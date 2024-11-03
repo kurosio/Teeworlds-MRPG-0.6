@@ -290,7 +290,7 @@ bool CInventoryManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* CMD, c
 		CPlayerItem* pPlayerItem = pPlayer->GetItem(VoteID);
 		pPlayerItem->Drop(Get);
 
-		GS()->Broadcast(ClientID, BroadcastPriority::GameInformation, 100, "You drop {}x{}", pPlayerItem->Info()->GetName(), Get);
+		GS()->Broadcast(ClientID, BroadcastPriority::GameInformation, 100, "You drop {} x{}", pPlayerItem->Info()->GetName(), Get);
 		pPlayer->m_VotesData.UpdateCurrentVotes();
 		return true;
 	}
@@ -319,7 +319,7 @@ bool CInventoryManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* CMD, c
 		const int DesValue = pPlayerSelectedItem->GetDysenthis() * Get;
 		if(pPlayerSelectedItem->Remove(Get) && pPlayerMaterialItem->Add(DesValue))
 		{
-			GS()->Chat(ClientID, "Disassemble {}x{}.", pPlayerSelectedItem->Info()->GetName(), Get);
+			GS()->Chat(ClientID, "Disassemble {} x{}.", pPlayerSelectedItem->Info()->GetName(), Get);
 			pPlayer->m_VotesData.UpdateCurrentVotes();
 		}
 		return true;
@@ -463,15 +463,19 @@ void CInventoryManager::ItemSelected(CPlayer* pPlayer, const CPlayerItem* pItem)
 	VoteWrapper VItem(ClientID, VWF_UNIQUE|VWF_STYLE_SIMPLE);
 
 	// name description
-	if(pInfo->IsEnchantable())
+	if(!pInfo->IsStackable())
 	{
 		VItem.SetTitle("{}{} {}", (pItem->m_Settings ? "✔ " : "\0"), pInfo->GetName(), pItem->GetStringEnchantLevel().c_str());
-		if(pInfo->HasAttributes())
-			VItem.Add("{}", pItem->GetStringAttributesInfo(pPlayer));
 	}
 	else
 	{
 		VItem.SetTitle("{}{} x{}", (pItem->m_Settings ? "✔ " : "\0"), pInfo->GetName(), pItem->m_Value);
+	}
+
+	// add attributes
+	if(pInfo->HasAttributes())
+	{
+		VItem.Add("{}", pItem->GetStringAttributesInfo(pPlayer));
 	}
 
 	// show description

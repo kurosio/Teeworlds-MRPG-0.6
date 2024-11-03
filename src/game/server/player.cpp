@@ -805,7 +805,7 @@ int CPlayer::GetTotalAttributeValue(AttributeIdentifier ID) const
 			continue;
 
 		// if is equipped and enchantable add attribute
-		if(PlayerItem.IsEquipped() && PlayerItem.Info()->IsEnchantable() && PlayerItem.Info()->GetInfoEnchantStats(ID))
+		if(PlayerItem.IsEquipped() && PlayerItem.Info()->IsEnchantable())
 		{
 			totalValue += PlayerItem.GetEnchantStats(ID);
 		}

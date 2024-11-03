@@ -259,7 +259,7 @@ void VoteWrapper::RebuildVotes(int ClientID)
 		.BeginDepth()
 			.Add("Probably a server error")
 		.EndDepth()
-		.Add("Report the error code #{}x{}", pVotesData->GetCurrentMenuID(), pVotesData->GetLastMenuID())
+		.Add("Report the error code #{} x{}", pVotesData->GetCurrentMenuID(), pVotesData->GetLastMenuID())
 		.AddBackpage(ClientID);
 	}
 

@@ -191,7 +191,7 @@ bool CMailboxManager::AcceptMail(CPlayer* pPlayer, int MailID)
 		CPlayerItem* pPlayerItem = pPlayer->GetItem(pItem);
 
 		// check enchantable and has item
-		if(pPlayerItem->HasItem() && pItem.Info()->IsEnchantable())
+		if(pPlayerItem->HasItem() && !pItem.Info()->IsStackable())
 		{
 			vCannotAcceptableItems.push_back(pItem);
 		}

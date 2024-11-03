@@ -17,6 +17,6 @@ public:
 	void OnEntity(int Index, vec2 Pos, int Flags) override;
 	void CreateLogic(int Type, int Mode, vec2 Pos, int ParseID) override;
 
-	void TryGenerateMoneyBags(int Num);
+	void TryGenerateMoneyBag();
 };
 #endif

@@ -40,21 +40,21 @@ void MotdMenu::Tick()
 	auto addScrollBar = [&](int index)
 	{
 		// initialize variables
-		int totalItems = (int)m_Points.size();
-		int currentScrollPos = m_ScrollManager.GetScrollPos();
-		int visibleItems = m_ScrollManager.GetMaxVisibleItems();
+		const auto totalItems = m_Points.size();
+		const auto currentScrollPos = m_ScrollManager.GetScrollPos();
+		const auto visibleItems = m_ScrollManager.GetMaxVisibleItems();
 
-		float visibleProportion = static_cast<float>(visibleItems) / static_cast<float>(totalItems);
-		int scrollBarHeight = static_cast<int>(visibleProportion * visibleItems);
+		const auto visibleProportion = static_cast<float>(visibleItems) / static_cast<float>(totalItems);
+		auto scrollBarHeight = round_to_int(visibleProportion * visibleItems);
 		if(scrollBarHeight < 1) 
 			scrollBarHeight = 1;
 
 		// calculate position
-		float progress = static_cast<float>(currentScrollPos) / static_cast<float>(totalItems - visibleItems);
-		int scrollBarPosition = static_cast<int>(progress * (visibleItems - scrollBarHeight));
+		const auto progress = static_cast<float>(currentScrollPos) / static_cast<float>(totalItems - visibleItems);
+		const auto scrollBarPosition = static_cast<int>(progress * (visibleItems - scrollBarHeight));
 
 		// get current index
-		int currentBar = index - currentScrollPos;
+		const auto currentBar = index - currentScrollPos;
 		const char* pSymbol = currentBar >= scrollBarPosition && currentBar < scrollBarPosition + scrollBarHeight ? "\u258D" : "\u258F";
 		buffer.append(pSymbol);
 	};
@@ -82,6 +82,7 @@ void MotdMenu::Tick()
 			m_ScrollManager.ScrollDown();
 			m_ResendMotdTick = pServer->Tick() + 5;
 		}
+
 		pServer->Input()->BlockInputGroup(m_ClientID, BLOCK_INPUT_FIRE | BLOCK_INPUT_FREEZE_HAMMER);
 	}
 

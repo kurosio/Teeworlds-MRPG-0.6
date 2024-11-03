@@ -12,8 +12,8 @@
 
 #include "game/server/core/components/guilds/guild_manager.h"
 #include "game/server/core/components/guilds/guild_house_data.h"
+#include "game/server/core/entities/items/money_bag.h"
 #include "game/server/core/tools/path_finder.h"
-#include "game/server/entities/pickup.h"
 
 CGameControllerDefault::CGameControllerDefault(CGS *pGS)
 : IGameController(pGS)
@@ -24,7 +24,7 @@ CGameControllerDefault::CGameControllerDefault(CGS *pGS)
 
 void CGameControllerDefault::Tick()
 {
-	TryGenerateMoneyBags(1);
+	TryGenerateMoneyBag();
 	IGameController::Tick();
 }
 
@@ -96,12 +96,12 @@ void CGameControllerDefault::OnEntity(int Index, vec2 Pos, int Flags)
 	}
 }
 
-void CGameControllerDefault::TryGenerateMoneyBags(int Num)
+void CGameControllerDefault::TryGenerateMoneyBag()
 {
 	// try get prepared path
 	if(m_PathMoneyBag.TryGetPath())
 	{
-		new CPickup(&GS()->m_World, WEAPON_LASER, m_PathMoneyBag.vPath.back());
+		new CEntityMoneyBag(&GS()->m_World, m_PathMoneyBag.vPath.back());
 		m_PathMoneyBag.Reset();
 	}
 

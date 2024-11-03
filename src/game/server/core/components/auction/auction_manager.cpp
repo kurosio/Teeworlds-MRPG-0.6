@@ -86,7 +86,7 @@ void CAuctionManager::ShowAuction(CPlayer* pPlayer) const
 		if(pSlot->GetOwnerID() == pPlayer->Account()->GetID())
 		{
 			const CItem* pItem = pSlot->GetItem();
-			VSelf.AddOption("AUCTION_BUY", pSlot->GetID(), "{}. Cancel slot ({}x{})", VSelf.NextPos(), pItem->Info()->GetName(), pItem->GetValue());
+			VSelf.AddOption("AUCTION_BUY", pSlot->GetID(), "{}. Cancel slot ({} x{})", VSelf.NextPos(), pItem->Info()->GetName(), pItem->GetValue());
 		}
 	}
 	VoteWrapper::AddEmptyline(ClientID);
@@ -99,7 +99,7 @@ void CAuctionManager::ShowAuction(CPlayer* pPlayer) const
 		if(pSlot->GetOwnerID() != pPlayer->Account()->GetID())
 		{
 			const CItem* pItem = pSlot->GetItem();
-			VList.AddMenu(MENU_AUCTION_SLOT_SELECT, pSlot->GetID(), "{}. {}x{} Seller: {}",
+			VList.AddMenu(MENU_AUCTION_SLOT_SELECT, pSlot->GetID(), "{}. {} x{} Seller: {}",
 				VList.NextPos(), pItem->Info()->GetName(), pItem->GetValue(), Server()->GetAccountNickname(pSlot->GetOwnerID()));
 		}
 	}
@@ -150,7 +150,7 @@ void CAuctionManager::ShowAuctionSlot(CPlayer* pPlayer, int ID) const
 
 	// show slot information
 	VoteWrapper VInfo(ClientID, VWF_ALIGN_TITLE|VWF_STYLE_STRICT_BOLD|VWF_SEPARATE, "Auction slot");
-	VInfo.Add("Item: {}x{}", pSlot->GetItem()->Info()->GetName(), pSlot->GetItem()->GetValue());
+	VInfo.Add("Item: {} x{}", pSlot->GetItem()->Info()->GetName(), pSlot->GetItem()->GetValue());
 	VInfo.Add("Price: {$} gold", pSlot->GetPrice());
 	VInfo.Add("Seller: {}", Server()->GetAccountNickname(pSlot->GetOwnerID()));
 	VoteWrapper::AddEmptyline(ClientID);
@@ -297,7 +297,7 @@ void CAuctionManager::CreateSlot(CPlayer* pPlayer, CAuctionSlot* pAuctionData) c
 
 			// send messages
 			const int AvailableSlots = g_Config.m_SvMaxPlayerAuctionSlots - GetSlotsCountByAccountID(AccountID);
-			GS()->Chat(-1, "{} created a slot [{}x{}] auction.", Server()->ClientName(ClientID), pPlayerItem->Info()->GetName(), pItem->GetValue());
+			GS()->Chat(-1, "{} created a slot [{} x{}] auction.", Server()->ClientName(ClientID), pPlayerItem->Info()->GetName(), pItem->GetValue());
 			GS()->Chat(ClientID, "Still available {} slots!", AvailableSlots);
 		}
 	}
@@ -336,19 +336,19 @@ bool CAuctionManager::BuySlot(CPlayer* pPlayer, int ID) const
 		// send mail for seller
 		MailWrapper MailSeller("Auctionist", pSlot->GetOwnerID(), "Auction alert.");
 		MailSeller.AddDescLine("Buyer: {}", Server()->ClientName(ClientID));
-		MailSeller.AddDescLine("Item: {}x{}", pItem->Info()->GetName(), pItem->GetValue());
+		MailSeller.AddDescLine("Item: {} x{}", pItem->Info()->GetName(), pItem->GetValue());
 		MailSeller.AttachItem({ itGold, pSlot->GetPrice() });
 		MailSeller.Send();
 
 		// send mail for buyer
 		MailWrapper MailBuyer("Auctionist", AccountID, "Auction alert.");
 		MailBuyer.AddDescLine("Seller: {}", Server()->GetAccountNickname(pSlot->GetOwnerID()));
-		MailBuyer.AddDescLine("Item: {}x{}", pItem->Info()->GetName(), pItem->GetValue());
+		MailBuyer.AddDescLine("Item: {} x{}", pItem->Info()->GetName(), pItem->GetValue());
 		MailBuyer.AttachItem(*pItem);
 		MailBuyer.Send();
 
 		// update and messages
-		GS()->ChatAccount(AccountID, "You bought {}x{}.", pItem->Info()->GetName(), pItem->GetValue());
+		GS()->ChatAccount(AccountID, "You bought {} x{}.", pItem->Info()->GetName(), pItem->GetValue());
 		GS()->ChatAccount(pSlot->GetOwnerID(), "Your slot was sold!");
 		RemoveSlotByID(ID);
 		return true;

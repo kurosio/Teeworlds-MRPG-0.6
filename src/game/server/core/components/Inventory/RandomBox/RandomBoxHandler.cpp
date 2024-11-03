@@ -41,96 +41,86 @@ void CEntityRandomBoxRandomizer::Tick()
 	// Check if m_LifeTime is zero or a multiple of the server tick speed
 	if(!m_LifeTime || m_LifeTime % Server()->TickSpeed() == 0)
 	{
-		// Select a random item
+		// select random item
 		auto IterRandomElement = SelectRandomItem();
-
-		// Check if the player exists and if the player's character exists
 		if(m_pPlayer && m_pPlayer->GetCharacter())
 		{
 			const vec2 PlayerPos = m_pPlayer->GetCharacter()->m_Core.m_Pos;
 			GS()->EntityManager()->Text(PlayerPos + vec2(0, -80), 50, GS()->GetItemInfo(IterRandomElement->m_ItemID)->GetName());
 		}
 
+		// is last iteration
 		if(!m_LifeTime)
 		{
-			// function lambda for check allowed get or send it from inbox
-			auto GiveRandomItem = [&](const CRandomItem& RandItem)
+			// initialize variables
+			struct ReceivedItem
 			{
-				bool IsEnchantable = GS()->GetItemInfo(RandItem.m_ItemID)->IsEnchantable();
+				CRandomItem RandomItem;
+				int Coincidences;
+			};
+			std::list<ReceivedItem> aReceivedItems;
+			auto fnGiveItem = [&](const CRandomItem& RandItem)
+			{
+				const auto HasItem = m_pPlayer->GetItem(RandItem.m_ItemID)->HasItem();
+				const auto IsStackable = GS()->GetItemInfo(RandItem.m_ItemID)->IsStackable();
 
-				// Prepare mail
-				MailWrapper Mail("System", m_AccountID, "Random box.");
-				Mail.AddDescLine("Item was not received by you personally.");
-
-				// Check if the player doesn't exist
-				if(!m_pPlayer || (IsEnchantable && m_pPlayer->GetItem(RandItem.m_ItemID)->HasItem()))
+				if(!m_pPlayer || (!IsStackable && HasItem))
 				{
-					// Send a message to the player's inbox stating the item was not received personally
+					// send mail
+					MailWrapper Mail("System", m_AccountID, "Random box.");
+					Mail.AddDescLine("Item was not received by you personally.");
 					Mail.AttachItem(CItem(RandItem.m_ItemID, RandItem.m_Value));
 					Mail.Send();
-					return;
 				}
-
-				// Add the item to the player
-				m_pPlayer->GetItem(RandItem.m_ItemID)->Add(RandItem.m_Value, 0, 0, false);
-				GS()->CreateDeath(m_pPlayer->m_ViewPos, m_pPlayer->GetCID());
+				else
+				{
+					// add to inventory
+					m_pPlayer->GetItem(RandItem.m_ItemID)->Add(RandItem.m_Value, 0, 0, false);
+					GS()->CreateDeath(m_pPlayer->m_ViewPos, m_pPlayer->GetCID());
+				}
 			};
-
-			// get list received items
-			struct ReceivedItem { CRandomItem RandomItem; int Coincidences; };
-			std::list<ReceivedItem> aReceivedItems;
-
-			// Define a lambda function called "findMatchingItem"
 			auto findMatchingItem = [&IterRandomElement](const ReceivedItem& pItem)
 			{
 				return pItem.RandomItem.m_ItemID == IterRandomElement->m_ItemID;
 			};
 
-			// Iterate "m_Used" number of times
+			// add random items
 			for(int i = 0; i < m_Used; i++)
 			{
-				// Find the first element in the vector "aReceivedItems" that satisfies the condition specified by the lambda function "findMatchingItem"
-				auto iter = std::find_if(aReceivedItems.begin(), aReceivedItems.end(), findMatchingItem);
-
-				// If an element was found
+				auto iter = std::ranges::find_if(aReceivedItems, findMatchingItem);
 				if(iter != aReceivedItems.end())
 				{
-					// Increment the values of the element's RandomItem member
 					iter->RandomItem.m_Value += IterRandomElement->m_Value;
 					iter->Coincidences++;
 				}
 				else
 				{
-					// If no element was found, add a new element
 					aReceivedItems.push_back({ *IterRandomElement, 1 });
 				}
 
-				// Assign a new random item to IterRandomElement
+				// next random item
 				IterRandomElement = SelectRandomItem();
 			}
 
-			// Check if the player exists
+			// is player valid
 			if(m_pPlayer)
 			{
-				// Send a chat message
+				// send information to chat and give items to the player
 				const char* pClientName = GS()->Server()->ClientName(m_pPlayer->GetCID());
 				GS()->Chat(-1, "---------------------------------");
-				GS()->Chat(-1, "{} uses '{}x{}' and got:", pClientName, m_pPlayerUsesItem->Info()->GetName(), m_Used);
-
-				// Iterate through all the received items / information
-				for(auto& pItem : aReceivedItems)
+				GS()->Chat(-1, "{} uses '{} x{}' and got:", pClientName, m_pPlayerUsesItem->Info()->GetName(), m_Used);
+				for(const auto& pItem : aReceivedItems)
 				{
-					CPlayerItem* pPlayerItem = m_pPlayer->GetItem(pItem.RandomItem.m_ItemID);
-					GiveRandomItem(pItem.RandomItem);
-					GS()->Chat(-1, "* {}x{} - ({})", pPlayerItem->Info()->GetName(), pItem.RandomItem.m_Value, pItem.Coincidences);
+					fnGiveItem(pItem.RandomItem);
+					GS()->Chat(-1, "* {} x{} - ({})", GS()->GetItemInfo(pItem.RandomItem.m_ItemID)->GetName(), pItem.RandomItem.m_Value, pItem.Coincidences);
 				}
 				GS()->Chat(-1, "---------------------------------");
 			}
 			else
 			{
-				// Give the random items to the player offline
-				for(auto& pItem : aReceivedItems)
-					GiveRandomItem(pItem.RandomItem);
+				// give items to the player by mail
+				for(const auto& pItem : aReceivedItems)
+					fnGiveItem(pItem.RandomItem);
 			}
 
 			// Destroy the current entity

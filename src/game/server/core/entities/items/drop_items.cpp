@@ -27,7 +27,7 @@ bool CDropItem::TakeItem(int ClientID)
 
 	// change of enchanted objects
 	CPlayerItem* pPlayerItem = pPlayer->GetItem(m_DropItem.GetID());
-	if(pPlayerItem->GetValue() > 0 && pPlayerItem->Info()->IsEnchantable())
+	if(pPlayerItem->GetValue() > 0 && !pPlayerItem->Info()->IsStackable())
 	{
 		bool LastEquipped = pPlayerItem->IsEquipped();
 		tl_swap(static_cast<CItem&>(*pPlayerItem), m_DropItem);
@@ -76,7 +76,7 @@ void CDropItem::Tick()
 		const CPlayerItem* pPlayerItem = pChar->GetPlayer()->GetItem(m_DropItem.GetID());
 		const char* pOwnerNick = (m_OwnerID != -1 ? Server()->ClientName(m_OwnerID) : "\0");
 
-		if(pPlayerItem->Info()->IsEnchantable())
+		if(!pPlayerItem->Info()->IsStackable())
 		{
 			if(pPlayerItem->GetValue() > 0)
 			{
@@ -91,7 +91,7 @@ void CDropItem::Tick()
 		}
 		else
 		{
-			GS()->Broadcast(ClientID, BroadcastPriority::GameInformation, 100, "{}x{} {}",
+			GS()->Broadcast(ClientID, BroadcastPriority::GameInformation, 100, "{} x{} {}",
 				m_DropItem.Info()->GetName(), m_DropItem.GetValue(), pOwnerNick);
 		}
 	}

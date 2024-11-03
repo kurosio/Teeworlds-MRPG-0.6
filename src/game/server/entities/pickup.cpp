@@ -111,15 +111,6 @@ void CPickup::Tick()
 			GS()->CreateSound(m_Pos, SOUND_PICKUP_SHOTGUN);
 		}
 	}
-	else if(m_Type == WEAPON_LASER && m_Projectile)
-	{
-		const int RandomMoney = 1 + rand() % 500;
-
-		pPlayer->Account()->AddGold(RandomMoney, false);
-		GS()->Chat(-1, "Player {} has found money bag with {$} golds", Server()->ClientName(pPlayer->GetCID()), RandomMoney);
-		GS()->CreateDeath(m_Pos, pPlayer->GetCID());
-		MarkForDestroy();
-	}
 
 	if(Picked)
 	{

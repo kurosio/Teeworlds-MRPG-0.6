@@ -294,7 +294,7 @@ void CWarehouseManager::ShowTradeList(CWarehouse* pWarehouse, CPlayer* pPlayer, 
 		const int Price = Trade.GetPrice();
 
 		// set title name by enchant type (or stack item, or only once)
-		if(pItemInfo->IsEnchantable())
+		if(!pItemInfo->IsStackable())
 		{
 			const bool HasItem = pPlayer->GetItem(*pItem)->HasItem();
 			VItems.AddMenu(MENU_WAREHOUSE_ITEM_SELECT, Trade.GetID(), "[{}] {} {} - {$} {}", (HasItem ? "✔" : "×"),
@@ -302,7 +302,7 @@ void CWarehouseManager::ShowTradeList(CWarehouse* pWarehouse, CPlayer* pPlayer, 
 		}
 		else
 		{
-			VItems.AddMenu(MENU_WAREHOUSE_ITEM_SELECT, Trade.GetID(), "[{}] {}x{} - {$} {}",
+			VItems.AddMenu(MENU_WAREHOUSE_ITEM_SELECT, Trade.GetID(), "[{}] {} x{} - {$} {}",
 				pPlayer->GetItem(*pItem)->GetValue(), pItemInfo->GetName(), pItem->GetValue(), Price, pCurrency->GetName());
 		}
 	}
@@ -324,7 +324,7 @@ void CWarehouseManager::ShowTrade(CPlayer* pPlayer, CWarehouse* pWarehouse, int 
 
 	// trade item informaton
 	VoteWrapper VItem(ClientID, VWF_SEPARATE | VWF_STYLE_STRICT_BOLD, "Do you want to buy?");
-	if(pItem->Info()->IsEnchantable())
+	if(!pItem->Info()->IsStackable())
 	{
 		VItem.Add("{} {}", (HasItem ? "✔" : "×"), pItem->Info()->GetName());
 	}
@@ -365,7 +365,7 @@ void CWarehouseManager::ShowTrade(CPlayer* pPlayer, CWarehouse* pWarehouse, int 
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// show status and button buy
-	if(pItem->Info()->IsEnchantable() && HasItem)
+	if(!pItem->Info()->IsStackable() && HasItem)
 	{
 		VoteWrapper(ClientID).Add("- You can't buy more than one item");
 	}
@@ -398,7 +398,7 @@ bool CWarehouseManager::BuyItem(CPlayer* pPlayer, CWarehouse* pWarehouse, int Tr
 	auto* pPlayerItem = pPlayer->GetItem(*pItem);
 
 	// check if the player has the enchanted item in the backpack
-	if(pPlayerItem->HasItem() && pPlayerItem->Info()->IsEnchantable())
+	if(pPlayerItem->HasItem() && !pPlayerItem->Info()->IsStackable())
 	{
 		GS()->Chat(ClientID, "Enchant item maximal count x1 in a backpack!");
 		return false;
@@ -428,7 +428,7 @@ bool CWarehouseManager::BuyItem(CPlayer* pPlayer, CWarehouse* pWarehouse, int Tr
 
 		// add items
 		pPlayerItem->Add(pItem->GetValue(), 0, pItem->GetEnchant());
-		GS()->Chat(ClientID, "You exchanged {}x{$} for {}x{}.", pCurrency->GetName(), pTrade->GetPrice(), pItem->Info()->GetName(), pItem->GetValue());
+		GS()->Chat(ClientID, "You exchanged {} x{$} for {} x{}.", pCurrency->GetName(), pTrade->GetPrice(), pItem->Info()->GetName(), pItem->GetValue());
 		return true;
 	}
 
@@ -462,7 +462,7 @@ bool CWarehouseManager::SellItem(CPlayer* pPlayer, CWarehouse* pWarehouse, int T
 
 		// add currency for player
 		pPlayerCurrencyItem->Add(FinalPrice);
-		GS()->Chat(ClientID, "You sold {}x{} for {$} {}.", pItem->Info()->GetName(), Value, FinalPrice, pCurrency->GetName());
+		GS()->Chat(ClientID, "You sold {} x{} for {$} {}.", pItem->Info()->GetName(), Value, FinalPrice, pCurrency->GetName());
 		return true;
 	}
 

@@ -96,7 +96,7 @@ bool CPlayerItem::Add(int Value, int StartSettings, int StartEnchant, bool Messa
 
 	// check enchantable type
 	const int ClientID = pPlayer->GetCID();
-	if(Info()->IsEnchantable())
+	if(!Info()->IsStackable())
 	{
 		if(m_Value > 0)
 		{
@@ -147,7 +147,7 @@ bool CPlayerItem::Add(int Value, int StartSettings, int StartEnchant, bool Messa
 	}
 	else
 	{
-		GS()->Chat(ClientID, "You obtain an {}x{}({}).", Info()->GetName(), Value, m_Value);
+		GS()->Chat(ClientID, "You obtain an {} x{}({}).", Info()->GetName(), Value, m_Value);
 	}
 
 	return Save();
@@ -231,7 +231,7 @@ bool CPlayerItem::Use(int Value)
 	if(m_ID == itCapsuleSurvivalExperience && Remove(Value))
 	{
 		int Getting = randomRangecount(10, 50, Value);
-		GS()->Chat(-1, "{} used {}x{} and got {} survival experience.", GS()->Server()->ClientName(ClientID), Info()->GetName(), Value, Getting);
+		GS()->Chat(-1, "{} used {} x{} and got {} survival experience.", GS()->Server()->ClientName(ClientID), Info()->GetName(), Value, Getting);
 		pPlayer->Account()->AddExperience(Getting);
 		return true;
 	}
@@ -239,7 +239,7 @@ bool CPlayerItem::Use(int Value)
 	if(m_ID == itLittleBagGold && Remove(Value))
 	{
 		int Getting = randomRangecount(10, 50, Value);
-		GS()->Chat(-1, "{} used {}x{} and got {} gold.", GS()->Server()->ClientName(ClientID), Info()->GetName(), Value, Getting);
+		GS()->Chat(-1, "{} used {} x{} and got {} gold.", GS()->Server()->ClientName(ClientID), Info()->GetName(), Value, Getting);
 		pPlayer->Account()->AddGold(Getting);
 		return true;
 	}
@@ -310,7 +310,7 @@ bool CPlayerItem::Use(int Value)
 			const auto EffectName = optPotionContext->Effect.c_str();
 
 			pPlayer->m_Effects.Add(EffectName, PotionTime * Server()->TickSpeed());
-			GS()->Chat(ClientID, "You used {}x{}", Info()->GetName(), Value);
+			GS()->Chat(ClientID, "You used {} x{}", Info()->GetName(), Value);
 			GS()->EntityManager()->Text(pPlayer->m_ViewPos + vec2(0, -140.0f), 70, EffectName);
 
 			// Update the recast time based on potion type

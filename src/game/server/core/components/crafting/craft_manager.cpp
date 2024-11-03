@@ -63,7 +63,7 @@ void CCraftManager::CraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const
 		if(playerItemCount < requiredItemCount)
 		{
 			int itemShortage = requiredItemCount - playerItemCount;
-			missingItems += fmt_localize(ClientID, "{}x{} ", RequiredItem.Info()->GetName(), itemShortage);
+			missingItems += fmt_localize(ClientID, "{} x{} ", RequiredItem.Info()->GetName(), itemShortage);
 		}
 	}
 
@@ -97,13 +97,13 @@ void CCraftManager::CraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const
 	pPlayerCraftItem->Add(craftedItemCount);
 
 	// report a crafted item, either to everyone or only to a player, depending on its characteristics
-	if(pPlayerCraftItem->Info()->IsEnchantable())
+	if(!pPlayerCraftItem->Info()->IsStackable())
 	{
-		GS()->Chat(-1, "{} crafted [{}x{}].", Server()->ClientName(ClientID), pPlayerCraftItem->Info()->GetName(), craftedItemCount);
+		GS()->Chat(-1, "{} crafted [{} x{}].", Server()->ClientName(ClientID), pPlayerCraftItem->Info()->GetName(), craftedItemCount);
 	}
 	else
 	{
-		GS()->Chat(ClientID, "You crafted [{}x{}].", pPlayerCraftItem->Info()->GetName(), craftedItemCount);
+		GS()->Chat(ClientID, "You crafted [{} x{}].", pPlayerCraftItem->Info()->GetName(), craftedItemCount);
 	}
 
 	// update achievement and votes
@@ -176,7 +176,7 @@ void CCraftManager::ShowCraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const
 	// detail information
 	VoteWrapper VCraftItem(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_STRICT_BOLD, "\u2692 Detail information");
 	CItemDescription* pCraftItemInfo = pCraft->GetItem()->Info();
-	VCraftItem.Add("Crafting: {}x{}", pCraftItemInfo->GetName(), pCraft->GetItem()->GetValue());
+	VCraftItem.Add("Crafting: {} x{}", pCraftItemInfo->GetName(), pCraft->GetItem()->GetValue());
 	VCraftItem.Add("{}", pCraftItemInfo->GetDescription());
 	if(pCraftItemInfo->HasAttributes())
 	{
@@ -195,7 +195,7 @@ void CCraftManager::ShowCraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const
 		{
 			auto playerGold = pPlayer->Account()->GetTotalGold();
 			bool hasEnoughGold = pPlayer->Account()->GetTotalGold() >= CraftPrice;
-			VCraftRequired.MarkList().Add("{} Goldx{$} ({$})", hasEnoughGold ? "\u2714" : "\u2718", CraftPrice, playerGold);
+			VCraftRequired.MarkList().Add("{} Gold x{$} ({$})", hasEnoughGold ? "\u2714" : "\u2718", CraftPrice, playerGold);
 		}
 
 		// requied items
@@ -203,7 +203,7 @@ void CCraftManager::ShowCraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const
 		{
 			CPlayerItem* pPlayerItem = pPlayer->GetItem(pRequiredItem);
 			bool hasEnoughItems = pPlayerItem->GetValue() >= pRequiredItem.GetValue();
-			VCraftRequired.MarkList().Add("{} {}x{} ({})", hasEnoughItems ? "\u2714" : "\u2718",
+			VCraftRequired.MarkList().Add("{} {} x{} ({})", hasEnoughItems ? "\u2714" : "\u2718",
 				pRequiredItem.Info()->GetName(), pRequiredItem.GetValue(), pPlayerItem->GetValue());
 		}
 		VCraftRequired.EndDepth();
@@ -212,7 +212,7 @@ void CCraftManager::ShowCraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const
 
 	// add craft button
 	bool hasCraftItem = pPlayer->GetItem(pCraft->GetItem()->GetID())->HasItem();
-	if(pCraftItemInfo->IsEnchantable() && hasCraftItem)
+	if(!pCraftItemInfo->IsStackable() && hasCraftItem)
 	{
 		VoteWrapper(ClientID).Add("- You already have the item", pCraft->GetPrice(pPlayer));
 	}
@@ -252,14 +252,14 @@ void CCraftManager::ShowCraftList(CPlayer* pPlayer, const char* TypeName, ItemTy
 		const int Price = pCraft->GetPrice(pPlayer);
 
 		// set title name by enchant type (or stack item, or only once)
-		if(pCraftItemInfo->IsEnchantable())
+		if(!pCraftItemInfo->IsStackable())
 		{
 			VCraftList.AddMenu(MENU_CRAFTING_SELECT, ID, "{}{} - {} gold", 
 				(pPlayer->GetItem(ItemID)->GetValue() ? "✔ " : "\0"), pCraftItemInfo->GetName(), Price);
 		}
 		else
 		{
-			VCraftList.AddMenu(MENU_CRAFTING_SELECT, ID, "[{}]{}x{} - {} gold",
+			VCraftList.AddMenu(MENU_CRAFTING_SELECT, ID, "[{}]{} x{} - {} gold",
 				pPlayer->GetItem(ItemID)->GetValue(), pCraftItemInfo->GetName(), pCraft->GetItem()->GetValue(), Price);
 		}
 	}

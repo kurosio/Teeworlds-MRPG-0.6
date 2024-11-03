@@ -122,6 +122,11 @@ void CItemDescription::StartItemScenario(CPlayer* pPlayer, ItemScenarioEvent Eve
 	});
 }
 
+bool CItemDescription::IsStackable() const
+{
+	return !(IsEnchantable() || IsType(ItemType::Setting) || IsType(ItemType::Equipment) || IsType(ItemType::Module));
+}
+
 bool CItemDescription::IsEnchantable() const
 {
 	return !m_aAttributes.empty();

@@ -135,7 +135,7 @@ void CSkillManager::ShowSkill(CPlayer* pPlayer, int SkillID) const
 	// required sp for learn
 	VoteWrapper VRequired(ClientID, VWF_OPEN | VWF_STYLE_STRICT, "Required");
 	VRequired.ReinitNumeralDepthStyles({{ DEPTH_LVL1, DEPTH_LIST_STYLE_BOLD }});
-	VRequired.MarkList().Add("{} {}x{} ({})", MarkHas ? "\u2714" : "\u2718", 
+	VRequired.MarkList().Add("{} {} x{} ({})", MarkHas ? "\u2714" : "\u2718", 
 		pPlayerSkillPoints->Info()->GetName(), pInfo->GetPriceSP(), pPlayerSkillPoints->GetValue());
 	VRequired.AddLine();
 	VoteWrapper::AddEmptyline(ClientID);

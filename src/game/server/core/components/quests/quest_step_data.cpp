@@ -179,14 +179,14 @@ void CQuestStep::PostFinish()
 
 			if(pRequired.m_Type == QuestBotInfo::TaskRequiredItems::Type::SHOW)
 			{
-				GS()->Chat(pPlayer->GetCID(), "[Done] Show the {}x{} to the {}!", pPlayerItem->Info()->GetName(), pRequired.m_Item.GetValue(), m_Bot.GetName());
+				GS()->Chat(pPlayer->GetCID(), "[Done] Show the {} x{} to the {}!", pPlayerItem->Info()->GetName(), pRequired.m_Item.GetValue(), m_Bot.GetName());
 				continue;
 			}
 
 			// remove item
 			vInteractItemIds.emplace(pPlayerItem->GetID());
 			pPlayerItem->Remove(pRequired.m_Item.GetValue());
-			GS()->Chat(pPlayer->GetCID(), "[Done] Give the {}x{} to the {}!", pPlayerItem->Info()->GetName(), pRequired.m_Item.GetValue(), m_Bot.GetName());
+			GS()->Chat(pPlayer->GetCID(), "[Done] Give the {} x{} to the {}!", pPlayerItem->Info()->GetName(), pRequired.m_Item.GetValue(), m_Bot.GetName());
 		}
 	}
 

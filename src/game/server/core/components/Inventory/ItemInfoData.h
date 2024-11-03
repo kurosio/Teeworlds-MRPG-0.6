@@ -104,6 +104,7 @@ public:
 	std::optional<HarvestingContext>& GetHarvestingContext() { return m_HarvestingContext; }
 	std::optional<PotionContext>& GetPotionContext() { return m_PotionContext; }
 
+	bool IsStackable() const;
 	bool IsEnchantable() const;
 	bool IsEnchantMaxLevel(int Enchant) const;
 	bool HasAttributes() const;
