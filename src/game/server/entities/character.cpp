@@ -1522,6 +1522,20 @@ void CCharacter::HandleTiles()
 			GS()->Broadcast(m_ClientID, BroadcastPriority::GameBasicStats, 50, "");
 		}
 
+		// chairs
+		if(m_pTilesHandler->IsActive(TILE_CHAIR_LV1))
+		{
+			m_pPlayer->Account()->HandleChair(1, 1);
+		}
+		if(m_pTilesHandler->IsActive(TILE_CHAIR_LV2))
+		{
+			m_pPlayer->Account()->HandleChair(3, 3);
+		}
+		if(m_pTilesHandler->IsActive(TILE_CHAIR_LV3))
+		{
+			m_pPlayer->Account()->HandleChair(5, 5);
+		}
+
 		// check from components
 		GS()->Core()->OnCharacterTile(this);
 	}
@@ -1529,14 +1543,6 @@ void CCharacter::HandleTiles()
 	// water effect enter exit
 	if(m_pTilesHandler->IsEnter(TILE_WATER) || m_pTilesHandler->IsExit(TILE_WATER))
 		GS()->CreateDeath(m_Core.m_Pos, m_ClientID);
-
-	// chairs
-	if(m_pTilesHandler->IsActive(TILE_CHAIR_LV1))
-		m_pPlayer->Account()->HandleChair(1, 1);
-	if(m_pTilesHandler->IsActive(TILE_CHAIR_LV2))
-		m_pPlayer->Account()->HandleChair(3, 3);
-	if(m_pTilesHandler->IsActive(TILE_CHAIR_LV3))
-		m_pPlayer->Account()->HandleChair(5, 5);
 }
 
 void CCharacter::GiveRandomEffects(int To)
