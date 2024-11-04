@@ -1313,8 +1313,8 @@ bool CCharacter::TakeDamage(vec2 Force, int Damage, int FromCID, int Weapon)
 	m_EmoteStop = Server()->Tick() + 500 * Server()->TickSpeed() / 1000;
 	m_pPlayer->SetSnapHealthTick(2);
 	m_pPlayer->m_aPlayerTick[LastDamage] = Server()->Tick();
-	dbg_msg("test", "[dmg:%d crit:%d, weapon:%d] damage %s to %s / star num %d", 
-		Damage, IsCriticalDamage, pFrom->GetCharacter()->m_Core.m_ActiveWeapon, pFrom->IsBot() ? "bot" : "player", m_pPlayer->IsBot() ? "bot" : "player", StarNum);
+	//dbg_msg("test", "[dmg:%d crit:%d, weapon:%d] damage %s to %s / star num %d", 
+	//	Damage, IsCriticalDamage, pFrom->GetCharacter()->m_Core.m_ActiveWeapon, pFrom->IsBot() ? "bot" : "player", m_pPlayer->IsBot() ? "bot" : "player", StarNum);
 
 	if(m_pPlayer->m_Effects.IsActive("LastStand"))
 	{
@@ -1509,20 +1509,17 @@ void CCharacter::HandleTiles()
 		if(m_pTilesHandler->IsActive(TILE_ZONE))
 		{
 			const auto pZone = GS()->Collision()->GetZonedetail(m_Core.m_Pos);
-			if(pZone && m_Zonename != pZone->GetName())
+			if(pZone && ((Server()->Tick() % Server()->TickSpeed() == 0) || m_Zonename != pZone->GetName()))
 			{
-				const auto infoZone = fmt_default("{}. ({})", pZone->GetName(), pZone->IsPVP() ? "PVP" : "Safe");
-				const int wrapLength = infoZone.length() / 2;
-				const auto result = fmt_default("{}\n{}\n{}",
-					mystd::aesthetic::wrapLineConfident(wrapLength), infoZone, mystd::aesthetic::wrapLineConfident(wrapLength));
-
-				GS()->Broadcast(m_ClientID, BroadcastPriority::TitleInformation, 150, result.c_str());
 				m_Zonename = pZone->GetName();
+				const auto infoZone = fmt_default("{} zone. ({})", pZone->GetName(), pZone->IsPVP() ? "PVP" : "Safe");
+				GS()->Broadcast(m_ClientID, BroadcastPriority::GameBasicStats, 50, infoZone.c_str());
 			}
 		}
 		else if(m_pTilesHandler->IsExit(TILE_ZONE))
 		{
 			m_Zonename = "unknown";
+			GS()->Broadcast(m_ClientID, BroadcastPriority::GameBasicStats, 50, "");
 		}
 
 		// check from components

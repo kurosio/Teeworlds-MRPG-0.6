@@ -93,19 +93,17 @@ public:
 	CPlayer(CGS* pGS, int ClientID);
 	virtual ~CPlayer();
 
-	virtual int GetTeam();
+	bool IsAfk() const { return m_Afk; }
+	int64_t GetAfkTime() const;
+
 	virtual bool IsBot() const { return false; }
+	virtual int GetTeam();
 	virtual	int GetCurrentWorldID() const;
 	virtual CTeeInfo& GetTeeInfo() const;
-
 	virtual int GetMaxHealth() const;
 	virtual int GetMaxMana() const;
 	virtual	int GetHealth() const { return GetTempData().m_TempHealth; }
 	virtual	int GetMana() const { return GetTempData().m_TempMana; }
-	bool IsAfk() const { return m_Afk; }
-	int64_t GetAfkTime() const;
-
-	void FormatBroadcastBasicStats(char* pBuffer, int Size, const char* pAppendStr = "\0") const;
 
 	virtual void HandleTuningParams();
 	virtual int64_t GetMaskVisibleForClients() const { return -1; }
@@ -115,6 +113,8 @@ public:
 	virtual int GetTotalAttributeValue(AttributeIdentifier ID) const;
 	float GetAttributeChance(AttributeIdentifier ID) const;
 	virtual void UpdateTempData(int Health, int Mana);
+
+	void FormatBroadcastBasicStats(char* pBuffer, int Size, const char* pAppendStr = "\0") const;
 
 	virtual void Tick();
 	virtual void PostTick();
