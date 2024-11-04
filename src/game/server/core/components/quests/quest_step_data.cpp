@@ -22,7 +22,7 @@ void CQuestStepBase::UpdateBot() const
 	int BotClientID = -1;
 	for(int i = MAX_PLAYERS; i < MAX_CLIENTS; ++i)
 	{
-		CPlayer* pPlayer = pGS->GetPlayer(i);
+		const auto* pPlayer = dynamic_cast<CPlayerBot*>(pGS->GetPlayer(i));
 		if(pPlayer && pPlayer->GetBotType() == TYPE_BOT_QUEST && pPlayer->GetBotMobID() == m_Bot.m_ID)
 		{
 			BotClientID = i;

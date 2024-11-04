@@ -14,6 +14,7 @@ enum
 	SAFEFLAG_DAMAGE_DISABLED = 1 << 3
 };
 
+class CPlayerBot;
 class CMultipleOrbite;
 
 class CCharacter : public CEntity
@@ -81,7 +82,7 @@ protected:
 	void HandleIndependentTuning();
 
 	void HandleSafeFlags();
-	bool StartConversation(CPlayer* pTarget) const;
+	bool StartConversation(CPlayerBot* pTarget) const;
 	void HandleEventsDeath(int Killer, vec2 Force) const;
 
 	void AutoUseHealingPotionIfNeeded() const;

@@ -9,14 +9,15 @@ CQuestMobAI::CQuestMobAI(CQuestBotMobInfo* pQuestMobInfo, CPlayerBot* pPlayer, C
 
 bool CQuestMobAI::CanDamage(CPlayer* pFrom)
 {
-	if(pFrom->GetBotType() == TYPE_BOT_EIDOLON)
-	{
-		if(const auto* pOwner = dynamic_cast<CPlayerBot*>(pFrom)->GetEidolonOwner())
-			return m_pQuestMobInfo->m_ActiveForClient[pOwner->GetCID()];
-	}
-
 	if(!pFrom->IsBot() && m_pQuestMobInfo->m_ActiveForClient[pFrom->GetCID()])
 		return true;
+
+	const auto* pFromBot = dynamic_cast<CPlayerBot*>(pFrom);
+	if(pFromBot && pFromBot->GetBotType() == TYPE_BOT_EIDOLON)
+	{
+		if(const auto* pOwner = pFromBot->GetEidolonOwner())
+			return m_pQuestMobInfo->m_ActiveForClient[pOwner->GetCID()];
+	}
 
 	return false;
 }

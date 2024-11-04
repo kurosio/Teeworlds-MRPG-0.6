@@ -1571,12 +1571,13 @@ bool CCharacter::HandleHammerActions(vec2 Direction, vec2 ProjStartPos)
 			continue;
 
 		// talking wth bot
-		if(StartConversation(pTarget->GetPlayer()))
+		auto* pTargetPlayerBot = dynamic_cast<CPlayerBot*>(pTarget->GetPlayer());
+		if(StartConversation(pTargetPlayerBot))
 		{
 			GS()->CreatePlayerSound(m_pPlayer->GetCID(), SOUND_TEE_CRY);
 			GS()->CreateHammerHit(ProjStartPos);
 
-			const int BotID = pTarget->GetPlayer()->GetBotID();
+			const int BotID = pTargetPlayerBot->GetBotID();
 			GS()->Chat(m_pPlayer->GetCID(), "You begin speaking with {}.", DataBotInfo::ms_aDataBot[BotID].m_aNameBot);
 			return true;
 		}
@@ -1933,13 +1934,12 @@ void CCharacter::HandleDoorHit()
 		m_Core.m_Jumped = 1;
 }
 
-bool CCharacter::StartConversation(CPlayer* pTarget) const
+bool CCharacter::StartConversation(CPlayerBot* pTarget) const
 {
-	if(m_pPlayer->IsBot() || !pTarget->IsBot())
+	if(m_pPlayer->IsBot() || !pTarget)
 		return false;
 
-	const auto pTargetBot = static_cast<CPlayerBot*>(pTarget);
-	if(pTargetBot && pTargetBot->IsConversational() && pTargetBot->IsActiveForClient(m_pPlayer->GetCID()))
+	if(pTarget && pTarget->IsConversational() && pTarget->IsActiveForClient(m_pPlayer->GetCID()))
 	{
 		m_pPlayer->m_Dialog.Start(pTarget->GetCID());
 		return true;

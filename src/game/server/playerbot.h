@@ -54,9 +54,9 @@ public:
 
 	int GetTeam() override { return TEAM_BLUE; }
 	bool IsBot() const override { return true; }
-	int GetBotID() const override { return m_BotID; }
-	int GetBotType() const override { return m_BotType; }
-	int GetBotMobID() const override { return m_MobID; }
+	int GetBotID() const { return m_BotID; }
+	int GetBotType() const { return m_BotType; }
+	int GetBotMobID() const { return m_MobID; }
 	int GetCurrentWorldID() const override;
 	CTeeInfo& GetTeeInfo() const override;
 

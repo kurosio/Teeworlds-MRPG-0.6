@@ -88,12 +88,10 @@ bool CCharacterBotAI::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 	CCharacter::TakeDamage(Force, Dmg, From, Weapon);
 
 	// Convert from (eidolon to eidolon owner)
-	if(pFrom->GetBotType() == TYPE_BOT_EIDOLON)
+	const auto* pFromBot = dynamic_cast<CPlayerBot*>(pFrom);
+	if(pFromBot && pFromBot->GetBotType() == TYPE_BOT_EIDOLON)
 	{
-		if(const auto* pFromBot = dynamic_cast<CPlayerBot*>(pFrom))
-		{
-			From = pFromBot->GetEidolonOwner()->GetCID();
-		}
+		From = pFromBot->GetEidolonOwner()->GetCID();
 	}
 
 	// Add player to the list of damaged players

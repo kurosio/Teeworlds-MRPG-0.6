@@ -95,9 +95,6 @@ public:
 
 	virtual int GetTeam();
 	virtual bool IsBot() const { return false; }
-	virtual int GetBotID() const { return -1; }
-	virtual int GetBotType() const { return -1; }
-	virtual int GetBotMobID() const { return -1; }
 	virtual	int GetCurrentWorldID() const;
 	virtual CTeeInfo& GetTeeInfo() const;
 

@@ -13,8 +13,9 @@ bool CEidolonAI::CanDamage(CPlayer* pFrom)
 	if(!pFrom->IsBot() && m_pPlayer->GetEidolonOwner() != pFrom)
 		return true;
 
-	if(pFrom->GetBotType() == TYPE_BOT_MOB || pFrom->GetBotType() == TYPE_BOT_EIDOLON ||
-		pFrom->GetBotType() == TYPE_BOT_QUEST_MOB)
+	const auto* pFromBot = static_cast<CPlayerBot*>(pFrom);
+	if(pFromBot && (pFromBot->GetBotType() == TYPE_BOT_MOB || pFromBot->GetBotType() == TYPE_BOT_EIDOLON ||
+		pFromBot->GetBotType() == TYPE_BOT_QUEST_MOB))
 		return true;
 
 	return false;

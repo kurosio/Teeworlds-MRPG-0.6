@@ -10,8 +10,14 @@ CMobAI::CMobAI(MobBotInfo* pNpcInfo, CPlayerBot* pPlayer, CCharacterBotAI* pChar
 
 bool CMobAI::CanDamage(CPlayer* pFrom)
 {
-	return !pFrom->IsBot() || pFrom->GetBotType() == TYPE_BOT_EIDOLON ||
-		pFrom->GetBotType() == TYPE_BOT_NPC;
+	if(!pFrom->IsBot())
+		return true;
+
+	const auto* pFromBot = static_cast<CPlayerBot*>(pFrom);
+	if(pFromBot && (pFromBot->GetBotType() == TYPE_BOT_EIDOLON || pFromBot->GetBotType() == TYPE_BOT_NPC))
+		return true;
+
+	return false;
 }
 
 void CMobAI::OnSpawn()

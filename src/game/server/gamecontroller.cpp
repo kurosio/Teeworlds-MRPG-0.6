@@ -50,7 +50,8 @@ void IGameController::OnCharacterDeath(CPlayer* pVictim, CPlayer* pKiller, int W
 		// achievement defeat mob & pve
 		if(pVictim->IsBot() && !pKiller->IsBot())
 		{
-			pKiller->UpdateAchievement(AchievementType::DefeatMob, pVictim->GetBotID(), 1, PROGRESS_ACCUMULATE);
+			const auto VictimBotID = dynamic_cast<CPlayerBot*>(pVictim)->GetBotID();
+			pKiller->UpdateAchievement(AchievementType::DefeatMob, VictimBotID, 1, PROGRESS_ACCUMULATE);
 			pKiller->UpdateAchievement(AchievementType::DefeatPVE, NOPE, 1, PROGRESS_ACCUMULATE);
 		}
 

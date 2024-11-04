@@ -40,14 +40,15 @@ void CBotWall::Tick()
 		if(!pChar->GetPlayer()->IsBot())
 			continue;
 
-		int BotType = pChar->GetPlayer()->GetBotType();
+		const auto pPlayerBot = static_cast<CPlayerBot*>(pChar->GetPlayer());
+		int BotType = pPlayerBot->GetBotType();
 		if((m_Flag & WALLLINEFLAG_MOB_BOT) && (BotType == TYPE_BOT_MOB))
 		{
 			HitCharacter(pChar);
 			continue;
 		}
 
-		int MobID = pChar->GetPlayer()->GetBotMobID();
+		int MobID = pPlayerBot->GetBotMobID();
 		if((m_Flag & WALLLINEFLAG_NPC_BOT) && (BotType == TYPE_BOT_NPC) && (NpcBotInfo::ms_aNpcBot[MobID].m_Function != FUNCTION_NPC_GUARDIAN))
 		{
 			HitCharacter(pChar);
