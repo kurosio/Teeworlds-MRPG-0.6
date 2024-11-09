@@ -62,8 +62,19 @@ void CCollision::Init(IKernel* pKernel, int WorldID)
 		unsigned int SwitchLayerSize = pMap->GetDataSize(pSwitchLayer->m_Switch);
 		if(SwitchLayerSize >= (m_Width * m_Height * sizeof(CSwitchTileExtra)))
 		{
-			m_pExtra = static_cast<CSwitchTileExtra*>(pMap->GetData(pSwitchLayer->m_Switch));
-			InitExtra();
+			m_pSwitchExtra = static_cast<CSwitchTileExtra*>(pMap->GetData(pSwitchLayer->m_Switch));
+			InitSwitchExtra();
+		}
+	}
+
+	// initialize speedup tiles
+	if(const CMapItemLayerTilemap* pSwitchLayer = m_pLayers->SpeedupLayer())
+	{
+		unsigned int SpeedupLayerSize = pMap->GetDataSize(pSwitchLayer->m_Speedup);
+		if(SpeedupLayerSize >= (m_Width * m_Height * sizeof(CSpeedupTileExtra)))
+		{
+			m_pSpeedupExtra = static_cast<CSpeedupTileExtra*>(pMap->GetData(pSwitchLayer->m_Speedup));
+			InitSpeedupExtra();
 		}
 	}
 }
@@ -99,7 +110,7 @@ void CCollision::InitTiles(CTile* pTiles)
 
 		if(Index == TILE_FIXED_CAM || Index == TILE_SMOOTH_FIXED_CAM)
 		{
-			FixedCamZoneData data;
+			FixedCamZoneDetail data;
 			data.Pos = { (i % m_Width) * TILE_SIZE + TILE_SIZE / 2.0f, (i / m_Width) * TILE_SIZE + TILE_SIZE / 2.0f };
 			data.Rect = { data.Pos.x - CAM_RADIUS_W, data.Pos.y - CAM_RADIUS_H, data.Pos.x + CAM_RADIUS_W, data.Pos.y + CAM_RADIUS_H };
 			data.Smooth = (Index == TILE_SMOOTH_FIXED_CAM);
@@ -142,42 +153,72 @@ void CCollision::InitTeleports()
 	}
 }
 
-void CCollision::InitExtra()
+void CCollision::InitSwitchExtra()
 {
-	const std::vector<std::string>& settings = m_pLayers->GetSettings();
+	const std::vector<std::string>& settingsLines = m_pLayers->GetSettings();
 
 	for(int i = 0; i < m_Width * m_Height; i++)
 	{
-		const int Number = m_pExtra[i].m_Number;
-		const int Type = m_pExtra[i].m_Type;
+		const int Number = m_pSwitchExtra[i].m_Number;
+		const int Type = m_pSwitchExtra[i].m_Type;
+		const vec2 tilePos = { (i % m_Width) * TILE_SIZE + TILE_SIZE / 2.0f, (i / m_Width) * TILE_SIZE + TILE_SIZE / 2.0f };
 
 		if(Type == TILE_ZONE)
 		{
 			if(m_vZoneDetail.contains(Number))
 				continue;
 
-			std::string Name {};
-			bool AntiPVP = false;
-
-			if(auto name = mystd::loadSetting<std::string>("#zone_name", settings, { Number }))
+			ZoneDetail detail;
+			const auto zoneIdentity = "#zone " + std::to_string(Number);
+			if(mystd::loadSettings<std::string, bool>(zoneIdentity, settingsLines, &detail.Name, &detail.IsPvp))
 			{
-				Name = name.value();
+				m_vZoneDetail[Number] = detail;
+				if(!detail.IsPvp)
+				{
+					m_pTiles[i].m_ColFlags |= COLFLAG_SAFE;
+				}
 			}
-			if(auto pvp = mystd::loadSetting<int>("#zone_pvp", settings, { Number }); (!pvp.has_value() || pvp <= 0))
-			{
-				AntiPVP = true;
-				m_pTiles[i].m_ColFlags |= COLFLAG_SAFE;
-			}
-
-			m_vZoneDetail[Number].Init(AntiPVP, Name);
 		}
 		else if(Type == TILE_INTERACT_OBJECT)
 		{
-			if(auto result = mystd::loadSetting<std::string>("#switch", settings, { Number }))
+			/*if(auto result = mystd::loadSettings<std::string>("#switch", settings, { Number }))
 			{
-				const vec2 tilePos = { (i % m_Width) * TILE_SIZE + TILE_SIZE / 2.0f, (i / m_Width) * TILE_SIZE + TILE_SIZE / 2.0f };
 				m_vInteractObjects[result.value()] = tilePos;
+			}*/
+		}
+		else if(Type == TILE_TEXT)
+		{
+			TextZoneDetail detail;
+			const auto textIdentity = "#text " + std::to_string(Number);
+			if(mystd::loadSettings<std::string>(textIdentity, settingsLines, &detail.Text))
+			{
+				detail.Pos = tilePos;
+				m_vTextZones.emplace_back(detail);
 			}
+		}
+	}
+}
+
+void CCollision::InitSpeedupExtra()
+{
+	for(int i = 0; i < m_Width * m_Height; i++)
+	{
+		const auto Type = m_pSpeedupExtra[i].m_Type;
+		const vec2 TilePos =
+		{
+			(i % m_Width) * TILE_SIZE + TILE_SIZE / 2.0f,
+			(i / m_Width) * TILE_SIZE + TILE_SIZE / 2.0f
+		};
+
+		// sound tile
+		if(Type == TILE_SOUND)
+		{
+			SoundZoneDetail detail;
+			detail.Pos = TilePos;
+			detail.SoundID = m_pSpeedupExtra[i].m_Force;
+			detail.Tick = -1;
+			m_vSoundZones.emplace_back(detail);
+			m_pTiles[i].m_Index = static_cast<char>(Type);
 		}
 	}
 }
@@ -230,22 +271,22 @@ int CCollision::GetFrontTileIndex(float x, float y) const
 
 int CCollision::GetExtraTileIndex(float x, float y) const
 {
-	if(!m_pExtra)
+	if(!m_pSwitchExtra)
 		return TILE_AIR;
 
 	int Nx = clamp(round_to_int(x) / 32, 0, m_Width - 1);
 	int Ny = clamp(round_to_int(y) / 32, 0, m_Height - 1);
-	return m_pExtra[Ny * m_Width + Nx].m_Type;
+	return m_pSwitchExtra[Ny * m_Width + Nx].m_Type;
 }
 
 std::optional<CCollision::ZoneDetail> CCollision::GetZonedetail(vec2 Pos) const
 {
-	if(!m_pExtra)
+	if(!m_pSwitchExtra)
 		return std::nullopt;
 
 	int Nx = clamp(round_to_int(Pos.x) / 32, 0, m_Width - 1);
 	int Ny = clamp(round_to_int(Pos.y) / 32, 0, m_Height - 1);
-	int Number = m_pExtra[Ny * m_Width + Nx].m_Number;
+	int Number = m_pSwitchExtra[Ny * m_Width + Nx].m_Number;
 
 	if(m_vZoneDetail.contains(Number))
 		return m_vZoneDetail.at(Number);
@@ -611,10 +652,10 @@ int CCollision::GetFrontTileFlags(float x, float y) const
 
 int CCollision::GetExtraTileFlags(float x, float y) const
 {
-	if(!m_pExtra)
+	if(!m_pSwitchExtra)
 		return 0;
 
 	int Nx = clamp(round_to_int(x) / 32, 0, m_Width - 1);
 	int Ny = clamp(round_to_int(y) / 32, 0, m_Height - 1);
-	return m_pExtra[Ny * m_Width + Nx].m_Type > 128 ? 0 : m_pExtra[Ny * m_Width + Nx].m_Flags;
+	return m_pSwitchExtra[Ny * m_Width + Nx].m_Type > 128 ? 0 : m_pSwitchExtra[Ny * m_Width + Nx].m_Flags;
 }

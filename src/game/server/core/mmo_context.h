@@ -24,6 +24,14 @@ enum ESpecialSound
 	SOUND_USE_POTION,
 };
 
+constexpr int GetSoundInterval(int SoundId)
+{
+	switch(SoundId)
+	{
+		case SOUND_MENU: return 27;
+		default: return 1;
+	}
+}
 
 // spawn types
 enum ESpawnType

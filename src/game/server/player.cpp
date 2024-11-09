@@ -490,7 +490,7 @@ void CPlayer::OnDirectInput(CNetObj_PlayerInput* pNewInput)
 	}
 
 	// parse event keys
-	Server()->Input()->ParseInputClickedKeys(m_ClientID , pNewInput, m_pLastInput);
+	Server()->Input()->ParseInputClickedKeys(m_ClientID, pNewInput, m_pLastInput);
 	if(m_pCharacter)
 	{
 		const int ActiveWeapon = m_pCharacter->m_Core.m_ActiveWeapon;

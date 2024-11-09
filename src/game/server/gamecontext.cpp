@@ -719,6 +719,7 @@ void CGS::OnTick()
 	m_World.Tick();
 	m_pController->Tick();
 
+	// player updates on tick
 	for(int i = 0; i < MAX_CLIENTS; i++)
 	{
 		if(!Server()->ClientIngame(i) || !m_apPlayers[i] || m_apPlayers[i]->GetCurrentWorldID() != m_WorldID)
@@ -1260,6 +1261,32 @@ void CGS::OnClearClientData(int ClientID)
 	// clear active snap bots for player
 	for(auto& pActiveSnap : DataBotInfo::ms_aDataBot)
 		pActiveSnap.second.m_aVisibleActive[ClientID] = false;
+}
+
+void CGS::UpdateCollisionZones()
+{
+	// update sound zones
+	auto& vSoundZones = Collision()->GetSoundZones();
+	for(auto& [Pos, SoundID, Tick] : vSoundZones)
+	{
+		if(Tick <= Server()->Tick())
+		{
+			const auto interval = GetSoundInterval(SoundID);
+			CreateSound(Pos, SoundID);
+			Tick = Server()->Tick() + (interval * Server()->TickSpeed());
+		}
+	}
+
+	// update text zones every 10 seconds
+	const int TextZoneUpdateInterval = Server()->TickSpeed() * 10;
+	if(Server()->Tick() % TextZoneUpdateInterval == 0)
+	{
+		const auto& vTextZones = Collision()->GetTextZones();
+		for(const auto& [Pos, Text] : vTextZones)
+		{
+			EntityManager()->Text(Pos, TextZoneUpdateInterval, Text.c_str());
+		}
+	}
 }
 
 bool CGS::SendMenuMotd(CPlayer* pPlayer, int Menulist) const

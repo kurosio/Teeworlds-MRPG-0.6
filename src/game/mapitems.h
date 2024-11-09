@@ -63,11 +63,6 @@ enum
 	TILE_QUEST_BOARD,
 	TILE_AETHER_TELEPORT,
 	TILE_SHOP_ZONE,
-
-	TILE_TELE_FROM_CONFIRM = 10,
-	TILE_TELE_FROM = 26,
-	TILE_TELE_OUT,
-
 	TILE_GUILD_CHAIR = 32,
 	TILE_CHAIR_LV1,
 	TILE_CHAIR_LV2,
@@ -76,15 +71,19 @@ enum
 	TILE_INFO_WANTED,
 	TILE_BANK_MANAGER,
 
-	TILE_CLEAR_SPECIAL_EVENTS = 48,
-	TILE_SPECIAL_EVENT_PARTY,
-	TILE_SPECIAL_EVENT_LIKE,
-	TILE_SPECIAL_EVENT_HEALTH,
+	// teleport tiles
+	TILE_TELE_FROM_CONFIRM = 10,
+	TILE_TELE_FROM = 26,
+	TILE_TELE_OUT,
 
-	// extra
-	TILE_ZONE = 144,
+	// switch extra
+	TILE_ZONE = 112,
 	TILE_INTERACT_OBJECT,
+	TILE_TEXT,
 	MAX_TILES,
+
+	// speedup extra
+	TILE_SOUND = 144,
 
 	//Flags
 	TILEFLAG_XFLIP = 1,
@@ -156,6 +155,15 @@ public:
 	unsigned char m_Type;
 	unsigned char m_Flags;
 	unsigned char m_Delay;
+};
+
+class CSpeedupTileExtra
+{
+public:
+	unsigned char m_Force;
+	unsigned char m_MaxSpeed;
+	unsigned char m_Type;
+	short m_Angle;
 };
 
 struct CMapItemInfo

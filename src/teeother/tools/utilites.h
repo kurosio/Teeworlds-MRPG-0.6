@@ -44,14 +44,32 @@ namespace mystd
 	namespace detail
 	{
 		// specialization parsing value
-		template<typename T>
-		inline std::optional<T> ParseValue(const std::string& str) { return std::nullopt; };
+		namespace optparse
+		{
+			template<typename T> inline std::optional<T> Value(const std::string& str) { return std::nullopt; };
+			template<> inline std::optional<bool> Value<bool>(const std::string& str) { return str_toint(str.c_str()) > 0; }
+			template<> inline std::optional<float> Value<float>(const std::string& str) { return str_tofloat(str.c_str()); }
+			template<> inline std::optional<double> Value<double>(const std::string& str) { return str_tofloat(str.c_str()); }
+			template<> inline std::optional<int> Value<int>(const std::string& str) { return str_toint(str.c_str()); }
+			template<> inline std::optional<std::string> Value<std::string>(const std::string& str) { return str; }
+			template<> inline std::optional<BigInt> Value<BigInt>(const std::string& str) { return BigInt(str); }
+			template<> inline std::optional<vec2> Value<vec2>(const std::string& str)
+			{
+				const auto pos = str.find(' ');
+				if(pos == std::string::npos)
+				{
+					const auto errorStr = "invalid vec2 parse format: " + str;
+					dbg_assert(false, errorStr.c_str());
+					return std::nullopt;
+				}
 
-		template<>
-		inline std::optional<int> ParseValue<int>(const std::string& str) { return str_toint(str.c_str()); }
-
-		template<>
-		inline std::optional<std::string> ParseValue<std::string>(const std::string& str) { return str; }
+				const std::string_view xStr = str.substr(0, pos);
+				const std::string_view yStr = str.substr(pos + 1);
+				const float x = str_tofloat(xStr.data());
+				const float y = str_tofloat(yStr.data());
+				return vec2(x, y);
+			}
+		}
 
 		// сoncepts
 		template<typename T>
@@ -105,32 +123,76 @@ namespace mystd
 	template<detail::is_container... Containers>
 	void freeContainer(Containers&... args) { (freeContainer(args), ...); }
 
-	// function for loading numeral configurations // TODO:ignore severity
-	template<typename T1, typename T2 = int>
-	inline std::optional<T1> loadSetting(const std::string& prefix, const std::vector<std::string>& settings, std::optional<T2> UniquePrefix = std::nullopt)
+	template<typename... Args>
+	bool loadSettings(const std::string& prefix, const std::vector<std::string>& lines, Args*... values)
 	{
-		std::string fullPrefix = prefix + " ";
-		if(UniquePrefix.has_value())
+		size_t CurrentPos = 0;
+		bool Success = true;
+
+		// helper function to load a single value based on prefix
+		auto loadSingleValue = [&CurrentPos, &lines](const std::string& fullPrefix) -> std::optional<std::string>
 		{
-			if constexpr(std::is_same_v<T2, std::string>)
-				fullPrefix += UniquePrefix.value() + " ";
+			auto it = std::ranges::find_if(lines, [&CurrentPos, &fullPrefix](const std::string& s)
+			{
+				return s.starts_with(fullPrefix);
+			});
+
+			if(it != lines.end())
+			{
+				auto valueStr = it->substr(fullPrefix.size() + CurrentPos);
+				valueStr.erase(valueStr.begin(), std::find_if_not(valueStr.begin(), valueStr.end(), [](unsigned char c)
+				{
+					return std::isspace(c);
+				}));
+
+				// is by quotes parser
+				if(valueStr.starts_with('"'))
+				{
+					const auto end = valueStr.find('\"', 1);
+					if(end != std::string::npos)
+					{
+						CurrentPos += end + 1;
+						return valueStr.substr(1, end - 1);
+					}
+
+					return std::nullopt;
+				}
+
+				// default parser
+				const auto end = valueStr.find_first_of(" \t\n\r");
+				if(end != std::string::npos)
+				{
+					CurrentPos += end;
+					return valueStr.substr(0, end);
+				}
+
+				return valueStr;
+			}
+
+			return std::nullopt;
+		};
+
+
+		// lambda to load and parse a single value
+		auto loadAndParse = [&](auto* value)
+		{
+			using ValueType = std::remove_pointer_t<decltype(value)>;
+			const auto fullPrefix = prefix + " ";
+
+			if(auto valueStrOpt = loadSingleValue(fullPrefix); valueStrOpt.has_value())
+			{
+				if(auto parsedValue = detail::optparse::Value<ValueType>(valueStrOpt.value()); parsedValue.has_value())
+					*value = parsedValue.value();
+				else
+					Success = false;
+			}
 			else
-				fullPrefix += std::to_string(UniquePrefix.value()) + " ";
-		}
+				Success = false;
+		};
 
-		auto it = std::ranges::find_if(settings, [&fullPrefix](const std::string& s)
-		{
-			return s.starts_with(fullPrefix);
-		});
-
-		if(it != settings.end())
-		{
-			std::string valueStr = it->substr(fullPrefix.size());
-			if(!valueStr.empty())
-				return detail::ParseValue<T1>(valueStr);
-		}
-
-		return std::nullopt;
+		// use fold expression
+		(loadAndParse(values), ...);
+		return Success;
 	}
 
 	template <typename T> requires std::is_arithmetic_v<T>

@@ -132,6 +132,7 @@ public:
 	const char *NetVersion() const override;
 	void OnClearClientData(int ClientID) override;
 
+	void UpdateCollisionZones();
 	bool SendMenuMotd(CPlayer* pPlayer, int Menulist) const;
 
 	int GetWorldID() const { return m_WorldID; }

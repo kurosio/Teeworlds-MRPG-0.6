@@ -16,6 +16,7 @@ enum
 class CTile;
 class CTeleTile;
 class CSwitchTileExtra;
+class CSpeedupTileExtra;
 class CLayers;
 
 class CCollision
@@ -29,27 +30,10 @@ public:
 		COLFLAG_SAFE = 1 << 3,
 		COLFLAG_DISALLOW_MOVE = 1 << 4,
 	};
-	class ZoneDetail
+	struct ZoneDetail
 	{
-		bool m_AntiPVP{};
-		std::string m_Name{};
-
-	public:
-		void Init(bool AntiPvp, const std::string& Name)
-		{
-			m_AntiPVP = AntiPvp;
-			m_Name = Name;
-		}
-
-		bool IsPVP() const
-		{
-			return !m_AntiPVP;
-		}
-
-		std::string GetName() const
-		{
-			return m_Name;
-		}
+		bool IsPvp{};
+		std::string Name{};
 	};
 
 private:
@@ -58,25 +42,40 @@ private:
 	CTile *m_pTiles{};
 	CTile *m_pFront{};
 	CTeleTile* m_pTele{};
-	CSwitchTileExtra* m_pExtra{};
+	CSwitchTileExtra* m_pSwitchExtra{};
+	CSpeedupTileExtra* m_pSpeedupExtra{};
 	CLayers* m_pLayers {};
 
 	// elements
-	struct FixedCamZoneData
+	struct FixedCamZoneDetail
 	{
-		vec2 Pos;
-		vec4 Rect;
-		bool Smooth;
+		vec2 Pos{};
+		vec4 Rect{};
+		bool Smooth{};
+	};
+	struct SoundZoneDetail
+	{
+		vec2 Pos{};
+		int SoundID{};
+		int Tick{};
+	};
+	struct TextZoneDetail
+	{
+		vec2 Pos {};
+		std::string Text {};
 	};
 	std::map<int, std::vector<vec2>> m_vTeleOuts {};
-	std::vector<FixedCamZoneData> m_vFixedCamZones {};
+	std::vector<FixedCamZoneDetail> m_vFixedCamZones {};
 	std::map<std::string, vec2> m_vInteractObjects {};
 	std::map<int, ZoneDetail> m_vZoneDetail {};
+	std::vector<SoundZoneDetail> m_vSoundZones {};
+	std::vector<TextZoneDetail> m_vTextZones {};
 
 	// initialization
 	void InitTiles(CTile* pTiles);
 	void InitTeleports();
-	void InitExtra();
+	void InitSwitchExtra();
+	void InitSpeedupExtra();
 
 	// flags
 	int GetMainTileFlags(float x, float y) const;
@@ -98,6 +97,8 @@ public:
 	int GetHeight() const { return m_Height; }
 	vec2 GetRotateDirByFlags(int Flags);
 	CLayers* GetLayers() const { return m_pLayers; }
+	std::vector<SoundZoneDetail>& GetSoundZones() { return m_vSoundZones; }
+	std::vector<TextZoneDetail>& GetTextZones() { return m_vTextZones; }
 
 	// tile index
 	int GetMainTileIndex(float x, float y) const;

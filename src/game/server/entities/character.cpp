@@ -1509,10 +1509,10 @@ void CCharacter::HandleTiles()
 		if(m_pTilesHandler->IsActive(TILE_ZONE))
 		{
 			const auto pZone = GS()->Collision()->GetZonedetail(m_Core.m_Pos);
-			if(pZone && ((Server()->Tick() % Server()->TickSpeed() == 0) || m_Zonename != pZone->GetName()))
+			if(pZone && ((Server()->Tick() % Server()->TickSpeed() == 0) || m_Zonename != pZone->Name))
 			{
-				m_Zonename = pZone->GetName();
-				const auto infoZone = fmt_default("{} zone. ({})", pZone->GetName(), pZone->IsPVP() ? "PVP" : "Safe");
+				m_Zonename = pZone->Name;
+				const auto infoZone = fmt_default("{} zone. ({})", pZone->Name, pZone->IsPvp ? "PVP" : "Safe");
 				GS()->Broadcast(m_ClientID, BroadcastPriority::GameBasicStats, 50, infoZone.c_str());
 			}
 		}
