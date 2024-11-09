@@ -734,6 +734,7 @@ void CGS::OnTick()
 	}
 
 	Core()->OnTick();
+	UpdateCollisionZones();
 }
 
 void CGS::OnTickGlobal()
@@ -1278,7 +1279,7 @@ void CGS::UpdateCollisionZones()
 	}
 
 	// update text zones every 10 seconds
-	const int TextZoneUpdateInterval = Server()->TickSpeed() * 10;
+	const int TextZoneUpdateInterval = Server()->TickSpeed() * 3;
 	if(Server()->Tick() % TextZoneUpdateInterval == 0)
 	{
 		const auto& vTextZones = Collision()->GetTextZones();

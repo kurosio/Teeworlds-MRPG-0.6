@@ -124,6 +124,12 @@ namespace mystd
 	void freeContainer(Containers&... args) { (freeContainer(args), ...); }
 
 	template<typename... Args>
+	bool loadSettings(const std::string& prefix, const std::string& line, Args*... values)
+	{
+		return loadSettings(prefix, std::vector{line}, values...);
+	}
+
+	template<typename... Args>
 	bool loadSettings(const std::string& prefix, const std::vector<std::string>& lines, Args*... values)
 	{
 		size_t CurrentPos = 0;
