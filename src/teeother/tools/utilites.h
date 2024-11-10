@@ -73,16 +73,21 @@ namespace mystd
 
 		// сoncepts
 		template<typename T>
-		concept is_has_clear_function = requires(T & c) { { c.clear() } -> std::same_as<void>; };
+		concept is_has_clear_function = requires(T & c)
+		{
+			{ c.clear() } -> std::same_as<void>;
+		};
 
 		template<typename T>
-		concept is_smart_pointer = requires(T & c) {
+		concept is_smart_pointer = requires(T & c)
+		{
 			{ c.get() } -> std::convertible_to<typename T::element_type*>;
 			{ c.reset() } noexcept -> std::same_as<void>;
 		};
 
 		template <typename T>
-		concept is_container = requires(T & c) {
+		concept is_container = requires(T & c)
+		{
 			typename T::value_type;
 			typename T::iterator;
 			{ c.begin() } -> std::convertible_to<typename T::iterator>;
@@ -90,7 +95,8 @@ namespace mystd
 		};
 
 		template<typename T>
-		concept is_map_container = requires(T & c) {
+		concept is_map_container = requires(T & c)
+		{
 			typename T::key_type;
 			typename T::mapped_type;
 				requires is_container<T>;

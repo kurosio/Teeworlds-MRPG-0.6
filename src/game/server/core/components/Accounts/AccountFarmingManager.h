@@ -22,7 +22,7 @@ class CAccountFarmingManager : public MmoComponent
 	};
 	static std::map < int, FarmingPoint > ms_vmFarmingPoints;
 
-	void OnInitWorld(const char* pWhereLocalWorld) override;
+	void OnInitWorld(const std::string& SqlQueryWhereWorld) override;
 
 public:
 	CItemDescription* GetFarmingItemInfoByPos(vec2 Pos) const;

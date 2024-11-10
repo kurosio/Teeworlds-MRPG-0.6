@@ -88,11 +88,11 @@ void CBotManager::OnPreInit()
 	}
 }
 
-void CBotManager::OnInitWorld(const char* pWhereLocalWorld)
+void CBotManager::OnInitWorld(const std::string& SqlQueryWhereWorld)
 {
-	InitQuestBots(pWhereLocalWorld);
-	InitNPCBots(pWhereLocalWorld);
-	InitMobsBots(pWhereLocalWorld);
+	InitQuestBots(SqlQueryWhereWorld.c_str());
+	InitNPCBots(SqlQueryWhereWorld.c_str());
+	InitMobsBots(SqlQueryWhereWorld.c_str());
 }
 
 bool CBotManager::OnClientMessage(int MsgID, void* pRawMsg, int ClientID)

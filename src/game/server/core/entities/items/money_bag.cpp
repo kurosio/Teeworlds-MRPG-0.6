@@ -29,5 +29,5 @@ void CEntityMoneyBag::Snap(int SnappingClient)
 	if(NetworkClipped(SnappingClient))
 		return;
 
-	GS()->SnapProjectile(SnappingClient, GetID(), m_Pos, {}, Server()->Tick(), WEAPON_LASER);
+	GS()->SnapProjectile(SnappingClient, GetID(), m_Pos, {}, Server()->Tick() - 3, WEAPON_LASER);
 }

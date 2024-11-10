@@ -14,7 +14,7 @@ class CWorldManager : public MmoComponent
 
 	~CWorldManager() override;
 
-	void OnInitWorld(const char* pWhereLocalWorld) override;
+	void OnInitWorld(const std::string& SqlQueryWhereWorld) override;
 	void OnPostInit() override;
 
 public:

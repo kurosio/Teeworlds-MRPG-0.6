@@ -9,10 +9,10 @@
 
 constexpr int g_UpdateTextLifeTime = SERVER_TICK_SPEED * 2;
 
-void CHouseManager::OnInitWorld(const char* pWhereLocalWorld)
+void CHouseManager::OnInitWorld(const std::string& SqlQueryWhereWorld)
 {
 	// initialize houses
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_HOUSES_TABLE, pWhereLocalWorld);
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_HOUSES_TABLE, SqlQueryWhereWorld.c_str());
 	while(pRes->next())
 	{
 		HouseIdentifier ID = pRes->getInt("ID");

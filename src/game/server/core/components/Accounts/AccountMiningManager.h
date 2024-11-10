@@ -22,7 +22,7 @@ class CAccountMiningManager : public MmoComponent
 	};
 	static std::map < int, MiningPoint > ms_vmMiningPoints;
 
-	void OnInitWorld(const char* pWhereLocalWorld) override;
+	void OnInitWorld(const std::string& SqlQueryWhereWorld) override;
 
 public:
 	CItemDescription* GetMiningItemInfoByPos(vec2 Pos) const;

@@ -66,7 +66,6 @@ private:
 	};
 	std::map<int, std::vector<vec2>> m_vTeleOuts {};
 	std::vector<FixedCamZoneDetail> m_vFixedCamZones {};
-	std::map<std::string, vec2> m_vInteractObjects {};
 	std::map<int, ZoneDetail> m_vZoneDetail {};
 	std::vector<SoundZoneDetail> m_vSoundZones {};
 	std::vector<TextZoneDetail> m_vTextZones {};

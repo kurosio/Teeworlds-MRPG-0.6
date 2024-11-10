@@ -53,18 +53,18 @@ public:
 
 	// global systems
 	void OnInit(IServer* pServer, IConsole* pConsole, IStorageEngine* pStorage);
-	void OnConsoleInit(IConsole* pConsole);
-	void OnTick();
-	bool OnClientMessage(int MsgID, void* pRawMsg, int ClientID);
-	void OnPlayerLogin(CPlayer* pPlayer);
+	void OnConsoleInit(IConsole* pConsole) const;
+	void OnTick() const;
+	bool OnClientMessage(int MsgID, void* pRawMsg, int ClientID) const;
+	void OnPlayerLogin(CPlayer* pPlayer) const;
 	void OnCharacterTile(CCharacter* pChr) const;
-	bool OnSendMenuMotd(CPlayer* pPlayer, int Menulist);
-	bool OnSendMenuVotes(CPlayer* pPlayer, int Menulist);
-	bool OnPlayerVoteCommand(CPlayer *pPlayer, const char *pCmd, int ExtraValue1, int ExtraValue2, int ReasonNumber, const char *pReason);
-	bool OnPlayerMotdCommand(CPlayer *pPlayer, const char *pCmd, int ExtraValue);
-	void OnResetClientData(int ClientID);
+	bool OnSendMenuMotd(CPlayer* pPlayer, int Menulist) const;
+	bool OnSendMenuVotes(CPlayer* pPlayer, int Menulist) const;
+	bool OnPlayerVoteCommand(CPlayer *pPlayer, const char *pCmd, int ExtraValue1, int ExtraValue2, int ReasonNumber, const char *pReason) const;
+	bool OnPlayerMotdCommand(CPlayer *pPlayer, const char *pCmd, int ExtraValue) const;
+	void OnResetClientData(int ClientID) const;
 	void OnHandleTimePeriod() const;
-	void OnHandlePlayerTimePeriod(CPlayer* pPlayer);
+	void OnHandlePlayerTimePeriod(CPlayer* pPlayer) const;
 
 	static void AsyncClientEnterMsgInfo(std::string ClientName, int ClientID);
 	void SyncLocalizations() const;

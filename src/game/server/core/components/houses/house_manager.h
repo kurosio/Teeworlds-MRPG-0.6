@@ -17,7 +17,7 @@ class CHouseManager : public MmoComponent
 		mystd::freeContainer(CHouse::Data());
 	}
 
-	void OnInitWorld(const char* pWhereLocalWorld) override;
+	void OnInitWorld(const std::string& SqlQueryWhereWorld) override;
 	void OnTick() override;
 	void OnTimePeriod(ETimePeriod Period) override;
 	void OnCharacterTile(CCharacter* pChr) override;

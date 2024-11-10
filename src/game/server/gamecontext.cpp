@@ -1278,8 +1278,8 @@ void CGS::UpdateCollisionZones()
 		}
 	}
 
-	// update text zones every 10 seconds
-	const int TextZoneUpdateInterval = Server()->TickSpeed() * 3;
+	// update tile text by interval
+	const int TextZoneUpdateInterval = Server()->TickSpeed() * g_Config.m_SvIntervalTileTextUpdate;
 	if(Server()->Tick() % TextZoneUpdateInterval == 0)
 	{
 		const auto& vTextZones = Collision()->GetTextZones();

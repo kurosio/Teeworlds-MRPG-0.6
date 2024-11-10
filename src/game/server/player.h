@@ -122,6 +122,7 @@ public:
 	virtual void FakeSnap();
 	virtual bool IsActive() const { return true; }
 	virtual void PrepareRespawnTick();
+	virtual Mood GetMoodState() const { return Mood::Normal; }
 
 	void RefreshClanString();
 
@@ -162,7 +163,6 @@ public:
 	bool IsSameMotdMenu(int Menulist) const { return m_pMotdMenu && m_pMotdMenu->GetMenulist() == Menulist; }
 	void CloseMotdMenu() { m_pMotdMenu->ClearMotd(m_pGS, this); }
 
-	virtual Mood GetMoodState() const { return Mood::Normal; }
 	void ChangeWorld(int WorldID, std::optional<vec2> newWorldPosition = std::nullopt) const;
 };
 

@@ -32,9 +32,9 @@ void CGuildManager::OnPreInit()
 	InitWars();
 }
 
-void CGuildManager::OnInitWorld(const char* pWhereLocalWorld)
+void CGuildManager::OnInitWorld(const std::string& SqlQueryWhereWorld)
 {
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_GUILDS_HOUSES, pWhereLocalWorld);
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_GUILDS_HOUSES, SqlQueryWhereWorld.c_str());
 	while(pRes->next())
 	{
 		// initialize variables

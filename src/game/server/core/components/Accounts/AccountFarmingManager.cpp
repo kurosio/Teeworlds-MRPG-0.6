@@ -9,9 +9,9 @@
 
 std::map < int , CAccountFarmingManager::FarmingPoint > CAccountFarmingManager::ms_vmFarmingPoints;
 
-void CAccountFarmingManager::OnInitWorld(const char* pWhereLocalWorld)
+void CAccountFarmingManager::OnInitWorld(const std::string& SqlQueryWhereWorld)
 {
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_positions_farming", pWhereLocalWorld);
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_positions_farming", SqlQueryWhereWorld.c_str());
 	while(pRes->next())
 	{
 		// initialize variables

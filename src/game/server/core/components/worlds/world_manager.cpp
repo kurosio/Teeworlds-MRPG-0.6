@@ -12,10 +12,10 @@ CWorldManager::~CWorldManager()
 	m_PathFinderBFS.clear();
 }
 
-void CWorldManager::OnInitWorld(const char* pWhereLocalWorld)
+void CWorldManager::OnInitWorld(const std::string& SqlQueryWhereWorld)
 {
 	std::deque<CWorldSwapData> vSwappers{};
-	const auto formatWhere = fmt_default("{} OR `TwoWorldID` = '{}'", pWhereLocalWorld, GS()->GetWorldID());
+	const auto formatWhere = fmt_default("{} OR `TwoWorldID` = '{}'", SqlQueryWhereWorld, GS()->GetWorldID());
 
 	// initializing world swappers from the database
 	ResultPtr pResSwap = Database->Execute<DB::SELECT>("*", "tw_world_swap", formatWhere.c_str());

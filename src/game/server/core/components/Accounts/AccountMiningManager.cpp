@@ -8,9 +8,9 @@
 
 std::map < int , CAccountMiningManager::MiningPoint > CAccountMiningManager::ms_vmMiningPoints;
 
-void CAccountMiningManager::OnInitWorld(const char* pWhereLocalWorld)
+void CAccountMiningManager::OnInitWorld(const std::string& SqlQueryWhereWorld)
 {
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_positions_mining", pWhereLocalWorld);
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_positions_mining", SqlQueryWhereWorld.c_str());
 	while (pRes->next())
 	{
 		// initialize variables

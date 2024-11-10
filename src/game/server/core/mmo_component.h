@@ -63,9 +63,9 @@ private:
 	/**
 	 * @brief Initializes the MMO component for a specific world.
 	 * 
-	 * @param pSqlQueryWhereWorld The location of the local world.
+	 * @param SqlQueryWhereWorld The location of the local world.
 	 */
-	virtual void OnInitWorld(const char* pSqlQueryWhereWorld) {}
+	virtual void OnInitWorld(const std::string& SqlQueryWhereWorld) {}
 
 	/**
 	 * @brief Initializes the MMO component post init.

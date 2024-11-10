@@ -66,9 +66,8 @@ void CMmoController::OnInit(IServer* pServer, IConsole* pConsole, IStorageEngine
 		if(m_pGameServer->GetWorldID() == MAIN_WORLD_ID)
 			pComponent->OnPreInit();
 
-		char aLocalSelect[64];
-		str_format(aLocalSelect, sizeof(aLocalSelect), "WHERE WorldID = '%d'", m_pGameServer->GetWorldID());
-		pComponent->OnInitWorld(aLocalSelect);
+		const auto selectStr = fmt_default("WHERE WorldID = '{}'", m_pGameServer->GetWorldID());
+		pComponent->OnInitWorld(selectStr);
 
 		if(m_pGameServer->GetWorldID() == (Instance::Server()->GetWorldsSize() - 1))
 			pComponent->OnPostInit();
@@ -78,7 +77,7 @@ void CMmoController::OnInit(IServer* pServer, IConsole* pConsole, IStorageEngine
 	LoadLogicWorld();
 }
 
-void CMmoController::OnConsoleInit(IConsole* pConsole)
+void CMmoController::OnConsoleInit(IConsole* pConsole) const
 {
 	for(auto& pComponent : m_System.m_vComponents)
 	{
@@ -87,31 +86,36 @@ void CMmoController::OnConsoleInit(IConsole* pConsole)
 	}
 }
 
-void CMmoController::OnTick()
+void CMmoController::OnTick() const
 {
 	for(auto& pComponent : m_System.m_vComponents)
+	{
 		pComponent->OnTick();
+	}
 
 	// Check if the current tick is a multiple of the time period check time
 	if(GS()->Server()->Tick() % ((GS()->Server()->TickSpeed() * 60) * g_Config.m_SvTimePeriodCheckTime) == 0)
+	{
 		OnHandleTimePeriod();
+	}
 }
 
-bool CMmoController::OnClientMessage(int MsgID, void* pRawMsg, int ClientID)
+bool CMmoController::OnClientMessage(int MsgID, void* pRawMsg, int ClientID) const
 {
-	if(GS()->Server()->ClientIngame(ClientID) && GS()->GetPlayer(ClientID))
+	// check valid client
+	if(!GS()->Server()->ClientIngame(ClientID) || !GS()->GetPlayer(ClientID))
+		return false;
+
+	for(auto& pComponent : m_System.m_vComponents)
 	{
-		for(auto& pComponent : m_System.m_vComponents)
-		{
-			if(pComponent->OnClientMessage(MsgID, pRawMsg, ClientID))
-				return true;
-		}
+		if(pComponent->OnClientMessage(MsgID, pRawMsg, ClientID))
+			return true;
 	}
 
 	return false;
 }
 
-void CMmoController::OnPlayerLogin(CPlayer* pPlayer)
+void CMmoController::OnPlayerLogin(CPlayer* pPlayer) const
 {
 	for(const auto& pComponent : m_System.m_vComponents)
 	{
@@ -119,7 +123,7 @@ void CMmoController::OnPlayerLogin(CPlayer* pPlayer)
 	}
 }
 
-bool CMmoController::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
+bool CMmoController::OnSendMenuMotd(CPlayer* pPlayer, int Menulist) const
 {
 	for(const auto& pComponent : m_System.m_vComponents)
 	{
@@ -129,10 +133,10 @@ bool CMmoController::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
 	return false;
 }
 
-bool CMmoController::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
+bool CMmoController::OnSendMenuVotes(CPlayer* pPlayer, int Menulist) const
 {
 	// initialize variables
-	int ClientID = pPlayer->GetCID();
+	const auto ClientID = pPlayer->GetCID();
 
 	// main menu
 	if(Menulist == MENU_MAIN)
@@ -163,17 +167,14 @@ bool CMmoController::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		VGroup.AddMenu(MENU_DUNGEONS, "\u262C Dungeons");
 		VGroup.AddMenu(MENU_GROUP, "\u2042 Group");
 		VGroup.AddMenu(MENU_GUILD_FINDER, "\u20AA Guild Finder");
-
 		if(pPlayer->Account()->HasGuild())
 		{
 			VGroup.AddMenu(MENU_GUILD, "\u32E1 Guild");
 		}
-
 		if(pPlayer->Account()->HasHouse())
 		{
 			VPersonal.AddMenu(MENU_HOUSE, "\u2302 House");
 		}
-
 		VGroup.AddMenu(MENU_MAILBOX, "\u2709 Mailbox");
 		VoteWrapper::AddEmptyline(ClientID);
 
@@ -284,8 +285,8 @@ bool CMmoController::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		{
 			VoteWrapper(ClientID).Add("No mob point's in this world");
 		}
-		VoteWrapper::AddEmptyline(ClientID);
 
+		VoteWrapper::AddEmptyline(ClientID);
 		VoteWrapper::AddBackpage(ClientID);
 		return true;
 	}
@@ -311,7 +312,8 @@ void CMmoController::OnCharacterTile(CCharacter* pChr) const
 		pComponent->OnCharacterTile(pChr);
 }
 
-bool CMmoController::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const int ExtraValue1, const int ExtraValue2, int ReasonNumber, const char* pReason)
+bool CMmoController::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
+	const int ExtraValue1, const int ExtraValue2, int ReasonNumber, const char* pReason) const
 {
 	if(!pPlayer)
 		return true;
@@ -324,7 +326,7 @@ bool CMmoController::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, con
 	return false;
 }
 
-bool CMmoController::OnPlayerMotdCommand(CPlayer* pPlayer, const char* pCmd, int ExtraValue)
+bool CMmoController::OnPlayerMotdCommand(CPlayer* pPlayer, const char* pCmd, int ExtraValue) const
 {
 	if(!pPlayer)
 		return true;
@@ -337,7 +339,7 @@ bool CMmoController::OnPlayerMotdCommand(CPlayer* pPlayer, const char* pCmd, int
 	return false;
 }
 
-void CMmoController::OnResetClientData(int ClientID)
+void CMmoController::OnResetClientData(int ClientID) const
 {
 	for(auto& pComponent : m_System.m_vComponents)
 		pComponent->OnClientReset(ClientID);
@@ -410,7 +412,7 @@ void CMmoController::OnHandleTimePeriod() const
 	}
 }
 
-void CMmoController::OnHandlePlayerTimePeriod(CPlayer* pPlayer)
+void CMmoController::OnHandlePlayerTimePeriod(CPlayer* pPlayer) const
 {
 	// Set a flag indicating whether time periods have been updated
 	std::vector<int> aPeriodsUpdated {};
