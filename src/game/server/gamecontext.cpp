@@ -1266,18 +1266,6 @@ void CGS::OnClearClientData(int ClientID)
 
 void CGS::UpdateCollisionZones()
 {
-	// update sound zones
-	auto& vSoundZones = Collision()->GetSoundZones();
-	for(auto& [Pos, SoundID, Tick] : vSoundZones)
-	{
-		if(Tick <= Server()->Tick())
-		{
-			const auto interval = GetSoundInterval(SoundID);
-			CreateSound(Pos, SoundID);
-			Tick = Server()->Tick() + (interval * Server()->TickSpeed());
-		}
-	}
-
 	// update tile text by interval
 	const int TextZoneUpdateInterval = Server()->TickSpeed() * g_Config.m_SvIntervalTileTextUpdate;
 	if(Server()->Tick() % TextZoneUpdateInterval == 0)

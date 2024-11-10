@@ -22,6 +22,7 @@ enum ESpecialSound
 	SOUND_ITEM_EQUIP,
 	SOUND_ITEM_SELL_BUY,
 	SOUND_USE_POTION,
+	SOUND_MUSIC_DISCO,
 };
 
 constexpr int GetSoundInterval(int SoundId)

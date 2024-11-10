@@ -199,29 +199,7 @@ void CCollision::InitSwitchExtra()
 	}
 }
 
-void CCollision::InitSpeedupExtra()
-{
-	for(int i = 0; i < m_Width * m_Height; i++)
-	{
-		const auto Type = m_pSpeedupExtra[i].m_Type;
-		const vec2 TilePos =
-		{
-			(i % m_Width) * TILE_SIZE + TILE_SIZE / 2.0f,
-			(i / m_Width) * TILE_SIZE + TILE_SIZE / 2.0f
-		};
-
-		// sound tile
-		if(Type == TILE_SOUND)
-		{
-			SoundZoneDetail detail;
-			detail.Pos = TilePos;
-			detail.SoundID = m_pSpeedupExtra[i].m_Force;
-			detail.Tick = -1;
-			m_vSoundZones.emplace_back(detail);
-			m_pTiles[i].m_Index = static_cast<char>(Type);
-		}
-	}
-}
+void CCollision::InitSpeedupExtra() {}
 
 void CCollision::InitEntities(const std::function<void(int, vec2, int)>& funcInit) const
 {

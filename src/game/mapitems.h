@@ -82,7 +82,6 @@ enum
 	TILE_INTERACT_OBJECT = 24,
 
 	// speedup extra
-	TILE_SOUND = 144,
 	MAX_TILES = 255,
 
 	//Flags

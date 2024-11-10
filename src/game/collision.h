@@ -53,12 +53,6 @@ private:
 		vec4 Rect{};
 		bool Smooth{};
 	};
-	struct SoundZoneDetail
-	{
-		vec2 Pos{};
-		int SoundID{};
-		int Tick{};
-	};
 	struct TextZoneDetail
 	{
 		vec2 Pos {};
@@ -67,7 +61,6 @@ private:
 	std::map<int, std::vector<vec2>> m_vTeleOuts {};
 	std::vector<FixedCamZoneDetail> m_vFixedCamZones {};
 	std::map<int, ZoneDetail> m_vZoneDetail {};
-	std::vector<SoundZoneDetail> m_vSoundZones {};
 	std::vector<TextZoneDetail> m_vTextZones {};
 
 	// initialization
@@ -96,7 +89,6 @@ public:
 	int GetHeight() const { return m_Height; }
 	vec2 GetRotateDirByFlags(int Flags);
 	CLayers* GetLayers() const { return m_pLayers; }
-	std::vector<SoundZoneDetail>& GetSoundZones() { return m_vSoundZones; }
 	std::vector<TextZoneDetail>& GetTextZones() { return m_vTextZones; }
 
 	// tile index
