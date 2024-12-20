@@ -1,7 +1,6 @@
 #ifndef GAME_SERVER_CORE_RCON_PROCESSOR_H
 #define GAME_SERVER_CORE_RCON_PROCESSOR_H
 
-class CGS;
 class IConsole;
 
 class RconProcessor
@@ -26,7 +25,7 @@ class RconProcessor
 	static void ConchainGameinfoUpdate(IConsole::IResult* pResult, void* pUserData, IConsole::FCommandCallback pfnCallback, void* pCallbackUserData);
 
 public:
-	static void Init(CGS* pGS, IConsole* pConsole, IServer* pServer);
+	static void Init(IConsole* pConsole, IServer* pServer);
 };
 
 #endif

@@ -8,7 +8,7 @@
 #include "components/Bots/BotManager.h"
 #include "components/mails/mail_wrapper.h"
 
-void RconProcessor::Init(CGS* pGS, IConsole* pConsole, IServer* pServer)
+void RconProcessor::Init(IConsole* pConsole, IServer* pServer)
 {
 	// rcon commands
 	pConsole->Register("set_world_time", "i[hour]", CFGFLAG_SERVER, ConSetWorldTime, pServer, "Set worlds time.");
@@ -26,7 +26,7 @@ void RconProcessor::Init(CGS* pGS, IConsole* pConsole, IServer* pServer)
 	pConsole->Register("bans_acc", "", CFGFLAG_SERVER, ConBansAcc, pServer, "Accounts bans");
 
 	// chain's
-	pConsole->Chain("sv_motd", ConchainSpecialMotdupdate, pGS);
+	pConsole->Chain("sv_motd", ConchainSpecialMotdupdate, pServer);
 }
 
 void RconProcessor::ConSetWorldTime(IConsole::IResult* pResult, void* pUserData)
@@ -281,7 +281,7 @@ void RconProcessor::ConchainSpecialMotdupdate(IConsole::IResult* pResult, void* 
 	pfnCallback(pResult, pCallbackUserData);
 	if(pResult->NumArguments())
 	{
-		const auto pSelf = (CGS*)pUserData;
+		const auto pSelf = (IServer*)pUserData;
 		pSelf->SendMotd(-1, g_Config.m_SvMotd);
 	}
 }
