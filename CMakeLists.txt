@@ -232,6 +232,9 @@ find_package(MySQL)
 #find_package(GLEW)
 
 # TODO: change
+if(POLICY CMP0167)
+   cmake_policy(SET CMP0167 OLD)
+endif()
 if(TARGET_OS AND TARGET_OS STREQUAL "linux")
   find_package(Boost 1.36.0)
   if(NOT(Boost_FOUND))
