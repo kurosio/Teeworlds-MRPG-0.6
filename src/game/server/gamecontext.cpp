@@ -11,7 +11,6 @@
 
 #include "entity_manager.h"
 #include "core/command_processor.h"
-#include "core/rcon_processor.h"
 #include "core/tools/path_finder.h"
 #include "core/entities/items/drop_items.h"
 
@@ -677,7 +676,6 @@ void CGS::OnConsoleInit()
 	m_pServer = Kernel()->RequestInterface<IServer>();
 	m_pConsole = Kernel()->RequestInterface<IConsole>();
 
-	RconProcessor::Init(this, m_pConsole, m_pServer);
 	m_pMmoController->OnConsoleInit(m_pConsole);
 }
 

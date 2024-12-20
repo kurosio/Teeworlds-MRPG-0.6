@@ -24,6 +24,8 @@
 
 #include <csignal>
 
+#include "game/server/core/rcon_processor.h"
+
 volatile sig_atomic_t InterruptSignaled = 0;
 
 bool IsInterrupted()
@@ -138,6 +140,7 @@ int main(int argc, const char** argv)
 
 	// register all console commands
 	pServer->RegisterCommands();
+	RconProcessor::Init(pConsole, pServer); // crucial to call before config execution
 
 	if (!pConsole->ExecuteFile(AUTOEXEC_SERVER_FILE, -1, true)) {
 		pConsole->ExecuteFile(AUTOEXEC_FILE, -1, true);
