@@ -5,7 +5,8 @@ on:
     branches: [ stable ]
   pull_request:
     branches: [ stable ]
-
+  workflow_dispatch:
+  
 jobs:
   build-cmake:
     name: ${{ matrix.name }}
