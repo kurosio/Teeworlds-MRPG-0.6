@@ -720,7 +720,7 @@ list(APPEND TARGETS_OWN engine-shared game-shared)
 if(SERVER_COMPILE)
   # Sources
   file(GLOB_RECURSE ENGINE_SERVER "src/engine/server/*.cpp" "src/engine/server/*.h")
-  file(GLOB_RECURSE GAME_SERVER "src/game/server/*.cpp" "src/game/server/*.h")
+  file(GLOB_RECURSE GAME_SERVER "src/game/server/*.cpp" "src/game/server/*.h" "src/game/server/*.hpp")
   file(GLOB LOCALIZED_SERVER "src/teeother/components/*.cpp" "src/teeother/components/*.h" "src/teeother/tools/*.cpp" 
      "src/teeother/tools/geolite2pp/*.cpp" "src/teeother/tools/geolite2pp/*.hpp"  
      "src/teeother/tools/*.h" "src/teeother/tools/flat_hash_map/*.h")
