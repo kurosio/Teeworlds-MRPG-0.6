@@ -1,8 +1,23 @@
 MRPG server transfer version from 0.7 to 0.6 (ddnet) with ex protocol and features
-[![CircleCI](https://circleci.com/gh/teeworlds/teeworlds.svg?style=svg)](https://circleci.com/gh/teeworlds/teeworlds) [![AppVeyor Build Status](https://ci.appveyor.com/api/projects/status/github/teeworlds/teeworlds?branch=master&svg=true)](https://ci.appveyor.com/project/heinrich5991/teeworlds)
-=========
-`readme will be changed over time`
- 
+
+***
+
+Welcome to the **stable branch** of MRPG project!
+
+## Important Notice
+If you were directed here, it means the **main branch** is currently unusable. This version of the project has fewer features but provides a functional and stable experience.
+
+## Resources
+Below are some helpful links for this branch:
+
+- **Build Artifacts**: [Download here](https://github.com/kurosio/Teeworlds-MRPG-0.6/releases/tag/stable.deprecated)
+- **MySQL Dump**: [View here](https://github.com/kurosio/Teeworlds-MRPG-0.6/blob/main/MRPG-database.sql)
+- **Discord Community**: [Join here](https://discord.gg/ME7JGh5kfu)
+
+Thank you for your understanding and support!
+
+
+***
 
 A retro multiplayer shooter
 --------------------------- 
