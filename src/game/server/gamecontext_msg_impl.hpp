@@ -1,10 +1,10 @@
-#ifndef GAME_SERVER_MESSAGES_IMPL_H
-#define GAME_SERVER_MESSAGES_IMPL_H
+#ifndef GAME_SERVER_GAMECONTEXT_MSG_IMPL_HPP
+#define GAME_SERVER_GAMECONTEXT_MSG_IMPL_HPP
 
 #include "gamecontext.h"
 
 template<typename... Ts>
-inline void Chat(int ClientID, const char* pText, const Ts&... args)
+void CGS::Chat(int ClientID, const char* pText, const Ts&... args)
 {
     const int Start = std::max(ClientID, 0);
     const int End = (ClientID < 0 ? MAX_PLAYERS : ClientID + 1);
@@ -17,7 +17,7 @@ inline void Chat(int ClientID, const char* pText, const Ts&... args)
 }
 
 template<typename... Ts>
-inline bool ChatAccount(int AccountID, const char* pText, const Ts&... args)
+bool CGS::ChatAccount(int AccountID, const char* pText, const Ts&... args)
 {
     if(CPlayer* pPlayer = GetPlayerByUserID(AccountID))
     {
@@ -28,7 +28,7 @@ inline bool ChatAccount(int AccountID, const char* pText, const Ts&... args)
 }
 
 template<typename... Ts>
-inline void ChatGuild(int GuildID, const char* pText, const Ts&... args)
+void CGS::ChatGuild(int GuildID, const char* pText, const Ts&... args)
 {
     const std::string GuildPrefix = "Guild | ";
     for(int i = 0; i < MAX_PLAYERS; i++)
@@ -41,7 +41,7 @@ inline void ChatGuild(int GuildID, const char* pText, const Ts&... args)
 }
 
 template<typename... Ts>
-inline void ChatWorld(int WorldID, const char* pSuffix, const char* pText, const Ts&... args)
+void CGS::ChatWorld(int WorldID, const char* pSuffix, const char* pText, const Ts&... args)
 {
     const std::string Prefix = pSuffix[0] != '\0' ? std::string(pSuffix) + " " : "";
     for(int i = 0; i < MAX_PLAYERS; i++)
@@ -54,7 +54,7 @@ inline void ChatWorld(int WorldID, const char* pSuffix, const char* pText, const
 }
 
 template<typename... Ts>
-inline void Motd(int ClientID, const char* pText, const Ts&... args)
+void CGS::Motd(int ClientID, const char* pText, const Ts&... args)
 {
     const int Start = std::max(ClientID, 0);
     const int End = (ClientID < 0 ? MAX_PLAYERS : ClientID + 1);
@@ -62,12 +62,12 @@ inline void Motd(int ClientID, const char* pText, const Ts&... args)
     for(int i = Start; i < End; i++)
     {
         if(m_apPlayers[i])
-            SendMotd(i, fmt_localize(i, pText, args...).c_str());
+            Server()->SendMotd(i, fmt_localize(i, pText, args...).c_str());
     }
 }
 
 template<typename... Ts>
-inline void Broadcast(int ClientID, BroadcastPriority Priority, int LifeSpan, const char* pText, const Ts&... args)
+void CGS::Broadcast(int ClientID, BroadcastPriority Priority, int LifeSpan, const char* pText, const Ts&... args)
 {
     const int Start = std::max(ClientID, 0);
     const int End = (ClientID < 0 ? MAX_PLAYERS : ClientID + 1);
@@ -80,7 +80,7 @@ inline void Broadcast(int ClientID, BroadcastPriority Priority, int LifeSpan, co
 }
 
 template<typename... Ts>
-inline void BroadcastWorld(int WorldID, BroadcastPriority Priority, int LifeSpan, const char* pText, const Ts&... args)
+void CGS::BroadcastWorld(int WorldID, BroadcastPriority Priority, int LifeSpan, const char* pText, const Ts&... args)
 {
     for(int i = 0; i < MAX_PLAYERS; i++)
     {
@@ -89,4 +89,4 @@ inline void BroadcastWorld(int WorldID, BroadcastPriority Priority, int LifeSpan
     }
 }
 
-#endif // GAME_SERVER_MESSAGES_IMPL_H
+#endif // GAME_SERVER_GAMECONTEXT_MSG_IMPL_HPP

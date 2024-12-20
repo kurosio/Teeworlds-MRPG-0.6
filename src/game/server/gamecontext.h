@@ -163,8 +163,16 @@ private:
 	void UpdateExpMultiplier();
 
 public:
-	#include "gamecontext_msg_impl.h"
+	template<typename... Ts> void Chat(int ClientID, const char* pText, const Ts&... args);
+	template<typename... Ts> bool ChatAccount(int AccountID, const char* pText, const Ts&... args);
+	template<typename... Ts> void ChatGuild(int GuildID, const char* pText, const Ts&... args);
+	template<typename... Ts> void ChatWorld(int WorldID, const char* pSuffix, const char* pText, const Ts&... args);
+	template<typename... Ts> void Motd(int ClientID, const char* pText, const Ts&... args);
+	template<typename... Ts> void Broadcast(int ClientID, BroadcastPriority Priority, int LifeSpan, const char* pText, const Ts&... args);
+	template<typename... Ts> void BroadcastWorld(int WorldID, BroadcastPriority Priority, int LifeSpan, const char* pText, const Ts&... args);
 };
+
+#include "gamecontext_msg_impl.hpp"
 
 inline int64_t CmaskAll() { return -1; }
 inline int64_t CmaskOne(int ClientID) { return (int64_t)1<<ClientID; }
