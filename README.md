@@ -11,7 +11,7 @@ If you were directed here, it means the **main branch** is currently unusable. T
 Below are some helpful links for this branch:
 
 - **Build Artifacts**: [Download here](https://github.com/kurosio/Teeworlds-MRPG-0.6/releases/tag/stable.deprecated)
-- **MySQL Dump**: [View here](https://github.com/kurosio/Teeworlds-MRPG-0.6/blob/main/MRPG-database.sql)
+- **MySQL Dump**: [View here](https://github.com/kurosio/Teeworlds-MRPG-0.6/blob/stable/MRPG-database.sql)
 - **Discord Community**: [Join here](https://discord.gg/ME7JGh5kfu)
 
 Thank you for your understanding and support!
