@@ -219,10 +219,12 @@ find_package(MySQL)
 #find_package(DiscordGameSDK)
 #find_package(GLEW)
 
-# TODO: change
-if(NOT Boost_INCLUDE_DIRS)
-  set(Boost_INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/libraries/boost/include")
+## boost
+if(POLICY CMP0167)
+  cmake_policy(SET CMP0167 OLD)
 endif()
+set(BOOST_INCLUDEDIR "libraries/boost/include") # hint
+find_package(Boost 1.69 REQUIRED) # smart_ptr (header-only)
 
 # another packages
 find_package(Git)
@@ -732,6 +734,7 @@ if(SERVER_COMPILE)
   )
   set(SERVER_LIBRARIES
     ${MYSQL_LIBRARIES}
+    ${Boost_LIBRARIES} # empty, but will be here for the future
   )
   set(DEPS_SERVER ${DEPS})
 
