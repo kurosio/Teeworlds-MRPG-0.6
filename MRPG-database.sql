@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 5.2.0
+-- version 5.2.1
 -- https://www.phpmyadmin.net/
 --
--- Хост: 127.0.0.1
--- Время создания: Авг 27 2023 г., 06:38
--- Версия сервера: 10.4.24-MariaDB
--- Версия PHP: 8.1.5
+-- Host: 127.0.0.1
+-- Generation Time: Dec 20, 2024 at 02:48 PM
+-- Server version: 10.4.32-MariaDB
+-- PHP Version: 8.2.12
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -18,22 +18,22 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- База данных: `test2`
+-- Database: `mrpg_dev`
 --
 
 -- --------------------------------------------------------
 
 --
--- Структура таблицы `enum_behavior_mobs`
+-- Table structure for table `enum_behavior_mobs`
 --
 
 CREATE TABLE `enum_behavior_mobs` (
   `ID` int(11) NOT NULL,
   `Behavior` varchar(32) NOT NULL DEFAULT 'Standard'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Дамп данных таблицы `enum_behavior_mobs`
+-- Dumping data for table `enum_behavior_mobs`
 --
 
 INSERT INTO `enum_behavior_mobs` (`ID`, `Behavior`) VALUES
@@ -44,16 +44,16 @@ INSERT INTO `enum_behavior_mobs` (`ID`, `Behavior`) VALUES
 -- --------------------------------------------------------
 
 --
--- Структура таблицы `enum_effects_list`
+-- Table structure for table `enum_effects_list`
 --
 
 CREATE TABLE `enum_effects_list` (
   `ID` int(11) NOT NULL,
-  `Name` varchar(16) CHARACTER SET utf8mb4 DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+  `Name` varchar(16) DEFAULT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Дамп данных таблицы `enum_effects_list`
+-- Dumping data for table `enum_effects_list`
 --
 
 INSERT INTO `enum_effects_list` (`ID`, `Name`) VALUES
@@ -64,16 +64,16 @@ INSERT INTO `enum_effects_list` (`ID`, `Name`) VALUES
 -- --------------------------------------------------------
 
 --
--- Структура таблицы `enum_items_functional`
+-- Table structure for table `enum_items_functional`
 --
 
 CREATE TABLE `enum_items_functional` (
   `FunctionID` int(11) NOT NULL,
   `Name` varchar(64) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Дамп данных таблицы `enum_items_functional`
+-- Dumping data for table `enum_items_functional`
 --
 
 INSERT INTO `enum_items_functional` (`FunctionID`, `Name`) VALUES
@@ -96,16 +96,16 @@ INSERT INTO `enum_items_functional` (`FunctionID`, `Name`) VALUES
 -- --------------------------------------------------------
 
 --
--- Структура таблицы `enum_items_types`
+-- Table structure for table `enum_items_types`
 --
 
 CREATE TABLE `enum_items_types` (
   `TypeID` int(11) NOT NULL,
   `Name` varchar(32) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Дамп данных таблицы `enum_items_types`
+-- Dumping data for table `enum_items_types`
 --
 
 INSERT INTO `enum_items_types` (`TypeID`, `Name`) VALUES
@@ -122,16 +122,16 @@ INSERT INTO `enum_items_types` (`TypeID`, `Name`) VALUES
 -- --------------------------------------------------------
 
 --
--- Структура таблицы `enum_quest_interactive`
+-- Table structure for table `enum_quest_interactive`
 --
 
 CREATE TABLE `enum_quest_interactive` (
   `ID` int(11) NOT NULL,
   `Name` varchar(64) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Дамп данных таблицы `enum_quest_interactive`
+-- Dumping data for table `enum_quest_interactive`
 --
 
 INSERT INTO `enum_quest_interactive` (`ID`, `Name`) VALUES
@@ -145,18 +145,18 @@ INSERT INTO `enum_quest_interactive` (`ID`, `Name`) VALUES
 -- --------------------------------------------------------
 
 --
--- Структура таблицы `enum_worlds`
+-- Table structure for table `enum_worlds`
 --
 
 CREATE TABLE `enum_worlds` (
   `WorldID` int(11) NOT NULL,
-  `Name` varchar(32) CHARACTER SET utf8 NOT NULL,
+  `Name` varchar(32) NOT NULL,
   `RespawnWorld` int(11) DEFAULT NULL,
   `RequiredQuestID` int(11) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Дамп данных таблицы `enum_worlds`
+-- Dumping data for table `enum_worlds`
 --
 
 INSERT INTO `enum_worlds` (`WorldID`, `Name`, `RespawnWorld`, `RequiredQuestID`) VALUES
@@ -172,7 +172,7 @@ INSERT INTO `enum_worlds` (`WorldID`, `Name`, `RespawnWorld`, `RequiredQuestID`)
 -- --------------------------------------------------------
 
 --
--- Структура таблицы `tw_accounts`
+-- Table structure for table `tw_accounts`
 --
 
 CREATE TABLE `tw_accounts` (
@@ -185,24 +185,24 @@ CREATE TABLE `tw_accounts` (
   `RegisteredIP` varchar(64) NOT NULL DEFAULT '0.0.0.0',
   `LoginIP` varchar(64) NOT NULL DEFAULT '0.0.0.0',
   `Language` varchar(8) NOT NULL DEFAULT 'en'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
 --
--- Структура таблицы `tw_accounts_aethers`
+-- Table structure for table `tw_accounts_aethers`
 --
 
 CREATE TABLE `tw_accounts_aethers` (
   `ID` int(11) NOT NULL,
   `UserID` int(11) NOT NULL,
   `AetherID` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=COMPACT;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci ROW_FORMAT=COMPACT;
 
 -- --------------------------------------------------------
 
 --
--- Структура таблицы `tw_accounts_bans`
+-- Table structure for table `tw_accounts_bans`
 --
 
 CREATE TABLE `tw_accounts_bans` (
@@ -210,13 +210,13 @@ CREATE TABLE `tw_accounts_bans` (
   `AccountId` int(11) NOT NULL,
   `BannedSince` timestamp NULL DEFAULT current_timestamp(),
   `BannedUntil` timestamp NOT NULL DEFAULT current_timestamp(),
-  `Reason` varchar(512) CHARACTER SET utf8 NOT NULL DEFAULT 'No Reason Given'
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+  `Reason` varchar(512) NOT NULL DEFAULT 'No Reason Given'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
 --
--- Структура таблицы `tw_accounts_data`
+-- Table structure for table `tw_accounts_data`
 --
 
 CREATE TABLE `tw_accounts_data` (
@@ -245,12 +245,12 @@ CREATE TABLE `tw_accounts_data` (
   `Ammo` int(11) NOT NULL DEFAULT 0,
   `Efficiency` int(11) NOT NULL DEFAULT 0,
   `Extraction` int(11) NOT NULL DEFAULT 0
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
 --
--- Структура таблицы `tw_accounts_farming`
+-- Table structure for table `tw_accounts_farming`
 --
 
 CREATE TABLE `tw_accounts_farming` (
@@ -258,12 +258,12 @@ CREATE TABLE `tw_accounts_farming` (
   `Level` int(11) NOT NULL DEFAULT 1,
   `Exp` int(11) NOT NULL DEFAULT 0,
   `Upgrade` int(11) NOT NULL DEFAULT 0
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=COMPACT;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci ROW_FORMAT=COMPACT;
 
 -- --------------------------------------------------------
 
 --
--- Структура таблицы `tw_accounts_items`
+-- Table structure for table `tw_accounts_items`
 --
 
 CREATE TABLE `tw_accounts_items` (
@@ -274,12 +274,12 @@ CREATE TABLE `tw_accounts_items` (
   `Enchant` int(11) NOT NULL,
   `Durability` int(11) NOT NULL DEFAULT 100,
   `UserID` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=DYNAMIC;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci ROW_FORMAT=DYNAMIC;
 
 -- --------------------------------------------------------
 
 --
--- Структура таблицы `tw_accounts_mailbox`
+-- Table structure for table `tw_accounts_mailbox`
 --
 
 CREATE TABLE `tw_accounts_mailbox` (
@@ -292,12 +292,12 @@ CREATE TABLE `tw_accounts_mailbox` (
   `UserID` int(11) NOT NULL,
   `IsRead` tinyint(4) NOT NULL DEFAULT 0,
   `FromSend` varchar(32) NOT NULL DEFAULT 'Game'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=COMPACT;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci ROW_FORMAT=COMPACT;
 
 -- --------------------------------------------------------
 
 --
--- Структура таблицы `tw_accounts_mining`
+-- Table structure for table `tw_accounts_mining`
 --
 
 CREATE TABLE `tw_accounts_mining` (
@@ -305,12 +305,12 @@ CREATE TABLE `tw_accounts_mining` (
   `Level` int(11) NOT NULL DEFAULT 1,
   `Exp` int(11) NOT NULL DEFAULT 0,
   `Upgrade` int(11) NOT NULL DEFAULT 0
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=COMPACT;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci ROW_FORMAT=COMPACT;
 
 -- --------------------------------------------------------
 
 --
--- Структура таблицы `tw_accounts_quests`
+-- Table structure for table `tw_accounts_quests`
 --
 
 CREATE TABLE `tw_accounts_quests` (
@@ -318,12 +318,12 @@ CREATE TABLE `tw_accounts_quests` (
   `QuestID` int(11) DEFAULT NULL,
   `UserID` int(11) NOT NULL,
   `Type` int(11) NOT NULL DEFAULT 0
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
 --
--- Структура таблицы `tw_accounts_skills`
+-- Table structure for table `tw_accounts_skills`
 --
 
 CREATE TABLE `tw_accounts_skills` (
@@ -332,24 +332,24 @@ CREATE TABLE `tw_accounts_skills` (
   `UserID` int(11) NOT NULL,
   `Level` int(11) NOT NULL,
   `UsedByEmoticon` int(11) DEFAULT -1
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
 --
--- Структура таблицы `tw_account_eidolon_enhancements`
+-- Table structure for table `tw_account_eidolon_enhancements`
 --
 
 CREATE TABLE `tw_account_eidolon_enhancements` (
   `ID` int(11) NOT NULL,
   `Index` int(11) NOT NULL,
   `UserID` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
 --
--- Структура таблицы `tw_aethers`
+-- Table structure for table `tw_aethers`
 --
 
 CREATE TABLE `tw_aethers` (
@@ -358,10 +358,10 @@ CREATE TABLE `tw_aethers` (
   `WorldID` int(11) NOT NULL,
   `TeleX` int(11) NOT NULL,
   `TeleY` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Дамп данных таблицы `tw_aethers`
+-- Dumping data for table `tw_aethers`
 --
 
 INSERT INTO `tw_aethers` (`ID`, `Name`, `WorldID`, `TeleX`, `TeleY`) VALUES
@@ -377,7 +377,7 @@ INSERT INTO `tw_aethers` (`ID`, `Name`, `WorldID`, `TeleX`, `TeleY`) VALUES
 -- --------------------------------------------------------
 
 --
--- Структура таблицы `tw_attributs`
+-- Table structure for table `tw_attributs`
 --
 
 CREATE TABLE `tw_attributs` (
@@ -386,10 +386,10 @@ CREATE TABLE `tw_attributs` (
   `FieldName` varchar(32) DEFAULT NULL,
   `Price` int(11) NOT NULL,
   `Type` int(11) NOT NULL COMMENT '0.tank1.healer2.dps3.weapon4.hard5.jobs 6. others'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Дамп данных таблицы `tw_attributs`
+-- Dumping data for table `tw_attributs`
 --
 
 INSERT INTO `tw_attributs` (`ID`, `Name`, `FieldName`, `Price`, `Type`) VALUES
@@ -419,7 +419,7 @@ INSERT INTO `tw_attributs` (`ID`, `Name`, `FieldName`, `Price`, `Type`) VALUES
 -- --------------------------------------------------------
 
 --
--- Структура таблицы `tw_auction_items`
+-- Table structure for table `tw_auction_items`
 --
 
 CREATE TABLE `tw_auction_items` (
@@ -430,12 +430,12 @@ CREATE TABLE `tw_auction_items` (
   `UserID` int(11) NOT NULL DEFAULT 0,
   `Enchant` int(11) NOT NULL DEFAULT 0,
   `ValidUntil` bigint(20) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
 --
--- Структура таблицы `tw_bots_info`
+-- Table structure for table `tw_bots_info`
 --
 
 CREATE TABLE `tw_bots_info` (
@@ -448,10 +448,10 @@ CREATE TABLE `tw_bots_info` (
   `SlotGrenade` int(11) DEFAULT 5,
   `SlotRifle` int(11) DEFAULT 6,
   `SlotArmor` int(11) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=COMPACT;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci ROW_FORMAT=COMPACT;
 
 --
--- Дамп данных таблицы `tw_bots_info`
+-- Dumping data for table `tw_bots_info`
 --
 
 INSERT INTO `tw_bots_info` (`ID`, `Name`, `JsonTeeInfo`, `SlotHammer`, `SlotGun`, `SlotShotgun`, `SlotGrenade`, `SlotRifle`, `SlotArmor`) VALUES
@@ -516,7 +516,7 @@ INSERT INTO `tw_bots_info` (`ID`, `Name`, `JsonTeeInfo`, `SlotHammer`, `SlotGun`
 -- --------------------------------------------------------
 
 --
--- Структура таблицы `tw_bots_mobs`
+-- Table structure for table `tw_bots_mobs`
 --
 
 CREATE TABLE `tw_bots_mobs` (
@@ -540,10 +540,10 @@ CREATE TABLE `tw_bots_mobs` (
   `it_drop_4` int(11) DEFAULT NULL,
   `it_drop_count` varchar(64) NOT NULL DEFAULT '|0|0|0|0|0|',
   `it_drop_chance` varchar(64) NOT NULL DEFAULT '|0|0|0|0|0|'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Дамп данных таблицы `tw_bots_mobs`
+-- Dumping data for table `tw_bots_mobs`
 --
 
 INSERT INTO `tw_bots_mobs` (`ID`, `BotID`, `WorldID`, `PositionX`, `PositionY`, `Effect`, `Behavior`, `Level`, `Power`, `Spread`, `Number`, `Respawn`, `Boss`, `it_drop_0`, `it_drop_1`, `it_drop_2`, `it_drop_3`, `it_drop_4`, `it_drop_count`, `it_drop_chance`) VALUES
@@ -571,7 +571,7 @@ INSERT INTO `tw_bots_mobs` (`ID`, `BotID`, `WorldID`, `PositionX`, `PositionY`, 
 -- --------------------------------------------------------
 
 --
--- Структура таблицы `tw_bots_npc`
+-- Table structure for table `tw_bots_npc`
 --
 
 CREATE TABLE `tw_bots_npc` (
@@ -585,10 +585,10 @@ CREATE TABLE `tw_bots_npc` (
   `Static` int(11) NOT NULL,
   `Emote` enum('Pain','Happy','Surprise','Angry','Blink') DEFAULT NULL,
   `WorldID` int(11) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Дамп данных таблицы `tw_bots_npc`
+-- Dumping data for table `tw_bots_npc`
 --
 
 INSERT INTO `tw_bots_npc` (`ID`, `BotID`, `PosX`, `PosY`, `GiveQuestID`, `DialogData`, `Function`, `Static`, `Emote`, `WorldID`) VALUES
@@ -619,7 +619,7 @@ INSERT INTO `tw_bots_npc` (`ID`, `BotID`, `PosX`, `PosY`, `GiveQuestID`, `Dialog
 -- --------------------------------------------------------
 
 --
--- Структура таблицы `tw_bots_quest`
+-- Table structure for table `tw_bots_quest`
 --
 
 CREATE TABLE `tw_bots_quest` (
@@ -641,10 +641,10 @@ CREATE TABLE `tw_bots_quest` (
   `Amount` varchar(64) NOT NULL DEFAULT '|0|0|0|0|0|0|',
   `InteractionType` int(11) DEFAULT NULL,
   `InteractionTemp` int(11) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Дамп данных таблицы `tw_bots_quest`
+-- Dumping data for table `tw_bots_quest`
 --
 
 INSERT INTO `tw_bots_quest` (`ID`, `BotID`, `QuestID`, `Step`, `WorldID`, `PosX`, `PosY`, `DialogData`, `EventData`, `RequiredItemID1`, `RequiredItemID2`, `RewardItemID1`, `RewardItemID2`, `RequiredDefeatMobID1`, `RequiredDefeatMobID2`, `Amount`, `InteractionType`, `InteractionTemp`) VALUES
@@ -770,7 +770,7 @@ INSERT INTO `tw_bots_quest` (`ID`, `BotID`, `QuestID`, `Step`, `WorldID`, `PosX`
 -- --------------------------------------------------------
 
 --
--- Структура таблицы `tw_crafts_list`
+-- Table structure for table `tw_crafts_list`
 --
 
 CREATE TABLE `tw_crafts_list` (
@@ -780,10 +780,10 @@ CREATE TABLE `tw_crafts_list` (
   `RequiredItems` longtext CHARACTER SET utf8mb4 COLLATE utf8mb4_bin NOT NULL CHECK (json_valid(`RequiredItems`)),
   `Price` int(11) NOT NULL DEFAULT 100,
   `WorldID` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=COMPACT;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci ROW_FORMAT=COMPACT;
 
 --
--- Дамп данных таблицы `tw_crafts_list`
+-- Dumping data for table `tw_crafts_list`
 --
 
 INSERT INTO `tw_crafts_list` (`ID`, `ItemID`, `ItemValue`, `RequiredItems`, `Price`, `WorldID`) VALUES
@@ -816,7 +816,7 @@ INSERT INTO `tw_crafts_list` (`ID`, `ItemID`, `ItemValue`, `RequiredItems`, `Pri
 -- --------------------------------------------------------
 
 --
--- Структура таблицы `tw_dungeons`
+-- Table structure for table `tw_dungeons`
 --
 
 CREATE TABLE `tw_dungeons` (
@@ -828,10 +828,10 @@ CREATE TABLE `tw_dungeons` (
   `RequiredQuestID` int(11) NOT NULL DEFAULT -1,
   `Story` tinyint(4) NOT NULL DEFAULT 0,
   `WorldID` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Дамп данных таблицы `tw_dungeons`
+-- Dumping data for table `tw_dungeons`
 --
 
 INSERT INTO `tw_dungeons` (`ID`, `Name`, `Level`, `DoorX`, `DoorY`, `RequiredQuestID`, `Story`, `WorldID`) VALUES
@@ -840,7 +840,7 @@ INSERT INTO `tw_dungeons` (`ID`, `Name`, `Level`, `DoorX`, `DoorY`, `RequiredQue
 -- --------------------------------------------------------
 
 --
--- Структура таблицы `tw_dungeons_door`
+-- Table structure for table `tw_dungeons_door`
 --
 
 CREATE TABLE `tw_dungeons_door` (
@@ -850,10 +850,10 @@ CREATE TABLE `tw_dungeons_door` (
   `PosY` int(11) NOT NULL,
   `BotID` int(11) NOT NULL,
   `DungeonID` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Дамп данных таблицы `tw_dungeons_door`
+-- Dumping data for table `tw_dungeons_door`
 --
 
 INSERT INTO `tw_dungeons_door` (`ID`, `Name`, `PosX`, `PosY`, `BotID`, `DungeonID`) VALUES
@@ -865,7 +865,7 @@ INSERT INTO `tw_dungeons_door` (`ID`, `Name`, `PosX`, `PosY`, `BotID`, `DungeonI
 -- --------------------------------------------------------
 
 --
--- Структура таблицы `tw_dungeons_records`
+-- Table structure for table `tw_dungeons_records`
 --
 
 CREATE TABLE `tw_dungeons_records` (
@@ -874,12 +874,12 @@ CREATE TABLE `tw_dungeons_records` (
   `DungeonID` int(11) NOT NULL,
   `Seconds` int(11) NOT NULL,
   `PassageHelp` int(11) NOT NULL DEFAULT 0
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
 --
--- Структура таблицы `tw_guilds`
+-- Table structure for table `tw_guilds`
 --
 
 CREATE TABLE `tw_guilds` (
@@ -893,12 +893,12 @@ CREATE TABLE `tw_guilds` (
   `AvailableSlots` int(11) NOT NULL DEFAULT 2,
   `ChairExperience` int(11) NOT NULL DEFAULT 1,
   `ChairMoney` int(11) NOT NULL DEFAULT 1
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
 --
--- Структура таблицы `tw_guilds_decorations`
+-- Table structure for table `tw_guilds_decorations`
 --
 
 CREATE TABLE `tw_guilds_decorations` (
@@ -908,10 +908,10 @@ CREATE TABLE `tw_guilds_decorations` (
   `HouseID` int(11) NOT NULL,
   `ItemID` int(11) NOT NULL,
   `WorldID` int(11) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=latin1;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Дамп данных таблицы `tw_guilds_decorations`
+-- Dumping data for table `tw_guilds_decorations`
 --
 
 INSERT INTO `tw_guilds_decorations` (`ID`, `PosX`, `PosY`, `HouseID`, `ItemID`, `WorldID`) VALUES
@@ -922,7 +922,7 @@ INSERT INTO `tw_guilds_decorations` (`ID`, `PosX`, `PosY`, `HouseID`, `ItemID`, 
 -- --------------------------------------------------------
 
 --
--- Структура таблицы `tw_guilds_history`
+-- Table structure for table `tw_guilds_history`
 --
 
 CREATE TABLE `tw_guilds_history` (
@@ -930,12 +930,12 @@ CREATE TABLE `tw_guilds_history` (
   `GuildID` int(11) NOT NULL,
   `Text` varchar(64) NOT NULL,
   `Time` datetime NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
 --
--- Структура таблицы `tw_guilds_houses`
+-- Table structure for table `tw_guilds_houses`
 --
 
 CREATE TABLE `tw_guilds_houses` (
@@ -949,10 +949,10 @@ CREATE TABLE `tw_guilds_houses` (
   `TextY` int(11) NOT NULL,
   `Price` int(11) NOT NULL DEFAULT 50000,
   `WorldID` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Дамп данных таблицы `tw_guilds_houses`
+-- Dumping data for table `tw_guilds_houses`
 --
 
 INSERT INTO `tw_guilds_houses` (`ID`, `GuildID`, `PosX`, `PosY`, `DoorX`, `DoorY`, `TextX`, `TextY`, `Price`, `WorldID`) VALUES
@@ -963,19 +963,19 @@ INSERT INTO `tw_guilds_houses` (`ID`, `GuildID`, `PosX`, `PosY`, `DoorX`, `DoorY
 -- --------------------------------------------------------
 
 --
--- Структура таблицы `tw_guilds_invites`
+-- Table structure for table `tw_guilds_invites`
 --
 
 CREATE TABLE `tw_guilds_invites` (
   `ID` int(11) NOT NULL,
   `GuildID` int(11) NOT NULL,
   `UserID` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
 --
--- Структура таблицы `tw_guilds_ranks`
+-- Table structure for table `tw_guilds_ranks`
 --
 
 CREATE TABLE `tw_guilds_ranks` (
@@ -983,12 +983,12 @@ CREATE TABLE `tw_guilds_ranks` (
   `Access` int(11) NOT NULL DEFAULT 3,
   `Name` varchar(32) NOT NULL DEFAULT 'Rank name',
   `GuildID` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
 --
--- Структура таблицы `tw_houses`
+-- Table structure for table `tw_houses`
 --
 
 CREATE TABLE `tw_houses` (
@@ -1006,10 +1006,10 @@ CREATE TABLE `tw_houses` (
   `PlantY` int(11) NOT NULL,
   `AccessData` varchar(128) DEFAULT NULL,
   `WorldID` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Дамп данных таблицы `tw_houses`
+-- Dumping data for table `tw_houses`
 --
 
 INSERT INTO `tw_houses` (`ID`, `UserID`, `PosX`, `PosY`, `DoorX`, `DoorY`, `Class`, `Price`, `HouseBank`, `PlantID`, `PlantX`, `PlantY`, `AccessData`, `WorldID`) VALUES
@@ -1023,7 +1023,7 @@ INSERT INTO `tw_houses` (`ID`, `UserID`, `PosX`, `PosY`, `DoorX`, `DoorY`, `Clas
 -- --------------------------------------------------------
 
 --
--- Структура таблицы `tw_houses_decorations`
+-- Table structure for table `tw_houses_decorations`
 --
 
 CREATE TABLE `tw_houses_decorations` (
@@ -1033,10 +1033,10 @@ CREATE TABLE `tw_houses_decorations` (
   `HouseID` int(11) NOT NULL,
   `ItemID` int(11) NOT NULL,
   `WorldID` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Дамп данных таблицы `tw_houses_decorations`
+-- Dumping data for table `tw_houses_decorations`
 --
 
 INSERT INTO `tw_houses_decorations` (`ID`, `PosX`, `PosY`, `HouseID`, `ItemID`, `WorldID`) VALUES
@@ -1057,7 +1057,7 @@ INSERT INTO `tw_houses_decorations` (`ID`, `PosX`, `PosY`, `HouseID`, `ItemID`, 
 -- --------------------------------------------------------
 
 --
--- Структура таблицы `tw_items_list`
+-- Table structure for table `tw_items_list`
 --
 
 CREATE TABLE `tw_items_list` (
@@ -1073,10 +1073,10 @@ CREATE TABLE `tw_items_list` (
   `Attribute1` int(11) DEFAULT NULL,
   `AttributeValue0` int(11) NOT NULL DEFAULT 0,
   `AttributeValue1` int(11) NOT NULL DEFAULT 0
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Дамп данных таблицы `tw_items_list`
+-- Dumping data for table `tw_items_list`
 --
 
 INSERT INTO `tw_items_list` (`ID`, `Name`, `Description`, `Type`, `Function`, `Data`, `InitialPrice`, `Desynthesis`, `Attribute0`, `Attribute1`, `AttributeValue0`, `AttributeValue1`) VALUES
@@ -1176,7 +1176,7 @@ INSERT INTO `tw_items_list` (`ID`, `Name`, `Description`, `Type`, `Function`, `D
 -- --------------------------------------------------------
 
 --
--- Структура таблицы `tw_logics_worlds`
+-- Table structure for table `tw_logics_worlds`
 --
 
 CREATE TABLE `tw_logics_worlds` (
@@ -1188,12 +1188,12 @@ CREATE TABLE `tw_logics_worlds` (
   `PosY` int(11) NOT NULL,
   `WorldID` int(11) NOT NULL,
   `Comment` varchar(64) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=COMPACT;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci ROW_FORMAT=COMPACT;
 
 -- --------------------------------------------------------
 
 --
--- Структура таблицы `tw_positions_mining`
+-- Table structure for table `tw_positions_mining`
 --
 
 CREATE TABLE `tw_positions_mining` (
@@ -1205,10 +1205,10 @@ CREATE TABLE `tw_positions_mining` (
   `PositionY` int(11) NOT NULL,
   `Distance` int(11) NOT NULL DEFAULT 300 COMMENT 'Range of unit spreading',
   `WorldID` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=COMPACT;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci ROW_FORMAT=COMPACT;
 
 --
--- Дамп данных таблицы `tw_positions_mining`
+-- Dumping data for table `tw_positions_mining`
 --
 
 INSERT INTO `tw_positions_mining` (`ID`, `ItemID`, `Level`, `Health`, `PositionX`, `PositionY`, `Distance`, `WorldID`) VALUES
@@ -1217,7 +1217,7 @@ INSERT INTO `tw_positions_mining` (`ID`, `ItemID`, `Level`, `Health`, `PositionX
 -- --------------------------------------------------------
 
 --
--- Структура таблицы `tw_positions_plant`
+-- Table structure for table `tw_positions_plant`
 --
 
 CREATE TABLE `tw_positions_plant` (
@@ -1229,10 +1229,10 @@ CREATE TABLE `tw_positions_plant` (
   `PositionY` int(11) NOT NULL,
   `Distance` int(11) NOT NULL DEFAULT 300 COMMENT 'Range of unit spreading',
   `WorldID` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 ROW_FORMAT=COMPACT;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci ROW_FORMAT=COMPACT;
 
 --
--- Дамп данных таблицы `tw_positions_plant`
+-- Dumping data for table `tw_positions_plant`
 --
 
 INSERT INTO `tw_positions_plant` (`ID`, `ItemID`, `Level`, `Health`, `PositionX`, `PositionY`, `Distance`, `WorldID`) VALUES
@@ -1242,7 +1242,7 @@ INSERT INTO `tw_positions_plant` (`ID`, `ItemID`, `Level`, `Health`, `PositionX`
 -- --------------------------------------------------------
 
 --
--- Структура таблицы `tw_quests_list`
+-- Table structure for table `tw_quests_list`
 --
 
 CREATE TABLE `tw_quests_list` (
@@ -1251,10 +1251,10 @@ CREATE TABLE `tw_quests_list` (
   `Money` int(11) NOT NULL,
   `Exp` int(11) NOT NULL,
   `StoryLine` varchar(24) NOT NULL DEFAULT 'Hero'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Дамп данных таблицы `tw_quests_list`
+-- Dumping data for table `tw_quests_list`
 --
 
 INSERT INTO `tw_quests_list` (`ID`, `Name`, `Money`, `Exp`, `StoryLine`) VALUES
@@ -1301,7 +1301,7 @@ INSERT INTO `tw_quests_list` (`ID`, `Name`, `Money`, `Exp`, `StoryLine`) VALUES
 -- --------------------------------------------------------
 
 --
--- Структура таблицы `tw_skills_list`
+-- Table structure for table `tw_skills_list`
 --
 
 CREATE TABLE `tw_skills_list` (
@@ -1315,10 +1315,10 @@ CREATE TABLE `tw_skills_list` (
   `PriceSP` int(11) NOT NULL,
   `MaxLevel` int(11) NOT NULL,
   `Passive` tinyint(1) NOT NULL DEFAULT 0
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Дамп данных таблицы `tw_skills_list`
+-- Dumping data for table `tw_skills_list`
 --
 
 INSERT INTO `tw_skills_list` (`ID`, `Name`, `Description`, `Type`, `BoostName`, `BoostValue`, `PercentageCost`, `PriceSP`, `MaxLevel`, `Passive`) VALUES
@@ -1334,7 +1334,7 @@ INSERT INTO `tw_skills_list` (`ID`, `Name`, `Description`, `Type`, `BoostName`, 
 -- --------------------------------------------------------
 
 --
--- Структура таблицы `tw_voucher`
+-- Table structure for table `tw_voucher`
 --
 
 CREATE TABLE `tw_voucher` (
@@ -1343,10 +1343,10 @@ CREATE TABLE `tw_voucher` (
   `Data` text NOT NULL,
   `Multiple` tinyint(1) NOT NULL DEFAULT 0,
   `ValidUntil` bigint(20) NOT NULL DEFAULT 0
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Дамп данных таблицы `tw_voucher`
+-- Dumping data for table `tw_voucher`
 --
 
 INSERT INTO `tw_voucher` (`ID`, `Code`, `Data`, `Multiple`, `ValidUntil`) VALUES
@@ -1356,7 +1356,7 @@ INSERT INTO `tw_voucher` (`ID`, `Code`, `Data`, `Multiple`, `ValidUntil`) VALUES
 -- --------------------------------------------------------
 
 --
--- Структура таблицы `tw_voucher_redeemed`
+-- Table structure for table `tw_voucher_redeemed`
 --
 
 CREATE TABLE `tw_voucher_redeemed` (
@@ -1364,21 +1364,12 @@ CREATE TABLE `tw_voucher_redeemed` (
   `VoucherID` int(11) NOT NULL,
   `UserID` int(11) NOT NULL,
   `TimeCreated` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
---
--- Дамп данных таблицы `tw_voucher_redeemed`
---
-
-INSERT INTO `tw_voucher_redeemed` (`ID`, `VoucherID`, `UserID`, `TimeCreated`) VALUES
-(1, 1, 1, 1667644547),
-(2, 1, 28, 1668621209),
-(3, 1, 4, 1668785252);
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
 --
--- Структура таблицы `tw_warehouses`
+-- Table structure for table `tw_warehouses`
 --
 
 CREATE TABLE `tw_warehouses` (
@@ -1388,10 +1379,10 @@ CREATE TABLE `tw_warehouses` (
   `PosY` int(11) NOT NULL,
   `Currency` int(11) NOT NULL DEFAULT 1,
   `WorldID` int(11) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Дамп данных таблицы `tw_warehouses`
+-- Dumping data for table `tw_warehouses`
 --
 
 INSERT INTO `tw_warehouses` (`ID`, `Name`, `PosX`, `PosY`, `Currency`, `WorldID`) VALUES
@@ -1403,7 +1394,7 @@ INSERT INTO `tw_warehouses` (`ID`, `Name`, `PosX`, `PosY`, `Currency`, `WorldID`
 -- --------------------------------------------------------
 
 --
--- Структура таблицы `tw_warehouse_items`
+-- Table structure for table `tw_warehouse_items`
 --
 
 CREATE TABLE `tw_warehouse_items` (
@@ -1414,10 +1405,10 @@ CREATE TABLE `tw_warehouse_items` (
   `Price` int(11) NOT NULL,
   `Enchant` int(11) NOT NULL DEFAULT 0,
   `WarehouseID` int(11) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Дамп данных таблицы `tw_warehouse_items`
+-- Dumping data for table `tw_warehouse_items`
 --
 
 INSERT INTO `tw_warehouse_items` (`ID`, `ItemID`, `ItemValue`, `RequiredItemID`, `Price`, `Enchant`, `WarehouseID`) VALUES
@@ -1437,7 +1428,7 @@ INSERT INTO `tw_warehouse_items` (`ID`, `ItemID`, `ItemValue`, `RequiredItemID`,
 -- --------------------------------------------------------
 
 --
--- Структура таблицы `tw_world_swap`
+-- Table structure for table `tw_world_swap`
 --
 
 CREATE TABLE `tw_world_swap` (
@@ -1448,10 +1439,10 @@ CREATE TABLE `tw_world_swap` (
   `TwoWorldID` int(11) DEFAULT NULL,
   `TwoPositionX` int(11) DEFAULT NULL,
   `TwoPositionY` int(11) DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
--- Дамп данных таблицы `tw_world_swap`
+-- Dumping data for table `tw_world_swap`
 --
 
 INSERT INTO `tw_world_swap` (`ID`, `WorldID`, `PositionX`, `PositionY`, `TwoWorldID`, `TwoPositionX`, `TwoPositionY`) VALUES
@@ -1463,43 +1454,43 @@ INSERT INTO `tw_world_swap` (`ID`, `WorldID`, `PositionX`, `PositionY`, `TwoWorl
 (13, 6, 9430, 1370, 7, 240, 1690);
 
 --
--- Индексы сохранённых таблиц
+-- Indexes for dumped tables
 --
 
 --
--- Индексы таблицы `enum_behavior_mobs`
+-- Indexes for table `enum_behavior_mobs`
 --
 ALTER TABLE `enum_behavior_mobs`
   ADD PRIMARY KEY (`ID`),
   ADD KEY `Behavior` (`Behavior`);
 
 --
--- Индексы таблицы `enum_effects_list`
+-- Indexes for table `enum_effects_list`
 --
 ALTER TABLE `enum_effects_list`
   ADD PRIMARY KEY (`ID`),
   ADD KEY `Name` (`Name`);
 
 --
--- Индексы таблицы `enum_items_functional`
+-- Indexes for table `enum_items_functional`
 --
 ALTER TABLE `enum_items_functional`
   ADD PRIMARY KEY (`FunctionID`);
 
 --
--- Индексы таблицы `enum_items_types`
+-- Indexes for table `enum_items_types`
 --
 ALTER TABLE `enum_items_types`
   ADD PRIMARY KEY (`TypeID`);
 
 --
--- Индексы таблицы `enum_quest_interactive`
+-- Indexes for table `enum_quest_interactive`
 --
 ALTER TABLE `enum_quest_interactive`
   ADD KEY `ID` (`ID`);
 
 --
--- Индексы таблицы `enum_worlds`
+-- Indexes for table `enum_worlds`
 --
 ALTER TABLE `enum_worlds`
   ADD PRIMARY KEY (`WorldID`),
@@ -1510,7 +1501,7 @@ ALTER TABLE `enum_worlds`
   ADD KEY `RequiredQuestID` (`RequiredQuestID`);
 
 --
--- Индексы таблицы `tw_accounts`
+-- Indexes for table `tw_accounts`
 --
 ALTER TABLE `tw_accounts`
   ADD PRIMARY KEY (`ID`),
@@ -1519,7 +1510,7 @@ ALTER TABLE `tw_accounts`
   ADD KEY `Username` (`Username`);
 
 --
--- Индексы таблицы `tw_accounts_aethers`
+-- Indexes for table `tw_accounts_aethers`
 --
 ALTER TABLE `tw_accounts_aethers`
   ADD PRIMARY KEY (`ID`),
@@ -1528,14 +1519,14 @@ ALTER TABLE `tw_accounts_aethers`
   ADD KEY `TeleportID` (`AetherID`);
 
 --
--- Индексы таблицы `tw_accounts_bans`
+-- Indexes for table `tw_accounts_bans`
 --
 ALTER TABLE `tw_accounts_bans`
   ADD PRIMARY KEY (`Id`),
   ADD KEY `tw_accounts_bans_tw_accounts_ID_fk` (`AccountId`);
 
 --
--- Индексы таблицы `tw_accounts_data`
+-- Indexes for table `tw_accounts_data`
 --
 ALTER TABLE `tw_accounts_data`
   ADD PRIMARY KEY (`ID`),
@@ -1548,14 +1539,14 @@ ALTER TABLE `tw_accounts_data`
   ADD KEY `Exp` (`Exp`);
 
 --
--- Индексы таблицы `tw_accounts_farming`
+-- Indexes for table `tw_accounts_farming`
 --
 ALTER TABLE `tw_accounts_farming`
   ADD PRIMARY KEY (`UserID`),
   ADD UNIQUE KEY `AccountID` (`UserID`);
 
 --
--- Индексы таблицы `tw_accounts_items`
+-- Indexes for table `tw_accounts_items`
 --
 ALTER TABLE `tw_accounts_items`
   ADD PRIMARY KEY (`ID`),
@@ -1563,7 +1554,7 @@ ALTER TABLE `tw_accounts_items`
   ADD KEY `ItemID` (`ItemID`);
 
 --
--- Индексы таблицы `tw_accounts_mailbox`
+-- Indexes for table `tw_accounts_mailbox`
 --
 ALTER TABLE `tw_accounts_mailbox`
   ADD PRIMARY KEY (`ID`),
@@ -1572,14 +1563,14 @@ ALTER TABLE `tw_accounts_mailbox`
   ADD KEY `tw_accounts_inbox_ibfk_2` (`ItemID`);
 
 --
--- Индексы таблицы `tw_accounts_mining`
+-- Indexes for table `tw_accounts_mining`
 --
 ALTER TABLE `tw_accounts_mining`
   ADD PRIMARY KEY (`UserID`),
   ADD UNIQUE KEY `AccountID` (`UserID`);
 
 --
--- Индексы таблицы `tw_accounts_quests`
+-- Indexes for table `tw_accounts_quests`
 --
 ALTER TABLE `tw_accounts_quests`
   ADD PRIMARY KEY (`ID`),
@@ -1589,7 +1580,7 @@ ALTER TABLE `tw_accounts_quests`
   ADD KEY `tw_accounts_quests_ibfk_4` (`QuestID`);
 
 --
--- Индексы таблицы `tw_accounts_skills`
+-- Indexes for table `tw_accounts_skills`
 --
 ALTER TABLE `tw_accounts_skills`
   ADD PRIMARY KEY (`ID`),
@@ -1598,13 +1589,13 @@ ALTER TABLE `tw_accounts_skills`
   ADD KEY `OwnerID` (`UserID`);
 
 --
--- Индексы таблицы `tw_account_eidolon_enhancements`
+-- Indexes for table `tw_account_eidolon_enhancements`
 --
 ALTER TABLE `tw_account_eidolon_enhancements`
   ADD PRIMARY KEY (`ID`);
 
 --
--- Индексы таблицы `tw_aethers`
+-- Indexes for table `tw_aethers`
 --
 ALTER TABLE `tw_aethers`
   ADD PRIMARY KEY (`ID`),
@@ -1612,13 +1603,13 @@ ALTER TABLE `tw_aethers`
   ADD KEY `WorldID` (`WorldID`);
 
 --
--- Индексы таблицы `tw_attributs`
+-- Indexes for table `tw_attributs`
 --
 ALTER TABLE `tw_attributs`
   ADD PRIMARY KEY (`ID`);
 
 --
--- Индексы таблицы `tw_auction_items`
+-- Indexes for table `tw_auction_items`
 --
 ALTER TABLE `tw_auction_items`
   ADD PRIMARY KEY (`ID`),
@@ -1629,7 +1620,7 @@ ALTER TABLE `tw_auction_items`
   ADD KEY `Price` (`Price`);
 
 --
--- Индексы таблицы `tw_bots_info`
+-- Indexes for table `tw_bots_info`
 --
 ALTER TABLE `tw_bots_info`
   ADD PRIMARY KEY (`ID`),
@@ -1642,7 +1633,7 @@ ALTER TABLE `tw_bots_info`
   ADD KEY `SlotRifle` (`SlotRifle`);
 
 --
--- Индексы таблицы `tw_bots_mobs`
+-- Indexes for table `tw_bots_mobs`
 --
 ALTER TABLE `tw_bots_mobs`
   ADD PRIMARY KEY (`ID`),
@@ -1657,7 +1648,7 @@ ALTER TABLE `tw_bots_mobs`
   ADD KEY `Behavior` (`Behavior`);
 
 --
--- Индексы таблицы `tw_bots_npc`
+-- Indexes for table `tw_bots_npc`
 --
 ALTER TABLE `tw_bots_npc`
   ADD PRIMARY KEY (`ID`),
@@ -1667,7 +1658,7 @@ ALTER TABLE `tw_bots_npc`
   ADD KEY `tw_bots_npc_ibfk_5` (`GiveQuestID`);
 
 --
--- Индексы таблицы `tw_bots_quest`
+-- Indexes for table `tw_bots_quest`
 --
 ALTER TABLE `tw_bots_quest`
   ADD PRIMARY KEY (`ID`),
@@ -1683,7 +1674,7 @@ ALTER TABLE `tw_bots_quest`
   ADD KEY `interactive_type` (`InteractionType`);
 
 --
--- Индексы таблицы `tw_crafts_list`
+-- Indexes for table `tw_crafts_list`
 --
 ALTER TABLE `tw_crafts_list`
   ADD PRIMARY KEY (`ID`),
@@ -1692,14 +1683,14 @@ ALTER TABLE `tw_crafts_list`
   ADD KEY `WorldID` (`WorldID`);
 
 --
--- Индексы таблицы `tw_dungeons`
+-- Indexes for table `tw_dungeons`
 --
 ALTER TABLE `tw_dungeons`
   ADD PRIMARY KEY (`ID`),
   ADD KEY `WorldID` (`WorldID`);
 
 --
--- Индексы таблицы `tw_dungeons_door`
+-- Indexes for table `tw_dungeons_door`
 --
 ALTER TABLE `tw_dungeons_door`
   ADD PRIMARY KEY (`ID`),
@@ -1707,7 +1698,7 @@ ALTER TABLE `tw_dungeons_door`
   ADD KEY `tw_dungeons_door_ibfk_2` (`BotID`);
 
 --
--- Индексы таблицы `tw_dungeons_records`
+-- Indexes for table `tw_dungeons_records`
 --
 ALTER TABLE `tw_dungeons_records`
   ADD PRIMARY KEY (`ID`),
@@ -1716,7 +1707,7 @@ ALTER TABLE `tw_dungeons_records`
   ADD KEY `Seconds` (`Seconds`);
 
 --
--- Индексы таблицы `tw_guilds`
+-- Indexes for table `tw_guilds`
 --
 ALTER TABLE `tw_guilds`
   ADD PRIMARY KEY (`ID`),
@@ -1727,7 +1718,7 @@ ALTER TABLE `tw_guilds`
   ADD KEY `Experience` (`Experience`);
 
 --
--- Индексы таблицы `tw_guilds_decorations`
+-- Indexes for table `tw_guilds_decorations`
 --
 ALTER TABLE `tw_guilds_decorations`
   ADD PRIMARY KEY (`ID`),
@@ -1736,14 +1727,14 @@ ALTER TABLE `tw_guilds_decorations`
   ADD KEY `HouseID` (`HouseID`);
 
 --
--- Индексы таблицы `tw_guilds_history`
+-- Indexes for table `tw_guilds_history`
 --
 ALTER TABLE `tw_guilds_history`
   ADD PRIMARY KEY (`ID`),
   ADD KEY `MemberID` (`GuildID`);
 
 --
--- Индексы таблицы `tw_guilds_houses`
+-- Indexes for table `tw_guilds_houses`
 --
 ALTER TABLE `tw_guilds_houses`
   ADD PRIMARY KEY (`ID`),
@@ -1752,7 +1743,7 @@ ALTER TABLE `tw_guilds_houses`
   ADD KEY `WorldID` (`WorldID`);
 
 --
--- Индексы таблицы `tw_guilds_invites`
+-- Indexes for table `tw_guilds_invites`
 --
 ALTER TABLE `tw_guilds_invites`
   ADD PRIMARY KEY (`ID`),
@@ -1761,7 +1752,7 @@ ALTER TABLE `tw_guilds_invites`
   ADD KEY `MemberID` (`GuildID`);
 
 --
--- Индексы таблицы `tw_guilds_ranks`
+-- Indexes for table `tw_guilds_ranks`
 --
 ALTER TABLE `tw_guilds_ranks`
   ADD PRIMARY KEY (`ID`),
@@ -1769,7 +1760,7 @@ ALTER TABLE `tw_guilds_ranks`
   ADD KEY `MemberID` (`GuildID`);
 
 --
--- Индексы таблицы `tw_houses`
+-- Indexes for table `tw_houses`
 --
 ALTER TABLE `tw_houses`
   ADD PRIMARY KEY (`ID`),
@@ -1779,7 +1770,7 @@ ALTER TABLE `tw_houses`
   ADD KEY `PlantID` (`PlantID`);
 
 --
--- Индексы таблицы `tw_houses_decorations`
+-- Indexes for table `tw_houses_decorations`
 --
 ALTER TABLE `tw_houses_decorations`
   ADD PRIMARY KEY (`ID`),
@@ -1789,7 +1780,7 @@ ALTER TABLE `tw_houses_decorations`
   ADD KEY `DecoID` (`ItemID`);
 
 --
--- Индексы таблицы `tw_items_list`
+-- Indexes for table `tw_items_list`
 --
 ALTER TABLE `tw_items_list`
   ADD PRIMARY KEY (`ID`),
@@ -1801,7 +1792,7 @@ ALTER TABLE `tw_items_list`
   ADD KEY `tw_items_list_ibfk_5` (`Attribute1`);
 
 --
--- Индексы таблицы `tw_logics_worlds`
+-- Indexes for table `tw_logics_worlds`
 --
 ALTER TABLE `tw_logics_worlds`
   ADD PRIMARY KEY (`ID`),
@@ -1811,7 +1802,7 @@ ALTER TABLE `tw_logics_worlds`
   ADD KEY `ParseInt` (`ParseInt`);
 
 --
--- Индексы таблицы `tw_positions_mining`
+-- Indexes for table `tw_positions_mining`
 --
 ALTER TABLE `tw_positions_mining`
   ADD PRIMARY KEY (`ID`),
@@ -1820,7 +1811,7 @@ ALTER TABLE `tw_positions_mining`
   ADD KEY `WorldID` (`WorldID`);
 
 --
--- Индексы таблицы `tw_positions_plant`
+-- Indexes for table `tw_positions_plant`
 --
 ALTER TABLE `tw_positions_plant`
   ADD PRIMARY KEY (`ID`),
@@ -1829,33 +1820,35 @@ ALTER TABLE `tw_positions_plant`
   ADD KEY `WorldID` (`WorldID`);
 
 --
--- Индексы таблицы `tw_quests_list`
+-- Indexes for table `tw_quests_list`
 --
 ALTER TABLE `tw_quests_list`
   ADD PRIMARY KEY (`ID`),
   ADD UNIQUE KEY `ID` (`ID`);
 
 --
--- Индексы таблицы `tw_skills_list`
+-- Indexes for table `tw_skills_list`
 --
 ALTER TABLE `tw_skills_list`
   ADD PRIMARY KEY (`ID`),
   ADD UNIQUE KEY `ID` (`ID`);
 
 --
--- Индексы таблицы `tw_voucher`
+-- Indexes for table `tw_voucher`
 --
 ALTER TABLE `tw_voucher`
   ADD PRIMARY KEY (`ID`);
 
 --
--- Индексы таблицы `tw_voucher_redeemed`
+-- Indexes for table `tw_voucher_redeemed`
 --
 ALTER TABLE `tw_voucher_redeemed`
-  ADD PRIMARY KEY (`ID`);
+  ADD PRIMARY KEY (`ID`),
+  ADD KEY `tw_voucher_redeemed_ibfk_1` (`UserID`),
+  ADD KEY `tw_voucher_redeemed_ibfk_2` (`VoucherID`);
 
 --
--- Индексы таблицы `tw_warehouses`
+-- Indexes for table `tw_warehouses`
 --
 ALTER TABLE `tw_warehouses`
   ADD PRIMARY KEY (`ID`),
@@ -1864,7 +1857,7 @@ ALTER TABLE `tw_warehouses`
   ADD KEY `Currency` (`Currency`);
 
 --
--- Индексы таблицы `tw_warehouse_items`
+-- Indexes for table `tw_warehouse_items`
 --
 ALTER TABLE `tw_warehouse_items`
   ADD PRIMARY KEY (`ID`),
@@ -1875,7 +1868,7 @@ ALTER TABLE `tw_warehouse_items`
   ADD KEY `Price` (`Price`);
 
 --
--- Индексы таблицы `tw_world_swap`
+-- Indexes for table `tw_world_swap`
 --
 ALTER TABLE `tw_world_swap`
   ADD PRIMARY KEY (`ID`),
@@ -1883,286 +1876,286 @@ ALTER TABLE `tw_world_swap`
   ADD KEY `TwoWorldID` (`TwoWorldID`);
 
 --
--- AUTO_INCREMENT для сохранённых таблиц
+-- AUTO_INCREMENT for dumped tables
 --
 
 --
--- AUTO_INCREMENT для таблицы `enum_behavior_mobs`
+-- AUTO_INCREMENT for table `enum_behavior_mobs`
 --
 ALTER TABLE `enum_behavior_mobs`
   MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
--- AUTO_INCREMENT для таблицы `enum_effects_list`
+-- AUTO_INCREMENT for table `enum_effects_list`
 --
 ALTER TABLE `enum_effects_list`
   MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
--- AUTO_INCREMENT для таблицы `enum_items_functional`
+-- AUTO_INCREMENT for table `enum_items_functional`
 --
 ALTER TABLE `enum_items_functional`
   MODIFY `FunctionID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
 
 --
--- AUTO_INCREMENT для таблицы `enum_items_types`
+-- AUTO_INCREMENT for table `enum_items_types`
 --
 ALTER TABLE `enum_items_types`
   MODIFY `TypeID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
--- AUTO_INCREMENT для таблицы `tw_accounts`
+-- AUTO_INCREMENT for table `tw_accounts`
 --
 ALTER TABLE `tw_accounts`
   MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT для таблицы `tw_accounts_aethers`
+-- AUTO_INCREMENT for table `tw_accounts_aethers`
 --
 ALTER TABLE `tw_accounts_aethers`
   MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT для таблицы `tw_accounts_bans`
+-- AUTO_INCREMENT for table `tw_accounts_bans`
 --
 ALTER TABLE `tw_accounts_bans`
   MODIFY `Id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT для таблицы `tw_accounts_data`
+-- AUTO_INCREMENT for table `tw_accounts_data`
 --
 ALTER TABLE `tw_accounts_data`
   MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT для таблицы `tw_accounts_items`
+-- AUTO_INCREMENT for table `tw_accounts_items`
 --
 ALTER TABLE `tw_accounts_items`
   MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT для таблицы `tw_accounts_mailbox`
+-- AUTO_INCREMENT for table `tw_accounts_mailbox`
 --
 ALTER TABLE `tw_accounts_mailbox`
   MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT для таблицы `tw_accounts_quests`
+-- AUTO_INCREMENT for table `tw_accounts_quests`
 --
 ALTER TABLE `tw_accounts_quests`
   MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT для таблицы `tw_accounts_skills`
+-- AUTO_INCREMENT for table `tw_accounts_skills`
 --
 ALTER TABLE `tw_accounts_skills`
   MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT для таблицы `tw_account_eidolon_enhancements`
+-- AUTO_INCREMENT for table `tw_account_eidolon_enhancements`
 --
 ALTER TABLE `tw_account_eidolon_enhancements`
   MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT для таблицы `tw_aethers`
+-- AUTO_INCREMENT for table `tw_aethers`
 --
 ALTER TABLE `tw_aethers`
   MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
--- AUTO_INCREMENT для таблицы `tw_auction_items`
+-- AUTO_INCREMENT for table `tw_auction_items`
 --
 ALTER TABLE `tw_auction_items`
   MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT для таблицы `tw_bots_info`
+-- AUTO_INCREMENT for table `tw_bots_info`
 --
 ALTER TABLE `tw_bots_info`
   MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=62;
 
 --
--- AUTO_INCREMENT для таблицы `tw_bots_mobs`
+-- AUTO_INCREMENT for table `tw_bots_mobs`
 --
 ALTER TABLE `tw_bots_mobs`
   MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
 
 --
--- AUTO_INCREMENT для таблицы `tw_bots_npc`
+-- AUTO_INCREMENT for table `tw_bots_npc`
 --
 ALTER TABLE `tw_bots_npc`
   MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=24;
 
 --
--- AUTO_INCREMENT для таблицы `tw_bots_quest`
+-- AUTO_INCREMENT for table `tw_bots_quest`
 --
 ALTER TABLE `tw_bots_quest`
   MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=121;
 
 --
--- AUTO_INCREMENT для таблицы `tw_crafts_list`
+-- AUTO_INCREMENT for table `tw_crafts_list`
 --
 ALTER TABLE `tw_crafts_list`
   MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26;
 
 --
--- AUTO_INCREMENT для таблицы `tw_dungeons`
+-- AUTO_INCREMENT for table `tw_dungeons`
 --
 ALTER TABLE `tw_dungeons`
   MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
--- AUTO_INCREMENT для таблицы `tw_dungeons_door`
+-- AUTO_INCREMENT for table `tw_dungeons_door`
 --
 ALTER TABLE `tw_dungeons_door`
   MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
--- AUTO_INCREMENT для таблицы `tw_dungeons_records`
+-- AUTO_INCREMENT for table `tw_dungeons_records`
 --
 ALTER TABLE `tw_dungeons_records`
   MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT для таблицы `tw_guilds`
+-- AUTO_INCREMENT for table `tw_guilds`
 --
 ALTER TABLE `tw_guilds`
   MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT для таблицы `tw_guilds_decorations`
+-- AUTO_INCREMENT for table `tw_guilds_decorations`
 --
 ALTER TABLE `tw_guilds_decorations`
   MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=11;
 
 --
--- AUTO_INCREMENT для таблицы `tw_guilds_history`
+-- AUTO_INCREMENT for table `tw_guilds_history`
 --
 ALTER TABLE `tw_guilds_history`
   MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT для таблицы `tw_guilds_houses`
+-- AUTO_INCREMENT for table `tw_guilds_houses`
 --
 ALTER TABLE `tw_guilds_houses`
   MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
--- AUTO_INCREMENT для таблицы `tw_guilds_invites`
+-- AUTO_INCREMENT for table `tw_guilds_invites`
 --
 ALTER TABLE `tw_guilds_invites`
   MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT для таблицы `tw_guilds_ranks`
+-- AUTO_INCREMENT for table `tw_guilds_ranks`
 --
 ALTER TABLE `tw_guilds_ranks`
   MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT для таблицы `tw_houses`
+-- AUTO_INCREMENT for table `tw_houses`
 --
 ALTER TABLE `tw_houses`
   MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
--- AUTO_INCREMENT для таблицы `tw_houses_decorations`
+-- AUTO_INCREMENT for table `tw_houses_decorations`
 --
 ALTER TABLE `tw_houses_decorations`
   MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
 
 --
--- AUTO_INCREMENT для таблицы `tw_items_list`
+-- AUTO_INCREMENT for table `tw_items_list`
 --
 ALTER TABLE `tw_items_list`
   MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=93;
 
 --
--- AUTO_INCREMENT для таблицы `tw_logics_worlds`
+-- AUTO_INCREMENT for table `tw_logics_worlds`
 --
 ALTER TABLE `tw_logics_worlds`
   MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
 
 --
--- AUTO_INCREMENT для таблицы `tw_positions_mining`
+-- AUTO_INCREMENT for table `tw_positions_mining`
 --
 ALTER TABLE `tw_positions_mining`
   MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
--- AUTO_INCREMENT для таблицы `tw_positions_plant`
+-- AUTO_INCREMENT for table `tw_positions_plant`
 --
 ALTER TABLE `tw_positions_plant`
   MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
--- AUTO_INCREMENT для таблицы `tw_quests_list`
+-- AUTO_INCREMENT for table `tw_quests_list`
 --
 ALTER TABLE `tw_quests_list`
   MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=40;
 
 --
--- AUTO_INCREMENT для таблицы `tw_skills_list`
+-- AUTO_INCREMENT for table `tw_skills_list`
 --
 ALTER TABLE `tw_skills_list`
   MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
--- AUTO_INCREMENT для таблицы `tw_voucher`
+-- AUTO_INCREMENT for table `tw_voucher`
 --
 ALTER TABLE `tw_voucher`
   MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
--- AUTO_INCREMENT для таблицы `tw_voucher_redeemed`
+-- AUTO_INCREMENT for table `tw_voucher_redeemed`
 --
 ALTER TABLE `tw_voucher_redeemed`
   MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
--- AUTO_INCREMENT для таблицы `tw_warehouses`
+-- AUTO_INCREMENT for table `tw_warehouses`
 --
 ALTER TABLE `tw_warehouses`
   MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 --
--- AUTO_INCREMENT для таблицы `tw_warehouse_items`
+-- AUTO_INCREMENT for table `tw_warehouse_items`
 --
 ALTER TABLE `tw_warehouse_items`
   MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
 
 --
--- AUTO_INCREMENT для таблицы `tw_world_swap`
+-- AUTO_INCREMENT for table `tw_world_swap`
 --
 ALTER TABLE `tw_world_swap`
   MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
--- Ограничения внешнего ключа сохраненных таблиц
+-- Constraints for dumped tables
 --
 
 --
--- Ограничения внешнего ключа таблицы `enum_worlds`
+-- Constraints for table `enum_worlds`
 --
 ALTER TABLE `enum_worlds`
   ADD CONSTRAINT `enum_worlds_ibfk_1` FOREIGN KEY (`RequiredQuestID`) REFERENCES `tw_quests_list` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
--- Ограничения внешнего ключа таблицы `tw_accounts_aethers`
+-- Constraints for table `tw_accounts_aethers`
 --
 ALTER TABLE `tw_accounts_aethers`
   ADD CONSTRAINT `tw_accounts_aethers_ibfk_1` FOREIGN KEY (`UserID`) REFERENCES `tw_accounts_data` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `tw_accounts_aethers_ibfk_2` FOREIGN KEY (`AetherID`) REFERENCES `tw_aethers` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
--- Ограничения внешнего ключа таблицы `tw_accounts_bans`
+-- Constraints for table `tw_accounts_bans`
 --
 ALTER TABLE `tw_accounts_bans`
   ADD CONSTRAINT `tw_accounts_bans_tw_accounts_ID_fk` FOREIGN KEY (`AccountId`) REFERENCES `tw_accounts` (`ID`);
 
 --
--- Ограничения внешнего ключа таблицы `tw_accounts_data`
+-- Constraints for table `tw_accounts_data`
 --
 ALTER TABLE `tw_accounts_data`
   ADD CONSTRAINT `tw_accounts_data_ibfk_3` FOREIGN KEY (`WorldID`) REFERENCES `enum_worlds` (`WorldID`) ON DELETE SET NULL ON UPDATE CASCADE,
@@ -2170,53 +2163,53 @@ ALTER TABLE `tw_accounts_data`
   ADD CONSTRAINT `tw_accounts_data_ibfk_5` FOREIGN KEY (`ID`) REFERENCES `tw_accounts` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
--- Ограничения внешнего ключа таблицы `tw_accounts_farming`
+-- Constraints for table `tw_accounts_farming`
 --
 ALTER TABLE `tw_accounts_farming`
   ADD CONSTRAINT `tw_accounts_farming_ibfk_1` FOREIGN KEY (`UserID`) REFERENCES `tw_accounts_data` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
--- Ограничения внешнего ключа таблицы `tw_accounts_items`
+-- Constraints for table `tw_accounts_items`
 --
 ALTER TABLE `tw_accounts_items`
   ADD CONSTRAINT `tw_accounts_items_ibfk_1` FOREIGN KEY (`ItemID`) REFERENCES `tw_items_list` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `tw_accounts_items_ibfk_2` FOREIGN KEY (`UserID`) REFERENCES `tw_accounts_data` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
--- Ограничения внешнего ключа таблицы `tw_accounts_mailbox`
+-- Constraints for table `tw_accounts_mailbox`
 --
 ALTER TABLE `tw_accounts_mailbox`
   ADD CONSTRAINT `tw_accounts_mailbox_ibfk_1` FOREIGN KEY (`UserID`) REFERENCES `tw_accounts_data` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `tw_accounts_mailbox_ibfk_2` FOREIGN KEY (`ItemID`) REFERENCES `tw_items_list` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
--- Ограничения внешнего ключа таблицы `tw_accounts_mining`
+-- Constraints for table `tw_accounts_mining`
 --
 ALTER TABLE `tw_accounts_mining`
   ADD CONSTRAINT `tw_accounts_mining_ibfk_1` FOREIGN KEY (`UserID`) REFERENCES `tw_accounts_data` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
--- Ограничения внешнего ключа таблицы `tw_accounts_quests`
+-- Constraints for table `tw_accounts_quests`
 --
 ALTER TABLE `tw_accounts_quests`
   ADD CONSTRAINT `tw_accounts_quests_ibfk_3` FOREIGN KEY (`UserID`) REFERENCES `tw_accounts_data` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `tw_accounts_quests_ibfk_4` FOREIGN KEY (`QuestID`) REFERENCES `tw_quests_list` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
--- Ограничения внешнего ключа таблицы `tw_accounts_skills`
+-- Constraints for table `tw_accounts_skills`
 --
 ALTER TABLE `tw_accounts_skills`
   ADD CONSTRAINT `tw_accounts_skills_ibfk_1` FOREIGN KEY (`SkillID`) REFERENCES `tw_skills_list` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `tw_accounts_skills_ibfk_2` FOREIGN KEY (`UserID`) REFERENCES `tw_accounts_data` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
--- Ограничения внешнего ключа таблицы `tw_aethers`
+-- Constraints for table `tw_aethers`
 --
 ALTER TABLE `tw_aethers`
   ADD CONSTRAINT `tw_aethers_ibfk_1` FOREIGN KEY (`WorldID`) REFERENCES `enum_worlds` (`WorldID`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
--- Ограничения внешнего ключа таблицы `tw_bots_info`
+-- Constraints for table `tw_bots_info`
 --
 ALTER TABLE `tw_bots_info`
   ADD CONSTRAINT `tw_bots_info_ibfk_1` FOREIGN KEY (`SlotArmor`) REFERENCES `tw_items_list` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -2227,7 +2220,7 @@ ALTER TABLE `tw_bots_info`
   ADD CONSTRAINT `tw_bots_info_ibfk_6` FOREIGN KEY (`SlotRifle`) REFERENCES `tw_items_list` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
--- Ограничения внешнего ключа таблицы `tw_bots_mobs`
+-- Constraints for table `tw_bots_mobs`
 --
 ALTER TABLE `tw_bots_mobs`
   ADD CONSTRAINT `tw_bots_mobs_ibfk_1` FOREIGN KEY (`BotID`) REFERENCES `tw_bots_info` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -2239,7 +2232,7 @@ ALTER TABLE `tw_bots_mobs`
   ADD CONSTRAINT `tw_bots_mobs_ibfk_9` FOREIGN KEY (`it_drop_0`) REFERENCES `tw_items_list` (`ID`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 --
--- Ограничения внешнего ключа таблицы `tw_bots_npc`
+-- Constraints for table `tw_bots_npc`
 --
 ALTER TABLE `tw_bots_npc`
   ADD CONSTRAINT `tw_bots_npc_ibfk_1` FOREIGN KEY (`BotID`) REFERENCES `tw_bots_info` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -2247,7 +2240,7 @@ ALTER TABLE `tw_bots_npc`
   ADD CONSTRAINT `tw_bots_npc_ibfk_5` FOREIGN KEY (`GiveQuestID`) REFERENCES `tw_quests_list` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
--- Ограничения внешнего ключа таблицы `tw_bots_quest`
+-- Constraints for table `tw_bots_quest`
 --
 ALTER TABLE `tw_bots_quest`
   ADD CONSTRAINT `tw_bots_quest_ibfk_1` FOREIGN KEY (`BotID`) REFERENCES `tw_bots_info` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -2262,40 +2255,40 @@ ALTER TABLE `tw_bots_quest`
   ADD CONSTRAINT `tw_bots_quest_ibfk_9` FOREIGN KEY (`WorldID`) REFERENCES `enum_worlds` (`WorldID`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 --
--- Ограничения внешнего ключа таблицы `tw_crafts_list`
+-- Constraints for table `tw_crafts_list`
 --
 ALTER TABLE `tw_crafts_list`
   ADD CONSTRAINT `tw_crafts_list_ibfk_1` FOREIGN KEY (`ItemID`) REFERENCES `tw_items_list` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `tw_crafts_list_ibfk_2` FOREIGN KEY (`WorldID`) REFERENCES `enum_worlds` (`WorldID`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
--- Ограничения внешнего ключа таблицы `tw_dungeons`
+-- Constraints for table `tw_dungeons`
 --
 ALTER TABLE `tw_dungeons`
   ADD CONSTRAINT `tw_dungeons_ibfk_1` FOREIGN KEY (`WorldID`) REFERENCES `enum_worlds` (`WorldID`) ON DELETE NO ACTION ON UPDATE CASCADE;
 
 --
--- Ограничения внешнего ключа таблицы `tw_dungeons_door`
+-- Constraints for table `tw_dungeons_door`
 --
 ALTER TABLE `tw_dungeons_door`
   ADD CONSTRAINT `tw_dungeons_door_ibfk_1` FOREIGN KEY (`DungeonID`) REFERENCES `tw_dungeons` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `tw_dungeons_door_ibfk_2` FOREIGN KEY (`BotID`) REFERENCES `tw_bots_info` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
--- Ограничения внешнего ключа таблицы `tw_dungeons_records`
+-- Constraints for table `tw_dungeons_records`
 --
 ALTER TABLE `tw_dungeons_records`
   ADD CONSTRAINT `tw_dungeons_records_ibfk_1` FOREIGN KEY (`UserID`) REFERENCES `tw_accounts_data` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `tw_dungeons_records_ibfk_2` FOREIGN KEY (`DungeonID`) REFERENCES `tw_dungeons` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
--- Ограничения внешнего ключа таблицы `tw_guilds`
+-- Constraints for table `tw_guilds`
 --
 ALTER TABLE `tw_guilds`
   ADD CONSTRAINT `tw_guilds_ibfk_1` FOREIGN KEY (`UserID`) REFERENCES `tw_accounts_data` (`ID`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 --
--- Ограничения внешнего ключа таблицы `tw_guilds_decorations`
+-- Constraints for table `tw_guilds_decorations`
 --
 ALTER TABLE `tw_guilds_decorations`
   ADD CONSTRAINT `tw_guilds_decorations_ibfk_2` FOREIGN KEY (`ItemID`) REFERENCES `tw_items_list` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -2303,26 +2296,26 @@ ALTER TABLE `tw_guilds_decorations`
   ADD CONSTRAINT `tw_guilds_decorations_ibfk_4` FOREIGN KEY (`HouseID`) REFERENCES `tw_guilds_houses` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
--- Ограничения внешнего ключа таблицы `tw_guilds_history`
+-- Constraints for table `tw_guilds_history`
 --
 ALTER TABLE `tw_guilds_history`
   ADD CONSTRAINT `tw_guilds_history_ibfk_1` FOREIGN KEY (`GuildID`) REFERENCES `tw_guilds` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
--- Ограничения внешнего ключа таблицы `tw_guilds_houses`
+-- Constraints for table `tw_guilds_houses`
 --
 ALTER TABLE `tw_guilds_houses`
   ADD CONSTRAINT `tw_guilds_houses_ibfk_1` FOREIGN KEY (`WorldID`) REFERENCES `enum_worlds` (`WorldID`) ON UPDATE CASCADE,
   ADD CONSTRAINT `tw_guilds_houses_ibfk_2` FOREIGN KEY (`GuildID`) REFERENCES `tw_guilds` (`ID`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 --
--- Ограничения внешнего ключа таблицы `tw_guilds_ranks`
+-- Constraints for table `tw_guilds_ranks`
 --
 ALTER TABLE `tw_guilds_ranks`
   ADD CONSTRAINT `tw_guilds_ranks_ibfk_1` FOREIGN KEY (`GuildID`) REFERENCES `tw_guilds` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
--- Ограничения внешнего ключа таблицы `tw_houses`
+-- Constraints for table `tw_houses`
 --
 ALTER TABLE `tw_houses`
   ADD CONSTRAINT `tw_houses_ibfk_1` FOREIGN KEY (`PlantID`) REFERENCES `tw_items_list` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -2330,7 +2323,7 @@ ALTER TABLE `tw_houses`
   ADD CONSTRAINT `tw_houses_ibfk_3` FOREIGN KEY (`UserID`) REFERENCES `tw_accounts_data` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
--- Ограничения внешнего ключа таблицы `tw_houses_decorations`
+-- Constraints for table `tw_houses_decorations`
 --
 ALTER TABLE `tw_houses_decorations`
   ADD CONSTRAINT `tw_houses_decorations_ibfk_1` FOREIGN KEY (`HouseID`) REFERENCES `tw_houses` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -2338,7 +2331,7 @@ ALTER TABLE `tw_houses_decorations`
   ADD CONSTRAINT `tw_houses_decorations_ibfk_3` FOREIGN KEY (`WorldID`) REFERENCES `enum_worlds` (`WorldID`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
--- Ограничения внешнего ключа таблицы `tw_items_list`
+-- Constraints for table `tw_items_list`
 --
 ALTER TABLE `tw_items_list`
   ADD CONSTRAINT `tw_items_list_ibfk_1` FOREIGN KEY (`Type`) REFERENCES `enum_items_types` (`TypeID`) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -2347,14 +2340,14 @@ ALTER TABLE `tw_items_list`
   ADD CONSTRAINT `tw_items_list_ibfk_4` FOREIGN KEY (`Attribute1`) REFERENCES `tw_attributs` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
--- Ограничения внешнего ключа таблицы `tw_logics_worlds`
+-- Constraints for table `tw_logics_worlds`
 --
 ALTER TABLE `tw_logics_worlds`
   ADD CONSTRAINT `tw_logics_worlds_ibfk_1` FOREIGN KEY (`WorldID`) REFERENCES `enum_worlds` (`WorldID`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `tw_logics_worlds_ibfk_2` FOREIGN KEY (`ParseInt`) REFERENCES `tw_items_list` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
--- Ограничения внешнего ключа таблицы `tw_positions_mining`
+-- Constraints for table `tw_positions_mining`
 --
 ALTER TABLE `tw_positions_mining`
   ADD CONSTRAINT `tw_positions_mining_ibfk_1` FOREIGN KEY (`ItemID`) REFERENCES `tw_items_list` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -2363,21 +2356,28 @@ ALTER TABLE `tw_positions_mining`
   ADD CONSTRAINT `tw_positions_mining_ibfk_4` FOREIGN KEY (`WorldID`) REFERENCES `enum_worlds` (`WorldID`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
--- Ограничения внешнего ключа таблицы `tw_positions_plant`
+-- Constraints for table `tw_positions_plant`
 --
 ALTER TABLE `tw_positions_plant`
   ADD CONSTRAINT `tw_positions_plant_ibfk_1` FOREIGN KEY (`ItemID`) REFERENCES `tw_items_list` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `tw_positions_plant_ibfk_2` FOREIGN KEY (`WorldID`) REFERENCES `enum_worlds` (`WorldID`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
--- Ограничения внешнего ключа таблицы `tw_warehouses`
+-- Constraints for table `tw_voucher_redeemed`
+--
+ALTER TABLE `tw_voucher_redeemed`
+  ADD CONSTRAINT `tw_voucher_redeemed_ibfk_1` FOREIGN KEY (`UserID`) REFERENCES `tw_accounts` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `tw_voucher_redeemed_ibfk_2` FOREIGN KEY (`VoucherID`) REFERENCES `tw_voucher` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `tw_warehouses`
 --
 ALTER TABLE `tw_warehouses`
   ADD CONSTRAINT `tw_warehouses_ibfk_1` FOREIGN KEY (`Currency`) REFERENCES `tw_items_list` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `tw_warehouses_ibfk_2` FOREIGN KEY (`WorldID`) REFERENCES `enum_worlds` (`WorldID`);
 
 --
--- Ограничения внешнего ключа таблицы `tw_warehouse_items`
+-- Constraints for table `tw_warehouse_items`
 --
 ALTER TABLE `tw_warehouse_items`
   ADD CONSTRAINT `tw_warehouse_items_ibfk_1` FOREIGN KEY (`WarehouseID`) REFERENCES `tw_warehouses` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE,
@@ -2385,7 +2385,7 @@ ALTER TABLE `tw_warehouse_items`
   ADD CONSTRAINT `tw_warehouse_items_ibfk_3` FOREIGN KEY (`RequiredItemID`) REFERENCES `tw_items_list` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
--- Ограничения внешнего ключа таблицы `tw_world_swap`
+-- Constraints for table `tw_world_swap`
 --
 ALTER TABLE `tw_world_swap`
   ADD CONSTRAINT `tw_world_swap_ibfk_1` FOREIGN KEY (`WorldID`) REFERENCES `enum_worlds` (`WorldID`) ON DELETE CASCADE ON UPDATE CASCADE,
