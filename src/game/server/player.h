@@ -161,7 +161,7 @@ public:
 
 	void SetSnapHealthTick(int Sec);
 	bool IsSameMotdMenu(int Menulist) const { return m_pMotdMenu && m_pMotdMenu->GetMenulist() == Menulist; }
-	void CloseMotdMenu() { m_pMotdMenu->ClearMotd(m_pGS, this); }
+	void CloseMotdMenu() { m_pMotdMenu->ClearMotd(Server(), this); }
 
 	void ChangeWorld(int WorldID, std::optional<vec2> newWorldPosition = std::nullopt) const;
 };

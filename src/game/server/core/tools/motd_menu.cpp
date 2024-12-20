@@ -113,7 +113,7 @@ void MotdMenu::Tick()
 
 			if(command == "CLOSE")
 			{
-				ClearMotd(pGS, pChar->GetPlayer());
+				ClearMotd(pServer, pChar->GetPlayer());
 				return;
 			}
 
@@ -134,7 +134,7 @@ void MotdMenu::Tick()
 			{
 				if(m_Flags & MTFLAG_CLOSE_ON_SELECT)
 				{
-					ClearMotd(pGS, pChar->GetPlayer());
+					ClearMotd(pServer, pChar->GetPlayer());
 					return;
 				}
 
@@ -157,7 +157,7 @@ void MotdMenu::Tick()
 	{
 		m_LastBuffer = buffer;
 		m_ResendMotdTick = pServer->Tick() + pServer->TickSpeed();
-		pGS->SendMotd(m_ClientID, buffer.c_str());
+		pServer->SendMotd(m_ClientID, buffer.c_str());
 	}
 	else if(pServer->Tick() >= m_ResendMotdTick)
 	{
@@ -187,10 +187,10 @@ void MotdMenu::Send(int Menulist)
 	}
 }
 
-void MotdMenu::ClearMotd(CGS* pGS, CPlayer* pPlayer)
+void MotdMenu::ClearMotd(IServer* pServer, CPlayer* pPlayer)
 {
 	m_Points.clear();
-	pGS->SendMotd(m_ClientID, "");
+	pServer->SendMotd(m_ClientID, "");
 	if(pPlayer && pPlayer->m_pMotdMenu)
 	{
 		pPlayer->m_pMotdMenu.reset();

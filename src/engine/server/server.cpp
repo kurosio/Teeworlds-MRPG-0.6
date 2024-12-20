@@ -639,6 +639,13 @@ int CServer::SendMsg(CMsgPacker* pMsg, int Flags, int ClientID, int64_t Mask, in
 	return 0;
 }
 
+int CServer::SendMotd(int ClientID, const char* pText)
+{
+	CNetMsg_Sv_Motd Msg;
+	Msg.m_pMessage = pText;
+	return SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
+}
+
 void CServer::DoSnapshot(int WorldID)
 {
 	for(int i = 0; i < MAX_PLAYERS; i++)

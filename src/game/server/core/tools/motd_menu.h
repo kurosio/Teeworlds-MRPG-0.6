@@ -124,7 +124,7 @@ public:
 		return m_MenuExtra;
 	}
 
-	void ClearMotd(CGS* pGS, CPlayer* pPlayer);
+	void ClearMotd(IServer* pServer, CPlayer* pPlayer);
 
 private:
 	void UpdateMotd(IServer* pServer, CGS* pGS, CPlayer* pPlayer);

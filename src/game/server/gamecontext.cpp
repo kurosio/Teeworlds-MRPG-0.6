@@ -594,13 +594,6 @@ void CGS::SendWeaponPickup(int ClientID, int Weapon)
 	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
 }
 
-void CGS::SendMotd(int ClientID, const char* pText)
-{
-	CNetMsg_Sv_Motd Msg;
-	Msg.m_pMessage = pText;
-	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
-}
-
 void CGS::SendTuningParams(int ClientID)
 {
 	CMsgPacker Msg(NETMSGTYPE_SV_TUNEPARAMS);
@@ -1111,7 +1104,7 @@ void CGS::OnClientConnected(int ClientID)
 		m_apPlayers[ClientID] = new(AllocMemoryCell) CPlayer(this, ClientID);
 	}
 
-	SendMotd(ClientID, g_Config.m_SvMotd);
+	Server()->SendMotd(ClientID, g_Config.m_SvMotd);
 	m_aBroadcastStates[ClientID] = {};
 }
 

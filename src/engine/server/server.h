@@ -217,6 +217,7 @@ public:
 
 	int GetClientVersion(int ClientID) const override;
 	int SendMsg(CMsgPacker* pMsg, int Flags, int ClientID, int64_t Mask = -1, int WorldID = -1) override;
+	int SendMotd(int ClientID, const char *pText) override;
 
 	void DoSnapshot(int WorldID);
 
