@@ -68,7 +68,7 @@ class CWorld
 {
 	friend class CMultiWorlds;
 
-	int m_WorldID {};
+	int m_ID {};
 	char m_aName[64] {};
 	char m_aPath[512] {};
 	class IGameServer* m_pGameServer {};
@@ -76,14 +76,13 @@ class CWorld
 	CWorldDetail m_Detail{};
 
 public:
-	CWorld(int WorldID, const std::string& Name, const std::string& Path, const CWorldDetail& Data)
+	CWorld(int ID, const std::string& Name, const std::string& Path, const CWorldDetail& Data)
 	{
-		m_WorldID = WorldID;
+		m_ID = ID;
 		m_Detail = Data;
-		m_pMapDetail = new CMapDetail(this);
-
 		str_copy(m_aName, Name.c_str(), sizeof(m_aName));
 		str_copy(m_aPath, Path.c_str(), sizeof(m_aPath));
+		m_pMapDetail = new CMapDetail(this);
 	}
 	~CWorld();
 

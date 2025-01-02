@@ -461,8 +461,6 @@ enum
 	itTicketResetClassStats        = 21,    // Ticket to reset the statistics of class upgrades
 	itTicketResetWeaponStats       = 23,    // Ticket to reset the statistics cartridge upgrade
 	itTicketDiscountCraft          = 24,    // Discount ticket for crafting
-	itRandomHomeDecoration         = 26,    // Random home decor
-	itRandomRelicsBox              = 58,    // Random Relics box
 
 	// potions
 	itPotionManaRegen              = 14,    // Mana regeneration potion
@@ -500,7 +498,7 @@ enum
 	itShotgun                      = 4,     // Equipment Shotgun
 	itGrenade                      = 5,     // Equipment Grenade
 	itPizdamet                     = 100,   // Equipment Pizdamet
-	itLaser                        = 6,     // Equipment Rifle
+	itRifle                        = 6,     // Equipment Rifle
 	itRifleWallPusher              = 101,   // Equipment Rifle Plazma wall
 	itRifleMagneticPulse           = 103,   // Equpment Magnetic pulse rifle
 

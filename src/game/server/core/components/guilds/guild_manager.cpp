@@ -989,7 +989,7 @@ void CGuildManager::OnTimePeriod(ETimePeriod Period)
 
 void CGuildManager::InitWars() const
 {
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_GUILDS_WARS_TABLE);
+	/*ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_GUILDS_WARS_TABLE);
 	if(pRes->next())
 	{
 		// Get the ID of the guild that is not the current guild
@@ -1012,7 +1012,7 @@ void CGuildManager::InitWars() const
 		// Create instance
 		CGuildWarHandler* pWarHandler = CGuildWarHandler::CreateElement();
 		pWarHandler->Init({ pGuild1, pGuild2, Score1 }, { pGuild2, pGuild1, Score2 }, TimeUntilEnd);
-	}
+	}*/
 }
 
 void CGuildManager::Create(CPlayer* pPlayer, const char* pGuildName) const

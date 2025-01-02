@@ -55,16 +55,16 @@ bool CMultiWorlds::Init(CWorld* pNewWorld, IKernel* pKernel)
 	bool RegisterFail = false;
 	if(m_NextIsReloading) // reregister
 	{
-		RegisterFail = RegisterFail || !pKernel->ReregisterInterface(pNewWorld->m_pMapDetail->m_pMap, pNewWorld->m_WorldID);
-		RegisterFail = RegisterFail || !pKernel->ReregisterInterface(static_cast<IMap*>(pNewWorld->m_pMapDetail->m_pMap), pNewWorld->m_WorldID);
-		RegisterFail = RegisterFail || !pKernel->ReregisterInterface(pNewWorld->m_pGameServer, pNewWorld->m_WorldID);
+		RegisterFail = RegisterFail || !pKernel->ReregisterInterface(pNewWorld->m_pMapDetail->m_pMap, pNewWorld->m_ID);
+		RegisterFail = RegisterFail || !pKernel->ReregisterInterface(static_cast<IMap*>(pNewWorld->m_pMapDetail->m_pMap), pNewWorld->m_ID);
+		RegisterFail = RegisterFail || !pKernel->ReregisterInterface(pNewWorld->m_pGameServer, pNewWorld->m_ID);
 	}
 	else // register
 	{
 		pNewWorld->m_pMapDetail->m_pMap = CreateEngineMap();
-		RegisterFail = RegisterFail || !pKernel->RegisterInterface(pNewWorld->m_pMapDetail->m_pMap, false, pNewWorld->m_WorldID);
-		RegisterFail = RegisterFail || !pKernel->RegisterInterface(static_cast<IMap*>(pNewWorld->m_pMapDetail->m_pMap), false, pNewWorld->m_WorldID);
-		RegisterFail = RegisterFail || !pKernel->RegisterInterface(pNewWorld->m_pGameServer, false, pNewWorld->m_WorldID);
+		RegisterFail = RegisterFail || !pKernel->RegisterInterface(pNewWorld->m_pMapDetail->m_pMap, false, pNewWorld->m_ID);
+		RegisterFail = RegisterFail || !pKernel->RegisterInterface(static_cast<IMap*>(pNewWorld->m_pMapDetail->m_pMap), false, pNewWorld->m_ID);
+		RegisterFail = RegisterFail || !pKernel->RegisterInterface(pNewWorld->m_pGameServer, false, pNewWorld->m_ID);
 	}
 
 	m_WasInitilized++;
@@ -79,7 +79,7 @@ bool CMultiWorlds::LoadFromDB(IKernel* pKernel)
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_worlds");
  	while(pRes->next())
 	{
-		const int WorldID = pRes->getInt("WorldID");
+		const int WorldID = pRes->getInt("ID");
 		dbg_assert(WorldID < ENGINE_MAX_WORLDS, "exceeded pool of allocated memory for worlds");
 
 		std::string Name = pRes->getString("Name");
@@ -94,7 +94,7 @@ bool CMultiWorlds::LoadFromDB(IKernel* pKernel)
 		{
 			str_copy(m_apWorlds[WorldID]->m_aName, Name.c_str(), sizeof(m_apWorlds[WorldID]->m_aName));
 			str_copy(m_apWorlds[WorldID]->m_aPath, Path.c_str(), sizeof(m_apWorlds[WorldID]->m_aPath));
-			m_apWorlds[WorldID]->m_WorldID = WorldID;
+			m_apWorlds[WorldID]->m_ID = WorldID;
 			m_apWorlds[WorldID]->m_Detail = WorldDetail;
 		}
 		else
