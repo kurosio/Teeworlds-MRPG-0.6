@@ -13,50 +13,41 @@
  * * items - collection of items (id, value, enchant, price)
  */
 
-void CWarehouse::Init(const std::string& Name, const std::string& Properties, vec2 Pos, int Currency, int WorldID)
+void CWarehouse::Init(const std::string& Name, const DBSet& Type, const std::string& Properties, vec2 Pos, int Currency, int WorldID)
 {
 	str_copy(m_aName, Name.c_str(), sizeof(m_aName));
 	m_Pos = Pos;
 	m_Currency = Currency;
 	m_WorldID = WorldID;
 
-	InitProperties(Properties);
+	InitProperties(Type, Properties);
 }
 
-void CWarehouse::InitProperties(const std::string& Properties)
+void CWarehouse::InitProperties(const DBSet& Type, const std::string& Properties)
 {
 	// check properties exist
 	dbg_assert(!Properties.empty(), "The properties string is empty");
 
+	// init type
+	m_Flags = WF_NONE;
+
+	if(Type.hasSet("buying"))
+	{
+		m_Flags |= WF_BUY;
+	}
+	else if(Type.hasSet("selling"))
+	{
+		m_Flags |= WF_SELL;
+	}
+	
+	if(Type.hasSet("storage"))
+	{
+		m_Flags |= WF_STORAGE;
+	}
+
 	// parse properties
 	mystd::json::parse(Properties, [this](nlohmann::json& pJson)
 	{
-		// check importal properties values
-		std::string Type = pJson.value("type", "");
-		dbg_assert(!Type.empty(), "The 'type' property is missing or empty");
-
-		// intialize warehouse flags
-		if(Type == "buying")
-		{
-			m_Flags = WF_BUY;
-		}
-		else if(Type == "selling")
-		{
-			m_Flags = WF_SELL;
-		}
-		else if(Type == "buying_storage")
-		{
-			m_Flags = WF_BUY_STORAGE;
-		}
-		else if(Type == "selling_storage")
-		{
-			m_Flags = WF_SELL_STORAGE;
-		}
-		else
-		{
-			dbg_assert(false, "Invalid warehouse type");
-		}
-
 		// initialize trade list
 		if(m_Flags & (WF_BUY | WF_SELL))
 		{

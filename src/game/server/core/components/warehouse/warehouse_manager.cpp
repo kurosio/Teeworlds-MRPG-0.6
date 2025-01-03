@@ -14,12 +14,13 @@ void CWarehouseManager::OnPreInit()
 	{
 		const auto ID = pRes->getInt("ID");
 		const auto Name = pRes->getString("Name");
+		const auto Type = DBSet(pRes->getString("Type"));
 		const auto Properties = pRes->getString("Properties");
 		const auto Pos = vec2((float)pRes->getInt("PosX"), (float)pRes->getInt("PosY"));
 		const auto Currency = pRes->getInt("Currency");
 		const auto WorldID = pRes->getInt("WorldID");
 
-		CWarehouse::CreateElement(ID)->Init(Name, Properties, Pos, Currency, WorldID);
+		CWarehouse::CreateElement(ID)->Init(Name, Type, Properties, Pos, Currency, WorldID);
 	}
 }
 

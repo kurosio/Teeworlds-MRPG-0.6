@@ -131,8 +131,8 @@ public:
 	}
 
 	// initialize
-	void Init(const std::string& Name, const std::string& Properties, vec2 Pos, int Currency, int WorldID);
-	void InitProperties(const std::string& Properties);
+	void Init(const std::string& Name, const DBSet& Type, const std::string& Properties, vec2 Pos, int Currency, int WorldID);
+	void InitProperties(const DBSet& Type, const std::string& Properties);
 	void SaveProperties();
 
 	// get identificator
