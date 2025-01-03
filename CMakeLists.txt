@@ -218,6 +218,7 @@ find_package(OpenSSL)
 find_package(MySQL)
 #find_package(DiscordGameSDK)
 #find_package(GLEW)
+find_package(SQLite3)
 
 ## boost
 if(POLICY CMP0167)
@@ -280,6 +281,7 @@ endif()
 if(SERVER_COMPILE)
   show_dependency_status("MySQL" MYSQL TRUE)
   show_dependency_status("OpenSSL" OPENSSL FALSE)
+  show_dependency_status("SQLite3" SQLite3 TRUE)
 endif()
 #if(CLIENT_COMPILE)
 #  show_dependency_status("Freetype" FREETYPE TRUE)
@@ -439,6 +441,7 @@ set(COPY_FILES_SERVER
   ${CURL_COPY_FILES}
   ${MYSQL_COPY_FILES}
   ${OPENSSL_COPY_FILES}
+  ${SQLite3_COPY_FILES}
 )
 
 file(COPY #${COPY_FILES_CLIENT} 
@@ -730,10 +733,12 @@ if(SERVER_COMPILE)
   set(SERVER_INCLUDES_DIRS
     ${Boost_INCLUDE_DIRS}
     ${MYSQL_INCLUDE_DIRS}
+    ${SQLite3_INCLUDE_DIRS}
     ${LIBMAXMINDDB_INCLUDE_DIR}
   )
   set(SERVER_LIBRARIES
     ${MYSQL_LIBRARIES}
+    ${SQLite3_LIBRARIES}
     ${Boost_LIBRARIES} # empty, but will be here for the future
   )
   set(DEPS_SERVER ${DEPS})

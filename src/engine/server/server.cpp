@@ -26,6 +26,8 @@
 #include "register.h"
 #include "server.h"
 
+#include "sqlite3/sqlite_handler.h"
+
 #if defined(CONF_FAMILY_WINDOWS)
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
