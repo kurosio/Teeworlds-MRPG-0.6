@@ -805,8 +805,8 @@ int CServer::NewClientCallback(int ClientID, void* pUser)
 	pThis->m_aClients[ClientID].m_Authed = AUTHED_NO;
 	pThis->m_aClients[ClientID].m_AuthTries = 0;
 	pThis->m_aClients[ClientID].m_pRconCmdToSend = 0;
-	pThis->m_aClients[ClientID].m_OldWorldID = MAIN_WORLD_ID;
-	pThis->m_aClients[ClientID].m_WorldID = MAIN_WORLD_ID;
+	pThis->m_aClients[ClientID].m_OldWorldID = g_Config.m_SvShowWorldWhenConnect;
+	pThis->m_aClients[ClientID].m_WorldID = g_Config.m_SvShowWorldWhenConnect;
 	pThis->m_aClients[ClientID].m_ChangeWorld = false;
 	pThis->m_aClients[ClientID].m_ClientVersion = 0;
 	pThis->m_aClients[ClientID].m_IsClientMRPG = false;
@@ -853,8 +853,8 @@ int CServer::DelClientCallback(int ClientID, const char* pReason, void* pUser)
 	pThis->m_aClients[ClientID].m_Authed = AUTHED_NO;
 	pThis->m_aClients[ClientID].m_AuthTries = 0;
 	pThis->m_aClients[ClientID].m_pRconCmdToSend = nullptr;
-	pThis->m_aClients[ClientID].m_OldWorldID = MAIN_WORLD_ID;
-	pThis->m_aClients[ClientID].m_WorldID = MAIN_WORLD_ID;
+	pThis->m_aClients[ClientID].m_OldWorldID = g_Config.m_SvShowWorldWhenConnect;
+	pThis->m_aClients[ClientID].m_WorldID = g_Config.m_SvShowWorldWhenConnect;
 	pThis->m_aClients[ClientID].m_ChangeWorld = false;
 	pThis->m_aClients[ClientID].m_ClientVersion = 0;
 	pThis->m_aClients[ClientID].m_IsClientMRPG = false;
