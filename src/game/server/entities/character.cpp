@@ -283,8 +283,13 @@ bool CCharacter::FireHammer(vec2 Direction, vec2 ProjStartPos)
 		const int Num = GS()->m_World.FindEntities(ProjStartPos, GetRadius() * 128.f, (CEntity**)apEnts, MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
 		for(int i = 0; i < Num; ++i)
 		{
+			// skip self damage
 			const auto* pTarget = apEnts[i];
-			if((pTarget == this) || GS()->Collision()->IntersectLineWithInvisible(ProjStartPos, pTarget->m_Pos, nullptr, nullptr))
+			if(m_ClientID == pTarget->GetClientID())
+				continue;
+
+			// check intersect line
+			if(GS()->Collision()->IntersectLineWithInvisible(ProjStartPos, pTarget->m_Pos, nullptr, nullptr))
 				continue;
 
 			if(!pTarget->IsAllowedPVP(m_ClientID))
@@ -292,14 +297,17 @@ bool CCharacter::FireHammer(vec2 Direction, vec2 ProjStartPos)
 
 			const auto Dir = length(pTarget->m_Pos - m_Pos) > 0.0f ? normalize(pTarget->m_Pos - m_Pos) : vec2(0.f, -1.f);
 			const auto Force = vec2(0.f, -1.f) + normalize(Dir + vec2(0.f, -1.1f)) * 10.0f;
+			
+			// create flying point
 			auto* pPoint = new CEntityFlyingPoint(&GS()->m_World, ProjStartPos, Force, pTarget->GetClientID(), m_ClientID);
-
 			pPoint->Register([this, Force](CPlayer* pFrom, CPlayer* pPlayer)
 			{
 				auto* pChar = pPlayer->GetCharacter();
 				GS()->CreateDeath(pChar->GetPos(), pPlayer->GetCID());
 				pChar->TakeDamage(Force, 0, pFrom->GetCID(), WEAPON_HAMMER);
 			});
+
+			// reload
 			m_ReloadTimer = Server()->TickSpeed() / 3;
 		}
 
@@ -315,12 +323,18 @@ bool CCharacter::FireHammer(vec2 Direction, vec2 ProjStartPos)
 		// apply damage and force to all nearby characters
 		for(auto* pTarget = (CCharacter*)GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); pTarget; pTarget = (CCharacter*)pTarget->TypeNext())
 		{
-			if(!pTarget->IsAllowedPVP(m_ClientID) || pTarget->GetClientID() == m_ClientID)
+			// skip self damage
+			if(m_ClientID == pTarget->GetClientID())
+				continue;
+
+			if(!pTarget->IsAllowedPVP(m_ClientID))
 				continue;
 				
 			const auto Dist = distance(pTarget->m_Pos, m_Pos);
 			if(Dist < Radius)
+			{
 				GS()->CreateExplosion(pTarget->GetPos(), m_ClientID, WEAPON_HAMMER, 1);
+			}
 		}
 
 		// move and visual effect
@@ -335,8 +349,12 @@ bool CCharacter::FireHammer(vec2 Direction, vec2 ProjStartPos)
 	const int Num = GS()->m_World.FindEntities(ProjStartPos, GetRadius() * Radius, (CEntity**)apEnts, MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
 	for(int i = 0; i < Num; ++i)
 	{
+		// skip self damage
 		auto* pTarget = apEnts[i];
-		if((pTarget == this) || GS()->Collision()->IntersectLineWithInvisible(ProjStartPos, pTarget->m_Pos, nullptr, nullptr))
+		if(m_ClientID == pTarget->GetClientID())
+			continue;
+
+		if(GS()->Collision()->IntersectLineWithInvisible(ProjStartPos, pTarget->m_Pos, nullptr, nullptr))
 			continue;
 
 		if(!pTarget->IsAllowedPVP(m_ClientID) || pTarget->m_Core.m_CollisionDisabled)
@@ -461,7 +479,11 @@ bool CCharacter::FireGrenade(vec2 Direction, vec2 ProjStartPos)
 
 			for(auto* pChar = (CCharacter*)pBase->GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); pChar; pChar = (CCharacter*)pChar->TypeNext())
 			{
-				if(pBase->GetClientID() == pChar->GetPlayer()->GetCID() || !pChar->IsAllowedPVP(pBase->GetClientID()))
+				// skip self damage
+				if(pBase->GetClientID() == pChar->GetPlayer()->GetCID())
+					continue;
+
+				if(!pChar->IsAllowedPVP(pBase->GetClientID()))
 					continue;
 
 				// check distance
@@ -563,6 +585,10 @@ bool CCharacter::FireRifle(vec2 Direction, vec2 ProjStartPos)
 			// hit character
 			for(auto* pChar = (CCharacter*)pBase->GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); pChar; pChar = (CCharacter*)pChar->TypeNext())
 			{
+				// skip self damage
+				if(pBase->GetClientID() == pChar->GetPlayer()->GetCID())
+					continue;
+
 				if(!pChar->IsAllowedPVP(pBase->GetClientID()))
 					continue;
 
@@ -632,6 +658,10 @@ bool CCharacter::FireRifle(vec2 Direction, vec2 ProjStartPos)
 			// hit character
 			for(const auto* pChar = (CCharacter*)pBase->GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); pChar; pChar = (CCharacter*)pChar->TypeNext())
 			{
+				// skip self damage
+				if(pBase->GetClientID() == pChar->GetPlayer()->GetCID())
+					continue;
+
 				if(!pChar->IsAllowedPVP(pBase->GetClientID()))
 					continue;
 

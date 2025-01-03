@@ -200,13 +200,18 @@ bool CCharacterBotAI::IsAllowedPVP(int FromID) const
 	if(!pFrom || FromID == m_pBotPlayer->GetCID())
 		return false;
 
+	// Skip invalid character
+	const auto* pFromChar = pFrom->GetCharacter();
+	if(!pFromChar)
+		return false;
+
 	// Check if damage is disabled for the current object or the object it is interacting with
-	if(m_Core.m_DamageDisabled || pFrom->GetCharacter()->m_Core.m_DamageDisabled)
+	if(m_Core.m_DamageDisabled || pFromChar->m_Core.m_DamageDisabled)
 		return false;
 
 	// disable damage on safe area
 	if(GS()->Collision()->GetCollisionFlagsAt(GetPos()) & CCollision::COLFLAG_SAFE
-		|| GS()->Collision()->GetCollisionFlagsAt(pFrom->GetCharacter()->GetPos()) & CCollision::COLFLAG_SAFE)
+		|| GS()->Collision()->GetCollisionFlagsAt(pFromChar->GetPos()) & CCollision::COLFLAG_SAFE)
 		return false;
 
 	return AI()->CanDamage(pFrom);
