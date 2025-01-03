@@ -514,6 +514,9 @@ enum
 	itShowCriticalDamage           = 34,    // Critical damage setting
 	itShowQuestStarNavigator       = 93,    // Show quest path when idle
 	itShowDetailGainMessages       = 98,    // Show detail gain messages
+
+	// special events
+	itTittleNewbie                 = 30,    // After tutorial game stage
 };
 
 // broadcast

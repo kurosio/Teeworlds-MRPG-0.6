@@ -1916,10 +1916,10 @@ bool CCharacter::IsWorldAccessible() const
 		}
 
 		// check finished tutorial
-		if(!pAccount->GetClass().HasProfession() && !GS()->IsPlayerInWorld(m_ClientID, TUTORIAL_WORLD_ID))
+		if(!m_pPlayer->GetItem(itTittleNewbie)->HasItem() && !GS()->IsPlayerInWorld(m_ClientID, TUTORIAL_WORLD_ID))
 		{
 			m_pPlayer->GetTempData().ClearTeleportPosition();
-			GS()->Chat(m_pPlayer->GetCID(), "You will need to take the training and select a class!");
+			GS()->Chat(m_pPlayer->GetCID(), "You need to complete the Tutorial.");
 			m_pPlayer->ChangeWorld(TUTORIAL_WORLD_ID);
 			return false;
 		}
