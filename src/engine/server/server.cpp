@@ -1659,7 +1659,7 @@ void CServer::UpdateRegisterServerInfo()
 
 	nlohmann::json JsServerInfo =
 	{
-		{"max_clients", (int)MAX_CLIENTS},
+		{"max_clients", (int)MAX_PLAYERS},
 		{"max_players", (int)MAX_PLAYERS},
 		{"passworded", g_Config.m_Password[0] != '\0' ? true : false},
 		{"game_type", "MRPG"},
