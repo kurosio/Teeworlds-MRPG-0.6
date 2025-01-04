@@ -1,3 +1,4 @@
+#include "entities/personal_door.h"
 #include "scenario_tutorial.h"
 
 #include <game/server/gamecontext.h>
@@ -32,6 +33,7 @@ void CTutorialScenario::OnSetupScenario()
 
 void CTutorialScenario::ProcessStep(const nlohmann::json& step)
 {
+	// check valid action
 	if(!step.contains("action") || !step["action"].is_string())
 	{
 		dbg_msg("scenario-tutorial", "Missing or invalid 'action' key in JSON");
@@ -48,6 +50,52 @@ void CTutorialScenario::ProcessStep(const nlohmann::json& step)
 			GetPlayer()->GetQuest(questID)->Reset();
 		}
 	}
+	// create new door
+	else if(action == "new_door")
+	{
+		bool Follow = step.value("follow", false);
+		std::string Key = step.value("key", "");
+		m_vpPersonalDoors[Key].m_Pos =
+		{
+			step["position"].value("x", 0.0f),
+			step["position"].value("y", 0.0f)
+		};
+
+		auto& newDoorStep = AddStep();
+		newDoorStep.WhenStarted([Key, this](auto*)
+		{
+			vec2 Pos = m_vpPersonalDoors[Key].m_Pos;
+			m_vpPersonalDoors[Key].m_EntPtr = std::make_unique<CEntityPersonalDoor>(&GS()->m_World, GetClientID(), Pos, vec2(0, -1));
+		});
+
+		if(Follow)
+		{
+			Message(0, "The door's locked!");
+			FixedCam(100, m_vpPersonalDoors[Key].m_Pos);
+		}
+	}
+	// remove door
+	else if(action == "remove_door")
+	{
+		bool Follow = step.value("follow", false);
+		std::string Key = step.value("key", "");
+		vec2 DoorPos = m_vpPersonalDoors[Key].m_Pos;
+
+		auto& removeDoorStep = AddStep();
+		removeDoorStep.WhenStarted([Follow, Key, this](auto*)
+		{
+			if(m_vpPersonalDoors.contains(Key))
+			{
+				m_vpPersonalDoors.erase(Key);
+			}
+		});
+
+		if(Follow)
+		{
+			Message(0, "The door's is oppened!");
+			FixedCam(100, DoorPos);
+		}
+	}
 	// message
 	else if(action == "message")
 	{
@@ -57,43 +105,45 @@ void CTutorialScenario::ProcessStep(const nlohmann::json& step)
 		Message(delay, text);
 	}
 	// emote message
-	else if(action == "emote_message")
+	else if(action == "emote")
 	{
-		int delay = step.value("delay", 0);
 		int emoteType = step.value("emote_type", (int)EMOTE_NORMAL);
 		int emoticonType = step.value("emoticon_type", -1);
-		std::string text = step.value("text", "");
 
-		EmoteMessage(delay, emoteType, emoticonType, text);
+		Emote(emoteType, emoticonType);
 	}
 	// teleport
 	else if(action == "teleport")
 	{
-		int delay = step.value("delay", 0);
-		vec2 position = { step["position"].value("x", 0.0f), step["position"].value("y", 0.0f) };
-		std::string text = step.value("text", "");
+		vec2 position = 
+		{
+			step["position"].value("x", 0.0f), 
+			step["position"].value("y", 0.0f) 
+		};
 
-		Teleport(delay, position, text);
+		Teleport(position);
 	}
 	// movement task
 	else if(action == "movement_task")
 	{
 		int delay = step.value("delay", 0);
-		vec2 position = { step["position"].value("x", 0.0f), step["position"].value("y", 0.0f) };
-		std::string lockViewText = step.value("lock_text", "");
+		vec2 position = 
+		{
+			step["position"].value("x", 0.0f), 
+			step["position"].value("y", 0.0f) 
+		};
 		std::string text = step.value("text", "");
-		bool loockView = step.value("lock_view", true);
+		std::string targetLookText = step.value("target_lock_text", "");
+		bool targetLook = step.value("target_look", true);
 
-		MovementTask(delay, position, lockViewText, text, loockView);
+		MovementTask(delay, position, targetLookText, text, targetLook);
 	}
 	// fixed cam
-	else if(action == "fixed_cam")
+	else if(action == "fix_cam")
 	{
 		int delay = step.value("delay", 0);
 		vec2 position = { step["position"].value("x", 0.0f), step["position"].value("y", 0.0f) };
-		std::string startText = step.value("start_text", "");
-		std::string endText = step.value("end_text", "");
-		FixedCam(delay, position, startText, endText);
+		FixedCam(delay, position);
 	}
 	// freeze movements
 	else if(action == "freeze_movements")
@@ -135,8 +185,7 @@ void CTutorialScenario::ProcessStep(const nlohmann::json& step)
 			}
 		}
 
-		std::string text = step.value("text", "");
-		Shootmarkers(markers, text);
+		Shootmarkers(markers);
 	}
 	else
 	{
@@ -144,10 +193,10 @@ void CTutorialScenario::ProcessStep(const nlohmann::json& step)
 	}
 }
 
-void CTutorialScenario::MovementTask(int delay, const vec2& pos, const std::string& lockViewText, const std::string& text, bool lockView)
+void CTutorialScenario::MovementTask(int delay, const vec2& pos, const std::string& targetLookText, const std::string& text, bool targetLook)
 {
 	// is has lockView
-	if(lockView)
+	if(targetLook)
 	{
 		MovingDisable(true);
 
@@ -156,7 +205,7 @@ void CTutorialScenario::MovementTask(int delay, const vec2& pos, const std::stri
 		{
 			m_MovementPos = pos;
 		});
-		lockStep.WhenActive([this, lockViewText](auto*)
+		lockStep.WhenActive([this, targetLookText](auto*)
 		{
 			if(Server()->Tick() % (Server()->TickSpeed() / 2) == 0)
 			{
@@ -164,7 +213,7 @@ void CTutorialScenario::MovementTask(int delay, const vec2& pos, const std::stri
 			}
 
 			GetPlayer()->LockedView().ViewLock(m_MovementPos, true);
-			SendBroadcast(lockViewText);
+			SendBroadcast(targetLookText);
 		});
 
 		MovingDisable(false);
@@ -191,31 +240,21 @@ void CTutorialScenario::MovementTask(int delay, const vec2& pos, const std::stri
 	});
 }
 
-void CTutorialScenario::FixedCam(int delay, const vec2& pos, const std::string& startMsg, const std::string& endMsg)
+void CTutorialScenario::FixedCam(int delay, const vec2& pos)
 {
 	auto& step = AddStep(delay);
-	step.WhenActive([this, pos, startMsg](auto*)
+	step.WhenActive([this, pos](auto*)
 	{
 		GetPlayer()->LockedView().ViewLock(pos, true);
-		SendBroadcast(startMsg);
 	});
-
-	if(!endMsg.empty())
-	{
-		step.WhenFinished([this, endMsg](auto*)
-		{
-			SendBroadcast(endMsg);
-		});
-	}
 }
 
-void CTutorialScenario::Teleport(int delay, const vec2& pos, const std::string& text)
+void CTutorialScenario::Teleport(const vec2& pos)
 {
-	auto& teleportStep = AddStep(delay);
-	teleportStep.WhenStarted([this, pos, text](auto*)
+	auto& teleportStep = AddStep();
+	teleportStep.WhenStarted([this, pos](auto*)
 	{
 		GetCharacter()->ChangePosition(pos);
-		SendBroadcast(text);
 	});
 }
 
@@ -229,25 +268,28 @@ void CTutorialScenario::MovingDisable(bool State)
 }
 
 
-void CTutorialScenario::Shootmarkers(const std::vector<std::pair<vec2, int>>& vShotmarkers, const std::string& text)
+void CTutorialScenario::Shootmarkers(const std::vector<std::pair<vec2, int>>& vShotmarkers)
 {
 	for(const auto& [position, health] : vShotmarkers)
 	{
 		CreateEntityShootmarkersTask(position, health);
-		FixedCam(100, position, "You can shoot with the left mouse button.", "");
+		SendBroadcast("You can shoot with the left mouse button.");
+		FixedCam(100, position);
 	}
 
 	auto& stepShootmarkers = AddStep();
-	stepShootmarkers.WhenActive([this, text](auto*)
+	stepShootmarkers.WhenActive([this](auto*)
 	{
-		SendBroadcast(text);
+		SendBroadcast("Shoot the targets!");
 	});
 	stepShootmarkers.CheckCondition(ConditionPriority::CONDITION_AND_TIMER, [this](auto*)
 	{
-		return IsShootingComplete();
+		return std::ranges::all_of(m_vpShootmarkers, [](const std::weak_ptr<CEntityGroup>& weakPtr)
+		{
+			return weakPtr.expired();
+		});
 	});
 }
-
 
 void CTutorialScenario::Message(int delay, const std::string& text)
 {
@@ -258,22 +300,13 @@ void CTutorialScenario::Message(int delay, const std::string& text)
 	});
 }
 
-void CTutorialScenario::EmoteMessage(int delay, int emoteType, int emoticonType, const std::string& text)
+void CTutorialScenario::Emote(int emoteType, int emoticonType)
 {
-	auto& emoteMessageStep = AddStep(delay);
-	emoteMessageStep.WhenStarted([this, emoteType, emoticonType, text](auto*)
+	auto& emoteStep = AddStep();
+	emoteStep.WhenStarted([this, emoteType, emoticonType](auto*)
 	{
 		GetCharacter()->SetEmote(emoteType, 1, false);
 		GS()->SendEmoticon(GetClientID(), emoticonType);
-		SendBroadcast(text);
-	});
-}
-
-bool CTutorialScenario::IsShootingComplete() const
-{
-	return std::ranges::all_of(m_vpShootmarkers, [](const std::weak_ptr<CEntityGroup>& weakPtr)
-	{
-		return weakPtr.expired();
 	});
 }
 
@@ -301,7 +334,7 @@ void CTutorialScenario::CreateEntityShootmarkersTask(const vec2& pos, int health
 		{
 			if(distance(pBase->GetPos(), pProj->GetCurrentPos()) < 48.f)
 			{
-				Health -= 1; // TODO fix
+				Health -= 1;
 				pBase->GS()->CreateDamage(pBase->GetPos(), pBase->GetClientID(), 1, false, random_angle(), CmaskOne(pBase->GetClientID()));
 				pProj->MarkForDestroy();
 			}
