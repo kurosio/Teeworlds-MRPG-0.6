@@ -1,6 +1,5 @@
 #include "scenario_tutorial.h"
 
-#include "entities/personal_door.h"
 #include <game/server/gamecontext.h>
 
 #include <game/server/core/entities/group/entitiy_group.h>

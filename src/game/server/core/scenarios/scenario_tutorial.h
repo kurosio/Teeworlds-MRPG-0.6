@@ -1,6 +1,7 @@
 #ifndef GAME_SERVER_CORE_SCENARIOS_SCENARIO_TUTORIAL_H
 #define GAME_SERVER_CORE_SCENARIOS_SCENARIO_TUTORIAL_H
 
+#include "entities/personal_door.h"
 #include <game/server/core/tools/event_listener.h>
 #include <game/server/core/tools/scenario_manager.h>
 
