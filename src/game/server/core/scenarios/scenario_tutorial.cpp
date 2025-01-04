@@ -51,6 +51,7 @@ void CTutorialScenario::ProcessStep(const nlohmann::json& step)
 	{
 		int itemID = step.value("item_id", -1);
 		int required = step.value("required", 0);
+		bool remove = step.value("remove", false);
 		bool showProgress = step.value("show_progress", false);
 
 		auto& hasItemStep = AddStep();
@@ -66,6 +67,14 @@ void CTutorialScenario::ProcessStep(const nlohmann::json& step)
 				}
 			});
 		}
+		if(remove)
+		{
+			hasItemStep.WhenFinished([this, itemID, required](auto*)
+			{
+				GetPlayer()->GetItem(itemID)->Remove(required);
+			});
+		}
+
 		hasItemStep.CheckCondition(ConditionPriority::CONDITION_AND_TIMER, [this, itemID, required](auto*)
 		{
 			return GetPlayer()->GetItem(itemID)->GetValue() >= required;
