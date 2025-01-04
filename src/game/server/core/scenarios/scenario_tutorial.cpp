@@ -70,8 +70,8 @@ void CTutorialScenario::ProcessStep(const nlohmann::json& step)
 
 		if(Follow)
 		{
-			Message(0, "The door's locked!");
-			FixedCam(100, m_vpPersonalDoors[Key].m_Pos);
+			StepMessage(0, "The door's locked!");
+			StepFixedCam(100, m_vpPersonalDoors[Key].m_Pos);
 		}
 	}
 	// remove door
@@ -92,8 +92,8 @@ void CTutorialScenario::ProcessStep(const nlohmann::json& step)
 
 		if(Follow)
 		{
-			Message(0, "The door's is oppened!");
-			FixedCam(100, DoorPos);
+			StepMessage(0, "The door's is oppened!");
+			StepFixedCam(100, DoorPos);
 		}
 	}
 	// message
@@ -102,7 +102,7 @@ void CTutorialScenario::ProcessStep(const nlohmann::json& step)
 		int delay = step.value("delay", 0);
 		std::string text = step.value("text", "");
 
-		Message(delay, text);
+		StepMessage(delay, text);
 	}
 	// emote message
 	else if(action == "emote")
@@ -110,7 +110,7 @@ void CTutorialScenario::ProcessStep(const nlohmann::json& step)
 		int emoteType = step.value("emote_type", (int)EMOTE_NORMAL);
 		int emoticonType = step.value("emoticon_type", -1);
 
-		Emote(emoteType, emoticonType);
+		StepEmote(emoteType, emoticonType);
 	}
 	// teleport
 	else if(action == "teleport")
@@ -121,7 +121,7 @@ void CTutorialScenario::ProcessStep(const nlohmann::json& step)
 			step["position"].value("y", 0.0f) 
 		};
 
-		Teleport(position);
+		StepTeleport(position);
 	}
 	// movement task
 	else if(action == "movement_task")
@@ -136,20 +136,20 @@ void CTutorialScenario::ProcessStep(const nlohmann::json& step)
 		std::string targetLookText = step.value("target_lock_text", "");
 		bool targetLook = step.value("target_look", true);
 
-		MovementTask(delay, position, targetLookText, text, targetLook);
+		StepMovementTask(delay, position, targetLookText, text, targetLook);
 	}
 	// fixed cam
 	else if(action == "fix_cam")
 	{
 		int delay = step.value("delay", 0);
 		vec2 position = { step["position"].value("x", 0.0f), step["position"].value("y", 0.0f) };
-		FixedCam(delay, position);
+		StepFixedCam(delay, position);
 	}
 	// freeze movements
 	else if(action == "freeze_movements")
 	{
 		bool freezeState = step.value("state", false);
-		MovingDisable(freezeState);
+		StepMovingDisable(freezeState);
 	}
 	// check quest accepted
 	else if(action == "check_quest_accepted")
@@ -185,7 +185,7 @@ void CTutorialScenario::ProcessStep(const nlohmann::json& step)
 			}
 		}
 
-		Shootmarkers(markers);
+		StepShootmarkers(markers);
 	}
 	else
 	{
@@ -193,12 +193,12 @@ void CTutorialScenario::ProcessStep(const nlohmann::json& step)
 	}
 }
 
-void CTutorialScenario::MovementTask(int delay, const vec2& pos, const std::string& targetLookText, const std::string& text, bool targetLook)
+void CTutorialScenario::StepMovementTask(int delay, const vec2& pos, const std::string& targetLookText, const std::string& text, bool targetLook)
 {
 	// is has lockView
 	if(targetLook)
 	{
-		MovingDisable(true);
+		StepMovingDisable(true);
 
 		auto& lockStep = AddStep(delay);
 		lockStep.WhenStarted([this, pos](auto*)
@@ -216,7 +216,7 @@ void CTutorialScenario::MovementTask(int delay, const vec2& pos, const std::stri
 			SendBroadcast(targetLookText);
 		});
 
-		MovingDisable(false);
+		StepMovingDisable(false);
 	}
 
 	// movements
@@ -240,7 +240,7 @@ void CTutorialScenario::MovementTask(int delay, const vec2& pos, const std::stri
 	});
 }
 
-void CTutorialScenario::FixedCam(int delay, const vec2& pos)
+void CTutorialScenario::StepFixedCam(int delay, const vec2& pos)
 {
 	auto& step = AddStep(delay);
 	step.WhenActive([this, pos](auto*)
@@ -249,7 +249,7 @@ void CTutorialScenario::FixedCam(int delay, const vec2& pos)
 	});
 }
 
-void CTutorialScenario::Teleport(const vec2& pos)
+void CTutorialScenario::StepTeleport(const vec2& pos)
 {
 	auto& teleportStep = AddStep();
 	teleportStep.WhenStarted([this, pos](auto*)
@@ -258,7 +258,7 @@ void CTutorialScenario::Teleport(const vec2& pos)
 	});
 }
 
-void CTutorialScenario::MovingDisable(bool State)
+void CTutorialScenario::StepMovingDisable(bool State)
 {
 	auto& movingStep = AddStep();
 	movingStep.WhenStarted([this, State](auto*)
@@ -268,13 +268,13 @@ void CTutorialScenario::MovingDisable(bool State)
 }
 
 
-void CTutorialScenario::Shootmarkers(const std::vector<std::pair<vec2, int>>& vShotmarkers)
+void CTutorialScenario::StepShootmarkers(const std::vector<std::pair<vec2, int>>& vShotmarkers)
 {
 	for(const auto& [position, health] : vShotmarkers)
 	{
 		CreateEntityShootmarkersTask(position, health);
-		Message(0, "You can shoot with the left mouse button.");
-		FixedCam(100, position);
+		StepMessage(0, "You can shoot with the left mouse button.");
+		StepFixedCam(100, position);
 	}
 
 	auto& stepShootmarkers = AddStep();
@@ -291,7 +291,7 @@ void CTutorialScenario::Shootmarkers(const std::vector<std::pair<vec2, int>>& vS
 	});
 }
 
-void CTutorialScenario::Message(int delay, const std::string& text)
+void CTutorialScenario::StepMessage(int delay, const std::string& text)
 {
 	auto& messageStep = AddStep(delay);
 	messageStep.WhenStarted([this, text](auto*)
@@ -300,7 +300,7 @@ void CTutorialScenario::Message(int delay, const std::string& text)
 	});
 }
 
-void CTutorialScenario::Emote(int emoteType, int emoticonType)
+void CTutorialScenario::StepEmote(int emoteType, int emoticonType)
 {
 	auto& emoteStep = AddStep();
 	emoteStep.WhenStarted([this, emoteType, emoticonType](auto*)

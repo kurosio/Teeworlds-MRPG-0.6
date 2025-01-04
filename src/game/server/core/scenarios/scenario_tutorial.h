@@ -29,13 +29,13 @@ protected:
 	void ProcessStep(const nlohmann::json& step);
 
 private:
-	void Message(int delay, const std::string& text);
-	void Emote(int emoteType, int emoticonType);
-	void Shootmarkers(const std::vector<std::pair<vec2, int>>& vShotmarkers);
-	void FixedCam(int delay, const vec2& pos);
-	void Teleport(const vec2& pos);
-	void MovingDisable(bool State);
-	void MovementTask(int delay, const vec2& pos, const std::string&, const std::string& text, bool lockView = true);
+	void StepMessage(int delay, const std::string& text);
+	void StepEmote(int emoteType, int emoticonType);
+	void StepShootmarkers(const std::vector<std::pair<vec2, int>>& vShotmarkers);
+	void StepFixedCam(int delay, const vec2& pos);
+	void StepTeleport(const vec2& pos);
+	void StepMovingDisable(bool State);
+	void StepMovementTask(int delay, const vec2& pos, const std::string&, const std::string& text, bool lockView = true);
 
 	void CreateEntityShootmarkersTask(const vec2& pos, int health);
 	void SendBroadcast(const std::string& text) const;
