@@ -75,7 +75,7 @@ void CTutorialScenario::ProcessStep(const nlohmann::json& step)
 
 		if(Follow)
 		{
-			StepMessage(0, "The door's locked!");
+			StepMessage(0, "The door's locked!", "\0");
 			StepFixedCam(100, m_vpPersonalDoors[Key].m_Pos);
 		}
 	}
@@ -97,7 +97,7 @@ void CTutorialScenario::ProcessStep(const nlohmann::json& step)
 
 		if(Follow)
 		{
-			StepMessage(0, "The door's is oppened!");
+			StepMessage(0, "The door's is oppened!", "\0");
 			StepFixedCam(100, DoorPos);
 		}
 	}
@@ -105,9 +105,14 @@ void CTutorialScenario::ProcessStep(const nlohmann::json& step)
 	else if(action == "message")
 	{
 		int delay = step.value("delay", 0);
-		std::string text = step.value("text", "");
+		std::string chatMsg = step.value("chat", "");
+		std::string broadcastMsg = step.value("broadcast", "");
+		std::string fullMsg = step.value("full", "");
 
-		StepMessage(delay, text);
+		if(!fullMsg.empty())
+			StepMessage(delay, fullMsg, fullMsg);
+		else
+			StepMessage(delay, broadcastMsg, chatMsg);
 	}
 	// emote message
 	else if(action == "emote")
@@ -278,7 +283,7 @@ void CTutorialScenario::StepShootmarkers(const std::vector<std::pair<vec2, int>>
 	for(const auto& [position, health] : vShotmarkers)
 	{
 		CreateEntityShootmarkersTask(position, health);
-		StepMessage(0, "You can shoot with the left mouse button.");
+		StepMessage(0, "You can shoot with the left mouse button.", "\0");
 		StepFixedCam(100, position);
 	}
 
@@ -296,12 +301,20 @@ void CTutorialScenario::StepShootmarkers(const std::vector<std::pair<vec2, int>>
 	});
 }
 
-void CTutorialScenario::StepMessage(int delay, const std::string& text)
+void CTutorialScenario::StepMessage(int delay, const std::string& broadcastMsg, const std::string& chatMsg)
 {
 	auto& messageStep = AddStep(delay);
-	messageStep.WhenStarted([this, text](auto*)
+	messageStep.WhenStarted([this, delay, chatMsg, broadcastMsg](auto*)
 	{
-		SendBroadcast(text);
+		if(!broadcastMsg.empty())
+		{
+			GS()->Broadcast(GetClientID(), BroadcastPriority::VeryImportant, delay, broadcastMsg.c_str());
+		}
+
+		if(!chatMsg.empty())
+		{
+			GS()->Chat(GetClientID(), chatMsg.c_str());
+		}
 	});
 }
 
