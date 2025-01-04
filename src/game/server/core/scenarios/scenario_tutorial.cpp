@@ -47,8 +47,32 @@ void CTutorialScenario::ProcessStep(const nlohmann::json& step)
 
 	std::string action = step["action"];
 
+	if(action == "check_has_item")
+	{
+		int itemID = step.value("item_id", -1);
+		int required = step.value("required", 0);
+		bool showProgress = step.value("show_progress", false);
+
+		auto& hasItemStep = AddStep();
+		if(showProgress)
+		{
+			hasItemStep.WhenActive([this, itemID, required](auto*)
+			{
+				if(Server()->Tick() % Server()->TickSpeed() == 0)
+				{
+					auto* pItem = GetPlayer()->GetItem(itemID);
+					GS()->Broadcast(GetClientID(), BroadcastPriority::GameBasicStats, Server()->TickSpeed(),
+						"Objective: to get {} ({} of {}).", pItem->Info()->GetName(), pItem->GetValue(), required);
+				}
+			});
+		}
+		hasItemStep.CheckCondition(ConditionPriority::CONDITION_AND_TIMER, [this, itemID, required](auto*)
+		{
+			return GetPlayer()->GetItem(itemID)->GetValue() >= required;
+		});
+	}
 	// reset quest
-	if(action == "reset_quest")
+	else if(action == "reset_quest")
 	{
 		if(int questID = step.value("quest_id", -1); questID > 0)
 		{

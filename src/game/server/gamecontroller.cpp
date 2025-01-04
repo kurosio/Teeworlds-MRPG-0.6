@@ -7,7 +7,13 @@
 
 #include "entities/pickup.h"
 #include "core/entities/logic/botwall.h"
+#include "core/entities/items/harvesting_item.h"
+
 #include "core/components/achievements/achievement_data.h"
+#include "core/components/Accounts/AccountMiningManager.h"
+#include "core/components/Accounts/AccountFarmingManager.h"
+#include "core/components/guilds/guild_manager.h"
+#include "core/components/houses/house_manager.h"
 
 #include "entities/character_bot.h"
 
@@ -188,6 +194,53 @@ void IGameController::OnEntity(int Index, vec2 Pos, int Flags)
 	{
 		vec2 Direction = GS()->Collision()->GetRotateDirByFlags(Flags);
 		new CBotWall(&GS()->m_World, Pos, Direction, CBotWall::Flags::WALLLINEFLAG_AGRESSED_BOT);
+	}
+
+	// calculate polar coordinates
+	const vec2 roundPos = vec2((float)(round_to_int(Pos.x) / 32 * 32), (float)(round_to_int(Pos.y) / 32 * 32));
+	const float iter = 16.f / (float)g_Config.m_SvHarvestingItemsPerTile;
+	const float multiplier = iter * 2;
+
+	// entity farming point
+	if(Index == ENTITY_FARMING)
+	{
+		for(int i = 0; i < g_Config.m_SvHarvestingItemsPerTile; i++)
+		{
+			// calculate polar coordinates
+			const float calculate = iter + (float)i * multiplier;
+			vec2 newPos = vec2(roundPos.x + calculate, Pos.y);
+			if(GS()->Collision()->GetCollisionFlagsAt(roundPos.x - iter, Pos.y) || GS()->Collision()->GetCollisionFlagsAt(roundPos.x + (30.f + iter), Pos.y))
+				newPos = vec2(Pos.x, roundPos.y + calculate);
+
+			// default farm positions
+			if(auto* pItemInfo = GS()->Core()->AccountFarmingManager()->GetFarmingItemInfoByPos(newPos))
+				new CEntityHarvestingItem(&GS()->m_World, pItemInfo->GetID(), newPos, CEntityHarvestingItem::HARVESTINGITEM_TYPE_FARMING);
+
+			// guild house farm positions
+			if(CGuildHouse::CFarmzone* pFarmzone = GS()->Core()->GuildManager()->GetHouseFarmzoneByPos(newPos))
+				pFarmzone->Add(new CEntityHarvestingItem(&GS()->m_World, pFarmzone->GetItemID(), newPos, CEntityHarvestingItem::HARVESTINGITEM_TYPE_FARMING));
+
+			// house farm positions
+			if(CHouse::CFarmzone* pFarmzone = GS()->Core()->HouseManager()->GetHouseFarmzoneByPos(newPos))
+				pFarmzone->Add(new CEntityHarvestingItem(&GS()->m_World, pFarmzone->GetItemID(), newPos, CEntityHarvestingItem::HARVESTINGITEM_TYPE_FARMING));
+		}
+	}
+
+	// entity mining point
+	if(Index == ENTITY_MINING)
+	{
+		for(int i = 0; i < g_Config.m_SvHarvestingItemsPerTile; i++)
+		{
+			// calculate polar coordinates
+			const float calculate = iter + (float)i * multiplier;
+			vec2 newPos = vec2(roundPos.x + calculate, Pos.y);
+			if(GS()->Collision()->GetCollisionFlagsAt(roundPos.x - iter, Pos.y) || GS()->Collision()->GetCollisionFlagsAt(roundPos.x + (30.f + iter), Pos.y))
+				newPos = vec2(Pos.x, roundPos.y + calculate);
+
+			// default ores positions
+			if(auto* pItemInfo = GS()->Core()->AccountMiningManager()->GetMiningItemInfoByPos(newPos))
+				new CEntityHarvestingItem(&GS()->m_World, pItemInfo->GetID(), newPos, CEntityHarvestingItem::HARVESTINGITEM_TYPE_MINING);
+		}
 	}
 }
 
