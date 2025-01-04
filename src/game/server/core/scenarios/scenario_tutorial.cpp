@@ -273,7 +273,7 @@ void CTutorialScenario::Shootmarkers(const std::vector<std::pair<vec2, int>>& vS
 	for(const auto& [position, health] : vShotmarkers)
 	{
 		CreateEntityShootmarkersTask(position, health);
-		SendBroadcast("You can shoot with the left mouse button.");
+		Message(0, "You can shoot with the left mouse button.");
 		FixedCam(100, position);
 	}
 
