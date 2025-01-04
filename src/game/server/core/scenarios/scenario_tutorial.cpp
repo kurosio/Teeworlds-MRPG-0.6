@@ -1,6 +1,6 @@
-#include "entities/personal_door.h"
 #include "scenario_tutorial.h"
 
+#include "entities/personal_door.h"
 #include <game/server/gamecontext.h>
 
 #include <game/server/core/entities/group/entitiy_group.h>
@@ -10,6 +10,12 @@ CTutorialScenario::CTutorialScenario(const nlohmann::json& jsonData)
 	: ScenarioBase(SCENARIO_TUTORIAL)
 {
 	m_JsonData = jsonData;
+}
+
+CTutorialScenario::~CTutorialScenario()
+{
+	m_vpPersonalDoors.clear();
+	m_vpShootmarkers.clear();
 }
 
 bool CTutorialScenario::OnStopConditions()

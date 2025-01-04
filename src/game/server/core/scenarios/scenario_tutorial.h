@@ -22,6 +22,7 @@ class CTutorialScenario : public ScenarioBase, public IEventListener
 
 public:
 	CTutorialScenario(const nlohmann::json& jsonData);
+	~CTutorialScenario();
 
 protected:
 	bool OnStopConditions() override;
