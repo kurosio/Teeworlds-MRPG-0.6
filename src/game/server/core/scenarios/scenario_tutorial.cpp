@@ -142,11 +142,17 @@ void CTutorialScenario::ProcessStep(const nlohmann::json& step)
 			step["position"].value("x", 0.0f), 
 			step["position"].value("y", 0.0f) 
 		};
-		std::string text = step.value("text", "");
 		std::string targetLookText = step.value("target_lock_text", "");
 		bool targetLook = step.value("target_look", true);
 
-		StepMovementTask(delay, position, targetLookText, text, targetLook);
+		std::string chatMsg = step.value("chat", "");
+		std::string broadcastMsg = step.value("broadcast", "");
+		std::string fullMsg = step.value("full", "");
+
+		if(!fullMsg.empty())
+			StepMovementTask(delay, position, targetLookText, fullMsg, fullMsg, targetLook);
+		else
+			StepMovementTask(delay, position, targetLookText, broadcastMsg, chatMsg, targetLook);
 	}
 	// fixed cam
 	else if(action == "fix_cam")
@@ -203,7 +209,7 @@ void CTutorialScenario::ProcessStep(const nlohmann::json& step)
 	}
 }
 
-void CTutorialScenario::StepMovementTask(int delay, const vec2& pos, const std::string& targetLookText, const std::string& text, bool targetLook)
+void CTutorialScenario::StepMovementTask(int delay, const vec2& pos, const std::string& targetLookText, const std::string& broadcastMsg, const std::string& chatMsg, bool targetLook)
 {
 	// is has lockView
 	if(targetLook)
@@ -231,18 +237,19 @@ void CTutorialScenario::StepMovementTask(int delay, const vec2& pos, const std::
 
 	// movements
 	auto& moveStep = AddStep();
-	moveStep.WhenStarted([this](auto*)
+	moveStep.WhenStarted([this, chatMsg](auto*)
 	{
 		GetCharacter()->MovingDisable(false);
+		GS()->Chat(GetClientID(), chatMsg.c_str());
 	});
-	moveStep.WhenActive([this, text](auto*)
+	moveStep.WhenActive([this, broadcastMsg](auto*)
 	{
 		if(Server()->Tick() % (Server()->TickSpeed() / 2) == 0)
 		{
 			GS()->CreateHammerHit(m_MovementPos, CmaskOne(GetClientID()));
 		}
 
-		SendBroadcast(text);
+		GS()->Broadcast(GetClientID(), BroadcastPriority::VeryImportant, Server()->TickSpeed(), broadcastMsg.c_str());
 	});
 	moveStep.CheckCondition(ConditionPriority::CONDITION_AND_TIMER, [this](auto*)
 	{

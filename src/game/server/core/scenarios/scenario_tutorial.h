@@ -37,7 +37,7 @@ private:
 	void StepFixedCam(int delay, const vec2& pos);
 	void StepTeleport(const vec2& pos);
 	void StepMovingDisable(bool State);
-	void StepMovementTask(int delay, const vec2& pos, const std::string&, const std::string& text, bool lockView = true);
+	void StepMovementTask(int delay, const vec2& pos, const std::string& targetLookText, const std::string& broadcastMsg, const std::string& chatMsg, bool targetLook = true);
 
 	void CreateEntityShootmarkersTask(const vec2& pos, int health);
 	void SendBroadcast(const std::string& text) const;
