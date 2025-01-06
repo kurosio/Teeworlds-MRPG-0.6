@@ -336,7 +336,7 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		// Currency information
 		VoteWrapper VCurrency(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "Account Currency");
 		VCurrency.Add("Bank: {}", pAccount->GetBank());
-		for(int itemID : {itGold, itAchievementPoint, itSkillPoint, itAlliedSeals, itMaterial, itProduct})
+		for(int itemID : {itGold, itAchievementPoint, itSkillPoint, itActivityCoin, itMaterial, itProduct})
 		{
 			VCurrency.Add("{}: {}", pPlayer->GetItem(itemID)->Info()->GetName(), pPlayer->GetItem(itemID)->GetValue());
 		}

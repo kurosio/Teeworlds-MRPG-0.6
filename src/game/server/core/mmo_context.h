@@ -475,10 +475,10 @@ enum
 	// currency
 	itGold                         = 1,     // Money ordinary currency
 	itMaterial                     = 7,     // Scraping material
-	itProduct                      = 8,     // Scraping material
+	itProduct                      = 8,     // Scraping products for warehouses
 	itSkillPoint                   = 9,     // Skillpoint
 	itAchievementPoint             = 10,    // Achievement point
-	itAlliedSeals                  = 30,    // Allied seals
+	itActivityCoin                 = 29,    // Activity coin
 	itTicketGuild                  = 95,    // Ticket for the creation of the guild
 
 	// modules

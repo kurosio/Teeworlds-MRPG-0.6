@@ -22,9 +22,9 @@ enum
 
 	QUEST_FLAG_CANT_REFUSE = 1 << 5,
 
+	QUEST_FLAG_GRANTED_FROM_CHAIN = 1 << 9,
 	QUEST_FLAG_GRANTED_FROM_NPC = 1 << 10,
 	QUEST_FLAG_GRANTED_FROM_BOARD = 1 << 11,
-	QUEST_FLAG_GRANTED_FROM_AUTO = 1 << 12,
 };
 
 // quest description
@@ -70,12 +70,11 @@ public:
 		return m_pData[ID] = pData;
 	}
 
-	void Init(const std::string& Name, int Gold, int Exp, std::optional<int> NextQuestID, const DBSet& FlagSet)
+	void Init(const std::string& Name, int Gold, int Exp, std::optional<int> NextQuestID)
 	{
 		m_Name = Name;
 		m_NextQuestID = NextQuestID;
 		m_Reward.Init(Exp, Gold);
-		InitFlags(FlagSet);
 	}
 
 	void InitPrevousQuestID(int QuestID)
@@ -97,9 +96,9 @@ public:
 		else if(FlagSet.hasSet("Type repeatable"))
 			m_Flags |= QUEST_FLAG_TYPE_REPEATABLE;
 
-		// initialize other flags
-		if(m_NextQuestID.has_value())
-			m_Flags |= QUEST_FLAG_GRANTED_FROM_AUTO;
+		// initialize other flagss
+		if(m_NextQuestID.has_value() || m_PreviousQuestID.has_value())
+			m_Flags |= QUEST_FLAG_GRANTED_FROM_CHAIN;
 		if(FlagSet.hasSet("Can't refuse"))
 			m_Flags |= QUEST_FLAG_CANT_REFUSE;
 	}
@@ -115,12 +114,16 @@ public:
 	CQuestDescription* GetPreviousQuest() const;
 	CReward& Reward() { return m_Reward; }
 
+	bool HasFlag(int Flag) const { return (m_Flags & Flag) != 0; }
 	bool HasObjectives(int Step);
+
 	void PreparePlayerObjectives(int StepPos, int ClientID, std::deque<std::shared_ptr<CQuestStep>>& pElem);
 
-	bool HasFlag(int Flag) const { return (m_Flags & Flag) != 0; }
-	bool CanBeGranted() const { return HasFlag(QUEST_FLAG_GRANTED_FROM_AUTO) || HasFlag(QUEST_FLAG_GRANTED_FROM_NPC) || HasFlag(QUEST_FLAG_GRANTED_FROM_BOARD); }
-	bool CanBeAcceptedOrRefused() const { return HasFlag(QUEST_FLAG_GRANTED_FROM_BOARD) || !CanBeGranted(); }
+	bool CanBeGrantedByChain() const { return HasFlag(QUEST_FLAG_GRANTED_FROM_CHAIN); }
+	bool CanBeGrantedByNPC() const { return HasFlag(QUEST_FLAG_GRANTED_FROM_NPC); }
+	bool CanBeGrantedByBoard() const { return HasFlag(QUEST_FLAG_GRANTED_FROM_BOARD); }
+	bool CanBeGranted() const { return CanBeGrantedByChain() || CanBeGrantedByNPC() || CanBeGrantedByBoard(); }
+	bool CanBeAcceptOrRefuse() const { return CanBeGrantedByBoard(); }
 
 	// steps with array bot data on active step
 	std::map < int, std::deque<CQuestStepBase> > m_vObjectives;

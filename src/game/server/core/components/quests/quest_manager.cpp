@@ -7,64 +7,62 @@
 void CQuestManager::OnPreInit()
 {
 	// Load quests
+	std::unordered_map<int, DBSet> vTempQuestFlags {};
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_quests_list");
 	while(pRes->next())
 	{
 		// initialize variables
-		QuestIdentifier ID = pRes->getInt("ID");
-		int nextQuestID = pRes->getInt("NextQuestID");
-		DBSet flagSet = std::string(pRes->getString("Flags").c_str());
-		std::string Name = pRes->getString("Name").c_str();
-		int Gold = pRes->getInt("Money");
-		int Exp = pRes->getInt("Exp");
+		const auto ID = pRes->getInt("ID");
+		const auto nextQuestID = pRes->getInt("NextQuestID");
+		const auto Name = pRes->getString("Name");
+		const auto Gold = pRes->getInt("Money");
+		const auto Exp = pRes->getInt("Exp");
+		DBSet flagSet(pRes->getString("Flags"));
 
 		// create new element
 		auto optionalNextQuestID = nextQuestID > 0 ? std::optional(nextQuestID) : std::nullopt;
-		CQuestDescription::CreateElement(ID)->Init(Name, Gold, Exp, optionalNextQuestID, flagSet);
+		CQuestDescription::CreateElement(ID)->Init(Name, Gold, Exp, optionalNextQuestID);
+		vTempQuestFlags[ID] = flagSet;
 	}
+
+	// Initialize previous quests ids for chain by nextQuestID
+	for(const auto& [ID, pQuest] : CQuestDescription::Data())
+	{
+		if(auto* pNextQuest = pQuest->GetNextQuest())
+			pNextQuest->InitPrevousQuestID(ID);
+	}
+
+	// Initialize flags
+	for(const auto& [ID, pQuest] : CQuestDescription::Data())
+		pQuest->InitFlags(vTempQuestFlags[ID]);
 
 	// Load quest boards
 	ResultPtr pResBoard = Database->Execute<DB::SELECT>("*", TW_QUEST_BOARDS_TABLE);
 	while(pResBoard->next())
 	{
 		// initialize variables
-		int ID = pResBoard->getInt("ID");
-		std::string Name = pResBoard->getString("Name").c_str();
-		vec2 Pos = vec2((float)pResBoard->getInt("PosX"), (float)pResBoard->getInt("PosY"));
-		int WorldID = pResBoard->getInt("WorldID");
+		const auto ID = pResBoard->getInt("ID");
+		const auto Name = pResBoard->getString("Name");
+		const auto Pos = vec2((float)pResBoard->getInt("PosX"), (float)pResBoard->getInt("PosY"));
+		const auto WorldID = pResBoard->getInt("WorldID");
 
 		// create new element
 		CQuestsBoard::CreateElement(ID)->Init(Name, Pos, WorldID);
 	}
 
 	// Load board quests
-	std::unordered_map<int, std::deque<CQuestDescription*>> vInitializeList;
 	ResultPtr pResDailyQuest = Database->Execute<DB::SELECT>("*", TW_QUESTS_DAILY_BOARD_LIST);
 	while(pResDailyQuest->next())
 	{
-		// Initialize variables
-		QuestIdentifier QuestID = pResDailyQuest->getInt("QuestID");
-		int BoardID = pResDailyQuest->getInt("DailyBoardID");
+		// initialize variables
+		const auto QuestID = pResDailyQuest->getInt("QuestID");
+		const auto BoardID = pResDailyQuest->getInt("DailyBoardID");
 
-		// Add quest to board
+		// add quest to board
 		auto* pQuest = GS()->GetQuestInfo(QuestID);
+		auto* pBoard = CQuestsBoard::Data()[BoardID];
 		pQuest->AddFlag(QUEST_FLAG_GRANTED_FROM_BOARD);
-		vInitializeList[BoardID].push_back(GS()->GetQuestInfo(QuestID));
-	}
-	for(auto& [BoardID, DataContainer] : vInitializeList)
-	{
-		auto it = CQuestsBoard::Data().find(BoardID);
-		if(it != CQuestsBoard::Data().end())
-		{
-			it->second->m_vpQuests = DataContainer;
-		}
-	}
-
-	// Initialize previous quests ids for chain by nextQuestID
-	for(const auto& [id, pQuest] : CQuestDescription::Data())
-	{
-		if(auto* pNextQuest = pQuest->GetNextQuest())
-			pNextQuest->InitPrevousQuestID(id);
+		pBoard->GetQuestsList().push_back(QuestID);
 	}
 }
 
@@ -274,27 +272,19 @@ void CQuestManager::ShowQuestsBoardList(CPlayer* pPlayer, CQuestsBoard* pBoard) 
 		return;
 	}
 
-	// дambda function to show quest board by group list
-	auto ShowQuestBoardByGroupList = [this](CPlayer* pPlayer, CQuestsBoard* pBoard, const char* pTitle, int Count, int QuestFlag)
+	// lambda function to show quest board by group list
+	auto ShowQuestBoardByGroupList = [this](CPlayer* pPlayer, CQuestsBoard* pBoard, const char* pTitle, int QuestFlag)
 	{
-		if(Count > 0)
+		auto vQuestsList = pBoard->GetUnfinishedQuestsByFlag(pPlayer, QuestFlag);
+		if(!vQuestsList.empty())
 		{
-			VoteWrapper VGroup(pPlayer->GetCID(), VWF_STYLE_SIMPLE, pTitle, Count);
-			for(const auto& pQuestInfo : pBoard->m_vpQuests)
+			VoteWrapper VGroup(pPlayer->GetCID(), VWF_STYLE_SIMPLE, "{} {}", pTitle, vQuestsList.size());
+			for(const auto& QuestID : vQuestsList)
 			{
-				// check quest flag
-				if(!pQuestInfo->HasFlag(QuestFlag))
-					continue;
-
-				// check if quest is completed
-				const auto* pQuest = pPlayer->GetQuest(pQuestInfo->GetID());
-				if(pQuest->IsCompleted())
-					continue;
-
-				// add menu
+				const auto* pQuest = pPlayer->GetQuest(QuestID);
 				const char* StateIndicator = (pQuest->IsAccepted() ? "✔" : "✖");
-				const char* QuestName = pQuestInfo->GetName();
-				VGroup.AddMenu(MENU_BOARD_QUEST_SELECT, pQuestInfo->GetID(), "({}) {}", StateIndicator, QuestName);
+				const char* QuestName = pQuest->Info()->GetName();
+				VGroup.AddMenu(MENU_BOARD_QUEST_SELECT, QuestID, "({}) {}", StateIndicator, QuestName);
 			}
 			VoteWrapper::AddEmptyline(pPlayer->GetCID());
 		}
@@ -302,14 +292,14 @@ void CQuestManager::ShowQuestsBoardList(CPlayer* pPlayer, CQuestsBoard* pBoard) 
 
 	// information
 	VoteWrapper VBoard(ClientID, VWF_STYLE_STRICT_BOLD|VWF_SEPARATE|VWF_ALIGN_TITLE, "Board: {}", pBoard->GetName());
-	VBoard.AddItemValue(itAlliedSeals);
+	VBoard.AddItemValue(itActivityCoin);
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// add groups
-	ShowQuestBoardByGroupList(pPlayer, pBoard, "\u2696 Available daily {}", pBoard->CountAvailableDailyQuests(pPlayer), QUEST_FLAG_TYPE_DAILY);
-	ShowQuestBoardByGroupList(pPlayer, pBoard, "\u2696 Available weekly {}", pBoard->CountAvailableWeeklyQuests(pPlayer), QUEST_FLAG_TYPE_WEEKLY);
-	ShowQuestBoardByGroupList(pPlayer, pBoard, "\u2696 Available repeatable {}", pBoard->CountAvailableRepeatableQuests(pPlayer), QUEST_FLAG_TYPE_REPEATABLE);
-	ShowQuestBoardByGroupList(pPlayer, pBoard, "\u2696 Available side {}", pBoard->CountAvailableSideQuests(pPlayer), QUEST_FLAG_TYPE_SIDE);
+	ShowQuestBoardByGroupList(pPlayer, pBoard, "\u2696 Available daily", QUEST_FLAG_TYPE_DAILY);
+	ShowQuestBoardByGroupList(pPlayer, pBoard, "\u2696 Available weekly", QUEST_FLAG_TYPE_WEEKLY);
+	ShowQuestBoardByGroupList(pPlayer, pBoard, "\u2696 Available repeatable", QUEST_FLAG_TYPE_REPEATABLE);
+	ShowQuestBoardByGroupList(pPlayer, pBoard, "\u2696 Available side", QUEST_FLAG_TYPE_SIDE);
 
 	// wanted players
 	VoteWrapper VWanted(ClientID, VWF_SEPARATE | VWF_STYLE_SIMPLE, "Wanted players list");
@@ -448,7 +438,7 @@ void CQuestManager::ShowQuestInfo(CPlayer* pPlayer, CQuestDescription* pQuest, b
 		auto* playerPreviousQuest = pPlayer->GetQuest(pPreviousQuest->GetID());
 		if(playerPreviousQuest->IsCompleted())
 		{
-			if(pQuest->CanBeAcceptedOrRefused())
+			if(pQuest->CanBeAcceptOrRefuse())
 				VButtons.AddOption("QUEST_STATE", pPlayerQuest->GetID(), (pPlayerQuest->IsAccepted() ? "Refuse" : "Accept"));
 			else
 				VButtons.Add("\u26A0 Quest is auto-activated or by NPC");
@@ -460,7 +450,7 @@ void CQuestManager::ShowQuestInfo(CPlayer* pPlayer, CQuestDescription* pQuest, b
 	}
 	else
 	{
-		if(pQuest->CanBeAcceptedOrRefused())
+		if(pQuest->CanBeAcceptOrRefuse())
 			VButtons.AddOption("QUEST_STATE", pPlayerQuest->GetID(), (pPlayerQuest->IsAccepted() ? "Refuse" : "Accept"));
 		else
 			VButtons.Add("\u26A0 Quest is auto-activated or by NPC");
@@ -480,8 +470,8 @@ CQuestsBoard* CQuestManager::GetBoardByPos(vec2 Pos) const
 void CQuestManager::ResetPeriodQuests(CPlayer* pPlayer, ETimePeriod Period) const
 {
 	// initialize variables
-	int ClientID = pPlayer->GetCID();
-	int AccountID = pPlayer->Account()->GetID();
+	const auto ClientID = pPlayer->GetCID();
+	const auto AccountID = pPlayer->Account()->GetID();
 	std::string questIDsToReset{};
 
 	// reset period quests

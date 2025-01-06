@@ -85,9 +85,9 @@ void CEntityPathArrow::Snap(int SnappingClient)
 	if(m_AreaClipped > 1.f && distance(m_PosTo, pPlayer->m_ViewPos) < m_AreaClipped)
 		return;
 
-	vec2 CorePos = pPlayer->GetCharacter()->m_Core.m_Pos;
-	m_Pos = CorePos - normalize(CorePos - m_PosTo) * clamp(distance(m_Pos, m_PosTo), 32.0f, 90.0f);
-	GS()->SnapPickup(SnappingClient, GetID(), m_Pos, POWERUP_ARMOR);
+	m_Pos = pPlayer->GetCharacter()->m_Core.m_Pos;
+	const auto FinalPos = m_Pos - normalize(m_Pos - m_PosTo) * clamp(distance(m_Pos, m_PosTo), 32.0f, 90.0f);
+	GS()->SnapPickup(SnappingClient, GetID(), FinalPos, POWERUP_ARMOR);
 }
 
 CPlayer* CEntityPathArrow::GetPlayer() const

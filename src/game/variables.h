@@ -102,8 +102,13 @@ MACRO_CONFIG_INT(SvDoorRadiusHit, sv_door_radius_hit, 16, 16, 1000, CFGFLAG_SERV
 // -----------------------
 MACRO_CONFIG_INT(SvWarehouseProductsCanTake, sv_warehouse_products_can_take, 50, 10, 100000, CFGFLAG_SERVER, "Maximum amount of products a player can carry from the warehouse")
 MACRO_CONFIG_INT(SvHarvestingItemsPerTile, sv_harvesting_items_per_tile, 2, 1, 4, CFGFLAG_SERVER, "Number of items that can be harvested from a single tile")
-MACRO_CONFIG_INT(SvDailyQuestSealReward, sv_daily_quest_seal_reward, 100, 5, 100000, CFGFLAG_SERVER, "Number of allied seals rewarded for completing a daily quest")
 MACRO_CONFIG_INT(SvUpdateEntityTextNames, sv_update_ent_text_names, 50, 25, 1000, CFGFLAG_SERVER, "Frequency of updating entity text names")
+
+MACRO_CONFIG_INT(SvMainQuestActivityCoin, sv_main_quest_activity_coin, 20, 1, 100000, CFGFLAG_SERVER, "Activity coin reward for completing a main quest")
+MACRO_CONFIG_INT(SvSideQuestActivityCoin, sv_side_quest_activity_coin, 20, 1, 100000, CFGFLAG_SERVER, "Activity coin reward for completing a side quest")
+MACRO_CONFIG_INT(SvRepeatableActivityCoin, sv_repeatable_quest_activity_coin, 5, 1, 100000, CFGFLAG_SERVER, "Activity coin reward for completing a repeatable quest")
+MACRO_CONFIG_INT(SvDailyActivityCoin, sv_daily_quest_quest_activity_coin, 100, 1, 100000, CFGFLAG_SERVER, "Activity coin reward for completing a daily quest")
+MACRO_CONFIG_INT(SvWeeklyActivityCoin, sv_weekly_quest_activity_coin, 500, 1, 100000, CFGFLAG_SERVER, "Activity coin reward for completing a weekly quest")
 
 // -----------------------
 // Auction System Configuration

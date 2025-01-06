@@ -10,7 +10,7 @@ CEntityQuestAction::CEntityQuestAction(CGameWorld* pGameWorld, int ClientID, int
 	const std::weak_ptr<CQuestStep>& pStep, bool AutoCompletesQuestStep, std::optional<int> optDefeatBotCID)
 	: CEntity(pGameWorld, CGameWorld::ENTTYPE_MOVE_TO_POINT, {}, 32.f, ClientID), m_MoveToIndex(MoveToIndex)
 {
-	// Initialize base
+	// initialize base
 	m_pStep = pStep;
 	m_optDefeatBotCID = optDefeatBotCID;
 	m_AutoCompletesQuestStep = AutoCompletesQuestStep;
@@ -29,13 +29,23 @@ CEntityQuestAction::CEntityQuestAction(CGameWorld* pGameWorld, int ClientID, int
 
 CEntityQuestAction::~CEntityQuestAction()
 {
-	// update player progress
+	// update quest player progress
 	if(CPlayer* pPlayer = GetPlayer())
 	{
+		// try auto finish step
+		if(m_AutoCompletesQuestStep)
+		{
+			auto* pQuestStep = GetQuestStep();
+			const bool LastElement = (pQuestStep->GetCompletedMoveActionCount() == pQuestStep->GetMoveActionNum());
+
+			if(LastElement && pQuestStep->IsComplete())
+				pQuestStep->Finish();
+		}
+
 		GS()->Core()->QuestManager()->Update(pPlayer);
 	}
 
-	// update defeat bot
+	// mark whether or not we need to remove the mob from the game
 	if(CPlayerBot* pDefeatBotPlayer = GetDefeatPlayerBot())
 	{
 		auto& QuestBotInfo = pDefeatBotPlayer->GetQuestBotMobInfo();
@@ -134,30 +144,31 @@ void CEntityQuestAction::Handler(const std::function<bool()>& pCallbackSuccesful
 
 void CEntityQuestAction::TryFinish()
 {
-	CPlayer* pPlayer = GetPlayer();
-	CPlayerQuest* pQuest = GetPlayerQuest();
-	CQuestStep* pQuestStep = GetQuestStep();
+	auto* pPlayer = GetPlayer();
+	auto* pQuest = GetPlayerQuest();
+	auto* pQuestStep = GetQuestStep();
 	const auto* pTaskData = GetTaskMoveTo();
 
 	// required item
 	if(pTaskData->m_TypeFlags & QuestBotInfo::TaskAction::Types::REQUIRED_ITEM && pTaskData->m_RequiredItem.IsValid())
 	{
-		ItemIdentifier ItemID = pTaskData->m_RequiredItem.GetID();
-		int RequiredValue = pTaskData->m_RequiredItem.GetValue();
+		const auto ItemID = pTaskData->m_RequiredItem.GetID();
+		const auto RequiredValue = pTaskData->m_RequiredItem.GetValue();
+		
 		if(!pPlayer->Account()->SpendCurrency(RequiredValue, ItemID))
 			return;
 
-		CPlayerItem* pPlayerItem = pPlayer->GetItem(ItemID);
+		auto* pPlayerItem = pPlayer->GetItem(ItemID);
 		GS()->Chat(m_ClientID, "You've used on the point {} x{}", pPlayerItem->Info()->GetName(), RequiredValue);
 	}
 
 	// pickup item
 	if(pTaskData->m_TypeFlags & QuestBotInfo::TaskAction::Types::PICKUP_ITEM && pTaskData->m_PickupItem.IsValid())
 	{
-		ItemIdentifier ItemID = pTaskData->m_PickupItem.GetID();
-		int PickupValue = pTaskData->m_PickupItem.GetValue();
-		CPlayerItem* pPlayerItem = pPlayer->GetItem(ItemID);
-
+		const auto ItemID = pTaskData->m_PickupItem.GetID();
+		const auto PickupValue = pTaskData->m_PickupItem.GetValue();
+		
+		auto* pPlayerItem = pPlayer->GetItem(ItemID);
 		pPlayerItem->Add(PickupValue);
 		GS()->Chat(m_ClientID, "You've picked up {} x{}.", pPlayerItem->Info()->GetName(), PickupValue);
 	}
@@ -169,20 +180,12 @@ void CEntityQuestAction::TryFinish()
 	}
 
 	// Set the complete flag to true
-	GetQuestStep()->m_aMoveActionProgress[m_MoveToIndex] = true;
+	pQuestStep->m_aMoveActionProgress[m_MoveToIndex] = true;
 	pQuest->Datafile().Save();
 
 	// Create a death entity at the current position and destroy this entity
 	GS()->CreateDeath(m_Pos, m_ClientID);
 	GameWorld()->DestroyEntity(this);
-
-	// Finish the quest step if AutoCompleteQuestStep is true
-	if(m_AutoCompletesQuestStep)
-	{
-		const bool IsLastElement = (pQuestStep->GetCompletedMoveActionCount() == pQuestStep->GetMoveActionNum());
-		if(IsLastElement && pQuestStep->IsComplete())
-			pQuestStep->Finish();
-	}
 }
 
 CPlayer* CEntityQuestAction::GetPlayer() const

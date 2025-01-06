@@ -91,14 +91,14 @@ bool CPlayerQuest::Accept()
 	Database->Execute<DB::INSERT>("tw_accounts_quests", "(QuestID, UserID, Type) VALUES ('{}', '{}', '{}')", m_ID, pPlayer->Account()->GetID(), (int)m_State);
 
 	// message about quest accept state
-	if(Info()->HasFlag(QUEST_FLAG_TYPE_REPEATABLE))
-		GS()->Chat(m_ClientID, "Repeatable quest: '{}' accepted!", Info()->GetName());
+	if(Info()->HasFlag(QUEST_FLAG_TYPE_MAIN))
+		GS()->Chat(m_ClientID, "Main quest: '{}' accepted!", Info()->GetName());
 	else if(Info()->HasFlag(QUEST_FLAG_TYPE_DAILY))
 		GS()->Chat(m_ClientID, "Daily quest: '{}' accepted!", Info()->GetName());
 	else if(Info()->HasFlag(QUEST_FLAG_TYPE_WEEKLY))
 		GS()->Chat(m_ClientID, "Weekly quest: '{}' accepted!", Info()->GetName());
-	else if(Info()->HasFlag(QUEST_FLAG_TYPE_MAIN))
-		GS()->Chat(m_ClientID, "Main quest: '{}' accepted!", Info()->GetName());
+	else if(Info()->HasFlag(QUEST_FLAG_TYPE_REPEATABLE))
+		GS()->Chat(m_ClientID, "Repeatable quest: '{}' accepted!", Info()->GetName());
 	else
 		GS()->Chat(m_ClientID, "Side quest: '{}' accepted!", Info()->GetName());
 
@@ -175,21 +175,36 @@ void CPlayerQuest::UpdateStepProgress()
 	// handle quest by flags
 	if(Info()->HasFlag(QUEST_FLAG_TYPE_REPEATABLE))
 	{
+		pPlayer->GetItem(itActivityCoin)->Add(g_Config.m_SvRepeatableActivityCoin);
 		GS()->Chat(-1, "{} completed repeatable quest \"{}\".", GS()->Server()->ClientName(m_ClientID), Info()->GetName());
 		Refuse();
 		return;
 	}
-	else if(Info()->HasFlag(QUEST_FLAG_TYPE_DAILY))
+
+	// daily quest
+	if(Info()->HasFlag(QUEST_FLAG_TYPE_DAILY))
 	{
-		pPlayer->GetItem(itAlliedSeals)->Add(g_Config.m_SvDailyQuestSealReward);
+		pPlayer->GetItem(itActivityCoin)->Add(g_Config.m_SvDailyActivityCoin);
 		GS()->Chat(-1, "{} completed daily quest \"{}\".", GS()->Server()->ClientName(m_ClientID), Info()->GetName());
 	}
+	// weekly quest
 	else if(Info()->HasFlag(QUEST_FLAG_TYPE_WEEKLY))
+	{
+		pPlayer->GetItem(itActivityCoin)->Add(g_Config.m_SvWeeklyActivityCoin);
 		GS()->Chat(-1, "{} completed weekly quest \"{}\".", GS()->Server()->ClientName(m_ClientID), Info()->GetName());
+	}
+	// main quest
 	else if(Info()->HasFlag(QUEST_FLAG_TYPE_MAIN))
+	{
+		pPlayer->GetItem(itActivityCoin)->Add(g_Config.m_SvMainQuestActivityCoin);
 		GS()->Chat(-1, "{} completed main quest \"{}\".", GS()->Server()->ClientName(m_ClientID), Info()->GetName());
+	}
+	// side quest
 	else
+	{
+		pPlayer->GetItem(itActivityCoin)->Add(g_Config.m_SvSideQuestActivityCoin);
 		GS()->Chat(-1, "{} completed side quest \"{}\".", GS()->Server()->ClientName(m_ClientID), Info()->GetName());
+	}
 
 	// update quest state in database
 	m_State = QuestState::Finished;

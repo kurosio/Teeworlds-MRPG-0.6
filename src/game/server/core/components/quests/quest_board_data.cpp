@@ -4,55 +4,23 @@
 
 #include <game/server/player.h>
 
-int CQuestsBoard::CountAvailableDailyQuests(CPlayer* pPlayer)
+std::deque<int> CQuestsBoard::GetUnfinishedQuestsByFlag(CPlayer* pPlayer, int Flag)
 {
-	return (int)std::ranges::count_if(m_vpQuests, [&pPlayer](const auto& p)
+	std::deque<int> vResult {};
+	for(auto& QuestID : m_vpQuestsList)
 	{
-		if(p->HasFlag(QUEST_FLAG_TYPE_DAILY))
-		{
-			CPlayerQuest* pQuest = pPlayer->GetQuest(p->GetID());
-			return pQuest->GetState() != QuestState::Finished;
-		}
-		return false;
-	});
-}
+		const auto* pQuest = pPlayer->GetQuest(QuestID);
+		if(!pQuest)
+			continue;
 
-int CQuestsBoard::CountAvailableWeeklyQuests(CPlayer* pPlayer)
-{
-	return (int)std::ranges::count_if(m_vpQuests, [&pPlayer](const auto& p)
-	{
-		if(p->HasFlag(QUEST_FLAG_TYPE_WEEKLY))
-		{
-			CPlayerQuest* pQuest = pPlayer->GetQuest(p->GetID());
-			return pQuest->GetState() != QuestState::Finished;
-		}
-		return false;
-	});
-}
+		if(!pQuest->Info()->HasFlag(Flag))
+			continue;
 
-
-int CQuestsBoard::CountAvailableRepeatableQuests(CPlayer* pPlayer)
-{
-	return (int)std::ranges::count_if(m_vpQuests, [&pPlayer](const auto& p)
-	{
-		if(p->HasFlag(QUEST_FLAG_TYPE_REPEATABLE))
+		if(pQuest->GetState() != QuestState::Finished)
 		{
-			CPlayerQuest* pQuest = pPlayer->GetQuest(p->GetID());
-			return pQuest->GetState() != QuestState::Finished;
+			vResult.push_back(QuestID);
 		}
-		return false;
-	});
-}
+	}
 
-int CQuestsBoard::CountAvailableSideQuests(CPlayer* pPlayer)
-{
-	return (int)std::ranges::count_if(m_vpQuests, [&pPlayer](const auto& p)
-	{
-		if(p->HasFlag(QUEST_FLAG_TYPE_SIDE))
-		{
-			CPlayerQuest* pQuest = pPlayer->GetQuest(p->GetID());
-			return pQuest->GetState() != QuestState::Finished;
-		}
-		return false;
-	});
+	return vResult;
 }
