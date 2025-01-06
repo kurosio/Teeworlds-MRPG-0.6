@@ -18,25 +18,29 @@
 #include <new>
 
 // todo: rework this
+const char* CConsole::CResult::GetString(unsigned Index) const { return GetStringOr(Index, ""); }
+int CConsole::CResult::GetInteger(unsigned Index) const { return GetIntegerOr(Index, 0); }
+float CConsole::CResult::GetFloat(unsigned Index) const { return GetFloatOr(Index, 0.0f); }
 
-const char* CConsole::CResult::GetString(unsigned Index) const
+const char* CConsole::CResult::GetStringOr(unsigned Index, const char* pDefault) const
 {
 	if(Index >= m_NumArgs)
-		return "";
+		return pDefault;
 	return m_apArgs[Index];
 }
 
-int CConsole::CResult::GetInteger(unsigned Index) const
+
+int CConsole::CResult::GetIntegerOr(unsigned Index, int Default) const
 {
 	if(Index >= m_NumArgs)
-		return 0;
+		return Default;
 	return str_toint(m_apArgs[Index]);
 }
 
-float CConsole::CResult::GetFloat(unsigned Index) const
+float CConsole::CResult::GetFloatOr(unsigned Index, float Default) const
 {
 	if(Index >= m_NumArgs)
-		return 0.0f;
+		return Default;
 	return str_tofloat(m_apArgs[Index]);
 }
 

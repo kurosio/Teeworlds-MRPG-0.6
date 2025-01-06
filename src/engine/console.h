@@ -50,6 +50,10 @@ public:
 		IResult() { m_NumArgs = 0; }
 		virtual ~IResult() {}
 
+		virtual int GetIntegerOr(unsigned Index, int Default) const = 0;
+		virtual float GetFloatOr(unsigned Index, float Default) const = 0;
+		virtual const char* GetStringOr(unsigned Index, const char* pDefault) const = 0;
+
 		virtual int GetInteger(unsigned Index) const = 0;
 		virtual float GetFloat(unsigned Index) const = 0;
 		virtual const char *GetString(unsigned Index) const = 0;

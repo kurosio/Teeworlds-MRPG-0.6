@@ -13,7 +13,6 @@ class CCommandProcessor
 	static void ConChatRegister(IConsole::IResult* pResult, void* pUserData);
 	static void ConChatGuild(IConsole::IResult* pResult, void* pUserData);
 	static void ConChatHouse(IConsole::IResult* pResult, void* pUserData);
-	static void ConChatPosition(IConsole::IResult* pResult, void* pUserData);
 	static void ConChatSound(IConsole::IResult* pResult, void* pUserData);
 	static void ConChatGiveEffect(IConsole::IResult* pResult, void* pUserData);
 	static void ConGroup(IConsole::IResult* pResult, void* pUser);

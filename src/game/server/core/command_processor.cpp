@@ -40,7 +40,6 @@ CCommandProcessor::CCommandProcessor(CGS* pGS)
 	AddCommand("house", "?s[element] ?s[subelement] ?i[number]", ConChatHouse, pServer, "");
 
 	// admin command
-	AddCommand("pos", "", ConChatPosition, pServer, "");
 	AddCommand("sound", "i[sound]", ConChatSound, pServer, "");
 	AddCommand("effect", "s[effect] i[sec]", ConChatGiveEffect, pServer, "");
 
@@ -276,23 +275,6 @@ void CCommandProcessor::ConChatHouse(IConsole::IResult* pResult, void* pUser)
 	pGS->Chat(ClientID, mystd::aesthetic::boardPillar("House system", 7).c_str());
 	pGS->Chat(ClientID, "/house doors - settings door's");
 	pGS->Chat(ClientID, "/house sell - sell the house to the state");
-}
-
-void CCommandProcessor::ConChatPosition(IConsole::IResult* pResult, void* pUser)
-{
-	const auto ClientID = pResult->GetClientID();
-	auto* pGS = GetCommandResultGameServer(ClientID, pUser);
-	const auto* pPlayer = pGS->GetPlayer(ClientID);
-
-	if(!pPlayer || !pPlayer->GetCharacter() || !pGS->Server()->IsAuthed(ClientID))
-		return;
-
-	const auto originPosX = round_to_int(pPlayer->GetCharacter()->m_Core.m_Pos.x);
-	const auto originPosY = round_to_int(pPlayer->GetCharacter()->m_Core.m_Pos.y);
-	const int convertedPosX = originPosX / 32;
-	const int convertedPosY = originPosY / 32;
-	pGS->Chat(ClientID, "[{}] Position X: {}({}) Y: {}({}).", pGS->Server()->GetWorldName(pGS->GetWorldID()), convertedPosX, originPosX, convertedPosY, originPosY);
-	dbg_msg("cmd_pos", "%0.f %0.f WorldID: %d", pPlayer->GetCharacter()->m_Core.m_Pos.x, pPlayer->GetCharacter()->m_Core.m_Pos.y, pGS->GetWorldID());
 }
 
 void CCommandProcessor::ConChatSound(IConsole::IResult* pResult, void* pUser)

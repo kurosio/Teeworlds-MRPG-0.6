@@ -24,8 +24,12 @@ void RconProcessor::Init(IConsole* pConsole, IServer* pServer)
 	pConsole->Register("ban_acc", "i[cid]s[time]r[reason]", CFGFLAG_SERVER, ConBanAcc, pServer, "Ban account, time format: d - days, h - hours, m - minutes, s - seconds, example: 3d15m");
 	pConsole->Register("unban_acc", "i[banid]", CFGFLAG_SERVER, ConUnBanAcc, pServer, "UnBan account, pass ban id from bans_acc");
 	pConsole->Register("bans_acc", "", CFGFLAG_SERVER, ConBansAcc, pServer, "Accounts bans");
-	pConsole->Register("tele_by_mouse", "", CFGFLAG_SERVER, ConTeleportToMouse, pServer, "Teleport by mouse");
 
+	// tools
+	pConsole->Register("tele_by_mouse", "", CFGFLAG_SERVER, ConTeleportByMouse, pServer, "Teleport by mouse");
+	pConsole->Register("tele_by_pos", "i[x]i[y]?i[world_id]", CFGFLAG_SERVER, ConTeleportByPos, pServer, "Teleport by pos");
+	pConsole->Register("tele_by_client", "i[cid]", CFGFLAG_SERVER, ConTeleportByClient, pServer, "Teleport by client");
+	pConsole->Register("position", "?i[cid]", CFGFLAG_SERVER, ConPosition, pServer, "Get position by client (default self position)");
 
 	// chain's
 	pConsole->Chain("sv_motd", ConchainSpecialMotdupdate, pServer);
@@ -37,16 +41,93 @@ static CGS* GetCommandResultGameServer(int ClientID, void* pUser)
 	return (CGS*)pServer->GameServer(pServer->GetClientWorldID(ClientID));
 }
 
-void RconProcessor::ConTeleportToMouse(IConsole::IResult* pResult, void* pUser)
+void RconProcessor::ConTeleportByMouse(IConsole::IResult* pResult, void* pUser)
 {
 	const auto ClientID = pResult->GetClientID();
 	auto* pGS = GetCommandResultGameServer(ClientID, pUser);
 	const auto* pPlayer = pGS->GetPlayer(ClientID);
-	if(!pPlayer || !pPlayer->GetCharacter() || !pGS->Server()->IsAuthed(ClientID))
+	if(!pPlayer || !pPlayer->GetCharacter())
 		return;
 
+	// teleport by mouse
 	const auto mousePos = pPlayer->GetCharacter()->GetMousePos();
 	pPlayer->GetCharacter()->ChangePosition(mousePos);
+}
+
+void RconProcessor::ConTeleportByPos(IConsole::IResult* pResult, void* pUser)
+{
+	IServer* pServer = (IServer*)pUser;
+	const auto ClientID = pResult->GetClientID();
+	const auto PosX = pResult->GetInteger(0);
+	const auto PosY = pResult->GetInteger(1);
+	const auto WorldID = pResult->GetIntegerOr(2, pServer->GetClientWorldID(ClientID));
+
+	auto* pGS = GetCommandResultGameServer(ClientID, pUser);
+	const auto* pPlayer = pGS->GetPlayer(ClientID);
+	if(!pPlayer || !pPlayer->GetCharacter())
+		return;
+
+	// teleport by pos
+	const auto NewPos = vec2(PosX, PosY);
+	if(pServer->GetClientWorldID(ClientID) != WorldID)
+	{
+		pPlayer->GetTempData().SetTeleportPosition(NewPos);
+		pServer->ChangeWorld(ClientID, WorldID);
+	}
+	else
+	{
+		pPlayer->GetCharacter()->ChangePosition(NewPos);
+	}
+}
+
+void RconProcessor::ConTeleportByClient(IConsole::IResult* pResult, void* pUser)
+{
+	IServer* pServer = (IServer*)pUser;
+	auto ClientID = pResult->GetInteger(0);
+	auto* pGS = GetCommandResultGameServer(ClientID, pUser);
+	auto* pPlayer = pGS->GetPlayer(ClientID);
+	if(!pPlayer || !pPlayer->GetCharacter())
+	{
+		pGS->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "teleport by client", "I can't find the player, or he's dead");
+		return;
+	}
+
+	const auto NewPos = pPlayer->GetCharacter()->m_Core.m_Pos;
+	const auto NewWorldID = pServer->GetClientWorldID(ClientID);
+
+	ClientID = pResult->GetClientID();
+	pGS = GetCommandResultGameServer(ClientID, pUser);
+	pPlayer = pGS->GetPlayer(ClientID);
+	if(!pPlayer || !pPlayer->GetCharacter())
+		return;
+
+	// teleport by client
+	if(pPlayer->GetCurrentWorldID() != NewWorldID)
+	{
+		pPlayer->GetTempData().SetTeleportPosition(NewPos);
+		pServer->ChangeWorld(ClientID, NewWorldID);
+	}
+	else
+	{
+		pPlayer->GetCharacter()->ChangePosition(NewPos);
+	}
+}
+
+void RconProcessor::ConPosition(IConsole::IResult* pResult, void* pUser)
+{
+	int ClientID = pResult->GetIntegerOr(0, pResult->GetClientID());
+	auto* pGS = GetCommandResultGameServer(ClientID, pUser);
+	const auto* pPlayer = pGS->GetPlayer(ClientID);
+
+	if(!pPlayer || !pPlayer->GetCharacter())
+		return;
+
+	const auto PosX = round_to_int(pPlayer->GetCharacter()->m_Core.m_Pos.x);
+	const auto PosY = round_to_int(pPlayer->GetCharacter()->m_Core.m_Pos.y);
+	const int MapPosX = PosX / 32;
+	const int MapPosY = PosY / 32;
+	pGS->Console()->PrintF(IConsole::OUTPUT_LEVEL_STANDARD, "client position", "CID: %d Pos: %d %d(%d %d) World: %s(%d)",
+		ClientID, MapPosX, MapPosY, PosX, PosY, pGS->Server()->GetWorldName(pGS->GetWorldID()), pGS->GetWorldID());
 }
 
 void RconProcessor::ConSetWorldTime(IConsole::IResult* pResult, void* pUserData)

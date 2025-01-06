@@ -117,6 +117,10 @@ class CConsole : public IConsole
 			m_apArgs[m_NumArgs++] = pArg;
 		}
 
+		int GetIntegerOr(unsigned Index, int Default) const;
+		float GetFloatOr(unsigned Index, float Default) const;
+		const char* GetStringOr(unsigned Index, const char* pDefault) const;
+
 		const char *GetString(unsigned Index) const override;
 		int GetInteger(unsigned Index) const override;
 		float GetFloat(unsigned Index) const override;
