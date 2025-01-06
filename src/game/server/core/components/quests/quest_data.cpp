@@ -34,7 +34,6 @@ CQuestDescription* CQuestDescription::GetPreviousQuest() const
 
 void CQuestDescription::PreparePlayerSteps(int StepPos, int ClientID, std::deque<std::shared_ptr<CQuestStep>>& pElem)
 {
-	pElem.clear();
 	for(const auto& Step : m_vSteps[StepPos])
 	{
 		pElem.emplace_back(std::make_shared<CQuestStep>(ClientID, Step.m_Bot));
@@ -73,7 +72,11 @@ bool CPlayerQuest::Accept()
 {
 	// check valid player and quest state
 	CPlayer* pPlayer = GetPlayer();
-	if(m_State != QuestState::NoAccepted || !pPlayer)
+	if(!pPlayer)
+		return false;
+
+	// check acceptable state
+	if(m_State != QuestState::NoAccepted)
 		return false;
 
 	// initialize
@@ -82,32 +85,18 @@ bool CPlayerQuest::Accept()
 	m_Datafile.Create();
 	Database->Execute<DB::INSERT>("tw_accounts_quests", "(QuestID, UserID, Type) VALUES ('{}', '{}', '{}')", m_ID, pPlayer->Account()->GetID(), (int)m_State);
 
-	// handle repeatable quest
+	// message about quest accept state
 	int ClientID = pPlayer->GetCID();
 	if(Info()->HasFlag(QUEST_FLAG_TYPE_REPEATABLE))
-	{
 		GS()->Chat(ClientID, "Repeatable quest: '{}' accepted!", Info()->GetName());
-	}
-	// handle daily quest
 	else if(Info()->HasFlag(QUEST_FLAG_TYPE_DAILY))
-	{
 		GS()->Chat(ClientID, "Daily quest: '{}' accepted!", Info()->GetName());
-	}
-	// handle weekly quest
 	else if(Info()->HasFlag(QUEST_FLAG_TYPE_WEEKLY))
-	{
 		GS()->Chat(ClientID, "Weekly quest: '{}' accepted!", Info()->GetName());
-	}
-	// handle main quest
 	else if(Info()->HasFlag(QUEST_FLAG_TYPE_MAIN))
-	{
 		GS()->Chat(ClientID, "Main quest: '{}' accepted!", Info()->GetName());
-	}
-	// handle other quest
 	else
-	{
 		GS()->Chat(ClientID, "Side quest: '{}' accepted!", Info()->GetName());
-	}
 
 	// accepted effects
 	GS()->Broadcast(ClientID, BroadcastPriority::TitleInformation, 100, "Quest Accepted");
@@ -118,17 +107,19 @@ bool CPlayerQuest::Accept()
 void CPlayerQuest::Refuse()
 {
 	CPlayer* pPlayer = GetPlayer();
-	if(m_State != QuestState::Accepted || !pPlayer)
+	if(!pPlayer)
 		return;
 
-	// refuse quest
-	Database->Execute<DB::REMOVE>("tw_accounts_quests", "WHERE QuestID = '{}' AND UserID = '{}'", m_ID, pPlayer->Account()->GetID());
+	if(m_State != QuestState::Accepted)
+		return;
+
 	Reset();
+	Database->Execute<DB::REMOVE>("tw_accounts_quests", "WHERE QuestID = '{}' AND UserID = '{}'", m_ID, pPlayer->Account()->GetID());
 }
 
 void CPlayerQuest::Reset()
 {
-	m_Step = 0;
+	m_Step = 1;
 	m_State = QuestState::NoAccepted;
 	for(const auto& pStep : m_vSteps)
 	{
@@ -138,70 +129,66 @@ void CPlayerQuest::Reset()
 	m_Datafile.Delete();
 }
 
-void CPlayerQuest::UpdateStepPosition()
+void CPlayerQuest::UpdateStepProgress()
 {
-	// check player valid and unfinished steps
 	CPlayer* pPlayer = GetPlayer();
-	if(!pPlayer || HasUnfinishedSteps())
+	if(!pPlayer)
 		return;
 
-	// update
+	if(HasUnfinishedSteps())
+		return;
+
+	// update step progress
 	m_Step++;
+	m_vSteps.clear();
 	Info()->PreparePlayerSteps(m_Step, m_ClientID, m_vSteps);
-	if(!m_vSteps.empty())
+
+	// check finished state
+	bool IsNowFinished = m_vSteps.empty();
+	if(!IsNowFinished)
 	{
 		m_Datafile.Create();
 		Update();
-		return;
 	}
-
-	// apply reward for player
-	Info()->Reward().ApplyReward(pPlayer);
-
-	// completion effects
-	GS()->Broadcast(m_ClientID, BroadcastPriority::TitleInformation, 100, "Quest Complete");
-	GS()->EntityManager()->Text(pPlayer->m_ViewPos + vec2(0, -70), 30, "QUEST COMPLETE");
-	GS()->CreatePlayerSound(m_ClientID, SOUND_CTF_CAPTURE);
-
-	// handle repeatable type quest
-	if(Info()->HasFlag(QUEST_FLAG_TYPE_REPEATABLE))
-	{
-		GS()->Chat(-1, "{} completed repeatable quest \"{}\".", GS()->Server()->ClientName(m_ClientID), Info()->GetName());
-		Refuse();
-		return;
-	}
-
-	// handle type daily quest
-	if(Info()->HasFlag(QUEST_FLAG_TYPE_DAILY))
-	{
-		pPlayer->GetItem(itAlliedSeals)->Add(g_Config.m_SvDailyQuestSealReward);
-		GS()->Chat(-1, "{} completed daily quest \"{}\".", GS()->Server()->ClientName(m_ClientID), Info()->GetName());
-	}
-	// handle type weekly quest
-	else if(Info()->HasFlag(QUEST_FLAG_TYPE_WEEKLY))
-	{
-		GS()->Chat(-1, "{} completed weekly quest \"{}\".", GS()->Server()->ClientName(m_ClientID), Info()->GetName());
-	}
-	// handle type main quest
-	else if(Info()->HasFlag(QUEST_FLAG_TYPE_MAIN))
-	{
-		GS()->Chat(-1, "{} completed main quest \"{}\".", GS()->Server()->ClientName(m_ClientID), Info()->GetName());
-	}
-	// handle other type quest
 	else
 	{
-		GS()->Chat(-1, "{} completed side quest \"{}\".", GS()->Server()->ClientName(m_ClientID), Info()->GetName());
+		// apply reward for player
+		Info()->Reward().ApplyReward(pPlayer);
+
+		// completion effects
+		GS()->Broadcast(m_ClientID, BroadcastPriority::TitleInformation, 100, "Quest Complete");
+		GS()->EntityManager()->Text(pPlayer->m_ViewPos + vec2(0, -70), 30, "QUEST COMPLETE");
+		GS()->CreatePlayerSound(m_ClientID, SOUND_CTF_CAPTURE);
+
+		// handle quest by flags
+		if(Info()->HasFlag(QUEST_FLAG_TYPE_REPEATABLE))
+		{
+			GS()->Chat(-1, "{} completed repeatable quest \"{}\".", GS()->Server()->ClientName(m_ClientID), Info()->GetName());
+			Refuse();
+			return;
+		}
+		else if(Info()->HasFlag(QUEST_FLAG_TYPE_DAILY))
+		{
+			pPlayer->GetItem(itAlliedSeals)->Add(g_Config.m_SvDailyQuestSealReward);
+			GS()->Chat(-1, "{} completed daily quest \"{}\".", GS()->Server()->ClientName(m_ClientID), Info()->GetName());
+		}
+		else if(Info()->HasFlag(QUEST_FLAG_TYPE_WEEKLY))
+			GS()->Chat(-1, "{} completed weekly quest \"{}\".", GS()->Server()->ClientName(m_ClientID), Info()->GetName());
+		else if(Info()->HasFlag(QUEST_FLAG_TYPE_MAIN))
+			GS()->Chat(-1, "{} completed main quest \"{}\".", GS()->Server()->ClientName(m_ClientID), Info()->GetName());
+		else
+			GS()->Chat(-1, "{} completed side quest \"{}\".", GS()->Server()->ClientName(m_ClientID), Info()->GetName());
+
+		// update quest state in database
+		m_State = QuestState::Finished;
+		m_Datafile.Delete();
+		Database->Execute<DB::UPDATE>("tw_accounts_quests", "Type = '{}' WHERE QuestID = '{}' AND UserID = '{}'", (int)m_State, m_ID, pPlayer->Account()->GetID());
+
+		// save player stats and accept next story quest
+		GS()->Core()->SaveAccount(pPlayer, SAVE_STATS);
+		GS()->Core()->QuestManager()->TryAcceptNextQuestChain(pPlayer, m_ID);
+		GS()->Core()->DungeonManager()->NotifyUnlockedDungeonsByQuest(pPlayer, m_ID);
 	}
-
-	// update quest state in database
-	m_State = QuestState::Finished;
-	Database->Execute<DB::UPDATE>("tw_accounts_quests", "Type = '{}' WHERE QuestID = '{}' AND UserID = '{}'", (int)m_State, m_ID, pPlayer->Account()->GetID());
-	m_Datafile.Delete();
-
-	// save player stats and accept next story quest
-	GS()->Core()->SaveAccount(pPlayer, SAVE_STATS);
-	GS()->Core()->QuestManager()->TryAcceptNextQuestChain(pPlayer, m_ID);
-	GS()->Core()->DungeonManager()->NotifyUnlockedDungeonsByQuest(pPlayer, m_ID);
 }
 
 void CPlayerQuest::Update()
@@ -210,7 +197,7 @@ void CPlayerQuest::Update()
 	{
 		pStep->Update();
 	}
-	UpdateStepPosition();
+	UpdateStepProgress();
 }
 
 CQuestStep* CPlayerQuest::GetStepByMob(int MobID)

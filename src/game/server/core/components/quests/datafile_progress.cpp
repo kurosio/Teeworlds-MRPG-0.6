@@ -10,8 +10,13 @@
  */
 void QuestDatafile::Create() const
 {
-	// check if the quest state is not ACCEPT or if the player does not exist
-	if(!m_pQuest || m_pQuest->m_State != QuestState::Accepted || !m_pQuest->GetPlayer())
+	if(!m_pQuest)
+		return;
+
+	if(!m_pQuest->GetPlayer())
+		return;
+
+	if(m_pQuest->m_State != QuestState::Accepted)
 		return;
 
 	// json structuring

@@ -93,19 +93,6 @@ void CUniversalScenario::InitStep(const nlohmann::json& step)
 			});
 		}
 	}
-	// reset quest complete
-	else if(action == "reset_quest")
-	{
-		const int questID = step.value("quest_id", -1);
-
-		if(questID > 0)
-		{
-			AddStep().WhenFinished([questID](auto* pBase)
-			{
-				pBase->GetPlayer()->GetQuest(questID)->Reset();
-			});
-		}
-	}
 	else
 	{
 		dbg_msg("scenario-universal", "Unknown action: %s", action.c_str());

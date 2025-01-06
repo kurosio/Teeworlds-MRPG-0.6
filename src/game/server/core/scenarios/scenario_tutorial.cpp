@@ -83,10 +83,34 @@ void CTutorialScenario::ProcessStep(const nlohmann::json& step)
 	// reset quest
 	else if(action == "reset_quest")
 	{
-		if(int questID = step.value("quest_id", -1); questID > 0)
+		const auto QuestID = step.value("quest_id", -1);
+		auto& resetQuestStep = AddStep();
+		resetQuestStep.WhenStarted([QuestID, this](auto*)
 		{
-			GetPlayer()->GetQuest(questID)->Reset();
-		}
+			if(QuestID > 0)
+			{
+				const auto* pPlayer = GetPlayer();
+				auto* pQuest = pPlayer->GetQuest(QuestID);
+				pQuest->Refuse();
+			}
+		});
+	}	
+	// reset quest
+	else if(action == "accept_quest")
+	{
+		const auto QuestID = step.value("quest_id", -1);
+		auto& acceptQuestStep = AddStep();
+		acceptQuestStep.WhenStarted([QuestID, this](auto*)
+		{
+			if(QuestID > 0)
+			{
+				const auto* pPlayer = GetPlayer();
+				auto* pQuest = pPlayer->GetQuest(QuestID);
+				if(pQuest->IsAccepted())
+					pQuest->Refuse();
+				pQuest->Accept();
+			}
+		});
 	}
 	// create new door
 	else if(action == "new_door")

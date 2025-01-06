@@ -165,10 +165,10 @@ public:
 	void Update();
 	bool Accept();
 	void Refuse();
-	void Reset();
 
 private:
-	void UpdateStepPosition();
+	void Reset();
+	void UpdateStepProgress();
 };
 
 
