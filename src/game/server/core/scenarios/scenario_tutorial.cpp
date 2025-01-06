@@ -229,17 +229,21 @@ void CTutorialScenario::ProcessStep(const nlohmann::json& step)
 	{
 		if(int questID = step.value("quest_id", -1); questID > 0)
 		{
-			AddStep().CheckCondition(ConditionPriority::CONDITION_AND_TIMER, [this, questID](auto*) {
+			auto& checkQuestAcceptedState = AddStep();
+			checkQuestAcceptedState.CheckCondition(ConditionPriority::CONDITION_AND_TIMER, [this, questID](auto*) 
+			{
 				return GetPlayer()->GetQuest(questID)->IsAccepted();
 			});
 		}
 	}
 	// check quest completed
-	else if(action == "check_quest_completed")
+	else if(action == "check_quest_finished")
 	{
 		if(int questID = step.value("quest_id", -1); questID > 0)
 		{
-			AddStep().CheckCondition(ConditionPriority::CONDITION_AND_TIMER, [this, questID](auto*) {
+			auto& checkQuestFinishedState = AddStep();
+			checkQuestFinishedState.CheckCondition(ConditionPriority::CONDITION_AND_TIMER, [this, questID](auto*)
+			{
 				return GetPlayer()->GetQuest(questID)->IsCompleted();
 			});
 		}
