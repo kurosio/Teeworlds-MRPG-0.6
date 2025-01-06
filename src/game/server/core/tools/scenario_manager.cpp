@@ -48,6 +48,8 @@ void ScenarioBase::ExecuteCurrentStep()
 	{
 		OnUnregisterEventListener(GS()->EventListener());
 		step.FuncOnEnd(this);
+		if(!GetPlayer())
+			return;
 		step.FuncOnEnd = nullptr;
 	}
 
@@ -110,12 +112,16 @@ void ScenarioBase::Tick()
 	{
 		OnRegisterEventListener(GS()->EventListener());
 		step.FuncOnStart(this);
+		if(!GetPlayer())
+			return;
 		step.FuncOnStart = nullptr;
 	}
 
 	if(step.FuncActive)
 	{
 		step.FuncActive(this);
+		if(!GetPlayer())
+			return;
 	}
 
 	if(CanExecuteStep(step, elapsedTick))

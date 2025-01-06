@@ -331,7 +331,6 @@ void CTutorialScenario::StepTeleport(const vec2& pos, int worldID)
 		auto* pPlayer = GetPlayer();
 		if(worldID >= 0 && !GS()->IsPlayerInWorld(GetClientID(), worldID))
 		{
-			Stop();
 			pPlayer->ChangeWorld(worldID, pos);
 			return;
 		}
