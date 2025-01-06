@@ -35,7 +35,7 @@ private:
 	void StepEmote(int emoteType, int emoticonType);
 	void StepShootmarkers(const std::vector<std::pair<vec2, int>>& vShotmarkers);
 	void StepFixedCam(int delay, const vec2& pos);
-	void StepTeleport(const vec2& pos);
+	void StepTeleport(const vec2& pos, int worldID);
 	void StepMovingDisable(bool State);
 	void StepMovementTask(int delay, const vec2& pos, const std::string& targetLookText, const std::string& broadcastMsg, const std::string& chatMsg, bool targetLook = true);
 

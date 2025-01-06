@@ -187,8 +187,8 @@ void CTutorialScenario::ProcessStep(const nlohmann::json& step)
 			step["position"].value("x", 0.0f), 
 			step["position"].value("y", 0.0f) 
 		};
-
-		StepTeleport(position);
+		int worldID = step.value("world_id", -1);
+		StepTeleport(position, worldID);
 	}
 	// movement task
 	else if(action == "movement_task")
@@ -323,12 +323,20 @@ void CTutorialScenario::StepFixedCam(int delay, const vec2& pos)
 	});
 }
 
-void CTutorialScenario::StepTeleport(const vec2& pos)
+void CTutorialScenario::StepTeleport(const vec2& pos, int worldID)
 {
 	auto& teleportStep = AddStep();
-	teleportStep.WhenStarted([this, pos](auto*)
+	teleportStep.WhenStarted([this, pos, worldID](auto*)
 	{
-		GetCharacter()->ChangePosition(pos);
+		auto* pPlayer = GetPlayer();
+		if(worldID >= 0 && !GS()->IsPlayerInWorld(GetClientID(), worldID))
+		{
+			pPlayer->ChangeWorld(worldID, pos);
+			return;
+		}
+		
+		pPlayer->GetCharacter()->ChangePosition(pos);
+		pPlayer->m_VotesData.UpdateCurrentVotes();
 	});
 }
 
