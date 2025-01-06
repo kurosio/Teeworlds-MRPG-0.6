@@ -2,7 +2,7 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "tutorial.h"
 
-#include <game/server/core/scenarios/scenario_tutorial.h>
+#include <game/server/core/scenarios/scenario_universal.h>
 #include <game/server/gamecontext.h>
 
 CGameControllerTutorial::CGameControllerTutorial(class CGS* pGS)
@@ -37,7 +37,7 @@ void CGameControllerTutorial::Tick()
 bool CGameControllerTutorial::OnCharacterSpawn(CCharacter* pChr)
 {
 	// start tutorial scenario
-	pChr->GetPlayer()->Scenarios().Start(std::make_unique<CTutorialScenario>(m_JsonTutorialData));
+	pChr->GetPlayer()->Scenarios().Start(std::make_unique<CUniversalScenario>(m_JsonTutorialData));
 
 	return IGameController::OnCharacterSpawn(pChr);
 }

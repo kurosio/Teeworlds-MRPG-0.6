@@ -24,9 +24,29 @@ void RconProcessor::Init(IConsole* pConsole, IServer* pServer)
 	pConsole->Register("ban_acc", "i[cid]s[time]r[reason]", CFGFLAG_SERVER, ConBanAcc, pServer, "Ban account, time format: d - days, h - hours, m - minutes, s - seconds, example: 3d15m");
 	pConsole->Register("unban_acc", "i[banid]", CFGFLAG_SERVER, ConUnBanAcc, pServer, "UnBan account, pass ban id from bans_acc");
 	pConsole->Register("bans_acc", "", CFGFLAG_SERVER, ConBansAcc, pServer, "Accounts bans");
+	pConsole->Register("tele_by_mouse", "", CFGFLAG_SERVER, ConTeleportToMouse, pServer, "Teleport by mouse");
+
 
 	// chain's
 	pConsole->Chain("sv_motd", ConchainSpecialMotdupdate, pServer);
+}
+
+static CGS* GetCommandResultGameServer(int ClientID, void* pUser)
+{
+	IServer* pServer = (IServer*)pUser;
+	return (CGS*)pServer->GameServer(pServer->GetClientWorldID(ClientID));
+}
+
+void RconProcessor::ConTeleportToMouse(IConsole::IResult* pResult, void* pUser)
+{
+	const auto ClientID = pResult->GetClientID();
+	auto* pGS = GetCommandResultGameServer(ClientID, pUser);
+	const auto* pPlayer = pGS->GetPlayer(ClientID);
+	if(!pPlayer || !pPlayer->GetCharacter() || !pGS->Server()->IsAuthed(ClientID))
+		return;
+
+	const auto mousePos = pPlayer->GetCharacter()->GetMousePos();
+	pPlayer->GetCharacter()->ChangePosition(mousePos);
 }
 
 void RconProcessor::ConSetWorldTime(IConsole::IResult* pResult, void* pUserData)

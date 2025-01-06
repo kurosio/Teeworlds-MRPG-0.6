@@ -280,16 +280,18 @@ void CCommandProcessor::ConChatHouse(IConsole::IResult* pResult, void* pUser)
 
 void CCommandProcessor::ConChatPosition(IConsole::IResult* pResult, void* pUser)
 {
-	const int ClientID = pResult->GetClientID();
-	CGS* pGS = GetCommandResultGameServer(ClientID, pUser);
+	const auto ClientID = pResult->GetClientID();
+	auto* pGS = GetCommandResultGameServer(ClientID, pUser);
+	const auto* pPlayer = pGS->GetPlayer(ClientID);
 
-	CPlayer* pPlayer = pGS->GetPlayer(ClientID);
 	if(!pPlayer || !pPlayer->GetCharacter() || !pGS->Server()->IsAuthed(ClientID))
 		return;
 
-	const int PosX = static_cast<int>(pPlayer->GetCharacter()->m_Core.m_Pos.x) / 32;
-	const int PosY = static_cast<int>(pPlayer->GetCharacter()->m_Core.m_Pos.y) / 32;
-	pGS->Chat(ClientID, "[{}] Position X: {} Y: {}.", pGS->Server()->GetWorldName(pGS->GetWorldID()), PosX, PosY);
+	const auto originPosX = round_to_int(pPlayer->GetCharacter()->m_Core.m_Pos.x);
+	const auto originPosY = round_to_int(pPlayer->GetCharacter()->m_Core.m_Pos.y);
+	const int convertedPosX = originPosX / 32;
+	const int convertedPosY = originPosY / 32;
+	pGS->Chat(ClientID, "[{}] Position X: {}({}) Y: {}({}).", pGS->Server()->GetWorldName(pGS->GetWorldID()), convertedPosX, originPosX, convertedPosY, originPosY);
 	dbg_msg("cmd_pos", "%0.f %0.f WorldID: %d", pPlayer->GetCharacter()->m_Core.m_Pos.x, pPlayer->GetCharacter()->m_Core.m_Pos.y, pGS->GetWorldID());
 }
 
