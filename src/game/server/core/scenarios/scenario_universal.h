@@ -19,9 +19,10 @@ protected:
 	void InitStep(const nlohmann::json& step);
 
 private:
-	void Message(int delay, const std::string& chatText, const std::string& broadcastText, int emote, int emoticon);
-	void FixedCam(int delay, const vec2& pos, const std::string& whenActiveBroadcast);
-	void Teleport(int delay, const vec2& pos);
+	void StepMessage(int delay, const std::string& broadcastMsg, const std::string& chatMsg);
+	void StepEmote(int emoteType, int emoticonType);
+	void StepFixedCam(int delay, const vec2& pos);
+	void StepTeleport(const vec2& pos);
 
 	void SendChat(const std::string& text) const;
 	void SendBroadcast(const std::string& text) const;

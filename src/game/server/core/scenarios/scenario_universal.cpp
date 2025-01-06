@@ -40,108 +40,88 @@ void CUniversalScenario::InitStep(const nlohmann::json& step)
 	std::string action = step["action"];
 
 	// message
-	if(action == "game_message")
+	if(action == "message")
 	{
-		const int delay = step.value("delay", 0);
-		const auto chatText = step.value("chat", "\0");
-		const auto broadcastText = step.value("broadcast", "\0");
-		const int emoteType = step.value("emote", -1);
-		const int emoticonType = step.value("emoticon", -1);
+		int delay = step.value("delay", 0);
+		std::string chatMsg = step.value("chat", "");
+		std::string broadcastMsg = step.value("broadcast", "");
+		std::string fullMsg = step.value("full", "");
 
-		Message(delay, chatText, broadcastText, emoteType, emoticonType);
+		if(!fullMsg.empty())
+			StepMessage(delay, fullMsg, fullMsg);
+		else
+			StepMessage(delay, broadcastMsg, chatMsg);
+	}
+	// emote message
+	else if(action == "emote")
+	{
+		int emoteType = step.value("emote_type", (int)EMOTE_NORMAL);
+		int emoticonType = step.value("emoticon_type", -1);
+
+		StepEmote(emoteType, emoticonType);
 	}
 	// teleport
 	else if(action == "teleport")
 	{
-		const int delay = step.value("delay", 0);
-		const vec2 position = { step["position"].value("x", 0.0f), step["position"].value("y", 0.0f) };
+		vec2 position =
+		{
+			step["position"].value("x", 0.0f),
+			step["position"].value("y", 0.0f)
+		};
 
-		Teleport(delay, position);
+		StepTeleport(position);
 	}
 	// fixed cam
-	else if(action == "fixed_cam")
+	else if(action == "fix_cam")
 	{
-		const int delay = step.value("delay", 0);
-		const vec2 position = { step["position"].value("x", 0.0f), step["position"].value("y", 0.0f) };
-		const auto whenActiveBroadcastText = step.value("text", "");
-
-		FixedCam(delay, position, whenActiveBroadcastText);
-	}
-	// check quest accepted
-	else if(action == "check_quest_accepted")
-	{
-		const int questID = step.value("quest_id", -1);
-
-		if(questID > 0)
-		{
-			AddStep().CheckCondition(ConditionPriority::CONDITION_AND_TIMER, [this, questID](auto*) 
-			{
-				return GetPlayer()->GetQuest(questID)->IsAccepted();
-			});
-		}
-	}
-	// check quest completed
-	else if(action == "check_quest_completed")
-	{
-		const int questID = step.value("quest_id", -1);
-
-		if(questID > 0)
-		{
-			AddStep().CheckCondition(ConditionPriority::CONDITION_AND_TIMER, [this, questID](auto*) 
-			{
-				return GetPlayer()->GetQuest(questID)->IsCompleted();
-			});
-		}
-	}
-	else
-	{
-		dbg_msg("scenario-universal", "Unknown action: %s", action.c_str());
+		int delay = step.value("delay", 0);
+		vec2 position = { step["position"].value("x", 0.0f), step["position"].value("y", 0.0f) };
+		StepFixedCam(delay, position);
 	}
 }
 
-void CUniversalScenario::FixedCam(int delay, const vec2& pos, const std::string& whenActiveBroadcast)
+void CUniversalScenario::StepFixedCam(int delay, const vec2& pos)
 {
 	auto& step = AddStep(delay);
-	step.WhenActive([this, pos, whenActiveBroadcast](auto*)
+	step.WhenActive([this, pos](auto*)
 	{
 		GetPlayer()->LockedView().ViewLock(pos, true);
-		SendBroadcast(whenActiveBroadcast);
 	});
 }
 
-void CUniversalScenario::Teleport(int delay, const vec2& pos)
+void CUniversalScenario::StepTeleport(const vec2& pos)
 {
-	auto& teleportStep = AddStep(delay);
+	auto& teleportStep = AddStep();
 	teleportStep.WhenStarted([this, pos](auto*)
 	{
 		GetCharacter()->ChangePosition(pos);
 	});
 }
 
-void CUniversalScenario::Message(int delay, const std::string& chatText, const std::string& broadcastText, int emote, int emoticon)
+void CUniversalScenario::StepMessage(int delay, const std::string& broadcastMsg, const std::string& chatMsg)
 {
 	auto& messageStep = AddStep(delay);
-	messageStep.WhenStarted([this, chatText, broadcastText, emote, emoticon](auto*)
+	messageStep.WhenStarted([this, delay, chatMsg, broadcastMsg](auto*)
 	{
-		if(!chatText.empty())
+		if(!broadcastMsg.empty())
 		{
-			SendChat(chatText);
+			GS()->Broadcast(GetClientID(), BroadcastPriority::VeryImportant, delay, broadcastMsg.c_str());
 		}
 
-		if(!broadcastText.empty())
+		if(!chatMsg.empty())
 		{
-			SendBroadcast(broadcastText);
+			GS()->Chat(GetClientID(), chatMsg.c_str());
 		}
+	});
+}
 
-		if(emote != -1)
-		{
-			GetCharacter()->SetEmote(emote, 1, false);
-		}
-
-		if(emoticon != -1)
-		{
-			GS()->SendEmoticon(GetClientID(), emoticon);
-		}
+void CUniversalScenario::StepEmote(int emoteType, int emoticonType)
+{
+	auto& emoteStep = AddStep();
+	emoteStep.WhenStarted([this, emoteType, emoticonType](auto*)
+	{
+		GetCharacter()->SetEmote(emoteType, 1, false);
+		GS()->SendEmoticon(GetClientID(), emoticonType);
 	});
 }
 

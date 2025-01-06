@@ -1600,7 +1600,7 @@ bool CCharacter::HandleHammerActions(vec2 Direction, vec2 ProjStartPos)
 			continue;
 
 		// check distance valid
-		if(distance(pTarget->m_Core.m_Pos, m_Core.m_Pos) > 40.0f)
+		if(distance(pTarget->m_Core.m_Pos, m_Core.m_Pos) > 64.0f)
 			continue;
 
 		// talking wth bot
