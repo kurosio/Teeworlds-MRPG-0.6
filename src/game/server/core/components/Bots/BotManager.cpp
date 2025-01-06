@@ -135,7 +135,7 @@ void CBotManager::InitQuestBots(const char* pWhereLocalWorld)
 		Base.m_Bot = QuestBot;
 		dbg_assert(GS()->GetQuestInfo(QuestID) != nullptr, "QuestID is not valid");
 		auto* pQuestInfo = GS()->GetQuestInfo(QuestID);
-		pQuestInfo->m_vSteps[QuestBot.m_StepPos].push_back(Base);
+		pQuestInfo->m_vObjectives[QuestBot.m_StepPos].push_back(Base);
 
 		// initilize
 		QuestBotInfo::ms_aQuestBot[MobID] = std::move(QuestBot);

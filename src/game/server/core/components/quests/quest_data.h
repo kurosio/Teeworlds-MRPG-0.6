@@ -20,6 +20,8 @@ enum
 	QUEST_FLAG_TYPE_WEEKLY = 1 << 3,
 	QUEST_FLAG_TYPE_REPEATABLE = 1 << 4,
 
+	QUEST_FLAG_CANT_REFUSE = 1 << 5,
+
 	QUEST_FLAG_GRANTED_FROM_NPC = 1 << 10,
 	QUEST_FLAG_GRANTED_FROM_BOARD = 1 << 11,
 	QUEST_FLAG_GRANTED_FROM_AUTO = 1 << 12,
@@ -84,18 +86,22 @@ public:
 	void InitFlags(const DBSet& FlagSet)
 	{
 		// initialize type flags
-		if(FlagSet.hasSet("Type daily"))
+		if(FlagSet.hasSet("Type main"))
+			m_Flags |= QUEST_FLAG_TYPE_MAIN;
+		else if(FlagSet.hasSet("Type side"))
+			m_Flags |= QUEST_FLAG_TYPE_SIDE;
+		else if(FlagSet.hasSet("Type daily"))
 			m_Flags |= QUEST_FLAG_TYPE_DAILY;
 		else if(FlagSet.hasSet("Type weekly"))
 			m_Flags |= QUEST_FLAG_TYPE_WEEKLY;
 		else if(FlagSet.hasSet("Type repeatable"))
 			m_Flags |= QUEST_FLAG_TYPE_REPEATABLE;
-		else
-			m_Flags |= QUEST_FLAG_TYPE_MAIN;
 
 		// initialize other flags
 		if(m_NextQuestID.has_value())
 			m_Flags |= QUEST_FLAG_GRANTED_FROM_AUTO;
+		if(FlagSet.hasSet("Can't refuse"))
+			m_Flags |= QUEST_FLAG_CANT_REFUSE;
 	}
 
 	void AddFlag(int Flag)
@@ -109,13 +115,15 @@ public:
 	CQuestDescription* GetPreviousQuest() const;
 	CReward& Reward() { return m_Reward; }
 
-	void PreparePlayerSteps(int StepPos, int ClientID, std::deque<std::shared_ptr<CQuestStep>>& pElem);
+	bool HasObjectives(int Step);
+	void PreparePlayerObjectives(int StepPos, int ClientID, std::deque<std::shared_ptr<CQuestStep>>& pElem);
+
 	bool HasFlag(int Flag) const { return (m_Flags & Flag) != 0; }
 	bool CanBeGranted() const { return HasFlag(QUEST_FLAG_GRANTED_FROM_AUTO) || HasFlag(QUEST_FLAG_GRANTED_FROM_NPC) || HasFlag(QUEST_FLAG_GRANTED_FROM_BOARD); }
 	bool CanBeAcceptedOrRefused() const { return HasFlag(QUEST_FLAG_GRANTED_FROM_BOARD) || !CanBeGranted(); }
 
 	// steps with array bot data on active step
-	std::map < int, std::deque<CQuestStepBase> > m_vSteps;
+	std::map < int, std::deque<CQuestStepBase> > m_vObjectives;
 };
 
 class CPlayerQuest : public MultiworldIdentifiableData< std::map < int, std::map <int, CPlayerQuest* > > >
@@ -130,7 +138,7 @@ class CPlayerQuest : public MultiworldIdentifiableData< std::map < int, std::map
 	QuestIdentifier m_ID {};
 	QuestState m_State {};
 	int m_Step {};
-	std::deque<std::shared_ptr<CQuestStep>> m_vSteps {};
+	std::deque<std::shared_ptr<CQuestStep>> m_vObjectives {};
 	QuestDatafile m_Datafile {};
 
 public:
@@ -158,16 +166,16 @@ public:
 	QuestState GetState() const { return m_State; }
 	bool IsCompleted() const { return m_State == QuestState::Finished; }
 	bool IsAccepted() const { return m_State == QuestState::Accepted; }
-	bool HasUnfinishedSteps() const;
+	bool HasUnfinishedObjectives() const;
 	int GetStepPos() const { return m_Step; }
 	CQuestStep* GetStepByMob(int MobID);
 
 	void Update();
 	bool Accept();
 	void Refuse();
+	void Reset();
 
 private:
-	void Reset();
 	void UpdateStepProgress();
 };
 

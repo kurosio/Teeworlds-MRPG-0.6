@@ -257,7 +257,7 @@ void CQuestManager::TryAppendDefeatProgress(CPlayer* pPlayer, int DefeatedBotID)
 			continue;
 
 		// check current steps and append
-		for(auto& pStepBot : pQuest->m_vSteps)
+		for(auto& pStepBot : pQuest->m_vObjectives)
 			pStepBot->AppendDefeatProgress(DefeatedBotID);
 	}
 }
@@ -340,12 +340,12 @@ void CQuestManager::ShowQuestInfo(CPlayer* pPlayer, CQuestDescription* pQuest, b
 	VInfo.Add("Name: {}", pQuest->GetName());
 	VInfo.Add("Experience: {}", pQuest->Reward().GetExperience());
 	VInfo.Add("Gold: {$}", pQuest->Reward().GetGold());
-	VInfo.Add("Total Steps: {}", pQuest->m_vSteps.size());
+	VInfo.Add("Total Steps: {}", pQuest->m_vObjectives.size());
 	VInfo.Add("Status: {}", (pPlayerQuest->IsAccepted() ? "Accepted" : "Not Accepted"));
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// step information
-	for(const auto& [stepNumber, subSteps] : pQuest->m_vSteps)
+	for(const auto& [stepNumber, subSteps] : pQuest->m_vObjectives)
 	{
 		VoteWrapper VStep(ClientID, VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE | VWF_SEPARATE, "\u270E Step {}", stepNumber);
 
@@ -560,7 +560,7 @@ int CQuestManager::GetUnfrozenItemValue(CPlayer* pPlayer, int ItemID) const
 		if(pQuest->GetState() != QuestState::Accepted)
 			continue;
 
-		/*for(auto& pStepBot : pQuest->m_vSteps)
+		/*for(auto& pStepBot : pQuest->m_vObjectives)
 		{
 			if(!pStepBot.second.m_StepComplete)
 				AvailableValue -= pStepBot.second.GetNumberBlockedItem(ItemID);

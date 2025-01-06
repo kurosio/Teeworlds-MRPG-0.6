@@ -22,8 +22,8 @@ void QuestDatafile::Create() const
 	// json structuring
 	nlohmann::json JsonQuestData;
 	JsonQuestData["current_step"] = m_pQuest->m_Step;
-	m_pQuest->Info()->PreparePlayerSteps(m_pQuest->m_Step, m_pQuest->m_ClientID, m_pQuest->m_vSteps);
-	for(auto& pStep : m_pQuest->m_vSteps)
+	m_pQuest->Info()->PreparePlayerObjectives(m_pQuest->m_Step, m_pQuest->m_ClientID, m_pQuest->m_vObjectives);
+	for(auto& pStep : m_pQuest->m_vObjectives)
 	{
 		nlohmann::json Append;
 		Append["quest_bot_id"] = pStep->m_Bot.m_ID;
@@ -43,7 +43,7 @@ void QuestDatafile::Create() const
 	}
 
 	// Loop through each player step
-	for(auto& pStep : m_pQuest->m_vSteps)
+	for(auto& pStep : m_pQuest->m_vObjectives)
 	{
 		int MoveToElementsSize = pStep->m_Bot.m_vRequiredMoveAction.size();
 		pStep->m_aMoveActionProgress.resize(MoveToElementsSize, false);
@@ -72,10 +72,10 @@ void QuestDatafile::Load() const
 	// loading steps
 	nlohmann::json JsonQuestData = nlohmann::json::parse((char*)RawData.data());
 	m_pQuest->m_Step = JsonQuestData.value("current_step", 1);
-	m_pQuest->Info()->PreparePlayerSteps(m_pQuest->m_Step, m_pQuest->m_ClientID, m_pQuest->m_vSteps);
+	m_pQuest->Info()->PreparePlayerObjectives(m_pQuest->m_Step, m_pQuest->m_ClientID, m_pQuest->m_vObjectives);
 
 	// Check defferent size of steps
-	if(JsonQuestData["steps"].size() != m_pQuest->m_vSteps.size())
+	if(JsonQuestData["steps"].size() != m_pQuest->m_vObjectives.size())
 	{
 		dbg_msg(PRINT_QUEST_PREFIX, "Reinitialization... Player save file has a different size of steps!");
 		Create();
@@ -86,7 +86,7 @@ void QuestDatafile::Load() const
 	int dequePos = 0;
 	for(auto& Step : JsonQuestData["steps"])
 	{
-		auto& WorkedNode = m_pQuest->m_vSteps[dequePos++];
+		auto& WorkedNode = m_pQuest->m_vObjectives[dequePos++];
 		WorkedNode->m_StepComplete = Step.value("state", false);
 		if(WorkedNode->m_StepComplete)
 			continue;
@@ -134,7 +134,7 @@ void QuestDatafile::Load() const
 	}
 
 	// Update the steps of the bot
-	for(auto& pStep : m_pQuest->m_vSteps)
+	for(auto& pStep : m_pQuest->m_vObjectives)
 	{
 		// If the current step is not complete
 		if(!pStep->m_StepComplete)
@@ -155,7 +155,7 @@ bool QuestDatafile::Save() const
 	// json structuring
 	nlohmann::json JsonQuestData;
 	JsonQuestData["current_step"] = m_pQuest->m_Step;
-	for(auto& pStep : m_pQuest->m_vSteps)
+	for(auto& pStep : m_pQuest->m_vObjectives)
 	{
 		nlohmann::json Append;
 		Append["quest_bot_id"] = pStep->m_Bot.m_ID;
@@ -179,7 +179,7 @@ void QuestDatafile::Delete() const
 	if(!m_pQuest)
 		return;
 
-	m_pQuest->m_vSteps.clear();
+	m_pQuest->m_vObjectives.clear();
 
 	// Remove the temporary user quest data file
 	mystd::file::remove(GetFilename().c_str());

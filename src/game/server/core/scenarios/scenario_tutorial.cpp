@@ -91,7 +91,7 @@ void CTutorialScenario::ProcessStep(const nlohmann::json& step)
 			{
 				const auto* pPlayer = GetPlayer();
 				auto* pQuest = pPlayer->GetQuest(QuestID);
-				pQuest->Refuse();
+				pQuest->Reset();
 			}
 		});
 	}	
@@ -107,7 +107,7 @@ void CTutorialScenario::ProcessStep(const nlohmann::json& step)
 				const auto* pPlayer = GetPlayer();
 				auto* pQuest = pPlayer->GetQuest(QuestID);
 				if(pQuest->IsAccepted())
-					pQuest->Refuse();
+					pQuest->Reset();
 				pQuest->Accept();
 			}
 		});
