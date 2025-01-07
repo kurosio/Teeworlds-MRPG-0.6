@@ -10,8 +10,9 @@ class CEntityDirectionNavigator : public CEntity
 public:
 	class CPlayer* m_pPlayer;
 
-	CEntityDirectionNavigator(CGameWorld* pGameWorld, int ClientID, vec2 Position, int WorldID);
+	CEntityDirectionNavigator(CGameWorld* pGameWorld);
 
+	bool TryStart(int ClientID, vec2 Position, int WorldID);
 	void Snap(int SnappingClient) override;
 };
 

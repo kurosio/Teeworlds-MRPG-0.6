@@ -5,27 +5,23 @@
 #include <game/server/core/components/worlds/world_manager.h>
 #include <game/server/gamecontext.h>
 
-#include <game/server/core/entities/tools/path_navigator.h>
-
-CEntityDirectionNavigator::CEntityDirectionNavigator(CGameWorld* pGameWorld, int ClientID, vec2 Position, int WorldID)
-	: CEntity(pGameWorld, CGameWorld::ENTTYPE_PATH_FINDER, Position, 0, ClientID)
+CEntityDirectionNavigator::CEntityDirectionNavigator(CGameWorld* pGameWorld)
+	: CEntity(pGameWorld, CGameWorld::ENTTYPE_PATH_FINDER, {}, 0, -1)
 {
-	const auto PosTo = GS()->Core()->WorldManager()->FindPosition(WorldID, Position);
-	if(!PosTo.has_value())
-	{
-		MarkForDestroy();
-		return;
-	}
+	GameWorld()->InsertEntity(this);
+}
+
+bool CEntityDirectionNavigator::TryStart(int ClientID, vec2 Position, int WorldID)
+{
+	m_ClientID = ClientID;
+	m_pPlayer = GS()->GetPlayer(m_ClientID, true, true);
+
+	auto PosTo = GS()->Core()->WorldManager()->FindPosition(WorldID, Position);
+	if(!PosTo.has_value() || !m_pPlayer)
+		return false;
 
 	m_PosTo = PosTo.value();
-	m_pPlayer = GS()->GetPlayer(m_ClientID, true, true);
-	GameWorld()->InsertEntity(this);
-
-	// quest navigator finder
-	if(m_pPlayer && m_pPlayer->GetItem(itShowQuestStarNavigator)->IsEquipped())
-	{
-		new CEntityPathNavigator(&GS()->m_World, this, true, m_pPlayer->m_ViewPos, m_Pos, WorldID, false, CmaskOne(ClientID));
-	}
+	return true;
 }
 
 void CEntityDirectionNavigator::Snap(int SnappingClient)
