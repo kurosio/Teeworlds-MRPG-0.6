@@ -22,7 +22,7 @@ void CNpcAI::OnSpawn()
 
 	if(Function == FUNCTION_NPC_GIVE_QUEST)
 	{
-		m_pCharacter->AddMultipleOrbite(3, POWERUP_ARMOR, 0);
+		EnableBotIndicator(POWERUP_HEALTH, 0);
 	}
 	else if(Function == FUNCTION_NPC_NURSE)
 	{
@@ -30,7 +30,7 @@ void CNpcAI::OnSpawn()
 	}
 	else if(Function == FUNCTION_NPC_GUARDIAN)
 	{
-		m_pCharacter->AddMultipleOrbite(2, POWERUP_NINJA, POWERUP_WEAPON);
+		EnableBotIndicator(POWERUP_NINJA, POWERUP_WEAPON);
 	}
 }
 

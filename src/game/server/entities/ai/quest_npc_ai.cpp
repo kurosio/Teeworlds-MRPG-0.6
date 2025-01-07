@@ -18,7 +18,7 @@ void CQuestNpcAI::OnSpawn()
 
 	if(m_pQuestNpcInfo->m_HasAction)
 	{
-		GS()->EntityManager()->EffectCircleDamage(m_ClientID, Server()->TickSpeed() / 2, Server()->TickSpeed());
+		EnableBotIndicator(POWERUP_ARMOR, 0);
 	}
 }
 

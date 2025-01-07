@@ -26,9 +26,7 @@ void CMobAI::OnSpawn()
 
 	if(m_pMobInfo->m_Boss)
 	{
-		m_pCharacter->AddMultipleOrbite(1, POWERUP_HEALTH, 0);
-		m_pCharacter->AddMultipleOrbite(1, POWERUP_ARMOR, 0);
-
+		EnableBotIndicator(POWERUP_WEAPON, WEAPON_HAMMER);
 		GS()->ChatWorld(m_pMobInfo->m_WorldID, nullptr, "In your zone emerging {}!", m_pMobInfo->GetName());
 	}
 }

@@ -7,6 +7,7 @@ class CGS;
 class CPlayer;
 class CPlayerBot;
 class CCharacterBotAI;
+class CEntityBotIndicator;
 
 class CBaseAI
 {
@@ -29,6 +30,8 @@ public:
 
 	int GetEmotionStyle() const { return m_EmotionStyle; }
 	CTargetAI* GetTarget() { return &m_Target; }
+	void EnableBotIndicator(int Type, int SubType);
+	void DisableBotIndicator();
 
 protected:
 	int m_ClientID{};
@@ -43,6 +46,9 @@ protected:
 
 	CPlayer* SearchPlayerCondition(float Distance, const std::function<bool(CPlayer*)>& Condition);
 	CPlayerBot* SearchPlayerBotCondition(float Distance, const std::function<bool(CPlayerBot*)>& Condition);
+
+private:
+	CEntityBotIndicator* m_pEntBotIndicator {};
 };
 
 #endif

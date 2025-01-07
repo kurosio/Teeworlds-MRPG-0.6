@@ -1,5 +1,7 @@
 #include "base_ai.h"
 
+#include "bot_indicator.h"
+
 #include <engine/server.h>
 #include <game/server/entities/character_bot.h>
 #include <game/server/gamecontext.h>
@@ -13,6 +15,21 @@ CBaseAI::CBaseAI(CPlayerBot* pPlayer, CCharacterBotAI* pCharacter)
 	m_Target.Init(m_pCharacter);
 	m_SpawnPoint = m_pCharacter->m_Core.m_Pos;
 	m_EmotionStyle = EMOTE_NORMAL;
+}
+
+void CBaseAI::EnableBotIndicator(int Type, int SubType)
+{
+	if(!m_pEntBotIndicator)
+		m_pEntBotIndicator = new CEntityBotIndicator(&GS()->m_World, m_ClientID, Type, SubType);
+}
+
+void CBaseAI::DisableBotIndicator()
+{
+	if(!m_pEntBotIndicator)
+		return;
+
+	delete m_pEntBotIndicator;
+	m_pEntBotIndicator = nullptr;
 }
 
 IServer* CBaseAI::Server() const
