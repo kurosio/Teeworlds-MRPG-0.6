@@ -2,6 +2,7 @@
 
 #include <game/server/gamecontext.h>
 
+#include <game/server/core/entities/items/drop_items.h>
 #include <game/server/core/entities/group/entitiy_group.h>
 #include <game/server/entities/projectile.h>
 
@@ -171,6 +172,26 @@ void CUniversalScenario::ProcessStep(const nlohmann::json& step)
 		else
 			StepMessage(delay, broadcastMsg, chatMsg);
 	}
+	// dropped item task
+	else if(action == "pick_item_task")
+	{
+		if(!step.contains("item"))
+			return;
+
+		vec2 position =
+		{
+			step["position"].value("x", 0.0f),
+			step["position"].value("y", 0.0f)
+		};
+		std::string chatMsg = step.value("chat", "");
+		std::string broadcastMsg = step.value("broadcast", "");
+		std::string fullMsg = step.value("full", "");
+
+		if(!fullMsg.empty())
+			StepPickItemTask(position, step["item"], fullMsg, fullMsg);
+		else
+			StepPickItemTask(position, step["item"], broadcastMsg, chatMsg);
+	}
 	// emote message
 	else if(action == "emote")
 	{
@@ -189,6 +210,24 @@ void CUniversalScenario::ProcessStep(const nlohmann::json& step)
 		};
 		int worldID = step.value("world_id", -1);
 		StepTeleport(position, worldID);
+	}
+	// chat task
+	else if(action == "use_chat_task")
+	{
+		auto& useChatTaskStep = AddStep();
+		std::string message = step.value("chat", "@");
+		useChatTaskStep.WhenActive([this, message](auto*)
+		{
+			if(Server()->Tick() % Server()->TickSpeed() == 0)
+			{
+				GS()->Broadcast(GetClientID(), BroadcastPriority::MainInformation, Server()->TickSpeed(), "Objective: Write in the chat: '{}'", message);
+			}
+		});
+		useChatTaskStep.CheckCondition(ConditionPriority::CONDITION_AND_TIMER, [this, message](auto*)
+		{
+			std::string lastMessage = GetPlayer()->m_aLastMsg;
+			return lastMessage.find(message) == 0;
+		});
 	}
 	// movement task
 	else if(action == "movement_task")
@@ -301,7 +340,9 @@ void CUniversalScenario::StepMovementTask(int delay, const vec2& pos, const std:
 	moveStep.WhenStarted([this, chatMsg](auto*)
 	{
 		GetCharacter()->MovingDisable(false);
-		GS()->Chat(GetClientID(), chatMsg.c_str());
+
+		if(!chatMsg.empty())
+			GS()->Chat(GetClientID(), chatMsg.c_str());
 	});
 	moveStep.WhenActive([this, broadcastMsg](auto*)
 	{
@@ -310,11 +351,51 @@ void CUniversalScenario::StepMovementTask(int delay, const vec2& pos, const std:
 			GS()->CreateHammerHit(m_MovementPos, CmaskOne(GetClientID()));
 		}
 
-		GS()->Broadcast(GetClientID(), BroadcastPriority::VeryImportant, Server()->TickSpeed(), broadcastMsg.c_str());
+		if(!broadcastMsg.empty())
+			GS()->Broadcast(GetClientID(), BroadcastPriority::VeryImportant, Server()->TickSpeed(), broadcastMsg.c_str());
 	});
 	moveStep.CheckCondition(ConditionPriority::CONDITION_AND_TIMER, [this](auto*)
 	{
 		return distance(GetCharacter()->GetPos(), m_MovementPos) < 32.f;
+	});
+}
+
+void CUniversalScenario::StepPickItemTask(const vec2& pos, const nlohmann::json& itemJson, const std::string& broadcastMsg, const std::string& chatMsg)
+{
+	auto& pickItemStep = AddStep();
+	CItem item = CItem::FromJSON(itemJson);
+
+	pickItemStep.WhenStarted([this, pos, item, chatMsg](auto*)
+	{
+		if(!item.Info()->IsStackable() && GetPlayer()->GetItem(item)->HasItem())
+			return;
+
+		const float Angle = angle(normalize(vec2 {}));
+		m_pEntDroppedItem = new CDropItem(&GS()->m_World, pos, vec2{ }, Angle, item, GetClientID());
+		if(m_pEntDroppedItem)
+		{
+			GS()->CreatePlayerSpawn(pos, CmaskOne(GetClientID()));
+			if(!chatMsg.empty())
+				GS()->Chat(GetClientID(), chatMsg.c_str());
+		}
+	});
+	pickItemStep.WhenActive([this, broadcastMsg](auto*)
+	{
+		if(m_pEntDroppedItem)
+		{
+			m_pEntDroppedItem->SetLifetime(Server()->TickSpeed() * g_Config.m_SvDroppedItemLifetime);
+			if(!broadcastMsg.empty())
+				GS()->Broadcast(GetClientID(), BroadcastPriority::VeryImportant, Server()->TickSpeed(), broadcastMsg.c_str());
+		}
+	});
+	pickItemStep.CheckCondition(ConditionPriority::CONDITION_AND_TIMER, [this, item](auto*)
+	{
+		if(!GS()->m_World.ExistEntity(m_pEntDroppedItem))
+		{
+			m_pEntDroppedItem = nullptr;
+			return true;
+		}
+		return false;
 	});
 }
 
@@ -356,17 +437,20 @@ void CUniversalScenario::StepMovingDisable(bool State)
 
 void CUniversalScenario::StepShootmarkers(const std::vector<std::pair<vec2, int>>& vShotmarkers)
 {
-	for(const auto& [position, health] : vShotmarkers)
+	auto& stepCreateShootmarkers = AddStep();
+	stepCreateShootmarkers.WhenStarted([this, vShotmarkers](auto*)
 	{
-		CreateEntityShootmarkersTask(position, health);
-		StepMessage(0, "You can shoot with the left mouse button.", "\0");
-		StepFixedCam(100, position);
-	}
+		for(const auto& [position, health] : vShotmarkers)
+			CreateEntityShootmarkersTask(position, health);
+	});
 
+	for(const auto& [position, health] : vShotmarkers)
+		StepFixedCam(100, position);
+	
 	auto& stepShootmarkers = AddStep();
 	stepShootmarkers.WhenActive([this](auto*)
 	{
-		SendBroadcast("Shoot the targets!");
+		GS()->Broadcast(GetClientID(), BroadcastPriority::VeryImportant, Server()->TickSpeed(), "Shoot the targets!");
 	});
 	stepShootmarkers.CheckCondition(ConditionPriority::CONDITION_AND_TIMER, [this](auto*)
 	{

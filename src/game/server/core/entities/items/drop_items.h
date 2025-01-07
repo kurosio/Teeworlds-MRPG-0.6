@@ -20,6 +20,10 @@ public:
 	void Tick() override;
 	void Snap(int SnappingClient) override;
 
+	void SetLifetime(int Lifetime) 
+	{
+		m_LifeSpan = Lifetime;
+	};
 	bool TakeItem(int ClientID);
 };
 

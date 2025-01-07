@@ -110,6 +110,8 @@ MACRO_CONFIG_INT(SvRepeatableActivityCoin, sv_repeatable_quest_activity_coin, 5,
 MACRO_CONFIG_INT(SvDailyActivityCoin, sv_daily_quest_quest_activity_coin, 100, 1, 100000, CFGFLAG_SERVER, "Activity coin reward for completing a daily quest")
 MACRO_CONFIG_INT(SvWeeklyActivityCoin, sv_weekly_quest_activity_coin, 500, 1, 100000, CFGFLAG_SERVER, "Activity coin reward for completing a weekly quest")
 
+MACRO_CONFIG_INT(SvDroppedItemLifetime, sv_dropped_item_lifetime, 20, 5, 60, CFGFLAG_SERVER, "Lifetime dropped item in seconds")
+
 // -----------------------
 // Auction System Configuration
 // -----------------------

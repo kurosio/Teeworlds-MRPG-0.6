@@ -11,7 +11,7 @@ CDropItem::CDropItem(CGameWorld *pGameWorld, vec2 Pos, vec2 Vel, float AngleForc
 {
 	m_Pos = Pos;
 	m_Vel = Vel;
-	m_LifeSpan = Server()->TickSpeed() * 20;
+	m_LifeSpan = Server()->TickSpeed() * g_Config.m_SvDroppedItemLifetime;
 
 	m_OwnerID = OwnerID;
 	m_DropItem = DropItem;

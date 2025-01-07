@@ -461,8 +461,6 @@ void CPlayer::TryRespawn()
 		GS()->CreatePlayerSpawn(SpawnPos);
 		GetTempData().ClearTeleportPosition();
 		m_WantSpawn = false;
-
-		GS()->SendMenuMotd(this, MOTD_MENU_WIKI_INFO);
 	}
 }
 
