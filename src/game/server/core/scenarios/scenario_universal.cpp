@@ -496,6 +496,7 @@ void CUniversalScenario::CreateEntityShootmarkersTask(const vec2& pos, int healt
 
 	// initialize effect
 	const auto pEntity = groupPtr->CreatePickup(pos);
+	pEntity->SetMask(CmaskOne(GetClientID()));
 	pEntity->RegisterEvent(CBaseEntity::EventTick, [](CBaseEntity* pBase)
 	{
 		// health
@@ -510,6 +511,9 @@ void CUniversalScenario::CreateEntityShootmarkersTask(const vec2& pos, int healt
 		// destroy projectiles
 		for(auto* pProj = (CProjectile*)pBase->GameWorld()->FindFirst(CGameWorld::ENTTYPE_PROJECTILE); pProj; pProj = (CProjectile*)pProj->TypeNext())
 		{
+			if(!CmaskIsSet(pBase->GetMask(), pProj->GetOwnerCID()))
+				continue;
+
 			if(distance(pBase->GetPos(), pProj->GetCurrentPos()) < 48.f)
 			{
 				Health -= 1;

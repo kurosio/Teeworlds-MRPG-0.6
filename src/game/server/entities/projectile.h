@@ -24,7 +24,7 @@ public:
 
 	vec2 GetPos(float Time);
 	vec2 GetCurrentPos() const { return m_CurrentPos; }
-	int GetOwner() const { return m_Owner; }
+	int GetOwnerCID() const { return m_Owner; }
 
 	void Reset() override;
 	void Tick() override;

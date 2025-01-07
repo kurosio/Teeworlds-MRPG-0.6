@@ -12,6 +12,7 @@ CBaseEntity::CBaseEntity(CGameWorld* pGameWorld, const std::shared_ptr<CEntityGr
 
 	m_GroupPtr = group;
 	m_ClientID = Owner;
+	m_Mask = CmaskAll();
 
 	TriggerEvent(EventCreate);
 	GameWorld()->InsertEntity(this);
@@ -95,5 +96,6 @@ void CBaseEntity::TickDeferred()
 
 void CBaseEntity::Snap(int SnappingClient)
 {
-	TriggerEvent(EventSnap, SnappingClient, m_vIDs);
+	if(m_Mask == CmaskAll() || CmaskIsSet(m_Mask, SnappingClient))
+		TriggerEvent(EventSnap, SnappingClient, m_vIDs);
 }

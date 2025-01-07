@@ -34,6 +34,8 @@ public:
 	std::shared_ptr<CEntityGroup> GetGroup() const { return m_GroupPtr.lock(); }
 	std::vector<int>& GetIDs() { return m_vIDs; }
 	int GetSnapID() const { return GetID(); }
+	void SetMask(int64_t Mask) { m_Mask = Mask; }
+	int64_t GetMask() const { return m_Mask; }
 
 protected:
 	void TriggerEvent(EventType Type)
@@ -83,14 +85,15 @@ protected:
 		}
 	}
 
-	std::function<void(CBaseEntity*)> m_CreateCallback;
-	std::function<void(CBaseEntity*)> m_TickCallback;
-	std::function<void(CBaseEntity*)> m_TickDeferredCallback;
-	std::function<void(CBaseEntity*)> m_DestroyCallback;
-	std::function<void(CBaseEntity*, int, const std::vector<int>&)> m_SnapCallback;
+	std::function<void(CBaseEntity*)> m_CreateCallback{};
+	std::function<void(CBaseEntity*)> m_TickCallback{};
+	std::function<void(CBaseEntity*)> m_TickDeferredCallback{};
+	std::function<void(CBaseEntity*)> m_DestroyCallback{};
+	std::function<void(CBaseEntity*, int, const std::vector<int>&)> m_SnapCallback{};
 
-	std::weak_ptr<CEntityGroup> m_GroupPtr;
-	std::vector<int> m_vIDs;
+	int64_t m_Mask{};
+	std::weak_ptr<CEntityGroup> m_GroupPtr{};
+	std::vector<int> m_vIDs{};
 };
 
 #endif
