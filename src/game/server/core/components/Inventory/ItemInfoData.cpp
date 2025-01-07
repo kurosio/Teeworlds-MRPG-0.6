@@ -107,18 +107,31 @@ void CItemDescription::StartItemScenario(CPlayer* pPlayer, ItemScenarioEvent Eve
 {
 	mystd::json::parse(m_Data, [&pPlayer, Event, this](nlohmann::json& pJson)
 	{
+		int ScenarioID = SCENARIO_UNIVERSAL;
 		const char* pElem;
 		switch(Event)
 		{
-			case ItemScenarioEvent::OnEventGot: pElem = "on_event_got"; break;
-			case ItemScenarioEvent::OnEventLost: pElem = "on_event_lost"; break;
-			case ItemScenarioEvent::OnEventEquip: pElem = "on_event_equip"; break;
-			default: pElem = "on_event_unequip"; break;
+			case ItemScenarioEvent::OnEventGot: 
+				ScenarioID = SCENARIO_ON_ITEM_GOT;
+				pElem = "on_event_got"; 
+				break;
+			case ItemScenarioEvent::OnEventLost:
+				ScenarioID = SCENARIO_ON_ITEM_LOST;
+				pElem = "on_event_lost"; 
+				break;
+			case ItemScenarioEvent::OnEventEquip:
+				ScenarioID = SCENARIO_ON_ITEM_EQUIP;
+				pElem = "on_event_equip"; 
+				break;
+			default: 
+				ScenarioID = SCENARIO_ON_ITEM_UNEQUIP;
+				pElem = "on_event_unequip"; 
+				break;
 		}
 
 		// start scenario
 		const auto& scenarioJsonData = pJson[pElem];
-		pPlayer->Scenarios().Start(std::make_unique<CUniversalScenario>(scenarioJsonData));
+		pPlayer->Scenarios().Start(std::make_unique<CUniversalScenario>(ScenarioID, scenarioJsonData));
 	});
 }
 

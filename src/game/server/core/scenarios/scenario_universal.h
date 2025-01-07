@@ -22,7 +22,7 @@ class CUniversalScenario : public ScenarioBase, public IEventListener
 	vec2 m_MovementPos {};
 
 public:
-	CUniversalScenario(const nlohmann::json& jsonData);
+	CUniversalScenario(int ScenarioID, const nlohmann::json& jsonData);
 	~CUniversalScenario();
 
 protected:

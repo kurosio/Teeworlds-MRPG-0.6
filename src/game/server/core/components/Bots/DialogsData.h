@@ -5,8 +5,8 @@
 
 enum class DialogScenarioEvent
 {
-	OnRecieveTask,
-	OnCompleteTask,
+	OnRecieveObjectives,
+	OnCompleteObjectives,
 	OnEnd
 };
 

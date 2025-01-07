@@ -5,8 +5,8 @@
 #include <game/server/core/entities/group/entitiy_group.h>
 #include <game/server/entities/projectile.h>
 
-CUniversalScenario::CUniversalScenario(const nlohmann::json& jsonData)
-	: ScenarioBase(SCENARIO_TUTORIAL)
+CUniversalScenario::CUniversalScenario(int ScenarioID, const nlohmann::json& jsonData)
+	: ScenarioBase(ScenarioID)
 {
 	m_JsonData = jsonData;
 }

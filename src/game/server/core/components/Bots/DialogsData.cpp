@@ -411,7 +411,7 @@ bool CPlayerDialog::CheckActionCompletion() const
 		}
 
 		GS()->CreatePlayerSound(m_pPlayer->GetCID(), SOUND_CTF_RETURN);
-		StartDialogScenario(DialogScenarioEvent::OnCompleteTask);
+		StartDialogScenario(DialogScenarioEvent::OnCompleteObjectives);
 		return true;
 	}
 
@@ -466,17 +466,27 @@ void CPlayerDialog::StartDialogScenario(DialogScenarioEvent Pos) const
 	mystd::json::parse(scenarioJson, [Pos, this](nlohmann::json& pJson)
 	{
 		const char* pElem;
+		int ScenarioID = SCENARIO_UNIVERSAL;
 
 		switch(Pos)
 		{
-			case DialogScenarioEvent::OnRecieveTask: pElem = "on_recieve_task"; break;
-			case DialogScenarioEvent::OnCompleteTask: pElem = "on_complete_task"; break;
-			default: pElem = "on_end"; break;
+			case DialogScenarioEvent::OnRecieveObjectives: 
+				ScenarioID = SCENARIO_ON_DIALOG_RECIEVE_OBJECTIVES;
+				pElem = "on_recieve_objectives"; 
+				break;
+			case DialogScenarioEvent::OnCompleteObjectives: 
+				ScenarioID = SCENARIO_ON_DIALOG_COMPLETE_OBJECTIVES;
+				pElem = "on_complete_objectives"; 
+				break;
+			default: 
+				ScenarioID = SCENARIO_ON_DIALOG_END;
+				pElem = "on_end"; 
+				break;
 		}
 
 		// start scenario
 		const auto& scenarioJsonData = pJson[pElem];
-		m_pPlayer->Scenarios().Start(std::make_unique<CUniversalScenario>(scenarioJsonData));
+		m_pPlayer->Scenarios().Start(std::make_unique<CUniversalScenario>(ScenarioID, scenarioJsonData));
 	});
 }
 
@@ -499,7 +509,7 @@ void CPlayerDialog::ShowCurrentDialog() const
 				pStep->m_TaskListReceived = true;
 				pStep->UpdateTaskMoveTo();
 
-				StartDialogScenario(DialogScenarioEvent::OnRecieveTask);
+				StartDialogScenario(DialogScenarioEvent::OnRecieveObjectives);
 			}
 		}
 	}
