@@ -83,7 +83,7 @@ void CEntityHouseDoor::Tick()
 
 void CEntityHouseDoor::Snap(int SnappingClient)
 {
-	if(NetworkClipped(SnappingClient, true) || m_State == OPENED)
+	if(NetworkClipped(SnappingClient) || m_State == OPENED)
 		return;
 
 	if(GS()->GetClientVersion(SnappingClient) >= VERSION_DDNET_MULTI_LASER)

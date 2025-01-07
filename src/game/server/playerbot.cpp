@@ -309,32 +309,26 @@ int64_t CPlayerBot::GetMaskVisibleForClients() const
 	return Mask;
 }
 
-EStateSnapping CPlayerBot::IsActiveForClient(int ClientID) const
+ESnappingPriority CPlayerBot::IsActiveForClient(int ClientID) const
 {
 	CPlayer* pSnappingPlayer = GS()->GetPlayer(ClientID);
 	if(ClientID < 0 || ClientID >= MAX_PLAYERS || !pSnappingPlayer)
-		return STATE_SNAPPING_NONE;
+		return SNAPPING_PRIORITY_NONE;
 
 	if(m_BotType == TYPE_BOT_QUEST)
 	{
-		bool& refActiveByQuest = DataBotInfo::ms_aDataBot[m_BotID].m_aActiveByQuest[ClientID];
-		refActiveByQuest = false;
-
 		// is quest not accept
 		const auto QuestID = QuestBotInfo::ms_aQuestBot[m_MobID].m_QuestID;
 		if(pSnappingPlayer->GetQuest(QuestID)->GetState() != QuestState::Accepted)
-			return STATE_SNAPPING_NONE;
+			return SNAPPING_PRIORITY_NONE;
 
 		// is step pos not equal current step pos
 		if((QuestBotInfo::ms_aQuestBot[m_MobID].m_StepPos != pSnappingPlayer->GetQuest(QuestID)->GetStepPos()))
-			return STATE_SNAPPING_NONE;
+			return SNAPPING_PRIORITY_NONE;
 
 		// is step pos completed
 		if(pSnappingPlayer->GetQuest(QuestID)->GetStepByMob(GetBotMobID())->m_StepComplete)
-			return STATE_SNAPPING_NONE;
-
-		// set bot active by quest
-		refActiveByQuest = true;
+			return SNAPPING_PRIORITY_NONE;
 	}
 
 	if(m_BotType == TYPE_BOT_NPC)
@@ -343,20 +337,20 @@ EStateSnapping CPlayerBot::IsActiveForClient(int ClientID) const
 	
 		// always show guardian and nurse
 		if(FunctionNPC == FUNCTION_NPC_GUARDIAN || FunctionNPC == FUNCTION_NPC_NURSE)
-			return STATE_SNAPPING_FULL;
+			return SNAPPING_PRIORITY_HIGH;
 
 		// does not show npc what active by quest
 		const auto ActiveByQuest = DataBotInfo::ms_aDataBot[m_BotID].m_aActiveByQuest[ClientID];
 		if(ActiveByQuest)
-			return STATE_SNAPPING_NONE;
+			return SNAPPING_PRIORITY_NONE;
 
 		// is active or finished quest show only character
 		const int GivesQuest = GS()->Core()->BotManager()->GetQuestNPC(m_MobID);
 		if(FunctionNPC == FUNCTION_NPC_GIVE_QUEST && pSnappingPlayer->GetQuest(GivesQuest)->GetState() != QuestState::NoAccepted)
-			return STATE_SNAPPING_ONLY_CHARACTER;
+			return SNAPPING_PRIORITY_LOWER;
 	}
 
-	return STATE_SNAPPING_FULL;
+	return SNAPPING_PRIORITY_HIGH;
 }
 
 void CPlayerBot::HandleTuningParams()

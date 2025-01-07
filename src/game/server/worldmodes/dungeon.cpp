@@ -574,7 +574,7 @@ void DungeonDoor::Tick()
 
 void DungeonDoor::Snap(int SnappingClient)
 {
-	if(NetworkClipped(SnappingClient, true) || m_State >= DUNGEON_STARTED)
+	if(NetworkClipped(SnappingClient) || m_State >= DUNGEON_STARTED)
 		return;
 
 	CNetObj_Laser* pObj = static_cast<CNetObj_Laser*>(Server()->SnapNewItem(NETOBJTYPE_LASER, GetID(), sizeof(CNetObj_Laser)));

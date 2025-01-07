@@ -297,7 +297,7 @@ void CCharacterBotAI::Snap(int SnappingClient)
 		return;
 
 	// check network clipped and translate state
-	if(NetworkClipped(SnappingClient) || !Server()->Translate(ID, SnappingClient))
+	if(NetworkClippedByPriority(SnappingClient, SNAPPING_PRIORITY_LOWER) || !Server()->Translate(ID, SnappingClient))
 		return;
 
 	CNetObj_Character* pCharacter = static_cast<CNetObj_Character*>(Server()->SnapNewItem(NETOBJTYPE_CHARACTER, ID, sizeof(CNetObj_Character)));

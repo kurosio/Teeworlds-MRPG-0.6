@@ -128,7 +128,6 @@ bool CBrush::UpdatePosition()
 		m_Position = NewPos;
 	}
 	m_pEntity->SetPos(m_Position);
-	m_pEntity->TickFreeze();
 	return distance(m_Position, m_pBoard->GetPos()) <= m_pBoard->m_Radius;
 }
 

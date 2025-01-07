@@ -16,6 +16,7 @@ CEntity::CEntity(CGameWorld* pGameWorld, int ObjType, vec2 Pos, int Radius, int 
 	m_ClientID = ClientID;
 	m_Radius = Radius;
 	m_MarkedForDestroy = false;
+	m_NextCheckSnappingPriority = SNAPPING_PRIORITY_HIGH;
 
 	m_Pos = Pos;
 	m_PosTo = Pos;
@@ -27,26 +28,28 @@ CEntity::~CEntity()
 	Server()->SnapFreeID(m_ID);
 }
 
-int CEntity::NetworkClipped(int SnappingClient, bool FreezeUnsnapped)
+int CEntity::NetworkClippedByPriority(int SnappingClient, ESnappingPriority Priority)
 {
-	return NetworkClipped(SnappingClient, m_Pos, FreezeUnsnapped);
+	m_NextCheckSnappingPriority = Priority;
+	int Result = NetworkClipped(SnappingClient, m_Pos);
+	m_NextCheckSnappingPriority = SNAPPING_PRIORITY_HIGH;
+	return Result;
 }
 
-int CEntity::NetworkClipped(int SnappingClient, vec2 CheckPos, bool FreezeUnsnapped)
+int CEntity::NetworkClipped(int SnappingClient)
 {
-	return NetworkClipped(SnappingClient, CheckPos, 0.f, FreezeUnsnapped);
+	return NetworkClipped(SnappingClient, m_Pos);
 }
 
-int CEntity::NetworkClipped(int SnappingClient, vec2 CheckPos, float Radius, bool FreezeUnsnapped)
+int CEntity::NetworkClipped(int SnappingClient, vec2 CheckPos)
 {
-	if(!m_TickFreezeCheckStarted && FreezeUnsnapped)
-	{
-		m_TickFreeze = true;
-		m_TickFreezeCheckStarted = true;
-	}
+	return NetworkClipped(SnappingClient, CheckPos, 0.f);
+}
 
+int CEntity::NetworkClipped(int SnappingClient, vec2 CheckPos, float Radius)
+{
 	if(SnappingClient == -1)
-		return NetworkClippedResultImpl<0>(FreezeUnsnapped);
+		return 0;
 
 	const CPlayer* pPlayer = GS()->GetPlayer(SnappingClient);
 	const float dx = pPlayer->m_ViewPos.x - CheckPos.x;
@@ -54,22 +57,21 @@ int CEntity::NetworkClipped(int SnappingClient, vec2 CheckPos, float Radius, boo
 	const float radiusOffset = Radius / 2.f;
 
 	if(absolute(dx) > (1000.0f + radiusOffset) || absolute(dy) > (800.0f + radiusOffset))
-		return NetworkClippedResultImpl<1>(FreezeUnsnapped);
+		return 1;
 
-	if(distance(pPlayer->m_ViewPos, CheckPos) > (1100.0f + radiusOffset) || !IsClientEntityFullSnapping(SnappingClient))
-		return NetworkClippedResultImpl<1>(FreezeUnsnapped);
+	if(distance(pPlayer->m_ViewPos, CheckPos) > (1100.0f + radiusOffset) || !IsValidSnappingState(SnappingClient))
+		return 1;
 
-	return NetworkClippedResultImpl<0>(FreezeUnsnapped);
+	return 0;
 }
 
-bool CEntity::IsClientEntityFullSnapping(int SnappingClient) const
+bool CEntity::IsValidSnappingState(int SnappingClient) const
 {
-	// Check if the client ID is within the valid range
+	// prepare got snap state
 	if(m_ClientID >= 0 && m_ClientID < MAX_CLIENTS)
 	{
-		// Get the player object corresponding to the client ID
 		CPlayer* pPlayer = GS()->GetPlayer(m_ClientID);
-		if(pPlayer->IsActiveForClient(SnappingClient) != STATE_SNAPPING_FULL)
+		if(pPlayer->IsActiveForClient(SnappingClient) < m_NextCheckSnappingPriority)
 			return false;
 	}
 

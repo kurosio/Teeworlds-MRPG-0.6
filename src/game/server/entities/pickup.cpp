@@ -124,7 +124,7 @@ void CPickup::Tick()
 
 void CPickup::Snap(int SnappingClient)
 {
-	if(m_SpawnTick != -1 || NetworkClipped(SnappingClient, (m_SpawnTick == -1)))
+	if(m_SpawnTick != -1 || NetworkClipped(SnappingClient))
 		return;
 
 	if(m_Projectile)

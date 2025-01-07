@@ -590,14 +590,6 @@ enum
 	WEAPON_WORLD = -1,
 };
 
-// snapping state personal for player
-enum EStateSnapping
-{
-	STATE_SNAPPING_NONE = 0,
-	STATE_SNAPPING_ONLY_CHARACTER,
-	STATE_SNAPPING_FULL,
-};
-
 constexpr const char* GetEmoteNameById(int emoteId) noexcept
 {
 	switch(emoteId)

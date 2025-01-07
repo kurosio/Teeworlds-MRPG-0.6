@@ -49,6 +49,7 @@ bool CQuestStepBase::IsActiveStep() const
 	const auto* pGS = dynamic_cast<CGS*>(Instance::GameServer(m_Bot.m_WorldID));
 	const int QuestID = m_Bot.m_QuestID;
 	const int QuestBotID = m_Bot.m_ID;
+	bool ActiveQuestStep = false;
 
 	// check valid quest
 	if(!CQuestDescription::Data().contains(QuestID))
@@ -56,6 +57,9 @@ bool CQuestStepBase::IsActiveStep() const
 
 	for(int i = 0; i < MAX_PLAYERS; ++i)
 	{
+		bool& refActiveByQuest = DataBotInfo::ms_aDataBot[m_Bot.m_BotID].m_aActiveByQuest[i];
+		refActiveByQuest = false;
+
 		CPlayer* pPlayer = pGS->GetPlayer(i);
 		if(!pPlayer || !pPlayer->IsAuthed())
 			continue;
@@ -68,10 +72,11 @@ bool CQuestStepBase::IsActiveStep() const
 		if(!pStep || pStep->m_StepComplete || pStep->m_ClientQuitting)
 			continue;
 
-		return true;
+		refActiveByQuest = true;
+		ActiveQuestStep = true;
 	}
 
-	return false;
+	return ActiveQuestStep;
 }
 
 // ##############################################################

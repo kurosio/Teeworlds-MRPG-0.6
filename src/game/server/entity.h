@@ -10,6 +10,15 @@
 	Class: Entity
 		Basic entity class.
 */
+
+// snapping state
+enum ESnappingPriority
+{
+	SNAPPING_PRIORITY_NONE = 0,
+	SNAPPING_PRIORITY_LOWER,
+	SNAPPING_PRIORITY_HIGH,
+};
+
 class CEntity
 {
 	MACRO_ALLOC_HEAP()
@@ -26,9 +35,6 @@ private:
 
 	int m_ID;
 	int m_ObjType;
-	int m_TickFreeze;
-	bool m_TickFreezeCheckStarted;
-
 
 	/* State */
 	bool m_MarkedForDestroy;
@@ -43,6 +49,7 @@ protected:
 	vec2 m_Pos;
 	vec2 m_PosTo;
 	int m_ClientID;
+	ESnappingPriority m_NextCheckSnappingPriority;
 
 	/*
 		Variable: m_Radius
@@ -77,7 +84,6 @@ public:
 	void MarkForDestroy()				{ m_MarkedForDestroy = true; }
 	void SetPos(vec2 Pos)				{ m_Pos = Pos; }
 	void SetPosTo(vec2 Pos)				{ m_PosTo = Pos; }
-	void TickFreeze()					{ m_TickFreeze = true; }
 	void SetClientID(int ClientID)		{ m_ClientID = ClientID; }
 
 	/* Getters */
@@ -145,21 +151,13 @@ public:
 		Returns:
 			Non-zero if the entity doesn't have to be in the snapshot.
 	*/
-	int NetworkClipped(int SnappingClient, bool FreezeUnsnapped = false);
-	int NetworkClipped(int SnappingClient, vec2 CheckPos, bool FreezeUnsnapped = false);
-	int NetworkClipped(int SnappingClient, vec2 CheckPos, float Radius, bool FreezeUnsnapped = false);
+	int NetworkClippedByPriority(int SnappingClient, ESnappingPriority Priority);
+	int NetworkClipped(int SnappingClient);
+	int NetworkClipped(int SnappingClient, vec2 CheckPos);
+	int NetworkClipped(int SnappingClient, vec2 CheckPos, float Radius);
 
-private:
-	template<int Result>
-	int NetworkClippedResultImpl(bool FreezeUnsnapped)
-	{
-		if(FreezeUnsnapped && Result == 0)
-			m_TickFreeze = false;
-		return Result;
-	}
 public:
-
-	bool IsClientEntityFullSnapping(int SnappingClient) const;
+	bool IsValidSnappingState(int SnappingClient) const;
 	bool GameLayerClipped(vec2 CheckPos) const;
 };
 

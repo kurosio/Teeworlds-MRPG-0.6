@@ -199,7 +199,7 @@ void CEntityHarvestingItem::Tick()
 
 void CEntityHarvestingItem::Snap(int SnappingClient)
 {
-	if(m_SpawnTick != -1 || NetworkClipped(SnappingClient, m_SpawnTick == -1))
+	if(m_SpawnTick != -1 || NetworkClipped(SnappingClient))
 		return;
 
 	CNetObj_Pickup *pP = static_cast<CNetObj_Pickup *>(Server()->SnapNewItem(NETOBJTYPE_PICKUP, GetID(), sizeof(CNetObj_Pickup)));

@@ -74,7 +74,7 @@ public:
 	}
 
 	int64_t GetMaskVisibleForClients() const override;
-	EStateSnapping IsActiveForClient(int ClientID) const override;
+	ESnappingPriority IsActiveForClient(int ClientID) const override;
 	std::optional<int> GetEquippedItemID(ItemFunctional EquipID, int SkipItemID = -1) const override;
 	int GetTotalAttributeValue(AttributeIdentifier ID) const override;
 
