@@ -25,8 +25,7 @@ void CEntityBotIndicator::Tick()
 
 void CEntityBotIndicator::Snap(int SnappingClient)
 {
-	const auto* pPlayerBot = dynamic_cast<CPlayerBot*>(GS()->GetPlayer(m_ClientID));
-	if(!pPlayerBot || !pPlayerBot->IsActive() || !pPlayerBot->IsActiveForClient(SnappingClient))
+	if(NetworkClipped(SnappingClient))
 		return;
 
 	vec2 ShowPos = vec2(m_Pos.x, m_Pos.y - 64.f);

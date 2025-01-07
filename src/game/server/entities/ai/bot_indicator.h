@@ -6,7 +6,6 @@ class CEntityBotIndicator : public CEntity
 {
 	int m_Type;
 	int m_SubType;
-	int m_ClientID;
 
 public:
 	CEntityBotIndicator(CGameWorld *pGameWorld, int ClientID, int Type, int SubType);

@@ -15,7 +15,7 @@ public:
 	char m_aNameBot[MAX_NAME_LENGTH] {};
 	CTeeInfo m_TeeInfos {};
 	int m_aEquipSlot[NUM_EQUIPPED] {};
-	bool m_aVisibleActive[MAX_PLAYERS] {};
+	bool m_aActiveByQuest[MAX_PLAYERS] {};
 	DBSet m_EquippedModules {};
 
 	static bool IsDataBotValid(int BotID) { return (ms_aDataBot.find(BotID) != ms_aDataBot.end()); }

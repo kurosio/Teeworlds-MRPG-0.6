@@ -23,7 +23,7 @@ CPlayerBot::CPlayerBot(CGS* pGS, int ClientID, int BotID, int MobID, int SpawnPo
 
 CPlayerBot::~CPlayerBot()
 {
-	std::memset(DataBotInfo::ms_aDataBot[m_BotID].m_aVisibleActive, 0, MAX_PLAYERS * sizeof(bool));
+	std::memset(DataBotInfo::ms_aDataBot[m_BotID].m_aActiveByQuest, 0, MAX_PLAYERS * sizeof(bool));
 }
 
 void CPlayerBot::InitQuestBotMobInfo(CQuestBotMobInfo elem)
@@ -311,52 +311,51 @@ int64_t CPlayerBot::GetMaskVisibleForClients() const
 
 EStateSnapping CPlayerBot::IsActiveForClient(int ClientID) const
 {
-	// Get the snapping player
 	CPlayer* pSnappingPlayer = GS()->GetPlayer(ClientID);
-
-	// Check if the client ID is valid and if the snapping player exists
 	if(ClientID < 0 || ClientID >= MAX_PLAYERS || !pSnappingPlayer)
 		return STATE_SNAPPING_NONE;
 
-	// Check if the bot type is quest bot
 	if(m_BotType == TYPE_BOT_QUEST)
 	{
-		// Check if the quest state for the snapping player is not ACCEPT
-		const QuestIdentifier QuestID = QuestBotInfo::ms_aQuestBot[m_MobID].m_QuestID;
+		bool& refActiveByQuest = DataBotInfo::ms_aDataBot[m_BotID].m_aActiveByQuest[ClientID];
+		refActiveByQuest = false;
+
+		// is quest not accept
+		const auto QuestID = QuestBotInfo::ms_aQuestBot[m_MobID].m_QuestID;
 		if(pSnappingPlayer->GetQuest(QuestID)->GetState() != QuestState::Accepted)
 			return STATE_SNAPPING_NONE;
 
-		// Check if the current step of the quest bot is not the same as the current step of the snapping player's quest
+		// is step pos not equal current step pos
 		if((QuestBotInfo::ms_aQuestBot[m_MobID].m_StepPos != pSnappingPlayer->GetQuest(QuestID)->GetStepPos()))
 			return STATE_SNAPPING_NONE;
 
-		// Check if the step for the bot mob in the snapping player's quest is already completed
+		// is step pos completed
 		if(pSnappingPlayer->GetQuest(QuestID)->GetStepByMob(GetBotMobID())->m_StepComplete)
 			return STATE_SNAPPING_NONE;
 
-		// Set the visible active state for the snapping player to true
-		DataBotInfo::ms_aDataBot[m_BotID].m_aVisibleActive[ClientID] = true;
+		// set bot active by quest
+		refActiveByQuest = true;
 	}
 
-	// Check if the bot type is NPC bot
 	if(m_BotType == TYPE_BOT_NPC)
 	{
-		// Check if the function of the NPC bot is NPC_GUARDIAN
-		if(NpcBotInfo::ms_aNpcBot[m_MobID].m_Function == FUNCTION_NPC_GUARDIAN)
+		const auto FunctionNPC = NpcBotInfo::ms_aNpcBot[m_MobID].m_Function;
+	
+		// always show guardian and nurse
+		if(FunctionNPC == FUNCTION_NPC_GUARDIAN || FunctionNPC == FUNCTION_NPC_NURSE)
 			return STATE_SNAPPING_FULL;
 
-		// Check if the visible active state for the snapping player is already true
-		if(DataBotInfo::ms_aDataBot[m_BotID].m_aVisibleActive[ClientID])
+		// does not show npc what active by quest
+		const auto ActiveByQuest = DataBotInfo::ms_aDataBot[m_BotID].m_aActiveByQuest[ClientID];
+		if(ActiveByQuest)
 			return STATE_SNAPPING_NONE;
 
-		// Check if the NPC's function is to give a quest and if the player has already accepted the quest
+		// is active or finished quest show only character
 		const int GivesQuest = GS()->Core()->BotManager()->GetQuestNPC(m_MobID);
-		if(NpcBotInfo::ms_aNpcBot[m_MobID].m_Function == FUNCTION_NPC_GIVE_QUEST
-			&& pSnappingPlayer->GetQuest(GivesQuest)->GetState() != QuestState::NoAccepted)
+		if(FunctionNPC == FUNCTION_NPC_GIVE_QUEST && pSnappingPlayer->GetQuest(GivesQuest)->GetState() != QuestState::NoAccepted)
 			return STATE_SNAPPING_ONLY_CHARACTER;
 	}
 
-	// Return full state as the default state
 	return STATE_SNAPPING_FULL;
 }
 

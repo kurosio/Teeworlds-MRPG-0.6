@@ -1252,7 +1252,7 @@ void CGS::OnClearClientData(int ClientID)
 
 	// clear active snap bots for player
 	for(auto& pActiveSnap : DataBotInfo::ms_aDataBot)
-		pActiveSnap.second.m_aVisibleActive[ClientID] = false;
+		pActiveSnap.second.m_aActiveByQuest[ClientID] = false;
 }
 
 void CGS::UpdateCollisionZones()

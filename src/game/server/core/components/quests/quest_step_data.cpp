@@ -207,7 +207,6 @@ void CQuestStep::PostFinish()
 	}
 
 	// update bot status
-	DataBotInfo::ms_aDataBot[m_Bot.m_BotID].m_aVisibleActive[ClientID] = false;
 	pPlayer->GetQuest(m_Bot.m_QuestID)->Update();
 	pPlayer->m_VotesData.UpdateVotesIf(MENU_JOURNAL_MAIN);
 }

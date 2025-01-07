@@ -83,7 +83,7 @@ void CBotManager::OnPreInit()
 			BotInfo.m_TeeInfos.m_ColorFeet = pJson.value("color_feet", -1);
 		});
 
-		memset(BotInfo.m_aVisibleActive, false, MAX_PLAYERS);
+		memset(BotInfo.m_aActiveByQuest, false, MAX_PLAYERS);
 		DataBotInfo::ms_aDataBot[BotID] = BotInfo;
 	}
 }
