@@ -39,6 +39,7 @@ bool CQuestDescription::HasObjectives(int Step)
 
 void CQuestDescription::PreparePlayerObjectives(int Step, int ClientID, std::deque<std::shared_ptr<CQuestStep>>& pElem)
 {
+	pElem.clear();
 	for(const auto& Step : m_vObjectives[Step])
 	{
 		pElem.emplace_back(std::make_shared<CQuestStep>(ClientID, Step.m_Bot));
