@@ -1134,6 +1134,10 @@ void CCharacter::HandleEventsDeath(int Killer, vec2 Force) const
 	if(!pKiller || (Killer == m_ClientID))
 		return;
 
+	// skip for prisoned client
+	if(m_pPlayer->Account()->GetPrisonManager().IsInPrison())
+		return;
+
 	const bool KillerIsGuardian = (pKiller->IsBot() && dynamic_cast<CPlayerBot*>(pKiller)->GetBotType() == TYPE_BOT_NPC &&
 		NpcBotInfo::ms_aNpcBot[dynamic_cast<CPlayerBot*>(pKiller)->GetBotMobID()].m_Function == FUNCTION_NPC_GUARDIAN);
 	const bool KillerIsPlayer = !pKiller->IsBot();
