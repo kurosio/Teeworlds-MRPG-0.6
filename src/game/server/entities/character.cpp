@@ -1134,8 +1134,9 @@ void CCharacter::HandleEventsDeath(int Killer, vec2 Force) const
 	if(!pKiller || (Killer == m_ClientID))
 		return;
 
-	// skip for prisoned client
-	if(m_pPlayer->Account()->GetPrisonManager().IsInPrison())
+	// skip for prisoned client and killer
+	if(m_pPlayer->Account()->GetPrisonManager().IsInPrison() || 
+		(!pKiller->IsBot() && pKiller->Account()->GetPrisonManager().IsInPrison()))
 		return;
 
 	const bool KillerIsGuardian = (pKiller->IsBot() && dynamic_cast<CPlayerBot*>(pKiller)->GetBotType() == TYPE_BOT_NPC &&
@@ -1151,13 +1152,9 @@ void CCharacter::HandleEventsDeath(int Killer, vec2 Force) const
 		{
 			GS()->EntityManager()->DropItem(m_Pos, Killer >= MAX_PLAYERS ? -1 : Killer, { itGold, LossGold }, Force);
 			if(KillerIsPlayer)
-			{
 				GS()->Chat(m_ClientID, "You lost {}% ({$}) gold, killer {}!", g_Config.m_SvGoldLossOnDeath, LossGold, Server()->ClientName(Killer));
-			}
 			else
-			{
 				GS()->Chat(m_ClientID, "You lost {}% ({$}) gold due to death!", g_Config.m_SvGoldLossOnDeath, LossGold, Server()->ClientName(Killer));
-			}
 		}
 	}
 
@@ -1173,11 +1170,10 @@ void CCharacter::HandleEventsDeath(int Killer, vec2 Force) const
 				GS()->Chat(-1, "{} killed {}, who was wanted. The reward is {$} gold!",
 					Server()->ClientName(m_pPlayer->GetCID()), Server()->ClientName(Killer), Arrest);
 			}
-
 			GS()->Chat(m_ClientID, "Treasury confiscates {}% ({$}) of your gold.", g_Config.m_SvArrestGoldOnDeath, Arrest);
-			m_pPlayer->Account()->GetPrisonManager().Imprison(360);
 		}
 
+		m_pPlayer->Account()->GetPrisonManager().Imprison(360);
 		m_pPlayer->Account()->ResetCrimeScore();
 	}
 	else if(KillerIsPlayer)
