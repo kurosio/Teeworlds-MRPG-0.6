@@ -9,7 +9,6 @@
 #include <game/server/core/entities/items/drop_quest_items.h>
 #include <game/server/core/entities/tools/dir_navigator.h>
 #include <game/server/core/entities/tools/laser_orbite.h>
-#include <game/server/core/entities/tools/path_navigator.h>
 
 #include "entities/move_action.h"
 #include "entities/path_finder.h"
@@ -254,32 +253,19 @@ void CQuestStep::UpdatePathNavigator()
 		return;
 
 	CPlayer* pPlayer = GetPlayer();
+	const bool Exists = m_pEntNavigator && GS()->m_World.ExistEntity(m_pEntNavigator);
 	const bool DependLife = !m_StepComplete && !m_ClientQuitting && pPlayer && pPlayer->GetCharacter();
 
-	if(!DependLife && m_pEntNavigator)
+	if(!DependLife && Exists)
 	{
 		dbg_msg("dir_navigator", "delete navigator");
 		delete m_pEntNavigator;
 		m_pEntNavigator = nullptr;
 	}
-	else if(DependLife && !m_pEntNavigator)
+	else if(DependLife && !Exists)
 	{
-		m_pEntNavigator = new CEntityDirectionNavigator(&GS()->m_World);
-		if(m_pEntNavigator->TryStart(m_ClientID, m_Bot.m_Position, m_Bot.m_WorldID))
-		{
-			if(pPlayer->GetItem(itShowQuestStarNavigator)->IsEquipped())
-			{
-				new CEntityPathNavigator(&GS()->m_World, m_pEntNavigator, true, pPlayer->m_ViewPos,
-					m_pEntNavigator->GetPosTo(), m_Bot.m_WorldID, false, CmaskOne(m_ClientID));
-			}
-			dbg_msg("dir_navigator", "create navigator");
-		}
-		else
-		{
-			delete m_pEntNavigator;
-			m_pEntNavigator = nullptr;
-			dbg_msg("dir_navigator", "can't create navigator");
-		}
+		dbg_msg("test", "create navigator");
+		m_pEntNavigator = new CEntityDirectionNavigator(&GS()->m_World, m_ClientID, m_Bot.m_Position, m_Bot.m_WorldID);
 	}
 }
 
