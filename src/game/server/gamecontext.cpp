@@ -1410,6 +1410,7 @@ void CGS::InitWorld()
 	{
 		m_pController = new CGameControllerDefault(this);
 		pWorldType = "Default";
+		m_AllowedPVP = true;
 	}
 
 	UpdateExpMultiplier();

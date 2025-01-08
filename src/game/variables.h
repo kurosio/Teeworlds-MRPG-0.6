@@ -127,11 +127,6 @@ MACRO_CONFIG_INT(SvGuildAnotherUpgradePrice, sv_guild_another_upgrade_price, 168
 MACRO_CONFIG_INT(SvGuildWarDurationMinutes, sv_guild_war_duration_minutes, 30, 1, 240, CFGFLAG_SERVER, "Duration of a guild war in minutes")
 
 // -----------------------
-// PvP Configuration
-// -----------------------
-MACRO_CONFIG_INT(SvAntiPvPLevelDifference, sv_anti_pvp_level_difference, 50, 0, 10000, CFGFLAG_SERVER, "Maximum level difference allowed for PvP")
-
-// -----------------------
 // Experience and Gold Configuration
 // -----------------------
 MACRO_CONFIG_INT(SvMobKillExpFactor, sv_mob_kill_exp_factor, 1000, 100, 5000, CFGFLAG_SERVER, "Experience multiplier for killing mobs")
