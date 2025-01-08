@@ -175,7 +175,11 @@ void CCollision::InitSwitchExtra()
 				m_vZoneDetail[Number] = detail;
 				if(!detail.IsPvp)
 				{
-					m_pTiles[i].m_ColFlags |= COLFLAG_SAFE;
+					for(int j = 0; j < m_Width * m_Height; j++)
+					{
+						if(m_pSwitchExtra[j].m_Number == Number)
+							m_pTiles[j].m_ColFlags |= COLFLAG_SAFE;
+					}
 				}
 			}
 		}
