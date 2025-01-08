@@ -97,7 +97,15 @@ CQuestStep::~CQuestStep()
 	m_aMobProgress.clear();
 	m_aMoveActionProgress.clear();
 	CQuestStepBase::UpdateBot();
+
+	// move actions
+	for(auto* pEntPtr : m_vpEntitiesAction)
+		delete pEntPtr;
 	m_vpEntitiesAction.clear();
+
+	// navigator
+	for(auto* pEntPtr : m_vpEntitiesNavigator)
+		delete pEntPtr;
 	m_vpEntitiesNavigator.clear();
 
 	// update bot and path navigator
@@ -526,16 +534,16 @@ void CQuestStep::CreateEntityQuestAction(int MoveToIndex, std::optional<int> Opt
 		return;
 
 	// find the action by move to index
-	const auto iter = std::ranges::find_if(m_vpEntitiesAction, [MoveToIndex](const std::shared_ptr<CEntityQuestAction>& pPtr)
+	const auto iter = std::ranges::find_if(m_vpEntitiesAction, [MoveToIndex](const CEntityQuestAction* pEntPtr)
 	{
-		return MoveToIndex == pPtr->GetMoveToIndex();
+		return MoveToIndex == pEntPtr->GetMoveToIndex();
 	});
 
 	// create a new move to item if it does not exist
 	if(iter == m_vpEntitiesAction.end())
 	{
-		auto pSharedAction = std::make_shared<CEntityQuestAction>(&GS()->m_World, m_ClientID, MoveToIndex, weak_from_this(), m_Bot.IsAutoCompletesQuestStep(), OptDefeatBotCID);
-		m_vpEntitiesAction.emplace_back(pSharedAction);
+		auto pEntPtr = new CEntityQuestAction(&GS()->m_World, m_ClientID, MoveToIndex, weak_from_this(), m_Bot.IsAutoCompletesQuestStep(), OptDefeatBotCID);
+		m_vpEntitiesAction.emplace_back(pEntPtr);
 
 		// create navigations
 		auto* pTaskData = &m_Bot.m_vRequiredMoveAction[MoveToIndex];
@@ -543,18 +551,16 @@ void CQuestStep::CreateEntityQuestAction(int MoveToIndex, std::optional<int> Opt
 		{
 			CEntityLaserOrbite* pEntOrbite;
 			constexpr float Radius = 400.f;
-			GS()->EntityManager()->LaserOrbite(pEntOrbite, pSharedAction.get(), (int)(Radius / 50.f),
-				LaserOrbiteType::InsideOrbite, 0.f, pSharedAction->GetRadius(), LASERTYPE_FREEZE, CmaskOne(m_ClientID));
-
+			GS()->EntityManager()->LaserOrbite(pEntOrbite, pEntPtr, (int)(Radius / 50.f),
+				LaserOrbiteType::InsideOrbite, 0.f, pEntPtr->GetRadius(), LASERTYPE_FREEZE, CmaskOne(m_ClientID));
 			CreateEntityArrowNavigator(pTaskData->m_Position, pTaskData->m_WorldID, Radius, CEntityPathArrow::CONDITION_MOVE_TO, MoveToIndex);
 		}
 		else if(!pTaskData->m_Navigator)
 		{
 			CEntityLaserOrbite* pEntOrbite;
 			const float Radius = 400.f + random_float(2000.f);
-			GS()->EntityManager()->LaserOrbite(pEntOrbite, pSharedAction.get(), (int)(Radius / 50.f),
+			GS()->EntityManager()->LaserOrbite(pEntOrbite, pEntPtr, (int)(Radius / 50.f),
 				LaserOrbiteType::InsideOrbiteRandom, 0.f, Radius, LASERTYPE_FREEZE, CmaskOne(m_ClientID));
-
 			CreateEntityArrowNavigator(pTaskData->m_Position, pTaskData->m_WorldID, Radius, CEntityPathArrow::CONDITION_MOVE_TO, MoveToIndex);
 		}
 		else
@@ -568,7 +574,7 @@ void CQuestStep::CreateEntityQuestAction(int MoveToIndex, std::optional<int> Opt
 void CQuestStep::CreateEntityArrowNavigator(vec2 Position, int WorldID, float AreaClipped, int ConditionType, int ConditionIndex)
 {
 	// find the bot navigator by the position
-	const auto iter = std::ranges::find_if(m_vpEntitiesNavigator, [Position](const std::shared_ptr<CEntityPathArrow>& pPtr)
+	const auto iter = std::ranges::find_if(m_vpEntitiesNavigator, [Position](const CEntityPathArrow* pPtr)
 	{
 		return pPtr->GetPosTo() == Position;
 	});
@@ -576,7 +582,7 @@ void CQuestStep::CreateEntityArrowNavigator(vec2 Position, int WorldID, float Ar
 	// create a new arrow navigator if it does not exist
 	if(iter == m_vpEntitiesNavigator.end())
 	{
-		auto pSharedArrow = std::make_shared<CEntityPathArrow>(&GS()->m_World, m_ClientID, AreaClipped, Position, WorldID, weak_from_this(), ConditionType, ConditionIndex);
-		m_vpEntitiesNavigator.emplace_back(pSharedArrow);
+		auto pEntPtr = new CEntityPathArrow(&GS()->m_World, m_ClientID, AreaClipped, Position, WorldID, weak_from_this(), ConditionType, ConditionIndex);
+		m_vpEntitiesNavigator.emplace_back(pEntPtr);
 	}
 }

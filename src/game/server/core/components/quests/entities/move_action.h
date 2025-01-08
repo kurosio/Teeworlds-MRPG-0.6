@@ -24,7 +24,6 @@ public:
 	void Tick() override;
 	void Snap(int SnappingClient) override;
 	int GetMoveToIndex() const { return m_MoveToIndex; }
-	void Destroy() override;
 
 private:
 	CPlayer* GetPlayer() const;

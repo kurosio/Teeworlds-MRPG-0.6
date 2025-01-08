@@ -6,20 +6,26 @@
 #include <game/server/core/components/worlds/world_manager.h>
 #include <game/server/core/tools/path_finder.h>
 
-CEntityPathNavigator::CEntityPathNavigator(CGameWorld* pGameWorld, CEntity* pParent, bool StartByCreating, vec2 FromPos, vec2 SearchPos, int WorldID, bool Projectile, int64_t Mask)
-	: CEntity(pGameWorld, CGameWorld::ENTTYPE_PATH_NAVIGATOR, FromPos)
+CPlayer* CEntityPathNavigator::GetPlayer() const
 {
+	return GS()->GetPlayer(m_ClientID);
+}
+
+CEntityPathNavigator::CEntityPathNavigator(CGameWorld* pGameWorld, int ClientID, bool StartByCreating, vec2 SearchPos, int WorldID, bool Projectile, int64_t Mask)
+	: CEntity(pGameWorld, CGameWorld::ENTTYPE_PATH_NAVIGATOR, {}, 0, ClientID)
+{
+	const auto* pPlayer = GetPlayer();
 	const auto PosTo = GS()->Core()->WorldManager()->FindPosition(WorldID, SearchPos);
-	if(!PosTo.has_value())
+	if(!PosTo.has_value() || !pPlayer)
 	{
 		MarkForDestroy();
 		return;
 	}
 
+	m_Pos = pPlayer->m_ViewPos;
 	m_PosTo = PosTo.value();
 	m_Mask = Mask;
 	m_StepPos = 0;
-	m_pParent = pParent;
 	m_Projectile = Projectile;
 	m_StartByCreating = StartByCreating;
 	GameWorld()->InsertEntity(this);
@@ -27,19 +33,23 @@ CEntityPathNavigator::CEntityPathNavigator(CGameWorld* pGameWorld, CEntity* pPar
 
 void CEntityPathNavigator::Tick()
 {
-	// destroy the entity if its parent no longer exists
-	if(!GameWorld()->ExistEntity(m_pParent))
+	auto* pPlayer = GetPlayer();
+	if(!pPlayer)
 	{
 		GameWorld()->DestroyEntity(this);
 		return;
 	}
 
+	if(!pPlayer->GetCharacter())
+		return;
+
 	// if no path is available, request a new path
+	vec2 PlayerPos = pPlayer->GetCharacter()->m_Core.m_Pos;
 	if(m_PathHandle.vPath.empty())
 	{
-		if(m_TickLastIdle < Server()->Tick() && distance(m_pParent->GetPos(), m_PosTo) > 240.f)
+		if(m_TickLastIdle < Server()->Tick() && distance(PlayerPos, m_PosTo) > 240.f)
 		{
-			GS()->PathFinder()->RequestPath(m_PathHandle, m_pParent->GetPos(), m_PosTo);
+			GS()->PathFinder()->RequestPath(m_PathHandle, PlayerPos, m_PosTo);
 			m_StepPos = 0;
 		}
 		m_PathHandle.TryGetPath();
@@ -48,23 +58,27 @@ void CEntityPathNavigator::Tick()
 
 	// perform movement if the countdown has expired
 	if(m_TickCountDown < Server()->Tick())
-		Move();
+		Move(pPlayer);
 }
 
 void CEntityPathNavigator::TickDeferred()
 {
+	auto* pPlayer = GetPlayer();
+	if(!pPlayer || !pPlayer->GetCharacter())
+		return;
+
 	// update last position
-	if(m_LastPos != m_pParent->GetPos() && m_TickLastIdle != -1 && !m_StartByCreating)
+	vec2 PlayerPos = pPlayer->GetCharacter()->m_Core.m_Pos;
+	if(m_LastPos != PlayerPos && m_TickLastIdle != -1 && !m_StartByCreating)
 	{
 		m_TickLastIdle = Server()->Tick() + (Server()->TickSpeed() * 3);
 	}
-	m_LastPos = m_pParent->GetPos();
+	m_LastPos = PlayerPos;
 }
 
 
-void CEntityPathNavigator::Move()
+void CEntityPathNavigator::Move(CPlayer* pPlayer)
 {
-	// move by projectile
 	if(m_Projectile)
 	{
 		if(is_negative_vec(m_Pos))
@@ -100,7 +114,8 @@ void CEntityPathNavigator::Move()
 		m_StepPos++;
 
 		// check if the entity should stop moving
-		if(distance(m_pParent->GetPos(), m_Pos) > 800.0f || m_StepPos >= (int)m_PathHandle.vPath.size())
+		vec2 PlayerPos = pPlayer->GetCharacter()->m_Core.m_Pos;
+		if(distance(PlayerPos, m_Pos) > 800.0f || m_StepPos >= (int)m_PathHandle.vPath.size())
 		{
 			m_TickCountDown = Server()->Tick() + (Server()->TickSpeed() * 2);
 			m_StartByCreating = false;

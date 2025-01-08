@@ -7,9 +7,10 @@
 
 class CPlayer;
 class CQuestStep;
-
+class CEntityPathNavigator;
 class CEntityPathArrow : public CEntity, public std::enable_shared_from_this<CEntityPathArrow>
 {
+	CEntityPathNavigator* m_pEntNavigator {};
 	float m_AreaClipped{};
 	int m_ConditionType{};
 	int m_ConditionIndex{};
@@ -24,10 +25,10 @@ public:
 
 	CEntityPathArrow(CGameWorld* pGameWorld, int ClientID, float AreaClipped, vec2 SearchPos, int WorldID,
 		const std::weak_ptr<CQuestStep>& pStep, int ConditionType, int ConditionIndex);
+	~CEntityPathArrow() override;
 
 	void Tick() override;
 	void Snap(int SnappingClient) override;
-	void Destroy() override;
 
 private:
 	CPlayer* GetPlayer() const;

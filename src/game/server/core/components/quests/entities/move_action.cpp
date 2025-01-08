@@ -29,6 +29,14 @@ CEntityQuestAction::CEntityQuestAction(CGameWorld* pGameWorld, int ClientID, int
 
 CEntityQuestAction::~CEntityQuestAction()
 {
+	if(const auto& pStep = GetQuestStep())
+	{
+		std::erase_if(pStep->m_vpEntitiesAction, [this](const auto* pEntPtr)
+		{
+			return pEntPtr == this;
+		});
+	}
+
 	// update quest player progress
 	if(CPlayer* pPlayer = GetPlayer())
 	{
@@ -72,14 +80,6 @@ CEntityQuestAction::~CEntityQuestAction()
 	// free ids
 	for(int i = 0; i < m_IDs.size(); i++)
 		Server()->SnapFreeID(m_IDs[i]);
-}
-
-void CEntityQuestAction::Destroy()
-{
-	if(auto* pStep = GetQuestStep())
-	{
-		std::erase(pStep->m_vpEntitiesAction, shared_from_this());
-	}
 }
 
 void CEntityQuestAction::Tick()

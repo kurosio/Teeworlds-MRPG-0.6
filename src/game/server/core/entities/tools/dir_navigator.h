@@ -5,13 +5,19 @@
 
 #include <game/server/entity.h>
 
+class CPlayer;
+class CEntityPathNavigator;
 class CEntityDirectionNavigator : public CEntity
 {
+	CEntityPathNavigator* m_pEntNavigator;
+
 public:
-	class CPlayer* m_pPlayer;
+	CPlayer* GetPlayer() const;
 
 	CEntityDirectionNavigator(CGameWorld* pGameWorld, int ClientID, vec2 Position, int WorldID);
+	~CEntityDirectionNavigator() override;
 
+	void Tick() override;
 	void Snap(int SnappingClient) override;
 };
 

@@ -5,12 +5,12 @@
 
 #include <game/server/entity.h>
 
+class CPlayer;
 class CEntityPathNavigator : public CEntity
 {
 	PathRequestHandle m_PathHandle{};
 	bool m_StartByCreating{};
 	int m_StepPos {};
-	CEntity* m_pParent {};
 	vec2 m_LastPos {};
 	int64_t m_Mask {};
 	int m_TickLastIdle {};
@@ -18,16 +18,15 @@ class CEntityPathNavigator : public CEntity
 	bool m_Projectile {};
 
 public:
-	CEntityPathNavigator(CGameWorld* pGameWorld, CEntity* pParent, bool StartByCreating, vec2 FromPos, vec2 SearchPos, int WorldID, bool Projectile, int64_t Mask = -1);
-
-	ska::unordered_map<int, vec2> getFinishedContainer(ska::unordered_map<int, vec2>& pathContainer);
+	CPlayer* GetPlayer() const;
+	CEntityPathNavigator(CGameWorld* pGameWorld, int ClientID, bool StartByCreating, vec2 SearchPos, int WorldID, bool Projectile, int64_t Mask = -1);
 
 	void Tick() override;
 	void Snap(int SnappingClient) override;
 	void TickDeferred() override;
 
 private:
-	void Move();
+	void Move(CPlayer* pPlayer);
 };
 
 #endif

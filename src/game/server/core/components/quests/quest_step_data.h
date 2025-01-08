@@ -24,6 +24,8 @@ private:
 
 // ##############################################################
 // ################# PLAYER STEP STRUCTURE ######################
+class CEntityPathArrow;
+class CEntityQuestAction;
 class CEntityDirectionNavigator;
 class CQuestStep : public CQuestStepBase, public std::enable_shared_from_this<CQuestStep>
 {
@@ -31,7 +33,6 @@ class CQuestStep : public CQuestStepBase, public std::enable_shared_from_this<CQ
 	class CPlayer* GetPlayer() const;
 
 	CEntityDirectionNavigator* m_pEntNavigator{};
-
 	struct MobProgressStatus
 	{
 		int m_Count;
@@ -73,8 +74,8 @@ public:
 	int GetCompletedMoveActionCount();
 
 	// steps path finder tools
-	std::deque < std::shared_ptr<class CEntityQuestAction> > m_vpEntitiesAction {};
-	std::deque < std::shared_ptr<class CEntityPathArrow> > m_vpEntitiesNavigator {};
+	std::deque < CEntityQuestAction* > m_vpEntitiesAction {};
+	std::deque < CEntityPathArrow* > m_vpEntitiesNavigator {};
 
 	void CreateEntityQuestAction(int MoveToIndex, std::optional<int> OptDefeatBotCID = std::nullopt);
 	void CreateEntityArrowNavigator(vec2 Position, int WorldID, float AreaClipped, int ConditionType, int ConditionIndex);

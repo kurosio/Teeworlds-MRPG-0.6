@@ -19,22 +19,29 @@ CEntityPathArrow::CEntityPathArrow(CGameWorld* pGameWorld, int ClientID, float A
 	}
 	m_PosTo = PosTo.value();
 	m_AreaClipped = AreaClipped;
+	m_pEntNavigator = nullptr;
 	GameWorld()->InsertEntity(this);
 
 	// quest navigator finder
-	CPlayer* pPlayer = GetPlayer();
+	auto* pPlayer = GetPlayer();
 	if(pPlayer && pPlayer->GetItem(itShowQuestStarNavigator)->IsEquipped())
-	{
-		new CEntityPathNavigator(&GS()->m_World, this, true, pPlayer->m_ViewPos, SearchPos, WorldID, true, CmaskOne(ClientID));
-	}
+		m_pEntNavigator = new CEntityPathNavigator(&GS()->m_World, m_ClientID, true, SearchPos, WorldID, true, CmaskOne(ClientID));
 }
 
-void CEntityPathArrow::Destroy()
+CEntityPathArrow::~CEntityPathArrow()
 {
 	if(const auto& pStep = GetQuestStep())
 	{
-		const auto sharedThis = shared_from_this();
-		std::erase(pStep->m_vpEntitiesNavigator, sharedThis);
+		std::erase_if(pStep->m_vpEntitiesNavigator, [this](const auto* pEntPtr) 
+		{
+			return pEntPtr == this;
+		});
+	}
+
+	if(m_pEntNavigator)
+	{
+		delete m_pEntNavigator;
+		m_pEntNavigator = nullptr;
 	}
 }
 
@@ -46,14 +53,14 @@ void CEntityPathArrow::Tick()
 		return;
 	}
 
-	CPlayer* pPlayer = GetPlayer();
-	if(!pPlayer || !pPlayer->GetCharacter())
+	auto* pPlayer = GetPlayer();
+	if(!pPlayer)
 	{
 		GameWorld()->DestroyEntity(this);
 		return;
 	}
 
-	CQuestStep* pStep = GetQuestStep();
+	auto* pStep = GetQuestStep();
 	if(!pStep)
 	{
 		GameWorld()->DestroyEntity(this);
@@ -71,6 +78,11 @@ void CEntityPathArrow::Tick()
 		GameWorld()->DestroyEntity(this);
 		return;
 	}
+
+	if(!pPlayer->GetCharacter())
+		return;
+
+	m_Pos = pPlayer->GetCharacter()->m_Core.m_Pos;
 }
 
 void CEntityPathArrow::Snap(int SnappingClient)
@@ -78,14 +90,9 @@ void CEntityPathArrow::Snap(int SnappingClient)
 	if(m_ClientID != SnappingClient)
 		return;
 
-	CPlayer* pPlayer = GetPlayer();
-	if(!pPlayer || !pPlayer->GetCharacter())
+	if(m_AreaClipped > 1.f && distance(m_PosTo, m_Pos) < m_AreaClipped)
 		return;
 
-	if(m_AreaClipped > 1.f && distance(m_PosTo, pPlayer->m_ViewPos) < m_AreaClipped)
-		return;
-
-	m_Pos = pPlayer->GetCharacter()->m_Core.m_Pos;
 	const auto FinalPos = m_Pos - normalize(m_Pos - m_PosTo) * clamp(distance(m_Pos, m_PosTo), 32.0f, 90.0f);
 	GS()->SnapPickup(SnappingClient, GetID(), FinalPos, POWERUP_ARMOR);
 }
