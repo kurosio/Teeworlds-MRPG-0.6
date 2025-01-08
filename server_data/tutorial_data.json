@@ -1,158 +1,456 @@
 {
   "steps": [
-    {
+	{
+		"action": "new_door",
+		"key": "door_1_1",
+		"position": {
+			"x": 1049.0,
+			"y": 1009.0
+		}
+	},
+	{
+		"action": "message",
+		"delay": 200,
+		"broadcast": "Эта туториал поможет вам освоиться в мире MMORPG",
+		"chat": "Cперва пройдите увлекательное обучение и выполнив первый квест. Готовы к приключениям?"
+    },	
+	{
+		"action": "message",
+		"delay": 150,
+		"broadcast": "Давайте для начала пройдем вводный курс."
+    },	
+	{
+		"action": "message",
+		"delay": 400,
+		"broadcast": "Уделяйте вниманию тому что я буду вам писать\nВ скором времени перед вами откроется дверь\nдля прохода в новую зону обучения"
+    },
+	{
+		"action": "message",
+		"chat": "Перед вами распахнулась дверь, следуйте в новую зону"
+    },
+	{
+		"action": "remove_door",
+		"key": "door_1_1"
+	},
+	
+	
+	
+	
+	{
+		"action": "new_door",
+		"key": "door_1_2",
+		"position": {
+			"x": 2016.0,
+			"y": 768.0
+		}
+	},
+	{
+		"action": "movement_task",
+		"delay": 150,
+		"position": {
+			"x": 1632.0,
+			"y": 960.0
+		},
+		"broadcast": "Доберись до указаной точки",
+		"target_lock_text": "Двигайся сюда чтобы продолжить",
+		"target_look": true
+	},
+	{
+		"action": "message",
+		"delay": 400,
+		"broadcast": "На карте могут быть различные объекты: блоки, платформы, сундуки,\nNPC (неигровые персонажи) и многое другое. Нет каких то определенных целей, бесконечный гемплей",
+		"chat": "Читайте внимательно это поможет вам быстрее влится в игровой процесс."
+	},	
+	{
+		"action": "remove_door",
+		"key": "door_1_2"
+	},
+	
+	
+	
+	{
+		"action": "movement_task",
+		"delay": 150,
+		"position": {
+			"x": 2624.0,
+			"y": 864.0
+		},
+		"broadcast": "Доберись до указаной точки.",
+		"target_lock_text": "Двигайся сюда чтобы продолжить.",
+		"target_look": true
+	},
+	{
+		"action": "message",
+		"delay": 250,
+		"broadcast": "Ваш интерфейс содержит важную информацию.",
+		"chat": "В списках голосов вы можете управлять персонажем, взаимодействовать с инвентарем, управлять характеристиками, и многое другое."
+	},
+	{
+		"action": "message",
+		"delay": 250,
+		"chat": "Слева отображаются все ваши параметры для удобной игры. Снизу так же есть информация во время битв. Обратите внимание на это."
+	},
+	{
+		"action": "message",
+		"delay": 250,
+		"broadcast": "Ваш интерфейс содержит важную информацию.",
+		"chat": "Еще имеются игровые чат команды с которыми вы можете ознакомиться с помощью '/cmdlist'."
+	},	
+	{
+		"action": "message",
+		"chat": "Также рекомендую вам ознакомиться с правилами командой '/rules'."
+	},
+	{
+		"action": "use_chat_task",
+		"chat": "/rules"
+	},
+	{
+		"action": "message",
+		"delay": 500,
+		"broadcast": "Теперь думаю пока вы читаете правила,\nя подготовлю следующую зону обучения."
+	},	
+	{
+		"action": "teleport",
+		"position": {
+			"x": 267.0,
+			"y": 1594.0
+		}
+	},
+	
+	{
+		"action": "new_door",
+		"key": "door_2_1",
+		"position": {
+			"x": 856.0,
+			"y": 1777.0
+		}
+	},
+	{
+		"action": "message",
+		"delay": 150,
+		"broadcast": "Думаю с передвижением у вас не возникнет проблем."
+	},	
+	{
+		"action": "message",
+		"delay": 200,
+		"broadcast": "Здесь собран минимальный уровень сложности, для игры в MMORPG."
+	},
+	{
+		"action": "remove_door",
+		"key": "door_2_1"
+	},	
+	{
+		"action": "new_door",
+		"key": "door_2_2",
+		"position": {
+			"x": 1329.0,
+			"y": 1777.0
+		}
+	},	
+	{
+		"action": "message",
+		"chat": "Давайте приступим, для начала к двойным прыжкам."
+	},
+	{
+		"action": "movement_task",
+		"delay": 150,
+		"position": {
+			"x": 1267.0,
+			"y": 1777.0
+		},
+		"broadcast": "Доберись до указаной точки.",
+		"target_lock_text": "Двигайся сюда чтобы продолжить.",
+		"target_look": true
+	},
+	{
+		"action": "remove_door",
+		"key": "door_2_2"
+	},
+	{
+		"action": "new_door",
+		"key": "door_2_3",
+		"position": {
+			"x": 1696.0,
+			"y": 1169.0
+		}
+	},
+	{
+		"action": "message",
+		"chat": "Давайте попробуем преодолеть это препядствие."
+	},
+	{
+		"action": "movement_task",
+		"delay": 150,
+		"position": {
+			"x": 1502.0,
+			"y": 1169.0
+		},
+		"broadcast": "Доберись до указаной точки.",
+		"target_lock_text": "Двигайся сюда чтобы продолжить.",
+		"target_look": true
+	},	
+	{
+		"action": "pick_item_task",
+		"position": {
+			"x": 1622.0,
+			"y": 1169.0
+		},
+		"item": {
+			"id": 3,
+			"value": 1
+		},
+		"broadcast": "Подберите предмет который появился рядом.\nДля этого используте удар молотком!"
+	},
+	{
+		"action": "remove_door",
+		"key": "door_2_3"
+	},	
+	{
+		"action": "new_door",
+		"key": "door_2_4",
+		"position": {
+			"x": 2440.0,
+			"y": 1777.0
+		}
+	},
+	{
+		"action": "message",
+		"chat": "Давайте потренируем стрельбу."
+	},
+	{
+		"action": "shootmarkers",
+		"markers":[
+			{
+				"position": { "x": 2127.0, "y": 1165.0 },
+				"health": 3
+			},
+			{
+				"position": { "x": 2304.0, "y": 1357.0 },
+				"health": 3
+			},
+			{
+				"position": { "x": 2531.0, "y": 1470.0 },
+				"health": 3
+			},
+			{
+				"position": { "x": 1713.0, "y": 1655.0 },
+				"health": 3
+			}
+		]
+	},
+	{
+		"action": "remove_door",
+		"key": "door_2_4"
+	},
+	{
+		"action": "movement_task",
+		"delay": 150,
+		"position": {
+			"x": 3089.0,
+			"y": 1777.0
+		},
+		"broadcast": "Доберись до указаной точки.",
+		"target_lock_text": "Двигайся сюда чтобы продолжить.",
+		"target_look": true
+	},	
+	{
+		"action": "message",
+		"chat": "Давайте на последок проверим меткость."
+	},
+	{
+		"action": "shootmarkers",
+		"markers":[
+			{
+				"position": { "x": 2852.0, "y": 1405.0 },
+				"health": 3
+			},
+			{
+				"position": { "x": 3008.0, "y": 1405.0 },
+				"health": 3
+			},
+			{
+				"position": { "x": 3165.0, "y": 1405.0 },
+				"health": 3
+			},
+			{
+				"position": { "x": 3333.0, "y": 1405.0 },
+				"health": 3
+			}
+		]
+	},
+	{
+		"action": "message",
+		"delay": 200,
+		"broadcast": "Поздравляю основные элементы передвижения изучены."
+	},
+	{
+		"action": "message",
+		"delay": 500,
+		"broadcast": "Подготваливаю вам новую зону для обучения."
+	},
+	    {
       "action": "reset_quest",
       "quest_id": 1
     },
-    {
-      "action": "freeze_movements",
-      "state": true
-    },
-    {
-      "action": "message",
-      "delay": 100,
-      "text": "Welcome to the tutorial!"
-    },
-    {
-      "action": "emote_message",
-      "delay": 150,
-      "emote_type": 3,
-      "emoticon_type": 15,
-      "text": "You're wondering what this is and what I'm doing here?"
-    },
-    {
-      "action": "message",
-      "delay": 100,
-      "text": "I'm here to help you learn the basics of the game."
-    },
-    {
-      "action": "freeze_movements",
-      "state": false
-    },
-    {
-      "action": "movement_task",
-      "delay": 150,
-      "position": { "x": 1749, "y": 849 },
-      "lock_text": "Can you see the dot?",
-      "text": "Move to the dot!"
-    },
-    {
-      "action": "freeze_movements",
-      "state": true
-    },
-    {
-      "action": "message",
-      "delay": 100,
-      "text": "Great job!"
-    },
-    {
-      "action": "teleport",
-      "delay": 100,
-      "position": { "x": 640, "y": 2752 },
-      "text": "Let's test your hook skills!"
-    },
-    {
-      "action": "freeze_movements",
-      "state": false
-    },
-    {
-      "action": "movement_task",
-      "delay": 150,
-      "position": { "x": 5580, "y": 2800 },
-      "lock_text": "Try to get to the courts",
-      "text": "Move to the dot!"
-    },
-    {
-      "action": "freeze_movements",
-      "state": true
-    },
-    {
-      "action": "message",
-      "delay": 100,
-      "text": "Great job!"
-    },
-    {
-      "action": "teleport",
-      "delay": 100,
-      "position": { "x": 3072, "y": 1408 },
-      "text": "Now let's get to the basics of the gamemode!"
-    },
-    {
-      "action": "fixed_cam",
-      "delay": 150,
-      "position": { "x": 3964, "y": 1455 },
-      "start_text": "These are NPCs that you can usually interact with.\nBut there are also some that will only share information.",
-      "end_message": "Try talking to him!"
-    },
-    {
-      "action": "freeze_movements",
-      "state": false
-    },
-    {
-      "action": "check_quest_accepted",
-      "quest_id": 1
-    },
-    {
-      "action": "freeze_movements",
-      "state": true
-    },
-    {
-      "action": "message",
-      "delay": 50,
-      "text": "You accept your first quest pretty well!"
-    },    
+	
 	{
-      "action": "message",
-      "delay": 50,
-      "text": "There is a movement indicator for the NPC next to you!"
+		"action": "new_door",
+		"key": "door_3_1",
+		"position": {
+			"x": 910.0,
+			"y": 2193.0
+		}
+	},
+	{
+		"action": "new_door",
+		"key": "door_3_2",
+		"position": {
+			"x": 2996.0,
+			"y": 2225.0
+		}
+	},
+	{
+		"action": "teleport",
+		"position": {
+			"x": 264.0,
+			"y": 2001.0
+		}
+	},
+	{
+		"action": "message",
+		"delay": 500,
+		"broadcast": "Теперь изучим классику MMORPG.\nПодготавливаю квест."
+	},
+	{
+		"action": "accept_quest",
+		"quest_id": 1
+	},
+	{
+		"action": "message",
+		"chat": "Доберитесь до NPC."
+	},
+	{
+		"action": "fix_cam",
+		"delay": 150,
+		"position": {
+			"x": 810.0,
+			"y": 2193.0
+		}
+	},
+	{
+		"action": "remove_door",
+		"key": "door_3_1"
+	},
+	{
+		"action": "check_quest_finished",
+		"quest_id": 1
+	},
+	{
+		"action": "remove_door",
+		"key": "door_3_2"
+	},
+	{
+		"action": "message",
+		"broadcast": "Ваш инвентарь хранит собранные предметы.\nВы можете как одевать, снимать, так и выбрасывать предметы. \nНекоторые предметы можно использовать, кликнув в меню голосования"
     },
-    {
-      "action": "fixed_cam",
-      "delay": 100,
-      "position": { "x": 3242, "y": 1457 },
-      "start_text": "As you can see it points in the direction of the NPC.",
-      "end_text": "Go up to him and talk to him!"
+	{
+		"action": "message",
+		"chat": "Это плантации. Плантации являются сельскохозяйственным делом. Добудьте 1 расстение!"
     },
-    {
-      "action": "freeze_movements",
-      "state": false
+	{
+		"action": "fix_cam",
+		"delay": 200,
+		"position": {
+			"x": 3510.0,
+			"y": 2257.0
+		}
+	},
+	{
+		"action": "message",
+		"chat": "Бейте молотком по сердечкам и вы увидите процесс сбора расстений"
     },
-    {
-      "action": "check_quest_completed",
-      "quest_id": 1
+	{
+		"action": "check_has_item",
+		"item_id": 40,
+		"required": 1,
+		"show_progress": true
+	},
+	{
+		"action": "message",
+		"chat": "Отнесите их в домик. И переработайте нажимая соотвествуещие кнопки в меню голосования. Нажмите на крафт"
     },
-    {
-      "action": "freeze_movements",
-      "state": true
+	{
+		"action": "movement_task",
+		"delay": 150,
+		"position": {
+			"x": 3774.0,
+			"y": 2193.0
+		},
+		"broadcast": "Доберись до указаной точки.",
+		"target_lock_text": "Двигайся сюда чтобы продолжить.",
+		"target_look": true
+	},
+	{
+		"action": "message",
+		"chat": "Здесь вы сможете использовать услуги ремесленика. Используйте добытые предметы и создайте предмет необходимый для продолжения."
+    },		
+	{
+		"action": "message",
+		"chat": "Для этого откройте в специальной зоне лист голосований из меню и выберите соответствующий предмет."
+    },	
+	{
+		"action": "check_has_item",
+		"item_id": 41,
+		"required": 1,
+		"remove": true,
+		"show_progress": true
+	},
+	
+	{
+		"action": "new_door",
+		"key": "door_4_1",
+		"position": {
+			"x": 2966.0,
+			"y": 1201.0
+		}
+	},
+	{
+		"action": "teleport",
+		"position": {
+			"x": 2762.0,
+			"y": 1201.0
+		}
+	},
+	{
+		"action": "message",
+		"delay": 200,
+		"broadcast": "Поздравляю вас с прохождением Tutorial."
+    },		
+	{
+		"action": "message",
+		"delay": 200,
+		"broadcast": "Я думаю чему то вы научились."
     },
-    {
-      "action": "message",
-      "delay": 100,
-      "text": "You already know how to do the quests."
+	{
+		"action": "message",
+		"delay": 100,
+		"broadcast": "Вот вам небольшой подарочек от меня."
     },
-    {
-      "action": "teleport",
-      "delay": 50,
-      "position": { "x": 5280, "y": 900 },
-      "text": "Let's test your shooting skills."
-    },
-    {
-      "action": "shootmarkers",
-      "markers": [
-        { "position": { "x": 5480, "y": 800 }, "health": 5 },
-        { "position": { "x": 5580, "y": 750 }, "health": 5 },
-        { "position": { "x": 5380, "y": 680 }, "health": 5 }
-      ],
-      "text": "Shoot the markers!"
-    },
-    {
-      "action": "message",
-      "delay": 100,
-      "text": "You're doing pretty good!"
-    },
-    {
-      "action": "freeze_movements",
-      "state": false
-    }
+	{
+		"action": "pick_item_task",
+		"position": {
+			"x": 2879.0,
+			"y": 1201.0
+		},
+		"item": {
+			"id": 30,
+			"value": 1
+		},
+		"broadcast": "Подберите предмет который появился рядом.\nДля этого используте удар молотком!"
+	},
+	{
+		"action": "remove_door",
+		"key": "door_4_1"
+	}
   ]
 }
