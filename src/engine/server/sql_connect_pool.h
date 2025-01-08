@@ -386,12 +386,22 @@ private:
 	{
 		CResultQuery Data;
 		Data.m_TypeQuery = Type;
+
 		if(Type == DB::INSERT)
-			Data.m_Query = std::string("INSERT INTO " + std::string(pTable) + " " + strQuery + ";");
+		{
+			Data.m_Query = "INSERT INTO ";
+			Data.m_Query.append(pTable).append(" ").append(strQuery).append(";");
+		}
 		else if(Type == DB::UPDATE)
-			Data.m_Query = std::string("UPDATE " + std::string(pTable) + " SET " + strQuery + ";");
+		{
+			Data.m_Query = "UPDATE ";
+			Data.m_Query.append(pTable).append(" SET ").append(strQuery).append(";");
+		}
 		else if(Type == DB::REMOVE)
-			Data.m_Query = std::string("DELETE FROM " + std::string(pTable) + " " + strQuery + ";");
+		{
+			Data.m_Query = "DELETE FROM ";
+			Data.m_Query.append(pTable).append(" ").append(strQuery).append(";");
+		}
 
 		return std::make_unique<CResultQuery>(Data);
 	}

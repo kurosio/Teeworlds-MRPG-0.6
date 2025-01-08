@@ -1391,33 +1391,41 @@ bool CGS::IsWorldType(WorldType Type) const
 
 void CGS::InitWorld()
 {
-	// initilize world type
-	const char* pWorldType;
-	CWorldDetail* pWorldDetail = Server()->GetWorldDetail(m_WorldID);
-	if(pWorldDetail->GetType() == WorldType::Dungeon)
+	const auto pWorldDetail = Server()->GetWorldDetail(m_WorldID);
+	const auto worldType = pWorldDetail->GetType();
+
+	// determine controller and world type
+	std::string_view worldTypeStr;
+	switch(worldType)
 	{
-		m_pController = new CGameControllerDungeon(this);
-		pWorldType = "Dungeon";
-		m_AllowedPVP = false;
-	}
-	else if(pWorldDetail->GetType() == WorldType::Tutorial)
-	{
-		m_pController = new CGameControllerTutorial(this);
-		pWorldType = "Tutorial";
-		m_AllowedPVP = false;
-	}
-	else
-	{
-		m_pController = new CGameControllerDefault(this);
-		pWorldType = "Default";
-		m_AllowedPVP = true;
+		case WorldType::Dungeon:
+			m_pController = new CGameControllerDungeon(this);
+			worldTypeStr = "Dungeon";
+			m_AllowedPVP = false;
+			break;
+
+		case WorldType::Tutorial:
+			m_pController = new CGameControllerTutorial(this);
+			worldTypeStr = "Tutorial";
+			m_AllowedPVP = false;
+			break;
+
+		default:
+			m_pController = new CGameControllerDefault(this);
+			worldTypeStr = "Default";
+			m_AllowedPVP = true;
+			break;
 	}
 
+	// initialize controller and update game state
 	UpdateExpMultiplier();
 	m_pController->OnInit();
 
-	const char* pStatePVP = m_AllowedPVP ? "yes" : "no";
-	dbg_msg("world init", "%s(ID: %d) | %s | PvP: %s", Server()->GetWorldName(m_WorldID), m_WorldID, pWorldType, pStatePVP);
+	// Log world initialization details
+	const char* pStrStatePvp = m_AllowedPVP ? "yes" : "no";
+	dbg_msg("world init", "%s(ID: %d) | %s | PvP: %s",
+		Server()->GetWorldName(m_WorldID), m_WorldID,
+		worldTypeStr.data(), pStrStatePvp);
 }
 
 bool CGS::IsPlayerInWorld(int ClientID, int WorldID) const
