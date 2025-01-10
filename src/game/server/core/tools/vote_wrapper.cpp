@@ -472,14 +472,12 @@ bool CVotePlayerData::DefaultVoteCommands(const char* pCmd, const int Extra1, co
 	if(PPSTR(pCmd, "null") == 0)
 		return true;
 
-	// sound effect
-	m_pGS->CreatePlayerSound(m_pPlayer->GetCID(), SOUND_VOTE_SELECT);
-
 	// command menu
 	if(PPSTR(pCmd, "MENU") == 0)
 	{
 		m_ExtraID = Extra2 <= NOPE ? std::nullopt : std::make_optional(Extra2);
 
+		m_pGS->CreatePlayerSound(m_pPlayer->GetCID(), SOUND_VOTE_MENU_CLICK);
 		ResetHidden(Extra1);
 		UpdateVotes(Extra1);
 		return true;
@@ -488,9 +486,13 @@ bool CVotePlayerData::DefaultVoteCommands(const char* pCmd, const int Extra1, co
 	// command back
 	if(PPSTR(pCmd, "BACK") == 0)
 	{
+		m_pGS->CreatePlayerSound(m_pPlayer->GetCID(), SOUND_VOTE_MENU_CLICK);
 		UpdateVotes(m_LastMenuID);
 		return true;
 	}
+
+	// sound effect
+	m_pGS->CreatePlayerSound(m_pPlayer->GetCID(), SOUND_VOTE_ITEM_CLICK);
 
 	// command hidden
 	if(PPSTR(pCmd, "HIDDEN") == 0)

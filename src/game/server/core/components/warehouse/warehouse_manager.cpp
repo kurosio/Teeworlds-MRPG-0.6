@@ -429,6 +429,7 @@ bool CWarehouseManager::BuyItem(CPlayer* pPlayer, CWarehouse* pWarehouse, int Tr
 		// add items
 		pPlayerItem->Add(pItem->GetValue(), 0, pItem->GetEnchant());
 		GS()->Chat(ClientID, "You exchanged {} x{$} for {} x{}.", pCurrency->GetName(), pTrade->GetPrice(), pItem->Info()->GetName(), pItem->GetValue());
+		GS()->CreatePlayerSound(ClientID, SOUND_SELL_BUY);
 		return true;
 	}
 
