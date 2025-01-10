@@ -181,7 +181,7 @@ int CPlayerBot::GetTotalAttributeValue(AttributeIdentifier ID) const
 		int AttributeValue = Power;
 		for(unsigned i = 0; i < NUM_EQUIPPED; i++)
 		{
-			if(const auto ItemID = GetEquippedItemID((ItemFunctional)i))
+			if(const auto ItemID = GetEquippedItemID((ItemType)i))
 			{
 				AttributeValue += GS()->GetItemInfo(ItemID.value())->GetInfoEnchantStats(ID);
 			}
@@ -466,7 +466,7 @@ void CPlayerBot::GetFormatedName(char* aBuffer, int BufferSize)
 	}
 }
 
-std::optional<int> CPlayerBot::GetEquippedItemID(ItemFunctional EquipID, int SkipItemID) const
+std::optional<int> CPlayerBot::GetEquippedItemID(ItemType EquipID, int SkipItemID) const
 {
 	if((EquipID >= EquipHammer && EquipID <= EquipLaser) || EquipID == EquipArmor)
 	{

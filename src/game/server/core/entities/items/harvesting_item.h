@@ -40,7 +40,7 @@ public:
 	void SpawnPositions();
 
 private:
-	bool TakeDamage(AttributeIdentifier Attribute, CPlayer* pPlayer, const CPlayerItem* pWorkedItem, ItemFunctional EquipID, int SelfLevel);
+	bool TakeDamage(AttributeIdentifier Attribute, CPlayer* pPlayer, const CPlayerItem* pWorkedItem, ItemType EquipID, int SelfLevel);
 	int GetPickupType() const;
 	CItemDescription* GetItemInfo() const;
 };

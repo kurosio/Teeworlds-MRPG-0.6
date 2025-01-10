@@ -172,7 +172,7 @@ void CCharacterBotAI::SelectWeaponAtRandomInterval()
 	{
 		const int RandomWeapon = rand() % (WEAPON_LASER + 1);
 
-		if(RandomWeapon == WEAPON_HAMMER || m_pBotPlayer->GetEquippedItemID((ItemFunctional)RandomWeapon).has_value())
+		if(RandomWeapon == WEAPON_HAMMER || m_pBotPlayer->GetEquippedItemID((ItemType)RandomWeapon).has_value())
 		{
 			m_Core.m_ActiveWeapon = clamp(RandomWeapon, (int)WEAPON_HAMMER, (int)WEAPON_LASER);
 		}

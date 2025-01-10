@@ -21,19 +21,19 @@ class CInventoryManager : public MmoComponent
 	bool OnSendMenuVotes(class CPlayer* pPlayer, int Menulist) override;
 
 public:
-	static std::vector<int> GetItemIDsCollection(ItemType Type);
-	static std::vector<int> GetItemIDsCollectionByFunction(ItemFunctional Type);
+	static std::vector<int> GetItemIDsCollectionByGroup(ItemGroup Type);
+	static std::vector<int> GetItemIDsCollectionByType(ItemType Type);
 
 	// primary
+	bool ListInventory(int ClientID, ItemGroup Type);
 	bool ListInventory(int ClientID, ItemType Type);
-	bool ListInventory(int ClientID, ItemFunctional Type);
 	void ItemSelected(CPlayer* pPlayer, const CPlayerItem* pItem);
 	int GetUnfrozenItemValue(class CPlayer* pPlayer, ItemIdentifier ItemID) const;
 
-	void ShowSellingItemsByFunction(CPlayer* pPlayer, ItemFunctional Type) const;
+	void ShowSellingItemsByFunction(CPlayer* pPlayer, ItemType Type) const;
 
 	void RepairDurabilityItems(class CPlayer *pPlayer);
-	int GetCountItemsType(class CPlayer* pPlayer, ItemType Type) const;
+	int GetCountItemsType(class CPlayer* pPlayer, ItemGroup Type) const;
 
 	void AddItemSleep(int AccountID, ItemIdentifier ItemID, int Value, int Milliseconds);
 };

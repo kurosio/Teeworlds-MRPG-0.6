@@ -866,7 +866,7 @@ bool CCharacter::GiveWeapon(int Weapon, int Ammo)
 {
 	const int WeaponID = clamp(Weapon, (int)WEAPON_HAMMER, (int)WEAPON_NINJA);
 	const bool IsHammer = WeaponID == WEAPON_HAMMER;
-	if(!m_pPlayer->IsEquipped((ItemFunctional)WeaponID) && !IsHammer)
+	if(!m_pPlayer->IsEquipped((ItemType)WeaponID) && !IsHammer)
 	{
 		if(RemoveWeapon(WeaponID) && WeaponID == m_Core.m_ActiveWeapon)
 			SetWeapon(m_Core.m_aWeapons[m_LastWeapon].m_Got ? m_LastWeapon : (int)WEAPON_HAMMER);
@@ -1729,7 +1729,7 @@ void CCharacter::HandleBuff(CTuningParams* TuningParams)
 		{
 			const auto ItemID = potion.first;
 			const auto& PotionContext = potion.second;
-			const auto Functional = GS()->GetItemInfo(ItemID)->GetFunctional();
+			const auto Functional = GS()->GetItemInfo(ItemID)->GetType();
 
 			// increase by equip type
 			if(m_pPlayer->m_Effects.IsActive(PotionContext.Effect.c_str()))
@@ -1809,7 +1809,7 @@ void CCharacter::UpdateEquippedStats(int ItemID)
 
 	// get item info only once
 	const auto* pItemInfo = GS()->GetItemInfo(ItemID);
-	const auto Functional = pItemInfo->GetFunctional();
+	const auto Functional = pItemInfo->GetType();
 	if(Functional >= EquipHammer && Functional <= EquipLaser)
 	{
 		m_pPlayer->GetCharacter()->GiveWeapon(Functional, 3);

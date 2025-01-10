@@ -54,7 +54,7 @@ void CEntityPathArrow::Tick()
 	}
 
 	auto* pPlayer = GetPlayer();
-	if(!pPlayer)
+	if(!pPlayer || !pPlayer->GetCharacter())
 	{
 		GameWorld()->DestroyEntity(this);
 		return;
@@ -78,9 +78,6 @@ void CEntityPathArrow::Tick()
 		GameWorld()->DestroyEntity(this);
 		return;
 	}
-
-	if(!pPlayer->GetCharacter())
-		return;
 
 	m_Pos = pPlayer->GetCharacter()->m_Core.m_Pos;
 }

@@ -116,7 +116,7 @@ void CEntityHarvestingItem::Process(int ClientID)
 	}
 }
 
-bool CEntityHarvestingItem::TakeDamage(AttributeIdentifier Attribute, CPlayer* pPlayer, const CPlayerItem* pWorkedItem, ItemFunctional EquipID, int SelfLevel)
+bool CEntityHarvestingItem::TakeDamage(AttributeIdentifier Attribute, CPlayer* pPlayer, const CPlayerItem* pWorkedItem, ItemType EquipID, int SelfLevel)
 {
 	// check valid harvesting data
 	const auto optHarvestingContext = GetItemInfo()->GetHarvestingContext();

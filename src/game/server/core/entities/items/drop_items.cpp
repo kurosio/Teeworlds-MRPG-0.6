@@ -32,7 +32,7 @@ bool CDropItem::TakeItem(int ClientID)
 		bool LastEquipped = pPlayerItem->IsEquipped();
 		tl_swap(static_cast<CItem&>(*pPlayerItem), m_DropItem);
 		if(!pPlayerItem->IsEquipped() && LastEquipped)
-			pPlayerItem->Equip(false);
+			pPlayerItem->Equip();
 
 		GS()->Chat(ClientID, "You now own {}{}", pPlayerItem->Info()->GetName(), pPlayerItem->GetStringEnchantLevel().c_str());
 		pPlayer->m_VotesData.UpdateVotesIf(MENU_INVENTORY);

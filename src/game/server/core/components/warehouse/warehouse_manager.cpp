@@ -244,14 +244,13 @@ void CWarehouseManager::ShowWarehouseList(CPlayer* pPlayer, CWarehouse* pWarehou
 	VStorage.AddOption("REPAIR_ITEMS", "Repair all items - FREE");
 
 	// show trade list by groups
-	ShowTradeList(pWarehouse, pPlayer, "Can be used's", ItemType::Usable);
-	ShowTradeList(pWarehouse, pPlayer, "Potion's", ItemType::Potion);
-	ShowTradeList(pWarehouse, pPlayer, "Equipment's", ItemType::Equipment);
-	ShowTradeList(pWarehouse, pPlayer, "Module's", ItemType::Module);
-	ShowTradeList(pWarehouse, pPlayer, "Decoration's", ItemType::Decoration);
-	ShowTradeList(pWarehouse, pPlayer, "Craft's", ItemType::CraftingMaterial);
-	ShowTradeList(pWarehouse, pPlayer, "Other's", ItemType::Other);
-	ShowTradeList(pWarehouse, pPlayer, "Quest and all the rest's", ItemType::Invisible);
+	ShowTradeList(pWarehouse, pPlayer, "Can be used's", ItemGroup::Usable);
+	ShowTradeList(pWarehouse, pPlayer, "Potion's", ItemGroup::Potion);
+	ShowTradeList(pWarehouse, pPlayer, "Equipment's", ItemGroup::Equipment);
+	ShowTradeList(pWarehouse, pPlayer, "Decoration's", ItemGroup::Decoration);
+	ShowTradeList(pWarehouse, pPlayer, "Craft's", ItemGroup::Resource);
+	ShowTradeList(pWarehouse, pPlayer, "Other's", ItemGroup::Other);
+	ShowTradeList(pWarehouse, pPlayer, "Quest's", ItemGroup::Quest);
 
 	// selling list
 	if(pWarehouse->IsHasFlag(WF_SELL))
@@ -269,7 +268,7 @@ void CWarehouseManager::ShowWarehouseList(CPlayer* pPlayer, CWarehouse* pWarehou
 	}
 }
 
-void CWarehouseManager::ShowTradeList(CWarehouse* pWarehouse, CPlayer* pPlayer, const char* TypeName, ItemType Type) const
+void CWarehouseManager::ShowTradeList(CWarehouse* pWarehouse, CPlayer* pPlayer, const char* TypeName, ItemGroup Type) const
 {
 	if(!pWarehouse)
 		return;
@@ -278,7 +277,7 @@ void CWarehouseManager::ShowTradeList(CWarehouse* pWarehouse, CPlayer* pPlayer, 
 	const auto* pCurrency = pWarehouse->GetCurrency();
 	auto vTradeListByType = pWarehouse->GetTradingList() | std::views::filter([Type](const CTrade& Trade)
 	{
-		return Trade.GetItem()->Info()->GetType() == Type;
+		return Trade.GetItem()->Info()->GetGroup() == Type;
 	});
 
 	// check if the warehouse has a trading list by type

@@ -1493,7 +1493,7 @@ void CGuildManager::ShowFarmzoneEdit(CPlayer* pPlayer, int FarmzoneID) const
 
 	// items list availables can be planted
 	VoteWrapper VPossiblePlanting(ClientID, VWF_OPEN|VWF_STYLE_SIMPLE, "\u2741 Possible items for planting");
-	std::vector<ItemIdentifier> vItems = Core()->InventoryManager()->GetItemIDsCollectionByFunction(ResourceHarvestable);
+	std::vector<ItemIdentifier> vItems = Core()->InventoryManager()->GetItemIDsCollectionByType(ResourceHarvestable);
 	for(auto& ID : vItems)
 	{
 		CPlayerItem* pPlayerItem = pPlayer->GetItem(ID);

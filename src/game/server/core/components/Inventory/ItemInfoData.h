@@ -35,7 +35,6 @@ public:
 		int Value {};
 		int Lifetime {};
 	};
-
 	using ContainerAttributes = std::deque< CAttribute >;
 
 private:
@@ -44,10 +43,10 @@ private:
 	ItemIdentifier m_ID {};
 	char m_aName[32] {};
 	char m_aDescription[64] {};
-	ItemType m_Type {};
+	ItemGroup m_Group {};
 	int m_Dysenthis {};
 	int m_InitialPrice {};
-	ItemFunctional m_Function {};
+	ItemType m_Type {};
 	ContainerAttributes m_aAttributes {};
 	std::string m_Data {};
 	CRandomBox m_RandomBox {};
@@ -58,7 +57,8 @@ public:
 	CItemDescription() = default;
 	CItemDescription(ItemIdentifier ID) : m_ID(ID) {}
 
-	void Init(const std::string& Name, const std::string& Description, ItemType Type, int Dysenthis, int InitialPrice, ItemFunctional Function, ContainerAttributes aAttributes, std::string&& Data)
+	void Init(const std::string& Name, const std::string& Description, const DBSet& GroupSet, 
+		const DBSet& TypeSet, int Dysenthis, int InitialPrice, ContainerAttributes aAttributes, std::string&& Data)
 	{
 		m_Data = std::move(Data);
 		mystd::json::parse(m_Data, [this](nlohmann::json& pJson)
@@ -76,16 +76,14 @@ public:
 
 		str_copy(m_aName, Name.c_str(), sizeof(m_aName));
 		str_copy(m_aDescription, Description.c_str(), sizeof(m_aDescription));
-		m_Type = Type;
 		m_Dysenthis = Dysenthis;
 		m_InitialPrice = InitialPrice;
-		m_Function = Function;
 		m_aAttributes = std::move(aAttributes);
 
 		m_pData[m_ID] = *this;
-		m_pData[m_ID].InitJsonData();
+		m_pData[m_ID].InitData(GroupSet, TypeSet);
 	}
-	void InitJsonData();
+	void InitData(const DBSet& Type, const DBSet& Functional);
 
 	ItemIdentifier GetID() const { return m_ID; }
 
@@ -95,10 +93,32 @@ public:
 	const char* GetDescription() const { return m_aDescription; }
 	int GetInitialPrice() const { return m_InitialPrice; }
 	int GetDysenthis(int Enchant) const { return m_Dysenthis ? (m_Dysenthis + (maximum(GetEnchantPrice(Enchant) / 4, 1) * Enchant)) : 0; }
-	ItemFunctional GetFunctional() const { return m_Function; }
-	bool IsFunctional(ItemFunctional Functional) const { return m_Function == Functional; }
+	
 	ItemType GetType() const { return m_Type; }
-	bool IsType(ItemType Type) const { return m_Type == Type; }
+	bool IsType(ItemType Functional) const 
+	{
+		return m_Type == Functional; 
+	}
+
+	ItemGroup GetGroup() const { return m_Group; }
+	bool IsGroup(ItemGroup Type) const 
+	{
+		return m_Group == Type; 
+	}
+
+	bool IsEquipmentSlot() const 
+	{
+		return (m_Group == ItemGroup::Equipment && (m_Type == ItemType::EquipHammer || m_Type == ItemType::EquipGun || m_Type == ItemType::EquipShotgun
+			|| m_Type == ItemType::EquipGrenade || m_Type == ItemType::EquipLaser || m_Type == ItemType::EquipArmor
+			|| m_Type == ItemType::EquipEidolon || m_Type == ItemType::EquipPickaxe || m_Type == ItemType::EquipRake
+			|| m_Type == ItemType::EquipTitle || m_Type == ItemType::EquipPotionHeal || m_Type == ItemType::EquipPotionMana));
+	}
+
+	bool IsEquipmentNonSlot() const 
+	{
+		return (m_Group == ItemGroup::Equipment && !IsEquipmentSlot());
+	}
+
 	class CRandomBox* GetRandomBox() { return m_RandomBox.IsEmpty() ? nullptr : &m_RandomBox; }
 	ContainerAttributes& GetAttributes() { return m_aAttributes; }
 	std::optional<HarvestingContext>& GetHarvestingContext() { return m_HarvestingContext; }

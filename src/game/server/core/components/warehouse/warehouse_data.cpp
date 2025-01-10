@@ -62,11 +62,11 @@ void CWarehouse::InitProperties(const DBSet& Type, const std::string& Properties
 					// by type or function collection
 					if(CollectType == "type")
 					{
-						vItems = CInventoryManager::GetItemIDsCollection(static_cast<ItemType>(pItem.value("value", -1)));
+						vItems = CInventoryManager::GetItemIDsCollectionByGroup(static_cast<ItemGroup>(pItem.value("value", -1)));
 					}
 					else
 					{
-						vItems = CInventoryManager::GetItemIDsCollectionByFunction(static_cast<ItemFunctional>(pItem.value("value", -1)));
+						vItems = CInventoryManager::GetItemIDsCollectionByType(static_cast<ItemType>(pItem.value("value", -1)));
 					}
 
 					// adding all item's from collection to trade list

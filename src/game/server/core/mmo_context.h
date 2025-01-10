@@ -211,43 +211,42 @@ enum class ToplistType : int
 };
 
 // item types
-enum class ItemType : short
+enum class ItemGroup : short
 {
-	Invisible = 0,
+	Quest = 0,
+	Currency,
 	Usable,
-	CraftingMaterial,
-	Module,
+	Resource,
 	Other,
-	Setting,
+	Settings,
 	Equipment,
 	Decoration,
 	Potion,
-	NUM_TYPES,
 };
 
-constexpr const char* GetTypeItemName(ItemType type) noexcept
+constexpr const char* GetTypeItemName(ItemGroup type) noexcept
 {
 	switch(type)
 	{
-		case ItemType::Invisible:        return "Invisible";
-		case ItemType::Usable:           return "Usable";
-		case ItemType::CraftingMaterial: return "Crafting material";
-		case ItemType::Module:           return "Module";
-		case ItemType::Other:            return "Other";
-		case ItemType::Setting:          return "Setting";
-		case ItemType::Equipment:        return "Equipment";
-		case ItemType::Decoration:       return "Decoration";
-		case ItemType::Potion:           return "Potion";
-		default:                         return "Unknown";
+		case ItemGroup::Quest:            return "Quest";
+		case ItemGroup::Usable:           return "Usable";
+		case ItemGroup::Resource:         return "Resource";
+		case ItemGroup::Other:            return "Other";
+		case ItemGroup::Settings:         return "Settings";
+		case ItemGroup::Equipment:        return "Equipment";
+		case ItemGroup::Decoration:       return "Decoration";
+		case ItemGroup::Potion:           return "Potion";
+		default:                          return "Unknown";
 	}
 
 }
 
 // item functional
-enum ItemFunctional : short
+enum ItemType : short
 {
 	// equipped items
-	EquipHammer = 0,
+	NoFunctional = -1,
+	EquipHammer,
 	EquipGun,
 	EquipShotgun,
 	EquipGrenade,
@@ -264,13 +263,12 @@ enum ItemFunctional : short
 	// functional categories
 	UseSingle = NUM_EQUIPPED,
 	UseMultiple,
-	Setting,
 	ResourceHarvestable,
 	ResourceMineable,
 	NUM_FUNCTIONS
 };
 
-constexpr const char* GetFunctionalItemName(ItemFunctional functional) noexcept
+constexpr const char* GetFunctionalItemName(ItemType functional) noexcept
 {
 	switch(functional)
 	{
@@ -288,7 +286,6 @@ constexpr const char* GetFunctionalItemName(ItemFunctional functional) noexcept
 		case EquipTitle:          return "Title";
 		case UseSingle:           return "Use Single";
 		case UseMultiple:         return "Use Multiple";
-		case Setting:             return "Setting";
 		case ResourceHarvestable: return "Resource Harvestable";
 		case ResourceMineable:    return "Resource Mineable";
 		default:                  return "Unknown";
@@ -468,9 +465,6 @@ enum
 	NOPE                           = -1,
 	itCapsuleSurvivalExperience    = 16,    // Gives 10-50 experience
 	itLittleBagGold                = 17,    // Gives 10-50 gold
-	itTicketResetClassStats        = 21,    // Ticket to reset the statistics of class upgrades
-	itTicketResetWeaponStats       = 23,    // Ticket to reset the statistics cartridge upgrade
-	itTicketDiscountCraft          = 24,    // Discount ticket for crafting
 
 	// potions
 	itPotionManaRegen              = 14,    // Mana regeneration potion

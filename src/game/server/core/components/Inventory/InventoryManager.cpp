@@ -14,10 +14,10 @@ void ExecuteTemplateItemsTypes(T Type, std::map < int, CPlayerItem >& paItems, c
 	for(const auto& [ItemID, ItemData] : paItems)
 	{
 		bool ActivateCallback = false;
-		if constexpr(std::is_same_v<T, ItemType>)
+		if constexpr(std::is_same_v<T, ItemGroup>)
+			ActivateCallback = ItemData.HasItem() && ItemData.Info()->IsGroup(Type);
+		else if constexpr(std::is_same_v<T, ItemType>)
 			ActivateCallback = ItemData.HasItem() && ItemData.Info()->IsType(Type);
-		else if constexpr(std::is_same_v<T, ItemFunctional>)
-			ActivateCallback = ItemData.HasItem() && ItemData.Info()->IsFunctional(Type);
 
 		if(ActivateCallback)
 			pFunc(ItemData);
@@ -33,8 +33,8 @@ void CInventoryManager::OnPreInit()
 		const auto ItemID = pRes->getInt("ID");
 		const auto Name = pRes->getString("Name");
 		const auto Description = pRes->getString("Description");
-		const auto Type = (ItemType)pRes->getInt("Type");
-		const auto Function = (ItemFunctional)pRes->getInt("Function");
+		const auto GroupSet = DBSet(pRes->getString("Group"));
+		const auto TypeSet = DBSet(pRes->getString("Type"));
 		const auto InitialPrice = pRes->getInt("InitialPrice");
 		const auto Dysenthis = pRes->getInt("Desynthesis");
 		auto Data = pRes->getString("Data");
@@ -43,8 +43,8 @@ void CInventoryManager::OnPreInit()
 		for(int i = 0; i < MAX_ATTRIBUTES_FOR_ITEM; i++)
 		{
 			char aAttributeID[32], aAttributeValue[32];
-			str_format(aAttributeID, sizeof(aAttributeID), "Attribute%d", i);
-			str_format(aAttributeValue, sizeof(aAttributeValue), "AttributeValue%d", i);
+			str_format(aAttributeID, sizeof(aAttributeID), "AT%d", (i + 1));
+			str_format(aAttributeValue, sizeof(aAttributeValue), "ATValue%d", (i + 1));
 
 			const auto AttributeID = (AttributeIdentifier)pRes->getInt(aAttributeID);
 			const auto AttributeValue = pRes->getInt(aAttributeValue);
@@ -56,7 +56,7 @@ void CInventoryManager::OnPreInit()
 			}
 		}
 
-		CItemDescription(ItemID).Init(Name, Description, Type, Dysenthis, InitialPrice, Function, aContainerAttributes, std::move(Data));
+		CItemDescription(ItemID).Init(Name, Description, GroupSet, TypeSet, Dysenthis, InitialPrice, aContainerAttributes, std::move(Data));
 	}
 
 	ResultPtr pResAtt = Database->Execute<DB::SELECT>("*", "tw_attributes");
@@ -100,14 +100,14 @@ bool CInventoryManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
-		std::vector<std::pair<ItemType, std::string>> vMenuItems = 
+		std::vector<std::pair<ItemGroup, std::string>> vMenuItems = 
 		{
-			{ ItemType::Usable,           "\u270C" },
-			{ ItemType::CraftingMaterial, "\u2692" },
-			{ ItemType::Equipment,        "\u26B0" },
-			{ ItemType::Module,           "\u2693" },
-			{ ItemType::Potion,           "\u26B1" },
-			{ ItemType::Other,            "\u26C3" }
+			{ ItemGroup::Usable,           "\u270C" },
+			{ ItemGroup::Resource,         "\u2692" },
+			{ ItemGroup::Equipment,        "\u26B0" },
+			{ ItemGroup::Potion,           "\u26B1" },
+			{ ItemGroup::Quest,            "\u26C1" },
+			{ ItemGroup::Other,            "\u26C3" }
 		};
 
 		// inventory tabs
@@ -123,7 +123,7 @@ bool CInventoryManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		VoteWrapper VInfo(ClientID);
 		if(itemTypeSelected.has_value())
 		{
-			if(!ListInventory(ClientID, (ItemType)itemTypeSelected.value()))
+			if(!ListInventory(ClientID, (ItemGroup)itemTypeSelected.value()))
 			{
 				VInfo.Add("The selected list is empty");
 			}
@@ -144,7 +144,7 @@ bool CInventoryManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
 		// lambda equipment
-		auto addEquipmentFieldFunc = [&](VoteWrapper& Wrapper, ItemFunctional EquipID) -> bool
+		auto addEquipmentFieldFunc = [&](VoteWrapper& Wrapper, ItemType EquipID) -> bool
 		{
 			// check if equipped
 			const auto ItemID = pPlayer->GetEquippedItemID(EquipID);
@@ -192,7 +192,6 @@ bool CInventoryManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		addEquipmentFieldFunc(VEquipment, EquipArmor);
 		addEquipmentFieldFunc(VEquipment, EquipPickaxe);
 		addEquipmentFieldFunc(VEquipment, EquipRake);
-		VEquipment.AddMenu(MENU_MODULES, ">>> Manage Modules <<<");
 		VoteWrapper::AddEmptyline(ClientID);
 
 		// potions equipment
@@ -206,7 +205,7 @@ bool CInventoryManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		VoteWrapper VInfo(ClientID);
 		if(itemFunctionalSelected.has_value())
 		{
-			if(!ListInventory(ClientID, (ItemFunctional)itemFunctionalSelected.value()))
+			if(!ListInventory(ClientID, (ItemType)itemFunctionalSelected.value()))
 				VInfo.Add("The selected list is empty");
 		}
 		else
@@ -222,7 +221,7 @@ bool CInventoryManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 
 	if(Menulist == MENU_MODULES)
 	{
-		pPlayer->m_VotesData.SetLastMenuID(MENU_EQUIPMENT);
+		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
 		const auto& PlayerItems = CPlayerItem::Data()[ClientID];
 
@@ -230,7 +229,7 @@ bool CInventoryManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		VoteWrapper VFunctional(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "\u2604 Modules: Functional");
 		auto functionalModules = PlayerItems | std::views::filter([](const auto& pair) 
 		{
-			return pair.second.Info()->IsType(ItemType::Module) && !pair.second.Info()->HasAttributes() && pair.second.HasItem();
+			return pair.second.Info()->IsEquipmentNonSlot() && !pair.second.Info()->HasAttributes() && pair.second.HasItem();
 		});
 
 		for(const auto& [ItemID, PlayerItem] : functionalModules)
@@ -251,7 +250,7 @@ bool CInventoryManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		VoteWrapper VStats(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "\u2604 Modules: Stats");
 		auto statModules = PlayerItems | std::views::filter([](const auto& pair) 
 		{
-			return pair.second.Info()->IsType(ItemType::Module) && pair.second.Info()->HasAttributes() && pair.second.HasItem();
+			return pair.second.Info()->IsEquipmentNonSlot() && pair.second.Info()->HasAttributes() && pair.second.HasItem();
 		});
 
 		for(const auto& [ItemID, PlayerItem] : statModules)
@@ -327,7 +326,13 @@ bool CInventoryManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* CMD, c
 
 	if(PPSTR(CMD, "EQUIP_ITEM") == 0)
 	{
-		pPlayer->GetItem(VoteID)->Equip();
+		auto* pPlayerItem = pPlayer->GetItem(VoteID);
+		if(pPlayerItem->IsEquipped())
+			pPlayerItem->UnEquip();
+		else
+			pPlayerItem->Equip();
+
+		pPlayerItem->Save();
 		pPlayer->m_VotesData.UpdateCurrentVotes();
 		return true;
 	}
@@ -369,7 +374,20 @@ void CInventoryManager::RepairDurabilityItems(CPlayer* pPlayer)
 		Item.m_Durability = 100;
 }
 
-std::vector<int> CInventoryManager::GetItemIDsCollection(ItemType Type)
+std::vector<int> CInventoryManager::GetItemIDsCollectionByGroup(ItemGroup Type)
+{
+	std::vector<int> ItemIDs {};
+
+	for(const auto& [ID, pInfo] : CItemDescription::Data())
+	{
+		if(pInfo.IsGroup(Type))
+			ItemIDs.push_back(ID);
+	}
+
+	return ItemIDs;
+}
+
+std::vector<int> CInventoryManager::GetItemIDsCollectionByType(ItemType Type)
 {
 	std::vector<int> ItemIDs {};
 
@@ -382,20 +400,7 @@ std::vector<int> CInventoryManager::GetItemIDsCollection(ItemType Type)
 	return ItemIDs;
 }
 
-std::vector<int> CInventoryManager::GetItemIDsCollectionByFunction(ItemFunctional Type)
-{
-	std::vector<int> ItemIDs {};
-
-	for(const auto& [ID, pInfo] : CItemDescription::Data())
-	{
-		if(pInfo.IsFunctional(Type))
-			ItemIDs.push_back(ID);
-	}
-
-	return ItemIDs;
-}
-
-bool CInventoryManager::ListInventory(int ClientID, ItemType Type)
+bool CInventoryManager::ListInventory(int ClientID, ItemGroup Type)
 {
 	bool hasItems = false;
 	ExecuteTemplateItemsTypes(Type, CPlayerItem::Data()[ClientID], [&](const CPlayerItem& pItem)
@@ -406,7 +411,7 @@ bool CInventoryManager::ListInventory(int ClientID, ItemType Type)
 	return hasItems;
 }
 
-bool CInventoryManager::ListInventory(int ClientID, ItemFunctional Type)
+bool CInventoryManager::ListInventory(int ClientID, ItemType Type)
 {
 	bool hasItems = false;
 	ExecuteTemplateItemsTypes(Type, CPlayerItem::Data()[ClientID], [&](const CPlayerItem& pItem)
@@ -428,7 +433,7 @@ int CInventoryManager::GetUnfrozenItemValue(CPlayer* pPlayer, ItemIdentifier Ite
 	return AvailableValue;
 }
 
-void CInventoryManager::ShowSellingItemsByFunction(CPlayer* pPlayer, ItemFunctional Type) const
+void CInventoryManager::ShowSellingItemsByFunction(CPlayer* pPlayer, ItemType Type) const
 {
 	const int ClientID = pPlayer->GetCID();
 
@@ -443,7 +448,7 @@ void CInventoryManager::ShowSellingItemsByFunction(CPlayer* pPlayer, ItemFunctio
 		VItems.BeginDepth();
 		for(auto& [ID, Item] : CItemDescription::Data())
 		{
-			if(Item.GetFunctional() != Type)
+			if(Item.GetType() != Type)
 				continue;
 
 			int Price = maximum(1, Item.GetInitialPrice());
@@ -460,53 +465,47 @@ void CInventoryManager::ItemSelected(CPlayer* pPlayer, const CPlayerItem* pItem)
 	const ItemIdentifier ItemID = pItem->GetID();
 	CItemDescription* pInfo = pItem->Info();
 
-	VoteWrapper VItem(ClientID, VWF_UNIQUE|VWF_STYLE_SIMPLE);
-
 	// name description
+	VoteWrapper VItem(ClientID, VWF_UNIQUE|VWF_STYLE_SIMPLE);
 	if(!pInfo->IsStackable())
-	{
 		VItem.SetTitle("{}{} {}", (pItem->m_Settings ? "✔ " : "\0"), pInfo->GetName(), pItem->GetStringEnchantLevel().c_str());
-	}
 	else
-	{
 		VItem.SetTitle("{}{} x{}", (pItem->m_Settings ? "✔ " : "\0"), pInfo->GetName(), pItem->m_Value);
+
+	// is group quest non action
+	if(pInfo->m_Group == ItemGroup::Quest)
+	{
+		VItem.Add("{}", pInfo->GetDescription());
+		return;
 	}
 
 	// add attributes
 	if(pInfo->HasAttributes())
-	{
 		VItem.Add("{}", pItem->GetStringAttributesInfo(pPlayer));
-	}
 
 	// show description
 	if(pPlayer->GetItem(itShowEquipmentDescription)->IsEquipped())
-	{
 		VItem.Add("{}", pInfo->GetDescription());
-	}
 
 	// is used item
-	if(pInfo->m_Function == UseSingle || pInfo->m_Function == UseMultiple)
-	{
+	if(pInfo->m_Group == ItemGroup::Usable && (pInfo->m_Type == ItemType::UseSingle || pInfo->m_Type == ItemType::UseMultiple))
 		VItem.AddOption("IUSE", ItemID, "Use");
-	}
 
 	// is potion
-	if(pInfo->m_Type == ItemType::Potion)
-	{
+	if(pInfo->m_Group == ItemGroup::Potion)
 		VItem.AddOption("EQUIP_ITEM", ItemID, "Auto use - {}", (pItem->m_Settings ? "Enable" : "Disable"));
-	}
 
 	// is decoration
-	if(pInfo->m_Type == ItemType::Decoration)
+	if(pInfo->m_Group == ItemGroup::Decoration)
 	{
 		VItem.AddOption("DECORATION_HOUSE_ADD", ItemID, "Start drawing near house");
 		VItem.AddOption("GUILD_HOUSE_DECORATION", ItemID, "Start drawing near guild house");
 	}
 
 	// is equipped
-	if(pInfo->m_Type == ItemType::Equipment || pInfo->m_Function == Setting)
+	if(pInfo->m_Group == ItemGroup::Equipment)
 	{
-		if(pInfo->m_Function == EquipHammer && pItem->IsEquipped())
+		if(pInfo->m_Type == EquipHammer && pItem->IsEquipped())
 			VItem.Add("You can not undress equipping hammer");
 		else
 			VItem.AddOption("EQUIP_ITEM", ItemID, (pItem->m_Settings ? "Undress" : "Equip"));
@@ -535,12 +534,12 @@ void CInventoryManager::ItemSelected(CPlayer* pPlayer, const CPlayerItem* pItem)
 	}
 }
 
-int CInventoryManager::GetCountItemsType(CPlayer* pPlayer, ItemType Type) const
+int CInventoryManager::GetCountItemsType(CPlayer* pPlayer, ItemGroup Type) const
 {
 	const int ClientID = pPlayer->GetCID();
 	return (int)std::count_if(CPlayerItem::Data()[ClientID].cbegin(), CPlayerItem::Data()[ClientID].cend(), [Type](auto pItem)
 	{
-		return pItem.second.HasItem() && pItem.second.Info()->IsType(Type);
+		return pItem.second.HasItem() && pItem.second.Info()->IsGroup(Type);
 	});
 }
 

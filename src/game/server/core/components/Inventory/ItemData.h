@@ -77,8 +77,7 @@ public:
 	int GetDysenthis() const { return Info()->GetDysenthis(m_Enchant); }
 	bool IsEquipped() const
 	{
-		return m_Value > 0 && m_Settings > 0 && (Info()->IsType(ItemType::Potion) || Info()->IsType(ItemType::Setting) 
-			|| Info()->IsType(ItemType::Module) || Info()->IsType(ItemType::Equipment));
+		return m_Value > 0 && m_Settings > 0 && (Info()->IsGroup(ItemGroup::Potion) || Info()->IsGroup(ItemGroup::Settings) || Info()->IsGroup(ItemGroup::Equipment));
 	}
 	bool IsEnchantMaxLevel() const { return Info()->IsEnchantMaxLevel(m_Enchant); }
 	bool HasItem() const { return m_Value > 0; }
@@ -87,7 +86,8 @@ public:
 	// main functions
 	bool Add(int Value, int StartSettings = 0, int StartEnchant = 0, bool Message = true);
 	bool Remove(int Value);
-	bool Equip(bool SaveItem = true);
+	bool Equip();
+	bool UnEquip();
 	bool Use(int Value);
 	bool Drop(int Value);
 	bool Save();
@@ -97,6 +97,9 @@ public:
 	bool SetEnchant(int Enchant) override;
 	bool SetDurability(int Durability) override;
 	bool SetSettings(int Settings) override;
+
+private:
+	bool ShouldAutoEquip();
 };
 
 #endif

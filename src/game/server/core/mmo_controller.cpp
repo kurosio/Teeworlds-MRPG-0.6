@@ -150,23 +150,23 @@ bool CMmoController::OnSendMenuVotes(CPlayer* pPlayer, int Menulist) const
 		VStatistics.Add("Level {}, Exp {}/{}", pPlayer->Account()->GetLevel(), pPlayer->Account()->GetExperience(), expForLevel);
 		VStatistics.Add("Gold: {$}, Bank: {$}", pPlayer->Account()->GetGold(), pPlayer->Account()->GetBank());
 		VStatistics.Add("Skill Point {}SP", pPlayer->GetItem(itSkillPoint)->GetValue());
+		VStatistics.AddMenu(MENU_ACCOUNT_INFO, "\u2698 Account information");
 		VoteWrapper::AddEmptyline(ClientID);
 
 		// Personal Menu
 		VoteWrapper VPersonal(ClientID, VWF_ALIGN_TITLE, "\u262A Personal Menu");
 		VPersonal.AddMenu(MENU_UPGRADES, "\u2657 Upgrades & Professions ({}p)", pPlayer->Account()->GetTotalProfessionsUpgradePoints());
-		VPersonal.AddMenu(MENU_ACCOUNT_INFO, "\u2698 Account Information");
 		VPersonal.AddMenu(MENU_ACHIEVEMENTS, "\u2654 Achievements");
+		VPersonal.AddMenu(MENU_EQUIPMENT, "\u26B0 Equipments");
+		VPersonal.AddMenu(MENU_MODULES, "\u26B0 Modules");
 		VPersonal.AddMenu(MENU_INVENTORY, "\u205C Inventory");
-		VPersonal.AddMenu(MENU_EQUIPMENT, "\u26B0 Equipment");
-		VPersonal.AddMenu(MENU_EIDOLON, "\u2727 Eidolons");
 		VoteWrapper::AddEmptyline(ClientID);
 
 		// Group & Social
 		VoteWrapper VGroup(ClientID, VWF_ALIGN_TITLE, "\u2600 Social & Group Menu");
 		VGroup.AddMenu(MENU_DUNGEONS, "\u262C Dungeons");
 		VGroup.AddMenu(MENU_GROUP, "\u2042 Group");
-		VGroup.AddMenu(MENU_GUILD_FINDER, "\u20AA Guild Finder");
+		VGroup.AddMenu(MENU_GUILD_FINDER, "\u20AA Guild finder");
 		if(pPlayer->Account()->HasGuild())
 		{
 			VGroup.AddMenu(MENU_GUILD, "\u32E1 Guild");
@@ -186,7 +186,7 @@ bool CMmoController::OnSendMenuVotes(CPlayer* pPlayer, int Menulist) const
 
 		// Information Menu
 		VoteWrapper VInfo(ClientID, VWF_ALIGN_TITLE, "\u262A Information Menu");
-		VInfo.AddMenu(MENU_GUIDE, "\u10D3 Wiki / Grinding Guide");
+		VInfo.AddMenu(MENU_GUIDE, "\u10D3 Wiki / Grinding guide");
 		VInfo.AddMenu(MENU_LEADERBOARD, "\u21F0 Rankings: Guilds & Players");
 		VoteWrapper::AddEmptyline(ClientID);
 

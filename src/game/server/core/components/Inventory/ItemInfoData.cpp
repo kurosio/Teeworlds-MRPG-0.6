@@ -68,8 +68,64 @@ int CItemDescription::GetEnchantPrice(int EnchantLevel) const
 	return FinishedPrice;
 }
 
-void CItemDescription::InitJsonData()
+void CItemDescription::InitData(const DBSet& GroupSet, const DBSet& TypeSet)
 {
+	// initialize group
+	if(GroupSet.hasSet("Quest"))
+		m_Group = ItemGroup::Quest;
+	else if(GroupSet.hasSet("Usable"))
+		m_Group = ItemGroup::Usable;
+	else if(GroupSet.hasSet("Resource"))
+		m_Group = ItemGroup::Resource;
+	else if(GroupSet.hasSet("Other"))
+		m_Group = ItemGroup::Other;
+	else if(GroupSet.hasSet("Settings"))
+		m_Group = ItemGroup::Settings;
+	else if(GroupSet.hasSet("Equipment"))
+		m_Group = ItemGroup::Equipment;
+	else if(GroupSet.hasSet("Decoration"))
+		m_Group = ItemGroup::Decoration;
+	else if(GroupSet.hasSet("Potion"))
+		m_Group = ItemGroup::Potion;
+	else if(GroupSet.hasSet("Currency"))
+		m_Group = ItemGroup::Currency;
+
+	// initialize type
+	if(TypeSet.hasSet("Default"))
+		m_Type = ItemType::NoFunctional;
+	else if(TypeSet.hasSet("Equip hammer"))
+		m_Type = ItemType::EquipHammer;
+	else if(TypeSet.hasSet("Equip gun"))
+		m_Type = ItemType::EquipGun;
+	else if(TypeSet.hasSet("Equip shotgun"))
+		m_Type = ItemType::EquipShotgun;
+	else if(TypeSet.hasSet("Equip grenade"))
+		m_Type = ItemType::EquipGrenade;
+	else if(TypeSet.hasSet("Equip rifle"))
+		m_Type = ItemType::EquipLaser;
+	else if(TypeSet.hasSet("Equip pickaxe"))
+		m_Type = ItemType::EquipPickaxe;
+	else if(TypeSet.hasSet("Equip rake"))
+		m_Type = ItemType::EquipRake;
+	else if(TypeSet.hasSet("Equip armor"))
+		m_Type = ItemType::EquipArmor;
+	else if(TypeSet.hasSet("Equip eidolon"))
+		m_Type = ItemType::EquipEidolon;
+	else if(TypeSet.hasSet("Equip title"))
+		m_Type = ItemType::EquipTitle;
+	else if(TypeSet.hasSet("Equip potion HP"))
+		m_Type = ItemType::EquipPotionHeal;
+	else if(TypeSet.hasSet("Equip potion MP"))
+		m_Type = ItemType::EquipPotionMana;
+	else if(TypeSet.hasSet("Single use x1"))
+		m_Type = ItemType::UseSingle;
+	else if(TypeSet.hasSet("Multiple use x99"))
+		m_Type = ItemType::UseMultiple;
+	else if(TypeSet.hasSet("Resource harvestable"))
+		m_Type = ItemType::ResourceHarvestable;
+	else if(TypeSet.hasSet("Resource mineable"))
+		m_Type = ItemType::ResourceMineable;
+
 	mystd::json::parse(m_Data, [this](nlohmann::json& pJson)
 	{
 		// try to initialize harversing
@@ -137,7 +193,7 @@ void CItemDescription::StartItemScenario(CPlayer* pPlayer, ItemScenarioEvent Eve
 
 bool CItemDescription::IsStackable() const
 {
-	return !(IsEnchantable() || IsType(ItemType::Setting) || IsType(ItemType::Equipment) || IsType(ItemType::Module));
+	return !(IsEnchantable() || IsGroup(ItemGroup::Settings) || IsGroup(ItemGroup::Equipment));
 }
 
 bool CItemDescription::IsEnchantable() const

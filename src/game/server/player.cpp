@@ -750,7 +750,7 @@ CPlayerQuest* CPlayer::GetQuest(QuestIdentifier ID) const
 	return questData[ID];
 }
 
-std::optional<int> CPlayer::GetEquippedItemID(ItemFunctional EquipID, int SkipItemID) const
+std::optional<int> CPlayer::GetEquippedItemID(ItemType EquipType, int SkipItemID) const
 {
 	const auto& playerItems = CPlayerItem::Data()[m_ClientID];
 	for(const auto& [itemID, item] : playerItems)
@@ -764,7 +764,7 @@ std::optional<int> CPlayer::GetEquippedItemID(ItemFunctional EquipID, int SkipIt
 		if(!item.IsEquipped())
 			continue;
 
-		if(!item.Info()->IsFunctional(EquipID))
+		if(!item.Info()->IsType(EquipType))
 			continue;
 
 		return itemID;
@@ -773,7 +773,7 @@ std::optional<int> CPlayer::GetEquippedItemID(ItemFunctional EquipID, int SkipIt
 	return std::nullopt;
 }
 
-bool CPlayer::IsEquipped(ItemFunctional EquipID) const
+bool CPlayer::IsEquipped(ItemType EquipID) const
 {
 	const auto& optItemID = GetEquippedItemID(EquipID, -1);
 	return optItemID.has_value();

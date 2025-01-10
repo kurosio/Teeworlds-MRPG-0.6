@@ -108,8 +108,8 @@ public:
 	virtual void HandleTuningParams();
 	virtual int64_t GetMaskVisibleForClients() const { return -1; }
 	virtual ESnappingPriority IsActiveForClient(int ClientID) const { return SNAPPING_PRIORITY_HIGH; }
-	virtual std::optional<int> GetEquippedItemID(ItemFunctional EquipID, int SkipItemID = -1) const;
-	virtual bool IsEquipped(ItemFunctional EquipID) const;
+	virtual std::optional<int> GetEquippedItemID(ItemType EquipID, int SkipItemID = -1) const;
+	virtual bool IsEquipped(ItemType EquipID) const;
 	virtual int GetTotalAttributeValue(AttributeIdentifier ID) const;
 	float GetAttributeChance(AttributeIdentifier ID) const;
 	virtual void UpdateTempData(int Health, int Mana);

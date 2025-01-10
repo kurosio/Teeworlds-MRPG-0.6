@@ -34,7 +34,7 @@ void CCraftManager::OnPreInit()
 	// sort craft item's by function
 	std::ranges::sort(CCraftItem::Data(), [](const CCraftItem* p1, const CCraftItem* p2)
 	{
-		return p1->GetItem()->Info()->GetFunctional() > p2->GetItem()->Info()->GetFunctional();
+		return p1->GetItem()->Info()->GetType() > p2->GetItem()->Info()->GetType();
 	});
 }
 
@@ -77,14 +77,6 @@ void CCraftManager::CraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const
 	const int craftPrice = pCraft->GetPrice(pPlayer);
 	if(!pPlayer->Account()->SpendCurrency(craftPrice))
 		return;
-
-	// if a discount ticket is used, delete it and apply the discount
-	auto* pDiscountTicket = pPlayer->GetItem(itTicketDiscountCraft);
-	if(pDiscountTicket->IsEquipped())
-	{
-		pDiscountTicket->Remove(1);
-		GS()->Chat(ClientID, "You used the {} for a 25% discount.", GS()->GetItemInfo(itTicketDiscountCraft)->GetName());
-	}
 
 	// remove necessary items from the player's inventory
 	for(const auto& RequiredItem : pCraft->GetRequiredItems())
@@ -137,14 +129,13 @@ bool CCraftManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		VCraftInfo.AddItemValue(itGold);
 
 		// show craft tabs
-		ShowCraftList(pPlayer, "Can be used's", ItemType::Usable);
-		ShowCraftList(pPlayer, "Potion's", ItemType::Potion);
-		ShowCraftList(pPlayer, "Equipment's", ItemType::Equipment);
-		ShowCraftList(pPlayer, "Module's", ItemType::Module);
-		ShowCraftList(pPlayer, "Decoration's", ItemType::Decoration);
-		ShowCraftList(pPlayer, "Craft's", ItemType::CraftingMaterial);
-		ShowCraftList(pPlayer, "Other's", ItemType::Other);
-		ShowCraftList(pPlayer, "Quest and all the rest's", ItemType::Invisible);
+		ShowCraftList(pPlayer, "Can be used's", ItemGroup::Usable);
+		ShowCraftList(pPlayer, "Potion's", ItemGroup::Potion);
+		ShowCraftList(pPlayer, "Equipment's", ItemGroup::Equipment);
+		ShowCraftList(pPlayer, "Decoration's", ItemGroup::Decoration);
+		ShowCraftList(pPlayer, "Craft's", ItemGroup::Resource);
+		ShowCraftList(pPlayer, "Other's", ItemGroup::Other);
+		ShowCraftList(pPlayer, "Quest's", ItemGroup::Quest);
 		return true;
 	}
 
@@ -223,13 +214,13 @@ void CCraftManager::ShowCraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const
 
 }
 
-void CCraftManager::ShowCraftList(CPlayer* pPlayer, const char* TypeName, ItemType Type) const
+void CCraftManager::ShowCraftList(CPlayer* pPlayer, const char* TypeName, ItemGroup Type) const
 {
 	const int ClientID = pPlayer->GetCID();
 
 	// order only by type
 	if(std::ranges::none_of(CCraftItem::Data(), [Type](const CCraftItem* p)
-	{ return p->GetItem()->Info()->GetType() == Type; }))
+	{ return p->GetItem()->Info()->GetGroup() == Type; }))
 	{
 		return;
 	}
@@ -244,7 +235,7 @@ void CCraftManager::ShowCraftList(CPlayer* pPlayer, const char* TypeName, ItemTy
 		CItemDescription* pCraftItemInfo = pCraft->GetItem()->Info();
 
 		// check by type and world
-		if(pCraftItemInfo->GetType() != Type || pCraft->GetWorldID() != GS()->GetWorldID())
+		if(pCraftItemInfo->GetGroup() != Type || pCraft->GetWorldID() != GS()->GetWorldID())
 			continue;
 
 		CraftIdentifier ID = pCraft->GetID();

@@ -5,6 +5,7 @@
 #include <base/hash_ctxt.h>
 #include <game/server/gamecontext.h>
 
+#include <game/server/core/components/Inventory/InventoryManager.h>
 #include <game/server/core/components/Dungeons/DungeonManager.h>
 #include <game/server/core/components/mails/mailbox_manager.h>
 #include <game/server/core/components/worlds/world_data.h>
@@ -334,12 +335,11 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		VoteWrapper::AddEmptyline(ClientID);
 
 		// Currency information
+		const auto currencyItemIDs = GS()->Core()->InventoryManager()->GetItemIDsCollectionByGroup(ItemGroup::Currency);
 		VoteWrapper VCurrency(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "Account Currency");
 		VCurrency.Add("Bank: {}", pAccount->GetBank());
-		for(int itemID : {itGold, itAchievementPoint, itSkillPoint, itActivityCoin, itMaterial, itProduct})
-		{
+		for(int itemID : currencyItemIDs)
 			VCurrency.Add("{}: {}", pPlayer->GetItem(itemID)->Info()->GetName(), pPlayer->GetItem(itemID)->GetValue());
-		}
 
 		// Add backpage
 		VoteWrapper::AddBackpage(ClientID);
@@ -441,7 +441,7 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		const auto& PlayerItems = CPlayerItem::Data()[ClientID];
 		for(const auto& [ItemID, ItemData] : PlayerItems)
 		{
-			if(ItemData.Info()->IsType(ItemType::Setting) && ItemData.HasItem())
+			if(ItemData.Info()->IsGroup(ItemGroup::Settings) && ItemData.HasItem())
 			{
 				const char* Status = ItemData.GetSettings() ? "Enabled" : "Disabled";
 				VAccount.AddOption("EQUIP_ITEM", ItemID, "[{}] {}", Status, ItemData.Info()->GetName());
@@ -504,7 +504,7 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		for(auto& pairItem : CPlayerItem::Data()[ClientID])
 		{
 			CPlayerItem* pPlayerItem = &pairItem.second;
-			if(pPlayerItem->Info()->IsFunctional(EquipTitle) && pPlayerItem->HasItem())
+			if(pPlayerItem->Info()->IsType(EquipTitle) && pPlayerItem->HasItem())
 			{
 				// initialize variables
 				bool IsEquipped = pPlayerItem->IsEquipped();

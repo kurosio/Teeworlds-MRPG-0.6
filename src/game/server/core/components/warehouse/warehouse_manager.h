@@ -21,7 +21,7 @@ class CWarehouseManager : public MmoComponent
 
 	// vote menus
 	void ShowWarehouseList(CPlayer* pPlayer, CWarehouse* pWarehouse) const;
-	void ShowTradeList(CWarehouse* pWarehouse, CPlayer* pPlayer, const char* TypeName, ItemType Type) const;
+	void ShowTradeList(CWarehouse* pWarehouse, CPlayer* pPlayer, const char* TypeName, ItemGroup Type) const;
 	void ShowTrade(CPlayer* pPlayer, CWarehouse* pWarehouse, int TradeID) const;
 
 	// functions

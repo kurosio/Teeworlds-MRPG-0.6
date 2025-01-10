@@ -16,21 +16,22 @@ CEntityDirectionNavigator::CEntityDirectionNavigator(CGameWorld* pGameWorld, int
 	: CEntity(pGameWorld, CGameWorld::ENTTYPE_PATH_FINDER, Position, 0, ClientID)
 {
 	const auto PosTo = GS()->Core()->WorldManager()->FindPosition(WorldID, Position);
+	m_pEntNavigator = nullptr;
+	m_Pos = Position;
 	if(!PosTo.has_value())
 	{
 		MarkForDestroy();
 		return;
 	}
-
-	m_Pos = Position;
 	m_PosTo = PosTo.value();
-	m_pEntNavigator = nullptr;
 	GameWorld()->InsertEntity(this);
 
 	// quest navigator finder
 	auto* pPlayer = GetPlayer();
 	if(pPlayer && pPlayer->GetItem(itShowQuestStarNavigator)->IsEquipped())
+	{
 		m_pEntNavigator = new CEntityPathNavigator(&GS()->m_World, m_ClientID, true, Position, WorldID, false, CmaskOne(ClientID));
+	}
 }
 
 CEntityDirectionNavigator::~CEntityDirectionNavigator()
@@ -45,14 +46,11 @@ CEntityDirectionNavigator::~CEntityDirectionNavigator()
 void CEntityDirectionNavigator::Tick()
 {
 	auto* pPlayer = GetPlayer();
-	if(!pPlayer)
+	if(!pPlayer || !pPlayer->GetCharacter())
 	{
 		GameWorld()->DestroyEntity(this);
 		return;
 	}
-
-	if(!pPlayer->GetCharacter())
-		return;
 
 	m_Pos = pPlayer->GetCharacter()->m_Core.m_Pos;
 }

@@ -119,7 +119,7 @@ std::pair<int, int> CEidolonManager::GetEidolonsSize(int ClientID) const
 	{
 		for(auto& p : CPlayerItem::Data()[ClientID])
 		{
-			if(p.second.HasItem() && p.second.Info()->IsType(ItemType::Equipment) && p.second.Info()->IsFunctional(
+			if(p.second.HasItem() && p.second.Info()->IsGroup(ItemGroup::Equipment) && p.second.Info()->IsType(
 				EquipEidolon))
 				Collect++;
 		}

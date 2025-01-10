@@ -56,6 +56,25 @@ bool CPlayerItem::SetSettings(int Settings)
 	return Save();
 }
 
+bool CPlayerItem::ShouldAutoEquip()
+{
+	const auto* pPlayer = GetPlayer();
+	if(!pPlayer || !pPlayer->IsAuthed())
+		return false;
+
+	if(Info()->IsEquipmentSlot())
+	{
+		return !pPlayer->GetEquippedItemID(Info()->GetType()).has_value();
+	}
+	
+	if(Info()->IsEquipmentNonSlot())
+	{
+		return true;
+	}
+
+	return false;
+}
+
 bool CPlayerItem::SetDurability(int Durability)
 {
 	if(m_Value < 1)
@@ -98,19 +117,22 @@ bool CPlayerItem::Add(int Value, int StartSettings, int StartEnchant, bool Messa
 	const int ClientID = pPlayer->GetCID();
 	if(!Info()->IsStackable())
 	{
+		// send by mail no space for item
 		if(m_Value > 0)
 		{
 			MailWrapper Mail("System", pPlayer->Account()->GetID(), "No place for item.");
 			Mail.AddDescLine("You already have this item.");
 			Mail.AddDescLine("We can't put it in inventory");
-			Mail.AttachItem({m_ID, 1, StartEnchant, 100});
+			Mail.AttachItem(CItem(m_ID, 1, StartEnchant, 100));
 			Mail.Send();
 			return false;
 		}
 
+		// not stackable maximal is 1
 		Value = 1;
 	}
 
+	// first initialize
 	if(!m_Value)
 	{
 		m_Enchant = StartEnchant;
@@ -118,37 +140,38 @@ bool CPlayerItem::Add(int Value, int StartSettings, int StartEnchant, bool Messa
 		Info()->StartItemScenario(pPlayer, ItemScenarioEvent::OnEventGot);
 	}
 
+	// update achievements and add value
 	m_Value += Value;
-
-	// achievement for item
 	pPlayer->UpdateAchievement(AchievementType::ReceiveItem, m_ID, Value, PROGRESS_ACCUMULATE);
 	pPlayer->UpdateAchievement(AchievementType::HaveItem, m_ID, m_Value, PROGRESS_ABSOLUTE);
 
-	// check the empty slot if yes then put the item on
-	if((Info()->IsType(ItemType::Equipment) && !pPlayer->GetEquippedItemID(Info()->GetFunctional()).has_value()) || Info()->IsType(ItemType::Module))
+	// try auto equip item
+	if(ShouldAutoEquip() && !IsEquipped())
 	{
-		if(!IsEquipped())
-			Equip(false);
-
+		Equip();
 		GS()->Chat(ClientID, "Auto equip {} - {}", Info()->GetName(), GetStringAttributesInfo(pPlayer));
 	}
 
-	if(!Message || Info()->IsType(ItemType::Setting) || Info()->IsType(ItemType::Invisible))
+	// disable notify about items for special group and types
+	const auto Group = Info()->GetGroup();
+	if(!Message || Group == ItemGroup::Settings || m_ID == itGold)
 		return Save();
 
-	if(Info()->IsType(ItemType::Equipment) || Info()->IsType(ItemType::Module))
+	// Notify about items
+	if(Group == ItemGroup::Equipment)
 	{
-		GS()->Chat(-1, "{} got of the {}.", GS()->Server()->ClientName(ClientID), Info()->GetName());
-		if(Info()->IsFunctional(EquipEidolon))
-		{
-			std::pair EidolonSize = GS()->Core()->EidolonManager()->GetEidolonsSize(ClientID);
-			GS()->Chat(-1, "{} has a collection {} out of {} eidolons.", GS()->Server()->ClientName(ClientID), EidolonSize.first, EidolonSize.second);
-		}
+		const auto Type = Info()->GetType();
+		if(Type == ItemType::EquipTitle)
+			GS()->Chat(-1, "{} unlocked the title: {}!", GS()->Server()->ClientName(ClientID), Info()->GetName());
+		else if(Type == ItemType::EquipEidolon)
+			GS()->Chat(-1, "{} obtained an Eidolon: {}!", GS()->Server()->ClientName(ClientID), Info()->GetName());
+		else
+			GS()->Chat(-1, "{} obtained the {}.", GS()->Server()->ClientName(ClientID), Info()->GetName());
 	}
+	else if(Group == ItemGroup::Currency)
+		GS()->Chat(ClientID, "You received {} x{} ({}).", Info()->GetName(), Value, m_Value);
 	else
-	{
-		GS()->Chat(ClientID, "You obtain an {} x{}({}).", Info()->GetName(), Value, m_Value);
-	}
+		GS()->Chat(ClientID, "You obtained an {} x{} ({}).", Info()->GetName(), Value, m_Value);
 
 	return Save();
 }
@@ -163,10 +186,9 @@ bool CPlayerItem::Remove(int Value)
 	if(!pPlayer || !pPlayer->IsAuthed())
 		return false;
 
-	// unequip if this is the last item
-	if(m_Value <= Value && IsEquipped())
+	if(m_Value <= Value)
 	{
-		Equip(false);
+		UnEquip();
 		Info()->StartItemScenario(pPlayer, ItemScenarioEvent::OnEventLost);
 	}
 
@@ -174,44 +196,70 @@ bool CPlayerItem::Remove(int Value)
 	return Save();
 }
 
-bool CPlayerItem::Equip(bool SaveItem)
+bool CPlayerItem::Equip()
 {
-	if(m_Value < 1)
+	if(m_Value < 1 || m_Settings >= 1)
 		return false;
 
 	auto* pPlayer = GetPlayer();
 	if(!pPlayer || !pPlayer->IsAuthed())
 		return false;
 
-	m_Settings ^= true;
-
-	if(Info()->IsType(ItemType::Equipment))
+	// remove old equipment from slot
+	if(Info()->IsEquipmentSlot())
 	{
-		const ItemFunctional EquipID = Info()->GetFunctional();
-		auto ItemID = pPlayer->GetEquippedItemID(EquipID, m_ID);
-		while(ItemID.has_value())
+		const ItemType equipType = Info()->GetType();
+		while(auto oldItemId = pPlayer->GetEquippedItemID(equipType, m_ID))
 		{
-			CPlayerItem* pPlayerItem = pPlayer->GetItem(ItemID.value());
-			pPlayerItem->SetSettings(0);
-			ItemID = pPlayer->GetEquippedItemID(EquipID, m_ID);
+			if(auto pOldItem = pPlayer->GetItem(oldItemId.value()))
+				pOldItem->SetSettings(0);
 		}
 	}
 
-	if(pPlayer->GetCharacter())
+	// equip
+	m_Settings = true;
+
+	// update player stats
+	if(auto* pCharacter = pPlayer->GetCharacter())
 	{
-		pPlayer->GetCharacter()->UpdateEquippedStats(m_ID);
+		pCharacter->UpdateEquippedStats(m_ID);
+		GS()->MarkUpdatedBroadcast(m_ClientID);
 	}
 
-	GS()->CreatePlayerSound(m_ClientID, SOUND_ITEM_EQUIP);
+	// update achievements and start scenarios
 	pPlayer->UpdateAchievement(AchievementType::Equip, m_ID, m_Settings, PROGRESS_ABSOLUTE);
-	Info()->StartItemScenario(pPlayer, m_Settings ? ItemScenarioEvent::OnEventEquip : ItemScenarioEvent::OnEventUnequip);
-	GS()->MarkUpdatedBroadcast(m_ClientID);
-	return SaveItem ? Save() : true;
+	Info()->StartItemScenario(pPlayer, ItemScenarioEvent::OnEventEquip);
+	GS()->CreatePlayerSound(m_ClientID, SOUND_ITEM_EQUIP);
+	return true;
+}
+
+bool CPlayerItem::UnEquip()
+{
+	if(m_Value < 1 || m_Settings <= 0)
+		return false;
+
+	auto* pPlayer = GetPlayer();
+	if(!pPlayer || !pPlayer->IsAuthed())
+		return false;
+
+	// unequip
+	m_Settings = false;
+
+	// update player stats
+	if(auto* pCharacter = pPlayer->GetCharacter())
+	{
+		pCharacter->UpdateEquippedStats(m_ID);
+		GS()->MarkUpdatedBroadcast(m_ClientID);
+	}
+
+	Info()->StartItemScenario(pPlayer, ItemScenarioEvent::OnEventUnequip);
+	GS()->CreatePlayerSound(m_ClientID, SOUND_ITEM_EQUIP);
+	return true;
 }
 
 bool CPlayerItem::Use(int Value)
 {
-	Value = Info()->IsFunctional(UseSingle) ? 1 : minimum(Value, m_Value);
+	Value = Info()->IsType(UseSingle) ? 1 : minimum(Value, m_Value);
 	if(Value <= 0)
 		return false;
 
@@ -221,12 +269,6 @@ bool CPlayerItem::Use(int Value)
 
 	const int ClientID = pPlayer->GetCID();
 
-	// ticket discount craft
-	if(m_ID == itTicketDiscountCraft)
-	{
-		GS()->Chat(ClientID, "This item can only be used (Auto Use, and then craft).");
-		return true;
-	}
 	// survial capsule experience
 	if(m_ID == itCapsuleSurvivalExperience && Remove(Value))
 	{
@@ -235,6 +277,7 @@ bool CPlayerItem::Use(int Value)
 		pPlayer->Account()->AddExperience(Getting);
 		return true;
 	}
+
 	// little bag gold
 	if(m_ID == itLittleBagGold && Remove(Value))
 	{
@@ -243,65 +286,15 @@ bool CPlayerItem::Use(int Value)
 		pPlayer->Account()->AddGold(Getting);
 		return true;
 	}
-	// ticket reset for class stats
-	/*if(m_ID == itTicketResetClassStats && Remove(Value))
-	{
-		int BackUpgrades = 0;
-		for(const auto& [ID, pAttribute] : CAttributeDescription::Data())
-		{
-			if(pAttribute->HasDatabaseField() && pPlayer->Account()->m_aStats[ID] > 0)
-			{
-				// skip weapon spreading
-				if(pAttribute->IsGroup(AttributeGroup::Weapon))
-					continue;
-
-				BackUpgrades += pPlayer->Account()->m_aStats[ID] * pAttribute->GetUpgradePrice();
-				pPlayer->Account()->m_aStats[ID] = 0;
-			}
-		}
-
-		GS()->Chat(-1, "{} used {} returned {} upgrades.", GS()->Server()->ClientName(ClientID), Info()->GetName(), BackUpgrades);
-		pPlayer->Account()->m_UpgradePoint += BackUpgrades;
-		GS()->Core()->SaveAccount(pPlayer, SAVE_UPGRADES);
-		return true;
-	}
-	// ticket reset for weapons stats
-	if(m_ID == itTicketResetWeaponStats && Remove(Value))
-	{
-		int BackUpgrades = 0;
-		for(const auto& [ID, pAttribute] : CAttributeDescription::Data())
-		{
-			if(pAttribute->HasDatabaseField() && pPlayer->Account()->m_aStats[ID] > 0)
-			{
-				// skip all stats allow only weapons
-				if(pAttribute->GetGroup() != AttributeGroup::Weapon)
-					continue;
-
-				const int UpgradeValue = pPlayer->Account()->m_aStats[ID];
-				if(UpgradeValue <= 0)
-					continue;
-
-				BackUpgrades += UpgradeValue * pAttribute->GetUpgradePrice();
-				pPlayer->Account()->m_aStats[ID] -= UpgradeValue;
-			}
-		}
-
-		GS()->Chat(-1, "{} used {} returned {} upgrades.", GS()->Server()->ClientName(ClientID), Info()->GetName(), BackUpgrades);
-		pPlayer->Account()->m_UpgradePoint += BackUpgrades;
-		GS()->Core()->SaveAccount(pPlayer, SAVE_UPGRADES);
-		return true;
-	} TODO FIX Reset stats*/
 
 	// potion health regen
 	if(const auto optPotionContext = Info()->GetPotionContext())
 	{
 		// check potion recast time
-		const auto Function = Info()->GetFunctional();
-		if((Function == EquipPotionHeal && pPlayer->m_aPlayerTick[HealPotionRecast] >= Server()->Tick()) ||
-			(Function == EquipPotionMana && pPlayer->m_aPlayerTick[ManaPotionRecast] >= Server()->Tick()))
-		{
+		const auto Type = Info()->GetType();
+		if((Type == EquipPotionHeal && pPlayer->m_aPlayerTick[HealPotionRecast] >= Server()->Tick()) ||
+			(Type == EquipPotionMana && pPlayer->m_aPlayerTick[ManaPotionRecast] >= Server()->Tick()))
 			return true;
-		}
 
 		// try use
 		if(Remove(Value))
@@ -314,14 +307,14 @@ bool CPlayerItem::Use(int Value)
 			GS()->EntityManager()->Text(pPlayer->m_ViewPos + vec2(0, -140.0f), 70, EffectName);
 
 			// Update the recast time based on potion type
-			auto& recastTick = (Function == EquipPotionHeal) ? pPlayer->m_aPlayerTick[HealPotionRecast] : pPlayer->m_aPlayerTick[ManaPotionRecast];
+			auto& recastTick = (Type == EquipPotionHeal) ? pPlayer->m_aPlayerTick[HealPotionRecast] : pPlayer->m_aPlayerTick[ManaPotionRecast];
 			recastTick = Server()->Tick() + ((PotionTime + POTION_RECAST_APPEND_TIME) * Server()->TickSpeed());
 		}
 
 		return true;
 	}
 
-	// or if it random box
+	// random box
 	if(Info()->GetRandomBox())
 	{
 		Info()->GetRandomBox()->Start(pPlayer, 5, this, Value);
@@ -348,11 +341,11 @@ bool CPlayerItem::Drop(int Value)
 		Force = normalize(Force) * 8.0f;
 	}
 
-	CPlayerItem DropItem = *this;
+	CItem DropItem = *this;
 	if(Remove(Value))
 	{
-		DropItem.m_Value = Value;
-		GS()->EntityManager()->DropItem(pChar->m_Core.m_Pos, -1, static_cast<CItem>(DropItem), Force);
+		DropItem.SetValue(Value);
+		GS()->EntityManager()->DropItem(pChar->m_Core.m_Pos, -1, DropItem, Force);
 		return true;
 	}
 
@@ -389,7 +382,8 @@ bool CPlayerItem::Save()
 		if(m_Value)
 		{
 			m_Durability = 100;
-			Database->Execute<DB::INSERT>("tw_accounts_items", "(ItemID, UserID, Value, Settings, Enchant) VALUES ('{}', '{}', '{}', '{}', '{}')", m_ID, UserID, m_Value, m_Settings, m_Enchant);
+			Database->Execute<DB::INSERT>("tw_accounts_items", "(ItemID, UserID, Value, Settings, Enchant) VALUES ('{}', '{}', '{}', '{}', '{}')", 
+				m_ID, UserID, m_Value, m_Settings, m_Enchant);
 		}
 	});
 
