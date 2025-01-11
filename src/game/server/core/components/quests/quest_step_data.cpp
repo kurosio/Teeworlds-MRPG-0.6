@@ -209,7 +209,8 @@ void CQuestStep::PostFinish()
 		for(auto& pRewardItem : m_Bot.m_RewardItems)
 		{
 			// no use same giving and receiving for it can use "show"
-			dbg_assert(vInteractItemIds.find(pRewardItem.GetID()) != vInteractItemIds.end(), "the quest has (the same item of giving and receiving)");
+			if(vInteractItemIds.find(pRewardItem.GetID()) != vInteractItemIds.end())
+				dbg_assert(false, "the quest has (the same item of giving and receiving)");
 
 			// check for enchant item
 			CPlayerItem* pPlayerItem = pPlayer->GetItem(pRewardItem);
