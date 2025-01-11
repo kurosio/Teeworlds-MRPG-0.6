@@ -60,7 +60,7 @@ void CWarehouse::InitProperties(const DBSet& Type, const std::string& Properties
 					std::vector<int> vItems;
 
 					// by type or function collection
-					if(CollectType == "type")
+					if(CollectType == "group")
 					{
 						vItems = CInventoryManager::GetItemIDsCollectionByGroup(static_cast<ItemGroup>(pItem.value("value", -1)));
 					}
