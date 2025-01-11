@@ -7,7 +7,7 @@ using AttributeDescriptionPtr = std::shared_ptr< class CAttributeDescription >;
 
 class CAttributeDescription : public MultiworldIdentifiableData< std::map < AttributeIdentifier, AttributeDescriptionPtr > >
 {
-	char m_aName[32]{};
+	std::string m_Name;
 	AttributeIdentifier m_ID{};
 	AttributeGroup m_Group{};
 	int m_UpgradePrice{};
@@ -15,34 +15,35 @@ class CAttributeDescription : public MultiworldIdentifiableData< std::map < Attr
 public:
 	static AttributeDescriptionPtr CreateElement(AttributeIdentifier ID)
 	{
-		m_pData[ID] = std::make_shared<CAttributeDescription>();
-		m_pData[ID]->m_ID = ID;
-		return m_pData[ID];
+		auto element = std::make_shared<CAttributeDescription>();
+		element->m_ID = ID;
+		m_pData[ID] = element;
+		return element;
 	}
 
 	void Init(const std::string& Name, int UpgradePrice, AttributeGroup Group)
 	{
-		str_copy(m_aName, Name.c_str(), sizeof(m_aName));
+		m_Name = Name;
 		m_UpgradePrice = UpgradePrice;
 		m_Group = Group;
 	}
 
-	const char* GetName() const
+	const char* GetName() const noexcept
 	{
-		return m_aName;
+		return m_Name.c_str();
 	}
 
-	bool IsGroup(AttributeGroup Type) const
+	bool IsGroup(AttributeGroup Type) const noexcept
 	{
 		return m_Group == Type;
 	}
 
-	int GetUpgradePrice() const
+	int GetUpgradePrice() const noexcept
 	{
 		return m_UpgradePrice;
 	}
 
-	AttributeGroup GetGroup() const
+	AttributeGroup GetGroup() const noexcept
 	{
 		return m_Group;
 	}
@@ -55,7 +56,7 @@ class CAttribute
 
 public:
 	CAttribute() = default;
-	CAttribute(AttributeIdentifier ID, int Value)
+	explicit CAttribute(AttributeIdentifier ID, int Value)
 		: m_ID(ID), m_Value(Value)
 	{}
 
@@ -86,7 +87,9 @@ public:
 
 	CAttributeDescription* Info() const
 	{
-		return CAttributeDescription::Data()[m_ID].get();
+		auto it = CAttributeDescription::Data().find(m_ID);
+		dbg_assert(it != CAttributeDescription::Data().end(), "Attribute ID not found in data");
+		return it->second.get();
 	}
 };
 

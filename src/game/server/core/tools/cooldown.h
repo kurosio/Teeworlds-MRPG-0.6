@@ -19,13 +19,11 @@ public:
 private:
 	void EndCooldown(const char* pMessage = "\0");
 	bool HasPlayerMoved(CPlayer* pPlayer) const;
-	bool HasMouseMoved(CPlayer* pPlayer) const;
 	void BroadcastCooldown(IServer* pServer) const;
 
 	std::string m_Name {};
 	int m_ClientID {};
 	vec2 m_StartPos {};
-	vec2 m_StartMousePos {};
 	int m_Timer {};
 	int m_StartTimer {};
 	CCooldownCallback m_Callback {};

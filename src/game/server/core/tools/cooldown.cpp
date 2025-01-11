@@ -11,7 +11,6 @@ void CCooldown::Start(int Time, std::string Name, CCooldownCallback fnCallback)
 	if(const CPlayer* pPlayer = pGS->GetPlayer(m_ClientID, true, true))
 	{
 		m_StartPos = pPlayer->m_ViewPos;
-		m_StartMousePos = pPlayer->GetCharacter()->GetMousePos();
 		m_StartTimer = Time;
 		m_Timer = Time;
 		m_Callback = std::move(fnCallback);
@@ -63,7 +62,7 @@ void CCooldown::Tick()
 	IServer* pServer = Instance::Server();
 	if(pServer->Tick() % (pServer->TickSpeed() / 25) == 0)
 	{
-		if(HasPlayerMoved(pPlayer) || HasMouseMoved(pPlayer))
+		if(HasPlayerMoved(pPlayer))
 		{
 			m_Interrupted = true;
 			return;
@@ -88,11 +87,6 @@ void CCooldown::EndCooldown(const char* pMessage)
 bool CCooldown::HasPlayerMoved(CPlayer* pPlayer) const
 {
 	return distance(m_StartPos, pPlayer->m_ViewPos) > 48.f;
-}
-
-bool CCooldown::HasMouseMoved(CPlayer* pPlayer) const
-{
-	return pPlayer->GetCharacter() ? distance(m_StartMousePos, pPlayer->GetCharacter()->GetMousePos()) > 48.f : true;
 }
 
 void CCooldown::BroadcastCooldown(IServer* pServer) const
