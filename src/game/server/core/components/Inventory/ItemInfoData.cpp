@@ -186,8 +186,11 @@ void CItemDescription::StartItemScenario(CPlayer* pPlayer, ItemScenarioEvent Eve
 		}
 
 		// start scenario
-		const auto& scenarioJsonData = pJson[pElem];
-		pPlayer->Scenarios().Start(std::make_unique<CUniversalScenario>(ScenarioID, scenarioJsonData));
+		if(pJson.contains(pElem))
+		{
+			const auto& scenarioJsonData = pJson[pElem];
+			pPlayer->Scenarios().Start(std::make_unique<CUniversalScenario>(ScenarioID, scenarioJsonData));
+		}
 	});
 }
 
