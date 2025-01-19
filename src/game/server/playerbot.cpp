@@ -15,7 +15,7 @@ CPlayerBot::CPlayerBot(CGS* pGS, int ClientID, int BotID, int MobID, int SpawnPo
 	: CPlayer(pGS, ClientID), m_BotType(SpawnPoint), m_BotID(BotID), m_MobID(MobID)
 {
 	m_OldTargetPos = vec2(0, 0);
-	m_DungeonAllowedSpawn = false;
+	m_AllowedSpawn = true;
 	m_Items.reserve(CItemDescription::Data().size());
 
 	CPlayerBot::PrepareRespawnTick();
@@ -253,48 +253,49 @@ int CPlayerBot::GetTotalAttributeValue(AttributeIdentifier ID) const
 
 void CPlayerBot::TryRespawn()
 {
-	// select spawn point
-	vec2 SpawnPos;
+	if(!m_AllowedSpawn)
+		return;
+
+	std::optional<vec2> FinalSpawnPos = std::nullopt;
+
 	if(m_BotType == TYPE_BOT_MOB)
 	{
-		// close spawn mobs on non allowed spawn dungeon
-		if(GS()->IsWorldType(WorldType::Dungeon) && !m_DungeonAllowedSpawn)
-			return;
+		vec2 SpawnPos;
+		const auto RespawnPosition = MobBotInfo::ms_aMobBot[m_MobID].m_Position;
+		const auto Radius = MobBotInfo::ms_aMobBot[m_MobID].m_Radius;
 
-		const vec2 MobRespawnPosition = MobBotInfo::ms_aMobBot[m_MobID].m_Position;
-		if(!GS()->m_pController->CanSpawn(m_BotType, &SpawnPos, std::make_pair(MobRespawnPosition, 800.f)))
-			return;
-
-		// reset spawn mobs on non allowed spawn dungeon
-		if(GS()->IsWorldType(WorldType::Dungeon) && m_DungeonAllowedSpawn)
-			m_DungeonAllowedSpawn = false;
+		if(GS()->m_pController->CanSpawn(m_BotType, &SpawnPos, std::make_pair(RespawnPosition, Radius)))
+			FinalSpawnPos = SpawnPos;
 	}
 	else if(m_BotType == TYPE_BOT_NPC)
 	{
-		SpawnPos = NpcBotInfo::ms_aNpcBot[m_MobID].m_Position;
+		FinalSpawnPos = NpcBotInfo::ms_aNpcBot[m_MobID].m_Position;
 	}
 	else if(m_BotType == TYPE_BOT_QUEST)
 	{
-		SpawnPos = QuestBotInfo::ms_aQuestBot[m_MobID].m_Position;
+		FinalSpawnPos = QuestBotInfo::ms_aQuestBot[m_MobID].m_Position;
 	}
 	else if(m_BotType == TYPE_BOT_EIDOLON)
 	{
-		CPlayer* pOwner = GetEidolonOwner();
+		auto* pOwner = GetEidolonOwner();
 		if(!pOwner || !pOwner->GetCharacter())
 			return;
 
-		SpawnPos = pOwner->GetCharacter()->GetPos();
+		FinalSpawnPos = pOwner->GetCharacter()->GetPos();
 	}
 	else if(m_BotType == TYPE_BOT_QUEST_MOB)
 	{
-		SpawnPos = GetQuestBotMobInfo().m_Position;
+		FinalSpawnPos = GetQuestBotMobInfo().m_Position;
 	}
 
 	// create character
-	const int AllocMemoryCell = m_ClientID + GS()->GetWorldID() * MAX_CLIENTS;
-	m_pCharacter = new(AllocMemoryCell) CCharacterBotAI(&GS()->m_World);
-	m_pCharacter->Spawn(this, SpawnPos);
-	GS()->CreatePlayerSpawn(SpawnPos, GetMaskVisibleForClients());
+	if(FinalSpawnPos.has_value())
+	{
+		const int AllocMemoryCell = m_ClientID + GS()->GetWorldID() * MAX_CLIENTS;
+		m_pCharacter = new(AllocMemoryCell) CCharacterBotAI(&GS()->m_World);
+		m_pCharacter->Spawn(this, *FinalSpawnPos);
+		GS()->CreatePlayerSpawn(*FinalSpawnPos, GetMaskVisibleForClients());
+	}
 }
 
 int64_t CPlayerBot::GetMaskVisibleForClients() const

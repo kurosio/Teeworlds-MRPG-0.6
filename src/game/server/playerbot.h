@@ -34,7 +34,7 @@ class CPlayerBot : public CPlayer
 	int m_MaxMana{};
 	int m_Mana{};
 	bool m_DisabledBotDamage{};
-	int m_DungeonAllowedSpawn{};
+	int m_AllowedSpawn{};
 	CQuestBotMobInfo m_QuestMobInfo{};
 
 public:
@@ -87,7 +87,7 @@ public:
 	bool IsConversational() const;
 	void PrepareRespawnTick() override;
 
-	void SetDungeonAllowedSpawn(bool Spawn) { m_DungeonAllowedSpawn = Spawn; }
+	void SetAllowedSpawn(bool Spawn) { m_AllowedSpawn = Spawn; }
 
 	int m_EidolonItemID;
 	CPlayer* GetEidolonOwner() const;

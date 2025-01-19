@@ -284,6 +284,12 @@ void CGameControllerDungeon::OnCharacterDeath(CPlayer* pVictim, CPlayer* pKiller
 	if(pVictim->IsBot())
 	{
 		CPlayerBot* pVictimBot = static_cast<CPlayerBot*>(pVictim);
+
+		if(m_StateDungeon >= DUNGEON_STARTED)
+		{
+			pVictimBot->SetAllowedSpawn(false);
+		}
+
 		if(pKiller->GetCID() != pVictim->GetCID() && pVictimBot->GetBotType() == TYPE_BOT_MOB)
 		{
 			const int Progress = 100 - translate_to_percent(CountMobs(), LeftMobsToWin());
@@ -291,6 +297,7 @@ void CGameControllerDungeon::OnCharacterDeath(CPlayer* pVictim, CPlayer* pKiller
 			GS()->ChatWorld(m_WorldID, "Dungeon:", "The dungeon is completed on [{}%]", Progress);
 			UpdateDoorKeyState();
 		}
+
 	}
 }
 
@@ -406,7 +413,7 @@ void CGameControllerDungeon::SetMobsSpawn(bool AllowedSpawn)
 		CPlayerBot* BotPlayer = dynamic_cast<CPlayerBot*>(GS()->GetPlayer(i));
 		if(BotPlayer && BotPlayer->GetBotType() == TYPE_BOT_MOB && m_WorldID == BotPlayer->GetCurrentWorldID())
 		{
-			BotPlayer->SetDungeonAllowedSpawn(AllowedSpawn);
+			BotPlayer->SetAllowedSpawn(AllowedSpawn);
 			if(!AllowedSpawn && BotPlayer->GetCharacter())
 				BotPlayer->GetCharacter()->Die(i, WEAPON_WORLD);
 		}

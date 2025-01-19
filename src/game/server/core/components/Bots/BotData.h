@@ -6,6 +6,8 @@
 #include <game/server/core/components/Inventory/ItemData.h>
 #include "DialogsData.h"
 
+// TODO: required rewrite full code
+
 /************************************************************************/
 /*  Global data information bot                                         */
 /************************************************************************/
@@ -194,6 +196,7 @@ public:
 	int m_Level {};
 	int m_RespawnTick {};
 	int m_WorldID {};
+	float m_Radius {};
 	int m_aDropItem[MAX_DROPPED_FROM_MOBS] {};
 	int m_aValueItem[MAX_DROPPED_FROM_MOBS] {};
 	float m_aRandomItem[MAX_DROPPED_FROM_MOBS] {};

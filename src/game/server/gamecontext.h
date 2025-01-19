@@ -159,7 +159,9 @@ public:
 private:
 	void InitWorld();
 	void HandleNicknameChange(CPlayer* pPlayer, const char* pNewNickname) const;
+
 	void UpdateExpMultiplier();
+	void ResetExpMultiplier();
 
 public:
 	template<typename... Ts> void Chat(int ClientID, const char* pText, const Ts&... args);

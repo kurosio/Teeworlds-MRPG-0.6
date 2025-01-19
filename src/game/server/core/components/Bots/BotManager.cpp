@@ -195,6 +195,7 @@ void CBotManager::InitMobsBots(const char* pWhereLocalWorld)
 		MobBot.m_Boss = pRes->getBoolean("Boss");
 		MobBot.m_Level = pRes->getInt("Level");
 		MobBot.m_RespawnTick = pRes->getInt("Respawn");
+		MobBot.m_Radius = (float)pRes->getInt("Radius");
 		MobBot.m_BotID = BotID;
 		MobBot.m_BehaviorSets = pRes->getString("Behavior").c_str();
 		std::string BuffDebuff = pRes->getString("Effect").c_str();

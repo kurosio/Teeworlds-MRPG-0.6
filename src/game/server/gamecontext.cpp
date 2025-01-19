@@ -681,24 +681,16 @@ void CGS::OnConsoleInit()
 
 void CGS::OnDaytypeChange(int NewDaytype)
 {
-	// update multiplier
-	UpdateExpMultiplier();
-
 	// send day info
 	const char* pWorldname = Server()->GetWorldName(m_WorldID);
 	switch(NewDaytype)
 	{
-		case MORNING_TYPE:
-			ChatWorld(m_WorldID, "", "Rise and shine! The sun has made its triumphant return, banishing the darkness of night. It's time to face the challenges of a brand new day.");
-			ChatWorld(m_WorldID, "", "The exp multiplier in the '{}' zone is 100%.", pWorldname);
-			break;
-		case EVENING_TYPE:
-			ChatWorld(m_WorldID, "", "The exp multiplier in the '{}' zone is 100%.", pWorldname);
-			break;
 		case NIGHT_TYPE:
+			UpdateExpMultiplier();
 			ChatWorld(m_WorldID, "", "Nighttime adventure in the '{}' zone has been boosted by {}%!", pWorldname, m_MultiplierExp);
 			break;
 		default:
+			ResetExpMultiplier();
 			ChatWorld(m_WorldID, "", "The exp multiplier in the '{}' zone is 100%.", pWorldname);
 			break;
 	}
@@ -1274,18 +1266,18 @@ bool CGS::SendMenuMotd(CPlayer* pPlayer, int Menulist) const
 
 void CGS::UpdateExpMultiplier()
 {
-	// is dungeon
 	if(IsWorldType(WorldType::Dungeon))
 	{
 		m_MultiplierExp = g_Config.m_SvRaidDungeonExpMultiplier;
 		return;
 	}
 
-	// is nighttype
-	if(Server()->GetCurrentTypeday() == NIGHT_TYPE)
-		m_MultiplierExp = (100 + maximum(20, rand() % 200));
-	else
-		m_MultiplierExp = 100;
+	m_MultiplierExp = (100 + maximum(20, rand() % 200));
+}
+
+void CGS::ResetExpMultiplier()
+{
+	m_MultiplierExp = 100;
 }
 
 void CGS::UpdateVotesIfForAll(int MenuList) const
