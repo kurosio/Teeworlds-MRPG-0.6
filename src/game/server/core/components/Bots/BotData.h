@@ -59,7 +59,6 @@ public:
 	int m_WorldID {};
 	int m_BotID {};
 	int m_ID {};
-	bool m_GenerateNick {};
 	bool m_HasAction {};
 	std::string m_ScenarioJson {};
 	std::vector<CDialogStep> m_aDialogs {};

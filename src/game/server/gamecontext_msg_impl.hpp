@@ -43,7 +43,7 @@ void CGS::ChatGuild(int GuildID, const char* pText, const Ts&... args)
 template<typename... Ts>
 void CGS::ChatWorld(int WorldID, const char* pSuffix, const char* pText, const Ts&... args)
 {
-    const std::string Prefix = pSuffix[0] != '\0' ? std::string(pSuffix) + " " : "";
+    const std::string Prefix = pSuffix ? std::string(pSuffix) + " " : "";
     for(int i = 0; i < MAX_PLAYERS; i++)
     {
         if(CPlayer* pPlayer = GetPlayer(i, true); pPlayer && IsPlayerInWorld(i, WorldID))
