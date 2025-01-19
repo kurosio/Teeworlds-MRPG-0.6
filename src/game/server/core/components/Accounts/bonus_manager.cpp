@@ -5,7 +5,7 @@
 #include <engine/shared/linereader.h>
 #include <game/server/gamecontext.h>
 
-const char* CBonusManager::GetStringBonusType(int bonusType) const
+const char* BonusManager::GetStringBonusType(int bonusType) const
 {
 	switch(bonusType)
 	{
@@ -18,7 +18,7 @@ const char* CBonusManager::GetStringBonusType(int bonusType) const
 	}
 }
 
-void CBonusManager::SendInfoAboutActiveBonuses() const
+void BonusManager::SendInfoAboutActiveBonuses() const
 {
 	const auto pGS = (CGS*)Instance::GameServerPlayer(m_ClientID);
 
@@ -32,7 +32,7 @@ void CBonusManager::SendInfoAboutActiveBonuses() const
 	}
 }
 
-void CBonusManager::AddBonus(const TemporaryBonus& bonus)
+void BonusManager::AddBonus(const TemporaryBonus& bonus)
 {
 	const auto pGS = (CGS*)Instance::GameServerPlayer(m_ClientID);
 
@@ -68,7 +68,7 @@ void CBonusManager::AddBonus(const TemporaryBonus& bonus)
 	SaveBonuses();
 }
 
-void CBonusManager::LoadBonuses()
+void BonusManager::LoadBonuses()
 {
 	const auto* pGS = (CGS*)Instance::GameServerPlayer(m_ClientID);
 	IStorageEngine* pStorage = pGS->Storage();
@@ -105,7 +105,7 @@ void CBonusManager::LoadBonuses()
 	}
 }
 
-void CBonusManager::SaveBonuses() const
+void BonusManager::SaveBonuses() const
 {
 	const auto* pGS = (CGS*)Instance::GameServerPlayer(m_ClientID);
 	IStorageEngine* pStorage = pGS->Storage();
@@ -130,7 +130,7 @@ void CBonusManager::SaveBonuses() const
 	}
 }
 
-void CBonusManager::UpdateBonuses()
+void BonusManager::UpdateBonuses()
 {
 	bool hasChanges = false;
 	for(auto it = m_vTemporaryBonuses.begin(); it != m_vTemporaryBonuses.end();)
@@ -154,7 +154,7 @@ void CBonusManager::UpdateBonuses()
 	}
 }
 
-float CBonusManager::GetTotalBonusPercentage(int bonusType) const
+float BonusManager::GetTotalBonusPercentage(int bonusType) const
 {
 	float totalPercentage = 0.0f;
 	for(const auto& bonus : m_vTemporaryBonuses)
@@ -168,7 +168,7 @@ float CBonusManager::GetTotalBonusPercentage(int bonusType) const
 	return totalPercentage;
 }
 
-std::pair<int, std::string> CBonusManager::GetBonusActivitiesString() const
+std::pair<int, std::string> BonusManager::GetBonusActivitiesString() const
 {
 	std::pair<int, std::string> bonusActivities{};
 	int bonusesInLine = 0;

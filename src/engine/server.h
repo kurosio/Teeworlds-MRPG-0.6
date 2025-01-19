@@ -226,8 +226,9 @@ public:
 
 	virtual int* GetIdMap(int ClientID) = 0;
 
-	virtual void AddAccountNickname(int UID, std::string Nickname) = 0;
+	virtual void UpdateAccountBase(int UID, std::string Nickname, int Rating) = 0;
 	virtual const char* GetAccountNickname(int AccountID) = 0;
+	virtual int GetAccountRank(int AccountID) = 0;
 
 	virtual void ExpireServerInfo() = 0;
 };
@@ -265,7 +266,6 @@ public:
 
 	virtual const char *Version() const = 0;
 	virtual const char *NetVersion() const = 0;
-	virtual int GetRank(int AuthID) const = 0;
 
 	virtual void OnUpdateClientServerInfo(nlohmann::json* pJson, int ClientID) = 0;
 };

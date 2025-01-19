@@ -124,7 +124,6 @@ public:
 	bool IsClientCharacterExist(int ClientID) const override;
 	bool IsClientMRPG(int ClientID) const;
 	bool PlayerExists(int ClientID) const override { return m_apPlayers[ClientID]; }
-	int GetRank(int AccountID) const override;
 	void* GetLastInput(int ClientID) const override;
 	int GetClientVersion(int ClientID) const;
 	const char *Version() const override;

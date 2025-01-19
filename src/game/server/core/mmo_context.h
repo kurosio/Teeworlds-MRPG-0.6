@@ -205,7 +205,7 @@ enum class ToplistType : int
 {
 	GuildLeveling,
 	GuildWealthy,
-	PlayerRankPoints,
+	PlayerRating,
 	PlayerWealthy,
 	NUM_TOPLIST_TYPES
 };
@@ -213,7 +213,8 @@ enum class ToplistType : int
 // item types
 enum class ItemGroup : short
 {
-	Quest = 0,
+	Unknown = -1,
+	Quest,
 	Currency,
 	Usable,
 	Resource,
@@ -242,10 +243,11 @@ constexpr const char* GetTypeItemName(ItemGroup type) noexcept
 }
 
 // item functional
-enum ItemType : short
+enum class ItemType : short
 {
 	// equipped items
-	NoFunctional = -1,
+	Unknown = -1,
+	Default,
 	EquipHammer,
 	EquipGun,
 	EquipShotgun,
@@ -268,29 +270,96 @@ enum ItemType : short
 	NUM_FUNCTIONS
 };
 
+constexpr std::string GetRatingFilename(int AccountID) noexcept
+{
+	return std::string("server_data/account_rating/raiting_").append(std::to_string(AccountID)).append("AID").append(".json");
+}
+
+inline static int GetWeaponByEquip(const ItemType& type) noexcept
+{
+	switch(type)
+	{
+		case ItemType::EquipHammer: return WEAPON_HAMMER;
+		case ItemType::EquipGun: return WEAPON_GUN;
+		case ItemType::EquipShotgun: return WEAPON_SHOTGUN;
+		case ItemType::EquipGrenade: return WEAPON_GRENADE;
+		case ItemType::EquipLaser: return WEAPON_LASER;
+		default: return -1;
+	}
+}
+
+inline static ItemType GetEquipByWeapon(int weapon) noexcept
+{
+	switch(weapon)
+	{
+		case WEAPON_HAMMER: return ItemType::EquipHammer;
+		case WEAPON_GUN: return ItemType::EquipGun;
+		case WEAPON_SHOTGUN: return ItemType::EquipShotgun;
+		case WEAPON_GRENADE: return ItemType::EquipGrenade;
+		case WEAPON_LASER: return ItemType::EquipLaser;
+		default: return ItemType::Unknown;
+	}
+}
+
 constexpr const char* GetFunctionalItemName(ItemType functional) noexcept
 {
 	switch(functional)
 	{
-		case EquipHammer:         return "Hammer";
-		case EquipGun:            return "Gun";
-		case EquipShotgun:        return "Shotgun";
-		case EquipGrenade:        return "Grenade";
-		case EquipLaser:          return "Laser";
-		case EquipPickaxe:        return "Pickaxe";
-		case EquipRake:           return "Rake";
-		case EquipArmor:          return "Armor";
-		case EquipEidolon:        return "Eidolon";
-		case EquipPotionHeal:     return "Potion Heal";
-		case EquipPotionMana:     return "Potion Mana";
-		case EquipTitle:          return "Title";
-		case UseSingle:           return "Use Single";
-		case UseMultiple:         return "Use Multiple";
-		case ResourceHarvestable: return "Resource Harvestable";
-		case ResourceMineable:    return "Resource Mineable";
+		case ItemType::EquipHammer:         return "Hammer";
+		case ItemType::EquipGun:            return "Gun";
+		case ItemType::EquipShotgun:        return "Shotgun";
+		case ItemType::EquipGrenade:        return "Grenade";
+		case ItemType::EquipLaser:          return "Laser";
+		case ItemType::EquipPickaxe:        return "Pickaxe";
+		case ItemType::EquipRake:           return "Rake";
+		case ItemType::EquipArmor:          return "Armor";
+		case ItemType::EquipEidolon:        return "Eidolon";
+		case ItemType::EquipPotionHeal:     return "Potion Heal";
+		case ItemType::EquipPotionMana:     return "Potion Mana";
+		case ItemType::EquipTitle:          return "Title";
+		case ItemType::UseSingle:           return "Use Single";
+		case ItemType::UseMultiple:         return "Use Multiple";
+		case ItemType::ResourceHarvestable: return "Resource Harvestable";
+		case ItemType::ResourceMineable:    return "Resource Mineable";
 		default:                  return "Unknown";
 	}
+}
 
+inline static ItemGroup GetItemGroupFromDBSet(const DBSet& dbset) noexcept
+{
+	if(dbset.hasSet("Quest")) return ItemGroup::Quest;
+	else if(dbset.hasSet("Usable")) return ItemGroup::Usable;
+	else if(dbset.hasSet("Resource")) return ItemGroup::Resource;
+	else if(dbset.hasSet("Other")) return ItemGroup::Other;
+	else if(dbset.hasSet("Settings")) return ItemGroup::Settings;
+	else if(dbset.hasSet("Equipment")) return ItemGroup::Equipment;
+	else if(dbset.hasSet("Decoration")) return ItemGroup::Decoration;
+	else if(dbset.hasSet("Potion")) return ItemGroup::Potion;
+	else if(dbset.hasSet("Currency")) return ItemGroup::Currency;
+	else return ItemGroup::Unknown;
+}
+
+inline static ItemType GetItemTypeFromDBSet(const DBSet& dbset) noexcept
+{
+	// initialize type
+	if(dbset.hasSet("Default")) return ItemType::Default;
+	else if(dbset.hasSet("Equip hammer")) return ItemType::EquipHammer;
+	else if(dbset.hasSet("Equip gun")) return ItemType::EquipGun;
+	else if(dbset.hasSet("Equip shotgun")) return ItemType::EquipShotgun;
+	else if(dbset.hasSet("Equip grenade")) return ItemType::EquipGrenade;
+	else if(dbset.hasSet("Equip rifle")) return ItemType::EquipLaser;
+	else if(dbset.hasSet("Equip pickaxe")) return ItemType::EquipPickaxe;
+	else if(dbset.hasSet("Equip rake")) return ItemType::EquipRake;
+	else if(dbset.hasSet("Equip armor")) return ItemType::EquipArmor;
+	else if(dbset.hasSet("Equip eidolon")) return ItemType::EquipEidolon;
+	else if(dbset.hasSet("Equip title")) return ItemType::EquipTitle;
+	else if(dbset.hasSet("Equip potion HP")) return ItemType::EquipPotionHeal;
+	else if(dbset.hasSet("Equip potion MP")) return ItemType::EquipPotionMana;
+	else if(dbset.hasSet("Single use x1")) return ItemType::UseSingle;
+	else if(dbset.hasSet("Multiple use x99")) return ItemType::UseMultiple;
+	else if(dbset.hasSet("Resource harvestable")) return ItemType::ResourceHarvestable;
+	else if(dbset.hasSet("Resource mineable")) return ItemType::ResourceMineable;
+	else return ItemType::Unknown;
 }
 
 enum class QuestState : int

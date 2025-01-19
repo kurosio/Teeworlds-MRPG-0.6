@@ -7,6 +7,7 @@
 #include "bonus_manager.h"
 #include "prison_manager.h"
 #include "profession.h"
+#include "rating_system.h"
 #include <game/server/core/components/guilds/guild_data.h>
 #include <game/server/core/components/auction/auction_data.h>
 #include <game/server/class_data.h>
@@ -32,47 +33,32 @@ class CAccountData
 	CHouse* m_pHouseData{};
 	std::weak_ptr<GroupData> m_pGroupData;
 	CGuild* m_pGuildData{};
-	CClassData m_Class {};
+	ClassData m_Class {};
 	nlohmann::json m_AchievementsData { };
-	CBonusManager m_BonusManager{};
-	CPrisonManager m_PrisonManager{};
+	BonusManager m_BonusManager{};
+	PrisonManager m_PrisonManager{};
 	BigInt m_Bank {};
+	RatingSystem m_RatingSystem{};
 
 	CGS* GS() const;
 	CPlayer* GetPlayer() const;
 
 public:
-	CPrisonManager& GetPrisonManager()
-	{
-		return m_PrisonManager;
-	}
+	int GetClientID() const;
 
-	const CPrisonManager& GetPrisonManager() const
-	{
-		return m_PrisonManager;
-	}
+	PrisonManager& GetPrisonManager() { return m_PrisonManager; }
+	const PrisonManager& GetPrisonManager() const { return m_PrisonManager; }
 
-	CBonusManager& GetBonusManager()
-	{
-		return m_BonusManager;
-	}
+	BonusManager& GetBonusManager() { return m_BonusManager; }
+	const BonusManager& GetBonusManager() const { return m_BonusManager; }
 
-	const CBonusManager& GetBonusManager() const
-	{
-		return m_BonusManager;
-	}
+	RatingSystem& GetRatingSystem() { return m_RatingSystem; }
+	const RatingSystem& GetRatingSystem() const { return m_RatingSystem; }
 
-	CClassData& GetClass()
-	{
-		return m_Class;
-	}
+	ClassData& GetClass() { return m_Class; }
+	const ClassData& GetClass() const { return m_Class; }
 
-	const CClassData& GetClass() const
-	{
-		return m_Class;
-	}
-
-	CProfession* GetClassProfession() const
+	CProfession* GetClassProfession() const 
 	{
 		return GetProfession(m_Class.GetProfessionID());
 	}
@@ -91,8 +77,6 @@ public:
 	{
 		return m_vProfessions;
 	}
-
-	int CalculateRankPoints() const;
 
 	/*
 	 * Group functions: initialize or uniques from function
@@ -219,14 +203,25 @@ struct CAccountTempData
 	int m_TempTimeDungeon;
 	bool m_TempDungeonReady;
 
-	void SetTeleportPosition(vec2 Position) { m_TempTeleportPos = Position; }
-	vec2 GetTeleportPosition() const { return m_TempTeleportPos; }
-	void ClearTeleportPosition() { m_TempTeleportPos = { -1, -1 }; }
+	void SetSpawnPosition(vec2 Position) 
+	{
+		m_TempSpawnPos = Position; 
+	}
+
+	std::optional<vec2> GetSpawnPosition() const 
+	{
+		return m_TempSpawnPos;
+	}
+
+	void ClearSpawnPosition() 
+	{
+		m_TempSpawnPos = std::nullopt;
+	}
 
 	static std::map < int, CAccountTempData > ms_aPlayerTempData;
 
 private:
-	vec2 m_TempTeleportPos{};
+	std::optional<vec2> m_TempSpawnPos{};
 };
 
 #endif

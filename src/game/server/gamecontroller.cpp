@@ -27,9 +27,6 @@ IGameController::IGameController(CGS* pGS)
 	m_pGS = pGS;
 	m_GameFlags = 0;
 	m_pServer = m_pGS->Server();
-
-	for(int i = 0; i < NUM_SPAWN; i++)
-		m_aNumSpawnPoints[i] = 0;
 }
 
 void IGameController::OnCharacterDamage(CPlayer* pFrom, CPlayer* pTo, int Damage)
@@ -61,10 +58,17 @@ void IGameController::OnCharacterDeath(CPlayer* pVictim, CPlayer* pKiller, int W
 			pKiller->UpdateAchievement(AchievementType::DefeatPVE, NOPE, 1, PROGRESS_ACCUMULATE);
 		}
 
-		// achievement defeat pvp
+		// defeat pvp
 		if(!pVictim->IsBot() && !pKiller->IsBot())
 		{
+			// achievement defeat pvp
 			pKiller->UpdateAchievement(AchievementType::DefeatPVP, NOPE, 1, PROGRESS_ACCUMULATE);
+		
+			// update rating
+			auto& pKillerRating = pKiller->Account()->GetRatingSystem();
+			auto& pVictimRating = pVictim->Account()->GetRatingSystem();
+			pKillerRating.UpdateRating(GS(), true, pVictim->Account());
+			pVictimRating.UpdateRating(GS(), false, pKiller->Account());
 		}
 	}
 
@@ -128,118 +132,118 @@ bool IGameController::OnCharacterBotSpawn(CCharacterBotAI* pChr)
 	pChr->IncreaseMana(MaxStartMP);
 	pChr->GiveWeapon(WEAPON_HAMMER, -1);
 
-	if(pPlayerBot->IsEquipped(EquipGun))
-		pChr->GiveWeapon(WEAPON_GUN, 10);
-	if(pPlayerBot->IsEquipped(EquipShotgun))
-		pChr->GiveWeapon(WEAPON_SHOTGUN, 10);
-	if(pPlayerBot->IsEquipped(EquipGrenade))
-		pChr->GiveWeapon(WEAPON_GRENADE, 10);
-	if(pPlayerBot->IsEquipped(EquipLaser))
-		pChr->GiveWeapon(WEAPON_LASER, 10);
+	for(int i = WEAPON_GUN; i < WEAPON_LASER; i++)
+		pChr->GiveWeapon(i, 10);
 
 	return true;
 }
 
 void IGameController::OnEntity(int Index, vec2 Pos, int Flags)
 {
-	int Type = -1;
-	int SubType = 0;
-	switch(Index)
+	if(Index == ENTITY_SPAWN)
 	{
-		case ENTITY_SPAWN:
-		m_aaSpawnPoints[SPAWN_HUMAN][m_aNumSpawnPoints[SPAWN_HUMAN]++] = Pos;
-		break;
-		case ENTITY_SPAWN_MOBS:
-		m_aaSpawnPoints[SPAWN_BOT][m_aNumSpawnPoints[SPAWN_BOT]++] = Pos;
-		break;
-		case ENTITY_SPAWN_SAFE:
-		m_aaSpawnPoints[SPAWN_HUMAN_TREATMENT][m_aNumSpawnPoints[SPAWN_HUMAN_TREATMENT]++] = Pos;
-		break;
-		case ENTITY_SPAWN_PRISON:
-		m_aaSpawnPoints[SPAWN_HUMAN_PRISON][m_aNumSpawnPoints[SPAWN_HUMAN_PRISON]++] = Pos;
-		break;
-		case ENTITY_ARMOR_1:
-		Type = POWERUP_ARMOR;
-		break;
-		case ENTITY_HEALTH_1:
-		Type = POWERUP_HEALTH;
-		break;
-		case ENTITY_PICKUP_SHOTGUN:
-		Type = POWERUP_WEAPON;
-		SubType = WEAPON_SHOTGUN;
-		break;
-		case ENTITY_PICKUP_GRENADE:
-		Type = POWERUP_WEAPON;
-		SubType = WEAPON_GRENADE;
-		break;
-		case ENTITY_PICKUP_LASER:
-		Type = POWERUP_WEAPON;
-		SubType = WEAPON_LASER;
-		break;
-		default: break;
+		m_aaSpawnPoints[SPAWN_HUMAN].push_back(Pos);
 	}
 
-	if(Type != -1)
+	else if(Index == ENTITY_SPAWN_MOBS)
 	{
-		new CPickup(&GS()->m_World, Type, SubType, Pos);
+		m_aaSpawnPoints[SPAWN_BOT].push_back(Pos);
+	}
+	
+	else if(Index == ENTITY_SPAWN_SAFE)
+	{
+		m_aaSpawnPoints[SPAWN_HUMAN_TREATMENT].push_back(Pos);
+	}
+	
+	else if(Index == ENTITY_SPAWN_PRISON)
+	{
+		m_aaSpawnPoints[SPAWN_HUMAN_PRISON].push_back(Pos);
 	}
 
-	if(Index == ENTITY_NPC_WALL)
+	else if(Index == ENTITY_ARMOR_1)
+	{
+		new CPickup(&GS()->m_World, POWERUP_ARMOR, 0, Pos);
+	}
+
+	else if(Index == ENTITY_HEALTH_1)
+	{
+		new CPickup(&GS()->m_World, POWERUP_HEALTH, 0, Pos);
+	}
+
+	else if(Index == ENTITY_PICKUP_SHOTGUN)
+	{
+		new CPickup(&GS()->m_World, POWERUP_WEAPON, WEAPON_SHOTGUN, Pos);
+	}
+	
+	else if(Index == ENTITY_PICKUP_GRENADE)
+	{
+		new CPickup(&GS()->m_World, POWERUP_WEAPON, WEAPON_GRENADE, Pos);
+	}
+	
+	else if(Index == ENTITY_PICKUP_LASER)
+	{
+		new CPickup(&GS()->m_World, POWERUP_WEAPON, WEAPON_LASER, Pos);
+	}
+
+	else if(Index == ENTITY_NPC_WALL)
 	{
 		vec2 Direction = GS()->Collision()->GetRotateDirByFlags(Flags);
 		new CBotWall(&GS()->m_World, Pos, Direction, CBotWall::Flags::WALLLINEFLAG_FRIENDLY_BOT);
 	}
 
-	if(Index == ENTITY_MOB_WALL)
+	else if(Index == ENTITY_MOB_WALL)
 	{
 		vec2 Direction = GS()->Collision()->GetRotateDirByFlags(Flags);
 		new CBotWall(&GS()->m_World, Pos, Direction, CBotWall::Flags::WALLLINEFLAG_AGRESSED_BOT);
 	}
 
-	// calculate polar coordinates
-	const vec2 roundPos = vec2((float)(round_to_int(Pos.x) / 32 * 32), (float)(round_to_int(Pos.y) / 32 * 32));
-	const float iter = 16.f / (float)g_Config.m_SvHarvestingItemsPerTile;
-	const float multiplier = iter * 2;
-
-	// entity farming point
-	if(Index == ENTITY_FARMING)
+	else if(Index == ENTITY_FARMING || Index == ENTITY_MINING)
 	{
-		for(int i = 0; i < g_Config.m_SvHarvestingItemsPerTile; i++)
+		// calculate polar coordinates
+		const vec2 roundPos = vec2((float)(round_to_int(Pos.x) / 32 * 32), (float)(round_to_int(Pos.y) / 32 * 32));
+		const float iter = 16.f / (float)g_Config.m_SvHarvestingItemsPerTile;
+		const float multiplier = iter * 2;
+
+		// entity farming point
+		if(Index == ENTITY_FARMING)
 		{
-			// calculate polar coordinates
-			const float calculate = iter + (float)i * multiplier;
-			vec2 newPos = vec2(roundPos.x + calculate, Pos.y);
-			if(GS()->Collision()->GetCollisionFlagsAt(roundPos.x - iter, Pos.y) || GS()->Collision()->GetCollisionFlagsAt(roundPos.x + (30.f + iter), Pos.y))
-				newPos = vec2(Pos.x, roundPos.y + calculate);
+			for(int i = 0; i < g_Config.m_SvHarvestingItemsPerTile; i++)
+			{
+				// calculate polar coordinates
+				const float calculate = iter + (float)i * multiplier;
+				vec2 newPos = vec2(roundPos.x + calculate, Pos.y);
+				if(GS()->Collision()->GetCollisionFlagsAt(roundPos.x - iter, Pos.y) || GS()->Collision()->GetCollisionFlagsAt(roundPos.x + (30.f + iter), Pos.y))
+					newPos = vec2(Pos.x, roundPos.y + calculate);
 
-			// default farm positions
-			if(auto* pItemInfo = GS()->Core()->AccountFarmingManager()->GetFarmingItemInfoByPos(newPos))
-				new CEntityHarvestingItem(&GS()->m_World, pItemInfo->GetID(), newPos, CEntityHarvestingItem::HARVESTINGITEM_TYPE_FARMING);
+				// default farm positions
+				if(auto* pItemInfo = GS()->Core()->AccountFarmingManager()->GetFarmingItemInfoByPos(newPos))
+					new CEntityHarvestingItem(&GS()->m_World, pItemInfo->GetID(), newPos, CEntityHarvestingItem::HARVESTINGITEM_TYPE_FARMING);
 
-			// guild house farm positions
-			if(CGuildHouse::CFarmzone* pFarmzone = GS()->Core()->GuildManager()->GetHouseFarmzoneByPos(newPos))
-				pFarmzone->Add(new CEntityHarvestingItem(&GS()->m_World, pFarmzone->GetItemID(), newPos, CEntityHarvestingItem::HARVESTINGITEM_TYPE_FARMING));
+				// guild house farm positions
+				if(CGuildHouse::CFarmzone* pFarmzone = GS()->Core()->GuildManager()->GetHouseFarmzoneByPos(newPos))
+					pFarmzone->Add(new CEntityHarvestingItem(&GS()->m_World, pFarmzone->GetItemID(), newPos, CEntityHarvestingItem::HARVESTINGITEM_TYPE_FARMING));
 
-			// house farm positions
-			if(CHouse::CFarmzone* pFarmzone = GS()->Core()->HouseManager()->GetHouseFarmzoneByPos(newPos))
-				pFarmzone->Add(new CEntityHarvestingItem(&GS()->m_World, pFarmzone->GetItemID(), newPos, CEntityHarvestingItem::HARVESTINGITEM_TYPE_FARMING));
+				// house farm positions
+				if(CHouse::CFarmzone* pFarmzone = GS()->Core()->HouseManager()->GetHouseFarmzoneByPos(newPos))
+					pFarmzone->Add(new CEntityHarvestingItem(&GS()->m_World, pFarmzone->GetItemID(), newPos, CEntityHarvestingItem::HARVESTINGITEM_TYPE_FARMING));
+			}
 		}
-	}
 
-	// entity mining point
-	if(Index == ENTITY_MINING)
-	{
-		for(int i = 0; i < g_Config.m_SvHarvestingItemsPerTile; i++)
+		// entity mining point
+		if(Index == ENTITY_MINING)
 		{
-			// calculate polar coordinates
-			const float calculate = iter + (float)i * multiplier;
-			vec2 newPos = vec2(roundPos.x + calculate, Pos.y);
-			if(GS()->Collision()->GetCollisionFlagsAt(roundPos.x - iter, Pos.y) || GS()->Collision()->GetCollisionFlagsAt(roundPos.x + (30.f + iter), Pos.y))
-				newPos = vec2(Pos.x, roundPos.y + calculate);
+			for(int i = 0; i < g_Config.m_SvHarvestingItemsPerTile; i++)
+			{
+				// calculate polar coordinates
+				const float calculate = iter + (float)i * multiplier;
+				vec2 newPos = vec2(roundPos.x + calculate, Pos.y);
+				if(GS()->Collision()->GetCollisionFlagsAt(roundPos.x - iter, Pos.y) || GS()->Collision()->GetCollisionFlagsAt(roundPos.x + (30.f + iter), Pos.y))
+					newPos = vec2(Pos.x, roundPos.y + calculate);
 
-			// default ores positions
-			if(auto* pItemInfo = GS()->Core()->AccountMiningManager()->GetMiningItemInfoByPos(newPos))
-				new CEntityHarvestingItem(&GS()->m_World, pItemInfo->GetID(), newPos, CEntityHarvestingItem::HARVESTINGITEM_TYPE_MINING);
+				// default ores positions
+				if(auto* pItemInfo = GS()->Core()->AccountMiningManager()->GetMiningItemInfoByPos(newPos))
+					new CEntityHarvestingItem(&GS()->m_World, pItemInfo->GetID(), newPos, CEntityHarvestingItem::HARVESTINGITEM_TYPE_MINING);
+			}
 		}
 	}
 }
@@ -346,66 +350,60 @@ bool IGameController::CanSpawn(int SpawnType, vec2* pOutPos, std::pair<vec2, flo
 
 	CSpawnEval Eval;
 	EvaluateSpawnType(&Eval, SpawnType, LimiterSpread);
-
 	*pOutPos = Eval.m_Pos;
 	return Eval.m_Got;
 }
 
-float IGameController::EvaluateSpawnPos(CSpawnEval* pEval, vec2 Pos) const
-{
-	float Score = 0.0f;
-	for(const CCharacter* pC = dynamic_cast<CCharacter*>(GS()->m_World.FindFirst(CGameWorld::ENTTYPE_CHARACTER)); pC; pC = (CCharacter*)pC->TypeNext())
-	{
-		// team mates are not as dangerous as enemies
-		float Scoremod = 1.0f;
-		if(pEval->m_FriendlyTeam != -1 && pC->GetPlayer()->GetTeam() == pEval->m_FriendlyTeam)
-			Scoremod = 0.5f;
-
-		const float d = distance(Pos, pC->GetPos());
-		Score += Scoremod * (d == 0.f ? 1000000000.0f : 1.0f / d);
-	}
-
-	return Score;
-}
-
 void IGameController::EvaluateSpawnType(CSpawnEval* pEval, int SpawnType, std::pair<vec2, float> LimiterSpread) const
 {
-	// get spawn point
-	for(int i = 0; i < m_aNumSpawnPoints[SpawnType]; i++)
+	for(auto& currentPos : m_aaSpawnPoints[SpawnType])
 	{
-		// check if the position is occupado
+		if(LimiterSpread.second >= 1.f)
+		{
+			if(distance(LimiterSpread.first, currentPos) > LimiterSpread.second)
+				continue;
+		}
+
 		CCharacter* aEnts[MAX_CLIENTS];
-		int Num = GS()->m_World.FindEntities(m_aaSpawnPoints[SpawnType][i], 64, (CEntity**)aEnts, MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
-		vec2 Positions[5] = { vec2(0.0f, 0.0f), vec2(-32.0f, 0.0f), vec2(0.0f, -32.0f), vec2(32.0f, 0.0f), vec2(0.0f, 32.0f) };
+		int Num = GS()->m_World.FindEntities(currentPos, 64, (CEntity**)aEnts, MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
+		const vec2 Positions[5] = {
+			vec2(0.0f, 0.0f),
+			vec2(-32.0f, 0.0f),
+			vec2(0.0f, -32.0f),
+			vec2(32.0f, 0.0f),
+			vec2(0.0f, 32.0f)
+		};
+
 		int Result = -1;
-
-		if(LimiterSpread.second >= 1.f && distance(LimiterSpread.first, m_aaSpawnPoints[SpawnType][i]) > LimiterSpread.second)
-			continue;
-
 		for(int Index = 0; Index < 5 && Result == -1; ++Index)
 		{
-			Result = Index;
+			vec2 spawnPos = currentPos + Positions[Index];
+			bool isValid = true;
+
 			for(int c = 0; c < Num; ++c)
 			{
-				if(
-					GS()->Collision()->CheckPoint(m_aaSpawnPoints[SpawnType][i] + Positions[Index]) ||
-					distance(aEnts[c]->GetPos(), m_aaSpawnPoints[SpawnType][i] + Positions[Index]) <= aEnts[c]->GetRadius())
+				if(GS()->Collision()->CheckPoint(spawnPos) ||
+					distance(aEnts[c]->GetPos(), spawnPos) <= aEnts[c]->GetRadius())
 				{
-					Result = -1;
+					isValid = false;
 					break;
 				}
 			}
-		}
-		if(Result == -1)
-			continue; // try next spawn point
 
-		const vec2 P = m_aaSpawnPoints[SpawnType][i] + Positions[Result];
-		const float S = EvaluateSpawnPos(pEval, P);
-		if(!pEval->m_Got || pEval->m_Score > S)
+			if(isValid)
+			{
+				Result = Index;
+			}
+		}
+
+		if(Result == -1)
+			continue;
+
+		const vec2 spawnPos = currentPos + Positions[Result];
+		if(!pEval->m_Got)
 		{
 			pEval->m_Got = true;
-			pEval->m_Score = S;
-			pEval->m_Pos = P;
+			pEval->m_Pos = spawnPos;
 		}
 	}
 }

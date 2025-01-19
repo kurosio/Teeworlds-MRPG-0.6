@@ -86,7 +86,7 @@ CServer::~CServer()
 {
 	delete m_pRegister;
 	delete m_pMultiWorlds;
-	m_aAccountsNicknames.clear();
+	m_vBaseAccounts.clear();
 
 	Database->DisconnectConnectionHeap();
 }
@@ -1903,7 +1903,7 @@ int CServer::Run(ILogger* pLogger)
 		MultiWorlds()->GetWorld(i)->GameServer()->OnInit(i);
 
 	// initilize nicknames
-	InitAccountNicknames();
+	InitBaseAccounts();
 
 	// starting information
 	{
@@ -1914,7 +1914,7 @@ int CServer::Run(ILogger* pLogger)
 		Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "██║╚██╔╝██║██╔══██╗██╔═══╝ ██║   ██║");
 		Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "██║ ╚═╝ ██║██║  ██║██║     ╚██████╔╝");
 		Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "╚═╝     ╚═╝╚═╝  ╚═╝╚═╝      ╚═════╝ ");
-		str_format(aBuf, sizeof(aBuf), "initialized player nicknames: %lu", m_aAccountsNicknames.size());
+		str_format(aBuf, sizeof(aBuf), "initialized accounts: %lu", m_vBaseAccounts.size());
 		Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
 		str_format(aBuf, sizeof(aBuf), "initialized worlds: %d", MultiWorlds()->GetSizeInitilized());
 		Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
@@ -2479,48 +2479,52 @@ int* CServer::GetIdMap(int ClientID)
 }
 
 // This function initializes the account nicknames for the server
-void CServer::InitAccountNicknames()
+void CServer::InitBaseAccounts()
 {
-	// Check if the m_aAccountNicknames vector is not empty
-	if(!m_aAccountsNicknames.empty())
-	{
-		// If it is not empty, return and exit the function
+	if(!m_vBaseAccounts.empty())
 		return;
-	}
 
-	// Execute a SELECT query on the "tw_accounts_data" table in the database
-	// and store the result in the pRes pointer
-	ResultPtr pRes = Database->Execute<DB::SELECT>("ID, Nick", "tw_accounts_data");
-
-	// Reserve memory in the m_aAccountNicknames vector to store the number of rows + reserve in the result
-	m_aAccountsNicknames.reserve(pRes->rowsCount() + 10000);
-
-	// Iterate over each row in the result
+	ResultPtr pRes = Database->Execute<DB::SELECT>("ID, Nick, Rating", "tw_accounts_data");
+	m_vBaseAccounts.reserve(pRes->rowsCount() + 10000);
 	while(pRes->next())
 	{
-		// Add a new entry to the m_aAccountNicknames map with the UID as the key and Nick as the value
 		const int UID = pRes->getInt("ID");
-		AddAccountNickname(UID, pRes->getString("Nick").c_str());
+		const auto Nick = pRes->getString("Nick");
+		const auto Rating = pRes->getInt("Rating");
+		UpdateAccountBase(UID, Nick, Rating);
 	}
 }
 
-// This function is used to add a nickname for an account identified by its UID.
-void CServer::AddAccountNickname(int UID, std::string Nickname)
+void CServer::UpdateAccountBase(int UID, std::string Nickname, int Rating)
 {
-	m_aAccountsNicknames.emplace(UID, Nickname);
+	BaseAccount account { Nickname, Rating };
+	auto it = m_vBaseAccounts.find(UID);
+	if(it != m_vBaseAccounts.end())
+		m_vSortedRankAccounts.erase(it->second);
+
+	m_vBaseAccounts[UID] = account;
+	m_vSortedRankAccounts.insert(account);
 }
 
-// This function is a getter method for retrieving the nickname associated with an account ID.
-// It takes an AccountID as input parameter and returns the corresponding nickname.
 const char* CServer::GetAccountNickname(int AccountID)
 {
-	if(m_aAccountsNicknames.find(AccountID) != m_aAccountsNicknames.end())
-	{
-		// Return the nickname associated with the account ID.
-		return m_aAccountsNicknames[AccountID].c_str();
-	}
+	if(m_vBaseAccounts.find(AccountID) != m_vBaseAccounts.end())
+		return m_vBaseAccounts[AccountID].Nickname.c_str();
 
 	return "Empty";
+}
+
+int CServer::GetAccountRank(int AccountID)
+{
+	auto it = m_vBaseAccounts.find(AccountID);
+	if(it == m_vBaseAccounts.end())
+		return -1;
+
+	auto sortedIt = m_vSortedRankAccounts.find(it->second);
+	if(sortedIt == m_vSortedRankAccounts.end())
+		return -1;
+
+	return std::distance(m_vSortedRankAccounts.begin(), sortedIt) + 1;
 }
 
 // This function sets the loggers for the server

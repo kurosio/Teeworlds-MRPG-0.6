@@ -16,7 +16,7 @@ struct PrisonTerm
 	int RemainingTime() const { return maximum(0, ImprisonmentTime - static_cast<int>(time(nullptr) - StartTime)); }
 };
 
-class CPrisonManager
+class PrisonManager
 {
 	int m_ClientID {};
 	PrisonTerm m_PrisonTerm {};

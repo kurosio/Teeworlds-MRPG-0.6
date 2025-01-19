@@ -7,8 +7,8 @@
 
 class CGameControllerDefault : public IGameController
 {
-	int m_MoneyBagTick {};
-	PathRequestHandle m_PathMoneyBag {};
+	int m_MoneyBagTick{};
+	PathRequestHandle m_PathMoneyBag{};
 
 public:
 	CGameControllerDefault(class CGS *pGameServer);

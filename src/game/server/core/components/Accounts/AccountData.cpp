@@ -23,22 +23,15 @@ CPlayer* CAccountData::GetPlayer() const
 	return GS()->GetPlayer(m_ClientID);
 }
 
+int CAccountData::GetClientID() const
+{
+	return GetPlayer()->GetCID();
+}
+
 int CAccountData::GetGoldCapacity() const
 {
 	const auto TotalByAttribute = GetPlayer()->GetTotalAttributeValue(AttributeIdentifier::GoldCapacity);
 	return DEFAULT_MAX_PLAYER_BAG_GOLD + TotalByAttribute;
-}
-
-int CAccountData::CalculateRankPoints() const
-{
-	int ResultRankPoints = 0;
-
-	for(auto& Prof : m_vProfessions)
-	{
-		ResultRankPoints += Prof.GetLevel();
-	}
-
-	return ResultRankPoints;
 }
 
 void CAccountData::Init(int ID, int ClientID, const char* pLogin, std::string Language, std::string LoginDate, ResultPtr pResult)
@@ -84,6 +77,10 @@ void CAccountData::Init(int ID, int ClientID, const char* pLogin, std::string La
 	m_Class.Init(m_ClientID, (ProfessionIdentifier)pResult->getInt("ProfessionID"));
 	m_BonusManager.Init(m_ClientID);
 	m_PrisonManager.Init(m_ClientID);
+	m_RatingSystem.Init(this);
+
+	// update account base
+	pServer->UpdateAccountBase(m_ID, pServer->ClientName(m_ClientID), m_RatingSystem.GetRating());
 }
 
 void CAccountData::InitProfessions()

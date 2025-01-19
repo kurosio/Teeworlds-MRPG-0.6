@@ -29,21 +29,10 @@ void CHouse::InitProperties(int Bank, std::string&& AccessDoorList, std::string&
 	// Parse the JSON string
 	mystd::json::parse(JsonProperties, [this](nlohmann::json& pJson)
 	{
-		// Assert for important properties
-		dbg_assert(pJson.find("pos") != pJson.end(), "The importal properties value is empty");
-
-		auto pHousePosData = pJson["pos"];
-		m_Position.x = (float)pHousePosData.value("x", 0);
-		m_Position.y = (float)pHousePosData.value("y", 0);
-		m_Radius = (float)pHousePosData.value("radius", 300);
-
-		// Initialize text position
-		if(pJson.find("text_pos") != pJson.end())
-		{
-			auto pTextPosData = pJson["text_pos"];
-			m_TextPosition.x = (float)pTextPosData.value("x", 0);
-			m_TextPosition.y = (float)pTextPosData.value("y", 0);
-		}
+		dbg_assert(pJson.find("position") != pJson.end(), "The importal properties value is empty");
+		m_Position = pJson.value("position", vec2());
+		m_Radius = (float)pJson.value("radius", 300);
+		m_TextPosition = pJson.value("text_position", vec2());
 	});
 
 	// Create a new instance of CBank and assign it to m_pBank
@@ -232,8 +221,9 @@ CHouse::CDoorManager::CDoorManager(CHouse* pHouse, std::string&& AccessList, std
 	{
 		for(const auto& pDoor : pJson)
 		{
-			std::string Doorname = pDoor.value("name", "");
-			vec2 Position = vec2(pDoor.value("x", 0), pDoor.value("y", 0));
+			auto Doorname = pDoor.value("name", "");
+			auto Position = pDoor.value("position", vec2());
+
 			AddDoor(Doorname.c_str(), Position);
 		}
 	});
@@ -513,11 +503,12 @@ CHouse::CFarmzonesManager::CFarmzonesManager(CHouse* pHouse, std::string&& JsonF
 	{
 		for(const auto& pFarmzone : pJson)
 		{
-			std::string Farmname = pFarmzone.value("name", "");
-			vec2 Position = vec2(pFarmzone.value("x", 0), pFarmzone.value("y", 0));
-			int ItemID = pFarmzone.value("item_id", 0);
-			float Radius = pFarmzone.value("radius", 100);
-			AddFarmzone({ this, Farmname.c_str(), ItemID, Position, Radius });
+			auto Farmname = pFarmzone.value("name", "");
+			auto Position = pFarmzone.value("position", vec2());
+			auto ItemID = pFarmzone.value("item_id", 0);
+			auto Radius = (float)pFarmzone.value("radius", 100);
+
+			AddFarmzone(CFarmzone(this, std::move(Farmname), ItemID, Position, Radius));
 		}
 	});
 }
@@ -559,8 +550,7 @@ void CHouse::CFarmzonesManager::Save() const
 		// Create a JSON object to store data for each farm zone
 		nlohmann::json farmzoneData;
 		farmzoneData["name"] = p.second.GetName();
-		farmzoneData["x"] = round_to_int(p.second.GetPos().x);
-		farmzoneData["y"] = round_to_int(p.second.GetPos().y);
+		farmzoneData["position"] = p.second.GetPos();
 		farmzoneData["item_id"] = p.second.GetItemID();
 		farmzoneData["radius"] = round_to_int(p.second.GetRadius());
 		Farmzones.push_back(farmzoneData);

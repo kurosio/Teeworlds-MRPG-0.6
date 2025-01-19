@@ -21,7 +21,7 @@ class CInventoryManager : public MmoComponent
 	bool OnSendMenuVotes(class CPlayer* pPlayer, int Menulist) override;
 
 public:
-	static std::vector<int> GetItemIDsCollectionByGroup(ItemGroup Type);
+	static std::vector<int> GetItemsCollection(std::optional<ItemGroup> optGroup, std::optional<ItemType> optType);
 	static std::vector<int> GetItemIDsCollectionByType(ItemType Type);
 
 	// primary

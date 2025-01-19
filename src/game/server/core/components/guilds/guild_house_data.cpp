@@ -23,24 +23,13 @@ void CGuildHouse::InitProperties(std::string&& JsonDoors, std::string&& JsonFarm
 	// Assert important values
 	dbg_assert(JsonProperties.length() > 0, "The properties string is empty");
 
-	// Parse the JSON string
+	// initialize main settings
 	mystd::json::parse(JsonProperties, [this](nlohmann::json& pJson)
 	{
-		// Assert for important properties
-		dbg_assert(pJson.find("pos") != pJson.end(), "The importal properties value is empty");
-
-		auto pHousePosData = pJson["pos"];
-		m_Position.x = (float)pHousePosData.value("x", 0);
-		m_Position.y = (float)pHousePosData.value("y", 0);
-		m_Radius = (float)pHousePosData.value("radius", 300);
-
-		// Initialize text position
-		if(pJson.find("text_pos") != pJson.end())
-		{
-			auto pTextPosData = pJson["text_pos"];
-			m_TextPosition.x = (float)pTextPosData.value("x", 0);
-			m_TextPosition.y = (float)pTextPosData.value("y", 0);
-		}
+		dbg_assert(pJson.find("position") != pJson.end(), "The importal properties value is empty");
+		m_Position = pJson.value("position", vec2());
+		m_TextPosition = pJson.value("text_position", vec2());
+		m_Radius = (float)pJson.value("radius", 300);
 	});
 
 	// Create a new instance of CDecorationManager and assign it to m_pDecorationManager
@@ -143,10 +132,11 @@ CGuildHouse::CFarmzonesManager::CFarmzonesManager(CGuildHouse* pHouse, std::stri
 	{
 		for(const auto& Farmzone : pJson)
 		{
-			std::string Farmname = Farmzone.value("name", "");
-			vec2 Position = vec2(Farmzone.value("x", 0), Farmzone.value("y", 0));
-			int ItemID = Farmzone.value("item_id", 0);
-			float Radius = (float)Farmzone.value("radius", 100);
+			auto Farmname = Farmzone.value("name", "");
+			auto Position = Farmzone.value("position", vec2());
+			auto ItemID = Farmzone.value("item_id", 0);
+			auto Radius = (float)Farmzone.value("radius", 100);
+
 			AddFarmzone({ this, Farmname.c_str(), ItemID, Position, Radius });
 		}
 	});
@@ -188,8 +178,7 @@ void CGuildHouse::CFarmzonesManager::Save() const
 		// Create a JSON object to store data for each farm zone
 		nlohmann::json farmzoneData;
 		farmzoneData["name"] = p.second.GetName();
-		farmzoneData["x"] = round_to_int(p.second.GetPos().x);
-		farmzoneData["y"] = round_to_int(p.second.GetPos().y);
+		farmzoneData["position"] = p.second.GetPos();
 		farmzoneData["item_id"] = p.second.GetItemID();
 		farmzoneData["radius"] = round_to_int(p.second.GetRadius());
 		Farmzones.push_back(farmzoneData);
@@ -338,7 +327,7 @@ CGuildHouse::CDoorManager::CDoorManager(CGuildHouse* pHouse, std::string&& JsonD
 		for(const auto& pDoor : pJson)
 		{
 			std::string Doorname = pDoor.value("name", "");
-			vec2 Position = vec2(pDoor.value("x", 0), pDoor.value("y", 0));
+			vec2 Position = pDoor.value("position", vec2());
 			AddDoor(Doorname.c_str(), Position);
 		}
 	});

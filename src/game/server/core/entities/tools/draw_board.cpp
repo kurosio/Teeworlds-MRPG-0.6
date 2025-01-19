@@ -47,7 +47,7 @@ CBrush::~CBrush()
 
 void CBrush::InitBrushCollection()
 {
-	m_vBrushItemsCollection = GS()->Core()->InventoryManager()->GetItemIDsCollectionByGroup(ItemGroup::Decoration);
+	m_vBrushItemsCollection = GS()->Core()->InventoryManager()->GetItemsCollection(ItemGroup::Decoration, std::nullopt);
 	m_BrushItem = m_vBrushItemsCollection.begin();
 }
 

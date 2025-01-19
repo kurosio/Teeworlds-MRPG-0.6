@@ -92,7 +92,7 @@ void CEntityHarvestingItem::Process(int ClientID)
 		if(!pMinerProfession)
 			return;
 
-		if(TakeDamage(AttributeIdentifier::Efficiency, pPlayer, pPlayerItem, EquipPickaxe, pMinerProfession->GetLevel()))
+		if(TakeDamage(AttributeIdentifier::Efficiency, pPlayer, pPlayerItem, ItemType::EquipPickaxe, pMinerProfession->GetLevel()))
 		{
 			const auto Value = 1 + rand() % 2;
 			pMinerProfession->AddExperience(Value);
@@ -106,7 +106,7 @@ void CEntityHarvestingItem::Process(int ClientID)
 		if(!pFarmerProfession)
 			return;
 
-		if(TakeDamage(AttributeIdentifier::Extraction, pPlayer, pPlayerItem, EquipRake, pFarmerProfession->GetLevel()))
+		if(TakeDamage(AttributeIdentifier::Extraction, pPlayer, pPlayerItem, ItemType::EquipRake, pFarmerProfession->GetLevel()))
 		{
 			const auto Value = 1 + rand() % 2;
 			pFarmerProfession->AddExperience(Value);

@@ -71,7 +71,7 @@ void RconProcessor::ConTeleportByPos(IConsole::IResult* pResult, void* pUser)
 	const auto NewPos = vec2(PosX, PosY);
 	if(pServer->GetClientWorldID(ClientID) != WorldID)
 	{
-		pPlayer->GetTempData().SetTeleportPosition(NewPos);
+		pPlayer->GetTempData().SetSpawnPosition(NewPos);
 		pServer->ChangeWorld(ClientID, WorldID);
 	}
 	else
@@ -104,7 +104,7 @@ void RconProcessor::ConTeleportByClient(IConsole::IResult* pResult, void* pUser)
 	// teleport by client
 	if(pPlayer->GetCurrentWorldID() != NewWorldID)
 	{
-		pPlayer->GetTempData().SetTeleportPosition(NewPos);
+		pPlayer->GetTempData().SetSpawnPosition(NewPos);
 		pServer->ChangeWorld(ClientID, NewWorldID);
 	}
 	else

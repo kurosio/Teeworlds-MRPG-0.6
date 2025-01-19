@@ -262,7 +262,7 @@ void CCharacter::FireWeapon()
 bool CCharacter::FireHammer(vec2 Direction, vec2 ProjStartPos)
 {
 	// check equip state
-	const auto EquippedItem = m_pPlayer->GetEquippedItemID(EquipHammer);
+	const auto EquippedItem = m_pPlayer->GetEquippedItemID(ItemType::EquipHammer);
 	if(!EquippedItem.has_value())
 	{
 		GS()->Broadcast(m_pPlayer->GetCID(), BroadcastPriority::GameWarning, 2, "You don't have a hammer equipped.");
@@ -378,7 +378,7 @@ bool CCharacter::FireHammer(vec2 Direction, vec2 ProjStartPos)
 bool CCharacter::FireGun(vec2 Direction, vec2 ProjStartPos)
 {
 	// check equip state
-	const auto EquippedItem = m_pPlayer->GetEquippedItemID(EquipGun);
+	const auto EquippedItem = m_pPlayer->GetEquippedItemID(ItemType::EquipGun);
 	if(!EquippedItem.has_value())
 	{
 		GS()->Broadcast(m_pPlayer->GetCID(), BroadcastPriority::GameWarning, 2, "You don't have a gun equipped.");
@@ -412,7 +412,7 @@ bool CCharacter::FireGun(vec2 Direction, vec2 ProjStartPos)
 bool CCharacter::FireShotgun(vec2 Direction, vec2 ProjStartPos)
 {
 	// check equip state
-	const auto EquippedItem = m_pPlayer->GetEquippedItemID(EquipShotgun);
+	const auto EquippedItem = m_pPlayer->GetEquippedItemID(ItemType::EquipShotgun);
 	if(!EquippedItem.has_value())
 	{
 		GS()->Broadcast(m_pPlayer->GetCID(), BroadcastPriority::GameWarning, 2, "You don't have a shotgun equipped.");
@@ -454,7 +454,7 @@ bool CCharacter::FireShotgun(vec2 Direction, vec2 ProjStartPos)
 bool CCharacter::FireGrenade(vec2 Direction, vec2 ProjStartPos)
 {
 	// check equip state
-	const auto EquippedItem = m_pPlayer->GetEquippedItemID(EquipGrenade);
+	const auto EquippedItem = m_pPlayer->GetEquippedItemID(ItemType::EquipGrenade);
 	if(!EquippedItem.has_value())
 	{
 		GS()->Broadcast(m_pPlayer->GetCID(), BroadcastPriority::GameWarning, 2, "You don't have a grenade equipped.");
@@ -537,7 +537,7 @@ bool CCharacter::FireGrenade(vec2 Direction, vec2 ProjStartPos)
 bool CCharacter::FireRifle(vec2 Direction, vec2 ProjStartPos)
 {
 	// check equip state
-	const auto EquippedItem = m_pPlayer->GetEquippedItemID(EquipLaser);
+	const auto EquippedItem = m_pPlayer->GetEquippedItemID(ItemType::EquipLaser);
 	if(!EquippedItem.has_value())
 	{
 		GS()->Broadcast(m_pPlayer->GetCID(), BroadcastPriority::GameWarning, 2, "You don't have a laser equipped.");
@@ -862,33 +862,54 @@ void CCharacter::RemoveMultipleOrbite(int Amount, int Type, int Subtype) const
 	m_pMultipleOrbite->Remove(Amount, Type, Subtype);
 }
 
-bool CCharacter::GiveWeapon(int Weapon, int Ammo)
+bool CCharacter::GiveWeapon(int WeaponID, int Ammo)
 {
-	const int WeaponID = clamp(Weapon, (int)WEAPON_HAMMER, (int)WEAPON_NINJA);
-	const bool IsHammer = WeaponID == WEAPON_HAMMER;
-	if(!m_pPlayer->IsEquipped((ItemType)WeaponID) && !IsHammer)
+	if(WeaponID < WEAPON_HAMMER || WeaponID > WEAPON_NINJA)
+		return false;
+
+	const bool IsWeaponHammer = WeaponID == WEAPON_HAMMER;
+	const auto EquipID = GetEquipByWeapon(WeaponID);
+	
+	// remove is unequipped weapon
+	if(!m_pPlayer->IsEquipped(EquipID) && !IsWeaponHammer)
 	{
-		if(RemoveWeapon(WeaponID) && WeaponID == m_Core.m_ActiveWeapon)
-			SetWeapon(m_Core.m_aWeapons[m_LastWeapon].m_Got ? m_LastWeapon : (int)WEAPON_HAMMER);
+		RemoveWeapon(WeaponID);
 		return false;
 	}
 
-	const int MaximumAmmo = 10 + m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::Ammo);
-	if(m_Core.m_aWeapons[WeaponID].m_Ammo >= MaximumAmmo)
+	// check max ammo
+	const int MaxAmmo = 10 + m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::Ammo);
+	if(m_Core.m_aWeapons[WeaponID].m_Ammo >= MaxAmmo)
 		return false;
 
-	const int GotAmmo = IsHammer ? -1 : m_Core.m_aWeapons[WeaponID].m_Got ? minimum(m_Core.m_aWeapons[WeaponID].m_Ammo + Ammo, MaximumAmmo) : minimum(Ammo, MaximumAmmo);
+	// calculate got ammo
+	int GotAmmo;
+	if(m_Core.m_aWeapons[WeaponID].m_Got)
+	{
+		GotAmmo = minimum(m_Core.m_aWeapons[WeaponID].m_Ammo + Ammo, MaxAmmo);
+	}
+	else
+	{
+		GotAmmo = minimum(Ammo, MaxAmmo);
+	}
+
+	// change weapon state
 	m_Core.m_aWeapons[WeaponID].m_Got = true;
-	m_Core.m_aWeapons[WeaponID].m_Ammo = GotAmmo;
+	m_Core.m_aWeapons[WeaponID].m_Ammo = IsWeaponHammer ? -1 : GotAmmo;
 	return true;
 }
 
-bool CCharacter::RemoveWeapon(int Weapon)
+bool CCharacter::RemoveWeapon(int WeaponID)
 {
-	const bool Reverse = m_Core.m_aWeapons[Weapon].m_Got;
-	m_Core.m_aWeapons[Weapon].m_Got = false;
-	m_Core.m_aWeapons[Weapon].m_Ammo = -1;
-	return Reverse;
+	if(!m_Core.m_aWeapons[WeaponID].m_Got || WeaponID < WEAPON_HAMMER || WeaponID > WEAPON_NINJA)
+		return false;
+
+	if(WeaponID == m_Core.m_ActiveWeapon)
+		SetWeapon(m_Core.m_aWeapons[m_LastWeapon].m_Got ? m_LastWeapon : WEAPON_HAMMER);
+
+	m_Core.m_aWeapons[WeaponID].m_Got = false;
+	m_Core.m_aWeapons[WeaponID].m_Ammo = -1;
+	return true;
 }
 
 // This function sets the character's emote and its duration
@@ -902,6 +923,7 @@ void CCharacter::SetEmote(int Emote, int Sec, bool StartEmoticion)
 		return;
 	}
 
+
 	// Check if the character is alive and the emote has stopped
 	if(m_EmoteStop < Server()->Tick())
 	{
@@ -910,6 +932,7 @@ void CCharacter::SetEmote(int Emote, int Sec, bool StartEmoticion)
 		// Set the time when the emote should stop
 		m_EmoteStop = Server()->Tick() + Sec * Server()->TickSpeed();
 	}
+
 
 	// Check if the emoticion should be started
 	if(StartEmoticion)
@@ -1217,7 +1240,7 @@ void CCharacter::AutoUseHealingPotionIfNeeded() const
 		return;
 
 	// check for equippement potion
-	const auto equippedHeal = m_pPlayer->GetEquippedItemID(EquipPotionHeal);
+	const auto equippedHeal = m_pPlayer->GetEquippedItemID(ItemType::EquipPotionHeal);
 	TryUsePotion(equippedHeal);
 }
 
@@ -1232,7 +1255,7 @@ void CCharacter::AutoUseManaPotionIfNeeded() const
 		return;
 
 	// check for equippement potion
-	const auto equippedMana = m_pPlayer->GetEquippedItemID(EquipPotionMana);
+	const auto equippedMana = m_pPlayer->GetEquippedItemID(ItemType::EquipPotionMana);
 	TryUsePotion(equippedMana);
 }
 
@@ -1734,11 +1757,11 @@ void CCharacter::HandleBuff(CTuningParams* TuningParams)
 			// increase by equip type
 			if(m_pPlayer->m_Effects.IsActive(PotionContext.Effect.c_str()))
 			{
-				if(Functional == EquipPotionHeal)
+				if(Functional == ItemType::EquipPotionHeal)
 				{
 					IncreaseHealth(PotionContext.Value);
 				}
-				else if(Functional == EquipPotionMana)
+				else if(Functional == ItemType::EquipPotionMana)
 				{
 					IncreaseMana(PotionContext.Value);
 				}
@@ -1806,20 +1829,27 @@ void CCharacter::UpdateEquippedStats(int ItemID)
 		m_pPlayer->Account()->DepositGoldToBank(excessGold);
 		GS()->Chat(m_pPlayer->GetCID(), "Your gold has been reduced to the maximum capacity.");
 	}
-
-	// get item info only once
+	
+	// character data
 	const auto* pItemInfo = GS()->GetItemInfo(ItemID);
-	const auto Functional = pItemInfo->GetType();
-	if(Functional >= EquipHammer && Functional <= EquipLaser)
+	if(const auto* pChar = m_pPlayer->GetCharacter())
 	{
-		m_pPlayer->GetCharacter()->GiveWeapon(Functional, 3);
-	}
+		const auto Type = pItemInfo->GetType();
 
-	// process eidolon if applicable
-	if(Functional == EquipEidolon)
-	{
-		m_pPlayer->TryRemoveEidolon();
-		m_pPlayer->TryCreateEidolon();
+		// weapon
+		const auto WeaponID = GetWeaponByEquip(Type);
+		if(WeaponID >= WEAPON_HAMMER)
+		{
+			const auto Ammo = (WeaponID == WEAPON_HAMMER ? -1 : 3);
+			m_pPlayer->GetCharacter()->GiveWeapon(WeaponID, Ammo);
+		}
+
+		// eidolon
+		if(Type == ItemType::EquipEidolon)
+		{
+			m_pPlayer->TryRemoveEidolon();
+			m_pPlayer->TryCreateEidolon();
+		}
 	}
 
 	// update ammo regeneration if applicable
@@ -1908,7 +1938,7 @@ bool CCharacter::IsWorldAccessible() const
 		{
 			if(!GS()->Core()->GuildManager()->GetHouseByPos(m_Core.m_Pos))
 			{
-				m_pPlayer->GetTempData().ClearTeleportPosition();
+				m_pPlayer->GetTempData().ClearSpawnPosition();
 				GS()->Chat(m_pPlayer->GetCID(), "You were magically transported!");
 				m_pPlayer->ChangeWorld(MAIN_WORLD_ID);
 				return false;
@@ -1918,7 +1948,7 @@ bool CCharacter::IsWorldAccessible() const
 		// check finished tutorial
 		if(!m_pPlayer->GetItem(itTittleNewbie)->HasItem() && !GS()->IsPlayerInWorld(m_ClientID, TUTORIAL_WORLD_ID))
 		{
-			m_pPlayer->GetTempData().ClearTeleportPosition();
+			m_pPlayer->GetTempData().ClearSpawnPosition();
 			GS()->Chat(m_pPlayer->GetCID(), "You need to complete the Tutorial.");
 			m_pPlayer->ChangeWorld(TUTORIAL_WORLD_ID);
 			return false;

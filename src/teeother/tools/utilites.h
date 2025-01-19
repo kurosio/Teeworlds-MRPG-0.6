@@ -11,6 +11,8 @@ using ByteArray = std::basic_string<std::byte>;
  * This function overload nlohmann json checks if the JSON value is either a string or a number.
  * If the value is a string, it directly converts it to BigInt.
  */
+
+ // convert bigint <-> json
 inline void from_json(const nlohmann::json& j, BigInt& value)
 {
 	if(j.is_string())
@@ -29,6 +31,36 @@ inline void from_json(const nlohmann::json& j, BigInt& value)
 inline void to_json(nlohmann::json& j, const BigInt& value)
 {
 	j = value.to_string();
+}
+
+// convert vec2 <-> json
+inline void from_json(const nlohmann::json& j, vec2& value)
+{
+	if(j.is_object())
+	{
+		if(j.contains("x") && j.contains("y"))
+		{
+			value.x = j.at("x").get<float>();
+			value.y = j.at("y").get<float>();
+		}
+		else
+		{
+			throw std::invalid_argument("JSON object does not contain 'x' and 'y' fields");
+		}
+	}
+	else
+	{
+		throw std::invalid_argument("Unsupported JSON type for vec2");
+	}
+}
+
+inline void to_json(nlohmann::json& j, const vec2& value) 
+{
+	j = nlohmann::json 
+	{
+		{"x", value.x}, 
+		{"y", value.y} 
+	};
 }
 
 

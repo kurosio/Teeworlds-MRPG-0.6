@@ -3,13 +3,13 @@
 #ifndef GAME_SERVER_CORE_COMPONENTS_ACCOUNTS_CLASS_DATA_H
 #define GAME_SERVER_CORE_COMPONENTS_ACCOUNTS_CLASS_DATA_H
 
-class CClassData
+class ClassData
 {
 	int m_ClientID{};
 	ProfessionIdentifier m_ProfessionID{};
 
 public:
-	CClassData()
+	ClassData()
 	{
 		m_ProfessionID = ProfessionIdentifier::None;
 	}

@@ -69,7 +69,7 @@ AccountCodeResult CAccountManager::RegisterAccount(int ClientID, const char* Log
 	// Insert the account into the tw_accounts_data table with the ID and nickname values
 	Database->Execute<DB::INSERT, 100>("tw_accounts_data", "(ID, Nick) VALUES ('{}', '{}')", InitID, cClearNick.cstr());
 
-	Server()->AddAccountNickname(InitID, cClearNick.cstr());
+	Server()->UpdateAccountBase(InitID, cClearNick.cstr(), g_Config.m_SvMinRating);
 	GS()->Chat(ClientID, "- Registration complete! Don't forget to save your data.");
 	GS()->Chat(ClientID, "# Your nickname is a unique identifier.");
 	GS()->Chat(ClientID, "# Log in: \"/login {} {}\"", cClearLogin.cstr(), cClearPass.cstr());
@@ -162,39 +162,49 @@ void CAccountManager::LoadAccount(CPlayer* pPlayer, bool FirstInitilize)
 	// Check if it is not the first initialization
 	if(!FirstInitilize)
 	{
-		if(const int Letters = Core()->MailboxManager()->GetMailCount(pAccount->GetID()); Letters > 0)
+		const int Letters = Core()->MailboxManager()->GetMailCount(pAccount->GetID());
+		if(Letters > 0)
+		{
 			GS()->Chat(ClientID, "You have {} unread letters.", Letters);
+		}
+		
 		pAccount->GetBonusManager().SendInfoAboutActiveBonuses();
 		pPlayer->m_VotesData.UpdateVotes(MENU_MAIN);
 		return;
 	}
 
+	// on player login
 	Core()->OnPlayerLogin(pPlayer);
-	const int Rank = GetRank(pAccount->GetID());
-	GS()->Chat(-1, "{} logged to account. Rank #{}[{}]", Server()->ClientName(ClientID), Rank, Server()->ClientCountryIsoCode(ClientID));
-	{
-		auto InitSettingsItem = [pPlayer](const std::unordered_map<int, int>& pItems)
-		{
-			for(auto& [id, defaultValue] : pItems)
-			{
-				if(auto pItem = pPlayer->GetItem(id))
-				{
-					if(!pItem->HasItem())
-						pItem->Add(1, defaultValue);
-				}
-			}
-		};
 
-		InitSettingsItem(
+	// initialize default item's & settings
+	auto InitSettingsItem = [pPlayer](const std::unordered_map<int, int>& pItems)
+	{
+		for(auto& [id, defaultValue] : pItems)
+		{
+			if(auto pItem = pPlayer->GetItem(id))
 			{
-				{ itHammer, 1 },
-				{ itShowEquipmentDescription, 0 },
-				{ itShowCriticalDamage, 1 },
-				{ itShowQuestStarNavigator, 1 },
-				{ itShowDetailGainMessages, 1},
-			});
-	}
+				if(!pItem->HasItem())
+					pItem->Add(1, defaultValue);
+			}
+		}
+	};
+
+	InitSettingsItem(
+		{
+			{ itHammer, 1 },
+			{ itShowEquipmentDescription, 0 },
+			{ itShowCriticalDamage, 1 },
+			{ itShowQuestStarNavigator, 1 },
+			{ itShowDetailGainMessages, 1},
+		});
+
+	// update player time periods
 	Core()->OnHandlePlayerTimePeriod(pPlayer);
+
+	// notify about rank
+	const int Rank = Server()->GetAccountRank(pAccount->GetID());
+	GS()->Chat(-1, "{} logged to account. Rank #{}[{}] ({})", Server()->ClientName(ClientID), Rank,
+		Server()->ClientCountryIsoCode(ClientID), pPlayer->Account()->GetRatingSystem().GetRankName());
 
 	// Change player's world ID to the latest correct world ID
 	const int LatestCorrectWorldID = GetLastVisitedWorldID(pPlayer);
@@ -220,12 +230,6 @@ bool CAccountManager::ChangeNickname(const std::string& newNickname, int ClientI
 	Database->Execute<DB::UPDATE>("tw_accounts_data", "Nick = '{}' WHERE ID = '{}'", cClearNick.cstr(), pPlayer->Account()->GetID());
 	Server()->SetClientName(ClientID, newNickname.c_str());
 	return true;
-}
-
-int CAccountManager::GetRank(int AccountID)
-{
-	ResultPtr pRes = Database->Execute<DB::SELECT>("Rank FROM (SELECT ID, RANK() OVER (ORDER BY RankPoints DESC) AS Rank", "tw_accounts_data", ") AS RankedData WHERE ID = {}", AccountID);
-	return pRes->next() ? pRes->getInt("Rank") : -1;
 }
 
 void CAccountManager::OnClientReset(int ClientID)
@@ -335,7 +339,7 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		VoteWrapper::AddEmptyline(ClientID);
 
 		// Currency information
-		const auto currencyItemIDs = GS()->Core()->InventoryManager()->GetItemIDsCollectionByGroup(ItemGroup::Currency);
+		const auto currencyItemIDs = GS()->Core()->InventoryManager()->GetItemsCollection(ItemGroup::Currency, std::nullopt);
 		VoteWrapper VCurrency(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "Account Currency");
 		VCurrency.Add("Bank: {}", pAccount->GetBank());
 		for(int itemID : currencyItemIDs)
@@ -490,7 +494,7 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		pPlayer->m_VotesData.SetLastMenuID(MENU_SETTINGS);
 
 		// initialize variables
-		const auto EquippedTitleItemID = pPlayer->GetEquippedItemID(EquipTitle);
+		const auto EquippedTitleItemID = pPlayer->GetEquippedItemID(ItemType::EquipTitle);
 		const char* pCurrentTitle = EquippedTitleItemID.has_value() ? pPlayer->GetItem(EquippedTitleItemID.value())->Info()->GetName() : "title is not used";
 
 		// title information
@@ -504,7 +508,7 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		for(auto& pairItem : CPlayerItem::Data()[ClientID])
 		{
 			CPlayerItem* pPlayerItem = &pairItem.second;
-			if(pPlayerItem->Info()->IsType(EquipTitle) && pPlayerItem->HasItem())
+			if(pPlayerItem->Info()->IsType(ItemType::EquipTitle) && pPlayerItem->HasItem())
 			{
 				// initialize variables
 				bool IsEquipped = pPlayerItem->IsEquipped();

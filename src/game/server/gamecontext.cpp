@@ -730,22 +730,20 @@ void CGS::OnTick()
 
 void CGS::OnTickGlobal()
 {
-	// check if it's time to check the player's time period based on the configured interval
+	// update player time period
 	if(Server()->Tick() % (Server()->TickSpeed() * g_Config.m_SvPlayerPeriodCheckInterval) == 0)
 	{
-		for(int i = 0; i < MAX_PLAYERS; i++)
+		for(int i = 0; i < MAX_PLAYERS; ++i)
 		{
 			if(CPlayer* pPlayer = GetPlayer(i, true))
 				Core()->OnHandlePlayerTimePeriod(pPlayer);
 		}
 	}
 
-	// check if the current tick is a multiple of the specified chat message time interval
+	// send chat messages with interval
 	if(Server()->Tick() % (Server()->TickSpeed() * g_Config.m_SvChatMessageInterval) == 0)
 	{
-		// Create a deque (double-ended queue) to hold the chat messages
-		std::deque<std::string> vMsg
-		{
+		static const std::deque<std::string> vMessages = {
 			"[INFO] We recommend that you use the function in F1 console \"ui_close_window_after_changing_setting 1\", this will allow the voting menu not to close after clicking to vote.",
 			"[INFO] If you can't see the dialogs with NPCs, check in F1 console \"cl_motd_time\" so that the value is set.",
 			"[INFO] Information and data can be found in the call voting menu.",
@@ -753,35 +751,40 @@ void CGS::OnTickGlobal()
 			"[INFO] Don't know what to do? For example, try to find ways to improve your attributes, of which there are more than 25."
 		};
 
-		// Select a random chat message from the deque and send it as a chat message to all players (-1)
-		Chat(-1, vMsg[rand() % vMsg.size()].c_str());
+		Chat(-1, vMessages[rand() % vMessages.size()].c_str());
 	}
 
-	// check if it's time to display the top message based on the configured interval
+	// send top messages with interval
 	if(Server()->Tick() % (Server()->TickSpeed() * g_Config.m_SvChatTopMessageInterval) == 0)
 	{
-		// generate a random top list type
 		ToplistType RandomType = (ToplistType)(rand() % (int)ToplistType::NUM_TOPLIST_TYPES);
+		auto vResult = Core()->GetTopList(RandomType, 2);
+		if(vResult.size() < 2)
+			return;
 
-		// determine the appropriate message based on the random top list type
-		switch(RandomType)
+		auto& Leader = vResult[1];
+		auto& Second = vResult[2];
+
+		if(RandomType == ToplistType::PlayerRating)
 		{
-			case ToplistType::GuildLeveling:
-				Chat(-1, "---- [Top 5 guilds by leveling] ----");
-				break;
-			case ToplistType::GuildWealthy:
-				Chat(-1, "---- [Top 5 guilds by gold] ----");
-				break;
-			case ToplistType::PlayerRankPoints:
-				Chat(-1, "---- [Top 5 players by leveling] ----");
-				break;
-			default:
-				Chat(-1, "---- [Top 5 players by gold] ----");
-				break;
+			Chat(-1, "Rating leader: {} ({})! In second place is {} ({}) — the competition is heating up!", 
+				Leader.Name, Leader.Data["Rating"].to_int(), Second.Name, Second.Data["Rating"].to_int());
 		}
-
-		// show the top list to all players
-		Core()->ShowTopList(-1, RandomType, 5);
+		else if(RandomType == ToplistType::PlayerWealthy)
+		{
+			Chat(-1, "Wealthiest player: {}({$}) is richest! {}({$}) close behind!",
+				Leader.Name, Leader.Data["Bank"], Second.Name, Second.Data["Bank"]);
+		}		
+		else if(RandomType == ToplistType::GuildLeveling)
+		{
+			Chat(-1, "The most experienced guild: {} (Level {})! Close behind: {} (Level {}).",
+				Leader.Name, Leader.Data["Level"], Second.Name, Second.Data["Level"]);
+		}
+		else if(RandomType == ToplistType::GuildWealthy)
+		{
+			Chat(-1, "The richest guild: {}({$})! Second place: {}({$}) is catching up!",
+				Leader.Name, Leader.Data["Bank"], Second.Name, Second.Data["Bank"]);
+		}
 	}
 }
 
@@ -1200,11 +1203,6 @@ void CGS::OnClientPrepareChangeWorld(int ClientID)
 
 	const int AllocMemoryCell = ClientID + m_WorldID * MAX_CLIENTS;
 	m_apPlayers[ClientID] = new(AllocMemoryCell) CPlayer(this, ClientID);
-}
-
-int CGS::GetRank(int AccountID) const
-{
-	return Core()->AccountManager()->GetRank(AccountID);
 }
 
 bool CGS::IsClientReady(int ClientID) const

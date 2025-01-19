@@ -207,17 +207,14 @@ bool CMmoController::OnSendMenuVotes(CPlayer* pPlayer, int Menulist) const
 		VoteWrapper VTopSelect(ClientID, VWF_OPEN, "Select a type of ranking");
 		VTopSelect.AddMenu(MENU_LEADERBOARD, (int)ToplistType::GuildLeveling, "Top 10 guilds by leveling");
 		VTopSelect.AddMenu(MENU_LEADERBOARD, (int)ToplistType::GuildWealthy, "Top 10 guilds by wealthy");
-		VTopSelect.AddMenu(MENU_LEADERBOARD, (int)ToplistType::PlayerRankPoints, "Top 10 players by rank points");
+		VTopSelect.AddMenu(MENU_LEADERBOARD, (int)ToplistType::PlayerRating, "Top 10 players by rank points");
 		VTopSelect.AddMenu(MENU_LEADERBOARD, (int)ToplistType::PlayerWealthy, "Top 10 players by wealthy");
 		VoteWrapper::AddEmptyline(ClientID);
 
 		// show top list
 		VoteWrapper VTopList(ClientID, VWF_STYLE_SIMPLE|VWF_SEPARATE);
 		if(const auto Toplist = pPlayer->m_VotesData.GetExtraID())
-		{
-			ShowTopList(ClientID, (ToplistType)Toplist.value(), 10, &VTopList);
-
-		}
+			ShowTopList(&VTopList, ClientID, (ToplistType)Toplist.value(), 10);
 
 		// backpage
 		VoteWrapper::AddBackpage(ClientID);
@@ -485,8 +482,7 @@ void CMmoController::SaveAccount(CPlayer* pPlayer, int Table) const
 	else if(Table == SAVE_PROFESSION)
 	{
 		const auto ProfessionID = (int)pAccount->GetClass().GetProfessionID();
-		const auto RankPoints = pAccount->CalculateRankPoints();
-		Database->Execute<DB::UPDATE>("tw_accounts_data", "RankPoints = '{}', ProfessionID = '{}' WHERE ID = '{}'", RankPoints, ProfessionID, AccountID);
+		Database->Execute<DB::UPDATE>("tw_accounts_data", "ProfessionID = '{}' WHERE ID = '{}'", ProfessionID, AccountID);
 	}
 
 	// save world position
@@ -545,105 +541,116 @@ void CMmoController::ShowLoadingProgress(const char* pLoading, size_t Size) cons
 	GS()->Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "LOAD DB", aLoadingBuf);
 }
 
-void CMmoController::ShowTopList(int ClientID, ToplistType Type, int Rows, VoteWrapper* pWrapper) const
+void CMmoController::ShowTopList(VoteWrapper* pWrapper, int ClientID, ToplistType Type, int Rows) const
 {
 	if(Type == ToplistType::GuildLeveling)
 	{
-		if(pWrapper)
-		{
-			pWrapper->SetTitle("Top 10 guilds leveling");
-		}
+		pWrapper->SetTitle("Top 10 guilds leveling");
 
-		ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_guilds", "ORDER BY Level DESC, Exp DESC LIMIT {}", Rows);
-		while(pRes->next())
+		auto vResult = GetTopList(Type, Rows);
+		for(auto& Elem : vResult)
 		{
-			const auto Rank = pRes->getRow();
-			const int Level = pRes->getInt("Level");
-			const auto Experience = pRes->getUInt64("Exp");
-			const auto Guildname = pRes->getString("Name");
-
-			if(pWrapper)
-			{
-				pWrapper->Add("{}. {} :: Level {} : Exp {}", Rank, Guildname, Level, Experience);
-			}
-			else
-			{
-				GS()->Chat(ClientID, "{}. {} :: Level {} : Exp {}", Rank, Guildname, Level, Experience);
-			}
+			const auto Rank = Elem.first;
+			const auto Guildname = Elem.second.Name;
+			const auto Level = Elem.second.Data["Level"].to_int();
+			const auto Experience = Elem.second.Data["Exp"];
+			pWrapper->Add("{}. {} :: Level {} : Exp {}", Rank, Guildname, Level, Experience);
 		}
 	}
 	else if(Type == ToplistType::GuildWealthy)
 	{
-		if(pWrapper)
-		{
-			pWrapper->SetTitle("Top 10 guilds wealthy");
-		}
+		pWrapper->SetTitle("Top 10 guilds wealthy");
 
-		ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_guilds", "ORDER BY Bank DESC LIMIT {}", Rows);
-		while(pRes->next())
+		auto vResult = GetTopList(Type, Rows);
+		for(auto& Elem : vResult)
 		{
-			const auto Rank = pRes->getRow();
-			const int Gold = pRes->getInt("Bank");
-			const auto Guildname = pRes->getString("Name");
-
-			if(pWrapper)
-			{
-				pWrapper->Add("{}. {} :: Gold {$}", Rank, Guildname, Gold);
-			}
-			else
-			{
-				GS()->Chat(ClientID, "{}. {} :: Gold {$}", Rank, Guildname, Gold);
-			}
+			const auto Rank = Elem.first;
+			const auto Guildname = Elem.second.Name;
+			const auto Bank = Elem.second.Data["Bank"];
+			pWrapper->Add("{}. {} :: Bank {$}", Rank, Guildname, Bank);
 		}
 	}
-	else if(Type == ToplistType::PlayerRankPoints)
+	else if(Type == ToplistType::PlayerRating)
 	{
-		if(pWrapper)
-		{
-			pWrapper->SetTitle("Top 10 players rank points");
-		}
+		pWrapper->SetTitle("Top 10 players rank points");
 
-		ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_data", "ORDER BY RankPoints DESC LIMIT {}", Rows);
-		while(pRes->next())
+		auto vResult = GetTopList(Type, Rows);
+		for(auto& Elem : vResult)
 		{
-			const auto Rank = pRes->getRow();
-			const auto RankPoints = pRes->getInt("RankPoints");
-			const auto Nickname = pRes->getString("Nick");
-
-			if(pWrapper)
-			{
-				pWrapper->Add("{}. {} :: Rank points {}", Rank, Nickname, RankPoints);
-			}
-			else
-			{
-				GS()->Chat(ClientID, "{}. {} :: Rank points {}", Rank, Nickname, RankPoints);
-			}
+			const auto Rank = Elem.first;
+			const auto Nickname = Elem.second.Name;
+			const auto Rating = Elem.second.Data["Rating"].to_int();
+			pWrapper->Add("{}. {} :: Rating {}", Rank, Nickname, Rating);
 		}
 	}
 	else if(Type == ToplistType::PlayerWealthy)
 	{
-		if(pWrapper)
-		{
-			pWrapper->SetTitle("Top 10 players wealthy");
-		}
+		pWrapper->SetTitle("Top 10 players wealthy");
 
-		ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_data", "ORDER BY Bank DESC LIMIT {}", Rows);
+		auto vResult = GetTopList(Type, Rows);
+		for(auto& Elem : vResult)
+		{
+			const auto Rank = Elem.first;
+			const auto Nickname = Elem.second.Name;
+			const auto Bank = Elem.second.Data["Bank"];
+			pWrapper->Add("{}. {} :: Wealthy(bank) {$} golds", Rank, Nickname, Bank);
+		}
+	}
+}
+
+std::map<int, CMmoController::TempTopData> CMmoController::GetTopList(ToplistType Type, int Rows) const
+{
+	std::map<int, TempTopData> vResult {};
+
+	if(Type == ToplistType::GuildLeveling)
+	{
+		ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_guilds", "ORDER BY Level DESC, Exp DESC LIMIT {}", Rows);
 		while(pRes->next())
 		{
 			const auto Rank = pRes->getRow();
-			const auto Bank = pRes->getBigInt("Bank");
-			const auto Nickname = pRes->getString("Nick");
-
-			if(pWrapper)
-			{
-				pWrapper->Add("{}. {} :: Wealthy(bank) {$} golds", Rank, Nickname, Bank);
-			}
-			else
-			{
-				GS()->Chat(ClientID, "{}. {} :: Wealthy(bank) {$} golds", Rank, Nickname, Bank);
-			}
+			auto& field = vResult[Rank];
+			field.Name = pRes->getString("Name");
+			field.Data["Level"] = pRes->getInt("Level");
+			field.Data["Exp"] = pRes->getUInt64("Exp");
 		}
 	}
+	else if(Type == ToplistType::GuildWealthy)
+	{
+		ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_guilds", "ORDER BY Bank DESC LIMIT {}", Rows);
+		while(pRes->next())
+		{
+			const auto Rank = pRes->getRow();
+			auto& field = vResult[Rank];
+			field.Name = pRes->getString("Name");
+			field.Data["Bank"] = pRes->getBigInt("Bank");
+		}
+	}
+	else if(Type == ToplistType::PlayerRating)
+	{
+		ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_data", "ORDER BY Rating DESC LIMIT {}", Rows);
+		while(pRes->next())
+		{
+			const auto Rank = pRes->getRow();
+			auto& field = vResult[Rank];
+			field.Name = pRes->getString("Nick");
+			field.Data["ID"] = pRes->getInt("ID");
+			field.Data["Rating"] = pRes->getInt("Rating");
+		}
+	}
+	else if(Type == ToplistType::PlayerWealthy)
+	{
+		ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_data", "ORDER BY Bank + 0 DESC LIMIT {}", Rows);
+		while(pRes->next())
+		{
+			const auto Rank = pRes->getRow();
+			auto& field = vResult[Rank];
+			field.Name = pRes->getString("Nick");
+			field.Data["ID"] = pRes->getInt("ID");
+			field.Data["Bank"] = pRes->getBigInt("Bank");
+		}
+	}
+
+	return vResult;
 }
 
 void CMmoController::AsyncClientEnterMsgInfo(const std::string ClientName, int ClientID)

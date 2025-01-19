@@ -203,7 +203,7 @@ void CPlayer::TryCreateEidolon()
 		return;
 
 	// check valid equppied item id
-	const auto eidolonItemID = GetEquippedItemID(EquipEidolon);
+	const auto eidolonItemID = GetEquippedItemID(ItemType::EquipEidolon);
 	if(!eidolonItemID.has_value())
 		return;
 
@@ -299,7 +299,7 @@ void CPlayer::Snap(int SnappingClient)
 
 			if(m_aInitialClanBuffer[0] == '\0' || str_comp_nocase(m_aRotateClanBuffer, m_aInitialClanBuffer) == 0)
 			{
-				RefreshClanString();
+				RefreshClanTagString();
 			}
 		}
 
@@ -378,7 +378,7 @@ void CPlayer::FakeSnap()
 	}
 }
 
-void CPlayer::RefreshClanString()
+void CPlayer::RefreshClanTagString()
 {
 	// is not authed send only clan
 	if(!IsAuthed())
@@ -387,31 +387,29 @@ void CPlayer::RefreshClanString()
 		return;
 	}
 
+	// top rank position
+	auto* pAccount = Account();
+	auto RatingRank = Server()->GetAccountRank(pAccount->GetID());
+	auto RatingPoints = pAccount->GetRatingSystem().GetRating();
+	auto RatingRankName = pAccount->GetRatingSystem().GetRankName();
+	std::string prepared = fmt_default(" | #{} {}({})", RatingRank, RatingRankName, RatingPoints);
+
 	// location
-	auto prepared = " | " + std::string(Server()->GetWorldName(GetCurrentWorldID()));
+	prepared += fmt_default(" | {}", Server()->GetWorldName(GetCurrentWorldID()));
 
 	// title
-	if(const auto titleItemID = GetEquippedItemID(EquipTitle); titleItemID.has_value())
-	{
-		prepared += " | ";
-		prepared += GetItem(titleItemID.value())->Info()->GetName();
-	}
+	if(const auto titleItemID = GetEquippedItemID(ItemType::EquipTitle); titleItemID.has_value())
+		prepared += fmt_default(" | {}", GetItem(titleItemID.value())->Info()->GetName());
 
 	// guild
-	if(const auto* pGuild = Account()->GetGuild())
-	{
-		prepared += " | ";
-		prepared += pGuild->GetName();
-		prepared += " : ";
-		prepared += Account()->GetGuildMember()->GetRank()->GetName();
-	}
+	if(const auto* pGuild = pAccount->GetGuild())
+		prepared += fmt_default(" | {} : {}", pGuild->GetName(), pAccount->GetGuildMember()->GetRank()->GetName());
 
 	// class
 	char classBuffer[64];
 	const char* professionName = GetProfessionName(Account()->GetClass().GetProfessionID());
 	str_format(classBuffer, sizeof(classBuffer), " %-*s ", 8 - str_length(professionName), professionName);
-	prepared += " | ";
-	prepared += classBuffer;
+	prepared += fmt_default(" | {}", classBuffer);
 
 	// end format
 	str_format(m_aRotateClanBuffer, sizeof(m_aRotateClanBuffer), "%s", prepared.c_str());
@@ -427,39 +425,54 @@ CCharacter* CPlayer::GetCharacter() const
 
 void CPlayer::TryRespawn()
 {
-	vec2 SpawnPos;
-	int SpawnType = Account()->GetPrisonManager().IsInPrison() ? SPAWN_HUMAN_PRISON : SPAWN_HUMAN;
-
-	// Check if the last killed by weapon is not WEAPON_WORLD
-	if(!Account()->GetPrisonManager().IsInPrison() && GetTempData().m_LastKilledByWeapon != WEAPON_WORLD)
+	int SpawnType = SPAWN_HUMAN;
+	std::optional<vec2> FinalSpawnPos = std::nullopt;
+	
+	// spawn by prison
+	if(Account()->GetPrisonManager().IsInPrison())
 	{
-		int RespawnWorldID = GS()->GetWorldData()->GetRespawnWorld()->GetID();
-		if(RespawnWorldID >= 0 && !GS()->IsPlayerInWorld(m_ClientID, RespawnWorldID))
+		SpawnType = SPAWN_HUMAN_PRISON;
+	}
+
+	// spawn by kill
+	else if(GetTempData().m_LastKilledByWeapon != WEAPON_WORLD)
+	{
+		auto* pRespawnWorld = GS()->GetWorldData()->GetRespawnWorld();
+		if(pRespawnWorld && !GS()->IsPlayerInWorld(m_ClientID, pRespawnWorld->GetID()))
 		{
-			ChangeWorld(RespawnWorldID);
+			ChangeWorld(pRespawnWorld->GetID());
 			return;
 		}
+
 		SpawnType = SPAWN_HUMAN_TREATMENT;
 	}
 
-	// Check if the controller allows spawning of the given spawn type at the specified position
-	if(GS()->m_pController->CanSpawn(SpawnType, &SpawnPos))
+	// spawn by optional teleport
+	else if(!GS()->IsWorldType(WorldType::Dungeon))
 	{
-		vec2 TeleportPosition = GetTempData().GetTeleportPosition();
-		bool CanSelfCordSpawn = !is_negative_vec(TeleportPosition) && !GS()->Collision()->CheckPoint(TeleportPosition);
+		auto optionalSpawnPos = GetTempData().GetSpawnPosition();
+		if(optionalSpawnPos.has_value() && !GS()->Collision()->CheckPoint(*optionalSpawnPos))
+			FinalSpawnPos = optionalSpawnPos;
+	}
 
-		// Use self-coordinated spawning if possible
-		if(!GS()->IsWorldType(WorldType::Dungeon) && CanSelfCordSpawn)
-		{
-			SpawnPos = TeleportPosition;
-		}
 
-		// Create and spawn a new character
+	// prepare spawn position
+	if(!FinalSpawnPos.has_value())
+	{
+		vec2 SpawnPos;
+		if(GS()->m_pController->CanSpawn(SpawnType, &SpawnPos))
+			FinalSpawnPos = SpawnPos;
+	}
+
+
+	// respawn character
+	if(FinalSpawnPos.has_value())
+	{
 		int AllocMemoryCell = MAX_CLIENTS * GS()->GetWorldID() + m_ClientID;
 		m_pCharacter = new(AllocMemoryCell) CCharacter(&GS()->m_World);
-		m_pCharacter->Spawn(this, SpawnPos);
-		GS()->CreatePlayerSpawn(SpawnPos);
-		GetTempData().ClearTeleportPosition();
+		m_pCharacter->Spawn(this, *FinalSpawnPos);
+		GS()->CreatePlayerSpawn(*FinalSpawnPos);
+		GetTempData().ClearSpawnPosition();
 		m_WantSpawn = false;
 	}
 }
@@ -892,7 +905,7 @@ void CPlayer::ChangeWorld(int WorldID, std::optional<vec2> newWorldPosition) con
 	// if new position is provided, set the teleport position
 	if(newWorldPosition.has_value())
 	{
-		tempData.SetTeleportPosition(newWorldPosition.value());
+		tempData.SetSpawnPosition(newWorldPosition.value());
 	}
 
 	// change the player's world

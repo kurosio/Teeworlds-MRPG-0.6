@@ -46,19 +46,19 @@ void CEntityDropBonuses::Tick()
 		else if (m_Type == POWERUP_WEAPON)
 		{
 			// shotgun
-			if (m_Subtype == WEAPON_SHOTGUN && pChar->GetPlayer()->IsEquipped(EquipShotgun))
+			if (m_Subtype == WEAPON_SHOTGUN && pChar->GetPlayer()->IsEquipped(ItemType::EquipShotgun))
 			{
 				pChar->GiveWeapon(m_Subtype, m_Value);
 				GS()->CreateSound(m_Pos, SOUND_PICKUP_SHOTGUN);
 			}
 			// grenade
-			else if (m_Subtype == WEAPON_GRENADE && pChar->GetPlayer()->IsEquipped(EquipGrenade))
+			else if (m_Subtype == WEAPON_GRENADE && pChar->GetPlayer()->IsEquipped(ItemType::EquipGrenade))
 			{
 				pChar->GiveWeapon(m_Subtype, m_Value);
 				GS()->CreateSound(m_Pos, SOUND_PICKUP_GRENADE);
 			}
 			// laser
-			else if (m_Subtype == WEAPON_LASER && pChar->GetPlayer()->IsEquipped(EquipLaser))
+			else if (m_Subtype == WEAPON_LASER && pChar->GetPlayer()->IsEquipped(ItemType::EquipLaser))
 			{
 				pChar->GiveWeapon(m_Subtype, m_Value);
 				GS()->CreateSound(m_Pos, SOUND_PICKUP_SHOTGUN);

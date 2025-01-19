@@ -20,23 +20,23 @@ enum DungeonState
 class DungeonDoor;
 class CGameControllerDungeon : public IGameController
 {
-	DungeonDoor *m_DungeonDoor;
-	int m_StateDungeon;
-	int m_DungeonID;
-	int m_WorldID;
+	DungeonDoor* m_DungeonDoor {};
+	int m_StateDungeon {};
+	int m_DungeonID {};
+	int m_WorldID {};
 
-	int m_ActivePlayers;
-	int m_TankClientID;
-	int m_SyncDungeon;
+	int m_ActivePlayers {};
+	int m_TankClientID {};
+	int m_SyncDungeon {};
 
-	int m_LastStartingTick;
-	int m_StartingTick;
-	int m_FinishedTick;
-	int m_SafeTick;
-	int m_MaximumTick;
-	int m_ShiftRoundStartTick;
+	int m_LastStartingTick {};
+	int m_StartingTick {};
+	int m_FinishedTick {};
+	int m_SafeTick {};
+	int m_MaximumTick {};
+	int m_ShiftRoundStartTick {};
 
-	CPlayerDungeonRecord m_Records[MAX_PLAYERS];
+	CPlayerDungeonRecord m_Records[MAX_PLAYERS] {};
 
 public:
 	CGameControllerDungeon(class CGS* pGameServer);
@@ -69,7 +69,7 @@ private:
 
 class DungeonDoor : public CEntity
 {
-	int m_State;
+	int m_State {};
 public:
 	DungeonDoor(CGameWorld *pGameWorld, vec2 Pos);
 

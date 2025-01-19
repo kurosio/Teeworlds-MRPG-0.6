@@ -161,6 +161,10 @@ MACRO_CONFIG_STR(SvDiscordInviteLink, sv_discord_invite_link, 32, "nope", CFGFLA
 MACRO_CONFIG_INT(SvIntervalTileTextUpdate, sv_interval_tile_text_update, 1, 1, 60, CFGFLAG_SERVER, "Interval update tile text")
 MACRO_CONFIG_INT(SvShowWorldWhenConnect, sv_show_world_when_connect, 0, 0, ENGINE_MAX_WORLDS, CFGFLAG_SERVER, "Show default world when player connect")
 
+MACRO_CONFIG_INT(SvMinRating, sv_min_rating, 1000, 1000, 5000, CFGFLAG_SERVER, "Minial rating player")
+MACRO_CONFIG_INT(SvMaxRating, sv_max_rating, 2500, 2500, 10000, CFGFLAG_SERVER, "Maximal rating player")
+MACRO_CONFIG_INT(SvRatingCoefficientBase, sv_rating_coefficient_base, 40, 5, 100, CFGFLAG_SERVER, "Coefficient rating base")
+
 // mysql
 MACRO_CONFIG_STR(SvMySqlHost, sv_sql_host, 32, "localhost", CFGFLAG_SERVER, "MySQL Host")
 MACRO_CONFIG_STR(SvMySqlDatabase, sv_sql_database, 32, "database", CFGFLAG_SERVER, "MySQL Database")

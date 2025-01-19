@@ -179,7 +179,7 @@ int CPlayerBot::GetTotalAttributeValue(AttributeIdentifier ID) const
 	{
 		// get stats from the bot's equipment
 		int AttributeValue = Power;
-		for(unsigned i = 0; i < NUM_EQUIPPED; i++)
+		for(unsigned i = 0; i < (unsigned)ItemType::NUM_EQUIPPED; i++)
 		{
 			if(const auto ItemID = GetEquippedItemID((ItemType)i))
 			{
@@ -468,10 +468,10 @@ void CPlayerBot::GetFormatedName(char* aBuffer, int BufferSize)
 
 std::optional<int> CPlayerBot::GetEquippedItemID(ItemType EquipID, int SkipItemID) const
 {
-	if((EquipID >= EquipHammer && EquipID <= EquipLaser) || EquipID == EquipArmor)
+	auto& DataBot = DataBotInfo::ms_aDataBot[m_BotID];
+	if(DataBot.m_vEquippedSlot.contains(EquipID))
 	{
-		// default data bot
-		int itemID = DataBotInfo::ms_aDataBot[m_BotID].m_aEquipSlot[EquipID];
+		int itemID = DataBot.m_vEquippedSlot[EquipID];
 		return (itemID > 0) ? std::make_optional(itemID) : std::nullopt;
 	}
 

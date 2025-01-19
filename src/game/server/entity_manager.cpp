@@ -276,8 +276,8 @@ void CEntityManager::LastStand(int ClientID, vec2 Position, float Radius, int Ma
 				return;
 			}
 
-			const auto LastStandTime = pBase->Server()->TickSpeed() * 3;
-			pChar->GetPlayer()->m_Effects.Add("LastStand", LastStandTime);
+			const auto LastStandTime = 3;
+			pChar->GetPlayer()->m_Effects.Add("LastStand", LastStandTime * pBase->Server()->TickSpeed());
 		}
 
 		pBase->SetPos(pChar->GetPos());

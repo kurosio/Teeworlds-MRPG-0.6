@@ -85,7 +85,7 @@ bool CDungeonManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, co
 
 		if(!GS()->IsWorldType(WorldType::Dungeon))
 		{
-			pPlayer->GetTempData().SetTeleportPosition(pPlayer->GetCharacter()->m_Core.m_Pos);
+			pPlayer->GetTempData().SetSpawnPosition(pPlayer->GetCharacter()->m_Core.m_Pos);
 			GS()->Core()->SaveAccount(pPlayer, ESaveType::SAVE_POSITION);
 		}
 

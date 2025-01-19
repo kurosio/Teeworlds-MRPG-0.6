@@ -171,10 +171,10 @@ void CCharacterBotAI::SelectWeaponAtRandomInterval()
 	if(Server()->Tick() % changeInterval == 0)
 	{
 		const int RandomWeapon = rand() % (WEAPON_LASER + 1);
-
-		if(RandomWeapon == WEAPON_HAMMER || m_pBotPlayer->GetEquippedItemID((ItemType)RandomWeapon).has_value())
+		const auto EquipID = GetEquipByWeapon(RandomWeapon);
+		if(m_pBotPlayer->IsEquipped(EquipID))
 		{
-			m_Core.m_ActiveWeapon = clamp(RandomWeapon, (int)WEAPON_HAMMER, (int)WEAPON_LASER);
+			m_Core.m_ActiveWeapon = RandomWeapon;
 		}
 	}
 }
@@ -221,6 +221,13 @@ bool CCharacterBotAI::GiveWeapon(int Weapon, int GiveAmmo)
 {
 	if(Weapon < WEAPON_HAMMER || Weapon > WEAPON_NINJA)
 		return false;
+
+	auto EquipID = GetEquipByWeapon(Weapon);
+	if(!m_pBotPlayer->IsEquipped(EquipID))
+	{
+		RemoveWeapon(Weapon);
+		return false;
+	}
 
 	m_Core.m_aWeapons[Weapon].m_Got = true;
 	m_Core.m_aWeapons[Weapon].m_Ammo = GiveAmmo;

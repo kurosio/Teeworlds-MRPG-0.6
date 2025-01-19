@@ -304,8 +304,8 @@ void CCommandProcessor::ConChatGiveEffect(IConsole::IResult* pResult, void* pUse
 
 	// give effect
 	const char* pEffect = pResult->GetString(0);
-	const auto Seconds = pResult->GetInteger(1) * pServer->TickSpeed();
-	if(pPlayer->m_Effects.Add(pEffect, Seconds))
+	const auto Seconds = pResult->GetInteger(1);
+	if(pPlayer->m_Effects.Add(pEffect, Seconds * pServer->TickSpeed()))
 	{
 		pGS->Chat(ClientID, "You have received the effect {} for {} seconds.", pEffect, Seconds);
 		dbg_msg("cmd_auth", "%s got %s (%d sec) by auth command!", pServer->ClientName(ClientID), pEffect, Seconds);

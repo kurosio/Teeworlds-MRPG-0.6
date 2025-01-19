@@ -124,7 +124,7 @@ public:
 	virtual void PrepareRespawnTick();
 	virtual Mood GetMoodState() const { return Mood::Normal; }
 
-	void RefreshClanString();
+	void RefreshClanTagString();
 
 	CPlayerBot* GetEidolon() const;
 	void TryCreateEidolon();

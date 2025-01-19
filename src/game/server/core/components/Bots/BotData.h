@@ -14,7 +14,7 @@ class DataBotInfo
 public:
 	char m_aNameBot[MAX_NAME_LENGTH] {};
 	CTeeInfo m_TeeInfos {};
-	int m_aEquipSlot[NUM_EQUIPPED] {};
+	std::map<ItemType, int> m_vEquippedSlot {};
 	bool m_aActiveByQuest[MAX_PLAYERS] {};
 	DBSet m_EquippedModules {};
 

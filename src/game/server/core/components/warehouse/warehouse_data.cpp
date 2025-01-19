@@ -32,18 +32,12 @@ void CWarehouse::InitProperties(const DBSet& Type, const std::string& Properties
 	m_Flags = WF_NONE;
 
 	if(Type.hasSet("buying"))
-	{
 		m_Flags |= WF_BUY;
-	}
 	else if(Type.hasSet("selling"))
-	{
 		m_Flags |= WF_SELL;
-	}
 	
 	if(Type.hasSet("storage"))
-	{
 		m_Flags |= WF_STORAGE;
-	}
 
 	// parse properties
 	mystd::json::parse(Properties, [this](nlohmann::json& pJson)
@@ -56,28 +50,20 @@ void CWarehouse::InitProperties(const DBSet& Type, const std::string& Properties
 			{
 				for(const auto& pItem : pJson["items_collections"])
 				{
-					std::string CollectType = pItem.value("collect_by", "");
-					std::vector<int> vItems;
-
-					// by type or function collection
-					if(CollectType == "group")
-					{
-						vItems = CInventoryManager::GetItemIDsCollectionByGroup(static_cast<ItemGroup>(pItem.value("value", -1)));
-					}
-					else
-					{
-						vItems = CInventoryManager::GetItemIDsCollectionByType(static_cast<ItemType>(pItem.value("value", -1)));
-					}
+					const auto dbSetGroup = DBSet(pItem.value("group", ""));
+					const auto dbSetType = DBSet(pItem.value("type", ""));
+					const auto groupOpt = GetItemGroupFromDBSet(dbSetGroup);
+					const auto typeOpt = GetItemTypeFromDBSet(dbSetType);
+					auto vItems = CInventoryManager::GetItemsCollection(groupOpt, typeOpt);
 
 					// adding all item's from collection to trade list
 					for(const int ItemID : vItems)
 					{
 						auto Item = CItem(ItemID, 1, 0);
+						const auto HasInitialPrice = Item.Info()->GetInitialPrice() > 0;
 
-						if(Item.IsValid() && Item.Info()->GetInitialPrice() > 0)
-						{
+						if(Item.IsValid() && HasInitialPrice)
 							m_vTradingList.emplace_back(m_vTradingList.size(), std::move(Item), Item.Info()->GetInitialPrice());
-						}
 					}
 				}
 			}
@@ -87,16 +73,15 @@ void CWarehouse::InitProperties(const DBSet& Type, const std::string& Properties
 			{
 				for(const auto& pItem : pJson["items"])
 				{
-					const int ItemID = pItem.value("id", -1);
-					const int Value = pItem.value("value", 1);
-					const int Enchant = pItem.value("enchant", 0);
-					const int Price = pItem.value("price", 0);
+					const auto ItemID = pItem.value("id", -1);
+					const auto Value = pItem.value("value", 1);
+					const auto Enchant = pItem.value("enchant", 0);
+					const auto Price = pItem.value("price", 0);
 					auto Item = CItem(ItemID, Value, Enchant);
 
+					// adding item to trading list
 					if(Item.IsValid() && Price > 0)
-					{
 						m_vTradingList.emplace_back(m_vTradingList.size(), std::move(Item), Price);
-					}
 				}
 			}
 		}
@@ -110,7 +95,7 @@ void CWarehouse::InitProperties(const DBSet& Type, const std::string& Properties
 			// initialize storage
 			const auto JsonStorage = pJson["storage"];
 			m_Storage.m_Value = JsonStorage.value("value", BigInt(0));
-			m_Storage.m_TextPos = vec2(JsonStorage.value("x", 0), JsonStorage.value("y", 0));
+			m_Storage.m_TextPos = JsonStorage.value("position", vec2());
 			m_Storage.m_pWarehouse = this;
 		}
 

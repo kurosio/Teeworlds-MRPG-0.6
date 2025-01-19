@@ -59,15 +59,15 @@ void CBotManager::OnPreInit()
 
 		DataBotInfo BotInfo;
 		str_copy(BotInfo.m_aNameBot, pRes->getString("Name").c_str(), sizeof(BotInfo.m_aNameBot));
-		BotInfo.m_aEquipSlot[EquipHammer] = pRes->getInt("SlotHammer");
-		BotInfo.m_aEquipSlot[EquipGun] = pRes->getInt("SlotGun");
-		BotInfo.m_aEquipSlot[EquipShotgun] = pRes->getInt("SlotShotgun");
-		BotInfo.m_aEquipSlot[EquipGrenade] = pRes->getInt("SlotGrenade");
-		BotInfo.m_aEquipSlot[EquipLaser] = pRes->getInt("SlotRifle");
-		BotInfo.m_aEquipSlot[EquipArmor] = pRes->getInt("SlotArmor");
-		BotInfo.m_aEquipSlot[EquipPickaxe] = 0;
-		BotInfo.m_aEquipSlot[EquipRake] = 0;
-		BotInfo.m_aEquipSlot[EquipEidolon] = 0;
+		BotInfo.m_vEquippedSlot[ItemType::EquipHammer] = pRes->getInt("SlotHammer");
+		BotInfo.m_vEquippedSlot[ItemType::EquipGun] = pRes->getInt("SlotGun");
+		BotInfo.m_vEquippedSlot[ItemType::EquipShotgun] = pRes->getInt("SlotShotgun");
+		BotInfo.m_vEquippedSlot[ItemType::EquipGrenade] = pRes->getInt("SlotGrenade");
+		BotInfo.m_vEquippedSlot[ItemType::EquipLaser] = pRes->getInt("SlotRifle");
+		BotInfo.m_vEquippedSlot[ItemType::EquipArmor] = pRes->getInt("SlotArmor");
+		BotInfo.m_vEquippedSlot[ItemType::EquipPickaxe] = 0;
+		BotInfo.m_vEquippedSlot[ItemType::EquipRake] = 0;
+		BotInfo.m_vEquippedSlot[ItemType::EquipEidolon] = 0;
 
 		std::string EquippedModules = pRes->getString("EquippedModules").c_str();
 		if(!EquippedModules.empty())

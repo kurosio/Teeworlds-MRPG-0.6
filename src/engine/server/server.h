@@ -286,13 +286,25 @@ public:
 
 	int* GetIdMap(int ClientID) override;
 
-	void AddAccountNickname(int UID, std::string Nickname) override;
+	void UpdateAccountBase(int UID, std::string Nickname, int Rating) override;
 	const char* GetAccountNickname(int AccountID) override;
+	int GetAccountRank(int AccountID) override;
 
 	void SetLoggers(std::shared_ptr<ILogger>&& pFileLogger, std::shared_ptr<ILogger>&& pStdoutLogger);
 private:
-	ska::unordered_map<int, std::string> m_aAccountsNicknames{};
-	void InitAccountNicknames();
+	struct BaseAccount
+	{
+		std::string Nickname {};
+		int Rating {};
+
+		bool operator<(const BaseAccount& other) const 
+		{
+			return Rating > other.Rating;
+		}
+	};
+	ska::unordered_map<int, BaseAccount> m_vBaseAccounts{};
+	std::set<BaseAccount> m_vSortedRankAccounts{};
+	void InitBaseAccounts();
 };
 
 extern CServer* CreateServer();

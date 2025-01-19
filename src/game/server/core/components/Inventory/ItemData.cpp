@@ -259,7 +259,7 @@ bool CPlayerItem::UnEquip()
 
 bool CPlayerItem::Use(int Value)
 {
-	Value = Info()->IsType(UseSingle) ? 1 : minimum(Value, m_Value);
+	Value = Info()->IsType(ItemType::UseSingle) ? 1 : minimum(Value, m_Value);
 	if(Value <= 0)
 		return false;
 
@@ -292,8 +292,8 @@ bool CPlayerItem::Use(int Value)
 	{
 		// check potion recast time
 		const auto Type = Info()->GetType();
-		if((Type == EquipPotionHeal && pPlayer->m_aPlayerTick[HealPotionRecast] >= Server()->Tick()) ||
-			(Type == EquipPotionMana && pPlayer->m_aPlayerTick[ManaPotionRecast] >= Server()->Tick()))
+		if((Type == ItemType::EquipPotionHeal && pPlayer->m_aPlayerTick[HealPotionRecast] >= Server()->Tick()) ||
+			(Type == ItemType::EquipPotionMana && pPlayer->m_aPlayerTick[ManaPotionRecast] >= Server()->Tick()))
 			return true;
 
 		// try use
@@ -307,7 +307,7 @@ bool CPlayerItem::Use(int Value)
 			GS()->EntityManager()->Text(pPlayer->m_ViewPos + vec2(0, -140.0f), 70, EffectName);
 
 			// Update the recast time based on potion type
-			auto& recastTick = (Type == EquipPotionHeal) ? pPlayer->m_aPlayerTick[HealPotionRecast] : pPlayer->m_aPlayerTick[ManaPotionRecast];
+			auto& recastTick = (Type == ItemType::EquipPotionHeal) ? pPlayer->m_aPlayerTick[HealPotionRecast] : pPlayer->m_aPlayerTick[ManaPotionRecast];
 			recastTick = Server()->Tick() + ((PotionTime + POTION_RECAST_APPEND_TIME) * Server()->TickSpeed());
 		}
 

@@ -24,7 +24,7 @@ struct TemporaryBonus
 	int RemainingTime() const { return maximum(0, Duration - static_cast<int>(difftime(time(nullptr), StartTime))); }
 };
 
-class CBonusManager
+class BonusManager
 {
 	int m_ClientID{};
 	std::vector<TemporaryBonus> m_vTemporaryBonuses{};

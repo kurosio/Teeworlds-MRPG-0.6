@@ -8,40 +8,27 @@
 		Controls the main game logic. Keeping track of team and player score,
 		winning conditions and specific game logic.
 */
+class CGS;
+class IServer;
 class IGameController
 {
-	class CGS *m_pGS;
-	class IServer *m_pServer;
+	CGS* m_pGS {};
+	IServer* m_pServer {};
 
-	// spawn
 	struct CSpawnEval
 	{
-		CSpawnEval()
-		{
-			m_Got = false;
-			m_FriendlyTeam = -1;
-			m_Pos = vec2(100,100);
-			m_Score = 0;
-		}
-
-		vec2 m_Pos;
-		bool m_Got;
-		int m_FriendlyTeam;
-		float m_Score;
+		vec2 m_Pos{};
+		bool m_Got{};
 	};
-
-	vec2 m_aaSpawnPoints[NUM_SPAWN][64];
-	int m_aNumSpawnPoints[NUM_SPAWN];
-
-	float EvaluateSpawnPos(CSpawnEval *pEval, vec2 Pos) const;
-	void EvaluateSpawnType(CSpawnEval *pEval, int Type, std::pair<vec2, float> LimiterSpread) const;
+	std::array<std::vector<vec2>, NUM_SPAWN> m_aaSpawnPoints{};
+	
+	void EvaluateSpawnType(CSpawnEval* Pos, int Type, std::pair<vec2, float> LimiterSpread) const;
 
 protected:
 	CGS *GS() const { return m_pGS; }
 	IServer *Server() const { return m_pServer; }
 
-	// info
-	int m_GameFlags;
+	int m_GameFlags{};
 
 	void UpdateGameInfo(int ClientID);
 
@@ -71,7 +58,6 @@ public:
 
 	bool CanSpawn(int SpawnType, vec2 *pPos, std::pair<vec2, float> LimiterSpread = std::make_pair(vec2(), -1.f)) const;
 	void DoTeamChange(class CPlayer *pPlayer);
-
 };
 
 #endif

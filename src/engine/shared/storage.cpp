@@ -149,6 +149,8 @@ public:
 				fs_makedir("server_data/account_prison");
 			if(!fs_is_dir("server_data/account_quests"))
 				fs_makedir("server_data/account_quests");
+			if(!fs_is_dir("server_data/account_rating"))
+				fs_makedir("server_data/account_rating");
 		}
 
 		return m_NumPaths ? 0 : 1;

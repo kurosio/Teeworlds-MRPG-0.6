@@ -6,17 +6,17 @@
 
 #include <game/server/core/components/worlds/world_data.h>
 
-CGS* CPrisonManager::GS() const
+CGS* PrisonManager::GS() const
 {
     return (CGS*)Instance::GameServerPlayer(m_ClientID);
 }
 
-CPlayer* CPrisonManager::GetPlayer() const
+CPlayer* PrisonManager::GetPlayer() const
 {
     return GS()->GetPlayer(m_ClientID);
 }
 
-void CPrisonManager::Imprison(int Seconds)
+void PrisonManager::Imprison(int Seconds)
 {
     m_PrisonTerm.ImprisonmentTime = Seconds;
     m_PrisonTerm.StartTime = time(nullptr);
@@ -36,7 +36,7 @@ void CPrisonManager::Imprison(int Seconds)
     SavePrisonData();
 }
 
-void CPrisonManager::Free()
+void PrisonManager::Free()
 {
     m_PrisonTerm.ImprisonmentTime = 0;
     m_PrisonTerm.StartTime = 0;
@@ -56,7 +56,7 @@ void CPrisonManager::Free()
     }
 }
 
-void CPrisonManager::UpdatePrison()
+void PrisonManager::UpdatePrison()
 {
     if(!m_PrisonTerm.IsActive())
         return;
@@ -90,7 +90,7 @@ void CPrisonManager::UpdatePrison()
     }
 }
 
-std::pair<int, std::string> CPrisonManager::GetPrisonStatusString() const
+std::pair<int, std::string> PrisonManager::GetPrisonStatusString() const
 {
     int RemainingTime = m_PrisonTerm.RemainingTime();
     char aBuf[64];
@@ -98,7 +98,7 @@ std::pair<int, std::string> CPrisonManager::GetPrisonStatusString() const
     return { RemainingTime, std::string(aBuf) };
 }
 
-void CPrisonManager::LoadPrisonData()
+void PrisonManager::LoadPrisonData()
 {
     CPlayer* pPlayer = GetPlayer();
     if(!pPlayer)
@@ -133,7 +133,7 @@ void CPrisonManager::LoadPrisonData()
     }
 }
 
-void CPrisonManager::SavePrisonData() const
+void PrisonManager::SavePrisonData() const
 {
     CPlayer* pPlayer = GetPlayer();
     if(!pPlayer)

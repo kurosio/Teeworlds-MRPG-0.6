@@ -41,7 +41,6 @@ public:
 
 	int GetLastVisitedWorldID(CPlayer* pPlayer) const;
 	
-	static int GetRank(int AccountID);
 	static bool IsActive(int ClientID)
 	{
 		return CAccountData::ms_aData.contains(ClientID);

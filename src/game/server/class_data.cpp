@@ -5,13 +5,13 @@
 #include <engine/server.h>
 #include <game/server/gamecontext.h>
 
-void CClassData::SetProfessionID(ProfessionIdentifier ProfID)
+void ClassData::SetProfessionID(ProfessionIdentifier ProfID)
 {
 	m_ProfessionID = ProfID;
 	UpdateProfessionSkin();
 }
 
-float CClassData::GetExtraHP() const
+float ClassData::GetExtraHP() const
 {
 	if(m_ProfessionID == ProfessionIdentifier::Tank)
 		return 30.f;
@@ -22,7 +22,7 @@ float CClassData::GetExtraHP() const
 	return 0.f;
 }
 
-float CClassData::GetExtraMP() const
+float ClassData::GetExtraMP() const
 {
 	if(m_ProfessionID == ProfessionIdentifier::Tank)
 		return 5.f;
@@ -33,7 +33,7 @@ float CClassData::GetExtraMP() const
 	return 0;
 }
 
-float CClassData::GetExtraDMG() const
+float ClassData::GetExtraDMG() const
 {
 	if(m_ProfessionID == ProfessionIdentifier::Tank)
 		return 10.f;
@@ -44,7 +44,7 @@ float CClassData::GetExtraDMG() const
 	return 0;
 }
 
-void CClassData::UpdateProfessionSkin() const
+void ClassData::UpdateProfessionSkin() const
 {
 	const auto* pGS = (CGS*)Instance::GameServerPlayer(m_ClientID);
 
