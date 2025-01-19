@@ -92,22 +92,8 @@ bool IGameController::OnCharacterSpawn(CCharacter* pChr)
 	GS()->EventListener()->Notify<IEventListener::Type::PlayerSpawn>(pChr->GetPlayer());
 
 	// Health
-	int StartHealth = pChr->GetPlayer()->GetMaxHealth();
-	if(!GS()->IsWorldType(WorldType::Dungeon))
-	{
-		if(pChr->GetPlayer()->GetHealth() > 0)
-			StartHealth = pChr->GetPlayer()->GetHealth();
-		else
-			StartHealth /= 2;
-	}
-	pChr->IncreaseHealth(StartHealth);
-
-	// Mana
-	if(pChr->GetPlayer()->GetMana() > 0)
-	{
-		const int StartMana = pChr->GetPlayer()->GetMana();
-		pChr->IncreaseMana(StartMana);
-	}
+	pChr->IncreaseHealth(pChr->GetPlayer()->GetMaxHealth());
+	pChr->IncreaseMana(3);
 
 	// Weapons
 	const int MaximumAmmo = 10 + pChr->GetPlayer()->GetTotalAttributeValue(AttributeIdentifier::Ammo);
@@ -148,11 +134,6 @@ void IGameController::OnEntity(int Index, vec2 Pos, int Flags)
 	else if(Index == ENTITY_SPAWN_MOBS)
 	{
 		m_aaSpawnPoints[SPAWN_BOT].push_back(Pos);
-	}
-	
-	else if(Index == ENTITY_SPAWN_SAFE)
-	{
-		m_aaSpawnPoints[SPAWN_HUMAN_TREATMENT].push_back(Pos);
 	}
 	
 	else if(Index == ENTITY_SPAWN_PRISON)

@@ -39,8 +39,7 @@ enum ESpawnType
 {
 	SPAWN_HUMAN           = 0, // Spawn a human player
 	SPAWN_BOT             = 1, // Spawn a bot player
-	SPAWN_HUMAN_TREATMENT = 2, // Spawn a human player in a safe location
-	SPAWN_HUMAN_PRISON    = 3, // Spawn a human prison
+	SPAWN_HUMAN_PRISON    = 2, // Spawn a human prison
 	NUM_SPAWN
 };
 

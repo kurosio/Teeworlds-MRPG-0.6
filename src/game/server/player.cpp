@@ -443,8 +443,6 @@ void CPlayer::TryRespawn()
 			ChangeWorld(pRespawnWorld->GetID());
 			return;
 		}
-
-		SpawnType = SPAWN_HUMAN_TREATMENT;
 	}
 
 	// spawn by optional teleport
