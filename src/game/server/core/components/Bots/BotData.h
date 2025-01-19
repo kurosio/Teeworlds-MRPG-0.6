@@ -191,7 +191,6 @@ class MobBotInfo
 public:
 	bool m_Boss {};
 	int m_Power {};
-	int m_Spread {};
 	vec2 m_Position;
 	int m_Level {};
 	int m_RespawnTick {};
