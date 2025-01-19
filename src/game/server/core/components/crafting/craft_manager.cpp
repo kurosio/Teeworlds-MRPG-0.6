@@ -129,13 +129,8 @@ bool CCraftManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		VCraftInfo.AddItemValue(itGold);
 
 		// show craft tabs
-		ShowCraftList(pPlayer, "Can be used's", ItemGroup::Usable);
-		ShowCraftList(pPlayer, "Potion's", ItemGroup::Potion);
-		ShowCraftList(pPlayer, "Equipment's", ItemGroup::Equipment);
-		ShowCraftList(pPlayer, "Decoration's", ItemGroup::Decoration);
-		ShowCraftList(pPlayer, "Craft's", ItemGroup::Resource);
-		ShowCraftList(pPlayer, "Other's", ItemGroup::Other);
-		ShowCraftList(pPlayer, "Quest's", ItemGroup::Quest);
+		for(auto i = (int)ItemGroup::Quest; i < (int)ItemGroup::Potion; i++)
+			ShowCraftList(pPlayer, (ItemGroup)i);
 		return true;
 	}
 
@@ -214,13 +209,13 @@ void CCraftManager::ShowCraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const
 
 }
 
-void CCraftManager::ShowCraftList(CPlayer* pPlayer, const char* TypeName, ItemGroup Type) const
+void CCraftManager::ShowCraftList(CPlayer* pPlayer, ItemGroup Group) const
 {
 	const int ClientID = pPlayer->GetCID();
 
 	// order only by type
-	if(std::ranges::none_of(CCraftItem::Data(), [Type](const CCraftItem* p)
-	{ return p->GetItem()->Info()->GetGroup() == Type; }))
+	if(std::ranges::none_of(CCraftItem::Data(), [Group](const CCraftItem* p)
+	{ return p->GetItem()->Info()->GetGroup() == Group; }))
 	{
 		return;
 	}
@@ -229,13 +224,13 @@ void CCraftManager::ShowCraftList(CPlayer* pPlayer, const char* TypeName, ItemGr
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// craft tab list
-	VoteWrapper VCraftList(ClientID, VWF_SEPARATE_OPEN, TypeName);
+	VoteWrapper VCraftList(ClientID, VWF_SEPARATE_OPEN, GetItemGroupName(Group));
 	for(const auto& pCraft : CCraftItem::Data())
 	{
 		CItemDescription* pCraftItemInfo = pCraft->GetItem()->Info();
 
 		// check by type and world
-		if(pCraftItemInfo->GetGroup() != Type || pCraft->GetWorldID() != GS()->GetWorldID())
+		if(pCraftItemInfo->GetGroup() != Group || pCraft->GetWorldID() != GS()->GetWorldID())
 			continue;
 
 		CraftIdentifier ID = pCraft->GetID();

@@ -114,7 +114,7 @@ bool CInventoryManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		VoteWrapper VInventoryTabs(ClientID, VWF_SEPARATE|VWF_ALIGN_TITLE|VWF_STYLE_SIMPLE, "\u262A Inventory tabs");
 		for(const auto& [Type, Icon] : vMenuItems)
 		{
-			VInventoryTabs.AddMenu(MENU_INVENTORY, (int)Type, "{} {} ({})", Icon, GetTypeItemName(Type), GetCountItemsType(pPlayer, Type));
+			VInventoryTabs.AddMenu(MENU_INVENTORY, (int)Type, "{} {} ({})", Icon, GetItemGroupName(Type), GetCountItemsType(pPlayer, Type));
 		}
 		VoteWrapper::AddEmptyline(ClientID);
 
@@ -150,7 +150,7 @@ bool CInventoryManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 			const auto ItemID = pPlayer->GetEquippedItemID(EquipID);
 			if(!ItemID.has_value() || !pPlayer->GetItem(ItemID.value())->IsEquipped())
 			{
-				Wrapper.AddMenu(MENU_EQUIPMENT, (int)EquipID, "{} not equipped", GetFunctionalItemName(EquipID));
+				Wrapper.AddMenu(MENU_EQUIPMENT, (int)EquipID, "{} not equipped", GetItemTypeName(EquipID));
 				return false;
 			}
 
@@ -201,11 +201,11 @@ bool CInventoryManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		VoteWrapper::AddEmptyline(ClientID);
 
 		// show and sort equipment
-		const auto itemFunctionalSelected = pPlayer->m_VotesData.GetExtraID();
+		const auto itemTypeSelected = pPlayer->m_VotesData.GetExtraID();
 		VoteWrapper VInfo(ClientID);
-		if(itemFunctionalSelected.has_value())
+		if(itemTypeSelected.has_value())
 		{
-			if(!ListInventory(ClientID, (ItemType)itemFunctionalSelected.value()))
+			if(!ListInventory(ClientID, (ItemType)itemTypeSelected.value()))
 				VInfo.Add("The selected list is empty");
 		}
 		else

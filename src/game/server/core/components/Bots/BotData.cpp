@@ -25,19 +25,12 @@ MobBotInfo* DataBotInfo::FindMobByBot(int BotID)
 /************************************************************************/
 /*  Global data mob bot                                               */
 /************************************************************************/
-void MobBotInfo::InitDebuffs(int Seconds, int Range, float Chance, std::string& buffSets)
+void MobBotInfo::InitDebuffs(int Seconds, int Range, float Chance, const DBSet& buffSets)
 {
-	if(!buffSets.empty())
+	for(auto& def : buffSets.GetDataItems())
 	{
-		size_t start;
-		size_t end = 0;
-		std::string delim = ",";
-
-		while((start = buffSets.find_first_not_of(delim, end)) != std::string::npos)
-		{
-			end = buffSets.find(delim, start);
-			m_Effects.emplace_back(Chance, buffSets.substr(start, end - start), std::make_pair(Seconds, Range));
-		}
+		CMobDebuff debuff(Chance, def.first, std::make_pair(Seconds, Range));
+		m_Effects.emplace_back(debuff);
 	}
 }
 

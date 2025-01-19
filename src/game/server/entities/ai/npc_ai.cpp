@@ -11,8 +11,15 @@ CNpcAI::CNpcAI(NpcBotInfo* pNpcInfo, CPlayerBot* pPlayer, CCharacterBotAI* pChar
 bool CNpcAI::CanDamage(CPlayer* pFrom)
 {
 	if(m_pNpcInfo->m_Function == FUNCTION_NPC_GUARDIAN)
-		return pFrom->IsBot() || pFrom->Account()->IsCrimeScoreMaxedOut();
+	{
+		if(pFrom->IsBot())
+		{
+			auto* pFromBot = dynamic_cast<CPlayerBot*>(pFrom);
+			return pFromBot->GetBotType() == TYPE_BOT_MOB;
+		}
 
+		return pFrom->Account()->IsCrimeScoreMaxedOut();
+	}
 	return false;
 }
 

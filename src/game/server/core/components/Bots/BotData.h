@@ -157,36 +157,44 @@ enum MobBehaviorFlags
 	MOBFLAG_BEHAVIOR_AGGRESSIVE = 1 << 3,
 };
 
-class CMobBuffDebuff
+class CMobDebuff
 {
 	float m_Chance {};
 	std::string m_Effect {};
 	std::tuple<int, int> m_Time {};
 
 public:
-	CMobBuffDebuff() = default;
-	CMobBuffDebuff(float Chance, std::string Effect, std::tuple<int, int> Time) : m_Chance(Chance), m_Effect(Effect), m_Time(Time) {}
+	CMobDebuff() = default;
+	CMobDebuff(float Chance, const std::string& Effect, const std::tuple<int, int>& Time)
+		: m_Chance(Chance), m_Effect(Effect), m_Time(Time) {}
 
-	enum
+	enum TupleIndices
 	{
-		SECONDS,
-		RANGE
+		SECONDS = 0,
+		RANGE = 1
 	};
 
-	const char* getEffect() const { return m_Effect.c_str(); }
+	const std::string& getEffect() const noexcept 
+	{
+		return m_Effect;
+	}
+
 	int getTime() const
 	{
 		int Range = std::get<RANGE>(m_Time);
 		int Time = std::get<SECONDS>(m_Time) - Range / 2;
 		return Time + rand() % Range;
 	}
-	float getChance() const { return m_Chance; }
+	float getChance() const 
+	{
+		return m_Chance; 
+	}
 };
 
 class MobBotInfo
 {
 	friend class CBotManager;
-	std::deque < CMobBuffDebuff > m_Effects;
+	std::deque < CMobDebuff > m_Effects;
 
 public:
 	bool m_Boss {};
@@ -199,7 +207,7 @@ public:
 	int m_aDropItem[MAX_DROPPED_FROM_MOBS] {};
 	int m_aValueItem[MAX_DROPPED_FROM_MOBS] {};
 	float m_aRandomItem[MAX_DROPPED_FROM_MOBS] {};
-	DBSet m_BehaviorSets;
+	DBSet m_Behaviors;
 	int m_BotID {};
 
 	const char* GetName() const
@@ -207,17 +215,17 @@ public:
 		return DataBotInfo::ms_aDataBot[m_BotID].m_aNameBot;
 	}
 
-	std::deque < CMobBuffDebuff >& GetEffects()
+	std::deque < CMobDebuff >& GetDebuffs()
 	{
 		return m_Effects;
 	}
 
-	[[nodiscard]] CMobBuffDebuff* GetRandomEffect()
+	[[nodiscard]] CMobDebuff* GetRandomDebuff()
 	{
 		return m_Effects.empty() ? nullptr : &m_Effects[rand() % m_Effects.size()];
 	}
 
-	void InitDebuffs(int Seconds, int Range, float Chance, std::string& buffSets);
+	void InitDebuffs(int Seconds, int Range, float Chance, const DBSet& buffSets);
 
 	static bool IsValid(int MobID)
 	{

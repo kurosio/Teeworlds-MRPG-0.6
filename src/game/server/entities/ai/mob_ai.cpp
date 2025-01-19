@@ -37,9 +37,9 @@ void CMobAI::OnGiveRandomEffect(int ClientID)
 	if(!pPlayer)
 		return;
 
-	if(const auto* pBuff = m_pMobInfo->GetRandomEffect())
+	if(const auto* pBuff = m_pMobInfo->GetRandomDebuff())
 	{
-		pPlayer->m_Effects.Add(pBuff->getEffect(), pBuff->getTime(), pBuff->getChance());
+		pPlayer->m_Effects.Add(pBuff->getEffect().c_str(), pBuff->getTime(), pBuff->getChance());
 	}
 }
 

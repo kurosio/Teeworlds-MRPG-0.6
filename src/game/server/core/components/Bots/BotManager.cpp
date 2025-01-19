@@ -197,9 +197,11 @@ void CBotManager::InitMobsBots(const char* pWhereLocalWorld)
 		MobBot.m_RespawnTick = pRes->getInt("Respawn");
 		MobBot.m_Radius = (float)pRes->getInt("Radius");
 		MobBot.m_BotID = BotID;
-		MobBot.m_BehaviorSets = pRes->getString("Behavior").c_str();
-		std::string BuffDebuff = pRes->getString("Effect").c_str();
-		MobBot.InitDebuffs(4, 4, 3.0f, BuffDebuff);
+		MobBot.m_Behaviors = pRes->getString("Behavior").c_str();
+
+		// initialize debuffs
+		auto dbDebuffs = DBSet(pRes->getString("Debuffs"));
+		MobBot.InitDebuffs(5, 5, 5.0f, dbDebuffs);
 
 		for(int i = 0; i < MAX_DROPPED_FROM_MOBS; i++)
 		{

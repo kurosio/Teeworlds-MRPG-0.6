@@ -1752,19 +1752,16 @@ void CCharacter::HandleBuff(CTuningParams* TuningParams)
 		{
 			const auto ItemID = potion.first;
 			const auto& PotionContext = potion.second;
-			const auto Functional = GS()->GetItemInfo(ItemID)->GetType();
+			const auto Type = GS()->GetItemInfo(ItemID)->GetType();
 
 			// increase by equip type
 			if(m_pPlayer->m_Effects.IsActive(PotionContext.Effect.c_str()))
 			{
-				if(Functional == ItemType::EquipPotionHeal)
-				{
+				if(Type == ItemType::EquipPotionHeal)
 					IncreaseHealth(PotionContext.Value);
-				}
-				else if(Functional == ItemType::EquipPotionMana)
-				{
+				
+				else if(Type == ItemType::EquipPotionMana)
 					IncreaseMana(PotionContext.Value);
-				}
 			}
 		});
 	}

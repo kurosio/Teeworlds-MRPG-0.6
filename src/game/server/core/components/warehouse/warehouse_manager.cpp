@@ -268,16 +268,16 @@ void CWarehouseManager::ShowWarehouseList(CPlayer* pPlayer, CWarehouse* pWarehou
 	}
 }
 
-void CWarehouseManager::ShowTradeList(CWarehouse* pWarehouse, CPlayer* pPlayer, const char* TypeName, ItemGroup Type) const
+void CWarehouseManager::ShowTradeList(CWarehouse* pWarehouse, CPlayer* pPlayer, const char* TypeName, ItemGroup Group) const
 {
 	if(!pWarehouse)
 		return;
 
 	const int ClientID = pPlayer->GetCID();
 	const auto* pCurrency = pWarehouse->GetCurrency();
-	auto vTradeListByType = pWarehouse->GetTradingList() | std::views::filter([Type](const CTrade& Trade)
+	auto vTradeListByType = pWarehouse->GetTradingList() | std::views::filter([Group](const CTrade& Trade)
 	{
-		return Trade.GetItem()->Info()->GetGroup() == Type;
+		return Trade.GetItem()->Info()->GetGroup() == Group;
 	});
 
 	// check if the warehouse has a trading list by type

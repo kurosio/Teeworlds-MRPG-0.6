@@ -16,22 +16,6 @@ enum AchievementProgressType
 	PROGRESS_ABSOLUTE,
 };
 
-// achievement types
-enum class AchievementType : int
-{
-	DefeatPVP = 1,
-	DefeatPVE,
-	DefeatMob,
-	Death,
-	TotalDamage,
-	Equip,
-	ReceiveItem,
-	HaveItem,
-	CraftItem,
-	UnlockWorld,
-	Leveling,
-};
-
 enum
 {
 	ACHIEVEMENT_GROUP_GENERAL = 0,

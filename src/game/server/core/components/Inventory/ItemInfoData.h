@@ -83,7 +83,7 @@ public:
 		m_pData[m_ID] = *this;
 		m_pData[m_ID].InitData(GroupSet, TypeSet);
 	}
-	void InitData(const DBSet& Type, const DBSet& Functional);
+	void InitData(const DBSet& GroupSet, const DBSet& TypeSet);
 
 	ItemIdentifier GetID() const { return m_ID; }
 
@@ -95,15 +95,15 @@ public:
 	int GetDysenthis(int Enchant) const { return m_Dysenthis ? (m_Dysenthis + (maximum(GetEnchantPrice(Enchant) / 4, 1) * Enchant)) : 0; }
 	
 	ItemType GetType() const { return m_Type; }
-	bool IsType(ItemType Functional) const 
+	bool IsType(ItemType Type) const 
 	{
-		return m_Type == Functional; 
+		return m_Type == Type; 
 	}
 
 	ItemGroup GetGroup() const { return m_Group; }
-	bool IsGroup(ItemGroup Type) const 
+	bool IsGroup(ItemGroup Group) const 
 	{
-		return m_Group == Type; 
+		return m_Group == Group; 
 	}
 
 	bool IsEquipmentSlot() const 
