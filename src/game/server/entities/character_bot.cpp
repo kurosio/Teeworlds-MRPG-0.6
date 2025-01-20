@@ -158,6 +158,13 @@ void CCharacterBotAI::ClearForcedWeapon()
 
 void CCharacterBotAI::SelectWeaponAtRandomInterval()
 {
+	// is empty target set default hammer
+	if(AI()->GetTarget()->IsEmpty())
+	{
+		m_Core.m_ActiveWeapon = WEAPON_HAMMER;
+		return;
+	}
+
 	// If an active weapon is forced, set it.
 	if(m_ForcedActiveWeapon.has_value())
 	{
@@ -393,7 +400,7 @@ void CCharacterBotAI::Move()
 	int Index = -1;
 	int ActiveWayPoints = 0;
 	vec2 WayPos = TargetPos;
-	for(int i = 0; i < (int)m_pBotPlayer->m_PathHandle.vPath.size() && i < 30 && 
+	for(int i = 0; i < (int)m_pBotPlayer->m_PathHandle.vPath.size() && i < 30 &&
 		!GS()->Collision()->IntersectLineWithInvisible(m_pBotPlayer->m_PathHandle.vPath[i], m_Pos, nullptr, nullptr); i++)
 	{
 		Index = i;

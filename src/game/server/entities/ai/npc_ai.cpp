@@ -113,6 +113,7 @@ void CNpcAI::ProcessGuardianNPC() const
 	if(const auto* pTargetChar = GS()->GetPlayerChar(m_Target.GetCID()))
 	{
 		m_pPlayer->m_TargetPos = pTargetChar->GetPos();
+		m_pCharacter->SelectWeaponAtRandomInterval();
 		m_pCharacter->Fire();
 		m_pCharacter->Move();
 		return;
