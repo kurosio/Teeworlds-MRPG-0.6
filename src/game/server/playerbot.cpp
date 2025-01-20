@@ -335,7 +335,7 @@ ESnappingPriority CPlayerBot::IsActiveForClient(int ClientID) const
 	if(m_BotType == TYPE_BOT_NPC)
 	{
 		const auto FunctionNPC = NpcBotInfo::ms_aNpcBot[m_MobID].m_Function;
-	
+
 		// always show guardian and nurse
 		if(FunctionNPC == FUNCTION_NPC_GUARDIAN || FunctionNPC == FUNCTION_NPC_NURSE)
 			return SNAPPING_PRIORITY_HIGH;

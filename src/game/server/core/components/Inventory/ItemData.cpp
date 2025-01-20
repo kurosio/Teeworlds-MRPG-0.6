@@ -19,7 +19,7 @@ CPlayer* CPlayerItem::GetPlayer() const
 	return GS()->GetPlayer(m_ClientID);
 }
 
-inline int randomRangecount(int startrandom, int endrandom, int count)
+inline static int randomRangecount(int startrandom, int endrandom, int count)
 {
 	int result = 0;
 	for(int i = 0; i < count; i++)
@@ -56,7 +56,7 @@ bool CPlayerItem::SetSettings(int Settings)
 	return Save();
 }
 
-bool CPlayerItem::ShouldAutoEquip()
+bool CPlayerItem::ShouldAutoEquip() const
 {
 	const auto* pPlayer = GetPlayer();
 	if(!pPlayer || !pPlayer->IsAuthed())
@@ -66,7 +66,7 @@ bool CPlayerItem::ShouldAutoEquip()
 	{
 		return !pPlayer->GetEquippedItemID(Info()->GetType()).has_value();
 	}
-	
+
 	if(Info()->IsEquipmentNonSlot())
 	{
 		return true;
@@ -94,7 +94,7 @@ bool CPlayerItem::SetValue(int Value)
 
 	if(m_Value > Value)
 	{
-		Changes = Remove((m_Value - Value));
+		Changes = Remove(m_Value - Value);
 	}
 	else if(m_Value < Value)
 	{
@@ -288,7 +288,7 @@ bool CPlayerItem::Use(int Value)
 	}
 
 	// potion health regen
-	if(const auto optPotionContext = Info()->GetPotionContext())
+	if(const auto& optPotionContext = Info()->GetPotionContext())
 	{
 		// check potion recast time
 		const auto Type = Info()->GetType();
@@ -382,7 +382,7 @@ bool CPlayerItem::Save()
 		if(m_Value)
 		{
 			m_Durability = 100;
-			Database->Execute<DB::INSERT>("tw_accounts_items", "(ItemID, UserID, Value, Settings, Enchant) VALUES ('{}', '{}', '{}', '{}', '{}')", 
+			Database->Execute<DB::INSERT>("tw_accounts_items", "(ItemID, UserID, Value, Settings, Enchant) VALUES ('{}', '{}', '{}', '{}', '{}')",
 				m_ID, UserID, m_Value, m_Settings, m_Enchant);
 		}
 	});
@@ -403,7 +403,7 @@ CItem CItem::FromJSON(const nlohmann::json& json)
 		CItem Item(ID, Value, Enchant, Durability);
 		return Item;
 	}
-	catch (nlohmann::json::exception& s)
+	catch(nlohmann::json::exception& s)
 	{
 		dbg_msg("CItem(FromJSON)", "%s (json %s)", json.dump().c_str(), s.what());
 	}
@@ -430,7 +430,7 @@ CItemsContainer CItem::FromArrayJSON(const nlohmann::json& json, const char* pFi
 			}
 		}
 	}
-	catch (nlohmann::json::exception& s)
+	catch(nlohmann::json::exception& s)
 	{
 		dbg_msg("CItem(FromArrayJson)", "(json %s)", s.what());
 	}
@@ -467,7 +467,7 @@ void CItem::ToArrayJSON(CItemsContainer& vItems, nlohmann::json& json, const cha
 			json[pField].push_back(jsItem);
 		}
 	}
-	catch (nlohmann::json::exception& s)
+	catch(nlohmann::json::exception& s)
 	{
 		dbg_msg("CItem(ToArrayJson)", "(json %s)", s.what());
 	}

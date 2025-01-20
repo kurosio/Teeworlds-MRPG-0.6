@@ -6,7 +6,7 @@
 
 constexpr unsigned int s_Particles = 4;
 
-CEntityQuestAction::CEntityQuestAction(CGameWorld* pGameWorld, int ClientID, int MoveToIndex, 
+CEntityQuestAction::CEntityQuestAction(CGameWorld* pGameWorld, int ClientID, int MoveToIndex,
 	const std::weak_ptr<CQuestStep>& pStep, bool AutoCompletesQuestStep, std::optional<int> optDefeatBotCID)
 	: CEntity(pGameWorld, CGameWorld::ENTTYPE_MOVE_TO_POINT, {}, 32.f, ClientID), m_MoveToIndex(MoveToIndex)
 {
@@ -29,7 +29,8 @@ CEntityQuestAction::CEntityQuestAction(CGameWorld* pGameWorld, int ClientID, int
 
 CEntityQuestAction::~CEntityQuestAction()
 {
-	if(const auto& pStep = GetQuestStep())
+	const auto& pStep = GetQuestStep();
+	if(pStep)
 	{
 		std::erase_if(pStep->m_vpEntitiesAction, [this](const auto* pEntPtr)
 		{
@@ -38,23 +39,25 @@ CEntityQuestAction::~CEntityQuestAction()
 	}
 
 	// update quest player progress
-	if(CPlayer* pPlayer = GetPlayer())
+	CPlayer* pPlayer = GetPlayer();
+	if(pPlayer && pStep)
 	{
 		// try auto finish step
 		if(m_AutoCompletesQuestStep)
 		{
-			auto* pQuestStep = GetQuestStep();
-			const bool LastElement = (pQuestStep->GetCompletedMoveActionCount() == pQuestStep->GetMoveActionNum());
-
-			if(LastElement && pQuestStep->IsComplete())
-				pQuestStep->Finish();
+			const bool LastElement = (pStep->GetCompletedMoveActionCount() == pStep->GetMoveActionNum());
+			if(LastElement && pStep->IsComplete())
+			{
+				pStep->Finish();
+			}
 		}
 
 		GS()->Core()->QuestManager()->Update(pPlayer);
 	}
 
 	// mark whether or not we need to remove the mob from the game
-	if(CPlayerBot* pDefeatBotPlayer = GetDefeatPlayerBot())
+	CPlayerBot* pDefeatBotPlayer = GetDefeatPlayerBot();
+	if(pDefeatBotPlayer)
 	{
 		auto& QuestBotInfo = pDefeatBotPlayer->GetQuestBotMobInfo();
 		QuestBotInfo.m_ActiveForClient[m_ClientID] = false;
@@ -154,7 +157,7 @@ void CEntityQuestAction::TryFinish()
 	{
 		const auto ItemID = pTaskData->m_RequiredItem.GetID();
 		const auto RequiredValue = pTaskData->m_RequiredItem.GetValue();
-		
+
 		if(!pPlayer->Account()->SpendCurrency(RequiredValue, ItemID))
 			return;
 
@@ -167,7 +170,7 @@ void CEntityQuestAction::TryFinish()
 	{
 		const auto ItemID = pTaskData->m_PickupItem.GetID();
 		const auto PickupValue = pTaskData->m_PickupItem.GetValue();
-		
+
 		auto* pPlayerItem = pPlayer->GetItem(ItemID);
 		pPlayerItem->Add(PickupValue);
 		GS()->Chat(m_ClientID, "You've picked up {} x{}.", pPlayerItem->Info()->GetName(), PickupValue);

@@ -61,7 +61,7 @@ public:
 	CPlayerItem() = default;
 	CPlayerItem(ItemIdentifier ID, int ClientID) : m_ClientID(ClientID) { m_ID = ID; }
 	CPlayerItem(ItemIdentifier ID, int ClientID, int Value, int Enchant, int Durability, int Settings) : CItem(ID, Value, Enchant, Durability, Settings), m_ClientID(ClientID) { }
-	
+
 	void Init(int Value, int Enchant, int Durability, int Settings)
 	{
 		m_Value = Value;
@@ -70,7 +70,7 @@ public:
 		m_Settings = Settings;
 		CPlayerItem::m_pData[m_ClientID][m_ID] = *this;
 	}
-	
+
 	// getters
 	int GetEnchantStats(AttributeIdentifier ID) const { return Info()->GetInfoEnchantStats(ID, m_Enchant); }
 	int GetEnchantPrice() const { return Info()->GetEnchantPrice(m_Enchant); }
@@ -99,7 +99,7 @@ public:
 	bool SetSettings(int Settings) override;
 
 private:
-	bool ShouldAutoEquip();
+	bool ShouldAutoEquip() const;
 };
 
 #endif

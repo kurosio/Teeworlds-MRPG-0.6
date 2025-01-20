@@ -3,8 +3,6 @@
 #include <game/server/entities/character_bot.h>
 #include <game/server/gamecontext.h>
 
-//#include <game/server/entities/botai/nurse_heart.h>
-
 CNpcAI::CNpcAI(NpcBotInfo* pNpcInfo, CPlayerBot* pPlayer, CCharacterBotAI* pCharacter)
 	: CBaseAI(pPlayer, pCharacter), m_pNpcInfo(pNpcInfo) {}
 
@@ -76,7 +74,7 @@ void CNpcAI::OnTargetRules(float Radius)
 
 	if(Function == FUNCTION_NPC_GUARDIAN)
 	{
-		auto* pPlayer = SearchPlayerCondition(Radius, [&](const CPlayer* pCandidate)
+		auto* pPlayer = SearchPlayerCondition(Radius, [](const CPlayer* pCandidate)
 		{
 			const bool IsCrimaScoreMax = pCandidate->Account()->IsCrimeScoreMaxedOut();
 			const bool DamageDisabled = pCandidate->GetCharacter()->m_Core.m_DamageDisabled;
@@ -86,7 +84,7 @@ void CNpcAI::OnTargetRules(float Radius)
 
 		if(!pPlayer)
 		{
-			pPlayer = SearchPlayerBotCondition(Radius, [&](CPlayerBot* pCandidate)
+			pPlayer = SearchPlayerBotCondition(Radius, [this](CPlayerBot* pCandidate)
 			{
 				return m_pCharacter->IsAllowedPVP(pCandidate->GetCID());
 			});
@@ -148,7 +146,7 @@ void CNpcAI::ProcessDefaultNPC()
 
 	// behavior
 	bool HasPlayerNearby = false;
-	SearchPlayerCondition(128.f, [&](CPlayer* pCandidate)
+	SearchPlayerCondition(128.f, [this, &HasPlayerNearby](CPlayer* pCandidate)
 	{
 		const int CandidateCID = pCandidate->GetCID();
 
@@ -194,8 +192,6 @@ void CNpcAI::Process()
 	// has functional nurse
 	if(m_pNpcInfo->m_Function == FUNCTION_NPC_NURSE)
 	{
-		//SetSafeFlags(SAFEFLAG_COLLISION_DISABLED);
-		//ProcessNPC();
 		return;
 	}
 
