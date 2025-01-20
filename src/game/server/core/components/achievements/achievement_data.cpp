@@ -32,7 +32,7 @@ void CAchievementInfo::InitData(const std::string& RewardData)
 		case AchievementType::CraftItem:
 			m_Group = ACHIEVEMENT_GROUP_ITEMS;
 			break;
-		default: 
+		default:
 			m_Group = ACHIEVEMENT_GROUP_GENERAL;
 			break;
 	}
@@ -117,22 +117,25 @@ bool CAchievement::UpdateProgress(int Criteria, int Progress, int ProgressType)
 
 void CAchievement::RewardPlayer() const
 {
-	const auto& JsonData = m_pInfo->GetRewardData();
-	if(JsonData.empty()) 
-		return;
-
 	CPlayer* pPlayer = GetPlayer();
-	if(const int Experience = JsonData.value("exp", 0); Experience > 0)
+	const auto& JsonData = m_pInfo->GetRewardData();
+
+	// json reward
+	if(!JsonData.empty())
 	{
-		pPlayer->Account()->AddExperience(Experience);
-		GS()->Chat(m_ClientID, "You received {} exp!", Experience);
+		if(const int Experience = JsonData.value("exp", 0); Experience > 0)
+		{
+			pPlayer->Account()->AddExperience(Experience);
+			GS()->Chat(m_ClientID, "You received {} exp!", Experience);
+		}
+
+		for(const CItemsContainer Items = CItem::FromArrayJSON(JsonData, "items"); auto & Item : Items)
+		{
+			pPlayer->GetItem(Item)->Add(Item.GetValue());
+		}
 	}
 
-	for(const CItemsContainer Items = CItem::FromArrayJSON(JsonData, "items"); auto & Item : Items)
-	{
-		pPlayer->GetItem(Item)->Add(Item.GetValue());
-	}
-
+	// achievement points
 	if(const int AchievementPoints = m_pInfo->GetPoint(); AchievementPoints > 0)
 	{
 		auto* pPlayerItem = pPlayer->GetItem(itAchievementPoint);
