@@ -57,7 +57,7 @@ public:
 	CItemDescription() = default;
 	CItemDescription(ItemIdentifier ID) : m_ID(ID) {}
 
-	void Init(const std::string& Name, const std::string& Description, const DBSet& GroupSet, 
+	void Init(const std::string& Name, const std::string& Description, const DBSet& GroupSet,
 		const DBSet& TypeSet, int Dysenthis, int InitialPrice, ContainerAttributes aAttributes, std::string&& Data)
 	{
 		m_Data = std::move(Data);
@@ -93,20 +93,20 @@ public:
 	const char* GetDescription() const { return m_aDescription; }
 	int GetInitialPrice() const { return m_InitialPrice; }
 	int GetDysenthis(int Enchant) const { return m_Dysenthis ? (m_Dysenthis + (maximum(GetEnchantPrice(Enchant) / 4, 1) * Enchant)) : 0; }
-	
+
 	ItemType GetType() const { return m_Type; }
-	bool IsType(ItemType Type) const 
+	bool IsType(ItemType Type) const
 	{
-		return m_Type == Type; 
+		return m_Type == Type;
 	}
 
 	ItemGroup GetGroup() const { return m_Group; }
-	bool IsGroup(ItemGroup Group) const 
+	bool IsGroup(ItemGroup Group) const
 	{
-		return m_Group == Group; 
+		return m_Group == Group;
 	}
 
-	bool IsEquipmentSlot() const 
+	bool IsEquipmentSlot() const
 	{
 		return (m_Group == ItemGroup::Equipment && (m_Type == ItemType::EquipHammer || m_Type == ItemType::EquipGun || m_Type == ItemType::EquipShotgun
 			|| m_Type == ItemType::EquipGrenade || m_Type == ItemType::EquipLaser || m_Type == ItemType::EquipArmor
@@ -114,7 +114,7 @@ public:
 			|| m_Type == ItemType::EquipTitle || m_Type == ItemType::EquipPotionHeal || m_Type == ItemType::EquipPotionMana));
 	}
 
-	bool IsEquipmentNonSlot() const 
+	bool IsEquipmentNonSlot() const
 	{
 		return (m_Group == ItemGroup::Equipment && !IsEquipmentSlot());
 	}

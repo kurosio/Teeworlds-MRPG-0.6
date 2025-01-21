@@ -5,38 +5,31 @@
 #include <game/server/gamecontext.h>
 #include "RandomBoxHandler.h"
 
-bool CRandomBox::Start(CPlayer* pPlayer, int Seconds, CPlayerItem* pPlayerUsesItem, int UseValue)
+bool CRandomBox::Start(CPlayer* pPlayer, int Ticks, CPlayerItem* pPlayerUsesItem, int Value)
 {
-	// Check if player and item parameters are valid
-	if(!pPlayer || !pPlayer->IsAuthed() || !pPlayerUsesItem || !pPlayerUsesItem->HasItem())
+	if(!pPlayer || !pPlayer->IsAuthed())
 		return false;
 
-	// Check if the last random box is still opening
+	if(!pPlayerUsesItem || !pPlayerUsesItem->HasItem())
+		return false;
+
 	if(pPlayer->m_aPlayerTick[LastRandomBox] > pPlayer->GS()->Server()->Tick())
 	{
 		pPlayer->GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::MainInformation, 100, "Wait until the last random box opens!");
 		return false;
 	}
 
-	// Clamp use value to a maximum of 100
-	UseValue = minimum(100, UseValue);
 
-	// Remove the specified amount of items and initialize the box
-	if(pPlayerUsesItem->Remove(UseValue))
+	// clamping value (maximal is 100)
+	Value = minimum(100, Value);
+
+	// start random box event
+	if(pPlayerUsesItem->Remove(Value))
 	{
-		// Send a chat message to the player confirming the usage of the items
-		pPlayer->GS()->Chat(pPlayer->GetCID(), "You used '{} x{}'.", pPlayerUsesItem->Info()->GetName(), UseValue);
-
-		// Convert the duration from seconds to game ticks
-		Seconds *= pPlayer->GS()->Server()->TickSpeed();
-
-		// Set the tick when the last random box will finish opening
-		pPlayer->m_aPlayerTick[LastRandomBox] = pPlayer->GS()->Server()->Tick() + Seconds;
-
-		// Sort the vector of random items by chance
-		// Create a new instance of the random box randomizer entity
-		std::sort(m_VectorItems.begin(), m_VectorItems.end(), [](const CRandomItem& pLeft, const CRandomItem& pRight) { return pLeft.m_Chance < pRight.m_Chance; });
-		new CEntityRandomBoxRandomizer(&pPlayer->GS()->m_World, pPlayer, pPlayer->Account()->GetID(), Seconds, std::move(m_VectorItems), pPlayerUsesItem, UseValue);
+		pPlayer->GS()->Chat(pPlayer->GetCID(), "You used '{} x{}'.", pPlayerUsesItem->Info()->GetName(), Value);
+		pPlayer->m_aPlayerTick[LastRandomBox] = pPlayer->GS()->Server()->Tick() + Ticks;
+		new CEntityRandomBoxRandomizer(&pPlayer->GS()->m_World, pPlayer->Account()->GetID(), Ticks, m_vItems, pPlayerUsesItem, Value);
+		return true;
 	}
 
 	return true;

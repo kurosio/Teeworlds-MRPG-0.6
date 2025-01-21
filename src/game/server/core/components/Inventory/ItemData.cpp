@@ -317,7 +317,8 @@ bool CPlayerItem::Use(int Value)
 	// random box
 	if(Info()->GetRandomBox())
 	{
-		Info()->GetRandomBox()->Start(pPlayer, 5, this, Value);
+		const auto Time = 5 * Server()->TickSpeed();
+		Info()->GetRandomBox()->Start(pPlayer, Time, this, Value);
 		return true;
 	}
 
