@@ -9,10 +9,10 @@
 #include "game/server/core/components/mails/mail_wrapper.h"
 
 CEntityRandomBoxRandomizer::CEntityRandomBoxRandomizer(CGameWorld* pGameWorld, int AccountID, int Lifetime,
-	const ChanceProcessor<CRandomItem>& ChanceProcessor, CPlayerItem* pPlayerUsesItem, int UseValue)
+	const ChanceProcessor<CRandomItem>& ChanceProcessor, CPlayerItem* pPlayerUsesItem, int Value)
 	: CEntity(pGameWorld, CGameWorld::ENTTYPE_RANDOM_BOX, {})
 {
-	m_Used = UseValue;
+	m_Used = Value;
 	m_Lifetime = Lifetime;
 	m_AccountID = AccountID;
 	m_pPlayerUsesItem = pPlayerUsesItem;

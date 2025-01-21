@@ -759,14 +759,14 @@ void CGS::OnTickGlobal()
 
 		if(RandomType == ToplistType::PlayerRating)
 		{
-			Chat(-1, "Rating leader: {} ({})! In second place is {} ({}) — the competition is heating up!", 
+			Chat(-1, "Rating leader: {} ({})! In second place is {} ({}) — the competition is heating up!",
 				Leader.Name, Leader.Data["Rating"].to_int(), Second.Name, Second.Data["Rating"].to_int());
 		}
 		else if(RandomType == ToplistType::PlayerWealthy)
 		{
 			Chat(-1, "Wealthiest player: {}({$}) is richest! {}({$}) close behind!",
 				Leader.Name, Leader.Data["Bank"], Second.Name, Second.Data["Bank"]);
-		}		
+		}
 		else if(RandomType == ToplistType::GuildLeveling)
 		{
 			Chat(-1, "The most experienced guild: {} (Level {})! Close behind: {} (Level {}).",
@@ -1252,9 +1252,13 @@ void CGS::UpdateCollisionZones()
 	if(Server()->Tick() % TextZoneUpdateInterval == 0)
 	{
 		const auto& vTextZones = Collision()->GetTextZones();
-		for(const auto& [Pos, Text] : vTextZones)
+		for(const auto& [Number, Detail] : vTextZones)
 		{
-			EntityManager()->Text(Pos, TextZoneUpdateInterval, Text.c_str());
+			const auto& Text = Detail.Text;
+			for(const auto& Pos : Detail.vPositions)
+			{
+				EntityManager()->Text(Pos, TextZoneUpdateInterval, Text.c_str());
+			}
 		}
 	}
 }

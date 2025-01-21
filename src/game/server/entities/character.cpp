@@ -1565,7 +1565,7 @@ void CCharacter::HandleTiles()
 			if(pZone && ((Server()->Tick() % Server()->TickSpeed() == 0) || m_Zonename != pZone->Name))
 			{
 				m_Zonename = pZone->Name;
-				const auto infoZone = fmt_default("{} zone. ({})", pZone->Name, pZone->IsPvp ? "PVP" : "Safe");
+				const auto infoZone = fmt_default("{} zone. ({})", pZone->Name, pZone->PVP ? "PVP" : "Safe");
 				GS()->Broadcast(m_ClientID, BroadcastPriority::GameBasicStats, 50, infoZone.c_str());
 			}
 		}

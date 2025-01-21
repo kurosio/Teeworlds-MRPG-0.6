@@ -32,8 +32,13 @@ public:
 	};
 	struct ZoneDetail
 	{
-		bool IsPvp{};
+		bool PVP{};
 		std::string Name{};
+	};
+	struct TextZoneDetail
+	{
+		std::vector<vec2> vPositions {};
+		std::string Text {};
 	};
 
 private:
@@ -53,21 +58,19 @@ private:
 		vec4 Rect{};
 		bool Smooth{};
 	};
-	struct TextZoneDetail
-	{
-		vec2 Pos {};
-		std::string Text {};
-	};
+
 	std::map<int, std::vector<vec2>> m_vTeleOuts {};
 	std::vector<FixedCamZoneDetail> m_vFixedCamZones {};
 	std::map<int, ZoneDetail> m_vZoneDetail {};
-	std::vector<TextZoneDetail> m_vTextZones {};
+	std::map<int, TextZoneDetail> m_vZoneTextDetail {};
 
 	// initialization
 	void InitTiles(CTile* pTiles);
 	void InitTeleports();
 	void InitSwitchExtra();
 	void InitSpeedupExtra();
+
+	void InitSettings();
 
 	// flags
 	int GetMainTileFlags(float x, float y) const;
@@ -89,7 +92,7 @@ public:
 	int GetHeight() const { return m_Height; }
 	vec2 GetRotateDirByFlags(int Flags);
 	CLayers* GetLayers() const { return m_pLayers; }
-	std::vector<TextZoneDetail>& GetTextZones() { return m_vTextZones; }
+	std::map<int, TextZoneDetail>& GetTextZones() { return m_vZoneTextDetail; }
 
 	// tile index
 	int GetMainTileIndex(float x, float y) const;

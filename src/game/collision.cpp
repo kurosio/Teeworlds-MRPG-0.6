@@ -32,6 +32,7 @@ void CCollision::Init(IKernel* pKernel, int WorldID)
 	// initailize base game tiles
 	IMap* pMap = m_pLayers->Map();
 	m_pTiles = static_cast<CTile*>(pMap->GetData(pGameLayer->m_Data));
+	InitSettings();
 	InitTiles(m_pTiles);
 
 	// initialize front tiles
@@ -82,7 +83,7 @@ void CCollision::Init(IKernel* pKernel, int WorldID)
 void CCollision::InitTiles(CTile* pTiles)
 {
 	// initialze variables
-	static std::unordered_map<int, int> TileFlags = 
+	static std::unordered_map<int, int> TileFlags =
 	{
 		{ TILE_DEATH, COLFLAG_DEATH },
 		{ TILE_SOLID, COLFLAG_SOLID },
@@ -149,7 +150,7 @@ void CCollision::InitTeleports()
 		{
 			m_pTiles[i].m_Index = static_cast<char>(Type);
 			m_vTeleOuts[Number].push_back(tilePos);
-		} 
+		}
 	}
 }
 
@@ -163,24 +164,12 @@ void CCollision::InitSwitchExtra()
 		const int Type = m_pSwitchExtra[i].m_Type;
 		const vec2 tilePos = { (i % m_Width) * TILE_SIZE + TILE_SIZE / 2.0f, (i / m_Width) * TILE_SIZE + TILE_SIZE / 2.0f };
 
-		if(Type == TILE_ZONE)
+		if(Type == TILE_ZONE && m_vZoneDetail.contains(Number))
 		{
-			if(m_vZoneDetail.contains(Number))
-				continue;
-
-			ZoneDetail detail;
-			const auto zoneIdentity = "#zone " + std::to_string(Number);
-			if(mystd::loadSettings<std::string, bool>(zoneIdentity, settingsLines, &detail.Name, &detail.IsPvp))
+			auto& zone = m_vZoneDetail[Number];
+			if(!zone.PVP)
 			{
-				m_vZoneDetail[Number] = detail;
-				if(!detail.IsPvp)
-				{
-					for(int j = 0; j < m_Width * m_Height; j++)
-					{
-						if(m_pSwitchExtra[j].m_Number == Number)
-							m_pTiles[j].m_ColFlags |= COLFLAG_SAFE;
-					}
-				}
+				m_pTiles[i].m_ColFlags |= COLFLAG_SAFE;
 			}
 		}
 		else if(Type == TILE_INTERACT_OBJECT)
@@ -190,20 +179,35 @@ void CCollision::InitSwitchExtra()
 				m_vInteractObjects[result.value()] = tilePos;
 			}*/
 		}
-		else if(Type == TILE_TEXT)
+		else if(Type == TILE_TEXT && m_vZoneTextDetail.contains(Number))
 		{
-			TextZoneDetail detail;
-			const auto textIdentity = "#text " + std::to_string(Number);
-			if(mystd::loadSettings<std::string>(textIdentity, settingsLines, &detail.Text))
-			{
-				detail.Pos = tilePos;
-				m_vTextZones.emplace_back(detail);
-			}
+			auto& zone = m_vZoneTextDetail[Number];
+			zone.vPositions.emplace_back(tilePos);
 		}
 	}
 }
 
 void CCollision::InitSpeedupExtra() {}
+
+void CCollision::InitSettings()
+{
+	const std::vector<std::string>& settingsLines = m_pLayers->GetSettings();
+
+	for(int i = 1; i < 255; i++)
+	{
+		// initialize zones details
+		ZoneDetail zoneDetail;
+		const auto zoneIdentity = "#zone " + std::to_string(i);
+		if(mystd::loadSettings<std::string, bool>(zoneIdentity, settingsLines, &zoneDetail.Name, &zoneDetail.PVP))
+			m_vZoneDetail[i] = zoneDetail;
+
+		// initialize text zone details
+		TextZoneDetail textDetail;
+		const auto textIdentity = "#text " + std::to_string(i);
+		if(mystd::loadSettings<std::string>(textIdentity, settingsLines, &textDetail.Text))
+			m_vZoneTextDetail[i] = textDetail;
+	}
+}
 
 void CCollision::InitEntities(const std::function<void(int, vec2, int)>& funcInit) const
 {
@@ -335,7 +339,7 @@ int CCollision::IntersectLine(vec2 Pos0, vec2 Pos1, vec2 *pOutCollision, vec2 *p
 	const int DeltaTileX = (Tile0X <= Tile1X) ? 1 : -1;
 	const int DeltaTileY = (Tile0Y <= Tile1Y) ? 1 : -1;
 	const float DeltaError = DeltaTileY * DeltaTileX * Ratio;
-	
+
 	int CurTileX = Tile0X;
 	int CurTileY = Tile0Y;
 	vec2 Pos = Pos0;
