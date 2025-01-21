@@ -43,6 +43,7 @@ public:
 	{
 		if(m_pCharacter)
 		{
+			// is lost decrease agression
 			if(m_Type == TargetType::Lost && m_Aggression)
 			{
 				m_Aggression--;

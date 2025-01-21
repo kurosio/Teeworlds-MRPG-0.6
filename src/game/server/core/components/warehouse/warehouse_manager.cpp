@@ -15,12 +15,12 @@ void CWarehouseManager::OnPreInit()
 		const auto ID = pRes->getInt("ID");
 		const auto Name = pRes->getString("Name");
 		const auto Type = DBSet(pRes->getString("Type"));
-		const auto Properties = pRes->getString("Properties");
+		const auto Data = pRes->getString("Data");
 		const auto Pos = vec2((float)pRes->getInt("PosX"), (float)pRes->getInt("PosY"));
 		const auto Currency = pRes->getInt("Currency");
 		const auto WorldID = pRes->getInt("WorldID");
 
-		CWarehouse::CreateElement(ID)->Init(Name, Type, Properties, Pos, Currency, WorldID);
+		CWarehouse::CreateElement(ID)->Init(Name, Type, Data, Pos, Currency, WorldID);
 	}
 }
 
@@ -242,15 +242,19 @@ void CWarehouseManager::ShowWarehouseList(CPlayer* pPlayer, CWarehouse* pWarehou
 	}
 	VStorage.AddItemValue(pCurrency->GetID());
 	VStorage.AddOption("REPAIR_ITEMS", "Repair all items - FREE");
+	VoteWrapper::AddEmptyline(ClientID);
 
 	// show trade list by groups
-	ShowTradeList(pWarehouse, pPlayer, "Can be used's", ItemGroup::Usable);
-	ShowTradeList(pWarehouse, pPlayer, "Potion's", ItemGroup::Potion);
-	ShowTradeList(pWarehouse, pPlayer, "Equipment's", ItemGroup::Equipment);
-	ShowTradeList(pWarehouse, pPlayer, "Decoration's", ItemGroup::Decoration);
-	ShowTradeList(pWarehouse, pPlayer, "Craft's", ItemGroup::Resource);
-	ShowTradeList(pWarehouse, pPlayer, "Other's", ItemGroup::Other);
-	ShowTradeList(pWarehouse, pPlayer, "Quest's", ItemGroup::Quest);
+	if(pWarehouse->IsHasFlag(WF_BUY))
+	{
+		ShowTradeList(pWarehouse, pPlayer, "Can be used's", ItemGroup::Usable);
+		ShowTradeList(pWarehouse, pPlayer, "Potion's", ItemGroup::Potion);
+		ShowTradeList(pWarehouse, pPlayer, "Equipment's", ItemGroup::Equipment);
+		ShowTradeList(pWarehouse, pPlayer, "Decoration's", ItemGroup::Decoration);
+		ShowTradeList(pWarehouse, pPlayer, "Craft's", ItemGroup::Resource);
+		ShowTradeList(pWarehouse, pPlayer, "Other's", ItemGroup::Other);
+		ShowTradeList(pWarehouse, pPlayer, "Quest's", ItemGroup::Quest);
+	}
 
 	// selling list
 	if(pWarehouse->IsHasFlag(WF_SELL))
@@ -452,7 +456,7 @@ bool CWarehouseManager::SellItem(CPlayer* pPlayer, CWarehouse* pWarehouse, int T
 	const auto FinalPrice = Value * Price;
 
 	// try spend by item
-	if(pPlayer->Account()->SpendCurrency(Value, pItem->GetID()))
+	if(Value > 0 && pPlayer->Account()->SpendCurrency(Value, pItem->GetID()))
 	{
 		// storage add products
 		if(pWarehouse->IsHasFlag(WF_STORAGE))

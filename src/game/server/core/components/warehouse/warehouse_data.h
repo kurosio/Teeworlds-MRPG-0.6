@@ -83,7 +83,7 @@ class CWarehouse : public MultiworldIdentifiableData<std::deque<CWarehouse*>>
 			if(m_pWarehouse->IsHasFlag(WF_STORAGE) && m_Value >= Value)
 			{
 				m_Value -= Value;
-				m_pWarehouse->SaveProperties();
+				m_pWarehouse->SaveData();
 				return true;
 			}
 			return false;
@@ -95,7 +95,7 @@ class CWarehouse : public MultiworldIdentifiableData<std::deque<CWarehouse*>>
 			if(m_pWarehouse->IsHasFlag(WF_STORAGE))
 			{
 				m_Value += Value;
-				m_pWarehouse->SaveProperties();
+				m_pWarehouse->SaveData();
 			}
 		}
 
@@ -112,7 +112,7 @@ class CWarehouse : public MultiworldIdentifiableData<std::deque<CWarehouse*>>
 
 	int m_ID {};
 	int64_t m_Flags {};
-	char m_aName[32] {};
+	std::string m_Name {};
 	vec2 m_Pos {};
 	int m_Currency {};
 	int m_WorldID {};
@@ -131,60 +131,20 @@ public:
 	}
 
 	// initialize
-	void Init(const std::string& Name, const DBSet& Type, const std::string& Properties, vec2 Pos, int Currency, int WorldID);
-	void InitProperties(const DBSet& Type, const std::string& Properties);
-	void SaveProperties();
+	void Init(const std::string& Name, const DBSet& Type, const std::string& Data, vec2 Pos, int Currency, int WorldID);
+	void InitJson(const DBSet& Type, const std::string& Data);
+	void SaveData();
 
-	// get identificator
-	int GetID() const
-	{
-		return m_ID;
-	}
+	int GetID() const { return m_ID; }
+	bool IsHasFlag(int Flag) const { return m_Flags & Flag; }
+	const char* GetName() const { return m_Name.c_str(); }
+	vec2 GetPos() const { return m_Pos; }
+	int GetWorldID() const { return m_WorldID; }
 
-	// check flag is enabled
-	bool IsHasFlag(int Flag) const
-	{
-		return m_Flags & Flag;
-	}
-
-	// get warehouse name
-	const char* GetName() const
-	{
-		return m_aName;
-	}
-
-	// get warehouse position
-	vec2 GetPos() const
-	{
-		return m_Pos;
-	}
-
-	// get currency
-	CItemDescription* GetCurrency() const
-	{
-		return &CItemDescription::Data()[m_Currency];
-	}
-
-	// get location world id
-	int GetWorldID() const
-	{
-		return m_WorldID;
-	}
-
-	// get storage
-	CStorage& Storage()
-	{
-		return m_Storage;
-	}
-
-	// get trade element
+	CItemDescription* GetCurrency() const { return &CItemDescription::Data()[m_Currency]; }
+	CStorage& Storage() { return m_Storage; }
 	CTrade* GetTrade(int TradeID);
-
-	// get trade container
-	const ContainerTradingList& GetTradingList() const
-	{
-		return m_vTradingList;
-	}
+	const ContainerTradingList& GetTradingList() const { return m_vTradingList; }
 };
 
 #endif

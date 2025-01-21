@@ -158,13 +158,6 @@ void CCharacterBotAI::ClearForcedWeapon()
 
 void CCharacterBotAI::SelectWeaponAtRandomInterval()
 {
-	// is empty target set default hammer
-	if(AI()->GetTarget()->IsEmpty())
-	{
-		m_Core.m_ActiveWeapon = WEAPON_HAMMER;
-		return;
-	}
-
 	// If an active weapon is forced, set it.
 	if(m_ForcedActiveWeapon.has_value())
 	{
@@ -365,7 +358,11 @@ void CCharacterBotAI::Snap(int SnappingClient)
 
 void CCharacterBotAI::ProcessBot()
 {
-	AI()->GetTarget()->Tick();
+	if(m_pAI->GetTarget()->IsEmpty())
+		m_Core.m_ActiveWeapon = WEAPON_HAMMER;
+	else
+		m_pAI->GetTarget()->Tick();
+
 	m_pAI->Process();
 
 	m_PrevPos = m_Pos;

@@ -6,41 +6,37 @@
 #include <game/server/gamecontext.h>
 #include <game/server/core/components/Inventory/InventoryManager.h>
 
-/*
- * Json structure information:
- * * type - warehouse type (buying, selling, buying_storage, selling_storage)
- * * items_collections - collection of items by type or function (collect_by, value)
- * * items - collection of items (id, value, enchant, price)
- */
-
-void CWarehouse::Init(const std::string& Name, const DBSet& Type, const std::string& Properties, vec2 Pos, int Currency, int WorldID)
+void CWarehouse::Init(const std::string& Name, const DBSet& Type, const std::string& Data, vec2 Pos, int Currency, int WorldID)
 {
-	str_copy(m_aName, Name.c_str(), sizeof(m_aName));
+	m_Flags = WF_NONE;
+	m_Name = Name;
 	m_Pos = Pos;
 	m_Currency = Currency;
 	m_WorldID = WorldID;
 
-	InitProperties(Type, Properties);
+	InitJson(Type, Data);
 }
 
-void CWarehouse::InitProperties(const DBSet& Type, const std::string& Properties)
+void CWarehouse::InitJson(const DBSet& Type, const std::string& Data)
 {
 	// check properties exist
-	dbg_assert(!Properties.empty(), "The properties string is empty");
+	dbg_assert(!Data.empty(), "The data json string is empty");
 
-	// init type
-	m_Flags = WF_NONE;
 
+	// initialize type flags
 	if(Type.hasSet("buying"))
 		m_Flags |= WF_BUY;
 	else if(Type.hasSet("selling"))
 		m_Flags |= WF_SELL;
-	
+
+
+	// initialize other flags
 	if(Type.hasSet("storage"))
 		m_Flags |= WF_STORAGE;
 
+
 	// parse properties
-	mystd::json::parse(Properties, [this](nlohmann::json& pJson)
+	mystd::json::parse(Data, [this](nlohmann::json& pJson)
 	{
 		// initialize trade list
 		if(m_Flags & (WF_BUY | WF_SELL))
@@ -63,7 +59,9 @@ void CWarehouse::InitProperties(const DBSet& Type, const std::string& Properties
 						const auto HasInitialPrice = Item.Info()->GetInitialPrice() > 0;
 
 						if(Item.IsValid() && HasInitialPrice)
+						{
 							m_vTradingList.emplace_back(m_vTradingList.size(), std::move(Item), Item.Info()->GetInitialPrice());
+						}
 					}
 				}
 			}
@@ -81,10 +79,13 @@ void CWarehouse::InitProperties(const DBSet& Type, const std::string& Properties
 
 					// adding item to trading list
 					if(Item.IsValid() && Price > 0)
+					{
 						m_vTradingList.emplace_back(m_vTradingList.size(), std::move(Item), Price);
+					}
 				}
 			}
 		}
+
 
 		// initialize storage
 		if(m_Flags & WF_STORAGE)
@@ -99,9 +100,33 @@ void CWarehouse::InitProperties(const DBSet& Type, const std::string& Properties
 			m_Storage.m_pWarehouse = this;
 		}
 
+		// sorting by group and price
+		std::ranges::sort(m_vTradingList, [](const CTrade& a, const CTrade& b)
+		{
+			const auto aPrice = a.GetItem()->Info()->GetInitialPrice();
+			const auto bPrice = b.GetItem()->Info()->GetInitialPrice();
+
+			if(aPrice != bPrice)
+			{
+				return aPrice < bPrice;
+			}
+
+			const auto aGroup = a.GetItem()->Info()->GetGroup();
+			const auto bGroup = b.GetItem()->Info()->GetGroup();
+			if(aGroup != bGroup)
+			{
+				return aGroup < bGroup;
+			}
+
+			const auto aType = a.GetItem()->Info()->GetType();
+			const auto bType = b.GetItem()->Info()->GetType();
+			return aType < bType;
+		});
+
+
 		// information about initialize
 		dbg_msg("warehouse", "'%s' initialized. (storage: '%s', type: '%s', size: '%lu')",
-			m_aName,
+			m_Name.c_str(),
 			IsHasFlag(WF_STORAGE) ? "Yes" : "No",
 			IsHasFlag(WF_BUY) ? "Buy" : "Sell",
 			m_vTradingList.size());
@@ -111,7 +136,7 @@ void CWarehouse::InitProperties(const DBSet& Type, const std::string& Properties
 	});
 }
 
-void CWarehouse::SaveProperties()
+void CWarehouse::SaveData()
 {
 	// update storage value
 	if(IsHasFlag(WF_STORAGE))
@@ -131,7 +156,7 @@ CTrade* CWarehouse::GetTrade(int TradeID)
 		return Trade.GetID() == TradeID;
 	});
 
-	return iter != m_vTradingList.end() ? &(*iter) : nullptr;
+	return iter != m_vTradingList.end() ? std::to_address(iter) : nullptr;
 }
 
 void CWarehouse::CStorage::UpdateText(int LifeTime) const
