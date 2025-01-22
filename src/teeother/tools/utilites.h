@@ -54,12 +54,12 @@ inline void from_json(const nlohmann::json& j, vec2& value)
 	}
 }
 
-inline void to_json(nlohmann::json& j, const vec2& value) 
+inline void to_json(nlohmann::json& j, const vec2& value)
 {
-	j = nlohmann::json 
+	j = nlohmann::json
 	{
-		{"x", value.x}, 
-		{"y", value.y} 
+		{"x", value.x},
+		{"y", value.y}
 	};
 }
 
@@ -184,10 +184,18 @@ namespace mystd
 			if(it != lines.end())
 			{
 				auto valueStr = it->substr(fullPrefix.size() + CurrentPos);
-				valueStr.erase(valueStr.begin(), std::find_if_not(valueStr.begin(), valueStr.end(), [](unsigned char c)
+
+				// erase spaces
+				size_t spacesRemoved = 0;
+				valueStr.erase(valueStr.begin(), std::find_if_not(valueStr.begin(), valueStr.end(), [&](unsigned char c)
 				{
-					return std::isspace(c);
+					bool isSpace = std::isspace(c);
+					if(isSpace) ++spacesRemoved;
+					return isSpace;
 				}));
+
+				// update current position by spaces
+				CurrentPos += spacesRemoved;
 
 				// is by quotes parser
 				if(valueStr.starts_with('"'))
