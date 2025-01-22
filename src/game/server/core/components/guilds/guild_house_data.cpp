@@ -95,10 +95,6 @@ bool CGuildHouse::ReduceRentDays(int Days)
 
 void CGuildHouse::UpdateText(int Lifetime) const
 {
-	// check valid vector and now time
-	if(!is_negative_vec(m_TextPosition))
-		return;
-
 	// update text
 	const char* pName = IsPurchased() ? m_pGuild->GetName() : "FREE GUILD HOUSE";
 	GS()->EntityManager()->Text(m_TextPosition, Lifetime - 5, pName);
