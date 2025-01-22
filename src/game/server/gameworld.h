@@ -35,7 +35,8 @@ struct FixedViewCam
 				m_CurrentView = playerView;
 
 			// check distance
-			if(const float distanceToTarget = distance(*m_CurrentView, target); distanceToTarget < 5.f)
+			float distanceByState = m_Locked ? 4.f : 32.f;
+			if(const float distanceToTarget = distance(*m_CurrentView, target); distanceToTarget < distanceByState)
 			{
 				if(m_Locked)
 					m_CurrentView = target;

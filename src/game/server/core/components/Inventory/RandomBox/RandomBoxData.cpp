@@ -19,7 +19,6 @@ bool CRandomBox::Start(CPlayer* pPlayer, int Ticks, CPlayerItem* pPlayerUsesItem
 		return false;
 	}
 
-
 	// clamping value (maximal is 100)
 	Value = minimum(100, Value);
 

@@ -105,6 +105,7 @@ void initGatheringNode(const std::string& nodeType, const std::vector<std::strin
 		}
 
 		// store the initialized node
+		detail.m_vItems.normalizeChances();
 		vNodesContainer[Number] = detail;
 		dbg_msg("map-init", "%s %d initialized: Items='%d'", nodeType.c_str(), Number, (int)detail.m_vItems.size());
 	}

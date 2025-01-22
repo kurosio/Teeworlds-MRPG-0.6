@@ -28,7 +28,6 @@ public:
 
 		m_vElements.push_back({ Element, Chance });
 		m_TotalChance += Chance;
-		normalizeChances();
 	}
 
 	bool removeElement(const T& element)
@@ -42,30 +41,6 @@ public:
 		{
 			m_TotalChance -= it->Chance;
 			m_vElements.erase(it);
-			normalizeChances();
-			return true;
-		}
-
-		return false;
-	}
-
-	bool changeChance(const T& element, double newChance)
-	{
-		if(newChance <= 0)
-			return false;
-
-		auto it = std::find_if(m_vElements.begin(), m_vElements.end(),
-			[&element](const ElementWithChance& e)
-		{
-			return e.Element == element;
-		});
-
-		if(it != m_vElements.end())
-		{
-			m_TotalChance -= it->Chance;
-			it->Chance = newChance;
-			m_TotalChance += newChance;
-			normalizeChances();
 			return true;
 		}
 
@@ -92,8 +67,6 @@ public:
 
 		for(auto& e : m_vElements)
 			e.Chance = newChance;
-
-		normalizeChances();
 	}
 
 	T getRandomElement() const

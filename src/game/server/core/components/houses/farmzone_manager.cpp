@@ -14,6 +14,7 @@ void CFarmzone::AddItemToNode(int ItemID)
 {
 	m_Node.m_vItems.addElement(ItemID, 100.f);
 	m_Node.m_vItems.setEqualChance(100.f);
+	m_Node.m_vItems.normalizeChances();
 }
 
 bool CFarmzone::RemoveItemFromNode(int ItemID)
@@ -23,8 +24,10 @@ bool CFarmzone::RemoveItemFromNode(int ItemID)
 
 	bool Removed = m_Node.m_vItems.removeElement(ItemID);
 	if(Removed)
+	{
 		m_Node.m_vItems.setEqualChance(100.f);
-
+		m_Node.m_vItems.normalizeChances();
+	}
 	return Removed;
 }
 

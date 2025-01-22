@@ -17,6 +17,7 @@ CEntityRandomBoxRandomizer::CEntityRandomBoxRandomizer(CGameWorld* pGameWorld, i
 	m_AccountID = AccountID;
 	m_pPlayerUsesItem = pPlayerUsesItem;
 	m_ChanceProcessor = ChanceProcessor;
+	m_ChanceProcessor.normalizeChances();
 
 	GameWorld()->InsertEntity(this);
 }
