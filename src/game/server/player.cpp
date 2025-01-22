@@ -427,7 +427,7 @@ void CPlayer::TryRespawn()
 {
 	int SpawnType = SPAWN_HUMAN;
 	std::optional<vec2> FinalSpawnPos = std::nullopt;
-	
+
 	// spawn by prison
 	if(Account()->GetPrisonManager().IsInPrison())
 	{
@@ -665,7 +665,7 @@ void CPlayer::FormatBroadcastBasicStats(char* pBuffer, int Size, const char* pAp
 		Result.append(MaxLines - Lines, '\n');
 	}
 
-	str_format(pBuffer, Size, "%s%-150s", Result.c_str(), pAppendStr);
+	str_format(pBuffer, Size, "%s%-200s", Result.c_str(), pAppendStr);
 }
 
 /* #########################################################################
