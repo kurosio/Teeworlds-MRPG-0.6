@@ -281,6 +281,10 @@ void CPlayerBot::TryRespawn()
 		if(!pOwner || !pOwner->GetCharacter())
 			return;
 
+		auto* pOwnerItem = pOwner->GetItem(pOwner->GetEquippedItemID(ItemType::EquipEidolon).value());
+		if(pOwnerItem->GetDurability() <= 0)
+			return;
+
 		FinalSpawnPos = pOwner->GetCharacter()->GetPos();
 	}
 	else if(m_BotType == TYPE_BOT_QUEST_MOB)

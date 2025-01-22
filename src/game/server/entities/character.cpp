@@ -357,7 +357,7 @@ bool CCharacter::FireHammer(vec2 Direction, vec2 ProjStartPos)
 		if(GS()->Collision()->IntersectLineWithInvisible(ProjStartPos, pTarget->m_Pos, nullptr, nullptr))
 			continue;
 
-		if(!pTarget->IsAllowedPVP(m_ClientID) || pTarget->m_Core.m_CollisionDisabled)
+		if(!pTarget->IsAllowedPVP(m_ClientID))
 			continue;
 
 		const auto HammerHitPos = length(pTarget->m_Pos - ProjStartPos) > 0.0f
@@ -1295,6 +1295,13 @@ int CCharacter::GetTotalDamageByWeapon(int Weapon) const
 	return Damage + EnchantBonus;
 }
 
+CPlayer* CCharacter::GetLastAttacker() const
+{
+	if(m_pPlayer->m_aPlayerTick[LastDamage] > (Server()->Tick() - Server()->TickSpeed() * 2))
+		return GS()->GetPlayer(m_LastDamageByClient);
+	return nullptr;
+}
+
 bool CCharacter::TakeDamage(vec2 Force, int Damage, int FromCID, int Weapon)
 {
 	// clamp force vel
@@ -1364,6 +1371,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Damage, int FromCID, int Weapon)
 	m_Health -= Damage;
 	m_EmoteType = EMOTE_PAIN;
 	m_EmoteStop = Server()->Tick() + 500 * Server()->TickSpeed() / 1000;
+	m_LastDamageByClient = FromCID;
 	m_pPlayer->SetSnapHealthTick(2);
 	m_pPlayer->m_aPlayerTick[LastDamage] = Server()->Tick();
 	//dbg_msg("test", "[dmg:%d crit:%d, weapon:%d] damage %s to %s / star num %d",

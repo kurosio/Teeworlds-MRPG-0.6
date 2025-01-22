@@ -82,7 +82,7 @@ void CProjectile::Tick()
 	m_LifeSpan--;
 
 	// check collide span and target
-	if (m_LifeSpan < 0 || GameLayerClipped(CurPos) || Collide || (TargetChr && !TargetChr->m_Core.m_CollisionDisabled && TargetChr->IsAllowedPVP(OwnerChar->GetPlayer()->GetCID())))
+	if (m_LifeSpan < 0 || GameLayerClipped(CurPos) || Collide || (TargetChr && TargetChr->IsAllowedPVP(OwnerChar->GetPlayer()->GetCID())))
 	{
 		if(m_LifeSpan >= 0 || m_Weapon == WEAPON_GRENADE)
 		{

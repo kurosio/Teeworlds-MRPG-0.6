@@ -370,7 +370,11 @@ void CInventoryManager::RepairDurabilityItems(CPlayer* pPlayer)
 	const int ClientID = pPlayer->GetCID();
 	Database->Execute<DB::UPDATE>("tw_accounts_items", "Durability = '100' WHERE UserID = '{}'", pPlayer->Account()->GetID());
 	for(auto& [ID, Item] : CPlayerItem::Data()[ClientID])
+	{
 		Item.m_Durability = 100;
+	}
+
+	pPlayer->TryCreateEidolon();
 }
 
 std::vector<int> CInventoryManager::GetItemsCollection(std::optional<ItemGroup> optGroup, std::optional<ItemType> optType)

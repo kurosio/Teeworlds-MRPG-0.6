@@ -11,6 +11,7 @@ public:
 	bool CanDamage(CPlayer* pFrom) override;
 
 	void OnSpawn() override;
+	void OnDie(int Killer, int Weapon) override;
 
 	void OnTargetRules(float Radius) override;
 	void Process() override;

@@ -11,7 +11,14 @@ CEidolonAI::CEidolonAI(CPlayerBot* pPlayer, CCharacterBotAI* pCharacter)
 bool CEidolonAI::CanDamage(CPlayer* pFrom)
 {
 	if(!pFrom->IsBot() && m_pPlayer->GetEidolonOwner() != pFrom)
-		return true;
+	{
+		auto* pOwner = m_pPlayer->GetEidolonOwner();
+		auto* pOwnerLastAttacker = pOwner->GetCharacter()->GetLastAttacker();
+		if(pOwnerLastAttacker && pOwnerLastAttacker->GetCID() == pFrom->GetCID())
+			return true;
+
+		return false;
+	}
 
 	const auto* pFromBot = static_cast<CPlayerBot*>(pFrom);
 	if(pFromBot && (pFromBot->GetBotType() == TYPE_BOT_MOB || pFromBot->GetBotType() == TYPE_BOT_EIDOLON ||
@@ -27,6 +34,27 @@ void CEidolonAI::OnSpawn()
 	m_pCharacter->m_Core.m_Solo = true;
 }
 
+void CEidolonAI::OnDie(int Killer, int Weapon)
+{
+	auto* pOwner = m_pPlayer->GetEidolonOwner();
+	if(!pOwner || !pOwner->GetCharacter())
+		return;
+
+	if(Weapon != WEAPON_SELF && Weapon != WEAPON_WORLD)
+	{
+		auto optItemID = pOwner->GetEquippedItemID(ItemType::EquipEidolon);
+		if(optItemID.has_value())
+		{
+			auto* pPlayerItem = pOwner->GetItem(optItemID.value());
+			if(pPlayerItem && pPlayerItem->GetDurability() > 0)
+			{
+				pPlayerItem->SetDurability(0);
+				pOwner->GS()->Chat(pOwner->GetCID(), "Your eidolon item durability is 0.");
+			}
+		}
+	}
+}
+
 void CEidolonAI::OnTargetRules(float Radius)
 {
 	auto* pOwner = m_pPlayer->GetEidolonOwner();
@@ -34,19 +62,11 @@ void CEidolonAI::OnTargetRules(float Radius)
 		return;
 
 	// find from players
-	const auto* pTarget = GS()->GetPlayer(m_Target.GetCID(), false, true);
 	const auto* pPlayer = SearchPlayerCondition(Radius, [&](const CPlayer* pCandidate)
 	{
+		const auto* pOwnerChar = pOwner->GetCharacter();
 		const bool DamageDisabled = pCandidate->GetCharacter()->m_Core.m_DamageDisabled;
-		const bool AllowedPVP = pOwner->GetCID() != pCandidate->GetCID() && pOwner->GetCharacter()->IsAllowedPVP(pCandidate->GetCID());
-
-		if(pTarget)
-		{
-			const int CurrentTotalAttHP = pTarget->GetTotalAttributeValue(AttributeIdentifier::HP);
-			const int CandidateTotalAttHP = pCandidate->GetTotalAttributeValue(AttributeIdentifier::HP);
-			return !DamageDisabled && AllowedPVP && (CurrentTotalAttHP < CandidateTotalAttHP);
-		}
-
+		const bool AllowedPVP = pOwner->GetCID() != pCandidate->GetCID() && m_pCharacter->IsAllowedPVP(pCandidate->GetCID());
 		return !DamageDisabled && AllowedPVP;
 	});
 

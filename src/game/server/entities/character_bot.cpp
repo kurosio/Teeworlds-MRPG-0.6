@@ -135,8 +135,9 @@ void CCharacterBotAI::Die(int Killer, int Weapon)
 	}
 
 	// Die
+	m_pAI->OnDie(Killer, Weapon);
 	m_aListDmgPlayers.clear();
-	AI()->GetTarget()->Reset();
+	m_pAI->GetTarget()->Reset();
 	CCharacter::Die(Killer, Weapon);
 }
 
