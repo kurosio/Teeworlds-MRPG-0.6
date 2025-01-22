@@ -100,7 +100,7 @@ bool CInventoryManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
-		std::vector<std::pair<ItemGroup, std::string>> vMenuItems = 
+		std::vector<std::pair<ItemGroup, std::string>> vMenuItems =
 		{
 			{ ItemGroup::Usable,           "\u270C" },
 			{ ItemGroup::Resource,         "\u2692" },
@@ -227,7 +227,7 @@ bool CInventoryManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 
 		// weapons equipment
 		VoteWrapper VFunctional(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "\u2604 Modules: Functional");
-		auto functionalModules = PlayerItems | std::views::filter([](const auto& pair) 
+		auto functionalModules = PlayerItems | std::views::filter([](const auto& pair)
 		{
 			return pair.second.Info()->IsEquipmentNonSlot() && !pair.second.Info()->HasAttributes() && pair.second.HasItem();
 		});
@@ -248,7 +248,7 @@ bool CInventoryManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 
 		// weapons equipment
 		VoteWrapper VStats(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "\u2604 Modules: Stats");
-		auto statModules = PlayerItems | std::views::filter([](const auto& pair) 
+		auto statModules = PlayerItems | std::views::filter([](const auto& pair)
 		{
 			return pair.second.Info()->IsEquipmentNonSlot() && pair.second.Info()->HasAttributes() && pair.second.HasItem();
 		});
@@ -267,7 +267,6 @@ bool CInventoryManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		}
 
 		// add backpage
-		VoteWrapper::AddEmptyline(ClientID);
 		VoteWrapper::AddBackpage(ClientID);
 		return true;
 	}

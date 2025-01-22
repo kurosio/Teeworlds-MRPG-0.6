@@ -231,67 +231,6 @@ int CBotManager::GetQuestNPC(int MobID)
 	return NpcBotInfo::ms_aNpcBot[MobID].m_GiveQuestID;
 }
 
-bool CBotManager::InsertItemsDetailVotes(CPlayer* pPlayer, int WorldID) const
-{
-	bool Found = false;
-	const int ClientID = pPlayer->GetCID();
-	const float ExtraChance = clamp(static_cast<float>(pPlayer->GetTotalAttributeValue(AttributeIdentifier::LuckyDropItem)) / 100.0f, 0.01f, 10.0f);
-
-	for(const auto& [ID, Mob] : MobBotInfo::ms_aMobBot)
-	{
-		if(WorldID != Mob.m_WorldID)
-			continue;
-
-		const vec2 Pos = Mob.m_Position / 32.0f;
-		VoteWrapper VMob(ClientID, VWF_UNIQUE | VWF_STYLE_SIMPLE, "Mob {}", Mob.GetName());
-		VMob.MarkList().Add("Location:");
-		{
-			VMob.BeginDepth();
-			VMob.Add(Instance::Localize(ClientID, Instance::Server()->GetWorldName(WorldID)));
-			VMob.Add("x{} y{}", (int)Pos.x, (int)Pos.y);
-			VMob.EndDepth();
-		}
-		VMob.AddLine();
-		VMob.MarkList().Add("Description:");
-		{
-			VMob.BeginDepth();
-			VMob.Add("Level: {}", Mob.m_Level);
-			VMob.Add("Power: {}", Mob.m_Power);
-			VMob.Add("Boss: {}", Mob.m_Boss ? "Yes" : "No");
-			VMob.Add("Respawn: {} sec", Mob.m_RespawnTick);
-			VMob.EndDepth();
-		}
-		VMob.AddLine();
-		VMob.MarkList().Add("Dropped:");
-		{
-			VMob.BeginDepth();
-			bool HasDropItem = false;
-			for(int i = 0; i < MAX_DROPPED_FROM_MOBS; i++)
-			{
-				if(Mob.m_aDropItem[i] <= 0 || Mob.m_aValueItem[i] <= 0)
-					continue;
-
-				const float Chance = Mob.m_aRandomItem[i];
-				CItemDescription* pDropItemInfo = GS()->GetItemInfo(Mob.m_aDropItem[i]);
-
-				char aBuf[128];
-				str_format(aBuf, sizeof(aBuf), "x%d - chance to loot %0.2f%%(+%0.2f%%)", Mob.m_aValueItem[i], Chance, ExtraChance);
-				VMob.Add("{}{}", pDropItemInfo->GetName(), aBuf);
-				HasDropItem = true;
-			}
-			if(!HasDropItem)
-			{
-				VMob.Add("The mob has no items!");
-			}
-			VMob.EndDepth();
-		}
-		VMob.AddLine();
-		Found = true;
-	}
-
-	return Found;
-}
-
 // add a new bot
 void CBotManager::ConAddCharacterBot(int ClientID, const char* pCharacter)
 {

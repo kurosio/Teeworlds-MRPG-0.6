@@ -109,7 +109,7 @@ AccountCodeResult CAccountManager::LoginAccount(int ClientID, const char* pLogin
 	int AccountID = pResAccount->getInt("ID");
 
 	// check is login and password correct
-	ResultPtr pResCheck = Database->Execute<DB::SELECT>("ID, LoginDate, Language, Password, PasswordSalt", 
+	ResultPtr pResCheck = Database->Execute<DB::SELECT>("ID, LoginDate, Language, Password, PasswordSalt",
 		"tw_accounts", "WHERE Username = '{}' AND ID = '{}'", sqlStrLogin.cstr(), AccountID);
 	if(!pResCheck->next() || str_comp(pResCheck->getString("Password").c_str(), HashPassword(sqlStrPass.cstr(), pResCheck->getString("PasswordSalt").c_str()).c_str()) != 0)
 	{
@@ -167,7 +167,7 @@ void CAccountManager::LoadAccount(CPlayer* pPlayer, bool FirstInitilize)
 		{
 			GS()->Chat(ClientID, "You have {} unread letters.", Letters);
 		}
-		
+
 		pAccount->GetBonusManager().SendInfoAboutActiveBonuses();
 		pPlayer->m_VotesData.UpdateVotes(MENU_MAIN);
 		return;
@@ -271,7 +271,6 @@ void CAccountManager::AddMenuProfessionUpgrades(CPlayer* pPlayer, CProfession* p
 			VUpgrades.AddOption("UPGRADE", (int)ProfID, (int)ID, "Upgrade {} - {} (cost 1 point)", pAttribute->GetName(), Value);
 		}
 	}
-	VoteWrapper::AddEmptyline(ClientID);
 }
 
 bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
@@ -279,7 +278,7 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	const int ClientID = pPlayer->GetCID();
 
 	// account information
-	if(Menulist == MENU_ACCOUNT_INFO)
+	if(Menulist == MENU_ACCOUNT_DETAIL_INFO)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
@@ -303,43 +302,38 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		{
 			const auto expNeed = pProfession->GetExpForNextLevel();
 			const auto progress = translate_to_percent(expNeed, pProfession->GetExperience());
-			const auto progressBar = mystd::string::progressBar(100, progress, 10, "\u25B0", "\u25B1");
-
-			Wrapper.MarkList().Add(name.c_str());
-			Wrapper.Add("[Lvl {}] Exp {$}/{$}", pProfession->GetLevel(), pProfession->GetExperience(), expNeed);
-			Wrapper.Add("{} - {~.2}%", progressBar, progress);
-			Wrapper.AddLine();
+			const auto progressBar = mystd::string::progressBar(100, progress, 20, "\u25B0", "\u25B1");
+			Wrapper.MarkList().Add("{} [Lv{} {}] - {~.2}%", name.c_str(), pProfession->GetLevel(), progressBar, progress);
 		};
 
 		// Leveling information (war)
-		VoteWrapper VLevelingWar(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "Leveling (War professions)");
+		VoteWrapper VLevelingWar(ClientID, VWF_ALIGN_TITLE, "Leveling (War professions)");
 		for(auto& Profession : pPlayer->Account()->GetProfessions())
 		{
 			if(Profession.IsProfessionType(PROFESSION_TYPE_WAR))
 			{
-				const auto AppendActiveStatus = pPlayer->Account()->GetClass().IsProfession(Profession.GetProfessionID()) ? " (active)" : "";
+				const auto AppendActiveStatus = pPlayer->Account()->GetClass().IsProfession(Profession.GetProfessionID()) ? "(A)" : "";
 				const auto pProfessionName = std::string(GetProfessionName(Profession.GetProfessionID()));
-				const auto Title = "Profession " + pProfessionName + AppendActiveStatus;
+				const auto Title = AppendActiveStatus + pProfessionName;
 				addLevelingInfo(VLevelingWar , &Profession, Title);
 			}
 		}
 		VoteWrapper::AddEmptyline(ClientID);
 
 		// Leveling information (work)
-		VoteWrapper VLevelingOther(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "Leveling (Other professions)");
+		VoteWrapper VLevelingOther(ClientID, VWF_ALIGN_TITLE, "Leveling (Other professions)");
 		for(auto& Profession : pPlayer->Account()->GetProfessions())
 		{
 			if(Profession.IsProfessionType(PROFESSION_TYPE_OTHER))
 			{
 				const auto pProfessionName = std::string(GetProfessionName(Profession.GetProfessionID()));
-				const auto Title = "Profession " + pProfessionName;
-				addLevelingInfo(VLevelingOther, &Profession, Title);
+				addLevelingInfo(VLevelingOther, &Profession, pProfessionName);
 			}
 		}
 		VoteWrapper::AddEmptyline(ClientID);
 
 		// Currency information
-		const auto currencyItemIDs = GS()->Core()->InventoryManager()->GetItemsCollection(ItemGroup::Currency, std::nullopt);
+		const auto currencyItemIDs = CInventoryManager::GetItemsCollection(ItemGroup::Currency, std::nullopt);
 		VoteWrapper VCurrency(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "Account Currency");
 		VCurrency.Add("Bank: {}", pAccount->GetBank());
 		for(int itemID : currencyItemIDs)
@@ -374,20 +368,13 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		}
 		VoteWrapper::AddEmptyline(ClientID);
 
-		// add upgrades by class profession
-		AddMenuProfessionUpgrades(pPlayer, pClassProf);
-
 		// professions
-		VoteWrapper VProfessions(ClientID, VWF_SEPARATE_OPEN | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "\u2696 Upgrade other professions");
+		VoteWrapper VProfessions(ClientID, VWF_SEPARATE_OPEN | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "\u2696 Upgrade professions");
 		for(const auto& Prof : pPlayer->Account()->GetProfessions())
 		{
-			if(Prof.IsProfessionType(PROFESSION_TYPE_OTHER))
-			{
-				const auto ProfessionID = Prof.GetProfessionID();
-				VProfessions.AddMenu(MENU_UPGRADES, (int)ProfessionID, "Profession {} ({}P)", GetProfessionName(ProfessionID), Prof.GetUpgradePoint());
-			}
+			const auto ProfessionID = Prof.GetProfessionID();
+			VProfessions.AddMenu(MENU_UPGRADES, (int)ProfessionID, "Profession {} ({}P)", GetProfessionName(ProfessionID), Prof.GetUpgradePoint());
 		}
-		VoteWrapper::AddEmptyline(ClientID);
 
 		// list upgrades by profession
 		if(const auto ProfID = pPlayer->m_VotesData.GetExtraID())
@@ -401,6 +388,7 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 			}
 
 			// add profession upgrades
+			VoteWrapper::AddEmptyline(ClientID);
 			AddMenuProfessionUpgrades(pPlayer, pProf);
 		}
 
@@ -605,7 +593,7 @@ void CAccountManager::OnCharacterTile(CCharacter* pChr)
 {
 	CPlayer* pPlayer = pChr->GetPlayer();
 	int ClientID = pPlayer->GetCID();
-	
+
 	HANDLE_TILE_MOTD_MENU(pPlayer, pChr, TILE_INFO_BONUSES, MOTD_MENU_BONUSES_INFO)
 	HANDLE_TILE_MOTD_MENU(pPlayer, pChr, TILE_INFO_WANTED, MOTD_MENU_WANTED_INFO)
 	HANDLE_TILE_MOTD_MENU(pPlayer, pChr, TILE_BANK_MANAGER, MOTD_MENU_BANK_MANAGER)

@@ -26,9 +26,6 @@ class CAccountFarmingManager : public MmoComponent
 
 public:
 	CItemDescription* GetFarmingItemInfoByPos(vec2 Pos) const;
-
-	//void ShowMenu(CPlayer* pPlayer) const;
-	bool InsertItemsDetailVotes(CPlayer* pPlayer, int WorldID);
 };
 
 #endif

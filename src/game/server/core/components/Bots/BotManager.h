@@ -25,8 +25,6 @@ class CBotManager : public MmoComponent
 public:
 	static int GetQuestNPC(int MobID);
 	void ConAddCharacterBot(int ClientID, const char* pCharacter);
-
-	bool InsertItemsDetailVotes(CPlayer* pPlayer, int WorldID) const;
 };
 
 #endif

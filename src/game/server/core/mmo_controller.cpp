@@ -89,20 +89,14 @@ void CMmoController::OnConsoleInit(IConsole* pConsole) const
 void CMmoController::OnTick() const
 {
 	for(auto& pComponent : m_System.m_vComponents)
-	{
 		pComponent->OnTick();
-	}
 
-	// Check if the current tick is a multiple of the time period check time
 	if(GS()->Server()->Tick() % ((GS()->Server()->TickSpeed() * 60) * g_Config.m_SvTimePeriodCheckTime) == 0)
-	{
 		OnHandleTimePeriod();
-	}
 }
 
 bool CMmoController::OnClientMessage(int MsgID, void* pRawMsg, int ClientID) const
 {
-	// check valid client
 	if(!GS()->Server()->ClientIngame(ClientID) || !GS()->GetPlayer(ClientID))
 		return false;
 
@@ -118,9 +112,7 @@ bool CMmoController::OnClientMessage(int MsgID, void* pRawMsg, int ClientID) con
 void CMmoController::OnPlayerLogin(CPlayer* pPlayer) const
 {
 	for(const auto& pComponent : m_System.m_vComponents)
-	{
 		pComponent->OnPlayerLogin(pPlayer);
-	}
 }
 
 bool CMmoController::OnSendMenuMotd(CPlayer* pPlayer, int Menulist) const
@@ -135,7 +127,6 @@ bool CMmoController::OnSendMenuMotd(CPlayer* pPlayer, int Menulist) const
 
 bool CMmoController::OnSendMenuVotes(CPlayer* pPlayer, int Menulist) const
 {
-	// initialize variables
 	const auto ClientID = pPlayer->GetCID();
 
 	// main menu
@@ -149,8 +140,7 @@ bool CMmoController::OnSendMenuVotes(CPlayer* pPlayer, int Menulist) const
 		VoteWrapper VStatistics(ClientID, VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE | VWF_SEPARATE, "Class profession: {}", pProfName);
 		VStatistics.Add("Level {}, Exp {}/{}", pPlayer->Account()->GetLevel(), pPlayer->Account()->GetExperience(), expForLevel);
 		VStatistics.Add("Gold: {$}, Bank: {$}", pPlayer->Account()->GetGold(), pPlayer->Account()->GetBank());
-		VStatistics.Add("Skill Point {}SP", pPlayer->GetItem(itSkillPoint)->GetValue());
-		VStatistics.AddMenu(MENU_ACCOUNT_INFO, "\u2698 Account information");
+		VStatistics.AddMenu(MENU_ACCOUNT_DETAIL_INFO, "\u2698 Detail information");
 		VoteWrapper::AddEmptyline(ClientID);
 
 		// Personal Menu
@@ -158,7 +148,7 @@ bool CMmoController::OnSendMenuVotes(CPlayer* pPlayer, int Menulist) const
 		VPersonal.AddMenu(MENU_UPGRADES, "\u2657 Upgrades & Professions ({}p)", pPlayer->Account()->GetTotalProfessionsUpgradePoints());
 		VPersonal.AddMenu(MENU_ACHIEVEMENTS, "\u2654 Achievements");
 		VPersonal.AddMenu(MENU_EQUIPMENT, "\u26B0 Equipments");
-		VPersonal.AddMenu(MENU_MODULES, "\u26B0 Modules");
+		VPersonal.AddMenu(MENU_MODULES, "\u26B1 Modules");
 		VPersonal.AddMenu(MENU_INVENTORY, "\u205C Inventory");
 		VoteWrapper::AddEmptyline(ClientID);
 
@@ -186,7 +176,6 @@ bool CMmoController::OnSendMenuVotes(CPlayer* pPlayer, int Menulist) const
 
 		// Information Menu
 		VoteWrapper VInfo(ClientID, VWF_ALIGN_TITLE, "\u262A Information Menu");
-		VInfo.AddMenu(MENU_GUIDE, "\u10D3 Wiki / Grinding guide");
 		VInfo.AddMenu(MENU_LEADERBOARD, "\u21F0 Rankings: Guilds & Players");
 		VoteWrapper::AddEmptyline(ClientID);
 
@@ -221,73 +210,6 @@ bool CMmoController::OnSendMenuVotes(CPlayer* pPlayer, int Menulist) const
 		return true;
 	}
 
-	// grinding guide
-	if(Menulist == MENU_GUIDE)
-	{
-		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
-
-		// discord information
-		VoteWrapper VDiscordInfo(ClientID, VWF_STYLE_STRICT_BOLD);
-		VDiscordInfo.AddLine().Add("Discord: \"{}\"", g_Config.m_SvDiscordInviteLink).AddLine();
-
-		// information
-		VoteWrapper VGrindingInfo(ClientID, VWF_SEPARATE_CLOSED, "Grinding Information");
-		VGrindingInfo.Add("You can look mob, farm, and mining point's.");
-		VGrindingInfo.AddLine();
-
-		// show all world's
-		VoteWrapper VGrindingSelect(ClientID, VWF_SEPARATE_OPEN, "Select a zone to view information");
-		for(int ID = MAIN_WORLD_ID; ID < GS()->Server()->GetWorldsSize(); ID++)
-			VGrindingSelect.AddMenu(MENU_GUIDE_SELECT, ID, "{}", GS()->Server()->GetWorldName(ID));
-
-		// add back page
-		VoteWrapper::AddBackpage(ClientID);
-		return true;
-	}
-
-	// grinding guide selected
-	if(Menulist == MENU_GUIDE_SELECT)
-	{
-		pPlayer->m_VotesData.SetLastMenuID(MENU_GUIDE);
-
-		const auto WorldID = pPlayer->m_VotesData.GetExtraID();
-		if(!WorldID.has_value())
-		{
-			VoteWrapper::AddBackpage(ClientID);
-			return true;
-		}
-
-		// ores information detail
-		VoteWrapper VMiningPoints(ClientID, VWF_STYLE_STRICT_BOLD);
-		VMiningPoints.AddLine().Add("Mining point's from ({})", Instance::Server()->GetWorldName(*WorldID)).AddLine();
-		if(!AccountMiningManager()->InsertItemsDetailVotes(pPlayer, *WorldID))
-		{
-			VoteWrapper(ClientID).Add("No mining point's in this world");
-		}
-		VoteWrapper::AddEmptyline(ClientID);
-
-		// farm information detail
-		VoteWrapper VFarmingPoints(ClientID, VWF_STYLE_STRICT_BOLD);
-		VFarmingPoints.AddLine().Add("Farming point's from ({})", Instance::Server()->GetWorldName(*WorldID)).AddLine();
-		if(!AccountFarmingManager()->InsertItemsDetailVotes(pPlayer, *WorldID))
-		{
-			VoteWrapper(ClientID).Add("No farm point's in this world");
-		}
-		VoteWrapper::AddEmptyline(ClientID);
-
-		// mobs information detail
-		VoteWrapper VMobsPoints(ClientID, VWF_STYLE_STRICT_BOLD);
-		VMobsPoints.AddLine().Add("Mob point's from ({})", Instance::Server()->GetWorldName(*WorldID)).AddLine();
-		if(!BotManager()->InsertItemsDetailVotes(pPlayer, *WorldID))
-		{
-			VoteWrapper(ClientID).Add("No mob point's in this world");
-		}
-
-		VoteWrapper::AddEmptyline(ClientID);
-		VoteWrapper::AddBackpage(ClientID);
-		return true;
-	}
-
 	// ----------------------------------------
 	// check append votes
 	for(auto& pComponent : m_System.m_vComponents)
@@ -309,7 +231,7 @@ void CMmoController::OnCharacterTile(CCharacter* pChr) const
 		pComponent->OnCharacterTile(pChr);
 }
 
-bool CMmoController::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
+bool CMmoController::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd,
 	const int ExtraValue1, const int ExtraValue2, int ReasonNumber, const char* pReason) const
 {
 	if(!pPlayer)
@@ -532,13 +454,6 @@ void CMmoController::LoadLogicWorld() const
 		const vec2 Position = vec2(pRes->getInt("PosX"), pRes->getInt("PosY"));
 		GS()->m_pController->CreateLogic(Type, Mode, Position, Health);
 	}
-}
-
-void CMmoController::ShowLoadingProgress(const char* pLoading, size_t Size) const
-{
-	char aLoadingBuf[128];
-	str_format(aLoadingBuf, sizeof(aLoadingBuf), "[Loaded %d %s] :: WorldID %d.", (int)Size, pLoading, GS()->GetWorldID());
-	GS()->Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "LOAD DB", aLoadingBuf);
 }
 
 void CMmoController::ShowTopList(VoteWrapper* pWrapper, int ClientID, ToplistType Type, int Rows) const

@@ -68,18 +68,16 @@ public:
 
 	static void AsyncClientEnterMsgInfo(std::string ClientName, int ClientID);
 	void SyncLocalizations() const;
-	//
 	void LoadLogicWorld() const;
 	void SaveAccount(CPlayer *pPlayer, int Table) const;
-	void ShowLoadingProgress(const char* pLoading, size_t Size) const;
 
-	void ShowTopList(class VoteWrapper* pWrapper, int ClientID, ToplistType Type, int Rows) const;
 	struct TempTopData
 	{
 		std::string Name;
 		std::map<std::string, BigInt> Data;
 	};
 	std::map<int, TempTopData> GetTopList(ToplistType Type, int Rows) const;
+	void ShowTopList(class VoteWrapper* pWrapper, int ClientID, ToplistType Type, int Rows) const;
 };
 
 #endif

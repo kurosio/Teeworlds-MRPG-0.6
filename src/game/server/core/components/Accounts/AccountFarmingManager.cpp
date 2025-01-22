@@ -36,36 +36,3 @@ CItemDescription* CAccountFarmingManager::GetFarmingItemInfoByPos(vec2 Pos) cons
 	});
 	return (Iter != ms_vmFarmingPoints.end()) ? GS()->GetItemInfo(Iter->second.m_ItemID) : nullptr;;
 }
-
-bool CAccountFarmingManager::InsertItemsDetailVotes(CPlayer* pPlayer, int WorldID)
-{
-	bool Found = false;
-	const int ClientID = pPlayer->GetCID();
-
-	for(const auto& [ID, Point] : ms_vmFarmingPoints)
-	{
-		if(WorldID != Point.m_WorldID)
-			continue;
-
-		const vec2 Pos = Point.m_Position / 32.0f;
-		VoteWrapper VInfo(ClientID, VWF_UNIQUE | VWF_STYLE_SIMPLE, "Farm point {}", GS()->GetItemInfo(Point.m_ItemID)->GetName());
-		VInfo.MarkList().Add("Location:");
-		{
-			VInfo.BeginDepth();
-			VInfo.Add(Instance::Localize(ClientID, Instance::Server()->GetWorldName(WorldID)));
-			VInfo.Add("x{} y{}", (int)Pos.x, (int)Pos.y);
-			VInfo.EndDepth();
-		}
-		VInfo.AddLine();
-		VInfo.MarkList().Add("Description");
-		{
-			VInfo.BeginDepth();
-			VInfo.Add("Distance of distribution: {}P", Point.m_Distance);
-			VInfo.EndDepth();
-		}
-		VInfo.AddLine();
-		Found = true;
-	}
-
-	return Found;
-}

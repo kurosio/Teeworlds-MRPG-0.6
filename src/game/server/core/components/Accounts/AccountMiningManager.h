@@ -26,9 +26,6 @@ class CAccountMiningManager : public MmoComponent
 
 public:
 	CItemDescription* GetMiningItemInfoByPos(vec2 Pos) const;
-
-	//void ShowMenu(CPlayer *pPlayer) const;
-	bool InsertItemsDetailVotes(CPlayer* pPlayer, int WorldID) const;
 };
 
 #endif

@@ -35,38 +35,3 @@ CItemDescription* CAccountMiningManager::GetMiningItemInfoByPos(vec2 Pos) const
 	});
 	return (Iter != ms_vmMiningPoints.end()) ? GS()->GetItemInfo(Iter->second.m_ItemID) : nullptr;;
 }
-
-bool CAccountMiningManager::InsertItemsDetailVotes(CPlayer* pPlayer, int WorldID) const
-{
-	bool Found = false;
-	const int ClientID = pPlayer->GetCID();
-
-	for(const auto& [ID, Ore] : ms_vmMiningPoints)
-	{
-		if(WorldID != Ore.m_WorldID)
-			continue;
-
-		const vec2 Pos = Ore.m_Position / 32.0f;
-		VoteWrapper VOres(ClientID, VWF_UNIQUE | VWF_STYLE_SIMPLE, "Ore {}", GS()->GetItemInfo(Ore.m_ItemID)->GetName());
-		VOres.MarkList().Add("Location:");
-		{
-			VOres.BeginDepth();
-			VOres.Add(Instance::Localize(ClientID, Instance::Server()->GetWorldName(WorldID)));
-			VOres.Add("x{} y{}", (int)Pos.x, (int)Pos.y);
-			VOres.EndDepth();
-		}
-		VOres.AddLine();
-		VOres.MarkList().Add("Description");
-		{
-			VOres.BeginDepth();
-			//VOres.Add("Level: {}", Ore.Level);
-			//VOres.Add("Health: {}P", Ore.m_StartHealth);
-			VOres.Add("Distance of distribution: {}P", Ore.m_Distance);
-			VOres.EndDepth();
-		}
-		VOres.AddLine();
-		Found = true;
-	}
-
-	return Found;
-}

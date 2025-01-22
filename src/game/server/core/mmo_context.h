@@ -410,7 +410,7 @@ enum EMenuList
 {
 	// Main menu
 	MENU_MAIN = 1,
-	MENU_ACCOUNT_INFO,
+	MENU_ACCOUNT_DETAIL_INFO,
 	MENU_EQUIPMENT,
 	MENU_INVENTORY,
 	MENU_UPGRADES,
@@ -489,10 +489,6 @@ enum EMenuList
 
 	// Group menus
 	MENU_GROUP,
-
-	// Grinding
-	MENU_GUIDE,
-	MENU_GUIDE_SELECT,
 
 	// Crafting
 	MENU_CRAFTING_LIST,
