@@ -4,7 +4,6 @@
 #define GAME_SERVER_INVENTORY_RANDOM_BOX_HANDLER_H
 
 #include <game/server/entity.h>
-#include <game/server/core/tools/chance_processor.h>
 
 class CPlayerItem;
 class CPlayer;

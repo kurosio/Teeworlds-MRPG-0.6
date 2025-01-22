@@ -7,7 +7,7 @@
 
 #include "entities/pickup.h"
 #include "core/entities/logic/botwall.h"
-#include "core/entities/items/harvesting_item.h"
+#include "core/entities/items/gathering_node.h"
 
 #include "core/components/achievements/achievement_data.h"
 #include "core/components/Accounts/AccountMiningManager.h"
@@ -63,7 +63,7 @@ void IGameController::OnCharacterDeath(CPlayer* pVictim, CPlayer* pKiller, int W
 		{
 			// achievement defeat pvp
 			pKiller->UpdateAchievement(AchievementType::DefeatPVP, NOPE, 1, PROGRESS_ACCUMULATE);
-		
+
 			// update rating
 			auto& pKillerRating = pKiller->Account()->GetRatingSystem();
 			auto& pVictimRating = pVictim->Account()->GetRatingSystem();
@@ -135,7 +135,7 @@ void IGameController::OnEntity(int Index, vec2 Pos, int Flags)
 	{
 		m_aaSpawnPoints[SPAWN_BOT].push_back(Pos);
 	}
-	
+
 	else if(Index == ENTITY_SPAWN_PRISON)
 	{
 		m_aaSpawnPoints[SPAWN_HUMAN_PRISON].push_back(Pos);
@@ -155,12 +155,12 @@ void IGameController::OnEntity(int Index, vec2 Pos, int Flags)
 	{
 		new CPickup(&GS()->m_World, POWERUP_WEAPON, WEAPON_SHOTGUN, Pos);
 	}
-	
+
 	else if(Index == ENTITY_PICKUP_GRENADE)
 	{
 		new CPickup(&GS()->m_World, POWERUP_WEAPON, WEAPON_GRENADE, Pos);
 	}
-	
+
 	else if(Index == ENTITY_PICKUP_LASER)
 	{
 		new CPickup(&GS()->m_World, POWERUP_WEAPON, WEAPON_LASER, Pos);
@@ -178,52 +178,74 @@ void IGameController::OnEntity(int Index, vec2 Pos, int Flags)
 		new CBotWall(&GS()->m_World, Pos, Direction, CBotWall::Flags::WALLLINEFLAG_AGRESSED_BOT);
 	}
 
-	else if(Index == ENTITY_FARMING || Index == ENTITY_MINING)
+	else if(Index == ENTITY_PLANT)
 	{
-		// calculate polar coordinates
-		const vec2 roundPos = vec2((float)(round_to_int(Pos.x) / 32 * 32), (float)(round_to_int(Pos.y) / 32 * 32));
-		const float iter = 16.f / (float)g_Config.m_SvHarvestingItemsPerTile;
-		const float multiplier = iter * 2;
+		const auto roundPos = vec2(round_to_int(Pos.x) / 32 * 32, round_to_int(Pos.y) / 32 * 32);
+		const auto range = 16.f / (float)g_Config.m_SvGatheringEntitiesPerTile;
+		const auto multiplier = range * 2;
 
 		// entity farming point
-		if(Index == ENTITY_FARMING)
+		for(int i = 0; i < g_Config.m_SvGatheringEntitiesPerTile; i++)
 		{
-			for(int i = 0; i < g_Config.m_SvHarvestingItemsPerTile; i++)
+			const float offset = range + i * multiplier;
+			auto newPos = vec2(roundPos.x + offset, Pos.y);
+
+			// handle collision flags to adjust the position
+			if(GS()->Collision()->GetCollisionFlagsAt(roundPos.x - range, Pos.y) ||
+				GS()->Collision()->GetCollisionFlagsAt(roundPos.x + (30.f + range), Pos.y))
 			{
-				// calculate polar coordinates
-				const float calculate = iter + (float)i * multiplier;
-				vec2 newPos = vec2(roundPos.x + calculate, Pos.y);
-				if(GS()->Collision()->GetCollisionFlagsAt(roundPos.x - iter, Pos.y) || GS()->Collision()->GetCollisionFlagsAt(roundPos.x + (30.f + iter), Pos.y))
-					newPos = vec2(Pos.x, roundPos.y + calculate);
-
-				// default farm positions
-				if(auto* pItemInfo = GS()->Core()->AccountFarmingManager()->GetFarmingItemInfoByPos(newPos))
-					new CEntityHarvestingItem(&GS()->m_World, pItemInfo->GetID(), newPos, CEntityHarvestingItem::HARVESTINGITEM_TYPE_FARMING);
-
-				// guild house farm positions
-				if(CGuildHouse::CFarmzone* pFarmzone = GS()->Core()->GuildManager()->GetHouseFarmzoneByPos(newPos))
-					pFarmzone->Add(new CEntityHarvestingItem(&GS()->m_World, pFarmzone->GetItemID(), newPos, CEntityHarvestingItem::HARVESTINGITEM_TYPE_FARMING));
-
-				// house farm positions
-				if(CHouse::CFarmzone* pFarmzone = GS()->Core()->HouseManager()->GetHouseFarmzoneByPos(newPos))
-					pFarmzone->Add(new CEntityHarvestingItem(&GS()->m_World, pFarmzone->GetItemID(), newPos, CEntityHarvestingItem::HARVESTINGITEM_TYPE_FARMING));
+				newPos = vec2(Pos.x, roundPos.y + offset);
 			}
+
+			// try create guild house plant
+			if(auto* pFarmzone = GS()->Core()->GuildManager()->GetHouseFarmzoneByPos(newPos))
+				pFarmzone->Add(GS(), newPos);
+
+			// try create house plant
+			if(auto* pFarmzone = GS()->Core()->HouseManager()->GetHouseFarmzoneByPos(newPos))
+				pFarmzone->Add(GS(), newPos);
+		}
+	}
+}
+
+void IGameController::OnEntitySwitch(int Index, vec2 Pos, int Flags, int Number)
+{
+	if(Index == ENTITY_PLANT || Index == ENTITY_ORE)
+	{
+		const auto roundPos = vec2(round_to_int(Pos.x) / 32 * 32, round_to_int(Pos.y) / 32 * 32);
+		const auto range = 16.f / (float)g_Config.m_SvGatheringEntitiesPerTile;
+		const auto multiplier = range * 2;
+
+		// initialize gathering node and type
+		GatheringNode* pNode = nullptr;
+		int nodeType = 0;
+		if(Index == ENTITY_ORE)
+		{
+			pNode = GS()->Collision()->GetOreNode(Number);
+			nodeType = CEntityGatheringNode::GATHERING_NODE_ORE;
+		}
+		else if(Index == ENTITY_PLANT)
+		{
+			pNode = GS()->Collision()->GetPlantNode(Number);
+			nodeType = CEntityGatheringNode::GATHERING_NODE_PLANT;
 		}
 
-		// entity mining point
-		if(Index == ENTITY_MINING)
+		// create entities for node
+		if(pNode)
 		{
-			for(int i = 0; i < g_Config.m_SvHarvestingItemsPerTile; i++)
+			for(int i = 0; i < g_Config.m_SvGatheringEntitiesPerTile; i++)
 			{
-				// calculate polar coordinates
-				const float calculate = iter + (float)i * multiplier;
-				vec2 newPos = vec2(roundPos.x + calculate, Pos.y);
-				if(GS()->Collision()->GetCollisionFlagsAt(roundPos.x - iter, Pos.y) || GS()->Collision()->GetCollisionFlagsAt(roundPos.x + (30.f + iter), Pos.y))
-					newPos = vec2(Pos.x, roundPos.y + calculate);
+				const float offset = range + i * multiplier;
+				auto newPos = vec2(roundPos.x + offset, Pos.y);
 
-				// default ores positions
-				if(auto* pItemInfo = GS()->Core()->AccountMiningManager()->GetMiningItemInfoByPos(newPos))
-					new CEntityHarvestingItem(&GS()->m_World, pItemInfo->GetID(), newPos, CEntityHarvestingItem::HARVESTINGITEM_TYPE_MINING);
+				// handle collision flags to adjust the position
+				if(GS()->Collision()->GetCollisionFlagsAt(roundPos.x - range, Pos.y) ||
+					GS()->Collision()->GetCollisionFlagsAt(roundPos.x + (30.f + range), Pos.y))
+				{
+					newPos = vec2(Pos.x, roundPos.y + offset);
+				}
+
+				new CEntityGatheringNode(&GS()->m_World, pNode, newPos, nodeType);
 			}
 		}
 	}

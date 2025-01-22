@@ -80,6 +80,74 @@ void CCollision::Init(IKernel* pKernel, int WorldID)
 	}
 }
 
+void initGatheringNode(const std::string& nodeType, const std::vector<std::string>& vSettings, int Number, std::unordered_map<int, GatheringNode>& vNodesContainer)
+{
+	std::string ItemsData {};
+	GatheringNode detail {};
+	const auto Identity = nodeType + " " + std::to_string(Number);
+
+	// load settings for the node
+	if(mystd::loadSettings<std::string, int, int, std::string>(Identity, vSettings, &detail.Name, &detail.Level, &detail.Health, &ItemsData))
+	{
+		dbg_msg("map-init", "%s %d started initialization: Name='%s', Level='%d', Health='%d'", nodeType.c_str(), Number, detail.Name.c_str(), detail.Level, detail.Health);
+
+		// parse and add items
+		DBSet ItemsSet(ItemsData);
+		for(const auto& [Elem, Size] : ItemsSet.GetDataItems())
+		{
+			int ItemID;
+			float Chance;
+			if(sscanf(Elem.c_str(), "[%d/%f]", &ItemID, &Chance) == 2)
+			{
+				detail.m_vItems.addElement(ItemID, Chance);
+				dbg_msg("map-init", "Added item: ItemID='%d', Chance='%f'", ItemID, Chance);
+			}
+		}
+
+		// store the initialized node
+		vNodesContainer[Number] = detail;
+		dbg_msg("map-init", "%s %d initialized: Items='%d'", nodeType.c_str(), Number, (int)detail.m_vItems.size());
+	}
+}
+
+void CCollision::InitSettings()
+{
+	const auto& settings = m_pLayers->GetSettings();
+
+	dbg_msg("map-init", "------------------------");
+	for(int i = 1; i < 255; i++)
+	{
+		// initialize zones details
+		{
+			ZoneDetail detail;
+			const auto Identity = std::string("#zone ").append(std::to_string(i));
+			if(mystd::loadSettings<std::string, bool>(Identity, settings, &detail.Name, &detail.PVP))
+			{
+				dbg_msg("map-init", "Switch zone %d initialized: Name='%s', PVP=%s", i, detail.Name.c_str(), detail.PVP ? "true" : "false");
+				m_vZoneDetail[i] = detail;
+			}
+		}
+
+		// initialize text zone details
+		{
+			TextZoneDetail detail;
+			const auto Identity = std::string("#text ").append(std::to_string(i));
+			if(mystd::loadSettings<std::string>(Identity, settings, &detail.Text))
+			{
+				dbg_msg("map-init", "Switch text %d initialized: String='%s'", i, detail.Text.c_str());
+				m_vZoneTextDetail[i] = detail;
+			}
+		}
+
+		// initialize gathering nodes
+		{
+			initGatheringNode("#node_ore", settings, i, m_vOreNodes);
+			initGatheringNode("#node_plant", settings, i, m_vOreNodes);
+		}
+	}
+	dbg_msg("map-init", "------------------------");
+}
+
 void CCollision::InitTiles(CTile* pTiles)
 {
 	// initialze variables
@@ -172,13 +240,6 @@ void CCollision::InitSwitchExtra()
 				m_pTiles[i].m_ColFlags |= COLFLAG_SAFE;
 			}
 		}
-		else if(Type == TILE_INTERACT_OBJECT)
-		{
-			/*if(auto result = mystd::loadSettings<std::string>("#switch", settings, { Number }))
-			{
-				m_vInteractObjects[result.value()] = tilePos;
-			}*/
-		}
 		else if(Type == TILE_TEXT && m_vZoneTextDetail.contains(Number))
 		{
 			auto& zone = m_vZoneTextDetail[Number];
@@ -188,26 +249,6 @@ void CCollision::InitSwitchExtra()
 }
 
 void CCollision::InitSpeedupExtra() {}
-
-void CCollision::InitSettings()
-{
-	const std::vector<std::string>& settingsLines = m_pLayers->GetSettings();
-
-	for(int i = 1; i < 255; i++)
-	{
-		// initialize zones details
-		ZoneDetail zoneDetail;
-		const auto zoneIdentity = "#zone " + std::to_string(i);
-		if(mystd::loadSettings<std::string, bool>(zoneIdentity, settingsLines, &zoneDetail.Name, &zoneDetail.PVP))
-			m_vZoneDetail[i] = zoneDetail;
-
-		// initialize text zone details
-		TextZoneDetail textDetail;
-		const auto textIdentity = "#text " + std::to_string(i);
-		if(mystd::loadSettings<std::string>(textIdentity, settingsLines, &textDetail.Text))
-			m_vZoneTextDetail[i] = textDetail;
-	}
-}
 
 void CCollision::InitEntities(const std::function<void(int, vec2, int)>& funcInit) const
 {
@@ -222,6 +263,25 @@ void CCollision::InitEntities(const std::function<void(int, vec2, int)>& funcIni
 				const vec2 Pos(x * 32.0f + 16.0f, y * 32.0f + 16.0f);
 				const int Flags = m_pTiles[TileIndex].m_Flags;
 				funcInit(Index - ENTITY_OFFSET, Pos, Flags);
+			}
+		}
+	}
+}
+
+void CCollision::InitSwitchEntities(const std::function<void(int, vec2, int, int)>& funcInit) const
+{
+	for(int y = 0; y < m_Height; ++y)
+	{
+		for(int x = 0; x < m_Width; ++x)
+		{
+			const int TileIndex = y * m_Width + x;
+			const int Type = m_pSwitchExtra[TileIndex].m_Type;
+			const int Number = m_pSwitchExtra[TileIndex].m_Number;
+			if(Type >= ENTITY_OFFSET)
+			{
+				const vec2 Pos(x * 32.0f + 16.0f, y * 32.0f + 16.0f);
+				const int Flags = m_pSwitchExtra[TileIndex].m_Flags;
+				funcInit(Type - ENTITY_OFFSET, Pos, Flags, Number);
 			}
 		}
 	}

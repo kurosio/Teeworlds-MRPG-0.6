@@ -17,7 +17,7 @@
 #include <game/server/core/components/worlds/world_data.h>
 
 #include <game/server/core/entities/group/entitiy_group.h>
-#include <game/server/core/entities/items/harvesting_item.h>
+#include <game/server/core/entities/items/gathering_node.h>
 #include <game/server/core/entities/tools/multiple_orbite.h>
 #include <game/server/core/entities/tools/flying_point.h>
 
@@ -297,7 +297,7 @@ bool CCharacter::FireHammer(vec2 Direction, vec2 ProjStartPos)
 
 			const auto Dir = length(pTarget->m_Pos - m_Pos) > 0.0f ? normalize(pTarget->m_Pos - m_Pos) : vec2(0.f, -1.f);
 			const auto Force = vec2(0.f, -1.f) + normalize(Dir + vec2(0.f, -1.1f)) * 10.0f;
-			
+
 			// create flying point
 			auto* pPoint = new CEntityFlyingPoint(&GS()->m_World, ProjStartPos, Force, pTarget->GetClientID(), m_ClientID);
 			pPoint->Register([this, Force](CPlayer* pFrom, CPlayer* pPlayer)
@@ -329,7 +329,7 @@ bool CCharacter::FireHammer(vec2 Direction, vec2 ProjStartPos)
 
 			if(!pTarget->IsAllowedPVP(m_ClientID))
 				continue;
-				
+
 			const auto Dist = distance(pTarget->m_Pos, m_Pos);
 			if(Dist < Radius)
 			{
@@ -869,7 +869,7 @@ bool CCharacter::GiveWeapon(int WeaponID, int Ammo)
 
 	const bool IsWeaponHammer = WeaponID == WEAPON_HAMMER;
 	const auto EquipID = GetEquipByWeapon(WeaponID);
-	
+
 	// remove is unequipped weapon
 	if(!m_pPlayer->IsEquipped(EquipID) && !IsWeaponHammer)
 	{
@@ -1158,7 +1158,7 @@ void CCharacter::HandleEventsDeath(int Killer, vec2 Force) const
 		return;
 
 	// skip for prisoned client and killer
-	if(m_pPlayer->Account()->GetPrisonManager().IsInPrison() || 
+	if(m_pPlayer->Account()->GetPrisonManager().IsInPrison() ||
 		(!pKiller->IsBot() && pKiller->Account()->GetPrisonManager().IsInPrison()))
 		return;
 
@@ -1366,7 +1366,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Damage, int FromCID, int Weapon)
 	m_EmoteStop = Server()->Tick() + 500 * Server()->TickSpeed() / 1000;
 	m_pPlayer->SetSnapHealthTick(2);
 	m_pPlayer->m_aPlayerTick[LastDamage] = Server()->Tick();
-	//dbg_msg("test", "[dmg:%d crit:%d, weapon:%d] damage %s to %s / star num %d", 
+	//dbg_msg("test", "[dmg:%d crit:%d, weapon:%d] damage %s to %s / star num %d",
 	//	Damage, IsCriticalDamage, pFrom->GetCharacter()->m_Core.m_ActiveWeapon, pFrom->IsBot() ? "bot" : "player", m_pPlayer->IsBot() ? "bot" : "player", StarNum);
 
 	if(m_pPlayer->m_Effects.IsActive("LastStand"))
@@ -1639,12 +1639,14 @@ bool CCharacter::HandleHammerActions(vec2 Direction, vec2 ProjStartPos)
 		}
 	}
 
-	// harvesting items
-	if(auto* pEntJobItem = (CEntityHarvestingItem*)GameWorld()->ClosestEntity(m_Pos, 14.f, CGameWorld::ENTTYPE_HERVESTING_ITEM, nullptr))
+	// gathering items
+	if(auto* pEntJobItem = (CEntityGatheringNode*)GameWorld()->ClosestEntity(m_Pos, 14.f, CGameWorld::ENTTYPE_GATHERING_NODE, nullptr))
 	{
-		pEntJobItem->Process(m_pPlayer->GetCID());
-		m_ReloadTimer = Server()->TickSpeed() / 3;
-		return true;
+		if(pEntJobItem->TakeDamage(m_pPlayer))
+		{
+			m_ReloadTimer = Server()->TickSpeed() / 3;
+			return true;
+		}
 	}
 
 	return false;
@@ -1759,7 +1761,7 @@ void CCharacter::HandleBuff(CTuningParams* TuningParams)
 			{
 				if(Type == ItemType::EquipPotionHeal)
 					IncreaseHealth(PotionContext.Value);
-				
+
 				else if(Type == ItemType::EquipPotionMana)
 					IncreaseMana(PotionContext.Value);
 			}
@@ -1769,7 +1771,7 @@ void CCharacter::HandleBuff(CTuningParams* TuningParams)
 
 void CCharacter::HandleSafeFlags()
 {
-	// reset 
+	// reset
 	m_Core.m_HammerHitDisabled = false;
 	m_Core.m_CollisionDisabled = false;
 	m_Core.m_HookHitDisabled = false;
@@ -1826,7 +1828,7 @@ void CCharacter::UpdateEquippedStats(int ItemID)
 		m_pPlayer->Account()->DepositGoldToBank(excessGold);
 		GS()->Chat(m_pPlayer->GetCID(), "Your gold has been reduced to the maximum capacity.");
 	}
-	
+
 	// character data
 	const auto* pItemInfo = GS()->GetItemInfo(ItemID);
 	if(const auto* pChar = m_pPlayer->GetCharacter())
@@ -1891,7 +1893,7 @@ bool CCharacter::IsAllowedPVP(int FromID) const
 		return false;
 
 	// disable damage on safe area
-	if(GS()->Collision()->GetCollisionFlagsAt(m_Core.m_Pos) & CCollision::COLFLAG_SAFE 
+	if(GS()->Collision()->GetCollisionFlagsAt(m_Core.m_Pos) & CCollision::COLFLAG_SAFE
 		|| GS()->Collision()->GetCollisionFlagsAt(pFrom->GetCharacter()->m_Core.m_Pos) & CCollision::COLFLAG_SAFE)
 		return false;
 

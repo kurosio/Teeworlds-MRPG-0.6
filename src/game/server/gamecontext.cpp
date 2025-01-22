@@ -662,8 +662,16 @@ void CGS::OnInit(int WorldID)
 	m_pMmoController->OnInit(m_pServer, m_pConsole, m_pStorage);
 	InitWorld();
 
-	// initialize cores
-	m_Collision.InitEntities(std::bind(&IGameController::OnEntity, m_pController, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3));
+	// initialize entities
+	m_Collision.InitEntities([this](int index, vec2 position, int flags)
+	{
+		m_pController->OnEntity(index, position, flags);
+	});
+
+	m_Collision.InitSwitchEntities([this](int type, vec2 position, int flags, int number)
+	{
+		m_pController->OnEntitySwitch(type, position, flags, number);
+	});
 	m_pController->CanSpawn(SPAWN_HUMAN_PRISON, &m_JailPosition);
 
 	// initialize

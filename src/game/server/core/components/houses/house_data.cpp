@@ -6,7 +6,7 @@
 
 #include <game/server/entity_manager.h>
 #include <game/server/gamecontext.h>
-#include <game/server/core/entities/items/harvesting_item.h>
+#include <game/server/core/entities/items/gathering_node.h>
 #include <game/server/core/entities/tools/draw_board.h>
 #include <game/server/core/components/mails/mail_wrapper.h>
 
@@ -49,7 +49,7 @@ void CHouse::InitProperties(int Bank, std::string&& AccessDoorList, std::string&
 
 	// Create a new instance of CFarmzonesManager and assign it to m_pFarmzonesManager
 	// The CFarmzonesManager will handle all the farmzones for the house.
-	m_pFarmzonesManager = new CFarmzonesManager(this, std::move(JsonFarmzones));
+	m_pFarmzonesManager = new CFarmzonesManager(std::move(JsonFarmzones));
 
 	// Asserts
 	dbg_assert(m_pBank != nullptr, "The house bank is null");
@@ -147,6 +147,11 @@ void CHouse::HandleTimePeriod(ETimePeriod Period)
 		// send message
 		GS()->ChatAccount(m_AccountID, "Your house rent has been paid.");
 	}
+}
+
+void CHouse::Save()
+{
+	Database->Execute<DB::UPDATE>(TW_GUILDS_HOUSES, "Farmzones = '{}' WHERE ID = '{}'", m_pFarmzonesManager->DumpJsonString(), m_ID);
 }
 
 int CHouse::GetRentPrice() const
@@ -480,81 +485,4 @@ bool CHouse::CDecorationManager::Remove(const EntityPoint* pPoint) const
 	Database->Execute<DB::REMOVE>(TW_HOUSES_DECORATION_TABLE, "WHERE HouseID = '{}' AND ItemID = '{}' AND PosX = '{}' AND PosY = '{}'",
 		m_pHouse->GetID(), pPoint->m_ItemID, round_to_int(pPoint->m_pEntity->GetPos().x), round_to_int(pPoint->m_pEntity->GetPos().y));
 	return true;
-}
-
-/* -------------------------------------
- * Farmzones impl
- * ------------------------------------- */
-void CHouse::CFarmzone::ChangeItem(int ItemID)
-{
-	for(auto& pFarm : m_vFarms)
-	{
-		pFarm->m_ItemID = ItemID;
-	}
-	m_ItemID = ItemID;
-	m_pManager->Save();
-}
-
-CGS* CHouse::CFarmzonesManager::GS() const { return m_pHouse->GS(); }
-CHouse::CFarmzonesManager::CFarmzonesManager(CHouse* pHouse, std::string&& JsonFarmzones) : m_pHouse(pHouse)
-{
-	// Parse the JSON string
-	mystd::json::parse(JsonFarmzones, [this](nlohmann::json& pJson)
-	{
-		for(const auto& pFarmzone : pJson)
-		{
-			auto Farmname = pFarmzone.value("name", "");
-			auto Position = pFarmzone.value("position", vec2());
-			auto ItemID = pFarmzone.value("item_id", 0);
-			auto Radius = (float)pFarmzone.value("radius", 100);
-
-			AddFarmzone(CFarmzone(this, std::move(Farmname), ItemID, Position, Radius));
-		}
-	});
-}
-
-// Destructor for the CHouseDoorsController class
-CHouse::CFarmzonesManager::~CFarmzonesManager()
-{
-	m_vFarmzones.clear();
-}
-
-void CHouse::CFarmzonesManager::AddFarmzone(CFarmzone&& Farmzone)
-{
-	m_vFarmzones.emplace(m_vFarmzones.size() + 1, std::forward<CFarmzone>(Farmzone));
-}
-
-CHouse::CFarmzone* CHouse::CFarmzonesManager::GetFarmzoneByPos(vec2 Pos)
-{
-	for(auto& p : m_vFarmzones)
-	{
-		if(distance(p.second.GetPos(), Pos) <= p.second.GetRadius())
-			return &p.second;
-	}
-
-	return nullptr;
-}
-
-CHouse::CFarmzone* CHouse::CFarmzonesManager::GetFarmzoneByID(int ID)
-{
-	const auto it = m_vFarmzones.find(ID);
-	return it != m_vFarmzones.end() ? &it->second : nullptr;
-}
-
-void CHouse::CFarmzonesManager::Save() const
-{
-	// Create a JSON object to store farm zones data
-	nlohmann::json Farmzones;
-	for(auto& p : m_vFarmzones)
-	{
-		// Create a JSON object to store data for each farm zone
-		nlohmann::json farmzoneData;
-		farmzoneData["name"] = p.second.GetName();
-		farmzoneData["position"] = p.second.GetPos();
-		farmzoneData["item_id"] = p.second.GetItemID();
-		farmzoneData["radius"] = round_to_int(p.second.GetRadius());
-		Farmzones.push_back(farmzoneData);
-	}
-
-	Database->Execute<DB::UPDATE>(TW_GUILDS_HOUSES, "Farmzones = '{}' WHERE ID = '{}'", Farmzones.dump().c_str(), m_pHouse->GetID());
 }

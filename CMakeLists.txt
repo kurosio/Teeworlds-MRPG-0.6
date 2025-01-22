@@ -104,7 +104,7 @@ if(NOT MSVC)
   if(TARGET_ARCH STREQUAL "x86")
     add_c_compiler_flag_if_supported(OUR_FLAGS -ffloat-store)
   endif()
-  
+
   add_cxx_compiler_flag_if_supported(OUR_FLAGS_OWN -Wall)
   add_cxx_compiler_flag_if_supported(OUR_FLAGS_OWN -Wextra)
   add_cxx_compiler_flag_if_supported(OUR_FLAGS_OWN -Wno-unused-parameter)
@@ -120,7 +120,7 @@ if(NOT MSVC)
   if(NOT TARGET_OS STREQUAL "linux")
     add_cxx_compiler_flag_if_supported(OUR_FLAGS_DEP -Wno-implicit-function-declaration)
   endif()
-  
+
   check_c_compiler_flag("-O2;-Wp,-Werror;-D_FORTIFY_SOURCE=2" DEFINE_FORTIFY_SOURCE) # Some distributions define _FORTIFY_SOURCE by themselves.
 endif()
 
@@ -444,7 +444,7 @@ set(COPY_FILES_SERVER
   ${SQLite3_COPY_FILES}
 )
 
-file(COPY #${COPY_FILES_CLIENT} 
+file(COPY #${COPY_FILES_CLIENT}
   ${COPY_FILES_SERVER} DESTINATION .)
 
 ########################################################################
@@ -724,12 +724,12 @@ if(SERVER_COMPILE)
   # Sources
   file(GLOB_RECURSE ENGINE_SERVER "src/engine/server/*.cpp" "src/engine/server/*.h")
   file(GLOB_RECURSE GAME_SERVER "src/game/server/*.cpp" "src/game/server/*.h" "src/game/server/*.hpp")
-  file(GLOB LOCALIZED_SERVER "src/teeother/components/*.cpp" "src/teeother/components/*.h" "src/teeother/tools/*.cpp" 
-     "src/teeother/tools/geolite2pp/*.cpp" "src/teeother/tools/geolite2pp/*.hpp"  
+  file(GLOB LOCALIZED_SERVER "src/teeother/components/*.cpp" "src/teeother/components/*.h" "src/teeother/tools/*.cpp"
+     "src/teeother/tools/geolite2pp/*.cpp" "src/teeother/tools/geolite2pp/*.hpp"
      "src/teeother/tools/*.h" "src/teeother/tools/flat_hash_map/*.h")
   set(GAME_GENERATED_SERVER src/generated/server_data.cpp src/generated/server_data.h)
   set(SERVER_SRC ${ENGINE_SERVER} ${GAME_SERVER} ${GAME_GENERATED_SERVER} ${LOCALIZED_SERVER})
-  
+
   set(SERVER_INCLUDES_DIRS
     ${Boost_INCLUDE_DIRS}
     ${MYSQL_INCLUDE_DIRS}

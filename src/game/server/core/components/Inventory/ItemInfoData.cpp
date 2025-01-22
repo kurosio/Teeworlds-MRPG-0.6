@@ -85,15 +85,6 @@ void CItemDescription::InitData(const DBSet& GroupSet, const DBSet& TypeSet)
 	// load data context for item
 	mystd::json::parse(m_Data, [this](nlohmann::json& pJson)
 	{
-		// try to initialize harversing
-		if(const auto& pHarvestingJson = pJson["harvesting"]; !pHarvestingJson.is_null())
-		{
-			HarvestingContext Harvesting;
-			Harvesting.Level = pHarvestingJson.value("level", 1);
-			Harvesting.Health = pHarvestingJson.value("health", 100);
-			m_HarvestingContext = Harvesting;
-		}
-
 		// try to initialize potion
 		if(const auto& pPotionJson = pJson["potion"]; !pPotionJson.is_null())
 		{
@@ -124,21 +115,21 @@ void CItemDescription::StartItemScenario(CPlayer* pPlayer, ItemScenarioEvent Eve
 		const char* pElem;
 		switch(Event)
 		{
-			case ItemScenarioEvent::OnEventGot: 
+			case ItemScenarioEvent::OnEventGot:
 				ScenarioID = SCENARIO_ON_ITEM_GOT;
-				pElem = "on_event_got"; 
+				pElem = "on_event_got";
 				break;
 			case ItemScenarioEvent::OnEventLost:
 				ScenarioID = SCENARIO_ON_ITEM_LOST;
-				pElem = "on_event_lost"; 
+				pElem = "on_event_lost";
 				break;
 			case ItemScenarioEvent::OnEventEquip:
 				ScenarioID = SCENARIO_ON_ITEM_EQUIP;
-				pElem = "on_event_equip"; 
+				pElem = "on_event_equip";
 				break;
-			default: 
+			default:
 				ScenarioID = SCENARIO_ON_ITEM_UNEQUIP;
-				pElem = "on_event_unequip"; 
+				pElem = "on_event_unequip";
 				break;
 		}
 

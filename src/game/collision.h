@@ -63,14 +63,15 @@ private:
 	std::vector<FixedCamZoneDetail> m_vFixedCamZones {};
 	std::map<int, ZoneDetail> m_vZoneDetail {};
 	std::map<int, TextZoneDetail> m_vZoneTextDetail {};
+	std::unordered_map<int, GatheringNode> m_vOreNodes {};
+	std::unordered_map<int, GatheringNode> m_vPlantNodes {};
 
 	// initialization
+	void InitSettings();
 	void InitTiles(CTile* pTiles);
 	void InitTeleports();
 	void InitSwitchExtra();
 	void InitSpeedupExtra();
-
-	void InitSettings();
 
 	// flags
 	int GetMainTileFlags(float x, float y) const;
@@ -85,8 +86,25 @@ public:
 	CCollision();
 	~CCollision();
 
+	GatheringNode* GetOreNode(int Number)
+	{
+		if(!m_vOreNodes.contains(Number))
+			return nullptr;
+
+		return &m_vOreNodes[Number];
+	}
+
+	GatheringNode* GetPlantNode(int Number)
+	{
+		if(!m_vPlantNodes.contains(Number))
+			return nullptr;
+
+		return &m_vPlantNodes[Number];
+	}
+
 	void Init(class IKernel* pKernel, int WorldID);
 	void InitEntities(const std::function<void(int, vec2, int)>& funcInit) const;
+	void InitSwitchEntities(const std::function<void(int, vec2, int, int)>& funcInit) const;
 
 	int GetWidth() const { return m_Width; }
 	int GetHeight() const { return m_Height; }
@@ -124,6 +142,7 @@ public:
 	std::optional<ZoneDetail> GetZonedetail(vec2 Pos) const;
 	std::optional<vec2> TryGetTeleportOut(vec2 currentPos);
 	std::optional<std::pair<vec2, bool>> TryGetFixedCamPos(vec2 currentPos) const;
+
 
 	// other
 	int IntersectLine(vec2 Pos0, vec2 Pos1, vec2* pOutCollision, vec2* pOutBeforeCollision, int ColFlag = COLFLAG_SOLID) const;

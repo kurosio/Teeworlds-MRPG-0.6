@@ -176,7 +176,7 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int 
 			default: GS()->Chat(ClientID, "Unforeseen error."); break;
 			case GuildResult::SET_LEADER_NON_GUILD_PLAYER: GS()->Chat(ClientID, "The player is not a member of your guild"); break;
 			case GuildResult::SET_LEADER_PLAYER_ALREADY_LEADER: GS()->Chat(ClientID, "The player is already a leader"); break;
-			case GuildResult::SUCCESSFUL: 
+			case GuildResult::SUCCESSFUL:
 				GS()->UpdateVotesIfForAll(MENU_GUILD_MEMBER_LIST);
 				pPlayer->m_VotesData.UpdateCurrentVotes();
 			break;
@@ -260,7 +260,7 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int 
 			default: GS()->Chat(ClientID, "Unforeseen error."); break;
 			case GuildResult::MEMBER_KICK_IS_OWNER: GS()->Chat(ClientID, "You can't kick a leader"); break;
 			case GuildResult::MEMBER_KICK_DOES_NOT_EXIST: GS()->Chat(ClientID, "The player is no longer on the guild membership lists"); break;
-			case GuildResult::MEMBER_SUCCESSFUL: 
+			case GuildResult::MEMBER_SUCCESSFUL:
 				GS()->UpdateVotesIfForAll(MENU_GUILD_MEMBER_LIST);
 				pPlayer->m_VotesData.UpdateVotes(MENU_GUILD_MEMBER_LIST);
 			break;
@@ -599,7 +599,7 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int 
 			case GuildResult::BUY_HOUSE_ALREADY_PURCHASED: GS()->Chat(ClientID, "This guild house has already been purchased."); break;
 			case GuildResult::BUY_HOUSE_NOT_ENOUGH_GOLD: GS()->Chat(ClientID, "Your guild doesn't have enough gold."); break;
 			case GuildResult::BUY_HOUSE_UNAVAILABLE: GS()->Chat(ClientID, "This guild house is not available for purchase."); break;
-			case GuildResult::SUCCESSFUL: 
+			case GuildResult::SUCCESSFUL:
 				pPlayer->m_VotesData.UpdateCurrentVotes();
 				GS()->UpdateVotesIfForAll(MENU_GUILD);
 			break;
@@ -644,6 +644,49 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int 
 		}
 
 		GS()->UpdateVotesIfForAll(MENU_GUILD_WARS);
+		return true;
+	}
+
+	// remove plant
+	if(PPSTR(pCmd, "GUILD_HOUSE_FARM_ZONE_REMOVE_PLANT") == 0)
+	{
+		// check guild valid and access rights
+		auto* pGuild = pPlayer->Account()->GetGuild();
+		if(!pGuild || !pPlayer->Account()->GetGuildMember()->CheckAccess(GUILD_RANK_RIGHT_UPGRADES_HOUSE))
+		{
+			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
+			return true;
+		}
+
+		// check house valid
+		auto* pHouse = pGuild->GetHouse();
+		if(!pHouse)
+		{
+			GS()->Chat(ClientID, "Your guild does not have a house.");
+			return true;
+		}
+
+		// initialize variables
+		const int& FarmzoneID = Extra1;
+		const ItemIdentifier& ItemID = Extra2;
+
+		// check farmzone valid
+		auto pFarmzone = pHouse->GetFarmzonesManager()->GetFarmzoneByID(FarmzoneID);
+		if(!pFarmzone)
+		{
+			GS()->Chat(ClientID, "Farm zone not found.");
+			return true;
+		}
+
+		// check is same planted item with current
+		if(pFarmzone->RemoveItemFromNode(ItemID))
+		{
+			auto* pItemInfo = GS()->GetItemInfo(ItemID);
+			GS()->Chat(ClientID, "You have successfully removed the {} from {}.", pItemInfo->GetName(), pFarmzone->GetName());
+			pHouse->Save();
+		}
+
+		pPlayer->m_VotesData.UpdateVotesIf(MENU_GUILD_HOUSE_FARMZONE_SELECT);
 		return true;
 	}
 
@@ -703,7 +746,8 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int 
 			{
 				// update
 				GS()->Chat(ClientID, "You have successfully plant to farm zone.");
-				pFarmzone->ChangeItem(ItemID);
+				pFarmzone->AddItemToNode(ItemID);
+				pHouse->Save();
 			}
 			else
 			{
@@ -1191,7 +1235,7 @@ void CGuildManager::ShowUpgrades(CPlayer* pPlayer) const
 			int Price = pGuild->GetUpgradePrice(static_cast<GuildUpgrade>(i));
 			const auto* pUpgrade = &pGuild->GetUpgrades().getField<int>(i);
 
-			VUpgrHouse.AddOption("GUILD_UPGRADE", i, "Upgrade {} ({}) {$} gold", 
+			VUpgrHouse.AddOption("GUILD_UPGRADE", i, "Upgrade {} ({}) {$} gold",
 				pUpgrade->getDescription(), pUpgrade->m_Value, Price);
 		}
 		VoteWrapper::AddEmptyline(ClientID);
@@ -1260,7 +1304,7 @@ void CGuildManager::ShowMembershipList(CPlayer* pPlayer) const
 		auto pMember = pIterMember.second;
 		const int& UID = pMember->GetAccountID();
 		const char* pNickname = Server()->GetAccountNickname(UID);
-		VList.AddMenu(MENU_GUILD_MEMBER_SELECT, UID, "{}. {} {} Deposit: {}", 
+		VList.AddMenu(MENU_GUILD_MEMBER_SELECT, UID, "{}. {} {} Deposit: {}",
 			VList.NextPos(), pMember->GetRank()->GetName(), pNickname, pMember->GetDeposit());
 	}
 	VoteWrapper::AddEmptyline(ClientID);
@@ -1481,26 +1525,42 @@ void CGuildManager::ShowFarmzoneEdit(CPlayer* pPlayer, int FarmzoneID) const
 	if(!pFarmzone)
 		return;
 
-	int ClientID = pPlayer->GetCID();
-	CItemDescription* pItem = GS()->GetItemInfo(pFarmzone->GetItemID());
+	const auto ClientID = pPlayer->GetCID();
 
 	// information
 	VoteWrapper VInfo(ClientID, VWF_ALIGN_TITLE|VWF_SEPARATE|VWF_STYLE_STRICT_BOLD, "\u2741 Farm {} zone", pFarmzone->GetName());
 	VInfo.Add("You can grow a plant on the property");
 	VInfo.Add("Chance: {}%", s_GuildChancePlanting);
-	VInfo.Add("Planted: {}", pItem->GetName());
+	VoteWrapper::AddEmptyline(ClientID);
+
+	// planted list
+	for(auto& Elem : pFarmzone->GetNode().m_vItems)
+	{
+		auto ItemID = Elem.Element;
+		auto* pItemInfo = GS()->GetItemInfo(ItemID);
+		VoteWrapper VPlanted(ClientID, VWF_UNIQUE | VWF_STYLE_SIMPLE, "{} - chance {~.2}%", pItemInfo->GetName(), Elem.Chance);
+		VPlanted.AddOption("GUILD_HOUSE_FARM_ZONE_REMOVE_PLANT", FarmzoneID, ItemID, "Remove {} from plant", pItemInfo->GetName());
+	}
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// items list availables can be planted
+	auto vItems = CInventoryManager::GetItemIDsCollectionByType(ItemType::ResourceHarvestable);
 	VoteWrapper VPossiblePlanting(ClientID, VWF_OPEN|VWF_STYLE_SIMPLE, "\u2741 Possible items for planting");
-	std::vector<ItemIdentifier> vItems = Core()->InventoryManager()->GetItemIDsCollectionByType(ItemType::ResourceHarvestable);
 	for(auto& ID : vItems)
 	{
-		CPlayerItem* pPlayerItem = pPlayer->GetItem(ID);
-		if(pPlayerItem->HasItem() && ID != pFarmzone->GetItemID())
+		bool AllowPlant = true;
+		for(auto& Elem : pFarmzone->GetNode().m_vItems)
 		{
-			VPossiblePlanting.AddOption("GUILD_HOUSE_FARM_ZONE_TRY_PLANT", FarmzoneID, ID, "Try plant {} (has {})", pPlayerItem->Info()->GetName(), pPlayerItem->GetValue());
+			if(Elem.Element == ID)
+			{
+				AllowPlant = false;
+				break;
+			}
 		}
+
+		auto* pPlayerItem = pPlayer->GetItem(ID);
+		if(AllowPlant && pPlayerItem->HasItem())
+			VPossiblePlanting.AddOption("GUILD_HOUSE_FARM_ZONE_TRY_PLANT", FarmzoneID, ID, "Try plant {} (has {})", pPlayerItem->Info()->GetName(), pPlayerItem->GetValue());
 	}
 	VoteWrapper::AddEmptyline(ClientID);
 }
@@ -1730,7 +1790,7 @@ CGuild* CGuildManager::GetGuildByName(const char* pGuildname) const
 	return itGuild != CGuild::Data().end() ? (*itGuild) : nullptr;
 }
 
-CGuildHouse::CFarmzone* CGuildManager::GetHouseFarmzoneByPos(vec2 Pos) const
+CFarmzone* CGuildManager::GetHouseFarmzoneByPos(vec2 Pos) const
 {
 	for(auto& p : CGuildHouse::Data())
 	{

@@ -21,7 +21,7 @@ class IGameController
 		bool m_Got{};
 	};
 	std::array<std::vector<vec2>, NUM_SPAWN> m_aaSpawnPoints{};
-	
+
 	void EvaluateSpawnType(CSpawnEval* Pos, int Type, std::pair<vec2, float> LimiterSpread) const;
 
 protected:
@@ -44,6 +44,7 @@ public:
 	virtual bool OnCharacterBotSpawn(class CCharacterBotAI *pChr);
 
 	virtual void OnEntity(int Index, vec2 Pos, int Flags);
+	virtual void OnEntitySwitch(int Index, vec2 Pos, int Flags, int Number);
 
 	void OnPlayerConnect(class CPlayer *pPlayer);
 	void OnPlayerDisconnect(class CPlayer *pPlayer);

@@ -14,6 +14,7 @@
 #include <future>
 #include <queue>
 #include <set>
+#include <random>
 #include <ranges>
 #include <optional>
 #include <variant>
@@ -22,6 +23,8 @@
 #include <teeother/tools/flat_hash_map/flat_hash_map.h>
 #include <teeother/tools/flat_hash_map/unordered_map.h>
 #include <teeother/tools/nlohmann_json.h>
+#include <teeother/tools/chance_processor.h>
+#include <teeother/tools/dbset.h>
 
 #include <base/system.h>
 #include <base/big_int.h>
@@ -34,5 +37,6 @@
 #include <engine/shared/protocol.h>
 #include <generated/protocol.h>
 #include <teeother/tools/utilites.h>
+#include <game/server/core/mmo_context.h>
 
 #endif //GAME_TEEOTHER_STDAFX_SHARED_H

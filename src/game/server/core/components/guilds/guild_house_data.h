@@ -3,6 +3,8 @@
 #ifndef GAME_SERVER_COMPONENT_GUILD_HOUSE_DATA_H
 #define GAME_SERVER_COMPONENT_GUILD_HOUSE_DATA_H
 
+#include <game/server/core/components/houses/farmzone_manager.h>
+
 #define TW_GUILDS_HOUSES "tw_guilds_houses"
 #define TW_GUILD_HOUSES_DECORATION_TABLE "tw_guilds_decorations"
 static constexpr float s_GuildChancePlanting = 0.025f;
@@ -15,7 +17,7 @@ class CEntityHouseDecoration;
 class CEntityDrawboard;
 class CEntityGuildDoor;
 class EntityPoint;
-class CEntityHarvestingItem;
+class CEntityGatheringNode;
 using GuildHouseIdentifier = int;
 
 class CGuildHouse : public MultiworldIdentifiableData< std::deque < CGuildHouse* > >
@@ -23,64 +25,8 @@ class CGuildHouse : public MultiworldIdentifiableData< std::deque < CGuildHouse*
 	friend class CGuild;
 	friend class CGuildHouseDoorManager;
 	friend class CGuildHouseDecorationManager;
-	friend class CFarmzonesManager;
 
 public:
-	/* -------------------------------------
-	 * Farmzones impl
-	 * ------------------------------------- */
-	class CFarmzonesManager;
-	class CFarmzone
-	{
-		CFarmzonesManager* m_pManager {};
-		std::string m_Name {};
-		int m_ItemID {};
-		vec2 m_Pos {};
-		float m_Radius {};
-		std::vector<CEntityHarvestingItem*> m_vFarms {};
-
-	public:
-		CFarmzone() = delete;
-		CFarmzone(CFarmzonesManager* pManager, std::string&& Name, int ItemID, vec2 Pos, float Radius) : m_pManager(pManager)
-		{
-			m_Name = std::move(Name);
-			m_ItemID = ItemID;
-			m_Pos = Pos;
-			m_Radius = Radius;
-		}
-
-		const char* GetName() const { return m_Name.c_str(); }
-		float GetRadius() const { return m_Radius; }
-		int GetItemID() const { return m_ItemID; }
-		vec2 GetPos() const { return m_Pos; }
-		std::vector<CEntityHarvestingItem*>& GetContainer() { return m_vFarms; }
-
-		void ChangeItem(int ItemID);
-		void Add(CEntityHarvestingItem* pItem) { m_vFarms.push_back(pItem); }
-		void Remove(CEntityHarvestingItem* pItem) { m_vFarms.erase(std::remove(m_vFarms.begin(), m_vFarms.end(), pItem), m_vFarms.end()); }
-	};
-
-	class CFarmzonesManager
-	{
-		friend class CFarmzone;
-		CGS* GS() const;
-		CGuildHouse* m_pHouse {};
-		std::unordered_map<int, CFarmzone> m_vFarmzones {};
-
-	public:
-		CFarmzonesManager() = delete;
-		CFarmzonesManager(CGuildHouse* pHouse, std::string&& JsonFarmzones);
-		~CFarmzonesManager();
-
-		std::unordered_map<int, CFarmzone>& GetContainer() { return m_vFarmzones; }
-
-		void AddFarmzone(CFarmzone&& Farmzone);
-		CFarmzone* GetFarmzoneByPos(vec2 Pos);
-		CFarmzone* GetFarmzoneByID(int ID);
-
-	private:
-		void Save() const;
-	};
 
 	/* -------------------------------------
 	 * Decorations impl
@@ -191,6 +137,7 @@ public:
 	bool ReduceRentDays(int Days);
 	void UpdateText(int Lifetime) const;
 	void UpdateGuild(CGuild* pGuild);
+	void Save();
 };
 
 #endif

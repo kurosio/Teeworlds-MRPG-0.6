@@ -5,7 +5,7 @@
 #include <game/server/entity_manager.h>
 #include <game/server/gamecontext.h>
 
-#include <game/server/core/entities/items/harvesting_item.h>
+#include <game/server/core/entities/items/gathering_node.h>
 #include <game/server/core/entities/tools/draw_board.h>
 #include <game/server/core/components/guilds/entities/guild_door.h>
 #include <game/server/core/components/guilds/guild_data.h>
@@ -42,7 +42,7 @@ void CGuildHouse::InitProperties(std::string&& JsonDoors, std::string&& JsonFarm
 
 	// Create a new instance of CFarmzonesManager and assign it to m_pFarmzonesManager
 	// The CFarmzonesManager will handle all the farmzones for the guild house.
-	m_pFarmzonesManager = new CFarmzonesManager(this, std::move(JsonFarmzones));
+	m_pFarmzonesManager = new CFarmzonesManager(std::move(JsonFarmzones));
 
 	// Asserts
 	dbg_assert(m_pFarmzonesManager != nullptr, "The house farmzones manager is null");
@@ -113,79 +113,9 @@ void CGuildHouse::UpdateGuild(CGuild* pGuild)
 	}
 }
 
-/* -------------------------------------
- * Farmzones impl
- * ------------------------------------- */
-void CGuildHouse::CFarmzone::ChangeItem(int ItemID)
+void CGuildHouse::Save()
 {
-	for(auto& pFarm : m_vFarms)
-		pFarm->m_ItemID = ItemID;
-	m_ItemID = ItemID;
-	m_pManager->Save();
-}
-
-CGS* CGuildHouse::CFarmzonesManager::GS() const { return m_pHouse->GS(); }
-CGuildHouse::CFarmzonesManager::CFarmzonesManager(CGuildHouse* pHouse, std::string&& JsonFarmzones) : m_pHouse(pHouse)
-{
-	// Parse the JSON string
-	mystd::json::parse(JsonFarmzones, [this](nlohmann::json& pJson)
-	{
-		for(const auto& Farmzone : pJson)
-		{
-			auto Farmname = Farmzone.value("name", "");
-			auto Position = Farmzone.value("position", vec2());
-			auto ItemID = Farmzone.value("item_id", 0);
-			auto Radius = (float)Farmzone.value("radius", 100);
-
-			AddFarmzone({ this, Farmname.c_str(), ItemID, Position, Radius });
-		}
-	});
-}
-
-CGuildHouse::CFarmzonesManager::~CFarmzonesManager()
-{
-	m_vFarmzones.clear();
-}
-
-void CGuildHouse::CFarmzonesManager::AddFarmzone(CFarmzone&& Farmzone)
-{
-	m_vFarmzones.emplace(m_vFarmzones.size() + 1, std::forward<CFarmzone>(Farmzone));
-}
-
-CGuildHouse::CFarmzone* CGuildHouse::CFarmzonesManager::GetFarmzoneByPos(vec2 Pos)
-{
-	for(auto& p : m_vFarmzones)
-	{
-		if(distance(p.second.GetPos(), Pos) <= p.second.GetRadius())
-			return &p.second;
-	}
-
-	return nullptr;
-}
-
-CGuildHouse::CFarmzone* CGuildHouse::CFarmzonesManager::GetFarmzoneByID(int ID)
-{
-	const auto it = m_vFarmzones.find(ID);
-	return it != m_vFarmzones.end() ? &it->second : nullptr;
-}
-
-void CGuildHouse::CFarmzonesManager::Save() const
-{
-	// Create a JSON object to store farm zones data
-	nlohmann::json Farmzones;
-	for(auto& p : m_vFarmzones)
-	{
-		// Create a JSON object to store data for each farm zone
-		nlohmann::json farmzoneData;
-		farmzoneData["name"] = p.second.GetName();
-		farmzoneData["position"] = p.second.GetPos();
-		farmzoneData["item_id"] = p.second.GetItemID();
-		farmzoneData["radius"] = round_to_int(p.second.GetRadius());
-		Farmzones.push_back(farmzoneData);
-	}
-
-	// update database
-	Database->Execute<DB::UPDATE>(TW_GUILDS_HOUSES, "Farmzones = '{}' WHERE ID = '{}'", Farmzones.dump().c_str(), m_pHouse->GetID());
+	Database->Execute<DB::UPDATE>(TW_GUILDS_HOUSES, "Farmzones = '{}' WHERE ID = '{}'", m_pFarmzonesManager->DumpJsonString(), m_ID);
 }
 
 /* -------------------------------------

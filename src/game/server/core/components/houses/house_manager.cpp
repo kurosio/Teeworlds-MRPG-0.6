@@ -154,6 +154,41 @@ bool CHouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* CMD, const
 	}
 
 	// house farm zone try plant
+	if(PPSTR(CMD, "HOUSE_FARM_ZONE_REMOVE_PLANT") == 0)
+	{
+		// check valid house
+		auto *pHouse = pPlayer->Account()->GetHouse();
+		if(!pHouse)
+		{
+			GS()->Chat(ClientID, "You do not have your own home!");
+			return true;
+		}
+
+		// initialize variables
+		const int& FarmzoneID = VoteID;
+		const ItemIdentifier& ItemID = VoteID2;
+
+		// check farmzone valid
+		auto pFarmzone = pHouse->GetFarmzonesManager()->GetFarmzoneByID(FarmzoneID);
+		if(!pFarmzone)
+		{
+			GS()->Chat(ClientID, "Farm zone not found.");
+			return true;
+		}
+
+		// check is same planted item with current
+		if(pFarmzone->RemoveItemFromNode(ItemID))
+		{
+			auto* pItemInfo = GS()->GetItemInfo(ItemID);
+			GS()->Chat(ClientID, "You have successfully removed the {} from {}.", pItemInfo->GetName(), pFarmzone->GetName());
+			pHouse->Save();
+		}
+
+		pPlayer->m_VotesData.UpdateVotesIf(MENU_HOUSE_FARMZONE_SELECT);
+		return true;
+	}
+
+	// house farm zone try plant
 	if(PPSTR(CMD, "HOUSE_FARM_ZONE_TRY_PLANT") == 0)
 	{
 		// check valid house
@@ -201,7 +236,8 @@ bool CHouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* CMD, const
 			{
 				// update data
 				GS()->Chat(ClientID, "You have successfully plant to farm zone.");
-				pFarmzone->ChangeItem(ItemID);
+				pFarmzone->AddItemToNode(ItemID);
+				pHouse->Save();
 			}
 			else
 			{
@@ -493,22 +529,41 @@ void CHouseManager::ShowFarmzoneEdit(CPlayer* pPlayer, int FarmzoneID) const
 
 	// initialize variables
 	int ClientID = pPlayer->GetCID();
-	CItemDescription* pItem = GS()->GetItemInfo(pFarmzone->GetItemID());
+	auto& Node = pFarmzone->GetNode();
 
 	// information
 	VoteWrapper VInfo(ClientID, VWF_SEPARATE | VWF_STYLE_STRICT_BOLD, "\u2741 Farm {} zone", pFarmzone->GetName());
 	VInfo.Add("You can grow a plant on the property");
 	VInfo.Add("Chance: {}%", s_GuildChancePlanting);
-	VInfo.Add("Planted: {}", pItem->GetName());
+	VoteWrapper::AddEmptyline(ClientID);
+
+	// planted list
+	for(auto& Elem : Node.m_vItems)
+	{
+		auto ItemID = Elem.Element;
+		auto* pItemInfo = GS()->GetItemInfo(ItemID);
+		VoteWrapper VPlanted(ClientID, VWF_UNIQUE | VWF_STYLE_SIMPLE, "{} - chance {~.2}%", pItemInfo->GetName(), Elem.Chance);
+		VPlanted.AddOption("HOUSE_FARM_ZONE_REMOVE_PLANT", FarmzoneID, ItemID, "Remove {} from plant", pItemInfo->GetName());
+	}
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// items list availables can be planted
+	auto vItems = CInventoryManager::GetItemIDsCollectionByType(ItemType::ResourceHarvestable);
 	VoteWrapper VPossiblePlanting(ClientID, VWF_OPEN | VWF_STYLE_SIMPLE, "\u2741 Possible items for planting");
-	std::vector<ItemIdentifier> vItems = Core()->InventoryManager()->GetItemIDsCollectionByType(ItemType::ResourceHarvestable);
 	for(auto& ID : vItems)
 	{
-		CPlayerItem* pPlayerItem = pPlayer->GetItem(ID);
-		if(pPlayerItem->HasItem() && ID != pFarmzone->GetItemID())
+		bool AllowPlant = true;
+		for(auto& Elem : pFarmzone->GetNode().m_vItems)
+		{
+			if(Elem.Element == ID)
+			{
+				AllowPlant = false;
+				break;
+			}
+		}
+
+		auto* pPlayerItem = pPlayer->GetItem(ID);
+		if(AllowPlant && pPlayerItem->HasItem())
 			VPossiblePlanting.AddOption("HOUSE_FARM_ZONE_TRY_PLANT", FarmzoneID, ID, "Try plant {} (has {})", pPlayerItem->Info()->GetName(), pPlayerItem->GetValue());
 	}
 	VoteWrapper::AddEmptyline(ClientID);
@@ -595,7 +650,7 @@ CHouse* CHouseManager::GetHouseByPos(vec2 Pos) const
 	return pHouse != CHouse::Data().end() ? *pHouse : nullptr;
 }
 
-CHouse::CFarmzone* CHouseManager::GetHouseFarmzoneByPos(vec2 Pos) const
+CFarmzone* CHouseManager::GetHouseFarmzoneByPos(vec2 Pos) const
 {
 	for(auto& p : CHouse::Data())
 	{

@@ -3,6 +3,7 @@
 #ifndef GAME_SERVER_COMPONENT_HOUSE_DATA_H
 #define GAME_SERVER_COMPONENT_HOUSE_DATA_H
 
+#include "farmzone_manager.h"
 #include <game/server/core/components/Inventory/ItemData.h>
 
 #define TW_HOUSES_TABLE "tw_houses"
@@ -10,7 +11,7 @@
 
 class CGS;
 class CPlayer;
-class CEntityHarvestingItem;
+class CEntityGatheringNode;
 class CDrawingData;
 class CEntityDrawboard;
 class EntityPoint;
@@ -22,63 +23,8 @@ class CHouse : public MultiworldIdentifiableData< std::deque < CHouse* > >
 {
 	CGS* GS() const;
 	CPlayer* GetPlayer() const;
-	
+
 public:
-	/* -------------------------------------
- * Farmzones impl
- * ------------------------------------- */
-	class CFarmzonesManager;
-	class CFarmzone
-	{
-		CFarmzonesManager* m_pManager {};
-		std::string m_Name {};
-		int m_ItemID {};
-		vec2 m_Pos {};
-		float m_Radius {};
-		std::vector<CEntityHarvestingItem*> m_vFarms {};
-
-	public:
-		CFarmzone() = delete;
-		CFarmzone(CFarmzonesManager* pManager, std::string&& Name, int ItemID, vec2 Pos, float Radius) : m_pManager(pManager)
-		{
-			m_Name = std::move(Name);
-			m_ItemID = ItemID;
-			m_Pos = Pos;
-			m_Radius = Radius;
-		}
-
-		const char* GetName() const { return m_Name.c_str(); }
-		float GetRadius() const { return m_Radius; }
-		int GetItemID() const { return m_ItemID; }
-		vec2 GetPos() const { return m_Pos; }
-		std::vector<CEntityHarvestingItem*>& GetContainer() { return m_vFarms; }
-
-		void ChangeItem(int ItemID);
-		void Add(CEntityHarvestingItem* pItem) { m_vFarms.push_back(pItem); }
-		void Remove(CEntityHarvestingItem* pItem) { m_vFarms.erase(std::remove(m_vFarms.begin(), m_vFarms.end(), pItem), m_vFarms.end()); }
-	};
-
-	class CFarmzonesManager
-	{
-		friend class CFarmzone;
-		CGS* GS() const;
-		CHouse* m_pHouse {};
-		std::unordered_map<int, CFarmzone> m_vFarmzones {};
-
-	public:
-		CFarmzonesManager() = delete;
-		CFarmzonesManager(CHouse* pHouse, std::string&& JsonFarmzones);
-		~CFarmzonesManager();
-
-		std::unordered_map<int, CFarmzone>& GetContainer() { return m_vFarmzones; }
-
-		void AddFarmzone(CFarmzone&& Farmzone);
-		CFarmzone* GetFarmzoneByPos(vec2 Pos);
-		CFarmzone* GetFarmzoneByID(int ID);
-
-	private:
-		void Save() const;
-	};
 
 	/* -------------------------------------
 	 * Bank impl
@@ -115,7 +61,7 @@ public:
 	public:
 		CDoorManager(CHouse* pHouse, std::string&& AccessList, std::string&& JsonDoors);
 		~CDoorManager();
-		
+
 		ska::unordered_set<int>& GetAccesses() { return m_vAccessUserIDs; }               // Get the set of user IDs with access to the house
 		ska::unordered_map<int, CEntityHouseDoor*>& GetContainer() { return m_vpEntDoors; }  // Get the map of door numbers to CHouseDoor objects
 		void AddAccess(int UserID);                                                      // Add access for a user
@@ -220,6 +166,8 @@ public:
 	void Sell();
 	void UpdateText(int Lifetime) const;
 	void HandleTimePeriod(ETimePeriod Period);
+
+	void Save();
 };
 
 #endif

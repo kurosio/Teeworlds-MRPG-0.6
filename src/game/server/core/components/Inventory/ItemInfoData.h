@@ -23,12 +23,6 @@ enum class ItemScenarioEvent
 class CItemDescription : public MultiworldIdentifiableData < std::map< int, CItemDescription > >
 {
 public:
-	struct HarvestingContext
-	{
-		int Level  {1};
-		int Health {100};
-	};
-
 	struct PotionContext
 	{
 		std::string Effect {};
@@ -50,7 +44,6 @@ private:
 	ContainerAttributes m_aAttributes {};
 	std::string m_Data {};
 	CRandomBox m_RandomBox {};
-	std::optional<HarvestingContext> m_HarvestingContext {};
 	std::optional<PotionContext> m_PotionContext {};
 
 public:
@@ -61,19 +54,6 @@ public:
 		const DBSet& TypeSet, int Dysenthis, int InitialPrice, ContainerAttributes aAttributes, std::string&& Data)
 	{
 		m_Data = std::move(Data);
-		mystd::json::parse(m_Data, [this](nlohmann::json& pJson)
-		{
-			// try to initialize harversing
-			m_HarvestingContext = HarvestingContext{
-				pJson.value("harvesting", nlohmann::json::object()).value("level", 1),
-				pJson.value("harvesting", nlohmann::json::object()).value("health", 100)
-			};
-
-			// try to initialize random box
-			for(auto& p : pJson["random_box"])
-				m_RandomBox.Add(p.value("item_id", -1), p.value("value", 1), p.value("chance", 100.0f));
-		});
-
 		str_copy(m_aName, Name.c_str(), sizeof(m_aName));
 		str_copy(m_aDescription, Description.c_str(), sizeof(m_aDescription));
 		m_Dysenthis = Dysenthis;
@@ -121,7 +101,6 @@ public:
 
 	class CRandomBox* GetRandomBox() { return m_RandomBox.IsEmpty() ? nullptr : &m_RandomBox; }
 	ContainerAttributes& GetAttributes() { return m_aAttributes; }
-	std::optional<HarvestingContext>& GetHarvestingContext() { return m_HarvestingContext; }
 	std::optional<PotionContext>& GetPotionContext() { return m_PotionContext; }
 
 	bool IsStackable() const;

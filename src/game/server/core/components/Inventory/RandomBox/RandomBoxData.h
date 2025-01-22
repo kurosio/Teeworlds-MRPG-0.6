@@ -3,8 +3,6 @@
 #ifndef GAME_SERVER_INVENTORY_RANDOM_BOX_H
 #define GAME_SERVER_INVENTORY_RANDOM_BOX_H
 
-#include <game/server/core/tools/chance_processor.h>
-
 // forward
 class CPlayerItem;
 class CPlayer;

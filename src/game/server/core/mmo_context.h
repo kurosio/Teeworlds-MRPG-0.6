@@ -5,6 +5,15 @@
 
 #include "tools/path_finder_result.h"
 
+// gathering node
+struct GatheringNode
+{
+	int Level {};
+	int Health {};
+	std::string Name {};
+	ChanceProcessor<int> m_vItems {};
+};
+
 // skin data
 struct CTeeInfo
 {
@@ -633,6 +642,7 @@ enum class AttributeGroup : int
 // Attribute context
 enum class AttributeIdentifier : int
 {
+	Unknown = -1,
 	DMG = 1,                     // Attribute identifier for damage
 	AttackSPD = 2,               // Attribute identifier for attack speed
 	CritDMG = 3,                 // Attribute identifier for critical damage

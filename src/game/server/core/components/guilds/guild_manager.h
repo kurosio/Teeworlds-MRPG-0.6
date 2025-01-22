@@ -52,7 +52,7 @@ public:
 	CGuildHouse* GetHouseByPos(vec2 Pos) const;
 	CGuild* GetGuildByID(GuildIdentifier ID) const;
 	CGuild* GetGuildByName(const char* pGuildname) const;
-	CGuildHouse::CFarmzone* GetHouseFarmzoneByPos(vec2 Pos) const;
+	CFarmzone* GetHouseFarmzoneByPos(vec2 Pos) const;
 };
 
 #endif

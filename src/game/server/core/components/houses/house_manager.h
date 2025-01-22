@@ -34,7 +34,7 @@ class CHouseManager : public MmoComponent
 public:
 	CHouse* GetHouse(HouseIdentifier ID) const;
 	CHouse* GetHouseByPos(vec2 Pos) const;
-	CHouse::CFarmzone* GetHouseFarmzoneByPos(vec2 Pos) const;
+	CFarmzone* GetHouseFarmzoneByPos(vec2 Pos) const;
 };
 
 #endif

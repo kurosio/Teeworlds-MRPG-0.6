@@ -8,7 +8,6 @@
 
 #include <engine/server/sql_connect_pool.h>
 #include <teeother/tools/dbfield.h>
-#include <teeother/tools/dbset.h>
 
 #include <engine/console.h>
 #include <engine/kernel.h>
@@ -19,7 +18,6 @@
 #include <game/mapitems.h>
 #include <game/version.h>
 #include <game/voting.h>
-#include <game/server/core/mmo_context.h>
 
 
 #endif //GAME_TEEOTHER_STDAFX_SHARED_H
