@@ -146,7 +146,7 @@ void CWarehouse::SaveData()
 	}
 
 	// save to db
-	Database->Execute<DB::UPDATE>(TW_WAREHOUSE_TABLE, "Properties = '{}' WHERE ID = '{}'", m_Properties.dump().c_str(), m_ID);
+	Database->Execute<DB::UPDATE>(TW_WAREHOUSE_TABLE, "Data = '{}' WHERE ID = '{}'", m_Properties.dump().c_str(), m_ID);
 }
 
 CTrade* CWarehouse::GetTrade(int TradeID)
