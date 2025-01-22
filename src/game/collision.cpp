@@ -142,7 +142,7 @@ void CCollision::InitSettings()
 		// initialize gathering nodes
 		{
 			initGatheringNode("#node_ore", settings, i, m_vOreNodes);
-			initGatheringNode("#node_plant", settings, i, m_vOreNodes);
+			initGatheringNode("#node_plant", settings, i, m_vPlantNodes);
 		}
 	}
 	dbg_msg("map-init", "------------------------");
