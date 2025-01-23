@@ -26,6 +26,7 @@
 #include <game/server/core/entities/weapons/grenade_pizdamet.h>
 #include <game/server/core/entities/weapons/rifle_magneticpulse.h>
 #include <game/server/core/entities/weapons/rifle_wallpusher.h>
+#include <game/server/core/entities/weapons/rifle_trackedplazma.h>
 
 MACRO_ALLOC_POOL_ID_IMPL(CCharacter, MAX_CLIENTS* ENGINE_MAX_WORLDS + MAX_CLIENTS)
 
@@ -506,6 +507,14 @@ bool CCharacter::FireRifle(vec2 Direction, vec2 ProjStartPos)
 	if(EquippedItem == itRifleMagneticPulse)
 	{
 		new CEntityRifleMagneticPulse(&GS()->m_World, m_ClientID, 128.f, ProjStartPos, Direction);
+		GS()->CreateSound(m_Pos, SOUND_LASER_FIRE);
+		return true;
+	}
+
+	// Plazma
+	if(EquippedItem == itRifleTrackedPlazma)
+	{
+		new CEntityRifleTrackedPlazma(&GS()->m_World, m_ClientID, ProjStartPos, Direction);
 		GS()->CreateSound(m_Pos, SOUND_LASER_FIRE);
 		return true;
 	}
