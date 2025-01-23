@@ -121,33 +121,33 @@ public:
 				snapshot of everything in the game for demo
 				recording.
 	*/
-	virtual void Snap(int SnappingClient) {}
+virtual void Snap(int SnappingClient) { }
 
-	/*
-		Function: PostSnap
-			Called after all entities Snap(int SnappingClient) function has been called.
-	*/
-	virtual void PostSnap() {}
+/*
+	Function: PostSnap
+		Called after all entities Snap(int SnappingClient) function has been called.
+*/
+virtual void PostSnap() { }
 
 
-	/*
-		Function: networkclipped(int snapping_client)
-			Performs a series of test to see if a client can see the
-			entity.
+/*
+	Function: networkclipped(int snapping_client)
+		Performs a series of test to see if a client can see the
+		entity.
 
-		Arguments:
-			SnappingClient - ID of the client which snapshot is
-				being generated. Could be -1 to create a complete
-				snapshot of everything in the game for demo
-				recording.
+	Arguments:
+		SnappingClient - ID of the client which snapshot is
+			being generated. Could be -1 to create a complete
+			snapshot of everything in the game for demo
+			recording.
 
-		Returns:
-			Non-zero if the entity doesn't have to be in the snapshot.
-	*/
-	int NetworkClippedByPriority(int SnappingClient, ESnappingPriority Priority);
-	int NetworkClipped(int SnappingClient);
-	int NetworkClipped(int SnappingClient, vec2 CheckPos);
-	int NetworkClipped(int SnappingClient, vec2 CheckPos, float Radius);
+	Returns:
+		Non-zero if the entity doesn't have to be in the snapshot.
+*/
+int NetworkClippedByPriority(int SnappingClient, ESnappingPriority Priority);
+int NetworkClipped(int SnappingClient);
+int NetworkClipped(int SnappingClient, vec2 CheckPos);
+int NetworkClipped(int SnappingClient, vec2 CheckPos, float Radius);
 
 public:
 	bool IsValidSnappingState(int SnappingClient) const;
@@ -160,8 +160,8 @@ public:
 */
 class CFlashingTick
 {
-	int m_Timer{ TIMER_RESET };
-	bool m_Flashing{};
+	int m_Timer { TIMER_RESET };
+	bool m_Flashing {};
 
 	constexpr static int FLASH_THRESHOLD = 150;
 	constexpr static int TIMER_RESET = 5;
@@ -189,6 +189,99 @@ public:
 			m_Flashing = false;
 			m_Timer = TIMER_RESET;
 		}
+	}
+};
+
+template <typename T>
+class Interpolation
+{
+private:
+	bool m_Started {};
+	bool m_Active {};
+	bool m_Reversed {};
+	T m_InitialValue {};
+	T m_TargetValue {};
+	int m_DurationTicks {};
+	int m_ElapsedTicks {};
+	int m_StartTick {};
+	std::function<T(float)> m_InterpolationFunction;
+
+public:
+	Interpolation() = default;
+
+	void Init(T initialValue, T targetValue, int durationTicks, std::function<T(float)> interpolationFunction)
+	{
+		m_InitialValue = initialValue;
+		m_TargetValue = targetValue;
+		m_DurationTicks = durationTicks;
+		m_InterpolationFunction = interpolationFunction;
+	}
+
+	void Start(int currentTick)
+	{
+		if(m_Active)
+			return;
+
+		m_Started = true;
+		m_Active = true;
+		m_Reversed = false;
+		m_StartTick = currentTick;
+		m_ElapsedTicks = 0;
+	}
+
+	void Reverse(int currentTick)
+	{
+		if(m_Active)
+			return;
+
+		m_Started = true;
+		m_Active = true;
+		m_Reversed = !m_Reversed;
+		std::swap(m_InitialValue, m_TargetValue);
+		m_StartTick = currentTick;
+		m_ElapsedTicks = 0;
+	}
+
+	void Stop()
+	{
+		m_Active = false;
+		m_Started = false;
+	}
+
+	bool IsStarted() const
+	{
+		return m_Started;
+	}
+
+	bool IsActive() const
+	{
+		return m_Active;
+	}
+
+	int GetDurationTicks() const
+	{
+		return m_DurationTicks;
+	}
+
+	T GetCurrentValue(int currentTick)
+	{
+		if(!m_Active)
+		{
+			return m_Reversed ? m_InitialValue : m_TargetValue;
+		}
+
+		m_ElapsedTicks = currentTick - m_StartTick;
+		if(m_ElapsedTicks >= m_DurationTicks)
+		{
+			m_Active = false;
+			return m_TargetValue;
+		}
+
+		float t = static_cast<float>(m_ElapsedTicks) / m_DurationTicks;
+		if(m_Reversed)
+			t = 1.0f - t;
+
+		return m_InterpolationFunction(t);
 	}
 };
 

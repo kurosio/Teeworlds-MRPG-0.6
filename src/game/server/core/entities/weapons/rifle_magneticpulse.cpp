@@ -6,8 +6,12 @@ CEntityRifleMagneticPulse::CEntityRifleMagneticPulse(CGameWorld* pGameWorld, int
 {
 	m_ClientID = OwnerCID;
 	m_Direction = Direction;
-	m_Radius = Radius;
 	m_LifeTick = Server()->TickSpeed() * 2;
+	m_Radius = 0.f;
+	m_RadiusAnimation.Init(0.f, Radius, Server()->TickSpeed() / 5, [Radius](float t)
+	{
+		return 0.f + t * (Radius - 0.0f);
+	});
 
 	GameWorld()->InsertEntity(this);
 }
@@ -75,6 +79,14 @@ void CEntityRifleMagneticPulse::TickLastPhase()
 		MarkForDestroy();
 		return;
 	}
+
+	// animation
+	if(m_LifeTick <= m_RadiusAnimation.GetDurationTicks())
+		m_RadiusAnimation.Reverse(Server()->Tick());
+	else if(!m_RadiusAnimation.IsStarted())
+		m_RadiusAnimation.Start(Server()->Tick());
+
+	m_Radius = m_RadiusAnimation.GetCurrentValue(Server()->Tick());
 
 	// magnetic pulse
 	for(auto* pChar = (CCharacter*)GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); pChar; pChar = (CCharacter*)pChar->TypeNext())

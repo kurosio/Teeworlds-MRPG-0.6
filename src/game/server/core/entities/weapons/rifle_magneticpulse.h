@@ -16,6 +16,7 @@ class CEntityRifleMagneticPulse : public CEntity
 	vec2 m_Direction {};
 	bool m_LastPhase {};
 	int m_LifeTick {};
+	Interpolation<float> m_RadiusAnimation;
 
 public:
 	CEntityRifleMagneticPulse(CGameWorld* pGameWorld, int OwnerCID, float Radius, vec2 Pos, vec2 Direction);
