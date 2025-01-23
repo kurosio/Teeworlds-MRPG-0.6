@@ -596,7 +596,8 @@ enum
 	itRifle                        = 6,     // Equipment Rifle
 	itRifleWallPusher              = 101,   // Equipment Rifle Plazma wall
 	itRifleMagneticPulse           = 103,   // Equpment Magnetic pulse rifle
-	itRiflePlazma                  = 150,   // Equipment Plazma rifle
+	itRifleTrackedPlazma           = 150,   // Equipment Plazma rifle
+	itGunPulse                     = 151,   // Equipment Pulse gun
 
 	// decoration items
 	itPickupHealth                 = 18,    // Pickup heart

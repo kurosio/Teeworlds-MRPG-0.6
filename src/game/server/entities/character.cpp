@@ -390,26 +390,19 @@ bool CCharacter::FireGun(vec2 Direction, vec2 ProjStartPos)
 		return false;
 	}
 
-	/*
-	 * Here weapons can be modified to have different behavior
-	 */
+	// gun pulse
+	if(EquippedItem == itGunPulse)
+	{
+		new CLaser(GameWorld(), m_ClientID, 0, m_Pos, Direction, 400.f, true);
+		GS()->CreateSound(m_Pos, SOUND_GUN_FIRE);
+		return true;
+	}
 
 	// default gun
-	vec2 MouseTarget = vec2(m_LatestInput.m_TargetX, m_LatestInput.m_TargetY);
-	const int Lifetime = (int)(Server()->TickSpeed() * GS()->Tuning()->m_GunLifetime);
-	new CProjectile(
-		GameWorld(),
-		WEAPON_GUN,
-		m_pPlayer->GetCID(),
-		ProjStartPos,
-		Direction,
-		Lifetime,
-		false,
-		0,
-		-1,
-		MouseTarget,
-		WEAPON_GUN);
-
+	const auto MouseTarget = vec2(m_LatestInput.m_TargetX, m_LatestInput.m_TargetY);
+	const auto Lifetime = (int)(Server()->TickSpeed() * GS()->Tuning()->m_GunLifetime);
+	new CProjectile(GameWorld(), WEAPON_GUN, m_pPlayer->GetCID(), ProjStartPos,
+		Direction, Lifetime, false, 0, -1, MouseTarget, WEAPON_GUN);
 	GS()->CreateSound(m_Pos, SOUND_GUN_FIRE);
 	return true;
 }
@@ -423,10 +416,6 @@ bool CCharacter::FireShotgun(vec2 Direction, vec2 ProjStartPos)
 		GS()->Broadcast(m_pPlayer->GetCID(), BroadcastPriority::GameWarning, 2, "You don't have a shotgun equipped.");
 		return false;
 	}
-
-	/*
-	 * Here weapons can be modified to have different behavior
-	 */
 
 	// default shotgun
 	constexpr int ShotSpread = 5;
@@ -520,7 +509,8 @@ bool CCharacter::FireRifle(vec2 Direction, vec2 ProjStartPos)
 	}
 
 	// default laser
-	new CLaser(GameWorld(), m_Pos, Direction, GS()->Tuning()->m_LaserReach, m_pPlayer->GetCID());
+	const auto Damage = g_pData->m_Weapons.m_aId[WEAPON_LASER].m_Damage;
+	new CLaser(&GS()->m_World, m_ClientID, Damage, ProjStartPos, Direction, GS()->Tuning()->m_LaserReach, false);
 	GS()->CreateSound(m_Pos, SOUND_LASER_FIRE);
 	return true;
 }

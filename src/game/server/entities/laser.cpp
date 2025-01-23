@@ -6,30 +6,35 @@
 #include <generated/server_data.h>
 #include "character.h"
 
-CLaser::CLaser(CGameWorld *pGameWorld, vec2 Pos, vec2 Direction, float StartEnergy, int Owner)
+CLaser::CLaser(CGameWorld *pGameWorld, int OwnerCID, int Damage, vec2 Pos, vec2 Direction, float StartEnergy, bool Explosive)
 : CEntity(pGameWorld, CGameWorld::ENTTYPE_LASER, Pos)
 {
-	m_Owner = Owner;
+	m_ClientID = OwnerCID;
 	m_Energy = StartEnergy;
-	m_Dir = Direction;
+	m_Direction = Direction;
+	m_Explosive = Explosive;
+	m_Damage = Damage;
 	m_Bounces = 0;
 	m_EvalTick = 0;
 	GameWorld()->InsertEntity(this);
-	CLaser::DoBounce();
+	DoBounce();
 }
 
 bool CLaser::HitCharacter(vec2 From, vec2 To)
 {
 	vec2 At;
-	CCharacter *pOwnerChar = GS()->GetPlayerChar(m_Owner);
-	CCharacter *pHit = GS()->m_World.IntersectCharacter(m_Pos, To, 0.f, At, pOwnerChar);
+	auto *pOwnerChar = GS()->GetPlayerChar(m_ClientID);
+	auto*pHit = GS()->m_World.IntersectCharacter(m_Pos, To, 0.f, At, pOwnerChar);
 	if(!pHit || pHit->m_Core.m_CollisionDisabled)
 		return false;
 
 	m_PosTo = From;
 	m_Pos = At;
 	m_Energy = -1;
-	pHit->TakeDamage(vec2(0.f, 0.f), g_pData->m_Weapons.m_aId[WEAPON_LASER].m_Damage, m_Owner, WEAPON_LASER);
+	if(m_Explosive)
+		GS()->CreateExplosion(m_Pos, m_ClientID, WEAPON_LASER, 1);
+	else
+		pHit->TakeDamage(vec2(0.f, 0.f), m_Damage, m_ClientID, WEAPON_LASER);
 	return true;
 }
 
@@ -37,13 +42,13 @@ void CLaser::DoBounce()
 {
 	m_EvalTick = Server()->Tick();
 
-	if(m_Energy < 0 || !GS()->GetPlayerChar(m_Owner))
+	if(m_Energy < 0 || !GS()->GetPlayerChar(m_ClientID))
 	{
 		GameWorld()->DestroyEntity(this);
 		return;
 	}
 
-	vec2 To = m_Pos + m_Dir * m_Energy;
+	vec2 To = m_Pos + m_Direction * m_Energy;
 
 	if(GS()->Collision()->IntersectLine(m_Pos, To, 0x0, &To))
 	{
@@ -54,17 +59,20 @@ void CLaser::DoBounce()
 			m_Pos = To;
 
 			vec2 TempPos = m_Pos;
-			vec2 TempDir = m_Dir * 4.0f;
+			vec2 TempDir = m_Direction * 4.0f;
 
 			GS()->Collision()->MovePoint(&TempPos, &TempDir, 1.0f, 0);
 			m_Pos = TempPos;
-			m_Dir = normalize(TempDir);
+			m_Direction = normalize(TempDir);
 
 			m_Energy -= distance(m_PosTo, m_Pos) + GS()->Tuning()->m_LaserBounceCost;
 			m_Bounces++;
 
 			if(m_Bounces > GS()->Tuning()->m_LaserBounceNum)
 				m_Energy = -1;
+
+			if(m_Explosive)
+				GS()->CreateExplosion(m_Pos, m_ClientID, WEAPON_LASER, 1);
 
 			GS()->CreateSound(m_Pos, SOUND_LASER_BOUNCE);
 		}
@@ -96,13 +104,5 @@ void CLaser::Snap(int SnappingClient)
 	if(NetworkClipped(SnappingClient) && NetworkClipped(SnappingClient, m_PosTo))
 		return;
 
-	CNetObj_Laser *pObj = static_cast<CNetObj_Laser *>(Server()->SnapNewItem(NETOBJTYPE_LASER, GetID(), sizeof(CNetObj_Laser)));
-	if(!pObj)
-		return;
-
-	pObj->m_X = (int)m_Pos.x;
-	pObj->m_Y = (int)m_Pos.y;
-	pObj->m_FromX = (int)m_PosTo.x;
-	pObj->m_FromY = (int)m_PosTo.y;
-	pObj->m_StartTick = m_EvalTick;
+	GS()->SnapLaser(SnappingClient, GetID(), m_Pos, m_PosTo, m_EvalTick);
 }

@@ -1,8 +1,8 @@
-#include "rifle_plazma.h"
+#include "rifle_trackedplazma.h"
 
 #include <game/server/gamecontext.h>
 
-CEntityRiflePlazma::CEntityRiflePlazma(CGameWorld* pGameWorld, int OwnerCID, vec2 Pos, vec2 Direction)
+CEntityRifleTrackedPlazma::CEntityRifleTrackedPlazma(CGameWorld* pGameWorld, int OwnerCID, vec2 Pos, vec2 Direction)
 : CEntity(pGameWorld, CGameWorld::ENTTYPE_BONUS_DROP, Pos, 24)
 {
 	m_ClientID = OwnerCID;
@@ -17,7 +17,7 @@ CEntityRiflePlazma::CEntityRiflePlazma(CGameWorld* pGameWorld, int OwnerCID, vec
 	GameWorld()->InsertEntity(this);
 }
 
-void CEntityRiflePlazma::Tick()
+void CEntityRifleTrackedPlazma::Tick()
 {
 	const auto* pOwner = GetOwner();
 	if(!pOwner || !pOwner->GetCharacter())
@@ -55,7 +55,7 @@ void CEntityRiflePlazma::Tick()
 	m_Direction = normalize(pTarget->m_Core.m_Pos - m_Pos);
 }
 
-void CEntityRiflePlazma::Snap(int SnappingClient)
+void CEntityRifleTrackedPlazma::Snap(int SnappingClient)
 {
 	if(NetworkClipped(SnappingClient))
 		return;
@@ -63,7 +63,7 @@ void CEntityRiflePlazma::Snap(int SnappingClient)
 	GS()->SnapLaser(SnappingClient, GetID(), m_Pos, m_Pos, Server()->Tick());
 }
 
-void CEntityRiflePlazma::Explode()
+void CEntityRifleTrackedPlazma::Explode()
 {
 	auto* pTarget = GS()->GetPlayerChar(m_TrackedCID);
 	auto ExplosionPos = pTarget ? pTarget->m_Core.m_Pos : m_Pos;
@@ -72,7 +72,7 @@ void CEntityRiflePlazma::Explode()
 	GameWorld()->DestroyEntity(this);
 }
 
-void CEntityRiflePlazma::SearchPotentialTarget()
+void CEntityRifleTrackedPlazma::SearchPotentialTarget()
 {
 	// search min distance player
 	int MinDistanceCID = -1;
