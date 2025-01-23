@@ -46,7 +46,7 @@ void CSkill::SelectNextControlEmote()
 		return;
 
 	m_SelectedEmoticion = (m_SelectedEmoticion + 1) % (NUM_EMOTICONS + 1) - 1;
-	Database->Execute<DB::UPDATE>("tw_accounts_skills", "UsedByEmoticon = '{}' WHERE SkillID = '{}' AND UserID = '{}'", 
+	Database->Execute<DB::UPDATE>("tw_accounts_skills", "UsedByEmoticon = '{}' WHERE SkillID = '{}' AND UserID = '{}'",
 		m_SelectedEmoticion, m_ID, pPlayer->Account()->GetID());
 }
 
@@ -89,28 +89,27 @@ bool CSkill::Use()
 	}
 
 	// Cure I
-	if(IsActivated(pChar, ManaCost, SKILL_CURE_I))
+	if(IsActivated(pChar, ManaCost, SKILL_CURE))
 	{
 		// cure near players
 		for(int i = 0; i < MAX_PLAYERS; i++)
 		{
-			// check player
-			auto* pSearchPl = GS()->GetPlayer(i, true, true);
-			if(!pSearchPl || !GS()->IsPlayerInWorld(i))
+			auto* pSearch = GS()->GetPlayer(i, true, true);
+			if(!pSearch || !GS()->IsPlayerInWorld(i))
 				continue;
 
 			// check distance
-			if(distance(PlayerPosition, pSearchPl->GetCharacter()->GetPos()) > 800)
+			if(distance(PlayerPosition, pSearch->GetCharacter()->GetPos()) > 800)
 				continue;
 
 			// dissalow heal for pvp clients
-			if(pSearchPl->GetCharacter()->IsAllowedPVP(ClientID) && i != ClientID)
+			if(i != ClientID && pSearch->GetCharacter()->IsAllowedPVP(ClientID))
 				continue;
 
 			// create healt
-			const int PowerLevel = maximum(ManaCost + translate_to_percent_rest(ManaCost, minimum(GetBonus(), 100)), 1);
-			new CHeartHealer(&GS()->m_World, PlayerPosition, pSearchPl, PowerLevel, pSearchPl->GetCharacter()->m_Core.m_Vel, true);
-			GS()->CreateDeath(pSearchPl->GetCharacter()->GetPos(), i);
+			const auto PowerLevel = maximum(ManaCost + translate_to_percent_rest(ManaCost, minimum(GetBonus(), 100)), 1);
+			new CHeartHealer(&GS()->m_World, PlayerPosition, pSearch, PowerLevel, pSearch->GetCharacter()->m_Core.m_Vel, true);
+			GS()->CreateDeath(pSearch->GetCharacter()->GetPos(), i);
 		}
 
 		GS()->CreateSound(PlayerPosition, SOUND_CTF_GRAB_PL);
@@ -211,37 +210,46 @@ bool CSkill::Use()
 		return true;
 	}
 
-	// Skill sleepy gravity
 	if(IsActivated(pChar, ManaCost, SKILL_SLEEPY_GRAVITY, SKILL_USAGE_RESET))
 	{
-		//GS()->EntityManager()->Tornado(ClientID, PlayerPosition, Damage, Lifetime, Speed, Radius);
-		//GS()->EntityManager()->HealingAura(ClientID, PlayerPosition, 320.f, 1000, 10);
-
-		GS()->EntityManager()->GravityDisruption(ClientID, PlayerPosition, minimum(200.f + GetBonus(), 400.f), 10 * Server()->TickSpeed(), 
+		const auto UpgradedValue = minimum(200.f + GetBonus(), 400.f);
+		GS()->EntityManager()->GravityDisruption(ClientID, PlayerPosition, UpgradedValue, 10 * Server()->TickSpeed(),
 			ManaCost, &pEntSkillPtr);
 		return true;
 	}
 
-	// Skill heart turret
 	if(IsActivated(pChar, ManaCost, SKILL_HEART_TURRET, SKILL_USAGE_RESET))
 	{
-		//GS()->EntityManager()->FlameWall(ClientID, PlayerPosition, 200.f, 1000, 1, 0.3f);
-		//GS()->EntityManager()->FrostNova(ClientID, PlayerPosition, 120.f, 12, 5);
-		//GS()->EntityManager()->HealingAura(ClientID, PlayerPosition, 320.f, 1000, 10);
-		//GS()->EntityManager()->Bow(ClientID, 5, 25, 160.f, 16);
-
-		GS()->EntityManager()->HealthTurret(ClientID, PlayerPosition, ManaCost, (10 + GetBonus()) * Server()->TickSpeed(), 2 * Server()->TickSpeed(), &pEntSkillPtr);
+		const auto UpgradeValue = (10 + GetBonus()) * Server()->TickSpeed();
+		GS()->EntityManager()->HealthTurret(ClientID, PlayerPosition, ManaCost, UpgradeValue, 2 * Server()->TickSpeed(), &pEntSkillPtr);
 		return true;
 	}
 
-	// Skill last stand
-	if(IsActivated(pChar, 0, SKILL_LAST_STAND, SKILL_USAGE_TOGGLE))
+	if(IsActivated(pChar, ManaCost, SKILL_LAST_STAND, SKILL_USAGE_TOGGLE))
 	{
-		//GS()->EntityManager()->FlameWall(ClientID, PlayerPosition, 200.f, 1000, 1, 0.3f);
-
-		// enable shield
-		const int ManaPerSeconds = ManaCost - GetBonus();
+		const auto ManaPerSeconds = ManaCost - GetBonus();
 		GS()->EntityManager()->LastStand(ClientID, PlayerPosition, 96.f, ManaPerSeconds, &pEntSkillPtr);
+		return true;
+	}
+
+	if(IsActivated(pChar, ManaCost, SKILL_MAGIC_BOW, SKILL_USAGE_TOGGLE))
+	{
+		const auto Shots = 1 + GetBonus();
+		GS()->EntityManager()->Bow(ClientID, 1, Shots, 180.f, 8, &pEntSkillPtr);
+		return true;
+	}
+
+	if(IsActivated(pChar, ManaCost, SKILL_HEALING_AURA, SKILL_USAGE_RESET))
+	{
+		const auto UpgradedValue = minimum(320.f + GetBonus(), 400.f);
+		GS()->EntityManager()->HealingAura(ClientID, PlayerPosition, UpgradedValue, 10 * Server()->TickSpeed(), ManaCost);
+		return true;
+	}
+
+	if(IsActivated(pChar, ManaCost, SKILL_FLAME_WALL, SKILL_USAGE_RESET))
+	{
+		const auto UpgradedValue = minimum(200.f + GetBonus(), 320.f);
+		GS()->EntityManager()->FlameWall(ClientID, PlayerPosition, UpgradedValue, 10 * Server()->TickSpeed(), 1, 0.3f);
 		return true;
 	}
 
