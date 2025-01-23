@@ -8,8 +8,14 @@ CEntityRifleWallPusher::CEntityRifleWallPusher(CGameWorld* pGameWorld, int Owner
 	m_ClientID = OwnerCID;
 	m_Direction = Direction;
 	m_LifeTick = LifeTick;
+	m_ID2 = Server()->SnapNewID();
 
 	GameWorld()->InsertEntity(this);
+}
+
+CEntityRifleWallPusher::~CEntityRifleWallPusher()
+{
+	Server()->SnapFreeID(m_ID2);
 }
 
 void CEntityRifleWallPusher::Tick()
@@ -65,6 +71,7 @@ void CEntityRifleWallPusher::Snap(int SnappingClient)
 		return;
 
 	GS()->SnapLaser(SnappingClient, GetID(), m_Pos, m_PosTo, Server()->Tick() - 3);
+	GS()->SnapLaser(SnappingClient, m_ID2, m_PosTo, m_Pos, Server()->Tick() - 3);
 }
 
 void CEntityRifleWallPusher::CheckHitCharacter(const vec2 PrevPos) const

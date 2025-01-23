@@ -6,9 +6,11 @@ class CEntityRifleWallPusher : public CEntity
 {
 	vec2 m_Direction {};
 	int m_LifeTick {};
+	int m_ID2 {};
 
 public:
 	CEntityRifleWallPusher(CGameWorld* pGameWorld, int OwnerCID, vec2 Pos, vec2 Direction, int LifeTick);
+	~CEntityRifleWallPusher();
 
 	void Tick() override;
 	void Snap(int SnappingClient) override;
