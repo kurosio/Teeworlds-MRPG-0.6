@@ -6,17 +6,14 @@
 CEntity::CEntity(CGameWorld* pGameWorld, int ObjType, vec2 Pos, int Radius, int ClientID)
 {
 	m_pGameWorld = pGameWorld;
-
 	m_pPrevTypeEntity = nullptr;
 	m_pNextTypeEntity = nullptr;
-
-	m_ID = Server()->SnapNewID();
 	m_ObjType = ObjType;
-
 	m_ClientID = ClientID;
 	m_Radius = Radius;
 	m_MarkedForDestroy = false;
 	m_NextCheckSnappingPriority = SNAPPING_PRIORITY_HIGH;
+	m_ID = Server()->SnapNewID();
 
 	m_Pos = Pos;
 	m_PosTo = Pos;
@@ -24,8 +21,14 @@ CEntity::CEntity(CGameWorld* pGameWorld, int ObjType, vec2 Pos, int Radius, int 
 
 CEntity::~CEntity()
 {
-	GameWorld()->RemoveEntity(this);
 	Server()->SnapFreeID(m_ID);
+	for(auto& group : m_vGroupIds)
+	{
+		for(auto& id : group.second)
+			Server()->SnapFreeID(id);
+	}
+	m_vGroupIds.clear();
+	GameWorld()->RemoveEntity(this);
 }
 
 int CEntity::NetworkClippedByPriority(int SnappingClient, ESnappingPriority Priority)
@@ -84,4 +87,28 @@ bool CEntity::GameLayerClipped(vec2 CheckPos) const
 	const int ry = round_to_int(CheckPos.y) / 32;
 	return (rx < -200 || rx >= GS()->Collision()->GetWidth() + 200)
 		|| (ry < -200 || ry >= GS()->Collision()->GetHeight() + 200);
+}
+
+CPlayer* CEntity::GetOwner() const
+{
+	return GS()->GetPlayer(m_ClientID);
+}
+
+CCharacter* CEntity::GetOwnerChar() const
+{
+	return GS()->GetPlayerChar(m_ClientID);
+}
+
+void CEntity::AddGroupIds(int GroupID, int NumIds)
+{
+	m_vGroupIds[GroupID].resize(NumIds);
+	for(auto& id : m_vGroupIds[GroupID])
+		id = Server()->SnapNewID();
+}
+
+void CEntity::RemoveGroupIds(int GroupID)
+{
+	for(auto& id : m_vGroupIds[GroupID])
+		Server()->SnapFreeID(id);
+	m_vGroupIds.erase(GroupID);
 }

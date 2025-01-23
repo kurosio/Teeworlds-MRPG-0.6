@@ -19,15 +19,15 @@ enum ESnappingPriority
 	SNAPPING_PRIORITY_HIGH,
 };
 
+class CPlayer;
+class CCharacter;
+
 class CEntity
 {
 	MACRO_ALLOC_HEAP()
 
 private:
-	/* Friend classes */
-	friend class CGameWorld; // for entity list handling
-
-	/* Identity */
+	friend class CGameWorld;
 	class CGameWorld *m_pGameWorld;
 
 	CEntity *m_pPrevTypeEntity;
@@ -35,30 +35,20 @@ private:
 
 	int m_ID;
 	int m_ObjType;
-
-	/* State */
 	bool m_MarkedForDestroy;
+	std::map<int, std::vector<int>> m_vGroupIds {};
 
 protected:
-	/* State */
-
-	/*
-		Variable: m_Pos, m_PosTo
-			Contains the current posititon of the entity.
-	*/
 	vec2 m_Pos;
 	vec2 m_PosTo;
 	int m_ClientID;
 	ESnappingPriority m_NextCheckSnappingPriority;
 
-	/*
-		Variable: m_Radius
-			Contains the physical size of the entity.
-	*/
 	float m_Radius;
-
-	/* Getters */
 	int GetID() const					{ return m_ID; }
+	std::vector<int>& GetGroupIds(int GroupID) { return m_vGroupIds[GroupID]; }
+	void AddGroupIds(int GroupID, int NumIds);
+	void RemoveGroupIds(int GroupID);
 
 public:
 	/* Constructor */
@@ -79,6 +69,9 @@ public:
 	const vec2 &GetPosTo() const		{ return m_PosTo; }
 	float GetRadius() const				{ return m_Radius; }
 	bool IsMarkedForDestroy() const		{ return m_MarkedForDestroy; }
+
+	CPlayer* GetOwner() const;
+	CCharacter* GetOwnerChar() const;
 
 	/* Setters */
 	void MarkForDestroy()				{ m_MarkedForDestroy = true; }

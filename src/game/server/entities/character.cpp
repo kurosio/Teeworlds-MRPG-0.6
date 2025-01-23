@@ -20,8 +20,12 @@
 #include <game/server/core/entities/items/gathering_node.h>
 #include <game/server/core/entities/tools/multiple_orbite.h>
 #include <game/server/core/entities/tools/flying_point.h>
-
 #include "character_bot.h"
+
+// weapons
+#include <game/server/core/entities/weapons/grenade_pizdamet.h>
+#include <game/server/core/entities/weapons/rifle_magneticpulse.h>
+#include <game/server/core/entities/weapons/rifle_wallpusher.h>
 
 MACRO_ALLOC_POOL_ID_IMPL(CCharacter, MAX_CLIENTS* ENGINE_MAX_WORLDS + MAX_CLIENTS)
 
@@ -464,72 +468,17 @@ bool CCharacter::FireGrenade(vec2 Direction, vec2 ProjStartPos)
 	// pizdamet
 	if(EquippedItem == itPizdamet)
 	{
-		// initialize group & config
-		const auto groupPtr = CEntityGroup::NewGroup(&GS()->m_World, CGameWorld::ENTTYPE_PROJECTILE, m_ClientID);
-		const auto pFire = groupPtr->CreatePickup(ProjStartPos, POWERUP_HEALTH);
-
-		// initialize element & config
-		Direction = vec2(m_Core.m_Input.m_TargetX + rand() % 50 - rand() % 100, m_Core.m_Input.m_TargetY + rand() % 50 - rand() % 100);
-		pFire->SetConfig("direction", Direction);
-		pFire->RegisterEvent(CBaseEntity::EventTick, [](CBaseEntity* pBase)
-		{
-			CCharacter* pResultChar = nullptr;
-			auto& DirectionRef = pBase->GetRefConfig("direction", vec2());
-			pBase->SetPos(pBase->GetPos() + normalize(DirectionRef) * 18.0f);
-
-			for(auto* pChar = (CCharacter*)pBase->GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); pChar; pChar = (CCharacter*)pChar->TypeNext())
-			{
-				// skip self damage
-				if(pBase->GetClientID() == pChar->GetPlayer()->GetCID())
-					continue;
-
-				if(!pChar->IsAllowedPVP(pBase->GetClientID()))
-					continue;
-
-				// check distance
-				const float Distance = distance(pBase->GetPos(), pChar->m_Core.m_Pos);
-				if(Distance < 64.f)
-				{
-					pResultChar = pChar;
-					break;
-				}
-
-				// smooth navigate to target
-				if(Distance < 300.0f)
-				{
-					vec2 ToEnemy = normalize(pChar->m_Core.m_Pos - pBase->GetPos());
-					DirectionRef = normalize(DirectionRef + ToEnemy * 0.05f);
-				}
-			}
-
-			// destroy and explosion
-			if(pResultChar != nullptr || pBase->GS()->Collision()->CheckPoint(pBase->GetPos()))
-			{
-				pBase->GS()->CreateRandomRadiusExplosion(4, 120.f, pBase->GetPos(), pBase->GetClientID(), WEAPON_GRENADE, 0);
-				pBase->MarkForDestroy();
-			}
-		});
-
+		new CEntityGrenadePizdamet(&GS()->m_World, m_ClientID, ProjStartPos, Direction);
 		m_ReloadTimer = Server()->TickSpeed() / 8;
 		GS()->CreateSound(m_Pos, SOUND_GRENADE_FIRE);
 		return true;
 	}
 
 	// default grenade
-	vec2 MouseTarget = vec2(m_LatestInput.m_TargetX, m_LatestInput.m_TargetY);
-	new CProjectile(
-		GameWorld(),
-		WEAPON_GRENADE,
-		m_pPlayer->GetCID(),
-		ProjStartPos,
-		Direction,
-		(int)(Server()->TickSpeed() * GS()->Tuning()->m_GrenadeLifetime),
-		true,
-		0,
-		SOUND_GRENADE_EXPLODE,
-		MouseTarget,
-		WEAPON_GRENADE);
-
+	const auto MouseTarget = vec2(m_LatestInput.m_TargetX, m_LatestInput.m_TargetY);
+	new CProjectile(GameWorld(), WEAPON_GRENADE, m_pPlayer->GetCID(), ProjStartPos,
+		Direction, (int)(Server()->TickSpeed() * GS()->Tuning()->m_GrenadeLifetime),
+		true, 0, SOUND_GRENADE_EXPLODE, MouseTarget, WEAPON_GRENADE);
 	GS()->CreateSound(m_Pos, SOUND_GRENADE_FIRE);
 	return true;
 }
@@ -547,83 +496,8 @@ bool CCharacter::FireRifle(vec2 Direction, vec2 ProjStartPos)
 	// plazma wall
 	if(EquippedItem == itRifleWallPusher)
 	{
-		// initialize group & config
-		const auto groupPtr = CEntityGroup::NewGroup(&GS()->m_World, CGameWorld::ENTTYPE_LASER, m_ClientID);
-		const auto pFire = groupPtr->CreateLaser(ProjStartPos, ProjStartPos);
-
-		// initialize element & config
-		pFire->SetConfig("direction", Direction);
-		pFire->SetConfig("lifetime", Server()->TickSpeed() * 5);
-		pFire->RegisterEvent(CBaseEntity::EventTick, [](CBaseEntity* pBase)
-		{
-			// lifetime
-			auto& LifeTimeRef = pBase->GetRefConfig("lifetime", 0);
-			if(!LifeTimeRef)
-			{
-				pBase->MarkForDestroy();
-				return;
-			}
-			LifeTimeRef--;
-
-			// initialize variables
-			const auto Direction = pBase->GetConfig("direction", vec2());
-			const auto NormalizedDirection = normalize(Direction);
-			const auto IsCollide = pBase->GS()->Collision()->CheckPoint(pBase->GetPos()) && pBase->GS()->Collision()->CheckPoint(pBase->GetPosTo());
-			const auto PrevPos = pBase->GetPos();
-			const auto DistanceBetwenPoint = distance(pBase->GetPos(), pBase->GetPosTo());
-
-			// increase length & move
-			if(DistanceBetwenPoint < 240.f)
-			{
-				const auto PerpendicularDirection = vec2(-NormalizedDirection.y, NormalizedDirection.x);
-				pBase->SetPos(pBase->GetPos() + PerpendicularDirection * 3.0f);
-				pBase->SetPosTo(pBase->GetPosTo() - PerpendicularDirection * 3.0f);
-			}
-			pBase->SetPos(pBase->GetPos() + NormalizedDirection * 10.f);
-			pBase->SetPosTo(pBase->GetPosTo() + NormalizedDirection * 10.f);
-
-			// hit character
-			for(auto* pChar = (CCharacter*)pBase->GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); pChar; pChar = (CCharacter*)pChar->TypeNext())
-			{
-				// skip self damage
-				if(pBase->GetClientID() == pChar->GetPlayer()->GetCID())
-					continue;
-
-				if(!pChar->IsAllowedPVP(pBase->GetClientID()))
-					continue;
-
-				vec2 IntersectPos;
-				if(closest_point_on_line(pBase->GetPos(), pBase->GetPosTo(), pChar->m_Core.m_Pos, IntersectPos))
-				{
-					const float Distance = distance(IntersectPos, pChar->m_Core.m_Pos);
-					if(Distance <= g_Config.m_SvDoorRadiusHit * 3)
-					{
-						const auto WallMovement = pBase->GetPos() - PrevPos;
-						const auto PredictedPos = pChar->m_Core.m_Pos + WallMovement;
-						const auto WallCollide = pBase->GS()->Collision()->TestBox(PredictedPos, vec2(pChar->ms_PhysSize, pChar->ms_PhysSize));
-
-						if(WallCollide)
-						{
-							pChar->TakeDamage({}, 1, pBase->GetClientID(), WEAPON_LASER);
-						}
-						else
-						{
-							pChar->m_Core.m_Pos = PredictedPos;
-							pChar->m_Core.m_Vel = {};
-						}
-					}
-				}
-			}
-
-			// check collide
-			if(IsCollide)
-			{
-				pBase->GS()->CreateDeath(pBase->GetPos(), pBase->GetClientID());
-				pBase->GS()->CreateDeath(pBase->GetPosTo(), pBase->GetClientID());
-				pBase->MarkForDestroy();
-			}
-		});
-
+		const auto LifeTime = 5 * Server()->TickSpeed();
+		new CEntityRifleWallPusher(&GS()->m_World, m_ClientID, ProjStartPos, Direction, LifeTime);
 		GS()->CreateSound(m_Pos, SOUND_LASER_FIRE);
 		return true;
 	}
@@ -631,113 +505,10 @@ bool CCharacter::FireRifle(vec2 Direction, vec2 ProjStartPos)
 	// Magnetic pulse rifle
 	if(EquippedItem == itRifleMagneticPulse)
 	{
-		enum
-		{
-			NUM_IDS_PROJ_CYRCLE = 2,
-			NUM_IDS_CYRCLE = 8,
-			NUM_IDS = NUM_IDS_PROJ_CYRCLE + NUM_IDS_CYRCLE,
-		};
-
-		// initialize group & config
-		const auto groupPtr = CEntityGroup::NewGroup(&GS()->m_World, CGameWorld::ENTTYPE_LASER, m_ClientID);
-		const auto pFire = groupPtr->CreateLaser(ProjStartPos, ProjStartPos);
-
-		// initialize element & config
-		pFire->SetConfig("direction", Direction);
-		pFire->RegisterEvent(CBaseEntity::EventTick, [](CBaseEntity* pBase)
-		{
-			// initialize variables
-			const auto Direction = pBase->GetConfig("direction", vec2());
-			const auto NormalizedDirection = normalize(Direction);
-			const auto OldPos = pBase->GetPos();
-
-			// move
-			pBase->SetPos(pBase->GetPos() + NormalizedDirection * 10.f);
-			pBase->SetPosTo(OldPos);
-
-			// hit character
-			for(const auto* pChar = (CCharacter*)pBase->GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); pChar; pChar = (CCharacter*)pChar->TypeNext())
-			{
-				// skip self damage
-				if(pBase->GetClientID() == pChar->GetPlayer()->GetCID())
-					continue;
-
-				if(!pChar->IsAllowedPVP(pBase->GetClientID()))
-					continue;
-
-				const auto Distance = distance(pBase->GetPos(), pChar->m_Core.m_Pos);
-				const auto Run = Distance <= 64.f || pBase->GS()->Collision()->CheckPoint(pBase->GetPos());
-
-				if(!Run)
-					continue;
-
-				// create magnetic cyrcle
-				const auto pResult = pBase->GetGroup()->CreateBase(pBase->GetPos(), CGameWorld::ENTTYPE_LASER);
-				pResult->SetConfig("radius", 128.f);
-				pResult->SetConfig("lifetime", pBase->Server()->TickSpeed());
-				pResult->RegisterEvent(CBaseEntity::EventTick, [](CBaseEntity* pBase)
-				{
-					const auto Radius = pBase->GetConfig("radius", 0.f);
-					auto& LifeTimeRef = pBase->GetRefConfig("lifetime", 0);
-
-					// lifetime
-					if(!LifeTimeRef)
-					{
-						pBase->GS()->CreateCyrcleExplosion(NUM_IDS_CYRCLE, Radius, pBase->GetPos(), pBase->GetClientID(), WEAPON_LASER, 1);
-						pBase->MarkForDestroy();
-						return;
-					}
-					LifeTimeRef--;
-
-					// magnetic
-					for(auto* pChar = (CCharacter*)pBase->GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); pChar; pChar = (CCharacter*)pChar->TypeNext())
-					{
-						const float Dist = distance(pBase->GetPos(), pChar->m_Core.m_Pos);
-						if(Dist > Radius || Dist < 24.0f)
-							continue;
-
-						if(pChar->IsAllowedPVP(pBase->GetClientID()))
-						{
-							vec2 Dir = normalize(pChar->m_Core.m_Pos - pBase->GetPos());
-							pChar->m_Core.m_Vel -= Dir * 5.f;
-						}
-					}
-				});
-				pResult->RegisterEvent(CBaseEntity::EventSnap, NUM_IDS, [](CBaseEntity* pBase, int SnappingClient, const std::vector<int>& vIds)
-				{
-					const auto Radius = pBase->GetConfig("radius", 0.f);
-					constexpr float AngleStep = 2.0f * pi / static_cast<float>(NUM_IDS_CYRCLE);
-
-					// snap inside cyrcle
-					for(int i = 0; i < NUM_IDS_PROJ_CYRCLE; i++)
-					{
-						const auto RangeRandomPos = random_range_pos(pBase->GetPos(), Radius);
-						pBase->GS()->SnapProjectile(SnappingClient, vIds[i], RangeRandomPos, {}, pBase->Server()->Tick(), WEAPON_HAMMER, pBase->GetClientID());
-					}
-
-					// snap cyrcle connect
-					for(int i = 0; i < NUM_IDS_CYRCLE; ++i)
-					{
-						const auto nextIndex = (i + 1) % NUM_IDS_CYRCLE;
-						const auto CurrentPos = pBase->GetPos() + vec2(Radius * cos(AngleStep * i), Radius * sin(AngleStep * i));
-						const auto NextPos = pBase->GetPos() + vec2(Radius * cos(AngleStep * nextIndex), Radius * sin(AngleStep * nextIndex));
-						pBase->GS()->SnapLaser(SnappingClient, vIds[NUM_IDS_PROJ_CYRCLE + i], CurrentPos, NextPos, pBase->Server()->Tick() - 1);
-					}
-				});
-
-				// destroy
-				pBase->GS()->CreateDeath(pBase->GetPos(), pBase->GetClientID());
-				pBase->MarkForDestroy();
-				return;
-			}
-		});
-
+		new CEntityRifleMagneticPulse(&GS()->m_World, m_ClientID, 128.f, ProjStartPos, Direction);
+		GS()->CreateSound(m_Pos, SOUND_LASER_FIRE);
 		return true;
 	}
-
-	/*
-	 * Here weapons can be modified to have different behavior
-	 */
 
 	// default laser
 	new CLaser(GameWorld(), m_Pos, Direction, GS()->Tuning()->m_LaserReach, m_pPlayer->GetCID());
