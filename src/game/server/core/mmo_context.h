@@ -634,7 +634,7 @@ enum class AttributeGroup : int
 	Healer,
 	Dps,
 	Weapon,
-	Hardtype,
+	DamageType,
 	Job,
 	Other,
 };

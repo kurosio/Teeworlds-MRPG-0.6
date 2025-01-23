@@ -10,20 +10,37 @@ CEidolonAI::CEidolonAI(CPlayerBot* pPlayer, CCharacterBotAI* pCharacter)
 
 bool CEidolonAI::CanDamage(CPlayer* pFrom)
 {
-	if(!pFrom->IsBot() && m_pPlayer->GetEidolonOwner() != pFrom)
+	auto* pOwner = m_pPlayer->GetEidolonOwner();
+
+	if(m_pPlayer->GetEidolonOwner() != pFrom)
 	{
-		auto* pOwner = m_pPlayer->GetEidolonOwner();
-		auto* pOwnerLastAttacker = pOwner->GetCharacter()->GetLastAttacker();
-		if(pOwnerLastAttacker && pOwnerLastAttacker->GetCID() == pFrom->GetCID())
-			return true;
+		if(pOwner)
+		{
+			auto* pOwnerLastAttacker = pOwner->GetCharacter()->GetLastAttacker();
+			if(pOwnerLastAttacker &&
+				pOwnerLastAttacker->GetCID() == pFrom->GetCID())
+				return true;
+
+			auto* pFromChar = pFrom->GetCharacter();
+			if(pFromChar)
+			{
+				auto pFromLastAttacker = pFromChar->GetLastAttacker();
+				if(pFromLastAttacker &&
+					(pFromLastAttacker->GetCID() == pOwner->GetCID() ||
+						pFromLastAttacker->GetCID() == m_pPlayer->GetCID()))
+					return true;
+			}
+		}
 
 		return false;
 	}
 
-	const auto* pFromBot = static_cast<CPlayerBot*>(pFrom);
-	if(pFromBot && (pFromBot->GetBotType() == TYPE_BOT_MOB || pFromBot->GetBotType() == TYPE_BOT_EIDOLON ||
-		pFromBot->GetBotType() == TYPE_BOT_QUEST_MOB))
-		return true;
+	if(pFrom->IsBot())
+	{
+		const auto* pFromBot = static_cast<CPlayerBot*>(pFrom);
+		if(pFromBot && (pFromBot->GetBotType() == TYPE_BOT_MOB))
+			return true;
+	}
 
 	return false;
 }

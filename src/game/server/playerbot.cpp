@@ -191,13 +191,17 @@ int CPlayerBot::GetTotalAttributeValue(AttributeIdentifier ID) const
 		float Percent = 100.0f;
 		const auto* pAttribute = GS()->GetAttributeInfo(ID);
 
-		if(pAttribute->IsGroup(AttributeGroup::Healer))
+		if(pAttribute->IsGroup(AttributeGroup::DamageType))
+		{
+			Percent = 5.0f;
+		}
+		else if(pAttribute->IsGroup(AttributeGroup::Dps))
 		{
 			Percent = 15.0f;
 		}
-		else if(pAttribute->IsGroup(AttributeGroup::Hardtype))
+		else if(pAttribute->IsGroup(AttributeGroup::Healer))
 		{
-			Percent = 5.0f;
+			Percent = 20.0f;
 		}
 
 		// downcast for unhardness boss

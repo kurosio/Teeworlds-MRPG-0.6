@@ -462,7 +462,7 @@ int CGameControllerDungeon::GetAttributeDungeonSyncByClass(ProfessionIdentifier 
 			Percent = 50.0f;
 
 		// very small dps boost
-		else if(Type == AttributeGroup::Hardtype && ID != AttributeIdentifier::DMG)
+		else if(Type == AttributeGroup::DamageType && ID != AttributeIdentifier::DMG)
 			return 0;
 	}
 
@@ -471,7 +471,7 @@ int CGameControllerDungeon::GetAttributeDungeonSyncByClass(ProfessionIdentifier 
 	if(ProfID == ProfessionIdentifier::Dps)
 	{
 		// basic default dps upgrades
-		if(Type == AttributeGroup::Dps || Type == AttributeGroup::Hardtype)
+		if(Type == AttributeGroup::Dps || Type == AttributeGroup::DamageType)
 			Percent = 0.1f;
 
 		// very small tank boost
@@ -492,7 +492,7 @@ int CGameControllerDungeon::GetAttributeDungeonSyncByClass(ProfessionIdentifier 
 			Percent = 10.f;
 
 		// very small dps boost
-		else if(Type == AttributeGroup::Hardtype && ID != AttributeIdentifier::DMG)
+		else if(Type == AttributeGroup::DamageType && ID != AttributeIdentifier::DMG)
 			return 0;
 	}
 

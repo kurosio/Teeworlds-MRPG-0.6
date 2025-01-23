@@ -50,7 +50,7 @@ int CItemDescription::GetEnchantPrice(int EnchantLevel) const
 			AttributeGroup Type = Att.Info()->GetGroup();
 
 			// strength stats
-			if(Type == AttributeGroup::Hardtype)
+			if(Type == AttributeGroup::DamageType)
 				UpgradePrice = maximum(80, Att.Info()->GetUpgradePrice()) * 55;
 
 			// weapon and job stats
