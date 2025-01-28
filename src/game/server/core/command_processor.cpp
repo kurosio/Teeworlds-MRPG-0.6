@@ -54,8 +54,10 @@ CCommandProcessor::CCommandProcessor(CGS* pGS)
 
 	// information command
 	AddCommand("cmdlist", "?i[page]", ConChatCmdList, pServer, "");
-	AddCommand("help", "?i[page]", ConChatCmdList, pServer, "");
+	AddCommand("help", "", ConChatCmdList, pServer, "");
 	AddCommand("rules", "", ConChatRules, pServer, "");
+	AddCommand("info", "", ConChatWiki, pServer, "");
+	AddCommand("wiki", "", ConChatWiki, pServer, "");
 
 	AddCommand("add_multiple_orbite", "i[orbite] i[type] i[subtype]", ConAddMultipleOrbite, pServer, "");
 }
@@ -210,7 +212,7 @@ void CCommandProcessor::ConChatHouse(IConsole::IResult* pResult, void* pUser)
 			for(const auto& [Number, Door] : pDoorManager->GetContainer())
 			{
 				bool State = pDoorManager->GetContainer()[Number]->IsClosed();
-				pGS->Chat(ClientID, "Number: {}. Name: {} ({})", 
+				pGS->Chat(ClientID, "Number: {}. Name: {} ({})",
 					Number, Door->GetName(), State ? Instance::Localize(ClientID, "closed") : Instance::Localize(ClientID, "opened"));
 			}
 			return;
@@ -476,6 +478,19 @@ void CCommandProcessor::ConChatRules(IConsole::IResult* pResult, void* pUser)
 	pGS->Chat(ClientID, "- Don't use multiple accounts");
 	pGS->Chat(ClientID, "- Don't share your account credentials (username, password)");
 	pGS->Chat(ClientID, "- The admins and moderators will mute/kick/ban per discretion");
+}
+
+void CCommandProcessor::ConChatWiki(IConsole::IResult* pResult, void* pUser)
+{
+	const int ClientID = pResult->GetClientID();
+	CGS* pGS = GetCommandResultGameServer(ClientID, pUser);
+
+	CPlayer* pPlayer = pGS->GetPlayer(ClientID);
+	if(!pPlayer)
+		return;
+
+	// send wiki info
+	pGS->SendMenuMotd(pPlayer, MOTD_MENU_WIKI_INFO);
 }
 
 void CCommandProcessor::ConChatVoucher(IConsole::IResult* pResult, void* pUser)
