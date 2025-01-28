@@ -66,7 +66,7 @@ void CAccountData::Init(int ID, int ClientID, const char* pLogin, std::string La
 	// The update query is executed on the row with the ID equal to the given UserID
 	char aAddrStr[64];
 	pServer->GetClientAddr(m_ClientID, aAddrStr, sizeof(aAddrStr));
-	Database->Execute<DB::UPDATE>("tw_accounts", "LoginDate = CURRENT_TIMESTAMP, LoginIP = '{}', CountryISO = '{}' WHERE ID = '{}'", 
+	Database->Execute<DB::UPDATE>("tw_accounts", "LoginDate = CURRENT_TIMESTAMP, LoginIP = '{}', CountryISO = '{}' WHERE ID = '{}'",
 		aAddrStr, Instance::Server()->ClientCountryIsoCode(m_ClientID), ID);
 
 	/*
@@ -346,9 +346,9 @@ bool CAccountData::SpendCurrency(int Price, int CurrencyItemID)
 		const auto TotalCurrency = m_Bank + pCurrencyItem->GetValue();
 
 		// check amount
-		if(CurrencyValue < Price)
+		if(TotalCurrency < Price)
 		{
-			GS()->Chat(m_ClientID, "Required {}, but you only have {} {} (including bank)!", Price, CurrencyValue, pCurrencyItem->Info()->GetName());
+			GS()->Chat(m_ClientID, "Required {}, but you only have {} {} (including bank)!", Price, TotalCurrency, pCurrencyItem->Info()->GetName());
 			return false;
 		}
 

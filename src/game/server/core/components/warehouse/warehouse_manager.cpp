@@ -325,6 +325,7 @@ void CWarehouseManager::ShowTrade(CPlayer* pPlayer, CWarehouse* pWarehouse, int 
 	const auto HasItem = pPlayerItem->HasItem();
 	const auto* pCurrency = pWarehouse->GetCurrency();
 	const auto* pPlayerItemCurrency = pPlayer->GetItem(pCurrency->GetID());
+	const auto PlayerCurrencyValue = pCurrency->GetID() == itGold ? pPlayer->Account()->GetTotalGold() : pPlayerItemCurrency->GetValue();
 
 	// trade item informaton
 	VoteWrapper VItem(ClientID, VWF_SEPARATE | VWF_STYLE_STRICT_BOLD, "Do you want to buy?");
@@ -362,10 +363,10 @@ void CWarehouseManager::ShowTrade(CPlayer* pPlayer, CWarehouse* pWarehouse, int 
 	}
 
 	// show required currency items
-	const auto MarkHas = pPlayerItemCurrency->GetValue() >= pTrade->GetPrice();
+	const auto MarkHas = PlayerCurrencyValue >= pTrade->GetPrice();
 	const char* pLabelMark = MarkHas ? "\u2714" : "\u2718";
 
-	VRequired.MarkList().Add("{} {}x{$} ({})", pLabelMark, pCurrency->GetName(), pTrade->GetPrice(), pPlayerItemCurrency->GetValue());
+	VRequired.MarkList().Add("{} {}x{$} ({})", pLabelMark, pCurrency->GetName(), pTrade->GetPrice(), PlayerCurrencyValue);
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// show status and button buy
