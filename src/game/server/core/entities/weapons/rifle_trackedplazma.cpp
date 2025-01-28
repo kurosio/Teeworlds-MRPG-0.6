@@ -79,6 +79,9 @@ void CEntityRifleTrackedPlazma::SearchPotentialTarget()
 		if(m_ClientID == pChar->GetPlayer()->GetCID() || !pChar->IsAllowedPVP(m_ClientID))
 			continue;
 
+		if(GS()->Collision()->IntersectLineWithInvisible(m_Pos, pChar->m_Core.m_Pos, 0, 0))
+			continue;
+
 		float Dist = distance(pChar->m_Core.m_Pos, m_Pos);
 		if(Dist < MinDistance)
 		{
