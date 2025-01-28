@@ -49,7 +49,7 @@ void CHouse::InitProperties(int Bank, std::string&& AccessDoorList, std::string&
 
 	// Create a new instance of CFarmzonesManager and assign it to m_pFarmzonesManager
 	// The CFarmzonesManager will handle all the farmzones for the house.
-	m_pFarmzonesManager = new CFarmzonesManager(std::move(JsonFarmzones));
+	m_pFarmzonesManager = new CFarmzonesManager(JsonFarmzones);
 
 	// Asserts
 	dbg_assert(m_pBank != nullptr, "The house bank is null");

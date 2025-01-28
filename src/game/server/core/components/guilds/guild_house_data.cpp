@@ -42,7 +42,7 @@ void CGuildHouse::InitProperties(std::string&& JsonDoors, std::string&& JsonFarm
 
 	// Create a new instance of CFarmzonesManager and assign it to m_pFarmzonesManager
 	// The CFarmzonesManager will handle all the farmzones for the guild house.
-	m_pFarmzonesManager = new CFarmzonesManager(std::move(JsonFarmzones));
+	m_pFarmzonesManager = new CFarmzonesManager(JsonFarmzones);
 
 	// Asserts
 	dbg_assert(m_pFarmzonesManager != nullptr, "The house farmzones manager is null");

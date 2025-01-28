@@ -147,7 +147,7 @@ public:
 	virtual bool GiveWeapon(int Weapon, int Ammo);
 	bool RemoveWeapon(int Weapon);
 	void ChangePosition(vec2 NewPos);
-	void UpdateEquippedStats(int ItemID);
+	void UpdateEquippedStats(std::optional<int> UpdatedItemID = std::nullopt);
 	void SetDoorHit(vec2 Start, vec2 End);
 	void HandleDoorHit();
 	void ResetDoorHit() { m_NormalDoorHit = vec2(0, 0); }

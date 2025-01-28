@@ -31,7 +31,7 @@ bool CFarmzone::RemoveItemFromNode(int ItemID)
 	return Removed;
 }
 
-CFarmzonesManager::CFarmzonesManager(std::string&& JsonFarmzones)
+CFarmzonesManager::CFarmzonesManager(const std::string& JsonFarmzones)
 {
 	// Parse the JSON string
 	mystd::json::parse(JsonFarmzones, [this](nlohmann::json& pJson)
@@ -43,7 +43,7 @@ CFarmzonesManager::CFarmzonesManager(std::string&& JsonFarmzones)
 			auto ItemsSet = DBSet(pFarmzone.value("items", ""));
 			auto Radius = (float)pFarmzone.value("radius", 100);
 
-			AddFarmzone(CFarmzone(this, std::move(Farmname), ItemsSet, Position, Radius));
+			AddFarmzone(Farmname, ItemsSet, Position, Radius);
 		}
 	});
 }
@@ -53,9 +53,10 @@ CFarmzonesManager::~CFarmzonesManager()
 	m_vFarmzones.clear();
 }
 
-void CFarmzonesManager::AddFarmzone(CFarmzone&& Farmzone)
+void CFarmzonesManager::AddFarmzone(const std::string& Farmname, const DBSet& ItemSet, vec2 Pos, float Radius)
 {
-	m_vFarmzones.emplace(m_vFarmzones.size() + 1, std::forward<CFarmzone>(Farmzone));
+	CFarmzone Zone(this, Farmname, ItemSet, Pos, Radius);
+	m_vFarmzones.emplace(m_vFarmzones.size() + 1, Zone);
 }
 
 CFarmzone* CFarmzonesManager::GetFarmzoneByPos(vec2 Pos)

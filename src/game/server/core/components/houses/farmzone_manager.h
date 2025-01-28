@@ -17,7 +17,7 @@ class CFarmzone
 
 public:
 	CFarmzone() = delete;
-	CFarmzone(CFarmzonesManager* pManager, std::string&& Name, const DBSet& ItemsSet, vec2 Pos, float Radius) : m_pManager(pManager)
+	CFarmzone(CFarmzonesManager* pManager, const std::string& Name, const DBSet& ItemsSet, vec2 Pos, float Radius) : m_pManager(pManager)
 	{
 		for(auto& [str, size] : ItemsSet.GetDataItems())
 		{
@@ -32,7 +32,7 @@ public:
 			}
 		}
 
-		m_Node.Name = std::move(Name);
+		m_Node.Name = Name;
 		m_Node.Level = 1;
 		m_Node.Health = 100;
 		m_Pos = Pos;
@@ -43,12 +43,10 @@ public:
 	int GetItemID() const { return m_Node.m_vItems.getRandomElement(); }
 	float GetRadius() const { return m_Radius; }
 	vec2 GetPos() const { return m_Pos; }
-
 	GatheringNode& GetNode() { return m_Node; }
 
 	void AddItemToNode(int ItemID);
 	bool RemoveItemFromNode(int ItemID);
-
 	void Add(CGS* pGS, const vec2& Pos);
 };
 
@@ -59,12 +57,12 @@ class CFarmzonesManager
 
 public:
 	CFarmzonesManager() = delete;
-	explicit CFarmzonesManager(std::string&& JsonFarmzones);
+	explicit CFarmzonesManager(const std::string& JsonFarmzones);
 	~CFarmzonesManager();
 
 	std::unordered_map<int, CFarmzone>& GetContainer() { return m_vFarmzones; }
 
-	void AddFarmzone(CFarmzone&& Farmzone);
+	void AddFarmzone(const std::string& Farmname, const DBSet& ItemSet, vec2 Pos, float Radius);
 	CFarmzone* GetFarmzoneByPos(vec2 Pos);
 	CFarmzone* GetFarmzoneByID(int ID);
 	std::string DumpJsonString() const;

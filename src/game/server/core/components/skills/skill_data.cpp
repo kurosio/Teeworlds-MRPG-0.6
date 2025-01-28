@@ -227,7 +227,7 @@ bool CSkill::Use()
 
 	if(IsActivated(pChar, ManaCost, SKILL_LAST_STAND, SKILL_USAGE_TOGGLE))
 	{
-		const auto ManaPerSeconds = ManaCost - GetBonus();
+		const auto ManaPerSeconds = translate_to_percent_rest(ManaCost, maximum(30 - GetBonus(), 15));
 		GS()->EntityManager()->LastStand(ClientID, PlayerPosition, 96.f, ManaPerSeconds, &pEntSkillPtr);
 		return true;
 	}

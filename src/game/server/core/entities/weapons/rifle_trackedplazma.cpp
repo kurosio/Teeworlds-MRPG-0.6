@@ -65,10 +65,7 @@ void CEntityRifleTrackedPlazma::Snap(int SnappingClient)
 
 void CEntityRifleTrackedPlazma::Explode()
 {
-	auto* pTarget = GS()->GetPlayerChar(m_TrackedCID);
-	auto ExplosionPos = pTarget ? pTarget->m_Core.m_Pos : m_Pos;
-	GS()->CreateCyrcleExplosion(2, 32.f, ExplosionPos, m_ClientID, WEAPON_LASER, 1);
-
+	GS()->CreateCyrcleExplosion(2, 32.f, m_Pos, m_ClientID, WEAPON_LASER, 1);
 	GameWorld()->DestroyEntity(this);
 }
 

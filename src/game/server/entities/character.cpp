@@ -826,7 +826,7 @@ void CCharacter::Tick()
 	m_pPlayer->UpdateTempData(m_Health, m_Mana);
 
 	// game clipped
-	if(GameLayerClipped(m_Pos))
+	if(GameLayerClipped(m_Pos) || m_pTilesHandler->IsEnter(TILE_DEATH))
 	{
 		Die(m_pPlayer->GetCID(), WEAPON_SELF);
 	}
@@ -1574,7 +1574,7 @@ void CCharacter::HandleSafeFlags()
 	}
 }
 
-void CCharacter::UpdateEquippedStats(int ItemID)
+void CCharacter::UpdateEquippedStats(std::optional<int> UpdatedItemID)
 {
 	if(!m_Alive || !m_pPlayer->IsAuthed())
 		return;
@@ -1607,33 +1607,34 @@ void CCharacter::UpdateEquippedStats(int ItemID)
 		GS()->Chat(m_pPlayer->GetCID(), "Your gold has been reduced to the maximum capacity.");
 	}
 
-	// character data
-	const auto* pItemInfo = GS()->GetItemInfo(ItemID);
-	if(const auto* pChar = m_pPlayer->GetCharacter())
+	// update by item
+	if(UpdatedItemID.has_value())
 	{
-		const auto Type = pItemInfo->GetType();
-
-		// weapon
-		const auto WeaponID = GetWeaponByEquip(Type);
-		if(WeaponID >= WEAPON_HAMMER)
+		const auto* pItemInfo = GS()->GetItemInfo(*UpdatedItemID);
+		if(const auto* pChar = m_pPlayer->GetCharacter())
 		{
-			const auto Ammo = (WeaponID == WEAPON_HAMMER ? -1 : 3);
-			m_pPlayer->GetCharacter()->GiveWeapon(WeaponID, Ammo);
+			const auto Type = pItemInfo->GetType();
+
+			// weapon
+			const auto WeaponID = GetWeaponByEquip(Type);
+			if(WeaponID >= WEAPON_HAMMER)
+			{
+				const auto Ammo = (WeaponID == WEAPON_HAMMER ? -1 : 3);
+				m_pPlayer->GetCharacter()->GiveWeapon(WeaponID, Ammo);
+			}
+
+			// eidolon
+			if(Type == ItemType::EquipEidolon)
+			{
+				m_pPlayer->TryRemoveEidolon();
+				m_pPlayer->TryCreateEidolon();
+			}
 		}
 
-		// eidolon
-		if(Type == ItemType::EquipEidolon)
-		{
-			m_pPlayer->TryRemoveEidolon();
-			m_pPlayer->TryCreateEidolon();
-		}
-	}
-
-	// update ammo regeneration if applicable
-	const int AmmoRegen = pItemInfo->GetInfoEnchantStats(AttributeIdentifier::AmmoRegen);
-	if(AmmoRegen > 0)
-	{
-		m_AmmoRegen = m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::AmmoRegen);
+		// update ammo regeneration if applicable
+		const int AmmoRegen = pItemInfo->GetInfoEnchantStats(AttributeIdentifier::AmmoRegen);
+		if(AmmoRegen > 0)
+			m_AmmoRegen = m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::AmmoRegen);
 	}
 }
 

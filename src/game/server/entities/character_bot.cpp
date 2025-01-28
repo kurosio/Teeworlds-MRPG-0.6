@@ -264,7 +264,7 @@ void CCharacterBotAI::Tick()
 	m_pBotPlayer->UpdateTempData(m_Health, m_Mana);
 
 	// game clipped
-	if(GameLayerClipped(m_Pos))
+	if(GameLayerClipped(m_Pos) || GetTiles()->IsEnter(TILE_DEATH))
 	{
 		Die(m_pBotPlayer->GetCID(), WEAPON_SELF);
 	}
