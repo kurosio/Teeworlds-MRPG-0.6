@@ -256,11 +256,14 @@ void CGS::CreateSound(vec2 Pos, int Sound, int64_t Mask)
 			pEvent->m_SoundId = Sound - NUM_SOUNDS;
 		}
 	}
-	else if(auto* pEvent = m_Events.Create<CNetEvent_SoundWorld>(Mask))
+	else if(Sound >= 0)
 	{
-		pEvent->m_X = (int)Pos.x;
-		pEvent->m_Y = (int)Pos.y;
-		pEvent->m_SoundId = maximum(0, Sound);
+		if(auto* pEvent = m_Events.Create<CNetEvent_SoundWorld>(Mask))
+		{
+			pEvent->m_X = (int)Pos.x;
+			pEvent->m_Y = (int)Pos.y;
+			pEvent->m_SoundId = maximum(0, Sound);
+		}
 	}
 }
 
@@ -272,11 +275,14 @@ void CGS::CreatePlayerSound(int ClientID, int Sound)
 		Msg.m_SoundId = Sound - NUM_SOUNDS;
 		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
 	}
-	else if(auto* pEvent = m_Events.Create<CNetEvent_SoundWorld>(CmaskOne(ClientID)); pEvent && GetPlayer(ClientID))
+	else if(Sound >= 0)
 	{
-		pEvent->m_X = (int)m_apPlayers[ClientID]->m_ViewPos.x;
-		pEvent->m_Y = (int)m_apPlayers[ClientID]->m_ViewPos.y;
-		pEvent->m_SoundId = maximum(0, Sound);
+		if(auto* pEvent = m_Events.Create<CNetEvent_SoundWorld>(CmaskOne(ClientID)); pEvent && GetPlayer(ClientID))
+		{
+			pEvent->m_X = (int)m_apPlayers[ClientID]->m_ViewPos.x;
+			pEvent->m_Y = (int)m_apPlayers[ClientID]->m_ViewPos.y;
+			pEvent->m_SoundId = maximum(0, Sound);
+		}
 	}
 }
 
