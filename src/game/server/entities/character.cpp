@@ -240,13 +240,11 @@ void CCharacter::FireWeapon()
 		case WEAPON_SHOTGUN: FireShotgun(Direction, ProjStartPos); break;
 		case WEAPON_GRENADE: FireGrenade(Direction, ProjStartPos); break;
 		case WEAPON_LASER: FireRifle(Direction, ProjStartPos); break;
-
 		case WEAPON_NINJA:
 		{
 			m_Ninja.m_ActivationDir = Direction;
 			m_Ninja.m_CurrentMoveTime = g_pData->m_Weapons.m_Ninja.m_Movetime * Server()->TickSpeed() / 1000;
 			m_Ninja.m_OldVelAmount = length(m_Core.m_Vel);
-
 			GS()->CreateSound(m_Pos, SOUND_NINJA_FIRE);
 		}
 		break;
@@ -401,8 +399,9 @@ bool CCharacter::FireGun(vec2 Direction, vec2 ProjStartPos)
 	// default gun
 	const auto MouseTarget = vec2(m_LatestInput.m_TargetX, m_LatestInput.m_TargetY);
 	const auto Lifetime = (int)(Server()->TickSpeed() * GS()->Tuning()->m_GunLifetime);
+	const auto ExplodeModule = m_pPlayer->GetItem(itExplosiveGun)->IsEquipped();
 	new CProjectile(GameWorld(), WEAPON_GUN, m_pPlayer->GetCID(), ProjStartPos,
-		Direction, Lifetime, false, 0, -1, MouseTarget, WEAPON_GUN);
+		Direction, Lifetime, ExplodeModule, 0, -1, MouseTarget, WEAPON_GUN);
 	GS()->CreateSound(m_Pos, SOUND_GUN_FIRE);
 	return true;
 }
