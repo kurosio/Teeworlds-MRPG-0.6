@@ -61,7 +61,7 @@ void CMobAI::OnRewardPlayer(CPlayer* pPlayer, vec2 Force) const
 				GS()->Chat(ClientID, "You gained {} gold.", goldGain);
 			}
 
-			pPlayer->Account()->AddGold(goldGain, false, true);
+			pPlayer->Account()->AddGold(goldGain, true);
 		}
 	}
 
@@ -121,7 +121,7 @@ void CMobAI::OnRewardPlayer(CPlayer* pPlayer, vec2 Force) const
 		{
 			CPlayerItem* pPlayerItem = pPlayer->GetItem(itSkillPoint);
 			pPlayerItem->Add(1);
-			GS()->Chat(ClientID, "Skill points increased. Now you have {} SP!", pPlayerItem->GetValue());
+			GS()->Chat(ClientID, "Skill points increased. Now you have '{} SP'!", pPlayerItem->GetValue());
 		}
 	}
 

@@ -87,7 +87,7 @@ void CHouse::Buy(CPlayer* pPlayer)
 		Database->Execute<DB::UPDATE>(TW_HOUSES_TABLE, "UserID = '{}', Bank = '0', AccessList = NULL WHERE ID = '{}'", m_AccountID, m_ID);
 
 		// send information
-		GS()->Chat(-1, "{} becomes the owner of the house class {}", Server()->ClientName(ClientID), GetClassName());
+		GS()->Chat(-1, "'{}' becomes the owner of the house class '{}'.", Server()->ClientName(ClientID), GetClassName());
 		pPlayer->m_VotesData.UpdateCurrentVotes();
 	}
 }
@@ -118,7 +118,7 @@ void CHouse::Sell()
 
 	// send information
 	GS()->ChatAccount(m_AccountID, "Your House is sold!");
-	GS()->Chat(-1, "House: {} have been is released!", m_ID);
+	GS()->Chat(-1, "House: '{}' have been is released!", m_ID);
 }
 
 void CHouse::UpdateText(int Lifetime) const
@@ -180,7 +180,7 @@ void CHouse::CBank::Add(int Value)
 	// update
 	m_Bank += Value;
 	Database->Execute<DB::UPDATE>(TW_HOUSES_TABLE, "Bank = '{}' WHERE ID = '{}'", m_Bank, m_pHouse->GetID());
-	GS()->Chat(pPlayer->GetCID(), "You put {} gold in the safe, now {}!", Value, m_Bank);
+	GS()->Chat(pPlayer->GetCID(), "You put '{} gold' in the safe, now '{}'!", Value, m_Bank);
 }
 
 void CHouse::CBank::Take(int Value)
@@ -200,7 +200,7 @@ void CHouse::CBank::Take(int Value)
 		m_Bank -= Value;
 		pPlayer->Account()->AddGold(Value);
 		Database->Execute<DB::UPDATE>(TW_HOUSES_TABLE, "Bank = '{}' WHERE ID = '{}'", m_Bank, m_pHouse->GetID());
-		GS()->Chat(ClientID, "You take {} gold in the safe {}!", Value, m_Bank);
+		GS()->Chat(ClientID, "You take '{} gold' in the safe '{}'!", Value, m_Bank);
 	}
 }
 
@@ -431,7 +431,7 @@ bool CHouse::CDecorationManager::DrawboardToolEventCallback(DrawboardToolEvent E
 
 			if(pHouse->GetDecorationManager()->Add(pPoint))
 			{
-				pHouse->GS()->Chat(ClientID, "You have added {} to your house!", pPlayerItem->Info()->GetName());
+				pHouse->GS()->Chat(ClientID, "You have added '{}' to your house!", pPlayerItem->Info()->GetName());
 				return true;
 			}
 
@@ -442,7 +442,7 @@ bool CHouse::CDecorationManager::DrawboardToolEventCallback(DrawboardToolEvent E
 		{
 			if(pHouse->GetDecorationManager()->Remove(pPoint))
 			{
-				pHouse->GS()->Chat(ClientID, "You have removed {} from your house!", pPlayerItem->Info()->GetName());
+				pHouse->GS()->Chat(ClientID, "You have removed '{}' from your house!", pPlayerItem->Info()->GetName());
 				return true;
 			}
 

@@ -396,7 +396,7 @@ void CMmoController::SaveAccount(CPlayer* pPlayer, int Table) const
 	// save social
 	else if(Table == SAVE_SOCIAL)
 	{
-		const auto CrimeScore = pAccount->GetCrimeScore();
+		const auto CrimeScore = pAccount->GetCrime();
 		Database->Execute<DB::UPDATE>("tw_accounts_data", "CrimeScore = '{}' WHERE ID = '{}'", CrimeScore, AccountID);
 	}
 
@@ -580,7 +580,7 @@ void CMmoController::AsyncClientEnterMsgInfo(const std::string ClientName, int C
 		if(!pRes->next())
 		{
 			pGS->Chat(ClientID, "You need to register using /register <login> <pass>!");
-			pGS->Chat(-1, "Apparently, we have a new player, {}!", PlayerName.c_str());
+			pGS->Chat(-1, "Apparently, we have a new player, '{}'!", PlayerName.c_str());
 			return;
 		}
 

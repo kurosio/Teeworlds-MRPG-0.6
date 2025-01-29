@@ -29,6 +29,7 @@ class CAccountData
 	char m_aLogin[64] {};
 	char m_aLastLogin[64] {};
 	int m_CrimeScore {};
+	int m_LastTickCrimeScoreChanges {};
 
 	CHouse* m_pHouseData{};
 	std::weak_ptr<GroupData> m_pGroupData;
@@ -58,7 +59,7 @@ public:
 	ClassData& GetClass() { return m_Class; }
 	const ClassData& GetClass() const { return m_Class; }
 
-	CProfession* GetClassProfession() const 
+	CProfession* GetClassProfession() const
 	{
 		return GetProfession(m_Class.GetProfessionID());
 	}
@@ -142,9 +143,11 @@ public:
 		return m_aLastLogin;
 	}
 
-	void IncreaseCrimeScore(int Score);
-	bool IsCrimeScoreMaxedOut() const { return m_CrimeScore >= 100; }
-	int GetCrimeScore() const { return m_CrimeScore; }
+	void IncreaseCrime(int Score);
+	void DecreaseCrime(int Score);
+	bool IsCrimeDecreaseTime() const;
+	bool IsCrimeMaxedOut() const { return m_CrimeScore >= 100; }
+	int GetCrime() const { return m_CrimeScore; }
 	void ResetCrimeScore();
 
 	BigInt GetBank() const { return m_Bank; }
@@ -153,9 +156,9 @@ public:
 	int GetGoldCapacity() const;
 
 	void AddExperience(uint64_t Value) const;
-	void AddGold(int Value, bool ToBank = true, bool ApplyBonuses = false); // Adds the specified value to the player's gold (currency)
-	bool DepositGoldToBank(int Amount);
-	bool WithdrawGoldFromBank(int Amount);
+	void AddGold(int Value, bool ApplyBonuses = false);
+	void AddGoldToBank(int Amount);
+	bool RemoveGoldFromBank(int Amount);
 	bool SpendCurrency(int Price, int CurrencyItemID = 1); // Returns a boolean value indicating whether the currency was successfully spent or not.
 	void HandleChair(uint64_t Exp, int Gold);
 
@@ -203,17 +206,17 @@ struct CAccountTempData
 	int m_TempTimeDungeon;
 	bool m_TempDungeonReady;
 
-	void SetSpawnPosition(vec2 Position) 
+	void SetSpawnPosition(vec2 Position)
 	{
-		m_TempSpawnPos = Position; 
+		m_TempSpawnPos = Position;
 	}
 
-	std::optional<vec2> GetSpawnPosition() const 
+	std::optional<vec2> GetSpawnPosition() const
 	{
 		return m_TempSpawnPos;
 	}
 
-	void ClearSpawnPosition() 
+	void ClearSpawnPosition()
 	{
 		m_TempSpawnPos = std::nullopt;
 	}

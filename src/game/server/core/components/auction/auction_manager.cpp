@@ -297,8 +297,8 @@ void CAuctionManager::CreateSlot(CPlayer* pPlayer, CAuctionSlot* pAuctionData) c
 
 			// send messages
 			const int AvailableSlots = g_Config.m_SvMaxPlayerAuctionSlots - GetSlotsCountByAccountID(AccountID);
-			GS()->Chat(-1, "{} created a slot [{} x{}] auction.", Server()->ClientName(ClientID), pPlayerItem->Info()->GetName(), pItem->GetValue());
-			GS()->Chat(ClientID, "Still available {} slots!", AvailableSlots);
+			GS()->Chat(-1, "'{}' created a 'slot [{} x{}]' auction.", Server()->ClientName(ClientID), pPlayerItem->Info()->GetName(), pItem->GetValue());
+			GS()->Chat(ClientID, "Still available '{} slots'!", AvailableSlots);
 		}
 	}
 }

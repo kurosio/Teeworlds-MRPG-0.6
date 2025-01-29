@@ -157,7 +157,7 @@ void CCommandProcessor::ConChatGuild(IConsole::IResult* pResult, void* pUser)
 	{
 		if(Guildname.length() > 8 || Guildname.length() < 3)
 		{
-			pGS->Chat(ClientID, "Guild name must contain 3-8 characters");
+			pGS->Chat(ClientID, "Guild name must contain '3-8 characters'.");
 			return;
 		}
 
@@ -212,7 +212,7 @@ void CCommandProcessor::ConChatHouse(IConsole::IResult* pResult, void* pUser)
 			for(const auto& [Number, Door] : pDoorManager->GetContainer())
 			{
 				bool State = pDoorManager->GetContainer()[Number]->IsClosed();
-				pGS->Chat(ClientID, "Number: {}. Name: {} ({})",
+				pGS->Chat(ClientID, "Number: '{}'. Name: {} ({})",
 					Number, Door->GetName(), State ? Instance::Localize(ClientID, "closed") : Instance::Localize(ClientID, "opened"));
 			}
 			return;
@@ -261,7 +261,7 @@ void CCommandProcessor::ConChatHouse(IConsole::IResult* pResult, void* pUser)
 			pDoorManager->Reverse(Number);
 			pPlayer->m_VotesData.UpdateVotes(MENU_HOUSE);
 			bool State = pDoorManager->GetContainer()[Number]->IsClosed();
-			pGS->Chat(pPlayer->GetCID(), "Door {}(Number {}) was {}!", pDoorManager->GetContainer()[Number]->GetName(), Number, State ? "closed" : "opened");
+			pGS->Chat(pPlayer->GetCID(), "Door '{}(Number {})' was '{}'!", pDoorManager->GetContainer()[Number]->GetName(), Number, State ? "closed" : "opened");
 			return;
 		}
 
@@ -309,7 +309,7 @@ void CCommandProcessor::ConChatGiveEffect(IConsole::IResult* pResult, void* pUse
 	const auto Seconds = pResult->GetInteger(1);
 	if(pPlayer->m_Effects.Add(pEffect, Seconds * pServer->TickSpeed()))
 	{
-		pGS->Chat(ClientID, "You have received the effect {} for {} seconds.", pEffect, Seconds);
+		pGS->Chat(ClientID, "You have received the effect '{}' for '{} seconds'.", pEffect, Seconds);
 		dbg_msg("cmd_auth", "%s got %s (%d sec) by auth command!", pServer->ClientName(ClientID), pEffect, Seconds);
 	}
 }
@@ -380,7 +380,7 @@ void CCommandProcessor::ConGroup(IConsole::IResult* pResult, void* pUser)
 
 	const char* Status = (pGroup ? Instance::Localize(ClientID, "in a group") : Instance::Localize(ClientID, "not in a group"));
 	pGS->Chat(ClientID, mystd::aesthetic::boardPillar("Group system", 8).c_str());
-	pGS->Chat(ClientID, "Current status: {}!", Status);
+	pGS->Chat(ClientID, "Current status: '{}'!", Status);
 	pGS->Chat(ClientID, "/group create - create a new group");
 	pGS->Chat(ClientID, "/group list - group membership list");
 	pGS->Chat(ClientID, "/group leave - leave the group");
@@ -399,7 +399,7 @@ void CCommandProcessor::ConChatUseItem(IConsole::IResult* pResult, void* pUser)
 	const int ItemID = pResult->GetInteger(0);
 	if(CItemDescription::Data().find(ItemID) == CItemDescription::Data().end())
 	{
-		pGS->Chat(ClientID, "There is no item with the entered Item Identifier.");
+		pGS->Chat(ClientID, "There is no item with the entered 'Item Identifier'.");
 		return;
 	}
 
@@ -419,7 +419,7 @@ void CCommandProcessor::ConChatUseSkill(IConsole::IResult* pResult, void* pUser)
 	const int SkillID = pResult->GetInteger(0);
 	if(CSkillDescription::Data().find(SkillID) == CSkillDescription::Data().end())
 	{
-		pGS->Chat(ClientID, "There is no skill with the entered Skill Identifier.");
+		pGS->Chat(ClientID, "There is no skill with the entered 'Skill Identifier'.");
 		return;
 	}
 
@@ -504,7 +504,7 @@ void CCommandProcessor::ConChatVoucher(IConsole::IResult* pResult, void* pUser)
 
 	if(pResult->NumArguments() != 1)
 	{
-		pGS->Chat(ClientID, "Use: /voucher <voucher>");
+		pGS->Chat(ClientID, "Use: '/voucher <voucher>'.");
 		return;
 	}
 
@@ -543,12 +543,12 @@ void CCommandProcessor::ChatCmd(const char* pMessage, CPlayer* pPlayer)
 		{
 			char aArgsDesc[256];
 			GS()->Console()->ParseArgumentsDescription(pCommand->m_pParams, aArgsDesc, sizeof(aArgsDesc));
-			GS()->Chat(ClientID, "Use: /{} {}", pCommand->m_pName, aArgsDesc);
+			GS()->Chat(ClientID, "Use: '/{} {}'.", pCommand->m_pName, aArgsDesc);
 		}
 		return;
 	}
 
-	GS()->Chat(ClientID, "Command {} not found!", pMessage);
+	GS()->Chat(ClientID, "Command '{}' not found!", pMessage);
 }
 
 // Function to add a new command to the command processor

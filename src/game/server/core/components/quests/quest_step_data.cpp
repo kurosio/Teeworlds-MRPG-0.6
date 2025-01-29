@@ -192,14 +192,14 @@ void CQuestStep::PostFinish()
 
 			if(pRequired.m_Type == QuestBotInfo::TaskRequiredItems::Type::SHOW)
 			{
-				GS()->Chat(pPlayer->GetCID(), "[Done] Show the {} x{} to the {}!", pPlayerItem->Info()->GetName(), pRequired.m_Item.GetValue(), m_Bot.GetName());
+				GS()->Chat(pPlayer->GetCID(), "[Done] Show the '{} x{}' to the '{}'!", pPlayerItem->Info()->GetName(), pRequired.m_Item.GetValue(), m_Bot.GetName());
 				continue;
 			}
 
 			// remove item
 			vInteractItemIds.emplace(pPlayerItem->GetID());
 			pPlayerItem->Remove(pRequired.m_Item.GetValue());
-			GS()->Chat(pPlayer->GetCID(), "[Done] Give the {} x{} to the {}!", pPlayerItem->Info()->GetName(), pRequired.m_Item.GetValue(), m_Bot.GetName());
+			GS()->Chat(pPlayer->GetCID(), "[Done] Give the '{} x{}' to the '{}'!", pPlayerItem->Info()->GetName(), pRequired.m_Item.GetValue(), m_Bot.GetName());
 		}
 	}
 
@@ -247,7 +247,7 @@ void CQuestStep::AppendDefeatProgress(int DefeatedBotID)
 		if(m_aMobProgress[DefeatedBotID].m_Count >= DefeatCount)
 		{
 			m_aMobProgress[DefeatBotID].m_Complete = true;
-			GS()->Chat(pPlayer->GetCID(), "[Done] Defeat the {}'s for the {}!", DataBotInfo::ms_aDataBot[DefeatedBotID].m_aNameBot, m_Bot.GetName());
+			GS()->Chat(pPlayer->GetCID(), "[Done] Defeat the '{}'s' for the '{}'!", DataBotInfo::ms_aDataBot[DefeatedBotID].m_aNameBot, m_Bot.GetName());
 		}
 
 		pQuest->Datafile().Save();

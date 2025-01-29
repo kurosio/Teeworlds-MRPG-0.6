@@ -66,7 +66,7 @@ void CEidolonAI::OnDie(int Killer, int Weapon)
 			if(pPlayerItem && pPlayerItem->GetDurability() > 0)
 			{
 				pPlayerItem->SetDurability(0);
-				pOwner->GS()->Chat(pOwner->GetCID(), "Your eidolon item durability is 0.");
+				pOwner->GS()->Chat(pOwner->GetCID(), "Your eidolon item 'durability is 0'.");
 			}
 		}
 	}

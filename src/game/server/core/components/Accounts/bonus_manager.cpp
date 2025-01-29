@@ -28,7 +28,7 @@ void BonusManager::SendInfoAboutActiveBonuses() const
 	}
 	else
 	{
-		pGS->Chat(m_ClientID, "You have {} active bonus{}.", activeBonusesCount, activeBonusesCount > 1 ? "es" : "");
+		pGS->Chat(m_ClientID, "You have '{} active bonus{}'.", activeBonusesCount, activeBonusesCount > 1 ? "es" : "");
 	}
 }
 
@@ -49,8 +49,8 @@ void BonusManager::AddBonus(const TemporaryBonus& bonus)
 			const char* bonusType = GetStringBonusType(bonus.Type);
 			const int addedDurationMinutes = bonus.Duration / 60;
 			const int newTotalDurationMinutes = existingBonus.Duration / 60;
-			pGS->Chat(m_ClientID, "{} +{~.2}% has been extended by {} minutes.", bonusType, bonus.Amount, addedDurationMinutes);
-			pGS->Chat(m_ClientID, "New total duration: {} minutes.", newTotalDurationMinutes);
+			pGS->Chat(m_ClientID, "'{} +{~.2}%' has been extended by '{} minutes'.", bonusType, bonus.Amount, addedDurationMinutes);
+			pGS->Chat(m_ClientID, "New total duration: '{} minutes'.", newTotalDurationMinutes);
 			break;
 		}
 	}
@@ -62,7 +62,7 @@ void BonusManager::AddBonus(const TemporaryBonus& bonus)
 
 		// information
 		const char* bonusType = GetStringBonusType(bonus.Type);
-		pGS->Chat(m_ClientID, "You have received: {} +{~.2}%", bonusType, bonus.Amount);
+		pGS->Chat(m_ClientID, "You have received: '{} +{~.2}%'", bonusType, bonus.Amount);
 	}
 
 	SaveBonuses();
@@ -138,7 +138,7 @@ void BonusManager::UpdateBonuses()
 		if(!it->IsActive())
 		{
 			CGS* pGS = (CGS*)Instance::GameServerPlayer(m_ClientID);
-			pGS->Chat(m_ClientID, "Your {} of {~.2f}% has expired.", GetStringBonusType(it->Type), it->Amount);
+			pGS->Chat(m_ClientID, "Your '{}' of '{~.2f}%' has expired.", GetStringBonusType(it->Type), it->Amount);
 			it = m_vTemporaryBonuses.erase(it);
 			hasChanges = true;
 		}

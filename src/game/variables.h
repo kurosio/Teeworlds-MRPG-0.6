@@ -160,6 +160,7 @@ MACRO_CONFIG_INT(SvLimitDecoration, sv_limit_decorations, 10, 5, 20, CFGFLAG_SER
 MACRO_CONFIG_STR(SvDiscordInviteLink, sv_discord_invite_link, 32, "nope", CFGFLAG_SERVER, "Link to server invitation")
 MACRO_CONFIG_INT(SvIntervalTileTextUpdate, sv_interval_tile_text_update, 1, 1, 60, CFGFLAG_SERVER, "Interval update tile text")
 MACRO_CONFIG_INT(SvShowWorldWhenConnect, sv_show_world_when_connect, 0, 0, ENGINE_MAX_WORLDS, CFGFLAG_SERVER, "Show default world when player connect")
+MACRO_CONFIG_INT(SvCrimeIntervalDecrease, sv_crime_interval_decrease, 5, 1, 60, CFGFLAG_SERVER, "Interval decrease crime score")
 
 MACRO_CONFIG_INT(SvMinRating, sv_min_rating, 1000, 1000, 5000, CFGFLAG_SERVER, "Minial rating player")
 MACRO_CONFIG_INT(SvMaxRating, sv_max_rating, 2500, 2500, 10000, CFGFLAG_SERVER, "Maximal rating player")

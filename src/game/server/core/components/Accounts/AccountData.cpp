@@ -78,6 +78,7 @@ void CAccountData::Init(int ID, int ClientID, const char* pLogin, std::string La
 	m_BonusManager.Init(m_ClientID);
 	m_PrisonManager.Init(m_ClientID);
 	m_RatingSystem.Init(this);
+	m_LastTickCrimeScoreChanges = pServer->Tick();
 
 	// update account base
 	pServer->UpdateAccountBase(m_ID, pServer->ClientName(m_ClientID), m_RatingSystem.GetRating());
@@ -217,33 +218,76 @@ bool CAccountData::IsSameGuild(int GuildID) const
 	return m_pGuildData->GetID() == GuildID;
 }
 
-void CAccountData::IncreaseCrimeScore(int Score)
+void CAccountData::IncreaseCrime(int Score)
 {
 	auto* pPlayer = GetPlayer();
 	if(!pPlayer)
 		return;
 
-	m_CrimeScore = minimum(m_CrimeScore + Score, 100);
-	GS()->Chat(m_ClientID, "Your 'Crime Score' has increased to {}p!", m_CrimeScore);
-	GS()->Core()->SaveAccount(pPlayer, SAVE_SOCIAL);
+	const auto OldCrimeScore = m_CrimeScore;
+	const auto NewCrimeScore = minimum(m_CrimeScore + Score, 100);
+
+	if(OldCrimeScore != NewCrimeScore)
+	{
+		m_CrimeScore = NewCrimeScore;
+		m_LastTickCrimeScoreChanges = GS()->Server()->Tick();
+
+		if(NewCrimeScore >= 100)
+			GS()->Chat(-1, "'{}' added to wanted list, reward for elimination.", GS()->Server()->ClientName(pPlayer->GetCID()));
+
+		GS()->Chat(m_ClientID, "Your crime level has been increased to '{} points'.", m_CrimeScore);
+		GS()->Core()->SaveAccount(pPlayer, SAVE_SOCIAL);
+	}
+}
+
+void CAccountData::DecreaseCrime(int Score)
+{
+	auto* pPlayer = GetPlayer();
+	if(!pPlayer)
+		return;
+
+	const auto OldCrimeScore = m_CrimeScore;
+	const auto NewCrimeScore = maximum(m_CrimeScore - Score, 0);
+
+	if(OldCrimeScore != NewCrimeScore)
+	{
+		m_CrimeScore = NewCrimeScore;
+		m_LastTickCrimeScoreChanges = GS()->Server()->Tick();
+
+		if(OldCrimeScore >= 100)
+			GS()->Chat(-1, "'{}' removed from wanted list.", GS()->Server()->ClientName(pPlayer->GetCID()));
+
+		GS()->Chat(m_ClientID, "Your crime level has been decreased to '{} points'.", m_CrimeScore);
+		GS()->Core()->SaveAccount(pPlayer, SAVE_SOCIAL);
+	}
+}
+
+bool CAccountData::IsCrimeDecreaseTime() const
+{
+	return m_CrimeScore > 0 &&
+		GS()->Server()->Tick() > m_LastTickCrimeScoreChanges + ((SERVER_TICK_SPEED * 60) * g_Config.m_SvCrimeIntervalDecrease);
+}
+
+void CAccountData::ResetCrimeScore()
+{
+	auto* pPlayer = GetPlayer();
+	if(pPlayer)
+	{
+		m_CrimeScore = 0;
+		GS()->Core()->SaveAccount(pPlayer, SAVE_SOCIAL);
+	}
 }
 
 int CAccountData::GetGold() const
 {
 	auto* pPlayer = GetPlayer();
-	if(!pPlayer)
-		return 0;
-
-	return pPlayer->GetItem(itGold)->GetValue();
+	return pPlayer ? pPlayer->GetItem(itGold)->GetValue() : 0;
 }
 
 BigInt CAccountData::GetTotalGold() const
 {
 	auto* pPlayer = GetPlayer();
-	if(!pPlayer)
-		return 0;
-
-	return m_Bank + pPlayer->GetItem(itGold)->GetValue();
+	return pPlayer ? m_Bank + pPlayer->GetItem(itGold)->GetValue() : 0;
 }
 
 void CAccountData::AddExperience(uint64_t Value) const
@@ -271,7 +315,7 @@ void CAccountData::AddExperience(uint64_t Value) const
 		{
 			auto* pSkillPoint = pPlayer->GetItem(itSkillPoint);
 			pSkillPoint->Add(g_Config.m_SvSkillPointsPerLevel);
-			GS()->Chat(m_ClientID, "You have earned {} Skill Points! You now have {} SP!", g_Config.m_SvSkillPointsPerLevel, pSkillPoint->GetValue());
+			GS()->Chat(m_ClientID, "You have earned '{} Skill Points'! You now have '{} SP'!", g_Config.m_SvSkillPointsPerLevel, pSkillPoint->GetValue());
 		}
 
 		// notify about new zones
@@ -285,43 +329,18 @@ void CAccountData::AddExperience(uint64_t Value) const
 	}
 }
 
-void CAccountData::AddGold(int Value, bool ToBank, bool ApplyBonuses)
+void CAccountData::AddGold(int Value, bool ApplyBonuses)
 {
-	// check valid player
 	auto* pPlayer = GetPlayer();
 	if(!pPlayer)
 		return;
 
 	// apply bonuses
 	if(ApplyBonuses)
-	{
 		m_BonusManager.ApplyBonuses(BONUS_TYPE_GOLD, &Value);
-	}
 
-	// to bank
-	if(ToBank)
-	{
-		m_Bank += Value;
-		GS()->Core()->SaveAccount(pPlayer, SAVE_STATS);
-		return;
-	}
-
-	// initialize variables
-	auto* pGoldItem = pPlayer->GetItem(itGold);
-	const auto CurrentGold = pGoldItem->GetValue();
-	const auto FreeSpace = GetGoldCapacity() - CurrentGold;
-
-	// add golds
-	if(Value > FreeSpace)
-	{
-		pGoldItem->Add(FreeSpace);
-		m_Bank += (Value - FreeSpace);
-		GS()->Core()->SaveAccount(pPlayer, SAVE_STATS);
-	}
-	else
-	{
-		pGoldItem->Add(Value);
-	}
+	// add gold
+	pPlayer->GetItem(itGold)->Add(Value);
 }
 
 bool CAccountData::SpendCurrency(int Price, int CurrencyItemID)
@@ -332,9 +351,7 @@ bool CAccountData::SpendCurrency(int Price, int CurrencyItemID)
 
 	// check is free
 	if(Price <= 0)
-	{
 		return true;
-	}
 
 	// initialize variables
 	auto* pCurrencyItem = pPlayer->GetItem(CurrencyItemID);
@@ -348,7 +365,7 @@ bool CAccountData::SpendCurrency(int Price, int CurrencyItemID)
 		// check amount
 		if(TotalCurrency < Price)
 		{
-			GS()->Chat(m_ClientID, "Required {}, but you only have {} {} (including bank)!", Price, TotalCurrency, pCurrencyItem->Info()->GetName());
+			GS()->Chat(m_ClientID, "Required '{}', but you only have '{} {} (including bank)'!", Price, TotalCurrency, pCurrencyItem->Info()->GetName());
 			return false;
 		}
 
@@ -374,89 +391,34 @@ bool CAccountData::SpendCurrency(int Price, int CurrencyItemID)
 	// other currency
 	if(CurrencyValue < Price)
 	{
-		GS()->Chat(m_ClientID, "Required {}, but you only have {} {} (including bank)!", Price, CurrencyValue, pCurrencyItem->Info()->GetName());
+		GS()->Chat(m_ClientID, "Required '{}', but you only have '{} {} (including bank)'!", Price, CurrencyValue, pCurrencyItem->Info()->GetName());
 		return false;
 	}
 
 	return pCurrencyItem->Remove(Price);
 }
 
-bool CAccountData::DepositGoldToBank(int Amount)
+void CAccountData::AddGoldToBank(int Amount)
 {
 	auto* pPlayer = GetPlayer();
-	if(!pPlayer)
-		return false;
-
-	// initialize variables
-	auto* pItemGold = pPlayer->GetItem(itGold);
-	const auto CurrentGold = pItemGold->GetValue();
-	const auto Capacity = GetGoldCapacity();
-	Amount = minimum(Capacity - CurrentGold, Amount);
-	Amount = minimum(CurrentGold, Amount);
-
-	// check amount
-	if(Amount <= 0)
+	if(pPlayer)
 	{
-		GS()->Chat(m_ClientID, "You don't have enough space in your inventory to deposit gold into the bank!");
-		return false;
+		m_Bank += Amount;
+		GS()->Core()->SaveAccount(pPlayer, SAVE_STATS);
 	}
+}
 
-	// remove gold from player
-	if(pItemGold->Remove(Amount))
+bool CAccountData::RemoveGoldFromBank(int Amount)
+{
+	auto* pPlayer = GetPlayer();
+	if(pPlayer && m_Bank >= Amount)
 	{
-		const int Commission = translate_to_percent_rest(Amount, g_Config.m_SvBankCommissionRate);
-		const int FinalAmount = Amount - Commission;
-
-		GS()->Chat(m_ClientID, "You have deposited {$} gold into your bank (Commission: {$}).", FinalAmount, Commission);
-		m_Bank += FinalAmount;
+		m_Bank -= Amount;
 		GS()->Core()->SaveAccount(pPlayer, SAVE_STATS);
 		return true;
 	}
 
 	return false;
-}
-
-bool CAccountData::WithdrawGoldFromBank(int Amount)
-{
-	auto* pPlayer = GetPlayer();
-	if(!pPlayer)
-		return false;
-
-	// initialize variables
-	auto* pItemGold = pPlayer->GetItem(itGold);
-	const auto CurrentGold = pItemGold->GetValue();
-	const auto AvailableSpace = GetGoldCapacity() - CurrentGold;
-	const auto GoldToWithdraw = minimum(Amount, AvailableSpace);
-
-	// check bank amount
-	if(m_Bank < Amount)
-	{
-		GS()->Chat(m_ClientID, "You only have {$} gold in your bank, but you tried to withdraw {}!", m_Bank, Amount);
-		return false;
-	}
-
-	// calculate gold for withdraw
-	if(GoldToWithdraw <= 0)
-	{
-		GS()->Chat(m_ClientID, "You don't have enough space in your inventory to withdraw {$} gold!", Amount);
-		return false;
-	}
-
-	pItemGold->Add(GoldToWithdraw);
-	m_Bank -= GoldToWithdraw;
-	GS()->Core()->SaveAccount(pPlayer, SAVE_STATS);
-	GS()->Chat(m_ClientID, "You have withdrawn {$} gold from your bank to your inventory.", GoldToWithdraw);
-	return true;
-}
-
-void CAccountData::ResetCrimeScore()
-{
-	auto* pPlayer = GetPlayer();
-	if(!pPlayer)
-		return;
-
-	m_CrimeScore = 0;
-	GS()->Core()->SaveAccount(pPlayer, SAVE_SOCIAL);
 }
 
 void CAccountData::HandleChair(uint64_t Exp, int Gold)
@@ -489,7 +451,7 @@ void CAccountData::HandleChair(uint64_t Exp, int Gold)
 	AddExperience(expGain);
 	if(!isGoldBagFull)
 	{
-		AddGold(goldGain, false, true);
+		AddGold(goldGain, true);
 	}
 
 	// format

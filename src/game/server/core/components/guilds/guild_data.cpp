@@ -56,7 +56,7 @@ void CGuild::AddExperience(uint64_t Experience)
 		m_Level++;
 
 		// send messages
-		GS()->Chat(-1, "Guild {} raised the level up to {}", GetName(), m_Level);
+		GS()->Chat(-1, "Guild '{}' raised the level up to {}", GetName(), m_Level);
 		m_pLogger->Add(LOGFLAG_GUILD_MAIN_CHANGES, "Guild raised level to '%d'.", m_Level);
 
 		// recompute experience

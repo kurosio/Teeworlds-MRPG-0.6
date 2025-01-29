@@ -97,7 +97,7 @@ bool CAethernetManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
 			}
 
 			// Inform the player that they have been teleported to the Aether
-			GS()->Chat(ClientID, "You have been teleported to the {} {}.", Server()->GetWorldName(pAether->GetWorldID()), pAether->GetName());
+			GS()->Chat(ClientID, "You have been teleported to the '{} {}'.", Server()->GetWorldName(pAether->GetWorldID()), pAether->GetName());
 		}
 		return true;
 	}
@@ -171,7 +171,7 @@ void CAethernetManager::UnlockLocationByPos(CPlayer* pPlayer, vec2 Pos) const
 		Database->Execute<DB::INSERT>(TW_ACCOUNTS_AETHERS, "(UserID, AetherID) VALUES ('{}', '{}')", pPlayer->Account()->GetID(), pAether->GetID());
 
 		pPlayer->Account()->AddAether(pAether->GetID());
-		GS()->Chat(ClientID, "You now have Aethernet access to the {}.", pAether->GetName());
+		GS()->Chat(ClientID, "You now have Aethernet access to the '{}'.", pAether->GetName());
 	}
 }
 

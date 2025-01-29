@@ -317,7 +317,7 @@ bool CInventoryManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* CMD, c
 		const int DesValue = pPlayerSelectedItem->GetDysenthis() * Get;
 		if(pPlayerSelectedItem->Remove(Get) && pPlayerMaterialItem->Add(DesValue))
 		{
-			GS()->Chat(ClientID, "Disassemble {} x{}.", pPlayerSelectedItem->Info()->GetName(), Get);
+			GS()->Chat(ClientID, "Disassemble '{} x{}'.", pPlayerSelectedItem->Info()->GetName(), Get);
 			pPlayer->m_VotesData.UpdateCurrentVotes();
 		}
 		return true;
@@ -357,7 +357,8 @@ bool CInventoryManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* CMD, c
 
 		// information
 		std::string strNewAttributes = pPlayerItem->Info()->HasAttributes() ? pPlayerItem->GetStringAttributesInfo(pPlayer) : "unattributed";
-		GS()->Chat(-1, "{} enchant {} {} {}", Server()->ClientName(ClientID), pPlayerItem->Info()->GetName(), pPlayerItem->GetStringEnchantLevel(), strNewAttributes);
+		GS()->Chat(-1, "'{}' enchant '{} {} {}'.", Server()->ClientName(ClientID), pPlayerItem->Info()->GetName(), 
+			pPlayerItem->GetStringEnchantLevel(), strNewAttributes);
 		pPlayer->m_VotesData.UpdateCurrentVotes();
 		return true;
 	}

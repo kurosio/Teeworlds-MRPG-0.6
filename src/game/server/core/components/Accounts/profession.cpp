@@ -87,7 +87,7 @@ void CProfession::AddExperience(uint64_t Experience)
 				GS()->EntityManager()->Text(pPlayer->GetCharacter()->m_Core.m_Pos + vec2(0, -40), 40, pProfessionName);
 			}
 
-			GS()->Chat(m_ClientID, "{} Level UP. Now Level {}!", pProfessionName, m_Level);
+			GS()->Chat(m_ClientID, "'{}' Level UP. Now Level {}!", pProfessionName, m_Level);
 			pPlayer->UpdateAchievement(AchievementType::Leveling, (int)m_ProfessionID, m_Level, PROGRESS_ABSOLUTE);
 			GS()->Core()->SaveAccount(pPlayer, SAVE_PROFESSION);
 			Save();

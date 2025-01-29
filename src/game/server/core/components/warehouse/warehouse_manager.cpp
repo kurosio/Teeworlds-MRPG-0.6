@@ -157,7 +157,7 @@ bool CWarehouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
 		{
 			pWarehouse->Storage().Add(Value);
 			pPlayer->Account()->AddGold(Value);
-			GS()->Chat(ClientID, "You loaded {} products. Got {$} gold.", Value, Value);
+			GS()->Chat(ClientID, "You loaded '{} products'. Got '{$} gold'.", Value, Value);
 			pPlayer->m_VotesData.UpdateCurrentVotes();
 		}
 
@@ -190,7 +190,7 @@ bool CWarehouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
 		CPlayerItem* pProducts = pPlayer->GetItem(itProduct);
 		if(pProducts->GetValue() >= g_Config.m_SvWarehouseProductsCanTake)
 		{
-			GS()->Chat(ClientID, "You can't take more than {} products.", g_Config.m_SvWarehouseProductsCanTake);
+			GS()->Chat(ClientID, "You can't take more than '{} products'.", g_Config.m_SvWarehouseProductsCanTake);
 			return true;
 		}
 
@@ -199,7 +199,7 @@ bool CWarehouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
 		if(pWarehouse->Storage().Remove(FinalValue))
 		{
 			pProducts->Add(FinalValue);
-			GS()->Chat(ClientID, "You unloaded {} products.", FinalValue);
+			GS()->Chat(ClientID, "You unloaded '{} products'.", FinalValue);
 			pPlayer->m_VotesData.UpdateCurrentVotes();
 		}
 
@@ -417,7 +417,7 @@ bool CWarehouseManager::BuyItem(CPlayer* pPlayer, CWarehouse* pWarehouse, int Tr
 
 		if(StorageValue < ProductsCost)
 		{
-			GS()->Chat(ClientID, "Not enought products in storage! Required {} products.", ProductsCost);
+			GS()->Chat(ClientID, "Not enought products in storage! Required '{} products'.", ProductsCost);
 			return false;
 		}
 	}
@@ -433,7 +433,7 @@ bool CWarehouseManager::BuyItem(CPlayer* pPlayer, CWarehouse* pWarehouse, int Tr
 
 		// add items
 		pPlayerItem->Add(pItem->GetValue(), 0, pItem->GetEnchant());
-		GS()->Chat(ClientID, "You exchanged {} x{$} for {} x{}.", pCurrency->GetName(), pTrade->GetPrice(), pItem->Info()->GetName(), pItem->GetValue());
+		GS()->Chat(ClientID, "You exchanged '{} x{$}' for '{} x{}'.", pCurrency->GetName(), pTrade->GetPrice(), pItem->Info()->GetName(), pItem->GetValue());
 		GS()->CreatePlayerSound(ClientID, SOUND_SELL_BUY);
 		return true;
 	}
@@ -468,7 +468,7 @@ bool CWarehouseManager::SellItem(CPlayer* pPlayer, CWarehouse* pWarehouse, int T
 
 		// add currency for player
 		pPlayerCurrencyItem->Add(FinalPrice);
-		GS()->Chat(ClientID, "You sold {} x{} for {$} {}.", pItem->Info()->GetName(), Value, FinalPrice, pCurrency->GetName());
+		GS()->Chat(ClientID, "You sold '{} x{}' for '{$} {}'.", pItem->Info()->GetName(), Value, FinalPrice, pCurrency->GetName());
 		return true;
 	}
 

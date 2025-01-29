@@ -140,8 +140,29 @@ bool CPlayerItem::Add(int Value, int StartSettings, int StartEnchant, bool Messa
 		Info()->StartItemScenario(pPlayer, ItemScenarioEvent::OnEventGot);
 	}
 
-	// update achievements and add value
-	m_Value += Value;
+	// sync gold and bank
+	if(m_ID == itGold)
+	{
+		auto NextValue = m_Value + Value;
+		const auto MaxCapacity = pPlayer->Account()->GetGoldCapacity();
+
+		if(NextValue > MaxCapacity)
+		{
+			NextValue -= MaxCapacity;
+			pPlayer->Account()->AddGoldToBank(NextValue);
+			m_Value = MaxCapacity;
+		}
+		else
+		{
+			m_Value = NextValue;
+		}
+	}
+	else
+	{
+		m_Value += Value;
+	}
+
+	// update achievements
 	pPlayer->UpdateAchievement(AchievementType::ReceiveItem, m_ID, Value, PROGRESS_ACCUMULATE);
 	pPlayer->UpdateAchievement(AchievementType::HaveItem, m_ID, m_Value, PROGRESS_ABSOLUTE);
 
@@ -149,7 +170,7 @@ bool CPlayerItem::Add(int Value, int StartSettings, int StartEnchant, bool Messa
 	if(ShouldAutoEquip() && !IsEquipped())
 	{
 		Equip();
-		GS()->Chat(ClientID, "Auto equip {} - {}", Info()->GetName(), GetStringAttributesInfo(pPlayer));
+		GS()->Chat(ClientID, "Auto equip '{} - {}'.", Info()->GetName(), GetStringAttributesInfo(pPlayer));
 	}
 
 	// disable notify about items for special group and types
@@ -162,16 +183,16 @@ bool CPlayerItem::Add(int Value, int StartSettings, int StartEnchant, bool Messa
 	{
 		const auto Type = Info()->GetType();
 		if(Type == ItemType::EquipTitle)
-			GS()->Chat(-1, "{} unlocked the title: {}!", GS()->Server()->ClientName(ClientID), Info()->GetName());
+			GS()->Chat(-1, "'{}' unlocked the title: '{}'!", GS()->Server()->ClientName(ClientID), Info()->GetName());
 		else if(Type == ItemType::EquipEidolon)
-			GS()->Chat(-1, "{} obtained an Eidolon: {}!", GS()->Server()->ClientName(ClientID), Info()->GetName());
+			GS()->Chat(-1, "'{}' obtained an Eidolon: '{}'!", GS()->Server()->ClientName(ClientID), Info()->GetName());
 		else
-			GS()->Chat(-1, "{} obtained the {}.", GS()->Server()->ClientName(ClientID), Info()->GetName());
+			GS()->Chat(-1, "'{}' obtained the '{}'.", GS()->Server()->ClientName(ClientID), Info()->GetName());
 	}
 	else if(Group == ItemGroup::Currency)
-		GS()->Chat(ClientID, "You received {} x{} ({}).", Info()->GetName(), Value, m_Value);
+		GS()->Chat(ClientID, "You received '{} x{} ({})'.", Info()->GetName(), Value, m_Value);
 	else
-		GS()->Chat(ClientID, "You obtained an {} x{} ({}).", Info()->GetName(), Value, m_Value);
+		GS()->Chat(ClientID, "You obtained an '{} x{} ({})'.", Info()->GetName(), Value, m_Value);
 
 	return Save();
 }
@@ -273,7 +294,7 @@ bool CPlayerItem::Use(int Value)
 	if(m_ID == itCapsuleSurvivalExperience && Remove(Value))
 	{
 		int Getting = randomRangecount(10, 50, Value);
-		GS()->Chat(-1, "{} used {} x{} and got {} survival experience.", GS()->Server()->ClientName(ClientID), Info()->GetName(), Value, Getting);
+		GS()->Chat(-1, "'{}' used '{} x{}' and got '{} survival experience'.", GS()->Server()->ClientName(ClientID), Info()->GetName(), Value, Getting);
 		pPlayer->Account()->AddExperience(Getting);
 		return true;
 	}
@@ -282,7 +303,7 @@ bool CPlayerItem::Use(int Value)
 	if(m_ID == itLittleBagGold && Remove(Value))
 	{
 		int Getting = randomRangecount(10, 50, Value);
-		GS()->Chat(-1, "{} used {} x{} and got {} gold.", GS()->Server()->ClientName(ClientID), Info()->GetName(), Value, Getting);
+		GS()->Chat(-1, "'{}' used '{} x{}' and got '{} gold'.", GS()->Server()->ClientName(ClientID), Info()->GetName(), Value, Getting);
 		pPlayer->Account()->AddGold(Getting);
 		return true;
 	}
@@ -303,7 +324,7 @@ bool CPlayerItem::Use(int Value)
 			const auto EffectName = optPotionContext->Effect.c_str();
 
 			pPlayer->m_Effects.Add(EffectName, PotionTime * Server()->TickSpeed());
-			GS()->Chat(ClientID, "You used {} x{}", Info()->GetName(), Value);
+			GS()->Chat(ClientID, "You used '{} x{}'.", Info()->GetName(), Value);
 			GS()->EntityManager()->Text(pPlayer->m_ViewPos + vec2(0, -140.0f), 70, EffectName);
 
 			// Update the recast time based on potion type

@@ -225,12 +225,12 @@ bool CGroupManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 					{
 						pGroup->Add(pPlayer->Account()->GetID());
 						pGS->Chat(ClientID, "You've accepted the invitation!");
-						pGS->Chat(InvitedCID, "{} accepted your invitation!", pGS->Server()->ClientName(ClientID));
+						pGS->Chat(InvitedCID, "'{}' accepted your invitation!", pGS->Server()->ClientName(ClientID));
 					}
 					else
 					{
 						pGS->Chat(ClientID, "You declined the invitation!");
-						pGS->Chat(InvitedCID, "{} declined your invitation!", pGS->Server()->ClientName(ClientID));
+						pGS->Chat(InvitedCID, "'{}' declined your invitation!", pGS->Server()->ClientName(ClientID));
 					}
 				}
 			};
@@ -238,8 +238,8 @@ bool CGroupManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 			pOption->RegisterCallback(fncallbackJoindGuild);
 
 			// send messages
-			GS()->Chat(ClientID, "You've invited {} to join your group!", Server()->ClientName(InvitedCID));
-			GS()->Chat(InvitedCID, "You have been invited by the {} to join the group.", Server()->ClientName(ClientID));
+			GS()->Chat(ClientID, "You've invited '{}' to join your group!", Server()->ClientName(InvitedCID));
+			GS()->Chat(InvitedCID, "You have been invited by the '{}' to join the group.", Server()->ClientName(ClientID));
 		}
 
 		return true;

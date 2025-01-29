@@ -198,7 +198,7 @@ bool CMailboxManager::AcceptMail(CPlayer* pPlayer, int MailID)
 		else
 		{
 			pPlayerItem->Add(pItem.GetValue(), 0, pItem.GetEnchant());
-			GS()->Chat(pPlayer->GetCID(), "You received an attached item [{}].", pItem.Info()->GetName());
+			GS()->Chat(pPlayer->GetCID(), "You received an attached item ['{}'].", pItem.Info()->GetName());
 		}
 	}
 

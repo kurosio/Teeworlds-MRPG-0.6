@@ -181,7 +181,7 @@ bool CGuildHouse::CDecorationManager::DrawboardToolEventCallback(DrawboardToolEv
 		// try to add the point
 		if(pHouse->GetDecorationManager()->Add(pPoint))
 		{
-			pHouse->GS()->Chat(ClientID, "You have added {} to your house!", pPlayerItem->Info()->GetName());
+			pHouse->GS()->Chat(ClientID, "You have added '{}' to your house!", pPlayerItem->Info()->GetName());
 			return true;
 		}
 
@@ -195,7 +195,7 @@ bool CGuildHouse::CDecorationManager::DrawboardToolEventCallback(DrawboardToolEv
 		CPlayerItem* pPlayerItem = pPlayer->GetItem(pPoint->m_ItemID);
 		if(pHouse->GetDecorationManager()->Remove(pPoint))
 		{
-			pHouse->GS()->Chat(ClientID, "You have removed {} from your house!", pPlayerItem->Info()->GetName());
+			pHouse->GS()->Chat(ClientID, "You have removed '{}' from your house!", pPlayerItem->Info()->GetName());
 			return true;
 		}
 

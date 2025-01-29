@@ -89,7 +89,7 @@ bool CDungeonManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, co
 			GS()->Core()->SaveAccount(pPlayer, ESaveType::SAVE_POSITION);
 		}
 
-		GS()->Chat(-1, "{} joined to Dungeon {}!", Server()->ClientName(ClientID), CDungeonData::ms_aDungeon[Extra1].m_aName);
+		GS()->Chat(-1, "'{}' joined to Dungeon '{}'!", Server()->ClientName(ClientID), CDungeonData::ms_aDungeon[Extra1].m_aName);
 		GS()->Chat(ClientID, "You can vote for the choice of tank (Dungeon Tab)!");
 		pPlayer->ChangeWorld(CDungeonData::ms_aDungeon[Extra1].m_WorldID);
 		return true;
@@ -194,6 +194,6 @@ void CDungeonManager::NotifyUnlockedDungeonsByQuest(CPlayer* pPlayer, int QuestI
 	for(const auto& dungeon : CDungeonData::ms_aDungeon)
 	{
 		if(QuestID == dungeon.second.m_RequiredQuestID)
-			GS()->Chat(-1, "{} opened dungeon ({})!", Server()->ClientName(ClientID), dungeon.second.m_aName);
+			GS()->Chat(-1, "'{}' opened dungeon '({})'!", Server()->ClientName(ClientID), dungeon.second.m_aName);
 	}
 }

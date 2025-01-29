@@ -16,7 +16,7 @@ bool CNpcAI::CanDamage(CPlayer* pFrom)
 			return pFromBot->GetBotType() == TYPE_BOT_MOB;
 		}
 
-		return pFrom->Account()->IsCrimeScoreMaxedOut();
+		return pFrom->Account()->IsCrimeMaxedOut();
 	}
 	return false;
 }
@@ -46,10 +46,10 @@ void CNpcAI::OnTakeDamage(int Dmg, int From, int Weapon)
 
 	if(!pFrom->IsBot())
 	{
-		pFrom->Account()->IncreaseCrimeScore(1 + rand() % 8);
+		pFrom->Account()->IncreaseCrime(1 + rand() % 8);
 		m_pCharacter->SetEmote(EMOTE_ANGRY, 1, true);
 
-		if(Function == FUNCTION_NPC_GUARDIAN && pFrom->Account()->IsCrimeScoreMaxedOut())
+		if(Function == FUNCTION_NPC_GUARDIAN && pFrom->Account()->IsCrimeMaxedOut())
 		{
 			m_Target.Set(From, 200);
 		}
@@ -76,7 +76,7 @@ void CNpcAI::OnTargetRules(float Radius)
 	{
 		auto* pPlayer = SearchPlayerCondition(Radius, [](const CPlayer* pCandidate)
 		{
-			const bool IsCrimaScoreMax = pCandidate->Account()->IsCrimeScoreMaxedOut();
+			const bool IsCrimaScoreMax = pCandidate->Account()->IsCrimeMaxedOut();
 			const bool DamageDisabled = pCandidate->GetCharacter()->m_Core.m_DamageDisabled;
 
 			return !DamageDisabled && IsCrimaScoreMax;

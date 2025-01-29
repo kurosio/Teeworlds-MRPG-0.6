@@ -137,12 +137,12 @@ void CGameControllerDungeon::ChangeState(int State)
 
 		// dungeon finished information
 		char aTimeFormat[64];
-		str_format(aTimeFormat, sizeof(aTimeFormat), "Time: %d minute(s) %d second(s)", FinishTime / 60, FinishTime - (FinishTime / 60 * 60));
+		str_format(aTimeFormat, sizeof(aTimeFormat), "Time: '%d minute(s) %d second(s)'.", FinishTime / 60, FinishTime - (FinishTime / 60 * 60));
 		GS()->Chat(-1, "Group{}!", Buffer.buffer());
-		GS()->Chat(-1, "{} finished {}!", CDungeonData::ms_aDungeon[m_DungeonID].m_aName, aTimeFormat);
+		GS()->Chat(-1, "'{}' finished {}!", CDungeonData::ms_aDungeon[m_DungeonID].m_aName, aTimeFormat);
 
 		if(pBestPlayer)
-			GS()->Chat(-1, "Most Valuable '{}'. With help {} points.", Server()->ClientName(pBestPlayer->GetCID()), BestPassageHelp);
+			GS()->Chat(-1, "Most Valuable '{}'. With help '{} points'.", Server()->ClientName(pBestPlayer->GetCID()), BestPassageHelp);
 	}
 
 	// - - - - - - - - - - - - - - - - - - - - - -

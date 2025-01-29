@@ -180,7 +180,7 @@ bool CHouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* CMD, const
 		if(pFarmzone->RemoveItemFromNode(ItemID))
 		{
 			auto* pItemInfo = GS()->GetItemInfo(ItemID);
-			GS()->Chat(ClientID, "You have successfully removed the {} from {}.", pItemInfo->GetName(), pFarmzone->GetName());
+			GS()->Chat(ClientID, "You have successfully removed the '{}' from '{}'.", pItemInfo->GetName(), pFarmzone->GetName());
 			pHouse->Save();
 		}
 
@@ -310,7 +310,7 @@ bool CHouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* CMD, const
 		// check minimal
 		if(Get < 100)
 		{
-			GS()->Chat(ClientID, "The minimum interaction cannot be below 100 gold!");
+			GS()->Chat(ClientID, "The minimum interaction cannot be below '100 gold'!");
 			return true;
 		}
 
@@ -334,7 +334,7 @@ bool CHouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* CMD, const
 		// check minimal
 		if(Get < 100)
 		{
-			GS()->Chat(ClientID, "The minimum interaction cannot be below 100 gold!");
+			GS()->Chat(ClientID, "The minimum interaction cannot be below '100 gold'!");
 			return true;
 		}
 

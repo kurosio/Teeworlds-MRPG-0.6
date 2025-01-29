@@ -131,7 +131,7 @@ void CAttackTeleport::Tick()
 
 					if(pNextPlayer->m_Effects.Add("Stun", StunTime * Server()->TickSpeed()))
 					{
-						GS()->Chat(pNextPlayer->GetCID(), "You have been stunned for {} seconds!", StunTime);
+						GS()->Chat(pNextPlayer->GetCID(), "You have been stunned for '{} seconds'!", StunTime);
 					}
 
 					pNextChar->TakeDamage(Force * 12.0f, MaximalDamageSize, ClientID, WEAPON_NINJA);

@@ -270,7 +270,7 @@ bool CEntityDrawboard::Draw(CBrush* pBrush, EntityPoint* pPoint)
 		CPlayerItem* pPlayerItem = pBrush->m_pPlayer->GetItem(pPoint->m_ItemID);
 		if(!pPlayerItem->HasItem())
 		{
-			GS()->Chat(pBrush->m_pPlayer->GetCID(), "You don't have {}", pPlayerItem->Info()->GetName());
+			GS()->Chat(pBrush->m_pPlayer->GetCID(), "You don't have '{}'.", pPlayerItem->Info()->GetName());
 			return false;
 		}
 

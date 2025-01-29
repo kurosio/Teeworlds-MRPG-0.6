@@ -306,7 +306,7 @@ void CQuestManager::ShowQuestsBoardList(CPlayer* pPlayer, CQuestsBoard* pBoard) 
 	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
 		CPlayer* pPl = GS()->GetPlayer(i, true);
-		if(!pPl || !pPl->Account()->IsCrimeScoreMaxedOut())
+		if(!pPl || !pPl->Account()->IsCrimeMaxedOut())
 			continue;
 
 		const int Reward = minimum(translate_to_percent_rest(pPlayer->Account()->GetGold(), (float)g_Config.m_SvArrestGoldOnDeath), pPlayer->Account()->GetGold());

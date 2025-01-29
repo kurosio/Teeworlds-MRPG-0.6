@@ -371,8 +371,8 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int 
 		{
 			default: GS()->Chat(ClientID, "Unforeseen error."); break;
 			case GuildResult::RANK_ADD_ALREADY_EXISTS: GS()->Chat(ClientID, "The rank name already exists"); break;
-			case GuildResult::RANK_ADD_LIMIT_HAS_REACHED: GS()->Chat(ClientID, "Rank limit reached, {} out of {}", (int)GUILD_RANKS_MAX_COUNT, (int)GUILD_RANKS_MAX_COUNT); break;
-			case GuildResult::RANK_WRONG_NUMBER_OF_CHAR_IN_NAME: GS()->Chat(ClientID, "Minimum number of characters 2, maximum 16."); break;
+			case GuildResult::RANK_ADD_LIMIT_HAS_REACHED: GS()->Chat(ClientID, "Rank limit reached, '{} out of {}'.", (int)GUILD_RANKS_MAX_COUNT, (int)GUILD_RANKS_MAX_COUNT); break;
+			case GuildResult::RANK_WRONG_NUMBER_OF_CHAR_IN_NAME: GS()->Chat(ClientID, "Minimum number of 'characters 2, maximum 16'."); break;
 			case GuildResult::RANK_SUCCESSFUL:
 				GS()->Chat(ClientID, "The rank '{}' has been successfully added!", pReason);
 				GS()->UpdateVotesIfForAll(MENU_GUILD_RANK_LIST);
@@ -413,7 +413,7 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int 
 		{
 			default: GS()->Chat(ClientID, "Unforeseen error."); break;
 			case GuildResult::RANK_RENAME_ALREADY_NAME_EXISTS: GS()->Chat(ClientID, "The name is already in use by another rank"); break;
-			case GuildResult::RANK_WRONG_NUMBER_OF_CHAR_IN_NAME: GS()->Chat(ClientID, "Minimum number of characters 2, maximum 16."); break;
+			case GuildResult::RANK_WRONG_NUMBER_OF_CHAR_IN_NAME: GS()->Chat(ClientID, "Minimum number of 'characters 2, maximum 16'."); break;
 			case GuildResult::RANK_SUCCESSFUL: GS()->UpdateVotesIfForAll(MENU_GUILD_RANK_SELECT); break;
 		}
 		return true;
@@ -575,7 +575,7 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int 
 			default: GS()->Chat(ClientID, "Unforeseen error."); break;
 			case GuildResult::MEMBER_REQUEST_ALREADY_SEND: GS()->Chat(ClientID, "You have already sent a request to this guild."); break;
 			case GuildResult::MEMBER_NO_AVAILABLE_SLOTS: GS()->Chat(ClientID, "No guild slots available."); break;
-			case GuildResult::MEMBER_SUCCESSFUL: GS()->Chat(ClientID, "You sent a request to join the {} guild.", pGuild->GetName()); break;
+			case GuildResult::MEMBER_SUCCESSFUL: GS()->Chat(ClientID, "You sent a request to join the '{}' guild.", pGuild->GetName()); break;
 		}
 		return true;
 	}
@@ -682,7 +682,7 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int 
 		if(pFarmzone->RemoveItemFromNode(ItemID))
 		{
 			auto* pItemInfo = GS()->GetItemInfo(ItemID);
-			GS()->Chat(ClientID, "You have successfully removed the {} from {}.", pItemInfo->GetName(), pFarmzone->GetName());
+			GS()->Chat(ClientID, "You have successfully removed the '{}' from '{}'.", pItemInfo->GetName(), pFarmzone->GetName());
 			pHouse->Save();
 		}
 
@@ -1119,7 +1119,7 @@ void CGuildManager::Disband(GuildIdentifier ID) const
 	if(pGuild->HasHouse())
 	{
 		pGuild->SellHouse();
-		GS()->Chat(-1, "The guild {} has lost house.", pGuild->GetName());
+		GS()->Chat(-1, "The guild '{}' has lost house.", pGuild->GetName());
 	}
 
 	// send mail
@@ -1131,7 +1131,7 @@ void CGuildManager::Disband(GuildIdentifier ID) const
 		Mail.AttachItem(CItem(itGold, chunk));
 	});
 	Mail.Send();
-	GS()->Chat(-1, "The {} guild has been disbanded.", pGuild->GetName());
+	GS()->Chat(-1, "The '{}' guild has been disbanded.", pGuild->GetName());
 
 	// remove all related guild data
 	Database->Execute<DB::REMOVE>(TW_GUILDS_INVITES_TABLE, "WHERE GuildID = '{}'", pGuild->GetID());

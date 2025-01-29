@@ -19,7 +19,7 @@ void CEntityMoneyBag::Tick()
 	const int RandomValue = 1 + rand() % 3;
 
 	pPlayerItem->Add(RandomValue);
-	GS()->Chat(-1, "Player {} has found {} x{}", Server()->ClientName(pPlayer->GetCID()), pPlayerItem->Info()->GetName(), RandomValue);
+	GS()->Chat(-1, "Player '{}' has found '{} x{}'.", Server()->ClientName(pPlayer->GetCID()), pPlayerItem->Info()->GetName(), RandomValue);
 	GS()->CreateDeath(m_Pos, pPlayer->GetCID());
 	GameWorld()->DestroyEntity(this);
 }

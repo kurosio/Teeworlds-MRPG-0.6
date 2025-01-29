@@ -945,25 +945,25 @@ void CCharacter::HandleEventsDeath(int Killer, vec2 Force) const
 		{
 			GS()->EntityManager()->DropItem(m_Pos, Killer >= MAX_PLAYERS ? -1 : Killer, { itGold, LossGold }, Force);
 			if(KillerIsPlayer)
-				GS()->Chat(m_ClientID, "You lost {}% ({$}) gold, killer {}!", g_Config.m_SvGoldLossOnDeath, LossGold, Server()->ClientName(Killer));
+				GS()->Chat(m_ClientID, "You lost '{}% ({$}) gold', killer '{}'!", g_Config.m_SvGoldLossOnDeath, LossGold, Server()->ClientName(Killer));
 			else
-				GS()->Chat(m_ClientID, "You lost {}% ({$}) gold due to death!", g_Config.m_SvGoldLossOnDeath, LossGold, Server()->ClientName(Killer));
+				GS()->Chat(m_ClientID, "You lost '{}% ({$})' gold due to death!", g_Config.m_SvGoldLossOnDeath, LossGold, Server()->ClientName(Killer));
 		}
 	}
 
 	// Crime score system
-	if(m_pPlayer->Account()->IsCrimeScoreMaxedOut() && (KillerIsGuardian || KillerIsPlayer))
+	if(m_pPlayer->Account()->IsCrimeMaxedOut() && (KillerIsGuardian || KillerIsPlayer))
 	{
 		const int Arrest = minimum(translate_to_percent_rest(pItemGold->GetValue(), (float)g_Config.m_SvArrestGoldOnDeath), pItemGold->GetValue());
 		if(Arrest > 0 && pItemGold->Remove(Arrest))
 		{
 			if(KillerIsPlayer)
 			{
-				pKiller->Account()->AddGold(Arrest, false);
-				GS()->Chat(-1, "{} killed {}, who was wanted. The reward is {$} gold!",
+				pKiller->Account()->AddGold(Arrest);
+				GS()->Chat(-1, "'{}' killed '{}', who was wanted. The reward is '{$} gold'!",
 					Server()->ClientName(m_pPlayer->GetCID()), Server()->ClientName(Killer), Arrest);
 			}
-			GS()->Chat(m_ClientID, "Treasury confiscates {}% ({$}) of your gold.", g_Config.m_SvArrestGoldOnDeath, Arrest);
+			GS()->Chat(m_ClientID, "Treasury confiscates '{}% ({$})' of your gold.", g_Config.m_SvArrestGoldOnDeath, Arrest);
 		}
 
 		m_pPlayer->Account()->GetPrisonManager().Imprison(360);
@@ -971,7 +971,7 @@ void CCharacter::HandleEventsDeath(int Killer, vec2 Force) const
 	}
 	else if(KillerIsPlayer)
 	{
-		pKiller->Account()->IncreaseCrimeScore(20);
+		pKiller->Account()->IncreaseCrime(20);
 	}
 }
 
@@ -1412,7 +1412,7 @@ bool CCharacter::HandleHammerActions(vec2 Direction, vec2 ProjStartPos)
 			GS()->CreateHammerHit(ProjStartPos);
 
 			const int BotID = pTargetPlayerBot->GetBotID();
-			GS()->Chat(m_pPlayer->GetCID(), "You begin speaking with {}.", DataBotInfo::ms_aDataBot[BotID].m_aNameBot);
+			GS()->Chat(m_pPlayer->GetCID(), "You begin speaking with '{}'.", DataBotInfo::ms_aDataBot[BotID].m_aNameBot);
 			return true;
 		}
 	}
@@ -1603,7 +1603,8 @@ void CCharacter::UpdateEquippedStats(std::optional<int> UpdatedItemID)
 	if(CurrentGold > MaxGoldCapacity)
 	{
 		const int excessGold = CurrentGold - MaxGoldCapacity;
-		m_pPlayer->Account()->DepositGoldToBank(excessGold);
+		m_pPlayer->Account()->AddGoldToBank(excessGold);
+		m_pPlayer->GetItem(itGold)->Remove(excessGold);
 		GS()->Chat(m_pPlayer->GetCID(), "Your gold has been reduced to the maximum capacity.");
 	}
 

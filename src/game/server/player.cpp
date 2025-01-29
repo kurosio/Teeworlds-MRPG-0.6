@@ -157,6 +157,9 @@ void CPlayer::Tick()
 		m_Dialog.Tick();
 	}
 
+	if(Account()->IsCrimeDecreaseTime())
+		Account()->DecreaseCrime(10);
+
 	if(m_PlayerFlags & PLAYERFLAG_IN_MENU)
 		m_VotesData.ApplyVoteUpdaterData();
 }

@@ -91,12 +91,12 @@ void CEntityRandomBoxRandomizer::Finish()
 		// send information
 		const char* pClientName = GS()->Server()->ClientName(pPlayer->GetCID());
 		GS()->Chat(-1, "---------------------------------");
-		GS()->Chat(-1, "{} uses '{} x{}' and got:", pClientName, m_pPlayerUsesItem->Info()->GetName(), m_Used);
+		GS()->Chat(-1, "'{}' uses '{} x{}' and got:", pClientName, m_pPlayerUsesItem->Info()->GetName(), m_Used);
 		for(const auto& [ItemID, Received] : vReceivedItems)
 		{
 			const auto Value = Received.Element.Value;
 			auto* pItemInfo = GS()->GetItemInfo(ItemID);
-			GS()->Chat(-1, "* {} x{} - ({})", pItemInfo->GetName(), Value, Received.Coincidences);
+			GS()->Chat(-1, "* '{} x{} - ({})'", pItemInfo->GetName(), Value, Received.Coincidences);
 		}
 		GS()->Chat(-1, "---------------------------------");
 

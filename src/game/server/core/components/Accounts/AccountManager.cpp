@@ -32,7 +32,7 @@ AccountCodeResult CAccountManager::RegisterAccount(int ClientID, const char* Log
 	// Check if the length of the login and password is between 4 and 12 characters
 	if(str_length(Login) > 12 || str_length(Login) < 4 || str_length(Password) > 12 || str_length(Password) < 4)
 	{
-		GS()->Chat(ClientID, "The username and password must each contain 4 - 12 characters.");
+		GS()->Chat(ClientID, "The username and password must each contain '4 - 12 characters'.");
 		return AccountCodeResult::AOP_MISMATCH_LENGTH_SYMBOLS; // Return mismatch length symbols error
 	}
 
@@ -165,7 +165,7 @@ void CAccountManager::LoadAccount(CPlayer* pPlayer, bool FirstInitilize)
 		const int Letters = Core()->MailboxManager()->GetMailCount(pAccount->GetID());
 		if(Letters > 0)
 		{
-			GS()->Chat(ClientID, "You have {} unread letters.", Letters);
+			GS()->Chat(ClientID, "You have '{} unread letters'.", Letters);
 		}
 
 		pAccount->GetBonusManager().SendInfoAboutActiveBonuses();
@@ -203,7 +203,7 @@ void CAccountManager::LoadAccount(CPlayer* pPlayer, bool FirstInitilize)
 
 	// notify about rank
 	const int Rank = Server()->GetAccountRank(pAccount->GetID());
-	GS()->Chat(-1, "{} logged to account. Rank #{}[{}] ({})", Server()->ClientName(ClientID), Rank,
+	GS()->Chat(-1, "'{}' logged to account. Rank '#{}[{}]' ({})", Server()->ClientName(ClientID), Rank,
 		Server()->ClientCountryIsoCode(ClientID), pPlayer->Account()->GetRatingSystem().GetRankName());
 
 	// Change player's world ID to the latest correct world ID
@@ -291,7 +291,7 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		VInfo.Add("Account ID: {}", pAccount->GetID());
 		VInfo.Add("Login: {}", pAccount->GetLogin());
 		VInfo.Add("Class: {}", pPlayer->Account()->GetClass().GetName());
-		VInfo.Add("Crime score: {}", pAccount->GetCrimeScore());
+		VInfo.Add("Crime score: {}", pAccount->GetCrime());
 		VInfo.Add("Gold capacity: {}", pAccount->GetGoldCapacity());
 		VInfo.Add("Has house: {}", pAccount->HasHouse() ? "yes" : "no");
 		VInfo.Add("Has guild: {}", pAccount->HasGuild() ? "yes" : "no");
@@ -561,7 +561,7 @@ bool CAccountManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, co
 		{
 			const auto nowValue = pProfession->GetAttributeValue(AttributeID);
 			const auto pProfessionName = GetProfessionName(ProfessionID);
-			GS()->Chat(ClientID, "[{}] Attribute '{}' enhanced to {}p!", pProfessionName, pAttributeInfo->GetName(), nowValue);
+			GS()->Chat(ClientID, "[{}] Attribute '{}' enhanced to '{}p'!", pProfessionName, pAttributeInfo->GetName(), nowValue);
 			pPlayer->m_VotesData.UpdateCurrentVotes();
 		}
 
@@ -621,8 +621,6 @@ bool CAccountManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
 		MBonuses.AddText("Commision rate: {}%", g_Config.m_SvBankCommissionRate);
 		MBonuses.AddSeparateLine();
 		MBonuses.Add("BANK_DEPOSIT", CurrentGold, "Deposit All");
-		int WithdrawAll = pPlayer->Account()->GetGoldCapacity();
-		MBonuses.Add("BANK_WITHDRAW", WithdrawAll, "Withdraw All");
 		MBonuses.Send(MOTD_MENU_BANK_MANAGER);
 		return true;
 	}
@@ -666,7 +664,7 @@ bool CAccountManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
 		for(int i = 0; i < MAX_PLAYERS; i++)
 		{
 			CPlayer* pPl = GS()->GetPlayer(i, true);
-			if(!pPl || !pPl->Account()->IsCrimeScoreMaxedOut())
+			if(!pPl || !pPl->Account()->IsCrimeMaxedOut())
 				continue;
 
 			CPlayerItem* pItemGold = pPl->GetItem(itGold);
@@ -696,18 +694,26 @@ bool CAccountManager::OnPlayerMotdCommand(CPlayer* pPlayer, const char* pCmd, co
 	// deposit bank gold
 	if(strcmp(pCmd, "BANK_DEPOSIT") == 0)
 	{
-		if(pPlayer->Account()->DepositGoldToBank(ExtraValue))
+		auto* pGold = pPlayer->GetItem(itGold);
+		if(pGold->GetValue() <= 100)
 		{
-			GS()->SendMenuMotd(pPlayer, MOTD_MENU_BANK_MANAGER);
+			GS()->Chat(pPlayer->GetCID(), "You need at least '100 gold' to deposit.");
+			return true;
 		}
-		return true;
-	}
 
-	// withdraw bank gold
-	if(strcmp(pCmd, "BANK_WITHDRAW") == 0)
-	{
-		if(pPlayer->Account()->WithdrawGoldFromBank(ExtraValue))
-			GS()->SendMenuMotd(pPlayer, MOTD_MENU_BANK_MANAGER);
+		if(pGold->GetValue() < ExtraValue)
+		{
+			GS()->Chat(pPlayer->GetCID(), "You can max deposit '{} gold'.", pGold->GetValue());
+			return true;
+		}
+
+		const auto CommisionValue = translate_to_percent_rest(ExtraValue, g_Config.m_SvBankCommissionRate);
+		const auto FinalValue = ExtraValue - CommisionValue;
+
+		pGold->Remove(ExtraValue);
+		pPlayer->Account()->AddGoldToBank(FinalValue);
+		GS()->Chat(pPlayer->GetCID(), "You have successfully deposited '{} gold'. Commision '{} gold'.", FinalValue, CommisionValue);
+		GS()->Chat(pPlayer->GetCID(), "Commision '{} gold'.", CommisionValue);
 		return true;
 	}
 

@@ -767,22 +767,22 @@ void CGS::OnTickGlobal()
 
 		if(RandomType == ToplistType::PlayerRating)
 		{
-			Chat(-1, "Rating leader: {} ({})! In second place is {} ({}) — the competition is heating up!",
+			Chat(-1, "Rating leader: '{} ({})'! In second place is '{} ({})' — the competition is heating up!",
 				Leader.Name, Leader.Data["Rating"].to_int(), Second.Name, Second.Data["Rating"].to_int());
 		}
 		else if(RandomType == ToplistType::PlayerWealthy)
 		{
-			Chat(-1, "Wealthiest player: {}({$}) is richest! {}({$}) close behind!",
+			Chat(-1, "Wealthiest player: '{}({$})' is richest! '{}({$})' close behind!",
 				Leader.Name, Leader.Data["Bank"], Second.Name, Second.Data["Bank"]);
 		}
 		else if(RandomType == ToplistType::GuildLeveling)
 		{
-			Chat(-1, "The most experienced guild: {} (Level {})! Close behind: {} (Level {}).",
+			Chat(-1, "The most experienced guild: '{} (Level {})'! Close behind: '{} (Level {})'.",
 				Leader.Name, Leader.Data["Level"], Second.Name, Second.Data["Level"]);
 		}
 		else if(RandomType == ToplistType::GuildWealthy)
 		{
-			Chat(-1, "The richest guild: {}({$})! Second place: {}({$}) is catching up!",
+			Chat(-1, "The richest guild: '{}({$})'! Second place: '{}({$})' is catching up!",
 				Leader.Name, Leader.Data["Bank"], Second.Name, Second.Data["Bank"]);
 		}
 	}
@@ -1119,12 +1119,12 @@ void CGS::OnClientEnter(int ClientID)
 
 	if(!pPlayer->IsAuthed())
 	{
-		Chat(-1, "{} entered and joined the MRPG", Server()->ClientName(ClientID));
+		Chat(-1, "'{}' entered and joined the MRPG", Server()->ClientName(ClientID));
 		CMmoController::AsyncClientEnterMsgInfo(Server()->ClientName(ClientID), ClientID);
 		return;
 	}
 
-	Chat(ClientID, "Welcome to {}! Zone multiplier exp is at {}%.", Server()->GetWorldName(m_WorldID), m_MultiplierExp);
+	Chat(ClientID, "Welcome to '{}'! Zone multiplier exp is at '{}%'.", Server()->GetWorldName(m_WorldID), m_MultiplierExp);
 	Core()->AccountManager()->LoadAccount(pPlayer, false);
 	Core()->SaveAccount(m_apPlayers[ClientID], SAVE_POSITION);
 }
@@ -1139,7 +1139,7 @@ void CGS::OnClientDrop(int ClientID, const char* pReason)
 
 	if((Server()->ClientIngame(ClientID) || Server()->IsClientChangingWorld(ClientID)) && IsPlayerInWorld(ClientID))
 	{
-		Chat(-1, "{} has left the MRPG", Server()->ClientName(ClientID));
+		Chat(-1, "'{}' has left the MRPG", Server()->ClientName(ClientID));
 		Console()->PrintF(IConsole::OUTPUT_LEVEL_STANDARD, "game", "leave player='%d:%s'", ClientID, Server()->ClientName(ClientID));
 		Core()->SaveAccount(m_apPlayers[ClientID], SAVE_POSITION);
 	}

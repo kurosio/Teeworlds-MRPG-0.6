@@ -24,7 +24,7 @@ void PrisonManager::Imprison(int Seconds)
     vec2 PrisonPos;
     if(GS()->m_pController->CanSpawn(SPAWN_HUMAN_PRISON, &PrisonPos))
     {
-        GS()->Chat(-1, "{}, has been imprisoned for {} seconds.", GS()->Server()->ClientName(m_ClientID), Seconds);
+        GS()->Chat(-1, "'{}', has been imprisoned for '{} seconds'.", GS()->Server()->ClientName(m_ClientID), Seconds);
 
         const auto* pPlayer = GetPlayer();
         if(pPlayer && pPlayer->GetCharacter())
@@ -41,7 +41,7 @@ void PrisonManager::Free()
     m_PrisonTerm.ImprisonmentTime = 0;
     m_PrisonTerm.StartTime = 0;
 
-    GS()->Chat(-1, "{} has been released from prison.", GS()->Server()->ClientName(m_ClientID));
+    GS()->Chat(-1, "'{}' has been released from prison.", GS()->Server()->ClientName(m_ClientID));
 
     if(const auto* pPlayer = GetPlayer())
     {

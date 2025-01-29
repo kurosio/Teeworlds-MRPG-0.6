@@ -69,7 +69,7 @@ void CCraftManager::CraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const
 
 	if(!missingItems.empty())
 	{
-		GS()->Chat(ClientID, "Item(s) left to gather: {}", missingItems.c_str());
+		GS()->Chat(ClientID, "Item(s) left to gather: '{}'", missingItems.c_str());
 		return;
 	}
 
@@ -91,11 +91,11 @@ void CCraftManager::CraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const
 	// report a crafted item, either to everyone or only to a player, depending on its characteristics
 	if(!pPlayerCraftItem->Info()->IsStackable())
 	{
-		GS()->Chat(-1, "{} crafted [{} x{}].", Server()->ClientName(ClientID), pPlayerCraftItem->Info()->GetName(), craftedItemCount);
+		GS()->Chat(-1, "'{}' crafted '[{} x{}]'.", Server()->ClientName(ClientID), pPlayerCraftItem->Info()->GetName(), craftedItemCount);
 	}
 	else
 	{
-		GS()->Chat(ClientID, "You crafted [{} x{}].", pPlayerCraftItem->Info()->GetName(), craftedItemCount);
+		GS()->Chat(ClientID, "You crafted '[{} x{}]'.", pPlayerCraftItem->Info()->GetName(), craftedItemCount);
 	}
 
 	// update achievement and votes

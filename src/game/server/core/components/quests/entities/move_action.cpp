@@ -162,7 +162,7 @@ void CEntityQuestAction::TryFinish()
 			return;
 
 		auto* pPlayerItem = pPlayer->GetItem(ItemID);
-		GS()->Chat(m_ClientID, "You've used on the point {} x{}", pPlayerItem->Info()->GetName(), RequiredValue);
+		GS()->Chat(m_ClientID, "You've used on the point '{} x{}'.", pPlayerItem->Info()->GetName(), RequiredValue);
 	}
 
 	// pickup item
@@ -173,7 +173,7 @@ void CEntityQuestAction::TryFinish()
 
 		auto* pPlayerItem = pPlayer->GetItem(ItemID);
 		pPlayerItem->Add(PickupValue);
-		GS()->Chat(m_ClientID, "You've picked up {} x{}.", pPlayerItem->Info()->GetName(), PickupValue);
+		GS()->Chat(m_ClientID, "You've picked up '{} x{}'.", pPlayerItem->Info()->GetName(), PickupValue);
 	}
 
 	// Completion text

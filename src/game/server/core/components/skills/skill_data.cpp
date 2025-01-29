@@ -71,7 +71,7 @@ bool CSkill::Use()
 	if(ProfID != ProfessionIdentifier::None && !pPlayer->Account()->GetClass().IsProfession(ProfID))
 	{
 		const char* pProfName = GetProfessionName(ProfID);
-		GS()->Chat(m_ClientID, "You can use this skill with '{}' profession.", pProfName);
+		GS()->Chat(m_ClientID, "You can use this skill with '{} profession'.", pProfName);
 		return false;
 	}
 
@@ -320,14 +320,14 @@ bool CSkill::Upgrade()
 	{
 		m_Level++;
 		Database->Execute<DB::UPDATE>("tw_accounts_skills", "Level = '{}' WHERE SkillID = '{}' AND UserID = '{}'", m_Level, m_ID, pPlayer->Account()->GetID());
-		GS()->Chat(ClientID, "Increased the skill [{} level to {}]", Info()->GetName(), m_Level);
+		GS()->Chat(ClientID, "Increased the skill ['{}' level to '{}'].", Info()->GetName(), m_Level);
 	}
 	else
 	{
 		m_Level = 1;
 		m_SelectedEmoticion = -1;
 		Database->Execute<DB::INSERT>("tw_accounts_skills", "(SkillID, UserID, Level) VALUES ('{}', '{}', '1');", m_ID, pPlayer->Account()->GetID());
-		GS()->Chat(ClientID, "Learned a new skill [{}]", Info()->GetName());
+		GS()->Chat(ClientID, "Learned a new skill ['{}']", Info()->GetName());
 	}
 
 	return true;
