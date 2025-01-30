@@ -3,7 +3,7 @@
 #include <game/server/gamecontext.h>
 
 CEntityRifleTrackedPlazma::CEntityRifleTrackedPlazma(CGameWorld* pGameWorld, int OwnerCID, vec2 Pos, vec2 Direction)
-: CEntity(pGameWorld, CGameWorld::ENTTYPE_BONUS_DROP, Pos, 24)
+: CEntity(pGameWorld, CGameWorld::ENTTYPE_LASER, Pos, 24)
 {
 	m_ClientID = OwnerCID;
 	m_Direction = Direction;

@@ -2,7 +2,7 @@
 #include <game/server/gamecontext.h>
 
 CEntityRifleMagneticPulse::CEntityRifleMagneticPulse(CGameWorld* pGameWorld, int OwnerCID, float Radius, vec2 Pos, vec2 Direction)
-	: CEntity(pGameWorld, CGameWorld::ENTTYPE_BONUS_DROP, Pos, 24)
+	: CEntity(pGameWorld, CGameWorld::ENTTYPE_LASER, Pos, 24)
 {
 	m_ClientID = OwnerCID;
 	m_Direction = Direction;

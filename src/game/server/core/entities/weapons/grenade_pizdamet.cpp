@@ -3,7 +3,7 @@
 #include <game/server/gamecontext.h>
 
 CEntityGrenadePizdamet::CEntityGrenadePizdamet(CGameWorld *pGameWorld, int OwnerCID, vec2 Pos, vec2 Direction)
-: CEntity(pGameWorld, CGameWorld::ENTTYPE_BONUS_DROP, Pos, 24)
+: CEntity(pGameWorld, CGameWorld::ENTTYPE_PROJECTILE, Pos, 24)
 {
 	m_ClientID = OwnerCID;
 	m_Direction = vec2(centrelized_frandom(Direction.x, 0.3f), centrelized_frandom(Direction.y, 0.3f));

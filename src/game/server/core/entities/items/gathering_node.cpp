@@ -1,5 +1,6 @@
 #include "gathering_node.h"
 
+#include <game/server/entity_manager.h>
 #include <game/server/gamecontext.h>
 
 #include <game/server/core/components/Accounts/AccountMiningManager.h>
@@ -137,6 +138,10 @@ void CEntityGatheringNode::Die(CPlayer* pPlayer, CProfession* pProfession)
 	pProfession->AddExperience(m_pNode->Level);
 	pPlayerItem->Add(Value);
 	SetSpawn(20);
+
+	// create design drop pickup
+	const auto DesignPos = vec2(m_Pos.x, m_Pos.y - 24.f);
+	GS()->EntityManager()->DesignRandomDrop(2 + rand() % 2, 8.0f, DesignPos, Server()->TickSpeed(), POWERUP_HEALTH, 0, CmaskOne(pPlayer->GetCID()));
 }
 
 int CEntityGatheringNode::GetPickupType() const

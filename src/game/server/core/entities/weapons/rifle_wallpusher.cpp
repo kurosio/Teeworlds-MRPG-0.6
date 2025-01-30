@@ -3,7 +3,7 @@
 #include <game/server/gamecontext.h>
 
 CEntityRifleWallPusher::CEntityRifleWallPusher(CGameWorld* pGameWorld, int OwnerCID, vec2 Pos, vec2 Direction, int LifeTick)
-: CEntity(pGameWorld, CGameWorld::ENTTYPE_BONUS_DROP, Pos, 24)
+: CEntity(pGameWorld, CGameWorld::ENTTYPE_LASER, Pos, 24)
 {
 	m_ClientID = OwnerCID;
 	m_Direction = Direction;
@@ -29,7 +29,7 @@ void CEntityRifleWallPusher::Tick()
 	}
 
 	// sound
-	if(Server()->Tick() % Server()->TickSpeed() == 0)
+	if(Server()->Tick() % Server()->TickSpeed() * GetSoundInterval(SOUND_WEAPONS_WALL_PUSHER_BULLET) == 0)
 		GS()->CreateSound(m_Pos, SOUND_WEAPONS_WALL_PUSHER_BULLET);
 
 	// check lifetime

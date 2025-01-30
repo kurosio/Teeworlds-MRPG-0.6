@@ -5,6 +5,7 @@
 
 #include "entities/projectile.h"
 #include "core/entities/group/entitiy_group.h"
+#include "core/entities/items/design_drop.h"
 #include "core/entities/items/drop_bonuses.h"
 #include "core/entities/items/drop_items.h"
 #include "core/entities/tools/flying_point.h"
@@ -21,6 +22,15 @@ IServer* CEntityManager::Server() const
 CEntityManager::CEntityManager(CGS* pGS)
 {
 	m_pGS = pGS;
+}
+
+void CEntityManager::DesignRandomDrop(int Amount, float Force, vec2 Pos, int LifeSpan, int Type, int Subtype, int64_t Mask) const
+{
+	for(int i = 0; i < Amount; i++)
+	{
+		const auto RandVel = vec2(random_float(-Force, Force), Force + random_float(-Force, Force));
+		new CEntityDesignDrop(&GS()->m_World, LifeSpan, Pos, RandVel, Type, Subtype, Mask);
+	}
 }
 
 void CEntityManager::DropBonus(vec2 Pos, int Type, int Subtype, int Value, int NumDrop, vec2 Force) const

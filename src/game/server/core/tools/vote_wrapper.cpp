@@ -367,7 +367,7 @@ CVoteOption* VoteWrapper::GetOptionVoteByAction(int ClientID, const char* pActio
 	{
 		auto iter = std::ranges::find_if(iterGroup->m_vpVotelist, [pActionName](const CVoteOption& vote)
 		{
-			return str_comp(pActionName, vote.m_aDescription) == 0;
+			return str_utf8_comp_nocase_num(pActionName, vote.m_aDescription, str_length(pActionName)) == 0;
 		});
 
 		if(iter != iterGroup->m_vpVotelist.end())

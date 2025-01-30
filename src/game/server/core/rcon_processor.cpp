@@ -25,6 +25,9 @@ void RconProcessor::Init(IConsole* pConsole, IServer* pServer)
 	pConsole->Register("unban_acc", "i[banid]", CFGFLAG_SERVER, ConUnBanAcc, pServer, "UnBan account, pass ban id from bans_acc");
 	pConsole->Register("bans_acc", "", CFGFLAG_SERVER, ConBansAcc, pServer, "Accounts bans");
 
+	pConsole->Register("jail", "i[cid]i[sec]", CFGFLAG_SERVER, ConJail, pServer, "Imprison a player for a set number of seconds");
+	pConsole->Register("unjail", "i[cid]", CFGFLAG_SERVER, ConUnjail, pServer, "Release the player from prison");
+
 	// tools
 	pConsole->Register("tele_by_mouse", "", CFGFLAG_SERVER, ConTeleportByMouse, pServer, "Teleport by mouse");
 	pConsole->Register("tele_by_pos", "i[x]i[y]?i[world_id]", CFGFLAG_SERVER, ConTeleportByPos, pServer, "Teleport by pos");
@@ -39,6 +42,47 @@ static CGS* GetCommandResultGameServer(int ClientID, void* pUser)
 {
 	IServer* pServer = (IServer*)pUser;
 	return (CGS*)pServer->GameServer(pServer->GetClientWorldID(ClientID));
+}
+
+void RconProcessor::ConJail(IConsole::IResult* pResult, void* pUser)
+{
+	const auto* pServer = (IServer*)pUser;
+	const auto PrisonedCID = pResult->GetInteger(0);
+	const auto FromCID = pResult->GetClientID();
+	const auto Seconds = pResult->GetInteger(1);
+
+	auto* pGS = GetCommandResultGameServer(PrisonedCID, pUser);
+	const auto* pPlayer = pGS->GetPlayer(PrisonedCID);
+	if(!pPlayer || !pPlayer->IsAuthed())
+	{
+		pGS->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "jail", "I can't find the player, or he's not authed");
+		return;
+	}
+
+	// prison
+	pPlayer->Account()->GetPrisonManager().Imprison(Seconds);
+	pGS->Console()->PrintF(IConsole::OUTPUT_LEVEL_STANDARD, "jail", "%s prisoned up player %s for %d seconds.",
+		pServer->ClientName(FromCID), pServer->ClientName(PrisonedCID), Seconds);
+}
+
+void RconProcessor::ConUnjail(IConsole::IResult* pResult, void* pUser)
+{
+	const auto* pServer = (IServer*)pUser;
+	const auto FromCID = pResult->GetClientID();
+	const auto UnprisonedCID = pResult->GetInteger(0);
+
+	auto* pGS = GetCommandResultGameServer(UnprisonedCID, pUser);
+	const auto* pPlayer = pGS->GetPlayer(UnprisonedCID);
+	if(!pPlayer || !pPlayer->IsAuthed())
+	{
+		pGS->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "jail", "I can't find the player, or he's not authed");
+		return;
+	}
+
+	// unprisoned
+	pPlayer->Account()->GetPrisonManager().Free();
+	pGS->Console()->PrintF(IConsole::OUTPUT_LEVEL_STANDARD, "jail", "%s unprisoned up player %s.",
+		pServer->ClientName(FromCID), pServer->ClientName(UnprisonedCID));
 }
 
 void RconProcessor::ConTeleportByMouse(IConsole::IResult* pResult, void* pUser)
