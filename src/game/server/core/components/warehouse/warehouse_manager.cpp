@@ -364,14 +364,14 @@ void CWarehouseManager::ShowTrade(CPlayer* pPlayer, CWarehouse* pWarehouse, int 
 		const auto MarkHas = pWarehouse->Storage().GetValue() >= ProductCost;
 		const char* pLabelMark = MarkHas ? "\u2714" : "\u2718";
 
-		VRequired.MarkList().Add("{} {}x{$} ({})", pLabelMark, pProductInfo->GetName(), ProductCost, pWarehouse->Storage().GetValue());
+		VRequired.MarkList().Add("{} {}x{} ({})", pLabelMark, pProductInfo->GetName(), ProductCost, pWarehouse->Storage().GetValue());
 	}
 
 	// show required currency items
 	const auto MarkHas = PlayerCurrencyValue >= pTrade->GetPrice();
 	const char* pLabelMark = MarkHas ? "\u2714" : "\u2718";
 
-	VRequired.MarkList().Add("{} {}x{$} ({})", pLabelMark, pCurrency->GetName(), pTrade->GetPrice(), PlayerCurrencyValue);
+	VRequired.MarkList().Add("{} {}x{$} ({$})", pLabelMark, pCurrency->GetName(), pTrade->GetPrice(), PlayerCurrencyValue);
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// show status and button buy
