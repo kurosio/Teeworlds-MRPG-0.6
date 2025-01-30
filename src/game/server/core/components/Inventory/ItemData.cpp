@@ -250,7 +250,7 @@ bool CPlayerItem::Equip()
 	// update achievements and start scenarios
 	pPlayer->UpdateAchievement(AchievementType::Equip, m_ID, m_Settings, PROGRESS_ABSOLUTE);
 	Info()->StartItemScenario(pPlayer, ItemScenarioEvent::OnEventEquip);
-	GS()->CreatePlayerSound(m_ClientID, SOUND_ITEM_EQUIP);
+	GS()->CreateSound(pPlayer->m_ViewPos, SOUND_VOTE_ITEM_EQUIP);
 	return true;
 }
 
@@ -274,7 +274,7 @@ bool CPlayerItem::UnEquip()
 	}
 
 	Info()->StartItemScenario(pPlayer, ItemScenarioEvent::OnEventUnequip);
-	GS()->CreatePlayerSound(m_ClientID, SOUND_ITEM_EQUIP);
+	GS()->CreateSound(pPlayer->m_ViewPos, SOUND_VOTE_ITEM_EQUIP);
 	return true;
 }
 
@@ -288,13 +288,11 @@ bool CPlayerItem::Use(int Value)
 	if(!pPlayer || !pPlayer->IsAuthed())
 		return false;
 
-	const int ClientID = pPlayer->GetCID();
-
 	// survial capsule experience
 	if(m_ID == itCapsuleSurvivalExperience && Remove(Value))
 	{
 		int Getting = randomRangecount(10, 50, Value);
-		GS()->Chat(-1, "'{}' used '{} x{}' and got '{} survival experience'.", GS()->Server()->ClientName(ClientID), Info()->GetName(), Value, Getting);
+		GS()->Chat(-1, "'{}' used '{} x{}' and got '{} survival experience'.", GS()->Server()->ClientName(m_ClientID), Info()->GetName(), Value, Getting);
 		pPlayer->Account()->AddExperience(Getting);
 		return true;
 	}
@@ -303,7 +301,7 @@ bool CPlayerItem::Use(int Value)
 	if(m_ID == itLittleBagGold && Remove(Value))
 	{
 		int Getting = randomRangecount(10, 50, Value);
-		GS()->Chat(-1, "'{}' used '{} x{}' and got '{} gold'.", GS()->Server()->ClientName(ClientID), Info()->GetName(), Value, Getting);
+		GS()->Chat(-1, "'{}' used '{} x{}' and got '{} gold'.", GS()->Server()->ClientName(m_ClientID), Info()->GetName(), Value, Getting);
 		pPlayer->Account()->AddGold(Getting);
 		return true;
 	}
@@ -324,8 +322,9 @@ bool CPlayerItem::Use(int Value)
 			const auto EffectName = optPotionContext->Effect.c_str();
 
 			pPlayer->m_Effects.Add(EffectName, PotionTime * Server()->TickSpeed());
-			GS()->Chat(ClientID, "You used '{} x{}'.", Info()->GetName(), Value);
+			GS()->Chat(m_ClientID, "You used '{} x{}'.", Info()->GetName(), Value);
 			GS()->EntityManager()->Text(pPlayer->m_ViewPos + vec2(0, -140.0f), 70, EffectName);
+			GS()->CreatePlayerSound(m_ClientID, SOUND_GAME_POTION_START);
 
 			// Update the recast time based on potion type
 			auto& recastTick = (Type == ItemType::EquipPotionHeal) ? pPlayer->m_aPlayerTick[HealPotionRecast] : pPlayer->m_aPlayerTick[ManaPotionRecast];

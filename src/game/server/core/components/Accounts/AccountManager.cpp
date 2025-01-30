@@ -562,6 +562,7 @@ bool CAccountManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, co
 			const auto nowValue = pProfession->GetAttributeValue(AttributeID);
 			const auto pProfessionName = GetProfessionName(ProfessionID);
 			GS()->Chat(ClientID, "[{}] Attribute '{}' enhanced to '{}p'!", pProfessionName, pAttributeInfo->GetName(), nowValue);
+			GS()->CreatePlayerSound(ClientID, SOUND_VOTE_UPGRADE);
 			pPlayer->m_VotesData.UpdateCurrentVotes();
 		}
 
@@ -584,6 +585,7 @@ bool CAccountManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, co
 		pPlayer->m_VotesData.ResetExtraID();
 		pPlayer->m_VotesData.UpdateCurrentVotes();
 		Core()->SaveAccount(pPlayer, SAVE_PROFESSION);
+		GS()->CreateSound(pPlayer->m_ViewPos, SOUND_CHANGE_CLASS);
 		return true;
 	}
 

@@ -828,6 +828,7 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int 
 			return true;
 		}
 
+		GS()->CreatePlayerSound(ClientID, SOUND_VOTE_UPGRADE);
 		GS()->UpdateVotesIfForAll(MENU_GUILD_UPGRADES);
 		return true;
 	}

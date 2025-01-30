@@ -85,6 +85,7 @@ bool CWarehouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
 	if(PPSTR(pCmd, "REPAIR_ITEMS") == 0)
 	{
 		Core()->InventoryManager()->RepairDurabilityItems(pPlayer);
+		GS()->CreateSound(pPlayer->m_ViewPos, SOUND_VOTE_WAREHOUSE_REPAIR_ITEMS);
 		GS()->Chat(ClientID, "All items have been repaired.");
 		return true;
 	}
@@ -103,6 +104,7 @@ bool CWarehouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
 		// buy item
 		if(BuyItem(pPlayer, pWarehouse, TradeID))
 		{
+			GS()->CreateSound(pPlayer->m_ViewPos, SOUND_VOTE_WAREHOUSE_BUY);
 			pPlayer->m_VotesData.UpdateCurrentVotes();
 		}
 
@@ -123,6 +125,7 @@ bool CWarehouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
 		// sell item
 		if(SellItem(pPlayer, pWarehouse, TradeID, ReasonNumber))
 		{
+			GS()->CreateSound(pPlayer->m_ViewPos, SOUND_VOTE_WAREHOUSE_SELL);
 			pPlayer->m_VotesData.UpdateCurrentVotes();
 		}
 
@@ -158,6 +161,7 @@ bool CWarehouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
 			pWarehouse->Storage().Add(Value);
 			pPlayer->Account()->AddGold(Value);
 			GS()->Chat(ClientID, "You loaded '{} products'. Got '{$} gold'.", Value, Value);
+			GS()->CreateSound(pPlayer->m_ViewPos, SOUND_VOTE_WAREHOUSE_PRODUCT_LOAD);
 			pPlayer->m_VotesData.UpdateCurrentVotes();
 		}
 
@@ -200,6 +204,7 @@ bool CWarehouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
 		{
 			pProducts->Add(FinalValue);
 			GS()->Chat(ClientID, "You unloaded '{} products'.", FinalValue);
+			GS()->CreateSound(pPlayer->m_ViewPos, SOUND_VOTE_WAREHOUSE_PRODUCT_UNLOAD);
 			pPlayer->m_VotesData.UpdateCurrentVotes();
 		}
 
@@ -433,8 +438,8 @@ bool CWarehouseManager::BuyItem(CPlayer* pPlayer, CWarehouse* pWarehouse, int Tr
 
 		// add items
 		pPlayerItem->Add(pItem->GetValue(), 0, pItem->GetEnchant());
-		GS()->Chat(ClientID, "You exchanged '{} x{$}' for '{} x{}'.", pCurrency->GetName(), pTrade->GetPrice(), pItem->Info()->GetName(), pItem->GetValue());
-		GS()->CreatePlayerSound(ClientID, SOUND_SELL_BUY);
+		GS()->Chat(ClientID, "You exchanged '{} x{$}' for '{} x{}'.",
+			pCurrency->GetName(), pTrade->GetPrice(), pItem->Info()->GetName(), pItem->GetValue());
 		return true;
 	}
 

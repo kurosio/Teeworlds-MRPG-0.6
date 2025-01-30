@@ -99,6 +99,7 @@ void CCraftManager::CraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const
 	}
 
 	// update achievement and votes
+	GS()->CreateSound(pPlayer->m_ViewPos, SOUND_VOTE_CRAFT);
 	pPlayer->UpdateAchievement(AchievementType::CraftItem, pCraft->GetID(), craftedItemCount, PROGRESS_ACCUMULATE);
 	pPlayer->m_VotesData.UpdateCurrentVotes();
 }
@@ -240,7 +241,7 @@ void CCraftManager::ShowCraftList(CPlayer* pPlayer, ItemGroup Group) const
 		// set title name by enchant type (or stack item, or only once)
 		if(!pCraftItemInfo->IsStackable())
 		{
-			VCraftList.AddMenu(MENU_CRAFTING_SELECT, ID, "{}{} - {} gold", 
+			VCraftList.AddMenu(MENU_CRAFTING_SELECT, ID, "{}{} - {} gold",
 				(pPlayer->GetItem(ItemID)->GetValue() ? "✔ " : "\0"), pCraftItemInfo->GetName(), Price);
 		}
 		else

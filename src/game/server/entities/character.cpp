@@ -343,6 +343,7 @@ bool CCharacter::FireHammer(vec2 Direction, vec2 ProjStartPos)
 		// move and visual effect
 		m_Core.m_Vel += Direction * 2.5f;
 		GS()->CreateExplosion(m_Pos, m_ClientID, WEAPON_HAMMER, 0);
+		GS()->CreateSound(m_Pos, SOUND_WEAPONS_HAMMER_BLAST_START);
 	}
 
 	// default hammer
@@ -392,7 +393,7 @@ bool CCharacter::FireGun(vec2 Direction, vec2 ProjStartPos)
 	if(EquippedItem == itGunPulse)
 	{
 		new CLaser(GameWorld(), m_ClientID, 0, m_Pos, Direction, 400.f, true);
-		GS()->CreateSound(m_Pos, SOUND_GUN_FIRE);
+		GS()->CreateSound(m_Pos, SOUND_WEAPONS_GUN_PULSE_START);
 		return true;
 	}
 
@@ -487,7 +488,6 @@ bool CCharacter::FireRifle(vec2 Direction, vec2 ProjStartPos)
 	{
 		const auto LifeTime = 5 * Server()->TickSpeed();
 		new CEntityRifleWallPusher(&GS()->m_World, m_ClientID, ProjStartPos, Direction, LifeTime);
-		GS()->CreateSound(m_Pos, SOUND_LASER_FIRE);
 		return true;
 	}
 
@@ -495,7 +495,6 @@ bool CCharacter::FireRifle(vec2 Direction, vec2 ProjStartPos)
 	if(EquippedItem == itRifleMagneticPulse)
 	{
 		new CEntityRifleMagneticPulse(&GS()->m_World, m_ClientID, 128.f, ProjStartPos, Direction);
-		GS()->CreateSound(m_Pos, SOUND_LASER_FIRE);
 		return true;
 	}
 
@@ -503,7 +502,7 @@ bool CCharacter::FireRifle(vec2 Direction, vec2 ProjStartPos)
 	if(EquippedItem == itRifleTrackedPlazma)
 	{
 		new CEntityRifleTrackedPlazma(&GS()->m_World, m_ClientID, ProjStartPos, Direction);
-		GS()->CreateSound(m_Pos, SOUND_LASER_FIRE);
+		GS()->CreateSound(m_Pos, SOUND_WEAPONS_TRACKED_PLAZMA_START);
 		return true;
 	}
 
