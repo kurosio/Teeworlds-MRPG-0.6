@@ -45,7 +45,16 @@ void CSkill::SelectNextControlEmote()
 	if(!pPlayer)
 		return;
 
-	m_SelectedEmoticion = (m_SelectedEmoticion + 1) % (NUM_EMOTICONS + 1) - 1;
+	if(m_SelectedEmoticion == -1)
+		m_SelectedEmoticion = 0;
+	else
+	{
+		if(m_SelectedEmoticion == NUM_EMOTICONS)
+			m_SelectedEmoticion = -1;
+		else
+			m_SelectedEmoticion++;
+	}
+
 	Database->Execute<DB::UPDATE>("tw_accounts_skills", "UsedByEmoticon = '{}' WHERE SkillID = '{}' AND UserID = '{}'",
 		m_SelectedEmoticion, m_ID, pPlayer->Account()->GetID());
 }
