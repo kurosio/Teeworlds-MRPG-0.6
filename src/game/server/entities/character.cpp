@@ -1416,9 +1416,11 @@ bool CCharacter::HandleHammerActions(vec2 Direction, vec2 ProjStartPos)
 	}
 
 	// gathering items
-	if(auto* pEntJobItem = (CEntityGatheringNode*)GameWorld()->ClosestEntity(m_Pos, 14.f, CGameWorld::ENTTYPE_GATHERING_NODE, nullptr))
+	auto vGatheringItems = GameWorld()->FindEntities(m_Core.m_Pos, 16.f, 32, CGameWorld::ENTTYPE_GATHERING_NODE);
+	for(auto* pItem : vGatheringItems)
 	{
-		if(pEntJobItem->TakeDamage(m_pPlayer))
+		auto* pGatheringItem = dynamic_cast<CEntityGatheringNode*>(pItem);
+		if(pGatheringItem && pGatheringItem->TakeDamage(m_pPlayer))
 		{
 			m_ReloadTimer = Server()->TickSpeed() / 3;
 			return true;

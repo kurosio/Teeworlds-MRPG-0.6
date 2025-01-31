@@ -33,7 +33,8 @@ void CProfession::Init(int ClientID, const std::optional<std::string>& jsonData)
 	{
 		const auto Data = GetPreparedJsonString();
 		const auto AccountID = GetPlayer()->Account()->GetID();
-		Database->Execute<DB::INSERT>("tw_accounts_professions", "(UserID, ProfessionID, Data) VALUES ('{}', '{}', '{}')", AccountID, (int)m_ProfessionID, Data);
+		Database->Execute<DB::INSERT>("tw_accounts_professions", "(UserID, ProfessionID, Data) VALUES ('{}', '{}', '{}')",
+			AccountID, (int)m_ProfessionID, Data);
 		return;
 	}
 
@@ -56,7 +57,8 @@ void CProfession::Save()
 	const auto* pPlayer = GetPlayer();
 	const auto Data = GetPreparedJsonString();
 	const auto AccountID = pPlayer->Account()->GetID();
-	Database->Execute<DB::UPDATE>("tw_accounts_professions", "Data = '{}' WHERE ProfessionID = '{}' AND UserID = '{}'", Data, (int)m_ProfessionID, AccountID);
+	Database->Execute<DB::UPDATE>("tw_accounts_professions", "Data = '{}' WHERE ProfessionID = '{}' AND UserID = '{}'",
+		Data, (int)m_ProfessionID, AccountID);
 }
 
 void CProfession::AddExperience(uint64_t Experience)
