@@ -55,9 +55,9 @@ constexpr std::string fmt_digit(T Value)
 	}
 
 	// prepare digit
-	if(conversionString.length() > (num + 1))
+	if(conversionString.length() > num)
 	{
-		for(size_t i = conversionString.length() - num; i > 0 && i > num; i -= num)
+		for(int i = (int)conversionString.length() - num; i > 0; i -= num)
 		{
 			conversionString.insert(i, 1, separator);
 		}
