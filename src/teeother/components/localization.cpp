@@ -1,6 +1,7 @@
 #include "localization.h"
 
 #include <engine/shared/linereader.h>
+#include <regex>
 
 constexpr auto g_pMotherLanguageFile = "en";
 
@@ -303,15 +304,18 @@ void CLocalization::CLanguage::CUpdater::Finish()
 
 	// save file
 	std::string Data;
-	for (const auto& p : m_vElements)
+	for(const auto& p : m_vElements)
 	{
 		if(!p.m_Hash.empty())
 		{
 			Data += "$" + p.m_Hash + "\n";
 		}
-		Data += p.m_Text + "\n";
-		Data += "== " + p.m_Result;
-		Data += "\n\n";
+
+		std::string EscapedText = std::regex_replace(p.m_Text, std::regex("\n"), "\\n");
+		std::string EscapedResult = std::regex_replace(p.m_Result, std::regex("\n"), "\\n");
+
+		Data += EscapedText + "\n";
+		Data += "== " + EscapedResult + "\n\n";
 	}
 
 	// clear data
