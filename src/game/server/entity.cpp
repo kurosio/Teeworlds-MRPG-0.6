@@ -73,8 +73,8 @@ bool CEntity::IsValidSnappingState(int SnappingClient) const
 	// prepare got snap state
 	if(m_ClientID >= 0 && m_ClientID < MAX_CLIENTS)
 	{
-		CPlayer* pPlayer = GS()->GetPlayer(m_ClientID);
-		if(pPlayer->IsActiveForClient(SnappingClient) < m_NextCheckSnappingPriority)
+		auto* pPlayer = GS()->GetPlayer(m_ClientID);
+		if(pPlayer && pPlayer->IsActiveForClient(SnappingClient) < m_NextCheckSnappingPriority)
 			return false;
 	}
 
