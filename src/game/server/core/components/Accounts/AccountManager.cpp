@@ -298,6 +298,14 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		VInfo.Add("In group: {}", pAccount->HasGroup() ? "yes" : "no");
 		VoteWrapper::AddEmptyline(ClientID);
 
+		// Ranking information
+		VoteWrapper VRating(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "Rating information");
+		VRating.Add("Rating: {}({})", pAccount->GetRatingSystem().GetRating(), pAccount->GetRatingSystem().GetRankName());
+		VRating.Add("Played: {}", pAccount->GetRatingSystem().GetPlayed());
+		VRating.Add("Win: {} / Losses: {}", pAccount->GetRatingSystem().GetWins(), pAccount->GetRatingSystem().GetLosses());
+		VRating.Add("Win rate: {~.2}%", pAccount->GetRatingSystem().GetWinRate());
+		VoteWrapper::AddEmptyline(ClientID);
+
 		auto addLevelingInfo = [&](VoteWrapper& Wrapper, const CProfession* pProfession, const std::string& name)
 		{
 			const auto expNeed = pProfession->GetExpForNextLevel();

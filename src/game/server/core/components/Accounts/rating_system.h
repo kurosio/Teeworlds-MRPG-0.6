@@ -7,7 +7,9 @@ class RatingSystem
 {
 private:
 	int m_Rating {};
-	int m_Played {};
+	int64_t m_Wins {};
+	int64_t m_Losses {};
+	int64_t m_Played {};
 	std::vector<int> m_vHistory {};
 	CAccountData* m_pAccount {};
 	std::string m_FileName {};
@@ -21,8 +23,9 @@ public:
 
 	int GetRating() const { return m_Rating; }
 	int GetPlayed() const  { return m_Played; }
-	int GetWins() const { return std::count(m_vHistory.begin(), m_vHistory.end(), 1); }
-	int GetLosses() const { return std::count(m_vHistory.begin(), m_vHistory.end(), 0); }
+	int GetWins() const { return m_Wins; }
+	int GetLosses() const { return m_Losses; }
+	double GetWinRate() const;
 	std::string GetRankName() const;
 
 	void Create();
