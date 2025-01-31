@@ -28,6 +28,7 @@ void CMobAI::OnSpawn()
 	{
 		EnableBotIndicator(POWERUP_WEAPON, WEAPON_HAMMER);
 		GS()->ChatWorld(m_pMobInfo->m_WorldID, nullptr, "In your zone emerging {}!", m_pMobInfo->GetName());
+		GS()->CreatePlayerSound(-1, SOUND_BOSS_RESPAWN);
 	}
 }
 

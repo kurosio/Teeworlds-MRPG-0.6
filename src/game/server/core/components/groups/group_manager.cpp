@@ -226,6 +226,8 @@ bool CGroupManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 						pGroup->Add(pPlayer->Account()->GetID());
 						pGS->Chat(ClientID, "You've accepted the invitation!");
 						pGS->Chat(InvitedCID, "'{}' accepted your invitation!", pGS->Server()->ClientName(ClientID));
+						pGS->CreatePlayerSound(ClientID, SOUND_GUILD_GROUP_ACCEPT);
+						pGS->CreatePlayerSound(InvitedCID, SOUND_GUILD_GROUP_ACCEPT);
 					}
 					else
 					{

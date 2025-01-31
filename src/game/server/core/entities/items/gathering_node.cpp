@@ -63,6 +63,7 @@ bool CEntityGatheringNode::TakeDamage(CPlayer* pPlayer)
 
 	// initialize profession details
 	const auto ClientID = pPlayer->GetCID();
+	int SoundId = -1;
 	auto EquipID = ItemType::Unknown;
 	auto AttributeID = AttributeIdentifier::Unknown;
 	CProfession* pProfession = nullptr;
@@ -73,11 +74,13 @@ bool CEntityGatheringNode::TakeDamage(CPlayer* pPlayer)
 			EquipID = ItemType::EquipPickaxe;
 			AttributeID = AttributeIdentifier::Efficiency;
 			pProfession = pPlayer->Account()->GetProfession(ProfessionIdentifier::Miner);
+			SoundId = SOUND_GAME_MINER;
 			break;
 		case GATHERING_NODE_PLANT:
 			EquipID = ItemType::EquipRake;
 			AttributeID = AttributeIdentifier::Extraction;
 			pProfession = pPlayer->Account()->GetProfession(ProfessionIdentifier::Farmer);
+			SoundId = SOUND_GAME_FARMER;
 			break;
 		default:
 			return false;
@@ -97,7 +100,7 @@ bool CEntityGatheringNode::TakeDamage(CPlayer* pPlayer)
 	// damage
 	int Damage = maximum(1, pPlayer->GetTotalAttributeValue(AttributeID));
 	m_CurrentHealth -= Damage;
-	GS()->CreateSound(m_Pos, 20, CmaskOne(ClientID));
+	GS()->CreateSound(m_Pos, SoundId);
 
 	// working
 	const auto optEquippedItemID = pPlayer->GetEquippedItemID(EquipID);
@@ -141,7 +144,7 @@ void CEntityGatheringNode::Die(CPlayer* pPlayer, CProfession* pProfession)
 
 	// create design drop pickup
 	const auto DesignPos = vec2(m_Pos.x, m_Pos.y - 24.f);
-	GS()->EntityManager()->DesignRandomDrop(2 + rand() % 2, 8.0f, DesignPos, Server()->TickSpeed(), POWERUP_HEALTH, 0, CmaskOne(pPlayer->GetCID()));
+	GS()->EntityManager()->DesignRandomDrop(2 + rand() % 2, 8.0f, DesignPos, Server()->TickSpeed(), GetPickupType(), 0, CmaskOne(pPlayer->GetCID()));
 }
 
 int CEntityGatheringNode::GetPickupType() const

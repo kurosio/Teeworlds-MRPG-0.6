@@ -47,21 +47,22 @@ void CDropQuestItem::Tick()
 	m_Flash.Tick(m_LifeSpan);
 	GS()->Collision()->MovePhysicalAngleBox(&m_Pos, &m_Vel, vec2(m_Radius, m_Radius), &m_Angle, &m_AngleForce, 0.5f);
 
-	CPlayerItem* pItem = pPlayer->GetItem(m_ItemID);
-	const CPlayerQuest* pQuest = pPlayer->GetQuest(m_QuestID);
-	if(pQuest->GetState() != QuestState::Accepted || pQuest->GetStepPos() != m_Step || pItem->GetValue() >= m_Needed)
+	// check quest valid and item value
+	auto* pPlayerItem = pPlayer->GetItem(m_ItemID);
+	const auto* pQuest = pPlayer->GetQuest(m_QuestID);
+	if(pQuest->GetState() != QuestState::Accepted || pQuest->GetStepPos() != m_Step || pPlayerItem->GetValue() >= m_Needed)
 	{
 		GameWorld()->DestroyEntity(this);
 		return;
 	}
 
 	// pickup
-	if (pPlayer->GetCharacter() && distance(m_Pos, pPlayer->GetCharacter()->m_Core.m_Pos) < 32.0f)
+	if(pPlayer->GetCharacter() && distance(m_Pos, pPlayer->GetCharacter()->m_Core.m_Pos) < 32.0f)
 	{
 		if(Server()->Input()->IsKeyClicked(m_ClientID, KEY_EVENT_FIRE_HAMMER))
 		{
-			pItem->Add(1);
-			GS()->Chat(m_ClientID, "You got '{}'.", pItem->Info()->GetName());
+			pPlayerItem->Add(1);
+			GS()->Chat(m_ClientID, "You got '{}'.", pPlayerItem->Info()->GetName());
 			GameWorld()->DestroyEntity(this);
 			return;
 		}
@@ -76,33 +77,17 @@ void CDropQuestItem::Snap(int SnappingClient)
 	if(m_Flash.IsFlashing() || m_ClientID != SnappingClient || NetworkClipped(SnappingClient))
 		return;
 
-	// vanilla box
-	CNetObj_Projectile* pProj = static_cast<CNetObj_Projectile*>(Server()->SnapNewItem(NETOBJTYPE_PROJECTILE, GetID(), sizeof(CNetObj_Projectile)));
-	if (pProj)
-	{
-		pProj->m_X = (int)m_Pos.x;
-		pProj->m_Y = (int)m_Pos.y;
-		pProj->m_VelX = 0;
-		pProj->m_VelY = 0;
-		pProj->m_StartTick = Server()->Tick();
-		pProj->m_Type = WEAPON_HAMMER;
-	}
+	// body
+	GS()->SnapProjectile(SnappingClient, GetID(), m_Pos, {}, Server()->Tick(), WEAPON_HAMMER, m_ClientID);
 
+	// parts
 	static const float Radius = 16.0f;
 	const float AngleStep = 2.0f * pi / (float)CDropQuestItem::NUM_IDS;
 	const float AngleStart = (pi / (float)CDropQuestItem::NUM_IDS) + (2.0f * pi * m_Angle);
 	for(int i = 0; i < CDropQuestItem::NUM_IDS; i++)
 	{
-		CNetObj_Laser *pRifleObj = static_cast<CNetObj_Laser *>(Server()->SnapNewItem(NETOBJTYPE_LASER, m_IDs[i], sizeof(CNetObj_Laser)));
-		if(!pRifleObj)
-			return;
-
-		vec2 Pos = m_Pos + vec2(Radius * cos(AngleStart + AngleStep * i), Radius * sin(AngleStart + AngleStep * i));
-		vec2 PosTo = m_Pos + vec2(Radius * cos(AngleStart + AngleStep * (i+1)), Radius * sin(AngleStart + AngleStep * (i+1)));
-		pRifleObj->m_X = (int)Pos.x;
-		pRifleObj->m_Y = (int)Pos.y;
-		pRifleObj->m_FromX = (int)PosTo.x;
-		pRifleObj->m_FromY = (int)PosTo.y;
-		pRifleObj->m_StartTick = Server()->Tick() - 4;
+		const auto FinalPos = m_Pos + vec2(Radius * cos(AngleStart + AngleStep * i), Radius * sin(AngleStart + AngleStep * i));
+		const auto FinalPosTo = m_Pos + vec2(Radius * cos(AngleStart + AngleStep * (i+1)), Radius * sin(AngleStart + AngleStep * (i+1)));
+		GS()->SnapLaser(SnappingClient, m_IDs[i], FinalPosTo, FinalPos, Server()->Tick() - 4);
 	}
 }

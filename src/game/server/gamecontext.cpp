@@ -273,7 +273,7 @@ void CGS::CreatePlayerSound(int ClientID, int Sound)
 	{
 		CNetMsg_Sv_MapSoundGlobal Msg;
 		Msg.m_SoundId = Sound - NUM_SOUNDS;
-		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID);
+		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID, -1, m_WorldID);
 	}
 	else if(Sound >= 0)
 	{

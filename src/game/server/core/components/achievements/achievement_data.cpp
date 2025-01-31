@@ -99,8 +99,8 @@ bool CAchievement::UpdateProgress(int Criteria, int Progress, int ProgressType)
 	if(m_pInfo->IsCompleted(Criteria, this))
 	{
 		GS()->CreateHammerHit(pPlayer->m_ViewPos);
-		GS()->CreatePlayerSound(m_ClientID, SOUND_CTF_CAPTURE);
 		GS()->Chat(m_ClientID, "'{}' has completed the achievement '{}'!", Server()->ClientName(m_ClientID), m_pInfo->GetName());
+		GS()->CreatePlayerSound(m_ClientID, SOUND_GAME_DONE);
 
 		m_Completed = true;
 		RewardPlayer();

@@ -121,7 +121,7 @@ bool CSkill::Use()
 			GS()->CreateDeath(pSearch->GetCharacter()->GetPos(), i);
 		}
 
-		GS()->CreateSound(PlayerPosition, SOUND_CTF_GRAB_PL);
+		GS()->CreateSound(PlayerPosition, SOUND_SKILL_START);
 		return true;
 	}
 
@@ -162,6 +162,7 @@ bool CSkill::Use()
 			GS()->CreateSound(PlayerPosition, SOUND_CTF_GRAB_PL);
 		}
 
+		GS()->CreateSound(PlayerPosition, SOUND_SKILL_START);
 		GS()->EntityManager()->Text(PlayerPosition + vec2(0, -96), 40, "RECOVERY AMMO");
 		return true;
 	}
@@ -224,6 +225,7 @@ bool CSkill::Use()
 		const auto UpgradedValue = minimum(200.f + GetBonus(), 400.f);
 		GS()->EntityManager()->GravityDisruption(ClientID, PlayerPosition, UpgradedValue, 10 * Server()->TickSpeed(),
 			ManaCost, &pEntSkillPtr);
+		GS()->CreateSound(PlayerPosition, SOUND_SKILL_START);
 		return true;
 	}
 
@@ -231,6 +233,7 @@ bool CSkill::Use()
 	{
 		const auto UpgradeValue = (10 + GetBonus()) * Server()->TickSpeed();
 		GS()->EntityManager()->HealthTurret(ClientID, PlayerPosition, ManaCost, UpgradeValue, 2 * Server()->TickSpeed(), &pEntSkillPtr);
+		GS()->CreateSound(PlayerPosition, SOUND_SKILL_START);
 		return true;
 	}
 
@@ -238,6 +241,7 @@ bool CSkill::Use()
 	{
 		const auto ManaPerSeconds = translate_to_percent_rest(ManaCost, maximum(30 - GetBonus(), 15));
 		GS()->EntityManager()->LastStand(ClientID, PlayerPosition, 96.f, ManaPerSeconds, &pEntSkillPtr);
+		GS()->CreateSound(PlayerPosition, SOUND_SKILL_START);
 		return true;
 	}
 
@@ -245,6 +249,7 @@ bool CSkill::Use()
 	{
 		const auto Shots = 1 + GetBonus();
 		GS()->EntityManager()->Bow(ClientID, 1, Shots, 180.f, 8, &pEntSkillPtr);
+		GS()->CreateSound(PlayerPosition, SOUND_SKILL_START);
 		return true;
 	}
 
@@ -252,6 +257,7 @@ bool CSkill::Use()
 	{
 		const auto UpgradedValue = minimum(320.f + GetBonus(), 400.f);
 		GS()->EntityManager()->HealingAura(ClientID, PlayerPosition, UpgradedValue, 10 * Server()->TickSpeed(), ManaCost);
+		GS()->CreateSound(PlayerPosition, SOUND_SKILL_START);
 		return true;
 	}
 
@@ -259,6 +265,7 @@ bool CSkill::Use()
 	{
 		const auto UpgradedValue = minimum(200.f + GetBonus(), 320.f);
 		GS()->EntityManager()->FlameWall(ClientID, PlayerPosition, UpgradedValue, 10 * Server()->TickSpeed(), 1, 0.3f);
+		GS()->CreateSound(PlayerPosition, SOUND_SKILL_START);
 		return true;
 	}
 

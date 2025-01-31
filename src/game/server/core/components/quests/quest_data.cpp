@@ -68,7 +68,7 @@ CPlayerQuest::~CPlayerQuest()
 
 bool CPlayerQuest::HasUnfinishedObjectives() const
 {
-	return std::ranges::any_of(m_vObjectives, [](const std::shared_ptr<CQuestStep>& pPtr) 
+	return std::ranges::any_of(m_vObjectives, [](const std::shared_ptr<CQuestStep>& pPtr)
 	{
 		return !pPtr->m_StepComplete && pPtr->m_Bot.m_HasAction;
 	});
@@ -105,7 +105,7 @@ bool CPlayerQuest::Accept()
 
 	// accepted effects
 	GS()->Broadcast(m_ClientID, BroadcastPriority::TitleInformation, 100, "Quest Accepted");
-	GS()->CreatePlayerSound(m_ClientID, SOUND_CTF_GRAB_EN);
+	GS()->CreatePlayerSound(m_ClientID, SOUND_GAME_ACCEPT);
 	return true;
 }
 
@@ -164,14 +164,14 @@ void CPlayerQuest::UpdateStepProgress()
 		Update();
 		return;
 	}
-	
+
 	// apply reward for player
 	Info()->Reward().ApplyReward(pPlayer);
 
 	// completion effects
 	GS()->Broadcast(m_ClientID, BroadcastPriority::TitleInformation, 100, "Quest Complete");
 	GS()->EntityManager()->Text(pPlayer->m_ViewPos + vec2(0, -70), 30, "QUEST COMPLETE");
-	GS()->CreatePlayerSound(m_ClientID, SOUND_CTF_CAPTURE);
+	GS()->CreatePlayerSound(m_ClientID, SOUND_GAME_DONE);
 
 	// handle quest by flags
 	if(Info()->HasFlag(QUEST_FLAG_TYPE_REPEATABLE))
@@ -229,7 +229,7 @@ void CPlayerQuest::Update()
 
 CQuestStep* CPlayerQuest::GetStepByMob(int MobID)
 {
-	const auto iter = std::ranges::find_if(m_vObjectives, [MobID](const std::shared_ptr<CQuestStep>& Step) 
+	const auto iter = std::ranges::find_if(m_vObjectives, [MobID](const std::shared_ptr<CQuestStep>& Step)
 	{
 		return Step->m_Bot.m_ID == MobID;
 	});

@@ -104,7 +104,6 @@ public:
 	CDPSProfession() : CProfession(ProfessionIdentifier::Dps, PROFESSION_TYPE_WAR)
 	{
 		m_Attributes[AttributeIdentifier::Crit] = 0;
-		m_Attributes[AttributeIdentifier::CritDMG] = 0;
 		m_Attributes[AttributeIdentifier::AttackSPD] = 0;
 	}
 };

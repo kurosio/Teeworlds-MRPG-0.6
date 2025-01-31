@@ -5,10 +5,14 @@
 #include <game/server/gamecontext.h>
 
 CEntityDropBonuses::CEntityDropBonuses(CGameWorld *pGameWorld, vec2 Pos, vec2 Vel, int Type, int Subtype, int Value)
-: CEntity(pGameWorld, CGameWorld::ENTTYPE_BONUS_DROP, Pos, 24), m_Vel(Vel), m_Type(Type), m_Subtype(Subtype)
+: CEntity(pGameWorld, CGameWorld::ENTTYPE_BONUS_DROP, Pos, 16.f)
 {
+	m_Vel = Vel;
+	m_Type = Type;
+	m_Subtype = Subtype;
 	m_Value = Value;
 	m_LifeSpan = Server()->TickSpeed() * 15;
+
 	GameWorld()->InsertEntity(this);
 }
 
@@ -26,7 +30,7 @@ void CEntityDropBonuses::Tick()
 	GS()->Collision()->MovePhysicalBox(&m_Pos, &m_Vel, vec2(m_Radius, m_Radius), 0.5f);
 
 	// interactive
-	CCharacter *pChar = (CCharacter*)GameWorld()->ClosestEntity(m_Pos, 16.0f, CGameWorld::ENTTYPE_CHARACTER, nullptr);
+	auto *pChar = (CCharacter*)GameWorld()->ClosestEntity(m_Pos, m_Radius, CGameWorld::ENTTYPE_CHARACTER, nullptr);
 	if(pChar && !pChar->GetPlayer()->IsBot())
 	{
 		// health
@@ -74,12 +78,5 @@ void CEntityDropBonuses::Snap(int SnappingClient)
 	if(m_Flash.IsFlashing() || NetworkClipped(SnappingClient))
 		return;
 
-	CNetObj_Pickup *pP = static_cast<CNetObj_Pickup *>(Server()->SnapNewItem(NETOBJTYPE_PICKUP, GetID(), sizeof(CNetObj_Pickup)));
-	if(!pP)
-		return;
-
-	pP->m_X = (int)m_Pos.x;
-	pP->m_Y = (int)m_Pos.y;
-	pP->m_Type = m_Type;
-	pP->m_Subtype = m_Subtype;
+	GS()->SnapPickup(SnappingClient, GetID(), m_Pos, m_Type, m_Subtype);
 }

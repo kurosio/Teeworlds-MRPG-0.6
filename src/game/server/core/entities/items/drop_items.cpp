@@ -11,22 +11,22 @@ CDropItem::CDropItem(CGameWorld *pGameWorld, vec2 Pos, vec2 Vel, float AngleForc
 {
 	m_Pos = Pos;
 	m_Vel = Vel;
-	m_LifeSpan = Server()->TickSpeed() * g_Config.m_SvDroppedItemLifetime;
-
 	m_OwnerID = OwnerID;
 	m_DropItem = DropItem;
 	m_DropItem.SetSettings(0);
+	m_LifeSpan = Server()->TickSpeed() * g_Config.m_SvDroppedItemLifetime;
+
 	GameWorld()->InsertEntity(this);
 }
 
 bool CDropItem::TakeItem(int ClientID)
 {
-	CPlayer *pPlayer = GS()->GetPlayer(ClientID, true, true);
+	auto *pPlayer = GS()->GetPlayer(ClientID, true, true);
 	if(!pPlayer || (m_OwnerID >= 0 && m_OwnerID != ClientID))
 		return false;
 
 	// change of enchanted objects
-	CPlayerItem* pPlayerItem = pPlayer->GetItem(m_DropItem.GetID());
+	auto* pPlayerItem = pPlayer->GetItem(m_DropItem.GetID());
 	if(pPlayerItem->GetValue() > 0 && !pPlayerItem->Info()->IsStackable())
 	{
 		bool LastEquipped = pPlayerItem->IsEquipped();
@@ -52,7 +52,6 @@ bool CDropItem::TakeItem(int ClientID)
 
 void CDropItem::Tick()
 {
-	// lifetime dk
 	m_LifeSpan--;
 	if(m_LifeSpan < 0)
 	{
@@ -69,11 +68,11 @@ void CDropItem::Tick()
 		m_OwnerID = -1;
 
 	// information
-	CCharacter *pChar = (CCharacter*)GameWorld()->ClosestEntity(m_Pos, 64.0f, CGameWorld::ENTTYPE_CHARACTER, nullptr);
+	auto *pChar = (CCharacter*)GameWorld()->ClosestEntity(m_Pos, 64.0f, CGameWorld::ENTTYPE_CHARACTER, nullptr);
 	if(pChar && !pChar->GetPlayer()->IsBot())
 	{
 		const int ClientID = pChar->GetPlayer()->GetCID();
-		const CPlayerItem* pPlayerItem = pChar->GetPlayer()->GetItem(m_DropItem.GetID());
+		const auto* pPlayerItem = pChar->GetPlayer()->GetItem(m_DropItem.GetID());
 		const char* pOwnerNick = (m_OwnerID != -1 ? Server()->ClientName(m_OwnerID) : "\0");
 
 		if(!pPlayerItem->Info()->IsStackable())
@@ -102,13 +101,5 @@ void CDropItem::Snap(int SnappingClient)
 	if(m_Flash.IsFlashing() || NetworkClipped(SnappingClient))
 		return;
 
-	// vanilla
-	CNetObj_Pickup *pPickup = static_cast<CNetObj_Pickup *>(Server()->SnapNewItem(NETOBJTYPE_PICKUP, GetID(), sizeof(CNetObj_Pickup)));
-	if(pPickup)
-	{
-		pPickup->m_X = (int)m_Pos.x;
-		pPickup->m_Y = (int)m_Pos.y;
-		pPickup->m_Type = POWERUP_WEAPON;
-		pPickup->m_Subtype = WEAPON_HAMMER;
-	}
+	GS()->SnapPickup(SnappingClient, GetID(), m_Pos, POWERUP_WEAPON, WEAPON_HAMMER);
 }

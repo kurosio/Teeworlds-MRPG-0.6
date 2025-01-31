@@ -20,7 +20,7 @@ public:
 	void Tick() override;
 	void Snap(int SnappingClient) override;
 
-	void SetLifetime(int Lifetime) 
+	void SetLifetime(int Lifetime)
 	{
 		m_LifeSpan = Lifetime;
 	};

@@ -460,7 +460,7 @@ bool CCharacter::FireGrenade(vec2 Direction, vec2 ProjStartPos)
 	{
 		new CEntityGrenadePizdamet(&GS()->m_World, m_ClientID, ProjStartPos, Direction);
 		m_ReloadTimer = Server()->TickSpeed() / 8;
-		GS()->CreateSound(m_Pos, SOUND_GRENADE_FIRE);
+		GS()->CreateSound(m_Pos, SOUND_WEAPONS_PIZDAMET_START);
 		return true;
 	}
 

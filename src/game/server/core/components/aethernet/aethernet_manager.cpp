@@ -70,7 +70,7 @@ bool CAethernetManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
 			GS()->Chat(ClientID, "Aether not found.");
 			return true;
 		}
-		
+
 		// Check if the player does not have access to the Aether
 		if(!pPlayer->Account()->IsUnlockedAether(AetherID))
 		{
@@ -82,16 +82,15 @@ bool CAethernetManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
 		const int& Fee = Extra2;
 		if(Fee <= 0 || pPlayer->Account()->SpendCurrency(Fee))
 		{
-			// Check if the player is in a different world than the Aether
 			vec2 Position = pAether->GetPosition();
 			if(!GS()->IsPlayerInWorld(ClientID, pAether->GetWorldID()))
 			{
-				// Set the teleport position in the player's temporary data
+				GS()->CreateSound(Position, SOUND_AETHER_TELEPORT);
 				pPlayer->ChangeWorld(pAether->GetWorldID(), Position);
 			}
 			else
 			{
-				// Change the player's position to the Aether's position
+				GS()->CreateSound(Position, SOUND_AETHER_TELEPORT);
 				pPlayer->GetCharacter()->ChangePosition(Position);
 				pPlayer->m_VotesData.UpdateCurrentVotes();
 			}
