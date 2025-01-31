@@ -581,6 +581,7 @@ bool CAccountManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, co
 		}
 
 		pPlayer->Account()->GetClass().SetProfessionID(ProfessionID);
+		pPlayer->Account()->GetClass().UpdateProfessionSkin();
 		pPlayer->GetCharacter()->UpdateEquippedStats();
 		pPlayer->m_VotesData.ResetExtraID();
 		pPlayer->m_VotesData.UpdateCurrentVotes();

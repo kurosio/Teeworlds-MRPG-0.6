@@ -103,6 +103,7 @@ bool IGameController::OnCharacterSpawn(CCharacter* pChr)
 
 	// eidolons
 	pChr->GetPlayer()->TryCreateEidolon();
+	pChr->GetPlayer()->Account()->GetClass().UpdateProfessionSkin();
 	return true;
 }
 

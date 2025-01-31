@@ -1632,6 +1632,10 @@ void CCharacter::UpdateEquippedStats(std::optional<int> UpdatedItemID)
 			}
 		}
 
+		// check skin costumizer and profession skins
+		if(*UpdatedItemID == itCustomizer)
+			m_pPlayer->Account()->GetClass().UpdateProfessionSkin();
+
 		// update ammo regeneration if applicable
 		const int AmmoRegen = pItemInfo->GetInfoEnchantStats(AttributeIdentifier::AmmoRegen);
 		if(AmmoRegen > 0)

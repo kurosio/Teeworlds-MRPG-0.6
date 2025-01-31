@@ -8,7 +8,6 @@
 void ClassData::SetProfessionID(ProfessionIdentifier ProfID)
 {
 	m_ProfessionID = ProfID;
-	UpdateProfessionSkin();
 }
 
 float ClassData::GetExtraHP() const
