@@ -5,6 +5,75 @@
 
 constexpr auto g_pMotherLanguageFile = "en";
 
+std::string ProcessUnicodeEscapes(const char* input)
+{
+	std::string result;
+	const char* p = input;
+
+	while(*p)
+	{
+		// Check for \uXXXX escape sequence
+		if(*p == '\\' && *(p + 1) == 'u' &&
+			isxdigit(*(p + 2)) && isxdigit(*(p + 3)) &&
+			isxdigit(*(p + 4)) && isxdigit(*(p + 5)))
+		{
+			// Parse unicode escape \uXXXX
+			unsigned int unicode_value;
+			int num_converted = sscanf(p + 2, "%4x", &unicode_value);
+
+			// Check if parsing was successful and the unicode value is valid
+			if(num_converted != 1 || unicode_value > 0x10FFFF)
+			{
+				++p;
+				continue;
+			}
+
+			// convert the Unicode value to UTF-8 and append it to the result string
+			char utf8_char[4];
+			int utf8_length = 0;
+			if(unicode_value <= 0x7F)
+			{
+				utf8_char[0] = static_cast<char>(unicode_value);
+				utf8_length = 1;
+			}
+			else if(unicode_value <= 0x7FF)
+			{
+				utf8_char[0] = static_cast<char>(0xC0 | (unicode_value >> 6));
+				utf8_char[1] = static_cast<char>(0x80 | (unicode_value & 0x3F));
+				utf8_length = 2;
+			}
+			else if(unicode_value <= 0xFFFF)
+			{
+				utf8_char[0] = static_cast<char>(0xE0 | (unicode_value >> 12));
+				utf8_char[1] = static_cast<char>(0x80 | ((unicode_value >> 6) & 0x3F));
+				utf8_char[2] = static_cast<char>(0x80 | (unicode_value & 0x3F));
+				utf8_length = 3;
+			}
+			else if(unicode_value <= 0x10FFFF)
+			{
+				utf8_char[0] = static_cast<char>(0xF0 | (unicode_value >> 18));
+				utf8_char[1] = static_cast<char>(0x80 | ((unicode_value >> 12) & 0x3F));
+				utf8_char[2] = static_cast<char>(0x80 | ((unicode_value >> 6) & 0x3F));
+				utf8_char[3] = static_cast<char>(0x80 | (unicode_value & 0x3F));
+				utf8_length = 4;
+			}
+
+			// append the UTF-8 bytes
+			for(int i = 0; i < utf8_length; ++i)
+				result.push_back(utf8_char[i]);
+
+			p += 6;
+		}
+		else
+		{
+			result.push_back(*p);
+			++p;
+		}
+	}
+
+	return result;
+}
+
 CLocalization::~CLocalization()
 {
 	for(int i = 0; i < m_pLanguages.size(); i++)
@@ -229,7 +298,7 @@ bool CLocalization::CLanguage::CUpdater::Prepare()
 			if(!str_length(pLine) || pLine[0] == '#')
 				continue;
 
-			Temp.m_Text = pLine;
+			Temp.m_Text = ProcessUnicodeEscapes(pLine);
 			continue;
 		}
 
@@ -249,7 +318,7 @@ bool CLocalization::CLanguage::CUpdater::Prepare()
 
 		// initialize element
 		const char* pReplacement = (pLine + 3);
-		Temp.m_Result = pReplacement;
+		Temp.m_Result = ProcessUnicodeEscapes(pReplacement);
 		m_vElements.push_back(Temp);
 
 		// clear tempary data
