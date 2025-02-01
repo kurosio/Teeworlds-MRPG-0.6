@@ -549,7 +549,7 @@ void CQuestStep::CreateEntityQuestAction(int MoveToIndex, std::optional<int> Opt
 	CEntityLaserOrbite* pEntOrbite = nullptr;
 	const auto* pTaskData = &m_Bot.m_vRequiredMoveAction[MoveToIndex];
 
-	if(pTaskData->m_TypeFlags & QuestBotInfo::TaskAction::Types::DEFEAT_MOB)
+	if(pTaskData->m_TypeFlags & QuestBotInfo::TaskAction::Types::TFDEFEAT_MOB)
 	{
 		GS()->EntityManager()->LaserOrbite(pEntOrbite, pAction, (int)(BaseRadius / 50.f),
 			LaserOrbiteType::InsideOrbite, 0.f, pAction->GetRadius(), LASERTYPE_FREEZE, CmaskOne(m_ClientID));

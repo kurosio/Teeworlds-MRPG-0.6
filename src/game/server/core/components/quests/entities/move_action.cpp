@@ -17,7 +17,7 @@ CEntityQuestAction::CEntityQuestAction(CGameWorld* pGameWorld, int ClientID, int
 	if(const auto* pTaskData = GetTaskMoveTo())
 	{
 		m_Pos = pTaskData->m_Position;
-		m_Radius = (pTaskData->m_TypeFlags & QuestBotInfo::TaskAction::Types::DEFEAT_MOB) ? 400.f : 32.f;
+		m_Radius = (pTaskData->m_TypeFlags & QuestBotInfo::TaskAction::Types::TFDEFEAT_MOB) ? 400.f : 32.f;
 	}
 	GameWorld()->InsertEntity(this);
 
@@ -153,7 +153,7 @@ void CEntityQuestAction::TryFinish()
 	const auto* pTaskData = GetTaskMoveTo();
 
 	// required item
-	if(pTaskData->m_TypeFlags & QuestBotInfo::TaskAction::Types::REQUIRED_ITEM && pTaskData->m_RequiredItem.IsValid())
+	if(pTaskData->m_TypeFlags & QuestBotInfo::TaskAction::Types::TFREQUIRED_ITEM && pTaskData->m_RequiredItem.IsValid())
 	{
 		const auto ItemID = pTaskData->m_RequiredItem.GetID();
 		const auto RequiredValue = pTaskData->m_RequiredItem.GetValue();
@@ -166,7 +166,7 @@ void CEntityQuestAction::TryFinish()
 	}
 
 	// pickup item
-	if(pTaskData->m_TypeFlags & QuestBotInfo::TaskAction::Types::PICKUP_ITEM && pTaskData->m_PickupItem.IsValid())
+	if(pTaskData->m_TypeFlags & QuestBotInfo::TaskAction::Types::TFPICKUP_ITEM && pTaskData->m_PickupItem.IsValid())
 	{
 		const auto ItemID = pTaskData->m_PickupItem.GetID();
 		const auto PickupValue = pTaskData->m_PickupItem.GetValue();
@@ -250,38 +250,38 @@ void CEntityQuestAction::HandleTaskType(const QuestBotInfo::TaskAction* pTaskDat
 {
 	const unsigned TypeFlags = pTaskData->m_TypeFlags;
 
-	// defeat type flag
-	if(TypeFlags & QuestBotInfo::TaskAction::Types::DEFEAT_MOB)
+	// move flag
+	if(TypeFlags & QuestBotInfo::TaskAction::Types::TFMOVING)
+	{
+		Handler([] { return true; });
+	}
+	// move press flag
+	else if(TypeFlags & QuestBotInfo::TaskAction::Types::TFMOVING_PRESS)
+	{
+		Handler([this] { return PressedFire(); });
+	}
+	// move follow press flag
+	else if(TypeFlags & QuestBotInfo::TaskAction::Types::TFMOVING_FOLLOW_PRESS)
+	{
+		const auto Position = pTaskData->m_Interaction.m_Position;
+		if(Server()->Tick() % (Server()->TickSpeed() / 3) == 0)
+			GS()->CreateHammerHit(Position, CmaskOne(m_ClientID));
+
+		Handler([this, Position]
+		{
+			return PressedFire() && distance(GetPlayer()->GetCharacter()->GetMousePos(), Position) < 48.f;
+		});
+	}
+	// defeat bot flag
+	else if(TypeFlags & QuestBotInfo::TaskAction::Types::TFDEFEAT_MOB)
 	{
 		Handler([this]
 		{
 			CPlayerBot* pDefeatMobPlayer = GetDefeatPlayerBot();
 			if(!pDefeatMobPlayer)
 				return true;
-			return pDefeatMobPlayer && pDefeatMobPlayer->GetQuestBotMobInfo().m_CompleteClient[m_ClientID];
+			return pDefeatMobPlayer->GetQuestBotMobInfo().m_CompleteClient[m_ClientID];
 		});
-	}
-	// move only type flag
-	else if(TypeFlags & QuestBotInfo::TaskAction::Types::MOVE_ONLY)
-	{
-		Handler([this] { return true; });
-	}
-	// interactive flag
-	else if(TypeFlags & QuestBotInfo::TaskAction::Types::INTERACTIVE)
-	{
-		if(Server()->Tick() % (Server()->TickSpeed() / 3) == 0)
-		{
-			GS()->CreateHammerHit(pTaskData->m_Interaction.m_Position, CmaskOne(m_ClientID));
-		}
-		Handler([this, pTaskData]
-		{
-			return PressedFire() && distance(GetPlayer()->GetCharacter()->GetMousePos(), pTaskData->m_Interaction.m_Position) < 48.f;
-		});
-	}
-	// pickup or required item
-	else if(TypeFlags & (QuestBotInfo::TaskAction::PICKUP_ITEM | QuestBotInfo::TaskAction::REQUIRED_ITEM))
-	{
-		Handler([this] { return PressedFire(); });
 	}
 }
 
@@ -293,7 +293,7 @@ void CEntityQuestAction::HandleBroadcastInformation(const QuestBotInfo::TaskActi
 	const auto Type = pTaskData->m_TypeFlags;
 
 	// skip defeat mob
-	if(Type & QuestBotInfo::TaskAction::Types::DEFEAT_MOB)
+	if(Type & QuestBotInfo::TaskAction::Types::TFDEFEAT_MOB)
 		return;
 
 	// formating
@@ -313,11 +313,11 @@ void CEntityQuestAction::HandleBroadcastInformation(const QuestBotInfo::TaskActi
 	}
 
 	// send broadcast
-	if(Type & QuestBotInfo::TaskAction::Types::INTERACTIVE)
+	if(Type & QuestBotInfo::TaskAction::Types::TFMOVING_FOLLOW_PRESS)
 	{
 		GS()->Broadcast(m_ClientID, BroadcastPriority::MainInformation, 10, "Click the highlighted area with the hammer to interact.\n{}", strBuffer.c_str());
 	}
-	else if(Type & (QuestBotInfo::TaskAction::Types::PICKUP_ITEM | QuestBotInfo::TaskAction::Types::REQUIRED_ITEM))
+	else if(Type & (QuestBotInfo::TaskAction::Types::TFPICKUP_ITEM | QuestBotInfo::TaskAction::Types::TFREQUIRED_ITEM))
 	{
 		GS()->Broadcast(m_ClientID, BroadcastPriority::MainInformation, 10, "Press 'Fire' with the hammer to interact.\n{}", strBuffer.c_str());
 	}

@@ -93,9 +93,10 @@ void QuestBotInfo::InitTasksFromJSON(const std::string& JsonData)
 				const int WorldID = p.value("world_id", m_WorldID);
 				const int Step = p.value("step", 1);
 				const float Cooldown = p.value("cooldown", 0.f);
-				const bool Navigator = p.value("navigator", true);
+				const bool Navigator = p.value("navigator", "true") == "true";
 				const std::string CompletionText = p.value("completion_text", "");
 				const std::string TaskName = p.value("name", "Demands a bit of action");
+				const std::string Mode = p.value("mode", "move");
 
 				// initialize data flags
 				CItem PickUpItem {};
@@ -107,83 +108,45 @@ void QuestBotInfo::InitTasksFromJSON(const std::string& JsonData)
 					// pickup item
 					if(p.contains("pick_up_item"))
 					{
-						// Create a CItem object from the "pick_up_item" json object and assign it to PickUpItem
 						PickUpItem = CItem::FromJSON(p["pick_up_item"]);
-
-						// Set the PICKUP_ITEM flag in the Type variable
-						Type |= TaskAction::Types::PICKUP_ITEM;
+						Type |= TaskAction::Types::TFPICKUP_ITEM;
 					}
 
 					// required item
 					if(p.contains("required_item"))
 					{
-						// Create a CItem object from the "required_item" json object and assign it to RequiredItem
 						RequiredItem = CItem::FromJSON(p["required_item"]);
-
-						// Set the REQUIRED_ITEM flag in the Type variable
-						Type |= TaskAction::Types::REQUIRED_ITEM;
+						Type |= TaskAction::Types::TFREQUIRED_ITEM;
 					}
 
-					// interaction
-					if(p.contains("interactive"))
+					// move
+					if(Mode == "move")
 					{
-						// Retrieve the "interactive" element from the JSON object
+						Type |= TaskAction::Types::TFMOVING;
+					}
+					// moving press
+					else if(Mode == "move_press")
+					{
+						Type |= TaskAction::Types::TFMOVING_PRESS;
+					}
+					// interaction
+					else if(Mode == "move_follow_press" && p.contains("interactive"))
+					{
 						auto pIntJson = p["interactive"];
-
-						// Retrieve the value of the "x" key from the "interactive" element
-						// If the key does not exist, use -1 as the default value
 						Interactive.m_Position.x = pIntJson.value("x", -1);
-
-						// Retrieve the value of the "y" key from the "interactive" element
-						// If the key does not exist, use -1 as the default value
 						Interactive.m_Position.y = pIntJson.value("y", -1);
 
-						// Check the current value of the "Type" variable
-						if(Type == TaskAction::Types::EMPTY)
-						{
-							// If it is TaskAction::Types::EMPTY, add TaskAction::Types::INTERACTIVE to it
-							Type |= TaskAction::Types::INTERACTIVE;
-						}
-						else if(Type == TaskAction::Types::PICKUP_ITEM)
-						{
-							// If it is TaskAction::Types::PICKUP_ITEM, set TaskAction::Types::INTERACTIVE_PICKUP to it
-							Type = TaskAction::Types::INTERACTIVE_PICKUP;
-						}
-						else if(Type == TaskAction::Types::REQUIRED_ITEM)
-						{
-							// If it is TaskAction::Types::REQUIRED_ITEM, set TaskAction::Types::INTERACTIVE_REQUIRED to it
-							Type = TaskAction::Types::INTERACTIVE_REQUIRED;
-						}
+						Type |= TaskAction::Types::TFMOVING_FOLLOW_PRESS;
 					}
 					// defeat mob json element
-					else if(p.contains("defeat_bot"))
+					else if(Mode == "defeat_bot" && p.contains("defeat_bot"))
 					{
-						// Retrieve the "defeat_bot" element from the JSON object
 						auto pDefJson = p["defeat_bot"];
-
-						// Retrieve the value of the "id" key from the "defeat_bot" element
-						// If the key does not exist, use -1 as the default value
 						DefeatDescription.m_BotID = pDefJson.value("id", -1);
-
-						// Retrieve the value of the "attribute_power" key from the "defeat_bot" element
-						// If the key does not exist, use 10 as the default value
 						DefeatDescription.m_AttributePower = pDefJson.value("attribute_power", 10);
-
-						// Retrieve the value of the "world_id" key from the "defeat_bot" element
-						// If the key does not exist, use the value of m_WorldID as the default value
 						DefeatDescription.m_WorldID = pDefJson.value("world_id", m_WorldID);
 
-						// Check the current value of the "Type" variable
-						if(Type == TaskAction::Types::EMPTY)
-						{
-							// If it is TaskAction::Types::EMPTY, add TaskAction::Types::DEFEAT_MOB to it
-							Type |= TaskAction::Types::DEFEAT_MOB;
-						}
-						else if(Type == TaskAction::Types::PICKUP_ITEM)
-						{
-							// If it is TaskAction::Types::PICKUP_ITEM, set TaskAction::Types::DEFEAT_MOB_PICKUP to it
-							Type = TaskAction::Types::DEFEAT_MOB_PICKUP;
-						}
+						Type |= TaskAction::Types::TFDEFEAT_MOB;
 					}
 				}
 
@@ -206,7 +169,7 @@ void QuestBotInfo::InitTasksFromJSON(const std::string& JsonData)
 					Move.m_Position = Position;
 					Move.m_CompletionText = CompletionText;
 					Move.m_TaskName = TaskName;
-					Move.m_TypeFlags = maximum(Type, (unsigned int)TaskAction::Types::MOVE_ONLY);
+					Move.m_TypeFlags = maximum(Type, (unsigned int)TaskAction::Types::TFMOVING);
 					Move.m_QuestBotID = m_ID;
 					Move.m_Interaction = Interactive;
 					Move.m_DefeatMobInfo = DefeatDescription;

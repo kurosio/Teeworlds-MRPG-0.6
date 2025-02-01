@@ -92,18 +92,13 @@ public:
 	{
 		enum Types : unsigned int
 		{
-			// Define each value in the enumeration with a unique identifier and bit position
 			EMPTY = 0,
-			MOVE_ONLY = 1 << 0,          // 00000001
-			PICKUP_ITEM = 1 << 1,        // 00000010
-			REQUIRED_ITEM = 1 << 2,      // 00000100
-			DEFEAT_MOB = 1 << 3,         // 00001000
-			INTERACTIVE = 1 << 4,        // 00010000
-
-			// Combine multiple values using bitwise OR operation
-			DEFEAT_MOB_PICKUP = DEFEAT_MOB | PICKUP_ITEM,             // 00001010
-			INTERACTIVE_PICKUP = INTERACTIVE | PICKUP_ITEM,           // 00010010
-			INTERACTIVE_REQUIRED = INTERACTIVE | REQUIRED_ITEM        // 00010100
+			TFMOVING = 1 << 0,
+			TFMOVING_PRESS = 1 << 1,
+			TFMOVING_FOLLOW_PRESS = 1 << 2,
+			TFPICKUP_ITEM = 1 << 3,
+			TFREQUIRED_ITEM = 1 << 4,
+			TFDEFEAT_MOB = 1 << 5,
 		};
 
 		struct DefeatMob
@@ -174,7 +169,7 @@ public:
 		RANGE = 1
 	};
 
-	const std::string& getEffect() const noexcept 
+	const std::string& getEffect() const noexcept
 	{
 		return m_Effect;
 	}
@@ -185,9 +180,9 @@ public:
 		int Time = std::get<SECONDS>(m_Time) - Range / 2;
 		return Time + rand() % Range;
 	}
-	float getChance() const 
+	float getChance() const
 	{
-		return m_Chance; 
+		return m_Chance;
 	}
 };
 
