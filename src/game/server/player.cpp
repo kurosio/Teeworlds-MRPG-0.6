@@ -658,7 +658,7 @@ void CPlayer::FormatBroadcastBasicStats(char* pBuffer, int Size, const char* pAp
 
 	if(!BonusActivitiesStr.empty())
 	{
-		Result += "\n" + BonusActivitiesLines;
+		Result += "\n" + BonusActivitiesStr;
 	}
 
 	constexpr int MaxLines = 20;

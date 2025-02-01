@@ -334,6 +334,21 @@ bool CPlayerItem::Use(int Value)
 		return true;
 	}
 
+	// bonus context
+	if(const auto& optBonusContext = Info()->GetBonusContext(); optBonusContext.has_value() && Remove(Value))
+	{
+		TemporaryBonus bonus;
+		bonus.Amount = optBonusContext->Amount;
+		bonus.Type = optBonusContext->Type;
+		bonus.StartTime = time(nullptr);
+		bonus.SetDuration(optBonusContext->DurationDays, optBonusContext->DurationHours, optBonusContext->DurationMinutes, 0);
+		for(int i = 0; i < Value; i++)
+		{
+			pPlayer->Account()->GetBonusManager().AddBonus(bonus);
+		}
+		return true;
+	}
+
 	// random box
 	if(Info()->GetRandomBox())
 	{

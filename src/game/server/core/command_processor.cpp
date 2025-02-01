@@ -58,6 +58,7 @@ CCommandProcessor::CCommandProcessor(CGS* pGS)
 	AddCommand("rules", "", ConChatRules, pServer, "");
 	AddCommand("info", "", ConChatWiki, pServer, "");
 	AddCommand("wiki", "", ConChatWiki, pServer, "");
+	AddCommand("bonuses", "", ConChatBonuses, pServer, "");
 
 	AddCommand("add_multiple_orbite", "i[orbite] i[type] i[subtype]", ConAddMultipleOrbite, pServer, "");
 }
@@ -445,6 +446,8 @@ void CCommandProcessor::ConChatCmdList(IConsole::IResult* pResult, void* pUser)
 		pGS->Chat(ClientID, "/voucher <voucher> - get voucher special items.");
 		pGS->Chat(ClientID, "/useskill <uid> - use skill by uid.");
 		pGS->Chat(ClientID, "/useitem <uid> - use item by uid.");
+		pGS->Chat(ClientID, "/wiki - wiki information about mod.");
+		pGS->Chat(ClientID, "/bonuses - active bonuses.");
 
 	}
 	else if(Page == 2)
@@ -478,6 +481,18 @@ void CCommandProcessor::ConChatRules(IConsole::IResult* pResult, void* pUser)
 	pGS->Chat(ClientID, "- Don't use multiple accounts");
 	pGS->Chat(ClientID, "- Don't share your account credentials (username, password)");
 	pGS->Chat(ClientID, "- The admins and moderators will mute/kick/ban per discretion");
+}
+
+void CCommandProcessor::ConChatBonuses(IConsole::IResult* pResult, void* pUser)
+{
+	const int ClientID = pResult->GetClientID();
+	auto* pGS = GetCommandResultGameServer(ClientID, pUser);
+	auto* pPlayer = pGS->GetPlayer(ClientID);
+	if(!pPlayer)
+		return;
+
+	// send bonuses info
+	pGS->SendMenuMotd(pPlayer, MOTD_MENU_BONUSES_INFO);
 }
 
 void CCommandProcessor::ConChatWiki(IConsole::IResult* pResult, void* pUser)

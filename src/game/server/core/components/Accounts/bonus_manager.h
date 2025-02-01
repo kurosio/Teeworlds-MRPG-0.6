@@ -19,11 +19,46 @@ struct TemporaryBonus
 	time_t StartTime{};
 	int Duration{};
 
-	bool IsActive() const { return difftime(time(nullptr), StartTime) < Duration; }
-	int RemainingTime() const { return maximum(0, Duration - static_cast<int>(difftime(time(nullptr), StartTime))); }
+	bool IsActive() const
+	{
+		return difftime(time(nullptr), StartTime) < Duration;
+	}
+
 	void SetDuration(int days, int hours, int minutes, int seconds)
 	{
 		Duration = (days * 24 * 3600) + (hours * 3600) + (minutes * 60) + seconds;
+	}
+
+	int RemainingTime() const
+	{
+		return maximum(0, Duration - static_cast<int>(difftime(time(nullptr), StartTime)));
+	}
+
+	void GetRemainingTimeFormatted(int* days, int* hours, int* minutes, int* seconds) const
+	{
+		int remaining = RemainingTime();
+		if(days)
+		{
+			*days = remaining / (24 * 3600);
+			remaining %= (24 * 3600);
+		}
+
+		if(hours)
+		{
+			*hours = remaining / 3600;
+			remaining %= 3600;
+		}
+
+		if(minutes)
+		{
+			*minutes = remaining / 60;
+			remaining %= 60;
+		}
+
+		if(seconds)
+		{
+			*seconds = remaining % 60;
+		}
 	}
 };
 

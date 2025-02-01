@@ -640,17 +640,17 @@ bool CAccountManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
 	if(Menulist == MOTD_MENU_BONUSES_INFO)
 	{
 		int position = 1;
-		MotdMenu MBonuses(ClientID, "All bonuses overlap, the minimum increase cannot be lower than 1 point.");
+		MotdMenu MBonuses(ClientID, MTFLAG_CLOSE_BUTTON, "All bonuses overlap, the minimum increase cannot be lower than 1 point.");
 		MBonuses.AddText("Active bonuses \u2696");
 		MBonuses.AddSeparateLine();
 		for(auto& bonus : pPlayer->Account()->GetBonusManager().GetTemporaryBonuses())
 		{
+			int days, hours, minutes, seconds;
 			const char* pBonusType = pPlayer->Account()->GetBonusManager().GetStringBonusType(bonus.Type);
-			int remainingTime = bonus.RemainingTime();
-			int minutes = remainingTime / 60;
-			int seconds = remainingTime % 60;
+			bonus.GetRemainingTimeFormatted(&days, &hours, &minutes, &seconds);
+
 			MBonuses.AddText("{}. {} - {~.2}%", position, pBonusType, bonus.Amount);
-			MBonuses.AddText("Time left: {} min {} sec.", minutes, seconds);
+			MBonuses.AddText("Time left: {}d {}h {}m {}s.", days, hours, minutes, seconds);
 			MBonuses.AddSeparateLine();
 			position++;
 		}
