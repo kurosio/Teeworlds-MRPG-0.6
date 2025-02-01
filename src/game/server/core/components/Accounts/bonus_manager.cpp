@@ -13,7 +13,6 @@ const char* BonusManager::GetStringBonusType(int bonusType) const
 		case BONUS_TYPE_GOLD: return "Gold Boost";
 		case BONUS_TYPE_HP: return "HP Boost";
 		case BONUS_TYPE_MP: return "MP Boost";
-		case BONUS_TYPE_DMG: return "DMG Boost";
 		default: return "Unknown Bonus";
 	}
 }
@@ -195,7 +194,6 @@ std::pair<int, std::string> BonusManager::GetBonusActivitiesString() const
 				case BONUS_TYPE_GOLD: bonusName = "Gold"; break;
 				case BONUS_TYPE_HP: bonusName = "HP"; break;
 				case BONUS_TYPE_MP: bonusName = "MP"; break;
-				case BONUS_TYPE_DMG: bonusName = "DMG"; break;
 				default: bonusName = "Unknown"; break;
 			}
 

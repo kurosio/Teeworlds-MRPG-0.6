@@ -96,6 +96,17 @@ void CItemDescription::InitData(const DBSet& GroupSet, const DBSet& TypeSet)
 			m_PotionContext = Potion;
 		}
 
+		if(const auto& pBonusJson = pJson["bonus"]; !pBonusJson.is_null())
+		{
+			BonusesContext Bonus;
+			Bonus.Amount = pBonusJson.value("amount", 0.f);
+			Bonus.DurationDays = pBonusJson.value("duration_days", 0);
+			Bonus.DurationHours = pBonusJson.value("duration_hours", 0);
+			Bonus.DurationMinutes = pBonusJson.value("duration_minutes", 0);
+			Bonus.Type = pBonusJson.value("type", 0);
+			m_BonusContext = Bonus;
+		}
+
 		// try to initialize random box
 		for(auto& p : pJson["random_box"])
 		{

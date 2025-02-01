@@ -29,6 +29,14 @@ public:
 		int Value {};
 		int Lifetime {};
 	};
+	struct BonusesContext
+	{
+		int Type{};
+		int DurationDays {};
+		int DurationHours {};
+		int DurationMinutes {};
+		float Amount {};
+	};
 	using ContainerAttributes = std::deque< CAttribute >;
 
 private:
@@ -45,6 +53,7 @@ private:
 	std::string m_Data {};
 	CRandomBox m_RandomBox {};
 	std::optional<PotionContext> m_PotionContext {};
+	std::optional<BonusesContext> m_BonusContext {};
 
 public:
 	CItemDescription() = default;
@@ -102,6 +111,7 @@ public:
 	class CRandomBox* GetRandomBox() { return m_RandomBox.IsEmpty() ? nullptr : &m_RandomBox; }
 	ContainerAttributes& GetAttributes() { return m_aAttributes; }
 	std::optional<PotionContext>& GetPotionContext() { return m_PotionContext; }
+	std::optional<BonusesContext>& GetBonusContext() { return m_BonusContext; }
 
 	bool IsStackable() const;
 	bool IsEnchantable() const;

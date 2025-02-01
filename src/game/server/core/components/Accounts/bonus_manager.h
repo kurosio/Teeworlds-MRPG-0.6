@@ -9,7 +9,6 @@ enum
 	BONUS_TYPE_GOLD,
 	BONUS_TYPE_HP,
 	BONUS_TYPE_MP,
-	BONUS_TYPE_DMG,
 	END_BONUS_TYPE,
 };
 
@@ -22,6 +21,10 @@ struct TemporaryBonus
 
 	bool IsActive() const { return difftime(time(nullptr), StartTime) < Duration; }
 	int RemainingTime() const { return maximum(0, Duration - static_cast<int>(difftime(time(nullptr), StartTime))); }
+	void SetDuration(int days, int hours, int minutes, int seconds)
+	{
+		Duration = (days * 24 * 3600) + (hours * 3600) + (minutes * 60) + seconds;
+	}
 };
 
 class BonusManager
@@ -44,7 +47,7 @@ public:
 	template <typename T> requires std::is_integral_v<T>
 	void ApplyBonuses(int bonusType, T* pValue, T* pBonusValue = nullptr) const
 	{
-		T Result = (T)0;
+		auto Result = (T)0;
 
 		for(const TemporaryBonus& bonus : m_vTemporaryBonuses)
 		{
