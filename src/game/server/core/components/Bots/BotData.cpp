@@ -82,7 +82,7 @@ void QuestBotInfo::InitTasksFromJSON(const std::string& JsonData)
 		}
 
 		// initilize move to points
-		m_AutoCompletesQuestStep = pJson.value("move_to_completes_quest_step", false);
+		m_MoveToAutoCompletesStep = pJson.value("move_to_completes_quest_step", false);
 		if(pJson.contains("move_to"))
 		{
 			int LatestBiggerStep = 1;
@@ -147,6 +147,13 @@ void QuestBotInfo::InitTasksFromJSON(const std::string& JsonData)
 						DefeatDescription.m_WorldID = pDefJson.value("world_id", m_WorldID);
 
 						Type |= TaskAction::Types::TFDEFEAT_MOB;
+					}
+
+					// interactives with item's only with accepted press
+					if((RequiredItem.IsValid() || PickUpItem.IsValid()) && (Type & TaskAction::Types::TFMOVING))
+					{
+						Type &= ~TaskAction::Types::TFMOVING;
+						Type |= TaskAction::Types::TFMOVING_PRESS;
 					}
 				}
 

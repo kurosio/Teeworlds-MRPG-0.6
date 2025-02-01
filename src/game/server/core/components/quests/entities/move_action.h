@@ -10,15 +10,15 @@ class CQuestStep;
 
 class CEntityQuestAction : public CEntity, public std::enable_shared_from_this<CEntityQuestAction>
 {
-	bool m_AutoCompletesQuestStep;
+	bool m_MoveToAutoCompletesStep;
 	int m_MoveToIndex;
 	std::optional<int> m_optDefeatBotCID {};
 	std::weak_ptr<CQuestStep> m_pStep;
 	array < int > m_IDs;
 
 public:
-	CEntityQuestAction(CGameWorld* pGameWorld, int ClientID, int MoveToIndex, const std::weak_ptr<CQuestStep>& pStep, 
-		bool AutoCompletesQuestStep, std::optional<int> optDefeatBotCID = std::nullopt);
+	CEntityQuestAction(CGameWorld* pGameWorld, int ClientID, int MoveToIndex, const std::weak_ptr<CQuestStep>& pStep,
+		bool MoveToAutoCompletesStep, std::optional<int> optDefeatBotCID = std::nullopt);
 	~CEntityQuestAction() override;
 
 	void Tick() override;

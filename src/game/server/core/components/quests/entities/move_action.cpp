@@ -7,13 +7,13 @@
 constexpr unsigned int s_Particles = 4;
 
 CEntityQuestAction::CEntityQuestAction(CGameWorld* pGameWorld, int ClientID, int MoveToIndex,
-	const std::weak_ptr<CQuestStep>& pStep, bool AutoCompletesQuestStep, std::optional<int> optDefeatBotCID)
+	const std::weak_ptr<CQuestStep>& pStep, bool MoveToAutoCompletesStep, std::optional<int> optDefeatBotCID)
 	: CEntity(pGameWorld, CGameWorld::ENTTYPE_MOVE_TO_POINT, {}, 32.f, ClientID), m_MoveToIndex(MoveToIndex)
 {
 	// initialize base
 	m_pStep = pStep;
 	m_optDefeatBotCID = optDefeatBotCID;
-	m_AutoCompletesQuestStep = AutoCompletesQuestStep;
+	m_MoveToAutoCompletesStep = MoveToAutoCompletesStep;
 	if(const auto* pTaskData = GetTaskMoveTo())
 	{
 		m_Pos = pTaskData->m_Position;
@@ -43,7 +43,7 @@ CEntityQuestAction::~CEntityQuestAction()
 	if(pPlayer && pStep)
 	{
 		// try auto finish step
-		if(m_AutoCompletesQuestStep)
+		if(m_MoveToAutoCompletesStep)
 		{
 			const bool LastElement = (pStep->GetCompletedMoveActionCount() == pStep->GetMoveActionNum());
 			if(LastElement && pStep->IsComplete())
@@ -255,11 +255,13 @@ void CEntityQuestAction::HandleTaskType(const QuestBotInfo::TaskAction* pTaskDat
 	{
 		Handler([] { return true; });
 	}
+
 	// move press flag
 	else if(TypeFlags & QuestBotInfo::TaskAction::Types::TFMOVING_PRESS)
 	{
 		Handler([this] { return PressedFire(); });
 	}
+
 	// move follow press flag
 	else if(TypeFlags & QuestBotInfo::TaskAction::Types::TFMOVING_FOLLOW_PRESS)
 	{
@@ -272,6 +274,7 @@ void CEntityQuestAction::HandleTaskType(const QuestBotInfo::TaskAction* pTaskDat
 			return PressedFire() && distance(GetPlayer()->GetCharacter()->GetMousePos(), Position) < 48.f;
 		});
 	}
+
 	// defeat bot flag
 	else if(TypeFlags & QuestBotInfo::TaskAction::Types::TFDEFEAT_MOB)
 	{
@@ -301,25 +304,26 @@ void CEntityQuestAction::HandleBroadcastInformation(const QuestBotInfo::TaskActi
 	if(pRequireItem.IsValid())
 	{
 		CPlayerItem* pPlayerItem = pPlayer->GetItem(pRequireItem.GetID());
-		strBuffer += fmt_localize(m_ClientID, "- Required: {} ({} | {})\n",
+		strBuffer += fmt_localize(m_ClientID, "- Required: {} x{}({})\n",
 			pPlayerItem->Info()->GetName(), pRequireItem.GetValue(), pPlayerItem->GetValue());
 	}
 
 	if(pPickupItem.IsValid())
 	{
 		CPlayerItem* pPlayerItem = pPlayer->GetItem(pPickupItem.GetID());
-		strBuffer += fmt_localize(m_ClientID, "- Pick up: {} ({} | {})\n",
+		strBuffer += fmt_localize(m_ClientID, "- Pick up: {} x{}({})\n",
 			pPlayerItem->Info()->GetName(), pPickupItem.GetValue(), pPlayerItem->GetValue());
 	}
 
 	// send broadcast
-	if(Type & QuestBotInfo::TaskAction::Types::TFMOVING_FOLLOW_PRESS)
+	if(Type & QuestBotInfo::TaskAction::Types::TFMOVING_PRESS)
 	{
-		GS()->Broadcast(m_ClientID, BroadcastPriority::MainInformation, 10, "Click the highlighted area with the hammer to interact.\n{}", strBuffer.c_str());
+		GS()->Broadcast(m_ClientID, BroadcastPriority::MainInformation, 10,
+			"Click with the hammer to interact.\n{}", strBuffer.c_str());
 	}
-	else if(Type & (QuestBotInfo::TaskAction::Types::TFPICKUP_ITEM | QuestBotInfo::TaskAction::Types::TFREQUIRED_ITEM))
+	else if(Type & QuestBotInfo::TaskAction::Types::TFMOVING_FOLLOW_PRESS)
 	{
-		GS()->Broadcast(m_ClientID, BroadcastPriority::MainInformation, 10, "Press 'Fire' with the hammer to interact.\n{}", strBuffer.c_str());
+		GS()->Broadcast(m_ClientID, BroadcastPriority::MainInformation, 10,
+			"Click the highlighted area with the hammer to interact.\n{}", strBuffer.c_str());
 	}
-
 }
