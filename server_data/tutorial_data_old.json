@@ -1,0 +1,332 @@
+{
+  "steps": [
+    {
+      "action": "reset_quest",
+      "quest_id": 1
+    },
+	
+	
+	
+	
+	{
+		"action": "new_door",
+		"key": "door_part_01",
+		"position": {
+			"x": 1049.0,
+			"y": 1009.0
+		}
+	},
+	{
+		"action": "message",
+		"delay": 500,
+		"broadcast": "Эта туториал поможет вам освоиться в мире MMORPG",
+		"chat": "Cперва пройдите увлекательное обучение и выполнив первый квест.\nГотовы к приключениям?"
+    },	
+	{
+		"action": "remove_door",
+		"key": "door_part_01",
+		"follow": false
+	},
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	{
+		"action": "new_door",
+		"key": "door_part_02",
+		"position": {
+			"x": 2016.0,
+			"y": 768.0
+		}
+	},
+	{
+		"action": "movement_task",
+		"delay": 200,
+		"position": {
+			"x": 1632.0,
+			"y": 960.0
+		},
+		"broadcast": "Доберись до указаной точки",
+		"target_lock_text": "Двигайся сюда чтобы продолжить",
+		"target_look": true
+	},
+	{
+		"action": "message",
+		"delay": 500,
+		"broadcast": "На карте могут быть различные объекты: блоки, платформы, сундуки,\nNPC (неигровые персонажи) и многое другое. Нет каких то определенных целей, бесконечный гемплей",
+		"chat": "Читайте внимательно это поможет вам быстрее влится в игровой процесс."
+	},	
+	{
+		"action": "remove_door",
+		"key": "door_part_02",
+		"follow": false
+	},
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	{
+		"action": "new_door",
+		"key": "door_part_03",
+		"position": {
+			"x": 3072.0,
+			"y": 640.0
+		}
+	},
+	{
+		"action": "movement_task",
+		"delay": 200,
+		"position": {
+			"x": 2624.0,
+			"y": 864.0
+		},
+		"broadcast": "Доберись до указаной точки.",
+		"target_lock_text": "Двигайся сюда чтобы продолжить.",
+		"target_look": true
+	},
+	{
+		"action": "message",
+		"delay": 200,
+		"broadcast": "Ваш интерфейс содержит важную информацию.",
+		"chat": "Слева отображаются все ваши параметры для удобной игры. Снизу так же есть информация во время битв. Обратите внимание на это."
+	},	
+	{
+		"action": "remove_door",
+		"key": "door_part_03",
+		"follow": false
+	},
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	{
+		"action": "new_door",
+		"key": "door_part_04",
+		"position": {
+			"x": 4288.0,
+			"y": 704.0
+		}
+	},
+	{
+		"action": "movement_task",
+		"delay": 200,
+		"position": {
+			"x": 3712.0,
+			"y": 768.0
+		},
+		"broadcast": "Доберись до указаной точки.",
+		"target_lock_text": "Двигайся сюда чтобы продолжить.",
+		"target_look": true
+	},
+	{
+		"action": "message",
+		"delay": 200,
+		"broadcast": "Управление в MMORPG похоже на обычное но есть уникальные функции.",
+		"chat": "Таже есть классы от которых зависит исход игры. Остановись чтобы выбрать класс. Изучите систему управления в панели голосования"
+	},	
+	{
+		"action": "remove_door",
+		"key": "door_part_04",
+		"follow": false
+	},
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	{
+		"action": "new_door",
+		"key": "door_part_05",
+		"position": {
+			"x": 5440.0,
+			"y": 768.0
+		}
+	},
+	{
+		"action": "movement_task",
+		"delay": 200,
+		"position": {
+			"x": 4516.0,
+			"y": 817.0
+		},
+		"broadcast": "Доберись до указаной точки.",
+		"target_lock_text": "Двигайся сюда чтобы продолжить.",
+		"target_look": true
+	},
+	{
+		"action": "message",
+		"broadcast": "Ваш инвентарь хранит собранные предметы.\nВы можете как одевать, снимать, так и выбрасывать предметы. \nНекоторые предметы можно использовать, кликнув в меню голосования"
+    },
+	{
+		"action": "message",
+		"chat": "Это плантации. Плантации являются сельскохозяйственным делом. Добудьте 2 расстения!"
+    },
+	{
+		"action": "fix_cam",
+		"delay": 250,
+		"position": {
+			"x": 5074.0,
+			"y": 881.0
+		}
+	},
+	{
+		"action": "message",
+		"chat": "Бейте молотком по сердечкам и вы увидите процесс сбора расстений"
+    },
+	{
+		"action": "check_has_item",
+		"item_id": 40,
+		"required": 2,
+		"show_progress": true
+	},
+	{
+		"action": "message",
+		"delay": 0,
+		"chat": "Отнесите их в домик. И переработайте нажимая соотвествуещие кнопки в меню голосования. Нажмите на крафт"
+    },
+	{
+		"action": "movement_task",
+		"delay": 200,
+		"position": {
+			"x": 4815.0,
+			"y": 849.0
+		},
+		"broadcast": "Доберись до указаной точки.",
+		"target_lock_text": "Двигайся сюда чтобы продолжить.",
+		"target_look": true
+	},
+	{
+		"action": "message",
+		"chat": "Здесь вы сможете использовать услуги ремесленика. Используйте добытые предметы и создайте предмет необходимый для продолжения."
+    },		
+	{
+		"action": "message",
+		"chat": "Для этого откройте в специальной зоне лист голосований и выберите соответствующий предмет."
+    },	
+	{
+		"action": "check_has_item",
+		"item_id": 41,
+		"required": 3,
+		"remove": true,
+		"show_progress": true
+	},	
+	{
+		"action": "remove_door",
+		"key": "door_part_05",
+		"follow": true	
+	},
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	{
+		"action": "new_door",
+		"key": "door_part_06",
+		"position": {
+			"x": 6688.0,
+			"y": 704.0
+		}
+	},
+	{
+		"action": "movement_task",
+		"delay": 200,
+		"position": {
+			"x": 5984.0,
+			"y": 832.0
+		},
+		"broadcast": "Доберись до указаной точки.",
+		"target_lock_text": "Двигайся сюда чтобы продолжить.",
+		"target_look": true
+	},
+	{
+		"action": "accept_quest",
+		"quest_id": 1
+	},
+	{
+		"action": "message",
+		"broadcast": "NPC – это неигровые персонажи, которые могут давать задания,\nпродавать предметы или предоставлять другую информацию.",
+		"chat": "Подойти к NPC и начать с ним диалог, чтобы начать взаимодействие. Обращайте внимание на то, что говорят NPC – они часто дают важные подсказки."
+	},
+	{
+		"action": "check_quest_accepted",
+		"quest_id": 1
+	},
+	{
+		"action": "remove_door",
+		"key": "door_part_06",
+		"follow": false
+	},
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	{
+		"action": "new_door",
+		"key": "door_part_07",
+		"follow": false,
+		"position": {
+			"x": 8448.0,
+			"y": 672.0
+		}
+	},
+	{
+		"action": "check_quest_finished",
+		"quest_id": 1
+	},
+	{
+		"action": "message",
+		"delay": 200,
+		"broadcast": "MMORPG поддерживает некоторые команды в чате. Смотри в чат\n",
+		"chat": "Примеры команд /help справка по определенной команде /cmdlist покажет список доступных команд. Изучение этих команд поможет вам."
+	},	
+	{
+		"action": "remove_door",
+		"key": "door_part_07",
+		"follow": true
+	},
+	
+	
+	{
+		"action": "teleport",
+		"position": {
+			"x": 6688.0,
+			"y": 704.0
+		},
+		"world_id": 1
+	}
+  ]
+}
