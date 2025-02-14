@@ -205,7 +205,7 @@ void CCraftManager::ShowCraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const
 	}
 	else
 	{
-		VoteWrapper(ClientID).AddOption("CRAFT", pCraft->GetID(), "\u2699 Craft ({} gold)", pCraft->GetPrice(pPlayer));
+		VoteWrapper(ClientID).AddOption("CRAFT", pCraft->GetID(), "\u2699 Craft ({$} gold)", pCraft->GetPrice(pPlayer));
 	}
 
 }
@@ -241,12 +241,12 @@ void CCraftManager::ShowCraftList(CPlayer* pPlayer, ItemGroup Group) const
 		// set title name by enchant type (or stack item, or only once)
 		if(!pCraftItemInfo->IsStackable())
 		{
-			VCraftList.AddMenu(MENU_CRAFTING_SELECT, ID, "{}{} - {} gold",
+			VCraftList.AddMenu(MENU_CRAFTING_SELECT, ID, "{}{} - {$} gold",
 				(pPlayer->GetItem(ItemID)->GetValue() ? "✔ " : "\0"), pCraftItemInfo->GetName(), Price);
 		}
 		else
 		{
-			VCraftList.AddMenu(MENU_CRAFTING_SELECT, ID, "[{}]{} x{} - {} gold",
+			VCraftList.AddMenu(MENU_CRAFTING_SELECT, ID, "[{}]{} x{} - {$} gold",
 				pPlayer->GetItem(ItemID)->GetValue(), pCraftItemInfo->GetName(), pCraft->GetItem()->GetValue(), Price);
 		}
 	}

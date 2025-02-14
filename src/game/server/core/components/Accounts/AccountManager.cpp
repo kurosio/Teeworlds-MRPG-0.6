@@ -268,7 +268,7 @@ void CAccountManager::AddMenuProfessionUpgrades(CPlayer* pPlayer, CProfession* p
 		for(auto& [ID, Value] : pProf->GetAttributes())
 		{
 			const auto* pAttribute = GS()->GetAttributeInfo(ID);
-			VUpgrades.AddOption("UPGRADE", (int)ProfID, (int)ID, "Upgrade {} - {} (cost 1 point)", pAttribute->GetName(), Value);
+			VUpgrades.AddOption("UPGRADE", (int)ProfID, (int)ID, "Upgrade {} - {} (1 point)", pAttribute->GetName(), Value);
 		}
 	}
 }
@@ -623,7 +623,7 @@ bool CAccountManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
 		const BigInt CurrentBankGold = pPlayer->Account()->GetBank();
 		const BigInt TotalGold = pPlayer->Account()->GetTotalGold();
 
-		MotdMenu MBonuses(ClientID,  "Here you can securely store or retrieve your gold. Remember, gold in the Bank is protected and will never be lost, even in death.");
+		MotdMenu MBonuses(ClientID,  "Here you can securely store your gold. Remember, gold in the Bank is protected and will never be lost, even in death.");
 		MBonuses.AddText("Bank Management \u2697");
 		MBonuses.AddSeparateLine();
 		MBonuses.AddText("Gold: {$}", CurrentGold);

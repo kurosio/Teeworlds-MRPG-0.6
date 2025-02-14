@@ -490,7 +490,7 @@ Beer
 
 $attribute7
 MP
-== MP
+== МП
 
 $item_description171
 The ancient component
@@ -1354,7 +1354,7 @@ Etherna
 == Этерна
 
 Commision rate: {}%
-== Ставка комиссии: {}%
+== Комиссия: {}%
 
 Disband
 == Распустить
@@ -1830,7 +1830,7 @@ Minimum number of 'characters 2, maximum 16'.
 == /rules - правила сервера.
 
 Bank Management ⚗
-== Управление банком ⚗
+== Упр. банком ⚗
 
 Enchant
 == Зачаровать
@@ -2575,7 +2575,7 @@ The account is already in the game.
 
 $attribute9
 Ammo Regen
-== Регенерация боеприпасов
+== AMMO РЕГ
 
 $dialog_npc290
 <player>, do you have any questions? I'm sorry, can't help you.
@@ -2683,8 +2683,8 @@ Emoticon Question
 This nickname is already in use.
 == Этот никнейм уже используется.
 
-[{}]{} x{} - {} gold  
-== [{}]{} x{} - {} золота
+[{}]{} x{} - {$} gold  
+== [{}]{} x{} - {$} золота
 
 Unforeseen error
 == Непредвиденная ошибка
@@ -2707,7 +2707,7 @@ The reason you already have the item
 
 $item_name19
 Explosive module for gun
-== Взрывной модуль для пистолета
+== Взр. модуль для Gun
 
 $item_description87
 Bone Armillae is an item level 1.
@@ -2725,7 +2725,7 @@ Archer | Iron tip
 
 $item_description96
 Customizer for personal skins
-== Настроитель для личных скинов.
+== Позволяет лич. скины.
 
 $item_name92
 Web
@@ -3826,7 +3826,7 @@ chat
 
 $item_description65
 Inflicts gradual explode damage.
-== Наносит постепенный взрывной урон.
+== Наносит пост. взр. урон.
 
 ❊ Alternative story dungeon's  
 == ❊ Альтернативные сюжетные подземелья
@@ -4005,7 +4005,7 @@ has {}
 
 $attribute5
 HP
-== Здоровье.
+== ХП
 
 server  
 == сервер
@@ -4237,8 +4237,8 @@ price
 {} : Aethernet
 == {} : Эфирная сеть
 
-{}{} - {} gold
-== {}{} - {} золота
+{}{} - {$} gold
+== {}{} - {$} золота
 
 {}. {} :: Bank {}
 == {}. {} :: Банк {}
@@ -4487,7 +4487,7 @@ warehouse_name
 
 $attribute19
 Eidolon PWR
-== Сила Эйдолона
+== Eidolon СИЛ
 
 {} upgrades
 == {} улучшений
@@ -4647,7 +4647,7 @@ yes
 
 $item_name93
 Show quest star navigation
-== Показать навигацию по звёздам квеста.
+== Путь по звездам к квесту
 
 - The admins and moderators will mute/kick/ban per discretion
 == - Администраторы и модераторы будут мутить/кикать/банить по своему усмотрению
@@ -4679,7 +4679,7 @@ Titanium ingot
 
 $attribute4
 Crit
-== Крит
+== КРИТ
 
 $item_description72
 Iron ingot
@@ -4694,7 +4694,7 @@ The power of the elementals wanes, and the harmony of the forest gives way to ch
 
 $item_name66
 Magic Spider Hook
-== Магический пауковый крюк.
+== Маг. пауковый крюк.
 
 $skill_name3
 Craft Discount
@@ -4709,7 +4709,7 @@ And what better time than the present!? Leave the city via the Blue Badger Gate,
 
 $item_name20
 Explosive module for shotgun
-== Взрывной модуль для дробовика
+== Взр. модуль для Shotgun
 
 $dialog_quest170
 For your second task, you are to visit the Lancers' Guild.
@@ -4941,7 +4941,7 @@ But their desire to settle in the Twelveswood continued to burn fiercely; time a
 
 $item_name25
 Show equipment description
-== Показать описание снаряжения.
+== Показать описание снаряжения
 
 ⚖ Available weekly  
 == ⚖ Доступно еженедельно
@@ -4955,7 +4955,7 @@ Cargo
 
 $attribute20
 Gold Capacity
-== Вместимость золота
+== Вместимость
 
 $dialog_quest283
 The Order of the Twin Adder makes no distinction between newcome adventurers and forestborn Gridanians. Your worth as a soldier is measured by your dedication to the cause.
@@ -5038,7 +5038,7 @@ Adamantium Rake
 
 $attribute18
 Lucky Drop
-== Удачный Дроп.
+== УД. ДРОП
 
 $dialog_quest381
 As a matter of fact, I think it's about time you made yourself useful at Bentbranch Meadows in the Central Shroud.
@@ -5151,7 +5151,7 @@ It's a strange-looking and disgusting egg.
 
 $item_description66
 It's sticky to the air.
-== Он липкий на воздухе.
+== Крюк на воздухе.
 
 group  
 == группа
@@ -5286,7 +5286,7 @@ Actually...haven't you registered with us already? There's something strikingly 
 
 $item_name65
 Explosive impulse hook
-== Взрывной импульсный крюк
+== Взр. имп. крюк
 
 $skill_description6
 An attacking teleport that deals damage to all mobs radius
@@ -5369,7 +5369,7 @@ The skills practiced by our archers allow them to gauge an enemy's weaknesses fr
 
 $item_name97
 Damage Equalizer
-== Уравнитель урона.
+== Уравн. урона
 
 $item_description111
 Very dark fragments
@@ -5656,7 +5656,7 @@ Coins that are given out for activity
 
 $attribute14
 Gun DMG
-== Урон от пистолета
+== Gun УРН
 
 $dialog_quest303
 According to my recruit's tale of woe, there should be a set of survey records, a surveyor's rope, and two boxes of surveyor's instruments strewn about the interior of a cave to the south of here. <sigh> It's a wonder the damn fool didn't lose his boots... Ahem. Matron watch over you.
@@ -5684,7 +5684,7 @@ Adamantium pickaxe
 
 $attribute3
 Crit DMG
-== Критический Урон.
+== КРИТ УРН
 
 $dialog_quest550
 You bear a message from Hearer Leonnie? An evil presence in the Deepcroft? That does sound grave, indeed.
@@ -5828,7 +5828,7 @@ We have a potential crisis on our hands, and I would appreciate your assistance.
 
 $item_description97
 Disabled self dmg.
-== Отключенный самоурон.
+== Отключает самоурон.
 
 Interaction:
 == Взаимодействие:
@@ -5957,7 +5957,7 @@ Command: /gcreate <name>
 
 $item_name98
 Show detail gain messages
-== Показать сообщения о получении деталей.
+== Сообщения получения детально
 
 $quest_name25
 Archer | Need eggs!
@@ -5993,7 +5993,7 @@ Required to improve eidolons
 
 $attribute8
 Vampirism
-== Вампиризм.
+== ВАМП
 
 $item_name147
 Harvest King
@@ -6069,7 +6069,7 @@ Adventurer! Thank the gods you've come!
 
 $attribute17
 Rifle DMG
-== Урон винтовки
+== Rifle УРН
 
 $dialog_quest182
 Here at the Lancers' Guild, spear wielders gather to train with one another, and further hone their abilities under the tutelage of our fine instructors.
@@ -6089,7 +6089,7 @@ Hmmm... Yes, I think you pass muster.
 
 $attribute6
 Lucky
-== Удача
+== УДЧ
 
 $item_description136
 Aether crystal
@@ -6247,7 +6247,7 @@ House rent has expired, has been sold.
 
 $attribute12
 Extraction
-== Извлечение.
+== Извлечение
 
 Not Accepted
 == Не принято
@@ -6398,7 +6398,7 @@ Let us begin at the beginning, shall we? Now that you are a formal member of the
 
 $item_description64
 Inflicts gradual damage.
-== Наносит постепенный урон.
+== Наносит пост. урон.
 
 $dialog_quest48
 To an outsider's eyes, all may seem well with our nation, but naught could be further from the truth. The people live in a state of constant apprehension.
@@ -6635,7 +6635,7 @@ One of our patrols sent word that you had been spotted doing battle with enraged
 
 $attribute16
 Grenade DMG
-== Урон от гранаты
+== Grenade УРН
 
 $dialog_quest473
 Bugger me, I think this belongs to that stranger said to be meddling with the chocobos! Thank you, adventurer. We have been lax in our duties, but no longer—I swear we will find this shadow.
@@ -6679,7 +6679,7 @@ I would assign you a mission of considerable import, yet the need for secrecy pr
 
 $attribute15
 Shotgun DMG
-== Урон от дробовика
+== Shotgun УРН
 
 $item_name85
 Thorny Ring
@@ -6703,7 +6703,7 @@ A little weak poison
 
 $attribute10
 Ammo
-== Боеприпасы
+== АММО
 
 $item_name32
 Surveyor's rope
@@ -7243,7 +7243,7 @@ Oh, and be sure to wear your mask or she may not recognize you. Now, off you go,
 
 $attribute2
 Attack SPD
-== Скорость атаки
+== СКР. АТК
 
 Group membership list
 == Список участников группы
@@ -7296,8 +7296,8 @@ $dialog_quest49
 The Ixal and various gangs of common bandits provide an unending supply of trouble─trouble compounded by the ever-present threat of the Garlean Empire to the north. And that is to say nothing of the Calamity...
 == Иксалы и различные банды обычных бандитов обеспечивают бесконечный поток проблем, усугубляемых постоянной угрозой со стороны Гарлемской Империи на севере. И это не говоря уже о Катастрофе...
 
-Upgrade {} - {} (cost 1 point)
-== Улучшить {} - {} (стоимость 1 очко)
+Upgrade {} - {} (1 point)
+== Улучшить {} - {} (1 очко)
 
 $dialog_quest681
 Perchance you are feeling nervous, but never fear—despite all the pomp surrounding the role, there really is nothing to being Emissary.
@@ -7339,7 +7339,7 @@ The first was devised by the longbow sentries of the Elezen who once ruled the l
 
 $attribute1
 DMG
-== Урон
+== УРН
 
 $dialog_quest820
 Hello, stranger. Between the prairie and the plain, there's some kind of creature. It changes color. It's very frightening to the people of Gridania. You can reduce their numbers. Destroy 25 of the creatures.
@@ -7444,7 +7444,7 @@ Empyrean Ring
 
 $attribute13
 Hammer DMG
-== Урон от молота.
+== Hammer УРН
 
 $item_name26
 Iron rake
@@ -7516,7 +7516,7 @@ Iron Crate
 
 $item_name34
 Show critical damage
-== Показать критический урон
+== Показать крит. урон
 
 $item_description58
 Farm-grown Corn
@@ -7616,8 +7616,8 @@ Iron armor
 Leveling (War professions)
 == Повышение уровня (Боевые профессии)
 
-Here you can securely store or retrieve your gold. Remember, gold in the Bank is protected and will never be lost, even in death.
-== Здесь вы можете безопасно хранить или забирать свое золото. Помните, золото в банке защищено и никогда не будет потеряно, даже после смерти.
+Here you can securely store your gold. Remember, gold in the Bank is protected and will never be lost, even in death.
+== Здесь вы можете безопасно хранить свое золото. Помните, золото в банке защищено и никогда не будет потеряно, даже после смерти.
 
 $quest_name21
 To Guard a Guardian
