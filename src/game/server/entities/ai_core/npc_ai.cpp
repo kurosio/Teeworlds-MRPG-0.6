@@ -31,7 +31,7 @@ void CNpcAI::OnSpawn()
 	}
 	else if(Function == FUNCTION_NPC_NURSE)
 	{
-		//new CNurseHeart(&GS()->m_World, m_ClientID);
+		//new CEntityNurseHeart(&GS()->m_World, m_ClientID);
 	}
 	else if(Function == FUNCTION_NPC_GUARDIAN)
 	{

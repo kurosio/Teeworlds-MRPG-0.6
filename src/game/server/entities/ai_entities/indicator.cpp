@@ -1,4 +1,4 @@
-#include "bot_indicator.h"
+#include "indicator.h"
 
 #include <game/server/gamecontext.h>
 

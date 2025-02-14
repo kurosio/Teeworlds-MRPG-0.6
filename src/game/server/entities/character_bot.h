@@ -4,7 +4,7 @@
 #define GAME_SERVER_ENTITIES_CHARACTER_BOT_H
 
 #include "character.h"
-#include "ai/base_ai.h"
+#include "ai_core/base_ai.h"
 
 class CCharacterBotAI : public CCharacter
 {

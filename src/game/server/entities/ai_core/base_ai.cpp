@@ -1,6 +1,6 @@
 #include "base_ai.h"
 
-#include "bot_indicator.h"
+#include "../ai_entities/indicator.h"
 
 #include <engine/server.h>
 #include <game/server/entities/character_bot.h>

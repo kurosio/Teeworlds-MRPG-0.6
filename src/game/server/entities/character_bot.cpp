@@ -4,11 +4,11 @@
 #include <game/server/core/tools/path_finder.h>
 #include "character_bot.h"
 
-#include "ai/npc_ai.h"
-#include "ai/eidolon_ai.h"
-#include "ai/mob_ai.h"
-#include "ai/quest_mob_ai.h"
-#include "ai/quest_npc_ai.h"
+#include "ai_core/npc_ai.h"
+#include "ai_core/eidolon_ai.h"
+#include "ai_core/mob_ai.h"
+#include "ai_core/quest_mob_ai.h"
+#include "ai_core/quest_npc_ai.h"
 
 #include <game/server/core/components/Bots/BotData.h>
 #include <game/server/gamecontext.h>
