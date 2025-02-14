@@ -5,6 +5,7 @@
 #include <game/server/gamecontext.h>
 
 #include "../achievements/achievement_data.h"
+#include "../Inventory/InventoryManager.h"
 
 void CCraftManager::OnPreInit()
 {
@@ -130,8 +131,26 @@ bool CCraftManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		VCraftInfo.AddItemValue(itGold);
 
 		// show craft tabs
-		for(auto i = (int)ItemGroup::Quest; i < (int)ItemGroup::Potion; i++)
-			ShowCraftList(pPlayer, (ItemGroup)i);
+		for(auto group = (int)ItemGroup::Quest; group < (int)ItemGroup::Potion; ++group)
+		{
+			// equipment
+			if(group == (int)ItemGroup::Equipment)
+			{
+				for(auto type = (int)ItemType::Default; type < (int)ItemType::NUM_EQUIPPED; ++type)
+				{
+					const char* pName = (type == (int)ItemType::Default) ? "Modules" : GetItemTypeName((ItemType)type);
+					const auto vCollection = CInventoryManager::GetItemsCollection(ItemGroup::Equipment, (ItemType)type);
+					ShowCraftList(pPlayer, pName, vCollection);
+				}
+
+				continue;
+			}
+
+			// default
+			const auto vCollection = CInventoryManager::GetItemsCollection((ItemGroup)group, std::nullopt);
+			ShowCraftList(pPlayer, GetItemGroupName((ItemGroup)group), vCollection);
+		}
+
 		return true;
 	}
 
@@ -210,28 +229,29 @@ void CCraftManager::ShowCraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const
 
 }
 
-void CCraftManager::ShowCraftList(CPlayer* pPlayer, ItemGroup Group) const
+void CCraftManager::ShowCraftList(CPlayer* pPlayer, const char* pName, const std::vector<int>& Items) const
 {
 	const int ClientID = pPlayer->GetCID();
-
-	// order only by type
-	if(std::ranges::none_of(CCraftItem::Data(), [Group](const CCraftItem* p)
-	{ return p->GetItem()->Info()->GetGroup() == Group; }))
+	std::vector<const CCraftItem*> filteredItems;
+	std::ranges::copy_if(CCraftItem::Data(), std::back_inserter(filteredItems), [&Items](const CCraftItem* p)
 	{
+		return std::ranges::find(Items, p->GetItem()->GetID()) != Items.end();
+	});
+
+	if(filteredItems.empty())
 		return;
-	}
 
-	// add empty line
+	// sort by price
+	std::ranges::sort(filteredItems, [pPlayer](const CCraftItem* a, const CCraftItem* b) {
+		return a->GetPrice(pPlayer) < b->GetPrice(pPlayer);
+	});
+
 	VoteWrapper::AddEmptyline(ClientID);
-
-	// craft tab list
-	VoteWrapper VCraftList(ClientID, VWF_SEPARATE_OPEN, GetItemGroupName(Group));
-	for(const auto& pCraft : CCraftItem::Data())
+	VoteWrapper VCraftList(ClientID, VWF_SEPARATE_OPEN, pName);
+	for(const auto& pCraft : filteredItems)
 	{
 		CItemDescription* pCraftItemInfo = pCraft->GetItem()->Info();
-
-		// check by type and world
-		if(pCraftItemInfo->GetGroup() != Group || pCraft->GetWorldID() != GS()->GetWorldID())
+		if(pCraft->GetWorldID() != GS()->GetWorldID())
 			continue;
 
 		CraftIdentifier ID = pCraft->GetID();

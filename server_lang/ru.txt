@@ -1402,7 +1402,7 @@ Auctionist
 == Аукционист
 
 Dps
-== Урон в секунду
+== Дамагер
 
 Is empty
 == Пусто
@@ -4476,8 +4476,8 @@ used
 '{}' opened dungeon '({})'!
 == '{}' открыл подземелье '({})'!
 
-'{}' has left the MRPG
-== '{}' покинул MRPG
+'{}' has left the {}
+== '{}' покинул {}
 
 warehouse_name
 == название_склада
@@ -4685,8 +4685,8 @@ $item_description72
 Iron ingot
 == Железный слиток
 
-'{}' entered and joined the MRPG
-== '{}' вошел и присоединился к MRPG
+'{}' entered and joined the {}
+== '{}' вошел и присоединился к {}
 
 $dialog_quest233
 The power of the elementals wanes, and the harmony of the forest gives way to chaos. A great abundance of life has been lost as the strong run rampant, stifling the weak and new-sprung.
@@ -5416,7 +5416,7 @@ Mind the birds, adventurer. They get nervous around strangers.
 
 $item_description102
 Hammer Blast
-== Удар молота
+== Ударный молот
 
 $dialog_quest22
 Thank you so much! It's exactly what I've been waiting for. You've helped me more than you can imagine.
@@ -5540,7 +5540,7 @@ help
 
 $item_name102
 Hammer Blast
-== Удар молота.
+== Ударн. молот
 
 $dialog_quest111
 However, we have received reports that vast clouds of the creatures' spores have rendered parts of the Twelveswood impassable, and ruined crops besides.

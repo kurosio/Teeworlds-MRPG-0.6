@@ -1125,7 +1125,7 @@ void CServer::ProcessClientPacket(CNetChunk* pPacket)
 					str_copy(m_aClients[ClientID].m_aCountryIsoCode, CGeoIP::getData("country_iso_code", aAddrStrWithoutPort).c_str(), sizeof(m_aClients[ClientID].m_aCountryIsoCode));
 
 					char aBuf[256];
-					str_format(aBuf, sizeof(aBuf), "player is ready. ClientID=%d addr=%s continent=%s country_iso_code=%s", 
+					str_format(aBuf, sizeof(aBuf), "player is ready. ClientID=%d addr=%s continent=%s country_iso_code=%s",
 						ClientID, aAddrStr, m_aClients[ClientID].m_aContinent, m_aClients[ClientID].m_aCountryIsoCode);
 					Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "server", aBuf);
 
@@ -1492,7 +1492,7 @@ void CServer::CacheServerInfo(CBrowserCache* pCache, int Type, bool SendClients)
 	}
 
 	// gametype
-	p.AddString("MRPG", 16);
+	p.AddString(g_Config.m_SvGamemodeName, 16);
 
 	// flags
 	ADD_INT(p, g_Config.m_Password[0] ? SERVER_FLAG_PASSWORD : 0);
@@ -1662,7 +1662,7 @@ void CServer::UpdateRegisterServerInfo()
 		{"max_clients", (int)MAX_PLAYERS},
 		{"max_players", (int)MAX_PLAYERS},
 		{"passworded", g_Config.m_Password[0] != '\0' ? true : false},
-		{"game_type", "MRPG"},
+		{"game_type", g_Config.m_SvGamemodeName},
 		{"name", g_Config.m_SvName},
 		{"map",
 			{

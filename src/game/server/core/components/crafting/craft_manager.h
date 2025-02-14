@@ -20,7 +20,7 @@ class CCraftManager : public MmoComponent
 	bool OnSendMenuVotes(CPlayer* pPlayer, int Menulist) override;
 
 	// vote list's menus
-	void ShowCraftList(CPlayer* pPlayer, ItemGroup Group) const;
+	void ShowCraftList(CPlayer* pPlayer, const char* pName, const std::vector<int>& Items) const;
 	void ShowCraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const;
 
 	// craft item

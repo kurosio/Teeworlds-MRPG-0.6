@@ -1123,7 +1123,7 @@ void CGS::OnClientEnter(int ClientID)
 
 	if(!pPlayer->IsAuthed())
 	{
-		Chat(-1, "'{}' entered and joined the MRPG", Server()->ClientName(ClientID));
+		Chat(-1, "'{}' entered and joined the {}", Server()->ClientName(ClientID), g_Config.m_SvGamemodeName);
 		CMmoController::AsyncClientEnterMsgInfo(Server()->ClientName(ClientID), ClientID);
 		return;
 	}
@@ -1143,7 +1143,7 @@ void CGS::OnClientDrop(int ClientID, const char* pReason)
 
 	if((Server()->ClientIngame(ClientID) || Server()->IsClientChangingWorld(ClientID)) && IsPlayerInWorld(ClientID))
 	{
-		Chat(-1, "'{}' has left the MRPG", Server()->ClientName(ClientID));
+		Chat(-1, "'{}' has left the {}", Server()->ClientName(ClientID), g_Config.m_SvGamemodeName);
 		Console()->PrintF(IConsole::OUTPUT_LEVEL_STANDARD, "game", "leave player='%d:%s'", ClientID, Server()->ClientName(ClientID));
 		Core()->SaveAccount(m_apPlayers[ClientID], SAVE_POSITION);
 	}
