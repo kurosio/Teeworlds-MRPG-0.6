@@ -7,16 +7,40 @@
 #include "../achievements/achievement_data.h"
 #include "../Inventory/InventoryManager.h"
 
+
+void CCraftManager::InitCraftGroup(const std::string& GroupName, const std::vector<int>& Items)
+{
+	// filtered items by Temporary craft list elements
+	std::vector<CCraftItem> filteredItems;
+	std::ranges::copy_if(s_vInitTemporaryCraftList, std::back_inserter(filteredItems), [&Items](const CCraftItem& p)
+	{
+		return std::ranges::find(Items, p.GetItem()->GetID()) != Items.end();
+	});
+
+	if(!filteredItems.empty())
+	{
+		// sort by price
+		std::ranges::sort(filteredItems, [](const CCraftItem& a, const CCraftItem& b)
+		{
+			return a.GetPrice(nullptr) < b.GetPrice();
+		});
+
+		// initialize
+		CCraftItem::CreateGroup(GroupName, filteredItems);
+	}
+}
+
+
 void CCraftManager::OnPreInit()
 {
-	// load crafts
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_crafts_list");
 	while(pRes->next())
 	{
-		int ItemID = pRes->getInt("ItemID");
-		int ItemValue = pRes->getInt("ItemValue");
-		int Price = pRes->getInt("Price");
-		int WorldID = pRes->getInt("WorldID");
+		// initialize variables
+		const auto ItemID = pRes->getInt("ItemID");
+		const auto ItemValue = pRes->getInt("ItemValue");
+		const auto Price = pRes->getInt("Price");
+		const auto WorldID = pRes->getInt("WorldID");
 
 		// initialize required ingredients
 		CItemsContainer RequiredIngredients {};
@@ -26,18 +50,37 @@ void CCraftManager::OnPreInit()
 			RequiredIngredients = CItem::FromArrayJSON(pJson, "items");
 		});
 
-		// initialize new craft element
+		// initialize temp craft element
 		CraftIdentifier ID = pRes->getInt("ID");
-		auto* pCraftItem = CCraftItem::CreateElement(ID);
-		pCraftItem->Init(RequiredIngredients, CItem(ItemID, ItemValue), Price, WorldID);
+		auto& elem = s_vInitTemporaryCraftList.emplace_back(ID);
+		elem.Init(RequiredIngredients, CItem(ItemID, ItemValue), Price, WorldID);
+	}
+}
+
+
+void CCraftManager::OnPostInit()
+{
+	// initialize groups
+	for(auto group = (int)ItemGroup::Quest; group < (int)ItemGroup::Potion; ++group)
+	{
+		if(group != (int)ItemGroup::Equipment)
+		{
+			const auto vCollection = CInventoryManager::GetItemsCollection((ItemGroup)group, std::nullopt);
+			InitCraftGroup(GetItemGroupName((ItemGroup)group), vCollection);
+		}
 	}
 
-	// sort craft item's by function
-	std::ranges::sort(CCraftItem::Data(), [](const CCraftItem* p1, const CCraftItem* p2)
+	for(auto type = (int)ItemType::Default; type < (int)ItemType::NUM_EQUIPPED; ++type)
 	{
-		return p1->GetItem()->Info()->GetType() > p2->GetItem()->Info()->GetType();
-	});
+		const char* pName = (type == (int)ItemType::Default) ? "Modules" : GetItemTypeName((ItemType)type);
+		const auto vCollection = CInventoryManager::GetItemsCollection(ItemGroup::Equipment, (ItemType)type);
+		InitCraftGroup(pName, vCollection);
+	}
+
+	// clear
+	s_vInitTemporaryCraftList.clear();
 }
+
 
 void CCraftManager::OnCharacterTile(CCharacter* pChr)
 {
@@ -46,13 +89,14 @@ void CCraftManager::OnCharacterTile(CCharacter* pChr)
 	HANDLE_TILE_VOTE_MENU(pPlayer, pChr, TILE_CRAFT_ZONE, MENU_CRAFTING_LIST, {}, {});
 }
 
+
 void CCraftManager::CraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const
 {
 	if(!pPlayer || !pCraft)
 		return;
 
-	const int ClientID = pPlayer->GetCID();
-	CPlayerItem* pPlayerCraftItem = pPlayer->GetItem(*pCraft->GetItem());
+	const auto ClientID = pPlayer->GetCID();
+	auto* pPlayerCraftItem = pPlayer->GetItem(*pCraft->GetItem());
 
 	// check if we have all the necessary items
 	std::string missingItems;
@@ -105,6 +149,7 @@ void CCraftManager::CraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const
 	pPlayer->m_VotesData.UpdateCurrentVotes();
 }
 
+
 bool CCraftManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const int Extra1, const int Extra2, int ReasonNumber, const char* pReason)
 {
 	// craft item function
@@ -116,6 +161,7 @@ bool CCraftManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 
 	return false;
 }
+
 
 bool CCraftManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 {
@@ -131,25 +177,8 @@ bool CCraftManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		VCraftInfo.AddItemValue(itGold);
 
 		// show craft tabs
-		for(auto group = (int)ItemGroup::Quest; group < (int)ItemGroup::Potion; ++group)
-		{
-			// equipment
-			if(group == (int)ItemGroup::Equipment)
-			{
-				for(auto type = (int)ItemType::Default; type < (int)ItemType::NUM_EQUIPPED; ++type)
-				{
-					const char* pName = (type == (int)ItemType::Default) ? "Modules" : GetItemTypeName((ItemType)type);
-					const auto vCollection = CInventoryManager::GetItemsCollection(ItemGroup::Equipment, (ItemType)type);
-					ShowCraftList(pPlayer, pName, vCollection);
-				}
-
-				continue;
-			}
-
-			// default
-			const auto vCollection = CInventoryManager::GetItemsCollection((ItemGroup)group, std::nullopt);
-			ShowCraftList(pPlayer, GetItemGroupName((ItemGroup)group), vCollection);
-		}
+		for(auto& [GroupName, GroupData] : CCraftItem::Data())
+			ShowCraftGroup(pPlayer, GroupName, GroupData);
 
 		return true;
 	}
@@ -172,6 +201,7 @@ bool CCraftManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 
 	return false;
 }
+
 
 void CCraftManager::ShowCraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const
 {
@@ -219,38 +249,21 @@ void CCraftManager::ShowCraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const
 	// add craft button
 	bool hasCraftItem = pPlayer->GetItem(pCraft->GetItem()->GetID())->HasItem();
 	if(!pCraftItemInfo->IsStackable() && hasCraftItem)
-	{
 		VoteWrapper(ClientID).Add("- You already have the item", pCraft->GetPrice(pPlayer));
-	}
 	else
-	{
 		VoteWrapper(ClientID).AddOption("CRAFT", pCraft->GetID(), "\u2699 Craft ({$} gold)", pCraft->GetPrice(pPlayer));
-	}
-
 }
 
-void CCraftManager::ShowCraftList(CPlayer* pPlayer, const char* pName, const std::vector<int>& Items) const
+
+void CCraftManager::ShowCraftGroup(CPlayer* pPlayer, const std::string& GroupName, const std::deque<CCraftItem*>& vItems) const
 {
-	const int ClientID = pPlayer->GetCID();
-	std::vector<const CCraftItem*> filteredItems;
-	std::ranges::copy_if(CCraftItem::Data(), std::back_inserter(filteredItems), [&Items](const CCraftItem* p)
-	{
-		return std::ranges::find(Items, p->GetItem()->GetID()) != Items.end();
-	});
-
-	if(filteredItems.empty())
-		return;
-
-	// sort by price
-	std::ranges::sort(filteredItems, [pPlayer](const CCraftItem* a, const CCraftItem* b) {
-		return a->GetPrice(pPlayer) < b->GetPrice(pPlayer);
-	});
+	const auto ClientID = pPlayer->GetCID();
 
 	VoteWrapper::AddEmptyline(ClientID);
-	VoteWrapper VCraftList(ClientID, VWF_SEPARATE_OPEN, pName);
-	for(const auto& pCraft : filteredItems)
+	VoteWrapper VCraftList(ClientID, VWF_SEPARATE_OPEN, GroupName.c_str());
+	for(auto& pCraft : vItems)
 	{
-		CItemDescription* pCraftItemInfo = pCraft->GetItem()->Info();
+		const auto* pCraftItemInfo = pCraft->GetItem()->Info();
 		if(pCraft->GetWorldID() != GS()->GetWorldID())
 			continue;
 
@@ -270,13 +283,17 @@ void CCraftManager::ShowCraftList(CPlayer* pPlayer, const char* pName, const std
 				pPlayer->GetItem(ItemID)->GetValue(), pCraftItemInfo->GetName(), pCraft->GetItem()->GetValue(), Price);
 		}
 	}
-
-	// add line
 	VoteWrapper::AddLine(ClientID);
 }
 
 CCraftItem* CCraftManager::GetCraftByID(CraftIdentifier ID) const
 {
-	auto iter = std::ranges::find_if(CCraftItem::Data(), [ID](const CCraftItem* p){ return p->GetID() == ID; });
-	return iter != CCraftItem::Data().end() ? *iter : nullptr;
+	for(const auto& [key, itemDeque] : CCraftItem::Data())
+	{
+		auto iter = std::ranges::find_if(itemDeque, [ID](const CCraftItem* p) { return p->GetID() == ID; });
+		if(iter != itemDeque.end())
+			return *iter;
+	}
+
+	return nullptr;
 }
