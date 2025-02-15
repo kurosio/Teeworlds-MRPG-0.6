@@ -11,7 +11,7 @@
 void CCraftManager::InitCraftGroup(const std::string& GroupName, const std::vector<int>& Items)
 {
 	// filtered items by Temporary craft list elements
-	std::vector<CCraftItem> filteredItems;
+	std::vector<CCraftItem> filteredItems {};
 	std::ranges::copy_if(s_vInitTemporaryCraftList, std::back_inserter(filteredItems), [&Items](const CCraftItem& p)
 	{
 		return std::ranges::find(Items, p.GetItem()->GetID()) != Items.end();
@@ -85,7 +85,6 @@ void CCraftManager::OnPostInit()
 void CCraftManager::OnCharacterTile(CCharacter* pChr)
 {
 	CPlayer* pPlayer = pChr->GetPlayer();
-
 	HANDLE_TILE_VOTE_MENU(pPlayer, pChr, TILE_CRAFT_ZONE, MENU_CRAFTING_LIST, {}, {});
 }
 
@@ -108,7 +107,7 @@ void CCraftManager::CraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const
 		if(playerItemCount < requiredItemCount)
 		{
 			int itemShortage = requiredItemCount - playerItemCount;
-			missingItems += fmt_localize(ClientID, "{} x{} ", RequiredItem.Info()->GetName(), itemShortage);
+			missingItems += fmt_default("{} x{} ", RequiredItem.Info()->GetName(), itemShortage);
 		}
 	}
 
@@ -257,19 +256,27 @@ void CCraftManager::ShowCraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const
 
 void CCraftManager::ShowCraftGroup(CPlayer* pPlayer, const std::string& GroupName, const std::deque<CCraftItem*>& vItems) const
 {
+	// initialize variables
 	const auto ClientID = pPlayer->GetCID();
+	const int CurrentWorldID = GS()->GetWorldID();
+	auto filteredItems = vItems | std::views::filter([&CurrentWorldID](const CCraftItem* pCraft)
+	{
+		return pCraft->GetWorldID() == CurrentWorldID;
+	});
 
+	// skip empty list
+	if(filteredItems.empty())
+		return;
+
+	// add group menu
 	VoteWrapper::AddEmptyline(ClientID);
 	VoteWrapper VCraftList(ClientID, VWF_SEPARATE_OPEN, GroupName.c_str());
-	for(auto& pCraft : vItems)
+	for(auto& pCraft : filteredItems)
 	{
-		const auto* pCraftItemInfo = pCraft->GetItem()->Info();
-		if(pCraft->GetWorldID() != GS()->GetWorldID())
-			continue;
-
-		CraftIdentifier ID = pCraft->GetID();
-		ItemIdentifier ItemID = pCraft->GetItem()->GetID();
+		const auto ID = pCraft->GetID();
+		const auto ItemID = pCraft->GetItem()->GetID();
 		const int Price = pCraft->GetPrice(pPlayer);
+		const auto* pCraftItemInfo = pCraft->GetItem()->Info();
 
 		// set title name by enchant type (or stack item, or only once)
 		if(!pCraftItemInfo->IsStackable())
@@ -285,6 +292,7 @@ void CCraftManager::ShowCraftGroup(CPlayer* pPlayer, const std::string& GroupNam
 	}
 	VoteWrapper::AddLine(ClientID);
 }
+
 
 CCraftItem* CCraftManager::GetCraftByID(CraftIdentifier ID) const
 {
