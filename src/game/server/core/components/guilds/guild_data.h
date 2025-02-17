@@ -430,7 +430,7 @@ private:
 		DBField<int>((int)GuildUpgrade::ChairExperience, "ChairExperience", "Chair experience", GUILD_NEW_UPGRADE_CHAIR),
 	};
 
-	CBank* m_pBank {};
+	CBank* m_pBankManager {};
 	CLogEntry* m_pLogger {};
 	CRanksManager* m_pRanks {};
 	CMembersManager* m_pMembers {};
@@ -460,7 +460,7 @@ public:
 
 		// components init
 		m_pLogger = new CLogEntry(this, Logflag);
-		m_pBank = new CBank(Bank, this);
+		m_pBankManager = new CBank(Bank, this);
 		m_pRanks = new CRanksManager(this, DefaultRankID);
 		m_pMembers = new CMembersManager(this, JsonMembers);
 		m_pRanks->UpdateDefaultRank();
@@ -473,9 +473,9 @@ public:
 	}
 
 	// Get guild bank
-	CBank* GetBank() const
+	CBank* GetBankManager() const
 	{
-		return m_pBank;
+		return m_pBankManager;
 	}
 
 	// Get guild log entry

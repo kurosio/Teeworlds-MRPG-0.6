@@ -1335,7 +1335,7 @@ void CCharacter::HandleTiles()
 			m_pPlayer->LockedView().ViewLock(result->first, result->second);
 
 		// zone information
-		if(m_pTilesHandler->IsActive(TILE_ZONE))
+		if(m_pTilesHandler->IsActive(TILE_SW_ZONE))
 		{
 			const auto pZone = GS()->Collision()->GetZonedetail(m_Core.m_Pos);
 			if(pZone && ((Server()->Tick() % Server()->TickSpeed() == 0) || m_Zonename != pZone->Name))
@@ -1345,7 +1345,7 @@ void CCharacter::HandleTiles()
 				GS()->Broadcast(m_ClientID, BroadcastPriority::GameBasicStats, 50, infoZone.c_str());
 			}
 		}
-		else if(m_pTilesHandler->IsExit(TILE_ZONE))
+		else if(m_pTilesHandler->IsExit(TILE_SW_ZONE))
 		{
 			m_Zonename = "unknown";
 			GS()->Broadcast(m_ClientID, BroadcastPriority::GameBasicStats, 50, "");

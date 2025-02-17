@@ -20,7 +20,7 @@ CUniversalScenario::~CUniversalScenario()
 
 bool CUniversalScenario::OnStopConditions()
 {
-	const CPlayer* pPlayer = GetPlayer();
+	const auto* pPlayer = GetPlayer();
 	return !pPlayer || !pPlayer->GetCharacter();
 }
 
@@ -47,7 +47,6 @@ void CUniversalScenario::ProcessStep(const nlohmann::json& step)
 	}
 
 	std::string action = step["action"];
-
 	if(action == "check_has_item")
 	{
 		int itemID = step.value("item_id", -1);
@@ -81,6 +80,7 @@ void CUniversalScenario::ProcessStep(const nlohmann::json& step)
 			return GetPlayer()->GetItem(itemID)->GetValue() >= required;
 		});
 	}
+
 	// reset quest
 	else if(action == "reset_quest")
 	{
@@ -95,7 +95,8 @@ void CUniversalScenario::ProcessStep(const nlohmann::json& step)
 				pQuest->Reset();
 			}
 		});
-	}	
+	}
+
 	// reset quest
 	else if(action == "accept_quest")
 	{
@@ -113,6 +114,7 @@ void CUniversalScenario::ProcessStep(const nlohmann::json& step)
 			}
 		});
 	}
+
 	// create new door
 	else if(action == "new_door")
 	{
@@ -137,6 +139,7 @@ void CUniversalScenario::ProcessStep(const nlohmann::json& step)
 			StepFixedCam(100, m_vpPersonalDoors[Key].m_Pos);
 		}
 	}
+
 	// remove door
 	else if(action == "remove_door")
 	{
@@ -159,6 +162,7 @@ void CUniversalScenario::ProcessStep(const nlohmann::json& step)
 			StepFixedCam(100, DoorPos);
 		}
 	}
+
 	// message
 	else if(action == "message")
 	{
@@ -172,6 +176,7 @@ void CUniversalScenario::ProcessStep(const nlohmann::json& step)
 		else
 			StepMessage(delay, broadcastMsg, chatMsg);
 	}
+
 	// dropped item task
 	else if(action == "pick_item_task")
 	{
@@ -192,6 +197,7 @@ void CUniversalScenario::ProcessStep(const nlohmann::json& step)
 		else
 			StepPickItemTask(position, step["item"], broadcastMsg, chatMsg);
 	}
+
 	// emote message
 	else if(action == "emote")
 	{
@@ -200,17 +206,19 @@ void CUniversalScenario::ProcessStep(const nlohmann::json& step)
 
 		StepEmote(emoteType, emoticonType);
 	}
+
 	// teleport
 	else if(action == "teleport")
 	{
-		vec2 position = 
+		vec2 position =
 		{
-			step["position"].value("x", 0.0f), 
-			step["position"].value("y", 0.0f) 
+			step["position"].value("x", 0.0f),
+			step["position"].value("y", 0.0f)
 		};
 		int worldID = step.value("world_id", -1);
 		StepTeleport(position, worldID);
 	}
+
 	// chat task
 	else if(action == "use_chat_task")
 	{
@@ -229,14 +237,15 @@ void CUniversalScenario::ProcessStep(const nlohmann::json& step)
 			return lastMessage.find(message) == 0;
 		});
 	}
+
 	// movement task
 	else if(action == "movement_task")
 	{
 		int delay = step.value("delay", 0);
-		vec2 position = 
+		vec2 position =
 		{
-			step["position"].value("x", 0.0f), 
-			step["position"].value("y", 0.0f) 
+			step["position"].value("x", 0.0f),
+			step["position"].value("y", 0.0f)
 		};
 		std::string targetLookText = step.value("target_lock_text", "");
 		bool targetLook = step.value("target_look", true);
@@ -250,6 +259,7 @@ void CUniversalScenario::ProcessStep(const nlohmann::json& step)
 		else
 			StepMovementTask(delay, position, targetLookText, broadcastMsg, chatMsg, targetLook);
 	}
+
 	// fixed cam
 	else if(action == "fix_cam")
 	{
@@ -257,24 +267,27 @@ void CUniversalScenario::ProcessStep(const nlohmann::json& step)
 		vec2 position = { step["position"].value("x", 0.0f), step["position"].value("y", 0.0f) };
 		StepFixedCam(delay, position);
 	}
+
 	// freeze movements
 	else if(action == "freeze_movements")
 	{
 		bool freezeState = step.value("state", false);
 		StepMovingDisable(freezeState);
 	}
+
 	// check quest accepted
 	else if(action == "check_quest_accepted")
 	{
 		if(int questID = step.value("quest_id", -1); questID > 0)
 		{
 			auto& checkQuestAcceptedState = AddStep();
-			checkQuestAcceptedState.CheckCondition(ConditionPriority::CONDITION_AND_TIMER, [this, questID](auto*) 
+			checkQuestAcceptedState.CheckCondition(ConditionPriority::CONDITION_AND_TIMER, [this, questID](auto*)
 			{
 				return GetPlayer()->GetQuest(questID)->IsAccepted();
 			});
 		}
 	}
+
 	// check quest completed
 	else if(action == "check_quest_finished")
 	{
@@ -287,6 +300,7 @@ void CUniversalScenario::ProcessStep(const nlohmann::json& step)
 			});
 		}
 	}
+
 	// shotmarks
 	else if(action == "shootmarkers")
 	{
@@ -419,7 +433,7 @@ void CUniversalScenario::StepTeleport(const vec2& pos, int worldID)
 			pPlayer->ChangeWorld(worldID, pos);
 			return;
 		}
-		
+
 		pPlayer->GetCharacter()->ChangePosition(pos);
 		pPlayer->m_VotesData.UpdateCurrentVotes();
 	});
@@ -446,7 +460,7 @@ void CUniversalScenario::StepShootmarkers(const std::vector<std::pair<vec2, int>
 
 	for(const auto& [position, health] : vShotmarkers)
 		StepFixedCam(100, position);
-	
+
 	auto& stepShootmarkers = AddStep();
 	stepShootmarkers.WhenActive([this](auto*)
 	{

@@ -315,7 +315,7 @@ bool CHouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* CMD, const
 		}
 
 		// add gold to house bank
-		pHouse->GetBank()->Add(Get);
+		pHouse->GetBankManager()->Add(Get);
 		pPlayer->m_VotesData.UpdateVotesIf(MENU_HOUSE);
 		return true;
 	}
@@ -339,7 +339,7 @@ bool CHouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* CMD, const
 		}
 
 		// take gold from house bank
-		pHouse->GetBank()->Take(Get);
+		pHouse->GetBankManager()->Take(Get);
 		pPlayer->m_VotesData.UpdateVotesIf(MENU_HOUSE);
 		return true;
 	}
@@ -619,12 +619,12 @@ void CHouseManager::ShowMenu(CPlayer* pPlayer) const
 	// information
 	VoteWrapper VInfo(ClientID, VWF_SEPARATE | VWF_STYLE_STRICT_BOLD, "\u2747 Information about house");
 	VInfo.Add("Class: {}", pHouse->GetClassName());
-	VInfo.Add("Bank: {} golds", pHouse->GetBank()->Get());
+	VInfo.Add("Bank: {} golds", pHouse->GetBankManager()->Get());
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// house bank
 	VoteWrapper VBank(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "\u2727 Bank Management");
-	VBank.Add("Your: {$} | Bank: {$} golds", pPlayer->Account()->GetTotalGold(), pHouse->GetBank()->Get());
+	VBank.Add("Your: {$} | Bank: {$} golds", pPlayer->Account()->GetTotalGold(), pHouse->GetBankManager()->Get());
 	VBank.AddOption("HOUSE_BANK_ADD", "Add. (Amount in a reason)");
 	VBank.AddOption("HOUSE_BANK_TAKE", "Take. (Amount in a reason)");
 	VoteWrapper::AddEmptyline(ClientID);
@@ -646,7 +646,11 @@ CHouse* CHouseManager::GetHouse(HouseIdentifier ID) const
 
 CHouse* CHouseManager::GetHouseByPos(vec2 Pos) const
 {
-	auto pHouse = std::ranges::find_if(CHouse::Data(), [Pos](auto& p) { return distance(Pos, p->GetPos()) < 128.0f; });
+	auto pHouse = std::ranges::find_if(CHouse::Data(), [&](auto& p)
+	{
+		const auto optNumber = GS()->Collision()->GetSwitchTileNumberAtIndex(p->GetPos(), TILE_SW_HOUSE_ZONE);
+		return optNumber && *optNumber == p->GetID();
+	});
 	return pHouse != CHouse::Data().end() ? *pHouse : nullptr;
 }
 

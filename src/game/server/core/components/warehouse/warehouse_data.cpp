@@ -14,10 +14,10 @@ void CWarehouse::Init(const std::string& Name, const DBSet& Type, const std::str
 	m_Currency = Currency;
 	m_WorldID = WorldID;
 
-	InitJson(Type, Data);
+	InitJsonData(Type, Data);
 }
 
-void CWarehouse::InitJson(const DBSet& Type, const std::string& Data)
+void CWarehouse::InitJsonData(const DBSet& Type, const std::string& Data)
 {
 	// check properties exist
 	dbg_assert(!Data.empty(), "The data json string is empty");

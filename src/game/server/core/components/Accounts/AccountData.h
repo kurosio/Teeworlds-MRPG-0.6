@@ -150,7 +150,7 @@ public:
 	int GetCrime() const { return m_CrimeScore; }
 	void ResetCrimeScore();
 
-	BigInt GetBank() const { return m_Bank; }
+	BigInt GetBankManager() const { return m_Bank; }
 	int GetGold() const;
 	BigInt GetTotalGold() const;
 	int GetGoldCapacity() const;

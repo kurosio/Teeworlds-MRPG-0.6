@@ -233,7 +233,7 @@ void CCollision::InitSwitchExtra()
 		const int Type = m_pSwitchExtra[i].m_Type;
 		const vec2 tilePos = { (i % m_Width) * TILE_SIZE + TILE_SIZE / 2.0f, (i / m_Width) * TILE_SIZE + TILE_SIZE / 2.0f };
 
-		if(Type == TILE_ZONE && m_vZoneDetail.contains(Number))
+		if(Type == TILE_SW_ZONE && m_vZoneDetail.contains(Number))
 		{
 			auto& zone = m_vZoneDetail[Number];
 			if(!zone.PVP)
@@ -241,7 +241,7 @@ void CCollision::InitSwitchExtra()
 				m_pTiles[i].m_ColFlags |= COLFLAG_SAFE;
 			}
 		}
-		else if(Type == TILE_TEXT && m_vZoneTextDetail.contains(Number))
+		else if(Type == TILE_SW_TEXT && m_vZoneTextDetail.contains(Number))
 		{
 			auto& zone = m_vZoneTextDetail[Number];
 			zone.vPositions.emplace_back(tilePos);
@@ -324,6 +324,30 @@ int CCollision::GetExtraTileIndex(float x, float y) const
 	int Nx = clamp(round_to_int(x) / 32, 0, m_Width - 1);
 	int Ny = clamp(round_to_int(y) / 32, 0, m_Height - 1);
 	return m_pSwitchExtra[Ny * m_Width + Nx].m_Type;
+}
+
+CSwitchTileExtra* CCollision::GetSwitchTile(vec2 Pos) const
+{
+	if(!m_pSwitchExtra)
+		return nullptr;
+
+	int Nx = clamp(round_to_int(Pos.x) / 32, 0, m_Width - 1);
+	int Ny = clamp(round_to_int(Pos.y) / 32, 0, m_Height - 1);
+	return &m_pSwitchExtra[Ny * m_Width + Nx];
+}
+
+std::optional<int> CCollision::GetSwitchTileNumber(vec2 Pos) const
+{
+	auto* pSwitchTile = GetSwitchTile(Pos);
+	return pSwitchTile ? std::make_optional(pSwitchTile->m_Number) : std::nullopt;
+}
+
+std::optional<int> CCollision::GetSwitchTileNumberAtIndex(vec2 Pos, int Index) const
+{
+	auto* pSwitchTile = GetSwitchTile(Pos);
+	if(pSwitchTile && pSwitchTile->m_Type == Index)
+		return std::make_optional(pSwitchTile->m_Number);
+	return std::nullopt;
 }
 
 std::optional<CCollision::ZoneDetail> CCollision::GetZonedetail(vec2 Pos) const

@@ -22,17 +22,12 @@ class CCraftManager : public MmoComponent
 	bool OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int Extra1, int Extra2, int ReasonNumber, const char* pReason) override;
 	bool OnSendMenuVotes(CPlayer* pPlayer, int Menulist) override;
 
-	// vote list's menus
 	void ShowCraftGroup(CPlayer* pPlayer, const std::string& GroupName, const std::deque<CCraftItem*>& vItems) const;
 	void ShowCraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const;
-
-	// craft item
 	void CraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const;
 
 public:
-	// get craft item by id
 	CCraftItem* GetCraftByID(CraftIdentifier ID) const;
-
 };
 
 #endif

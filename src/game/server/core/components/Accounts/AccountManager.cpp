@@ -343,7 +343,7 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		// Currency information
 		const auto currencyItemIDs = CInventoryManager::GetItemsCollection(ItemGroup::Currency, std::nullopt);
 		VoteWrapper VCurrency(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "Account Currency");
-		VCurrency.Add("Bank: {}", pAccount->GetBank());
+		VCurrency.Add("Bank: {}", pAccount->GetBankManager());
 		for(int itemID : currencyItemIDs)
 			VCurrency.Add("{}: {}", pPlayer->GetItem(itemID)->Info()->GetName(), pPlayer->GetItem(itemID)->GetValue());
 
@@ -620,7 +620,7 @@ bool CAccountManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
 	{
 		// initialize variables
 		const int CurrentGold = pPlayer->Account()->GetGold();
-		const BigInt CurrentBankGold = pPlayer->Account()->GetBank();
+		const BigInt CurrentBankGold = pPlayer->Account()->GetBankManager();
 		const BigInt TotalGold = pPlayer->Account()->GetTotalGold();
 
 		MotdMenu MBonuses(ClientID,  "Here you can securely store your gold. Remember, gold in the Bank is protected and will never be lost, even in death.");

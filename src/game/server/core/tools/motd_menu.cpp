@@ -46,7 +46,7 @@ void MotdMenu::Tick()
 
 		const auto visibleProportion = static_cast<float>(visibleItems) / static_cast<float>(totalItems);
 		auto scrollBarHeight = round_to_int(visibleProportion * visibleItems);
-		if(scrollBarHeight < 1) 
+		if(scrollBarHeight < 1)
 			scrollBarHeight = 1;
 
 		// calculate position

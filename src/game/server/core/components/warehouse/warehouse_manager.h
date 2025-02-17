@@ -29,10 +29,7 @@ class CWarehouseManager : public MmoComponent
 	bool SellItem(CPlayer* pPlayer, CWarehouse* pWarehouse, int TradeID, int Value) const;
 
 public:
-	// finding a warehouse by position
 	CWarehouse* GetWarehouse(vec2 Pos) const;
-
-	// finding a warehouse by ID
 	CWarehouse* GetWarehouse(int WarehouseID) const;
 };
 

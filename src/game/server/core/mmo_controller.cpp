@@ -139,7 +139,7 @@ bool CMmoController::OnSendMenuVotes(CPlayer* pPlayer, int Menulist) const
 		// Statistics menu
 		VoteWrapper VStatistics(ClientID, VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE | VWF_SEPARATE, "Class profession: {}", pProfName);
 		VStatistics.Add("Level {}, Exp {}/{}", pPlayer->Account()->GetLevel(), pPlayer->Account()->GetExperience(), expForLevel);
-		VStatistics.Add("Gold: {$}, Bank: {$}", pPlayer->Account()->GetGold(), pPlayer->Account()->GetBank());
+		VStatistics.Add("Gold: {$}, Bank: {$}", pPlayer->Account()->GetGold(), pPlayer->Account()->GetBankManager());
 		VStatistics.AddMenu(MENU_ACCOUNT_DETAIL_INFO, "\u2698 Detail information");
 		VoteWrapper::AddEmptyline(ClientID);
 
@@ -389,7 +389,7 @@ void CMmoController::SaveAccount(CPlayer* pPlayer, int Table) const
 	// save account base
 	if(Table == SAVE_STATS)
 	{
-		const auto Bank = pAccount->GetBank().to_string();
+		const auto Bank = pAccount->GetBankManager().to_string();
 		Database->Execute<DB::UPDATE>("tw_accounts_data", "Bank = '{}' WHERE ID = '{}'", Bank, AccountID);
 	}
 

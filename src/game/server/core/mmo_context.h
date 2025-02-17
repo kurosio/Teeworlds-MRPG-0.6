@@ -179,6 +179,7 @@ enum class DrawboardToolEvent : int
 	OnStart,
 	OnPointAdd,
 	OnPointErase,
+	OnUpdate,
 	OnEnd,
 };
 

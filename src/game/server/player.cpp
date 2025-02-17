@@ -631,7 +631,7 @@ void CPlayer::FormatBroadcastBasicStats(char* pBuffer, int Size, const char* pAp
 	const auto MaxMP = GetMaxMana();
 	const auto HP = m_pCharacter->Health();
 	const auto MP = m_pCharacter->Mana();
-	const auto Bank = Account()->GetBank();
+	const auto Bank = Account()->GetBankManager();
 	const auto Gold = Account()->GetGold();
 	const auto GoldCapacity = Account()->GetGoldCapacity();
 	const auto [BonusActivitiesLines, BonusActivitiesStr] = Account()->GetBonusManager().GetBonusActivitiesString();

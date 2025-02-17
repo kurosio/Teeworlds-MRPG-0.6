@@ -30,6 +30,12 @@ public:
 		COLFLAG_SAFE = 1 << 3,
 		COLFLAG_DISALLOW_MOVE = 1 << 4,
 	};
+	enum class HouseZoneType
+	{
+		Player,
+		Guild
+	};
+
 	struct ZoneDetail
 	{
 		bool PVP{};
@@ -116,6 +122,10 @@ public:
 	int GetMainTileIndex(float x, float y) const;
 	int GetFrontTileIndex(float x, float y) const;
 	int GetExtraTileIndex(float x, float y) const;
+
+	CSwitchTileExtra* GetSwitchTile(vec2 Pos) const;
+	std::optional<int> GetSwitchTileNumber(vec2 Pos) const;
+	std::optional<int> GetSwitchTileNumberAtIndex(vec2 Pos, int Index) const;
 
 	// collision flags
 	bool CheckPoint(float x, float y, int Flag = COLFLAG_SOLID) const { return (GetCollisionFlagsAt(x, y) & Flag) != 0; }

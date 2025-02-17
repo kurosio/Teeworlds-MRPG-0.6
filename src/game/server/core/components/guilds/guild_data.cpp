@@ -13,7 +13,7 @@ CGuild::~CGuild()
 	delete m_pMembers;
 	delete m_pLogger;
 	delete m_pRanks;
-	delete m_pBank;
+	delete m_pBankManager;
 }
 
 bool CGuild::Upgrade(GuildUpgrade Type)
@@ -25,7 +25,7 @@ bool CGuild::Upgrade(GuildUpgrade Type)
 		return false;
 
 	const int Price = GetUpgradePrice(Type);
-	if(m_pBank->Spend(Price))
+	if(m_pBankManager->Spend(Price))
 	{
 		pUpgradeField->m_Value += 1;
 		Database->Execute<DB::UPDATE>(TW_GUILDS_TABLE, "{} = '{}' WHERE ID = '{}'", pUpgradeField->getFieldName(), pUpgradeField->m_Value, m_ID);
@@ -111,7 +111,7 @@ GuildResult CGuild::BuyHouse(int HouseID)
 		return GuildResult::BUY_HOUSE_ALREADY_PURCHASED;
 
 	// try to buy the house
-	if(GetBank()->Spend((*IterHouse)->GetInitialFee()))
+	if(GetBankManager()->Spend((*IterHouse)->GetInitialFee()))
 	{
 		// implement the house
 		m_pHouse = *IterHouse;
@@ -581,13 +581,13 @@ bool CGuild::CMember::DepositInBank(int Value)
 	{
 		// implement deposit
 		m_Deposit += Value;
-		m_pGuild->GetBank()->Add(Value);
+		m_pGuild->GetBankManager()->Add(Value);
 		m_pGuild->GetMembers()->Save();
 
 		// send messages
 		const char* pNickname = Instance::Server()->GetAccountNickname(m_AccountID);
 		m_pGuild->GetLogger()->Add(LOGFLAG_BANK_CHANGES, "'%s' deposit '%d' in the guild safe.", pNickname, Value);
-		GS()->ChatGuild(m_pGuild->GetID(), "'{}' deposit {} gold in the safe, now {}!", pNickname, Value, m_pGuild->GetBank()->Get());
+		GS()->ChatGuild(m_pGuild->GetID(), "'{}' deposit {} gold in the safe, now {}!", pNickname, Value, m_pGuild->GetBankManager()->Get());
 		return true;
 	}
 
@@ -602,7 +602,7 @@ bool CGuild::CMember::WithdrawFromBank(int Value)
 		return false;
 
 	// try spend from guild bank
-	if(m_pGuild->GetBank()->Spend(Value))
+	if(m_pGuild->GetBankManager()->Spend(Value))
 	{
 		// implement the withdraw
 		m_Deposit -= Value;
@@ -612,7 +612,7 @@ bool CGuild::CMember::WithdrawFromBank(int Value)
 		// send messages
 		const char* pNickname = Instance::Server()->GetAccountNickname(m_AccountID);
 		m_pGuild->GetLogger()->Add(LOGFLAG_BANK_CHANGES, "'%s' withdrawn '%d' from the guild safe.", pNickname, Value);
-		GS()->ChatGuild(m_pGuild->GetID(), "'{}' withdrawn {} gold from the safe, now {}!", pNickname, Value, m_pGuild->GetBank()->Get());
+		GS()->ChatGuild(m_pGuild->GetID(), "'{}' withdrawn {} gold from the safe, now {}!", pNickname, Value, m_pGuild->GetBankManager()->Get());
 		return true;
 	}
 

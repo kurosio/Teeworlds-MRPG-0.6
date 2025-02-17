@@ -62,6 +62,9 @@ bool CBrush::OnUpdate()
 		return false;
 	}
 
+	if(!ProccessEvent(DrawboardToolEvent::OnUpdate, nullptr))
+		return false;
+
 	SendBroadcast();
 	return HandleInput();
 }

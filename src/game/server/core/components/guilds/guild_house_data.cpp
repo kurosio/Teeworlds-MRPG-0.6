@@ -67,11 +67,11 @@ const char* CGuildHouse::GetOwnerName() const
 bool CGuildHouse::ExtendRentDays(int Days)
 {
 	// check validity
-	if(!m_pGuild || !m_pGuild->GetBank())
+	if(!m_pGuild || !m_pGuild->GetBankManager())
 		return false;
 
 	// try spend for rent days
-	if(m_pGuild->GetBank()->Spend(GetRentPrice() * Days))
+	if(m_pGuild->GetBankManager()->Spend(GetRentPrice() * Days))
 	{
 		m_RentDays += Days;
 		Database->Execute<DB::UPDATE>(TW_GUILDS_HOUSES, "RentDays = '{}' WHERE ID = '{}'", m_RentDays, m_ID);
@@ -84,7 +84,7 @@ bool CGuildHouse::ExtendRentDays(int Days)
 bool CGuildHouse::ReduceRentDays(int Days)
 {
 	// check validity
-	if(!m_pGuild || !m_pGuild->GetBank() || m_RentDays <= 0)
+	if(!m_pGuild || !m_pGuild->GetBankManager() || m_RentDays <= 0)
 		return false;
 
 	// reduce rent days
@@ -131,7 +131,7 @@ CGuildHouse::CDecorationManager::~CDecorationManager()
 void CGuildHouse::CDecorationManager::Init()
 {
 	// Create a new instance of CEntityDrawboard and pass the world and house position as parameters
-	m_pDrawBoard = new CEntityDrawboard(&GS()->m_World, m_pHouse->GetPos(), m_pHouse->GetRadius());
+	m_pDrawBoard = new CEntityDrawboard(&GS()->m_World, m_pHouse->GetPos(), 3200.f);
 	m_pDrawBoard->RegisterEvent(&CDecorationManager::DrawboardToolEventCallback, m_pHouse);
 	m_pDrawBoard->SetFlags(DRAWBOARDFLAG_PLAYER_ITEMS);
 
@@ -152,6 +152,15 @@ bool CGuildHouse::CDecorationManager::StartDrawing(CPlayer* pPlayer) const
 	return pPlayer && pPlayer->GetCharacter() && m_pDrawBoard->StartDrawing(pPlayer);
 }
 
+bool CGuildHouse::CDecorationManager::EndDrawing(CPlayer* pPlayer)
+{
+	if(!pPlayer && pPlayer->GetCharacter())
+		return false;
+
+	m_pDrawBoard->EndDrawing(pPlayer);
+	return true;
+}
+
 bool CGuildHouse::CDecorationManager::HasFreeSlots() const
 {
 	return m_pDrawBoard->GetEntityPoints().size() < (int)MAX_DECORATIONS_PER_HOUSE;
@@ -160,12 +169,25 @@ bool CGuildHouse::CDecorationManager::HasFreeSlots() const
 bool CGuildHouse::CDecorationManager::DrawboardToolEventCallback(DrawboardToolEvent Event, CPlayer* pPlayer, const EntityPoint* pPoint, void* pUser)
 {
 	// check validity
-	const auto pHouse = (CGuildHouse*)pUser;
+	const auto* pHouse = (CGuildHouse*)pUser;
 	if(!pPlayer || !pHouse)
 		return false;
 
 	// initialize variables
 	const int& ClientID = pPlayer->GetCID();
+
+	// event update
+	if(Event == DrawboardToolEvent::OnUpdate)
+	{
+		const auto MousePos = pPlayer->GetCharacter()->GetMousePos();
+		const auto optNumber = pHouse->GS()->Collision()->GetSwitchTileNumberAtIndex(MousePos, TILE_SW_GUILD_HOUSE_ZONE);
+		if(!optNumber || (*optNumber != pHouse->GetID()))
+		{
+			pHouse->GS()->Chat(ClientID, "Editing is not allowed in your cursor area. Editor closed!");
+			return false;
+		}
+		return true;
+	}
 
 	// event point add
 	if(Event == DrawboardToolEvent::OnPointAdd && pPoint)

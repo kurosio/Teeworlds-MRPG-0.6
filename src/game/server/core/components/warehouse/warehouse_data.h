@@ -132,7 +132,7 @@ public:
 
 	// initialize
 	void Init(const std::string& Name, const DBSet& Type, const std::string& Data, vec2 Pos, int Currency, int WorldID);
-	void InitJson(const DBSet& Type, const std::string& Data);
+	void InitJsonData(const DBSet& Type, const std::string& Data);
 	void SaveData();
 
 	int GetID() const { return m_ID; }

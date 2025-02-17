@@ -1124,7 +1124,7 @@ void CGuildManager::Disband(GuildIdentifier ID) const
 	}
 
 	// send mail
-	BigInt ReturnsGold = std::max((BigInt)1, pGuild->GetBank()->Get());
+	BigInt ReturnsGold = std::max((BigInt)1, pGuild->GetBankManager()->Get());
 	MailWrapper Mail("System", pGuild->GetLeaderUID(), "Your guild was disbanded.");
 	Mail.AddDescLine("We returned some gold from your guild.");
 	mystd::process_bigint_in_chunks<int>(ReturnsGold, [&Mail](int chunk)
@@ -1167,12 +1167,12 @@ void CGuildManager::ShowMenu(int ClientID) const
 	VInfo.Add("Leader: {}", Server()->GetAccountNickname(pGuild->GetLeaderUID()));
 	VInfo.Add("Level: {} Exp: {}/{}", pGuild->GetLevel(), pGuild->GetExperience(), ExpNeed);
 	VInfo.Add("Members: {} of {}", MemberUsedSlots, MemberMaxSlots);
-	VInfo.Add("Bank: {$} gold", pGuild->GetBank()->Get());
+	VInfo.Add("Bank: {$} gold", pGuild->GetBankManager()->Get());
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// Guild management
 	VoteWrapper VManagement(ClientID, VWF_SEPARATE_OPEN|VWF_STYLE_SIMPLE, "\u262B Guild Management");
-	VManagement.Add("Your: {$} | Bank: {$} gold", pPlayer->Account()->GetTotalGold(), pGuild->GetBank()->Get());
+	VManagement.Add("Your: {$} | Bank: {$} gold", pPlayer->Account()->GetTotalGold(), pGuild->GetBankManager()->Get());
 	VManagement.AddOption("GUILD_DEPOSIT_GOLD", "Deposit. (Amount in a reason)");
 	VManagement.AddLine();
 	VManagement.AddMenu(MENU_GUILD_UPGRADES, "Improvements & Upgrades");
@@ -1190,7 +1190,7 @@ void CGuildManager::ShowMenu(int ClientID) const
 		auto* pHouse = pGuild->GetHouse();
 		VoteWrapper::AddEmptyline(ClientID);
 		VoteWrapper VHouse(ClientID, VWF_SEPARATE_OPEN|VWF_STYLE_SIMPLE, "\u2302 House Management (rented for {# (day|days)})", pHouse->GetRentDays());
-		VHouse.Add("Bank: {$} | Rent per day: {$} gold", pGuild->GetBank()->Get(), pHouse->GetRentPrice());
+		VHouse.Add("Bank: {$} | Rent per day: {$} gold", pGuild->GetBankManager()->Get(), pHouse->GetRentPrice());
 		VHouse.AddOption("GUILD_HOUSE_EXTEND_RENT", "Extend. (Amount in a reason)");
 		VHouse.AddLine();
 		VHouse.AddOption("GUILD_HOUSE_DECORATION_EDIT", "Decoration editor");
@@ -1212,7 +1212,7 @@ void CGuildManager::ShowUpgrades(CPlayer* pPlayer) const
 	// information
 	VoteWrapper VInfo(ClientID, VWF_STYLE_STRICT_BOLD|VWF_SEPARATE, "\u2324 Guild upgrades (Information)");
 	VInfo.Add("All improvements are solely related to the guild itself.");
-	VInfo.Add("Bank: {}", pGuild->GetBank()->Get());
+	VInfo.Add("Bank: {}", pGuild->GetBankManager()->Get());
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// guild-related upgrades
@@ -1609,7 +1609,7 @@ void CGuildManager::ShowFinderDetail(CPlayer* pPlayer, GuildIdentifier ID) const
 	VInfo.Add("Leader: {}", Server()->GetAccountNickname(pGuild->GetLeaderUID()));
 	VInfo.Add("Members: {} of {}", CurrentSlots.first, CurrentSlots.second);
 	VInfo.Add("Has house: {}", pGuild->HasHouse() ? "Yes" : "No");
-	VInfo.Add("Bank: {$} gold", pGuild->GetBank()->Get());
+	VInfo.Add("Bank: {$} gold", pGuild->GetBankManager()->Get());
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// Memberlist
@@ -1657,7 +1657,7 @@ void CGuildManager::ShowBuyHouse(CPlayer* pPlayer, CGuildHouse* pHouse) const
 		}
 
 		// show options
-		VTop.Add("Bank: {$} gold | Initial fee: {$}", pGuild->GetBank()->Get(), pHouse->GetInitialFee());
+		VTop.Add("Bank: {$} gold | Initial fee: {$}", pGuild->GetBankManager()->Get(), pHouse->GetInitialFee());
 		VTop.AddOption("GUILD_HOUSE_BUY", pHouse->GetID(), "Purchase");
 	}
 }

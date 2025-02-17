@@ -76,9 +76,10 @@ enum
 	TILE_TELE_OUT = 27,
 
 	// switch extra
-	TILE_ZONE = 22,
-	TILE_TEXT = 23,
-	TILE_INTERACT_OBJECT = 24,
+	TILE_SW_ZONE = 22,
+	TILE_SW_TEXT = 23,
+	TILE_SW_HOUSE_ZONE = 24,
+	TILE_SW_GUILD_HOUSE_ZONE = 25,
 
 	// speedup extra
 	MAX_TILES = 255,

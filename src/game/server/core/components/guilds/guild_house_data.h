@@ -45,6 +45,7 @@ public:
 		~CDecorationManager();
 
 		bool StartDrawing(CPlayer* pPlayer) const;
+		bool EndDrawing(CPlayer* pPlayer);
 		bool HasFreeSlots() const;
 
 	private:

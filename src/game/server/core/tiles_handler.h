@@ -8,7 +8,7 @@ constexpr int TILES_LAYER_NUM = 3;
 #define HANDLE_TILE_MOTD_MENU(pPlayer, pChr, tile, motdMenu) \
 	if(pChr->GetTiles()->IsEnter(tile)) \
 	{ \
-		GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::GameInformation, 50, "Welcome! Press the 'self kill' key to open the menu."); \
+		GS()->SendMenuMotd(pPlayer, motdMenu); \
 	} \
 	else if(pChr->GetTiles()->IsExit(tile) && pPlayer->IsSameMotdMenu(motdMenu)) \
 	{ \
