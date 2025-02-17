@@ -124,7 +124,7 @@ bool CDecorationManager::StartDrawing(CPlayer* pPlayer) const
 bool CDecorationManager::EndDrawing(CPlayer* pPlayer)
 {
 	// check valid
-	if(!pPlayer || pPlayer->GetCharacter())
+	if(!pPlayer || !pPlayer->GetCharacter())
 		return false;
 
 
