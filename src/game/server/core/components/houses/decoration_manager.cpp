@@ -16,15 +16,12 @@ static bool DrawboardToolEventCallback(DrawboardToolEvent Event, CPlayer* pPlaye
 		return false;
 
 
-	// initialize variables
-	const int ClientID = pPlayer->GetCID();
-	const auto* pDecorationItem = pPlayer->GetItem(pPoint->m_ItemID);
-
-
 	// add point event
+	const int ClientID = pPlayer->GetCID();
 	if(Event == DrawboardToolEvent::OnPointAdd && pPoint)
 	{
 		// check free slots
+		const auto* pDecorationItem = pPlayer->GetItem(pPoint->m_ItemID);
 		if(!pManager->HasFreeSlots())
 		{
 			pManager->GS()->Chat(ClientID, "You have reached the maximum number of decorations for house!");
@@ -45,6 +42,7 @@ static bool DrawboardToolEventCallback(DrawboardToolEvent Event, CPlayer* pPlaye
 	if(Event == DrawboardToolEvent::OnPointErase)
 	{
 		// try erase element
+		const auto* pDecorationItem = pPlayer->GetItem(pPoint->m_ItemID);
 		if(pManager->Remove(pPoint))
 		{
 			pManager->GS()->Chat(ClientID, "You have removed '{}' from house!", pDecorationItem->Info()->GetName());
@@ -62,9 +60,11 @@ static bool DrawboardToolEventCallback(DrawboardToolEvent Event, CPlayer* pPlaye
 
 		if(!optNumber || (*optNumber != pHouse->GetID()))
 		{
-			pManager->EndDrawing(pPlayer);
-			return true;
+			pHouse->GS()->Chat(ClientID, "Editing is not allowed in your cursor area. Editor closed!");
+			return false;
 		}
+
+		return true;
 	}
 
 	// end drawing event
@@ -124,7 +124,7 @@ bool CDecorationManager::StartDrawing(CPlayer* pPlayer) const
 bool CDecorationManager::EndDrawing(CPlayer* pPlayer)
 {
 	// check valid
-	if(!pPlayer && pPlayer->GetCharacter())
+	if(!pPlayer || pPlayer->GetCharacter())
 		return false;
 
 

@@ -3,7 +3,9 @@
 #ifndef GAME_SERVER_COMPONENT_GUILD_HOUSE_DATA_H
 #define GAME_SERVER_COMPONENT_GUILD_HOUSE_DATA_H
 
-#include <game/server/core/components/houses/farmzone_manager.h>
+#include "../houses/base_house.h"
+#include "../houses/decoration_manager.h"
+#include "../houses/farmzone_manager.h"
 
 #define TW_GUILDS_HOUSES "tw_guilds_houses"
 #define TW_GUILD_HOUSES_DECORATION_TABLE "tw_guilds_decorations"
@@ -12,48 +14,14 @@ static constexpr float s_GuildChancePlanting = 0.025f;
 class CGS;
 class CPlayer;
 class CGuild;
-class CDrawingData;
-class CEntityHouseDecoration;
-class CEntityDrawboard;
 class CEntityGuildDoor;
-class EntityPoint;
 class CEntityGatheringNode;
 using GuildHouseIdentifier = int;
 
-class CGuildHouse : public MultiworldIdentifiableData< std::deque < CGuildHouse* > >
+class CGuildHouse : public IHouse, public MultiworldIdentifiableData< std::deque < CGuildHouse* > >
 {
 	friend class CGuild;
 	friend class CGuildHouseDoorManager;
-	friend class CGuildHouseDecorationManager;
-
-public:
-
-	/* -------------------------------------
-	 * Decorations impl
-	 * ------------------------------------- */
-	using DecorationIdentifier = int;
-	using DecorationsContainer = std::vector<CEntityHouseDecoration*>;
-	class CDecorationManager
-	{
-		CGS* GS() const;
-		CEntityDrawboard* m_pDrawBoard {};
-		CGuildHouse* m_pHouse {};
-
-	public:
-		CDecorationManager() = delete;
-		CDecorationManager(CGuildHouse* pHouse);
-		~CDecorationManager();
-
-		bool StartDrawing(CPlayer* pPlayer) const;
-		bool EndDrawing(CPlayer* pPlayer);
-		bool HasFreeSlots() const;
-
-	private:
-		void Init();
-		static bool DrawboardToolEventCallback(DrawboardToolEvent Event, CPlayer* pPlayer, const EntityPoint* pPoint, void* pUser);
-		bool Add(const EntityPoint* pPoint) const;
-		bool Remove(const EntityPoint* pPoint) const;
-	};
 
 	/* -------------------------------------
 	 * Doors impl
@@ -81,7 +49,7 @@ public:
 	};
 
 private:
-	CGS* GS() const;
+	CGS* GS() const override;
 
 	CGuild* m_pGuild {};
 	GuildHouseIdentifier m_ID{};
@@ -98,7 +66,7 @@ private:
 
 public:
 	CGuildHouse() = default;
-	~CGuildHouse();
+	~CGuildHouse() override;
 
 	static CGuildHouse* CreateElement(const GuildHouseIdentifier& ID)
 	{
@@ -121,11 +89,23 @@ public:
 
 	CGuild* GetGuild() const { return m_pGuild; }
 	CDoorManager* GetDoorManager() const { return m_pDoors; }
-	CDecorationManager* GetDecorationManager() const { return m_pDecorationManager; }
-	CFarmzonesManager* GetFarmzonesManager() const { return m_pFarmzonesManager; }
 
-	GuildHouseIdentifier GetID() const { return m_ID; }
-	vec2 GetPos() const { return m_Position; }
+	// decoration manager
+	CDecorationManager* GetDecorationManager() const
+	{
+		return m_pDecorationManager;
+	}
+
+
+	CFarmzonesManager* GetFarmzonesManager() const
+	{
+		return m_pFarmzonesManager;
+	}
+
+	int GetID() const override { return m_ID; }
+	vec2 GetPos() const override { return m_Position; }
+	const char* GetTableName() const override { return TW_GUILDS_HOUSES; }
+
 	float GetRadius() const { return m_Radius; }
 	int GetWorldID() const { return m_WorldID; }
 	int GetInitialFee() const { return m_InitialFee; }

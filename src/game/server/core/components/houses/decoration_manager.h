@@ -22,6 +22,7 @@ public:
 	{
 		m_DecorationTableName = DecorationTableName;
 		m_pHouse = pHouse;
+		Init();
 	}
 	~CDecorationManager();
 
