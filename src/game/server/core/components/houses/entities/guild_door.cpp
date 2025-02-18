@@ -5,8 +5,8 @@
 #include <game/server/entity_manager.h>
 #include <game/server/gamecontext.h>
 
-#include "game/server/core/components/guilds/guild_data.h"
-#include "game/server/core/components/guilds/guild_house_data.h"
+#include <game/server/core/components/guilds/guild_data.h>
+#include <game/server/core/components/houses/guild_house_data.h>
 
 CEntityGuildDoor::CEntityGuildDoor(CGameWorld* pGameWorld, CGuildHouse* pHouse, std::string&& Name, vec2 Pos)
 	: CEntity(pGameWorld, CGameWorld::ENTTYPE_PLAYER_HOUSE_DOOR, Pos), m_Name(std::move(Name)), m_pHouse(pHouse)

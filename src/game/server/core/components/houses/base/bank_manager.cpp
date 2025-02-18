@@ -1,5 +1,4 @@
 #include "bank_manager.h"
-
 #include <game/server/gamecontext.h>
 
 CGS* CBankManager::GS() const

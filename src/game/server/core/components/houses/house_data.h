@@ -3,11 +3,12 @@
 #ifndef GAME_SERVER_COMPONENT_HOUSE_DATA_H
 #define GAME_SERVER_COMPONENT_HOUSE_DATA_H
 
-#include "base_house.h"
-#include "bank_manager.h"
-#include "farmzone_manager.h"
-#include "decoration_manager.h"
-#include <game/server/core/components/Inventory/ItemData.h>
+#include "base/interface_house.h"
+#include "base/bank_manager.h"
+#include "base/farmzone_manager.h"
+#include "base/decoration_manager.h"
+
+#include "../Inventory/ItemData.h"
 
 #define TW_HOUSES_TABLE "tw_houses"
 
@@ -24,6 +25,12 @@ using HouseIdentifier = int;
 class CHouse : public IHouse, public MultiworldIdentifiableData< std::deque < CHouse* > >
 {
 public:
+	CGS* GS() const override;
+	CPlayer* GetPlayer() const override;
+	int GetID() const override { return m_ID; }
+	vec2 GetPos() const override { return m_Position; }
+	const char* GetTableName() const override { return TW_HOUSES_TABLE; }
+
 	/* -------------------------------------
 	 * Doors impl
 	 * ------------------------------------- */
@@ -114,12 +121,6 @@ public:
 	}
 
 	CDoorManager* GetDoorManager() const { return m_pDoorManager; }
-
-	CGS* GS() const override;
-	CPlayer* GetPlayer() const override;
-	int GetID() const override { return m_ID; }
-	vec2 GetPos() const override { return m_Position; }
-	const char* GetTableName() const override { return TW_HOUSES_TABLE; }
 
 	int GetAccountID() const { return m_AccountID; }
 	const char* GetClassName() const { return m_aClass; }

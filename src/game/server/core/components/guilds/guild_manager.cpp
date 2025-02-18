@@ -4,9 +4,10 @@
 
 #include <game/server/gamecontext.h>
 
-#include "entities/guild_door.h"
 #include <game/server/core/components/Inventory/InventoryManager.h>
 #include <game/server/core/components/mails/mail_wrapper.h>
+
+#include "../houses/entities/guild_door.h"
 
 void CGuildManager::OnPreInit()
 {

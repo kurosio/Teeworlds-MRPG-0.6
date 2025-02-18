@@ -3,9 +3,9 @@
 #ifndef GAME_SERVER_COMPONENT_GUILD_HOUSE_DATA_H
 #define GAME_SERVER_COMPONENT_GUILD_HOUSE_DATA_H
 
-#include "../houses/base_house.h"
-#include "../houses/decoration_manager.h"
-#include "../houses/farmzone_manager.h"
+#include "base/interface_house.h"
+#include "base/decoration_manager.h"
+#include "base/farmzone_manager.h"
 
 #define TW_GUILDS_HOUSES "tw_guilds_houses"
 #define TW_GUILD_HOUSES_DECORATION_TABLE "tw_guilds_decorations"

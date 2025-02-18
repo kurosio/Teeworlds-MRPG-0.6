@@ -7,8 +7,9 @@
 
 #include <game/server/core/entities/items/gathering_node.h>
 #include <game/server/core/entities/tools/draw_board.h>
-#include <game/server/core/components/guilds/entities/guild_door.h>
 #include <game/server/core/components/guilds/guild_data.h>
+
+#include "entities/guild_door.h"
 
 CGS* CGuildHouse::GS() const { return (CGS*)Instance::GameServer(m_WorldID); }
 CGuildHouse::~CGuildHouse()

@@ -2,7 +2,7 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #ifndef GAME_SERVER_CORE_COMPONENTS_GUILDS_GUILD_DATA_H
 #define GAME_SERVER_CORE_COMPONENTS_GUILDS_GUILD_DATA_H
-#include "guild_house_data.h"
+#include "../houses/guild_house_data.h"
 #include "guild_war_data.h"
 
 #define TW_GUILDS_TABLE "tw_guilds"
@@ -226,7 +226,7 @@ public:
 		CRanksManager() = delete;
 		CRanksManager(CGuild* pGuild, GuildRankIdentifier DefaultID);
 		~CRanksManager();
-		
+
 		// Get container of guild ranks
 		std::deque<class CRank*>& GetContainer()
 		{
@@ -382,7 +382,7 @@ public:
 		RequestData(int FromUID) noexcept : m_FromUID(FromUID) {}
 
 		// Getter method for retrieving the FromUID member variable
-		int GetFromUID() const noexcept { return m_FromUID; }                                
+		int GetFromUID() const noexcept { return m_FromUID; }
 	};
 
 	using RequestsContainer = std::vector < RequestData* >;
@@ -448,7 +448,7 @@ public:
 		return m_pData.emplace_back(pData);
 	}
 
-	void Init(const std::string& Name, const std::string& JsonMembers, GuildRankIdentifier DefaultRankID, int Level, 
+	void Init(const std::string& Name, const std::string& JsonMembers, GuildRankIdentifier DefaultRankID, int Level,
 		uint64_t Experience, int Score, int LeaderUID, const BigInt& Bank, int64_t Logflag, ResultPtr* pRes)
 	{
 		m_Name = Name;

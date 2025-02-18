@@ -1,7 +1,7 @@
 #ifndef GAME_SERVER_COMPONENT_HOUSE_BANK_MANAGER_H
 #define GAME_SERVER_COMPONENT_HOUSE_BANK_MANAGER_H
 
-#include "base_house.h"
+#include "interface_house.h"
 
 class CGS;
 class CPlayer;
