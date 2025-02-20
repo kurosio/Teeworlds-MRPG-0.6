@@ -1764,12 +1764,15 @@ CGuildHouse* CGuildManager::GetHouseByID(const GuildHouseIdentifier& ID) const
 
 CGuildHouse* CGuildManager::GetHouseByPos(vec2 Pos) const
 {
-	auto itHouse = std::ranges::find_if(CGuildHouse::Data(), [&Pos, this](const CGuildHouse* p)
-	{
-		return GS()->GetWorldID() == p->GetWorldID() && distance(Pos, p->GetPos()) < p->GetRadius();
-	});
+	const auto optNumber = GS()->Collision()->GetSwitchTileNumberAtIndex(Pos, TILE_SW_HOUSE_ZONE);
+	if(!optNumber.has_value())
+		return nullptr;
 
-	return itHouse != CGuildHouse::Data().end() ? *itHouse : nullptr;
+	auto pHouse = std::ranges::find_if(CGuildHouse::Data(), [&](auto& p)
+	{
+		return optNumber && *optNumber == p->GetID();
+	});
+	return pHouse != CGuildHouse::Data().end() ? *pHouse : nullptr;
 }
 
 CGuild* CGuildManager::GetGuildByID(GuildIdentifier ID) const

@@ -15,10 +15,7 @@ static constexpr float s_GuildChancePlanting = 0.025f;
 class CGS;
 class CPlayer;
 class CGuild;
-class CEntityGuildDoor;
-class CEntityGatheringNode;
 using GuildHouseIdentifier = int;
-
 class CGuildHouse : public IHouse, public MultiworldIdentifiableData< std::deque < CGuildHouse* > >
 {
 	friend class CGuild;
@@ -29,7 +26,6 @@ private:
 
 	CGuild* m_pGuild {};
 	GuildHouseIdentifier m_ID{};
-	float m_Radius {};
 	vec2 m_Position{};
 	vec2 m_TextPosition{};
 	int m_InitialFee {};
@@ -82,7 +78,6 @@ public:
 	const char* GetTableName() const override { return TW_GUILDS_HOUSES; }
 	IHouse::Type GetHouseType() const override { return IHouse::Type::Guild; }
 
-	float GetRadius() const { return m_Radius; }
 	int GetWorldID() const { return m_WorldID; }
 	int GetInitialFee() const { return m_InitialFee; }
 	int GetRentPrice() const;

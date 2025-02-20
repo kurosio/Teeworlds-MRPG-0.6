@@ -29,7 +29,6 @@ void CGuildHouse::InitComponents(const std::string& DoorsData, const std::string
 		dbg_assert(pJson.find("position") != pJson.end(), "The importal properties value is empty");
 		m_Position = pJson.value("position", vec2());
 		m_TextPosition = pJson.value("text_position", vec2());
-		m_Radius = (float)pJson.value("radius", 300);
 	});
 
 
@@ -47,9 +46,10 @@ void CGuildHouse::InitComponents(const std::string& DoorsData, const std::string
 
 int CGuildHouse::GetRentPrice() const
 {
-	int DoorCount = (int)GetDoorManager()->GetContainer().size();
-	int FarmzoneCount = (int)GetFarmzonesManager()->GetContainer().size();
-	return (int)m_Radius + (DoorCount * 200) + (FarmzoneCount * 500);
+	const auto DoorCount = (int)GetDoorManager()->GetContainer().size();
+	const auto FarmzoneCount = (int)GetFarmzonesManager()->GetContainer().size();
+
+	return (int)(DoorCount * 200) + (FarmzoneCount * 500);
 }
 
 const char* CGuildHouse::GetOwnerName() const
@@ -103,7 +103,3 @@ void CGuildHouse::UpdateGuild(CGuild* pGuild)
 		m_pGuild->m_pHouse = this;
 	}
 }
-
-/* -------------------------------------
- * Doors impl
- * ------------------------------------- */

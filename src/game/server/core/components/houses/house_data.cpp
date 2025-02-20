@@ -40,7 +40,8 @@ void CHouse::InitComponents(BigInt Bank, const std::string& DoorsData, const std
 	m_pDecorationManager = new CDecorationManager(this, TW_GUILD_HOUSES_DECORATION_TABLE);
 	m_pFarmzonesManager = new CFarmzonesManager(this, FarmzonesData);
 
-	// Asserts
+
+	// asserts
 	dbg_assert(m_pBankManager != nullptr, "The house bank is null");
 	dbg_assert(m_pFarmzonesManager != nullptr, "The house farmzones manager is null");
 	dbg_assert(m_pDecorationManager != nullptr, "The house decorations manager is null");
@@ -51,7 +52,7 @@ void CHouse::Buy(CPlayer* pPlayer)
 {
 	const int ClientID = pPlayer->GetCID();
 
-	// check is player already have a house
+	// check is already has house
 	if(pPlayer->Account()->HasHouse())
 	{
 		GS()->Chat(ClientID, "You already have a home.");
@@ -73,7 +74,7 @@ void CHouse::Buy(CPlayer* pPlayer)
 		m_pDoorManager->CloseAll();
 		m_pBankManager->Reset();
 		pPlayer->Account()->ReinitializeHouse();
-		Database->Execute<DB::UPDATE>(TW_HOUSES_TABLE, "UserID = '{}', Bank = '0', AccessList = NULL WHERE ID = '{}'", m_AccountID, m_ID);
+		Database->Execute<DB::UPDATE>(TW_HOUSES_TABLE, "UserID = '{}', Bank = '0' WHERE ID = '{}'", m_AccountID, m_ID);
 
 		// send information
 		GS()->Chat(-1, "'{}' becomes the owner of the house class '{}'.", Server()->ClientName(ClientID), GetClassName());
@@ -106,7 +107,7 @@ void CHouse::Sell()
 	m_pDoorManager->CloseAll();
 	m_pBankManager->Reset();
 	m_AccountID = -1;
-	Database->Execute<DB::UPDATE>(TW_HOUSES_TABLE, "UserID = NULL, Bank = '0', AccessList = NULL WHERE ID = '{}'", m_ID);
+	Database->Execute<DB::UPDATE>(TW_HOUSES_TABLE, "UserID = NULL, Bank = '0' WHERE ID = '{}'", m_ID);
 
 	// send information
 	GS()->ChatAccount(m_AccountID, "Your House is sold!");

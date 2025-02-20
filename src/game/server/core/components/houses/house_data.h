@@ -36,7 +36,7 @@ private:
 	vec2 m_Position {};
 	vec2 m_TextPosition {};
 	vec2 m_FarmPos {};
-	char m_aClass[32] {};
+	std::string m_ClassName {};
 	int m_AccountID {};
 	int m_WorldID {};
 	int m_Price {};
@@ -52,15 +52,16 @@ public:
 		return m_pData.emplace_back(std::move(pData));
 	}
 
-	void Init(int AccountID, std::string Class, int Price, BigInt Bank, int WorldID, std::string AccessDoorList, std::string&& JsonDoors, std::string&& JsonFarmzones, std::string&& JsonProperties)
+	void Init(int AccountID, const std::string& ClassName, int Price, BigInt Bank, int WorldID,
+		const std::string& DoorsData, const std::string& FarmzonesData, const std::string& PropertiesData)
 	{
 		m_AccountID = AccountID;
-		str_copy(m_aClass, Class.c_str(), sizeof(m_aClass));
+		m_ClassName = ClassName;
 		m_Price = Price;
 		m_WorldID = WorldID;
 
-		// init decoration
-		InitComponents(Bank, std::move(JsonDoors), std::move(JsonFarmzones), std::move(JsonProperties));
+		// init components
+		InitComponents(Bank, DoorsData, FarmzonesData, PropertiesData);
 	}
 
 	CDecorationManager* GetDecorationManager() const { return m_pDecorationManager; }
@@ -69,7 +70,7 @@ public:
 	CDoorManager* GetDoorManager() const { return m_pDoorManager; }
 
 	int GetAccountID() const { return m_AccountID; }
-	const char* GetClassName() const { return m_aClass; }
+	const char* GetClassName() const { return m_ClassName.c_str(); }
 	const vec2& GetFarmPos() const { return m_FarmPos; }
 	bool HasOwner() const { return m_AccountID > 0; }
 	int GetPrice() const { return m_Price; }

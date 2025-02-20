@@ -15,18 +15,17 @@ void CHouseManager::OnInitWorld(const std::string& SqlQueryWhereWorld)
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", TW_HOUSES_TABLE, SqlQueryWhereWorld.c_str());
 	while(pRes->next())
 	{
-		HouseIdentifier ID = pRes->getInt("ID");
-		int AccountID = pRes->getInt("UserID");
-		std::string ClassName = pRes->getString("Class");
-		int Price = pRes->getInt("Price");
-		int Bank = pRes->getInt("Bank");
-		int WorldID = pRes->getInt("WorldID");
-		std::string AccessList = pRes->getString("AccessList");
-		std::string JsonDoors = pRes->getString("Doors");
-		std::string JsonFarmzones = pRes->getString("Farmzones");
-		std::string JsonProperties = pRes->getString("Properties");
+		const auto ID = pRes->getInt("ID");
+		const auto AccountID = pRes->getInt("UserID");
+		const auto ClassName = pRes->getString("Class");
+		const auto Price = pRes->getInt("Price");
+		const auto Bank = pRes->getBigInt("Bank");
+		const auto WorldID = pRes->getInt("WorldID");
+		std::string DoorsData = pRes->getString("Doors");
+		std::string FarmzonesData = pRes->getString("Farmzones");
+		std::string PropertiesData = pRes->getString("Properties");
 
-		CHouse::CreateElement(ID)->Init(AccountID, ClassName, Price, Bank, WorldID, std::move(AccessList), std::move(JsonDoors), std::move(JsonFarmzones), std::move(JsonProperties));
+		CHouse::CreateElement(ID)->Init(AccountID, ClassName, Price, Bank, WorldID, DoorsData, FarmzonesData, PropertiesData);
 	}
 }
 
