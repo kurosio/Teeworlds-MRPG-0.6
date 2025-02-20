@@ -19,7 +19,7 @@ CHouse::~CHouse()
 	delete m_pBankManager;
 }
 
-void CHouse::InitComponents(BigInt Bank, const std::string& DoorsData, const std::string& FarmzonesData, const std::string& PropertiesData)
+void CHouse::InitComponents(const BigInt& Bank, const std::string& DoorsData, const std::string& FarmzonesData, const std::string& PropertiesData)
 {
 	// assert main properties string
 	dbg_assert(PropertiesData.length() > 0, "The properties string is empty");
@@ -67,14 +67,15 @@ void CHouse::Buy(CPlayer* pPlayer)
 	}
 
 	// try spend currency
-	if(pPlayer->Account()->SpendCurrency(m_Price))
+	if(pPlayer->Account()->SpendCurrency(m_InitialFee))
 	{
 		// update data
 		m_AccountID = pPlayer->Account()->GetID();
 		m_pDoorManager->CloseAll();
 		m_pBankManager->Reset();
+		m_RentDays = 3;
 		pPlayer->Account()->ReinitializeHouse();
-		Database->Execute<DB::UPDATE>(TW_HOUSES_TABLE, "UserID = '{}', Bank = '0' WHERE ID = '{}'", m_AccountID, m_ID);
+		Database->Execute<DB::UPDATE>(TW_HOUSES_TABLE, "UserID = '{}', Bank = '0', RentDays = '3' WHERE ID = '{}'", m_AccountID, m_ID);
 
 		// send information
 		GS()->Chat(-1, "'{}' becomes the owner of the house class '{}'.", Server()->ClientName(ClientID), GetClassName());
@@ -144,7 +145,9 @@ void CHouse::HandleTimePeriod(ETimePeriod Period)
 
 int CHouse::GetRentPrice() const
 {
-	int DoorCount = (int)GetDoorManager()->GetContainer().size();
-	int FarmzoneCount = (int)GetFarmzonesManager()->GetContainer().size();
-	return (DoorCount * 400) + (FarmzoneCount * 400);
+	const auto DoorCount = (int)GetDoorManager()->GetContainer().size();
+	const auto FarmzoneCount = (int)GetFarmzonesManager()->GetContainer().size();
+	const auto PartPrice = translate_to_percent_rest(m_InitialFee, 33.f);
+
+	return (int)PartPrice + ((DoorCount * 200) + (FarmzoneCount * 500));
 }

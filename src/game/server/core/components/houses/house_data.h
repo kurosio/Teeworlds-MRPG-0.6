@@ -33,13 +33,13 @@ private:
 	CDoorManager* m_pDoorManager {};
 
 	HouseIdentifier m_ID {};
+	std::string m_ClassName {};
 	vec2 m_Position {};
 	vec2 m_TextPosition {};
-	vec2 m_FarmPos {};
-	std::string m_ClassName {};
 	int m_AccountID {};
 	int m_WorldID {};
-	int m_Price {};
+	int m_InitialFee {};
+	int m_RentDays {};
 
 public:
 	CHouse() = default;
@@ -52,12 +52,13 @@ public:
 		return m_pData.emplace_back(std::move(pData));
 	}
 
-	void Init(int AccountID, const std::string& ClassName, int Price, BigInt Bank, int WorldID,
+	void Init(int AccountID, const std::string& ClassName, int RentDays, int InitialFee, const BigInt& Bank, int WorldID,
 		const std::string& DoorsData, const std::string& FarmzonesData, const std::string& PropertiesData)
 	{
 		m_AccountID = AccountID;
 		m_ClassName = ClassName;
-		m_Price = Price;
+		m_InitialFee = InitialFee;
+		m_RentDays = RentDays;
 		m_WorldID = WorldID;
 
 		// init components
@@ -71,13 +72,12 @@ public:
 
 	int GetAccountID() const { return m_AccountID; }
 	const char* GetClassName() const { return m_ClassName.c_str(); }
-	const vec2& GetFarmPos() const { return m_FarmPos; }
 	bool HasOwner() const { return m_AccountID > 0; }
-	int GetPrice() const { return m_Price; }
+	int GetInitialFee() const { return m_InitialFee; }
 	int GetWorldID() const { return m_WorldID; }
 	int GetRentPrice() const;
 
-	void InitComponents(BigInt Bank, const std::string& DoorsData, const std::string& FarmzonesData, const std::string& PropertiesData);
+	void InitComponents(const BigInt& Bank, const std::string& DoorsData, const std::string& FarmzonesData, const std::string& PropertiesData);
 	void Buy(CPlayer* pPlayer);
 	void Sell();
 	void UpdateText(int Lifetime) const;

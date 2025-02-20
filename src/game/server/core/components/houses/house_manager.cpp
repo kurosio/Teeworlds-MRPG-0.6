@@ -18,14 +18,15 @@ void CHouseManager::OnInitWorld(const std::string& SqlQueryWhereWorld)
 		const auto ID = pRes->getInt("ID");
 		const auto AccountID = pRes->getInt("UserID");
 		const auto ClassName = pRes->getString("Class");
-		const auto Price = pRes->getInt("Price");
+		const auto InitialFee = pRes->getInt("InitialFee");
+		const auto RentDays = pRes->getInt("RentDays");
 		const auto Bank = pRes->getBigInt("Bank");
 		const auto WorldID = pRes->getInt("WorldID");
 		std::string DoorsData = pRes->getString("Doors");
 		std::string FarmzonesData = pRes->getString("Farmzones");
 		std::string PropertiesData = pRes->getString("Properties");
 
-		CHouse::CreateElement(ID)->Init(AccountID, ClassName, Price, Bank, WorldID, DoorsData, FarmzonesData, PropertiesData);
+		CHouse::CreateElement(ID)->Init(AccountID, ClassName, RentDays, InitialFee, Bank, WorldID, DoorsData, FarmzonesData, PropertiesData);
 	}
 }
 
@@ -511,13 +512,13 @@ void CHouseManager::ShowBuyHouse(CPlayer* pPlayer, CHouse* pHouse)
 
 	// information
 	VoteWrapper VInfo(ClientID, VWF_SEPARATE | VWF_STYLE_STRICT_BOLD, "\u2732 House information");
-	VInfo.Add("Every player has the right to rent houses.", pHouse->GetPrice());
-	VInfo.Add("An admission price is required for rentals.", pHouse->GetPrice());
+	VInfo.Add("Every player has the right to rent houses.", pHouse->GetInitialFee());
+	VInfo.Add("An admission price is required for rentals.", pHouse->GetInitialFee());
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// detail information
 	VoteWrapper VDetail(ClientID, VWF_STYLE_SIMPLE, "Detail information about house.", ID, pHouse->GetClassName());
-	VDetail.Add("Admission price: {} gold", pHouse->GetPrice());
+	VDetail.Add("Admission price: {} gold", pHouse->GetInitialFee());
 	VDetail.Add("Owned by: {}", pOwnerNickname);
 	VDetail.Add("Class: {}", pHouse->GetClassName());
 	VoteWrapper::AddEmptyline(ClientID);
@@ -525,7 +526,7 @@ void CHouseManager::ShowBuyHouse(CPlayer* pPlayer, CHouse* pHouse)
 	// buy tab
 	VoteWrapper VBuy(ClientID, VWF_OPEN|VWF_STYLE_SIMPLE, "Buying a house");
 	if(!pHouse->HasOwner())
-		VBuy.AddOption("HOUSE_BUY", "Buy for {$} golds", pHouse->GetPrice());
+		VBuy.AddOption("HOUSE_BUY", "Buy for {$} golds", pHouse->GetInitialFee());
 	else
 		VBuy.Add("This house has already been purchased!");
 	VoteWrapper::AddEmptyline(ClientID);

@@ -48,8 +48,9 @@ int CGuildHouse::GetRentPrice() const
 {
 	const auto DoorCount = (int)GetDoorManager()->GetContainer().size();
 	const auto FarmzoneCount = (int)GetFarmzonesManager()->GetContainer().size();
+	const auto PartPrice = translate_to_percent_rest(m_InitialFee, 33.f);
 
-	return (int)(DoorCount * 200) + (FarmzoneCount * 500);
+	return (int)PartPrice + ((DoorCount * 200) + (FarmzoneCount * 500));
 }
 
 const char* CGuildHouse::GetOwnerName() const
