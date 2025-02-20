@@ -181,7 +181,6 @@ bool CHouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* CMD, const
 		{
 			auto* pItemInfo = GS()->GetItemInfo(ItemID);
 			GS()->Chat(ClientID, "You have successfully removed the '{}' from '{}'.", pItemInfo->GetName(), pFarmzone->GetName());
-			pHouse->Save();
 		}
 
 		pPlayer->m_VotesData.UpdateVotesIf(MENU_HOUSE_FARMZONE_SELECT);
@@ -205,7 +204,8 @@ bool CHouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* CMD, const
 		const ItemIdentifier& ItemID = VoteID2;
 
 		// check farmzone valid
-		auto pFarmzone = pHouse->GetFarmzonesManager()->GetFarmzoneByID(FarmzoneID);
+		auto* pManager = pHouse->GetFarmzonesManager();
+		auto* pFarmzone = pManager->GetFarmzoneByID(FarmzoneID);
 		if(!pFarmzone)
 		{
 			GS()->Chat(ClientID, "Farm zone not found.");
@@ -237,7 +237,7 @@ bool CHouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* CMD, const
 				// update data
 				GS()->Chat(ClientID, "You have successfully plant to farm zone.");
 				pFarmzone->AddItemToNode(ItemID);
-				pHouse->Save();
+				pManager->Save();
 			}
 			else
 			{
@@ -377,28 +377,6 @@ bool CHouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* CMD, const
 		return true;
 	}
 
-	// house add to invited list
-	if(PPSTR(CMD, "HOUSE_INVITED_LIST_ADD") == 0)
-	{
-		const int UserID = VoteID;
-		if(auto* pHouse = pPlayer->Account()->GetHouse())
-			pHouse->GetDoorManager()->AddAccess(UserID);
-
-		pPlayer->m_VotesData.UpdateVotesIf(MENU_HOUSE_DOOR_LIST);
-		return true;
-	}
-
-	// house remove from invited list
-	if(PPSTR(CMD, "HOUSE_INVITED_LIST_REMOVE") == 0)
-	{
-		const int UserID = VoteID;
-		if(auto* pHouse = pPlayer->Account()->GetHouse())
-			pHouse->GetDoorManager()->RemoveAccess(UserID);
-
-		pPlayer->m_VotesData.UpdateVotesIf(MENU_HOUSE_DOOR_LIST);
-		return true;
-	}
-
 	return false;
 }
 
@@ -443,54 +421,6 @@ void CHouseManager::ShowDoorsController(CPlayer* pPlayer) const
 		VDoors.AddOption("HOUSE_DOOR", Number, "[{}] {} door", StateDoor ? "Closed" : "Open", DoorData->GetName());
 	}
 	VoteWrapper::AddEmptyline(ClientID);
-
-	// show active access players to house
-	auto* pHouseDoor = pHouse->GetDoorManager();
-	VoteWrapper VAccess(ClientID, VWF_OPEN | VWF_STYLE_SIMPLE, "Permits have been granted:");
-	{
-		VAccess.BeginDepth();
-		VAccess.Add("You and your eidolon have full access");
-		for(auto& p : pHouseDoor->GetAccesses())
-			VAccess.AddOption("HOUSE_INVITED_LIST_REMOVE", p, "Remove access from {}", Server()->GetAccountNickname(p));
-		VAccess.EndDepth();
-	}
-	VoteWrapper::AddEmptyline(ClientID);
-
-	// search result
-	const char* pField = pPlayer->GetTempData().m_aPlayerSearchBuf[0] == '\0' ? "by reason field" : pPlayer->GetTempData().m_aPlayerSearchBuf;
-	VoteWrapper VSearch(ClientID, VWF_SEPARATE_CLOSED | VWF_STYLE_SIMPLE, "You can add {} player's", pHouseDoor->GetAvailableAccessSlots());
-	VSearch.AddOption("HOUSE_INVITED_LIST_FIND", "Field: [{}]", pField);
-	VSearch.AddLine();
-	VSearch.Add("Result by: {}", pPlayer->GetTempData().m_aPlayerSearchBuf);
-	{
-		VSearch.BeginDepth();
-		if(pPlayer->GetTempData().m_aPlayerSearchBuf[0] != '\0')
-		{
-			bool Found = false;
-			CSqlString<64> cPlayerName = CSqlString<64>(pPlayer->GetTempData().m_aPlayerSearchBuf);
-			ResultPtr pRes = Database->Execute<DB::SELECT>("ID, Nick", "tw_accounts_data", "WHERE Nick LIKE '%{}%' LIMIT 5", cPlayerName.cstr());
-			while(pRes->next())
-			{
-				const int UserID = pRes->getInt("ID");
-				if(pHouseDoor->HasAccess(UserID) || (UserID == pPlayer->Account()->GetID()))
-					continue;
-
-				cPlayerName = pRes->getString("Nick").c_str();
-				VSearch.AddOption("HOUSE_INVITED_LIST_ADD", UserID, "Give access for {}", cPlayerName.cstr());
-				Found = true;
-			}
-
-			if(!Found)
-			{
-				VSearch.Add("Not found!", pPlayer->GetTempData().m_aPlayerSearchBuf);
-			}
-		}
-		else
-		{
-			VSearch.Add("Set the reason for the search field");
-		}
-		VSearch.EndDepth();
-	}
 }
 
 void CHouseManager::ShowFarmzonesControl(CPlayer* pPlayer) const

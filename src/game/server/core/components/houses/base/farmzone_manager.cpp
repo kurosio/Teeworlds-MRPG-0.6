@@ -8,30 +8,40 @@ void CFarmzone::Add(CGS* pGS, const vec2& Pos)
 	m_vFarms.push_back(new CEntityGatheringNode(&pGS->m_World, &m_Node, Pos, CEntityGatheringNode::GATHERING_NODE_PLANT));
 }
 
+
 void CFarmzone::AddItemToNode(int ItemID)
 {
+	// add new node
 	m_Node.m_vItems.addElement(ItemID, 100.f);
 	m_Node.m_vItems.setEqualChance(100.f);
 	m_Node.m_vItems.normalizeChances();
 }
 
+
 bool CFarmzone::RemoveItemFromNode(int ItemID)
 {
+	// check is last element
 	if(m_Node.m_vItems.size() <= 1)
 		return false;
 
+	// try remove
 	bool Removed = m_Node.m_vItems.removeElement(ItemID);
 	if(Removed)
 	{
 		m_Node.m_vItems.setEqualChance(100.f);
 		m_Node.m_vItems.normalizeChances();
 	}
+
 	return Removed;
 }
 
-CFarmzonesManager::CFarmzonesManager(const std::string& JsonFarmzones)
+
+CFarmzonesManager::CFarmzonesManager(IHouse* pHouse, const std::string& JsonFarmzones)
 {
-	// Parse the JSON string
+	// initialize variables
+	m_pHouse = pHouse;
+
+	// load farmzones from json
 	mystd::json::parse(JsonFarmzones, [this](nlohmann::json& pJson)
 	{
 		for(const auto& pFarmzone : pJson)
@@ -40,22 +50,24 @@ CFarmzonesManager::CFarmzonesManager(const std::string& JsonFarmzones)
 			auto Position = pFarmzone.value("position", vec2());
 			auto ItemsSet = DBSet(pFarmzone.value("items", ""));
 			auto Radius = (float)pFarmzone.value("radius", 100);
-
 			AddFarmzone(Farmname, ItemsSet, Position, Radius);
 		}
 	});
 }
+
 
 CFarmzonesManager::~CFarmzonesManager()
 {
 	m_vFarmzones.clear();
 }
 
+
 void CFarmzonesManager::AddFarmzone(const std::string& Farmname, const DBSet& ItemSet, vec2 Pos, float Radius)
 {
 	CFarmzone Zone(this, Farmname, ItemSet, Pos, Radius);
 	m_vFarmzones.emplace(m_vFarmzones.size() + 1, Zone);
 }
+
 
 CFarmzone* CFarmzonesManager::GetFarmzoneByPos(vec2 Pos)
 {
@@ -68,14 +80,17 @@ CFarmzone* CFarmzonesManager::GetFarmzoneByPos(vec2 Pos)
 	return nullptr;
 }
 
+
 CFarmzone* CFarmzonesManager::GetFarmzoneByID(int ID)
 {
 	const auto it = m_vFarmzones.find(ID);
 	return it != m_vFarmzones.end() ? &it->second : nullptr;
 }
 
-std::string CFarmzonesManager::DumpJsonString() const
+
+void CFarmzonesManager::Save() const
 {
+	// prepare json data
 	nlohmann::json Farmzones;
 	for(auto& p : m_vFarmzones)
 	{
@@ -94,9 +109,11 @@ std::string CFarmzonesManager::DumpJsonString() const
 			Items.pop_back();
 
 		farmzoneData["items"] = Items;
-
 		Farmzones.push_back(farmzoneData);
 	}
 
-	return Farmzones.dump(4);
+	// save to database
+	Database->Execute<DB::UPDATE>(m_pHouse->GetTableName(),
+		"Farmzones = '{}' WHERE ID = '{}'",
+		Farmzones.dump(4), m_pHouse->GetID());
 }

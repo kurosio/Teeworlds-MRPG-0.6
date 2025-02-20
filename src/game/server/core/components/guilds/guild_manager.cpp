@@ -7,7 +7,7 @@
 #include <game/server/core/components/Inventory/InventoryManager.h>
 #include <game/server/core/components/mails/mail_wrapper.h>
 
-#include "../houses/entities/guild_door.h"
+#include "../houses/entities/house_door.h"
 
 void CGuildManager::OnPreInit()
 {
@@ -684,7 +684,6 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int 
 		{
 			auto* pItemInfo = GS()->GetItemInfo(ItemID);
 			GS()->Chat(ClientID, "You have successfully removed the '{}' from '{}'.", pItemInfo->GetName(), pFarmzone->GetName());
-			pHouse->Save();
 		}
 
 		pPlayer->m_VotesData.UpdateVotesIf(MENU_GUILD_HOUSE_FARMZONE_SELECT);
@@ -716,7 +715,8 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int 
 		const ItemIdentifier& ItemID = Extra2;
 
 		// check farmzone valid
-		auto pFarmzone = pHouse->GetFarmzonesManager()->GetFarmzoneByID(FarmzoneID);
+		auto* pManager = pHouse->GetFarmzonesManager();
+		auto* pFarmzone = pManager->GetFarmzoneByID(FarmzoneID);
 		if(!pFarmzone)
 		{
 			GS()->Chat(ClientID, "Farm zone not found.");
@@ -748,7 +748,7 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int 
 				// update
 				GS()->Chat(ClientID, "You have successfully plant to farm zone.");
 				pFarmzone->AddItemToNode(ItemID);
-				pHouse->Save();
+				pManager->Save();
 			}
 			else
 			{

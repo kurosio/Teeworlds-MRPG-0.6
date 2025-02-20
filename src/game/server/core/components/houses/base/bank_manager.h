@@ -13,7 +13,8 @@ class CBankManager
 	BigInt m_Bank {};
 
 public:
-	CBankManager(IHouse* pHouse, BigInt Bank) : m_pHouse(pHouse), m_Bank(Bank) { }
+	CBankManager(IHouse* pHouse, const BigInt& Bank)
+		: m_pHouse(pHouse), m_Bank(Bank) { }
 
 	BigInt Get() const { return m_Bank; }
 	void Add(int Value);

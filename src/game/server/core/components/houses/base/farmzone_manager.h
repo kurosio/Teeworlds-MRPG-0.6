@@ -1,6 +1,8 @@
 #ifndef GAME_SERVER_COMPONENT_HOUSES_BASE_FARMZONE_MANAGER_H
 #define GAME_SERVER_COMPONENT_HOUSES_BASE_FARMZONE_MANAGER_H
 
+#include "interface_house.h"
+
 class CGS;
 class CFarmzonesManager;
 class CEntityGatheringNode;
@@ -17,6 +19,15 @@ public:
 	CFarmzone() = delete;
 	CFarmzone(CFarmzonesManager* pManager, const std::string& Name, const DBSet& ItemsSet, vec2 Pos, float Radius) : m_pManager(pManager)
 	{
+		// initialize variables
+		m_pManager = pManager;
+		m_Node.Name = Name;
+		m_Node.Level = 1;
+		m_Node.Health = 100;
+		m_Pos = Pos;
+		m_Radius = Radius;
+
+		// load items from node
 		for(auto& [str, size] : ItemsSet.GetDataItems())
 		{
 			try
@@ -29,12 +40,6 @@ public:
 				dbg_msg("house_farmzone", "%s", e.what());
 			}
 		}
-
-		m_Node.Name = Name;
-		m_Node.Level = 1;
-		m_Node.Health = 100;
-		m_Pos = Pos;
-		m_Radius = Radius;
 	}
 
 	const char* GetName() const { return m_Node.Name.c_str(); }
@@ -51,11 +56,12 @@ public:
 class CFarmzonesManager
 {
 	friend class CFarmzone;
+	IHouse* m_pHouse {};
 	std::unordered_map<int, CFarmzone> m_vFarmzones {};
 
 public:
 	CFarmzonesManager() = delete;
-	explicit CFarmzonesManager(const std::string& JsonFarmzones);
+	CFarmzonesManager(IHouse* pHouse, const std::string& JsonFarmzones);
 	~CFarmzonesManager();
 
 	std::unordered_map<int, CFarmzone>& GetContainer() { return m_vFarmzones; }
@@ -63,7 +69,7 @@ public:
 	void AddFarmzone(const std::string& Farmname, const DBSet& ItemSet, vec2 Pos, float Radius);
 	CFarmzone* GetFarmzoneByPos(vec2 Pos);
 	CFarmzone* GetFarmzoneByID(int ID);
-	std::string DumpJsonString() const;
+	void Save() const;
 };
 
 #endif

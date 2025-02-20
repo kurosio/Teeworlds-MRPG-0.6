@@ -2,8 +2,6 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "house_data.h"
 
-#include "entities/house_door.h"
-
 #include <game/server/entity_manager.h>
 #include <game/server/gamecontext.h>
 #include <game/server/core/entities/items/gathering_node.h>
@@ -21,7 +19,7 @@ CHouse::~CHouse()
 	delete m_pBankManager;
 }
 
-void CHouse::InitProperties(BigInt Bank, const std::string& AccessList, const std::string& DoorsData, const std::string& FarmzonesData, const std::string& PropertiesData)
+void CHouse::InitComponents(BigInt Bank, const std::string& DoorsData, const std::string& FarmzonesData, const std::string& PropertiesData)
 {
 	// assert main properties string
 	dbg_assert(PropertiesData.length() > 0, "The properties string is empty");
@@ -38,9 +36,9 @@ void CHouse::InitProperties(BigInt Bank, const std::string& AccessList, const st
 
 	// initialize components
 	m_pBankManager = new CBankManager(this, Bank);
-	m_pDoorManager = new CDoorManager(this, AccessList, DoorsData);
+	m_pDoorManager = new CDoorManager(this, DoorsData);
 	m_pDecorationManager = new CDecorationManager(this, TW_GUILD_HOUSES_DECORATION_TABLE);
-	m_pFarmzonesManager = new CFarmzonesManager(FarmzonesData);
+	m_pFarmzonesManager = new CFarmzonesManager(this, FarmzonesData);
 
 	// Asserts
 	dbg_assert(m_pBankManager != nullptr, "The house bank is null");
@@ -143,167 +141,9 @@ void CHouse::HandleTimePeriod(ETimePeriod Period)
 	}
 }
 
-void CHouse::Save()
-{
-	Database->Execute<DB::UPDATE>(TW_GUILDS_HOUSES, "Farmzones = '{}' WHERE ID = '{}'", m_pFarmzonesManager->DumpJsonString(), m_ID);
-}
-
 int CHouse::GetRentPrice() const
 {
 	int DoorCount = (int)GetDoorManager()->GetContainer().size();
 	int FarmzoneCount = (int)GetFarmzonesManager()->GetContainer().size();
 	return (DoorCount * 400) + (FarmzoneCount * 400);
 }
-
-/* -------------------------------------
- * Door impl
- * ------------------------------------- */
-CGS* CHouse::CDoorManager::GS() const { return m_pHouse->GS(); }
-CPlayer* CHouse::CDoorManager::GetPlayer() const { return m_pHouse->GetPlayer(); }
-CHouse::CDoorManager::CDoorManager(CHouse* pHouse, const std::string& AccessList, const std::string& DoorsData) : m_pHouse(pHouse)
-{
-	// parse doors the JSON string
-	mystd::json::parse(DoorsData, [this](nlohmann::json& pJson)
-	{
-		for(const auto& pDoor : pJson)
-		{
-			auto Doorname = pDoor.value("name", "");
-			auto Position = pDoor.value("position", vec2());
-			AddDoor(Doorname.c_str(), Position);
-		}
-	});
-
-	// initialize access list
-	DBSet m_Set(AccessList);
-	m_vAccessUserIDs.reserve(MAX_HOUSE_DOOR_INVITED_PLAYERS);
-	for(auto& p : m_Set.GetDataItems())
-	{
-		if(int UID = std::atoi(p.first.c_str()); UID > 0)
-			m_vAccessUserIDs.insert(UID);
-	}
-}
-
-CHouse::CDoorManager::~CDoorManager()
-{
-	for(auto& p : m_vpEntDoors)
-		delete p.second;
-	m_vpEntDoors.clear();
-	m_vAccessUserIDs.clear();
-}
-
-void CHouse::CDoorManager::Open(int Number)
-{
-	if(m_vpEntDoors.find(Number) != m_vpEntDoors.end())
-		m_vpEntDoors[Number]->Open();
-}
-
-void CHouse::CDoorManager::Close(int Number)
-{
-	if(m_vpEntDoors.find(Number) != m_vpEntDoors.end())
-		m_vpEntDoors[Number]->Close();
-}
-
-void CHouse::CDoorManager::Reverse(int Number)
-{
-	if(m_vpEntDoors.find(Number) != m_vpEntDoors.end())
-	{
-		if(m_vpEntDoors[Number]->IsClosed())
-			Open(Number); // Open the door
-		else
-			Close(Number); // Close the door
-	}
-}
-
-void CHouse::CDoorManager::OpenAll()
-{
-	for(auto& p : m_vpEntDoors)
-		Open(p.first);
-}
-
-void CHouse::CDoorManager::CloseAll()
-{
-	for(auto& p : m_vpEntDoors)
-		Close(p.first);
-}
-
-void CHouse::CDoorManager::ReverseAll()
-{
-	for(auto& p : m_vpEntDoors)
-		Reverse(p.first);
-}
-
-void CHouse::CDoorManager::AddAccess(int UserID)
-{
-	// check if the size of the m_vAccessUserIDs set is greater than or equal to the maximum number of invited players allowed
-	if(m_vAccessUserIDs.size() >= MAX_HOUSE_DOOR_INVITED_PLAYERS)
-	{
-		GS()->ChatAccount(m_pHouse->GetAccountID(), "You have reached the limit of the allowed players!");
-		return;
-	}
-
-	// try add access to list
-	if(!m_vAccessUserIDs.insert(UserID).second)
-		return;
-
-	// update
-	SaveAccessList();
-}
-
-void CHouse::CDoorManager::RemoveAccess(int UserID)
-{
-	// try remove access
-	if(m_vAccessUserIDs.erase(UserID) > 0)
-		SaveAccessList();
-}
-
-bool CHouse::CDoorManager::HasAccess(int UserID)
-{
-	return m_pHouse->GetAccountID() == UserID || m_vAccessUserIDs.find(UserID) != m_vAccessUserIDs.end();
-}
-
-int CHouse::CDoorManager::GetAvailableAccessSlots() const
-{
-	return (int)MAX_HOUSE_DOOR_INVITED_PLAYERS - (int)m_vAccessUserIDs.size();
-}
-
-void CHouse::CDoorManager::SaveAccessList() const
-{
-	// initialize variables
-	std::string AcessList;
-	AcessList.reserve(m_vAccessUserIDs.size() * 8);
-
-	// parse access user ids to string
-	for(const auto& UID : m_vAccessUserIDs)
-	{
-		AcessList += std::to_string(UID);
-		AcessList += ',';
-	}
-
-	// remove last comma character
-	if(!AcessList.empty())
-		AcessList.pop_back();
-
-	// update
-	Database->Execute<DB::UPDATE>(TW_HOUSES_TABLE, "AccessList = '{}' WHERE ID = '{}'", AcessList.c_str(), m_pHouse->GetID());
-}
-
-void CHouse::CDoorManager::AddDoor(const char* pDoorname, vec2 Position)
-{
-	// Add the door to the m_vpEntDoors map using the door name as the key
-	m_vpEntDoors.emplace(m_vpEntDoors.size() + 1, new CEntityHouseDoor(&GS()->m_World, m_pHouse, std::string(pDoorname), Position));
-}
-
-void CHouse::CDoorManager::RemoveDoor(const char* pDoorname, vec2 Position)
-{
-	auto iter = std::find_if(m_vpEntDoors.begin(), m_vpEntDoors.end(), [&](const std::pair<int, CEntityHouseDoor*>& p)
-	{
-		return p.second->GetName() == pDoorname && p.second->GetPos() == Position;
-	});
-
-	if(iter != m_vpEntDoors.end())
-	{
-		delete iter->second;
-		m_vpEntDoors.erase(iter);
-	}
-}
-

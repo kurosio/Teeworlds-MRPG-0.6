@@ -5,6 +5,7 @@
 
 #include "base/interface_house.h"
 #include "base/decoration_manager.h"
+#include "base/door_manager.h"
 #include "base/farmzone_manager.h"
 
 #define TW_GUILDS_HOUSES "tw_guilds_houses"
@@ -23,31 +24,6 @@ class CGuildHouse : public IHouse, public MultiworldIdentifiableData< std::deque
 	friend class CGuild;
 	friend class CGuildHouseDoorManager;
 
-	/* -------------------------------------
-	 * Doors impl
-	 * ------------------------------------- */
-	class CDoorManager
-	{
-		CGS* GS() const;
-		CGuildHouse* m_pHouse {};
-		ska::unordered_map<int, CEntityGuildDoor*> m_apEntDoors {};
-
-	public:
-		CDoorManager() = delete;
-		CDoorManager(CGuildHouse* pHouse, std::string&& JsonDoors);
-		~CDoorManager();
-
-		ska::unordered_map<int, CEntityGuildDoor*>& GetContainer() { return m_apEntDoors; }
-		void Open(int Number); // Open a specific door
-		void Close(int Number); // Close a specific door
-		void Reverse(int Number); // Reverse the state of a specific door
-		void OpenAll(); // Open all doors
-		void CloseAll(); // Close all doors
-		void ReverseAll(); // Reverse the state of all doors
-		void AddDoor(const char* pDoorname, vec2 Position);
-		void RemoveDoor(const char* pDoorname, vec2 Position);
-	};
-
 private:
 	CGS* GS() const override;
 
@@ -60,7 +36,7 @@ private:
 	int m_WorldID{};
 	int m_RentDays {};
 
-	CDoorManager* m_pDoors {};
+	CDoorManager* m_pDoorManager {};
 	CDecorationManager* m_pDecorationManager {};
 	CFarmzonesManager* m_pFarmzonesManager {};
 
@@ -75,20 +51,19 @@ public:
 		return m_pData.emplace_back(std::move(pData));
 	}
 
-	void Init(CGuild* pGuild, int RentDays, int InitialFee, int WorldID, std::string&& JsonDoors, std::string&& JsonFarmzones, std::string&& JsonProperties)
+	void Init(CGuild* pGuild, int RentDays, int InitialFee, int WorldID, std::string&& DoorsData, std::string&& FarmzonesData, std::string&& PropertiesData)
 	{
 		m_InitialFee = InitialFee;
 		m_RentDays = RentDays;
 		m_WorldID = WorldID;
 
-		InitProperties(std::move(JsonDoors), std::move(JsonFarmzones), std::move(JsonProperties));
+		InitComponents(DoorsData, FarmzonesData, PropertiesData);
 		UpdateGuild(pGuild);
 	}
-
-	void InitProperties(std::string&& JsonDoors, std::string&& JsonFarmzones, std::string&& JsonProperties);
+	void InitComponents(const std::string& DoorsData, const std::string& FarmzonesData, const std::string& PropertiesData);
 
 	CGuild* GetGuild() const { return m_pGuild; }
-	CDoorManager* GetDoorManager() const { return m_pDoors; }
+	CDoorManager* GetDoorManager() const { return m_pDoorManager; }
 
 	// decoration manager
 	CDecorationManager* GetDecorationManager() const
@@ -105,6 +80,7 @@ public:
 	int GetID() const override { return m_ID; }
 	vec2 GetPos() const override { return m_Position; }
 	const char* GetTableName() const override { return TW_GUILDS_HOUSES; }
+	IHouse::Type GetHouseType() const override { return IHouse::Type::Guild; }
 
 	float GetRadius() const { return m_Radius; }
 	int GetWorldID() const { return m_WorldID; }
@@ -118,7 +94,6 @@ public:
 	bool ReduceRentDays(int Days);
 	void UpdateText(int Lifetime) const;
 	void UpdateGuild(CGuild* pGuild);
-	void Save();
 };
 
 #endif
