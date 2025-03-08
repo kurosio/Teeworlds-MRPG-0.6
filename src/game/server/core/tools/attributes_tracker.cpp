@@ -1,23 +1,7 @@
 #include "attributes_tracker.h"
 
-constexpr const char* TRACKING_FILE_NAME = "attribute_tracking.json";
+constexpr const char* TRACKING_FILE_NAME = "server_data/attribute_tracking.json";
 
-namespace nlohmann
-{
-	inline void to_json(nlohmann::json& j, const TrackingAttributeData& data)
-	{
-		j = nlohmann::json {
-			{"AccountID", data.AccountID},
-			{"Amount", data.Amount}
-		};
-	}
-
-	inline void from_json(const nlohmann::json& j, TrackingAttributeData& data)
-	{
-		j.at("AccountID").get_to(data.AccountID);
-		j.at("Amount").get_to(data.Amount);
-	}
-}
 
 void CAttributesTracker::Load()
 {
@@ -31,6 +15,7 @@ void CAttributesTracker::Load()
 	auto j = nlohmann::json::parse((char*)RawData.data());
 	m_vTrackingData = j.value("tracking", std::unordered_map<int, TrackingAttributeData>{});
 }
+
 
 void CAttributesTracker::Save()
 {
@@ -47,9 +32,19 @@ void CAttributesTracker::Save()
 	}
 }
 
-void CAttributesTracker::Update(int AttributeID, TrackingAttributeData Data)
+
+void CAttributesTracker::ModifyIfNeeded(int AttributeID, int AccountID, size_t Amount)
 {
+	if(m_vTrackingData[AttributeID].Amount >= Amount)
+		return;
+
+	TrackingAttributeData Data;
+	Data.AccountID = AccountID;
+	Data.Amount = Amount;
+	m_vTrackingData[AttributeID] = Data;
+	Save();
 }
+
 
 std::optional<TrackingAttributeData> CAttributesTracker::Get(int AttributeID) const
 {
