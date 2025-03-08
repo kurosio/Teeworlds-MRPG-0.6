@@ -40,7 +40,7 @@ void IGameController::OnCharacterDamage(CPlayer* pFrom, CPlayer* pTo, int Damage
 
 void IGameController::OnCharacterDeath(CPlayer* pVictim, CPlayer* pKiller, int Weapon)
 {
-	GS()->EventListener()->Notify<IEventListener::Type::PlayerDeath>( pVictim, pKiller, Weapon);
+	g_EventListenerManager.Notify<IEventListener::Type::PlayerDeath>( pVictim, pKiller, Weapon);
 
 	// achievement death
 	if(!pVictim->IsBot())
@@ -89,7 +89,7 @@ void IGameController::OnCharacterDeath(CPlayer* pVictim, CPlayer* pKiller, int W
 
 bool IGameController::OnCharacterSpawn(CCharacter* pChr)
 {
-	GS()->EventListener()->Notify<IEventListener::Type::PlayerSpawn>(pChr->GetPlayer());
+	g_EventListenerManager.Notify<IEventListener::Type::PlayerSpawn>(pChr->GetPlayer());
 
 	// Health
 	pChr->IncreaseHealth(pChr->GetPlayer()->GetMaxHealth());

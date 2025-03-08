@@ -22,7 +22,7 @@ public:
 
 	virtual void OnPlayerDeath(CPlayer* pPlayer, CPlayer* pKiller, int Weapon) {}
 	virtual void OnPlayerSpawn(CPlayer* pPlayer) {}
-	virtual void OnPlayerAttributeUpdate(CPlayer* pPlayer, int AttributeID, size_t Amount) {}
+	virtual void OnPlayerAttributeUpdate(CPlayer* pPlayer, int AttributeID, size_t NewValue) {}
 };
 
 class CEventListenerManager
@@ -78,5 +78,7 @@ public:
 		}
 	}
 };
+
+extern CEventListenerManager g_EventListenerManager;
 
 #endif

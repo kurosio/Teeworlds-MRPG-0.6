@@ -16,15 +16,15 @@ struct TrackingAttributeData
 inline void to_json(nlohmann::json& j, const TrackingAttributeData& data)
 {
 	j = nlohmann::json {
-		{"AccountID", data.AccountID},
-		{"Amount", data.Amount}
+		{"account_id", data.AccountID},
+		{"amount", data.Amount}
 	};
 }
 
 inline void from_json(const nlohmann::json& j, TrackingAttributeData& data)
 {
-	j.at("AccountID").get_to(data.AccountID);
-	j.at("Amount").get_to(data.Amount);
+	j.at("account_id").get_to(data.AccountID);
+	j.at("amount").get_to(data.Amount);
 }
 
 
@@ -33,15 +33,17 @@ class CAttributesTracker : public IEventListener
 	std::unordered_map<int, TrackingAttributeData> m_vTrackingData {};
 
 public:
-	CAttributesTracker();
+	void Init(CGS* pGS);
 	std::optional<TrackingAttributeData> Get(int AttributeID) const;
 
 protected:
-	void OnPlayerAttributeUpdate(CPlayer* pPlayer, int AttributeID, size_t Amount) override;
+	void OnPlayerAttributeUpdate(CPlayer* pPlayer, int AttributeID, size_t NewValue) override;
 
 private:
 	void Load();
 	void Save();
 };
+
+extern CAttributesTracker g_AttributesTracker;
 
 #endif

@@ -43,7 +43,6 @@ class CGS : public IGameServer
 	CCollision m_Collision;
 	CNetObjHandler m_NetObjHandler;
 	CTuningParams m_Tuning;
-	CEventListenerManager m_EventListener;
 	bool m_AllowedPVP;
 	vec2 m_JailPosition;
 	int m_WorldID;
@@ -58,7 +57,6 @@ public:
 	CPathFinder* PathFinder() const { return m_pPathFinder; }
 	CCollision *Collision() { return &m_Collision; }
 	CTuningParams *Tuning() { return &m_Tuning; }
-	CEventListenerManager* EventListener() { return &m_EventListener; }
 
 	CEventHandler m_Events;
 	IGameController* m_pController;
@@ -87,7 +85,7 @@ public:
 	void CreateSound(vec2 Pos, int Sound, int64_t Mask = -1);
 	void CreatePlayerSound(int ClientID, int Sound);
 
-	void SnapLaser(int SnappingClient, int ID, const vec2& To, const vec2& From, int StartTick, 
+	void SnapLaser(int SnappingClient, int ID, const vec2& To, const vec2& From, int StartTick,
 		int LaserType = LASERTYPE_RIFLE, int Subtype = 0, int Owner = -1, int Flags = 0) const;
 	void SnapPickup(int SnappingClient, int ID, const vec2& Pos, int Type = POWERUP_HEALTH, int SubType = 0) const;
 	void SnapProjectile(int SnappingClient, int ID, const vec2& Pos, const vec2& Vel, int StartTick,

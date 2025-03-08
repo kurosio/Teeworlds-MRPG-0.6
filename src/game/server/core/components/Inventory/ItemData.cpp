@@ -247,6 +247,8 @@ bool CPlayerItem::Equip()
 		GS()->MarkUpdatedBroadcast(m_ClientID);
 	}
 
+	// notify update attributes
+
 	// update achievements and start scenarios
 	pPlayer->UpdateAchievement(AchievementType::Equip, m_ID, m_Settings, PROGRESS_ABSOLUTE);
 	Info()->StartItemScenario(pPlayer, ItemScenarioEvent::OnEventEquip);

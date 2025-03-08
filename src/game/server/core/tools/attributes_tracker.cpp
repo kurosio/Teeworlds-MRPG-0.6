@@ -1,26 +1,43 @@
 #include "attributes_tracker.h"
 #include <game/server/gamecontext.h>
 
+CAttributesTracker g_AttributesTracker;
 constexpr const char* TRACKING_FILE_NAME = "server_data/attribute_tracking.json";
 
 
-CAttributesTracker::CAttributesTracker()
+void CAttributesTracker::Init(CGS* pGS)
 {
-	auto* pGS = (CGS*)Instance::GameServer();
-	pGS->EventListener()->RegisterListener(IEventListener::Type::PlayerAttributeUpdate, this);
+	Load();
+	g_EventListenerManager.RegisterListener(IEventListener::Type::PlayerAttributeUpdate, this);
 }
 
 
 void CAttributesTracker::OnPlayerAttributeUpdate(CPlayer* pPlayer, int AttributeID, size_t Amount)
 {
-	if(m_vTrackingData[AttributeID].Amount >= Amount)
-		return;
+	auto& TrackingData = m_vTrackingData[AttributeID];
 
-	TrackingAttributeData Data;
-	Data.AccountID = pPlayer->Account()->GetID();
-	Data.Amount = Amount;
-	m_vTrackingData[AttributeID] = Data;
-	Save();
+	// update highter amount
+	bool NeededSafe = false;
+	auto* pGS = pPlayer->GS();
+	auto* pPlayerHighter = pGS->GetPlayerByUserID(TrackingData.AccountID);
+	if(pPlayerHighter)
+	{
+		auto Current = pPlayerHighter->GetTotalAttributeValue((AttributeIdentifier)AttributeID);
+		TrackingData.Amount = Current;
+		NeededSafe = true;
+	}
+
+	// update personal amount
+	if(TrackingData.Amount < Amount)
+	{
+		TrackingData.AccountID = pPlayer->Account()->GetID();
+		TrackingData.Amount = Amount;
+		NeededSafe = true;
+	}
+
+	// update
+	if(NeededSafe)
+		Save();
 }
 
 
