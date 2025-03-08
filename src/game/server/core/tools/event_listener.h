@@ -17,10 +17,12 @@ public:
 	{
 		PlayerDeath,
 		PlayerSpawn,
+		PlayerAttributeUpdate,
 	};
 
 	virtual void OnPlayerDeath(CPlayer* pPlayer, CPlayer* pKiller, int Weapon) {}
 	virtual void OnPlayerSpawn(CPlayer* pPlayer) {}
+	virtual void OnPlayerAttributeUpdate(CPlayer* pPlayer, int AttributeID, size_t Amount) {}
 };
 
 class CEventListenerManager
@@ -51,6 +53,7 @@ public:
 			m_vListeners.erase(event);
 		}
 	}
+
 	template <IEventListener::Type event, typename... Ts>
 	void Notify(Ts&&... args)
 	{
@@ -66,6 +69,10 @@ public:
 				else if constexpr(event == IEventListener::Type::PlayerSpawn)
 				{
 					listener->OnPlayerSpawn(std::forward<Ts>(args)...);
+				}
+				else if constexpr(event == IEventListener::Type::PlayerAttributeUpdate)
+				{
+					listener->OnPlayerAttributeUpdate(std::forward<Ts>(args)...);
 				}
 			}
 		}

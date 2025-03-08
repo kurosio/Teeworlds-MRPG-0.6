@@ -1,6 +1,27 @@
 #include "attributes_tracker.h"
+#include <game/server/gamecontext.h>
 
 constexpr const char* TRACKING_FILE_NAME = "server_data/attribute_tracking.json";
+
+
+CAttributesTracker::CAttributesTracker()
+{
+	auto* pGS = (CGS*)Instance::GameServer();
+	pGS->EventListener()->RegisterListener(IEventListener::Type::PlayerAttributeUpdate, this);
+}
+
+
+void CAttributesTracker::OnPlayerAttributeUpdate(CPlayer* pPlayer, int AttributeID, size_t Amount)
+{
+	if(m_vTrackingData[AttributeID].Amount >= Amount)
+		return;
+
+	TrackingAttributeData Data;
+	Data.AccountID = pPlayer->Account()->GetID();
+	Data.Amount = Amount;
+	m_vTrackingData[AttributeID] = Data;
+	Save();
+}
 
 
 void CAttributesTracker::Load()
@@ -30,19 +51,6 @@ void CAttributesTracker::Save()
 	{
 		dbg_msg("attributes_tracking", "Failed to save the attributes.");
 	}
-}
-
-
-void CAttributesTracker::ModifyIfNeeded(int AttributeID, int AccountID, size_t Amount)
-{
-	if(m_vTrackingData[AttributeID].Amount >= Amount)
-		return;
-
-	TrackingAttributeData Data;
-	Data.AccountID = AccountID;
-	Data.Amount = Amount;
-	m_vTrackingData[AttributeID] = Data;
-	Save();
 }
 
 

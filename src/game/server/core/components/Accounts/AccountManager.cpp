@@ -569,6 +569,8 @@ bool CAccountManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, co
 		{
 			const auto nowValue = pProfession->GetAttributeValue(AttributeID);
 			const auto pProfessionName = GetProfessionName(ProfessionID);
+
+			GS()->EventListener()->Notify<IEventListener::Type::PlayerAttributeUpdate>(pPlayer, (int)AttributeID, (size_t)nowValue);
 			GS()->Chat(ClientID, "[{}] Attribute '{}' enhanced to '{}p'!", pProfessionName, pAttributeInfo->GetName(), nowValue);
 			GS()->CreatePlayerSound(ClientID, SOUND_VOTE_UPGRADE);
 			pPlayer->m_VotesData.UpdateCurrentVotes();
