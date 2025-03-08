@@ -35,7 +35,7 @@ private:
 	HouseIdentifier m_ID {};
 	std::string m_ClassName {};
 	vec2 m_Position {};
-	vec2 m_TextPosition {};
+	std::optional<vec2> m_TextPosition { };
 	int m_AccountID {};
 	int m_WorldID {};
 	int m_InitialFee {};

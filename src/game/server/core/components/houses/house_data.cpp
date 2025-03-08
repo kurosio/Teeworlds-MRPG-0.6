@@ -8,8 +8,6 @@
 #include <game/server/core/entities/tools/draw_board.h>
 #include <game/server/core/components/mails/mail_wrapper.h>
 
-CGS* CHouse::GS() const { return static_cast<CGS*>(Server()->GameServer(m_WorldID)); }
-CPlayer* CHouse::GetPlayer() const { return GS()->GetPlayerByUserID(m_AccountID); }
 
 CHouse::~CHouse()
 {
@@ -18,6 +16,19 @@ CHouse::~CHouse()
 	delete m_pDoorManager;
 	delete m_pBankManager;
 }
+
+
+CGS* CHouse::GS() const
+{
+	return static_cast<CGS*>(Server()->GameServer(m_WorldID));
+}
+
+
+CPlayer* CHouse::GetPlayer() const
+{
+	return GS()->GetPlayerByUserID(m_AccountID);
+}
+
 
 void CHouse::InitComponents(const BigInt& Bank, const std::string& DoorsData, const std::string& FarmzonesData, const std::string& PropertiesData)
 {
@@ -48,6 +59,7 @@ void CHouse::InitComponents(const BigInt& Bank, const std::string& DoorsData, co
 	dbg_assert(m_pDoorManager != nullptr, "The house doors manager is null");
 }
 
+
 void CHouse::Buy(CPlayer* pPlayer)
 {
 	const int ClientID = pPlayer->GetCID();
@@ -59,12 +71,14 @@ void CHouse::Buy(CPlayer* pPlayer)
 		return;
 	}
 
+
 	// check is house has owner
 	if(HasOwner())
 	{
 		GS()->Chat(ClientID, "House has already been purchased!");
 		return;
 	}
+
 
 	// try spend currency
 	if(pPlayer->Account()->SpendCurrency(m_InitialFee))
@@ -83,11 +97,13 @@ void CHouse::Buy(CPlayer* pPlayer)
 	}
 }
 
+
 void CHouse::Sell()
 {
 	// check is has owner
 	if(!HasOwner())
 		return;
+
 
 	// send mail
 	BigInt ReturnsGold = std::max((BigInt)1, m_pBankManager->Get());
@@ -98,6 +114,7 @@ void CHouse::Sell()
 		Mail.AttachItem(CItem(itGold, chunk));
 	});
 	Mail.Send();
+
 
 	// Update the house data
 	if(CPlayer* pPlayer = GetPlayer())
@@ -110,21 +127,25 @@ void CHouse::Sell()
 	m_AccountID = -1;
 	Database->Execute<DB::UPDATE>(TW_HOUSES_TABLE, "UserID = NULL, Bank = '0' WHERE ID = '{}'", m_ID);
 
+
 	// send information
 	GS()->ChatAccount(m_AccountID, "Your House is sold!");
 	GS()->Chat(-1, "House: '{}' have been is released!", m_ID);
 }
 
+
 void CHouse::UpdateText(int Lifetime) const
 {
 	// check valid vector and now time
-	if(is_negative_vec(m_TextPosition))
+	if(!m_TextPosition.has_value())
 		return;
+
 
 	// initialize variable with name
 	const char* pName = HasOwner() ? Server()->GetAccountNickname(m_AccountID) : "FREE HOUSE";
-	GS()->EntityManager()->Text(m_TextPosition, Lifetime - 5, pName);
+	GS()->EntityManager()->Text(m_TextPosition.value(), Lifetime - 5, pName);
 }
+
 
 void CHouse::HandleTimePeriod(ETimePeriod Period)
 {
@@ -142,6 +163,7 @@ void CHouse::HandleTimePeriod(ETimePeriod Period)
 		GS()->ChatAccount(m_AccountID, "Your house rent has been paid.");
 	}
 }
+
 
 int CHouse::GetRentPrice() const
 {

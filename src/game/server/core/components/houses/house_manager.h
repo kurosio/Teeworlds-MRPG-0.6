@@ -22,7 +22,9 @@ class CHouseManager : public MmoComponent
 	void OnTimePeriod(ETimePeriod Period) override;
 	void OnCharacterTile(CCharacter* pChr) override;
 	bool OnSendMenuVotes(CPlayer* pPlayer, int Menulist) override;
+	bool OnSendMenuMotd(CPlayer* pPlayer, int Menulist) override;
 	bool OnPlayerVoteCommand(CPlayer* pPlayer, const char* CMD, int VoteID, int VoteID2, int Get, const char* GetText) override;
+	bool OnPlayerMotdCommand(CPlayer* pPlayer, const char* pCmd, const int ExtraValue) override;
 
 	void ShowBuyHouse(CPlayer* pPlayer, CHouse* pHouse);
 	void ShowMenu(CPlayer* pPlayer) const;

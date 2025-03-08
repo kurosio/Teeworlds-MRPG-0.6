@@ -52,21 +52,15 @@ void CHouseManager::OnTimePeriod(ETimePeriod Period)
 
 void CHouseManager::OnCharacterTile(CCharacter* pChr)
 {
-	CPlayer* pPlayer = pChr->GetPlayer();
+	auto* pPlayer = pChr->GetPlayer();
+	const auto ClientID = pPlayer->GetCID();
 
-	HANDLE_TILE_VOTE_MENU(pPlayer, pChr, TILE_PLAYER_HOUSE, MENU_HOUSE_BUY, {}, {});
+	HANDLE_TILE_MOTD_MENU(pPlayer, pChr, TILE_PLAYER_HOUSE, MOTD_MENU_HOUSE_INFO)
 }
 
 bool CHouseManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 {
 	const int ClientID = pPlayer->GetCID();
-
-	// buy house menu
-	if(Menulist == MENU_HOUSE_BUY)
-	{
-		ShowBuyHouse(pPlayer, GetHouseByPos(pPlayer->GetCharacter()->m_Core.m_Pos));
-		return true;
-	}
 
 	// menu house
 	if(Menulist == MENU_HOUSE)
@@ -121,18 +115,20 @@ bool CHouseManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	return false;
 }
 
+bool CHouseManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
+{
+	if(Menulist == MOTD_MENU_HOUSE_INFO)
+	{
+		ShowBuyHouse(pPlayer, GetHouseByPos(pPlayer->GetCharacter()->m_Core.m_Pos));
+		return true;
+	}
+
+	return false;
+}
+
 bool CHouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* CMD, const int VoteID, const int VoteID2, int Get, const char* GetText)
 {
 	const int ClientID = pPlayer->GetCID();
-
-	// buy house
-	if(PPSTR(CMD, "HOUSE_BUY") == 0)
-	{
-		const int HouseID = VoteID;
-		if(auto* pHouse = GetHouse(HouseID))
-			pHouse->Buy(pPlayer);
-		return true;
-	}
 
 	// start decoration edit mode
 	if(PPSTR(CMD, "HOUSE_DECORATION_EDIT") == 0)
@@ -380,6 +376,23 @@ bool CHouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* CMD, const
 	return false;
 }
 
+bool CHouseManager::OnPlayerMotdCommand(CPlayer* pPlayer, const char* pCmd, const int ExtraValue)
+{
+	// buy house
+	if(PPSTR(pCmd, "HOUSE_BUY") == 0)
+	{
+		const int HouseID = ExtraValue;
+		if(auto* pHouse = GetHouse(HouseID))
+		{
+			pHouse->Buy(pPlayer);
+		}
+
+		return true;
+	}
+
+	return false;
+}
+
 void CHouseManager::ShowSell(CPlayer* pPlayer) const
 {
 	auto* pHouse = pPlayer->Account()->GetHouse();
@@ -505,31 +518,29 @@ void CHouseManager::ShowBuyHouse(CPlayer* pPlayer, CHouse* pHouse)
 	if(!pHouse || !pPlayer)
 		return;
 
+
 	// initialize variables
-	HouseIdentifier ID = pHouse->GetID();
-	const int ClientID = pPlayer->GetCID();
+	const auto HouseID = pHouse->GetID();
+	const auto ClientID = pPlayer->GetCID();
 	const char* pOwnerNickname = pHouse->HasOwner() ? Instance::Server()->GetAccountNickname(pHouse->GetAccountID()) : "No owner";
 
-	// information
-	VoteWrapper VInfo(ClientID, VWF_SEPARATE | VWF_STYLE_STRICT_BOLD, "\u2732 House information");
-	VInfo.Add("Every player has the right to rent houses.", pHouse->GetInitialFee());
-	VInfo.Add("An admission price is required for rentals.", pHouse->GetInitialFee());
-	VoteWrapper::AddEmptyline(ClientID);
 
-	// detail information
-	VoteWrapper VDetail(ClientID, VWF_STYLE_SIMPLE, "Detail information about house.", ID, pHouse->GetClassName());
-	VDetail.Add("Admission price: {} gold", pHouse->GetInitialFee());
-	VDetail.Add("Owned by: {}", pOwnerNickname);
-	VDetail.Add("Class: {}", pHouse->GetClassName());
-	VoteWrapper::AddEmptyline(ClientID);
-
-	// buy tab
-	VoteWrapper VBuy(ClientID, VWF_OPEN|VWF_STYLE_SIMPLE, "Buying a house");
+	// house detail purchease
+	MotdMenu MHouseDetail(ClientID, MTFLAG_CLOSE_BUTTON, "Every player has the right to rent houses.\nAn admission price is required for rentals.");
+	MHouseDetail.AddText("House HID:[{}]", HouseID);
+	MHouseDetail.AddText("Class: {}", pHouse->GetClassName());
+	MHouseDetail.AddText("Rent: {$}", pHouse->GetRentPrice());
+	MHouseDetail.AddSeparateLine();
 	if(!pHouse->HasOwner())
-		VBuy.AddOption("HOUSE_BUY", "Buy for {$} golds", pHouse->GetInitialFee());
+	{
+		MHouseDetail.AddText("Price: {$}", pHouse->GetInitialFee());
+		MHouseDetail.Add("HOUSE_BUY", HouseID, "Buy this house");
+	}
 	else
-		VBuy.Add("This house has already been purchased!");
-	VoteWrapper::AddEmptyline(ClientID);
+	{
+		MHouseDetail.AddText("Owner: {}", pOwnerNickname);
+	}
+	MHouseDetail.Send(MOTD_MENU_HOUSE_INFO);
 }
 
 void CHouseManager::ShowMenu(CPlayer* pPlayer) const
