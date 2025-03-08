@@ -10,7 +10,7 @@ struct TrackingAttributeData
 
 class CAttributesTracker
 {
-	std::unordered_map<int, TrackingAttributeData> m_TrackingData {};
+	std::unordered_map<int, TrackingAttributeData> m_vTrackingData {};
 
 public:
 	void Load();
