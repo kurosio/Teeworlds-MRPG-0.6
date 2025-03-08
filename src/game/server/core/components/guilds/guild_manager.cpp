@@ -321,17 +321,17 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int 
 		}
 
 		// check maximal rent days
-		if(pHouse->GetRentDays() >= GUILD_HOUSE_MAX_RENT_DAYS)
+		if(pHouse->GetRentDays() >= MAX_HOUSE_RENT_DAYS)
 		{
-			GS()->Chat(ClientID, "You can not extend the rent anymore then {# (day|days)}.", (int)GUILD_HOUSE_MAX_RENT_DAYS);
+			GS()->Chat(ClientID, "You can not extend the rent anymore then {# (day|days)}.", (int)MAX_HOUSE_RENT_DAYS);
 			return true;
 		}
 
 		// check minimal
-		ReasonNumber = clamp(ReasonNumber, 0, GUILD_HOUSE_MAX_RENT_DAYS - pHouse->GetRentDays());
+		ReasonNumber = clamp(ReasonNumber, 0, MAX_HOUSE_RENT_DAYS - pHouse->GetRentDays());
 		if(!ReasonNumber)
 		{
-			GS()->Chat(ClientID, "Minimum is 1 day. Maximum {# total (day|days)}.", (int)GUILD_HOUSE_MAX_RENT_DAYS);
+			GS()->Chat(ClientID, "Minimum is 1 day. Maximum {# total (day|days)}.", (int)MAX_HOUSE_RENT_DAYS);
 			return true;
 		}
 

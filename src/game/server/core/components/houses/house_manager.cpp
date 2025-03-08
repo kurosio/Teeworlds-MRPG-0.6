@@ -1,4 +1,4 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
+﻿/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "house_manager.h"
 
@@ -126,12 +126,12 @@ bool CHouseManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
 	return false;
 }
 
-bool CHouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* CMD, const int VoteID, const int VoteID2, int Get, const char* GetText)
+bool CHouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const int Extra1, const int Extra2, int ReasonNumber, const char* pText)
 {
 	const int ClientID = pPlayer->GetCID();
 
 	// start decoration edit mode
-	if(PPSTR(CMD, "HOUSE_DECORATION_EDIT") == 0)
+	if(PPSTR(pCmd, "HOUSE_DECORATION_EDIT") == 0)
 	{
 		// check house valid
 		auto* pHouse = pPlayer->Account()->GetHouse();
@@ -150,7 +150,7 @@ bool CHouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* CMD, const
 	}
 
 	// house farm zone try plant
-	if(PPSTR(CMD, "HOUSE_FARM_ZONE_REMOVE_PLANT") == 0)
+	if(PPSTR(pCmd, "HOUSE_FARM_ZONE_REMOVE_PLANT") == 0)
 	{
 		// check valid house
 		auto *pHouse = pPlayer->Account()->GetHouse();
@@ -161,8 +161,8 @@ bool CHouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* CMD, const
 		}
 
 		// initialize variables
-		const int& FarmzoneID = VoteID;
-		const ItemIdentifier& ItemID = VoteID2;
+		const int& FarmzoneID = Extra1;
+		const ItemIdentifier& ItemID = Extra2;
 
 		// check farmzone valid
 		auto pFarmzone = pHouse->GetFarmzonesManager()->GetFarmzoneByID(FarmzoneID);
@@ -184,7 +184,7 @@ bool CHouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* CMD, const
 	}
 
 	// house farm zone try plant
-	if(PPSTR(CMD, "HOUSE_FARM_ZONE_TRY_PLANT") == 0)
+	if(PPSTR(pCmd, "HOUSE_FARM_ZONE_TRY_PLANT") == 0)
 	{
 		// check valid house
 		auto *pHouse = pPlayer->Account()->GetHouse();
@@ -195,9 +195,9 @@ bool CHouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* CMD, const
 		}
 
 		// initialize variables
-		const int& Useds = maximum(1, Get);
-		const int& FarmzoneID = VoteID;
-		const ItemIdentifier& ItemID = VoteID2;
+		const int& Useds = maximum(1, ReasonNumber);
+		const int& FarmzoneID = Extra1;
+		const ItemIdentifier& ItemID = Extra2;
 
 		// check farmzone valid
 		auto* pManager = pHouse->GetFarmzonesManager();
@@ -246,7 +246,7 @@ bool CHouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* CMD, const
 	}
 
 	// move to house
-	if(PPSTR(CMD, "HOUSE_SPAWN") == 0)
+	if(PPSTR(pCmd, "HOUSE_SPAWN") == 0)
 	{
 		// check valid house
 		auto* pHouse = pPlayer->Account()->GetHouse();
@@ -269,7 +269,7 @@ bool CHouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* CMD, const
 	}
 
 	// sell house
-	if(PPSTR(CMD, "HOUSE_SELL") == 0)
+	if(PPSTR(pCmd, "HOUSE_SELL") == 0)
 	{
 		// check player house
 		auto *pHouse = pPlayer->Account()->GetHouse();
@@ -280,7 +280,7 @@ bool CHouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* CMD, const
 		}
 
 		// check captcha accidental press
-		if(Get != 777)
+		if(ReasonNumber != 777)
 		{
 			GS()->Chat(ClientID, "A verification number was entered incorrectly!");
 			return true;
@@ -293,7 +293,7 @@ bool CHouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* CMD, const
 	}
 
 	// add gold to house bank
-	if(PPSTR(CMD, "HOUSE_BANK_ADD") == 0)
+	if(PPSTR(pCmd, "HOUSE_BANK_ADD") == 0)
 	{
 		// check valid house
 		auto* pHouse = pPlayer->Account()->GetHouse();
@@ -304,20 +304,20 @@ bool CHouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* CMD, const
 		}
 
 		// check minimal
-		if(Get < 100)
+		if(ReasonNumber < 100)
 		{
 			GS()->Chat(ClientID, "The minimum interaction cannot be below '100 gold'!");
 			return true;
 		}
 
 		// add gold to house bank
-		pHouse->GetBankManager()->Add(Get);
+		pHouse->GetBankManager()->Add(ReasonNumber);
 		pPlayer->m_VotesData.UpdateVotesIf(MENU_HOUSE);
 		return true;
 	}
 
 	// take gold from house bank
-	if(PPSTR(CMD, "HOUSE_BANK_TAKE") == 0)
+	if(PPSTR(pCmd, "HOUSE_BANK_TAKE") == 0)
 	{
 		// check valid house
 		auto* pHouse = pPlayer->Account()->GetHouse();
@@ -328,20 +328,20 @@ bool CHouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* CMD, const
 		}
 
 		// check minimal
-		if(Get < 100)
+		if(ReasonNumber < 100)
 		{
 			GS()->Chat(ClientID, "The minimum interaction cannot be below '100 gold'!");
 			return true;
 		}
 
 		// take gold from house bank
-		pHouse->GetBankManager()->Take(Get);
+		pHouse->GetBankManager()->Take(ReasonNumber);
 		pPlayer->m_VotesData.UpdateVotesIf(MENU_HOUSE);
 		return true;
 	}
 
 	// interact with house door
-	if(PPSTR(CMD, "HOUSE_DOOR") == 0)
+	if(PPSTR(pCmd, "HOUSE_DOOR") == 0)
 	{
 		// check valid house
 		auto* pHouse = pPlayer->Account()->GetHouse();
@@ -352,24 +352,63 @@ bool CHouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* CMD, const
 		}
 
 		// reverse door house
-		int UniqueDoorID = VoteID;
+		int UniqueDoorID = Extra1;
 		pHouse->GetDoorManager()->Reverse(UniqueDoorID);
 		pPlayer->m_VotesData.UpdateVotesIf(MENU_HOUSE_DOOR_LIST);
 		return true;
 	}
 
 	// house invited list
-	if(PPSTR(CMD, "HOUSE_INVITED_LIST_FIND") == 0)
+	if(PPSTR(pCmd, "HOUSE_INVITED_LIST_FIND") == 0)
 	{
 		// check valid name
-		if(PPSTR(GetText, "NULL") == 0)
+		if(PPSTR(pText, "NULL") == 0)
 		{
 			GS()->Chat(ClientID, "Use please another name.");
 			return true;
 		}
 
-		str_copy(pPlayer->GetTempData().m_aPlayerSearchBuf, GetText, sizeof(pPlayer->GetTempData().m_aPlayerSearchBuf));
+		str_copy(pPlayer->GetTempData().m_aPlayerSearchBuf, pText, sizeof(pPlayer->GetTempData().m_aPlayerSearchBuf));
 		pPlayer->m_VotesData.UpdateVotesIf(MENU_HOUSE_DOOR_LIST);
+		return true;
+	}
+
+	// extend rent
+	if(PPSTR(pCmd, "HOUSE_EXTEND_RENT") == 0)
+	{
+		// check valid house
+		auto* pHouse = pPlayer->Account()->GetHouse();
+		if(!pHouse)
+		{
+			GS()->Chat(ClientID, "You do not have your own home!");
+			return true;
+		}
+
+		// check maximal rent days
+		if(pHouse->GetRentDays() >= MAX_HOUSE_RENT_DAYS)
+		{
+			GS()->Chat(ClientID, "You can not extend the rent anymore then {# (day|days)}.", (int)MAX_HOUSE_RENT_DAYS);
+			return true;
+		}
+
+		// check minimal
+		ReasonNumber = clamp(ReasonNumber, 0, MAX_HOUSE_RENT_DAYS - pHouse->GetRentDays());
+		if(!ReasonNumber)
+		{
+			GS()->Chat(ClientID, "Minimum is 1 day. Maximum {# total (day|days)}.", (int)MAX_HOUSE_RENT_DAYS);
+			return true;
+		}
+
+		// extend
+		if(pHouse->ExtendRentDays(ReasonNumber))
+		{
+			GS()->Chat(ClientID, "Your house was extended by {# total (day|days)}.", ReasonNumber);
+			pPlayer->m_VotesData.UpdateCurrentVotes();
+			return true;
+		}
+
+		// failed
+		GS()->Chat(ClientID, "Not enough gold.");
 		return true;
 	}
 
@@ -560,18 +599,21 @@ void CHouseManager::ShowMenu(CPlayer* pPlayer) const
 	// information
 	VoteWrapper VInfo(ClientID, VWF_SEPARATE | VWF_STYLE_STRICT_BOLD, "\u2747 Information about house");
 	VInfo.Add("Class: {}", pHouse->GetClassName());
-	VInfo.Add("Bank: {} golds", pHouse->GetBankManager()->Get());
+	VInfo.Add("Bank: {$}", pHouse->GetBankManager()->Get());
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// house bank
-	VoteWrapper VBank(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "\u2727 Bank Management");
-	VBank.Add("Your: {$} | Bank: {$} golds", pPlayer->Account()->GetTotalGold(), pHouse->GetBankManager()->Get());
-	VBank.AddOption("HOUSE_BANK_ADD", "Add. (Amount in a reason)");
-	VBank.AddOption("HOUSE_BANK_TAKE", "Take. (Amount in a reason)");
+	VoteWrapper VBank(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "\u2727 Bank Management (rented for {# (day|days)})", pHouse->GetRentDays());
+	VBank.Add("Your: {$} | Bank: {$}", pPlayer->Account()->GetTotalGold(), pHouse->GetBankManager()->Get());
+	VBank.AddOption("HOUSE_BANK_ADD", "Add. (amount in a reason)");
+	VBank.AddOption("HOUSE_BANK_TAKE", "Take. (amount in a reason)");
+	VBank.AddLine();
+	VBank.Add("Bank: {$} | Rent per day: {$} gold", pHouse->GetBankManager()->Get(), pHouse->GetRentPrice());
+	VBank.AddOption("HOUSE_EXTEND_RENT", "Extend. (amount in a reason)");
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// house management
-	VoteWrapper VManagement(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "\u262B House Management");
+	VoteWrapper VManagement(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "\u2302 House Management");
 	VManagement.AddOption("HOUSE_DECORATION_EDIT", "Decoration editor");
 	VManagement.AddMenu(MENU_HOUSE_FARMZONE_LIST, "Farms");
 	VManagement.AddMenu(MENU_HOUSE_DOOR_LIST, "Doors");

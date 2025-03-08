@@ -146,6 +146,24 @@ void CHouse::UpdateText(int Lifetime) const
 	GS()->EntityManager()->Text(m_TextPosition.value(), Lifetime - 5, pName);
 }
 
+bool CHouse::ExtendRentDays(int Days)
+{
+	// check validity
+	if(!HasOwner() || !m_pBankManager)
+		return false;
+
+
+	// try spend for rent days
+	if(m_pBankManager->Spend(GetRentPrice() * Days))
+	{
+		m_RentDays += Days;
+		Database->Execute<DB::UPDATE>(TW_HOUSES_TABLE, "RentDays = '{}' WHERE ID = '{}'", m_RentDays, m_ID);
+		return true;
+	}
+
+	return false;
+}
+
 
 void CHouse::HandleTimePeriod(ETimePeriod Period)
 {

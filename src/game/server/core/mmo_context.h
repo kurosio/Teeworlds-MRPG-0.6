@@ -581,6 +581,7 @@ enum
 	MIN_SKINCHANGE_CLIENTVERSION   = 0x0703,// minimum client version for skin change
 	MIN_RACE_CLIENTVERSION         = 0x0704,// minimum client version for race type
 	MAX_DROPPED_FROM_MOBS          = 5,     // maximum number of items dropped from mobs
+	MAX_HOUSE_RENT_DAYS            = 7,     // Max rent duration for a guild house
 
 	// items
 	NOPE                           = -1,

@@ -24,7 +24,6 @@ enum GuildMisc
 	GUILD_NEW_UPGRADE_SLOTS = 2,         // New guilds start with 2 additional slots
 	GUILD_NEW_UPGRADE_CHAIR = 1,         // New guilds start with 1 chair upgrade
 	GUILD_RENT_DAYS_DEFAULT = 3,         // Default rent duration for a guild
-	GUILD_HOUSE_MAX_RENT_DAYS = 30       // Max rent duration for a guild house
 };
 
 // Enum for guild rank rights levels

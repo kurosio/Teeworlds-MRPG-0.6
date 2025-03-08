@@ -76,11 +76,14 @@ public:
 	int GetInitialFee() const { return m_InitialFee; }
 	int GetWorldID() const { return m_WorldID; }
 	int GetRentPrice() const;
+	int GetRentDays() const { return m_RentDays; }
 
 	void InitComponents(const BigInt& Bank, const std::string& DoorsData, const std::string& FarmzonesData, const std::string& PropertiesData);
 	void Buy(CPlayer* pPlayer);
 	void Sell();
 	void UpdateText(int Lifetime) const;
+	bool ExtendRentDays(int Days);
+
 	void HandleTimePeriod(ETimePeriod Period);
 };
 
