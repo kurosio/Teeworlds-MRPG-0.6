@@ -55,6 +55,7 @@ CMmoController::CMmoController(CGS* pGameServer) : m_pGameServer(pGameServer)
 void CMmoController::OnInit(IServer* pServer, IConsole* pConsole, IStorageEngine* pStorage)
 {
 	// initialize components
+	const auto isLastInitializedWorld = m_pGameServer->GetWorldID() == (Instance::Server()->GetWorldsSize() - 1);
 	for(auto& pComponent : m_System.m_vComponents)
 	{
 		pComponent->m_Core = this;
@@ -69,9 +70,13 @@ void CMmoController::OnInit(IServer* pServer, IConsole* pConsole, IStorageEngine
 		const auto selectStr = fmt_default("WHERE WorldID = '{}'", m_pGameServer->GetWorldID());
 		pComponent->OnInitWorld(selectStr);
 
-		if(m_pGameServer->GetWorldID() == (Instance::Server()->GetWorldsSize() - 1))
+		if(isLastInitializedWorld)
 			pComponent->OnPostInit();
 	}
+
+	// log about listeners
+	if(isLastInitializedWorld)
+		g_EventListenerManager.LogRegisteredEvents();
 
 	SyncLocalizations();
 	LoadLogicWorld();

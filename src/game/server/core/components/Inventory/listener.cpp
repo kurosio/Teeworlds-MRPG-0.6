@@ -11,6 +11,7 @@ void CInventoryListener::Initialize()
     g_EventListenerManager.RegisterListener(IEventListener::PlayerEquipItem, this);
     g_EventListenerManager.RegisterListener(IEventListener::PlayerUnequipItem, this);
     g_EventListenerManager.RegisterListener(IEventListener::PlayerEnchantItem, this);
+
     m_AttributesTracker.LoadTrackingData();
 }
 

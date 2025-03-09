@@ -39,6 +39,7 @@ class CEventListenerManager
 {
 	std::mutex m_Mutex;
 	std::unordered_map<IEventListener::Type, std::vector<IEventListener*>> m_vListeners;
+	std::unordered_map<IEventListener::Type, size_t> m_EventListenerCounts;
 
 public:
 	void RegisterListener(IEventListener::Type event, IEventListener* listener)
@@ -49,6 +50,7 @@ public:
 		if(std::ranges::find(listeners, listener) == listeners.end())
 		{
 			listeners.push_back(listener);
+			m_EventListenerCounts[event]++;
 		}
 	}
 
@@ -58,9 +60,26 @@ public:
 		auto& listeners = m_vListeners[event];
 
 		listeners.erase(std::ranges::remove(listeners, listener).begin(), listeners.end());
-		if(listeners.empty())
+
+		if(!listeners.empty())
+		{
+			m_EventListenerCounts[event]--;
+		}
+		else
 		{
 			m_vListeners.erase(event);
+			m_EventListenerCounts.erase(event);
+		}
+	}
+
+	void LogRegisteredEvents()
+	{
+		std::unique_lock lock(m_Mutex);
+		dbg_msg("EventListenerManager", "Registered events and their listeners:");
+
+		for(const auto& [event, listeners] : m_vListeners)
+		{
+			dbg_msg("EventListenerManager", "Event: %d, Listeners count: %zu", event, listeners.size());
 		}
 	}
 
