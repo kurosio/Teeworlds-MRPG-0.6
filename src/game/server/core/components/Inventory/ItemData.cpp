@@ -35,11 +35,12 @@ bool CPlayerItem::SetEnchant(int Enchant)
 	if(m_Value < 1)
 		return false;
 
-	const auto* pPlayer = GetPlayer();
+	auto* pPlayer = GetPlayer();
 	if(!pPlayer || !pPlayer->IsAuthed())
 		return false;
 
 	m_Enchant = Enchant;
+	g_EventListenerManager.Notify<IEventListener::PlayerEnchantItem>(pPlayer, this);
 	return Save();
 }
 
@@ -80,12 +81,19 @@ bool CPlayerItem::SetDurability(int Durability)
 	if(m_Value < 1)
 		return false;
 
-	const auto* pPlayer = GetPlayer();
+	auto* pPlayer = GetPlayer();
 	if(!pPlayer || !pPlayer->IsAuthed())
 		return false;
 
 	m_Durability = Durability;
-	return Save();
+
+	if(Save())
+	{
+		g_EventListenerManager.Notify<IEventListener::PlayerDurabilityItem>(pPlayer, this);
+		return true;
+	}
+
+	return false;
 }
 
 bool CPlayerItem::SetValue(int Value)
@@ -230,30 +238,26 @@ bool CPlayerItem::Equip()
 	if(Info()->IsEquipmentSlot())
 	{
 		const ItemType equipType = Info()->GetType();
-		while(auto oldItemId = pPlayer->GetEquippedItemID(equipType, m_ID))
+		while(auto oldEquipItemID = pPlayer->GetEquippedItemID(equipType, m_ID))
 		{
-			if(auto pOldItem = pPlayer->GetItem(oldItemId.value()))
-				pOldItem->SetSettings(0);
+			if(auto pOldEquippedItem = pPlayer->GetItem(oldEquipItemID.value()))
+				pOldEquippedItem->SetSettings(0);
 		}
 	}
 
-	// equip
+	// update
 	m_Settings = true;
-
-	// update player stats
-	if(auto* pCharacter = pPlayer->GetCharacter())
+	if(Save())
 	{
-		pCharacter->UpdateEquippedStats(m_ID);
-		GS()->MarkUpdatedBroadcast(m_ClientID);
+		g_EventListenerManager.Notify<IEventListener::PlayerEquipItem>(pPlayer, this);
+		pPlayer->UpdateAchievement(AchievementType::Equip, m_ID, true, PROGRESS_ABSOLUTE);
+		pPlayer->UpdateAchievement(AchievementType::Equip, m_ID, m_Settings, PROGRESS_ABSOLUTE);
+		Info()->StartItemScenario(pPlayer, ItemScenarioEvent::OnEventEquip);
+		GS()->CreateSound(pPlayer->m_ViewPos, SOUND_VOTE_ITEM_EQUIP);
+		return true;
 	}
 
-	// notify update attributes
-
-	// update achievements and start scenarios
-	pPlayer->UpdateAchievement(AchievementType::Equip, m_ID, m_Settings, PROGRESS_ABSOLUTE);
-	Info()->StartItemScenario(pPlayer, ItemScenarioEvent::OnEventEquip);
-	GS()->CreateSound(pPlayer->m_ViewPos, SOUND_VOTE_ITEM_EQUIP);
-	return true;
+	return false;
 }
 
 bool CPlayerItem::UnEquip()
@@ -265,19 +269,17 @@ bool CPlayerItem::UnEquip()
 	if(!pPlayer || !pPlayer->IsAuthed())
 		return false;
 
-	// unequip
+	// update
 	m_Settings = false;
-
-	// update player stats
-	if(auto* pCharacter = pPlayer->GetCharacter())
+	if(Save())
 	{
-		pCharacter->UpdateEquippedStats(m_ID);
-		GS()->MarkUpdatedBroadcast(m_ClientID);
+		g_EventListenerManager.Notify<IEventListener::PlayerUnequipItem>(pPlayer, this);
+		Info()->StartItemScenario(pPlayer, ItemScenarioEvent::OnEventUnequip);
+		GS()->CreateSound(pPlayer->m_ViewPos, SOUND_VOTE_ITEM_EQUIP);
+		return true;
 	}
 
-	Info()->StartItemScenario(pPlayer, ItemScenarioEvent::OnEventUnequip);
-	GS()->CreateSound(pPlayer->m_ViewPos, SOUND_VOTE_ITEM_EQUIP);
-	return true;
+	return false;
 }
 
 bool CPlayerItem::Use(int Value)

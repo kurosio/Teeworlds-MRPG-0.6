@@ -5,24 +5,34 @@
 class CGS;
 class IServer;
 class CPlayer;
+class CPlayerItem;
 class CCharacter;
 
 // event listener
 class IEventListener
 {
 public:
+	IEventListener() = default;
 	virtual ~IEventListener() = default;
 
-	enum class Type
+	enum Type
 	{
 		PlayerDeath,
 		PlayerSpawn,
-		PlayerAttributeUpdate,
+		PlayerUpgrade,
+		PlayerEquipItem,
+		PlayerUnequipItem,
+		PlayerEnchantItem,
+		PlayerDurabilityItem,
 	};
 
 	virtual void OnPlayerDeath(CPlayer* pPlayer, CPlayer* pKiller, int Weapon) {}
 	virtual void OnPlayerSpawn(CPlayer* pPlayer) {}
-	virtual void OnPlayerAttributeUpdate(CPlayer* pPlayer, int AttributeID, size_t NewValue) {}
+	virtual void OnPlayerUpgrade(CPlayer* pPlayer, int AttributeID) {}
+	virtual void OnPlayerEquipItem(CPlayer* pPlayer, CPlayerItem* pItem) {}
+	virtual void OnPlayerUnequipItem(CPlayer* pPlayer, CPlayerItem* pItem) {}
+	virtual void OnPlayerEnchantItem(CPlayer* pPlayer, CPlayerItem* pItem) {}
+	virtual void OnPlayerDurabilityItem(CPlayer* pPlayer, CPlayerItem* pItem) {}
 };
 
 class CEventListenerManager
@@ -62,18 +72,20 @@ public:
 		{
 			for(auto* listener : it->second)
 			{
-				if constexpr(event == IEventListener::Type::PlayerDeath)
-				{
+				if constexpr(event == IEventListener::PlayerDeath)
 					listener->OnPlayerDeath(std::forward<Ts>(args)...);
-				}
-				else if constexpr(event == IEventListener::Type::PlayerSpawn)
-				{
+				else if constexpr(event == IEventListener::PlayerSpawn)
 					listener->OnPlayerSpawn(std::forward<Ts>(args)...);
-				}
-				else if constexpr(event == IEventListener::Type::PlayerAttributeUpdate)
-				{
-					listener->OnPlayerAttributeUpdate(std::forward<Ts>(args)...);
-				}
+				else if constexpr(event == IEventListener::PlayerUpgrade)
+					listener->OnPlayerUpgrade(std::forward<Ts>(args)...);
+				else if constexpr(event == IEventListener::PlayerEquipItem)
+					listener->OnPlayerEquipItem(std::forward<Ts>(args)...);
+				else if constexpr(event == IEventListener::PlayerUnequipItem)
+					listener->OnPlayerUnequipItem(std::forward<Ts>(args)...);
+				else if constexpr(event == IEventListener::PlayerEnchantItem)
+					listener->OnPlayerEnchantItem(std::forward<Ts>(args)...);
+				else if constexpr(event == IEventListener::PlayerDurabilityItem)
+					listener->OnPlayerDurabilityItem(std::forward<Ts>(args)...);
 			}
 		}
 	}
