@@ -32,16 +32,19 @@ inline static int randomRangecount(int startrandom, int endrandom, int count)
 
 bool CPlayerItem::SetEnchant(int Enchant)
 {
-	if(m_Value < 1)
-		return false;
-
 	auto* pPlayer = GetPlayer();
-	if(!pPlayer || !pPlayer->IsAuthed())
-		return false;
+	if(pPlayer && pPlayer->IsAuthed() && m_Value >= 1)
+	{
+		m_Enchant = Enchant;
 
-	m_Enchant = Enchant;
-	g_EventListenerManager.Notify<IEventListener::PlayerEnchantItem>(pPlayer, this);
-	return Save();
+		if(Save())
+		{
+			g_EventListenerManager.Notify<IEventListener::PlayerEnchantItem>(pPlayer, this);
+			return true;
+		}
+	}
+
+	return false;
 }
 
 bool CPlayerItem::SetSettings(int Settings)
@@ -78,19 +81,15 @@ bool CPlayerItem::ShouldAutoEquip() const
 
 bool CPlayerItem::SetDurability(int Durability)
 {
-	if(m_Value < 1)
-		return false;
-
 	auto* pPlayer = GetPlayer();
-	if(!pPlayer || !pPlayer->IsAuthed())
-		return false;
-
-	m_Durability = Durability;
-
-	if(Save())
+	if(pPlayer && pPlayer->IsAuthed() && m_Value >= 1)
 	{
-		g_EventListenerManager.Notify<IEventListener::PlayerDurabilityItem>(pPlayer, this);
-		return true;
+		m_Durability = Durability;
+		if(Save())
+		{
+			g_EventListenerManager.Notify<IEventListener::PlayerDurabilityItem>(pPlayer, this);
+			return true;
+		}
 	}
 
 	return false;
@@ -227,34 +226,30 @@ bool CPlayerItem::Remove(int Value)
 
 bool CPlayerItem::Equip()
 {
-	if(m_Value < 1 || m_Settings >= 1)
-		return false;
-
 	auto* pPlayer = GetPlayer();
-	if(!pPlayer || !pPlayer->IsAuthed())
-		return false;
-
-	// remove old equipment from slot
-	if(Info()->IsEquipmentSlot())
+	if(pPlayer && pPlayer->IsAuthed() && m_Value >= 1 && !m_Settings)
 	{
-		const ItemType equipType = Info()->GetType();
-		while(auto oldEquipItemID = pPlayer->GetEquippedItemID(equipType, m_ID))
+		// remove old equipment from slot
+		if(Info()->IsEquipmentSlot())
 		{
-			if(auto pOldEquippedItem = pPlayer->GetItem(oldEquipItemID.value()))
-				pOldEquippedItem->SetSettings(0);
+			const ItemType equipType = Info()->GetType();
+			while(auto oldEquipItemID = pPlayer->GetEquippedItemID(equipType, m_ID))
+			{
+				if(auto pOldEquippedItem = pPlayer->GetItem(oldEquipItemID.value()))
+					pOldEquippedItem->SetSettings(0);
+			}
 		}
-	}
 
-	// update
-	m_Settings = true;
-	if(Save())
-	{
-		g_EventListenerManager.Notify<IEventListener::PlayerEquipItem>(pPlayer, this);
-		pPlayer->UpdateAchievement(AchievementType::Equip, m_ID, true, PROGRESS_ABSOLUTE);
-		pPlayer->UpdateAchievement(AchievementType::Equip, m_ID, m_Settings, PROGRESS_ABSOLUTE);
-		Info()->StartItemScenario(pPlayer, ItemScenarioEvent::OnEventEquip);
-		GS()->CreateSound(pPlayer->m_ViewPos, SOUND_VOTE_ITEM_EQUIP);
-		return true;
+		// update
+		m_Settings = true;
+		if(Save())
+		{
+			g_EventListenerManager.Notify<IEventListener::PlayerEquipItem>(pPlayer, this);
+			pPlayer->UpdateAchievement(AchievementType::Equip, m_ID, true, PROGRESS_ABSOLUTE);
+			Info()->StartItemScenario(pPlayer, ItemScenarioEvent::OnEventEquip);
+			GS()->CreateSound(pPlayer->m_ViewPos, SOUND_VOTE_ITEM_EQUIP);
+			return true;
+		}
 	}
 
 	return false;
@@ -266,17 +261,16 @@ bool CPlayerItem::UnEquip()
 		return false;
 
 	auto* pPlayer = GetPlayer();
-	if(!pPlayer || !pPlayer->IsAuthed())
-		return false;
-
-	// update
-	m_Settings = false;
-	if(Save())
+	if(pPlayer && pPlayer->IsAuthed() && m_Value >= 1 && m_Settings >= 1)
 	{
-		g_EventListenerManager.Notify<IEventListener::PlayerUnequipItem>(pPlayer, this);
-		Info()->StartItemScenario(pPlayer, ItemScenarioEvent::OnEventUnequip);
-		GS()->CreateSound(pPlayer->m_ViewPos, SOUND_VOTE_ITEM_EQUIP);
-		return true;
+		m_Settings = false;
+		if(Save())
+		{
+			g_EventListenerManager.Notify<IEventListener::PlayerUnequipItem>(pPlayer, this);
+			Info()->StartItemScenario(pPlayer, ItemScenarioEvent::OnEventUnequip);
+			GS()->CreateSound(pPlayer->m_ViewPos, SOUND_VOTE_ITEM_EQUIP);
+			return true;
+		}
 	}
 
 	return false;
