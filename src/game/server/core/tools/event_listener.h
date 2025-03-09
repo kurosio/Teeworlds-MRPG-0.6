@@ -12,7 +12,6 @@ class CCharacter;
 class IEventListener
 {
 public:
-	IEventListener() = default;
 	virtual ~IEventListener() = default;
 
 	enum Type
