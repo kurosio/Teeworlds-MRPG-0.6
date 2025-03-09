@@ -23,11 +23,6 @@ CPlayer* CAccountData::GetPlayer() const
 	return GS()->GetPlayer(m_ClientID);
 }
 
-int CAccountData::GetClientID() const
-{
-	return GetPlayer()->GetCID();
-}
-
 int CAccountData::GetGoldCapacity() const
 {
 	const auto TotalByAttribute = GetPlayer()->GetTotalAttributeValue(AttributeIdentifier::GoldCapacity);
@@ -36,49 +31,43 @@ int CAccountData::GetGoldCapacity() const
 
 void CAccountData::Init(int ID, int ClientID, const char* pLogin, std::string Language, std::string LoginDate, ResultPtr pResult)
 {
-	// Check if the ID has already been set
-	m_ClientID = ClientID;
+	// asserts
 	dbg_assert(m_ID <= 0 || !pResult, "Unique AccountID cannot change the value more than 1 time");
 
 	// initialize
 	IServer* pServer = Instance::Server();
-	str_copy(m_aLogin, pLogin, sizeof(m_aLogin));
-	str_copy(m_aLastLogin, LoginDate.c_str(), sizeof(m_aLastLogin));
-
-	// base data
+	m_Login = pLogin;
+	m_LastLoginDate = LoginDate;
 	m_ID = ID;
+	m_ClientID = ClientID;
 	m_CrimeScore = pResult->getInt("CrimeScore");
 	m_aHistoryWorld.push_front(pResult->getInt("WorldID"));
 	m_Bank = pResult->getString("Bank");
-
-	// time periods
 	m_Periods.m_DailyStamp = pResult->getInt64("DailyStamp");
 	m_Periods.m_WeekStamp = pResult->getInt64("WeekStamp");
 	m_Periods.m_MonthStamp = pResult->getInt64("MonthStamp");
-
-	// initialize data
-	InitProfessions();
-	InitAchievements(pResult->getString("Achievements"));
+	m_LastTickCrimeScoreChanges = pServer->Tick();
 	pServer->SetClientLanguage(m_ClientID, Language.c_str());
 
-	// Execute a database update query to update the "tw_accounts" table
-	// Set the LoginDate to the current timestamp and LoginIP to the client address
-	// The update query is executed on the row with the ID equal to the given UserID
-	char aAddrStr[64];
+
+	// update login ip, date, country
+	char aAddrStr[NETADDR_MAXSTRSIZE]{};
 	pServer->GetClientAddr(m_ClientID, aAddrStr, sizeof(aAddrStr));
-	Database->Execute<DB::UPDATE>("tw_accounts", "LoginDate = CURRENT_TIMESTAMP, LoginIP = '{}', CountryISO = '{}' WHERE ID = '{}'",
+	Database->Execute<DB::UPDATE>("tw_accounts",
+		"LoginDate = CURRENT_TIMESTAMP, LoginIP = '{}', CountryISO = '{}' WHERE ID = '{}'",
 		aAddrStr, Instance::Server()->ClientCountryIsoCode(m_ClientID), ID);
 
-	/*
-		Initialize sub account data.
-	*/
-	ReinitializeHouse();
-	ReinitializeGuild();
+
+	// initialize sub account data.
+	InitProfessions();
+	InitAchievements(pResult->getString("Achievements"));
 	m_Class.Init(m_ClientID, (ProfessionIdentifier)pResult->getInt("ProfessionID"));
 	m_BonusManager.Init(m_ClientID);
 	m_PrisonManager.Init(m_ClientID);
 	m_RatingSystem.Init(this);
-	m_LastTickCrimeScoreChanges = pServer->Tick();
+	ReinitializeHouse();
+	ReinitializeGuild();
+
 
 	// update account base
 	pServer->UpdateAccountBase(m_ID, pServer->ClientName(m_ClientID), m_RatingSystem.GetRating());
@@ -92,6 +81,7 @@ void CAccountData::InitProfessions()
 	m_vProfessions.push_back(CHealerProfession());
 	m_vProfessions.push_back(CFarmerProfession());
 	m_vProfessions.push_back(CMinerProfession());
+
 
 	// load professions data
 	std::map<ProfessionIdentifier, std::string> vmProfessionsData {};
@@ -116,12 +106,12 @@ void CAccountData::InitAchievements(const std::string& Data)
 	// initialize player base
 	const auto* pPlayer = GetPlayer();
 	std::map<int, CAchievement*> m_apReferenceMap {};
-
 	for(const auto& pAchievement : CAchievementInfo::Data())
 	{
 		const int AchievementID = pAchievement->GetID();
 		m_apReferenceMap[AchievementID] = CAchievement::CreateElement(pAchievement, pPlayer->GetCID());
 	}
+
 
 	// initialize player achievements
 	mystd::json::parse(Data, [&m_apReferenceMap, this](nlohmann::json& pJson)

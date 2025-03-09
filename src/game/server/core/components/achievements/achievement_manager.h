@@ -23,7 +23,6 @@ class CAchievementManager : public MmoComponent
 	void AddAchievementDetails(VoteWrapper& VAchievement, const CAchievementInfo* pInfo, int Progress, int Required) const;
 
 public:
-	void UpdateAchievement(CPlayer* pPlayer, AchievementType Type, int Criteria, int Progress, int AppendProgress) const;
 	int GetCountByType(AchievementType Type) const;
 	int GetCompletedCountByType(int ClientID, AchievementType Type) const;
 	int GetCount() const;

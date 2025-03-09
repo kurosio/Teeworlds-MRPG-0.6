@@ -16,8 +16,6 @@
 #include "core/tools/vote_wrapper.h"
 
 class CPlayerBot;
-enum class AchievementType;
-
 class CPlayer
 {
 	MACRO_ALLOC_POOL_ID()
@@ -129,7 +127,6 @@ public:
 	CPlayerBot* GetEidolon() const;
 	void TryCreateEidolon();
 	void TryRemoveEidolon();
-	void UpdateAchievement(AchievementType Type, int Criteria, int Progress, int ProgressType);
 
 private:
 	virtual void GetFormatedName(char* aBuffer, int BufferSize);

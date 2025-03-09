@@ -3,14 +3,14 @@
 #ifndef GAME_SERVER_COMPONENT_ACCOUNT_DATA_H
 #define GAME_SERVER_COMPONENT_ACCOUNT_DATA_H
 
-// TODO: fully rework structures
 #include "bonus_manager.h"
 #include "prison_manager.h"
 #include "profession.h"
 #include "rating_system.h"
+
 #include <game/server/core/components/guilds/guild_data.h>
 #include <game/server/core/components/auction/auction_data.h>
-#include <game/server/class_data.h>
+#include <game/server/core/class_data.h>
 
 class CGS;
 class CPlayer;
@@ -21,13 +21,13 @@ class CGuildMemberData;
 
 class CAccountData
 {
-	ska::unordered_set< int > m_aAetherLocation {};
+	mutable ska::unordered_set< int > m_aAetherLocation {};
 	mutable std::vector<CProfession> m_vProfessions {};
+	int m_ClientID {};
 
 	int m_ID {};
-	int m_ClientID {};
-	char m_aLogin[64] {};
-	char m_aLastLogin[64] {};
+	std::string m_Login{};
+	std::string m_LastLoginDate{};
 	int m_CrimeScore {};
 	int m_LastTickCrimeScoreChanges {};
 
@@ -45,7 +45,6 @@ class CAccountData
 	CPlayer* GetPlayer() const;
 
 public:
-	int GetClientID() const;
 
 	PrisonManager& GetPrisonManager() { return m_PrisonManager; }
 	const PrisonManager& GetPrisonManager() const { return m_PrisonManager; }
@@ -133,15 +132,9 @@ public:
 		});
 	}
 
-	const char* GetLogin() const
-	{
-		return m_aLogin;
-	}
-
-	const char* GetLastLoginDate() const
-	{
-		return m_aLastLogin;
-	}
+	int GetClientID() const { return m_ClientID; }
+	const char* GetLogin() const { return m_Login.c_str(); }
+	const char* GetLastLoginDate() const { return m_LastLoginDate.c_str(); }
 
 	void IncreaseCrime(int Score);
 	void DecreaseCrime(int Score);

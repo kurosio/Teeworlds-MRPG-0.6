@@ -7,6 +7,7 @@ class CGS;
 class CPlayer;
 class CPlayerItem;
 class CProfession;
+enum class AchievementType;
 
 class CAchievementListener : public IEventListener
 {
@@ -30,6 +31,9 @@ protected:
 	void OnPlayerEquipItem(CPlayer* pPlayer, CPlayerItem* pItem) override;
 	void OnPlayerProfessionLeveling(CPlayer* pPlayer, CProfession* pProfession, int NewLevel) override;
 	void OnPlayerProfessionUnlockedZone(CPlayer* pPlayer, CProfession* pProfession, int WorldID) override;
+
+private:
+	void UpdateAchievement(CPlayer* pPlayer, AchievementType Type, int Criteria, int Progress, int ProgressType) const;
 };
 
 extern CAchievementListener g_AchievementListener;

@@ -211,38 +211,6 @@ void CAchievementManager::AddAchievementDetails(VoteWrapper& VAchievement, const
 	}
 }
 
-void CAchievementManager::UpdateAchievement(CPlayer* pPlayer, AchievementType Type, int Criteria, int Progress, int ProgressType) const
-{
-	if(!pPlayer || pPlayer->IsBot())
-		return;
-
-	// initialize variables
-	bool Updated = false;
-	auto& pAchievements = CAchievement::Data()[pPlayer->GetCID()];
-
-	// search for the achievement
-	for(const auto& pAchievement : pAchievements)
-	{
-		const auto achievementType = pAchievement->Info()->GetType();
-		const auto achievementCriteria = pAchievement->Info()->GetCriteria();
-
-		if(achievementType != Type || pAchievement->IsCompleted())
-			continue;
-
-		if(achievementCriteria <= 0 || achievementCriteria == Criteria)
-		{
-			if(pAchievement->UpdateProgress(Criteria, Progress, ProgressType))
-				Updated = true;
-		}
-	}
-
-	// update the achievement progress in the database
-	if(Updated)
-	{
-		GS()->Core()->SaveAccount(pPlayer, SAVE_ACHIEVEMENTS);
-	}
-}
-
 int CAchievementManager::GetCount() const
 {
 	return (int)CAchievementInfo::Data().size();

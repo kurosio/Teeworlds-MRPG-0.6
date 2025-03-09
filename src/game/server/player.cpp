@@ -234,11 +234,6 @@ void CPlayer::TryRemoveEidolon()
 	}
 }
 
-void CPlayer::UpdateAchievement(AchievementType Type, int Criteria, int Progress, int ProgressType)
-{
-	GS()->Core()->AchievementManager()->UpdateAchievement(this, Type, Criteria, Progress, ProgressType);
-}
-
 void CPlayer::HandleScoreboardColors()
 {
 	if(m_TickActivatedGroupColour > Server()->Tick())
