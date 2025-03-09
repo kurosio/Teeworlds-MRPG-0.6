@@ -169,9 +169,8 @@ bool CPlayerItem::Add(int Value, int StartSettings, int StartEnchant, bool Messa
 		m_Value += Value;
 	}
 
-	// update achievements
-	pPlayer->UpdateAchievement(AchievementType::ReceiveItem, m_ID, Value, PROGRESS_ACCUMULATE);
-	pPlayer->UpdateAchievement(AchievementType::HaveItem, m_ID, m_Value, PROGRESS_ABSOLUTE);
+	// notify listeners
+	g_EventListenerManager.Notify<IEventListener::PlayerGotItem>(pPlayer, this, Value);
 
 	// try auto equip item
 	if(ShouldAutoEquip() && !IsEquipped())
@@ -207,21 +206,25 @@ bool CPlayerItem::Add(int Value, int StartSettings, int StartEnchant, bool Messa
 bool CPlayerItem::Remove(int Value)
 {
 	Value = minimum(Value, m_Value);
-	if(Value <= 0)
-		return false;
 
 	auto* pPlayer = GetPlayer();
-	if(!pPlayer || !pPlayer->IsAuthed())
-		return false;
-
-	if(m_Value <= Value)
+	if(pPlayer && pPlayer->IsAuthed() && Value > 0)
 	{
-		UnEquip();
-		Info()->StartItemScenario(pPlayer, ItemScenarioEvent::OnEventLost);
+		if(m_Value <= Value)
+		{
+			UnEquip();
+			Info()->StartItemScenario(pPlayer, ItemScenarioEvent::OnEventLost);
+		}
+
+		m_Value -= Value;
+		if(Save())
+		{
+			g_EventListenerManager.Notify<IEventListener::PlayerLostItem>(pPlayer, this, Value);
+			return true;
+		}
 	}
 
-	m_Value -= Value;
-	return Save();
+	return false;
 }
 
 bool CPlayerItem::Equip()
@@ -245,7 +248,6 @@ bool CPlayerItem::Equip()
 		if(Save())
 		{
 			g_EventListenerManager.Notify<IEventListener::PlayerEquipItem>(pPlayer, this);
-			pPlayer->UpdateAchievement(AchievementType::Equip, m_ID, true, PROGRESS_ABSOLUTE);
 			Info()->StartItemScenario(pPlayer, ItemScenarioEvent::OnEventEquip);
 			GS()->CreateSound(pPlayer->m_ViewPos, SOUND_VOTE_ITEM_EQUIP);
 			return true;

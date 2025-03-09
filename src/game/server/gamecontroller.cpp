@@ -31,40 +31,18 @@ IGameController::IGameController(CGS* pGS)
 
 void IGameController::OnCharacterDamage(CPlayer* pFrom, CPlayer* pTo, int Damage)
 {
-	// achievement total damage
-	if(pFrom != pTo && !pFrom->IsBot())
-	{
-		pFrom->UpdateAchievement(AchievementType::TotalDamage, NOPE, Damage, PROGRESS_ACCUMULATE);
-	}
+	g_EventListenerManager.Notify<IEventListener::CharacterDamage>(pFrom, pTo, Damage);
 }
 
 void IGameController::OnCharacterDeath(CPlayer* pVictim, CPlayer* pKiller, int Weapon)
 {
-	g_EventListenerManager.Notify<IEventListener::Type::PlayerDeath>( pVictim, pKiller, Weapon);
-
-	// achievement death
-	if(!pVictim->IsBot())
-	{
-		pVictim->UpdateAchievement(AchievementType::Death, NOPE, 1, PROGRESS_ACCUMULATE);
-	}
+	g_EventListenerManager.Notify<IEventListener::Type::CharacterDeath>( pVictim, pKiller, Weapon);
 
 	if(pVictim != pKiller)
 	{
-		// achievement defeat mob & pve
-		if(pVictim->IsBot() && !pKiller->IsBot())
-		{
-			const auto VictimBotID = dynamic_cast<CPlayerBot*>(pVictim)->GetBotID();
-			pKiller->UpdateAchievement(AchievementType::DefeatMob, VictimBotID, 1, PROGRESS_ACCUMULATE);
-			pKiller->UpdateAchievement(AchievementType::DefeatPVE, NOPE, 1, PROGRESS_ACCUMULATE);
-		}
-
-		// defeat pvp
+		// update rating
 		if(!pVictim->IsBot() && !pKiller->IsBot())
 		{
-			// achievement defeat pvp
-			pKiller->UpdateAchievement(AchievementType::DefeatPVP, NOPE, 1, PROGRESS_ACCUMULATE);
-
-			// update rating
 			auto& pKillerRating = pKiller->Account()->GetRatingSystem();
 			auto& pVictimRating = pVictim->Account()->GetRatingSystem();
 			pKillerRating.UpdateRating(GS(), true, pVictim->Account());
@@ -89,7 +67,7 @@ void IGameController::OnCharacterDeath(CPlayer* pVictim, CPlayer* pKiller, int W
 
 bool IGameController::OnCharacterSpawn(CCharacter* pChr)
 {
-	g_EventListenerManager.Notify<IEventListener::Type::PlayerSpawn>(pChr->GetPlayer());
+	g_EventListenerManager.Notify<IEventListener::Type::CharacterSpawn>(pChr->GetPlayer());
 
 	// Health
 	pChr->IncreaseHealth(pChr->GetPlayer()->GetMaxHealth());

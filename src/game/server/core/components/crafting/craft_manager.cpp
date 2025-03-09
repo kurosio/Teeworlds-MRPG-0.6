@@ -142,9 +142,9 @@ void CCraftManager::CraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const
 		GS()->Chat(ClientID, "You crafted '[{} x{}]'.", pPlayerCraftItem->Info()->GetName(), craftedItemCount);
 	}
 
-	// update achievement and votes
+	// notify event and votes
+	g_EventListenerManager.Notify<IEventListener::PlayerCraftItem>(pPlayer, pCraft);
 	GS()->CreateSound(pPlayer->m_ViewPos, SOUND_VOTE_CRAFT);
-	pPlayer->UpdateAchievement(AchievementType::CraftItem, pCraft->GetID(), craftedItemCount, PROGRESS_ACCUMULATE);
 	pPlayer->m_VotesData.UpdateCurrentVotes();
 }
 

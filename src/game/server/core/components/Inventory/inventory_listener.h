@@ -1,5 +1,5 @@
-#ifndef GAME_SERVER_CORE_TOOLS_ATTRIBUTES_TRACKER_H
-#define GAME_SERVER_CORE_TOOLS_ATTRIBUTES_TRACKER_H
+#ifndef GAME_SERVER_CORE_COMPONENTS_INVENTORY_INVENTORY_LISTENER_H
+#define GAME_SERVER_CORE_COMPONENTS_INVENTORY_INVENTORY_LISTENER_H
 
 #include <game/server/core/tools/event_listener.h>
 
@@ -51,7 +51,7 @@ protected:
     void OnPlayerEquipItem(CPlayer* pPlayer, CPlayerItem* pItem) override;
     void OnPlayerUnequipItem(CPlayer* pPlayer, CPlayerItem* pItem) override;
     void OnPlayerEnchantItem(CPlayer* pPlayer, CPlayerItem* pItem) override;
-    void OnPlayerUpgrade(CPlayer* pPlayer, int AttributeID) override;
+    void OnPlayerProfessionUpgrade(CPlayer* pPlayer, int AttributeID) override;
 
 private:
     void UpdateAttributesForItem(CPlayer* pPlayer, CPlayerItem* pItem);

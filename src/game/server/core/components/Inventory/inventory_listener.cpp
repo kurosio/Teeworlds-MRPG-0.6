@@ -1,4 +1,4 @@
-#include "listener.h"
+#include "inventory_listener.h"
 #include <game/server/gamecontext.h>
 
 CInventoryListener g_InventoryListener;
@@ -7,7 +7,7 @@ constexpr const char* ATTRIBUTE_TRACKING_FILE_NAME = "server_data/attribute_trac
 // inventory listener
 void CInventoryListener::Initialize()
 {
-    g_EventListenerManager.RegisterListener(IEventListener::PlayerUpgrade, this);
+    g_EventListenerManager.RegisterListener(IEventListener::PlayerProfessionUpgrade, this);
     g_EventListenerManager.RegisterListener(IEventListener::PlayerEquipItem, this);
     g_EventListenerManager.RegisterListener(IEventListener::PlayerUnequipItem, this);
     g_EventListenerManager.RegisterListener(IEventListener::PlayerEnchantItem, this);
@@ -15,7 +15,7 @@ void CInventoryListener::Initialize()
     m_AttributesTracker.LoadTrackingData();
 }
 
-void CInventoryListener::OnPlayerUpgrade(CPlayer* pPlayer, int AttributeID)
+void CInventoryListener::OnPlayerProfessionUpgrade(CPlayer* pPlayer, int AttributeID)
 {
     // Update tracking data when a player upgrades an attribute
     auto totalAttribute = pPlayer->GetTotalAttributeValue(static_cast<AttributeIdentifier>(AttributeID));

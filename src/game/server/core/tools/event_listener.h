@@ -5,6 +5,8 @@
 class CGS;
 class IServer;
 class CPlayer;
+class CProfession;
+class CCraftItem;
 class CPlayerItem;
 class CCharacter;
 
@@ -16,22 +18,34 @@ public:
 
 	enum Type
 	{
-		PlayerDeath,
-		PlayerSpawn,
-		PlayerUpgrade,
+		CharacterDamage,
+		CharacterDeath,
+		CharacterSpawn,
+		PlayerProfessionUpgrade,
+		PlayerProfessionLeveling,
+		PlayerProfessionUnlockedZone,
+		PlayerGotItem,
+		PlayerLostItem,
+		PlayerCraftItem,
 		PlayerEquipItem,
 		PlayerUnequipItem,
 		PlayerEnchantItem,
 		PlayerDurabilityItem,
 	};
 
-	virtual void OnPlayerDeath(CPlayer* pPlayer, CPlayer* pKiller, int Weapon) {}
-	virtual void OnPlayerSpawn(CPlayer* pPlayer) {}
-	virtual void OnPlayerUpgrade(CPlayer* pPlayer, int AttributeID) {}
-	virtual void OnPlayerEquipItem(CPlayer* pPlayer, CPlayerItem* pItem) {}
-	virtual void OnPlayerUnequipItem(CPlayer* pPlayer, CPlayerItem* pItem) {}
-	virtual void OnPlayerEnchantItem(CPlayer* pPlayer, CPlayerItem* pItem) {}
-	virtual void OnPlayerDurabilityItem(CPlayer* pPlayer, CPlayerItem* pItem) {}
+	virtual void OnCharacterDamage(CPlayer* pFrom, CPlayer* pTo, int Damage) { }
+	virtual void OnCharacterDeath(CPlayer* pVictim, CPlayer* pKiller, int Weapon) { }
+	virtual void OnCharacterSpawn(CPlayer* pPlayer) { }
+	virtual void OnPlayerProfessionUpgrade(CPlayer* pPlayer, int AttributeID) { }
+	virtual void OnPlayerProfessionLeveling(CPlayer* pPlayer, CProfession* pProfession, int NewLevel) { }
+	virtual void OnPlayerProfessionUnlockedZone(CPlayer* pPlayer, CProfession* pProfession, int WorldID) { }
+	virtual void OnPlayerGotItem(CPlayer* pPlayer, CPlayerItem* pItem, int Got) { }
+	virtual void OnPlayerLostItem(CPlayer* pPlayer, CPlayerItem* pItem, int Lost) { }
+	virtual void OnPlayerCraftItem(CPlayer* pPlayer, CCraftItem* pCraft) { }
+	virtual void OnPlayerEquipItem(CPlayer* pPlayer, CPlayerItem* pItem) { }
+	virtual void OnPlayerUnequipItem(CPlayer* pPlayer, CPlayerItem* pItem) { }
+	virtual void OnPlayerEnchantItem(CPlayer* pPlayer, CPlayerItem* pItem) { }
+	virtual void OnPlayerDurabilityItem(CPlayer* pPlayer, CPlayerItem* pItem) { }
 };
 
 class CEventListenerManager
@@ -90,12 +104,24 @@ public:
 		{
 			for(auto* listener : it->second)
 			{
-				if constexpr(event == IEventListener::PlayerDeath)
-					listener->OnPlayerDeath(std::forward<Ts>(args)...);
-				else if constexpr(event == IEventListener::PlayerSpawn)
-					listener->OnPlayerSpawn(std::forward<Ts>(args)...);
-				else if constexpr(event == IEventListener::PlayerUpgrade)
-					listener->OnPlayerUpgrade(std::forward<Ts>(args)...);
+				if constexpr(event == IEventListener::CharacterDamage)
+					listener->OnCharacterDamage(std::forward<Ts>(args)...);
+				else if constexpr(event == IEventListener::CharacterDeath)
+					listener->OnCharacterDeath(std::forward<Ts>(args)...);
+				else if constexpr(event == IEventListener::CharacterSpawn)
+					listener->OnCharacterSpawn(std::forward<Ts>(args)...);
+				else if constexpr(event == IEventListener::PlayerProfessionUpgrade)
+					listener->OnPlayerProfessionUpgrade(std::forward<Ts>(args)...);
+				else if constexpr(event == IEventListener::PlayerProfessionLeveling)
+					listener->OnPlayerProfessionLeveling(std::forward<Ts>(args)...);
+				else if constexpr(event == IEventListener::PlayerProfessionUnlockedZone)
+					listener->OnPlayerProfessionUnlockedZone(std::forward<Ts>(args)...);
+				else if constexpr(event == IEventListener::PlayerGotItem)
+					listener->OnPlayerGotItem(std::forward<Ts>(args)...);
+				else if constexpr(event == IEventListener::PlayerLostItem)
+					listener->OnPlayerLostItem(std::forward<Ts>(args)...);
+				else if constexpr(event == IEventListener::PlayerCraftItem)
+					listener->OnPlayerCraftItem(std::forward<Ts>(args)...);
 				else if constexpr(event == IEventListener::PlayerEquipItem)
 					listener->OnPlayerEquipItem(std::forward<Ts>(args)...);
 				else if constexpr(event == IEventListener::PlayerUnequipItem)
