@@ -19,6 +19,7 @@
 #include "core/components/quests/quest_manager.h"
 #include "core/components/skills/skill_manager.h"
 
+#include "core/components/achievements/achievement_listener.h"
 #include "core/components/Inventory/inventory_listener.h"
 #include "core/components/Eidolons/EidolonInfoData.h"
 #include "core/components/worlds/world_data.h"
@@ -662,8 +663,11 @@ void CGS::OnInit(int WorldID)
 	for(int i = 0; i < NUM_NETOBJTYPES; i++)
 		Server()->SnapSetStaticsize(i, m_NetObjHandler.GetObjSize(i));
 
-	// initialize controller
+	// initialize listeners
+	g_AchievementListener.Initialize();
 	g_InventoryListener.Initialize();
+
+	// initialize controller
 	m_World.SetGameServer(this);
 	m_Events.SetGameServer(this);
 	m_Collision.Init(Kernel(), WorldID);

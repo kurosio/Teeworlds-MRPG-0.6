@@ -417,7 +417,26 @@ enum class AchievementType : int
 	Leveling,
 };
 
+constexpr const char* GetAchievementTypeName(AchievementType typeID) noexcept
+{
+	switch(typeID)
+	{
+		case AchievementType::DefeatPVP:       return "Defeat PVP";
+		case AchievementType::DefeatPVE:       return "Defeat PVE";
+		case AchievementType::DefeatMob:       return "Defeat Mob";
+		case AchievementType::Death:           return "Death";
+		case AchievementType::TotalDamage:     return "Total Damage";
+		case AchievementType::Equip:           return "Equip";
+		case AchievementType::ReceiveItem:     return "Receive Item";
+		case AchievementType::HaveItem:        return "Have Item";
+		case AchievementType::CraftItem:       return "Craft Item";
+		case AchievementType::UnlockWorld:     return "Unlock World";
+		case AchievementType::Leveling:        return "Leveling";
+		default:                               return "Unknown";
+	}
+}
 
+// quest state
 enum class QuestState : int
 {
 	NoAccepted = 0,

@@ -28,7 +28,6 @@ class CAchievementInfo : public MultiworldIdentifiableData< std::deque<CAchievem
 {
 	int m_ID {};
 	AchievementType m_Type {};
-	int m_Group {};
 	std::string m_aName {};
 	int m_Criteria{};
 	int m_Required{};
@@ -50,7 +49,6 @@ public:
 	int GetPoint() const { return m_Point; }
 	const char* GetName() const { return m_aName.c_str(); }
 	AchievementType GetType() const { return m_Type; }
-	int GetGroup() const { return m_Group; }
 	nlohmann::json& GetRewardData() { return m_RewardData; }
 	bool RewardExists() const { return !m_RewardData.empty(); }
 

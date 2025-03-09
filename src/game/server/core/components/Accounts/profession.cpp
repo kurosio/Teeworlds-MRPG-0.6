@@ -66,7 +66,6 @@ void CProfession::AddExperience(uint64_t Experience)
 	auto* pPlayer = GetPlayer();
 	auto ExperienceNeed = computeExperience(m_Level);
 	const char* pProfessionName = GetProfessionName(m_ProfessionID);
-	const auto oldLevel = m_Level;
 
 	// append experience
 	m_Experience += Experience;

@@ -19,13 +19,13 @@ class CAchievementManager : public MmoComponent
 	bool OnSendMenuVotes(CPlayer* pPlayer, int Menulist) override;
 
 	void ShowMenu(CPlayer* pPlayer) const;
-	void ShowGroupMenu(CPlayer* pPlayer, int Group) const;
+	void ShowTypeList(CPlayer* pPlayer, AchievementType Type) const;
 	void AddAchievementDetails(VoteWrapper& VAchievement, const CAchievementInfo* pInfo, int Progress, int Required) const;
 
 public:
 	void UpdateAchievement(CPlayer* pPlayer, AchievementType Type, int Criteria, int Progress, int AppendProgress) const;
-	int GetCountByGroup(int Group) const;
-	int GetCompletedCountByGroup(int ClientID, int Group) const;
+	int GetCountByType(AchievementType Type) const;
+	int GetCompletedCountByType(int ClientID, AchievementType Type) const;
 	int GetCount() const;
 	int GetCompletedCount(int ClientID) const;
 };

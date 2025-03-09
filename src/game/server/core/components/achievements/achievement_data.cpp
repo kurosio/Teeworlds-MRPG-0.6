@@ -14,28 +14,6 @@ void CAchievementInfo::InitData(const std::string& RewardData)
 	{
 		m_RewardData = std::move(pJson);
 	});
-
-	// initialize achievement group
-	m_Group = ACHIEVEMENT_GROUP_GENERAL;
-	switch(m_Type)
-	{
-		case AchievementType::DefeatPVP:
-		case AchievementType::DefeatPVE:
-		case AchievementType::DefeatMob:
-		case AchievementType::Death:
-		case AchievementType::TotalDamage:
-			m_Group = ACHIEVEMENT_GROUP_BATTLE;
-			break;
-		case AchievementType::Equip:
-		case AchievementType::ReceiveItem:
-		case AchievementType::HaveItem:
-		case AchievementType::CraftItem:
-			m_Group = ACHIEVEMENT_GROUP_ITEMS;
-			break;
-		default:
-			m_Group = ACHIEVEMENT_GROUP_GENERAL;
-			break;
-	}
 }
 
 bool CAchievementInfo::IsCompleted(int Criteria, const CAchievement* pAchievement) const

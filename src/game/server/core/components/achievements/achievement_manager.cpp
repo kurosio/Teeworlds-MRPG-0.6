@@ -54,9 +54,9 @@ bool CAchievementManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_ACHIEVEMENTS);
 
-		if(const auto GroupID = pPlayer->m_VotesData.GetExtraID())
+		if(const auto TypeID = pPlayer->m_VotesData.GetExtraID())
 		{
-			ShowGroupMenu(pPlayer, GroupID.value());
+			ShowTypeList(pPlayer, (AchievementType)TypeID.value());
 			VoteWrapper::AddEmptyline(ClientID);
 		}
 
@@ -68,54 +68,56 @@ bool CAchievementManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 
 void CAchievementManager::ShowMenu(CPlayer* pPlayer) const
 {
+	// initialize variables
 	const int ClientID = pPlayer->GetCID();
+	const auto TotalAchievements = GetCount();
+	const auto TotalCompleted = GetCompletedCount(ClientID);
+	const auto Percentage = round_to_int(translate_to_percent(TotalAchievements, TotalCompleted));
 
-	// information
+
+	// info
 	VoteWrapper VInfo(ClientID, VWF_STYLE_STRICT_BOLD | VWF_SEPARATE, "\u2324 Achievements (Information)");
 	VInfo.Add("You can complete achievements and earn rewards.");
 	VoteWrapper::AddEmptyline(ClientID);
 
+
 	// main
-	int TotalAchievements = GetCount();
-	int TotalCompleted = GetCompletedCount(ClientID);
-	int Percentage = translate_to_percent(TotalAchievements, TotalCompleted);
 	VoteWrapper VMain(ClientID, VWF_STYLE_STRICT | VWF_ALIGN_TITLE | VWF_SEPARATE, "\u2654 Main information");
 	VMain.Add("{} of {} completed (progress {}%)", TotalCompleted, TotalAchievements, Percentage);
 	VMain.Add("Achievement points: {}p", pPlayer->GetItem(itAchievementPoint)->GetValue());
 	VoteWrapper::AddEmptyline(ClientID);
 
-	// show group
+
+	// types
 	VoteWrapper VGroup(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "\u2059 Achievements groups");
-	int CompletedGeneral = GetCompletedCountByGroup(ClientID, ACHIEVEMENT_GROUP_GENERAL);
-	int TotalGeneral = GetCountByGroup(ACHIEVEMENT_GROUP_GENERAL);
-	VGroup.AddMenu(MENU_ACHIEVEMENTS_SELECT, ACHIEVEMENT_GROUP_GENERAL, "General ({} of {})", CompletedGeneral, TotalGeneral);
-
-	int CompletedBattle = GetCompletedCountByGroup(ClientID, ACHIEVEMENT_GROUP_BATTLE);
-	int TotalBattle = GetCountByGroup(ACHIEVEMENT_GROUP_BATTLE);
-	VGroup.AddMenu(MENU_ACHIEVEMENTS_SELECT, ACHIEVEMENT_GROUP_BATTLE, "Battle ({} of {})", CompletedBattle, TotalBattle);
-
-	int CompletedItems = GetCompletedCountByGroup(ClientID, ACHIEVEMENT_GROUP_ITEMS);
-	int TotalItems = GetCountByGroup(ACHIEVEMENT_GROUP_ITEMS);
-	VGroup.AddMenu(MENU_ACHIEVEMENTS_SELECT, ACHIEVEMENT_GROUP_ITEMS, "Items ({} of {})", CompletedItems, TotalItems);
+	for(int i = (int)AchievementType::DefeatPVP; i <= (int)AchievementType::Leveling; i++)
+	{
+		auto Type = (AchievementType)i;
+		auto Completed = GetCompletedCountByType(ClientID, Type);
+		auto Total = GetCountByType(Type);
+		VGroup.AddMenu(MENU_ACHIEVEMENTS_SELECT, i, "{} ({} of {})", GetAchievementTypeName(Type), Completed, Total);
+	}
 }
 
-void CAchievementManager::ShowGroupMenu(CPlayer* pPlayer, int groupID) const
+void CAchievementManager::ShowTypeList(CPlayer* pPlayer, AchievementType Type) const
 {
+	// initialize variables
 	const int ClientID = pPlayer->GetCID();
-	const char* apGroupName[] = { "General", "Battle", "Items" };
+	const auto& achievements = CAchievement::Data()[ClientID];
 
-	// information
+
+	// info
 	VoteWrapper VInfo(ClientID, VWF_STYLE_STRICT_BOLD | VWF_SEPARATE | VWF_ALIGN_TITLE, "\u2324 Achievements (Information)");
 	VInfo.Add("Select an achievement from the list to get conditions.");
 	VoteWrapper::AddEmptyline(ClientID);
 
+
 	// achievements list
-	const auto& achievements = CAchievement::Data()[ClientID];
-	VoteWrapper(ClientID).Add("\u2263 {} achievements", apGroupName[groupID]);
+	VoteWrapper(ClientID).Add("\u2263 {} achievements", GetAchievementTypeName(Type));
 	for(auto& pAchievement : achievements)
 	{
 		const auto* pInfo = pAchievement->Info();
-		if(pInfo->GetGroup() != groupID)
+		if(pInfo->GetType() != Type)
 			continue;
 
 		const auto progress = pAchievement->GetProgress();
@@ -123,12 +125,8 @@ void CAchievementManager::ShowGroupMenu(CPlayer* pPlayer, int groupID) const
 		const bool completed = pAchievement->IsCompleted();
 		const bool rewardExists = pInfo->RewardExists();
 
-		VoteWrapper VAchievement(ClientID, VWF_UNIQUE | VWF_STYLE_SIMPLE, "{} ({}AP) {}{}",
-			completed ? "✔" : "×",
-			pInfo->GetPoint(),
-			pInfo->GetName(),
-			rewardExists ? " : Reward" : "");
-
+		VoteWrapper VAchievement(ClientID, VWF_UNIQUE | VWF_STYLE_SIMPLE, "{} {}{}",
+			completed ? "✔" : "×", pInfo->GetName(), rewardExists ? " : Reward" : "");
 		AddAchievementDetails(VAchievement, pInfo, progress, required);
 	}
 }
@@ -139,8 +137,8 @@ void CAchievementManager::AddAchievementDetails(VoteWrapper& VAchievement, const
 	{
 		const auto progressAchievement = translate_to_percent(Required, Progress);
 		const auto progressBar = mystd::string::progressBar(100, (int)progressAchievement, 10, "\u25B0", "\u25B1");
-
 		wrapper.Add("Progress: {} - {~.2}%", progressBar, progressAchievement);
+		wrapper.Add("Achievement point: {}", pInfo->GetPoint());
 		if(needed.empty())
 			wrapper.Add("{} {}/{}", action, progress, required);
 		else
@@ -250,20 +248,20 @@ int CAchievementManager::GetCount() const
 	return (int)CAchievementInfo::Data().size();
 }
 
-int CAchievementManager::GetCountByGroup(int Group) const
+int CAchievementManager::GetCountByType(AchievementType Type) const
 {
-	return (int)std::ranges::count_if(CAchievementInfo::Data(), [Group](const CAchievementInfo* pAchievement)
+	return (int)std::ranges::count_if(CAchievementInfo::Data(), [Type](const CAchievementInfo* pAchievement)
 	{
-		return pAchievement->GetGroup() == Group;
+		return pAchievement->GetType() == Type;
 	});
 }
 
-int CAchievementManager::GetCompletedCountByGroup(int ClientID, int Group) const
+int CAchievementManager::GetCompletedCountByType(int ClientID, AchievementType Type) const
 {
 	auto& pAchievements = CAchievement::Data()[ClientID];
-	return (int)std::ranges::count_if(pAchievements, [Group](const CAchievement* p)
+	return (int)std::ranges::count_if(pAchievements, [Type](const CAchievement* p)
 	{
-		return p->Info()->GetGroup() == Group && p->IsCompleted();
+		return p->Info()->GetType() == Type && p->IsCompleted();
 	});
 }
 
