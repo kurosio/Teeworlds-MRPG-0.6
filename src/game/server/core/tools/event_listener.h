@@ -50,7 +50,7 @@ public:
 
 class CEventListenerManager
 {
-	std::mutex m_Mutex;
+	std::recursive_mutex m_Mutex;
 	std::unordered_map<IEventListener::Type, std::vector<IEventListener*>> m_vListeners;
 	std::unordered_map<IEventListener::Type, size_t> m_EventListenerCounts;
 
@@ -71,7 +71,6 @@ public:
 	{
 		std::unique_lock lock(m_Mutex);
 		auto& listeners = m_vListeners[event];
-
 		listeners.erase(std::ranges::remove(listeners, listener).begin(), listeners.end());
 
 		if(!listeners.empty())
@@ -99,7 +98,7 @@ public:
 	template <IEventListener::Type event, typename... Ts>
 	void Notify(Ts&&... args)
 	{
-		std::lock_guard lock(m_Mutex);
+		std::unique_lock lock(m_Mutex);
 		if(const auto it = m_vListeners.find(event); it != m_vListeners.end())
 		{
 			for(auto* listener : it->second)

@@ -62,7 +62,7 @@ private:
 
 	/**
 	 * @brief Initializes the MMO component for a specific world.
-	 * 
+	 *
 	 * @param SqlQueryWhereWorld The location of the local world.
 	 */
 	virtual void OnInitWorld(const std::string& SqlQueryWhereWorld) {}
@@ -79,7 +79,7 @@ private:
 
 	/**
 	 * @brief Called when a time period occurs.
-	 * 
+	 *
 	 * @param Period The time period that occurred.
 	 */
 	virtual void OnTimePeriod(ETimePeriod Period) { return; }
@@ -91,35 +91,35 @@ private:
 
 	/**
 	 * @brief Called when a client is reset.
-	 * 
+	 *
 	 * @param ClientID The ID of the client.
 	 */
 	virtual void OnClientReset(int ClientID) {}
 
 	/**
 	 * @brief Called when a client message is received.
-	 * 
+	 *
 	 * @param MsgID The ID of the message.
 	 * @param pRawMsg A pointer to the raw message data.
 	 * @param ClientID The ID of the client.
-	 * 
+	 *
 	 * @return True if the message was handled, false otherwise.
 	 */
 	virtual bool OnClientMessage(int MsgID, void* pRawMsg, int ClientID) { return false; }
 
 	/**
 	 * @brief Called when a player logs in.
-	 * 
+	 *
 	 * @param pPlayer A pointer to the player object.
 	 */
 	virtual void OnPlayerLogin(CPlayer* pPlayer) {}
 
 	/**
 	 * @brief Called when a player selects a menu item.
-	 * 
+	 *
 	 * @param pPlayer A pointer to the player object.
 	 * @param Menulist The selected menu item.
-	 * 
+	 *
 	 * @return True if the menu item was handled, false otherwise.
 	 */
 	virtual bool OnSendMenuVotes(CPlayer* pPlayer, int Menulist) { return false; }
@@ -136,14 +136,14 @@ private:
 
 	/**
 	 * @brief Called when a player issues a vote command.
-	 * 
+	 *
 	 * @param pPlayer A pointer to the player object.
 	 * @param pCmd The vote command.
 	 * @param ExtraValue1 The ID of the vote.
 	 * @param ExtraValue2 The second ID of the vote.
 	 * @param ReasonNumber The get parameter.
 	 * @param pReason The get text parameter.
-	 * 
+	 *
 	 * @return True if the vote command was handled, false otherwise.
 	 */
 	virtual bool OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const int ExtraValue1, const int ExtraValue2, int ReasonNumber, const char* pReason) { return false; }
@@ -161,7 +161,7 @@ private:
 
 	/**
 	 * @brief Called when a player experiences a time period.
-	 * 
+	 *
 	 * @param pPlayer A pointer to the player object.
 	 * @param Period The time period that occurred.
 	 */
@@ -169,7 +169,7 @@ private:
 
 	/**
 	 * @brief Called when a character tile is encountered.
-	 * 
+	 *
 	 * @param pChr A pointer to the character object.
 	 */
 	virtual void OnCharacterTile(CCharacter* pChr) {}
