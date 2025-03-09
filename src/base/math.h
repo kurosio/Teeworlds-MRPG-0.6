@@ -221,12 +221,12 @@ T add_percent_to_source(T* pvalue, float percent)
 	{
 		if constexpr(std::is_same_v<T, BigInt>)
 		{
-			BigInt result = translate_to_percent_rest1(*pvalue, percent);
+			BigInt result = translate_to_percent_rest(*pvalue, percent);
 			*pvalue += result;
 		}
 		else
 		{
-			T result = translate_to_percent_rest1(*pvalue, percent);
+			T result = translate_to_percent_rest(*pvalue, percent);
 			*pvalue += result;
 		}
 	}
