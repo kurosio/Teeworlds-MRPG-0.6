@@ -2,16 +2,22 @@
 #define GAME_SERVER_CORE_TOOLS_MOTD_MENU_H
 #include "event_listener.h"
 
-class CGS;
-class CPlayer;
 enum MotdMenuFlags
 {
 	MTFLAG_CLOSE_BUTTON    = 1 << 0,
 	MTFLAG_CLOSE_ON_SELECT = 1 << 1,
+
+	MTTEXTINPUTFLAG_ONLY_NUMERIC = 1 << 0,
+	MTTEXTINPUTFLAG_PASSWORD = 1 << 1,
 };
 
+class CGS;
+class CPlayer;
 class MotdMenu
 {
+	CGS* GS() const;
+	CPlayer* GetPlayer() const;
+
 	class ScrollManager
 	{
 		int m_ScrollPos {};
@@ -19,8 +25,8 @@ class MotdMenu
 		int m_MaxItemsVisible {};
 
 	public:
-		explicit ScrollManager(int visibleLines) : m_MaxItemsVisible(visibleLines) {}
-		void SetMaxScrollPos(int itemCount) { m_MaxScrollPos = maximum(0, itemCount - m_MaxItemsVisible); }
+		explicit ScrollManager(int VisibleLines) : m_MaxItemsVisible(VisibleLines) {}
+		void SetMaxScrollPos(int ItemCount) { m_MaxScrollPos = maximum(0, ItemCount - m_MaxItemsVisible); }
 		int GetScrollPos() const { return m_ScrollPos; }
 		int GetEndScrollPos() const { return minimum(m_ScrollPos + m_MaxItemsVisible, m_MaxScrollPos + m_MaxItemsVisible); }
 		int GetMaxVisibleItems() const { return m_MaxItemsVisible; }
@@ -85,6 +91,7 @@ public:
 		AddImpl(MenuID, Extra, "MENU", fmt_localize(m_ClientID, description.data(), args...));
 	}
 
+	void AddEditField(int TextID, int64_t Flags = 0);
 	void AddLine()
 	{
 		AddImpl(NOPE, NOPE, "NULL", "");
@@ -124,11 +131,30 @@ public:
 		return m_MenuExtra;
 	}
 
+	bool ApplyFieldEdit(const std::string& Message);
 	void ClearMotd(IServer* pServer, CPlayer* pPlayer);
 
 private:
 	void UpdateMotd(IServer* pServer, CGS* pGS, CPlayer* pPlayer);
 	void AddImpl(int extra, int extra2, std::string_view command, const std::string& description);
+};
+
+struct CMotdPlayerData
+{
+	struct ActiveInputTextField
+	{
+		bool Active {};
+		int TextID {};
+	};
+
+	struct TextField
+	{
+		std::string Message {};
+		int64_t Flags {};
+	};
+
+	ActiveInputTextField m_CurrentInputField {};
+	std::map<int, TextField> m_vFields {};
 };
 
 #endif

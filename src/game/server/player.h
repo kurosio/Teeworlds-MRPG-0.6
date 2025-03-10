@@ -72,6 +72,7 @@ public:
 	========================================================== */
 	CCooldown m_Cooldown {};
 	CVotePlayerData m_VotesData {};
+	CMotdPlayerData m_MotdData {};
 	CPlayerDialog m_Dialog;
 	CEffectManager m_Effects {};
 	CTuningParams m_PrevTuningParams;

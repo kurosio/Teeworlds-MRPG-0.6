@@ -2,6 +2,16 @@
 
 #include <game/server/gamecontext.h>
 
+CGS* MotdMenu::GS() const
+{
+	return (CGS*)Instance::GameServerPlayer(m_ClientID);
+}
+
+CPlayer* MotdMenu::GetPlayer() const
+{
+	return GS()->GetPlayer(m_ClientID);
+}
+
 void MotdMenu::AddImpl(int extra, int extra2, std::string_view command, const std::string& description)
 {
 	Point p;
@@ -14,15 +24,37 @@ void MotdMenu::AddImpl(int extra, int extra2, std::string_view command, const st
 	m_ScrollManager.SetMaxScrollPos(static_cast<int>(m_Points.size()));
 }
 
+void MotdMenu::AddEditField(int TextID, int64_t Flags)
+{
+	// initialize variables
+	auto& playerMotdData = GetPlayer()->m_MotdData;
+	auto& currentInputField = playerMotdData.m_CurrentInputField;
+	auto& vFields = playerMotdData.m_vFields;
+	const char* pMarkActive = (currentInputField.Active && TextID == currentInputField.TextID) ? "✎ " : "";
+	size_t lengthSide = vFields[TextID].Message.empty() ? 18 : 0;
+	std::string spaces = lengthSide > 0 ? std::string(lengthSide, '-') : "";
+
+	// flags
+	std::string endText;
+	vFields[TextID].Flags = Flags;
+	if(vFields[TextID].Flags & MTTEXTINPUTFLAG_PASSWORD)
+		endText = std::string(vFields[TextID].Message.length(), '*');
+	else
+		endText = vFields[TextID].Message;
+
+	// result
+	std::string result = fmt_localize(m_ClientID, "{}[-{}{}-]", pMarkActive, endText, spaces);
+	AddImpl(TextID, NOPE, "TEXT_FIELD", result);
+}
+
 void MotdMenu::Tick()
 {
 	// check is has points
 	if(m_Points.empty())
 		return;
 
-	const auto pServer = Instance::Server();
-	const auto pGS = (CGS*)Instance::GameServerPlayer(m_ClientID);
-	const auto pChar = pGS->GetPlayerChar(m_ClientID);
+	const auto pServer = GS()->Server();
+	const auto pChar = GS()->GetPlayerChar(m_ClientID);
 
 	// check valid character
 	if(!pChar)
@@ -101,15 +133,31 @@ void MotdMenu::Tick()
 		}
 
 		// initialize variables
+		bool updatedMotd = false;
 		const int checkYStart = startLineY + linePos * lineSizeY;
 		const int checkYEnd = startLineY + (linePos + 1) * lineSizeY;
 		const bool isSelected = (targetX > -196 && targetX < 196 && targetY >= checkYStart && targetY < checkYEnd);
+		const bool isClicked = pServer->Input()->IsKeyClicked(m_ClientID, KEY_EVENT_FIRE);
 
-		// is hovered and clicked
-		if(isSelected && pServer->Input()->IsKeyClicked(m_ClientID, KEY_EVENT_FIRE))
+		// is clicked with active text field editor
+		if(isClicked && pChar->GetPlayer()->m_MotdData.m_CurrentInputField.Active)
 		{
-			bool updatedMotd = false;
+			GS()->Chat(m_ClientID, "[⇄] Editing a field is canceled!");
+			pChar->GetPlayer()->m_MotdData.m_CurrentInputField.Active = false;
+			updatedMotd = true;
+		}
+		// is hovered and clicked
+		else if(isSelected && pServer->Input()->IsKeyClicked(m_ClientID, KEY_EVENT_FIRE))
+		{
 			const auto& extra = m_Points[i].m_Extra;
+
+			if(command == "TEXT_FIELD")
+			{
+				pChar->GetPlayer()->m_MotdData.m_CurrentInputField.Active = true;
+				pChar->GetPlayer()->m_MotdData.m_CurrentInputField.TextID = extra;
+				GS()->Chat(m_ClientID, "[⇄] Editing a field (use chat)!");
+				updatedMotd = true;
+			}
 
 			if(command == "CLOSE")
 			{
@@ -122,15 +170,17 @@ void MotdMenu::Tick()
 				updatedMotd = true;
 				m_Menulist = extra;
 				m_MenuExtra = m_Points[i].m_Extra2 <= NOPE ? std::nullopt : std::make_optional<int>(m_Points[i].m_Extra2);
+				pChar->GetPlayer()->m_MotdData.m_vFields.clear();
 			}
 
 			if(command == "BACKPAGE")
 			{
 				updatedMotd = true;
 				m_Menulist = m_LastMenulist;
+				pChar->GetPlayer()->m_MotdData.m_vFields.clear();
 			}
 
-			if(pGS->OnClientMotdCommand(m_ClientID, command.c_str(), extra))
+			if(GS()->OnClientMotdCommand(m_ClientID, command.c_str(), extra))
 			{
 				if(m_Flags & MTFLAG_CLOSE_ON_SELECT)
 				{
@@ -140,12 +190,12 @@ void MotdMenu::Tick()
 
 				updatedMotd = true;
 			}
+		}
 
-			if(updatedMotd)
-			{
-				UpdateMotd(pServer, pGS, pChar->GetPlayer());
-				return;
-			}
+		if(updatedMotd)
+		{
+			UpdateMotd(pServer, GS(), pChar->GetPlayer());
+			return;
 		}
 
 		addLineToBuffer(m_Points[i].m_aDesc, isSelected);
@@ -162,7 +212,7 @@ void MotdMenu::Tick()
 	else if(pServer->Tick() >= m_ResendMotdTick)
 	{
 		m_ResendMotdTick = pServer->Tick() + pServer->TickSpeed();
-		UpdateMotd(pServer, pGS, pChar->GetPlayer());
+		UpdateMotd(pServer, GS(), pChar->GetPlayer());
 	}
 }
 
@@ -187,12 +237,40 @@ void MotdMenu::Send(int Menulist)
 	}
 }
 
+bool MotdMenu::ApplyFieldEdit(const std::string& Message)
+{
+	auto* pPlayer = GetPlayer();
+	if(!pPlayer)
+		return false;
+
+	auto& textFieldEdit = pPlayer->m_MotdData.m_CurrentInputField;
+	auto& vFields = pPlayer->m_MotdData.m_vFields;
+
+	if(!textFieldEdit.Active)
+		return false;
+
+	// check flag ony numeric values
+	auto& filedData = vFields[textFieldEdit.TextID];
+	if(filedData.Flags & MTTEXTINPUTFLAG_ONLY_NUMERIC && !std::all_of(filedData.Message.begin(), filedData.Message.end(), isdigit))
+	{
+		GS()->Chat(m_ClientID, "[⇄] Only numeric values will be allowed to be entered.");
+		return true;
+	}
+
+	textFieldEdit.Active = false;
+	filedData.Message = Message;
+	m_ResendMotdTick = 0;
+	GS()->Chat(m_ClientID, "[⇄] Field is been updated!");
+	return true;
+}
+
 void MotdMenu::ClearMotd(IServer* pServer, CPlayer* pPlayer)
 {
 	m_Points.clear();
 	pServer->SendMotd(m_ClientID, "");
 	if(pPlayer && pPlayer->m_pMotdMenu)
 	{
+		pPlayer->m_MotdData.m_vFields.clear();
 		pPlayer->m_pMotdMenu.reset();
 	}
 }

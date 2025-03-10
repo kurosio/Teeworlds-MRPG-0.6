@@ -625,6 +625,12 @@ bool CAccountManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
 		const BigInt CurrentBankGold = pPlayer->Account()->GetBankManager();
 		const BigInt TotalGold = pPlayer->Account()->GetTotalGold();
 
+		enum
+		{
+			TEST_FIELD1,
+			SOME_FIELD2,
+		};
+
 		MotdMenu MBonuses(ClientID,  "Here you can securely store your gold. Remember, gold in the Bank is protected and will never be lost, even in death.");
 		MBonuses.AddText("Bank Management \u2697");
 		MBonuses.AddSeparateLine();
@@ -632,6 +638,14 @@ bool CAccountManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
 		MBonuses.AddText("Bank: {$}", CurrentBankGold);
 		MBonuses.AddText("Total: {$}", TotalGold);
 		MBonuses.AddText("Commision rate: {}%", g_Config.m_SvBankCommissionRate);
+		MBonuses.AddSeparateLine();
+		MBonuses.AddLine();
+		MBonuses.AddText("Login:");
+		MBonuses.AddEditField(TEST_FIELD1);
+		MBonuses.AddLine();
+		MBonuses.AddText("Password:");
+		MBonuses.AddEditField(SOME_FIELD2, MTTEXTINPUTFLAG_PASSWORD);
+		MBonuses.AddLine();
 		MBonuses.AddSeparateLine();
 		MBonuses.Add("BANK_DEPOSIT", CurrentGold, "Deposit All");
 		MBonuses.Send(MOTD_MENU_BANK_MANAGER);

@@ -857,6 +857,10 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 			if(!str_utf8_check(pMsg->m_pMessage))
 				return;
 
+			// is apply field edit
+			if(pPlayer->m_pMotdMenu && pPlayer->m_pMotdMenu->ApplyFieldEdit(pMsg->m_pMessage))
+				return;
+
 			// check message
 			const auto firstChar = pMsg->m_pMessage[0];
 			if(firstChar == '/')
