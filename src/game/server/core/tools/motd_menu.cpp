@@ -76,7 +76,7 @@ void MotdMenu::Tick()
 
 	// prepare the buffer for the MOTD
 	int linePos = 2;
-	std::string buffer = Instance::Localize(m_ClientID, "* Use 'Self kill' to close the motd!\n\n");
+	std::string buffer = Instance::Localize(m_ClientID, "* Self kill - close the motd!\n\n");
 	auto addScrollBar = [&](int index)
 	{
 		// initialize variables
@@ -151,7 +151,7 @@ void MotdMenu::Tick()
 		// is clicked with active text field editor
 		if(isClicked && pPlayer->m_MotdData.m_CurrentInputField.Active)
 		{
-			GS()->Chat(m_ClientID, "[⇄] Editing a field is canceled!");
+			GS()->Chat(m_ClientID, "[&] Editing a field is canceled!");
 			pPlayer->m_MotdData.m_CurrentInputField.Active = false;
 			updatedMotd = true;
 		}
@@ -164,7 +164,7 @@ void MotdMenu::Tick()
 			{
 				pPlayer->m_MotdData.m_CurrentInputField.Active = true;
 				pPlayer->m_MotdData.m_CurrentInputField.TextID = extra;
-				GS()->Chat(m_ClientID, "[⇄] Editing a field (use chat)!");
+				GS()->Chat(m_ClientID, "[&] Editing a field (use chat)!");
 				updatedMotd = true;
 			}
 
@@ -265,14 +265,14 @@ bool MotdMenu::ApplyFieldEdit(const std::string& Message)
 	auto& filedData = vFields[textFieldEdit.TextID];
 	if(filedData.Flags & MTTEXTINPUTFLAG_ONLY_NUMERIC && !std::all_of(filedData.Message.begin(), filedData.Message.end(), isdigit))
 	{
-		GS()->Chat(m_ClientID, "[⇄] Only numeric values will be allowed to be entered.");
+		GS()->Chat(m_ClientID, "[&] Only numeric values will be allowed to be entered.");
 		return true;
 	}
 
 	textFieldEdit.Active = false;
 	filedData.Message = Message;
-	m_ResendMotdTick = 0;
-	GS()->Chat(m_ClientID, "[⇄] Field is been updated!");
+	GS()->Chat(m_ClientID, "[&] Field is been updated!");
+	UpdateMotd();
 	return true;
 }
 
