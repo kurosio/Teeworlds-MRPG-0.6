@@ -708,7 +708,7 @@ bool CAccountManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
 	return false;
 }
 
-bool CAccountManager::OnPlayerMotdCommand(CPlayer* pPlayer, const char* pCmd, const int ExtraValue)
+bool CAccountManager::OnPlayerMotdCommand(CPlayer* pPlayer, CMotdPlayerData* pMotdData, const char* pCmd)
 {
 	// deposit bank gold
 	if(strcmp(pCmd, "BANK_DEPOSIT") == 0)
@@ -720,6 +720,7 @@ bool CAccountManager::OnPlayerMotdCommand(CPlayer* pPlayer, const char* pCmd, co
 			return true;
 		}
 
+		auto ExtraValue = pMotdData->ExtraValue;
 		if(pGold->GetValue() < ExtraValue)
 		{
 			GS()->Chat(pPlayer->GetCID(), "You can max deposit '{} gold'.", pGold->GetValue());

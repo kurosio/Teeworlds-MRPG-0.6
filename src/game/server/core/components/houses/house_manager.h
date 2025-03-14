@@ -24,9 +24,9 @@ class CHouseManager : public MmoComponent
 	bool OnSendMenuVotes(CPlayer* pPlayer, int Menulist) override;
 	bool OnSendMenuMotd(CPlayer* pPlayer, int Menulist) override;
 	bool OnPlayerVoteCommand(CPlayer* pPlayer, const char* CMD, int VoteID, int VoteID2, int Get, const char* GetText) override;
-	bool OnPlayerMotdCommand(CPlayer* pPlayer, const char* pCmd, const int ExtraValue) override;
+	bool OnPlayerMotdCommand(CPlayer* pPlayer, CMotdPlayerData* pMotdData, const char* pCmd) override;
 
-	void ShowBuyHouse(CPlayer* pPlayer, CHouse* pHouse);
+	void ShowDetail(CPlayer* pPlayer, CHouse* pHouse);
 	void ShowMenu(CPlayer* pPlayer) const;
 	void ShowSell(CPlayer* pPlayer) const;
 	void ShowDoorsController(CPlayer* pPlayer) const;

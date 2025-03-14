@@ -20,7 +20,7 @@ class CAccountManager : public MmoComponent
 	bool OnSendMenuVotes(CPlayer* pPlayer, int Menulist) override;
 	bool OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int Extra1, int Extra2, int ReasonNumber, const char* pReason) override;
 	bool OnSendMenuMotd(CPlayer* pPlayer, int Menulist) override;
-	bool OnPlayerMotdCommand(CPlayer* pPlayer, const char* pCmd, const int ExtraValue) override;
+	bool OnPlayerMotdCommand(CPlayer* pPlayer, CMotdPlayerData* pMotdData, const char* pCmd) override;
 
     struct AccBan
     {
@@ -40,7 +40,7 @@ public:
     std::vector<AccBan> BansAccount() const;
 
 	int GetLastVisitedWorldID(CPlayer* pPlayer) const;
-	
+
 	static bool IsActive(int ClientID)
 	{
 		return CAccountData::ms_aData.contains(ClientID);

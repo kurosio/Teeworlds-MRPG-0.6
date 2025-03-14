@@ -1333,19 +1333,21 @@ bool CGS::OnClientVoteCommand(int ClientID, const char* pCmd, const int Extra1, 
 	return Core()->OnPlayerVoteCommand(pPlayer, pCmd, Extra1, Extra2, ReasonNumber, csqlReason.cstr());
 }
 
-bool CGS::OnClientMotdCommand(int ClientID, const char* pCmd, int Extra)
+bool CGS::OnClientMotdCommand(int ClientID, const char* pCmd, int ExtraValue)
 {
-	CPlayer* pPlayer = GetPlayer(ClientID, false, true);
+	auto* pPlayer = GetPlayer(ClientID, false, true);
 	if(!pPlayer)
 	{
 		Chat(ClientID, "Deploy it while still alive!");
 		return true;
 	}
 
+	pPlayer->m_MotdData.ExtraValue = ExtraValue;
+
 	if(PPSTR(pCmd, "BACKPAGE") == 0 || PPSTR(pCmd, "MENU") == 0)
 		return true;
 
-	const bool Result = Core()->OnPlayerMotdCommand(pPlayer, pCmd, Extra);
+	const bool Result = Core()->OnPlayerMotdCommand(pPlayer, &pPlayer->m_MotdData, pCmd);
 	if(Result)
 	{
 		CreatePlayerSound(ClientID, SOUND_PICKUP_ARMOR);

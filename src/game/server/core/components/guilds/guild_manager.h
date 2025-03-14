@@ -19,7 +19,9 @@ class CGuildManager : public MmoComponent
 	void OnTick() override;
 	void OnCharacterTile(CCharacter* pChr) override;
 	bool OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int Extra1, int Extra2, int ReasonNumber, const char* pReason) override;
+	bool OnPlayerMotdCommand(CPlayer* pPlayer, CMotdPlayerData* pMotdData, const char* pCmd) override;
 	bool OnSendMenuVotes(CPlayer* pPlayer, int Menulist) override;
+	bool OnSendMenuMotd(CPlayer* pPlayer, int Menulist) override;
 	void OnTimePeriod(ETimePeriod Period) override;
 
 	void InitWars() const;
@@ -37,12 +39,12 @@ private:
 	void ShowRankEdit(CPlayer* pPlayer, GuildRankIdentifier ID) const;
 	void ShowFinder(CPlayer* pPlayer) const;
 	void ShowFinderDetail(CPlayer* pPlayer, GuildIdentifier ID) const;
-	void ShowLogs(CPlayer* pPlayer) const;
+	void ShowLogsMenu(CPlayer* pPlayer) const;
 	void ShowMembershipList(CPlayer* pPlayer) const;
 	void ShowMembershipEdit(CPlayer* pPlayer, int AccountID) const;
 	void ShowRequests(CPlayer* pPlayer) const;
-	void ShowBuyHouse(CPlayer* pPlayer, CGuildHouse* pHouse) const;
-	void ShowDeclareWar(int ClientID) const;
+	void ShowDetail(CPlayer* pPlayer, CGuildHouse* pHouse) const;
+	void ShowDeclareWarMenu(int ClientID) const;
 	void ShowDoorsControl(CPlayer* pPlayer) const;
 	void ShowFarmzonesControl(CPlayer* pPlayer) const;
 	void ShowFarmzoneEdit(CPlayer* pPlayer, int FarmzoneID) const;

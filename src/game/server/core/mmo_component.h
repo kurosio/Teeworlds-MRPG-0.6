@@ -12,6 +12,9 @@ class IServer;
 class CMmoController;
 class CPlayer;
 class CCharacter;
+class CMotdPlayerData;
+class CVotePlayerData;
+
 using namespace sqlstr;
 
 class MmoComponent
@@ -157,7 +160,7 @@ private:
 	 *
 	 * @return True if the motd command was handled, false otherwise.
 	 */
-	virtual bool OnPlayerMotdCommand(CPlayer* pPlayer, const char* pCmd, const int ExtraValue) { return false; }
+	virtual bool OnPlayerMotdCommand(CPlayer* pPlayer, CMotdPlayerData* pMotdData, const char* pCmd) { return false; }
 
 	/**
 	 * @brief Called when a player experiences a time period.

@@ -250,14 +250,14 @@ bool CMmoController::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd,
 	return false;
 }
 
-bool CMmoController::OnPlayerMotdCommand(CPlayer* pPlayer, const char* pCmd, int ExtraValue) const
+bool CMmoController::OnPlayerMotdCommand(CPlayer* pPlayer, CMotdPlayerData* pMotdData, const char* pCmd) const
 {
 	if(!pPlayer)
 		return true;
 
 	for(auto& pComponent : m_System.m_vComponents)
 	{
-		if(pComponent->OnPlayerMotdCommand(pPlayer, pCmd, ExtraValue))
+		if(pComponent->OnPlayerMotdCommand(pPlayer, pMotdData, pCmd))
 			return true;
 	}
 	return false;

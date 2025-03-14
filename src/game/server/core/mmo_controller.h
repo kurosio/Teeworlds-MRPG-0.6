@@ -61,7 +61,7 @@ public:
 	bool OnSendMenuMotd(CPlayer* pPlayer, int Menulist) const;
 	bool OnSendMenuVotes(CPlayer* pPlayer, int Menulist) const;
 	bool OnPlayerVoteCommand(CPlayer *pPlayer, const char *pCmd, int ExtraValue1, int ExtraValue2, int ReasonNumber, const char *pReason) const;
-	bool OnPlayerMotdCommand(CPlayer *pPlayer, const char *pCmd, int ExtraValue) const;
+	bool OnPlayerMotdCommand(CPlayer* pPlayer, CMotdPlayerData* pMotdData, const char* pCmd) const;
 	void OnResetClientData(int ClientID) const;
 	void OnHandleTimePeriod() const;
 	void OnHandlePlayerTimePeriod(CPlayer* pPlayer) const;

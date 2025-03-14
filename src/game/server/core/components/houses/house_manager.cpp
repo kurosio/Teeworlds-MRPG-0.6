@@ -55,7 +55,7 @@ void CHouseManager::OnCharacterTile(CCharacter* pChr)
 	auto* pPlayer = pChr->GetPlayer();
 	const auto ClientID = pPlayer->GetCID();
 
-	HANDLE_TILE_MOTD_MENU(pPlayer, pChr, TILE_PLAYER_HOUSE, MOTD_MENU_HOUSE_INFO)
+	HANDLE_TILE_MOTD_MENU(pPlayer, pChr, TILE_PLAYER_HOUSE, MOTD_MENU_PLAYER_HOUSE_DETAIL)
 }
 
 bool CHouseManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
@@ -117,9 +117,9 @@ bool CHouseManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 
 bool CHouseManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
 {
-	if(Menulist == MOTD_MENU_HOUSE_INFO)
+	if(Menulist == MOTD_MENU_PLAYER_HOUSE_DETAIL)
 	{
-		ShowBuyHouse(pPlayer, GetHouseByPos(pPlayer->GetCharacter()->m_Core.m_Pos));
+		ShowDetail(pPlayer, GetHouseByPos(pPlayer->GetCharacter()->m_Core.m_Pos));
 		return true;
 	}
 
@@ -415,12 +415,12 @@ bool CHouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 	return false;
 }
 
-bool CHouseManager::OnPlayerMotdCommand(CPlayer* pPlayer, const char* pCmd, const int ExtraValue)
+bool CHouseManager::OnPlayerMotdCommand(CPlayer* pPlayer, CMotdPlayerData* pMotdData, const char* pCmd)
 {
 	// buy house
 	if(PPSTR(pCmd, "HOUSE_BUY") == 0)
 	{
-		const int HouseID = ExtraValue;
+		const int HouseID = pMotdData->ExtraValue;
 		if(auto* pHouse = GetHouse(HouseID))
 		{
 			pHouse->Buy(pPlayer);
@@ -551,18 +551,16 @@ void CHouseManager::ShowFarmzoneEdit(CPlayer* pPlayer, int FarmzoneID) const
 	VoteWrapper::AddEmptyline(ClientID);
 }
 
-void CHouseManager::ShowBuyHouse(CPlayer* pPlayer, CHouse* pHouse)
+void CHouseManager::ShowDetail(CPlayer* pPlayer, CHouse* pHouse)
 {
 	// check valid player and house
 	if(!pHouse || !pPlayer)
 		return;
 
-
 	// initialize variables
 	const auto HouseID = pHouse->GetID();
 	const auto ClientID = pPlayer->GetCID();
 	const char* pOwnerNickname = pHouse->HasOwner() ? Instance::Server()->GetAccountNickname(pHouse->GetAccountID()) : "No owner";
-
 
 	// house detail purchease
 	MotdMenu MHouseDetail(ClientID, MTFLAG_CLOSE_BUTTON, "Every player has the right to rent houses.\nAn admission price is required for rentals.");
@@ -573,13 +571,13 @@ void CHouseManager::ShowBuyHouse(CPlayer* pPlayer, CHouse* pHouse)
 	if(!pHouse->HasOwner())
 	{
 		MHouseDetail.AddText("Price: {$}", pHouse->GetInitialFee());
-		MHouseDetail.Add("HOUSE_BUY", HouseID, "Buy this house");
+		MHouseDetail.Add("HOUSE_BUY", HouseID, "Purchase");
 	}
 	else
 	{
 		MHouseDetail.AddText("Owner: {}", pOwnerNickname);
 	}
-	MHouseDetail.Send(MOTD_MENU_HOUSE_INFO);
+	MHouseDetail.Send(MOTD_MENU_PLAYER_HOUSE_DETAIL);
 }
 
 void CHouseManager::ShowMenu(CPlayer* pPlayer) const

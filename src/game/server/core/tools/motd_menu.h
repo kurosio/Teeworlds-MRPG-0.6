@@ -120,8 +120,9 @@ private:
 	void AddImpl(int extra, int extra2, std::string_view command, const std::string& description);
 };
 
-struct CMotdPlayerData
+class CMotdPlayerData
 {
+public:
 	friend class MotdMenu;
 	class ScrollManager
 	{
@@ -161,6 +162,8 @@ struct CMotdPlayerData
 
 		return m_vFields.at(index).Message;
 	}
+
+	int ExtraValue{};
 
 private:
 	ActiveInputTextField m_CurrentInputField {};

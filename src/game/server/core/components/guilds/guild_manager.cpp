@@ -76,9 +76,10 @@ void CGuildManager::OnTick()
 
 void CGuildManager::OnCharacterTile(CCharacter* pChr)
 {
-	CPlayer* pPlayer = pChr->GetPlayer();
+	auto* pPlayer = pChr->GetPlayer();
+	const auto ClientID = pPlayer->GetCID();
 
-	HANDLE_TILE_VOTE_MENU(pPlayer, pChr, TILE_GUILD_HOUSE, MENU_GUILD_BUY_HOUSE, {}, {});
+	HANDLE_TILE_MOTD_MENU(pPlayer, pChr, TILE_GUILD_HOUSE, MOTD_MENU_GUILD_HOUSE_DETAIL)
 
 	if(pChr->GetTiles()->IsActive(TILE_GUILD_CHAIR))
 	{
@@ -854,6 +855,39 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int 
 	return false;
 }
 
+bool CGuildManager::OnPlayerMotdCommand(CPlayer* pPlayer, CMotdPlayerData* pMotdData, const char* pCmd)
+{
+	const auto ClientID = pPlayer->GetCID();
+
+	// buy house
+	if(PPSTR(pCmd, "GUILD_HOUSE_BUY") == 0)
+	{
+		// check guild valid and access rights
+		auto* pGuild = pPlayer->Account()->GetGuild();
+		if(!pGuild || !pPlayer->Account()->GetGuildMember()->CheckAccess(GUILD_RANK_RIGHT_LEADER))
+		{
+			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
+			return true;
+		}
+
+		// result
+		const int HouseID = pMotdData->ExtraValue;
+		switch(pGuild->BuyHouse(HouseID))
+		{
+			default: GS()->Chat(ClientID, "Unforeseen error."); break;
+			case GuildResult::BUY_HOUSE_ALREADY_HAVE: GS()->Chat(ClientID, "Your guild already has a house."); break;
+			case GuildResult::BUY_HOUSE_ALREADY_PURCHASED: GS()->Chat(ClientID, "This guild house has already been purchased."); break;
+			case GuildResult::BUY_HOUSE_NOT_ENOUGH_GOLD: GS()->Chat(ClientID, "Your guild doesn't have enough gold."); break;
+			case GuildResult::BUY_HOUSE_UNAVAILABLE: GS()->Chat(ClientID, "This guild house is not available for purchase."); break;
+			case GuildResult::SUCCESSFUL: break;
+		}
+
+		return true;
+	}
+
+	return false;
+}
+
 bool CGuildManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 {
 	const int ClientID = pPlayer->GetCID();
@@ -915,21 +949,11 @@ bool CGuildManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		return true;
 	}
 
-	// menu guild house purchase
-	if(Menulist == MENU_GUILD_BUY_HOUSE)
-	{
-		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
-		CCharacter* pChr = pPlayer->GetCharacter();
-		CGuildHouse* pHouse = GetHouseByPos(pChr->m_Core.m_Pos);
-		ShowBuyHouse(pPlayer, pHouse);
-		return true;
-	}
-
 	// menu guild logs
 	if(Menulist == MENU_GUILD_LOGS)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_GUILD);
-		ShowLogs(pPlayer);
+		ShowLogsMenu(pPlayer);
 		VoteWrapper::AddBackpage(ClientID);
 		return true;
 	}
@@ -938,7 +962,7 @@ bool CGuildManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	if(Menulist == MENU_GUILD_WARS)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_GUILD);
-		ShowDeclareWar(ClientID);
+		ShowDeclareWarMenu(ClientID);
 		return true;
 	}
 
@@ -1020,6 +1044,19 @@ bool CGuildManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		}
 
 		VoteWrapper::AddBackpage(ClientID);
+		return true;
+	}
+
+	return false;
+}
+
+bool CGuildManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
+{
+	if(Menulist == MOTD_MENU_GUILD_HOUSE_DETAIL)
+	{
+		auto* pChr = pPlayer->GetCharacter();
+		auto* pHouse = GetHouseByPos(pChr->m_Core.m_Pos);
+		ShowDetail(pPlayer, pHouse);
 		return true;
 	}
 
@@ -1627,43 +1664,41 @@ void CGuildManager::ShowFinderDetail(CPlayer* pPlayer, GuildIdentifier ID) const
 	VoteWrapper::AddEmptyline(ClientID);
 }
 
-void CGuildManager::ShowBuyHouse(CPlayer* pPlayer, CGuildHouse* pHouse) const
+void CGuildManager::ShowDetail(CPlayer* pPlayer, CGuildHouse* pHouse) const
 {
 	if(!pHouse || !pPlayer)
 		return;
 
-	// information
-	int ClientID = pPlayer->GetCID();
-	VoteWrapper VInfo(ClientID, VWF_SEPARATE|VWF_STYLE_STRICT, "\u2324 Information about guild house");
-	VInfo.Add("Buying a house you will need to constantly the Treasury");
-	VInfo.Add("In the intervals of time will be paid house");
-	VInfo.Add("Owned by: {}", pHouse->GetOwnerName());
-	VInfo.Add("Farm {(zone|zones): #}", (int)pHouse->GetFarmzonesManager()->GetContainer().size());
-	VInfo.Add("Controlled {(door|doors): #}", (int)pHouse->GetDoorManager()->GetContainer().size());
-	VoteWrapper::AddEmptyline(ClientID);
+	// initialze variables
+	const auto ClientID = pPlayer->GetCID();
+	const auto HouseID = pHouse->GetID();
 
-	// top
+	// house detail purchease
+	MotdMenu MHouseDetail(ClientID, MTFLAG_CLOSE_BUTTON, "Buying a house you will need to constantly the Treasury. In the intervals of time will be paid house.");
+	MHouseDetail.AddText("House HID:[{}]", HouseID);
+	MHouseDetail.AddText("Farm {(zone|zones): #}", (int)pHouse->GetFarmzonesManager()->GetContainer().size());
+	MHouseDetail.AddText("{(Door|Doors): #}", (int)pHouse->GetDoorManager()->GetContainer().size());
+	MHouseDetail.AddText("Rent: {$}", pHouse->GetRentPrice());
+	MHouseDetail.AddSeparateLine();
 	if(!pHouse->IsPurchased())
 	{
 		auto* pGuild = pPlayer->Account()->GetGuild();
-		VoteWrapper VTop(ClientID, VWF_SEPARATE_OPEN|VWF_STYLE_SIMPLE, "Purchase of a house");
-		VTop.Add("Price rent per day: {$} golds", pHouse->GetRentPrice());
+		MHouseDetail.AddText("Price: {$}", pHouse->GetInitialFee());
 
-		// check rights
-		if(!pGuild || !pPlayer->Account()->GetGuildMember()->CheckAccess(GUILD_RANK_RIGHT_LEADER))
+		if(pGuild && pPlayer->Account()->GetGuildMember()->CheckAccess(GUILD_RANK_RIGHT_LEADER))
 		{
-			VTop.Add("Initial fee: {$} gold", pHouse->GetInitialFee());
-			VTop.Add("You don't have the right to buy a house");
-			return;
+			MHouseDetail.AddText("Bank: {$}", pGuild->GetBankManager()->Get());
+			MHouseDetail.Add("GUILD_HOUSE_BUY", HouseID, "Purchase");
 		}
-
-		// show options
-		VTop.Add("Bank: {$} gold | Initial fee: {$}", pGuild->GetBankManager()->Get(), pHouse->GetInitialFee());
-		VTop.AddOption("GUILD_HOUSE_BUY", pHouse->GetID(), "Purchase");
 	}
+	else
+	{
+		MHouseDetail.AddText("Owner: {}", pHouse->GetOwnerName());
+	}
+	MHouseDetail.Send(MOTD_MENU_GUILD_HOUSE_DETAIL);
 }
 
-void CGuildManager::ShowDeclareWar(int ClientID) const
+void CGuildManager::ShowDeclareWarMenu(int ClientID) const
 {
 	// If player does not exist or does not have a guild, return
 	CPlayer* pPlayer = GS()->GetPlayer(ClientID, true);
@@ -1715,7 +1750,7 @@ void CGuildManager::ShowDeclareWar(int ClientID) const
 }
 
 // Function to show guild logs for a specific player
-void CGuildManager::ShowLogs(CPlayer* pPlayer) const
+void CGuildManager::ShowLogsMenu(CPlayer* pPlayer) const
 {
 	auto* pGuild = pPlayer->Account()->GetGuild();
 	if(!pGuild)
