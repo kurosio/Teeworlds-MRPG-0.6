@@ -122,6 +122,7 @@ private:
 
 struct CMotdPlayerData
 {
+	friend class MotdMenu;
 	class ScrollManager
 	{
 		int m_ScrollPos {};
@@ -153,6 +154,15 @@ struct CMotdPlayerData
 		int64_t Flags {};
 	};
 
+	std::optional<std::string> GetFieldStr(size_t index) const
+	{
+		if(!m_vFields.contains(index) || m_vFields.at(index).Message.empty())
+			return std::nullopt;
+
+		return m_vFields.at(index).Message;
+	}
+
+private:
 	ActiveInputTextField m_CurrentInputField {};
 	std::map<int, TextField> m_vFields {};
 	ScrollManager m_ScrollManager { 13 };

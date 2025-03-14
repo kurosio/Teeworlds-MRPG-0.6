@@ -646,6 +646,8 @@ bool CAccountManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
 		MBonuses.AddText("Password:");
 		MBonuses.AddEditField(SOME_FIELD2, MTTEXTINPUTFLAG_PASSWORD);
 		MBonuses.AddLine();
+		MBonuses.Add("TEST_FIELD_STR", CurrentGold, "TEST");
+		MBonuses.AddLine();
 		MBonuses.AddSeparateLine();
 		MBonuses.Add("BANK_DEPOSIT", CurrentGold, "Deposit All");
 		MBonuses.Send(MOTD_MENU_BANK_MANAGER);
@@ -718,6 +720,23 @@ bool CAccountManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
 
 bool CAccountManager::OnPlayerMotdCommand(CPlayer* pPlayer, const char* pCmd, const int ExtraValue)
 {
+	// deposit bank gold
+	if(strcmp(pCmd, "TEST_FIELD_STR") == 0)
+	{
+		auto fieldStr = pPlayer->m_MotdData.GetFieldStr(0);
+		auto fieldStr2 = pPlayer->m_MotdData.GetFieldStr(1);
+		if(fieldStr.has_value() && fieldStr2.has_value())
+		{
+			GS()->Chat(pPlayer->GetCID(), "{}, {}", fieldStr.value(), fieldStr2.value());
+		}
+		else
+		{
+			GS()->Chat(pPlayer->GetCID(), "One of the fields is not set");
+		}
+
+		return true;
+	}
+
 	// deposit bank gold
 	if(strcmp(pCmd, "BANK_DEPOSIT") == 0)
 	{
