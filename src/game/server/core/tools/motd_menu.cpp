@@ -14,6 +14,10 @@ CPlayer* MotdMenu::GetPlayer() const
 
 void MotdMenu::AddImpl(int extra, int extra2, std::string_view command, const std::string& description)
 {
+	auto* pPlayer = GetPlayer();
+	if(!pPlayer)
+		return;
+
 	Point p;
 	str_copy(p.m_aDesc, description.c_str(), sizeof(p.m_aDesc));
 	str_utf8_fix_truncation(p.m_aDesc);
@@ -21,13 +25,17 @@ void MotdMenu::AddImpl(int extra, int extra2, std::string_view command, const st
 	p.m_Extra = extra;
 	p.m_Extra2 = extra2;
 	m_Points.push_back(p);
-	m_ScrollManager.SetMaxScrollPos(static_cast<int>(m_Points.size()));
+	pPlayer->m_MotdData.m_ScrollManager.SetMaxScrollPos(static_cast<int>(m_Points.size()));
 }
 
 void MotdMenu::AddEditField(int TextID, int64_t Flags)
 {
+	auto* pPlayer = GetPlayer();
+	if(!pPlayer)
+		return;
+
 	// initialize variables
-	auto& playerMotdData = GetPlayer()->m_MotdData;
+	auto& playerMotdData = pPlayer->m_MotdData;
 	auto& currentInputField = playerMotdData.m_CurrentInputField;
 	auto& vFields = playerMotdData.m_vFields;
 	const char* pMarkActive = (currentInputField.Active && TextID == currentInputField.TextID) ? "✎ " : "";
@@ -53,16 +61,16 @@ void MotdMenu::Tick()
 	if(m_Points.empty())
 		return;
 
-	const auto pServer = GS()->Server();
-	const auto pChar = GS()->GetPlayerChar(m_ClientID);
-
 	// check valid character
-	if(!pChar)
+	auto* pPlayer = GetPlayer();
+	if(!pPlayer || !pPlayer->GetCharacter())
 		return;
 
 	// initialize variables
 	constexpr int lineSizeY = 20;
 	constexpr int startLineY = -284;
+	auto* pServer = Instance::Server();
+	const auto* pChar = pPlayer->GetCharacter();
 	const int targetX = pChar->m_Core.m_Input.m_TargetX;
 	const int targetY = pChar->m_Core.m_Input.m_TargetY;
 
@@ -73,8 +81,8 @@ void MotdMenu::Tick()
 	{
 		// initialize variables
 		const auto totalItems = m_Points.size();
-		const auto currentScrollPos = m_ScrollManager.GetScrollPos();
-		const auto visibleItems = m_ScrollManager.GetMaxVisibleItems();
+		const auto currentScrollPos = pPlayer->m_MotdData.m_ScrollManager.GetScrollPos();
+		const auto visibleItems = pPlayer->m_MotdData.m_ScrollManager.GetMaxVisibleItems();
 
 		const auto visibleProportion = static_cast<float>(visibleItems) / static_cast<float>(totalItems);
 		auto scrollBarHeight = round_to_int(visibleProportion * visibleItems);
@@ -106,12 +114,12 @@ void MotdMenu::Tick()
 		// handle scrolling with key events
 		if(pServer->Input()->IsKeyClicked(m_ClientID, KEY_EVENT_NEXT_WEAPON))
 		{
-			m_ScrollManager.ScrollUp();
+			pPlayer->m_MotdData.m_ScrollManager.ScrollUp();
 			m_ResendMotdTick = pServer->Tick() + 5;
 		}
 		else if(pServer->Input()->IsKeyClicked(m_ClientID, KEY_EVENT_PREV_WEAPON))
 		{
-			m_ScrollManager.ScrollDown();
+			pPlayer->m_MotdData.m_ScrollManager.ScrollDown();
 			m_ResendMotdTick = pServer->Tick() + 5;
 		}
 
@@ -119,7 +127,8 @@ void MotdMenu::Tick()
 	}
 
 	// add menu items to buffer
-	for(int i = m_ScrollManager.GetScrollPos(); i < m_ScrollManager.GetEndScrollPos() && i < static_cast<int>(m_Points.size()); ++i, ++linePos)
+	int i = pPlayer->m_MotdData.m_ScrollManager.GetScrollPos();
+	for(; i < pPlayer->m_MotdData.m_ScrollManager.GetEndScrollPos() && i < static_cast<int>(m_Points.size()); ++i, ++linePos)
 	{
 		// add scrollbar symbol
 		addScrollBar(i);
@@ -140,10 +149,10 @@ void MotdMenu::Tick()
 		const bool isClicked = pServer->Input()->IsKeyClicked(m_ClientID, KEY_EVENT_FIRE);
 
 		// is clicked with active text field editor
-		if(isClicked && pChar->GetPlayer()->m_MotdData.m_CurrentInputField.Active)
+		if(isClicked && pPlayer->m_MotdData.m_CurrentInputField.Active)
 		{
 			GS()->Chat(m_ClientID, "[⇄] Editing a field is canceled!");
-			pChar->GetPlayer()->m_MotdData.m_CurrentInputField.Active = false;
+			pPlayer->m_MotdData.m_CurrentInputField.Active = false;
 			updatedMotd = true;
 		}
 		// is hovered and clicked
@@ -153,15 +162,15 @@ void MotdMenu::Tick()
 
 			if(command == "TEXT_FIELD")
 			{
-				pChar->GetPlayer()->m_MotdData.m_CurrentInputField.Active = true;
-				pChar->GetPlayer()->m_MotdData.m_CurrentInputField.TextID = extra;
+				pPlayer->m_MotdData.m_CurrentInputField.Active = true;
+				pPlayer->m_MotdData.m_CurrentInputField.TextID = extra;
 				GS()->Chat(m_ClientID, "[⇄] Editing a field (use chat)!");
 				updatedMotd = true;
 			}
 
 			if(command == "CLOSE")
 			{
-				ClearMotd(pServer, pChar->GetPlayer());
+				ClearMotd();
 				return;
 			}
 
@@ -170,21 +179,24 @@ void MotdMenu::Tick()
 				updatedMotd = true;
 				m_Menulist = extra;
 				m_MenuExtra = m_Points[i].m_Extra2 <= NOPE ? std::nullopt : std::make_optional<int>(m_Points[i].m_Extra2);
-				pChar->GetPlayer()->m_MotdData.m_vFields.clear();
+				pPlayer->m_MotdData.m_vFields.clear();
+				pPlayer->m_MotdData.m_ScrollManager.Reset();
+
 			}
 
 			if(command == "BACKPAGE")
 			{
 				updatedMotd = true;
 				m_Menulist = m_LastMenulist;
-				pChar->GetPlayer()->m_MotdData.m_vFields.clear();
+				pPlayer->m_MotdData.m_vFields.clear();
+				pPlayer->m_MotdData.m_ScrollManager.Reset();
 			}
 
 			if(GS()->OnClientMotdCommand(m_ClientID, command.c_str(), extra))
 			{
 				if(m_Flags & MTFLAG_CLOSE_ON_SELECT)
 				{
-					ClearMotd(pServer, pChar->GetPlayer());
+					ClearMotd();
 					return;
 				}
 
@@ -194,7 +206,7 @@ void MotdMenu::Tick()
 
 		if(updatedMotd)
 		{
-			UpdateMotd(pServer, GS(), pChar->GetPlayer());
+			UpdateMotd();
 			return;
 		}
 
@@ -212,7 +224,7 @@ void MotdMenu::Tick()
 	else if(pServer->Tick() >= m_ResendMotdTick)
 	{
 		m_ResendMotdTick = pServer->Tick() + pServer->TickSpeed();
-		UpdateMotd(pServer, GS(), pChar->GetPlayer());
+		UpdateMotd();
 	}
 }
 
@@ -264,26 +276,31 @@ bool MotdMenu::ApplyFieldEdit(const std::string& Message)
 	return true;
 }
 
-void MotdMenu::ClearMotd(IServer* pServer, CPlayer* pPlayer)
+void MotdMenu::ClearMotd()
 {
+	auto* pServer = Instance::Server();
+	auto* pPlayer = GetPlayer();
+
 	m_Points.clear();
 	pServer->SendMotd(m_ClientID, "");
 	if(pPlayer && pPlayer->m_pMotdMenu)
 	{
+		pPlayer->m_MotdData.m_ScrollManager.Reset();
 		pPlayer->m_MotdData.m_vFields.clear();
 		pPlayer->m_pMotdMenu.reset();
 	}
 }
 
-void MotdMenu::UpdateMotd(IServer* pServer, CGS* pGS, CPlayer* pPlayer)
+void MotdMenu::UpdateMotd()
 {
-	ScrollManager oldScrollData = m_ScrollManager;
-	const auto oldMenuExtra = m_MenuExtra;
+	auto* pServer = Instance::Server();
+	auto* pPlayer = GetPlayer();
 
-	m_ResendMotdTick = pServer->Tick() + pServer->TickSpeed();
-	pGS->SendMenuMotd(pPlayer, m_Menulist);
-	oldScrollData.SetMaxScrollPos((int)pPlayer->m_pMotdMenu->m_Points.size());
-
-	pPlayer->m_pMotdMenu->m_ScrollManager = oldScrollData;
-	pPlayer->m_pMotdMenu->m_MenuExtra = oldMenuExtra;
+	if(pPlayer)
+	{
+		const auto oldMenuExtra = m_MenuExtra;
+		m_ResendMotdTick = pServer->Tick() + pServer->TickSpeed();
+		GS()->SendMenuMotd(pPlayer, m_Menulist);
+		pPlayer->m_pMotdMenu->m_MenuExtra = oldMenuExtra;
+	}
 }

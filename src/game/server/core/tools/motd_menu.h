@@ -18,24 +18,6 @@ class MotdMenu
 	CGS* GS() const;
 	CPlayer* GetPlayer() const;
 
-	class ScrollManager
-	{
-		int m_ScrollPos {};
-		int m_MaxScrollPos {};
-		int m_MaxItemsVisible {};
-
-	public:
-		explicit ScrollManager(int VisibleLines) : m_MaxItemsVisible(VisibleLines) {}
-		void SetMaxScrollPos(int ItemCount) { m_MaxScrollPos = maximum(0, ItemCount - m_MaxItemsVisible); }
-		int GetScrollPos() const { return m_ScrollPos; }
-		int GetEndScrollPos() const { return minimum(m_ScrollPos + m_MaxItemsVisible, m_MaxScrollPos + m_MaxItemsVisible); }
-		int GetMaxVisibleItems() const { return m_MaxItemsVisible; }
-		void ScrollUp() { m_ScrollPos = minimum(m_ScrollPos + 1, m_MaxScrollPos); }
-		void ScrollDown() { m_ScrollPos = maximum(m_ScrollPos - 1, 0); }
-		bool CanScrollUp() const { return m_ScrollPos > 0; }
-		bool CanScrollDown() const { return m_ScrollPos < m_MaxScrollPos; }
-	};
-
 	struct Point
 	{
 		int m_Extra{};
@@ -53,7 +35,6 @@ class MotdMenu
 	std::string m_LastBuffer{};
 	std::string m_Description{};
 	std::vector<Point> m_Points{};
-	ScrollManager m_ScrollManager{13};
 
 public:
 	MotdMenu(int ClientID) : m_ClientID(ClientID) {}
@@ -132,15 +113,34 @@ public:
 	}
 
 	bool ApplyFieldEdit(const std::string& Message);
-	void ClearMotd(IServer* pServer, CPlayer* pPlayer);
+	void ClearMotd();
 
 private:
-	void UpdateMotd(IServer* pServer, CGS* pGS, CPlayer* pPlayer);
+	void UpdateMotd();
 	void AddImpl(int extra, int extra2, std::string_view command, const std::string& description);
 };
 
 struct CMotdPlayerData
 {
+	class ScrollManager
+	{
+		int m_ScrollPos {};
+		int m_MaxScrollPos {};
+		int m_MaxItemsVisible {};
+
+	public:
+		explicit ScrollManager(int VisibleLines) : m_MaxItemsVisible(VisibleLines) { }
+		void SetMaxScrollPos(int ItemCount) { m_MaxScrollPos = maximum(0, ItemCount - m_MaxItemsVisible); }
+		int GetScrollPos() const { return m_ScrollPos; }
+		int GetEndScrollPos() const { return minimum(m_ScrollPos + m_MaxItemsVisible, m_MaxScrollPos + m_MaxItemsVisible); }
+		int GetMaxVisibleItems() const { return m_MaxItemsVisible; }
+		void ScrollUp() { m_ScrollPos = minimum(m_ScrollPos + 1, m_MaxScrollPos); }
+		void ScrollDown() { m_ScrollPos = maximum(m_ScrollPos - 1, 0); }
+		bool CanScrollUp() const { return m_ScrollPos > 0; }
+		bool CanScrollDown() const { return m_ScrollPos < m_MaxScrollPos; }
+		void Reset() { m_ScrollPos = m_MaxScrollPos = 0; }
+	};
+
 	struct ActiveInputTextField
 	{
 		bool Active {};
@@ -155,6 +155,7 @@ struct CMotdPlayerData
 
 	ActiveInputTextField m_CurrentInputField {};
 	std::map<int, TextField> m_vFields {};
+	ScrollManager m_ScrollManager { 13 };
 };
 
 #endif
