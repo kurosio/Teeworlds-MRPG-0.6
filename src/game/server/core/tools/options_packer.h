@@ -17,8 +17,9 @@ class OptionTuplePacker : public BaseOptionPacker
 public:
     std::tuple<Args...> m_OptionData;
 
+    // here perfect capture is replaced by copying to avoid problems
     explicit OptionTuplePacker(Args... values)
-        : m_OptionData(std::forward<Args>(values)...) {
+        : m_OptionData(values...) {
     }
 };
 
