@@ -43,18 +43,12 @@ public:
 	MotdMenu(int ClientID, int Flags) : m_Flags(Flags), m_ClientID(ClientID) {}
 
 	template <typename... Ts>
-	MotdMenu(int ClientID, const char* pDesc, const Ts&... args)
-		: m_ClientID(ClientID), m_Description(fmt_localize(ClientID, pDesc, args...)) {}
+	MotdMenu(int ClientID, std::string_view description, const Ts&... args)
+		: m_ClientID(ClientID), m_Description(fmt_localize(ClientID, description.data(), args...)) { }
 
 	template <typename... Ts>
-	MotdMenu(int ClientID, int Flags, const char* pDesc, const Ts&... args)
-		: m_Flags(Flags), m_ClientID(ClientID), m_Description(fmt_localize(ClientID, pDesc, args...)) {}
-
-	template <typename... Ts>
-	MotdOption& Add(std::string_view command, std::string_view description, const Ts&... args)
-	{
-		return AddImpl(command, fmt_localize(m_ClientID, description.data(), args...));
-	}
+	MotdMenu(int ClientID, int Flags, std::string_view description, const Ts&... args)
+		: m_Flags(Flags), m_ClientID(ClientID), m_Description(fmt_localize(ClientID, description.data(), args...)) {}
 
 	template <typename... Ts>
 	void AddText(std::string_view description, const Ts&... args)
@@ -63,13 +57,18 @@ public:
 	}
 
 	template <typename... Ts>
-	void AddMenu(int MenuID, int Extra, std::string_view description, const Ts&... args)
+	MotdOption& AddOption(std::string_view command, std::string_view description, const Ts&... args)
 	{
-		auto& Point = AddImpl("MENU", fmt_localize(m_ClientID, description.data(), args...));
-		Point.Pack(MenuID, Extra);
+		return AddImpl(command, fmt_localize(m_ClientID, description.data(), args...));
 	}
 
-	void AddEditField(int TextID, int64_t Flags = 0);
+	template <typename... Ts>
+	void AddMenu(int MenuID, int Extra, std::string_view description, const Ts&... args)
+	{
+		AddImpl("MENU", fmt_localize(m_ClientID, description.data(), args...)).Pack(MenuID, Extra);
+	}
+
+	void AddField(int TextID, int64_t Flags = 0);
 
 	void AddLine()
 	{
@@ -115,6 +114,7 @@ public:
 
 private:
 	void UpdateMotd();
+	void ApplyScrollbar(CPlayer* pPlayer, int Index, std::string& pBuffer);
 	MotdOption& AddImpl(std::string_view command, const std::string& description);
 };
 

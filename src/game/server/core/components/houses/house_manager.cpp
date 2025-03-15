@@ -567,7 +567,7 @@ void CHouseManager::ShowDetail(CPlayer* pPlayer, CHouse* pHouse)
 	if(!pHouse->HasOwner())
 	{
 		MHouseDetail.AddText("Price: {$}", pHouse->GetInitialFee());
-		MHouseDetail.Add("HOUSE_BUY", "Purchase").Pack(pHouse);
+		MHouseDetail.AddOption("HOUSE_BUY", "Purchase").Pack(pHouse);
 	}
 	else
 	{

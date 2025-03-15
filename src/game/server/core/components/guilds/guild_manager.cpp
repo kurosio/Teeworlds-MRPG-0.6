@@ -1664,7 +1664,7 @@ void CGuildManager::ShowDetail(CPlayer* pPlayer, CGuildHouse* pHouse) const
 		if(pGuild && pPlayer->Account()->GetGuildMember()->CheckAccess(GUILD_RANK_RIGHT_LEADER))
 		{
 			MHouseDetail.AddText("Bank: {$}", pGuild->GetBankManager()->Get());
-			MHouseDetail.Add("GUILD_HOUSE_BUY", "Purchase").Pack(pHouse);
+			MHouseDetail.AddOption("GUILD_HOUSE_BUY", "Purchase").Pack(pHouse);
 		}
 	}
 	else

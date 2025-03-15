@@ -639,7 +639,7 @@ bool CAccountManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
 		MBonuses.AddText("Total: {$}", TotalGold);
 		MBonuses.AddText("Commision rate: {}%", g_Config.m_SvBankCommissionRate);
 		MBonuses.AddSeparateLine();
-		MBonuses.Add("BANK_DEPOSIT", "Deposit All").Pack(CurrentGold);
+		MBonuses.AddOption("BANK_DEPOSIT", "Deposit All").Pack(CurrentGold);
 		MBonuses.Send(MOTD_MENU_BANK_MANAGER);
 		return true;
 	}

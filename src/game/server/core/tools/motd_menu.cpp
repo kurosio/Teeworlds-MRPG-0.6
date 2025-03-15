@@ -28,7 +28,7 @@ MotdOption& MotdMenu::AddImpl(std::string_view command, const std::string& descr
 	return m_Points.back();
 }
 
-void MotdMenu::AddEditField(int TextID, int64_t Flags)
+void MotdMenu::AddField(int TextID, int64_t Flags)
 {
 	auto* pPlayer = GetPlayer();
 	if(!pPlayer)
@@ -71,40 +71,12 @@ void MotdMenu::Tick()
 	constexpr int startLineY = -284;
 	auto* pServer = Instance::Server();
 	const auto* pChar = pPlayer->GetCharacter();
-	const int targetX = pChar->m_Core.m_Input.m_TargetX;
-	const int targetY = pChar->m_Core.m_Input.m_TargetY;
+	const auto targetX = pChar->m_Core.m_Input.m_TargetX;
+	const auto targetY = pChar->m_Core.m_Input.m_TargetY;
 
 	// prepare the buffer for the MOTD
 	int linePos = 2;
 	std::string buffer = Instance::Localize(m_ClientID, "* Self kill - close the motd!\n\n");
-	auto addScrollBar = [&](int index)
-	{
-		// initialize variables
-		const auto totalItems = m_Points.size();
-		const auto currentScrollPos = pPlayer->m_MotdData.m_ScrollManager.GetScrollPos();
-		const auto visibleItems = pPlayer->m_MotdData.m_ScrollManager.GetMaxVisibleItems();
-
-		const auto visibleProportion = static_cast<float>(visibleItems) / static_cast<float>(totalItems);
-		auto scrollBarHeight = round_to_int(visibleProportion * visibleItems);
-		if(scrollBarHeight < 1)
-			scrollBarHeight = 1;
-
-		// calculate position
-		const auto progress = static_cast<float>(currentScrollPos) / static_cast<float>(totalItems - visibleItems);
-		const auto scrollBarPosition = static_cast<int>(progress * (visibleItems - scrollBarHeight));
-
-		// get current index
-		const auto currentBar = index - currentScrollPos;
-		const char* pSymbol = currentBar >= scrollBarPosition && currentBar < scrollBarPosition + scrollBarHeight ? "\u258D" : "\u258F";
-		buffer.append(pSymbol);
-	};
-
-	auto addLineToBuffer = [&](const std::string& line, bool isSelected)
-	{
-		buffer.append(isSelected ? "\u279C " : "\u257E ");
-		buffer.append(line);
-		buffer.append("\n");
-	};
 
 	// key events and freeze input is hovered worked area
 	const int startWorkedAreaY = startLineY;
@@ -131,7 +103,7 @@ void MotdMenu::Tick()
 	for(; i < pPlayer->m_MotdData.m_ScrollManager.GetEndScrollPos() && i < static_cast<int>(m_Points.size()); ++i, ++linePos)
 	{
 		// add scrollbar symbol
-		addScrollBar(i);
+		ApplyScrollbar(pPlayer, i, buffer);
 
 		// empty command only text
 		const auto& command = m_Points[i].m_Command;
@@ -156,9 +128,18 @@ void MotdMenu::Tick()
 			updatedMotd = true;
 		}
 		// is hovered and clicked
-		else if(isSelected && pServer->Input()->IsKeyClicked(m_ClientID, KEY_EVENT_FIRE))
+		else if(isSelected && isClicked)
 		{
+			pPlayer->m_MotdData.m_pCurrent = &m_Points[i];
 
+			// close option command
+			if(command == "CLOSE")
+			{
+				ClearMotd();
+				return;
+			}
+
+			// text field option command
 			if(command == "TEXT_FIELD")
 			{
 				const auto& [TextID] = m_Points[i].Unpack<int>();
@@ -168,12 +149,7 @@ void MotdMenu::Tick()
 				updatedMotd = true;
 			}
 
-			if(command == "CLOSE")
-			{
-				ClearMotd();
-				return;
-			}
-
+			// menu option command
 			if(command == "MENU")
 			{
 				const auto& [MenuID, Extra] = m_Points[i].Unpack<int, int>();
@@ -185,6 +161,7 @@ void MotdMenu::Tick()
 
 			}
 
+			// backpage option command
 			if(command == "BACKPAGE")
 			{
 				updatedMotd = true;
@@ -193,7 +170,7 @@ void MotdMenu::Tick()
 				pPlayer->m_MotdData.m_ScrollManager.Reset();
 			}
 
-			pPlayer->m_MotdData.m_pCurrent = &m_Points[i];
+			// parse option commands
 			if(GS()->OnClientMotdCommand(m_ClientID, command.c_str()))
 			{
 				if(m_Flags & MTFLAG_CLOSE_ON_SELECT)
@@ -206,13 +183,17 @@ void MotdMenu::Tick()
 			}
 		}
 
+		// is update motd
 		if(updatedMotd)
 		{
 			UpdateMotd();
 			return;
 		}
 
-		addLineToBuffer(m_Points[i].m_aDesc, isSelected);
+		// apply line format
+		buffer.append(isSelected ? "\u279C " : "\u257E ");
+		buffer.append(m_Points[i].m_aDesc);
+		buffer.append("\n");
 	}
 	buffer += "\n" + m_Description;
 
@@ -305,4 +286,25 @@ void MotdMenu::UpdateMotd()
 		GS()->SendMenuMotd(pPlayer, m_Menulist);
 		pPlayer->m_pMotdMenu->m_MenuExtra = oldMenuExtra;
 	}
+}
+
+void MotdMenu::ApplyScrollbar(CPlayer* pPlayer, int Index, std::string& pBuffer)
+{
+	// initialize variables
+	const auto totalItems = m_Points.size();
+	const auto currentScrollPos = pPlayer->m_MotdData.m_ScrollManager.GetScrollPos();
+	const auto visibleItems = pPlayer->m_MotdData.m_ScrollManager.GetMaxVisibleItems();
+	const auto visibleProportion = static_cast<float>(visibleItems) / static_cast<float>(totalItems);
+	auto scrollBarHeight = round_to_int(visibleProportion * visibleItems);
+	if(scrollBarHeight < 1)
+		scrollBarHeight = 1;
+
+	// calculate position
+	const auto progress = static_cast<float>(currentScrollPos) / static_cast<float>(totalItems - visibleItems);
+	const auto scrollBarPosition = static_cast<int>(progress * (visibleItems - scrollBarHeight));
+
+	// get current index
+	const auto currentBar = Index - currentScrollPos;
+	const char* pSymbol = currentBar >= scrollBarPosition && currentBar < scrollBarPosition + scrollBarHeight ? "\u258D" : "\u258F";
+	pBuffer.append(pSymbol);
 }
