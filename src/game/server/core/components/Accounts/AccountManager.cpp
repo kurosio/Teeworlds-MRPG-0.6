@@ -639,7 +639,7 @@ bool CAccountManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
 		MBonuses.AddText("Total: {$}", TotalGold);
 		MBonuses.AddText("Commision rate: {}%", g_Config.m_SvBankCommissionRate);
 		MBonuses.AddSeparateLine();
-		MBonuses.Add("BANK_DEPOSIT", CurrentGold, "Deposit All");
+		MBonuses.Add("BANK_DEPOSIT", "Deposit All").Pack(CurrentGold);
 		MBonuses.Send(MOTD_MENU_BANK_MANAGER);
 		return true;
 	}
@@ -720,17 +720,17 @@ bool CAccountManager::OnPlayerMotdCommand(CPlayer* pPlayer, CMotdPlayerData* pMo
 			return true;
 		}
 
-		auto ExtraValue = pMotdData->ExtraValue;
-		if(pGold->GetValue() < ExtraValue)
+		const auto& [Value] = pMotdData->GetCurrent()->Unpack<int>();
+		if(pGold->GetValue() < Value)
 		{
 			GS()->Chat(pPlayer->GetCID(), "You can max deposit '{} gold'.", pGold->GetValue());
 			return true;
 		}
 
-		const auto CommisionValue = translate_to_percent_rest(ExtraValue, g_Config.m_SvBankCommissionRate);
-		const auto FinalValue = ExtraValue - CommisionValue;
+		const auto CommisionValue = translate_to_percent_rest(Value, g_Config.m_SvBankCommissionRate);
+		const auto FinalValue = Value - CommisionValue;
 
-		pGold->Remove(ExtraValue);
+		pGold->Remove(Value);
 		pPlayer->Account()->AddGoldToBank(FinalValue);
 		GS()->Chat(pPlayer->GetCID(), "You have successfully deposited '{} gold'. Commision '{} gold'.", FinalValue, CommisionValue);
 		GS()->Chat(pPlayer->GetCID(), "Commision '{} gold'.", CommisionValue);

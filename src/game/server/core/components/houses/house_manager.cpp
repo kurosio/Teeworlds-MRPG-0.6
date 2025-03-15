@@ -420,11 +420,9 @@ bool CHouseManager::OnPlayerMotdCommand(CPlayer* pPlayer, CMotdPlayerData* pMotd
 	// buy house
 	if(PPSTR(pCmd, "HOUSE_BUY") == 0)
 	{
-		const int HouseID = pMotdData->ExtraValue;
-		if(auto* pHouse = GetHouse(HouseID))
-		{
+		const auto& [pHouse] = pMotdData->GetCurrent()->Unpack<CHouse*>();
+		if(pHouse)
 			pHouse->Buy(pPlayer);
-		}
 
 		return true;
 	}
@@ -558,20 +556,18 @@ void CHouseManager::ShowDetail(CPlayer* pPlayer, CHouse* pHouse)
 		return;
 
 	// initialize variables
-	const auto HouseID = pHouse->GetID();
 	const auto ClientID = pPlayer->GetCID();
 	const char* pOwnerNickname = pHouse->HasOwner() ? Instance::Server()->GetAccountNickname(pHouse->GetAccountID()) : "No owner";
 
 	// house detail purchease
 	MotdMenu MHouseDetail(ClientID, MTFLAG_CLOSE_BUTTON, "Every player has the right to rent houses.\nAn admission price is required for rentals.");
-	MHouseDetail.AddText("House HID:[{}]", HouseID);
 	MHouseDetail.AddText("Class: {}", pHouse->GetClassName());
 	MHouseDetail.AddText("Rent: {$}", pHouse->GetRentPrice());
 	MHouseDetail.AddSeparateLine();
 	if(!pHouse->HasOwner())
 	{
 		MHouseDetail.AddText("Price: {$}", pHouse->GetInitialFee());
-		MHouseDetail.Add("HOUSE_BUY", HouseID, "Purchase");
+		MHouseDetail.Add("HOUSE_BUY", "Purchase").Pack(pHouse);
 	}
 	else
 	{

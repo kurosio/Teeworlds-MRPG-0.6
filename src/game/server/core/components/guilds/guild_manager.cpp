@@ -582,33 +582,6 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int 
 		return true;
 	}
 
-	// buy house
-	if(PPSTR(pCmd, "GUILD_HOUSE_BUY") == 0)
-	{
-		// check guild valid and access rights
-		auto* pGuild = pPlayer->Account()->GetGuild();
-		if(!pGuild || !pPlayer->Account()->GetGuildMember()->CheckAccess(GUILD_RANK_RIGHT_LEADER))
-		{
-			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
-			return true;
-		}
-
-		// result
-		switch(pGuild->BuyHouse(Extra1))
-		{
-			default: GS()->Chat(ClientID, "Unforeseen error."); break;
-			case GuildResult::BUY_HOUSE_ALREADY_HAVE: GS()->Chat(ClientID, "Your guild already has a house."); break;
-			case GuildResult::BUY_HOUSE_ALREADY_PURCHASED: GS()->Chat(ClientID, "This guild house has already been purchased."); break;
-			case GuildResult::BUY_HOUSE_NOT_ENOUGH_GOLD: GS()->Chat(ClientID, "Your guild doesn't have enough gold."); break;
-			case GuildResult::BUY_HOUSE_UNAVAILABLE: GS()->Chat(ClientID, "This guild house is not available for purchase."); break;
-			case GuildResult::SUCCESSFUL:
-				pPlayer->m_VotesData.UpdateCurrentVotes();
-				GS()->UpdateVotesIfForAll(MENU_GUILD);
-			break;
-		}
-		return true;
-	}
-
 	// declare guild war
 	if(PPSTR(pCmd, "GUILD_DECLARE_WAR") == 0)
 	{
@@ -871,15 +844,18 @@ bool CGuildManager::OnPlayerMotdCommand(CPlayer* pPlayer, CMotdPlayerData* pMotd
 		}
 
 		// result
-		const int HouseID = pMotdData->ExtraValue;
-		switch(pGuild->BuyHouse(HouseID))
+		const auto& [pHouse] = pMotdData->GetCurrent()->Unpack<CGuildHouse*>();
+		if(pHouse)
 		{
-			default: GS()->Chat(ClientID, "Unforeseen error."); break;
-			case GuildResult::BUY_HOUSE_ALREADY_HAVE: GS()->Chat(ClientID, "Your guild already has a house."); break;
-			case GuildResult::BUY_HOUSE_ALREADY_PURCHASED: GS()->Chat(ClientID, "This guild house has already been purchased."); break;
-			case GuildResult::BUY_HOUSE_NOT_ENOUGH_GOLD: GS()->Chat(ClientID, "Your guild doesn't have enough gold."); break;
-			case GuildResult::BUY_HOUSE_UNAVAILABLE: GS()->Chat(ClientID, "This guild house is not available for purchase."); break;
-			case GuildResult::SUCCESSFUL: break;
+			switch(pGuild->BuyHouse(pHouse->GetID()))
+			{
+				default: GS()->Chat(ClientID, "Unforeseen error."); break;
+				case GuildResult::BUY_HOUSE_ALREADY_HAVE: GS()->Chat(ClientID, "Your guild already has a house."); break;
+				case GuildResult::BUY_HOUSE_ALREADY_PURCHASED: GS()->Chat(ClientID, "This guild house has already been purchased."); break;
+				case GuildResult::BUY_HOUSE_NOT_ENOUGH_GOLD: GS()->Chat(ClientID, "Your guild doesn't have enough gold."); break;
+				case GuildResult::BUY_HOUSE_UNAVAILABLE: GS()->Chat(ClientID, "This guild house is not available for purchase."); break;
+				case GuildResult::SUCCESSFUL: break;
+			}
 		}
 
 		return true;
@@ -1688,7 +1664,7 @@ void CGuildManager::ShowDetail(CPlayer* pPlayer, CGuildHouse* pHouse) const
 		if(pGuild && pPlayer->Account()->GetGuildMember()->CheckAccess(GUILD_RANK_RIGHT_LEADER))
 		{
 			MHouseDetail.AddText("Bank: {$}", pGuild->GetBankManager()->Get());
-			MHouseDetail.Add("GUILD_HOUSE_BUY", HouseID, "Purchase");
+			MHouseDetail.Add("GUILD_HOUSE_BUY", "Purchase").Pack(pHouse);
 		}
 	}
 	else

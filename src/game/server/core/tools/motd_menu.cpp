@@ -12,20 +12,20 @@ CPlayer* MotdMenu::GetPlayer() const
 	return GS()->GetPlayer(m_ClientID);
 }
 
-void MotdMenu::AddImpl(int extra, int extra2, std::string_view command, const std::string& description)
+MotdOption& MotdMenu::AddImpl(std::string_view command, const std::string& description)
 {
-	auto* pPlayer = GetPlayer();
-	if(!pPlayer)
-		return;
-
-	Point p;
+	MotdOption p;
 	str_copy(p.m_aDesc, description.c_str(), sizeof(p.m_aDesc));
 	str_utf8_fix_truncation(p.m_aDesc);
 	p.m_Command = command;
-	p.m_Extra = extra;
-	p.m_Extra2 = extra2;
-	m_Points.push_back(p);
-	pPlayer->m_MotdData.m_ScrollManager.SetMaxScrollPos(static_cast<int>(m_Points.size()));
+	m_Points.push_back(std::move(p));
+
+	if(auto* pPlayer = GetPlayer())
+	{
+		pPlayer->m_MotdData.m_ScrollManager.SetMaxScrollPos(static_cast<int>(m_Points.size()));
+	}
+
+	return m_Points.back();
 }
 
 void MotdMenu::AddEditField(int TextID, int64_t Flags)
@@ -52,7 +52,7 @@ void MotdMenu::AddEditField(int TextID, int64_t Flags)
 
 	// result
 	std::string result = fmt_localize(m_ClientID, "{}[-{}{}-]", pMarkActive, endText, spaces);
-	AddImpl(TextID, NOPE, "TEXT_FIELD", result);
+	AddImpl("TEXT_FIELD", result).Pack(TextID);
 }
 
 void MotdMenu::Tick()
@@ -158,12 +158,12 @@ void MotdMenu::Tick()
 		// is hovered and clicked
 		else if(isSelected && pServer->Input()->IsKeyClicked(m_ClientID, KEY_EVENT_FIRE))
 		{
-			const auto& extra = m_Points[i].m_Extra;
 
 			if(command == "TEXT_FIELD")
 			{
+				const auto& [TextID] = m_Points[i].Unpack<int>();
 				pPlayer->m_MotdData.m_CurrentInputField.Active = true;
-				pPlayer->m_MotdData.m_CurrentInputField.TextID = extra;
+				pPlayer->m_MotdData.m_CurrentInputField.TextID = TextID;
 				GS()->Chat(m_ClientID, "[&] Editing a field (use chat)!");
 				updatedMotd = true;
 			}
@@ -176,9 +176,10 @@ void MotdMenu::Tick()
 
 			if(command == "MENU")
 			{
+				const auto& [MenuID, Extra] = m_Points[i].Unpack<int, int>();
 				updatedMotd = true;
-				m_Menulist = extra;
-				m_MenuExtra = m_Points[i].m_Extra2 <= NOPE ? std::nullopt : std::make_optional<int>(m_Points[i].m_Extra2);
+				m_Menulist = MenuID;
+				m_MenuExtra = Extra <= NOPE ? std::nullopt : std::make_optional<int>(Extra);
 				pPlayer->m_MotdData.m_vFields.clear();
 				pPlayer->m_MotdData.m_ScrollManager.Reset();
 
@@ -192,7 +193,8 @@ void MotdMenu::Tick()
 				pPlayer->m_MotdData.m_ScrollManager.Reset();
 			}
 
-			if(GS()->OnClientMotdCommand(m_ClientID, command.c_str(), extra))
+			pPlayer->m_MotdData.m_pCurrent = &m_Points[i];
+			if(GS()->OnClientMotdCommand(m_ClientID, command.c_str()))
 			{
 				if(m_Flags & MTFLAG_CLOSE_ON_SELECT)
 				{
@@ -233,7 +235,7 @@ void MotdMenu::Send(int Menulist)
 	// add close button if necessary
 	if(m_Flags & MTFLAG_CLOSE_BUTTON)
 	{
-		AddImpl(NOPE, NOPE, "CLOSE", "Close");
+		AddImpl("CLOSE", "Close");
 	}
 
 	// reinitialize player motd menu

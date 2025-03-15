@@ -1,14 +1,24 @@
 ﻿#ifndef GAME_SERVER_CORE_TOOLS_MOTD_MENU_H
 #define GAME_SERVER_CORE_TOOLS_MOTD_MENU_H
 #include "event_listener.h"
+#include "options_packer.h"
 
 enum MotdMenuFlags
 {
+	// motd menu flags
 	MTFLAG_CLOSE_BUTTON    = 1 << 0,
 	MTFLAG_CLOSE_ON_SELECT = 1 << 1,
 
+	// motd input flags
 	MTTEXTINPUTFLAG_ONLY_NUMERIC = 1 << 0,
 	MTTEXTINPUTFLAG_PASSWORD = 1 << 1,
+};
+
+class MotdOption : public OptionPacker
+{
+public:
+	std::string m_Command { "NULL" };
+	char m_aDesc[32] {};
 };
 
 class CGS;
@@ -18,14 +28,7 @@ class MotdMenu
 	CGS* GS() const;
 	CPlayer* GetPlayer() const;
 
-	struct Point
-	{
-		int m_Extra{};
-		int m_Extra2 {};
-		std::string m_Command{"NULL"};
-		char m_aDesc[32]{};
-	};
-
+	std::vector<MotdOption> m_Points {};
 	std::optional<int> m_MenuExtra {};
 	int m_LastMenulist{NOPE};
 	int m_Menulist {NOPE};
@@ -34,7 +37,6 @@ class MotdMenu
 	int m_ResendMotdTick {};
 	std::string m_LastBuffer{};
 	std::string m_Description{};
-	std::vector<Point> m_Points{};
 
 public:
 	MotdMenu(int ClientID) : m_ClientID(ClientID) {}
@@ -49,45 +51,41 @@ public:
 		: m_Flags(Flags), m_ClientID(ClientID), m_Description(fmt_localize(ClientID, pDesc, args...)) {}
 
 	template <typename... Ts>
+	MotdOption& Add(std::string_view command, std::string_view description, const Ts&... args)
+	{
+		return AddImpl(command, fmt_localize(m_ClientID, description.data(), args...));
+	}
+
+	template <typename... Ts>
 	void AddText(std::string_view description, const Ts&... args)
 	{
-		AddImpl(NOPE, NOPE, "NULL", fmt_localize(m_ClientID, description.data(), args...));
-	}
-
-	template <typename... Ts>
-	void Add(std::string_view command, std::string_view description, const Ts&... args)
-	{
-		AddImpl(NOPE, NOPE, command, fmt_localize(m_ClientID, description.data(), args...));
-	}
-
-	template <typename... Ts>
-	void Add(std::string_view command, int extra, std::string_view description, const Ts&... args)
-	{
-		AddImpl(extra, NOPE, command, fmt_localize(m_ClientID, description.data(), args...));
+		AddImpl("NULL", fmt_localize(m_ClientID, description.data(), args...));
 	}
 
 	template <typename... Ts>
 	void AddMenu(int MenuID, int Extra, std::string_view description, const Ts&... args)
 	{
-		AddImpl(MenuID, Extra, "MENU", fmt_localize(m_ClientID, description.data(), args...));
+		auto& Point = AddImpl("MENU", fmt_localize(m_ClientID, description.data(), args...));
+		Point.Pack(MenuID, Extra);
 	}
 
 	void AddEditField(int TextID, int64_t Flags = 0);
+
 	void AddLine()
 	{
-		AddImpl(NOPE, NOPE, "NULL", "");
+		AddImpl("NULL", "");
 	}
 
 	void AddSeparateLine()
 	{
-		AddImpl(NOPE, NOPE, "NULL", "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500"
+		AddImpl("NULL", "\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500"
 			"\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500"
 			"\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500");
 	}
 
 	void AddBackpage()
 	{
-		AddImpl(NOPE, NOPE,"BACKPAGE", "<<< Backpage");
+		AddImpl("BACKPAGE", "<<< Backpage");
 	}
 
 	void Tick();
@@ -117,7 +115,7 @@ public:
 
 private:
 	void UpdateMotd();
-	void AddImpl(int extra, int extra2, std::string_view command, const std::string& description);
+	MotdOption& AddImpl(std::string_view command, const std::string& description);
 };
 
 class CMotdPlayerData
@@ -163,9 +161,10 @@ public:
 		return m_vFields.at(index).Message;
 	}
 
-	int ExtraValue{};
+	MotdOption* GetCurrent() { return m_pCurrent; }
 
 private:
+	MotdOption* m_pCurrent {};
 	ActiveInputTextField m_CurrentInputField {};
 	std::map<int, TextField> m_vFields {};
 	ScrollManager m_ScrollManager { 13 };
