@@ -1,6 +1,10 @@
 #ifndef GAME_SERVER_CORE_TOOLS_OPTIONS_PACKER_H
 #define GAME_SERVER_CORE_TOOLS_OPTIONS_PACKER_H
 
+// concepts
+template<typename T>
+concept NotConstPointer = !std::is_pointer_v<T> || !std::is_const_v<std::remove_pointer_t<T>>;
+
 class BaseOptionPacker
 {
 public:
@@ -8,41 +12,47 @@ public:
 };
 
 template<typename... Args>
-class TupleOptionPacker : public BaseOptionPacker
+class OptionTuplePacker : public BaseOptionPacker
 {
 public:
-    std::tuple<Args...> m_TupleData;
+    std::tuple<Args...> m_OptionData;
 
-    explicit TupleOptionPacker(Args... values)
-        : m_TupleData(values...) {
+    explicit OptionTuplePacker(Args... values)
+        : m_OptionData(std::forward<Args>(values)...) {
     }
 };
 
 class OptionPacker
 {
-    std::shared_ptr<BaseOptionPacker> m_Options {};
+    std::shared_ptr<BaseOptionPacker> m_OptionContainer {};
 
 public:
     template<typename... Args>
-    void Pack(Args... values)
+    void Pack(Args&&... values) requires (NotConstPointer<Args> && ...)
     {
-        m_Options = std::make_shared<TupleOptionPacker<std::decay_t<Args>...>>(values...);
+        // compile assert for empty unpack options
+        static_assert(sizeof...(Args) > 0, "Pack must be called with at least one argument");
+
+        m_OptionContainer = std::make_shared<OptionTuplePacker<std::decay_t<Args>...>>(std::forward<Args>(values)...);
     }
 
     template<typename... Args>
     auto Unpack() -> std::tuple<std::decay_t<Args>...>
     {
-        using CleanOption = TupleOptionPacker<std::decay_t<Args>...>;
-        auto options = dynamic_cast<CleanOption*>(m_Options.get());
+        // compile assert for empty unpack options
+        static_assert(sizeof...(Args) > 0, "Unpack must be called with at least one argument");
+
+        using CleanOption = OptionTuplePacker<std::decay_t<Args>...>;
+        auto optionPacker = dynamic_cast<CleanOption*>(m_OptionContainer.get());
 
         // create options by default values
-        if(!options)
+        if(!optionPacker)
         {
             return std::tuple<std::decay_t<Args>...>(std::decay_t<Args>{}...);
         }
 
         // unpacking options
-        return unpackHelper(options->m_TupleData, std::index_sequence_for<Args...> {});
+        return unpackHelper(optionPacker->m_OptionData, std::index_sequence_for<Args...> {});
     }
 
 protected:
