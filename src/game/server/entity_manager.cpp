@@ -6,7 +6,7 @@
 #include "entities/projectile.h"
 #include "core/entities/group/entitiy_group.h"
 #include "core/entities/items/design_drop.h"
-#include "core/entities/items/drop_bonuses.h"
+#include "core/entities/items/drop_pickup.h"
 #include "core/entities/items/drop_items.h"
 #include "core/entities/tools/flying_point.h"
 #include "core/entities/tools/laser_orbite.h"
@@ -33,14 +33,14 @@ void CEntityManager::DesignRandomDrop(int Amount, float Force, vec2 Pos, int Lif
 	}
 }
 
-void CEntityManager::DropBonus(vec2 Pos, int Type, int Subtype, int Value, int NumDrop, vec2 Force) const
+void CEntityManager::DropPickup(vec2 Pos, int Type, int Subtype, int Value, int NumDrop, vec2 Force) const
 {
 	for(int i = 0; i < NumDrop; i++)
 	{
 		vec2 Vel = Force;
 		Vel.x += random_float(15.0f);
 		Vel.y += random_float(15.0f);
-		new CEntityDropBonuses(&GS()->m_World, Pos, Vel, Type, Subtype, Value);
+		new CEntityDropPickup(&GS()->m_World, Pos, Vel, Type, Subtype, Value);
 	}
 }
 

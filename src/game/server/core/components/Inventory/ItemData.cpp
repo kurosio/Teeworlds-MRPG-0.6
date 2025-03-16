@@ -410,7 +410,7 @@ bool CPlayerItem::Save()
 
 			// update an item
 			Database->Execute<DB::UPDATE>("tw_accounts_items", "Value = '{}', Settings = '{}', Enchant = '{}', Durability = '{}' WHERE UserID = '{}' AND ItemID = '{}'",
-				m_Value, m_Settings, m_Enchant, m_Durability, GetPlayer()->Account()->GetID(), m_ID);
+				m_Value, m_Settings, m_Enchant, m_Durability, UserID, m_ID);
 			return;
 		}
 

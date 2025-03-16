@@ -1,10 +1,10 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#include "drop_bonuses.h"
+#include "drop_pickup.h"
 
 #include <game/server/gamecontext.h>
 
-CEntityDropBonuses::CEntityDropBonuses(CGameWorld *pGameWorld, vec2 Pos, vec2 Vel, int Type, int Subtype, int Value)
+CEntityDropPickup::CEntityDropPickup(CGameWorld *pGameWorld, vec2 Pos, vec2 Vel, int Type, int Subtype, int Value)
 : CEntity(pGameWorld, CGameWorld::ENTTYPE_BONUS_DROP, Pos, 16.f)
 {
 	m_Vel = Vel;
@@ -16,7 +16,7 @@ CEntityDropBonuses::CEntityDropBonuses(CGameWorld *pGameWorld, vec2 Pos, vec2 Ve
 	GameWorld()->InsertEntity(this);
 }
 
-void CEntityDropBonuses::Tick()
+void CEntityDropPickup::Tick()
 {
 	m_LifeSpan--;
 	if (m_LifeSpan < 0)
@@ -73,7 +73,7 @@ void CEntityDropBonuses::Tick()
 	}
 }
 
-void CEntityDropBonuses::Snap(int SnappingClient)
+void CEntityDropPickup::Snap(int SnappingClient)
 {
 	if(m_Flash.IsFlashing() || NetworkClipped(SnappingClient))
 		return;

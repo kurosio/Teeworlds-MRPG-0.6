@@ -77,7 +77,7 @@ void CDropItem::Tick()
 
 		if(!pPlayerItem->Info()->IsStackable())
 		{
-			if(pPlayerItem->GetValue() > 0)
+			if(pPlayerItem->HasItem())
 			{
 				GS()->Broadcast(ClientID, BroadcastPriority::GameInformation, 100, "You have: {}{}\nReplace with: {}{} {}",
 					pPlayerItem->Info()->GetName(), pPlayerItem->GetStringEnchantLevel().c_str(), m_DropItem.Info()->GetName(), m_DropItem.GetStringEnchantLevel().c_str(), pOwnerNick);

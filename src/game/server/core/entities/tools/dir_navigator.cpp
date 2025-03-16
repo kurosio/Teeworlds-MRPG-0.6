@@ -18,12 +18,10 @@ CEntityDirectionNavigator::CEntityDirectionNavigator(CGameWorld* pGameWorld, int
 	const auto PosTo = GS()->Core()->WorldManager()->FindPosition(WorldID, Position);
 	m_pEntNavigator = nullptr;
 	m_Pos = Position;
-	if(!PosTo.has_value())
-	{
+	if(PosTo.has_value())
+		m_PosTo = PosTo.value();
+	else
 		MarkForDestroy();
-		return;
-	}
-	m_PosTo = PosTo.value();
 	GameWorld()->InsertEntity(this);
 
 	// quest navigator finder

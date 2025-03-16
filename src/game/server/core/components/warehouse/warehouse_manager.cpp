@@ -31,10 +31,8 @@ void CWarehouseManager::OnTick()
 	{
 		for(const auto pWarehouse : CWarehouse::Data())
 		{
-			if(!pWarehouse->IsHasFlag(WF_STORAGE))
-				continue;
-
-			pWarehouse->Storage().UpdateText(g_UpdateTextLifeTime);
+			if(pWarehouse->IsHasFlag(WF_STORAGE))
+				pWarehouse->Storage().UpdateText(g_UpdateTextLifeTime);
 		}
 	}
 }
@@ -234,7 +232,6 @@ void CWarehouseManager::ShowWarehouseList(CPlayer* pPlayer, CWarehouse* pWarehou
 	const int ClientID = pPlayer->GetCID();
 	const auto* pCurrency = pWarehouse->GetCurrency();
 
-
 	// show base shop functions
 	VoteWrapper VStorage(ClientID, VWF_SEPARATE | VWF_STYLE_STRICT_BOLD, "Warehouse :: {}", pWarehouse->GetName());
 	if(pWarehouse->IsHasFlag(WF_STORAGE))
@@ -253,7 +250,6 @@ void CWarehouseManager::ShowWarehouseList(CPlayer* pPlayer, CWarehouse* pWarehou
 	}
 	VStorage.AddItemValue(pCurrency->GetID());
 	VStorage.AddOption("REPAIR_ITEMS", "Repair all items - FREE");
-	VoteWrapper::AddEmptyline(ClientID);
 
 
 	// show trade list by groups
@@ -273,6 +269,7 @@ void CWarehouseManager::ShowWarehouseList(CPlayer* pPlayer, CWarehouse* pWarehou
 	// selling list
 	if(pWarehouse->IsHasFlag(WF_SELL))
 	{
+		VoteWrapper::AddEmptyline(ClientID);
 		VoteWrapper VItems(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "\u2725 Choose the item you want to sell");
 		for(const auto& Trade : pWarehouse->GetTradingList())
 		{

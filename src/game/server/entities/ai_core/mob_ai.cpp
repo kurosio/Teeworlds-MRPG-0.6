@@ -79,7 +79,7 @@ void CMobAI::OnRewardPlayer(CPlayer* pPlayer, vec2 Force) const
 		}
 
 		GS()->EntityManager()->ExpFlyingPoint(m_pCharacter->m_Core.m_Pos, ClientID, expGain, Force);
-		GS()->EntityManager()->DropBonus(m_pCharacter->m_Core.m_Pos, POWERUP_ARMOR, 0, expBonusDrop, (1 + rand() % 2), Force);
+		GS()->EntityManager()->DropPickup(m_pCharacter->m_Core.m_Pos, POWERUP_ARMOR, 0, expBonusDrop, (1 + rand() % 2), Force);
 	}
 
 	// drop item's

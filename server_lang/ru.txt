@@ -228,8 +228,8 @@ Buyer
 == Buyer
 
 $item_description35
-Althyk's Ring is an item level 1.
-== Althyk's Ring is an item level 1.
+Copper ore
+== Copper ore
 
 $skill_name10
 Magic Bow
@@ -322,8 +322,8 @@ Gravity potion
 == Gravity potion
 
 $item_description39
-Pieces of armor from the junk
-== Pieces of armor from the junk
+The usual copper pickaxe
+== The usual copper pickaxe
 
 $item_description28
 Lightweight armor
@@ -417,8 +417,8 @@ Invisibility potion
 == Invisibility potion
 
 $item_description31
-...
-== ...
+Crate
+== Crate
 
 $quest_name50
 Farmer | Harvest
@@ -445,8 +445,8 @@ Ancient relic
 == Ancient relic
 
 $item_name39
-Trash armor
-== Trash armor
+Copper pickaxe
+== Copper pickaxe
 
 $quest_name42
 Farmer | Need more wheat
@@ -488,9 +488,9 @@ $item_name154
 Beer
 == Beer
 
-$attribute7
-MP
-== МП
+$item_name35
+Copper ore
+== Copper ore
 
 $item_description171
 The ancient component
@@ -588,1219 +588,113 @@ $item_description117
 Hook parts
 == Hook parts
 
-Dungeon waiting {} sec!\nPlayer's are ready to start right now {} of {}!\nYou can change state with 'Vote yes'
-== Подземелье ждет {} сек!\nИгроки готовы начать прямо сейчас {} из {}!\nВы можете изменить состояние с помощью 'Голосовать за'
-
-Accepted
-== Принято
-
-Emoticon ...
-== Эмотикон ...
-
-You don't have a laser equipped.
-== У вас не экипирован лазер.
-
-/house sell - sell the house to the state
-== /house sell - продать дом государству
-
-All improvements are solely related to the guild itself.
-== Все улучшения относятся исключительно к гильдии.
-
-Apparently, we have a new player, '{}'!
-== Похоже, у нас новый игрок, '{}'!
-
-⁙ Achievements groups  
-== ⁙ Группы достижений
-
-/guild - guild system.
-== /guild - система гильдий.
-
-/guild create <name> - create a new guild
-== /guild create <имя> - создать новую гильдию
-
-/guild leave - leave the guild
-== /guild leave - покинуть гильдию
-
-/house - house system.
-== /house - система домов.
-
-/house doors - settings door's
-== /house doors - настройки дверей
-
-Amount of experience required to level up mining
-== Количество опыта, необходимое для повышения уровня добычи
-
-Potion
-== Зелье
-
-Achievement '{}' will be soon completed!
-== Достижение '{}' скоро будет завершено!
-
-Press hammer 'Fire', to pick up an item
-== Нажмите 'Огонь' молотком, чтобы поднять предмет
-
-Disassemble (+{}m)
-== Разобрать (+{}м)
-
-Emoticon Exclamation
-== Эмотикон Восклицание
-
-Equip shotgun
-== Экипировать дробовик
-
-Chance (in percent) for Skill Points to drop from regular mobs
-== Шанс (в процентах) выпадения очков навыков с обычных мобов
-
-Tax rate (in percent) for adding a new auction slot
-== Налоговая ставка (в процентах) за добавление нового слота аукциона
-
-:: Crit damage: {}p.
-== :: Крит. урон: {}p.
-
-Armor
-== Броня
-
-/house doors reverse_all - reverse all door's
-== /house doors reverse_all - перевернуть все двери
-
-Guild members with the necessary rights,
-== Члены гильдии с необходимыми правами,
-
-/house doors open_all - open all door's
-== /house doors open_all - открыть все двери
-
-Equip rake
-== Экипировать грабли
-
-Accounts bans
-== Баны Аккаунтов
-
-Achievements
-== Достижения
-
-Criteria
-== Критерии
-
-Emoticon Drop
-== Эмотикон Drop
-
-Class profession: {}
-== Профессия класса: {}
-
-Activity coin reward for completing a repeatable quest
-== Награда в монетах за выполнение повторяемого квеста
-
-Collect {} x{}
-== Собрать {} x{}
-
-name  
-== имя
-
-You don't have a hammer equipped.
-== У вас не экипирован молот.
-
-Generate money bag per minute (in minutes)
-== Генерация мешка с деньгами в минуту (в минутах)
-
-Rating leader: '{} ({})'! In second place is '{} ({})' — the competition is heating up!
-== Лидер рейтинга: '{} ({})'! На втором месте '{} ({})' — конкуренция накаляется!
-
-Can be used's
-== Можно использовать
-
-< Interrupted >
-== < Прервано >
-
-Active bonuses ⚖
-== Активные бонусы ⚖
-
-Accept the offer.
-== Принять предложение.
-
-Emote
-== Эмоция
-
-Account Information
-== Информация об аккаунте
-
-Allow client to notify you on chat highlights
-== Разрешить клиенту уведомлять вас о выделениях в чате
-
-Emoticon Sorry
-== Эмотикон Извинение
-
-Emoticon Music
-== Эмотикон Музыка
-
-EXP
-== ОПЫТ
-
-Dungeon
-== Подземелье
-
-Amount of experience required to level up farming
-== Количество опыта, необходимое для повышения уровня фермерства
-
-Equip potion MP
-== Экипировать зелье MP
-
-Disable clipping
-== Отключить обрезку
-
-Craft's
-== Крафт
-
-Equip
-== Экипировать
-
-Auction alert.
-== Оповещение об аукционе.
-
-Aethernet information
-== Информация о сети Эфира
-
-Admission price: {} gold
-== Цена входа: {} золота
-
-Battle ({} of {})
-== Битва ({} из {})
-
-Accept
-== Принять
-
-:: Vampirism stolen: {}HP.
-== :: Вампиризм украл: {}HP.
-
-Your guild doesn't have enough gold.
-== У вашей гильдии недостаточно золота.
-
-Add. (Amount in a reason)
-== Добавить. (Сумма в причине)
-
-Call off the summoned
-== Отозвать призванного
-
-Close motd menu?
-== Закрыть меню motd?
-
-Achievement points: {}p
-== Очки достижений: {}p
-
-/voucher <voucher> - get voucher special items.
-== /voucher <ваучер> - получить специальные предметы по ваучеру.
-
-Gold spent on upgrades will not be refunded.
-== Золото, потраченное на улучшения, не возвращается.
-
-Potion HP recast: {}
-== Перезарядка зелья HP: {}
-
-Press fire for attacks by skill: {} attacks!
-== Нажмите огонь для атак навыком: {} атак!
-
-You have no access, or you are not a member of the guild.
-== У вас нет доступа, или вы не являетесь членом гильдии.
-
-Begin dialogue: \"hammer hit\"
-== Начать диалог: \"удар молотком\"
-
-Buying a house you will need to constantly the Treasury
-== Покупая дом, вам нужно будет постоянно пополнять казну
-
-Emoticon Hearts
-== Эмотикон Сердца
-
-Bank: {} golds
-== Банк: {} золота
-
-Active dungeon
-== Активное подземелье
-
-A Money Bag has appeared in the area! Who will claim it?
-== В области появился мешок с деньгами! Кто заберет его?
-
-Defeat {} [{}/{}]
-== Победить {} [{}/{}]
-
-/useskill <uid> - use skill by uid.
-== /useskill <uid> - использовать навык по UID.
-
-Deploy it while still alive!
-== Разверните его, пока он еще жив!
-
-⚘ Detail information
-== ⚘ Подробная информация
-
-Buyer: {}
-== Покупатель: {}
-
-Class
-== Класс
-
-Board: {}
-== Доска: {}
-
-Buy for {$} golds
-== Купить за {$} золота
-
-A sociable spirit, she loves to protect people.
-== Общительный дух, она любит защищать людей.
-
-Bag Full
-== Сумка полна
-
-Buy
-== Купить
-
-Platinum
-== Платина
-
-Default stack
-== Стандартный стек
-
-Unlock {}
-== Разблокировать {}
-
-You have: {}{}\nReplace with: {}{} {}
-== У вас: {}{}\nЗаменить на: {}{} {}
-
-A list of wanted players for whom bounties have been assigned. To get the bounty you need to kill a player from the list.
-== Список разыскиваемых игроков, за которых назначена награда. Чтобы получить награду, нужно убить игрока из списка.
-
-Editing rank '{}'
-== Редактирование ранга '{}'
-
-House has already been purchased!
-== Дом уже куплен!
-
-Equipment's
-== Экипировка
-
-Bank
-== Банк
-
-You have successfully deposited '{} gold'. Commision '{} gold'.
-== Вы успешно внесли '{} золота'. Комиссия '{} золота'.
-
-Choose the item you want to sell
-== Выберите предмет, который хотите продать
-
-Name
-== Имя
-
-Console
-== Консоль
-
-Attached items
-== Прикрепленные предметы
-
-Group
-== Группа
-
-Emoticon Deviltee
-== Эмотикон Deviltee
-
-/house doors close_all - close all door's
-== /house doors close_all - закрыть все двери
-
-/house doors reverse <number> - reverse door by id
-== /house doors reverse <номер> - перевернуть дверь по ID
-
-Gold multiplier for killing mobs
-== Множитель золота за убийство мобов
-
-/login <name> <pass> - log in account.
-== /login <имя> <пароль> - войти в аккаунт.
-
-Bronze
-== Бронза
-
-<player>, are you interested in something? I'm sorry, don't want to talk right now.
-== <player>, вас что-то интересует? Извините, не хочу сейчас разговаривать.
-
-Open
-== Открыть
-
-Delete
-== Удалить
-
-After completing the quest step, unable to save the file.
-== После завершения шага квеста не удалось сохранить файл.
-
-Dungeon ended {} sec!
-== Подземелье завершено за {} сек!
-
-Use a customized skin
-== Использовать пользовательский скин
-
-Behavior
-== Поведение
-
-⁂ Group  
-== ⁂ Группа
-
-Duration of a guild war in minutes
-== Продолжительность войны гильдий в минутах
-
-/useitem <uid> - use item by uid.
-== /useitem <uid> - использовать предмет по UID.
-
-Agressed
-== Агрессия
-
-/house doors list - list door's and ids
-== /house doors list - список дверей и их ID
-
-/register <name> <pass> - new account.
-== /register <имя> <пароль> - новый аккаунт.
-
-<<< Backpage
-== <<< Назад
-
-<player>, do you have any questions? I'm sorry, can't help you.
-== <player>, у вас есть вопросы? Извините, не могу помочь.
-
-Bank: {}
-== Банк: {}
-
-AFK
-== АФК
-
-Boss
-== Босс
-
-Auto equip '{} - {}'.
-== Автоматически экипировать '{} - {}'.
-
-Can't set in collide tile
-== Нельзя установить в столкновении
-
-Check if player is afk
-== Проверить, находится ли игрок в AFK
-
-A system error has occurred, contact administrator.
-== Произошла системная ошибка, свяжитесь с администратором.
-
-Blink
-== Моргание
-
-Emoticon Wtf
-== Эмотикон Wtf
-
-Random box.
-== Случайная коробка.
-
-You can bind active skill any button using the console
-== Вы можете привязать активный навык к любой кнопке с помощью консоли
-
-Fire
-== Огонь
-
-/tutorial - training challenge.
-== /tutorial - обучающее испытание.
-
-Members: {} of {}
-== Участники: {} из {}
-
-Guild name must contain '3-8 characters'.
-== Название гильдии должно содержать '3-8 символов'.
-
-Description:
-== Описание:
-
-Click the highlighted area with the hammer to interact.\n{}
-== Нажмите на выделенную область молотком для взаимодействия.\n{}
-
-Experience Boost
-== Увеличение опыта
-
-Commision '{} gold'.
-== Комиссия '{} золота'.
-
-Doors
-== Двери
-
-Emoticon Zzz
-== Эмотикон Zzz
-
-Door controls
-== Управление дверьми
-
-You've already reached the maximum level
-== Вы уже достигли максимального уровня
-
-Disable
-== Отключить
-
-Deposit All
-== Внести все
-
-You drop {} x{}
-== Вы выбросили {} x{}
-
-Lv{lv} {type}[{bar}] {~.2f}%+{~.3f}%({})XP
-== Ур{lv} {type}[{bar}] {~.2f}%+{~.3f}%({})Опыт
-
-Desynthesis
-== Разбор
-
-Account settings Information
-== Информация о настройках аккаунта
-
-Detail information about house.
-== Подробная информация о доме.
-
-Guild name: {}
-== Название гильдии: {}
-
-Completed quests: {} ({~.2}%)
-== Завершенные квесты: {} ({~.2}%)
-
-Decoration editor
-== Редактор декора
-
-Available slots
-== Доступные слоты
-
-You don't have a gun equipped.
-== У вас не экипирован пистолет.
-
-Equip pickaxe
-== Экипировать кирку
-
-Deny
-== Отклонить
-
-㋡ Guild  
-== ㋡ Гильдия
-
-In your zone emerging {}!
-== В вашей зоне появляется {}!
-
-In the 'Adventure Journal', you can see in which quest an item is used
-== В 'Журнале приключений' вы можете увидеть, в каком квесте используется предмет
-
-Display background map in the menu
-== Отображать фоновую карту в меню
-
-Deposit: {}
-== Внести: {}
-
-Newbie
-== Новичок
-
-The mob was found, but the quest step is not active for players.
-== Моб найден, но шаг квеста не активен для игроков.
-
-You have received: '{} +{~.2}%'
-== Вы получили: '{} +{~.2}%'
-
-⇰ Rankings: Guilds & Players  
-== ⇰ Рейтинги: Гильдии и игроки
-
-Other slots
-== Другие слоты
-
-Disband the guild with the name
-== Распустить гильдию с именем
-
-Eidolon Collection Information
-== Информация о коллекции эйдолонов
-
-Activity coin reward for completing a side quest
-== Награда в монетах за выполнение побочного квеста
-
-Bank: {$} gold | Initial fee: {$}
-== Банк: {$} золота | Начальный взнос: {$}
-
-Command list [{} of {}]
-== Список команд [{} из {}]
-
-Daily quest: '{}' accepted!
-== Ежедневный квест: '{}' принят!
-
-You don't have the right to buy a house
-== У вас нет права купить дом
-
-Do you want learn?
-== Хотите изучить?
-
-[INFO] If you can't see the dialogs with NPCs, check in F1 console "cl_motd_time" so that the value is set.  
-== [ИНФО] Если вы не видите диалоги с NPC, проверьте в консоли F1 "cl_motd_time", чтобы значение было установлено.
-
-☪ Personal Menu  
-== ☪ Личное меню
-
-Information about mailbox
-== Информация о почтовом ящике
-
-Commission rate for bank transactions (in percentage)
-== Ставка комиссии за банковские операции (в процентах)
-
-Collect {} [{}/{}]
-== Собрать {} [{}/{}]
-
-All the doors of the house were closed!
-== Все двери дома закрыты!
-
-Players can send requests to join the guild
-== Игроки могут отправлять запросы на вступление в гильдию
-
-You failed plant to farm zone.
-== Вам не удалось посадить в зону фермы.
-
-Do you want to buy?
-== Хотите купить?
-
-You have left the active zone!
-== Вы покинули активную зону!
-
-You have reached the maximum number of slots in the auction!
-== Вы достигли максимального количества слотов на аукционе!
-
-List all afk players
-== Список всех игроков в AFK
-
-Here you can see your collection of eidolons.
-== Здесь вы можете увидеть свою коллекцию эйдолонов.
-
-Durability
-== Прочность
-
-Rank: {}
-== Ранг: {}
-
-Friendly
-== Дружелюбный
-
-Poison
-== Яд
-
-Upgrade {} ({}) {$} gold
-== Улучшить {} ({}) {$} золота
-
-Player '{}' has found '{} x{}'.
-== Игрок '{}' нашел '{} x{}'.
-
-Remove item <clientid> <itemid> <count>
-== Удалить предмет <clientid> <itemid> <count>
-
-Money
-== Деньги
-
-The warehouse is flagged as storage, but no storage data provided
-== Склад помечен как хранилище, но данные о хранилище не предоставлены
-
-Price
-== Цена
-
-Experience multiplier for completing raid dungeons
-== Множитель опыта за завершение рейдовых подземелий
-
-This house has already been purchased!
-== Этот дом уже куплен!
-
-The sender heavens.
-== Отправитель на небесах.
-
-Current title: {}
-== Текущий титул: {}
-
-Battle
-== Битва
-
-Equip armor
-== Экипировать броню
-
-Current status: '{}'!
-== Текущий статус: '{}'!
-
-Use Multiple
-== Использовать несколько
-
-Quest Statistics
-== Статистика квестов
-
-Exit dungeon {} (warning)
-== Выйти из подземелья {} (предупреждение)
-
-Decoration
-== Декор
-
-Equip grenade
-== Экипировать гранату
-
-Enchant ({}m)
-== Зачаровать ({}м)
-
-Decoration's
-== Декор
-
-Buying a house
-== Покупка дома
-
-Equip eidolon
-== Экипировать эйдолона
-
-Crime score: {}
-== Уровень преступности: {}
-
-Dungeons Information
-== Информация о подземельях
-
-Gold capacity: {}
-== Вместимость золота: {}
-
-Mode
-== Режим
-
-Currency
-== Валюта
-
-Treasury confiscates '{}% ({$})' of your gold.
-== Казна конфискует '{}% ({$})' вашего золота.
-
-Enabled
-== Включено
-
-The selected list is empty
-== Выбранный список пуст
-
-Dungeon started!
-== Подземелье началось!
-
-You can't take more than '{} products'.
-== Вы не можете взять больше '{} продуктов'.
-
-Your home has: {} farm zones.
-== Ваш дом имеет: {} зон фермы.
-
-Emoticon Ooop
-== Эмотикон Ooop
-
-Disband. (in reason send 55428)
-== Распустить. (в причине отправить 55428)
-
-Available languages
-== Доступные языки
-
-Equipment
-== Экипировка
-
-Improvements & Upgrades
-== Улучшения и апгрейды
-
-Pain
-== Боль
-
-Command '{}' not found!
-== Команда '{}' не найдена!
-
-Cooldown: {# (minute|minutes)}
-== Перезарядка: {# (минута|минуты)}
-
-Error
-== Ошибка
-
-Default
-== По умолчанию
-
-Coefficient rating base
-== Базовый коэффициент рейтинга
-
-Dryads are green dryads with sea-green vines.
-== Дриады — зеленые дриады с морскими зелеными лозами.
-
-Disband group
-== Распустить группу
-
-Closed
-== Закрыто
-
-Your house rent has been paid.
-== Аренда вашего дома оплачена.
-
-Equip title
-== Экипировать титул
-
-Items
-== Предметы
-
-Next: ➡ {}
-== Далее: ➡ {}
-
-Here you can set the title.
-== Здесь вы можете установить титул.
-
-Every player has the right to rent houses.
-== Каждый игрок имеет право арендовать дома.
-
-Editing member '{}'
-== Редактирование участника '{}'
-
-Rank '{}' new rights '{}'!
-== Ранг '{}' новые права '{}'!
-
-Player not found or isn't logged in
-== Игрок не найден или не вошел в систему
-
-Disassemble '{} x{}'.
-== Разобрать '{} x{}'.
-
-Door '{}(Number {})' was '{}'!
-== Дверь '{}(Номер {})' была '{}'!
-
-Etherna
-== Этерна
-
-Commision rate: {}%
-== Комиссия: {}%
-
-Disband
-== Распустить
-
-Always show name plates disregarding of distance
-== Всегда показывать таблички с именами независимо от расстояния
-
-Drop
-== Выбросить
-
-Maximum number of auction slots available to a player
-== Макс кол-во слотов для аукциона
-
-Enchantable
-== Зачаровываемый
-
-Debuffs
-== Дебаффы
-
-Descriptions of eidolon ({})
-== Описания эйдолона ({})
-
-Type side
-== Тип побочный
-
-Grenade
-== Граната
-
-No dungeons available at the moment!
-== Нет доступных подземелий на данный момент!
-
-Goodbye!
-== До свидания!
-
-Full changes {}
-== Полные изменения {}
-
-General ({} of {})
-== Общие ({} из {})
-
-Learned a new skill ['{}']
-== Изучено новое умение ['{}']
-
-Auctionist
-== Аукционист
-
-Dps
-== Дамагер
-
-Is empty
-== Пусто
-
-Invalid item size.
-== Неверный размер предмета.
-
-Emoticon Sushi
-== Эмотикон Суши
-
-Deposit. (Amount in a reason)
-== Внести. (Сумма в причине)
-
-Activity coin reward for completing a weekly quest
-== Награда в монетах за выполнение еженедельного квеста
-
-Door creaking.. Opened door somewhere!
-== Скрип двери.. Где-то открылась дверь!
-
-Door radius for interaction
-== Радиус взаимодействия с дверью
-
-Guild '{}' raised the level up to {}
-== Гильдия '{}' повысила уровень до {}
-
-Members
-== Участники
-
-Legend
-== Легенда
-
-Join to {} group?
-== Присоединиться к группе {}?
-
-Guild house is sold.
-== Дом гильдии продан.
-
-Press 'Fire' with the hammer to interact.\n{}
-== Нажмите 'Огонь' с молотком для взаимодействия.\n{}
-
-Group{}!
-== Группа{}!
-
-Give access for {}
-== Дать доступ для {}
-
-Not enough gold.
-== Недостаточно золота.
-
-GiveQuestID
-== IDВыдачиКвеста
-
-Not enough mana to maintain the shield.
-== Недостаточно маны для поддержания щита.
-
-Finished
-== Завершено
-
-Emoticon Eyes
-== Эмотикон Глаза
-
-Farm {(zone|zones): #}
-== Ферма {(зона|зоны): #}
-
-Not enought products in storage! Required '{} products'.
-== Недостаточно продуктов на складе! Требуется '{} продуктов'.
-
-Number of Skill Points awarded per level up
-== Количество очков навыков, выдаваемых за повышение уровня
-
-Is empty list
-== Список пуст
-
-Leave the group
-== Покинуть группу
-
-Power
-== Сила
-
-Gold
-== Золото
-
-Logs
-== Логи
-
-Mouse max distance, in static camera mode
-== Максимальное расстояние мыши в режиме статической камеры
-
-Mana is required for the casting or continuation of this spell.
-== Для произнесения или продолжения этого заклинания требуется мана.
-
-Predict position of projectiles
-== Предсказать позицию снарядов
-
-Can't refuse
-== Нельзя отказаться
-
-Aether not found.
-== Эфир не найден.
-
-Full
-== Полный
-
-Level: {} Exp: {}/{}
-== Уровень: {} Опыт: {}/{}
-
-Experience multiplier for using a chair
-== Множитель опыта за использование стула
-
-Farm {} zone / {}
-== Ферма {} зона / {}
-
-How to deal with inactive clients (0=move to spectator, 1=move to spectator and kick, 2=kick or move to free spectator slot, 3=kick directly)
-== Как обрабатывать неактивных клиентов (0=переместить в зрители, 1=переместить в зрители и кикнуть, 2=кикнуть или переместить в свободный слот зрителя, 3=кикнуть напрямую)
-
-Equip potion HP
-== Экипировать зелье HP
-
-Flags
-== Флаги
-
-No place for item.
-== Нет места для предмета.
-
-Has guild: {}
-== Есть гильдия: {}
-
-Emoticon Ghost
-== Эмотикон Призрак
-
-Interface server address (LAN page)
-== Адрес интерфейсного сервера (LAN-страница)
-
-Field: [{}]
-== Поле: [{}]
-
-Exp
-== Опыт
-
-Perhaps the self-proclaimed queen of pigs.
-== Возможно, самопровозглашенная королева свиней.
-
-Has house: {}
-== Есть дом: {}
-
-Not found!
-== Не найдено!
-
-Healer
-== Лекарь
-
-Guild wars
-== Войны гильдий
-
-Not selected
-== Не выбрано
-
-Move to the house
-== Переместиться в дом
-
-Group commands
-== Команды группы
-
-Deaths
-== Смерти
-
-Please use a different name.
-== Пожалуйста, используйте другое имя.
-
-This chat is for guilds and team members.
-== Этот чат для гильдий и членов команды.
-
-Number: '{}'. Name: {} ({})
-== Номер: '{}'. Имя: {} ({})
-
-Give item <clientid> <itemid> <count> <enchant> <mail 1=yes 0=no>
-== Дать предмет <clientid> <itemid> <count> <enchant> <mail 1=да 0=нет>
-
-Farm zone not found.
-== Зона фермы не найдена.
-
-House system
-== Система домов
-
-NextQuestID
-== IDСледующегоКвеста
-
-New rank is created [{}]!
-== Создан новый ранг [{}]!
-
-All the doors of the house were reversed!
-== Все двери дома перевернуты!
-
-Other's
-== Другие
-
-Disable effects (mrpg)
-== Отключить эффекты (mrpg)
-
-delay  
-== задержка
-
-House main changes {}
-== Основные изменения дома {}
-
-Guild system
-== Система гильдий
-
-The reason for write the number for each row
-== Причина для написания номера для каждой строки
-
-Logs of activity
-== Логи активности
-
-Function
-== Функция
-
-Nick
-== Ник
-
-Item: {} x{}
-== Предмет: {} x{}
-
-Give Leader (in reason 134)
-== Передать лидерство (в причине 134)
-
-Invite & kick
-== Пригласить и кикнуть
-
-Interval decrease crime score
-== Интервал уменьшения уровня преступности
-
-The security timer is over, be careful!
-== Таймер безопасности истек, будьте осторожны!
-
-Interval for displaying chat messages (in seconds)
-== Интервал отображения сообщений в чате (в секундах)
-
-Locked for now.
-== Заблокировано на данный момент.
-
-Disabled
-== Отключено
-
-Your rating increased by {}({}) points ({})  
-== Ваш рейтинг увеличен на {}({}) очков ({})
-
-Initial fee: {$} gold
-== Начальный взнос: {$} золота
-
-create  
-== создать
-
-Management
-== Управление
-
-$dialog_quest462
-If you must sate your curiosity, by all means investigate. Should you actually find something of note, I would like very much to see it.
-== Если вы должны удовлетворить своё любопытство, то исследуйте. Если вам удастся найти что-то примечательное, мне бы очень хотелось это увидеть.
-
-buying  
-== покупка
-
-Disable completely the whisper feature.
-== Полностью отключить функцию шепота.
-
-General
-== Общие
-
-Percentage of gold lost upon death
-== Процент золота, потерянного после смерти
-
-$quest_name1
-First quest
-== Первый квест.
-
-Failed to retrieve settings data.
-== Не удалось получить данные настроек.
-
-Players for invitation
-== Игроки для приглашения
-
-Get position by client (default self position)
-== Получить позицию от клиента (по умолчанию своя позиция)
-
-The properties string is empty
-== Строка свойств пуста
-
-Laser
-== Лазер
-
-Number of entities that can be gathering from a single tile
-== Количество сущностей, которые можно собрать с одного тайла
-
-The voucher code '{}' has expired.
-== Код ваучера '{}' истек.
-
-Door list
-== Список дверей
-
-Equip hammer
-== Экипировать молот
-
-The tasks haven't been completed yet!
-== Задачи еще не выполнены!
-
-Invalid settings index.
-== Неверный индекс настроек.
-
-Experience: {}
-== Опыт: {}
-
-Experience multiplier for killing mobs
-== Множитель опыта за убийство мобов
-
-Emoticon Zomg
-== Эмотикон Zomg
-
-Predict movements of other players
-== Предсказать движения других игроков
-
-Farmzones
-== Зоны Ферм
-
-At the moment players are passing this dungeon!
-== В данный момент игроки проходят это подземелье!
-
-No
-== Нет
-
-Link to server invitation
-== Ссылка на приглашение на сервер
-
-No such player or he's not afk
-== Нет такого игрока, или он не в AFK
-
-Item was not received by you personally.
-== Предмет не был получен вами лично.
-
-Farms
-== Фермы
-
-Last seen in: {}
-== Последний раз видели в: {}
-
-Kick {}
-== Кикнуть {}
-
-Defeat {} x{}
-== Победить {} x{}
-
-Item(s) left to gather: '{}'
-== Осталось собрать предмет(ы): '{}'
-
-Objective: to get {} ({} of {}).
-== Цель: получить {} ({} из {}).
-
-Level
-== Уровень
-
-Invite {}
-== Пригласить {}
-
-Gun
-== Пистолет
-
-Have
-== Иметь
-
-List of membership ({} of {})
-== Список участников ({} из {})
-
-LastStand
-== ПоследнийРубеж
-
-Auto use - {}
-== Автоматическое использование - {}
-
-You don't have Aether access to this location.
-== У вас нет доступа к Эфиру в этом месте.
-
-Maximum number of total auction slots
-== Максимальное общее количество слотов аукциона
-
-Interface settings page
-== Страница настроек интерфейса
-
-No guild slots available.
-== Нет доступных слотов гильдии.
-
-Maximum amount of products a player can carry from the warehouse
-== Максимальное количество продуктов, которое игрок может унести со склада
-
-[{}] Sell {} - {$} {} per unit  
-== [{}] Продать {} - {$} {} за единицу
-
-Oops, that doesn't seem to be the right login or password
-== Упс, похоже, неправильный логин или пароль
+$item_name49
+Monoa armor
+== Monoa armor
+
+$item_description38
+The usual copper rake
+== The usual copper rake
+
+$item_name37
+Copper armor
+== Copper armor
+
+$item_name38
+Copper rake
+== Copper rake
+
+$item_name66
+Magic spider hook
+== Magic spider hook
+
+$item_name43
+Titanium pickaxe
+== Titanium pickaxe
+
+$item_name62
+Adamantium rake
+== Adamantium rake
+
+$item_name64
+Poison hook
+== Poison hook
+
+$item_name21
+Sword
+== Sword
+
+$item_description49
+It's a beautiful armor
+== It's a beautiful armor
+
+$item_description36
+Processed copper
+== Processed copper
+
+$item_description37
+Armor made of copper
+== Armor made of copper
+
+$item_name130
+Iron crate
+== Iron crate
+
+$item_description15
+Recovers 5HP per second for 10 seconds.
+== Recovers 5HP per second for 10 seconds.
+
+$item_name36
+Copper ingot
+== Copper ingot
+
+$item_description130
+Iron crate
+== Iron crate
+
+$dialog_npc50
+Hey, stranger. Help yourself to any beverage you want. Even the illegal stuff. Heehee.
+== Hey, stranger. Help yourself to any beverage you want. Even the illegal stuff. Heehee.
+
+$house_class_name2
+Test
+== Test
+
+$item_name69
+#EMPTY
+== #EMPTY
+
+$item_name81
+#EMPTY
+== #EMPTY
+
+$item_name79
+#EMPTY
+== #EMPTY
+
+$item_name76
+#EMPTY
+== #EMPTY
+
+$item_name77
+#EMPTY
+== #EMPTY
+
+$item_name132
+#EMPTY
+== #EMPTY
+
+$item_name60
+#EMPTY
+== #EMPTY
+
+$item_name75
+#EMPTY
+== #EMPTY
+
+$item_name126
+#EMPTY
+== #EMPTY
 
 You've invited '{}' to join your group!
 == Вы пригласили '{}' присоединиться к вашей группе!
@@ -2625,10 +1519,6 @@ Eidolon Pig Queen
 
 You have successfully removed the '{}' from '{}'.
 == Вы успешно удалили '{}' из '{}'.
-
-$item_name35
-Althyk's Ring
-== Кольцо Алтыка.
 
 The minimum interaction cannot be below '100 gold'!
 == Минимальное взаимодействие не может быть ниже '100 золота'!
@@ -4113,9 +3003,9 @@ A drawer full of tools
 ✦ Learn ({} of {} level)  
 == ✦ Изучить ({} из {} уровня)
 
-$item_name49
-Monoa Mask
-== Маска Моноа
+$attribute7
+MP
+== МП
 
 ⁂ Group
 == ⁂ Группа
@@ -4220,9 +3110,8 @@ $dialog_quest415
 And whenever we try to call their faces to mind, we see naught but silhouettes amidst a blinding glare.
 == И когда бы мы не попытались вспомнить их лица, мы видим лишь силуэты среди ослепительного блеска.
 
-$item_description38
-Eversharp Ring is an item level 1.
-== Кольцо Бессмертия — предмет 1 уровня.
+Dungeon waiting {} sec!\nPlayer's are ready to start right now {} of {}!\nYou can change state with 'Vote yes'
+== Подземелье ждет {} сек!\nИгроки готовы начать прямо сейчас {} из {}!\nВы можете изменить состояние с помощью 'Голосовать за'
 
 $dialog_quest790
 Hi. My guys need good armor and a great hammer. Bring them to me. I owe you one
@@ -4243,9 +3132,8 @@ price
 {}. {} :: Bank {}
 == {}. {} :: Банк {}
 
-$item_name37
-Ring of Fidelity
-== Кольцо верности
+Accepted
+== Принято
 
 step  
 == шаг
@@ -4425,16 +3313,14 @@ It happens sometimes
 skin  
 == скин
 
-$item_name81
-Adamantium hammer
-== Адамантиевый молот
+Emoticon ...
+== Эмотикон ...
 
 ⚱ Modules
 == ⚱ Модули
 
-$item_name38
-Eversharp Ring
-== Кольцо вечной остроты
+You don't have a laser equipped.
+== У вас не экипирован лазер.
 
 ✉ Mailbox
 == ✉ Почтовый ящик
@@ -4621,9 +3507,8 @@ radius
 * Use 'Self kill' to close the motd!\n\n
 == * Используйте 'Self kill', чтобы закрыть motd!\n\n
 
-$item_name69
-Bestial Light Armor
-== Легкая звериная броня
+/house sell - sell the house to the state
+== /house sell - продать дом государству
 
 $dialog_quest1810
 If you've a will to enlist, speak with me again and we can begin the enrollment procedures.
@@ -4692,9 +3577,8 @@ $dialog_quest233
 The power of the elementals wanes, and the harmony of the forest gives way to chaos. A great abundance of life has been lost as the strong run rampant, stifling the weak and new-sprung.
 == Сила элементалей угасает, и гармония леса уступает хаосу. Великое количество жизни было утрачено, так как сильные беспечно бегают, подавляя слабых и новорождённых.
 
-$item_name66
-Magic Spider Hook
-== Маг. пауковый крюк.
+All improvements are solely related to the guild itself.
+== Все улучшения относятся исключительно к гильдии.
 
 $skill_name3
 Craft Discount
@@ -4916,9 +3800,8 @@ $dialog_quest275
 The Ixal rarely set foot in the Central Shroud, so tight is our guard over the area. What purpose could have driven them to take such a risk? I fear something is afoot...
 == Иксали редко ступают в Центральную Чащу, так как наша охрана в этом районе очень плотная. Что могло заставить их пойти на такой риск? Боюсь, что-то затевается...
 
-$item_name43
-Titanium Pickaxe
-== Титановая кирка.
+Apparently, we have a new player, '{}'!
+== Похоже, у нас новый игрок, '{}'!
 
 $dialog_quest3810
 Don't be too disappointed if the recent troubles cast a shadow over proceedings, however. I fear nothing short of the mysterious interloper's apprehension can prevent that...
@@ -5026,9 +3909,8 @@ Lancer | Ghost vs
 {} (has {})
 == {} (имеет {})
 
-$item_name62
-Adamantium Rake
-== Адамантиновые грабли
+⁙ Achievements groups  
+== ⁙ Группы достижений
 
 '{}' initiated area ('{}')!
 == '{}' инициировал зону ('{}')!
@@ -5118,20 +4000,17 @@ $skill_boost8
 power of aggression
 == сила агрессии
 
-$dialog_npc50
-<player>, do you have any questions? I'm sorry, can't help you.
-== <player>, у тебя есть вопросы? Извини, не могу помочь.
+/house doors reverse_all - reverse all door's
+== /house doors reverse_all - перевернуть все двери
 
-$item_name60
-Blue Light Armor
-== Синяя легкая броня
+/guild - guild system.
+== /guild - система гильдий.
 
 - Don't block other players
 == - Не блокируйте других игроков
 
-$item_name64
-Poison Hook
-== Ядовитый Крюк
+/guild create <name> - create a new guild
+== /guild create <имя> - создать новую гильдию
 
 $dialog_quest670
 Back from your trip to the Carpenters' Guild? Let's see what you have in that box.
@@ -5345,9 +4224,8 @@ Listen to their requests, and do all that you can. May the elementals bless your
 guild  
 == гильдия
 
-$item_name76
-Shadower Mantle
-== Мантия Теней
+/guild leave - leave the guild
+== /guild leave - покинуть гильдию
 
 in a group  
 == в группе
@@ -5434,9 +4312,8 @@ $dialog_quest278
 Their garb may appear outlandish, and their exchanges baffling, but never once have they given us cause to doubt them.
 == Их одежда может казаться экзотичной, а их разговоры—загадочными, но ни разу они не дали нам повода усомниться в них.
 
-$item_name77
-Mercenary Armor
-== Броня наемника
+/house - house system.
+== /house - система домов.
 
 $item_description121
 Magic pours out of this flower
@@ -5516,9 +4393,8 @@ $dialog_quest580
 No! Oh, please gods, no! Leia's egg!
 == Нет! О, боги, пожалуйста, нет! Яйцо Леи!
 
-$dialog_npc240
-<player>, do you have any questions? I'm sorry, can't help you.
-== <player>, у тебя есть вопросы? Извини, не могу помочь.
+Guild members with the necessary rights,
+== Члены гильдии с необходимыми правами,
 
 $item_name68
 Cabbage
@@ -5535,8 +4411,8 @@ $dialog_quest169
 I hope this gives you a better idea of who we are, and what we do here. Oho, did I see the spark of ambition flare within your eyes?
 == Надеюсь, это даст вам лучшее представление о том, кто мы и что мы здесь делаем. Охо, я вижу, в ваших глазах вспыхнула искра амбиций?
 
-help  
-== помощь
+Collect {} x{}
+== Собрать {} x{}
 
 $item_name102
 Hammer Blast
@@ -5550,8 +4426,8 @@ $dialog_quest290
 Ah, you must be the adventurer standing in for our injured companions. Terribly unfortunate business, that.
 == Ах, вы, должно быть, тот искатель приключений, который заменяет наших раненых товарищей. Ужасно неприятное дело.
 
-⚰ Equipments  
-== ⚰ Снаряжение
+< Interrupted >
+== < Прервано >
 
 $item_description60
 Base armor
@@ -5571,8 +4447,8 @@ $skill_name2
 Sleepy Gravity
 == Сонная гравитация
 
-⚖ Available daily  
-== ⚖ Доступно ежедневно
+Allow client to notify you on chat highlights
+== Разрешить клиенту уведомлять вас о выделениях в чате
 
 $item_description23
 Strange incomprehensible records
@@ -5586,9 +4462,8 @@ $dialog_quest332
 Anole eggs are both large and filled with nutrients - the perfect meal for a soldier. She will be more than a little pleased to see you, I should imagine.
 == Яйца анол большие и богаты питательными веществами—идеальная еда для солдата. Думаю, она будет более чем рада вас видеть.
 
-$item_name135
-Hoarder's bag
-== Мешок собирателя
+Amount of experience required to level up farming
+== Количество опыта, необходимое для повышения уровня фермерства
 
 $item_name47
 Letter 
@@ -5602,9 +4477,8 @@ $dialog_quest43
 Oh, I probably just have you confused with another adventurer─dozens of you come through here every day, after all. Now, where was I? Ah, yes.
 == О, вероятно, я просто перепутал вас с другим искателем приключений — десятки из вас приходят сюда каждый день. Так где я остановился? Ах, да.
 
-$quest_name26
-Archer | The feathers?
-== Лучник | Перья?
+Auction alert.
+== Оповещение об аукционе.
 
 $dialog_npc160
 <player>, do you have any questions? I'm sorry, can't help you.
@@ -5618,9 +4492,8 @@ $dialog_quest200
 Greetings, adventurer. I see you are faithfully following Mother Miounne's instructions.
 == Приветствую, искатель приключений. Вижу, вы старательно следуете указаниям Матери Миунн.
 
-$item_name134
-Life crystal
-== Кристалл жизни
+:: Vampirism stolen: {}HP.
+== :: Вампиризм украл: {}HP.
 
 $item_name127
 Explosive Powder
@@ -5634,9 +4507,8 @@ $quest_name13
 Don't Look Down
 == Не смотри вниз
 
-$item_description11
-Decoration for house!
-== Декорация для дома!
+Achievement points: {}p
+== Очки достижений: {}p
 
 $item_description131
 Golden Crate
@@ -5650,9 +4522,8 @@ $dialog_quest363
 Most of his party has been successfully evacuated, but five remain unaccounted for.
 == Большая часть его группы была успешно эвакуирована, но пятеро всё ещё числятся пропавшими.
 
-$item_description29
-Coins that are given out for activity
-== Монеты, которые выдаются за активность
+You have no access, or you are not a member of the guild.
+== У вас нет доступа, или вы не являетесь членом гильдии.
 
 $attribute14
 Gun DMG
@@ -5666,9 +4537,8 @@ $dialog_quest641
 But to receive such praise from the Elder Seedseer herself!
 == Но получать такую похвалу от самой Старшей Семяувидки!
 
-$dialog_quest202
-Aetherytes are devices that tap into aetherial energies, and are primarily used as a means to travel swiftly from one place to another.
-== Эфириты — это устройства, которые используют эфирные энергии и в основном используются для быстрого перемещения из одного места в другое.
+Active dungeon
+== Активное подземелье
 
 $dialog_quest291
 It seems, however, that you had little trouble gathering the egg sacs in their stead. Excellent work. I shall have them sent over to the Trappers' League immediately.
@@ -5682,9 +4552,8 @@ $item_name63
 Adamantium pickaxe
 == Адамантиновая кирка.
 
-$attribute3
-Crit DMG
-== КРИТ УРН
+⚘ Detail information
+== ⚘ Подробная информация
 
 $dialog_quest550
 You bear a message from Hearer Leonnie? An evil presence in the Deepcroft? That does sound grave, indeed.
@@ -5705,9 +4574,8 @@ It is not, perhaps, the easiest pathway to walk, but there are those who believe
 Kick
 == Кикнуть
 
-$dialog_quest387
-Oh, and be sure to introduce yourself to Keitha, the head chocobo wrangler, when you arrive.
-== О, и не забудьте представиться Ките, главному конюху, когда прибудете.
+A sociable spirit, she loves to protect people.
+== Общительный дух, она любит защищать людей.
 
 $dialog_quest631
 Miounne has information on the Ixal, you say? Speak freely─you have both my ears.
@@ -5721,9 +4589,8 @@ $dialog_quest101
 There is no better place to learn the arts of conjury. Speak with Madelle, and she will explain the benefits of joining the guild.
 == Нет лучшего места для изучения искусства заклинаний. Поговорите с Мадель, и она объяснит преимущества вступления в гильдию.
 
-$dialog_quest780
-Aapphpphpph. Hello stranger. You smell that foul odor. It's the mushrooms. They're getting big and plentiful. Please get rid of them. I think there's some kind of magic involved. Good luck, traveler.
-== Аппхппхппх. Здравствуй, незнакомец. Ты чувствуешь этот зловонный запах. Это грибы. Они становятся большими и многочисленными. Пожалуйста, избавься от них. Думаю, здесь замешана какая-то магия. Удачи, путешественник.
+Unlock {}
+== Разблокировать {}
 
 $skill_description5
 The blessing restores ammo
@@ -5737,9 +4604,8 @@ $dialog_quest662
 Take it, along with this warning: get so much as a scratch on the thing, and I shall make an unceremonial artifact out of you.
 == Возьмите это вместе с предупреждением: если на нём появится хоть царапина, я сделаю из вас бесцеремонный артефакт.
 
-$item_name70
-Wheat
-== Пшеница.
+Equipment's
+== Экипировка
 
 $dialog_quest330
 Ah, you have returned. Now might my brothers and sisters continue their meditations undisturbed. You have my thanks.
@@ -5753,9 +4619,8 @@ $quest_name33
 Lancer | Hate mushrooms
 == Копейщик | Ненависть к грибам
 
-$dialog_quest73
-Though this is indeed a troubling development, the Gods' Quiver has more pressing concerns and can ill afford to waste time fighting funguars.
-== Хотя это действительно тревожное развитие, Укупорка Богов имеет более неотложные проблемы и не может позволить себе тратить время на борьбу с фунгуарами.
+Console
+== Консоль
 
 $dialog_quest355
 Alas, it would seem something has gone awry. Word arrived just moments ago that the Hearer and his guards have been attacked by a towering shadow. Aye, you heard me true - a shadow.
@@ -5769,8 +4634,8 @@ $item_description140
 You've been through the whole ordeal of murder.
 == Вы прошли через все это издевательство с убийством.
 
-Here you can choose the language.
-== Здесь вы можете выбрать язык.
+/house doors reverse <number> - reverse door by id
+== /house doors reverse <номер> - перевернуть дверь по ID
 
 $dialog_quest356
 On any other day, I would dispatch my best Quivermen to provide support, but I sent them to repel an Ixali incursion in the West Shroud nary a bell ago.
@@ -5784,9 +4649,8 @@ $dialog_quest167
 Thus was the Archers' Guild born from the ranks of the Trappers' League.
 == Так Гильдия лучников родилась из рядов Лиги ловцов.
 
-$item_name79
-Titanium hammer
-== Титановый молот
+Open
+== Открыть
 
 Interaction
 == Взаимодействие
@@ -5795,13 +4659,11 @@ $dialog_quest571
 Ah, this's the shipment I was waitin' on from Quarrymill. I heard the wagon ran afoul o' some great monstrosity just up the path from the Mirror Planks, but I see you've managed to scrape together a few bits and pieces.
 == Ах, это груз, который я ждал из Кварримилла. Я слышал, что повозка столкнулась с какой-то огромной тварью прямо у тропы от Зеркальных Планок, но вижу, вы успели собрать несколько кусочков.
 
-$item_name21
-Sworld
-== Меч
+Amount of experience required to level up mining
+== Количество опыта, необходимое для повышения уровня добычи
 
-$dialog_quest279
-Indeed, they often assist the Gods' Quiver and the Wood Wailers in their work -- much as I hope you will in the days to come, <player>.
-== Действительно, они часто помогают Божественному Колчану и Лесным Стражам в их работе—так же, как я надеюсь, будете помогать и вы в будущем, <player>.
+Behavior
+== Поведение
 
 $dialog_quest441
 Keeping the root passable is an important job, you see. It's one of the few ways folk can traverse the Central Shroud since the Calamity all but split the area in twain.
@@ -5814,9 +4676,8 @@ $skill_name8
 Provoke
 == Провокация
 
-$item_description6
-Conventional weapon
-== Обычное оружие.
+/house doors list - list door's and ids
+== /house doors list - список дверей и их ID
 
 $dialog_quest195
 Granted, the work they offer is unlikely to be of realm-shattering importance─but prove your worth and build a reputation, and in time folk will be more inclined to entrust you with matters of moment.
@@ -5837,8 +4698,8 @@ $dialog_quest470
 Hmmm? Have you found something?
 == Хммм? Вы нашли что-то?
 
-Gold Boost
-== Увеличение золота
+AFK
+== АФК
 
 Interface serverbrowser page
 == Страница браузера серверов интерфейса
@@ -5851,9 +4712,8 @@ $item_description149
 You're respected. And they give you a discount
 == Вы уважаемы. И они дают вам скидку.
 
-$item_name23
-Survey records
-== Записи обследования
+A system error has occurred, contact administrator.
+== Произошла системная ошибка, свяжитесь с администратором.
 
 $item_description62
 The usual adamantium rake.
@@ -5867,9 +4727,8 @@ $item_description148
 Nothing but nothing
 == Ничего, кроме ничего
 
-$item_description110
-The claws of the beast
-== Когти зверя.
+Fire
+== Огонь
 
 $item_description124
 Adhesive Bandage
@@ -5879,13 +4738,11 @@ $item_description48
 A magical thing
 == Магическая вещь.
 
-$item_name126
-Rifle Scope
-== Прицел для винтовки.
+Potion
+== Зелье
 
-$item_name40
-Green grass
-== Зелёная трава
+Click the highlighted area with the hammer to interact.\n{}
+== Нажмите на выделенную область молотком для взаимодействия.\n{}
 
 $dialog_quest282
 Having done so, you are to deliver them to Monranguin at Gilbert's Spire. He will answer any queries you might have. Now, I have other business to attend to.
@@ -5899,9 +4756,8 @@ $dialog_quest511
 What's this? A shadowy stranger near the Matron's Lethe... You've already shown this to Bernard and Elmar, I see. Good, good.
 == Что это? Теневой незнакомец возле Леты Матроны... Вы уже показали это Бернару и Эльмару, я вижу. Хорошо, хорошо.
 
-$item_name52
-Vampire armor
-== Броня вампира
+Door controls
+== Управление дверьми
 
 $dialog_quest614
 I fear it may also prove dangerous, however, so you must be prepared.
@@ -5915,9 +4771,8 @@ $item_description134
 The life-giving crystal
 == Кристалл, дарующий жизнь
 
-$item_name2
-Hammer
-== Молот
+Lv{lv} {type}[{bar}] {~.2f}%+{~.3f}%({})XP
+== Ур{lv} {type}[{bar}] {~.2f}%+{~.3f}%({})Опыт
 
 $quest_name19
 Leia's Legacy
@@ -5931,9 +4786,8 @@ $dialog_quest190
 For your third and final task, I would have you visit the markets at the heart of Old Gridania's commercial district. There you shall find weapons and armor, and all the various items that an adventurer might need on his/her travels.
 == Для вашей третьей и последней задачи я хотел бы, чтобы вы посетили рынки в сердце коммерческого района Старой Гридании. Там вы найдете оружие и броню, а также все различные предметы, которые могут понадобиться искателю приключений в его/ее путешествиях.
 
-$dialog_quest75
-Don't you start with that. Adventurers are the very salve that Gridania needs.
-== Не начинайте с этого. Искатели приключений — это именно то, что нужно Гридании.
+Completed quests: {} ({~.2}%)
+== Завершенные квесты: {} ({~.2}%)
 
 $dialog_quest310
 Yes, may I assist you with some matter?
@@ -5947,9 +4801,8 @@ $dialog_quest610
 I haven't the slightest inkling what this could be about...
 == У меня нет ни малейшего представления, о чём это может быть...
 
-$dialog_quest374
-Pray return to Gridania and seek out Miounne.
-== Пожалуйста, вернитесь в Гриданию и найдите Миунне.
+Deny
+== Отклонить
 
 $item_description95
 Command: /gcreate <name>
@@ -5971,9 +4824,8 @@ $dialog_npc300
 <player>, do you have any questions? I'm sorry, can't help you.
 == <player>, у тебя есть вопросы? Извини, не могу помочь.
 
-$skill_description7
-Restores HP all nearby target's.
-== Восстанавливает Здоровье всем близким целям.
+Deposit: {}
+== Внести: {}
 
 $dialog_quest450
 It is—regrettably—my duty to stand watch over the road from here to Bentbranch Meadows.
@@ -5987,9 +4839,8 @@ $quest_name40
 S | Population Control
 == С | Контроль населения
 
-$item_description89
-Required to improve eidolons
-== Необходимо для улучшения эйдолонов
+Other slots
+== Другие слоты
 
 $attribute8
 Vampirism
@@ -6003,9 +4854,8 @@ $item_description40
 It looks like ordinary green grass.
 == Похоже на обычную зеленую траву.
 
-$dialog_quest192
-The master merchant can be...uncooperative at times, so be sure to offer him one of my famous eel pies. Like so many men, he is much more charitable when his stomach is full. Here, I made a batch not long ago.
-== Главный купец может быть... невыгодным время от времени, так что не забудьте предложить ему один из моих известных угревых пирогов. Как и многие мужчины, он намного более щедрый, когда его живот полон. Вот, я приготовил партию не так давно.
+Command list [{} of {}]
+== Список команд [{} из {}]
 
 $item_description108
 Treated leather
@@ -6019,9 +4869,8 @@ $item_name145
 The Lord Healer
 == Лорд-целитель
 
-$dialog_quest400
-Seven hells! Some bastard Qiqirn has gone and broken one of me chocobo eggs!
-== Семь адов! Какой-то ублюдок Кикирн сломал одно из моих яиц чокобо!
+☪ Personal Menu  
+== ☪ Личное меню
 
 $item_name104
 Thread
@@ -6035,9 +4884,8 @@ $dialog_quest612
 Gods be good...
 == Боги, будьте добры...
 
-$item_description120
-One of the items to create a guild
-== Один из предметов для создания гильдии
+Players can send requests to join the guild
+== Игроки могут отправлять запросы на вступление в гильдию
 
 $dialog_quest312
 Fled at the first sign of danger, you say? I see... Well, all is not lost: it appears the recruit managed to complete the surveying assignment. The records are actually quite detailed.
@@ -6051,9 +4899,8 @@ $dialog_quest32
 Before you rush off and begin pestering every second citizen for work, I suggest you make yourself known at the Carline Canopy. That's the headquarters of the local Adventurers' Guild, in case you were wondering.
 == Прежде чем ты бросишься и начнешь приставать к каждому второму гражданину с просьбами о работе, я предлагаю тебе заявить о себе в Крыше Карлайн. Это штаб-квартира местной Гильдии искателей приключений, если тебе интересно.
 
-$dialog_quest185
-And it was here in Gridania that their myriad fighting styles came into contact, eventually giving rise to the art taught here today.
-== И именно здесь, в Гридании, их множество боевых стилей встретились, в конечном итоге дав начало искусству, которое обучают здесь сегодня.
+List all afk players
+== Список всех игроков в AFK
 
 $item_description8
 Required to shop
@@ -6067,9 +4914,8 @@ $dialog_quest350
 Adventurer! Thank the gods you've come!
 == Искатель приключений! Слава богам, ты пришел!
 
-$attribute17
-Rifle DMG
-== Rifle УРН
+Poison
+== Яд
 
 $dialog_quest182
 Here at the Lancers' Guild, spear wielders gather to train with one another, and further hone their abilities under the tutelage of our fine instructors.
@@ -6083,9 +4929,8 @@ $dialog_quest1410
 And for their intimacy with the elementals, the Hearers would go on to attain greater mastery over the forces of nature. Thus did they conceive the art of conjury.
 == И благодаря их близости с элементалями, Слушатели достигли большего мастерства в управлении силами природы. Так они создали искусство заклинаний.
 
-$dialog_quest251
-Hmmm... Yes, I think you pass muster.
-== Хммм... Да, я думаю, вы прошли испытание.
+The warehouse is flagged as storage, but no storage data provided
+== Склад помечен как хранилище, но данные о хранилище не предоставлены
 
 $attribute6
 Lucky
@@ -6106,9 +4951,8 @@ $dialog_quest45
 As the head of the Adventurers' Guild in Gridania, I have the honor of providing guidance to the fledgling heroes who pass through our gates.
 == Как глава Гильдии искателей приключений в Гридании, я имею честь направлять юных героев, проходящих через наши врата.
 
-$item_name144
-DMG Lord
-== Лорд Урона
+Current title: {}
+== Текущий титул: {}
 
 $item_description114
 Meat that's gone bad
@@ -6122,9 +4966,8 @@ $item_description34
 Settings game.
 == Настройки игры.
 
-$dialog_quest740
-Hi. I need iron, as always. Not many people are helping. Bring me 25 bars of iron. I really need them to make arrows.
-== Привет. Мне нужно железо, как всегда. Не многие помогают. Принесите мне 25 железных слитков. Они мне действительно нужны для изготовления стрел.
+Quest Statistics
+== Статистика квестов
 
 $dialog_quest150
 For your second task, you are to visit the Archers' Guild.
@@ -6138,9 +4981,8 @@ $item_description12
 Decoration for house!
 == Декорация для дома!
 
-$dialog_quest314
-We can no longer rely on our past knowledge of the Twelveswood. If we are to survive these troubled times, we must reacquaint ourselves with our surroundings, that we may better discern the threats we face. Stay vigilant, adventurer
-== Мы больше не можем полагаться на наши прошлые знания о Двенадцатилесье. Если мы хотим выжить в эти трудные времена, мы должны заново познакомиться с нашим окружением, чтобы лучше распознавать угрозы. Будьте бдительны, искатель приключений.
+Decoration's
+== Декор
 
 $item_name138
 Bone meal
@@ -6154,9 +4996,8 @@ $item_description20
 It happens sometimes
 == Иногда такое случается
 
-$item_name80
-EIDOL #3
-== ЭЙДОЛ #3.
+Gold capacity: {}
+== Вместимость золота: {}
 
 $dialog_quest364
 Please find them, and see them out of harm's way.
@@ -6170,9 +5011,8 @@ $dialog_quest274
 I can say with absolute certainty that this blade is of Ixali origin. It is of a kind used exclusively in the beastmen's rituals.
 == Я могу с абсолютной уверенностью сказать, что этот клинок имеет происхождение от Иксали. Это оружие, используемое исключительно в ритуалах зверолюдей.
 
-$dialog_quest189
-The Lancers' Guild is always eager to welcome new initiates.
-== Гильдия копейщиков всегда рада приветствовать новых учеников.
+The selected list is empty
+== Выбранный список пуст
 
 players  
 == игроки
@@ -6185,9 +5025,8 @@ $dialog_quest460
 A shadowy fellow? Hmmm...now that you mention it, I may have seen something.
 == Темный парень? Хммм... теперь, когда ты упомянул об этом, возможно, я что-то видел.
 
-$dialog_quest620
-Time is of the essence, so I shall speak plain.
-== Время на исходе, поэтому я буду говорить прямо.
+Disband. (in reason send 55428)
+== Распустить. (в причине отправить 55428)
 
 $item_name111
 Fragments of Darkness
@@ -6201,9 +5040,8 @@ $item_description68
 Farm-grown Cabbage
 == Капуста, выращенная на ферме
 
-$dialog_quest644
-There are preparations that the Emissary must needs complete ahead of time. I suggest you consult Miounne regarding the matter—she is overseeing the arrangements for the event.
-== Есть приготовления, которые Посланник должен завершить заранее. Я предлагаю вам проконсультироваться с Миунн по этому поводу—она курирует подготовку к мероприятию.
+Command '{}' not found!
+== Команда '{}' не найдена!
 
 $dialog_quest10
 Oh, it's good to see you <player>!
@@ -6216,9 +5054,8 @@ Someone's skull
 Interface server address (Internet page)
 == Адрес интерфейсного сервера (Интернет-страница)
 
-$dialog_quest294
-Indeed, a single outbreak once claimed the lives of a third of the Hyuran population here in Gridania. That was a long time ago, of course. With the medicines available to us now, the Creeping Death is not the killer it once was.
-== Действительно, одна вспышка когда-то унесла жизни трети хюранского населения Гридании. Это было давно, конечно. Сейчас, с доступными нам лекарствами, Ползучая смерть уже не так смертоносна, как раньше.
+Dryads are green dryads with sea-green vines.
+== Дриады — зеленые дриады с морскими зелеными лозами.
 
 This item has already been planted on this farm.
 == Этот предмет уже посажен на этой ферме.
@@ -6238,23 +5075,21 @@ $item_description138
 Bone meal
 == Костная мука
 
-$item_description92
-A spider's web
-== Паутина
+Items
+== Предметы
 
 House rent has expired, has been sold.
 == Аренда дома истекла, дом продан.
 
 $attribute12
 Extraction
-== Извлечение
+== ИЗВЛ
 
 Not Accepted
 == Не принято
 
-$dialog_quest2610
-Be forewarned: my people cannot offer you support, lest our quarry catch scent of our presence and evade us yet again. Proceed with caution.
-== Предупреждаю: мои люди не могут предложить вам поддержку, чтобы наша цель не учуяла наше присутствие и не ускользнула снова. Действуйте осторожно.
+Rank '{}' new rights '{}'!
+== Ранг '{}' новые права '{}'!
 
 $quest_name20
 Dread Is in the Air
@@ -6268,9 +5103,8 @@ $dialog_quest50
 Look at what just arrived─another godsdamned adventurer...
 == Посмотрите, кто только что прибыл─ещё один проклятый искатель приключений...
 
-$dialog_quest730
-Stranger, we all need your help. We're under attack by flying beasts. Please help us.
-== Незнакомец, нам всем нужна ваша помощь. Мы подвергаемся нападению летающих тварей. Пожалуйста, помогите нам.
+Commision rate: {}%
+== Комиссия: {}%
 
 I can't find the player, or he's dead
 == Я не могу найти игрока, или он мертв
@@ -6282,9 +5116,8 @@ $item_name112
 Mushroom extract
 == Экстракт гриба
 
-$item_description75
-Eternal Sun Belt is an item level 1.
-== Пояс Вечной Солнце — предмет 1 уровня.
+Enchantable
+== Зачаровываемый
 
 Extend. (Amount in a reason)
 == Продлить. (Сумма в причине)
@@ -6295,8 +5128,8 @@ Miner
 Farmer
 == Фермер
 
-✧ Bank Management  
-== ✧ Управление банком
+No dungeons available at the moment!
+== Нет доступных подземелий на данный момент!
 
 $dialog_quest621
 Based on Luquelot's observations, the Ixal have designs on the Guardian Tree, and they mean to act soon.
@@ -6309,9 +5142,8 @@ Start with Elmar at the Bannock, then find Bernard at the eastern gates of Bentb
 ⚙ Account settings  
 == ⚙ Настройки аккаунта
 
-$dialog_quest110
-Ordinarily, the forest funguars that inhabit the Central Shroud are naught more than a nuisance.
-== Обычно лесные фунгуа, которые обитают в Центральной Завесе, не более чем досадная проблема.
+Auctionist
+== Аукционист
 
 $item_description42
 The usual titanium rake.
@@ -6324,9 +5156,8 @@ But this is no time for such idle thoughts. I thank you for delivering this mess
 Improving skill's
 == Улучшение навыков
 
-$dialog_quest440
-Oh, you've cleared the root of blue trumpets? Wonderful! To be quite honest, I have this teeny-tiny problem with heights. <sigh> No, this is not my ideal posting, but we all do what we must.
-== О, вы очистили корень синих трубочек? Замечательно! Честно говоря, у меня есть небольшая проблема с высотой. <вздох> Нет, это не моё идеальное место, но мы все делаем то, что должны.
+Deposit. (Amount in a reason)
+== Внести. (Сумма в причине)
 
 Leader: {}
 == Лидер: {}
@@ -6338,8 +5169,8 @@ $item_name143
 Tank Lord
 == Лорд Танка.
 
-☫ Guild Management  
-== ☫ Управление гильдией
+Members
+== Участники
 
 $item_description135
 Hoarder's bag
@@ -6360,8 +5191,8 @@ $item_description56
 The strongest adamantite ore
 == Самая прочная руда адамантита
 
-Leveling (Other professions)
-== Повышение уровня (Другие профессии)
+Group{}!
+== Группа{}!
 
 Gold: {$}
 == Золото: {$}
@@ -6372,9 +5203,8 @@ In group: {}
 In the intervals of time will be paid house
 == В промежутках времени будет оплачен дом
 
-$dialog_quest530
-I have another task for you, adventurer. I need you to head to the Hedgetree to the southwest of here and speak with Hearer Leonnie.
-== У меня есть еще одно задание для тебя, искатель приключений. Мне нужно, чтобы ты отправился к Хеджетри на юго-запад отсюда и поговорил с Послушницей Леонни.
+Finished
+== Завершено
 
 $dialog_quest13
 Can I ask you to deliver it?
@@ -6388,9 +5218,8 @@ $dialog_quest112
 We periodically cull the funguar population in order to prevent such occurrences, but the creatures have taken to spawning out of season, making it ever more difficult to keep their numbers in check.
 == Мы периодически сокращаем популяцию фунгваров, чтобы предотвратить такие случаи, но эти существа начали размножаться вне сезона, что делает всё труднее держать их численность под контролем.
 
-$item_name129
-Wooden Crate
-== Деревянный ящик
+Is empty list
+== Список пуст
 
 $dialog_quest90
 Let us begin at the beginning, shall we? Now that you are a formal member of the Adventurers' Guild, we must be sure you have a firm grasp of the fundamentals of adventuring. To that end, I have three tasks I wish you to perform.
@@ -6404,9 +5233,8 @@ $dialog_quest48
 To an outsider's eyes, all may seem well with our nation, but naught could be further from the truth. The people live in a state of constant apprehension.
 == Для постороннего взгляда всё в нашем государстве может казаться благополучным, но ничто не может быть дальше от истины. Люди живут в постоянном страхе.
 
-$dialog_quest184
-With the passing of time, our nation became a gathering place for spearmasters from across the realm─many eager to test their mettle against the famed might of our Wood Wailers.
-== Со временем наше государство стало местом сбора мастеров копья со всего мира—многие стремились испытать свои силы против знаменитой мощи наших Лесных Стражей.
+Mouse max distance, in static camera mode
+== Максимальное расстояние мыши в режиме статической камеры
 
 $dialog_quest840
 Hi. There's a dungeon behind the cemetery. I don't know where it came from, but there's too many zombies. Can you figure it out? I'd appreciate it if you could kill 50 zombies.
@@ -6420,9 +5248,8 @@ $item_description82
 Universal iron armor
 == Универсальная железная броня
 
-$item_name17
-Little bag of gold
-== Маленький мешочек золота
+Full
+== Полный
 
 $item_name125
 Skull
@@ -6434,9 +5261,8 @@ Enchant item maximal count x1 in a backpack!
 Interval for displaying chat toplist messages (in seconds)
 == Интервал отображения сообщений топ-листа чата (в секундах)
 
-$dialog_quest276
-What's that? A dubious couple sporting peculiar spectacles? Hah hah hah!
-== Что это? Сомнительная пара в странных очках? Ха-ха-ха!
+Equip potion HP
+== Экипировать зелье HP
 
 $warehouse_name5
 Podyska perdyska
@@ -6450,9 +5276,8 @@ $warehouse_name1
 Weapons shop
 == Оружейная лавка
 
-$dialog_quest358
-They must not be allowed to succeed. And so I bid you go to Spirithold and do whatever is necessary to resolve the situation. Please, say you will help us.
-== Им нельзя позволить добиться успеха. Поэтому я прошу вас отправиться в Духоград и сделать всё необходимое для разрешения ситуации. Пожалуйста, скажите, что поможете нам.
+Interface server address (LAN page)
+== Адрес интерфейсного сервера (LAN-страница)
 
 $item_name74
 Adamantite ingot
@@ -6466,9 +5291,8 @@ $item_description27
 The usual iron pickaxe.
 == Обычная железная кирка.
 
-$item_description49
-It's a beautiful mask
-== Это красивая маска
+Not found!
+== Не найдено!
 
 $quest_name35
 Wizard | Dark shards
@@ -6490,25 +5314,21 @@ $dialog_quest70
 Ordinarily, the forest funguars that inhabit the Central Shroud are naught more than a nuisance.
 == Обычно лесные грибники, обитающие в Центральной Чаще, не более чем помеха.
 
-$item_description59
-Eidolon Merrilee
-== Эйдолон Меррил.
+Group commands
+== Команды группы
 
-$item_description36
-Empyrean Ring is an item level 1.
-== Эмпирейский Кольцо — предмет 1 уровня.
+Press hammer 'Fire', to pick up an item
+== Нажмите 'Огонь' молотком, чтобы поднять предмет
 
 $item_description106
 Concentrated poison
 == Концентрированный яд
 
-$item_description37
-Ring of Fidelity is an item level 1.
-== Кольцо Верности — предмет 1 уровня.
+Disassemble (+{}m)
+== Разобрать (+{}м)
 
-$dialog_quest33
-The Carline Canopy is the building you see behind me. Speak to Mother Miounne within, and she will take you in hand.
-== Крыша Карлайн — это здание, которое ты видишь за мной. Поговори с Матерью Миунн внутри, и она возьмет тебя в свои руки.
+Give item <clientid> <itemid> <count> <enchant> <mail 1=yes 0=no>
+== Дать предмет <clientid> <itemid> <count> <enchant> <mail 1=да 0=нет>
 
 $dialog_quest720
 Hi. Here's the thing. I can't handle a flying beast infestation on my own. If we don't do something now, it'll be too late. Why don't we reduce their population?
@@ -6522,9 +5342,8 @@ $item_name57
 EIDOL #1
 == ЭЙДОЛ #1.
 
-$dialog_quest501
-Roseline is right to be cautious. For this stranger to venture so close, yet to go to such great lengths to remain undetected, is highly suspicious. They clearly have designs on Bentbranch.
-== Розелин права, что насторожена. Для этого незнакомца, который так близко подошел, но очень старается остаться незамеченным, это крайне подозрительно. У них явно есть планы на Бентбранч.
+All the doors of the house were reversed!
+== Все двери дома перевернуты!
 
 $dialog_quest186
 That spear technique could be formalized at all owed much to the founding of the Lancers' Guild by Wood Wailer captain Mistalle nigh on a century past.
@@ -6537,8 +5356,8 @@ $dialog_quest1412
 Should you wish to delve further into the mysteries of conjury, then I urge you to consider joining our ranks.
 == Если вы хотите глубже погрузиться в тайны заклинательства, я настоятельно рекомендую вам вступить в наши ряды.
 
-Here you can change the settings of your account.
-== Здесь вы можете изменить настройки вашего аккаунта.
+Guild system
+== Система гильдий
 
 $dialog_quest151
 There is no better place to learn the arts of the bow. Speak with Athelyna, and she will explain the benefits of joining the guild.
@@ -6552,9 +5371,8 @@ $dialog_quest700
 Ah, there you are. I hear you're looking for a little adventure. Well, if you're really up for it, I've got something for you. But I'm warning you, it's no laughing matter. It's about Les. I'm short on supplies again. Bring 50 anole carcasses and 50 chigoe carcasses and their eggs, 25 apiece.
 == Ах, вот вы где. Я слышал, что вы ищете немного приключений. Ну, если вы действительно готовы, у меня есть кое-что для вас. Но я вас предупреждаю, это не шутка. Это касается Леса. У меня снова не хватает запасов. Принесите 50 трупов анолисов и 50 трупов чигой и их яйца, по 25 штук.
 
-$skill_name5
-Blessing of God of war
-== Благословение бога войны
+Item: {} x{}
+== Предмет: {} x{}
 
 $dialog_quest168
 It is the way of the guild to promote greatness in archery through friendly competition. And the results of our methods can be seen in the vaunted archers of the Gods' Quiver, many of whom spent their formative years loosing arrows at the guild's practice butts.
@@ -6568,8 +5386,8 @@ $dialog_quest572
 Seems I can't get through two bells these days without hearin' some new tale o' horrors in the Deepcroft or bandit cutthroats prowlin' the woods hereabouts. Makes me wonder if me chocobos are safe at night, it does. If we're ever in need of a 'venturer's skills, I hope you'll be around to lend a hand.
 == Похоже, в последнее время я не могу провести и двух часов, не услышав какую-нибудь новую историю об ужасах в Глубинном Склепе или бандитских головорезах, рыщущих по здешним лесам. Это заставляет меня задуматься, безопасны ли мои чокобо ночью. Если нам когда-нибудь понадобятся навыки искателя приключений, я надеюсь, ты будешь рядом, чтобы помочь.
 
-House decorations changes {}
-== Изменения в декоре дома {}
+Interval for displaying chat messages (in seconds)
+== Интервал отображения сообщений в чате (в секундах)
 
 $item_description85
 Thorny Ring is item level 1.
@@ -6583,9 +5401,8 @@ $dialog_quest252
 You would be surprised at how many young, promising soldiers get themselves killed by rushing off into the woods without first donning a decent set of armor.
 == Вы будете удивлены, как много молодых, многообещающих солдат погибают, бросаясь в лес, не надев подходящую броню.
 
-$dialog_quest272
-But tell me, what were you able to discover at Lifemend Stump?
-== Но скажи мне, что тебе удалось обнаружить у Пня Жизнедателя?
+create  
+== создать
 
 $quest_name18
 Salvaging the Scene
@@ -6596,15 +5413,14 @@ List of ranks ({} of {})
 
 $attribute11
 Efficiency
-== Эффективность
+== ЭФФК
 
-$dialog_quest293
-The chigoe, you see, is one of the few creatures capable of transmitting the disease known as the Creeping Death. Until relatively recently, any Hyur who contracted this ghastly illness would almost invariably perish.
-== Чигой, видите ли, является одним из немногих существ, способных передавать болезнь, известную как Ползучая Смерть. До относительно недавнего времени любой Хюр, который заразился этой ужасной болезнью, почти всегда умирал.
+General
+== Общие
 
-$dialog_quest532
-Knowing how absorbed the Hearer becomes in her work, I am not unduly concerned. Armelle, however, was responsible for organizing Leonnie's transportation and is likely wondering if her wayward passenger is ever going to arrive. Perhaps a gentle reminder is in order?
-== Зная, как поглощена Слушательница своей работой, я не слишком беспокоюсь. Однако Армель отвечала за организацию транспорта Леонни и, вероятно, задаётся вопросом, прибудет ли её непослушный пассажир. Может, стоит мягко напомнить?
+$dialog_npc240
+<player>, do you have any questions? I'm sorry, can't help you.
+== <player>, у тебя есть вопросы? Извини, не могу помочь.
 
 $dialog_quest581
 <player>, you must help me! I stepped out of the stables for but a moment, and when I returned it was gone!
@@ -6621,9 +5437,8 @@ Decoration for house!
 /group create - create a new group
 == /group create - создать новую группу
 
-$dialog_quest521
-We received a peddler at the gates the other day─an excitable Lalafell that was sweating and swearing that he had been attacked by large winged beasts. Yet other than hornets, I know of no flying creatures in this region.
-== На днях у ворот мы встретили торговца─взволнованного лалафелла, который потел и клялся, что на него напали большие крылатые существа. Однако, кроме шершней, я не знаю летающих существ в этом регионе.
+Get position by client (default self position)
+== Получить позицию от клиента (по умолчанию своя позиция)
 
 $dialog_quest370
 All this happened inside Spirithold? Twelve preserve us...
@@ -6637,9 +5452,8 @@ $attribute16
 Grenade DMG
 == Grenade УРН
 
-$dialog_quest473
-Bugger me, I think this belongs to that stranger said to be meddling with the chocobos! Thank you, adventurer. We have been lax in our duties, but no longer—I swear we will find this shadow.
-== Да вы шутите, я думаю, это принадлежит тому незнакомцу, который, как говорят, вмешивается в дела чокобо! Спасибо вам, искатель приключений. Мы были небрежны в своих обязанностях, но больше не будем — клянусь, мы найдем эту тень.
+Door list
+== Список дверей
 
 $item_name31
 Crate
@@ -6653,13 +5467,11 @@ $dialog_quest760
 Hi. Did you hear there's a ghost living in the swamps? Get rid of him. Only for sure. They say it keeps showing up. But try it anyway.
 == Привет. Ты слышал, что в болотах живет призрак? Избавься от него. Только наверняка. Говорят, он продолжает появляться. Но все равно попробуй.
 
-$item_description25
-Settings game.
-== Настройки игры.
+Experience multiplier for killing mobs
+== Множитель опыта за убийство мобов
 
-$dialog_quest82
-On behalf of my fellow citizens, I welcome you to Gridania. May you come to consider our nation as your own in time.
-== От имени моих сограждан я приветствую вас в Гридании. Надеюсь, со временем вы начнете считать нашу страну своей.
+⚖ Available daily  
+== ⚖ Доступно ежедневно
 
 $item_description76
 Mantle for Healer.
@@ -6669,13 +5481,12 @@ $dialog_quest560
 Might you assist me with another matter, <player>? A wagon that departed from Quarrymill was overturned on the road when some large, ill-tempered forest beast chose that moment to defend its territory.
 == Можешь ли ты помочь мне с другим делом, <player>? Повозка, отправившаяся из Карьерной Мельницы, перевернулась на дороге, когда какое-то большое, злобное лесное существо выбрало этот момент для защиты своей территории.
 
-$dialog_quest270
-<player>! It is good to see you back!
-== <player>! Рад видеть тебя снова!
+No
+== Нет
 
-$dialog_quest261
-I would assign you a mission of considerable import, yet the need for secrecy prevents me from disclosing its details until you have pledged your participation. I am authorized to tell you only that it concerns suspicious activity in the Twelveswood. Say that you will lend us your aid, and I shall proceed with the briefing.
-== Я бы поручил вам миссию большой важности, но необходимость сохранения секретности не позволяет мне раскрыть детали, пока вы не пообещаете участвовать. Мне разрешено сказать только, что это касается подозрительной активности в Двенадцатилесье. Скажите, что поможете нам, и я приступлю к инструктажу.
+$item_name135
+Hoarder's bag
+== Мешок собирателя
 
 $attribute15
 Shotgun DMG
@@ -6685,13 +5496,12 @@ $item_name85
 Thorny Ring
 == Колючее кольцо
 
-$dialog_quest46
-No matter your ambitions, the guild is here to help you attain them.
-== Не важно, какие у вас амбиции, гильдия здесь, чтобы помочь вам достичь их.
+Last seen in: {}
+== Последний раз видели в: {}
 
-$dialog_quest206
-But you need not locate them all at once. Before rushing out into the wilds, I suggest you start with the aetherytes found here in Gridania.
-== Но тебе не нужно находить их все сразу. Прежде чем броситься в дикие земли, я предлагаю начать с эфиритов, найденных здесь, в Гридании.
+$quest_name26
+Archer | The feathers?
+== Лучник | Перья?
 
 $dialog_quest341
 I'm not certain I should be the one to - By Nophica, that's an anole egg! The troops will be glad indeed to see one of these at table! And you say Hearer Pauline sent you on this errand?
@@ -6701,13 +5511,12 @@ $item_description105
 A little weak poison
 == Слабый яд
 
-$attribute10
-Ammo
-== АММО
+Level
+== Уровень
 
-$item_name32
-Surveyor's rope
-== Веревка геодезиста
+$item_name134
+Life crystal
+== Кристалл жизни
 
 $item_name48
 Artifact
@@ -6717,13 +5526,12 @@ $quest_name24
 The Gridanian Envoy
 == Посланник Гридании
 
-$item_name108
-Leather
-== Кожа
+LastStand
+== ПоследнийРубеж
 
-$dialog_quest3811
-But we were talking about you, Adventurer. You have made Mother proud. I expect great things of you, young man/lady!
-== Но мы говорили о тебе, Искатель приключений. Ты сделал Мать гордой. Я ожидаю от тебя великих дел, молодой человек/девушка!
+$item_description11
+Decoration for house!
+== Декорация для дома!
 
 $dialog_quest542
 I must abide a while longer, that I might better divine the source of the elementals' distress. Please inform Armelle that I shall be late in arriving.
@@ -6733,13 +5541,12 @@ $dialog_quest583
 You will help me, won't you, <player>? Oh, thank you, thank you!
 == Вы поможете мне, не так ли, <player>? О, спасибо, спасибо!
 
-$dialog_quest691
-I am most glad of that. Now, I hope you will not doubt the earnestness of my concern...but I would ask a favor of you. Nor can I deny that I summoned you here in part with this in mind. Know, however, that I proceed only upon the understanding that you are rested and well.
-== Я очень рад этому. Теперь, я надеюсь, вы не усомнитесь в искренности моей заботы... но я хочу попросить вас об одолжении. И не могу отрицать, что я вызвал вас сюда отчасти с этой целью. Однако знайте, что я действую только с пониманием того, что вы отдохнули и чувствуете себя хорошо.
+No guild slots available.
+== Нет доступных слотов гильдии.
 
-$dialog_quest340
-Who goes there! Oh, Adventurer, it's you. Hm? Another delivery?
-== Кто там! О, Искатель приключений, это ты. Хм? Еще одна доставка?
+$item_description29
+Coins that are given out for activity
+== Монеты, которые выдаются за активность
 
 $dialog_quest20
 Oh, hey! You look like you brought something.
@@ -6753,9 +5560,9 @@ $aether2
 Apartaments 1 (Left)
 == Апартаменты 1 (Слева)
 
-$dialog_quest540
-Yes, what troubles you, my de─? Ah. Yes. The boat. I had quite forgotten.
-== Да, что вас беспокоит, моя до─? Ах. Да. Лодка. Я совсем забыл.
+$dialog_quest202
+Aetherytes are devices that tap into aetherial energies, and are primarily used as a means to travel swiftly from one place to another.
+== Эфириты — это устройства, которые используют эфирные энергии и в основном используются для быстрого перемещения из одного места в другое.
 
 $dialog_quest551
 I shall organize a vessel for a later time, then. Perhaps a bell from now? Two? Better make it three, just to be safe. Thank you for your trouble.
@@ -6769,9 +5576,9 @@ $aether4
 Swamp (Left)
 == Болото (Слева)
 
-$dialog_quest322
-Their numbers have continued to grow since the advent of the Seventh Umbral Era, you see, forcing packs of the scalekin to come down from the mountains in search of food. If you could slay a handful of the beasts, that should lessen their need to hunt and also serve as a warning to the anoles to remain within their territory.
-== Их численность продолжала расти с наступлением Седьмой Эры Тьмы, понимаешь, что заставляет стаи чешуйчатых спускаться с гор в поисках пищи. Если бы ты мог убить несколько этих зверей, это уменьшило бы их потребность в охоте, а также послужило бы предупреждением анолам оставаться на своей территории.
+$attribute3
+Crit DMG
+== КРИТ УРН
 
 $dialog_quest394
 As a matter of fact, I've a task right here that wants doin'.
@@ -6785,13 +5592,12 @@ $dialog_quest11
 I have a little favor to ask of you. Do you see this <item_31>?
 == У меня к вам небольшая просьба. Видите этот <item_31>?
 
-$item_name130
-Iron Crate
-== Железный ящик
+Emoticon Exclamation
+== Эмотикон Восклицание
 
-$item_name84
-Adamantium armor
-== Адамантиевая броня
+$dialog_quest387
+Oh, and be sure to introduce yourself to Keitha, the head chocobo wrangler, when you arrive.
+== О, и не забудьте представиться Ките, главному конюху, когда прибудете.
 
 $item_name53
 Vampire hammer
@@ -6805,9 +5611,9 @@ $item_description103
 Conventional weapon
 == Обычное оружие
 
-$item_description1
-Major currency
-== Основная валюта
+$dialog_quest780
+Aapphpphpph. Hello stranger. You smell that foul odor. It's the mushrooms. They're getting big and plentiful. Please get rid of them. I think there's some kind of magic involved. Good luck, traveler.
+== Аппхппхппх. Здравствуй, незнакомец. Ты чувствуешь этот зловонный запах. Это грибы. Они становятся большими и многочисленными. Пожалуйста, избавься от них. Думаю, здесь замешана какая-то магия. Удачи, путешественник.
 
 $item_name103
 Magnetic Pulse
@@ -6821,9 +5627,9 @@ $dialog_quest148
 It took five long decades, but our forebears finally succeeded. Their reward: the elementals' permission to dwell in the Twelveswood. So it was that the nation of Gridania was born.
 == Потребовалось пять долгих десятилетий, но наши предки наконец добились успеха. Их наградой стало разрешение элементалов поселиться в Двенадцатилесье. Так родилась нация Гридания.
 
-$item_description52
-Armor that sucks the life
-== Броня, которая высасывает жизнь
+$item_name70
+Wheat
+== Пшеница.
 
 $dialog_quest650
 Well, well, if it isn't the Emissary himself/herself! Had I known you were coming, I would have baked a pie!
@@ -6837,9 +5643,9 @@ $dialog_quest265
 Suspecting a connection, we tightened our surveillance in hopes of tracking down our unknown visitor. Alas, our quarry is proving to be exceedingly elusive -- almost as if he knows our movements ahead of time.
 == Подозревая о связи, мы усилили наблюдение в надежде отследить нашего незнакомого посетителя. Увы, наша добыча оказывается чрезвычайно неуловимой — словно он заранее знает о наших передвижениях.
 
-$item_name7
-Material
-== Материал
+$dialog_quest73
+Though this is indeed a troubling development, the Gods' Quiver has more pressing concerns and can ill afford to waste time fighting funguars.
+== Хотя это действительно тревожное развитие, Укупорка Богов имеет более неотложные проблемы и не может позволить себе тратить время на борьбу с фунгуарами.
 
 $quest_name12
 You Shall Not Trespass
@@ -6853,9 +5659,8 @@ $item_name105
 Weak poison
 == Слабый яд
 
-$item_name142
-Dungeon King
-== Король Подземелья.
+Here you can choose the language.
+== Здесь вы можете выбрать язык.
 
 $quest_name7
 Eggs over Queasy
@@ -6868,9 +5673,8 @@ $quest_name8
 Surveying the Damage
 == Осмотр ущерба
 
-$dialog_quest630
-So you are <player>, the adventurer of whom I have heard so much. I understand you wish words with me.
-== Итак, ты <player>, искатель приключений, о котором я так много слышал. Я понимаю, что ты хочешь поговорить со мной.
+/house doors - settings door's
+== /house doors - настройки дверей
 
 $skill_description2
 Magnet mobs to itself
@@ -6884,9 +5688,9 @@ $item_name122
 Life Flower
 == Цветок жизни
 
-$dialog_quest149
-Since that time, the elementals have taught us to live as one with nature, speaking to all Gridanians through the Hearers─those mages who are able to commune with them.
-== С тех пор элементалы научили нас жить в гармонии с природой, общаясь со всеми гриданийцами через Послушников — тех магов, которые способны общаться с ними.
+$dialog_quest279
+Indeed, they often assist the Gods' Quiver and the Wood Wailers in their work -- much as I hope you will in the days to come, <player>.
+== Действительно, они часто помогают Божественному Колчану и Лесным Стражам в их работе—так же, как я надеюсь, будете помогать и вы в будущем, <player>.
 
 $dialog_quest300
 Such an embarrassing turn of events... I sent a recruit from the Bannock on a surveying expedition only for the craven to turn tail and flee at the first sign of trouble.
@@ -6900,9 +5704,9 @@ $dialog_quest144
 It was not until some five centuries ago that conjury emerged from this shapeless agglomeration of spells and charms─an event which led to the founding of Gridania.
 == Лишь около пяти веков назад колдовство выделилось из этой бесформенной массы заклинаний и чар — событие, которое привело к основанию Гридании.
 
-$dialog_quest392
-When the Elder Seedseer bade us welcome 'venturers, 'tis fair to say we had our doubts—till hardworkin' folks like yourself set about provin' us wrong, that is. Consider me a convert!
-== Когда Старшая Сеятельница велела нам приветствовать искателей приключений, честно говоря, у нас были сомнения—до тех пор, пока такие трудолюбивые люди, как вы, не доказали обратное. Считайте меня обращенным!
+$item_description6
+Conventional weapon
+== Обычное оружие.
 
 $dialog_quest359
 I knew you would not let me down. You will have all the support I can muster.
@@ -6920,9 +5724,8 @@ $dialog_quest380
 How is my favorite fresh-faced adventurer? Oh, do not scowl so—I speak out of habit. You've come a long way since you first walked through my door, and I'll not deny it.
 == Как поживает мой любимый свежеиспеченный искатель приключений? О, не хмурься так — я говорю по привычке. Ты прошел долгий путь с тех пор, как впервые переступил порог моего дома, и я не стану это отрицать.
 
-$dialog_quest211
-The three locations you visited will feature prominently in your life as an adventurer─it is best you grow familiar with them as soon as possible.
-== Три места, которые ты посетил, будут играть важную роль в твоей жизни как искателя приключений — лучше всего, если ты познакомишься с ними как можно скорее.
+Gold Boost
+== Увеличение золота
 
 $item_description5
 Conventional weapon
@@ -6936,9 +5739,9 @@ $dialog_quest145
 In those dark days, the elementals would not suffer man's presence in the Twelveswood, forcing our forebears to make their homes beneath the earth, in the great subterranean city of Gelmorra.
 == В те тёмные дни элементали не терпели присутствия людей в Двенадцатилесье, вынуждая наших предков селиться под землёй, в великом подземном городе Гельморра.
 
-$dialog_quest605
-Please make all haste─I have an irrepressible feeling that something terrible is about to happen.
-== Пожалуйста, поторопитесь─у меня непреодолимое чувство, что должно произойти что-то ужасное.
+$item_name23
+Survey records
+== Записи обследования
 
 $dialog_quest520
 You're quite the compassionate adventurer, by the sound of it. Well far be it from me to look a gift chocobo in the mouth─I have need of a capable [GENDER]/woman like yourself.
@@ -6952,9 +5755,9 @@ $item_description44
 Just leather bag.
 == Просто кожаная сумка.
 
-$dialog_npc210
-<player>, do you have any questions? I'm sorry, can't help you.
-== <player>, у тебя есть вопросы? Извини, не могу помочь.
+$item_description110
+The claws of the beast
+== Когти зверя.
 
 $dialog_quest472
 But wait—why would a traveler make camp here, when it would be far safer to beg the hospitality of Bentbranch Meadows?
@@ -6968,24 +5771,24 @@ $dialog_quest615
 Make what arrangements you can, and report back to me the moment you are ready.
 == Сделайте необходимые приготовления и доложите мне, как только будете готовы.
 
-$item_description41
-Compressed processed grass
-== Сжатая обработанная трава
+$item_name40
+Green grass
+== Зелёная трава
 
 $item_name106
 Poison
 == Яд
 
-$item_description15
-Recovers 7HP per second for 10 seconds.
-== Восстанавливает 7HP в секунду в течение 10 секунд.
+Equip shotgun
+== Экипировать дробовик
 
 $dialog_quest604
 In case it proved useful, I have committed the details of my sightings to parchment, and would ask that you deliver the document to Mother Miounne.
 == На случай, если это окажется полезным, я записал детали своих наблюдений на пергамент и прошу вас доставить документ Матери Миунн.
 
-Last login: {}
-== Последний вход: {}
+$item_name52
+Vampire armor
+== Броня вампира
 
 $dialog_quest207
 Should you wish to learn more about the aetheryte or transportation magic, I am here to answer your questions.
@@ -6999,9 +5802,9 @@ $dialog_quest393
 Anyroad, you've a mind to help out at the ranch, have you? Good. We could always do with a hand or two to keep the place runnin' smoothly.
 == В любом случае, ты хочешь помочь на ранчо, да? Хорошо. Нам всегда пригодится пара рук, чтобы поддерживать работу на месте.
 
-$dialog_quest1413
-I can begin your initiation whenever you desire. Call upon me when you are ready to take the first step.
-== Я могу начать твое посвящение, когда ты пожелаешь. Обратись ко мне, когда будешь готов сделать первый шаг.
+$item_name2
+Hammer
+== Молот
 
 $dialog_quest645
 Now, you had best get going—the ceremony cannot commence without the Emissary.
@@ -7015,9 +5818,9 @@ $dialog_quest531
 After tending to the Hedgetree, the Hearer was scheduled to board a boat from the Mirror Planks... Well, the vessel's departure time has come and gone, but there is still no sign of her.
 == После ухода за Хеджетри Послушница должна была сесть на лодку у Зеркальных Плашек... Что ж, время отправления судна прошло, но ее все еще нет.
 
-$skill_boost2
-radius
-== радиус.
+$dialog_quest75
+Don't you start with that. Adventurers are the very salve that Gridania needs.
+== Не начинайте с этого. Искатели приключений — это именно то, что нужно Гридании.
 
 $dialog_quest391
 I've heard many and more things about you—good things, lest you worry.
@@ -7030,9 +5833,9 @@ Miner's clothes
 - ✎ Slay enemies:
 == - ✎ Убить врагов:
 
-$item_description107
-Untreated Leather
-== Необработанная кожа
+$dialog_quest374
+Pray return to Gridania and seek out Miounne.
+== Пожалуйста, вернитесь в Гриданию и найдите Миунне.
 
 Join dungeon {}
 == Присоединиться к подземелью {}
@@ -7049,9 +5852,9 @@ $dialog_quest273
 A sword in the stump, and a dead Ixal? Hmmm...
 == Меч в пне и мертвый Иксал? Хммм...
 
-$dialog_quest712
-You─adventurer! Mind that you do not cause any trouble here, or I shall personally cast you out of this realm and into the seventh hell.
-== Ты — искатель приключений! Смотри, чтобы ты не устроил здесь никаких неприятностей, иначе я лично вышвырну тебя из этого мира в седьмой ад.
+$skill_description7
+Restores HP all nearby target's.
+== Восстанавливает Здоровье всем близким целям.
 
 Hammer
 == Молот
@@ -7063,9 +5866,9 @@ And it was that which set me to thinking... Ever since the appearance of the muc
 How long to show the server message of the day
 == Как долго показывать сообщение сервера дня
 
-$item_name86
-Thorny Necklace
-== Колючее ожерелье
+$item_description89
+Required to improve eidolons
+== Необходимо для улучшения эйдолонов
 
 $dialog_npc230
 <player>, do you have any questions? I'm sorry, can't help you.
@@ -7079,9 +5882,9 @@ $dialog_quest600
 My thanks for your kindness earlier. I hate to impose again, but I have need of your assistance in another matter─one of grave import, I fear.
 == Благодарю вас за вашу доброту ранее. Не хочу снова вас обременять, но мне нужна ваша помощь в другом деле─очень важном, боюсь.
 
-$dialog_quest210
-The conquering hero returns. You have completed my little tasks, I trust?
-== Возвращается герой-победитель. Ты выполнил мои маленькие задания, я надеюсь?
+$dialog_quest192
+The master merchant can be...uncooperative at times, so be sure to offer him one of my famous eel pies. Like so many men, he is much more charitable when his stomach is full. Here, I made a batch not long ago.
+== Главный купец может быть... невыгодным время от времени, так что не забудьте предложить ему один из моих известных угревых пирогов. Как и многие мужчины, он намного более щедрый, когда его живот полон. Вот, я приготовил партию не так давно.
 
 $dialog_quest671
 Ahhh...this is by far the finest Monoa mask I have ever laid eyes upon. The timbermaster has truly outdone himself this time.
@@ -7095,9 +5898,9 @@ $item_name67
 Strawberries
 == Клубника
 
-$skill_boost7
-% adds a health bonus
-== % добавляет бонус к здоровью
+$dialog_quest400
+Seven hells! Some bastard Qiqirn has gone and broken one of me chocobo eggs!
+== Семь адов! Какой-то ублюдок Кикирн сломал одно из моих яиц чокобо!
 
 $item_name55
 Titanium ore
@@ -7111,9 +5914,9 @@ $dialog_quest301
 This is not how we treat requests from the conjurers! And as if such a poor showing weren't bad enough, the lily-livered half-wit left behind the surveying equipment provided by Hearer Pauline herself!
 == Это не то, как мы обращаемся с просьбами от заклинателей! И как будто такого плохого поведения было недостаточно, этот трусливый недоумок оставил оборудование для обследования, предоставленное самой Слушательницей Полин!
 
-$dialog_quest390
-You must be the 'venturer Miounne sent word about. I'm Keitha, head wrangler 'round these parts.
-== Должно быть, вы тот искатель приключений, о котором говорила Миунн. Я Кита, главный конюх в этих краях.
+$item_description120
+One of the items to create a guild
+== Один из предметов для создания гильдии
 
 $dialog_quest362
 Doubtless you already know this, but a towering shadow manifested without warning and attacked the Hearer in the midst of the rite.
@@ -7127,9 +5930,9 @@ $dialog_quest352
 Listen well, for we haven't much time.
 == Слушай внимательно, у нас не так много времени.
 
-$dialog_quest3510
-Now, we are racing against time, so you had best make haste.
-== Теперь мы боремся со временем, так что вам лучше поторопиться.
+$dialog_quest185
+And it was here in Gridania that their myriad fighting styles came into contact, eventually giving rise to the art taught here today.
+== И именно здесь, в Гридании, их множество боевых стилей встретились, в конечном итоге дав начало искусству, которое обучают здесь сегодня.
 
 $dialog_quest240
 I see you are eager to lend a hand, <player>. That is well. But I cannot in good conscience send you into the forest until I have established that your equipment is equal to the task.
@@ -7143,9 +5946,9 @@ $dialog_quest60
 Don't you start with that. Adventurers are the very salve that Gridania needs.
 == Не начинай с этого. Искатели приключений — это именно то, что нужно Гридании.
 
-$dialog_quest491
-A shadowy figure... Understood. I'll pass word to the recruits as well as the sentries.
-== Темная фигура... Понял. Я передам слово новобранцам, а также часовым.
+$attribute17
+Rifle DMG
+== Rifle УРН
 
 $skill_description4
 You can perform an automatic fire
@@ -7159,9 +5962,9 @@ $dialog_quest430
 Ho there, adventurer. You seem light on your feet. Fancy a quick skip along the root of the heavenspillar here? I need someone to pick off a blue trumpet or two.
 == Эй, искатель приключений. Вы кажетесь проворным. Не хотите ли быстро пробежаться по корню небесного столпа? Мне нужно, чтобы кто-то сорвал пару синих труб.
 
-$item_name88
-EIDOL #4
-== ЭЙДОЛ #4.
+$dialog_quest251
+Hmmm... Yes, I think you pass muster.
+== Хммм... Да, я думаю, вы прошли испытание.
 
 Level {}, Exp {}/{}
 == Ур {}, Опыт {}/{}
@@ -7178,9 +5981,9 @@ $dialog_quest40
 Well, well, what have we here?
 == Ну-ну, что у нас здесь?
 
-$quest_name5
-Passing Muster
-== Комплексное испытание
+$item_name144
+DMG Lord
+== Лорд Урона
 
 $quest_name9
 A Soldier's Breakfast
@@ -7194,13 +5997,12 @@ $dialog_quest267
 Fear and anxiety are beginning to take their toll upon the citizenry, <player>. For their sake, I ask that you aid us in this investigation.
 == Страх и тревога начинают сказываться на горожанах, <player>. Ради них я прошу вас помочь нам в этом расследовании.
 
-$dialog_quest1611
-Before you can enlist, however, you must gain the approval of the guildmaster. Once you are ready to proceed, speak with me again and we can begin seeing about your enrollment.
-== Однако, прежде чем ты сможешь записаться, тебе нужно получить одобрение мастера гильдии. Когда будешь готов продолжить, поговори со мной снова, и мы начнем оформлять твое зачисление.
+$dialog_quest740
+Hi. I need iron, as always. Not many people are helping. Bring me 25 bars of iron. I really need them to make arrows.
+== Привет. Мне нужно железо, как всегда. Не многие помогают. Принесите мне 25 железных слитков. Они мне действительно нужны для изготовления стрел.
 
-$item_name132
-Mana Cloak
-== Плащ маны
+Chance (in percent) for Skill Points to drop from regular mobs
+== Шанс (в процентах) выпадения очков навыков с обычных мобов
 
 $item_name16
 Capsule survival experience
@@ -7210,9 +6012,9 @@ $dialog_quest141
 It is at Miounne's request that you have come? Then allow me to provide you with an overview of what it is to be a conjurer.
 == Это по просьбе Миунне вы пришли? Тогда позвольте мне дать вам представление о том, что значит быть конжурером.
 
-$item_name75
-Eternal Sun Belt
-== Пояс Вечного Солнца.
+$dialog_quest314
+We can no longer rely on our past knowledge of the Twelveswood. If we are to survive these troubled times, we must reacquaint ourselves with our surroundings, that we may better discern the threats we face. Stay vigilant, adventurer
+== Мы больше не можем полагаться на наши прошлые знания о Двенадцатилесье. Если мы хотим выжить в эти трудные времена, мы должны заново познакомиться с нашим окружением, чтобы лучше распознавать угрозы. Будьте бдительны, искатель приключений.
 
 $dialog_quest656
 Go to the Carpenters' Guild and collect it from the man, then return to me for further instructions.
@@ -7225,9 +6027,9 @@ $item_description83
 Universal titanium armor
 == Универсальная титановая броня.
 
-$quest_name22
-Festive Endeavors
-== Праздничные усилия
+$item_name80
+EIDOL #3
+== ЭЙДОЛ #3.
 
 $dialog_quest636
 Ah, would that the Warriors of Light were still with us...
@@ -7241,9 +6043,9 @@ $dialog_quest684
 Oh, and be sure to wear your mask or she may not recognize you. Now, off you go, <player>, and good luck!
 == О, и не забудьте надеть маску, иначе она может вас не узнать. Итак, вперед, <player>, удачи!
 
-$attribute2
-Attack SPD
-== СКР. АТК
+$dialog_quest189
+The Lancers' Guild is always eager to welcome new initiates.
+== Гильдия копейщиков всегда рада приветствовать новых учеников.
 
 Group membership list
 == Список участников группы
@@ -7256,9 +6058,9 @@ $item_description74
 Adamantite ingot
 == Адамантиновый слиток.
 
-$item_name114
-Rotten meat
-== Гнилое мясо
+$dialog_quest620
+Time is of the essence, so I shall speak plain.
+== Время на исходе, поэтому я буду говорить прямо.
 
 $dialog_quest372
 Well, I shan't find any answers on my own. I must needs discuss this with Galfrid. The matter warrants a full investigation, if I am any judge, and that shall certainly be my recommendation.
@@ -7272,9 +6074,9 @@ $dialog_quest502
 We appreciate the help. I should write my name here, yes?
 == Мы ценим помощь. Я должен написать свое имя здесь, да?
 
-$dialog_quest313
-With the changes wrought by the Calamity, I thought it wise to send the Order of the Twin Adder on a number of expeditions to map the region's topography. As fortune would have it, the officers saw these tasks as an excellent opportunity to train inexperienced soldiers.
-== С изменениями, вызванными Катаклизмом, я решил, что было бы разумно отправить Орден Двойной Гадюки на несколько экспедиций для картирования топографии региона. Как посчастливилось, офицеры сочли эти задачи отличной возможностью для обучения неопытных солдат.
+$dialog_quest644
+There are preparations that the Emissary must needs complete ahead of time. I suggest you consult Miounne regarding the matter—she is overseeing the arrangements for the event.
+== Есть приготовления, которые Посланник должен завершить заранее. Я предлагаю вам проконсультироваться с Миунн по этому поводу—она курирует подготовку к мероприятию.
 
 $skill_description8
 Aggresses mobs in case of weak aggression
@@ -7288,9 +6090,9 @@ $dialog_quest292
 Lest you wonder, these egg sacs are not destined for the dinner table! Members of the Twin Adder and the Wood Wailers are assisting the league by collecting the samples they need to check for signs of sickness.
 == Чтобы вы не сомневались, эти яичные мешки не предназначены для обеденного стола! Члены Двойной Гадюки и Лесные Стражи помогают лиге, собирая образцы, необходимые для проверки на признаки болезни.
 
-$item_description91
-Generates ammunition
-== Генерирует боеприпасы
+$dialog_quest294
+Indeed, a single outbreak once claimed the lives of a third of the Hyuran population here in Gridania. That was a long time ago, of course. With the medicines available to us now, the Creeping Death is not the killer it once was.
+== Действительно, одна вспышка когда-то унесла жизни трети хюранского населения Гридании. Это было давно, конечно. Сейчас, с доступными нам лекарствами, Ползучая смерть уже не так смертоносна, как раньше.
 
 $dialog_quest49
 The Ixal and various gangs of common bandits provide an unending supply of trouble─trouble compounded by the ever-present threat of the Garlean Empire to the north. And that is to say nothing of the Calamity...
@@ -7307,9 +6109,9 @@ $item_description122
 Life pours out of this flower
 == Жизнь изливается из этого цветка
 
-$item_name44
-Leather bag
-== Кожаная сумка.
+$item_description92
+A spider's web
+== Паутина
 
 $dialog_quest500
 You have business with me, adventurer?
@@ -7323,9 +6125,9 @@ $dialog_quest672
 In case he didn't mention, the mask is crafted from consecrated lumber rendered up by the Guardian Tree, solely for use in the ceremony. In other words, it is priceless—Mother bids you to handle it with care.
 == На случай, если он не упомянул, маска сделана из освящённой древесины, предоставленной Древом-Хранителем, исключительно для использования в церемонии. Другими словами, она бесценна—Мать велит вам обращаться с ней осторожно.
 
-$item_name139
-WarLord
-== Властелин Войны.
+$dialog_quest2610
+Be forewarned: my people cannot offer you support, lest our quarry catch scent of our presence and evade us yet again. Proceed with caution.
+== Предупреждаю: мои люди не могут предложить вам поддержку, чтобы наша цель не учуяла наше присутствие и не ускользнула снова. Действуйте осторожно.
 
 In this section you can choose a dungeon
 == В этом разделе вы можете выбрать подземелье
@@ -7337,9 +6139,9 @@ $dialog_quest164
 The first was devised by the longbow sentries of the Elezen who once ruled the lowlands, while the second belonged to the shortbow hunters of the formerly nomadic Miqo'te. As you will doubtless be aware, both races ultimately came to call the Twelveswood home.
 == Первый стиль был разработан лучниками-часовыми элезен, которые когда-то правили низменностями, а второй принадлежал охотникам с короткими луками из ранее кочевых мико'те. Как вы, несомненно, знаете, обе расы в итоге стали называть Двенадцатилесье своим домом.
 
-$attribute1
-DMG
-== УРН
+$dialog_quest730
+Stranger, we all need your help. We're under attack by flying beasts. Please help us.
+== Незнакомец, нам всем нужна ваша помощь. Мы подвергаемся нападению летающих тварей. Пожалуйста, помогите нам.
 
 $dialog_quest820
 Hello, stranger. Between the prairie and the plain, there's some kind of creature. It changes color. It's very frightening to the people of Gridania. You can reduce their numbers. Destroy 25 of the creatures.
@@ -7352,9 +6154,9 @@ $dialog_quest582
 I— What was gone? An egg! Sorry? You are sure the chocobos will lay another!? Gah! You do not understand—the egg is extremely valuable! I must find it!
 == Я... Что пропало? Яйцо! Прости? Ты уверен, что чокобо снесут еще одно!? Ах! Ты не понимаешь — это яйцо чрезвычайно ценно! Я должен найти его!
 
-$dialog_quest403
-Would you mind headin' over to the Matron's Lethe and havin' a word with a soldier named Roseline for me? The ratmen nest in her neck of the woods, see... She'll know what to do.
-== Не могли бы вы зайти на Матроннный Лет и поговорить с солдатом по имени Розелин за меня? Крысуподобные существа гнездятся в её округе, понимаете... Она знает, что делать.
+$item_description75
+Eternal Sun Belt is an item level 1.
+== Пояс Вечной Солнце — предмет 1 уровня.
 
 $quest_name4
 To the Bannock
@@ -7368,9 +6170,8 @@ $dialog_quest72
 We periodically cull the funguar population in order to prevent such occurrences, but the creatures have taken to spawning out of season, making it ever more difficult to keep their numbers in check.
 == Мы периодически сокращаем популяцию грибников, чтобы предотвратить такие случаи, но существа начали размножаться вне сезона, что делает контроль их численности всё более сложным.
 
-$quest_name32
-Lancer | Dynamite hunt
-== Копейщик | Охота на динамит.
+✧ Bank Management  
+== ✧ Управление банком
 
 $dialog_quest371
 Who was that masked mage, and by what dark ambition is he driven? SO many things shrouded in mystery...
@@ -7384,9 +6185,9 @@ $quest_name15
 Threat Level Elevated
 == Уровень угрозы повышен
 
-$dialog_quest76
-The Elder Seedseer herself bade us welcome them with open arms. Do you mean to disregard her will?
-== Сама Старшая Семяувидка велела нам приветствовать их с открытыми объятиями. Вы хотите игнорировать её волю?
+$dialog_quest110
+Ordinarily, the forest funguars that inhabit the Central Shroud are naught more than a nuisance.
+== Обычно лесные фунгуа, которые обитают в Центральной Завесе, не более чем досадная проблема.
 
 $dialog_quest584
 Someone must have made off with it. There can be no other explanation. I shall scour every ilm of the stable once more just to be sure. While I do so, I should be very grateful if you would ask the others if they noticed anything unusual.
@@ -7400,9 +6201,9 @@ $dialog_quest541
 Hm? Oh, my task with the Hedgetree is well and finished, but the elementals murmur of a malevolent presence in the vicinity of the Tam-Tara Deepcroft.
 == Хм? О, мое задание с Хеджетри завершено, но элементалы шепчут о зловещем присутствии в окрестностях Глубинного Склепа Тама-Тара.
 
-$dialog_quest622
-The tree is the oldest living thing in this ancient forest, and it is held sacred by every forestborn Gridanian.
-== Это дерево — самое древнее живое существо в этом древнем лесу, и оно считается священным для каждого лесного жителя Гридании.
+$dialog_quest440
+Oh, you've cleared the root of blue trumpets? Wonderful! To be quite honest, I have this teeny-tiny problem with heights. <sigh> No, this is not my ideal posting, but we all do what we must.
+== О, вы очистили корень синих трубочек? Замечательно! Честно говоря, у меня есть небольшая проблема с высотой. <вздох> Нет, это не моё идеальное место, но мы все делаем то, что должны.
 
 $dialog_quest113
 Though this is indeed a troubling development, the Gods' Quiver has more pressing concerns and can ill afford to waste time fighting funguars.
@@ -7415,9 +6216,8 @@ Farm-grown Wheat
 House: '{}' have been is released!
 == Дом: '{}' освобожден!
 
-$dialog_quest302
-While I attempt to instill some backbone into this so-called “soldier,” would you mind recovering the survey gear and returning it to Hearer Pauline at Gabineaux's Bower?
-== Пока я пытаюсь вдохнуть немного мужества в этого так называемого "солдата", не могли бы вы найти снаряжение для обследования и вернуть его Слушательнице Полин в Беседку Габино?
+☫ Guild Management  
+== ☫ Управление гильдией
 
 $item_description4
 Conventional weapon
@@ -7434,13 +6234,11 @@ $item_name94
 Pickup Laser
 == Лазерный захват
 
-$dialog_quest320
-I hesitate to make such a dangerous, request, but might you assist us in thinning the number of anoles on Naked Rock?
-== Я колеблюсь делать такой опасный запрос, но не могли бы вы помочь нам сократить количество анол на Голой скале?
+Leveling (Other professions)
+== Повышение уровня (Другие профессии)
 
-$item_name36
-Empyrean Ring
-== Эмпирейское кольцо.
+:: Crit damage: {}p.
+== :: Крит. урон: {}p.
 
 $attribute13
 Hammer DMG
@@ -7450,9 +6248,9 @@ $item_name26
 Iron rake
 == Железные грабли
 
-$item_name115
-Magic Matter
-== Магическая материя
+$dialog_quest530
+I have another task for you, adventurer. I need you to head to the Hedgetree to the southwest of here and speak with Hearer Leonnie.
+== У меня есть еще одно задание для тебя, искатель приключений. Мне нужно, чтобы ты отправился к Хеджетри на юго-запад отсюда и поговорил с Послушницей Леонни.
 
 $dialog_quest47
 In return, we expect you to fulfill your duties as an adventurer by assisting the people of Gridania. A fine deal, wouldn't you agree?
@@ -7466,9 +6264,9 @@ $dialog_quest165
 Though the two peoples began as rivals, they gradually learned to live together in harmony. During this time, they learned from one another, their two schools of archery intermingling to give birth to the art as it is known today.
 == Хотя два народа начали как соперники, они постепенно научились жить вместе в гармонии. За это время они учились друг у друга, их две школы стрельбы из лука смешались, чтобы породить искусство, известное сегодня.
 
-$dialog_quest389
-By the way, have you perchance heard about the coming festival? It is truly a splendid occasion, looked forward to by young and old alike, and I heartily recommend that you take the time to enjoy.
-== Кстати, ты случайно не слышал о предстоящем фестивале? Это действительно великолепное событие, которого с нетерпением ждут и молодые, и старые, и я настоятельно рекомендую тебе найти время, чтобы насладиться им.
+$item_name129
+Wooden Crate
+== Деревянный ящик
 
 Language
 == Язык
@@ -7480,9 +6278,9 @@ $dialog_quest591
 And yet, I find that I am still troubled... While this whole regrettable episode unfolded, I bore witness to a sight that greatly concerned me..
 == И все же я обнаруживаю, что все еще обеспокоен... Пока разворачивался весь этот прискорбный эпизод, я стал свидетелем зрелища, которое меня сильно встревожило.
 
-$dialog_quest242
-I suggest you take some time to evaluate your equipment. Once you deem your armor to be of sufficient quality, present yourself to me for inspection.
-== Я предлагаю вам потратить немного времени на оценку вашего снаряжения. Как только вы сочтете вашу броню достаточного качества, представьтесь мне для проверки.
+$dialog_quest184
+With the passing of time, our nation became a gathering place for spearmasters from across the realm─many eager to test their mettle against the famed might of our Wood Wailers.
+== Со временем наше государство стало местом сбора мастеров копья со всего мира—многие стремились испытать свои силы против знаменитой мощи наших Лесных Стражей.
 
 $dialog_quest180
 Welcome to the Lancers' Guild. I see you brought your own spear.
@@ -7495,8 +6293,9 @@ $dialog_npc100
 House is sold.
 == Дом продан.
 
-It has a delicate pink color, likes to eat everything green.
-== Он имеет нежный розовый цвет, любит есть все зеленое.
+$item_name17
+Little bag of gold
+== Маленький мешочек золота
 
 $item_name149
 King of Gold
@@ -7510,9 +6309,9 @@ $item_description127
 Very explosive
 == Очень взрывоопасно
 
-$item_description130
-Iron Crate
-== Железный ящик
+$dialog_quest276
+What's that? A dubious couple sporting peculiar spectacles? Hah hah hah!
+== Что это? Сомнительная пара в странных очках? Ха-ха-ха!
 
 $item_name34
 Show critical damage
@@ -7526,9 +6325,9 @@ $dialog_quest161
 Ah, now that I think on it, you have the look of one who has received Mother Miounne's “gentle” instruction. Very well, I shall give you a brief introduction to archery and the Archers' Guild.
 == Ах, теперь, когда я подумал, у тебя вид того, кто получил "мягкое" наставление Матери Миунн. Очень хорошо, я дам тебе краткое введение в стрельбу из лука и Гильдию лучников.
 
-$dialog_quest280
-<player>, injuries to several of my men have left me shorthanded, and I require a capable sort to complete their unfinished duty.
-== <player>, травмы нескольких моих людей оставили меня без достаточного количества рук, и мне нужен способный человек, чтобы завершить их незаконченную работу.
+$dialog_quest358
+They must not be allowed to succeed. And so I bid you go to Spirithold and do whatever is necessary to resolve the situation. Please, say you will help us.
+== Им нельзя позволить добиться успеха. Поэтому я прошу вас отправиться в Духоград и сделать всё необходимое для разрешения ситуации. Пожалуйста, скажите, что поможете нам.
 
 $item_description7
 Required to improve weapons
@@ -7542,8 +6341,8 @@ $dialog_quest402
 Somethin' has to be done about those Qiqirn...
 == Что-то нужно сделать с этими Кикирнами...
 
-Has a strong attack, but cannot use anything.
-== Имеет сильную атаку, но не может использовать ничего.
+Achievement '{}' will be soon completed!
+== Достижение '{}' скоро будет завершено!
 
 $dialog_quest452
 Which reminds me—mayhap it was my imagination, but I believe I caught a glimpse of some shadowy fellow not too long ago. Would you mind passing word to Roseline down below? I would go myself but, well...it's hard enough marshaling the courage to walk the root for my shift...
@@ -7561,9 +6360,9 @@ $dialog_quest30
 Another green adventurer, I presume?
 == Ещё один зелёный искатель приключений, полагаю?
 
-$item_description54
-Ordinary iron ore
-== Обычная железная руда
+$item_description59
+Eidolon Merrilee
+== Эйдолон Меррил.
 
 $item_name42
 Titanium rake
@@ -7575,9 +6374,9 @@ Objective: Write in the chat: '{}'
 Interval update tile text
 == Интервал обновления текста тайлов
 
-$dialog_npc180
-<player>, do you have any questions? I'm sorry, can't help you.
-== <player>, у вас есть вопросы? Извините, не могу помочь.
+$dialog_quest33
+The Carline Canopy is the building you see behind me. Speak to Mother Miounne within, and she will take you in hand.
+== Крыша Карлайн — это здание, которое ты видишь за мной. Поговори с Матерью Миунн внутри, и она возьмет тебя в свои руки.
 
 $item_name133
 Advanced Combat Techniques
@@ -7591,9 +6390,9 @@ $item_name140
 Legend of the DM
 == Легенда о DM.
 
-$item_name146
-Lord of the Ore
-== Лорд Руды.
+$dialog_quest501
+Roseline is right to be cautious. For this stranger to venture so close, yet to go to such great lengths to remain undetected, is highly suspicious. They clearly have designs on Bentbranch.
+== Розелин права, что насторожена. Для этого незнакомца, который так близко подошел, но очень старается остаться незамеченным, это крайне подозрительно. У них явно есть планы на Бентбранч.
 
 $dialog_quest562
 Simply follow the road here to the south and you should come across the wreckage. Salvage what cargo you can, and deliver it to Keitha at Bentbranch Meadows if you would be so kind.
@@ -7605,9 +6404,8 @@ Chance (in percent) for Skill Points to drop from rare mobs
 {} of {} completed (progress {}%)
 == {} из {} завершено (прогресс {}%)
 
-$dialog_quest295
-Even so, it is best to halt any new outbreaks before they occur. Thus we gather chigoe eggs on a regular basis in order to assist the Trappers' League with their ongoing research. Your timely assistance is most appreciated.
-== Тем не менее, лучше предотвратить новые вспышки до их возникновения. Поэтому мы регулярно собираем яйца чиго, чтобы помочь Лиге ловцов в их исследованиях. Ваша своевременная помощь очень ценится.
+Here you can change the settings of your account.
+== Здесь вы можете изменить настройки вашего аккаунта.
 
 $item_name82
 Iron armor
@@ -7619,9 +6417,9 @@ Leveling (War professions)
 Here you can securely store your gold. Remember, gold in the Bank is protected and will never be lost, even in death.
 == Здесь вы можете безопасно хранить свое золото. Помните, золото в банке защищено и никогда не будет потеряно, даже после смерти.
 
-$quest_name21
-To Guard a Guardian
-== Защита Хранителя
+$skill_name5
+Blessing of God of war
+== Благословение бога войны
 
 $item_description128
 Spider Egg
@@ -7635,9 +6433,8 @@ $item_description100
 Pizdamet
 == Пиздамет
 
-$dialog_quest354
-Desiring to offer the ruins back to the forest, a Hearer ventured inside to carry out the Rite of Returning.
-== Желая вернуть руины лесу, Слушатель отправился внутрь, чтобы провести Обряд Возвращения.
+House decorations changes {}
+== Изменения в декоре дома {}
 
 $quest_name6
 Chasing Shadows
@@ -7650,8 +6447,9 @@ Iron ingot
 Increased the skill ['{}' level to '{}'].
 == Увеличено умение ['{}' до уровня '{}'].
 
-Members changes {}
-== Изменения в участниках {}
+$dialog_quest272
+But tell me, what were you able to discover at Lifemend Stump?
+== Но скажи мне, что тебе удалось обнаружить у Пня Жизнедателя?
 
 $item_description104
 A strand of spider web
@@ -7664,10 +6462,994 @@ Hammer Lamp
 House doors changes {}
 == Изменения в дверях дома {}
 
-'{}' joined to Dungeon '{}'!
-== '{}' присоединился к подземелью '{}'!
+$dialog_quest293
+The chigoe, you see, is one of the few creatures capable of transmitting the disease known as the Creeping Death. Until relatively recently, any Hyur who contracted this ghastly illness would almost invariably perish.
+== Чигой, видите ли, является одним из немногих существ, способных передавать болезнь, известную как Ползучая Смерть. До относительно недавнего времени любой Хюр, который заразился этой ужасной болезнью, почти всегда умирал.
 
 $dialog_quest268
 You have my gratitude. With your help, I am hopeful we will shed light upon this mystery.
 == Вы заслужили мою благодарность. С вашей помощью я надеюсь пролить свет на эту тайну.
+
+/house doors open_all - open all door's
+== /house doors open_all - открыть все двери
+
+Equip rake
+== Экипировать грабли
+
+Accounts bans
+== Баны Аккаунтов
+
+help  
+== помощь
+
+Criteria
+== Критерии
+
+Emoticon Drop
+== Эмотикон Drop
+
+Class profession: {}
+== Профессия класса: {}
+
+⚰ Equipments  
+== ⚰ Снаряжение
+
+name  
+== имя
+
+You don't have a hammer equipped.
+== У вас не экипирован молот.
+
+Generate money bag per minute (in minutes)
+== Генерация мешка с деньгами в минуту (в минутах)
+
+$item_description25
+Settings game.
+== Настройки игры.
+
+$dialog_quest521
+We received a peddler at the gates the other day─an excitable Lalafell that was sweating and swearing that he had been attacked by large winged beasts. Yet other than hornets, I know of no flying creatures in this region.
+== На днях у ворот мы встретили торговца─взволнованного лалафелла, который потел и клялся, что на него напали большие крылатые существа. Однако, кроме шершней, я не знаю летающих существ в этом регионе.
+
+Active bonuses ⚖
+== Активные бонусы ⚖
+
+Accept the offer.
+== Принять предложение.
+
+$dialog_quest270
+<player>! It is good to see you back!
+== <player>! Рад видеть тебя снова!
+
+$dialog_quest473
+Bugger me, I think this belongs to that stranger said to be meddling with the chocobos! Thank you, adventurer. We have been lax in our duties, but no longer—I swear we will find this shadow.
+== Да вы шутите, я думаю, это принадлежит тому незнакомцу, который, как говорят, вмешивается в дела чокобо! Спасибо вам, искатель приключений. Мы были небрежны в своих обязанностях, но больше не будем — клянусь, мы найдем эту тень.
+
+Emoticon Sorry
+== Эмотикон Извинение
+
+Emoticon Music
+== Эмотикон Музыка
+
+$dialog_quest46
+No matter your ambitions, the guild is here to help you attain them.
+== Не важно, какие у вас амбиции, гильдия здесь, чтобы помочь вам достичь их.
+
+$dialog_quest82
+On behalf of my fellow citizens, I welcome you to Gridania. May you come to consider our nation as your own in time.
+== От имени моих сограждан я приветствую вас в Гридании. Надеюсь, со временем вы начнете считать нашу страну своей.
+
+Equip potion MP
+== Экипировать зелье MP
+
+Disable clipping
+== Отключить обрезку
+
+$attribute10
+Ammo
+== АММО
+
+$dialog_quest261
+I would assign you a mission of considerable import, yet the need for secrecy prevents me from disclosing its details until you have pledged your participation. I am authorized to tell you only that it concerns suspicious activity in the Twelveswood. Say that you will lend us your aid, and I shall proceed with the briefing.
+== Я бы поручил вам миссию большой важности, но необходимость сохранения секретности не позволяет мне раскрыть детали, пока вы не пообещаете участвовать. Мне разрешено сказать только, что это касается подозрительной активности в Двенадцатилесье. Скажите, что поможете нам, и я приступлю к инструктажу.
+
+Aethernet information
+== Информация о сети Эфира
+
+Admission price: {} gold
+== Цена входа: {} золота
+
+$item_name108
+Leather
+== Кожа
+
+$dialog_quest206
+But you need not locate them all at once. Before rushing out into the wilds, I suggest you start with the aetherytes found here in Gridania.
+== Но тебе не нужно находить их все сразу. Прежде чем броситься в дикие земли, я предлагаю начать с эфиритов, найденных здесь, в Гридании.
+
+Your guild doesn't have enough gold.
+== У вашей гильдии недостаточно золота.
+
+Add. (Amount in a reason)
+== Добавить. (Сумма в причине)
+
+$dialog_quest691
+I am most glad of that. Now, I hope you will not doubt the earnestness of my concern...but I would ask a favor of you. Nor can I deny that I summoned you here in part with this in mind. Know, however, that I proceed only upon the understanding that you are rested and well.
+== Я очень рад этому. Теперь, я надеюсь, вы не усомнитесь в искренности моей заботы... но я хочу попросить вас об одолжении. И не могу отрицать, что я вызвал вас сюда отчасти с этой целью. Однако знайте, что я действую только с пониманием того, что вы отдохнули и чувствуете себя хорошо.
+
+$item_name32
+Surveyor's rope
+== Веревка геодезиста
+
+/voucher <voucher> - get voucher special items.
+== /voucher <ваучер> - получить специальные предметы по ваучеру.
+
+Gold spent on upgrades will not be refunded.
+== Золото, потраченное на улучшения, не возвращается.
+
+Potion HP recast: {}
+== Перезарядка зелья HP: {}
+
+$dialog_quest3811
+But we were talking about you, Adventurer. You have made Mother proud. I expect great things of you, young man/lady!
+== Но мы говорили о тебе, Искатель приключений. Ты сделал Мать гордой. Я ожидаю от тебя великих дел, молодой человек/девушка!
+
+Begin dialogue: \"hammer hit\"
+== Начать диалог: \"удар молотком\"
+
+Buying a house you will need to constantly the Treasury
+== Покупая дом, вам нужно будет постоянно пополнять казну
+
+Emoticon Hearts
+== Эмотикон Сердца
+
+$dialog_quest340
+Who goes there! Oh, Adventurer, it's you. Hm? Another delivery?
+== Кто там! О, Искатель приключений, это ты. Хм? Еще одна доставка?
+
+A Money Bag has appeared in the area! Who will claim it?
+== В области появился мешок с деньгами! Кто заберет его?
+
+Defeat {} [{}/{}]
+== Победить {} [{}/{}]
+
+/useskill <uid> - use skill by uid.
+== /useskill <uid> - использовать навык по UID.
+
+$dialog_quest540
+Yes, what troubles you, my de─? Ah. Yes. The boat. I had quite forgotten.
+== Да, что вас беспокоит, моя до─? Ах. Да. Лодка. Я совсем забыл.
+
+Buyer: {}
+== Покупатель: {}
+
+Class
+== Класс
+
+Board: {}
+== Доска: {}
+
+$dialog_quest322
+Their numbers have continued to grow since the advent of the Seventh Umbral Era, you see, forcing packs of the scalekin to come down from the mountains in search of food. If you could slay a handful of the beasts, that should lessen their need to hunt and also serve as a warning to the anoles to remain within their territory.
+== Их численность продолжала расти с наступлением Седьмой Эры Тьмы, понимаешь, что заставляет стаи чешуйчатых спускаться с гор в поисках пищи. Если бы ты мог убить несколько этих зверей, это уменьшило бы их потребность в охоте, а также послужило бы предупреждением анолам оставаться на своей территории.
+
+Bag Full
+== Сумка полна
+
+Buy
+== Купить
+
+Platinum
+== Платина
+
+$item_name84
+Adamantium armor
+== Адамантиевая броня
+
+You have: {}{}\nReplace with: {}{} {}
+== У вас: {}{}\nЗаменить на: {}{} {}
+
+A list of wanted players for whom bounties have been assigned. To get the bounty you need to kill a player from the list.
+== Список разыскиваемых игроков, за которых назначена награда. Чтобы получить награду, нужно убить игрока из списка.
+
+Editing rank '{}'
+== Редактирование ранга '{}'
+
+$item_description1
+Major currency
+== Основная валюта
+
+Bank
+== Банк
+
+You have successfully deposited '{} gold'. Commision '{} gold'.
+== Вы успешно внесли '{} золота'. Комиссия '{} золота'.
+
+Choose the item you want to sell
+== Выберите предмет, который хотите продать
+
+$item_description52
+Armor that sucks the life
+== Броня, которая высасывает жизнь
+
+Attached items
+== Прикрепленные предметы
+
+Group
+== Группа
+
+Emoticon Deviltee
+== Эмотикон Deviltee
+
+$item_name7
+Material
+== Материал
+
+Gold multiplier for killing mobs
+== Множитель золота за убийство мобов
+
+/login <name> <pass> - log in account.
+== /login <имя> <пароль> - войти в аккаунт.
+
+Bronze
+== Бронза
+
+$item_name142
+Dungeon King
+== Король Подземелья.
+
+Delete
+== Удалить
+
+After completing the quest step, unable to save the file.
+== После завершения шага квеста не удалось сохранить файл.
+
+Dungeon ended {} sec!
+== Подземелье завершено за {} сек!
+
+$dialog_quest630
+So you are <player>, the adventurer of whom I have heard so much. I understand you wish words with me.
+== Итак, ты <player>, искатель приключений, о котором я так много слышал. Я понимаю, что ты хочешь поговорить со мной.
+
+⁂ Group  
+== ⁂ Группа
+
+Duration of a guild war in minutes
+== Продолжительность войны гильдий в минутах
+
+/useitem <uid> - use item by uid.
+== /useitem <uid> - использовать предмет по UID.
+
+$dialog_quest149
+Since that time, the elementals have taught us to live as one with nature, speaking to all Gridanians through the Hearers─those mages who are able to commune with them.
+== С тех пор элементалы научили нас жить в гармонии с природой, общаясь со всеми гриданийцами через Послушников — тех магов, которые способны общаться с ними.
+
+/register <name> <pass> - new account.
+== /register <имя> <пароль> - новый аккаунт.
+
+<<< Backpage
+== <<< Назад
+
+<player>, do you have any questions? I'm sorry, can't help you.
+== <player>, у вас есть вопросы? Извините, не могу помочь.
+
+$dialog_quest392
+When the Elder Seedseer bade us welcome 'venturers, 'tis fair to say we had our doubts—till hardworkin' folks like yourself set about provin' us wrong, that is. Consider me a convert!
+== Когда Старшая Сеятельница велела нам приветствовать искателей приключений, честно говоря, у нас были сомнения—до тех пор, пока такие трудолюбивые люди, как вы, не доказали обратное. Считайте меня обращенным!
+
+Boss
+== Босс
+
+Auto equip '{} - {}'.
+== Автоматически экипировать '{} - {}'.
+
+Can't set in collide tile
+== Нельзя установить в столкновении
+
+$dialog_quest211
+The three locations you visited will feature prominently in your life as an adventurer─it is best you grow familiar with them as soon as possible.
+== Три места, которые ты посетил, будут играть важную роль в твоей жизни как искателя приключений — лучше всего, если ты познакомишься с ними как можно скорее.
+
+Blink
+== Моргание
+
+Emoticon Wtf
+== Эмотикон Wtf
+
+Random box.
+== Случайная коробка.
+
+$dialog_quest605
+Please make all haste─I have an irrepressible feeling that something terrible is about to happen.
+== Пожалуйста, поторопитесь─у меня непреодолимое чувство, что должно произойти что-то ужасное.
+
+/tutorial - training challenge.
+== /tutorial - обучающее испытание.
+
+Members: {} of {}
+== Участники: {} из {}
+
+Guild name must contain '3-8 characters'.
+== Название гильдии должно содержать '3-8 символов'.
+
+$dialog_npc210
+<player>, do you have any questions? I'm sorry, can't help you.
+== <player>, у тебя есть вопросы? Извини, не могу помочь.
+
+Experience Boost
+== Увеличение опыта
+
+Commision '{} gold'.
+== Комиссия '{} золота'.
+
+Doors
+== Двери
+
+$item_description41
+Compressed processed grass
+== Сжатая обработанная трава
+
+You've already reached the maximum level
+== Вы уже достигли максимального уровня
+
+Disable
+== Отключить
+
+Deposit All
+== Внести все
+
+Last login: {}
+== Последний вход: {}
+
+Desynthesis
+== Разбор
+
+Account settings Information
+== Информация о настройках аккаунта
+
+Detail information about house.
+== Подробная информация о доме.
+
+$dialog_quest1413
+I can begin your initiation whenever you desire. Call upon me when you are ready to take the first step.
+== Я могу начать твое посвящение, когда ты пожелаешь. Обратись ко мне, когда будешь готов сделать первый шаг.
+
+Decoration editor
+== Редактор декора
+
+Available slots
+== Доступные слоты
+
+You don't have a gun equipped.
+== У вас не экипирован пистолет.
+
+$skill_boost2
+radius
+== радиус.
+
+㋡ Guild  
+== ㋡ Гильдия
+
+In your zone emerging {}!
+== В вашей зоне появляется {}!
+
+In the 'Adventure Journal', you can see in which quest an item is used
+== В 'Журнале приключений' вы можете увидеть, в каком квесте используется предмет
+
+$item_description107
+Untreated Leather
+== Необработанная кожа
+
+Newbie
+== Новичок
+
+The mob was found, but the quest step is not active for players.
+== Моб найден, но шаг квеста не активен для игроков.
+
+You have received: '{} +{~.2}%'
+== Вы получили: '{} +{~.2}%'
+
+$dialog_quest712
+You─adventurer! Mind that you do not cause any trouble here, or I shall personally cast you out of this realm and into the seventh hell.
+== Ты — искатель приключений! Смотри, чтобы ты не устроил здесь никаких неприятностей, иначе я лично вышвырну тебя из этого мира в седьмой ад.
+
+Disband the guild with the name
+== Распустить гильдию с именем
+
+Eidolon Collection Information
+== Информация о коллекции эйдолонов
+
+Activity coin reward for completing a side quest
+== Награда в монетах за выполнение побочного квеста
+
+$item_name86
+Thorny Necklace
+== Колючее ожерелье
+
+Daily quest: '{}' accepted!
+== Ежедневный квест: '{}' принят!
+
+You don't have the right to buy a house
+== У вас нет права купить дом
+
+Do you want learn?
+== Хотите изучить?
+
+$dialog_quest210
+The conquering hero returns. You have completed my little tasks, I trust?
+== Возвращается герой-победитель. Ты выполнил мои маленькие задания, я надеюсь?
+
+Information about mailbox
+== Информация о почтовом ящике
+
+Commission rate for bank transactions (in percentage)
+== Ставка комиссии за банковские операции (в процентах)
+
+Collect {} [{}/{}]
+== Собрать {} [{}/{}]
+
+$skill_boost7
+% adds a health bonus
+== % добавляет бонус к здоровью
+
+You failed plant to farm zone.
+== Вам не удалось посадить в зону фермы.
+
+Do you want to buy?
+== Хотите купить?
+
+You have left the active zone!
+== Вы покинули активную зону!
+
+$dialog_quest390
+You must be the 'venturer Miounne sent word about. I'm Keitha, head wrangler 'round these parts.
+== Должно быть, вы тот искатель приключений, о котором говорила Миунн. Я Кита, главный конюх в этих краях.
+
+Here you can see your collection of eidolons.
+== Здесь вы можете увидеть свою коллекцию эйдолонов.
+
+Durability
+== Прочность
+
+Rank: {}
+== Ранг: {}
+
+$dialog_quest3510
+Now, we are racing against time, so you had best make haste.
+== Теперь мы боремся со временем, так что вам лучше поторопиться.
+
+Upgrade {} ({}) {$} gold
+== Улучшить {} ({}) {$} золота
+
+Player '{}' has found '{} x{}'.
+== Игрок '{}' нашел '{} x{}'.
+
+Remove item <clientid> <itemid> <count>
+== Удалить предмет <clientid> <itemid> <count>
+
+$dialog_quest491
+A shadowy figure... Understood. I'll pass word to the recruits as well as the sentries.
+== Темная фигура... Понял. Я передам слово новобранцам, а также часовым.
+
+Price
+== Цена
+
+Experience multiplier for completing raid dungeons
+== Множитель опыта за завершение рейдовых подземелий
+
+This house has already been purchased!
+== Этот дом уже куплен!
+
+$item_name88
+EIDOL #4
+== ЭЙДОЛ #4.
+
+Battle
+== Битва
+
+Equip armor
+== Экипировать броню
+
+Current status: '{}'!
+== Текущий статус: '{}'!
+
+$quest_name5
+Passing Muster
+== Комплексное испытание
+
+Exit dungeon {} (warning)
+== Выйти из подземелья {} (предупреждение)
+
+Decoration
+== Декор
+
+Equip grenade
+== Экипировать гранату
+
+$dialog_quest1611
+Before you can enlist, however, you must gain the approval of the guildmaster. Once you are ready to proceed, speak with me again and we can begin seeing about your enrollment.
+== Однако, прежде чем ты сможешь записаться, тебе нужно получить одобрение мастера гильдии. Когда будешь готов продолжить, поговори со мной снова, и мы начнем оформлять твое зачисление.
+
+Buying a house
+== Покупка дома
+
+Equip eidolon
+== Экипировать эйдолона
+
+Crime score: {}
+== Уровень преступности: {}
+
+Tax rate (in percent) for adding a new auction slot
+== Налоговая ставка (в процентах) за добавление нового слота аукциона
+
+Mode
+== Режим
+
+Currency
+== Валюта
+
+Treasury confiscates '{}% ({$})' of your gold.
+== Казна конфискует '{}% ({$})' вашего золота.
+
+$quest_name22
+Festive Endeavors
+== Праздничные усилия
+
+Dungeon started!
+== Подземелье началось!
+
+You can't take more than '{} products'.
+== Вы не можете взять больше '{} продуктов'.
+
+Your home has: {} farm zones.
+== Ваш дом имеет: {} зон фермы.
+
+$attribute2
+Attack SPD
+== СКР. АТК
+
+Available languages
+== Доступные языки
+
+Equipment
+== Экипировка
+
+Improvements & Upgrades
+== Улучшения и апгрейды
+
+$item_name114
+Rotten meat
+== Гнилое мясо
+
+Cooldown: {# (minute|minutes)}
+== Перезарядка: {# (минута|минуты)}
+
+Error
+== Ошибка
+
+Default
+== По умолчанию
+
+$dialog_quest313
+With the changes wrought by the Calamity, I thought it wise to send the Order of the Twin Adder on a number of expeditions to map the region's topography. As fortune would have it, the officers saw these tasks as an excellent opportunity to train inexperienced soldiers.
+== С изменениями, вызванными Катаклизмом, я решил, что было бы разумно отправить Орден Двойной Гадюки на несколько экспедиций для картирования топографии региона. Как посчастливилось, офицеры сочли эти задачи отличной возможностью для обучения неопытных солдат.
+
+Disband group
+== Распустить группу
+
+Closed
+== Закрыто
+
+Your house rent has been paid.
+== Аренда вашего дома оплачена.
+
+$item_description91
+Generates ammunition
+== Генерирует боеприпасы
+
+Next: ➡ {}
+== Далее: ➡ {}
+
+Here you can set the title.
+== Здесь вы можете установить титул.
+
+Every player has the right to rent houses.
+== Каждый игрок имеет право арендовать дома.
+
+$item_name44
+Leather bag
+== Кожаная сумка.
+
+Player not found or isn't logged in
+== Игрок не найден или не вошел в систему
+
+Disassemble '{} x{}'.
+== Разобрать '{} x{}'.
+
+Door '{}(Number {})' was '{}'!
+== Дверь '{}(Номер {})' была '{}'!
+
+$item_name139
+WarLord
+== Властелин Войны.
+
+Disband
+== Распустить
+
+Always show name plates disregarding of distance
+== Всегда показывать таблички с именами независимо от расстояния
+
+Drop
+== Выбросить
+
+$attribute1
+DMG
+== УРН
+
+Debuffs
+== Дебаффы
+
+Descriptions of eidolon ({})
+== Описания эйдолона ({})
+
+Type side
+== Тип побочный
+
+$dialog_quest403
+Would you mind headin' over to the Matron's Lethe and havin' a word with a soldier named Roseline for me? The ratmen nest in her neck of the woods, see... She'll know what to do.
+== Не могли бы вы зайти на Матроннный Лет и поговорить с солдатом по имени Розелин за меня? Крысуподобные существа гнездятся в её округе, понимаете... Она знает, что делать.
+
+Goodbye!
+== До свидания!
+
+Full changes {}
+== Полные изменения {}
+
+General ({} of {})
+== Общие ({} из {})
+
+$quest_name32
+Lancer | Dynamite hunt
+== Копейщик | Охота на динамит.
+
+Dps
+== Дамагер
+
+Is empty
+== Пусто
+
+Invalid item size.
+== Неверный размер предмета.
+
+$dialog_quest76
+The Elder Seedseer herself bade us welcome them with open arms. Do you mean to disregard her will?
+== Сама Старшая Семяувидка велела нам приветствовать их с открытыми объятиями. Вы хотите игнорировать её волю?
+
+Activity coin reward for completing a weekly quest
+== Награда в монетах за выполнение еженедельного квеста
+
+Door creaking.. Opened door somewhere!
+== Скрип двери.. Где-то открылась дверь!
+
+Door radius for interaction
+== Радиус взаимодействия с дверью
+
+$dialog_quest622
+The tree is the oldest living thing in this ancient forest, and it is held sacred by every forestborn Gridanian.
+== Это дерево — самое древнее живое существо в этом древнем лесу, и оно считается священным для каждого лесного жителя Гридании.
+
+Legend
+== Легенда
+
+Join to {} group?
+== Присоединиться к группе {}?
+
+Guild house is sold.
+== Дом гильдии продан.
+
+$dialog_quest302
+While I attempt to instill some backbone into this so-called “soldier,” would you mind recovering the survey gear and returning it to Hearer Pauline at Gabineaux's Bower?
+== Пока я пытаюсь вдохнуть немного мужества в этого так называемого "солдата", не могли бы вы найти снаряжение для обследования и вернуть его Слушательнице Полин в Беседку Габино?
+
+Give access for {}
+== Дать доступ для {}
+
+Not enough gold.
+== Недостаточно золота.
+
+GiveQuestID
+== IDВыдачиКвеста
+
+$dialog_quest320
+I hesitate to make such a dangerous, request, but might you assist us in thinning the number of anoles on Naked Rock?
+== Я колеблюсь делать такой опасный запрос, но не могли бы вы помочь нам сократить количество анол на Голой скале?
+
+Emoticon Eyes
+== Эмотикон Глаза
+
+Farm {(zone|zones): #}
+== Ферма {(зона|зоны): #}
+
+Not enought products in storage! Required '{} products'.
+== Недостаточно продуктов на складе! Требуется '{} продуктов'.
+
+$item_name115
+Magic Matter
+== Магическая материя
+
+Leave the group
+== Покинуть группу
+
+Power
+== Сила
+
+Gold
+== Золото
+
+$dialog_quest389
+By the way, have you perchance heard about the coming festival? It is truly a splendid occasion, looked forward to by young and old alike, and I heartily recommend that you take the time to enjoy.
+== Кстати, ты случайно не слышал о предстоящем фестивале? Это действительно великолепное событие, которого с нетерпением ждут и молодые, и старые, и я настоятельно рекомендую тебе найти время, чтобы насладиться им.
+
+Mana is required for the casting or continuation of this spell.
+== Для произнесения или продолжения этого заклинания требуется мана.
+
+Predict position of projectiles
+== Предсказать позицию снарядов
+
+Can't refuse
+== Нельзя отказаться
+
+$dialog_quest242
+I suggest you take some time to evaluate your equipment. Once you deem your armor to be of sufficient quality, present yourself to me for inspection.
+== Я предлагаю вам потратить немного времени на оценку вашего снаряжения. Как только вы сочтете вашу броню достаточного качества, представьтесь мне для проверки.
+
+Level: {} Exp: {}/{}
+== Уровень: {} Опыт: {}/{}
+
+Experience multiplier for using a chair
+== Множитель опыта за использование стула
+
+Farm {} zone / {}
+== Ферма {} зона / {}
+
+It has a delicate pink color, likes to eat everything green.
+== Он имеет нежный розовый цвет, любит есть все зеленое.
+
+Flags
+== Флаги
+
+No place for item.
+== Нет места для предмета.
+
+Has guild: {}
+== Есть гильдия: {}
+
+Armor
+== Броня
+
+Field: [{}]
+== Поле: [{}]
+
+Exp
+== Опыт
+
+Perhaps the self-proclaimed queen of pigs.
+== Возможно, самопровозглашенная королева свиней.
+
+$dialog_quest280
+<player>, injuries to several of my men have left me shorthanded, and I require a capable sort to complete their unfinished duty.
+== <player>, травмы нескольких моих людей оставили меня без достаточного количества рук, и мне нужен способный человек, чтобы завершить их незаконченную работу.
+
+Healer
+== Лекарь
+
+Guild wars
+== Войны гильдий
+
+Not selected
+== Не выбрано
+
+Has a strong attack, but cannot use anything.
+== Имеет сильную атаку, но не может использовать ничего.
+
+Deaths
+== Смерти
+
+Please use a different name.
+== Пожалуйста, используйте другое имя.
+
+This chat is for guilds and team members.
+== Этот чат для гильдий и членов команды.
+
+$item_description54
+Ordinary iron ore
+== Обычная железная руда
+
+Farm zone not found.
+== Зона фермы не найдена.
+
+House system
+== Система домов
+
+NextQuestID
+== IDСледующегоКвеста
+
+$dialog_npc180
+<player>, do you have any questions? I'm sorry, can't help you.
+== <player>, у вас есть вопросы? Извините, не могу помочь.
+
+Other's
+== Другие
+
+Disable effects (mrpg)
+== Отключить эффекты (mrpg)
+
+delay  
+== задержка
+
+$item_name146
+Lord of the Ore
+== Лорд Руды.
+
+The reason for write the number for each row
+== Причина для написания номера для каждой строки
+
+Logs of activity
+== Логи активности
+
+Function
+== Функция
+
+$dialog_quest295
+Even so, it is best to halt any new outbreaks before they occur. Thus we gather chigoe eggs on a regular basis in order to assist the Trappers' League with their ongoing research. Your timely assistance is most appreciated.
+== Тем не менее, лучше предотвратить новые вспышки до их возникновения. Поэтому мы регулярно собираем яйца чиго, чтобы помочь Лиге ловцов в их исследованиях. Ваша своевременная помощь очень ценится.
+
+Give Leader (in reason 134)
+== Передать лидерство (в причине 134)
+
+Invite & kick
+== Пригласить и кикнуть
+
+Interval decrease crime score
+== Интервал уменьшения уровня преступности
+
+$quest_name21
+To Guard a Guardian
+== Защита Хранителя
+
+Locked for now.
+== Заблокировано на данный момент.
+
+Disabled
+== Отключено
+
+Your rating increased by {}({}) points ({})  
+== Ваш рейтинг увеличен на {}({}) очков ({})
+
+$dialog_quest354
+Desiring to offer the ruins back to the forest, a Hearer ventured inside to carry out the Rite of Returning.
+== Желая вернуть руины лесу, Слушатель отправился внутрь, чтобы провести Обряд Возвращения.
+
+Management
+== Управление
+
+$dialog_quest462
+If you must sate your curiosity, by all means investigate. Should you actually find something of note, I would like very much to see it.
+== Если вы должны удовлетворить своё любопытство, то исследуйте. Если вам удастся найти что-то примечательное, мне бы очень хотелось это увидеть.
+
+buying  
+== покупка
+
+Members changes {}
+== Изменения в участниках {}
+
+Percentage of gold lost upon death
+== Процент золота, потерянного после смерти
+
+$quest_name1
+First quest
+== Первый квест.
+
+Failed to retrieve settings data.
+== Не удалось получить данные настроек.
+
+'{}' joined to Dungeon '{}'!
+== '{}' присоединился к подземелью '{}'!
+
+The properties string is empty
+== Строка свойств пуста
+
+Laser
+== Лазер
+
+Number of entities that can be gathering from a single tile
+== Количество сущностей, которые можно собрать с одного тайла
+
+Achievements
+== Достижения
+
+Equip hammer
+== Экипировать молот
+
+The tasks haven't been completed yet!
+== Задачи еще не выполнены!
+
+Invalid settings index.
+== Неверный индекс настроек.
+
+$dialog_quest532
+Knowing how absorbed the Hearer becomes in her work, I am not unduly concerned. Armelle, however, was responsible for organizing Leonnie's transportation and is likely wondering if her wayward passenger is ever going to arrive. Perhaps a gentle reminder is in order?
+== Зная, как поглощена Слушательница своей работой, я не слишком беспокоюсь. Однако Армель отвечала за организацию транспорта Леонни и, вероятно, задаётся вопросом, прибудет ли её непослушный пассажир. Может, стоит мягко напомнить?
+
+Emoticon Zomg
+== Эмотикон Zomg
+
+Predict movements of other players
+== Предсказать движения других игроков
+
+Farmzones
+== Зоны Ферм
+
+Rating leader: '{} ({})'! In second place is '{} ({})' — the competition is heating up!
+== Лидер рейтинга: '{} ({})'! На втором месте '{} ({})' — конкуренция накаляется!
+
+Link to server invitation
+== Ссылка на приглашение на сервер
+
+No such player or he's not afk
+== Нет такого игрока, или он не в AFK
+
+Item was not received by you personally.
+== Предмет не был получен вами лично.
+
+Emote
+== Эмоция
+
+Kick {}
+== Кикнуть {}
+
+Defeat {} x{}
+== Победить {} x{}
+
+Item(s) left to gather: '{}'
+== Осталось собрать предмет(ы): '{}'
+
+EXP
+== ОПЫТ
+
+Invite {}
+== Пригласить {}
+
+Gun
+== Пистолет
+
+Have
+== Иметь
+
+Craft's
+== Крафт
+
+Auto use - {}
+== Автоматическое использование - {}
+
+You don't have Aether access to this location.
+== У вас нет доступа к Эфиру в этом месте.
+
+Maximum number of total auction slots
+== Максимальное общее количество слотов аукциона
+
+Battle ({} of {})
+== Битва ({} из {})
+
+Maximum amount of products a player can carry from the warehouse
+== Максимальное количество продуктов, которое игрок может унести со склада
+
+[{}] Sell {} - {$} {} per unit  
+== [{}] Продать {} - {$} {} за единицу
+
+Oops, that doesn't seem to be the right login or password
+== Упс, похоже, неправильный логин или пароль
+
+Call off the summoned
+== Отозвать призванного
 

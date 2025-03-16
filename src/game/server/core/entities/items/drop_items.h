@@ -1,7 +1,7 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#ifndef GAME_SERVER_ENTITIES_DROPINGITEMS_H
-#define GAME_SERVER_ENTITIES_DROPINGITEMS_H
+#ifndef GAME_SERVER_CORE_ENTITIES_ITEMS_DROP_ITEMS_H
+#define GAME_SERVER_CORE_ENTITIES_ITEMS_DROP_ITEMS_H
 #include <game/server/entity.h>
 
 #include <game/server/core/components/Inventory/ItemData.h>

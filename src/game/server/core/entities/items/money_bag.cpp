@@ -3,14 +3,14 @@
 #include <game/server/gamecontext.h>
 
 CEntityMoneyBag::CEntityMoneyBag(CGameWorld *pGameWorld, vec2 Pos)
-: CEntity(pGameWorld, CGameWorld::ENTTYPE_BONUS_DROP, Pos, 24)
+: CEntity(pGameWorld, CGameWorld::ENTTYPE_BONUS_DROP, Pos, 16.0f)
 {
 	GameWorld()->InsertEntity(this);
 }
 
 void CEntityMoneyBag::Tick()
 {
-	const auto *pChar = (CCharacter*)GameWorld()->ClosestEntity(m_Pos, 16.0f, CGameWorld::ENTTYPE_CHARACTER, nullptr);
+	const auto *pChar = (CCharacter*)GameWorld()->ClosestEntity(m_Pos, m_Radius, CGameWorld::ENTTYPE_CHARACTER, nullptr);
 	if(!pChar || !pChar->IsAlive() || pChar->GetPlayer()->IsBot())
 		return;
 

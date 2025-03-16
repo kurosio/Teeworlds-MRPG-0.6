@@ -23,7 +23,7 @@ public:
 	CEntityManager(CGS* pGS);
 
 	void DesignRandomDrop(int Amount, float MaxForce, vec2 Pos, int LifeSpan, int Type, int Subtype, int64_t Mask = -1) const;
-	void DropBonus(vec2 Pos, int Type, int Subtype, int Value, int NumDrop = 1, vec2 Force = vec2(0.0f, 0.0f)) const;
+	void DropPickup(vec2 Pos, int Type, int Subtype, int Value, int NumDrop = 1, vec2 Force = vec2(0.0f, 0.0f)) const;
 	void DropItem(vec2 Pos, int ClientID, const CItem& Item, vec2 Force = vec2(0.0f, 0.0f)) const;
 	void RandomDropItem(vec2 Pos, int ClientID, float Chance, const CItem& Item, vec2 Force = vec2(0.0f, 0.0f)) const;
 	void FlyingPoint(vec2 Pos, int ClientID, vec2 Force = vec2(0.0f, 0.0f)) const;
