@@ -1,28 +1,14 @@
-set_extra_dirs_lib(BOX2D box2d)
-find_file(BOX2D_LIBRARY box2d.lib
-        HINTS ${HINTS_BOX2D_LIBDIR}
-        PATHS ${PATHS_BOX2D_LIBDIR}
-        ${CROSSCOMPILING_NO_CMAKE_SYSTEM_PATH}
-        )
+set(BOX2D_BUNDLED ON)
+file(GLOB_RECURSE BOX2D_SRC "src/engine/external/box2d/src/*.c" "src/engine/external/box2d/src/*.h")
 
-set_extra_dirs_include(BOX2D box2d "${BOX2D_LIBRARY}")
-find_path(BOX2D_INCLUDEDIR box2d/box2d.h
-        HINTS ${HINTS_BOX2D_INCLUDEDIR}
-        PATHS ${PATHS_BOX2D_INCLUDEDIR}
-        ${CROSSCOMPILING_NO_CMAKE_SYSTEM_PATH}
-        )
+set(BOX2D_INCLUDEDIR "src/engine/external/box2d/include")
+add_library(box2d EXCLUDE_FROM_ALL OBJECT ${BOX2D_SRC})
+target_include_directories(box2d PUBLIC ${BOX2D_INCLUDEDIR})
+
+set(BOX2D_DEP $<TARGET_OBJECTS:box2d>)
+set(BOX2D_INCLUDE_DIRS ${BOX2D_INCLUDEDIR})
+set(BOX2D_LIBRARIES)
+list(APPEND TARGETS_DEP box2d)
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(Box2D DEFAULT_MSG BOX2D_INCLUDEDIR BOX2D_LIBRARY)
-mark_as_advanced(BOX2D_INCLUDEDIR BOX2D_LIBRARY)
-
-if(BOX2D_FOUND)
-    is_bundled(BOX2D_BUNDLED "${BOX2D_LIBRARY}")
-    set(BOX2D_LIBRARIES ${BOX2D_LIBRARY})
-    set(BOX2D_INCLUDE_DIRS ${BOX2D_INCLUDEDIR})
-
-    set(BOX2D_COPY_FILES)
-    if(BOX2D_BUNDLED AND TARGET_OS STREQUAL "windows")
-        set(BOX2D_COPY_FILES "${EXTRA_BOX2D_LIBDIR}/box2d.dll")
-    endif()
-endif()
+find_package_handle_standard_args(BOX2D DEFAULT_MSG BOX2D_INCLUDEDIR)

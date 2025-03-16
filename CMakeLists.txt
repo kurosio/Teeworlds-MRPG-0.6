@@ -208,6 +208,7 @@ endif()
 find_package(Python3)
 find_package(Threads)
 find_package(ZLIB)
+find_package(BOX2D)
 #find_package(Pnglite)
 #find_package(Freetype)
 #find_package(SDL2)
@@ -218,7 +219,6 @@ find_package(OpenSSL)
 find_package(MySQL)
 #find_package(DiscordGameSDK)
 #find_package(GLEW)
-find_package(Box2D)
 find_package(SQLite3)
 
 ## boost
@@ -283,7 +283,7 @@ if(SERVER_COMPILE)
   show_dependency_status("MySQL" MYSQL TRUE)
   show_dependency_status("OpenSSL" OPENSSL FALSE)
   show_dependency_status("SQLite3" SQLite3 TRUE)
-  show_dependency_status("Box2D" BOX2D TRUE)
+  show_dependency_status("Box2d" BOX2D TRUE)
 endif()
 #if(CLIENT_COMPILE)
 #  show_dependency_status("Freetype" FREETYPE TRUE)
@@ -444,7 +444,6 @@ set(COPY_FILES_SERVER
   ${MYSQL_COPY_FILES}
   ${OPENSSL_COPY_FILES}
   ${SQLite3_COPY_FILES}
-  ${BOX2D_COPY_FILES}
 )
 
 file(COPY #${COPY_FILES_CLIENT}
@@ -746,7 +745,7 @@ if(SERVER_COMPILE)
     ${Boost_LIBRARIES} # empty, but will be here for the future
     ${BOX2D_LIBRARIES}
   )
-  set(DEPS_SERVER ${DEPS})
+  set(DEPS_SERVER ${DEPS} ${BOX2D_DEP})
 
   # Icon
   set(SERVER_ICON)
