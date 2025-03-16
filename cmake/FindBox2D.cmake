@@ -20,6 +20,10 @@ if(NOT Box2D_FOUND)
   set(Box2D_INCLUDE_DIRS ${Box2D_INCLUDEDIR})
   set(Box2D_LIBRARIES)
   list(APPEND TARGETS_DEP box2d)
+	    
+  if(MINGW OR TARGET_OS STREQUAL "linux")
+    target_compile_options(box2d PUBLIC -Wno-declaration-after-statement)
+  endif()
 	  
   set_target_properties(box2d PROPERTIES C_STANDARD 17 C_STANDARD_REQUIRED ON)
   
