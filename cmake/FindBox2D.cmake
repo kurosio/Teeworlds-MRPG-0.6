@@ -20,6 +20,10 @@ if(NOT Box2D_FOUND)
   set(Box2D_INCLUDE_DIRS ${Box2D_INCLUDEDIR})
   set(Box2D_LIBRARIES)
   list(APPEND TARGETS_DEP box2d)
+	  
+  set_property(TARGET box2d PROPERTY CXX_STANDARD 17)
+  set_property(TARGET box2d PROPERTY CXX_STANDARD_REQUIRED ON)
+  set_property(TARGET box2d PROPERTY CXX_EXTENSIONS OFF)
 
   include(FindPackageHandleStandardArgs)
   find_package_handle_standard_args(Box2D DEFAULT_MSG Box2D_INCLUDEDIR)
