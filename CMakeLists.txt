@@ -208,7 +208,7 @@ endif()
 find_package(Python3)
 find_package(Threads)
 find_package(ZLIB)
-find_package(BOX2D)
+find_package(Box2D)
 #find_package(Pnglite)
 #find_package(Freetype)
 #find_package(SDL2)
@@ -283,7 +283,7 @@ if(SERVER_COMPILE)
   show_dependency_status("MySQL" MYSQL TRUE)
   show_dependency_status("OpenSSL" OPENSSL FALSE)
   show_dependency_status("SQLite3" SQLite3 TRUE)
-  show_dependency_status("Box2d" BOX2D TRUE)
+  show_dependency_status("Box2d" Box2D TRUE)
 endif()
 #if(CLIENT_COMPILE)
 #  show_dependency_status("Freetype" FREETYPE TRUE)
@@ -737,15 +737,15 @@ if(SERVER_COMPILE)
     ${MYSQL_INCLUDE_DIRS}
     ${SQLite3_INCLUDE_DIRS}
     ${LIBMAXMINDDB_INCLUDE_DIR}
-    ${BOX2D_INCLUDE_DIRS}
+    ${Box2D_INCLUDE_DIRS}
   )
   set(SERVER_LIBRARIES
     ${MYSQL_LIBRARIES}
     ${SQLite3_LIBRARIES}
     ${Boost_LIBRARIES} # empty, but will be here for the future
-    ${BOX2D_LIBRARIES}
+    ${Box2D_LIBRARIES}
   )
-  set(DEPS_SERVER ${DEPS} ${BOX2D_DEP})
+  set(DEPS_SERVER ${DEPS} ${Box2D_DEP})
 
   # Icon
   set(SERVER_ICON)
