@@ -10,7 +10,7 @@
 #include <float.h>
 #include <stddef.h>
 
-static_assert( B2_MAX_POLYGON_VERTICES > 2, "must be 3 or more" );
+_Static_assert( B2_MAX_POLYGON_VERTICES > 2, "must be 3 or more" );
 
 bool b2IsValidRay( const b2RayCastInput* input )
 {

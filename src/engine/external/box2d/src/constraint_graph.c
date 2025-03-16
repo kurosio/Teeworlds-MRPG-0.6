@@ -25,12 +25,12 @@
 // This is used for debugging by making all constraints be assigned to overflow.
 #define B2_FORCE_OVERFLOW 0
 
-static_assert( B2_GRAPH_COLOR_COUNT == 12, "graph color count assumed to be 12" );
+_Static_assert( B2_GRAPH_COLOR_COUNT == 12, "graph color count assumed to be 12" );
 
 void b2CreateGraph( b2ConstraintGraph* graph, int bodyCapacity )
 {
-	static_assert( B2_GRAPH_COLOR_COUNT >= 2, "must have at least two constraint graph colors" );
-	static_assert( B2_OVERFLOW_INDEX == B2_GRAPH_COLOR_COUNT - 1, "bad over flow index" );
+	_Static_assert( B2_GRAPH_COLOR_COUNT >= 2, "must have at least two constraint graph colors" );
+	_Static_assert( B2_OVERFLOW_INDEX == B2_GRAPH_COLOR_COUNT - 1, "bad over flow index" );
 
 	*graph = ( b2ConstraintGraph ){ 0 };
 

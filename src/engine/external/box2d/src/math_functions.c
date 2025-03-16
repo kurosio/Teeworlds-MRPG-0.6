@@ -5,7 +5,7 @@
 
 #include <float.h>
 
-static_assert( sizeof( int32_t ) == sizeof( int ), "Box2D expects int32_t and int to be the same" );
+_Static_assert( sizeof( int32_t ) == sizeof( int ), "Box2D expects int32_t and int to be the same" );
 
 bool b2IsValidFloat( float a )
 {

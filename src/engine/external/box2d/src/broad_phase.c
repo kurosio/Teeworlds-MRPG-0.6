@@ -26,7 +26,7 @@
 
 void b2CreateBroadPhase( b2BroadPhase* bp )
 {
-	static_assert( b2_bodyTypeCount == 3, "must be three body types" );
+	_Static_assert( b2_bodyTypeCount == 3, "must be three body types" );
 
 	// if (s_file == NULL)
 	//{
