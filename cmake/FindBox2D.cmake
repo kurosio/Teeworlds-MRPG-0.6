@@ -21,6 +21,8 @@ if(NOT Box2D_FOUND)
   set(Box2D_LIBRARIES)
   list(APPEND TARGETS_DEP box2d)
 	  
+  set_target_properties(box2d PROPERTIES CXX_STANDARD 17 CXX_STANDARD_REQUIRED ON)
+  
   if(MSVC)
       target_compile_options(box2d PRIVATE /wd4566)
   else()
