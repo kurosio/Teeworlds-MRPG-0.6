@@ -148,4 +148,17 @@ public:
 	}
 };
 
+/*
+ * Fisherman profession
+ */
+class CFishermanProfession : public CProfession
+{
+public:
+	CFishermanProfession()
+		: CProfession(ProfessionIdentifier::Fisherman, PROFESSION_TYPE_OTHER)
+	{
+		m_Attributes[AttributeIdentifier::Patience] = 1;
+	}
+};
+
 #endif
