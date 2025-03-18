@@ -1,11 +1,11 @@
 #include <game/collision.h>
 #include "rope.h"
 
-void RopePhysic::Init(int NumPoints, const vec2& Start, const vec2& Force, float Mass)
+void RopePhysic::Init(int NumPoints, const vec2& Start, const vec2& Force, float EndPointMass)
 {
     m_StartPoint = Start;
     m_Force = Force;
-    m_MassAtEnd = Mass;
+    m_EndPointMass = EndPointMass;
 
     m_vPoints.clear();
     m_vPoints.reserve(NumPoints);
@@ -23,7 +23,7 @@ vec2 getCorrection(const vec2& point, const vec2& point2, float tension)
     return direction * springForce;
 }
 
-void RopePhysic::UpdatePhysics(CCollision* pCollision, float Gravity, float Tension, float MaxStretch)
+void RopePhysic::UpdatePhysics(CCollision* pCollision, float PointMass, float Tension, float MaxStretch)
 {
     constexpr float forceDamping = 0.98f;
     constexpr float dampingFactor = 0.05f;
@@ -45,7 +45,7 @@ void RopePhysic::UpdatePhysics(CCollision* pCollision, float Gravity, float Tens
                 return;
             }
 
-            m_vPoints[i].y += m_MassAtEnd;
+            m_vPoints[i].y += m_EndPointMass;
             m_vPoints[i] += m_Force;
             m_Force *= forceDamping;
 
@@ -58,7 +58,7 @@ void RopePhysic::UpdatePhysics(CCollision* pCollision, float Gravity, float Tens
             bool isLastPointCollised = pCollision->CheckPoint(m_vPoints[m_vPoints.size() - 1], CCollision::COLFLAG_SOLID);
             if(isLastPointCollised)
             {
-                m_vPoints[i].y += Gravity;
+                m_vPoints[i].y += PointMass;
             }
 
             vec2 correction = getCorrection(m_vPoints[i], m_vPoints[i - 1], Tension);
