@@ -208,7 +208,6 @@ endif()
 find_package(Python3)
 find_package(Threads)
 find_package(ZLIB)
-find_package(Box2D)
 #find_package(Pnglite)
 #find_package(Freetype)
 #find_package(SDL2)
@@ -283,7 +282,6 @@ if(SERVER_COMPILE)
   show_dependency_status("MySQL" MYSQL TRUE)
   show_dependency_status("OpenSSL" OPENSSL FALSE)
   show_dependency_status("SQLite3" SQLite3 TRUE)
-  show_dependency_status("Box2d" Box2D TRUE)
 endif()
 #if(CLIENT_COMPILE)
 #  show_dependency_status("Freetype" FREETYPE TRUE)
@@ -404,17 +402,14 @@ endif()
 
 set_src(DEP_JSON_SRC GLOB src/engine/external/json-parser json.c json.h)
 set_src(DEP_MD5_SRC GLOB src/engine/external/md5 md5.c md5.h)
-set_src(DEP_PUGIXML_SRC GLOB src/engine/external/xml pugiconfig.hpp pugixml.cpp pugixml.hpp)
 
 add_library(json EXCLUDE_FROM_ALL OBJECT ${DEP_JSON_SRC})
 add_library(md5 EXCLUDE_FROM_ALL OBJECT ${DEP_MD5_SRC})
-add_library(pugixml EXCLUDE_FROM_ALL OBJECT ${DEP_PUGIXML_SRC})
 
 set(DEP_JSON $<TARGET_OBJECTS:json>)
 set(DEP_MD5 $<TARGET_OBJECTS:md5>)
-set(DEP_PUGIXML $<TARGET_OBJECTS:pugixml>)
 
-list(APPEND TARGETS_DEP json md5 pugixml)
+list(APPEND TARGETS_DEP json md5)
 
 ########################################################################
 # COPY DATA AND DLLS
@@ -627,7 +622,7 @@ set(GAME_GENERATED_SHARED
 )
 
 # Libraries & Deps
-set(DEPS ${DEP_JSON} ${DEP_MD5} ${ZLIB_DEP} ${DEP_PUGIXML})
+set(DEPS ${DEP_JSON} ${DEP_MD5} ${ZLIB_DEP})
 set(LIBS ${CMAKE_THREAD_LIBS_INIT} ${ZLIB_LIBRARIES} ${CURL_LIBRARIES} ${OPENSSL_CRYPTO_LIBRARY} ${PLATFORM_LIBS})
 
 # Targets
@@ -737,15 +732,13 @@ if(SERVER_COMPILE)
     ${MYSQL_INCLUDE_DIRS}
     ${SQLite3_INCLUDE_DIRS}
     ${LIBMAXMINDDB_INCLUDE_DIR}
-    ${Box2D_INCLUDE_DIRS}
   )
   set(SERVER_LIBRARIES
     ${MYSQL_LIBRARIES}
     ${SQLite3_LIBRARIES}
     ${Boost_LIBRARIES} # empty, but will be here for the future
-    ${Box2D_LIBRARIES}
   )
-  set(DEPS_SERVER ${DEPS} ${Box2D_DEP})
+  set(DEPS_SERVER ${DEPS})
 
   # Icon
   set(SERVER_ICON)
