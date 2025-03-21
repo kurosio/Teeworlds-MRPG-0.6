@@ -72,6 +72,7 @@ private:
 	std::map<int, TextZoneDetail> m_vZoneTextDetail {};
 	std::unordered_map<int, GatheringNode> m_vOreNodes {};
 	std::unordered_map<int, GatheringNode> m_vPlantNodes {};
+	std::unordered_map<int, GatheringNode> m_vFishNodes {};
 
 	// initialization
 	void InitSettings();
@@ -107,6 +108,14 @@ public:
 			return nullptr;
 
 		return &m_vPlantNodes[Number];
+	}
+
+	GatheringNode* GetFishNode(int Number)
+	{
+		if(!m_vFishNodes.contains(Number))
+			return nullptr;
+
+		return &m_vFishNodes[Number];
 	}
 
 	void Init(class IKernel* pKernel, int WorldID);
