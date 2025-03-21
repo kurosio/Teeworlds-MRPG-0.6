@@ -29,6 +29,7 @@ public:
 		COLFLAG_NOHOOK = 4,
 		COLFLAG_SAFE = 1 << 3,
 		COLFLAG_DISALLOW_MOVE = 1 << 4,
+		COLFLAG_WATER = 1 << 5,
 	};
 	enum class HouseZoneType
 	{

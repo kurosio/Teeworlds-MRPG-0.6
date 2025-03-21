@@ -25,8 +25,7 @@ vec2 getCorrection(const vec2& point, const vec2& point2, float tension)
 
 void RopePhysic::UpdatePhysics(CCollision* pCollision, float PointMass, float Tension, float MaxStretch)
 {
-    constexpr float forceDamping = 0.98f;
-    constexpr float dampingFactor = 0.05f;
+    constexpr float forceDamping = 0.95f;
 
     if(m_vPoints.size() <= 2)
         return;
@@ -37,41 +36,20 @@ void RopePhysic::UpdatePhysics(CCollision* pCollision, float PointMass, float Te
         bool isLastPoint = (i == m_vPoints.size() - 1);
         if(isLastPoint)
         {
-            if(pCollision->CheckPoint(m_vPoints[i], CCollision::COLFLAG_SOLID))
-            {
-                m_Force = vec2(0.0f, 0.0f);
-                m_vPoints[i] += vec2(0.0f, 0.0f) * 0.1f;
-                m_vPoints[i - 1] += getCorrection(m_vPoints[i], m_vPoints[i - 1], Tension) * 2.f;
-                return;
-            }
+            if(pCollision->CheckPoint(m_vPoints[i], CCollision::COLFLAG_WATER))
+                pCollision->MovePhysicalBox(&m_vPoints[i], &m_Force, vec2(1.f, 1.f), 0.0f, -0.7f);
+            else
+                pCollision->MovePhysicalBox(&m_vPoints[i], &m_Force, vec2(1.f, 1.f), 0.5f, 0.7f);
 
-            m_vPoints[i].y += m_EndPointMass;
-            m_vPoints[i] += m_Force;
+            m_vPoints[i - 1] += getCorrection(m_vPoints[i], m_vPoints[i - 1], Tension);
             m_Force *= forceDamping;
-
-            vec2 correction = getCorrection(m_vPoints[i], m_vPoints[i - 1], Tension);
-            m_vPoints[i] -= correction;
-            m_vPoints[i - 1] += correction;
-        }
-        else
-        {
-            bool isLastPointCollised = pCollision->CheckPoint(m_vPoints[m_vPoints.size() - 1], CCollision::COLFLAG_SOLID);
-            if(isLastPointCollised)
-            {
-                m_vPoints[i].y += PointMass;
-            }
-
-            vec2 correction = getCorrection(m_vPoints[i], m_vPoints[i - 1], Tension);
-            m_vPoints[i] -= correction;
-            m_vPoints[i - 1] += correction;
+            return;
         }
 
-        // velocity damping by two points
-        if(i > 1)
-        {
-            vec2 velocity = m_vPoints[i] - m_vPoints[i - 1];
-            m_vPoints[i] += velocity * dampingFactor;
-        }
+        m_vPoints[i].y += PointMass;
+        vec2 correction = getCorrection(m_vPoints[i], m_vPoints[i - 1], Tension);
+        m_vPoints[i] -= correction;
+        m_vPoints[i - 1] += correction;
     }
 
     // normalize points
