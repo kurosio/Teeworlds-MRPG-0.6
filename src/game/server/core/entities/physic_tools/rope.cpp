@@ -1,11 +1,10 @@
 #include <game/collision.h>
 #include "rope.h"
 
-void RopePhysic::Init(int NumPoints, const vec2& Start, const vec2& Force, float EndPointMass)
+void RopePhysic::Init(int NumPoints, const vec2& Start, const vec2& Force)
 {
     m_StartPoint = Start;
     m_Force = Force;
-    m_EndPointMass = EndPointMass;
 
     m_vPoints.clear();
     m_vPoints.reserve(NumPoints);
@@ -51,26 +50,9 @@ void RopePhysic::UpdatePhysics(CCollision* pCollision, float PointMass, float Te
         m_vPoints[i] -= correction;
         m_vPoints[i - 1] += correction;
     }
-
-    // normalize points
-    const auto lastPointIndex = m_vPoints.size() - 1;
-    float stretch = distance(m_vPoints[lastPointIndex], m_vPoints[lastPointIndex - 1]);
-    if(stretch > MaxStretch)
-    {
-        for(int i = lastPointIndex - 1; i > 0; --i)
-        {
-            float distToPrev = distance(m_vPoints[i], m_vPoints[i - 1]);
-            if(distToPrev <= MaxStretch)
-            {
-                vec2 stretchDir = normalize(m_vPoints[i] - m_vPoints[i - 1]);
-                m_vPoints[i] = m_vPoints[i - 1] + stretchDir * MaxStretch;
-            }
-        }
-    }
 }
 
-void RopePhysic::SetFrontPoint(const vec2& Pos)
+void RopePhysic::SetForce(const vec2& Force)
 {
-    if(!m_vPoints.empty())
-        m_vPoints.front() = Pos;
+    m_Force = Force;
 }
