@@ -29,27 +29,23 @@ void RopePhysic::UpdatePhysics(CCollision* pCollision, float PointMass, float Te
     if(m_vPoints.size() <= 2)
         return;
 
-    // update
-    for(int i = 1; i < m_vPoints.size(); ++i)
+    // update points
+    for(int i = 1; i < m_vPoints.size() - 1; ++i)
     {
-        bool isLastPoint = (i == m_vPoints.size() - 1);
-        if(isLastPoint)
-        {
-            if(pCollision->CheckPoint(m_vPoints[i], CCollision::COLFLAG_WATER))
-                pCollision->MovePhysicalBox(&m_vPoints[i], &m_Force, vec2(1.f, 1.f), 0.0f, -0.7f);
-            else
-                pCollision->MovePhysicalBox(&m_vPoints[i], &m_Force, vec2(1.f, 1.f), 0.5f, 0.7f);
-
-            m_vPoints[i - 1] += getCorrection(m_vPoints[i], m_vPoints[i - 1], Tension);
-            m_Force *= forceDamping;
-            return;
-        }
-
         m_vPoints[i].y += PointMass;
         vec2 correction = getCorrection(m_vPoints[i], m_vPoints[i - 1], Tension);
         m_vPoints[i] -= correction;
         m_vPoints[i - 1] += correction;
     }
+
+    // update last mass point
+    auto lastIndex = m_vPoints.size() - 1;
+    if(pCollision->CheckPoint(m_vPoints[lastIndex], CCollision::COLFLAG_WATER))
+        pCollision->MovePhysicalBox(&m_vPoints[lastIndex], &m_Force, vec2(1.f, 1.f), 0.0f, -0.7f);
+    else
+        pCollision->MovePhysicalBox(&m_vPoints[lastIndex], &m_Force, vec2(1.f, 1.f), 0.5f, 0.7f);
+    m_vPoints[lastIndex - 1] += getCorrection(m_vPoints[lastIndex], m_vPoints[lastIndex - 1], Tension);
+    m_Force *= forceDamping;
 }
 
 void RopePhysic::SetForce(const vec2& Force)
