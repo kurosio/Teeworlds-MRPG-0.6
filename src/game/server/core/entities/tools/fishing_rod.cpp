@@ -164,6 +164,18 @@ void CEntityFishingRod::FishingTick(CPlayer* pPlayer, CProfession* pFisherman, G
 			const auto totalDamage = pNode->Health - m_Fishing.m_Health;
 			float percentDmg = translate_to_percent(pNode->Health, totalDamage);
 			m_Fishing.m_InterpolatedX = (*m_Fishing.m_FromPoint).x + ((m_EndRodPoint.x - (*m_Fishing.m_FromPoint).x) * (percentDmg / 100.f));
+
+			constexpr int IGNORE_POINTS = 3;
+			float percentHP = translate_to_percent(pNode->Health, m_Fishing.m_Health);
+			float percentPoints = translate_to_percent((size_t)NUM_ROPE_POINTS, m_Rope.m_vPoints.size());
+			while(percentPoints > percentHP)
+			{
+				if(m_Rope.m_vPoints.size() <= IGNORE_POINTS)
+					break;
+				m_Rope.m_vPoints.erase(m_Rope.m_vPoints.begin() + 1);
+				m_Rope.m_vPoints.shrink_to_fit();
+				percentPoints = translate_to_percent((size_t)NUM_ROPE_POINTS, m_Rope.m_vPoints.size());
+			}
 		}
 
 		// smooth moving
