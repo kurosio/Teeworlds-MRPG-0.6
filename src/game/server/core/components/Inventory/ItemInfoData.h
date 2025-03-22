@@ -100,7 +100,8 @@ public:
 		return (m_Group == ItemGroup::Equipment && (m_Type == ItemType::EquipHammer || m_Type == ItemType::EquipGun || m_Type == ItemType::EquipShotgun
 			|| m_Type == ItemType::EquipGrenade || m_Type == ItemType::EquipLaser || m_Type == ItemType::EquipArmor
 			|| m_Type == ItemType::EquipEidolon || m_Type == ItemType::EquipPickaxe || m_Type == ItemType::EquipRake
-			|| m_Type == ItemType::EquipTitle || m_Type == ItemType::EquipPotionHeal || m_Type == ItemType::EquipPotionMana));
+			|| m_Type == ItemType::EquipTitle || m_Type == ItemType::EquipPotionHeal || m_Type == ItemType::EquipPotionMana
+			|| m_Type == ItemType::EquipFishrod));
 	}
 
 	bool IsEquipmentNonSlot() const
