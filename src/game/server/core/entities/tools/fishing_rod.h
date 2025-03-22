@@ -5,8 +5,28 @@
 #include <game/server/entity.h>
 
 class CPlayer;
+class CProfession;
+struct GatheringNode;
 class CEntityFishingRod : public CEntity
 {
+	struct FishingNow
+	{
+		enum State
+		{
+			WAITING,
+			HOOKING,
+			PULLING,
+			SUCCESS,
+			AWAY,
+		};
+
+		std::optional<vec2> m_FromPoint {};
+		float m_InterpolatedX{};
+		int m_State {};
+		int m_Health {};
+		int m_HookingTime {};
+	};
+
 	enum
 	{
 		ROD = 0,
@@ -18,9 +38,12 @@ class CEntityFishingRod : public CEntity
 
 	vec2 m_LastPoint {};
 	RopePhysic m_Rope {};
+	FishingNow m_Fishing{};
 
 public:
 	CEntityFishingRod(CGameWorld* pGameWorld, int ClientID, vec2 Position, vec2 Force);
+
+	void FishingTick(CPlayer* pPlayer, CProfession* pFisherman, GatheringNode* pNode, std::optional<int> EquippedItemID);
 
 	void Tick() override;
 	void Snap(int SnappingClient) override;
