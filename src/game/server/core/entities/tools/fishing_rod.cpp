@@ -6,7 +6,7 @@
 CEntityFishingRod::CEntityFishingRod(CGameWorld* pGameWorld, int ClientID, vec2 Position, vec2 Force)
 	: CEntity(pGameWorld, CGameWorld::ENTTYPE_PATH_FINDER, Position, 0, ClientID)
 {
-	m_LastPoint = Position;
+	m_EndRodPoint = Position;
 	m_Rope.Init(NUM_ROPE_POINTS, Position, Force);
 	m_Fishing.m_State = FishingNow::WAITING;
 	m_Fishing.m_HookingTime = SERVER_TICK_SPEED * (3 + rand() % 15);
@@ -55,7 +55,7 @@ void CEntityFishingRod::Tick()
 	// update
 	m_Pos = pChar->m_Core.m_Pos;
 	m_Rope.UpdatePhysics(GS()->Collision(), 3.0f, 16.f, 64.f);
-	m_Rope.m_vPoints[0] = m_LastPoint;
+	m_Rope.m_vPoints[0] = m_EndRodPoint;
 
 	// fishing
 	const auto& TestBox = vec2(m_Rope.m_vPoints.back().x, m_Rope.m_vPoints.back().y + 18.f);
@@ -163,7 +163,7 @@ void CEntityFishingRod::FishingTick(CPlayer* pPlayer, CProfession* pFisherman, G
 
 			const auto totalDamage = pNode->Health - m_Fishing.m_Health;
 			float percentDmg = translate_to_percent(pNode->Health, totalDamage);
-			m_Fishing.m_InterpolatedX = (*m_Fishing.m_FromPoint).x + ((m_LastPoint.x - (*m_Fishing.m_FromPoint).x) * (percentDmg / 100.f));
+			m_Fishing.m_InterpolatedX = (*m_Fishing.m_FromPoint).x + ((m_EndRodPoint.x - (*m_Fishing.m_FromPoint).x) * (percentDmg / 100.f));
 		}
 
 		// smooth moving
@@ -180,9 +180,9 @@ void CEntityFishingRod::FishingTick(CPlayer* pPlayer, CProfession* pFisherman, G
 			pPlayerItem->Add(Value);
 
 			// create design drop pickup
-			const auto DesignPos = vec2(m_LastPoint.x, m_LastPoint.y - 24.f);
+			const auto DesignPos = vec2(m_EndRodPoint.x, m_EndRodPoint.y - 24.f);
 			GS()->EntityManager()->DesignRandomDrop(2 + rand() % 2, 8.0f, DesignPos, Server()->TickSpeed(), POWERUP_HEALTH, 0, CmaskOne(pPlayer->GetCID()));
-			lastPoint = m_LastPoint;
+			lastPoint = m_EndRodPoint;
 			m_Fishing.m_State = FishingNow::SUCCESS;
 		}
 
@@ -224,7 +224,7 @@ void CEntityFishingRod::Snap(int SnappingClient)
 		const auto From = facingRight ? vec2(m_Pos.x + first.x, m_Pos.y + first.y) : vec2(m_Pos.x - first.x, m_Pos.y + first.y);
 		const auto To = facingRight ? vec2(m_Pos.x + second.x, m_Pos.y + second.y) : vec2(m_Pos.x - second.x, m_Pos.y + second.y);
 		GS()->SnapLaser(SnappingClient, rodIds[i], From, To, curTick, LASERTYPE_SHOTGUN);
-		m_LastPoint = To;
+		m_EndRodPoint = To;
 	}
 
 	// draw rope

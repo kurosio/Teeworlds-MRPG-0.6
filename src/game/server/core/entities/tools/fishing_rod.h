@@ -36,7 +36,7 @@ class CEntityFishingRod : public CEntity
 		NUM_ROPE_POINTS = 10,
 	};
 
-	vec2 m_LastPoint {};
+	vec2 m_EndRodPoint {};
 	RopePhysic m_Rope {};
 	FishingNow m_Fishing{};
 

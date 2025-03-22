@@ -30,7 +30,7 @@ void RopePhysic::UpdatePhysics(CCollision* pCollision, float PointMass, float Te
         return;
 
     // update points
-    for(int i = 1; i < m_vPoints.size() - 1; ++i)
+    for(size_t i = 1; i < m_vPoints.size() - 1; ++i)
     {
         m_vPoints[i].y += PointMass;
         vec2 correction = getCorrection(m_vPoints[i], m_vPoints[i - 1], Tension);
