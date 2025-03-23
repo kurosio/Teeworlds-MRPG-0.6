@@ -301,6 +301,20 @@ void CUniversalScenario::ProcessStep(const nlohmann::json& step)
 		}
 	}
 
+	// check quest step completed
+	else if(action == "check_quest_step_finished")
+	{
+		if(int questID = step.value("quest_id", -1); questID > 0)
+		{
+			auto stepQuest = step.value("step", -1);
+			auto& checkQuestStepFinishedState = AddStep();
+			checkQuestStepFinishedState.CheckCondition(ConditionPriority::CONDITION_AND_TIMER, [this, questID, stepQuest](auto*)
+			{
+				return GetPlayer()->GetQuest(questID)->GetStepPos() > stepQuest;
+			});
+		}
+	}
+
 	// shotmarks
 	else if(action == "shootmarkers")
 	{

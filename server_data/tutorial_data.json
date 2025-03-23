@@ -342,8 +342,9 @@
 		"key": "door_3_1"
 	},
 	{
-		"action": "check_quest_finished",
-		"quest_id": 1
+		"action": "check_quest_step_finished",
+		"quest_id": 1,
+		"step": 2
 	},
 	{
 		"action": "remove_door",
