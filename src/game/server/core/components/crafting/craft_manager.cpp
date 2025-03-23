@@ -44,11 +44,17 @@ void CCraftManager::OnPreInit()
 
 		// initialize required ingredients
 		CItemsContainer RequiredIngredients {};
-		std::string JsonRequiredData = pRes->getString("RequiredItems").c_str();
-		mystd::json::parse(JsonRequiredData, [&](nlohmann::json& pJson)
+		DBSet ItemsSet(pRes->getString("RequiredItems"));
+		for(const auto& [Elem, Size] : ItemsSet.GetDataItems())
 		{
-			RequiredIngredients = CItem::FromArrayJSON(pJson, "items");
-		});
+			int ItemID{};
+			int Value{};
+			if(sscanf(Elem.c_str(), "[%d/%d]", &ItemID, &Value) == 2)
+			{
+				CItem Item(ItemID, Value);
+				RequiredIngredients.push_back(Item);
+			}
+		}
 
 		// initialize temp craft element
 		CraftIdentifier ID = pRes->getInt("ID");
