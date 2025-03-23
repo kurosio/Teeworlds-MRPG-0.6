@@ -328,6 +328,7 @@ enum class ItemType : short
 	UseMultiple,
 	ResourceHarvestable,
 	ResourceMineable,
+	ResourceFishes,
 	NUM_FUNCTIONS
 };
 
@@ -352,6 +353,7 @@ inline static ItemType GetItemTypeFromDBSet(const DBSet& dbset) noexcept
 	else if(dbset.hasSet("Multiple use x99")) return ItemType::UseMultiple;
 	else if(dbset.hasSet("Resource harvestable")) return ItemType::ResourceHarvestable;
 	else if(dbset.hasSet("Resource mineable")) return ItemType::ResourceMineable;
+	else if(dbset.hasSet("Resource fishes")) return ItemType::ResourceFishes;
 	else return ItemType::Unknown;
 }
 
@@ -374,8 +376,9 @@ constexpr const char* GetItemTypeName(ItemType type) noexcept
 		case ItemType::EquipTitle:          return "Title";
 		case ItemType::UseSingle:           return "Use Single";
 		case ItemType::UseMultiple:         return "Use Multiple";
-		case ItemType::ResourceHarvestable: return "Resource Harvestable";
-		case ItemType::ResourceMineable:    return "Resource Mineable";
+		case ItemType::ResourceHarvestable: return "Resource harvestable";
+		case ItemType::ResourceMineable:    return "Resource mineable";
+		case ItemType::ResourceFishes:      return "Resource fishes";
 		default:                  return "Unknown";
 	}
 }

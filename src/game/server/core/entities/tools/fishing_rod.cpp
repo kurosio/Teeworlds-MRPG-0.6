@@ -57,7 +57,7 @@ void CEntityFishingRod::Tick()
 	m_Rope.UpdatePhysics(GS()->Collision(), 3.0f, 16.f, 64.f);
 	m_Rope.m_vPoints[0] = m_EndRodPoint;
 
-	// fishing
+	// fishing only water
 	const auto& TestBox = vec2(m_Rope.m_vPoints.back().x, m_Rope.m_vPoints.back().y + 18.f);
 	if((GS()->Collision()->GetCollisionFlagsAt(TestBox) & CCollision::COLFLAG_WATER) == 0)
 	{
@@ -68,7 +68,7 @@ void CEntityFishingRod::Tick()
 	}
 
 	// check node
-	auto switchNumber = GS()->Collision()->GetSwitchTileNumber(TestBox).value_or(-1);
+	const auto switchNumber = GS()->Collision()->GetSwitchTileNumber(TestBox).value_or(-1);
 	auto* pNode = GS()->Collision()->GetFishNode(switchNumber);
 	if(!pNode)
 	{
@@ -148,7 +148,7 @@ void CEntityFishingRod::FishingTick(CPlayer* pPlayer, CProfession* pFisherman, G
 	if(m_Fishing.m_State == FishingNow::PULLING)
 	{
 		// set end point
-		if(!m_Fishing.m_FromPoint.has_value())
+		if(!m_Fishing.m_FromPoint)
 		{
 			m_Fishing.m_FromPoint = lastPoint;
 			m_Fishing.m_InterpolatedX = lastPoint.x;
