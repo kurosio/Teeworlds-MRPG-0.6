@@ -35,7 +35,7 @@ struct FixedViewCam
 				m_CurrentView = playerView;
 
 			// check distance
-			float distanceByState = m_Locked ? 4.f : 32.f;
+			float distanceByState = m_Locked ? 4.f : 64.f;
 			if(const float distanceToTarget = distance(*m_CurrentView, target); distanceToTarget < distanceByState)
 			{
 				if(m_Locked)
@@ -47,11 +47,7 @@ struct FixedViewCam
 			else // moving
 			{
 				float dynamicLerpSpeed = 0.05f + distanceToTarget * 0.001f;
-				if(!m_Locked)
-					dynamicLerpSpeed = std::max(dynamicLerpSpeed * 2.f, 2.f);
-				else
-					dynamicLerpSpeed = std::max(dynamicLerpSpeed, 0.5f);
-
+				dynamicLerpSpeed = std::max(dynamicLerpSpeed, 0.5f);
 				m_CurrentView = lerp(*m_CurrentView, target, dynamicLerpSpeed * 0.16f);
 			}
 		}

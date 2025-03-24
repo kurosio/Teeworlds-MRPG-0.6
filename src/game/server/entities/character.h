@@ -16,6 +16,7 @@ enum
 
 class CPlayerBot;
 class CMultipleOrbite;
+class CEntityFishingRod;
 
 class CCharacter : public CEntity
 {
@@ -38,6 +39,7 @@ class CCharacter : public CEntity
 	// info for dead reckoning
 	CCharacterCore m_SendCore {}; // core that we should send
 	CCharacterCore m_ReckoningCore {}; // the dead reckoning core
+	CEntityFishingRod* m_pFishingRod {};
 
 	void HandleReload();
 	void FireWeapon();

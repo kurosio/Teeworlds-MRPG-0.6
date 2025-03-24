@@ -27,6 +27,7 @@
 #include <game/server/core/entities/weapons/rifle_magneticpulse.h>
 #include <game/server/core/entities/weapons/rifle_wallpusher.h>
 #include <game/server/core/entities/weapons/rifle_trackedplazma.h>
+#include <game/server/core/entities/tools/fishing_rod.h>
 
 MACRO_ALLOC_POOL_ID_IMPL(CCharacter, MAX_CLIENTS* ENGINE_MAX_WORLDS + MAX_CLIENTS)
 
@@ -1308,6 +1309,31 @@ void CCharacter::HandleTiles()
 {
 	// handle tilesets
 	m_pTilesHandler->Handle(m_Core.m_Pos);
+
+	// fishing mode
+	if(m_pTilesHandler->IsActive(TILE_FISHING_MODE))
+	{
+		m_Core.m_ActiveWeapon = WEAPON_HAMMER;
+		Server()->Input()->BlockInputGroup(m_ClientID, BLOCK_INPUT_FIRE);
+		if(Server()->Input()->IsKeyClicked(m_ClientID, KEY_EVENT_FIRE))
+		{
+			bool ExistEntity = GameWorld()->ExistEntity(m_pFishingRod);
+			if(ExistEntity && m_pFishingRod->IsWaitingState())
+				m_pFishingRod->MarkForDestroy();
+
+			if(!m_pFishingRod || m_pFishingRod->IsMarkedForDestroy())
+			{
+				const auto ForceX = m_LatestInput.m_TargetX * 0.08f;
+				const auto ForceY = m_LatestInput.m_TargetY * 0.08f;
+				m_pFishingRod = new CEntityFishingRod(&GS()->m_World, m_ClientID, m_Core.m_Pos, vec2(ForceX, ForceY));
+			}
+		}
+	}
+	if(m_pTilesHandler->IsEnter(TILE_FISHING_MODE) || m_pTilesHandler->IsExit(TILE_FISHING_MODE))
+	{
+		if(GameWorld()->ExistEntity(m_pFishingRod))
+			m_pFishingRod->MarkForDestroy();
+	}
 
 	// teleport
 	if(m_pTilesHandler->IsActive(TILE_TELE_FROM))

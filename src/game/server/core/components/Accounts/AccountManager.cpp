@@ -625,12 +625,6 @@ bool CAccountManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
 		const BigInt CurrentBankGold = pPlayer->Account()->GetBankManager();
 		const BigInt TotalGold = pPlayer->Account()->GetTotalGold();
 
-		enum
-		{
-			TEST_FIELD1,
-			SOME_FIELD2,
-		};
-
 		MotdMenu MBonuses(ClientID,  "Here you can securely store your gold. Remember, gold in the Bank is protected and will never be lost, even in death.");
 		MBonuses.AddText("Bank Management \u2697");
 		MBonuses.AddSeparateLine();
