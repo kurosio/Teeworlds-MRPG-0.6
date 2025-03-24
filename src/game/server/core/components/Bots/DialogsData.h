@@ -3,13 +3,6 @@
 #ifndef GAME_SERVER_COMPONENT_DIALOGS_DATA_H
 #define GAME_SERVER_COMPONENT_DIALOGS_DATA_H
 
-enum class DialogScenarioEvent
-{
-	OnRecieveObjectives,
-	OnCompleteObjectives,
-	OnEnd
-};
-
 class CPlayerDialog
 {
 	friend class CDialogStep;
@@ -28,9 +21,9 @@ public:
 		Clear();
 	}
 
-	bool IsActive() const 
+	bool IsActive() const
 	{
-		return m_BotCID >= MAX_PLAYERS && m_BotCID < MAX_CLIENTS; 
+		return m_BotCID >= MAX_PLAYERS && m_BotCID < MAX_CLIENTS;
 	}
 
 	void Init(CPlayer* pPlayer);
@@ -40,13 +33,13 @@ public:
 	void End();
 	void Tick();
 
+
 private:
 	void PrepareDialog(const class CDialogStep* pDialog, const char* pLeftNickname, const char* pRightNickname);
 	const char* GetCurrentText() const { return m_aFormatedText; }
 	void ClearText();
 
 	class CDialogStep* GetCurrent() const;
-	void StartDialogScenario(DialogScenarioEvent Pos) const;
 	void ShowCurrentDialog() const;
 	void Clear();
 };

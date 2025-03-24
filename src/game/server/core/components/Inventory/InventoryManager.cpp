@@ -35,9 +35,10 @@ void CInventoryManager::OnPreInit()
 		const auto Description = pRes->getString("Description");
 		const auto GroupSet = DBSet(pRes->getString("Group"));
 		const auto TypeSet = DBSet(pRes->getString("Type"));
+		const auto ScenarioData = pRes->getString("ScenarioData");
 		const auto InitialPrice = pRes->getInt("InitialPrice");
 		const auto Dysenthis = pRes->getInt("Desynthesis");
-		auto Data = pRes->getString("Data");
+		const auto Data = pRes->getString("Data");
 
 		CItemDescription::ContainerAttributes aContainerAttributes;
 		for(int i = 0; i < MAX_ATTRIBUTES_FOR_ITEM; i++)
@@ -56,7 +57,7 @@ void CInventoryManager::OnPreInit()
 			}
 		}
 
-		CItemDescription(ItemID).Init(Name, Description, GroupSet, TypeSet, Dysenthis, InitialPrice, aContainerAttributes, std::move(Data));
+		CItemDescription(ItemID).Init(Name, Description, GroupSet, TypeSet, Dysenthis, InitialPrice, aContainerAttributes, Data, ScenarioData);
 	}
 
 	ResultPtr pResAtt = Database->Execute<DB::SELECT>("*", "tw_attributes");

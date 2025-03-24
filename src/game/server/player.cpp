@@ -19,6 +19,7 @@
 #include "core/components/worlds/world_data.h"
 
 #include "core/tools/vote_optional.h"
+#include "core/scenarios/scenario_universal.h"
 
 MACRO_ALLOC_POOL_ID_IMPL(CPlayer, MAX_CLIENTS * ENGINE_MAX_WORLDS + MAX_CLIENTS)
 
@@ -917,4 +918,30 @@ int CPlayer::GetCurrentWorldID() const
 CTeeInfo& CPlayer::GetTeeInfo() const
 {
 	return Account()->m_TeeInfos;
+}
+
+void CPlayer::StartUniversalScenario(const std::string& ScenarioData, int ScenarioID)
+{
+	if(ScenarioData.empty())
+		return;
+
+	// parse scenario
+	mystd::json::parse(ScenarioData, [ScenarioID, this](nlohmann::json& pJson)
+	{
+		std::string ObjElem {};
+		switch(ScenarioID)
+		{
+			case SCENARIO_ON_DIALOG_RECIEVE_OBJECTIVES: ObjElem = "on_recieve_objectives"; break;
+			case SCENARIO_ON_DIALOG_COMPLETE_OBJECTIVES: ObjElem = "on_complete_objectives"; break;
+			case SCENARIO_ON_END_STEP: ObjElem = "on_end"; break;
+			case SCENARIO_ON_ITEM_EQUIP: ObjElem = "on_equip"; break;
+			case SCENARIO_ON_ITEM_GOT: ObjElem = "on_got"; break;
+			case SCENARIO_ON_ITEM_LOST: ObjElem = "on_lost"; break;
+			case SCENARIO_ON_ITEM_UNEQUIP: ObjElem = "on_unequip"; break;
+		}
+
+		// start scenario
+		const auto& scenarioJsonData = ObjElem.empty() ? pJson : pJson[ObjElem];
+		Scenarios().Start(std::make_unique<CUniversalScenario>(ScenarioID, scenarioJsonData));
+	});
 }

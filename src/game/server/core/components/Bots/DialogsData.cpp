@@ -5,8 +5,6 @@
 #include <game/server/gamecontext.h>
 #include <game/server/core/components/quests/quest_manager.h>
 
-#include <game/server/core/scenarios/scenario_universal.h>
-
 void CDialogStep::Init(int BotID, const nlohmann::json& JsonDialog)
 {
 	// initialize variables
@@ -153,7 +151,7 @@ void CPlayerDialog::Start(int BotCID)
 
 	// Check if bot is valid
 	const auto pPlayerBot = dynamic_cast<CPlayerBot*>(GS()->GetPlayer(BotCID));
-	if(!pPlayerBot) 
+	if(!pPlayerBot)
 		return;
 
 	// Initialize variables
@@ -396,8 +394,9 @@ bool CPlayerDialog::CheckActionCompletion() const
 	if(m_BotType == TYPE_BOT_QUEST)
 	{
 		const int ClientID = m_pPlayer->GetCID();
-		const int QuestID = QuestBotInfo::ms_aQuestBot[m_MobID].m_QuestID;
-		auto* pQuest = m_pPlayer->GetQuest(QuestID);
+		const auto& questBot = QuestBotInfo::ms_aQuestBot[m_MobID];
+		const int questID = questBot.m_QuestID;
+		auto* pQuest = m_pPlayer->GetQuest(questID);
 		auto* pStep = pQuest->GetStepByMob(m_MobID);
 
 		if(!pStep)
@@ -410,8 +409,9 @@ bool CPlayerDialog::CheckActionCompletion() const
 			return false;
 		}
 
+		const auto& scenarioData = questBot.m_ScenarioJson;
+		m_pPlayer->StartUniversalScenario(scenarioData, EScenarios::SCENARIO_ON_DIALOG_COMPLETE_OBJECTIVES);
 		GS()->CreatePlayerSound(m_pPlayer->GetCID(), SOUND_CTF_RETURN);
-		StartDialogScenario(DialogScenarioEvent::OnCompleteObjectives);
 		return true;
 	}
 
@@ -423,12 +423,9 @@ void CPlayerDialog::End()
 	// handle end of quest
 	if(m_BotType == TYPE_BOT_QUEST)
 	{
-		const int QuestID = QuestBotInfo::ms_aQuestBot[m_MobID].m_QuestID;
-
-		if(m_pPlayer->GetQuest(QuestID)->GetStepByMob(m_MobID)->Finish())
-		{
-			StartDialogScenario(DialogScenarioEvent::OnEnd);
-		}
+		const auto& questBot = QuestBotInfo::ms_aQuestBot[m_MobID];
+		const int questID = questBot.m_QuestID;
+		m_pPlayer->GetQuest(questID)->GetStepByMob(m_MobID)->Finish();
 	}
 
 	Clear();
@@ -449,47 +446,6 @@ void CPlayerDialog::Clear()
 	ClearText();
 }
 
-void CPlayerDialog::StartDialogScenario(DialogScenarioEvent Pos) const
-{
-	// load scenario
-	std::string scenarioJson;
-
-	if(m_BotType == TYPE_BOT_QUEST)
-	{
-		scenarioJson = QuestBotInfo::ms_aQuestBot[m_MobID].m_ScenarioJson;
-	}
-
-	if(scenarioJson.empty())
-		return;
-
-	// parse scenario
-	mystd::json::parse(scenarioJson, [Pos, this](nlohmann::json& pJson)
-	{
-		const char* pElem;
-		int ScenarioID = SCENARIO_UNIVERSAL;
-
-		switch(Pos)
-		{
-			case DialogScenarioEvent::OnRecieveObjectives: 
-				ScenarioID = SCENARIO_ON_DIALOG_RECIEVE_OBJECTIVES;
-				pElem = "on_recieve_objectives"; 
-				break;
-			case DialogScenarioEvent::OnCompleteObjectives: 
-				ScenarioID = SCENARIO_ON_DIALOG_COMPLETE_OBJECTIVES;
-				pElem = "on_complete_objectives"; 
-				break;
-			default: 
-				ScenarioID = SCENARIO_ON_DIALOG_END;
-				pElem = "on_end"; 
-				break;
-		}
-
-		// start scenario
-		const auto& scenarioJsonData = pJson[pElem];
-		m_pPlayer->Scenarios().Start(std::make_unique<CUniversalScenario>(ScenarioID, scenarioJsonData));
-	});
-}
-
 void CPlayerDialog::ShowCurrentDialog() const
 {
 	CDialogStep* pCurrent = GetCurrent();
@@ -499,8 +455,9 @@ void CPlayerDialog::ShowCurrentDialog() const
 	{
 		if(m_BotType == TYPE_BOT_QUEST)
 		{
-			const int QuestID = QuestBotInfo::ms_aQuestBot[m_MobID].m_QuestID;
-			CPlayerQuest* pQuest = m_pPlayer->GetQuest(QuestID);
+			const auto& questBot = QuestBotInfo::ms_aQuestBot[m_MobID];
+			const int questID = questBot.m_QuestID;
+			CPlayerQuest* pQuest = m_pPlayer->GetQuest(questID);
 			pQuest->GetStepByMob(m_MobID)->CreateVarietyTypesRequiredItems();
 
 			CQuestStep* pStep = pQuest->GetStepByMob(m_MobID);
@@ -509,7 +466,8 @@ void CPlayerDialog::ShowCurrentDialog() const
 				pStep->m_TaskListReceived = true;
 				pStep->UpdateTaskMoveTo();
 
-				StartDialogScenario(DialogScenarioEvent::OnRecieveObjectives);
+				const auto& scenarioData = questBot.m_ScenarioJson;
+				m_pPlayer->StartUniversalScenario(scenarioData, EScenarios::SCENARIO_ON_DIALOG_RECIEVE_OBJECTIVES);
 			}
 		}
 	}

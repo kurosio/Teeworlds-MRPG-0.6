@@ -162,6 +162,7 @@ public:
 	void CloseMotdMenu() { m_pMotdMenu->ClearMotd(); }
 
 	void ChangeWorld(int WorldID, std::optional<vec2> newWorldPosition = std::nullopt) const;
+	void StartUniversalScenario(const std::string& ScenarioData, int ScenarioID);
 };
 
 #endif

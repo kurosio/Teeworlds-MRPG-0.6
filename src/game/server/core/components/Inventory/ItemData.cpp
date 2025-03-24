@@ -144,7 +144,7 @@ bool CPlayerItem::Add(int Value, int StartSettings, int StartEnchant, bool Messa
 	{
 		m_Enchant = StartEnchant;
 		m_Settings = StartSettings;
-		Info()->StartItemScenario(pPlayer, ItemScenarioEvent::OnEventGot);
+		pPlayer->StartUniversalScenario(Info()->GetScenarioData(), EScenarios::SCENARIO_ON_ITEM_GOT);
 	}
 
 	// sync gold and bank
@@ -213,7 +213,7 @@ bool CPlayerItem::Remove(int Value)
 		if(m_Value <= Value)
 		{
 			UnEquip();
-			Info()->StartItemScenario(pPlayer, ItemScenarioEvent::OnEventLost);
+			pPlayer->StartUniversalScenario(Info()->GetScenarioData(), EScenarios::SCENARIO_ON_ITEM_LOST);
 		}
 
 		m_Value -= Value;
@@ -248,7 +248,7 @@ bool CPlayerItem::Equip()
 		if(Save())
 		{
 			g_EventListenerManager.Notify<IEventListener::PlayerEquipItem>(pPlayer, this);
-			Info()->StartItemScenario(pPlayer, ItemScenarioEvent::OnEventEquip);
+			pPlayer->StartUniversalScenario(Info()->GetScenarioData(), EScenarios::SCENARIO_ON_ITEM_EQUIP);
 			GS()->CreateSound(pPlayer->m_ViewPos, SOUND_VOTE_ITEM_EQUIP);
 			return true;
 		}
@@ -269,7 +269,7 @@ bool CPlayerItem::UnEquip()
 		if(Save())
 		{
 			g_EventListenerManager.Notify<IEventListener::PlayerUnequipItem>(pPlayer, this);
-			Info()->StartItemScenario(pPlayer, ItemScenarioEvent::OnEventUnequip);
+			pPlayer->StartUniversalScenario(Info()->GetScenarioData(), EScenarios::SCENARIO_ON_ITEM_UNEQUIP);
 			GS()->CreateSound(pPlayer->m_ViewPos, SOUND_VOTE_ITEM_EQUIP);
 			return true;
 		}

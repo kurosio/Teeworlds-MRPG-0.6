@@ -1,10 +1,7 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "ItemInfoData.h"
-
 #include <game/server/gamecontext.h>
-
-#include <game/server/core/scenarios/scenario_universal.h>
 
 int CItemDescription::GetInfoEnchantStats(AttributeIdentifier ID) const
 {
@@ -114,41 +111,6 @@ void CItemDescription::InitData(const DBSet& GroupSet, const DBSet& TypeSet)
 			const auto Value = p.value("value", 1);
 			const auto Chance = p.value("chance", 100.0f);
 			m_RandomBox.Add(ItemID, Value, Chance);
-		}
-	});
-}
-
-void CItemDescription::StartItemScenario(CPlayer* pPlayer, ItemScenarioEvent Event) const
-{
-	mystd::json::parse(m_Data, [&pPlayer, Event, this](nlohmann::json& pJson)
-	{
-		int ScenarioID = SCENARIO_UNIVERSAL;
-		const char* pElem;
-		switch(Event)
-		{
-			case ItemScenarioEvent::OnEventGot:
-				ScenarioID = SCENARIO_ON_ITEM_GOT;
-				pElem = "on_event_got";
-				break;
-			case ItemScenarioEvent::OnEventLost:
-				ScenarioID = SCENARIO_ON_ITEM_LOST;
-				pElem = "on_event_lost";
-				break;
-			case ItemScenarioEvent::OnEventEquip:
-				ScenarioID = SCENARIO_ON_ITEM_EQUIP;
-				pElem = "on_event_equip";
-				break;
-			default:
-				ScenarioID = SCENARIO_ON_ITEM_UNEQUIP;
-				pElem = "on_event_unequip";
-				break;
-		}
-
-		// start scenario
-		if(pJson.contains(pElem))
-		{
-			const auto& scenarioJsonData = pJson[pElem];
-			pPlayer->Scenarios().Start(std::make_unique<CUniversalScenario>(ScenarioID, scenarioJsonData));
 		}
 	});
 }

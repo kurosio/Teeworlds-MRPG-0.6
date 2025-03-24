@@ -114,7 +114,7 @@ CQuestStep::~CQuestStep()
 
 int CQuestStep::GetNumberBlockedItem(int ItemID) const
 {
-	return std::accumulate(m_Bot.m_vRequiredItems.begin(), m_Bot.m_vRequiredItems.end(), 0, [ItemID](int Amount, const auto& p) 
+	return std::accumulate(m_Bot.m_vRequiredItems.begin(), m_Bot.m_vRequiredItems.end(), 0, [ItemID](int Amount, const auto& p)
 	{
 		return Amount + (p.m_Item.GetID() == ItemID ? p.m_Item.GetValue() : 0);
 	});
@@ -179,7 +179,6 @@ bool CQuestStep::Finish()
 void CQuestStep::PostFinish()
 {
 	CPlayer* pPlayer = GetPlayer();
-	int ClientID = pPlayer->GetCID();
 	ska::unordered_set<int> vInteractItemIds {};
 
 	// required item's
@@ -220,7 +219,8 @@ void CQuestStep::PostFinish()
 		}
 	}
 
-	// update bot status
+	// update
+	pPlayer->StartUniversalScenario(m_Bot.m_ScenarioJson, EScenarios::SCENARIO_ON_END_STEP);
 	pPlayer->GetQuest(m_Bot.m_QuestID)->Update();
 	pPlayer->m_VotesData.UpdateVotesIf(MENU_JOURNAL_MAIN);
 }
@@ -310,7 +310,7 @@ void CQuestStep::UpdateTaskMoveTo()
 		if(m_aMoveActionProgress[i] || TaskData.m_Step != CurrentStep)
 			continue;
 
-		// Always creating navigator in other worlds 
+		// Always creating navigator in other worlds
 		if(TaskData.m_WorldID != pPlayer->GetCurrentWorldID())
 		{
 			CreateEntityArrowNavigator(TaskData.m_Position, TaskData.m_WorldID, 0.0f, CEntityPathArrow::CONDITION_MOVE_TO, i);

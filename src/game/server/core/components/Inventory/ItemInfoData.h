@@ -11,15 +11,6 @@
 #include "RandomBox/RandomBoxData.h"
 
 using ItemIdentifier = int;
-
-enum class ItemScenarioEvent
-{
-	OnEventGot,
-	OnEventLost,
-	OnEventEquip,
-	OnEventUnequip,
-};
-
 class CItemDescription : public MultiworldIdentifiableData < std::map< int, CItemDescription > >
 {
 public:
@@ -51,6 +42,7 @@ private:
 	ItemType m_Type {};
 	ContainerAttributes m_aAttributes {};
 	std::string m_Data {};
+	std::string m_ScenarioData {};
 	CRandomBox m_RandomBox {};
 	std::optional<PotionContext> m_PotionContext {};
 	std::optional<BonusesContext> m_BonusContext {};
@@ -60,9 +52,10 @@ public:
 	CItemDescription(ItemIdentifier ID) : m_ID(ID) {}
 
 	void Init(const std::string& Name, const std::string& Description, const DBSet& GroupSet,
-		const DBSet& TypeSet, int Dysenthis, int InitialPrice, ContainerAttributes aAttributes, std::string&& Data)
+		const DBSet& TypeSet, int Dysenthis, int InitialPrice, ContainerAttributes aAttributes, const std::string& Data, const std::string& ScenarioData)
 	{
-		m_Data = std::move(Data);
+		m_Data = Data;
+		m_ScenarioData = ScenarioData;
 		str_copy(m_aName, Name.c_str(), sizeof(m_aName));
 		str_copy(m_aDescription, Description.c_str(), sizeof(m_aDescription));
 		m_Dysenthis = Dysenthis;
@@ -74,26 +67,17 @@ public:
 	}
 	void InitData(const DBSet& GroupSet, const DBSet& TypeSet);
 
-	ItemIdentifier GetID() const { return m_ID; }
-
 	// main functions
-	void StartItemScenario(CPlayer* pPlayer, ItemScenarioEvent Event) const;
+	ItemIdentifier GetID() const { return m_ID; }
+	std::string GetScenarioData() const { return m_ScenarioData; }
 	const char* GetName() const { return m_aName; }
 	const char* GetDescription() const { return m_aDescription; }
 	int GetInitialPrice() const { return m_InitialPrice; }
 	int GetDysenthis(int Enchant) const { return m_Dysenthis ? (m_Dysenthis + (maximum(GetEnchantPrice(Enchant) / 4, 1) * Enchant)) : 0; }
-
 	ItemType GetType() const { return m_Type; }
-	bool IsType(ItemType Type) const
-	{
-		return m_Type == Type;
-	}
-
+	bool IsType(ItemType Type) const { return m_Type == Type; }
 	ItemGroup GetGroup() const { return m_Group; }
-	bool IsGroup(ItemGroup Group) const
-	{
-		return m_Group == Group;
-	}
+	bool IsGroup(ItemGroup Group) const { return m_Group == Group; }
 
 	bool IsEquipmentSlot() const
 	{
