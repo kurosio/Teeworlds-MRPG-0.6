@@ -102,6 +102,7 @@ public:
 	int m_AmmoRegen {};
 	vec2 m_OldPos {};
 	vec2 m_OlderPos {};
+	bool m_FishingMode {};
 
 	// constructors
 	CCharacter(CGameWorld *pWorld);
@@ -120,6 +121,8 @@ public:
 	virtual bool TakeDamage(vec2 Force, int Damage, int FromCID, int Weapon);
 	virtual void Die(int Killer, int Weapon);
 	virtual void HandleTuning();
+
+	bool IsFishingModeActive() const;
 
 	void MovingDisable(bool State);
 

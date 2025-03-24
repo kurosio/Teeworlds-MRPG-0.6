@@ -1435,6 +1435,11 @@ void CCharacter::HandleTuning()
 	HandleIndependentTuning();
 }
 
+bool CCharacter::IsFishingModeActive() const
+{
+	return m_FishingMode && m_pTilesHandler->IsActive(TILE_FISHING_MODE);
+}
+
 void CCharacter::MovingDisable(bool State)
 {
 	if(State)
