@@ -2,18 +2,22 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #ifndef GAME_VERSION_H
 #define GAME_VERSION_H
+#ifndef GAME_RELEASE_VERSION
+#define GAME_RELEASE_VERSION "19.2"
+#endif
 
-#define SETTINGS_FILENAME "settings_mmo"
-
-#define GAME_RELEASE_VERSION "18.5"
-#define CLIENT_VERSIONNR 18050
-
+// teeworlds
+#define CLIENT_VERSION7 0x0705
 #define GAME_VERSION "0.6.4, " GAME_RELEASE_VERSION
 #define GAME_NETVERSION "0.6 626fce9a778df4d4"
-extern const char *GIT_SHORTREV_HASH;
+#define GAME_NETVERSION7 "0.7 802f1be60a05665f"
 
-// ~~ RELEASE PROTOCOL(CLIENT/SERVER SIDE) VERSION
-// in case of a change it will force to update the client when entering the server to the value that is specified here
-#define CURRENT_PROTOCOL_VERSION_MRPG 2000
+// ddnet
+#define DDNET_VERSION_NUMBER 19020
+extern const char* GIT_SHORTREV_HASH;
+#define GAME_NAME "DDNet"
+
+// mrpg protocol (CLIENT/SERVER SIDE) VERSION
+#define MRPG_PROTOCOL_VERSION 2000
 
 #endif

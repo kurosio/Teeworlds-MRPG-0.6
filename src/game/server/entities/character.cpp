@@ -60,7 +60,6 @@ bool CCharacter::Spawn(CPlayer* pPlayer, vec2 Pos)
 	m_Core.Init(&GS()->m_World.m_Core, GS()->Collision());
 	m_Core.m_ActiveWeapon = WEAPON_HAMMER;
 	m_Core.m_Pos = m_Pos;
-	m_SpawnPoint = m_Core.m_Pos;
 	GS()->m_World.m_Core.m_apCharacters[m_pPlayer->GetCID()] = &m_Core;
 
 	m_ReckoningTick = 0;
@@ -82,8 +81,8 @@ bool CCharacter::Spawn(CPlayer* pPlayer, vec2 Pos)
 		GS()->Core()->QuestManager()->Update(m_pPlayer);
 		GS()->Core()->QuestManager()->TryAcceptNextQuestChainAll(m_pPlayer);
 
-		m_AmmoRegen = m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::AmmoRegen);
 		m_pPlayer->m_VotesData.UpdateCurrentVotes();
+		m_AmmoRegen = m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::AmmoRegen);
 		GS()->MarkUpdatedBroadcast(m_pPlayer->GetCID());
 
 		const bool Spawned = GS()->m_pController->OnCharacterSpawn(this);
@@ -802,7 +801,7 @@ void CCharacter::Tick()
 		return;
 
 	// check world access
-	if(!IsWorldAccessible())
+	if(!CanAccessWorld())
 		return;
 
 	// handler's
@@ -1073,26 +1072,21 @@ CPlayer* CCharacter::GetLastAttacker() const
 
 bool CCharacter::TakeDamage(vec2 Force, int Damage, int FromCID, int Weapon)
 {
+	constexpr float MaximumVel = 24.f;
+
 	// clamp force vel
 	m_Core.m_Vel += Force;
-	constexpr float MaximumVel = 24.f;
 	if(length(m_Core.m_Vel) > MaximumVel)
-	{
 		m_Core.m_Vel = normalize(m_Core.m_Vel) * MaximumVel;
-	}
 
 	// check disallow damage
 	if(!IsAllowedPVP(FromCID))
-	{
 		return false;
-	}
 
 	// check valid from
 	auto* pFrom = GS()->GetPlayer(FromCID);
 	if(!pFrom || !pFrom->GetCharacter())
-	{
 		return false;
-	}
 
 	// damage calculation
 	Damage += pFrom->GetCharacter()->GetTotalDamageByWeapon(Weapon);
@@ -1350,7 +1344,9 @@ void CCharacter::HandleTiles()
 				}
 			}
 		}
-		if((m_pTilesHandler->IsEnter(TILE_FISHING_MODE) || m_pTilesHandler->IsExit(TILE_FISHING_MODE)) && GameWorld()->ExistEntity(m_pFishingRod))
+		if(m_pTilesHandler->IsEnter(TILE_FISHING_MODE))
+			GS()->Broadcast(m_ClientID, BroadcastPriority::GameBasicStats, 100, "Use 'Fire' to start fishing!");
+		else if(m_pTilesHandler->IsExit(TILE_FISHING_MODE) && GameWorld()->ExistEntity(m_pFishingRod))
 			m_pFishingRod->MarkForDestroy();
 
 		// locked view cam
@@ -1458,11 +1454,6 @@ void CCharacter::HandleTuning()
 	HandleIndependentTuning();
 }
 
-bool CCharacter::IsFishingModeActive() const
-{
-	return m_FishingMode && m_pTilesHandler->IsActive(TILE_FISHING_MODE);
-}
-
 void CCharacter::MovingDisable(bool State)
 {
 	if(State)
@@ -1542,6 +1533,7 @@ void CCharacter::HandleBuff(CTuningParams* TuningParams)
 	// buffs
 	if(Server()->Tick() % Server()->TickSpeed() == 0)
 	{
+		// fire
 		if(m_pPlayer->m_Effects.IsActive("Fire"))
 		{
 			const int ExplodeDamageSize = translate_to_percent_rest(m_pPlayer->GetMaxHealth(), 3);
@@ -1549,6 +1541,7 @@ void CCharacter::HandleBuff(CTuningParams* TuningParams)
 			TakeDamage(vec2(0, 0), ExplodeDamageSize, m_pPlayer->GetCID(), WEAPON_SELF);
 		}
 
+		// poison
 		if(m_pPlayer->m_Effects.IsActive("Poison"))
 		{
 			const int PoisonSize = translate_to_percent_rest(m_pPlayer->GetMaxHealth(), 3);
@@ -1566,10 +1559,13 @@ void CCharacter::HandleBuff(CTuningParams* TuningParams)
 			if(m_pPlayer->m_Effects.IsActive(PotionContext.Effect.c_str()))
 			{
 				if(Type == ItemType::EquipPotionHeal)
+				{
 					IncreaseHealth(PotionContext.Value);
-
+				}
 				else if(Type == ItemType::EquipPotionMana)
+				{
 					IncreaseMana(PotionContext.Value);
+				}
 			}
 		});
 	}
@@ -1642,9 +1638,8 @@ void CCharacter::UpdateEquippedStats(std::optional<int> UpdatedItemID)
 		const auto* pItemInfo = GS()->GetItemInfo(*UpdatedItemID);
 		if(const auto* pChar = m_pPlayer->GetCharacter())
 		{
-			const auto Type = pItemInfo->GetType();
-
 			// weapon
+			const auto Type = pItemInfo->GetType();
 			const auto WeaponID = GetWeaponByEquip(Type);
 			if(WeaponID >= WEAPON_HAMMER)
 			{
@@ -1721,25 +1716,25 @@ bool CCharacter::IsAllowedPVP(int FromID) const
 		// anti pvp on safe world or dungeon
 		if(!GS()->IsAllowedPVP() || GS()->IsWorldType(WorldType::Dungeon))
 			return false;
-	}
 
-	// only for unself player
-	if(FromID != m_pPlayer->GetCID())
-	{
-		// anti pvp for guild players
-		if(m_pPlayer->Account()->IsClientSameGuild(FromID))
-			return false;
+		// only for unself player
+		if(FromID != m_pPlayer->GetCID())
+		{
+			// anti pvp for guild players
+			if(m_pPlayer->Account()->IsClientSameGuild(FromID))
+				return false;
 
-		// anti pvp for group players
-		GroupData* pGroup = m_pPlayer->Account()->GetGroup();
-		if(pGroup && pGroup->HasAccountID(pFrom->Account()->GetID()))
-			return false;
+			// anti pvp for group players
+			GroupData* pGroup = m_pPlayer->Account()->GetGroup();
+			if(pGroup && pGroup->HasAccountID(pFrom->Account()->GetID()))
+				return false;
+		}
 	}
 
 	return true;
 }
 
-bool CCharacter::IsWorldAccessible() const
+bool CCharacter::CanAccessWorld() const
 {
 	if(Server()->Tick() % Server()->TickSpeed() * 3 == 0 && m_pPlayer->IsAuthed())
 	{
@@ -1747,13 +1742,10 @@ bool CCharacter::IsWorldAccessible() const
 		const auto* pAccount = m_pPlayer->Account();
 		if(pAccount->GetLevel() < GS()->GetWorldData()->GetRequiredLevel())
 		{
-			if(!GS()->Core()->GuildManager()->GetHouseByPos(m_Core.m_Pos))
-			{
-				m_pPlayer->GetTempData().ClearSpawnPosition();
-				GS()->Chat(m_pPlayer->GetCID(), "You were magically transported!");
-				m_pPlayer->ChangeWorld(MAIN_WORLD_ID);
-				return false;
-			}
+			m_pPlayer->GetTempData().ClearSpawnPosition();
+			GS()->Chat(m_pPlayer->GetCID(), "You were magically transported!");
+			m_pPlayer->ChangeWorld(MAIN_WORLD_ID);
+			return false;
 		}
 
 		// check finished tutorial
@@ -1768,7 +1760,7 @@ bool CCharacter::IsWorldAccessible() const
 	return true;
 }
 
-bool CCharacter::CheckFailMana(int Mana)
+bool CCharacter::TryUseMana(int Mana)
 {
 	if(m_Mana < Mana)
 	{

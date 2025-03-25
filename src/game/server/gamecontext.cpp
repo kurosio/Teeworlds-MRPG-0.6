@@ -1043,7 +1043,7 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 		if(MsgID == NETMSGTYPE_CL_ISMRPGSERVER)
 		{
 			// check protocol version
-			if(const auto pMsg = (CNetMsg_Cl_IsMRPGServer*)pRawMsg; pMsg->m_Version != CURRENT_PROTOCOL_VERSION_MRPG)
+			if(const auto pMsg = (CNetMsg_Cl_IsMRPGServer*)pRawMsg; pMsg->m_Version != MRPG_PROTOCOL_VERSION)
 			{
 				Server()->Kick(ClientID, "Update client use updater or download in discord.");
 				return;

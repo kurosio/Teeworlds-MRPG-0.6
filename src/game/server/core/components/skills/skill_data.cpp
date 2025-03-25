@@ -282,7 +282,7 @@ bool CSkill::IsActivated(CCharacter* pChar, int Manacost, int SkillID, int Skill
 	// reset skill when use
 	if(SkillUsage == SKILL_USAGE_RESET)
 	{
-		if(pChar->CheckFailMana(Manacost))
+		if(pChar->TryUseMana(Manacost))
 			return false;
 
 		if(const auto groupPtr = skillEntityPtr.lock())
@@ -301,14 +301,14 @@ bool CSkill::IsActivated(CCharacter* pChar, int Manacost, int SkillID, int Skill
 			return false;
 		}
 
-		if(pChar->CheckFailMana(Manacost))
+		if(pChar->TryUseMana(Manacost))
 			return false;
 
 		GS()->Broadcast(m_ClientID, BroadcastPriority::GameWarning, 100, "The {} has been enabled!", Info()->GetName());
 		return true;
 	}
 
-	return !pChar->CheckFailMana(Manacost);
+	return !pChar->TryUseMana(Manacost);
 }
 
 bool CSkill::Upgrade()

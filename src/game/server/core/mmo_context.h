@@ -729,11 +729,6 @@ enum class AttributeIdentifier : int
 /*
  * Enum default
  */
-enum
-{
-	WEAPON_SELF = -2,
-	WEAPON_WORLD = -1,
-};
 
 constexpr const char* GetEmoteNameById(int emoteId) noexcept
 {

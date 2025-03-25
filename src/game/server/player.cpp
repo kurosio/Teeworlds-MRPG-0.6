@@ -342,6 +342,14 @@ void CPlayer::Snap(int SnappingClient)
 				pSpectatorInfo->m_SpectatorId = (isViewLocked ? m_ClientID : -1);
 				m_FixedView.Reset();
 			}
+
+			if(auto* pDDNetSpectatorInfo = Server()->SnapNewItem<CNetObj_DDNetSpectatorInfo>(m_ClientID))
+			{
+				pDDNetSpectatorInfo->m_HasCameraInfo = 0;
+				pDDNetSpectatorInfo->m_Zoom = 1000;
+				pDDNetSpectatorInfo->m_Deadzone = 800;
+				pDDNetSpectatorInfo->m_FollowFactor = 0;
+			}
 		}
 	}
 }
@@ -493,9 +501,7 @@ void CPlayer::OnDirectInput(CNetObj_PlayerInput* pNewInput)
 {
 	// Update view position for spectators
 	if(!m_pCharacter && GetTeam() == TEAM_SPECTATORS)
-	{
 		m_ViewPos = vec2(pNewInput->m_TargetX, pNewInput->m_TargetY);
-	}
 
 	// parse event keys
 	Server()->Input()->ParseInputClickedKeys(m_ClientID, pNewInput, m_pLastInput);

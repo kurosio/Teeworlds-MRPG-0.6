@@ -49,7 +49,7 @@ class CCharacter : public CEntity
 	bool HandleHammerActions(vec2 Direction, vec2 ProjStartPos);
 	void HandleBuff(CTuningParams* TuningParams);
 	void HandlePlayer();
-	bool IsWorldAccessible() const;
+	bool CanAccessWorld() const;
 
 	bool FireHammer(vec2 Direction, vec2 ProjStartPos);
 	bool FireGun(vec2 Direction, vec2 ProjStartPos);
@@ -74,7 +74,6 @@ protected:
 	int m_EmoteType {};
 	int m_EmoteStop {};
 	int m_SafeTickFlags {};
-	vec2 m_SpawnPoint {};
 	vec2 m_NormalDoorHit {};
 	std::string m_Zonename {};
 	CMultipleOrbite* m_pMultipleOrbite {};
@@ -104,7 +103,6 @@ public:
 	int m_AmmoRegen {};
 	vec2 m_OldPos {};
 	vec2 m_OlderPos {};
-	bool m_FishingMode {};
 
 	// constructors
 	CCharacter(CGameWorld *pWorld);
@@ -124,8 +122,6 @@ public:
 	virtual void Die(int Killer, int Weapon);
 	virtual void HandleTuning();
 
-	bool IsFishingModeActive() const;
-
 	void MovingDisable(bool State);
 
 	void OnPredictedInput(CNetObj_PlayerInput *pNewInput);
@@ -144,7 +140,7 @@ public:
 	void SetWeapon(int Weapon);
 	bool IncreaseHealth(int Amount);
 	bool IncreaseMana(int Amount);
-	bool CheckFailMana(int Mana);
+	bool TryUseMana(int Mana);
 	int Mana() const { return m_Mana; }
 	int Health() const { return m_Health; }
 	void AddMultipleOrbite(int Amount, int Type, int Subtype);

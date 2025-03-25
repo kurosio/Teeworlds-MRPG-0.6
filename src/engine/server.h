@@ -124,17 +124,6 @@ public:
 		return SendPackMsgOne(pMsg, Flags, ClientID, Mask, WorldID);
 	}
 
-	int SendPackMsgTranslate(const CNetMsg_Sv_Dialog* pMsg, int Flags, int ClientID, int64_t Mask, int WorldID)
-	{
-		CNetMsg_Sv_Dialog MsgCopy;
-		mem_copy(&MsgCopy, pMsg, sizeof(MsgCopy));
-
-		if(!Translate(MsgCopy.m_LeftClientID, ClientID) || !Translate(MsgCopy.m_RightClientID, ClientID))
-			return 0;
-
-		return SendPackMsgOne(&MsgCopy, Flags, ClientID, Mask, WorldID);
-	}
-	
 	int SendPackMsgTranslate(const CNetMsg_Sv_Emoticon* pMsg, int Flags, int ClientID, int64_t Mask, int WorldID)
 	{
 		CNetMsg_Sv_Emoticon MsgCopy;

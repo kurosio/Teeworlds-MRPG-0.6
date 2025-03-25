@@ -275,7 +275,7 @@ void CEntityManager::LastStand(int ClientID, vec2 Position, float Radius, int Ma
 		// action
 		if(pBase->Server()->Tick() % pBase->Server()->TickSpeed() == 0)
 		{
-			if(pChar->CheckFailMana(ManaCostPerSec))
+			if(pChar->TryUseMana(ManaCostPerSec))
 			{
 				if(pChar->GetPlayer()->m_Effects.Remove("LastStand"))
 				{
