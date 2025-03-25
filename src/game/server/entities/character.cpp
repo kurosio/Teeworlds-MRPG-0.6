@@ -1280,6 +1280,9 @@ void CCharacter::Snap(int SnappingClient)
 	DDNetFlag(CHARACTERFLAG_MOVEMENTS_DISABLED, m_Core.m_MovingDisabled);
 	DDNetFlag(CHARACTERFLAG_IN_FREEZE, m_Core.m_IsInFreeze);
 	DDNetFlag(CHARACTERFLAG_PRACTICE_MODE, BlockingInputFireWeapon);
+	DDNetFlag(CHARACTERFLAG_LOCK_MODE, false);
+	DDNetFlag(CHARACTERFLAG_TEAM0_MODE, m_pTilesHandler->IsActive(TILE_FISHING_MODE));
+	DDNetFlag(CHARACTERFLAG_INVINCIBLE, false);
 
 	pDDNetCharacter->m_FreezeEnd = 0;
 	pDDNetCharacter->m_Jumps = m_Core.m_Jumps;
@@ -1292,6 +1295,7 @@ void CCharacter::Snap(int SnappingClient)
 	pDDNetCharacter->m_FreezeStart = m_Core.m_FreezeStart;
 	pDDNetCharacter->m_TargetX = m_Core.m_Input.m_TargetX;
 	pDDNetCharacter->m_TargetY = m_Core.m_Input.m_TargetY;
+	pDDNetCharacter->m_TuneZoneOverride = -1;
 }
 
 void CCharacter::PostSnap()

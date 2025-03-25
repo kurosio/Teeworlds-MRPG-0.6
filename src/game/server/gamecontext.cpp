@@ -129,6 +129,26 @@ CEidolonInfoData* CGS::GetEidolonByItemID(ItemIdentifier ItemID) const
 	return p != CEidolonInfoData::Data().end() ? &(*p) : nullptr;
 }
 
+void CGS::CreateBirthdayEffect(vec2 Pos, int64_t Mask)
+{
+	CNetEvent_Birthday* pEvent = m_Events.Create<CNetEvent_Birthday>(Mask);
+	if(pEvent)
+	{
+		pEvent->m_X = (int)Pos.x;
+		pEvent->m_Y = (int)Pos.y;
+	}
+}
+
+void CGS::CreateFinishEffect(vec2 Pos, int64_t Mask)
+{
+	CNetEvent_Finish* pEvent = m_Events.Create<CNetEvent_Finish>(Mask);
+	if(pEvent)
+	{
+		pEvent->m_X = (int)Pos.x;
+		pEvent->m_Y = (int)Pos.y;
+	}
+}
+
 void CGS::CreateDamage(vec2 Pos, int FromCID, int Amount, bool CritDamage, float Angle, int64_t Mask)
 {
 	float a = 3 * pi / 2 + Angle;
