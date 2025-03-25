@@ -5,8 +5,6 @@
 #include <game/server/gamecontext.h>
 
 #include "components/Accounts/AccountManager.h"
-#include "components/Accounts/AccountMiningManager.h"
-#include "components/Accounts/AccountFarmingManager.h"
 #include "components/achievements/achievement_manager.h"
 #include "components/auction/auction_manager.h"
 #include "components/aethernet/aethernet_manager.h"
@@ -45,8 +43,6 @@ CMmoController::CMmoController(CGS* pGameServer) : m_pGameServer(pGameServer)
 	m_System.add(m_pGroupManager = new CGroupManager);
 	m_System.add(m_pSkillManager = new CSkillManager);
 	m_System.add(m_pAccountManager = new CAccountManager);
-	m_System.add(m_pAccountMiningManager = new CAccountMiningManager);
-	m_System.add(m_pAccountFarmingManager = new CAccountFarmingManager);
 	m_System.add(m_pMailboxManager = new CMailboxManager);
 	m_System.add(new CWikiManager);
 

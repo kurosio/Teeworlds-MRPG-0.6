@@ -10,8 +10,6 @@
 #include "core/entities/items/gathering_node.h"
 
 #include "core/components/achievements/achievement_data.h"
-#include "core/components/Accounts/AccountMiningManager.h"
-#include "core/components/Accounts/AccountFarmingManager.h"
 #include "core/components/guilds/guild_manager.h"
 #include "core/components/houses/house_manager.h"
 
