@@ -5,7 +5,7 @@
 #include <game/server/core/tools/event_listener.h>
 #include <game/server/core/tools/scenario_manager.h>
 
-class CDropItem;
+class CEntityDropItem;
 class CEntityGroup;
 class CEntityPersonalDoor;
 
@@ -21,7 +21,7 @@ class CUniversalScenario : public ScenarioBase, public IEventListener
 	std::map<std::string, PersonalDoor> m_vpPersonalDoors {};
 	std::vector <std::weak_ptr<CEntityGroup>> m_vpShootmarkers {};
 	vec2 m_MovementPos {};
-	CDropItem* m_pEntDroppedItem {};
+	CEntityDropItem* m_pEntDroppedItem {};
 
 public:
 	CUniversalScenario(int ScenarioID, const nlohmann::json& jsonData);

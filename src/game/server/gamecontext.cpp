@@ -14,7 +14,7 @@
 #include "core/tools/path_finder.h"
 #include "core/entities/items/drop_items.h"
 
-#include "core/components/Accounts/AccountManager.h"
+#include "core/components/accounts/account_manager.h"
 #include "core/components/Bots/BotManager.h"
 #include "core/components/quests/quest_manager.h"
 #include "core/components/skills/skill_manager.h"
@@ -1408,9 +1408,9 @@ bool CGS::TakeItemCharacter(int ClientID)
 	if(!pPlayer)
 		return false;
 
-	std::vector<CDropItem*> vDrops;
-	for(CEntity* item : m_World.FindEntities(pPlayer->GetCharacter()->m_Core.m_Pos, 64, 64, CGameWorld::ENTTYPE_ITEM_DROP))
-		vDrops.push_back((CDropItem*)item);
+	std::vector<CEntityDropItem*> vDrops;
+	for(CEntity* item : m_World.FindEntities(pPlayer->GetCharacter()->m_Core.m_Pos, 24, 64, CGameWorld::ENTTYPE_ITEM_DROP))
+		vDrops.push_back((CEntityDropItem*)item);
 
 	for(const auto& pDrop : vDrops)
 	{

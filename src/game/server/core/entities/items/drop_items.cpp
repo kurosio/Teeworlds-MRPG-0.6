@@ -3,26 +3,33 @@
 #include "drop_items.h"
 
 #include <game/server/gamecontext.h>
-
 #include <base/tl/base.h>
 
-CDropItem::CDropItem(CGameWorld *pGameWorld, vec2 Pos, vec2 Vel, float AngleForce, CItem DropItem, int OwnerID)
-: CEntity(pGameWorld, CGameWorld::ENTTYPE_ITEM_DROP, Pos, 28.0f)
+enum
+{
+	MAIN_GROUP = 1,
+	NUM_MAIN_IDS = 3,
+};
+
+CEntityDropItem::CEntityDropItem(CGameWorld *pGameWorld, vec2 Pos, vec2 Vel, float AngleForce, CItem DropItem, int OwnerID)
+: CEntity(pGameWorld, CGameWorld::ENTTYPE_ITEM_DROP, Pos, 24.0f)
 {
 	m_Pos = Pos;
 	m_Vel = Vel;
-	m_OwnerID = OwnerID;
+	m_ClientID = OwnerID;
 	m_DropItem = DropItem;
 	m_DropItem.SetSettings(0);
 	m_LifeSpan = Server()->TickSpeed() * g_Config.m_SvDroppedItemLifetime;
+	m_IsCurrency = m_DropItem.Info()->IsGroup(ItemGroup::Currency);
+	AddGroupIds(MAIN_GROUP, NUM_MAIN_IDS);
 
 	GameWorld()->InsertEntity(this);
 }
 
-bool CDropItem::TakeItem(int ClientID)
+bool CEntityDropItem::TakeItem(int ClientID)
 {
 	auto *pPlayer = GS()->GetPlayer(ClientID, true, true);
-	if(!pPlayer || (m_OwnerID >= 0 && m_OwnerID != ClientID))
+	if(!pPlayer || (m_ClientID >= 0 && m_ClientID != ClientID))
 		return false;
 
 	// change of enchanted objects
@@ -50,7 +57,7 @@ bool CDropItem::TakeItem(int ClientID)
 	return true;
 }
 
-void CDropItem::Tick()
+void CEntityDropItem::Tick()
 {
 	m_LifeSpan--;
 	if(m_LifeSpan < 0)
@@ -64,16 +71,29 @@ void CDropItem::Tick()
 	GS()->Collision()->MovePhysicalBox(&m_Pos, &m_Vel, vec2(m_Radius, m_Radius), 0.5f);
 
 	// set without owner if there is no player owner
-	if(m_OwnerID != -1 && !GS()->GetPlayer(m_OwnerID, true, true))
-		m_OwnerID = -1;
+	if(m_ClientID != -1)
+	{
+		auto* pPlayer = GS()->GetPlayer(m_ClientID, true, true);
+		if(pPlayer && pPlayer->GetItem(itMagnetItems)->IsEquipped())
+			m_Vel += normalize(pPlayer->GetCharacter()->m_Core.m_Pos - m_Pos) * 0.55f;
+		else if(!pPlayer)
+			m_ClientID = -1;
+	}
 
 	// information
-	auto *pChar = (CCharacter*)GameWorld()->ClosestEntity(m_Pos, 64.0f, CGameWorld::ENTTYPE_CHARACTER, nullptr);
+	auto *pChar = (CCharacter*)GameWorld()->ClosestEntity(m_Pos, 32.0f, CGameWorld::ENTTYPE_CHARACTER, nullptr);
 	if(pChar && !pChar->GetPlayer()->IsBot())
 	{
+		if(distance(pChar->m_Core.m_Pos, m_Pos) > 24.0f)
+		{
+			if(m_ClientID == -1 || m_ClientID == pChar->GetClientID())
+				m_Vel += normalize(pChar->m_Core.m_Pos - m_Pos) * 0.55f;
+			return;
+		}
+
 		const int ClientID = pChar->GetPlayer()->GetCID();
 		const auto* pPlayerItem = pChar->GetPlayer()->GetItem(m_DropItem.GetID());
-		const char* pOwnerNick = (m_OwnerID != -1 ? Server()->ClientName(m_OwnerID) : "\0");
+		const char* pOwnerNick = (m_ClientID != -1 ? Server()->ClientName(m_ClientID) : "\0");
 
 		if(!pPlayerItem->Info()->IsStackable())
 		{
@@ -96,10 +116,29 @@ void CDropItem::Tick()
 	}
 }
 
-void CDropItem::Snap(int SnappingClient)
+void CEntityDropItem::Snap(int SnappingClient)
 {
 	if(m_Flash.IsFlashing() || NetworkClipped(SnappingClient))
 		return;
 
-	GS()->SnapPickup(SnappingClient, GetID(), m_Pos, POWERUP_WEAPON, WEAPON_HAMMER);
+	if(m_IsCurrency)
+	{
+		m_Radius = 12.f;
+		GS()->SnapProjectile(SnappingClient, GetID(), m_Pos, {}, Server()->Tick() - 2, WEAPON_LASER, m_ClientID);
+	}
+	else
+	{
+		m_Radius = 24.f;
+		GS()->SnapPickup(SnappingClient, GetID(), m_Pos, POWERUP_ARMOR_LASER);
+	}
+
+	const auto& currencyGroup = GetGroupIds(MAIN_GROUP);
+	for(int i = 0; i < NUM_MAIN_IDS; i++)
+	{
+		float AngleStep = 2.0f * pi / (float)NUM_MAIN_IDS;
+		float AngleStart = (2.0f * pi * (float)Server()->Tick() / (float)Server()->TickSpeed()) * 1.55f;
+		float X = m_Radius * cos(AngleStart + AngleStep * (float)i);
+		float Y = m_Radius * sin(AngleStart + AngleStep * (float)i);
+		GS()->SnapProjectile(SnappingClient, currencyGroup[i], m_Pos + vec2(X, Y), { }, Server()->Tick(), WEAPON_HAMMER);
+	}
 }

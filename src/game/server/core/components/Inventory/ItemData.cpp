@@ -372,9 +372,9 @@ bool CPlayerItem::Drop(int Value)
 
 	const auto* pChar = pPlayer->GetCharacter();
 	auto Force = vec2(pChar->m_Core.m_Input.m_TargetX, pChar->m_Core.m_Input.m_TargetY);
-	if(length(Force) > 8.0f)
+	if(length(Force) > 10.0f)
 	{
-		Force = normalize(Force) * 8.0f;
+		Force = normalize(Force) * 10.0f;
 	}
 
 	CItem DropItem = *this;

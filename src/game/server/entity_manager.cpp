@@ -49,7 +49,7 @@ void CEntityManager::DropItem(vec2 Pos, int ClientID, const CItem& Item, vec2 Fo
 	if(Item.IsValid())
 	{
 		const float Angle = angle(normalize(Force));
-		new CDropItem(&GS()->m_World, Pos, Force, Angle, Item, ClientID);
+		new CEntityDropItem(&GS()->m_World, Pos, Force, Angle, Item, ClientID);
 	}
 }
 

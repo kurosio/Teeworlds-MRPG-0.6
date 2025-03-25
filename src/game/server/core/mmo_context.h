@@ -640,6 +640,7 @@ enum
 	itSpiderHook                   = 66,    // Spider hook
 	itCustomizer                   = 96,    // Curomizer for personal skins
 	itDamageEqualizer              = 97,    // Module for dissable self dmg
+	itMagnetItems                  = 185,   // Magnetizes items meant for you
 
 	// weapons
 	itHammer                       = 2,     // Equipment Hammers

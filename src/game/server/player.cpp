@@ -5,7 +5,7 @@
 #include "gamecontext.h"
 #include "worldmodes/dungeon.h"
 
-#include "core/components/Accounts/AccountManager.h"
+#include "core/components/accounts/account_manager.h"
 #include "core/components/achievements/achievement_manager.h"
 #include "core/components/Bots/BotManager.h"
 #include "core/components/Dungeons/DungeonData.h"

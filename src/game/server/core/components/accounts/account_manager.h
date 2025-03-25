@@ -5,7 +5,7 @@
 #include <game/server/core/mmo_component.h>
 #include <game/server/core/tools/timeperiod_data.h>
 
-#include "AccountData.h"
+#include "account_data.h"
 
 class CAccountManager : public MmoComponent
 {

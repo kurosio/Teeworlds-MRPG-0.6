@@ -3,8 +3,6 @@
 #include <game/server/entity_manager.h>
 #include <game/server/gamecontext.h>
 
-#include <game/server/core/components/Accounts/AccountMiningManager.h>
-#include <game/server/core/components/Accounts/AccountFarmingManager.h>
 #include <game/server/core/components/houses/house_manager.h>
 
 CEntityGatheringNode::CEntityGatheringNode(CGameWorld* pGameWorld, GatheringNode* pNode, vec2 Pos, int Type)

@@ -4,7 +4,7 @@
 
 #include <game/server/gamecontext.h>
 
-#include "components/Accounts/AccountManager.h"
+#include "components/accounts/account_manager.h"
 #include "components/achievements/achievement_manager.h"
 #include "components/auction/auction_manager.h"
 #include "components/aethernet/aethernet_manager.h"

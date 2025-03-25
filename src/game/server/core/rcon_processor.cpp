@@ -3,7 +3,7 @@
 #include <engine/server.h>
 #include <game/server/gamecontext.h>
 
-#include "components/Accounts/AccountManager.h"
+#include "components/accounts/account_manager.h"
 #include "components/guilds/guild_manager.h"
 #include "components/Bots/BotManager.h"
 #include "components/mails/mail_wrapper.h"

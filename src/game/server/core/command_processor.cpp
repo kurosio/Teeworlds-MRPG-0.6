@@ -1,7 +1,7 @@
 ﻿#include "command_processor.h"
 
 #include <engine/server.h>
-#include <game/server/core/components/Accounts/AccountManager.h>
+#include <game/server/core/components/accounts/account_manager.h>
 #include <game/server/core/components/guilds/guild_manager.h>
 #include <game/server/core/components/houses/house_manager.h>
 #include <game/server/core/components/groups/group_manager.h>

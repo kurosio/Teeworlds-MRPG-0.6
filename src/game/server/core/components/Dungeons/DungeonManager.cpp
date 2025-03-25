@@ -4,7 +4,7 @@
 
 #include <game/server/gamecontext.h>
 
-#include <game/server/core/components/Accounts/AccountManager.h>
+#include <game/server/core/components/accounts/account_manager.h>
 
 #include "game/server/worldmodes/dungeon.h"
 

@@ -2,7 +2,7 @@
 
 #include <engine/server.h>
 #include <game/server/gamecontext.h>
-#include "AccountData.h"
+#include "account_data.h"
 
 constexpr double DECAY_FACTOR = 0.01;
 constexpr double LEVEL_FACTOR = 0.05;

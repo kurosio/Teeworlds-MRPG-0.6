@@ -399,7 +399,7 @@ void CUniversalScenario::StepPickItemTask(const vec2& pos, const nlohmann::json&
 			return;
 
 		const float Angle = angle(normalize(vec2 {}));
-		m_pEntDroppedItem = new CDropItem(&GS()->m_World, pos, vec2{ }, Angle, item, GetClientID());
+		m_pEntDroppedItem = new CEntityDropItem(&GS()->m_World, pos, vec2{ }, Angle, item, GetClientID());
 		if(m_pEntDroppedItem)
 		{
 			GS()->CreatePlayerSpawn(pos, CmaskOne(GetClientID()));

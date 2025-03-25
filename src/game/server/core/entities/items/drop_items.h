@@ -6,16 +6,16 @@
 
 #include <game/server/core/components/Inventory/ItemData.h>
 
-class CDropItem : public CEntity
+class CEntityDropItem : public CEntity
 {
-	CItem m_DropItem;
-	int m_OwnerID;
-	vec2 m_Vel;
-	int m_LifeSpan;
-	CFlashingTick m_Flash;
+	CItem m_DropItem {};
+	vec2 m_Vel {};
+	int m_LifeSpan {};
+	bool m_IsCurrency {};
+	CFlashingTick m_Flash {};
 
 public:
-	CDropItem(class CGameWorld *pGameWorld, vec2 Pos, vec2 Vel, float AngleForce, CItem DropItem, int OwnerID);
+	CEntityDropItem(class CGameWorld *pGameWorld, vec2 Pos, vec2 Vel, float AngleForce, CItem DropItem, int OwnerID);
 
 	void Tick() override;
 	void Snap(int SnappingClient) override;
