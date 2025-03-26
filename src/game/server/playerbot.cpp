@@ -537,7 +537,7 @@ const CTeeInfo& CPlayerBot::GetTeeInfo() const
 void CPlayerBot::HandlePathFinder()
 {
 	const auto* pChar = dynamic_cast<CCharacterBotAI*>(m_pCharacter);
-	if(!IsActive() || !pChar || !pChar->IsAlive())
+	if(!IsActive() || !pChar || !pChar->IsAlive() || Server()->Tick() % 5 != 0)
 		return;
 
 	if(GetBotType() == TYPE_BOT_MOB)

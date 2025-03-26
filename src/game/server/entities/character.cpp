@@ -18,6 +18,7 @@
 
 #include <game/server/core/entities/group/entitiy_group.h>
 #include <game/server/core/entities/items/gathering_node.h>
+#include <game/server/core/entities/items/fishing_rod.h>
 #include <game/server/core/entities/tools/multiple_orbite.h>
 #include <game/server/core/entities/tools/flying_point.h>
 #include "character_bot.h"
@@ -27,7 +28,6 @@
 #include <game/server/core/entities/weapons/rifle_magneticpulse.h>
 #include <game/server/core/entities/weapons/rifle_wallpusher.h>
 #include <game/server/core/entities/weapons/rifle_trackedplazma.h>
-#include <game/server/core/entities/tools/fishing_rod.h>
 
 MACRO_ALLOC_POOL_ID_IMPL(CCharacter, MAX_CLIENTS* ENGINE_MAX_WORLDS + MAX_CLIENTS)
 
