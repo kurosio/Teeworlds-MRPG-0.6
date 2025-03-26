@@ -7,7 +7,7 @@
 void CTileHandler::Handle(const vec2& Position)
 {
 	// initialize variables
-	const int Indices[TILES_LAYER_NUM] = 
+	const int Indices[TILES_LAYER_NUM] =
 	{
 		m_pCollision->GetMainTileIndex(Position.x, Position.y),
 		m_pCollision->GetFrontTileIndex(Position.x, Position.y),

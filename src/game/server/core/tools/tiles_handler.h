@@ -1,7 +1,7 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#ifndef GAME_SERVER_CORE_TILES_HANDLER_H
-#define GAME_SERVER_CORE_TILES_HANDLER_H
+#ifndef GAME_SERVER_CORE_TOOLS_TILES_HANDLER_H
+#define GAME_SERVER_CORE_TOOLS_TILES_HANDLER_H
 
 constexpr int TILES_LAYER_NUM = 3;
 
@@ -41,11 +41,8 @@ constexpr int TILES_LAYER_NUM = 3;
 		exitActions \
 	}
 
-// forward declaration
 class CCollision;
 class CCharacter;
-
-// tile handler
 class CTileHandler
 {
 	CCollision* m_pCollision {};
@@ -56,7 +53,8 @@ class CTileHandler
 	int m_MoveRestrictions {};
 
 public:
-	explicit CTileHandler(CCollision* pCollision, CCharacter* pCharacter) : m_pCollision(pCollision), m_pCharacter(pCharacter) {}
+	explicit CTileHandler(CCollision* pCollision, CCharacter* pCharacter)
+		: m_pCollision(pCollision), m_pCharacter(pCharacter) {}
 
 	void Handle(const vec2& Position);
 
