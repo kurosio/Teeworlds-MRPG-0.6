@@ -85,7 +85,7 @@ void CProfession::AddExperience(uint64_t Experience)
 			if(pPlayer->GetCharacter() && pPlayer->GetCharacter()->IsAlive())
 			{
 				GS()->CreateSound(pPlayer->GetCharacter()->m_Core.m_Pos, 4);
-				GS()->CreateDeath(pPlayer->GetCharacter()->m_Core.m_Pos, m_ClientID);
+				GS()->CreateBirthdayEffect(pPlayer->GetCharacter()->m_Core.m_Pos, m_ClientID);
 				GS()->EntityManager()->Text(pPlayer->GetCharacter()->m_Core.m_Pos + vec2(0, -40), 40, pProfessionName);
 			}
 

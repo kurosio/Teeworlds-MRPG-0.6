@@ -33,50 +33,15 @@ public:
 	void AddExperience(uint64_t Experience);
 	bool Upgrade(AttributeIdentifier ID, int Units, int PricePerUnit);
 
-	int GetLevel() const
-	{
-		return m_Level;
-	}
-
-	uint64_t GetExperience() const
-	{
-		return m_Experience;
-	}
-
-	uint64_t GetExpForNextLevel() const
-	{
-		return computeExperience(m_Level);
-	}
-
-	int GetUpgradePoint() const
-	{
-		return m_UpgradePoint;
-	}
-
-	ProfessionIdentifier GetProfessionID() const
-	{
-		return m_ProfessionID;
-	}
-
-	bool IsProfessionType(int ProfessionType) const
-	{
-		return m_ProfessionType == ProfessionType;
-	}
-
-	const std::unordered_map<AttributeIdentifier, int>& GetAttributes() const
-	{
-		return m_Attributes;
-	}
-
-	int GetAttributeValue(AttributeIdentifier ID) const
-	{
-		return m_Attributes.contains(ID) ? m_Attributes.at(ID) : 0;
-	}
-
-	bool HasAttributes() const
-	{
-		return !m_Attributes.empty();
-	}
+	int GetLevel() const { return m_Level; }
+	uint64_t GetExperience() const { return m_Experience; }
+	uint64_t GetExpForNextLevel() const { return computeExperience(m_Level); }
+	int GetUpgradePoint() const { return m_UpgradePoint; }
+	ProfessionIdentifier GetProfessionID() const { return m_ProfessionID; }
+	bool IsProfessionType(int ProfessionType) const { return m_ProfessionType == ProfessionType; }
+	const std::unordered_map<AttributeIdentifier, int>& GetAttributes() const { return m_Attributes; }
+	int GetAttributeValue(AttributeIdentifier ID) const { return m_Attributes.contains(ID) ? m_Attributes.at(ID) : 0; }
+	bool HasAttributes() const { return !m_Attributes.empty(); }
 
 private:
 	std::string GetPreparedJsonString() const;

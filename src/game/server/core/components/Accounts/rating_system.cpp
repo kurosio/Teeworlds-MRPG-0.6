@@ -98,6 +98,7 @@ std::string RatingSystem::GetRankName() const
 		if(Percent <= threshold)
 			return rank;
 	}
+
 	return "Legend";
 }
 

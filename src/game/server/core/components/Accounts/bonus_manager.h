@@ -19,19 +19,9 @@ struct TemporaryBonus
 	time_t StartTime{};
 	int Duration{};
 
-	bool IsActive() const
-	{
-		return difftime(time(nullptr), StartTime) < Duration;
-	}
-
 	void SetDuration(int days, int hours, int minutes, int seconds)
 	{
 		Duration = (days * 24 * 3600) + (hours * 3600) + (minutes * 60) + seconds;
-	}
-
-	int RemainingTime() const
-	{
-		return maximum(0, Duration - static_cast<int>(difftime(time(nullptr), StartTime)));
 	}
 
 	void GetRemainingTimeFormatted(int* days, int* hours, int* minutes, int* seconds) const
@@ -60,6 +50,9 @@ struct TemporaryBonus
 			*seconds = remaining % 60;
 		}
 	}
+
+	bool IsActive() const { return difftime(time(nullptr), StartTime) < Duration; }
+	int RemainingTime() const { return maximum(0, Duration - static_cast<int>(difftime(time(nullptr), StartTime))); }
 };
 
 class BonusManager
@@ -71,13 +64,13 @@ public:
 	void Init(int ClientID)
 	{
 		m_ClientID = ClientID;
-		LoadBonuses();
+		Load();
 	}
 
 	const char* GetStringBonusType(int bonusType) const;
 	void SendInfoAboutActiveBonuses() const;
 	void AddBonus(const TemporaryBonus& bonus);
-	void UpdateBonuses();
+	void PostTick();
 
 	template <typename T> requires std::is_integral_v<T>
 	void ApplyBonuses(int bonusType, T* pValue, T* pBonusValue = nullptr) const
@@ -106,8 +99,8 @@ public:
 	std::vector<TemporaryBonus>& GetTemporaryBonuses() { return m_vTemporaryBonuses; }
 
 private:
-	void LoadBonuses();
-	void SaveBonuses() const;
+	void Load();
+	void Save() const;
 };
 
 #endif

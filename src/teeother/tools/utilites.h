@@ -162,12 +162,6 @@ namespace mystd
 	void freeContainer(Containers&... args) { (freeContainer(args), ...); }
 
 	template<typename... Args>
-	bool loadSettings(const std::string& prefix, const std::string& line, Args*... values)
-	{
-		return loadSettings(prefix, std::vector{line}, values...);
-	}
-
-	template<typename... Args>
 	bool loadSettings(const std::string& prefix, const std::vector<std::string>& lines, Args*... values)
 	{
 		size_t CurrentPos = 0;
@@ -291,6 +285,28 @@ namespace mystd
 			}
 
 			return resutStr;
+		}
+
+		inline std::vector<std::string> splitLines(const std::string& input)
+		{
+			std::vector<std::string> lines;
+			std::string current_line;
+
+			for(char c : input)
+			{
+				if(c == '\n')
+				{
+					lines.push_back(current_line);
+					current_line.clear();
+				}
+				else
+					current_line += c;
+			}
+
+			if(!current_line.empty())
+				lines.push_back(current_line);
+
+			return lines;
 		}
 	}
 

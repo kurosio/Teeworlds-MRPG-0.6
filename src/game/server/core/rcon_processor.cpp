@@ -80,7 +80,7 @@ void RconProcessor::ConUnjail(IConsole::IResult* pResult, void* pUser)
 	}
 
 	// unprisoned
-	pPlayer->Account()->GetPrisonManager().Free();
+	pPlayer->Account()->GetPrisonManager().Release();
 	pGS->Console()->PrintF(IConsole::OUTPUT_LEVEL_STANDARD, "jail", "%s unprisoned up player %s.",
 		pServer->ClientName(FromCID), pServer->ClientName(UnprisonedCID));
 }

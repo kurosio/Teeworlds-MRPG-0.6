@@ -5,7 +5,6 @@ class CGS;
 class CAccountData;
 class RatingSystem
 {
-private:
 	int m_Rating {};
 	int64_t m_Wins {};
 	int64_t m_Losses {};
@@ -28,6 +27,7 @@ public:
 	double GetWinRate() const;
 	std::string GetRankName() const;
 
+private:
 	void Create();
 	void Load();
 	void Save();

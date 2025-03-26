@@ -177,8 +177,8 @@ void CPlayer::PostTick()
 		// handlers
 		HandleTuningParams();
 		CVoteOptional::HandleVoteOptionals(m_ClientID);
-		Account()->GetBonusManager().UpdateBonuses();
-		Account()->GetPrisonManager().UpdatePrison();
+		Account()->GetBonusManager().PostTick();
+		Account()->GetPrisonManager().PostTick();
 		m_Effects.PostTick();
 		m_Scenarios.PostTick();
 	}

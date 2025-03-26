@@ -5,6 +5,11 @@
 #include <engine/shared/linereader.h>
 #include <game/server/gamecontext.h>
 
+inline static std::string getFileName(int AccountID)
+{
+	return fmt_default("server_data/account_bonuses/{}.txt", AccountID);
+}
+
 const char* BonusManager::GetStringBonusType(int bonusType) const
 {
 	switch(bonusType)
@@ -20,15 +25,10 @@ const char* BonusManager::GetStringBonusType(int bonusType) const
 void BonusManager::SendInfoAboutActiveBonuses() const
 {
 	const auto pGS = (CGS*)Instance::GameServerPlayer(m_ClientID);
-
-	if(const int activeBonusesCount = static_cast<int>(m_vTemporaryBonuses.size()); activeBonusesCount == 0)
-	{
+	if(const auto activeBonusesCount = static_cast<int>(m_vTemporaryBonuses.size()); activeBonusesCount == 0)
 		pGS->Chat(m_ClientID, "You have no active bonuses.");
-	}
 	else
-	{
 		pGS->Chat(m_ClientID, "You have '{} active bonus{}'.", activeBonusesCount, activeBonusesCount > 1 ? "es" : "");
-	}
 }
 
 void BonusManager::AddBonus(const TemporaryBonus& bonus)
@@ -64,21 +64,22 @@ void BonusManager::AddBonus(const TemporaryBonus& bonus)
 		pGS->Chat(m_ClientID, "You have received: '{} +{~.2}%'", bonusType, bonus.Amount);
 	}
 
-	SaveBonuses();
+	Save();
 }
 
-void BonusManager::LoadBonuses()
+void BonusManager::Load()
 {
 	const auto* pGS = (CGS*)Instance::GameServerPlayer(m_ClientID);
-	IStorageEngine* pStorage = pGS->Storage();
 	const auto* pPlayer = pGS->GetPlayer(m_ClientID);
 
 	if(!pPlayer)
 		return;
 
-	const time_t currentTime = time(nullptr);
-	if(const auto File = pStorage->OpenFile(fmt_default("server_data/account_bonuses/{}.txt", pPlayer->Account()->GetID()).c_str(), IOFLAG_READ | IOFLAG_SKIP_BOM, IStorageEngine::TYPE_ABSOLUTE))
+	auto* pStorage = pGS->Storage();
+	const auto Filename = getFileName(pPlayer->Account()->GetID());
+	if(const auto File = pStorage->OpenFile(Filename.c_str(), IOFLAG_READ | IOFLAG_SKIP_BOM, IStorageEngine::TYPE_ABSOLUTE))
 	{
+		const time_t currentTime = time(nullptr);
 		CLineReader Reader;
 		Reader.Init(File);
 
@@ -104,16 +105,17 @@ void BonusManager::LoadBonuses()
 	}
 }
 
-void BonusManager::SaveBonuses() const
+void BonusManager::Save() const
 {
 	const auto* pGS = (CGS*)Instance::GameServerPlayer(m_ClientID);
-	IStorageEngine* pStorage = pGS->Storage();
 	const auto* pPlayer = pGS->GetPlayer(m_ClientID);
 
 	if(!pPlayer)
 		return;
 
-	if(const auto File = pStorage->OpenFile(fmt_default("server_data/account_bonuses/{}.txt", pPlayer->Account()->GetID()).c_str(), IOFLAG_WRITE, IStorageEngine::TYPE_ABSOLUTE))
+	auto* pStorage = pGS->Storage();
+	const auto Filename = getFileName(pPlayer->Account()->GetID());
+	if(const auto File = pStorage->OpenFile(Filename.c_str(), IOFLAG_WRITE, IStorageEngine::TYPE_ABSOLUTE))
 	{
 		for(const auto& bonus : m_vTemporaryBonuses)
 		{
@@ -129,7 +131,7 @@ void BonusManager::SaveBonuses() const
 	}
 }
 
-void BonusManager::UpdateBonuses()
+void BonusManager::PostTick()
 {
 	bool hasChanges = false;
 	for(auto it = m_vTemporaryBonuses.begin(); it != m_vTemporaryBonuses.end();)
@@ -149,7 +151,7 @@ void BonusManager::UpdateBonuses()
 
 	if(hasChanges)
 	{
-		SaveBonuses();
+		Save();
 	}
 }
 
