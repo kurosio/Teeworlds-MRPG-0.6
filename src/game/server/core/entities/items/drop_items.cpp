@@ -84,10 +84,17 @@ void CEntityDropItem::Tick()
 	auto *pChar = (CCharacter*)GameWorld()->ClosestEntity(m_Pos, 32.0f, CGameWorld::ENTTYPE_CHARACTER, nullptr);
 	if(pChar && !pChar->GetPlayer()->IsBot())
 	{
+		bool CanPick = m_ClientID == -1 || m_ClientID == pChar->GetClientID();
 		if(distance(pChar->m_Core.m_Pos, m_Pos) > 24.0f)
 		{
-			if(m_ClientID == -1 || m_ClientID == pChar->GetClientID())
+			if(CanPick)
 				m_Vel += normalize(pChar->m_Core.m_Pos - m_Pos) * 0.55f;
+			return;
+		}
+
+		if(m_IsCurrency && CanPick)
+		{
+			TakeItem(pChar->GetClientID());
 			return;
 		}
 
