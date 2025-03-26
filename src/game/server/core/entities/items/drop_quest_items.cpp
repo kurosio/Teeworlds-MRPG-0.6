@@ -66,6 +66,7 @@ void CDropQuestItem::Tick()
 		{
 			pPlayerItem->Add(1);
 			GS()->Chat(m_ClientID, "You got '{}'.", pPlayerItem->Info()->GetName());
+			GS()->CreatePlayerSound(m_ClientID, SOUND_PICK_UP);
 			GameWorld()->DestroyEntity(this);
 			return;
 		}

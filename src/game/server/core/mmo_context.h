@@ -63,6 +63,7 @@ enum ESpecialSound
 	SOUND_GAME_WANTED,
 	SOUND_GAME_MINER,
 	SOUND_GAME_FARMER,
+	SOUND_PICK_UP,
 };
 
 constexpr int GetSoundInterval(int SoundId)

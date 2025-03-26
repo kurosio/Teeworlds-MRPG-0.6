@@ -9,7 +9,7 @@ CEntityFishingRod::CEntityFishingRod(CGameWorld* pGameWorld, int ClientID, vec2 
 	m_EndRodPoint = Position;
 	m_Rope.Init(NUM_ROPE_POINTS, Position, Force);
 	m_Fishing.m_State = FishingNow::WAITING;
-	m_Fishing.m_HookingTime = SERVER_TICK_SPEED * (3 + rand() % 15);
+	m_Fishing.m_HookingTime = SERVER_TICK_SPEED * (5 + rand() % 14);
 
 	AddSnappingGroupIds(ROD, NUM_ROD_POINTS);
 	AddSnappingGroupIds(ROPE, NUM_ROPE_POINTS);
@@ -155,6 +155,7 @@ void CEntityFishingRod::FishingTick(CPlayer* pPlayer, CProfession* pFisherman, G
 		}
 
 		// input key fire
+		auto* pChar = pPlayer->GetCharacter();
 		Server()->Input()->BlockInputGroup(m_ClientID, BLOCK_INPUT_FIRE);
 		if(Server()->Input()->IsKeyClicked(m_ClientID, KEY_EVENT_FIRE))
 		{
@@ -235,7 +236,7 @@ void CEntityFishingRod::Snap(int SnappingClient)
 		const auto& [first, second] = positions[i];
 		const auto From = facingRight ? vec2(m_Pos.x + first.x, m_Pos.y + first.y) : vec2(m_Pos.x - first.x, m_Pos.y + first.y);
 		const auto To = facingRight ? vec2(m_Pos.x + second.x, m_Pos.y + second.y) : vec2(m_Pos.x - second.x, m_Pos.y + second.y);
-		GS()->SnapLaser(SnappingClient, rodIds[i], From, To, curTick, LASERTYPE_SHOTGUN);
+		GS()->SnapLaser(SnappingClient, rodIds[i], From, To, curTick - 2, LASERTYPE_SHOTGUN);
 		m_EndRodPoint = To;
 	}
 
@@ -248,7 +249,7 @@ void CEntityFishingRod::Snap(int SnappingClient)
 		{
 			const auto& From = m_Rope.m_vPoints[i];
 			const auto& To = m_Rope.m_vPoints[i + 1];
-			GS()->SnapLaser(SnappingClient, ropeIds[i], From, To, curTick - 5, LASERTYPE_DRAGGER);
+			GS()->SnapLaser(SnappingClient, ropeIds[i], From, To, curTick - 6, LASERTYPE_DRAGGER);
 		}
 
 		// draw rod float

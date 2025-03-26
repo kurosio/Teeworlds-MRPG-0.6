@@ -222,6 +222,27 @@ void CCharacter::FireWeapon()
 	// Check if the player is not a bot
 	if(!IsCharBot)
 	{
+		// fishing mode
+		if(m_pTilesHandler->IsActive(TILE_FISHING_MODE))
+		{
+			bool ExistEntity = GameWorld()->ExistEntity(m_pFishingRod);
+			if(ExistEntity && m_pFishingRod->IsWaitingState())
+			{
+				delete m_pFishingRod;
+				m_pFishingRod = nullptr;
+			}
+
+			if(!m_pFishingRod || !ExistEntity)
+			{
+				const auto ForceX = m_LatestInput.m_TargetX * 0.08f;
+				const auto ForceY = m_LatestInput.m_TargetY * 0.08f;
+				m_pFishingRod = new CEntityFishingRod(&GS()->m_World, m_ClientID, m_Core.m_Pos, vec2(ForceX, ForceY));
+				m_ReloadTimer = Server()->TickSpeed();
+			}
+
+			return;
+		}
+
 		// Check if the active weapon has no ammo
 		if(!m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_Ammo)
 		{
@@ -1328,29 +1349,16 @@ void CCharacter::HandleTiles()
 	// handle locked view camera and tile interactions if the player is not a bot
 	if(!m_pPlayer->IsBot())
 	{
-		// fishing mode
-		if(m_pTilesHandler->IsActive(TILE_FISHING_MODE))
-		{
-			m_Core.m_ActiveWeapon = WEAPON_HAMMER;
-			Server()->Input()->BlockInputGroup(m_ClientID, BLOCK_INPUT_FIRE);
-			if(Server()->Input()->IsKeyClicked(m_ClientID, KEY_EVENT_FIRE))
-			{
-				bool ExistEntity = GameWorld()->ExistEntity(m_pFishingRod);
-				if(ExistEntity && m_pFishingRod->IsWaitingState())
-					m_pFishingRod->MarkForDestroy();
-
-				if(!m_pFishingRod || m_pFishingRod->IsMarkedForDestroy())
-				{
-					const auto ForceX = m_LatestInput.m_TargetX * 0.08f;
-					const auto ForceY = m_LatestInput.m_TargetY * 0.08f;
-					m_pFishingRod = new CEntityFishingRod(&GS()->m_World, m_ClientID, m_Core.m_Pos, vec2(ForceX, ForceY));
-				}
-			}
-		}
+		// fishing information
 		if(m_pTilesHandler->IsEnter(TILE_FISHING_MODE))
+		{
 			GS()->Broadcast(m_ClientID, BroadcastPriority::GameBasicStats, 100, "Use 'Fire' to start fishing!");
+		}
 		else if(m_pTilesHandler->IsExit(TILE_FISHING_MODE) && GameWorld()->ExistEntity(m_pFishingRod))
-			m_pFishingRod->MarkForDestroy();
+		{
+			delete m_pFishingRod;
+			m_pFishingRod = nullptr;
+		}
 
 		// locked view cam
 		if(const auto result = GS()->Collision()->TryGetFixedCamPos(m_Core.m_Pos))

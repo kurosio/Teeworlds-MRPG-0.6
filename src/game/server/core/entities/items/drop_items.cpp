@@ -53,6 +53,7 @@ bool CEntityDropItem::TakeItem(int ClientID)
 	GS()->Broadcast(ClientID, BroadcastPriority::GameWarning, 10, "\0");
 	pPlayer->m_VotesData.UpdateVotesIf(MENU_INVENTORY);
 	pPlayer->m_VotesData.UpdateVotesIf(MENU_EQUIPMENT);
+	GS()->CreatePlayerSound(m_ClientID, SOUND_PICK_UP);
 	GameWorld()->DestroyEntity(this);
 	return true;
 }
