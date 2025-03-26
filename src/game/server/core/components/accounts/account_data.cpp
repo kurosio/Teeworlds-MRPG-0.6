@@ -29,6 +29,15 @@ int CAccountData::GetGoldCapacity() const
 	return DEFAULT_MAX_PLAYER_BAG_GOLD + TotalByAttribute;
 }
 
+const CTeeInfo& CAccountData::GetTeeInfo() const
+{
+	auto* pPlayer = GetPlayer();
+	auto* pProfession = m_pActiveProfession;
+	if(pPlayer && pProfession && !pPlayer->GetItem(itCustomizer)->IsEquipped())
+		return pProfession->GetTeeInfo();
+	return m_TeeInfos;
+}
+
 void CAccountData::Init(int ID, int ClientID, const char* pLogin, std::string Language, std::string LoginDate, ResultPtr pResult)
 {
 	// asserts
@@ -61,7 +70,7 @@ void CAccountData::Init(int ID, int ClientID, const char* pLogin, std::string La
 	// initialize sub account data.
 	InitProfessions();
 	InitAchievements(pResult->getString("Achievements"));
-	m_Class.Init(m_ClientID, (ProfessionIdentifier)pResult->getInt("ProfessionID"));
+	m_pActiveProfession = GetProfession((ProfessionIdentifier)pResult->getInt("ProfessionID"));
 	m_BonusManager.Init(m_ClientID);
 	m_PrisonManager.Init(m_ClientID);
 	m_RatingSystem.Init(this);
@@ -287,7 +296,7 @@ void CAccountData::AddExperience(uint64_t Value) const
 		return;
 
 	// check valid active profession
-	const auto pClassProfession = GetClassProfession();
+	const auto pClassProfession = GetActiveProfession();
 	if(!pClassProfession)
 	{
 		GS()->Chat(m_ClientID, "You don't have an active profession to gain experience!");
@@ -419,7 +428,7 @@ void CAccountData::HandleChair(uint64_t Exp, int Gold)
 		return;
 
 	// check active profession
-	const auto* pClassProfession = GetClassProfession();
+	const auto* pClassProfession = GetActiveProfession();
 	if(!pClassProfession)
 	{
 		GS()->Broadcast(m_ClientID, BroadcastPriority::GameWarning, 100, "You don't have an active profession to gain experience!");

@@ -58,7 +58,7 @@ public:
 	int GetBotType() const { return m_BotType; }
 	int GetBotMobID() const { return m_MobID; }
 	int GetCurrentWorldID() const override;
-	CTeeInfo& GetTeeInfo() const override;
+	const CTeeInfo& GetTeeInfo() const override;
 
 	void InitBasicStats(int StartHP, int StartMP, int MaxHP, int MaxMP);
 	int GetMaxHealth() const override { return m_MaxHealth; }

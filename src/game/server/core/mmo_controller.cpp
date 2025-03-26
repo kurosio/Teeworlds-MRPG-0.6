@@ -133,7 +133,7 @@ bool CMmoController::OnSendMenuVotes(CPlayer* pPlayer, int Menulist) const
 	// main menu
 	if(Menulist == MENU_MAIN)
 	{
-		const auto pProfName = GetProfessionName(pPlayer->Account()->GetClass().GetProfessionID());
+		const auto pProfName = GetProfessionName(pPlayer->Account()->GetActiveProfessionID());
 		const auto expForLevel = computeExperience(pPlayer->Account()->GetLevel());
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
@@ -404,7 +404,7 @@ void CMmoController::SaveAccount(CPlayer* pPlayer, int Table) const
 	// save profession
 	else if(Table == SAVE_PROFESSION)
 	{
-		const auto ProfessionID = (int)pAccount->GetClass().GetProfessionID();
+		const auto ProfessionID = (int)pAccount->GetActiveProfessionID();
 		Database->Execute<DB::UPDATE>("tw_accounts_data", "ProfessionID = '{}' WHERE ID = '{}'", ProfessionID, AccountID);
 	}
 

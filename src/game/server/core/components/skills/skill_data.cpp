@@ -77,7 +77,7 @@ bool CSkill::Use()
 
 	// check profession skill
 	const auto ProfID = Info()->GetProfessionID();
-	if(ProfID != ProfessionIdentifier::None && !pPlayer->Account()->GetClass().IsProfession(ProfID))
+	if(ProfID != ProfessionIdentifier::None && pPlayer->Account()->GetActiveProfessionID() != ProfID)
 	{
 		const char* pProfName = GetProfessionName(ProfID);
 		GS()->Chat(m_ClientID, "You can use this skill with '{} profession'.", pProfName);

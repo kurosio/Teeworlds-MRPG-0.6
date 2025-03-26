@@ -308,10 +308,8 @@ bool CGameControllerDungeon::OnCharacterSpawn(CCharacter* pChr)
 		const int ClientID = pChr->GetPlayer()->GetCID();
 
 		// update tanking client status
-		if(pChr->GetPlayer()->Account()->GetClass().IsProfession(ProfessionIdentifier::Tank))
-		{
+		if(pChr->GetPlayer()->Account()->GetActiveProfessionID() == ProfessionIdentifier::Tank)
 			pChr->GetPlayer()->m_MoodState = Mood::Tank;
-		}
 
 		// player died after the safety timer ended
 		if(!m_SafeTick)

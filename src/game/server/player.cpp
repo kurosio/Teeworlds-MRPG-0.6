@@ -307,10 +307,10 @@ void CPlayer::Snap(int SnappingClient)
 		StrToInts(&pClientInfo->m_Name0, 4, aNameBuf);
 		StrToInts(&pClientInfo->m_Clan0, 3, m_aRotateClanBuffer);
 		pClientInfo->m_Country = Server()->ClientCountry(m_ClientID);
-		StrToInts(&pClientInfo->m_Skin0, 6, GetTeeInfo().m_aSkinName);
-		pClientInfo->m_UseCustomColor = GetTeeInfo().m_UseCustomColor;
-		pClientInfo->m_ColorBody = GetTeeInfo().m_ColorBody;
-		pClientInfo->m_ColorFeet = GetTeeInfo().m_ColorFeet;
+		StrToInts(&pClientInfo->m_Skin0, 6, Account()->GetTeeInfo().m_aSkinName);
+		pClientInfo->m_UseCustomColor = Account()->GetTeeInfo().m_UseCustomColor;
+		pClientInfo->m_ColorBody = Account()->GetTeeInfo().m_ColorBody;
+		pClientInfo->m_ColorFeet = Account()->GetTeeInfo().m_ColorFeet;
 	}
 
 	// player info
@@ -414,7 +414,7 @@ void CPlayer::RefreshClanTagString()
 
 	// class
 	char classBuffer[64];
-	const char* professionName = GetProfessionName(Account()->GetClass().GetProfessionID());
+	const char* professionName = GetProfessionName(Account()->GetActiveProfessionID());
 	str_format(classBuffer, sizeof(classBuffer), " %-*s ", 8 - str_length(professionName), professionName);
 	prepared += fmt_default(" | {}", classBuffer);
 
@@ -603,7 +603,6 @@ bool CPlayer::IsAuthed() const
 int CPlayer::GetMaxHealth() const
 {
 	auto DefaultHP = 10 + GetTotalAttributeValue(AttributeIdentifier::HP);
-	DefaultHP += translate_to_percent_rest(DefaultHP, Account()->GetClass().GetExtraHP());
 	Account()->GetBonusManager().ApplyBonuses(BONUS_TYPE_HP, &DefaultHP);
 	return DefaultHP;
 }
@@ -611,7 +610,6 @@ int CPlayer::GetMaxHealth() const
 int CPlayer::GetMaxMana() const
 {
 	auto DefaultMP = 10 + GetTotalAttributeValue(AttributeIdentifier::MP);
-	DefaultMP += translate_to_percent_rest(DefaultMP, Account()->GetClass().GetExtraMP());
 	Account()->GetBonusManager().ApplyBonuses(BONUS_TYPE_MP, &DefaultMP);
 	return DefaultMP;
 }
@@ -806,7 +804,7 @@ int CPlayer::GetTotalAttributeValue(AttributeIdentifier ID) const
 		const auto* pDungeon = dynamic_cast<const CGameControllerDungeon*>(GS()->m_pController);
 		if(pAtt->GetUpgradePrice() < 4 && CDungeonData::ms_aDungeon[pDungeon->GetDungeonID()].IsDungeonPlaying())
 		{
-			return pDungeon->GetAttributeDungeonSyncByClass(Account()->GetClass().GetProfessionID(), ID);
+			return pDungeon->GetAttributeDungeonSyncByClass(Account()->GetActiveProfessionID(), ID);
 		}
 	}
 
@@ -825,17 +823,18 @@ int CPlayer::GetTotalAttributeValue(AttributeIdentifier ID) const
 		}
 	}
 
-	// add attribute value from player's improvements
-	if(const auto* pClassProf = Account()->GetClassProfession())
-	{
-		totalValue += pClassProf->GetAttributeValue(ID);
-	}
-
 	// add attribute for other profession
 	for(const auto& Prof : Account()->GetProfessions())
 	{
 		if(Prof.IsProfessionType(PROFESSION_TYPE_OTHER))
 			totalValue += Prof.GetAttributeValue(ID);
+	}
+
+	// add attribute for active profession
+	if(const auto* pClassProf = Account()->GetActiveProfession())
+	{
+		totalValue += pClassProf->GetAttributeValue(ID);
+		totalValue += translate_to_percent_rest(totalValue, pClassProf->GetExtraBoostAttribute(ID));
 	}
 
 	return totalValue;
@@ -921,9 +920,9 @@ int CPlayer::GetCurrentWorldID() const
 	return Server()->GetClientWorldID(m_ClientID);
 }
 
-CTeeInfo& CPlayer::GetTeeInfo() const
+const CTeeInfo& CPlayer::GetTeeInfo() const
 {
-	return Account()->m_TeeInfos;
+	return Account()->GetTeeInfo();
 }
 
 void CPlayer::StartUniversalScenario(const std::string& ScenarioData, int ScenarioID)

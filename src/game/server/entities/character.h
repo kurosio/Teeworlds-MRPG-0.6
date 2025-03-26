@@ -4,7 +4,7 @@
 #define GAME_SERVER_ENTITIES_CHARACTER_H
 #include <game/server/entity.h>
 
-#include "../core/tiles_handler.h"
+#include "../core/tools/tiles_handler.h"
 
 enum
 {

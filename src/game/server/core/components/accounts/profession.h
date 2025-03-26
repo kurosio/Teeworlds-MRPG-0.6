@@ -22,7 +22,9 @@ class CProfession
 protected:
 	CGS* GS() const;
 	CPlayer* GetPlayer() const;
-	std::unordered_map<AttributeIdentifier, int> m_Attributes;
+	std::unordered_map<AttributeIdentifier, int> m_Attributes {};
+	std::unordered_map<AttributeIdentifier, float> m_ExtraBoost {};
+	CTeeInfo m_ProfessionSkin {};
 
 public:
 	CProfession(ProfessionIdentifier ProfID, int ProfessionType);
@@ -41,7 +43,8 @@ public:
 	bool IsProfessionType(int ProfessionType) const { return m_ProfessionType == ProfessionType; }
 	const std::unordered_map<AttributeIdentifier, int>& GetAttributes() const { return m_Attributes; }
 	int GetAttributeValue(AttributeIdentifier ID) const { return m_Attributes.contains(ID) ? m_Attributes.at(ID) : 0; }
-	bool HasAttributes() const { return !m_Attributes.empty(); }
+	float GetExtraBoostAttribute(AttributeIdentifier ID) const { return m_ExtraBoost.contains(ID) ? m_ExtraBoost.at(ID) : .0f; }
+	const CTeeInfo& GetTeeInfo() const { return m_ProfessionSkin; }
 
 private:
 	std::string GetPreparedJsonString() const;
@@ -55,8 +58,18 @@ class CTankProfession : public CProfession
 public:
 	CTankProfession() : CProfession(ProfessionIdentifier::Tank, PROFESSION_TYPE_WAR)
 	{
+		// availables for upgrades
 		m_Attributes[AttributeIdentifier::HP] = 0;
 		m_Attributes[AttributeIdentifier::Lucky] = 0;
+
+		// extra boost for profession
+		m_ExtraBoost[AttributeIdentifier::HP] = 30.f;
+		m_ExtraBoost[AttributeIdentifier::MP] = 5.f;
+		m_ExtraBoost[AttributeIdentifier::DMG] = 10.f;
+
+		// profession skin
+		m_ProfessionSkin.m_UseCustomColor = 0;
+		str_copy(m_ProfessionSkin.m_aSkinName, "red_panda", sizeof(m_ProfessionSkin.m_aSkinName));
 	}
 };
 
@@ -68,8 +81,18 @@ class CDPSProfession : public CProfession
 public:
 	CDPSProfession() : CProfession(ProfessionIdentifier::Dps, PROFESSION_TYPE_WAR)
 	{
+		// availables for upgrades
 		m_Attributes[AttributeIdentifier::Crit] = 0;
 		m_Attributes[AttributeIdentifier::AttackSPD] = 0;
+
+		// extra boost for profession
+		m_ExtraBoost[AttributeIdentifier::HP] = 5.f;
+		m_ExtraBoost[AttributeIdentifier::MP] = 15.f;
+		m_ExtraBoost[AttributeIdentifier::DMG] = 30.f;\
+
+		// profession skin
+		m_ProfessionSkin.m_UseCustomColor = 0;
+		str_copy(m_ProfessionSkin.m_aSkinName, "Empieza", sizeof(m_ProfessionSkin.m_aSkinName));
 	}
 };
 
@@ -82,8 +105,18 @@ public:
 	CHealerProfession()
 		: CProfession(ProfessionIdentifier::Healer, PROFESSION_TYPE_WAR)
 	{
+		// availables for upgrades
 		m_Attributes[AttributeIdentifier::MP] = 0;
 		m_Attributes[AttributeIdentifier::Vampirism] = 0;
+
+		// extra boost for profession
+		m_ExtraBoost[AttributeIdentifier::HP] = 15.f;
+		m_ExtraBoost[AttributeIdentifier::MP] = 30.f;
+		m_ExtraBoost[AttributeIdentifier::DMG] = 5.f;
+
+		// profession skin
+		m_ProfessionSkin.m_UseCustomColor = 0;
+		str_copy(m_ProfessionSkin.m_aSkinName, "flokes", sizeof(m_ProfessionSkin.m_aSkinName));
 	}
 };
 
@@ -96,6 +129,7 @@ public:
 	CFarmerProfession()
 		: CProfession(ProfessionIdentifier::Farmer, PROFESSION_TYPE_OTHER)
 	{
+		// availables for upgrades
 		m_Attributes[AttributeIdentifier::Extraction] = 1;
 	}
 };
@@ -109,6 +143,7 @@ public:
 	CMinerProfession()
 		: CProfession(ProfessionIdentifier::Miner, PROFESSION_TYPE_OTHER)
 	{
+		// availables for upgrades
 		m_Attributes[AttributeIdentifier::Efficiency] = 1;
 	}
 };
@@ -122,6 +157,7 @@ public:
 	CFishermanProfession()
 		: CProfession(ProfessionIdentifier::Fisherman, PROFESSION_TYPE_OTHER)
 	{
+		// availables for upgrades
 		m_Attributes[AttributeIdentifier::Patience] = 1;
 	}
 };

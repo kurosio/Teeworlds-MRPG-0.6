@@ -10,7 +10,6 @@
 
 #include <game/server/core/components/guilds/guild_data.h>
 #include <game/server/core/components/auction/auction_data.h>
-#include <game/server/core/class_data.h>
 
 class CGS;
 class CPlayer;
@@ -34,7 +33,7 @@ class CAccountData
 	CHouse* m_pHouseData{};
 	std::weak_ptr<GroupData> m_pGroupData;
 	CGuild* m_pGuildData{};
-	ClassData m_Class {};
+	CProfession* m_pActiveProfession {};
 	nlohmann::json m_AchievementsData { };
 	BonusManager m_BonusManager{};
 	PrisonManager m_PrisonManager{};
@@ -55,12 +54,19 @@ public:
 	RatingSystem& GetRatingSystem() { return m_RatingSystem; }
 	const RatingSystem& GetRatingSystem() const { return m_RatingSystem; }
 
-	ClassData& GetClass() { return m_Class; }
-	const ClassData& GetClass() const { return m_Class; }
-
-	CProfession* GetClassProfession() const
+	void ChangeProfession(ProfessionIdentifier Profession)
 	{
-		return GetProfession(m_Class.GetProfessionID());
+		m_pActiveProfession = GetProfession(Profession);
+	}
+
+	CProfession* GetActiveProfession() const
+	{
+		return m_pActiveProfession;
+	}
+
+	ProfessionIdentifier GetActiveProfessionID() const
+	{
+		return m_pActiveProfession ? m_pActiveProfession->GetProfessionID() : ProfessionIdentifier::None;
 	}
 
 	CProfession* GetProfession(ProfessionIdentifier Profession) const
@@ -77,6 +83,8 @@ public:
 	{
 		return m_vProfessions;
 	}
+
+	const CTeeInfo& GetTeeInfo() const;
 
 	/*
 	 * Group functions: initialize or uniques from function
@@ -114,13 +122,13 @@ public:
 	 */
 	int GetLevel() const
 	{
-		const auto* pClassProfession = GetClassProfession();
+		const auto* pClassProfession = GetActiveProfession();
 		return pClassProfession ? pClassProfession->GetLevel() : 1;
 	}
 
 	uint64_t GetExperience() const
 	{
-		const auto* pClassProfession = GetClassProfession();
+		const auto* pClassProfession = GetActiveProfession();
 		return pClassProfession ? pClassProfession->GetExperience() : 0;
 	}
 

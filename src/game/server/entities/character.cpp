@@ -1058,9 +1058,8 @@ int CCharacter::GetTotalDamageByWeapon(int Weapon) const
 		default: break;
 	}
 
-	// apply extra damage by class
-	const int EnchantBonus = translate_to_percent_rest(m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::DMG), m_pPlayer->Account()->GetClass().GetExtraDMG());
-	return Damage + EnchantBonus;
+	Damage += m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::DMG);
+	return Damage;
 }
 
 CPlayer* CCharacter::GetLastAttacker() const
@@ -1658,10 +1657,6 @@ void CCharacter::UpdateEquippedStats(std::optional<int> UpdatedItemID)
 				m_pPlayer->TryCreateEidolon();
 			}
 		}
-
-		// check skin costumizer and profession skins
-		if(*UpdatedItemID == itCustomizer)
-			m_pPlayer->Account()->GetClass().UpdateProfessionSkin();
 
 		// update ammo regeneration if applicable
 		const int AmmoRegen = pItemInfo->GetInfoEnchantStats(AttributeIdentifier::AmmoRegen);

@@ -290,7 +290,7 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		VInfo.Add("Last login: {}", pLastLoginDate);
 		VInfo.Add("Account ID: {}", pAccount->GetID());
 		VInfo.Add("Login: {}", pAccount->GetLogin());
-		VInfo.Add("Class: {}", pPlayer->Account()->GetClass().GetName());
+		VInfo.Add("Class: {}", GetProfessionName(pPlayer->Account()->GetActiveProfessionID()));
 		VInfo.Add("Crime score: {}", pAccount->GetCrime());
 		VInfo.Add("Gold capacity: {}", pAccount->GetGoldCapacity());
 		VInfo.Add("Has house: {}", pAccount->HasHouse() ? "yes" : "no");
@@ -320,7 +320,7 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		{
 			if(Profession.IsProfessionType(PROFESSION_TYPE_WAR))
 			{
-				const auto AppendActiveStatus = pPlayer->Account()->GetClass().IsProfession(Profession.GetProfessionID()) ? "(A)" : "";
+				const auto AppendActiveStatus = pPlayer->Account()->GetActiveProfessionID() == Profession.GetProfessionID() ? "(A)" : "";
 				const auto pProfessionName = std::string(GetProfessionName(Profession.GetProfessionID()));
 				const auto Title = AppendActiveStatus + pProfessionName;
 				addLevelingInfo(VLevelingWar , &Profession, Title);
@@ -356,7 +356,7 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
-		auto* pClassProf = pPlayer->Account()->GetClassProfession();
+		const auto ActiveProfID = pPlayer->Account()->GetActiveProfessionID();
 
 		// select war profession
 		VoteWrapper VClassSelector(ClientID, VWF_SEPARATE_OPEN | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "\u2694 Change class profession");
@@ -364,7 +364,7 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		{
 			if(Prof.IsProfessionType(PROFESSION_TYPE_WAR))
 			{
-				const char* StrActiveFlag = (pClassProf && pClassProf->GetProfessionID() == Prof.GetProfessionID()) ? "\u2713" : "\u2715";
+				const char* StrActiveFlag = (ActiveProfID == Prof.GetProfessionID()) ? "\u2713" : "\u2715";
 				const char* pProfName = GetProfessionName(Prof.GetProfessionID());
 				const auto expNeed = Prof.GetExpForNextLevel();
 				const int progress = round_to_int(translate_to_percent(expNeed, Prof.GetExperience()));
@@ -590,8 +590,7 @@ bool CAccountManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, co
 			return true;
 		}
 
-		pPlayer->Account()->GetClass().SetProfessionID(ProfessionID);
-		pPlayer->Account()->GetClass().UpdateProfessionSkin();
+		pPlayer->Account()->ChangeProfession(ProfessionID);
 		pPlayer->GetCharacter()->UpdateEquippedStats();
 		pPlayer->m_VotesData.ResetExtraID();
 		pPlayer->m_VotesData.UpdateCurrentVotes();

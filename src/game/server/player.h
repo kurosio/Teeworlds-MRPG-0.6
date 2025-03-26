@@ -98,7 +98,7 @@ public:
 	virtual bool IsBot() const { return false; }
 	virtual int GetTeam();
 	virtual	int GetCurrentWorldID() const;
-	virtual CTeeInfo& GetTeeInfo() const;
+	virtual const CTeeInfo& GetTeeInfo() const;
 	virtual int GetMaxHealth() const;
 	virtual int GetMaxMana() const;
 	virtual	int GetHealth() const { return GetTempData().m_TempHealth; }

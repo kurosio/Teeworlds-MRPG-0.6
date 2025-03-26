@@ -100,6 +100,6 @@ void CWorldManager::NotifyUnlockedZonesByLeveling(CPlayer* pPlayer) const
 			continue;
 
 		GS()->Chat(-1, "'{}' initiated area ('{}')!", Server()->ClientName(ClientID), Server()->GetWorldName(pData->GetID()));
-		g_EventListenerManager.Notify<IEventListener::PlayerProfessionUnlockedZone>(pPlayer, pPlayer->Account()->GetClassProfession(), pData->GetID());
+		g_EventListenerManager.Notify<IEventListener::PlayerProfessionUnlockedZone>(pPlayer, pPlayer->Account()->GetActiveProfession(), pData->GetID());
 	}
 }
