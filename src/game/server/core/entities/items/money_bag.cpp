@@ -10,6 +10,9 @@ CEntityMoneyBag::CEntityMoneyBag(CGameWorld *pGameWorld, vec2 Pos)
 
 void CEntityMoneyBag::Tick()
 {
+	if(!HasPlayersInView())
+		return;
+
 	const auto *pChar = (CCharacter*)GameWorld()->ClosestEntity(m_Pos, m_Radius, CGameWorld::ENTTYPE_CHARACTER, nullptr);
 	if(!pChar || !pChar->IsAlive() || pChar->GetPlayer()->IsBot())
 		return;

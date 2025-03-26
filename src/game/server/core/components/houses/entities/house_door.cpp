@@ -28,6 +28,9 @@ CEntityHouseDoor::CEntityHouseDoor(CGameWorld* pGameWorld, IHouse* pHouse, const
 
 void CEntityHouseDoor::Tick()
 {
+	if(!HasPlayersInView())
+		return;
+
 	if(m_pHouse->GetHouseType() == IHouse::Type::Player && !PlayerHouseTick())
 	{
 		MarkForDestroy();

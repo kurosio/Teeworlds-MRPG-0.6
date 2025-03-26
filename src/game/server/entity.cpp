@@ -12,6 +12,7 @@ CEntity::CEntity(CGameWorld* pGameWorld, int ObjType, vec2 Pos, int Radius, int 
 	m_ClientID = ClientID;
 	m_Radius = Radius;
 	m_MarkedForDestroy = false;
+	m_HasPlayersInView = true;
 	m_NextCheckSnappingPriority = SNAPPING_PRIORITY_HIGH;
 	m_ID = Server()->SnapNewID();
 
@@ -52,7 +53,10 @@ int CEntity::NetworkClipped(int SnappingClient, vec2 CheckPos)
 int CEntity::NetworkClipped(int SnappingClient, vec2 CheckPos, float Radius)
 {
 	if(SnappingClient == -1)
+	{
+		m_HasPlayersInView = true;
 		return 0;
+	}
 
 	const CPlayer* pPlayer = GS()->GetPlayer(SnappingClient);
 	const float dx = pPlayer->m_ViewPos.x - CheckPos.x;
@@ -65,6 +69,7 @@ int CEntity::NetworkClipped(int SnappingClient, vec2 CheckPos, float Radius)
 	if(distance(pPlayer->m_ViewPos, CheckPos) > (1100.0f + radiusOffset) || !IsValidSnappingState(SnappingClient))
 		return 1;
 
+	m_HasPlayersInView = true;
 	return 0;
 }
 
@@ -99,14 +104,14 @@ CCharacter* CEntity::GetOwnerChar() const
 	return GS()->GetPlayerChar(m_ClientID);
 }
 
-void CEntity::AddGroupIds(int GroupID, int NumIds)
+void CEntity::AddSnappingGroupIds(int GroupID, int NumIds)
 {
 	m_vGroupIds[GroupID].resize(NumIds);
 	for(auto& id : m_vGroupIds[GroupID])
 		id = Server()->SnapNewID();
 }
 
-void CEntity::RemoveGroupIds(int GroupID)
+void CEntity::RemoveSnappingGroupIds(int GroupID)
 {
 	for(auto& id : m_vGroupIds[GroupID])
 		Server()->SnapFreeID(id);

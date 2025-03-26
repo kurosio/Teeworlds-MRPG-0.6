@@ -11,8 +11,8 @@ CEntityFishingRod::CEntityFishingRod(CGameWorld* pGameWorld, int ClientID, vec2 
 	m_Fishing.m_State = FishingNow::WAITING;
 	m_Fishing.m_HookingTime = SERVER_TICK_SPEED * (3 + rand() % 15);
 
-	AddGroupIds(ROD, NUM_ROD_POINTS);
-	AddGroupIds(ROPE, NUM_ROPE_POINTS);
+	AddSnappingGroupIds(ROD, NUM_ROD_POINTS);
+	AddSnappingGroupIds(ROPE, NUM_ROPE_POINTS);
 	GameWorld()->InsertEntity(this);
 }
 
@@ -218,7 +218,7 @@ void CEntityFishingRod::Snap(int SnappingClient)
 		return;
 
 	// initialize variables
-	auto& rodIds = GetGroupIds(ROD);
+	auto& rodIds = GetSnappingGroupIds(ROD);
 	const auto curTick = Server()->Tick();
 	const bool facingRight = (pChar->m_LatestInput.m_TargetX > 0.f);
 	const std::array<std::pair<vec2, vec2>, 3> positions = {
@@ -240,7 +240,7 @@ void CEntityFishingRod::Snap(int SnappingClient)
 	}
 
 	// draw rope
-	auto& ropeIds = GetGroupIds(ROPE);
+	auto& ropeIds = GetSnappingGroupIds(ROPE);
 	const size_t ropePointCount = m_Rope.m_vPoints.size();
 	if(ropePointCount >= 2)
 	{

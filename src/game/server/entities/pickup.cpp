@@ -55,6 +55,9 @@ void CPickup::Tick()
 		}
 	}
 
+	if(!HasPlayersInView())
+		return;
+
 	auto* pChar = (CCharacter *)GS()->m_World.ClosestEntity(m_Pos, 20.0f, CGameWorld::ENTTYPE_CHARACTER, nullptr);
 	if(!pChar || !pChar->IsAlive() || pChar->GetPlayer()->IsBot())
 		return;

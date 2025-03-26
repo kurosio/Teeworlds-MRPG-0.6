@@ -131,30 +131,35 @@ void CGameWorld::RemoveEntity(CEntity* pEnt)
 void CGameWorld::Snap(int SnappingClient)
 {
 	for(int i = 0; i < NUM_ENTTYPES; i++)
+	{
 		for(CEntity* pEnt = m_apFirstEntityTypes[i]; pEnt; )
 		{
 			m_pNextTraverseEntity = pEnt->m_pNextTypeEntity;
 			pEnt->Snap(SnappingClient);
 			pEnt = m_pNextTraverseEntity;
 		}
+	}
 }
 
 //
 void CGameWorld::PostSnap()
 {
 	for(int i = 0; i < NUM_ENTTYPES; i++)
+	{
 		for(CEntity* pEnt = m_apFirstEntityTypes[i]; pEnt; )
 		{
 			m_pNextTraverseEntity = pEnt->m_pNextTypeEntity;
 			pEnt->PostSnap();
 			pEnt = m_pNextTraverseEntity;
 		}
+	}
 }
 
 void CGameWorld::RemoveEntities()
 {
 	// destroy objects marked for destruction
 	for(int i = 0; i < NUM_ENTTYPES; i++)
+	{
 		for(CEntity* pEnt = m_apFirstEntityTypes[i]; pEnt; )
 		{
 			m_pNextTraverseEntity = pEnt->m_pNextTypeEntity;
@@ -165,26 +170,37 @@ void CGameWorld::RemoveEntities()
 			}
 			pEnt = m_pNextTraverseEntity;
 		}
+	}
 }
 
 void CGameWorld::Tick()
 {
 	// update all objects
 	for(int i = 0; i < NUM_ENTTYPES; i++)
+	{
 		for(CEntity* pEnt = m_apFirstEntityTypes[i]; pEnt; )
 		{
 			m_pNextTraverseEntity = pEnt->m_pNextTypeEntity;
 			pEnt->Tick();
 			pEnt = m_pNextTraverseEntity;
 		}
+	}
 
+	const auto& currentGameTick = Server()->Tick();
 	for(int i = 0; i < NUM_ENTTYPES; i++)
+	{
 		for(CEntity* pEnt = m_apFirstEntityTypes[i]; pEnt; )
 		{
+			if(g_Config.m_SvHighBandwidth || (currentGameTick % 2) == 0)
+			{
+				pEnt->m_HasPlayersInView = false;
+			}
+
 			m_pNextTraverseEntity = pEnt->m_pNextTypeEntity;
 			pEnt->TickDeferred();
 			pEnt = m_pNextTraverseEntity;
 		}
+	}
 
 	RemoveEntities();
 	UpdatePlayerMaps();

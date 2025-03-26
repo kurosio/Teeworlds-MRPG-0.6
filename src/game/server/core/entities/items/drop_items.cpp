@@ -21,7 +21,7 @@ CEntityDropItem::CEntityDropItem(CGameWorld *pGameWorld, vec2 Pos, vec2 Vel, flo
 	m_DropItem.SetSettings(0);
 	m_LifeSpan = Server()->TickSpeed() * g_Config.m_SvDroppedItemLifetime;
 	m_IsCurrency = m_DropItem.Info()->IsGroup(ItemGroup::Currency);
-	AddGroupIds(MAIN_GROUP, NUM_MAIN_IDS);
+	AddSnappingGroupIds(MAIN_GROUP, NUM_MAIN_IDS);
 
 	GameWorld()->InsertEntity(this);
 }
@@ -66,8 +66,11 @@ void CEntityDropItem::Tick()
 		GameWorld()->DestroyEntity(this);
 		return;
 	}
-
 	m_Flash.Tick(m_LifeSpan);
+
+	if(!HasPlayersInView())
+		return;
+
 	GS()->Collision()->MovePhysicalBox(&m_Pos, &m_Vel, vec2(m_Radius, m_Radius), 0.5f);
 
 	// set without owner if there is no player owner
@@ -139,7 +142,7 @@ void CEntityDropItem::Snap(int SnappingClient)
 		GS()->SnapPickup(SnappingClient, GetID(), m_Pos, POWERUP_ARMOR_LASER);
 	}
 
-	const auto& currencyGroup = GetGroupIds(MAIN_GROUP);
+	const auto& currencyGroup = GetSnappingGroupIds(MAIN_GROUP);
 	for(int i = 0; i < NUM_MAIN_IDS; i++)
 	{
 		float AngleStep = 2.0f * pi / (float)NUM_MAIN_IDS;

@@ -26,6 +26,9 @@ void CEntityDropPickup::Tick()
 		return;
 	}
 
+	if(!HasPlayersInView())
+		return;
+
 	m_Flash.Tick(m_LifeSpan);
 	GS()->Collision()->MovePhysicalBox(&m_Pos, &m_Vel, vec2(m_Radius, m_Radius), 0.5f);
 

@@ -28,27 +28,26 @@ class CEntity
 
 private:
 	friend class CGameWorld;
-	class CGameWorld *m_pGameWorld;
-
-	CEntity *m_pPrevTypeEntity;
-	CEntity *m_pNextTypeEntity;
-
-	int m_ID;
-	int m_ObjType;
-	bool m_MarkedForDestroy;
+	class CGameWorld* m_pGameWorld {};
+	CEntity* m_pPrevTypeEntity {};
+	CEntity* m_pNextTypeEntity {};
+	int m_ID {};
+	int m_ObjType {};
+	bool m_MarkedForDestroy {};
+	bool m_HasPlayersInView {};
 	std::map<int, std::vector<int>> m_vGroupIds {};
 
 protected:
-	vec2 m_Pos;
-	vec2 m_PosTo;
-	int m_ClientID;
-	ESnappingPriority m_NextCheckSnappingPriority;
+	vec2 m_Pos {};
+	vec2 m_PosTo {};
+	int m_ClientID {};
+	float m_Radius {};
+	ESnappingPriority m_NextCheckSnappingPriority {};
 
-	float m_Radius;
-	int GetID() const					{ return m_ID; }
-	std::vector<int>& GetGroupIds(int GroupID) { return m_vGroupIds[GroupID]; }
-	void AddGroupIds(int GroupID, int NumIds);
-	void RemoveGroupIds(int GroupID);
+	int GetID() const					               { return m_ID; }
+	std::vector<int>& GetSnappingGroupIds(int GroupID) { return m_vGroupIds[GroupID]; }
+	void AddSnappingGroupIds(int GroupID, int NumIds);
+	void RemoveSnappingGroupIds(int GroupID);
 
 public:
 	/* Constructor */
@@ -69,6 +68,7 @@ public:
 	const vec2 &GetPosTo() const		{ return m_PosTo; }
 	float GetRadius() const				{ return m_Radius; }
 	bool IsMarkedForDestroy() const		{ return m_MarkedForDestroy; }
+	bool HasPlayersInView() const       { return m_HasPlayersInView; }
 
 	CPlayer* GetOwner() const;
 	CCharacter* GetOwnerChar() const;

@@ -35,7 +35,7 @@ CDropQuestItem::~CDropQuestItem()
 
 void CDropQuestItem::Tick()
 {
-	CPlayer* pPlayer = GS()->GetPlayer(m_ClientID);
+	auto* pPlayer = GS()->GetPlayer(m_ClientID);
 
 	m_LifeSpan--;
 	if (m_LifeSpan < 0 || !pPlayer)
@@ -43,6 +43,9 @@ void CDropQuestItem::Tick()
 		GameWorld()->DestroyEntity(this);
 		return;
 	}
+
+	if(!HasPlayersInView())
+		return;
 
 	m_Flash.Tick(m_LifeSpan);
 	GS()->Collision()->MovePhysicalAngleBox(&m_Pos, &m_Vel, vec2(m_Radius, m_Radius), &m_Angle, &m_AngleForce, 0.5f);
