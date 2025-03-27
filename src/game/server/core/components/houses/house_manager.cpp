@@ -165,7 +165,8 @@ bool CHouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 		const ItemIdentifier& ItemID = Extra2;
 
 		// check farmzone valid
-		auto pFarmzone = pHouse->GetFarmzonesManager()->GetFarmzoneByID(FarmzoneID);
+		auto* pManager = pHouse->GetFarmzonesManager();
+		auto* pFarmzone = pManager->GetFarmzoneByID(FarmzoneID);
 		if(!pFarmzone)
 		{
 			GS()->Chat(ClientID, "Farm zone not found.");
@@ -177,6 +178,7 @@ bool CHouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 		{
 			auto* pItemInfo = GS()->GetItemInfo(ItemID);
 			GS()->Chat(ClientID, "You have successfully removed the '{}' from '{}'.", pItemInfo->GetName(), pFarmzone->GetName());
+			pManager->Save();
 		}
 
 		pPlayer->m_VotesData.UpdateVotesIf(MENU_HOUSE_FARMZONE_SELECT);
