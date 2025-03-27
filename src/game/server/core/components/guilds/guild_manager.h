@@ -50,10 +50,11 @@ private:
 	void ShowFarmzoneEdit(CPlayer* pPlayer, int FarmzoneID) const;
 
 public:
-	CGuildHouse* GetHouseByID(const GuildHouseIdentifier& ID) const;
-	CGuildHouse* GetHouseByPos(vec2 Pos) const;
 	CGuild* GetGuildByID(GuildIdentifier ID) const;
 	CGuild* GetGuildByName(const char* pGuildname) const;
+
+	CGuildHouse* GetHouseByID(const GuildHouseIdentifier& ID) const;
+	CGuildHouse* GetHouseByPos(vec2 Pos) const;
 	CFarmzone* GetHouseFarmzoneByPos(vec2 Pos) const;
 };
 

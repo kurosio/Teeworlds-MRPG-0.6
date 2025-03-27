@@ -623,18 +623,29 @@ CHouse* CHouseManager::GetHouse(HouseIdentifier ID) const
 
 CHouse* CHouseManager::GetHouseByPos(vec2 Pos) const
 {
+	const auto switchNumber = GS()->Collision()->GetSwitchTileNumberAtIndex(Pos, TILE_SW_HOUSE_ZONE);
+	if(!switchNumber)
+		return nullptr;
+
 	auto pHouse = std::ranges::find_if(CHouse::Data(), [&](auto& p)
 	{
-		const auto optNumber = GS()->Collision()->GetSwitchTileNumberAtIndex(p->GetPos(), TILE_SW_HOUSE_ZONE);
-		return optNumber && *optNumber == p->GetID();
+		return *switchNumber == p->GetID();
 	});
+
 	return pHouse != CHouse::Data().end() ? *pHouse : nullptr;
 }
 
 CFarmzone* CHouseManager::GetHouseFarmzoneByPos(vec2 Pos) const
 {
+	const auto switchNumber = GS()->Collision()->GetSwitchTileNumberAtIndex(Pos, TILE_SW_HOUSE_ZONE);
+	if(!switchNumber)
+		return nullptr;
+
 	for(auto& p : CHouse::Data())
 	{
+		if(*switchNumber != p->GetID())
+			continue;
+
 		for(auto& Farmzone : p->GetFarmzonesManager()->GetContainer())
 		{
 			if(distance(Pos, Farmzone.second.GetPos()) < Farmzone.second.GetRadius())

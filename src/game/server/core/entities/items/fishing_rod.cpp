@@ -155,7 +155,6 @@ void CEntityFishingRod::FishingTick(CPlayer* pPlayer, CProfession* pFisherman, G
 		}
 
 		// input key fire
-		auto* pChar = pPlayer->GetCharacter();
 		Server()->Input()->BlockInputGroup(m_ClientID, BLOCK_INPUT_FIRE);
 		if(Server()->Input()->IsKeyClicked(m_ClientID, KEY_EVENT_FIRE))
 		{

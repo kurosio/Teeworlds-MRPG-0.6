@@ -1763,29 +1763,6 @@ void CGuildManager::ShowLogsMenu(CPlayer* pPlayer) const
 	VoteWrapper::AddEmptyline(ClientID);
 }
 
-CGuildHouse* CGuildManager::GetHouseByID(const GuildHouseIdentifier& ID) const
-{
-	auto itHouse = std::ranges::find_if(CGuildHouse::Data(), [&ID](const CGuildHouse* p)
-	{
-		return ID == p->GetID();
-	});
-
-	return itHouse != CGuildHouse::Data().end() ? *itHouse : nullptr;
-}
-
-CGuildHouse* CGuildManager::GetHouseByPos(vec2 Pos) const
-{
-	const auto optNumber = GS()->Collision()->GetSwitchTileNumberAtIndex(Pos, TILE_SW_HOUSE_ZONE);
-	if(!optNumber.has_value())
-		return nullptr;
-
-	auto pHouse = std::ranges::find_if(CGuildHouse::Data(), [&](auto& p)
-	{
-		return optNumber && *optNumber == p->GetID();
-	});
-	return pHouse != CGuildHouse::Data().end() ? *pHouse : nullptr;
-}
-
 CGuild* CGuildManager::GetGuildByID(GuildIdentifier ID) const
 {
 	auto itGuild = std::ranges::find_if(CGuild::Data(), [&ID](CGuild* p)
@@ -1806,11 +1783,42 @@ CGuild* CGuildManager::GetGuildByName(const char* pGuildname) const
 	return itGuild != CGuild::Data().end() ? (*itGuild) : nullptr;
 }
 
+CGuildHouse* CGuildManager::GetHouseByID(const GuildHouseIdentifier& ID) const
+{
+	auto pHouse = std::ranges::find_if(CGuildHouse::Data(), [&ID](const CGuildHouse* p)
+	{
+		return ID == p->GetID();
+	});
+
+	return pHouse != CGuildHouse::Data().end() ? *pHouse : nullptr;
+}
+
+CGuildHouse* CGuildManager::GetHouseByPos(vec2 Pos) const
+{
+	const auto switchNumber = GS()->Collision()->GetSwitchTileNumberAtIndex(Pos, TILE_SW_HOUSE_ZONE);
+	if(!switchNumber)
+		return nullptr;
+
+	auto pHouse = std::ranges::find_if(CGuildHouse::Data(), [&](auto& p)
+	{
+		return *switchNumber == p->GetID();
+	});
+
+	return pHouse != CGuildHouse::Data().end() ? *pHouse : nullptr;
+}
+
 CFarmzone* CGuildManager::GetHouseFarmzoneByPos(vec2 Pos) const
 {
-	for(auto& p : CGuildHouse::Data())
+	const auto switchNumber = GS()->Collision()->GetSwitchTileNumberAtIndex(Pos, TILE_SW_HOUSE_ZONE);
+	if(!switchNumber)
+		return nullptr;
+
+	for(auto& pHouse : CGuildHouse::Data())
 	{
-		for(auto& Farmzone : p->GetFarmzonesManager()->GetContainer())
+		if(*switchNumber != pHouse->GetID())
+			continue;
+
+		for(auto& Farmzone : pHouse->GetFarmzonesManager()->GetContainer())
 		{
 			if(distance(Pos, Farmzone.second.GetPos()) < Farmzone.second.GetRadius())
 				return &Farmzone.second;
