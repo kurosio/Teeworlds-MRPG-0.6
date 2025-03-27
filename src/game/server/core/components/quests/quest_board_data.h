@@ -15,7 +15,7 @@ class CQuestsBoard : public MultiworldIdentifiableData< std::map< int, CQuestsBo
 	std::string m_Name {};
 	vec2 m_Pos {};
 	int m_WorldID {};
-	std::deque<int> m_vpQuestsList {};
+	std::deque<CQuestDescription*> m_vQuestList {};
 
 public:
 	CQuestsBoard() = default;
@@ -34,16 +34,11 @@ public:
 		m_WorldID = WorldID;
 	}
 
-	std::deque<int>& GetQuestsList() { return m_vpQuestsList; }
-
-	// functions
-	std::deque<int> GetUnfinishedQuestsByFlag(CPlayer* pPlayer, int Flag);
-
-	// getters
 	int GetID() const { return m_ID; }
 	const char* GetName() const { return m_Name.c_str(); }
 	vec2 GetPos() const { return m_Pos; }
 	int GetWorldID() const { return m_WorldID; }
+	std::deque<CQuestDescription*>& GetQuestList() { return m_vQuestList; }
 };
 
 #endif

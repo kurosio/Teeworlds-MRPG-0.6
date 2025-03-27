@@ -1,9 +1,7 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "guild_data.h"
-
 #include <game/server/gamecontext.h>
-
 #include <game/server/core/components/mails/mail_wrapper.h>
 
 CGS* CGuild::GS() const { return (CGS*)Instance::GameServerPlayer(m_pHouse != nullptr ? m_pHouse->GetWorldID() : MAIN_WORLD_ID); }
@@ -187,7 +185,7 @@ bool CGuild::StartWar(CGuild* pTargetGuild)
 {
 	if(!pTargetGuild || pTargetGuild->GetWar() || GetWar())
 		return false;
-	
+
 	CGuildWarHandler* pWarHandler = CGuildWarHandler::CreateElement();
 	time_t TimeUntilEnd = time(nullptr) + (g_Config.m_SvGuildWarDurationMinutes * 60);
 	pWarHandler->Init({ this, pTargetGuild, 0 }, { pTargetGuild, this, 0 }, TimeUntilEnd);

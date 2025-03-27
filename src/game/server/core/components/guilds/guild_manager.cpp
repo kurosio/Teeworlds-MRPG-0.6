@@ -101,7 +101,7 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int 
 	const int ClientID = pPlayer->GetCID();
 
 	// teleport to house
-	if(PPSTR(pCmd, "GUILD_HOUSE_SPAWN") == 0)
+	if(PPSTR(pCmd, "GUILD_HOUSE_TELEPORT") == 0)
 	{
 		// check guild valid
 		auto* pGuild = pPlayer->Account()->GetGuild();
@@ -122,7 +122,6 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int 
 		// Check if the player is in a different world than pAether
 		if(!GS()->IsPlayerInWorld(ClientID, pHouse->GetWorldID()))
 		{
-			// Change the player's world to pAether's world
 			pPlayer->ChangeWorld(pHouse->GetWorldID(), pHouse->GetPos());
 			return true;
 		}
@@ -134,7 +133,7 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int 
 	}
 
 	// start house decoration edit
-	if(PPSTR(pCmd, "GUILD_HOUSE_DECORATION_EDIT") == 0)
+	if(PPSTR(pCmd, "GUILD_HOUSE_DECORATION") == 0)
 	{
 		// check guild valid and access rights
 		auto* pGuild = pPlayer->Account()->GetGuild();
@@ -646,7 +645,8 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int 
 		const ItemIdentifier& ItemID = Extra2;
 
 		// check farmzone valid
-		auto pFarmzone = pHouse->GetFarmzonesManager()->GetFarmzoneByID(FarmzoneID);
+		auto* pManager = pHouse->GetFarmzonesManager();
+		auto pFarmzone = pManager->GetFarmzoneByID(FarmzoneID);
 		if(!pFarmzone)
 		{
 			GS()->Chat(ClientID, "Farm zone not found.");
@@ -658,6 +658,7 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int 
 		{
 			auto* pItemInfo = GS()->GetItemInfo(ItemID);
 			GS()->Chat(ClientID, "You have successfully removed the '{}' from '{}'.", pItemInfo->GetName(), pFarmzone->GetName());
+			pManager->Save();
 		}
 
 		pPlayer->m_VotesData.UpdateVotesIf(MENU_GUILD_HOUSE_FARMZONE_SELECT);
@@ -1207,10 +1208,10 @@ void CGuildManager::ShowMenu(int ClientID) const
 		VHouse.Add("Bank: {$} | Rent per day: {$} gold", pGuild->GetBankManager()->Get(), pHouse->GetRentPrice());
 		VHouse.AddOption("GUILD_HOUSE_EXTEND_RENT", "Extend. (Amount in a reason)");
 		VHouse.AddLine();
-		VHouse.AddOption("GUILD_HOUSE_DECORATION_EDIT", "Decoration editor");
+		VHouse.AddOption("GUILD_HOUSE_TELEPORT", "Teleport to house");
+		VHouse.AddOption("GUILD_HOUSE_DECORATION", "Decoration editor");
 		VHouse.AddMenu(MENU_GUILD_HOUSE_DOOR_LIST, "Doors");
 		VHouse.AddMenu(MENU_GUILD_HOUSE_FARMZONE_LIST, "Farms");
-		VHouse.AddOption("GUILD_HOUSE_SPAWN", "Move to the house");
 		VHouse.AddMenu(MENU_GUILD_SELL_HOUSE, "Sell");
 	}
 }
@@ -1769,6 +1770,7 @@ CGuild* CGuildManager::GetGuildByID(GuildIdentifier ID) const
 	{
 		return p->GetID() == ID;
 	});
+
 
 	return itGuild != CGuild::Data().end() ? (*itGuild) : nullptr;
 }

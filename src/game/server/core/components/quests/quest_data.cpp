@@ -12,6 +12,41 @@ void CQuestDescription::CReward::ApplyReward(CPlayer* pPlayer) const
 	pPlayer->Account()->AddGold(m_Gold);
 }
 
+int CQuestDescription::GetChainLength() const
+{
+	int Value = 1; // include current quest
+
+	auto* pPrevious = GetPreviousQuest();
+	while(pPrevious != nullptr)
+	{
+		pPrevious = pPrevious->GetPreviousQuest();
+		Value++;
+	}
+
+	auto* pNext = GetNextQuest();
+	while(pNext != nullptr)
+	{
+		pNext = pNext->GetNextQuest();
+		Value++;
+	}
+
+	return Value;
+}
+
+int CQuestDescription::GetCurrentChainPos() const
+{
+	int Value = 1; // include current quest
+
+	auto* pPrevious = GetPreviousQuest();
+	while(pPrevious != nullptr)
+	{
+		pPrevious = pPrevious->GetPreviousQuest();
+		Value++;
+	}
+
+	return Value;
+}
+
 CQuestDescription* CQuestDescription::GetNextQuest() const
 {
 	if(m_NextQuestID.has_value())

@@ -110,6 +110,8 @@ public:
 
 	QuestIdentifier GetID() const { return m_ID; }
 	const char* GetName() const { return m_Name.c_str(); }
+	int GetChainLength() const;
+	int GetCurrentChainPos() const;
 	CQuestDescription* GetNextQuest() const;
 	CQuestDescription* GetPreviousQuest() const;
 	CReward& Reward() { return m_Reward; }
