@@ -289,7 +289,7 @@ void CQuestManager::ShowQuestsBoardList(CPlayer* pPlayer, CQuestsBoard* pBoard) 
 				while(pCurrentQuest->IsCompleted() && pCurrentQuestInfo != nullptr)
 				{
 					pCurrentQuest = pPlayer->GetQuest(pCurrentQuestInfo->GetID());
-					pCurrentQuestInfo = pQuestInfo->GetNextQuest();
+					pCurrentQuestInfo = pCurrentQuestInfo->GetNextQuest();
 				}
 
 				if(pCurrentQuestInfo)
