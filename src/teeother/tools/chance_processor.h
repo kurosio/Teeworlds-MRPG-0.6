@@ -32,7 +32,7 @@ public:
 
 	bool removeElement(const T& element)
 	{
-		auto it = std::find_if(m_vElements.begin(), m_vElements.end(), [&element](const ElementWithChance& e)
+		auto it = std::ranges::find_if(m_vElements, [&element](const ElementWithChance& e)
 		{
 			return e.Element == element;
 		});
@@ -45,6 +45,16 @@ public:
 		}
 
 		return false;
+	}
+
+	bool hasElement(const T& element)
+	{
+		auto it = std::ranges::find_if(m_vElements, [&element](const ElementWithChance& e)
+		{
+			return e.Element == element;
+		});
+
+		return it != m_vElements.end();
 	}
 
 	void normalizeChances()

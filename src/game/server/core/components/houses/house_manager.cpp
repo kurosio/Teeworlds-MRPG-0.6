@@ -131,7 +131,7 @@ bool CHouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 	const int ClientID = pPlayer->GetCID();
 
 	// start decoration edit mode
-	if(PPSTR(pCmd, "HOUSE_DECORATION_EDIT") == 0)
+	if(PPSTR(pCmd, "HOUSE_DECORATION") == 0)
 	{
 		// check house valid
 		auto* pHouse = pPlayer->Account()->GetHouse();
@@ -150,7 +150,7 @@ bool CHouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 	}
 
 	// house farm zone try plant
-	if(PPSTR(pCmd, "HOUSE_FARM_ZONE_REMOVE_PLANT") == 0)
+	if(PPSTR(pCmd, "HOUSE_FARMZONE_REMOVE_PLANT") == 0)
 	{
 		// check valid house
 		auto *pHouse = pPlayer->Account()->GetHouse();
@@ -184,7 +184,7 @@ bool CHouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 	}
 
 	// house farm zone try plant
-	if(PPSTR(pCmd, "HOUSE_FARM_ZONE_TRY_PLANT") == 0)
+	if(PPSTR(pCmd, "HOUSE_FARMZONE_TRY_PLANT") == 0)
 	{
 		// check valid house
 		auto *pHouse = pPlayer->Account()->GetHouse();
@@ -209,7 +209,7 @@ bool CHouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 		}
 
 		// check is same planted item with current
-		if(ItemID == pFarmzone->GetItemID())
+		if(pFarmzone->GetNode().m_vItems.hasElement(ItemID))
 		{
 			GS()->Chat(ClientID, "This item has already been planted on this farm.");
 			return true;
@@ -218,7 +218,6 @@ bool CHouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 		// check spend currency (planting item)
 		if(pPlayer->Account()->SpendCurrency(Useds, ItemID))
 		{
-			// Check if the chance result is successful
 			bool Success = false;
 			Chance result(s_GuildChancePlanting);
 			for(int i = 0; i < Useds && !Success; i++)
@@ -230,7 +229,6 @@ bool CHouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 			// result
 			if(Success)
 			{
-				// update data
 				GS()->Chat(ClientID, "You have successfully plant to farm zone.");
 				pFarmzone->AddItemToNode(ItemID);
 				pManager->Save();
@@ -239,14 +237,15 @@ bool CHouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 			{
 				GS()->Chat(ClientID, "You failed plant to farm zone.");
 			}
+
 			pPlayer->m_VotesData.UpdateVotesIf(MENU_HOUSE_FARMZONE_SELECT);
 		}
 
 		return true;
 	}
 
-	// move to house
-	if(PPSTR(pCmd, "HOUSE_SPAWN") == 0)
+	// teleport to house
+	if(PPSTR(pCmd, "HOUSE_TELEPORT") == 0)
 	{
 		// check valid house
 		auto* pHouse = pPlayer->Account()->GetHouse();
@@ -508,7 +507,7 @@ void CHouseManager::ShowFarmzoneEdit(CPlayer* pPlayer, int FarmzoneID) const
 		return;
 
 	// initialize variables
-	int ClientID = pPlayer->GetCID();
+	const auto ClientID = pPlayer->GetCID();
 	auto& Node = pFarmzone->GetNode();
 
 	// information
@@ -523,7 +522,7 @@ void CHouseManager::ShowFarmzoneEdit(CPlayer* pPlayer, int FarmzoneID) const
 		auto ItemID = Elem.Element;
 		auto* pItemInfo = GS()->GetItemInfo(ItemID);
 		VoteWrapper VPlanted(ClientID, VWF_UNIQUE | VWF_STYLE_SIMPLE, "{} - chance {~.2}%", pItemInfo->GetName(), Elem.Chance);
-		VPlanted.AddOption("HOUSE_FARM_ZONE_REMOVE_PLANT", FarmzoneID, ItemID, "Remove {} from plant", pItemInfo->GetName());
+		VPlanted.AddOption("HOUSE_FARMZONE_REMOVE_PLANT", FarmzoneID, ItemID, "Remove {} from plant", pItemInfo->GetName());
 	}
 	VoteWrapper::AddEmptyline(ClientID);
 
@@ -532,20 +531,13 @@ void CHouseManager::ShowFarmzoneEdit(CPlayer* pPlayer, int FarmzoneID) const
 	VoteWrapper VPossiblePlanting(ClientID, VWF_OPEN | VWF_STYLE_SIMPLE, "\u2741 Possible items for planting");
 	for(auto& ID : vItems)
 	{
-		bool AllowPlant = true;
-		for(auto& Elem : pFarmzone->GetNode().m_vItems)
-		{
-			if(Elem.Element == ID)
-			{
-				AllowPlant = false;
-				break;
-			}
-		}
-
 		auto* pPlayerItem = pPlayer->GetItem(ID);
-		if(AllowPlant && pPlayerItem->HasItem())
-			VPossiblePlanting.AddOption("HOUSE_FARM_ZONE_TRY_PLANT", FarmzoneID, ID, "Try plant {} (has {})", pPlayerItem->Info()->GetName(), pPlayerItem->GetValue());
+		if(pPlayerItem->HasItem())
+		{
+			VPossiblePlanting.AddOption("HOUSE_FARMZONE_TRY_PLANT", FarmzoneID, ID, "Try plant {} (has {})", pPlayerItem->Info()->GetName(), pPlayerItem->GetValue());
+		}
 	}
+
 	VoteWrapper::AddEmptyline(ClientID);
 }
 
@@ -578,17 +570,13 @@ void CHouseManager::ShowDetail(CPlayer* pPlayer, CHouse* pHouse)
 
 void CHouseManager::ShowMenu(CPlayer* pPlayer) const
 {
-	// check valid player
-	if(!pPlayer)
-		return;
-
 	// check valid house
 	auto* pHouse = pPlayer->Account()->GetHouse();
 	if(!pHouse)
 		return;
 
 	// initialize variables
-	int ClientID = pPlayer->GetCID();
+	const auto ClientID = pPlayer->GetCID();
 
 	// information
 	VoteWrapper VInfo(ClientID, VWF_SEPARATE | VWF_STYLE_STRICT_BOLD, "\u2747 Information about house");
@@ -608,16 +596,20 @@ void CHouseManager::ShowMenu(CPlayer* pPlayer) const
 
 	// house management
 	VoteWrapper VManagement(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "\u2302 House Management");
-	VManagement.AddOption("HOUSE_DECORATION_EDIT", "Decoration editor");
+	VManagement.AddOption("HOUSE_TELEPORT", "Teleport to house");
+	VManagement.AddOption("HOUSE_DECORATION", "Decoration editor");
 	VManagement.AddMenu(MENU_HOUSE_FARMZONE_LIST, "Farms");
 	VManagement.AddMenu(MENU_HOUSE_DOOR_LIST, "Doors");
-	VManagement.AddOption("HOUSE_SPAWN", "Move to house");
 	VManagement.AddMenu(MENU_HOUSE_SELL, "Sell");
 }
 
 CHouse* CHouseManager::GetHouse(HouseIdentifier ID) const
 {
-	auto pHouse = std::ranges::find_if(CHouse::Data(), [ID](auto& p) { return p->GetID() == ID; });
+	auto pHouse = std::ranges::find_if(CHouse::Data(), [ID](auto& p)
+	{
+		return p->GetID() == ID;
+	});
+
 	return pHouse != CHouse::Data().end() ? *pHouse : nullptr;
 }
 

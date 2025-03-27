@@ -20,10 +20,6 @@ void CFarmzone::AddItemToNode(int ItemID)
 
 bool CFarmzone::RemoveItemFromNode(int ItemID)
 {
-	// check is last element
-	if(m_Node.m_vItems.size() <= 1)
-		return false;
-
 	// try remove
 	bool Removed = m_Node.m_vItems.removeElement(ItemID);
 	if(Removed)
