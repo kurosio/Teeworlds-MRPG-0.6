@@ -178,7 +178,7 @@ void CEntityGatheringNode::Tick()
 
 void CEntityGatheringNode::Snap(int SnappingClient)
 {
-	if(m_SpawnTick != -1 || NetworkClipped(SnappingClient))
+	if(m_SpawnTick != -1 || NetworkClipped(SnappingClient) || (m_pNode && m_pNode->m_vItems.isEmpty()))
 		return;
 
 	GS()->SnapPickup(SnappingClient, GetID(), m_Pos, GetPickupType(), 0);
