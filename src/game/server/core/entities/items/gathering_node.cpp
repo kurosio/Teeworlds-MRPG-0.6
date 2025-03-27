@@ -59,8 +59,15 @@ bool CEntityGatheringNode::TakeDamage(CPlayer* pPlayer)
 	if(m_CurrentHealth <= 0 || m_SpawnTick != -1)
 		return false;
 
-	// initialize profession details
+	// information about empty node
 	const auto ClientID = pPlayer->GetCID();
+	if(m_pNode->m_vItems.isEmpty())
+	{
+		GS()->Broadcast(ClientID, BroadcastPriority::GameWarning, 100, "This node has no plants for harvesting.");
+		return false;
+	}
+
+	// initialize profession details
 	int SoundId = -1;
 	auto EquipID = ItemType::Unknown;
 	auto AttributeID = AttributeIdentifier::Unknown;
