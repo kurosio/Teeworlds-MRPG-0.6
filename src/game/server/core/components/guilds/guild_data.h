@@ -23,6 +23,7 @@ enum GuildMisc
 	GUILD_LOGS_MAX_COUNT = 50,           // Max number of log entries for a guild
 	GUILD_NEW_UPGRADE_SLOTS = 2,         // New guilds start with 2 additional slots
 	GUILD_NEW_UPGRADE_CHAIR = 1,         // New guilds start with 1 chair upgrade
+	GUILD_NEW_UPGRADE_DOOR_HEALTH = 1,   // New guilds start with 1 door health
 	GUILD_RENT_DAYS_DEFAULT = 3,         // Default rent duration for a guild
 };
 
@@ -69,11 +70,12 @@ enum class GuildResult : int
 // Enum for guild upgrade types
 enum class GuildUpgrade : size_t
 {
-    AvailableSlots = 0,                   // Upgrade for additional member slots
-    NumGuildUpgr,                         // Total number of guild upgrades
+	AvailableSlots = 0,                  // Upgrade for additional member slots
+	NumGuildUpgr,                        // Total number of guild upgrades
 
-    ChairExperience = 1,                  // Upgrade for house chair experience
-    NumGuildHouseUpgr                     // Total number of guild house upgrades
+	ChairExperience = 1,                 // Upgrade for house chair experience
+	DoorHealth = 2,                      // Upgrade for house door health
+	NumGuildHouseUpgr                    // Total number of guild house upgrades
 };
 
 // Flags for tracking guild activity logs
@@ -115,16 +117,9 @@ public:
 		CBank(const BigInt& Value, CGuild* pGuild)
 			: m_pGuild(pGuild), m_Value(Value) {}
 
-		// Get current bank balance
-		const BigInt& Get() const
-		{
-			return m_Value;
-		}
+		const BigInt& Get() const { return m_Value; }
 
-		// Add to bank balance
 		void Add(const BigInt& Value);
-
-		// Spend from bank balance
 		[[nodiscard]] bool Spend(const BigInt& Value);
 	};
 
@@ -148,19 +143,10 @@ public:
 		CLogEntry() = delete;
 		CLogEntry(CGuild* pGuild, int64_t Logflag);
 
-		// Set activity flag
-		void SetActivityFlag(int64_t Flag);
-
-		// Check if flag is set
+		const LogContainer& GetContainer() const { return m_aLogs; }
 		bool IsActivityFlagSet(int64_t Flag) const;
 
-		// Get log container
-		const LogContainer& GetContainer() const
-		{
-			return m_aLogs;
-		}
-
-		// Add log message
+		void SetActivityFlag(int64_t Flag);
 		void Add(int64_t LogFlag, const char* pBuffer, ...);
 
 	private:
@@ -182,35 +168,14 @@ public:
 		CRank() = delete;
 		CRank(GuildRankIdentifier RID, std::string&& Rank, GuildRankRights Rights, CGuild* pGuild);
 
-		// Get rank ID
-		GuildRankIdentifier GetID() const
-		{
-			return m_ID;
-		}
-
-		// Get rank name
-		const char* GetName() const
-		{
-			return m_Rank.c_str();
-		}
-
-		// Get name of specific rank right
+		GuildRankIdentifier GetID() const { return m_ID; }
+		const char* GetName() const{ return m_Rank.c_str(); }
 		const char* GetRightsName(GuildRankRights Right) const;
-
-		// Get name of current rank rights
-		const char* GetRightsName() const
-		{
-			return GetRightsName(m_Rights);
-		}
-
-		// Rename the rank
-		[[nodiscard]] GuildResult Rename(std::string NewRank);
-
-		// Set rank rights
-		void SetRights(GuildRankRights Rights);
-
-		// Get current rank rights
+		const char* GetRightsName() const { return GetRightsName(m_Rights); }
 		const GuildRankRights& GetRights() const { return m_Rights; }
+
+		[[nodiscard]] GuildResult Rename(std::string NewRank);
+		void SetRights(GuildRankRights Rights);
 	};
 
 	using RankContainer = std::deque<class CRank*>;
@@ -226,31 +191,13 @@ public:
 		CRanksManager(CGuild* pGuild, GuildRankIdentifier DefaultID);
 		~CRanksManager();
 
-		// Get container of guild ranks
-		std::deque<class CRank*>& GetContainer()
-		{
-			return m_aRanks;
-		}
-
-		// Add a new guild rank
-		[[nodiscard]] GuildResult Add(const std::string& Rank);
-
-		// Remove a guild rank
-		[[nodiscard]] GuildResult Remove(const std::string& Rank);
-
-		// Get guild rank by name
+		std::deque<class CRank*>& GetContainer() { return m_aRanks; }
 		CRank* Get(const std::string& Rank) const;
-
-		// Get guild rank by ID
 		CRank* Get(GuildRankIdentifier ID) const;
+		CRank* GetDefaultRank() const { return m_pDefaultRank; }
 
-		// Get default guild rank
-		CRank* GetDefaultRank() const
-		{
-			return m_pDefaultRank;
-		}
-
-		// Update the default guild rank
+		[[nodiscard]] GuildResult Add(const std::string& Rank);
+		[[nodiscard]] GuildResult Remove(const std::string& Rank);
 		void UpdateDefaultRank();
 
 	private:
@@ -274,47 +221,17 @@ public:
 		CMember(CGuild* pGuild, int AccountID, CRank* pRank, BigInt Deposit = 0);
 		~CMember();
 
-		// Check if member is online
 		bool IsOnline() const;
-
-		// Get member's account ID
-		int GetAccountID() const
-		{
-			return m_AccountID;
-		}
-
-		// Get member's deposit
-		BigInt GetDeposit() const
-		{
-			return m_Deposit;
-		}
-
-		// Set member's deposit
-		void SetDeposit(const BigInt& Deposit)
-		{
-			m_Deposit = Deposit;
-		}
-
-		// Get member's rank
-		CRank* GetRank() const
-		{
-			return m_pRank;
-		}
-
-		// Set member's rank by ID
-		[[nodiscard]] bool SetRank(GuildRankIdentifier RankID);
-
-		// Set member's rank by rank pointer
-		[[nodiscard]] bool SetRank(CRank* pRank);
-
-		// Deposit money to bank
-		[[nodiscard]] bool DepositInBank(int Value);
-
-		// Withdraw money from bank
-		[[nodiscard]] bool WithdrawFromBank(int Value);
-
-		// Check if member has required access
+		int GetAccountID() const { return m_AccountID; }
+		BigInt GetDeposit() const { return m_Deposit; }
+		CRank* GetRank() const { return m_pRank; }
 		[[nodiscard]] bool CheckAccess(GuildRankRights RequiredAccess) const;
+
+		void SetDeposit(const BigInt& Deposit) { m_Deposit = Deposit; }
+		[[nodiscard]] bool SetRank(GuildRankIdentifier RankID);
+		[[nodiscard]] bool SetRank(CRank* pRank);
+		[[nodiscard]] bool DepositInBank(int Value);
+		[[nodiscard]] bool WithdrawFromBank(int Value);
 	};
 
 	using MembersContainer = std::map<int, CMember*>;
@@ -329,40 +246,16 @@ public:
 		CMembersManager(CGuild* pGuild, const std::string& JsonMembers);
 		~CMembersManager();
 
-		// Pointer to the request manager for join requests
-		CRequestsManager* GetRequests() const
-		{
-			return m_pRequests;
-		}
-
-		// Get a guild member by Account ID
+		CRequestsManager* GetRequests() const { return m_pRequests; }
 		CMember* Get(int AccountID);
-
-		// Get the guild members container
-		MembersContainer& GetContainer()
-		{
-			return m_apMembers;
-		}
-
-		// Add a member to the guild by Account ID
-		[[nodiscard]] GuildResult Join(int AccountID);
-
-		// Remove a member from the guild by Account ID
-		[[nodiscard]] GuildResult Kick(int AccountID);
-
-		// Reset all deposits to zero
-		void ResetDeposits();
-
-		// Get the current number of used and total slots
+		MembersContainer& GetContainer() { return m_apMembers; }
 		std::pair<int, int> GetCurrentSlots() const;
-
-		// Check if there are free slots available
 		bool HasFreeSlots() const;
-
-		// Get the number of online members
 		int GetOnlineCount() const;
 
-		// Save the guild members data
+		[[nodiscard]] GuildResult Join(int AccountID);
+		[[nodiscard]] GuildResult Kick(int AccountID);
+		void ResetDeposits();
 		void Save() const;
 
 	private:
@@ -380,7 +273,6 @@ public:
 		RequestData() = delete;
 		RequestData(int FromUID) noexcept : m_FromUID(FromUID) {}
 
-		// Getter method for retrieving the FromUID member variable
 		int GetFromUID() const noexcept { return m_FromUID; }
 	};
 
@@ -396,19 +288,10 @@ public:
 		CRequestsManager(CGuild* pGuild);
 		~CRequestsManager();
 
-		// Getter for the join requests container
-		const RequestsContainer& GetContainer() const
-		{
-			return m_aRequestsJoin;
-		}
+		const RequestsContainer& GetContainer() const { return m_aRequestsJoin; }
 
-		// Method for requesting to join the guild
 		[[nodiscard]] GuildResult Request(int FromUID);
-
-		// Method for accepting a join request
 		[[nodiscard]] GuildResult Accept(int UserID, const CMember* pFromMember = nullptr);
-
-		// Method for denying a join request
 		void Deny(int UserID, const CMember* pFromMember = nullptr);
 
 	private:
@@ -427,6 +310,7 @@ private:
 	{
 		DBField<int>((int)GuildUpgrade::AvailableSlots, "AvailableSlots", "Available slots", GUILD_NEW_UPGRADE_SLOTS),
 		DBField<int>((int)GuildUpgrade::ChairExperience, "ChairExperience", "Chair experience", GUILD_NEW_UPGRADE_CHAIR),
+		DBField<int>((int)GuildUpgrade::DoorHealth, "DoorHealth", "Max door health", GUILD_NEW_UPGRADE_DOOR_HEALTH),
 	};
 
 	CBank* m_pBankManager {};

@@ -608,6 +608,7 @@ enum
 	MIN_RACE_CLIENTVERSION         = 0x0704,// minimum client version for race type
 	MAX_DROPPED_FROM_MOBS          = 5,     // maximum number of items dropped from mobs
 	MAX_HOUSE_RENT_DAYS            = 7,     // Max rent duration for a guild house
+	DEFAULT_HOUSE_DOOR_HEALTH      = 10000, // default house door hp
 
 	// items
 	NOPE                           = -1,
