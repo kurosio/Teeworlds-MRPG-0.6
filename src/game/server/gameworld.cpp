@@ -408,3 +408,88 @@ void CGameWorld::UpdatePlayerMaps()
 	// Clear the list of marked active bots.
 	m_aMarkedBotsActive.clear();
 }
+
+/*
+ * Fixed view cam
+ */
+void FixedViewCam::ViewLock(const vec2& Position, bool Smooth)
+{
+	m_LockedAt = Position;
+	m_Smooth = Smooth;
+	m_Locked = true;
+	m_Moving = true;
+}
+
+void FixedViewCam::Tick(vec2& playerView)
+{
+	if(m_Moving)
+	{
+		const vec2 target = m_Locked ? m_LockedAt : playerView;
+
+		// fast camera
+		if(!m_Smooth)
+		{
+			m_CurrentView = target;
+			m_Moving = false;
+			return;
+		}
+
+		// smooth camera
+		if(!m_CurrentView.has_value())
+			m_CurrentView = playerView;
+
+		// check distance
+		const float distanceToTarget = distance(*m_CurrentView, target);
+		if(distanceToTarget < 2.f)
+		{
+			if(m_Locked)
+				m_CurrentView = target;
+			else
+				m_CurrentView.reset();
+
+			m_Moving = false;
+		}
+		else // moving
+		{
+			vec2 nextPos;
+			float lerpFactor = 0.0f;
+
+			// lerp factor
+			if(m_Locked)
+			{
+				float distanceToTarget = distance(*m_CurrentView, m_LockedAt);
+				lerpFactor = (0.05f + distanceToTarget * 0.001f) * 0.16f;
+				lerpFactor = std::max(lerpFactor, 0.5f * 0.16f);
+				nextPos = lerp(*m_CurrentView, m_LockedAt, lerpFactor);
+			}
+			else
+			{
+				lerpFactor = 0.72f;
+				nextPos = lerp(*m_CurrentView, playerView, lerpFactor);
+			}
+
+			// speed limit
+			vec2 delta = nextPos - *m_CurrentView;
+			float moveLen = length(delta);
+			if(moveLen > g_Config.m_SvMaxSmoothViewCamSpeed)
+			{
+				delta = normalize(delta) * g_Config.m_SvMaxSmoothViewCamSpeed;
+				nextPos = *m_CurrentView + delta;
+			}
+
+			m_CurrentView = nextPos;
+		}
+	}
+
+	if(m_CurrentView.has_value())
+		playerView = *m_CurrentView;
+}
+
+void FixedViewCam::Reset()
+{
+	if(!m_Locked || m_Moving)
+		return;
+
+	m_Locked = false;
+	m_Moving = true;
+}

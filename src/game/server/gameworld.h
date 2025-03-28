@@ -8,71 +8,6 @@ class CEntity;
 class CEntityGroup;
 class CCharacter;
 
-struct FixedViewCam
-{
-	std::optional<vec2> GetCurrentView() const
-	{
-		return m_CurrentView;
-	}
-
-	void ViewLock(const vec2& Position, bool Smooth = false)
-	{
-		m_LockedAt = Position;
-		m_Smooth = Smooth;
-		m_Locked = true;
-		m_Moving = true;
-	}
-
-	void Tick(vec2& playerView)
-	{
-		if(m_Moving)
-		{
-			// prepare current view
-			const vec2 target = m_Locked ? m_LockedAt : playerView;
-			if(!m_Smooth)
-				m_CurrentView = target;
-			else if(!m_CurrentView.has_value())
-				m_CurrentView = playerView;
-
-			// check distance
-			float distanceByState = m_Locked ? 4.f : 64.f;
-			if(const float distanceToTarget = distance(*m_CurrentView, target); distanceToTarget < distanceByState)
-			{
-				if(m_Locked)
-					m_CurrentView = target;
-				else
-					m_CurrentView.reset();
-				m_Moving = false;
-			}
-			else // moving
-			{
-				float dynamicLerpSpeed = 0.05f + distanceToTarget * 0.001f;
-				dynamicLerpSpeed = std::max(dynamicLerpSpeed, 0.5f);
-				m_CurrentView = lerp(*m_CurrentView, target, dynamicLerpSpeed * 0.16f);
-			}
-		}
-
-		if(m_CurrentView.has_value())
-			playerView = *m_CurrentView;
-	}
-
-	void Reset()
-	{
-		if(!m_Locked || m_Moving)
-			return;
-
-		m_Locked = false;
-		m_Moving = true;
-	}
-
-private:
-	std::optional<vec2> m_CurrentView {};
-	vec2 m_LockedAt {};
-	bool m_Locked {};
-	bool m_Moving {};
-	bool m_Smooth {};
-};
-
 /*
 	Class: Game World
 		Tracks all entities in the game. Propagates tick and
@@ -167,6 +102,22 @@ public:
 
 private:
 	void RemoveEntities();
+};
+
+struct FixedViewCam
+{
+	std::optional<vec2> GetCurrentView() const { return m_CurrentView; }
+
+	void ViewLock(const vec2& Position, bool Smooth = false);
+	void Tick(vec2& playerView);
+	void Reset();
+
+private:
+	std::optional<vec2> m_CurrentView {};
+	vec2 m_LockedAt {};
+	bool m_Locked {};
+	bool m_Moving {};
+	bool m_Smooth {};
 };
 
 #endif
