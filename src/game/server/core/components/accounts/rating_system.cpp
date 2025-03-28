@@ -79,6 +79,8 @@ void RatingSystem::UpdateRating(CGS* pGS, bool Won, int OpponentRating, int Oppo
 		pGS->Chat(m_pAccount->GetClientID(), "Wins: {} / Losses: {} / Win rate: {~.2}%.", GetWins(), GetLosses(), GetWinRate());
 		Save();
 	}
+
+	UpdateClient();
 }
 
 std::string RatingSystem::GetRankName() const
@@ -116,6 +118,7 @@ void RatingSystem::Create()
 	}
 
 	Save();
+	UpdateClient();
 }
 
 void RatingSystem::Load()
@@ -136,6 +139,7 @@ void RatingSystem::Load()
 	m_Wins = j.value("wins", 0);
 	m_Losses = j.value("losses", 0);
 	m_vHistory = j.value("history", std::vector<int>{});
+	UpdateClient();
 }
 
 void RatingSystem::Save()
@@ -155,12 +159,19 @@ void RatingSystem::Save()
 	auto Result = mystd::file::save(m_FileName.c_str(), Data.data(), static_cast<unsigned>(Data.size()));
 	if(Result == mystd::file::result::SUCCESSFUL)
 	{
-		auto* pServer = Instance::Server();
-		pServer->UpdateAccountBase(m_pAccount->GetID(), pServer->ClientName(m_pAccount->GetClientID()), m_Rating);
 		Database->Execute<DB::UPDATE>("tw_accounts_data", "Rating = '{}' WHERE ID = '{}'", m_Rating, m_pAccount->GetID());
 	}
 	else
 	{
 		dbg_msg("rating", "Failed to save the rating file AID(%d).", m_pAccount->GetID());
 	}
+}
+
+void RatingSystem::UpdateClient() const
+{
+	if(!m_pAccount)
+		return;
+
+	auto* pServer = Instance::Server();
+	pServer->UpdateAccountBase(m_pAccount->GetID(), pServer->ClientName(m_pAccount->GetClientID()), m_Rating);
 }

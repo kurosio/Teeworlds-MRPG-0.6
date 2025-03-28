@@ -31,6 +31,7 @@ private:
 	void Create();
 	void Load();
 	void Save();
+	void UpdateClient() const;
 };
 
 
