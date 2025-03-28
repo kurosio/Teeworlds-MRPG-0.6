@@ -356,7 +356,16 @@ void CQuestManager::ShowQuestInfo(CPlayer* pPlayer, CQuestDescription* pQuest, b
 {
 	// initialize variables
 	const int ClientID = pPlayer->GetCID();
-	CPlayerQuest* pPlayerQuest = pPlayer->GetQuest(pQuest->GetID());
+	auto* pPlayerQuest = pPlayer->GetQuest(pQuest->GetID());
+
+	// detailed information
+	VoteWrapper VInfo(ClientID, VWF_STYLE_STRICT_BOLD, "\u2690 Quest Details");
+	VInfo.Add("Name: {}", pQuest->GetName());
+	VInfo.Add("Experience: {}", pQuest->Reward().GetExperience());
+	VInfo.Add("Gold: {$}", pQuest->Reward().GetGold());
+	VInfo.Add("Total Steps: {}", pQuest->m_vObjectives.size());
+	VInfo.Add("Status: {}", (pPlayerQuest->IsAccepted() ? "Accepted" : "Not Accepted"));
+	VoteWrapper::AddEmptyline(ClientID);
 
 	// add buttons
 	VoteWrapper VButtons(ClientID, VWF_STYLE_DOUBLE | VWF_SEPARATE | VWF_ALIGN_TITLE, "Action's");
@@ -368,25 +377,19 @@ void CQuestManager::ShowQuestInfo(CPlayer* pPlayer, CQuestDescription* pQuest, b
 	if(pNextQuest)
 		VButtons.AddMenu(Menulist, pNextQuest->GetID(), "Next: \u27A1 {}", pNextQuest->GetName());
 
-	// only for uncompleted quest add refuse accept
-	if(pQuest->CanBeAcceptOrRefuse() && !pPlayerQuest->IsCompleted() && (!pPrevQuest || pPlayer->GetQuest(pPrevQuest->GetID())->IsCompleted()))
-		VButtons.AddOption("QUEST_STATE", pPlayerQuest->GetID(), (pPlayerQuest->IsAccepted() ? "Refuse" : "Accept"));
+	// current quest
+	if(pPlayerQuest->IsCompleted())
+		VButtons.Add("\u2714 Quest completed!");
+	else if(pPrevQuest && !pPlayer->GetQuest(pPrevQuest->GetID())->IsCompleted())
+		VButtons.Add("\u26A0 Prev quest incomplete!");
+	else if(!pQuest->CanBeAcceptOrRefuse())
+		VButtons.Add("\u26A0 Auto-activated!");
 	else
-		VButtons.Add("\u26A0 Quest is auto-activated or by NPC");
+		VButtons.AddOption("QUEST_STATE", pPlayerQuest->GetID(), (pPlayerQuest->IsAccepted() ? "Refuse" : "Accept"));
 
 	// prev quest button
 	if(pPrevQuest)
 		VButtons.AddMenu(Menulist, pPrevQuest->GetID(), "Previous: \u2B05 {}", pPrevQuest->GetName());
-
-	VoteWrapper::AddEmptyline(ClientID);
-
-	// detailed information
-	VoteWrapper VInfo(ClientID, VWF_STYLE_STRICT_BOLD, "\u2690 Quest Details");
-	VInfo.Add("Name: {}", pQuest->GetName());
-	VInfo.Add("Experience: {}", pQuest->Reward().GetExperience());
-	VInfo.Add("Gold: {$}", pQuest->Reward().GetGold());
-	VInfo.Add("Total Steps: {}", pQuest->m_vObjectives.size());
-	VInfo.Add("Status: {}", (pPlayerQuest->IsAccepted() ? "Accepted" : "Not Accepted"));
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// step information
@@ -396,7 +399,9 @@ void CQuestManager::ShowQuestInfo(CPlayer* pPlayer, CQuestDescription* pQuest, b
 
 		// check if the step is locked
 		const bool isStepLocked = !pPlayerQuest->IsCompleted() &&
-			((pPlayerQuest->IsAccepted() && stepNumber > pPlayerQuest->GetStepPos()) || (!pPlayerQuest->IsAccepted() && stepNumber != 1));
+			((pPlayerQuest->IsAccepted() && stepNumber > pPlayerQuest->GetStepPos()) ||
+				(!pPlayerQuest->IsAccepted() && stepNumber != 1));
+
 		if(isStepLocked)
 		{
 			VStep.Add("Locked for now.");
