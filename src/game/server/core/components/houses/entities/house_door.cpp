@@ -8,6 +8,59 @@
 #include "../guild_house_data.h"
 #include "../house_data.h"
 
+void CDoorDurability::Init(IHouse* pHouse)
+{
+	m_pHouse = pHouse;
+	m_Health = GetMaxHealth();
+}
+
+
+bool CDoorDurability::IncreaseHealth(int Health)
+{
+	if(m_Health >= GetMaxHealth())
+		return false;
+
+	m_Health = minimum(m_Health + Health, GetMaxHealth());
+	return true;
+}
+
+
+bool CDoorDurability::TakeDamage(int Damage)
+{
+	m_LastDamageTick = Instance::Server()->Tick();
+	m_Health = maximum(0, m_Health - Damage);
+	return m_Health > 0;
+}
+
+
+void CDoorDurability::Tick()
+{
+	auto* pServer = Instance::Server();
+	if(pServer->Tick() > (m_LastDamageTick + (pServer->TickSpeed() * 60 * 10)))
+	{
+		IncreaseHealth(DEFAULT_HOUSE_DOOR_HEALTH);
+		m_LastDamageTick = pServer->Tick();
+	}
+}
+
+
+int CDoorDurability::GetMaxHealth() const
+{
+	if(m_pHouse->GetHouseType() == IHouse::Type::Guild)
+	{
+		auto* pHouse = dynamic_cast<CGuildHouse*>(m_pHouse);
+		auto* pGuild = pHouse->GetGuild();
+		if(pGuild)
+		{
+			const int currentHealth = pGuild->GetUpgrades().getRef<int>((int)GuildUpgrade::DoorHealth);
+			return currentHealth * DEFAULT_HOUSE_DOOR_HEALTH;
+		}
+	}
+
+	return DEFAULT_HOUSE_DOOR_HEALTH;
+}
+
+
 CEntityHouseDoor::CEntityHouseDoor(CGameWorld* pGameWorld, IHouse* pHouse, const std::string& Name, vec2 Pos)
 	: CEntity(pGameWorld, CGameWorld::ENTTYPE_HOUSE_DOOR, Pos)
 {
@@ -20,6 +73,7 @@ CEntityHouseDoor::CEntityHouseDoor(CGameWorld* pGameWorld, IHouse* pHouse, const
 	m_Name = Name;
 	m_PosControll = Pos;
 	m_State = CLOSED;
+	m_DurabilityManager.Init(pHouse);
 
 	// insert entity to gameworld
 	GameWorld()->InsertEntity(this);
@@ -31,14 +85,8 @@ void CEntityHouseDoor::Tick()
 	if(!HasPlayersInView())
 		return;
 
-	if(m_pHouse->GetHouseType() == IHouse::Type::Player && !PlayerHouseTick())
-	{
-		MarkForDestroy();
-		return;
-	}
-
-	// guild door
-	else if(m_pHouse->GetHouseType() == IHouse::Type::Guild && !GuildHouseTick())
+	if((m_pHouse->GetHouseType() == IHouse::Type::Player && !PlayerHouseTick()) ||
+		(m_pHouse->GetHouseType() == IHouse::Type::Guild && !GuildHouseTick()))
 	{
 		MarkForDestroy();
 		return;
@@ -53,6 +101,7 @@ void CEntityHouseDoor::Reverse()
 	else
 		Open();
 }
+
 
 bool CEntityHouseDoor::PlayerHouseTick()
 {
@@ -109,6 +158,7 @@ bool CEntityHouseDoor::PlayerHouseTick()
 	return true;
 }
 
+
 bool CEntityHouseDoor::GuildHouseTick()
 {
 	auto* pHouse = dynamic_cast<CGuildHouse*>(m_pHouse);
@@ -122,15 +172,22 @@ bool CEntityHouseDoor::GuildHouseTick()
 		return true;
 	}
 
+	// durability manager
+	m_DurabilityManager.Tick();
+	if(m_DurabilityManager.IsDestroyed())
+		return true;
+
 	// interact with the door
 	for(auto* pChar = (CCharacter*)GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); pChar; pChar = (CCharacter*)pChar->TypeNext())
 	{
-		const auto ClientID = pChar->GetPlayer()->GetCID();
-		auto* pCharGuild = pChar->GetPlayer()->Account()->GetGuild();
+		auto* pCheckGuild = pChar->GetPlayer()->Account()->GetGuild();
 
+		// interaction by mouse
 		if(distance(m_PosControll, pChar->GetMousePos()) < 24.0f)
 		{
-			if(pCharGuild && pHouse->IsPurchased() && pCharGuild->GetID() == pHouse->GetGuild()->GetID() &&
+			const auto ClientID = pChar->GetPlayer()->GetCID();
+
+			if(pCheckGuild && pHouse->IsPurchased() && pCheckGuild->GetID() == pHouse->GetGuild()->GetID() &&
 				pChar->GetPlayer()->Account()->GetGuildMember()->CheckAccess(GUILD_RANK_RIGHT_UPGRADES_HOUSE))
 			{
 				if(Server()->Input()->IsKeyClicked(ClientID, KEY_EVENT_FIRE_HAMMER))
@@ -140,6 +197,7 @@ bool CEntityHouseDoor::GuildHouseTick()
 			}
 			else
 			{
+				// TODO: Add logic durability house.
 				GS()->Broadcast(ClientID, BroadcastPriority::GameInformation, 10, "You do not have access to '{}' door!", m_Name);
 			}
 		}
@@ -150,11 +208,10 @@ bool CEntityHouseDoor::GuildHouseTick()
 			vec2 IntersectPos;
 			if(closest_point_on_line(m_Pos, m_PosTo, pChar->m_Core.m_Pos, IntersectPos))
 			{
-				const auto Distance = distance(IntersectPos, pChar->m_Core.m_Pos);
-				if(Distance <= g_Config.m_SvDoorRadiusHit)
+				const auto dist = distance(IntersectPos, pChar->m_Core.m_Pos);
+				if(dist <= g_Config.m_SvDoorRadiusHit)
 				{
-					// check for guild member
-					if(pCharGuild && pHouse->IsPurchased() && pCharGuild->GetID() == pHouse->GetGuild()->GetID())
+					if(pCheckGuild && pHouse->IsPurchased() && pCheckGuild->GetID() == pHouse->GetGuild()->GetID())
 						continue;
 
 					// hit by door
@@ -170,8 +227,8 @@ bool CEntityHouseDoor::GuildHouseTick()
 
 void CEntityHouseDoor::Snap(int SnappingClient)
 {
-	if(NetworkClipped(SnappingClient) || m_State == OPENED)
+	if(NetworkClipped(SnappingClient) || m_State == OPENED || m_DurabilityManager.IsDestroyed())
 		return;
 
-	GS()->SnapLaser(SnappingClient, GetID(), m_Pos, m_PosTo, Server()->Tick() - 2, LASERTYPE_DOOR);
+	GS()->SnapLaser(SnappingClient, GetID(), m_Pos, m_PosTo, Server()->Tick() - m_DurabilityManager.GetTickShift(), LASERTYPE_DRAGGER);
 }

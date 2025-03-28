@@ -4,6 +4,30 @@
 
 #include "../base/interface_house.h"
 
+class CDoorDurability
+{
+	int m_Health {};
+	int m_LastDamageTick {};
+	IHouse* m_pHouse {};
+
+public:
+	CDoorDurability() = default;
+
+	void Init(IHouse* pHouse);
+	bool IncreaseHealth(int Health);
+	bool TakeDamage(int Damage);
+	void Tick();
+
+	int GetHealth() const { return m_Health; }
+	int GetMaxHealth() const;
+	int GetTickShift() const
+	{
+		const int MaxHealth = GetMaxHealth();
+		return ((MaxHealth - m_Health) * 6) / MaxHealth;
+	}
+	bool IsDestroyed() const { return m_Health <= 0; }
+};
+
 class CEntityHouseDoor : public CEntity
 {
 	enum States
@@ -17,6 +41,8 @@ class CEntityHouseDoor : public CEntity
 	vec2 m_PosControll {};
 	int m_State {};
 
+	CDoorDurability m_DurabilityManager {};
+
 public:
 	CEntityHouseDoor(CGameWorld* pGameWorld, IHouse* pHouse, const std::string& Name, vec2 Pos);
 
@@ -29,6 +55,7 @@ public:
 	bool IsClosed() const { return m_State == CLOSED; }
 	std::string GetName() { return m_Name; }
 
+private:
 	bool PlayerHouseTick();
 	bool GuildHouseTick();
 };

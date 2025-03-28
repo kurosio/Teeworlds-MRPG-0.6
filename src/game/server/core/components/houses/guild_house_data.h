@@ -49,12 +49,13 @@ public:
 
 	void Init(CGuild* pGuild, int RentDays, int InitialFee, int WorldID, std::string&& DoorsData, std::string&& FarmzonesData, std::string&& PropertiesData)
 	{
+		UpdateGuild(pGuild);
+
 		m_InitialFee = InitialFee;
 		m_RentDays = RentDays;
 		m_WorldID = WorldID;
 
 		InitComponents(DoorsData, FarmzonesData, PropertiesData);
-		UpdateGuild(pGuild);
 	}
 	void InitComponents(const std::string& DoorsData, const std::string& FarmzonesData, const std::string& PropertiesData);
 
