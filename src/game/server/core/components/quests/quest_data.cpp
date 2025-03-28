@@ -49,21 +49,17 @@ int CQuestDescription::GetCurrentChainPos() const
 
 CQuestDescription* CQuestDescription::GetNextQuest() const
 {
-	if(m_NextQuestID.has_value())
-	{
-		if(const auto it = m_pData.find(m_NextQuestID.value()); it != m_pData.end())
-			return it->second;
-	}
+	if(m_NextQuestID && m_pData.contains(*m_NextQuestID))
+		return m_pData.at(*m_NextQuestID);
+
 	return nullptr;
 }
 
 CQuestDescription* CQuestDescription::GetPreviousQuest() const
 {
-	if(m_PreviousQuestID.has_value())
-	{
-		if(const auto it = m_pData.find(m_PreviousQuestID.value()); it != m_pData.end())
-			return it->second;
-	}
+	if(m_PreviousQuestID && m_pData.contains(*m_PreviousQuestID))
+		return m_pData.at(*m_PreviousQuestID);
+
 	return nullptr;
 }
 

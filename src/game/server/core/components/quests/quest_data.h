@@ -103,10 +103,10 @@ public:
 			m_Flags |= QUEST_FLAG_CANT_REFUSE;
 	}
 
-	void AddFlag(int Flag)
-	{
-		m_Flags |= Flag;
-	}
+	void AddFlag(int Flag) { m_Flags |= Flag; }
+	void SetFlags(int Flag) { m_Flags = Flag; }
+	int GetFlags() const { return m_Flags; }
+	bool HasFlag(int Flag) const { return (m_Flags & Flag) != 0; }
 
 	QuestIdentifier GetID() const { return m_ID; }
 	const char* GetName() const { return m_Name.c_str(); }
@@ -116,7 +116,6 @@ public:
 	CQuestDescription* GetPreviousQuest() const;
 	CReward& Reward() { return m_Reward; }
 
-	bool HasFlag(int Flag) const { return (m_Flags & Flag) != 0; }
 	bool HasObjectives(int Step);
 
 	void PreparePlayerObjectives(int StepPos, int ClientID, std::deque<std::shared_ptr<CQuestStep>>& pElem);

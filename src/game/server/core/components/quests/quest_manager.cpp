@@ -25,18 +25,16 @@ void CQuestManager::OnPreInit()
 		vTempQuestFlags[ID] = flagSet;
 	}
 
-	// Initialize previous quests ids for chain by nextQuestID
+	// Initialize flags, previous quests ids for chain by nextQuestID
 	for(const auto& [ID, pQuest] : CQuestDescription::Data())
 	{
 		if(auto* pNextQuest = pQuest->GetNextQuest())
 			pNextQuest->InitPrevousQuestID(ID);
+
+		pQuest->InitFlags(vTempQuestFlags[ID]);
 	}
 
-	// Initialize flags
-	for(const auto& [ID, pQuest] : CQuestDescription::Data())
-		pQuest->InitFlags(vTempQuestFlags[ID]);
-
-	// Load quest boards
+	// Load boards
 	ResultPtr pResBoard = Database->Execute<DB::SELECT>("*", TW_QUEST_BOARDS_TABLE);
 	while(pResBoard->next())
 	{
@@ -63,6 +61,22 @@ void CQuestManager::OnPreInit()
 		auto* pBoard = CQuestsBoard::Data()[BoardID];
 		pQuest->AddFlag(QUEST_FLAG_GRANTED_FROM_BOARD);
 		pBoard->GetQuestList().push_back(pQuest);
+	}
+
+	// initialize by chain flags for all next quests
+	for(const auto& [ID, pQuest] : CQuestDescription::Data())
+	{
+		auto* pPrevQuest = pQuest->GetPreviousQuest();
+		if(pPrevQuest != nullptr)
+			continue;
+
+		const auto Flags = pQuest->GetFlags();
+		auto* pNextQuest = pQuest->GetNextQuest();
+		while(pNextQuest != nullptr)
+		{
+			pNextQuest->SetFlags(Flags);
+			pNextQuest = pNextQuest->GetNextQuest();
+		}
 	}
 }
 
@@ -276,40 +290,37 @@ void CQuestManager::ShowQuestsBoardList(CPlayer* pPlayer, CQuestsBoard* pBoard) 
 	auto ShowQuestBoardByGroupList = [this](CPlayer* pPlayer, CQuestsBoard* pBoard, const char* pTitle, int QuestFlag)
 	{
 		auto& vQuestsData = pBoard->GetQuestList();
-		if(!vQuestsData.empty())
+		if(vQuestsData.empty())
+			return;
+
+		VoteWrapper VGroup(pPlayer->GetCID(), VWF_STYLE_SIMPLE, pTitle);
+		for(auto& pQuestInfo : vQuestsData)
 		{
-			VoteWrapper VGroup(pPlayer->GetCID(), VWF_STYLE_SIMPLE, pTitle);
-			for(auto& pQuestInfo : vQuestsData)
+			if(!pQuestInfo || !pQuestInfo->HasFlag(QuestFlag))
+				continue;
+
+			while(pQuestInfo && pPlayer->GetQuest(pQuestInfo->GetID())->IsCompleted())
+				pQuestInfo = pQuestInfo->GetNextQuest();
+
+			if(pQuestInfo)
 			{
-				if(!pQuestInfo || !pQuestInfo->HasFlag(QuestFlag))
-					continue;
+				const auto* pPlayerQuest = pPlayer->GetQuest(pQuestInfo->GetID());
+				const char* pStateIndicator = (pPlayerQuest->IsAccepted() ? "✔" : "✖");
+				const char* pQuestName = pQuestInfo->GetName();
+				const auto chainLength = pQuestInfo->GetChainLength();
 
-				auto* pCurrentQuestInfo = pQuestInfo;
-				auto* pCurrentQuest = pPlayer->GetQuest(pQuestInfo->GetID());
-				while(pCurrentQuest->IsCompleted() && pCurrentQuestInfo != nullptr)
+				if(chainLength > 1)
 				{
-					pCurrentQuest = pPlayer->GetQuest(pCurrentQuestInfo->GetID());
-					pCurrentQuestInfo = pCurrentQuestInfo->GetNextQuest();
+					const auto currentChainPos = pQuestInfo->GetCurrentChainPos();
+					VGroup.AddMenu(MENU_BOARD_QUEST_SELECT, pPlayerQuest->GetID(), "({}) {} ({} of {})", pStateIndicator, pQuestName, currentChainPos, chainLength);
 				}
-
-				if(pCurrentQuestInfo)
+				else
 				{
-					const char* pStateIndicator = (pCurrentQuest->IsAccepted() ? "✔" : "✖");
-					const char* pQuestName = pCurrentQuestInfo->GetName();
-					const auto chainLength = pCurrentQuestInfo->GetChainLength();
-					if(chainLength > 1)
-					{
-						const auto currentChainPos = pCurrentQuestInfo->GetCurrentChainPos();
-						VGroup.AddMenu(MENU_BOARD_QUEST_SELECT, pCurrentQuest->GetID(), "({}) {} ({} of {})", pStateIndicator, pQuestName, currentChainPos, chainLength);
-					}
-					else
-					{
-						VGroup.AddMenu(MENU_BOARD_QUEST_SELECT, pCurrentQuest->GetID(), "({}) {}", pStateIndicator, pQuestName);
-					}
+					VGroup.AddMenu(MENU_BOARD_QUEST_SELECT, pPlayerQuest->GetID(), "({}) {}", pStateIndicator, pQuestName);
 				}
 			}
-			VoteWrapper::AddEmptyline(pPlayer->GetCID());
 		}
+		VoteWrapper::AddEmptyline(pPlayer->GetCID());
 	};
 
 	// information
@@ -350,36 +361,23 @@ void CQuestManager::ShowQuestInfo(CPlayer* pPlayer, CQuestDescription* pQuest, b
 	// add buttons
 	VoteWrapper VButtons(ClientID, VWF_STYLE_DOUBLE | VWF_SEPARATE | VWF_ALIGN_TITLE, "Action's");
 	const auto* pNextQuest = pQuest->GetNextQuest();
-	const auto* pPreviousQuest = pQuest->GetPreviousQuest();
+	const auto* pPrevQuest = pQuest->GetPreviousQuest();
 	const int Menulist = fromBoard ? MENU_BOARD_QUEST_SELECT : MENU_JOURNAL_QUEST_DETAILS;
 
+	// next quest button
 	if(pNextQuest)
-	{
 		VButtons.AddMenu(Menulist, pNextQuest->GetID(), "Next: \u27A1 {}", pNextQuest->GetName());
-	}
 
-	if(pPreviousQuest)
-	{
-		auto* playerPreviousQuest = pPlayer->GetQuest(pPreviousQuest->GetID());
-		if(playerPreviousQuest->IsCompleted())
-		{
-			if(pQuest->CanBeAcceptOrRefuse())
-				VButtons.AddOption("QUEST_STATE", pPlayerQuest->GetID(), (pPlayerQuest->IsAccepted() ? "Refuse" : "Accept"));
-			else
-				VButtons.Add("\u26A0 Quest is auto-activated or by NPC");
-		}
-		else
-			VButtons.Add("\u26A0 Need to complete {}.", playerPreviousQuest->Info()->GetName());
-
-		VButtons.AddMenu(Menulist, pPreviousQuest->GetID(), "Previous: \u2B05 {}", playerPreviousQuest->Info()->GetName());
-	}
+	// only for uncompleted quest add refuse accept
+	if(pQuest->CanBeAcceptOrRefuse() && !pPlayerQuest->IsCompleted() && (!pPrevQuest || pPlayer->GetQuest(pPrevQuest->GetID())->IsCompleted()))
+		VButtons.AddOption("QUEST_STATE", pPlayerQuest->GetID(), (pPlayerQuest->IsAccepted() ? "Refuse" : "Accept"));
 	else
-	{
-		if(pQuest->CanBeAcceptOrRefuse())
-			VButtons.AddOption("QUEST_STATE", pPlayerQuest->GetID(), (pPlayerQuest->IsAccepted() ? "Refuse" : "Accept"));
-		else
-			VButtons.Add("\u26A0 Quest is auto-activated or by NPC");
-	}
+		VButtons.Add("\u26A0 Quest is auto-activated or by NPC");
+
+	// prev quest button
+	if(pPrevQuest)
+		VButtons.AddMenu(Menulist, pPrevQuest->GetID(), "Previous: \u2B05 {}", pPrevQuest->GetName());
+
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// detailed information
@@ -504,23 +502,21 @@ void CQuestManager::ResetPeriodQuests(CPlayer* pPlayer, ETimePeriod Period) cons
 			(Period == DAILY_STAMP && pQuest->Info()->HasFlag(QUEST_FLAG_TYPE_DAILY)))
 		{
 			// only in one direction forward only (skip quests what has previous quest)
-			auto* pPrevQuestInfo = pQuest->Info()->GetPreviousQuest();
-			if(pPrevQuestInfo != nullptr)
+			if(pQuest->Info()->GetPreviousQuest() != nullptr)
 				continue;
 
 			// reset full next quest line
-			auto* pCurrentQuest = pQuest;
 			auto* pCurrentQuestInfo = pQuest->Info();
 			while(pCurrentQuestInfo != nullptr)
 			{
-				pCurrentQuest = pPlayer->GetQuest(pCurrentQuestInfo->GetID());
-				pCurrentQuestInfo = pCurrentQuestInfo->GetNextQuest();
-
+				auto* pCurrentQuest = pPlayer->GetQuest(pCurrentQuestInfo->GetID());
 				if(pCurrentQuest->IsAccepted() || pCurrentQuest->IsCompleted())
 				{
-					questIDsToReset += std::to_string(QuestID) + ",";
+					questIDsToReset += std::to_string(pCurrentQuest->GetID()) + ",";
 					pCurrentQuest->Reset();
 				}
+
+				pCurrentQuestInfo = pCurrentQuestInfo->GetNextQuest();
 			}
 		}
 	}
