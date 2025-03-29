@@ -6,41 +6,31 @@
 #include <game/server/core/components/worlds/world_manager.h>
 #include <game/server/core/tools/path_finder.h>
 
-CPlayer* CEntityPathNavigator::GetPlayer() const
-{
-	return GS()->GetPlayer(m_ClientID);
-}
-
 CEntityPathNavigator::CEntityPathNavigator(CGameWorld* pGameWorld, int ClientID, bool StartByCreating, vec2 SearchPos, int WorldID, bool Projectile, int64_t Mask)
 	: CEntity(pGameWorld, CGameWorld::ENTTYPE_PATH_NAVIGATOR, {}, 0, ClientID)
 {
-	const auto* pPlayer = GetPlayer();
-	const auto PosTo = GS()->Core()->WorldManager()->FindPosition(WorldID, SearchPos);
-	if(!PosTo.has_value() || !pPlayer)
-	{
-		MarkForDestroy();
-		return;
-	}
-
-	m_Pos = pPlayer->m_ViewPos;
-	m_PosTo = PosTo.value();
 	m_Mask = Mask;
 	m_StepPos = 0;
 	m_Projectile = Projectile;
 	m_StartByCreating = StartByCreating;
+
+	const auto* pPlayer = GetOwner();
+	const auto PosTo = GS()->Core()->WorldManager()->FindPosition(WorldID, SearchPos);
+	if(PosTo && pPlayer)
+	{
+		m_Pos = pPlayer->m_ViewPos;
+		m_PosTo = *PosTo;
+	}
+	else
+		MarkForDestroy();
+
 	GameWorld()->InsertEntity(this);
 }
 
 void CEntityPathNavigator::Tick()
 {
-	auto* pPlayer = GetPlayer();
-	if(!pPlayer)
-	{
-		GameWorld()->DestroyEntity(this);
-		return;
-	}
-
-	if(!pPlayer->GetCharacter())
+	auto* pPlayer = GetOwner();
+	if(!pPlayer || !pPlayer->GetCharacter())
 		return;
 
 	// if no path is available, request a new path
@@ -63,7 +53,7 @@ void CEntityPathNavigator::Tick()
 
 void CEntityPathNavigator::TickDeferred()
 {
-	auto* pPlayer = GetPlayer();
+	auto* pPlayer = GetOwner();
 	if(!pPlayer || !pPlayer->GetCharacter())
 		return;
 
@@ -129,14 +119,5 @@ void CEntityPathNavigator::Snap(int SnappingClient)
 	if(!m_Projectile || m_PathHandle.vPath.empty() || !CmaskIsSet(m_Mask, SnappingClient) || NetworkClipped(SnappingClient))
 		return;
 
-	CNetObj_Projectile* pObj = static_cast<CNetObj_Projectile*>(Server()->SnapNewItem(NETOBJTYPE_PROJECTILE, GetID(), sizeof(CNetObj_Projectile)));
-	if(pObj)
-	{
-		pObj->m_X = (int)m_Pos.x;
-		pObj->m_Y = (int)m_Pos.y;
-		pObj->m_VelX = 0;
-		pObj->m_VelY = 0;
-		pObj->m_StartTick = Server()->Tick();
-		pObj->m_Type = WEAPON_HAMMER;
-	}
+	GS()->SnapProjectile(SnappingClient, GetID(), m_Pos, {}, Server()->Tick(), WEAPON_HAMMER, m_ClientID);
 }

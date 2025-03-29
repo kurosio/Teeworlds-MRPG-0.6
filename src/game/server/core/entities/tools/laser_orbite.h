@@ -23,7 +23,6 @@ public:
 private:
 	array<int> m_IDs;
 	LaserOrbiteType m_Type {};
-	int m_ClientID {};
 	int m_LaserType {};
 	float m_MoveSpeed{};
 	int64_t m_Mask{};

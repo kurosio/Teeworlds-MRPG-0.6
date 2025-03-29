@@ -37,8 +37,9 @@ void QuestDatafile::Create() const
 
 		pStep->m_aMoveActionProgress.resize(pStep->m_Bot.m_vRequiredMoveAction.size(), false);
 		for(auto& p : pStep->m_Bot.m_vRequiredMoveAction)
+		{
 			Append["move_to"].push_back({ { "complete", false } });
-
+		}
 		JsonQuestData["steps"].push_back(Append);
 	}
 

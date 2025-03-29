@@ -5,31 +5,35 @@
 
 class CPlayer;
 class CPlayerBot;
-class CPlayerQuest;
 class CQuestStep;
+class CPlayerQuest;
+class CEntityDirNavigator;
 
-class CEntityQuestAction : public CEntity, public std::enable_shared_from_this<CEntityQuestAction>
+class CEntityQuestAction : public CEntity
 {
-	bool m_MoveToAutoCompletesStep;
+	enum
+	{
+		VISUAL_GROUP = 0,
+		VISTUAL_IDS_NUM = 4
+	};
+
 	int m_MoveToIndex;
-	std::optional<int> m_optDefeatBotCID {};
-	std::weak_ptr<CQuestStep> m_pStep;
-	array < int > m_IDs;
+	CQuestStep* m_pStep {};
+	CEntityDirNavigator* m_pEntDirNavigator {};
+	std::optional<int> m_DefeatBotCID {};
 
 public:
-	CEntityQuestAction(CGameWorld* pGameWorld, int ClientID, int MoveToIndex, const std::weak_ptr<CQuestStep>& pStep,
-		bool MoveToAutoCompletesStep, std::optional<int> optDefeatBotCID = std::nullopt);
+	CEntityQuestAction(CGameWorld* pGameWorld, int ClientID, int MoveToIndex, CQuestStep* pStep);
 	~CEntityQuestAction() override;
+
+	void Initialize();
 
 	void Tick() override;
 	void Snap(int SnappingClient) override;
-	int GetMoveToIndex() const { return m_MoveToIndex; }
 
 private:
-	CPlayer* GetPlayer() const;
 	CPlayerBot* GetDefeatPlayerBot() const;
 	CPlayerQuest* GetPlayerQuest() const;
-	CQuestStep* GetQuestStep() const;
 	QuestBotInfo::TaskAction* GetTaskMoveTo() const;
 
 	bool PressedFire() const;

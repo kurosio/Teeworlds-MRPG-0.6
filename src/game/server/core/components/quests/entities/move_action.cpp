@@ -1,62 +1,37 @@
 #include "game/server/core/components/Bots/BotData.h"
 #include "move_action.h"
+#include "dir_navigator.h"
 
 #include <game/server/gamecontext.h>
+#include <game/server/entity_manager.h>
 #include "game/server/core/components/quests/quest_manager.h"
 
-constexpr unsigned int s_Particles = 4;
-
-CEntityQuestAction::CEntityQuestAction(CGameWorld* pGameWorld, int ClientID, int MoveToIndex,
-	const std::weak_ptr<CQuestStep>& pStep, bool MoveToAutoCompletesStep, std::optional<int> optDefeatBotCID)
+CEntityQuestAction::CEntityQuestAction(CGameWorld* pGameWorld, int ClientID, int MoveToIndex, CQuestStep* pStep)
 	: CEntity(pGameWorld, CGameWorld::ENTTYPE_MOVE_TO_POINT, {}, 32.f, ClientID), m_MoveToIndex(MoveToIndex)
 {
-	// initialize base
 	m_pStep = pStep;
-	m_optDefeatBotCID = optDefeatBotCID;
-	m_MoveToAutoCompletesStep = MoveToAutoCompletesStep;
 	if(const auto* pTaskData = GetTaskMoveTo())
-	{
-		m_Pos = pTaskData->m_Position;
-		m_Radius = (pTaskData->m_TypeFlags & QuestBotInfo::TaskAction::Types::TFDEFEAT_MOB) ? 400.f : 32.f;
-	}
-	GameWorld()->InsertEntity(this);
+		Initialize();
+	else
+		MarkForDestroy();
 
-	// initialize snap ids
-	m_IDs.set_size(s_Particles);
-	for(int i = 0; i < m_IDs.size(); i++)
-		m_IDs[i] = Server()->SnapNewID();
+	AddSnappingGroupIds(VISUAL_GROUP, VISTUAL_IDS_NUM);
+	GameWorld()->InsertEntity(this);
 }
 
 CEntityQuestAction::~CEntityQuestAction()
 {
-	const auto& pStep = GetQuestStep();
-	if(pStep)
-	{
-		std::erase_if(pStep->m_vpEntitiesAction, [this](const auto* pEntPtr)
-		{
-			return pEntPtr == this;
-		});
-	}
+	// clear data
+	if(m_pEntDirNavigator)
+		delete m_pEntDirNavigator;
 
-	// update quest player progress
-	CPlayer* pPlayer = GetPlayer();
-	if(pPlayer && pStep)
-	{
-		// try auto finish step
-		if(m_MoveToAutoCompletesStep)
-		{
-			const bool LastElement = (pStep->GetCompletedMoveActionCount() == pStep->GetMoveActionNum());
-			if(LastElement && pStep->IsComplete())
-			{
-				pStep->Finish();
-			}
-		}
-
-		GS()->Core()->QuestManager()->Update(pPlayer);
-	}
+	// disable cooldown on erase action
+	auto* pPlayer = GetOwner();
+	if(pPlayer && pPlayer->m_Cooldown.IsActive())
+		pPlayer->m_Cooldown.Reset();
 
 	// mark whether or not we need to remove the mob from the game
-	CPlayerBot* pDefeatBotPlayer = GetDefeatPlayerBot();
+	auto* pDefeatBotPlayer = GetDefeatPlayerBot();
 	if(pDefeatBotPlayer)
 	{
 		auto& QuestBotInfo = pDefeatBotPlayer->GetQuestBotMobInfo();
@@ -76,41 +51,90 @@ CEntityQuestAction::~CEntityQuestAction()
 		if(ClearDefeatMobPlayer)
 		{
 			GS()->DestroyPlayer(pDefeatBotPlayer->GetCID());
-			dbg_msg(PRINT_QUEST_PREFIX, "Deleted questing mob");
+			dbg_msg(PRINT_QUEST_PREFIX, "Deleted objective quest mob!");
 		}
 	}
+}
 
-	// free ids
-	for(int i = 0; i < m_IDs.size(); i++)
-		Server()->SnapFreeID(m_IDs[i]);
+void CEntityQuestAction::Initialize()
+{
+	const auto* pTaskData = GetTaskMoveTo();
+	m_Pos = pTaskData->m_Position;
+	m_Radius = pTaskData->m_TypeFlags & QuestBotInfo::TaskAction::Types::TFDEFEAT_MOB ? 400.f : 32.f;
+
+	// try create defeat mob
+	if(pTaskData->IsHasDefeatMob())
+	{
+		CPlayerBot* pPlayerBot = nullptr;
+		for(int c = MAX_PLAYERS; c < MAX_CLIENTS; ++c)
+		{
+			auto* pPotentialBot = dynamic_cast<CPlayerBot*>(GS()->GetPlayer(c));
+			if(pPotentialBot && pPotentialBot->GetQuestBotMobInfo().m_QuestID == m_pStep->m_Bot.m_QuestID &&
+				pPotentialBot->GetQuestBotMobInfo().m_QuestStep == m_pStep->m_Bot.m_StepPos &&
+				pPotentialBot->GetQuestBotMobInfo().m_MoveToStep == m_MoveToIndex)
+			{
+				pPlayerBot = pPotentialBot;
+				break;
+			}
+		}
+
+		if(!pPlayerBot)
+		{
+			const auto& DefeatMobInfo = pTaskData->m_DefeatMobInfo;
+			const int MobClientID = GS()->CreateBot(TYPE_BOT_QUEST_MOB, DefeatMobInfo.m_BotID, -1);
+			pPlayerBot = dynamic_cast<CPlayerBot*>(GS()->GetPlayer(MobClientID));
+
+			CQuestBotMobInfo data;
+			data.m_QuestID = m_pStep->m_Bot.m_QuestID;
+			data.m_QuestStep = m_pStep->m_Bot.m_StepPos;
+			data.m_MoveToStep = m_MoveToIndex;
+			data.m_AttributePower = DefeatMobInfo.m_AttributePower;
+			data.m_WorldID = DefeatMobInfo.m_WorldID;
+			data.m_Position = pTaskData->m_Position;
+			pPlayerBot->InitQuestBotMobInfo(data);
+			dbg_msg(PRINT_QUEST_PREFIX, "Creating a objective quest mob!");
+		}
+
+		pPlayerBot->GetQuestBotMobInfo().m_ActiveForClient[m_ClientID] = true;
+		pPlayerBot->GetQuestBotMobInfo().m_CompleteClient[m_ClientID] = false;
+		m_DefeatBotCID = pPlayerBot->GetCID();
+	}
+
+	// initialize support entities
+	if(pTaskData->m_TypeFlags & QuestBotInfo::TaskAction::Types::TFDEFEAT_MOB)
+	{
+		constexpr auto Radius = 400.f;
+		m_pEntDirNavigator = new CEntityDirNavigator(&GS()->m_World, POWERUP_ARMOR, 0, false, m_ClientID, Radius, m_Pos, pTaskData->m_WorldID);
+		GS()->EntityManager()->LaserOrbite(this, (int)(Radius / 50.f), LaserOrbiteType::InsideOrbite, 0.f, Radius, LASERTYPE_FREEZE, CmaskOne(m_ClientID));
+	}
+	else if(!pTaskData->m_Navigator)
+	{
+		const auto Radius = 1000.f + random_float(2000.f);
+		m_pEntDirNavigator = new CEntityDirNavigator(&GS()->m_World, POWERUP_ARMOR, 0, false, m_ClientID, Radius, m_Pos, pTaskData->m_WorldID);
+		GS()->EntityManager()->LaserOrbite(this, (int)(Radius / 50.f), LaserOrbiteType::InsideOrbiteRandom, 0.f, Radius, LASERTYPE_FREEZE, CmaskOne(m_ClientID));
+
+	}
+	else
+	{
+		m_pEntDirNavigator = new CEntityDirNavigator(&GS()->m_World, POWERUP_ARMOR, 0, false, m_ClientID, 0.f, m_Pos, pTaskData->m_WorldID);
+	}
+
+	if(m_pEntDirNavigator && m_pEntDirNavigator->IsMarkedForDestroy())
+		m_pEntDirNavigator = nullptr;
 }
 
 void CEntityQuestAction::Tick()
 {
-	CPlayer* pPlayer = GetPlayer();
+	auto* pPlayer = GetOwner();
 	if(!pPlayer || !pPlayer->GetCharacter())
-	{
-		GameWorld()->DestroyEntity(this);
 		return;
-	}
 
-	if(!GetPlayerQuest() || !GetQuestStep())
-	{
-		GameWorld()->DestroyEntity(this);
-		return;
-	}
-
-	const auto* pTaskData = GetTaskMoveTo();
-	if(!pTaskData)
-	{
-		GameWorld()->DestroyEntity(this);
-		return;
-	}
-
-	const bool IsComplected = GetQuestStep()->m_aMoveActionProgress[m_MoveToIndex];
+	// update step status
+	const bool IsComplected = m_pStep->m_aMoveActionProgress[m_MoveToIndex];
 	if(IsComplected)
 	{
-		GameWorld()->DestroyEntity(this);
+		if(!m_pStep->TryAutoFinish())
+			m_pStep->Update();
 		return;
 	}
 
@@ -119,6 +143,7 @@ void CEntityQuestAction::Tick()
 		return;
 
 	// handlers
+	const auto* pTaskData = GetTaskMoveTo();
 	HandleTaskType(pTaskData);
 	HandleBroadcastInformation(pTaskData);
 }
@@ -133,7 +158,7 @@ void CEntityQuestAction::Handler(const std::function<bool()>& pCallbackSuccesful
 	if(!pCallbackSuccesful())
 		return;
 
-	CPlayer* pPlayer = GetPlayer();
+	CPlayer* pPlayer = GetOwner();
 	const auto* pTaskData = GetTaskMoveTo();
 	if(pTaskData->m_Cooldown > 0)
 	{
@@ -147,9 +172,9 @@ void CEntityQuestAction::Handler(const std::function<bool()>& pCallbackSuccesful
 
 void CEntityQuestAction::TryFinish()
 {
-	auto* pPlayer = GetPlayer();
+	auto* pPlayer = GetOwner();
 	auto* pQuest = GetPlayerQuest();
-	auto* pQuestStep = GetQuestStep();
+	auto* pQuestStep = m_pStep;
 	const auto* pTaskData = GetTaskMoveTo();
 
 	// required item
@@ -178,60 +203,33 @@ void CEntityQuestAction::TryFinish()
 
 	// Completion text
 	if(!pTaskData->m_CompletionText.empty())
-	{
 		GS()->Chat(m_ClientID, pTaskData->m_CompletionText.c_str());
-	}
 
 	// Set the complete flag to true
 	pQuestStep->m_aMoveActionProgress[m_MoveToIndex] = true;
 	pQuest->Datafile().Save();
-
-	// Create a death entity at the current position and destroy this entity
 	GS()->CreateDeath(m_Pos, m_ClientID);
-	GameWorld()->DestroyEntity(this);
-}
-
-CPlayer* CEntityQuestAction::GetPlayer() const
-{
-	return GS()->GetPlayer(m_ClientID);
 }
 
 CPlayerBot* CEntityQuestAction::GetDefeatPlayerBot() const
 {
-	if(m_optDefeatBotCID.has_value())
-		return dynamic_cast<CPlayerBot*>(GS()->GetPlayer(m_optDefeatBotCID.value()));
+	if(m_DefeatBotCID.has_value())
+		return dynamic_cast<CPlayerBot*>(GS()->GetPlayer(m_DefeatBotCID.value()));
 	return nullptr;
 }
 
 CPlayerQuest* CEntityQuestAction::GetPlayerQuest() const
 {
-	CPlayer* pPlayer = GetPlayer();
+	CPlayer* pPlayer = GetOwner();
 	if(!pPlayer)
 		return nullptr;
 
-	if(const auto pStep = m_pStep.lock())
-	{
-		return pPlayer->GetQuest(pStep->m_Bot.m_QuestID);
-	}
-	return nullptr;
-}
-
-CQuestStep* CEntityQuestAction::GetQuestStep() const
-{
-	if(const auto pStep = m_pStep.lock())
-	{
-		return pStep.get();
-	}
-	return nullptr;
+	return pPlayer->GetQuest(m_pStep->m_Bot.m_QuestID);
 }
 
 QuestBotInfo::TaskAction* CEntityQuestAction::GetTaskMoveTo() const
 {
-	if(const auto pStep = m_pStep.lock())
-	{
-		return &pStep->m_Bot.m_vRequiredMoveAction[m_MoveToIndex];
-	}
-	return nullptr;
+	return &m_pStep->m_Bot.m_vRequiredMoveAction[m_MoveToIndex];
 }
 
 void CEntityQuestAction::Snap(int SnappingClient)
@@ -239,10 +237,11 @@ void CEntityQuestAction::Snap(int SnappingClient)
 	if(m_ClientID != SnappingClient)
 		return;
 
-	for(int i = 0; i < m_IDs.size(); i++)
+	auto& visualIdsGroup = GetSnappingGroupIds(VISUAL_GROUP);
+	for(auto& id : visualIdsGroup)
 	{
 		vec2 randomRangePos = random_range_pos(m_Pos, m_Radius);
-		GS()->SnapProjectile(SnappingClient, m_IDs[i], randomRangePos, { }, Server()->Tick() - 3, WEAPON_HAMMER, m_ClientID);
+		GS()->SnapProjectile(SnappingClient, id, randomRangePos, { }, Server()->Tick() - 3, WEAPON_HAMMER, m_ClientID);
 	}
 }
 
@@ -271,7 +270,7 @@ void CEntityQuestAction::HandleTaskType(const QuestBotInfo::TaskAction* pTaskDat
 
 		Handler([this, Position]
 		{
-			return PressedFire() && distance(GetPlayer()->GetCharacter()->GetMousePos(), Position) < 48.f;
+			return PressedFire() && distance(GetOwner()->GetCharacter()->GetMousePos(), Position) < 48.f;
 		});
 	}
 
@@ -290,7 +289,7 @@ void CEntityQuestAction::HandleTaskType(const QuestBotInfo::TaskAction* pTaskDat
 
 void CEntityQuestAction::HandleBroadcastInformation(const QuestBotInfo::TaskAction* pTaskData) const
 {
-	CPlayer* pPlayer = GetPlayer();
+	CPlayer* pPlayer = GetOwner();
 	const auto& pPickupItem = pTaskData->m_PickupItem;
 	const auto& pRequireItem = pTaskData->m_RequiredItem;
 	const auto Type = pTaskData->m_TypeFlags;
@@ -303,14 +302,14 @@ void CEntityQuestAction::HandleBroadcastInformation(const QuestBotInfo::TaskActi
 	std::string strBuffer;
 	if(pRequireItem.IsValid())
 	{
-		CPlayerItem* pPlayerItem = pPlayer->GetItem(pRequireItem.GetID());
+		CPlayerItem* pPlayerItem = pPlayer->GetItem(pRequireItem);
 		strBuffer += fmt_localize(m_ClientID, "- Required: {} x{}({})\n",
 			pPlayerItem->Info()->GetName(), pRequireItem.GetValue(), pPlayerItem->GetValue());
 	}
 
 	if(pPickupItem.IsValid())
 	{
-		CPlayerItem* pPlayerItem = pPlayer->GetItem(pPickupItem.GetID());
+		CPlayerItem* pPlayerItem = pPlayer->GetItem(pPickupItem);
 		strBuffer += fmt_localize(m_ClientID, "- Pick up: {} x{}({})\n",
 			pPlayerItem->Info()->GetName(), pPickupItem.GetValue(), pPlayerItem->GetValue());
 	}

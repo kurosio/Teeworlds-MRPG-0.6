@@ -998,10 +998,6 @@ void CCharacter::Die(int Killer, int Weapon)
 {
 	m_Alive = false;
 
-	// a nice sound
-	GS()->m_pController->OnCharacterDeath(m_pPlayer, GS()->GetPlayer(Killer), Weapon);
-	GS()->CreateSound(m_Pos, SOUND_PLAYER_DIE);
-
 	// send the kill message
 	CNetMsg_Sv_KillMsg Msg;
 	Msg.m_Killer = Killer;
@@ -1013,9 +1009,14 @@ void CCharacter::Die(int Killer, int Weapon)
 	// respawn
 	m_pPlayer->m_aPlayerTick[ETickState::Die] = Server()->Tick() / 2;
 	m_pPlayer->PrepareRespawnTick();
+	GS()->Core()->QuestManager()->Update(m_pPlayer);
+	GS()->m_pController->OnCharacterDeath(m_pPlayer, GS()->GetPlayer(Killer), Weapon);
+
+	// remove from world
 	GS()->m_World.RemoveEntity(this);
 	GS()->m_World.m_Core.m_apCharacters[m_ClientID] = nullptr;
 	GS()->CreateDeath(m_Pos, m_ClientID);
+	GS()->CreateSound(m_Pos, SOUND_PLAYER_DIE);
 }
 
 void CCharacter::AutoUseHealingPotionIfNeeded() const

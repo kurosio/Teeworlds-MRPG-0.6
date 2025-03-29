@@ -35,7 +35,7 @@ CEntityLaserOrbite::~CEntityLaserOrbite()
 
 void CEntityLaserOrbite::Tick()
 {
-	CPlayer* pPlayer = GS()->GetPlayer(m_ClientID, false, true);
+	auto* pPlayer = GetOwner();
 	if((m_ClientID >= 0 && !pPlayer) || (m_pEntParent && !GameWorld()->ExistEntity(m_pEntParent)))
 	{
 		GameWorld()->DestroyEntity(this);
@@ -72,7 +72,7 @@ vec2 CEntityLaserOrbite::UtilityOrbitePos(int PosID) const
 
 void CEntityLaserOrbite::Snap(int SnappingClient)
 {
-	if(NetworkClipped(SnappingClient, m_Pos, m_Radius) || !CmaskIsSet(m_Mask, SnappingClient))
+	if(NetworkClipped(SnappingClient, m_Pos, m_Radius + 1000.f) || !CmaskIsSet(m_Mask, SnappingClient))
 		return;
 
 	vec2 LastPosition = m_Pos + UtilityOrbitePos(m_IDs.size() - 1);
@@ -80,33 +80,7 @@ void CEntityLaserOrbite::Snap(int SnappingClient)
 	{
 		vec2 PosStart = m_Pos + UtilityOrbitePos(i);
 
-		if(GS()->GetClientVersion(SnappingClient) >= VERSION_DDNET_MULTI_LASER)
-		{
-			CNetObj_DDNetLaser* pObj = static_cast<CNetObj_DDNetLaser*>(Server()->SnapNewItem(NETOBJTYPE_DDNETLASER, m_IDs[i], sizeof(CNetObj_DDNetLaser)));
-			if(!pObj)
-				return;
-
-			pObj->m_FromX = (int)PosStart.x;
-			pObj->m_FromY = (int)PosStart.y;
-			pObj->m_ToX = (int)LastPosition.x;
-			pObj->m_ToY = (int)LastPosition.y;
-			pObj->m_StartTick = Server()->Tick() - 4;
-			pObj->m_Owner = m_ClientID;
-			pObj->m_Type = m_LaserType;
-		}
-		else
-		{
-			CNetObj_Laser* pObj = static_cast<CNetObj_Laser*>(Server()->SnapNewItem(NETOBJTYPE_LASER, m_IDs[i], sizeof(CNetObj_Laser)));
-			if(!pObj)
-				return;
-
-			pObj->m_FromX = (int)PosStart.x;
-			pObj->m_FromY = (int)PosStart.y;
-			pObj->m_X = (int)LastPosition.x;
-			pObj->m_Y = (int)LastPosition.y;
-			pObj->m_StartTick = Server()->Tick() - 4;
-		}
-
+		GS()->SnapLaser(SnappingClient, m_IDs[i], LastPosition, PosStart, Server()->Tick() - 4, m_LaserType, 0, m_ClientID);
 		LastPosition = PosStart;
 	}
 }

@@ -538,7 +538,7 @@ void CQuestManager::ResetPeriodQuests(CPlayer* pPlayer, ETimePeriod Period) cons
 void CQuestManager::Update(CPlayer* pPlayer)
 {
 	// initialize variables
-	const int ClientID = pPlayer->GetCID();
+	const auto ClientID = pPlayer->GetCID();
 	const auto& vPlayerQuests = CPlayerQuest::Data()[ClientID];
 
 	// try update quests

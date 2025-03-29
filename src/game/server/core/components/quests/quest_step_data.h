@@ -24,15 +24,15 @@ private:
 
 // ##############################################################
 // ################# PLAYER STEP STRUCTURE ######################
-class CEntityPathArrow;
+class CEntity;
 class CEntityQuestAction;
-class CEntityDirectionNavigator;
+class CEntityDirNavigator;
 class CQuestStep : public CQuestStepBase, public std::enable_shared_from_this<CQuestStep>
 {
 	class CGS* GS() const;
 	class CPlayer* GetPlayer() const;
 
-	CEntityDirectionNavigator* m_pEntNavigator{};
+	CEntityDirNavigator* m_pEntNavigator{};
 	struct MobProgressStatus
 	{
 		int m_Count;
@@ -56,29 +56,26 @@ public:
 	bool m_ClientQuitting{};
 	bool m_TaskListReceived{};
 
-	int GetNumberBlockedItem(int ItemID) const;
 	bool IsComplete();
 	bool Finish();
 	void PostFinish();
+	bool TryAutoFinish();
 
 	void AppendDefeatProgress(int DefeatedBotID);
 	void CreateVarietyTypesRequiredItems();
 	void FormatStringTasks(char* aBufQuestTask, int Size);
 
-	void UpdatePathNavigator();
-	void UpdateTaskMoveTo();
+	void UpdateNavigator();
+	void UpdateObjectives();
 	void Update();
 
-	int GetMoveActionNum() const;
+	void ClearObjectives();
+
 	int GetMoveActionCurrentStepPos() const;
-	int GetCompletedMoveActionCount();
 
-	// steps path finder tools
-	std::deque < CEntityQuestAction* > m_vpEntitiesAction {};
-	std::deque < CEntityPathArrow* > m_vpEntitiesNavigator {};
-
-	void CreateEntityQuestAction(int MoveToIndex, std::optional<int> OptDefeatBotCID = std::nullopt);
-	void CreateEntityArrowNavigator(vec2 Position, int WorldID, float AreaClipped, int ConditionType, int ConditionIndex);
+	// entities
+	std::map < int, CEntity* > m_vpEntitiesMoveAction {};
+	std::map < int, CEntityDirNavigator* > m_vpEntitiesDefeatBotNavigator {};
 };
 
 #endif

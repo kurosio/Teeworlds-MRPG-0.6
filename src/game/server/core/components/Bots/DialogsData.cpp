@@ -464,7 +464,7 @@ void CPlayerDialog::ShowCurrentDialog() const
 			if(!pStep->m_TaskListReceived)
 			{
 				pStep->m_TaskListReceived = true;
-				pStep->UpdateTaskMoveTo();
+				pStep->UpdateObjectives();
 
 				const auto& scenarioData = questBot.m_ScenarioJson;
 				m_pPlayer->StartUniversalScenario(scenarioData, EScenarios::SCENARIO_ON_DIALOG_RECIEVE_OBJECTIVES);
