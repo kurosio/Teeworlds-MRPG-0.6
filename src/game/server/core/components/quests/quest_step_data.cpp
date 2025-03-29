@@ -365,7 +365,7 @@ void CQuestStep::Update()
 	UpdateBot();
 	UpdateNavigator();
 	UpdateObjectives();
-	TryAutoFinish(QUEST_STEP_AUTO_FINISH_MODE_FULL);
+	//TryAutoFinish(QUEST_STEP_AUTO_FINISH_MODE_FULL);
 }
 
 void CQuestStep::ClearObjectives()
