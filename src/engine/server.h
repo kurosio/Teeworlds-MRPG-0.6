@@ -262,10 +262,10 @@ public:
 namespace Instance
 {
 	struct Data { inline static class IServer* g_pServer; };
-	static IServer* Server() { return Data::g_pServer; }
-	static IGameServer* GameServerPlayer(int ClientID = -1) { return Data::g_pServer->GameServerPlayer(ClientID); }
-	static IGameServer* GameServer(int WorldID = MAIN_WORLD_ID) { return Data::g_pServer->GameServer(WorldID); }
-	static const char* Localize(int ClientID, const char* pText) { return Data::g_pServer->Localize(ClientID, pText); }
+	static [[maybe_unused]] IServer* Server() { return Data::g_pServer; }
+	static [[maybe_unused]] IGameServer* GameServerPlayer(int ClientID = -1) { return Data::g_pServer->GameServerPlayer(ClientID); }
+	static [[maybe_unused]] IGameServer* GameServer(int WorldID = MAIN_WORLD_ID) { return Data::g_pServer->GameServer(WorldID); }
+	static [[maybe_unused]] const char* Localize(int ClientID, const char* pText) { return Data::g_pServer->Localize(ClientID, pText); }
 };
 
 extern IGameServer *CreateGameServer();
