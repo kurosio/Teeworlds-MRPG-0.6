@@ -119,6 +119,7 @@ void CBotManager::InitQuestBots(const char* pWhereLocalWorld)
 		QuestBot.m_WorldID = pRes->getInt("WorldID");
 		QuestBot.m_Position = vec2(pRes->getInt("PosX"), pRes->getInt("PosY") + 1);
 		QuestBot.m_ScenarioJson = pRes->getString("ScenarioData");
+		QuestBot.m_AutoFinishMode = GetQuestStepAutoFinishModeFromDBSet(DBSet(pRes->getString("AutoFinishMode")));
 
 		// tasks initilized
 		std::string TasksData = pRes->getString("TasksData");

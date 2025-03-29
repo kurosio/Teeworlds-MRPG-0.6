@@ -198,11 +198,13 @@ void CQuestStep::PostFinish()
 	pPlayer->m_VotesData.UpdateVotesIf(MENU_JOURNAL_MAIN);
 }
 
-bool CQuestStep::TryAutoFinish()
+bool CQuestStep::TryAutoFinish(int Mode)
 {
-	// try auto finish step
+	if(Mode == QUEST_STEP_AUTO_FINISH_MODE_NO || Mode != m_Bot.GetAutoFinishMode())
+		return false;
+
 	const auto* pPlayer = GetPlayer();
-	if(pPlayer && !pPlayer->m_Dialog.IsActive() && m_Bot.IsAutoCompletesQuestStep())
+	if(pPlayer && !pPlayer->m_Dialog.IsActive())
 	{
 		bool allActionsFinished = std::ranges::all_of(m_aMoveActionProgress, [](const bool F){ return F; });
 		if(allActionsFinished && IsComplete())
@@ -363,6 +365,7 @@ void CQuestStep::Update()
 	UpdateBot();
 	UpdateNavigator();
 	UpdateObjectives();
+	TryAutoFinish(QUEST_STEP_AUTO_FINISH_MODE_FULL);
 }
 
 void CQuestStep::ClearObjectives()

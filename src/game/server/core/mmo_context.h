@@ -23,11 +23,6 @@ struct CTeeInfo
 	int m_ColorFeet;
 };
 
-constexpr std::string GetRatingFilename(int AccountID) noexcept
-{
-	return std::string("server_data/account_rating/raiting_").append(std::to_string(AccountID)).append("AID").append(".json");
-}
-
 // special sounds
 enum ESpecialSound
 {
@@ -193,6 +188,21 @@ enum class LaserOrbiteType : unsigned char
 	InsideOrbite,
 	InsideOrbiteRandom,
 };
+
+// quest auto finish modes
+enum EQuestStepAutoFinishMode
+{
+	QUEST_STEP_AUTO_FINISH_MODE_NO,
+	QUEST_STEP_AUTO_FINISH_MODE_FULL,
+	QUEST_STEP_AUTO_FINISH_MODE_PARTIAL
+};
+
+inline static int GetQuestStepAutoFinishModeFromDBSet(const DBSet& dbset) noexcept
+{
+	if(dbset.hasSet("Full")) return QUEST_STEP_AUTO_FINISH_MODE_FULL;
+	else if(dbset.hasSet("Partial")) return QUEST_STEP_AUTO_FINISH_MODE_PARTIAL;
+	else return QUEST_STEP_AUTO_FINISH_MODE_NO;
+}
 
 // professions
 enum class ProfessionIdentifier : int

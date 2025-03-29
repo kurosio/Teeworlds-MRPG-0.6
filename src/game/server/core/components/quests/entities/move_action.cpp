@@ -133,7 +133,7 @@ void CEntityQuestAction::Tick()
 	const bool IsComplected = m_pStep->m_aMoveActionProgress[m_MoveToIndex];
 	if(IsComplected)
 	{
-		if(!m_pStep->TryAutoFinish())
+		if(!m_pStep->TryAutoFinish(QUEST_STEP_AUTO_FINISH_MODE_PARTIAL))
 			m_pStep->Update();
 		return;
 	}

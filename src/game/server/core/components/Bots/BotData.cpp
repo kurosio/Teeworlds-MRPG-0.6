@@ -41,6 +41,8 @@ void QuestBotInfo::InitTasksFromJSON(const std::string& JsonData)
 {
 	mystd::json::parse(JsonData, [&](const nlohmann::json& pJson)
 	{
+		bool HasTasks = false;
+
 		// initilize required items
 		if(pJson.contains("required_items"))
 		{
@@ -60,6 +62,7 @@ void QuestBotInfo::InitTasksFromJSON(const std::string& JsonData)
 						Task.m_Type = TaskRequiredItems::Type::DEFAULT;
 
 					m_vRequiredItems.push_back(Task);
+					HasTasks = true;
 				}
 			}
 		}
@@ -77,12 +80,12 @@ void QuestBotInfo::InitTasksFromJSON(const std::string& JsonData)
 				if(BotID > 0 && Value > 0)
 				{
 					m_vRequiredDefeats.push_back({ BotID, Value });
+					HasTasks = true;
 				}
 			}
 		}
 
 		// initilize move to points
-		m_MoveToAutoCompletesStep = pJson.value("move_to_completes_quest_step", false);
 		if(pJson.contains("move_to"))
 		{
 			int LatestBiggerStep = 1;
@@ -181,8 +184,13 @@ void QuestBotInfo::InitTasksFromJSON(const std::string& JsonData)
 					Move.m_Interaction = Interactive;
 					Move.m_DefeatMobInfo = DefeatDescription;
 					m_vRequiredMoveAction.push_back(Move);
+					HasTasks = true;
 				}
 			}
 		}
+
+		// disable auto finish mode for non-tasked quests
+		if(!HasTasks)
+			m_AutoFinishMode = QUEST_STEP_AUTO_FINISH_MODE_NO;
 	});
 }

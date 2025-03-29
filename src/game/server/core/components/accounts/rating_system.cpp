@@ -7,10 +7,15 @@
 constexpr double DECAY_FACTOR = 0.01;
 constexpr double LEVEL_FACTOR = 0.05;
 
+inline static std::string getFileName(int AccountID)
+{
+	return std::string("server_data/account_rating/raiting_").append(std::to_string(AccountID)).append("AID").append(".json");
+}
+
 void RatingSystem::Init(CAccountData* pAccount)
 {
 	m_pAccount = pAccount;
-	m_FileName = GetRatingFilename(pAccount->GetID());
+	m_FileName = getFileName(pAccount->GetID());
 	Load();
 }
 
