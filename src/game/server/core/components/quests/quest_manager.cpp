@@ -289,29 +289,30 @@ void CQuestManager::ShowQuestsBoardList(CPlayer* pPlayer, CQuestsBoard* pBoard) 
 	// lambda function to show quest board by group list
 	auto ShowQuestBoardByGroupList = [this](CPlayer* pPlayer, CQuestsBoard* pBoard, const char* pTitle, int QuestFlag)
 	{
-		auto& vQuestsData = pBoard->GetQuestList();
+		const auto& vQuestsData = pBoard->GetQuestList();
 		if(vQuestsData.empty())
 			return;
 
 		VoteWrapper VGroup(pPlayer->GetCID(), VWF_STYLE_SIMPLE, pTitle);
-		for(auto& pQuestInfo : vQuestsData)
+		for(const auto& pQuestInfo : vQuestsData)
 		{
 			if(!pQuestInfo || !pQuestInfo->HasFlag(QuestFlag))
 				continue;
 
-			while(pQuestInfo && pPlayer->GetQuest(pQuestInfo->GetID())->IsCompleted())
-				pQuestInfo = pQuestInfo->GetNextQuest();
+			auto* pCurrentQuest = pQuestInfo;
+			while(pCurrentQuest && pPlayer->GetQuest(pCurrentQuest->GetID())->IsCompleted())
+				pCurrentQuest = pCurrentQuest->GetNextQuest();
 
-			if(pQuestInfo)
+			if(pCurrentQuest)
 			{
-				const auto* pPlayerQuest = pPlayer->GetQuest(pQuestInfo->GetID());
+				const auto* pPlayerQuest = pPlayer->GetQuest(pCurrentQuest->GetID());
 				const char* pStateIndicator = (pPlayerQuest->IsAccepted() ? "✔" : "✖");
-				const char* pQuestName = pQuestInfo->GetName();
-				const auto chainLength = pQuestInfo->GetChainLength();
+				const char* pQuestName = pCurrentQuest->GetName();
+				const auto chainLength = pCurrentQuest->GetChainLength();
 
 				if(chainLength > 1)
 				{
-					const auto currentChainPos = pQuestInfo->GetCurrentChainPos();
+					const auto currentChainPos = pCurrentQuest->GetCurrentChainPos();
 					VGroup.AddMenu(MENU_BOARD_QUEST_SELECT, pPlayerQuest->GetID(), "({}) {} ({} of {})", pStateIndicator, pQuestName, currentChainPos, chainLength);
 				}
 				else
