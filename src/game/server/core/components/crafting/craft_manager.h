@@ -8,7 +8,6 @@
 
 class CCraftManager : public MmoComponent
 {
-	inline static std::deque<CCraftItem> s_vInitTemporaryCraftList{};
 	void InitCraftGroup(const std::string& GroupName, const std::vector<int>& Items);
 
 	~CCraftManager() override

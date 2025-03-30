@@ -8,35 +8,13 @@
 #include "../Inventory/InventoryManager.h"
 
 
-void CCraftManager::InitCraftGroup(const std::string& GroupName, const std::vector<int>& Items)
-{
-	// filtered items by Temporary craft list elements
-	std::vector<CCraftItem> filteredItems {};
-	std::ranges::copy_if(s_vInitTemporaryCraftList, std::back_inserter(filteredItems), [&Items](const CCraftItem& p)
-	{
-		return std::ranges::find(Items, p.GetItem()->GetID()) != Items.end();
-	});
-
-	if(!filteredItems.empty())
-	{
-		// sort by price
-		std::ranges::sort(filteredItems, [](const CCraftItem& a, const CCraftItem& b)
-		{
-			return a.GetPrice(nullptr) < b.GetPrice();
-		});
-
-		// initialize
-		CCraftItem::CreateGroup(GroupName, filteredItems);
-	}
-}
-
-
 void CCraftManager::OnPreInit()
 {
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_crafts_list");
 	while(pRes->next())
 	{
 		// initialize variables
+		const auto GroupName = pRes->getString("GroupName");
 		const auto ItemID = pRes->getInt("ItemID");
 		const auto ItemValue = pRes->getInt("ItemValue");
 		const auto Price = pRes->getInt("Price");
@@ -56,35 +34,24 @@ void CCraftManager::OnPreInit()
 			}
 		}
 
-		// initialize temp craft element
+		// initialize craft element
 		CraftIdentifier ID = pRes->getInt("ID");
-		auto& elem = s_vInitTemporaryCraftList.emplace_back(ID);
-		elem.Init(RequiredIngredients, CItem(ItemID, ItemValue), Price, WorldID);
+		auto* pCraftItem = CCraftItem::CreateElement(GroupName, ID);
+		pCraftItem->Init(RequiredIngredients, CItem(ItemID, ItemValue), Price, WorldID);
 	}
 }
 
 
 void CCraftManager::OnPostInit()
 {
-	// initialize groups
-	for(auto group = (int)ItemGroup::Quest; group < (int)ItemGroup::Potion; ++group)
+	// post sorting
+	for(auto& [Group, vItems] : CCraftItem::Data())
 	{
-		if(group != (int)ItemGroup::Equipment)
+		std::ranges::sort(vItems, [](const auto* pA, const auto* pB)
 		{
-			const auto vCollection = CInventoryManager::GetItemsCollection((ItemGroup)group, std::nullopt);
-			InitCraftGroup(GetItemGroupName((ItemGroup)group), vCollection);
-		}
+			return pA->GetPrice(nullptr) < pB->GetPrice();
+		});
 	}
-
-	for(auto type = (int)ItemType::Default; type < (int)ItemType::NUM_EQUIPPED; ++type)
-	{
-		const char* pName = (type == (int)ItemType::Default) ? "Modules" : GetItemTypeName((ItemType)type);
-		const auto vCollection = CInventoryManager::GetItemsCollection(ItemGroup::Equipment, (ItemType)type);
-		InitCraftGroup(pName, vCollection);
-	}
-
-	// clear
-	s_vInitTemporaryCraftList.clear();
 }
 
 

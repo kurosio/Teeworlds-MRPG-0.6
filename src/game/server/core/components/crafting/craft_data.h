@@ -13,15 +13,14 @@ class CCraftItem : public MultiworldIdentifiableData< std::map<std::string, std:
 	int m_WorldID {};
 
 public:
+	explicit CCraftItem() = default;
 	explicit CCraftItem(CraftIdentifier ID) : m_ID(ID) {}
 
-	static void CreateGroup(const std::string& GroupName, const std::vector<CCraftItem>& vElem)
+	static CCraftItem* CreateElement(const std::string& GroupName, int ID)
 	{
-		for(auto& elem : vElem)
-		{
-			auto pData = new CCraftItem(elem);
-			m_pData[GroupName].emplace_back(pData);
-		}
+		auto pData = new CCraftItem(ID);
+		pData->m_ID = ID;
+		return m_pData[GroupName].emplace_back(std::move(pData));
 	}
 
 	void Init(CItemsContainer RequiredContainer, CItem Item, int Price, int WorldID)
