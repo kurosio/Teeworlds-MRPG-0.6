@@ -134,6 +134,12 @@ bool CCraftManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 		return true;
 	}
 
+	if(PPSTR(pCmd, "CRAFT_TAB_SELECT") == 0)
+	{
+		pPlayer->m_ActiveCraftGroupID = Extra1;
+		pPlayer->m_VotesData.UpdateCurrentVotes();
+	}
+
 	return false;
 }
 
@@ -145,15 +151,37 @@ bool CCraftManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	// craft list menu
 	if(Menulist == MENU_CRAFTING_LIST)
 	{
+		// filtered group with items
+		int initializeGroupID = 1;
+		const auto currentWorldID = GS()->GetWorldID();
+		std::map<int, std::pair<std::string, std::deque<CCraftItem*>>> vFilteredMap {};
+		for(auto& [Name, vItems] : CCraftItem::Data())
+		{
+			std::deque<CCraftItem*> vResult {};
+			for(auto& pCraft : vItems | std::views::filter([&currentWorldID](const CCraftItem* pCraft) { return pCraft->GetWorldID() == currentWorldID; }))
+				vResult.push_back(pCraft);
+			if(!vResult.empty())
+				vFilteredMap[initializeGroupID] = std::make_pair(Name, std::move(vResult));
+			initializeGroupID++;
+		}
+
 		// show information
 		VoteWrapper VCraftInfo(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_STRICT_BOLD, "\u2692 Crafting Information");
 		VCraftInfo.Add("If you will not have enough items for crafting");
 		VCraftInfo.Add("You will write those and the amount that is still required");
 		VCraftInfo.AddItemValue(itGold);
+		VCraftInfo.AddLine();
+		for(auto& [ID, Data] : vFilteredMap)
+			VCraftInfo.AddOption("CRAFT_TAB_SELECT", ID, Data.first.c_str());
+		VoteWrapper::AddEmptyline(ClientID);
 
-		// show craft tabs
-		for(auto& [GroupName, GroupData] : CCraftItem::Data())
-			ShowCraftGroup(pPlayer, GroupName, GroupData);
+		// show tab items
+		const auto activeCraftGroupID = pPlayer->m_ActiveCraftGroupID;
+		if(vFilteredMap.contains(activeCraftGroupID))
+		{
+			const auto& [Name, vItems] = vFilteredMap[activeCraftGroupID];
+			ShowCraftGroup(pPlayer, Name, vItems);
+		}
 
 		return true;
 	}
@@ -234,20 +262,10 @@ void CCraftManager::ShowCraftGroup(CPlayer* pPlayer, const std::string& GroupNam
 {
 	// initialize variables
 	const auto ClientID = pPlayer->GetCID();
-	const int CurrentWorldID = GS()->GetWorldID();
-	auto filteredItems = vItems | std::views::filter([&CurrentWorldID](const CCraftItem* pCraft)
-	{
-		return pCraft->GetWorldID() == CurrentWorldID;
-	});
-
-	// skip empty list
-	if(filteredItems.empty())
-		return;
 
 	// add group menu
-	VoteWrapper::AddEmptyline(ClientID);
-	VoteWrapper VCraftList(ClientID, VWF_SEPARATE_OPEN, GroupName.c_str());
-	for(auto& pCraft : filteredItems)
+	VoteWrapper VCraftList(ClientID, VWF_STYLE_SIMPLE|VWF_SEPARATE_OPEN, GroupName.c_str());
+	for(auto& pCraft : vItems)
 	{
 		const auto ID = pCraft->GetID();
 		const auto ItemID = pCraft->GetItem()->GetID();
@@ -266,7 +284,7 @@ void CCraftManager::ShowCraftGroup(CPlayer* pPlayer, const std::string& GroupNam
 				pPlayer->GetItem(ItemID)->GetValue(), pCraftItemInfo->GetName(), pCraft->GetItem()->GetValue(), Price);
 		}
 	}
-	VoteWrapper::AddLine(ClientID);
+	VoteWrapper::AddEmptyline(ClientID);
 }
 
 
