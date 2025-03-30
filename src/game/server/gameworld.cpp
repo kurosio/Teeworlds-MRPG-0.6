@@ -440,7 +440,8 @@ void FixedViewCam::Tick(vec2& playerView)
 
 		// check distance
 		const float distanceToTarget = distance(*m_CurrentView, target);
-		if(distanceToTarget < 2.f)
+		const float minDistanceByState = !m_Locked ? 16.f : 2.f;
+		if(distanceToTarget < minDistanceByState)
 		{
 			if(m_Locked)
 				m_CurrentView = target;
@@ -457,7 +458,6 @@ void FixedViewCam::Tick(vec2& playerView)
 			// lerp factor
 			if(m_Locked)
 			{
-				float distanceToTarget = distance(*m_CurrentView, m_LockedAt);
 				lerpFactor = (0.05f + distanceToTarget * 0.001f) * 0.16f;
 				lerpFactor = std::max(lerpFactor, 0.5f * 0.16f);
 				nextPos = lerp(*m_CurrentView, m_LockedAt, lerpFactor);
