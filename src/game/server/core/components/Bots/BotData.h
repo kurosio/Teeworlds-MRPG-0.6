@@ -52,7 +52,7 @@ public:
 class QuestBotInfo
 {
 public:
-	int m_AutoFinishMode {};
+	bool m_AutoFinish {};
 	vec2 m_Position {};
 	int m_QuestID {};
 	int m_StepPos {};
@@ -130,7 +130,7 @@ public:
 	};
 
 	std::deque < TaskAction > m_vRequiredMoveAction;
-	int GetAutoFinishMode() const { return m_AutoFinishMode; }
+	bool IsAutoFinish() const { return m_AutoFinish; }
 
 	const char* GetName() const { return DataBotInfo::ms_aDataBot[m_BotID].m_aNameBot; }
 	static bool IsValid(int MobID) { return ms_aQuestBot.find(MobID) != ms_aQuestBot.end() && DataBotInfo::IsDataBotValid(ms_aQuestBot[MobID].m_BotID); }

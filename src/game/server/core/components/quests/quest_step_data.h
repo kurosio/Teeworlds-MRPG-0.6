@@ -59,7 +59,7 @@ public:
 	bool IsComplete();
 	bool Finish();
 	void PostFinish();
-	bool TryAutoFinish(int Mode);
+	bool TryAutoFinish();
 
 	void AppendDefeatProgress(int DefeatedBotID);
 	void CreateVarietyTypesRequiredItems();

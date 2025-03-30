@@ -108,6 +108,7 @@ void CBotManager::InitQuestBots(const char* pWhereLocalWorld)
 	{
 		const int MobID = pRes->getInt("ID");
 		const int QuestID = pRes->getInt("QuestID");
+		const auto AutoFinsihMode = pRes->getString("AutoFinish") == "Partial";
 		dbg_assert(QuestID > 0, "Some quest bot's does not have quest structure");
 
 		// load from database
@@ -119,7 +120,7 @@ void CBotManager::InitQuestBots(const char* pWhereLocalWorld)
 		QuestBot.m_WorldID = pRes->getInt("WorldID");
 		QuestBot.m_Position = vec2(pRes->getInt("PosX"), pRes->getInt("PosY") + 1);
 		QuestBot.m_ScenarioJson = pRes->getString("ScenarioData");
-		QuestBot.m_AutoFinishMode = GetQuestStepAutoFinishModeFromDBSet(DBSet(pRes->getString("AutoFinishMode")));
+		QuestBot.m_AutoFinish = AutoFinsihMode;
 
 		// tasks initilized
 		std::string TasksData = pRes->getString("TasksData");

@@ -198,11 +198,8 @@ void CQuestStep::PostFinish()
 	pPlayer->m_VotesData.UpdateVotesIf(MENU_JOURNAL_MAIN);
 }
 
-bool CQuestStep::TryAutoFinish(int Mode)
+bool CQuestStep::TryAutoFinish()
 {
-	if(Mode == QUEST_STEP_AUTO_FINISH_MODE_NO || Mode != m_Bot.GetAutoFinishMode())
-		return false;
-
 	const auto* pPlayer = GetPlayer();
 	if(pPlayer && !pPlayer->m_Dialog.IsActive())
 	{
@@ -365,7 +362,6 @@ void CQuestStep::Update()
 	UpdateBot();
 	UpdateNavigator();
 	UpdateObjectives();
-	//TryAutoFinish(QUEST_STEP_AUTO_FINISH_MODE_FULL);
 }
 
 void CQuestStep::ClearObjectives()
