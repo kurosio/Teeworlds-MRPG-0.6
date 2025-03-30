@@ -195,7 +195,7 @@ void CAccountManager::LoadAccount(CPlayer* pPlayer, bool FirstInitilize)
 			{ itShowEquipmentDescription, 0 },
 			{ itShowCriticalDamage, 1 },
 			{ itShowQuestStarNavigator, 1 },
-			{ itShowDetailGainMessages, 1},
+			{ itShowDetailGainMessages, 0 },
 		});
 
 	// update player time periods
