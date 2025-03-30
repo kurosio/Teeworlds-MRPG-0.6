@@ -14,7 +14,7 @@ void CCraftManager::OnPreInit()
 	while(pRes->next())
 	{
 		// initialize variables
-		const auto GroupName = pRes->getString("GroupName");
+		const auto GroupNameSet = DBSet(pRes->getString("GroupName"));
 		const auto ItemID = pRes->getInt("ItemID");
 		const auto ItemValue = pRes->getInt("ItemValue");
 		const auto Price = pRes->getInt("Price");
@@ -36,8 +36,11 @@ void CCraftManager::OnPreInit()
 
 		// initialize craft element
 		CraftIdentifier ID = pRes->getInt("ID");
-		auto* pCraftItem = CCraftItem::CreateElement(GroupName, ID);
-		pCraftItem->Init(RequiredIngredients, CItem(ItemID, ItemValue), Price, WorldID);
+		for(auto& [Name, P] : GroupNameSet.GetDataItems())
+		{
+			auto* pCraftItem = CCraftItem::CreateElement(Name, ID);
+			pCraftItem->Init(RequiredIngredients, CItem(ItemID, ItemValue), Price, WorldID);
+		}
 	}
 }
 
