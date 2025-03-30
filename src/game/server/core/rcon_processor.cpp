@@ -33,6 +33,7 @@ void RconProcessor::Init(IConsole* pConsole, IServer* pServer)
 	pConsole->Register("tele_by_pos", "i[x]i[y]?i[world_id]", CFGFLAG_SERVER, ConTeleportByPos, pServer, "Teleport by pos");
 	pConsole->Register("tele_by_client", "i[cid]", CFGFLAG_SERVER, ConTeleportByClient, pServer, "Teleport by client");
 	pConsole->Register("position", "?i[cid]", CFGFLAG_SERVER, ConPosition, pServer, "Get position by client (default self position)");
+	pConsole->Register("quest", "?s[state]?i[quest_id]", CFGFLAG_SERVER, ConQuest, pServer, "Accept or reset the quest with the specified ID");
 
 	// chain's
 	pConsole->Chain("sv_motd", ConchainSpecialMotdupdate, pServer);
@@ -43,6 +44,7 @@ static CGS* GetCommandResultGameServer(int ClientID, void* pUser)
 	IServer* pServer = (IServer*)pUser;
 	return (CGS*)pServer->GameServer(pServer->GetClientWorldID(ClientID));
 }
+
 
 void RconProcessor::ConJail(IConsole::IResult* pResult, void* pUser)
 {
@@ -65,6 +67,7 @@ void RconProcessor::ConJail(IConsole::IResult* pResult, void* pUser)
 		pServer->ClientName(FromCID), pServer->ClientName(PrisonedCID), Seconds);
 }
 
+
 void RconProcessor::ConUnjail(IConsole::IResult* pResult, void* pUser)
 {
 	const auto* pServer = (IServer*)pUser;
@@ -85,6 +88,7 @@ void RconProcessor::ConUnjail(IConsole::IResult* pResult, void* pUser)
 		pServer->ClientName(FromCID), pServer->ClientName(UnprisonedCID));
 }
 
+
 void RconProcessor::ConTeleportByMouse(IConsole::IResult* pResult, void* pUser)
 {
 	const auto ClientID = pResult->GetClientID();
@@ -97,6 +101,7 @@ void RconProcessor::ConTeleportByMouse(IConsole::IResult* pResult, void* pUser)
 	const auto mousePos = pPlayer->GetCharacter()->GetMousePos();
 	pPlayer->GetCharacter()->ChangePosition(mousePos);
 }
+
 
 void RconProcessor::ConTeleportByPos(IConsole::IResult* pResult, void* pUser)
 {
@@ -123,6 +128,7 @@ void RconProcessor::ConTeleportByPos(IConsole::IResult* pResult, void* pUser)
 		pPlayer->GetCharacter()->ChangePosition(NewPos);
 	}
 }
+
 
 void RconProcessor::ConTeleportByClient(IConsole::IResult* pResult, void* pUser)
 {
@@ -157,6 +163,7 @@ void RconProcessor::ConTeleportByClient(IConsole::IResult* pResult, void* pUser)
 	}
 }
 
+
 void RconProcessor::ConPosition(IConsole::IResult* pResult, void* pUser)
 {
 	int ClientID = pResult->GetIntegerOr(0, pResult->GetClientID());
@@ -174,6 +181,7 @@ void RconProcessor::ConPosition(IConsole::IResult* pResult, void* pUser)
 		ClientID, MapPosX, MapPosY, PosX, PosY, pGS->Server()->GetWorldName(pGS->GetWorldID()), pGS->GetWorldID());
 }
 
+
 void RconProcessor::ConSetWorldTime(IConsole::IResult* pResult, void* pUserData)
 {
 	// initialize variables
@@ -183,6 +191,7 @@ void RconProcessor::ConSetWorldTime(IConsole::IResult* pResult, void* pUserData)
 	// set offset game time
 	pServer->SetOffsetGameTime(Hour);
 }
+
 
 void RconProcessor::ConItemList(IConsole::IResult* pResult, void* pUserData)
 {
@@ -197,6 +206,7 @@ void RconProcessor::ConItemList(IConsole::IResult* pResult, void* pUserData)
 			"ID: %d | Name: %s | %s", ID, Item.GetName(), Item.IsEnchantable() ? "Enchantable" : "Default stack");
 	}
 }
+
 
 // give the item to the player
 void RconProcessor::ConGiveItem(IConsole::IResult* pResult, void* pUserData)
@@ -233,6 +243,7 @@ void RconProcessor::ConGiveItem(IConsole::IResult* pResult, void* pUserData)
 	}
 }
 
+
 void RconProcessor::ConDisbandGuild(IConsole::IResult* pResult, void* pUserData)
 {
 	// initialize variables
@@ -252,6 +263,7 @@ void RconProcessor::ConDisbandGuild(IConsole::IResult* pResult, void* pUserData)
 	pSelf->Console()->PrintF(IConsole::OUTPUT_LEVEL_STANDARD, "guild_disband", "Guild with identifier %d and by the name of %s has been disbanded.", pGuild->GetID(), pGuildName);
 	pSelf->Core()->GuildManager()->Disband(pGuild->GetID());
 }
+
 
 void RconProcessor::ConRemItem(IConsole::IResult* pResult, void* pUserData)
 {
@@ -277,6 +289,7 @@ void RconProcessor::ConRemItem(IConsole::IResult* pResult, void* pUserData)
 	}
 }
 
+
 void RconProcessor::ConSay(IConsole::IResult* pResult, void* pUserData)
 {
 	// initialize variables
@@ -286,6 +299,7 @@ void RconProcessor::ConSay(IConsole::IResult* pResult, void* pUserData)
 	// send chat
 	pSelf->SendChat(-1, CHAT_ALL, pResult->GetString(0));
 }
+
 
 void RconProcessor::ConAddCharacter(IConsole::IResult* pResult, void* pUserData)
 {
@@ -305,6 +319,7 @@ void RconProcessor::ConAddCharacter(IConsole::IResult* pResult, void* pUserData)
 	pSelf->Core()->BotManager()->ConAddCharacterBot(ClientID, pResult->GetString(1));
 }
 
+
 void RconProcessor::ConSyncLinesForTranslate(IConsole::IResult* pResult, void* pUserData)
 {
 	// initialize variables
@@ -314,6 +329,7 @@ void RconProcessor::ConSyncLinesForTranslate(IConsole::IResult* pResult, void* p
 	// start thread for sync lines
 	std::thread(&CMmoController::SyncLocalizations, pSelf->Core()).detach();
 }
+
 
 void RconProcessor::ConListAfk(IConsole::IResult* pResult, void* pUserData)
 {
@@ -342,6 +358,7 @@ void RconProcessor::ConListAfk(IConsole::IResult* pResult, void* pUserData)
 	pSelf->Console()->PrintF(IConsole::OUTPUT_LEVEL_STANDARD, "AFK", "%d afk players in total", Counter);
 }
 
+
 void RconProcessor::ConCheckAfk(IConsole::IResult* pResult, void* pUserData)
 {
 	// initialize variables
@@ -365,6 +382,7 @@ void RconProcessor::ConCheckAfk(IConsole::IResult* pResult, void* pUserData)
 	// if not found information about afk
 	pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "AFK", "No such player or he's not afk");
 }
+
 
 void RconProcessor::ConBanAcc(IConsole::IResult* pResult, void* pUserData)
 {
@@ -393,6 +411,7 @@ void RconProcessor::ConBanAcc(IConsole::IResult* pResult, void* pUserData)
 	pSelf->Core()->AccountManager()->BanAccount(pPlayer, time, pResult->GetString(2));
 }
 
+
 void RconProcessor::ConUnBanAcc(IConsole::IResult* pResult, void* pUserData)
 {
 	const auto pServer = (IServer*)pUserData;
@@ -401,6 +420,7 @@ void RconProcessor::ConUnBanAcc(IConsole::IResult* pResult, void* pUserData)
 	// unban account by banid
 	pSelf->Core()->AccountManager()->UnBanAccount(pResult->GetInteger(0));
 }
+
 
 void RconProcessor::ConBansAcc(IConsole::IResult* pResult, void* pUserData)
 {
@@ -421,6 +441,71 @@ void RconProcessor::ConBansAcc(IConsole::IResult* pResult, void* pUserData)
 	pSelf->Console()->PrintF(IConsole::OUTPUT_LEVEL_STANDARD, "BansAccount", "%d bans in total", Counter);
 }
 
+
+void RconProcessor::ConQuest(IConsole::IResult* pResult, void* pUser)
+{
+	const auto* pServer = (IServer*)pUser;
+	const auto ClientID = pResult->GetClientID();
+	const char* pStatus = pResult->GetString(0);
+	auto* pGS = GetCommandResultGameServer(ClientID, pUser);
+	auto* pPlayer = pGS->GetPlayer(ClientID);
+	if(!pPlayer || !pPlayer->IsAuthed())
+	{
+		pGS->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "quest", "Log in to account after which use.");
+		return;
+	}
+	auto TryGetValidPlayerQuest = [pGS, pPlayer, pResult]() -> CPlayerQuest*
+	{
+		const auto QuestID = pResult->GetInteger(1);
+		if(!CQuestDescription::Data().contains(QuestID))
+		{
+			pGS->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "quest", "The quest with this ID does not exist.");
+			return nullptr;
+		}
+		return pPlayer->GetQuest(QuestID);
+	};
+
+	if(str_comp(pStatus, "list") == 0)
+	{
+		for(auto& [ID, pQuestInfo] : CQuestDescription::Data())
+		{
+			auto* pPlayerQuest = pPlayer->GetQuest(ID);
+			pGS->Console()->PrintF(IConsole::OUTPUT_LEVEL_STANDARD, "quest_list",
+				"ID: %d | Name: %s | State: %s", ID, pQuestInfo->GetName(), GetQustStateName(pPlayerQuest->GetState()));
+		}
+	}
+	else if(str_comp(pStatus, "accept") == 0)
+	{
+		auto* pPlayerQuest = TryGetValidPlayerQuest();
+		if(pPlayerQuest)
+		{
+			if(pPlayerQuest->IsAccepted() || pPlayerQuest->IsCompleted())
+				pGS->Console()->PrintF(IConsole::OUTPUT_LEVEL_STANDARD, "quest", "The quest is either completed or already accepted.");
+			if(pPlayerQuest->Accept())
+				pGS->Console()->PrintF(IConsole::OUTPUT_LEVEL_STANDARD, "quest", "Quest '%s:%d' successful accepted!",
+					pPlayerQuest->Info()->GetName(), pPlayerQuest->GetID());
+		}
+	}
+	else if(str_comp(pStatus, "reset") == 0)
+	{
+		auto* pPlayerQuest = TryGetValidPlayerQuest();
+		if(pPlayerQuest)
+		{
+			if(pPlayerQuest->IsAccepted() || pPlayerQuest->IsCompleted())
+			{
+				pPlayerQuest->Reset();
+				pGS->Console()->PrintF(IConsole::OUTPUT_LEVEL_STANDARD, "quest", "Quest '%s:%d' successful refused!",
+					pPlayerQuest->Info()->GetName(), pPlayerQuest->GetID());
+			}
+		}
+	}
+	else
+	{
+		pGS->Console()->PrintF(IConsole::OUTPUT_LEVEL_STANDARD, "quest", "Use 'quest <list, accept, reset> <quest_id>.");
+	}
+}
+
+
 void RconProcessor::ConchainSpecialMotdupdate(IConsole::IResult* pResult, void* pUserData, IConsole::FCommandCallback pfnCallback, void* pCallbackUserData)
 {
 	pfnCallback(pResult, pCallbackUserData);
@@ -430,6 +515,7 @@ void RconProcessor::ConchainSpecialMotdupdate(IConsole::IResult* pResult, void* 
 		pSelf->SendMotd(-1, g_Config.m_SvMotd);
 	}
 }
+
 
 void RconProcessor::ConchainGameinfoUpdate(IConsole::IResult* pResult, void* pUserData, IConsole::FCommandCallback pfnCallback, void* pCallbackUserData)
 {

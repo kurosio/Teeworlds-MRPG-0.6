@@ -28,6 +28,8 @@ class RconProcessor
 	static void ConJail(IConsole::IResult* pResult, void* pUserData);
 	static void ConUnjail(IConsole::IResult* pResult, void* pUserData);
 
+	static void ConQuest(IConsole::IResult* pResult, void* pUserData);
+
 	// chain's
 	static void ConchainSpecialMotdupdate(IConsole::IResult* pResult, void* pUserData, IConsole::FCommandCallback pfnCallback, void* pCallbackUserData);
 	static void ConchainGameinfoUpdate(IConsole::IResult* pResult, void* pUserData, IConsole::FCommandCallback pfnCallback, void* pCallbackUserData);
