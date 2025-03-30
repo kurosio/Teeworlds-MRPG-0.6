@@ -45,16 +45,31 @@ void CCraftManager::OnPreInit()
 }
 
 
-void CCraftManager::OnPostInit()
+void CCraftManager::OnInitWorld(const std::string&)
 {
-	// post sorting
-	for(auto& [Group, vItems] : CCraftItem::Data())
+	const int currentWorldID = GS()->GetWorldID();
+
+	// filter only current world and sorting by price
+	for(auto& [Name, vItems] : CCraftItem::Data())
 	{
-		std::ranges::sort(vItems, [](const auto* pA, const auto* pB)
+		auto vResult = vItems | std::views::filter([currentWorldID](CCraftItem* pCraft)
+		{ return pCraft->GetWorldID() == currentWorldID; });
+		if(!vResult.empty())
 		{
-			return pA->GetPrice(nullptr) < pB->GetPrice();
-		});
+			std::deque<CCraftItem*> vFilteredItems(vResult.begin(), vResult.end());
+			std::ranges::sort(vFilteredItems, [](const auto* pA, const auto* pB)
+			{ return pA->GetPrice() < pB->GetPrice(); });
+			m_vOrderedCraftList.emplace_back(Name, std::move(vFilteredItems));
+		}
 	}
+
+	// ordered crafting groups
+	std::sort(m_vOrderedCraftList.begin(), m_vOrderedCraftList.end(), [](const auto& a, const auto& b)
+	{
+		auto maxA = std::ranges::max_element(a.second, [](CCraftItem* pLeft, CCraftItem* pRight) { return pLeft->GetPrice() < pRight->GetPrice(); });
+		auto maxB = std::ranges::max_element(b.second, [](CCraftItem* pLeft, CCraftItem* pRight) { return pLeft->GetPrice() < pRight->GetPrice(); });
+		return maxA != a.second.end() && maxB != b.second.end() && (*maxA)->GetPrice() < (*maxB)->GetPrice();
+	});
 }
 
 
@@ -151,35 +166,21 @@ bool CCraftManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	// craft list menu
 	if(Menulist == MENU_CRAFTING_LIST)
 	{
-		// filtered group with items
-		int initializeGroupID = 1;
-		const auto currentWorldID = GS()->GetWorldID();
-		std::map<int, std::pair<std::string, std::deque<CCraftItem*>>> vFilteredMap {};
-		for(auto& [Name, vItems] : CCraftItem::Data())
-		{
-			std::deque<CCraftItem*> vResult {};
-			for(auto& pCraft : vItems | std::views::filter([&currentWorldID](const CCraftItem* pCraft) { return pCraft->GetWorldID() == currentWorldID; }))
-				vResult.push_back(pCraft);
-			if(!vResult.empty())
-				vFilteredMap[initializeGroupID] = std::make_pair(Name, std::move(vResult));
-			initializeGroupID++;
-		}
-
-		// show information
-		VoteWrapper VCraftInfo(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_STRICT_BOLD, "\u2692 Crafting Information");
-		VCraftInfo.Add("If you will not have enough items for crafting");
-		VCraftInfo.Add("You will write those and the amount that is still required");
-		VCraftInfo.AddItemValue(itGold);
-		VCraftInfo.AddLine();
-		for(auto& [ID, Data] : vFilteredMap)
-			VCraftInfo.AddOption("CRAFT_TAB_SELECT", ID, Data.first.c_str());
+		// craft selector
+		VoteWrapper VCraftSelector(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_STRICT_BOLD, "\u2692 Crafting Information");
+		VCraftSelector.Add("If you will not have enough items for crafting");
+		VCraftSelector.Add("You will write those and the amount that is still required");
+		VCraftSelector.AddItemValue(itGold);
+		VCraftSelector.AddLine();
+		for(int i = 0; i < m_vOrderedCraftList.size(); i++)
+			VCraftSelector.AddOption("CRAFT_TAB_SELECT", i, m_vOrderedCraftList[i].first.c_str());
 		VoteWrapper::AddEmptyline(ClientID);
 
 		// show tab items
 		const auto activeCraftGroupID = pPlayer->m_ActiveCraftGroupID;
-		if(vFilteredMap.contains(activeCraftGroupID))
+		if(activeCraftGroupID >= 0 && activeCraftGroupID < m_vOrderedCraftList.size())
 		{
-			const auto& [Name, vItems] = vFilteredMap[activeCraftGroupID];
+			const auto& [Name, vItems] = m_vOrderedCraftList[activeCraftGroupID];
 			ShowCraftGroup(pPlayer, Name, vItems);
 		}
 
