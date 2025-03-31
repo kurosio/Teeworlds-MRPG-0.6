@@ -36,7 +36,7 @@ void IGameController::OnCharacterDeath(CPlayer* pVictim, CPlayer* pKiller, int W
 {
 	g_EventListenerManager.Notify<IEventListener::Type::CharacterDeath>( pVictim, pKiller, Weapon);
 
-	if(pVictim != pKiller)
+	if(pVictim && pKiller && pVictim != pKiller)
 	{
 		// update rating
 		if(!pVictim->IsBot() && !pKiller->IsBot())
@@ -49,7 +49,7 @@ void IGameController::OnCharacterDeath(CPlayer* pVictim, CPlayer* pKiller, int W
 	}
 
 	// update last killed by weapon
-	if(!pVictim->IsBot())
+	if(pVictim && !pVictim->IsBot())
 	{
 		pVictim->TryRemoveEidolon();
 		pVictim->GetTempData().m_LastKilledByWeapon = Weapon;
