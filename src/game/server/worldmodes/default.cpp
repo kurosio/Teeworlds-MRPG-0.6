@@ -21,22 +21,6 @@ void CGameControllerDefault::Tick()
 	IGameController::Tick();
 }
 
-void CGameControllerDefault::CreateLogic(int Type, int Mode, vec2 Pos, int ParseInt)
-{
-	if(Type == 1)
-	{
-		new CLogicWall(&GS()->m_World, Pos);
-	}
-	if(Type == 2)
-	{
-		new CLogicWallWall(&GS()->m_World, Pos, Mode, ParseInt);
-	}
-	if(Type == 3)
-	{
-		new CLogicDoorKey(&GS()->m_World, Pos, ParseInt, Mode);
-	}
-}
-
 void CGameControllerDefault::TryGenerateMoneyBag()
 {
 	// try get prepared path

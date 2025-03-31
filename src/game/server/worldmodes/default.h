@@ -14,7 +14,6 @@ public:
 	CGameControllerDefault(class CGS *pGameServer);
 
 	void Tick() override;
-	void CreateLogic(int Type, int Mode, vec2 Pos, int ParseID) override;
 
 	void TryGenerateMoneyBag();
 };
