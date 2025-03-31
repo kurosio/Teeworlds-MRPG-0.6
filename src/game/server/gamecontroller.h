@@ -21,7 +21,6 @@ class IGameController
 		bool m_Got{};
 	};
 	std::array<std::vector<vec2>, NUM_SPAWN> m_aaSpawnPoints{};
-
 	void EvaluateSpawnType(CSpawnEval* Pos, int Type, std::pair<vec2, float> LimiterSpread) const;
 
 protected:
@@ -34,7 +33,7 @@ protected:
 
 public:
 	IGameController(class CGS *pGS);
-	virtual ~IGameController() {}
+	virtual ~IGameController() = default;
 
 	virtual void OnInit() {};
 	virtual void OnCharacterDamage(class CPlayer* pFrom, class CPlayer* pTo, int Damage);
@@ -48,10 +47,6 @@ public:
 
 	void OnPlayerConnect(class CPlayer *pPlayer);
 	void OnPlayerDisconnect(class CPlayer *pPlayer);
-	void OnPlayerInfoChange(class CPlayer *pPlayer, int WorldID);
-	void OnReset();
-
-	virtual void CreateLogic(int Type, int Mode, vec2 Pos, int Health) = 0;
 
 	// general
 	virtual void Snap();

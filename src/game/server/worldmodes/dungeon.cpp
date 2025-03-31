@@ -536,18 +536,6 @@ void CGameControllerDungeon::Snap()
 	pGameInfoEx->m_Version = GAMEINFO_CURVERSION;
 }
 
-void CGameControllerDungeon::CreateLogic(int Type, int Mode, vec2 Pos, int ParseInt)
-{
-	if(Type == 1)
-		new CLogicWall(&GS()->m_World, Pos);
-
-	if(Type == 2)
-		new CLogicWallWall(&GS()->m_World, Pos, Mode, ParseInt);
-
-	if(Type == 3)
-		new CLogicDoorKey(&GS()->m_World, Pos, ParseInt, Mode);
-}
-
 DungeonDoor::DungeonDoor(CGameWorld* pGameWorld, vec2 Pos)
 	: CEntity(pGameWorld, CGameWorld::ENTTYPE_DUNGEON_DOOR, Pos)
 {

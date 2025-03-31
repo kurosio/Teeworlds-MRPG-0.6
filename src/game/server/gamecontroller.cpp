@@ -34,18 +34,15 @@ void IGameController::OnCharacterDamage(CPlayer* pFrom, CPlayer* pTo, int Damage
 
 void IGameController::OnCharacterDeath(CPlayer* pVictim, CPlayer* pKiller, int Weapon)
 {
-	g_EventListenerManager.Notify<IEventListener::Type::CharacterDeath>( pVictim, pKiller, Weapon);
+	g_EventListenerManager.Notify<IEventListener::Type::CharacterDeath>(pVictim, pKiller, Weapon);
 
-	if(pVictim && pKiller && pVictim != pKiller)
+	// update rating
+	if(pVictim && pKiller && pVictim != pKiller && !pVictim->IsBot() && !pKiller->IsBot())
 	{
-		// update rating
-		if(!pVictim->IsBot() && !pKiller->IsBot())
-		{
-			auto& pKillerRating = pKiller->Account()->GetRatingSystem();
-			auto& pVictimRating = pVictim->Account()->GetRatingSystem();
-			pKillerRating.UpdateRating(GS(), true, pVictim->Account());
-			pVictimRating.UpdateRating(GS(), false, pKiller->Account());
-		}
+		auto& pKillerRating = pKiller->Account()->GetRatingSystem();
+		auto& pVictimRating = pVictim->Account()->GetRatingSystem();
+		pKillerRating.UpdateRating(GS(), true, pVictim->Account());
+		pVictimRating.UpdateRating(GS(), false, pKiller->Account());
 	}
 
 	// update last killed by weapon
@@ -253,17 +250,6 @@ void IGameController::OnPlayerDisconnect(CPlayer* pPlayer)
 	pPlayer->OnDisconnect();
 }
 
-void IGameController::OnPlayerInfoChange(CPlayer* pPlayer, int WorldID) {}
-
-void IGameController::OnReset()
-{
-	for(int i = 0; i < MAX_CLIENTS; i++)
-	{
-		if(CPlayer* pPlayer = GS()->GetPlayer(i))
-			pPlayer->m_aPlayerTick[Respawn] = Server()->Tick() + Server()->TickSpeed() / 2;
-	}
-}
-
 // general
 void IGameController::Snap()
 {
@@ -397,6 +383,5 @@ void IGameController::DoTeamChange(CPlayer* pPlayer)
 	char aBuf[128];
 	str_format(aBuf, sizeof(aBuf), "team_join player='%d:%s' m_Team=%d", ClientID, Server()->ClientName(ClientID), Team);
 	GS()->Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "game", aBuf);
-	OnPlayerInfoChange(pPlayer, GS()->GetWorldID());
 	Server()->ExpireServerInfo();
 }

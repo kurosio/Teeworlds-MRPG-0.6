@@ -75,7 +75,6 @@ void CMmoController::OnInit(IServer* pServer, IConsole* pConsole, IStorageEngine
 		g_EventListenerManager.LogRegisteredEvents();
 
 	SyncLocalizations();
-	LoadLogicWorld();
 }
 
 void CMmoController::OnConsoleInit(IConsole* pConsole) const
@@ -443,17 +442,6 @@ void CMmoController::SaveAccount(CPlayer* pPlayer, int Table) const
 	{
 		const auto pLogin = pAccount->GetLogin();
 		Database->Execute<DB::UPDATE>("tw_accounts", "Username = '{}' WHERE ID = '{}'", pLogin, AccountID);
-	}
-}
-
-void CMmoController::LoadLogicWorld() const
-{
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_logics_worlds", "WHERE WorldID = '{}'", GS()->GetWorldID());
-	while(pRes->next())
-	{
-		const int Type = pRes->getInt("MobID"), Mode = pRes->getInt("Mode"), Health = pRes->getInt("ParseInt");
-		const vec2 Position = vec2(pRes->getInt("PosX"), pRes->getInt("PosY"));
-		GS()->m_pController->CreateLogic(Type, Mode, Position, Health);
 	}
 }
 

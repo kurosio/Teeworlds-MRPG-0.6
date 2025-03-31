@@ -68,7 +68,6 @@ public:
 
 	static void AsyncClientEnterMsgInfo(std::string ClientName, int ClientID);
 	void SyncLocalizations() const;
-	void LoadLogicWorld() const;
 	void SaveAccount(CPlayer *pPlayer, int Table) const;
 
 	struct TempTopData
