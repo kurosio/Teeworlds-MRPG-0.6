@@ -64,7 +64,7 @@ void CCraftManager::OnInitWorld(const std::string&)
 	}
 
 	// ordered crafting groups
-	std::sort(m_vOrderedCraftList.begin(), m_vOrderedCraftList.end(), [](const auto& a, const auto& b)
+	std::ranges::sort(m_vOrderedCraftList, [](const auto& a, const auto& b)
 	{
 		auto maxA = std::ranges::max_element(a.second, [](CCraftItem* pLeft, CCraftItem* pRight) { return pLeft->GetPrice() < pRight->GetPrice(); });
 		auto maxB = std::ranges::max_element(b.second, [](CCraftItem* pLeft, CCraftItem* pRight) { return pLeft->GetPrice() < pRight->GetPrice(); });
@@ -172,13 +172,13 @@ bool CCraftManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		VCraftSelector.Add("You will write those and the amount that is still required");
 		VCraftSelector.AddItemValue(itGold);
 		VCraftSelector.AddLine();
-		for(int i = 0; i < m_vOrderedCraftList.size(); i++)
+		for(int i = 0; i < (int)m_vOrderedCraftList.size(); i++)
 			VCraftSelector.AddOption("CRAFT_TAB_SELECT", i, m_vOrderedCraftList[i].first.c_str());
 		VoteWrapper::AddEmptyline(ClientID);
 
 		// show tab items
 		const auto activeCraftGroupID = pPlayer->m_ActiveCraftGroupID;
-		if(activeCraftGroupID >= 0 && activeCraftGroupID < m_vOrderedCraftList.size())
+		if(activeCraftGroupID >= 0 && activeCraftGroupID < (int)m_vOrderedCraftList.size())
 		{
 			const auto& [Name, vItems] = m_vOrderedCraftList[activeCraftGroupID];
 			ShowCraftGroup(pPlayer, Name, vItems);
