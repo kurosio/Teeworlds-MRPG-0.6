@@ -102,15 +102,10 @@ void CAchievement::RewardPlayer() const
 	if(!JsonData.empty())
 	{
 		if(const int Experience = JsonData.value("exp", 0); Experience > 0)
-		{
 			pPlayer->Account()->AddExperience(Experience);
-			GS()->Chat(m_ClientID, "You received '{} exp'!", Experience);
-		}
 
 		for(const CItemsContainer Items = CItem::FromArrayJSON(JsonData, "items"); auto & Item : Items)
-		{
 			pPlayer->GetItem(Item)->Add(Item.GetValue());
-		}
 	}
 
 	// achievement points
@@ -118,7 +113,6 @@ void CAchievement::RewardPlayer() const
 	{
 		auto* pPlayerItem = pPlayer->GetItem(itAchievementPoint);
 		pPlayerItem->Add(AchievementPoints);
-		GS()->Chat(m_ClientID, "You received '{}({}) achievement points'!", AchievementPoints, pPlayerItem->GetValue());
 	}
 }
 
