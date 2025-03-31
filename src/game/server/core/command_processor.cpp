@@ -9,46 +9,21 @@
 #include "components/houses/entities/house_door.h"
 #include "game/server/gamecontext.h"
 
-void ConAddMultipleOrbite(IConsole::IResult* pResult, void* pUserData)
-{
-	IServer* pServer = (IServer*)pUserData;
-	CGS* pGS = (CGS*)pServer->GameServer(pServer->GetClientWorldID(pResult->GetClientID()));
-
-	CPlayer* pPlayer = pGS->GetPlayer(pResult->GetClientID());
-	if(!pPlayer || !pPlayer->IsAuthed() || !pPlayer->GetCharacter())
-		return;
-
-	const int Orbite = pResult->GetInteger(0);
-	const int Type = pResult->GetInteger(1);
-	const int Subtype = pResult->GetInteger(2);
-	pPlayer->GetCharacter()->AddMultipleOrbite(Orbite, Type, Subtype);
-}
-
 CCommandProcessor::CCommandProcessor(CGS* pGS)
 {
 	m_pGS = pGS;
-	m_CommandManager.Init(m_pGS->Console(), this, nullptr, nullptr);
+	m_CommandManager.Init(m_pGS->Console());
 
 	IServer* pServer = m_pGS->Server();
 	AddCommand("login", "s[username] s[password]", ConChatLogin, pServer, "");
 	AddCommand("register", "s[username] s[password]", ConChatRegister, pServer, "");
 
-	// guild commands
-	AddCommand("guild", "?s[element] ?s[name]", ConChatGuild, pServer, "");
-
-	// house commands
-	AddCommand("house", "?s[element] ?s[subelement] ?i[number]", ConChatHouse, pServer, "");
-
-	// admin command
-	AddCommand("sound", "i[sound]", ConChatSound, pServer, "");
-	AddCommand("effect", "s[effect] i[sec]", ConChatGiveEffect, pServer, "");
-
-	// group command
-	AddCommand("group", "?s[element] ?s[post]", ConGroup, pServer, "");
-
 	// game command
-	AddCommand("useitem", "i[item]", ConChatUseItem, pServer, "");
-	AddCommand("useskill", "i[skill]", ConChatUseSkill, pServer, "");
+	AddCommand("group", "?s[element] ?s[post]", ConGroup, pServer, "");
+	AddCommand("guild", "?s[element] ?s[name]", ConChatGuild, pServer, "");
+	AddCommand("house", "?s[element] ?s[subelement] ?i[number]", ConChatHouse, pServer, "");
+	AddCommand("use_item", "i[item]", ConChatUseItem, pServer, "");
+	AddCommand("use_skill", "i[skill]", ConChatUseSkill, pServer, "");
 	AddCommand("voucher", "r[voucher]", ConChatVoucher, pServer, "");
 	AddCommand("coupon", "r[coupon]", ConChatVoucher, pServer, "");
 
@@ -59,8 +34,6 @@ CCommandProcessor::CCommandProcessor(CGS* pGS)
 	AddCommand("info", "", ConChatWiki, pServer, "");
 	AddCommand("wiki", "", ConChatWiki, pServer, "");
 	AddCommand("bonuses", "", ConChatBonuses, pServer, "");
-
-	AddCommand("add_multiple_orbite", "i[orbite] i[type] i[subtype]", ConAddMultipleOrbite, pServer, "");
 }
 
 CCommandProcessor::~CCommandProcessor()
@@ -77,32 +50,29 @@ static CGS* GetCommandResultGameServer(int ClientID, void* pUser)
 void CCommandProcessor::ConChatLogin(IConsole::IResult* pResult, void* pUser)
 {
 	const int ClientID = pResult->GetClientID();
-	CGS* pGS = GetCommandResultGameServer(ClientID, pUser);
+	auto* pGS = GetCommandResultGameServer(ClientID, pUser);
+	auto* pPlayer = pGS->GetPlayer(ClientID);
 
-	CPlayer* pPlayer = pGS->GetPlayer(ClientID);
-	if(pPlayer)
+	if(!pPlayer)
+		return;
+
+	if(pPlayer->IsAuthed())
 	{
-		if(pPlayer->IsAuthed())
-		{
-			pGS->Chat(ClientID, "You're already signed in!");
-			return;
-		}
-
-		char aUsername[16];
-		char aPassword[16];
-		str_copy(aUsername, pResult->GetString(0), sizeof(aUsername));
-		str_copy(aPassword, pResult->GetString(1), sizeof(aPassword));
-
-		pGS->Core()->AccountManager()->LoginAccount(ClientID, aUsername, aPassword);
+		pGS->Chat(ClientID, "You're already signed in!");
+		return;
 	}
+
+	const char* pUsername = pResult->GetString(0);
+	const char* pPassword = pResult->GetString(1);
+	pGS->Core()->AccountManager()->LoginAccount(ClientID, pUsername, pPassword);
 }
 
 void CCommandProcessor::ConChatRegister(IConsole::IResult* pResult, void* pUser)
 {
 	const int ClientID = pResult->GetClientID();
-	CGS* pGS = GetCommandResultGameServer(ClientID, pUser);
+	auto* pGS = GetCommandResultGameServer(ClientID, pUser);
+	auto* pPlayer = pGS->GetPlayer(ClientID);
 
-	CPlayer* pPlayer = pGS->GetPlayer(ClientID);
 	if(!pPlayer)
 		return;
 
@@ -112,20 +82,17 @@ void CCommandProcessor::ConChatRegister(IConsole::IResult* pResult, void* pUser)
 		return;
 	}
 
-	char aUsername[16];
-	char aPassword[16];
-	str_copy(aUsername, pResult->GetString(0), sizeof(aUsername));
-	str_copy(aPassword, pResult->GetString(1), sizeof(aPassword));
-
-	pGS->Core()->AccountManager()->RegisterAccount(ClientID, aUsername, aPassword);
+	const char* pUsername = pResult->GetString(0);
+	const char* pPassword = pResult->GetString(1);
+	pGS->Core()->AccountManager()->RegisterAccount(ClientID, pUsername, pPassword);
 }
 
 void CCommandProcessor::ConChatGuild(IConsole::IResult* pResult, void* pUser)
 {
 	const int ClientID = pResult->GetClientID();
-	CGS* pGS = GetCommandResultGameServer(ClientID, pUser);
+	auto* pGS = GetCommandResultGameServer(ClientID, pUser);
+	auto* pPlayer = pGS->GetPlayer(ClientID);
 
-	CPlayer* pPlayer = pGS->GetPlayer(ClientID);
 	if(!pPlayer || !pPlayer->IsAuthed())
 		return;
 
@@ -280,41 +247,6 @@ void CCommandProcessor::ConChatHouse(IConsole::IResult* pResult, void* pUser)
 	pGS->Chat(ClientID, "/house sell - sell the house to the state");
 }
 
-void CCommandProcessor::ConChatSound(IConsole::IResult* pResult, void* pUser)
-{
-	const int ClientID = pResult->GetClientID();
-	CGS* pGS = GetCommandResultGameServer(ClientID, pUser);
-
-	CPlayer* pPlayer = pGS->GetPlayer(ClientID);
-	if(!pPlayer || !pPlayer->GetCharacter() || !pGS->Server()->IsAuthed(ClientID))
-		return;
-
-	const int SoundID = maximum(0, pResult->GetInteger(0));
-	pGS->CreateSound(pPlayer->GetCharacter()->m_Core.m_Pos, SoundID);
-}
-
-void CCommandProcessor::ConChatGiveEffect(IConsole::IResult* pResult, void* pUser)
-{
-	// initialize variables
-	const auto ClientID = pResult->GetClientID();
-	const auto* pServer = (IServer*)pUser;
-	auto* pGS = (CGS*)pServer->GameServer(pServer->GetClientWorldID(ClientID));
-	auto* pPlayer = pGS->GetPlayer(ClientID, true);
-
-	// check auth state and valid player
-	if(!pPlayer || !pGS->Server()->IsAuthed(ClientID))
-		return;
-
-	// give effect
-	const char* pEffect = pResult->GetString(0);
-	const auto Seconds = pResult->GetInteger(1);
-	if(pPlayer->m_Effects.Add(pEffect, Seconds * pServer->TickSpeed()))
-	{
-		pGS->Chat(ClientID, "You have received the effect '{}' for '{} seconds'.", pEffect, Seconds);
-		dbg_msg("cmd_auth", "%s got %s (%d sec) by auth command!", pServer->ClientName(ClientID), pEffect, Seconds);
-	}
-}
-
 void CCommandProcessor::ConGroup(IConsole::IResult* pResult, void* pUser)
 {
 	// Get the client ID from the result
@@ -444,8 +376,8 @@ void CCommandProcessor::ConChatCmdList(IConsole::IResult* pResult, void* pUser)
 		pGS->Chat(ClientID, "/register <name> <pass> - new account.");
 		pGS->Chat(ClientID, "/login <name> <pass> - log in account.");
 		pGS->Chat(ClientID, "/voucher <voucher> - get voucher special items.");
-		pGS->Chat(ClientID, "/useskill <uid> - use skill by uid.");
-		pGS->Chat(ClientID, "/useitem <uid> - use item by uid.");
+		pGS->Chat(ClientID, "/use_skill <uid> - use skill by uid.");
+		pGS->Chat(ClientID, "/use_item <uid> - use item by uid.");
 		pGS->Chat(ClientID, "/wiki - wiki information about mod.");
 		pGS->Chat(ClientID, "/bonuses - active bonuses.");
 
@@ -532,46 +464,71 @@ void CCommandProcessor::ConChatVoucher(IConsole::IResult* pResult, void* pUser)
 /*  Command system                                                      */
 /************************************************************************/
 
-void CCommandProcessor::ChatCmd(const char* pMessage, CPlayer* pPlayer)
+void CCommandProcessor::ProcessClientChatCommand(int ClientID, const char* pMessage)
 {
-	const int ClientID = pPlayer->GetCID();
-
-	int Char = 0;
-	char aCommand[256] = { 0 };
+	// prepare command buffer
+	int charIndex = 0;
+	char aCmdBuf[256] = { 0 };
 	for(int i = 1; i < str_length(pMessage); i++)
 	{
 		if(pMessage[i] != ' ')
 		{
-			aCommand[Char] = pMessage[i];
-			Char++;
-			continue;
+			aCmdBuf[charIndex] = pMessage[i];
+			charIndex++;
 		}
-		break;
+		else
+			break;
 	}
 
-	const IConsole::CCommandInfo* pCommand = GS()->Console()->GetCommandInfo(aCommand, CFGFLAG_CHAT, false);
-	if(pCommand)
+	// search command info
+	const IConsole::CCommandInfo* pCommandInfo = GS()->Console()->GetCommandInfo(aCmdBuf, CFGFLAG_CHAT, false);
+	if(pCommandInfo)
 	{
-		int ErrorArgs;
-		GS()->Console()->ExecuteLineFlag(pMessage + 1, CFGFLAG_CHAT, ClientID, false, &ErrorArgs);
-		if(ErrorArgs)
+		int errorArgs;
+		GS()->Console()->ExecuteLineFlag(pMessage + 1, CFGFLAG_CHAT, ClientID, false, &errorArgs);
+		if(errorArgs)
 		{
-			char aArgsDesc[256];
-			GS()->Console()->ParseArgumentsDescription(pCommand->m_pParams, aArgsDesc, sizeof(aArgsDesc));
-			GS()->Chat(ClientID, "Use: '/{} {}'.", pCommand->m_pName, aArgsDesc);
+			char argsDesc[256];
+			GS()->Console()->ParseArgumentsDescription(pCommandInfo->m_pParams, argsDesc, sizeof(argsDesc));
+			GS()->Chat(ClientID, "Use: '/{} {}'", pCommandInfo->m_pName, argsDesc);
 		}
-		return;
 	}
-
-	GS()->Chat(ClientID, "Command '{}' not found!", pMessage);
+	else
+	{
+		GS()->Chat(ClientID, "Command '{}' not found!", pMessage);
+	}
 }
 
-// Function to add a new command to the command processor
+
 void CCommandProcessor::AddCommand(const char* pName, const char* pParams, IConsole::FCommandCallback pfnFunc, void* pUser, const char* pHelp)
 {
-	// Register the command in the console
 	GS()->Console()->Register(pName, pParams, CFGFLAG_CHAT, pfnFunc, pUser, pHelp);
-
-	// Add the command to the command manager
 	m_CommandManager.AddCommand(pName, pHelp, pParams, pfnFunc, pUser);
+}
+
+
+void CCommandProcessor::SendClientCommandsInfo(CGS* pGS, int ClientID) const
+{
+	// send start group command
+	{
+		CNetMsg_Sv_CommandInfoGroupStart msg;
+		pGS->Server()->SendPackMsg(&msg, MSGFLAG_VITAL | MSGFLAG_NORECORD, ClientID);
+	}
+
+	// send allowed commands
+	for(const IConsole::CCommandInfo* pCmd = pGS->Console()->FirstCommandInfo(IConsole::ACCESS_LEVEL_USER, CFGFLAG_CHAT); pCmd != nullptr;
+		pCmd = pCmd->NextCommandInfo(IConsole::ACCESS_LEVEL_USER, CFGFLAG_CHAT))
+	{
+		CNetMsg_Sv_CommandInfo msg;
+		msg.m_pName = pCmd->m_pName;
+		msg.m_pArgsFormat = pCmd->m_pParams;
+		msg.m_pHelpText = pCmd->m_pHelp;
+		pGS->Server()->SendPackMsg(&msg, MSGFLAG_VITAL | MSGFLAG_NORECORD, ClientID);
+	}
+
+	// send end group command
+	{
+		CNetMsg_Sv_CommandInfoGroupEnd msg;
+		pGS->Server()->SendPackMsg(&msg, MSGFLAG_VITAL | MSGFLAG_NORECORD, ClientID);
+	}
 }

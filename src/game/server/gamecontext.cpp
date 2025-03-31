@@ -884,7 +884,7 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 			// check message
 			const auto firstChar = pMsg->m_pMessage[0];
 			if(firstChar == '/')
-				CommandProcessor()->ChatCmd(pMsg->m_pMessage, pPlayer);
+				CommandProcessor()->ProcessClientChatCommand(ClientID, pMsg->m_pMessage);
 			else if(firstChar == '#')
 				ChatWorld(pPlayer->GetCurrentWorldID(), "Nearby:", "'{}' performed an act '{}'.", Server()->ClientName(ClientID), pMsg->m_pMessage);
 			else
@@ -1150,6 +1150,7 @@ void CGS::OnClientEnter(int ClientID)
 		return;
 
 	m_pController->OnPlayerConnect(pPlayer);
+	m_pCommandProcessor->SendClientCommandsInfo(this, ClientID);
 
 	if(!pPlayer->IsAuthed())
 	{

@@ -43,11 +43,7 @@ public:
 
 private:
 	array<CCommand> m_aCommands;
-
 	IConsole* m_pConsole;
-	void* m_pHookContext;
-	FNewCommandHook m_pfnNewCommandHook;
-	FRemoveCommandHook m_pfnRemoveCommandHook;
 
 public:
 	CCommandManager()
@@ -56,12 +52,9 @@ public:
 		m_aCommands.clear();
 	}
 
-	void Init(IConsole* pConsole, void* pHookContext = 0, FNewCommandHook pfnNewCommandHook = 0, FRemoveCommandHook pfnRemoveCommandHook = 0)
+	void Init(IConsole* pConsole)
 	{
 		m_pConsole = pConsole;
-		m_pHookContext = pHookContext;
-		m_pfnNewCommandHook = pfnNewCommandHook;
-		m_pfnRemoveCommandHook = pfnRemoveCommandHook;
 	}
 
 	const CCommand* GetCommand(const char* pCommand)
@@ -90,10 +83,7 @@ public:
 		if (!m_pConsole->ArgStringIsValid(pArgsFormat))
 			return 1;
 
-		int Index = m_aCommands.add(CCommand(pCommand, pHelpText, pArgsFormat, pfnCallback, pContext));
-		if (m_pfnNewCommandHook)
-			m_pfnNewCommandHook(&m_aCommands[Index], m_pHookContext);
-
+		m_aCommands.add(CCommand(pCommand, pHelpText, pArgsFormat, pfnCallback, pContext));
 		return 0;
 	}
 
@@ -103,9 +93,6 @@ public:
 		{
 			if (!str_comp(m_aCommands[i].m_aName, pCommand))
 			{
-				if (m_pfnRemoveCommandHook)
-					m_pfnRemoveCommandHook(&m_aCommands[i], m_pHookContext);
-
 				m_aCommands.remove_index(i);
 				return 0;
 			}
