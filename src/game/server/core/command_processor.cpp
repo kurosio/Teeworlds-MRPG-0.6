@@ -15,25 +15,24 @@ CCommandProcessor::CCommandProcessor(CGS* pGS)
 	m_CommandManager.Init(m_pGS->Console());
 
 	IServer* pServer = m_pGS->Server();
-	AddCommand("login", "s[username] s[password]", ConChatLogin, pServer, "");
-	AddCommand("register", "s[username] s[password]", ConChatRegister, pServer, "");
+	AddCommand("login", "s[username] s[password]", ConChatLogin, pServer, "User login (authentication)");
+	AddCommand("register", "s[username] s[password]", ConChatRegister, pServer, "Register a new account");
 
-	// game command
-	AddCommand("group", "?s[element] ?s[post]", ConGroup, pServer, "");
-	AddCommand("guild", "?s[element] ?s[name]", ConChatGuild, pServer, "");
-	AddCommand("house", "?s[element] ?s[subelement] ?i[number]", ConChatHouse, pServer, "");
-	AddCommand("use_item", "i[item]", ConChatUseItem, pServer, "");
-	AddCommand("use_skill", "i[skill]", ConChatUseSkill, pServer, "");
-	AddCommand("voucher", "r[voucher]", ConChatVoucher, pServer, "");
-	AddCommand("coupon", "r[coupon]", ConChatVoucher, pServer, "");
+	// game commands
+	AddCommand("group", "?s[element] ?s[post]", ConGroup, pServer, "Manage group settings");
+	AddCommand("guild", "?s[element] ?s[name]", ConChatGuild, pServer, "Manage guild settings");
+	AddCommand("house", "?s[element] ?s[subelement] ?i[number]", ConChatHouse, pServer, "Manage house settings");
+	AddCommand("use_item", "i[item]", ConChatUseItem, pServer, "Use an item");
+	AddCommand("use_skill", "i[skill]", ConChatUseSkill, pServer, "Use a skill");
+	AddCommand("voucher", "r[voucher]", ConChatVoucher, pServer, "Activate a voucher");
 
-	// information command
-	AddCommand("cmdlist", "?i[page]", ConChatCmdList, pServer, "");
-	AddCommand("help", "", ConChatCmdList, pServer, "");
-	AddCommand("rules", "", ConChatRules, pServer, "");
-	AddCommand("info", "", ConChatWiki, pServer, "");
-	AddCommand("wiki", "", ConChatWiki, pServer, "");
-	AddCommand("bonuses", "", ConChatBonuses, pServer, "");
+	// information commands
+	AddCommand("cmdlist", "?i[page]", ConChatCmdList, pServer, "Display the list of available commands");
+	AddCommand("help", "", ConChatCmdList, pServer, "Get help on commands");
+	AddCommand("rules", "", ConChatRules, pServer, "View game rules");
+	AddCommand("info", "", ConChatWiki, pServer, "Game information/wiki");
+	AddCommand("wiki", "", ConChatWiki, pServer, "Game information/wiki");
+	AddCommand("bonuses", "", ConChatBonuses, pServer, "Information on bonuses");
 }
 
 CCommandProcessor::~CCommandProcessor()
