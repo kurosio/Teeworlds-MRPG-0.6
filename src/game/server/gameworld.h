@@ -86,8 +86,8 @@ public:
 	void UpdatePlayerMaps();
 
 	CEntity *FindFirst(int Type);
-	int FindEntities(vec2 Pos, float Radius, CEntity **ppEnts, int Max, int Type);
-	std::vector<CEntity*> FindEntities(vec2 Pos, float Radius, int Max, int Type);
+	int FindEntities(vec2 Pos, float Radius, CEntity **ppEnts, int Max, int Type) const;
+	std::vector<CEntity*> FindEntities(vec2 Pos, float Radius, int Max, int Type) const;
 	CEntity *ClosestEntity(vec2 Pos, float Radius, int Type, CEntity *pNotThis) const;
 	CCharacter *IntersectCharacter(vec2 Pos0, vec2 Pos1, float Radius, vec2 &NewPos, CEntity *pNotThis = nullptr);
 	bool IntersectClosestEntity(vec2 Pos, float Radius, int EnttypeID);

@@ -2486,11 +2486,6 @@ size_t str_utf8_offset_bytes_to_chars(const char *str, size_t byte_offset);
 size_t str_utf8_offset_chars_to_bytes(const char *str, size_t char_offset);
 
 /*
-	Function: Pfffff
-*/
-void str_translation_cyrlic_to_latin(char* str);
-
-/*
 	Function: str_next_token
 		Writes the next token after str into buf, returns the rest of the string.
 
@@ -2617,9 +2612,9 @@ int kill_process(PROCESS process);
 
 /**
  * Checks if a process is alive.
- * 
+ *
  * @param process Handle/PID of the process.
- * 
+ *
  * @return bool Returns true if the process is currently running, false if the process is not running (dead).
  */
 bool is_process_alive(PROCESS process);

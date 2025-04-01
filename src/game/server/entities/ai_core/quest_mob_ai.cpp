@@ -34,10 +34,21 @@ void CQuestMobAI::OnRewardPlayer(CPlayer* pPlayer, vec2 Force) const
 
 	if(m_pQuestMobInfo->m_ActiveForClient[ClientID])
 	{
-		m_pQuestMobInfo->m_CompleteClient[ClientID] = true;
+		m_pQuestMobInfo->m_ActiveForClient[ClientID] = false;
 	}
 
 	GS()->Core()->QuestManager()->TryAppendDefeatProgress(pPlayer, BotID);
+}
+
+void CQuestMobAI::OnDie(int Killer, int Weapon)
+{
+	// mark for destroy is non active clients
+	bool MarkForDestroy = std::ranges::none_of(m_pQuestMobInfo->m_ActiveForClient, [](bool active) { return active; });
+	if(MarkForDestroy)
+	{
+		dbg_msg(PRINT_QUEST_PREFIX, "Marked for destroy objective quest mob!");
+		m_pPlayer->MarkForDestroy();
+	}
 }
 
 void CQuestMobAI::OnTargetRules(float Radius)

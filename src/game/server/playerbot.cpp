@@ -32,7 +32,6 @@ void CPlayerBot::InitQuestBotMobInfo(CQuestBotMobInfo elem)
 	{
 		m_QuestMobInfo = elem;
 		std::memset(m_QuestMobInfo.m_ActiveForClient, 0, MAX_PLAYERS * sizeof(bool));
-		std::memset(m_QuestMobInfo.m_CompleteClient, 0, MAX_PLAYERS * sizeof(bool));
 	}
 }
 

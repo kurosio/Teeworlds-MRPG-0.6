@@ -273,6 +273,9 @@ void CCollision::InitEntities(const std::function<void(int, vec2, int)>& funcIni
 
 void CCollision::InitSwitchEntities(const std::function<void(int, vec2, int, int)>& funcInit) const
 {
+	if(!m_pSwitchExtra)
+		return;
+
 	for(int y = 0; y < m_Height; ++y)
 	{
 		for(int x = 0; x < m_Width; ++x)

@@ -18,28 +18,28 @@ void CQuestStepBase::UpdateBot() const
 	auto* pGS = dynamic_cast<CGS*>(Instance::GameServer(m_Bot.m_WorldID));
 
 	// search active bot
-	int BotClientID = -1;
+	CPlayerBot* pPlayerBot = nullptr;
 	for(int i = MAX_PLAYERS; i < MAX_CLIENTS; ++i)
 	{
-		const auto* pPlayer = dynamic_cast<CPlayerBot*>(pGS->GetPlayer(i));
+		auto* pPlayer = dynamic_cast<CPlayerBot*>(pGS->GetPlayer(i));
 		if(pPlayer && pPlayer->GetBotType() == TYPE_BOT_QUEST && pPlayer->GetBotMobID() == m_Bot.m_ID)
 		{
-			BotClientID = i;
+			pPlayerBot = pPlayer;
 			break;
 		}
 	}
 
 	// update bot state
 	const bool ActiveStepBot = IsActiveStep();
-	if(ActiveStepBot && BotClientID == -1)
+	if(ActiveStepBot && !pPlayerBot)
 	{
 		dbg_msg(PRINT_QUEST_PREFIX, "The mob was not found, but the quest step remains active for players.");
 		pGS->CreateBot(TYPE_BOT_QUEST, m_Bot.m_BotID, m_Bot.m_ID);
 	}
-	else if(!ActiveStepBot && BotClientID != -1)
+	else if(!ActiveStepBot && pPlayerBot)
 	{
 		dbg_msg(PRINT_QUEST_PREFIX, "The mob was found, but the quest step is not active for players.");
-		pGS->DestroyPlayer(BotClientID);
+		pPlayerBot->MarkForDestroy();
 	}
 }
 

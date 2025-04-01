@@ -41,12 +41,13 @@ class CPlayer
 protected:
 	IServer* Server() const;
 
-	CGS* m_pGS;
-	int m_ClientID;
-	CCharacter* m_pCharacter;
-	bool m_Afk;
-	bool m_LastInputInit;
-	int64_t m_LastPlaytime;
+	CGS* m_pGS {};
+	int m_ClientID {};
+	bool m_MarkForDestroy {};
+	CCharacter* m_pCharacter {};
+	bool m_Afk {};
+	bool m_LastInputInit {};
+	int64_t m_LastPlaytime {};
 	FixedViewCam m_FixedView {};
 	ScenarioManager m_Scenarios {};
 
@@ -95,6 +96,8 @@ public:
 
 	bool IsAfk() const { return m_Afk; }
 	int64_t GetAfkTime() const;
+	void MarkForDestroy() { m_MarkForDestroy = true; }
+	bool IsMarkedForDestroy() const { return m_MarkForDestroy; }
 
 	virtual bool IsBot() const { return false; }
 	virtual int GetTeam();

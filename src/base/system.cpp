@@ -3890,17 +3890,6 @@ int str_utf8_encode(char *ptr, int chr)
 	return 0;
 }
 
-void str_translation_cyrlic_to_latin(char* str)
-{
-	// const char because the utf character can have different sizes in bytes
-	const char* translate_from[] = { "А", "а", "С", "с", "Е", "е", "О", "о", "М", "Х", "х", "В", "К", "у", "Т", "Р", "р", "З", "Д", "и", "Н", "п" };
-	const char* translate_to[] = { "A", "a", "C", "c", "E", "e", "O", "o", "M", "X", "x", "B", "K", "y", "T", "P", "p", "3", "D", "u", "H", "n" };
-	for(size_t i = 0; i < std::size(translate_from); i++)
-	{
-		str_replace(str, translate_from[i], translate_to[i]);
-	}
-}
-
 static unsigned char str_byte_next(const char **ptr)
 {
 	unsigned char byte_value = **ptr;

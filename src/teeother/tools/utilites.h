@@ -308,6 +308,47 @@ namespace mystd
 
 			return lines;
 		}
+
+		/* (c) Valentin Bashkirov (github.com/0xfaulty).*/
+		inline void str_transliterate(char* pStr)
+		{
+			static const std::unordered_map<int, char> translit =
+			{
+				{0x0410, 'A'}, {0x0430, 'a'},
+				{0x0421, 'C'}, {0x0441, 'c'},
+				{0x0415, 'E'}, {0x0435, 'e'},
+				{0x041E, 'O'}, {0x043E, 'o'},
+				{0x041C, 'M'},
+				{0x0425, 'X'}, {0x0445, 'x'},
+				{0x0412, 'B'},
+				{0x041A, 'K'},
+				{0x0443, 'y'},
+				{0x0422, 'T'},
+				{0x0420, 'P'}, {0x0440, 'p'},
+				{0x0417, '3'},
+				{0x0414, 'D'}, {0x0434, 'g'},
+				{0x0438, 'u'},
+				{0x041D, 'H'},
+				{0x043F, 'n'}
+			};
+
+			char* pWrite = pStr;
+			while(*pStr)
+			{
+				const char* pRead = pStr;
+				int codePoint = str_utf8_decode(&pRead);
+				if(auto it = translit.find(codePoint); it != translit.end())
+					*pWrite++ = it->second;
+				else
+				{
+					while(pStr != pRead)
+						*pWrite++ = *pStr++;
+				}
+				pStr = const_cast<char*>(pRead);
+			}
+			*pWrite = '\0';
+		}
+
 	}
 
 

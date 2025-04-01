@@ -30,28 +30,18 @@ CEntityQuestAction::~CEntityQuestAction()
 	if(pPlayer && pPlayer->m_Cooldown.IsActive())
 		pPlayer->m_Cooldown.Reset();
 
-	// mark whether or not we need to remove the mob from the game
+	// mark for destroy is non active clients
 	auto* pDefeatBotPlayer = GetDefeatPlayerBot();
 	if(pDefeatBotPlayer)
 	{
 		auto& QuestBotInfo = pDefeatBotPlayer->GetQuestBotMobInfo();
 		QuestBotInfo.m_ActiveForClient[m_ClientID] = false;
-		QuestBotInfo.m_CompleteClient[m_ClientID] = false;
 
-		bool ClearDefeatMobPlayer = true;
-		for(int i = 0; i < MAX_PLAYERS; ++i)
+		bool MarkForDestroy = std::ranges::none_of(QuestBotInfo.m_ActiveForClient, [](bool active) { return active; });
+		if(MarkForDestroy)
 		{
-			if(QuestBotInfo.m_ActiveForClient[i])
-			{
-				ClearDefeatMobPlayer = false;
-				break;
-			}
-		}
-
-		if(ClearDefeatMobPlayer)
-		{
-			GS()->DestroyPlayer(pDefeatBotPlayer->GetCID());
-			dbg_msg(PRINT_QUEST_PREFIX, "Deleted objective quest mob!");
+			dbg_msg(PRINT_QUEST_PREFIX, "Marked for destroy objective quest mob!");
+			pDefeatBotPlayer->MarkForDestroy();
 		}
 	}
 }
@@ -96,7 +86,6 @@ void CEntityQuestAction::Initialize()
 		}
 
 		pPlayerBot->GetQuestBotMobInfo().m_ActiveForClient[m_ClientID] = true;
-		pPlayerBot->GetQuestBotMobInfo().m_CompleteClient[m_ClientID] = false;
 		m_DefeatBotCID = pPlayerBot->GetCID();
 	}
 
@@ -280,9 +269,7 @@ void CEntityQuestAction::HandleTaskType(const QuestBotInfo::TaskAction* pTaskDat
 		Handler([this]
 		{
 			CPlayerBot* pDefeatMobPlayer = GetDefeatPlayerBot();
-			if(!pDefeatMobPlayer)
-				return true;
-			return pDefeatMobPlayer->GetQuestBotMobInfo().m_CompleteClient[m_ClientID];
+			return !pDefeatMobPlayer || !pDefeatMobPlayer->GetQuestBotMobInfo().m_ActiveForClient[m_ClientID];
 		});
 	}
 }

@@ -161,7 +161,7 @@ void CVoteGroup::Reformat(std::string& Buffer)
 
 	// optimize text for buffer size
 	if(str_comp(m_pPlayer->GetLanguage(), "ru") == 0 || str_comp(m_pPlayer->GetLanguage(), "uk") == 0)
-		str_translation_cyrlic_to_latin(Buffer.data());
+		mystd::string::str_transliterate(Buffer.data());
 }
 
 void CVoteGroup::AddLineImpl()
@@ -188,7 +188,7 @@ void CVoteGroup::AddBackpageImpl()
 	// new option
 	AddLineImpl();
 	CVoteOption Vote;
-	str_copy(Vote.m_aDescription, "\u21A9 Backpage", sizeof(Vote.m_aDescription));
+	str_copy(Vote.m_aDescription, Instance::Localize(m_ClientID, "\u21A9 Backpage"), sizeof(Vote.m_aDescription));
 	str_copy(Vote.m_aCommand, "BACK", sizeof(Vote.m_aCommand));
 	m_vpVotelist.emplace_back(Vote);
 }

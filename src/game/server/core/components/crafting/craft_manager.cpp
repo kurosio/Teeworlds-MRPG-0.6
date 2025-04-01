@@ -167,9 +167,7 @@ bool CCraftManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	if(Menulist == MENU_CRAFTING_LIST)
 	{
 		// craft selector
-		VoteWrapper VCraftSelector(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_STRICT_BOLD, "\u2692 Crafting Information");
-		VCraftSelector.Add("If you will not have enough items for crafting");
-		VCraftSelector.Add("You will write those and the amount that is still required");
+		VoteWrapper VCraftSelector(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_STRICT_BOLD, "\u2692 Crafting List");
 		VCraftSelector.AddItemValue(itGold);
 		VCraftSelector.AddLine();
 		for(int i = 0; i < (int)m_vOrderedCraftList.size(); i++)

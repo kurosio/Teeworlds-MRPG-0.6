@@ -678,6 +678,8 @@ void CGS::OnInit(int WorldID)
 	m_pConsole = Kernel()->RequestInterface<IConsole>();
 	m_pStorage = Kernel()->RequestInterface<IStorageEngine>();
 
+	m_World.SetGameServer(this);
+	m_Events.SetGameServer(this);
 	m_WorldID = WorldID;
 
 	for(int i = 0; i < NUM_NETOBJTYPES; i++)
@@ -688,8 +690,6 @@ void CGS::OnInit(int WorldID)
 	g_InventoryListener.Initialize();
 
 	// initialize controller
-	m_World.SetGameServer(this);
-	m_Events.SetGameServer(this);
 	m_Collision.Init(Kernel(), WorldID);
 	m_pMmoController->OnInit(m_pServer, m_pConsole, m_pStorage);
 	InitWorld();
@@ -747,6 +747,12 @@ void CGS::OnTick()
 	{
 		if(!Server()->ClientIngame(i) || !m_apPlayers[i] || m_apPlayers[i]->GetCurrentWorldID() != m_WorldID)
 			continue;
+
+		if(m_apPlayers[i]->IsMarkedForDestroy())
+		{
+			DestroyPlayer(i);
+			continue;
+		}
 
 		m_apPlayers[i]->Tick();
 		m_apPlayers[i]->PostTick();

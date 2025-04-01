@@ -17,9 +17,7 @@ public:
 	int m_AttributePower;
 	int m_WorldID;
 	vec2 m_Position;
-
 	bool m_ActiveForClient[MAX_PLAYERS] {};
-	bool m_CompleteClient[MAX_PLAYERS] {};
 };
 
 class CPlayerBot : public CPlayer

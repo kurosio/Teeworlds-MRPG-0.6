@@ -16,6 +16,7 @@ public:
 
 	void OnSpawn() override;
 	void OnRewardPlayer(CPlayer* pPlayer, vec2 Force) const override;
+	void OnDie(int Killer, int Weapon) override;
 	void OnTargetRules(float Radius) override;
 	void Process() override;
 

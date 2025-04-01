@@ -49,6 +49,7 @@ bool CCharacter::Spawn(CPlayer* pPlayer, vec2 Pos)
 	m_pPlayer = pPlayer;
 	m_ClientID = pPlayer->GetCID();
 
+	m_Mana = 0;
 	m_EmoteStop = -1;
 	m_LastAction = -1;
 	m_LastNoAmmoSound = -1;
@@ -56,23 +57,20 @@ bool CCharacter::Spawn(CPlayer* pPlayer, vec2 Pos)
 	m_QueuedWeapon = -1;
 
 	m_Pos = Pos;
+	m_OldPos = Pos;
 	m_Core.Reset();
 	m_Core.Init(&GS()->m_World.m_Core, GS()->Collision());
 	m_Core.m_ActiveWeapon = WEAPON_HAMMER;
 	m_Core.m_Pos = m_Pos;
-	GS()->m_World.m_Core.m_apCharacters[m_pPlayer->GetCID()] = &m_Core;
-
-	m_ReckoningTick = 0;
-	m_SendCore = {};
-	GS()->m_World.InsertEntity(this);
-	m_Alive = true;
-	m_NumInputs = 0;
-
-	m_Mana = 0;
-	m_OldPos = Pos;
 	m_Core.m_DamageDisabled = false;
 	m_Core.m_CollisionDisabled = false;
 	m_Core.m_WorldID = m_pPlayer->GetCurrentWorldID();
+	m_ReckoningTick = 0;
+	m_SendCore = {};
+	m_NumInputs = 0;
+	GS()->m_World.m_Core.m_apCharacters[m_ClientID] = &m_Core;
+	GS()->m_World.InsertEntity(this);
+	m_Alive = true;
 
 	if(!m_pPlayer->IsBot())
 	{
@@ -83,7 +81,7 @@ bool CCharacter::Spawn(CPlayer* pPlayer, vec2 Pos)
 
 		m_pPlayer->m_VotesData.UpdateCurrentVotes();
 		m_AmmoRegen = m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::AmmoRegen);
-		GS()->MarkUpdatedBroadcast(m_pPlayer->GetCID());
+		GS()->MarkUpdatedBroadcast(m_ClientID);
 
 		const bool Spawned = GS()->m_pController->OnCharacterSpawn(this);
 		return Spawned;
@@ -285,6 +283,8 @@ void CCharacter::FireWeapon()
 
 bool CCharacter::FireHammer(vec2 Direction, vec2 ProjStartPos)
 {
+	constexpr int MAX_LENGTH_CHARACTERS = 16;
+
 	// check equip state
 	const auto EquippedItem = m_pPlayer->GetEquippedItemID(ItemType::EquipHammer);
 	if(!EquippedItem.has_value())
@@ -303,13 +303,12 @@ bool CCharacter::FireHammer(vec2 Direction, vec2 ProjStartPos)
 	// lamp hammer
 	if(EquippedItem == itHammerLamp)
 	{
-		CCharacter* apEnts[MAX_CLIENTS];
-		const int Num = GS()->m_World.FindEntities(ProjStartPos, GetRadius() * 128.f, (CEntity**)apEnts, MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
-		for(int i = 0; i < Num; ++i)
+		const auto vEntities = GS()->m_World.FindEntities(ProjStartPos, GetRadius() , MAX_LENGTH_CHARACTERS, CGameWorld::ENTTYPE_CHARACTER);
+		for(auto* pEnt : vEntities)
 		{
 			// skip self damage
-			const auto* pTarget = apEnts[i];
-			if(m_ClientID == pTarget->GetClientID())
+			auto* pTarget = dynamic_cast<CCharacter*>(pEnt);
+			if(!pTarget || m_ClientID == pTarget->GetClientID())
 				continue;
 
 			// check intersect line
@@ -365,18 +364,17 @@ bool CCharacter::FireHammer(vec2 Direction, vec2 ProjStartPos)
 		m_Core.m_Vel += Direction * 2.5f;
 		GS()->CreateExplosion(m_Pos, m_ClientID, WEAPON_HAMMER, 0);
 		GS()->CreateSound(m_Pos, SOUND_WEAPONS_HAMMER_BLAST_START);
+		return true;
 	}
 
 	// default hammer
 	constexpr float Radius = 3.2f;
-	CCharacter* apEnts[MAX_CLIENTS];
-
-	const int Num = GS()->m_World.FindEntities(ProjStartPos, GetRadius() * Radius, (CEntity**)apEnts, MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
-	for(int i = 0; i < Num; ++i)
+	const auto vEntities = GS()->m_World.FindEntities(ProjStartPos, GetRadius() * Radius, MAX_LENGTH_CHARACTERS, CGameWorld::ENTTYPE_CHARACTER);
+	for(auto* pEnt : vEntities)
 	{
 		// skip self damage
-		auto* pTarget = apEnts[i];
-		if(m_ClientID == pTarget->GetClientID())
+		auto* pTarget = dynamic_cast<CCharacter*>(pEnt);
+		if(!pTarget || m_ClientID == pTarget->GetClientID())
 			continue;
 
 		if(GS()->Collision()->IntersectLineWithInvisible(ProjStartPos, pTarget->m_Pos, nullptr, nullptr))
@@ -387,12 +385,11 @@ bool CCharacter::FireHammer(vec2 Direction, vec2 ProjStartPos)
 
 		const auto HammerHitPos = length(pTarget->m_Pos - ProjStartPos) > 0.0f
 			? pTarget->m_Pos - normalize(pTarget->m_Pos - ProjStartPos) * GetRadius() * Radius : ProjStartPos;
-			GS()->CreateHammerHit(pTarget->m_Pos - normalize(pTarget->m_Pos - ProjStartPos) * GetRadius() * Radius);
 		const auto Dir = length(pTarget->m_Pos - m_Pos) > 0.0f ? normalize(pTarget->m_Pos - m_Pos) : vec2(0.f, -1.f);
 		const auto Force = vec2(0.f, -1.f) + normalize(Dir + vec2(0.f, -1.1f)) * 10.0f;
 
-		pTarget->TakeDamage(Force, 0, m_ClientID, WEAPON_HAMMER);
 		GS()->CreateHammerHit(HammerHitPos);
+		pTarget->TakeDamage(Force, 0, m_ClientID, WEAPON_HAMMER);
 		m_ReloadTimer = Server()->TickSpeed() / 3;
 	}
 

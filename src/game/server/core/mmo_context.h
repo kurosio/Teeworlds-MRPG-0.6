@@ -367,8 +367,8 @@ constexpr const char* GetItemTypeName(ItemType type) noexcept
 		case ItemType::EquipFishrod:        return "Fish rod";
 		case ItemType::EquipArmor:          return "Armor";
 		case ItemType::EquipEidolon:        return "Eidolon";
-		case ItemType::EquipPotionHeal:     return "Potion Heal";
-		case ItemType::EquipPotionMana:     return "Potion Mana";
+		case ItemType::EquipPotionHeal:     return "Potion HP";
+		case ItemType::EquipPotionMana:     return "Potion MP";
 		case ItemType::EquipTitle:          return "Title";
 		case ItemType::UseSingle:           return "Use Single";
 		case ItemType::UseMultiple:         return "Use Multiple";

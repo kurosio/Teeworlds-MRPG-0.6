@@ -45,7 +45,7 @@ bool CGameWorld::ExistEntity(CEntity* pEnt) const
 	return pEnt && m_apEntitiesCollection.find(pEnt) != m_apEntitiesCollection.end();
 }
 
-int CGameWorld::FindEntities(vec2 Pos, float Radius, CEntity** ppEnts, int Max, int Type)
+int CGameWorld::FindEntities(vec2 Pos, float Radius, CEntity** ppEnts, int Max, int Type) const
 {
 	if(Type < 0 || Type >= NUM_ENTTYPES)
 		return 0;
@@ -65,7 +65,7 @@ int CGameWorld::FindEntities(vec2 Pos, float Radius, CEntity** ppEnts, int Max, 
 	return Num;
 }
 
-std::vector<CEntity*> CGameWorld::FindEntities(vec2 Pos, float Radius, int Max, int Type)
+std::vector<CEntity*> CGameWorld::FindEntities(vec2 Pos, float Radius, int Max, int Type) const
 {
 	if(Type < 0 || Type >= NUM_ENTTYPES)
 		return {};
