@@ -227,7 +227,7 @@ void CCollision::InitTeleports()
 
 void CCollision::InitSwitchExtra()
 {
-	const std::vector<std::string>& settingsLines = m_pLayers->GetSettings();
+	// const std::vector<std::string>& settingsLines = m_pLayers->GetSettings();
 
 	for(int i = 0; i < m_Width * m_Height; i++)
 	{

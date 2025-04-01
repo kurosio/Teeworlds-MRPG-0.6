@@ -81,7 +81,7 @@ void CEidolonAI::OnTargetRules(float Radius)
 	// find from players
 	const auto* pPlayer = SearchPlayerCondition(Radius, [&](const CPlayer* pCandidate)
 	{
-		const auto* pOwnerChar = pOwner->GetCharacter();
+		// const auto* pOwnerChar = pOwner->GetCharacter();
 		const bool DamageDisabled = pCandidate->GetCharacter()->m_Core.m_DamageDisabled;
 		const bool AllowedPVP = pOwner->GetCID() != pCandidate->GetCID() && m_pCharacter->IsAllowedPVP(pCandidate->GetCID());
 		return !DamageDisabled && AllowedPVP;

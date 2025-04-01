@@ -10,7 +10,7 @@ CEntityQuestAction::CEntityQuestAction(CGameWorld* pGameWorld, int ClientID, int
 	: CEntity(pGameWorld, CGameWorld::ENTTYPE_MOVE_TO_POINT, {}, 32.f, ClientID), m_MoveToIndex(MoveToIndex)
 {
 	m_pStep = pStep;
-	if(const auto* pTaskData = GetTaskMoveTo())
+	if(m_pStep)
 		Initialize();
 	else
 		MarkForDestroy();
