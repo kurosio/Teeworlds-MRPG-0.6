@@ -167,6 +167,7 @@ MACRO_CONFIG_INT(SvVanConnPerSecond, sv_van_conn_per_second, 10, 0, 10000, CFGFL
 MACRO_CONFIG_INT(SvHardresetAfterDays, sv_hard_reset_after_days, 7, 1, 14, CFGFLAG_SAVE | CFGFLAG_SERVER, "Reset the server when it has been idle for a specified number of days without players")
 MACRO_CONFIG_INT(SvMaxAfkTime, sv_max_afk_time, 600, 0, 144400, CFGFLAG_SAVE | CFGFLAG_SERVER, "Afk timer")
 MACRO_CONFIG_INT(SvMapDownloadSpeed, sv_map_download_speed, 8, 1, 16, CFGFLAG_SAVE | CFGFLAG_SERVER, "Number of map data packages a client gets on each request")
+MACRO_CONFIG_INT(SvShowWorldWhenConnect, sv_show_world_when_connect, 0, 0, ENGINE_MAX_WORLDS, CFGFLAG_SERVER, "Show default world when player connect")
 
 MACRO_CONFIG_STR(EcBindaddr, ec_bindaddr, 128, "localhost", CFGFLAG_ECON, "Address to bind the external console to. Anything but 'localhost' is dangerous")
 MACRO_CONFIG_INT(EcPort, ec_port, 0, 0, 0, CFGFLAG_ECON, "Port to use for the external console")

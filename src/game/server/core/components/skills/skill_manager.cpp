@@ -145,7 +145,7 @@ void CSkillManager::ShowSkill(CPlayer* pPlayer, int SkillID) const
 	if(!IsPassive && IsLearned)
 	{
 		VoteWrapper VUsage(ClientID, VWF_OPEN | VWF_STYLE_STRICT, "Usage");
-		VUsage.Add("F1 Bind: (bind 'key' say \"/useskill {}\")", SkillID);
+		VUsage.Add("F1 Bind: (bind 'key' say \"/use_skill {}\")", SkillID);
 		VUsage.AddOption("SKILL_CHANGE_USAGE_EMOTICION", SkillID, "Used on {}", pSkill->GetSelectedEmoticonName());
 		VUsage.AddLine();
 		VoteWrapper::AddEmptyline(ClientID);
