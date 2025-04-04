@@ -254,14 +254,14 @@ bool mem_has_null(const void *block, size_t size)
 	return false;
 }
 
-IOHANDLE io_open_impl(const char *filename, int flags)
+IOHANDLE io_open(const char* filename, int flags)
 {
-	dbg_assert(flags == (IOFLAG_READ | IOFLAG_SKIP_BOM) || flags == IOFLAG_READ || flags == IOFLAG_WRITE || flags == IOFLAG_APPEND, "flags must be read, read+skipbom, write or append");
+	dbg_assert(flags == IOFLAG_READ || flags == IOFLAG_WRITE || flags == IOFLAG_APPEND, "flags must be read, write or append");
 #if defined(CONF_FAMILY_WINDOWS)
 	const std::wstring wide_filename = windows_utf8_to_wide(filename);
 	DWORD desired_access;
 	DWORD creation_disposition;
-	const char *open_mode;
+	const char* open_mode;
 	if((flags & IOFLAG_READ) != 0)
 	{
 		desired_access = FILE_READ_DATA;
@@ -271,7 +271,7 @@ IOHANDLE io_open_impl(const char *filename, int flags)
 	else if(flags == IOFLAG_WRITE)
 	{
 		desired_access = FILE_WRITE_DATA;
-		creation_disposition = OPEN_ALWAYS;
+		creation_disposition = CREATE_ALWAYS;
 		open_mode = "wb";
 	}
 	else if(flags == IOFLAG_APPEND)
@@ -290,11 +290,11 @@ IOHANDLE io_open_impl(const char *filename, int flags)
 		return nullptr;
 	const int file_descriptor = _open_osfhandle((intptr_t)handle, 0);
 	dbg_assert(file_descriptor != -1, "_open_osfhandle failure");
-	FILE *file_stream = _fdopen(file_descriptor, open_mode);
+	FILE* file_stream = _fdopen(file_descriptor, open_mode);
 	dbg_assert(file_stream != nullptr, "_fdopen failure");
 	return file_stream;
 #else
-	const char *open_mode;
+	const char* open_mode;
 	if((flags & IOFLAG_READ) != 0)
 	{
 		open_mode = "rb";
@@ -314,21 +314,6 @@ IOHANDLE io_open_impl(const char *filename, int flags)
 	}
 	return fopen(filename, open_mode);
 #endif
-}
-
-IOHANDLE io_open(const char *filename, int flags)
-{
-	IOHANDLE result = io_open_impl(filename, flags);
-	unsigned char buf[3];
-	if((flags & IOFLAG_SKIP_BOM) == 0 || !result)
-	{
-		return result;
-	}
-	if(io_read(result, buf, sizeof(buf)) != 3 || buf[0] != 0xef || buf[1] != 0xbb || buf[2] != 0xbf)
-	{
-		io_seek(result, 0, IOSEEK_START);
-	}
-	return result;
 }
 
 unsigned io_read(IOHANDLE io, void *buffer, unsigned size)

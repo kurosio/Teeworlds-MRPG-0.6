@@ -309,6 +309,76 @@ namespace mystd
 			return lines;
 		}
 
+		inline std::string escape(const std::string_view src)
+		{
+			std::string result;
+			result.reserve(src.size());
+
+			for(const auto& ch : src)
+			{
+				switch(ch)
+				{
+					case '\n': result += "\\n"; break;
+					case '\t': result += "\\t"; break;
+					case '\\': result += "\\\\"; break;
+					case '"':  result += "\\\""; break;
+					default:
+						result += ch;
+						break;
+				}
+			}
+
+			return result;
+		}
+
+		inline std::string unescape(const std::string_view src)
+		{
+			std::string result;
+			result.reserve(src.size());
+
+			for(size_t i = 0; i < src.size(); ++i)
+			{
+				if(src[i] == '\\' && i + 1 < src.size())
+				{
+					switch(src[i + 1])
+					{
+						case 'n':  result += '\n'; ++i; break;
+						case 't':  result += '\t'; ++i; break;
+						case '\\': result += '\\'; ++i; break;
+						case '"':  result += '"';  ++i; break;
+						case 'u':
+							if(i + 5 < src.size())
+							{
+								unsigned int unicodeChar = 0;
+								auto [ptr, ec] = std::from_chars(&src[i + 2], &src[i + 6], unicodeChar, 16);
+
+								if(ec == std::errc())
+								{
+									std::array<char, 5> utf8_buffer {};
+									int utf8_len = str_utf8_encode(utf8_buffer.data(), unicodeChar);
+									if(utf8_len > 0)
+										result.append(utf8_buffer.data(), utf8_len);
+
+									i += 5;
+									break;
+								}
+							}
+							else
+							{
+								result += '\\';
+							}
+							break;
+					}
+				}
+				else
+				{
+					result += src[i];
+				}
+			}
+
+			return result;
+		}
+
 		/* (c) Valentin Bashkirov (github.com/0xfaulty).*/
 		inline void str_transliterate(char* pStr)
 		{

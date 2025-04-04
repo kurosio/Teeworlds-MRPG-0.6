@@ -5,42 +5,39 @@
 
 void CWikiManager::OnPreInit()
 {
-	if(const auto File = GS()->Storage()->OpenFile("server_data/wiki_content.txt", IOFLAG_READ | IOFLAG_SKIP_BOM, IStorageEngine::TYPE_ABSOLUTE))
+	CLineReader Reader;
+	if(!Reader.OpenFile(GS()->Storage()->OpenFile("server_data/wiki_content.txt", IOFLAG_READ, IStorageEngine::TYPE_ABSOLUTE)))
+		return;
+
+	// initialize variables
+	std::string CurrentTitle;
+	std::string CurrentContent;
+	int incrementWikiID = 1;
+
+	// parse wiki information
+	for(const char* pLine = Reader.Get(); pLine; pLine = Reader.Get())
 	{
-		// initialize variables
-		CLineReader Reader;
-		Reader.Init(File);
-		std::string CurrentTitle;
-		std::string CurrentContent;
-		int incrementWikiID = 1;
-
-		// parse wiki information
-		for(const char* pLine = Reader.Get(); pLine; pLine = Reader.Get())
+		if(str_startswith(pLine, "#"))
 		{
-			if(str_startswith(pLine, "#"))
+			if(!CurrentTitle.empty() && !CurrentContent.empty())
 			{
-				if(!CurrentTitle.empty() && !CurrentContent.empty())
-				{
-					CWikiData::CreateElement(incrementWikiID++)->Init(CurrentTitle, CurrentContent);
-					CurrentContent.clear();
-				}
+				CWikiData::CreateElement(incrementWikiID++)->Init(CurrentTitle, CurrentContent);
+				CurrentContent.clear();
+			}
 
-				CurrentTitle = pLine + 1;
-			}
-			else
-			{
-				CurrentContent += pLine;
-				CurrentContent += "\n";
-			}
+			CurrentTitle = pLine + 1;
 		}
-
-		// add last element
-		if(!CurrentTitle.empty() && !CurrentContent.empty())
+		else
 		{
-			CWikiData::CreateElement(incrementWikiID++)->Init(CurrentTitle, CurrentContent);
+			CurrentContent += pLine;
+			CurrentContent += "\n";
 		}
+	}
 
-		io_close(File);
+	// add last element
+	if(!CurrentTitle.empty() && !CurrentContent.empty())
+	{
+		CWikiData::CreateElement(incrementWikiID++)->Init(CurrentTitle, CurrentContent);
 	}
 }
 

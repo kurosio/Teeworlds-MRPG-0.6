@@ -11,22 +11,22 @@
 	{
 		"action": "message",
 		"delay": 200,
-		"broadcast": "Эта туториал поможет вам освоиться в мире MMORPG",
-		"chat": "Cперва пройдите увлекательное обучение и выполнив первый квест. Готовы к приключениям?"
+		"broadcast": "This tutorial will help you get familiar with the world of MMORPG\nand introduce you to the basics of the game.",
+		"chat": "Start with an exciting tutorial and complete your first quest. Ready for the adventure?"
     },	
 	{
 		"action": "message",
 		"delay": 150,
-		"broadcast": "Давайте для начала пройдем вводный курс."
+		"broadcast": "Let's start by going through the introductory course."
     },	
 	{
 		"action": "message",
 		"delay": 400,
-		"broadcast": "Уделяйте вниманию тому что я буду вам писать\nВ скором времени перед вами откроется дверь\nдля прохода в новую зону обучения"
+		"broadcast": "Pay attention to what I will write to you.\nSoon, a door will open before you, leading to a new training area."
     },
 	{
 		"action": "message",
-		"chat": "Перед вами распахнулась дверь, следуйте в новую зону"
+		"chat": "A door has opened before you, proceed to the new area."
     },
 	{
 		"action": "remove_door",
@@ -51,15 +51,15 @@
 			"x": 1632.0,
 			"y": 960.0
 		},
-		"broadcast": "Доберись до указаной точки",
-		"target_lock_text": "Двигайся сюда чтобы продолжить",
+		"broadcast": "Reach the specified point.",
+		"target_lock_text": "Head over here to continue.",
 		"target_look": true
 	},
 	{
 		"action": "message",
 		"delay": 400,
-		"broadcast": "На карте могут быть различные объекты: блоки, платформы, сундуки,\nNPC (неигровые персонажи) и многое другое. Нет каких то определенных целей, бесконечный гемплей",
-		"chat": "Читайте внимательно это поможет вам быстрее влится в игровой процесс."
+		"broadcast": "The map may contain various objects: blocks, platforms,\nchests, NPCs (non-player characters), and much more.\nThere are no specific goals, offering endless gameplay.",
+		"chat": "Read carefully — it will help you dive into the gameplay more quickly."
 	},	
 	{
 		"action": "remove_door",
@@ -75,30 +75,30 @@
 			"x": 2624.0,
 			"y": 864.0
 		},
-		"broadcast": "Доберись до указаной точки.",
-		"target_lock_text": "Двигайся сюда чтобы продолжить.",
+		"broadcast": "Reach the specified point.",
+		"target_lock_text": "Head over here to continue.",
 		"target_look": true
 	},
 	{
 		"action": "message",
 		"delay": 250,
-		"broadcast": "Ваш интерфейс содержит важную информацию.",
-		"chat": "В списках голосов вы можете управлять персонажем, взаимодействовать с инвентарем, управлять характеристиками, и многое другое."
+		"broadcast": "The interface contains important information.",
+		"chat": "In the voting list, you can control your character, interact with the inventory, adjust attributes, and much more."
 	},
 	{
 		"action": "message",
 		"delay": 250,
-		"chat": "Слева отображаются все ваши параметры для удобной игры. Снизу так же есть информация во время битв. Обратите внимание на это."
+		"chat": "On the left, all your stats are displayed for easier gameplay. At the bottom, you'll also find information during battles. Pay attention to this."
 	},
 	{
 		"action": "message",
 		"delay": 250,
-		"broadcast": "Ваш интерфейс содержит важную информацию.",
-		"chat": "Еще имеются игровые чат команды с которыми вы можете ознакомиться с помощью '/cmdlist'."
+		"broadcast": "The interface contains important information.",
+		"chat": "There are also in-game chat commands that you can explore by using '/cmdlist'."
 	},	
 	{
 		"action": "message",
-		"chat": "Также рекомендую вам ознакомиться с правилами командой '/rules'."
+		"chat": "I also recommend reviewing the rules by using the '/rules' command."
 	},
 	{
 		"action": "use_chat_task",
@@ -107,7 +107,7 @@
 	{
 		"action": "message",
 		"delay": 500,
-		"broadcast": "Теперь думаю пока вы читаете правила,\nя подготовлю следующую зону обучения."
+		"broadcast": "While you're reading the rules,\nI'll prepare the next training area for you."
 	},	
 	{
 		"action": "teleport",
@@ -128,12 +128,12 @@
 	{
 		"action": "message",
 		"delay": 150,
-		"broadcast": "Думаю с передвижением у вас не возникнет проблем."
+		"broadcast": "I'm sure you won't have any trouble with movement."
 	},	
 	{
 		"action": "message",
 		"delay": 200,
-		"broadcast": "Здесь собран минимальный уровень сложности, для игры в MMORPG."
+		"broadcast": "This features the minimum difficulty level for playing an MMORPG."
 	},
 	{
 		"action": "remove_door",
@@ -149,7 +149,7 @@
 	},	
 	{
 		"action": "message",
-		"chat": "Давайте приступим, для начала к двойным прыжкам."
+		"chat": "Let's start by learning double jumps."
 	},
 	{
 		"action": "movement_task",
@@ -158,8 +158,8 @@
 			"x": 1267.0,
 			"y": 1777.0
 		},
-		"broadcast": "Доберись до указаной точки.",
-		"target_lock_text": "Двигайся сюда чтобы продолжить.",
+		"broadcast": "Reach the specified point.",
+		"target_lock_text": "Head over here to continue.",
 		"target_look": true
 	},
 	{
@@ -176,7 +176,7 @@
 	},
 	{
 		"action": "message",
-		"chat": "Давайте попробуем преодолеть это препядствие."
+		"chat": "Let's try to overcome this obstacle."
 	},
 	{
 		"action": "movement_task",
@@ -185,8 +185,8 @@
 			"x": 1502.0,
 			"y": 1169.0
 		},
-		"broadcast": "Доберись до указаной точки.",
-		"target_lock_text": "Двигайся сюда чтобы продолжить.",
+		"broadcast": "Reach the specified point.",
+		"target_lock_text": "Head over here to continue.",
 		"target_look": true
 	},	
 	{
@@ -199,7 +199,7 @@
 			"id": 3,
 			"value": 1
 		},
-		"broadcast": "Подберите предмет который появился рядом.\nДля этого используте удар молотком!"
+		"broadcast": "Pick up the item that appeared nearby by using\nthe hammer strike!"
 	},
 	{
 		"action": "remove_door",
@@ -215,7 +215,7 @@
 	},
 	{
 		"action": "message",
-		"chat": "Давайте потренируем стрельбу."
+		"chat": "Let's practice our shooting skills."
 	},
 	{
 		"action": "shootmarkers",
@@ -249,13 +249,13 @@
 			"x": 3089.0,
 			"y": 1777.0
 		},
-		"broadcast": "Доберись до указаной точки.",
-		"target_lock_text": "Двигайся сюда чтобы продолжить.",
+		"broadcast": "Reach the specified point.",
+		"target_lock_text": "Head over here to continue.",
 		"target_look": true
 	},	
 	{
 		"action": "message",
-		"chat": "Давайте на последок проверим меткость."
+		"chat": "Let's test your accuracy one last time."
 	},
 	{
 		"action": "shootmarkers",
@@ -281,12 +281,12 @@
 	{
 		"action": "message",
 		"delay": 200,
-		"broadcast": "Поздравляю основные элементы передвижения изучены."
+		"broadcast": "Congratulations, you've mastered the basic movement elements."
 	},
 	{
 		"action": "message",
 		"delay": 500,
-		"broadcast": "Подготваливаю вам новую зону для обучения."
+		"broadcast": "I'm preparing a new training area for you."
 	},
 	    {
       "action": "reset_quest",
@@ -319,7 +319,7 @@
 	{
 		"action": "message",
 		"delay": 500,
-		"broadcast": "Теперь изучим классику MMORPG.\nПодготавливаю квест."
+		"broadcast": "Now, let's explore the classics of MMORPG.\nI'm preparing a quest for you."
 	},
 	{
 		"action": "accept_quest",
@@ -327,7 +327,7 @@
 	},
 	{
 		"action": "message",
-		"chat": "Доберитесь до NPC."
+		"chat": "Reach the NPC (non-player character)."
 	},
 	{
 		"action": "fix_cam",
@@ -352,11 +352,11 @@
 	},
 	{
 		"action": "message",
-		"broadcast": "Ваш инвентарь хранит собранные предметы.\nВы можете как одевать, снимать, так и выбрасывать предметы. \nНекоторые предметы можно использовать, кликнув в меню голосования"
+		"broadcast": "Your inventory stores all the items you've collected.\nYou can equip, unequip, or discard items.\nSome items can be used by clicking in the voting menu."
     },
 	{
 		"action": "message",
-		"chat": "Это плантации. Плантации являются сельскохозяйственным делом. Добудьте 1 расстение!"
+		"chat": "These are plantations, which are part of agriculture. Collect one plant!"
     },
 	{
 		"action": "fix_cam",
@@ -368,7 +368,7 @@
 	},
 	{
 		"action": "message",
-		"chat": "Бейте молотком по сердечкам и вы увидите процесс сбора расстений"
+		"chat": "Hit the hearts with the hammer, and you'll see the plant collection process."
     },
 	{
 		"action": "check_has_item",
@@ -378,7 +378,7 @@
 	},
 	{
 		"action": "message",
-		"chat": "Отнесите их в домик. И переработайте нажимая соотвествуещие кнопки в меню голосования. Нажмите на крафт"
+		"chat": "Take them to the house and process them by clicking the appropriate buttons in the voting menu. Click on 'Craft'."
     },
 	{
 		"action": "movement_task",
@@ -387,17 +387,17 @@
 			"x": 3774.0,
 			"y": 2193.0
 		},
-		"broadcast": "Доберись до указаной точки.",
-		"target_lock_text": "Двигайся сюда чтобы продолжить.",
+		"broadcast": "Reach the specified point.",
+		"target_lock_text": "Head over here to continue.",
 		"target_look": true
 	},
 	{
 		"action": "message",
-		"chat": "Здесь вы сможете использовать услуги ремесленика. Используйте добытые предметы и создайте предмет необходимый для продолжения."
+		"chat": "Here, you can use the services of the craftsman. Use the collected items to create what is needed to continue."
     },		
 	{
 		"action": "message",
-		"chat": "Для этого откройте в специальной зоне лист голосований из меню и выберите соответствующий предмет."
+		"chat": "To do this, open the voting list in the special zone from the menu and select the required item."
     },	
 	{
 		"action": "check_has_item",
@@ -425,17 +425,17 @@
 	{
 		"action": "message",
 		"delay": 200,
-		"broadcast": "Поздравляю вас с прохождением Tutorial."
+		"broadcast": "Congratulations on completing the tutorial!"
     },		
 	{
 		"action": "message",
 		"delay": 200,
-		"broadcast": "Я думаю чему то вы научились."
+		"broadcast": "I'm sure you've learned something."
     },
 	{
 		"action": "message",
 		"delay": 100,
-		"broadcast": "Вот вам небольшой подарочек от меня."
+		"broadcast": "Here's a little gift from me."
     },
 	{
 		"action": "pick_item_task",
@@ -447,7 +447,7 @@
 			"id": 30,
 			"value": 1
 		},
-		"broadcast": "Подберите предмет который появился рядом.\nДля этого используте удар молотком!"
+		"broadcast": "Pick up the item that appeared nearby by using\nthe hammer strike!"
 	},
 	{
 		"action": "remove_door",

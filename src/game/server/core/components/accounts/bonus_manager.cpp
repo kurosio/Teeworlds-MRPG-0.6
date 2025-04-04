@@ -77,31 +77,27 @@ void BonusManager::Load()
 
 	auto* pStorage = pGS->Storage();
 	const auto Filename = getFileName(pPlayer->Account()->GetID());
-	if(const auto File = pStorage->OpenFile(Filename.c_str(), IOFLAG_READ | IOFLAG_SKIP_BOM, IStorageEngine::TYPE_ABSOLUTE))
-	{
-		const time_t currentTime = time(nullptr);
-		CLineReader Reader;
-		Reader.Init(File);
+	CLineReader Reader;
+	if(!Reader.OpenFile(pStorage->OpenFile(Filename.c_str(), IOFLAG_READ, IStorageEngine::TYPE_ABSOLUTE)))
+		return;
 
-		char* pLine;
-		while((pLine = Reader.Get()))
-		{
-			TemporaryBonus bonus;
+	const time_t currentTime = time(nullptr);
+	while(const char* pReadLine = Reader.Get())
+	{
+		TemporaryBonus bonus;
 #if defined(__GNUC__) && __WORDSIZE == 64
-			if(sscanf(pLine, "%d %f %ld %d", &bonus.Type, &bonus.Amount, &bonus.StartTime, &bonus.Duration) == 4)
+		if(sscanf(pReadLine, "%d %f %ld %d", &bonus.Type, &bonus.Amount, &bonus.StartTime, &bonus.Duration) == 4)
 #else
-			if(sscanf(pLine, "%d %f %lld %d", &bonus.Type, &bonus.Amount, &bonus.StartTime, &bonus.Duration) == 4)
+		if(sscanf(pReadLine, "%d %f %lld %d", &bonus.Type, &bonus.Amount, &bonus.StartTime, &bonus.Duration) == 4)
 #endif
+		{
+			int elapsedTime = static_cast<int>(difftime(currentTime, bonus.StartTime));
+			if(elapsedTime < bonus.Duration)
 			{
-				int elapsedTime = static_cast<int>(difftime(currentTime, bonus.StartTime));
-				if(elapsedTime < bonus.Duration)
-				{
-					bonus.StartTime = currentTime - elapsedTime;
-					m_vTemporaryBonuses.push_back(bonus);
-				}
+				bonus.StartTime = currentTime - elapsedTime;
+				m_vTemporaryBonuses.push_back(bonus);
 			}
 		}
-		io_close(File);
 	}
 }
 

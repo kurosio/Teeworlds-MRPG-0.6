@@ -48,7 +48,7 @@ public:
 		CUpdater m_Updater;
 
 	public:
-		CLanguage(const std::string& Name, const std::string& Filename, const std::string& ParentFilename);
+		CLanguage(std::string_view Name, std::string_view Filename, std::string_view ParentFilename);
 		~CLanguage();
 
 		const char* GetParentFilename() const { return m_ParentFilename.c_str(); }

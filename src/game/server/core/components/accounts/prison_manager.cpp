@@ -98,7 +98,7 @@ void PrisonManager::Load()
 
 	auto* pStorage = GS()->Storage();
 	const auto Filename = getFileName(pPlayer->Account()->GetID());
-	if(const auto File = pStorage->OpenFile(Filename.c_str(), IOFLAG_READ | IOFLAG_SKIP_BOM, IStorageEngine::TYPE_ABSOLUTE))
+	if(const auto File = pStorage->OpenFile(Filename.c_str(), IOFLAG_READ, IStorageEngine::TYPE_ABSOLUTE))
 	{
 		const time_t currentTime = time(nullptr);
 		char* pResult = io_read_all_str(File);

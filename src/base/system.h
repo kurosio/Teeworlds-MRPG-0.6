@@ -220,7 +220,6 @@ enum
 	IOFLAG_READ = 1,
 	IOFLAG_WRITE = 2,
 	IOFLAG_APPEND = 4,
-	IOFLAG_SKIP_BOM = 8,
 
 	IOSEEK_START = 0,
 	IOSEEK_CUR = 1,
@@ -239,7 +238,7 @@ typedef void *IOHANDLE;
  * @param File to open.
  * @param flags A set of IOFLAG flags.
  *
- * @sa IOFLAG_READ, IOFLAG_WRITE, IOFLAG_APPEND, IOFLAG_SKIP_BOM.
+ * @sa IOFLAG_READ, IOFLAG_WRITE, IOFLAG_APPEND.
  *
  * @return A handle to the file on success and 0 on failure.
  *
