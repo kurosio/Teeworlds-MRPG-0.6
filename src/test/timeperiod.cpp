@@ -210,3 +210,26 @@ TEST_F(CTimePeriodTest, HandlesComplexParsingScenarios) {
     EXPECT_EQ(period3.minutes(), 3);
     EXPECT_EQ(period3.seconds(), 4);
 }
+
+// Test complex parsing scenarios
+TEST_F(CTimePeriodTest, EmptyLiterals)
+{
+    // Mixed short and long formats
+    CTimePeriod period("1");
+    EXPECT_EQ(period.days(), 0);
+    EXPECT_EQ(period.hours(), 0);
+    EXPECT_EQ(period.minutes(), 1);
+    EXPECT_EQ(period.seconds(), 0);
+
+    CTimePeriod period2("1 2 3 4 5");
+    EXPECT_EQ(period2.days(), 0);
+    EXPECT_EQ(period2.hours(), 0);
+    EXPECT_EQ(period2.minutes(), 15);
+    EXPECT_EQ(period2.seconds(), 0);
+
+    CTimePeriod period3("2h 15  10y");
+    EXPECT_EQ(period3.days(), 3650);
+    EXPECT_EQ(period3.hours(), 2);
+    EXPECT_EQ(period3.minutes(), 15);
+    EXPECT_EQ(period3.seconds(), 0);
+}

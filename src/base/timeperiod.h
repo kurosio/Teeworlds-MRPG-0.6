@@ -40,7 +40,10 @@ public:
                 while (isalpha(Peek())) Advance();
                 const std::string Literal = m_Source.substr(Offset, m_Current - Offset);
 
-                AddValue(Literal, std::stoll(Value));
+                if (Literal.empty())
+                    AddValue(60, std::stoll(Value));
+                else
+                    AddValue(Literal, std::stoll(Value));
             }
         }
 
