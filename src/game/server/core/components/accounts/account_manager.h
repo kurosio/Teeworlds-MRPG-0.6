@@ -3,7 +3,7 @@
 #ifndef GAME_SERVER_COMPONENT_ACCOUNT_MAIN_CORE_H
 #define GAME_SERVER_COMPONENT_ACCOUNT_MAIN_CORE_H
 #include <game/server/core/mmo_component.h>
-#include <game/server/core/tools/timeperiod_data.h>
+#include <base/timeperiod.h>
 
 #include "account_data.h"
 
@@ -35,7 +35,7 @@ public:
 	AccountCodeResult LoginAccount(int ClientID, const char *pLogin, const char *pPassword);
 	void LoadAccount(CPlayer *pPlayer, bool FirstInitilize = false);
 	bool ChangeNickname(const std::string& newNickname, int ClientID) const;
-    bool BanAccount(CPlayer* pPlayer, TimePeriodData Time, const std::string& Reason);
+    bool BanAccount(CPlayer* pPlayer, CTimePeriod Time, const std::string& Reason);
     bool UnBanAccount(int BanId) const;
     std::vector<AccBan> BansAccount() const;
 

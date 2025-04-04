@@ -392,7 +392,7 @@ void RconProcessor::ConBanAcc(IConsole::IResult* pResult, void* pUserData)
 	const auto pSelf = (CGS*)pServer->GameServer();
 
 	// check valid timeperiod
-	TimePeriodData time(pResult->GetString(1));
+	CTimePeriod time(pResult->GetString(1));
 	if(time.isZero())
 	{
 		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "BanAccount", "Time bad formatted or equals zero!");

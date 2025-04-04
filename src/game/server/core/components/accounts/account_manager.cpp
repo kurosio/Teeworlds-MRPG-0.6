@@ -805,7 +805,7 @@ void CAccountManager::UseVoucher(int ClientID, const char* pVoucher) const
 	GS()->Chat(ClientID, "The voucher code '{}' does not exist.", pVoucher);
 }
 
-bool CAccountManager::BanAccount(CPlayer* pPlayer, TimePeriodData Time, const std::string& Reason)
+bool CAccountManager::BanAccount(CPlayer* pPlayer, CTimePeriod Time, const std::string& Reason)
 {
 	// Check if the account is already banned
 	ResultPtr pResBan = Database->Execute<DB::SELECT>("BannedUntil", "tw_accounts_bans", "WHERE AccountId = '{}' AND current_timestamp() < `BannedUntil`", pPlayer->Account()->GetID());
