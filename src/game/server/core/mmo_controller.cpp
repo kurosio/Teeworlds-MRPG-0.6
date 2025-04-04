@@ -10,7 +10,7 @@
 #include "components/aethernet/aethernet_manager.h"
 #include "components/Bots/BotManager.h"
 #include "components/crafting/craft_manager.h"
-#include "components/Dungeons/DungeonManager.h"
+#include "components/dungeons/dungeon_manager.h"
 #include "components/Eidolons/EidolonManager.h"
 #include "components/groups/group_manager.h"
 #include "components/guilds/guild_manager.h"

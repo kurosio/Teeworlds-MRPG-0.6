@@ -4,7 +4,6 @@
 
 #include <game/server/entity_manager.h>
 #include <game/server/gamecontext.h>
-#include <game/server/core/components/Dungeons/DungeonManager.h>
 
 void CQuestDescription::CReward::ApplyReward(CPlayer* pPlayer) const
 {
@@ -246,7 +245,6 @@ void CPlayerQuest::UpdateStepProgress()
 	// save player stats and accept next story quest
 	GS()->Core()->SaveAccount(pPlayer, SAVE_STATS);
 	GS()->Core()->QuestManager()->TryAcceptNextQuestChain(pPlayer, m_ID);
-	GS()->Core()->DungeonManager()->NotifyUnlockedDungeonsByQuest(pPlayer, m_ID);
 }
 
 void CPlayerQuest::Update()

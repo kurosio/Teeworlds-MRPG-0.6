@@ -9,7 +9,7 @@
 #include <game/server/core/entities/logic/logicwall.h>
 
 #include <game/server/core/components/accounts/account_manager.h>
-#include <game/server/core/components/Dungeons/DungeonManager.h>
+#include <game/server/core/components/dungeons/dungeon_manager.h>
 
 CGameControllerDungeon::CGameControllerDungeon(class CGS* pGS) : IGameController(pGS)
 {
@@ -18,24 +18,24 @@ CGameControllerDungeon::CGameControllerDungeon(class CGS* pGS) : IGameController
 	m_ActivePlayers = 0;
 
 	// init dungeon zone
-	auto iter = std::find_if(CDungeonData::ms_aDungeon.begin(), CDungeonData::ms_aDungeon.end(), [&](const std::pair<int, CDungeonData>& pDungeon)
-	{ return pDungeon.second.m_WorldID == m_WorldID; });
-	dbg_assert(iter != CDungeonData::ms_aDungeon.end(), "dungeon world type not found dungeon data");
-	m_DungeonID = iter->first;
+	//auto iter = std::find_if(CDungeonData::ms_aDungeon.begin(), CDungeonData::ms_aDungeon.end(), [&](const std::pair<int, CDungeonData>& pDungeon)
+	//{ return pDungeon.second.m_WorldID == m_WorldID; });
+	//dbg_assert(iter != CDungeonData::ms_aDungeon.end(), "dungeon world type not found dungeon data");
+	//m_DungeonID = iter->first;
 
-	// door creation to start
-	vec2 DoorPosition = vec2(CDungeonData::ms_aDungeon[m_DungeonID].m_DoorX, CDungeonData::ms_aDungeon[m_DungeonID].m_DoorY);
-	m_DungeonDoor = new DungeonDoor(&GS()->m_World, DoorPosition);
-	ChangeState(DUNGEON_WAITING);
+	//// door creation to start
+	//vec2 DoorPosition = vec2(CDungeonData::ms_aDungeon[m_DungeonID].m_DoorX, CDungeonData::ms_aDungeon[m_DungeonID].m_DoorY);
+	//m_DungeonDoor = new DungeonDoor(&GS()->m_World, DoorPosition);
+	//ChangeState(DUNGEON_WAITING);
 
 	// key door construction
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_dungeons_door", "WHERE DungeonID = '{}'", m_DungeonID);
-	while(pRes->next())
-	{
-		const int DungeonBotID = pRes->getInt("BotID");
-		DoorPosition = vec2(pRes->getInt("PosX"), pRes->getInt("PosY"));
-		new CLogicDungeonDoorKey(&GS()->m_World, DoorPosition, DungeonBotID);
-	}
+	//ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_dungeons_door", "WHERE DungeonID = '{}'", m_DungeonID);
+	//while(pRes->next())
+	//{
+	//	const int DungeonBotID = pRes->getInt("BotID");
+	//	DoorPosition = vec2(pRes->getInt("PosX"), pRes->getInt("PosY"));
+	//	new CLogicDungeonDoorKey(&GS()->m_World, DoorPosition, DungeonBotID);
+	//}
 }
 
 void CGameControllerDungeon::KillAllPlayers() const
@@ -51,7 +51,7 @@ void CGameControllerDungeon::KillAllPlayers() const
 void CGameControllerDungeon::ChangeState(int State)
 {
 	m_StateDungeon = State;
-	CDungeonData::ms_aDungeon[m_DungeonID].m_State = State;
+	//CDungeonData::ms_aDungeon[m_DungeonID].m_State = State;
 
 	// - - - - - - - - - - - - - - - - - - - - - -
 	// used when changing state to waiting
@@ -63,7 +63,7 @@ void CGameControllerDungeon::ChangeState(int State)
 		m_LastStartingTick = 0;
 		m_SafeTick = 0;
 
-		CDungeonData::ms_aDungeon[m_DungeonID].m_Progress = 0;
+		//CDungeonData::ms_aDungeon[m_DungeonID].m_Progress = 0;
 		SetMobsSpawn(false);
 		ResetDoorKeyState();
 	}
@@ -106,43 +106,12 @@ void CGameControllerDungeon::ChangeState(int State)
 		dynamic_string Buffer;
 		int FinishTime = -1;
 		int BestPassageHelp = 0;
-		CPlayer* pBestPlayer = nullptr;
-
-		for(int i = 0; i < MAX_PLAYERS; i++)
-		{
-			CPlayer* pPlayer = GS()->GetPlayer(i);
-			if(!pPlayer || !GS()->IsPlayerInWorld(i, m_WorldID))
-				continue;
-
-			// update finish time int sec
-			m_Records[i].m_Time = pPlayer->GetTempData().m_TempTimeDungeon / Server()->TickSpeed();
-			FinishTime = m_Records[i].m_Time;
-
-			// search best passage help
-			if(m_Records[i].m_PassageHelp > BestPassageHelp)
-			{
-				BestPassageHelp = m_Records[i].m_PassageHelp;
-				pBestPlayer = pPlayer;
-			}
-
-			// add names to group
-			Buffer.append(", ");
-			Buffer.append(Server()->ClientName(i));
-
-			// save record and reset time for client
-			GS()->Core()->DungeonManager()->SaveDungeonRecord(pPlayer, m_DungeonID, &m_Records[i]);
-			pPlayer->GetTempData().m_TempTimeDungeon = 0;
-			m_Records[i].Reset();
-		}
 
 		// dungeon finished information
 		char aTimeFormat[64];
 		str_format(aTimeFormat, sizeof(aTimeFormat), "Time: '%d minute(s) %d second(s)'.", FinishTime / 60, FinishTime - (FinishTime / 60 * 60));
 		GS()->Chat(-1, "Group{}!", Buffer.buffer());
-		GS()->Chat(-1, "'{}' finished {}!", CDungeonData::ms_aDungeon[m_DungeonID].m_aName, aTimeFormat);
-
-		if(pBestPlayer)
-			GS()->Chat(-1, "Most Valuable '{}'. With help '{} points'.", Server()->ClientName(pBestPlayer->GetCID()), BestPassageHelp);
+		//GS()->Chat(-1, "'{}' finished {}!", CDungeonData::ms_aDungeon[m_DungeonID].m_aName, aTimeFormat);
 	}
 
 	// - - - - - - - - - - - - - - - - - - - - - -
@@ -160,7 +129,7 @@ void CGameControllerDungeon::ChangeState(int State)
 void CGameControllerDungeon::StateTick()
 {
 	const int Players = PlayersNum();
-	CDungeonData::ms_aDungeon[m_DungeonID].m_Players = Players;
+	//CDungeonData::ms_aDungeon[m_DungeonID].m_Players = Players;
 
 	// - - - - - - - - - - - - - - - - - - - - - -
 	// dungeon
@@ -253,30 +222,6 @@ void CGameControllerDungeon::StateTick()
 	}
 }
 
-void CGameControllerDungeon::OnCharacterDamage(CPlayer* pFrom, CPlayer* pTo, int Damage)
-{
-	if(!pFrom || !pTo || Damage <= 0)
-		return;
-
-	/*
-	 * Commentary, as the tank has weak damage. Then his help will be counted for his received damage.
-	 */
-
-	// if it's tank passage get how got size damage
-	if(pFrom->IsBot() && pTo->m_MoodState == Mood::Tank)
-	{
-		const int ClientID = pTo->GetCID();
-		m_Records[ClientID].m_PassageHelp += Damage;
-	}
-
-	// if it's not tank passage from size damage + health
-	if(!pFrom->IsBot() && pTo->IsBot())
-	{
-		const int ClientID = pFrom->GetCID();
-		m_Records[ClientID].m_PassageHelp += Damage;
-	}
-}
-
 void CGameControllerDungeon::OnCharacterDeath(CPlayer* pVictim, CPlayer* pKiller, int Weapon)
 {
 	IGameController::OnCharacterDeath(pVictim, pKiller, Weapon);
@@ -293,7 +238,7 @@ void CGameControllerDungeon::OnCharacterDeath(CPlayer* pVictim, CPlayer* pKiller
 		if(pKiller->GetCID() != pVictim->GetCID() && pVictimBot->GetBotType() == TYPE_BOT_MOB)
 		{
 			const int Progress = 100 - translate_to_percent(CountMobs(), LeftMobsToWin());
-			CDungeonData::ms_aDungeon[m_DungeonID].m_Progress = Progress;
+			//CDungeonData::ms_aDungeon[m_DungeonID].m_Progress = Progress;
 			GS()->ChatWorld(m_WorldID, "Dungeon:", "The dungeon is completed on [{}%]", Progress);
 			UpdateDoorKeyState();
 		}

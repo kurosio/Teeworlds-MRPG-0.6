@@ -6,7 +6,7 @@
 #include <game/server/entity.h>
 #include <game/server/gamecontroller.h>
 
-#include <game/server/core/components/Dungeons/DungeonData.h>
+#include <game/server/core/components/dungeons/dungeon_data.h>
 
 enum DungeonState
 {
@@ -36,15 +36,12 @@ class CGameControllerDungeon : public IGameController
 	int m_MaximumTick {};
 	int m_ShiftRoundStartTick {};
 
-	CPlayerDungeonRecord m_Records[MAX_PLAYERS] {};
-
 public:
 	CGameControllerDungeon(class CGS* pGameServer);
 
 	void Tick() override;
 	void Snap() override;
 
-	void OnCharacterDamage(CPlayer* pFrom, CPlayer* pTo, int Damage) override;
 	void OnCharacterDeath(class CPlayer* pVictim, class CPlayer* pKiller, int Weapon) override;
 	bool OnCharacterSpawn(class CCharacter* pChr) override;
 	int GetAttributeDungeonSyncByClass(ProfessionIdentifier ProfID, AttributeIdentifier ID) const;

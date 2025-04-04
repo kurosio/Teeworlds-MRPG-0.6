@@ -1,11 +1,7 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#include "DungeonManager.h"
+#include "dungeon_manager.h"
 
 #include <game/server/gamecontext.h>
-
 #include <game/server/core/components/accounts/account_manager.h>
-
 #include "game/server/worldmodes/dungeon.h"
 
 void CDungeonManager::OnPreInit()
@@ -14,13 +10,13 @@ void CDungeonManager::OnPreInit()
 	while(pRes->next())
 	{
 		const int ID = pRes->getInt("ID");
-		str_copy(CDungeonData::ms_aDungeon[ID].m_aName, pRes->getString("Name").c_str(), sizeof(CDungeonData::ms_aDungeon[ID].m_aName));
-		CDungeonData::ms_aDungeon[ID].m_Level = pRes->getInt("Level");
-		CDungeonData::ms_aDungeon[ID].m_DoorX = pRes->getInt("DoorX");
-		CDungeonData::ms_aDungeon[ID].m_DoorY = pRes->getInt("DoorY");
-		CDungeonData::ms_aDungeon[ID].m_RequiredQuestID = pRes->getInt("RequiredQuestID");
-		CDungeonData::ms_aDungeon[ID].m_WorldID = pRes->getInt("WorldID");
-		CDungeonData::ms_aDungeon[ID].m_IsStory = pRes->getBoolean("Story");
+		auto Name = pRes->getString("Name");
+		auto Level = pRes->getInt("Level");
+		auto DoorPos = vec2(pRes->getInt("DoorX"), pRes->getInt("DoorY"));
+		auto WorldID = pRes->getInt("WorldID");
+
+		auto* pDungeon = CDungeonData::CreateElement(ID);
+		pDungeon->Init(DoorPos, Level, Name, WorldID);
 	}
 }
 
@@ -61,7 +57,7 @@ bool CDungeonManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, co
 	if(!pPlayer->GetCharacter() || !pPlayer->GetCharacter()->IsAlive())
 		return false;
 
-	if(PPSTR(pCmd, "DUNGEONJOIN") == 0)
+/*	if(PPSTR(pCmd, "DUNGEONJOIN") == 0)
 	{
 		if(GS()->IsPlayerInWorld(ClientID, CDungeonData::ms_aDungeon[Extra1].m_WorldID))
 		{
@@ -101,31 +97,9 @@ bool CDungeonManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, co
 		const int LatestCorrectWorldID = Core()->AccountManager()->GetLastVisitedWorldID(pPlayer);
 		pPlayer->ChangeWorld(LatestCorrectWorldID);
 		return true;
-	}
+	}*/
 
 	return false;
-}
-
-bool CDungeonManager::IsDungeonWorld(int WorldID)
-{
-	return std::find_if(CDungeonData::ms_aDungeon.begin(), CDungeonData::ms_aDungeon.end(),
-		[WorldID](const std::pair<int, CDungeonData>& pDungeon) { return pDungeon.second.m_WorldID == WorldID; }) != CDungeonData::ms_aDungeon.end();
-}
-
-void CDungeonManager::SaveDungeonRecord(CPlayer* pPlayer, int DungeonID, CPlayerDungeonRecord* pPlayerDungeonRecord)
-{
-	const int Seconds = pPlayerDungeonRecord->m_Time;
-	const float PassageHelp = pPlayerDungeonRecord->m_PassageHelp;
-
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_dungeons_records", "WHERE UserID = '{}' AND DungeonID = '{}'", pPlayer->Account()->GetID(), DungeonID);
-	if(pRes->next())
-	{
-		if(pRes->getInt("Lifetime") > Seconds && pRes->getInt("PassageHelp") < PassageHelp)
-			Database->Execute<DB::UPDATE>("tw_dungeons_records", "Lifetime = '{}', PassageHelp = '{}' WHERE UserID = '{}' AND DungeonID = '{}'",
-				Seconds, PassageHelp, pPlayer->Account()->GetID(), DungeonID);
-		return;
-	}
-	Database->Execute<DB::INSERT>("tw_dungeons_records", "(UserID, DungeonID, Lifetime, PassageHelp) VALUES ('{}', '{}', '{}', '{}')", pPlayer->Account()->GetID(), DungeonID, Seconds, PassageHelp);
 }
 
 void CDungeonManager::InsertVotesDungeonTop(int DungeonID, VoteWrapper* pWrapper) const
@@ -148,26 +122,14 @@ bool CDungeonManager::ShowDungeonsList(CPlayer* pPlayer, bool Story) const
 {
 	bool Found = false;
 	const int ClientID = pPlayer->GetCID();
-	for(const auto& dungeon : CDungeonData::ms_aDungeon)
+	for(const auto* pDungeon : CDungeonData::Data())
 	{
-		if(dungeon.second.m_IsStory != Story)
-			continue;
-
 		VoteWrapper VDungeon(ClientID, VWF_UNIQUE|VWF_STYLE_SIMPLE, "Lvl{} {} : Players {} : {} [{}%]",
-			dungeon.second.m_Level, dungeon.second.m_aName, dungeon.second.m_Players, 
-			(dungeon.second.IsDungeonPlaying() ? "Active dungeon" : "Waiting players"), dungeon.second.m_Progress);
+			pDungeon->GetLevel(), pDungeon->GetName(), pDungeon->GetPlayersNum(),
+			(pDungeon->IsPlaying() ? "Active dungeon" : "Waiting players"), pDungeon->GetProgress());
 
-		InsertVotesDungeonTop(dungeon.first, &VDungeon);
-
-		const int NeededQuestID = dungeon.second.m_RequiredQuestID;
-		if(NeededQuestID <= 0 || pPlayer->GetQuest(NeededQuestID)->IsCompleted())
-		{
-			VDungeon.AddOption("DUNGEONJOIN", dungeon.first, "Join dungeon {}", dungeon.second.m_aName);
-		}
-		else
-		{
-			VDungeon.Add("Need to complete quest {}", pPlayer->GetQuest(NeededQuestID)->Info()->GetName());
-		}
+		InsertVotesDungeonTop(pDungeon->GetID(), &VDungeon);
+		VDungeon.AddOption("DUNGEONJOIN", pDungeon->GetID(), "Join dungeon {}", pDungeon->GetName());
 		Found = true;
 	}
 
@@ -180,20 +142,26 @@ void CDungeonManager::ShowInsideDungeonMenu(CPlayer* pPlayer) const
 		return;
 
 	const int ClientID = pPlayer->GetCID();
-	CGameControllerDungeon* pController = (CGameControllerDungeon*)GS()->m_pController;
+	const auto* pController = (CGameControllerDungeon*)GS()->m_pController;
+	if(!pController)
+		return;
+
 	int DungeonID = pController->GetDungeonID();
+	auto* pDungeon = GetDungeonByID(DungeonID);
+	if(!pDungeon)
+		return;
 
 	// exit from dungeon
 	VoteWrapper::AddLine(ClientID);
-	VoteWrapper(ClientID).AddOption("DUNGEONEXIT", "Exit dungeon {} (warning)", CDungeonData::ms_aDungeon[DungeonID].m_aName);
+	VoteWrapper(ClientID).AddOption("DUNGEONEXIT", "Exit dungeon {} (warning)", pDungeon->GetName());
 }
 
-void CDungeonManager::NotifyUnlockedDungeonsByQuest(CPlayer* pPlayer, int QuestID) const
+CDungeonData* CDungeonManager::GetDungeonByID(int DungeonID) const
 {
-	const int ClientID = pPlayer->GetCID();
-	for(const auto& dungeon : CDungeonData::ms_aDungeon)
+	auto pDungeon = std::ranges::find_if(CDungeonData::Data(), [DungeonID](auto* pDungeon)
 	{
-		if(QuestID == dungeon.second.m_RequiredQuestID)
-			GS()->Chat(-1, "'{}' opened dungeon '({})'!", Server()->ClientName(ClientID), dungeon.second.m_aName);
-	}
+		return pDungeon->GetID() == DungeonID;
+	});
+
+	return pDungeon != CDungeonData::Data().end() ? *pDungeon : nullptr;
 }

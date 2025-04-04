@@ -8,7 +8,7 @@
 #include "core/components/accounts/account_manager.h"
 #include "core/components/achievements/achievement_manager.h"
 #include "core/components/Bots/BotManager.h"
-#include "core/components/Dungeons/DungeonData.h"
+#include "core/components/dungeons/dungeon_data.h"
 #include "core/components/Eidolons/EidolonInfoData.h"
 #include "core/components/guilds/guild_manager.h"
 #include "core/components/quests/quest_manager.h"
@@ -696,12 +696,12 @@ bool CPlayer::ParseVoteOptionResult(int Vote)
 		// dungeon change ready state
 		if(GS()->IsWorldType(WorldType::Dungeon))
 		{
-			const int DungeonID = dynamic_cast<CGameControllerDungeon*>(GS()->m_pController)->GetDungeonID();
-			if(!CDungeonData::ms_aDungeon[DungeonID].IsDungeonPlaying())
-			{
-				GetTempData().m_TempDungeonReady = !GetTempData().m_TempDungeonReady;
-				GS()->Chat(m_ClientID, "You changed the ready mode to \"{}\"!", GetTempData().m_TempDungeonReady ? "ready" : "not ready");
-			}
+			//const int DungeonID = dynamic_cast<CGameControllerDungeon*>(GS()->m_pController)->GetDungeonID();
+			//if(!CDungeonData::ms_aDungeon[DungeonID].IsDungeonPlaying())
+			//{
+			//	GetTempData().m_TempDungeonReady = !GetTempData().m_TempDungeonReady;
+			//	GS()->Chat(m_ClientID, "You changed the ready mode to \"{}\"!", GetTempData().m_TempDungeonReady ? "ready" : "not ready");
+			//}
 			return true;
 		}
 	}
@@ -801,11 +801,11 @@ int CPlayer::GetTotalAttributeValue(AttributeIdentifier ID) const
 	// check if the player is in a dungeon and the attribute has a low improvement cost
 	if(GS()->IsWorldType(WorldType::Dungeon))
 	{
-		const auto* pDungeon = dynamic_cast<const CGameControllerDungeon*>(GS()->m_pController);
-		if(pAtt->GetUpgradePrice() < 4 && CDungeonData::ms_aDungeon[pDungeon->GetDungeonID()].IsDungeonPlaying())
-		{
-			return pDungeon->GetAttributeDungeonSyncByClass(Account()->GetActiveProfessionID(), ID);
-		}
+		//const auto* pDungeon = dynamic_cast<const CGameControllerDungeon*>(GS()->m_pController);
+		//if(pAtt->GetUpgradePrice() < 4 && CDungeonData::ms_aDungeon[pDungeon->GetDungeonID()].IsDungeonPlaying())
+		//{
+		//	return pDungeon->GetAttributeDungeonSyncByClass(Account()->GetActiveProfessionID(), ID);
+		//}
 	}
 
 	// counting attributes from equipped items
