@@ -285,10 +285,10 @@ void CLocalization::CLanguage::CUpdater::Finish()
 		return;
 
 	//// order non updated translated to up
-	//std::ranges::sort(m_vElements, [](const Element& p1, const Element& p2)
-	//{
-	//	return p1.m_Result == p1.m_Text && p2.m_Result != p2.m_Text;
-	//});
+	std::ranges::sort(m_vElements, [](const Element& p1, const Element& p2)
+	{
+		return p1.m_Result == p1.m_Text && p2.m_Result != p2.m_Text;
+	});
 
 	// save file
 	std::string Data;
