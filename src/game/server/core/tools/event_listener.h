@@ -9,6 +9,7 @@ class CProfession;
 class CCraftItem;
 class CPlayerItem;
 class CCharacter;
+class CPlayerQuest;
 
 // event listener
 class IEventListener
@@ -23,7 +24,6 @@ public:
 		CharacterSpawn,
 		PlayerProfessionUpgrade,
 		PlayerProfessionLeveling,
-		PlayerProfessionUnlockedZone,
 		PlayerGotItem,
 		PlayerLostItem,
 		PlayerCraftItem,
@@ -31,6 +31,7 @@ public:
 		PlayerUnequipItem,
 		PlayerEnchantItem,
 		PlayerDurabilityItem,
+		PlayerQuestChangeState,
 	};
 
 	virtual void OnCharacterDamage(CPlayer* pFrom, CPlayer* pTo, int Damage) { }
@@ -38,7 +39,6 @@ public:
 	virtual void OnCharacterSpawn(CPlayer* pPlayer) { }
 	virtual void OnPlayerProfessionUpgrade(CPlayer* pPlayer, int AttributeID) { }
 	virtual void OnPlayerProfessionLeveling(CPlayer* pPlayer, CProfession* pProfession, int NewLevel) { }
-	virtual void OnPlayerProfessionUnlockedZone(CPlayer* pPlayer, CProfession* pProfession, int WorldID) { }
 	virtual void OnPlayerGotItem(CPlayer* pPlayer, CPlayerItem* pItem, int Got) { }
 	virtual void OnPlayerLostItem(CPlayer* pPlayer, CPlayerItem* pItem, int Lost) { }
 	virtual void OnPlayerCraftItem(CPlayer* pPlayer, CCraftItem* pCraft) { }
@@ -46,6 +46,7 @@ public:
 	virtual void OnPlayerUnequipItem(CPlayer* pPlayer, CPlayerItem* pItem) { }
 	virtual void OnPlayerEnchantItem(CPlayer* pPlayer, CPlayerItem* pItem) { }
 	virtual void OnPlayerDurabilityItem(CPlayer* pPlayer, CPlayerItem* pItem) { }
+	virtual void OnPlayerQuestChangeState(CPlayer* pPlayer, CPlayerQuest* pQuest, QuestState NewState) { }
 };
 
 class CEventListenerManager
@@ -113,8 +114,6 @@ public:
 					listener->OnPlayerProfessionUpgrade(std::forward<Ts>(args)...);
 				else if constexpr(event == IEventListener::PlayerProfessionLeveling)
 					listener->OnPlayerProfessionLeveling(std::forward<Ts>(args)...);
-				else if constexpr(event == IEventListener::PlayerProfessionUnlockedZone)
-					listener->OnPlayerProfessionUnlockedZone(std::forward<Ts>(args)...);
 				else if constexpr(event == IEventListener::PlayerGotItem)
 					listener->OnPlayerGotItem(std::forward<Ts>(args)...);
 				else if constexpr(event == IEventListener::PlayerLostItem)
@@ -129,6 +128,8 @@ public:
 					listener->OnPlayerEnchantItem(std::forward<Ts>(args)...);
 				else if constexpr(event == IEventListener::PlayerDurabilityItem)
 					listener->OnPlayerDurabilityItem(std::forward<Ts>(args)...);
+				else if constexpr(event == IEventListener::PlayerQuestChangeState)
+					listener->OnPlayerQuestChangeState(std::forward<Ts>(args)...);
 			}
 		}
 	}

@@ -16,13 +16,6 @@ enum AchievementProgressType
 	PROGRESS_ABSOLUTE,
 };
 
-enum
-{
-	ACHIEVEMENT_GROUP_GENERAL = 0,
-	ACHIEVEMENT_GROUP_BATTLE,
-	ACHIEVEMENT_GROUP_ITEMS
-};
-
 // achievement information data
 class CAchievementInfo : public MultiworldIdentifiableData< std::deque<CAchievementInfo*> >
 {

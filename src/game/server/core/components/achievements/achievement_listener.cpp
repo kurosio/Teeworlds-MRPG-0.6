@@ -8,15 +8,19 @@ CAchievementListener g_AchievementListener;
 
 void CAchievementListener::OnCharacterDamage(CPlayer* pFrom, CPlayer* pTo, int Damage)
 {
-	if(pFrom != pTo && !pFrom->IsBot())
+	if(pFrom && pFrom != pTo && !pFrom->IsBot())
+	{
 		UpdateAchievement(pFrom, AchievementType::TotalDamage, NOPE, Damage, PROGRESS_ACCUMULATE);
+	}
 }
 
 void CAchievementListener::OnCharacterDeath(CPlayer* pVictim, CPlayer* pKiller, int Weapon)
 {
 	// achievement death
 	if(pVictim && !pVictim->IsBot())
+	{
 		UpdateAchievement(pVictim, AchievementType::Death, NOPE, 1, PROGRESS_ACCUMULATE);
+	}
 
 	if(pKiller && pVictim && pVictim != pKiller)
 	{
@@ -46,9 +50,12 @@ void CAchievementListener::OnPlayerProfessionLeveling(CPlayer* pPlayer, CProfess
 	UpdateAchievement(pPlayer, AchievementType::Leveling, (int)pProfession->GetProfessionID(), NewLevel, PROGRESS_ABSOLUTE);
 }
 
-void CAchievementListener::OnPlayerProfessionUnlockedZone(CPlayer* pPlayer, CProfession* pProfession, int WorldID)
+void CAchievementListener::OnPlayerQuestChangeState(CPlayer* pPlayer, CPlayerQuest* pQuest, QuestState NewState)
 {
-	UpdateAchievement(pPlayer, AchievementType::UnlockWorld, WorldID, 1, PROGRESS_ABSOLUTE);
+	if(pQuest->IsCompleted())
+	{
+		UpdateAchievement(pPlayer, AchievementType::CompleteQuest, pQuest->GetID(), true, PROGRESS_ABSOLUTE);
+	}
 }
 
 void CAchievementListener::OnPlayerGotItem(CPlayer* pPlayer, CPlayerItem* pItem, int Got)
@@ -89,5 +96,7 @@ void CAchievementListener::UpdateAchievement(CPlayer* pPlayer, AchievementType T
 
 	// update the achievement progress in the database
 	if(Updated)
+	{
 		pPlayer->GS()->Core()->SaveAccount(pPlayer, SAVE_ACHIEVEMENTS);
+	}
 }

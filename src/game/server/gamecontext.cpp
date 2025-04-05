@@ -729,10 +729,11 @@ void CGS::OnDaytypeChange(int NewDaytype)
 			UpdateExpMultiplier();
 			ChatWorld(m_WorldID, "", "Nighttime adventure in the '{}' zone has been boosted by {}%!", pWorldname, m_MultiplierExp);
 			break;
-		default:
-			ResetExpMultiplier();
+		case MORNING_TYPE:
 			ChatWorld(m_WorldID, "", "The exp multiplier in the '{}' zone is 100%.", pWorldname);
+			ResetExpMultiplier();
 			break;
+		default: break;
 	}
 }
 

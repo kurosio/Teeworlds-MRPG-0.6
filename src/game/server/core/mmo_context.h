@@ -417,7 +417,7 @@ enum class AchievementType : int
 	ReceiveItem,
 	HaveItem,
 	CraftItem,
-	UnlockWorld,
+	CompleteQuest,
 	Leveling,
 };
 
@@ -434,7 +434,7 @@ constexpr const char* GetAchievementTypeName(AchievementType typeID) noexcept
 		case AchievementType::ReceiveItem:     return "Receive Item";
 		case AchievementType::HaveItem:        return "Have Item";
 		case AchievementType::CraftItem:       return "Craft Item";
-		case AchievementType::UnlockWorld:     return "Unlock World";
+		case AchievementType::CompleteQuest:   return "Complete Quest";
 		case AchievementType::Leveling:        return "Leveling";
 		default:                               return "Unknown";
 	}

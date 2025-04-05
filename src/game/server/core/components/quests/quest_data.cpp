@@ -116,8 +116,8 @@ bool CPlayerQuest::Accept()
 		return false;
 
 	// initialize
+	SetNewState(QuestState::Accepted);
 	m_Step = 1;
-	m_State = QuestState::Accepted;
 	m_Datafile.Create();
 	Database->Execute<DB::INSERT>("tw_accounts_quests", "(QuestID, UserID, Type) VALUES ('{}', '{}', '{}')", m_ID, pPlayer->Account()->GetID(), (int)m_State);
 
@@ -165,7 +165,7 @@ void CPlayerQuest::Reset()
 		return;
 
 	m_Step = 1;
-	m_State = QuestState::NoAccepted;
+	SetNewState(QuestState::NoAccepted);
 	for(const auto& pStep : m_vObjectives)
 	{
 		pStep->Update();
@@ -238,7 +238,7 @@ void CPlayerQuest::UpdateStepProgress()
 	}
 
 	// update quest state in database
-	m_State = QuestState::Finished;
+	SetNewState(QuestState::Finished);
 	m_Datafile.Delete();
 	Database->Execute<DB::UPDATE>("tw_accounts_quests", "Type = '{}' WHERE QuestID = '{}' AND UserID = '{}'", (int)m_State, m_ID, pPlayer->Account()->GetID());
 
@@ -263,4 +263,13 @@ CQuestStep* CPlayerQuest::GetStepByMob(int MobID)
 		return Step->m_Bot.m_ID == MobID;
 	});
     return iter != m_vObjectives.end() ? iter->get() : nullptr;
+}
+
+void CPlayerQuest::SetNewState(QuestState State)
+{
+	if(m_State != State)
+	{
+		m_State = State;
+		g_EventListenerManager.Notify<IEventListener::PlayerQuestChangeState>(GetPlayer(), this, State);
+	}
 }

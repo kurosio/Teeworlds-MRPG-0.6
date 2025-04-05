@@ -20,7 +20,7 @@ public:
 		g_EventListenerManager.RegisterListener(IEventListener::PlayerCraftItem, this);
 		g_EventListenerManager.RegisterListener(IEventListener::PlayerEquipItem, this);
 		g_EventListenerManager.RegisterListener(IEventListener::PlayerProfessionLeveling, this);
-		g_EventListenerManager.RegisterListener(IEventListener::PlayerProfessionUnlockedZone, this);
+		g_EventListenerManager.RegisterListener(IEventListener::PlayerQuestChangeState, this);
 	}
 
 protected:
@@ -30,7 +30,7 @@ protected:
 	void OnPlayerCraftItem(CPlayer* pPlayer, CCraftItem* pCraft) override;
 	void OnPlayerEquipItem(CPlayer* pPlayer, CPlayerItem* pItem) override;
 	void OnPlayerProfessionLeveling(CPlayer* pPlayer, CProfession* pProfession, int NewLevel) override;
-	void OnPlayerProfessionUnlockedZone(CPlayer* pPlayer, CProfession* pProfession, int WorldID) override;
+	void OnPlayerQuestChangeState(CPlayer* pPlayer, CPlayerQuest* pQuest, QuestState NewState) override;
 
 private:
 	void UpdateAchievement(CPlayer* pPlayer, AchievementType Type, int Criteria, int Progress, int ProgressType) const;

@@ -188,10 +188,10 @@ void CAchievementManager::AddAchievementDetails(VoteWrapper& VAchievement, const
 			VAchievement.Add("Equip {}", pItem->GetName());
 			break;
 		}
-		case AchievementType::UnlockWorld:
+		case AchievementType::CompleteQuest:
 		{
-			int worldID = pInfo->GetCriteria();
-			VAchievement.Add("Unlock {}", Server()->GetWorldName(worldID));
+			CQuestDescription* pQuestInfo = GS()->GetQuestInfo(pInfo->GetCriteria());
+			VAchievement.Add("Quest {}", pQuestInfo->GetName());
 			break;
 		}
 		case AchievementType::Leveling:

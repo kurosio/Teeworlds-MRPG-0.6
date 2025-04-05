@@ -146,7 +146,6 @@ class CPlayerQuest : public MultiworldIdentifiableData< std::map < int, std::map
 	QuestDatafile m_Datafile {};
 
 public:
-
 	CPlayerQuest(QuestIdentifier ID, int ClientID) : m_ClientID(ClientID), m_Step(1) { m_ID = ID; }
 	~CPlayerQuest();
 
@@ -181,6 +180,7 @@ public:
 
 private:
 	void UpdateStepProgress();
+	void SetNewState(QuestState State);
 };
 
 

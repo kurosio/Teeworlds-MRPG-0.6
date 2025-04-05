@@ -27,7 +27,7 @@ bool CAchievementInfo::IsCompleted(int Criteria, const CAchievement* pAchievemen
 	{
 		// achievements that require minimal progress (just having progress)
 		case AchievementType::Equip:
-		case AchievementType::UnlockWorld:
+		case AchievementType::CompleteQuest:
 			return pAchievement->m_Progress > 0;
 
 		// achievements that require a specific number of actions or conditions to be met
