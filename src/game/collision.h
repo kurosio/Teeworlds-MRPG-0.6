@@ -178,6 +178,13 @@ public:
 	void MovePhysicalAngleBox(vec2* pPos, vec2* pVel, vec2 Size, float* pAngle, float* pAngleForce, float Elasticity, float Gravity = 0.5f) const;
 	void MovePhysicalBox(vec2* pPos, vec2* pVel, vec2 Size, float Elasticity, float Gravity = 0.5f) const;
 	vec2 GetDoorNormal(vec2 doorStart, vec2 doorEnd, vec2 from);
+
+	template <typename ... Ts>
+	vec2 VerifyPoint(int64_t CollisionFlags, vec2 Pos, std::string_view Message, const Ts&... FormatArgs) const
+	{
+		dbg_assert(CheckPoint(Pos, CollisionFlags) == false, fmt_default(Message.data(), FormatArgs...).c_str());
+		return Pos;
+	}
 };
 
 #endif

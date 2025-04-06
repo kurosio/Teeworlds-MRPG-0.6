@@ -284,6 +284,7 @@ void CCharacter::FireWeapon()
 bool CCharacter::FireHammer(vec2 Direction, vec2 ProjStartPos)
 {
 	constexpr int MAX_LENGTH_CHARACTERS = 16;
+	const bool IsBot = m_pPlayer->IsBot();
 
 	// check equip state
 	const auto EquippedItem = m_pPlayer->GetEquippedItemID(ItemType::EquipHammer);
@@ -368,7 +369,7 @@ bool CCharacter::FireHammer(vec2 Direction, vec2 ProjStartPos)
 	}
 
 	// default hammer
-	constexpr float Radius = 3.2f;
+	const float Radius = IsBot ? 3.2f : 6.4f;
 	const auto vEntities = GS()->m_World.FindEntities(ProjStartPos, GetRadius() * Radius, MAX_LENGTH_CHARACTERS, CGameWorld::ENTTYPE_CHARACTER);
 	for(auto* pEnt : vEntities)
 	{
@@ -383,12 +384,11 @@ bool CCharacter::FireHammer(vec2 Direction, vec2 ProjStartPos)
 		if(!pTarget->IsAllowedPVP(m_ClientID))
 			continue;
 
-		const auto HammerHitPos = length(pTarget->m_Pos - ProjStartPos) > 0.0f
-			? pTarget->m_Pos - normalize(pTarget->m_Pos - ProjStartPos) * GetRadius() * Radius : ProjStartPos;
-		const auto Dir = length(pTarget->m_Pos - m_Pos) > 0.0f ? normalize(pTarget->m_Pos - m_Pos) : vec2(0.f, -1.f);
-		const auto Force = vec2(0.f, -1.f) + normalize(Dir + vec2(0.f, -1.1f)) * 10.0f;
+		const auto Dir = length(pTarget->m_Pos - m_Pos) > 0.0f
+			? normalize(pTarget->m_Pos - m_Pos) : vec2(0.f, -1.f);
+		const auto Force = vec2(0.f, -1.f) + normalize(Dir + vec2(0.f, -1.1f)) * (IsBot ? 5.0f : 10.0f);
 
-		GS()->CreateHammerHit(HammerHitPos);
+		GS()->CreateHammerHit(pTarget->m_Pos);
 		pTarget->TakeDamage(Force, 0, m_ClientID, WEAPON_HAMMER);
 		m_ReloadTimer = Server()->TickSpeed() / 3;
 	}

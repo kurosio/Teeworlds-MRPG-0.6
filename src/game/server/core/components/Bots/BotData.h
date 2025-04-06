@@ -7,6 +7,7 @@
 #include "DialogsData.h"
 
 // TODO: required rewrite full code
+class CCollision;
 
 /************************************************************************/
 /*  Global data information bot                                         */
@@ -134,7 +135,7 @@ public:
 
 	const char* GetName() const { return DataBotInfo::ms_aDataBot[m_BotID].m_aNameBot; }
 	static bool IsValid(int MobID) { return ms_aQuestBot.find(MobID) != ms_aQuestBot.end() && DataBotInfo::IsDataBotValid(ms_aQuestBot[MobID].m_BotID); }
-	void InitTasksFromJSON(const std::string& JsonData);
+	void InitTasksFromJSON(CCollision* pCollision, const std::string& JsonData);
 
 	static std::map<int, QuestBotInfo> ms_aQuestBot;
 };

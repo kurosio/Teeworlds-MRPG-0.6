@@ -1,5 +1,6 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
+#include <game/collision.h>
 #include "BotData.h"
 
 std::map< int, DataBotInfo > DataBotInfo::ms_aDataBot;
@@ -37,7 +38,7 @@ void MobBotInfo::InitDebuffs(int Seconds, int Range, float Chance, const DBSet& 
 /************************************************************************/
 /*  Global data quest bot                                               */
 /************************************************************************/
-void QuestBotInfo::InitTasksFromJSON(const std::string& JsonData)
+void QuestBotInfo::InitTasksFromJSON(CCollision* pCollision, const std::string& JsonData)
 {
 	mystd::json::parse(JsonData, [&](const nlohmann::json& pJson)
 	{
@@ -88,7 +89,9 @@ void QuestBotInfo::InitTasksFromJSON(const std::string& JsonData)
 
 			for(const auto& p : pJson["move_to"])
 			{
-				const vec2 Position = { p.value("x", -1.f), p.value("y", -1.f) };
+				const auto Pos = vec2(p.value("x", -1.f), p.value("y", -1.f));
+				const auto VerifyPos = pCollision->VerifyPoint(CCollision::COLFLAG_DEATH | CCollision::COLFLAG_SOLID,
+					Pos, "QuestTask: Mob(ID:{}), Pos(X:{}({}), Y:{}({})) - invalid (death, solid) position.", m_ID, Pos.x, Pos.x / 32.f, Pos.y, Pos.y / 32.f);
 				const int WorldID = p.value("world_id", m_WorldID);
 				const int Step = p.value("step", 1);
 				const float Cooldown = p.value("cooldown", 0.f);
@@ -163,24 +166,21 @@ void QuestBotInfo::InitTasksFromJSON(const std::string& JsonData)
 				}
 
 				// add new move_to point
-				if(!is_negative_vec(Position))
-				{
-					TaskAction Move;
-					Move.m_WorldID = WorldID;
-					Move.m_Step = LatestBiggerStep;
-					Move.m_Navigator = Navigator;
-					Move.m_Cooldown = (int)(Cooldown * (float)SERVER_TICK_SPEED);
-					Move.m_PickupItem = PickUpItem;
-					Move.m_RequiredItem = RequiredItem;
-					Move.m_Position = Position;
-					Move.m_CompletionText = CompletionText;
-					Move.m_TaskName = TaskName;
-					Move.m_TypeFlags = maximum(Type, (unsigned int)TaskAction::Types::TFMOVING);
-					Move.m_QuestBotID = m_ID;
-					Move.m_Interaction = Interactive;
-					Move.m_DefeatMobInfo = DefeatDescription;
-					m_vRequiredMoveAction.push_back(Move);
-				}
+				TaskAction Move;
+				Move.m_WorldID = WorldID;
+				Move.m_Step = LatestBiggerStep;
+				Move.m_Navigator = Navigator;
+				Move.m_Cooldown = (int)(Cooldown * (float)SERVER_TICK_SPEED);
+				Move.m_PickupItem = PickUpItem;
+				Move.m_RequiredItem = RequiredItem;
+				Move.m_Position = VerifyPos;
+				Move.m_CompletionText = CompletionText;
+				Move.m_TaskName = TaskName;
+				Move.m_TypeFlags = maximum(Type, (unsigned int)TaskAction::Types::TFMOVING);
+				Move.m_QuestBotID = m_ID;
+				Move.m_Interaction = Interactive;
+				Move.m_DefeatMobInfo = DefeatDescription;
+				m_vRequiredMoveAction.push_back(Move);
 			}
 		}
 	});

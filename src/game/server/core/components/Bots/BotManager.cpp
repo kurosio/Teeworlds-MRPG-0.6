@@ -107,28 +107,35 @@ void CBotManager::InitQuestBots(const char* pWhereLocalWorld)
 	while(pRes->next())
 	{
 		const int MobID = pRes->getInt("ID");
+		const auto BotID = pRes->getInt("BotID");
 		const int QuestID = pRes->getInt("QuestID");
 		const auto AutoFinsihMode = pRes->getString("AutoFinish") == "Partial";
+		const auto Step = pRes->getInt("Step");
+		const auto Pos = vec2(pRes->getInt("PosX"), pRes->getInt("PosY") + 1);
+		const auto VerifyPos = GS()->Collision()->VerifyPoint(CCollision::COLFLAG_DEATH | CCollision::COLFLAG_SOLID,
+			Pos, "QuestNPC: Mob(ID:{}) - invalid (death, solid) position.", MobID);
+		const auto ScenarioData = pRes->getString("ScenarioData");
+		const auto TaskData = pRes->getString("TasksData");
+		const auto DialogData = pRes->getString("DialogData");
+		const auto WorldID = pRes->getInt("WorldID");
 		dbg_assert(QuestID > 0, "Some quest bot's does not have quest structure");
 
 		// load from database
 		QuestBotInfo QuestBot;
 		QuestBot.m_ID = MobID;
 		QuestBot.m_QuestID = QuestID;
-		QuestBot.m_BotID = pRes->getInt("BotID");
-		QuestBot.m_StepPos = pRes->getInt("Step");
-		QuestBot.m_WorldID = pRes->getInt("WorldID");
-		QuestBot.m_Position = vec2(pRes->getInt("PosX"), pRes->getInt("PosY") + 1);
-		QuestBot.m_ScenarioJson = pRes->getString("ScenarioData");
+		QuestBot.m_BotID = BotID;
+		QuestBot.m_StepPos = Step;
+		QuestBot.m_Position = VerifyPos;
+		QuestBot.m_ScenarioJson = ScenarioData;
 		QuestBot.m_AutoFinish = AutoFinsihMode;
+		QuestBot.m_WorldID = WorldID;
 
 		// tasks initilized
-		std::string TasksData = pRes->getString("TasksData");
-		QuestBot.InitTasksFromJSON(TasksData);
+		QuestBot.InitTasksFromJSON(GS()->Collision(), TaskData);
 
 		// dialog initilizer
-		std::string DialogJsonStr = pRes->getString("DialogData");
-		auto [hasAction, vDialogs] = DialogsInitilizer(QuestBot.m_BotID, DialogJsonStr);
+		auto [hasAction, vDialogs] = DialogsInitilizer(QuestBot.m_BotID, DialogData);
 		QuestBot.m_HasAction = hasAction;
 		QuestBot.m_aDialogs = vDialogs;
 
@@ -144,24 +151,33 @@ void CBotManager::InitQuestBots(const char* pWhereLocalWorld)
 	}
 }
 
-// Initialization of NPC bots
 void CBotManager::InitNPCBots(const char* pWhereLocalWorld)
 {
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_bots_npc", pWhereLocalWorld);
 	while(pRes->next())
 	{
 		const int MobID = pRes->getInt("ID");
+		const auto BotID = pRes->getInt("BotID");
+		const auto Static = pRes->getBoolean("Static");
+		const auto Pos = vec2(pRes->getInt("PosX"), pRes->getInt("PosY"));
+		const auto VerifyPos = GS()->Collision()->VerifyPoint(CCollision::COLFLAG_DEATH | CCollision::COLFLAG_SOLID,
+			Pos, "NPC: Mob(ID:{}) - invalid (death, solid) position.", MobID);
+		const auto WorldID = pRes->getInt("WorldID");
+		const auto Emote = pRes->getInt("Emote");
+		const auto Function = pRes->getInt("Function");
+		const auto Quest = pRes->getInt("GiveQuestID");
 
 		// load from database
 		NpcBotInfo NpcBot;
-		NpcBot.m_WorldID = pRes->getInt("WorldID");
-		NpcBot.m_Static = pRes->getBoolean("Static");
-		NpcBot.m_Position = vec2(pRes->getInt("PosX"), pRes->getInt("PosY") + (NpcBot.m_Static ? 1 : 0));
-		NpcBot.m_Emote = pRes->getInt("Emote");
-		NpcBot.m_BotID = pRes->getInt("BotID");
-		NpcBot.m_Function = pRes->getInt("Function");
-		NpcBot.m_GiveQuestID = pRes->getInt("GiveQuestID");
-		if(NpcBot.m_GiveQuestID > 0)
+		NpcBot.m_WorldID = WorldID;
+		NpcBot.m_Static = Static;
+		NpcBot.m_Position = VerifyPos + vec2(0.f, Static ? 1.f : 0.f);
+		NpcBot.m_Emote = Emote;
+		NpcBot.m_BotID = BotID;
+		NpcBot.m_Function = Function;
+		NpcBot.m_GiveQuestID = Quest;
+
+		if(Quest > 0)
 		{
 			dbg_assert(GS()->GetQuestInfo(NpcBot.m_GiveQuestID) != nullptr, "QuestID is not valid");
 			auto* pQuestInfo = GS()->GetQuestInfo(NpcBot.m_GiveQuestID);
@@ -170,8 +186,8 @@ void CBotManager::InitNPCBots(const char* pWhereLocalWorld)
 		}
 
 		// dialog initilizer
-		std::string DialogJsonStr = pRes->getString("DialogData").c_str();
-		NpcBot.m_aDialogs = DialogsInitilizer(NpcBot.m_BotID, DialogJsonStr).second;
+		const auto DialogData = pRes->getString("DialogData");
+		NpcBot.m_aDialogs = DialogsInitilizer(NpcBot.m_BotID, DialogData).second;
 
 		// initilize
 		NpcBotInfo::ms_aNpcBot[MobID] = NpcBot;
@@ -179,32 +195,41 @@ void CBotManager::InitNPCBots(const char* pWhereLocalWorld)
 	}
 }
 
-// Initialization of Mobs bots
 void CBotManager::InitMobsBots(const char* pWhereLocalWorld)
 {
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_bots_mobs", pWhereLocalWorld);
 	while(pRes->next())
 	{
-		const int MobID = pRes->getInt("ID");
-		const int BotID = pRes->getInt("BotID");
-		const int NumberOfMobs = pRes->getInt("Number");
+		// initialize variables
+		const auto MobID = pRes->getInt("ID");
+		const auto BotID = pRes->getInt("BotID");
+		const auto NumberOfMobs = pRes->getInt("Number");
+		const auto Position = vec2(pRes->getInt("PositionX"), pRes->getInt("PositionY"));
+		const auto Power = pRes->getInt("Power");
+		const auto IsBoss = pRes->getBoolean("Boss");
+		const auto Level = pRes->getInt("Level");
+		const auto RespawnTick = pRes->getInt("Respawn");
+		const auto Radius = (float)pRes->getInt("Radius");
+		const auto Behavior = pRes->getString("Behavior");
+		const auto WorldID = pRes->getInt("WorldID");
 
-		// load from database
+		// create new structure
 		MobBotInfo MobBot;
-		MobBot.m_WorldID = pRes->getInt("WorldID");
-		MobBot.m_Position = vec2(pRes->getInt("PositionX"), pRes->getInt("PositionY"));
-		MobBot.m_Power = pRes->getInt("Power");
-		MobBot.m_Boss = pRes->getBoolean("Boss");
-		MobBot.m_Level = pRes->getInt("Level");
-		MobBot.m_RespawnTick = pRes->getInt("Respawn");
-		MobBot.m_Radius = (float)pRes->getInt("Radius");
 		MobBot.m_BotID = BotID;
-		MobBot.m_Behaviors = pRes->getString("Behavior").c_str();
+		MobBot.m_Position = Position;
+		MobBot.m_Power = Power;
+		MobBot.m_Boss = IsBoss;
+		MobBot.m_Level = Level;
+		MobBot.m_RespawnTick = RespawnTick;
+		MobBot.m_Radius = Radius;
+		MobBot.m_Behaviors = Behavior;
+		MobBot.m_WorldID = WorldID;
 
 		// initialize debuffs
-		auto dbDebuffs = DBSet(pRes->getString("Debuffs"));
-		MobBot.InitDebuffs(5, 5, 5.0f, dbDebuffs);
+		auto DebuffSet = DBSet(pRes->getString("Debuffs"));
+		MobBot.InitDebuffs(5, 5, 5.0f, DebuffSet);
 
+		// initialize drop items
 		for(int i = 0; i < MAX_DROPPED_FROM_MOBS; i++)
 		{
 			char aBuf[32];
@@ -221,7 +246,9 @@ void CBotManager::InitMobsBots(const char* pWhereLocalWorld)
 
 		// create bots
 		for(int c = 0; c < NumberOfMobs; c++)
+		{
 			GS()->CreateBot(TYPE_BOT_MOB, BotID, MobID);
+		}
 	}
 }
 
