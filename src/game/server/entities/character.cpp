@@ -1006,7 +1006,6 @@ void CCharacter::Die(int Killer, int Weapon)
 	// respawn
 	m_pPlayer->m_aPlayerTick[ETickState::Die] = Server()->Tick() / 2;
 	m_pPlayer->PrepareRespawnTick();
-	GS()->Core()->QuestManager()->Update(m_pPlayer);
 	GS()->m_pController->OnCharacterDeath(m_pPlayer, GS()->GetPlayer(Killer), Weapon);
 
 	// remove from world

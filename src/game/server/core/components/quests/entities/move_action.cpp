@@ -223,7 +223,7 @@ QuestBotInfo::TaskAction* CEntityQuestAction::GetTaskMoveTo() const
 
 void CEntityQuestAction::Snap(int SnappingClient)
 {
-	if(m_ClientID != SnappingClient)
+	if(m_ClientID != SnappingClient || !GetOwnerChar())
 		return;
 
 	auto& visualIdsGroup = GetSnappingGroupIds(VISUAL_GROUP);

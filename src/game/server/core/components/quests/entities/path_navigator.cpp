@@ -116,7 +116,7 @@ void CEntityPathNavigator::Move(CPlayer* pPlayer)
 
 void CEntityPathNavigator::Snap(int SnappingClient)
 {
-	if(!m_Projectile || m_PathHandle.vPath.empty() || !CmaskIsSet(m_Mask, SnappingClient) || NetworkClipped(SnappingClient))
+	if(!m_Projectile || m_PathHandle.vPath.empty() || !CmaskIsSet(m_Mask, SnappingClient) || NetworkClipped(SnappingClient) || !GetOwnerChar())
 		return;
 
 	GS()->SnapProjectile(SnappingClient, GetID(), m_Pos, {}, Server()->Tick(), WEAPON_HAMMER, m_ClientID);

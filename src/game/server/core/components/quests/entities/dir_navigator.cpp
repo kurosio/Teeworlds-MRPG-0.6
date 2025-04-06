@@ -50,7 +50,7 @@ void CEntityDirNavigator::Tick()
 
 void CEntityDirNavigator::Snap(int SnappingClient)
 {
-	if(m_ClientID != SnappingClient)
+	if(m_ClientID != SnappingClient || !GetOwnerChar())
 		return;
 
 	if(m_Clipped > 1.f && distance(m_PosTo, m_Pos) < m_Clipped)
