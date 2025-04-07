@@ -92,7 +92,7 @@ public:
 
 		// profession skin
 		m_ProfessionSkin.m_UseCustomColor = 0;
-		str_copy(m_ProfessionSkin.m_aSkinName, "Empieza", sizeof(m_ProfessionSkin.m_aSkinName));
+		str_copy(m_ProfessionSkin.m_aSkinName, "flokes", sizeof(m_ProfessionSkin.m_aSkinName));
 	}
 };
 
@@ -116,7 +116,7 @@ public:
 
 		// profession skin
 		m_ProfessionSkin.m_UseCustomColor = 0;
-		str_copy(m_ProfessionSkin.m_aSkinName, "flokes", sizeof(m_ProfessionSkin.m_aSkinName));
+		str_copy(m_ProfessionSkin.m_aSkinName, "Empieza", sizeof(m_ProfessionSkin.m_aSkinName));
 	}
 };
 
