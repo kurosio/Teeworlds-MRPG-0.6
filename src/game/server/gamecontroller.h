@@ -18,6 +18,7 @@ class IGameController
 	struct CSpawnEval
 	{
 		vec2 m_Pos{};
+		float m_Score{};
 		bool m_Got{};
 	};
 	std::array<std::vector<vec2>, NUM_SPAWN> m_aaSpawnPoints{};
@@ -53,6 +54,7 @@ public:
 	virtual void Tick();
 
 	bool CanSpawn(int SpawnType, vec2 *pPos, std::pair<vec2, float> LimiterSpread = std::make_pair(vec2(), -1.f)) const;
+	float EvaluateSpawnPos(CSpawnEval* pEval, vec2 Pos) const;
 	void DoTeamChange(class CPlayer *pPlayer);
 };
 
