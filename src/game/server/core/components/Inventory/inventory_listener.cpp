@@ -7,12 +7,50 @@ constexpr const char* ATTRIBUTE_TRACKING_FILE_NAME = "server_data/attribute_trac
 // inventory listener
 void CInventoryListener::Initialize()
 {
+    g_EventListenerManager.RegisterListener(IEventListener::CharacterSpawn, this);
     g_EventListenerManager.RegisterListener(IEventListener::PlayerProfessionUpgrade, this);
     g_EventListenerManager.RegisterListener(IEventListener::PlayerEquipItem, this);
     g_EventListenerManager.RegisterListener(IEventListener::PlayerUnequipItem, this);
     g_EventListenerManager.RegisterListener(IEventListener::PlayerEnchantItem, this);
 
     m_AttributesTracker.LoadTrackingData();
+}
+
+void CInventoryListener::OnCharacterSpawn(CPlayer* pPlayer)
+{
+    if(pPlayer->IsBot())
+        return;
+
+    auto& TrackingData = m_AttributesTracker.m_vTrackingData;
+    const auto& BiggestTank = TrackingData[(int)AttributeIdentifier::HP];
+    const auto& BiggestHealer = TrackingData[(int)AttributeIdentifier::MP];
+    const auto& BiggestDPS = TrackingData[(int)AttributeIdentifier::HP];
+    const auto AccountID = pPlayer->Account()->GetID();
+    bool bestExpert = false;
+
+    // TODO: add features
+    for(int i = 0; i < 3; i++)
+    {
+        if(AccountID == BiggestTank.AccountID)
+        {
+            pPlayer->GetCharacter()->AddMultipleOrbite(1, POWERUP_HEALTH, 0, MULTIPLE_ORBITE_TYPE_ELLIPTICAL);
+            bestExpert = true;
+        }
+        if(AccountID == BiggestHealer.AccountID)
+        {
+            pPlayer->GetCharacter()->AddMultipleOrbite(1, POWERUP_ARMOR, 0, MULTIPLE_ORBITE_TYPE_PULSATING);
+            bestExpert = true;
+        }
+
+        if(AccountID == BiggestDPS.AccountID)
+        {
+            pPlayer->GetCharacter()->AddMultipleOrbite(1, POWERUP_ARMOR_NINJA, 0, MULTIPLE_ORBITE_TYPE_VARIABLE_RADIUS);
+            bestExpert = true;
+        }
+    }
+
+    if(bestExpert)
+        pPlayer->GS()->Chat(pPlayer->GetCID(), "You are the top expert in your profession on the server. Visual highlighting is now active.");
 }
 
 void CInventoryListener::OnPlayerProfessionUpgrade(CPlayer* pPlayer, int AttributeID)

@@ -14,40 +14,44 @@ CMultipleOrbite::CMultipleOrbite(CGameWorld* pGameWorld, CEntity* pParent)
 CMultipleOrbite::~CMultipleOrbite()
 {
 	for(const auto& pItems : m_Items)
-	{
 		Server()->SnapFreeID(pItems.m_ID);
-	}
 	m_Items.clear();
 }
 
-void CMultipleOrbite::Add(int Value, int Type, int Subtype)
+void CMultipleOrbite::Add(int Value, int Type, int Subtype, int Orbitetype)
 {
+	m_Items.reserve(m_Items.size() + Value);
+
 	for(int i = 0; i < Value; i++)
 	{
 		SnapItem Item;
 		Item.m_ID = Server()->SnapNewID();
 		Item.m_Type = Type;
 		Item.m_Subtype = Subtype;
+		Item.m_Orbitetype = Orbitetype;
 		m_Items.push_back(Item);
 	}
 }
 
-void CMultipleOrbite::Remove(int Value, int Type, int Subtype)
+void CMultipleOrbite::Remove(int Value, int Type, int Subtype, int Orbitetype)
 {
-	int Count = 0;
-	for(auto it = m_Items.begin(); it != m_Items.end() && Count < Value;)
+	auto it = std::remove_if(m_Items.begin(), m_Items.end(),
+		[&](const SnapItem& item)
 	{
-		if(it->m_Type == Type && it->m_Subtype == Subtype)
-		{
-			Server()->SnapFreeID(it->m_ID);
-			it = m_Items.erase(it);
-			Count++;
-		}
-		else
-		{
-			++it;
-		}
-	}
+		return item.m_Type == Type &&
+			item.m_Subtype == Subtype &&
+			item.m_Orbitetype == Orbitetype;
+	});
+
+	int Count = std::distance(it, m_Items.end());
+	Count = minimum(Count, Value);
+
+	// free snap ids
+	for(auto itDel = m_Items.end() - Count; itDel != m_Items.end(); ++itDel)
+		Server()->SnapFreeID(itDel->m_ID);
+
+	// erase item's
+	m_Items.erase(it, it + Count);
 }
 
 void CMultipleOrbite::Tick()
@@ -61,13 +65,77 @@ void CMultipleOrbite::Tick()
 	m_Pos = m_pParent->GetPos();
 }
 
-vec2 CMultipleOrbite::UtilityOrbitePos(int PosID) const
+vec2 CMultipleOrbite::UtilityOrbitePos(int Orbitetype, int Iter) const
 {
 	float AngleStep = 2.0f * pi / (float)m_Items.size();
-	float AngleStart = (2.0f * pi * (float)Server()->Tick() / (float)Server()->TickSpeed()) * 0.55f;
-	float X = GetRadius() * cos(AngleStart + AngleStep * (float)PosID);
-	float Y = GetRadius() * sin(AngleStart + AngleStep * (float)PosID);
-	return { X, Y };
+
+	if(Orbitetype == MULTIPLE_ORBITE_TYPE_DEFAULT)
+	{
+		float AngleStart = (2.0f * pi * (float)Server()->Tick() / (float)Server()->TickSpeed()) * 0.55f;
+		float X = GetRadius() * cos(AngleStart + AngleStep * (float)Iter);
+		float Y = GetRadius() * sin(AngleStart + AngleStep * (float)Iter);
+		return { X, Y };
+	}
+	else if(Orbitetype == MULTIPLE_ORBITE_TYPE_PULSATING)
+	{
+		float AngleStart = (2.0f * pi * (float)Server()->Tick() / (float)Server()->TickSpeed()) * 0.55f;
+		float DirectionModifier = cos((float)Server()->Tick() / (float)Server()->TickSpeed() * 2.0f);
+		float X = GetRadius() * cos(AngleStart + AngleStep * (float)Iter) * DirectionModifier;
+		float Y = GetRadius() * sin(AngleStart + AngleStep * (float)Iter) * DirectionModifier;
+		return { X, Y };
+	}
+	else if(Orbitetype == MULTIPLE_ORBITE_TYPE_ELLIPTICAL)
+	{
+		float AngleStart = (2.0f * pi * (float)Server()->Tick() / (float)Server()->TickSpeed()) * 0.55f;
+		float XRadius = GetRadius();
+		float YRadius = GetRadius() * 0.5f;
+		float X = XRadius * cos(AngleStart + AngleStep * (float)Iter);
+		float Y = YRadius * sin(AngleStart + AngleStep * (float)Iter);
+		return { X, Y };
+	}
+	else if(Orbitetype == MULTIPLE_ORBITE_TYPE_VIBRATION)
+	{
+		float AngleStart = (2.0f * pi * (float)Server()->Tick() / (float)Server()->TickSpeed()) * 0.5f;
+		float Vibration = sin((float)Server()->Tick() / (float)Server()->TickSpeed() * 5.0f) * 10.0f;
+		float X = (GetRadius() + Vibration) * cos(AngleStart + AngleStep * (float)Iter);
+		float Y = (GetRadius() + Vibration) * sin(AngleStart + AngleStep * (float)Iter);
+		return { X, Y };
+	}
+	else if(Orbitetype == MULTIPLE_ORBITE_TYPE_VARIABLE_RADIUS)
+	{
+		float AngleStart = (2.0f * pi * (float)Server()->Tick() / (float)Server()->TickSpeed()) * 0.5f;
+		float Radius = GetRadius() + sin(AngleStart * 0.5f) * 20.0f;
+		float X = Radius * cos(AngleStart + AngleStep * (float)Iter);
+		float Y = Radius * sin(AngleStart + AngleStep * (float)Iter);
+		return { X, Y };
+	}
+	else if(Orbitetype == MULTIPLE_ORBITE_TYPE_EIGHT)
+	{
+		float AngleStart = (2.0f * pi * (float)Server()->Tick() / (float)Server()->TickSpeed()) * 0.55f;
+		float A = GetRadius();
+		float B = GetRadius() / 2.f;
+		float X = A * cos(AngleStart + AngleStep * (float)Iter) * cos(AngleStep * (float)Iter);
+		float Y = B * sin(AngleStart + AngleStep * (float)Iter);
+		return { X, Y };
+	}
+	else if(Orbitetype == MULTIPLE_ORBITE_TYPE_LOOPING)
+	{
+		float AngleStart = (2.0f * pi * (float)Server()->Tick() / (float)Server()->TickSpeed()) * 0.55f;
+		float A = GetRadius();
+		float B = 5.f;
+		float X = A * cos(AngleStart + AngleStep * (float)Iter) * cos(B * (float)Server()->Tick() / 50.0f);
+		float Y = A * sin(AngleStart + AngleStep * (float)Iter) * sin(B * (float)Server()->Tick() / 50.0f);
+		return { X, Y };
+	}
+	else if(Orbitetype == MULTIPLE_ORBITE_TYPE_DYNAMIC_CENTER)
+	{
+		float AngleStart = (2.0f * pi * (float)Server()->Tick() / (float)Server()->TickSpeed()) * 0.55f;
+		vec2 DynamicCenter = { sin((float)Server()->Tick() / 60.0f) * 20.0f, cos((float)Server()->Tick() / 80.0f) * 15.0f };
+		float Radius = GetRadius();
+		float X = (DynamicCenter.x + Radius) * cos(AngleStart + AngleStep * (float)Iter);
+		float Y = (DynamicCenter.y + Radius) * sin(AngleStart + AngleStep * (float)Iter);
+		return { X, Y };
+	}
 }
 
 void CMultipleOrbite::Snap(int SnappingClient)
@@ -75,18 +143,11 @@ void CMultipleOrbite::Snap(int SnappingClient)
 	if(NetworkClipped(SnappingClient))
 		return;
 
-	int Pos = 0;
-	for(const auto& [ID, Type, Subtype] : m_Items)
+	int Iter = 0;
+	for(const auto& [ID, Type, Subtype, Orbitetype] : m_Items)
 	{
-		const vec2 PosStart = m_Pos + UtilityOrbitePos(Pos);
-		CNetObj_Pickup* pObj = static_cast<CNetObj_Pickup*>(Server()->SnapNewItem(NETOBJTYPE_PICKUP, ID, sizeof(CNetObj_Pickup)));
-		if(!pObj)
-			continue;
-
-		pObj->m_X = (int)PosStart.x;
-		pObj->m_Y = (int)PosStart.y;
-		pObj->m_Type = Type;
-		pObj->m_Subtype = Subtype;
-		Pos++;
+		const vec2 PosStart = m_Pos + UtilityOrbitePos(Orbitetype, Iter);
+		GS()->SnapPickup(SnappingClient, ID, PosStart, Type, Subtype);
+		Iter++;
 	}
 }

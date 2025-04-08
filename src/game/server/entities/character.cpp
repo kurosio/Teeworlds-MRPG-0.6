@@ -629,7 +629,7 @@ void CCharacter::HandleHookActions()
 	}
 }
 
-void CCharacter::AddMultipleOrbite(int Amount, int Type, int Subtype)
+void CCharacter::AddMultipleOrbite(int Amount, int Type, int Subtype, int Orbitetype)
 {
 	if(!m_pMultipleOrbite)
 	{
@@ -637,15 +637,15 @@ void CCharacter::AddMultipleOrbite(int Amount, int Type, int Subtype)
 		m_pMultipleOrbite->SetClientID(m_pPlayer->GetCID());
 	}
 
-	m_pMultipleOrbite->Add(Amount, Type, Subtype);
+	m_pMultipleOrbite->Add(Amount, Type, Subtype, Orbitetype);
 }
 
-void CCharacter::RemoveMultipleOrbite(int Amount, int Type, int Subtype) const
+void CCharacter::RemoveMultipleOrbite(int Amount, int Type, int Subtype, int Orbitetype) const
 {
 	if(!m_pMultipleOrbite)
 		return;
 
-	m_pMultipleOrbite->Remove(Amount, Type, Subtype);
+	m_pMultipleOrbite->Remove(Amount, Type, Subtype, Orbitetype);
 }
 
 bool CCharacter::GiveWeapon(int WeaponID, int Ammo)
