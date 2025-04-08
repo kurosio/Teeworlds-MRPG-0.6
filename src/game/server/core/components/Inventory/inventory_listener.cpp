@@ -24,7 +24,7 @@ void CInventoryListener::OnCharacterSpawn(CPlayer* pPlayer)
     auto& TrackingData = m_AttributesTracker.m_vTrackingData;
     const auto& BiggestTank = TrackingData[(int)AttributeIdentifier::HP];
     const auto& BiggestHealer = TrackingData[(int)AttributeIdentifier::MP];
-    const auto& BiggestDPS = TrackingData[(int)AttributeIdentifier::HP];
+    const auto& BiggestDPS = TrackingData[(int)AttributeIdentifier::CritDMG];
     const auto AccountID = pPlayer->Account()->GetID();
     bool bestExpert = false;
 
