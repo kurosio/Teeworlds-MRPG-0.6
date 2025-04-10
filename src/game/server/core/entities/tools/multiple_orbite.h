@@ -13,6 +13,7 @@ class CMultipleOrbite : public CEntity
 		int m_Type;
 		int m_Subtype;
 		int m_Orbitetype;
+		bool m_Projectile;
 	};
 	std::vector< SnapItem > m_Items{};
 	CEntity* m_pParent {};
@@ -24,8 +25,8 @@ public:
 	void Snap(int SnappingClient) override;
 	void Tick() override;
 
-	void Add(int Value, int Type, int Subtype, int Orbitetype);
-	void Remove(int Value, int Type, int Subtype, int Orbitetype);
+	void Add(bool Projectile, int Value, int Type, int Subtype, int Orbitetype);
+	void Remove(bool Projectile, int Value, int Type, int Subtype, int Orbitetype);
 
 private:
 	vec2 UtilityOrbitePos(int Orbitetype, int Iter) const;

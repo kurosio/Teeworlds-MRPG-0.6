@@ -14,6 +14,8 @@ class CPlayerQuest;
 // event listener
 class IEventListener
 {
+	friend class CEventListenerManager;
+
 public:
 	virtual ~IEventListener() = default;
 
@@ -34,6 +36,7 @@ public:
 		PlayerQuestChangeState,
 	};
 
+private:
 	virtual void OnCharacterDamage(CPlayer* pFrom, CPlayer* pTo, int Damage) { }
 	virtual void OnCharacterDeath(CPlayer* pVictim, CPlayer* pKiller, int Weapon) { }
 	virtual void OnCharacterSpawn(CPlayer* pPlayer) { }

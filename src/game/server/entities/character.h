@@ -143,8 +143,8 @@ public:
 	bool TryUseMana(int Mana);
 	int Mana() const { return m_Mana; }
 	int Health() const { return m_Health; }
-	void AddMultipleOrbite(int Amount, int Type, int Subtype, int Orbitetype);
-	void RemoveMultipleOrbite(int Amount, int Type, int Subtype, int Orbitetype) const;
+	void AddMultipleOrbite(bool Projectile, int Amount, int PickupType, int Subtype, int Orbitetype);
+	void RemoveMultipleOrbite(bool Projectile, int Amount, int PickupType, int Subtype, int Orbitetype) const;
 	virtual bool GiveWeapon(int Weapon, int Ammo);
 	bool RemoveWeapon(int Weapon);
 	void ChangePosition(vec2 NewPos);

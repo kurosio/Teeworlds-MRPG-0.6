@@ -796,10 +796,23 @@ void CGS::OnTickGlobal()
 	// send top messages with interval
 	if(Server()->Tick() % (Server()->TickSpeed() * g_Config.m_SvChatTopMessageInterval) == 0)
 	{
-		ToplistType RandomType = (ToplistType)(rand() % (int)ToplistType::NUM_TOPLIST_TYPES);
+		const auto RandomType = (ToplistType)(rand() % (int)ToplistType::NUM_TOPLIST_TYPES);
 		auto vResult = Core()->GetTopList(RandomType, 2);
 		if(vResult.size() < 2)
 			return;
+
+		if(RandomType == ToplistType::PlayerExpert)
+		{
+			Chat(-1, "-- {}", "Top Specialists in the Realm");
+			for(auto& [Iter, Top] : vResult)
+			{
+				auto* pAttribute = GetAttributeInfo((AttributeIdentifier)Top.Data["AttributeID"].to_int());
+				auto* pNickname = Server()->GetAccountNickname(Top.Data["AccountID"].to_int());
+				Chat(-1, "{}({}): '{-}'.", Top.Name, pAttribute->GetName(), pNickname);
+			}
+
+			return;
+		}
 
 		auto& Leader = vResult[1];
 		auto& Second = vResult[2];

@@ -33,10 +33,12 @@ class CAttributesTracker
     friend class CInventoryListener;
     std::unordered_map<int, TrackingAttributeData> m_vTrackingData {};
 
-    std::optional<TrackingAttributeData> GetTrackingData(int AttributeID) const;
     void UpdateTrackingDataIfNecessary(CPlayer* pPlayer, int AttributeID, size_t NewValue);
     void LoadTrackingData();
     void SaveTrackingData();
+
+public:
+    std::optional<TrackingAttributeData> GetTrackingData(int AttributeID) const;
 };
 
 // inventory listener
@@ -46,6 +48,7 @@ class CInventoryListener : public IEventListener
 
 public:
     void Initialize();
+    CAttributesTracker& AttributeTracker() { return m_AttributesTracker; }
 
 protected:
     void OnCharacterSpawn(CPlayer* pPlayer) override;

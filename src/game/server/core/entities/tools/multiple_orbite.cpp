@@ -18,7 +18,7 @@ CMultipleOrbite::~CMultipleOrbite()
 	m_Items.clear();
 }
 
-void CMultipleOrbite::Add(int Value, int Type, int Subtype, int Orbitetype)
+void CMultipleOrbite::Add(bool Projectile, int Value, int Type, int Subtype, int Orbitetype)
 {
 	m_Items.reserve(m_Items.size() + Value);
 
@@ -29,17 +29,19 @@ void CMultipleOrbite::Add(int Value, int Type, int Subtype, int Orbitetype)
 		Item.m_Type = Type;
 		Item.m_Subtype = Subtype;
 		Item.m_Orbitetype = Orbitetype;
+		Item.m_Projectile = Projectile;
 		m_Items.push_back(Item);
 	}
 }
 
-void CMultipleOrbite::Remove(int Value, int Type, int Subtype, int Orbitetype)
+void CMultipleOrbite::Remove(bool Projectile, int Value, int Type, int Subtype, int Orbitetype)
 {
 	auto it = std::remove_if(m_Items.begin(), m_Items.end(),
 		[&](const SnapItem& item)
 	{
 		return item.m_Type == Type &&
 			item.m_Subtype == Subtype &&
+			item.m_Projectile == Projectile &&
 			item.m_Orbitetype == Orbitetype;
 	});
 
@@ -147,10 +149,13 @@ void CMultipleOrbite::Snap(int SnappingClient)
 		return;
 
 	int Iter = 0;
-	for(const auto& [ID, Type, Subtype, Orbitetype] : m_Items)
+	for(const auto& [ID, Type, Subtype, Orbitetype, Projectile] : m_Items)
 	{
 		const vec2 PosStart = m_Pos + UtilityOrbitePos(Orbitetype, Iter);
-		GS()->SnapPickup(SnappingClient, ID, PosStart, Type, Subtype);
+		if(Projectile)
+			GS()->SnapProjectile(SnappingClient, ID, PosStart, {}, Server()->Tick(), Type, m_ClientID);
+		else
+			GS()->SnapPickup(SnappingClient, ID, PosStart, Type, Subtype);
 		Iter++;
 	}
 }

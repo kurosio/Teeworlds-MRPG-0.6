@@ -21,36 +21,38 @@ void CInventoryListener::OnCharacterSpawn(CPlayer* pPlayer)
     if(pPlayer->IsBot())
         return;
 
-    auto& TrackingData = m_AttributesTracker.m_vTrackingData;
-    const auto& BiggestTank = TrackingData[(int)AttributeIdentifier::HP];
-    const auto& BiggestHealer = TrackingData[(int)AttributeIdentifier::MP];
-    const auto& BiggestDPS = TrackingData[(int)AttributeIdentifier::CritDMG];
+    struct AttributeData
+    {
+        AttributeIdentifier identifier;
+        int weaponType;
+        int orbiteType;
+    };
+
     const auto AccountID = pPlayer->Account()->GetID();
     bool bestExpert = false;
+    std::array<AttributeData, 6> attributesData = {
+        AttributeData{AttributeIdentifier::HP, WEAPON_SHOTGUN, MULTIPLE_ORBITE_TYPE_EIGHT},
+        AttributeData{AttributeIdentifier::MP, WEAPON_SHOTGUN, MULTIPLE_ORBITE_TYPE_DYNAMIC_CENTER},
+        AttributeData{AttributeIdentifier::CritDMG, WEAPON_SHOTGUN, MULTIPLE_ORBITE_TYPE_PULSATING},
+        AttributeData{AttributeIdentifier::Efficiency, WEAPON_HAMMER, MULTIPLE_ORBITE_TYPE_EIGHT},
+        AttributeData{AttributeIdentifier::Extraction, WEAPON_HAMMER, MULTIPLE_ORBITE_TYPE_DYNAMIC_CENTER},
+        AttributeData{AttributeIdentifier::Patience, WEAPON_HAMMER, MULTIPLE_ORBITE_TYPE_PULSATING}
+    };
 
-    // TODO: add features
-    for(int i = 0; i < 3; i++)
+    for(const auto& attribute : attributesData)
     {
-        if(AccountID == BiggestTank.AccountID)
+        const auto& Biggest = m_AttributesTracker.GetTrackingData((int)attribute.identifier);
+        if(Biggest && AccountID == (*Biggest).AccountID)
         {
-            pPlayer->GetCharacter()->AddMultipleOrbite(1, POWERUP_HEALTH, 0, MULTIPLE_ORBITE_TYPE_ELLIPTICAL);
-            bestExpert = true;
-        }
-        if(AccountID == BiggestHealer.AccountID)
-        {
-            pPlayer->GetCharacter()->AddMultipleOrbite(1, POWERUP_ARMOR, 0, MULTIPLE_ORBITE_TYPE_PULSATING);
-            bestExpert = true;
-        }
-
-        if(AccountID == BiggestDPS.AccountID)
-        {
-            pPlayer->GetCharacter()->AddMultipleOrbite(1, POWERUP_NINJA, 0, MULTIPLE_ORBITE_TYPE_VARIABLE_RADIUS);
+            pPlayer->GetCharacter()->AddMultipleOrbite(true, 2, attribute.weaponType, 0, attribute.orbiteType);
             bestExpert = true;
         }
     }
 
     if(bestExpert)
+    {
         pPlayer->GS()->Chat(pPlayer->GetCID(), "You are the top expert in your profession on the server. Visual highlighting is now active.");
+    }
 }
 
 void CInventoryListener::OnPlayerProfessionUpgrade(CPlayer* pPlayer, int AttributeID)
