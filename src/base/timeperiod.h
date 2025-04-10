@@ -15,8 +15,8 @@ public:
         TokenHolder m_Tokens;
         ResultHolder m_Result;
 
-        int m_Start = 0;
-        int m_Current = 0;
+        size_t m_Start = 0;
+        size_t m_Current = 0;
 
         [[nodiscard]] bool AtEnd() const {
             return m_Current >= m_Source.length();
@@ -35,7 +35,7 @@ public:
             if (const char c = Advance(); isdigit(c)) {
                 while (isdigit(Peek())) Advance();
                 const std::string Value = m_Source.substr(m_Start, m_Current - m_Start);
-                const int Offset = m_Current;
+                const auto Offset = m_Current;
 
                 while (isalpha(Peek())) Advance();
                 const std::string Literal = m_Source.substr(Offset, m_Current - Offset);
