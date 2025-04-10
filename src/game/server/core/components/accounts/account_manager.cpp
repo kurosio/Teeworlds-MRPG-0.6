@@ -231,6 +231,26 @@ bool CAccountManager::ChangeNickname(const std::string& newNickname, int ClientI
 	return true;
 }
 
+void CAccountManager::OnPlayerLogin(CPlayer* pPlayer)
+{
+	if(!pPlayer || !pPlayer->Account())
+		return;
+
+	// select first random profession by system
+	auto* pAccount = pPlayer->Account();
+	if(pAccount->GetActiveProfessionID() == ProfessionIdentifier::None)
+	{
+		ChanceProcessor<ProfessionIdentifier> process;
+		process.addElement(ProfessionIdentifier::Tank, 100.f);
+		process.addElement(ProfessionIdentifier::Healer, 100.f);
+		process.addElement(ProfessionIdentifier::Dps, 100.f);
+		process.setEqualChance(100.f);
+		process.normalizeChances();
+		pAccount->ChangeProfession(process.getRandomElement());
+		GS()->Chat(pPlayer->GetCID(), "Your profession has been chosen by the system. You can change it at any time in the voting menu.");
+	}
+}
+
 void CAccountManager::OnClientReset(int ClientID)
 {
 	CAccountTempData::ms_aPlayerTempData.erase(ClientID);

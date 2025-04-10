@@ -15,6 +15,7 @@ class CAccountManager : public MmoComponent
 		mystd::freeContainer(CAccountData::ms_aData, CAccountTempData::ms_aPlayerTempData);
 	}
 
+	void OnPlayerLogin(CPlayer* pPlayer) override;
 	void OnClientReset(int ClientID) override;
 	void OnCharacterTile(CCharacter* pChr) override;
 	bool OnSendMenuVotes(CPlayer* pPlayer, int Menulist) override;
