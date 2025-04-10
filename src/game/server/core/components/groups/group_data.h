@@ -25,7 +25,7 @@ public:
 	}
 
 	// functions
-	void Init(int LeaderUID, DBSet&& SetAccountIDs)
+	void Init(int LeaderUID, const DBSet& SetAccountIDs)
 	{
 		// initialize group list
 		m_vAccountIds.reserve(MAX_GROUP_MEMBERS);

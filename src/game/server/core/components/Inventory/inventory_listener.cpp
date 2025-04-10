@@ -44,7 +44,7 @@ void CInventoryListener::OnCharacterSpawn(CPlayer* pPlayer)
 
         if(AccountID == BiggestDPS.AccountID)
         {
-            pPlayer->GetCharacter()->AddMultipleOrbite(1, POWERUP_ARMOR_NINJA, 0, MULTIPLE_ORBITE_TYPE_VARIABLE_RADIUS);
+            pPlayer->GetCharacter()->AddMultipleOrbite(1, POWERUP_NINJA, 0, MULTIPLE_ORBITE_TYPE_VARIABLE_RADIUS);
             bestExpert = true;
         }
     }

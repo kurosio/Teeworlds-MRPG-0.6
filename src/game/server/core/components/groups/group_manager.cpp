@@ -15,11 +15,11 @@ void CGroupManager::OnPreInit()
 		// Get the values of the columns for the current row
 		GroupIdentifier ID = pRes->getInt("ID");
 		int OwnerUID = pRes->getInt("OwnerUID");
-		std::string StrAccountIDs = pRes->getString("AccountIDs").c_str();
+		auto SetAccounts = DBSet(pRes->getString("AccountIDs"));
 
 		// Initialize a GroupData object with the retrieved values
 		auto groupData = GroupData::CreateElement(ID);
-		groupData->Init(OwnerUID, std::move(StrAccountIDs));
+		groupData->Init(OwnerUID, SetAccounts);
 	}
 }
 
@@ -60,10 +60,10 @@ GroupData* CGroupManager::CreateGroup(CPlayer* pPlayer) const
 
 	// Initialize variables
 	int OwnerUID = pPlayer->Account()->GetID();
-	std::string StrAccountIDs = std::to_string(OwnerUID);
+	const auto StrAccountIDs = DBSet(std::to_string(OwnerUID));
 
 	// Insert to database
-	Database->Execute<DB::INSERT>(TW_GROUPS_TABLE, "(ID, OwnerUID, AccountIDs) VALUES ('{}', '{}', '{}')", InitID, OwnerUID, StrAccountIDs.c_str());
+	Database->Execute<DB::INSERT>(TW_GROUPS_TABLE, "(ID, OwnerUID, AccountIDs) VALUES ('{}', '{}', '{}')", InitID, OwnerUID, StrAccountIDs.Dump().c_str());
 
 	// Initialize the group
 	auto groupData = GroupData::CreateElement(InitID);

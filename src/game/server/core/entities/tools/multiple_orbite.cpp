@@ -130,7 +130,9 @@ vec2 CMultipleOrbite::UtilityOrbitePos(int Orbitetype, int Iter) const
 	else if(Orbitetype == MULTIPLE_ORBITE_TYPE_DYNAMIC_CENTER)
 	{
 		float AngleStart = (2.0f * pi * (float)Server()->Tick() / (float)Server()->TickSpeed()) * 0.55f;
-		vec2 DynamicCenter = { sin((float)(Server()->Tick()) / 60.0f) * 20.0f, cos((float)(Server()->Tick()) / 80.0f) * 15.0f };
+		float DynX = sin((float)Server()->Tick() / 60.0f) * 20.0f;
+		float DynY = cos((float)Server()->Tick() / 80.0f) * 15.0f;
+		vec2 DynamicCenter = { DynX,  DynY };
 		float Radius = GetRadius();
 		float X = (DynamicCenter.x + Radius) * cos(AngleStart + AngleStep * (float)Iter);
 		float Y = (DynamicCenter.y + Radius) * sin(AngleStart + AngleStep * (float)Iter);

@@ -56,7 +56,7 @@ public:
 
 	int m_ClientID {};
 	bool m_StepComplete{};
-	bool m_ClientQuitting{};
+	bool m_MarkedForDestroy{};
 	bool m_TaskListReceived{};
 
 	bool IsComplete();
@@ -72,6 +72,7 @@ public:
 	void UpdateObjectives();
 	void Update();
 
+	void MarkForDestroy();
 	void ClearObjectives();
 
 	int GetMoveActionCurrentStepPos() const;

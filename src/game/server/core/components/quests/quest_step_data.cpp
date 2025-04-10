@@ -68,7 +68,7 @@ bool CQuestStepBase::IsActiveStep() const
 			continue;
 
 		auto* pStep = pQuest->GetStepByMob(QuestBotID);
-		if(!pStep || pStep->m_StepComplete || pStep->m_ClientQuitting)
+		if(!pStep || pStep->m_StepComplete || pStep->m_MarkedForDestroy)
 			continue;
 
 		refActiveByQuest = true;
@@ -92,9 +92,6 @@ CPlayer* CQuestStep::GetPlayer() const
 
 CQuestStep::~CQuestStep()
 {
-	m_ClientQuitting = true;
-	CQuestStep::Update();
-
 	m_aMobProgress.clear();
 	m_aMoveActionProgress.clear();
 }
@@ -214,7 +211,7 @@ bool CQuestStep::TryAutoFinish()
 void CQuestStep::AppendDefeatProgress(int DefeatedBotID)
 {
 	const auto* pPlayer = GetPlayer();
-	if(!pPlayer || m_ClientQuitting)
+	if(!pPlayer || m_MarkedForDestroy)
 		return;
 
 	if(m_StepComplete || m_Bot.m_vRequiredDefeats.empty() || !DataBotInfo::IsDataBotValid(DefeatedBotID))
@@ -248,7 +245,7 @@ void CQuestStep::UpdateNavigator()
 {
 	// clearing is quitting or invlaid player
 	auto* pPlayer = GetPlayer();
-	if(m_ClientQuitting || m_StepComplete || !pPlayer || !pPlayer->GetCharacter())
+	if(m_MarkedForDestroy || m_StepComplete || !pPlayer || !pPlayer->GetCharacter())
 	{
 		if(m_pEntNavigator)
 		{
@@ -276,7 +273,7 @@ void CQuestStep::UpdateObjectives()
 {
 	// clearing is quitting or invlaid player
 	auto* pPlayer = GetPlayer();
-	if(!pPlayer || !pPlayer->GetCharacter() || m_ClientQuitting)
+	if(!pPlayer || !pPlayer->GetCharacter() || m_MarkedForDestroy)
 	{
 		ClearObjectives();
 		return;
@@ -364,6 +361,11 @@ void CQuestStep::Update()
 	UpdateObjectives();
 }
 
+void CQuestStep::MarkForDestroy()
+{
+	m_MarkedForDestroy = true;
+}
+
 void CQuestStep::ClearObjectives()
 {
 	if(!m_vpEntitiesDefeatBotNavigator.empty() || !m_vpEntitiesMoveAction.empty())
@@ -384,7 +386,7 @@ void CQuestStep::CreateVarietyTypesRequiredItems()
 {
 	// check default action
 	const auto* pPlayer = GetPlayer();
-	if(!pPlayer || !pPlayer->GetCharacter() || m_ClientQuitting)
+	if(!pPlayer || !pPlayer->GetCharacter() || m_MarkedForDestroy)
 		return;
 
 	if(m_StepComplete || m_Bot.m_vRequiredItems.empty())

@@ -124,8 +124,8 @@ void QuestDatafile::Load() const
 				WorkedNode->m_aMoveActionProgress[p] = Step["move_to"][p].value("complete", false);
 		}
 
-		// Set ClientQuitting value of the corresponding player step to false
-		WorkedNode->m_ClientQuitting = false;
+		// Set marked for destroy
+		WorkedNode->m_MarkedForDestroy = false;
 	}
 
 	// Update the steps of the bot

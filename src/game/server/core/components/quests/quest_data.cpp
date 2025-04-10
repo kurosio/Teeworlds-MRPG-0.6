@@ -81,11 +81,15 @@ void CQuestDescription::ResetPlayerObjectives(std::deque<CQuestStep*>& pElem)
 	if(!pElem.empty())
 	{
 		dbg_msg(PRINT_QUEST_PREFIX, "CLEARING OBJECTIVES (QID:%d)", m_ID);
-		for(auto*& pPtr : pElem)
+		for(auto* pPtr : pElem)
 		{
-			delete pPtr;
-			pPtr = nullptr;
+			pPtr->MarkForDestroy();
+			pPtr->Update();
 		}
+
+		for(auto*& pPtr : pElem)
+			delete pPtr;
+
 		pElem.clear();
 	}
 }
@@ -107,17 +111,7 @@ CQuestDescription* CPlayerQuest::Info() const
 
 CPlayerQuest::~CPlayerQuest()
 {
-	if(!m_vObjectives.empty())
-	{
-		dbg_msg(PRINT_QUEST_PREFIX, "CLEARING OBJECTIVES (by exit) (QID:%d)", m_ID);
-		for(auto*& pPtr : m_vObjectives)
-		{
-			delete pPtr;
-			pPtr = nullptr;
-		}
-
-		m_vObjectives.clear();
-	}
+	Info()->ResetPlayerObjectives(m_vObjectives);
 }
 
 bool CPlayerQuest::HasUnfinishedObjectives() const
