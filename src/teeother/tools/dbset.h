@@ -5,26 +5,17 @@
 
 class DBSet
 {
-	std::string m_Data {};
-	ska::flat_hash_map<std::string, size_t> m_DataItems {};
+	std::vector<std::string> m_DataItems {};
 
 public:
+	// constructors
 	DBSet() = default;
-
-	DBSet(std::string_view Data) : m_Data(Data)
+	DBSet(std::string_view Data)
 	{
-		Init();
+		Init(Data);
 	}
 
-	bool operator&(const size_t& flag) const
-	{
-		return std::any_of(m_DataItems.begin(), m_DataItems.end(), [flag](const auto& item)
-		{
-			const auto& [key, value] = item;
-			return flag & value;
-		});
-	}
-
+	// operator =
 	DBSet& operator=(std::string_view set)
 	{
 		DBSet tmp(set);
@@ -32,34 +23,55 @@ public:
 		return *this;
 	}
 
-	std::string Dump() const { return m_Data; }
-	bool hasSet(const std::string& pSet) const { return m_DataItems.find(pSet) != m_DataItems.end(); }
-	const ska::flat_hash_map<std::string, size_t>& GetDataItems() const { return m_DataItems; }
+	// emplace function
+	template <typename... Args>
+	void emplace(Args&&... args)
+	{
+		m_DataItems.emplace_back(std::forward<Args>(args)...);
+	}
+
+	// sort items, default by less
+	void sortItems(std::function<bool(const std::string&, const std::string&)> comparator = std::less<>())
+	{
+		std::sort(m_DataItems.begin(), m_DataItems.end(), comparator);
+	}
+
+	// dump string
+	std::string dump() const
+	{
+		if(m_DataItems.empty())
+			return "";
+
+		std::string result = m_DataItems[0];
+		for(size_t i = 1; i < m_DataItems.size(); ++i)
+			result += "," + m_DataItems[i];
+	}
+
+	bool hasSet(const std::string& pSet) const { return std::ranges::find(m_DataItems, pSet) != m_DataItems.end(); }
+	const std::vector<std::string>& getItems() const { return m_DataItems; }
 
 private:
-	void Init()
+	void Init(std::string_view TmpData)
 	{
-		if(m_Data.empty()) return;
+		if(TmpData.empty())
+			return;
 
 		const std::string_view delimiter = ",";
 		size_t iteration = 0;
+		m_DataItems.reserve(TmpData.length() / delimiter.length() + 1);
 
-		m_DataItems.reserve(m_Data.length() / delimiter.length() + 1);
-
-		auto split_view = m_Data | std::views::split(delimiter);
+		auto split_view = TmpData | std::views::split(delimiter);
 		for(auto token_range : split_view)
 		{
 			std::string token(token_range.begin(), token_range.end());
-
 			token.erase(token.find_last_not_of(' ') + 1);
 			token.erase(0, token.find_first_not_of(' '));
 
 			if(!token.empty())
-			{
-				m_DataItems[token] = (size_t)1 << iteration++;
-			}
+				m_DataItems.push_back(token);
 		}
 	}
 };
+
 
 #endif //GAME_SERVER_MMO_UTILS_DBSET_H

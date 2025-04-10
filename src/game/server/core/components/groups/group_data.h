@@ -29,9 +29,9 @@ public:
 	{
 		// initialize group list
 		m_vAccountIds.reserve(MAX_GROUP_MEMBERS);
-		for(auto& p : SetAccountIDs.GetDataItems())
+		for(auto& p : SetAccountIDs.getItems())
 		{
-			if(int UID = str_toint(p.first.c_str()); UID > 0)
+			if(int UID = str_toint(p.c_str()); UID > 0)
 				m_vAccountIds.insert(UID);
 		}
 

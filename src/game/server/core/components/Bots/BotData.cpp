@@ -28,9 +28,9 @@ MobBotInfo* DataBotInfo::FindMobByBot(int BotID)
 /************************************************************************/
 void MobBotInfo::InitDebuffs(int Seconds, int Range, float Chance, const DBSet& buffSets)
 {
-	for(auto& def : buffSets.GetDataItems())
+	for(auto& def : buffSets.getItems())
 	{
-		CMobDebuff debuff(Chance, def.first, std::make_pair(Seconds, Range));
+		CMobDebuff debuff(Chance, def, std::make_pair(Seconds, Range));
 		m_Effects.emplace_back(debuff);
 	}
 }

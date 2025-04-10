@@ -93,7 +93,7 @@ void initGatheringNode(const std::string& nodeType, const std::vector<std::strin
 
 		// parse and add items
 		DBSet ItemsSet(ItemsData);
-		for(const auto& [Elem, Size] : ItemsSet.GetDataItems())
+		for(const auto& Elem : ItemsSet.getItems())
 		{
 			int ItemID;
 			float Chance;

@@ -60,14 +60,15 @@ GroupData* CGroupManager::CreateGroup(CPlayer* pPlayer) const
 
 	// Initialize variables
 	int OwnerUID = pPlayer->Account()->GetID();
-	const auto StrAccountIDs = DBSet(std::to_string(OwnerUID));
+	const auto StrAccount = std::to_string(OwnerUID);
+	const auto AccountsSet = DBSet(StrAccount);
 
 	// Insert to database
-	Database->Execute<DB::INSERT>(TW_GROUPS_TABLE, "(ID, OwnerUID, AccountIDs) VALUES ('{}', '{}', '{}')", InitID, OwnerUID, StrAccountIDs.Dump().c_str());
+	Database->Execute<DB::INSERT>(TW_GROUPS_TABLE, "(ID, OwnerUID, AccountIDs) VALUES ('{}', '{}', '{}')", InitID, OwnerUID, StrAccount.c_str());
 
 	// Initialize the group
 	auto groupData = GroupData::CreateElement(InitID);
-	groupData->Init(OwnerUID, StrAccountIDs);
+	groupData->Init(OwnerUID, AccountsSet);
 	groupData->UpdateRandomColor();
 	pPlayer->Account()->SetGroup(groupData);
 

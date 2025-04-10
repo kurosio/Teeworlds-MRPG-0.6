@@ -23,7 +23,7 @@ void CCraftManager::OnPreInit()
 		// initialize required ingredients
 		CItemsContainer RequiredIngredients {};
 		DBSet ItemsSet(pRes->getString("RequiredItems"));
-		for(const auto& [Elem, Size] : ItemsSet.GetDataItems())
+		for(const auto& Elem : ItemsSet.getItems())
 		{
 			int ItemID{};
 			int Value{};
@@ -36,7 +36,7 @@ void CCraftManager::OnPreInit()
 
 		// initialize craft element
 		CraftIdentifier ID = pRes->getInt("ID");
-		for(auto& [Name, P] : GroupNameSet.GetDataItems())
+		for(auto& Name : GroupNameSet.getItems())
 		{
 			auto* pCraftItem = CCraftItem::CreateElement(Name, ID);
 			pCraftItem->Init(RequiredIngredients, CItem(ItemID, ItemValue), Price, WorldID);

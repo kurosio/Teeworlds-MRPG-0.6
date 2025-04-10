@@ -28,11 +28,11 @@ public:
 		m_Radius = Radius;
 
 		// load items from node
-		for(auto& [str, size] : ItemsSet.GetDataItems())
+		for(auto& Str : ItemsSet.getItems())
 		{
 			try
 			{
-				int itemID = std::stoi(str);
+				int itemID = std::stoi(Str);
 				AddItemToNode(itemID);
 			}
 			catch(const std::invalid_argument& e)
