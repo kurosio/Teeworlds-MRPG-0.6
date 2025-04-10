@@ -136,6 +136,7 @@ vec2 CMultipleOrbite::UtilityOrbitePos(int Orbitetype, int Iter) const
 		float Y = (DynamicCenter.y + Radius) * sin(AngleStart + AngleStep * (float)Iter);
 		return { X, Y };
 	}
+	return { 0.f, 0.f };
 }
 
 void CMultipleOrbite::Snap(int SnappingClient)

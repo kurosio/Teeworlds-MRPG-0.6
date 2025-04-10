@@ -62,7 +62,7 @@ void PrisonManager::PostTick()
 	if(!m_PrisonTerm.IsActive())
 		return;
 
-	const auto* pPlayer = GetPlayer();
+	auto* pPlayer = GetPlayer();
 	if(!pPlayer || !pPlayer->GetCharacter())
 		return;
 

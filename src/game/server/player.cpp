@@ -897,7 +897,7 @@ void CPlayer::SetSnapHealthTick(int Sec)
 	m_SnapHealthNicknameTick = Server()->Tick() + (Server()->TickSpeed() * Sec);
 }
 
-void CPlayer::ChangeWorld(int WorldID, std::optional<vec2> newWorldPosition) const
+void CPlayer::ChangeWorld(int WorldID, std::optional<vec2> newWorldPosition)
 {
 	// reset dungeon temporary data
 	auto& tempData = GetTempData();
@@ -947,6 +947,7 @@ void CPlayer::StartUniversalScenario(const std::string& ScenarioData, int Scenar
 
 		// start scenario
 		const auto& scenarioJsonData = ObjElem.empty() ? pJson : pJson[ObjElem];
-		Scenarios().Start(std::make_unique<CUniversalScenario>(ScenarioID, scenarioJsonData));
+		if(!scenarioJsonData.empty())
+			Scenarios().Start(std::make_unique<CUniversalScenario>(ScenarioID, scenarioJsonData));
 	});
 }

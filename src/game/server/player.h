@@ -165,7 +165,7 @@ public:
 	bool IsSameMotdMenu(int Menulist) const { return m_pMotdMenu && m_pMotdMenu->GetMenulist() == Menulist; }
 	void CloseMotdMenu() { m_pMotdMenu->ClearMotd(); }
 
-	void ChangeWorld(int WorldID, std::optional<vec2> newWorldPosition = std::nullopt) const;
+	void ChangeWorld(int WorldID, std::optional<vec2> newWorldPosition = std::nullopt);
 	void StartUniversalScenario(const std::string& ScenarioData, int ScenarioID);
 };
 

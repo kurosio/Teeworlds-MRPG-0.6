@@ -33,12 +33,12 @@ void CQuestStepBase::UpdateBot() const
 	const bool ActiveStepBot = IsActiveStep();
 	if(ActiveStepBot && !pPlayerBot)
 	{
-		dbg_msg(PRINT_QUEST_PREFIX, "The mob was not found, but the quest step remains active for players.");
+		dbg_msg(PRINT_QUEST_PREFIX, "CREATING QUEST BOT... (QID:%d)", m_Bot.m_QuestID);
 		pGS->CreateBot(TYPE_BOT_QUEST, m_Bot.m_BotID, m_Bot.m_ID);
 	}
 	else if(!ActiveStepBot && pPlayerBot)
 	{
-		dbg_msg(PRINT_QUEST_PREFIX, "The mob was found, but the quest step is not active for players.");
+		dbg_msg(PRINT_QUEST_PREFIX, "REMOVING QUEST BOT... (QID:%d)", m_Bot.m_QuestID);
 		pPlayerBot->MarkForDestroy();
 	}
 }
@@ -142,7 +142,7 @@ bool CQuestStep::Finish()
 	if(!pPlayer->GetQuest(QuestID)->Datafile().Save())
 	{
 		GS()->Chat(pPlayer->GetCID(), "A system error has occurred, contact administrator.");
-		dbg_msg(PRINT_QUEST_PREFIX, "After completing the quest step, unable to save the file.");
+		dbg_msg(PRINT_QUEST_PREFIX, "ERROR: CAN'T SAVE QUEST PROGRESS FILE.");
 		m_StepComplete = false;
 		return false;
 	}
@@ -254,7 +254,7 @@ void CQuestStep::UpdateNavigator()
 		{
 			delete m_pEntNavigator;
 			m_pEntNavigator = nullptr;
-			dbg_msg("quest_step", "navigator to step (bot) removed successfully!");
+			dbg_msg(PRINT_QUEST_PREFIX, "NAVIGATOR REMOVING... (QID:%d)", m_Bot.m_QuestID);
 		}
 
 		return;
@@ -267,7 +267,7 @@ void CQuestStep::UpdateNavigator()
 		if(!pNavigator->IsMarkedForDestroy())
 		{
 			m_pEntNavigator = pNavigator;
-			dbg_msg("quest_step", "navigator to step (bot) created successfully!");
+			dbg_msg(PRINT_QUEST_PREFIX, "NAVIGATOR CREATING... (QID:%d)", m_Bot.m_QuestID);
 		}
 	}
 }
@@ -284,7 +284,7 @@ void CQuestStep::UpdateObjectives()
 
 	// check conditions where does not creating objectives
 	auto* pQuest = pPlayer->GetQuest(m_Bot.m_QuestID);
-	if(m_StepComplete || m_ClientQuitting || !m_TaskListReceived || !pQuest ||
+	if(m_StepComplete || !m_TaskListReceived || !pQuest ||
 		pQuest->GetState() != QuestState::Accepted || pQuest->GetStepPos() != m_Bot.m_StepPos)
 	{
 		ClearObjectives();
@@ -366,14 +366,18 @@ void CQuestStep::Update()
 
 void CQuestStep::ClearObjectives()
 {
-	for(auto& pPair : m_vpEntitiesDefeatBotNavigator)
-		delete pPair.second;
-	for(auto& pPair : m_vpEntitiesMoveAction)
-		delete pPair.second;
+	if(!m_vpEntitiesDefeatBotNavigator.empty() || !m_vpEntitiesMoveAction.empty())
+	{
+		dbg_msg(PRINT_QUEST_PREFIX, "CLEARING ACTION, NAVIGATOR IS DONE (QID:%d)", m_Bot.m_QuestID);
 
-	m_vpEntitiesMoveAction.clear();
-	m_vpEntitiesDefeatBotNavigator.clear();
-	dbg_msg("quest_step", "clearing objectives is done");
+		for(auto& pPair : m_vpEntitiesDefeatBotNavigator)
+			delete pPair.second;
+		for(auto& pPair : m_vpEntitiesMoveAction)
+			delete pPair.second;
+
+		m_vpEntitiesMoveAction.clear();
+		m_vpEntitiesDefeatBotNavigator.clear();
+	}
 }
 
 void CQuestStep::CreateVarietyTypesRequiredItems()

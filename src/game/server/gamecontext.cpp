@@ -1245,6 +1245,7 @@ void CGS::OnClientPrepareChangeWorld(int ClientID)
 
 	const int AllocMemoryCell = ClientID + m_WorldID * MAX_CLIENTS;
 	m_apPlayers[ClientID] = new(AllocMemoryCell) CPlayer(this, ClientID);
+	Core()->QuestManager()->Update(m_apPlayers[ClientID]);
 }
 
 bool CGS::IsClientReady(int ClientID) const

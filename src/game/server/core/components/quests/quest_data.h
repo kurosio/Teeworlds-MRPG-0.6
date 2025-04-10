@@ -118,7 +118,8 @@ public:
 
 	bool HasObjectives(int Step);
 
-	void PreparePlayerObjectives(int StepPos, int ClientID, std::deque<std::shared_ptr<CQuestStep>>& pElem);
+	void PreparePlayerObjectives(int Step, int ClientID, std::deque<CQuestStep*>& pElem);
+	void ResetPlayerObjectives(std::deque<CQuestStep*>& pElem);
 
 	bool CanBeGrantedByChain() const { return HasFlag(QUEST_FLAG_GRANTED_FROM_CHAIN); }
 	bool CanBeGrantedByNPC() const { return HasFlag(QUEST_FLAG_GRANTED_FROM_NPC); }
@@ -142,7 +143,7 @@ class CPlayerQuest : public MultiworldIdentifiableData< std::map < int, std::map
 	QuestIdentifier m_ID {};
 	QuestState m_State {};
 	int m_Step {};
-	std::deque<std::shared_ptr<CQuestStep>> m_vObjectives {};
+	std::deque<CQuestStep*> m_vObjectives {};
 	QuestDatafile m_Datafile {};
 
 public:

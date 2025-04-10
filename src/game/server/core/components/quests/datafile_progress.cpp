@@ -20,10 +20,10 @@ void QuestDatafile::Create() const
 		return;
 
 	// json structuring
-	nlohmann::json JsonQuestData;
-	JsonQuestData["current_step"] = m_pQuest->m_Step;
+	nlohmann::json Prepare;
+	Prepare["current_step"] = m_pQuest->m_Step;
 	m_pQuest->Info()->PreparePlayerObjectives(m_pQuest->m_Step, m_pQuest->m_ClientID, m_pQuest->m_vObjectives);
-	for(auto& pStep : m_pQuest->m_vObjectives)
+	for(auto* pStep : m_pQuest->m_vObjectives)
 	{
 		nlohmann::json Append;
 		Append["quest_bot_id"] = pStep->m_Bot.m_ID;
@@ -35,24 +35,20 @@ void QuestDatafile::Create() const
 			Append["defeat"].push_back({ { "id", p.m_BotID }, { "count", 0 }, { "complete", false } });
 		}
 
-		pStep->m_aMoveActionProgress.resize(pStep->m_Bot.m_vRequiredMoveAction.size(), false);
 		for(auto& p : pStep->m_Bot.m_vRequiredMoveAction)
 		{
 			Append["move_to"].push_back({ { "complete", false } });
 		}
-		JsonQuestData["steps"].push_back(Append);
+		pStep->m_aMoveActionProgress.resize(pStep->m_Bot.m_vRequiredMoveAction.size(), false);
+		Prepare["steps"].push_back(Append);
 	}
 
 	// Loop through each player step
 	for(auto& pStep : m_pQuest->m_vObjectives)
-	{
-		int MoveToElementsSize = pStep->m_Bot.m_vRequiredMoveAction.size();
-		pStep->m_aMoveActionProgress.resize(MoveToElementsSize, false);
 		pStep->Update();
-	}
 
 	// save file
-	std::string Data = JsonQuestData.dump();
+	std::string Data = Prepare.dump();
 	mystd::file::save(GetFilename().c_str(), Data.data(), (unsigned)Data.size());
 }
 
@@ -95,15 +91,14 @@ void QuestDatafile::Load() const
 		// If "defeat" key exists in pStep
 		if(Step.contains("defeat"))
 		{
-			// If the size of the "defeat" array in pStep is not equal to the size of the m_aMobProgress map of the corresponding player step
-			if(Step["defeat"].size() != WorkedNode->m_Bot.m_vRequiredDefeats.size())
+			const auto totalSize = WorkedNode->m_Bot.m_vRequiredDefeats.size();
+			if(Step["defeat"].size() != totalSize)
 			{
 				dbg_msg(PRINT_QUEST_PREFIX, "Reinitialization... Player save file has a defeat value, but it is not present in the data!");
 				Create();
 				return;
 			}
 
-			// Iterate through each element in the "defeat" array
 			for(auto& p : Step["defeat"])
 			{
 				int ID = p.value("id", 0);
@@ -115,9 +110,8 @@ void QuestDatafile::Load() const
 		// If "move_to" key exists in pStep
 		if(Step.contains("move_to"))
 		{
-			// Check if the size of the "move_to" array of pStep is not equal to the size of the m_aPlayerSteps[SubBotID].m_Bot.m_RequiredMoveTo vector
-			size_t TotalAction = WorkedNode->m_Bot.m_vRequiredMoveAction.size();
-			if(Step["move_to"].size() != TotalAction)
+			const auto totalSize = WorkedNode->m_Bot.m_vRequiredMoveAction.size();
+			if(Step["move_to"].size() != totalSize)
 			{
 				dbg_msg(PRINT_QUEST_PREFIX, "Reinitialization... Player save file has a move_to value, but it is not present in the data!");
 				Create();
@@ -125,7 +119,7 @@ void QuestDatafile::Load() const
 			}
 
 			// Initialize the size of the MoveToProgress array based on the number of required move-to elements
-			WorkedNode->m_aMoveActionProgress.resize(TotalAction, false);
+			WorkedNode->m_aMoveActionProgress.resize(totalSize, false);
 			for(int p = 0; p < (int)Step["move_to"].size(); p++)
 				WorkedNode->m_aMoveActionProgress[p] = Step["move_to"][p].value("complete", false);
 		}
@@ -179,8 +173,6 @@ void QuestDatafile::Delete() const
 {
 	if(!m_pQuest)
 		return;
-
-	m_pQuest->m_vObjectives.clear();
 
 	// Remove the temporary user quest data file
 	mystd::file::remove(GetFilename().c_str());

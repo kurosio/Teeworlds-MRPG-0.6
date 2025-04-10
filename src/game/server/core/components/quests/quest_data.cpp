@@ -67,12 +67,26 @@ bool CQuestDescription::HasObjectives(int Step)
 	return m_vObjectives.contains(Step) && m_vObjectives[Step].size() > 0;
 }
 
-void CQuestDescription::PreparePlayerObjectives(int Step, int ClientID, std::deque<std::shared_ptr<CQuestStep>>& pElem)
+void CQuestDescription::PreparePlayerObjectives(int Step, int ClientID, std::deque<CQuestStep*>& pElem)
 {
-	pElem.clear();
-	for(const auto& Step : m_vObjectives[Step])
+	ResetPlayerObjectives(pElem);
+	dbg_msg(PRINT_QUEST_PREFIX, "PREPARE OBJECTIVES (QID:%d)", m_ID);
+	for(const auto& StepDesc : m_vObjectives[Step])
+		pElem.emplace_back(new CQuestStep(ClientID, StepDesc.m_Bot));
+
+}
+
+void CQuestDescription::ResetPlayerObjectives(std::deque<CQuestStep*>& pElem)
+{
+	if(!pElem.empty())
 	{
-		pElem.emplace_back(std::make_shared<CQuestStep>(ClientID, Step.m_Bot));
+		dbg_msg(PRINT_QUEST_PREFIX, "CLEARING OBJECTIVES (QID:%d)", m_ID);
+		for(auto*& pPtr : pElem)
+		{
+			delete pPtr;
+			pPtr = nullptr;
+		}
+		pElem.clear();
 	}
 }
 
@@ -93,12 +107,22 @@ CQuestDescription* CPlayerQuest::Info() const
 
 CPlayerQuest::~CPlayerQuest()
 {
-	m_vObjectives.clear();
+	if(!m_vObjectives.empty())
+	{
+		dbg_msg(PRINT_QUEST_PREFIX, "CLEARING OBJECTIVES (by exit) (QID:%d)", m_ID);
+		for(auto*& pPtr : m_vObjectives)
+		{
+			delete pPtr;
+			pPtr = nullptr;
+		}
+
+		m_vObjectives.clear();
+	}
 }
 
 bool CPlayerQuest::HasUnfinishedObjectives() const
 {
-	return std::ranges::any_of(m_vObjectives, [](const std::shared_ptr<CQuestStep>& pPtr)
+	return std::ranges::any_of(m_vObjectives, [](CQuestStep* pPtr)
 	{
 		return !pPtr->m_StepComplete && pPtr->m_Bot.m_HasAction;
 	});
@@ -164,13 +188,9 @@ void CPlayerQuest::Reset()
 	if(!pPlayer)
 		return;
 
+	Info()->ResetPlayerObjectives(m_vObjectives);
 	m_Step = 1;
 	SetNewState(QuestState::NoAccepted);
-	for(const auto& pStep : m_vObjectives)
-	{
-		pStep->Update();
-	}
-	m_vObjectives.clear();
 	m_Datafile.Delete();
 	Database->Execute<DB::REMOVE>("tw_accounts_quests", "WHERE QuestID = '{}' AND UserID = '{}'", m_ID, pPlayer->Account()->GetID());
 }
@@ -185,13 +205,11 @@ void CPlayerQuest::UpdateStepProgress()
 		return;
 
 	// update step progress
+	Info()->ResetPlayerObjectives(m_vObjectives);
 	m_Step++;
-	m_vObjectives.clear();
-
 	if(Info()->HasObjectives(m_Step))
 	{
 		m_Datafile.Create();
-		Update();
 		return;
 	}
 
@@ -250,19 +268,18 @@ void CPlayerQuest::UpdateStepProgress()
 void CPlayerQuest::Update()
 {
 	for(const auto& pStep : m_vObjectives)
-	{
 		pStep->Update();
-	}
+
 	UpdateStepProgress();
 }
 
 CQuestStep* CPlayerQuest::GetStepByMob(int MobID)
 {
-	const auto iter = std::ranges::find_if(m_vObjectives, [MobID](const std::shared_ptr<CQuestStep>& Step)
+	auto iter = std::ranges::find_if(m_vObjectives, [MobID](const CQuestStep* pPtr)
 	{
-		return Step->m_Bot.m_ID == MobID;
+		return pPtr->m_Bot.m_ID == MobID;
 	});
-    return iter != m_vObjectives.end() ? iter->get() : nullptr;
+    return iter != m_vObjectives.end() ? *iter : nullptr;
 }
 
 void CPlayerQuest::SetNewState(QuestState State)
