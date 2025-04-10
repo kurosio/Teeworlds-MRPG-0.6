@@ -444,7 +444,6 @@ void RconProcessor::ConBansAcc(IConsole::IResult* pResult, void* pUserData)
 
 void RconProcessor::ConQuest(IConsole::IResult* pResult, void* pUser)
 {
-	const auto* pServer = (IServer*)pUser;
 	const auto ClientID = pResult->GetClientID();
 	const char* pStatus = pResult->GetString(0);
 	auto* pGS = GetCommandResultGameServer(ClientID, pUser);

@@ -795,9 +795,6 @@ bool CPlayer::IsEquipped(ItemType EquipID) const
 
 int CPlayer::GetTotalAttributeValue(AttributeIdentifier ID) const
 {
-	// initialize variables
-	const auto* pAtt = GS()->GetAttributeInfo(ID);
-
 	// check if the player is in a dungeon and the attribute has a low improvement cost
 	if(GS()->IsWorldType(WorldType::Dungeon))
 	{

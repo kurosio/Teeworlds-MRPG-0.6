@@ -105,7 +105,7 @@ void CGameControllerDungeon::ChangeState(int State)
 
 		dynamic_string Buffer;
 		int FinishTime = -1;
-		int BestPassageHelp = 0;
+		//int BestPassageHelp = 0;
 
 		// dungeon finished information
 		char aTimeFormat[64];

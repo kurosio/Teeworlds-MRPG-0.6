@@ -53,11 +53,11 @@ bool CDungeonManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 
 bool CDungeonManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const int Extra1, const int Extra2, int ReasonNumber, const char* pReason)
 {
-	const int ClientID = pPlayer->GetCID();
 	if(!pPlayer->GetCharacter() || !pPlayer->GetCharacter()->IsAlive())
 		return false;
 
-/*	if(PPSTR(pCmd, "DUNGEONJOIN") == 0)
+	/*	const int ClientID = pPlayer->GetCID();
+	if(PPSTR(pCmd, "DUNGEONJOIN") == 0)
 	{
 		if(GS()->IsPlayerInWorld(ClientID, CDungeonData::ms_aDungeon[Extra1].m_WorldID))
 		{
