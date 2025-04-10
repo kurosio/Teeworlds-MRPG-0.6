@@ -17,7 +17,7 @@ void CAchievementListener::OnCharacterDamage(CPlayer* pFrom, CPlayer* pTo, int D
 void CAchievementListener::OnCharacterDeath(CPlayer* pVictim, CPlayer* pKiller, int Weapon)
 {
 	// achievement death
-	if(pVictim && !pVictim->IsBot())
+	if(pVictim && !pVictim->IsBot() && Weapon != WEAPON_WORLD)
 	{
 		UpdateAchievement(pVictim, AchievementType::Death, NOPE, 1, PROGRESS_ACCUMULATE);
 	}

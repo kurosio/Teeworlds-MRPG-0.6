@@ -46,7 +46,6 @@ void CQuestMobAI::OnDie(int Killer, int Weapon)
 	bool MarkForDestroy = std::ranges::none_of(m_pQuestMobInfo->m_ActiveForClient, [](bool active) { return active; });
 	if(MarkForDestroy)
 	{
-		dbg_msg(PRINT_QUEST_PREFIX, "Marked for destroy objective quest mob!");
 		m_pPlayer->MarkForDestroy();
 	}
 }
