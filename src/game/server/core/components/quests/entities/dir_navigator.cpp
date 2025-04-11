@@ -5,36 +5,38 @@
 #include <game/server/gamecontext.h>
 
 CEntityDirNavigator::CEntityDirNavigator(CGameWorld* pGameWorld, int Type, int Subtype, bool StarNavigator, int ClientID, float Clipped, vec2 Pos, int WorldID)
-	: CEntity(pGameWorld, CGameWorld::ENTTYPE_PATH_NAVIGATOR, Pos, 0, ClientID)
+	: CEntity(pGameWorld, CGameWorld::ENTTYPE_DIR_NAVIGATOR, Pos, 0, ClientID)
 {
 	m_Type = Type;
 	m_Subtype = Subtype;
 	m_Clipped = Clipped;
 	m_pEntNavigator = nullptr;
 	if(const auto PosTo = GS()->Core()->WorldManager()->FindPosition(WorldID, Pos))
-		m_PosTo = *PosTo;
-	else
-		MarkForDestroy();
-	GameWorld()->InsertEntity(this);
-
-	// path navigator
-	auto* pPlayer = GetOwner();
-	if(pPlayer && pPlayer->GetItem(itShowQuestStarNavigator)->IsEquipped())
 	{
-		auto* pNavigator = new CEntityPathNavigator(&GS()->m_World, m_ClientID, true, Pos, WorldID, !StarNavigator, CmaskOne(ClientID));
-		if(!pNavigator->IsMarkedForDestroy())
-			m_pEntNavigator = pNavigator;
+		m_PosTo = *PosTo;
+
+		// path navigator
+		auto* pPlayer = GetOwner();
+		if(pPlayer && pPlayer->GetItem(itShowQuestStarNavigator)->IsEquipped())
+		{
+			auto* pNavigator = new CEntityPathNavigator(&GS()->m_World, m_ClientID, true, Pos, WorldID, !StarNavigator, CmaskOne(ClientID));
+			if(!pNavigator->IsMarkedForDestroy())
+				m_pEntNavigator = pNavigator;
+		}
 	}
+	else
+	{
+		MarkForDestroy();
+	}
+
+	GameWorld()->InsertEntity(this);
 }
 
 
 CEntityDirNavigator::~CEntityDirNavigator()
 {
 	if(m_pEntNavigator)
-	{
-		delete m_pEntNavigator;
-		m_pEntNavigator = nullptr;
-	}
+		m_pEntNavigator->MarkForDestroy();
 }
 
 

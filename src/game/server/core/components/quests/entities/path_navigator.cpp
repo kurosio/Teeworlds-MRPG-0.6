@@ -22,7 +22,9 @@ CEntityPathNavigator::CEntityPathNavigator(CGameWorld* pGameWorld, int ClientID,
 		m_PosTo = *PosTo;
 	}
 	else
+	{
 		MarkForDestroy();
+	}
 
 	GameWorld()->InsertEntity(this);
 }

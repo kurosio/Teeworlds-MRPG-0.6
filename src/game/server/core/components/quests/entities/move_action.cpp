@@ -23,7 +23,10 @@ CEntityQuestAction::~CEntityQuestAction()
 {
 	// clear data
 	if(m_pEntDirNavigator)
-		delete m_pEntDirNavigator;
+	{
+		m_pEntDirNavigator->MarkForDestroy();
+		m_pEntDirNavigator = nullptr;
+	}
 
 	// disable cooldown on erase action
 	auto* pPlayer = GetOwner();

@@ -4,7 +4,7 @@
 #include <game/server/entity_manager.h>
 
 CEntityFishingRod::CEntityFishingRod(CGameWorld* pGameWorld, int ClientID, vec2 Position, vec2 Force)
-	: CEntity(pGameWorld, CGameWorld::ENTTYPE_PATH_FINDER, Position, 0, ClientID)
+	: CEntity(pGameWorld, CGameWorld::ENTTYPE_FISHING_ROD, Position, 0, ClientID)
 {
 	m_EndRodPoint = Position;
 	m_Rope.Init(NUM_ROPE_POINTS, Position, Force);
