@@ -481,19 +481,22 @@ void CHouseManager::ShowFarmzonesControl(CPlayer* pPlayer) const
 		return;
 
 	// initialize variables
-	int ClientID = pPlayer->GetCID();
-	int FarmzonesNum = (int)pHouse->GetFarmzonesManager()->GetContainer().size();
+	const auto ClientID = pPlayer->GetCID();
+	const auto FarmzonesSize = (int)pHouse->GetFarmzonesManager()->GetContainer().size();
 
 	// information
 	VoteWrapper VInfo(ClientID, VWF_STYLE_STRICT_BOLD | VWF_SEPARATE, "\u2324 Farm zones information");
 	VInfo.Add("You can control your farm zones in the house");
-	VInfo.Add("Your home has: {} farm zones.", FarmzonesNum);
+	VInfo.Add("Your home has: {} farm zones.", FarmzonesSize);
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// farm zones control
 	VoteWrapper VFarmzones(ClientID, VWF_OPEN | VWF_STYLE_SIMPLE, "\u2743 Farm zone's control");
 	for(auto& [ID, Farmzone] : pHouse->GetFarmzonesManager()->GetContainer())
-		VFarmzones.AddMenu(MENU_HOUSE_FARMZONE_SELECT, ID, "Farm {} zone / {}", Farmzone.GetName(), GS()->GetItemInfo(Farmzone.GetItemID())->GetName());
+	{
+		const auto sizeItems = Farmzone.GetNode().m_vItems.size();
+		VFarmzones.AddMenu(MENU_GUILD_HOUSE_FARMZONE_SELECT, ID, "Farm {} zone / {} variety", Farmzone.GetName(), sizeItems);
+	}
 
 	VoteWrapper::AddEmptyline(ClientID);
 }
@@ -513,7 +516,7 @@ void CHouseManager::ShowFarmzoneEdit(CPlayer* pPlayer, int FarmzoneID) const
 	auto& Node = pFarmzone->GetNode();
 
 	// information
-	VoteWrapper VInfo(ClientID, VWF_SEPARATE | VWF_STYLE_STRICT_BOLD, "\u2741 Farm {} zone", pFarmzone->GetName());
+	VoteWrapper VInfo(ClientID, VWF_ALIGN_TITLE | VWF_SEPARATE | VWF_STYLE_STRICT_BOLD, "\u2741 Farm {} zone", pFarmzone->GetName());
 	VInfo.Add("You can grow a plant on the property");
 	VInfo.Add("Chance: {}%", s_GuildChancePlanting);
 	VoteWrapper::AddEmptyline(ClientID);
@@ -533,8 +536,18 @@ void CHouseManager::ShowFarmzoneEdit(CPlayer* pPlayer, int FarmzoneID) const
 	VoteWrapper VPossiblePlanting(ClientID, VWF_OPEN | VWF_STYLE_SIMPLE, "\u2741 Possible items for planting");
 	for(auto& ID : vItems)
 	{
+		bool AllowPlant = true;
+		for(auto& Elem : Node.m_vItems)
+		{
+			if(Elem.Element == ID)
+			{
+				AllowPlant = false;
+				break;
+			}
+		}
+
 		auto* pPlayerItem = pPlayer->GetItem(ID);
-		if(pPlayerItem->HasItem())
+		if(AllowPlant && pPlayerItem->HasItem())
 		{
 			VPossiblePlanting.AddOption("HOUSE_FARMZONE_TRY_PLANT", FarmzoneID, ID, "Try plant {} (has {})", pPlayerItem->Info()->GetName(), pPlayerItem->GetValue());
 		}

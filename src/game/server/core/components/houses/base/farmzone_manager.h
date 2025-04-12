@@ -43,7 +43,6 @@ public:
 	}
 
 	const char* GetName() const { return m_Node.Name.c_str(); }
-	int GetItemID() const { return m_Node.m_vItems.getRandomElement(); }
 	float GetRadius() const { return m_Radius; }
 	vec2 GetPos() const { return m_Pos; }
 	GatheringNode& GetNode() { return m_Node; }

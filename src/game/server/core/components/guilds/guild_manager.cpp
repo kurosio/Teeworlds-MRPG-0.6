@@ -698,8 +698,8 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int 
 			return true;
 		}
 
-		// check is same plant item with current
-		if(ItemID == pFarmzone->GetItemID())
+		// check is same planted item with current
+		if(pFarmzone->GetNode().m_vItems.hasElement(ItemID))
 		{
 			GS()->Chat(ClientID, "This item has already been planted on this farm.");
 			return true;
@@ -1510,19 +1510,22 @@ void CGuildManager::ShowFarmzonesControl(CPlayer* pPlayer) const
 	if(!pHouse)
 		return;
 
-	int ClientID = pPlayer->GetCID();
-	int FarmzonesNum = (int)pHouse->GetFarmzonesManager()->GetContainer().size();
+	const auto ClientID = pPlayer->GetCID();
+	const auto FarmzonesSize = (int)pHouse->GetFarmzonesManager()->GetContainer().size();
 
 	// information
 	VoteWrapper VInfo(ClientID, VWF_STYLE_STRICT_BOLD | VWF_SEPARATE, "\u2324 Farm zones information");
 	VInfo.Add("You can control your farm zones in the house");
-	VInfo.Add("Your home has: {} farm zones.", FarmzonesNum);
+	VInfo.Add("Your home has: {} farm zones.", FarmzonesSize);
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// farm zones control
 	VoteWrapper VFarmzones(ClientID, VWF_OPEN|VWF_STYLE_SIMPLE, "\u2743 Farm zone's control");
 	for(auto& [ID, Farmzone] : pHouse->GetFarmzonesManager()->GetContainer())
-		VFarmzones.AddMenu(MENU_GUILD_HOUSE_FARMZONE_SELECT, ID, "Farm {} zone / {}", Farmzone.GetName(), GS()->GetItemInfo(Farmzone.GetItemID())->GetName());
+	{
+		const auto sizeItems = Farmzone.GetNode().m_vItems.size();
+		VFarmzones.AddMenu(MENU_GUILD_HOUSE_FARMZONE_SELECT, ID, "Farm {} zone / {} variety", Farmzone.GetName(), sizeItems);
+	}
 
 	VoteWrapper::AddEmptyline(ClientID);
 }
@@ -1542,6 +1545,7 @@ void CGuildManager::ShowFarmzoneEdit(CPlayer* pPlayer, int FarmzoneID) const
 		return;
 
 	const auto ClientID = pPlayer->GetCID();
+	auto& Node = pFarmzone->GetNode();
 
 	// information
 	VoteWrapper VInfo(ClientID, VWF_ALIGN_TITLE|VWF_SEPARATE|VWF_STYLE_STRICT_BOLD, "\u2741 Farm {} zone", pFarmzone->GetName());
@@ -1550,7 +1554,7 @@ void CGuildManager::ShowFarmzoneEdit(CPlayer* pPlayer, int FarmzoneID) const
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// planted list
-	for(auto& Elem : pFarmzone->GetNode().m_vItems)
+	for(auto& Elem : Node.m_vItems)
 	{
 		auto ItemID = Elem.Element;
 		auto* pItemInfo = GS()->GetItemInfo(ItemID);
@@ -1565,7 +1569,7 @@ void CGuildManager::ShowFarmzoneEdit(CPlayer* pPlayer, int FarmzoneID) const
 	for(auto& ID : vItems)
 	{
 		bool AllowPlant = true;
-		for(auto& Elem : pFarmzone->GetNode().m_vItems)
+		for(auto& Elem : Node.m_vItems)
 		{
 			if(Elem.Element == ID)
 			{
@@ -1576,8 +1580,11 @@ void CGuildManager::ShowFarmzoneEdit(CPlayer* pPlayer, int FarmzoneID) const
 
 		auto* pPlayerItem = pPlayer->GetItem(ID);
 		if(AllowPlant && pPlayerItem->HasItem())
+		{
 			VPossiblePlanting.AddOption("GUILD_HOUSE_FARM_ZONE_TRY_PLANT", FarmzoneID, ID, "Try plant {} (has {})", pPlayerItem->Info()->GetName(), pPlayerItem->GetValue());
+		}
 	}
+
 	VoteWrapper::AddEmptyline(ClientID);
 }
 

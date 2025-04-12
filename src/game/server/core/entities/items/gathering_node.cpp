@@ -137,7 +137,7 @@ bool CEntityGatheringNode::TakeDamage(CPlayer* pPlayer)
 
 void CEntityGatheringNode::Die(CPlayer* pPlayer, CProfession* pProfession)
 {
-	if(m_CurrentHealth > 0)
+	if(m_CurrentHealth > 0 || m_pNode->m_vItems.isEmpty())
 		return;
 
 	const auto Value = 1 + rand() % 2;
