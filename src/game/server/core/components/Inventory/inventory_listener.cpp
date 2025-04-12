@@ -30,13 +30,14 @@ void CInventoryListener::OnCharacterSpawn(CPlayer* pPlayer)
 
     const auto AccountID = pPlayer->Account()->GetID();
     bool bestExpert = false;
-    std::array<AttributeData, 6> attributesData = {
+    std::array<AttributeData, 7> attributesData = {
         AttributeData{AttributeIdentifier::HP, WEAPON_SHOTGUN, MULTIPLE_ORBITE_TYPE_EIGHT},
         AttributeData{AttributeIdentifier::MP, WEAPON_SHOTGUN, MULTIPLE_ORBITE_TYPE_DYNAMIC_CENTER},
         AttributeData{AttributeIdentifier::CritDMG, WEAPON_SHOTGUN, MULTIPLE_ORBITE_TYPE_PULSATING},
         AttributeData{AttributeIdentifier::Efficiency, WEAPON_HAMMER, MULTIPLE_ORBITE_TYPE_EIGHT},
         AttributeData{AttributeIdentifier::Extraction, WEAPON_HAMMER, MULTIPLE_ORBITE_TYPE_DYNAMIC_CENTER},
-        AttributeData{AttributeIdentifier::Patience, WEAPON_HAMMER, MULTIPLE_ORBITE_TYPE_PULSATING}
+        AttributeData{AttributeIdentifier::Patience, WEAPON_HAMMER, MULTIPLE_ORBITE_TYPE_PULSATING},
+        AttributeData{AttributeIdentifier::Endurance, WEAPON_HAMMER, MULTIPLE_ORBITE_TYPE_ELLIPTICAL}
     };
 
     for(const auto& attribute : attributesData)
