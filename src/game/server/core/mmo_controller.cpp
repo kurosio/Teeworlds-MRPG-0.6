@@ -576,15 +576,17 @@ std::map<int, CMmoController::TempTopData> CMmoController::GetTopList(ToplistTyp
 		auto BiggestMinerOpt = g_InventoryListener.AttributeTracker().GetTrackingData((int)AttributeIdentifier::Efficiency);
 		auto BiggestFarmerOpt = g_InventoryListener.AttributeTracker().GetTrackingData((int)AttributeIdentifier::Extraction);
 		auto BiggestFisherOpt = g_InventoryListener.AttributeTracker().GetTrackingData((int)AttributeIdentifier::Patience);
+		auto BiggestLoaderOpt = g_InventoryListener.AttributeTracker().GetTrackingData((int)AttributeIdentifier::Endurance);
 
-		std::array<std::tuple<std::string, int, std::optional<TrackingAttributeData>>, 6> topList = {
+		std::array<std::tuple<std::string, int, std::optional<TrackingAttributeData>>, 7> topList = {
 		{
 			{GetProfessionName(ProfessionIdentifier::Tank), (int)AttributeIdentifier::HP, BiggestTankOpt},
 			{GetProfessionName(ProfessionIdentifier::Healer), (int)AttributeIdentifier::MP, BiggestHealerOpt},
 			{GetProfessionName(ProfessionIdentifier::Dps), (int)AttributeIdentifier::CritDMG, BiggestDPSOpt},
 			{GetProfessionName(ProfessionIdentifier::Miner), (int)AttributeIdentifier::Efficiency, BiggestMinerOpt},
 			{GetProfessionName(ProfessionIdentifier::Farmer), (int)AttributeIdentifier::Extraction, BiggestFarmerOpt},
-			{GetProfessionName(ProfessionIdentifier::Fisherman), (int)AttributeIdentifier::Patience, BiggestFisherOpt}
+			{GetProfessionName(ProfessionIdentifier::Fisherman), (int)AttributeIdentifier::Patience, BiggestFisherOpt},
+			{GetProfessionName(ProfessionIdentifier::Loader), (int)AttributeIdentifier::Endurance, BiggestLoaderOpt}
 		}};
 
 		int Iter = 0;

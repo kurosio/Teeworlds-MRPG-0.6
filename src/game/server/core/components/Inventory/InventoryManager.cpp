@@ -194,6 +194,7 @@ bool CInventoryManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		addEquipmentFieldFunc(VEquipment, ItemType::EquipPickaxe);
 		addEquipmentFieldFunc(VEquipment, ItemType::EquipRake);
 		addEquipmentFieldFunc(VEquipment, ItemType::EquipFishrod);
+		addEquipmentFieldFunc(VEquipment, ItemType::EquipGloves);
 		VoteWrapper::AddEmptyline(ClientID);
 
 		// potions equipment

@@ -163,6 +163,12 @@ bool CWarehouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
 		const auto Value = pProducts->GetValue();
 		if(pPlayer->Account()->SpendCurrency(Value, itProduct))
 		{
+			// add experience to loader
+			auto Experience = translate_to_percent_rest(Value, 10);
+			auto* pLoader = pPlayer->Account()->GetProfession(ProfessionIdentifier::Loader);
+			pLoader->AddExperience(Experience);
+
+			// load to warehouse
 			pWarehouse->Storage().Add(Value);
 			pPlayer->Account()->AddGold(Value);
 			GS()->Chat(ClientID, "You loaded '{} products'. Got '{$} gold'.", Value, Value);
@@ -196,20 +202,28 @@ bool CWarehouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
 			return true;
 		}
 
+		auto EnduranceValue = pPlayer->GetTotalAttributeValue(AttributeIdentifier::Endurance);
+		auto MaxCanTake = g_Config.m_SvWarehouseProductsCanTake + EnduranceValue;
 
 		// check is player has maximum products
 		auto* pProducts = pPlayer->GetItem(itProduct);
-		if(pProducts->GetValue() >= g_Config.m_SvWarehouseProductsCanTake)
+		if(pProducts->GetValue() >= MaxCanTake)
 		{
-			GS()->Chat(ClientID, "You can't take more than '{} products'.", g_Config.m_SvWarehouseProductsCanTake);
+			GS()->Chat(ClientID, "You can't take more than '{} products'.", MaxCanTake);
 			return true;
 		}
 
 
 		// unload products
-		const auto FinalValue = minimum(pWarehouse->Storage().GetValue().to_clamp<int>(), g_Config.m_SvWarehouseProductsCanTake - pProducts->GetValue());
+		const auto FinalValue = minimum(pWarehouse->Storage().GetValue().to_clamp<int>(), MaxCanTake - pProducts->GetValue());
 		if(pWarehouse->Storage().Remove(FinalValue))
 		{
+			// add experience to loader
+			auto Experience = translate_to_percent_rest(FinalValue, 10);
+			auto* pLoader = pPlayer->Account()->GetProfession(ProfessionIdentifier::Loader);
+			pLoader->AddExperience(Experience);
+
+			// unloading
 			pProducts->Add(FinalValue);
 			GS()->Chat(ClientID, "You unloaded '{} products'.", FinalValue);
 			GS()->CreateSound(pPlayer->m_ViewPos, SOUND_VOTE_WAREHOUSE_PRODUCT_UNLOAD);

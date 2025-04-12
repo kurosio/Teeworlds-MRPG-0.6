@@ -85,7 +85,7 @@ public:
 			|| m_Type == ItemType::EquipGrenade || m_Type == ItemType::EquipLaser || m_Type == ItemType::EquipArmor
 			|| m_Type == ItemType::EquipEidolon || m_Type == ItemType::EquipPickaxe || m_Type == ItemType::EquipRake
 			|| m_Type == ItemType::EquipTitle || m_Type == ItemType::EquipPotionHeal || m_Type == ItemType::EquipPotionMana
-			|| m_Type == ItemType::EquipFishrod));
+			|| m_Type == ItemType::EquipFishrod || m_Type == ItemType::EquipGloves));
 	}
 
 	bool IsEquipmentNonSlot() const

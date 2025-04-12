@@ -91,6 +91,7 @@ void CAccountData::InitProfessions()
 	m_vProfessions.push_back(CFarmerProfession());
 	m_vProfessions.push_back(CMinerProfession());
 	m_vProfessions.push_back(CFishermanProfession());
+	m_vProfessions.push_back(CLoaderProfession());
 
 	// load professions data
 	std::map<ProfessionIdentifier, std::string> vmProfessionsData {};

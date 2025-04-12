@@ -88,7 +88,7 @@ public:
 		// extra boost for profession
 		m_ExtraBoost[AttributeIdentifier::HP] = 5.f;
 		m_ExtraBoost[AttributeIdentifier::MP] = 15.f;
-		m_ExtraBoost[AttributeIdentifier::DMG] = 30.f;\
+		m_ExtraBoost[AttributeIdentifier::DMG] = 30.f;
 
 		// profession skin
 		m_ProfessionSkin.m_UseCustomColor = 0;
@@ -159,6 +159,20 @@ public:
 	{
 		// availables for upgrades
 		m_Attributes[AttributeIdentifier::Patience] = 1;
+	}
+};
+
+/*
+ * Loader profession
+ */
+class CLoaderProfession : public CProfession
+{
+public:
+	CLoaderProfession()
+		: CProfession(ProfessionIdentifier::Loader, PROFESSION_TYPE_OTHER)
+	{
+		// availables for upgrades
+		m_Attributes[AttributeIdentifier::Endurance] = 1;
 	}
 };
 
