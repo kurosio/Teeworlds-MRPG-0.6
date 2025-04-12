@@ -239,7 +239,7 @@ bool CSkill::Use()
 
 	if(IsActivated(pChar, ManaCost, SKILL_LAST_STAND, SKILL_USAGE_TOGGLE))
 	{
-		const auto ManaPerSeconds = translate_to_percent_rest(ManaCost, maximum(30 - GetBonus(), 15));
+		const int ManaPerSeconds = maximum(1, translate_to_percent_rest(pPlayer->GetMaxMana(), maximum(Info()->GetPercentageCost() - GetBonus(), 15)));
 		GS()->EntityManager()->LastStand(ClientID, PlayerPosition, 96.f, ManaPerSeconds, &pEntSkillPtr);
 		GS()->CreateSound(PlayerPosition, SOUND_SKILL_START);
 		return true;
@@ -282,7 +282,7 @@ bool CSkill::IsActivated(CCharacter* pChar, int Manacost, int SkillID, int Skill
 	// reset skill when use
 	if(SkillUsage == SKILL_USAGE_RESET)
 	{
-		if(pChar->TryUseMana(Manacost))
+		if(!pChar->TryUseMana(Manacost))
 			return false;
 
 		if(const auto groupPtr = skillEntityPtr.lock())
@@ -301,14 +301,14 @@ bool CSkill::IsActivated(CCharacter* pChar, int Manacost, int SkillID, int Skill
 			return false;
 		}
 
-		if(pChar->TryUseMana(Manacost))
+		if(!pChar->TryUseMana(Manacost))
 			return false;
 
 		GS()->Broadcast(m_ClientID, BroadcastPriority::GameWarning, 100, "The {} has been enabled!", Info()->GetName());
 		return true;
 	}
 
-	return !pChar->TryUseMana(Manacost);
+	return pChar->TryUseMana(Manacost);
 }
 
 bool CSkill::Upgrade()

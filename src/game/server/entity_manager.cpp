@@ -275,12 +275,11 @@ void CEntityManager::LastStand(int ClientID, vec2 Position, float Radius, int Ma
 		// action
 		if(pBase->Server()->Tick() % pBase->Server()->TickSpeed() == 0)
 		{
-			if(pChar->TryUseMana(ManaCostPerSec))
+			if(!pChar->TryUseMana(ManaCostPerSec))
 			{
 				if(pChar->GetPlayer()->m_Effects.Remove("LastStand"))
-				{
 					pBase->GS()->Chat(pBase->GetClientID(), "'Last Stand' effect has been removed.");
-				}
+
 				pBase->GS()->Broadcast(pBase->GetClientID(), BroadcastPriority::MainInformation, 100, "Not enough mana to maintain the shield.");
 				pBase->MarkForDestroy();
 				return;

@@ -1769,14 +1769,14 @@ bool CCharacter::TryUseMana(int Mana)
 	if(m_Mana < Mana)
 	{
 		GS()->Broadcast(m_pPlayer->GetCID(), BroadcastPriority::GameWarning, 100, "Mana is required for the casting or continuation of this spell.");
-		return true;
+		return false;
 	}
 
 	m_Mana -= Mana;
 
 	GS()->MarkUpdatedBroadcast(m_pPlayer->GetCID());
 	AutoUseManaPotionIfNeeded();
-	return false;
+	return true;
 }
 
 void CCharacter::ChangePosition(vec2 NewPos)
