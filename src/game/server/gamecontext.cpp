@@ -806,9 +806,10 @@ void CGS::OnTickGlobal()
 			Chat(-1, "-- {}", "Top Specialists in the Realm");
 			for(auto& [Iter, Top] : vResult)
 			{
-				auto* pAttribute = GetAttributeInfo((AttributeIdentifier)Top.Data["AttributeID"].to_int());
+				auto* pAttribute = GetAttributeInfo((AttributeIdentifier)Top.Data["ID"].to_int());
 				auto* pNickname = Server()->GetAccountNickname(Top.Data["AccountID"].to_int());
-				Chat(-1, "{}({}): '{-}'.", Top.Name, pAttribute->GetName(), pNickname);
+				auto Value = Top.Data["Value"].to_int();
+				Chat(-1, "{}: '{-} - {}({})'.", Top.Name, pNickname, Value, pAttribute->GetName());
 			}
 
 			return;

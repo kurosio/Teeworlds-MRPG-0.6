@@ -509,9 +509,10 @@ void CMmoController::ShowTopList(VoteWrapper* pWrapper, int ClientID, ToplistTyp
 		auto vResult = GetTopList(Type, Rows);
 		for(auto& [Iter, Top] : vResult)
 		{
-			auto* pAttribute = GS()->GetAttributeInfo((AttributeIdentifier)Top.Data["AttributeID"].to_int());
 			auto* pNickname = Instance::Server()->GetAccountNickname(Top.Data["AccountID"].to_int());
-			pWrapper->Add("{}({}): '{-}'.", Top.Name, pAttribute->GetName(), pNickname);
+			auto* pAttribute = GS()->GetAttributeInfo((AttributeIdentifier)Top.Data["ID"].to_int());
+			auto Value = Top.Data["Value"].to_int();
+			pWrapper->Add("{}: '{-} - {}({})'.", Top.Name, pNickname, Value, pAttribute->GetName());
 		}
 	}
 }
@@ -576,31 +577,26 @@ std::map<int, CMmoController::TempTopData> CMmoController::GetTopList(ToplistTyp
 		auto BiggestFarmerOpt = g_InventoryListener.AttributeTracker().GetTrackingData((int)AttributeIdentifier::Extraction);
 		auto BiggestFisherOpt = g_InventoryListener.AttributeTracker().GetTrackingData((int)AttributeIdentifier::Patience);
 
-		std::array<std::tuple<std::string, int, std::optional<int>>, 6> topList = {
+		std::array<std::tuple<std::string, int, std::optional<TrackingAttributeData>>, 6> topList = {
 		{
-			{GetProfessionName(ProfessionIdentifier::Tank), (int)AttributeIdentifier::HP,
-				BiggestTankOpt ? std::make_optional(BiggestTankOpt->AccountID) : std::nullopt},
-			{GetProfessionName(ProfessionIdentifier::Healer), (int)AttributeIdentifier::MP,
-				BiggestHealerOpt ? std::make_optional(BiggestHealerOpt->AccountID) : std::nullopt},
-			{GetProfessionName(ProfessionIdentifier::Dps), (int)AttributeIdentifier::CritDMG,
-				BiggestDPSOpt ? std::make_optional(BiggestDPSOpt->AccountID) : std::nullopt},
-			{GetProfessionName(ProfessionIdentifier::Miner), (int)AttributeIdentifier::Efficiency,
-				BiggestMinerOpt ? std::make_optional(BiggestMinerOpt->AccountID) : std::nullopt},
-			{GetProfessionName(ProfessionIdentifier::Farmer), (int)AttributeIdentifier::Extraction,
-				BiggestFarmerOpt ? std::make_optional(BiggestFarmerOpt->AccountID) : std::nullopt},
-			{GetProfessionName(ProfessionIdentifier::Fisherman), (int)AttributeIdentifier::Patience,
-				BiggestFisherOpt ? std::make_optional(BiggestFisherOpt->AccountID) : std::nullopt}
+			{GetProfessionName(ProfessionIdentifier::Tank), (int)AttributeIdentifier::HP, BiggestTankOpt},
+			{GetProfessionName(ProfessionIdentifier::Healer), (int)AttributeIdentifier::MP, BiggestHealerOpt},
+			{GetProfessionName(ProfessionIdentifier::Dps), (int)AttributeIdentifier::CritDMG, BiggestDPSOpt},
+			{GetProfessionName(ProfessionIdentifier::Miner), (int)AttributeIdentifier::Efficiency, BiggestMinerOpt},
+			{GetProfessionName(ProfessionIdentifier::Farmer), (int)AttributeIdentifier::Extraction, BiggestFarmerOpt},
+			{GetProfessionName(ProfessionIdentifier::Fisherman), (int)AttributeIdentifier::Patience, BiggestFisherOpt}
 		}};
 
 		int Iter = 0;
-		for(const auto& [title, attributeID, accountIdOpt] : topList)
+		for(const auto& [title, attributeID, biggestTrackData] : topList)
 		{
-			if(accountIdOpt)
+			if(biggestTrackData)
 			{
 				auto& field = vResult[Iter];
 				field.Name = title;
-				field.Data["AccountID"] = *accountIdOpt;
-				field.Data["AttributeID"] = attributeID;
+				field.Data["AccountID"] = biggestTrackData->AccountID;
+				field.Data["ID"] = attributeID;
+				field.Data["Value"] = biggestTrackData->Amount;
 				Iter++;
 			}
 		}
