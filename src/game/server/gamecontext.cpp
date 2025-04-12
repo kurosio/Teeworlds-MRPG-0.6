@@ -969,11 +969,8 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 		{
 			const auto pMsg = (CNetMsg_Cl_SetSpectatorMode*)pRawMsg;
 			int SpectatorID = clamp(pMsg->m_SpectatorId, (int)SPEC_FOLLOW, MAX_CLIENTS - 1);
-			if(SpectatorID >= MAX_PLAYERS)
-			{
-				Chat(ClientID, "Spectating on NPCs is prohibited");
+			if(SpectatorID >= 0 && !Server()->ReverseTranslate(SpectatorID, ClientID))
 				return;
-			}
 
 			auto& LastSetSpecSpectatorMode = pPlayer->m_aPlayerTick[LastSetSpectatorMode];
 			if(LastSetSpecSpectatorMode && LastSetSpecSpectatorMode + Server()->TickSpeed() / 4 > Server()->Tick())
