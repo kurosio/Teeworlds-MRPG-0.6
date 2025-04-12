@@ -163,6 +163,6 @@ void GroupData::Save() const
 		StrAccountIds.pop_back();
 
 	// update group data
-	Database->Execute<DB::UPDATE>(TW_GROUPS_TABLE, "AccountIDs = '{}', GetOwnerUID = '{}' WHERE ID = '{}'", 
+	Database->Execute<DB::UPDATE>(TW_GROUPS_TABLE, "AccountIDs = '{}', OwnerUID = '{}' WHERE ID = '{}'",
 		StrAccountIds.c_str(), m_LeaderUID, m_ID);
 }
