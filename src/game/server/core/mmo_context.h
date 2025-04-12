@@ -739,7 +739,7 @@ enum class AttributeIdentifier : int
 	EidolonPWR = 19,             // Attribute identifier for eidolon power
 	GoldCapacity = 20,           // Attribute identifier for gold capacity
 	Patience = 21,               // Attribute identifier for fisherman
-	Endurance = 22,              // Attribute identifier for loader
+	ProductCapacity = 22,        // Attribute identifier for loader
 	ATTRIBUTES_NUM,              // The number of total attributes
 };
 

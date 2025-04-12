@@ -172,7 +172,7 @@ public:
 		: CProfession(ProfessionIdentifier::Loader, PROFESSION_TYPE_OTHER)
 	{
 		// availables for upgrades
-		m_Attributes[AttributeIdentifier::Endurance] = 1;
+		m_Attributes[AttributeIdentifier::ProductCapacity] = 1;
 	}
 };
 

@@ -202,7 +202,7 @@ bool CWarehouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
 			return true;
 		}
 
-		auto EnduranceValue = pPlayer->GetTotalAttributeValue(AttributeIdentifier::Endurance);
+		auto EnduranceValue = pPlayer->GetTotalAttributeValue(AttributeIdentifier::ProductCapacity);
 		auto MaxCanTake = g_Config.m_SvWarehouseProductsCanTake + EnduranceValue;
 
 		// check is player has maximum products

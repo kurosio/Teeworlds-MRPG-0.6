@@ -37,7 +37,7 @@ void CInventoryListener::OnCharacterSpawn(CPlayer* pPlayer)
         AttributeData{AttributeIdentifier::Efficiency, WEAPON_HAMMER, MULTIPLE_ORBITE_TYPE_EIGHT},
         AttributeData{AttributeIdentifier::Extraction, WEAPON_HAMMER, MULTIPLE_ORBITE_TYPE_DYNAMIC_CENTER},
         AttributeData{AttributeIdentifier::Patience, WEAPON_HAMMER, MULTIPLE_ORBITE_TYPE_PULSATING},
-        AttributeData{AttributeIdentifier::Endurance, WEAPON_HAMMER, MULTIPLE_ORBITE_TYPE_ELLIPTICAL}
+        AttributeData{AttributeIdentifier::ProductCapacity, WEAPON_HAMMER, MULTIPLE_ORBITE_TYPE_ELLIPTICAL}
     };
 
     for(const auto& attribute : attributesData)
