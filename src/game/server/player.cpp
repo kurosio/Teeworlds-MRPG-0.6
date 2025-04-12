@@ -32,6 +32,7 @@ CPlayer::CPlayer(CGS* pGS, int ClientID) : m_pGS(pGS), m_ClientID(ClientID)
 	m_SnapHealthNicknameTick = 0;
 
 	m_WantSpawn = true;
+	m_SpectatorID = SPEC_FREEVIEW;
 	m_PrevTuningParams = *pGS->Tuning();
 	m_NextTuningParams = m_PrevTuningParams;
 	m_Scenarios.Init(ClientID);
@@ -181,6 +182,17 @@ void CPlayer::PostTick()
 		Account()->GetPrisonManager().PostTick();
 		m_Effects.PostTick();
 		m_Scenarios.PostTick();
+	}
+
+	// update view pos for spectators
+	const bool isViewLocked = m_FixedView.GetCurrentView().has_value();
+	if(!isViewLocked && GetTeam() == TEAM_SPECTATORS && m_SpectatorID != SPEC_FREEVIEW)
+	{
+		auto* pSpecPlayerChar = GS()->GetPlayerChar(m_SpectatorID);
+		if(pSpecPlayerChar)
+			m_ViewPos = pSpecPlayerChar->GetPos();
+		else
+			m_SpectatorID = SPEC_FREEVIEW;
 	}
 
 	// handlers
@@ -337,9 +349,9 @@ void CPlayer::Snap(int SnappingClient)
 		{
 			if(auto* pSpectatorInfo = Server()->SnapNewItem<CNetObj_SpectatorInfo>(m_ClientID))
 			{
+				pSpectatorInfo->m_SpectatorId = (isViewLocked ? m_ClientID : m_SpectatorID);
 				pSpectatorInfo->m_X = m_ViewPos.x;
 				pSpectatorInfo->m_Y = m_ViewPos.y;
-				pSpectatorInfo->m_SpectatorId = (isViewLocked ? m_ClientID : -1);
 				m_FixedView.Reset();
 			}
 
@@ -379,7 +391,7 @@ void CPlayer::FakeSnap()
 	// spectator info
 	if(auto* pSpectatorInfo = Server()->SnapNewItem<CNetObj_SpectatorInfo>(FakeID))
 	{
-		pSpectatorInfo->m_SpectatorId = -1;
+		pSpectatorInfo->m_SpectatorId = m_SpectatorID;
 		pSpectatorInfo->m_X = m_ViewPos.x;
 		pSpectatorInfo->m_Y = m_ViewPos.y;
 	}
@@ -500,7 +512,7 @@ void CPlayer::OnDisconnect()
 void CPlayer::OnDirectInput(CNetObj_PlayerInput* pNewInput)
 {
 	// Update view position for spectators
-	if(!m_pCharacter && GetTeam() == TEAM_SPECTATORS)
+	if(!m_pCharacter && GetTeam() == TEAM_SPECTATORS && m_SpectatorID == SPEC_FREEVIEW)
 		m_ViewPos = vec2(pNewInput->m_TargetX, pNewInput->m_TargetY);
 
 	// parse event keys

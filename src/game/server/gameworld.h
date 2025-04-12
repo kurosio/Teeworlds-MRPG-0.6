@@ -74,7 +74,6 @@ public:
 
 	ska::unordered_set<std::shared_ptr<CEntityGroup>> m_EntityGroups;
 	bool m_ResetRequested;
-	bool m_Paused;
 	CWorldCore m_Core;
 
 	CGameWorld();

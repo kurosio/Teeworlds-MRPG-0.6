@@ -7,7 +7,7 @@
 //////////////////////////////////////////////////
 // game world
 //////////////////////////////////////////////////
-CGameWorld::CGameWorld() : m_pNextTraverseEntity(nullptr), m_Paused(false)
+CGameWorld::CGameWorld() : m_pNextTraverseEntity(nullptr)
 {
 	m_pGS = nullptr;
 	m_pServer = nullptr;

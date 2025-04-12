@@ -57,6 +57,7 @@ public:
 	ScenarioManager& Scenarios() { return m_Scenarios; }
 
 	vec2 m_ViewPos{};
+	int m_SpectatorID {};
 	int m_PlayerFlags{};
 	int m_aPlayerTick[NUM_TICK]{};
 	char m_aRotateClanBuffer[128]{};

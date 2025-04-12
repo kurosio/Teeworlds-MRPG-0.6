@@ -967,6 +967,26 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 
 		if(MsgID == NETMSGTYPE_CL_SETSPECTATORMODE)
 		{
+			const auto pMsg = (CNetMsg_Cl_SetSpectatorMode*)pRawMsg;
+			int SpectatorID = clamp(pMsg->m_SpectatorId, (int)SPEC_FOLLOW, MAX_CLIENTS - 1);
+			if(SpectatorID >= MAX_PLAYERS)
+			{
+				Chat(ClientID, "Spectating on NPCs is prohibited");
+				return;
+			}
+
+			auto& LastSetSpecSpectatorMode = pPlayer->m_aPlayerTick[LastSetSpectatorMode];
+			if(LastSetSpecSpectatorMode && LastSetSpecSpectatorMode + Server()->TickSpeed() / 4 > Server()->Tick())
+				return;
+
+			LastSetSpecSpectatorMode = Server()->Tick();
+			if(SpectatorID >= 0 && (!m_apPlayers[SpectatorID] || m_apPlayers[SpectatorID]->GetTeam() == TEAM_SPECTATORS))
+			{
+				Chat(ClientID, "Invalid spectator id used");
+				return;
+			}
+
+			pPlayer->m_SpectatorID = SpectatorID;
 			return;
 		}
 
