@@ -135,7 +135,7 @@ void BonusManager::PostTick()
 		if(!it->IsActive())
 		{
 			CGS* pGS = (CGS*)Instance::GameServerPlayer(m_ClientID);
-			pGS->Chat(m_ClientID, "Your '{}' of '{~.2f}%' has expired.", GetStringBonusType(it->Type), it->Amount);
+			pGS->Chat(m_ClientID, "Your '{}' of '{~.2}%' has expired.", GetStringBonusType(it->Type), it->Amount);
 			it = m_vTemporaryBonuses.erase(it);
 			hasChanges = true;
 		}
