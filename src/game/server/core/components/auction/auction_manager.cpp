@@ -99,8 +99,8 @@ void CAuctionManager::ShowAuction(CPlayer* pPlayer) const
 		if(pSlot->GetOwnerID() != pPlayer->Account()->GetID())
 		{
 			const CItem* pItem = pSlot->GetItem();
-			VList.AddMenu(MENU_AUCTION_SLOT_SELECT, pSlot->GetID(), "{}. {} x{} Seller: {}",
-				VList.NextPos(), pItem->Info()->GetName(), pItem->GetValue(), Server()->GetAccountNickname(pSlot->GetOwnerID()));
+			VList.AddMenu(MENU_AUCTION_SLOT_SELECT, pSlot->GetID(), "{}. {} x{} - {} gold. by {}",
+				VList.NextPos(), pItem->Info()->GetName(), pItem->GetValue(), pSlot->GetPrice(), Server()->GetAccountNickname(pSlot->GetOwnerID()));
 		}
 	}
 }
