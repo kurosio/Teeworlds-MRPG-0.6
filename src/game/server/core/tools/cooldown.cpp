@@ -22,7 +22,7 @@ void CCooldown::Start(int Tick, std::string Name, CCooldownCallback fnCallback)
 	m_Tick = Tick;
 
 	pGS->CreatePlayerSpawn(m_Pos, CmaskOne(m_ClientID));
-	pPlayer->GetCharacter()->SetEmote(EMOTE_BLINK, m_Tick, true);
+	pPlayer->GetCharacter()->SetEmote(EMOTE_BLINK, (m_Tick / SERVER_TICK_SPEED), true);
 }
 
 void CCooldown::Reset()
@@ -51,12 +51,12 @@ void CCooldown::Tick()
 	if(m_Tick <= 0)
 	{
 		EndCooldown();
-		
+
 		if(m_Callback)
 		{
 			m_Callback();
 		}
-		
+
 		return;
 	}
 
