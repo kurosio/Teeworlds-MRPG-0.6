@@ -188,10 +188,10 @@ void CPlayer::PostTick()
 	const bool isViewLocked = m_FixedView.GetCurrentView().has_value();
 	if(!isViewLocked && GetTeam() == TEAM_SPECTATORS && m_SpectatorID != SPEC_FREEVIEW)
 	{
-		auto* pSpecPlayerChar = GS()->GetPlayerChar(m_SpectatorID);
-		if(pSpecPlayerChar)
-			m_ViewPos = pSpecPlayerChar->GetPos();
-		else
+		auto* pSpecPlayer = GS()->GetPlayer(m_SpectatorID);
+		if(pSpecPlayer && pSpecPlayer->GetCharacter())
+			m_ViewPos = pSpecPlayer->GetCharacter()->GetPos();
+		else if(!pSpecPlayer || !GS()->IsPlayerInWorld(m_SpectatorID))
 			m_SpectatorID = SPEC_FREEVIEW;
 	}
 
