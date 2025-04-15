@@ -49,13 +49,13 @@ void IGameController::OnCharacterDeath(CPlayer* pVictim, CPlayer* pKiller, int W
 	if(pVictim && !pVictim->IsBot())
 	{
 		pVictim->TryRemoveEidolon();
-		pVictim->GetTempData().m_LastKilledByWeapon = Weapon;
+		pVictim->GetSharedData().m_LastKilledByWeapon = Weapon;
 
 		// Clear all effects on the player
 		if(Weapon != WEAPON_WORLD)
 		{
 			pVictim->m_Effects.RemoveAll();
-			pVictim->UpdateTempData(0, 0);
+			pVictim->UpdateSharedCharacterData(0, 0);
 		}
 	}
 }
@@ -391,7 +391,7 @@ void IGameController::DoTeamChange(CPlayer* pPlayer)
 	const int ClientID = pPlayer->GetCID();
 	const int Team = pPlayer->GetTeam();
 
-	pPlayer->GetTempData().m_LastKilledByWeapon = WEAPON_WORLD;
+	pPlayer->GetSharedData().m_LastKilledByWeapon = WEAPON_WORLD;
 
 	char aBuf[128];
 	str_format(aBuf, sizeof(aBuf), "team_join player='%d:%s' m_Team=%d", ClientID, Server()->ClientName(ClientID), Team);

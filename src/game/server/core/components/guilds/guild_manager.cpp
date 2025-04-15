@@ -542,7 +542,7 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int 
 		}
 
 		// update search buffer and reset votes
-		str_copy(pPlayer->GetTempData().m_aGuildSearchBuf, pReason, sizeof(pPlayer->GetTempData().m_aGuildSearchBuf));
+		str_copy(pPlayer->GetSharedData().m_aGuildSearchBuf, pReason, sizeof(pPlayer->GetSharedData().m_aGuildSearchBuf));
 		pPlayer->m_VotesData.UpdateVotes(MENU_GUILD_FINDER);
 		return true;
 	}
@@ -1600,14 +1600,14 @@ void CGuildManager::ShowFinder(CPlayer* pPlayer) const
 
 	// search field
 	VoteWrapper VSearch(ClientID, VWF_OPEN | VWF_STYLE_SIMPLE, "\u2732 Search by name");
-	VSearch.AddOption("GUILD_FINDER_SEARCH_FIELD", "Search: [{}]", pPlayer->GetTempData().m_aGuildSearchBuf[0] == '\0' ? "by reason field" : pPlayer->GetTempData().m_aGuildSearchBuf);
+	VSearch.AddOption("GUILD_FINDER_SEARCH_FIELD", "Search: [{}]", pPlayer->GetSharedData().m_aGuildSearchBuf[0] == '\0' ? "by reason field" : pPlayer->GetSharedData().m_aGuildSearchBuf);
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// search list
 	VoteWrapper VList(ClientID, VWF_OPEN | VWF_STYLE_SIMPLE, "Guild list");
 	for(auto& pGuild : CGuild::Data())
 	{
-		if(pPlayer->GetTempData().m_aGuildSearchBuf[0] == '\0' || str_utf8_find_nocase(pGuild->GetName(), pPlayer->GetTempData().m_aGuildSearchBuf) != nullptr)
+		if(pPlayer->GetSharedData().m_aGuildSearchBuf[0] == '\0' || str_utf8_find_nocase(pGuild->GetName(), pPlayer->GetSharedData().m_aGuildSearchBuf) != nullptr)
 		{
 			int OwnerUID = pGuild->GetLeaderUID();
 			VList.AddMenu(MENU_GUILD_FINDER_SELECT, pGuild->GetID(), "{} (leader {})", pGuild->GetName(), Server()->GetAccountNickname(OwnerUID));

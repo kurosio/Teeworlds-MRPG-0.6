@@ -253,7 +253,7 @@ void CAccountManager::OnPlayerLogin(CPlayer* pPlayer)
 
 void CAccountManager::OnClientReset(int ClientID)
 {
-	CAccountTempData::ms_aPlayerTempData.erase(ClientID);
+	CAccountSharedData::ms_aPlayerSharedData.erase(ClientID);
 	CAccountData::ms_aData.erase(ClientID);
 }
 

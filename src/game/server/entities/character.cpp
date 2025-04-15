@@ -699,7 +699,7 @@ bool CCharacter::RemoveWeapon(int WeaponID)
 }
 
 // This function sets the character's emote and its duration
-void CCharacter::SetEmote(int Emote, int Sec, bool StartEmoticion)
+void CCharacter::SetEmote(int Emote, int Sec, bool SendEmoticion)
 {
 	// Reset by default emote
 	if(Emote == EMOTE_NORMAL)
@@ -709,21 +709,16 @@ void CCharacter::SetEmote(int Emote, int Sec, bool StartEmoticion)
 		return;
 	}
 
-
-	// Check if the character is alive and the emote has stopped
+	// check if the character is alive and the emote has stopped
 	if(m_EmoteStop < Server()->Tick())
 	{
-		// Set the emote type
 		m_EmoteType = Emote;
-		// Set the time when the emote should stop
 		m_EmoteStop = Server()->Tick() + Sec * Server()->TickSpeed();
 	}
 
-
-	// Check if the emoticion should be started
-	if(StartEmoticion)
+	// check if the emoticion should be started
+	if(SendEmoticion)
 	{
-		// Send the corresponding emoticon based on the emote type
 		if(Emote == EMOTE_BLINK)
 			GS()->SendEmoticon(m_pPlayer->GetCID(), EMOTICON_DOTDOT);
 		else if(Emote == EMOTE_HAPPY)
@@ -839,7 +834,7 @@ void CCharacter::Tick()
 	// core
 	m_Core.m_Input = m_Input;
 	m_Core.Tick(true, &m_pPlayer->m_NextTuningParams);
-	m_pPlayer->UpdateTempData(m_Health, m_Mana);
+	m_pPlayer->UpdateSharedCharacterData(m_Health, m_Mana);
 
 	// game clipped
 	if(GameLayerClipped(m_Pos) || m_pTilesHandler->IsEnter(TILE_DEATH))
@@ -921,7 +916,7 @@ bool CCharacter::IncreaseHealth(int Amount)
 	Amount = maximum(Amount, 1);
 	m_Health = clamp(m_Health + Amount, 0, m_pPlayer->GetMaxHealth());
 	GS()->MarkUpdatedBroadcast(m_pPlayer->GetCID());
-	m_pPlayer->SetSnapHealthTick(2);
+	m_pPlayer->ShowHealthNickname(2);
 	return true;
 }
 
@@ -1152,7 +1147,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Damage, int FromCID, int Weapon)
 	m_EmoteType = EMOTE_PAIN;
 	m_EmoteStop = Server()->Tick() + 500 * Server()->TickSpeed() / 1000;
 	m_LastDamageByClient = FromCID;
-	m_pPlayer->SetSnapHealthTick(2);
+	m_pPlayer->ShowHealthNickname(2);
 	m_pPlayer->m_aPlayerTick[LastDamage] = Server()->Tick();
 	//dbg_msg("test", "[dmg:%d crit:%d, weapon:%d] damage %s to %s / star num %d",
 	//	Damage, IsCriticalDamage, pFrom->GetCharacter()->m_Core.m_ActiveWeapon, pFrom->IsBot() ? "bot" : "player", m_pPlayer->IsBot() ? "bot" : "player", StarNum);
@@ -1746,7 +1741,7 @@ bool CCharacter::CanAccessWorld() const
 		const auto* pAccount = m_pPlayer->Account();
 		if(pAccount->GetLevel() < GS()->GetWorldData()->GetRequiredLevel())
 		{
-			m_pPlayer->GetTempData().ClearSpawnPosition();
+			m_pPlayer->GetSharedData().ClearSpawnPosition();
 			GS()->Chat(m_pPlayer->GetCID(), "You were magically transported!");
 			m_pPlayer->ChangeWorld(MAIN_WORLD_ID);
 			return false;
@@ -1755,7 +1750,7 @@ bool CCharacter::CanAccessWorld() const
 		// check finished tutorial
 		if(!m_pPlayer->GetItem(itTittleNewbie)->HasItem() && !GS()->IsPlayerInWorld(m_ClientID, TUTORIAL_WORLD_ID))
 		{
-			m_pPlayer->GetTempData().ClearSpawnPosition();
+			m_pPlayer->GetSharedData().ClearSpawnPosition();
 			GS()->Chat(m_pPlayer->GetCID(), "You need to complete the Tutorial.");
 			m_pPlayer->ChangeWorld(TUTORIAL_WORLD_ID);
 			return false;

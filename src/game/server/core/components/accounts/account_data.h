@@ -189,7 +189,7 @@ public:
 	static std::map < int, CAccountData > ms_aData;
 };
 
-struct CAccountTempData
+struct CAccountSharedData
 {
 	int m_LastKilledByWeapon;
 	CAuctionSlot m_TempAuctionSlot;
@@ -199,9 +199,9 @@ struct CAccountTempData
 	char m_aPlayerSearchBuf[32];
 
 	// player stats
-	int m_TempHealth;
-	int m_TempMana;
-	int m_TempPing;
+	int m_Health;
+	int m_Mana;
+	int m_Ping;
 
 	// dungeon
 	int m_TempTimeDungeon;
@@ -222,7 +222,7 @@ struct CAccountTempData
 		m_TempSpawnPos = std::nullopt;
 	}
 
-	static std::map < int, CAccountTempData > ms_aPlayerTempData;
+	static std::map < int, CAccountSharedData > ms_aPlayerSharedData;
 
 private:
 	std::optional<vec2> m_TempSpawnPos{};

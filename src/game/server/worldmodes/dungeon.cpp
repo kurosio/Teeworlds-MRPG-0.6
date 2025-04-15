@@ -189,7 +189,7 @@ void CGameControllerDungeon::StateTick()
 			if(!pPlayer || !GS()->IsPlayerInWorld(i, m_WorldID))
 				continue;
 
-			pPlayer->GetTempData().m_TempTimeDungeon++;
+			pPlayer->GetSharedData().m_TempTimeDungeon++;
 		}
 
 		// security tick during which time the player will not return to the old world
@@ -318,7 +318,7 @@ int CGameControllerDungeon::PlayersReady() const
     for(int i = 0; i < MAX_PLAYERS; i++)
     {
         CPlayer* pPlayer = GS()->GetPlayer(i);
-        if(pPlayer && GS()->IsPlayerInWorld(i, m_WorldID) && pPlayer->GetTempData().m_TempDungeonReady)
+        if(pPlayer && GS()->IsPlayerInWorld(i, m_WorldID) && pPlayer->GetSharedData().m_TempDungeonReady)
         {
             ReadyPlayers++;
         }
@@ -366,28 +366,28 @@ void CGameControllerDungeon::SetMobsSpawn(bool AllowedSpawn)
 // TODO: something to do with the balance
 int CGameControllerDungeon::GetSyncFactor() const
 {
-	int MaxFactor = 0;
-	int MinFactor = std::numeric_limits<int>::max();
-	int BotCount = 0;
+	//int MaxFactor = 0;
+	//int MinFactor = std::numeric_limits<int>::max();
+	//int BotCount = 0;
 
-	for(int i = MAX_PLAYERS; i < MAX_CLIENTS; i++)
-	{
-		CPlayerBot* pBotPlayer = dynamic_cast<CPlayerBot*>(GS()->GetPlayer(i));
-		if(pBotPlayer && pBotPlayer->GetBotType() == TYPE_BOT_MOB && pBotPlayer->GetCurrentWorldID() == m_WorldID)
-		{
-			const int LevelDisciple = pBotPlayer->GetTotalAttributes();
-			MinFactor = minimum(MinFactor, LevelDisciple);
-			MaxFactor = maximum(MaxFactor, LevelDisciple);
-			BotCount++;
-		}
-	}
+	//for(int i = MAX_PLAYERS; i < MAX_CLIENTS; i++)
+	//{
+	//	CPlayerBot* pBotPlayer = dynamic_cast<CPlayerBot*>(GS()->GetPlayer(i));
+	//	if(pBotPlayer && pBotPlayer->GetBotType() == TYPE_BOT_MOB && pBotPlayer->GetCurrentWorldID() == m_WorldID)
+	//	{
+	//		const int LevelDisciple = pBotPlayer->GetTotalAttributes();
+	//		MinFactor = minimum(MinFactor, LevelDisciple);
+	//		MaxFactor = maximum(MaxFactor, LevelDisciple);
+	//		BotCount++;
+	//	}
+	//}
 
-	if(BotCount == 0)
-	{
+	//if(BotCount == 0)
+	//{
 		return 0; // No bot's, return default value
-	}
+	//}
 
-	return (MaxFactor + MinFactor) / 2;
+	//return (MaxFactor + MinFactor) / 2;
 }
 
 int CGameControllerDungeon::GetAttributeDungeonSyncByClass(ProfessionIdentifier ProfID, AttributeIdentifier ID) const

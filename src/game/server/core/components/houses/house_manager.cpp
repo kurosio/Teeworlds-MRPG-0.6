@@ -369,7 +369,7 @@ bool CHouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 			return true;
 		}
 
-		str_copy(pPlayer->GetTempData().m_aPlayerSearchBuf, pText, sizeof(pPlayer->GetTempData().m_aPlayerSearchBuf));
+		str_copy(pPlayer->GetSharedData().m_aPlayerSearchBuf, pText, sizeof(pPlayer->GetSharedData().m_aPlayerSearchBuf));
 		pPlayer->m_VotesData.UpdateVotesIf(MENU_HOUSE_DOOR_LIST);
 		return true;
 	}

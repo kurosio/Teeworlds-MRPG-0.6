@@ -36,7 +36,7 @@ class CPlayer
 		int m_TargetY;
 	};
 
-	int m_SnapHealthNicknameTick;
+	int m_ShowHealthNicknameTick;
 
 protected:
 	IServer* Server() const;
@@ -106,8 +106,8 @@ public:
 	virtual const CTeeInfo& GetTeeInfo() const;
 	virtual int GetMaxHealth() const;
 	virtual int GetMaxMana() const;
-	virtual	int GetHealth() const { return GetTempData().m_TempHealth; }
-	virtual	int GetMana() const { return GetTempData().m_TempMana; }
+	virtual	int GetHealth() const { return GetSharedData().m_Health; }
+	virtual	int GetMana() const { return GetSharedData().m_Mana; }
 
 	virtual void HandleTuningParams();
 	virtual int64_t GetMaskVisibleForClients() const { return -1; }
@@ -116,7 +116,7 @@ public:
 	virtual bool IsEquipped(ItemType EquipID) const;
 	virtual int GetTotalAttributeValue(AttributeIdentifier ID) const;
 	float GetAttributeChance(AttributeIdentifier ID) const;
-	virtual void UpdateTempData(int Health, int Mana);
+	virtual void UpdateSharedCharacterData(int Health, int Mana);
 
 	void FormatBroadcastBasicStats(char* pBuffer, int Size, const char* pAppendStr = "\0") const;
 
@@ -156,13 +156,10 @@ public:
 	virtual CPlayerItem* GetItem(ItemIdentifier ID);
 	CSkill* GetSkill(int SkillID) const;
 	CPlayerQuest* GetQuest(QuestIdentifier ID) const;
-	CAccountTempData& GetTempData() const { return CAccountTempData::ms_aPlayerTempData[m_ClientID]; }
+	CAccountSharedData& GetSharedData() const { return CAccountSharedData::ms_aPlayerSharedData[m_ClientID]; }
 	CAccountData* Account() const { return &CAccountData::ms_aData[m_ClientID]; }
 
-	int GetTotalAttributesInGroup(AttributeGroup Type) const;
-	int GetTotalAttributes() const;
-
-	void SetSnapHealthTick(int Sec);
+	void ShowHealthNickname(int Sec);
 	bool IsSameMotdMenu(int Menulist) const { return m_pMotdMenu && m_pMotdMenu->GetMenulist() == Menulist; }
 	void CloseMotdMenu() { m_pMotdMenu->ClearMotd(); }
 

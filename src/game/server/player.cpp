@@ -29,9 +29,14 @@ CPlayer::CPlayer(CGS* pGS, int ClientID) : m_pGS(pGS), m_ClientID(ClientID)
 {
 	m_aPlayerTick[Die] = Server()->Tick();
 	m_aPlayerTick[Respawn] = Server()->Tick() + Server()->TickSpeed();
-	m_SnapHealthNicknameTick = 0;
+	m_ShowHealthNicknameTick = 0;
 
 	m_WantSpawn = true;
+	m_Afk = false;
+	m_pLastInput = new CNetObj_PlayerInput({ 0 });
+	m_LastInputInit = false;
+	m_LastPlaytime = 0;
+	m_MoodState = Mood::Normal;
 	m_SpectatorID = SPEC_FREEVIEW;
 	m_PrevTuningParams = *pGS->Tuning();
 	m_NextTuningParams = m_PrevTuningParams;
@@ -43,13 +48,7 @@ CPlayer::CPlayer(CGS* pGS, int ClientID) : m_pGS(pGS), m_ClientID(ClientID)
 	// constructor only for players
 	if(m_ClientID < MAX_PLAYERS)
 	{
-		m_MoodState = Mood::Normal;
 		GS()->SendTuningParams(ClientID);
-
-		m_Afk = false;
-		m_pLastInput = new CNetObj_PlayerInput({ 0 });
-		m_LastInputInit = false;
-		m_LastPlaytime = 0;
 	}
 }
 
@@ -72,7 +71,7 @@ void CPlayer::GetFormatedName(char* aBuffer, int BufferSize)
 	const auto tickSpeed = Server()->TickSpeed();
 
 	// Player is not chatting and health nickname tick is valid
-	if(!isChatting && currentTick < m_SnapHealthNicknameTick)
+	if(!isChatting && currentTick < m_ShowHealthNicknameTick)
 	{
 		char aHealthProgressBuf[6];
 		char aNicknameBuf[MAX_NAME_LENGTH];
@@ -173,7 +172,7 @@ void CPlayer::PostTick()
 	{
 		// update latency value
 		if(Server()->ClientIngame(m_ClientID))
-			GetTempData().m_TempPing = m_Latency.m_Min;
+			GetSharedData().m_Ping = m_Latency.m_Min;
 
 		// handlers
 		HandleTuningParams();
@@ -334,7 +333,7 @@ void CPlayer::Snap(int SnappingClient)
 		pPlayerInfo->m_Local = localClient;
 		pPlayerInfo->m_ClientId = m_ClientID;
 		pPlayerInfo->m_Team = GetTeam();
-		pPlayerInfo->m_Latency = (SnappingClient == -1 ? m_Latency.m_Min : GetTempData().m_TempPing);
+		pPlayerInfo->m_Latency = (SnappingClient == -1 ? m_Latency.m_Min : GetSharedData().m_Ping);
 		pPlayerInfo->m_Score = Account()->GetLevel();
 
 		// ddnet player
@@ -454,7 +453,7 @@ void CPlayer::TryRespawn()
 	}
 
 	// spawn by kill
-	else if(GetTempData().m_LastKilledByWeapon != WEAPON_WORLD)
+	else if(GetSharedData().m_LastKilledByWeapon != WEAPON_WORLD)
 	{
 		auto* pRespawnWorld = GS()->GetWorldData()->GetRespawnWorld();
 		if(pRespawnWorld && !GS()->IsPlayerInWorld(m_ClientID, pRespawnWorld->GetID()))
@@ -467,7 +466,7 @@ void CPlayer::TryRespawn()
 	// spawn by optional teleport
 	else if(!GS()->IsWorldType(WorldType::Dungeon))
 	{
-		auto optionalSpawnPos = GetTempData().GetSpawnPosition();
+		auto optionalSpawnPos = GetSharedData().GetSpawnPosition();
 		if(optionalSpawnPos.has_value() && !GS()->Collision()->CheckPoint(*optionalSpawnPos))
 			FinalSpawnPos = optionalSpawnPos;
 	}
@@ -489,7 +488,7 @@ void CPlayer::TryRespawn()
 		m_pCharacter = new(AllocMemoryCell) CCharacter(&GS()->m_World);
 		m_pCharacter->Spawn(this, *FinalSpawnPos);
 		GS()->CreatePlayerSpawn(*FinalSpawnPos);
-		GetTempData().ClearSpawnPosition();
+		GetSharedData().ClearSpawnPosition();
 		m_WantSpawn = false;
 	}
 }
@@ -595,11 +594,11 @@ const char* CPlayer::GetLanguage() const
 	return Server()->GetClientLanguage(m_ClientID);
 }
 
-void CPlayer::UpdateTempData(int Health, int Mana)
+void CPlayer::UpdateSharedCharacterData(int Health, int Mana)
 {
-	auto& TempData = GetTempData();
-	TempData.m_TempHealth = Health;
-	TempData.m_TempMana = Mana;
+	auto& TempData = GetSharedData();
+	TempData.m_Health = Health;
+	TempData.m_Mana = Mana;
 }
 
 bool CPlayer::IsAuthed() const
@@ -711,8 +710,8 @@ bool CPlayer::ParseVoteOptionResult(int Vote)
 			//const int DungeonID = dynamic_cast<CGameControllerDungeon*>(GS()->m_pController)->GetDungeonID();
 			//if(!CDungeonData::ms_aDungeon[DungeonID].IsDungeonPlaying())
 			//{
-			//	GetTempData().m_TempDungeonReady = !GetTempData().m_TempDungeonReady;
-			//	GS()->Chat(m_ClientID, "You changed the ready mode to \"{}\"!", GetTempData().m_TempDungeonReady ? "ready" : "not ready");
+			//	GetSharedData().m_TempDungeonReady = !GetSharedData().m_TempDungeonReady;
+			//	GS()->Chat(m_ClientID, "You changed the ready mode to \"{}\"!", GetSharedData().m_TempDungeonReady ? "ready" : "not ready");
 			//}
 			return true;
 		}
@@ -873,43 +872,15 @@ float CPlayer::GetAttributeChance(AttributeIdentifier ID) const
 	}
 }
 
-int CPlayer::GetTotalAttributesInGroup(AttributeGroup Type) const
+void CPlayer::ShowHealthNickname(int Sec)
 {
-	int totalSize = 0;
-
-	// iterate over all attributes by group and sum their values
-	for(const auto& [ID, pAttribute] : CAttributeDescription::Data())
-	{
-		if(pAttribute->IsGroup(Type))
-		{
-			totalSize += GetTotalAttributeValue(ID);
-		}
-	}
-	return totalSize;
-}
-
-int CPlayer::GetTotalAttributes() const
-{
-	int totalSize = 0;
-
-	// iterate over all attributes and sum their values
-	for(const auto& attributeID : CAttributeDescription::Data() | std::views::keys)
-	{
-		totalSize += GetTotalAttributeValue(attributeID);
-	}
-
-	return totalSize;
-}
-
-void CPlayer::SetSnapHealthTick(int Sec)
-{
-	m_SnapHealthNicknameTick = Server()->Tick() + (Server()->TickSpeed() * Sec);
+	m_ShowHealthNicknameTick = Server()->Tick() + (Server()->TickSpeed() * Sec);
 }
 
 void CPlayer::ChangeWorld(int WorldID, std::optional<vec2> newWorldPosition)
 {
 	// reset dungeon temporary data
-	auto& tempData = GetTempData();
+	auto& tempData = GetSharedData();
 	tempData.m_TempDungeonReady = false;
 	tempData.m_TempTimeDungeon = 0;
 
@@ -957,6 +928,8 @@ void CPlayer::StartUniversalScenario(const std::string& ScenarioData, int Scenar
 		// start scenario
 		const auto& scenarioJsonData = ObjElem.empty() ? pJson : pJson[ObjElem];
 		if(!scenarioJsonData.empty())
+		{
 			Scenarios().Start(std::make_unique<CUniversalScenario>(ScenarioID, scenarioJsonData));
+		}
 	});
 }

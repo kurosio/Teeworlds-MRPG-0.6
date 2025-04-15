@@ -11,7 +11,7 @@
 #include "../worlds/world_manager.h"
 
 std::map < int, CAccountData > CAccountData::ms_aData;
-std::map < int, CAccountTempData > CAccountTempData::ms_aPlayerTempData;
+std::map < int, CAccountSharedData > CAccountSharedData::ms_aPlayerSharedData;
 
 CGS* CAccountData::GS() const
 {

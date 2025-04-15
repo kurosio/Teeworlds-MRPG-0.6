@@ -12,7 +12,7 @@ class CAccountManager : public MmoComponent
 	~CAccountManager() override
 	{
 		// free data
-		mystd::freeContainer(CAccountData::ms_aData, CAccountTempData::ms_aPlayerTempData);
+		mystd::freeContainer(CAccountData::ms_aData, CAccountSharedData::ms_aPlayerSharedData);
 	}
 
 	void OnPlayerLogin(CPlayer* pPlayer) override;

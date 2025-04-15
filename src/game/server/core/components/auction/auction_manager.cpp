@@ -109,7 +109,7 @@ void CAuctionManager::ShowCreateSlot(CPlayer* pPlayer) const
 {
 	// initialize variables
 	const int ClientID = pPlayer->GetCID();
-	CAuctionSlot* pAuctionData = &pPlayer->GetTempData().m_TempAuctionSlot;
+	CAuctionSlot* pAuctionData = &pPlayer->GetSharedData().m_TempAuctionSlot;
 	const CItem* pItem = pAuctionData->GetItem();
 	const int Value = pItem->GetValue();
 	const int Enchant = pItem->GetEnchant();
@@ -178,7 +178,7 @@ bool CAuctionManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, co
 		// initialize variables
 		const int ItemID = Extra1;
 		const CPlayerItem* pPlayerItem = pPlayer->GetItem(ItemID);
-		CAuctionSlot* pAuctionData = &pPlayer->GetTempData().m_TempAuctionSlot;
+		CAuctionSlot* pAuctionData = &pPlayer->GetSharedData().m_TempAuctionSlot;
 		ReasonNumber = minimum(ReasonNumber, pPlayerItem->GetValue());
 		const int MinimalPrice = (ReasonNumber * pPlayerItem->Info()->GetInitialPrice());
 
@@ -192,7 +192,7 @@ bool CAuctionManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, co
 	if(PPSTR(pCmd, "AUCTION_PRICE") == 0)
 	{
 		// initialize variables
-		CAuctionSlot* pAuctionData = &pPlayer->GetTempData().m_TempAuctionSlot;
+		CAuctionSlot* pAuctionData = &pPlayer->GetSharedData().m_TempAuctionSlot;
 		const int MinimalPrice = (pAuctionData->GetItem()->GetValue() * pAuctionData->GetItem()->Info()->GetInitialPrice());
 
 		// update slot price
@@ -216,7 +216,7 @@ bool CAuctionManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, co
 		}
 
 		// start creating new slot
-		CAuctionSlot* pAuctionData = &pPlayer->GetTempData().m_TempAuctionSlot;
+		CAuctionSlot* pAuctionData = &pPlayer->GetSharedData().m_TempAuctionSlot;
 		pAuctionData->SetItem({ ItemID, 1, pPlayer->GetItem(ItemID)->GetEnchant(), 0, 0});
 		pAuctionData->SetPrice(maximum(1, pAuctionData->GetItem()->Info()->GetInitialPrice()));
 		pPlayer->m_VotesData.UpdateVotes(MENU_AUCTION_CREATE_SLOT);
@@ -228,7 +228,7 @@ bool CAuctionManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, co
 		// initialize variables
 		const int ItemID = Extra1;
 		const CPlayerItem* pPlayerItem = pPlayer->GetItem(ItemID);
-		CAuctionSlot* pTempSlot = &pPlayer->GetTempData().m_TempAuctionSlot;
+		CAuctionSlot* pTempSlot = &pPlayer->GetSharedData().m_TempAuctionSlot;
 
 		// try to create new slot
 		if(pPlayerItem->GetValue() >= pTempSlot->GetItem()->GetValue())

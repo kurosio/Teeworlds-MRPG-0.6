@@ -65,7 +65,7 @@ public:
 	int GetMana() const override { return m_Mana; }
 
 	void HandleTuningParams() override;
-	void UpdateTempData(int Health, int Mana) override
+	void UpdateSharedCharacterData(int Health, int Mana) override
 	{
 		m_Health = Health;
 		m_Mana = Mana;

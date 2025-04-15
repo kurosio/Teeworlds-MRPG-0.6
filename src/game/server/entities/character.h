@@ -136,7 +136,7 @@ public:
 	void SetSafeFlags(int Flags = SAFEFLAG_DAMAGE_DISABLED | SAFEFLAG_HAMMER_HIT_DISABLED | SAFEFLAG_COLLISION_DISABLED | SAFEFLAG_HOOK_HIT_DISABLED) { m_SafeTickFlags = Flags; }
 	virtual bool IsAllowedPVP(int FromID) const;
 	bool IsAlive() const { return m_Alive; }
-	void SetEmote(int Emote, int Sec, bool StartEmoticion);
+	void SetEmote(int Emote, int Sec, bool SendEmoticion);
 	void SetWeapon(int Weapon);
 	bool IncreaseHealth(int Amount);
 	bool IncreaseMana(int Amount);
