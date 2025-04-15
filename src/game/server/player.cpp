@@ -777,22 +777,41 @@ CPlayerQuest* CPlayer::GetQuest(QuestIdentifier ID) const
 
 std::optional<int> CPlayer::GetEquippedItemID(ItemType EquipType, int SkipItemID) const
 {
-	const auto& playerItems = CPlayerItem::Data()[m_ClientID];
-	for(const auto& [itemID, item] : playerItems)
+	auto findEquippedItem = [&](const auto& equippedSlots) -> std::optional<int>
 	{
-		if(itemID == SkipItemID)
-			continue;
+		for(auto& [Type, EquippedItemIdOpt] : equippedSlots.getSlots())
+		{
+			if(EquipType != Type)
+				continue;
 
-		if(!item.HasItem())
-			continue;
+			if(EquippedItemIdOpt && *EquippedItemIdOpt != SkipItemID)
+				return EquippedItemIdOpt;
+		}
+		return std::nullopt;
+	};
 
-		if(!item.IsEquipped())
-			continue;
+	// search from shared
+	auto equippedItem = findEquippedItem(Account()->GetEquippedSlots());
+	if(equippedItem)
+		return equippedItem;
 
-		if(!item.Info()->IsType(EquipType))
-			continue;
+	// search from active profession
+	if(auto* pProfession = Account()->GetActiveProfession())
+	{
+		equippedItem = findEquippedItem(pProfession->GetEquippedSlots());
+		if(equippedItem)
+			return equippedItem;
+	}
 
-		return itemID;
+	// search from other
+	for(auto& Prof : Account()->GetProfessions())
+	{
+		if(Prof.IsProfessionType(PROFESSION_TYPE_OTHER))
+		{
+			equippedItem = findEquippedItem(Prof.GetEquippedSlots());
+			if(equippedItem)
+				return equippedItem;
+		}
 	}
 
 	return std::nullopt;
@@ -806,43 +825,52 @@ bool CPlayer::IsEquipped(ItemType EquipID) const
 
 int CPlayer::GetTotalAttributeValue(AttributeIdentifier ID) const
 {
-	// check if the player is in a dungeon and the attribute has a low improvement cost
-	if(GS()->IsWorldType(WorldType::Dungeon))
+	int totalValue = 0;
+
+	auto addItemEnchantStats = [&](const std::optional<int>& ItemIdOpt)
 	{
-		//const auto* pDungeon = dynamic_cast<const CGameControllerDungeon*>(GS()->m_pController);
-		//if(pAtt->GetUpgradePrice() < 4 && CDungeonData::ms_aDungeon[pDungeon->GetDungeonID()].IsDungeonPlaying())
-		//{
-		//	return pDungeon->GetAttributeDungeonSyncByClass(Account()->GetActiveProfessionID(), ID);
-		//}
+		if(ItemIdOpt && CPlayerItem::Data()[m_ClientID].contains(*ItemIdOpt))
+		{
+			auto& PlayerItem = CPlayerItem::Data()[m_ClientID].at(*ItemIdOpt);
+			if(PlayerItem.HasItem() && PlayerItem.GetDurability() > 0)
+				totalValue += PlayerItem.GetEnchantStats(ID);
+		}
+	};
+
+	// counting by shared equipment slots
+	for(auto& [Type, ItemIdOpt] : Account()->GetEquippedSlots().getSlots())
+		addItemEnchantStats(ItemIdOpt);
+
+	// counting by active profession
+	auto* pActiveProfession = Account()->GetActiveProfession();
+	if(pActiveProfession)
+	{
+		for(auto& [Type, ItemIdOpt] : pActiveProfession->GetEquippedSlots().getSlots())
+			addItemEnchantStats(ItemIdOpt);
+
+		totalValue += pActiveProfession->GetAttributeValue(ID);
+		totalValue += translate_to_percent_rest(totalValue, pActiveProfession->GetExtraPercentAttribute(ID));
 	}
 
-	// counting attributes from equipped items
-	int totalValue = 0;
-	for(const auto& [ItemID, PlayerItem] : CPlayerItem::Data()[m_ClientID])
+	// counting by other professions
+	for(auto& Prof : Account()->GetProfessions())
 	{
-		// required repair
-		if(PlayerItem.GetDurability() <= 0)
-			continue;
-
-		// if is equipped and enchantable add attribute
-		if(PlayerItem.IsEquipped() && PlayerItem.Info()->IsEnchantable())
+		if(Prof.IsProfessionType(PROFESSION_TYPE_OTHER))
 		{
-			totalValue += PlayerItem.GetEnchantStats(ID);
+			for(auto& [Type, ItemIdOpt] : Prof.GetEquippedSlots().getSlots())
+				addItemEnchantStats(ItemIdOpt);
+
+			totalValue += Prof.GetAttributeValue(ID);
 		}
 	}
 
-	// add attribute for other profession
-	for(const auto& Prof : Account()->GetProfessions())
+	// counting by modules
+	for(const auto& [ItemID, PlayerItem] : CPlayerItem::Data()[m_ClientID])
 	{
-		if(Prof.IsProfessionType(PROFESSION_TYPE_OTHER))
-			totalValue += Prof.GetAttributeValue(ID);
-	}
+		if(!PlayerItem.Info()->IsEquipmentNonSlot() || PlayerItem.GetDurability() <= 0)
+			continue;
 
-	// add attribute for active profession
-	if(const auto* pClassProf = Account()->GetActiveProfession())
-	{
-		totalValue += pClassProf->GetAttributeValue(ID);
-		totalValue += translate_to_percent_rest(totalValue, pClassProf->GetExtraBoostAttribute(ID));
+		totalValue += PlayerItem.GetEnchantStats(ID);
 	}
 
 	return totalValue;

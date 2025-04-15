@@ -39,6 +39,7 @@ class CAccountData
 	PrisonManager m_PrisonManager{};
 	BigInt m_Bank {};
 	RatingSystem m_RatingSystem{};
+	EquippedSlots m_EquippedSlots {};
 
 	CGS* GS() const;
 	CPlayer* GetPlayer() const;
@@ -53,6 +54,9 @@ public:
 
 	RatingSystem& GetRatingSystem() { return m_RatingSystem; }
 	const RatingSystem& GetRatingSystem() const { return m_RatingSystem; }
+
+	EquippedSlots& GetEquippedSlots() { return m_EquippedSlots; }
+	const EquippedSlots& GetEquippedSlots() const { return m_EquippedSlots; }
 
 	void ChangeProfession(ProfessionIdentifier Profession)
 	{
@@ -84,6 +88,9 @@ public:
 		return m_vProfessions;
 	}
 
+	bool EquipItem(int ItemID, bool AllProfessions = false);
+	bool UnequipItem(int ItemID, bool AllProfessions = false);
+
 	const CTeeInfo& GetTeeInfo() const;
 
 	/*
@@ -91,6 +98,8 @@ public:
 	 */
 	void Init(int ID, int ClientID, const char* pLogin, std::string Language, std::string LoginDate, ResultPtr pResult);
 	void InitProfessions();
+	void InitEquipments(std::string EquipmentSlots);
+	void SaveEquipments();
 	int GetID() const { return m_ID; }
 
 	/*

@@ -48,6 +48,7 @@ void CProfession::Init(int ClientID, const std::optional<std::string>& jsonData)
 		{
 			m_Attributes[(AttributeIdentifier)std::stoi(ID)] = Value;
 		}
+		m_EquippedSlots.load(json["equipped"].dump());
 	});
 }
 
@@ -132,5 +133,6 @@ std::string CProfession::GetPreparedJsonString() const
 		json["attributes"][std::to_string((int)ID)] = Value;
 	}
 
+	json["equipped"] = m_EquippedSlots.dumpJson();
 	return json.dump();
 }

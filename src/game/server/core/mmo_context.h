@@ -329,7 +329,9 @@ enum class ItemType : short
 	EquipRake,
 	EquipFishrod,
 	EquipGloves,
-	EquipArmor,
+	EquipArmorTank,
+	EquipArmorDPS,
+	EquipArmorHealer,
 	EquipEidolon,
 	EquipPotionHeal,
 	EquipPotionMana,
@@ -358,7 +360,9 @@ inline static ItemType GetItemTypeFromDBSet(const DBSet& dbset) noexcept
 	else if(dbset.hasSet("Equip rake")) return ItemType::EquipRake;
 	else if(dbset.hasSet("Equip fishrod")) return ItemType::EquipFishrod;
 	else if(dbset.hasSet("Equip gloves")) return ItemType::EquipGloves;
-	else if(dbset.hasSet("Equip armor")) return ItemType::EquipArmor;
+	else if(dbset.hasSet("Equip armor (tank)")) return ItemType::EquipArmorTank;
+	else if(dbset.hasSet("Equip armor (dps)")) return ItemType::EquipArmorDPS;
+	else if(dbset.hasSet("Equip armor (healer)")) return ItemType::EquipArmorHealer;
 	else if(dbset.hasSet("Equip eidolon")) return ItemType::EquipEidolon;
 	else if(dbset.hasSet("Equip title")) return ItemType::EquipTitle;
 	else if(dbset.hasSet("Equip potion HP")) return ItemType::EquipPotionHeal;
@@ -384,7 +388,9 @@ constexpr const char* GetItemTypeName(ItemType type) noexcept
 		case ItemType::EquipRake:           return "Rake";
 		case ItemType::EquipFishrod:        return "Fish rod";
 		case ItemType::EquipGloves:         return "Gloves";
-		case ItemType::EquipArmor:          return "Armor";
+		case ItemType::EquipArmorTank:      return "Armor";
+		case ItemType::EquipArmorDPS:       return "Armor";
+		case ItemType::EquipArmorHealer:    return "Armor";
 		case ItemType::EquipEidolon:        return "Eidolon";
 		case ItemType::EquipPotionHeal:     return "Potion HP";
 		case ItemType::EquipPotionMana:     return "Potion MP";

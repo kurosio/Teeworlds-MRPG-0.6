@@ -111,6 +111,42 @@ bool CPlayerItem::SetValue(int Value)
 	return Changes;
 }
 
+bool CPlayerItem::IsEquipped() const
+{
+	// is settings or module
+	if(Info()->IsEquipmentNonSlot() || Info()->IsGameSetting())
+		return m_Value > 0 && m_Settings > 0;
+
+	// is account slots
+	auto* pPlayer = GetPlayer();
+	auto Type = Info()->GetType();
+	auto equippedItemIdOpt = pPlayer->Account()->GetEquippedSlots().getEquippedItemID(Type);
+	if(equippedItemIdOpt && *equippedItemIdOpt == m_ID)
+		return true;
+
+	// is profession slots
+	auto* pProfession = pPlayer->Account()->GetActiveProfession();
+	if(pProfession)
+	{
+		equippedItemIdOpt = pProfession->GetEquippedSlots().getEquippedItemID(Type);
+		if(equippedItemIdOpt && *equippedItemIdOpt == m_ID)
+			return true;
+	}
+
+	// other profession slots
+	for(auto& Prof : pPlayer->Account()->GetProfessions())
+	{
+		if(Prof.IsProfessionType(PROFESSION_TYPE_OTHER))
+		{
+			equippedItemIdOpt = Prof.GetEquippedSlots().getEquippedItemID(Type);
+			if(equippedItemIdOpt && *equippedItemIdOpt == m_ID)
+				return true;
+		}
+	}
+
+	return false;
+}
+
 bool CPlayerItem::Add(int Value, int StartSettings, int StartEnchant, bool Message)
 {
 	if(Value < 1)
@@ -175,7 +211,7 @@ bool CPlayerItem::Add(int Value, int StartSettings, int StartEnchant, bool Messa
 	// try auto equip item
 	if(ShouldAutoEquip() && !IsEquipped())
 	{
-		Equip();
+		Equip(true);
 		GS()->Chat(ClientID, "Auto equip '{} - {}'.", Info()->GetName(), GetStringAttributesInfo(pPlayer));
 	}
 
@@ -212,7 +248,7 @@ bool CPlayerItem::Remove(int Value)
 	{
 		if(m_Value <= Value)
 		{
-			UnEquip();
+			UnEquip(true);
 			pPlayer->StartUniversalScenario(Info()->GetScenarioData(), EScenarios::SCENARIO_ON_ITEM_LOST);
 		}
 
@@ -227,52 +263,71 @@ bool CPlayerItem::Remove(int Value)
 	return false;
 }
 
-bool CPlayerItem::Equip()
+bool CPlayerItem::Equip(bool AllProfessions)
 {
-	auto* pPlayer = GetPlayer();
-	if(pPlayer && pPlayer->IsAuthed() && m_Value >= 1 && !m_Settings)
-	{
-		// remove old equipment from slot
-		if(Info()->IsEquipmentSlot())
-		{
-			const ItemType equipType = Info()->GetType();
-			while(auto oldEquipItemID = pPlayer->GetEquippedItemID(equipType, m_ID))
-			{
-				if(auto pOldEquippedItem = pPlayer->GetItem(oldEquipItemID.value()))
-					pOldEquippedItem->SetSettings(0);
-			}
-		}
+	if(m_Value < 1)
+		return false;
 
-		// update
+	auto* pPlayer = GetPlayer();
+	if(!pPlayer || !pPlayer->IsAuthed())
+		return false;
+
+	// is game setting or module
+	if(Info()->IsGameSetting() || Info()->IsEquipmentNonSlot())
+	{
+		if(m_Settings)
+			return false;
+
 		m_Settings = true;
-		if(Save())
-		{
-			g_EventListenerManager.Notify<IEventListener::PlayerEquipItem>(pPlayer, this);
-			pPlayer->StartUniversalScenario(Info()->GetScenarioData(), EScenarios::SCENARIO_ON_ITEM_EQUIP);
-			GS()->CreateSound(pPlayer->m_ViewPos, SOUND_VOTE_ITEM_EQUIP);
-			return true;
-		}
+		g_EventListenerManager.Notify<IEventListener::PlayerEquipItem>(pPlayer, this);
+		pPlayer->StartUniversalScenario(Info()->GetScenarioData(), EScenarios::SCENARIO_ON_ITEM_EQUIP);
+		GS()->CreateSound(pPlayer->m_ViewPos, SOUND_VOTE_ITEM_EQUIP);
+		return Save();
+	}
+
+	// by slots
+	auto* pAccount = pPlayer->Account();
+	if(pAccount->EquipItem(m_ID, AllProfessions))
+	{
+		g_EventListenerManager.Notify<IEventListener::PlayerEquipItem>(pPlayer, this);
+		pPlayer->StartUniversalScenario(Info()->GetScenarioData(), EScenarios::SCENARIO_ON_ITEM_EQUIP);
+		GS()->CreateSound(pPlayer->m_ViewPos, SOUND_VOTE_ITEM_EQUIP);
+		return true;
 	}
 
 	return false;
 }
 
-bool CPlayerItem::UnEquip()
+bool CPlayerItem::UnEquip(bool AllProfessions)
 {
-	if(m_Value < 1 || m_Settings <= 0)
+	if(m_Value < 1)
 		return false;
 
 	auto* pPlayer = GetPlayer();
-	if(pPlayer && pPlayer->IsAuthed() && m_Value >= 1 && m_Settings >= 1)
+	if(!pPlayer)
+		return false;
+
+	// is game setting or modules
+	if(Info()->IsGameSetting() || Info()->IsEquipmentNonSlot())
 	{
+		if(!m_Settings)
+			return false;
+
 		m_Settings = false;
-		if(Save())
-		{
-			g_EventListenerManager.Notify<IEventListener::PlayerUnequipItem>(pPlayer, this);
-			pPlayer->StartUniversalScenario(Info()->GetScenarioData(), EScenarios::SCENARIO_ON_ITEM_UNEQUIP);
-			GS()->CreateSound(pPlayer->m_ViewPos, SOUND_VOTE_ITEM_EQUIP);
-			return true;
-		}
+		g_EventListenerManager.Notify<IEventListener::PlayerUnequipItem>(pPlayer, this);
+		pPlayer->StartUniversalScenario(Info()->GetScenarioData(), EScenarios::SCENARIO_ON_ITEM_UNEQUIP);
+		GS()->CreateSound(pPlayer->m_ViewPos, SOUND_VOTE_ITEM_EQUIP);
+		return Save();
+	}
+
+	// by slots
+	auto* pAccount = pPlayer->Account();
+	if(pAccount->UnequipItem(m_ID, AllProfessions))
+	{
+		g_EventListenerManager.Notify<IEventListener::PlayerUnequipItem>(pPlayer, this);
+		pPlayer->StartUniversalScenario(Info()->GetScenarioData(), EScenarios::SCENARIO_ON_ITEM_UNEQUIP);
+		GS()->CreateSound(pPlayer->m_ViewPos, SOUND_VOTE_ITEM_EQUIP);
+		return true;
 	}
 
 	return false;

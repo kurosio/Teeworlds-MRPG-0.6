@@ -56,7 +56,6 @@ public:
 	{
 		m_Data = Data;
 		m_ScenarioData = ScenarioData;
-		str_copy(m_aName, Name.c_str(), sizeof(m_aName));
 		str_copy(m_aDescription, Description.c_str(), sizeof(m_aDescription));
 		m_Dysenthis = Dysenthis;
 		m_InitialPrice = InitialPrice;
@@ -64,8 +63,10 @@ public:
 
 		m_pData[m_ID] = *this;
 		m_pData[m_ID].InitData(GroupSet, TypeSet);
+		m_pData[m_ID].InitUniqueName(Name);
 	}
 	void InitData(const DBSet& GroupSet, const DBSet& TypeSet);
+	void InitUniqueName(const std::string& Name);
 
 	// main functions
 	ItemIdentifier GetID() const { return m_ID; }
@@ -81,16 +82,17 @@ public:
 
 	bool IsEquipmentSlot() const
 	{
-		return (m_Group == ItemGroup::Equipment && (m_Type == ItemType::EquipHammer || m_Type == ItemType::EquipGun || m_Type == ItemType::EquipShotgun
-			|| m_Type == ItemType::EquipGrenade || m_Type == ItemType::EquipLaser || m_Type == ItemType::EquipArmor
-			|| m_Type == ItemType::EquipEidolon || m_Type == ItemType::EquipPickaxe || m_Type == ItemType::EquipRake
-			|| m_Type == ItemType::EquipTitle || m_Type == ItemType::EquipPotionHeal || m_Type == ItemType::EquipPotionMana
-			|| m_Type == ItemType::EquipFishrod || m_Type == ItemType::EquipGloves));
+		return (m_Group == ItemGroup::Equipment && m_Type != ItemType::Default);
+	}
+
+	bool IsGameSetting() const
+	{
+		return (m_Group == ItemGroup::Settings && m_Type == ItemType::Default);
 	}
 
 	bool IsEquipmentNonSlot() const
 	{
-		return (m_Group == ItemGroup::Equipment && !IsEquipmentSlot());
+		return (m_Group == ItemGroup::Equipment && m_Type == ItemType::Default);
 	}
 
 	class CRandomBox* GetRandomBox() { return m_RandomBox.IsEmpty() ? nullptr : &m_RandomBox; }

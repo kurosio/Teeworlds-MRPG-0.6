@@ -115,6 +115,26 @@ void CItemDescription::InitData(const DBSet& GroupSet, const DBSet& TypeSet)
 	});
 }
 
+void CItemDescription::InitUniqueName(const std::string& Name)
+{
+	// prefix
+	std::string_view Prefix {};
+	if(m_Type == ItemType::EquipArmorTank)
+		Prefix = "T";
+	else if(m_Type == ItemType::EquipArmorDPS)
+		Prefix = "D";
+	else if(m_Type == ItemType::EquipArmorHealer)
+		Prefix = "H";
+
+	// prepare result
+	std::string Result {};
+	if(Prefix.empty())
+		Result = Name;
+	else
+		Result = fmt_default("({}){}", Prefix, Name);
+	str_copy(m_aName, Result.c_str(), sizeof(m_aName));
+}
+
 bool CItemDescription::IsStackable() const
 {
 	return !(IsEnchantable() || IsGroup(ItemGroup::Settings) || IsGroup(ItemGroup::Equipment));

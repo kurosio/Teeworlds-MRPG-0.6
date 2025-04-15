@@ -29,6 +29,62 @@ int CAccountData::GetGoldCapacity() const
 	return DEFAULT_MAX_PLAYER_BAG_GOLD + TotalByAttribute;
 }
 
+bool CAccountData::EquipItem(int ItemID, bool AllProfessions)
+{
+	bool Successful = false;
+	if(m_EquippedSlots.equipItem(ItemID))
+	{
+		SaveEquipments();
+		Successful = true;
+	}
+	if(m_pActiveProfession && m_pActiveProfession->GetEquippedSlots().equipItem(ItemID))
+	{
+		m_pActiveProfession->Save();
+		Successful = true;
+	}
+	for(auto& Prof : GetProfessions())
+	{
+		if(!AllProfessions && !Prof.IsProfessionType(PROFESSION_TYPE_OTHER))
+			continue;
+
+		if(Prof.GetEquippedSlots().equipItem(ItemID))
+		{
+			Prof.Save();
+			Successful = true;
+		}
+	}
+
+	return Successful;
+}
+
+bool CAccountData::UnequipItem(int ItemID, bool AllProfessions)
+{
+	bool Successful = false;
+	if(m_EquippedSlots.unequipItem(ItemID))
+	{
+		SaveEquipments();
+		Successful = true;
+	}
+	if(m_pActiveProfession && m_pActiveProfession->GetEquippedSlots().unequipItem(ItemID))
+	{
+		m_pActiveProfession->Save();
+		Successful = true;
+	}
+	for(auto& Prof : GetProfessions())
+	{
+		if(!AllProfessions && !Prof.IsProfessionType(PROFESSION_TYPE_OTHER))
+			continue;
+
+		if(Prof.GetEquippedSlots().unequipItem(ItemID))
+		{
+			Prof.Save();
+			Successful = true;
+		}
+	}
+
+	return Successful;
+}
+
 const CTeeInfo& CAccountData::GetTeeInfo() const
 {
 	auto* pPlayer = GetPlayer();
@@ -69,6 +125,7 @@ void CAccountData::Init(int ID, int ClientID, const char* pLogin, std::string La
 
 	// initialize sub account data.
 	InitProfessions();
+	InitEquipments(pResult->getString("EquippedSlots"));
 	InitAchievements(pResult->getString("Achievements"));
 	m_pActiveProfession = GetProfession((ProfessionIdentifier)pResult->getInt("ProfessionID"));
 	m_BonusManager.Init(m_ClientID);
@@ -109,6 +166,25 @@ void CAccountData::InitProfessions()
 		const auto optData = it != vmProfessionsData.end() ? std::make_optional<std::string>(it->second) : std::nullopt;
 		Profession.Init(m_ClientID, optData);
 	}
+}
+
+void CAccountData::InitEquipments(std::string EquippedSlots)
+{
+	// initialize default equipment slots
+	m_EquippedSlots.initSlot(ItemType::EquipPotionHeal, std::nullopt);
+	m_EquippedSlots.initSlot(ItemType::EquipPotionMana, std::nullopt);
+	m_EquippedSlots.initSlot(ItemType::EquipEidolon, std::nullopt);
+
+	// load equipped data
+	if(!EquippedSlots.empty())
+		m_EquippedSlots.load(EquippedSlots);
+	else
+		SaveEquipments();
+}
+
+void CAccountData::SaveEquipments()
+{
+	Database->Execute<DB::UPDATE>("tw_accounts_data", "EquippedSlots = '{}' WHERE ID = '{}'", m_EquippedSlots.dumpJson().dump(), m_ID);
 }
 
 void CAccountData::InitAchievements(const std::string& Data)

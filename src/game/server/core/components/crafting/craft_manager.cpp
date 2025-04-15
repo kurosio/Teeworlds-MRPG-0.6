@@ -62,14 +62,6 @@ void CCraftManager::OnInitWorld(const std::string&)
 			m_vOrderedCraftList.emplace_back(Name, std::move(vFilteredItems));
 		}
 	}
-
-	// ordered crafting groups
-	std::ranges::sort(m_vOrderedCraftList, [](const auto& a, const auto& b)
-	{
-		auto maxA = std::ranges::max_element(a.second, [](CCraftItem* pLeft, CCraftItem* pRight) { return pLeft->GetPrice() < pRight->GetPrice(); });
-		auto maxB = std::ranges::max_element(b.second, [](CCraftItem* pLeft, CCraftItem* pRight) { return pLeft->GetPrice() < pRight->GetPrice(); });
-		return maxA != a.second.end() && maxB != b.second.end() && (*maxA)->GetPrice() < (*maxB)->GetPrice();
-	});
 }
 
 
@@ -153,6 +145,7 @@ bool CCraftManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 	{
 		pPlayer->m_ActiveCraftGroupID = Extra1;
 		pPlayer->m_VotesData.UpdateCurrentVotes();
+		return true;
 	}
 
 	return false;

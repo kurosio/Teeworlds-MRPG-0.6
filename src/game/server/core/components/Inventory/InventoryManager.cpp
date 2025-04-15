@@ -178,29 +178,41 @@ bool CInventoryManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 			return true;
 		};
 
-		// weapons equipment
-		VoteWrapper VWeapons(ClientID, VWF_SEPARATE_OPEN | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "\u2604 Equipment: Weapons");
-		addEquipmentFieldFunc(VWeapons, ItemType::EquipHammer);
-		addEquipmentFieldFunc(VWeapons, ItemType::EquipGun);
-		addEquipmentFieldFunc(VWeapons, ItemType::EquipShotgun);
-		addEquipmentFieldFunc(VWeapons, ItemType::EquipGrenade);
-		addEquipmentFieldFunc(VWeapons, ItemType::EquipLaser);
+		//VoteWrapper VProfessionSelector(ClientID, VWF_SEPARATE_OPEN | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "\u2604 Choose a profession");
+		//for(auto& Profession : pPlayer->Account()->GetProfessions())
+		//{
+		//	const int GroupID = (int)Profession.GetProfessionID();
+		//	const auto pProfessionName = std::string(GetProfessionName(Profession.GetProfessionID()));
+		//	VProfessionSelector.AddOption("EQUIP_GROUP_SELECT", GroupID, "{}", GetProfessionName(Profession.GetProfessionID()));
+		//}
+		//VoteWrapper::AddEmptyline(ClientID);
+
+		// profession
+		auto* pProfession = pPlayer->Account()->GetActiveProfession();
+		if(pProfession)
+		{
+			VoteWrapper VProfession(ClientID, VWF_SEPARATE_OPEN | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "\u2604 Equipment: Profession");
+			for(auto& [Type, ItemIdOpt] : pProfession->GetEquippedSlots().getSlots())
+				addEquipmentFieldFunc(VProfession, Type);
+			VoteWrapper::AddEmptyline(ClientID);
+		}
+
+		// shared
+		VoteWrapper VShared(ClientID, VWF_SEPARATE_OPEN | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "\u2604 Equipment: Shared");
+		for(auto& [Type, ItemIdOpt] : pPlayer->Account()->GetEquippedSlots().getSlots())
+			addEquipmentFieldFunc(VShared, Type);
 		VoteWrapper::AddEmptyline(ClientID);
 
-		// general equipment (tools and armor)
-		VoteWrapper VEquipment(ClientID, VWF_SEPARATE_OPEN | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "\u2604 Equipment: General");
-		addEquipmentFieldFunc(VEquipment, ItemType::EquipEidolon);
-		addEquipmentFieldFunc(VEquipment, ItemType::EquipArmor);
-		addEquipmentFieldFunc(VEquipment, ItemType::EquipPickaxe);
-		addEquipmentFieldFunc(VEquipment, ItemType::EquipRake);
-		addEquipmentFieldFunc(VEquipment, ItemType::EquipFishrod);
-		addEquipmentFieldFunc(VEquipment, ItemType::EquipGloves);
-		VoteWrapper::AddEmptyline(ClientID);
-
-		// potions equipment
-		VoteWrapper VPotions(ClientID, VWF_SEPARATE_OPEN | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "\u2604 Equipment: Potions");
-		addEquipmentFieldFunc(VPotions, ItemType::EquipPotionHeal);
-		addEquipmentFieldFunc(VPotions, ItemType::EquipPotionMana);
+		// profession job
+		VoteWrapper VJob(ClientID, VWF_SEPARATE_OPEN | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "\u2604 Equipment: Job");
+		for(auto& Prof : pPlayer->Account()->GetProfessions())
+		{
+			if(Prof.IsProfessionType(PROFESSION_TYPE_OTHER))
+			{
+				for(auto& [Type, ItemIdOpt] : Prof.GetEquippedSlots().getSlots())
+					addEquipmentFieldFunc(VJob, Type);
+			}
+		}
 		VoteWrapper::AddEmptyline(ClientID);
 
 		// show and sort equipment
@@ -277,60 +289,67 @@ bool CInventoryManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	return false;
 }
 
-bool CInventoryManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* CMD, const int VoteID, const int VoteID2, int Get, const char* GetText)
+bool CInventoryManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const int Extra1, const int Extra2, int ReasonNumber, const char* pReason)
 {
 	const int ClientID = pPlayer->GetCID();
 
-	if(PPSTR(CMD, "IDROP") == 0)
+	if(PPSTR(pCmd, "IDROP") == 0)
 	{
-		int AvailableValue = GetUnfrozenItemValue(pPlayer, VoteID);
+		int AvailableValue = GetUnfrozenItemValue(pPlayer, Extra1);
 		if(AvailableValue <= 0)
 			return true;
 
-		Get = minimum(AvailableValue, Get);
-		CPlayerItem* pPlayerItem = pPlayer->GetItem(VoteID);
-		pPlayerItem->Drop(Get);
+		ReasonNumber = minimum(AvailableValue, ReasonNumber);
+		CPlayerItem* pPlayerItem = pPlayer->GetItem(Extra1);
+		pPlayerItem->Drop(ReasonNumber);
 
-		GS()->Broadcast(ClientID, BroadcastPriority::GameInformation, 100, "You drop {} x{}", pPlayerItem->Info()->GetName(), Get);
+		GS()->Broadcast(ClientID, BroadcastPriority::GameInformation, 100, "You drop {} x{}", pPlayerItem->Info()->GetName(), ReasonNumber);
 		GS()->CreateSound(pPlayer->m_ViewPos, SOUND_VOTE_ITEM_DROP);
 		pPlayer->m_VotesData.UpdateCurrentVotes();
 		return true;
 	}
 
-	if(PPSTR(CMD, "IUSE") == 0)
+	if(PPSTR(pCmd, "IUSE") == 0)
 	{
-		int AvailableValue = GetUnfrozenItemValue(pPlayer, VoteID);
+		int AvailableValue = GetUnfrozenItemValue(pPlayer, Extra1);
 		if(AvailableValue <= 0)
 			return true;
 
-		Get = minimum(AvailableValue, Get);
-		pPlayer->GetItem(VoteID)->Use(Get);
+		ReasonNumber = minimum(AvailableValue, ReasonNumber);
+		pPlayer->GetItem(Extra1)->Use(ReasonNumber);
 		pPlayer->m_VotesData.UpdateCurrentVotes();
 		return true;
 	}
 
-	if(PPSTR(CMD, "IDESYNTHESIS") == 0)
+	if(PPSTR(pCmd, "EQUIP_GROUP_SELECT") == 0)
 	{
-		int AvailableValue = GetUnfrozenItemValue(pPlayer, VoteID);
+		pPlayer->m_ActiveProfessionEquipGroupID = Extra1;
+		pPlayer->m_VotesData.UpdateCurrentVotes();
+		return true;
+	}
+
+	if(PPSTR(pCmd, "IDESYNTHESIS") == 0)
+	{
+		int AvailableValue = GetUnfrozenItemValue(pPlayer, Extra1);
 		if(AvailableValue <= 0)
 			return true;
 
-		Get = minimum(AvailableValue, Get);
-		CPlayerItem* pPlayerSelectedItem = pPlayer->GetItem(VoteID);
+		ReasonNumber = minimum(AvailableValue, ReasonNumber);
+		CPlayerItem* pPlayerSelectedItem = pPlayer->GetItem(Extra1);
 		CPlayerItem* pPlayerMaterialItem = pPlayer->GetItem(itMaterial);
-		const int DesValue = pPlayerSelectedItem->GetDysenthis() * Get;
-		if(pPlayerSelectedItem->Remove(Get) && pPlayerMaterialItem->Add(DesValue))
+		const int DesValue = pPlayerSelectedItem->GetDysenthis() * ReasonNumber;
+		if(pPlayerSelectedItem->Remove(ReasonNumber) && pPlayerMaterialItem->Add(DesValue))
 		{
-			GS()->Chat(ClientID, "Disassemble '{} x{}'.", pPlayerSelectedItem->Info()->GetName(), Get);
+			GS()->Chat(ClientID, "Disassemble '{} x{}'.", pPlayerSelectedItem->Info()->GetName(), ReasonNumber);
 			GS()->CreateSound(pPlayer->m_ViewPos, SOUND_VOTE_ITEM_DISSASEMBLE);
 			pPlayer->m_VotesData.UpdateCurrentVotes();
 		}
 		return true;
 	}
 
-	if(PPSTR(CMD, "EQUIP_ITEM") == 0)
+	if(PPSTR(pCmd, "EQUIP_ITEM") == 0)
 	{
-		auto* pPlayerItem = pPlayer->GetItem(VoteID);
+		auto* pPlayerItem = pPlayer->GetItem(Extra1);
 		if(pPlayerItem->IsEquipped())
 			pPlayerItem->UnEquip();
 		else
@@ -341,10 +360,10 @@ bool CInventoryManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* CMD, c
 		return true;
 	}
 
-	if(PPSTR(CMD, "ENCHANT_ITEM") == 0)
+	if(PPSTR(pCmd, "ENCHANT_ITEM") == 0)
 	{
 		// check enchant max level
-		CPlayerItem* pPlayerItem = pPlayer->GetItem(VoteID);
+		CPlayerItem* pPlayerItem = pPlayer->GetItem(Extra1);
 		if(pPlayerItem->IsEnchantMaxLevel())
 		{
 			GS()->Chat(ClientID, "Enchantment level is maximum");
@@ -485,9 +504,9 @@ void CInventoryManager::ItemSelected(CPlayer* pPlayer, const CPlayerItem* pItem)
 	// name description
 	VoteWrapper VItem(ClientID, VWF_UNIQUE|VWF_STYLE_SIMPLE);
 	if(!pInfo->IsStackable())
-		VItem.SetTitle("{}{} {}", (pItem->m_Settings ? "✔ " : "\0"), pInfo->GetName(), pItem->GetStringEnchantLevel().c_str());
+		VItem.SetTitle("{}{} {}", (pItem->IsEquipped() ? "✔ " : "\0"), pInfo->GetName(), pItem->GetStringEnchantLevel().c_str());
 	else
-		VItem.SetTitle("{}{} x{}", (pItem->m_Settings ? "✔ " : "\0"), pInfo->GetName(), pItem->m_Value);
+		VItem.SetTitle("{}{} x{}", (pItem->IsEquipped() ? "✔ " : "\0"), pInfo->GetName(), pItem->m_Value);
 
 	// is group quest non action
 	if(pInfo->m_Group == ItemGroup::Quest)
@@ -510,7 +529,7 @@ void CInventoryManager::ItemSelected(CPlayer* pPlayer, const CPlayerItem* pItem)
 
 	// is potion
 	if(pInfo->m_Group == ItemGroup::Potion)
-		VItem.AddOption("EQUIP_ITEM", ItemID, "Auto use - {}", (pItem->m_Settings ? "Enable" : "Disable"));
+		VItem.AddOption("EQUIP_ITEM", ItemID, "Auto use - {}", (pItem->IsEquipped() ? "Enable" : "Disable"));
 
 	// is decoration
 	if(pInfo->m_Group == ItemGroup::Decoration)
@@ -525,7 +544,7 @@ void CInventoryManager::ItemSelected(CPlayer* pPlayer, const CPlayerItem* pItem)
 		if(pInfo->m_Type == ItemType::EquipHammer && pItem->IsEquipped())
 			VItem.Add("You can not undress equipping hammer");
 		else
-			VItem.AddOption("EQUIP_ITEM", ItemID, (pItem->m_Settings ? "Undress" : "Equip"));
+			VItem.AddOption("EQUIP_ITEM", ItemID, (pItem->IsEquipped() ? "Undress" : "Equip"));
 	}
 
 	// is enchantable
