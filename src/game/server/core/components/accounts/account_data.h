@@ -90,7 +90,7 @@ public:
 
 	bool EquipItem(int ItemID, bool AllProfessions = false);
 	bool UnequipItem(int ItemID, bool AllProfessions = false);
-
+	bool IsActiveEquipmentSlot(ItemType Type);
 	const CTeeInfo& GetTeeInfo() const;
 
 	/*

@@ -85,6 +85,21 @@ bool CAccountData::UnequipItem(int ItemID, bool AllProfessions)
 	return Successful;
 }
 
+bool CAccountData::IsActiveEquipmentSlot(ItemType Type)
+{
+	bool Has = false;
+	if(m_EquippedSlots.hasSlot(Type))
+		Has = true;
+	if(m_pActiveProfession && m_pActiveProfession->GetEquippedSlots().hasSlot(Type))
+		Has = true;
+	for(auto& Prof : GetProfessions())
+	{
+		if(Prof.IsProfessionType(PROFESSION_TYPE_OTHER) && Prof.GetEquippedSlots().hasSlot(Type))
+			Has = true;
+	}
+	return Has;
+}
+
 const CTeeInfo& CAccountData::GetTeeInfo() const
 {
 	auto* pPlayer = GetPlayer();
@@ -171,9 +186,10 @@ void CAccountData::InitProfessions()
 void CAccountData::InitEquipments(std::string EquippedSlots)
 {
 	// initialize default equipment slots
-	m_EquippedSlots.initSlot(ItemType::EquipPotionHeal, std::nullopt);
-	m_EquippedSlots.initSlot(ItemType::EquipPotionMana, std::nullopt);
-	m_EquippedSlots.initSlot(ItemType::EquipEidolon, std::nullopt);
+	m_EquippedSlots.initSlot(ItemType::EquipPotionHeal);
+	m_EquippedSlots.initSlot(ItemType::EquipPotionMana);
+	m_EquippedSlots.initSlot(ItemType::EquipEidolon);
+	m_EquippedSlots.initSlot(ItemType::EquipTitle);
 
 	// load equipped data
 	if(!EquippedSlots.empty())

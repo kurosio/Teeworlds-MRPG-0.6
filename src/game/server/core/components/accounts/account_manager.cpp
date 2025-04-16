@@ -436,7 +436,6 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 
 		// game settings
 		VoteWrapper VMain(ClientID, VWF_OPEN, "\u2699 Main settings");
-		VMain.AddMenu(MENU_SETTINGS_TITLE, "Select personal title");
 		VMain.AddMenu(MENU_SETTINGS_LANGUAGE, "Settings language");
 		VMain.AddMenu(MENU_SETTINGS_ACCOUNT, "Settings account");
 
@@ -501,52 +500,6 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		VoteWrapper::AddEmptyline(ClientID);
 		VoteWrapper::AddBackpage(ClientID);
 		return true;
-	}
-
-	// title selection
-	if(Menulist == MENU_SETTINGS_TITLE)
-	{
-		pPlayer->m_VotesData.SetLastMenuID(MENU_SETTINGS);
-
-		// initialize variables
-		const auto EquippedTitleItemID = pPlayer->GetEquippedItemID(ItemType::EquipTitle);
-		const char* pCurrentTitle = EquippedTitleItemID.has_value() ? pPlayer->GetItem(EquippedTitleItemID.value())->Info()->GetName() : "title is not used";
-
-		// title information
-		VoteWrapper VInfo(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "Title Information");
-		VInfo.Add("Here you can set the title.");
-		VInfo.Add("Current title: {}", pCurrentTitle);
-		VoteWrapper::AddEmptyline(ClientID);
-
-		// title list
-		bool IsEmpty = true;
-		for(auto& pairItem : CPlayerItem::Data()[ClientID])
-		{
-			CPlayerItem* pPlayerItem = &pairItem.second;
-			if(pPlayerItem->Info()->IsType(ItemType::EquipTitle) && pPlayerItem->HasItem())
-			{
-				// initialize variables
-				bool IsEquipped = pPlayerItem->IsEquipped();
-
-				// add to list
-				VoteWrapper VList(ClientID, VWF_UNIQUE|VWF_STYLE_SIMPLE,"Title: {}", pPlayerItem->Info()->GetName());
-				VList.Add("{}", pPlayerItem->Info()->GetDescription());
-				if(pPlayerItem->Info()->HasAttributes())
-				{
-					VList.Add("{}", pPlayerItem->GetStringAttributesInfo(pPlayer));
-				}
-				VList.AddOption("EQUIP_ITEM", pPlayerItem->GetID(), "{} {}", IsEquipped ? "Unset" : "Set", pPlayerItem->Info()->GetName());
-				IsEmpty = false;
-			}
-		}
-		if(IsEmpty)
-		{
-			VoteWrapper(ClientID).Add("Is empty list");
-		}
-
-		// add backpage
-		VoteWrapper::AddEmptyline(ClientID);
-		VoteWrapper::AddBackpage(ClientID);
 	}
 
 	return false;

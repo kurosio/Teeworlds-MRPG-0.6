@@ -18,6 +18,11 @@ public:
 		return m_Slots;
 	}
 
+	bool hasSlot(ItemType Slot)
+	{
+		return m_Slots.contains(Slot);
+	}
+
 	std::optional<int> getEquippedItemID(ItemType Type) const
 	{
 		return m_Slots.contains(Type) ? m_Slots.at(Type) : std::nullopt;
@@ -25,11 +30,9 @@ public:
 
 	bool equipItem(int ItemID);
 	bool unequipItem(int ItemID);
-
 	void load(std::string EquippedSlots);
 
 	nlohmann::json dumpJson() const;
 };
-
 
 #endif

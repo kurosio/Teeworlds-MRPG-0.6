@@ -542,9 +542,17 @@ void CInventoryManager::ItemSelected(CPlayer* pPlayer, const CPlayerItem* pItem)
 	if(pInfo->m_Group == ItemGroup::Equipment)
 	{
 		if(pInfo->m_Type == ItemType::EquipHammer && pItem->IsEquipped())
+		{
 			VItem.Add("You can not undress equipping hammer");
-		else
+		}
+		else if(pPlayer->Account()->IsActiveEquipmentSlot(pInfo->m_Type))
+		{
 			VItem.AddOption("EQUIP_ITEM", ItemID, (pItem->IsEquipped() ? "Undress" : "Equip"));
+		}
+		else
+		{
+			VItem.Add("You can't equip on this profession");
+		}
 	}
 
 	// is enchantable
@@ -554,8 +562,8 @@ void CInventoryManager::ItemSelected(CPlayer* pPlayer, const CPlayerItem* pItem)
 		VItem.AddOption("ENCHANT_ITEM", ItemID, "Enchant ({}m)", Price);
 	}
 
-	// not allowed drop equipped hammer
-	if(ItemID != pPlayer->GetEquippedItemID(ItemType::EquipHammer))
+	// not allowed drop equipped hammer or title
+	if(ItemID != pPlayer->GetEquippedItemID(ItemType::EquipHammer) && !pInfo->IsType(ItemType::EquipTitle))
 	{
 		// can dysenthis
 		if(pItem->GetDysenthis() > 0)
