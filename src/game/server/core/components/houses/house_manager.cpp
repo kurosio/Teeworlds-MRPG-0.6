@@ -495,7 +495,7 @@ void CHouseManager::ShowFarmzonesControl(CPlayer* pPlayer) const
 	for(auto& [ID, Farmzone] : pHouse->GetFarmzonesManager()->GetContainer())
 	{
 		const auto sizeItems = Farmzone.GetNode().m_vItems.size();
-		VFarmzones.AddMenu(MENU_GUILD_HOUSE_FARMZONE_SELECT, ID, "Farm {} zone / {} variety", Farmzone.GetName(), sizeItems);
+		VFarmzones.AddMenu(MENU_HOUSE_FARMZONE_SELECT, ID, "Farm {} zone / {} variety", Farmzone.GetName(), sizeItems);
 	}
 
 	VoteWrapper::AddEmptyline(ClientID);
