@@ -86,6 +86,9 @@ void CInventoryManager::OnPlayerLogin(CPlayer* pPlayer)
 
 		CPlayerItem(ItemID, ClientID).Init(Value, Enchant, Durability, Settings);
 	}
+
+	// auto equip empty slots
+	pPlayer->Account()->AutoEquipSlots(true);
 }
 
 void CInventoryManager::OnClientReset(int ClientID)
@@ -148,15 +151,15 @@ bool CInventoryManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		auto addEquipmentFieldFunc = [&](VoteWrapper& Wrapper, ItemType EquipID) -> bool
 		{
 			// check if equipped
-			const auto ItemID = pPlayer->GetEquippedItemID(EquipID);
-			if(!ItemID.has_value() || !pPlayer->GetItem(ItemID.value())->IsEquipped())
+			const auto EquippedItemIdOpt = pPlayer->GetEquippedItemID(EquipID);
+			if(!EquippedItemIdOpt.has_value() || !pPlayer->GetItem(EquippedItemIdOpt.value())->IsEquipped())
 			{
 				Wrapper.AddMenu(MENU_EQUIPMENT, (int)EquipID, "{} not equipped", GetItemTypeName(EquipID));
 				return false;
 			}
 
 			// handle potion information
-			const auto pPlayerItem = pPlayer->GetItem(ItemID.value());
+			const auto pPlayerItem = pPlayer->GetItem(EquippedItemIdOpt.value());
 			if(EquipID == ItemType::EquipPotionHeal || EquipID == ItemType::EquipPotionMana)
 			{
 				if(const auto optPotionContext = pPlayerItem->Info()->GetPotionContext())
@@ -178,14 +181,9 @@ bool CInventoryManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 			return true;
 		};
 
-		//VoteWrapper VProfessionSelector(ClientID, VWF_SEPARATE_OPEN | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "\u2604 Choose a profession");
-		//for(auto& Profession : pPlayer->Account()->GetProfessions())
-		//{
-		//	const int GroupID = (int)Profession.GetProfessionID();
-		//	const auto pProfessionName = std::string(GetProfessionName(Profession.GetProfessionID()));
-		//	VProfessionSelector.AddOption("EQUIP_GROUP_SELECT", GroupID, "{}", GetProfessionName(Profession.GetProfessionID()));
-		//}
-		//VoteWrapper::AddEmptyline(ClientID);
+		VoteWrapper VMain(ClientID, VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "\u2604 Equipment: Basic");
+		VMain.AddOption("AUTO_EQUIP_SLOTS", "Auto equip slots by best equipment");
+		VoteWrapper::AddEmptyline(ClientID);
 
 		// profession
 		auto* pProfession = pPlayer->Account()->GetActiveProfession();
@@ -317,6 +315,13 @@ bool CInventoryManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
 
 		ReasonNumber = minimum(AvailableValue, ReasonNumber);
 		pPlayer->GetItem(Extra1)->Use(ReasonNumber);
+		pPlayer->m_VotesData.UpdateCurrentVotes();
+		return true;
+	}
+
+	if(PPSTR(pCmd, "AUTO_EQUIP_SLOTS") == 0)
+	{
+		pPlayer->Account()->AutoEquipSlots(false);
 		pPlayer->m_VotesData.UpdateCurrentVotes();
 		return true;
 	}
@@ -469,6 +474,28 @@ int CInventoryManager::GetUnfrozenItemValue(CPlayer* pPlayer, ItemIdentifier Ite
 	return AvailableValue;
 }
 
+CPlayerItem* CInventoryManager::GetBestEquipmentSlotItem(CPlayer* pPlayer, ItemType Type)
+{
+	if(!pPlayer)
+		return nullptr;
+
+	const auto ClientID = pPlayer->GetCID();
+	auto& PlayerItemsContainer = CPlayerItem::Data()[ClientID];
+
+	CPlayerItem* pBestItem = nullptr;
+
+	for(auto& [ItemId, Item] : PlayerItemsContainer)
+	{
+		if(!Item.HasItem() || !Item.Info()->IsEquipmentSlot() || !Item.Info()->IsType(Type))
+			continue;
+
+		if(pBestItem == nullptr || Item.GetTotalAttributesLevel() > pBestItem->GetTotalAttributesLevel())
+			pBestItem = &Item;
+	}
+
+	return pBestItem;
+}
+
 void CInventoryManager::ShowSellingItemsByFunction(CPlayer* pPlayer, ItemType Type) const
 {
 	const int ClientID = pPlayer->GetCID();
@@ -545,7 +572,7 @@ void CInventoryManager::ItemSelected(CPlayer* pPlayer, const CPlayerItem* pItem)
 		{
 			VItem.Add("You can not undress equipping hammer");
 		}
-		else if(pPlayer->Account()->IsActiveEquipmentSlot(pInfo->m_Type))
+		else if(pPlayer->Account()->IsAvailableEquipmentSlot(pInfo->m_Type) || pInfo->IsEquipmentNonSlot())
 		{
 			VItem.AddOption("EQUIP_ITEM", ItemID, (pItem->IsEquipped() ? "Undress" : "Equip"));
 		}

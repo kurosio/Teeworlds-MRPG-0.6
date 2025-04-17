@@ -44,8 +44,8 @@ void CEntityFishingRod::Tick()
 
 	// check equip fishing rod
 	auto* pPlayer = pChar->GetPlayer();
-	const auto EquippedItemID = pPlayer->GetEquippedItemID(ItemType::EquipFishrod);
-	if(!EquippedItemID.has_value())
+	const auto EquippedFishrodItemIdOpt = pPlayer->GetEquippedItemID(ItemType::EquipFishrod);
+	if(!EquippedFishrodItemIdOpt.has_value())
 	{
 		GS()->Chat(m_ClientID, "To start fishing, equip your fishing rod!");
 		MarkForDestroy();
@@ -85,7 +85,7 @@ void CEntityFishingRod::Tick()
 	}
 
 	// fishing logic
-	FishingTick(pPlayer, pFisherman, pNode, EquippedItemID);
+	FishingTick(pPlayer, pFisherman, pNode, EquippedFishrodItemIdOpt);
 }
 
 void CEntityFishingRod::FishingTick(CPlayer* pPlayer, CProfession* pFisherman, GatheringNode* pNode, std::optional<int> EquippedItemID)

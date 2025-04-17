@@ -287,8 +287,8 @@ bool CCharacter::FireHammer(vec2 Direction, vec2 ProjStartPos)
 	const bool IsBot = m_pPlayer->IsBot();
 
 	// check equip state
-	const auto EquippedItem = m_pPlayer->GetEquippedItemID(ItemType::EquipHammer);
-	if(!EquippedItem.has_value())
+	const auto EquippedItemIdOpt = m_pPlayer->GetEquippedItemID(ItemType::EquipHammer);
+	if(!EquippedItemIdOpt.has_value())
 	{
 		GS()->Broadcast(m_pPlayer->GetCID(), BroadcastPriority::GameWarning, 2, "You don't have a hammer equipped.");
 		return false;
@@ -302,7 +302,7 @@ bool CCharacter::FireHammer(vec2 Direction, vec2 ProjStartPos)
 	}
 
 	// lamp hammer
-	if(EquippedItem == itHammerLamp)
+	if(EquippedItemIdOpt == itHammerLamp)
 	{
 		const auto vEntities = GS()->m_World.FindEntities(ProjStartPos, GetRadius() , MAX_LENGTH_CHARACTERS, CGameWorld::ENTTYPE_CHARACTER);
 		for(auto* pEnt : vEntities)
@@ -340,7 +340,7 @@ bool CCharacter::FireHammer(vec2 Direction, vec2 ProjStartPos)
 	}
 
 	// blast hammer
-	if(EquippedItem == itHammerBlast)
+	if(EquippedItemIdOpt == itHammerBlast)
 	{
 		constexpr float Radius = 128.0f;
 
@@ -400,15 +400,15 @@ bool CCharacter::FireHammer(vec2 Direction, vec2 ProjStartPos)
 bool CCharacter::FireGun(vec2 Direction, vec2 ProjStartPos)
 {
 	// check equip state
-	const auto EquippedItem = m_pPlayer->GetEquippedItemID(ItemType::EquipGun);
-	if(!EquippedItem.has_value())
+	const auto EquippedItemIdOpt = m_pPlayer->GetEquippedItemID(ItemType::EquipGun);
+	if(!EquippedItemIdOpt.has_value())
 	{
 		GS()->Broadcast(m_pPlayer->GetCID(), BroadcastPriority::GameWarning, 2, "You don't have a gun equipped.");
 		return false;
 	}
 
 	// gun pulse
-	if(EquippedItem == itGunPulse)
+	if(EquippedItemIdOpt == itGunPulse)
 	{
 		new CLaser(GameWorld(), m_ClientID, 0, m_Pos, Direction, 400.f, true);
 		GS()->CreateSound(m_Pos, SOUND_WEAPONS_GUN_PULSE_START);
@@ -428,8 +428,8 @@ bool CCharacter::FireGun(vec2 Direction, vec2 ProjStartPos)
 bool CCharacter::FireShotgun(vec2 Direction, vec2 ProjStartPos)
 {
 	// check equip state
-	const auto EquippedItem = m_pPlayer->GetEquippedItemID(ItemType::EquipShotgun);
-	if(!EquippedItem.has_value())
+	const auto EquippedItemIdOpt = m_pPlayer->GetEquippedItemID(ItemType::EquipShotgun);
+	if(!EquippedItemIdOpt.has_value())
 	{
 		GS()->Broadcast(m_pPlayer->GetCID(), BroadcastPriority::GameWarning, 2, "You don't have a shotgun equipped.");
 		return false;
@@ -466,15 +466,15 @@ bool CCharacter::FireShotgun(vec2 Direction, vec2 ProjStartPos)
 bool CCharacter::FireGrenade(vec2 Direction, vec2 ProjStartPos)
 {
 	// check equip state
-	const auto EquippedItem = m_pPlayer->GetEquippedItemID(ItemType::EquipGrenade);
-	if(!EquippedItem.has_value())
+	const auto EquippedItemIdOpt = m_pPlayer->GetEquippedItemID(ItemType::EquipGrenade);
+	if(!EquippedItemIdOpt.has_value())
 	{
 		GS()->Broadcast(m_pPlayer->GetCID(), BroadcastPriority::GameWarning, 2, "You don't have a grenade equipped.");
 		return false;
 	}
 
 	// pizdamet
-	if(EquippedItem == itPizdamet)
+	if(EquippedItemIdOpt == itPizdamet)
 	{
 		new CEntityGrenadePizdamet(&GS()->m_World, m_ClientID, ProjStartPos, Direction);
 		m_ReloadTimer = Server()->TickSpeed() / 8;
@@ -494,15 +494,15 @@ bool CCharacter::FireGrenade(vec2 Direction, vec2 ProjStartPos)
 bool CCharacter::FireRifle(vec2 Direction, vec2 ProjStartPos)
 {
 	// check equip state
-	const auto EquippedItem = m_pPlayer->GetEquippedItemID(ItemType::EquipLaser);
-	if(!EquippedItem.has_value())
+	const auto EquippedItemIdOpt = m_pPlayer->GetEquippedItemID(ItemType::EquipLaser);
+	if(!EquippedItemIdOpt.has_value())
 	{
 		GS()->Broadcast(m_pPlayer->GetCID(), BroadcastPriority::GameWarning, 2, "You don't have a laser equipped.");
 		return false;
 	}
 
 	// plazma wall
-	if(EquippedItem == itRifleWallPusher)
+	if(EquippedItemIdOpt == itRifleWallPusher)
 	{
 		const auto LifeTime = 5 * Server()->TickSpeed();
 		new CEntityRifleWallPusher(&GS()->m_World, m_ClientID, ProjStartPos, Direction, LifeTime);
@@ -510,14 +510,14 @@ bool CCharacter::FireRifle(vec2 Direction, vec2 ProjStartPos)
 	}
 
 	// Magnetic pulse rifle
-	if(EquippedItem == itRifleMagneticPulse)
+	if(EquippedItemIdOpt == itRifleMagneticPulse)
 	{
 		new CEntityRifleMagneticPulse(&GS()->m_World, m_ClientID, 128.f, ProjStartPos, Direction);
 		return true;
 	}
 
 	// Plazma
-	if(EquippedItem == itRifleTrackedPlazma)
+	if(EquippedItemIdOpt == itRifleTrackedPlazma)
 	{
 		new CEntityRifleTrackedPlazma(&GS()->m_World, m_ClientID, ProjStartPos, Direction);
 		GS()->CreateSound(m_Pos, SOUND_WEAPONS_TRACKED_PLAZMA_START);
@@ -1021,8 +1021,8 @@ void CCharacter::AutoUseHealingPotionIfNeeded() const
 		return;
 
 	// check for equippement potion
-	const auto equippedHeal = m_pPlayer->GetEquippedItemID(ItemType::EquipPotionHeal);
-	TryUsePotion(equippedHeal);
+	const auto EquippedHealPotionOpt = m_pPlayer->GetEquippedItemID(ItemType::EquipPotionHeal);
+	TryUsePotion(EquippedHealPotionOpt);
 }
 
 void CCharacter::AutoUseManaPotionIfNeeded() const
@@ -1036,8 +1036,8 @@ void CCharacter::AutoUseManaPotionIfNeeded() const
 		return;
 
 	// check for equippement potion
-	const auto equippedMana = m_pPlayer->GetEquippedItemID(ItemType::EquipPotionMana);
-	TryUsePotion(equippedMana);
+	const auto EquippedManaPotionOpt = m_pPlayer->GetEquippedItemID(ItemType::EquipPotionMana);
+	TryUsePotion(EquippedManaPotionOpt);
 }
 
 void CCharacter::TryUsePotion(std::optional<int> optItemID) const

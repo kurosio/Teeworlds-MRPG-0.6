@@ -135,6 +135,15 @@ void CItemDescription::InitUniqueName(const std::string& Name)
 	str_copy(m_aName, Result.c_str(), sizeof(m_aName));
 }
 
+int CItemDescription::GetDysenthis(int Enchant) const
+{
+	if(!m_Dysenthis)
+		return 0;
+
+	auto enchantBonus = m_Dysenthis + maximum(GetEnchantPrice(Enchant) / 4, 1) * Enchant;
+	return enchantBonus;
+}
+
 bool CItemDescription::IsStackable() const
 {
 	return !(IsEnchantable() || IsGroup(ItemGroup::Settings) || IsGroup(ItemGroup::Equipment));
@@ -159,7 +168,25 @@ bool CItemDescription::IsEnchantMaxLevel(int Enchant) const
 	return false;
 }
 
-bool CItemDescription::HasAttributes() const { return !m_aAttributes.empty(); }
+bool CItemDescription::HasAttributes() const
+{
+	return !m_aAttributes.empty();
+}
+
+int CItemDescription::GetTotalAttributesLevel(int Enchant) const
+{
+	if(m_aAttributes.empty())
+		return 0;
+
+	int Total = 0;
+	for(auto& Attribute : m_aAttributes)
+	{
+		const int Value = GetInfoEnchantStats(Attribute.GetID(), Enchant);
+		Total += (Value * Attribute.Info()->GetUpgradePrice());
+	}
+
+	return Total;
+}
 
 std::string CItemDescription::GetStringAttributesInfo(CPlayer* pPlayer, int Enchant) const
 {

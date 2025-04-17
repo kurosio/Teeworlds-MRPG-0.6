@@ -7,6 +7,7 @@
 
 #include "../houses/house_data.h"
 #include "../achievements/achievement_data.h"
+#include "../Inventory/InventoryManager.h"
 #include "../guilds/guild_manager.h"
 #include "../worlds/world_manager.h"
 
@@ -27,77 +28,6 @@ int CAccountData::GetGoldCapacity() const
 {
 	const auto TotalByAttribute = GetPlayer()->GetTotalAttributeValue(AttributeIdentifier::GoldCapacity);
 	return DEFAULT_MAX_PLAYER_BAG_GOLD + TotalByAttribute;
-}
-
-bool CAccountData::EquipItem(int ItemID, bool AllProfessions)
-{
-	bool Successful = false;
-	if(m_EquippedSlots.equipItem(ItemID))
-	{
-		SaveEquipments();
-		Successful = true;
-	}
-	if(m_pActiveProfession && m_pActiveProfession->GetEquippedSlots().equipItem(ItemID))
-	{
-		m_pActiveProfession->Save();
-		Successful = true;
-	}
-	for(auto& Prof : GetProfessions())
-	{
-		if(!AllProfessions && !Prof.IsProfessionType(PROFESSION_TYPE_OTHER))
-			continue;
-
-		if(Prof.GetEquippedSlots().equipItem(ItemID))
-		{
-			Prof.Save();
-			Successful = true;
-		}
-	}
-
-	return Successful;
-}
-
-bool CAccountData::UnequipItem(int ItemID, bool AllProfessions)
-{
-	bool Successful = false;
-	if(m_EquippedSlots.unequipItem(ItemID))
-	{
-		SaveEquipments();
-		Successful = true;
-	}
-	if(m_pActiveProfession && m_pActiveProfession->GetEquippedSlots().unequipItem(ItemID))
-	{
-		m_pActiveProfession->Save();
-		Successful = true;
-	}
-	for(auto& Prof : GetProfessions())
-	{
-		if(!AllProfessions && !Prof.IsProfessionType(PROFESSION_TYPE_OTHER))
-			continue;
-
-		if(Prof.GetEquippedSlots().unequipItem(ItemID))
-		{
-			Prof.Save();
-			Successful = true;
-		}
-	}
-
-	return Successful;
-}
-
-bool CAccountData::IsActiveEquipmentSlot(ItemType Type)
-{
-	bool Has = false;
-	if(m_EquippedSlots.hasSlot(Type))
-		Has = true;
-	if(m_pActiveProfession && m_pActiveProfession->GetEquippedSlots().hasSlot(Type))
-		Has = true;
-	for(auto& Prof : GetProfessions())
-	{
-		if(Prof.IsProfessionType(PROFESSION_TYPE_OTHER) && Prof.GetEquippedSlots().hasSlot(Type))
-			Has = true;
-	}
-	return Has;
 }
 
 const CTeeInfo& CAccountData::GetTeeInfo() const
@@ -587,4 +517,138 @@ void CAccountData::UpdateAchievementProgress(int AchievementID, int Progress, bo
 		newAchievement["completed"] = Completed;
 		m_AchievementsData.push_back(newAchievement);
 	}
+}
+
+
+void CAccountData::AutoEquipSlots(bool OnlyEmptySlots)
+{
+	auto* pPlayer = GetPlayer();
+	if(!pPlayer)
+		return;
+
+	// auto equip implement logic
+	auto autoEquipSlotsImpl = [&](const auto& equippedSlots)
+	{
+		for(auto& [Type, EquippedItemIdOpt] : equippedSlots.getSlots())
+		{
+			// only empty slots
+			if(OnlyEmptySlots && EquippedItemIdOpt)
+				continue;
+
+			// equip best item
+			auto* pBestItem = GS()->Core()->InventoryManager()->GetBestEquipmentSlotItem(GetPlayer(), Type);
+			if(pBestItem && pBestItem->Equip())
+			{
+				GS()->Chat(pPlayer->GetCID(), "Auto equip '{} - {}'.", pBestItem->Info()->GetName(), pBestItem->GetStringAttributesInfo(pPlayer));
+			}
+		}
+	};
+
+	// auto equip shared, active profession, other professions
+	autoEquipSlotsImpl(m_EquippedSlots);
+	if(m_pActiveProfession)
+	{
+		autoEquipSlotsImpl(m_pActiveProfession->GetEquippedSlots());
+	}
+	for(auto& Prof : GetProfessions())
+	{
+		if(Prof.IsProfessionType(PROFESSION_TYPE_OTHER))
+			autoEquipSlotsImpl(Prof.GetEquippedSlots());
+	}
+}
+
+
+bool CAccountData::EquipItem(int ItemID)
+{
+	bool Successful = false;
+	if(m_EquippedSlots.equipItem(ItemID))
+	{
+		SaveEquipments();
+		Successful = true;
+	}
+	if(m_pActiveProfession && m_pActiveProfession->GetEquippedSlots().equipItem(ItemID))
+	{
+		m_pActiveProfession->Save();
+		Successful = true;
+	}
+	for(auto& Prof : GetProfessions())
+	{
+		if(Prof.IsProfessionType(PROFESSION_TYPE_OTHER) && Prof.GetEquippedSlots().equipItem(ItemID))
+		{
+			Prof.Save();
+			Successful = true;
+		}
+	}
+
+	return Successful;
+}
+
+
+bool CAccountData::UnequipItem(int ItemID)
+{
+	bool Successful = false;
+	if(m_EquippedSlots.unequipItem(ItemID))
+	{
+		SaveEquipments();
+		Successful = true;
+	}
+	if(m_pActiveProfession && m_pActiveProfession->GetEquippedSlots().unequipItem(ItemID))
+	{
+		m_pActiveProfession->Save();
+		Successful = true;
+	}
+	for(auto& Prof : GetProfessions())
+	{
+		if(Prof.IsProfessionType(PROFESSION_TYPE_OTHER) && Prof.GetEquippedSlots().unequipItem(ItemID))
+		{
+			Prof.Save();
+			Successful = true;
+		}
+	}
+
+	return Successful;
+}
+
+
+bool CAccountData::IsAvailableEquipmentSlot(ItemType Type)
+{
+	bool Has = false;
+
+	// shared slots always available
+	if(m_EquippedSlots.hasSlot(Type))
+		Has = true;
+
+	// active profession always available
+	if(m_pActiveProfession && m_pActiveProfession->GetEquippedSlots().hasSlot(Type))
+		Has = true;
+
+	// other professions always availables
+	for(auto& Prof : GetProfessions())
+	{
+		if(Prof.IsProfessionType(PROFESSION_TYPE_OTHER) && Prof.GetEquippedSlots().hasSlot(Type))
+			Has = true;
+	}
+
+	return Has;
+}
+
+
+std::optional<int> CAccountData::GetEquippedSlotItemID(ItemType Type) const
+{
+	// search from shared
+	if(m_EquippedSlots.hasSlot(Type))
+		return m_EquippedSlots.getEquippedItemID(Type);
+
+	// search from active profession
+	if(m_pActiveProfession && m_pActiveProfession->GetEquippedSlots().hasSlot(Type))
+		return m_pActiveProfession->GetEquippedSlots().getEquippedItemID(Type);
+
+	// search from other professions
+	for(auto& Prof : GetProfessions())
+	{
+		if(Prof.IsProfessionType(PROFESSION_TYPE_OTHER) && Prof.GetEquippedSlots().hasSlot(Type))
+			return Prof.GetEquippedSlots().getEquippedItemID(Type);
+	}
+
+	return std::nullopt;
 }

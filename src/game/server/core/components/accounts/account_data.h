@@ -45,6 +45,17 @@ class CAccountData
 	CPlayer* GetPlayer() const;
 
 public:
+	// main
+	struct TimePeriods
+	{
+		time_t m_DailyStamp { };
+		time_t m_WeekStamp { };
+		time_t m_MonthStamp { };
+	};
+	TimePeriods m_Periods {};
+	CTeeInfo m_TeeInfos {};
+	std::list< int > m_aHistoryWorld {};
+	static std::map < int, CAccountData > ms_aData;
 
 	PrisonManager& GetPrisonManager() { return m_PrisonManager; }
 	const PrisonManager& GetPrisonManager() const { return m_PrisonManager; }
@@ -61,6 +72,7 @@ public:
 	void ChangeProfession(ProfessionIdentifier Profession)
 	{
 		m_pActiveProfession = GetProfession(Profession);
+		AutoEquipSlots(true);
 	}
 
 	CProfession* GetActiveProfession() const
@@ -88,9 +100,6 @@ public:
 		return m_vProfessions;
 	}
 
-	bool EquipItem(int ItemID, bool AllProfessions = false);
-	bool UnequipItem(int ItemID, bool AllProfessions = false);
-	bool IsActiveEquipmentSlot(ItemType Type);
 	const CTeeInfo& GetTeeInfo() const;
 
 	/*
@@ -183,19 +192,13 @@ public:
 	void RemoveAether(int AetherID) { m_aAetherLocation.erase(AetherID); }
 	ska::unordered_set< int >& GetAethers() { return m_aAetherLocation; }
 
-	struct TimePeriods
-	{
-		time_t m_DailyStamp { };
-		time_t m_WeekStamp { };
-		time_t m_MonthStamp { };
-	};
+	// Equipments
+	void AutoEquipSlots(bool OnlyEmptySlots);
+	bool EquipItem(int ItemID);
+	bool UnequipItem(int ItemID);
+	bool IsAvailableEquipmentSlot(ItemType Type);
+	std::optional<int> GetEquippedSlotItemID(ItemType Type) const;
 
-	// main
-	TimePeriods m_Periods {};
-	std::list< int > m_aHistoryWorld {};
-
-	CTeeInfo m_TeeInfos {};
-	static std::map < int, CAccountData > ms_aData;
 };
 
 struct CAccountSharedData

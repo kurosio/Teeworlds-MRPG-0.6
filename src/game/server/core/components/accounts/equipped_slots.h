@@ -18,7 +18,7 @@ public:
 		return m_Slots;
 	}
 
-	bool hasSlot(ItemType Slot)
+	bool hasSlot(ItemType Slot) const
 	{
 		return m_Slots.contains(Slot);
 	}

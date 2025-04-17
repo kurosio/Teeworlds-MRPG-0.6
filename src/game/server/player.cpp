@@ -416,7 +416,7 @@ void CPlayer::RefreshClanTagString()
 	prepared += fmt_default(" | {}", Server()->GetWorldName(GetCurrentWorldID()));
 
 	// title
-	if(const auto titleItemID = GetEquippedItemID(ItemType::EquipTitle); titleItemID.has_value())
+	if(const auto titleItemID = GetEquippedItemID(ItemType::EquipTitle))
 		prepared += fmt_default(" | {}", GetItem(titleItemID.value())->Info()->GetName());
 
 	// guild
@@ -775,52 +775,15 @@ CPlayerQuest* CPlayer::GetQuest(QuestIdentifier ID) const
 	return questData[ID];
 }
 
-std::optional<int> CPlayer::GetEquippedItemID(ItemType EquipType, int SkipItemID) const
+std::optional<int> CPlayer::GetEquippedItemID(ItemType EquipType) const
 {
-	auto findEquippedItem = [&](const auto& equippedSlots) -> std::optional<int>
-	{
-		for(auto& [Type, EquippedItemIdOpt] : equippedSlots.getSlots())
-		{
-			if(EquipType != Type)
-				continue;
-
-			if(EquippedItemIdOpt && *EquippedItemIdOpt != SkipItemID)
-				return EquippedItemIdOpt;
-		}
-		return std::nullopt;
-	};
-
-	// search from shared
-	auto equippedItem = findEquippedItem(Account()->GetEquippedSlots());
-	if(equippedItem)
-		return equippedItem;
-
-	// search from active profession
-	if(auto* pProfession = Account()->GetActiveProfession())
-	{
-		equippedItem = findEquippedItem(pProfession->GetEquippedSlots());
-		if(equippedItem)
-			return equippedItem;
-	}
-
-	// search from other
-	for(auto& Prof : Account()->GetProfessions())
-	{
-		if(Prof.IsProfessionType(PROFESSION_TYPE_OTHER))
-		{
-			equippedItem = findEquippedItem(Prof.GetEquippedSlots());
-			if(equippedItem)
-				return equippedItem;
-		}
-	}
-
-	return std::nullopt;
+	return Account()->GetEquippedSlotItemID(EquipType);
 }
 
 bool CPlayer::IsEquipped(ItemType EquipID) const
 {
-	const auto& optItemID = GetEquippedItemID(EquipID, -1);
-	return optItemID.has_value();
+	const auto& ItemIdOpt = GetEquippedItemID(EquipID);
+	return ItemIdOpt.has_value();
 }
 
 int CPlayer::GetTotalAttributeValue(AttributeIdentifier ID) const

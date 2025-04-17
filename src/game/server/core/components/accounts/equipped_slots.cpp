@@ -16,7 +16,10 @@ void EquippedSlots::load(std::string EquippedSlots)
 		{
 			auto Type = (ItemType)std::stoi(T);
 			if(m_Slots.contains(Type))
-				m_Slots[Type] = ItemID;
+			{
+				auto ResultOpt = (ItemID > 0 ? std::make_optional<int>(ItemID) : std::nullopt);
+				m_Slots[Type] = ResultOpt;
+			}
 		}
 	});
 }

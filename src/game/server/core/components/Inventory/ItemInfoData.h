@@ -74,7 +74,7 @@ public:
 	const char* GetName() const { return m_aName; }
 	const char* GetDescription() const { return m_aDescription; }
 	int GetInitialPrice() const { return m_InitialPrice; }
-	int GetDysenthis(int Enchant) const { return m_Dysenthis ? (m_Dysenthis + (maximum(GetEnchantPrice(Enchant) / 4, 1) * Enchant)) : 0; }
+	int GetDysenthis(int Enchant) const;
 	ItemType GetType() const { return m_Type; }
 	bool IsType(ItemType Type) const { return m_Type == Type; }
 	ItemGroup GetGroup() const { return m_Group; }
@@ -82,17 +82,17 @@ public:
 
 	bool IsEquipmentSlot() const
 	{
-		return (m_Group == ItemGroup::Equipment && m_Type != ItemType::Default);
-	}
-
-	bool IsGameSetting() const
-	{
-		return (m_Group == ItemGroup::Settings && m_Type == ItemType::Default);
+		return ((m_Group == ItemGroup::Equipment || m_Group == ItemGroup::Potion) && m_Type != ItemType::Default);
 	}
 
 	bool IsEquipmentNonSlot() const
 	{
 		return (m_Group == ItemGroup::Equipment && m_Type == ItemType::Default);
+	}
+
+	bool IsGameSetting() const
+	{
+		return (m_Group == ItemGroup::Settings && m_Type == ItemType::Default);
 	}
 
 	class CRandomBox* GetRandomBox() { return m_RandomBox.IsEmpty() ? nullptr : &m_RandomBox; }
@@ -104,6 +104,7 @@ public:
 	bool IsEnchantable() const;
 	bool IsEnchantMaxLevel(int Enchant) const;
 	bool HasAttributes() const;
+	int GetTotalAttributesLevel(int Enchant) const;
 
 	// equip modules types functions
 	int GetInfoEnchantStats(AttributeIdentifier ID) const;

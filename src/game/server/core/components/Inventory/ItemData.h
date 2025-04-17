@@ -72,6 +72,7 @@ public:
 	}
 
 	// getters
+	int GetTotalAttributesLevel() const { return Info()->GetTotalAttributesLevel(m_Enchant); }
 	int GetEnchantStats(AttributeIdentifier ID) const { return Info()->GetInfoEnchantStats(ID, m_Enchant); }
 	int GetEnchantPrice() const { return Info()->GetEnchantPrice(m_Enchant); }
 	int GetDysenthis() const { return Info()->GetDysenthis(m_Enchant); }
@@ -84,8 +85,8 @@ public:
 	// main functions
 	bool Add(int Value, int StartSettings = 0, int StartEnchant = 0, bool Message = true);
 	bool Remove(int Value);
-	bool Equip(bool AllProfessions = false);
-	bool UnEquip(bool AllProfessions = false);
+	bool Equip();
+	bool UnEquip();
 	bool Use(int Value);
 	bool Drop(int Value);
 	bool Save();

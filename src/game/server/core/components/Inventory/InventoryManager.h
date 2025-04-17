@@ -29,6 +29,7 @@ public:
 	bool ListInventory(int ClientID, ItemType Type);
 	void ItemSelected(CPlayer* pPlayer, const CPlayerItem* pItem);
 	int GetUnfrozenItemValue(class CPlayer* pPlayer, ItemIdentifier ItemID) const;
+	CPlayerItem* GetBestEquipmentSlotItem(CPlayer* pPlayer, ItemType Type);
 
 	void ShowSellingItemsByFunction(CPlayer* pPlayer, ItemType Type) const;
 

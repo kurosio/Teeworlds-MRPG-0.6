@@ -66,15 +66,13 @@ bool CPlayerItem::ShouldAutoEquip() const
 	if(!pPlayer || !pPlayer->IsAuthed())
 		return false;
 
+	// is equipment slot
 	if(Info()->IsEquipmentSlot())
-	{
-		return !pPlayer->GetEquippedItemID(Info()->GetType()).has_value();
-	}
+		return !pPlayer->IsEquipped(Info()->GetType());
 
+	// is equipment non slot
 	if(Info()->IsEquipmentNonSlot())
-	{
 		return true;
-	}
 
 	return false;
 }
@@ -211,7 +209,7 @@ bool CPlayerItem::Add(int Value, int StartSettings, int StartEnchant, bool Messa
 	// try auto equip item
 	if(ShouldAutoEquip() && !IsEquipped())
 	{
-		Equip(true);
+		Equip();
 		GS()->Chat(ClientID, "Auto equip '{} - {}'.", Info()->GetName(), GetStringAttributesInfo(pPlayer));
 	}
 
@@ -248,7 +246,7 @@ bool CPlayerItem::Remove(int Value)
 	{
 		if(m_Value <= Value)
 		{
-			UnEquip(true);
+			UnEquip();
 			pPlayer->StartUniversalScenario(Info()->GetScenarioData(), EScenarios::SCENARIO_ON_ITEM_LOST);
 		}
 
@@ -263,7 +261,7 @@ bool CPlayerItem::Remove(int Value)
 	return false;
 }
 
-bool CPlayerItem::Equip(bool AllProfessions)
+bool CPlayerItem::Equip()
 {
 	if(m_Value < 1)
 		return false;
@@ -287,7 +285,7 @@ bool CPlayerItem::Equip(bool AllProfessions)
 
 	// by slots
 	auto* pAccount = pPlayer->Account();
-	if(pAccount->EquipItem(m_ID, AllProfessions))
+	if(pAccount->EquipItem(m_ID))
 	{
 		g_EventListenerManager.Notify<IEventListener::PlayerEquipItem>(pPlayer, this);
 		pPlayer->StartUniversalScenario(Info()->GetScenarioData(), EScenarios::SCENARIO_ON_ITEM_EQUIP);
@@ -298,7 +296,7 @@ bool CPlayerItem::Equip(bool AllProfessions)
 	return false;
 }
 
-bool CPlayerItem::UnEquip(bool AllProfessions)
+bool CPlayerItem::UnEquip()
 {
 	if(m_Value < 1)
 		return false;
@@ -322,7 +320,7 @@ bool CPlayerItem::UnEquip(bool AllProfessions)
 
 	// by slots
 	auto* pAccount = pPlayer->Account();
-	if(pAccount->UnequipItem(m_ID, AllProfessions))
+	if(pAccount->UnequipItem(m_ID))
 	{
 		g_EventListenerManager.Notify<IEventListener::PlayerUnequipItem>(pPlayer, this);
 		pPlayer->StartUniversalScenario(Info()->GetScenarioData(), EScenarios::SCENARIO_ON_ITEM_UNEQUIP);

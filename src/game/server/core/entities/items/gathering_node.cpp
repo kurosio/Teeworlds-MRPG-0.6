@@ -108,10 +108,10 @@ bool CEntityGatheringNode::TakeDamage(CPlayer* pPlayer)
 	GS()->CreateSound(m_Pos, SoundId);
 
 	// working
-	const auto optEquippedItemID = pPlayer->GetEquippedItemID(EquipID);
-	if(optEquippedItemID.has_value())
+	const auto EquippedToolItemIdOpt = pPlayer->GetEquippedItemID(EquipID);
+	if(EquippedToolItemIdOpt.has_value())
 	{
-		auto* pEquippedItem = pPlayer->GetItem(optEquippedItemID.value());
+		auto* pEquippedItem = pPlayer->GetItem(EquippedToolItemIdOpt.value());
 		const int Durability = pEquippedItem->GetDurability();
 		const bool RequiredRepair = Durability <= 0;
 

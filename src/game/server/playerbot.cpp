@@ -284,11 +284,14 @@ void CPlayerBot::TryRespawn()
 		if(!pOwner || !pOwner->GetCharacter())
 			return;
 
-		auto* pOwnerItem = pOwner->GetItem(pOwner->GetEquippedItemID(ItemType::EquipEidolon).value());
-		if(pOwnerItem->GetDurability() <= 0)
-			return;
+		if(auto EquippedItemIdOpt = pOwner->GetEquippedItemID(ItemType::EquipEidolon))
+		{
+			auto* pOwnerItem = pOwner->GetItem(pOwner->GetEquippedItemID(ItemType::EquipEidolon).value());
+			if(pOwnerItem->GetDurability() <= 0)
+				return;
 
-		FinalSpawnPos = pOwner->GetCharacter()->GetPos();
+			FinalSpawnPos = pOwner->GetCharacter()->GetPos();
+		}
 	}
 	else if(m_BotType == TYPE_BOT_QUEST_MOB)
 	{
@@ -474,7 +477,7 @@ void CPlayerBot::GetFormatedName(char* aBuffer, int BufferSize)
 	}
 }
 
-std::optional<int> CPlayerBot::GetEquippedItemID(ItemType EquipID, int SkipItemID) const
+std::optional<int> CPlayerBot::GetEquippedItemID(ItemType EquipID) const
 {
 	auto& DataBot = DataBotInfo::ms_aDataBot[m_BotID];
 	if(DataBot.m_vEquippedSlot.contains(EquipID))
