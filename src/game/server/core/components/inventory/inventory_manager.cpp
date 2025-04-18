@@ -8,23 +8,25 @@
 #include <game/server/core/components/houses/house_manager.h>
 #include <game/server/core/components/quests/quest_manager.h>
 
-template < typename T >
-void ExecuteTemplateItemsTypes(T Type, std::map < int, CPlayerItem >& paItems, const std::function<void(const CPlayerItem&)> pFunc)
+template <typename FilterT>
+void ForEachMatchingItem(FilterT filter, const std::map<int, CPlayerItem>& items, const std::function<void(const CPlayerItem&)>& callback)
 {
-	for(const auto& [ItemID, ItemData] : paItems)
+	for(const auto& [itemID, itemData] : items)
 	{
-		bool ActivateCallback = false;
-		if constexpr(std::is_same_v<T, ItemGroup>)
-			ActivateCallback = ItemData.HasItem() && ItemData.Info()->IsGroup(Type);
-		else if constexpr(std::is_same_v<T, ItemType>)
-			ActivateCallback = ItemData.HasItem() && ItemData.Info()->IsType(Type);
-
-		if(ActivateCallback)
-			pFunc(ItemData);
+		if constexpr(std::is_same_v<FilterT, ItemGroup>)
+		{
+			if(itemData.HasItem() && itemData.Info()->IsGroup(filter))
+				callback(itemData);
+		}
+		else if constexpr(std::is_same_v<FilterT, ItemType>)
+		{
+			if(itemData.HasItem() && itemData.Info()->IsType(filter))
+				callback(itemData);
+		}
 	}
 }
 
-using namespace sqlstr;
+
 void CInventoryManager::OnPreInit()
 {
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_items_list");
@@ -72,6 +74,7 @@ void CInventoryManager::OnPreInit()
 	}
 }
 
+
 void CInventoryManager::OnPlayerLogin(CPlayer* pPlayer)
 {
 	const int ClientID = pPlayer->GetCID();
@@ -91,10 +94,12 @@ void CInventoryManager::OnPlayerLogin(CPlayer* pPlayer)
 	pPlayer->Account()->AutoEquipSlots(true);
 }
 
+
 void CInventoryManager::OnClientReset(int ClientID)
 {
 	CPlayerItem::Data().erase(ClientID);
 }
+
 
 bool CInventoryManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 {
@@ -104,7 +109,7 @@ bool CInventoryManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
-		std::vector<std::pair<ItemGroup, std::string>> vMenuItems =
+		std::vector<std::pair<ItemGroup, std::string_view>> vMenuItems =
 		{
 			{ ItemGroup::Usable,           "\u270C" },
 			{ ItemGroup::Resource,         "\u2692" },
@@ -117,9 +122,7 @@ bool CInventoryManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		// inventory tabs
 		VoteWrapper VInventoryTabs(ClientID, VWF_SEPARATE|VWF_ALIGN_TITLE|VWF_STYLE_SIMPLE, "\u262A Inventory tabs");
 		for(const auto& [Type, Icon] : vMenuItems)
-		{
 			VInventoryTabs.AddMenu(MENU_INVENTORY, (int)Type, "{} {} ({})", Icon, GetItemGroupName(Type), GetCountItemsType(pPlayer, Type));
-		}
 		VoteWrapper::AddEmptyline(ClientID);
 
 		// show and sort inventory
@@ -128,9 +131,7 @@ bool CInventoryManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		if(itemTypeSelected.has_value())
 		{
 			if(!ListInventory(ClientID, (ItemGroup)itemTypeSelected.value()))
-			{
 				VInfo.Add("The selected list is empty");
-			}
 		}
 		else
 		{
@@ -162,11 +163,11 @@ bool CInventoryManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 			const auto pPlayerItem = pPlayer->GetItem(EquippedItemIdOpt.value());
 			if(EquipID == ItemType::EquipPotionHeal || EquipID == ItemType::EquipPotionMana)
 			{
-				if(const auto optPotionContext = pPlayerItem->Info()->GetPotionContext())
+				if(const auto PotionContextOpt = pPlayerItem->Info()->GetPotionContext())
 				{
-					const auto RecastTotal = optPotionContext->Lifetime + POTION_RECAST_APPEND_TIME;
+					const auto RecastTotal = PotionContextOpt->Lifetime + POTION_RECAST_APPEND_TIME;
 					Wrapper.AddMenu(MENU_EQUIPMENT, (int)EquipID, "{} (recast {} / +{}) x{}",
-						pPlayerItem->Info()->GetName(), RecastTotal, optPotionContext->Value, pPlayerItem->GetValue());
+						pPlayerItem->Info()->GetName(), RecastTotal, PotionContextOpt->Value, pPlayerItem->GetValue());
 				}
 				else
 				{
@@ -181,11 +182,12 @@ bool CInventoryManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 			return true;
 		};
 
+		// basic equipments tools
 		VoteWrapper VMain(ClientID, VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "\u2604 Equipment: Basic");
 		VMain.AddOption("AUTO_EQUIP_SLOTS", "Auto equip slots by best equipment");
 		VoteWrapper::AddEmptyline(ClientID);
 
-		// profession
+		// profession slots
 		auto* pProfession = pPlayer->Account()->GetActiveProfession();
 		if(pProfession)
 		{
@@ -195,13 +197,13 @@ bool CInventoryManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 			VoteWrapper::AddEmptyline(ClientID);
 		}
 
-		// shared
+		// shared slots
 		VoteWrapper VShared(ClientID, VWF_SEPARATE_OPEN | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "\u2604 Equipment: Shared");
 		for(auto& [Type, ItemIdOpt] : pPlayer->Account()->GetEquippedSlots().getSlots())
 			addEquipmentFieldFunc(VShared, Type);
 		VoteWrapper::AddEmptyline(ClientID);
 
-		// profession job
+		// profession job slots
 		VoteWrapper VJob(ClientID, VWF_SEPARATE_OPEN | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "\u2604 Equipment: Job");
 		for(auto& Prof : pPlayer->Account()->GetProfessions())
 		{
@@ -238,7 +240,7 @@ bool CInventoryManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 
 		const auto& PlayerItems = CPlayerItem::Data()[ClientID];
 
-		// weapons equipment
+		// modules functional
 		VoteWrapper VFunctional(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "\u2604 Modules: Functional");
 		auto functionalModules = PlayerItems | std::views::filter([](const auto& pair)
 		{
@@ -252,14 +254,11 @@ bool CInventoryManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 
 			VFunctional.AddOption("EQUIP_ITEM", pItemInfo->GetID(), "{}{} * {}", EquippedFlagStr, pItemInfo->GetName(), pItemInfo->GetDescription());
 		}
-
 		if(VFunctional.IsEmpty())
-		{
 			VFunctional.Add("No modules available");
-		}
 		VoteWrapper::AddEmptyline(ClientID);
 
-		// weapons equipment
+		// modules stats
 		VoteWrapper VStats(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "\u2604 Modules: Stats");
 		auto statModules = PlayerItems | std::views::filter([](const auto& pair)
 		{
@@ -273,11 +272,8 @@ bool CInventoryManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 
 			VStats.AddOption("EQUIP_ITEM", pItemInfo->GetID(), "{}{} * {}", EquippedFlagStr, pItemInfo->GetName(), PlayerItem.GetStringAttributesInfo(pPlayer));
 		}
-
 		if(VStats.IsEmpty())
-		{
 			VStats.Add("No modules available");
-		}
 
 		// add backpage
 		VoteWrapper::AddBackpage(ClientID);
@@ -291,14 +287,16 @@ bool CInventoryManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
 {
 	const int ClientID = pPlayer->GetCID();
 
-	if(PPSTR(pCmd, "IDROP") == 0)
+	// Drop item
+	if(PPSTR(pCmd, "DROP_ITEM") == 0)
 	{
-		int AvailableValue = GetUnfrozenItemValue(pPlayer, Extra1);
+		// check available value
+		auto AvailableValue = GetUnfrozenItemValue(pPlayer, Extra1);
 		if(AvailableValue <= 0)
 			return true;
 
+		auto* pPlayerItem = pPlayer->GetItem(Extra1);
 		ReasonNumber = minimum(AvailableValue, ReasonNumber);
-		CPlayerItem* pPlayerItem = pPlayer->GetItem(Extra1);
 		pPlayerItem->Drop(ReasonNumber);
 
 		GS()->Broadcast(ClientID, BroadcastPriority::GameInformation, 100, "You drop {} x{}", pPlayerItem->Info()->GetName(), ReasonNumber);
@@ -307,18 +305,43 @@ bool CInventoryManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
 		return true;
 	}
 
-	if(PPSTR(pCmd, "IUSE") == 0)
+	// Use item
+	if(PPSTR(pCmd, "USE_ITEM") == 0)
 	{
+		// check available value
 		int AvailableValue = GetUnfrozenItemValue(pPlayer, Extra1);
 		if(AvailableValue <= 0)
 			return true;
 
+		auto* pPlayerItem = pPlayer->GetItem(Extra1);
 		ReasonNumber = minimum(AvailableValue, ReasonNumber);
-		pPlayer->GetItem(Extra1)->Use(ReasonNumber);
+		pPlayerItem->Use(ReasonNumber);
 		pPlayer->m_VotesData.UpdateCurrentVotes();
 		return true;
 	}
 
+	// Dissasemble item
+	if(PPSTR(pCmd, "DISSASEMBLE_ITEM") == 0)
+	{
+		// check available value
+		auto AvailableValue = GetUnfrozenItemValue(pPlayer, Extra1);
+		if(AvailableValue <= 0)
+			return true;
+
+		ReasonNumber = minimum(AvailableValue, ReasonNumber);
+		auto* pPlayerItem = pPlayer->GetItem(Extra1);
+		auto* pPlayerMaterial = pPlayer->GetItem(itMaterial);
+		const int DesValue = pPlayerItem->GetDysenthis() * ReasonNumber;
+		if(pPlayerItem->Remove(ReasonNumber) && pPlayerMaterial->Add(DesValue))
+		{
+			GS()->Chat(ClientID, "Disassemble '{} x{}'.", pPlayerItem->Info()->GetName(), ReasonNumber);
+			GS()->CreateSound(pPlayer->m_ViewPos, SOUND_VOTE_ITEM_DISSASEMBLE);
+			pPlayer->m_VotesData.UpdateCurrentVotes();
+		}
+		return true;
+	}
+
+	// Auto equip slots by best equippement items
 	if(PPSTR(pCmd, "AUTO_EQUIP_SLOTS") == 0)
 	{
 		pPlayer->Account()->AutoEquipSlots(false);
@@ -326,32 +349,7 @@ bool CInventoryManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
 		return true;
 	}
 
-	if(PPSTR(pCmd, "EQUIP_GROUP_SELECT") == 0)
-	{
-		pPlayer->m_ActiveProfessionEquipGroupID = Extra1;
-		pPlayer->m_VotesData.UpdateCurrentVotes();
-		return true;
-	}
-
-	if(PPSTR(pCmd, "IDESYNTHESIS") == 0)
-	{
-		int AvailableValue = GetUnfrozenItemValue(pPlayer, Extra1);
-		if(AvailableValue <= 0)
-			return true;
-
-		ReasonNumber = minimum(AvailableValue, ReasonNumber);
-		CPlayerItem* pPlayerSelectedItem = pPlayer->GetItem(Extra1);
-		CPlayerItem* pPlayerMaterialItem = pPlayer->GetItem(itMaterial);
-		const int DesValue = pPlayerSelectedItem->GetDysenthis() * ReasonNumber;
-		if(pPlayerSelectedItem->Remove(ReasonNumber) && pPlayerMaterialItem->Add(DesValue))
-		{
-			GS()->Chat(ClientID, "Disassemble '{} x{}'.", pPlayerSelectedItem->Info()->GetName(), ReasonNumber);
-			GS()->CreateSound(pPlayer->m_ViewPos, SOUND_VOTE_ITEM_DISSASEMBLE);
-			pPlayer->m_VotesData.UpdateCurrentVotes();
-		}
-		return true;
-	}
-
+	// Equip item
 	if(PPSTR(pCmd, "EQUIP_ITEM") == 0)
 	{
 		auto* pPlayerItem = pPlayer->GetItem(Extra1);
@@ -365,10 +363,11 @@ bool CInventoryManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
 		return true;
 	}
 
+	// Enchant item
 	if(PPSTR(pCmd, "ENCHANT_ITEM") == 0)
 	{
 		// check enchant max level
-		CPlayerItem* pPlayerItem = pPlayer->GetItem(Extra1);
+		auto* pPlayerItem = pPlayer->GetItem(Extra1);
 		if(pPlayerItem->IsEnchantMaxLevel())
 		{
 			GS()->Chat(ClientID, "Enchantment level is maximum");
@@ -385,7 +384,7 @@ bool CInventoryManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
 		pPlayerItem->SetEnchant(EnchantLevel);
 
 		// information
-		std::string strNewAttributes = pPlayerItem->Info()->HasAttributes() ? pPlayerItem->GetStringAttributesInfo(pPlayer) : "unattributed";
+		const auto strNewAttributes = pPlayerItem->Info()->HasAttributes() ? pPlayerItem->GetStringAttributesInfo(pPlayer) : "unattributed";
 		GS()->Chat(-1, "'{}' enchant '{} {} {}'.", Server()->ClientName(ClientID), pPlayerItem->Info()->GetName(),
 			pPlayerItem->GetStringEnchantLevel(), strNewAttributes);
 		pPlayer->m_VotesData.UpdateCurrentVotes();
@@ -400,9 +399,7 @@ void CInventoryManager::RepairDurabilityItems(CPlayer* pPlayer)
 	const int ClientID = pPlayer->GetCID();
 	Database->Execute<DB::UPDATE>("tw_accounts_items", "Durability = '100' WHERE UserID = '{}'", pPlayer->Account()->GetID());
 	for(auto& [ID, Item] : CPlayerItem::Data()[ClientID])
-	{
 		Item.m_Durability = 100;
-	}
 
 	pPlayer->TryCreateEidolon();
 }
@@ -441,10 +438,10 @@ std::vector<int> CInventoryManager::GetItemIDsCollectionByType(ItemType Type)
 	return ItemIDs;
 }
 
-bool CInventoryManager::ListInventory(int ClientID, ItemGroup Type)
+bool CInventoryManager::ListInventory(int ClientID, ItemGroup Group)
 {
 	bool hasItems = false;
-	ExecuteTemplateItemsTypes(Type, CPlayerItem::Data()[ClientID], [&](const CPlayerItem& pItem)
+	ForEachMatchingItem(Group, CPlayerItem::Data()[ClientID], [&](const CPlayerItem& pItem)
 	{
 		ItemSelected(GS()->GetPlayer(ClientID), &pItem);
 		hasItems = true;
@@ -455,7 +452,7 @@ bool CInventoryManager::ListInventory(int ClientID, ItemGroup Type)
 bool CInventoryManager::ListInventory(int ClientID, ItemType Type)
 {
 	bool hasItems = false;
-	ExecuteTemplateItemsTypes(Type, CPlayerItem::Data()[ClientID], [&](const CPlayerItem& pItem)
+	ForEachMatchingItem(Type, CPlayerItem::Data()[ClientID], [&](const CPlayerItem& pItem)
 	{
 		ItemSelected(GS()->GetPlayer(ClientID), &pItem);
 		hasItems = true;
@@ -496,32 +493,6 @@ CPlayerItem* CInventoryManager::GetBestEquipmentSlotItem(CPlayer* pPlayer, ItemT
 	return pBestItem;
 }
 
-void CInventoryManager::ShowSellingItemsByFunction(CPlayer* pPlayer, ItemType Type) const
-{
-	const int ClientID = pPlayer->GetCID();
-
-	// show base shop functions
-	VoteWrapper VInfo(ClientID, VWF_SEPARATE_CLOSED, "Selling item's");
-	VInfo.Add("You can sell items from the list");
-	VInfo.AddLine();
-
-	VoteWrapper VItems(ClientID, VWF_SEPARATE_OPEN|VWF_STYLE_SIMPLE, "Sale of items from the list is available!");
-	VItems.Add("Choose the item you want to sell");
-	{
-		VItems.BeginDepth();
-		for(auto& [ID, Item] : CItemDescription::Data())
-		{
-			if(Item.GetType() != Type)
-				continue;
-
-			int Price = maximum(1, Item.GetInitialPrice());
-			VItems.AddOption("SELL_ITEM", ID, Price, "[{}] Sell {} ({$} gold's per unit)", pPlayer->GetItem(ID)->GetValue(), Item.GetName(), Price);
-		}
-		VItems.EndDepth();
-	}
-	VItems.AddLine();
-}
-
 void CInventoryManager::ItemSelected(CPlayer* pPlayer, const CPlayerItem* pItem)
 {
 	const int ClientID = pPlayer->GetCID();
@@ -552,7 +523,7 @@ void CInventoryManager::ItemSelected(CPlayer* pPlayer, const CPlayerItem* pItem)
 
 	// is used item
 	if(pInfo->m_Group == ItemGroup::Usable && (pInfo->m_Type == ItemType::UseSingle || pInfo->m_Type == ItemType::UseMultiple))
-		VItem.AddOption("IUSE", ItemID, "Use");
+		VItem.AddOption("USE_ITEM", ItemID, "Use");
 
 	// is potion
 	if(pInfo->m_Group == ItemGroup::Potion)
@@ -594,14 +565,14 @@ void CInventoryManager::ItemSelected(CPlayer* pPlayer, const CPlayerItem* pItem)
 	{
 		// can dysenthis
 		if(pItem->GetDysenthis() > 0)
-			VItem.AddOption("IDESYNTHESIS", ItemID, pItem->GetDysenthis(), "Disassemble (+{}m)", pItem->GetDysenthis());
+			VItem.AddOption("DISSASEMBLE_ITEM", ItemID, pItem->GetDysenthis(), "Disassemble (+{}m)", pItem->GetDysenthis());
 
 		// can trade
 		if(pInfo->m_InitialPrice > 0)
 			VItem.AddOption("AUCTION_CREATE", ItemID, "Sell at auction");
 
 		// drop
-		VItem.AddOption("IDROP", ItemID, "Drop");
+		VItem.AddOption("DROP_ITEM", ItemID, "Drop");
 	}
 }
 
@@ -612,36 +583,4 @@ int CInventoryManager::GetCountItemsType(CPlayer* pPlayer, ItemGroup Type) const
 	{
 		return pItem.second.HasItem() && pItem.second.Info()->IsGroup(Type);
 	});
-}
-
-// TODO: FIX IT (lock .. unlock)
-std::mutex lock_sleep;
-void CInventoryManager::AddItemSleep(int AccountID, ItemIdentifier ItemID, int Value, int Milliseconds)
-{
-	std::thread Thread([this, AccountID, ItemID, Value, Milliseconds]()
-	{
-		if(Milliseconds > 0)
-			std::this_thread::sleep_for(std::chrono::milliseconds(Milliseconds));
-
-		lock_sleep.lock();
-		CPlayer* pPlayer = GS()->GetPlayerByUserID(AccountID);
-		if(pPlayer)
-		{
-			pPlayer->GetItem(ItemID)->Add(Value);
-			lock_sleep.unlock();
-			return;
-		}
-
-		ResultPtr pRes = Database->Execute<DB::SELECT>("Value", "tw_accounts_items", "WHERE ItemID = '{}' AND UserID = '{}'", ItemID, AccountID);
-		if(pRes->next())
-		{
-			const int ReallyValue = pRes->getInt("Value") + Value;
-			Database->Execute<DB::UPDATE>("tw_accounts_items", "Value = '{}' WHERE UserID = '{}' AND ItemID = '{}'", ReallyValue, AccountID, ItemID);
-			lock_sleep.unlock();
-			return;
-		}
-		Database->Execute<DB::INSERT>("tw_accounts_items", "(ItemID, UserID, Value, Settings, Enchant) VALUES ('{}', '{}', '{}', '0', '0')", ItemID, AccountID, Value);
-		lock_sleep.unlock();
-	});
-	Thread.detach();
 }

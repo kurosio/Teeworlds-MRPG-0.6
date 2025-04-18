@@ -64,7 +64,6 @@ public:
 	char m_aInitialClanBuffer[128]{};
 	Mood m_MoodState{};
 	int m_ActiveCraftGroupID{};
-	int m_ActiveProfessionEquipGroupID {};
 	std::unique_ptr<MotdMenu> m_pMotdMenu{};
 
 	char m_aLastMsg[256]{};

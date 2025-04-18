@@ -31,12 +31,8 @@ public:
 	int GetUnfrozenItemValue(class CPlayer* pPlayer, ItemIdentifier ItemID) const;
 	CPlayerItem* GetBestEquipmentSlotItem(CPlayer* pPlayer, ItemType Type);
 
-	void ShowSellingItemsByFunction(CPlayer* pPlayer, ItemType Type) const;
-
 	void RepairDurabilityItems(class CPlayer *pPlayer);
 	int GetCountItemsType(class CPlayer* pPlayer, ItemGroup Type) const;
-
-	void AddItemSleep(int AccountID, ItemIdentifier ItemID, int Value, int Milliseconds);
 };
 
 #endif
