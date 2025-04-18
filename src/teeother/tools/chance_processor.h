@@ -1,7 +1,7 @@
 #ifndef TEEOTHER_TOOLS_CHANCE_PROCESSOR_H
 #define TEEOTHER_TOOLS_CHANCE_PROCESSOR_H
 
-template<typename T>
+template<typename T> requires std::equality_comparable<T>
 class ChanceProcessor
 {
 private:
@@ -15,7 +15,7 @@ private:
 	double m_TotalChance {};
 
 public:
-	void clear()
+	void clear() noexcept
 	{
 		m_vElements.clear();
 		m_TotalChance = 0.0;
@@ -47,14 +47,14 @@ public:
 		return false;
 	}
 
-	bool hasElement(const T& element)
+	bool hasElement(const T& element) const
 	{
-		auto it = std::ranges::find_if(m_vElements, [&element](const ElementWithChance& e)
+		const auto it = std::ranges::find_if(m_vElements, [&element](const ElementWithChance& e)
 		{
 			return e.Element == element;
 		});
 
-		return it != m_vElements.end();
+		return it != m_vElements.cend();
 	}
 
 	void normalizeChances()
@@ -84,20 +84,18 @@ public:
 		if(m_vElements.empty())
 			return {};
 
-		std::random_device rd;
-		std::mt19937 gen(rd());
-		std::uniform_real_distribution<> dis(0.0, (double)m_TotalChance);
+		// using thread_local for not create this every execute
+		thread_local std::mt19937 gen { std::random_device{}() };
+		std::uniform_real_distribution<double> dis(0.0, m_TotalChance);
 
 		auto randomValue = dis(gen);
-		double cumulativeChance = 0.0;
+		auto cumulativeChance = 0.0;
 
 		for(const auto& e : m_vElements)
 		{
 			cumulativeChance += e.Chance;
 			if(randomValue <= cumulativeChance)
-			{
 				return e.Element;
-			}
 		}
 
 		return m_vElements.back().Element;
@@ -108,19 +106,20 @@ public:
 	using ConstIterator = typename std::vector<ElementWithChance>::const_iterator;
 
 	// begin and end iterators (non-const)
-	Iterator begin() { return m_vElements.begin(); }
-	Iterator end() { return m_vElements.end(); }
-	ConstIterator begin() const { return m_vElements.begin(); }
-	ConstIterator end() const { return m_vElements.end(); }
+	Iterator begin() noexcept { return m_vElements.begin(); }
+	Iterator end() noexcept { return m_vElements.end(); }
+	ConstIterator begin() const noexcept { return m_vElements.begin(); }
+	ConstIterator end() const noexcept { return m_vElements.end(); }
 
 	// reverse iterators
-	std::reverse_iterator<Iterator> rbegin() { return m_vElements.rbegin(); }
-	std::reverse_iterator<Iterator> rend() { return m_vElements.rend(); }
-	std::reverse_iterator<ConstIterator> rbegin() const { return m_vElements.rbegin(); }
-	std::reverse_iterator<ConstIterator> rend() const { return m_vElements.rend(); }
+	std::reverse_iterator<Iterator> rbegin() noexcept { return m_vElements.rbegin(); }
+	std::reverse_iterator<Iterator> rend() noexcept { return m_vElements.rend(); }
+	std::reverse_iterator<ConstIterator> rbegin() const noexcept { return m_vElements.rbegin(); }
+	std::reverse_iterator<ConstIterator> rend() const noexcept { return m_vElements.rend(); }
 
-	bool isEmpty() const { return m_vElements.empty(); }
-	std::size_t size() const { return m_vElements.size(); }
+	// checking
+	bool isEmpty() const noexcept { return m_vElements.empty(); }
+	std::size_t size() const noexcept { return m_vElements.size(); }
 };
 
 #endif

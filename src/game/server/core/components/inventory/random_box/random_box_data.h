@@ -13,8 +13,12 @@ class CRandomItem
 public:
 	CRandomItem() = default;
 	CRandomItem(int itemID, int value) : ItemID(itemID), Value(value) {}
+	auto operator<=>(const CRandomItem& other) const = default;
 
-	bool isEmpty() const { return ItemID < 0 || Value < 0; }
+	bool isEmpty() const
+	{
+		return ItemID < 0 || Value < 0;
+	}
 
 	int ItemID {-1};
 	int Value {-1};

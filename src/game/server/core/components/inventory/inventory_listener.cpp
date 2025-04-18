@@ -28,9 +28,9 @@ void CInventoryListener::OnCharacterSpawn(CPlayer* pPlayer)
         int orbiteType;
     };
 
-    const auto AccountID = pPlayer->Account()->GetID();
     bool bestExpert = false;
-    std::array<AttributeData, 7> attributesData = {
+    const auto AccountID = pPlayer->Account()->GetID();
+    static std::array<AttributeData, 7> attributesData = {
         AttributeData{AttributeIdentifier::HP, WEAPON_SHOTGUN, MULTIPLE_ORBITE_TYPE_EIGHT},
         AttributeData{AttributeIdentifier::MP, WEAPON_SHOTGUN, MULTIPLE_ORBITE_TYPE_DYNAMIC_CENTER},
         AttributeData{AttributeIdentifier::CritDMG, WEAPON_SHOTGUN, MULTIPLE_ORBITE_TYPE_PULSATING},
