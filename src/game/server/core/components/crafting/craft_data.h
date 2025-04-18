@@ -1,7 +1,7 @@
 #ifndef GAME_SERVER_COMPONENT_CRAFT_DATA_H
 #define GAME_SERVER_COMPONENT_CRAFT_DATA_H
 
-#include "game/server/core/components/Inventory/ItemData.h"
+#include "game/server/core/components/inventory/item_data.h"
 
 using CraftIdentifier = int;
 class CCraftItem : public MultiworldIdentifiableData< std::map<std::string, std::deque<CCraftItem*> >>

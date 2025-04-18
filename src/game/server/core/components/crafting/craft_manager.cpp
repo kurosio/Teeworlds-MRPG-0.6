@@ -5,7 +5,7 @@
 #include <game/server/gamecontext.h>
 
 #include "../achievements/achievement_data.h"
-#include "../Inventory/InventoryManager.h"
+#include "../inventory/inventory_manager.h"
 
 
 void CCraftManager::OnPreInit()

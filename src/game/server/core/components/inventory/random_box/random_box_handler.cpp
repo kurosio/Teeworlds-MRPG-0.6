@@ -1,7 +1,7 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#include "RandomBoxData.h"
-#include "RandomBoxHandler.h"
+#include "random_box_data.h"
+#include "random_box_handler.h"
 
 #include <game/server/entity_manager.h>
 #include <game/server/gamecontext.h>

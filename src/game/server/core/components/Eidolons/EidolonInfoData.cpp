@@ -3,7 +3,7 @@
 #include "EidolonInfoData.h"
 
 #include "game/server/core/components/Bots/BotData.h"
-#include "game/server/core/components/Inventory/ItemInfoData.h"
+#include "game/server/core/components/inventory/item_info_data.h"
 
 CEidolonInfoData::EidolonDescriptionList CEidolonInfoData::m_EidolonsInfoData =
 {

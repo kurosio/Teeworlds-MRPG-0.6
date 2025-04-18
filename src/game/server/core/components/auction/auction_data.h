@@ -3,7 +3,7 @@
 #ifndef GAME_SERVER_CORE_COMPONENTS_AUCTION_AUCTION_DATA_H
 #define GAME_SERVER_CORE_COMPONENTS_AUCTION_AUCTION_DATA_H
 
-#include <game/server/core/components/Inventory/ItemData.h>
+#include <game/server/core/components/inventory/item_data.h>
 
 constexpr auto TW_AUCTION_SLOTS_TABLE = "tw_auction_slots";
 class CAuctionSlot : public MultiworldIdentifiableData<std::deque<CAuctionSlot*>>

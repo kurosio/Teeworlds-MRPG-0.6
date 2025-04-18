@@ -7,7 +7,7 @@
 
 #include "../houses/house_data.h"
 #include "../achievements/achievement_data.h"
-#include "../Inventory/InventoryManager.h"
+#include "../inventory/inventory_manager.h"
 #include "../guilds/guild_manager.h"
 #include "../worlds/world_manager.h"
 

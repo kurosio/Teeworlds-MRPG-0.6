@@ -4,7 +4,7 @@
 #define GAME_SERVER_PLAYER_H
 
 #include "core/components/accounts/account_data.h"
-#include "core/components/Inventory/ItemData.h"
+#include "core/components/inventory/item_data.h"
 #include "core/components/quests/quest_data.h"
 #include "core/components/skills/skill_data.h"
 

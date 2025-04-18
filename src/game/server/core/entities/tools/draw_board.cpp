@@ -4,7 +4,7 @@
 #include "laser_orbite.h"
 #include <game/server/entities/pickup.h>
 
-#include <game/server/core/components/Inventory/InventoryManager.h>
+#include <game/server/core/components/inventory/inventory_manager.h>
 
 IServer* CBrush::Server() const { return m_pBoard->Server(); }
 CGS* CBrush::GS() const { return m_pBoard->GS(); }

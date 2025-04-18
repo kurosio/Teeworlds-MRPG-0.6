@@ -4,7 +4,7 @@
 
 #include <game/server/gamecontext.h>
 
-#include <game/server/core/components/Inventory/InventoryManager.h>
+#include <game/server/core/components/inventory/inventory_manager.h>
 #include <game/server/core/components/mails/mail_wrapper.h>
 
 #include "../houses/entities/house_door.h"

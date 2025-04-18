@@ -3,7 +3,7 @@
 #ifndef GAME_SERVER_ENTITY_MANAGER_H
 #define GAME_SERVER_ENTITY_MANAGER_H
 
-#include "core/components/Inventory/ItemData.h"
+#include "core/components/inventory/item_data.h"
 
 // forward declarations
 class CGS;

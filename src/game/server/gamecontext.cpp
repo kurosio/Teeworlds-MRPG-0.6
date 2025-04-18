@@ -20,7 +20,7 @@
 #include "core/components/skills/skill_manager.h"
 
 #include "core/components/achievements/achievement_listener.h"
-#include "core/components/Inventory/inventory_listener.h"
+#include "core/components/inventory/inventory_listener.h"
 #include "core/components/Eidolons/EidolonInfoData.h"
 #include "core/components/worlds/world_data.h"
 #include "core/tools/vote_optional.h"

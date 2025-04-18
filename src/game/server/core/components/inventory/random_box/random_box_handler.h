@@ -1,7 +1,7 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#ifndef GAME_SERVER_INVENTORY_RANDOM_BOX_HANDLER_H
-#define GAME_SERVER_INVENTORY_RANDOM_BOX_HANDLER_H
+#ifndef GAME_SERVER_CORE_COMPONENTS_INVENTORY_RANDOM_BOX_RANDOM_BOX_HANDLER_H
+#define GAME_SERVER_CORE_COMPONENTS_INVENTORY_RANDOM_BOX_RANDOM_BOX_HANDLER_H
 
 #include <game/server/entity.h>
 

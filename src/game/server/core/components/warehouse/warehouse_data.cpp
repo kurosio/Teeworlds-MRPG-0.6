@@ -4,7 +4,7 @@
 
 #include <game/server/entity_manager.h>
 #include <game/server/gamecontext.h>
-#include <game/server/core/components/Inventory/InventoryManager.h>
+#include <game/server/core/components/inventory/inventory_manager.h>
 
 void CWarehouse::Init(const std::string& Name, const DBSet& Type, const std::string& Data, vec2 Pos, int Currency, int WorldID)
 {

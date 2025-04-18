@@ -15,7 +15,7 @@
 #include "components/groups/group_manager.h"
 #include "components/guilds/guild_manager.h"
 #include "components/houses/house_manager.h"
-#include "components/Inventory/InventoryManager.h"
+#include "components/inventory/inventory_manager.h"
 #include "components/mails/mailbox_manager.h"
 #include "components/quests/quest_manager.h"
 #include "components/skills/skill_manager.h"
@@ -23,7 +23,7 @@
 #include "components/wiki/wiki_manager.h"
 #include "components/worlds/world_manager.h"
 #include <teeother/components/localization.h>
-#include "components/Inventory/inventory_listener.h"
+#include "components/inventory/inventory_listener.h"
 
 CMmoController::CMmoController(CGS* pGameServer) : m_pGameServer(pGameServer)
 {

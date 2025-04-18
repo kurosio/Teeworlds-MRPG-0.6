@@ -1,9 +1,9 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#include "RandomBoxData.h"
+#include "random_box_data.h"
 
 #include <game/server/gamecontext.h>
-#include "RandomBoxHandler.h"
+#include "random_box_handler.h"
 
 bool CRandomBox::Start(CPlayer* pPlayer, int Ticks, CPlayerItem* pPlayerUsesItem, int Value)
 {

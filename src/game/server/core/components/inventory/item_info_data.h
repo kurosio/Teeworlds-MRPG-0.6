@@ -1,14 +1,14 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#ifndef GAME_SERVER_COMPONENT_ITEM_DATA_INFO_H
-#define GAME_SERVER_COMPONENT_ITEM_DATA_INFO_H
+#ifndef GAME_SERVER_CORE_COMPONENTS_INVENTORY_ITEM_INFO_DATA_H
+#define GAME_SERVER_CORE_COMPONENTS_INVENTORY_ITEM_INFO_DATA_H
 
 // define for quick fine-tuning of enchantment
 #define PERCENT_OF_ENCHANT 8
 #define PERCENT_MAXIMUM_ENCHANT 40
 
 #include "attribute_data.h"
-#include "RandomBox/RandomBoxData.h"
+#include "random_box/random_box_data.h"
 
 using ItemIdentifier = int;
 class CItemDescription : public MultiworldIdentifiableData < std::map< int, CItemDescription > >

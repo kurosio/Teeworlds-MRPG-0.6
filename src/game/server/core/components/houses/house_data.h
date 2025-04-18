@@ -9,7 +9,7 @@
 #include "base/door_manager.h"
 #include "base/decoration_manager.h"
 
-#include "../Inventory/ItemData.h"
+#include "../inventory/item_data.h"
 
 #define TW_HOUSES_TABLE "tw_houses"
 

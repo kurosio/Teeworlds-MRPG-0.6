@@ -4,7 +4,7 @@
 #define GAME_SERVER_CORE_ENTITIES_ITEMS_DROP_ITEMS_H
 #include <game/server/entity.h>
 
-#include <game/server/core/components/Inventory/ItemData.h>
+#include <game/server/core/components/inventory/item_data.h>
 
 class CEntityDropItem : public CEntity
 {

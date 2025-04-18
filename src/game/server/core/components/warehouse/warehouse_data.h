@@ -3,7 +3,7 @@
 #ifndef GAME_SERVER_COMPONENT_WAREHOUSE_DATA_H
 #define GAME_SERVER_COMPONENT_WAREHOUSE_DATA_H
 
-#include <game/server/core/components/Inventory/ItemData.h>
+#include <game/server/core/components/inventory/item_data.h>
 
 class CTrade;
 class CWarehouseStorage;

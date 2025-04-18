@@ -5,7 +5,7 @@
 #include <base/hash_ctxt.h>
 #include <game/server/gamecontext.h>
 
-#include <game/server/core/components/Inventory/InventoryManager.h>
+#include <game/server/core/components/inventory/inventory_manager.h>
 #include <game/server/core/components/mails/mailbox_manager.h>
 #include <game/server/core/components/worlds/world_data.h>
 

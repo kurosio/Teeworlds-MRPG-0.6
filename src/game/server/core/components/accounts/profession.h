@@ -48,7 +48,6 @@ public:
 	int GetAttributeValue(AttributeIdentifier ID) const { return m_Attributes.contains(ID) ? m_Attributes.at(ID) : 0; }
 	float GetExtraPercentAttribute(AttributeIdentifier ID) const { return m_ExtraPercent.contains(ID) ? m_ExtraPercent.at(ID) : .0f; }
 	const CTeeInfo& GetTeeInfo() const { return m_ProfessionSkin; }
-
 	EquippedSlots& GetEquippedSlots() { return m_EquippedSlots; }
 
 private:
