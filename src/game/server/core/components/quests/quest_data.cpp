@@ -215,39 +215,47 @@ void CPlayerQuest::UpdateStepProgress()
 	GS()->EntityManager()->Text(pPlayer->m_ViewPos + vec2(0, -70), 30, "QUEST COMPLETE");
 	GS()->CreatePlayerSound(m_ClientID, SOUND_GAME_DONE);
 
-	// handle quest by flags
+	// repeatable quest can't got finished state
+	bool CanGotActivityPoints = !Info()->HasFlag(QUEST_FLAG_NO_ACTIVITY_POINT);
 	if(Info()->HasFlag(QUEST_FLAG_TYPE_REPEATABLE))
 	{
-		pPlayer->GetItem(itActivityCoin)->Add(g_Config.m_SvRepeatableActivityCoin);
+		if(CanGotActivityPoints)
+			pPlayer->GetItem(itActivityCoin)->Add(g_Config.m_SvRepeatableActivityCoin);
+
 		GS()->Chat(-1, "{} completed repeatable quest \"{}\".", GS()->Server()->ClientName(m_ClientID), Info()->GetName());
 		Reset();
 		return;
 	}
 
 	// daily quest
+	int ActivityPoints = 0;
 	if(Info()->HasFlag(QUEST_FLAG_TYPE_DAILY))
 	{
-		pPlayer->GetItem(itActivityCoin)->Add(g_Config.m_SvDailyActivityCoin);
+		ActivityPoints = g_Config.m_SvDailyActivityCoin;
 		GS()->Chat(-1, "{} completed daily quest \"{}\".", GS()->Server()->ClientName(m_ClientID), Info()->GetName());
 	}
 	// weekly quest
 	else if(Info()->HasFlag(QUEST_FLAG_TYPE_WEEKLY))
 	{
-		pPlayer->GetItem(itActivityCoin)->Add(g_Config.m_SvWeeklyActivityCoin);
+		ActivityPoints = g_Config.m_SvWeeklyActivityCoin;
 		GS()->Chat(-1, "{} completed weekly quest \"{}\".", GS()->Server()->ClientName(m_ClientID), Info()->GetName());
 	}
 	// main quest
 	else if(Info()->HasFlag(QUEST_FLAG_TYPE_MAIN))
 	{
-		pPlayer->GetItem(itActivityCoin)->Add(g_Config.m_SvMainQuestActivityCoin);
+		ActivityPoints = g_Config.m_SvMainQuestActivityCoin;
 		GS()->Chat(-1, "{} completed main quest \"{}\".", GS()->Server()->ClientName(m_ClientID), Info()->GetName());
 	}
 	// side quest
 	else
 	{
-		pPlayer->GetItem(itActivityCoin)->Add(g_Config.m_SvSideQuestActivityCoin);
+		ActivityPoints = g_Config.m_SvSideQuestActivityCoin;
 		GS()->Chat(-1, "{} completed side quest \"{}\".", GS()->Server()->ClientName(m_ClientID), Info()->GetName());
 	}
+
+	// add activity points
+	if(CanGotActivityPoints && ActivityPoints > 0)
+		pPlayer->GetItem(itActivityCoin)->Add(ActivityPoints);
 
 	// update quest state in database
 	SetNewState(QuestState::Finished);

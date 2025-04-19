@@ -633,6 +633,7 @@ enum
 	NOPE                           = -1,
 	itCapsuleSurvivalExperience    = 16,    // Gives 10-50 experience
 	itLittleBagGold                = 17,    // Gives 10-50 gold
+	itPackCigarettes               = 256,   // Pack of cigarettes for reduce jail time
 
 	// potions
 	itPotionManaRegen              = 14,    // Mana regeneration potion

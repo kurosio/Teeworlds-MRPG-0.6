@@ -21,6 +21,7 @@ enum
 	QUEST_FLAG_TYPE_REPEATABLE = 1 << 4,
 
 	QUEST_FLAG_CANT_REFUSE = 1 << 5,
+	QUEST_FLAG_NO_ACTIVITY_POINT = 1 << 6,
 
 	QUEST_FLAG_GRANTED_FROM_CHAIN = 1 << 9,
 	QUEST_FLAG_GRANTED_FROM_NPC = 1 << 10,
@@ -101,6 +102,8 @@ public:
 			m_Flags |= QUEST_FLAG_GRANTED_FROM_CHAIN;
 		if(FlagSet.hasSet("Can't refuse"))
 			m_Flags |= QUEST_FLAG_CANT_REFUSE;
+		if(FlagSet.hasSet("No activity point"))
+			m_Flags |= QUEST_FLAG_NO_ACTIVITY_POINT;
 	}
 
 	void AddFlag(int Flag) { m_Flags |= Flag; }
