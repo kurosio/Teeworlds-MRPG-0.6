@@ -220,7 +220,7 @@ void CPlayerQuest::UpdateStepProgress()
 	{
 		pPlayer->GetItem(itActivityCoin)->Add(g_Config.m_SvRepeatableActivityCoin);
 		GS()->Chat(-1, "{} completed repeatable quest \"{}\".", GS()->Server()->ClientName(m_ClientID), Info()->GetName());
-		Refuse();
+		Reset();
 		return;
 	}
 

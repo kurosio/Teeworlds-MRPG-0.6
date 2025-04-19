@@ -359,21 +359,6 @@ bool CHouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 		return true;
 	}
 
-	// house invited list
-	if(PPSTR(pCmd, "HOUSE_INVITED_LIST_FIND") == 0)
-	{
-		// check valid name
-		if(PPSTR(pText, "NULL") == 0)
-		{
-			GS()->Chat(ClientID, "Use please another name.");
-			return true;
-		}
-
-		str_copy(pPlayer->GetSharedData().m_aPlayerSearchBuf, pText, sizeof(pPlayer->GetSharedData().m_aPlayerSearchBuf));
-		pPlayer->m_VotesData.UpdateVotesIf(MENU_HOUSE_DOOR_LIST);
-		return true;
-	}
-
 	// extend rent
 	if(PPSTR(pCmd, "HOUSE_EXTEND_RENT") == 0)
 	{
