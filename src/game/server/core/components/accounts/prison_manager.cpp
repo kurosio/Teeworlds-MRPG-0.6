@@ -47,6 +47,10 @@ void PrisonManager::Release()
 
 	if(const auto* pPlayer = GetPlayer())
 	{
+		const auto& vQuestList = CQuestDescription::Data();
+		if(vQuestList.contains(g_Config.m_SvRelatedJailQuestId))
+			pPlayer->GetQuest(g_Config.m_SvRelatedJailQuestId)->Refuse();
+
 		if(pPlayer->GetCharacter())
 			pPlayer->GetCharacter()->Die(m_ClientID, WEAPON_WORLD);
 
