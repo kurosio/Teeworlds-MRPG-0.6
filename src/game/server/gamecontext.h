@@ -144,7 +144,7 @@ public:
 			*pExperience = translate_to_percent_rest(*pExperience, (float)m_MultiplierExp);
 		}
 	}
-	bool IsPlayerInWorld(int ClientID, int WorldID = -1) const;
+	bool IsPlayerInWorld(int ClientID, std::optional<int> WorldIdOpt = std::nullopt) const;
 	bool IsAllowedPVP() const { return m_AllowedPVP; }
 	vec2 GetJailPosition() const { return m_JailPosition; }
 	bool ArePlayersNearby(vec2 Pos, float Distance) const;
@@ -158,8 +158,7 @@ public:
 
 private:
 	void InitWorld();
-	void HandleNicknameChange(CPlayer* pPlayer, const char* pNewNickname) const;
-
+	void ProcessNicknameChange(CPlayer* pPlayer, const char* pNewNickname) const;
 	void UpdateExpMultiplier();
 	void ResetExpMultiplier();
 

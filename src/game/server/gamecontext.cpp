@@ -633,7 +633,7 @@ void CGS::SendTuningParams(int ClientID)
 /* #########################################################################
 	ENGINE GAMECONTEXT
 ######################################################################### */
-void CGS::HandleNicknameChange(CPlayer* pPlayer, const char* pNewNickname) const
+void CGS::ProcessNicknameChange(CPlayer* pPlayer, const char* pNewNickname) const
 {
 	if(!pPlayer)
 		return;
@@ -650,22 +650,30 @@ void CGS::HandleNicknameChange(CPlayer* pPlayer, const char* pNewNickname) const
 		std::string NewName = pNewNickname;
 		auto fnCallback = [NewName](CPlayer* pPlayer, bool Accepted)
 		{
-			CGS* pGS = pPlayer->GS();
+			auto* pGS = pPlayer->GS();
 			const int ClientID = pPlayer->GetCID();
 			if(Accepted)
 			{
 				if(pGS->Core()->AccountManager()->ChangeNickname(NewName, ClientID))
+				{
 					pGS->Chat(ClientID, "Your nickname has been successfully updated.");
+				}
 				else
+				{
 					pGS->Chat(ClientID, "This nickname is already in use.");
+				}
 			}
 			else
+			{
 				pGS->Chat(ClientID, "You need to set a '{}' nickname. This window will keep appearing until you confirm the nickname change.", Instance::Server()->ClientName(ClientID));
+			}
 		};
+
 		auto closeCondition = [NewName](CPlayer* pPlayer)
 		{
 			return str_comp(NewName.c_str(), pPlayer->GS()->Server()->ClientName(pPlayer->GetCID())) == 0;
 		};
+
 		const auto pOption = CVoteOptional::Create(ClientID, 10, "Nick {}?", NewName.c_str());
 		pOption->RegisterCallback(fnCallback);
 		pOption->RegisterCloseCondition(closeCondition);
@@ -998,7 +1006,7 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 			if(!str_utf8_check(pMsg->m_pClan) || !str_utf8_check(pMsg->m_pSkin))
 				return;
 
-			HandleNicknameChange(pPlayer, pMsg->m_pName);
+			ProcessNicknameChange(pPlayer, pMsg->m_pName);
 			Server()->SetClientClan(ClientID, pMsg->m_pClan);
 			Server()->SetClientCountry(ClientID, pMsg->m_Country);
 
@@ -1504,13 +1512,13 @@ void CGS::InitWorld()
 		worldTypeStr.data(), pStrStatePvp);
 }
 
-bool CGS::IsPlayerInWorld(int ClientID, int WorldID) const
+bool CGS::IsPlayerInWorld(int ClientID, std::optional<int> WorldIdOpt) const
 {
 	if(ClientID < 0 || ClientID >= MAX_CLIENTS || !m_apPlayers[ClientID])
 		return false;
 
 	int PlayerWorldID = m_apPlayers[ClientID]->GetCurrentWorldID();
-	return PlayerWorldID == (WorldID == -1 ? m_WorldID : WorldID);
+	return PlayerWorldID == (WorldIdOpt ? *WorldIdOpt : m_WorldID);
 }
 
 bool CGS::ArePlayersNearby(vec2 Pos, float Distance) const

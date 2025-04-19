@@ -1678,7 +1678,9 @@ void CGuildManager::ShowDetail(CPlayer* pPlayer, CGuildHouse* pHouse) const
 	else
 	{
 		MHouseDetail.AddText("Owner: {}", pHouse->GetOwnerName());
+		MHouseDetail.AddText("Days left: {}", pHouse->GetRentDays());
 	}
+	MHouseDetail.AddSeparateLine();
 	MHouseDetail.Send(MOTD_MENU_GUILD_HOUSE_DETAIL);
 }
 

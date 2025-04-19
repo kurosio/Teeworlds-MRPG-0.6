@@ -579,7 +579,9 @@ void CHouseManager::ShowDetail(CPlayer* pPlayer, CHouse* pHouse)
 	else
 	{
 		MHouseDetail.AddText("Owner: {}", pOwnerNickname);
+		MHouseDetail.AddText("Days left: {}", pHouse->GetRentDays());
 	}
+	MHouseDetail.AddSeparateLine();
 	MHouseDetail.Send(MOTD_MENU_PLAYER_HOUSE_DETAIL);
 }
 

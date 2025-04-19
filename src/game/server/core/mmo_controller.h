@@ -66,7 +66,7 @@ public:
 	void OnHandleTimePeriod() const;
 	void OnHandlePlayerTimePeriod(CPlayer* pPlayer) const;
 
-	static void AsyncClientEnterMsgInfo(std::string ClientName, int ClientID);
+	static void AsyncClientEnterMsgInfo(std::string_view ClientName, int ClientID);
 	void SyncLocalizations() const;
 	void SaveAccount(CPlayer *pPlayer, int Table) const;
 
