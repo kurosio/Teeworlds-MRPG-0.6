@@ -69,7 +69,6 @@ void CGameControllerDungeon::ChangeState(int State)
 	else if(State == CDungeonData::STATE_WAITING)
 	{
 		// update
-		m_SyncDungeon = GetSyncFactor();
 		m_WaitingTick = Server()->TickSpeed() * g_Config.m_SvDungeonWaitingTime;
 	}
 
@@ -85,6 +84,7 @@ void CGameControllerDungeon::ChangeState(int State)
 		}
 
 		// update
+		PrepareSyncFactors();
 		m_StartedPlayers = GetPlayersNum();
 		m_SafetyTick = Server()->TickSpeed() * 30;
 		m_EndTick = Server()->TickSpeed() * 600;
@@ -115,7 +115,7 @@ void CGameControllerDungeon::ChangeState(int State)
 			if(pPlayer && GS()->IsPlayerInWorld(i, m_pDungeon->GetWorldID()))
 			{
 				int FinishTime = Server()->Tick() - pPlayer->GetSharedData().m_TempStartDungeonTick;
-				GS()->Chat(-1, "'{}' finished '{}'.", Server()->ClientName(i), m_pDungeon->GetName(), aTimeFormat);
+				GS()->Chat(-1, "'{}' finished '{}'.", Server()->ClientName(i), m_pDungeon->GetName());
 
 			}
 		}
@@ -124,28 +124,16 @@ void CGameControllerDungeon::ChangeState(int State)
 
 void CGameControllerDungeon::StateTick()
 {
-	const auto Players = GetPlayersNum();
+	const auto PlayersNum = GetPlayersNum();
 	const auto State = m_pDungeon->GetState();
 	const auto WorldID = m_pDungeon->GetWorldID();
-	m_pDungeon->UpdatePlayers(Players);
+	m_pDungeon->UpdatePlayers(PlayersNum);
 
 	// update inactive and waiting state
-	if(State != CDungeonData::STATE_INACTIVE)
-	{
-		if(Players < 1)
-		{
-			ChangeState(CDungeonData::STATE_INACTIVE);
-			return;
-		}
-	}
-	else
-	{
-		if(Players >= 1)
-		{
-			ChangeState(CDungeonData::STATE_WAITING);
-			return;
-		}
-	}
+	if(PlayersNum < 1 && State != CDungeonData::STATE_INACTIVE)
+		ChangeState(CDungeonData::STATE_INACTIVE);
+	else if(PlayersNum >= 1 && State == CDungeonData::STATE_INACTIVE)
+		ChangeState(CDungeonData::STATE_WAITING);
 
 	// waiting state
 	if(State == CDungeonData::STATE_WAITING)
@@ -153,13 +141,13 @@ void CGameControllerDungeon::StateTick()
 		if(m_WaitingTick)
 		{
 			// the ability to start prematurely on readiness
-			const int PlayersReadyState = PlayersReady();
-			if(PlayersReadyState >= Players && m_WaitingTick > 10 * Server()->TickSpeed())
+			const int PlayersReadyNum = GetPlayersReadyNum();
+			if(PlayersReadyNum >= PlayersNum && m_WaitingTick > 10 * Server()->TickSpeed())
 			{
 				m_LastWaitingTick = m_WaitingTick;
 				m_WaitingTick = 10 * Server()->TickSpeed();
 			}
-			else if(PlayersReadyState < Players && m_LastWaitingTick > 0)
+			else if(PlayersReadyNum < PlayersNum && m_LastWaitingTick > 0)
 			{
 				const int SkippedTick = 10 * Server()->TickSpeed() - m_WaitingTick;
 				m_WaitingTick = m_LastWaitingTick - SkippedTick;
@@ -170,13 +158,13 @@ void CGameControllerDungeon::StateTick()
 			const int Time = m_WaitingTick / Server()->TickSpeed();
 			GS()->BroadcastWorld(WorldID, BroadcastPriority::VeryImportant, 500,
 				"Dungeon waiting {} sec!\nPlayer's are ready to start right now {} of {}!\nYou can change state with 'Vote yes'",
-				Time, PlayersReadyState, Players);
+				Time, PlayersReadyNum, PlayersNum);
 
 			// update waiting time
 			m_WaitingTick--;
 			if(!m_WaitingTick)
 			{
-				m_StartedPlayers = Players;
+				m_StartedPlayers = PlayersNum;
 				ChangeState(CDungeonData::STATE_STARTED);
 			}
 		}
@@ -187,8 +175,6 @@ void CGameControllerDungeon::StateTick()
 	// started
 	else if(State == CDungeonData::STATE_STARTED)
 	{
-
-
 		// security tick during which time the player will not return to the old world
 		if(m_SafetyTick)
 		{
@@ -295,9 +281,7 @@ void CGameControllerDungeon::UpdateDoorKeyState()
 		pDoor; pDoor = (CLogicDungeonDoorKey*)pDoor->TypeNext())
 	{
 		if(pDoor->SyncStateChanges())
-		{
 			GS()->ChatWorld(m_pDungeon->GetWorldID(), "Dungeon:", "Door creaking.. Opened door somewhere!");
-		}
 	}
 }
 
@@ -340,7 +324,7 @@ int CGameControllerDungeon::GetRemainingMobsNum() const
 	return LeftMobs;
 }
 
-int CGameControllerDungeon::PlayersReady() const
+int CGameControllerDungeon::GetPlayersReadyNum() const
 {
     int ReadyPlayers = 0;
 
@@ -379,93 +363,45 @@ void CGameControllerDungeon::SetMobsSpawn(bool AllowedSpawn)
 			pPlayer->SetAllowedSpawn(AllowedSpawn);
 
 			if(!AllowedSpawn && pPlayer->GetCharacter())
-			{
 				pPlayer->GetCharacter()->Die(i, WEAPON_WORLD);
-			}
 		}
 	}
 }
 
-// TODO: something to do with the balance
-int CGameControllerDungeon::GetSyncFactor() const
+void CGameControllerDungeon::PrepareSyncFactors()
 {
-	//int MaxFactor = 0;
-	//int MinFactor = std::numeric_limits<int>::max();
-	//int BotCount = 0;
+	m_vSyncFactor.clear();
 
-	//for(int i = MAX_PLAYERS; i < MAX_CLIENTS; i++)
-	//{
-	//	CPlayerBot* pBotPlayer = dynamic_cast<CPlayerBot*>(GS()->GetPlayer(i));
-	//	if(pBotPlayer && pBotPlayer->GetBotType() == TYPE_BOT_MOB && pBotPlayer->GetCurrentWorldID() == m_WorldID)
-	//	{
-	//		const int LevelDisciple = pBotPlayer->GetTotalAttributes();
-	//		MinFactor = minimum(MinFactor, LevelDisciple);
-	//		MaxFactor = maximum(MaxFactor, LevelDisciple);
-	//		BotCount++;
-	//	}
-	//}
+	for(int i = 0; i < MAX_PLAYERS; i++)
+	{
+		auto* pPlayer = GS()->GetPlayer(i, true);
+		if(!pPlayer || !GS()->IsPlayerInWorld(i, m_pDungeon->GetWorldID()))
+			continue;
 
-	//if(BotCount == 0)
-	//{
-		return 0; // No bot's, return default value
-	//}
-
-	//return (MaxFactor + MinFactor) / 2;
+		for(auto ID = (int)AttributeIdentifier::DMG; ID < (int)AttributeIdentifier::ATTRIBUTES_NUM; ID++)
+		{
+			const auto AttributeID = (AttributeIdentifier)ID;
+			m_vSyncFactor[AttributeID] += pPlayer->GetTotalAttributeValue(AttributeID);
+		}
+	}
 }
 
-int CGameControllerDungeon::GetAttributeDungeonSyncByClass(ProfessionIdentifier ProfID, AttributeIdentifier ID) const
+
+int CGameControllerDungeon::CalculateMobAttribute(AttributeIdentifier ID, int PowerLevel, float BaseFactor, int minValue) const
 {
-	float Percent = 0.0f;
-	const float ActiveAttribute = m_SyncDungeon / 2.0f;
-	const AttributeGroup Type = GS()->GetAttributeInfo(ID)->GetGroup();
-
-	// - - - - - - - - -- - - -
-	// balance tanks
-	if(ProfID == ProfessionIdentifier::Tank)
-	{
-		// basic default tank upgrades
-		if(Type == AttributeGroup::Tank)
-			Percent = 50.0f;
-
-		// very small dps boost
-		else if(Type == AttributeGroup::DamageType && ID != AttributeIdentifier::DMG)
-			return 0;
-	}
-
-	// - - - - - - - - - - - - -
-	// balance dps
-	if(ProfID == ProfessionIdentifier::Dps)
-	{
-		// basic default dps upgrades
-		if(Type == AttributeGroup::Dps || Type == AttributeGroup::DamageType)
-			Percent = 0.1f;
-
-		// very small tank boost
-		else if(Type == AttributeGroup::Tank)
-			Percent = 5.f;
-	}
-
-	// - - - - - - - - - - - - -
-	// balance healer
-	if(ProfID == ProfessionIdentifier::Healer)
-	{
-		// basic default healer upgrades
-		if(Type == AttributeGroup::Healer)
-			Percent = minimum(25.0f + (m_StartedPlayers * 2.0f), 50.0f);
-
-		// small tank boost
-		else if(Type == AttributeGroup::Tank)
-			Percent = 10.f;
-
-		// very small dps boost
-		else if(Type == AttributeGroup::DamageType && ID != AttributeIdentifier::DMG)
-			return 0;
-	}
-
-	// return final stat by percent rest
-	const int AttributeSyncProcent = translate_to_percent_rest(ActiveAttribute, Percent);
-	return maximum(AttributeSyncProcent, 1);
+	int PlayersTotalAttribute = GetAttributeDungeonSync(ID);
+	int PlayersNum = GetPlayersNum();
+	float PowerLevelMultiplier = 1.0f + (PowerLevel - 1) * 0.15f;
+	auto attributeValue = static_cast<int>(PlayersTotalAttribute * BaseFactor * PowerLevelMultiplier / std::sqrt(PlayersNum));
+	return std::max(minValue, attributeValue);
 }
+
+
+int CGameControllerDungeon::GetAttributeDungeonSync(AttributeIdentifier ID) const
+{
+	return m_vSyncFactor.contains(ID) ? m_vSyncFactor.at(ID) : 0;
+}
+
 
 void CGameControllerDungeon::Tick()
 {
@@ -476,6 +412,20 @@ void CGameControllerDungeon::Tick()
 			ChangeState(CDungeonData::STATE_FINISHED);
 	}
 
+	//auto test = [&](int PlayersNum, int fromValue, int PowerLevel, float BaseFactor, int MinValue)
+	//{
+	//	float doorMultiplier = 1.0f + (PowerLevel - 1) * 0.15f;
+	//	auto attributeValue = static_cast<int>(fromValue * BaseFactor * doorMultiplier / std::sqrt(PlayersNum));
+	//	return std::max(MinValue, attributeValue);
+	//};
+
+	//int Players = 1 + rand() % 5;
+	//int From = 3 + rand() % 10;
+	//int FromH = 100 + rand() % 200;
+	//int Level = 1 + rand() % 10;
+	//dbg_msg("test", "DMG (%d:Lv%d) (%d -> %d).", Players, Level, From, test(Players, From, Level, (float)g_Config.m_SvDungeonDamageTypeFactor / 100.f, 0));
+	//dbg_msg("test", "HP (%d:Lv%d) (%d -> %d).", Players, Level, FromH, test(Players, FromH, Level, (float)g_Config.m_SvDungeonOtherTypeFactor / 100.f, 5));
+
 	StateTick();
 	IGameController::Tick();
 }
@@ -483,7 +433,7 @@ void CGameControllerDungeon::Tick()
 void CGameControllerDungeon::Snap()
 {
 	// vanilla snap
-	CNetObj_GameInfo* pGameInfoObj = (CNetObj_GameInfo*)Server()->SnapNewItem(NETOBJTYPE_GAMEINFO, 0, sizeof(CNetObj_GameInfo));
+	auto* pGameInfoObj = (CNetObj_GameInfo*)Server()->SnapNewItem(NETOBJTYPE_GAMEINFO, 0, sizeof(CNetObj_GameInfo));
 	if(!pGameInfoObj)
 		return;
 
@@ -495,7 +445,7 @@ void CGameControllerDungeon::Snap()
 	pGameInfoObj->m_RoundCurrent = 1;
 
 	// ddnet snap
-	CNetObj_GameInfoEx* pGameInfoEx = (CNetObj_GameInfoEx*)Server()->SnapNewItem(NETOBJTYPE_GAMEINFOEX, 0, sizeof(CNetObj_GameInfoEx));
+	auto* pGameInfoEx = (CNetObj_GameInfoEx*)Server()->SnapNewItem(NETOBJTYPE_GAMEINFOEX, 0, sizeof(CNetObj_GameInfoEx));
 	if(!pGameInfoEx)
 		return;
 
@@ -517,7 +467,7 @@ void CEntityDungeonWaitingDoor::Tick()
 	if(!m_Closed)
 		return;
 
-	for(CCharacter* pChar = (CCharacter*)GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); pChar; pChar = (CCharacter*)pChar->TypeNext())
+	for(auto* pChar = (CCharacter*)GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); pChar; pChar = (CCharacter*)pChar->TypeNext())
 	{
 		vec2 IntersectPos;
 		if(closest_point_on_line(m_Pos, m_PosTo, pChar->m_Core.m_Pos, IntersectPos))

@@ -556,12 +556,21 @@ bool CAccountManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, co
 	{
 		const auto ProfessionID = (ProfessionIdentifier)Extra1;
 
+		// can't change profession in dungeon
+		if(GS()->IsWorldType(WorldType::Dungeon))
+		{
+			GS()->Chat(ClientID, "You can't change profession in dungeons");
+			return true;
+		}
+
+		// check spam
 		if((pPlayer->m_aPlayerTick[LastDamage] + Server()->TickSpeed() * 5) > Server()->Tick())
 		{
 			GS()->Chat(ClientID, "Wait a couple of seconds, your player is currently in combat or taking damage");
 			return true;
 		}
 
+		// change class
 		pPlayer->Account()->ChangeProfession(ProfessionID);
 		pPlayer->GetCharacter()->UpdateEquippedStats();
 		pPlayer->m_VotesData.ResetExtraID();

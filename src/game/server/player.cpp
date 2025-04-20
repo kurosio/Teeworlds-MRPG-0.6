@@ -707,12 +707,12 @@ bool CPlayer::ParseVoteOptionResult(int Vote)
 		// dungeon change ready state
 		if(GS()->IsWorldType(WorldType::Dungeon))
 		{
-			//const int DungeonID = dynamic_cast<CGameControllerDungeon*>(GS()->m_pController)->GetDungeonID();
-			//if(!CDungeonData::ms_aDungeon[DungeonID].IsDungeonPlaying())
-			//{
-			//	GetSharedData().m_TempDungeonReady = !GetSharedData().m_TempDungeonReady;
-			//	GS()->Chat(m_ClientID, "You changed the ready mode to \"{}\"!", GetSharedData().m_TempDungeonReady ? "ready" : "not ready");
-			//}
+			auto* pController = dynamic_cast<CGameControllerDungeon*>(GS()->m_pController);
+			if(!pController || !pController->GetDungeon() || pController->GetDungeon()->IsPlaying())
+				return false;
+
+			GetSharedData().m_TempDungeonReady = !GetSharedData().m_TempDungeonReady;
+			GS()->Chat(m_ClientID, "You changed the ready mode to \"{}\"!", GetSharedData().m_TempDungeonReady ? "ready" : "not ready");
 			return true;
 		}
 	}
@@ -876,7 +876,6 @@ void CPlayer::ChangeWorld(int WorldID, std::optional<vec2> newWorldPosition)
 	// reset dungeon temporary data
 	auto& tempData = GetSharedData();
 	tempData.m_TempDungeonReady = false;
-	tempData.m_TempTimeDungeon = 0;
 
 	// if new position is provided, set the teleport position
 	if(newWorldPosition.has_value())

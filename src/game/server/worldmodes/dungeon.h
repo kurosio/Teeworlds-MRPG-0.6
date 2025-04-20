@@ -19,7 +19,8 @@ class CGameControllerDungeon : public IGameController
 
 	int m_StartedPlayers {};
 	int m_TankClientID {};
-	int m_SyncDungeon {};
+
+	std::map<AttributeIdentifier, int> m_vSyncFactor {};
 
 	int m_LastWaitingTick {};
 	int m_WaitingTick {};
@@ -37,12 +38,16 @@ public:
 
 	void OnCharacterDeath(class CPlayer* pVictim, class CPlayer* pKiller, int Weapon) override;
 	bool OnCharacterSpawn(class CCharacter* pChr) override;
-	int GetAttributeDungeonSyncByClass(ProfessionIdentifier ProfID, AttributeIdentifier ID) const;
-	int GetSyncFactor() const;
+
+	void PrepareSyncFactors();
+	int CalculateMobAttribute(AttributeIdentifier ID, int PowerLevel, float BaseFactor, int MinValue) const;
+	int GetAttributeDungeonSync(AttributeIdentifier ID) const;
+
+	const std::map<AttributeIdentifier, int>& GetSyncFactor() const { return m_vSyncFactor; }
 	CDungeonData* GetDungeon() const { return m_pDungeon; }
 
 private:
-	int PlayersReady() const;
+	int GetPlayersReadyNum() const;
 	int GetPlayersNum() const;
 	int GetRemainingMobsNum() const;
 	int GetTotalMobsNum() const;

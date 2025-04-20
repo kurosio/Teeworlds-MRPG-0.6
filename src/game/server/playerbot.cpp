@@ -172,83 +172,92 @@ void CPlayerBot::PrepareRespawnTick()
 	m_WantSpawn = true;
 }
 
+int CalculateAttribute(CGS* pGS, const CPlayerBot* pPlayer, AttributeIdentifier ID, int PowerLevel, bool Boss)
+{
+	const auto* pAttribute = pGS->GetAttributeInfo(ID);
+	if(!pAttribute)
+		return 0;
+
+	int AttributeValue = 0;
+
+	// from equipment
+	for(unsigned i = 0; i < (unsigned)ItemType::NUM_EQUIPPED; i++)
+	{
+		if(const auto ItemID = pPlayer->GetEquippedSlotItemID((ItemType)i))
+			AttributeValue += pGS->GetItemInfo(ItemID.value())->GetInfoEnchantStats(ID);
+	}
+
+	// is dungeon world
+	if(pGS->IsWorldType(WorldType::Dungeon))
+	{
+		const auto* pController = dynamic_cast<CGameControllerDungeon*>(pGS->m_pController);
+		if(pController && pController->GetDungeon())
+		{
+			// calculating stats
+			int MinValue = 0;
+			float BaseFactor = 0.f;
+			if(pAttribute->IsGroup(AttributeGroup::DamageType))
+			{
+				BaseFactor = (float)g_Config.m_SvDungeonDamageTypeFactor / 100.f;
+				MinValue = 0;
+			}
+			else if(ID == AttributeIdentifier::Crit)
+			{
+				BaseFactor = (float)g_Config.m_SvDungeonCritChanceFactor / 100.f;
+				MinValue = 0;
+			}
+			else
+			{
+				BaseFactor = (float)g_Config.m_SvDungeonOtherTypeFactor / 100.f;
+				MinValue = 5;
+			}
+
+			AttributeValue += pController->CalculateMobAttribute(ID, PowerLevel, BaseFactor, MinValue);
+		}
+
+		return AttributeValue;
+	}
+
+	// default
+	float Percent = 100.0f;
+	if(pAttribute->IsGroup(AttributeGroup::DamageType))
+		Percent = 5.0f;
+	else if(pAttribute->IsGroup(AttributeGroup::Dps))
+		Percent = 15.0f;
+	else if(pAttribute->IsGroup(AttributeGroup::Healer))
+		Percent = 20.0f;
+
+	// downcast for unhardness boss
+	if(Boss && ID != AttributeIdentifier::HP)
+		Percent /= 10.0f;
+
+	const int SyncPercentSize = maximum(1, translate_to_percent_rest(AttributeValue + PowerLevel, Percent));
+	return SyncPercentSize;
+}
+
 int CPlayerBot::GetTotalAttributeValue(AttributeIdentifier ID) const
 {
-	auto CalculateAttribute = [ID, this](int Power, bool Boss) -> int
-	{
-		// get stats from the bot's equipment
-		int AttributeValue = Power;
-		for(unsigned i = 0; i < (unsigned)ItemType::NUM_EQUIPPED; i++)
-		{
-			if(const auto ItemID = GetEquippedSlotItemID((ItemType)i))
-			{
-				AttributeValue += GS()->GetItemInfo(ItemID.value())->GetInfoEnchantStats(ID);
-			}
-		}
+	int AttributeValue = 10;
 
-		// sync power mobs
-		float Percent = 100.0f;
-		const auto* pAttribute = GS()->GetAttributeInfo(ID);
-
-		if(pAttribute->IsGroup(AttributeGroup::DamageType))
-		{
-			Percent = 5.0f;
-		}
-		else if(pAttribute->IsGroup(AttributeGroup::Dps))
-		{
-			Percent = 15.0f;
-		}
-		else if(pAttribute->IsGroup(AttributeGroup::Healer))
-		{
-			Percent = 20.0f;
-		}
-
-		// downcast for unhardness boss
-		if(Boss && ID != AttributeIdentifier::HP)
-		{
-			Percent /= 10.0f;
-		}
-
-		const int SyncPercentSize = maximum(1, translate_to_percent_rest(AttributeValue, Percent));
-		return SyncPercentSize;
-	};
-
-
-	// initiallize attributeValue by bot type
-	int AttributeValue;
 	if(m_BotType == TYPE_BOT_EIDOLON)
 	{
-		if(GS()->IsWorldType(WorldType::Dungeon))
-		{
-			const int SyncFactor = dynamic_cast<CGameControllerDungeon*>(GS()->m_pController)->GetSyncFactor();
-			AttributeValue = CalculateAttribute(translate_to_percent_rest(maximum(1, SyncFactor), 5), false);
-		}
-		else
-		{
-			const auto* pOwner = GetEidolonOwner();
-			AttributeValue = CalculateAttribute(pOwner ? pOwner->GetTotalAttributeValue(AttributeIdentifier::EidolonPWR) : 0, false);
-		}
+		const auto* pOwner = GetEidolonOwner();
+		AttributeValue = CalculateAttribute(GS(), this, ID, pOwner->GetTotalAttributeValue(AttributeIdentifier::EidolonPWR), false);
 	}
 	else if(m_BotType == TYPE_BOT_MOB)
 	{
 		const int PowerMob = MobBotInfo::ms_aMobBot[m_MobID].m_Power;
 		const bool IsBoss = MobBotInfo::ms_aMobBot[m_MobID].m_Boss;
-
-		AttributeValue = CalculateAttribute(PowerMob, IsBoss);
+		AttributeValue = CalculateAttribute(GS(), this, ID, PowerMob, IsBoss);
 	}
 	else if(m_BotType == TYPE_BOT_QUEST_MOB)
 	{
 		const int PowerQuestMob = m_QuestMobInfo.m_AttributePower;
-
-		AttributeValue = CalculateAttribute(PowerQuestMob, true);
+		AttributeValue = CalculateAttribute(GS(), this, ID, PowerQuestMob, true);
 	}
 	else if(m_BotType == TYPE_BOT_NPC)
 	{
-		AttributeValue = CalculateAttribute(10, true);
-	}
-	else
-	{
-		AttributeValue = 10;
+		AttributeValue = CalculateAttribute(GS(), this, ID, 10, false);
 	}
 
 	return AttributeValue;
