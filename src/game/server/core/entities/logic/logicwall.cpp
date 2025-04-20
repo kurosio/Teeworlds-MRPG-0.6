@@ -333,7 +333,7 @@ bool CLogicDungeonDoorKey::SyncStateChanges()
 	}
 
 	m_OpenedDoor = OpenState;
-	return !OpenState;
+	return OpenState;
 }
 
 void CLogicDungeonDoorKey::Snap(int SnappingClient)

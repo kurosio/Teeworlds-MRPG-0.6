@@ -10,13 +10,12 @@ void CDungeonManager::OnPreInit()
 	while(pRes->next())
 	{
 		const int ID = pRes->getInt("ID");
-		auto Name = pRes->getString("Name");
 		auto Level = pRes->getInt("Level");
-		auto DoorPos = vec2(pRes->getInt("DoorX"), pRes->getInt("DoorY"));
+		auto WaitingDoorPos = vec2(pRes->getInt("DoorX"), pRes->getInt("DoorY"));
 		auto WorldID = pRes->getInt("WorldID");
 
 		auto* pDungeon = CDungeonData::CreateElement(ID);
-		pDungeon->Init(DoorPos, Level, Name, WorldID);
+		pDungeon->Init(WaitingDoorPos, Level, WorldID);
 	}
 }
 
@@ -28,18 +27,22 @@ bool CDungeonManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
+		// information
 		VoteWrapper VInfo(ClientID, VWF_SEPARATE_CLOSED, "Dungeons Information");
 		VInfo.Add("In this section you can choose a dungeon");
 		VInfo.Add("View the fastest players on the passage");
 		VoteWrapper::AddEmptyline(ClientID);
 
+		// dungeon list
 		VoteWrapper(ClientID).Add("\u262C Story dungeon's");
 		if(!ShowDungeonsList(pPlayer, true))
 			VoteWrapper(ClientID).Add("No dungeons available at the moment!");
 		VoteWrapper::AddEmptyline(ClientID);
 
+		// inside menu
 		ShowInsideDungeonMenu(pPlayer);
 
+		// add backpage buttom
 		VoteWrapper::AddEmptyline(ClientID);
 		VoteWrapper::AddBackpage(ClientID);
 		return true;
@@ -106,6 +109,7 @@ bool CDungeonManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, co
 bool CDungeonManager::ShowDungeonsList(CPlayer* pPlayer, bool Story) const
 {
 	bool Found = false;
+
 	const int ClientID = pPlayer->GetCID();
 	for(const auto* pDungeon : CDungeonData::Data())
 	{
@@ -121,36 +125,29 @@ bool CDungeonManager::ShowDungeonsList(CPlayer* pPlayer, bool Story) const
 
 void CDungeonManager::ShowInsideDungeonMenu(CPlayer* pPlayer) const
 {
-	const int ClientID = pPlayer->GetCID();
-	const auto* pController = (CGameControllerDungeon*)GS()->m_pController;
-	if(!pController)
+	if(!GS()->IsWorldType(WorldType::Dungeon))
 		return;
 
-	auto* pDungeon = pController->GetDungeon();
-	if(!pDungeon)
+	const int ClientID = pPlayer->GetCID();
+	const auto* pController = (CGameControllerDungeon*)GS()->m_pController;
+	if(!pController || !pController->GetDungeon())
 		return;
 
 	// exit from dungeon
-	VoteWrapper::AddLine(ClientID);
-	VoteWrapper(ClientID).AddOption("DUNGEON_EXIT", "Exit dungeon {} (warning)", pDungeon->GetName());
+	const char* pDungeonName = pController->GetDungeon()->GetName();
+	VoteWrapper(ClientID).AddOption("DUNGEON_EXIT", "Exit dungeon {} (warning)", pDungeonName);
 }
 
 CDungeonData* CDungeonManager::GetDungeonByID(int DungeonID) const
 {
 	auto pDungeon = std::ranges::find_if(CDungeonData::Data(), [DungeonID](auto* pDungeon)
-	{
-		return pDungeon->GetID() == DungeonID;
-	});
-
+	{ return pDungeon->GetID() == DungeonID; });
 	return pDungeon != CDungeonData::Data().end() ? *pDungeon : nullptr;
 }
 
 CDungeonData* CDungeonManager::GetDungeonByWorldID(int WorldID) const
 {
 	auto pDungeon = std::ranges::find_if(CDungeonData::Data(), [WorldID](auto* pDungeon)
-	{
-		return pDungeon->GetWorldID() == WorldID;
-	});
-
+	{ return pDungeon->GetWorldID() == WorldID; });
 	return pDungeon != CDungeonData::Data().end() ? *pDungeon : nullptr;
 }

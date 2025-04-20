@@ -10,7 +10,6 @@ class CDungeonData : public MultiworldIdentifiableData< std::deque< CDungeonData
 
 	int m_ID {};
 	int m_Level {};
-	std::string_view m_Name {};
 	vec2 m_WaitingDoorPos {};
 
 	int m_State {};
@@ -22,6 +21,7 @@ class CDungeonData : public MultiworldIdentifiableData< std::deque< CDungeonData
 public:
 	enum DungeonState
 	{
+		STATE_UNINITIALIZED = -1,
 		STATE_INACTIVE,
 		STATE_WAITING,
 		STATE_STARTED,
@@ -35,17 +35,17 @@ public:
 		return m_pData.emplace_back(std::move(pData));
 	}
 
-	void Init(const vec2& WaitingDoorPos, int Level, std::string_view Name, int WorldID)
+	void Init(const vec2& WaitingDoorPos, int Level, int WorldID)
 	{
 		m_Level = Level;
-		m_Name = Name;
 		m_WorldID = WorldID;
 		m_WaitingDoorPos = WaitingDoorPos;
+		m_State = STATE_UNINITIALIZED;
 	}
 
 	int GetID() const { return m_ID; }
 	int GetLevel() const { return m_Level; }
-	std::string_view GetName() const { return m_Name; }
+	const char* GetName() const;
 	vec2 GetWaitingDoorPos() const { return m_WaitingDoorPos; }
 	int GetWorldID() const { return m_WorldID; }
 

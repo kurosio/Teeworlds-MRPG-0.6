@@ -216,8 +216,8 @@ struct CAccountSharedData
 	int m_Ping;
 
 	// dungeon
-	int m_TempTimeDungeon;
-	bool m_TempDungeonReady;
+	int m_TempStartDungeonTick {};
+	bool m_TempDungeonReady {};
 
 	void SetSpawnPosition(vec2 Position)
 	{

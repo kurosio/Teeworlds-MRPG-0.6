@@ -14,7 +14,7 @@
 CGameControllerDungeon::CGameControllerDungeon(class CGS* pGS, CDungeonData* pDungeon) : IGameController(pGS)
 {
 	m_GameFlags = 0;
-	m_ActivePlayers = 0;
+	m_StartedPlayers = 0;
 	m_pDungeon = pDungeon;
 
 	// create waiting door
@@ -24,9 +24,9 @@ CGameControllerDungeon::CGameControllerDungeon(class CGS* pGS, CDungeonData* pDu
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_dungeons_door", "WHERE DungeonID = '{}'", pDungeon->GetID());
 	while(pRes->next())
 	{
-		const int RequiredBotID = pRes->getInt("BotID");
-		vec2 Pos = vec2(pRes->getInt("PosX"), pRes->getInt("PosY"));
-		m_vpEntLogicDoor.emplace_back(new CLogicDungeonDoorKey(&GS()->m_World, Pos, RequiredBotID));
+		const auto RequiredBotID = pRes->getInt("BotID");
+		const auto DoorPos = vec2(pRes->getInt("PosX"), pRes->getInt("PosY"));
+		m_vpEntLogicDoor.emplace_back(new CLogicDungeonDoorKey(&GS()->m_World, DoorPos, RequiredBotID));
 	}
 
 	// update state
@@ -41,60 +41,53 @@ CGameControllerDungeon::~CGameControllerDungeon()
 	m_vpEntLogicDoor.clear();
 }
 
-void CGameControllerDungeon::KillAllPlayers() const
-{
-	for(int i = 0; i < MAX_PLAYERS; i++)
-	{
-		auto* pCharacter = GS()->GetPlayerChar(i);
-		if(pCharacter && GS()->IsPlayerInWorld(i, m_pDungeon->GetWorldID()))
-		{
-			pCharacter->Die(i, WEAPON_WORLD);
-		}
-	}
-}
-
 void CGameControllerDungeon::ChangeState(int State)
 {
 	const auto CurrentState = m_pDungeon->GetState();
 	if(State == CurrentState)
 		return;
 
+	// update dungeon state
 	m_pDungeon->SetState(State);
 
 	// inactive state
 	if(State == CDungeonData::STATE_INACTIVE)
 	{
-		m_MaximumTick = 0;
-		m_FinishedTick = 0;
-		m_StartingTick = 0;
-		m_LastStartingTick = 0;
-		m_SafeTick = 0;
-
 		// update
-		SetMobsSpawn(false);
-	}
-
-	// waiting state
-	else if(State == CDungeonData::STATE_WAITING)
-	{
-		m_SyncDungeon = GetSyncFactor();
-		m_StartingTick = Server()->TickSpeed() * g_Config.m_SvDungeonWaitingTime;
-
-		// update
+		m_EndTick = 0;
+		m_FinishTick = 0;
+		m_SafetyTick = 0;
+		m_WaitingTick = 0;
+		m_LastWaitingTick = 0;
 		m_pDungeon->UpdateProgress(0);
 		m_pEntWaitingDoor->Close();
 		SetMobsSpawn(false);
 		ResetDoorKeyState();
 	}
 
+	// waiting state
+	else if(State == CDungeonData::STATE_WAITING)
+	{
+		// update
+		m_SyncDungeon = GetSyncFactor();
+		m_WaitingTick = Server()->TickSpeed() * g_Config.m_SvDungeonWaitingTime;
+	}
+
 	// started state
 	else if(State == CDungeonData::STATE_STARTED)
 	{
-		m_ActivePlayers = GetPlayersNum();
-		m_MaximumTick = Server()->TickSpeed() * 600;
-		m_SafeTick = Server()->TickSpeed() * 30;
+		// update start time
+		for(int i = 0; i < MAX_PLAYERS; i++)
+		{
+			auto* pPlayer = GS()->GetPlayer(i);
+			if(pPlayer && GS()->IsPlayerInWorld(i, m_pDungeon->GetWorldID()))
+				pPlayer->GetSharedData().m_TempStartDungeonTick = Server()->Tick();
+		}
 
 		// update
+		m_StartedPlayers = GetPlayersNum();
+		m_SafetyTick = Server()->TickSpeed() * 30;
+		m_EndTick = Server()->TickSpeed() * 600;
 		m_pEntWaitingDoor->Open();
 		SetMobsSpawn(true);
 		KillAllPlayers();
@@ -109,29 +102,24 @@ void CGameControllerDungeon::ChangeState(int State)
 	// finish state
 	else if(State == CDungeonData::STATE_FINISHED)
 	{
-		m_SafeTick = 0;
-		m_FinishedTick = Server()->TickSpeed() * 20;
-
+		// update
+		m_SafetyTick = 0;
+		m_FinishTick = Server()->TickSpeed() * 20;
 		SetMobsSpawn(false);
 
-		//dynamic_string Buffer;
-		//int FinishTime = -1;
-		////int BestPassageHelp = 0;
+		// update finish time
+		// TODO: replace
+		for(int i = 0; i < MAX_PLAYERS; i++)
+		{
+			auto* pPlayer = GS()->GetPlayer(i);
+			if(pPlayer && GS()->IsPlayerInWorld(i, m_pDungeon->GetWorldID()))
+			{
+				int FinishTime = Server()->Tick() - pPlayer->GetSharedData().m_TempStartDungeonTick;
+				GS()->Chat(-1, "'{}' finished '{}'.", Server()->ClientName(i), m_pDungeon->GetName(), aTimeFormat);
 
-		//// dungeon finished information
-		//char aTimeFormat[64];
-		//str_format(aTimeFormat, sizeof(aTimeFormat), "Time: '%d minute(s) %d second(s)'.", FinishTime / 60, FinishTime - (FinishTime / 60 * 60));
-		//GS()->Chat(-1, "Group{}!", Buffer.buffer());
-		////GS()->Chat(-1, "'{}' finished {}!", CDungeonData::ms_aDungeon[m_DungeonID].m_aName, aTimeFormat);
+			}
+		}
 	}
-
-	//// - - - - - - - - - - - - - - - - - - - - - -
-	//// used when changing state to finished
-	//else if(State == DUNGEON_FINISHED)
-	//{
-	//	SetMobsSpawn(false);
-	//	KillAllPlayers();
-	//}
 }
 
 void CGameControllerDungeon::StateTick()
@@ -162,33 +150,33 @@ void CGameControllerDungeon::StateTick()
 	// waiting state
 	if(State == CDungeonData::STATE_WAITING)
 	{
-		if(m_StartingTick)
+		if(m_WaitingTick)
 		{
 			// the ability to start prematurely on readiness
 			const int PlayersReadyState = PlayersReady();
-			if(PlayersReadyState >= Players && m_StartingTick > 10 * Server()->TickSpeed())
+			if(PlayersReadyState >= Players && m_WaitingTick > 10 * Server()->TickSpeed())
 			{
-				m_LastStartingTick = m_StartingTick;
-				m_StartingTick = 10 * Server()->TickSpeed();
+				m_LastWaitingTick = m_WaitingTick;
+				m_WaitingTick = 10 * Server()->TickSpeed();
 			}
-			else if(PlayersReadyState < Players && m_LastStartingTick > 0)
+			else if(PlayersReadyState < Players && m_LastWaitingTick > 0)
 			{
-				const int SkippedTick = 10 * Server()->TickSpeed() - m_StartingTick;
-				m_StartingTick = m_LastStartingTick - SkippedTick;
-				m_LastStartingTick = 0;
+				const int SkippedTick = 10 * Server()->TickSpeed() - m_WaitingTick;
+				m_WaitingTick = m_LastWaitingTick - SkippedTick;
+				m_LastWaitingTick = 0;
 			}
 
 			// output before the start of the passage
-			const int Time = m_StartingTick / Server()->TickSpeed();
+			const int Time = m_WaitingTick / Server()->TickSpeed();
 			GS()->BroadcastWorld(WorldID, BroadcastPriority::VeryImportant, 500,
 				"Dungeon waiting {} sec!\nPlayer's are ready to start right now {} of {}!\nYou can change state with 'Vote yes'",
 				Time, PlayersReadyState, Players);
 
 			// update waiting time
-			m_StartingTick--;
-			if(!m_StartingTick)
+			m_WaitingTick--;
+			if(!m_WaitingTick)
 			{
-				m_ActivePlayers = Players;
+				m_StartedPlayers = Players;
 				ChangeState(CDungeonData::STATE_STARTED);
 			}
 		}
@@ -199,48 +187,34 @@ void CGameControllerDungeon::StateTick()
 	// started
 	else if(State == CDungeonData::STATE_STARTED)
 	{
-		// update players time
-		for(int i = 0; i < MAX_PLAYERS; i++)
-		{
-			CPlayer* pPlayer = GS()->GetPlayer(i);
-			if(!pPlayer || !GS()->IsPlayerInWorld(i, WorldID))
-				continue;
 
-			pPlayer->GetSharedData().m_TempTimeDungeon++;
-		}
 
 		// security tick during which time the player will not return to the old world
-		if(m_SafeTick)
+		if(m_SafetyTick)
 		{
-			m_SafeTick--;
-			if(!m_SafeTick)
-			{
+			m_SafetyTick--;
+			if(!m_SafetyTick)
 				GS()->ChatWorld(WorldID, "Dungeon:", "The security timer is over, be careful!");
-			}
 		}
 
-		// finish the dungeon when the dungeon is successfully completed
+		// finish is successfully completed
 		if(GetRemainingMobsNum() <= 0)
-		{
 			ChangeState(CDungeonData::STATE_FINISHED);
-		}
 	}
 
-	//// - - - - - - - - - - - - - - - - - - - - - -
-	//// used in the tick when the waiting is finished
-	//else if(State == CDungeonData::STATE_FINISHED)
-	//{
-	//	if(m_FinishedTick)
-	//	{
-	//		const int Time = m_FinishedTick / Server()->TickSpeed();
-	//		GS()->BroadcastWorld(m_WorldID, BroadcastPriority::VeryImportant, 500, "Dungeon ended {} sec!", Time);
+	// finished
+	else if(State == CDungeonData::STATE_FINISHED)
+	{
+		m_FinishTick--;
 
-	//		m_FinishedTick--;
-	//	}
-
-	//	if(!m_FinishedTick)
-	//		ChangeState(DUNGEON_FINISHED);
-	//}
+		if(m_FinishTick)
+		{
+			const auto Sec = m_FinishTick / Server()->TickSpeed();
+			GS()->BroadcastWorld(WorldID, BroadcastPriority::VeryImportant, 500, "Dungeon ended {} sec!", Sec);
+		}
+		else
+			KillAllPlayers();
+	}
 }
 
 void CGameControllerDungeon::OnCharacterDeath(CPlayer* pVictim, CPlayer* pKiller, int Weapon)
@@ -276,7 +250,7 @@ bool CGameControllerDungeon::OnCharacterSpawn(CCharacter* pChr)
 		const int ClientID = pChr->GetPlayer()->GetCID();
 
 		// player died after the safety timer ended
-		if(!m_SafeTick)
+		if(!m_SafetyTick)
 		{
 			GS()->Chat(ClientID, "You were thrown out of dungeon!");
 
@@ -301,6 +275,18 @@ bool CGameControllerDungeon::OnCharacterSpawn(CCharacter* pChr)
 
 	IGameController::OnCharacterSpawn(pChr);
 	return true;
+}
+
+void CGameControllerDungeon::KillAllPlayers() const
+{
+	for(int i = 0; i < MAX_PLAYERS; i++)
+	{
+		auto* pCharacter = GS()->GetPlayerChar(i);
+		if(pCharacter && GS()->IsPlayerInWorld(i, m_pDungeon->GetWorldID()))
+		{
+			pCharacter->Die(i, WEAPON_WORLD);
+		}
+	}
 }
 
 void CGameControllerDungeon::UpdateDoorKeyState()
@@ -465,7 +451,7 @@ int CGameControllerDungeon::GetAttributeDungeonSyncByClass(ProfessionIdentifier 
 	{
 		// basic default healer upgrades
 		if(Type == AttributeGroup::Healer)
-			Percent = minimum(25.0f + (m_ActivePlayers * 2.0f), 50.0f);
+			Percent = minimum(25.0f + (m_StartedPlayers * 2.0f), 50.0f);
 
 		// small tank boost
 		else if(Type == AttributeGroup::Tank)
@@ -483,10 +469,10 @@ int CGameControllerDungeon::GetAttributeDungeonSyncByClass(ProfessionIdentifier 
 
 void CGameControllerDungeon::Tick()
 {
-	if(m_MaximumTick)
+	if(m_EndTick)
 	{
-		m_MaximumTick--;
-		if(!m_MaximumTick)
+		m_EndTick--;
+		if(!m_EndTick)
 			ChangeState(CDungeonData::STATE_FINISHED);
 	}
 

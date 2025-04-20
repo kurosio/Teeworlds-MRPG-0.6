@@ -17,15 +17,15 @@ class CGameControllerDungeon : public IGameController
 	CEntityDungeonWaitingDoor* m_pEntWaitingDoor {};
 	std::vector< CLogicDungeonDoorKey* > m_vpEntLogicDoor {};
 
-	int m_ActivePlayers {};
+	int m_StartedPlayers {};
 	int m_TankClientID {};
 	int m_SyncDungeon {};
 
-	int m_LastStartingTick {};
-	int m_StartingTick {};
-	int m_FinishedTick {};
-	int m_SafeTick {};
-	int m_MaximumTick {};
+	int m_LastWaitingTick {};
+	int m_WaitingTick {};
+	int m_FinishTick {};
+	int m_SafetyTick {};
+	int m_EndTick {};
 	int m_ShiftRoundStartTick {};
 
 public:
