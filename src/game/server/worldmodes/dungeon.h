@@ -17,7 +17,6 @@ class CGameControllerDungeon : public IGameController
 	CEntityDungeonWaitingDoor* m_pEntWaitingDoor {};
 	std::vector< CLogicDungeonDoorKey* > m_vpEntLogicDoor {};
 
-	int m_StartedPlayers {};
 	int m_TankClientID {};
 
 	std::map<AttributeIdentifier, int> m_vSyncFactor {};

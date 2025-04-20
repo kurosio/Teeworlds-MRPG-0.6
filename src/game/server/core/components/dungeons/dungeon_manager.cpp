@@ -19,6 +19,7 @@ void CDungeonManager::OnPreInit()
 	}
 }
 
+
 bool CDungeonManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 {
 	const int ClientID = pPlayer->GetCID();
@@ -48,6 +49,7 @@ bool CDungeonManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	}
 	return false;
 }
+
 
 bool CDungeonManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const int Extra1, const int Extra2, int ReasonNumber, const char* pReason)
 {
@@ -113,6 +115,7 @@ bool CDungeonManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, co
 	return false;
 }
 
+
 bool CDungeonManager::ShowDungeonsList(CPlayer* pPlayer, bool Story) const
 {
 	bool Found = false;
@@ -130,6 +133,7 @@ bool CDungeonManager::ShowDungeonsList(CPlayer* pPlayer, bool Story) const
 	return Found;
 }
 
+
 void CDungeonManager::ShowInsideDungeonMenu(CPlayer* pPlayer) const
 {
 	if(!GS()->IsWorldType(WorldType::Dungeon))
@@ -141,10 +145,11 @@ void CDungeonManager::ShowInsideDungeonMenu(CPlayer* pPlayer) const
 		return;
 
 	// exit from dungeon
-	const char* pDungeonName = pController->GetDungeon()->GetName();
-	VoteWrapper(ClientID).AddOption("DUNGEON_EXIT", "Exit dungeon {} (warning)", pDungeonName);
+	const char* pName = pController->GetDungeon()->GetName();
+	VoteWrapper(ClientID).AddOption("DUNGEON_EXIT", "Exit dungeon {} (warning)", pName);
 	VoteWrapper::AddEmptyline(ClientID);
 }
+
 
 CDungeonData* CDungeonManager::GetDungeonByID(int DungeonID) const
 {
@@ -152,6 +157,7 @@ CDungeonData* CDungeonManager::GetDungeonByID(int DungeonID) const
 	{ return pDungeon->GetID() == DungeonID; });
 	return pDungeon != CDungeonData::Data().end() ? *pDungeon : nullptr;
 }
+
 
 CDungeonData* CDungeonManager::GetDungeonByWorldID(int WorldID) const
 {

@@ -14,7 +14,6 @@
 CGameControllerDungeon::CGameControllerDungeon(class CGS* pGS, CDungeonData* pDungeon) : IGameController(pGS)
 {
 	m_GameFlags = 0;
-	m_StartedPlayers = 0;
 	m_pDungeon = pDungeon;
 
 	// create waiting door
@@ -85,7 +84,6 @@ void CGameControllerDungeon::ChangeState(int State)
 
 		// update
 		PrepareSyncFactors();
-		m_StartedPlayers = GetPlayersNum();
 		m_SafetyTick = Server()->TickSpeed() * 30;
 		m_EndTick = Server()->TickSpeed() * 600;
 		m_pEntWaitingDoor->Open();
@@ -103,7 +101,6 @@ void CGameControllerDungeon::ChangeState(int State)
 	else if(State == CDungeonData::STATE_FINISHED)
 	{
 		// update
-		m_SafetyTick = 0;
 		m_FinishTick = Server()->TickSpeed() * 20;
 		SetMobsSpawn(false);
 
@@ -163,10 +160,7 @@ void CGameControllerDungeon::StateTick()
 			// update waiting time
 			m_WaitingTick--;
 			if(!m_WaitingTick)
-			{
-				m_StartedPlayers = PlayersNum;
 				ChangeState(CDungeonData::STATE_STARTED);
-			}
 		}
 
 		m_ShiftRoundStartTick = Server()->Tick();
@@ -185,7 +179,9 @@ void CGameControllerDungeon::StateTick()
 
 		// finish is successfully completed
 		if(GetRemainingMobsNum() <= 0)
+		{
 			ChangeState(CDungeonData::STATE_FINISHED);
+		}
 	}
 
 	// finished
@@ -223,7 +219,6 @@ void CGameControllerDungeon::OnCharacterDeath(CPlayer* pVictim, CPlayer* pKiller
 			m_pDungeon->UpdateProgress(Progress);
 			UpdateDoorKeyState();
 		}
-
 	}
 }
 
@@ -411,7 +406,7 @@ void CGameControllerDungeon::Tick()
 	{
 		m_EndTick--;
 		if(!m_EndTick)
-			ChangeState(CDungeonData::STATE_FINISHED);
+			KillAllPlayers();
 	}
 
 	//auto test = [&](int PlayersNum, int fromValue, int PowerLevel, float BaseFactor, int MinValue)

@@ -579,10 +579,6 @@ void CCharacterBotAI::Fire()
 	if((m_Input.m_Hook && m_Core.m_HookState == HOOK_IDLE) || m_ReloadTimer != 0)
 		return;
 
-	// if the target is within range when using the hammer
-	if(m_Core.m_ActiveWeapon == WEAPON_HAMMER && distance(pPlayer->GetCharacter()->GetPos(), GetPos()) > 128.0f)
-		return;
-
 	// toggle the fire button state
 	m_Input.m_Fire++;
 	m_LatestInput.m_Fire++;
