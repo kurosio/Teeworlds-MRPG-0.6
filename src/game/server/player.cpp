@@ -613,14 +613,14 @@ bool CPlayer::IsAuthed() const
 
 int CPlayer::GetMaxHealth() const
 {
-	auto DefaultHP = 10 + GetTotalAttributeValue(AttributeIdentifier::HP);
+	auto DefaultHP = DEFAULT_BASE_HP + GetTotalAttributeValue(AttributeIdentifier::HP);
 	Account()->GetBonusManager().ApplyBonuses(BONUS_TYPE_HP, &DefaultHP);
 	return DefaultHP;
 }
 
 int CPlayer::GetMaxMana() const
 {
-	auto DefaultMP = 10 + GetTotalAttributeValue(AttributeIdentifier::MP);
+	auto DefaultMP = DEFAULT_BASE_MP + GetTotalAttributeValue(AttributeIdentifier::MP);
 	Account()->GetBonusManager().ApplyBonuses(BONUS_TYPE_MP, &DefaultMP);
 	return DefaultMP;
 }

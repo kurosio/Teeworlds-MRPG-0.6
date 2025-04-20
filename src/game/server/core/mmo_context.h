@@ -616,6 +616,8 @@ enum
 		Basic kernel server settings
 		This is where the most basic server settings are stored
 	*/
+	DEFAULT_BASE_HP                = 10,    // default base health
+	DEFAULT_BASE_MP                = 10,    // default base mana
 	MAX_GROUP_MEMBERS              = 4,     // maximum number of players in a group
 	MAX_HOUSE_DOOR_INVITED_PLAYERS = 3,		// maximum player what can have access for house door
 	MAX_DECORATIONS_PER_HOUSE      = 20,    // maximum decorations for houses

@@ -371,6 +371,8 @@ void CGameControllerDungeon::SetMobsSpawn(bool AllowedSpawn)
 void CGameControllerDungeon::PrepareSyncFactors()
 {
 	m_vSyncFactor.clear();
+	m_vSyncFactor[AttributeIdentifier::HP] = DEFAULT_BASE_HP;
+	m_vSyncFactor[AttributeIdentifier::MP] = DEFAULT_BASE_MP;
 
 	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
@@ -387,13 +389,13 @@ void CGameControllerDungeon::PrepareSyncFactors()
 }
 
 
-int CGameControllerDungeon::CalculateMobAttribute(AttributeIdentifier ID, int PowerLevel, float BaseFactor, int minValue) const
+int CGameControllerDungeon::CalculateMobAttribute(AttributeIdentifier ID, int PowerLevel, float BaseFactor, int MinValue) const
 {
-	int PlayersTotalAttribute = GetAttributeDungeonSync(ID);
-	int PlayersNum = GetPlayersNum();
+	auto PlayersTotalAttribute = GetAttributeDungeonSync(ID);
+	auto PlayersNum = GetPlayersNum();
 	float PowerLevelMultiplier = 1.0f + (PowerLevel - 1) * 0.15f;
-	auto attributeValue = static_cast<int>(PlayersTotalAttribute * BaseFactor * PowerLevelMultiplier / std::sqrt(PlayersNum));
-	return std::max(minValue, attributeValue);
+	auto AttributeValue = static_cast<int>(PlayersTotalAttribute * BaseFactor * PowerLevelMultiplier / std::sqrt(PlayersNum));
+	return std::max(MinValue, AttributeValue);
 }
 
 
@@ -412,19 +414,17 @@ void CGameControllerDungeon::Tick()
 			ChangeState(CDungeonData::STATE_FINISHED);
 	}
 
-	//auto test = [&](int PlayersNum, int fromValue, int PowerLevel, float BaseFactor, int MinValue)
-	//{
-	//	float doorMultiplier = 1.0f + (PowerLevel - 1) * 0.15f;
-	//	auto attributeValue = static_cast<int>(fromValue * BaseFactor * doorMultiplier / std::sqrt(PlayersNum));
-	//	return std::max(MinValue, attributeValue);
-	//};
+	auto test = [&](int PlayersNum, int fromValue, int PowerLevel, float BaseFactor, int MinValue)
+	{
+		float doorMultiplier = 1.0f + (PowerLevel - 1) * 0.15f;
+		auto attributeValue = static_cast<int>(fromValue * BaseFactor * doorMultiplier / std::sqrt(PlayersNum));
+		return std::max(MinValue, attributeValue);
+	};
 
-	//int Players = 1 + rand() % 5;
-	//int From = 3 + rand() % 10;
-	//int FromH = 100 + rand() % 200;
-	//int Level = 1 + rand() % 10;
-	//dbg_msg("test", "DMG (%d:Lv%d) (%d -> %d).", Players, Level, From, test(Players, From, Level, (float)g_Config.m_SvDungeonDamageTypeFactor / 100.f, 0));
-	//dbg_msg("test", "HP (%d:Lv%d) (%d -> %d).", Players, Level, FromH, test(Players, FromH, Level, (float)g_Config.m_SvDungeonOtherTypeFactor / 100.f, 5));
+	int Players = 1;
+	int FromH = 26;
+	int Level = 1;
+	dbg_msg("test", "HP (%d:Lv%d) (%d -> %d).", Players, Level, FromH, test(Players, FromH, Level, (float)g_Config.m_SvDungeonOtherTypeFactor / 100.f, 5));
 
 	StateTick();
 	IGameController::Tick();

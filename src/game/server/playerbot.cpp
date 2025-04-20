@@ -172,7 +172,7 @@ void CPlayerBot::PrepareRespawnTick()
 	m_WantSpawn = true;
 }
 
-int CalculateAttribute(CGS* pGS, const CPlayerBot* pPlayer, AttributeIdentifier ID, int PowerLevel, bool Boss)
+static int CalculateAttribute(CGS* pGS, const CPlayerBot* pPlayer, AttributeIdentifier ID, int PowerLevel, bool Boss)
 {
 	const auto* pAttribute = pGS->GetAttributeInfo(ID);
 	if(!pAttribute)
