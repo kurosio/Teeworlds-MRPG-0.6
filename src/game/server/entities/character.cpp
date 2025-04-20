@@ -287,7 +287,7 @@ bool CCharacter::FireHammer(vec2 Direction, vec2 ProjStartPos)
 	const bool IsBot = m_pPlayer->IsBot();
 
 	// check equip state
-	const auto EquippedItemIdOpt = m_pPlayer->GetEquippedItemID(ItemType::EquipHammer);
+	const auto EquippedItemIdOpt = m_pPlayer->GetEquippedSlotItemID(ItemType::EquipHammer);
 	if(!EquippedItemIdOpt.has_value())
 	{
 		GS()->Broadcast(m_pPlayer->GetCID(), BroadcastPriority::GameWarning, 2, "You don't have a hammer equipped.");
@@ -400,7 +400,7 @@ bool CCharacter::FireHammer(vec2 Direction, vec2 ProjStartPos)
 bool CCharacter::FireGun(vec2 Direction, vec2 ProjStartPos)
 {
 	// check equip state
-	const auto EquippedItemIdOpt = m_pPlayer->GetEquippedItemID(ItemType::EquipGun);
+	const auto EquippedItemIdOpt = m_pPlayer->GetEquippedSlotItemID(ItemType::EquipGun);
 	if(!EquippedItemIdOpt.has_value())
 	{
 		GS()->Broadcast(m_pPlayer->GetCID(), BroadcastPriority::GameWarning, 2, "You don't have a gun equipped.");
@@ -428,7 +428,7 @@ bool CCharacter::FireGun(vec2 Direction, vec2 ProjStartPos)
 bool CCharacter::FireShotgun(vec2 Direction, vec2 ProjStartPos)
 {
 	// check equip state
-	const auto EquippedItemIdOpt = m_pPlayer->GetEquippedItemID(ItemType::EquipShotgun);
+	const auto EquippedItemIdOpt = m_pPlayer->GetEquippedSlotItemID(ItemType::EquipShotgun);
 	if(!EquippedItemIdOpt.has_value())
 	{
 		GS()->Broadcast(m_pPlayer->GetCID(), BroadcastPriority::GameWarning, 2, "You don't have a shotgun equipped.");
@@ -466,7 +466,7 @@ bool CCharacter::FireShotgun(vec2 Direction, vec2 ProjStartPos)
 bool CCharacter::FireGrenade(vec2 Direction, vec2 ProjStartPos)
 {
 	// check equip state
-	const auto EquippedItemIdOpt = m_pPlayer->GetEquippedItemID(ItemType::EquipGrenade);
+	const auto EquippedItemIdOpt = m_pPlayer->GetEquippedSlotItemID(ItemType::EquipGrenade);
 	if(!EquippedItemIdOpt.has_value())
 	{
 		GS()->Broadcast(m_pPlayer->GetCID(), BroadcastPriority::GameWarning, 2, "You don't have a grenade equipped.");
@@ -494,7 +494,7 @@ bool CCharacter::FireGrenade(vec2 Direction, vec2 ProjStartPos)
 bool CCharacter::FireRifle(vec2 Direction, vec2 ProjStartPos)
 {
 	// check equip state
-	const auto EquippedItemIdOpt = m_pPlayer->GetEquippedItemID(ItemType::EquipLaser);
+	const auto EquippedItemIdOpt = m_pPlayer->GetEquippedSlotItemID(ItemType::EquipLaser);
 	if(!EquippedItemIdOpt.has_value())
 	{
 		GS()->Broadcast(m_pPlayer->GetCID(), BroadcastPriority::GameWarning, 2, "You don't have a laser equipped.");
@@ -657,7 +657,7 @@ bool CCharacter::GiveWeapon(int WeaponID, int Ammo)
 	const auto EquipID = GetEquipByWeapon(WeaponID);
 
 	// remove is unequipped weapon
-	if(!m_pPlayer->IsEquipped(EquipID) && !IsWeaponHammer)
+	if(!m_pPlayer->IsEquippedSlot(EquipID) && !IsWeaponHammer)
 	{
 		RemoveWeapon(WeaponID);
 		return false;
@@ -1021,7 +1021,7 @@ void CCharacter::AutoUseHealingPotionIfNeeded() const
 		return;
 
 	// check for equippement potion
-	const auto EquippedHealPotionOpt = m_pPlayer->GetEquippedItemID(ItemType::EquipPotionHeal);
+	const auto EquippedHealPotionOpt = m_pPlayer->GetEquippedSlotItemID(ItemType::EquipPotionHeal);
 	TryUsePotion(EquippedHealPotionOpt);
 }
 
@@ -1036,7 +1036,7 @@ void CCharacter::AutoUseManaPotionIfNeeded() const
 		return;
 
 	// check for equippement potion
-	const auto EquippedManaPotionOpt = m_pPlayer->GetEquippedItemID(ItemType::EquipPotionMana);
+	const auto EquippedManaPotionOpt = m_pPlayer->GetEquippedSlotItemID(ItemType::EquipPotionMana);
 	TryUsePotion(EquippedManaPotionOpt);
 }
 

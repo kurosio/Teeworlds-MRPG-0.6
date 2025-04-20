@@ -68,7 +68,7 @@ bool CPlayerItem::ShouldAutoEquip() const
 
 	// is equipment slot
 	if(Info()->IsEquipmentSlot())
-		return !pPlayer->IsEquipped(Info()->GetType());
+		return !pPlayer->IsEquippedSlot(Info()->GetType());
 
 	// is equipment non slot
 	if(Info()->IsEquipmentNonSlot())

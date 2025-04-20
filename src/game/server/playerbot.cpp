@@ -180,7 +180,7 @@ int CPlayerBot::GetTotalAttributeValue(AttributeIdentifier ID) const
 		int AttributeValue = Power;
 		for(unsigned i = 0; i < (unsigned)ItemType::NUM_EQUIPPED; i++)
 		{
-			if(const auto ItemID = GetEquippedItemID((ItemType)i))
+			if(const auto ItemID = GetEquippedSlotItemID((ItemType)i))
 			{
 				AttributeValue += GS()->GetItemInfo(ItemID.value())->GetInfoEnchantStats(ID);
 			}
@@ -284,9 +284,9 @@ void CPlayerBot::TryRespawn()
 		if(!pOwner || !pOwner->GetCharacter())
 			return;
 
-		if(auto EquippedItemIdOpt = pOwner->GetEquippedItemID(ItemType::EquipEidolon))
+		if(auto EquippedItemIdOpt = pOwner->GetEquippedSlotItemID(ItemType::EquipEidolon))
 		{
-			auto* pOwnerItem = pOwner->GetItem(pOwner->GetEquippedItemID(ItemType::EquipEidolon).value());
+			auto* pOwnerItem = pOwner->GetItem(pOwner->GetEquippedSlotItemID(ItemType::EquipEidolon).value());
 			if(pOwnerItem->GetDurability() <= 0)
 				return;
 
@@ -477,7 +477,7 @@ void CPlayerBot::GetFormatedName(char* aBuffer, int BufferSize)
 	}
 }
 
-std::optional<int> CPlayerBot::GetEquippedItemID(ItemType EquipID) const
+std::optional<int> CPlayerBot::GetEquippedSlotItemID(ItemType EquipID) const
 {
 	auto& DataBot = DataBotInfo::ms_aDataBot[m_BotID];
 	if(DataBot.m_vEquippedSlot.contains(EquipID))

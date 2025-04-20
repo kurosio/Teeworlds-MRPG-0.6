@@ -59,7 +59,7 @@ void CEidolonAI::OnDie(int Killer, int Weapon)
 
 	if(Weapon != WEAPON_SELF && Weapon != WEAPON_WORLD)
 	{
-		auto EquippedEidolonItemIdOpt = pOwner->GetEquippedItemID(ItemType::EquipEidolon);
+		auto EquippedEidolonItemIdOpt = pOwner->GetEquippedSlotItemID(ItemType::EquipEidolon);
 		if(EquippedEidolonItemIdOpt.has_value())
 		{
 			auto* pPlayerItem = pOwner->GetItem(EquippedEidolonItemIdOpt.value());

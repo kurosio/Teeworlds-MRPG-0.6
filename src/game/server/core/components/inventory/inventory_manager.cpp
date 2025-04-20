@@ -152,7 +152,7 @@ bool CInventoryManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		auto addEquipmentFieldFunc = [&](VoteWrapper& Wrapper, ItemType EquipID) -> bool
 		{
 			// check if equipped
-			const auto EquippedItemIdOpt = pPlayer->GetEquippedItemID(EquipID);
+			const auto EquippedItemIdOpt = pPlayer->GetEquippedSlotItemID(EquipID);
 			if(!EquippedItemIdOpt.has_value() || !pPlayer->GetItem(EquippedItemIdOpt.value())->IsEquipped())
 			{
 				Wrapper.AddMenu(MENU_EQUIPMENT, (int)EquipID, "{} not equipped", GetItemTypeName(EquipID));
@@ -561,7 +561,7 @@ void CInventoryManager::ItemSelected(CPlayer* pPlayer, const CPlayerItem* pItem)
 	}
 
 	// not allowed drop equipped hammer or title
-	if(ItemID != pPlayer->GetEquippedItemID(ItemType::EquipHammer) && !pInfo->IsType(ItemType::EquipTitle))
+	if(ItemID != pPlayer->GetEquippedSlotItemID(ItemType::EquipHammer) && !pInfo->IsType(ItemType::EquipTitle))
 	{
 		// can dysenthis
 		if(pItem->GetDysenthis() > 0)

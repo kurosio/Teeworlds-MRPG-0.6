@@ -44,7 +44,7 @@ void CEntityFishingRod::Tick()
 
 	// check equip fishing rod
 	auto* pPlayer = pChar->GetPlayer();
-	const auto EquippedFishrodItemIdOpt = pPlayer->GetEquippedItemID(ItemType::EquipFishrod);
+	const auto EquippedFishrodItemIdOpt = pPlayer->GetEquippedSlotItemID(ItemType::EquipFishrod);
 	if(!EquippedFishrodItemIdOpt.has_value())
 	{
 		GS()->Chat(m_ClientID, "To start fishing, equip your fishing rod!");

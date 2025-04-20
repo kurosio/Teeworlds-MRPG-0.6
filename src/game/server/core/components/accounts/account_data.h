@@ -107,8 +107,8 @@ public:
 	 */
 	void Init(int ID, int ClientID, const char* pLogin, std::string Language, std::string LoginDate, ResultPtr pResult);
 	void InitProfessions();
-	void InitEquipments(std::string EquipmentSlots);
-	void SaveEquipments();
+	void InitSharedEquipments(const std::string& EquippedSlots);
+	void SaveSharedEquipments();
 	int GetID() const { return m_ID; }
 
 	/*

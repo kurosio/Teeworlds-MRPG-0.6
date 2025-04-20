@@ -173,7 +173,7 @@ void CCharacterBotAI::SelectWeaponAtRandomInterval()
 	{
 		const int RandomWeapon = rand() % (WEAPON_LASER + 1);
 		const auto EquipID = GetEquipByWeapon(RandomWeapon);
-		if(m_pBotPlayer->IsEquipped(EquipID))
+		if(m_pBotPlayer->IsEquippedSlot(EquipID))
 		{
 			m_Core.m_ActiveWeapon = RandomWeapon;
 		}
@@ -224,7 +224,7 @@ bool CCharacterBotAI::GiveWeapon(int Weapon, int GiveAmmo)
 		return false;
 
 	auto EquipID = GetEquipByWeapon(Weapon);
-	if(!m_pBotPlayer->IsEquipped(EquipID))
+	if(!m_pBotPlayer->IsEquippedSlot(EquipID))
 	{
 		RemoveWeapon(Weapon);
 		return false;

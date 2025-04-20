@@ -70,7 +70,7 @@ void CAccountData::Init(int ID, int ClientID, const char* pLogin, std::string La
 
 	// initialize sub account data.
 	InitProfessions();
-	InitEquipments(pResult->getString("EquippedSlots"));
+	InitSharedEquipments(pResult->getString("EquippedSlots"));
 	InitAchievements(pResult->getString("Achievements"));
 	m_pActiveProfession = GetProfession((ProfessionIdentifier)pResult->getInt("ProfessionID"));
 	m_BonusManager.Init(m_ClientID);
@@ -113,7 +113,7 @@ void CAccountData::InitProfessions()
 	}
 }
 
-void CAccountData::InitEquipments(std::string EquippedSlots)
+void CAccountData::InitSharedEquipments(const std::string& EquippedSlots)
 {
 	// initialize default equipment slots
 	m_EquippedSlots.initSlot(ItemType::EquipPotionHeal);
@@ -125,10 +125,10 @@ void CAccountData::InitEquipments(std::string EquippedSlots)
 	if(!EquippedSlots.empty())
 		m_EquippedSlots.load(EquippedSlots);
 	else
-		SaveEquipments();
+		SaveSharedEquipments();
 }
 
-void CAccountData::SaveEquipments()
+void CAccountData::SaveSharedEquipments()
 {
 	Database->Execute<DB::UPDATE>("tw_accounts_data", "EquippedSlots = '{}' WHERE ID = '{}'", m_EquippedSlots.dumpJson().dump(), m_ID);
 }
@@ -563,7 +563,7 @@ bool CAccountData::EquipItem(int ItemID)
 	bool Successful = false;
 	if(m_EquippedSlots.equipItem(ItemID))
 	{
-		SaveEquipments();
+		SaveSharedEquipments();
 		Successful = true;
 	}
 	if(m_pActiveProfession && m_pActiveProfession->GetEquippedSlots().equipItem(ItemID))
@@ -589,7 +589,7 @@ bool CAccountData::UnequipItem(int ItemID)
 	bool Successful = false;
 	if(m_EquippedSlots.unequipItem(ItemID))
 	{
-		SaveEquipments();
+		SaveSharedEquipments();
 		Successful = true;
 	}
 	if(m_pActiveProfession && m_pActiveProfession->GetEquippedSlots().unequipItem(ItemID))

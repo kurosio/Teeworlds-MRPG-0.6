@@ -7,7 +7,7 @@ void EquippedSlots::initSlot(ItemType type, std::optional<int> itemID)
 	m_Slots[type] = itemID;
 }
 
-void EquippedSlots::load(std::string EquippedSlots)
+void EquippedSlots::load(const std::string& EquippedSlots)
 {
 	// loading from data
 	mystd::json::parse(EquippedSlots, [this](nlohmann::json& json)

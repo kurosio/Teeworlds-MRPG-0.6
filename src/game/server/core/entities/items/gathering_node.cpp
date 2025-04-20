@@ -108,7 +108,7 @@ bool CEntityGatheringNode::TakeDamage(CPlayer* pPlayer)
 	GS()->CreateSound(m_Pos, SoundId);
 
 	// working
-	const auto EquippedToolItemIdOpt = pPlayer->GetEquippedItemID(EquipID);
+	const auto EquippedToolItemIdOpt = pPlayer->GetEquippedSlotItemID(EquipID);
 	if(EquippedToolItemIdOpt.has_value())
 	{
 		auto* pEquippedItem = pPlayer->GetItem(EquippedToolItemIdOpt.value());

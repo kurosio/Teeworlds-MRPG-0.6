@@ -30,7 +30,7 @@ public:
 
 	bool equipItem(int ItemID);
 	bool unequipItem(int ItemID);
-	void load(std::string EquippedSlots);
+	void load(const std::string& EquippedSlots);
 
 	nlohmann::json dumpJson() const;
 };

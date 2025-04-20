@@ -218,7 +218,7 @@ void CPlayer::TryCreateEidolon()
 		return;
 
 	// check valid equppied item id
-	const auto eidolonItemID = GetEquippedItemID(ItemType::EquipEidolon);
+	const auto eidolonItemID = GetEquippedSlotItemID(ItemType::EquipEidolon);
 	if(!eidolonItemID.has_value())
 		return;
 
@@ -416,7 +416,7 @@ void CPlayer::RefreshClanTagString()
 	prepared += fmt_default(" | {}", Server()->GetWorldName(GetCurrentWorldID()));
 
 	// title
-	if(const auto titleItemID = GetEquippedItemID(ItemType::EquipTitle))
+	if(const auto titleItemID = GetEquippedSlotItemID(ItemType::EquipTitle))
 		prepared += fmt_default(" | {}", GetItem(titleItemID.value())->Info()->GetName());
 
 	// guild
@@ -775,14 +775,14 @@ CPlayerQuest* CPlayer::GetQuest(QuestIdentifier ID) const
 	return questData[ID];
 }
 
-std::optional<int> CPlayer::GetEquippedItemID(ItemType EquipType) const
+std::optional<int> CPlayer::GetEquippedSlotItemID(ItemType EquipType) const
 {
 	return Account()->GetEquippedSlotItemID(EquipType);
 }
 
-bool CPlayer::IsEquipped(ItemType EquipID) const
+bool CPlayer::IsEquippedSlot(ItemType EquipID) const
 {
-	const auto& ItemIdOpt = GetEquippedItemID(EquipID);
+	const auto& ItemIdOpt = GetEquippedSlotItemID(EquipID);
 	return ItemIdOpt.has_value();
 }
 
@@ -800,15 +800,23 @@ int CPlayer::GetTotalAttributeValue(AttributeIdentifier ID) const
 		}
 	};
 
+	// counting by modules
+	for(const auto& [ItemID, PlayerItem] : CPlayerItem::Data()[m_ClientID])
+	{
+		if(PlayerItem.HasItem() && PlayerItem.Info()->IsEquipmentNonSlot() && PlayerItem.GetDurability() > 0)
+			totalValue += PlayerItem.GetEnchantStats(ID);
+	}
+
 	// counting by shared equipment slots
-	for(auto& [Type, ItemIdOpt] : Account()->GetEquippedSlots().getSlots())
+	for(const auto& [Type, ItemIdOpt] : Account()->GetEquippedSlots().getSlots())
 		addItemEnchantStats(ItemIdOpt);
+
 
 	// counting by active profession
 	auto* pActiveProfession = Account()->GetActiveProfession();
 	if(pActiveProfession)
 	{
-		for(auto& [Type, ItemIdOpt] : pActiveProfession->GetEquippedSlots().getSlots())
+		for(const auto& [Type, ItemIdOpt] : pActiveProfession->GetEquippedSlots().getSlots())
 			addItemEnchantStats(ItemIdOpt);
 
 		totalValue += pActiveProfession->GetAttributeValue(ID);
@@ -820,20 +828,11 @@ int CPlayer::GetTotalAttributeValue(AttributeIdentifier ID) const
 	{
 		if(Prof.IsProfessionType(PROFESSION_TYPE_OTHER))
 		{
-			for(auto& [Type, ItemIdOpt] : Prof.GetEquippedSlots().getSlots())
+			for(const auto& [Type, ItemIdOpt] : Prof.GetEquippedSlots().getSlots())
 				addItemEnchantStats(ItemIdOpt);
 
 			totalValue += Prof.GetAttributeValue(ID);
 		}
-	}
-
-	// counting by modules
-	for(const auto& [ItemID, PlayerItem] : CPlayerItem::Data()[m_ClientID])
-	{
-		if(!PlayerItem.Info()->IsEquipmentNonSlot() || PlayerItem.GetDurability() <= 0)
-			continue;
-
-		totalValue += PlayerItem.GetEnchantStats(ID);
 	}
 
 	return totalValue;
