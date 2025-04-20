@@ -272,12 +272,12 @@ void CAccountManager::AddMenuProfessionUpgrades(CPlayer* pPlayer, CProfession* p
 		{
 			const auto* pAttribute = GS()->GetAttributeInfo(ID);
 			const int AttributeSize = pPlayer->GetTotalAttributeValue(ID);
-			const float Percent = pPlayer->GetAttributeChance(ID);
+			const auto PercentOpt = pPlayer->GetAttributeChance(ID);
 
 			char aBuf[64] {};
-			if(Percent)
+			if(PercentOpt)
 			{
-				str_format(aBuf, sizeof(aBuf), "(%0.4f%%)", Percent);
+				str_format(aBuf, sizeof(aBuf), "(%0.4f%%)", *PercentOpt);
 			}
 			VUpgrades.Add("Total {} - {}{}", pAttribute->GetName(), AttributeSize, aBuf);
 		}

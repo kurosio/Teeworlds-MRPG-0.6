@@ -1109,7 +1109,8 @@ bool CCharacter::TakeDamage(vec2 Force, int Damage, int FromCID, int Weapon)
 	if(FromCID != m_pPlayer->GetCID())
 	{
 		// vampirism replenish your health
-		if(m_pPlayer->GetAttributeChance(AttributeIdentifier::Vampirism) > random_float(100.0f))
+		const auto ChanceVampirism = m_pPlayer->GetAttributeChance(AttributeIdentifier::Vampirism).value_or(0.f);
+		if(ChanceVampirism > random_float(100.0f))
 		{
 			const auto Recovery = maximum(1, Damage / 2);
 			pFrom->GetCharacter()->IncreaseHealth(Recovery);
@@ -1118,14 +1119,16 @@ bool CCharacter::TakeDamage(vec2 Force, int Damage, int FromCID, int Weapon)
 		}
 
 		// miss out on damage
-		if(m_pPlayer->GetAttributeChance(AttributeIdentifier::Lucky) > random_float(100.0f))
+		const auto ChanceLucky = m_pPlayer->GetAttributeChance(AttributeIdentifier::Lucky).value_or(0.f);
+		if(ChanceLucky > random_float(100.0f))
 		{
 			GS()->SendEmoticon(m_pPlayer->GetCID(), EMOTICON_HEARTS);
 			return false;
 		}
 
 		// critical damage
-		if(m_pPlayer->GetAttributeChance(AttributeIdentifier::Crit) > random_float(100.0f))
+		const auto ChanceCrit = m_pPlayer->GetAttributeChance(AttributeIdentifier::Crit).value_or(0.f);
+		if(ChanceCrit > random_float(100.0f))
 		{
 			const int CritAttributeDMG = maximum(pFrom->GetTotalAttributeValue(AttributeIdentifier::CritDMG), 1);
 			CritDamage = (CritAttributeDMG / 2) + rand() % CritAttributeDMG;

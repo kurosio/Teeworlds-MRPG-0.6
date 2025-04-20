@@ -16,7 +16,6 @@ class CDungeonManager : public MmoComponent
 	bool OnSendMenuVotes(CPlayer* pPlayer, int Menulist) override;
 
 public:
-	void InsertVotesDungeonTop(int DungeonID, class VoteWrapper* pWrapper) const;
 	bool ShowDungeonsList(CPlayer* pPlayer, bool Story) const;
 	void ShowInsideDungeonMenu(CPlayer* pPlayer) const;
 	CDungeonData* GetDungeonByID(int DungeonID) const;

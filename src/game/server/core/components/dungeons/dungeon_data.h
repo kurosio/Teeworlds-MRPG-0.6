@@ -4,11 +4,11 @@
 class CDungeonData : public MultiworldIdentifiableData< std::deque< CDungeonData* > >
 {
 	int m_ID {};
-	vec2 m_DoorPos {};
 	int m_Level {};
 	std::string m_Name {};
-	int m_State {};
+	vec2 m_WaitingDoorPos {};
 
+	bool m_Playing {};
 	int m_Progress {};
 	int m_Players {};
 	int m_WorldID {};
@@ -21,21 +21,22 @@ public:
 		return m_pData.emplace_back(std::move(pData));
 	}
 
-	void Init(const vec2& DoorPos, int Level, std::string_view Name, int WorldID)
+	void Init(const vec2& WaitingDoorPos, int Level, std::string_view Name, int WorldID)
 	{
-		m_DoorPos = DoorPos;
 		m_Level = Level;
 		m_Name = Name;
 		m_WorldID = WorldID;
+		m_WaitingDoorPos = WaitingDoorPos;
 	}
 
 	int GetID() const { return m_ID; }
-	bool IsPlaying() const { return m_State > 1; }
 	int GetLevel() const { return m_Level; }
-	int GetProgress() const { return m_Progress; }
 	std::string_view GetName() const { return m_Name; }
-	int GetPlayersNum() const { return m_Players; }
 	int GetWorldID() const { return m_WorldID; }
+
+	bool IsPlaying() const { return m_Playing; }
+	int GetProgress() const { return m_Progress; }
+	int GetPlayersNum() const { return m_Players; }
 };
 
 #endif

@@ -56,66 +56,56 @@ bool CDungeonManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, co
 	if(!pPlayer->GetCharacter() || !pPlayer->GetCharacter()->IsAlive())
 		return false;
 
-	/*	const int ClientID = pPlayer->GetCID();
-	if(PPSTR(pCmd, "DUNGEONJOIN") == 0)
+	const int ClientID = pPlayer->GetCID();
+
+	// dungeon enter
+	if(PPSTR(pCmd, "DUNGEON_JOIN") == 0)
 	{
-		if(GS()->IsPlayerInWorld(ClientID, CDungeonData::ms_aDungeon[Extra1].m_WorldID))
+		// check valid dungeon
+		auto* pDungeon = GetDungeonByID(Extra1);
+		if(!pDungeon)
+			return true;
+
+		// check equal player world
+		if(GS()->IsPlayerInWorld(ClientID, pDungeon->GetWorldID()))
 		{
 			GS()->Chat(ClientID, "You are already in this dungeon!");
 			pPlayer->m_VotesData.UpdateVotesIf(MENU_DUNGEONS);
 			return true;
 		}
-		if(CDungeonData::ms_aDungeon[Extra1].IsDungeonPlaying())
+
+		// check is playing
+		if(pDungeon->IsPlaying())
 		{
 			GS()->Chat(ClientID, "At the moment players are passing this dungeon!");
 			pPlayer->m_VotesData.UpdateVotesIf(MENU_DUNGEONS);
 			return true;
 		}
 
-		if(pPlayer->Account()->GetLevel() < CDungeonData::ms_aDungeon[Extra1].m_Level)
+		// check valid level
+		if(pPlayer->Account()->GetLevel() < pDungeon->GetLevel())
 		{
 			GS()->Chat(ClientID, "Your level is low to pass this dungeon!");
 			pPlayer->m_VotesData.UpdateVotesIf(MENU_DUNGEONS);
 			return true;
 		}
 
-		if(!GS()->IsWorldType(WorldType::Dungeon))
-		{
-			pPlayer->GetSharedData().SetSpawnPosition(pPlayer->GetCharacter()->m_Core.m_Pos);
-			GS()->Core()->SaveAccount(pPlayer, ESaveType::SAVE_POSITION);
-		}
-
-		GS()->Chat(-1, "'{}' joined to Dungeon '{}'!", Server()->ClientName(ClientID), CDungeonData::ms_aDungeon[Extra1].m_aName);
+		// information and join
+		GS()->Chat(-1, "'{}' joined to Dungeon '{}'!", Server()->ClientName(ClientID), pDungeon->GetName());
 		GS()->Chat(ClientID, "You can vote for the choice of tank (Dungeon Tab)!");
-		pPlayer->ChangeWorld(CDungeonData::ms_aDungeon[Extra1].m_WorldID);
+		pPlayer->ChangeWorld(pDungeon->GetWorldID());
 		return true;
 	}
 
-	// dungeon exit
-	else if(PPSTR(pCmd, "DUNGEONEXIT") == 0)
+	//dungeon exit
+	if(PPSTR(pCmd, "DUNGEON_EXIT") == 0)
 	{
 		const int LatestCorrectWorldID = Core()->AccountManager()->GetLastVisitedWorldID(pPlayer);
 		pPlayer->ChangeWorld(LatestCorrectWorldID);
 		return true;
-	}*/
+	}
 
 	return false;
-}
-
-void CDungeonManager::InsertVotesDungeonTop(int DungeonID, VoteWrapper* pWrapper) const
-{
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_dungeons_records", "WHERE DungeonID = '{}' ORDER BY Lifetime ASC LIMIT 5", DungeonID);
-	while(pRes->next())
-	{
-		const int Rank = pRes->getRow();
-		const int UserID = pRes->getInt("UserID");
-		const int BaseSeconds = pRes->getInt("Lifetime");
-		const int BasePassageHelp = pRes->getInt("PassageHelp");
-
-		const int Minutes = BaseSeconds / 60;
-		const int Seconds = BaseSeconds - (BaseSeconds / 60 * 60);
-		pWrapper->Add("{}. {} | {}:{}min | {}P", Rank, Server()->GetAccountNickname(UserID), Minutes, Seconds, BasePassageHelp);
-	}
 }
 
 bool CDungeonManager::ShowDungeonsList(CPlayer* pPlayer, bool Story) const
@@ -127,9 +117,7 @@ bool CDungeonManager::ShowDungeonsList(CPlayer* pPlayer, bool Story) const
 		VoteWrapper VDungeon(ClientID, VWF_UNIQUE|VWF_STYLE_SIMPLE, "Lvl{} {} : Players {} : {} [{}%]",
 			pDungeon->GetLevel(), pDungeon->GetName(), pDungeon->GetPlayersNum(),
 			(pDungeon->IsPlaying() ? "Active dungeon" : "Waiting players"), pDungeon->GetProgress());
-
-		InsertVotesDungeonTop(pDungeon->GetID(), &VDungeon);
-		VDungeon.AddOption("DUNGEONJOIN", pDungeon->GetID(), "Join dungeon {}", pDungeon->GetName());
+		VDungeon.AddOption("DUNGEON_JOIN", pDungeon->GetID(), "Join dungeon {}", pDungeon->GetName());
 		Found = true;
 	}
 
@@ -153,7 +141,7 @@ void CDungeonManager::ShowInsideDungeonMenu(CPlayer* pPlayer) const
 
 	// exit from dungeon
 	VoteWrapper::AddLine(ClientID);
-	VoteWrapper(ClientID).AddOption("DUNGEONEXIT", "Exit dungeon {} (warning)", pDungeon->GetName());
+	VoteWrapper(ClientID).AddOption("DUNGEON_EXIT", "Exit dungeon {} (warning)", pDungeon->GetName());
 }
 
 CDungeonData* CDungeonManager::GetDungeonByID(int DungeonID) const

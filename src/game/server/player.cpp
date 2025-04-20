@@ -839,7 +839,7 @@ int CPlayer::GetTotalAttributeValue(AttributeIdentifier ID) const
 	return totalValue;
 }
 
-float CPlayer::GetAttributeChance(AttributeIdentifier ID) const
+std::optional<float> CPlayer::GetAttributeChance(AttributeIdentifier ID) const
 {
 	// use a lambda to calculate chance
 	int attributeValue = GetTotalAttributeValue(ID);
@@ -862,7 +862,7 @@ float CPlayer::GetAttributeChance(AttributeIdentifier ID) const
 			return calculateChance(0.0f, 0.0015f, 30.0f);
 
 		default:
-			return 0.f;
+			return std::nullopt;
 	}
 }
 
