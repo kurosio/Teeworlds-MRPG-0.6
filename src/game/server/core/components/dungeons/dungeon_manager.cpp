@@ -34,7 +34,7 @@ bool CDungeonManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		VoteWrapper::AddEmptyline(ClientID);
 
 		// dungeon list
-		VoteWrapper(ClientID).Add("\u262C Story dungeon's");
+		VoteWrapper(ClientID).Add("\u262C Test mode dungeon");
 		if(!ShowDungeonsList(pPlayer, true))
 			VoteWrapper(ClientID).Add("No dungeons available at the moment!");
 		VoteWrapper::AddEmptyline(ClientID);
@@ -43,7 +43,6 @@ bool CDungeonManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		ShowInsideDungeonMenu(pPlayer);
 
 		// add backpage buttom
-		VoteWrapper::AddEmptyline(ClientID);
 		VoteWrapper::AddBackpage(ClientID);
 		return true;
 	}
@@ -64,6 +63,14 @@ bool CDungeonManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, co
 		auto* pDungeon = GetDungeonByID(Extra1);
 		if(!pDungeon)
 			return true;
+
+		// avaialbe dungeon join
+		if(!g_Config.m_SvAvailableDungeonJoin)
+		{
+			GS()->Chat(ClientID, "Dungeons disabled by server.");
+			pPlayer->m_VotesData.UpdateVotesIf(MENU_DUNGEONS);
+			return true;
+		}
 
 		// check equal player world
 		if(GS()->IsPlayerInWorld(ClientID, pDungeon->GetWorldID()))
@@ -136,6 +143,7 @@ void CDungeonManager::ShowInsideDungeonMenu(CPlayer* pPlayer) const
 	// exit from dungeon
 	const char* pDungeonName = pController->GetDungeon()->GetName();
 	VoteWrapper(ClientID).AddOption("DUNGEON_EXIT", "Exit dungeon {} (warning)", pDungeonName);
+	VoteWrapper::AddEmptyline(ClientID);
 }
 
 CDungeonData* CDungeonManager::GetDungeonByID(int DungeonID) const

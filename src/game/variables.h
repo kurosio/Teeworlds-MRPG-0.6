@@ -115,6 +115,7 @@ MACRO_CONFIG_INT(SvDroppedItemLifetime, sv_dropped_item_lifetime, 20, 5, 60, CFG
 // -----------------------
 // Dungeon sync balance
 // -----------------------
+MACRO_CONFIG_INT(SvAvailableDungeonJoin, sv_available_dungeon_join, 1, 0, 1, CFGFLAG_SERVER, "Available join to dungeon world");
 MACRO_CONFIG_INT(SvDungeonDamageTypeFactor, sv_dungeon_damage_type_factor, 10, 1, 100, CFGFLAG_SERVER, "Dungeon sync damage type factor");
 MACRO_CONFIG_INT(SvDungeonCritChanceFactor, sv_dungeon_crit_chance_factor, 5, 1, 100, CFGFLAG_SERVER, "Dungeon sync crit chance factor");
 MACRO_CONFIG_INT(SvDungeonOtherTypeFactor, sv_dungeon_other_type_factor, 30, 1, 100, CFGFLAG_SERVER, "Dungeon sync other type factor");

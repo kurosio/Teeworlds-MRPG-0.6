@@ -414,17 +414,17 @@ void CGameControllerDungeon::Tick()
 			ChangeState(CDungeonData::STATE_FINISHED);
 	}
 
-	auto test = [&](int PlayersNum, int fromValue, int PowerLevel, float BaseFactor, int MinValue)
-	{
-		float doorMultiplier = 1.0f + (PowerLevel - 1) * 0.15f;
-		auto attributeValue = static_cast<int>(fromValue * BaseFactor * doorMultiplier / std::sqrt(PlayersNum));
-		return std::max(MinValue, attributeValue);
-	};
+	//auto test = [&](int PlayersNum, int fromValue, int PowerLevel, float BaseFactor, int MinValue)
+	//{
+	//	float doorMultiplier = 1.0f + (PowerLevel - 1) * 0.15f;
+	//	auto attributeValue = static_cast<int>(fromValue * BaseFactor * doorMultiplier / std::sqrt(PlayersNum));
+	//	return std::max(MinValue, attributeValue);
+	//};
 
-	int Players = 1;
-	int FromH = 26;
-	int Level = 1;
-	dbg_msg("test", "HP (%d:Lv%d) (%d -> %d).", Players, Level, FromH, test(Players, FromH, Level, (float)g_Config.m_SvDungeonOtherTypeFactor / 100.f, 5));
+	//int Players = 1;
+	//int FromH = 26;
+	//int Level = 1;
+	//dbg_msg("test", "HP (%d:Lv%d) (%d -> %d).", Players, Level, FromH, test(Players, FromH, Level, (float)g_Config.m_SvDungeonOtherTypeFactor / 100.f, 5));
 
 	StateTick();
 	IGameController::Tick();
