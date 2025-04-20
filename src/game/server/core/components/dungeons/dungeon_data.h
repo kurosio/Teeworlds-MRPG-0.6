@@ -13,7 +13,6 @@ class CDungeonData : public MultiworldIdentifiableData< std::deque< CDungeonData
 	vec2 m_WaitingDoorPos {};
 
 	int m_State {};
-	bool m_Playing {};
 	int m_Progress {};
 	int m_Players {};
 	int m_WorldID {};
@@ -54,8 +53,7 @@ public:
 	void UpdateProgress(int Progress) { m_Progress = Progress; }
 	void UpdatePlayers(int Players) { m_Players = Players; }
 
-
-	bool IsPlaying() const { return m_Playing; }
+	bool IsPlaying() const { return m_State >= STATE_STARTED; }
 	int GetProgress() const { return m_Progress; }
 	int GetPlayersNum() const { return m_Players; }
 };
