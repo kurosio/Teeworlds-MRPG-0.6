@@ -790,18 +790,19 @@ int CPlayer::GetTotalAttributeValue(AttributeIdentifier ID) const
 {
 	int totalValue = 0;
 
+	const auto& vPlayerItems = CPlayerItem::Data()[m_ClientID];
 	auto addItemEnchantStats = [&](const std::optional<int>& ItemIdOpt)
 	{
-		if(ItemIdOpt && CPlayerItem::Data()[m_ClientID].contains(*ItemIdOpt))
+		if(ItemIdOpt && vPlayerItems.contains(*ItemIdOpt))
 		{
-			auto& PlayerItem = CPlayerItem::Data()[m_ClientID].at(*ItemIdOpt);
+			auto& PlayerItem = vPlayerItems.at(*ItemIdOpt);
 			if(PlayerItem.HasItem() && PlayerItem.GetDurability() > 0)
 				totalValue += PlayerItem.GetEnchantStats(ID);
 		}
 	};
 
 	// counting by modules
-	for(const auto& [ItemID, PlayerItem] : CPlayerItem::Data()[m_ClientID])
+	for(const auto& [ItemID, PlayerItem] : vPlayerItems)
 	{
 		if(PlayerItem.HasItem() && PlayerItem.Info()->IsEquipmentNonSlot() && PlayerItem.GetDurability() > 0)
 			totalValue += PlayerItem.GetEnchantStats(ID);
@@ -856,6 +857,9 @@ float CPlayer::GetAttributeChance(AttributeIdentifier ID) const
 
 		case AttributeIdentifier::Lucky:
 			return calculateChance(5.0f, 0.0015f, 20.0f);
+
+		case AttributeIdentifier::LuckyDropItem:
+			return calculateChance(0.0f, 0.0015f, 30.0f);
 
 		default:
 			return 0.f;

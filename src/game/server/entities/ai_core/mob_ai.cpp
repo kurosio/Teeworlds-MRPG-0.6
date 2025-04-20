@@ -84,7 +84,7 @@ void CMobAI::OnRewardPlayer(CPlayer* pPlayer, vec2 Force) const
 
 	// drop item's
 	{
-		const float ActiveLuckyDrop = clamp((float)pPlayer->GetTotalAttributeValue(AttributeIdentifier::LuckyDropItem) / 100.0f, 0.01f, 10.0f);
+		const float ActiveLuckyDrop = pPlayer->GetAttributeChance(AttributeIdentifier::LuckyDropItem);
 
 		for(int i = 0; i < MAX_DROPPED_FROM_MOBS; i++)
 		{
