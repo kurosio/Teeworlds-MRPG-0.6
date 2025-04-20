@@ -19,5 +19,6 @@ public:
 	bool ShowDungeonsList(CPlayer* pPlayer, bool Story) const;
 	void ShowInsideDungeonMenu(CPlayer* pPlayer) const;
 	CDungeonData* GetDungeonByID(int DungeonID) const;
+	CDungeonData* GetDungeonByWorldID(int WorldID) const;
 };
 #endif

@@ -2,7 +2,7 @@
 
 #include <game/server/gamecontext.h>
 #include <game/server/core/components/accounts/account_manager.h>
-#include "game/server/worldmodes/dungeon.h"
+#include <game/server/worldmodes/dungeon.h>
 
 void CDungeonManager::OnPreInit()
 {
@@ -31,20 +31,16 @@ bool CDungeonManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		VoteWrapper VInfo(ClientID, VWF_SEPARATE_CLOSED, "Dungeons Information");
 		VInfo.Add("In this section you can choose a dungeon");
 		VInfo.Add("View the fastest players on the passage");
+		VoteWrapper::AddEmptyline(ClientID);
 
-		VoteWrapper::AddLine(ClientID);
 		VoteWrapper(ClientID).Add("\u262C Story dungeon's");
 		if(!ShowDungeonsList(pPlayer, true))
 			VoteWrapper(ClientID).Add("No dungeons available at the moment!");
+		VoteWrapper::AddEmptyline(ClientID);
 
-		VoteWrapper::AddLine(ClientID);
-		VoteWrapper(ClientID).Add("\u274A Alternative story dungeon's");
-		if(!ShowDungeonsList(pPlayer, false))
-			VoteWrapper(ClientID).Add("No dungeons available at the moment!");
-
-		VoteWrapper::AddLine(ClientID);
 		ShowInsideDungeonMenu(pPlayer);
 
+		VoteWrapper::AddEmptyline(ClientID);
 		VoteWrapper::AddBackpage(ClientID);
 		return true;
 	}
@@ -92,7 +88,6 @@ bool CDungeonManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, co
 
 		// information and join
 		GS()->Chat(-1, "'{}' joined to Dungeon '{}'!", Server()->ClientName(ClientID), pDungeon->GetName());
-		GS()->Chat(ClientID, "You can vote for the choice of tank (Dungeon Tab)!");
 		pPlayer->ChangeWorld(pDungeon->GetWorldID());
 		return true;
 	}
@@ -126,16 +121,12 @@ bool CDungeonManager::ShowDungeonsList(CPlayer* pPlayer, bool Story) const
 
 void CDungeonManager::ShowInsideDungeonMenu(CPlayer* pPlayer) const
 {
-	if(!GS()->IsWorldType(WorldType::Dungeon))
-		return;
-
 	const int ClientID = pPlayer->GetCID();
 	const auto* pController = (CGameControllerDungeon*)GS()->m_pController;
 	if(!pController)
 		return;
 
-	int DungeonID = pController->GetDungeonID();
-	auto* pDungeon = GetDungeonByID(DungeonID);
+	auto* pDungeon = pController->GetDungeon();
 	if(!pDungeon)
 		return;
 
@@ -149,6 +140,16 @@ CDungeonData* CDungeonManager::GetDungeonByID(int DungeonID) const
 	auto pDungeon = std::ranges::find_if(CDungeonData::Data(), [DungeonID](auto* pDungeon)
 	{
 		return pDungeon->GetID() == DungeonID;
+	});
+
+	return pDungeon != CDungeonData::Data().end() ? *pDungeon : nullptr;
+}
+
+CDungeonData* CDungeonManager::GetDungeonByWorldID(int WorldID) const
+{
+	auto pDungeon = std::ranges::find_if(CDungeonData::Data(), [WorldID](auto* pDungeon)
+	{
+		return pDungeon->GetWorldID() == WorldID;
 	});
 
 	return pDungeon != CDungeonData::Data().end() ? *pDungeon : nullptr;

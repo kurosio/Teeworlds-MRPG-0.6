@@ -8,22 +8,14 @@
 
 #include <game/server/core/components/dungeons/dungeon_data.h>
 
-enum DungeonState
-{
-	DUNGEON_WAITING,
-	DUNGEON_WAITING_START,
-	DUNGEON_STARTED,
-	DUNGEON_WAITING_FINISH,
-	DUNGEON_FINISHED,
-};
+class CLogicDungeonDoorKey;
+class CEntityDungeonWaitingDoor;
 
-class DungeonDoor;
 class CGameControllerDungeon : public IGameController
 {
-	DungeonDoor* m_DungeonDoor {};
-	int m_StateDungeon {};
-	int m_DungeonID {};
-	int m_WorldID {};
+	CDungeonData* m_pDungeon {};
+	CEntityDungeonWaitingDoor* m_pEntWaitingDoor {};
+	std::vector< CLogicDungeonDoorKey* > m_vpEntLogicDoor {};
 
 	int m_ActivePlayers {};
 	int m_TankClientID {};
@@ -37,7 +29,8 @@ class CGameControllerDungeon : public IGameController
 	int m_ShiftRoundStartTick {};
 
 public:
-	CGameControllerDungeon(class CGS* pGameServer);
+	CGameControllerDungeon(class CGS* pGS, CDungeonData* pDungeon);
+	~CGameControllerDungeon() override;
 
 	void Tick() override;
 	void Snap() override;
@@ -46,13 +39,13 @@ public:
 	bool OnCharacterSpawn(class CCharacter* pChr) override;
 	int GetAttributeDungeonSyncByClass(ProfessionIdentifier ProfID, AttributeIdentifier ID) const;
 	int GetSyncFactor() const;
-	int GetDungeonID() const { return m_DungeonID; }
+	CDungeonData* GetDungeon() const { return m_pDungeon; }
 
 private:
 	int PlayersReady() const;
-	int PlayersNum() const;
-	int LeftMobsToWin() const;
-	int CountMobs() const;
+	int GetPlayersNum() const;
+	int GetRemainingMobsNum() const;
+	int GetTotalMobsNum() const;
 
 	void ChangeState(int State);
 	void StateTick();
@@ -63,13 +56,16 @@ private:
 	void ResetDoorKeyState();
 };
 
-class DungeonDoor : public CEntity
+class CEntityDungeonWaitingDoor : public CEntity
 {
-	int m_State {};
-public:
-	DungeonDoor(CGameWorld *pGameWorld, vec2 Pos);
+	int m_Closed {};
 
-	void SetState(int State) { m_State = State; };
+public:
+	CEntityDungeonWaitingDoor(CGameWorld *pGameWorld, vec2 Pos);
+
+	void Open() { m_Closed = false; }
+	void Close() { m_Closed = true; }
+
 	void Tick() override;
 	void Snap(int SnappingClient) override;
 };

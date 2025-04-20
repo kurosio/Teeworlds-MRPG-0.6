@@ -19,6 +19,7 @@
 #include "core/components/quests/quest_manager.h"
 #include "core/components/skills/skill_manager.h"
 
+#include "core/components/dungeons/dungeon_manager.h"
 #include "core/components/achievements/achievement_listener.h"
 #include "core/components/inventory/inventory_listener.h"
 #include "core/components/Eidolons/EidolonInfoData.h"
@@ -1483,22 +1484,28 @@ void CGS::InitWorld()
 	switch(worldType)
 	{
 		case WorldType::Dungeon:
-			m_pController = new CGameControllerDungeon(this);
+		{
+			auto* pDungeon = Core()->DungeonManager()->GetDungeonByWorldID(m_WorldID);
+			dbg_assert(pDungeon != nullptr, "can't create dungeon without dungeon context");
+			m_pController = new CGameControllerDungeon(this, pDungeon);
 			worldTypeStr = "Dungeon";
 			m_AllowedPVP = false;
 			break;
-
+		}
 		case WorldType::Tutorial:
+		{
 			m_pController = new CGameControllerTutorial(this);
 			worldTypeStr = "Tutorial";
 			m_AllowedPVP = false;
 			break;
-
+		}
 		default:
+		{
 			m_pController = new CGameControllerDefault(this);
 			worldTypeStr = "Default";
 			m_AllowedPVP = true;
 			break;
+		}
 	}
 
 	// initialize controller and update game state

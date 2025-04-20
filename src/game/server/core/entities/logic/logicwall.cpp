@@ -318,25 +318,22 @@ void CLogicDungeonDoorKey::Tick()
 
 bool CLogicDungeonDoorKey::SyncStateChanges()
 {
-	// sync with bots
+	bool OpenState = true;
+
 	for (int i = MAX_PLAYERS; i < MAX_CLIENTS; i++)
 	{
-		CPlayerBot* BotPlayer = static_cast<CPlayerBot*>(GS()->GetPlayer(i));
-		if (BotPlayer && BotPlayer->GetCharacter() && BotPlayer->GetBotType() == EBotsType::TYPE_BOT_MOB
-			&& BotPlayer->GetBotID() == m_BotID && GS()->GetWorldID() == BotPlayer->GetCurrentWorldID())
-		{
-			m_OpenedDoor = false;
-			return false;
-		}
+		auto* pPlayer = dynamic_cast<CPlayerBot*>(GS()->GetPlayer(i));
+		if(!pPlayer || !pPlayer->GetCharacter())
+			continue;
+
+		if(pPlayer->GetBotType() != EBotsType::TYPE_BOT_MOB || pPlayer->GetBotID() != m_BotID)
+			continue;
+
+		OpenState = false;
 	}
 
-
-	if (!m_OpenedDoor)
-	{
-		m_OpenedDoor = true;
-		return true;
-	}
-	return false;
+	m_OpenedDoor = OpenState;
+	return !OpenState;
 }
 
 void CLogicDungeonDoorKey::Snap(int SnappingClient)
@@ -344,13 +341,5 @@ void CLogicDungeonDoorKey::Snap(int SnappingClient)
 	if (m_OpenedDoor || NetworkClipped(SnappingClient))
 		return;
 
-	CNetObj_Laser *pObj = static_cast<CNetObj_Laser *>(Server()->SnapNewItem(NETOBJTYPE_LASER, GetID(), sizeof(CNetObj_Laser)));
-	if (!pObj)
-		return;
-
-	pObj->m_X = int(m_Pos.x);
-	pObj->m_Y = int(m_Pos.y);
-	pObj->m_FromX = int(m_PosTo.x);
-	pObj->m_FromY = int(m_PosTo.y);
-	pObj->m_StartTick = Server()->Tick()-3;
+	GS()->SnapLaser(SnappingClient, GetID(), m_Pos, m_PosTo, Server()->Tick() - 3, LASERTYPE_DOOR);
 }
