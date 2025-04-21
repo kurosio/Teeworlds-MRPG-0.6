@@ -8,6 +8,13 @@ std::map< int, NpcBotInfo > NpcBotInfo::ms_aNpcBot;
 std::map< int, QuestBotInfo > QuestBotInfo::ms_aQuestBot;
 std::map< int, MobBotInfo > MobBotInfo::ms_aMobBot;
 
+void MobBotInfo::InitBehaviors(const DBSet& Behavior)
+{
+	if(Behavior.hasSet("sleepy"))
+		m_BehaviorsFlags |= MOBFLAG_BEHAVIOR_SLEEPY;
+	if(Behavior.hasSet("slower"))
+		m_BehaviorsFlags |= MOBFLAG_BEHAVIOR_SLOWER;
+}
 
 /************************************************************************/
 /*  Global data bot                                               */

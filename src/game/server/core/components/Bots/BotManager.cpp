@@ -222,8 +222,11 @@ void CBotManager::InitMobsBots(const char* pWhereLocalWorld)
 		MobBot.m_Level = Level;
 		MobBot.m_RespawnTick = RespawnTick;
 		MobBot.m_Radius = Radius;
-		MobBot.m_Behaviors = Behavior;
 		MobBot.m_WorldID = WorldID;
+
+		// initialize behaviors
+		auto BehaviorSet = DBSet(Behavior);
+		MobBot.InitBehaviors(BehaviorSet);
 
 		// initialize debuffs
 		auto DebuffSet = DBSet(pRes->getString("Debuffs"));

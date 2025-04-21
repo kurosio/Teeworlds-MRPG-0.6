@@ -44,6 +44,24 @@ void CMobAI::OnGiveRandomEffect(int ClientID)
 	}
 }
 
+void CMobAI::OnHandleTunning(CTuningParams* pTuning)
+{
+	// behavior slower
+	if(m_pMobInfo->HasBehaviorFlag(MOBFLAG_BEHAVIOR_SLOWER))
+	{
+		pTuning->m_Gravity = 0.25f;
+		pTuning->m_GroundJumpImpulse = 8.0f;
+		pTuning->m_AirFriction = 0.75f;
+		pTuning->m_AirControlAccel = 1.0f;
+		pTuning->m_AirControlSpeed = 3.75f;
+		pTuning->m_AirJumpImpulse = 8.0f;
+		pTuning->m_HookFireSpeed = 30.0f;
+		pTuning->m_HookDragAccel = 1.5f;
+		pTuning->m_HookDragSpeed = 8.0f;
+		pTuning->m_PlayerHooking = 0;
+	}
+}
+
 void CMobAI::OnRewardPlayer(CPlayer* pPlayer, vec2 Force) const
 {
 	const int ClientID = pPlayer->GetCID();
@@ -164,6 +182,17 @@ void CMobAI::OnTargetRules(float Radius)
 
 void CMobAI::Process()
 {
+	// behavior sleepy
+	if(m_pMobInfo->HasBehaviorFlag(MOBFLAG_BEHAVIOR_SLEEPY) &&
+		m_pPlayer->m_aPlayerTick[LastDamage] < Server()->Tick() + (Server()->TickSpeed() * 5))
+	{
+		GS()->SendEmoticon(m_ClientID, EMOTICON_ZZZ);
+		m_pCharacter->SetEmote(EMOTE_BLINK, 1, false);
+		m_pCharacter->ResetInput();
+		return;
+	}
+
+	// update
 	m_pCharacter->UpdateTarget(1000.f);
 	m_pCharacter->ResetInput();
 

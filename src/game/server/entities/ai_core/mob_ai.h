@@ -16,9 +16,11 @@ public:
 
 	void OnSpawn() override;
 	void OnGiveRandomEffect(int ClientID) override;
+	void OnHandleTunning(CTuningParams* pTuning) override;
 	void OnRewardPlayer(CPlayer* pPlayer, vec2 Force) const override;
 	void OnTargetRules(float Radius) override;
 	void Process() override;
+
 
 private:
 	void ShowHealth() const;
