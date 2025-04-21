@@ -58,6 +58,7 @@ void CGameControllerDungeon::ChangeState(int State)
 		m_SafetyTick = 0;
 		m_WaitingTick = 0;
 		m_LastWaitingTick = 0;
+		m_StartedPlayersNum = 0;
 		m_pDungeon->UpdateProgress(0);
 		m_pEntWaitingDoor->Close();
 		SetMobsSpawn(false);
@@ -84,6 +85,7 @@ void CGameControllerDungeon::ChangeState(int State)
 
 		// update
 		PrepareSyncFactors();
+		m_StartedPlayersNum = GetPlayersNum();
 		m_SafetyTick = Server()->TickSpeed() * 30;
 		m_EndTick = Server()->TickSpeed() * 600;
 		m_pEntWaitingDoor->Open();
@@ -119,7 +121,8 @@ void CGameControllerDungeon::ChangeState(int State)
 	}
 }
 
-void CGameControllerDungeon::StateTick()
+
+void CGameControllerDungeon::Process()
 {
 	const auto PlayersNum = GetPlayersNum();
 	const auto State = m_pDungeon->GetState();
@@ -199,6 +202,7 @@ void CGameControllerDungeon::StateTick()
 	}
 }
 
+
 void CGameControllerDungeon::OnCharacterDeath(CPlayer* pVictim, CPlayer* pKiller, int Weapon)
 {
 	IGameController::OnCharacterDeath(pVictim, pKiller, Weapon);
@@ -221,6 +225,7 @@ void CGameControllerDungeon::OnCharacterDeath(CPlayer* pVictim, CPlayer* pKiller
 		}
 	}
 }
+
 
 bool CGameControllerDungeon::OnCharacterSpawn(CCharacter* pChr)
 {
@@ -258,6 +263,7 @@ bool CGameControllerDungeon::OnCharacterSpawn(CCharacter* pChr)
 	return true;
 }
 
+
 void CGameControllerDungeon::KillAllPlayers() const
 {
 	for(int i = 0; i < MAX_PLAYERS; i++)
@@ -270,6 +276,7 @@ void CGameControllerDungeon::KillAllPlayers() const
 	}
 }
 
+
 void CGameControllerDungeon::UpdateDoorKeyState()
 {
 	for(auto* pDoor = (CLogicDungeonDoorKey*)GS()->m_World.FindFirst(CGameWorld::ENTTYPE_DUNGEON_PROGRESS_DOOR);
@@ -280,12 +287,14 @@ void CGameControllerDungeon::UpdateDoorKeyState()
 	}
 }
 
+
 void CGameControllerDungeon::ResetDoorKeyState()
 {
 	for(auto* pDoor = (CLogicDungeonDoorKey*)GS()->m_World.FindFirst(CGameWorld::ENTTYPE_DUNGEON_PROGRESS_DOOR);
 		pDoor; pDoor = (CLogicDungeonDoorKey*)pDoor->TypeNext())
 		pDoor->ResetDoor();
 }
+
 
 int CGameControllerDungeon::GetTotalMobsNum() const
 {
@@ -303,6 +312,7 @@ int CGameControllerDungeon::GetTotalMobsNum() const
 	return NumMobs;
 }
 
+
 int CGameControllerDungeon::GetRemainingMobsNum() const
 {
 	int LeftMobs = 0;
@@ -319,6 +329,7 @@ int CGameControllerDungeon::GetRemainingMobsNum() const
 	return LeftMobs;
 }
 
+
 int CGameControllerDungeon::GetPlayersReadyNum() const
 {
     int ReadyPlayers = 0;
@@ -332,6 +343,7 @@ int CGameControllerDungeon::GetPlayersReadyNum() const
 
     return ReadyPlayers;
 }
+
 
 int CGameControllerDungeon::GetPlayersNum() const
 {
@@ -387,7 +399,7 @@ void CGameControllerDungeon::PrepareSyncFactors()
 int CGameControllerDungeon::CalculateMobAttribute(AttributeIdentifier ID, int PowerLevel, float BaseFactor, int MinValue) const
 {
 	auto PlayersTotalAttribute = GetAttributeDungeonSync(ID);
-	auto PlayersNum = GetPlayersNum();
+	auto PlayersNum = m_StartedPlayersNum;
 	float PowerLevelMultiplier = 1.0f + (PowerLevel - 1) * 0.15f;
 	auto AttributeValue = static_cast<int>(PlayersTotalAttribute * BaseFactor * PowerLevelMultiplier / std::sqrt(PlayersNum));
 	return std::max(MinValue, AttributeValue);
@@ -409,19 +421,7 @@ void CGameControllerDungeon::Tick()
 			KillAllPlayers();
 	}
 
-	//auto test = [&](int PlayersNum, int fromValue, int PowerLevel, float BaseFactor, int MinValue)
-	//{
-	//	float doorMultiplier = 1.0f + (PowerLevel - 1) * 0.15f;
-	//	auto attributeValue = static_cast<int>(fromValue * BaseFactor * doorMultiplier / std::sqrt(PlayersNum));
-	//	return std::max(MinValue, attributeValue);
-	//};
-
-	//int Players = 1;
-	//int FromH = 26;
-	//int Level = 1;
-	//dbg_msg("test", "HP (%d:Lv%d) (%d -> %d).", Players, Level, FromH, test(Players, FromH, Level, (float)g_Config.m_SvDungeonOtherTypeFactor / 100.f, 5));
-
-	StateTick();
+	Process();
 	IGameController::Tick();
 }
 

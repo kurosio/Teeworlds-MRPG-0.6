@@ -21,6 +21,7 @@ class CGameControllerDungeon : public IGameController
 
 	std::map<AttributeIdentifier, int> m_vSyncFactor {};
 
+	int m_StartedPlayersNum {};
 	int m_LastWaitingTick {};
 	int m_WaitingTick {};
 	int m_FinishTick {};
@@ -52,7 +53,7 @@ private:
 	int GetTotalMobsNum() const;
 
 	void ChangeState(int State);
-	void StateTick();
+	void Process();
 	void SetMobsSpawn(bool AllowedSpawn);
 	void KillAllPlayers() const;
 
