@@ -184,10 +184,13 @@ void CMobAI::Process()
 {
 	// behavior sleepy
 	if(m_pMobInfo->HasBehaviorFlag(MOBFLAG_BEHAVIOR_SLEEPY) &&
-		m_pPlayer->m_aPlayerTick[LastDamage] < Server()->Tick() + (Server()->TickSpeed() * 5))
+		(m_pPlayer->m_aPlayerTick[LastDamage] + (Server()->TickSpeed() * 5)) < Server()->Tick())
 	{
-		GS()->SendEmoticon(m_ClientID, EMOTICON_ZZZ);
-		m_pCharacter->SetEmote(EMOTE_BLINK, 1, false);
+		if(Server()->Tick() % Server()->TickSpeed() == 0)
+		{
+			GS()->SendEmoticon(m_ClientID, EMOTICON_ZZZ);
+			m_pCharacter->SetEmote(EMOTE_BLINK, 2, false);
+		}
 		m_pCharacter->ResetInput();
 		return;
 	}
