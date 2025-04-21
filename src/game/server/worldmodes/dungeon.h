@@ -6,7 +6,7 @@
 #include <game/server/entity.h>
 #include <game/server/gamecontroller.h>
 
-#include <game/server/core/components/dungeons/dungeon_data.h>
+#include <game/server/core/components/duties/dungeon_data.h>
 
 class CLogicDungeonDoorKey;
 class CEntityDungeonWaitingDoor;

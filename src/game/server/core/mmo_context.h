@@ -178,8 +178,12 @@ enum ETimePeriod
 enum class WorldType : int
 {
 	Default,
-	Dungeon,
 	Tutorial,
+	MiniGames,
+	Dungeon,
+	DeepDungeon,
+	TreasureDungeon,
+	PvP,
 };
 
 // drawboard events
@@ -578,9 +582,12 @@ enum EMenuList
 	MENU_CRAFTING_LIST,
 	MENU_CRAFTING_SELECT,
 
+	// Duties
+	MENU_DUTIES_LIST,
+	MENU_DUTIES_SELECT,
+
 	// Other menus
 	MENU_LEADERBOARD,
-	MENU_DUNGEONS,
 
 	// motd menus
 	MOTD_MENU_GUILD_HOUSE_DETAIL,

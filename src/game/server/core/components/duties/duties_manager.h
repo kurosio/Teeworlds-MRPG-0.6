@@ -1,12 +1,12 @@
-#ifndef GAME_SERVER_CORE_COMPONENTS_DUNGEONS_DUNGEON_MANAGER_H
-#define GAME_SERVER_CORE_COMPONENTS_DUNGEONS_DUNGEON_MANAGER_H
+#ifndef GAME_SERVER_CORE_COMPONENTS_DUTIES_DUTIES_MANAGER_H
+#define GAME_SERVER_CORE_COMPONENTS_DUTIES_DUTIES_MANAGER_H
 #include <game/server/core/mmo_component.h>
 
 #include "dungeon_data.h"
 
-class CDungeonManager : public MmoComponent
+class CDutiesManager : public MmoComponent
 {
-	~CDungeonManager() override
+	~CDutiesManager() override
 	{
 		mystd::freeContainer(CDungeonData::Data());
 	}
@@ -16,7 +16,8 @@ class CDungeonManager : public MmoComponent
 	bool OnSendMenuVotes(CPlayer* pPlayer, int Menulist) override;
 
 public:
-	bool ShowDungeonsList(CPlayer* pPlayer, bool Story) const;
+	void ShowDungeonsList(CPlayer* pPlayer, WorldType Type) const;
+	void ShowDungeonInfo(CPlayer* pPlayer, CDungeonData* pDungeon) const;
 	void ShowInsideDungeonMenu(CPlayer* pPlayer) const;
 	CDungeonData* GetDungeonByID(int DungeonID) const;
 	CDungeonData* GetDungeonByWorldID(int WorldID) const;

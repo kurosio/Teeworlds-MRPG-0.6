@@ -17,17 +17,19 @@ public:
 	CWorldDetail(const std::string_view& Type, int RespawnWorldID, int JailWorldID, int RequiredLevel)
 	{
 		if(Type == "default")
-		{
 			m_Type = WorldType::Default;
-		}
+		else if(Type == "mini_games")
+			m_Type = WorldType::MiniGames;
 		else if(Type == "dungeon")
-		{
 			m_Type = WorldType::Dungeon;
-		}
+		else if(Type == "deep_dungeon")
+			m_Type = WorldType::DeepDungeon;
+		else if(Type == "treasure_dungeon")
+			m_Type = WorldType::TreasureDungeon;
+		else if(Type == "pvp")
+			m_Type = WorldType::PvP;
 		else if(Type == "tutorial")
-		{
 			m_Type = WorldType::Tutorial;
-		}
 
 		m_RespawnWorldID = RespawnWorldID;
 		m_JailWorldID = JailWorldID;

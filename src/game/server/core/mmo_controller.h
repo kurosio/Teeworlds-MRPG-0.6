@@ -21,7 +21,7 @@ class CMmoController
 	class CGuildManager* m_pGuildManager;
 	class CGroupManager* m_pGroupManager;
 	class CCraftManager* m_pCraftManager;
-	class CDungeonManager* m_pDungeonManager;
+	class CDutiesManager* m_pDutiesManager;
 	class CHouseManager* m_pHouseManager;
 	class CMailboxManager* m_pMailboxManager;
 	class CSkillManager* m_pSkillManager;
@@ -43,7 +43,7 @@ public:
 	CWarehouseManager* WarehouseManager() const { return m_pWarehouseManager; }
 	CEidolonManager* EidolonManager() const { return m_pEidolonManager; }
 	CCraftManager* CraftManager() const { return m_pCraftManager; }
-	CDungeonManager* DungeonManager() const { return m_pDungeonManager; }
+	CDutiesManager* DutiesManager() const { return m_pDutiesManager; }
 	CHouseManager* HouseManager() const { return m_pHouseManager; }
 	CMailboxManager* MailboxManager() const { return m_pMailboxManager; }
 	CGuildManager* GuildManager() const { return m_pGuildManager; }
@@ -76,6 +76,7 @@ public:
 		std::map<std::string, BigInt> Data;
 	};
 	std::map<int, TempTopData> GetTopList(ToplistType Type, int Rows) const;
+	std::map<int, TempTopData> GetDungeonTopList(int DungeonID, int Rows) const;
 	void ShowTopList(class VoteWrapper* pWrapper, int ClientID, ToplistType Type, int Rows) const;
 };
 

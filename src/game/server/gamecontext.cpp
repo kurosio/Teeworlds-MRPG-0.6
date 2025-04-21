@@ -19,7 +19,7 @@
 #include "core/components/quests/quest_manager.h"
 #include "core/components/skills/skill_manager.h"
 
-#include "core/components/dungeons/dungeon_manager.h"
+#include "core/components/duties/duties_manager.h"
 #include "core/components/achievements/achievement_listener.h"
 #include "core/components/inventory/inventory_listener.h"
 #include "core/components/Eidolons/EidolonInfoData.h"
@@ -1485,7 +1485,7 @@ void CGS::InitWorld()
 	{
 		case WorldType::Dungeon:
 		{
-			auto* pDungeon = Core()->DungeonManager()->GetDungeonByWorldID(m_WorldID);
+			auto* pDungeon = Core()->DutiesManager()->GetDungeonByWorldID(m_WorldID);
 			dbg_assert(pDungeon != nullptr, "can't create dungeon without dungeon context");
 			m_pController = new CGameControllerDungeon(this, pDungeon);
 			worldTypeStr = "Dungeon";

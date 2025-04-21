@@ -8,7 +8,7 @@
 #include "core/components/accounts/account_manager.h"
 #include "core/components/achievements/achievement_manager.h"
 #include "core/components/Bots/BotManager.h"
-#include "core/components/dungeons/dungeon_data.h"
+#include "core/components/duties/dungeon_data.h"
 #include "core/components/Eidolons/EidolonInfoData.h"
 #include "core/components/guilds/guild_manager.h"
 #include "core/components/quests/quest_manager.h"

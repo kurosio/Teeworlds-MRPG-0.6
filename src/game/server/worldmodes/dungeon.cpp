@@ -9,7 +9,7 @@
 #include <game/server/core/entities/logic/logicwall.h>
 
 #include <game/server/core/components/accounts/account_manager.h>
-#include <game/server/core/components/dungeons/dungeon_manager.h>
+#include <game/server/core/components/duties/duties_manager.h>
 
 CGameControllerDungeon::CGameControllerDungeon(class CGS* pGS, CDungeonData* pDungeon) : IGameController(pGS)
 {
@@ -256,7 +256,7 @@ bool CGameControllerDungeon::OnCharacterSpawn(CCharacter* pChr)
 		if(!pPlayer || !GS()->IsPlayerInWorld(i, m_pDungeon->GetWorldID()))
 			continue;
 
-		pPlayer->m_VotesData.UpdateVotesIf(MENU_DUNGEONS);
+		pPlayer->m_VotesData.UpdateVotesIf(MENU_DUTIES_LIST);
 	}
 
 	IGameController::OnCharacterSpawn(pChr);

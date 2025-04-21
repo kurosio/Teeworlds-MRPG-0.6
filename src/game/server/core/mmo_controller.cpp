@@ -10,7 +10,7 @@
 #include "components/aethernet/aethernet_manager.h"
 #include "components/Bots/BotManager.h"
 #include "components/crafting/craft_manager.h"
-#include "components/dungeons/dungeon_manager.h"
+#include "components/duties/duties_manager.h"
 #include "components/Eidolons/EidolonManager.h"
 #include "components/groups/group_manager.h"
 #include "components/guilds/guild_manager.h"
@@ -37,7 +37,7 @@ CMmoController::CMmoController(CGS* pGameServer) : m_pGameServer(pGameServer)
 	m_System.add(m_pWarehouseManager = new CWarehouseManager);
 	m_System.add(new CAuctionManager);
 	m_System.add(m_pEidolonManager = new CEidolonManager);
-	m_System.add(m_pDungeonManager = new CDungeonManager);
+	m_System.add(m_pDutiesManager = new CDutiesManager);
 	m_System.add(new CAethernetManager);
 	m_System.add(m_pWorldManager = new CWorldManager);
 	m_System.add(m_pHouseManager = new CHouseManager);
@@ -168,7 +168,7 @@ bool CMmoController::OnSendMenuVotes(CPlayer* pPlayer, int Menulist) const
 
 		// Group & Social
 		VoteWrapper VGroup(ClientID, VWF_ALIGN_TITLE, "\u2600 Social & Group Menu");
-		VGroup.AddMenu(MENU_DUNGEONS, "\u262C Dungeons");
+		VGroup.AddMenu(MENU_DUTIES_LIST, "\u262C Duties");
 		VGroup.AddMenu(MENU_GROUP, "\u2042 Group");
 		VGroup.AddMenu(MENU_GUILD_FINDER, "\u20AA Guild finder");
 		if(pPlayer->Account()->HasGuild())
@@ -611,6 +611,22 @@ std::map<int, CMmoController::TempTopData> CMmoController::GetTopList(ToplistTyp
 				Iter++;
 			}
 		}
+	}
+
+	return vResult;
+}
+
+std::map<int, CMmoController::TempTopData> CMmoController::GetDungeonTopList(int DungeonID, int Rows) const
+{
+	std::map<int, TempTopData> vResult {};
+
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_dungeons_records", "WHERE DungeonID = '{}' ORDER BY Time DESC LIMIT {}", DungeonID, Rows);
+	while(pRes->next())
+	{
+		const auto Rank = pRes->getRow();
+		auto& field = vResult[Rank];
+		field.Name = GS()->Server()->GetAccountNickname(pRes->getInt("UserID"));
+		field.Data["Time"] = pRes->getInt("Time");
 	}
 
 	return vResult;
