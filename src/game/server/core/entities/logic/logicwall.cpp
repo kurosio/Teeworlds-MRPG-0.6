@@ -316,9 +316,9 @@ void CLogicDungeonDoorKey::Tick()
 	}
 }
 
-bool CLogicDungeonDoorKey::SyncStateChanges()
+bool CLogicDungeonDoorKey::Update()
 {
-	bool OpenState = true;
+	bool OldState = m_OpenedDoor;
 
 	for (int i = MAX_PLAYERS; i < MAX_CLIENTS; i++)
 	{
@@ -329,11 +329,10 @@ bool CLogicDungeonDoorKey::SyncStateChanges()
 		if(pPlayer->GetBotType() != EBotsType::TYPE_BOT_MOB || pPlayer->GetBotID() != m_BotID)
 			continue;
 
-		OpenState = false;
+		m_OpenedDoor = true;
 	}
 
-	m_OpenedDoor = OpenState;
-	return OpenState;
+	return OldState != m_OpenedDoor;
 }
 
 void CLogicDungeonDoorKey::Snap(int SnappingClient)

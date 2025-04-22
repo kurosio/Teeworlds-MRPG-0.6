@@ -78,11 +78,11 @@ class CLogicDungeonDoorKey : public CEntity
 	bool m_OpenedDoor;
 
 public:
-	CLogicDungeonDoorKey(CGameWorld *pGameWorld, vec2 Pos, int BotID);
+	CLogicDungeonDoorKey(CGameWorld* pGameWorld, vec2 Pos, int BotID);
 	virtual void Snap(int SnappingClient);
 	virtual void Tick();
 
-	bool SyncStateChanges();
+	bool Update();
 	void ResetDoor() { m_OpenedDoor = false; };
 };
 

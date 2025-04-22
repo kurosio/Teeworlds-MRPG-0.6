@@ -282,7 +282,7 @@ void CGameControllerDungeon::UpdateDoorKeyState()
 	for(auto* pDoor = (CLogicDungeonDoorKey*)GS()->m_World.FindFirst(CGameWorld::ENTTYPE_DUNGEON_PROGRESS_DOOR);
 		pDoor; pDoor = (CLogicDungeonDoorKey*)pDoor->TypeNext())
 	{
-		if(pDoor->SyncStateChanges())
+		if(pDoor->Update())
 			GS()->ChatWorld(m_pDungeon->GetWorldID(), "Dungeon:", "Door creaking.. Opened door somewhere!");
 	}
 }
