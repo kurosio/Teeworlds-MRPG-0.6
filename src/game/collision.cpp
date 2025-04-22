@@ -509,18 +509,21 @@ bool CCollision::IntersectLineColFlag(vec2 Pos0, vec2 Pos1, vec2* pOutCollision,
 
 void CCollision::FillLengthWall(int DepthTiles, vec2 Direction, vec2* pPos, vec2* pPosTo, bool OffsetStartlineOneTile) const
 {
-	if(pPos && pPosTo)
-	{
-		vec2 DirPos = Direction * ((float)DepthTiles * 32.f);
-		if(!IntersectLine(*pPos, *pPos + DirPos, nullptr, pPosTo))
-		{
-			*pPosTo = (*pPos + DirPos);
-		}
+	if(!pPos || !pPosTo)
+		return;
 
-		if(OffsetStartlineOneTile)
-		{
-			*pPos -= Direction * 30;
-		}
+	vec2 NormDir = normalize(Direction);
+	vec2 StartPos = *pPos;
+	vec2 EndPos = StartPos + NormDir * (DepthTiles * 32.0f);
+
+	if(!IntersectLine(StartPos, EndPos, nullptr, pPosTo))
+	{
+		*pPosTo = EndPos;
+	}
+
+	if(OffsetStartlineOneTile)
+	{
+		*pPos = StartPos - NormDir * 30.0f;
 	}
 }
 

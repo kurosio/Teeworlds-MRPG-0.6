@@ -1,12 +1,11 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
+#include "entities/waiting_door.h"
+#include "entities/progress_door.h"
 #include "dungeon.h"
 
 #include <game/server/entity.h>
 #include <game/server/gamecontext.h>
-
-#include <game/server/core/entities/logic/botwall.h>
-#include <game/server/core/entities/logic/logicwall.h>
 
 #include <game/server/core/components/accounts/account_manager.h>
 #include <game/server/core/components/duties/duties_manager.h>
@@ -25,7 +24,7 @@ CGameControllerDungeon::CGameControllerDungeon(class CGS* pGS, CDungeonData* pDu
 	{
 		const auto RequiredBotID = pRes->getInt("BotID");
 		const auto DoorPos = vec2(pRes->getInt("PosX"), pRes->getInt("PosY"));
-		m_vpEntLogicDoor.emplace_back(new CLogicDungeonDoorKey(&GS()->m_World, DoorPos, RequiredBotID));
+		m_vpEntLogicDoor.emplace_back(new CEntityDungeonProgressDoor(&GS()->m_World, DoorPos, RequiredBotID));
 	}
 
 	// update state
@@ -279,8 +278,8 @@ void CGameControllerDungeon::KillAllPlayers() const
 
 void CGameControllerDungeon::UpdateDoorKeyState()
 {
-	for(auto* pDoor = (CLogicDungeonDoorKey*)GS()->m_World.FindFirst(CGameWorld::ENTTYPE_DUNGEON_PROGRESS_DOOR);
-		pDoor; pDoor = (CLogicDungeonDoorKey*)pDoor->TypeNext())
+	for(auto* pDoor = (CEntityDungeonProgressDoor*)GS()->m_World.FindFirst(CGameWorld::ENTTYPE_DUNGEON_DOOR);
+		pDoor; pDoor = (CEntityDungeonProgressDoor*)pDoor->TypeNext())
 	{
 		if(pDoor->Update())
 			GS()->ChatWorld(m_pDungeon->GetWorldID(), "Dungeon:", "Door creaking.. Opened door somewhere!");
@@ -290,8 +289,8 @@ void CGameControllerDungeon::UpdateDoorKeyState()
 
 void CGameControllerDungeon::ResetDoorKeyState()
 {
-	for(auto* pDoor = (CLogicDungeonDoorKey*)GS()->m_World.FindFirst(CGameWorld::ENTTYPE_DUNGEON_PROGRESS_DOOR);
-		pDoor; pDoor = (CLogicDungeonDoorKey*)pDoor->TypeNext())
+	for(auto* pDoor = (CEntityDungeonProgressDoor*)GS()->m_World.FindFirst(CGameWorld::ENTTYPE_DUNGEON_DOOR);
+		pDoor; pDoor = (CEntityDungeonProgressDoor*)pDoor->TypeNext())
 		pDoor->ResetDoor();
 }
 
@@ -447,40 +446,4 @@ void CGameControllerDungeon::Snap()
 	pGameInfoEx->m_Flags = GAMEINFOFLAG_GAMETYPE_PLUS | GAMEINFOFLAG_ALLOW_EYE_WHEEL | GAMEINFOFLAG_ALLOW_HOOK_COLL | GAMEINFOFLAG_PREDICT_VANILLA;
 	pGameInfoEx->m_Flags2 = GAMEINFOFLAG2_GAMETYPE_CITY | GAMEINFOFLAG2_ALLOW_X_SKINS | GAMEINFOFLAG2_HUD_DDRACE | GAMEINFOFLAG2_HUD_HEALTH_ARMOR | GAMEINFOFLAG2_HUD_AMMO;
 	pGameInfoEx->m_Version = GAMEINFO_CURVERSION;
-}
-
-CEntityDungeonWaitingDoor::CEntityDungeonWaitingDoor(CGameWorld* pGameWorld, vec2 Pos)
-	: CEntity(pGameWorld, CGameWorld::ENTTYPE_DUNGEON_DOOR, Pos)
-{
-	m_Closed = true;
-	GS()->Collision()->FillLengthWall(32, vec2(0, -1), &m_Pos, &m_PosTo);
-	GameWorld()->InsertEntity(this);
-}
-
-void CEntityDungeonWaitingDoor::Tick()
-{
-	if(!m_Closed)
-		return;
-
-	for(auto* pChar = (CCharacter*)GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); pChar; pChar = (CCharacter*)pChar->TypeNext())
-	{
-		vec2 IntersectPos;
-		if(closest_point_on_line(m_Pos, m_PosTo, pChar->m_Core.m_Pos, IntersectPos))
-		{
-			float Distance = distance(IntersectPos, pChar->m_Core.m_Pos);
-			if(Distance <= (float)g_Config.m_SvDoorRadiusHit)
-			{
-				pChar->SetDoorHit(m_Pos, m_PosTo);
-				pChar->Die(pChar->GetPlayer()->GetCID(), WEAPON_WORLD);
-			}
-		}
-	}
-}
-
-void CEntityDungeonWaitingDoor::Snap(int SnappingClient)
-{
-	if(NetworkClipped(SnappingClient) || !m_Closed)
-		return;
-
-	GS()->SnapLaser(SnappingClient, GetID(), m_Pos, m_PosTo, Server()->Tick() - 2, LASERTYPE_DOOR);
 }

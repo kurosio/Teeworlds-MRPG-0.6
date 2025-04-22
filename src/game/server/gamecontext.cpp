@@ -5,9 +5,9 @@
 #include <engine/storage.h>
 #include <engine/map.h>
 
-#include "worldmodes/dungeon.h"
 #include "worldmodes/default.h"
 #include "worldmodes/tutorial.h"
+#include "worldmodes/dungeon/dungeon.h"
 
 #include "entity_manager.h"
 #include "core/command_processor.h"

@@ -1,21 +1,20 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#ifndef GAME_SERVER_GAMEMODES_DUNGEON_H
-#define GAME_SERVER_GAMEMODES_DUNGEON_H
+#ifndef GAME_SERVER_WORLDMODES_DUNGEON_DUNGEON_H
+#define GAME_SERVER_WORLDMODES_DUNGEON_DUNGEON_H
 
 #include <game/server/entity.h>
 #include <game/server/gamecontroller.h>
-
 #include <game/server/core/components/duties/dungeon_data.h>
 
-class CLogicDungeonDoorKey;
 class CEntityDungeonWaitingDoor;
+class CEntityDungeonProgressDoor;
 
 class CGameControllerDungeon : public IGameController
 {
 	CDungeonData* m_pDungeon {};
 	CEntityDungeonWaitingDoor* m_pEntWaitingDoor {};
-	std::vector< CLogicDungeonDoorKey* > m_vpEntLogicDoor {};
+	std::vector< CEntityDungeonProgressDoor* > m_vpEntLogicDoor {};
 
 	int m_TankClientID {};
 
@@ -59,20 +58,6 @@ private:
 
 	void UpdateDoorKeyState();
 	void ResetDoorKeyState();
-};
-
-class CEntityDungeonWaitingDoor : public CEntity
-{
-	int m_Closed {};
-
-public:
-	CEntityDungeonWaitingDoor(CGameWorld *pGameWorld, vec2 Pos);
-
-	void Open() { m_Closed = false; }
-	void Close() { m_Closed = true; }
-
-	void Tick() override;
-	void Snap(int SnappingClient) override;
 };
 
 #endif

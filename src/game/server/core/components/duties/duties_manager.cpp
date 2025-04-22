@@ -2,7 +2,7 @@
 
 #include <game/server/gamecontext.h>
 #include <game/server/core/components/accounts/account_manager.h>
-#include <game/server/worldmodes/dungeon.h>
+#include <game/server/worldmodes/dungeon/dungeon.h>
 
 void CDutiesManager::OnPreInit()
 {

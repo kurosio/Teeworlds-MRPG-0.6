@@ -3,7 +3,7 @@
 #include "player.h"
 
 #include "gamecontext.h"
-#include "worldmodes/dungeon.h"
+#include "worldmodes/dungeon/dungeon.h"
 
 #include "core/components/accounts/account_manager.h"
 #include "core/components/achievements/achievement_manager.h"

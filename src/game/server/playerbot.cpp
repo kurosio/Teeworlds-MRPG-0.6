@@ -4,7 +4,7 @@
 #include "gamecontext.h"
 
 #include "entities/character_bot.h"
-#include "worldmodes/dungeon.h"
+#include "worldmodes/dungeon/dungeon.h"
 
 #include "core/components/Bots/BotManager.h"
 #include "core/tools/path_finder.h"
