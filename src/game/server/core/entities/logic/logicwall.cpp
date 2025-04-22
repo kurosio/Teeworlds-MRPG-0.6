@@ -318,7 +318,7 @@ void CLogicDungeonDoorKey::Tick()
 
 bool CLogicDungeonDoorKey::Update()
 {
-	bool OldState = m_OpenedDoor;
+	bool NewState = true;
 
 	for (int i = MAX_PLAYERS; i < MAX_CLIENTS; i++)
 	{
@@ -329,10 +329,13 @@ bool CLogicDungeonDoorKey::Update()
 		if(pPlayer->GetBotType() != EBotsType::TYPE_BOT_MOB || pPlayer->GetBotID() != m_BotID)
 			continue;
 
-		m_OpenedDoor = true;
+		NewState = false;
+		break;
 	}
 
-	return OldState != m_OpenedDoor;
+	bool Changed = (m_OpenedDoor != NewState);
+	m_OpenedDoor = NewState;
+	return Changed;
 }
 
 void CLogicDungeonDoorKey::Snap(int SnappingClient)
