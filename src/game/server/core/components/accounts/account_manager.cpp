@@ -142,6 +142,7 @@ AccountCodeResult CAccountManager::LoginAccount(int ClientID, const char* pLogin
 	GS()->Chat(ClientID, "- Welcome! You've successfully logged in!");
 	GS()->m_pController->DoTeamChange(pPlayer);
 	LoadAccount(pPlayer, true);
+	g_EventListenerManager.Notify<IEventListener::PlayerLogin>(pPlayer, pPlayer->Account());
 	return AccountCodeResult::AOP_LOGIN_OK;
 }
 
@@ -378,7 +379,7 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		const auto ActiveProfID = pPlayer->Account()->GetActiveProfessionID();
 
 		// select war profession
-		VoteWrapper VClassSelector(ClientID, VWF_SEPARATE_OPEN | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "\u2694 Change class profession");
+		VoteWrapper VClassSelector(ClientID, VWF_SEPARATE_OPEN | VWF_ALIGN_TITLE | VWF_STYLE_STRICT_BOLD, "\u2694 Change class profession");
 		for(const auto& Prof : pPlayer->Account()->GetProfessions())
 		{
 			if(Prof.IsProfessionType(PROFESSION_TYPE_WAR))
@@ -396,7 +397,7 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		VoteWrapper::AddEmptyline(ClientID);
 
 		// professions
-		VoteWrapper VProfessions(ClientID, VWF_SEPARATE_OPEN | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "\u2696 Upgrade professions");
+		VoteWrapper VProfessions(ClientID, VWF_SEPARATE_OPEN | VWF_ALIGN_TITLE | VWF_STYLE_STRICT, "\u2696 Upgrade professions");
 		for(const auto& Prof : pPlayer->Account()->GetProfessions())
 		{
 			const auto ProfessionID = Prof.GetProfessionID();

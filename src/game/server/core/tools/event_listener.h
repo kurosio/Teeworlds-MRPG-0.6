@@ -5,6 +5,7 @@
 class CGS;
 class IServer;
 class CPlayer;
+class CAccountData;
 class CProfession;
 class CCraftItem;
 class CPlayerItem;
@@ -24,6 +25,7 @@ public:
 		CharacterDamage,
 		CharacterDeath,
 		CharacterSpawn,
+		PlayerLogin,
 		PlayerProfessionUpgrade,
 		PlayerProfessionLeveling,
 		PlayerGotItem,
@@ -40,6 +42,7 @@ private:
 	virtual void OnCharacterDamage(CPlayer* pFrom, CPlayer* pTo, int Damage) { }
 	virtual void OnCharacterDeath(CPlayer* pVictim, CPlayer* pKiller, int Weapon) { }
 	virtual void OnCharacterSpawn(CPlayer* pPlayer) { }
+	virtual void OnPlayerLogin(CPlayer* pPlayer, CAccountData* pAccount){ }
 	virtual void OnPlayerProfessionUpgrade(CPlayer* pPlayer, int AttributeID) { }
 	virtual void OnPlayerProfessionLeveling(CPlayer* pPlayer, CProfession* pProfession, int NewLevel) { }
 	virtual void OnPlayerGotItem(CPlayer* pPlayer, CPlayerItem* pItem, int Got) { }
@@ -113,6 +116,8 @@ public:
 					listener->OnCharacterDeath(std::forward<Ts>(args)...);
 				else if constexpr(event == IEventListener::CharacterSpawn)
 					listener->OnCharacterSpawn(std::forward<Ts>(args)...);
+				else if constexpr(event == IEventListener::PlayerLogin)
+					listener->OnPlayerLogin(std::forward<Ts>(args)...);
 				else if constexpr(event == IEventListener::PlayerProfessionUpgrade)
 					listener->OnPlayerProfessionUpgrade(std::forward<Ts>(args)...);
 				else if constexpr(event == IEventListener::PlayerProfessionLeveling)

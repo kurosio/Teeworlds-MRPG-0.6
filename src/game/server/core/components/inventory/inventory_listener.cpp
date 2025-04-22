@@ -7,76 +7,38 @@ constexpr const char* ATTRIBUTE_TRACKING_FILE_NAME = "server_data/attribute_trac
 // inventory listener
 void CInventoryListener::Initialize()
 {
-    g_EventListenerManager.RegisterListener(IEventListener::CharacterSpawn, this);
     g_EventListenerManager.RegisterListener(IEventListener::PlayerProfessionUpgrade, this);
     g_EventListenerManager.RegisterListener(IEventListener::PlayerEquipItem, this);
     g_EventListenerManager.RegisterListener(IEventListener::PlayerUnequipItem, this);
     g_EventListenerManager.RegisterListener(IEventListener::PlayerEnchantItem, this);
-
     m_AttributesTracker.LoadTrackingData();
 }
 
-void CInventoryListener::OnCharacterSpawn(CPlayer* pPlayer)
-{
-    if(pPlayer->IsBot())
-        return;
-
-    struct AttributeData
-    {
-        AttributeIdentifier identifier;
-        int weaponType;
-        int orbiteType;
-    };
-
-    bool bestExpert = false;
-    const auto AccountID = pPlayer->Account()->GetID();
-    static std::array<AttributeData, 7> attributesData = {
-        AttributeData{AttributeIdentifier::HP, WEAPON_SHOTGUN, MULTIPLE_ORBITE_TYPE_EIGHT},
-        AttributeData{AttributeIdentifier::MP, WEAPON_SHOTGUN, MULTIPLE_ORBITE_TYPE_DYNAMIC_CENTER},
-        AttributeData{AttributeIdentifier::CritDMG, WEAPON_SHOTGUN, MULTIPLE_ORBITE_TYPE_PULSATING},
-        AttributeData{AttributeIdentifier::Efficiency, WEAPON_HAMMER, MULTIPLE_ORBITE_TYPE_EIGHT},
-        AttributeData{AttributeIdentifier::Extraction, WEAPON_HAMMER, MULTIPLE_ORBITE_TYPE_DYNAMIC_CENTER},
-        AttributeData{AttributeIdentifier::Patience, WEAPON_HAMMER, MULTIPLE_ORBITE_TYPE_PULSATING},
-        AttributeData{AttributeIdentifier::ProductCapacity, WEAPON_HAMMER, MULTIPLE_ORBITE_TYPE_ELLIPTICAL}
-    };
-
-    for(const auto& attribute : attributesData)
-    {
-        const auto& Biggest = m_AttributesTracker.GetTrackingData((int)attribute.identifier);
-        if(Biggest && AccountID == (*Biggest).AccountID)
-        {
-            pPlayer->GetCharacter()->AddMultipleOrbite(true, 2, attribute.weaponType, 0, attribute.orbiteType);
-            bestExpert = true;
-        }
-    }
-
-    if(bestExpert)
-    {
-        pPlayer->GS()->Chat(pPlayer->GetCID(), "You are the top expert in your profession on the server. Visual highlighting is now active.");
-    }
-}
 
 void CInventoryListener::OnPlayerProfessionUpgrade(CPlayer* pPlayer, int AttributeID)
 {
-    // Update tracking data when a player upgrades an attribute
     auto totalAttribute = pPlayer->GetTotalAttributeValue(static_cast<AttributeIdentifier>(AttributeID));
     m_AttributesTracker.UpdateTrackingDataIfNecessary(pPlayer, AttributeID, totalAttribute);
 }
+
 
 void CInventoryListener::OnPlayerEquipItem(CPlayer* pPlayer, CPlayerItem* pItem)
 {
     UpdateAttributesForItem(pPlayer, pItem);
 }
 
+
 void CInventoryListener::OnPlayerUnequipItem(CPlayer* pPlayer, CPlayerItem* pItem)
 {
     UpdateAttributesForItem(pPlayer, pItem);
 }
 
+
 void CInventoryListener::OnPlayerEnchantItem(CPlayer* pPlayer, CPlayerItem* pItem)
 {
     UpdateAttributesForItem(pPlayer, pItem);
 }
+
 
 void CInventoryListener::UpdateAttributesForItem(CPlayer* pPlayer, CPlayerItem* pItem)
 {

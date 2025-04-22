@@ -268,6 +268,7 @@ enum class ToplistType : int
 	PlayerRating,
 	PlayerWealthy,
 	PlayerExpert,
+	PlayerAttributes,
 	NUM_TOPLIST_TYPES
 };
 

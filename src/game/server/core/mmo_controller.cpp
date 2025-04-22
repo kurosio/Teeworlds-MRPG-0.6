@@ -22,6 +22,7 @@
 #include "components/warehouse/warehouse_manager.h"
 #include "components/wiki/wiki_manager.h"
 #include "components/worlds/world_manager.h"
+#include "components/accounts/account_listener.h"
 #include "components/inventory/inventory_listener.h"
 
 #include <teeother/components/localization.h>
@@ -201,14 +202,10 @@ bool CMmoController::OnSendMenuVotes(CPlayer* pPlayer, int Menulist) const
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
-		// information
-		VoteWrapper VTopInfo(ClientID, VWF_STYLE_STRICT_BOLD|VWF_SEPARATE, "Top List Information");
-		VTopInfo.Add("You can view the top 10 players and guilds.");
-		VoteWrapper::AddEmptyline(ClientID);
-
 		// select type list
-		VoteWrapper VTopSelect(ClientID, VWF_OPEN, "Select a type of ranking");
+		VoteWrapper VTopSelect(ClientID, VWF_SEPARATE_OPEN|VWF_ALIGN_TITLE|VWF_STYLE_STRICT_BOLD, "Select a type of ranking");
 		VTopSelect.AddMenu(MENU_LEADERBOARD, (int)ToplistType::PlayerExpert, "Top Specialists in the Realm");
+		VTopSelect.AddMenu(MENU_LEADERBOARD, (int)ToplistType::PlayerAttributes, "Top by attributes");
 		VTopSelect.AddMenu(MENU_LEADERBOARD, (int)ToplistType::GuildLeveling, "Top 10 guilds by leveling");
 		VTopSelect.AddMenu(MENU_LEADERBOARD, (int)ToplistType::GuildWealthy, "Top 10 guilds by wealthy");
 		VTopSelect.AddMenu(MENU_LEADERBOARD, (int)ToplistType::PlayerRating, "Top 10 players by rank points");
@@ -457,11 +454,11 @@ void CMmoController::SaveAccount(CPlayer* pPlayer, int Table) const
 
 void CMmoController::ShowTopList(VoteWrapper* pWrapper, int ClientID, ToplistType Type, int Rows) const
 {
+	auto vResult = GetTopList(Type, Rows);
+
 	if(Type == ToplistType::GuildLeveling)
 	{
 		pWrapper->SetTitle("Top 10 guilds leveling");
-
-		auto vResult = GetTopList(Type, Rows);
 		for(auto& Elem : vResult)
 		{
 			const auto Rank = Elem.first;
@@ -474,8 +471,6 @@ void CMmoController::ShowTopList(VoteWrapper* pWrapper, int ClientID, ToplistTyp
 	else if(Type == ToplistType::GuildWealthy)
 	{
 		pWrapper->SetTitle("Top 10 guilds wealthy");
-
-		auto vResult = GetTopList(Type, Rows);
 		for(auto& Elem : vResult)
 		{
 			const auto Rank = Elem.first;
@@ -487,8 +482,6 @@ void CMmoController::ShowTopList(VoteWrapper* pWrapper, int ClientID, ToplistTyp
 	else if(Type == ToplistType::PlayerRating)
 	{
 		pWrapper->SetTitle("Top 10 players rank points");
-
-		auto vResult = GetTopList(Type, Rows);
 		for(auto& Elem : vResult)
 		{
 			const auto Rank = Elem.first;
@@ -500,8 +493,6 @@ void CMmoController::ShowTopList(VoteWrapper* pWrapper, int ClientID, ToplistTyp
 	else if(Type == ToplistType::PlayerWealthy)
 	{
 		pWrapper->SetTitle("Top 10 players wealthy");
-
-		auto vResult = GetTopList(Type, Rows);
 		for(auto& Elem : vResult)
 		{
 			const auto Rank = Elem.first;
@@ -513,14 +504,21 @@ void CMmoController::ShowTopList(VoteWrapper* pWrapper, int ClientID, ToplistTyp
 	else if(Type == ToplistType::PlayerExpert)
 	{
 		pWrapper->SetTitle("Top Specialists in the Realm");
-
-		auto vResult = GetTopList(Type, Rows);
 		for(auto& [Iter, Top] : vResult)
 		{
-			auto* pNickname = Instance::Server()->GetAccountNickname(Top.Data["AccountID"].to_int());
-			auto* pAttribute = GS()->GetAttributeInfo((AttributeIdentifier)Top.Data["ID"].to_int());
-			auto Value = Top.Data["Value"].to_int();
-			pWrapper->Add("{}: '{-} - {}({})'.", Top.Name, pNickname, Value, pAttribute->GetName());
+			const char* pNickname = Instance::Server()->GetAccountNickname(Top.Data["AccountID"].to_int());
+			const auto Level = Top.Data["Level"].to_int();
+			pWrapper->Add("{}: '{-} - {}LV'.", Top.Name, pNickname, Level);
+		}
+	}
+	else if(Type == ToplistType::PlayerAttributes)
+	{
+		pWrapper->SetTitle("Top by attributes");
+		for(auto& [Iter, Top] : vResult)
+		{
+			const char* pNickname = Instance::Server()->GetAccountNickname(Top.Data["AccountID"].to_int());
+			const auto Value = Top.Data["Value"].to_int();
+			pWrapper->Add("{}: '{-} - {}'.", Top.Name, pNickname, Value);
 		}
 	}
 }
@@ -579,35 +577,30 @@ std::map<int, CMmoController::TempTopData> CMmoController::GetTopList(ToplistTyp
 	}
 	else if(Type == ToplistType::PlayerExpert)
 	{
-		auto BiggestTankOpt = g_InventoryListener.AttributeTracker().GetTrackingData((int)AttributeIdentifier::HP);
-		auto BiggestHealerOpt = g_InventoryListener.AttributeTracker().GetTrackingData((int)AttributeIdentifier::MP);
-		auto BiggestDPSOpt = g_InventoryListener.AttributeTracker().GetTrackingData((int)AttributeIdentifier::CritDMG);
-		auto BiggestMinerOpt = g_InventoryListener.AttributeTracker().GetTrackingData((int)AttributeIdentifier::Efficiency);
-		auto BiggestFarmerOpt = g_InventoryListener.AttributeTracker().GetTrackingData((int)AttributeIdentifier::Extraction);
-		auto BiggestFisherOpt = g_InventoryListener.AttributeTracker().GetTrackingData((int)AttributeIdentifier::Patience);
-		auto BiggestLoaderOpt = g_InventoryListener.AttributeTracker().GetTrackingData((int)AttributeIdentifier::ProductCapacity);
-
-		std::array<std::tuple<std::string, int, std::optional<TrackingAttributeData>>, 7> topList = {
-		{
-			{GetProfessionName(ProfessionIdentifier::Tank), (int)AttributeIdentifier::HP, BiggestTankOpt},
-			{GetProfessionName(ProfessionIdentifier::Healer), (int)AttributeIdentifier::MP, BiggestHealerOpt},
-			{GetProfessionName(ProfessionIdentifier::Dps), (int)AttributeIdentifier::CritDMG, BiggestDPSOpt},
-			{GetProfessionName(ProfessionIdentifier::Miner), (int)AttributeIdentifier::Efficiency, BiggestMinerOpt},
-			{GetProfessionName(ProfessionIdentifier::Farmer), (int)AttributeIdentifier::Extraction, BiggestFarmerOpt},
-			{GetProfessionName(ProfessionIdentifier::Fisherman), (int)AttributeIdentifier::Patience, BiggestFisherOpt},
-			{GetProfessionName(ProfessionIdentifier::Loader), (int)AttributeIdentifier::ProductCapacity, BiggestLoaderOpt}
-		}};
-
 		int Iter = 0;
-		for(const auto& [title, attributeID, biggestTrackData] : topList)
+		auto& vTrackings = g_AccountListener.LevelingTracker().GetTrackings();
+		for(auto& [professionID, data] : vTrackings)
 		{
-			if(biggestTrackData)
+			auto& field = vResult[Iter];
+			field.Name = GetProfessionName((ProfessionIdentifier)professionID);
+			field.Data["AccountID"] = data.AccountID;
+			field.Data["Level"] = data.Level;
+			Iter++;
+		}
+	}
+	else if(Type == ToplistType::PlayerAttributes)
+	{
+		int Iter = 0;
+		auto& vTrackings = g_InventoryListener.AttributeTracker().GetTrackings();
+		for(auto& [attributeID, data] : vTrackings)
+		{
+			auto* pAttributeInfo = GS()->GetAttributeInfo((AttributeIdentifier)attributeID);
+			if(pAttributeInfo)
 			{
 				auto& field = vResult[Iter];
-				field.Name = title;
-				field.Data["AccountID"] = biggestTrackData->AccountID;
-				field.Data["ID"] = attributeID;
-				field.Data["Value"] = biggestTrackData->Amount;
+				field.Name = pAttributeInfo->GetName();
+				field.Data["AccountID"] = data.AccountID;
+				field.Data["Value"] = data.Amount;
 				Iter++;
 			}
 		}

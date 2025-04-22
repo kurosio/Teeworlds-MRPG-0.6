@@ -20,6 +20,7 @@
 #include "core/components/skills/skill_manager.h"
 
 #include "core/components/duties/duties_manager.h"
+#include "core/components/accounts/account_listener.h"
 #include "core/components/achievements/achievement_listener.h"
 #include "core/components/inventory/inventory_listener.h"
 #include "core/components/Eidolons/EidolonInfoData.h"
@@ -695,6 +696,7 @@ void CGS::OnInit(int WorldID)
 		Server()->SnapSetStaticsize(i, m_NetObjHandler.GetObjSize(i));
 
 	// initialize listeners
+	g_AccountListener.Initialize();
 	g_AchievementListener.Initialize();
 	g_InventoryListener.Initialize();
 
