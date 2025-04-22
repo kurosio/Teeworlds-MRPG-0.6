@@ -154,15 +154,14 @@ void CGameControllerDungeon::Process()
 			}
 
 			// output before the start of the passage
-			const int Time = m_WaitingTick / Server()->TickSpeed();
-			GS()->BroadcastWorld(WorldID, BroadcastPriority::VeryImportant, 500,
-				"Dungeon waiting {} sec!\nPlayer's are ready to start right now {} of {}!\nYou can change state with 'Vote yes'",
-				Time, PlayersReadyNum, PlayersNum);
+			GS()->BroadcastWorld(WorldID, BroadcastPriority::VeryImportant, 100, "Players {}/{} ready \u2014 press 'Vote yes' to join in!", PlayersReadyNum, PlayersNum);
 
 			// update waiting time
 			m_WaitingTick--;
 			if(!m_WaitingTick)
+			{
 				ChangeState(CDungeonData::STATE_STARTED);
+			}
 		}
 
 		m_ShiftRoundStartTick = Server()->Tick();
@@ -434,7 +433,7 @@ void CGameControllerDungeon::Snap()
 	pGameInfoObj->m_GameFlags = m_GameFlags;
 	pGameInfoObj->m_GameStateFlags = 0;
 	pGameInfoObj->m_RoundStartTick = m_ShiftRoundStartTick;
-	pGameInfoObj->m_WarmupTimer = 0;
+	pGameInfoObj->m_WarmupTimer = m_WaitingTick;
 	pGameInfoObj->m_RoundNum = 0;
 	pGameInfoObj->m_RoundCurrent = 1;
 
