@@ -7,6 +7,7 @@ class MobBotInfo;
 
 class CMobAI final : public CBaseAI
 {
+	int m_BehaviorPoisonedNextTick {};
 	MobBotInfo* m_pMobInfo {};
 
 public:
@@ -20,7 +21,6 @@ public:
 	void OnRewardPlayer(CPlayer* pPlayer, vec2 Force) const override;
 	void OnTargetRules(float Radius) override;
 	void Process() override;
-
 
 private:
 	void ShowHealth() const;

@@ -1550,8 +1550,8 @@ void CCharacter::HandleBuff(CTuningParams* TuningParams)
 		// poison
 		if(m_pPlayer->m_Effects.IsActive("Poison"))
 		{
-			const int PoisonSize = translate_to_percent_rest(m_pPlayer->GetMaxHealth(), 3);
-			TakeDamage(vec2(0, 0), PoisonSize, m_pPlayer->GetCID(), WEAPON_SELF);
+			const int PoisonDmg = translate_to_percent_rest(m_pPlayer->GetMaxHealth(), 3);
+			TakeDamage({}, PoisonDmg, m_pPlayer->GetCID(), WEAPON_SELF);
 		}
 
 		// handle potions

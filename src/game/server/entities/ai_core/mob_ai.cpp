@@ -182,6 +182,31 @@ void CMobAI::OnTargetRules(float Radius)
 
 void CMobAI::Process()
 {
+	// behavior poisonous
+	if(m_pMobInfo->HasBehaviorFlag(MOBFLAG_BEHAVIOR_POISONOUS) && m_BehaviorPoisonedNextTick < Server()->Tick())
+	{
+		const auto Theta = random_float(0.0f, 2.0f * pi);
+		const auto Distance = 32.f + sqrt(random_float()) * 128.f;
+		const auto RandomPosition = m_pCharacter->m_Core.m_Pos + vec2(Distance * cos(Theta), Distance * sin(Theta));
+
+		// give poison effect
+		if(!GS()->Collision()->CheckPoint(RandomPosition))
+		{
+			const auto vEntities = GS()->m_World.FindEntities(RandomPosition, 64.f, 8, CGameWorld::ENTTYPE_CHARACTER);
+			for(auto* pEnt : vEntities)
+			{
+				auto* pTarget = dynamic_cast<CCharacter*>(pEnt);
+				if(pTarget && pTarget->IsAllowedPVP(m_ClientID))
+				{
+					pTarget->GetPlayer()->m_Effects.Add("Poison", Server()->TickSpeed() * 5);
+				}
+			}
+			GS()->CreateDeath(RandomPosition, m_ClientID);
+		}
+
+		m_BehaviorPoisonedNextTick = Server()->Tick() + (5 + rand() % 40);
+	}
+
 	// behavior sleepy
 	if(m_pMobInfo->HasBehaviorFlag(MOBFLAG_BEHAVIOR_SLEEPY) &&
 		(m_pPlayer->m_aPlayerTick[LastDamage] + (Server()->TickSpeed() * 5)) < Server()->Tick())

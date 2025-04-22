@@ -147,6 +147,7 @@ enum MobBehaviorFlags
 {
 	MOBFLAG_BEHAVIOR_SLEEPY = 1 << 1,
 	MOBFLAG_BEHAVIOR_SLOWER = 1 << 2,
+	MOBFLAG_BEHAVIOR_POISONOUS = 1 << 3,
 };
 
 class CMobDebuff
