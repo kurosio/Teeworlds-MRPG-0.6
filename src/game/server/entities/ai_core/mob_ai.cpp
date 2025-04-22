@@ -183,7 +183,8 @@ void CMobAI::OnTargetRules(float Radius)
 void CMobAI::Process()
 {
 	// behavior poisonous
-	if(m_pMobInfo->HasBehaviorFlag(MOBFLAG_BEHAVIOR_POISONOUS) && m_BehaviorPoisonedNextTick < Server()->Tick())
+	if(m_pMobInfo->HasBehaviorFlag(MOBFLAG_BEHAVIOR_POISONOUS) &&
+		(m_BehaviorPoisonedNextTick < Server()->Tick()))
 	{
 		const auto Theta = random_float(0.0f, 2.0f * pi);
 		const auto Distance = 32.f + sqrt(random_float()) * 128.f;

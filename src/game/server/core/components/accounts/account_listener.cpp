@@ -112,8 +112,6 @@ void CLevelingTracker::SaveTrackingData()
 void CLevelingTracker::UpdateTrackingDataIfNecessary(CPlayer* pPlayer, int ProfessionID, int NewLevel)
 {
 	auto& TrackingData = m_vTrackingData[ProfessionID];
-	bool isUpdateNeeded = false;
-
 	if(NewLevel > TrackingData.Level)
 	{
 		TrackingData.AccountID = pPlayer->Account()->GetID();
