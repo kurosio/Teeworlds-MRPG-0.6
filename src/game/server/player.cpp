@@ -525,13 +525,16 @@ void CPlayer::OnDirectInput(CNetObj_PlayerInput* pNewInput)
 	// Reset input when chatting
 	if(pNewInput->m_PlayerFlags & PLAYERFLAG_CHATTING)
 	{
-		if(m_PlayerFlags & PLAYERFLAG_CHATTING)
-			return;
+		if(!(m_PlayerFlags & PLAYERFLAG_CHATTING))
+		{
+			if(m_pCharacter)
+				m_pCharacter->ResetInput();
 
-		if(m_pCharacter)
-			m_pCharacter->ResetInput();
+			m_PlayerFlags = pNewInput->m_PlayerFlags;
+		}
 
-		m_PlayerFlags = pNewInput->m_PlayerFlags;
+		// hidden broadcast priority
+		GS()->Broadcast(m_ClientID, BroadcastPriority::HiddenBroadcast, 100, "");
 		return;
 	}
 

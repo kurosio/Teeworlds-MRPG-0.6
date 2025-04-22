@@ -548,8 +548,7 @@ void CGS::BroadcastTick(int ClientID)
 			if(Broadcast.m_TimedPriority < BroadcastPriority::MainInformation)
 			{
 				// Format the broadcast message with basic player stats and append pAppend
-				const char* pAppend = m_apPlayers[ClientID]->m_PlayerFlags & PLAYERFLAG_CHATTING ? "\0" : Broadcast.m_NextMessage;
-				m_apPlayers[ClientID]->FormatBroadcastBasicStats(Broadcast.m_aCompleteMsg, sizeof(Broadcast.m_aCompleteMsg), pAppend);
+				m_apPlayers[ClientID]->FormatBroadcastBasicStats(Broadcast.m_aCompleteMsg, sizeof(Broadcast.m_aCompleteMsg), Broadcast.m_NextMessage);
 			}
 			else
 			{
