@@ -211,7 +211,7 @@ void CMobAI::Process()
 	}
 }
 
-bool CMobAI::HandleBehaviors(bool* pbAsleep)
+void CMobAI::HandleBehaviors(bool* pbAsleep)
 {
 	// behavior poisonous
 	if(m_pMobInfo->HasBehaviorFlag(MOBFLAG_BEHAVIOR_POISONOUS) &&

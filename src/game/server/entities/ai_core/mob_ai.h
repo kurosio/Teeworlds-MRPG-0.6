@@ -23,7 +23,7 @@ public:
 	void Process() override;
 
 private:
-	bool HandleBehaviors(bool* pbAsleep);
+	void HandleBehaviors(bool* pbAsleep);
 	void ShowHealth() const;
 };
 
