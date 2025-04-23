@@ -182,6 +182,37 @@ void CMobAI::OnTargetRules(float Radius)
 
 void CMobAI::Process()
 {
+	// handle behaviors
+	bool Asleep = false;
+	HandleBehaviors(&Asleep);
+	if(Asleep)
+		return;
+
+	// update
+	m_pCharacter->UpdateTarget(1000.f);
+	m_pCharacter->ResetInput();
+
+	if(const auto* pTargetChar = GS()->GetPlayerChar(m_Target.GetCID()))
+	{
+		m_pPlayer->m_TargetPos = pTargetChar->GetPos();
+		m_pCharacter->Fire();
+	}
+	else
+	{
+		m_pPlayer->m_TargetPos.reset();
+	}
+
+	m_pCharacter->SelectWeaponAtRandomInterval();
+	m_pCharacter->Move();
+
+	if(m_pMobInfo->m_Boss)
+	{
+		ShowHealth();
+	}
+}
+
+bool CMobAI::HandleBehaviors(bool* pbAsleep)
+{
 	// behavior poisonous
 	if(m_pMobInfo->HasBehaviorFlag(MOBFLAG_BEHAVIOR_POISONOUS) &&
 		(m_BehaviorPoisonedNextTick < Server()->Tick()))
@@ -218,29 +249,7 @@ void CMobAI::Process()
 			m_pCharacter->SetEmote(EMOTE_BLINK, 2, false);
 		}
 		m_pCharacter->ResetInput();
-		return;
-	}
-
-	// update
-	m_pCharacter->UpdateTarget(1000.f);
-	m_pCharacter->ResetInput();
-
-	if(const auto* pTargetChar = GS()->GetPlayerChar(m_Target.GetCID()))
-	{
-		m_pPlayer->m_TargetPos = pTargetChar->GetPos();
-		m_pCharacter->Fire();
-	}
-	else
-	{
-		m_pPlayer->m_TargetPos.reset();
-	}
-
-	m_pCharacter->SelectWeaponAtRandomInterval();
-	m_pCharacter->Move();
-
-	if(m_pMobInfo->m_Boss)
-	{
-		ShowHealth();
+		(*pbAsleep) = true;
 	}
 }
 
