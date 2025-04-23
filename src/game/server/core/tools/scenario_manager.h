@@ -163,7 +163,11 @@ public:
 
 	void Stop(int ScenarioID)
 	{
-		const auto it = std::ranges::find_if(m_Scenarios, [ScenarioID](const auto& pScenario) { return pScenario->m_ScenarioID == ScenarioID; });
+		const auto it = std::ranges::find_if(m_Scenarios, [ScenarioID](const auto& pScenario)
+		{
+			return pScenario->m_ScenarioID == ScenarioID;
+		});
+
 		if(it != m_Scenarios.end())
 		{
 			(*it)->Stop();
@@ -173,6 +177,9 @@ public:
 
 	void Tick() const
 	{
+		if(m_Scenarios.empty())
+			return;
+
 		for(auto& pScenario : m_Scenarios)
 		{
 			if(pScenario && pScenario->m_Running)
@@ -184,6 +191,9 @@ public:
 
 	void PostTick()
 	{
+		if(m_Scenarios.empty())
+			return;
+
 		std::erase_if(m_Scenarios, [](const std::unique_ptr<ScenarioBase>& pScenario)
 		{
 			if(pScenario->IsFinished())
@@ -197,6 +207,9 @@ public:
 
 	bool IsActive(int ScenarioID)
 	{
+		if(m_Scenarios.empty())
+			return false;
+
 		const auto it = std::ranges::find_if(m_Scenarios, [ScenarioID](const auto& pScenario) { return pScenario->m_ScenarioID == ScenarioID; });
 		return it != m_Scenarios.end();
 	}
