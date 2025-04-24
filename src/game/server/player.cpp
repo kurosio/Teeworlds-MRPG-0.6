@@ -20,6 +20,7 @@
 
 #include "core/tools/vote_optional.h"
 #include "core/scenarios/scenario_universal.h"
+#include "core/tools/scenario_player_manager.h"
 
 MACRO_ALLOC_POOL_ID_IMPL(CPlayer, MAX_CLIENTS * ENGINE_MAX_WORLDS + MAX_CLIENTS)
 
@@ -40,7 +41,6 @@ CPlayer::CPlayer(CGS* pGS, int ClientID) : m_pGS(pGS), m_ClientID(ClientID)
 	m_SpectatorID = SPEC_FREEVIEW;
 	m_PrevTuningParams = *pGS->Tuning();
 	m_NextTuningParams = m_PrevTuningParams;
-	m_Scenarios.Init(ClientID);
 	m_Cooldown.Init(ClientID);
 	m_VotesData.Init(m_pGS, this);
 	m_Dialog.Init(this);
@@ -147,7 +147,6 @@ void CPlayer::Tick()
 
 	// update events
 	m_FixedView.Tick(m_ViewPos);
-	m_Scenarios.Tick();
 	m_Cooldown.Tick();
 	if(m_pMotdMenu)
 	{
@@ -180,7 +179,6 @@ void CPlayer::PostTick()
 		Account()->GetBonusManager().PostTick();
 		Account()->GetPrisonManager().PostTick();
 		m_Effects.PostTick();
-		m_Scenarios.PostTick();
 	}
 
 	// update view pos for spectators
@@ -925,7 +923,7 @@ void CPlayer::StartUniversalScenario(const std::string& ScenarioData, int Scenar
 		const auto& scenarioJsonData = ObjElem.empty() ? pJson : pJson[ObjElem];
 		if(!scenarioJsonData.empty())
 		{
-			Scenarios().Start(std::make_unique<CUniversalScenario>(ScenarioID, scenarioJsonData));
+			GS()->ScenarioPlayerManager()->RegisterScenario<CUniversalScenario>(m_ClientID, scenarioJsonData);
 		}
 	});
 }

@@ -2,14 +2,15 @@
 #define GAME_SERVER_CORE_SCENARIOS_SCENARIO_TUTORIAL_H
 
 #include "entities/personal_door.h"
+
+#include <game/server/core/tools/scenario_base.h>
 #include <game/server/core/tools/event_listener.h>
-#include <game/server/core/tools/scenario_manager.h>
 
 class CEntityDropItem;
 class CEntityGroup;
 class CEntityPersonalDoor;
 
-class CUniversalScenario : public ScenarioBase, public IEventListener
+class CUniversalScenario : public PlayerScenarioBase, public IEventListener
 {
 	nlohmann::json m_JsonData {};
 
@@ -24,7 +25,7 @@ class CUniversalScenario : public ScenarioBase, public IEventListener
 	CEntityDropItem* m_pEntDroppedItem {};
 
 public:
-	CUniversalScenario(int ScenarioID, const nlohmann::json& jsonData);
+	CUniversalScenario(const nlohmann::json& jsonData);
 	~CUniversalScenario();
 
 protected:
@@ -41,7 +42,7 @@ private:
 	void StepMovingDisable(bool State);
 	void StepMovementTask(int delay, const vec2& pos, const std::string& targetLookText, const std::string& broadcastMsg, const std::string& chatMsg, bool targetLook = true);
 	void StepPickItemTask(const vec2& pos, const nlohmann::json& itemJson, const std::string& broadcastMsg, const std::string& chatMsg);
-	
+
 	void CreateEntityShootmarkersTask(const vec2& pos, int health);
 	void SendBroadcast(const std::string& text) const;
 };

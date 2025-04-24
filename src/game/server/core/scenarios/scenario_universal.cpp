@@ -6,8 +6,8 @@
 #include <game/server/core/entities/group/entitiy_group.h>
 #include <game/server/entities/projectile.h>
 
-CUniversalScenario::CUniversalScenario(int ScenarioID, const nlohmann::json& jsonData)
-	: ScenarioBase(ScenarioID)
+CUniversalScenario::CUniversalScenario(const nlohmann::json& jsonData)
+	: PlayerScenarioBase()
 {
 	m_JsonData = jsonData;
 }
@@ -20,8 +20,7 @@ CUniversalScenario::~CUniversalScenario()
 
 bool CUniversalScenario::OnStopConditions()
 {
-	const auto* pPlayer = GetPlayer();
-	return !pPlayer || !pPlayer->GetCharacter();
+	return !GetPlayer() || !GetCharacter();
 }
 
 void CUniversalScenario::OnSetupScenario()
@@ -57,7 +56,7 @@ void CUniversalScenario::ProcessStep(const nlohmann::json& step)
 		auto& hasItemStep = AddStep();
 		if(showProgress)
 		{
-			hasItemStep.WhenActive([this, itemID, required](auto*)
+			hasItemStep.WhenActive([this, itemID, required]()
 			{
 				if(Server()->Tick() % Server()->TickSpeed() == 0)
 				{
@@ -69,13 +68,13 @@ void CUniversalScenario::ProcessStep(const nlohmann::json& step)
 		}
 		if(remove)
 		{
-			hasItemStep.WhenFinished([this, itemID, required](auto*)
+			hasItemStep.WhenFinished([this, itemID, required]()
 			{
 				GetPlayer()->GetItem(itemID)->Remove(required);
 			});
 		}
 
-		hasItemStep.CheckCondition(ConditionPriority::CONDITION_AND_TIMER, [this, itemID, required](auto*)
+		hasItemStep.CheckCondition(ConditionPriority::CONDITION_AND_TIMER, [this, itemID, required]()
 		{
 			return GetPlayer()->GetItem(itemID)->GetValue() >= required;
 		});
@@ -86,7 +85,7 @@ void CUniversalScenario::ProcessStep(const nlohmann::json& step)
 	{
 		const auto QuestID = step.value("quest_id", -1);
 		auto& resetQuestStep = AddStep();
-		resetQuestStep.WhenStarted([QuestID, this](auto*)
+		resetQuestStep.WhenStarted([QuestID, this]()
 		{
 			if(QuestID > 0)
 			{
@@ -102,7 +101,7 @@ void CUniversalScenario::ProcessStep(const nlohmann::json& step)
 	{
 		const auto QuestID = step.value("quest_id", -1);
 		auto& acceptQuestStep = AddStep();
-		acceptQuestStep.WhenStarted([QuestID, this](auto*)
+		acceptQuestStep.WhenStarted([QuestID, this]()
 		{
 			if(QuestID > 0)
 			{
@@ -127,7 +126,7 @@ void CUniversalScenario::ProcessStep(const nlohmann::json& step)
 		};
 
 		auto& newDoorStep = AddStep();
-		newDoorStep.WhenStarted([Key, this](auto*)
+		newDoorStep.WhenStarted([Key, this]()
 		{
 			vec2 Pos = m_vpPersonalDoors[Key].m_Pos;
 			m_vpPersonalDoors[Key].m_EntPtr = std::make_unique<CEntityPersonalDoor>(&GS()->m_World, GetClientID(), Pos, vec2(0, -1));
@@ -148,7 +147,7 @@ void CUniversalScenario::ProcessStep(const nlohmann::json& step)
 		vec2 DoorPos = m_vpPersonalDoors[Key].m_Pos;
 
 		auto& removeDoorStep = AddStep();
-		removeDoorStep.WhenStarted([Follow, Key, this](auto*)
+		removeDoorStep.WhenStarted([Follow, Key, this]()
 		{
 			if(m_vpPersonalDoors.contains(Key))
 			{
@@ -224,14 +223,14 @@ void CUniversalScenario::ProcessStep(const nlohmann::json& step)
 	{
 		auto& useChatTaskStep = AddStep();
 		std::string message = step.value("chat", "@");
-		useChatTaskStep.WhenActive([this, message](auto*)
+		useChatTaskStep.WhenActive([this, message]()
 		{
 			if(Server()->Tick() % Server()->TickSpeed() == 0)
 			{
 				GS()->Broadcast(GetClientID(), BroadcastPriority::MainInformation, Server()->TickSpeed(), "Objective: Write in the chat: '{}'", message);
 			}
 		});
-		useChatTaskStep.CheckCondition(ConditionPriority::CONDITION_AND_TIMER, [this, message](auto*)
+		useChatTaskStep.CheckCondition(ConditionPriority::CONDITION_AND_TIMER, [this, message]()
 		{
 			std::string lastMessage = GetPlayer()->m_aLastMsg;
 			return lastMessage.find(message) == 0;
@@ -281,7 +280,7 @@ void CUniversalScenario::ProcessStep(const nlohmann::json& step)
 		if(int questID = step.value("quest_id", -1); questID > 0)
 		{
 			auto& checkQuestAcceptedState = AddStep();
-			checkQuestAcceptedState.CheckCondition(ConditionPriority::CONDITION_AND_TIMER, [this, questID](auto*)
+			checkQuestAcceptedState.CheckCondition(ConditionPriority::CONDITION_AND_TIMER, [this, questID]()
 			{
 				return GetPlayer()->GetQuest(questID)->IsAccepted();
 			});
@@ -294,7 +293,7 @@ void CUniversalScenario::ProcessStep(const nlohmann::json& step)
 		if(int questID = step.value("quest_id", -1); questID > 0)
 		{
 			auto& checkQuestFinishedState = AddStep();
-			checkQuestFinishedState.CheckCondition(ConditionPriority::CONDITION_AND_TIMER, [this, questID](auto*)
+			checkQuestFinishedState.CheckCondition(ConditionPriority::CONDITION_AND_TIMER, [this, questID]()
 			{
 				return GetPlayer()->GetQuest(questID)->IsCompleted();
 			});
@@ -308,7 +307,7 @@ void CUniversalScenario::ProcessStep(const nlohmann::json& step)
 		{
 			auto stepQuest = step.value("step", -1);
 			auto& checkQuestStepFinishedState = AddStep();
-			checkQuestStepFinishedState.CheckCondition(ConditionPriority::CONDITION_AND_TIMER, [this, questID, stepQuest](auto*)
+			checkQuestStepFinishedState.CheckCondition(ConditionPriority::CONDITION_AND_TIMER, [this, questID, stepQuest]()
 			{
 				return GetPlayer()->GetQuest(questID)->GetStepPos() > stepQuest;
 			});
@@ -345,11 +344,11 @@ void CUniversalScenario::StepMovementTask(int delay, const vec2& pos, const std:
 		StepMovingDisable(true);
 
 		auto& lockStep = AddStep(delay);
-		lockStep.WhenStarted([this, pos](auto*)
+		lockStep.WhenStarted([this, pos]()
 		{
 			m_MovementPos = pos;
 		});
-		lockStep.WhenActive([this, targetLookText](auto*)
+		lockStep.WhenActive([this, targetLookText]()
 		{
 			if(Server()->Tick() % (Server()->TickSpeed() / 2) == 0)
 			{
@@ -365,14 +364,14 @@ void CUniversalScenario::StepMovementTask(int delay, const vec2& pos, const std:
 
 	// movements
 	auto& moveStep = AddStep();
-	moveStep.WhenStarted([this, chatMsg](auto*)
+	moveStep.WhenStarted([this, chatMsg]()
 	{
 		GetCharacter()->MovingDisable(false);
 
 		if(!chatMsg.empty())
 			GS()->Chat(GetClientID(), chatMsg.c_str());
 	});
-	moveStep.WhenActive([this, broadcastMsg](auto*)
+	moveStep.WhenActive([this, broadcastMsg]()
 	{
 		if(Server()->Tick() % (Server()->TickSpeed() / 2) == 0)
 		{
@@ -382,7 +381,7 @@ void CUniversalScenario::StepMovementTask(int delay, const vec2& pos, const std:
 		if(!broadcastMsg.empty())
 			GS()->Broadcast(GetClientID(), BroadcastPriority::VeryImportant, Server()->TickSpeed(), broadcastMsg.c_str());
 	});
-	moveStep.CheckCondition(ConditionPriority::CONDITION_AND_TIMER, [this](auto*)
+	moveStep.CheckCondition(ConditionPriority::CONDITION_AND_TIMER, [this]()
 	{
 		return distance(GetCharacter()->GetPos(), m_MovementPos) < 32.f;
 	});
@@ -393,7 +392,7 @@ void CUniversalScenario::StepPickItemTask(const vec2& pos, const nlohmann::json&
 	auto& pickItemStep = AddStep();
 	CItem item = CItem::FromJSON(itemJson);
 
-	pickItemStep.WhenStarted([this, pos, item, chatMsg](auto*)
+	pickItemStep.WhenStarted([this, pos, item, chatMsg]()
 	{
 		if(!item.Info()->IsStackable() && GetPlayer()->GetItem(item)->HasItem())
 			return;
@@ -407,7 +406,7 @@ void CUniversalScenario::StepPickItemTask(const vec2& pos, const nlohmann::json&
 				GS()->Chat(GetClientID(), chatMsg.c_str());
 		}
 	});
-	pickItemStep.WhenActive([this, broadcastMsg](auto*)
+	pickItemStep.WhenActive([this, broadcastMsg]()
 	{
 		if(m_pEntDroppedItem)
 		{
@@ -416,7 +415,7 @@ void CUniversalScenario::StepPickItemTask(const vec2& pos, const nlohmann::json&
 				GS()->Broadcast(GetClientID(), BroadcastPriority::VeryImportant, Server()->TickSpeed(), broadcastMsg.c_str());
 		}
 	});
-	pickItemStep.CheckCondition(ConditionPriority::CONDITION_AND_TIMER, [this, item](auto*)
+	pickItemStep.CheckCondition(ConditionPriority::CONDITION_AND_TIMER, [this, item]()
 	{
 		if(!GS()->m_World.ExistEntity(m_pEntDroppedItem))
 		{
@@ -430,7 +429,7 @@ void CUniversalScenario::StepPickItemTask(const vec2& pos, const nlohmann::json&
 void CUniversalScenario::StepFixedCam(int delay, const vec2& pos)
 {
 	auto& step = AddStep(delay);
-	step.WhenActive([this, pos](auto*)
+	step.WhenActive([this, pos]()
 	{
 		GetPlayer()->LockedView().ViewLock(pos, true);
 	});
@@ -439,7 +438,7 @@ void CUniversalScenario::StepFixedCam(int delay, const vec2& pos)
 void CUniversalScenario::StepTeleport(const vec2& pos, int worldID)
 {
 	auto& teleportStep = AddStep();
-	teleportStep.WhenStarted([this, pos, worldID](auto*)
+	teleportStep.WhenStarted([this, pos, worldID]()
 	{
 		auto* pPlayer = GetPlayer();
 		if(worldID >= 0 && !GS()->IsPlayerInWorld(GetClientID(), worldID))
@@ -456,7 +455,7 @@ void CUniversalScenario::StepTeleport(const vec2& pos, int worldID)
 void CUniversalScenario::StepMovingDisable(bool State)
 {
 	auto& movingStep = AddStep();
-	movingStep.WhenStarted([this, State](auto*)
+	movingStep.WhenStarted([this, State]()
 	{
 		GetCharacter()->MovingDisable(State);
 	});
@@ -466,7 +465,7 @@ void CUniversalScenario::StepMovingDisable(bool State)
 void CUniversalScenario::StepShootmarkers(const std::vector<std::pair<vec2, int>>& vShotmarkers)
 {
 	auto& stepCreateShootmarkers = AddStep();
-	stepCreateShootmarkers.WhenStarted([this, vShotmarkers](auto*)
+	stepCreateShootmarkers.WhenStarted([this, vShotmarkers]()
 	{
 		for(const auto& [position, health] : vShotmarkers)
 			CreateEntityShootmarkersTask(position, health);
@@ -476,11 +475,11 @@ void CUniversalScenario::StepShootmarkers(const std::vector<std::pair<vec2, int>
 		StepFixedCam(100, position);
 
 	auto& stepShootmarkers = AddStep();
-	stepShootmarkers.WhenActive([this](auto*)
+	stepShootmarkers.WhenActive([this]()
 	{
 		GS()->Broadcast(GetClientID(), BroadcastPriority::VeryImportant, Server()->TickSpeed(), "Shoot the targets!");
 	});
-	stepShootmarkers.CheckCondition(ConditionPriority::CONDITION_AND_TIMER, [this](auto*)
+	stepShootmarkers.CheckCondition(ConditionPriority::CONDITION_AND_TIMER, [this]()
 	{
 		return std::ranges::all_of(m_vpShootmarkers, [](const std::weak_ptr<CEntityGroup>& weakPtr)
 		{
@@ -492,7 +491,7 @@ void CUniversalScenario::StepShootmarkers(const std::vector<std::pair<vec2, int>
 void CUniversalScenario::StepMessage(int delay, const std::string& broadcastMsg, const std::string& chatMsg)
 {
 	auto& messageStep = AddStep(delay);
-	messageStep.WhenStarted([this, delay, chatMsg, broadcastMsg](auto*)
+	messageStep.WhenStarted([this, delay, chatMsg, broadcastMsg]()
 	{
 		if(!broadcastMsg.empty())
 		{
@@ -509,7 +508,7 @@ void CUniversalScenario::StepMessage(int delay, const std::string& broadcastMsg,
 void CUniversalScenario::StepEmote(int emoteType, int emoticonType)
 {
 	auto& emoteStep = AddStep();
-	emoteStep.WhenStarted([this, emoteType, emoticonType](auto*)
+	emoteStep.WhenStarted([this, emoteType, emoticonType]()
 	{
 		GetCharacter()->SetEmote(emoteType, 1, false);
 		GS()->SendEmoticon(GetClientID(), emoticonType);

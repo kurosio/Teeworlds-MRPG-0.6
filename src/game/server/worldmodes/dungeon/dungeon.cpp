@@ -10,6 +10,33 @@
 #include <game/server/core/components/accounts/account_manager.h>
 #include <game/server/core/components/duties/duties_manager.h>
 
+#include <game/server/core/tools/scenario_group_manager.h>
+
+class CGroupScenarioTest : public GroupScenarioBase
+{
+	explicit CGroupScenarioTest(int ScenarioID) : GroupScenarioBase(ScenarioID) {}
+
+protected:
+	void OnSetupScenario() override
+	{
+		AddStep(100).WhenStarted([this]()
+		{
+			for(auto& clientID : GetParticipants())
+				GS()->Broadcast(clientID, BroadcastPriority::VeryImportant, 100, "Hello niggers.");
+		}
+		).CheckCondition(ConditionPriority::CONDITION_AND_TIMER, [this]()
+		{
+			return GetParticipants().size() > 1;
+		});
+
+		AddStep(100).WhenStarted([this]()
+		{
+			for(auto& clientID : GetParticipants())
+				GS()->Broadcast(clientID, BroadcastPriority::VeryImportant, 100, "Well go play scenario we has 2 players.");
+		});
+	}
+};
+
 CGameControllerDungeon::CGameControllerDungeon(class CGS* pGS, CDungeonData* pDungeon) : IGameController(pGS)
 {
 	m_GameFlags = 0;
@@ -223,7 +250,6 @@ void CGameControllerDungeon::OnCharacterDeath(CPlayer* pVictim, CPlayer* pKiller
 		}
 	}
 }
-
 
 bool CGameControllerDungeon::OnCharacterSpawn(CCharacter* pChr)
 {

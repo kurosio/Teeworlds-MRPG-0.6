@@ -10,6 +10,9 @@
 #include "gameworld.h"
 #include "playerbot.h"
 
+#include "core/tools/scenario_player_manager.h"
+#include "core/tools/scenario_group_manager.h"
+
 #include "core/mmo_controller.h"
 
 class CGS : public IGameServer
@@ -36,6 +39,8 @@ class CGS : public IGameServer
 	class CMmoController* m_pMmoController;
 	class CEntityManager* m_pEntityManager;
 	class CPathFinder* m_pPathFinder;
+	class CScenarioPlayerManager* m_pScenarioPlayerManager;
+	class CScenarioGroupManager* m_pScenarioGroupManager;
 
 	int m_MultiplierExp;
 	CPlayer* m_apPlayers[MAX_CLIENTS];
@@ -57,6 +62,8 @@ public:
 	CPathFinder* PathFinder() const { return m_pPathFinder; }
 	CCollision *Collision() { return &m_Collision; }
 	CTuningParams *Tuning() { return &m_Tuning; }
+	CScenarioGroupManager* ScenarioGroupManager() const { return m_pScenarioGroupManager; }
+	CScenarioPlayerManager* ScenarioPlayerManager() const { return m_pScenarioPlayerManager; }
 
 	CEventHandler m_Events;
 	IGameController* m_pController;

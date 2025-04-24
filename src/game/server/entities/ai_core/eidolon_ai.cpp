@@ -4,6 +4,7 @@
 #include <game/server/gamecontext.h>
 
 #include <game/server/core/scenarios/scenario_eidolon.h>
+#include <game/server/core/tools/scenario_player_manager.h>
 
 CEidolonAI::CEidolonAI(CPlayerBot* pPlayer, CCharacterBotAI* pCharacter)
 	: CBaseAI(pPlayer, pCharacter) {}
@@ -47,7 +48,7 @@ bool CEidolonAI::CanDamage(CPlayer* pFrom)
 
 void CEidolonAI::OnSpawn()
 {
-	m_pPlayer->Scenarios().Start(std::make_unique<CEidolonScenario>());
+	GS()->ScenarioPlayerManager()->RegisterScenario<CEidolonScenario>(m_ClientID);
 	m_pCharacter->m_Core.m_Solo = true;
 }
 

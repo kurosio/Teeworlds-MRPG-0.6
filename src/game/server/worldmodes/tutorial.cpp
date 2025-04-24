@@ -2,6 +2,7 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "tutorial.h"
 
+#include <game/server/core/tools/scenario_player_manager.h>
 #include <game/server/core/scenarios/scenario_universal.h>
 #include <game/server/gamecontext.h>
 

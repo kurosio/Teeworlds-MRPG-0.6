@@ -39,6 +39,8 @@ CGS::CGS()
 	m_pController = nullptr;
 	m_pCommandProcessor = nullptr;
 	m_pPathFinder = nullptr;
+	m_pScenarioPlayerManager = nullptr;
+	m_pScenarioGroupManager = nullptr;
 	mem_zero(m_apPlayers, sizeof(m_apPlayers));
 	mem_zero(m_aBroadcastStates, sizeof(m_aBroadcastStates));
 }
@@ -57,6 +59,8 @@ CGS::~CGS()
 	delete m_pCommandProcessor;
 	delete m_pPathFinder;
 	delete m_pEntityManager;
+	delete m_pScenarioPlayerManager;
+	delete m_pScenarioGroupManager;
 }
 
 CCharacter* CGS::GetPlayerChar(int ClientID) const
@@ -719,6 +723,8 @@ void CGS::OnInit(int WorldID)
 	// initialize
 	m_pCommandProcessor = new CCommandProcessor(this);
 	m_pPathFinder = new CPathFinder(&m_Collision);
+	m_pScenarioPlayerManager = new CScenarioPlayerManager(this);
+	m_pScenarioGroupManager = new CScenarioGroupManager(this);
 }
 
 void CGS::OnConsoleInit()
@@ -753,28 +759,32 @@ void CGS::OnTick()
 	m_World.Tick();
 	m_pController->Tick();
 
-	// player updates on tick
-	for(int i = 0; i < MAX_CLIENTS; i++)
+	for(int ClientID = 0; ClientID < MAX_CLIENTS; ++ClientID)
 	{
-		if(!Server()->ClientIngame(i) || !m_apPlayers[i] || m_apPlayers[i]->GetCurrentWorldID() != m_WorldID)
+		if(!Server()->ClientIngame(ClientID))
 			continue;
 
-		if(m_apPlayers[i]->IsMarkedForDestroy())
+		auto* pPlayer = m_apPlayers[ClientID];
+		if(!pPlayer || pPlayer->GetCurrentWorldID() != m_WorldID)
+			continue;
+
+		if(pPlayer->IsMarkedForDestroy())
 		{
-			DestroyPlayer(i);
+			DestroyPlayer(ClientID);
 			continue;
 		}
 
-		m_apPlayers[i]->Tick();
-		m_apPlayers[i]->PostTick();
-		if(i < MAX_PLAYERS)
-		{
-			BroadcastTick(i);
-		}
+		pPlayer->Tick();
+		pPlayer->PostTick();
+		ScenarioPlayerManager()->UpdateClientScenarios(ClientID);
+
+		if(ClientID < MAX_PLAYERS)
+			BroadcastTick(ClientID);
 	}
 
 	Core()->OnTick();
 	UpdateCollisionZones();
+	ScenarioGroupManager()->UpdateScenarios();
 }
 
 void CGS::OnTickGlobal()
@@ -1043,6 +1053,7 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 				return;
 
 			pPlayer->m_aPlayerTick[LastSelfKill] = Server()->Tick() + (Server()->TickSpeed() / 2);
+			pPlayer->KillCharacter();
 
 			// close motd menu by vote optional
 			if(pPlayer->m_pMotdMenu)
@@ -1213,21 +1224,29 @@ void CGS::OnClientEnter(int ClientID)
 
 void CGS::OnClientDrop(int ClientID, const char* pReason)
 {
-	if(!m_apPlayers[ClientID] || m_apPlayers[ClientID]->IsBot())
-		return;
+	// remove client from scenarios
+	ScenarioPlayerManager()->RemoveClient(ClientID);
+	ScenarioGroupManager()->RemoveClient(ClientID);
 
-	// update clients on drop
-	m_pController->OnPlayerDisconnect(m_apPlayers[ClientID]);
-
-	if((Server()->ClientIngame(ClientID) || Server()->IsClientChangingWorld(ClientID)) && IsPlayerInWorld(ClientID))
+	// check valid player
+	auto*& pPlayer = m_apPlayers[ClientID];
+	if(pPlayer && !pPlayer->IsBot())
 	{
-		Chat(-1, "'{}' has left the {}", Server()->ClientName(ClientID), g_Config.m_SvGamemodeName);
-		Console()->PrintF(IConsole::OUTPUT_LEVEL_STANDARD, "game", "leave player='%d:%s'", ClientID, Server()->ClientName(ClientID));
-		Core()->SaveAccount(m_apPlayers[ClientID], SAVE_POSITION);
-	}
+		// information
+		if((Server()->ClientIngame(ClientID) || Server()->IsClientChangingWorld(ClientID)) && IsPlayerInWorld(ClientID))
+		{
+			Chat(-1, "'{}' has left the {}", Server()->ClientName(ClientID), g_Config.m_SvGamemodeName);
+			Console()->PrintF(IConsole::OUTPUT_LEVEL_STANDARD, "game", "leave player='%d:%s'", ClientID, Server()->ClientName(ClientID));
+			Core()->SaveAccount(m_apPlayers[ClientID], SAVE_POSITION);
+		}
 
-	delete m_apPlayers[ClientID];
-	m_apPlayers[ClientID] = nullptr;
+		// update clients on drop
+		m_pController->OnPlayerDisconnect(pPlayer);
+
+		// delete player
+		delete pPlayer;
+		pPlayer = nullptr;
+	}
 }
 
 void CGS::OnClientDirectInput(int ClientID, void* pInput)
@@ -1276,6 +1295,11 @@ void CGS::OnUpdateClientServerInfo(nlohmann::json* pJson, int ClientID)
 
 void CGS::OnClientPrepareChangeWorld(int ClientID)
 {
+	// remove client from scenarios
+	ScenarioPlayerManager()->RemoveClient(ClientID);
+	ScenarioGroupManager()->RemoveClient(ClientID);
+
+	// prepare and delete player
 	if(m_apPlayers[ClientID])
 	{
 		m_apPlayers[ClientID]->KillCharacter(WEAPON_WORLD);
@@ -1283,6 +1307,7 @@ void CGS::OnClientPrepareChangeWorld(int ClientID)
 		m_apPlayers[ClientID] = nullptr;
 	}
 
+	// allocate new player
 	const int AllocMemoryCell = ClientID + m_WorldID * MAX_CLIENTS;
 	m_apPlayers[ClientID] = new(AllocMemoryCell) CPlayer(this, ClientID);
 	Core()->QuestManager()->Update(m_apPlayers[ClientID]);

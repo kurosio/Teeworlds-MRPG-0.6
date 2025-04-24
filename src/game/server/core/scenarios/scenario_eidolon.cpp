@@ -4,7 +4,7 @@
 
 CPlayer* CEidolonScenario::GetOwner() const
 {
-	const auto* pBot = dynamic_cast<CPlayerBot*>(GetPlayer());
+	auto* pBot = dynamic_cast<CPlayerBot*>(GetPlayer());
 	return pBot ? pBot->GetEidolonOwner() : nullptr;
 }
 

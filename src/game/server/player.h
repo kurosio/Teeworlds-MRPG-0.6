@@ -12,7 +12,6 @@
 #include "core/tools/cooldown.h"
 #include "core/tools/effect_manager.h"
 #include "core/tools/motd_menu.h"
-#include "core/tools/scenario_manager.h"
 #include "core/tools/vote_wrapper.h"
 
 class CPlayerBot;
@@ -49,12 +48,10 @@ protected:
 	bool m_LastInputInit {};
 	int64_t m_LastPlaytime {};
 	FixedViewCam m_FixedView {};
-	ScenarioManager m_Scenarios {};
 
 public:
 	CGS* GS() const { return m_pGS; }
 	FixedViewCam& LockedView() { return m_FixedView; }
-	ScenarioManager& Scenarios() { return m_Scenarios; }
 
 	vec2 m_ViewPos{};
 	int m_SpectatorID {};
