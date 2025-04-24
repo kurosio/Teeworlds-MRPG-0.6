@@ -25,6 +25,8 @@
 #include "core/components/inventory/inventory_listener.h"
 #include "core/components/Eidolons/EidolonInfoData.h"
 #include "core/components/worlds/world_data.h"
+#include "core/tools/scenario_group_manager.h"
+#include "core/tools/scenario_player_manager.h"
 #include "core/tools/vote_optional.h"
 #include "core/tools/vote_wrapper.h"
 

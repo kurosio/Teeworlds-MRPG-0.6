@@ -14,25 +14,26 @@
 
 class CGroupScenarioTest : public GroupScenarioBase
 {
-	explicit CGroupScenarioTest(int ScenarioID) : GroupScenarioBase(ScenarioID) {}
+public:
+	explicit CGroupScenarioTest() : GroupScenarioBase() {}
 
 protected:
 	void OnSetupScenario() override
 	{
-		AddStep(100).WhenStarted([this]()
+		AddStep(100).WhenActive([this]()
 		{
 			for(auto& clientID : GetParticipants())
-				GS()->Broadcast(clientID, BroadcastPriority::VeryImportant, 100, "Hello niggers.");
+				GS()->Chat(clientID,  "Hello niggers.");
 		}
 		).CheckCondition(ConditionPriority::CONDITION_AND_TIMER, [this]()
 		{
 			return GetParticipants().size() > 1;
 		});
 
-		AddStep(100).WhenStarted([this]()
+		AddStep(100).WhenActive([this]()
 		{
 			for(auto& clientID : GetParticipants())
-				GS()->Broadcast(clientID, BroadcastPriority::VeryImportant, 100, "Well go play scenario we has 2 players.");
+				GS()->Chat(clientID,  "Well go play scenario we has 2 players.");
 		});
 	}
 };
@@ -254,6 +255,16 @@ void CGameControllerDungeon::OnCharacterDeath(CPlayer* pVictim, CPlayer* pKiller
 bool CGameControllerDungeon::OnCharacterSpawn(CCharacter* pChr)
 {
 	const auto State = m_pDungeon->GetState();
+
+	if(!GS()->ScenarioGroupManager()->IsActive(m_ScenarioTestID))
+	{
+		m_ScenarioTestID = GS()->ScenarioGroupManager()->RegisterScenario<CGroupScenarioTest>(pChr->GetPlayer()->GetCID());
+	}
+	else
+	{
+		auto pScenario = GS()->ScenarioGroupManager()->GetScenario(m_ScenarioTestID);
+		pScenario->AddParticipant(pChr->GetPlayer()->GetCID());
+	}
 
 	if(State >= CDungeonData::STATE_STARTED)
 	{

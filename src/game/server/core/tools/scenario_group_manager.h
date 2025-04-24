@@ -24,7 +24,7 @@ public:
 		static_assert(std::is_base_of_v<GroupScenarioBase, T>, "T must derive from GroupScenarioBase for CScenarioGroupManager");
 
 		int scenarioID = m_NextScenarioID++;
-		auto pScenario = std::make_shared<T>(m_pGS, std::forward<Args>(args)...);
+		auto pScenario = std::make_shared<T>(std::forward<Args>(args)...);
 		pScenario->m_ScenarioID = scenarioID;
 		pScenario->m_pGS = m_pGS;
 
