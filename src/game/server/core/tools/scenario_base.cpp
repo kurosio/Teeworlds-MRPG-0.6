@@ -246,6 +246,7 @@ CCharacter* PlayerScenarioBase::GetCharacter() const
 	return GS()->GetPlayerChar(m_ClientID);
 }
 
+// --- GroupScenarioBase Implementation ---
 std::vector<CPlayer*> GroupScenarioBase::GetPlayers() const
 {
 	std::vector<CPlayer*> vResult {};
@@ -266,7 +267,6 @@ std::vector<CCharacter*> GroupScenarioBase::GetCharacters() const
 	return vResult;
 }
 
-// --- GroupScenarioBase Implementation ---
 bool GroupScenarioBase::OnPauseConditions()
 {
 	return std::ranges::all_of(m_vParticipantIDs, [this](int ClientID)

@@ -10,9 +10,6 @@
 #include "gameworld.h"
 #include "playerbot.h"
 
-#include "core/tools/scenario_player_manager.h"
-#include "core/tools/scenario_group_manager.h"
-
 #include "core/mmo_controller.h"
 
 class CGS : public IGameServer
