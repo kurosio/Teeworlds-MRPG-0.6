@@ -632,7 +632,7 @@ void CMmoController::AsyncClientEnterMsgInfo(std::string_view ClientName, int Cl
 	CSqlString<MAX_NAME_LENGTH> Nickname(ClientName.data());
 	const auto AsyncEnterRes = Database->Prepare<DB::SELECT>("ID, Nick", "tw_accounts_data", "WHERE Nick = '{}'", Nickname.cstr());
 
-	AsyncEnterRes->AtExecute([CapturedNickname = std::string_view(Nickname.cstr()), ClientID](ResultPtr pRes)
+	AsyncEnterRes->AtExecute([CapturedNickname = std::string(Nickname.cstr()), ClientID](ResultPtr pRes)
 	{
 		auto* pGS = (CGS*)Instance::Server()->GameServerPlayer(ClientID);
 
