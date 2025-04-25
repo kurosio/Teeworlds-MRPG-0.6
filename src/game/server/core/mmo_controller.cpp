@@ -153,6 +153,7 @@ bool CMmoController::OnSendMenuVotes(CPlayer* pPlayer, int Menulist) const
 
 		// Statistics menu
 		VoteWrapper VStatistics(ClientID, VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE | VWF_SEPARATE, "Class profession: {}", pProfName);
+		VStatistics.Add("Discord: ({-})", g_Config.m_SvDiscordInviteLink);
 		VStatistics.Add("Level {}, Exp {}/{}", pPlayer->Account()->GetLevel(), pPlayer->Account()->GetExperience(), expForLevel);
 		VStatistics.Add("Gold: {$}, Bank: {$}", pPlayer->Account()->GetGold(), pPlayer->Account()->GetBankManager());
 		VStatistics.AddMenu(MENU_ACCOUNT_DETAIL_INFO, "\u2698 Detail information");

@@ -1055,7 +1055,6 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 				return;
 
 			pPlayer->m_aPlayerTick[LastSelfKill] = Server()->Tick() + (Server()->TickSpeed() / 2);
-			pPlayer->KillCharacter();
 
 			// close motd menu by vote optional
 			if(pPlayer->m_pMotdMenu)

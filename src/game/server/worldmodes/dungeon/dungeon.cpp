@@ -10,34 +10,6 @@
 #include <game/server/core/components/accounts/account_manager.h>
 #include <game/server/core/components/duties/duties_manager.h>
 
-#include <game/server/core/tools/scenario_group_manager.h>
-
-class CGroupScenarioTest : public GroupScenarioBase
-{
-public:
-	explicit CGroupScenarioTest() : GroupScenarioBase() {}
-
-protected:
-	void OnSetupScenario() override
-	{
-		AddStep(100).WhenActive([this]()
-		{
-			for(auto& clientID : GetParticipants())
-				GS()->Chat(clientID,  "Hello niggers.");
-		}
-		).CheckCondition(ConditionPriority::CONDITION_AND_TIMER, [this]()
-		{
-			return GetParticipants().size() > 1;
-		});
-
-		AddStep(100).WhenActive([this]()
-		{
-			for(auto& clientID : GetParticipants())
-				GS()->Chat(clientID,  "Well go play scenario we has 2 players.");
-		});
-	}
-};
-
 CGameControllerDungeon::CGameControllerDungeon(class CGS* pGS, CDungeonData* pDungeon) : IGameController(pGS)
 {
 	m_GameFlags = 0;
@@ -255,16 +227,6 @@ void CGameControllerDungeon::OnCharacterDeath(CPlayer* pVictim, CPlayer* pKiller
 bool CGameControllerDungeon::OnCharacterSpawn(CCharacter* pChr)
 {
 	const auto State = m_pDungeon->GetState();
-
-	if(!GS()->ScenarioGroupManager()->IsActive(m_ScenarioTestID))
-	{
-		m_ScenarioTestID = GS()->ScenarioGroupManager()->RegisterScenario<CGroupScenarioTest>(pChr->GetPlayer()->GetCID());
-	}
-	else
-	{
-		auto pScenario = GS()->ScenarioGroupManager()->GetScenario(m_ScenarioTestID);
-		pScenario->AddParticipant(pChr->GetPlayer()->GetCID());
-	}
 
 	if(State >= CDungeonData::STATE_STARTED)
 	{
