@@ -35,9 +35,9 @@ static vec2 CalculateTileCenter(int Index, int Width)
 
 vec2 ClampVel(int MoveRestriction, vec2 Vel)
 {
-	if(Vel.x > 0 && (MoveRestriction & CANTMOVE_RIGHT) || Vel.x < 0 && (MoveRestriction & CANTMOVE_LEFT))
+	if((Vel.x > 0 && (MoveRestriction & CANTMOVE_RIGHT)) || (Vel.x < 0 && (MoveRestriction & CANTMOVE_LEFT)))
 		Vel.x = 0;
-	if(Vel.y > 0 && (MoveRestriction & CANTMOVE_DOWN) || Vel.y < 0 && (MoveRestriction & CANTMOVE_UP))
+	if((Vel.y > 0 && (MoveRestriction & CANTMOVE_DOWN)) || (Vel.y < 0 && (MoveRestriction & CANTMOVE_UP)))
 		Vel.y = 0;
 	return Vel;
 }
