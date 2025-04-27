@@ -1164,8 +1164,6 @@ bool CCharacter::TakeDamage(vec2 Force, int Damage, int FromCID, int Weapon)
 	m_LastDamageByClient = FromCID;
 	m_pPlayer->ShowHealthNickname(2);
 	m_pPlayer->m_aPlayerTick[LastDamage] = Server()->Tick();
-	//dbg_msg("test", "[dmg:%d crit:%d, weapon:%d] damage %s to %s / star num %d",
-	//	Damage, IsCriticalDamage, pFrom->GetCharacter()->m_Core.m_ActiveWeapon, pFrom->IsBot() ? "bot" : "player", m_pPlayer->IsBot() ? "bot" : "player", StarNum);
 
 	if(m_pPlayer->m_Effects.IsActive("LastStand"))
 	{
@@ -1403,10 +1401,6 @@ void CCharacter::HandleTilesImpl(int Index)
 			m_pFishingRod = nullptr;
 		}
 
-		// locked view cam
-		if(const auto result = GS()->Collision()->TryGetFixedCamPos(m_Pos))
-			m_pPlayer->LockedView().ViewLock(result->first, result->second);
-
 		// zone information
 		if(m_pTilesHandler->IsActive(TILE_SW_ZONE))
 		{
@@ -1426,17 +1420,15 @@ void CCharacter::HandleTilesImpl(int Index)
 
 		// chairs
 		if(m_pTilesHandler->IsActive(TILE_CHAIR_LV1))
-		{
 			m_pPlayer->Account()->HandleChair(1, 1);
-		}
 		if(m_pTilesHandler->IsActive(TILE_CHAIR_LV2))
-		{
 			m_pPlayer->Account()->HandleChair(3, 3);
-		}
 		if(m_pTilesHandler->IsActive(TILE_CHAIR_LV3))
-		{
 			m_pPlayer->Account()->HandleChair(5, 5);
-		}
+
+		// locked view cam
+		if(const auto result = GS()->Collision()->TryGetFixedCamPos(m_Pos))
+			m_pPlayer->LockedView().ViewLock(result->first, result->second);
 
 		// check from components
 		GS()->Core()->OnCharacterTile(this);

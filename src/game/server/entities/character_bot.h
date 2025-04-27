@@ -14,6 +14,8 @@ class CCharacterBotAI : public CCharacter
 	CPlayerBot* m_pBotPlayer{};
 
 	int m_MoveTick{};
+	int m_StrafeDirection {};
+	int m_LastStrafeChangeTick {};
 	int m_PrevDirection{};
 	vec2 m_DieForce {};
 	std::optional<int> m_ForcedActiveWeapon {};

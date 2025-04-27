@@ -379,63 +379,80 @@ void CCharacterBotAI::Move()
 	if(m_pBotPlayer->m_PathHandle.vPath.empty())
 		return;
 
-	// got target pos is has or by path handler
-	vec2 TargetPos = m_pBotPlayer->m_TargetPos.has_value() ?
-		m_pBotPlayer->m_TargetPos.value() : m_pBotPlayer->m_PathHandle.vPath.back();
+	// target pos
+	vec2 TargetPos = m_pBotPlayer->m_TargetPos.value_or(m_pBotPlayer->m_PathHandle.vPath.back());
 
 	// find the next available path point
 	int Index = -1;
 	int ActiveWayPoints = 0;
 	vec2 WayPos = TargetPos;
-	for(int i = 0; i < (int)m_pBotPlayer->m_PathHandle.vPath.size() && i < 30 &&
-		!GS()->Collision()->IntersectLineWithInvisible(m_pBotPlayer->m_PathHandle.vPath[i], m_Pos, nullptr, nullptr); i++)
+	for(int i = 0; i < (int)m_pBotPlayer->m_PathHandle.vPath.size() && i < 30; i++)
 	{
+		if(GS()->Collision()->IntersectLineWithInvisible(m_pBotPlayer->m_PathHandle.vPath[i], m_Pos, nullptr, nullptr))
+			break;
 		Index = i;
 		ActiveWayPoints = i;
 	}
-
-	// If the given index is valid
 	if(Index > -1)
 	{
 		WayPos = m_pBotPlayer->m_PathHandle.vPath[Index];
 	}
 
-	// aim towards the target position
+	// set aim target
 	SetAim(TargetPos - m_Pos);
 
-	// calculate the direction towards the waypoint
-	vec2 DirectionToWaypoint = length(WayPos - m_Core.m_Pos) > 0.0f ? normalize(WayPos - m_Core.m_Pos) : vec2(0.0f, 0.0f);
+	// direction to waypoint
+	float DistToWaypoint = distance(WayPos, m_Core.m_Pos);
+	vec2 DirectionToWaypoint = DistToWaypoint > 0.1f ? normalize(WayPos - m_Core.m_Pos) : vec2(0.0f, 0.0f);
 
 	// determine the movement direction
 	bool UseHook = true;
-	int PathDirection = (ActiveWayPoints > 3)
-		? (DirectionToWaypoint.x < -0.1f ? -1 : (DirectionToWaypoint.x > 0.1f ? 1 : 0))
-		: m_PrevDirection;
+	int PathDirection = (ActiveWayPoints > 3) ?
+		(DirectionToWaypoint.x < -0.1f ? -1 : (DirectionToWaypoint.x > 0.1f ? 1 : 0)) :
+		m_PrevDirection;
 
 	// determine the optimal distance to the target based on the active weapon
+	bool HasActiveTarget = (!m_pAI->GetTarget()->IsEmpty() &&
+							m_pAI->GetTarget()->GetType() == TargetType::Active &&
+							!GS()->Collision()->IntersectLine(TargetPos, GetPos(), nullptr, nullptr));
 	int DistanceDirection = 0;
-	if(!m_pAI->GetTarget()->IsEmpty() && m_pAI->GetTarget()->GetType() == TargetType::Active)
+
+	if(HasActiveTarget)
 	{
-		float OptimalDistance;
+		// get optional distance
+		float OptimalDistance = 64.0f;
 		switch(m_Core.m_ActiveWeapon)
 		{
-			case WEAPON_GUN: OptimalDistance = 300.0f; break;
-			case WEAPON_SHOTGUN: OptimalDistance = 250.0f; break;
-			case WEAPON_GRENADE: OptimalDistance = 400.0f; break;
-			case WEAPON_LASER: OptimalDistance = 600.0f; break;
-			default: OptimalDistance = 64.0f; break; // Default for other weapons
+			case WEAPON_GUN:      OptimalDistance = 300.0f; break;
+			case WEAPON_SHOTGUN:  OptimalDistance = 400.0f; break;
+			case WEAPON_GRENADE:  OptimalDistance = 500.0f; break;
+			case WEAPON_LASER:    OptimalDistance = 600.0f; break;
 		}
 
-		// calculate the difference between current distance and optimal distance
-		// adjust movement to maintain the optimal distance if line of sight is clear
 		float DistanceToTarget = distance(GetPos(), TargetPos);
 		float DistanceDifference = DistanceToTarget - OptimalDistance;
-		bool bLineOfSightClear = !GS()->Collision()->IntersectLine(m_Core.m_Pos, TargetPos, nullptr, nullptr);
+		bool LineOfSightClear = !GS()->Collision()->IntersectLine(m_Core.m_Pos, TargetPos, nullptr, nullptr);
 
-		if(bLineOfSightClear && fabs(DistanceDifference) > 50.0f)
+		// strafing
+		int CurrentTick = Server()->Tick();
+		if(CurrentTick - m_LastStrafeChangeTick > Server()->TickSpeed() * (1 + (rand() % 2)))
+		{
+			m_StrafeDirection = (rand() % 2) ? 1 : -1;
+			m_LastStrafeChangeTick = CurrentTick;
+		}
+
+		// move to optional distance or strafe
+		if(LineOfSightClear && fabs(DistanceDifference) < 80.0f)
+		{
+			DistanceDirection = m_StrafeDirection;
+		}
+		else if(LineOfSightClear && fabs(DistanceDifference) >= 80.0f)
 		{
 			vec2 DirToTarget = normalize(TargetPos - m_Core.m_Pos);
-			DistanceDirection = (DistanceDifference > 0) ? ((DirToTarget.x > 0) ? 1 : -1) : ((DirToTarget.x > 0) ? -1 : 1);
+			DistanceDirection = (DistanceDifference > 0) ?
+				(DirToTarget.x > 0 ? 1 : -1) :
+				(DirToTarget.x > 0 ? -1 : 1);
+
 			if(DistanceDifference <= 0)
 				UseHook = false;
 		}
@@ -447,34 +464,33 @@ void CCharacterBotAI::Move()
 		}
 	}
 
-	// set the movement direction based on distance and path direction
+	// set direction result
 	m_Input.m_Direction = (DistanceDirection != 0) ? DistanceDirection : PathDirection;
 
-	// handle disallowed movement zones
-	if(IsCollisionFlag(CCollision::COLFLAG_DISALLOW_MOVE) && !AI()->GetTarget()->IsEmpty())
+	// reverse input direction
+	if(IsCollisionFlag(CCollision::COLFLAG_DISALLOW_MOVE) && HasActiveTarget)
 	{
 		AI()->GetTarget()->SetType(TargetType::Lost);
 		m_Input.m_Direction = -m_Input.m_Direction;
-		SetDoorHit(1);
 	}
 
-	// check if the bot should jump based on terrain
+	// jump ground
 	const bool IsOnGround = IsGrounded();
-	if((IsOnGround && DirectionToWaypoint.y < -0.5f) || (!IsOnGround && DirectionToWaypoint.y < -0.5f && m_Core.m_Vel.y > 0))
+	if((IsOnGround && DirectionToWaypoint.y < -0.5f) ||
+		(!IsOnGround && DirectionToWaypoint.y < -0.5f && m_Core.m_Vel.y > 0))
+	{
 		m_Input.m_Jump = 1;
+	}
 
-	// check for obstacles ahead and decide whether to jump
 	vec2 WallPosition;
 	if(GS()->Collision()->IntersectLineWithInvisible(m_Pos, m_Pos + vec2(m_Input.m_Direction * 32.0f, 0), &WallPosition, nullptr))
 	{
-		if(IsOnGround && GS()->Collision()->IntersectLine(WallPosition, WallPosition + vec2(0, -210), nullptr, nullptr))
-			m_Input.m_Jump = 1;
-
-		if(!IsOnGround && GS()->Collision()->IntersectLine(WallPosition, WallPosition + vec2(0, -125), nullptr, nullptr))
+		float CheckHeight = IsOnGround ? -210.0f : -125.0f;
+		if(GS()->Collision()->IntersectLine(WallPosition, WallPosition + vec2(0, CheckHeight), nullptr, nullptr))
 			m_Input.m_Jump = 1;
 	}
 
-	// cancel the jump if the path goes downwards or there are not enough waypoints
+	// disable jump is down
 	if(m_Input.m_Jump == 1 && (DirectionToWaypoint.y >= 0 || ActiveWayPoints < 3))
 		m_Input.m_Jump = 0;
 
@@ -485,18 +501,22 @@ void CCharacterBotAI::Move()
 	if(pChar && !pChar->GetPlayer()->IsBot())
 		m_Input.m_Jump = 1;
 
-	// handle hook usage based on conditions
-	if(UseHook && ActiveWayPoints > 2 && !m_Input.m_Hook && (DirectionToWaypoint.x != 0 || DirectionToWaypoint.y != 0))
+	// hooking
+	if(ActiveWayPoints > 2 && !m_Input.m_Hook && (DirectionToWaypoint.x != 0 || DirectionToWaypoint.y != 0) && !pChar)
 	{
 		if(m_Core.m_HookState == HOOK_GRABBED && m_Core.m_HookedPlayer == -1)
 		{
-			vec2 HookVel = normalize(m_Core.m_HookPos - m_Core.m_Pos) * GS()->Tuning()->m_HookDragAccel;
-			HookVel.y *= 0.3f;
-			HookVel.x *= (m_Input.m_Direction == 0 || (m_Input.m_Direction < 0 && HookVel.x > 0) || (m_Input.m_Direction > 0 && HookVel.x < 0)) ? 0.95f : 0.75f;
-			HookVel += vec2(0, 1) * GS()->Tuning()->m_Gravity;
+			vec2 HookVel = normalize(m_Core.m_HookPos - GetPos()) * GS()->Tuning()->m_HookDragAccel;
+			if(HookVel.y > 0)
+				HookVel.y *= 0.3f;
+			if((HookVel.x < 0 && m_Input.m_Direction < 0) || (HookVel.x > 0 && m_Input.m_Direction > 0))
+				HookVel.x *= 0.95f;
+			else
+				HookVel.x *= 0.75f;
 
-			float ps = dot(DirectionToWaypoint, HookVel);
-			if(ps > 0 || (DirectionToWaypoint.y < 0 && m_Core.m_Vel.y > 0.f && m_Core.m_HookTick < 3 * SERVER_TICK_SPEED))
+			vec2 Target = vec2(m_Input.m_TargetX, m_Input.m_TargetY);
+			float ps = dot(Target, HookVel);
+			if(ps > 0 || (Target.y < 0 && m_Core.m_Vel.y > 0.f && m_Core.m_HookTick < SERVER_TICK_SPEED + SERVER_TICK_SPEED / 2))
 				m_Input.m_Hook = 1;
 			if(m_Core.m_HookTick > 4 * SERVER_TICK_SPEED || length(m_Core.m_HookPos - GetPos()) < 20.0f)
 				m_Input.m_Hook = 0;
@@ -505,21 +525,25 @@ void CCharacterBotAI::Move()
 			m_Input.m_Hook = 1;
 		else if(m_LatestInput.m_Hook == 0 && m_Core.m_HookState == HOOK_IDLE && rand() % 3 == 0)
 		{
-			int NumDir = 45;
+			int NumDir = 32;
 			vec2 HookDir(0.0f, 0.0f);
 			float MaxForce = 0;
-
 			for(int i = 0; i < NumDir; i++)
 			{
 				float a = 2 * i * pi / NumDir;
 				vec2 dir = direction(a);
 				vec2 Pos = GetPos() + dir * GS()->Tuning()->m_HookLength;
 
-				if((GS()->Collision()->IntersectLine(GetPos(), Pos, &Pos, nullptr) & (CCollision::COLFLAG_SOLID | CCollision::COLFLAG_NOHOOK)) == CCollision::COLFLAG_SOLID)
+				if((GS()->Collision()->IntersectLine(GetPos(), Pos, &Pos, 0) & (CCollision::COLFLAG_SOLID | CCollision::COLFLAG_NOHOOK)) == CCollision::COLFLAG_SOLID)
 				{
 					vec2 HookVel = dir * GS()->Tuning()->m_HookDragAccel;
-					HookVel.y *= 0.3f;
-					HookVel.x *= (HookVel.x < 0 && m_Input.m_Direction < 0) || (HookVel.x > 0 && m_Input.m_Direction > 0) ? 0.95f : 0.75f;
+					if(HookVel.y > 0)
+						HookVel.y *= 0.3f;
+					if((HookVel.x < 0 && m_Input.m_Direction < 0) || (HookVel.x > 0 && m_Input.m_Direction > 0))
+						HookVel.x *= 0.95f;
+					else
+						HookVel.x *= 0.75f;
+
 					HookVel += vec2(0, 1) * GS()->Tuning()->m_Gravity;
 
 					float ps = dot(DirectionToWaypoint, HookVel);
