@@ -144,7 +144,7 @@ public:
 	std::optional<std::pair<vec2, bool>> TryGetFixedCamPos(vec2 currentPos) const;
 	GatheringNode* GetOreNode(int SwitchNumber) { return m_vOreNodes.contains(SwitchNumber) ? &m_vOreNodes.at(SwitchNumber) : nullptr; }
 	GatheringNode* GetPlantNode(int SwitchNumber) { return m_vPlantNodes.contains(SwitchNumber) ? &m_vPlantNodes.at(SwitchNumber) : nullptr; }
-	GatheringNode* GetFishNode(int SwitchNumber) { return m_vFishNodes.contains(SwitchNumber) ? &m_vPlantNodes.at(SwitchNumber) : nullptr; }
+	GatheringNode* GetFishNode(int SwitchNumber) { return m_vFishNodes.contains(SwitchNumber) ? &m_vFishNodes.at(SwitchNumber) : nullptr; }
 
 	// tools
 	int IntersectLine(vec2 Pos0, vec2 Pos1, vec2* pOutCollision, vec2* pOutBeforeCollision, int ColFlag = COLFLAG_SOLID) const;
