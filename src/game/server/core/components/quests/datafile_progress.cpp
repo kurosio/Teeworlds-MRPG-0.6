@@ -67,7 +67,19 @@ void QuestDatafile::Load() const
 	}
 
 	// loading steps
-	nlohmann::json JsonQuestData = nlohmann::json::parse((char*)RawData.data());
+	nlohmann::json JsonQuestData{};
+	try
+	{
+		JsonQuestData = nlohmann::json::parse((char*)RawData.data());
+	}
+	catch(const nlohmann::json::parse_error& e)
+	{
+		dbg_msg("quest", "JSON: (%s).", e.what());
+		Create();
+		return;
+	}
+
+	// prepare steps
 	m_pQuest->m_Step = JsonQuestData.value("current_step", 1);
 	m_pQuest->Info()->PreparePlayerObjectives(m_pQuest->m_Step, m_pQuest->m_ClientID, m_pQuest->m_vObjectives);
 
