@@ -16,6 +16,7 @@ class CCharacterBotAI : public CCharacter
 	int m_MoveTick{};
 	int m_StrafeDirection {};
 	int m_LastStrafeChangeTick {};
+	int m_IntervalChangeWeapon {};
 	int m_PrevDirection{};
 	vec2 m_DieForce {};
 	std::optional<int> m_ForcedActiveWeapon {};

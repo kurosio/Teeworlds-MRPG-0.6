@@ -167,15 +167,22 @@ void CCharacterBotAI::SelectWeaponAtRandomInterval()
 		return;
 	}
 
-	// If the interval has succesful, change the weapon
-	const int changeInterval = Server()->TickSpeed() * (1 + rand() % 3);
-	if(Server()->Tick() % changeInterval == 0)
+	// interval change the weapon
+	if(--m_IntervalChangeWeapon <= 0)
 	{
-		const int RandomWeapon = rand() % (WEAPON_LASER + 1);
-		const auto EquipID = GetEquipByWeapon(RandomWeapon);
-		if(m_pBotPlayer->IsEquippedSlot(EquipID))
+		m_IntervalChangeWeapon = 25 + rand() % 100;
+
+		int AvailableWeapons[WEAPON_LASER + 1] {};
+		int WeaponCount = 0;
+		for(int i = 0; i <= WEAPON_LASER; i++)
 		{
-			m_Core.m_ActiveWeapon = RandomWeapon;
+			if(i != m_Core.m_ActiveWeapon && m_pBotPlayer->IsEquippedSlot(GetEquipByWeapon(i)))
+				AvailableWeapons[WeaponCount++] = i;
+		}
+
+		if(WeaponCount > 0)
+		{
+			m_Core.m_ActiveWeapon = AvailableWeapons[rand() % WeaponCount];
 		}
 	}
 }
@@ -349,9 +356,7 @@ void CCharacterBotAI::Snap(int SnappingClient)
 
 void CCharacterBotAI::ProcessBot()
 {
-	if(m_pAI->GetTarget()->IsEmpty())
-		m_Core.m_ActiveWeapon = WEAPON_HAMMER;
-	else
+	if(!m_pAI->GetTarget()->IsEmpty())
 		m_pAI->GetTarget()->Tick();
 
 	m_pAI->Process();
@@ -414,7 +419,7 @@ void CCharacterBotAI::Move()
 	// determine the optimal distance to the target based on the active weapon
 	bool HasActiveTarget = (!m_pAI->GetTarget()->IsEmpty() &&
 							m_pAI->GetTarget()->GetType() == TargetType::Active &&
-							!GS()->Collision()->IntersectLine(TargetPos, GetPos(), nullptr, nullptr));
+							!m_pAI->GetTarget()->IsCollided());
 	int DistanceDirection = 0;
 
 	if(HasActiveTarget)
@@ -581,7 +586,7 @@ void CCharacterBotAI::Move()
 
 void CCharacterBotAI::Fire()
 {
-	CPlayer* pPlayer = GS()->GetPlayer(AI()->GetTarget()->GetCID(), false, true);
+	auto* pPlayer = GS()->GetPlayer(AI()->GetTarget()->GetCID(), false, true);
 	if(!pPlayer || AI()->GetTarget()->IsEmpty() || AI()->GetTarget()->IsCollided())
 		return;
 
