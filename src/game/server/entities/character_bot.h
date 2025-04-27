@@ -15,7 +15,6 @@ class CCharacterBotAI : public CCharacter
 
 	int m_MoveTick{};
 	int m_PrevDirection{};
-	vec2 m_PrevPos{};
 	vec2 m_DieForce {};
 	std::optional<int> m_ForcedActiveWeapon {};
 	ska::unordered_set< int > m_aListDmgPlayers{};

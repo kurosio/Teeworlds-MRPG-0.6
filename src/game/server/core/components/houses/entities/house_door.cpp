@@ -65,7 +65,8 @@ CEntityHouseDoor::CEntityHouseDoor(CGameWorld* pGameWorld, IHouse* pHouse, const
 	: CEntity(pGameWorld, CGameWorld::ENTTYPE_HOUSE_DOOR, Pos)
 {
 	// prepare positions
-	GS()->Collision()->FillLengthWall(32, vec2(0, -1), &m_Pos, &m_PosTo, false);
+	GS()->Collision()->FillLengthWall(vec2(0, -1), &m_Pos, &m_PosTo, 32, true, false);
+	GS()->Collision()->SetDoorFromToCollisionAt(m_Pos, m_PosTo, TILE_STOPA, 0, GetID());
 	GS()->EntityManager()->LaserOrbite(this, 4, LaserOrbiteType::Default, 0.f, 16.f, LASERTYPE_DOOR);
 
 	// initialize variables
@@ -78,7 +79,6 @@ CEntityHouseDoor::CEntityHouseDoor(CGameWorld* pGameWorld, IHouse* pHouse, const
 	// insert entity to gameworld
 	GameWorld()->InsertEntity(this);
 }
-
 
 void CEntityHouseDoor::Tick()
 {
@@ -133,24 +133,20 @@ bool CEntityHouseDoor::PlayerHouseTick()
 			vec2 IntersectPos;
 			if(closest_point_on_line(m_Pos, m_PosTo, pChar->m_Core.m_Pos, IntersectPos))
 			{
-				const auto Distance = distance(IntersectPos, pChar->m_Core.m_Pos);
-				if(Distance <= g_Config.m_SvDoorRadiusHit)
+				// only for has access
+				if(pHouse->GetAccountID() == pChar->GetPlayer()->Account()->GetID())
+					continue;
+
+				// skip eidolon
+				if(pChar->GetPlayer()->IsBot())
 				{
-					// only for has access
-					if(pHouse->GetAccountID() == pChar->GetPlayer()->Account()->GetID())
+					auto* pPlayerBot = static_cast<CPlayerBot*>(pChar->GetPlayer());
+					if(pPlayerBot->GetEidolonOwner() && pHouse->GetAccountID() == pPlayerBot->GetEidolonOwner()->Account()->GetID())
 						continue;
-
-					// skip eidolon
-					if(pChar->GetPlayer()->IsBot())
-					{
-						auto* pPlayerBot = static_cast<CPlayerBot*>(pChar->GetPlayer());
-						if(pPlayerBot->GetEidolonOwner() && pHouse->GetAccountID() == pPlayerBot->GetEidolonOwner()->Account()->GetID())
-							continue;
-					}
-
-					// hit by door
-					pChar->SetDoorHit(m_Pos, m_PosTo);
 				}
+
+				// hit by door
+				pChar->SetDoorHit(GetID());
 			}
 		}
 	}
@@ -208,15 +204,10 @@ bool CEntityHouseDoor::GuildHouseTick()
 			vec2 IntersectPos;
 			if(closest_point_on_line(m_Pos, m_PosTo, pChar->m_Core.m_Pos, IntersectPos))
 			{
-				const auto dist = distance(IntersectPos, pChar->m_Core.m_Pos);
-				if(dist <= g_Config.m_SvDoorRadiusHit)
-				{
-					if(pCheckGuild && pHouse->IsPurchased() && pCheckGuild->GetID() == pHouse->GetGuild()->GetID())
-						continue;
+				if(pCheckGuild && pHouse->IsPurchased() && pCheckGuild->GetID() == pHouse->GetGuild()->GetID())
+					continue;
 
-					// hit by door
-					pChar->SetDoorHit(m_Pos, m_PosTo);
-				}
+				pChar->SetDoorHit(GetID());
 			}
 		}
 	}

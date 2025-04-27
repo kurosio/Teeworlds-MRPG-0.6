@@ -56,7 +56,7 @@ static bool DrawboardToolEventCallback(DrawboardToolEvent Event, CPlayer* pPlaye
 	if(Event == DrawboardToolEvent::OnUpdate)
 	{
 		const auto MousePos = pPlayer->GetCharacter()->GetMousePos();
-		const auto optNumber = pManager->GS()->Collision()->GetSwitchTileNumberAtIndex(MousePos, TILE_SW_HOUSE_ZONE);
+		const auto optNumber = pManager->GS()->Collision()->GetSwitchTileNumberAtTileIndex(MousePos, TILE_SW_HOUSE_ZONE);
 
 		if(!optNumber || (*optNumber != pHouse->GetID()))
 		{

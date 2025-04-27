@@ -5,21 +5,10 @@
 CEntityPersonalDoor::CEntityPersonalDoor(CGameWorld* pGameWorld, int ClientID, vec2 Pos, vec2 Direction)
 	: CEntity(pGameWorld, CGameWorld::ENTTYPE_BOT_WALL, Pos, 0, ClientID)
 {
-	GS()->Collision()->FillLengthWall(32, Direction, &m_Pos, &m_PosTo);
-	GameWorld()->InsertEntity(this);
-}
+	GS()->Collision()->FillLengthWall(Direction, &m_Pos, &m_PosTo);
+	GS()->Collision()->SetDoorFromToCollisionAt(m_Pos, m_PosTo, TILE_STOPA, 0, GetID());
 
-void CEntityPersonalDoor::HitCharacter(CCharacter* pChar)
-{
-	vec2 IntersectPos;
-	if(closest_point_on_line(m_Pos, m_PosTo, pChar->m_Core.m_Pos, IntersectPos))
-	{
-		const float Distance = distance(IntersectPos, pChar->m_Core.m_Pos);
-		if(Distance <= g_Config.m_SvDoorRadiusHit)
-		{
-			pChar->SetDoorHit(m_Pos, m_PosTo);
-		}
-	}
+	GameWorld()->InsertEntity(this);
 }
 
 void CEntityPersonalDoor::Tick()
@@ -33,7 +22,9 @@ void CEntityPersonalDoor::Tick()
 
 	if(auto* pChar = pPlayer->GetCharacter())
 	{
-		HitCharacter(pChar);
+		vec2 IntersectPos;
+		if(closest_point_on_line(m_Pos, m_PosTo, pChar->m_Core.m_Pos, IntersectPos))
+			pChar->SetDoorHit(GetID());
 	}
 }
 

@@ -250,12 +250,6 @@ void CCharacterBotAI::Tick()
 		return;
 	}
 
-	// handle safe flags
-	HandleSafeFlags();
-
-	// engine bots
-	ProcessBot();
-	HandleTiles();
 	HandleTuning();
 
 	// core
@@ -263,18 +257,20 @@ void CCharacterBotAI::Tick()
 	m_Core.Tick(true, &m_pBotPlayer->m_NextTuningParams);
 	m_pBotPlayer->UpdateSharedCharacterData(m_Health, m_Mana);
 
+	// handles
+	HandleSafeFlags();
+	ProcessBot();
+	if(!HandleTiles())
+		return;
+
 	// game clipped
 	if(GameLayerClipped(m_Pos) || GetTiles()->IsEnter(TILE_DEATH))
 	{
 		Die(m_pBotPlayer->GetCID(), WEAPON_SELF);
+		return;
 	}
 
-	// door
-	if(length(m_NormalDoorHit) < 0.1f)
-	{
-		m_OlderPos = m_OldPos;
-		m_OldPos = m_Core.m_Pos;
-	}
+	ApplyMoveRestrictions();
 }
 
 void CCharacterBotAI::TickDeferred()
@@ -283,16 +279,10 @@ void CCharacterBotAI::TickDeferred()
 	if(!m_pBotPlayer->IsActive() || !IsAlive())
 		return;
 
-	// door reset
-	if(length(m_NormalDoorHit) >= 0.1f)
-	{
-		HandleDoorHit();
-		m_NormalDoorHit = vec2(0, 0);
-	}
-
 	CCharacterCore::CParams PlayerTune(&m_pBotPlayer->m_NextTuningParams);
 	m_Core.Move(&PlayerTune);
 	m_Core.Quantize();
+	m_PrevPos = m_Pos;
 	m_Pos = m_Core.m_Pos;
 }
 
@@ -366,7 +356,6 @@ void CCharacterBotAI::ProcessBot()
 
 	m_pAI->Process();
 
-	m_PrevPos = m_Pos;
 	if(m_Input.m_Direction)
 	{
 		m_PrevDirection = m_Input.m_Direction;
@@ -466,7 +455,7 @@ void CCharacterBotAI::Move()
 	{
 		AI()->GetTarget()->SetType(TargetType::Lost);
 		m_Input.m_Direction = -m_Input.m_Direction;
-		m_NormalDoorHit = vec2(1.f, 1.f);
+		SetDoorHit(1);
 	}
 
 	// check if the bot should jump based on terrain
@@ -564,9 +553,6 @@ void CCharacterBotAI::Move()
 		m_Input.m_Jump = 1;
 		m_MoveTick = Server()->Tick();
 	}
-
-	// update previous position
-	m_PrevPos = m_Pos;
 }
 
 void CCharacterBotAI::Fire()

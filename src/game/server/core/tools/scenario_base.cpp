@@ -285,11 +285,12 @@ bool GroupScenarioBase::OnStopConditions()
 
 bool GroupScenarioBase::AddParticipant(int ClientID)
 {
+	if(m_vParticipantIDs.contains(ClientID))
+		return false;
+
 	auto [it, inserted] = m_vParticipantIDs.insert(ClientID);
 	if(inserted)
-	{
 		OnPlayerJoin(ClientID);
-	}
 
 	return inserted;
 }

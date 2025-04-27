@@ -56,7 +56,6 @@ void CPlayerBot::Tick()
 				if(pOwner && pOwner->GetCharacter() && distance(pOwner->GetCharacter()->GetPos(), m_ViewPos) > 1000.f)
 				{
 					vec2 OwnerPos = pOwner->GetCharacter()->GetPos();
-					m_pCharacter->ResetDoorHit();
 					m_pCharacter->ChangePosition(OwnerPos);
 
 					m_pCharacter->m_Core.m_Vel = pOwner->GetCharacter()->m_Core.m_Vel;

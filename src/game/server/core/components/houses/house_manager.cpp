@@ -617,7 +617,7 @@ CHouse* CHouseManager::GetHouse(HouseIdentifier ID) const
 
 CHouse* CHouseManager::GetHouseByPos(vec2 Pos) const
 {
-	const auto switchNumber = GS()->Collision()->GetSwitchTileNumberAtIndex(Pos, TILE_SW_HOUSE_ZONE);
+	const auto switchNumber = GS()->Collision()->GetSwitchTileNumberAtTileIndex(Pos, TILE_SW_HOUSE_ZONE);
 	if(!switchNumber)
 		return nullptr;
 
@@ -631,7 +631,7 @@ CHouse* CHouseManager::GetHouseByPos(vec2 Pos) const
 
 CFarmzone* CHouseManager::GetHouseFarmzoneByPos(vec2 Pos) const
 {
-	const auto switchNumber = GS()->Collision()->GetSwitchTileNumberAtIndex(Pos, TILE_SW_HOUSE_ZONE);
+	const auto switchNumber = GS()->Collision()->GetSwitchTileNumberAtTileIndex(Pos, TILE_SW_HOUSE_ZONE);
 	if(!switchNumber)
 		return nullptr;
 

@@ -1806,7 +1806,7 @@ CGuildHouse* CGuildManager::GetHouseByID(const GuildHouseIdentifier& ID) const
 
 CGuildHouse* CGuildManager::GetHouseByPos(vec2 Pos) const
 {
-	const auto switchNumber = GS()->Collision()->GetSwitchTileNumberAtIndex(Pos, TILE_SW_HOUSE_ZONE);
+	const auto switchNumber = GS()->Collision()->GetSwitchTileNumberAtTileIndex(Pos, TILE_SW_HOUSE_ZONE);
 	if(!switchNumber)
 		return nullptr;
 
@@ -1820,7 +1820,7 @@ CGuildHouse* CGuildManager::GetHouseByPos(vec2 Pos) const
 
 CFarmzone* CGuildManager::GetHouseFarmzoneByPos(vec2 Pos) const
 {
-	const auto switchNumber = GS()->Collision()->GetSwitchTileNumberAtIndex(Pos, TILE_SW_HOUSE_ZONE);
+	const auto switchNumber = GS()->Collision()->GetSwitchTileNumberAtTileIndex(Pos, TILE_SW_HOUSE_ZONE);
 	if(!switchNumber)
 		return nullptr;
 

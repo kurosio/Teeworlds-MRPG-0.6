@@ -72,6 +72,11 @@ enum
 	TILE_BANK_MANAGER = 38,
 	TILE_FISHING_MODE = 39,
 
+	// stop tiles
+	TILE_STOP = 60,
+	TILE_STOPS,
+	TILE_STOPA,
+
 	// teleport tiles
 	TILE_TELE_FROM_CONFIRM = 10,
 	TILE_TELE_FROM = 26,
@@ -164,6 +169,14 @@ public:
 	unsigned char m_MaxSpeed;
 	unsigned char m_Type;
 	short m_Angle;
+};
+
+class CDoorTile
+{
+public:
+	unsigned char m_Index;
+	unsigned char m_Flags;
+	int m_Number;
 };
 
 struct CMapItemInfo

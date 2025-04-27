@@ -3,7 +3,7 @@
 #include <game/server/gamecontext.h>
 
 CEntityRifleWallPusher::CEntityRifleWallPusher(CGameWorld* pGameWorld, int OwnerCID, vec2 Pos, vec2 Direction, int LifeTick)
-: CEntity(pGameWorld, CGameWorld::ENTTYPE_LASER, Pos, 24)
+: CEntity(pGameWorld, CGameWorld::ENTTYPE_LASER, Pos, 64)
 {
 	m_ClientID = OwnerCID;
 	m_Direction = Direction;
@@ -94,7 +94,7 @@ void CEntityRifleWallPusher::CheckHitCharacter(const vec2 PrevPos) const
 
 		// check distance
 		const float Distance = distance(IntersectPos, pChar->m_Core.m_Pos);
-		if(Distance > g_Config.m_SvDoorRadiusHit * 3)
+		if(Distance > GetRadius())
 			continue;
 
 		// wall pushing

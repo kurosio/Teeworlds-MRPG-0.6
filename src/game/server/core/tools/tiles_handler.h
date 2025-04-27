@@ -56,12 +56,12 @@ public:
 	explicit CTileHandler(CCollision* pCollision, CCharacter* pCharacter)
 		: m_pCollision(pCollision), m_pCharacter(pCharacter) {}
 
-	void Handle(const vec2& Position);
+	void Handle(int Index);
 
 	// tiles
-	bool IsEnter(int Index);
-	bool IsExit(int Index);
-	bool IsActive(int Index) const { return m_MarkedTiles[0] == Index || m_MarkedTiles[1] == Index || m_MarkedTiles[2] == Index; }
+	bool IsEnter(int TileIndex);
+	bool IsExit(int TileIndex);
+	bool IsActive(int TileIndex) const { return m_MarkedTiles[0] == TileIndex || m_MarkedTiles[1] == TileIndex || m_MarkedTiles[2] == TileIndex; }
 
 	// fold expression helpers
 	template <typename ... Ts> bool AreAnyEnter(const Ts... args) { return ((IsEnter(args)) || ...); }

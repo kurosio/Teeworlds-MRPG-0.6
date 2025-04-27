@@ -58,6 +58,7 @@ class CCharacter : public CEntity
 	bool FireRifle(vec2 Direction, vec2 ProjStartPos);
 
 	int GetTotalDamageByWeapon(int Weapon) const;
+	void HandleTilesImpl(int Index);
 
 protected:
 	int m_LastDamageByClient {};
@@ -74,13 +75,12 @@ protected:
 	int m_EmoteType {};
 	int m_EmoteStop {};
 	int m_SafeTickFlags {};
-	vec2 m_NormalDoorHit {};
 	std::string m_Zonename {};
 	CMultipleOrbite* m_pMultipleOrbite {};
 
 	void HandleWeapons();
 	void HandleNinja();
-	void HandleTiles();
+	bool HandleTiles();
 	void HandleIndependentTuning();
 
 	void HandleSafeFlags();
@@ -100,9 +100,9 @@ public:
 	static constexpr int ms_PhysSize = 28;
 	CCharacterCore m_Core {};
 
+	int m_MoveRestrictions {};
 	int m_AmmoRegen {};
-	vec2 m_OldPos {};
-	vec2 m_OlderPos {};
+	vec2 m_PrevPos {};
 
 	// constructors
 	CCharacter(CGameWorld *pWorld);
@@ -122,6 +122,7 @@ public:
 	virtual void Die(int Killer, int Weapon);
 	virtual void HandleTuning();
 
+	void ApplyMoveRestrictions();
 	void MovingDisable(bool State);
 
 	void OnPredictedInput(CNetObj_PlayerInput *pNewInput);
@@ -131,6 +132,7 @@ public:
 	bool IsGrounded() const;
 	bool IsCollisionFlag(int Flag) const;
 	CPlayer* GetHookedPlayer() const;
+	void SetDoorHit(int ID);
 
 	const char* GetZonename() const { return m_Zonename.c_str(); }
 	void SetSafeFlags(int Flags = SAFEFLAG_DAMAGE_DISABLED | SAFEFLAG_HAMMER_HIT_DISABLED | SAFEFLAG_COLLISION_DISABLED | SAFEFLAG_HOOK_HIT_DISABLED) { m_SafeTickFlags = Flags; }
@@ -149,9 +151,6 @@ public:
 	bool RemoveWeapon(int Weapon);
 	void ChangePosition(vec2 NewPos);
 	void UpdateEquippedStats(std::optional<int> UpdatedItemID = std::nullopt);
-	void SetDoorHit(vec2 Start, vec2 End);
-	void HandleDoorHit();
-	void ResetDoorHit() { m_NormalDoorHit = vec2(0, 0); }
 	vec2 GetMousePos() const { return m_Core.m_Pos + vec2(m_Core.m_Input.m_TargetX, m_Core.m_Input.m_TargetY); }
 	CPlayer* GetLastAttacker() const;
 };

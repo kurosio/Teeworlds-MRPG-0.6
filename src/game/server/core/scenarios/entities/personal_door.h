@@ -9,7 +9,6 @@ class CEntityPersonalDoor : public CEntity
 {
 public:
 	CEntityPersonalDoor(CGameWorld* pGameWorld, int ClientID, vec2 Pos, vec2 Direction);
-	void HitCharacter(CCharacter* pChar);
 
 	void Tick() override;
 	void Snap(int SnappingClient) override;

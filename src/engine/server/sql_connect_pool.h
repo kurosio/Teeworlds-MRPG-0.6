@@ -89,6 +89,33 @@ public:
 		return std::string(m_pResult->getString(column).c_str());
 	}
 
+	nlohmann::json getJson(const SQLString& column) const
+	{
+		nlohmann::json result = nullptr;
+		if(!m_pResult)
+			return result;
+
+		try
+		{
+			std::string json_string = m_pResult->getString(column).c_str();
+			if(json_string.empty())
+				return result;
+
+			result = nlohmann::json::parse(json_string);
+		}
+		catch(const nlohmann::json::parse_error& e)
+		{
+			dbg_msg("db", "JSON parse error for column '%s': %s", column.c_str(), e.what());
+			result = nullptr;
+		}
+		catch(...)
+		{
+			result = nullptr;
+		}
+
+		return result;
+	}
+
 	bool next() const
 	{
 		return m_pResult->next();

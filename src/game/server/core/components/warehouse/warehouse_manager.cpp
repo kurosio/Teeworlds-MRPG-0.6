@@ -15,7 +15,7 @@ void CWarehouseManager::OnPreInit()
 		const auto ID = pRes->getInt("ID");
 		const auto Name = pRes->getString("Name");
 		const auto Type = DBSet(pRes->getString("Type"));
-		const auto Data = pRes->getString("Data");
+		const auto Data = pRes->getJson("Data");
 		const auto Pos = vec2((float)pRes->getInt("PosX"), (float)pRes->getInt("PosY"));
 		const auto Currency = pRes->getInt("Currency");
 		const auto WorldID = pRes->getInt("WorldID");

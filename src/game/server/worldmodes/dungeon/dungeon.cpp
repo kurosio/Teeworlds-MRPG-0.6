@@ -10,6 +10,9 @@
 #include <game/server/core/components/accounts/account_manager.h>
 #include <game/server/core/components/duties/duties_manager.h>
 
+#include <game/server/core/scenarios/scenario_dungeon.h>
+#include <game/server/core/tools/scenario_group_manager.h>
+
 CGameControllerDungeon::CGameControllerDungeon(class CGS* pGS, CDungeonData* pDungeon) : IGameController(pGS)
 {
 	m_GameFlags = 0;
@@ -227,10 +230,16 @@ void CGameControllerDungeon::OnCharacterDeath(CPlayer* pVictim, CPlayer* pKiller
 bool CGameControllerDungeon::OnCharacterSpawn(CCharacter* pChr)
 {
 	const auto State = m_pDungeon->GetState();
+	const int ClientID = pChr->GetPlayer()->GetCID();
 
 	if(State >= CDungeonData::STATE_STARTED)
 	{
-		const int ClientID = pChr->GetPlayer()->GetCID();
+		if(!GS()->ScenarioGroupManager()->IsActive(m_ScenarioID))
+			m_ScenarioID = GS()->ScenarioGroupManager()->RegisterScenario<CDungeonScenario>(pChr->GetPlayer()->GetCID(), m_pDungeon->GetScenario());
+		else if(auto pScenario = GS()->ScenarioGroupManager()->GetScenario(m_ScenarioID))
+			pScenario->AddParticipant(pChr->GetPlayer()->GetCID());
+		else
+			dbg_assert(false, "Failed to register scenario id for dungeon.");
 
 		// player died after the safety timer ended
 		if(!m_SafetyTick)

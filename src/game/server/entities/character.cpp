@@ -57,7 +57,7 @@ bool CCharacter::Spawn(CPlayer* pPlayer, vec2 Pos)
 	m_QueuedWeapon = -1;
 
 	m_Pos = Pos;
-	m_OldPos = Pos;
+	m_PrevPos = Pos;
 	m_Core.Reset();
 	m_Core.Init(&GS()->m_World.m_Core, GS()->Collision());
 	m_Core.m_ActiveWeapon = WEAPON_HAMMER;
@@ -111,7 +111,9 @@ bool CCharacter::IsGrounded() const
 		return true;
 	if(GS()->Collision()->CheckPoint(m_Pos.x - GetRadius() / 2, m_Pos.y + GetRadius() / 2 + 5))
 		return true;
-	return false;
+
+	int MoveRestrictionsBelow = GS()->Collision()->GetMoveRestrictions(m_Pos + vec2(0, GetRadius() / 2 + 4), 0.f);
+	return (MoveRestrictionsBelow & CANTMOVE_DOWN) != 0;
 }
 
 bool CCharacter::IsCollisionFlag(int Flag) const
@@ -132,6 +134,11 @@ CPlayer* CCharacter::GetHookedPlayer() const
 	if(m_Core.m_HookState == HOOK_GRABBED)
 		return GS()->GetPlayer(m_Core.m_HookedPlayer);
 	return nullptr;
+}
+
+void CCharacter::SetDoorHit(int ID)
+{
+	m_Core.m_vDoorHitSet.insert(ID);
 }
 
 void CCharacter::DoWeaponSwitch()
@@ -817,13 +824,6 @@ void CCharacter::Tick()
 	if(!CanAccessWorld())
 		return;
 
-	// handler's
-	HandleSafeFlags();
-	HandlePlayer();
-	HandleTiles();
-	HandleWeapons();
-	HandleTuning();
-
 	// to end the tick on the destroy caused by the change of worlds
 	if(m_pTilesHandler->IsEnter(TILE_WORLD_SWAPPER))
 	{
@@ -831,36 +831,36 @@ void CCharacter::Tick()
 		return;
 	}
 
+	// pre tick
+	HandleTuning();
+
 	// core
 	m_Core.m_Input = m_Input;
 	m_Core.Tick(true, &m_pPlayer->m_NextTuningParams);
 	m_pPlayer->UpdateSharedCharacterData(m_Health, m_Mana);
 
+	// post tick
+	HandleSafeFlags();
+	HandlePlayer();
+	HandleWeapons();
+	if(!HandleTiles())
+		return;
+
 	// game clipped
 	if(GameLayerClipped(m_Pos) || m_pTilesHandler->IsEnter(TILE_DEATH))
 	{
 		Die(m_pPlayer->GetCID(), WEAPON_SELF);
+		return;
 	}
 
-	// freeze position by old core and current core
-	if(length(m_NormalDoorHit) < 0.1f)
-	{
-		m_OlderPos = m_OldPos;
-		m_OldPos = m_Core.m_Pos;
-	}
+	// prev pos apply move restriction
+	ApplyMoveRestrictions();
 }
 
 void CCharacter::TickDeferred()
 {
 	if(!m_Alive)
 		return;
-
-	// door reset
-	if(length(m_NormalDoorHit) >= 0.1f)
-	{
-		HandleDoorHit();
-		ResetDoorHit();
-	}
 
 	// advance the dummy
 	{
@@ -875,6 +875,7 @@ void CCharacter::TickDeferred()
 	CCharacterCore::CParams CoreTickParams(&m_pPlayer->m_NextTuningParams);
 	m_Core.Move(&CoreTickParams);
 	m_Core.Quantize();
+	m_PrevPos = m_Pos;
 	m_Pos = m_Core.m_Pos;
 	m_TriggeredEvents |= m_Core.m_TriggeredEvents;
 
@@ -1057,6 +1058,18 @@ void CCharacter::TryUsePotion(std::optional<int> optItemID) const
 	}
 }
 
+void CCharacter::ApplyMoveRestrictions()
+{
+	if(m_Core.m_Vel.y > 0 && (m_MoveRestrictions & CANTMOVE_DOWN))
+	{
+		m_Core.m_Jumped = 0;
+		m_Core.m_JumpedTotal = 0;
+	}
+
+	m_Core.m_Vel = ClampVel(m_MoveRestrictions, m_Core.m_Vel);
+	m_Core.m_vDoorHitSet.clear();
+}
+
 int CCharacter::GetTotalDamageByWeapon(int Weapon) const
 {
 	int Damage = 0;
@@ -1084,12 +1097,11 @@ CPlayer* CCharacter::GetLastAttacker() const
 
 bool CCharacter::TakeDamage(vec2 Force, int Damage, int FromCID, int Weapon)
 {
-	constexpr float MaximumVel = 24.f;
-
 	// clamp force vel
-	m_Core.m_Vel += Force;
-	if(length(m_Core.m_Vel) > MaximumVel)
-		m_Core.m_Vel = normalize(m_Core.m_Vel) * MaximumVel;
+	constexpr float MaximumVel = 24.f;
+	vec2 Temp = m_Core.m_Vel + Force;
+	m_Core.m_Vel = ClampVel(m_MoveRestrictions,
+		length(Temp) > MaximumVel ? normalize(Temp) * MaximumVel : Temp);
 
 	// check disallow damage
 	if(!IsAllowedPVP(FromCID))
@@ -1318,27 +1330,63 @@ void CCharacter::PostSnap()
 	m_TriggeredEvents = 0;
 }
 
-void CCharacter::HandleTiles()
+bool CCharacter::HandleTiles()
 {
-	// handle tilesets
-	m_pTilesHandler->Handle(m_Core.m_Pos);
+	// handle Anti-Skip tiles
+	int CurrentIndex = GS()->Collision()->GetMapIndex(m_Pos);
+	std::vector<int> vIndices = GS()->Collision()->GetMapIndices(m_PrevPos, m_Pos);
+	if(!vIndices.empty())
+	{
+		for(int& Index : vIndices)
+		{
+			HandleTilesImpl(Index);
+			if(!m_Alive)
+				return false;
+		}
+	}
+	else
+	{
+		HandleTilesImpl(CurrentIndex);
+		if(!m_Alive)
+			return false;
+	}
+
+	return true;
+}
+
+static bool IsDoorHitActive(int Number, void* pUser)
+{
+	auto* pChar = (CCharacter*)pUser;
+	return pChar ? pChar->m_Core.m_vDoorHitSet.contains(Number) : false;
+}
+
+void CCharacter::HandleTilesImpl(int Index)
+{
+	m_pTilesHandler->Handle(Index);
+	m_MoveRestrictions = GS()->Collision()->GetMoveRestrictions(&IsDoorHitActive, this, m_Pos, 18.0f);
 
 	// teleport
 	if(m_pTilesHandler->IsActive(TILE_TELE_FROM))
 	{
-		if(const auto outsPos = GS()->Collision()->TryGetTeleportOut(m_Core.m_Pos))
+		if(const auto outsPos = GS()->Collision()->TryGetTeleportOut(m_Pos))
 			ChangePosition(outsPos.value());
 	}
 
 	// confirm teleport
 	if(m_pTilesHandler->IsActive(TILE_TELE_FROM_CONFIRM))
 	{
-		if(const auto outsPos = GS()->Collision()->TryGetTeleportOut(m_Core.m_Pos))
+		if(const auto outsPos = GS()->Collision()->TryGetTeleportOut(m_Pos))
 		{
 			GS()->Broadcast(m_ClientID, BroadcastPriority::TitleInformation, Server()->TickSpeed(), "Use the hammer to enter");
 			if(m_Core.m_ActiveWeapon == WEAPON_HAMMER && m_ReloadTimer)
 				ChangePosition(outsPos.value());
 		}
+	}
+
+	// water effect enter exit
+	if(m_pTilesHandler->IsEnter(TILE_WATER) || m_pTilesHandler->IsExit(TILE_WATER))
+	{
+		GS()->CreateDeath(m_Pos, m_ClientID);
 	}
 
 	// handle locked view camera and tile interactions if the player is not a bot
@@ -1356,13 +1404,13 @@ void CCharacter::HandleTiles()
 		}
 
 		// locked view cam
-		if(const auto result = GS()->Collision()->TryGetFixedCamPos(m_Core.m_Pos))
+		if(const auto result = GS()->Collision()->TryGetFixedCamPos(m_Pos))
 			m_pPlayer->LockedView().ViewLock(result->first, result->second);
 
 		// zone information
 		if(m_pTilesHandler->IsActive(TILE_SW_ZONE))
 		{
-			const auto pZone = GS()->Collision()->GetZonedetail(m_Core.m_Pos);
+			const auto pZone = GS()->Collision()->GetZonedetail(m_Pos);
 			if(pZone && ((Server()->Tick() % Server()->TickSpeed() == 0) || m_Zonename != pZone->Name))
 			{
 				m_Zonename = pZone->Name;
@@ -1393,10 +1441,6 @@ void CCharacter::HandleTiles()
 		// check from components
 		GS()->Core()->OnCharacterTile(this);
 	}
-
-	// water effect enter exit
-	if(m_pTilesHandler->IsEnter(TILE_WATER) || m_pTilesHandler->IsExit(TILE_WATER))
-		GS()->CreateDeath(m_Core.m_Pos, m_ClientID);
 }
 
 void CCharacter::GiveRandomEffects(int To)
@@ -1668,11 +1712,6 @@ void CCharacter::UpdateEquippedStats(std::optional<int> UpdatedItemID)
 	}
 }
 
-void CCharacter::SetDoorHit(vec2 Start, vec2 End)
-{
-	m_NormalDoorHit = GS()->Collision()->GetDoorNormal(Start, End, m_Core.m_Pos);
-}
-
 void CCharacter::HandlePlayer()
 {
 	if(!m_pPlayer->IsAuthed())
@@ -1786,20 +1825,7 @@ void CCharacter::ChangePosition(vec2 NewPos)
 	GS()->CreatePlayerSpawn(NewPos);
 	m_Core.m_Pos = NewPos;
 	m_Pos = NewPos;
-	ResetDoorHit();
 	ResetHook();
-}
-
-void CCharacter::HandleDoorHit()
-{
-	const float dotProduct = dot(m_Core.m_Vel, m_NormalDoorHit);
-	m_Core.m_Vel -= m_NormalDoorHit * dotProduct;
-
-	if(dot(m_Core.m_Pos - m_OlderPos, m_NormalDoorHit) > 0)
-		m_Core.m_Pos -= m_NormalDoorHit * dot(m_Core.m_Pos - m_OlderPos, m_NormalDoorHit);
-
-	if(m_Core.m_Jumped >= 2)
-		m_Core.m_Jumped = 1;
 }
 
 bool CCharacter::StartConversation(CPlayerBot* pTarget) const

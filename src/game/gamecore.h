@@ -180,15 +180,6 @@ enum
 	SHOW_OTHERS_ONLY_TEAM = 2 // show players that are in solo and are in the same team
 };
 
-struct SSwitchers
-{
-	bool m_aStatus[MAX_CLIENTS];
-	bool m_Initial;
-	int m_aEndTick[MAX_CLIENTS];
-	int m_aType[MAX_CLIENTS];
-	int m_aLastUpdateTick[MAX_CLIENTS];
-};
-
 class CWorldCore
 {
 public:
@@ -293,6 +284,7 @@ public:
 	bool m_Reset;
 	CCollision* Collision() { return m_pCollision; }
 
+
 	vec2 m_LastVel;
 	int m_Colliding;
 	bool m_LeftWall;
@@ -325,8 +317,10 @@ public:
 	bool m_DeepFrozen;
 	bool m_LiveFrozen;
 
+	int m_MoveRestrictions;
 	bool m_DamageDisabled;
 	int m_WorldID;
+	std::set<int> m_vDoorHitSet {};
 };
 
 //input count

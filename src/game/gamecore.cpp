@@ -102,15 +102,23 @@ void CCharacterCore::Reset()
 	m_IsInFreeze = false;
 	m_DeepFrozen = false;
 	m_LiveFrozen = false;
+	m_vDoorHitSet.clear();
 
 	// never initialize both to 0
 	m_Input.m_TargetX = 0;
 	m_Input.m_TargetY = -1;
 }
 
+static bool IsDoorHitActive(int Number, void* pUser)
+{
+	auto* pThis = (CCharacterCore*)pUser;
+	return pThis ? pThis->m_vDoorHitSet.contains(Number) : false;
+}
+
 void CCharacterCore::Tick(bool UseInput, CTuningParams* pTuningParams)
 {
 	const CTuningParams* pTuning = pTuningParams ? pTuningParams : &m_pWorld->m_Tuning;
+	m_MoveRestrictions = m_pCollision->GetMoveRestrictions(UseInput ? &IsDoorHitActive : nullptr, this, m_Pos);
 	m_TriggeredEvents = 0;
 
 	// get ground state
@@ -411,11 +419,11 @@ void CCharacterCore::Tick(bool UseInput, CTuningParams* pTuningParams)
 						// add force to the hooked player
 						Temp.x = SaturatedAdd(-DragSpeed, DragSpeed, pCharCore->m_Vel.x, HookAccel * Dir.x * 1.5f);
 						Temp.y = SaturatedAdd(-DragSpeed, DragSpeed, pCharCore->m_Vel.y, HookAccel * Dir.y * 1.5f);
-						pCharCore->m_Vel = Temp;
+						pCharCore->m_Vel = ClampVel(pCharCore->m_MoveRestrictions, Temp);
 						// add a little bit force to the guy who has the grip
 						Temp.x = SaturatedAdd(-DragSpeed, DragSpeed, m_Vel.x, -HookAccel * Dir.x * 0.25f);
 						Temp.y = SaturatedAdd(-DragSpeed, DragSpeed, m_Vel.y, -HookAccel * Dir.y * 0.25f);
-						m_Vel = Temp;
+						m_Vel = ClampVel(m_MoveRestrictions, Temp);
 					}
 				}
 			}
@@ -456,7 +464,7 @@ void CCharacterCore::Move(CTuningParams* pTuningParams)
 		m_LeftWall = true;
 
 	m_Vel.x = m_Vel.x * (1.0f / RampValue);
-	
+
 	if(m_pWorld && (m_Super || (pTuning->m_PlayerCollision && !m_CollisionDisabled && !m_Solo)))
 	{
 		// check player collision

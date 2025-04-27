@@ -6,8 +6,11 @@
 CEntityDungeonWaitingDoor::CEntityDungeonWaitingDoor(CGameWorld* pGameWorld, vec2 Pos)
 	: CEntity(pGameWorld, CGameWorld::ENTTYPE_DUNGEON_DOOR, Pos)
 {
+	GS()->Collision()->FillLengthWall(vec2(0, -1), &m_Pos, &m_PosTo);
+	GS()->Collision()->SetDoorFromToCollisionAt(m_Pos, m_PosTo, TILE_STOPA, 0, GetID());
+
 	m_Closed = true;
-	GS()->Collision()->FillLengthWall(32, vec2(0, -1), &m_Pos, &m_PosTo);
+
 	GameWorld()->InsertEntity(this);
 }
 
@@ -21,14 +24,7 @@ void CEntityDungeonWaitingDoor::Tick()
 	{
 		vec2 IntersectPos;
 		if(closest_point_on_line(m_Pos, m_PosTo, pChar->m_Core.m_Pos, IntersectPos))
-		{
-			float Distance = distance(IntersectPos, pChar->m_Core.m_Pos);
-			if(Distance <= (float)g_Config.m_SvDoorRadiusHit)
-			{
-				pChar->SetDoorHit(m_Pos, m_PosTo);
-				pChar->Die(pChar->GetPlayer()->GetCID(), WEAPON_WORLD);
-			}
-		}
+			pChar->SetDoorHit(GetID());
 	}
 }
 

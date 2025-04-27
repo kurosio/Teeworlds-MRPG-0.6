@@ -131,8 +131,8 @@ public:
 	}
 
 	// initialize
-	void Init(const std::string& Name, const DBSet& Type, const std::string& Data, vec2 Pos, int Currency, int WorldID);
-	void InitJsonData(const DBSet& Type, const std::string& Data);
+	void Init(const std::string& Name, const DBSet& Type, const nlohmann::json& JsonData, vec2 Pos, int Currency, int WorldID);
+	void InitData(const DBSet& Type, const nlohmann::json& JsonData);
 	void SaveData();
 
 	int GetID() const { return m_ID; }

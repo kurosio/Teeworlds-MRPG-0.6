@@ -130,7 +130,9 @@ CLogicWallWall::CLogicWallWall(CGameWorld *pGameWorld, vec2 Pos, int Mode, int H
 : CEntity(pGameWorld, CGameWorld::ENTTYPE_EYES_WALL, Pos, 14)
 {
 	vec2 Direction = Mode == 0 ? vec2(0, -1) : vec2(1, 0);
-	GS()->Collision()->FillLengthWall(32, Direction, &m_Pos, &m_PosTo);
+	GS()->Collision()->FillLengthWall(Direction, &m_Pos, &m_PosTo);
+	GS()->Collision()->SetDoorFromToCollisionAt(m_Pos, m_PosTo, TILE_STOPA, 0, GetID());
+
 	m_RespawnTick = Server()->TickSpeed()*10;
 
 	GameWorld()->InsertEntity(this);
@@ -154,13 +156,7 @@ void CLogicWallWall::Tick()
 		{
 			vec2 IntersectPos;
 			if(closest_point_on_line(m_Pos, m_PosTo, pChar->m_Core.m_Pos, IntersectPos))
-			{
-				float Distance = distance(IntersectPos, pChar->m_Core.m_Pos);
-				if(Distance <= g_Config.m_SvDoorRadiusHit)
-				{
-					pChar->SetDoorHit(m_Pos, m_PosTo);
-				}
-			}
+				pChar->SetDoorHit(GetID());
 		}
 	}
 }
@@ -238,10 +234,12 @@ void CLogicWallLine::Snap(int SnappingClient)
 /////////////////////////////////////////
 /////////////////////////////////////////
 CLogicDoorKey::CLogicDoorKey(CGameWorld *pGameWorld, vec2 Pos, int ItemID, int Mode)
-: CEntity(pGameWorld, CGameWorld::ENTTYPE_LASER, Pos, 14)
+: CEntity(pGameWorld, CGameWorld::ENTTYPE_LASER, Pos, 128)
 {
 	vec2 Direction = Mode == 0 ? vec2(0, -1) : vec2(1, 0);
-	GS()->Collision()->FillLengthWall(32, Direction, &m_Pos, &m_PosTo);
+	GS()->Collision()->FillLengthWall(Direction, &m_Pos, &m_PosTo);
+	GS()->Collision()->SetDoorFromToCollisionAt(m_Pos, m_PosTo, TILE_STOPA, 0, GetID());
+
 	m_ItemID = ItemID;
 
 	GameWorld()->InsertEntity(this);
@@ -252,18 +250,17 @@ void CLogicDoorKey::Tick()
 	for (CCharacter* pChar = (CCharacter*)GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); pChar; pChar = (CCharacter*)pChar->TypeNext())
 	{
 		CPlayer* pPlayer = pChar->GetPlayer();
-		if (pPlayer->GetItem(m_ItemID)->GetValue())
+		if(pPlayer->GetItem(m_ItemID)->GetValue())
 			continue;
 
 		vec2 IntersectPos;
 		if(closest_point_on_line(m_Pos, m_PosTo, pChar->m_Core.m_Pos, IntersectPos))
 		{
 			float Distance = distance(IntersectPos, pChar->m_Core.m_Pos);
-			if(Distance <= g_Config.m_SvDoorRadiusHit)
-			{
-				pChar->SetDoorHit(m_Pos, m_PosTo);
+			if(Distance <= GetRadius())
 				GS()->Broadcast(pChar->GetPlayer()->GetCID(), BroadcastPriority::GameWarning, 100, "You need {}", GS()->GetItemInfo(m_ItemID)->GetName());
-			}
+
+			pChar->SetDoorHit(GetID());
 		}
 	}
 }

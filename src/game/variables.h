@@ -95,7 +95,6 @@ MACRO_CONFIG_INT(SvSkillPointsDropChanceRareMob, sv_skill_points_drop_chance_rar
 // Teleportation and Interaction Configuration
 // -----------------------
 MACRO_CONFIG_INT(SvTeleportFeePerDistance, sv_teleport_fee_per_distance, 12, 0, 10000, CFGFLAG_SERVER, "Teleportation fee per unit of world distance")
-MACRO_CONFIG_INT(SvDoorRadiusHit, sv_door_radius_hit, 16, 16, 1000, CFGFLAG_SERVER, "Door radius for interaction")
 
 // -----------------------
 // Inventory and Resource Management Configuration

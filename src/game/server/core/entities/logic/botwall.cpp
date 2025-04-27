@@ -5,9 +5,13 @@
 #include <game/server/gamecontext.h>
 
 CBotWall::CBotWall(CGameWorld* pGameWorld, vec2 Pos, vec2 Direction, int Flag)
-	: CEntity(pGameWorld, CGameWorld::ENTTYPE_BOT_WALL, Pos)
+	: CEntity(pGameWorld, CGameWorld::ENTTYPE_BOT_WALL, Pos, 64)
 {
-	GS()->Collision()->FillLengthWall(32, Direction, &m_Pos, &m_PosTo);
+	// prepare positions
+	GS()->Collision()->FillLengthWall(Direction, &m_Pos, &m_PosTo);
+	GS()->Collision()->SetDoorFromToCollisionAt(m_Pos, m_PosTo, TILE_STOPA, 0, GetID());
+
+	// initialize variables
 	m_Active = false;
 	m_Flag = Flag;
 
@@ -20,14 +24,10 @@ void CBotWall::HitCharacter(CCharacter* pChar)
 	if(closest_point_on_line(m_Pos, m_PosTo, pChar->m_Core.m_Pos, IntersectPos))
 	{
 		const float Distance = distance(IntersectPos, pChar->m_Core.m_Pos);
-		if(Distance <= g_Config.m_SvDoorRadiusHit * 3)
-		{
-			if(Distance <= g_Config.m_SvDoorRadiusHit)
-			{
-				pChar->SetDoorHit(m_Pos, m_PosTo);
-			}
+		if(Distance <= GetRadius())
 			m_Active = true;
-		}
+
+		pChar->SetDoorHit(GetID());
 	}
 }
 
@@ -37,8 +37,8 @@ void CBotWall::Tick()
 
 	for(CCharacter* pChar = (CCharacter*)GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); pChar; pChar = (CCharacter*)pChar->TypeNext())
 	{
-		if(!pChar->GetPlayer()->IsBot())
-			continue;
+		//if(!pChar->GetPlayer()->IsBot())
+		//	continue;
 
 		const auto pPlayerBot = static_cast<CPlayerBot*>(pChar->GetPlayer());
 		int BotType = pPlayerBot->GetBotType();

@@ -5,7 +5,11 @@
 CEntityDungeonProgressDoor::CEntityDungeonProgressDoor(CGameWorld* pGameWorld, vec2 Pos, int BotID)
 	: CEntity(pGameWorld, CGameWorld::ENTTYPE_DUNGEON_DOOR, Pos, 14)
 {
-	GS()->Collision()->FillLengthWall(32, vec2(0, -1), &m_Pos, &m_PosTo);
+	// prepare wall line
+	GS()->Collision()->FillLengthWall(vec2(0, -1), &m_Pos, &m_PosTo);
+	GS()->Collision()->SetDoorFromToCollisionAt(m_Pos, m_PosTo, TILE_STOPA, 0, GetID());
+
+	// initialize variables
 	m_OpenedDoor = false;
 	m_BotID = BotID;
 
@@ -17,15 +21,11 @@ void CEntityDungeonProgressDoor::Tick()
 	if(m_OpenedDoor)
 		return;
 
-	for(CCharacter* pChar = (CCharacter*)GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); pChar; pChar = (CCharacter*)pChar->TypeNext())
+	for(auto* pChar = (CCharacter*)GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); pChar; pChar = (CCharacter*)pChar->TypeNext())
 	{
 		vec2 IntersectPos;
 		if(closest_point_on_line(m_Pos, m_PosTo, pChar->m_Core.m_Pos, IntersectPos))
-		{
-			float Distance = distance(IntersectPos, pChar->m_Core.m_Pos);
-			if(Distance <= g_Config.m_SvDoorRadiusHit)
-				pChar->SetDoorHit(m_Pos, m_PosTo);
-		}
+			pChar->SetDoorHit(GetID());
 	}
 }
 

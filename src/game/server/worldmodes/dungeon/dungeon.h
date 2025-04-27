@@ -17,6 +17,7 @@ class CGameControllerDungeon : public IGameController
 	std::vector< CEntityDungeonProgressDoor* > m_vpEntLogicDoor {};
 
 	std::map<AttributeIdentifier, int> m_vSyncFactor {};
+	int m_ScenarioID {};
 
 	int m_StartedPlayersNum {};
 	int m_LastWaitingTick {};
