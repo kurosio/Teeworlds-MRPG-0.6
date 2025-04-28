@@ -979,6 +979,20 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 
 		if(MsgID == NETMSGTYPE_CL_SETSPECTATORMODE)
 		{
+			// allow input from spectator mode
+			if(pPlayer->GetTeam() != TEAM_SPECTATORS)
+			{
+				if(pPlayer->GetCharacter())
+				{
+					pPlayer->GetCharacter()->m_Input.m_Fire++;
+					pPlayer->GetCharacter()->m_LatestInput.m_Fire++;
+				}
+
+				Server()->Input()->AppendEventKeyClick(ClientID, KEY_EVENT_FIRE);
+				return;
+			}
+
+			// update spec spectator mode
 			const auto pMsg = (CNetMsg_Cl_SetSpectatorMode*)pRawMsg;
 			int SpectatorID = clamp(pMsg->m_SpectatorId, (int)SPEC_FOLLOW, MAX_CLIENTS - 1);
 			if(SpectatorID >= 0 && !Server()->ReverseTranslate(SpectatorID, ClientID))
