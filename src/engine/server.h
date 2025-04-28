@@ -182,6 +182,7 @@ public:
 	virtual CWorldDetail* GetWorldDetail(int WorldID) = 0;
 	virtual bool IsWorldType(int WorldID, WorldType Type) const = 0;
 	virtual int GetWorldsSize() const = 0;
+	virtual int GetClientsCountByWorld(int WorldID) const = 0;
 
 	virtual const char* Localize(int ClientID, const char* pText) = 0;
 	virtual void SetClientLanguage(int ClientID, const char* pLanguage) = 0;

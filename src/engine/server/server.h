@@ -214,6 +214,7 @@ public:
 	int ClientCountry(int ClientID) const override;
 	bool ClientIngame(int ClientID) const override;
 	int GetClientLatency(int ClientID) const override;
+	int GetClientsCountByWorld(int WorldID) const override;
 
 	int GetClientVersion(int ClientID) const override;
 	int SendMsg(CMsgPacker* pMsg, int Flags, int ClientID, int64_t Mask = -1, int WorldID = -1) override;
@@ -297,7 +298,7 @@ private:
 		std::string Nickname {};
 		int Rating {};
 
-		bool operator<(const BaseAccount& other) const 
+		bool operator<(const BaseAccount& other) const
 		{
 			return Rating > other.Rating;
 		}

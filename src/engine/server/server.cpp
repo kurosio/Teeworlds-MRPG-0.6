@@ -522,6 +522,19 @@ int CServer::GetClientLatency(int ClientID) const
 	return m_aClients[ClientID].m_Latency;
 }
 
+int CServer::GetClientsCountByWorld(int WorldID) const
+{
+	int Result = 0;
+
+	for(int i = 0; i < MAX_PLAYERS; i++)
+	{
+		if(m_aClients[i].m_State == CClient::STATE_INGAME && m_aClients[i].m_WorldID == WorldID)
+			Result++;
+	}
+
+	return Result;
+}
+
 void CServer::InitRconPasswordIfUnset()
 {
 	if(m_RconPasswordSet)

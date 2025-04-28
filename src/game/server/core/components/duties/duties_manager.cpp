@@ -32,32 +32,45 @@ bool CDutiesManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		// add selector
 		int EmptyTODO = 0;
 		VoteWrapper VSelectorType(ClientID, VWF_SEPARATE_OPEN|VWF_ALIGN_TITLE|VWF_STYLE_STRICT_BOLD, "\u261C Duties list");
-		VSelectorType.AddMenu(MENU_DUTIES_LIST, (int)WorldType::MiniGames, "\u2659 Mini-games ({})", EmptyTODO);
-		VSelectorType.AddMenu(MENU_DUTIES_LIST, (int)WorldType::Dungeon, "\u262C Dungeons ({})", CDungeonData::Data().size());
-		VSelectorType.AddMenu(MENU_DUTIES_LIST, (int)WorldType::DeepDungeon, "\u262A Deep dungeons ({})", EmptyTODO);
-		VSelectorType.AddMenu(MENU_DUTIES_LIST, (int)WorldType::TreasureDungeon, "\u2619 Treasure dungeons ({})", EmptyTODO);
-		VSelectorType.AddMenu(MENU_DUTIES_LIST, (int)WorldType::PvP, "\u2694 PvP ({})", EmptyTODO);
+		VSelectorType.AddMenu(MENU_DUTIES_LIST, (int)WorldType::MiniGames, "\u2659 Mini-games ({})", GetWorldsCountByType(WorldType::MiniGames));
+		VSelectorType.AddMenu(MENU_DUTIES_LIST, (int)WorldType::Dungeon, "\u262C Dungeons ({})", GetWorldsCountByType(WorldType::Dungeon));
+		VSelectorType.AddMenu(MENU_DUTIES_LIST, (int)WorldType::DeepDungeon, "\u262A Deep dungeons ({})", GetWorldsCountByType(WorldType::DeepDungeon));
+		VSelectorType.AddMenu(MENU_DUTIES_LIST, (int)WorldType::TreasureDungeon, "\u2619 Treasure dungeons ({})", GetWorldsCountByType(WorldType::TreasureDungeon));
+		VSelectorType.AddMenu(MENU_DUTIES_LIST, (int)WorldType::PvP, "\u2694 PvP ({})", GetWorldsCountByType(WorldType::PvP));
 		VoteWrapper::AddEmptyline(ClientID);
 
 		// inside menu
-		ShowInsideDungeonMenu(pPlayer);
+		ShowInsideMenu(pPlayer);
 
 		// dungeon list
 		if(const auto Type = pPlayer->m_VotesData.GetExtraID())
-			ShowDungeonsList(pPlayer, (WorldType)(*Type));
+			ShowDutiesList(pPlayer, (WorldType)(*Type));
 
 		// add backpage buttom
 		VoteWrapper::AddBackpage(ClientID);
 		return true;
 	}
 
-	// craft selected item
-	if(Menulist == MENU_DUTIES_SELECT)
+	// dungeon select
+	if(Menulist == MENU_DUNGEON_SELECT)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_DUTIES_LIST);
 
 		if(const auto DungeonID = pPlayer->m_VotesData.GetExtraID())
 			ShowDungeonInfo(pPlayer, GetDungeonByID(DungeonID.value()));
+
+		// add backpage
+		VoteWrapper::AddBackpage(ClientID);
+		return true;
+	}
+
+	// pvp select
+	if(Menulist == MENU_PVP_SELECT)
+	{
+		pPlayer->m_VotesData.SetLastMenuID(MENU_DUTIES_LIST);
+
+		if(const auto WorldID = pPlayer->m_VotesData.GetExtraID())
+			ShowPvpInfo(pPlayer, WorldID.value());
 
 		// add backpage
 		VoteWrapper::AddBackpage(ClientID);
@@ -121,8 +134,23 @@ bool CDutiesManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, con
 		return true;
 	}
 
+	// pvp enter
+	if(PPSTR(pCmd, "PVP_JOIN") == 0)
+	{
+		// check equal player world
+		if(GS()->IsPlayerInWorld(ClientID, Extra1))
+		{
+			GS()->Chat(ClientID, "You are already in this dungeon.");
+			pPlayer->m_VotesData.UpdateVotesIf(MENU_DUTIES_LIST);
+			return true;
+		}
+
+		pPlayer->ChangeWorld(Extra1);
+		return true;
+	}
+
 	//dungeon exit
-	if(PPSTR(pCmd, "DUNGEON_EXIT") == 0)
+	if(PPSTR(pCmd, "DUTIES_EXIT") == 0)
 	{
 		const int LatestCorrectWorldID = Core()->AccountManager()->GetLastVisitedWorldID(pPlayer);
 		pPlayer->ChangeWorld(LatestCorrectWorldID);
@@ -133,7 +161,7 @@ bool CDutiesManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, con
 }
 
 
-void CDutiesManager::ShowDungeonsList(CPlayer* pPlayer, WorldType Type) const
+void CDutiesManager::ShowDutiesList(CPlayer* pPlayer, WorldType Type) const
 {
 	const int ClientID = pPlayer->GetCID();
 
@@ -144,7 +172,21 @@ void CDutiesManager::ShowDungeonsList(CPlayer* pPlayer, WorldType Type) const
 		for(const auto* pDungeon : CDungeonData::Data())
 		{
 			const char* pStatus = (pDungeon->IsPlaying() ? "Active dungeon" : "Waiting players");
-			VDungeon.AddMenu(MENU_DUTIES_SELECT, pDungeon->GetID(), "Lv{}. {} : {}", pDungeon->GetLevel(), pDungeon->GetName(), pStatus);
+			VDungeon.AddMenu(MENU_DUNGEON_SELECT, pDungeon->GetID(), "Lv{}. {} : {}", pDungeon->GetLevel(), pDungeon->GetName(), pStatus);
+		}
+	}
+	else if(Type == WorldType::PvP)
+	{
+		VoteWrapper VPvP(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "\u262C PvP");
+		for(int i = MAIN_WORLD_ID; i < Server()->GetWorldsSize(); i++)
+		{
+			const auto* pDetail = Server()->GetWorldDetail(i);
+			if(pDetail->GetType() == WorldType::PvP)
+			{
+				const auto ClientsNum = Server()->GetClientsCountByWorld(i);
+				const char* pStatus = (ClientsNum > 0 ? "Active" : "Waiting");
+				VPvP.AddMenu(MENU_PVP_SELECT, i, "{} : {}", Server()->GetWorldName(i), pStatus);
+			}
 		}
 	}
 }
@@ -184,21 +226,51 @@ void CDutiesManager::ShowDungeonInfo(CPlayer* pPlayer, CDungeonData* pDungeon) c
 	}
 }
 
-
-void CDutiesManager::ShowInsideDungeonMenu(CPlayer* pPlayer) const
+void CDutiesManager::ShowInsideMenu(CPlayer* pPlayer) const
 {
-	if(!GS()->IsWorldType(WorldType::Dungeon))
-		return;
-
 	const int ClientID = pPlayer->GetCID();
-	const auto* pController = (CGameControllerDungeon*)GS()->m_pController;
-	if(!pController || !pController->GetDungeon())
-		return;
 
-	// exit from dungeon
-	const char* pName = pController->GetDungeon()->GetName();
-	VoteWrapper(ClientID).AddOption("DUNGEON_EXIT", "Exit dungeon {} (warning)", pName);
+	if(GS()->IsWorldType(WorldType::Dungeon))
+	{
+		const auto* pController = (CGameControllerDungeon*)GS()->m_pController;
+		if(!pController || !pController->GetDungeon())
+			return;
+
+		const char* pName = pController->GetDungeon()->GetName();
+		VoteWrapper(ClientID).AddOption("DUTIES_EXIT", "Exit dungeon {} (warning)", pName);
+	}
+	else if(GS()->IsWorldType(WorldType::PvP))
+	{
+		VoteWrapper(ClientID).AddOption("DUTIES_EXIT", "Exit from PvP");
+		VoteWrapper::AddEmptyline(ClientID);
+	}
+}
+
+void CDutiesManager::ShowPvpInfo(CPlayer* pPlayer, int WorldID) const
+{
+	const auto ClientID = pPlayer->GetCID();
+	const auto ClientsNum = Server()->GetClientsCountByWorld(WorldID);
+	const auto* pDetail = Server()->GetWorldDetail(WorldID);
+	const char* pStatus = (ClientsNum > 0 ? "Active" : "Waiting");
+	const char* pName = Server()->GetWorldName(WorldID);
+
+	// info
+	VoteWrapper VInfo(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_DOUBLE | VWF_ALIGN_TITLE, "\u2692 Detail information");
+	VInfo.Add("Name: {}", pName);
+	VInfo.Add("Recommended level: {} LVL", pDetail->GetRequiredLevel());
+	VInfo.Add("Recommended classes: ALL");
+	VInfo.Add("Status: {}", pStatus);
+	VInfo.Add("Players in-game: {}", ClientsNum);
 	VoteWrapper::AddEmptyline(ClientID);
+
+	// options
+	VoteWrapper VOptions(ClientID);
+	VOptions.AddOption("PVP_JOIN", WorldID, "Join to the PvP");
+	VoteWrapper::AddEmptyline(ClientID);
+
+	// records
+	VoteWrapper VRecords(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "Best PvP players");
+	VRecords.Add("Coming...");
 }
 
 
@@ -215,4 +287,18 @@ CDungeonData* CDutiesManager::GetDungeonByWorldID(int WorldID) const
 	auto pDungeon = std::ranges::find_if(CDungeonData::Data(), [WorldID](auto* pDungeon)
 	{ return pDungeon->GetWorldID() == WorldID; });
 	return pDungeon != CDungeonData::Data().end() ? *pDungeon : nullptr;
+}
+
+int CDutiesManager::GetWorldsCountByType(WorldType Type) const
+{
+	int Result = 0;
+
+	for(int i = 0; i < Server()->GetWorldsSize(); i++)
+	{
+		const auto* pDetail = Server()->GetWorldDetail(i);
+		if(pDetail->GetType() == Type)
+			Result++;
+	}
+
+	return Result;
 }

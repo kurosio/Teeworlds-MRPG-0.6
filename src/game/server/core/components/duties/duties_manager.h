@@ -16,10 +16,15 @@ class CDutiesManager : public MmoComponent
 	bool OnSendMenuVotes(CPlayer* pPlayer, int Menulist) override;
 
 public:
-	void ShowDungeonsList(CPlayer* pPlayer, WorldType Type) const;
+	void ShowDutiesList(CPlayer* pPlayer, WorldType Type) const;
+
 	void ShowDungeonInfo(CPlayer* pPlayer, CDungeonData* pDungeon) const;
-	void ShowInsideDungeonMenu(CPlayer* pPlayer) const;
+	void ShowInsideMenu(CPlayer* pPlayer) const;
+
+	void ShowPvpInfo(CPlayer* pPlayer, int WorldID) const;
+
 	CDungeonData* GetDungeonByID(int DungeonID) const;
 	CDungeonData* GetDungeonByWorldID(int WorldID) const;
+	int GetWorldsCountByType(WorldType Type) const;
 };
 #endif
