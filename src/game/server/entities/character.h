@@ -132,7 +132,7 @@ public:
 	bool IsGrounded() const;
 	bool IsCollisionFlag(int Flag) const;
 	CPlayer* GetHookedPlayer() const;
-	void SetDoorHit(int ID);
+	void SetDoorHit(int ID = TEAM_ALL);
 
 	const char* GetZonename() const { return m_Zonename.c_str(); }
 	void SetSafeFlags(int Flags = SAFEFLAG_DAMAGE_DISABLED | SAFEFLAG_HAMMER_HIT_DISABLED | SAFEFLAG_COLLISION_DISABLED | SAFEFLAG_HOOK_HIT_DISABLED) { m_SafeTickFlags = Flags; }

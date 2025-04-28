@@ -133,8 +133,8 @@ public:
 	std::vector<int> GetMapIndices(vec2 PrevPos, vec2 Pos, unsigned MaxIndices = 0) const;
 
 	// doors
-	void SetDoorCollisionAt(float x, float y, int Type, int Flags, int Number);
-	void SetDoorFromToCollisionAt(vec2 From, vec2 To, int Type, int Flags, int Number);
+	void SetDoorCollisionAt(float x, float y, int Type, int Flags, int Number = TEAM_ALL);
+	void SetDoorFromToCollisionAt(vec2 From, vec2 To, int Type, int Flags, int Number = TEAM_ALL);
 	void GetDoorTile(int Index, CDoorTile* pDoorTile) const;
 
 	// other

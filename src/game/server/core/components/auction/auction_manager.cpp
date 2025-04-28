@@ -381,7 +381,7 @@ CAuctionSlot* CAuctionManager::GetSlot(int ID) const
 
 void CAuctionManager::RemoveSlotByID(int ID) const
 {
-	if(const auto pSlot = GetSlot(ID))
+	if(auto* pSlot = GetSlot(ID))
 	{
 		Database->Execute<DB::REMOVE>(TW_AUCTION_SLOTS_TABLE, "WHERE ID = '{}'", ID);
 		std::erase(CAuctionSlot::Data(), pSlot);
