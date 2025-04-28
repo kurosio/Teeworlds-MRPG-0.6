@@ -57,8 +57,12 @@ void CEntityFishingRod::Tick()
 	m_Rope.UpdatePhysics(GS()->Collision(), 3.0f, 16.f, 64.f);
 	m_Rope.m_vPoints[0] = m_EndRodPoint;
 
+	// view cam effect
+	const auto& lastPoint = m_Rope.m_vPoints.back();
+	pPlayer->LockedView().ViewLock(lastPoint, true);
+
 	// fishing only water
-	const auto& TestBox = vec2(m_Rope.m_vPoints.back().x, m_Rope.m_vPoints.back().y + 18.f);
+	const auto& TestBox = vec2(lastPoint.x, lastPoint.y + 18.f);
 	if((GS()->Collision()->GetCollisionFlagsAt(TestBox) & CCollision::COLFLAG_WATER) == 0)
 	{
 		// pulling unground water
@@ -120,7 +124,7 @@ void CEntityFishingRod::FishingTick(CPlayer* pPlayer, CProfession* pFisherman, G
 	}
 
 	// hooking state
-	vec2& lastPoint = m_Rope.m_vPoints.back();
+	auto& lastPoint = m_Rope.m_vPoints.back();
 	if(m_Fishing.m_State == FishingNow::HOOKING)
 	{
 		// effect hooking
