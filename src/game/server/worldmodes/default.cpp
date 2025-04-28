@@ -39,6 +39,6 @@ void CGameControllerDefault::TryGenerateMoneyBag()
 
 		GS()->PathFinder()->RequestRandomPath(m_PathMoneyBag, Pos, Radius);
 		m_MoneyBagTick = Server()->Tick() + (Server()->TickSpeed() * g_Config.m_SvGenerateMoneyBagPerMinute * 60);
-		GS()->Chat(-1, "A Money Bag has appeared in the area! Who will claim it?");
+		GS()->ChatWorld(GS()->GetWorldID(), nullptr, "A Money Bag has appeared in the area! Who will claim it?");
 	}
 }

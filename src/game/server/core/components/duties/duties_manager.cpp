@@ -30,7 +30,6 @@ bool CDutiesManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
 		// add selector
-		int EmptyTODO = 0;
 		VoteWrapper VSelectorType(ClientID, VWF_SEPARATE_OPEN|VWF_ALIGN_TITLE|VWF_STYLE_STRICT_BOLD, "\u261C Duties list");
 		VSelectorType.AddMenu(MENU_DUTIES_LIST, (int)WorldType::MiniGames, "\u2659 Mini-games ({})", GetWorldsCountByType(WorldType::MiniGames));
 		VSelectorType.AddMenu(MENU_DUTIES_LIST, (int)WorldType::Dungeon, "\u262C Dungeons ({})", GetWorldsCountByType(WorldType::Dungeon));
