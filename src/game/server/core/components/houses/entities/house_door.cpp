@@ -221,5 +221,5 @@ void CEntityHouseDoor::Snap(int SnappingClient)
 	if(NetworkClipped(SnappingClient) || m_State == OPENED || m_DurabilityManager.IsDestroyed())
 		return;
 
-	GS()->SnapLaser(SnappingClient, GetID(), m_Pos, m_PosTo, Server()->Tick() - m_DurabilityManager.GetTickShift(), LASERTYPE_DRAGGER);
+	GS()->SnapLaser(SnappingClient, GetID(), m_Pos, m_PosTo, Server()->Tick() - 2, LASERTYPE_DOOR);
 }

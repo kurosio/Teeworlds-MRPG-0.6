@@ -316,7 +316,7 @@ void CGS::CreatePlayerSound(int ClientID, int Sound)
 	}
 }
 
-void CGS::SnapLaser(int SnappingClient, int ID, const vec2& To, const vec2& From, int StartTick, int LaserType, int Subtype, int Owner, int Flags) const
+void CGS::SnapLaser(int SnappingClient, int ID, const vec2& To, const vec2& From, int StartTick, int LaserType, int Subtype, int Owner, int Flags, int SwitchNumber) const
 {
 	if(GetClientVersion(SnappingClient) >= VERSION_DDNET_MULTI_LASER)
 	{
@@ -332,7 +332,7 @@ void CGS::SnapLaser(int SnappingClient, int ID, const vec2& To, const vec2& From
 		pObj->m_Owner = Owner;
 		pObj->m_Type = LaserType;
 		pObj->m_Subtype = Subtype;
-		pObj->m_SwitchNumber = 0;
+		pObj->m_SwitchNumber = SwitchNumber;
 		pObj->m_Flags = Flags;
 	}
 	else

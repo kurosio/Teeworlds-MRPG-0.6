@@ -166,15 +166,7 @@ void CLogicWallWall::Snap(int SnappingClient)
 	if (m_RespawnTick > 0 || NetworkClipped(SnappingClient))
 		return;
 
-	CNetObj_Laser *pObj = static_cast<CNetObj_Laser *>(Server()->SnapNewItem(NETOBJTYPE_LASER, GetID(), sizeof(CNetObj_Laser)));
-	if (!pObj)
-		return;
-
-	pObj->m_X = int(m_Pos.x);
-	pObj->m_Y = int(m_Pos.y);
-	pObj->m_FromX = int(m_PosTo.x);
-	pObj->m_FromY = int(m_PosTo.y);
-	pObj->m_StartTick = Server()->Tick()-2;
+	GS()->SnapLaser(SnappingClient, GetID(), m_Pos, m_PosTo, Server()->Tick() - 2, LASERTYPE_DOOR);
 }
 
 /////////////////////////////////////////
@@ -270,13 +262,5 @@ void CLogicDoorKey::Snap(int SnappingClient)
 	if (NetworkClipped(SnappingClient))
 		return;
 
-	CNetObj_Laser *pObj = static_cast<CNetObj_Laser *>(Server()->SnapNewItem(NETOBJTYPE_LASER, GetID(), sizeof(CNetObj_Laser)));
-	if (!pObj)
-		return;
-
-	pObj->m_X = int(m_Pos.x);
-	pObj->m_Y = int(m_Pos.y);
-	pObj->m_FromX = int(m_PosTo.x);
-	pObj->m_FromY = int(m_PosTo.y);
-	pObj->m_StartTick = Server()->Tick()-3;
+	GS()->SnapLaser(SnappingClient, GetID(), m_Pos, m_PosTo, Server()->Tick() - 3, LASERTYPE_DOOR);
 }

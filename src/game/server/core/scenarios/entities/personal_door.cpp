@@ -39,5 +39,5 @@ void CEntityPersonalDoor::Snap(int SnappingClient)
 	if(NetworkClipped(SnappingClient))
 		return;
 
-	GS()->SnapLaser(SnappingClient, GetID(), m_Pos, m_PosTo, Server()->Tick(), LASERTYPE_FREEZE, LASERTYPE_DOOR);
+	GS()->SnapLaser(SnappingClient, GetID(), m_Pos, m_PosTo, Server()->Tick(), LASERTYPE_DOOR);
 }
