@@ -1306,7 +1306,7 @@ void CCharacter::Snap(int SnappingClient)
 	DDNetFlag(CHARACTERFLAG_IN_FREEZE, m_Core.m_IsInFreeze);
 	DDNetFlag(CHARACTERFLAG_PRACTICE_MODE, BlockingInputFireWeapon);
 	DDNetFlag(CHARACTERFLAG_LOCK_MODE, false);
-	DDNetFlag(CHARACTERFLAG_TEAM0_MODE, m_pTilesHandler->IsActive(TILE_FISHING_MODE));
+	DDNetFlag(CHARACTERFLAG_TEAM0_MODE, false);
 	DDNetFlag(CHARACTERFLAG_INVINCIBLE, false);
 
 	pDDNetCharacter->m_FreezeEnd = 0;
