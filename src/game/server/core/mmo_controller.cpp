@@ -99,9 +99,21 @@ void CMmoController::OnTick() const
 		pComponent->OnTick();
 
 	// check time period
-	if(GS()->Server()->Tick() % ((GS()->Server()->TickSpeed() * 60) * g_Config.m_SvTimePeriodCheckTime) == 0)
+	if(GS()->GetWorldID() == MAIN_WORLD_ID &&
+		(GS()->Server()->Tick() % (GS()->Server()->TickSpeed() * g_Config.m_SvGlobalPeriodCheckInterval) == 0))
 	{
-		OnHandleTimePeriod();
+		OnHandleGlobalTimePeriod();
+	}
+
+	// update player time period
+	if(GS()->Server()->Tick() % (GS()->Server()->TickSpeed() * g_Config.m_SvPlayerPeriodCheckInterval) == 0)
+	{
+		for(int i = 0; i < MAX_PLAYERS; ++i)
+		{
+			auto* pPlayer = GS()->GetPlayer(i, true);
+			if(pPlayer && GS()->IsPlayerInWorld(i))
+				OnHandlePlayerTimePeriod(pPlayer);
+		}
 	}
 }
 
@@ -279,7 +291,7 @@ void CMmoController::OnResetClientData(int ClientID) const
 }
 
 
-void CMmoController::OnHandleTimePeriod() const
+void CMmoController::OnHandleGlobalTimePeriod() const
 {
 	// initialize variables
 	ByteArray RawData {};
@@ -290,14 +302,14 @@ void CMmoController::OnHandleTimePeriod() const
 	mystd::file::result Result = mystd::file::load("time_periods.cfg", &RawData);
 	if(Result == mystd::file::result::ERROR_FILE)
 	{
-		std::string Data = std::to_string(CurrentTimeStamp) + "\n" + std::to_string(CurrentTimeStamp) + "\n" + std::to_string(CurrentTimeStamp);
+		const auto Data = fmt_default("{}\n{}\n{}", CurrentTimeStamp, CurrentTimeStamp, CurrentTimeStamp);
 		mystd::file::save("time_periods.cfg", Data.data(), (unsigned)Data.size());
 		return;
 	}
 
 	// load time stamps
 	time_t DailyStamp, WeekStamp, MonthStamp;
-	std::string Data = std::string((char*)RawData.data(), RawData.size());
+	auto Data = std::string((char*)RawData.data(), RawData.size());
 #ifdef WIN32
 	std::sscanf(Data.c_str(), "%llu\n%llu\n%llu", &DailyStamp, &WeekStamp, &MonthStamp);
 #else
@@ -328,19 +340,18 @@ void CMmoController::OnHandleTimePeriod() const
 	// if any time period has been updated
 	if(!aPeriodsUpdated.empty())
 	{
-		std::string Data = std::to_string(DailyStamp) + "\n" + std::to_string(WeekStamp) + "\n" + std::to_string(MonthStamp);
+		Data = fmt_default("{}\n{}\n{}", DailyStamp, WeekStamp, MonthStamp);
 		mystd::file::save("time_periods.cfg", Data.data(), (unsigned)Data.size());
 		for(const auto& component : m_System.m_vComponents)
 		{
 			for(const auto& periods : aPeriodsUpdated)
 			{
-				ETimePeriod timePeriod = static_cast<ETimePeriod>(periods);
-				component->OnTimePeriod(timePeriod);
+				auto timePeriod = static_cast<ETimePeriod>(periods);
+				component->OnGlobalTimePeriod(timePeriod);
 			}
 		}
 	}
 }
-
 
 void CMmoController::OnHandlePlayerTimePeriod(CPlayer* pPlayer) const
 {

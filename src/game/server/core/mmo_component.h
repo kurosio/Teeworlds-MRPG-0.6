@@ -85,7 +85,7 @@ private:
 	 *
 	 * @param Period The time period that occurred.
 	 */
-	virtual void OnTimePeriod(ETimePeriod Period) { return; }
+	virtual void OnGlobalTimePeriod(ETimePeriod Period) { return; }
 
 	/**
 	 * @brief Called on each tick of the game.

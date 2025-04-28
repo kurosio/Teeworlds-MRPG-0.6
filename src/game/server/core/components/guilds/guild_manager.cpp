@@ -1040,7 +1040,7 @@ bool CGuildManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
 	return false;
 }
 
-void CGuildManager::OnTimePeriod(ETimePeriod Period)
+void CGuildManager::OnGlobalTimePeriod(ETimePeriod Period)
 {
 	// handle time period for each guilds
 	for(auto& pGuild : CGuild::Data())

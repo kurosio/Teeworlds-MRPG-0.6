@@ -63,7 +63,7 @@ public:
 	bool OnPlayerVoteCommand(CPlayer *pPlayer, const char *pCmd, int ExtraValue1, int ExtraValue2, int ReasonNumber, const char *pReason) const;
 	bool OnPlayerMotdCommand(CPlayer* pPlayer, CMotdPlayerData* pMotdData, const char* pCmd) const;
 	void OnResetClientData(int ClientID) const;
-	void OnHandleTimePeriod() const;
+	void OnHandleGlobalTimePeriod() const;
 	void OnHandlePlayerTimePeriod(CPlayer* pPlayer) const;
 
 	static void AsyncClientEnterMsgInfo(std::string_view ClientName, int ClientID);

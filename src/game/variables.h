@@ -70,7 +70,6 @@ MACRO_CONFIG_INT(ClStatboardInfos, cl_statboard_infos, 1259, 1, 2047, CFGFLAG_CL
 // -----------------------
 // Time and Periodic Events Configuration
 // -----------------------
-MACRO_CONFIG_INT(SvTimePeriodCheckTime, sv_time_period_check_timer, 5, 1, 60, CFGFLAG_SERVER, "Time period check interval (in minutes)")
 MACRO_CONFIG_INT(SvInfoChangeDelay, sv_info_change_delay, 5, 0, 9999, CFGFLAG_SERVER, "Delay (in seconds) between info changes (skin/color), set high to avoid rapid changes")
 
 // -----------------------
@@ -87,7 +86,7 @@ MACRO_CONFIG_INT(SvInactiveKick, sv_inactivekick, 2, 0, 3, CFGFLAG_SERVER, "How 
 // -----------------------
 // Skill Points Configuration
 // -----------------------
-MACRO_CONFIG_INT(SvSkillPointsPerLevel, sv_skill_points_per_level, 10, 0, 100, CFGFLAG_SERVER, "Number of Skill Points awarded per level up")
+MACRO_CONFIG_INT(SvSkillPointsPerLevel, sv_skill_points_per_level, 5, 0, 100, CFGFLAG_SERVER, "Number of Skill Points awarded per level up")
 MACRO_CONFIG_INT(SvSkillPointsDropChanceMob, sv_skill_points_drop_chance_mob, 5, 0, 100, CFGFLAG_SERVER, "Chance (in percent) for Skill Points to drop from regular mobs")
 MACRO_CONFIG_INT(SvSkillPointsDropChanceRareMob, sv_skill_points_drop_chance_rare_mob, 10, 0, 100, CFGFLAG_SERVER, "Chance (in percent) for Skill Points to drop from rare mobs")
 
@@ -117,7 +116,7 @@ MACRO_CONFIG_INT(SvDroppedItemLifetime, sv_dropped_item_lifetime, 20, 5, 60, CFG
 MACRO_CONFIG_INT(SvAvailableDungeonJoin, sv_available_dungeon_join, 1, 0, 1, CFGFLAG_SERVER, "Available join to dungeon world");
 MACRO_CONFIG_INT(SvDungeonDamageTypeFactor, sv_dungeon_damage_type_factor, 10, 1, 100, CFGFLAG_SERVER, "Dungeon sync damage type factor");
 MACRO_CONFIG_INT(SvDungeonCritChanceFactor, sv_dungeon_crit_chance_factor, 5, 1, 100, CFGFLAG_SERVER, "Dungeon sync crit chance factor");
-MACRO_CONFIG_INT(SvDungeonOtherTypeFactor, sv_dungeon_other_type_factor, 30, 1, 100, CFGFLAG_SERVER, "Dungeon sync other type factor");
+MACRO_CONFIG_INT(SvDungeonOtherTypeFactor, sv_dungeon_other_type_factor, 50, 1, 100, CFGFLAG_SERVER, "Dungeon sync other type factor");
 
 // -----------------------
 // Auction System Configuration
@@ -129,8 +128,8 @@ MACRO_CONFIG_INT(SvMaxAuctionSlots, sv_max_auction_slots, 50, 10, 300, CFGFLAG_S
 // -----------------------
 // Guild System Configuration
 // -----------------------
-MACRO_CONFIG_INT(SvGuildSlotUpgradePrice, sv_guild_slot_upgrade_price, 4100, 100, 9000000, CFGFLAG_SERVER, "Price for upgrading guild member slots")
-MACRO_CONFIG_INT(SvGuildAnotherUpgradePrice, sv_guild_another_upgrade_price, 16800, 100, 9000000, CFGFLAG_SERVER, "Price for upgrading additional guild features")
+MACRO_CONFIG_INT(SvGuildSlotUpgradePrice, sv_guild_slot_upgrade_price, 9000, 100, 9000000, CFGFLAG_SERVER, "Price for upgrading guild member slots")
+MACRO_CONFIG_INT(SvGuildAnotherUpgradePrice, sv_guild_another_upgrade_price, 18000, 100, 9000000, CFGFLAG_SERVER, "Price for upgrading additional guild features")
 MACRO_CONFIG_INT(SvGuildWarDurationMinutes, sv_guild_war_duration_minutes, 30, 1, 240, CFGFLAG_SERVER, "Duration of a guild war in minutes")
 
 // -----------------------
@@ -158,11 +157,12 @@ MACRO_CONFIG_INT(SvBankCommissionRate, sv_bank_commission_rate, 5, 0, 100, CFGFL
 // -----------------------
 // Miscellaneous Configuration
 // -----------------------
+MACRO_CONFIG_INT(SvPlayerPeriodCheckInterval, sv_player_check_interval, 600, 1, 144000, CFGFLAG_SERVER, "Time interval for checking player status (in seconds)")
+MACRO_CONFIG_INT(SvGlobalPeriodCheckInterval, sv_global_check_interval, 900, 1, 144000, CFGFLAG_SERVER, "Time interval for checking global status (in seconds)")
 MACRO_CONFIG_INT(SvGenerateMoneyBagPerMinute, sv_generate_money_bag_per_minute, 15, 0, 1020, CFGFLAG_SERVER, "Generate money bag per minute (in minutes)")
 MACRO_CONFIG_INT(SvDungeonWaitingTime, sv_dungeon_waiting_time, 180, 0, 1020, CFGFLAG_SERVER, "Waiting time for dungeon entry (in seconds)")
 MACRO_CONFIG_INT(SvChatMessageInterval, sv_chat_message_interval, 600, 0, 14400, CFGFLAG_SERVER, "Interval for displaying chat messages (in seconds)")
 MACRO_CONFIG_INT(SvChatTopMessageInterval, sv_chat_top_message_interval, 900, 0, 14400, CFGFLAG_SERVER, "Interval for displaying chat toplist messages (in seconds)")
-MACRO_CONFIG_INT(SvPlayerPeriodCheckInterval, sv_player_check_interval, 1440, 0, 14400, CFGFLAG_SERVER, "Time interval for checking player status (in seconds)")
 MACRO_CONFIG_INT(SvLimitDecoration, sv_limit_decorations, 10, 5, 20, CFGFLAG_SERVER, "Maximum number of decoration objects allowed")
 MACRO_CONFIG_STR(SvDiscordInviteLink, sv_discord_invite_link, 32, "nope", CFGFLAG_SERVER, "Link to server invitation")
 MACRO_CONFIG_INT(SvIntervalTileTextUpdate, sv_interval_tile_text_update, 1, 1, 60, CFGFLAG_SERVER, "Interval update tile text")

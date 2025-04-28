@@ -791,16 +791,6 @@ void CGS::OnTick()
 
 void CGS::OnTickGlobal()
 {
-	// update player time period
-	if(Server()->Tick() % (Server()->TickSpeed() * g_Config.m_SvPlayerPeriodCheckInterval) == 0)
-	{
-		for(int i = 0; i < MAX_PLAYERS; ++i)
-		{
-			if(CPlayer* pPlayer = GetPlayer(i, true))
-				Core()->OnHandlePlayerTimePeriod(pPlayer);
-		}
-	}
-
 	// send chat messages with interval
 	if(Server()->Tick() % (Server()->TickSpeed() * g_Config.m_SvChatMessageInterval) == 0)
 	{
