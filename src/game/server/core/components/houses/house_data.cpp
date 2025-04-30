@@ -164,21 +164,37 @@ bool CHouse::ExtendRentDays(int Days)
 	return false;
 }
 
+bool CHouse::ReduceRentDays(int Days)
+{
+	// check validity
+	if(!HasOwner() || !m_pBankManager || m_RentDays < Days)
+		return false;
+
+	// reduce rent days
+	m_RentDays -= clamp(Days, 1, m_RentDays);
+	Database->Execute<DB::UPDATE>(TW_HOUSES_TABLE, "RentDays = '{}' WHERE ID = '{}'", m_RentDays, m_ID);
+	return true;
+}
+
 
 void CHouse::HandleTimePeriod(ETimePeriod Period)
 {
 	// day event rent paid
 	if(Period == DAILY_STAMP && HasOwner())
 	{
-		// try spend to rent paid
-		if(!m_pBankManager->Spend(GetRentPrice()))
-		{
-			Sell();
-			return;
-		}
+		const auto Result = ReduceRentDays(1);
 
-		// send message
-		GS()->ChatAccount(m_AccountID, "Your house rent has been paid.");
+		if(Result)
+		{
+			// payment
+			GS()->ChatAccount(m_AccountID, "Your house rent has been paid.");
+		}
+		else
+		{
+			// expired
+			Sell();
+			GS()->ChatAccount(m_AccountID, "Your house rent has expired, has been sold.");
+		}
 	}
 }
 

@@ -80,7 +80,7 @@ bool CGuildHouse::ExtendRentDays(int Days)
 bool CGuildHouse::ReduceRentDays(int Days)
 {
 	// check validity
-	if(!m_pGuild || !m_pGuild->GetBankManager() || m_RentDays <= 0)
+	if(!m_pGuild || !m_pGuild->GetBankManager() || m_RentDays < Days)
 		return false;
 
 	// reduce rent days

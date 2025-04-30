@@ -82,7 +82,9 @@ public:
 	void Buy(CPlayer* pPlayer);
 	void Sell();
 	void UpdateText(int Lifetime) const;
+
 	bool ExtendRentDays(int Days);
+	bool ReduceRentDays(int Days);
 
 	void HandleTimePeriod(ETimePeriod Period);
 };

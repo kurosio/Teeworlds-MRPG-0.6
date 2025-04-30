@@ -157,19 +157,22 @@ void CGuild::HandleTimePeriod(ETimePeriod Period)
 	// rent paid
 	if(Period == DAILY_STAMP && HasHouse())
 	{
-		// can pay
-		if(m_pHouse->ReduceRentDays(1))
+		const auto Result = m_pHouse->ReduceRentDays(1);
+
+		if(Result)
 		{
+			// payment
 			GS()->ChatGuild(m_ID, "Your guild house rent has been paid.");
 			m_pLogger->Add(LOGFLAG_HOUSE_MAIN_CHANGES, "House rent has been paid.");
-			return;
 		}
-
-		// can't pay, so sell the house
-		SellHouse();
-		GS()->ChatGuild(m_ID, "Your guild house rent has expired, has been sold.");
-		m_pLogger->Add(LOGFLAG_HOUSE_MAIN_CHANGES, "House rent has expired, has been sold.");
-		GS()->UpdateVotesIfForAll(MENU_GUILD);
+		else
+		{
+			// expired
+			SellHouse();
+			GS()->ChatGuild(m_ID, "Your guild house rent has expired, has been sold.");
+			m_pLogger->Add(LOGFLAG_HOUSE_MAIN_CHANGES, "House rent has expired, has been sold.");
+			GS()->UpdateVotesIfForAll(MENU_GUILD);
+		}
 	}
 
 	// reset members deposits
