@@ -75,7 +75,6 @@ public:
 	int GetTotalAttributesLevel() const { return Info()->GetTotalAttributesLevel(m_Enchant); }
 	int GetEnchantStats(AttributeIdentifier ID) const { return Info()->GetInfoEnchantStats(ID, m_Enchant); }
 	int GetEnchantPrice() const { return Info()->GetEnchantPrice(m_Enchant); }
-	int GetDysenthis() const { return Info()->GetDysenthis(m_Enchant); }
 	bool IsEquipped() const;
 
 	bool IsEnchantMaxLevel() const { return Info()->IsEnchantMaxLevel(m_Enchant); }

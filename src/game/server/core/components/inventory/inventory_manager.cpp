@@ -39,7 +39,7 @@ void CInventoryManager::OnPreInit()
 		const auto TypeSet = DBSet(pRes->getString("Type"));
 		const auto ScenarioData = pRes->getString("ScenarioData");
 		const auto InitialPrice = pRes->getInt("InitialPrice");
-		const auto Dysenthis = pRes->getInt("Desynthesis");
+		const auto RequiresProducts = pRes->getInt("RequiresProducts");
 		const auto Data = pRes->getString("Data");
 
 		CItemDescription::ContainerAttributes aContainerAttributes;
@@ -59,7 +59,7 @@ void CInventoryManager::OnPreInit()
 			}
 		}
 
-		CItemDescription(ItemID).Init(Name, Description, GroupSet, TypeSet, Dysenthis, InitialPrice, aContainerAttributes, Data, ScenarioData);
+		CItemDescription(ItemID).Init(Name, Description, GroupSet, TypeSet, RequiresProducts, InitialPrice, aContainerAttributes, Data, ScenarioData);
 	}
 
 	ResultPtr pResAtt = Database->Execute<DB::SELECT>("*", "tw_attributes");
@@ -320,27 +320,6 @@ bool CInventoryManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
 		return true;
 	}
 
-	// Dissasemble item
-	if(PPSTR(pCmd, "DISSASEMBLE_ITEM") == 0)
-	{
-		// check available value
-		auto AvailableValue = GetUnfrozenItemValue(pPlayer, Extra1);
-		if(AvailableValue <= 0)
-			return true;
-
-		ReasonNumber = minimum(AvailableValue, ReasonNumber);
-		auto* pPlayerItem = pPlayer->GetItem(Extra1);
-		auto* pPlayerMaterial = pPlayer->GetItem(itMaterial);
-		const int DesValue = pPlayerItem->GetDysenthis() * ReasonNumber;
-		if(pPlayerItem->Remove(ReasonNumber) && pPlayerMaterial->Add(DesValue))
-		{
-			GS()->Chat(ClientID, "Disassemble '{} x{}'.", pPlayerItem->Info()->GetName(), ReasonNumber);
-			GS()->CreateSound(pPlayer->m_ViewPos, SOUND_VOTE_ITEM_DISSASEMBLE);
-			pPlayer->m_VotesData.UpdateCurrentVotes();
-		}
-		return true;
-	}
-
 	// Auto equip slots by best equippement items
 	if(PPSTR(pCmd, "AUTO_EQUIP_SLOTS") == 0)
 	{
@@ -563,10 +542,6 @@ void CInventoryManager::ItemSelected(CPlayer* pPlayer, const CPlayerItem* pItem)
 	// not allowed drop equipped hammer or title
 	if(ItemID != pPlayer->GetEquippedSlotItemID(ItemType::EquipHammer) && !pInfo->IsType(ItemType::EquipTitle))
 	{
-		// can dysenthis
-		if(pItem->GetDysenthis() > 0)
-			VItem.AddOption("DISSASEMBLE_ITEM", ItemID, pItem->GetDysenthis(), "Disassemble (+{}m)", pItem->GetDysenthis());
-
 		// can trade
 		if(pInfo->m_InitialPrice > 0)
 			VItem.AddOption("AUCTION_CREATE", ItemID, "Sell at auction");

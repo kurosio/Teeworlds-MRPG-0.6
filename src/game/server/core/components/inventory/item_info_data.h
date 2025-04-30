@@ -37,7 +37,7 @@ private:
 	char m_aName[32] {};
 	char m_aDescription[64] {};
 	ItemGroup m_Group {};
-	int m_Dysenthis {};
+	int m_RequiresProducts {};
 	int m_InitialPrice {};
 	ItemType m_Type {};
 	ContainerAttributes m_aAttributes {};
@@ -52,12 +52,12 @@ public:
 	CItemDescription(ItemIdentifier ID) : m_ID(ID) {}
 
 	void Init(const std::string& Name, const std::string& Description, const DBSet& GroupSet,
-		const DBSet& TypeSet, int Dysenthis, int InitialPrice, ContainerAttributes aAttributes, const std::string& Data, const std::string& ScenarioData)
+		const DBSet& TypeSet, int RequiresProducts, int InitialPrice, ContainerAttributes aAttributes, const std::string& Data, const std::string& ScenarioData)
 	{
 		m_Data = Data;
 		m_ScenarioData = ScenarioData;
 		str_copy(m_aDescription, Description.c_str(), sizeof(m_aDescription));
-		m_Dysenthis = Dysenthis;
+		m_RequiresProducts = RequiresProducts;
 		m_InitialPrice = InitialPrice;
 		m_aAttributes = std::move(aAttributes);
 
@@ -74,7 +74,7 @@ public:
 	const char* GetName() const { return m_aName; }
 	const char* GetDescription() const { return m_aDescription; }
 	int GetInitialPrice() const { return m_InitialPrice; }
-	int GetDysenthis(int Enchant) const;
+	int GetRequiresProducts() const;
 	ItemType GetType() const { return m_Type; }
 	bool IsType(ItemType Type) const { return m_Type == Type; }
 	ItemGroup GetGroup() const { return m_Group; }

@@ -59,7 +59,7 @@ public:
 	// get product cost
 	int GetProductsCost() const
 	{
-		auto Cost = m_Item.Info()->GetDysenthis(m_Item.GetEnchant());
+		auto Cost = m_Item.Info()->GetRequiresProducts();
 		Cost = (Cost <= 0) ? m_Item.GetValue() : Cost;
 		return Cost;
 	}

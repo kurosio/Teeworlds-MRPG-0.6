@@ -135,13 +135,9 @@ void CItemDescription::InitUniqueName(const std::string& Name)
 	str_copy(m_aName, Result.c_str(), sizeof(m_aName));
 }
 
-int CItemDescription::GetDysenthis(int Enchant) const
+int CItemDescription::GetRequiresProducts() const
 {
-	if(!m_Dysenthis)
-		return 0;
-
-	auto enchantBonus = m_Dysenthis + maximum(GetEnchantPrice(Enchant) / 4, 1) * Enchant;
-	return enchantBonus;
+	return m_RequiresProducts;
 }
 
 bool CItemDescription::IsStackable() const
