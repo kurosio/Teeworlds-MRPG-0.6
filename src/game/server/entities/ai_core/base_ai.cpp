@@ -80,8 +80,7 @@ CPlayerBot* CBaseAI::SearchPlayerBotCondition(float Distance, const std::functio
 		if(m_pPlayer->GetCID() == i)
 			continue;
 
-		CPlayerBot* pCandidatePlayer = dynamic_cast<CPlayerBot*>(GS()->GetPlayer(i));
-
+		auto* pCandidatePlayer = dynamic_cast<CPlayerBot*>(GS()->GetPlayer(i));
 		if(!pCandidatePlayer || !pCandidatePlayer->GetCharacter())
 			continue;
 

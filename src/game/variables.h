@@ -98,6 +98,7 @@ MACRO_CONFIG_INT(SvTeleportFeePerDistance, sv_teleport_fee_per_distance, 12, 0, 
 // -----------------------
 // Inventory and Resource Management Configuration
 // -----------------------
+MACRO_CONFIG_INT(SvPercentProductsCostByPrice, sv_percent_products_cost_by_price, 10, 1, 100, CFGFLAG_SERVER, "Percent from price for products cost")
 MACRO_CONFIG_INT(SvWarehouseProductsCanTake, sv_warehouse_products_can_take, 50, 10, 100000, CFGFLAG_SERVER, "Maximum amount of products a player can carry from the warehouse")
 MACRO_CONFIG_INT(SvGatheringEntitiesPerTile, sv_gathering_entities_per_tile, 2, 1, 4, CFGFLAG_SERVER, "Number of entities that can be gathering from a single tile")
 MACRO_CONFIG_INT(SvUpdateEntityTextNames, sv_update_ent_text_names, 50, 25, 1000, CFGFLAG_SERVER, "Frequency of updating entity text names")

@@ -59,9 +59,8 @@ public:
 	// get product cost
 	int GetProductsCost() const
 	{
-		auto Cost = m_Item.Info()->GetRequiresProducts();
-		Cost = (Cost <= 0) ? m_Item.GetValue() : Cost;
-		return Cost;
+		auto Price = minimum(1, GetPrice());
+		return translate_to_percent_rest(Price, g_Config.m_SvPercentProductsCostByPrice);
 	}
 };
 

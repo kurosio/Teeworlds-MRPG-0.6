@@ -135,11 +135,6 @@ void CItemDescription::InitUniqueName(const std::string& Name)
 	str_copy(m_aName, Result.c_str(), sizeof(m_aName));
 }
 
-int CItemDescription::GetRequiresProducts() const
-{
-	return m_RequiresProducts;
-}
-
 bool CItemDescription::IsStackable() const
 {
 	return !(IsEnchantable() || IsGroup(ItemGroup::Settings) || IsGroup(ItemGroup::Equipment));
