@@ -103,7 +103,7 @@ void CEntityRifleMagneticPulse::TickLastPhase()
 			continue;
 
 		const auto Dir = normalize(pChar->m_Core.m_Pos - m_Pos);
-		pChar->m_Core.m_Vel -= Dir * 5.f;
+		pChar->AddVelocity(-Dir * 5.f);
 	}
 }
 

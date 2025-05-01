@@ -161,7 +161,7 @@ void CEntityManager::GravityDisruption(int ClientID, vec2 Position, float Radius
 			if(!pBase->GetPlayer() || (pBase->GetClientID() != pChar->GetPlayer()->GetCID() && pChar->IsAllowedPVP(pBase->GetClientID())))
 			{
 				vec2 Dir = normalize(pChar->m_Core.m_Pos - BasePos);
-				pChar->m_Core.m_Vel -= Dir * 1.50f;
+				pChar->AddVelocity(-Dir * 1.5f);
 			}
 		}
 	});
@@ -357,7 +357,8 @@ void CEntityManager::FlameWall(int ClientID, vec2 Position, float Radius, int Li
 				if(pBase->Server()->Tick() % TickSpeed == 0)
 					pChar->TakeDamage(vec2(0, 0), DamagePerTick, pBase->GetClientID(), WEAPON_WORLD);
 
-				pChar->m_Core.m_Vel *= SlowDownFactor;
+				vec2 NewVelocity = pChar->m_Core.m_Vel * SlowDownFactor;
+				pChar->SetVelocity(NewVelocity);
 			}
 		}
 	});

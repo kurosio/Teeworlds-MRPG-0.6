@@ -369,7 +369,7 @@ bool CCharacter::FireHammer(vec2 Direction, vec2 ProjStartPos)
 		}
 
 		// move and visual effect
-		m_Core.m_Vel += Direction * 2.5f;
+		AddVelocity(Direction * 2.5f);
 		GS()->CreateExplosion(m_Pos, m_ClientID, WEAPON_HAMMER, 0);
 		GS()->CreateSound(m_Pos, SOUND_WEAPONS_HAMMER_BLAST_START);
 		return true;
@@ -1056,6 +1056,16 @@ void CCharacter::TryUsePotion(std::optional<int> optItemID) const
 			pPlayerItem->Use(1);
 		}
 	}
+}
+
+void CCharacter::SetVelocity(vec2 NewVelocity)
+{
+	m_Core.m_Vel = ClampVel(m_MoveRestrictions, NewVelocity);
+}
+
+void CCharacter::AddVelocity(vec2 Addition)
+{
+	SetVelocity(m_Core.m_Vel + Addition);
 }
 
 void CCharacter::ApplyMoveRestrictions()
