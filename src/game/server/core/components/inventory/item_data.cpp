@@ -371,6 +371,7 @@ bool CPlayerItem::Use(int Value)
 		// try use
 		if(Remove(Value))
 		{
+			const auto RecastTime = optPotionContext->Recasttime;
 			const auto PotionTime = optPotionContext->Lifetime;
 			const auto EffectName = optPotionContext->Effect.c_str();
 
@@ -381,7 +382,7 @@ bool CPlayerItem::Use(int Value)
 
 			// Update the recast time based on potion type
 			auto& recastTick = (Type == ItemType::EquipPotionHeal) ? pPlayer->m_aPlayerTick[HealPotionRecast] : pPlayer->m_aPlayerTick[ManaPotionRecast];
-			recastTick = Server()->Tick() + ((PotionTime + POTION_RECAST_APPEND_TIME) * Server()->TickSpeed());
+			recastTick = Server()->Tick() + (RecastTime * Server()->TickSpeed());
 		}
 
 		return true;

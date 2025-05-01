@@ -19,6 +19,7 @@ public:
 		std::string Effect {};
 		int Value {};
 		int Lifetime {};
+		int Recasttime {};
 	};
 	struct BonusesContext
 	{
