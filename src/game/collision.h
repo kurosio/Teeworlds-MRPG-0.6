@@ -142,6 +142,9 @@ public:
 	std::optional<ZoneDetail> GetZonedetail(vec2 Pos) const;
 	std::optional<vec2> TryGetTeleportOut(vec2 currentPos);
 	std::optional<std::pair<vec2, bool>> TryGetFixedCamPos(vec2 currentPos) const;
+	const std::unordered_map<int, GatheringNode>& GetOreNodes() const { return m_vOreNodes; }
+	const std::unordered_map<int, GatheringNode>& GetPlantNodes() const { return m_vPlantNodes; }
+	const std::unordered_map<int, GatheringNode>& GetFishNodes() const { return m_vFishNodes; }
 	GatheringNode* GetOreNode(int SwitchNumber) { return m_vOreNodes.contains(SwitchNumber) ? &m_vOreNodes.at(SwitchNumber) : nullptr; }
 	GatheringNode* GetPlantNode(int SwitchNumber) { return m_vPlantNodes.contains(SwitchNumber) ? &m_vPlantNodes.at(SwitchNumber) : nullptr; }
 	GatheringNode* GetFishNode(int SwitchNumber) { return m_vFishNodes.contains(SwitchNumber) ? &m_vFishNodes.at(SwitchNumber) : nullptr; }

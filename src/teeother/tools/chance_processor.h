@@ -23,7 +23,7 @@ public:
 
 	void addElement(const T& Element, double Chance)
 	{
-		if(Chance <= 0)
+		if(Chance <= 0.0)
 			return;
 
 		m_vElements.push_back({ Element, Chance });
@@ -32,10 +32,7 @@ public:
 
 	bool removeElement(const T& element)
 	{
-		auto it = std::ranges::find_if(m_vElements, [&element](const ElementWithChance& e)
-		{
-			return e.Element == element;
-		});
+		auto it = std::ranges::find(m_vElements, element, &ElementWithChance::Element);
 
 		if(it != m_vElements.end())
 		{
@@ -47,36 +44,45 @@ public:
 		return false;
 	}
 
+
+	const ElementWithChance* getElement(const T& element) const
+	{
+		auto it = std::ranges::find(m_vElements, element, &ElementWithChance::Element);
+		return (it != m_vElements.end()) ? &(*it) : nullptr;
+	}
+
+	ElementWithChance* getElement(const T& element)
+	{
+		auto it = std::ranges::find(m_vElements, element, &ElementWithChance::Element);
+		return (it != m_vElements.end()) ? &(*it) : nullptr;
+	}
+
 	bool hasElement(const T& element) const
 	{
-		const auto it = std::ranges::find_if(m_vElements, [&element](const ElementWithChance& e)
-		{
-			return e.Element == element;
-		});
-
-		return it != m_vElements.cend();
+		const auto it = std::ranges::find(m_vElements, element, &ElementWithChance::Element);
+		return it != m_vElements.end();
 	}
 
 	void normalizeChances()
 	{
-		if(m_TotalChance == 0.0)
+		if(m_TotalChance <= 0.0 || m_vElements.empty())
 			return;
 
 		for(auto& e : m_vElements)
 			e.Chance = (e.Chance / m_TotalChance) * 100.0;
 
-		m_TotalChance = 100.0;
+		m_TotalChance = m_vElements.empty() ? 0.0 : 100.0;
 	}
 
 	void setEqualChance(double newChance)
 	{
-		if(newChance <= 0)
+		if(newChance <= 0.0 || m_vElements.empty())
 			return;
-
-		m_TotalChance = newChance * m_vElements.size();
 
 		for(auto& e : m_vElements)
 			e.Chance = newChance;
+
+		m_TotalChance = newChance * static_cast<double>(m_vElements.size());
 	}
 
 	T getRandomElement() const

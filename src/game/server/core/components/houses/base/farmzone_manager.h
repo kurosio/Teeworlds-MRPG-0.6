@@ -17,30 +17,7 @@ class CFarmzone
 
 public:
 	CFarmzone() = delete;
-	CFarmzone(CFarmzonesManager* pManager, const std::string& Name, const DBSet& ItemsSet, vec2 Pos, float Radius) : m_pManager(pManager)
-	{
-		// initialize variables
-		m_pManager = pManager;
-		m_Node.Name = Name;
-		m_Node.Level = 1;
-		m_Node.Health = 100;
-		m_Pos = Pos;
-		m_Radius = Radius;
-
-		// load items from node
-		for(auto& Str : ItemsSet.getItems())
-		{
-			try
-			{
-				int itemID = std::stoi(Str);
-				AddItemToNode(itemID);
-			}
-			catch(const std::invalid_argument& e)
-			{
-				dbg_msg("house_farmzone", "%s", e.what());
-			}
-		}
-	}
+	CFarmzone(CFarmzonesManager* pManager, const std::string& Name, const DBSet& ItemsSet, vec2 Pos, float Radius);
 
 	const char* GetName() const { return m_Node.Name.c_str(); }
 	float GetRadius() const { return m_Radius; }
@@ -50,6 +27,9 @@ public:
 	void AddItemToNode(int ItemID);
 	bool RemoveItemFromNode(int ItemID);
 	void Add(CGS* pGS, const vec2& Pos);
+
+private:
+	void NormalizeHealth();
 };
 
 class CFarmzonesManager

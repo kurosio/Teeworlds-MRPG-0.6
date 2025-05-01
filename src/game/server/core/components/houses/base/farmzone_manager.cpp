@@ -3,11 +3,89 @@
 #include <game/server/core/entities/items/gathering_node.h>
 #include <game/server/gamecontext.h>
 
+CFarmzone::CFarmzone(CFarmzonesManager* pManager, const std::string& Name, const DBSet& ItemsSet, vec2 Pos, float Radius)
+	: m_pManager(pManager)
+{
+	// initialize variables
+	m_pManager = pManager;
+	m_Node.Name = Name;
+	m_Node.Level = 1;
+	m_Node.Health = 100;
+	m_Pos = Pos;
+	m_Radius = Radius;
+
+	// load items from node
+	for(auto& Str : ItemsSet.getItems())
+	{
+		try
+		{
+			int itemID = std::stoi(Str);
+			AddItemToNode(itemID);
+		}
+		catch(const std::invalid_argument& e)
+		{
+			dbg_msg("house_farmzone", "%s", e.what());
+		}
+	}
+}
+
 void CFarmzone::Add(CGS* pGS, const vec2& Pos)
 {
 	m_vFarms.push_back(new CEntityGatheringNode(&pGS->m_World, &m_Node, Pos, CEntityGatheringNode::GATHERING_NODE_PLANT));
 }
 
+void CFarmzone::NormalizeHealth()
+{
+	if(m_Node.m_vItems.isEmpty())
+		return;
+
+	// initialize variables
+	struct NormalizeInfoElement
+	{
+		int Health {};
+		double Chance {};
+	};
+
+	const auto& vPlantNodes = m_pManager->m_pHouse->GS()->Collision()->GetPlantNodes();
+	const auto& vFarmItems = m_Node.m_vItems;
+	std::unordered_map<int, NormalizeInfoElement> vResult;
+	vResult.reserve(vFarmItems.size());
+
+	// collect all best chances from nodes
+	for(const auto& [nodeId, node] : vPlantNodes)
+	{
+		for(const auto& item : vFarmItems)
+		{
+			auto pElement = node.m_vItems.getElement(item.Element);
+			if(!pElement)
+				continue;
+
+			if(!vResult.contains(item.Element) ||
+				vResult[item.Element].Chance < pElement->Chance)
+			{
+				vResult[item.Element].Health = node.Health;
+				vResult[item.Element].Chance = pElement->Chance;
+			}
+		}
+	}
+
+	// calculation result health for house node
+	int ResultHealth = 0;
+	double TargetChancePerPlant = 100.0 / vFarmItems.size();
+	for(const auto& [itemId, node] : vResult)
+	{
+		double HealthScaleFactor = TargetChancePerPlant / node.Chance;
+		auto NormalizedHealth = round_to_int(static_cast<double>(node.Health) * HealthScaleFactor);
+
+		ResultHealth += NormalizedHealth;
+	}
+
+	// result
+	m_Node.Health = maximum(10, ResultHealth);
+	for(auto& pEnt : m_vFarms)
+		pEnt->Reset();
+	dbg_msg("Normalize houses farmzones", "Result house node (%d HP)", ResultHealth);
+}
 
 void CFarmzone::AddItemToNode(int ItemID)
 {
@@ -15,6 +93,7 @@ void CFarmzone::AddItemToNode(int ItemID)
 	m_Node.m_vItems.addElement(ItemID, 100.f);
 	m_Node.m_vItems.setEqualChance(100.f);
 	m_Node.m_vItems.normalizeChances();
+	NormalizeHealth();
 }
 
 
@@ -26,6 +105,7 @@ bool CFarmzone::RemoveItemFromNode(int ItemID)
 	{
 		m_Node.m_vItems.setEqualChance(100.f);
 		m_Node.m_vItems.normalizeChances();
+		NormalizeHealth();
 	}
 
 	return Removed;
