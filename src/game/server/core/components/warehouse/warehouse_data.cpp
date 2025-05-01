@@ -125,7 +125,7 @@ void CWarehouse::InitData(const DBSet& Type, const nlohmann::json& JsonData)
 		m_vTradingList.size());
 
 	// save properties data for changes
-	m_Properties = std::move(JsonData);
+	m_Properties = JsonData;
 }
 
 void CWarehouse::SaveData()
