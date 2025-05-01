@@ -190,7 +190,6 @@ void CMobAI::Process()
 
 	// update
 	m_pCharacter->UpdateTarget(1000.f);
-	m_pCharacter->ResetInput();
 
 	if(const auto* pTargetChar = GS()->GetPlayerChar(m_Target.GetCID()))
 	{
@@ -248,7 +247,6 @@ void CMobAI::HandleBehaviors(bool* pbAsleep)
 			GS()->SendEmoticon(m_ClientID, EMOTICON_ZZZ);
 			m_pCharacter->SetEmote(EMOTE_BLINK, 2, false);
 		}
-		m_pCharacter->ResetInput();
 		(*pbAsleep) = true;
 	}
 }

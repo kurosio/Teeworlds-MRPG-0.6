@@ -795,7 +795,7 @@ void CGS::OnTickGlobal()
 	if(Server()->Tick() % (Server()->TickSpeed() * g_Config.m_SvChatMessageInterval) == 0)
 	{
 		static const std::deque<std::string> vMessages = {
-			"[INFO] We recommend that you use the function in F1 console \"ui_close_window_after_changing_setting 1\", this will allow the voting menu not to close after clicking to vote.",
+			"[INFO] We recommend that you use the function in F1 console \"ui_close_window_after_changing_setting 0\", this will allow the voting menu not to close after clicking to vote.",
 			"[INFO] If you can't see the dialogs with NPCs, check in F1 console \"cl_motd_time\" so that the value is set.",
 			"[INFO] Information and data can be found in the call voting menu.",
 			"[INFO] The mod supports translation, you can find it in \"Call vote -> Settings -> Settings language\".",

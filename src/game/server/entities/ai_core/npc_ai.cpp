@@ -108,7 +108,6 @@ void CNpcAI::ProcessGuardianNPC() const
 	{
 		m_pCharacter->UpdateTarget(800.0f);
 	}
-	m_pCharacter->ResetInput();
 
 	if(const auto* pTargetChar = GS()->GetPlayerChar(m_Target.GetCID()))
 	{

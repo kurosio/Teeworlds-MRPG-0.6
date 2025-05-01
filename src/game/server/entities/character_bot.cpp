@@ -263,6 +263,7 @@ void CCharacterBotAI::Tick()
 	m_Core.m_Input = m_Input;
 	m_Core.Tick(true, &m_pBotPlayer->m_NextTuningParams);
 	m_pBotPlayer->UpdateSharedCharacterData(m_Health, m_Mana);
+	ResetInput();
 
 	// handles
 	HandleSafeFlags();

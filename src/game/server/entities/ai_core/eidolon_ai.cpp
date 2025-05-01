@@ -108,7 +108,6 @@ void CEidolonAI::OnTargetRules(float Radius)
 void CEidolonAI::Process()
 {
 	m_pCharacter->SetSafeFlags(SAFEFLAG_COLLISION_DISABLED);
-	m_pCharacter->ResetInput();
 
 	const auto* pOwner = m_pPlayer->GetEidolonOwner();
 	if(!pOwner || !pOwner->GetCharacter())
