@@ -364,8 +364,8 @@ bool CPlayerItem::Use(int Value)
 	{
 		// check potion recast time
 		const auto Type = Info()->GetType();
-		if((Type == ItemType::EquipPotionHeal && pPlayer->m_aPlayerTick[HealPotionRecast] >= Server()->Tick()) ||
-			(Type == ItemType::EquipPotionMana && pPlayer->m_aPlayerTick[ManaPotionRecast] >= Server()->Tick()))
+		auto& recastTick = (Type == ItemType::EquipPotionHeal) ? pPlayer->m_aPlayerTick[HealPotionRecast] : pPlayer->m_aPlayerTick[ManaPotionRecast];
+		if(recastTick >= Server()->Tick())
 			return true;
 
 		// try use
@@ -381,7 +381,6 @@ bool CPlayerItem::Use(int Value)
 			GS()->CreatePlayerSound(m_ClientID, SOUND_GAME_POTION_START);
 
 			// Update the recast time based on potion type
-			auto& recastTick = (Type == ItemType::EquipPotionHeal) ? pPlayer->m_aPlayerTick[HealPotionRecast] : pPlayer->m_aPlayerTick[ManaPotionRecast];
 			recastTick = Server()->Tick() + (RecastTime * Server()->TickSpeed());
 		}
 
