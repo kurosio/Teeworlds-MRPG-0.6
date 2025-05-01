@@ -162,8 +162,7 @@ void CMobAI::OnTargetRules(float Radius)
 			return !DamageDisabled && (CurrentTotalAttHP < CandidateTotalAttHP);
 		}
 
-		const bool AgressionFactor = GS()->IsWorldType(WorldType::Dungeon) || rand() % 30 == 0;
-		return !DamageDisabled && AgressionFactor;
+		return !DamageDisabled;
 	});
 
 	if(!pPlayer)

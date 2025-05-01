@@ -61,7 +61,7 @@ CPlayer* CBaseAI::SearchPlayerCondition(float Distance, const std::function<bool
 
 		const bool IntersectedWithInvisibleLine = GS()->Collision()->IntersectLineWithInvisible(CandidatePos, PlayerPos, nullptr, nullptr);
 		m_Target.UpdateCollised(IntersectedWithInvisibleLine);
-		if(GS()->Collision()->IntersectLineWithInvisible(CandidatePos, PlayerPos, nullptr, nullptr))
+		if(IntersectedWithInvisibleLine)
 			continue;
 
 		if(!Condition(pCandidatePlayer))
@@ -95,7 +95,7 @@ CPlayerBot* CBaseAI::SearchPlayerBotCondition(float Distance, const std::functio
 
 		const bool IntersectedWithInvisibleLine = GS()->Collision()->IntersectLineWithInvisible(CandidatePos, PlayerPos, nullptr, nullptr);
 		m_Target.UpdateCollised(IntersectedWithInvisibleLine);
-		if(GS()->Collision()->IntersectLineWithInvisible(CandidatePos, PlayerPos, nullptr, nullptr))
+		if(IntersectedWithInvisibleLine)
 			continue;
 
 		if(!Condition(pCandidatePlayer))

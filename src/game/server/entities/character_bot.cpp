@@ -587,8 +587,8 @@ void CCharacterBotAI::Move()
 
 void CCharacterBotAI::Fire()
 {
-	auto* pPlayer = GS()->GetPlayer(AI()->GetTarget()->GetCID(), false, true);
-	if(!pPlayer || AI()->GetTarget()->IsEmpty() || AI()->GetTarget()->IsCollided())
+	auto* pChar = GS()->GetPlayerChar(AI()->GetTarget()->GetCID());
+	if(!pChar || AI()->GetTarget()->IsEmpty() || AI()->GetTarget()->IsCollided())
 		return;
 
 	// if hooking or reloading
