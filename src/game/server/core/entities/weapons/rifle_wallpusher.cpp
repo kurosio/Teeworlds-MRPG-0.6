@@ -67,7 +67,7 @@ void CEntityRifleWallPusher::Tick()
 	m_PosTo += NormalizedDirection * 10.f;
 
 	// check hitting characters
-	CheckHitCharacter(PrevPos);
+	TryHitCharacter(PrevPos);
 }
 
 void CEntityRifleWallPusher::Snap(int SnappingClient)
@@ -79,9 +79,11 @@ void CEntityRifleWallPusher::Snap(int SnappingClient)
 	GS()->SnapLaser(SnappingClient, m_ID2, m_PosTo, m_Pos, Server()->Tick() - 3);
 }
 
-void CEntityRifleWallPusher::CheckHitCharacter(const vec2 PrevPos) const
+void CEntityRifleWallPusher::TryHitCharacter(const vec2 PrevPos)
 {
 	// hit character
+	bool MarkedForDestroy = false;
+
 	for(auto* pChar = (CCharacter*)GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); pChar; pChar = (CCharacter*)pChar->TypeNext())
 	{
 		if(m_ClientID == pChar->GetPlayer()->GetCID() || !pChar->IsAllowedPVP(m_ClientID))
@@ -99,16 +101,19 @@ void CEntityRifleWallPusher::CheckHitCharacter(const vec2 PrevPos) const
 
 		// wall pushing
 		const auto WallMovement = m_Pos - PrevPos;
-		const auto PredictedPos = pChar->m_Core.m_Pos + WallMovement;
-		const auto WallCollide = GS()->Collision()->TestBox(PredictedPos, vec2(CCharacter::ms_PhysSize, CCharacter::ms_PhysSize));
-		if(WallCollide)
+		pChar->SetVelocity(WallMovement * 1.2f);
+
+		// character collide by wall
+		const auto CharCollideByWall = GS()->Collision()->TestBox(pChar->m_Core.m_Pos + WallMovement, vec2(CCharacter::ms_PhysSize, CCharacter::ms_PhysSize));
+		if(CharCollideByWall)
 		{
-			pChar->TakeDamage({}, 1, m_ClientID, WEAPON_LASER);
-		}
-		else
-		{
-			pChar->m_Core.m_Pos = PredictedPos;
-			pChar->m_Core.m_Vel = {};
+			GS()->CreateExplosion(m_Pos, m_ClientID, WEAPON_LASER, 3);
+			GS()->CreateExplosion(m_PosTo, m_ClientID, WEAPON_LASER, 3);
+			GS()->CreateExplosion(IntersectPos + WallMovement, m_ClientID, WEAPON_LASER, 5);
+			MarkedForDestroy = true;
 		}
 	}
+
+	if(MarkedForDestroy)
+		MarkForDestroy();
 }

@@ -16,7 +16,7 @@ public:
 	void Snap(int SnappingClient) override;
 
 private:
-	void CheckHitCharacter(const vec2 PrevPos) const;
+	void TryHitCharacter(const vec2 PrevPos);
 };
 
 #endif
