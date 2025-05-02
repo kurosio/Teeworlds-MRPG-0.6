@@ -13,8 +13,15 @@ CEidolonAI::CEidolonAI(CPlayerBot* pPlayer, CCharacterBotAI* pCharacter)
 
 bool CEidolonAI::CanDamage(CPlayer* pFrom)
 {
+	if(pFrom->IsBot())
+	{
+		auto* pFromBot = static_cast<CPlayerBot*>(pFrom);
+		if(auto* pMobAI = GetValidAI<CMobAI>(pFromBot))
+			return !pMobAI->IsNeutral();
+	}
+
 	auto* pOwner = m_pPlayer->GetEidolonOwner();
-	if(m_pPlayer->GetEidolonOwner() != pFrom)
+	if(pOwner != pFrom)
 	{
 		if(pOwner)
 		{
@@ -87,7 +94,8 @@ void CEidolonAI::OnTargetRules(float Radius)
 		pPlayer = SearchPlayerBotCondition(Radius, [&](CPlayerBot* pCandidate)
 		{
 			const bool DamageDisabled = pOwner->GetCharacter()->m_Core.m_DamageDisabled;
-			const bool AllowedPVP = m_pCharacter->IsAllowedPVP(pCandidate->GetCID()) && pOwner->GetCharacter()->IsAllowedPVP(pCandidate->GetCID());
+			const bool AllowedPVP = m_pCharacter->IsAllowedPVP(pCandidate->GetCID())
+				&& pCandidate->GetCharacter()->IsAllowedPVP(m_ClientID);
 			return !DamageDisabled && AllowedPVP;
 		});
 	}
