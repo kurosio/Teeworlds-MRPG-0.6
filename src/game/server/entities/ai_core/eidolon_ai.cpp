@@ -1,4 +1,6 @@
+#include "get_valid_ai_util.h"
 #include "eidolon_ai.h"
+#include "mob_ai.h"
 
 #include <game/server/entities/character_bot.h>
 #include <game/server/gamecontext.h>
@@ -12,7 +14,6 @@ CEidolonAI::CEidolonAI(CPlayerBot* pPlayer, CCharacterBotAI* pCharacter)
 bool CEidolonAI::CanDamage(CPlayer* pFrom)
 {
 	auto* pOwner = m_pPlayer->GetEidolonOwner();
-
 	if(m_pPlayer->GetEidolonOwner() != pFrom)
 	{
 		if(pOwner)
@@ -34,13 +35,6 @@ bool CEidolonAI::CanDamage(CPlayer* pFrom)
 		}
 
 		return false;
-	}
-
-	if(pFrom->IsBot())
-	{
-		const auto* pFromBot = static_cast<CPlayerBot*>(pFrom);
-		if(pFromBot && (pFromBot->GetBotType() == TYPE_BOT_MOB))
-			return true;
 	}
 
 	return false;
@@ -82,7 +76,6 @@ void CEidolonAI::OnTargetRules(float Radius)
 	// find from players
 	const auto* pPlayer = SearchPlayerCondition(Radius, [&](const CPlayer* pCandidate)
 	{
-		// const auto* pOwnerChar = pOwner->GetCharacter();
 		const bool DamageDisabled = pCandidate->GetCharacter()->m_Core.m_DamageDisabled;
 		const bool AllowedPVP = pOwner->GetCID() != pCandidate->GetCID() && m_pCharacter->IsAllowedPVP(pCandidate->GetCID());
 		return !DamageDisabled && AllowedPVP;
@@ -94,8 +87,8 @@ void CEidolonAI::OnTargetRules(float Radius)
 		pPlayer = SearchPlayerBotCondition(Radius, [&](CPlayerBot* pCandidate)
 		{
 			const bool DamageDisabled = pOwner->GetCharacter()->m_Core.m_DamageDisabled;
-
-			return !DamageDisabled && pOwner->GetCharacter()->IsAllowedPVP(pCandidate->GetCID());
+			const bool AllowedPVP = m_pCharacter->IsAllowedPVP(pCandidate->GetCID()) && pOwner->GetCharacter()->IsAllowedPVP(pCandidate->GetCID());
+			return !DamageDisabled && AllowedPVP;
 		});
 	}
 

@@ -8,6 +8,7 @@ class MobBotInfo;
 class CMobAI final : public CBaseAI
 {
 	int m_BehaviorPoisonedNextTick {};
+	bool m_BehaviorNeutral {};
 	MobBotInfo* m_pMobInfo {};
 
 public:
@@ -21,6 +22,7 @@ public:
 	void OnRewardPlayer(CPlayer* pPlayer, vec2 Force) const override;
 	void OnTargetRules(float Radius) override;
 	void Process() override;
+	bool IsNeutral() const { return m_BehaviorNeutral; }
 
 private:
 	void HandleBehaviors(bool* pbAsleep);

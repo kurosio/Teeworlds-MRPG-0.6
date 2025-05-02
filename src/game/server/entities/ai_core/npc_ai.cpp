@@ -1,4 +1,6 @@
+#include "get_valid_ai_util.h"
 #include "npc_ai.h"
+#include "mob_ai.h"
 
 #include <game/server/entities/character_bot.h>
 #include <game/server/gamecontext.h>
@@ -13,7 +15,10 @@ bool CNpcAI::CanDamage(CPlayer* pFrom)
 		if(pFrom->IsBot())
 		{
 			auto* pFromBot = dynamic_cast<CPlayerBot*>(pFrom);
-			return pFromBot->GetBotType() == TYPE_BOT_MOB;
+			if(auto* pMobAI = GetValidAI<CMobAI>(pFromBot))
+				return pMobAI && !pMobAI->IsNeutral();
+
+			return false;
 		}
 
 		return pFrom->Account()->IsCrimeMaxedOut();

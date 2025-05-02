@@ -16,6 +16,8 @@ void MobBotInfo::InitBehaviors(const DBSet& Behavior)
 		m_BehaviorsFlags |= MOBFLAG_BEHAVIOR_SLOWER;
 	if(Behavior.hasSet("poisonous"))
 		m_BehaviorsFlags |= MOBFLAG_BEHAVIOR_POISONOUS;
+	if(Behavior.hasSet("neutral"))
+		m_BehaviorsFlags |= MOBFLAG_BEHAVIOR_NEUTRAL;
 }
 
 /************************************************************************/

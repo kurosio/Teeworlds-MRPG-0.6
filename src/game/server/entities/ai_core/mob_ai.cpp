@@ -188,16 +188,19 @@ void CMobAI::Process()
 		return;
 
 	// update
-	m_pCharacter->UpdateTarget(1000.f);
+	if(!m_BehaviorNeutral)
+	{
+		m_pCharacter->UpdateTarget(1000.f);
 
-	if(const auto* pTargetChar = GS()->GetPlayerChar(m_Target.GetCID()))
-	{
-		m_pPlayer->m_TargetPos = pTargetChar->GetPos();
-		m_pCharacter->Fire();
-	}
-	else
-	{
-		m_pPlayer->m_TargetPos.reset();
+		if(const auto* pTargetChar = GS()->GetPlayerChar(m_Target.GetCID()))
+		{
+			m_pPlayer->m_TargetPos = pTargetChar->GetPos();
+			m_pCharacter->Fire();
+		}
+		else
+		{
+			m_pPlayer->m_TargetPos.reset();
+		}
 	}
 
 	m_pCharacter->SelectWeaponAtRandomInterval();
@@ -235,6 +238,14 @@ void CMobAI::HandleBehaviors(bool* pbAsleep)
 		}
 
 		m_BehaviorPoisonedNextTick = Server()->Tick() + (5 + rand() % 40);
+	}
+
+	// behavior neutral
+	m_BehaviorNeutral = false;
+	if(m_pMobInfo->HasBehaviorFlag(MOBFLAG_BEHAVIOR_NEUTRAL) &&
+		(m_pPlayer->m_aPlayerTick[LastDamage] + (Server()->TickSpeed() * 5)) < Server()->Tick())
+	{
+		m_BehaviorNeutral = true;
 	}
 
 	// behavior sleepy

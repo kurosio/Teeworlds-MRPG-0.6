@@ -48,6 +48,7 @@ bool CCharacter::Spawn(CPlayer* pPlayer, vec2 Pos)
 {
 	m_pPlayer = pPlayer;
 	m_ClientID = pPlayer->GetCID();
+	m_pPlayer->m_aPlayerTick[LastDamage] = 0;
 
 	m_Mana = 0;
 	m_EmoteStop = -1;
