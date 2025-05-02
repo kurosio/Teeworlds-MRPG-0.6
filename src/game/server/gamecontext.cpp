@@ -446,11 +446,15 @@ void CGS::SendChatTarget(int ClientID, const char* pText) const
 void CGS::SendChat(int ChatterClientID, int Mode, const char* pText, int64_t Mask)
 {
 	if(ChatterClientID >= 0 && ChatterClientID < MAX_CLIENTS)
-		Console()->PrintF(IConsole::OUTPUT_LEVEL_ADDINFO, Mode == CHAT_TEAM ? "teamchat" : "chat",
+	{
+		Console()->PrintF(IConsole::OUTPUT_LEVEL_STANDARD, Mode == CHAT_TEAM ? "teamchat" : "chat",
 			"%d:%d:%s: %s", ChatterClientID, Mode, Server()->ClientName(ChatterClientID), pText);
+	}
 	else
-		Console()->PrintF(IConsole::OUTPUT_LEVEL_ADDINFO, Mode == CHAT_TEAM ? "teamchat" : "chat",
+	{
+		Console()->PrintF(IConsole::OUTPUT_LEVEL_STANDARD, Mode == CHAT_TEAM ? "teamchat" : "chat",
 			"*** %s", pText);
+	}
 
 	CNetMsg_Sv_Chat Msg;
 	Msg.m_Team = 0;

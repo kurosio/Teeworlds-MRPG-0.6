@@ -14,6 +14,9 @@ void CGS::Chat(int ClientID, const char* pText, const Ts&... args)
         if(m_apPlayers[i])
             SendChatTarget(i, fmt_localize(i, pText, args...).c_str());
     }
+
+    if(Start == 0 && End == MAX_PLAYERS)
+        Console()->PrintF(IConsole::OUTPUT_LEVEL_STANDARD, "chat", "*** %s", fmt_default(pText, args...).c_str());
 }
 
 template<typename... Ts>
