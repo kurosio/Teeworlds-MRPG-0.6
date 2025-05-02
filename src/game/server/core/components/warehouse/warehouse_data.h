@@ -60,7 +60,7 @@ public:
 	int GetProductsCost() const
 	{
 		auto Price = maximum(1, GetPrice());
-		return translate_to_percent_rest(Price, g_Config.m_SvPercentProductsCostByPrice);
+		return translate_to_percent_rest(Price, g_Config.m_SvPercentProductsByPrice);
 	}
 };
 

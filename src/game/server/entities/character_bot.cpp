@@ -412,7 +412,6 @@ void CCharacterBotAI::Move()
 	vec2 DirectionToWaypoint = DistToWaypoint > 0.1f ? normalize(WayPos - m_Core.m_Pos) : vec2(0.0f, 0.0f);
 
 	// determine the movement direction
-	bool UseHook = true;
 	int PathDirection = (ActiveWayPoints > 3) ?
 		(DirectionToWaypoint.x < -0.1f ? -1 : (DirectionToWaypoint.x > 0.1f ? 1 : 0)) :
 		m_PrevDirection;
@@ -458,9 +457,6 @@ void CCharacterBotAI::Move()
 			DistanceDirection = (DistanceDifference > 0) ?
 				(DirToTarget.x > 0 ? 1 : -1) :
 				(DirToTarget.x > 0 ? -1 : 1);
-
-			if(DistanceDifference <= 0)
-				UseHook = false;
 		}
 		else
 		{
