@@ -606,20 +606,25 @@ void CCharacterBotAI::SetAim(vec2 Dir)
 
 void CCharacterBotAI::UpdateTarget(float Radius) const
 {
-	if(!AI()->GetTarget()->IsEmpty())
+	if(!m_pAI->GetTarget()->IsEmpty())
 	{
-		const auto* pTargetChar = GS()->GetPlayerChar(AI()->GetTarget()->GetCID());
-		if(!pTargetChar || !GS()->IsPlayerInWorld(AI()->GetTarget()->GetCID()) ||
-			distance(pTargetChar->GetPos(), m_Pos) > 800.0f)
+		const auto* pTargetChar = GS()->GetPlayerChar(m_pAI->GetTarget()->GetCID());
+		if(!pTargetChar || distance(pTargetChar->GetPos(), m_Pos) > 800.0f)
 		{
 			m_pBotPlayer->m_TargetPos.reset();
-			AI()->GetTarget()->Reset();
+			m_pAI->GetTarget()->Reset();
 			return;
 		}
 
-		if(pTargetChar->m_Core.m_DamageDisabled && AI()->GetTarget()->SetType(TargetType::Lost))
+		// update collised
+		const bool IntersectedWithInvisibleLine = GS()->Collision()->IntersectLineWithInvisible(m_Core.m_Pos, pTargetChar->m_Core.m_Pos, nullptr, nullptr);
+		m_pAI->GetTarget()->UpdateCollised(IntersectedWithInvisibleLine);
+
+		// lost target
+		if(pTargetChar->m_Core.m_DamageDisabled)
 		{
-			GS()->SendEmoticon(m_pBotPlayer->GetCID(), EMOTICON_QUESTION);
+			if(AI()->GetTarget()->SetType(TargetType::Lost))
+				GS()->SendEmoticon(m_pBotPlayer->GetCID(), EMOTICON_QUESTION);
 		}
 	}
 
