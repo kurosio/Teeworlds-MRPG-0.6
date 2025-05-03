@@ -98,6 +98,10 @@ MACRO_CONFIG_INT(SvTeleportFeePerDistance, sv_teleport_fee_per_distance, 12, 0, 
 // -----------------------
 // Inventory and Resource Management Configuration
 // -----------------------
+MACRO_CONFIG_INT(SvEnchantUpgradeInfluence, sv_enchant_upgrade_influence, 250, 10, 500, CFGFLAG_SERVER, "Enchant upgrade influence")
+MACRO_CONFIG_INT(SvEnchantIncreaseInfluence, sv_enchant_increase_influence, 40, 10, 100, CFGFLAG_SERVER, "Enchant increase influence")
+MACRO_CONFIG_INT(SvEnchantPriceFactor, sv_enchant_price_factor, 2, 1, 1000, CFGFLAG_SERVER, "Enchant price factor by upgrade cost")
+
 MACRO_CONFIG_INT(SvPercentProductsByPrice, sv_percent_products_by_price, 10, 1, 100, CFGFLAG_SERVER, "Percent from price for products cost")
 MACRO_CONFIG_INT(SvWarehouseProductsCanTake, sv_warehouse_products_can_take, 50, 10, 100000, CFGFLAG_SERVER, "Maximum amount of products a player can carry from the warehouse")
 MACRO_CONFIG_INT(SvGatheringEntitiesPerTile, sv_gathering_entities_per_tile, 2, 1, 4, CFGFLAG_SERVER, "Number of entities that can be gathering from a single tile")

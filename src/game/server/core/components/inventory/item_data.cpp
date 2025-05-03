@@ -111,9 +111,12 @@ bool CPlayerItem::SetValue(int Value)
 
 bool CPlayerItem::IsEquipped() const
 {
+	if(m_Value <= 0)
+		return false;
+
 	// is settings or module
 	if(Info()->IsEquipmentNonSlot() || Info()->IsGameSetting())
-		return m_Value > 0 && m_Settings > 0;
+		return m_Settings > 0;
 
 	// is account slots
 	auto* pPlayer = GetPlayer();

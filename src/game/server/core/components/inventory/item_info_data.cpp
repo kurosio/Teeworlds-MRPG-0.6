@@ -43,23 +43,10 @@ int CItemDescription::GetEnchantPrice(int EnchantLevel) const
 	{
 		if(Att.HasValue())
 		{
-			int UpgradePrice;
-			AttributeGroup Type = Att.Info()->GetGroup();
-
-			// strength stats
-			if(Type == AttributeGroup::DamageType)
-				UpgradePrice = maximum(80, Att.Info()->GetUpgradePrice()) * 55;
-
-			// weapon and job stats
-			else if(Type == AttributeGroup::Job || Type == AttributeGroup::Weapon || Att.GetID() == AttributeIdentifier::LuckyDropItem)
-				UpgradePrice = maximum(100, Att.Info()->GetUpgradePrice()) * 55;
-
-			// other stats
-			else
-				UpgradePrice = maximum(5, Att.Info()->GetUpgradePrice()) * 55;
-
-			const int PercentEnchant = maximum(1, translate_to_percent_rest(Att.GetValue(), PERCENT_OF_ENCHANT));
-			FinishedPrice += UpgradePrice * (PercentEnchant * (1 + EnchantLevel));
+			const float UpgradePriceInfluence = powf((float)maximum(1, Att.Info()->GetUpgradePrice() + 1), (float)(g_Config.m_SvEnchantUpgradeInfluence) / 100.f);
+			const float LevelInfluence = powf((float)maximum(1, EnchantLevel + 1), (float)(g_Config.m_SvEnchantIncreaseInfluence) / 100.f);
+			const float BaseAttributeCost = ((float)g_Config.m_SvEnchantPriceFactor * UpgradePriceInfluence);
+			FinishedPrice += round_to_int(BaseAttributeCost * Att.GetValue() * LevelInfluence);
 		}
 	}
 	return FinishedPrice;

@@ -288,7 +288,7 @@ void CAccountManager::AddMenuProfessionUpgrades(CPlayer* pPlayer, CProfession* p
 		for(auto& [ID, Value] : pProf->GetAttributes())
 		{
 			const auto* pAttribute = GS()->GetAttributeInfo(ID);
-			VUpgrades.AddOption("UPGRADE", (int)ProfID, (int)ID, "Upgrade {} - {} (1 point)", pAttribute->GetName(), Value);
+			VUpgrades.AddOption("UPGRADE", (int)ProfID, (int)ID, "Upgrade {} - {} ({} point)", pAttribute->GetName(), Value, pAttribute->GetUpgradePrice());
 		}
 	}
 }
