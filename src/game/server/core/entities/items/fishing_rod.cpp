@@ -192,7 +192,7 @@ void CEntityFishingRod::FishingTick(CPlayer* pPlayer, CProfession* pFisherman, G
 			const auto Value = 1 + rand() % 2;
 			const auto ItemID = pNode->m_vItems.getRandomElement();
 			auto* pPlayerItem = pPlayer->GetItem(ItemID);
-			pFisherman->AddExperience(pNode->Level);
+			pFisherman->AddExperience(pNode->Level * 2);
 			pPlayerItem->Add(Value);
 
 			// create design drop pickup
