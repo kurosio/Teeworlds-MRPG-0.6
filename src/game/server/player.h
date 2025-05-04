@@ -62,6 +62,8 @@ public:
 	Mood m_MoodState{};
 	int m_ActiveCraftGroupID{};
 	std::unique_ptr<MotdMenu> m_pMotdMenu{};
+	std::optional<ItemGroup> m_InventoryItemGroupFilter{};
+	std::optional<ItemType> m_InventoryItemTypeFilter{};
 
 	char m_aLastMsg[256]{};
 	StructLatency m_Latency;

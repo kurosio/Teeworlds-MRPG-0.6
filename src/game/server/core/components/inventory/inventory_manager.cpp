@@ -8,21 +8,19 @@
 #include <game/server/core/components/houses/house_manager.h>
 #include <game/server/core/components/quests/quest_manager.h>
 
-template <typename FilterT>
-void ForEachMatchingItem(FilterT filter, const std::map<int, CPlayerItem>& items, const std::function<void(const CPlayerItem&)>& callback)
+void ForEachMatchingItem(std::optional<ItemGroup> filterGroup, std::optional<ItemType> filterType,
+	const std::map<int, CPlayerItem>& items, const std::function<void(const CPlayerItem&)>& callback)
 {
 	for(const auto& [itemID, itemData] : items)
 	{
-		if constexpr(std::is_same_v<FilterT, ItemGroup>)
-		{
-			if(itemData.HasItem() && itemData.Info()->IsGroup(filter))
-				callback(itemData);
-		}
-		else if constexpr(std::is_same_v<FilterT, ItemType>)
-		{
-			if(itemData.HasItem() && itemData.Info()->IsType(filter))
-				callback(itemData);
-		}
+		if(!itemData.HasItem())
+			continue;
+
+		if((filterGroup && !itemData.Info()->IsGroup(*filterGroup)) ||
+			(filterType && !itemData.Info()->IsType(*filterType)))
+			continue;
+
+		callback(itemData);
 	}
 }
 
@@ -107,37 +105,7 @@ bool CInventoryManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	if(Menulist == MENU_INVENTORY)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
-
-		std::vector<std::pair<ItemGroup, std::string_view>> vMenuItems =
-		{
-			{ ItemGroup::Usable,           "\u270C" },
-			{ ItemGroup::Resource,         "\u2692" },
-			{ ItemGroup::Equipment,        "\u26B0" },
-			{ ItemGroup::Potion,           "\u26B1" },
-			{ ItemGroup::Quest,            "\u26C1" },
-			{ ItemGroup::Other,            "\u26C3" }
-		};
-
-		// inventory tabs
-		VoteWrapper VInventoryTabs(ClientID, VWF_SEPARATE|VWF_ALIGN_TITLE|VWF_STYLE_SIMPLE, "\u262A Inventory tabs");
-		for(const auto& [Type, Icon] : vMenuItems)
-			VInventoryTabs.AddMenu(MENU_INVENTORY, (int)Type, "{} {} ({})", Icon, GetItemGroupName(Type), GetCountItemsType(pPlayer, Type));
-		VoteWrapper::AddEmptyline(ClientID);
-
-		// show and sort inventory
-		const auto itemTypeSelected = pPlayer->m_VotesData.GetExtraID();
-		VoteWrapper VInfo(ClientID);
-		if(itemTypeSelected.has_value())
-		{
-			if(!ListInventory(ClientID, (ItemGroup)itemTypeSelected.value()))
-				VInfo.Add("The selected list is empty");
-		}
-		else
-		{
-			VInfo.Add("Select the required tab");
-		}
-
-		// add backpage
+		ShowPlayerInventory(pPlayer);
 		VoteWrapper::AddEmptyline(ClientID);
 		VoteWrapper::AddBackpage(ClientID);
 		return true;
@@ -148,13 +116,15 @@ bool CInventoryManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
 		// lambda equipment
+		const auto TypeSelectedOpt = pPlayer->m_VotesData.GetExtraID();
 		auto addEquipmentFieldFunc = [&](VoteWrapper& Wrapper, ItemType EquipID) -> bool
 		{
 			// check if equipped
+			const char* pSelector = GetSelectorStringByCondition(TypeSelectedOpt && (ItemType)(*TypeSelectedOpt) == EquipID);
 			const auto EquippedItemIdOpt = pPlayer->GetEquippedSlotItemID(EquipID);
 			if(!EquippedItemIdOpt.has_value() || !pPlayer->GetItem(EquippedItemIdOpt.value())->IsEquipped())
 			{
-				Wrapper.AddMenu(MENU_EQUIPMENT, (int)EquipID, "{} not equipped", GetItemTypeName(EquipID));
+				Wrapper.AddMenu(MENU_EQUIPMENT, (int)EquipID, "{} not equipped{SELECTOR}", GetItemTypeName(EquipID), pSelector);
 				return false;
 			}
 
@@ -165,19 +135,19 @@ bool CInventoryManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 				if(const auto PotionContextOpt = pPlayerItem->Info()->GetPotionContext())
 				{
 					const auto RecastTotal = PotionContextOpt->Lifetime + POTION_RECAST_DEFAULT_TIME;
-					Wrapper.AddMenu(MENU_EQUIPMENT, (int)EquipID, "{} (recast {} / +{}) x{}",
-						pPlayerItem->Info()->GetName(), RecastTotal, PotionContextOpt->Value, pPlayerItem->GetValue());
+					Wrapper.AddMenu(MENU_EQUIPMENT, (int)EquipID, "{} (recast {} / +{}) x{}{SELECTOR}",
+						pPlayerItem->Info()->GetName(), RecastTotal, PotionContextOpt->Value, pPlayerItem->GetValue(), pSelector);
 				}
 				else
 				{
-					Wrapper.AddMenu(MENU_EQUIPMENT, (int)EquipID, "{} x{}", pPlayerItem->Info()->GetName(), pPlayerItem->GetValue());
+					Wrapper.AddMenu(MENU_EQUIPMENT, (int)EquipID, "{} x{}{SELECTOR}", pPlayerItem->Info()->GetName(), pPlayerItem->GetValue(), pSelector);
 				}
 				return true;
 			}
 
 			// handle other equipment
 			const auto strAttributes = pPlayerItem->GetStringAttributesInfo(pPlayer);
-			Wrapper.AddMenu(MENU_EQUIPMENT, (int)EquipID, "{} / {}", pPlayerItem->Info()->GetName(), strAttributes);
+			Wrapper.AddMenu(MENU_EQUIPMENT, (int)EquipID, "{} / {}{SELECTOR}", pPlayerItem->Info()->GetName(), strAttributes, pSelector);
 			return true;
 		};
 
@@ -215,11 +185,10 @@ bool CInventoryManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		VoteWrapper::AddEmptyline(ClientID);
 
 		// show and sort equipment
-		const auto itemTypeSelected = pPlayer->m_VotesData.GetExtraID();
 		VoteWrapper VInfo(ClientID);
-		if(itemTypeSelected.has_value())
+		if(TypeSelectedOpt.has_value())
 		{
-			if(!ListInventory(ClientID, (ItemType)itemTypeSelected.value()))
+			if(!ListInventory(ClientID, std::nullopt, (ItemType)TypeSelectedOpt.value()))
 				VInfo.Add("The selected list is empty");
 		}
 		else
@@ -285,6 +254,16 @@ bool CInventoryManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 bool CInventoryManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const int Extra1, const int Extra2, int ReasonNumber, const char* pReason)
 {
 	const int ClientID = pPlayer->GetCID();
+
+	// filter itmes
+	if(PPSTR(pCmd, "FILTER_ITEMS") == 0)
+	{
+		pPlayer->m_InventoryItemGroupFilter = Extra1 != NOPE ? std::make_optional<ItemGroup>((ItemGroup)Extra1) : std::nullopt;
+		pPlayer->m_InventoryItemTypeFilter = Extra2 != NOPE ? std::make_optional<ItemType>((ItemType)Extra2) : std::nullopt;
+		pPlayer->m_VotesData.ResetHidden();
+		pPlayer->m_VotesData.UpdateCurrentVotes();
+		return true;
+	}
 
 	// Drop item
 	if(PPSTR(pCmd, "DROP_ITEM") == 0)
@@ -416,21 +395,10 @@ std::vector<int> CInventoryManager::GetItemIDsCollectionByType(ItemType Type)
 	return ItemIDs;
 }
 
-bool CInventoryManager::ListInventory(int ClientID, ItemGroup Group)
+bool CInventoryManager::ListInventory(int ClientID, std::optional<ItemGroup> GroupOpt, std::optional<ItemType> TypeOpt)
 {
 	bool hasItems = false;
-	ForEachMatchingItem(Group, CPlayerItem::Data()[ClientID], [&](const CPlayerItem& pItem)
-	{
-		ItemSelected(GS()->GetPlayer(ClientID), &pItem);
-		hasItems = true;
-	});
-	return hasItems;
-}
-
-bool CInventoryManager::ListInventory(int ClientID, ItemType Type)
-{
-	bool hasItems = false;
-	ForEachMatchingItem(Type, CPlayerItem::Data()[ClientID], [&](const CPlayerItem& pItem)
+	ForEachMatchingItem(GroupOpt, TypeOpt, CPlayerItem::Data()[ClientID], [this, &ClientID, &hasItems](const CPlayerItem& pItem)
 	{
 		ItemSelected(GS()->GetPlayer(ClientID), &pItem);
 		hasItems = true;
@@ -550,11 +518,89 @@ void CInventoryManager::ItemSelected(CPlayer* pPlayer, const CPlayerItem* pItem)
 	}
 }
 
-int CInventoryManager::GetCountItemsType(CPlayer* pPlayer, ItemGroup Type) const
+int CInventoryManager::GetCountItemsType(CPlayer* pPlayer, std::optional<ItemGroup> GroupOpt, std::optional<ItemType> TypeOpt) const
 {
 	const int ClientID = pPlayer->GetCID();
-	return (int)std::count_if(CPlayerItem::Data()[ClientID].cbegin(), CPlayerItem::Data()[ClientID].cend(), [Type](auto pItem)
+	return (int)std::count_if(CPlayerItem::Data()[ClientID].cbegin(), CPlayerItem::Data()[ClientID].cend(), [GroupOpt, TypeOpt](auto pItem)
 	{
-		return pItem.second.HasItem() && pItem.second.Info()->IsGroup(Type);
+		return pItem.second.HasItem() && (!GroupOpt || pItem.second.Info()->IsGroup(*GroupOpt)) &&
+											(!TypeOpt || pItem.second.Info()->IsType(*TypeOpt));
 	});
+}
+
+void CInventoryManager::ShowPlayerInventory(CPlayer* pPlayer)
+{
+	if(!pPlayer)
+		return;
+
+	const auto ClientID = pPlayer->GetCID();
+	std::map<ItemGroup, int> vGroupCounts {};
+	std::vector<std::pair<ItemGroup, std::string_view>> vMenuItems =
+	{
+		{ ItemGroup::Usable,      "\u270C" },
+		{ ItemGroup::Resource,    "\u2692" },
+		{ ItemGroup::Equipment,   "\u26B0" },
+		{ ItemGroup::Potion,      "\u26B1" },
+		{ ItemGroup::Quest,       "\u26C1" },
+		{ ItemGroup::Other,       "\u26C3" }
+	};
+
+	auto getDefaultTypeName = [](ItemGroup Group) -> const char*
+	{
+		switch(Group)
+		{
+			case ItemGroup::Resource:    return "Resource (Misc)";
+			case ItemGroup::Potion:      return "Potion (Misc)";
+			case ItemGroup::Equipment:   return "Equipment (Misc)";
+			case ItemGroup::Other:       return "Miscellaneous";
+			default:                     return "Other";
+		}
+	};
+
+	// inventory group filter
+	VoteWrapper VFilterGroup(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "\u262A Inventory tabs");
+	for(const auto& [Group, Icon] : vMenuItems)
+	{
+		const char* pSelected = GetSelectorStringByCondition(pPlayer->m_InventoryItemGroupFilter && (*pPlayer->m_InventoryItemGroupFilter) == Group);
+		const int ItemGroupCount = GetCountItemsType(pPlayer, Group, std::nullopt);
+		vGroupCounts[Group] = ItemGroupCount;
+		VFilterGroup.AddOption("FILTER_ITEMS", (int)Group, "{} {} ({}){}", Icon, GetItemGroupName(Group), ItemGroupCount, pSelected);
+	}
+	VoteWrapper::AddEmptyline(ClientID);
+
+	// active filter group
+	if(pPlayer->m_InventoryItemGroupFilter)
+	{
+		const auto& FilterGroupOpt = pPlayer->m_InventoryItemGroupFilter;
+		const auto FilterGroupValue = *FilterGroupOpt;
+
+		std::set<ItemType> vTypes {};
+		for(const auto& [itemId, data] : CItemDescription::Data())
+		{
+			if(pPlayer->GetItem(itemId)->HasItem() && data.IsGroup(FilterGroupValue))
+				vTypes.insert(data.GetType());
+		}
+
+		// show type selector or one full one group
+		if(vTypes.size() > 1)
+		{
+			std::map<ItemType, int> vTypeCounts{};
+			for(const auto& Type : vTypes)
+				vTypeCounts[Type] = GetCountItemsType(pPlayer, FilterGroupOpt, Type);
+
+			VFilterGroup.AddLine();
+			const char* pSelected = GetSelectorStringByCondition(!pPlayer->m_InventoryItemTypeFilter);
+			VFilterGroup.AddOption("FILTER_ITEMS", (int)FilterGroupValue, "All items ({}){SELECTOR}", vGroupCounts[FilterGroupValue], pSelected);
+			for(const auto& Type : vTypes)
+			{
+				pSelected = GetSelectorStringByCondition(pPlayer->m_InventoryItemTypeFilter && *pPlayer->m_InventoryItemTypeFilter == Type);
+				const char* pTypeName = Type == ItemType::Default ? getDefaultTypeName(FilterGroupValue) : GetItemTypeName(Type);
+				VFilterGroup.AddOption("FILTER_ITEMS", (int)FilterGroupValue, (int)Type, "{} ({}){SELECTOR}", pTypeName, vTypeCounts[Type], pSelected);
+			}
+		}
+
+		VoteWrapper VInfo(ClientID);
+		if(!ListInventory(ClientID, pPlayer->m_InventoryItemGroupFilter, pPlayer->m_InventoryItemTypeFilter))
+			VInfo.Add("The selected list is empty");
+	}
 }

@@ -269,35 +269,35 @@ public:
 		m_pGroup->SetLastVoteCallback(CallbackImpl, pUser);
 		return *this;
 	}
-	
+
 	static void AddLine(int ClientID) noexcept
 	{
 		const auto pVoteGroup = new CVoteGroup(ClientID, VWF_DISABLED);
 		pVoteGroup->AddLineImpl();
 		m_pData[ClientID].push_back(pVoteGroup);
 	}
-	
+
 	static void AddBackpage(int ClientID) noexcept
 	{
 		const auto pVoteGroup = new CVoteGroup(ClientID, VWF_DISABLED);
 		pVoteGroup->AddBackpageImpl();
 		m_pData[ClientID].push_back(pVoteGroup);
 	}
-	
+
 	static void AddEmptyline(int ClientID) noexcept
 	{
 		const auto pVoteGroup = new CVoteGroup(ClientID, VWF_DISABLED);
 		pVoteGroup->AddEmptylineImpl();
 		m_pData[ClientID].push_back(pVoteGroup);
 	}
-	
+
 	static void AddItemValue(int ClientID, int ItemID) noexcept
 	{
 		const auto pVoteGroup = new CVoteGroup(ClientID, VWF_DISABLED);
 		pVoteGroup->AddItemValueImpl(ItemID);
 		m_pData[ClientID].push_back(pVoteGroup);
 	}
-	
+
 	static void RebuildVotes(int ClientID);
 	static CVoteOption* GetOptionVoteByAction(int ClientID, const char* pActionName);
 };
@@ -327,7 +327,6 @@ class CVotePlayerData
 	VoteGroupHidden* EmplaceHidden(int ID, int Type);
 	VoteGroupHidden* GetHidden(int ID);
 	void ResetHidden(int MenuID);
-	void ResetHidden() { ResetHidden(m_CurrentMenuID); }
 	static void ThreadVoteUpdater(CVotePlayerData* pData);
 
 public:
@@ -359,6 +358,7 @@ public:
 	void UpdateVotesIf(int MenuID);
 	void UpdateCurrentVotes() { UpdateVotes(m_CurrentMenuID); }
 	void ClearVotes() const;
+	void ResetHidden() { ResetHidden(m_CurrentMenuID); }
 	void ResetExtraID() { m_ExtraID.reset(); }
 
 	void SetCurrentMenuID(int MenuID) { m_CurrentMenuID = MenuID; }

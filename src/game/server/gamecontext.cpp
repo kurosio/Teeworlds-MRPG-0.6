@@ -1110,19 +1110,16 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 
 		if(MsgID == NETMSGTYPE_CL_SHOWOTHERSLEGACY)
 		{
-			dbg_msg("msg", "msg show others legacy cid '%d'", ClientID);
 			return;
 		}
 
 		if(MsgID == NETMSGTYPE_CL_SHOWOTHERS)
 		{
-			dbg_msg("msg", "msg show others cid '%d'", ClientID);
 			return;
 		}
 
 		if(MsgID == NETMSGTYPE_CL_SHOWDISTANCE)
 		{
-			dbg_msg("msg", "msg show distance cid '%d'", ClientID);
 			return;
 		}
 

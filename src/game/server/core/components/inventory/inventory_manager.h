@@ -25,14 +25,16 @@ public:
 	static std::vector<int> GetItemIDsCollectionByType(ItemType Type);
 
 	// primary
-	bool ListInventory(int ClientID, ItemGroup Type);
-	bool ListInventory(int ClientID, ItemType Type);
+	bool ListInventory(int ClientID, std::optional<ItemGroup> GroupOpt, std::optional<ItemType> TypeOpt);
 	void ItemSelected(CPlayer* pPlayer, const CPlayerItem* pItem);
 	int GetUnfrozenItemValue(class CPlayer* pPlayer, ItemIdentifier ItemID) const;
 	CPlayerItem* GetBestEquipmentSlotItem(CPlayer* pPlayer, ItemType Type);
 
 	void RepairDurabilityItems(class CPlayer *pPlayer);
-	int GetCountItemsType(class CPlayer* pPlayer, ItemGroup Type) const;
+	int GetCountItemsType(CPlayer* pPlayer, std::optional<ItemGroup> GroupOpt, std::optional<ItemType> TypeOpt) const;
+
+private:
+	void ShowPlayerInventory(CPlayer* pPlayer);
 };
 
 #endif

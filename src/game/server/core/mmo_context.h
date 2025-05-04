@@ -380,32 +380,37 @@ inline static ItemType GetItemTypeFromDBSet(const DBSet& dbset) noexcept
 	else return ItemType::Unknown;
 }
 
+constexpr const char* GetSelectorStringByCondition(bool Condition)
+{
+	return Condition ? " <--" : "";
+}
+
 constexpr const char* GetItemTypeName(ItemType type) noexcept
 {
 	switch(type)
 	{
-		case ItemType::EquipHammer:         return "Hammer";
-		case ItemType::EquipGun:            return "Gun";
-		case ItemType::EquipShotgun:        return "Shotgun";
-		case ItemType::EquipGrenade:        return "Grenade";
-		case ItemType::EquipLaser:          return "Laser";
-		case ItemType::EquipPickaxe:        return "Pickaxe";
-		case ItemType::EquipRake:           return "Rake";
-		case ItemType::EquipFishrod:        return "Fish rod";
-		case ItemType::EquipGloves:         return "Gloves";
-		case ItemType::EquipArmorTank:      return "Armor";
-		case ItemType::EquipArmorDPS:       return "Armor";
-		case ItemType::EquipArmorHealer:    return "Armor";
-		case ItemType::EquipEidolon:        return "Eidolon";
-		case ItemType::EquipPotionHeal:     return "Potion HP";
-		case ItemType::EquipPotionMana:     return "Potion MP";
-		case ItemType::EquipTitle:          return "Title";
-		case ItemType::UseSingle:           return "Use Single";
-		case ItemType::UseMultiple:         return "Use Multiple";
-		case ItemType::ResourceHarvestable: return "Resource harvestable";
-		case ItemType::ResourceMineable:    return "Resource mineable";
-		case ItemType::ResourceFishes:      return "Resource fishes";
-		default:                  return "Unknown";
+		case ItemType::EquipHammer:         return "Weapon: Hammer";
+		case ItemType::EquipGun:            return "Weapon: Gun";
+		case ItemType::EquipShotgun:        return "Weapon: Shotgun";
+		case ItemType::EquipGrenade:        return "Weapon: Grenade";
+		case ItemType::EquipLaser:          return "Weapon: Laser";
+		case ItemType::EquipPickaxe:        return "Tool: Pickaxe";
+		case ItemType::EquipRake:           return "Tool: Rake";
+		case ItemType::EquipFishrod:        return "Tool: Fishing Rod";
+		case ItemType::EquipGloves:         return "Tool: Gloves";
+		case ItemType::EquipArmorTank:      return "Armor: Tank Role";
+		case ItemType::EquipArmorDPS:       return "Armor: DPS Role";
+		case ItemType::EquipArmorHealer:    return "Armor: Healer Role";
+		case ItemType::EquipEidolon:        return "Accessory: Eidolon";
+		case ItemType::EquipTitle:          return "Cosmetic: Title";
+		case ItemType::EquipPotionHeal:     return "Potion: Health";
+		case ItemType::EquipPotionMana:     return "Potion: Mana";
+		case ItemType::UseSingle:           return "Single-Use Item";
+		case ItemType::UseMultiple:         return "Multi-Use Item";
+		case ItemType::ResourceHarvestable: return "Resource (Harvestable)";
+		case ItemType::ResourceMineable:    return "Resource (Mineable)";
+		case ItemType::ResourceFishes:      return "Resource (Fish)";
+		default:                            return "Unknown";
 	}
 }
 

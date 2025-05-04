@@ -70,7 +70,6 @@ bool CQuestDescription::HasObjectives(int Step)
 void CQuestDescription::PreparePlayerObjectives(int Step, int ClientID, std::deque<CQuestStep*>& pElem)
 {
 	ResetPlayerObjectives(pElem);
-	dbg_msg(PRINT_QUEST_PREFIX, "PREPARE OBJECTIVES (QID:%d)", m_ID);
 	for(const auto& StepDesc : m_vObjectives[Step])
 		pElem.emplace_back(new CQuestStep(ClientID, StepDesc.m_Bot));
 
@@ -80,7 +79,6 @@ void CQuestDescription::ResetPlayerObjectives(std::deque<CQuestStep*>& pElem)
 {
 	if(!pElem.empty())
 	{
-		dbg_msg(PRINT_QUEST_PREFIX, "CLEARING OBJECTIVES (QID:%d)", m_ID);
 		for(auto* pPtr : pElem)
 		{
 			pPtr->MarkForDestroy();

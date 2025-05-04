@@ -160,15 +160,15 @@ bool CCraftManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	if(Menulist == MENU_CRAFTING_LIST)
 	{
 		// craft selector
+		const auto activeCraftGroupID = pPlayer->m_ActiveCraftGroupID;
 		VoteWrapper VCraftSelector(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_STRICT_BOLD, "\u2692 Crafting List");
 		VCraftSelector.AddItemValue(itGold);
 		VCraftSelector.AddLine();
 		for(int i = 0; i < (int)m_vOrderedCraftList.size(); i++)
-			VCraftSelector.AddOption("CRAFT_TAB_SELECT", i, m_vOrderedCraftList[i].first.c_str());
+			VCraftSelector.AddOption("CRAFT_TAB_SELECT", i, "{}{SELECTOR}", m_vOrderedCraftList[i].first, GetSelectorStringByCondition(activeCraftGroupID == i));
 		VoteWrapper::AddEmptyline(ClientID);
 
 		// show tab items
-		const auto activeCraftGroupID = pPlayer->m_ActiveCraftGroupID;
 		if(activeCraftGroupID >= 0 && activeCraftGroupID < (int)m_vOrderedCraftList.size())
 		{
 			const auto& [Name, vItems] = m_vOrderedCraftList[activeCraftGroupID];
