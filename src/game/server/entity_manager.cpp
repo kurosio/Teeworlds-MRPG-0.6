@@ -579,6 +579,11 @@ void CEntityManager::Bow(int ClientID, int Damage, int FireCount, float Explosio
 	// register event tick
 	pBow->RegisterEvent(CBaseEntity::EventTick, [](CBaseEntity* pBase)
 	{
+		// check valid owner char
+		const auto* pOwnerChar = pBase->GetCharacter();
+		if(!pOwnerChar)
+			return;
+
 		auto& FireCount = pBase->GetGroup()->GetRefConfig("fireCount", 0);
 
 		// freeze input for bow
@@ -589,8 +594,8 @@ void CEntityManager::Bow(int ClientID, int Damage, int FireCount, float Explosio
 		if(pBase->Server()->Input()->IsKeyClicked(pBase->GetClientID(), KEY_EVENT_FIRE))
 		{
 			// create fire
-			const auto Direction = normalize(vec2(pBase->GetCharacter()->m_Core.m_Input.m_TargetX, pBase->GetCharacter()->m_Core.m_Input.m_TargetY));
-			const auto pArrow = pBase->GetGroup()->CreatePickup(pBase->GetCharacter()->GetPos());
+			const auto Direction = normalize(vec2(pOwnerChar->m_Core.m_Input.m_TargetX, pOwnerChar->m_Core.m_Input.m_TargetY));
+			const auto pArrow = pBase->GetGroup()->CreatePickup(pOwnerChar->GetPos());
 			pArrow->SetConfig("direction", Direction);
 			FireCount--;
 
@@ -660,8 +665,8 @@ void CEntityManager::Bow(int ClientID, int Damage, int FireCount, float Explosio
 		}
 
 		// update position
-		const auto Angle = std::atan2(pBase->GetCharacter()->m_Core.m_Input.m_TargetY, pBase->GetCharacter()->m_Core.m_Input.m_TargetX);
-		pBase->SetPos(rotate(vec2(0.f, -56.f), pBase->GetCharacter()->GetPos(), Angle));
+		const auto Angle = std::atan2(pOwnerChar->m_Core.m_Input.m_TargetY, pOwnerChar->m_Core.m_Input.m_TargetX);
+		pBase->SetPos(rotate(vec2(0.f, -56.f), pOwnerChar->GetPos(), Angle));
 	});
 
 	// Register event snap
@@ -673,17 +678,21 @@ void CEntityManager::Bow(int ClientID, int Damage, int FireCount, float Explosio
 
 	pBow->RegisterEvent(CBaseEntity::EventSnap, (int)vArrowEdges.size() + 1, [vEdges = vArrowEdges](CBaseEntity* pBase, int SnappingClient, const std::vector<int>& vIds)
 	{
-		const auto* pChar = pBase->GetCharacter();
-		const auto Angle = std::atan2(pChar->m_Core.m_Input.m_TargetY, pChar->m_Core.m_Input.m_TargetX);
+		// check valid owner char
+		const auto* pOwnerChar = pBase->GetCharacter();
+		if(!pOwnerChar)
+			return;
+
+		const auto Angle = std::atan2(pOwnerChar->m_Core.m_Input.m_TargetY, pOwnerChar->m_Core.m_Input.m_TargetX);
 		const auto firstPos = vEdges.back();
 		const auto endPos = vEdges.front();
-		const auto Pos = rotate(firstPos, pChar->GetPos(), Angle);
-		const auto PosTo = rotate(endPos, pChar->GetPos(), Angle);
+		const auto Pos = rotate(firstPos, pOwnerChar->GetPos(), Angle);
+		const auto PosTo = rotate(endPos, pOwnerChar->GetPos(), Angle);
 		pBase->GS()->SnapLaser(SnappingClient, vIds[0], Pos, PosTo, pBase->Server()->Tick() - 3, LASERTYPE_SHOTGUN, 0, pBase->GetClientID());
 
 		for(size_t i = 0; i < vEdges.size(); ++i)
 		{
-			vec2 curPos = rotate(vEdges[i], pChar->GetPos(), Angle);
+			vec2 curPos = rotate(vEdges[i], pOwnerChar->GetPos(), Angle);
 			pBase->GS()->SnapPickup(SnappingClient, vIds[1 + i], curPos, POWERUP_ARMOR);
 		}
 	});
