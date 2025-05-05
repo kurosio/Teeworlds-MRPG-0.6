@@ -584,7 +584,7 @@ void CPlayer::ProgressBar(const char* pType, int Level, uint64_t Exp, uint64_t E
 	// send and format
 	const auto ProgressBar = mystd::string::progressBar(100, static_cast<int>(ExpProgress), 10, ":", " ");
 	const auto Result = fmt_default("Lv{lv} {type}[{bar}] {~.2}%+{~.3}%({})XP", Level, pType, ProgressBar, ExpProgress, GainedExpProgress, GainedExp);
-	GS()->Broadcast(m_ClientID, BroadcastPriority::GameInformation, 100, Result.c_str());
+	GS()->Broadcast(m_ClientID, BroadcastPriority::GamePriority, 100, Result.c_str());
 }
 
 /* #########################################################################
