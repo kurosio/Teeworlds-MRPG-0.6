@@ -1,5 +1,6 @@
 #include "scenario_dungeon.h"
 
+
 #include <game/server/gamecontext.h>
 
 CDungeonScenario::CDungeonScenario(const nlohmann::json& jsonData)
@@ -49,6 +50,22 @@ void CDungeonScenario::ProcessStep(const nlohmann::json& step)
 		else
 			AddMessageStep(delay, broadcastMsg, chatMsg);
 	}
+
+	// object destroy
+	if(action == "object_destroy")
+	{
+		std::vector<vec2> objects;
+		if(step.contains("objects") && step["objects"].is_array())
+		{
+			for(const auto& marker : step["objects"])
+			{
+				vec2 position = { marker["position"].value("x", 0.0f), marker["position"].value("y", 0.0f) };
+				objects.emplace_back(position);
+			}
+		}
+
+		AddObjectsDestroy(objects);
+	}
 }
 
 void CDungeonScenario::AddMessageStep(int delay, const std::string& broadcastMsg, const std::string& chatMsg)
@@ -67,5 +84,32 @@ void CDungeonScenario::AddMessageStep(int delay, const std::string& broadcastMsg
 			for(auto* pPlayer : GetPlayers())
 				GS()->Chat(pPlayer->GetCID(), chatMsg.c_str());
 		}
+	});
+}
+
+void CDungeonScenario::AddObjectsDestroy(const std::vector<vec2>& objects)
+{
+	auto& newStep = AddStep();
+
+	newStep.WhenStarted([this, objects]
+	{
+		for(const auto& pos : objects)
+		{
+			auto newObject = std::make_unique<CEntityObjectDestroy>(&GS()->m_World, pos, 3);
+			m_vObjectDestroy.push_back(std::move(newObject));
+		}
+	});
+
+	newStep.CheckCondition(ConditionPriority::CONDITION_AND_TIMER, [this]
+	{
+		return std::ranges::all_of(m_vObjectDestroy, [](const auto& uniquePtr)
+		{
+			return uniquePtr && !uniquePtr->IsActive();
+		});
+	});
+
+	newStep.WhenFinished([this]
+	{
+		m_vObjectDestroy.clear();
 	});
 }

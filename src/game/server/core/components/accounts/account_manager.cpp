@@ -485,15 +485,15 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		VLanguageInfo.Add("Active language: [{}]", pPlayerLanguage);
 		VoteWrapper::AddEmptyline(ClientID);
 
-		// languages TODO fix language selection
+		// languages
 		VoteWrapper VLanguages(ClientID, VWF_OPEN, "Available languages");
 		for(int i = 0; i < Server()->Localization()->m_pLanguages.size(); i++)
 		{
-			// Do not show the language that is already selected by the player in the selection lists
+			// do not show the language that is already selected by the player in the selection lists
 			if(str_comp(pPlayerLanguage, Server()->Localization()->m_pLanguages[i]->GetFilename()) == 0)
 				continue;
 
-			// Add language selection
+			// add language selection
 			const char* pLanguageName = Server()->Localization()->m_pLanguages[i]->GetName();
 			VLanguages.AddOption("SELECT_LANGUAGE", i, "Select language \"{}\"", pLanguageName);
 		}
