@@ -252,6 +252,7 @@ bool CGameControllerDungeon::OnCharacterSpawn(CCharacter* pChr)
 		}
 
 		IGameController::OnCharacterSpawn(pChr);
+		pChr->IncreaseMana(pChr->GetPlayer()->GetMaxMana());
 		return true;
 	}
 
