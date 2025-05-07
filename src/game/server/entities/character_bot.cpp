@@ -621,10 +621,12 @@ void CCharacterBotAI::UpdateTarget(float Radius) const
 		m_pAI->GetTarget()->UpdateCollised(IntersectedWithInvisibleLine);
 
 		// lost target
-		if(pTargetChar->m_Core.m_DamageDisabled)
+		if(pTargetChar->m_Core.m_DamageDisabled || IntersectedWithInvisibleLine)
 		{
 			if(AI()->GetTarget()->SetType(TargetType::Lost))
+			{
 				GS()->SendEmoticon(m_pBotPlayer->GetCID(), EMOTICON_QUESTION);
+			}
 		}
 	}
 
