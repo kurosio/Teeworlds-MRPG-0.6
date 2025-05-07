@@ -8,6 +8,13 @@
 
 #include <game/server/core/components/mails/mail_wrapper.h>
 
+CAuctionManager::~CAuctionManager()
+{
+	for(auto*& pPtr : CAuctionSlot::Data())
+		delete pPtr;
+	CAuctionSlot::Data().clear();
+}
+
 void CAuctionManager::OnPreInit()
 {
 	// init auction slots
@@ -48,9 +55,7 @@ bool CAuctionManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		pPlayer->m_VotesData.SetLastMenuID(MENU_AUCTION_LIST);
 
 		if(const auto SlotID = pPlayer->m_VotesData.GetExtraID())
-		{
 			ShowAuctionSlot(pPlayer, SlotID.value());
-		}
 
 		VoteWrapper::AddBackpage(ClientID);
 		return true;

@@ -7,7 +7,7 @@
 
 class CAuctionManager : public MmoComponent
 {
-	~CAuctionManager() override = default;
+	~CAuctionManager() override;
 
 	void OnPreInit() override;
 
