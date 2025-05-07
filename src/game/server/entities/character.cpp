@@ -312,7 +312,7 @@ bool CCharacter::FireHammer(vec2 Direction, vec2 ProjStartPos)
 	// lamp hammer
 	if(EquippedItemIdOpt == itHammerLamp)
 	{
-		const auto vEntities = GS()->m_World.FindEntities(ProjStartPos, GetRadius() , MAX_LENGTH_CHARACTERS, CGameWorld::ENTTYPE_CHARACTER);
+		const auto vEntities = GS()->m_World.FindEntities(ProjStartPos, 400.f , MAX_LENGTH_CHARACTERS, CGameWorld::ENTTYPE_CHARACTER);
 		for(auto* pEnt : vEntities)
 		{
 			// skip self damage
@@ -1087,7 +1087,7 @@ void CCharacter::ApplyMoveRestrictions()
 
 int CCharacter::GetTotalDamageByWeapon(int Weapon) const
 {
-	int Damage = 0;
+	int Damage = m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::DMG);
 
 	switch(Weapon)
 	{
@@ -1099,7 +1099,6 @@ int CCharacter::GetTotalDamageByWeapon(int Weapon) const
 		default: break;
 	}
 
-	Damage += m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::DMG);
 	return Damage;
 }
 
