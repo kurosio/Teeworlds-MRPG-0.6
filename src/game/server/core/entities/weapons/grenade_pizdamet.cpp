@@ -50,7 +50,7 @@ void CEntityGrenadePizdamet::Tick()
 	// destroy and explosion
 	if(pTargetChar != nullptr || GS()->Collision()->CheckPoint(m_Pos))
 	{
-		GS()->CreateRandomRadiusExplosion(3, 96.f, m_Pos, m_ClientID, WEAPON_GRENADE, 0);
+		GS()->CreateRandomRadiusExplosion(2, 96.f, m_Pos, m_ClientID, WEAPON_GRENADE, 0);
 		MarkForDestroy();
 	}
 }
