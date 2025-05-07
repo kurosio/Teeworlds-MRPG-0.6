@@ -189,6 +189,8 @@ enum class WorldType : int
 enum WorldFlags
 {
 	WORLD_FLAG_RATING_SYSTEM = 1 << 0,
+	WORLD_FLAG_CRIME_SCORE = 1 << 1,
+	WORLD_FLAG_LOST_DEATH_GOLD = 1 << 2,
 };
 
 // drawboard events

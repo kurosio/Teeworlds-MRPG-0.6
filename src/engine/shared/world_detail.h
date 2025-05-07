@@ -42,6 +42,10 @@ public:
 	{
 		if(FlagsSet.hasSet("rating_system"))
 			m_Flags |= WORLD_FLAG_RATING_SYSTEM;
+		if(FlagsSet.hasSet("crime_score"))
+			m_Flags |= WORLD_FLAG_CRIME_SCORE;
+		if(FlagsSet.hasSet("lost_gold_death"))
+			m_Flags |= WORLD_FLAG_LOST_DEATH_GOLD;
 	}
 
 	int GetRespawnWorldID() const

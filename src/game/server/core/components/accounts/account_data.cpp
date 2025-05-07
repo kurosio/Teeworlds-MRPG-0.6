@@ -243,7 +243,7 @@ bool CAccountData::IsSameGuild(int GuildID) const
 void CAccountData::IncreaseCrime(int Score)
 {
 	auto* pPlayer = GetPlayer();
-	if(!pPlayer)
+	if(!pPlayer || !GS()->HasWorldFlag(WORLD_FLAG_CRIME_SCORE))
 		return;
 
 	const auto OldCrimeScore = m_CrimeScore;
@@ -265,7 +265,7 @@ void CAccountData::IncreaseCrime(int Score)
 void CAccountData::DecreaseCrime(int Score)
 {
 	auto* pPlayer = GetPlayer();
-	if(!pPlayer)
+	if(!pPlayer || !GS()->HasWorldFlag(WORLD_FLAG_CRIME_SCORE))
 		return;
 
 	const auto OldCrimeScore = m_CrimeScore;

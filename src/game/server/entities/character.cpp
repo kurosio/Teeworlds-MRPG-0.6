@@ -951,7 +951,8 @@ void CCharacter::HandleEventsDeath(int Killer, vec2 Force) const
 	auto* pItemGold = m_pPlayer->GetItem(itGold);
 
 	// loss gold at death
-	if(g_Config.m_SvGoldLossOnDeath)
+	if(GS()->HasWorldFlag(WORLD_FLAG_LOST_DEATH_GOLD) &&
+		g_Config.m_SvGoldLossOnDeath)
 	{
 		const int LossGold = minimum(translate_to_percent_rest(pItemGold->GetValue(), (float)g_Config.m_SvGoldLossOnDeath), pItemGold->GetValue());
 		if(LossGold > 0 && pItemGold->Remove(LossGold))
@@ -965,26 +966,29 @@ void CCharacter::HandleEventsDeath(int Killer, vec2 Force) const
 	}
 
 	// Crime score system
-	if(m_pPlayer->Account()->IsCrimeMaxedOut() && (KillerIsGuardian || KillerIsPlayer))
+	if(GS()->HasWorldFlag(WORLD_FLAG_CRIME_SCORE))
 	{
-		const int Arrest = minimum(translate_to_percent_rest(pItemGold->GetValue(), (float)g_Config.m_SvArrestGoldOnDeath), pItemGold->GetValue());
-		if(Arrest > 0 && pItemGold->Remove(Arrest))
+		if(m_pPlayer->Account()->IsCrimeMaxedOut() && (KillerIsGuardian || KillerIsPlayer))
 		{
-			if(KillerIsPlayer)
+			const int Arrest = minimum(translate_to_percent_rest(pItemGold->GetValue(), (float)g_Config.m_SvArrestGoldOnDeath), pItemGold->GetValue());
+			if(Arrest > 0 && pItemGold->Remove(Arrest))
 			{
-				pKiller->Account()->AddGold(Arrest);
-				GS()->Chat(-1, "'{}' killed '{}', who was wanted. The reward is '{$} gold'!",
-					Server()->ClientName(Killer), Server()->ClientName(m_pPlayer->GetCID()), Arrest);
+				if(KillerIsPlayer)
+				{
+					pKiller->Account()->AddGold(Arrest);
+					GS()->Chat(-1, "'{}' killed '{}', who was wanted. The reward is '{$} gold'!",
+						Server()->ClientName(Killer), Server()->ClientName(m_pPlayer->GetCID()), Arrest);
+				}
+				GS()->Chat(m_ClientID, "Treasury confiscates '{}% ({$})' of your gold.", g_Config.m_SvArrestGoldOnDeath, Arrest);
 			}
-			GS()->Chat(m_ClientID, "Treasury confiscates '{}% ({$})' of your gold.", g_Config.m_SvArrestGoldOnDeath, Arrest);
-		}
 
-		m_pPlayer->Account()->GetPrisonManager().Imprison(360);
-		m_pPlayer->Account()->ResetCrimeScore();
-	}
-	else if(KillerIsPlayer)
-	{
-		pKiller->Account()->IncreaseCrime(20);
+			m_pPlayer->Account()->GetPrisonManager().Imprison(360);
+			m_pPlayer->Account()->ResetCrimeScore();
+		}
+		else if(KillerIsPlayer)
+		{
+			pKiller->Account()->IncreaseCrime(20);
+		}
 	}
 }
 
