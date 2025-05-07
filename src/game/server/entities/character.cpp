@@ -974,7 +974,7 @@ void CCharacter::HandleEventsDeath(int Killer, vec2 Force) const
 			{
 				pKiller->Account()->AddGold(Arrest);
 				GS()->Chat(-1, "'{}' killed '{}', who was wanted. The reward is '{$} gold'!",
-					Server()->ClientName(m_pPlayer->GetCID()), Server()->ClientName(Killer), Arrest);
+					Server()->ClientName(Killer), Server()->ClientName(m_pPlayer->GetCID()), Arrest);
 			}
 			GS()->Chat(m_ClientID, "Treasury confiscates '{}% ({$})' of your gold.", g_Config.m_SvArrestGoldOnDeath, Arrest);
 		}
