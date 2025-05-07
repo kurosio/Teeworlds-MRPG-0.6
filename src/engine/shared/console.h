@@ -231,8 +231,8 @@ public:
 	void SetUnknownCommandCallback(FUnknownCommandCallback pfnCallback, void *pUser) override;
 	void InitChecksum(CChecksumData *pData) const override;
 
-	void PrintF(int Level, const char* pFrom, const char* pStr, ...) override;
-	void PrintF(ColorRGBA PrintColor, int Level, const char* pFrom, const char* pStr, ...);
+	void PrintFormat(int Level, const char* pFrom, const char* pStr, ...) override;
+	void PrintFormat(ColorRGBA PrintColor, int Level, const char* pFrom, const char* pStr, ...);
 
 	void SetAccessLevel(int AccessLevel) override { m_AccessLevel = clamp(AccessLevel, (int)(ACCESS_LEVEL_ADMIN), (int)(ACCESS_LEVEL_USER)); }
 	void ResetGameSettings() override;

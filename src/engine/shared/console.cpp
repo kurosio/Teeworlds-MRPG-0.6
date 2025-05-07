@@ -416,7 +416,7 @@ void CConsole::InitChecksum(CChecksumData* pData) const
 	}
 }
 
-void CConsole::PrintF(int Level, const char* pFrom, const char* pStr, ...)
+void CConsole::PrintFormat(int Level, const char* pFrom, const char* pStr, ...)
 {
 	va_list VarArgs;
 	va_start(VarArgs, pStr);
@@ -425,7 +425,7 @@ void CConsole::PrintF(int Level, const char* pFrom, const char* pStr, ...)
 	va_end(VarArgs);
 }
 
-void CConsole::PrintF(ColorRGBA PrintColor, int Level, const char* pFrom, const char* pStr, ...)
+void CConsole::PrintFormat(ColorRGBA PrintColor, int Level, const char* pFrom, const char* pStr, ...)
 {
 	va_list VarArgs;
 	va_start(VarArgs, pStr);

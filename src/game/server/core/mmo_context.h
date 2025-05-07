@@ -192,6 +192,7 @@ enum WorldFlags
 	WORLD_FLAG_CRIME_SCORE = 1 << 1,
 	WORLD_FLAG_LOST_DEATH_GOLD = 1 << 2,
 	WORLD_FLAG_SPAWN_FULL_MANA = 1 << 3,
+	WORLD_FLAG_ALLOWED_PVP = 1 << 4,
 };
 
 // drawboard events

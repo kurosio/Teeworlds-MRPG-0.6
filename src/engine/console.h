@@ -126,8 +126,8 @@ public:
 	virtual void SetUnknownCommandCallback(FUnknownCommandCallback pfnCallback, void *pUser) = 0;
 	virtual void InitChecksum(CChecksumData *pData) const = 0;
 
-	virtual void PrintF(int Level, const char* pFrom, const char* pStr, ...) = 0;
-	virtual void PrintF(ColorRGBA PrintColor, int Level, const char* pFrom, const char* pStr, ...) = 0;
+	virtual void PrintFormat(int Level, const char* pFrom, const char* pStr, ...) = 0;
+	virtual void PrintFormat(ColorRGBA PrintColor, int Level, const char* pFrom, const char* pStr, ...) = 0;
 
 	virtual void SetAccessLevel(int AccessLevel) = 0;
 

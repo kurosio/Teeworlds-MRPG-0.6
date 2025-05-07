@@ -63,7 +63,7 @@ void RconProcessor::ConJail(IConsole::IResult* pResult, void* pUser)
 
 	// prison
 	pPlayer->Account()->GetPrisonManager().Imprison(Seconds);
-	pGS->Console()->PrintF(IConsole::OUTPUT_LEVEL_STANDARD, "jail", "%s prisoned up player %s for %d seconds.",
+	pGS->Console()->PrintFormat(IConsole::OUTPUT_LEVEL_STANDARD, "jail", "%s prisoned up player %s for %d seconds.",
 		pServer->ClientName(FromCID), pServer->ClientName(PrisonedCID), Seconds);
 }
 
@@ -84,7 +84,7 @@ void RconProcessor::ConUnjail(IConsole::IResult* pResult, void* pUser)
 
 	// unprisoned
 	pPlayer->Account()->GetPrisonManager().Release();
-	pGS->Console()->PrintF(IConsole::OUTPUT_LEVEL_STANDARD, "jail", "%s unprisoned up player %s.",
+	pGS->Console()->PrintFormat(IConsole::OUTPUT_LEVEL_STANDARD, "jail", "%s unprisoned up player %s.",
 		pServer->ClientName(FromCID), pServer->ClientName(UnprisonedCID));
 }
 
@@ -177,7 +177,7 @@ void RconProcessor::ConPosition(IConsole::IResult* pResult, void* pUser)
 	const auto PosY = round_to_int(pPlayer->GetCharacter()->m_Core.m_Pos.y);
 	const int MapPosX = PosX / 32;
 	const int MapPosY = PosY / 32;
-	pGS->Console()->PrintF(IConsole::OUTPUT_LEVEL_STANDARD, "client position", "CID: %d Pos: %d %d(%d %d) World: %s(%d)",
+	pGS->Console()->PrintFormat(IConsole::OUTPUT_LEVEL_STANDARD, "client position", "CID: %d Pos: %d %d(%d %d) World: %s(%d)",
 		ClientID, MapPosX, MapPosY, PosX, PosY, pGS->Server()->GetWorldName(pGS->GetWorldID()), pGS->GetWorldID());
 }
 
@@ -202,7 +202,7 @@ void RconProcessor::ConItemList(IConsole::IResult* pResult, void* pUserData)
 	// show list of items
 	for(auto& [ID, Item] : CItemDescription::Data())
 	{
-		pSelf->Console()->PrintF(IConsole::OUTPUT_LEVEL_STANDARD, "item_list",
+		pSelf->Console()->PrintFormat(IConsole::OUTPUT_LEVEL_STANDARD, "item_list",
 			"ID: %d | Name: %s | %s", ID, Item.GetName(), Item.IsEnchantable() ? "Enchantable" : "Default stack");
 	}
 }
@@ -223,7 +223,7 @@ void RconProcessor::ConGiveItem(IConsole::IResult* pResult, void* pUserData)
 	// check valid item
 	if(!CItemDescription::Data().contains(ItemID))
 	{
-		pSelf->Console()->PrintF(IConsole::OUTPUT_LEVEL_STANDARD, "give_item", "Item with ID %d not found. Use command for list \"item_list\".", ItemID);
+		pSelf->Console()->PrintFormat(IConsole::OUTPUT_LEVEL_STANDARD, "give_item", "Item with ID %d not found. Use command for list \"item_list\".", ItemID);
 		return;
 	}
 
@@ -255,12 +255,12 @@ void RconProcessor::ConDisbandGuild(IConsole::IResult* pResult, void* pUserData)
 	// check valid guild
 	if(!pGuild)
 	{
-		pSelf->Console()->PrintF(IConsole::OUTPUT_LEVEL_STANDARD, "guild_disband", "%s, no such guild has been found.", pGuildName);
+		pSelf->Console()->PrintFormat(IConsole::OUTPUT_LEVEL_STANDARD, "guild_disband", "%s, no such guild has been found.", pGuildName);
 		return;
 	}
 
 	// disband
-	pSelf->Console()->PrintF(IConsole::OUTPUT_LEVEL_STANDARD, "guild_disband", "Guild with identifier %d and by the name of %s has been disbanded.", pGuild->GetID(), pGuildName);
+	pSelf->Console()->PrintFormat(IConsole::OUTPUT_LEVEL_STANDARD, "guild_disband", "Guild with identifier %d and by the name of %s has been disbanded.", pGuild->GetID(), pGuildName);
 	pSelf->Core()->GuildManager()->Disband(pGuild->GetID());
 }
 
@@ -280,12 +280,12 @@ void RconProcessor::ConRemItem(IConsole::IResult* pResult, void* pUserData)
 		// success remove item
 		if(pPlayer->GetItem(ItemID)->Remove(Value))
 		{
-			pSelf->Console()->PrintF(IConsole::OUTPUT_LEVEL_STANDARD, "rem_item", "Item with ID %d(%d) has been removed from the player.", ItemID, Value);
+			pSelf->Console()->PrintFormat(IConsole::OUTPUT_LEVEL_STANDARD, "rem_item", "Item with ID %d(%d) has been removed from the player.", ItemID, Value);
 			return;
 		}
 
 		// item not found
-		pSelf->Console()->PrintF(IConsole::OUTPUT_LEVEL_STANDARD, "rem_item", "Item with ID %d not found in the player's inventory.", ItemID);
+		pSelf->Console()->PrintFormat(IConsole::OUTPUT_LEVEL_STANDARD, "rem_item", "Item with ID %d not found in the player's inventory.", ItemID);
 	}
 }
 
@@ -311,7 +311,7 @@ void RconProcessor::ConAddCharacter(IConsole::IResult* pResult, void* pUserData)
 	// we check if there is a player
 	if(const CPlayer* pPlayer = pSelf->GetPlayer(ClientID, true); !pPlayer)
 	{
-		pSelf->Console()->PrintF(IConsole::OUTPUT_LEVEL_STANDARD, "add_character", "Player not found or isn't logged in");
+		pSelf->Console()->PrintFormat(IConsole::OUTPUT_LEVEL_STANDARD, "add_character", "Player not found or isn't logged in");
 		return;
 	}
 
@@ -348,14 +348,14 @@ void RconProcessor::ConListAfk(IConsole::IResult* pResult, void* pUserData)
 			if(const CPlayer* pPlayer = pSelf->GetPlayer(i); pPlayer && pPlayer->IsAfk())
 			{
 				// write information about afk
-				pSelf->Console()->PrintF(IConsole::OUTPUT_LEVEL_STANDARD, "AFK", "id=%d name='%s' afk_time='%ld's", i, pServer->ClientName(i), pPlayer->GetAfkTime());
+				pSelf->Console()->PrintFormat(IConsole::OUTPUT_LEVEL_STANDARD, "AFK", "id=%d name='%s' afk_time='%ld's", i, pServer->ClientName(i), pPlayer->GetAfkTime());
 				Counter++;
 			}
 		}
 	}
 
 	// total afk players
-	pSelf->Console()->PrintF(IConsole::OUTPUT_LEVEL_STANDARD, "AFK", "%d afk players in total", Counter);
+	pSelf->Console()->PrintFormat(IConsole::OUTPUT_LEVEL_STANDARD, "AFK", "%d afk players in total", Counter);
 }
 
 
@@ -374,7 +374,7 @@ void RconProcessor::ConCheckAfk(IConsole::IResult* pResult, void* pUserData)
 		if(const CPlayer* pPlayer = pSelf->GetPlayer(ClientID); pPlayer && pPlayer->IsAfk())
 		{
 			// write information about afk
-			pSelf->Console()->PrintF(IConsole::OUTPUT_LEVEL_STANDARD, "AFK", "id=%d name='%s' afk_time='%ld's", ClientID, pServer->ClientName(ClientID), pPlayer->GetAfkTime());
+			pSelf->Console()->PrintFormat(IConsole::OUTPUT_LEVEL_STANDARD, "AFK", "id=%d name='%s' afk_time='%ld's", ClientID, pServer->ClientName(ClientID), pPlayer->GetAfkTime());
 			return;
 		}
 	}
@@ -433,12 +433,12 @@ void RconProcessor::ConBansAcc(IConsole::IResult* pResult, void* pUserData)
 	for(const auto& p : pSelf->Core()->AccountManager()->BansAccount())
 	{
 		// write information about afk
-		pSelf->Console()->PrintF(IConsole::OUTPUT_LEVEL_STANDARD, "BansAccount", "ban_id=%d name='%s' ban_until='%s' reason='%s'", p.id, p.nickname.c_str(), p.until.c_str(), p.reason.c_str());
+		pSelf->Console()->PrintFormat(IConsole::OUTPUT_LEVEL_STANDARD, "BansAccount", "ban_id=%d name='%s' ban_until='%s' reason='%s'", p.id, p.nickname.c_str(), p.until.c_str(), p.reason.c_str());
 		Counter++;
 	}
 
 	// total bans
-	pSelf->Console()->PrintF(IConsole::OUTPUT_LEVEL_STANDARD, "BansAccount", "%d bans in total", Counter);
+	pSelf->Console()->PrintFormat(IConsole::OUTPUT_LEVEL_STANDARD, "BansAccount", "%d bans in total", Counter);
 }
 
 
@@ -469,7 +469,7 @@ void RconProcessor::ConQuest(IConsole::IResult* pResult, void* pUser)
 		for(auto& [ID, pQuestInfo] : CQuestDescription::Data())
 		{
 			auto* pPlayerQuest = pPlayer->GetQuest(ID);
-			pGS->Console()->PrintF(IConsole::OUTPUT_LEVEL_STANDARD, "quest_list",
+			pGS->Console()->PrintFormat(IConsole::OUTPUT_LEVEL_STANDARD, "quest_list",
 				"ID: %d | Name: %s | State: %s", ID, pQuestInfo->GetName(), GetQustStateName(pPlayerQuest->GetState()));
 		}
 	}
@@ -479,9 +479,9 @@ void RconProcessor::ConQuest(IConsole::IResult* pResult, void* pUser)
 		if(pPlayerQuest)
 		{
 			if(pPlayerQuest->IsAccepted() || pPlayerQuest->IsCompleted())
-				pGS->Console()->PrintF(IConsole::OUTPUT_LEVEL_STANDARD, "quest", "The quest is either completed or already accepted.");
+				pGS->Console()->PrintFormat(IConsole::OUTPUT_LEVEL_STANDARD, "quest", "The quest is either completed or already accepted.");
 			if(pPlayerQuest->Accept())
-				pGS->Console()->PrintF(IConsole::OUTPUT_LEVEL_STANDARD, "quest", "Quest '%s:%d' successful accepted!",
+				pGS->Console()->PrintFormat(IConsole::OUTPUT_LEVEL_STANDARD, "quest", "Quest '%s:%d' successful accepted!",
 					pPlayerQuest->Info()->GetName(), pPlayerQuest->GetID());
 		}
 	}
@@ -493,14 +493,14 @@ void RconProcessor::ConQuest(IConsole::IResult* pResult, void* pUser)
 			if(pPlayerQuest->IsAccepted() || pPlayerQuest->IsCompleted())
 			{
 				pPlayerQuest->Reset();
-				pGS->Console()->PrintF(IConsole::OUTPUT_LEVEL_STANDARD, "quest", "Quest '%s:%d' successful refused!",
+				pGS->Console()->PrintFormat(IConsole::OUTPUT_LEVEL_STANDARD, "quest", "Quest '%s:%d' successful refused!",
 					pPlayerQuest->Info()->GetName(), pPlayerQuest->GetID());
 			}
 		}
 	}
 	else
 	{
-		pGS->Console()->PrintF(IConsole::OUTPUT_LEVEL_STANDARD, "quest", "Use 'quest <list, accept, reset> <quest_id>.");
+		pGS->Console()->PrintFormat(IConsole::OUTPUT_LEVEL_STANDARD, "quest", "Use 'quest <list, accept, reset> <quest_id>.");
 	}
 }
 

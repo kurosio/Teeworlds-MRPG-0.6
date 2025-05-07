@@ -48,6 +48,8 @@ public:
 			m_Flags |= WORLD_FLAG_LOST_DEATH_GOLD;
 		if(FlagsSet.hasSet("spawn_full_mana"))
 			m_Flags |= WORLD_FLAG_SPAWN_FULL_MANA;
+		if(FlagsSet.hasSet("allowed_pvp"))
+			m_Flags |= WORLD_FLAG_ALLOWED_PVP;
 	}
 
 	int GetRespawnWorldID() const

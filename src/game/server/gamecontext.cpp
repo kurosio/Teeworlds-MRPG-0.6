@@ -447,12 +447,12 @@ void CGS::SendChat(int ChatterClientID, int Mode, const char* pText, int64_t Mas
 {
 	if(ChatterClientID >= 0 && ChatterClientID < MAX_CLIENTS)
 	{
-		Console()->PrintF(IConsole::OUTPUT_LEVEL_STANDARD, Mode == CHAT_TEAM ? "teamchat" : "chat",
+		Console()->PrintFormat(IConsole::OUTPUT_LEVEL_STANDARD, Mode == CHAT_TEAM ? "teamchat" : "chat",
 			"%d:%d:%s: %s", ChatterClientID, Mode, Server()->ClientName(ChatterClientID), pText);
 	}
 	else
 	{
-		Console()->PrintF(IConsole::OUTPUT_LEVEL_STANDARD, Mode == CHAT_TEAM ? "teamchat" : "chat",
+		Console()->PrintFormat(IConsole::OUTPUT_LEVEL_STANDARD, Mode == CHAT_TEAM ? "teamchat" : "chat",
 			"*** %s", pText);
 	}
 
@@ -888,7 +888,7 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 	{
 		if(g_Config.m_Debug)
 		{
-			Console()->PrintF(IConsole::OUTPUT_LEVEL_DEBUG, "server",
+			Console()->PrintFormat(IConsole::OUTPUT_LEVEL_DEBUG, "server",
 				"dropped weird message '%s' (%d), failed on '%s'", m_NetObjHandler.GetMsgName(MsgID), MsgID, m_NetObjHandler.FailedMsgOn());
 		}
 
@@ -1257,7 +1257,7 @@ void CGS::OnClientDrop(int ClientID, const char* pReason)
 			else
 			{
 				Chat(-1, "'{}' has left the {}", Server()->ClientName(ClientID), g_Config.m_SvGamemodeName);
-				Console()->PrintF(IConsole::OUTPUT_LEVEL_STANDARD, "game", "leave player='%d:%s'", ClientID, Server()->ClientName(ClientID));
+				Console()->PrintFormat(IConsole::OUTPUT_LEVEL_STANDARD, "game", "leave player='%d:%s'", ClientID, Server()->ClientName(ClientID));
 			}
 
 			// save player position
@@ -1543,21 +1543,18 @@ void CGS::InitWorld()
 			dbg_assert(pDungeon != nullptr, "can't create dungeon without dungeon context");
 			m_pController = new CGameControllerDungeon(this, pDungeon);
 			worldTypeStr = "Dungeon";
-			m_AllowedPVP = false;
 			break;
 		}
 		case WorldType::Tutorial:
 		{
 			m_pController = new CGameControllerTutorial(this);
 			worldTypeStr = "Tutorial";
-			m_AllowedPVP = false;
 			break;
 		}
 		default:
 		{
 			m_pController = new CGameControllerDefault(this);
 			worldTypeStr = "Default";
-			m_AllowedPVP = true;
 			break;
 		}
 	}
@@ -1565,6 +1562,7 @@ void CGS::InitWorld()
 	// initialize controller and update game state
 	UpdateExpMultiplier();
 	m_pController->OnInit();
+	m_AllowedPVP = pWorldDetail->HasFlag(WORLD_FLAG_ALLOWED_PVP);
 
 	// Log world initialization details
 	const char* pStrStatePvp = m_AllowedPVP ? "yes" : "no";
