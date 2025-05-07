@@ -46,6 +46,8 @@ public:
 			m_Flags |= WORLD_FLAG_CRIME_SCORE;
 		if(FlagsSet.hasSet("lost_gold_death"))
 			m_Flags |= WORLD_FLAG_LOST_DEATH_GOLD;
+		if(FlagsSet.hasSet("spawn_full_mana"))
+			m_Flags |= WORLD_FLAG_SPAWN_FULL_MANA;
 	}
 
 	int GetRespawnWorldID() const

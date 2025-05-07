@@ -66,8 +66,9 @@ bool IGameController::OnCharacterSpawn(CCharacter* pChr)
 	g_EventListenerManager.Notify<IEventListener::Type::CharacterSpawn>(pChr->GetPlayer());
 
 	// Health
+	const int SpawnMana = GS()->HasWorldFlag(WORLD_FLAG_SPAWN_FULL_MANA) ? pChr->GetPlayer()->GetMaxMana() : 3;
 	pChr->IncreaseHealth(pChr->GetPlayer()->GetMaxHealth());
-	pChr->IncreaseMana(3);
+	pChr->IncreaseMana(SpawnMana);
 
 	// Weapons
 	const int MaximumAmmo = 10 + pChr->GetPlayer()->GetTotalAttributeValue(AttributeIdentifier::Ammo);
