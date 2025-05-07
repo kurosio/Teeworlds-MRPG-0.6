@@ -193,13 +193,16 @@ bool CSkill::Use()
 				continue;
 
 			// check target upper agression
-			if(const auto* pTargetPl = GS()->GetPlayer(pSearchChar->AI()->GetTarget()->GetCID(), false, true))
+			if(const auto* pTargetChar = GS()->GetPlayerChar(pSearchChar->AI()->GetTarget()->GetCID()))
 			{
-				if(pTargetPl->GetMaxHealth() > pPlayer->GetMaxHealth())
+				if(pTargetChar->GetPlayer()->GetMaxHealth() > pPlayer->GetMaxHealth())
 				{
 					MissedProvoked = true;
 					continue;
 				}
+
+				// set target for client
+				pSearchPl->m_TargetPos = pTargetChar->GetPos();
 			}
 
 			// set agression

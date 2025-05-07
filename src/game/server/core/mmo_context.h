@@ -186,6 +186,11 @@ enum class WorldType : int
 	PvP,
 };
 
+enum WorldFlags
+{
+	WORLD_FLAG_RATING_SYSTEM = 1 << 0,
+};
+
 // drawboard events
 enum class DrawboardToolEvent : int
 {

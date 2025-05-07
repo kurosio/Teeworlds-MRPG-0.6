@@ -1241,8 +1241,26 @@ void CGS::OnClientDrop(int ClientID, const char* pReason)
 		// information
 		if((Server()->ClientIngame(ClientID) || Server()->IsClientChangingWorld(ClientID)) && IsPlayerInWorld(ClientID))
 		{
-			Chat(-1, "'{}' has left the {}", Server()->ClientName(ClientID), g_Config.m_SvGamemodeName);
-			Console()->PrintF(IConsole::OUTPUT_LEVEL_STANDARD, "game", "leave player='%d:%s'", ClientID, Server()->ClientName(ClientID));
+			// messages & rage left
+			const auto* pChar = pPlayer->GetCharacter();
+			if(pChar && pChar->GetLastPlayerAttacker(3))
+			{
+				if(HasWorldFlag(WORLD_FLAG_RATING_SYSTEM))
+				{
+					Chat(-1, "'{}' rage left {} and lost {} rating points!", Server()->ClientName(ClientID),
+						g_Config.m_SvGamemodeName, g_Config.m_SvRageQuitDecreaseRating);
+					pPlayer->Account()->GetRatingSystem().DecreaseRating(g_Config.m_SvRageQuitDecreaseRating);
+				}
+				else
+					Chat(-1, "'{}' rage left the {}", Server()->ClientName(ClientID), g_Config.m_SvGamemodeName);
+			}
+			else
+			{
+				Chat(-1, "'{}' has left the {}", Server()->ClientName(ClientID), g_Config.m_SvGamemodeName);
+				Console()->PrintF(IConsole::OUTPUT_LEVEL_STANDARD, "game", "leave player='%d:%s'", ClientID, Server()->ClientName(ClientID));
+			}
+
+			// save player position
 			Core()->SaveAccount(m_apPlayers[ClientID], SAVE_POSITION);
 		}
 
@@ -1503,6 +1521,11 @@ bool CGS::TakeItemCharacter(int ClientID)
 bool CGS::IsWorldType(WorldType Type) const
 {
 	return Server()->IsWorldType(m_WorldID, Type);
+}
+
+bool CGS::HasWorldFlag(int64_t Flag) const
+{
+	return Server()->GetWorldDetail(m_WorldID)->HasFlag(Flag);
 }
 
 void CGS::InitWorld()

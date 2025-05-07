@@ -37,7 +37,8 @@ void IGameController::OnCharacterDeath(CPlayer* pVictim, CPlayer* pKiller, int W
 	g_EventListenerManager.Notify<IEventListener::Type::CharacterDeath>(pVictim, pKiller, Weapon);
 
 	// update rating
-	if(pVictim && pKiller && pVictim != pKiller && !pVictim->IsBot() && !pKiller->IsBot())
+	if(GS()->HasWorldFlag(WORLD_FLAG_RATING_SYSTEM) &&
+		pVictim && pKiller && pVictim != pKiller && !pVictim->IsBot() && !pKiller->IsBot())
 	{
 		auto& pKillerRating = pKiller->Account()->GetRatingSystem();
 		auto& pVictimRating = pVictim->Account()->GetRatingSystem();

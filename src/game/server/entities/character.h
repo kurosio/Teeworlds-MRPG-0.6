@@ -154,7 +154,7 @@ public:
 	void ChangePosition(vec2 NewPos);
 	void UpdateEquippedStats(std::optional<int> UpdatedItemID = std::nullopt);
 	vec2 GetMousePos() const { return m_Core.m_Pos + vec2(m_Core.m_Input.m_TargetX, m_Core.m_Input.m_TargetY); }
-	CPlayer* GetLastAttacker() const;
+	CPlayer* GetLastPlayerAttacker(int Timeout) const;
 };
 
 #endif

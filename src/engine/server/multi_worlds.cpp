@@ -85,11 +85,12 @@ bool CMultiWorlds::LoadFromDB(IKernel* pKernel)
 		std::string Name = pRes->getString("Name");
 		std::string Path = pRes->getString("Path");
 		std::string Type = pRes->getString("Type");
+		const auto FlagsSet = DBSet(pRes->getString("Flags"));
 		const int RespawnWorldID = pRes->getInt("RespawnWorldID");
 		const int JailWorldID = pRes->getInt("JailWorldID");
 		const int RequiredLevel = pRes->getInt("RequiredLevel");
 
-		CWorldDetail WorldDetail(Type, RespawnWorldID, JailWorldID, RequiredLevel);
+		CWorldDetail WorldDetail(Type, FlagsSet, RespawnWorldID, JailWorldID, RequiredLevel);
 		if(m_apWorlds[WorldID])
 		{
 			str_copy(m_apWorlds[WorldID]->m_aName, Name.c_str(), sizeof(m_apWorlds[WorldID]->m_aName));
@@ -119,7 +120,7 @@ void CMultiWorlds::Clear(bool Shutdown)
 			delete m_apWorlds[i];
 			continue;
 		}
-	
+
 		m_apWorlds[i]->m_pMapDetail->Unload();
 
 		delete m_apWorlds[i]->m_pGameServer;

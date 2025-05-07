@@ -7,6 +7,7 @@ class CWorld;
 
 class CWorldDetail
 {
+	int64_t m_Flags {};
 	int m_RespawnWorldID {};
 	int m_JailWorldID {};
 	int m_RequiredLevel {};
@@ -14,7 +15,7 @@ class CWorldDetail
 
 public:
 	CWorldDetail() = default;
-	CWorldDetail(const std::string_view& Type, int RespawnWorldID, int JailWorldID, int RequiredLevel)
+	CWorldDetail(const std::string_view& Type, const DBSet& FlagsSet, int RespawnWorldID, int JailWorldID, int RequiredLevel)
 	{
 		if(Type == "default")
 			m_Type = WorldType::Default;
@@ -34,6 +35,13 @@ public:
 		m_RespawnWorldID = RespawnWorldID;
 		m_JailWorldID = JailWorldID;
 		m_RequiredLevel = RequiredLevel;
+		InitFlags(FlagsSet);
+	}
+
+	void InitFlags(const DBSet& FlagsSet)
+	{
+		if(FlagsSet.hasSet("rating_system"))
+			m_Flags |= WORLD_FLAG_RATING_SYSTEM;
 	}
 
 	int GetRespawnWorldID() const
@@ -49,6 +57,11 @@ public:
 	int GetRequiredLevel() const
 	{
 		return m_RequiredLevel;
+	}
+
+	bool HasFlag(int64_t Flag) const
+	{
+		return (m_Flags & Flag) != 0;
 	}
 
 	WorldType GetType() const

@@ -25,7 +25,7 @@ bool CEidolonAI::CanDamage(CPlayer* pFrom)
 	{
 		if(pOwner)
 		{
-			auto* pOwnerLastAttacker = pOwner->GetCharacter()->GetLastAttacker();
+			auto* pOwnerLastAttacker = pOwner->GetCharacter()->GetLastPlayerAttacker(2);
 			if(pOwnerLastAttacker &&
 				pOwnerLastAttacker->GetCID() == pFrom->GetCID())
 				return true;
@@ -33,7 +33,7 @@ bool CEidolonAI::CanDamage(CPlayer* pFrom)
 			auto* pFromChar = pFrom->GetCharacter();
 			if(pFromChar)
 			{
-				auto pFromLastAttacker = pFromChar->GetLastAttacker();
+				auto pFromLastAttacker = pFromChar->GetLastPlayerAttacker(2);
 				if(pFromLastAttacker &&
 					(pFromLastAttacker->GetCID() == pOwner->GetCID() ||
 						pFromLastAttacker->GetCID() == m_pPlayer->GetCID()))

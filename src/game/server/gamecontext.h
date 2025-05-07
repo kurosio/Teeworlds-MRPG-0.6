@@ -139,6 +139,7 @@ public:
 
 	int GetWorldID() const { return m_WorldID; }
 	bool IsWorldType(WorldType Type) const;
+	bool HasWorldFlag(int64_t Flag) const;
 
 	template <typename T> requires std::is_integral_v<T>
 	void ApplyExperienceMultiplier(T* pExperience) const

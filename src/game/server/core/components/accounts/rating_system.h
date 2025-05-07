@@ -17,6 +17,7 @@ public:
 	RatingSystem() = default;
 
 	void Init(CAccountData* pAccount);
+	void DecreaseRating(int Rating);
 	void UpdateRating(CGS* pGS, bool Won, CAccountData* pOpponentAccount);
 	void UpdateRating(CGS* pGS, bool won, int OpponentRating, int OpponentLevel);
 

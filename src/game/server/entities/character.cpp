@@ -1099,9 +1099,9 @@ int CCharacter::GetTotalDamageByWeapon(int Weapon) const
 	return Damage;
 }
 
-CPlayer* CCharacter::GetLastAttacker() const
+CPlayer* CCharacter::GetLastPlayerAttacker(int Timeout) const
 {
-	if(m_pPlayer->m_aPlayerTick[LastDamage] > (Server()->Tick() - Server()->TickSpeed() * 2))
+	if(m_pPlayer->m_aPlayerTick[LastDamage] > (Server()->Tick() - Server()->TickSpeed() * Timeout))
 		return GS()->GetPlayer(m_LastDamageByClient);
 	return nullptr;
 }

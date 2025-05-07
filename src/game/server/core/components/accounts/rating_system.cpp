@@ -19,6 +19,12 @@ void RatingSystem::Init(CAccountData* pAccount)
 	Load();
 }
 
+void RatingSystem::DecreaseRating(int Decreasing)
+{
+	m_Rating = std::clamp(static_cast<int>(std::round(m_Rating - Decreasing)), g_Config.m_SvMinRating, g_Config.m_SvMaxRating);
+	Save();
+}
+
 double RatingSystem::GetWinRate() const
 {
 	if(m_Played == 0)
