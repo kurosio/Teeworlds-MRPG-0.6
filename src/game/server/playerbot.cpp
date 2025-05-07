@@ -195,12 +195,15 @@ static int CalculateAttribute(CGS* pGS, const CPlayerBot* pPlayer, AttributeIden
 			if(pAttribute->IsGroup(AttributeGroup::DamageType))
 			{
 				BaseFactor = (float)g_Config.m_SvDungeonDamageTypeFactor / 100.f;
-				MinValue = 0;
 			}
 			else if(ID == AttributeIdentifier::Crit)
 			{
 				BaseFactor = (float)g_Config.m_SvDungeonCritChanceFactor / 100.f;
-				MinValue = 0;
+			}
+			else if(Boss && ID == AttributeIdentifier::HP)
+			{
+				BaseFactor = (float)g_Config.m_SvDungeonBossHealthFactor / 100.0f;
+				MinValue = 5;
 			}
 			else
 			{

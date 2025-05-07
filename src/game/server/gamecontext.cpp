@@ -1412,7 +1412,7 @@ void CGS::UpdateExpMultiplier()
 {
 	if(IsWorldType(WorldType::Dungeon))
 	{
-		m_MultiplierExp = g_Config.m_SvRaidDungeonExpMultiplier;
+		m_MultiplierExp = g_Config.m_SvDungeonExpMultiplier;
 		return;
 	}
 
