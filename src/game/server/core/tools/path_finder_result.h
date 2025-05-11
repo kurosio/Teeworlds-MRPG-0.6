@@ -11,13 +11,18 @@ struct PathRequest
 {
 	ivec2 Start;
 	ivec2 End;
-	std::promise<PathResult*> Promise;
+	std::promise<std::unique_ptr<PathResult>> Promise;
 };
 
 struct PathRequestHandle
 {
-	std::future<PathResult*> Future;
-	std::vector<vec2> vPath;
+	std::future<std::unique_ptr<PathResult>> Future{};
+	std::vector<vec2> vPath {};
+
+	bool IsValid() const
+	{
+		return Future.valid();
+	}
 
 	bool IsReady() const
 	{
@@ -30,32 +35,29 @@ struct PathRequestHandle
 	{
 		if(IsReady())
 		{
-			bool Success = false;
 			try
 			{
-				if(const PathResult* pathResult = Future.get())
+				std::unique_ptr<PathResult> resultPtr = Future.get();
+				if(resultPtr && resultPtr->Success)
 				{
-					if(pathResult->Success)
-					{
-						vPath = pathResult->Path;
-						Future = std::future<PathResult*>();
-						Success = true;
-					}
-					delete pathResult;
+					vPath = std::move(resultPtr->Path);
+					return true;
 				}
 			}
 			catch(const std::future_error& e)
 			{
-				dbg_msg("PathFinder", "future error: %s", e.what());
+				dbg_msg("path_finder", "future error: %s", e.what());
 			}
-			return Success;
+
+			return false;
 		}
+
 		return false;
 	}
 
 	void Reset()
 	{
-		Future = std::future<PathResult*>();
+		Future = std::future<std::unique_ptr<PathResult>>();
 		vPath.clear();
 	}
 };

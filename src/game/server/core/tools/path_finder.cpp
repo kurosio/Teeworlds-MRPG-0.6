@@ -61,22 +61,23 @@ void CPathFinder::Initialize()
 
 void CPathFinder::RequestPath(PathRequestHandle& Handle, const vec2& Start, const vec2& End)
 {
-	if(Handle.Future.valid())
+	if(Handle.IsValid())
 		return;
 
 	const ivec2 istart((int)Start.x / 32, (int)Start.y / 32);
 	const ivec2 iend((int)End.x / 32, (int)End.y / 32);
 
-	std::lock_guard lock(m_QueueMutex);
 	PathRequest request;
 	request.Start = istart;
 	request.End = iend;
+	Handle.Future = request.Promise.get_future();
 
-	std::future<PathResult*> temp_future = request.Promise.get_future();
-	m_vRequestQueue.push(std::move(request));
+	{
+		std::lock_guard lock(m_QueueMutex);
+		m_vRequestQueue.push(std::move(request));
+	}
+
 	m_Condition.notify_one();
-
-	Handle.Future = std::move(temp_future);
 }
 
 void CPathFinder::RequestRandomPath(PathRequestHandle& Handle, const vec2& Start, float Radius)
@@ -88,46 +89,36 @@ void CPathFinder::PathfindingThread()
 {
 	while(m_Running)
 	{
-		std::vector<PathRequest> requests;
+		std::vector<PathRequest> currentRequestsBatch;
 
 		{
 			std::unique_lock lock(m_QueueMutex);
-			m_Condition.wait(lock, [this] { return !m_vRequestQueue.empty() || !m_Running; });
+			m_Condition.wait(lock, [this] { return !m_vRequestQueue.empty() || !m_Running.load(); });
 
-			if(!m_Running)
+			if(!m_Running.load() && m_vRequestQueue.empty())
 				return;
 
 			// get the next request from the queue
 			while(!m_vRequestQueue.empty())
 			{
-				requests.push_back(std::move(m_vRequestQueue.front()));
+				currentRequestsBatch.push_back(std::move(m_vRequestQueue.front()));
 				m_vRequestQueue.pop();
 			}
 		}
 
-		for(auto& request : requests)
+		for(auto& request : currentRequestsBatch)
 		{
 			std::vector<vec2> vPath = FindPath(request.Start, request.End);
-			const bool Success = !vPath.empty();
-			auto result = new PathResult({ vPath, Success });
+			const bool bSuccess = !vPath.empty();
+			auto resultPtr = std::make_unique<PathResult>(PathResult { std::move(vPath), bSuccess });
 
 			try
 			{
-				request.Promise.set_value(result);
+				request.Promise.set_value(std::move(resultPtr));
 			}
 			catch(const std::future_error& e)
 			{
 				dbg_msg("path_finder", "Future error: %s", e.what());
-				delete result;
-			}
-			catch(const std::exception& e)
-			{
-				dbg_msg("path_finder", "Std exception error: %s", e.what());
-				delete result;
-			}
-			catch(...)
-			{
-				delete result;
 			}
 		}
 	}
@@ -141,11 +132,20 @@ int ManhattanDistance(const ivec2& a, const ivec2& b)
 std::vector<vec2> CPathFinder::FindPath(const ivec2& Start, const ivec2& End)
 {
 	std::vector<vec2> vPath;
+
+	if(Start.x < 0 || Start.x >= m_Width || Start.y < 0 || Start.y >= m_Height ||
+		End.x < 0 || End.x >= m_Width || End.y < 0 || End.y >= m_Height)
+	{
+		dbg_msg("path_finder", "invalid start/end coordinates.");
+		return vPath;
+	}
+
 	if(m_MapData.IsCollide(Start.x, Start.y) || m_MapData.IsCollide(End.x, End.y))
 		return vPath;
 
 	// initialize variables
 	std::ranges::fill(m_vCostSoFar, std::numeric_limits<int>::max());
+
 	auto ToIndex = [this](const ivec2& pos)
 	{
 		return pos.y * m_Width + pos.x;
