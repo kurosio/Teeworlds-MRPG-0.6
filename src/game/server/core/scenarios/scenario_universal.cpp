@@ -544,7 +544,7 @@ void CUniversalScenario::CreateEntityShootmarkersTask(const vec2& pos, int healt
 			if(distance(pBase->GetPos(), pProj->GetCurrentPos()) < 48.f)
 			{
 				Health -= 1;
-				pBase->GS()->CreateDamage(pBase->GetPos(), pBase->GetClientID(), 1, false, random_angle(), CmaskOne(pBase->GetClientID()));
+				pBase->GS()->CreateDamage(pBase->GetPos(), pBase->GetClientID(), 1, random_angle(), CmaskOne(pBase->GetClientID()));
 				pProj->MarkForDestroy();
 			}
 		}

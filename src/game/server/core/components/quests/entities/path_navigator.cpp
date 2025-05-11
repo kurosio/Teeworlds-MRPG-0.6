@@ -102,7 +102,7 @@ void CEntityPathNavigator::Move(CPlayer* pPlayer)
 
 		// create damage effect
 		constexpr vec2 Corrector(32.f, 64.f);
-		GS()->CreateDamage(m_Pos - Corrector, -1, 1, false, 0.f, m_Mask);
+		GS()->CreateDamage(m_Pos - Corrector, -1, 1, 0.f, m_Mask);
 		m_StepPos++;
 
 		// check if the entity should stop moving

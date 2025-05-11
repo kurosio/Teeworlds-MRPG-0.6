@@ -199,6 +199,9 @@ public:
 	bool IsAvailableEquipmentSlot(ItemType Type);
 	std::optional<int> GetEquippedSlotItemID(ItemType Type) const;
 
+	//
+	int GetFreeSlotsAttributedModules() const;
+	int GetFreeSlotsNonAttributedModules() const;
 };
 
 struct CAccountSharedData

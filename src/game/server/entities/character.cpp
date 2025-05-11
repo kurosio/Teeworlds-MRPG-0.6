@@ -284,8 +284,10 @@ void CCharacter::FireWeapon()
 
 	if(!m_ReloadTimer)
 	{
-		const int ReloadArt = m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::AttackSPD);
-		m_ReloadTimer = g_pData->m_Weapons.m_aId[m_Core.m_ActiveWeapon].m_Firedelay * Server()->TickSpeed() / (1000 + ReloadArt);
+		constexpr int DefaultSpeed = 1000;
+		const auto SpeedMultiplier = m_pPlayer->GetAttributeChance(AttributeIdentifier::AttackSPD).value_or(100.f) / 100.f;
+		const auto Speed = (float)DefaultSpeed * SpeedMultiplier;
+		m_ReloadTimer = g_pData->m_Weapons.m_aId[m_Core.m_ActiveWeapon].m_Firedelay * Server()->TickSpeed() / round_to_int(Speed);
 	}
 }
 
@@ -377,7 +379,7 @@ bool CCharacter::FireHammer(vec2 Direction, vec2 ProjStartPos)
 	}
 
 	// default hammer
-	const float Radius = IsBot ? 3.2f : 6.4f;
+	const float Radius = m_pPlayer->GetItem(itBasicHammerPlus) ? 6.4f : 3.2f;
 	const auto vEntities = GS()->m_World.FindEntities(ProjStartPos, GetRadius() * Radius, MAX_LENGTH_CHARACTERS, CGameWorld::ENTTYPE_CHARACTER);
 	for(auto* pEnt : vEntities)
 	{
@@ -1179,16 +1181,19 @@ bool CCharacter::TakeDamage(vec2 Force, int Damage, int FromCID, int Weapon)
 	m_pPlayer->ShowHealthNickname(2);
 	m_pPlayer->m_aPlayerTick[LastDamage] = Server()->Tick();
 
+	// last stand effect
 	if(m_pPlayer->m_Effects.IsActive("LastStand"))
-	{
 		m_Health = maximum(1, m_Health);
-	}
 
+	// create hit sound damage
 	if(FromCID != m_pPlayer->GetCID())
 	{
 		pFrom->m_aPlayerTick[LastDamage] = Server()->Tick();
 		GS()->CreatePlayerSound(FromCID, SOUND_HIT);
 	}
+
+	if(IsCriticalDamage && pFrom->GetItem(itShowCriticalDamage)->IsEquipped())
+		GS()->Chat(FromCID, ":: Crit damage: {}p.", Damage);
 	GS()->CreateSound(m_Pos, DamageSoundId);
 	GS()->CreateDamage(m_Pos, FromCID, StarNum, IsCriticalDamage);
 	GS()->MarkUpdatedBroadcast(m_pPlayer->GetCID());
@@ -1198,9 +1203,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Damage, int FromCID, int Weapon)
 	if(m_Health <= 0)
 	{
 		if(FromCID != m_pPlayer->GetCID() && pFrom->GetCharacter())
-		{
 			pFrom->GetCharacter()->SetEmote(EMOTE_HAPPY, 1, false);
-		}
 
 		// do not kill the bot it is still running in CCharacterBotAI::TakeDamage
 		if(m_pPlayer->IsBot())
@@ -1791,7 +1794,7 @@ bool CCharacter::CanAccessWorld() const
 		{
 			m_pPlayer->GetSharedData().ClearSpawnPosition();
 			GS()->Chat(m_pPlayer->GetCID(), "You were magically transported!");
-			m_pPlayer->ChangeWorld(INITIALIZER_WORLD_ID);
+			m_pPlayer->ChangeWorld(BASE_GAME_WORLD_ID);
 			return false;
 		}
 

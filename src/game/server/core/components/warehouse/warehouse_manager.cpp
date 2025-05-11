@@ -126,7 +126,6 @@ bool CWarehouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
 		if(!pWarehouse)
 			return true;
 
-
 		// sell item
 		if(SellItem(pPlayer, pWarehouse, TradeID, ReasonNumber))
 		{

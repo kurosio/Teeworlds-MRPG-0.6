@@ -688,6 +688,7 @@ enum
 	itCustomizer                   = 96,    // Curomizer for personal skins
 	itDamageEqualizer              = 97,    // Module for dissable self dmg
 	itMagnetItems                  = 185,   // Magnetizes items meant for you
+	itBasicHammerPlus              = 316,   // Increase basic hammer range
 
 	// weapons
 	itHammer                       = 2,     // Equipment Hammers

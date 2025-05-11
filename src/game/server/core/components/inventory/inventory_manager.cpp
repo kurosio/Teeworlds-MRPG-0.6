@@ -206,42 +206,7 @@ bool CInventoryManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
-		const auto& PlayerItems = CPlayerItem::Data()[ClientID];
-
-		// modules functional
-		VoteWrapper VFunctional(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "\u2604 Modules: Functional");
-		auto functionalModules = PlayerItems | std::views::filter([](const auto& pair)
-		{
-			return pair.second.Info()->IsEquipmentNonSlot() && !pair.second.Info()->HasAttributes() && pair.second.HasItem();
-		});
-
-		for(const auto& [ItemID, PlayerItem] : functionalModules)
-		{
-			const auto* pItemInfo = PlayerItem.Info();
-			const auto EquippedFlagStr = PlayerItem.IsEquipped() ? "✔" : "";
-
-			VFunctional.AddOption("EQUIP_ITEM", pItemInfo->GetID(), "{}{} * {}", EquippedFlagStr, pItemInfo->GetName(), pItemInfo->GetDescription());
-		}
-		if(VFunctional.IsEmpty())
-			VFunctional.Add("No modules available");
-		VoteWrapper::AddEmptyline(ClientID);
-
-		// modules stats
-		VoteWrapper VStats(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "\u2604 Modules: Stats");
-		auto statModules = PlayerItems | std::views::filter([](const auto& pair)
-		{
-			return pair.second.Info()->IsEquipmentNonSlot() && pair.second.Info()->HasAttributes() && pair.second.HasItem();
-		});
-
-		for(const auto& [ItemID, PlayerItem] : statModules)
-		{
-			const auto* pItemInfo = PlayerItem.Info();
-			const auto EquippedFlagStr = PlayerItem.IsEquipped() ? "✔" : "";
-
-			VStats.AddOption("EQUIP_ITEM", pItemInfo->GetID(), "{}{} * {}", EquippedFlagStr, pItemInfo->GetName(), PlayerItem.GetStringAttributesInfo(pPlayer));
-		}
-		if(VStats.IsEmpty())
-			VStats.Add("No modules available");
+		ShowPlayerModules(pPlayer);
 
 		// add backpage
 		VoteWrapper::AddBackpage(ClientID);
@@ -489,7 +454,11 @@ void CInventoryManager::ItemSelected(CPlayer* pPlayer, const CPlayerItem* pItem)
 		{
 			VItem.Add("You can not undress equipping hammer");
 		}
-		else if(pPlayer->Account()->IsAvailableEquipmentSlot(pInfo->m_Type) || pInfo->IsEquipmentNonSlot())
+		else if(pInfo->IsEquipmentModules())
+		{
+			VItem.Add("Cannot be equipped from inventory");
+		}
+		else if(pPlayer->Account()->IsAvailableEquipmentSlot(pInfo->m_Type))
 		{
 			VItem.AddOption("EQUIP_ITEM", ItemID, (pItem->IsEquipped() ? "Undress" : "Equip"));
 		}
@@ -551,7 +520,7 @@ void CInventoryManager::ShowPlayerInventory(CPlayer* pPlayer)
 		{
 			case ItemGroup::Resource:    return "Resource (Misc)";
 			case ItemGroup::Potion:      return "Potion (Misc)";
-			case ItemGroup::Equipment:   return "Equipment (Misc)";
+			case ItemGroup::Equipment:   return "Equipment (Modules)";
 			case ItemGroup::Other:       return "Miscellaneous";
 			default:                     return "Other";
 		}
@@ -603,4 +572,79 @@ void CInventoryManager::ShowPlayerInventory(CPlayer* pPlayer)
 		if(!ListInventory(ClientID, pPlayer->m_InventoryItemGroupFilter, pPlayer->m_InventoryItemTypeFilter))
 			VInfo.Add("The selected list is empty");
 	}
+}
+
+void CInventoryManager::ShowPlayerModules(CPlayer* pPlayer)
+{
+	if(!pPlayer)
+		return;
+
+	// initialize variables
+	const auto ClientID = pPlayer->GetCID();
+	const auto& PlayerItems = CPlayerItem::Data()[ClientID];
+	const int MaxAttributedModulesSlots = g_Config.m_SvAttributedModulesSlots;
+	const int MaxFunctionalModulesSlots = g_Config.m_SvNonAttributedModulesSlots;
+	auto functionalModules = PlayerItems | std::views::filter([](const auto& pair)
+	{
+		return pair.second.Info()->IsEquipmentModules() && !pair.second.Info()->HasAttributes() && pair.second.HasItem();
+	});
+	auto statModules = PlayerItems | std::views::filter([](const auto& pair)
+	{
+		return pair.second.Info()->IsEquipmentModules() && pair.second.Info()->HasAttributes() && pair.second.HasItem();
+	});
+
+	// collected boost
+	int collectedNum = 0;
+	VoteWrapper VCollected(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_STRICT_BOLD, "\u2604 Active Effects Summary");
+	for(const auto& [ItemID, PlayerItem] : functionalModules)
+	{
+		if(PlayerItem.IsEquipped())
+		{
+			collectedNum++;
+			VCollected.Add("\u2022 {}", PlayerItem.Info()->GetDescription());
+		}
+	}
+	for(; collectedNum < MaxFunctionalModulesSlots; collectedNum++)
+		VCollected.Add("\u2022");
+
+	collectedNum = 0;
+	for(const auto& [ItemID, PlayerItem] : statModules)
+	{
+		if(PlayerItem.IsEquipped())
+		{
+			collectedNum++;
+			VCollected.Add("\u2022 {}", PlayerItem.GetStringAttributesInfo(pPlayer));
+		}
+	}
+	for(; collectedNum < MaxAttributedModulesSlots; collectedNum++)
+		VCollected.Add("\u2022");
+
+	VoteWrapper::AddEmptyline(ClientID);
+
+	// modules functional
+	const int CurrentFunctionalModulesSlots = MaxFunctionalModulesSlots - pPlayer->Account()->GetFreeSlotsNonAttributedModules();
+	VoteWrapper VFunctional(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE,
+		"\u2699 Modules: Functional ({} of {})", CurrentFunctionalModulesSlots, MaxFunctionalModulesSlots);
+	for(const auto& [ItemID, PlayerItem] : functionalModules)
+	{
+		const auto* pItemInfo = PlayerItem.Info();
+		const auto EquippedFlagStr = PlayerItem.IsEquipped() ? "✔" : "";
+		VFunctional.AddOption("EQUIP_ITEM", pItemInfo->GetID(), "{}{} * {}", EquippedFlagStr, pItemInfo->GetName(), pItemInfo->GetDescription());
+	}
+	if(VFunctional.IsEmpty())
+		VFunctional.Add("No modules available");
+	VoteWrapper::AddEmptyline(ClientID);
+
+	// modules stats
+	const int CurrentAttributedModulesSlots = MaxAttributedModulesSlots - pPlayer->Account()->GetFreeSlotsAttributedModules();
+	VoteWrapper VStats(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "\u2696 Modules: Stats ({} of {})",
+		CurrentAttributedModulesSlots, MaxAttributedModulesSlots);
+	for(const auto& [ItemID, PlayerItem] : statModules)
+	{
+		const auto* pItemInfo = PlayerItem.Info();
+		const auto EquippedFlagStr = PlayerItem.IsEquipped() ? "✔" : "";
+		VStats.AddOption("EQUIP_ITEM", pItemInfo->GetID(), "{}{} * {}", EquippedFlagStr, pItemInfo->GetName(), PlayerItem.GetStringAttributesInfo(pPlayer));
+	}
+	if(VStats.IsEmpty())
+		VStats.Add("No modules available");
 }

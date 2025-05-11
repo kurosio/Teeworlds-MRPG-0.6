@@ -805,7 +805,7 @@ int CPlayer::GetTotalAttributeValue(AttributeIdentifier ID) const
 	// counting by modules
 	for(const auto& [ItemID, PlayerItem] : vPlayerItems)
 	{
-		if(PlayerItem.HasItem() && PlayerItem.Info()->IsEquipmentNonSlot() && PlayerItem.GetDurability() > 0)
+		if(PlayerItem.HasItem() && PlayerItem.Info()->IsEquipmentModules() && PlayerItem.GetDurability() > 0)
 			totalValue += PlayerItem.GetEnchantStats(ID);
 	}
 
@@ -852,15 +852,20 @@ std::optional<float> CPlayer::GetAttributeChance(AttributeIdentifier ID) const
 	// chance
 	switch(ID)
 	{
+		case AttributeIdentifier::AttackSPD:
+			return calculateChance(100.0f, 500.f / g_Config.m_SvReachValueMaxAttackSpeed, 800.f);
+
 		case AttributeIdentifier::Vampirism:
+			return calculateChance(5.0f, 30.0f / g_Config.m_SvReachValueMaxVampirism, 30.0f);
+
 		case AttributeIdentifier::Crit:
-			return calculateChance(8.0f, 0.0015f, 30.0f);
+			return calculateChance(5.0f, 30.0f / g_Config.m_SvReachValueMaxCritChance, 30.0f);
 
 		case AttributeIdentifier::Lucky:
-			return calculateChance(5.0f, 0.0015f, 20.0f);
+			return calculateChance(5.0f, 20.0f / g_Config.m_SvReachValueMaxLucky, 20.0f);
 
 		case AttributeIdentifier::LuckyDropItem:
-			return calculateChance(0.0f, 0.0015f, 30.0f);
+			return calculateChance(0.0f, 30.0f / g_Config.m_SvReachValueMaxLuckyDrop, 30.0f);
 
 		default:
 			return std::nullopt;

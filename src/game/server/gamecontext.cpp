@@ -157,7 +157,7 @@ void CGS::CreateFinishEffect(vec2 Pos, int64_t Mask)
 	}
 }
 
-void CGS::CreateDamage(vec2 Pos, int FromCID, int Amount, bool CritDamage, float Angle, int64_t Mask)
+void CGS::CreateDamage(vec2 Pos, int FromCID, int Amount, float Angle, int64_t Mask)
 {
 	float a = 3 * pi / 2 + Angle;
 	float s = a - pi / 3;
@@ -171,12 +171,6 @@ void CGS::CreateDamage(vec2 Pos, int FromCID, int Amount, bool CritDamage, float
 			pEvent->m_Y = (int)Pos.y;
 			pEvent->m_Angle = (int)(f * 256.0f);
 		}
-	}
-
-	if(CritDamage)
-	{
-		if(CPlayer* pPlayer = GetPlayer(FromCID, true, true); pPlayer && pPlayer->GetItem(itShowCriticalDamage)->IsEquipped())
-			Chat(FromCID, ":: Crit damage: {}p.", Amount);
 	}
 }
 

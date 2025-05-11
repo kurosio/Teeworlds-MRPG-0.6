@@ -70,9 +70,15 @@ bool CPlayerItem::ShouldAutoEquip() const
 	if(Info()->IsEquipmentSlot())
 		return !pPlayer->IsEquippedSlot(Info()->GetType());
 
-	// is equipment non slot
-	if(Info()->IsEquipmentNonSlot())
+	// is equipment modules
+	if(Info()->IsEquipmentModules())
+	{
+		if((Info()->HasAttributes() && !pPlayer->Account()->GetFreeSlotsAttributedModules()) ||
+			(!Info()->HasAttributes() && !pPlayer->Account()->GetFreeSlotsNonAttributedModules()))
+			return false;
+
 		return true;
+	}
 
 	return false;
 }
@@ -115,7 +121,7 @@ bool CPlayerItem::IsEquipped() const
 		return false;
 
 	// is settings or module
-	if(Info()->IsEquipmentNonSlot() || Info()->IsGameSetting())
+	if(Info()->IsEquipmentModules() || Info()->IsGameSetting())
 		return m_Settings > 0;
 
 	// is account slots
@@ -274,14 +280,22 @@ bool CPlayerItem::Equip()
 		return false;
 
 	// is game setting or module
-	if(Info()->IsGameSetting() || Info()->IsEquipmentNonSlot())
+	if(Info()->IsGameSetting() || Info()->IsEquipmentModules())
 	{
 		if(m_Settings)
 			return false;
 
+		if(Info()->IsEquipmentModules())
+		{
+			if((Info()->HasAttributes() && !pPlayer->Account()->GetFreeSlotsAttributedModules()) ||
+				(!Info()->HasAttributes() && !pPlayer->Account()->GetFreeSlotsNonAttributedModules()))
+			{
+				GS()->Chat(m_ClientID, "You have no available equipment slots for modules.");
+				return false;
+			}
+		}
+
 		m_Settings = true;
-		g_EventListenerManager.Notify<IEventListener::PlayerEquipItem>(pPlayer, this);
-		pPlayer->StartUniversalScenario(Info()->GetScenarioData(), EScenarios::SCENARIO_ON_ITEM_EQUIP);
 		GS()->CreateSound(pPlayer->m_ViewPos, SOUND_VOTE_ITEM_EQUIP);
 		return Save();
 	}
@@ -309,7 +323,7 @@ bool CPlayerItem::UnEquip()
 		return false;
 
 	// is game setting or modules
-	if(Info()->IsGameSetting() || Info()->IsEquipmentNonSlot())
+	if(Info()->IsGameSetting() || Info()->IsEquipmentModules())
 	{
 		if(!m_Settings)
 			return false;

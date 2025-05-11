@@ -35,6 +35,7 @@ public:
 
 private:
 	void ShowPlayerInventory(CPlayer* pPlayer);
+	void ShowPlayerModules(CPlayer* pPlayer);
 };
 
 #endif

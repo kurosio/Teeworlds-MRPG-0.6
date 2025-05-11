@@ -83,7 +83,7 @@ public:
 		return ((m_Group == ItemGroup::Equipment || m_Group == ItemGroup::Potion) && m_Type != ItemType::Default);
 	}
 
-	bool IsEquipmentNonSlot() const
+	bool IsEquipmentModules() const
 	{
 		return (m_Group == ItemGroup::Equipment && m_Type == ItemType::Default);
 	}

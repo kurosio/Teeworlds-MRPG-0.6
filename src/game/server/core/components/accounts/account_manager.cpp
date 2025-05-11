@@ -618,11 +618,12 @@ AccountCodeResult CAccountManager::LoginAccount(int ClientID, const char* pLogin
 	// Update player account information from the database
 	const auto Language = pResCheck->getString("Language");
 	const auto LoginDate = pResCheck->getString("LoginDate");
+	const auto PinCode = pResCheck->getString("PinCode");
 	pPlayer->Account()->Init(AccountID, ClientID, sqlStrLogin.cstr(), Language, LoginDate, std::move(pResAccount));
 
 	// Send success messages to the client
 	GS()->Chat(ClientID, "- Welcome! You've successfully logged in!");
-	if(pResCheck->getString("PinCode").empty())
+	if(PinCode.empty())
 		GS()->Chat(ClientID, "PIN is not set, set it using '/set_pin'.");
 	GS()->m_pController->DoTeamChange(pPlayer);
 	LoadAccount(pPlayer, true);
@@ -1017,7 +1018,7 @@ std::vector<CAccountManager::AccBan> CAccountManager::BansAccount() const
 		std::string BannedUntil = pResBan->getString("BannedUntil").c_str();
 		std::string PlayerNickname = Server()->GetAccountNickname(AccountID);
 		std::string Reason = pResBan->getString("Reason").c_str();
-		out.push_back({ ID, BannedUntil, std::move(PlayerNickname), std::move(Reason) });
+		out.emplace_back(ID, BannedUntil, std::move(PlayerNickname), std::move(Reason));
 	}
 
 	return out;
@@ -1047,5 +1048,5 @@ int CAccountManager::GetLastVisitedWorldID(CPlayer* pPlayer) const
 		}
 		return false;
 	});
-	return pWorldIterator != pPlayer->Account()->m_aHistoryWorld.end() ? *pWorldIterator : INITIALIZER_WORLD_ID;
+	return pWorldIterator != pPlayer->Account()->m_aHistoryWorld.end() ? *pWorldIterator : BASE_GAME_WORLD_ID;
 }

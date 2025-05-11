@@ -652,3 +652,39 @@ std::optional<int> CAccountData::GetEquippedSlotItemID(ItemType Type) const
 
 	return std::nullopt;
 }
+
+int CAccountData::GetFreeSlotsAttributedModules() const
+{
+	int FreeSlots = g_Config.m_SvAttributedModulesSlots;
+
+	for(auto& [ID, Item] : CPlayerItem::Data()[m_ClientID])
+	{
+		if(Item.Info()->IsEquipmentModules() && Item.Info()->HasAttributes() && Item.IsEquipped())
+		{
+			if(!FreeSlots)
+				Item.UnEquip();
+			else
+				FreeSlots--;
+		}
+	}
+
+	return FreeSlots;
+}
+
+int CAccountData::GetFreeSlotsNonAttributedModules() const
+{
+	int FreeSlots = g_Config.m_SvNonAttributedModulesSlots;
+
+	for(auto& [ID, Item] : CPlayerItem::Data()[m_ClientID])
+	{
+		if(Item.Info()->IsEquipmentModules() && !Item.Info()->HasAttributes() && Item.IsEquipped())
+		{
+			if(!FreeSlots)
+				Item.UnEquip();
+			else
+				FreeSlots--;
+		}
+	}
+
+	return FreeSlots;
+}
