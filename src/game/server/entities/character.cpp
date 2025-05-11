@@ -379,7 +379,7 @@ bool CCharacter::FireHammer(vec2 Direction, vec2 ProjStartPos)
 	}
 
 	// default hammer
-	const float Radius = m_pPlayer->GetItem(itBasicHammerPlus) ? 6.4f : 3.2f;
+	const float Radius = m_pPlayer->GetItem(itBasicHammerPlus)->IsEquipped() ? 6.4f : 2.4f;
 	const auto vEntities = GS()->m_World.FindEntities(ProjStartPos, GetRadius() * Radius, MAX_LENGTH_CHARACTERS, CGameWorld::ENTTYPE_CHARACTER);
 	for(auto* pEnt : vEntities)
 	{
