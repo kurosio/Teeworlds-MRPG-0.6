@@ -2587,9 +2587,13 @@ int time_is_new_week(time_t savedStamp, time_t currentStamp)
 	struct tm savedTime = *localtime(&savedStamp);
 	struct tm currentTime = *localtime(&currentStamp);
 
-	if(currentTime.tm_wday < savedTime.tm_wday ||
-		(currentTime.tm_wday == 0 && savedTime.tm_wday == 6) ||
-		(currentTime.tm_wday == savedTime.tm_wday + 1))
+	int saved_wday_monday_is_0 = (savedTime.tm_wday == 0) ? 6 : (savedTime.tm_wday - 1);
+	int current_wday_monday_is_0 = (currentTime.tm_wday == 0) ? 6 : (currentTime.tm_wday - 1);
+	int savedMonday_yday_offset = savedTime.tm_yday - saved_wday_monday_is_0;
+	int currentMonday_yday_offset = currentTime.tm_yday - current_wday_monday_is_0;
+
+	if(currentTime.tm_year > savedTime.tm_year ||
+		(currentTime.tm_year == savedTime.tm_year && currentMonday_yday_offset > savedMonday_yday_offset))
 		return 1;
 
 	return 0;
@@ -3690,28 +3694,31 @@ int str_utf8_comp_nocase(const char *a, const char *b)
 	return (unsigned char)*a - (unsigned char)*b;
 }
 
-int str_utf8_comp_nocase_num(const char *a, const char *b, int num)
+int str_utf8_comp_nocase_num(const char* a, const char* b, int num)
 {
-	int code_a;
-	int code_b;
-	const char *old_a = a;
-
 	if(num <= 0)
 		return 0;
 
-	while(*a && *b)
+	int code_a, code_b;
+	for(int chars_compared = 0; chars_compared < num; ++chars_compared)
 	{
+		if(*a == '\0' && *b == '\0')
+			return 0;
+
+		if(*a == '\0')
+			return -1;
+
+		if(*b == '\0')
+			return 1;
+
 		code_a = str_utf8_tolower(str_utf8_decode(&a));
 		code_b = str_utf8_tolower(str_utf8_decode(&b));
 
 		if(code_a != code_b)
 			return code_a - code_b;
-
-		if(a - old_a >= num)
-			return 0;
 	}
 
-	return (unsigned char)*a - (unsigned char)*b;
+	return 0;
 }
 
 const char *str_utf8_find_nocase(const char *haystack, const char *needle, const char **end)

@@ -124,7 +124,7 @@ MACRO_CONFIG_INT(SvDungeonWaitingTime, sv_dungeon_waiting_time, 180, 0, 1020, CF
 MACRO_CONFIG_INT(SvDungeonDamageTypeFactor, sv_dungeon_damage_type_factor, 10, 1, 100, CFGFLAG_SERVER, "Dungeon sync damage type factor");
 MACRO_CONFIG_INT(SvDungeonCritChanceFactor, sv_dungeon_crit_chance_factor, 5, 1, 100, CFGFLAG_SERVER, "Dungeon sync crit chance factor");
 MACRO_CONFIG_INT(SvDungeonOtherTypeFactor, sv_dungeon_other_type_factor, 50, 1, 100, CFGFLAG_SERVER, "Dungeon sync other type factor");
-MACRO_CONFIG_INT(SvDungeonBossHealthFactor, sv_dungeon_boss_health_factor, 1000, 1, 1000, CFGFLAG_SERVER, "Dungeon sync boss health factor");
+MACRO_CONFIG_INT(SvDungeonBossHealthFactor, sv_dungeon_boss_health_factor, 300, 1, 1000, CFGFLAG_SERVER, "Dungeon sync boss health factor");
 
 // -----------------------
 // Auction System Configuration

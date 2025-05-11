@@ -198,19 +198,9 @@ bool CQuestManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 // This function is called when a player's time period changes in the quest manager
 void CQuestManager::OnPlayerTimePeriod(CPlayer* pPlayer, ETimePeriod Period)
 {
-	// daily reset quests
-	if(Period == DAILY_STAMP)
-	{
-		ResetPeriodQuests(pPlayer, DAILY_STAMP);
-		pPlayer->m_VotesData.UpdateCurrentVotes();
-	}
-
-	// weekly reset quests
-	if(Period == WEEK_STAMP)
-	{
-		ResetPeriodQuests(pPlayer, WEEK_STAMP);
-		pPlayer->m_VotesData.UpdateCurrentVotes();
-	}
+	// reset period quests
+	ResetPeriodQuests(pPlayer, Period);
+	pPlayer->m_VotesData.UpdateCurrentVotes();
 }
 
 void CQuestManager::ShowQuestList(CPlayer* pPlayer) const

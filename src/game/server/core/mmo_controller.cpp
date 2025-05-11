@@ -299,11 +299,11 @@ void CMmoController::OnHandleGlobalTimePeriod() const
 	time_t CurrentTimeStamp = time(nullptr);
 
 	// try open file
-	mystd::file::result Result = mystd::file::load("time_periods.cfg", &RawData);
+	mystd::file::result Result = mystd::file::load("server_data/time_periods.cfg", &RawData);
 	if(Result == mystd::file::result::ERROR_FILE)
 	{
 		const auto Data = fmt_default("{}\n{}\n{}", CurrentTimeStamp, CurrentTimeStamp, CurrentTimeStamp);
-		mystd::file::save("time_periods.cfg", Data.data(), (unsigned)Data.size());
+		mystd::file::save("server_data/time_periods.cfg", Data.data(), (unsigned)Data.size());
 		return;
 	}
 
