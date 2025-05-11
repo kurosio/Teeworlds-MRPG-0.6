@@ -9,6 +9,9 @@ class CCommandProcessor
 	class CGS* GS() const { return m_pGS; }
 	CCommandManager m_CommandManager;
 
+	static void ConChatSetPin(IConsole::IResult* pResult, void* pUserData);
+	static void ConChatChangePin(IConsole::IResult* pResult, void* pUserData);
+	static void ConChatChangePassword(IConsole::IResult* pResult, void* pUserData);
 	static void ConChatLogin(IConsole::IResult* pResult, void* pUserData);
 	static void ConChatRegister(IConsole::IResult* pResult, void* pUserData);
 	static void ConChatGuild(IConsole::IResult* pResult, void* pUserData);

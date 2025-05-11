@@ -32,6 +32,11 @@ CCommandProcessor::CCommandProcessor(CGS* pGS)
 	AddCommand("login", "s[username] s[password]", ConChatLogin, pServer, "User login (authentication)");
 	AddCommand("register", "s[username] s[password]", ConChatRegister, pServer, "Register a new account");
 
+	AddCommand("change_password", "s[old_password] s[new_password] ?s[pin]", ConChatChangePassword, pServer, "Change account password");
+
+	AddCommand("set_pin", "s[password] s[new_pin]", ConChatSetPin, pServer, "Set pincode account");
+	AddCommand("change_pin", "s[old_pin] s[new_pin]", ConChatChangePin, pServer, "Change pincode account");
+
 	// game commands
 	AddCommand("group", "?s[element] ?s[post]", ConGroup, pServer, "Manage group settings");
 	AddCommand("guild", "?s[element] ?s[name]", ConChatGuild, pServer, "Manage guild settings");
@@ -58,6 +63,49 @@ static CGS* GetCommandResultGameServer(int ClientID, void* pUser)
 {
 	IServer* pServer = (IServer*)pUser;
 	return (CGS*)pServer->GameServer(pServer->GetClientWorldID(ClientID));
+}
+
+void CCommandProcessor::ConChatSetPin(IConsole::IResult* pResult, void* pUser)
+{
+	const int ClientID = pResult->GetClientID();
+	auto* pGS = GetCommandResultGameServer(ClientID, pUser);
+	auto* pPlayer = pGS->GetPlayer(ClientID);
+
+	if(pPlayer)
+	{
+		const char* pPinOrPassword = pResult->GetString(0);
+		const char* pNewPincode = pResult->GetString(1);
+		pGS->Core()->AccountManager()->SetPinCode(ClientID, pPinOrPassword, pNewPincode, false);
+	}
+}
+
+void CCommandProcessor::ConChatChangePin(IConsole::IResult* pResult, void* pUser)
+{
+	const int ClientID = pResult->GetClientID();
+	auto* pGS = GetCommandResultGameServer(ClientID, pUser);
+	auto* pPlayer = pGS->GetPlayer(ClientID);
+
+	if(pPlayer)
+	{
+		const char* pPinOrPassword = pResult->GetString(0);
+		const char* pNewPincode = pResult->GetString(1);
+		pGS->Core()->AccountManager()->SetPinCode(ClientID, pPinOrPassword, pNewPincode, true);
+	}
+}
+
+void CCommandProcessor::ConChatChangePassword(IConsole::IResult* pResult, void* pUser)
+{
+	const int ClientID = pResult->GetClientID();
+	auto* pGS = GetCommandResultGameServer(ClientID, pUser);
+	auto* pPlayer = pGS->GetPlayer(ClientID);
+
+	if(pPlayer)
+	{
+		const char* pOldPassword = pResult->GetString(0);
+		const char* pNewPassword = pResult->GetString(1);
+		const char* pPincode = pResult->GetString(2);
+		pGS->Core()->AccountManager()->ChangePassword(ClientID, pOldPassword, pNewPassword, pPincode);
+	}
 }
 
 void CCommandProcessor::ConChatLogin(IConsole::IResult* pResult, void* pUser)
