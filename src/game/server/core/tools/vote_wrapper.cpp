@@ -78,7 +78,7 @@ void CVoteGroup::SetVoteTitleImpl(const char* pCmd, int Extra1, int Extra2, cons
 		// initialize variables
 		std::string StrSpace = " ";
 		const int TextLength = str_length(pText);
-		const int SpaceLength = (VOTE_VANILA_DESC_LENGTH - TextLength) / 2;
+		const int SpaceLength = (VOTE_DESC_LENGTH - TextLength) / 2;
 		const bool Styled = m_Flags & (VWF_STYLE_SIMPLE | VWF_STYLE_DOUBLE | VWF_STYLE_STRICT | VWF_STYLE_STRICT_BOLD);
 
 		// prefix

@@ -22,7 +22,7 @@ int CAccountManager::GetLastVisitedWorldID(CPlayer* pPlayer) const
 		}
 		return false;
 	});
-	return pWorldIterator != pPlayer->Account()->m_aHistoryWorld.end() ? *pWorldIterator : MAIN_WORLD_ID;
+	return pWorldIterator != pPlayer->Account()->m_aHistoryWorld.end() ? *pWorldIterator : INITIALIZER_WORLD_ID;
 }
 
 // Register an account for a client with the given parameters

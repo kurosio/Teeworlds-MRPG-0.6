@@ -248,7 +248,7 @@ void RconProcessor::ConDisbandGuild(IConsole::IResult* pResult, void* pUserData)
 {
 	// initialize variables
 	const auto pServer = (IServer*)pUserData;
-	const auto pSelf = (CGS*)pServer->GameServer(MAIN_WORLD_ID);
+	const auto pSelf = (CGS*)pServer->GameServer(INITIALIZER_WORLD_ID);
 	const char* pGuildName = pResult->GetString(0);
 	const CGuild* pGuild = pSelf->Core()->GuildManager()->GetGuildByName(pGuildName);
 
@@ -427,7 +427,7 @@ void RconProcessor::ConBansAcc(IConsole::IResult* pResult, void* pUserData)
 	// initialize variables
 	int Counter = 0;
 	const auto pServer = (IServer*)pUserData;
-	const auto pSelf = (CGS*)pServer->GameServer(MAIN_WORLD_ID);
+	const auto pSelf = (CGS*)pServer->GameServer(INITIALIZER_WORLD_ID);
 
 	// collects banned accounts
 	for(const auto& p : pSelf->Core()->AccountManager()->BansAccount())

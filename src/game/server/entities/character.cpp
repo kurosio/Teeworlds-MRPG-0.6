@@ -1791,7 +1791,7 @@ bool CCharacter::CanAccessWorld() const
 		{
 			m_pPlayer->GetSharedData().ClearSpawnPosition();
 			GS()->Chat(m_pPlayer->GetCID(), "You were magically transported!");
-			m_pPlayer->ChangeWorld(MAIN_WORLD_ID);
+			m_pPlayer->ChangeWorld(INITIALIZER_WORLD_ID);
 			return false;
 		}
 

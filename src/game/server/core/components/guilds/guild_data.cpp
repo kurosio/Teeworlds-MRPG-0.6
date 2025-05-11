@@ -4,7 +4,7 @@
 #include <game/server/gamecontext.h>
 #include <game/server/core/components/mails/mail_wrapper.h>
 
-CGS* CGuild::GS() const { return (CGS*)Instance::GameServerPlayer(m_pHouse != nullptr ? m_pHouse->GetWorldID() : MAIN_WORLD_ID); }
+CGS* CGuild::GS() const { return (CGS*)Instance::GameServerPlayer(m_pHouse != nullptr ? m_pHouse->GetWorldID() : INITIALIZER_WORLD_ID); }
 
 CGuild::~CGuild()
 {

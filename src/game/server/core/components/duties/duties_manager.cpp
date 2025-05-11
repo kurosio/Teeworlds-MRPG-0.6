@@ -177,7 +177,7 @@ void CDutiesManager::ShowDutiesList(CPlayer* pPlayer, WorldType Type) const
 	else if(Type == WorldType::PvP)
 	{
 		VoteWrapper VPvP(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "\u262C PvP");
-		for(int i = MAIN_WORLD_ID; i < Server()->GetWorldsSize(); i++)
+		for(int i = 0; i < Server()->GetWorldsSize(); i++)
 		{
 			const auto* pDetail = Server()->GetWorldDetail(i);
 			if(pDetail->GetType() == WorldType::PvP)

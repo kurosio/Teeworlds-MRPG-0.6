@@ -64,7 +64,7 @@ void CMmoController::OnInit(IServer* pServer, IConsole* pConsole, IStorageEngine
 		pComponent->m_pConsole = pConsole;
 		pComponent->m_pStorage = pStorage;
 
-		if(m_pGameServer->GetWorldID() == MAIN_WORLD_ID)
+		if(m_pGameServer->GetWorldID() == INITIALIZER_WORLD_ID)
 			pComponent->OnPreInit();
 
 		const auto selectStr = fmt_default("WHERE WorldID = '{}'", m_pGameServer->GetWorldID());
@@ -99,7 +99,7 @@ void CMmoController::OnTick() const
 		pComponent->OnTick();
 
 	// check time period
-	if(GS()->GetWorldID() == MAIN_WORLD_ID &&
+	if(GS()->GetWorldID() == INITIALIZER_WORLD_ID &&
 		(GS()->Server()->Tick() % (GS()->Server()->TickSpeed() * g_Config.m_SvGlobalPeriodCheckInterval) == 0))
 	{
 		OnHandleGlobalTimePeriod();

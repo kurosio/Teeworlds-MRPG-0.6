@@ -94,7 +94,7 @@ CServer::~CServer()
 IGameServer* CServer::GameServer(int WorldID) const
 {
 	if(!MultiWorlds()->IsValid(WorldID))
-		return MultiWorlds()->GetWorld(MAIN_WORLD_ID)->GameServer();
+		return MultiWorlds()->GetWorld(INITIALIZER_WORLD_ID)->GameServer();
 	return MultiWorlds()->GetWorld(WorldID)->GameServer();
 }
 
@@ -279,7 +279,7 @@ void CServer::ChangeWorld(int ClientID, int NewWorldID)
 int CServer::GetClientWorldID(int ClientID) const
 {
 	if(ClientID < 0 || ClientID >= MAX_CLIENTS || m_aClients[ClientID].m_State < CClient::STATE_READY)
-		return MAIN_WORLD_ID;
+		return INITIALIZER_WORLD_ID;
 
 	return m_aClients[ClientID].m_WorldID;
 }
@@ -782,7 +782,7 @@ int CServer::NewClientNoAuthCallback(int ClientID, void* pUser)
 {
 	CServer* pThis = (CServer*)pUser;
 
-	pThis->GameServer(MAIN_WORLD_ID)->OnClearClientData(ClientID);
+	pThis->GameServer(INITIALIZER_WORLD_ID)->OnClearClientData(ClientID);
 	pThis->m_aClients[ClientID].m_State = CClient::STATE_CONNECTING;
 	pThis->m_aClients[ClientID].m_aName[0] = 0;
 	pThis->m_aClients[ClientID].m_aClan[0] = 0;
@@ -808,7 +808,7 @@ int CServer::NewClientCallback(int ClientID, void* pUser)
 	memset(pIdMap, -1, sizeof(int) * VANILLA_MAX_CLIENTS);
 	pIdMap[0] = ClientID;
 
-	pThis->GameServer(MAIN_WORLD_ID)->OnClearClientData(ClientID);
+	pThis->GameServer(INITIALIZER_WORLD_ID)->OnClearClientData(ClientID);
 	str_copy(pThis->m_aClients[ClientID].m_aLanguage, "en", sizeof(pThis->m_aClients[ClientID].m_aLanguage));
 	pThis->m_aClients[ClientID].m_State = CClient::STATE_AUTH;
 	pThis->m_aClients[ClientID].m_aName[0] = 0;
@@ -855,7 +855,7 @@ int CServer::DelClientCallback(int ClientID, const char* pReason, void* pUser)
 			pGameServer->OnClientDrop(ClientID, pReason);
 		}
 
-		pThis->GameServer(MAIN_WORLD_ID)->OnClearClientData(ClientID);
+		pThis->GameServer(INITIALIZER_WORLD_ID)->OnClearClientData(ClientID);
 		pThis->ExpireServerInfo();
 	}
 
@@ -1096,7 +1096,7 @@ void CServer::ProcessClientPacket(CNetChunk* pPacket)
 
 				m_aClients[ClientID].m_Version = Unpacker.GetInt();
 				m_aClients[ClientID].m_State = CClient::STATE_CONNECTING;
-				GameServer(MAIN_WORLD_ID)->OnClearClientData(ClientID);
+				GameServer(INITIALIZER_WORLD_ID)->OnClearClientData(ClientID);
 				SendCapabilities(ClientID);
 				SendMap(ClientID);
 			}
@@ -1500,8 +1500,8 @@ void CServer::CacheServerInfo(CBrowserCache* pCache, int Type, bool SendClients)
 
 	if(Type == SERVERINFO_EXTENDED)
 	{
-		ADD_INT(p, MultiWorlds()->GetWorld(MAIN_WORLD_ID)->MapDetail()->GetCrc());
-		ADD_INT(p, MultiWorlds()->GetWorld(MAIN_WORLD_ID)->MapDetail()->GetSize());
+		ADD_INT(p, MultiWorlds()->GetWorld(INITIALIZER_WORLD_ID)->MapDetail()->GetCrc());
+		ADD_INT(p, MultiWorlds()->GetWorld(INITIALIZER_WORLD_ID)->MapDetail()->GetSize());
 	}
 
 	// gametype
@@ -1664,11 +1664,11 @@ void CServer::UpdateRegisterServerInfo()
 		}
 	}
 
-	auto* pMainWorld = MultiWorlds()->GetWorld(MAIN_WORLD_ID);
+	auto* pMainWorld = MultiWorlds()->GetWorld(INITIALIZER_WORLD_ID);
 	auto* pMapDetail = pMainWorld->MapDetail();
 
 	char aMapSha256[SHA256_MAXSTRSIZE];
-	sha256_str(MultiWorlds()->GetWorld(MAIN_WORLD_ID)->MapDetail()->GetSha256(), aMapSha256, sizeof(aMapSha256));
+	sha256_str(MultiWorlds()->GetWorld(INITIALIZER_WORLD_ID)->MapDetail()->GetSha256(), aMapSha256, sizeof(aMapSha256));
 
 	nlohmann::json JsServerInfo =
 	{
@@ -2023,7 +2023,7 @@ int CServer::Run(ILogger* pLogger)
 					}
 				}
 
-				MultiWorlds()->GetWorld(MAIN_WORLD_ID)->GameServer()->OnTickGlobal();
+				MultiWorlds()->GetWorld(INITIALIZER_WORLD_ID)->GameServer()->OnTickGlobal();
 				for(int i = 0; i < MultiWorlds()->GetSizeInitilized(); i++)
 				{
 					IGameServer* pGameServer = MultiWorlds()->GetWorld(i)->GameServer();

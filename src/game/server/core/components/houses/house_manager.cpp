@@ -33,7 +33,7 @@ void CHouseManager::OnInitWorld(const std::string& SqlQueryWhereWorld)
 void CHouseManager::OnTick()
 {
 	// check if we are in the main world
-	if(GS()->GetWorldID() != MAIN_WORLD_ID)
+	if(GS()->GetWorldID() != INITIALIZER_WORLD_ID)
 		return;
 
 	// update houses text

@@ -56,7 +56,7 @@ void CGuildManager::OnInitWorld(const std::string& SqlQueryWhereWorld)
 void CGuildManager::OnTick()
 {
 	// check if we are in the main world
-	if(GS()->GetWorldID() != MAIN_WORLD_ID)
+	if(GS()->GetWorldID() != INITIALIZER_WORLD_ID)
 		return;
 
 	// update guild wars

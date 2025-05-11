@@ -265,7 +265,7 @@ namespace Instance
 	struct Data { inline static class IServer* g_pServer; };
 	static inline IServer* Server() { return Data::g_pServer; }
 	static inline IGameServer* GameServerPlayer(int ClientID = -1) { return Data::g_pServer->GameServerPlayer(ClientID); }
-	static inline IGameServer* GameServer(int WorldID = MAIN_WORLD_ID) { return Data::g_pServer->GameServer(WorldID); }
+	static inline IGameServer* GameServer(int WorldID = INITIALIZER_WORLD_ID) { return Data::g_pServer->GameServer(WorldID); }
 	static inline const char* Localize(int ClientID, const char* pText) { return Data::g_pServer->Localize(ClientID, pText); }
 };
 
