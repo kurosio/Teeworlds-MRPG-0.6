@@ -496,8 +496,8 @@ bool CWarehouseManager::SellItem(CPlayer* pPlayer, CWarehouse* pWarehouse, int T
 		// storage add products
 		if(pWarehouse->IsHasFlag(WF_STORAGE))
 		{
-			const auto ProductsCost = pTrade->GetProductsCost() * Value;
-			pWarehouse->Storage().Add(ProductsCost);
+			const auto ProductsAppend = Price * Value; // TODO: update
+			pWarehouse->Storage().Add(ProductsAppend);
 		}
 
 		// add currency for player
