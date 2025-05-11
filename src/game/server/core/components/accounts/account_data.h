@@ -201,7 +201,7 @@ public:
 
 	//
 	int GetFreeSlotsAttributedModules() const;
-	int GetFreeSlotsNonAttributedModules() const;
+	int GetFreeSlotsFunctionalModules() const;
 };
 
 struct CAccountSharedData

@@ -622,7 +622,7 @@ void CInventoryManager::ShowPlayerModules(CPlayer* pPlayer)
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// modules functional
-	const int CurrentFunctionalModulesSlots = MaxFunctionalModulesSlots - pPlayer->Account()->GetFreeSlotsNonAttributedModules();
+	const int CurrentFunctionalModulesSlots = MaxFunctionalModulesSlots - pPlayer->Account()->GetFreeSlotsFunctionalModules();
 	VoteWrapper VFunctional(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE,
 		"\u2699 Modules: Functional ({} of {})", CurrentFunctionalModulesSlots, MaxFunctionalModulesSlots);
 	for(const auto& [ItemID, PlayerItem] : functionalModules)

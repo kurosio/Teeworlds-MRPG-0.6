@@ -76,9 +76,7 @@ void CMobAI::OnRewardPlayer(CPlayer* pPlayer, vec2 Force) const
 			const int goldGain = calculate_gold_gain(g_Config.m_SvMobKillGoldFactor, PlayerLevel, MobLevel, true);
 
 			if(showMessages)
-			{
 				GS()->Chat(ClientID, "You gained {} gold.", goldGain);
-			}
 
 			pPlayer->Account()->AddGold(goldGain, true);
 		}
@@ -92,9 +90,7 @@ void CMobAI::OnRewardPlayer(CPlayer* pPlayer, vec2 Force) const
 		GS()->ApplyExperienceMultiplier(&expGain);
 
 		if(showMessages)
-		{
 			GS()->Chat(ClientID, "You gained {} exp.", expGain);
-		}
 
 		GS()->EntityManager()->ExpFlyingPoint(m_pCharacter->m_Core.m_Pos, ClientID, expGain, Force);
 		GS()->EntityManager()->DropPickup(m_pCharacter->m_Core.m_Pos, POWERUP_ARMOR, 0, expBonusDrop, (1 + rand() % 2), Force);

@@ -671,7 +671,7 @@ int CAccountData::GetFreeSlotsAttributedModules() const
 	return FreeSlots;
 }
 
-int CAccountData::GetFreeSlotsNonAttributedModules() const
+int CAccountData::GetFreeSlotsFunctionalModules() const
 {
 	int FreeSlots = g_Config.m_SvNonAttributedModulesSlots;
 
