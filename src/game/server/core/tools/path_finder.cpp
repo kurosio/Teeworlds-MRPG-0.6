@@ -109,9 +109,26 @@ void CPathFinder::PathfindingThread()
 		{
 			std::vector<vec2> vPath = FindPath(request.Start, request.End);
 			const bool Success = !vPath.empty();
-
 			auto result = new PathResult({ vPath, Success });
-			request.Promise.set_value(result);
+
+			try
+			{
+				request.Promise.set_value(result);
+			}
+			catch(const std::future_error& e)
+			{
+				dbg_msg("path_finder", "Future error: %s", e.what());
+				delete result;
+			}
+			catch(const std::exception& e)
+			{
+				dbg_msg("path_finder", "Std exception error: %s", e.what());
+				delete result;
+			}
+			catch(...)
+			{
+				delete result;
+			}
 		}
 	}
 }

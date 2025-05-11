@@ -8,7 +8,7 @@
 enum
 {
 	MAIN_GROUP = 1,
-	NUM_MAIN_IDS = 3,
+	NUM_MAIN_IDS = 2,
 };
 
 CEntityDropItem::CEntityDropItem(CGameWorld *pGameWorld, vec2 Pos, vec2 Vel, float AngleForce, CItem DropItem, int OwnerID)
