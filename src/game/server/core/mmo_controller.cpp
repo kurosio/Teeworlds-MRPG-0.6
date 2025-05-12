@@ -341,7 +341,7 @@ void CMmoController::OnHandleGlobalTimePeriod() const
 	if(!aPeriodsUpdated.empty())
 	{
 		Data = fmt_default("{}\n{}\n{}", DailyStamp, WeekStamp, MonthStamp);
-		mystd::file::save("time_periods.cfg", Data.data(), (unsigned)Data.size());
+		mystd::file::save("server_data/time_periods.cfg", Data.data(), (unsigned)Data.size());
 		for(const auto& component : m_System.m_vComponents)
 		{
 			for(const auto& periods : aPeriodsUpdated)
