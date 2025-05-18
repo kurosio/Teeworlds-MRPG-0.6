@@ -57,7 +57,7 @@ void CAccountManager::AddMenuProfessionUpgrades(CPlayer* pPlayer, CProfession* p
 		{
 			const auto* pAttribute = GS()->GetAttributeInfo(ID);
 			const int AttributeSize = pPlayer->GetTotalAttributeValue(ID);
-			const auto PercentOpt = pPlayer->GetAttributeChance(ID);
+			const auto PercentOpt = pPlayer->GetTotalAttributeChance(ID);
 
 			char aBuf[64] {};
 			if(PercentOpt)

@@ -180,7 +180,7 @@ static int CalculateAttribute(CGS* pGS, const CPlayerBot* pPlayer, AttributeIden
 	for(unsigned i = 0; i < (unsigned)ItemType::NUM_EQUIPPED; i++)
 	{
 		if(const auto ItemID = pPlayer->GetEquippedSlotItemID((ItemType)i))
-			AttributeValue += pGS->GetItemInfo(ItemID.value())->GetInfoEnchantStats(ID);
+			AttributeValue += pGS->GetItemInfo(ItemID.value())->GetEnchantAttributeValue(ID);
 	}
 
 	// is dungeon world

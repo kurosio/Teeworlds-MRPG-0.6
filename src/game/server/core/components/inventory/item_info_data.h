@@ -105,8 +105,9 @@ public:
 	int GetTotalAttributesLevel(int Enchant) const;
 
 	// equip modules types functions
-	int GetInfoEnchantStats(AttributeIdentifier ID) const;
-	int GetInfoEnchantStats(AttributeIdentifier ID, int Enchant) const;
+	int GetEnchantAttributeValue(AttributeIdentifier ID) const;
+	int GetEnchantAttributeValue(AttributeIdentifier ID, int Enchant) const;
+	std::optional<float> GetEnchantAttributeChance(AttributeIdentifier ID, int Enchant) const;
 	int GetEnchantPrice(int EnchantLevel) const;
 	std::string GetStringAttributesInfo(CPlayer* pPlayer, int Enchant) const;
 	std::string GetStringEnchantLevel(int Enchant) const;

@@ -805,7 +805,7 @@ int CPlayer::GetTotalRawAttributeValue(AttributeIdentifier ID) const
 		if(PlayerItem.HasItem() && PlayerItem.Info()->HasAttributes() && PlayerItem.GetDurability() > 0 &&
 			 PlayerItem.Info()->IsEquipmentModules() && PlayerItem.IsEquipped())
 		{
-			totalValue += PlayerItem.GetEnchantStats(ID);
+			totalValue += PlayerItem.GetEnchantAttributeValue(ID);
 		}
 	}
 
@@ -818,7 +818,7 @@ int CPlayer::GetTotalRawAttributeValue(AttributeIdentifier ID) const
 			if(PlayerItem.HasItem() && PlayerItem.Info()->HasAttributes() && PlayerItem.GetDurability() > 0 &&
 				PlayerItem.Info()->IsEquipmentSlot())
 			{
-				totalValue += PlayerItem.GetEnchantStats(ID);
+				totalValue += PlayerItem.GetEnchantAttributeValue(ID);
 			}
 		}
 	};
@@ -853,36 +853,28 @@ int CPlayer::GetTotalRawAttributeValue(AttributeIdentifier ID) const
 	return totalValue;
 }
 
-std::optional<float> CPlayer::GetAttributeChance(AttributeIdentifier ID) const
+std::optional<float> CPlayer::GetTotalAttributeChance(AttributeIdentifier ID) const
 {
-	// use a lambda to calculate chance
-	int attributeValue = GetTotalAttributeValue(ID);
-	auto calculateChance = [attributeValue](float base, float multiplier, float max)
-	{
-		return std::min(base + static_cast<float>(attributeValue) * multiplier, max);
-	};
+	// collect chance sum
+	int totalValue = GetTotalAttributeValue(ID);
+	auto Result = CAttributeDescription::CalculateChance(ID, totalValue);
+	if(!Result)
+		return std::nullopt;
 
-	// chance
+	// prepare result
+	float max = 0.0f;
+	float base = 0.0f;
 	switch(ID)
 	{
-		case AttributeIdentifier::AttackSPD:
-			return calculateChance(100.0f, 500.f / g_Config.m_SvReachValueMaxAttackSpeed, 800.f);
-
-		case AttributeIdentifier::Vampirism:
-			return calculateChance(5.0f, 30.0f / g_Config.m_SvReachValueMaxVampirism, 30.0f);
-
-		case AttributeIdentifier::Crit:
-			return calculateChance(5.0f, 30.0f / g_Config.m_SvReachValueMaxCritChance, 30.0f);
-
-		case AttributeIdentifier::Lucky:
-			return calculateChance(5.0f, 20.0f / g_Config.m_SvReachValueMaxLucky, 20.0f);
-
-		case AttributeIdentifier::LuckyDropItem:
-			return calculateChance(0.0f, 30.0f / g_Config.m_SvReachValueMaxLuckyDrop, 30.0f);
-
-		default:
-			return std::nullopt;
+		case AttributeIdentifier::AttackSPD: base = 100.f; max = MAX_PERCENT_ATTRIBUTE_ATTACK_SPEED; break;
+		case AttributeIdentifier::Vampirism: base = 5.0f; max = MAX_PERCENT_ATTRIBUTE_VAMPIRISM; break;
+		case AttributeIdentifier::Crit: base = 5.0f; max = MAX_PERCENT_ATTRIBUTE_CRIT_CHANCE; break;
+		case AttributeIdentifier::Lucky: base = 5.0f; max = MAX_PERCENT_ATTRIBUTE_LUCKY; break;
+		case AttributeIdentifier::LuckyDropItem: base = 0.0f; max = MAX_PERCENT_ATTRIBUTE_LUCKY_DROP; break;
+		default: base = 0.f;
 	}
+
+	return std::min(base + (*Result), max);
 }
 
 void CPlayer::ShowHealthNickname(int Sec)

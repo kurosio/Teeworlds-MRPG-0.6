@@ -47,6 +47,22 @@ public:
 	{
 		return m_Group;
 	}
+
+	inline static std::optional<float> CalculateChance(AttributeIdentifier ID, int Value)
+	{
+		float multiplier = 0.0f;
+		switch(ID)
+		{
+			case AttributeIdentifier::AttackSPD: multiplier = (MAX_PERCENT_ATTRIBUTE_ATTACK_SPEED / g_Config.m_SvReachValueMaxAttackSpeed); break;
+			case AttributeIdentifier::Vampirism: multiplier = (MAX_PERCENT_ATTRIBUTE_VAMPIRISM / g_Config.m_SvReachValueMaxVampirism); break;
+			case AttributeIdentifier::Crit: multiplier = (MAX_PERCENT_ATTRIBUTE_CRIT_CHANCE / g_Config.m_SvReachValueMaxCritChance); break;
+			case AttributeIdentifier::Lucky: multiplier = (MAX_PERCENT_ATTRIBUTE_LUCKY / g_Config.m_SvReachValueMaxLucky); break;
+			case AttributeIdentifier::LuckyDropItem: multiplier = (MAX_PERCENT_ATTRIBUTE_LUCKY_DROP / g_Config.m_SvReachValueMaxLuckyDrop); break;
+			default: multiplier = 0.f;
+		}
+
+		return multiplier <= 0.f ? std::nullopt : std::make_optional<float>(static_cast<float>(Value) * multiplier);
+	}
 };
 
 class CAttribute

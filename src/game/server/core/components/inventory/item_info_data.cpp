@@ -3,7 +3,7 @@
 #include "item_info_data.h"
 #include <game/server/gamecontext.h>
 
-int CItemDescription::GetInfoEnchantStats(AttributeIdentifier ID) const
+int CItemDescription::GetEnchantAttributeValue(AttributeIdentifier ID) const
 {
 	for (const auto& Att : m_aAttributes)
 	{
@@ -20,9 +20,9 @@ int CItemDescription::GetInfoEnchantStats(AttributeIdentifier ID) const
 	return 0;
 }
 
-int CItemDescription::GetInfoEnchantStats(AttributeIdentifier ID, int Enchant) const
+int CItemDescription::GetEnchantAttributeValue(AttributeIdentifier ID, int Enchant) const
 {
-	const int StatSize = GetInfoEnchantStats(ID);
+	const int StatSize = GetEnchantAttributeValue(ID);
 	if(StatSize <= 0)
 		return 0;
 
@@ -34,6 +34,15 @@ int CItemDescription::GetInfoEnchantStats(AttributeIdentifier ID, int Enchant) c
 		EnchantStat += Enchant;
 
 	return EnchantStat;
+}
+
+std::optional<float> CItemDescription::GetEnchantAttributeChance(AttributeIdentifier ID, int Enchant) const
+{
+	int totalValue = GetEnchantAttributeValue(ID, Enchant);
+	if(!totalValue)
+		return std::nullopt;
+
+	return CAttributeDescription::CalculateChance(ID, totalValue);
 }
 
 int CItemDescription::GetEnchantPrice(int EnchantLevel) const
@@ -140,7 +149,7 @@ bool CItemDescription::IsEnchantMaxLevel(int Enchant) const
 		if(Att.HasValue())
 		{
 			const int EnchantMax = Att.GetValue() + translate_to_percent_rest(Att.GetValue(), PERCENT_MAXIMUM_ENCHANT);
-			if(GetInfoEnchantStats(Att.GetID(), Enchant) > EnchantMax)
+			if(GetEnchantAttributeValue(Att.GetID(), Enchant) > EnchantMax)
 				return true;
 		}
 	}
@@ -160,7 +169,7 @@ int CItemDescription::GetTotalAttributesLevel(int Enchant) const
 	int Total = 0;
 	for(auto& Attribute : m_aAttributes)
 	{
-		const int Value = GetInfoEnchantStats(Attribute.GetID(), Enchant);
+		const int Value = GetEnchantAttributeValue(Attribute.GetID(), Enchant);
 		Total += (Value * Attribute.Info()->GetUpgradePrice());
 	}
 
@@ -174,8 +183,15 @@ std::string CItemDescription::GetStringAttributesInfo(CPlayer* pPlayer, int Ench
 	{
 		if(Att.HasValue())
 		{
-			const int BonusValue = GetInfoEnchantStats(Att.GetID(), Enchant);
-			strAttributes += fmt_localize(pPlayer->GetCID(), "{}+{$} ", Att.Info()->GetName(), BonusValue);
+			if(auto chanceOpt = GetEnchantAttributeChance(Att.GetID(), Enchant))
+			{
+				strAttributes += fmt_localize(pPlayer->GetCID(), "{}+{~.2}% ", Att.Info()->GetName(), (*chanceOpt));
+			}
+			else
+			{
+				const int BonusValue = GetEnchantAttributeValue(Att.GetID(), Enchant);
+				strAttributes += fmt_localize(pPlayer->GetCID(), "{}+{$} ", Att.Info()->GetName(), BonusValue);
+			}
 		}
 	}
 	return strAttributes.empty() ? "unattributed" : strAttributes;

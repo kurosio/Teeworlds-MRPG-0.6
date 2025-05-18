@@ -115,7 +115,7 @@ public:
 	virtual std::optional<int> GetEquippedSlotItemID(ItemType EquipID) const;
 	virtual bool IsEquippedSlot(ItemType EquipID) const;
 	virtual int GetTotalRawAttributeValue(AttributeIdentifier ID) const;
-	std::optional<float> GetAttributeChance(AttributeIdentifier ID) const;
+	std::optional<float> GetTotalAttributeChance(AttributeIdentifier ID) const;
 	virtual void UpdateSharedCharacterData(int Health, int Mana);
 
 	int GetTotalAttributeValue(AttributeIdentifier AttributeID) const;

@@ -73,7 +73,8 @@ public:
 
 	// getters
 	int GetTotalAttributesLevel() const { return Info()->GetTotalAttributesLevel(m_Enchant); }
-	int GetEnchantStats(AttributeIdentifier ID) const { return Info()->GetInfoEnchantStats(ID, m_Enchant); }
+	std::optional<float> GetEnchantAttributeChance(AttributeIdentifier ID) const { return Info()->GetEnchantAttributeChance(ID, m_Enchant); }
+	int GetEnchantAttributeValue(AttributeIdentifier ID) const { return Info()->GetEnchantAttributeValue(ID, m_Enchant); }
 	int GetEnchantPrice() const { return Info()->GetEnchantPrice(m_Enchant); }
 	bool IsEquipped() const;
 

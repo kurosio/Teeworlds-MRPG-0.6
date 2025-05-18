@@ -285,7 +285,7 @@ void CCharacter::FireWeapon()
 	if(!m_ReloadTimer)
 	{
 		constexpr int DefaultSpeed = 1000;
-		const auto SpeedMultiplier = m_pPlayer->GetAttributeChance(AttributeIdentifier::AttackSPD).value_or(100.f) / 100.f;
+		const auto SpeedMultiplier = m_pPlayer->GetTotalAttributeChance(AttributeIdentifier::AttackSPD).value_or(100.f) / 100.f;
 		const auto Speed = (float)DefaultSpeed * SpeedMultiplier;
 		m_ReloadTimer = g_pData->m_Weapons.m_aId[m_Core.m_ActiveWeapon].m_Firedelay * Server()->TickSpeed() / round_to_int(Speed);
 	}
@@ -1137,7 +1137,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Damage, int FromCID, int Weapon)
 	if(FromCID != m_pPlayer->GetCID())
 	{
 		// vampirism replenish your health
-		const auto ChanceVampirism = m_pPlayer->GetAttributeChance(AttributeIdentifier::Vampirism).value_or(0.f);
+		const auto ChanceVampirism = m_pPlayer->GetTotalAttributeChance(AttributeIdentifier::Vampirism).value_or(0.f);
 		if(ChanceVampirism > random_float(100.0f))
 		{
 			const auto Recovery = maximum(1, Damage / 2);
@@ -1147,7 +1147,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Damage, int FromCID, int Weapon)
 		}
 
 		// miss out on damage
-		const auto ChanceLucky = m_pPlayer->GetAttributeChance(AttributeIdentifier::Lucky).value_or(0.f);
+		const auto ChanceLucky = m_pPlayer->GetTotalAttributeChance(AttributeIdentifier::Lucky).value_or(0.f);
 		if(ChanceLucky > random_float(100.0f))
 		{
 			GS()->SendEmoticon(m_pPlayer->GetCID(), EMOTICON_HEARTS);
@@ -1155,7 +1155,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Damage, int FromCID, int Weapon)
 		}
 
 		// critical damage
-		const auto ChanceCrit = m_pPlayer->GetAttributeChance(AttributeIdentifier::Crit).value_or(0.f);
+		const auto ChanceCrit = m_pPlayer->GetTotalAttributeChance(AttributeIdentifier::Crit).value_or(0.f);
 		if(ChanceCrit > random_float(100.0f))
 		{
 			const int CritAttributeDMG = maximum(pFrom->GetTotalAttributeValue(AttributeIdentifier::CritDMG), 1);
@@ -1715,7 +1715,7 @@ void CCharacter::UpdateEquippedStats(std::optional<int> UpdatedItemID)
 		}
 
 		// update ammo regeneration if applicable
-		const int AmmoRegen = pItemInfo->GetInfoEnchantStats(AttributeIdentifier::AmmoRegen);
+		const int AmmoRegen = pItemInfo->GetEnchantAttributeValue(AttributeIdentifier::AmmoRegen);
 		if(AmmoRegen > 0)
 			m_AmmoRegen = m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::AmmoRegen);
 
