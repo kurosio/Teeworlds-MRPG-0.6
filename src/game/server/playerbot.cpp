@@ -234,7 +234,7 @@ static int CalculateAttribute(CGS* pGS, const CPlayerBot* pPlayer, AttributeIden
 	return SyncPercentSize;
 }
 
-int CPlayerBot::GetTotalAttributeValue(AttributeIdentifier ID) const
+int CPlayerBot::GetTotalRawAttributeValue(AttributeIdentifier ID) const
 {
 	int AttributeValue = 10;
 

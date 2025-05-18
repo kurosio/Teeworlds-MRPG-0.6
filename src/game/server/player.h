@@ -48,6 +48,7 @@ protected:
 	bool m_LastInputInit {};
 	int64_t m_LastPlaytime {};
 	FixedViewCam m_FixedView {};
+	std::map<AttributeIdentifier, int> m_aStats {};
 
 public:
 	CGS* GS() const { return m_pGS; }
@@ -113,9 +114,12 @@ public:
 	virtual ESnappingPriority IsActiveForClient(int ClientID) const { return SNAPPING_PRIORITY_HIGH; }
 	virtual std::optional<int> GetEquippedSlotItemID(ItemType EquipID) const;
 	virtual bool IsEquippedSlot(ItemType EquipID) const;
-	virtual int GetTotalAttributeValue(AttributeIdentifier ID) const;
+	virtual int GetTotalRawAttributeValue(AttributeIdentifier ID) const;
 	std::optional<float> GetAttributeChance(AttributeIdentifier ID) const;
 	virtual void UpdateSharedCharacterData(int Health, int Mana);
+
+	int GetTotalAttributeValue(AttributeIdentifier AttributeID) const;
+	void UpdateTotalAttributeValue(AttributeIdentifier AttributeID, int Value) { m_aStats[AttributeID] = Value; }
 
 	void FormatBroadcastBasicStats(char* pBuffer, int Size, const char* pAppendStr = "\0") const;
 

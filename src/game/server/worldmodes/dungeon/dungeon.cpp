@@ -396,7 +396,7 @@ void CGameControllerDungeon::PrepareSyncFactors()
 		for(auto ID = (int)AttributeIdentifier::DMG; ID < (int)AttributeIdentifier::ATTRIBUTES_NUM; ID++)
 		{
 			const auto AttributeID = (AttributeIdentifier)ID;
-			m_vSyncFactor[AttributeID] += pPlayer->GetTotalAttributeValue(AttributeID);
+			m_vSyncFactor[AttributeID] += pPlayer->GetTotalRawAttributeValue(AttributeID);
 		}
 	}
 }

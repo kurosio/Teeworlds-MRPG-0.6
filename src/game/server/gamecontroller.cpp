@@ -83,8 +83,9 @@ bool IGameController::OnCharacterSpawn(CCharacter* pChr)
 
 bool IGameController::OnCharacterBotSpawn(CCharacterBotAI* pChr)
 {
-	auto* pPlayerBot = dynamic_cast<CPlayerBot*>(pChr->GetPlayer());
+	g_EventListenerManager.Notify<IEventListener::Type::CharacterSpawn>(pChr->GetPlayer());
 
+	auto* pPlayerBot = dynamic_cast<CPlayerBot*>(pChr->GetPlayer());
 	const int MaxStartHP = pPlayerBot->GetTotalAttributeValue(AttributeIdentifier::HP);
 	const int MaxStartMP = pPlayerBot->GetTotalAttributeValue(AttributeIdentifier::MP);
 	pPlayerBot->InitBasicStats(MaxStartHP, MaxStartMP, MaxStartHP, MaxStartMP);

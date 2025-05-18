@@ -602,6 +602,11 @@ void CPlayer::UpdateSharedCharacterData(int Health, int Mana)
 	TempData.m_Mana = Mana;
 }
 
+int CPlayer::GetTotalAttributeValue(AttributeIdentifier AttributeID) const
+{
+	return m_aStats.contains(AttributeID) ? m_aStats.at(AttributeID) : 0;
+}
+
 bool CPlayer::IsAuthed() const
 {
 	const auto* pAccountManager = GS()->Core()->AccountManager();
@@ -611,6 +616,7 @@ bool CPlayer::IsAuthed() const
 	}
 	return false;
 }
+
 
 int CPlayer::GetMaxHealth() const
 {
@@ -788,7 +794,7 @@ bool CPlayer::IsEquippedSlot(ItemType EquipID) const
 }
 
 
-int CPlayer::GetTotalAttributeValue(AttributeIdentifier ID) const
+int CPlayer::GetTotalRawAttributeValue(AttributeIdentifier ID) const
 {
 	int totalValue = 0;
 

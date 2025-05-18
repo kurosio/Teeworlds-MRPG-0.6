@@ -74,7 +74,7 @@ public:
 	int64_t GetMaskVisibleForClients() const override;
 	ESnappingPriority IsActiveForClient(int ClientID) const override;
 	std::optional<int> GetEquippedSlotItemID(ItemType EquipID) const override;
-	int GetTotalAttributeValue(AttributeIdentifier ID) const override;
+	int GetTotalRawAttributeValue(AttributeIdentifier ID) const override;
 
 	void Tick() override;
 	void PostTick() override;

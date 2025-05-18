@@ -52,6 +52,7 @@ public:
     CAttributesTracker& AttributeTracker() { return m_AttributesTracker; }
 
 protected:
+    void OnCharacterSpawn(CPlayer* pPlayer) override;
     void OnPlayerEquipItem(CPlayer* pPlayer, CPlayerItem* pItem) override;
     void OnPlayerUnequipItem(CPlayer* pPlayer, CPlayerItem* pItem) override;
     void OnPlayerEnchantItem(CPlayer* pPlayer, CPlayerItem* pItem) override;

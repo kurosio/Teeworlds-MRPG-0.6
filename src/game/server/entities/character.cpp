@@ -1521,7 +1521,7 @@ void CCharacter::MovingDisable(bool State)
 		ResetHook();
 	}
 	m_Core.m_MovingDisabled = State;
-};
+}
 
 void CCharacter::HandleIndependentTuning()
 {
