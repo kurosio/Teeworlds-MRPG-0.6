@@ -119,6 +119,7 @@ MACRO_CONFIG_INT(SvDroppedItemLifetime, sv_dropped_item_lifetime, 20, 5, 60, CFG
 // Player stats balance
 // -----------------------
 MACRO_CONFIG_INT(SvReachValueMaxAttackSpeed, sv_reach_value_max_attack_speed, 3000, 100, 1000000, CFGFLAG_SERVER, "The value at which the attribute will reach its maximum.");
+MACRO_CONFIG_INT(SvReachValueMaxAmmoRegen, sv_reach_value_max_ammo_regen, 3000, 100, 1000000, CFGFLAG_SERVER, "The value at which the attribute will reach its maximum.");
 MACRO_CONFIG_INT(SvReachValueMaxVampirism, sv_reach_value_max_vampirism, 3000, 100, 1000000, CFGFLAG_SERVER, "The value at which the attribute will reach its maximum.");
 MACRO_CONFIG_INT(SvReachValueMaxCritChance, sv_reach_value_max_crit_chance, 3000, 100, 1000000, CFGFLAG_SERVER, "The value at which the attribute will reach its maximum.");
 MACRO_CONFIG_INT(SvReachValueMaxLucky, sv_reach_value_max_lucky, 3000, 100, 1000000, CFGFLAG_SERVER, "The value at which the attribute will reach its maximum.");

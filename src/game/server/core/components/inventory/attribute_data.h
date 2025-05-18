@@ -54,6 +54,7 @@ public:
 		switch(ID)
 		{
 			case AttributeIdentifier::AttackSPD: multiplier = (MAX_PERCENT_ATTRIBUTE_ATTACK_SPEED / g_Config.m_SvReachValueMaxAttackSpeed); break;
+			case AttributeIdentifier::AmmoRegen: multiplier = (MAX_PERCENT_ATTRIBUTE_AMMO_REGEN / g_Config.m_SvReachValueMaxAmmoRegen); break;
 			case AttributeIdentifier::Vampirism: multiplier = (MAX_PERCENT_ATTRIBUTE_VAMPIRISM / g_Config.m_SvReachValueMaxVampirism); break;
 			case AttributeIdentifier::Crit: multiplier = (MAX_PERCENT_ATTRIBUTE_CRIT_CHANCE / g_Config.m_SvReachValueMaxCritChance); break;
 			case AttributeIdentifier::Lucky: multiplier = (MAX_PERCENT_ATTRIBUTE_LUCKY / g_Config.m_SvReachValueMaxLucky); break;

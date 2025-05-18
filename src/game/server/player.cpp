@@ -867,6 +867,7 @@ std::optional<float> CPlayer::GetTotalAttributeChance(AttributeIdentifier ID) co
 	switch(ID)
 	{
 		case AttributeIdentifier::AttackSPD: base = 100.f; max = MAX_PERCENT_ATTRIBUTE_ATTACK_SPEED; break;
+		case AttributeIdentifier::AmmoRegen: base = 100.f; max = MAX_PERCENT_ATTRIBUTE_AMMO_REGEN; break;
 		case AttributeIdentifier::Vampirism: base = 5.0f; max = MAX_PERCENT_ATTRIBUTE_VAMPIRISM; break;
 		case AttributeIdentifier::Crit: base = 5.0f; max = MAX_PERCENT_ATTRIBUTE_CRIT_CHANCE; break;
 		case AttributeIdentifier::Lucky: base = 5.0f; max = MAX_PERCENT_ATTRIBUTE_LUCKY; break;

@@ -6,6 +6,7 @@
 #include "tools/path_finder_result.h"
 
 constexpr float MAX_PERCENT_ATTRIBUTE_ATTACK_SPEED = 600.f;
+constexpr float MAX_PERCENT_ATTRIBUTE_AMMO_REGEN = 800.f;
 constexpr float MAX_PERCENT_ATTRIBUTE_VAMPIRISM = 30.f;
 constexpr float MAX_PERCENT_ATTRIBUTE_CRIT_CHANCE = 30.f;
 constexpr float MAX_PERCENT_ATTRIBUTE_LUCKY = 20.f;

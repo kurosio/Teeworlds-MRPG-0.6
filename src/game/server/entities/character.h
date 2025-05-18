@@ -101,7 +101,6 @@ public:
 	CCharacterCore m_Core {};
 
 	int m_MoveRestrictions {};
-	int m_AmmoRegen {};
 	vec2 m_PrevPos {};
 
 	// constructors

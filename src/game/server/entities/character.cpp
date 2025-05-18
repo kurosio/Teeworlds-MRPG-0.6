@@ -81,7 +81,6 @@ bool CCharacter::Spawn(CPlayer* pPlayer, vec2 Pos)
 		GS()->Core()->QuestManager()->TryAcceptNextQuestChainAll(m_pPlayer);
 
 		m_pPlayer->m_VotesData.UpdateCurrentVotes();
-		m_AmmoRegen = m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::AmmoRegen);
 		GS()->MarkUpdatedBroadcast(m_ClientID);
 
 		const bool Spawned = GS()->m_pController->OnCharacterSpawn(this);
@@ -555,9 +554,15 @@ void CCharacter::HandleWeapons()
 
 	if(m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_Ammo >= 0)
 	{
-		const int AmmoRegenTime = (m_Core.m_ActiveWeapon == (int)WEAPON_GUN ? (Server()->TickSpeed() / 2) : (maximum(5000 - m_AmmoRegen, 1000)) / 10);
-		if(m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_AmmoRegenStart < 0)
-			m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_AmmoRegenStart = Server()->Tick() + AmmoRegenTime;
+		{
+			constexpr int DefaultSpeed = 100;
+			const auto SpeedMultiplier = m_pPlayer->GetTotalAttributeChance(AttributeIdentifier::AmmoRegen).value_or(100.f) / 100.f;
+			const auto Speed = (float)DefaultSpeed * SpeedMultiplier;
+			const auto AmmoRegenTime = (m_Core.m_ActiveWeapon == (int)WEAPON_GUN ? (Server()->TickSpeed() / 2) : (500 / round_to_int(Speed)));
+			if(m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_AmmoRegenStart < 0)
+				m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_AmmoRegenStart = Server()->Tick() + (AmmoRegenTime * Server()->TickSpeed());
+		}
+
 
 		if(m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_AmmoRegenStart <= Server()->Tick())
 		{
@@ -1713,11 +1718,6 @@ void CCharacter::UpdateEquippedStats(std::optional<int> UpdatedItemID)
 				m_pPlayer->TryCreateEidolon();
 			}
 		}
-
-		// update ammo regeneration if applicable
-		const int AmmoRegen = pItemInfo->GetEnchantAttributeValue(AttributeIdentifier::AmmoRegen);
-		if(AmmoRegen > 0)
-			m_AmmoRegen = m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::AmmoRegen);
 
 		// check and limit ammo
 		int totalRealAmmo = 10 + m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::Ammo);
