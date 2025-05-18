@@ -296,6 +296,8 @@ bool CPlayerItem::Equip()
 		}
 
 		m_Settings = true;
+		g_EventListenerManager.Notify<IEventListener::PlayerEquipItem>(pPlayer, this);
+		pPlayer->StartUniversalScenario(Info()->GetScenarioData(), EScenarios::SCENARIO_ON_ITEM_EQUIP);
 		GS()->CreateSound(pPlayer->m_ViewPos, SOUND_VOTE_ITEM_EQUIP);
 		return Save();
 	}

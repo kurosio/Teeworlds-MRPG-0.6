@@ -1093,11 +1093,11 @@ int CCharacter::GetTotalDamageByWeapon(int Weapon) const
 
 	switch(Weapon)
 	{
-		case WEAPON_GUN: Damage = m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::GunDMG); break;
-		case WEAPON_SHOTGUN: Damage = m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::ShotgunDMG); break;
-		case WEAPON_GRENADE: Damage = m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::GrenadeDMG); break;
-		case WEAPON_LASER: Damage = m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::RifleDMG); break;
-		case WEAPON_HAMMER: Damage = m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::HammerDMG); break;
+		case WEAPON_GUN: Damage += m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::GunDMG); break;
+		case WEAPON_SHOTGUN: Damage += m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::ShotgunDMG); break;
+		case WEAPON_GRENADE: Damage += m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::GrenadeDMG); break;
+		case WEAPON_LASER: Damage += m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::RifleDMG); break;
+		case WEAPON_HAMMER: Damage += m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::HammerDMG); break;
 		default: break;
 	}
 
@@ -1718,6 +1718,13 @@ void CCharacter::UpdateEquippedStats(std::optional<int> UpdatedItemID)
 		const int AmmoRegen = pItemInfo->GetInfoEnchantStats(AttributeIdentifier::AmmoRegen);
 		if(AmmoRegen > 0)
 			m_AmmoRegen = m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::AmmoRegen);
+
+		// check and limit ammo
+		int totalRealAmmo = 10 + m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::Ammo);
+		m_Core.m_aWeapons[WEAPON_GUN].m_Ammo = minimum(m_Core.m_aWeapons[WEAPON_GUN].m_Ammo, totalRealAmmo);
+		m_Core.m_aWeapons[WEAPON_SHOTGUN].m_Ammo = minimum(m_Core.m_aWeapons[WEAPON_SHOTGUN].m_Ammo, totalRealAmmo);
+		m_Core.m_aWeapons[WEAPON_GRENADE].m_Ammo = minimum(m_Core.m_aWeapons[WEAPON_GRENADE].m_Ammo, totalRealAmmo);
+		m_Core.m_aWeapons[WEAPON_LASER].m_Ammo = minimum(m_Core.m_aWeapons[WEAPON_LASER].m_Ammo, totalRealAmmo);
 	}
 }
 
