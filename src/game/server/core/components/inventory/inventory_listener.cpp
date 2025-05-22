@@ -39,6 +39,20 @@ void CInventoryListener::OnPlayerProfessionUpgrade(CPlayer* pPlayer, int Attribu
 }
 
 
+void CInventoryListener::OnPlayerProfessionChange(CPlayer* pPlayer, CProfession* pOldProf, CProfession* pNewProf)
+{
+	if(pOldProf != pNewProf)
+	{
+		for(auto& [Id, Info] : CAttributeDescription::Data())
+		{
+			auto totalAttribute = pPlayer->GetTotalRawAttributeValue(Id);
+			pPlayer->UpdateTotalAttributeValue(Id, totalAttribute);
+			m_AttributesTracker.UpdateTrackingDataIfNecessary(pPlayer, (int)Id, totalAttribute);
+		}
+	}
+}
+
+
 void CInventoryListener::OnPlayerEquipItem(CPlayer* pPlayer, CPlayerItem* pItem)
 {
 	UpdateAttributesForItem(pPlayer, pItem);

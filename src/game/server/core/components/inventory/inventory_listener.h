@@ -57,6 +57,7 @@ protected:
     void OnPlayerUnequipItem(CPlayer* pPlayer, CPlayerItem* pItem) override;
     void OnPlayerEnchantItem(CPlayer* pPlayer, CPlayerItem* pItem) override;
     void OnPlayerProfessionUpgrade(CPlayer* pPlayer, int AttributeID) override;
+    void OnPlayerProfessionChange(CPlayer* pPlayer, CProfession* pOld, CProfession* pNew) override;
 
 private:
     void UpdateAttributesForItem(CPlayer* pPlayer, CPlayerItem* pItem);

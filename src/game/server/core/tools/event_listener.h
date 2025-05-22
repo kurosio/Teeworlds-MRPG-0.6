@@ -28,6 +28,7 @@ public:
 		PlayerLogin,
 		PlayerProfessionUpgrade,
 		PlayerProfessionLeveling,
+		PlayerProfessionChange,
 		PlayerGotItem,
 		PlayerLostItem,
 		PlayerCraftItem,
@@ -45,6 +46,7 @@ private:
 	virtual void OnPlayerLogin(CPlayer* pPlayer, CAccountData* pAccount){ }
 	virtual void OnPlayerProfessionUpgrade(CPlayer* pPlayer, int AttributeID) { }
 	virtual void OnPlayerProfessionLeveling(CPlayer* pPlayer, CProfession* pProfession, int NewLevel) { }
+	virtual void OnPlayerProfessionChange(CPlayer* pPlayer, CProfession* pOldProf, CProfession* pNewProf) { }
 	virtual void OnPlayerGotItem(CPlayer* pPlayer, CPlayerItem* pItem, int Got) { }
 	virtual void OnPlayerLostItem(CPlayer* pPlayer, CPlayerItem* pItem, int Lost) { }
 	virtual void OnPlayerCraftItem(CPlayer* pPlayer, CCraftItem* pCraft) { }
@@ -122,6 +124,8 @@ public:
 					listener->OnPlayerProfessionUpgrade(std::forward<Ts>(args)...);
 				else if constexpr(event == IEventListener::PlayerProfessionLeveling)
 					listener->OnPlayerProfessionLeveling(std::forward<Ts>(args)...);
+				else if constexpr(event == IEventListener::PlayerProfessionChange)
+					listener->OnPlayerProfessionChange(std::forward<Ts>(args)...);
 				else if constexpr(event == IEventListener::PlayerGotItem)
 					listener->OnPlayerGotItem(std::forward<Ts>(args)...);
 				else if constexpr(event == IEventListener::PlayerLostItem)

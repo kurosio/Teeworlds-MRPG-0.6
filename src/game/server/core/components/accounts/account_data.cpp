@@ -24,6 +24,16 @@ CPlayer* CAccountData::GetPlayer() const
 	return GS()->GetPlayer(m_ClientID);
 }
 
+void CAccountData::ChangeProfession(ProfessionIdentifier Profession)
+{
+	auto* pOldProfession = m_pActiveProfession;
+	m_pActiveProfession = GetProfession(Profession);
+	AutoEquipSlots(true);
+
+	// notify event listener
+	g_EventListenerManager.Notify<IEventListener::PlayerProfessionChange>(GetPlayer(), pOldProfession, m_pActiveProfession);
+}
+
 int CAccountData::GetGoldCapacity() const
 {
 	const auto TotalByAttribute = GetPlayer()->GetTotalAttributeValue(AttributeIdentifier::GoldCapacity);

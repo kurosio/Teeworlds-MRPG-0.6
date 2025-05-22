@@ -69,11 +69,7 @@ public:
 	EquippedSlots& GetEquippedSlots() { return m_EquippedSlots; }
 	const EquippedSlots& GetEquippedSlots() const { return m_EquippedSlots; }
 
-	void ChangeProfession(ProfessionIdentifier Profession)
-	{
-		m_pActiveProfession = GetProfession(Profession);
-		AutoEquipSlots(true);
-	}
+	void ChangeProfession(ProfessionIdentifier Profession);
 
 	CProfession* GetActiveProfession() const
 	{
