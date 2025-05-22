@@ -558,9 +558,10 @@ void CCharacter::HandleWeapons()
 			constexpr int DefaultSpeed = 100;
 			const auto SpeedMultiplier = m_pPlayer->GetTotalAttributeChance(AttributeIdentifier::AmmoRegen).value_or(100.f) / 100.f;
 			const auto Speed = (float)DefaultSpeed * SpeedMultiplier;
-			const auto AmmoRegenTime = (m_Core.m_ActiveWeapon == (int)WEAPON_GUN ? (Server()->TickSpeed() / 2) : (500 / round_to_int(Speed)));
+			const auto AmmoRegenTime = 500 / round_to_int(Speed);
 			if(m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_AmmoRegenStart < 0)
-				m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_AmmoRegenStart = Server()->Tick() + (AmmoRegenTime * Server()->TickSpeed());
+				m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_AmmoRegenStart = Server()->Tick() +
+				((int)WEAPON_GUN ? (Server()->TickSpeed() / 2) : (AmmoRegenTime * Server()->TickSpeed()));
 		}
 
 
