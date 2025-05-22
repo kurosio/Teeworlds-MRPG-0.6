@@ -62,6 +62,7 @@ protected:
 
 private:
     void UpdateAttributesForItem(CPlayer* pPlayer, CPlayerItem* pItem);
+    void UpdateAttributesFull(CPlayer* pPlayer);
 };
 
 extern CInventoryListener g_InventoryListener;

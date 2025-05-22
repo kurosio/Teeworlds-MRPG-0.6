@@ -8,7 +8,9 @@ constexpr const char* ATTRIBUTE_TRACKING_FILE_NAME = "server_data/attribute_trac
 void CInventoryListener::Initialize()
 {
 	g_EventListenerManager.RegisterListener(IEventListener::CharacterSpawn, this);
+	g_EventListenerManager.RegisterListener(IEventListener::PlayerLogin, this);
 	g_EventListenerManager.RegisterListener(IEventListener::PlayerProfessionUpgrade, this);
+	g_EventListenerManager.RegisterListener(IEventListener::PlayerProfessionChange, this);
 	g_EventListenerManager.RegisterListener(IEventListener::PlayerEquipItem, this);
 	g_EventListenerManager.RegisterListener(IEventListener::PlayerUnequipItem, this);
 	g_EventListenerManager.RegisterListener(IEventListener::PlayerEnchantItem, this);
@@ -18,20 +20,11 @@ void CInventoryListener::Initialize()
 
 void CInventoryListener::OnCharacterSpawn(CPlayer* pPlayer)
 {
-	// update total player stats
-	for(auto& [Id, Info] : CAttributeDescription::Data())
-	{
-		auto totalAttribute = pPlayer->GetTotalRawAttributeValue(Id);
-		pPlayer->UpdateTotalAttributeValue(Id, totalAttribute);
-
-		if(!pPlayer->IsBot())
-			m_AttributesTracker.UpdateTrackingDataIfNecessary(pPlayer, (int)Id, totalAttribute);
-	}
+	UpdateAttributesFull(pPlayer);
 }
 
 void CInventoryListener::OnPlayerLogin(CPlayer* pPlayer, CAccountData* pAccount)
 {
-	// auto-equip empty slots
 	pAccount->AutoEquipSlots(true);
 }
 
@@ -49,16 +42,8 @@ void CInventoryListener::OnPlayerProfessionChange(CPlayer* pPlayer, CProfession*
 {
 	if(pOldProf != pNewProf)
 	{
-		// update total player stats
-		for(auto& [Id, Info] : CAttributeDescription::Data())
-		{
-			auto totalAttribute = pPlayer->GetTotalRawAttributeValue(Id);
-			pPlayer->UpdateTotalAttributeValue(Id, totalAttribute);
-			m_AttributesTracker.UpdateTrackingDataIfNecessary(pPlayer, (int)Id, totalAttribute);
-		}
-
-		// auto-equip empty slots
 		pPlayer->Account()->AutoEquipSlots(true);
+		UpdateAttributesFull(pPlayer);
 	}
 }
 
@@ -96,6 +81,25 @@ void CInventoryListener::UpdateAttributesForItem(CPlayer* pPlayer, CPlayerItem* 
 	if(auto* pCharacter = pPlayer->GetCharacter())
 	{
 		pCharacter->UpdateEquippedStats(pItem->GetID());
+		pPlayer->GS()->MarkUpdatedBroadcast(pPlayer->GetCID());
+	}
+}
+
+void CInventoryListener::UpdateAttributesFull(CPlayer* pPlayer)
+{
+	// update total player stats
+	for(auto& [Id, Info] : CAttributeDescription::Data())
+	{
+		auto totalAttribute = pPlayer->GetTotalRawAttributeValue(Id);
+		pPlayer->UpdateTotalAttributeValue(Id, totalAttribute);
+		if(!pPlayer->IsBot())
+			m_AttributesTracker.UpdateTrackingDataIfNecessary(pPlayer, (int)Id, totalAttribute);
+	}
+
+	// update player stats when an item is equipped
+	if(auto* pCharacter = pPlayer->GetCharacter())
+	{
+		pCharacter->UpdateEquippedStats();
 		pPlayer->GS()->MarkUpdatedBroadcast(pPlayer->GetCID());
 	}
 }
