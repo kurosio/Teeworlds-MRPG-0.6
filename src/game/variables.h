@@ -125,7 +125,7 @@ MACRO_CONFIG_INT(SvReachValueMaxCritChance, sv_reach_value_max_crit_chance, 3000
 MACRO_CONFIG_INT(SvReachValueMaxLucky, sv_reach_value_max_lucky, 3000, 100, 1000000, CFGFLAG_SERVER, "The value at which the attribute will reach its maximum.");
 MACRO_CONFIG_INT(SvReachValueMaxLuckyDrop, sv_reach_value_lucky_drop, 3000, 100, 1000000, CFGFLAG_SERVER, "The value at which the attribute will reach its maximum.");
 
-MACRO_CONFIG_INT(SvNonAttributedModulesSlots, sv_non_attributed_modules_slots, 3, 1, 1000, CFGFLAG_SERVER, "Maximum non attributed modules slots.");
+MACRO_CONFIG_INT(SvNonAttributedModulesSlots, sv_non_attributed_modules_slots, 5, 1, 1000, CFGFLAG_SERVER, "Maximum non attributed modules slots.");
 MACRO_CONFIG_INT(SvAttributedModulesSlots, sv_attributed_modules_slots, 5, 1, 1000, CFGFLAG_SERVER, "Maximum attributed modules slots.");
 
 // -----------------------

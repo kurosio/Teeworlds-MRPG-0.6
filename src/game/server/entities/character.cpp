@@ -56,6 +56,7 @@ bool CCharacter::Spawn(CPlayer* pPlayer, vec2 Pos)
 	m_LastNoAmmoSound = -1;
 	m_LastWeapon = WEAPON_HAMMER;
 	m_QueuedWeapon = -1;
+	m_WaterAir = GetMaxWaterAir();
 
 	m_Pos = Pos;
 	m_PrevPos = Pos;
@@ -600,7 +601,7 @@ void CCharacter::HandleNinja()
 			if(distance(pChar->m_Core.m_Pos, m_Core.m_Pos) < Radius)
 			{
 				if(pChar->GetPlayer()->GetCID() != m_ClientID && pChar->IsAllowedPVP(m_ClientID))
-					pChar->TakeDamage(vec2(0, -10.0f), 1, m_pPlayer->GetCID(), WEAPON_NINJA);
+					pChar->TakeDamage(vec2(0, -10.0f), 1, m_ClientID, WEAPON_NINJA);
 			}
 		}
 	}
@@ -618,7 +619,7 @@ void CCharacter::HandleHookActions()
 		if(Server()->Tick() % (Server()->TickSpeed() / 2) == 0)
 		{
 			if(m_pPlayer->GetItem(itPoisonHook)->IsEquipped())
-				pHookedPlayer->GetCharacter()->TakeDamage({}, 1, m_ClientID, WEAPON_HAMMER);
+				pHookedPlayer->GetCharacter()->TakeDamage({}, 1, m_ClientID, WEAPON_GAME);
 		}
 	}
 	else
@@ -1000,6 +1001,82 @@ void CCharacter::HandleEventsDeath(int Killer, vec2 Force) const
 	}
 }
 
+int CCharacter::GetMaxWaterAir() const
+{
+	const auto* pBreathingReed = m_pPlayer->GetItem(itBreathingReed);
+	return pBreathingReed->IsEquipped() ? 16 : 8;
+}
+
+void CCharacter::HandleWater(CTuningParams* pTuningParams)
+{
+	if(!m_pTilesHandler->IsActive(TILE_WATER))
+	{
+		if(Server()->Tick() % Server()->TickSpeed() == 0)
+		{
+			const int maxWaterAir = GetMaxWaterAir();
+			if(m_WaterAir < maxWaterAir)
+				m_WaterAir = minimum(m_WaterAir + 1, maxWaterAir);
+		}
+
+		return;
+	}
+
+	// apply physics
+	bool hasDriverKit = m_pPlayer->GetItem(itDiversKit)->IsEquipped();
+	bool isKeptAfloat = m_pPlayer->GetItem(itLifePreserver)->IsEquipped() || hasDriverKit;
+	pTuningParams->m_Gravity = isKeptAfloat ? -0.05f : 0.15f;
+	pTuningParams->m_GroundFriction = 0.95f;
+	pTuningParams->m_GroundControlSpeed = 250.0f / Server()->TickSpeed();
+	pTuningParams->m_GroundControlAccel = 1.5f;
+	pTuningParams->m_AirFriction = 0.95f;
+	pTuningParams->m_AirControlSpeed = 250.0f / Server()->TickSpeed();
+	pTuningParams->m_AirControlAccel = 1.5f;
+	SetEmote(EMOTE_BLINK, 1, false);
+
+	// is has driver kit disable water air system
+	if(!hasDriverKit)
+	{
+		// initialize variables
+		const auto isHeadSubmerged = GS()->Collision()->CheckPoint(vec2(m_Core.m_Pos.x, m_Core.m_Pos.y - 16.f), CCollision::COLFLAG_WATER);
+		const auto maxWaterAir = GetMaxWaterAir();
+		const auto currentTick = Server()->Tick();
+
+		// water air
+		if(isHeadSubmerged)
+		{
+			if(m_WaterAir > 0)
+			{
+				if(Server()->Tick() % SERVER_TICK_SPEED == 0)
+				{
+					m_WaterAir--;
+					GS()->Broadcast(m_pPlayer->GetCID(), BroadcastPriority::GameWarning, SERVER_TICK_SPEED, "Air: {}/{}", m_WaterAir, maxWaterAir);
+				}
+			}
+			else
+			{
+				if(currentTick % SERVER_TICK_SPEED / 2 == 0)
+				{
+					const auto maxHP = m_pPlayer->GetMaxHealth();
+					const auto damageValue = translate_to_percent_rest(maxHP, 10.f);
+					TakeDamage(vec2(0, 0), damageValue, -1, WEAPON_WORLD);
+					GS()->CreateSound(m_Core.m_Pos, SOUND_PLAYER_PAIN_LONG);
+				}
+			}
+		}
+		else
+		{
+			if(m_WaterAir < maxWaterAir)
+			{
+				if(currentTick % SERVER_TICK_SPEED / 4 == 0)
+				{
+					m_WaterAir = minimum(m_WaterAir + 1, maxWaterAir);
+					GS()->Broadcast(m_pPlayer->GetCID(), BroadcastPriority::GameWarning, SERVER_TICK_SPEED, "Air: {}/{}", m_WaterAir, maxWaterAir);
+				}
+			}
+		}
+	}
+}
+
 void CCharacter::Die(int Killer, int Weapon)
 {
 	m_Alive = false;
@@ -1129,18 +1206,15 @@ bool CCharacter::TakeDamage(vec2 Force, int Damage, int FromCID, int Weapon)
 	if(!IsAllowedPVP(FromCID))
 		return false;
 
-	// check valid from
-	auto* pFrom = GS()->GetPlayer(FromCID);
-	if(!pFrom || !pFrom->GetCharacter())
-		return false;
-
 	// damage calculation
-	Damage += pFrom->GetCharacter()->GetTotalDamageByWeapon(Weapon);
+	auto* pFrom = GS()->GetPlayer(FromCID);
+	if(pFrom && pFrom->GetCharacter())
+		Damage += pFrom->GetCharacter()->GetTotalDamageByWeapon(Weapon);
 	Damage = (FromCID == m_pPlayer->GetCID() ? maximum(1, Damage / 2) : maximum(1, Damage));
 
 	// chances of effects
 	int CritDamage = 0;
-	if(FromCID != m_pPlayer->GetCID())
+	if(pFrom && pFrom->GetCharacter() && FromCID != m_pPlayer->GetCID())
 	{
 		// vampirism replenish your health
 		const auto ChanceVampirism = m_pPlayer->GetTotalAttributeChance(AttributeIdentifier::Vampirism).value_or(0.f);
@@ -1192,14 +1266,18 @@ bool CCharacter::TakeDamage(vec2 Force, int Damage, int FromCID, int Weapon)
 		m_Health = maximum(1, m_Health);
 
 	// create hit sound damage
-	if(FromCID != m_pPlayer->GetCID())
+	if(pFrom)
 	{
-		pFrom->m_aPlayerTick[LastDamage] = Server()->Tick();
-		GS()->CreatePlayerSound(FromCID, SOUND_HIT);
+		if(FromCID != m_pPlayer->GetCID())
+		{
+			pFrom->m_aPlayerTick[LastDamage] = Server()->Tick();
+			GS()->CreatePlayerSound(FromCID, SOUND_HIT);
+		}
+
+		if(IsCriticalDamage && pFrom->GetItem(itShowCriticalDamage)->IsEquipped())
+			GS()->Chat(FromCID, ":: Crit damage: {}p.", Damage);
 	}
 
-	if(IsCriticalDamage && pFrom->GetItem(itShowCriticalDamage)->IsEquipped())
-		GS()->Chat(FromCID, ":: Crit damage: {}p.", Damage);
 	GS()->CreateSound(m_Pos, DamageSoundId);
 	GS()->CreateDamage(m_Pos, FromCID, StarNum, IsCriticalDamage);
 	GS()->MarkUpdatedBroadcast(m_pPlayer->GetCID());
@@ -1208,7 +1286,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Damage, int FromCID, int Weapon)
 	// verify death
 	if(m_Health <= 0)
 	{
-		if(FromCID != m_pPlayer->GetCID() && pFrom->GetCharacter())
+		if(pFrom && pFrom->GetCharacter() && FromCID != m_pPlayer->GetCID())
 			pFrom->GetCharacter()->SetEmote(EMOTE_HAPPY, 1, false);
 
 		// do not kill the bot it is still running in CCharacterBotAI::TakeDamage
@@ -1548,18 +1626,8 @@ void CCharacter::HandleIndependentTuning()
 		pTuningParams->m_HookDragAccel = 0.f;
 	}
 
-	// water
-	if(m_pTilesHandler->IsActive(TILE_WATER))
-	{
-		pTuningParams->m_Gravity = -0.05f;
-		pTuningParams->m_GroundFriction = 0.95f;
-		pTuningParams->m_GroundControlSpeed = 250.0f / Server()->TickSpeed();
-		pTuningParams->m_GroundControlAccel = 1.5f;
-		pTuningParams->m_AirFriction = 0.95f;
-		pTuningParams->m_AirControlSpeed = 250.0f / Server()->TickSpeed();
-		pTuningParams->m_AirControlAccel = 1.5f;
-		SetEmote(EMOTE_BLINK, 1, false);
-	}
+	// handle water
+	HandleWater(pTuningParams);
 
 	// potions and buffs are different
 	HandleBuff(pTuningParams);
@@ -1603,14 +1671,14 @@ void CCharacter::HandleBuff(CTuningParams* TuningParams)
 		{
 			const int ExplodeDamageSize = translate_to_percent_rest(m_pPlayer->GetMaxHealth(), 3);
 			GS()->CreateExplosion(m_Core.m_Pos, m_pPlayer->GetCID(), WEAPON_GRENADE, 0);
-			TakeDamage(vec2(0, 0), ExplodeDamageSize, m_pPlayer->GetCID(), WEAPON_SELF);
+			TakeDamage(vec2(0, 0), ExplodeDamageSize, m_pPlayer->GetCID(), WEAPON_GAME);
 		}
 
 		// poison
 		if(m_pPlayer->m_Effects.IsActive("Poison"))
 		{
 			const int PoisonDmg = translate_to_percent_rest(m_pPlayer->GetMaxHealth(), 3);
-			TakeDamage({}, PoisonDmg, m_pPlayer->GetCID(), WEAPON_SELF);
+			TakeDamage({}, PoisonDmg, -1, WEAPON_GAME);
 		}
 
 		// handle potions
@@ -1745,47 +1813,48 @@ void CCharacter::HandlePlayer()
 	HandleHookActions();
 }
 
-bool CCharacter::IsAllowedPVP(int FromID) const
+bool CCharacter::IsAllowedPVP(int FromCID) const
 {
-	CPlayer* pFrom = GS()->GetPlayer(FromID, false, true);
-
-	// Dissable self damage without some item
-	if(!pFrom || (FromID == m_pPlayer->GetCID() && m_pPlayer->GetItem(itDamageEqualizer)->IsEquipped()))
-		return false;
-
-	// Check if damage is disabled for the current object or the object it is interacting with
-	if(m_Core.m_DamageDisabled || pFrom->GetCharacter()->m_Core.m_DamageDisabled)
-		return false;
-
-	// disable damage on safe area
-	if(GS()->Collision()->GetCollisionFlagsAt(m_Core.m_Pos) & CCollision::COLFLAG_SAFE
-		|| GS()->Collision()->GetCollisionFlagsAt(pFrom->GetCharacter()->m_Core.m_Pos) & CCollision::COLFLAG_SAFE)
-		return false;
-
-	if(pFrom->IsBot())
+	if(auto* pFrom = GS()->GetPlayer(FromCID, false, true))
 	{
-		// can damage bot
-		const auto* pBotChar = dynamic_cast<CCharacterBotAI*>(pFrom->GetCharacter());
-		if(!pBotChar->AI()->CanDamage(m_pPlayer))
-			return false;
-	}
-	else
-	{
-		// anti pvp on safe world or dungeon
-		if(!GS()->IsAllowedPVP() || GS()->IsWorldType(WorldType::Dungeon))
+		// dissable self damage from weapons
+		if(FromCID == m_pPlayer->GetCID() && m_pPlayer->GetItem(itDamageEqualizer)->IsEquipped())
 			return false;
 
-		// only for unself player
-		if(FromID != m_pPlayer->GetCID())
+		// Check if damage is disabled for the current object or the object it is interacting with
+		if(m_Core.m_DamageDisabled || pFrom->GetCharacter()->m_Core.m_DamageDisabled)
+			return false;
+
+		// disable damage on safe area
+		if(GS()->Collision()->GetCollisionFlagsAt(m_Core.m_Pos) & CCollision::COLFLAG_SAFE
+			|| GS()->Collision()->GetCollisionFlagsAt(pFrom->GetCharacter()->m_Core.m_Pos) & CCollision::COLFLAG_SAFE)
+			return false;
+
+		if(pFrom->IsBot())
 		{
-			// anti pvp for guild players
-			if(m_pPlayer->Account()->IsClientSameGuild(FromID))
+			// can damage bot
+			const auto* pBotChar = dynamic_cast<CCharacterBotAI*>(pFrom->GetCharacter());
+			if(!pBotChar->AI()->CanDamage(m_pPlayer))
+				return false;
+		}
+		else
+		{
+			// anti pvp on safe world or dungeon
+			if(!GS()->IsAllowedPVP() || GS()->IsWorldType(WorldType::Dungeon))
 				return false;
 
-			// anti pvp for group players
-			GroupData* pGroup = m_pPlayer->Account()->GetGroup();
-			if(pGroup && pGroup->HasAccountID(pFrom->Account()->GetID()))
-				return false;
+			// only for unself player
+			if(FromCID != m_pPlayer->GetCID())
+			{
+				// anti pvp for guild players
+				if(m_pPlayer->Account()->IsClientSameGuild(FromCID))
+					return false;
+
+				// anti pvp for group players
+				GroupData* pGroup = m_pPlayer->Account()->GetGroup();
+				if(pGroup && pGroup->HasAccountID(pFrom->Account()->GetID()))
+					return false;
+			}
 		}
 	}
 

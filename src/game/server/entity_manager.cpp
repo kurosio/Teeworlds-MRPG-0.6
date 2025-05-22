@@ -355,7 +355,7 @@ void CEntityManager::FlameWall(int ClientID, vec2 Position, float Radius, int Li
 			if(!pBase->GetPlayer() || (pBase->GetClientID() != pChar->GetPlayer()->GetCID() && pChar->IsAllowedPVP(pBase->GetClientID())))
 			{
 				if(pBase->Server()->Tick() % TickSpeed == 0)
-					pChar->TakeDamage(vec2(0, 0), DamagePerTick, pBase->GetClientID(), WEAPON_WORLD);
+					pChar->TakeDamage(vec2(0, 0), DamagePerTick, pBase->GetClientID(), WEAPON_GAME);
 
 				vec2 NewVelocity = pChar->m_Core.m_Vel * SlowDownFactor;
 				pChar->SetVelocity(NewVelocity);
@@ -415,7 +415,7 @@ void CEntityManager::FrostNova(int ClientID, vec2 Position, float Radius, int Da
 
 			if(pBase->GetClientID() != pChar->GetPlayer()->GetCID() && pChar->IsAllowedPVP(pBase->GetClientID()))
 			{
-				pChar->TakeDamage(vec2(0, 0), Damage, pBase->GetClientID(), WEAPON_WORLD);
+				pChar->TakeDamage(vec2(0, 0), Damage, pBase->GetClientID(), WEAPON_GAME);
 				//pChar->Freeze(FreezeTime);
 				pBase->MarkForDestroy();
 			}
@@ -616,7 +616,7 @@ void CEntityManager::Bow(int ClientID, int Damage, int FireCount, float Explosio
 					const auto Distance = distance(pBase->GetPos(), pChar->m_Core.m_Pos);
 					if(Distance < 64.f)
 					{
-						pChar->TakeDamage(Direction, Damage, pBase->GetClientID(), WEAPON_GRENADE);
+						pChar->TakeDamage(Direction, Damage, pBase->GetClientID(), WEAPON_GAME);
 						pBase->GS()->CreateRandomRadiusExplosion(ExplosionCount, ExplosionRadius, pBase->GetPos(), pBase->GetClientID(), WEAPON_NINJA, Damage);
 						pBase->MarkForDestroy();
 						return;

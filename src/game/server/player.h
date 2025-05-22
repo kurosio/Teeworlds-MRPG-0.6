@@ -120,7 +120,6 @@ public:
 
 	int GetTotalAttributeValue(AttributeIdentifier AttributeID) const;
 	void UpdateTotalAttributeValue(AttributeIdentifier AttributeID, int Value) { m_aStats[AttributeID] = Value; }
-
 	void FormatBroadcastBasicStats(char* pBuffer, int Size, const char* pAppendStr = "\0") const;
 
 	virtual void Tick();

@@ -28,20 +28,20 @@ void CAttackTeleport::Tick()
 		return;
 	}
 
-	// life span 
+	// life span
 	m_LifeSpan--;
 
 	// variables
-	const int ClientID = m_pPlayer->GetCID();
-	vec2 To = m_Pos + normalize(m_Direction) * 20.0f;
-	vec2 Size = vec2(m_Radius, m_Radius);
-	CCharacter* pOwnerChar = m_pPlayer->GetCharacter();
-	CCharacter *pSearchChar = (CCharacter*)GS()->m_World.ClosestEntity(To, m_Radius, CGameWorld::ENTTYPE_CHARACTER, nullptr);
+	const auto ClientID = m_pPlayer->GetCID();
+	const auto To = m_Pos + normalize(m_Direction) * 20.0f;
+	const auto Size = vec2(m_Radius, m_Radius);
+	auto* pOwnerChar = m_pPlayer->GetCharacter();
+	auto* pSearchChar = (CCharacter*)GS()->m_World.ClosestEntity(To, m_Radius, CGameWorld::ENTTYPE_CHARACTER, pOwnerChar);
 
 	// check collide
 	const bool IsCollide = (GS()->Collision()->TestBox(m_Pos, Size) || GS()->Collision()->TestBox(To, Size)
 		|| GS()->m_World.IntersectClosestDoorEntity(m_Pos, m_Radius) || GS()->m_World.IntersectClosestDoorEntity(To, m_Radius));
-	const bool IsAllowedPVP = (pSearchChar && pSearchChar->IsAlive() && pSearchChar != pOwnerChar && pSearchChar->IsAllowedPVP(pOwnerChar->GetPlayer()->GetCID()));
+	const bool IsAllowedPVP = (pSearchChar && pSearchChar->IsAlive() && pSearchChar->IsAllowedPVP(ClientID));
 
 	// first part
 	if(!m_SecondPart)
@@ -52,12 +52,12 @@ void CAttackTeleport::Tick()
 			GS()->CreateSound(pOwnerChar->GetPos(), SOUND_NINJA_FIRE);
 
 			// damage for players
-			const int MaximalDamageSize = translate_to_percent_rest(pOwnerChar->GetPlayer()->GetTotalAttributeValue(AttributeIdentifier::DMG), clamp(m_SkillBonus, 5, 50));
+			const auto currentDmgSize = m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::DMG);
+			const int maxDmgSize = maximum(1, translate_to_percent_rest(currentDmgSize, clamp(m_SkillBonus, 50, 100)));
+
 			for(int i = 0; i < MAX_CLIENTS; i++)
 			{
-				CPlayer* pSearchPlayer = GS()->GetPlayer(i, false, true);
-
-				// checking allowed pvp 
+				auto* pSearchPlayer = GS()->GetPlayer(i, false, true);
 				if(ClientID == i || !pSearchPlayer || !pSearchPlayer->GetCharacter()->IsAllowedPVP(ClientID))
 					continue;
 
@@ -68,17 +68,15 @@ void CAttackTeleport::Tick()
 
 				// take damage
 				vec2 SearchPos = pSearchPlayer->GetCharacter()->GetPos();
-				vec2 Diff = SearchPos - m_Pos;
-				vec2 Force = normalize(Diff) * 16.0f;
-				pSearchPlayer->GetCharacter()->TakeDamage(Force * 12.0f, MaximalDamageSize, ClientID, WEAPON_NINJA);
-				GS()->CreateExplosion(SearchPos, pOwnerChar->GetPlayer()->GetCID(), WEAPON_GRENADE, 0);
 				GS()->CreateSound(SearchPos, SOUND_NINJA_HIT);
+				GS()->CreateExplosion(SearchPos, ClientID, WEAPON_GAME, maxDmgSize);
+				pOwnerChar->IncreaseHealth(maxDmgSize);
 				m_vMovingMap.push_back(pSearchPlayer);
 			}
 
 			// change to new position
 			pOwnerChar->ChangePosition(m_Pos);
-			m_SecondPartTimeleft = Server()->TickSpeed();
+			m_SecondPartTimeleft = round_to_int((float)Server()->TickSpeed() * 1.5f);
 			m_SecondPart = true;
 		}
 
@@ -93,7 +91,6 @@ void CAttackTeleport::Tick()
 		{
 			// information about second part
 			GS()->Broadcast(ClientID, BroadcastPriority::GameWarning, Server()->TickSpeed(), "Press fire for attacks by skill: {} attacks!", m_SecondPartCombo);
-			pOwnerChar->SetSafeFlags();
 			m_SecondPartTimeleft--;
 
 			// is clicked fire
@@ -101,7 +98,8 @@ void CAttackTeleport::Tick()
 			{
 				CPlayer* pNextPlayer = nullptr;
 				CCharacter* pNextChar = nullptr;
-				const int MaximalDamageSize = translate_to_percent_rest(pOwnerChar->GetPlayer()->GetTotalAttributeValue(AttributeIdentifier::DMG), clamp(m_SkillBonus, 5, 50));
+				const auto currentDmgSize = m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::DMG);
+				const int maxDmgSize = maximum(1, translate_to_percent_rest(currentDmgSize, clamp(m_SkillBonus, 5, 50)));
 
 				// try get next player
 				while(!pNextPlayer && !pNextChar && !m_vMovingMap.empty())
@@ -110,7 +108,7 @@ void CAttackTeleport::Tick()
 					std::advance(randIt, rand() % m_vMovingMap.size());
 					pNextPlayer = (*randIt);
 
-					if(!pNextPlayer 
+					if(!pNextPlayer
 						|| (pNextPlayer && GS()->Collision()->IntersectLineColFlag(m_pPlayer->m_ViewPos, pNextPlayer->m_ViewPos, nullptr, nullptr, CCollision::COLFLAG_DISALLOW_MOVE)))
 					{
 						m_vMovingMap.erase(randIt);
@@ -127,15 +125,15 @@ void CAttackTeleport::Tick()
 					const auto SearchPos = pNextChar->GetPos();
 					const auto Diff = SearchPos - m_Pos;
 					const auto Force = normalize(Diff) * 16.0f;
-					const auto StunTime = 1;
+					const auto StunTime = 3;
 
 					if(pNextPlayer->m_Effects.Add("Stun", StunTime * Server()->TickSpeed()))
 					{
 						GS()->Chat(pNextPlayer->GetCID(), "You have been stunned for '{} seconds'!", StunTime);
 					}
 
-					pNextChar->TakeDamage(Force * 12.0f, MaximalDamageSize, ClientID, WEAPON_NINJA);
-					GS()->CreateExplosion(SearchPos, pOwnerChar->GetPlayer()->GetCID(), WEAPON_GRENADE, 0);
+					GS()->CreateExplosion(SearchPos, ClientID, WEAPON_GAME, maxDmgSize);
+					pOwnerChar->IncreaseHealth(maxDmgSize);
 					pOwnerChar->ChangePosition(pNextChar->GetPos());
 
 					GS()->CreateSound(SearchPos, SOUND_NINJA_FIRE);
@@ -148,7 +146,8 @@ void CAttackTeleport::Tick()
 					{
 						if(pPlayer && pPlayer->GetCharacter())
 						{
-							GS()->CreateExplosion(pPlayer->m_ViewPos, pOwnerChar->GetPlayer()->GetCID(), WEAPON_GRENADE, 0);
+							GS()->CreateExplosion(SearchPos, ClientID, WEAPON_GAME, maxDmgSize);
+							pOwnerChar->IncreaseHealth(maxDmgSize);
 							GS()->CreateDeath(pPlayer->m_ViewPos, pPlayer->GetCID());
 						}
 					}

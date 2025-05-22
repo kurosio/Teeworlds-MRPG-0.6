@@ -41,10 +41,14 @@ class CCharacter : public CEntity
 	CCharacterCore m_ReckoningCore {}; // the dead reckoning core
 	CEntityFishingRod* m_pFishingRod {};
 
+	int GetMaxWaterAir() const;
+	void HandleWater(CTuningParams* TuningParams);
+
 	void HandleReload();
-	void FireWeapon();
 	void HandleWeaponSwitch();
+	void FireWeapon();
 	void DoWeaponSwitch();
+
 	void HandleHookActions();
 	bool HandleHammerActions(vec2 Direction, vec2 ProjStartPos);
 	void HandleBuff(CTuningParams* TuningParams);
@@ -75,6 +79,7 @@ protected:
 	int m_EmoteType {};
 	int m_EmoteStop {};
 	int m_SafeTickFlags {};
+	int m_WaterAir {};
 	std::string m_Zonename {};
 	CMultipleOrbite* m_pMultipleOrbite {};
 
