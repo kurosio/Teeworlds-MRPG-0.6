@@ -231,14 +231,10 @@ void CCharacter::FireWeapon()
 		// fishing mode
 		if(m_pTilesHandler->IsActive(TILE_FISHING_MODE))
 		{
-			bool ExistEntity = GameWorld()->ExistEntity(m_pFishingRod);
-			if(ExistEntity && m_pFishingRod->IsWaitingState())
-			{
+			if(m_pFishingRod && m_pFishingRod->IsWaitingState())
 				delete m_pFishingRod;
-				m_pFishingRod = nullptr;
-			}
 
-			if(!m_pFishingRod || !ExistEntity)
+			if(!m_pFishingRod)
 			{
 				const auto ForceX = m_LatestInput.m_TargetX * 0.08f;
 				const auto ForceY = m_LatestInput.m_TargetY * 0.08f;
@@ -1496,10 +1492,9 @@ void CCharacter::HandleTilesImpl(int Index)
 		{
 			GS()->Broadcast(m_ClientID, BroadcastPriority::GameBasicStats, 100, "Use 'Fire' to start fishing!");
 		}
-		else if(m_pTilesHandler->IsExit(TILE_FISHING_MODE) && GameWorld()->ExistEntity(m_pFishingRod))
+		else if(m_pTilesHandler->IsExit(TILE_FISHING_MODE) && m_pFishingRod)
 		{
 			delete m_pFishingRod;
-			m_pFishingRod = nullptr;
 		}
 
 		// zone information

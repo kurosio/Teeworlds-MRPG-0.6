@@ -39,7 +39,6 @@ class CCharacter : public CEntity
 	// info for dead reckoning
 	CCharacterCore m_SendCore {}; // core that we should send
 	CCharacterCore m_ReckoningCore {}; // the dead reckoning core
-	CEntityFishingRod* m_pFishingRod {};
 
 	int GetMaxWaterAir() const;
 	void HandleWater(CTuningParams* TuningParams);
@@ -101,6 +100,7 @@ public:
 	CNetObj_PlayerInput m_Input {};
 	CNetObj_PlayerInput m_LatestPrevInput {};
 	CNetObj_PlayerInput m_LatestInput {};
+	CEntityFishingRod* m_pFishingRod {};
 
 	static constexpr int ms_PhysSize = 28;
 	CCharacterCore m_Core {};

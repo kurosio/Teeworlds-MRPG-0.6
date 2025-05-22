@@ -16,6 +16,12 @@ CEntityFishingRod::CEntityFishingRod(CGameWorld* pGameWorld, int ClientID, vec2 
 	GameWorld()->InsertEntity(this);
 }
 
+CEntityFishingRod::~CEntityFishingRod()
+{
+	if(auto* pChar = GS()->GetPlayerChar(m_ClientID))
+		pChar->m_pFishingRod = nullptr;
+}
+
 void CEntityFishingRod::Tick()
 {
 	// check valid

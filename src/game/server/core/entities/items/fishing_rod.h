@@ -42,6 +42,7 @@ class CEntityFishingRod : public CEntity
 
 public:
 	CEntityFishingRod(CGameWorld* pGameWorld, int ClientID, vec2 Position, vec2 Force);
+	~CEntityFishingRod() override;
 
 	void FishingTick(CPlayer* pPlayer, CProfession* pFisherman, GatheringNode* pNode, std::optional<int> EquippedItemID);
 	bool IsWaitingState() const { return m_Fishing.m_State == FishingNow::WAITING; }
