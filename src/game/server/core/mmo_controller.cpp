@@ -554,7 +554,7 @@ std::map<int, CMmoController::TempTopData> CMmoController::GetTopList(ToplistTyp
 	}
 	else if(Type == ToplistType::GuildWealthy)
 	{
-		ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_guilds", "ORDER BY Bank DESC LIMIT {}", Rows);
+		ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_guilds", "ORDER BY Bank + 0 DESC LIMIT {}", Rows);
 		while(pRes->next())
 		{
 			const auto Rank = pRes->getRow();
