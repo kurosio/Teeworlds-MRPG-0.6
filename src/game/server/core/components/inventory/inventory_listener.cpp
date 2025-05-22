@@ -29,6 +29,12 @@ void CInventoryListener::OnCharacterSpawn(CPlayer* pPlayer)
 	}
 }
 
+void CInventoryListener::OnPlayerLogin(CPlayer* pPlayer, CAccountData* pAccount)
+{
+	// auto-equip empty slots
+	pAccount->AutoEquipSlots(true);
+}
+
 
 void CInventoryListener::OnPlayerProfessionUpgrade(CPlayer* pPlayer, int AttributeID)
 {
@@ -43,12 +49,16 @@ void CInventoryListener::OnPlayerProfessionChange(CPlayer* pPlayer, CProfession*
 {
 	if(pOldProf != pNewProf)
 	{
+		// update total player stats
 		for(auto& [Id, Info] : CAttributeDescription::Data())
 		{
 			auto totalAttribute = pPlayer->GetTotalRawAttributeValue(Id);
 			pPlayer->UpdateTotalAttributeValue(Id, totalAttribute);
 			m_AttributesTracker.UpdateTrackingDataIfNecessary(pPlayer, (int)Id, totalAttribute);
 		}
+
+		// auto-equip empty slots
+		pPlayer->Account()->AutoEquipSlots(true);
 	}
 }
 

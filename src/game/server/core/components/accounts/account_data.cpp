@@ -28,7 +28,6 @@ void CAccountData::ChangeProfession(ProfessionIdentifier Profession)
 {
 	auto* pOldProfession = m_pActiveProfession;
 	m_pActiveProfession = GetProfession(Profession);
-	AutoEquipSlots(true);
 
 	// notify event listener
 	g_EventListenerManager.Notify<IEventListener::PlayerProfessionChange>(GetPlayer(), pOldProfession, m_pActiveProfession);
@@ -536,30 +535,37 @@ void CAccountData::AutoEquipSlots(bool OnlyEmptySlots)
 	if(!pPlayer)
 		return;
 
-	// auto equip implement logic
+	static constexpr std::array<ItemType, 5> OnlyEmptySlotTypes =
+	{
+		ItemType::EquipHammer,
+		ItemType::EquipGun,
+		ItemType::EquipShotgun,
+		ItemType::EquipGrenade,
+		ItemType::EquipLaser
+	};
+
+	// lambda tool
 	auto autoEquipSlotsImpl = [&](const auto& equippedSlots)
 	{
-		for(auto& [Type, EquippedItemIdOpt] : equippedSlots.getSlots())
+		for(const auto& [Type, EquippedItemIdOpt] : equippedSlots.getSlots())
 		{
-			// only empty slots
-			if(OnlyEmptySlots && EquippedItemIdOpt)
+			// is only empty slot and weapons always empty
+			if(EquippedItemIdOpt && (OnlyEmptySlots || std::ranges::find(OnlyEmptySlotTypes, Type) != OnlyEmptySlotTypes.end()))
 				continue;
 
-			// equip best item
-			auto* pBestItem = GS()->Core()->InventoryManager()->GetBestEquipmentSlotItem(GetPlayer(), Type);
+			// try equip best item
+			auto* pBestItem = GS()->Core()->InventoryManager()->GetBestEquipmentSlotItem(pPlayer, Type);
 			if(pBestItem && pBestItem->Equip())
-			{
 				GS()->Chat(pPlayer->GetCID(), "Auto equip '{} - {}'.", pBestItem->Info()->GetName(), pBestItem->GetStringAttributesInfo(pPlayer));
-			}
 		}
 	};
 
-	// auto equip shared, active profession, other professions
+	// process all relevant equipment slots
 	autoEquipSlotsImpl(m_EquippedSlots);
+
 	if(m_pActiveProfession)
-	{
 		autoEquipSlotsImpl(m_pActiveProfession->GetEquippedSlots());
-	}
+
 	for(auto& Prof : GetProfessions())
 	{
 		if(Prof.IsProfessionType(PROFESSION_TYPE_OTHER))

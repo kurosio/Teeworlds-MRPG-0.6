@@ -86,9 +86,6 @@ void CInventoryManager::OnPlayerLogin(CPlayer* pPlayer)
 
 		CPlayerItem(ItemID, ClientID).Init(Value, Enchant, Durability, Settings);
 	}
-
-	// auto equip empty slots
-	pPlayer->Account()->AutoEquipSlots(true);
 }
 
 
