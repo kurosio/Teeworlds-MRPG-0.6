@@ -562,7 +562,7 @@ void CCharacter::HandleWeapons()
 			const auto AmmoRegenTime = 500 / round_to_int(Speed);
 			if(m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_AmmoRegenStart < 0)
 				m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_AmmoRegenStart = Server()->Tick() +
-				((int)WEAPON_GUN ? (Server()->TickSpeed() / 2) : (AmmoRegenTime * Server()->TickSpeed()));
+				(m_Core.m_ActiveWeapon == (int)WEAPON_GUN ? (Server()->TickSpeed() / 2) : (AmmoRegenTime * Server()->TickSpeed()));
 		}
 
 
