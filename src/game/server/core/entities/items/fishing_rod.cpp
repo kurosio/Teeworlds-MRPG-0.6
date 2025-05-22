@@ -101,8 +101,9 @@ void CEntityFishingRod::FishingTick(CPlayer* pPlayer, CProfession* pFisherman, G
 	{
 		if(m_Fishing.m_State == FishingNow::HOOKING)
 		{
+			const auto HookingNextTime = pPlayer->GetItem(itFishBait)->IsEquipped() ? 10 : 15;
 			m_Fishing.m_State = FishingNow::WAITING;
-			m_Fishing.m_HookingTime = SERVER_TICK_SPEED * (3 + rand() % 15);
+			m_Fishing.m_HookingTime = SERVER_TICK_SPEED * (3 + HookingNextTime);
 		}
 		else
 		{
