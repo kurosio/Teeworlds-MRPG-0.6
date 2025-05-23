@@ -33,7 +33,7 @@ class CEntityFishingRod : public CEntity
 		NUM_ROD_POINTS = 3,
 
 		ROPE,
-		NUM_ROPE_POINTS = 10,
+		NUM_ROPE_POINTS = 8,
 	};
 
 	vec2 m_EndRodPoint {};
