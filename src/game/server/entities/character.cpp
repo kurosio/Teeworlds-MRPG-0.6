@@ -624,7 +624,10 @@ void CCharacter::HandleHookActions()
 		if(Server()->Tick() % (Server()->TickSpeed() / 2) == 0)
 		{
 			if(m_pPlayer->GetItem(itPoisonHook)->IsEquipped())
-				pHookedPlayer->GetCharacter()->TakeDamage({}, 1, m_ClientID, WEAPON_GAME);
+			{
+				const auto DmgSize = maximum(1, translate_to_percent_rest(m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::DMG), 5));
+				pHookedPlayer->GetCharacter()->TakeDamage({}, DmgSize, m_ClientID, WEAPON_GAME);
+			}
 		}
 	}
 	else
@@ -1213,8 +1216,11 @@ bool CCharacter::TakeDamage(vec2 Force, int Damage, int FromCID, int Weapon)
 
 	// damage calculation
 	auto* pFrom = GS()->GetPlayer(FromCID);
-	if(pFrom && pFrom->GetCharacter())
+	if(pFrom && pFrom->GetCharacter() &&
+		Weapon != WEAPON_GAME && Weapon != WEAPON_WORLD)
+	{
 		Damage += pFrom->GetTotalAttributeValue(AttributeIdentifier::DMG);
+	}
 	Damage = (FromCID == m_pPlayer->GetCID() ? maximum(1, Damage / 2) : maximum(1, Damage));
 
 	// chances of effects
@@ -1673,9 +1679,8 @@ void CCharacter::HandleBuff(CTuningParams* TuningParams)
 		// fire
 		if(m_pPlayer->m_Effects.IsActive("Fire"))
 		{
-			const int ExplodeDamageSize = translate_to_percent_rest(m_pPlayer->GetMaxHealth(), 3);
-			GS()->CreateExplosion(m_Core.m_Pos, m_pPlayer->GetCID(), WEAPON_GRENADE, 0);
-			TakeDamage(vec2(0, 0), ExplodeDamageSize, m_pPlayer->GetCID(), WEAPON_GAME);
+			const int ExplDmg = translate_to_percent_rest(m_pPlayer->GetMaxHealth(), 3);
+			GS()->CreateExplosion(m_Core.m_Pos, -1, WEAPON_GAME, ExplDmg);
 		}
 
 		// poison

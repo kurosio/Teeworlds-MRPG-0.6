@@ -226,8 +226,8 @@ bool CSkill::Use()
 	if(IsActivated(pChar, ManaCost, SKILL_SLEEPY_GRAVITY, SKILL_USAGE_RESET))
 	{
 		const auto UpgradedValue = minimum(200.f + GetBonus(), 400.f);
-		GS()->EntityManager()->GravityDisruption(ClientID, PlayerPosition, UpgradedValue, 10 * Server()->TickSpeed(),
-			ManaCost, &pEntSkillPtr);
+		const auto Damage = maximum(1, pPlayer->GetTotalAttributeValue(AttributeIdentifier::DMG));
+		GS()->EntityManager()->GravityDisruption(ClientID, PlayerPosition, UpgradedValue, 10 * Server()->TickSpeed(), Damage, &pEntSkillPtr);
 		GS()->CreateSound(PlayerPosition, SOUND_SKILL_START);
 		return true;
 	}
@@ -251,7 +251,8 @@ bool CSkill::Use()
 	if(IsActivated(pChar, ManaCost, SKILL_MAGIC_BOW, SKILL_USAGE_TOGGLE))
 	{
 		const auto Shots = 1 + GetBonus();
-		GS()->EntityManager()->Bow(ClientID, 1, Shots, 180.f, 8, &pEntSkillPtr);
+		const auto Damage = maximum(1, pPlayer->GetTotalAttributeValue(AttributeIdentifier::DMG));
+		GS()->EntityManager()->Bow(ClientID, Damage, Shots, 180.f, 8, &pEntSkillPtr);
 		GS()->CreateSound(PlayerPosition, SOUND_SKILL_START);
 		return true;
 	}
@@ -267,7 +268,9 @@ bool CSkill::Use()
 	if(IsActivated(pChar, ManaCost, SKILL_FLAME_WALL, SKILL_USAGE_RESET))
 	{
 		const auto UpgradedValue = minimum(200.f + GetBonus(), 320.f);
-		GS()->EntityManager()->FlameWall(ClientID, PlayerPosition, UpgradedValue, 10 * Server()->TickSpeed(), 1, 0.3f);
+		const auto Damage = maximum(1, translate_to_percent_rest(pPlayer->GetTotalAttributeValue(AttributeIdentifier::DMG), 5.0f));
+
+		GS()->EntityManager()->FlameWall(ClientID, PlayerPosition, UpgradedValue, 10 * Server()->TickSpeed(), Damage, 0.3f);
 		GS()->CreateSound(PlayerPosition, SOUND_SKILL_START);
 		return true;
 	}
