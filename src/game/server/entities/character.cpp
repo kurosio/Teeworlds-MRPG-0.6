@@ -1214,7 +1214,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Damage, int FromCID, int Weapon)
 	// damage calculation
 	auto* pFrom = GS()->GetPlayer(FromCID);
 	if(pFrom && pFrom->GetCharacter())
-		Damage += m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::DMG);
+		Damage += pFrom->GetTotalAttributeValue(AttributeIdentifier::DMG);
 	Damage = (FromCID == m_pPlayer->GetCID() ? maximum(1, Damage / 2) : maximum(1, Damage));
 
 	// chances of effects
