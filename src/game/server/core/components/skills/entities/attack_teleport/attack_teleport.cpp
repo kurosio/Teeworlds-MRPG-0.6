@@ -143,7 +143,7 @@ void CAttackTeleport::Tick()
 					// add external explosion damage for other player's
 					for(const auto& pPlayer : m_vMovingMap)
 					{
-						if(pPlayer && pPlayer->GetCharacter())
+						if(pPlayer && pPlayer->GetCharacter() && pNextPlayer != pPlayer)
 						{
 							const auto maxMovingMapDmg = maximum(1, round_to_int((float)maxDmgSize * 0.1f));
 							pPlayer->GetCharacter()->TakeDamage({}, maxMovingMapDmg, m_ClientID, WEAPON_GAME);
