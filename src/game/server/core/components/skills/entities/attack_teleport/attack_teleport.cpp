@@ -53,7 +53,7 @@ void CAttackTeleport::Tick()
 
 			// damage for players
 			const auto currentDmgSize = m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::DMG);
-			const int maxDmgSize = maximum(1, translate_to_percent_rest(currentDmgSize, clamp(m_SkillBonus, 1, 30)));
+			const int maxDmgSize = maximum(1, translate_to_percent_rest(currentDmgSize, clamp(m_SkillBonus, 1, 50)));
 
 			for(int i = 0; i < MAX_CLIENTS; i++)
 			{
@@ -99,7 +99,7 @@ void CAttackTeleport::Tick()
 				CPlayer* pNextPlayer = nullptr;
 				CCharacter* pNextChar = nullptr;
 				const auto currentDmgSize = m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::DMG);
-				const int maxDmgSize = maximum(1, translate_to_percent_rest(currentDmgSize, clamp(m_SkillBonus, 1, 30)));
+				const int maxDmgSize = maximum(1, translate_to_percent_rest(currentDmgSize, clamp(m_SkillBonus, 1, 50)));
 
 				// try get next player
 				while(!pNextPlayer && !pNextChar && !m_vMovingMap.empty())
@@ -145,8 +145,9 @@ void CAttackTeleport::Tick()
 					{
 						if(pPlayer && pPlayer->GetCharacter())
 						{
-							GS()->CreateExplosion(SearchPos, ClientID, WEAPON_GAME, maxDmgSize);
-							pOwnerChar->IncreaseHealth(maxDmgSize);
+							const auto maxMovingMapDmg = maximum(1, round_to_int((float)maxDmgSize * 0.1f));
+							pPlayer->GetCharacter()->TakeDamage({}, maxMovingMapDmg, m_ClientID, WEAPON_GAME);
+							pOwnerChar->IncreaseHealth(maxMovingMapDmg);
 							GS()->CreateDeath(pPlayer->m_ViewPos, pPlayer->GetCID());
 						}
 					}
