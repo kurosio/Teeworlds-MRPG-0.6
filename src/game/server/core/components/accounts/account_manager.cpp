@@ -164,6 +164,8 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 
 		// select war profession
 		VoteWrapper VClassSelector(ClientID, VWF_SEPARATE_OPEN | VWF_ALIGN_TITLE | VWF_STYLE_STRICT_BOLD, "\u2694 Change class profession");
+		VClassSelector.AddMenu(MENU_UPGRADES_ATTRIBUTES_DETAIL, "Player Attributes: Details");
+		VClassSelector.AddLine();
 		for(const auto& Prof : pPlayer->Account()->GetProfessions())
 		{
 			if(Prof.IsProfessionType(PROFESSION_TYPE_WAR))
@@ -207,6 +209,41 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		// Add back page
 		VoteWrapper::AddBackpage(ClientID);
 		return true;
+	}
+
+	if(Menulist == MENU_UPGRADES_ATTRIBUTES_DETAIL)
+	{
+		pPlayer->m_VotesData.SetLastMenuID(MENU_UPGRADES);
+
+		const std::map<AttributeGroup, std::string> vMapNames =
+		{
+			{ AttributeGroup::Tank, "Tank-related" },
+			{ AttributeGroup::Dps, "Dps-related" },
+			{ AttributeGroup::Healer, "Healer-related" },
+			{ AttributeGroup::Weapon, "Weapons-related" },
+			{ AttributeGroup::DamageType, "Damage-related" },
+			{ AttributeGroup::Job, "Job-related" },
+			{ AttributeGroup::Other, "Other" }
+		};
+
+
+		VoteWrapper VSelector(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_STRICT, "Select an Attribute Group");
+		for(auto& [group, title] : vMapNames)
+		{
+			const auto groupOpt = pPlayer->m_VotesData.GetExtraID();
+			const char* pSelector = GetSelectorStringByCondition(groupOpt && (AttributeGroup)(*groupOpt) == group);
+			VSelector.AddMenu(MENU_UPGRADES_ATTRIBUTES_DETAIL, (int)group, "{}{SELECTOR}", title, pSelector);
+		}
+		VoteWrapper::AddEmptyline(ClientID);
+
+		if(const auto groupOpt = pPlayer->m_VotesData.GetExtraID())
+		{
+			const auto group = (AttributeGroup)(*groupOpt);
+			ShowPlayerAttributesByGroup(pPlayer, vMapNames.at(group), group);
+		}
+
+		VoteWrapper::AddEmptyline(ClientID);
+		VoteWrapper::AddBackpage(ClientID);
 	}
 
 	// settings
@@ -288,6 +325,26 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	}
 
 	return false;
+}
+
+void CAccountManager::ShowPlayerAttributesByGroup(CPlayer* pPlayer, std::string_view Title, AttributeGroup Group) const
+{
+	const auto ClientID = pPlayer->GetCID();
+	VoteWrapper VGroup(ClientID, VWF_SEPARATE_OPEN | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, Title.data());
+	for(auto& [ID, pInfo] : CAttributeDescription::Data())
+	{
+		if(pInfo->IsGroup(Group))
+		{
+			if(const auto PercentOpt = pPlayer->GetTotalAttributeChance(ID))
+			{
+				VGroup.Add("{}: {~.2}%", pInfo->GetName(), (*PercentOpt));
+				continue;
+			}
+
+			const int AttributeSize = pPlayer->GetTotalAttributeValue(ID);
+			VGroup.Add("{}: {}", pInfo->GetName(), AttributeSize);
+		}
+	}
 }
 
 bool CAccountManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const int Extra1, const int Extra2, int ReasonNumber, const char* pReason)

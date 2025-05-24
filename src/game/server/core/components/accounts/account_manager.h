@@ -52,6 +52,7 @@ public:
 
 	static std::string HashPassword(const std::string& Password, const std::string& Salt);
 	void UseVoucher(int ClientID, const char* pVoucher) const;
+	void ShowPlayerAttributesByGroup(CPlayer* pPlayer, std::string_view Title, AttributeGroup Group) const;
 
 private:
 	void AddMenuProfessionUpgrades(CPlayer* pPlayer, CProfession* pProf) const;
