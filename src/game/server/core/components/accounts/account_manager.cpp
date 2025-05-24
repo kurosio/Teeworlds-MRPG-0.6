@@ -227,7 +227,7 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		};
 
 
-		VoteWrapper VSelector(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_STRICT, "Select an Attribute Group");
+		VoteWrapper VSelector(ClientID, VWF_SEPARATE_OPEN | VWF_ALIGN_TITLE | VWF_STYLE_STRICT_BOLD, "Select an Attribute Group");
 		for(auto& [group, title] : vMapNames)
 		{
 			const auto groupOpt = pPlayer->m_VotesData.GetExtraID();
