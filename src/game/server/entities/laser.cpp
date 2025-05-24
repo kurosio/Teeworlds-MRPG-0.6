@@ -32,7 +32,7 @@ bool CLaser::HitCharacter(vec2 From, vec2 To)
 	m_Pos = At;
 	m_Energy = -1;
 	if(m_Explosive)
-		GS()->CreateExplosion(m_Pos, m_ClientID, WEAPON_LASER, 1);
+		GS()->CreateExplosion(m_Pos, m_ClientID, WEAPON_LASER, m_Damage);
 	else
 		pHit->TakeDamage(vec2(0.f, 0.f), m_Damage, m_ClientID, WEAPON_LASER);
 	return true;

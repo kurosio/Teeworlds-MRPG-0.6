@@ -145,7 +145,7 @@ void CEntityManager::GravityDisruption(int ClientID, vec2 Position, float Radius
 		// life time
 		if(LifeTime <= 0)
 		{
-			pBase->GS()->CreateCyrcleExplosion(12, Radius, BasePos, pBase->GetClientID(), WEAPON_GRENADE, Damage);
+			pBase->GS()->CreateCyrcleExplosion(12, Radius, BasePos, pBase->GetClientID(), WEAPON_GAME, Damage);
 			pBase->MarkForDestroy();
 			return;
 		}
@@ -344,7 +344,7 @@ void CEntityManager::FlameWall(int ClientID, vec2 Position, float Radius, int Li
 
 		// random explosion on radius
 		if(pBase->Server()->Tick() % (TickSpeed / 2) == 0)
-			pBase->GS()->CreateRandomRadiusExplosion(2, Radius, pBase->GetPos(), pBase->GetClientID(), WEAPON_NINJA, DamagePerTick);
+			pBase->GS()->CreateRandomRadiusExplosion(2, Radius, pBase->GetPos(), pBase->GetClientID(), WEAPON_GAME, DamagePerTick);
 
 		// damage and slowdown enemies
 		for(auto* pChar = (CCharacter*)pBase->GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); pChar; pChar = (CCharacter*)pChar->TypeNext())
@@ -617,7 +617,7 @@ void CEntityManager::Bow(int ClientID, int Damage, int FireCount, float Explosio
 					if(Distance < 64.f)
 					{
 						pChar->TakeDamage(Direction, Damage, pBase->GetClientID(), WEAPON_GAME);
-						pBase->GS()->CreateRandomRadiusExplosion(ExplosionCount, ExplosionRadius, pBase->GetPos(), pBase->GetClientID(), WEAPON_NINJA, Damage);
+						pBase->GS()->CreateRandomRadiusExplosion(ExplosionCount, ExplosionRadius, pBase->GetPos(), pBase->GetClientID(), WEAPON_GAME, Damage);
 						pBase->MarkForDestroy();
 						return;
 					}
@@ -633,7 +633,7 @@ void CEntityManager::Bow(int ClientID, int Damage, int FireCount, float Explosio
 				// check collide
 				if(pBase->GS()->Collision()->CheckPoint(pBase->GetPos()))
 				{
-					pBase->GS()->CreateRandomRadiusExplosion(ExplosionCount, ExplosionRadius, pBase->GetPos(), pBase->GetClientID(), WEAPON_NINJA, Damage);
+					pBase->GS()->CreateRandomRadiusExplosion(ExplosionCount, ExplosionRadius, pBase->GetPos(), pBase->GetClientID(), WEAPON_GAME, Damage);
 					pBase->MarkForDestroy();
 					return;
 				}

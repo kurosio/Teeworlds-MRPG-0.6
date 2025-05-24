@@ -107,9 +107,10 @@ void CEntityRifleWallPusher::TryHitCharacter(const vec2 PrevPos)
 		const auto CharCollideByWall = GS()->Collision()->TestBox(pChar->m_Core.m_Pos + WallMovement, vec2(CCharacter::ms_PhysSize, CCharacter::ms_PhysSize));
 		if(CharCollideByWall)
 		{
-			GS()->CreateExplosion(m_Pos, m_ClientID, WEAPON_LASER, 3);
-			GS()->CreateExplosion(m_PosTo, m_ClientID, WEAPON_LASER, 3);
-			GS()->CreateExplosion(IntersectPos + WallMovement, m_ClientID, WEAPON_LASER, 5);
+			const auto totalDmg = GetOwnerChar()->GetTotalDamageByWeapon(WEAPON_LASER);
+			GS()->CreateExplosion(m_Pos, m_ClientID, WEAPON_LASER, totalDmg / 2);
+			GS()->CreateExplosion(m_PosTo, m_ClientID, WEAPON_LASER, totalDmg / 2);
+			GS()->CreateExplosion(IntersectPos + WallMovement, m_ClientID, WEAPON_LASER, totalDmg);
 			MarkedForDestroy = true;
 		}
 	}

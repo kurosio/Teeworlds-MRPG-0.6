@@ -50,7 +50,8 @@ void CEntityGrenadePizdamet::Tick()
 	// destroy and explosion
 	if(pTargetChar != nullptr || GS()->Collision()->CheckPoint(m_Pos))
 	{
-		GS()->CreateRandomRadiusExplosion(2, 96.f, m_Pos, m_ClientID, WEAPON_GRENADE, 0);
+		const auto totalDmg = pOwner->GetCharacter()->GetTotalDamageByWeapon(WEAPON_GRENADE);
+		GS()->CreateRandomRadiusExplosion(2, 96.f, m_Pos, m_ClientID, WEAPON_GRENADE, totalDmg);
 		MarkForDestroy();
 	}
 }

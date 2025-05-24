@@ -20,6 +20,9 @@ CProjectile::CProjectile(CGameWorld *pGameWorld, int Type, int Owner, vec2 Pos, 
 	m_Explosive = Explosive;
 	m_InitDir = InitDir;
 
+	const auto* pOwnerChar = GS()->GetPlayerChar(m_Owner);
+	m_Damage = pOwnerChar ? pOwnerChar->GetTotalDamageByWeapon(m_Weapon) : 0;
+
 	GameWorld()->InsertEntity(this);
 }
 
@@ -69,7 +72,7 @@ void CProjectile::Tick()
 	if (!pOwner || !pOwner->GetCharacter())
 	{
 		if (m_Explosive)
-			GS()->CreateExplosion(CurPos, -1, m_Weapon, 3);
+			GS()->CreateExplosion(CurPos, -1, m_Weapon, m_Damage);
 
 		GameWorld()->DestroyEntity(this);
 		return;
@@ -77,12 +80,12 @@ void CProjectile::Tick()
 
 	// initialize variables
 	bool Collide = GS()->Collision()->IntersectLineWithInvisible(PrevPos, CurPos, &CurPos, 0);
-	CCharacter* OwnerChar = GS()->GetPlayerChar(m_Owner);
-	CCharacter* TargetChr = GS()->m_World.IntersectCharacter(PrevPos, CurPos, 6.0f, CurPos, OwnerChar);
+	CCharacter* pOwnerChar = GS()->GetPlayerChar(m_Owner);
+	CCharacter* pTargetChar = GS()->m_World.IntersectCharacter(PrevPos, CurPos, 6.0f, CurPos, pOwnerChar);
 	m_LifeSpan--;
 
 	// check collide span and target
-	if (m_LifeSpan < 0 || GameLayerClipped(CurPos) || Collide || (TargetChr && TargetChr->IsAllowedPVP(OwnerChar->GetPlayer()->GetCID())))
+	if (m_LifeSpan < 0 || GameLayerClipped(CurPos) || Collide || (pTargetChar && pTargetChar->IsAllowedPVP(pOwnerChar->GetPlayer()->GetCID())))
 	{
 		if(m_LifeSpan >= 0 || m_Weapon == WEAPON_GRENADE)
 		{
@@ -91,11 +94,11 @@ void CProjectile::Tick()
 
 		if(m_Explosive)
 		{
-			GS()->CreateExplosion(CurPos, m_Owner, m_Weapon, 3);
+			GS()->CreateExplosion(CurPos, m_Owner, m_Weapon, m_Damage);
 		}
-		else if(TargetChr)
+		else if(pTargetChar)
 		{
-			TargetChr->TakeDamage(m_Direction * maximum(0.001f, m_Force), 0, m_Owner, m_Weapon);
+			pTargetChar->TakeDamage(m_Direction * maximum(0.001f, m_Force), m_Damage, m_Owner, m_Weapon);
 		}
 
 		GameWorld()->DestroyEntity(this);
@@ -118,7 +121,7 @@ void CProjectile::Snap(int SnappingClient)
 
 	if(SnappingClientVersion >= VERSION_DDNET_ENTITY_NETOBJS)
 	{
-		CNetObj_DDNetProjectile* pDDNetProjectile = static_cast<CNetObj_DDNetProjectile*>(Server()->SnapNewItem(NETOBJTYPE_DDNETPROJECTILE, GetID(), sizeof(CNetObj_DDNetProjectile)));
+		auto* pDDNetProjectile = static_cast<CNetObj_DDNetProjectile*>(Server()->SnapNewItem(NETOBJTYPE_DDNETPROJECTILE, GetID(), sizeof(CNetObj_DDNetProjectile)));
 		if(!pDDNetProjectile)
 		{
 			return;

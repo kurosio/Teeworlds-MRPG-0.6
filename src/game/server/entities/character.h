@@ -54,13 +54,12 @@ class CCharacter : public CEntity
 	void HandlePlayer();
 	bool CanAccessWorld() const;
 
-	bool FireHammer(vec2 Direction, vec2 ProjStartPos);
-	bool FireGun(vec2 Direction, vec2 ProjStartPos);
-	bool FireShotgun(vec2 Direction, vec2 ProjStartPos);
-	bool FireGrenade(vec2 Direction, vec2 ProjStartPos);
-	bool FireRifle(vec2 Direction, vec2 ProjStartPos);
+	bool FireHammer(vec2 Direction, vec2 ProjStartPos, int Damage);
+	bool FireGun(vec2 Direction, vec2 ProjStartPos, int Damage);
+	bool FireShotgun(vec2 Direction, vec2 ProjStartPos, int Damage);
+	bool FireGrenade(vec2 Direction, vec2 ProjStartPos, int Damage);
+	bool FireRifle(vec2 Direction, vec2 ProjStartPos, int Damage);
 
-	int GetTotalDamageByWeapon(int Weapon) const;
 	void HandleTilesImpl(int Index);
 
 protected:
@@ -159,6 +158,7 @@ public:
 	void UpdateEquippedStats(std::optional<int> UpdatedItemID = std::nullopt);
 	vec2 GetMousePos() const { return m_Core.m_Pos + vec2(m_Core.m_Input.m_TargetX, m_Core.m_Input.m_TargetY); }
 	CPlayer* GetLastPlayerAttacker(int Timeout) const;
+	int GetTotalDamageByWeapon(int Weapon) const;
 };
 
 #endif

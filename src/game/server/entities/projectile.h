@@ -17,6 +17,7 @@ class CProjectile : public CEntity
 	int m_StartTick;
 	bool m_Explosive;
 	vec2 m_InitDir;
+	int m_Damage;
 
 public:
 	CProjectile(CGameWorld* pGameWorld, int Type, int Owner, vec2 Pos, vec2 Dir, int Span,

@@ -27,6 +27,7 @@
 #include <game/server/core/entities/weapons/grenade_pizdamet.h>
 #include <game/server/core/entities/weapons/rifle_magneticpulse.h>
 #include <game/server/core/entities/weapons/rifle_wallpusher.h>
+#include <game/server/core/entities/weapons/rifle_tesla_serpent.h>
 #include <game/server/core/entities/weapons/rifle_trackedplazma.h>
 
 MACRO_ALLOC_POOL_ID_IMPL(CCharacter, MAX_CLIENTS* ENGINE_MAX_WORLDS + MAX_CLIENTS)
@@ -256,13 +257,14 @@ void CCharacter::FireWeapon()
 	const vec2 MouseTarget = vec2(m_LatestInput.m_TargetX, m_LatestInput.m_TargetY);
 	const vec2 Direction = normalize(MouseTarget);
 	const vec2 ProjStartPos = m_Pos + Direction * GetRadius() * 0.75f;
+	const auto TotalWeaponDamage = GetTotalDamageByWeapon(m_Core.m_ActiveWeapon);
 	switch(m_Core.m_ActiveWeapon)
 	{
-		case WEAPON_HAMMER: FireHammer(Direction, ProjStartPos); break;
-		case WEAPON_GUN: FireGun(Direction, ProjStartPos); break;
-		case WEAPON_SHOTGUN: FireShotgun(Direction, ProjStartPos); break;
-		case WEAPON_GRENADE: FireGrenade(Direction, ProjStartPos); break;
-		case WEAPON_LASER: FireRifle(Direction, ProjStartPos); break;
+		case WEAPON_HAMMER: FireHammer(Direction, ProjStartPos, TotalWeaponDamage); break;
+		case WEAPON_GUN: FireGun(Direction, ProjStartPos, TotalWeaponDamage); break;
+		case WEAPON_SHOTGUN: FireShotgun(Direction, ProjStartPos, TotalWeaponDamage); break;
+		case WEAPON_GRENADE: FireGrenade(Direction, ProjStartPos, TotalWeaponDamage); break;
+		case WEAPON_LASER: FireRifle(Direction, ProjStartPos, TotalWeaponDamage); break;
 		case WEAPON_NINJA:
 		{
 			m_Ninja.m_ActivationDir = Direction;
@@ -287,7 +289,7 @@ void CCharacter::FireWeapon()
 	}
 }
 
-bool CCharacter::FireHammer(vec2 Direction, vec2 ProjStartPos)
+bool CCharacter::FireHammer(vec2 Direction, vec2 ProjStartPos, int TotalWeaponDamage)
 {
 	constexpr int MAX_LENGTH_CHARACTERS = 16;
 	const bool IsBot = m_pPlayer->IsBot();
@@ -330,11 +332,11 @@ bool CCharacter::FireHammer(vec2 Direction, vec2 ProjStartPos)
 
 			// create flying point
 			auto* pPoint = new CEntityFlyingPoint(&GS()->m_World, ProjStartPos, Force, pTarget->GetClientID(), m_ClientID);
-			pPoint->Register([this, Force](CPlayer* pFrom, CPlayer* pPlayer)
+			pPoint->Register([this, Force, TotalWeaponDamage](CPlayer* pFrom, CPlayer* pPlayer)
 			{
 				auto* pChar = pPlayer->GetCharacter();
 				GS()->CreateDeath(pChar->GetPos(), pPlayer->GetCID());
-				pChar->TakeDamage(Force, 0, pFrom->GetCID(), WEAPON_HAMMER);
+				pChar->TakeDamage(Force, TotalWeaponDamage, pFrom->GetCID(), WEAPON_HAMMER);
 			});
 
 			// reload
@@ -363,13 +365,13 @@ bool CCharacter::FireHammer(vec2 Direction, vec2 ProjStartPos)
 			const auto Dist = distance(pTarget->m_Pos, m_Pos);
 			if(Dist < Radius)
 			{
-				GS()->CreateExplosion(pTarget->GetPos(), m_ClientID, WEAPON_HAMMER, 1);
+				GS()->CreateExplosion(pTarget->GetPos(), m_ClientID, WEAPON_HAMMER, TotalWeaponDamage);
 			}
 		}
 
 		// move and visual effect
 		AddVelocity(Direction * 2.5f);
-		GS()->CreateExplosion(m_Pos, m_ClientID, WEAPON_HAMMER, 0);
+		GS()->CreateExplosion(m_Pos, m_ClientID, WEAPON_HAMMER, TotalWeaponDamage);
 		GS()->CreateSound(m_Pos, SOUND_WEAPONS_HAMMER_BLAST_START);
 		return true;
 	}
@@ -395,7 +397,7 @@ bool CCharacter::FireHammer(vec2 Direction, vec2 ProjStartPos)
 		const auto Force = vec2(0.f, -1.f) + normalize(Dir + vec2(0.f, -1.1f)) * (IsBot ? 5.0f : 10.0f);
 
 		GS()->CreateHammerHit(pTarget->m_Pos);
-		pTarget->TakeDamage(Force, 0, m_ClientID, WEAPON_HAMMER);
+		pTarget->TakeDamage(Force, TotalWeaponDamage, m_ClientID, WEAPON_HAMMER);
 		m_ReloadTimer = Server()->TickSpeed() / 3;
 	}
 
@@ -403,7 +405,7 @@ bool CCharacter::FireHammer(vec2 Direction, vec2 ProjStartPos)
 	return true;
 }
 
-bool CCharacter::FireGun(vec2 Direction, vec2 ProjStartPos)
+bool CCharacter::FireGun(vec2 Direction, vec2 ProjStartPos, int TotalWeaponDamage)
 {
 	// check equip state
 	const auto EquippedItemIdOpt = m_pPlayer->GetEquippedSlotItemID(ItemType::EquipGun);
@@ -416,7 +418,7 @@ bool CCharacter::FireGun(vec2 Direction, vec2 ProjStartPos)
 	// gun pulse
 	if(EquippedItemIdOpt == itGunPulse)
 	{
-		new CLaser(GameWorld(), m_ClientID, 0, m_Pos, Direction, 400.f, true);
+		new CLaser(GameWorld(), m_ClientID, TotalWeaponDamage, m_Pos, Direction, 400.f, true);
 		GS()->CreateSound(m_Pos, SOUND_WEAPONS_GUN_PULSE_START);
 		return true;
 	}
@@ -431,7 +433,7 @@ bool CCharacter::FireGun(vec2 Direction, vec2 ProjStartPos)
 	return true;
 }
 
-bool CCharacter::FireShotgun(vec2 Direction, vec2 ProjStartPos)
+bool CCharacter::FireShotgun(vec2 Direction, vec2 ProjStartPos, int Damage)
 {
 	// check equip state
 	const auto EquippedItemIdOpt = m_pPlayer->GetEquippedSlotItemID(ItemType::EquipShotgun);
@@ -469,7 +471,7 @@ bool CCharacter::FireShotgun(vec2 Direction, vec2 ProjStartPos)
 	return true;
 }
 
-bool CCharacter::FireGrenade(vec2 Direction, vec2 ProjStartPos)
+bool CCharacter::FireGrenade(vec2 Direction, vec2 ProjStartPos, int Damage)
 {
 	// check equip state
 	const auto EquippedItemIdOpt = m_pPlayer->GetEquippedSlotItemID(ItemType::EquipGrenade);
@@ -497,7 +499,7 @@ bool CCharacter::FireGrenade(vec2 Direction, vec2 ProjStartPos)
 	return true;
 }
 
-bool CCharacter::FireRifle(vec2 Direction, vec2 ProjStartPos)
+bool CCharacter::FireRifle(vec2 Direction, vec2 ProjStartPos, int TotalWeaponDamage)
 {
 	// check equip state
 	const auto EquippedItemIdOpt = m_pPlayer->GetEquippedSlotItemID(ItemType::EquipLaser);
@@ -530,9 +532,15 @@ bool CCharacter::FireRifle(vec2 Direction, vec2 ProjStartPos)
 		return true;
 	}
 
+	// Tesla serpen
+	if(EquippedItemIdOpt == itRifleTeslaSerpent)
+	{
+		new CEntityTeslaSerpent(&GS()->m_World, m_ClientID, ProjStartPos, Direction, TotalWeaponDamage, 400.f, 3, 0.5f);
+		return true;
+	}
+
 	// default laser
-	const auto Damage = g_pData->m_Weapons.m_aId[WEAPON_LASER].m_Damage;
-	new CLaser(&GS()->m_World, m_ClientID, Damage, ProjStartPos, Direction, GS()->Tuning()->m_LaserReach, false);
+	new CLaser(&GS()->m_World, m_ClientID, TotalWeaponDamage, ProjStartPos, Direction, GS()->Tuning()->m_LaserReach, false);
 	GS()->CreateSound(m_Pos, SOUND_LASER_FIRE);
 	return true;
 }
@@ -597,7 +605,7 @@ void CCharacter::HandleNinja()
 			if(distance(pChar->m_Core.m_Pos, m_Core.m_Pos) < Radius)
 			{
 				if(pChar->GetPlayer()->GetCID() != m_ClientID && pChar->IsAllowedPVP(m_ClientID))
-					pChar->TakeDamage(vec2(0, -10.0f), 1, m_ClientID, WEAPON_NINJA);
+					pChar->TakeDamage(vec2(0, -10.0f), GetTotalDamageByWeapon(WEAPON_NINJA), m_ClientID, WEAPON_NINJA);
 			}
 		}
 	}
@@ -1168,7 +1176,7 @@ void CCharacter::ApplyMoveRestrictions()
 
 int CCharacter::GetTotalDamageByWeapon(int Weapon) const
 {
-	int Damage = m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::DMG);
+	int Damage = 0;
 
 	switch(Weapon)
 	{
@@ -1205,7 +1213,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Damage, int FromCID, int Weapon)
 	// damage calculation
 	auto* pFrom = GS()->GetPlayer(FromCID);
 	if(pFrom && pFrom->GetCharacter())
-		Damage += pFrom->GetCharacter()->GetTotalDamageByWeapon(Weapon);
+		Damage += m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::DMG);
 	Damage = (FromCID == m_pPlayer->GetCID() ? maximum(1, Damage / 2) : maximum(1, Damage));
 
 	// chances of effects
@@ -1736,7 +1744,6 @@ void CCharacter::UpdateEquippedStats(std::optional<int> UpdatedItemID)
 	if(m_Health > MaxHealth)
 	{
 		GS()->Chat(m_pPlayer->GetCID(), "Your health has been reduced.");
-		GS()->Chat(m_pPlayer->GetCID(), "You may have removed equipment that increased it.");
 		m_Health = MaxHealth;
 	}
 
@@ -1745,7 +1752,6 @@ void CCharacter::UpdateEquippedStats(std::optional<int> UpdatedItemID)
 	if(m_Mana > MaxMana)
 	{
 		GS()->Chat(m_pPlayer->GetCID(), "Your mana has been reduced.");
-		GS()->Chat(m_pPlayer->GetCID(), "You may have removed equipment that increased it.");
 		m_Mana = MaxMana;
 	}
 
