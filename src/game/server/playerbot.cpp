@@ -189,29 +189,33 @@ static int CalculateAttribute(CGS* pGS, const CPlayerBot* pPlayer, AttributeIden
 		const auto* pController = dynamic_cast<CGameControllerDungeon*>(pGS->m_pController);
 		if(pController && pController->GetDungeon())
 		{
-			// calculating stats
-			int MinValue = 0;
-			float BaseFactor = 0.f;
+			float PlayerStatConversionFactor = (float)g_Config.m_SvDunFactOther / 100.0f;
+			float PowerLevelCurveRate = (float)g_Config.m_SvDunPwrLvlRateBase / 1000.0f;
+			float PlayerCountScalingExponent = (float)g_Config.m_SvDunPlyCntExpBase / 100.0f;
+
 			if(pAttribute->IsGroup(AttributeGroup::DamageType))
 			{
-				BaseFactor = (float)g_Config.m_SvDungeonDamageTypeFactor / 100.f;
+				PlayerStatConversionFactor = (float)g_Config.m_SvDunFactDmg / 100.0f;
+				PowerLevelCurveRate = (float)g_Config.m_SvDunPwrLvlRateDmg / 1000.0f;
 			}
 			else if(ID == AttributeIdentifier::Crit)
 			{
-				BaseFactor = (float)g_Config.m_SvDungeonCritChanceFactor / 100.f;
+				PlayerStatConversionFactor = (float)g_Config.m_SvDunFactCrit / 100.0f;
+				PowerLevelCurveRate = (float)g_Config.m_SvDunPwrLvlRateCrit / 1000.0f;
 			}
 			else if(Boss && ID == AttributeIdentifier::HP)
 			{
-				BaseFactor = (float)g_Config.m_SvDungeonBossHealthFactor / 100.0f;
-				MinValue = 5;
+				PlayerStatConversionFactor = (float)g_Config.m_SvDunFactBossHp / 100.0f;
+				PowerLevelCurveRate = (float)g_Config.m_SvDunPwrLvlRateBossHp / 1000.0f;
+				PlayerCountScalingExponent = (float)g_Config.m_SvDunPlyCntExpBossHp / 100.0f;
 			}
 			else
 			{
-				BaseFactor = (float)g_Config.m_SvDungeonOtherTypeFactor / 100.f;
-				MinValue = 5;
+				PlayerStatConversionFactor = (float)g_Config.m_SvDunFactOther / 100.0f;
+				PowerLevelCurveRate = (float)g_Config.m_SvDunPwrLvlRateOther / 1000.0f;
 			}
 
-			AttributeValue += pController->CalculateMobAttribute(ID, PowerLevel, BaseFactor, MinValue);
+			AttributeValue += pController->CalculateMobAttribute(ID, PowerLevel, PlayerStatConversionFactor, PowerLevelCurveRate, PlayerCountScalingExponent, 1);
 		}
 
 		return AttributeValue;

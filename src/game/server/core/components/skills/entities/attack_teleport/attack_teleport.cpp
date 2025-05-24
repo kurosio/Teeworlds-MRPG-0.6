@@ -108,7 +108,7 @@ void CAttackTeleport::Tick()
 					std::advance(randIt, rand() % m_vMovingMap.size());
 					pNextPlayer = (*randIt);
 
-					if(!pNextPlayer
+					if(!pNextPlayer || !pNextPlayer->GetCharacter()
 						|| (pNextPlayer && GS()->Collision()->IntersectLineColFlag(m_pPlayer->m_ViewPos, pNextPlayer->m_ViewPos, nullptr, nullptr, CCollision::COLFLAG_DISALLOW_MOVE)))
 					{
 						m_vMovingMap.erase(randIt);
@@ -123,7 +123,6 @@ void CAttackTeleport::Tick()
 				{
 					// take damage and some buffs
 					const auto SearchPos = pNextChar->GetPos();
-					const auto Diff = SearchPos - m_Pos;
 					const auto StunTime = 3;
 
 					if(pNextPlayer->m_Effects.Add("Stun", StunTime * Server()->TickSpeed()))
