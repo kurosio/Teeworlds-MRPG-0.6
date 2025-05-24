@@ -124,7 +124,6 @@ void CAttackTeleport::Tick()
 					// take damage and some buffs
 					const auto SearchPos = pNextChar->GetPos();
 					const auto Diff = SearchPos - m_Pos;
-					const auto Force = normalize(Diff) * 16.0f;
 					const auto StunTime = 3;
 
 					if(pNextPlayer->m_Effects.Add("Stun", StunTime * Server()->TickSpeed()))

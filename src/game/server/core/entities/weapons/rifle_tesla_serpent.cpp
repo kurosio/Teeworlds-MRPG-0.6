@@ -109,6 +109,8 @@ void CEntityTeslaSerpent::CalculateChainLightning()
             GS()->CreateExplosion(HitPosition, m_ClientID, WEAPON_LASER, (int)CurrentSegmentDamage);
             m_vTargetsHitThisShot.push_back(pClosestHitCharacter->GetPlayer()->GetCID());
             // GS()->CreateSound(HitPosition, SOUND_WEAPON_TESLA_CHAIN);
+            GS()->CreateSound(HitPosition, SOUND_GRENADE_EXPLODE);
+            GS()->CreateSound(HitPosition, SOUND_HOOK_LOOP);
 
             CurrentChainSourcePos = HitPosition;
             CurrentSegmentDamage *= m_DamageFalloff;
@@ -118,6 +120,8 @@ void CEntityTeslaSerpent::CalculateChainLightning()
         {
             GS()->CreateExplosion(HitPosition, m_ClientID, WEAPON_LASER, (int)CurrentSegmentDamage);
             // GS()->CreateSound(HitPosition, SOUND_WEAPON_TESLA_CHAIN);
+            GS()->CreateSound(HitPosition, SOUND_GRENADE_EXPLODE);
+            GS()->CreateSound(HitPosition, SOUND_HOOK_LOOP);
             break;
         }
 

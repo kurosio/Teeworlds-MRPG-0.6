@@ -536,6 +536,7 @@ bool CCharacter::FireRifle(vec2 Direction, vec2 ProjStartPos, int TotalWeaponDam
 	if(EquippedItemIdOpt == itRifleTeslaSerpent)
 	{
 		new CEntityTeslaSerpent(&GS()->m_World, m_ClientID, ProjStartPos, Direction, TotalWeaponDamage, 400.f, 3, 0.5f);
+		GS()->CreateSound(m_Pos, SOUND_LASER_FIRE);
 		return true;
 	}
 
