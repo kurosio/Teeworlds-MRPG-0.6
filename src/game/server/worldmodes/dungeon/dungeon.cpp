@@ -411,30 +411,6 @@ int CGameControllerDungeon::CalculateMobAttribute(AttributeIdentifier ID, int Po
 	return std::max(MinValue, AttributeValue);
 }
 
-int CGameControllerDungeon::CalculateMobAttribute(AttributeIdentifier ID, int PowerLevel, float PlayerStatConversionFactor,
-	float PowerLevelCurveRate, float PlayerCountScalingExponent, int MinValue) const
-{
-	auto TotalPlayerAttribute = GetAttributeDungeonSync(ID);
-	double MobBaseAttribute = static_cast<double>(TotalPlayerAttribute) * PlayerStatConversionFactor;
-	double PowerScaledAttribute = MobBaseAttribute * (1.0 + (PowerLevel - 1) * std::max(0.0f, PowerLevelCurveRate));
-
-	double FinalAttributeValue;
-	if(PlayerCountScalingExponent > 0.0001f)
-	{
-		double PlayerCountDivisor = std::pow(maximum(1.0, static_cast<double>(m_StartedPlayersNum)), PlayerCountScalingExponent);
-		if(PlayerCountDivisor < 0.00001)
-			PlayerCountDivisor = 0.00001;
-
-		FinalAttributeValue = PowerScaledAttribute / PlayerCountDivisor;
-	}
-	else
-	{
-		FinalAttributeValue = PowerScaledAttribute;
-	}
-
-	int ResultAttribute = static_cast<int>(std::round(FinalAttributeValue));
-	return std::max(MinValue, ResultAttribute);
-}
 
 int CGameControllerDungeon::GetAttributeDungeonSync(AttributeIdentifier ID) const
 {

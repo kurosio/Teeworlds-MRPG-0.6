@@ -135,19 +135,11 @@ MACRO_CONFIG_INT(SvAvailableDungeonJoin, sv_available_dungeon_join, 1, 0, 1, CFG
 MACRO_CONFIG_INT(SvDungeonExpMultiplier, sv_dungeon_exp_multiplier, 150, 100, 1000, CFGFLAG_SERVER, "Experience multiplier for completing raid dungeons (percent)")
 MACRO_CONFIG_INT(SvDungeonWaitingTime, sv_dungeon_waiting_time, 180, 0, 1020, CFGFLAG_SERVER, "Waiting time for dungeon entry (in seconds)")
 
-MACRO_CONFIG_INT(SvDunFactDmg, sv_dun_fact_dmg, 15, 1, 500, CFGFLAG_SERVER, "Dungeon: DamageType attributes (percent of player total stat)");
-MACRO_CONFIG_INT(SvDunFactCrit, sv_dun_fact_crit, 7, 1, 500, CFGFLAG_SERVER, "Dungeon: CritChance attribute (percent of player total stat)");
-MACRO_CONFIG_INT(SvDunFactOther, sv_dun_fact_other, 50, 1, 500, CFGFLAG_SERVER, "Dungeon: OtherType attributes (percent of player total stat)");
-MACRO_CONFIG_INT(SvDunFactBossHp, sv_dung_fact_boos_hp, 350, 1, 2000, CFGFLAG_SERVER, "Dungeon: Boss HP (percent of player total stat)");
-
-MACRO_CONFIG_INT(SvDunPwrLvlRateBase, sv_dun_pwrlvl_rate_base, 150, 0, 5000, CFGFLAG_SERVER, "Dungeon: Base PowerLevelCurveRate");
-MACRO_CONFIG_INT(SvDunPwrLvlRateDmg, sv_dun_pwrlvl_rate_dmg, 40, 0, 5000, CFGFLAG_SERVER, "Dungeon: DamageType PowerLevelCurveRate");
-MACRO_CONFIG_INT(SvDunPwrLvlRateCrit, sv_dun_pwrlvl_rate_crit, 40, 0, 5000, CFGFLAG_SERVER, "Dungeon: CritChance PowerLevelCurveRate");
-MACRO_CONFIG_INT(SvDunPwrLvlRateBossHp, sv_dun_pwrlvl_rate_boss_hp, 220, 0, 5000, CFGFLAG_SERVER, "Dungeon: Boss HP PowerLevelCurveRate");
-MACRO_CONFIG_INT(SvDunPwrLvlRateOther, sv_dun_pwrlvl_rate_other, 160, 0, 5000, CFGFLAG_SERVER, "Dungeon: OtherType PowerLevelCurveRate");
-
-MACRO_CONFIG_INT(SvDunPlyCntExpBase, sv_dun_plycnt_exp_base, 50, 0, 200, CFGFLAG_SERVER, "Dungeon: Base PlayerCountScalingExponent");
-MACRO_CONFIG_INT(SvDunPlyCntExpBossHp, sv_dun_plycnt_exp_boss_hp, 25, 0, 200, CFGFLAG_SERVER, "Dungeon: Boss HP PlayerCountScalingExponent");
+// --- PlayerStatConversionFactor ---
+MACRO_CONFIG_INT(SvDunFactDmg, sv_dun_fact_dmg, 15, 1, 500, CFGFLAG_SERVER, "Dungeon: factor attributes (percent of player total stat)");
+MACRO_CONFIG_INT(SvDunFactCrit, sv_dun_fact_crit, 7, 1, 500, CFGFLAG_SERVER, "Dungeon: factor for CritChance attribute (percent of player total stat)");
+MACRO_CONFIG_INT(SvDunFactOther, sv_dun_fact_other, 50, 1, 500, CFGFLAG_SERVER, "Dungeon: factor for OtherType attributes (percent of player total stat)");
+MACRO_CONFIG_INT(SvDunFactBossHp, sv_dun_fact_boos_hp, 300, 1, 2000, CFGFLAG_SERVER, "Dungeon: factor for Boss HP (percent of player total stat)");
 
 // -----------------------
 // Auction System Configuration
