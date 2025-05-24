@@ -53,7 +53,7 @@ void CAttackTeleport::Tick()
 
 			// damage for players
 			const auto currentDmgSize = m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::DMG);
-			const int maxDmgSize = maximum(1, translate_to_percent_rest(currentDmgSize, clamp(m_SkillBonus, 1, 50)));
+			const int maxDmgSize = maximum(1, translate_to_percent_rest(currentDmgSize, clamp(m_SkillBonus, 1, 30)));
 
 			for(int i = 0; i < MAX_CLIENTS; i++)
 			{
@@ -99,7 +99,7 @@ void CAttackTeleport::Tick()
 				CPlayer* pNextPlayer = nullptr;
 				CCharacter* pNextChar = nullptr;
 				const auto currentDmgSize = m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::DMG);
-				const int maxDmgSize = maximum(1, translate_to_percent_rest(currentDmgSize, clamp(m_SkillBonus, 1, 50)));
+				const int maxDmgSize = maximum(1, translate_to_percent_rest(currentDmgSize, clamp(m_SkillBonus, 1, 30)));
 
 				// try get next player
 				while(!pNextPlayer && !pNextChar && !m_vMovingMap.empty())
