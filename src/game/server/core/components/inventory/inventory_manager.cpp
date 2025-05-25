@@ -431,11 +431,16 @@ void CInventoryManager::ItemSelected(CPlayer* pPlayer, const CPlayerItem* pItem)
 
 	// is used item
 	if(pInfo->m_Group == ItemGroup::Usable && (pInfo->m_Type == ItemType::UseSingle || pInfo->m_Type == ItemType::UseMultiple))
-		VItem.AddOption("USE_ITEM", ItemID, "Use");
+	{
+		VItem.AddOption("USE_ITEM", ItemID, "Use (ID: {})", ItemID);
+	}
 
 	// is potion
 	if(pInfo->m_Group == ItemGroup::Potion)
+	{
+		VItem.AddOption("USE_ITEM", ItemID, "Use (ID: {})", ItemID);
 		VItem.AddOption("EQUIP_ITEM", ItemID, "Auto use - {}", (pItem->IsEquipped() ? "Enable" : "Disable"));
+	}
 
 	// is decoration
 	if(pInfo->m_Group == ItemGroup::Decoration)
