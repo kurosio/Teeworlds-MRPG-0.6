@@ -320,6 +320,7 @@ class CVotePlayerData
 	int m_CurrentMenuID{};
 	std::optional<int> m_ExtraID {};
 	std::thread m_VoteUpdater {};
+	mystd::string_mapper<int> m_StringMapper {};
 	enum class STATE_UPDATER { WAITING, RUNNING, DONE };
 	std::atomic<STATE_UPDATER> m_VoteUpdaterStatus{ STATE_UPDATER::WAITING };
 	ska::unordered_map<int, ska::unordered_map<int, VoteGroupHidden>> m_aHiddenGroup{};
@@ -345,6 +346,7 @@ public:
 		m_pGS = nullptr;
 		m_pPlayer = nullptr;
 		m_aHiddenGroup.clear();
+		m_StringMapper.clear();
 	}
 
 	void Init(CGS* pGS, CPlayer* pPlayer)
@@ -360,6 +362,7 @@ public:
 	void ClearVotes() const;
 	void ResetHidden() { ResetHidden(m_CurrentMenuID); }
 	void ResetExtraID() { m_ExtraID.reset(); }
+	mystd::string_mapper<int>& GetStringMapper() { return m_StringMapper; }
 
 	void SetCurrentMenuID(int MenuID) { m_CurrentMenuID = MenuID; }
 	int GetCurrentMenuID() const { return m_CurrentMenuID; }

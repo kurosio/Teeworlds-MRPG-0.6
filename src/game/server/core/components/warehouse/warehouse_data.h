@@ -1,5 +1,4 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
+/* warehouse_data.h */
 #ifndef GAME_SERVER_COMPONENT_WAREHOUSE_DATA_H
 #define GAME_SERVER_COMPONENT_WAREHOUSE_DATA_H
 
@@ -8,9 +7,9 @@
 class CTrade;
 class CWarehouseStorage;
 using ContainerTradingList = std::deque<CTrade>;
+
 constexpr auto TW_WAREHOUSE_TABLE = "tw_warehouses";
 
-// warehouse flags
 enum WarehouseFlags
 {
 	WF_NONE = 0,
@@ -21,53 +20,36 @@ enum WarehouseFlags
 	WF_SELL_STORAGE = WF_SELL | WF_STORAGE
 };
 
-// trade slot
 class CTrade
 {
-	int m_ID {};
-	CItem m_Item {};
-	int m_Price {};
+	int m_ID{};
+	CItem m_Item{};
+	int m_Price{};
+	int m_ExplicitProducts{};
 
 public:
-	CTrade(int ID, CItem&& pItem, int Price)
-		: m_ID(ID), m_Item(std::move(pItem)), m_Price(Price) {}
-
-	// get trade identifier
-	int GetID() const
-	{
-		return m_ID;
+	CTrade(int ID, CItem&& pItem, int Price, int ExplicitProducts = NOPE)
+		: m_ID(ID), m_Item(std::move(pItem)), m_Price(Price), m_ExplicitProducts(ExplicitProducts) {
 	}
 
-	// get trade item
-	CItem* GetItem()
-	{
-		return &m_Item;
-	}
+	int GetID() const { return m_ID; }
+	CItem* GetItem() { return &m_Item; }
+	const CItem* GetItem() const { return &m_Item; }
+	int GetPrice() const { return m_Price; }
 
-	// get trade item
-	const CItem* GetItem() const
-	{
-		return &m_Item;
-	}
-
-	// get price
-	int GetPrice() const
-	{
-		return m_Price;
-	}
-
-	// get product cost
 	int GetProductsCost() const
 	{
+		if(m_ExplicitProducts != NOPE)
+			return m_ExplicitProducts;
+
 		auto Price = maximum(1, GetPrice());
 		return translate_to_percent_rest(Price, g_Config.m_SvPercentProductsByPrice);
 	}
 };
 
-// warehouse
+// Warehouse
 class CWarehouse : public MultiworldIdentifiableData<std::deque<CWarehouse*>>
 {
-	// storage inner structure
 	class CStorage
 	{
 		friend class CWarehouse;
@@ -76,10 +58,16 @@ class CWarehouse : public MultiworldIdentifiableData<std::deque<CWarehouse*>>
 		vec2 m_TextPos {};
 
 	public:
-		// remove storage value
+		CStorage() : m_pWarehouse(nullptr), m_Value(0), m_TextPos(0, 0) { }
+
+		void Init(CWarehouse* pWarehouse)
+		{
+			m_pWarehouse = pWarehouse;
+		}
+
 		bool Remove(const BigInt& Value)
 		{
-			if(m_pWarehouse->IsHasFlag(WF_STORAGE) && m_Value >= Value)
+			if(m_pWarehouse && m_pWarehouse->IsHasFlag(WF_STORAGE) && m_Value >= Value)
 			{
 				m_Value -= Value;
 				m_pWarehouse->SaveData();
@@ -88,25 +76,20 @@ class CWarehouse : public MultiworldIdentifiableData<std::deque<CWarehouse*>>
 			return false;
 		}
 
-		// add storage value
 		void Add(const BigInt& Value)
 		{
-			if(m_pWarehouse->IsHasFlag(WF_STORAGE))
+			if(m_pWarehouse && m_pWarehouse->IsHasFlag(WF_STORAGE))
 			{
 				m_Value += Value;
 				m_pWarehouse->SaveData();
 			}
 		}
 
-		// get value
-		BigInt GetValue() const
-		{
-			return m_Value;
-		}
-
-		// update text storage product value
+		BigInt GetValue() const { return m_Value; }
+		vec2 GetTextPos() const { return m_TextPos; }
+		void SetTextPos(vec2 Pos) { m_TextPos = Pos; }
+		void SetValue(const BigInt& Value) { m_Value = Value; }
 		void UpdateText(int LifeTime) const;
-
 	};
 
 	int m_ID {};
@@ -117,21 +100,23 @@ class CWarehouse : public MultiworldIdentifiableData<std::deque<CWarehouse*>>
 	int m_WorldID {};
 	CStorage m_Storage {};
 	ContainerTradingList m_vTradingList {};
-	nlohmann::json m_Properties {};
+	std::map<std::string, std::map<std::string, std::vector<CTrade*>>> m_mGroupedTradeIDs {};
 
 public:
 	CWarehouse() = default;
 
+	static const std::string s_DefaultSubgroupKey;
 	static CWarehouse* CreateElement(const int WarehouseID) noexcept
 	{
 		auto pData = new CWarehouse;
 		pData->m_ID = WarehouseID;
+		pData->m_Storage.Init(pData);
 		return m_pData.emplace_back(pData);
 	}
 
-	// initialize
-	void Init(const std::string& Name, const DBSet& Type, const nlohmann::json& JsonData, vec2 Pos, int Currency, int WorldID);
-	void InitData(const DBSet& Type, const nlohmann::json& JsonData);
+	void Init(const std::string& Name, const DBSet& Type, const std::string& TradesStr,
+		const nlohmann::json& StorageData, vec2 Pos, int Currency, int WorldID);
+	void InitData(const DBSet& Type, const std::string& TradesStr, const nlohmann::json& StorageData);
 	void SaveData();
 
 	int GetID() const { return m_ID; }
@@ -144,6 +129,13 @@ public:
 	CStorage& Storage() { return m_Storage; }
 	CTrade* GetTrade(int TradeID);
 	const ContainerTradingList& GetTradingList() const { return m_vTradingList; }
+	const std::map<std::string, std::map<std::string, std::vector<CTrade*>>>& GetGroupedTrades() const { return m_mGroupedTradeIDs; }
+
+private:
+	void ParseCollectionBlock(const std::string& block_content, const std::string& currentGroup, const std::string& currentSubgroup);
+	void ParseItemBlock(const std::string& block_content, const std::string& currentGroup, const std::string& currentSubgroup);
+	void InitializeStorage(const nlohmann::json& StorageData);
+	void InitializeFlags(const DBSet& Type);
 };
 
 #endif

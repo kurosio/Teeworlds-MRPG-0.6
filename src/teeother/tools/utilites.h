@@ -267,6 +267,16 @@ namespace mystd
 	 */
 	namespace string
 	{
+		inline std::string trim(const std::string& str)
+		{
+			const std::string whitespace = " \t\n\r\f\v";
+			size_t start = str.find_first_not_of(whitespace);
+			if(start == std::string::npos)
+				return "";
+			size_t end = str.find_last_not_of(whitespace);
+			return str.substr(start, end - start + 1);
+		}
+
 		inline std::string progressBar(uint64_t maxValue, uint64_t currentValue, int totalSteps, const std::string& Fillsymbols, const std::string& EmptySymbols)
 		{
 			std::string resutStr;
@@ -658,6 +668,54 @@ namespace mystd
 		{
 			m_umConfig.erase(key);
 		}
+	};
+
+	template <std::integral id_type>
+	class string_mapper
+	{
+	public:
+		[[nodiscard]] id_type string_to_id(const std::string& str)
+		{
+			auto it = m_vStrToIdsMap.find(str);
+			if(it == m_vStrToIdsMap.end())
+			{
+				if(m_NextID >= std::numeric_limits<id_type>::max())
+					m_NextID = 0;
+
+				id_type new_id = m_NextID++;
+				m_vStrToIdsMap[str] = new_id;
+				m_vIdsToStrMap[new_id] = str;
+				return new_id;
+			}
+
+			return it->second;
+		}
+
+		[[nodiscard]] std::optional<std::string> id_to_string(id_type id) const
+		{
+			auto it = m_vIdsToStrMap.find(id);
+			if(it != m_vIdsToStrMap.end())
+			{
+				return it->second;
+			}
+			return std::nullopt;
+		}
+
+		[[nodiscard]] bool has_string(const std::string& str) const { return m_vStrToIdsMap.count(str) > 0; }
+		[[nodiscard]] bool has_id(id_type id) const { return m_vIdsToStrMap.count(id) > 0; }
+		[[nodiscard]] size_t count() const { return m_vStrToIdsMap.size(); }
+
+		void clear()
+		{
+			m_vStrToIdsMap.clear();
+			m_vIdsToStrMap.clear();
+			m_NextID = 0;
+		}
+
+	private:
+		std::map<std::string, id_type> m_vStrToIdsMap;
+		std::map<id_type, std::string> m_vIdsToStrMap;
+		id_type m_NextID = 0;
 	};
 }
 
