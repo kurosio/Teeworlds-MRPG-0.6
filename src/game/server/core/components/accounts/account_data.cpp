@@ -549,6 +549,10 @@ void CAccountData::AutoEquipSlots(bool OnlyEmptySlots)
 	{
 		for(const auto& [Type, EquippedItemIdOpt] : equippedSlots.getSlots())
 		{
+			// is type potions group disable auto equip
+			if(Type == ItemType::EquipPotionHeal || Type == ItemType::EquipPotionMana)
+				continue;
+
 			// is only empty slot and weapons always empty
 			if(EquippedItemIdOpt && (OnlyEmptySlots || std::ranges::find(OnlyEmptySlotTypes, Type) != OnlyEmptySlotTypes.end()))
 				continue;
