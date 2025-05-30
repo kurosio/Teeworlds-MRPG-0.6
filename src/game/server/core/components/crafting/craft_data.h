@@ -4,7 +4,7 @@
 #include "game/server/core/components/inventory/item_data.h"
 
 using CraftIdentifier = int;
-class CCraftItem : public MultiworldIdentifiableData< std::map<std::string, std::deque<CCraftItem*> >>
+class CCraftItem : public MultiworldIdentifiableData< std::deque<CCraftItem*> >
 {
 	CraftIdentifier m_ID {};
 	CItem m_Item {};
@@ -16,11 +16,11 @@ public:
 	explicit CCraftItem() = default;
 	explicit CCraftItem(CraftIdentifier ID) : m_ID(ID) {}
 
-	static CCraftItem* CreateElement(const std::string& GroupName, int ID)
+	static CCraftItem* CreateElement(int ID)
 	{
 		auto pData = new CCraftItem(ID);
 		pData->m_ID = ID;
-		return m_pData[GroupName].emplace_back(std::move(pData));
+		return m_pData.emplace_back(std::move(pData));
 	}
 
 	void Init(CItemsContainer RequiredContainer, CItem Item, int Price, int WorldID)

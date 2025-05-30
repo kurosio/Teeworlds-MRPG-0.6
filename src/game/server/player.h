@@ -65,8 +65,8 @@ public:
 	std::unique_ptr<MotdMenu> m_pMotdMenu{};
 	std::optional<ItemGroup> m_InventoryItemGroupFilter{};
 	std::optional<ItemType> m_InventoryItemTypeFilter{};
-	std::optional<int> m_WarehouseGroupTradeFilter{};
-	std::optional<int> m_WarehouseSubgroupTradeFilter {};
+	std::optional<int> m_GroupFilter{};
+	std::optional<int> m_SubgroupFilter {};
 
 
 	char m_aLastMsg[256]{};

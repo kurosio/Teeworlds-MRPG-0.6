@@ -204,15 +204,15 @@ bool CWarehouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
 
 	if(PPSTR(pCmd, "WAREHOUSE_SELECTOR_GROUP") == 0)
 	{
-		pPlayer->m_WarehouseGroupTradeFilter = Extra1;
-		pPlayer->m_WarehouseSubgroupTradeFilter = std::nullopt;
+		pPlayer->m_GroupFilter = Extra1;
+		pPlayer->m_SubgroupFilter = std::nullopt;
 		pPlayer->m_VotesData.UpdateCurrentVotes();
 		return true;
 	}
 
 	if(PPSTR(pCmd, "WAREHOUSE_SELECTOR_SUBGROUP") == 0)
 	{
-		pPlayer->m_WarehouseSubgroupTradeFilter = Extra1;
+		pPlayer->m_SubgroupFilter = Extra1;
 		pPlayer->m_VotesData.UpdateCurrentVotes();
 		return true;
 	}
@@ -274,8 +274,8 @@ void CWarehouseManager::ShowGroupedSelector(CPlayer* pPlayer, CWarehouse* pWareh
 	const auto ClientID = pPlayer->GetCID();
 	const auto& groupedTradesContainer = pWarehouse->GetGroupedTrades();
 	const auto& allGroupData = groupedTradesContainer.get_all_data();
-	const auto& groupIdOpt = pPlayer->m_WarehouseGroupTradeFilter;
-	const auto& subgroupIdOpt = pPlayer->m_WarehouseSubgroupTradeFilter;
+	const auto& groupIdOpt = pPlayer->m_GroupFilter;
+	const auto& subgroupIdOpt = pPlayer->m_SubgroupFilter;
 
 	// show selector by group
 	VoteWrapper VSG(ClientID, VWF_ALIGN_TITLE | VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "\u2636 Select a group");
@@ -313,7 +313,7 @@ void CWarehouseManager::ShowGroupedSelector(CPlayer* pPlayer, CWarehouse* pWareh
 		}
 		else
 		{
-			pPlayer->m_WarehouseSubgroupTradeFilter = pPlayer->m_VotesData.GetStringMapper().string_to_id(groupedTradesContainer.get_default_subgroup_key());
+			pPlayer->m_SubgroupFilter = pPlayer->m_VotesData.GetStringMapper().string_to_id(groupedTradesContainer.get_default_subgroup_key());
 		}
 	}
 

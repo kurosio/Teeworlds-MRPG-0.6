@@ -7,10 +7,9 @@
 #include "../achievements/achievement_data.h"
 #include "../inventory/inventory_manager.h"
 
-
-void CCraftManager::OnPreInit()
+void CCraftManager::OnInitWorld(const std::string& Where)
 {
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_crafts_list");
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_crafts_list", Where.c_str());
 	while(pRes->next())
 	{
 		// initialize variables
@@ -25,8 +24,8 @@ void CCraftManager::OnPreInit()
 		DBSet ItemsSet(pRes->getString("RequiredItems"));
 		for(const auto& Elem : ItemsSet.getItems())
 		{
-			int ItemID{};
-			int Value{};
+			int ItemID {};
+			int Value {};
 			if(sscanf(Elem.c_str(), "[%d/%d]", &ItemID, &Value) == 2)
 			{
 				CItem Item(ItemID, Value);
@@ -36,32 +35,28 @@ void CCraftManager::OnPreInit()
 
 		// initialize craft element
 		CraftIdentifier ID = pRes->getInt("ID");
-		for(auto& Name : GroupNameSet.getItems())
+		auto* pCraftItem = CCraftItem::CreateElement(ID);
+		pCraftItem->Init(RequiredIngredients, CItem(ItemID, ItemValue), Price, WorldID);
+
+		// add to grouped list
+		for(const auto& NameFromSet : GroupNameSet.getItems())
 		{
-			auto* pCraftItem = CCraftItem::CreateElement(Name, ID);
-			pCraftItem->Init(RequiredIngredients, CItem(ItemID, ItemValue), Price, WorldID);
+			if(!NameFromSet.empty())
+			{
+				auto [currentParsingGroup, currentParsingSubgroup] = mystd::string::split_by_delimiter(NameFromSet, ':');
+				if(currentParsingSubgroup.empty())
+					currentParsingSubgroup = m_vGroupedCrafts.get_default_subgroup_key();
+				if(!currentParsingGroup.empty())
+					m_vGroupedCrafts.add_item(currentParsingGroup, currentParsingSubgroup, pCraftItem);
+			}
 		}
 	}
-}
 
-
-void CCraftManager::OnInitWorld(const std::string&)
-{
-	const int currentWorldID = GS()->GetWorldID();
-
-	// filter only current world and sorting by price
-	for(auto& [Name, vItems] : CCraftItem::Data())
+	// sort all items
+	m_vGroupedCrafts.sort_all_items([](const CCraftItem* a, const CCraftItem* b)
 	{
-		auto vResult = vItems | std::views::filter([currentWorldID](CCraftItem* pCraft)
-		{ return pCraft->GetWorldID() == currentWorldID; });
-		if(!vResult.empty())
-		{
-			std::deque<CCraftItem*> vFilteredItems(vResult.begin(), vResult.end());
-			std::ranges::sort(vFilteredItems, [](const auto* pA, const auto* pB)
-			{ return pA->GetPrice() < pB->GetPrice(); });
-			m_vOrderedCraftList.emplace_back(Name, std::move(vFilteredItems));
-		}
-	}
+		return a->GetPrice() < b->GetPrice();
+	});
 }
 
 
@@ -159,22 +154,7 @@ bool CCraftManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	// craft list menu
 	if(Menulist == MENU_CRAFTING_LIST)
 	{
-		// craft selector
-		const auto activeCraftGroupID = pPlayer->m_ActiveCraftGroupID;
-		VoteWrapper VCraftSelector(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_STRICT_BOLD, "\u2692 Crafting List");
-		VCraftSelector.AddItemValue(itGold);
-		VCraftSelector.AddLine();
-		for(int i = 0; i < (int)m_vOrderedCraftList.size(); i++)
-			VCraftSelector.AddOption("CRAFT_TAB_SELECT", i, "{}{SELECTOR}", m_vOrderedCraftList[i].first, GetSelectorStringByCondition(activeCraftGroupID == i));
-		VoteWrapper::AddEmptyline(ClientID);
-
-		// show tab items
-		if(activeCraftGroupID >= 0 && activeCraftGroupID < (int)m_vOrderedCraftList.size())
-		{
-			const auto& [Name, vItems] = m_vOrderedCraftList[activeCraftGroupID];
-			ShowCraftGroup(pPlayer, Name, vItems);
-		}
-
+		ShowGroupedSelector(pPlayer);
 		return true;
 	}
 
@@ -250,7 +230,7 @@ void CCraftManager::ShowCraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const
 }
 
 
-void CCraftManager::ShowCraftGroup(CPlayer* pPlayer, const std::string& GroupName, const std::deque<CCraftItem*>& vItems) const
+void CCraftManager::ShowCraftGroup(CPlayer* pPlayer, const std::string& GroupName, const std::vector<CCraftItem*>& vItems) const
 {
 	// initialize variables
 	const auto ClientID = pPlayer->GetCID();
@@ -280,13 +260,91 @@ void CCraftManager::ShowCraftGroup(CPlayer* pPlayer, const std::string& GroupNam
 }
 
 
+void CCraftManager::ShowGroupedSelector(CPlayer* pPlayer) const
+{
+	if(!pPlayer)
+		return;
+
+	// initialize variables
+	const auto ClientID = pPlayer->GetCID();
+	const auto& groupedTradesContainer = m_vGroupedCrafts;
+	const auto& allGroupData = groupedTradesContainer.get_all_data();
+	const auto& groupIdOpt = pPlayer->m_GroupFilter;
+	const auto& subgroupIdOpt = pPlayer->m_SubgroupFilter;
+
+	// show selector by group
+	VoteWrapper VSG(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_STRICT_BOLD, "\u2692 Crafting List");
+	for(const auto& [groupName, subGroupMap] : allGroupData)
+	{
+		const auto GroupID = pPlayer->m_VotesData.GetStringMapper().string_to_id(groupName);
+		const char* pSelectStr = GetSelectorStringByCondition(groupIdOpt && (*groupIdOpt) == GroupID);
+		VSG.AddOption("WAREHOUSE_SELECTOR_GROUP", GroupID, "{}({}){SELECTOR}", Instance::Localize(ClientID, groupName.c_str()), subGroupMap.size(), pSelectStr);
+	}
+
+	// show selector by subgroup
+	if(groupIdOpt)
+	{
+		// check valid id by group name and valid group container
+		const auto groupNameOpt = pPlayer->m_VotesData.GetStringMapper().id_to_string(*groupIdOpt);
+		if(!groupNameOpt || !groupedTradesContainer.has_group(*groupNameOpt))
+			return;
+
+		const auto* pSubGroupMap = groupedTradesContainer.get_subgroups(*groupNameOpt);
+		if(!pSubGroupMap)
+			return;
+
+		bool HasOnlyDefaultGroup = (pSubGroupMap->size() <= 1 &&
+			std::ranges::any_of(*pSubGroupMap, [&](const auto& pair) { return pair.first == groupedTradesContainer.get_default_subgroup_key(); }));
+
+		if(!HasOnlyDefaultGroup)
+		{
+			VSG.AddLine();
+			for(const auto& [subGroupName, itemList] : *pSubGroupMap)
+			{
+				const auto SubgroupID = pPlayer->m_VotesData.GetStringMapper().string_to_id(subGroupName);
+				const char* pSelectStr = GetSelectorStringByCondition(subgroupIdOpt && (*subgroupIdOpt) == SubgroupID);
+				VSG.AddOption("WAREHOUSE_SELECTOR_SUBGROUP", SubgroupID, "{}({}){SELECTOR}", subGroupName.c_str(), itemList.size(), pSelectStr);
+			}
+		}
+		else
+		{
+			pPlayer->m_SubgroupFilter = pPlayer->m_VotesData.GetStringMapper().string_to_id(groupedTradesContainer.get_default_subgroup_key());
+		}
+	}
+
+	// show all item's by filter
+	if(groupIdOpt && subgroupIdOpt)
+	{
+		// check valid id by group name and valid group container
+		const auto groupNameOptStr = pPlayer->m_VotesData.GetStringMapper().id_to_string(*groupIdOpt);
+		if(!groupNameOptStr || !groupedTradesContainer.has_group(*groupNameOptStr))
+			return;
+
+		// check valid id by subgroup name and valid subgroup container
+		const auto subGroupNameOptStr = pPlayer->m_VotesData.GetStringMapper().id_to_string(*subgroupIdOpt);
+		if(!subGroupNameOptStr || !groupedTradesContainer.has_subgroup(*groupNameOptStr, *subGroupNameOptStr))
+			return;
+
+		const auto* pItemList = groupedTradesContainer.get_items(*groupNameOptStr, *subGroupNameOptStr);
+		if(!pItemList)
+			return;
+
+		// show all item's by selector filter
+		VoteWrapper::AddEmptyline(ClientID);
+		const auto groupName = (*subGroupNameOptStr) != groupedTradesContainer.get_default_subgroup_key()
+			? (*subGroupNameOptStr) : (*groupNameOptStr);
+		ShowCraftGroup(pPlayer, Instance::Localize(ClientID, groupName.c_str()), *pItemList);
+	}
+}
+
+
+
 CCraftItem* CCraftManager::GetCraftByID(CraftIdentifier ID) const
 {
-	for(const auto& [key, itemDeque] : CCraftItem::Data())
+	for(const auto& craftItem : CCraftItem::Data())
 	{
-		auto iter = std::ranges::find_if(itemDeque, [ID](const CCraftItem* p) { return p->GetID() == ID; });
-		if(iter != itemDeque.end())
-			return *iter;
+		if(craftItem->GetID() == ID)
+			return craftItem;
 	}
 
 	return nullptr;
