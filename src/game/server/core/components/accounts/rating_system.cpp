@@ -137,6 +137,7 @@ void RatingSystem::Load()
 	if(!m_pAccount)
 		return;
 
+	// try load and get raw data
 	ByteArray RawData;
 	if(!mystd::file::load(m_FileName.c_str(), &RawData))
 	{
@@ -144,12 +145,26 @@ void RatingSystem::Load()
 		return;
 	}
 
-	auto j = nlohmann::json::parse((char*)RawData.data());
-	m_Rating = j.value("rating", g_Config.m_SvMinRating);
-	m_Played = j.value("played", 0);
-	m_Wins = j.value("wins", 0);
-	m_Losses = j.value("losses", 0);
-	m_vHistory = j.value("history", std::vector<int>{});
+	// try initialize json by raw string data
+	std::string rawString = (char*)RawData.data();
+	bool hasError = mystd::json::parse(rawString, [this](nlohmann::json& j)
+	{
+		m_Rating = j.value("rating", g_Config.m_SvMinRating);
+		m_Played = j.value("played", 0);
+		m_Wins = j.value("wins", 0);
+		m_Losses = j.value("losses", 0);
+		m_vHistory = j.value("history", std::vector<int>{});
+	});
+
+	// has error re-creating file
+	if(hasError)
+	{
+		dbg_msg("rating_system", "can't initialize '%s'. Re-creating....", m_FileName.c_str());
+		mystd::file::remove(m_FileName.c_str());
+		Create();
+		return;
+	}
+
 	UpdateClient();
 }
 
