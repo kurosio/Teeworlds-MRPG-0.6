@@ -137,8 +137,8 @@ void CMailboxManager::ShowMail(int MailID, CPlayer* pPlayer) const
 		std::string Sender = pRes->getString("Sender").c_str();
 
 		// parse items
-		const nlohmann::json jsAttachedItems = nlohmann::json::parse(pRes->getString("AttachedItems").c_str());
-		CItemsContainer vAttachedItems = CItem::FromArrayJSON(jsAttachedItems, "items");
+		const auto attachedItemsJson = pRes->getJson("AttachedItems");
+		CItemsContainer vAttachedItems = attachedItemsJson.value("items", CItemsContainer {});
 
 		// parse description lines
 		std::string Descriptions = pRes->getString("Description").c_str();
@@ -183,11 +183,11 @@ bool CMailboxManager::AcceptMail(CPlayer* pPlayer, int MailID)
 		return false;
 
 	// parse items
-	const nlohmann::json jsAttachedItems = nlohmann::json::parse(pRes->getString("AttachedItems").c_str());
-	CItemsContainer vAttachedItems = CItem::FromArrayJSON(jsAttachedItems, "items");
-	CItemsContainer vCannotAcceptableItems {};
+	const auto attachedItemsJson = pRes->getJson("AttachedItems");
+	CItemsContainer vAttachedItems = attachedItemsJson.value("items", CItemsContainer {});
 
 	// accept attached items
+	CItemsContainer vCannotAcceptableItems {};
 	for(auto& pItem : vAttachedItems)
 	{
 		CPlayerItem* pPlayerItem = pPlayer->GetItem(pItem);

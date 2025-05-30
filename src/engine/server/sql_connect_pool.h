@@ -95,24 +95,13 @@ public:
 		if(!m_pResult)
 			return result;
 
-		try
+		std::string jsonString = m_pResult->getString(column).c_str();
+		bool hasError = mystd::json::parse(jsonString, [&result](nlohmann::json& j)
 		{
-			std::string json_string = m_pResult->getString(column).c_str();
-			if(json_string.empty())
-				return result;
+			result = std::move(j);
+		});
 
-			result = nlohmann::json::parse(json_string);
-		}
-		catch(const nlohmann::json::parse_error& e)
-		{
-			dbg_msg("db", "JSON parse error for column '%s': %s", column.c_str(), e.what());
-			result = nullptr;
-		}
-		catch(...)
-		{
-			result = nullptr;
-		}
-
+		dbg_assert(!hasError, fmt_default("JSON from DB for column '{}' failed to parse.", column.c_str()).c_str());
 		return result;
 	}
 

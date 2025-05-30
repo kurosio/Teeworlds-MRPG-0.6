@@ -390,7 +390,14 @@ void CUniversalScenario::StepMovementTask(int delay, const vec2& pos, const std:
 void CUniversalScenario::StepPickItemTask(const vec2& pos, const nlohmann::json& itemJson, const std::string& broadcastMsg, const std::string& chatMsg)
 {
 	auto& pickItemStep = AddStep();
-	CItem item = CItem::FromJSON(itemJson);
+
+	CItem item;
+	itemJson.get_to(item);
+	if(!item.IsValid())
+	{
+		dbg_msg("scenario-universal", "skip step (StepPickItemTask) invalid item.");
+		return;
+	}
 
 	pickItemStep.WhenStarted([this, pos, item, chatMsg]()
 	{

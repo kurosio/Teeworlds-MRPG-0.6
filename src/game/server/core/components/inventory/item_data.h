@@ -8,48 +8,62 @@
 class CItem;
 using CItemsContainer = std::deque<CItem>;
 
+// item
 class CItem
 {
 protected:
-	ItemIdentifier m_ID{};
-	int m_Value{};
-	int m_Enchant{};
-	int m_Durability{};
-	int m_Settings{};
+	ItemIdentifier m_ID {};
+	int m_Value {};
+	int m_Enchant {};
+	int m_Durability {};
+	int m_Settings {};
 
 public:
 	CItem() = default;
-	CItem(ItemIdentifier ID, int Value = 0, int Enchant = 0, int Durability = 0, int Settings = 0) : m_ID(ID), m_Value(Value), m_Enchant(Enchant), m_Durability(Durability), m_Settings(Settings) {}
-
-	ItemIdentifier GetID() const { return m_ID; }
-	virtual void SetID(ItemIdentifier ID) { m_ID = ID; }
+	CItem(ItemIdentifier ID, int Value = 0, int Enchant = 0, int Durability = 0, int Settings = 0) :
+		m_ID(ID), m_Value(Value), m_Enchant(Enchant), m_Durability(Durability), m_Settings(Settings)
+	{
+	}
 
 	// getters
+	ItemIdentifier GetID() const { return m_ID; }
 	int GetValue() const { return m_Value; }
-	int GetEnchant() const{return m_Enchant;}
-	int GetDurability() const{return m_Durability;}
-	int GetSettings() const{ return m_Settings; }
-
-	// virtual functions
-	virtual bool SetValue(int Value) { m_Value = Value; return true; }
-	virtual bool SetEnchant(int Enchant) { m_Enchant = Enchant; return true; }
-	virtual bool SetDurability(int Durability){ m_Durability = Durability; return true; }
-	virtual bool SetSettings(int Settings) { m_Settings = Settings; return true; }
-
-	// valid
+	int GetEnchant() const { return m_Enchant; }
+	int GetDurability() const { return m_Durability; }
+	int GetSettings() const { return m_Settings; }
 	bool IsValid() const { return CItemDescription::Data().contains(m_ID) && m_Value > 0; }
-
 	CItemDescription* Info() const { return &CItemDescription::Data()[m_ID]; }
 	std::string GetStringEnchantLevel() const { return Info()->GetStringEnchantLevel(m_Enchant); }
 
-	// helper functions
-	[[nodiscard]] static CItem FromJSON(const nlohmann::json& json);
-	[[nodiscard]] static CItemsContainer FromArrayJSON(const nlohmann::json& json, const char* pField);
-	static void ToJSON(CItem& Item, nlohmann::json& json);
-	static void ToArrayJSON(CItemsContainer& vItems, nlohmann::json& json, const char* pField);
+	// setters
+	void SetID(ItemIdentifier ID) { m_ID = ID; }
+
+	virtual bool SetValue(int Value)
+	{
+		m_Value = Value;
+		return true;
+	}
+	virtual bool SetEnchant(int Enchant)
+	{
+		m_Enchant = Enchant;
+		return true;
+	}
+	virtual bool SetDurability(int Durability)
+	{
+		m_Durability = Durability;
+		return true;
+	}
+	virtual bool SetSettings(int Settings)
+	{
+		m_Settings = Settings;
+		return true;
+	}
 };
 
-class CPlayerItem : public CItem, public MultiworldIdentifiableData< std::map < int, std::map < int, CPlayerItem > > >
+
+
+// player item
+class CPlayerItem : public CItem, public MultiworldIdentifiableData<std::map<int, std::map<int, CPlayerItem>>>
 {
 	friend class CInventoryManager;
 	int m_ClientID {};
@@ -59,8 +73,11 @@ class CPlayerItem : public CItem, public MultiworldIdentifiableData< std::map < 
 
 public:
 	CPlayerItem() = default;
-	CPlayerItem(ItemIdentifier ID, int ClientID) : m_ClientID(ClientID) { m_ID = ID; }
-	CPlayerItem(ItemIdentifier ID, int ClientID, int Value, int Enchant, int Durability, int Settings) : CItem(ID, Value, Enchant, Durability, Settings), m_ClientID(ClientID) { }
+	CPlayerItem(ItemIdentifier ID, int ClientID) : CItem(ID), m_ClientID(ClientID) {}
+	CPlayerItem(ItemIdentifier ID, int ClientID, int Value, int Enchant, int Durability, int Settings) :
+		CItem(ID, Value, Enchant, Durability, Settings), m_ClientID(ClientID)
+	{
+	}
 
 	void Init(int Value, int Enchant, int Durability, int Settings)
 	{
@@ -77,7 +94,6 @@ public:
 	int GetEnchantAttributeValue(AttributeIdentifier ID) const { return Info()->GetEnchantAttributeValue(ID, m_Enchant); }
 	int GetEnchantPrice() const { return Info()->GetEnchantPrice(m_Enchant); }
 	bool IsEquipped() const;
-
 	bool IsEnchantMaxLevel() const { return Info()->IsEnchantMaxLevel(m_Enchant); }
 	bool HasItem() const { return m_Value > 0; }
 	std::string GetStringAttributesInfo(CPlayer* pPlayer) const { return Info()->GetStringAttributesInfo(pPlayer, m_Enchant); }
@@ -100,5 +116,55 @@ public:
 private:
 	bool ShouldAutoEquip() const;
 };
+
+
+
+// JSON ADL
+inline void to_json(nlohmann::json& j, const CItem& data)
+{
+	j = nlohmann::json::object({
+		{"id", data.GetID()},
+		{"value", data.GetValue()}
+		});
+
+	// optional fields
+	if(data.GetEnchant() != 0)
+		j["enchant"] = data.GetEnchant();
+	if(data.GetDurability() != 0)
+		j["durability"] = data.GetDurability();
+}
+
+inline void from_json(const nlohmann::json& j, CItem& data)
+{
+	if(!j.is_object())
+	{
+		throw nlohmann::json::type_error::create(302, fmt_default("type must be object, but is {}", std::string(j.type_name())));
+	}
+
+	data.SetID(j.at("id").get<ItemIdentifier>());
+	data.SetValue(j.at("value").get<int>());
+
+	// optional fields
+	data.SetEnchant(j.value("enchant", 0));
+	data.SetDurability(j.value("durability", 0));
+}
+
+// JSON ADL for CItemsContainer=
+inline void to_json(nlohmann::json& j, const CItemsContainer& container)
+{
+	j = nlohmann::json::array();
+	for(const CItem& item : container)
+		j.push_back(item);
+}
+
+inline void from_json(const nlohmann::json& j, CItemsContainer& container)
+{
+	if(!j.is_array())
+		throw nlohmann::json::type_error::create(302, "type must be array to deserialize into CItemsContainer");
+
+	container.clear();
+	for(const auto& element_json : j)
+		container.push_back(element_json.get<CItem>());
+}
 
 #endif

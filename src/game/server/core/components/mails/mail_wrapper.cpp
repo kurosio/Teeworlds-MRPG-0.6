@@ -32,10 +32,10 @@ void MailWrapper::Send()
 	const CSqlString<256> cDesc = CSqlString<256>(EndDescription.c_str());
 
 	// get prepared json attached items
-	nlohmann::json preparedJsItems {};
-	CItem::ToArrayJSON(m_vAttachedItems, preparedJsItems, "items");
+	nlohmann::json preparedItemsJson {};
+	preparedItemsJson["items"] = m_vAttachedItems;
 
 	// send to database
 	Database->Execute<DB::INSERT>("tw_accounts_mailbox", "(Name, Description, AttachedItems, UserID, Sender) VALUES ('{}', '{}', '{}', '{}', '{}');",
-		cTitle.cstr(), cDesc.cstr(), preparedJsItems.dump().c_str(), m_AccountID, cSender.cstr());
+		cTitle.cstr(), cDesc.cstr(), preparedItemsJson.dump().c_str(), m_AccountID, cSender.cstr());
 }

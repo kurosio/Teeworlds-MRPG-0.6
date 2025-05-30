@@ -59,7 +59,7 @@ void QuestBotInfo::InitTasksFromJSON(CCollision* pCollision, const std::string& 
 			for(const auto& p : pJson["required_items"])
 			{
 				TaskRequiredItems Task;
-				Task.m_Item = CItem::FromJSON(p);
+				p.get_to(Task.m_Item);
 
 				if(Task.m_Item.IsValid())
 				{
@@ -77,7 +77,7 @@ void QuestBotInfo::InitTasksFromJSON(CCollision* pCollision, const std::string& 
 		}
 
 		// initilize reward items
-		m_RewardItems = CItem::FromArrayJSON(pJson, "reward_items");
+		m_RewardItems = pJson.value("reward_items", CItemsContainer {});
 
 		// initilize defeat bots
 		if(pJson.contains("defeat_bots"))
@@ -121,14 +121,14 @@ void QuestBotInfo::InitTasksFromJSON(CCollision* pCollision, const std::string& 
 					// pickup item
 					if(p.contains("pick_up_item"))
 					{
-						PickUpItem = CItem::FromJSON(p["pick_up_item"]);
+						PickUpItem = p.value("pick_up_item", CItem{});
 						Type |= TaskAction::Types::TFPICKUP_ITEM;
 					}
 
 					// required item
 					if(p.contains("required_item"))
 					{
-						RequiredItem = CItem::FromJSON(p["required_item"]);
+						RequiredItem = p.value("required_item", CItem {});
 						Type |= TaskAction::Types::TFREQUIRED_ITEM;
 					}
 

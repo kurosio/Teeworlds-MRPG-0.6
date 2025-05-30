@@ -21,10 +21,10 @@ bool CLocalization::Init()
 		return false;
 	}
 
-	try
+	std::string rawString = (char*)RawData.data();
+	bool hasError = mystd::json::parse(rawString, [this](nlohmann::json& j)
 	{
-		auto json = nlohmann::json::parse((char*)RawData.data());
-		for(const auto& jsonLang : json["language indices"])
+		for(const auto& jsonLang : j["language indices"])
 		{
 			auto Name = jsonLang.value("name", "");
 			auto File = jsonLang.value("file", "");
@@ -38,13 +38,9 @@ bool CLocalization::Init()
 				m_pMainLanguage = pLanguage;
 			}
 		}
-	}
-	catch(const std::exception& e)
-	{
-		dbg_msg("localization", "JSON parse error: %s", e.what());
-		return false;
-	}
+	});
 
+	dbg_assert(!hasError, "localization: can't load laguage index file.");
 	return true;
 }
 
