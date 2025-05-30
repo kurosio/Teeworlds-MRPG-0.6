@@ -101,7 +101,7 @@ class CWarehouse : public MultiworldIdentifiableData<std::deque<CWarehouse*>>
 	int m_WorldID {};
 	CStorage m_Storage {};
 	ContainerTradingList m_vTradingList {};
-	grouped_container<CTrade> m_GroupedTrades;
+	mystd::grouped_container<CTrade> m_GroupedTrades;
 
 public:
 	static const std::string s_DefaultSubgroupKey;
@@ -131,8 +131,8 @@ public:
 	CTrade* GetTrade(int TradeID);
 	const ContainerTradingList& GetTradingList() const { return m_vTradingList; }
 
-	const grouped_container<CTrade>& GetGroupedTrades() const { return m_GroupedTrades; }
-	grouped_container<CTrade>& GetGroupedTrades() { return m_GroupedTrades; }
+	const mystd::grouped_container<CTrade>& GetGroupedTrades() const { return m_GroupedTrades; }
+	mystd::grouped_container<CTrade>& GetGroupedTrades() { return m_GroupedTrades; }
 
 private:
 	void ParseCollectionBlock(const std::string& block_content, const std::string& currentGroup, const std::string& currentSubgroup);
