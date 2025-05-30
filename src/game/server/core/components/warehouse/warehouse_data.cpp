@@ -152,19 +152,11 @@ void CWarehouse::InitData(const DBSet& Type, const std::string& ItemsString, con
 		if(trimmedLine[0] == '*')
 		{
 			const auto groupLineContent = mystd::string::trim(trimmedLine.substr(1));
-			const auto colonPos = groupLineContent.find(':');
-			if(colonPos != std::string::npos)
-			{
-				currentParsingGroup = mystd::string::trim(groupLineContent.substr(0, colonPos));
-				currentParsingSubgroup = mystd::string::trim(groupLineContent.substr(colonPos + 1));
-				if(currentParsingSubgroup.empty())
-					currentParsingSubgroup = m_GroupedTrades.get_default_subgroup_key();
-			}
-			else
-			{
-				currentParsingGroup = mystd::string::trim(groupLineContent);
-				currentParsingSubgroup = m_GroupedTrades.get_default_subgroup_key();
-			}
+			auto [parsedGroup, parsedSubgroup] = mystd::string::split_by_delimiter(groupLineContent, ':');
+			if(!parsedGroup.empty())
+				currentParsingGroup = parsedGroup;
+
+			currentParsingSubgroup = parsedSubgroup.empty() ? m_GroupedTrades.get_default_subgroup_key() : parsedSubgroup;
 		}
 		else if(trimmedLine[0] == '[' && trimmedLine.back() == ']')
 		{

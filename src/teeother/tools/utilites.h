@@ -277,6 +277,27 @@ namespace mystd
 			return str.substr(start, end - start + 1);
 		}
 
+
+		inline std::pair<std::string, std::string> split_by_delimiter(std::string_view InputString, char Delimiter)
+		{
+			std::string first_part {};
+			std::string second_part {};
+
+			const auto DelimiterPos = InputString.find(Delimiter);
+			if(DelimiterPos != std::string_view::npos)
+			{
+				first_part = trim(std::string(InputString.substr(0, DelimiterPos)));
+				second_part = trim(std::string(InputString.substr(DelimiterPos + 1)));
+			}
+			else
+			{
+				first_part = trim(std::string(InputString));
+			}
+
+			return { first_part, second_part };
+		}
+
+
 		inline std::string progressBar(uint64_t maxValue, uint64_t currentValue, int totalSteps, const std::string& Fillsymbols, const std::string& EmptySymbols)
 		{
 			std::string resutStr;
@@ -489,7 +510,7 @@ namespace mystd
 	{
 		enum result : int
 		{
-			ERROR_FILE,
+			ERROR_FILE = 0,
 			SUCCESSFUL,
 		};
 
