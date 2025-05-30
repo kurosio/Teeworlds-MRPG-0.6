@@ -272,17 +272,18 @@ void CWarehouseManager::ShowGroupedSelector(CPlayer* pPlayer, CWarehouse* pWareh
 
 	// initialize variables
 	const auto ClientID = pPlayer->GetCID();
-	const auto& vGroupedTrades = pWarehouse->GetGroupedTrades();
+	const auto& groupedTradesContainer = pWarehouse->GetGroupedTrades();
+	const auto& allGroupData = groupedTradesContainer.get_all_data();
 	const auto& groupIdOpt = pPlayer->m_WarehouseGroupTradeFilter;
 	const auto& subgroupIdOpt = pPlayer->m_WarehouseSubgroupTradeFilter;
 
 	// show selector by group
 	VoteWrapper VSG(ClientID, VWF_ALIGN_TITLE | VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "\u2636 Select a group");
-	for(const auto& [groupName, vSubGroups] : vGroupedTrades)
+	for(const auto& [groupName, subGroupMap] : allGroupData)
 	{
 		const auto GroupID = pPlayer->m_VotesData.GetStringMapper().string_to_id(groupName);
-		const auto pSelectStr = GetSelectorStringByCondition(groupIdOpt && (*groupIdOpt) == GroupID);
-		VSG.AddOption("WAREHOUSE_SELECTOR_GROUP", GroupID, "{}({}){SELECTOR}", Instance::Localize(ClientID, groupName.c_str()), vSubGroups.size(), pSelectStr);
+		const char* pSelectStr = GetSelectorStringByCondition(groupIdOpt && (*groupIdOpt) == GroupID);
+		VSG.AddOption("WAREHOUSE_SELECTOR_GROUP", GroupID, "{}({}){SELECTOR}", Instance::Localize(ClientID, groupName.c_str()), subGroupMap.size(), pSelectStr);
 	}
 
 	// show selector by subgroup
@@ -290,27 +291,29 @@ void CWarehouseManager::ShowGroupedSelector(CPlayer* pPlayer, CWarehouse* pWareh
 	{
 		// check valid id by group name and valid group container
 		const auto groupNameOpt = pPlayer->m_VotesData.GetStringMapper().id_to_string(*groupIdOpt);
-		if(!groupNameOpt || !vGroupedTrades.contains(*groupNameOpt))
+		if(!groupNameOpt || !groupedTradesContainer.has_group(*groupNameOpt))
 			return;
 
-		// check is only default group
-		const auto& vSubGroupTrades = vGroupedTrades.at((*groupNameOpt));
-		bool HasOnlyDefaultGroup = (vSubGroupTrades.size() <= 1 &&
-			std::ranges::any_of(vSubGroupTrades, [](const auto& pair) { return pair.first == CWarehouse::s_DefaultSubgroupKey; }));
+		const auto* pSubGroupMap = groupedTradesContainer.get_subgroups(*groupNameOpt);
+		if(!pSubGroupMap)
+			return;
+
+		bool HasOnlyDefaultGroup = (pSubGroupMap->size() <= 1 &&
+			std::ranges::any_of(*pSubGroupMap, [&](const auto& pair) { return pair.first == groupedTradesContainer.get_default_subgroup_key(); }));
 
 		if(!HasOnlyDefaultGroup)
 		{
 			VSG.AddLine();
-			for(const auto& [subGroupName, vTrades] : vSubGroupTrades)
+			for(const auto& [subGroupName, itemList] : *pSubGroupMap)
 			{
 				const auto SubgroupID = pPlayer->m_VotesData.GetStringMapper().string_to_id(subGroupName);
-				const auto pSelectStr = GetSelectorStringByCondition(subgroupIdOpt && (*subgroupIdOpt) == SubgroupID);
-				VSG.AddOption("WAREHOUSE_SELECTOR_SUBGROUP", SubgroupID, "{}({}){SELECTOR}", subGroupName, vTrades.size(), pSelectStr);
+				const char* pSelectStr = GetSelectorStringByCondition(subgroupIdOpt && (*subgroupIdOpt) == SubgroupID);
+				VSG.AddOption("WAREHOUSE_SELECTOR_SUBGROUP", SubgroupID, "{}({}){SELECTOR}", subGroupName.c_str(), itemList.size(), pSelectStr);
 			}
 		}
 		else
 		{
-			pPlayer->m_WarehouseSubgroupTradeFilter = pPlayer->m_VotesData.GetStringMapper().string_to_id(CWarehouse::s_DefaultSubgroupKey);
+			pPlayer->m_WarehouseSubgroupTradeFilter = pPlayer->m_VotesData.GetStringMapper().string_to_id(groupedTradesContainer.get_default_subgroup_key());
 		}
 	}
 
@@ -318,26 +321,29 @@ void CWarehouseManager::ShowGroupedSelector(CPlayer* pPlayer, CWarehouse* pWareh
 	if(groupIdOpt && subgroupIdOpt)
 	{
 		// check valid id by group name and valid group container
-		const auto groupNameOpt = pPlayer->m_VotesData.GetStringMapper().id_to_string(*groupIdOpt);
-		if(!groupNameOpt || !vGroupedTrades.contains(*groupNameOpt))
+		const auto groupNameOptStr = pPlayer->m_VotesData.GetStringMapper().id_to_string(*groupIdOpt);
+		if(!groupNameOptStr || !groupedTradesContainer.has_group(*groupNameOptStr))
 			return;
 
 		// check valid id by subgroup name and valid subgroup container
-		const auto subGroupNameOpt = pPlayer->m_VotesData.GetStringMapper().id_to_string(*subgroupIdOpt);
-		const auto& vSubGroupTrades = vGroupedTrades.at(*groupNameOpt);
-		if(!subGroupNameOpt || !vSubGroupTrades.contains(*subGroupNameOpt))
+		const auto subGroupNameOptStr = pPlayer->m_VotesData.GetStringMapper().id_to_string(*subgroupIdOpt);
+		if(!subGroupNameOptStr || !groupedTradesContainer.has_subgroup(*groupNameOptStr, *subGroupNameOptStr))
+			return;
+
+		const auto* pItemList = groupedTradesContainer.get_items(*groupNameOptStr, *subGroupNameOptStr);
+		if(!pItemList)
 			return;
 
 		// initialize variables
-		const auto& vTrades = vSubGroupTrades.at(*subGroupNameOpt);
 		const auto* pCurrency = pWarehouse->GetCurrency();
 
 		// show all item's by selector filter
 		VoteWrapper::AddEmptyline(ClientID);
-		const auto groupName = (*subGroupNameOpt) != CWarehouse::s_DefaultSubgroupKey
-										? (*subGroupNameOpt) : (*groupNameOpt);
+		const auto groupName = (*subGroupNameOptStr) != groupedTradesContainer.get_default_subgroup_key()
+			? (*subGroupNameOptStr) : (*groupNameOptStr);
 		VoteWrapper VGroup(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_STRICT_BOLD, "\u25BC {}", Instance::Localize(ClientID, groupName.c_str()));
-		for(auto& pTrade : vTrades)
+
+		for(CTrade* pTrade : *pItemList)
 		{
 			const auto* pItem = pTrade->GetItem();
 			const auto* pItemInfo = pItem->Info();

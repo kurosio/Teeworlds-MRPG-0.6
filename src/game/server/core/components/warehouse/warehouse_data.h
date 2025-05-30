@@ -1,11 +1,10 @@
-/* warehouse_data.h */
 #ifndef GAME_SERVER_COMPONENT_WAREHOUSE_DATA_H
 #define GAME_SERVER_COMPONENT_WAREHOUSE_DATA_H
 
+#include <teeother/tools/grouped_container.h>
 #include <game/server/core/components/inventory/item_data.h>
 
 class CTrade;
-class CWarehouseStorage;
 using ContainerTradingList = std::deque<CTrade>;
 
 constexpr auto TW_WAREHOUSE_TABLE = "tw_warehouses";
@@ -22,20 +21,22 @@ enum WarehouseFlags
 
 class CTrade
 {
-	int m_ID{};
-	CItem m_Item{};
-	int m_Price{};
-	int m_ExplicitProducts{};
+	int m_ID {};
+	CItem m_Item {};
+	int m_Price {};
+	int m_ExplicitProducts {};
 
 public:
 	CTrade(int ID, CItem&& pItem, int Price, int ExplicitProducts = NOPE)
-		: m_ID(ID), m_Item(std::move(pItem)), m_Price(Price), m_ExplicitProducts(ExplicitProducts) {
+		: m_ID(ID), m_Item(std::move(pItem)), m_Price(Price), m_ExplicitProducts(ExplicitProducts)
+	{
 	}
 
 	int GetID() const { return m_ID; }
 	CItem* GetItem() { return &m_Item; }
 	const CItem* GetItem() const { return &m_Item; }
 	int GetPrice() const { return m_Price; }
+	int GetExplicitProducts() const { return m_ExplicitProducts; }
 
 	int GetProductsCost() const
 	{
@@ -100,17 +101,16 @@ class CWarehouse : public MultiworldIdentifiableData<std::deque<CWarehouse*>>
 	int m_WorldID {};
 	CStorage m_Storage {};
 	ContainerTradingList m_vTradingList {};
-	std::map<std::string, std::map<std::string, std::vector<CTrade*>>> m_mGroupedTradeIDs {};
+	grouped_container<CTrade> m_GroupedTrades;
 
 public:
-	CWarehouse() = default;
-
 	static const std::string s_DefaultSubgroupKey;
+	CWarehouse() : m_GroupedTrades(s_DefaultSubgroupKey) { }
+
 	static CWarehouse* CreateElement(const int WarehouseID) noexcept
 	{
 		auto pData = new CWarehouse;
 		pData->m_ID = WarehouseID;
-		pData->m_Storage.Init(pData);
 		return m_pData.emplace_back(pData);
 	}
 
@@ -125,11 +125,14 @@ public:
 	vec2 GetPos() const { return m_Pos; }
 	int GetWorldID() const { return m_WorldID; }
 
-	CItemDescription* GetCurrency() const { return &CItemDescription::Data()[m_Currency]; }
+	CItemDescription* GetCurrency() const;
 	CStorage& Storage() { return m_Storage; }
+	const CStorage& Storage() const { return m_Storage; }
 	CTrade* GetTrade(int TradeID);
 	const ContainerTradingList& GetTradingList() const { return m_vTradingList; }
-	const std::map<std::string, std::map<std::string, std::vector<CTrade*>>>& GetGroupedTrades() const { return m_mGroupedTradeIDs; }
+
+	const grouped_container<CTrade>& GetGroupedTrades() const { return m_GroupedTrades; }
+	grouped_container<CTrade>& GetGroupedTrades() { return m_GroupedTrades; }
 
 private:
 	void ParseCollectionBlock(const std::string& block_content, const std::string& currentGroup, const std::string& currentSubgroup);
