@@ -115,12 +115,22 @@ void CAttributesTracker::LoadTrackingData()
 		return;
 	}
 
-	auto j = nlohmann::json::parse((char*)RawData.data());
-	for(const auto& item : j["tracking"])
+	std::string rawString = (char*)RawData.data();
+	bool hasError = mystd::json::parse(rawString, [this](nlohmann::json& jsonData)
 	{
-		int attributeID = item.value("attribute_id", -1);
-		TrackingAttributeData data = item.value("detail", TrackingAttributeData {});
-		m_vTrackingData[attributeID] = data;
+		for(const auto& item : jsonData["tracking"])
+		{
+			int attributeID = item.value("attribute_id", -1);
+			TrackingAttributeData data = item.value("detail", TrackingAttributeData {});
+			m_vTrackingData[attributeID] = data;
+		}
+	});
+
+	if(hasError)
+	{
+		dbg_msg("attributes_tracking", "Error with initialized '%s'. Creating new...", ATTRIBUTE_TRACKING_FILE_NAME);
+		m_vTrackingData.clear();
+		SaveTrackingData();
 	}
 }
 
@@ -140,7 +150,10 @@ void CAttributesTracker::SaveTrackingData()
 	auto Result = mystd::file::save(ATTRIBUTE_TRACKING_FILE_NAME, Data.data(), static_cast<unsigned>(Data.size()));
 	if(Result != mystd::file::result::SUCCESSFUL)
 	{
-		dbg_msg("attributes_tracking", "Failed to save the attributes.");
+		dbg_msg("attributes_tracking", "Failed to save the attributes. Re-creating file.");
+		mystd::file::remove(ATTRIBUTE_TRACKING_FILE_NAME);
+		m_vTrackingData.clear();
+		SaveTrackingData();
 	}
 }
 

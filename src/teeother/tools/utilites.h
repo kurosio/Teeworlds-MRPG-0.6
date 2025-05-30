@@ -441,20 +441,38 @@ namespace mystd
 	 */
 	namespace json
 	{
-		inline void parse(const std::string& Data, const std::function<void(nlohmann::json& pJson)>& pFuncCallback)
+		inline bool parse(const std::string& Data, const std::function<void(nlohmann::json& pJson)>& pFuncCallback)
 		{
-			if(!Data.empty())
+			if(Data.empty())
+				return true;
+
+			if(!pFuncCallback)
+				dbg_assert(pFuncCallback != nullptr, "[json parse] Callback function is null.");
+
+			try
 			{
-				try
-				{
-					nlohmann::json JsonData = nlohmann::json::parse(Data);
-					pFuncCallback(JsonData);
-				}
-				catch(nlohmann::json::exception& s)
-				{
-					dbg_assert(false, fmt_default("[json parse] Invalid json: {}", s.what()).c_str());
-				}
+				nlohmann::json JsonData = nlohmann::json::parse(Data);
+				pFuncCallback(JsonData);
+				return false;
 			}
+			catch(const nlohmann::json::parse_error& e)
+			{
+				dbg_msg("[json parse] Invalid json: %s", e.what());
+			}
+			catch(const nlohmann::json::exception& e)
+			{
+				dbg_assert(false, fmt_default("[json parse] JSON library exception: {}", e.what()).c_str());
+			}
+			catch(const std::exception& e)
+			{
+				dbg_assert(false, fmt_default("[json parse] Standard exception during processing: {}", e.what()).c_str());
+			}
+			catch(...)
+			{
+				dbg_assert(false, "[json parse] Unknown non-standard exception during processing.");
+			}
+
+			return true;
 		}
 	}
 

@@ -78,12 +78,22 @@ void CLevelingTracker::LoadTrackingData()
 		return;
 	}
 
-	auto j = nlohmann::json::parse((char*)RawData.data());
-	for(const auto& item : j["tracking"])
+	std::string rawString = (char*)RawData.data();
+	bool hasError = mystd::json::parse(rawString, [this](nlohmann::json& jsonData)
 	{
-		int professionID = item.value("profession_id", -1);
-		TrackingLevelingData data = item.value("detail", TrackingLevelingData{});
-		m_vTrackingData[professionID] = data;
+		for(const auto& item : jsonData["tracking"])
+		{
+			int professionID = item.value("profession_id", -1);
+			TrackingLevelingData data = item.value("detail", TrackingLevelingData {});
+			m_vTrackingData[professionID] = data;
+		}
+	});
+
+	if(hasError)
+	{
+		dbg_msg("leveling_tracking", "Error with initialized '%s'. Creating new...", LEVELING_TRACKING_FILE_NAME);
+		m_vTrackingData.clear();
+		SaveTrackingData();
 	}
 }
 
@@ -104,7 +114,10 @@ void CLevelingTracker::SaveTrackingData()
 	auto Result = mystd::file::save(LEVELING_TRACKING_FILE_NAME, Data.data(), static_cast<unsigned>(Data.size()));
 	if(Result != mystd::file::result::SUCCESSFUL)
 	{
-		dbg_msg("leveling_tracking", "Failed to save the leveling.");
+		dbg_msg("leveling_tracking", "Failed to save the leveling. Re-creating file.");
+		mystd::file::remove(LEVELING_TRACKING_FILE_NAME);
+		m_vTrackingData.clear();
+		SaveTrackingData();
 	}
 }
 
