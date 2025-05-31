@@ -239,7 +239,7 @@ bool CPlayerItem::Add(int Value, int StartSettings, int StartEnchant, bool Messa
 			GS()->Chat(-1, "'{}' obtained the '{}'.", GS()->Server()->ClientName(ClientID), Info()->GetName());
 	}
 	else if(Group == ItemGroup::Currency)
-		GS()->Broadcast(m_ClientID, BroadcastPriority::GamePriority, Server()->TickSpeed() / 2, "You received '{} x{} ({})'.", Info()->GetName(), Value, m_Value);
+		GS()->Broadcast(m_ClientID, BroadcastPriority::GamePriority, Server()->TickSpeed(), "You received '{} x{} ({})'.", Info()->GetName(), Value, m_Value);
 	else
 		GS()->Chat(ClientID, "You obtained an '{} x{} ({})'.", Info()->GetName(), Value, m_Value);
 
