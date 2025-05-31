@@ -24,6 +24,8 @@ class CQuestManager : public MmoComponent
 				delete pQuest;
 		}
 		CPlayerQuest::Data().clear();
+
+		mystd::freeContainer(CQuestsBoard::Data());
 		mystd::freeContainer(CQuestDescription::Data());
 	}
 
