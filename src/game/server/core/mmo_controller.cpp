@@ -76,10 +76,10 @@ void CMmoController::OnInit(IServer* pServer, IConsole* pConsole, IStorageEngine
 
 	// log about listeners
 	if(isLastInitializedWorld)
+	{
 		g_EventListenerManager.LogRegisteredEvents();
-
-	// sync localization from database
-	SyncLocalizations();
+		std::thread(&CMmoController::SyncLocalizations, this).detach();
+	}
 }
 
 
