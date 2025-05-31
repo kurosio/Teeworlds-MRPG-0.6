@@ -609,11 +609,8 @@ int CPlayer::GetTotalAttributeValue(AttributeIdentifier AttributeID) const
 
 bool CPlayer::IsAuthed() const
 {
-	const auto* pAccountManager = GS()->Core()->AccountManager();
-	if(pAccountManager->IsActive(m_ClientID))
-	{
+	if(CAccountManager::IsActive(m_ClientID))
 		return Account()->GetID() > 0;
-	}
 	return false;
 }
 

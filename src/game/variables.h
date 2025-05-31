@@ -159,10 +159,10 @@ MACRO_CONFIG_INT(SvGuildWarDurationMinutes, sv_guild_war_duration_minutes, 30, 1
 // -----------------------
 // Experience and Gold Configuration
 // -----------------------
-MACRO_CONFIG_INT(SvMobKillExpFactor, sv_mob_kill_exp_factor, 1000, 100, 5000, CFGFLAG_SERVER, "Experience multiplier for killing mobs")
-MACRO_CONFIG_INT(SvChairExpFactor, sv_chair_exp_factor, 10000, 1000, 50000, CFGFLAG_SERVER, "Experience multiplier for using a chair")
-MACRO_CONFIG_INT(SvMobKillGoldFactor, sv_mob_kill_gold_factor, 1200, 100, 5000, CFGFLAG_SERVER, "Gold multiplier for killing mobs")
-MACRO_CONFIG_INT(SvChairGoldFactor, sv_chair_gold_factor, 12000, 1, 50000, CFGFLAG_SERVER, "Gold multiplier for using a chair")
+MACRO_CONFIG_INT(SvMobKillExpFactor, sv_mob_kill_exp_factor, 4000, 100, 10000, CFGFLAG_SERVER, "Experience multiplier for killing mobs")
+MACRO_CONFIG_INT(SvChairExpFactor, sv_chair_exp_factor, 40000, 1000, 100000, CFGFLAG_SERVER, "Experience multiplier for using a chair")
+MACRO_CONFIG_INT(SvMobKillGoldFactor, sv_mob_kill_gold_factor, 5000, 100, 10000, CFGFLAG_SERVER, "Gold multiplier for killing mobs")
+MACRO_CONFIG_INT(SvChairGoldFactor, sv_chair_gold_factor, 50000, 100, 100000, CFGFLAG_SERVER, "Gold multiplier for using a chair")
 
 // -----------------------
 // Crafting and Resource Leveling Configuration
