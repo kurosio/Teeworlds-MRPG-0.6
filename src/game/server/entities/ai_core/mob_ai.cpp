@@ -114,7 +114,12 @@ void CMobAI::OnRewardPlayer(CPlayer* pPlayer, vec2 Force) const
 			CItem DropItem;
 			DropItem.SetID(DropID);
 			DropItem.SetValue(DropValue);
-			GS()->EntityManager()->RandomDropItem(m_pCharacter->m_Core.m_Pos, ClientID, RandomDrop, DropItem, ForceRandom);
+
+			// currency to inventory or by pickup
+			if(!g_Config.m_SvDropsCurrencyFromMobs && DropItem.Info()->IsGroup(ItemGroup::Currency))
+				pPlayer->GetItem(DropID)->Add(DropValue);
+			else
+				GS()->EntityManager()->RandomDropItem(m_pCharacter->m_Core.m_Pos, ClientID, RandomDrop, DropItem, ForceRandom);
 		}
 	}
 

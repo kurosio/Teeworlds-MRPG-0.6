@@ -114,6 +114,7 @@ MACRO_CONFIG_INT(SvDailyActivityCoin, sv_daily_quest_quest_activity_coin, 10, 1,
 MACRO_CONFIG_INT(SvWeeklyActivityCoin, sv_weekly_quest_activity_coin, 40, 1, 100000, CFGFLAG_SERVER, "Activity coin reward for completing a weekly quest")
 
 MACRO_CONFIG_INT(SvDroppedItemLifetime, sv_dropped_item_lifetime, 20, 5, 60, CFGFLAG_SERVER, "Lifetime dropped item in seconds")
+MACRO_CONFIG_INT(SvDropsCurrencyFromMobs, sv_drops_currency_from_mobs, 0, 0, 1, CFGFLAG_SERVER, "Drops currency from mobs. 0 - to inventory, 1 - to pickup.")
 
 // -----------------------
 // Player stats balance
