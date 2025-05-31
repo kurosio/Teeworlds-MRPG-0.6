@@ -128,8 +128,7 @@ void CWarehouse::InitData(const DBSet& Type, const std::string& ItemsString, con
 	if(!(m_Flags & (WF_BUY | WF_SELL)) || ItemsString.empty())
 	{
 		InitializeStorage(StorageData);
-		dbg_msg("warehouse", "'%s' (ID: %d) initialized. Flags: %lld. No trade items defined or flags not set for trading.",
-			m_Name.c_str(), m_ID, m_Flags);
+		dbg_msg("warehouse", "'%s' (ID: %d) initialized. No trade items defined or flags not set for trading.", m_Name.c_str(), m_ID);
 		return;
 	}
 
@@ -202,9 +201,8 @@ void CWarehouse::InitData(const DBSet& Type, const std::string& ItemsString, con
 		return aType < bType;
 	});
 
-	dbg_msg("warehouse", "'%s' (ID: %d) initialized. Flags: %lld, Total Items: %zu, Groups: %zu, Currency: %d, WorldID: %d",
-		m_Name.c_str(), m_ID, m_Flags,
-		m_vTradingList.size(), m_GroupedTrades.get_all_data().size(), m_Currency, m_WorldID);
+	dbg_msg("warehouse", "'%s' (ID: %d) initialized. Total Items: %zu, Groups: %zu, Currency: %d, WorldID: %d",
+		m_Name.c_str(), m_ID, m_vTradingList.size(), m_GroupedTrades.get_all_data().size(), m_Currency, m_WorldID);
 }
 
 void CWarehouse::InitializeStorage(const nlohmann::json& StorageData)
