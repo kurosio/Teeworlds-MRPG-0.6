@@ -205,27 +205,27 @@ bool CLocalization::CLanguage::CUpdater::Prepare()
 	Element Temp;
 	while(const char* pReadLine = LineReader.Get())
 	{
-		std::string Line = pReadLine;
+		std::string_view currentLine(pReadLine);
 
-		if(Line.empty() || Line[0] == '#')
+		if(currentLine.empty() || currentLine[0] == '#')
 			continue;
 
-		if(Line[0] == '$')
+		if(currentLine[0] == '$')
 		{
-			Temp.m_Hash = Line.substr(1);
+			Temp.m_Hash = std::string(currentLine.substr(1));
 			continue;
 		}
 
-		if(Line.rfind("== ", 0) == 0)
+		if(currentLine.rfind("== ", 0) == 0)
 		{
 			if(Temp.m_Text.empty())
 			{
-				dbg_msg("localization", "replacement without default string");
+				dbg_msg("localization", "replacement without default string (hash: '%s')", Temp.m_Hash.c_str());
 				continue;
 			}
 
-			std::string Replacement = Line.substr(3);
-			Temp.m_Result = mystd::string::unescape(Replacement);
+			std::string_view replacementView = currentLine.substr(3);
+			Temp.m_Result = mystd::string::unescape(replacementView);
 			m_vElements.push_back(Temp);
 
 			Temp.m_Text.clear();
@@ -236,11 +236,11 @@ bool CLocalization::CLanguage::CUpdater::Prepare()
 
 		if(!Temp.m_Text.empty())
 		{
-			dbg_msg("localization", "unexpected default string: '%s'", Line.c_str());
+			dbg_msg("localization", "unexpected default string: '%s'", currentLine.data());
 			continue;
 		}
 
-		Temp.m_Text = mystd::string::unescape(pReadLine);
+		Temp.m_Text = mystd::string::unescape(currentLine);
 	}
 
 	m_Prepared = true;
