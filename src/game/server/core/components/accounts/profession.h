@@ -78,6 +78,7 @@ public:
 		m_EquippedSlots.initSlot(ItemType::EquipGrenade);
 		m_EquippedSlots.initSlot(ItemType::EquipLaser);
 		m_EquippedSlots.initSlot(ItemType::EquipArmorTank);
+		m_EquippedSlots.initSlot(ItemType::EquipHelmetTank);
 
 		// profession skin
 		m_ProfessionSkin.m_UseCustomColor = 0;
@@ -109,6 +110,7 @@ public:
 		m_EquippedSlots.initSlot(ItemType::EquipGrenade);
 		m_EquippedSlots.initSlot(ItemType::EquipLaser);
 		m_EquippedSlots.initSlot(ItemType::EquipArmorDPS);
+		m_EquippedSlots.initSlot(ItemType::EquipHelmetDPS);
 
 		// profession skin
 		m_ProfessionSkin.m_UseCustomColor = 0;
@@ -141,6 +143,7 @@ public:
 		m_EquippedSlots.initSlot(ItemType::EquipGrenade);
 		m_EquippedSlots.initSlot(ItemType::EquipLaser);
 		m_EquippedSlots.initSlot(ItemType::EquipArmorHealer);
+		m_EquippedSlots.initSlot(ItemType::EquipHelmetHealer);
 
 		// profession skin
 		m_ProfessionSkin.m_UseCustomColor = 0;

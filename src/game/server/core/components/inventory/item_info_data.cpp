@@ -116,11 +116,11 @@ void CItemDescription::InitUniqueName(const std::string& Name)
 {
 	// prefix
 	std::string_view Prefix {};
-	if(m_Type == ItemType::EquipArmorTank)
+	if(m_Type == ItemType::EquipArmorTank || m_Type == ItemType::EquipHelmetTank)
 		Prefix = "T";
-	else if(m_Type == ItemType::EquipArmorDPS)
+	else if(m_Type == ItemType::EquipArmorDPS || m_Type == ItemType::EquipHelmetDPS)
 		Prefix = "D";
-	else if(m_Type == ItemType::EquipArmorHealer)
+	else if(m_Type == ItemType::EquipArmorHealer || m_Type == ItemType::EquipHelmetHealer)
 		Prefix = "H";
 
 	// prepare result
