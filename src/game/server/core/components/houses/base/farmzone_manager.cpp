@@ -84,7 +84,6 @@ void CFarmzone::NormalizeHealth()
 	m_Node.Health = maximum(10, ResultHealth);
 	for(auto& pEnt : m_vFarms)
 		pEnt->Reset();
-	dbg_msg("Normalize houses farmzones", "Result house node (%d HP)", ResultHealth);
 }
 
 void CFarmzone::AddItemToNode(int ItemID)

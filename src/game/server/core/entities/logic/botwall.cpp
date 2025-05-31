@@ -33,13 +33,12 @@ void CBotWall::HitCharacter(CCharacter* pChar)
 
 void CBotWall::Tick()
 {
+	if(!HasPlayersInView())
+		return;
+
 	m_Active = false;
-
-	for(CCharacter* pChar = (CCharacter*)GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); pChar; pChar = (CCharacter*)pChar->TypeNext())
+	for(auto* pChar = (CCharacter*)GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); pChar; pChar = (CCharacter*)pChar->TypeNext())
 	{
-		//if(!pChar->GetPlayer()->IsBot())
-		//	continue;
-
 		const auto pPlayerBot = static_cast<CPlayerBot*>(pChar->GetPlayer());
 		int BotType = pPlayerBot->GetBotType();
 		if((m_Flag & WALLLINEFLAG_MOB_BOT) && (BotType == TYPE_BOT_MOB))
@@ -65,8 +64,9 @@ void CBotWall::Tick()
 
 void CBotWall::Snap(int SnappingClient)
 {
-	if(!m_Active || NetworkClipped(SnappingClient))
+	if(NetworkClipped(SnappingClient) && NetworkClipped(SnappingClient, m_PosTo))
 		return;
 
-	GS()->SnapLaser(SnappingClient, GetID(), m_Pos, m_PosTo, Server()->Tick() - 2, LASERTYPE_DOOR);
+	if(m_Active)
+		GS()->SnapLaser(SnappingClient, GetID(), m_Pos, m_PosTo, Server()->Tick() - 2, LASERTYPE_DOOR);
 }
