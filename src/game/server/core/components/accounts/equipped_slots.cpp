@@ -39,7 +39,7 @@ void EquippedSlots::load(const std::string& equippedSlotsJson)
 			if(jsonItemID.is_number_integer())
 			{
 				CItem item(jsonItemID.get<int>());
-				it->second = (item.IsValid() && !item.Info()->IsType(currentItemType) ? std::make_optional<int>(item.GetID()) : std::nullopt);
+				it->second = (item.IsValid() && item.Info()->IsType(currentItemType) ? std::make_optional<int>(item.GetID()) : std::nullopt);
 			}
 			else if(jsonItemID.is_null())
 			{
