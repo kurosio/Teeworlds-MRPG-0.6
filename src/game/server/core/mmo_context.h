@@ -420,6 +420,9 @@ constexpr const char* GetItemTypeName(ItemType type) noexcept
 		case ItemType::EquipRake:           return "Tool: Rake";
 		case ItemType::EquipFishrod:        return "Tool: Fishing Rod";
 		case ItemType::EquipGloves:         return "Tool: Gloves";
+		case ItemType::EquipHelmetTank:     return "Helmet: Tank Role";
+		case ItemType::EquipHelmetDPS:      return "Helmet: DPS Role";
+		case ItemType::EquipHelmetHealer:   return "Helmet: Healer Role";
 		case ItemType::EquipArmorTank:      return "Armor: Tank Role";
 		case ItemType::EquipArmorDPS:       return "Armor: DPS Role";
 		case ItemType::EquipArmorHealer:    return "Armor: Healer Role";
