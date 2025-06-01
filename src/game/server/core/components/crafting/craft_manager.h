@@ -25,7 +25,7 @@ class CCraftManager : public MmoComponent
 	void ShowCraftGroup(CPlayer* pPlayer, const std::string& GroupName, const std::vector<CCraftItem*>& vItems) const;
 	void ShowGroupedSelector(CPlayer* pPlayer) const;
 	void ShowCraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const;
-	void CraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const;
+	void CraftItem(CPlayer* pPlayer, CCraftItem* pCraft, int Value) const;
 
 public:
 	CCraftItem* GetCraftByID(CraftIdentifier ID) const;

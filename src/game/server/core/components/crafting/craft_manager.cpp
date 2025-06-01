@@ -67,9 +67,9 @@ void CCraftManager::OnCharacterTile(CCharacter* pChr)
 }
 
 
-void CCraftManager::CraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const
+void CCraftManager::CraftItem(CPlayer* pPlayer, CCraftItem* pCraft, int Value) const
 {
-	if(!pPlayer || !pCraft)
+	if(!pPlayer || !pCraft || Value <= 0)
 		return;
 
 	const auto ClientID = pPlayer->GetCID();
@@ -80,11 +80,12 @@ void CCraftManager::CraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const
 	for(const auto& RequiredItem : pCraft->GetRequiredItems())
 	{
 		const int playerItemCount = pPlayer->GetItem(RequiredItem)->GetValue();
-		const int requiredItemCount = RequiredItem.GetValue();
+		const int requiredPerOne = RequiredItem.GetValue();
+		const int totalRequiredCount = requiredPerOne * Value;
 
-		if(playerItemCount < requiredItemCount)
+		if(playerItemCount < totalRequiredCount)
 		{
-			int itemShortage = requiredItemCount - playerItemCount;
+			int itemShortage = totalRequiredCount - playerItemCount;
 			missingItems += fmt_default("{} x{} ", RequiredItem.Info()->GetName(), itemShortage);
 		}
 	}
@@ -96,28 +97,31 @@ void CCraftManager::CraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const
 	}
 
 	// checking to see if there are enough funds for crafting
-	const int craftPrice = pCraft->GetPrice(pPlayer);
-	if(!pPlayer->Account()->SpendCurrency(craftPrice))
+	const int pricePerOne = pCraft->GetPrice(pPlayer);
+	const int totalCraftPrice = pricePerOne * Value;
+	if(!pPlayer->Account()->SpendCurrency(totalCraftPrice))
 		return;
 
 	// remove necessary items from the player's inventory
 	for(const auto& RequiredItem : pCraft->GetRequiredItems())
 	{
-		pPlayer->GetItem(RequiredItem)->Remove(RequiredItem.GetValue());
+		const int amountToRemove = RequiredItem.GetValue() * Value;
+		pPlayer->GetItem(RequiredItem)->Remove(amountToRemove);
 	}
 
 	// add the crafted item to the player's inventory
-	const int craftedItemCount = pCraft->GetItem()->GetValue();
-	pPlayerCraftItem->Add(craftedItemCount);
+	const int itemsPerCraft = pCraft->GetItem()->GetValue();
+	const int totalCraftedItemCount = itemsPerCraft * Value;
+	pPlayerCraftItem->Add(totalCraftedItemCount);
 
 	// report a crafted item, either to everyone or only to a player, depending on its characteristics
 	if(!pPlayerCraftItem->Info()->IsStackable())
 	{
-		GS()->Chat(-1, "'{}' crafted '[{} x{}]'.", Server()->ClientName(ClientID), pPlayerCraftItem->Info()->GetName(), craftedItemCount);
+		GS()->Chat(-1, "'{}' crafted '[{} x{}]'.", Server()->ClientName(ClientID), pPlayerCraftItem->Info()->GetName(), totalCraftedItemCount);
 	}
 	else
 	{
-		GS()->Chat(ClientID, "You crafted '[{} x{}]'.", pPlayerCraftItem->Info()->GetName(), craftedItemCount);
+		GS()->Chat(ClientID, "You crafted '[{} x{}]'.", pPlayerCraftItem->Info()->GetName(), totalCraftedItemCount);
 	}
 
 	// notify event and votes
@@ -132,7 +136,7 @@ bool CCraftManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 	// craft item function
 	if(PPSTR(pCmd, "CRAFT") == 0)
 	{
-		CraftItem(pPlayer, GetCraftByID(Extra1));
+		CraftItem(pPlayer, GetCraftByID(Extra1), ReasonNumber);
 		return true;
 	}
 
