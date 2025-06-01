@@ -5,7 +5,7 @@
 #include <game/server/gamecontext.h>
 
 CBotWall::CBotWall(CGameWorld* pGameWorld, vec2 Pos, vec2 Direction, int Flag)
-	: CEntity(pGameWorld, CGameWorld::ENTTYPE_BOT_WALL, Pos, 64)
+	: CEntity(pGameWorld, CGameWorld::ENTTYPE_BOT_DOOR, Pos, 64)
 {
 	// prepare positions
 	GS()->Collision()->FillLengthWall(Direction, &m_Pos, &m_PosTo);

@@ -3,7 +3,7 @@
 #include <game/server/gamecontext.h>
 
 CEntityPersonalDoor::CEntityPersonalDoor(CGameWorld* pGameWorld, int ClientID, vec2 Pos, vec2 Direction)
-	: CEntity(pGameWorld, CGameWorld::ENTTYPE_BOT_WALL, Pos, 0, ClientID)
+	: CEntity(pGameWorld, CGameWorld::ENTTYPE_BOT_DOOR, Pos, 0, ClientID)
 {
 	GS()->Collision()->FillLengthWall(Direction, &m_Pos, &m_PosTo);
 	GS()->Collision()->SetDoorFromToCollisionAt(m_Pos, m_PosTo, TILE_STOPA, 0);

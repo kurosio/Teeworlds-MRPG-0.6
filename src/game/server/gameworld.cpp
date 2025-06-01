@@ -257,7 +257,7 @@ bool CGameWorld::IntersectClosestDoorEntity(vec2 Pos, float Radius)
 {
 	if(IntersectClosestEntity(Pos, Radius, ENTTYPE_DUNGEON_DOOR))
 		return true;
-	if(IntersectClosestEntity(Pos, Radius, ENTTYPE_HOUSE_DOOR))
+	if(IntersectClosestEntity(Pos, Radius, ENTTYPE_DEFAULT_DOOR))
 		return true;
 	return false;
 }

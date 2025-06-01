@@ -3,7 +3,7 @@
 #include <game/server/gamecontext.h>
 
 CEntityMoneyBag::CEntityMoneyBag(CGameWorld *pGameWorld, vec2 Pos)
-: CEntity(pGameWorld, CGameWorld::ENTTYPE_BONUS_DROP, Pos, 16.0f)
+: CEntity(pGameWorld, CGameWorld::ENTTYPE_PICKUP, Pos, 16.0f)
 {
 	GameWorld()->InsertEntity(this);
 }

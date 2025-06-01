@@ -7,7 +7,7 @@
 #include "game/server/core/components/quests/quest_manager.h"
 
 CEntityQuestAction::CEntityQuestAction(CGameWorld* pGameWorld, int ClientID, int MoveToIndex, CQuestStep* pStep)
-	: CEntity(pGameWorld, CGameWorld::ENTTYPE_MOVE_TO_POINT, {}, 32.f, ClientID), m_MoveToIndex(MoveToIndex)
+	: CEntity(pGameWorld, CGameWorld::ENTTYPE_QUEST_OBJECTIVE, {}, 32.f, ClientID), m_MoveToIndex(MoveToIndex)
 {
 	m_pStep = pStep;
 	if(m_pStep)

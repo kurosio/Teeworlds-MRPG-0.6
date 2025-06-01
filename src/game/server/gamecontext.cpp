@@ -1501,7 +1501,7 @@ bool CGS::TakeItemCharacter(int ClientID)
 		return false;
 
 	std::vector<CEntityDropItem*> vDrops;
-	for(CEntity* item : m_World.FindEntities(pPlayer->GetCharacter()->m_Core.m_Pos, 24, 64, CGameWorld::ENTTYPE_ITEM_DROP))
+	for(CEntity* item : m_World.FindEntities(pPlayer->GetCharacter()->m_Core.m_Pos, 24, 64, CGameWorld::ENTTYPE_PICKUP_ITEM))
 		vDrops.push_back((CEntityDropItem*)item);
 
 	for(const auto& pDrop : vDrops)

@@ -10,7 +10,7 @@
 
 CEntityRandomBoxRandomizer::CEntityRandomBoxRandomizer(CGameWorld* pGameWorld, int AccountID, int Lifetime,
 	const ChanceProcessor<CRandomItem>& ChanceProcessor, CPlayerItem* pPlayerUsesItem, int Value)
-	: CEntity(pGameWorld, CGameWorld::ENTTYPE_RANDOM_BOX, {})
+	: CEntity(pGameWorld, CGameWorld::ENTTYPE_TOOLS, {})
 {
 	m_Used = Value;
 	m_Lifetime = Lifetime;

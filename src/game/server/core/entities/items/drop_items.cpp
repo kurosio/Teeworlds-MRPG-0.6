@@ -12,7 +12,7 @@ enum
 };
 
 CEntityDropItem::CEntityDropItem(CGameWorld *pGameWorld, vec2 Pos, vec2 Vel, float AngleForce, CItem DropItem, int OwnerID)
-: CEntity(pGameWorld, CGameWorld::ENTTYPE_ITEM_DROP, Pos, 24.0f)
+: CEntity(pGameWorld, CGameWorld::ENTTYPE_PICKUP_ITEM, Pos, 24.0f)
 {
 	m_Pos = Pos;
 	m_Vel = Vel;

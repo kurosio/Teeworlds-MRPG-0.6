@@ -62,7 +62,7 @@ int CDoorDurability::GetMaxHealth() const
 
 
 CEntityHouseDoor::CEntityHouseDoor(CGameWorld* pGameWorld, IHouse* pHouse, const std::string& Name, vec2 Pos)
-	: CEntity(pGameWorld, CGameWorld::ENTTYPE_HOUSE_DOOR, Pos)
+	: CEntity(pGameWorld, CGameWorld::ENTTYPE_DEFAULT_DOOR, Pos)
 {
 	// prepare positions
 	GS()->Collision()->FillLengthWall(vec2(0, -1), &m_Pos, &m_PosTo, 32, true, false);

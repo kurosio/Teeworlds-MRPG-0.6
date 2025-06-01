@@ -6,7 +6,7 @@
 #include <game/server/gamecontext.h>
 
 CLogicWall::CLogicWall(CGameWorld *pGameWorld, vec2 Pos)
-: CEntity(pGameWorld, CGameWorld::ENTTYPE_EYES, Pos)
+: CEntity(pGameWorld, CGameWorld::ENTTYPE_TOOLS, Pos)
 {
 	m_RespawnTick = Server()->TickSpeed()*10;
 	pLogicWallLine = new CLogicWallLine(&GS()->m_World, m_Pos);
@@ -72,7 +72,7 @@ void CLogicWall::Snap(int SnappingClient)
 
 /////////////////////////////////////////
 CLogicWallFire::CLogicWallFire(CGameWorld *pGameWorld, vec2 Pos, vec2 Direction, CLogicWall *Eyes)
-: CEntity(pGameWorld, CGameWorld::ENTTYPE_EYES, Pos, 14)
+: CEntity(pGameWorld, CGameWorld::ENTTYPE_TOOLS, Pos, 14)
 {
 	m_Pos = Pos;
 	pLogicWall = Eyes;
@@ -88,6 +88,7 @@ void CLogicWallFire::Tick()
 		return;
 	}
 
+	/*
 	for(CLogicWallWall *p = (CLogicWallWall*) GameWorld()->FindFirst(CGameWorld::ENTTYPE_EYES_WALL); p; p = (CLogicWallWall *)p->TypeNext())
 	{
 		vec2 IntersectPos;
@@ -107,7 +108,7 @@ void CLogicWallFire::Tick()
 				return;
 			}
 		}
-	}
+	}*/
 	m_Pos += m_Dir*2.0f;
 }
 
@@ -127,7 +128,7 @@ void CLogicWallFire::Snap(int SnappingClient)
 
 /////////////////////////////////////////
 CLogicWallWall::CLogicWallWall(CGameWorld *pGameWorld, vec2 Pos, int Mode, int Health)
-: CEntity(pGameWorld, CGameWorld::ENTTYPE_EYES_WALL, Pos, 14)
+: CEntity(pGameWorld, CGameWorld::ENTTYPE_TOOLS, Pos, 14)
 {
 	vec2 Direction = Mode == 0 ? vec2(0, -1) : vec2(1, 0);
 	GS()->Collision()->FillLengthWall(Direction, &m_Pos, &m_PosTo);

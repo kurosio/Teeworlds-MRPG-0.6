@@ -5,7 +5,7 @@
 #include <game/server/gamecontext.h>
 
 CEntityFlyingPoint::CEntityFlyingPoint(CGameWorld* pGameWorld, vec2 Pos, vec2 InitialVel, int ClientID, int FromID)
-: CEntity(pGameWorld, CGameWorld::ENTTYPE_BONUS_DROP, Pos)
+: CEntity(pGameWorld, CGameWorld::ENTTYPE_TOOLS, Pos)
 {
 	m_Pos = Pos;
 	m_InitialVel = InitialVel;

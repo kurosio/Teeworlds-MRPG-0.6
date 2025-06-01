@@ -5,7 +5,7 @@
 #include <game/server/gamecontext.h>
 
 CMultipleOrbite::CMultipleOrbite(CGameWorld* pGameWorld, CEntity* pParent)
-	: CEntity(pGameWorld, CGameWorld::ENTTYPE_MULTIPLE_ORBITE, vec2(0, 0), 64.f)
+	: CEntity(pGameWorld, CGameWorld::ENTTYPE_VISUAL, vec2(0, 0), 64.f)
 {
 	m_pParent = pParent;
 	GameWorld()->InsertEntity(this);
