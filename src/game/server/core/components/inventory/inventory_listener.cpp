@@ -1,5 +1,6 @@
 #include "inventory_listener.h"
 #include <game/server/gamecontext.h>
+#include <game/server/worldmodes/dungeon/dungeon.h>
 
 CInventoryListener g_InventoryListener;
 constexpr const char* ATTRIBUTE_TRACKING_FILE_NAME = "server_data/attribute_tracking.json";
@@ -82,6 +83,13 @@ void CInventoryListener::UpdateAttributesForItem(CPlayer* pPlayer, CPlayerItem* 
 	{
 		pCharacter->UpdateEquippedStats(pItem->GetID());
 		pPlayer->GS()->MarkUpdatedBroadcast(pPlayer->GetCID());
+	}
+
+	// refresh sync attributes
+	if(pPlayer->GS()->IsDutyStarted())
+	{
+		if(auto* pController = dynamic_cast<CGameControllerDungeon*>(pPlayer->GS()->m_pController))
+			pController->RefreshSyncAttributes();
 	}
 }
 

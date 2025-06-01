@@ -284,7 +284,7 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 			if(ItemData.Info()->IsGroup(ItemGroup::Settings) && ItemData.HasItem())
 			{
 				const char* Status = ItemData.GetSettings() ? "Enabled" : "Disabled";
-				VAccount.AddOption("EQUIP_ITEM", ItemID, "[{}] {}", Status, ItemData.Info()->GetName());
+				VAccount.AddOption("TOGGLE_SETTING", ItemID, "[{}] {}", Status, ItemData.Info()->GetName());
 			}
 		}
 

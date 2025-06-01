@@ -149,6 +149,8 @@ public:
 			*pExperience = translate_to_percent_rest(*pExperience, (float)m_MultiplierExp);
 		}
 	}
+
+	bool IsDutyStarted() const;
 	bool IsPlayerInWorld(int ClientID, std::optional<int> WorldIdOpt = std::nullopt) const;
 	bool IsAllowedPVP() const { return m_AllowedPVP; }
 	vec2 GetJailPosition() const { return m_JailPosition; }

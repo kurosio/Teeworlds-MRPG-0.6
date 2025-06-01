@@ -1776,23 +1776,21 @@ void CCharacter::UpdateEquippedStats(std::optional<int> UpdatedItemID)
 	if(UpdatedItemID.has_value())
 	{
 		const auto* pItemInfo = GS()->GetItemInfo(*UpdatedItemID);
-		if(auto* pChar = m_pPlayer->GetCharacter())
-		{
-			// weapon
-			const auto Type = pItemInfo->GetType();
-			const auto WeaponID = GetWeaponByEquip(Type);
-			if(WeaponID >= WEAPON_HAMMER)
-			{
-				const auto Ammo = (WeaponID == WEAPON_HAMMER ? -1 : 3);
-				pChar->GiveWeapon(WeaponID, Ammo);
-			}
 
-			// eidolon
-			if(Type == ItemType::EquipEidolon)
-			{
-				m_pPlayer->TryRemoveEidolon();
-				m_pPlayer->TryCreateEidolon();
-			}
+		// weapon
+		const auto Type = pItemInfo->GetType();
+		const auto WeaponID = GetWeaponByEquip(Type);
+		if(WeaponID >= WEAPON_HAMMER)
+		{
+			const auto Ammo = (WeaponID == WEAPON_HAMMER ? -1 : 3);
+			GiveWeapon(WeaponID, Ammo);
+		}
+
+		// eidolon
+		if(Type == ItemType::EquipEidolon)
+		{
+			m_pPlayer->TryRemoveEidolon();
+			m_pPlayer->TryCreateEidolon();
 		}
 
 		// check and limit ammo

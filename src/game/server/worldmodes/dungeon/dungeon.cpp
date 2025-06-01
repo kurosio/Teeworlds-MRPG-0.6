@@ -6,6 +6,7 @@
 
 #include <game/server/entity.h>
 #include <game/server/gamecontext.h>
+#include <game/server/entities/character_bot.h>
 
 #include <game/server/core/components/accounts/account_manager.h>
 #include <game/server/core/components/duties/duties_manager.h>
@@ -86,7 +87,8 @@ void CGameControllerDungeon::ChangeState(int State)
 		}
 
 		// update
-		PrepareSyncFactors();
+		m_vSyncFactor.clear();
+		PrepareSyncFactors(m_vSyncFactor);
 		m_StartedPlayersNum = GetPlayersNum();
 		m_SafetyTick = Server()->TickSpeed() * 30;
 		m_EndTick = Server()->TickSpeed() * 600;
@@ -381,11 +383,10 @@ void CGameControllerDungeon::SetMobsSpawn(bool AllowedSpawn)
 	}
 }
 
-void CGameControllerDungeon::PrepareSyncFactors()
+void CGameControllerDungeon::PrepareSyncFactors(std::map<AttributeIdentifier, int>& vResultMap)
 {
-	m_vSyncFactor.clear();
-	m_vSyncFactor[AttributeIdentifier::HP] = DEFAULT_BASE_HP;
-	m_vSyncFactor[AttributeIdentifier::MP] = DEFAULT_BASE_MP;
+	vResultMap[AttributeIdentifier::HP] = DEFAULT_BASE_HP;
+	vResultMap[AttributeIdentifier::MP] = DEFAULT_BASE_MP;
 
 	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
@@ -396,7 +397,7 @@ void CGameControllerDungeon::PrepareSyncFactors()
 		for(auto ID = (int)AttributeIdentifier::DMG; ID < (int)AttributeIdentifier::ATTRIBUTES_NUM; ID++)
 		{
 			const auto AttributeID = (AttributeIdentifier)ID;
-			m_vSyncFactor[AttributeID] += pPlayer->GetTotalRawAttributeValue(AttributeID);
+			vResultMap[AttributeID] += pPlayer->GetTotalRawAttributeValue(AttributeID);
 		}
 	}
 }
@@ -415,6 +416,54 @@ int CGameControllerDungeon::CalculateMobAttribute(AttributeIdentifier ID, int Po
 int CGameControllerDungeon::GetAttributeDungeonSync(AttributeIdentifier ID) const
 {
 	return m_vSyncFactor.contains(ID) ? m_vSyncFactor.at(ID) : 0;
+}
+
+
+void CGameControllerDungeon::RefreshSyncAttributes()
+{
+	bool Refresh = false;
+	bool RefreshUnchangedData = false;
+	std::map<AttributeIdentifier, int> vCurrentMap {};
+	PrepareSyncFactors(vCurrentMap);
+
+	for(auto& [ID, Value] : m_vSyncFactor)
+	{
+		if(vCurrentMap[ID] > Value)
+		{
+			Value = vCurrentMap[ID];
+			Refresh = true;
+			RefreshUnchangedData = (!RefreshUnchangedData && (ID == AttributeIdentifier::HP || ID == AttributeIdentifier::MP)) || RefreshUnchangedData;
+		}
+	}
+
+	if(Refresh)
+	{
+		for(int i = MAX_PLAYERS; i < MAX_CLIENTS; i++)
+		{
+			auto* pPlayerBot = dynamic_cast<CPlayerBot*>(GS()->GetPlayer(i));
+			if(!pPlayerBot || !pPlayerBot->GetCharacter())
+				continue;
+
+			// update total player stats
+			for(auto& [Id, Info] : CAttributeDescription::Data())
+			{
+				auto totalAttribute = pPlayerBot->GetTotalRawAttributeValue(Id);
+				pPlayerBot->UpdateTotalAttributeValue(Id, totalAttribute);
+			}
+
+			// refresh unchanged data
+			if(RefreshUnchangedData)
+			{
+				const int MaxStartHP = pPlayerBot->GetTotalAttributeValue(AttributeIdentifier::HP);
+				const int MaxStartMP = pPlayerBot->GetTotalAttributeValue(AttributeIdentifier::MP);
+				pPlayerBot->InitBasicStats(MaxStartHP, MaxStartMP, MaxStartHP, MaxStartMP);
+
+				auto* pChar = pPlayerBot->GetCharacter();
+				pChar->IncreaseHealth(MaxStartHP);
+				pChar->IncreaseMana(MaxStartMP);
+			}
+		}
+	}
 }
 
 

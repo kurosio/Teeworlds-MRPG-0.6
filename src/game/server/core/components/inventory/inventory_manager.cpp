@@ -260,28 +260,6 @@ bool CInventoryManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
 		return true;
 	}
 
-	// Auto equip slots by best equippement items
-	if(PPSTR(pCmd, "AUTO_EQUIP_SLOTS") == 0)
-	{
-		pPlayer->Account()->AutoEquipSlots(false);
-		pPlayer->m_VotesData.UpdateCurrentVotes();
-		return true;
-	}
-
-	// Equip item
-	if(PPSTR(pCmd, "EQUIP_ITEM") == 0)
-	{
-		auto* pPlayerItem = pPlayer->GetItem(Extra1);
-		if(pPlayerItem->IsEquipped())
-			pPlayerItem->UnEquip();
-		else
-			pPlayerItem->Equip();
-
-		pPlayerItem->Save();
-		pPlayer->m_VotesData.UpdateCurrentVotes();
-		return true;
-	}
-
 	// Enchant item
 	if(PPSTR(pCmd, "ENCHANT_ITEM") == 0)
 	{
@@ -306,6 +284,42 @@ bool CInventoryManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
 		const auto strNewAttributes = pPlayerItem->Info()->HasAttributes() ? pPlayerItem->GetStringAttributesInfo(pPlayer) : "unattributed";
 		GS()->Chat(-1, "'{}' enchant '{} {} {}'.", Server()->ClientName(ClientID), pPlayerItem->Info()->GetName(),
 			pPlayerItem->GetStringEnchantLevel(), strNewAttributes);
+		pPlayer->m_VotesData.UpdateCurrentVotes();
+		return true;
+	}
+
+	// Auto equip slots by best equippement items
+	if(PPSTR(pCmd, "AUTO_EQUIP_SLOTS") == 0)
+	{
+		pPlayer->Account()->AutoEquipSlots(false);
+		pPlayer->m_VotesData.UpdateCurrentVotes();
+		return true;
+	}
+
+	// Equip item
+	if(PPSTR(pCmd, "TOGGLE_EQUIP") == 0)
+	{
+		auto* pPlayerItem = pPlayer->GetItem(Extra1);
+		if(pPlayerItem->IsEquipped())
+			pPlayerItem->UnEquip();
+		else
+			pPlayerItem->Equip();
+
+		pPlayerItem->Save();
+		pPlayer->m_VotesData.UpdateCurrentVotes();
+		return true;
+	}
+
+	// Settings
+	if(PPSTR(pCmd, "TOGGLE_SETTING") == 0)
+	{
+		auto* pPlayerItem = pPlayer->GetItem(Extra1);
+		if(pPlayerItem->IsEquipped())
+			pPlayerItem->UnEquip();
+		else
+			pPlayerItem->Equip();
+
+		pPlayerItem->Save();
 		pPlayer->m_VotesData.UpdateCurrentVotes();
 		return true;
 	}
@@ -439,7 +453,7 @@ void CInventoryManager::ItemSelected(CPlayer* pPlayer, const CPlayerItem* pItem)
 	if(pInfo->m_Group == ItemGroup::Potion)
 	{
 		VItem.AddOption("USE_ITEM", ItemID, "Use (ID: {})", ItemID);
-		VItem.AddOption("EQUIP_ITEM", ItemID, "Auto use - {}", (pItem->IsEquipped() ? "Enable" : "Disable"));
+		VItem.AddOption("TOGGLE_EQUIP", ItemID, "Auto use - {}", (pItem->IsEquipped() ? "Enable" : "Disable"));
 	}
 
 	// is decoration
@@ -462,7 +476,7 @@ void CInventoryManager::ItemSelected(CPlayer* pPlayer, const CPlayerItem* pItem)
 		}
 		else if(pPlayer->Account()->IsAvailableEquipmentSlot(pInfo->m_Type))
 		{
-			VItem.AddOption("EQUIP_ITEM", ItemID, (pItem->IsEquipped() ? "Undress" : "Equip"));
+			VItem.AddOption("TOGGLE_EQUIP", ItemID, (pItem->IsEquipped() ? "Undress" : "Equip"));
 		}
 		else
 		{
@@ -631,7 +645,7 @@ void CInventoryManager::ShowPlayerModules(CPlayer* pPlayer)
 	{
 		const auto* pItemInfo = PlayerItem.Info();
 		const auto EquippedFlagStr = PlayerItem.IsEquipped() ? "✔" : "";
-		VFunctional.AddOption("EQUIP_ITEM", pItemInfo->GetID(), "{}{} * {}", EquippedFlagStr, pItemInfo->GetName(), pItemInfo->GetDescription());
+		VFunctional.AddOption("TOGGLE_EQUIP", pItemInfo->GetID(), "{}{} * {}", EquippedFlagStr, pItemInfo->GetName(), pItemInfo->GetDescription());
 	}
 	if(VFunctional.IsEmpty())
 		VFunctional.Add("No modules available");
@@ -645,7 +659,7 @@ void CInventoryManager::ShowPlayerModules(CPlayer* pPlayer)
 	{
 		const auto* pItemInfo = PlayerItem.Info();
 		const auto EquippedFlagStr = PlayerItem.IsEquipped() ? "✔" : "";
-		VStats.AddOption("EQUIP_ITEM", pItemInfo->GetID(), "{}{} * {}", EquippedFlagStr, pItemInfo->GetName(), PlayerItem.GetStringAttributesInfo(pPlayer));
+		VStats.AddOption("TOGGLE_EQUIP", pItemInfo->GetID(), "{}{} * {}", EquippedFlagStr, pItemInfo->GetName(), PlayerItem.GetStringAttributesInfo(pPlayer));
 	}
 	if(VStats.IsEmpty())
 		VStats.Add("No modules available");

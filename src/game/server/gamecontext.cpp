@@ -1565,6 +1565,19 @@ void CGS::InitWorld()
 		worldTypeStr.data(), pStrStatePvp);
 }
 
+bool CGS::IsDutyStarted() const
+{
+	const auto typeWorld = Server()->GetWorldDetail(m_WorldID)->GetType();
+
+	if(typeWorld == WorldType::Dungeon)
+	{
+		auto pController = dynamic_cast<CGameControllerDungeon*>(m_pController);
+		return pController && pController->GetDungeon()->GetState() >= CDungeonData::STATE_STARTED;
+	}
+
+	return false;
+}
+
 bool CGS::IsPlayerInWorld(int ClientID, std::optional<int> WorldIdOpt) const
 {
 	if(ClientID < 0 || ClientID >= MAX_CLIENTS || !m_apPlayers[ClientID])

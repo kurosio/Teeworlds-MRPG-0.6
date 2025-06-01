@@ -37,9 +37,10 @@ public:
 	void OnCharacterDeath(class CPlayer* pVictim, class CPlayer* pKiller, int Weapon) override;
 	bool OnCharacterSpawn(class CCharacter* pChr) override;
 
-	void PrepareSyncFactors();
+	void PrepareSyncFactors(std::map<AttributeIdentifier, int>& vResultMap);
 	int CalculateMobAttribute(AttributeIdentifier ID, int PowerLevel, float BaseFactor, int MinValue) const;
 	int GetAttributeDungeonSync(AttributeIdentifier ID) const;
+	void RefreshSyncAttributes();
 
 	const std::map<AttributeIdentifier, int>& GetSyncFactor() const { return m_vSyncFactor; }
 	CDungeonData* GetDungeon() const { return m_pDungeon; }
