@@ -108,6 +108,38 @@ bool CInventoryManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		return true;
 	}
 
+	if(Menulist == MENU_INVENTORY_RANDOMBOX_OPEN)
+	{
+		pPlayer->m_VotesData.SetLastMenuID(MENU_INVENTORY);
+
+		if(auto ItemIdOpt = pPlayer->m_VotesData.GetExtraID())
+		{
+			// random box information
+			const auto* pPlayerItem = pPlayer->GetItem(*ItemIdOpt);
+			VoteWrapper VBoxDetail(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_STRICT_BOLD, "Detail information");
+			if(pPlayerItem->Info()->GetRandomBox())
+			{
+				const auto& vItemList = pPlayerItem->Info()->GetRandomBox()->GetItems();
+				for(auto& [ItemDetail, Chance] : vItemList)
+				{
+					auto* pDropItemInfo = GS()->GetItemInfo(ItemDetail.ItemID);
+					const auto Value = ItemDetail.Value;
+					const auto pSelector = GetSelectorStringByCondition(pPlayer->m_CurrentRandomItem == ItemDetail);
+					VBoxDetail.Add("{~.2}% - {} x{$}{SELECTOR}", Chance, pDropItemInfo->GetName(), Value, pSelector);
+				}
+
+				VBoxDetail.AddLine();
+				VBoxDetail.AddItemValue(pPlayerItem->GetID());
+				if(pPlayerItem->HasItem())
+					VBoxDetail.AddOption("USE_ITEM", pPlayerItem->GetID(), "Use (ID: {})", pPlayerItem->GetID());
+			}
+		}
+
+		// add backpage
+		VoteWrapper::AddBackpage(ClientID);
+		return true;
+	}
+
 	if(Menulist == MENU_EQUIPMENT)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
@@ -446,7 +478,11 @@ void CInventoryManager::ItemSelected(CPlayer* pPlayer, const CPlayerItem* pItem)
 	// is used item
 	if(pInfo->m_Group == ItemGroup::Usable && (pInfo->m_Type == ItemType::UseSingle || pInfo->m_Type == ItemType::UseMultiple))
 	{
-		VItem.AddOption("USE_ITEM", ItemID, "Use (ID: {})", ItemID);
+		// random box
+		if(pInfo->GetRandomBox())
+			VItem.AddMenu(MENU_INVENTORY_RANDOMBOX_OPEN, ItemID, "Open");
+		else
+			VItem.AddOption("USE_ITEM", ItemID, "Use (ID: {})", ItemID);
 	}
 
 	// is potion

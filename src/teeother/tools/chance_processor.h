@@ -107,6 +107,16 @@ public:
 		return m_vElements.back().Element;
 	}
 
+	void sortElementsByChance()
+	{
+		if(m_vElements.empty())
+			return;
+
+		std::sort(m_vElements.begin(), m_vElements.end(), [](const ElementWithChance& a, const ElementWithChance& b) {
+			return a.Chance > b.Chance;
+		});
+	}
+
 	// iterator types
 	using Iterator = typename std::vector<ElementWithChance>::iterator;
 	using ConstIterator = typename std::vector<ElementWithChance>::const_iterator;

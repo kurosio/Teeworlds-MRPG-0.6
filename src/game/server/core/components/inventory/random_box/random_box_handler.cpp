@@ -27,13 +27,16 @@ void CEntityRandomBoxRandomizer::Tick()
 	// select random element every sec
 	if(m_Current.isEmpty() || m_Lifetime % Server()->TickSpeed() == 0 || !m_Lifetime)
 	{
+		// get next element
 		m_Current = m_ChanceProcessor.getRandomElement();
 
-		const auto* pPlayer = GS()->GetPlayerByUserID(m_AccountID);
+		auto* pPlayer = GS()->GetPlayerByUserID(m_AccountID);
 		if(pPlayer && pPlayer->GetCharacter())
 		{
 			const auto Pos = pPlayer->GetCharacter()->m_Core.m_Pos;
 			GS()->EntityManager()->Text(Pos + vec2(0, -80), 50, GS()->GetItemInfo(m_Current.ItemID)->GetName());
+			pPlayer->m_CurrentRandomItem = m_Current;
+			pPlayer->m_VotesData.UpdateVotesIf(MENU_INVENTORY_RANDOMBOX_OPEN);
 		}
 	}
 

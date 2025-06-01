@@ -62,6 +62,7 @@ public:
 	char m_aInitialClanBuffer[128]{};
 	Mood m_MoodState{};
 	int m_ActiveCraftGroupID{};
+	CRandomItem m_CurrentRandomItem {};
 	std::unique_ptr<MotdMenu> m_pMotdMenu{};
 	std::optional<ItemGroup> m_InventoryItemGroupFilter{};
 	std::optional<ItemType> m_InventoryItemTypeFilter{};

@@ -35,9 +35,11 @@ public:
 	void Add(int ItemID, int Value, float Chance)
 	{
 		m_vItems.addElement(CRandomItem(ItemID, Value), Chance);
+		m_vItems.sortElementsByChance();
 	}
 	bool Start(CPlayer* pPlayer, int Seconds, CPlayerItem* pPlayerUsesItem = nullptr, int UseValue = 1);
 	bool IsEmpty() const { return m_vItems.isEmpty(); }
+	const ChanceProcessor<CRandomItem>& GetItems() const { return m_vItems; }
 };
 
 #endif
