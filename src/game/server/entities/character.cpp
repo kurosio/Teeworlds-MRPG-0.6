@@ -1228,12 +1228,12 @@ bool CCharacter::TakeDamage(vec2 Force, int Damage, int FromCID, int Weapon)
 	if(pFrom && pFrom->GetCharacter() && FromCID != m_pPlayer->GetCID())
 	{
 		// ring chain lightning
-		if(m_pPlayer->GetItem(itRingChainLightning)->IsEquipped() && m_LastTeslaSerpenAttack < Server()->Tick())
+		if(m_pPlayer->GetItem(itRingChainLightning)->IsEquipped() && m_LastRingChainLightningAttack < Server()->Tick())
 		{
 			const auto randomSec = 1 + rand() % 5;
 			const auto totalChainDamage = translate_to_percent_rest(Damage, 20);
 			new CEntityTeslaSerpent(&GS()->m_World, m_ClientID, m_Pos, Force, totalChainDamage, 600.f, 8, 0.7f);
-			m_LastTeslaSerpenAttack = Server()->Tick() + (Server()->TickSpeed() * randomSec);
+			m_LastRingChainLightningAttack = Server()->Tick() + (Server()->TickSpeed() * randomSec);
 		}
 
 		// vampirism replenish your health
