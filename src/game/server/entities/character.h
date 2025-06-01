@@ -81,6 +81,9 @@ protected:
 	std::string m_Zonename {};
 	CMultipleOrbite* m_pMultipleOrbite {};
 
+	// misc modules or skills variables
+	int m_LastRingChainLightningAttack {};
+
 	void HandleWeapons();
 	void HandleNinja();
 	bool HandleTiles();

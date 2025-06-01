@@ -713,6 +713,7 @@ enum
 	itLifePreserver                = 319,   // Keeps player afloat
 	itDiversKit                    = 320,   // Can't drown, keeps player afloat
 	itFishBait                     = 323,   // Increases chance of hooking by 30%
+	itRingChainLightning           = 388,   // Reflects a portion of damage by lightning
 
 	// weapons
 	itHammer                       = 2,     // Equipment Hammers
