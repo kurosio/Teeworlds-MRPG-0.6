@@ -353,8 +353,10 @@ void CWarehouseManager::ShowGroupedSelector(CPlayer* pPlayer, CWarehouse* pWareh
 			// sell
 			if(!IsBuyingAction)
 			{
-				VGroup.AddOption("WAREHOUSE_SELL_ITEM", pWarehouse->GetID(), pTrade->GetID(), "[{}] Sell {} - {$} {} per unit",
-					pPlayerItem->GetValue(), pItemInfo->GetName(), pItem->GetStringEnchantLevel().c_str(), Price, pCurrency->GetName());
+				const auto sellValue = pItem->GetValue();
+				const auto playerValue = pPlayerItem->GetValue();
+				VGroup.AddOption("WAREHOUSE_SELL_ITEM", pWarehouse->GetID(), pTrade->GetID(), "[{}] Sell {} x{} - {$} {} per unit",
+					playerValue, pItemInfo->GetName(), sellValue, Price, pCurrency->GetName());
 				continue;
 			}
 
@@ -511,22 +513,20 @@ bool CWarehouseManager::SellItem(CPlayer* pPlayer, CWarehouse* pWarehouse, int T
 	auto* pPlayerCurrencyItem = pPlayer->GetItem(pCurrency->GetID());
 	const auto Price = pTrade->GetPrice();
 
-	ValueToSell = minimum(ValueToSell, Core()->InventoryManager()->GetUnfrozenItemValue(pPlayer, pItem->GetID()));
-	const auto FinalPrice = ValueToSell * Price;
+	const auto TotalValue = ValueToSell * pItem->GetValue();
+	const auto TotalProducts = ValueToSell * pTrade->GetProductsCost();
+	const auto TotalPrice = ValueToSell * Price;
 
 	// try spend by item
-	if(ValueToSell > 0 && pPlayer->Account()->SpendCurrency(ValueToSell, pItem->GetID()))
+	if(ValueToSell > 0 && pPlayer->Account()->SpendCurrency(TotalValue, pItem->GetID()))
 	{
 		// storage add products
 		if(pWarehouse->IsHasFlag(WF_STORAGE))
-		{
-			const auto ProductsAppend = Price * ValueToSell; // TODO: update
-			pWarehouse->Storage().Add(ProductsAppend);
-		}
+			pWarehouse->Storage().Add(TotalProducts);
 
 		// add currency for player
-		pPlayerCurrencyItem->Add(FinalPrice);
-		GS()->Chat(ClientID, "You sold '{} x{}' for '{$} {}'.", pItem->Info()->GetName(), ValueToSell, FinalPrice, pCurrency->GetName());
+		pPlayerCurrencyItem->Add(TotalPrice);
+		GS()->Chat(ClientID, "You sold '{} x{}' for '{$} {}'.", pItem->Info()->GetName(), TotalValue, TotalPrice, pCurrency->GetName());
 		return true;
 	}
 
