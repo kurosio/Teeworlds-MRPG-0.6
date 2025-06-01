@@ -411,6 +411,7 @@ bool CInventoryManager::ListInventory(int ClientID, std::optional<ItemGroup> Gro
 		ItemSelected(GS()->GetPlayer(ClientID), &pItem);
 		hasItems = true;
 	});
+
 	return hasItems;
 }
 

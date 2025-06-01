@@ -78,6 +78,7 @@ public:
 	vec2 GetPos() const override { return m_Position; }
 	const char* GetTableName() const override { return TW_GUILDS_HOUSES; }
 	IHouse::Type GetHouseType() const override { return IHouse::Type::Guild; }
+	int GetMaxDecorationSlots() const override;
 
 	int GetWorldID() const { return m_WorldID; }
 	int GetInitialFee() const { return m_InitialFee; }

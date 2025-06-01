@@ -77,6 +77,7 @@ public:
 	int GetWorldID() const { return m_WorldID; }
 	int GetRentPrice() const;
 	int GetRentDays() const { return m_RentDays; }
+	int GetMaxDecorationSlots() const override { return (int)MAX_DECORATIONS_PER_HOUSE; }
 
 	void InitComponents(const BigInt& Bank, const std::string& DoorsData, const std::string& FarmzonesData, const std::string& PropertiesData);
 	void Buy(CPlayer* pPlayer);

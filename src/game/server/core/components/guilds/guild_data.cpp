@@ -19,7 +19,7 @@ bool CGuild::Upgrade(GuildUpgrade Type)
 	auto* pUpgradeField = &m_UpgradesData.getField<int>((int)Type);
 
 	// check maximum for available slots
-	if(Type == GuildUpgrade::AvailableSlots && pUpgradeField->m_Value >= GUILD_MAX_SLOTS)
+	if(pUpgradeField->m_Value >= pUpgradeField->m_MaxValue)
 		return false;
 
 	const int Price = GetUpgradePrice(Type);
@@ -197,20 +197,27 @@ bool CGuild::StartWar(CGuild* pTargetGuild)
 
 int CGuild::GetUpgradePrice(GuildUpgrade Type)
 {
-	int EndPrice = 0;
+	int TotalPrice = 0;
+	const int CurrentPoint = m_UpgradesData.getRef<int>((int)Type);
 
-	if(Type == GuildUpgrade::AvailableSlots)
+	switch(Type)
 	{
-		const int CurrentPoint = m_UpgradesData.getRef<int>((int)GuildUpgrade::AvailableSlots);
-		EndPrice = CurrentPoint * g_Config.m_SvGuildSlotUpgradePrice;
-	}
-	else
-	{
-		const int CurrentPoint = m_UpgradesData.getRef<int>((int)Type);
-		EndPrice = CurrentPoint * g_Config.m_SvGuildAnotherUpgradePrice;
+		case GuildUpgrade::DoorHealth:
+		case GuildUpgrade::DecorationSlots:
+			TotalPrice = CurrentPoint * g_Config.ms_SvGuildLowUpgradePrice;
+			break;
+
+		case GuildUpgrade::AvailableSlots:
+			TotalPrice = CurrentPoint * g_Config.m_SvGuildMediumUpgradePrice;
+			break;
+
+		default:
+		case GuildUpgrade::ChairLevel:
+			TotalPrice = CurrentPoint * g_Config.m_SvGuildHighUpgradePrice;
+			break;
 	}
 
-	return EndPrice;
+	return TotalPrice;
 }
 
 bool CGuild::IsAccountMemberGuild(int AccountID)

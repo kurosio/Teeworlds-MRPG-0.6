@@ -18,13 +18,14 @@ using GuildRankIdentifier = int;
 // Enum for various guild limits and default values
 enum GuildMisc
 {
-	GUILD_MAX_SLOTS = 20,                // Max number of members in a guild
-	GUILD_RANKS_MAX_COUNT = 5,           // Max number of ranks in a guild
-	GUILD_LOGS_MAX_COUNT = 50,           // Max number of log entries for a guild
-	GUILD_NEW_UPGRADE_SLOTS = 2,         // New guilds start with 2 additional slots
-	GUILD_NEW_UPGRADE_CHAIR = 1,         // New guilds start with 1 chair upgrade
-	GUILD_NEW_UPGRADE_DOOR_HEALTH = 1,   // New guilds start with 1 door health
-	GUILD_RENT_DAYS_DEFAULT = 3,         // Default rent duration for a guild
+	GUILD_MAX_SLOTS = 20,                  // Max number of members in a guild
+	GUILD_RANKS_MAX_COUNT = 5,             // Max number of ranks in a guild
+	GUILD_LOGS_MAX_COUNT = 50,             // Max number of log entries for a guild
+	GUILD_NEW_UPGRADE_SLOTS = 2,           // New guilds start with 2 additional slots
+	GUILD_NEW_UPGRADE_CHAIR = 1,           // New guilds start with 1 chair upgrade
+	GUILD_NEW_UPGRADE_DOOR_HEALTH = 1,     // New guilds start with 1 door health
+	GUILD_NEW_UPGRADE_DECORATION_SLOT = 5, // New guilds start with 1 door health
+	GUILD_RENT_DAYS_DEFAULT = 3,           // Default rent duration for a guild
 };
 
 // Enum for guild rank rights levels
@@ -73,8 +74,9 @@ enum class GuildUpgrade : size_t
 	AvailableSlots = 0,                  // Upgrade for additional member slots
 	NumGuildUpgr,                        // Total number of guild upgrades
 
-	ChairLevel = 1,                 // Upgrade for house chair experience
+	ChairLevel = 1,                      // Upgrade for house chair experience
 	DoorHealth = 2,                      // Upgrade for house door health
+	DecorationSlots = 3,                 // Upgrade additional decoration slots
 	NumGuildHouseUpgr                    // Total number of guild house upgrades
 };
 
@@ -308,9 +310,10 @@ private:
 
 	DBFieldContainer m_UpgradesData
 	{
-		DBField<int>((int)GuildUpgrade::AvailableSlots, "AvailableSlots", "Available slots", GUILD_NEW_UPGRADE_SLOTS),
-		DBField<int>((int)GuildUpgrade::ChairLevel, "ChairLevel", "Chair level", GUILD_NEW_UPGRADE_CHAIR),
-		DBField<int>((int)GuildUpgrade::DoorHealth, "DoorHealth", "Max door health", GUILD_NEW_UPGRADE_DOOR_HEALTH),
+		DBField<int>((int)GuildUpgrade::AvailableSlots, "AvailableSlots", "Available slots", GUILD_NEW_UPGRADE_SLOTS, GUILD_MAX_SLOTS),
+		DBField<int>((int)GuildUpgrade::ChairLevel, "ChairLevel", "Chair level", GUILD_NEW_UPGRADE_CHAIR, 50),
+		DBField<int>((int)GuildUpgrade::DoorHealth, "DoorHealth", "Max door health", GUILD_NEW_UPGRADE_DOOR_HEALTH, 20),
+		DBField<int>((int)GuildUpgrade::DecorationSlots, "DecorationSlots", "Decoration slots", GUILD_NEW_UPGRADE_DECORATION_SLOT, 30),
 	};
 
 	CBank* m_pBankManager {};

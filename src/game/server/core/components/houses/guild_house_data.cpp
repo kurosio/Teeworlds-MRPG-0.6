@@ -44,6 +44,11 @@ void CGuildHouse::InitComponents(const std::string& DoorsData, const std::string
 	dbg_assert(m_pDoorManager != nullptr, "The house doors manager is null");
 }
 
+int CGuildHouse::GetMaxDecorationSlots() const
+{
+	return m_pGuild ? m_pGuild->GetUpgrades().getRef<int>((int)GuildUpgrade::DecorationSlots) : 0;
+}
+
 int CGuildHouse::GetRentPrice() const
 {
 	const auto DoorCount = (int)GetDoorManager()->GetContainer().size();

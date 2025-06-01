@@ -20,6 +20,7 @@ public:
     virtual vec2 GetPos() const = 0;
     virtual const char* GetTableName() const = 0;
     virtual Type GetHouseType() const = 0;
+    virtual int GetMaxDecorationSlots() const = 0;
 };
 
 #endif
