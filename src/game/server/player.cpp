@@ -649,7 +649,7 @@ void CPlayer::FormatBroadcastBasicStats(char* pBuffer, int Size, const char* pAp
 	const auto Bank = Account()->GetBankManager();
 	const auto Gold = Account()->GetGold();
 	const auto GoldCapacity = Account()->GetGoldCapacity();
-	const auto [BonusActivitiesLines, BonusActivitiesStr] = Account()->GetBonusManager().GetBonusActivitiesString();
+	const auto BonusActivitiesStr = Account()->GetBonusManager().GetBonusActivitiesString();
 
 	// result
 	auto Result = fmt_localize(m_ClientID, "\n\n\n\n\nLv{}[{}]\nHP {$}/{$}\nMP {$}/{$}\nGold {$} of {$}\nBank {$}",
@@ -671,11 +671,13 @@ void CPlayer::FormatBroadcastBasicStats(char* pBuffer, int Size, const char* pAp
 		Result += "\n" + fmt_localize(m_ClientID, "Potion MP recast: {}", Seconds);
 	}
 
+	// bonus activities info
 	if(!BonusActivitiesStr.empty())
 	{
 		Result += "\n" + BonusActivitiesStr;
 	}
 
+	// normalize lines
 	constexpr int MaxLines = 20;
 	const auto Lines = std::ranges::count(Result, '\n');
 	if(Lines < MaxLines)

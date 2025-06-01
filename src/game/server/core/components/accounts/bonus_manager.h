@@ -95,7 +95,7 @@ public:
 		}
 	}
 	float GetTotalBonusPercentage(int bonusType) const;
-	std::pair<int, std::string> GetBonusActivitiesString() const;
+	std::string GetBonusActivitiesString() const;
 	std::vector<TemporaryBonus>& GetTemporaryBonuses() { return m_vTemporaryBonuses; }
 
 private:
