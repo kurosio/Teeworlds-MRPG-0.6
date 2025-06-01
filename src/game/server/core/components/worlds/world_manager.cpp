@@ -15,7 +15,8 @@ CWorldManager::~CWorldManager()
 void CWorldManager::OnInitWorld(const std::string& SqlQueryWhereWorld)
 {
 	std::deque<CWorldSwapData> vSwappers{};
-	const auto formatWhere = fmt_default("{} OR `TwoWorldID` = '{}'", SqlQueryWhereWorld, GS()->GetWorldID());
+	const auto currentWorldID = GS()->GetWorldID();
+	const auto formatWhere = fmt_default("{} OR `TwoWorldID` = '{}'", SqlQueryWhereWorld, currentWorldID);
 
 	// initializing world swappers from the database
 	ResultPtr pResSwap = Database->Execute<DB::SELECT>("*", "tw_world_swap", formatWhere.c_str());
@@ -37,14 +38,10 @@ void CWorldManager::OnInitWorld(const std::string& SqlQueryWhereWorld)
 	}
 
 	// initializing world data
-	for(int i = 0; i < Server()->GetWorldsSize(); ++i)
-	{
-		const auto* pDetail = Server()->GetWorldDetail(i);
-		dbg_assert(pDetail != nullptr, "detail data inside world initialized invalid");
-
-		CWorldData::CreateElement(i)->Init(pDetail->GetRespawnWorldID(), pDetail->GetJailWorldID(),
-			pDetail->GetRequiredLevel(), std::move(vSwappers));
-	}
+	const auto* pDetail = Server()->GetWorldDetail(currentWorldID);
+	dbg_assert(pDetail != nullptr, "detail data inside world initialized invalid");
+	CWorldData::CreateElement(currentWorldID)->Init(pDetail->GetRespawnWorldID(), pDetail->GetJailWorldID(),
+		pDetail->GetRequiredLevel(), std::move(vSwappers));
 }
 
 void CWorldManager::OnPostInit()
