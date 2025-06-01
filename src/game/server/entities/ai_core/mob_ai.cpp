@@ -82,6 +82,12 @@ void CMobAI::OnRewardPlayer(CPlayer* pPlayer, vec2 Force) const
 		}
 	}
 
+	// grinding materials
+	{
+		const int materialGain = calculate_gold_gain(g_Config.m_SvMobKillMaterialFactor, PlayerLevel, MobLevel, false);
+		pPlayer->GetItem(itMaterial)->Add(materialGain);
+	}
+
 	// grinding experience
 	{
 		int expGain = calculate_exp_gain(g_Config.m_SvMobKillExpFactor, PlayerLevel, MobLevel);
