@@ -60,14 +60,12 @@ void CEntityTeslaSerpent::CalculateChainLightning()
         CCharacter* pClosestHitCharacter = nullptr;
         vec2 HitPosition = CurrentChainSourcePos + CurrentDirection * m_ChainRange;
         float MinHitDistance = m_ChainRange;
-        bool bHitWall = false;
 
         vec2 WallCollisionPoint;
         if(GS()->Collision()->IntersectLine(CurrentChainSourcePos, HitPosition, &WallCollisionPoint, nullptr))
         {
             HitPosition = WallCollisionPoint;
             MinHitDistance = distance(CurrentChainSourcePos, HitPosition);
-            bHitWall = true;
         }
 
         for(auto* pTargetChar = (CCharacter*)GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); pTargetChar; pTargetChar = (CCharacter*)pTargetChar->TypeNext())
@@ -97,7 +95,6 @@ void CEntityTeslaSerpent::CalculateChainLightning()
                     MinHitDistance = DistToTarget;
                     HitPosition = TargetCharPos;
                     pClosestHitCharacter = pTargetChar;
-                    bHitWall = false;
                 }
             }
         }
