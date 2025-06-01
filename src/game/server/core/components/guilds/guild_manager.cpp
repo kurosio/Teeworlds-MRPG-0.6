@@ -1225,7 +1225,7 @@ void CGuildManager::ShowUpgrades(CPlayer* pPlayer) const
 	// information
 	VoteWrapper VInfo(ClientID, VWF_STYLE_STRICT_BOLD|VWF_SEPARATE, "\u2324 Guild upgrades (Information)");
 	VInfo.Add("All improvements are solely related to the guild itself.");
-	VInfo.Add("Bank: {}", pGuild->GetBankManager()->Get());
+	VInfo.Add("Bank: {$}", pGuild->GetBankManager()->Get());
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// guild-related upgrades
