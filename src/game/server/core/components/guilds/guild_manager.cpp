@@ -83,15 +83,13 @@ void CGuildManager::OnCharacterTile(CCharacter* pChr)
 
 	if(pChr->GetTiles()->IsActive(TILE_GUILD_CHAIR))
 	{
-		if(Server()->Tick() % (Server()->TickSpeed() * 5) == 0)
+		if(auto* pGuildHouse = GetHouseByPos(pChr->GetPos()))
 		{
-			//const int HouseID = GetPosHouseID(pChr->m_Core.m_Pos);
-			//const int GuildID = GetHouseGuildID(HouseID);
-			//if(HouseID <= 0 || GuildID <= 0)
-			//	return true;
-
-			//const int Exp = CGuild::ms_aGuild[GuildID].m_UpgradesData(CGuild::CHAIR_EXPERIENCE, 0).m_Value;
-			//pPlayer->AccountManager()->AddExperience(Exp);
+			if(pGuildHouse->GetGuild())
+			{
+				const auto ChairLevel = pGuildHouse->GetGuild()->GetUpgrades().getRef<int>((int)GuildUpgrade::ChairLevel);
+				pPlayer->Account()->HandleChair(ChairLevel, ChairLevel);
+			}
 		}
 	}
 }
@@ -1246,9 +1244,9 @@ void CGuildManager::ShowUpgrades(CPlayer* pPlayer) const
 	if(pGuild->HasHouse())
 	{
 		VoteWrapper VUpgrHouse(ClientID, VWF_ALIGN_TITLE|VWF_STYLE_SIMPLE, "\u2725 House-related upgrades");
-		for(int i = (int)GuildUpgrade::ChairExperience; i < (int)GuildUpgrade::NumGuildHouseUpgr; i++)
+		for(int i = (int)GuildUpgrade::ChairLevel; i < (int)GuildUpgrade::NumGuildHouseUpgr; i++)
 		{
-			int Price = pGuild->GetUpgradePrice(static_cast<GuildUpgrade>(i));
+			const auto Price = pGuild->GetUpgradePrice(static_cast<GuildUpgrade>(i));
 			const auto* pUpgrade = &pGuild->GetUpgrades().getField<int>(i);
 
 			VUpgrHouse.AddOption("GUILD_UPGRADE", i, "Upgrade {} ({}) {$} gold",

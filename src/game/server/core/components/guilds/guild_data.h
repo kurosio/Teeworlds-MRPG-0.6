@@ -73,7 +73,7 @@ enum class GuildUpgrade : size_t
 	AvailableSlots = 0,                  // Upgrade for additional member slots
 	NumGuildUpgr,                        // Total number of guild upgrades
 
-	ChairExperience = 1,                 // Upgrade for house chair experience
+	ChairLevel = 1,                 // Upgrade for house chair experience
 	DoorHealth = 2,                      // Upgrade for house door health
 	NumGuildHouseUpgr                    // Total number of guild house upgrades
 };
@@ -309,7 +309,7 @@ private:
 	DBFieldContainer m_UpgradesData
 	{
 		DBField<int>((int)GuildUpgrade::AvailableSlots, "AvailableSlots", "Available slots", GUILD_NEW_UPGRADE_SLOTS),
-		DBField<int>((int)GuildUpgrade::ChairExperience, "ChairExperience", "Chair experience", GUILD_NEW_UPGRADE_CHAIR),
+		DBField<int>((int)GuildUpgrade::ChairLevel, "ChairLevel", "Chair level", GUILD_NEW_UPGRADE_CHAIR),
 		DBField<int>((int)GuildUpgrade::DoorHealth, "DoorHealth", "Max door health", GUILD_NEW_UPGRADE_DOOR_HEALTH),
 	};
 

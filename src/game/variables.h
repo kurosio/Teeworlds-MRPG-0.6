@@ -152,8 +152,8 @@ MACRO_CONFIG_INT(SvMaxAuctionSlots, sv_max_auction_slots, 50, 10, 300, CFGFLAG_S
 // -----------------------
 // Guild System Configuration
 // -----------------------
-MACRO_CONFIG_INT(SvGuildSlotUpgradePrice, sv_guild_slot_upgrade_price, 9000, 100, 9000000, CFGFLAG_SERVER, "Price for upgrading guild member slots")
-MACRO_CONFIG_INT(SvGuildAnotherUpgradePrice, sv_guild_another_upgrade_price, 18000, 100, 9000000, CFGFLAG_SERVER, "Price for upgrading additional guild features")
+MACRO_CONFIG_INT(SvGuildSlotUpgradePrice, sv_guild_slot_upgrade_price, 16000, 100, 9000000, CFGFLAG_SERVER, "Price for upgrading guild member slots")
+MACRO_CONFIG_INT(SvGuildAnotherUpgradePrice, sv_guild_another_upgrade_price, 40000, 100, 9000000, CFGFLAG_SERVER, "Price for upgrading additional guild features")
 MACRO_CONFIG_INT(SvGuildWarDurationMinutes, sv_guild_war_duration_minutes, 30, 1, 240, CFGFLAG_SERVER, "Duration of a guild war in minutes")
 
 // -----------------------
