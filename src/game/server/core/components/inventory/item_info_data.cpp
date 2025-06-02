@@ -147,6 +147,8 @@ void CItemDescription::InitUniqueName(const std::string& Name)
 		case ItemType::EquipRake:
 			Prefix = "J";
 			break;
+
+		default: break;
 	}
 
 	if(m_Group == ItemGroup::Equipment && m_Type == ItemType::Default)
