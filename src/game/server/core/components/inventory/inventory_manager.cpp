@@ -646,6 +646,14 @@ void CInventoryManager::ShowPlayerModules(CPlayer* pPlayer)
 		return pair.second.Info()->IsEquipmentModules() && pair.second.Info()->HasAttributes() && pair.second.HasItem();
 	});
 
+	// settings
+	const auto* pShowOnlyFunc = pPlayer->GetItem(itShowOnlyFunctionModules);
+	bool IsShowOnlyFunctionEnabled = pShowOnlyFunc->GetSettings() > 0;
+	const char* pStatusShowFunc = IsShowOnlyFunctionEnabled ? "Enabled" : "Disabled";
+	VoteWrapper VModulesSettings(ClientID, VWF_OPEN, "\u2699 Modules settings");
+	VModulesSettings.AddOption("TOGGLE_SETTING", pShowOnlyFunc->GetID(), "[{}] {}", pStatusShowFunc, pShowOnlyFunc->Info()->GetName());
+	VoteWrapper::AddEmptyline(ClientID);
+
 	// collected boost
 	int collectedNum = 0;
 	VoteWrapper VCollected(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_STRICT_BOLD, "\u2604 Active Effects Summary");
@@ -681,8 +689,11 @@ void CInventoryManager::ShowPlayerModules(CPlayer* pPlayer)
 	for(const auto& [ItemID, PlayerItem] : functionalModules)
 	{
 		const auto* pItemInfo = PlayerItem.Info();
-		const auto EquippedFlagStr = PlayerItem.IsEquipped() ? "✔" : "";
-		VFunctional.AddOption("TOGGLE_EQUIP", pItemInfo->GetID(), "{}{} * {}", EquippedFlagStr, pItemInfo->GetName(), pItemInfo->GetDescription());
+		const auto EquippedFlagStr = PlayerItem.IsEquipped() ? "✔ " : "";
+		if(IsShowOnlyFunctionEnabled)
+			VFunctional.AddOption("TOGGLE_EQUIP", pItemInfo->GetID(), "{}{}", EquippedFlagStr, pItemInfo->GetDescription());
+		else
+			VFunctional.AddOption("TOGGLE_EQUIP", pItemInfo->GetID(), "{}{} * {}", EquippedFlagStr, pItemInfo->GetName(), pItemInfo->GetDescription());
 	}
 	if(VFunctional.IsEmpty())
 		VFunctional.Add("No modules available");
@@ -695,8 +706,11 @@ void CInventoryManager::ShowPlayerModules(CPlayer* pPlayer)
 	for(const auto& [ItemID, PlayerItem] : statModules)
 	{
 		const auto* pItemInfo = PlayerItem.Info();
-		const auto EquippedFlagStr = PlayerItem.IsEquipped() ? "✔" : "";
-		VStats.AddOption("TOGGLE_EQUIP", pItemInfo->GetID(), "{}{} * {}", EquippedFlagStr, pItemInfo->GetName(), PlayerItem.GetStringAttributesInfo(pPlayer));
+		const auto EquippedFlagStr = PlayerItem.IsEquipped() ? "✔ " : "";
+		if(IsShowOnlyFunctionEnabled)
+			VStats.AddOption("TOGGLE_EQUIP", pItemInfo->GetID(), "{}{}", EquippedFlagStr, PlayerItem.GetStringAttributesInfo(pPlayer));
+		else
+			VStats.AddOption("TOGGLE_EQUIP", pItemInfo->GetID(), "{}{} * {}", EquippedFlagStr, PlayerItem.GetStringAttributesInfo(pPlayer), pItemInfo->GetName());
 	}
 	if(VStats.IsEmpty())
 		VStats.Add("No modules available");

@@ -737,6 +737,7 @@ void CAccountManager::LoadAccount(CPlayer* pPlayer, bool FirstInitilize)
 			{ itShowCriticalDamage, 1 },
 			{ itShowQuestStarNavigator, 1 },
 			{ itShowDetailGainMessages, 0 },
+			{ itShowOnlyFunctionModules, 1 },
 		});
 
 	// update player time periods

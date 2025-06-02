@@ -116,19 +116,48 @@ void CItemDescription::InitUniqueName(const std::string& Name)
 {
 	// prefix
 	std::string_view Prefix {};
-	if(m_Type == ItemType::EquipArmorTank || m_Type == ItemType::EquipHelmetTank)
-		Prefix = "T";
-	else if(m_Type == ItemType::EquipArmorDPS || m_Type == ItemType::EquipHelmetDPS)
-		Prefix = "D";
-	else if(m_Type == ItemType::EquipArmorHealer || m_Type == ItemType::EquipHelmetHealer)
-		Prefix = "H";
+	switch(m_Type)
+	{
+		case ItemType::EquipArmorTank:
+		case ItemType::EquipHelmetTank:
+			Prefix = "T";
+			break;
+
+		case ItemType::EquipArmorDPS:
+		case ItemType::EquipHelmetDPS:
+			Prefix = "D";
+			break;
+
+		case ItemType::EquipArmorHealer:
+		case ItemType::EquipHelmetHealer:
+			Prefix = "H";
+			break;
+
+		case ItemType::EquipHammer:
+		case ItemType::EquipGun:
+		case ItemType::EquipShotgun:
+		case ItemType::EquipGrenade:
+		case ItemType::EquipLaser:
+			Prefix = "W";
+			break;
+
+		case ItemType::EquipPickaxe:
+		case ItemType::EquipFishrod:
+		case ItemType::EquipGloves:
+		case ItemType::EquipRake:
+			Prefix = "J";
+			break;
+	}
+
+	if(m_Group == ItemGroup::Equipment && m_Type == ItemType::Default)
+		Prefix = "M";
 
 	// prepare result
 	std::string Result {};
 	if(Prefix.empty())
 		Result = Name;
 	else
-		Result = fmt_default("({}){}", Prefix, Name);
+		Result = fmt_default("{}: {}", Prefix, Name);
 	str_copy(m_aName, Result.c_str(), sizeof(m_aName));
 }
 
