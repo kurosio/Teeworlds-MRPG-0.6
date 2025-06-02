@@ -53,7 +53,7 @@ private:
 	virtual void OnPlayerEquipItem(CPlayer* pPlayer, CPlayerItem* pItem) { }
 	virtual void OnPlayerUnequipItem(CPlayer* pPlayer, CPlayerItem* pItem) { }
 	virtual void OnPlayerEnchantItem(CPlayer* pPlayer, CPlayerItem* pItem) { }
-	virtual void OnPlayerDurabilityItem(CPlayer* pPlayer, CPlayerItem* pItem) { }
+	virtual void OnPlayerDurabilityItem(CPlayer* pPlayer, CPlayerItem* pItem, int OldDurability) { }
 	virtual void OnPlayerQuestChangeState(CPlayer* pPlayer, CPlayerQuest* pQuest, QuestState NewState) { }
 };
 

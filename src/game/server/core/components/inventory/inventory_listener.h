@@ -55,6 +55,7 @@ protected:
     void OnCharacterSpawn(CPlayer* pPlayer) override;
     void OnPlayerLogin(CPlayer* pPlayer, CAccountData* pAccount) override;
     void OnPlayerEquipItem(CPlayer* pPlayer, CPlayerItem* pItem) override;
+    void OnPlayerDurabilityItem(CPlayer* pPlayer, CPlayerItem* pItem, int OldDurability) override;
     void OnPlayerUnequipItem(CPlayer* pPlayer, CPlayerItem* pItem) override;
     void OnPlayerEnchantItem(CPlayer* pPlayer, CPlayerItem* pItem) override;
     void OnPlayerProfessionUpgrade(CPlayer* pPlayer, int AttributeID) override;

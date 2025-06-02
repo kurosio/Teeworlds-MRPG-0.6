@@ -15,6 +15,7 @@ void CInventoryListener::Initialize()
 	g_EventListenerManager.RegisterListener(IEventListener::PlayerEquipItem, this);
 	g_EventListenerManager.RegisterListener(IEventListener::PlayerUnequipItem, this);
 	g_EventListenerManager.RegisterListener(IEventListener::PlayerEnchantItem, this);
+	g_EventListenerManager.RegisterListener(IEventListener::PlayerDurabilityItem, this);
 	m_AttributesTracker.LoadTrackingData();
 }
 
@@ -54,6 +55,13 @@ void CInventoryListener::OnPlayerEquipItem(CPlayer* pPlayer, CPlayerItem* pItem)
 	UpdateAttributesForItem(pPlayer, pItem);
 }
 
+void CInventoryListener::OnPlayerDurabilityItem(CPlayer* pPlayer, CPlayerItem* pItem, int OldDurability)
+{
+	const auto currentDurability = pItem->GetDurability();
+	if((OldDurability <= 0 && currentDurability > 0) ||
+		(OldDurability > 0 && currentDurability <= 0))
+		UpdateAttributesForItem(pPlayer, pItem);
+}
 
 void CInventoryListener::OnPlayerUnequipItem(CPlayer* pPlayer, CPlayerItem* pItem)
 {

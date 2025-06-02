@@ -86,14 +86,16 @@ bool CPlayerItem::ShouldAutoEquip() const
 bool CPlayerItem::SetDurability(int Durability)
 {
 	auto* pPlayer = GetPlayer();
-	if(pPlayer && pPlayer->IsAuthed() && m_Value >= 1)
+	if(!pPlayer || !pPlayer->IsAuthed() || m_Value < 1)
+		return false;
+
+	int oldDurability = m_Durability;
+	m_Durability = durability;
+
+	if(Save())
 	{
-		m_Durability = Durability;
-		if(Save())
-		{
-			g_EventListenerManager.Notify<IEventListener::PlayerDurabilityItem>(pPlayer, this);
-			return true;
-		}
+		g_EventListenerManager.Notify<IEventListener::PlayerDurabilityItem>(pPlayer, this, oldDurability);
+		return true;
 	}
 
 	return false;
