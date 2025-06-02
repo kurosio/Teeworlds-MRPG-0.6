@@ -715,6 +715,11 @@ enum
 	itFishBait                     = 323,   // Increases chance of hooking by 30%
 	itRingChainLightning           = 388,   // Reflects a portion of damage by lightning
 
+	// reset upgrades tomes
+	itTomeOfUpgrResetTank          = 399,   // Reset upgrade for Tank
+	itTomeOfUpgrResetDps           = 400,   // Reset upgrade for Dps
+	itTomeOfUpgrResetHealer        = 401,   // Reset upgrade for Healer
+
 	// weapons
 	itHammer                       = 2,     // Equipment Hammers
 	itHammerLamp                   = 99,    // Equipment Lamp hammer

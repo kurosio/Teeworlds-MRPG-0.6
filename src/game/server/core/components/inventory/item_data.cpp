@@ -378,6 +378,27 @@ bool CPlayerItem::Use(int Value)
 		return true;
 	}
 
+	// tome upgr-reset Tank
+	if(m_ID == itTomeOfUpgrResetTank && Remove(Value))
+	{
+		pPlayer->Account()->GetProfession(ProfessionIdentifier::Tank)->ResetUpgrades();
+		return true;
+	}
+
+	// tome upgr-reset Dps
+	if(m_ID == itTomeOfUpgrResetDps && Remove(Value))
+	{
+		pPlayer->Account()->GetProfession(ProfessionIdentifier::Dps)->ResetUpgrades();
+		return true;
+	}
+
+	// tome upgr-reset Healer
+	if(m_ID == itTomeOfUpgrResetHealer && Remove(Value))
+	{
+		pPlayer->Account()->GetProfession(ProfessionIdentifier::Healer)->ResetUpgrades();
+		return true;
+	}
+
 	// potion health regen
 	if(const auto& optPotionContext = Info()->GetPotionContext())
 	{

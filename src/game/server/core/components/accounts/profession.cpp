@@ -122,6 +122,51 @@ bool CProfession::Upgrade(AttributeIdentifier ID, int Units, int PricePerUnit)
 	return true;
 }
 
+void CProfession::ResetUpgrades()
+{
+	auto* pPlayer = GetPlayer();
+	if(m_Attributes.empty())
+	{
+		GS()->Chat(m_ClientID, "This profession has no attributes to reset.");
+		return;
+	}
+
+	// reset by all attributes
+	int RefundedPointsTotal = 0;
+	for(auto& [ID, currentValue] : m_Attributes)
+	{
+		int initialValue = (m_ProfessionType == PROFESSION_TYPE_OTHER ? 1 : 0);
+		if(currentValue > initialValue)
+		{
+			int PointsToRefund = currentValue - initialValue;
+			auto* pAttInfo = GS()->GetAttributeInfo(ID);
+
+			PointsToRefund *= pAttInfo->GetUpgradePrice();
+			m_UpgradePoint += PointsToRefund;
+			RefundedPointsTotal += PointsToRefund;
+			currentValue = initialValue;
+
+			// update player by raw attribute
+			auto totalAttribute = pPlayer->GetTotalRawAttributeValue(ID);
+			pPlayer->UpdateTotalAttributeValue(ID, totalAttribute);
+		}
+		else if(currentValue < initialValue)
+			currentValue = initialValue;
+	}
+
+	// information
+	if(RefundedPointsTotal > 0)
+	{
+		GS()->Chat(m_ClientID, "Upgrades have been reset. You received {} points back.", RefundedPointsTotal);
+		GS()->Chat(m_ClientID, "You now have {} total upgrade points.", m_UpgradePoint);
+		Save();
+		return;
+	}
+
+	GS()->Chat(m_ClientID, "No upgrade points were refunded. Attributes may already be at their base values.");
+}
+
+
 std::string CProfession::GetPreparedJsonString() const
 {
 	nlohmann::json json;

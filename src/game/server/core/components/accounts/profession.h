@@ -49,6 +49,7 @@ public:
 	float GetExtraPercentAttribute(AttributeIdentifier ID) const { return m_ExtraPercent.contains(ID) ? m_ExtraPercent.at(ID) : .0f; }
 	const CTeeInfo& GetTeeInfo() const { return m_ProfessionSkin; }
 	EquippedSlots& GetEquippedSlots() { return m_EquippedSlots; }
+	void ResetUpgrades();
 
 private:
 	std::string GetPreparedJsonString() const;
