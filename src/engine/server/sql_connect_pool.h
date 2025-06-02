@@ -302,7 +302,6 @@ private:
 				{
 					const std::unique_ptr<Statement> pStmt(pConnection->createStatement());
 					pStmt->execute(Query.c_str());
-					if(pCallbackResult)
 					if(callback)
 					{
 						callback();
