@@ -236,7 +236,7 @@ private:
 
 		void AtExecute(const CallbackResultPtr& pCallbackResult)
 		{
-			auto Item = [pCallbackResult](const std::string Query)
+			auto Item = [callback = std::move(pCallbackResult)](const std::string Query)
 			{
 				const char* pError = nullptr;
 
@@ -247,9 +247,9 @@ private:
 				{
 					const std::unique_ptr<Statement> pStmt(pConnection->createStatement());
 					auto pResult = std::make_unique<WrapperResultSet>(pStmt->executeQuery(Query.c_str()));
-					if(pCallbackResult)
+					if(callback)
 					{
-						pCallbackResult(std::move(pResult));
+						callback(std::move(pResult));
 					}
 					pStmt->close();
 				}
@@ -288,7 +288,7 @@ private:
 
 		void AtExecute(const CallbackUpdatePtr& pCallbackResult, int DelayMilliseconds = 0)
 		{
-			auto Item = [pCallbackResult](const std::string Query, const int Milliseconds)
+			auto Item = [callback = std::move(pCallbackResult)](const std::string Query, const int Milliseconds)
 			{
 				if (Milliseconds > 0)
 					std::this_thread::sleep_for(std::chrono::milliseconds(Milliseconds));
@@ -303,8 +303,9 @@ private:
 					const std::unique_ptr<Statement> pStmt(pConnection->createStatement());
 					pStmt->execute(Query.c_str());
 					if(pCallbackResult)
+					if(callback)
 					{
-						pCallbackResult();
+						callback();
 					}
 					pStmt->close();
 				}

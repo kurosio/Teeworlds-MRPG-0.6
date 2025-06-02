@@ -90,7 +90,7 @@ bool CPlayerItem::SetDurability(int Durability)
 		return false;
 
 	int oldDurability = m_Durability;
-	m_Durability = durability;
+	m_Durability = Durability;
 
 	if(Save())
 	{
