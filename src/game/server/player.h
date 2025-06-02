@@ -55,7 +55,6 @@ public:
 	FixedViewCam& LockedView() { return m_FixedView; }
 
 	vec2 m_ViewPos{};
-	int m_SpectatorID {};
 	int m_PlayerFlags{};
 	int m_aPlayerTick[NUM_TICK]{};
 	char m_aRotateClanBuffer[128]{};

@@ -461,6 +461,22 @@ void CServer::GetClientAddr(int ClientID, char* pAddrStr, int Size) const
 		net_addr_str(m_NetServer.ClientAddr(ClientID), pAddrStr, Size, false);
 }
 
+void CServer::SetSpectatorID(int ClientID, int SpectatorID)
+{
+	if(ClientID < 0 || ClientID >= MAX_CLIENTS || m_aClients[ClientID].m_State != CClient::STATE_INGAME)
+		return;
+
+	m_aClients[ClientID].m_SpectatorID = SpectatorID;
+}
+
+int CServer::GetSpectatorID(int ClientID) const
+{
+	if(ClientID < 0 || ClientID >= MAX_CLIENTS || m_aClients[ClientID].m_State != CClient::STATE_INGAME)
+		return SPEC_FREEVIEW;
+
+	return m_aClients[ClientID].m_SpectatorID;
+}
+
 void CServer::SetStateClientMRPG(int ClientID, bool State)
 {
 	if(ClientID < 0 || ClientID >= MAX_CLIENTS || m_aClients[ClientID].m_State < CClient::STATE_READY)
@@ -794,6 +810,7 @@ int CServer::NewClientNoAuthCallback(int ClientID, void* pUser)
 	pThis->m_aClients[ClientID].m_DDNetVersion = VERSION_NONE;
 	pThis->m_aClients[ClientID].m_GotDDNetVersionPacket = false;
 	pThis->m_aClients[ClientID].m_DDNetVersionSettled = false;
+	pThis->m_aClients[ClientID].m_SpectatorID = SPEC_FREEVIEW;
 	pThis->m_aClients[ClientID].Reset();
 
 	pThis->SendCapabilities(ClientID);
@@ -825,6 +842,7 @@ int CServer::NewClientCallback(int ClientID, void* pUser)
 	pThis->m_aClients[ClientID].m_IsClientMRPG = false;
 	pThis->m_aClients[ClientID].m_Quitting = false;
 
+	pThis->m_aClients[ClientID].m_SpectatorID = SPEC_FREEVIEW;
 	pThis->m_aClients[ClientID].m_DDNetVersion = VERSION_NONE;
 	pThis->m_aClients[ClientID].m_GotDDNetVersionPacket = false;
 	pThis->m_aClients[ClientID].m_DDNetVersionSettled = false;
@@ -872,6 +890,7 @@ int CServer::DelClientCallback(int ClientID, const char* pReason, void* pUser)
 	pThis->m_aClients[ClientID].m_ClientVersion = 0;
 	pThis->m_aClients[ClientID].m_IsClientMRPG = false;
 	pThis->m_aClients[ClientID].m_Quitting = false;
+	pThis->m_aClients[ClientID].m_SpectatorID = SPEC_FREEVIEW;
 	pThis->m_aClients[ClientID].m_Snapshots.PurgeAll();
 	return 0;
 }

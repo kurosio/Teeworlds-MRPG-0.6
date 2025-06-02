@@ -115,12 +115,11 @@ void CGameControllerDungeon::ChangeState(int State)
 		for(int i = 0; i < MAX_PLAYERS; i++)
 		{
 			auto* pPlayer = GS()->GetPlayer(i);
-			if(pPlayer && GS()->IsPlayerInWorld(i, m_pDungeon->GetWorldID()))
-			{
-				int FinishTime = Server()->Tick() - pPlayer->GetSharedData().m_TempStartDungeonTick;
-				GS()->Chat(-1, "'{}' finished '{}'.", Server()->ClientName(i), m_pDungeon->GetName());
+			if(!pPlayer || pPlayer->GetTeam() == TEAM_SPECTATORS || !GS()->IsPlayerInWorld(i, m_pDungeon->GetWorldID()))
+				continue;
 
-			}
+			int FinishTime = Server()->Tick() - pPlayer->GetSharedData().m_TempStartDungeonTick;
+			GS()->Chat(-1, "'{}' finished '{}'.", Server()->ClientName(i), m_pDungeon->GetName());
 		}
 	}
 }
@@ -260,8 +259,8 @@ bool CGameControllerDungeon::OnCharacterSpawn(CCharacter* pChr)
 	// update vote menu for player
 	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
-		CPlayer* pPlayer = GS()->GetPlayer(i);
-		if(!pPlayer || !GS()->IsPlayerInWorld(i, m_pDungeon->GetWorldID()))
+		auto* pPlayer = GS()->GetPlayer(i);
+		if(!pPlayer || pPlayer->GetTeam() == TEAM_SPECTATORS || !GS()->IsPlayerInWorld(i, m_pDungeon->GetWorldID()))
 			continue;
 
 		pPlayer->m_VotesData.UpdateVotesIf(MENU_DUTIES_LIST);
@@ -278,9 +277,7 @@ void CGameControllerDungeon::KillAllPlayers() const
 	{
 		auto* pCharacter = GS()->GetPlayerChar(i);
 		if(pCharacter && GS()->IsPlayerInWorld(i, m_pDungeon->GetWorldID()))
-		{
 			pCharacter->Die(i, WEAPON_WORLD);
-		}
 	}
 }
 
@@ -341,11 +338,15 @@ int CGameControllerDungeon::GetRemainingMobsNum() const
 int CGameControllerDungeon::GetPlayersReadyNum() const
 {
     int ReadyPlayers = 0;
+	const auto WorldID = m_pDungeon->GetWorldID();
 
     for(int i = 0; i < MAX_PLAYERS; i++)
     {
-        auto* pPlayer = GS()->GetPlayer(i);
-        if(pPlayer && GS()->IsPlayerInWorld(i, m_pDungeon->GetWorldID()) && pPlayer->GetSharedData().m_TempDungeonReady)
+		auto* pPlayer = GS()->GetPlayer(i);
+		if(!pPlayer || pPlayer->GetTeam() == TEAM_SPECTATORS || !GS()->IsPlayerInWorld(i, WorldID))
+			continue;
+
+		if(pPlayer->GetSharedData().m_TempDungeonReady)
             ReadyPlayers++;
     }
 
@@ -360,8 +361,11 @@ int CGameControllerDungeon::GetPlayersNum() const
 
 	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
-		if(Server()->GetClientWorldID(i) == WorldID)
-			PlayersNum++;
+		auto* pPlayer = GS()->GetPlayer(i);
+		if(!pPlayer || pPlayer->GetTeam() == TEAM_SPECTATORS || !GS()->IsPlayerInWorld(i, WorldID))
+			continue;
+
+		PlayersNum++;
 	}
 
 	return PlayersNum;
@@ -391,7 +395,7 @@ void CGameControllerDungeon::PrepareSyncFactors(std::map<AttributeIdentifier, in
 	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
 		auto* pPlayer = GS()->GetPlayer(i, true);
-		if(!pPlayer || !GS()->IsPlayerInWorld(i, m_pDungeon->GetWorldID()))
+		if(!pPlayer || pPlayer->GetTeam() == TEAM_SPECTATORS || !GS()->IsPlayerInWorld(i, m_pDungeon->GetWorldID()))
 			continue;
 
 		for(auto ID = (int)AttributeIdentifier::DMG; ID < (int)AttributeIdentifier::ATTRIBUTES_NUM; ID++)

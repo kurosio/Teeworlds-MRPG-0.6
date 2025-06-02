@@ -101,6 +101,7 @@ public:
 		int m_WorldID;
 		int m_OldWorldID;
 		bool m_ChangeWorld;
+		int m_SpectatorID;
 
 		int m_NextMapChunk;
 		bool m_Quitting;
@@ -205,6 +206,9 @@ public:
 	void SetClientDDNetVersion(int ClientID, int DDNetVersion) override;
 	int GetClientInfo(int ClientID, CClientInfo* pInfo) const override;
 	void GetClientAddr(int ClientID, char* pAddrStr, int Size) const override;
+
+	void SetSpectatorID(int ClientID, int SpectatorID) override;
+	int GetSpectatorID(int ClientID) const override;
 
 	void SetStateClientMRPG(int ClientID, bool State) override;
 	bool GetStateClientMRPG(int ClientID) const override;

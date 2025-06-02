@@ -67,7 +67,7 @@ void CEidolonAI::OnDie(int Killer, int Weapon)
 			auto* pPlayerItem = pOwner->GetItem(EquippedEidolonItemIdOpt.value());
 			if(pPlayerItem && pPlayerItem->GetDurability() > 0)
 			{
-				pPlayerItem->SetDurability(0);
+				//pPlayerItem->SetDurability(0); TODO crashed by event listener inventory durability item it's updated from character all item's and these item's destroyed eidolon character.
 				pOwner->GS()->Chat(pOwner->GetCID(), "Your eidolon item 'durability is 0'.");
 			}
 		}

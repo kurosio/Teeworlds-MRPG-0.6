@@ -53,6 +53,8 @@ public:
 	virtual int GetClientVersion(int ClientID) const = 0;
 	virtual int SendMsg(CMsgPacker *pMsg, int Flags, int ClientID, int64_t Mask = -1, int WorldID = -1) = 0;
 	virtual int SendMotd(int ClientID, const char* pText) = 0;
+	virtual void SetSpectatorID(int ClientID, int SpectatorID) = 0;
+	virtual int GetSpectatorID(int ClientID) const = 0;
 
 	bool Translate(int& Target, int Client)
 	{

@@ -38,7 +38,6 @@ CPlayer::CPlayer(CGS* pGS, int ClientID) : m_pGS(pGS), m_ClientID(ClientID)
 	m_LastInputInit = false;
 	m_LastPlaytime = 0;
 	m_MoodState = Mood::Normal;
-	m_SpectatorID = SPEC_FREEVIEW;
 	m_PrevTuningParams = *pGS->Tuning();
 	m_NextTuningParams = m_PrevTuningParams;
 	m_Cooldown.Init(ClientID);
@@ -183,13 +182,21 @@ void CPlayer::PostTick()
 
 	// update view pos for spectators
 	const bool isViewLocked = m_FixedView.GetCurrentView().has_value();
-	if(!isViewLocked && GetTeam() == TEAM_SPECTATORS && m_SpectatorID != SPEC_FREEVIEW)
+	const auto spectatorID = Server()->GetSpectatorID(m_ClientID);
+	if(!isViewLocked && GetTeam() == TEAM_SPECTATORS && spectatorID != SPEC_FREEVIEW)
 	{
-		auto* pSpecPlayer = GS()->GetPlayer(m_SpectatorID);
+		auto* pSpecPlayer = GS()->GetPlayer(spectatorID);
 		if(pSpecPlayer && pSpecPlayer->GetCharacter())
+		{
 			m_ViewPos = pSpecPlayer->GetCharacter()->GetPos();
-		else if(!pSpecPlayer || !GS()->IsPlayerInWorld(m_SpectatorID))
-			m_SpectatorID = SPEC_FREEVIEW;
+		}
+		else if(Server()->IsClientChangingWorld(spectatorID))
+		{
+			if(!GS()->IsPlayerInWorld(spectatorID))
+				ChangeWorld(Server()->GetClientWorldID(spectatorID));
+		}
+		else
+			Server()->SetSpectatorID(m_ClientID, SPEC_FREEVIEW);
 	}
 
 	// handlers
@@ -346,7 +353,7 @@ void CPlayer::Snap(int SnappingClient)
 		{
 			if(auto* pSpectatorInfo = Server()->SnapNewItem<CNetObj_SpectatorInfo>(m_ClientID))
 			{
-				pSpectatorInfo->m_SpectatorId = (isViewLocked ? m_ClientID : m_SpectatorID);
+				pSpectatorInfo->m_SpectatorId = (isViewLocked ? m_ClientID : Server()->GetSpectatorID(m_ClientID));
 				pSpectatorInfo->m_X = m_ViewPos.x;
 				pSpectatorInfo->m_Y = m_ViewPos.y;
 				m_FixedView.Reset();
@@ -388,7 +395,7 @@ void CPlayer::FakeSnap()
 	// spectator info
 	if(auto* pSpectatorInfo = Server()->SnapNewItem<CNetObj_SpectatorInfo>(FakeID))
 	{
-		pSpectatorInfo->m_SpectatorId = m_SpectatorID;
+		pSpectatorInfo->m_SpectatorId = Server()->GetSpectatorID(FakeID);
 		pSpectatorInfo->m_X = m_ViewPos.x;
 		pSpectatorInfo->m_Y = m_ViewPos.y;
 	}
@@ -509,7 +516,7 @@ void CPlayer::OnDisconnect()
 void CPlayer::OnDirectInput(CNetObj_PlayerInput* pNewInput)
 {
 	// Update view position for spectators
-	if(!m_pCharacter && GetTeam() == TEAM_SPECTATORS && m_SpectatorID == SPEC_FREEVIEW)
+	if(!m_pCharacter && GetTeam() == TEAM_SPECTATORS && Server()->GetSpectatorID(m_ClientID) == SPEC_FREEVIEW)
 		m_ViewPos = vec2(pNewInput->m_TargetX, pNewInput->m_TargetY);
 
 	// parse event keys

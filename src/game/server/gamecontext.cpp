@@ -1001,13 +1001,25 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 				return;
 
 			LastSetSpecSpectatorMode = Server()->Tick();
-			if(SpectatorID >= 0 && (!m_apPlayers[SpectatorID] || m_apPlayers[SpectatorID]->GetTeam() == TEAM_SPECTATORS))
+			if(SpectatorID >= 0)
 			{
-				Chat(ClientID, "Invalid spectator id used");
-				return;
+				if(!m_apPlayers[SpectatorID] || m_apPlayers[SpectatorID]->GetTeam() == TEAM_SPECTATORS)
+				{
+					Chat(ClientID, "Invalid spectator id used");
+					return;
+				}
+
+				const auto playerSpecWorldId = m_apPlayers[SpectatorID]->GetCurrentWorldID();
+				const auto currentWorldId = pPlayer->GetCurrentWorldID();
+				if(playerSpecWorldId != currentWorldId)
+				{
+					Server()->SetSpectatorID(ClientID, SpectatorID);
+					pPlayer->ChangeWorld(playerSpecWorldId);
+					return;
+				}
 			}
 
-			pPlayer->m_SpectatorID = SpectatorID;
+			Server()->SetSpectatorID(ClientID, SpectatorID);
 			return;
 		}
 
