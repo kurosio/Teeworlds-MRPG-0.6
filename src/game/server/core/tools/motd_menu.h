@@ -155,10 +155,11 @@ public:
 
 	std::optional<std::string> GetFieldStr(size_t index) const
 	{
-		if(!m_vFields.contains(index) || m_vFields.at(index).Message.empty())
+		auto it = m_vFields.find(index);
+		if(it == m_vFields.end() || it->second.Message.empty())
 			return std::nullopt;
 
-		return m_vFields.at(index).Message;
+		return it->second.Message;
 	}
 
 	MotdOption* GetCurrent() { return m_pCurrent; }

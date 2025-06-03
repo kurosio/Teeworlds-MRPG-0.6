@@ -76,7 +76,10 @@ void MotdMenu::Tick()
 
 	// prepare the buffer for the MOTD
 	int linePos = 2;
-	std::string buffer = Instance::Localize(m_ClientID, "* Self kill - close the motd!\n\n");
+	const auto estimatedSize = 50 + (pPlayer->m_MotdData.m_ScrollManager.GetMaxVisibleItems() * 40) + m_Description.length();
+	std::string buffer;
+	buffer.reserve(estimatedSize);
+	buffer = Instance::Localize(m_ClientID, "* Self kill - close the motd!\n\n");
 
 	// key events and freeze input is hovered worked area
 	const int startWorkedAreaY = startLineY;
@@ -195,7 +198,12 @@ void MotdMenu::Tick()
 		buffer.append(m_Points[i].m_aDesc);
 		buffer.append("\n");
 	}
-	buffer += "\n" + m_Description;
+
+	if(!m_Description.empty())
+	{
+		buffer.append("\n");
+		buffer.append(m_Description);
+	}
 
 	// update buffer if it has changed
 	if(m_LastBuffer != buffer)
@@ -292,19 +300,32 @@ void MotdMenu::ApplyScrollbar(CPlayer* pPlayer, int Index, std::string& pBuffer)
 {
 	// initialize variables
 	const auto totalItems = m_Points.size();
-	const auto currentScrollPos = pPlayer->m_MotdData.m_ScrollManager.GetScrollPos();
-	const auto visibleItems = pPlayer->m_MotdData.m_ScrollManager.GetMaxVisibleItems();
-	const auto visibleProportion = static_cast<float>(visibleItems) / static_cast<float>(totalItems);
-	auto scrollBarHeight = round_to_int(visibleProportion * visibleItems);
-	if(scrollBarHeight < 1)
-		scrollBarHeight = 1;
+	const auto& scrollManager = pPlayer->m_MotdData.m_ScrollManager;
+	const auto currentScrollPos = scrollManager.GetScrollPos();
+	const auto visibleItems = scrollManager.GetMaxVisibleItems();
+
+	// default full area
+	if(totalItems <= visibleItems)
+	{
+		pBuffer.append("\u258D");
+		return;
+	}
 
 	// calculate position
-	const auto progress = static_cast<float>(currentScrollPos) / static_cast<float>(totalItems - visibleItems);
+	const float visibleProportion = static_cast<float>(visibleItems) / static_cast<float>(totalItems);
+	auto scrollBarHeight = round_to_int(visibleProportion * visibleItems);
+
+	if(scrollBarHeight < 1)
+		scrollBarHeight = 1;
+	if(scrollBarHeight > visibleItems)
+		scrollBarHeight = visibleItems;
+
+	const float progressDenominator = static_cast<float>(totalItems - visibleItems);
+	const float progress = static_cast<float>(currentScrollPos) / progressDenominator;
 	const auto scrollBarPosition = static_cast<int>(progress * (visibleItems - scrollBarHeight));
 
 	// get current index
-	const auto currentBar = Index - currentScrollPos;
-	const char* pSymbol = currentBar >= scrollBarPosition && currentBar < scrollBarPosition + scrollBarHeight ? "\u258D" : "\u258F";
+	const auto currentBarIndexInVisibleArea = Index - currentScrollPos;
+	const char* pSymbol = (currentBarIndexInVisibleArea >= scrollBarPosition && currentBarIndexInVisibleArea < scrollBarPosition + scrollBarHeight) ? "\u258D" : "\u258F";
 	pBuffer.append(pSymbol);
 }
