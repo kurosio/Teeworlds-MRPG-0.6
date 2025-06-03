@@ -1950,7 +1950,7 @@ void CCharacter::TryActivateRingChainLightning(std::optional<int> DamageOpt)
 		const auto totalDamage = DamageOpt ? *DamageOpt : m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::DMG);
 		const auto totalChainDamage = translate_to_percent_rest(totalDamage, 20);
 
-		new CEntityTeslaSerpent(&GS()->m_World, m_ClientID, m_Pos, random_range_pos(vec2 {}, 128.f), totalChainDamage, 600.f, 8, 0.7f);
+		new CEntityTeslaSerpent(&GS()->m_World, m_ClientID, m_Pos, random_range_pos(vec2 {}, 128.f), totalChainDamage, 500.f, 8, 0.7f);
 		m_LastRingChainLightningAttack = Server()->Tick() + CalculateRingChainLightningCooldown();
 	}
 }
