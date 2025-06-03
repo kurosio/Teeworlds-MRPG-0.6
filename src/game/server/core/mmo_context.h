@@ -716,6 +716,7 @@ enum
 	itRingReturnLightning          = 388,   // Reflects a portion of damage by lightning
 	itRingGivingLightning          = 403,   // Lightning on attack with some probability
 	itRingPerfectLightning         = 404,   // Reflects and attacks with lightning at some chance
+	itTeslaInductiveCoil           = 405,   // Increases electro damage by 25%
 
 	// reset upgrades tomes
 	itTomeOfUpgrResetTank          = 399,   // Reset upgrade for Tank

@@ -22,8 +22,12 @@ CEntityTeslaSerpent::CEntityTeslaSerpent(CGameWorld* pGameWorld, int OwnerCID, v
     for(int i = 0; i < MAX_CHAIN_SEGMENTS; i++)
         AddSnappingGroupIds(i, NUM_SUB_SEGMENTS_PER_BOLT);
     GameWorld()->InsertEntity(this);
-
     m_vChainSegmentEndPoints.push_back(m_Pos);
+
+    // append damage by 25% from item
+    auto* pOwner = GetOwner();
+    if(pOwner && pOwner->GetItem(itTeslaInductiveCoil)->IsEquipped())
+        m_Damage += maximum(1.0f, translate_to_percent(m_Damage, 25.f));
 }
 
 void CEntityTeslaSerpent::Tick()
@@ -39,7 +43,6 @@ void CEntityTeslaSerpent::Tick()
     {
         CalculateChainLightning();
         m_ChainCalculationDone = true;
-        // GS()->CreateSound(m_Pos, SOUND_WEAPON_TESLA_FIRE);
     }
 
     m_LifeSpanTicks--;
@@ -105,7 +108,6 @@ void CEntityTeslaSerpent::CalculateChainLightning()
         {
             GS()->CreateExplosion(HitPosition, m_ClientID, WEAPON_LASER, (int)CurrentSegmentDamage);
             m_vTargetsHitThisShot.push_back(pClosestHitCharacter->GetPlayer()->GetCID());
-            // GS()->CreateSound(HitPosition, SOUND_WEAPON_TESLA_CHAIN);
             GS()->CreateSound(HitPosition, SOUND_GRENADE_EXPLODE);
             GS()->CreateSound(HitPosition, SOUND_HOOK_LOOP);
 
@@ -116,16 +118,13 @@ void CEntityTeslaSerpent::CalculateChainLightning()
         else
         {
             GS()->CreateExplosion(HitPosition, m_ClientID, WEAPON_LASER, (int)CurrentSegmentDamage);
-            // GS()->CreateSound(HitPosition, SOUND_WEAPON_TESLA_CHAIN);
             GS()->CreateSound(HitPosition, SOUND_GRENADE_EXPLODE);
             GS()->CreateSound(HitPosition, SOUND_HOOK_LOOP);
             break;
         }
 
         if(m_vChainSegmentEndPoints.size() >= MAX_CHAIN_SEGMENTS + 1)
-        {
             break;
-        }
     }
 }
 
