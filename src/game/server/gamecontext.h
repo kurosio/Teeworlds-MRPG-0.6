@@ -118,7 +118,7 @@ public:
 	void OnMessage(int MsgID, CUnpacker *pUnpacker, int ClientID) override;
 	void OnClientConnected(int ClientID) override;
 	void OnClientPrepareChangeWorld(int ClientID) override;
-	void OnClientEnter(int ClientID) override;
+	void OnClientEnter(int ClientID, bool FirstEnter) override;
 	void OnClientDrop(int ClientID, const char *pReason) override;
 	void OnClientDirectInput(int ClientID, void *pInput) override;
 	void OnClientPredictedInput(int ClientID, void *pInput) override;

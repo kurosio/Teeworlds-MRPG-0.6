@@ -1213,7 +1213,7 @@ void CGS::OnClientConnected(int ClientID)
 	m_aBroadcastStates[ClientID] = {};
 }
 
-void CGS::OnClientEnter(int ClientID)
+void CGS::OnClientEnter(int ClientID, bool FirstEnter)
 {
 	CPlayer* pPlayer = m_apPlayers[ClientID];
 	if(!pPlayer || pPlayer->IsBot())
@@ -1222,7 +1222,7 @@ void CGS::OnClientEnter(int ClientID)
 	m_pController->OnPlayerConnect(pPlayer);
 	m_pCommandProcessor->SendClientCommandsInfo(this, ClientID);
 
-	if(!pPlayer->IsAuthed())
+	if(FirstEnter)
 	{
 		Chat(-1, "'{}' entered and joined the {}", Server()->ClientName(ClientID), g_Config.m_SvGamemodeName);
 		CMmoController::AsyncClientEnterMsgInfo(Server()->ClientName(ClientID), ClientID);

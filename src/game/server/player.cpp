@@ -186,13 +186,12 @@ void CPlayer::PostTick()
 	if(!isViewLocked && GetTeam() == TEAM_SPECTATORS && spectatorID != SPEC_FREEVIEW)
 	{
 		auto* pSpecPlayer = GS()->GetPlayer(spectatorID);
-		if(pSpecPlayer && pSpecPlayer->GetCharacter())
+		if(pSpecPlayer)
 		{
-			m_ViewPos = pSpecPlayer->GetCharacter()->GetPos();
-		}
-		else if(Server()->IsClientChangingWorld(spectatorID))
-		{
-			if(!GS()->IsPlayerInWorld(spectatorID))
+			if(pSpecPlayer->GetCharacter())
+				m_ViewPos = pSpecPlayer->GetCharacter()->GetPos();
+			else if(Server()->ClientIngame(spectatorID) &&
+				Server()->GetClientWorldID(spectatorID) != Server()->GetClientWorldID(m_ClientID))
 				ChangeWorld(Server()->GetClientWorldID(spectatorID));
 		}
 		else

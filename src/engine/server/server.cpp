@@ -1197,7 +1197,7 @@ void CServer::ProcessClientPacket(CNetChunk* pPacket)
 				}
 
 				m_aClients[ClientID].m_State = CClient::STATE_INGAME;
-				GameServer(WorldID)->OnClientEnter(ClientID);
+				GameServer(WorldID)->OnClientEnter(ClientID, !m_aClients[ClientID].m_ChangeWorld);
 
 				ExpireServerInfo();
 			}
