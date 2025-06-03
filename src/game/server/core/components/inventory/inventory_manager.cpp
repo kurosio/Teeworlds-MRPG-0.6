@@ -364,8 +364,10 @@ void CInventoryManager::RepairDurabilityItems(CPlayer* pPlayer)
 	const int ClientID = pPlayer->GetCID();
 	Database->Execute<DB::UPDATE>("tw_accounts_items", "Durability = '100' WHERE UserID = '{}'", pPlayer->Account()->GetID());
 	for(auto& [ID, Item] : CPlayerItem::Data()[ClientID])
-		Item.m_Durability = 100;
-
+	{
+		if(Item.GetDurability() < 100)
+			Item.SetDurability(100);
+	}
 	pPlayer->TryCreateEidolon();
 }
 
