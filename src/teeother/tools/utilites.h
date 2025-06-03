@@ -267,37 +267,6 @@ namespace mystd
 	 */
 	namespace string
 	{
-		inline std::string trim(const std::string& str)
-		{
-			const std::string whitespace = " \t\n\r\f\v";
-			size_t start = str.find_first_not_of(whitespace);
-			if(start == std::string::npos)
-				return "";
-			size_t end = str.find_last_not_of(whitespace);
-			return str.substr(start, end - start + 1);
-		}
-
-
-		inline std::pair<std::string, std::string> split_by_delimiter(std::string_view InputString, char Delimiter)
-		{
-			std::string first_part {};
-			std::string second_part {};
-
-			const auto DelimiterPos = InputString.find(Delimiter);
-			if(DelimiterPos != std::string_view::npos)
-			{
-				first_part = trim(std::string(InputString.substr(0, DelimiterPos)));
-				second_part = trim(std::string(InputString.substr(DelimiterPos + 1)));
-			}
-			else
-			{
-				first_part = trim(std::string(InputString));
-			}
-
-			return { first_part, second_part };
-		}
-
-
 		inline std::string progressBar(uint64_t maxValue, uint64_t currentValue, int totalSteps, const std::string& Fillsymbols, const std::string& EmptySymbols)
 		{
 			std::string resutStr;
@@ -318,24 +287,41 @@ namespace mystd
 			return resutStr;
 		}
 
-		inline std::vector<std::string> splitLines(const std::string& input)
+		inline std::string trim(std::string_view sv)
+		{
+			constexpr std::string_view whitespace = " \t\n\r\f\v";
+			const auto start = sv.find_first_not_of(whitespace);
+			if(start == std::string::npos)
+				return "";
+			const auto end = sv.find_last_not_of(whitespace);
+			return std::string(sv.substr(start, end - start + 1));
+		}
+
+
+		inline std::pair<std::string, std::string> split_by_delimiter(std::string_view InputString, char Delimiter)
+		{
+			const auto DelimiterPos = InputString.find(Delimiter);
+			if(DelimiterPos != std::string_view::npos)
+				return { trim(InputString.substr(0, DelimiterPos)), trim(InputString.substr(DelimiterPos + 1)) };
+			else
+				return { trim(InputString), {} };
+		}
+
+		inline std::vector<std::string> split_lines(const std::string& input)
 		{
 			std::vector<std::string> lines;
-			std::string current_line;
+			std::string_view sv(input);
+			size_t current_pos = 0;
+			size_t newline_pos;
 
-			for(char c : input)
+			while((newline_pos = sv.find('\n', current_pos)) != std::string_view::npos)
 			{
-				if(c == '\n')
-				{
-					lines.push_back(current_line);
-					current_line.clear();
-				}
-				else
-					current_line += c;
+				lines.emplace_back(sv.substr(current_pos, newline_pos - current_pos));
+				current_pos = newline_pos + 1;
 			}
 
-			if(!current_line.empty())
-				lines.push_back(current_line);
+			if(current_pos < sv.length())
+				lines.emplace_back(sv.substr(current_pos));
 
 			return lines;
 		}
@@ -449,7 +435,6 @@ namespace mystd
 			}
 			*pWrite = '\0';
 		}
-
 	}
 
 
