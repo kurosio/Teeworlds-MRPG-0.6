@@ -140,7 +140,7 @@ private:
 /*
  * using typename
  */
-using ResultPtr = std::unique_ptr<WrapperResultSet>;
+using ResultPtr = std::shared_ptr<WrapperResultSet>;
 using CallbackResultPtr = std::function<void(ResultPtr)>;
 using CallbackUpdatePtr = std::function<void()>;
 
@@ -217,7 +217,7 @@ private:
 			try
 			{
 				const std::unique_ptr<Statement> pStmt(pConnection->createStatement());
-				pResult = std::make_unique<WrapperResultSet>(pStmt->executeQuery(m_Query.c_str()));
+				pResult = std::make_shared<WrapperResultSet>(pStmt->executeQuery(m_Query.c_str()));
 				pStmt->close();
 			}
 			catch (SQLException& e)
@@ -246,7 +246,7 @@ private:
 				try
 				{
 					const std::unique_ptr<Statement> pStmt(pConnection->createStatement());
-					auto pResult = std::make_unique<WrapperResultSet>(pStmt->executeQuery(Query.c_str()));
+					auto pResult = std::make_shared<WrapperResultSet>(pStmt->executeQuery(Query.c_str()));
 					if(callback)
 					{
 						callback(std::move(pResult));

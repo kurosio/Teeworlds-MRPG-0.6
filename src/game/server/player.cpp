@@ -191,7 +191,7 @@ void CPlayer::PostTick()
 			if(pSpecPlayer->GetCharacter())
 				m_ViewPos = pSpecPlayer->GetCharacter()->GetPos();
 			else if(Server()->ClientIngame(spectatorID) &&
-				Server()->GetClientWorldID(spectatorID) != Server()->GetClientWorldID(m_ClientID))
+					Server()->GetClientWorldID(spectatorID) != Server()->GetClientWorldID(m_ClientID))
 				ChangeWorld(Server()->GetClientWorldID(spectatorID));
 		}
 		else
