@@ -263,11 +263,12 @@ void VoteWrapper::RebuildVotes(int ClientID)
 		.AddBackpage(ClientID);
 	}
 
-	// rebuild groups
-	CVoteOption* pLastVoteOption = nullptr;
-	for(auto iterGroup = m_pData[ClientID].cbegin(); iterGroup != m_pData[ClientID].cend(); ++iterGroup)
+	auto& ClientVoteGroups = m_pData[ClientID];
+
+	// first changes (adding/removing lines/groups)
+	for(size_t i = 0; i < ClientVoteGroups.size(); ++i)
 	{
-		CVoteGroup* pGroup = *iterGroup;
+		CVoteGroup* pGroup = ClientVoteGroups[i];
 
 		// if the group is an expandable list type, it is empty if there is no element in it
 		if(pGroup->m_HasTitle && pGroup->IsEmpty() && !pGroup->IsHidden())
@@ -276,22 +277,33 @@ void VoteWrapper::RebuildVotes(int ClientID)
 		// check flag end with line
 		if(pGroup->m_Flags & VWF_SEPARATE)
 		{
-			auto niGroup = std::next(iterGroup);
-			bool nextNotEmptyline = niGroup != m_pData[ClientID].cend() && !(*niGroup)->m_vpVotelist.empty() && (*niGroup)->m_vpVotelist.back().m_aDescription[0] != '\0';
+			bool nextGroupExists = (i + 1 < ClientVoteGroups.size());
+			bool nextNotEmptyline = false;
+			if(nextGroupExists)
+			{
+				CVoteGroup* pNextGroup = ClientVoteGroups[i + 1];
+				if(pNextGroup && !pNextGroup->m_vpVotelist.empty() && (!pNextGroup->m_vpVotelist.back().m_Line && pNextGroup->m_vpVotelist.back().m_aDescription[0] != '\0'))
+					nextNotEmptyline = true;
+			}
 
 			if(pGroup->IsHidden() && nextNotEmptyline)
 			{
-				auto pVoteGroup = new CVoteGroup(ClientID, VWF_DISABLED);
-				pVoteGroup->AddLineImpl();
-				iterGroup = std::prev(m_pData[ClientID].insert(std::next(iterGroup), pVoteGroup));
+				auto pNewVoteGroup = new CVoteGroup(ClientID, VWF_DISABLED);
+				pNewVoteGroup->AddLineImpl();
+				ClientVoteGroups.insert(ClientVoteGroups.begin() + i + 1, pNewVoteGroup);
+				++i;
 			}
 			else if(!pGroup->m_vpVotelist.empty() && !pGroup->m_vpVotelist.back().m_Line)
 			{
 				pGroup->AddLineImpl();
 			}
 		}
+	}
 
-		// there should not be two lines in a row, or if there are three lines, the middle should be empty, aesthetics.
+	// delete consecutive lines
+	CVoteOption* pLastVoteOption = nullptr;
+	for(CVoteGroup* pGroup : ClientVoteGroups)
+	{
 		for(auto iterVote = pGroup->m_vpVotelist.begin(); iterVote != pGroup->m_vpVotelist.end();)
 		{
 			if(pLastVoteOption && pLastVoteOption->m_Line && iterVote->m_Line)
@@ -299,55 +311,49 @@ void VoteWrapper::RebuildVotes(int ClientID)
 				iterVote = pGroup->m_vpVotelist.erase(iterVote);
 				continue;
 			}
-
 			pLastVoteOption = &(*iterVote);
 			++iterVote;
 		}
 	}
 
-	// rebuild group votes
-	for(const auto pGroup : m_pData[ClientID])
+	// second format and send options
+	for(const auto pGroup : ClientVoteGroups)
 	{
+		if(pGroup->m_vpVotelist.empty())
+			continue;
+
+		const CVoteOption* pFrontOption = &pGroup->m_vpVotelist.front();
+		const CVoteOption* pBackOption = &pGroup->m_vpVotelist.back();
+
 		for(auto& Option : pGroup->m_vpVotelist)
 		{
 			// style and border
 			if(pGroup->m_Flags & (VWF_STYLE_SIMPLE | VWF_STYLE_DOUBLE | VWF_STYLE_STRICT | VWF_STYLE_STRICT_BOLD) && !pGroup->IsHidden())
 			{
-				const int& Flags = pGroup->m_Flags;
-				auto pBack = &pGroup->m_vpVotelist.back();
-				auto pFront = &pGroup->m_vpVotelist.front();
+				std::string Buffer;
+				Buffer.reserve(VOTE_DESC_LENGTH + 10);
 
-				// append border to the vote option (can outside but)
-				std::string Buffer{};
-				if(&Option == pFront)
-				{
+				const int& Flags = pGroup->m_Flags;
+
+				if(&Option == pFrontOption)
 					Buffer += GetBorderStyle(BorderType::Beggin, Flags);
-				}
-				else if(&Option == pBack)
-				{
+				else if(&Option == pBackOption)
 					Buffer += GetBorderStyle(BorderType::End, Flags);
-				}
 				else if(str_comp(Option.m_aCommand, "null") == 0 && Option.m_Depth <= 0 && !Option.m_Line)
-				{
 					Buffer += GetBorderStyle(BorderType::Middle, Flags);
-				}
 				else
-				{
 					Buffer += GetBorderStyle(BorderType::MiddleOption, Flags);
-				}
 
 				// level of the vote option
 				if(!Option.m_Line && Option.m_Depth > 0)
 				{
-					for(int i = 0; i < Option.m_Depth; i++)
+					for(int d = 0; d < Option.m_Depth; d++)
 						Buffer += GetBorderStyle(BorderType::Level, Flags);
 				}
 
-				// space between style and text
 				if(!Option.m_Line && !Option.m_Title && str_comp(Option.m_aCommand, "null") == 0)
 					Buffer += " ";
 
-				// Save changes
 				Buffer += Option.m_aDescription;
 				str_copy(Option.m_aDescription, Buffer.c_str(), sizeof(Option.m_aDescription));
 			}

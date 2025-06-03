@@ -162,6 +162,10 @@ public:
 	vec2 GetMousePos() const { return m_Core.m_Pos + vec2(m_Core.m_Input.m_TargetX, m_Core.m_Input.m_TargetY); }
 	CPlayer* GetLastPlayerAttacker(int Timeout) const;
 	int GetTotalDamageByWeapon(int Weapon) const;
+
+private:
+	void TryActivateRingChainLightning(std::optional<int> DamageOpt);
+	int CalculateRingChainLightningCooldown() const;
 };
 
 #endif

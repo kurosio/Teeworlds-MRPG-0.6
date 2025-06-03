@@ -713,7 +713,9 @@ enum
 	itLifePreserver                = 319,   // Keeps player afloat
 	itDiversKit                    = 320,   // Can't drown, keeps player afloat
 	itFishBait                     = 323,   // Increases chance of hooking by 30%
-	itRingChainLightning           = 388,   // Reflects a portion of damage by lightning
+	itRingReturnLightning          = 388,   // Reflects a portion of damage by lightning
+	itRingGivingLightning          = 403,   // Lightning on attack with some probability
+	itRingPerfectLightning         = 404,   // Reflects and attacks with lightning at some chance
 
 	// reset upgrades tomes
 	itTomeOfUpgrResetTank          = 399,   // Reset upgrade for Tank

@@ -254,6 +254,10 @@ void CCharacter::FireWeapon()
 		}
 	}
 
+	// ring giving lightning
+	TryActivateRingChainLightning(std::nullopt);
+
+	// fire by weapon
 	const vec2 MouseTarget = vec2(m_LatestInput.m_TargetX, m_LatestInput.m_TargetY);
 	const vec2 Direction = normalize(MouseTarget);
 	const vec2 ProjStartPos = m_Pos + Direction * GetRadius() * 0.75f;
@@ -1227,14 +1231,8 @@ bool CCharacter::TakeDamage(vec2 Force, int Damage, int FromCID, int Weapon)
 	int CritDamage = 0;
 	if(pFrom && pFrom->GetCharacter() && FromCID != m_pPlayer->GetCID())
 	{
-		// ring chain lightning
-		if(m_pPlayer->GetItem(itRingChainLightning)->IsEquipped() && m_LastRingChainLightningAttack < Server()->Tick())
-		{
-			const auto randomSec = 1 + rand() % 5;
-			const auto totalChainDamage = translate_to_percent_rest(Damage, 20);
-			new CEntityTeslaSerpent(&GS()->m_World, m_ClientID, m_Pos, Force, totalChainDamage, 600.f, 8, 0.7f);
-			m_LastRingChainLightningAttack = Server()->Tick() + (Server()->TickSpeed() * randomSec);
-		}
+		// try activate ring giving lightning
+		TryActivateRingChainLightning(Damage);
 
 		// vampirism replenish your health
 		const auto ChanceVampirism = m_pPlayer->GetTotalAttributeChance(AttributeIdentifier::Vampirism).value_or(0.f);
@@ -1940,4 +1938,26 @@ bool CCharacter::StartConversation(CPlayerBot* pTarget) const
 	}
 
 	return false;
+}
+
+void CCharacter::TryActivateRingChainLightning(std::optional<int> DamageOpt)
+{
+	if(m_LastRingChainLightningAttack > Server()->Tick())
+		return;
+
+	if(m_pPlayer->GetItem(itRingGivingLightning)->IsEquipped() || m_pPlayer->GetItem(itRingPerfectLightning)->IsEquipped())
+	{
+		const auto totalDamage = DamageOpt ? *DamageOpt : m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::DMG);
+		const auto totalChainDamage = translate_to_percent_rest(totalDamage, 20);
+
+		new CEntityTeslaSerpent(&GS()->m_World, m_ClientID, m_Pos, random_range_pos(vec2 {}, 128.f), totalChainDamage, 600.f, 8, 0.7f);
+		m_LastRingChainLightningAttack = Server()->Tick() + CalculateRingChainLightningCooldown();
+	}
+}
+
+int CCharacter::CalculateRingChainLightningCooldown() const
+{
+	if(m_pPlayer->GetItem(itRingPerfectLightning)->IsEquipped())
+		return (1 + rand() % 2) * Server()->TickSpeed();
+	return (1 + rand() % 6) * Server()->TickSpeed();
 }
