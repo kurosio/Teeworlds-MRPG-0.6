@@ -940,7 +940,7 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 				pPlayer->m_VotesData.ApplyVoteUpdaterData();
 				if(CVoteOption* pActionVote = VoteWrapper::GetOptionVoteByAction(ClientID, pMsg->m_pValue))
 				{
-					const int ReasonNumber = clamp(str_toint(pMsg->m_pReason), 1, 100000);
+					const int ReasonNumber = clamp(str_toint(pMsg->m_pReason), 1, 1000000000);
 					if(pActionVote->m_Callback.m_Impl)
 						pActionVote->m_Callback.m_Impl(pPlayer, ReasonNumber, pMsg->m_pReason, pActionVote->m_Callback.m_pData);
 					else
