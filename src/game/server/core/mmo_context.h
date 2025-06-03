@@ -141,12 +141,13 @@ enum ESkill
 	SKILL_MASTER_WEAPON    = 4, // automatic gunfire
 	SKILL_BLESSING_GOD_WAR = 5, // refill ammunition
 	SKILL_ATTACK_TELEPORT  = 6, // ?knockout? teleport
-	SKILL_CURE           = 7, // health recovery cure
+	SKILL_CURE             = 7, // health recovery cure
 	SKILL_PROVOKE          = 8, // provoke
 	SKILL_LAST_STAND       = 9, // energy shield
-	SKILL_MAGIC_BOW       = 10, // energy shield
-	SKILL_HEALING_AURA       = 11, // energy shield
+	SKILL_MAGIC_BOW        = 10, // energy shield
+	SKILL_HEALING_AURA     = 11, // energy shield
 	SKILL_FLAME_WALL       = 12, // energy shield
+	SKILL_HEALING_RIFT     = 13, // attack and heals
 	NUM_SKILLS,
 };
 

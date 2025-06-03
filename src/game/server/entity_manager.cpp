@@ -13,6 +13,7 @@
 #include "core/entities/tools/loltext.h"
 
 #include "core/components/skills/entities/heart_healer.h"
+#include "core/entities/weapons/rifle_tesla_serpent.h"
 
 IServer* CEntityManager::Server() const
 {
@@ -694,6 +695,375 @@ void CEntityManager::Bow(int ClientID, int Damage, int FireCount, float Explosio
 		{
 			vec2 curPos = rotate(vEdges[i], pOwnerChar->GetPos(), Angle);
 			pBase->GS()->SnapPickup(SnappingClient, vIds[1 + i], curPos, POWERUP_ARMOR);
+		}
+	});
+
+	if(pPtr)
+	{
+		*pPtr = groupPtr;
+	}
+}
+
+void CEntityManager::StartUniversalCast(int ClientID, vec2 TargetPosition, int NumRequiredClicks,
+	std::function<void(int, vec2, EntGroupWeakPtr*)> ActualSkillExecutionFunc, EntGroupWeakPtr* pCastingProcessTracker) const
+{
+	// initialize special symbols
+	struct FCastingSymbol
+	{
+		std::vector<vec2> m_vPoints;
+	};
+	static const std::vector<FCastingSymbol> s_vCastingSymbols = {
+		{ {{-0.0f, 0.8f}, {-0.6928f, -0.4f}, {0.6928f, -0.4f}} },
+		{ {{-0.6f, -0.6f}, {0.6f, -0.6f}, {0.6f, 0.6f}, {-0.6f, 0.6f}} },
+		{ {{0.0f, 0.8f}, {0.5f, 0.0f}, {0.0f, -0.8f}, {-0.5f, 0.0f}} },
+		{ {{0.0f, 0.9f}, {0.25f, 0.25f}, {0.9f, 0.0f}, {0.25f, -0.25f}, {0.0f, -0.9f}, {-0.25f, -0.25f}, {-0.9f, 0.0f}, {-0.25f, 0.25f}} },
+		{ {{-0.7f, -0.7f}, {0.7f, 0.7f}, {-0.7f, 0.7f}, {0.7f, -0.7f} }},
+		{ {{-0.7f, 0.7f}, {0.7f, 0.7f}, {0.7f, 0.2f}, {-0.2f, 0.2f}, {-0.2f, -0.3f}, {0.7f, -0.3f}, {0.7f, -0.8f}, {-0.7f, -0.8f}} },
+		{ {{0.0f, 0.8f}, {-0.6f, 0.1f}, {-0.2f, 0.1f}, {0.0f, -0.7f}, {0.2f, 0.1f}, {0.6f, 0.1f}} },
+		{ {{-0.7f, 0.6f}, {0.7f, 0.6f}, {0.7f, 0.4f}, {-0.5f, 0.4f}, {-0.5f, 0.0f}, {0.5f, 0.0f}, {0.5f, -0.4f}, {-0.7f, -0.4f}} },
+		{ {{-0.2f, 0.7f}, {0.7f, 0.7f}, {0.7f, -0.7f}, {-0.7f, -0.7f}, {-0.7f, 0.2f}, {0.2f, 0.2f}, {0.2f, -0.2f}, {-0.2f, -0.2f} }}
+	};
+	constexpr int MAX_SYMBOL_SEGMENTS = 8;
+
+	// check player
+	const auto* pPlayer = GS()->GetPlayer(ClientID);
+	if(!pPlayer || !pPlayer->GetCharacter())
+	{
+		if(pCastingProcessTracker)
+			pCastingProcessTracker->reset();
+		return;
+	}
+
+	auto pCastingGroup = CEntityGroup::NewGroup(&GS()->m_World, CGameWorld::ENTTYPE_ACTION, ClientID);
+	auto pCastingEntity = pCastingGroup->CreateBase(TargetPosition);
+	pCastingEntity->SetConfig("currentRequiredClicks", 0);
+	pCastingEntity->SetConfig("totalRequiredClicks", std::max(1, NumRequiredClicks));
+	pCastingEntity->SetConfig("currentSymbolID", -1);
+	pCastingEntity->SetConfig("symbolRotationSpeed", random_float(0.05f, 0.15f)* (rand() % 2 ? 1 : -1));
+
+	if(pCastingProcessTracker)
+		*pCastingProcessTracker = pCastingGroup;
+
+	GS()->Broadcast(ClientID, BroadcastPriority::GameWarning, SERVER_TICK_SPEED,
+		"Skill Cast. Requires fire pressing '{}' times.", std::max(1, NumRequiredClicks));
+	GS()->CreateSound(TargetPosition, SOUND_SKILL_START);
+
+	// register event tick
+	pCastingEntity->RegisterEvent(CBaseEntity::EventTick, [this, ActualSkillExecutionFunc, pCastingProcessTracker](CBaseEntity* pBase)
+	{
+		// interrupt
+		bool Interrupted = false;
+		auto* pOwner = pBase->GetPlayer();
+		auto* pOwnerChar = pBase->GetCharacter();
+
+		if(distance(pOwnerChar->m_Core.m_Pos, pBase->GetPos()) > 256.0f)
+			Interrupted = true;
+
+		if(Interrupted)
+		{
+			GS()->Chat(pOwner->GetCID(), "Skill channeling interrupted!");
+			if(pCastingProcessTracker)
+				pCastingProcessTracker->reset();
+			pBase->MarkForDestroy();
+			return;
+		}
+
+		// initialize variables
+		const int totalClicks = pBase->GetConfig("totalRequiredClicks", 1);
+		int& currentClicks = pBase->GetRefConfig("currentRequiredClicks", 0);
+
+		// check status
+		if(currentClicks < totalClicks)
+		{
+			GS()->Server()->Input()->BlockInputGroup(pBase->GetClientID(), BLOCK_INPUT_FIRE);
+			if(GS()->Server()->Input()->IsKeyClicked(pBase->GetClientID(), KEY_EVENT_FIRE))
+			{
+				int NewSymbolID = rand() % s_vCastingSymbols.size();
+				if(pBase->GetConfig("currentSymbolID", -1) != -1)
+				{
+					while(NewSymbolID == pBase->GetConfig("currentSymbolID", 0))
+						NewSymbolID = rand() % s_vCastingSymbols.size();
+				}
+
+				currentClicks++;
+				pBase->SetConfig("currentSymbolID", NewSymbolID);
+				GS()->CreatePlayerSpawn(pBase->GetPos());
+				GS()->CreateSound(pBase->GetPos(), SOUND_PICKUP_NINJA);
+				GS()->Broadcast(pBase->GetClientID(), BroadcastPriority::GameWarning, SERVER_TICK_SPEED,
+					"Clicks remaining: '{}'.", std::max(0, totalClicks - currentClicks));
+			}
+		}
+
+		// finish
+		if(currentClicks >= totalClicks)
+		{
+			if(ActualSkillExecutionFunc)
+				ActualSkillExecutionFunc(pOwner->GetCID(), pBase->GetPos(), pCastingProcessTracker);
+			pBase->MarkForDestroy();
+		}
+	});
+
+	// register event snap
+	const int NumCastingVisualIDs = MAX_SYMBOL_SEGMENTS;
+	pCastingEntity->RegisterEvent(CBaseEntity::EventSnap, NumCastingVisualIDs, [](CBaseEntity* pBase, int SnappingClient, const std::vector<int>& vIds)
+	{
+		// initialize variables
+		int Idx = 0;
+		int TotalClicks = pBase->GetConfig("totalRequiredClicks", 1);
+		int CurrentClicks = pBase->GetConfig("currentRequiredClicks", 0);
+		float ClickProgress = (TotalClicks > 0) ? (float)CurrentClicks / (float)TotalClicks : 0.0f;
+		ClickProgress = std::min(ClickProgress, 1.0f);
+		int ServerTick = pBase->Server()->Tick();
+		int CurrentSymbolID = pBase->GetConfig("currentSymbolID", -1);
+		float SymbolRotationSpeed = pBase->GetConfig("symbolRotationSpeed", 0.1f);
+		float SymbolBaseRotation = fmod(ServerTick * SymbolRotationSpeed, 2.0f * pi);
+		float StartCastVisualRadius = 64.0f;
+		float EndCastVisualRadius = 96.0f;
+		float CurrentSymbolScale = StartCastVisualRadius + (EndCastVisualRadius - StartCastVisualRadius) * ClickProgress;
+
+		if(CurrentSymbolID < 0 || CurrentSymbolID >= (int)s_vCastingSymbols.size() || ClickProgress < 0.01f && CurrentClicks == 0)
+			return;
+
+		const auto& Symbol = s_vCastingSymbols[CurrentSymbolID];
+		for(size_t i = 0; i < Symbol.m_vPoints.size() && Idx < (int)vIds.size(); ++i)
+		{
+			const auto p1_local = Symbol.m_vPoints[i];
+			const auto p2_local = Symbol.m_vPoints[(i + 1) % Symbol.m_vPoints.size()];
+			const auto cos_r = cos(SymbolBaseRotation);
+			const auto sin_r = sin(SymbolBaseRotation);
+			const auto p1_rotated = vec2(p1_local.x * cos_r - p1_local.y * sin_r, p1_local.x * sin_r + p1_local.y * cos_r);
+			const auto p2_rotated = vec2(p2_local.x * cos_r - p2_local.y * sin_r, p2_local.x * sin_r + p2_local.y * cos_r);
+			const auto p1_world = pBase->GetPos() + p1_rotated * CurrentSymbolScale;
+			const auto p2_world = pBase->GetPos() + p2_rotated * CurrentSymbolScale;
+
+			int LaserType = LASERTYPE_RIFLE;
+			if(ClickProgress > 0.6f)
+				LaserType = LASERTYPE_SHOTGUN;
+			if(ClickProgress >= 0.95f)
+				LaserType = LASERTYPE_DRAGGER;
+
+			pBase->GS()->SnapLaser(SnappingClient, vIds[Idx++], p1_world, p2_world, ServerTick - 1, LaserType, 0, pBase->GetClientID());
+		}
+	});
+}
+
+void CEntityManager::HealingRift(int ClientID, vec2 Position, float RiftRadius, float HealRadius, int Lifetime, float SerpentSpawnInterval,
+	int NumSerpentsPerSpawn, int HealAmountPerPulse, int NumOuterSegments, int NumInnerSegments, int NumSparks, EntGroupWeakPtr* pPtr) const
+{
+	const auto* pPlayer = GS()->GetPlayer(ClientID, false, true);
+	if(!pPlayer)
+		return;
+
+	// initialize group & config
+	auto groupPtr = CEntityGroup::NewGroup(&GS()->m_World, CGameWorld::ENTTYPE_SKILL, ClientID);
+	groupPtr->SetConfig("riftRadius", RiftRadius);
+	groupPtr->SetConfig("healRadius", HealRadius);
+	groupPtr->SetConfig("initialLifetimeTicks", Lifetime);
+	groupPtr->SetConfig("serpentSpawnIntervalTicks", (int)(SerpentSpawnInterval * Server()->TickSpeed()));
+	groupPtr->SetConfig("numSerpentsPerSpawn", NumSerpentsPerSpawn);
+	groupPtr->SetConfig("healAmountPerPulse", HealAmountPerPulse);
+	groupPtr->SetConfig("numOuterSegments", NumOuterSegments);
+	groupPtr->SetConfig("numInnerSegments", NumInnerSegments);
+	groupPtr->SetConfig("numSparks", NumSparks);
+	groupPtr->SetConfig("serpentPulseEffectDurationTicks", Server()->TickSpeed() / 2);
+	groupPtr->SetConfig("fadeOutDurationTicks", Server()->TickSpeed());
+
+	// initialize element (rift controller) & config
+	auto pRiftController = groupPtr->CreatePickup(Position, POWERUP_ARMOR);
+	pRiftController->SetConfig("currentLifetimeTicks", Lifetime);
+	pRiftController->SetConfig("serpentCooldownTicks", 0);
+	pRiftController->SetConfig("lastSerpentSpawnTick", 0);
+	pRiftController->SetConfig("recentSerpentTargets", std::vector<vec2>{});
+
+	// register event tick
+	pRiftController->RegisterEvent(CBaseEntity::EventTick, [this](CBaseEntity* pBase)
+	{
+		// check life time
+		int& currentLifetime = pBase->GetRefConfig("currentLifetimeTicks", 0);
+		currentLifetime--;
+		const int fadeOutDuration = pBase->GetGroup()->GetConfig("fadeOutDurationTicks", pBase->Server()->TickSpeed());
+		if(currentLifetime <= 0)
+		{
+			pBase->GS()->CreateExplosion(pBase->GetPos(), pBase->GetClientID(), WEAPON_GRENADE, 0);
+			pBase->GS()->CreateSound(pBase->GetPos(), SOUND_PLAYER_DIE);
+			pBase->MarkForDestroy();
+			return;
+		}
+
+		// initialize variables
+		const auto centerPos = pBase->GetPos();
+		const auto ServerTick = pBase->Server()->Tick();
+		const float riftRadius = pBase->GetGroup()->GetConfig("riftRadius", 100.0f);
+		const float healRadius = pBase->GetGroup()->GetConfig("healRadius", 150.0f);
+		const int serpentSpawnIntervalTicks = pBase->GetGroup()->GetConfig("serpentSpawnIntervalTicks", 100);
+		const int numSerpentsPerSpawn = pBase->GetGroup()->GetConfig("numSerpentsPerSpawn", 1);
+		const int healAmountPerPulse = pBase->GetGroup()->GetConfig("healAmountPerPulse", 10);
+		const int ownerCID = pBase->GetClientID();
+		auto* pOwner = pBase->GetPlayer();
+
+		// pulsing
+		const int lastSerpentSpawnTick = pBase->GetConfig("lastSerpentSpawnTick", 0);
+		const int serpentPulseEffectDuration = pBase->GetGroup()->GetConfig("serpentPulseEffectDurationTicks", pBase->Server()->TickSpeed() / 2);
+		bool isPulsing = ServerTick < lastSerpentSpawnTick + serpentPulseEffectDuration;
+
+		// moving
+		if(!isPulsing && currentLifetime > fadeOutDuration)
+		{
+			auto NewPos = pBase->GetPos();
+			vec2 TargetFollowPos = pOwner->GetCharacter()->m_Core.m_Pos - vec2(0, 28.f);
+			vec2 DirToTarget = normalize(TargetFollowPos - NewPos);
+			float DistToTarget = distance(TargetFollowPos, NewPos);
+			float MoveSpeed = 16.0f;
+			if(DistToTarget > 10.0f)
+			{
+				NewPos += DirToTarget * std::min(MoveSpeed, DistToTarget * 0.1f);
+				pBase->SetPos(NewPos);
+			}
+		}
+
+		// serpent cooldown
+		if(currentLifetime > fadeOutDuration)
+		{
+			int& serpentCooldown = pBase->GetRefConfig("serpentCooldownTicks", 0);
+			serpentCooldown--;
+			if(serpentCooldown <= 0)
+			{
+				serpentCooldown = serpentSpawnIntervalTicks;
+				pBase->GS()->CreateSound(centerPos, SOUND_NINJA_HIT);
+				pBase->SetConfig("lastSerpentSpawnTick", pBase->Server()->Tick());
+
+				// spawn tesla serpents
+				std::vector<vec2> currentSerpentTargets;
+				std::vector<CCharacter*> potentialTargets;
+				const auto totalDamage = pOwner->GetTotalAttributeValue(AttributeIdentifier::DMG);
+				const auto vEntities = GS()->m_World.FindEntities(centerPos, riftRadius * 2.0f, 8, CGameWorld::ENTTYPE_CHARACTER);
+				for(auto* pEnt : vEntities)
+				{
+					auto* pTarget = dynamic_cast<CCharacter*>(pEnt);
+					if(!pTarget || ownerCID == pTarget->GetClientID() || !pTarget->IsAllowedPVP(ownerCID))
+						continue;
+
+					potentialTargets.push_back(pTarget);
+				}
+
+				for(int i = 0; i < numSerpentsPerSpawn; ++i)
+				{
+					const auto serpentTargetPos = !potentialTargets.empty() ?
+						potentialTargets[rand() % potentialTargets.size()]->GetPos()
+						: centerPos + random_direction() * riftRadius;
+					currentSerpentTargets.push_back(serpentTargetPos);
+					new CEntityTeslaSerpent(pBase->GameWorld(), ownerCID, centerPos, serpentTargetPos,
+						totalDamage, 500.f, 2, 0.5f);
+				}
+				pBase->SetConfig("recentSerpentTargets", currentSerpentTargets);
+
+				// healing nearby
+				bool ShowRestoreHealth = false;
+				for(auto* pChar = (CCharacter*)pBase->GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); pChar; pChar = (CCharacter*)pChar->TypeNext())
+				{
+					if(distance(pChar->GetPos(), centerPos) > healRadius)
+						continue;
+
+					if(pChar->GetPlayer()->GetCID() == ownerCID || !pChar->IsAllowedPVP(pBase->GetClientID()))
+					{
+						ShowRestoreHealth = true;
+						new CHeartHealer(pBase->GameWorld(), centerPos, pChar->GetPlayer(), healAmountPerPulse, pChar->m_Core.m_Vel / 2.f);
+					}
+				}
+				if(ShowRestoreHealth)
+				{
+					pBase->GS()->EntityManager()->Text(centerPos + vec2(0, -96), 40, fmt_default("{}HP", healAmountPerPulse).c_str());
+					pBase->GS()->CreateSound(centerPos, SOUND_PICKUP_HEALTH);
+				}
+			}
+		}
+	});
+
+	// register event snap
+	const int NumIDs = NumOuterSegments + NumInnerSegments + NumSparks + (NumSerpentsPerSpawn * 2);
+	pRiftController->RegisterEvent(CBaseEntity::EventSnap, NumIDs, [this](CBaseEntity* pBase, int SnappingClient, const std::vector<int>& vIds)
+	{
+		// initialize variables
+		int currentIdIndex = 0;
+		const auto centerPos = pBase->GetPos();
+		const auto ServerTick = pBase->Server()->Tick();
+		const float initialRiftRadius = pBase->GetGroup()->GetConfig("riftRadius", 100.0f);
+		const int numOuterSegments = pBase->GetGroup()->GetConfig("numOuterSegments", 12);
+		const int numInnerSegments = pBase->GetGroup()->GetConfig("numInnerSegments", 8);
+		const int numSparks = pBase->GetGroup()->GetConfig("numSparks", 10);
+		const int lastSerpentSpawnTick = pBase->GetConfig("lastSerpentSpawnTick", 0);
+		const int serpentPulseEffectDuration = pBase->GetGroup()->GetConfig("serpentPulseEffectDurationTicks", pBase->Server()->TickSpeed() / 2);
+		bool isPulsing = ServerTick < lastSerpentSpawnTick + serpentPulseEffectDuration;
+		const std::vector<vec2>& recentSerpentTargets = pBase->GetConfig("recentSerpentTargets", std::vector<vec2>{});
+		const int currentLifetime = pBase->GetConfig("currentLifetimeTicks", 0);
+		const int fadeOutDuration = pBase->GetGroup()->GetConfig("fadeOutDurationTicks", pBase->Server()->TickSpeed());
+		float fadeProgress = 1.0f;
+		bool isFadingOut = false;
+
+		if(currentLifetime < fadeOutDuration)
+		{
+			isFadingOut = true;
+			fadeProgress = (float)currentLifetime / (float)std::max(1, fadeOutDuration);
+		}
+
+		float currentVisualRadius = initialRiftRadius * fadeProgress;
+		if(currentVisualRadius < 1.0f && isFadingOut)
+			return;
+
+		// outer ring
+		float OuterAngleStep = 2.0f * pi / std::max(1, numOuterSegments);
+		float OuterRotationPhase = fmod(ServerTick * 0.02f, 2.0f * pi);
+		float TimeParamOuter = (float)ServerTick / (float)SERVER_TICK_SPEED;
+		float OuterRadiusModulation = currentVisualRadius * (isPulsing ? 0.15f : 0.05f);
+		float ModulatedOuterRadius = currentVisualRadius + sin(TimeParamOuter * pi * 2.0f * (isPulsing ? 1.0f : 0.3f)) * OuterRadiusModulation;
+		ModulatedOuterRadius = std::max(0.0f, ModulatedOuterRadius);
+
+		for(int i = 0; i < numOuterSegments && currentIdIndex < (int)vIds.size(); ++i)
+		{
+			const auto p1 = centerPos + vec2(cos(OuterAngleStep * i + OuterRotationPhase), sin(OuterAngleStep * i + OuterRotationPhase)) * ModulatedOuterRadius;
+			const auto p2 = centerPos + vec2(cos(OuterAngleStep * (i + 1) + OuterRotationPhase), sin(OuterAngleStep * (i + 1) + OuterRotationPhase)) * ModulatedOuterRadius;
+			int laserTypeOuter = isFadingOut ? LASERTYPE_RIFLE : LASERTYPE_SHOTGUN;
+			int laserSubtypeOuter = (isPulsing && !isFadingOut) ? 1 : 0;
+			pBase->GS()->SnapLaser(SnappingClient, vIds[currentIdIndex++], p1, p2, ServerTick - 1, laserTypeOuter, laserSubtypeOuter, pBase->GetClientID());
+		}
+
+		// inner ring
+		float InnerAngleStep = 2.0f * pi / std::max(1, numInnerSegments);
+		float InnerRotationPhase = fmod(ServerTick * -0.05f, 2.0f * pi);
+		float ModulatedInnerRadius = ModulatedOuterRadius * (isPulsing ? 0.4f : 0.6f);
+		ModulatedInnerRadius = std::max(0.0f, ModulatedInnerRadius * fadeProgress);
+		for(int i = 0; i < numInnerSegments && currentIdIndex < (int)vIds.size(); ++i)
+		{
+			const auto p1 = centerPos + vec2(cos(InnerAngleStep * i + InnerRotationPhase), sin(InnerAngleStep * i + InnerRotationPhase)) * ModulatedInnerRadius;
+			const auto p2 = centerPos + vec2(cos(InnerAngleStep * (i + 1) + InnerRotationPhase), sin(InnerAngleStep * (i + 1) + InnerRotationPhase)) * ModulatedInnerRadius;
+			int laserSubtypeInner = (isPulsing && !isFadingOut) ? 1 : 0;
+			pBase->GS()->SnapLaser(SnappingClient, vIds[currentIdIndex++], p1, p2, ServerTick - 1, LASERTYPE_RIFLE, laserSubtypeInner, pBase->GetClientID());
+		}
+
+		// central sparks
+		int effectiveNumSparks = isFadingOut ? (int)(numSparks * fadeProgress) : numSparks;
+		for(int i = 0; i < effectiveNumSparks && currentIdIndex < (int)vIds.size(); ++i)
+		{
+			const auto FlickerInterval = (isPulsing && !isFadingOut) ? (int)SERVER_TICK_SPEED / 15 : (int)SERVER_TICK_SPEED / (isFadingOut ? 3 : 6);
+			const auto FlickerDuration = (isPulsing && !isFadingOut) ? (int)SERVER_TICK_SPEED / 20 : (int)SERVER_TICK_SPEED / (isFadingOut ? 4 : 12);
+			if((ServerTick + i * 5) % FlickerInterval > FlickerDuration)
+				continue;
+
+			const auto sparkEnd = centerPos + random_direction() * ModulatedInnerRadius * random_float(0.1f, 0.5f) * (isFadingOut ? fadeProgress * 0.5f : 1.0f);
+			pBase->GS()->SnapLaser(SnappingClient, vIds[currentIdIndex++], centerPos, sparkEnd, ServerTick - 1, LASERTYPE_RIFLE, 0, pBase->GetClientID());
+		}
+
+		if(isPulsing && fadeProgress > 0.5f)
+		{
+			for(const vec2& targetPos : recentSerpentTargets)
+			{
+				if(currentIdIndex >= (int)vIds.size())
+					break;
+
+				const auto tendrilStart = centerPos + normalize(targetPos - centerPos) * ModulatedInnerRadius * 0.5f * fadeProgress;
+				const auto tendrilEnd = centerPos + normalize(targetPos - centerPos) * distance(centerPos, targetPos) * fadeProgress;
+				pBase->GS()->SnapLaser(SnappingClient, vIds[currentIdIndex++], tendrilStart, tendrilEnd, ServerTick - 1, LASERTYPE_RIFLE, 1, pBase->GetClientID());
+			}
 		}
 	});
 

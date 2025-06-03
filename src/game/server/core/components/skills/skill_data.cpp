@@ -275,6 +275,33 @@ bool CSkill::Use()
 		return true;
 	}
 
+	if(IsActivated(pChar, ManaCost, SKILL_HEALING_RIFT, SKILL_USAGE_RESET))
+	{
+		const auto NumCastClicked = 20 - GetBonus();
+		const auto RiftRadius = 120.f;
+		const auto HealRadius = 320.f;
+		const auto Lifetime = 15 * Server()->TickSpeed();
+		const auto SerpentSpawnInterval = 1.5f;
+		const auto NumSerpentsPerSpawn = 2;
+		const auto HealingPerPulse = ManaCost;
+		const auto VisOuter = 10;
+		const auto VisInner = 6;
+		const auto VisSparks = 1;
+
+		// prepare lambda casting
+		auto FuncExecuteHealingRift = [this, RiftRadius, HealRadius, Lifetime, SerpentSpawnInterval, NumSerpentsPerSpawn, HealingPerPulse,
+			VisOuter, VisInner, VisSparks](int FinalClientID, vec2 FinalPosition, EntGroupWeakPtr* pFinalSkillTracker)
+		{
+			GS()->EntityManager()->HealingRift(FinalClientID, FinalPosition, RiftRadius, HealRadius, Lifetime,
+				SerpentSpawnInterval, NumSerpentsPerSpawn, HealingPerPulse, VisOuter, VisInner, VisSparks, pFinalSkillTracker);
+		};
+
+		// start casting
+		GS()->EntityManager()->StartUniversalCast(ClientID, PlayerPosition, NumCastClicked, FuncExecuteHealingRift, &pEntSkillPtr);
+		return true;
+	}
+
+
 	return false;
 }
 

@@ -40,6 +40,10 @@ public:
 	void LaserOrbite(CEntityLaserOrbite*& pOut, CEntity* pParent, int Amount, LaserOrbiteType Type, float Speed, float Radius, int LaserType = LASERTYPE_RIFLE, int64_t Mask = -1) const;
 
 	// skills
+	void StartUniversalCast(int ClientID, vec2 TargetPosition, int NumClicked,
+		std::function<void(int, vec2, EntGroupWeakPtr*)> ActualSkillExecutionFunc, EntGroupWeakPtr* pCastingProcessTracker) const;
+	void HealingRift(int ClientID, vec2 Position, float RiftRadius, float HealRadius, int Lifetime, float SerpentSpawnInterval,
+		int NumSerpentsPerSpawn, int HealAmountPerPulse, int NumOuterSegments, int NumInnerSegments, int NumSparks, EntGroupWeakPtr* pPtr) const;
 	void GravityDisruption(int ClientID, vec2 Position, float Radius, int Lifetime, int Damage, EntGroupWeakPtr* pPtr = nullptr) const;
 	void HealthTurret(int ClientID, vec2 Position, int RestoreHealth, int Lifetime, int InitialReloadtick, EntGroupWeakPtr* pPtr = nullptr) const;
 	void LastStand(int ClientID, vec2 Position, float Radius, int ManaCostPerSec, EntGroupWeakPtr* pPtr = nullptr) const;
