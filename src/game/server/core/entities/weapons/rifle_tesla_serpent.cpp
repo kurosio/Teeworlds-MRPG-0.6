@@ -106,7 +106,7 @@ void CEntityTeslaSerpent::CalculateChainLightning()
 
         if(pClosestHitCharacter)
         {
-            GS()->CreateExplosion(HitPosition, m_ClientID, WEAPON_LASER, (int)CurrentSegmentDamage);
+            GS()->CreateExplosion(HitPosition, m_ClientID, WEAPON_LASER, (int)CurrentSegmentDamage, FORCE_FLAG_CANT_SELF);
             m_vTargetsHitThisShot.push_back(pClosestHitCharacter->GetPlayer()->GetCID());
             GS()->CreateSound(HitPosition, SOUND_GRENADE_EXPLODE);
             GS()->CreateSound(HitPosition, SOUND_HOOK_LOOP);
@@ -117,7 +117,7 @@ void CEntityTeslaSerpent::CalculateChainLightning()
         }
         else
         {
-            GS()->CreateExplosion(HitPosition, m_ClientID, WEAPON_LASER, (int)CurrentSegmentDamage);
+            GS()->CreateExplosion(HitPosition, m_ClientID, WEAPON_LASER, (int)CurrentSegmentDamage, FORCE_FLAG_CANT_SELF);
             GS()->CreateSound(HitPosition, SOUND_GRENADE_EXPLODE);
             GS()->CreateSound(HitPosition, SOUND_HOOK_LOOP);
             break;

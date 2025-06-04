@@ -14,6 +14,12 @@ enum
 	SAFEFLAG_DAMAGE_DISABLED = 1 << 3
 };
 
+enum
+{
+	FORCE_FLAG_CANT_SELF = 1 << 0,
+	FORCE_FLAG_CANT_ALL = 1 << 1,
+};
+
 class CPlayerBot;
 class CMultipleOrbite;
 class CEntityFishingRod;
@@ -124,7 +130,7 @@ public:
 
 	virtual bool Spawn(class CPlayer* pPlayer, vec2 Pos);
 	virtual void GiveRandomEffects(int To);
-	virtual bool TakeDamage(vec2 Force, int Damage, int FromCID, int Weapon);
+	virtual bool TakeDamage(vec2 Force, int Damage, int FromCID, int Weapon, int ForceFlag = -1);
 	virtual void Die(int Killer, int Weapon);
 	virtual void HandleTuning();
 

@@ -653,7 +653,7 @@ void CCharacter::HandleHookActions()
 	{
 		if(m_pPlayer->GetItem(itExplodeHook)->IsEquipped())
 		{
-			GS()->CreateExplosion(m_Core.m_HookPos, m_ClientID, WEAPON_GUN, 0);
+			GS()->CreateExplosion(m_Core.m_HookPos, m_ClientID, WEAPON_GUN, 0, FORCE_FLAG_CANT_SELF);
 		}
 	}
 }
@@ -1206,15 +1206,22 @@ CPlayer* CCharacter::GetLastPlayerAttacker(int Timeout) const
 	return nullptr;
 }
 
-bool CCharacter::TakeDamage(vec2 Force, int Damage, int FromCID, int Weapon)
+bool CCharacter::TakeDamage(vec2 Force, int Damage, int FromCID, int Weapon, int ForceFlag)
 {
-	// clamp force vel
-	constexpr float MaximumVel = 24.f;
-	vec2 Temp = m_Core.m_Vel + Force;
-	m_Core.m_Vel = ClampVel(m_MoveRestrictions,
-		length(Temp) > MaximumVel ? normalize(Temp) * MaximumVel : Temp);
+	// apply force
+	bool CanApplyForce = true;
+	if((ForceFlag & FORCE_FLAG_CANT_ALL) || ((ForceFlag & FORCE_FLAG_CANT_SELF) && m_ClientID == FromCID))
+		CanApplyForce = false;
+	if(!ForceFlag || CanApplyForce)
+	{
+		constexpr float MaximumVel = 24.f;
+		vec2 Temp = m_Core.m_Vel + Force;
+		m_Core.m_Vel = ClampVel(m_MoveRestrictions,
+			length(Temp) > MaximumVel ? normalize(Temp) * MaximumVel : Temp);
+	}
 
-	// check disallow damage
+
+	// check allowed can damage
 	if(!IsAllowedPVP(FromCID))
 		return false;
 
@@ -1224,8 +1231,12 @@ bool CCharacter::TakeDamage(vec2 Force, int Damage, int FromCID, int Weapon)
 		Weapon != WEAPON_GAME && Weapon != WEAPON_WORLD)
 	{
 		Damage += pFrom->GetTotalAttributeValue(AttributeIdentifier::DMG);
+		Damage = (FromCID == m_pPlayer->GetCID() ? maximum(1, Damage / 2) : maximum(1, Damage));
 	}
-	Damage = (FromCID == m_pPlayer->GetCID() ? maximum(1, Damage / 2) : maximum(1, Damage));
+
+	// skip empty damage
+	if(!Damage)
+		return false;
 
 	// chances of effects
 	int CritDamage = 0;

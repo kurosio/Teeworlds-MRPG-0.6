@@ -71,7 +71,7 @@ void CCharacterBotAI::GiveRandomEffects(int ClientID)
 	}
 }
 
-bool CCharacterBotAI::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
+bool CCharacterBotAI::TakeDamage(vec2 Force, int Dmg, int From, int Weapon, int ForceFlag)
 {
 	if(!m_pBotPlayer->IsActive())
 		return false;

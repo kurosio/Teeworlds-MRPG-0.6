@@ -35,7 +35,7 @@ private:
 	void TickDeferred() override;
 	void Snap(int SnappingClient) override;
 	void GiveRandomEffects(int ClientID) override;
-	bool TakeDamage(vec2 Force, int Dmg, int From, int Weapon) override;
+	bool TakeDamage(vec2 Force, int Dmg, int From, int Weapon, int ForceFlag = -1) override;
 	void Die(int Killer, int Weapon) override;
 	void HandleTuning() override;
 	void ProcessBot();

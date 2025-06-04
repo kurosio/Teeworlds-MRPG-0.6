@@ -183,18 +183,18 @@ void CGS::CreateHammerHit(vec2 Pos, int64_t Mask)
 	}
 }
 
-void CGS::CreateRandomRadiusExplosion(int ExplosionCount, float Radius, vec2 Pos, int Owner, int Weapon, int MaxDamage)
+void CGS::CreateRandomRadiusExplosion(int ExplosionCount, float Radius, vec2 Pos, int Owner, int Weapon, int MaxDamage, int ForceFlag)
 {
 	for(int i = 0; i < ExplosionCount; ++i)
 	{
 		const float theta = random_float(0.0f, 2.0f * pi);
 		const float Distance = sqrt(random_float()) * Radius;
 		const vec2 ExplosionPos = Pos + vec2(Distance * cos(theta), Distance * sin(theta));
-		CreateExplosion(ExplosionPos, Owner, Weapon, MaxDamage);
+		CreateExplosion(ExplosionPos, Owner, Weapon, MaxDamage, ForceFlag);
 	}
 }
 
-void CGS::CreateCyrcleExplosion(int ExplosionCount, float Radius, vec2 Pos, int Owner, int Weapon, int MaxDamage)
+void CGS::CreateCyrcleExplosion(int ExplosionCount, float Radius, vec2 Pos, int Owner, int Weapon, int MaxDamage, int ForceFlag)
 {
 	const float AngleStep = 2.0f * pi / (float)ExplosionCount;
 
@@ -202,11 +202,11 @@ void CGS::CreateCyrcleExplosion(int ExplosionCount, float Radius, vec2 Pos, int 
 	{
 		const float Angle = i * AngleStep;
 		const vec2 ExplosionPos = Pos + vec2(Radius * cos(Angle), Radius * sin(Angle));
-		CreateExplosion(ExplosionPos, Owner, Weapon, MaxDamage);
+		CreateExplosion(ExplosionPos, Owner, Weapon, MaxDamage, ForceFlag);
 	}
 }
 
-void CGS::CreateExplosion(vec2 Pos, int Owner, int Weapon, int MaxDamage)
+void CGS::CreateExplosion(vec2 Pos, int Owner, int Weapon, int MaxDamage, int ForceFlag)
 {
 	// create the explosion event
 	if(auto* pEvent = m_Events.Create<CNetEvent_Explosion>())
@@ -222,7 +222,6 @@ void CGS::CreateExplosion(vec2 Pos, int Owner, int Weapon, int MaxDamage)
 	// find entities within explosion radius
 	CCharacter* apEnts[MAX_CLIENTS];
 	const int Num = m_World.FindEntities(Pos, Radius, reinterpret_cast<CEntity**>(apEnts), MAX_CLIENTS, CGameWorld::ENTTYPE_CHARACTER);
-
 	for(int i = 0; i < Num; ++i)
 	{
 		CCharacter* pChar = apEnts[i];
@@ -240,13 +239,11 @@ void CGS::CreateExplosion(vec2 Pos, int Owner, int Weapon, int MaxDamage)
 		{
 			Strength = 0.5f;
 			if(Owner != -1 && m_apPlayers[Owner])
-			{
 				Strength = m_apPlayers[Owner]->m_NextTuningParams.m_ExplosionStrength;
-			}
 		}
 
 		// Apply damage and force
-		pChar->TakeDamage(ForceDir * (Strength * Length), Damage, Owner, Weapon);
+		pChar->TakeDamage(ForceDir * (Strength * Length), Damage, Owner, Weapon, ForceFlag);
 	}
 }
 

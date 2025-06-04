@@ -83,9 +83,9 @@ public:
 	void CreateBirthdayEffect(vec2 Pos, int64_t Mask = -1);
 	void CreateDamage(vec2 Pos, int FromCID, int Amount, float Angle = 0.f, int64_t Mask = -1);
 	void CreateHammerHit(vec2 Pos, int64_t Mask = -1);
-	void CreateRandomRadiusExplosion(int ExplosionCount, float Radius, vec2 Pos, int Owner, int Weapon, int MaxDamage);
-	void CreateCyrcleExplosion(int ExplosionCount, float Radius, vec2 Pos, int Owner, int Weapon, int MaxDamage);
-	void CreateExplosion(vec2 Pos, int Owner, int Weapon, int MaxDamage);
+	void CreateRandomRadiusExplosion(int ExplosionCount, float Radius, vec2 Pos, int Owner, int Weapon, int MaxDamage, int ForceFlag = -1);
+	void CreateCyrcleExplosion(int ExplosionCount, float Radius, vec2 Pos, int Owner, int Weapon, int MaxDamage, int ForceFlag = -1);
+	void CreateExplosion(vec2 Pos, int Owner, int Weapon, int MaxDamage, int ForceFlag = -1);
 	void CreatePlayerSpawn(vec2 Pos, int64_t Mask = -1);
 	void CreateDeath(vec2 Pos, int ClientID, int64_t Mask = -1);
 	void CreateSound(vec2 Pos, int Sound, int64_t Mask = -1);
