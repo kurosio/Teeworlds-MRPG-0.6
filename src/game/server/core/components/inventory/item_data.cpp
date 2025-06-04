@@ -495,6 +495,7 @@ bool CPlayerItem::Save()
 	int itemSettings = m_Settings;
 	int itemEnchant = m_Enchant;
 	int itemDurability = m_Durability;
+	dbg_msg("test", "PREPARE START THREAD UPD ITEM %d", itemId);
 
 	auto pResCheck = Database->Prepare<DB::SELECT>("ItemID, UserID", "tw_accounts_items", "WHERE ItemID = '{}' AND UserID = '{}'", itemId, userId);
 	pResCheck->AtExecute([itemId, userId, itemValue, itemSettings, itemEnchant, itemDurability](ResultPtr pRes)
