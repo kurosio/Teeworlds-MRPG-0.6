@@ -821,7 +821,7 @@ void CEntityManager::StartUniversalCast(int ClientID, vec2 TargetPosition, int N
 		float EndCastVisualRadius = 96.0f;
 		float CurrentSymbolScale = StartCastVisualRadius + (EndCastVisualRadius - StartCastVisualRadius) * ClickProgress;
 
-		if(CurrentSymbolID < 0 || CurrentSymbolID >= (int)s_vCastingSymbols.size() || ClickProgress < 0.01f && CurrentClicks == 0)
+		if(CurrentSymbolID < 0 || CurrentSymbolID >= (int)s_vCastingSymbols.size() || (ClickProgress < 0.01f && CurrentClicks == 0))
 			return;
 
 		const auto& Symbol = s_vCastingSymbols[CurrentSymbolID];

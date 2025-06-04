@@ -16,7 +16,7 @@ bool CEidolonScenario::OnStopConditions()
 
 void CEidolonScenario::OnSetupScenario()
 {
-	const auto* pBot = dynamic_cast<CPlayerBot*>(GetPlayer());
+	/*const auto* pBot = dynamic_cast<CPlayerBot*>(GetPlayer());
 	const auto* pOwner = GetOwner();
 	CCharacter* pBotChar = pBot->GetCharacter();
 	CCharacter* pOwnerChar = pOwner->GetCharacter();
@@ -24,7 +24,7 @@ void CEidolonScenario::OnSetupScenario()
 	if(pOwner->GetHealth() < pOwner->GetMaxHealth() * 0.1)
 	{
 
-	}
+	}*/
 }
 
 void CEidolonScenario::SendRandomChatMessage(const std::vector<const char*>& messages) const

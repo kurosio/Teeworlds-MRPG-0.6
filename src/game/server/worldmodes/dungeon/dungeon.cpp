@@ -118,7 +118,7 @@ void CGameControllerDungeon::ChangeState(int State)
 			if(!pPlayer || pPlayer->GetTeam() == TEAM_SPECTATORS || !GS()->IsPlayerInWorld(i, m_pDungeon->GetWorldID()))
 				continue;
 
-			int FinishTime = Server()->Tick() - pPlayer->GetSharedData().m_TempStartDungeonTick;
+			//int FinishTime = Server()->Tick() - pPlayer->GetSharedData().m_TempStartDungeonTick;
 			GS()->Chat(-1, "'{}' finished '{}'.", Server()->ClientName(i), m_pDungeon->GetName());
 		}
 	}

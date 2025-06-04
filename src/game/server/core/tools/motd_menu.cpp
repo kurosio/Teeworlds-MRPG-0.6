@@ -299,10 +299,10 @@ void MotdMenu::UpdateMotd()
 void MotdMenu::ApplyScrollbar(CPlayer* pPlayer, int Index, std::string& pBuffer)
 {
 	// initialize variables
-	const auto totalItems = m_Points.size();
 	const auto& scrollManager = pPlayer->m_MotdData.m_ScrollManager;
+	const int totalItems = m_Points.size();
+	const int visibleItems = scrollManager.GetMaxVisibleItems();
 	const auto currentScrollPos = scrollManager.GetScrollPos();
-	const auto visibleItems = scrollManager.GetMaxVisibleItems();
 
 	// default full area
 	if(totalItems <= visibleItems)

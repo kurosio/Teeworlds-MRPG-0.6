@@ -136,9 +136,8 @@ bool CDecorationManager::EndDrawing(CPlayer* pPlayer)
 
 bool CDecorationManager::HasFreeSlots() const
 {
-	const auto& sizePoints = m_pDrawBoard->GetEntityPoints().size();
-	const auto& maxPoints = m_pHouse->GetMaxDecorationSlots();
-
+	const int sizePoints = m_pDrawBoard->GetEntityPoints().size();
+	const int maxPoints = m_pHouse->GetMaxDecorationSlots();
 	return sizePoints < maxPoints;
 }
 
