@@ -503,6 +503,7 @@ bool CPlayerItem::Save()
 			return;
 
 		// check database value
+		dbg_msg("test", "START THREAD UPD ITEM %d", itemId);
 		if(pRes && pRes->next())
 		{
 			// remove
@@ -515,6 +516,7 @@ bool CPlayerItem::Save()
 			// update
 			Database->Execute<DB::UPDATE>("tw_accounts_items", "Value = '{}', Settings = '{}', Enchant = '{}', Durability = '{}' WHERE UserID = '{}' AND ItemID = '{}'",
 				itemValue, itemSettings, itemEnchant, itemDurability, userId, itemId);
+			dbg_msg("test", "END THREAD UPD ITEM %d", itemId);
 			return;
 		}
 
@@ -524,7 +526,11 @@ bool CPlayerItem::Save()
 			constexpr int newDurability = 100;
 			Database->Execute<DB::INSERT>("tw_accounts_items", "(ItemID, UserID, Value, Settings, Enchant, Durability) VALUES ('{}', '{}', '{}', '{}', '{}', '{}')",
 				itemId, userId, itemValue, itemSettings, itemEnchant, newDurability);
+			dbg_msg("test", "END INSERT UPD ITEM %d", itemId);
+			return;
 		}
+
+		dbg_msg("test", "SKIP UPD ITEM %d", itemId);
 	});
 
 	return true;
