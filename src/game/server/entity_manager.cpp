@@ -723,6 +723,8 @@ void CEntityManager::StartUniversalCast(int ClientID, vec2 TargetPosition, int N
 		{ {{-0.7f, 0.6f}, {0.7f, 0.6f}, {0.7f, 0.4f}, {-0.5f, 0.4f}, {-0.5f, 0.0f}, {0.5f, 0.0f}, {0.5f, -0.4f}, {-0.7f, -0.4f}} },
 		{ {{-0.2f, 0.7f}, {0.7f, 0.7f}, {0.7f, -0.7f}, {-0.7f, -0.7f}, {-0.7f, 0.2f}, {0.2f, 0.2f}, {0.2f, -0.2f}, {-0.2f, -0.2f} }}
 	};
+	constexpr float StartCastVisualRadius = 64.0f;
+	constexpr float EndCastVisualRadius = 96.0f;
 	constexpr int MAX_SYMBOL_SEGMENTS = 8;
 
 	// check player
@@ -739,11 +741,12 @@ void CEntityManager::StartUniversalCast(int ClientID, vec2 TargetPosition, int N
 	pCastingEntity->SetConfig("currentRequiredClicks", 0);
 	pCastingEntity->SetConfig("totalRequiredClicks", std::max(1, NumRequiredClicks));
 	pCastingEntity->SetConfig("currentSymbolID", -1);
-	pCastingEntity->SetConfig("symbolRotationSpeed", random_float(0.05f, 0.15f)* (rand() % 2 ? 1 : -1));
+	pCastingEntity->SetConfig("symbolRotationSpeed", random_float(0.05f, 0.15f) * (rand() % 2 ? 1 : -1));
 
 	if(pCastingProcessTracker)
 		*pCastingProcessTracker = pCastingGroup;
 
+	GS()->CreatePlayerSpawn(TargetPosition);
 	GS()->Broadcast(ClientID, BroadcastPriority::GameWarning, SERVER_TICK_SPEED,
 		"Skill Cast. Requires fire pressing '{}' times.", std::max(1, NumRequiredClicks));
 	GS()->CreateSound(TargetPosition, SOUND_SKILL_START);
@@ -762,7 +765,7 @@ void CEntityManager::StartUniversalCast(int ClientID, vec2 TargetPosition, int N
 		if(Interrupted)
 		{
 			GS()->Chat(pOwner->GetCID(), "Skill channeling interrupted!");
-			if(pCastingProcessTracker)
+			if(pCastingProcessTracker && pCastingProcessTracker->lock())
 				pCastingProcessTracker->reset();
 			pBase->MarkForDestroy();
 			return;
@@ -791,6 +794,27 @@ void CEntityManager::StartUniversalCast(int ClientID, vec2 TargetPosition, int N
 				GS()->CreateSound(pBase->GetPos(), SOUND_PICKUP_NINJA);
 				GS()->Broadcast(pBase->GetClientID(), BroadcastPriority::GameWarning, SERVER_TICK_SPEED,
 					"Clicks remaining: '{}'.", std::max(0, totalClicks - currentClicks));
+
+				// create damage star effect
+				const auto& SymbolDef = s_vCastingSymbols[NewSymbolID];
+				if(!SymbolDef.m_vPoints.empty())
+				{
+					const auto centerPos = pBase->GetPos();
+					for(size_t j = 0; j < SymbolDef.m_vPoints.size(); ++j)
+					{
+						const auto localPos = SymbolDef.m_vPoints[j];
+						vec2 normalized_direction = normalize(localPos);
+						const float TargetAngleRad = angle(normalized_direction);
+						const float DamageAngleInput = TargetAngleRad - (3.0f * pi / 2.0f) + (pi / 9.0f);
+						int TotalClicks = pBase->GetConfig("totalRequiredClicks", 1);
+						int CurrentClicks = pBase->GetConfig("currentRequiredClicks", 0);
+						float ClickProgress = (TotalClicks > 0) ? (float)CurrentClicks / (float)TotalClicks : 0.0f;
+						ClickProgress = std::min(ClickProgress, 1.0f);
+						float CurrentSymbolScale = StartCastVisualRadius + (EndCastVisualRadius - StartCastVisualRadius) * ClickProgress;
+
+						GS()->CreateDamage(centerPos - localPos * CurrentSymbolScale, pBase->GetClientID(), 1, DamageAngleInput, -1);
+					}
+				}
 			}
 		}
 
@@ -816,21 +840,19 @@ void CEntityManager::StartUniversalCast(int ClientID, vec2 TargetPosition, int N
 		int ServerTick = pBase->Server()->Tick();
 		int CurrentSymbolID = pBase->GetConfig("currentSymbolID", -1);
 		float SymbolRotationSpeed = pBase->GetConfig("symbolRotationSpeed", 0.1f);
-		float SymbolBaseRotation = fmod(ServerTick * SymbolRotationSpeed, 2.0f * pi);
-		float StartCastVisualRadius = 64.0f;
-		float EndCastVisualRadius = 96.0f;
+		float SymbolBaseRotation = std::fmod(ServerTick * SymbolRotationSpeed, 2.0f * pi);
 		float CurrentSymbolScale = StartCastVisualRadius + (EndCastVisualRadius - StartCastVisualRadius) * ClickProgress;
 
 		if(CurrentSymbolID < 0 || CurrentSymbolID >= (int)s_vCastingSymbols.size() || (ClickProgress < 0.01f && CurrentClicks == 0))
 			return;
 
+		const auto cos_r = std::cos(SymbolBaseRotation);
+		const auto sin_r = std::sin(SymbolBaseRotation);
 		const auto& Symbol = s_vCastingSymbols[CurrentSymbolID];
 		for(size_t i = 0; i < Symbol.m_vPoints.size() && Idx < (int)vIds.size(); ++i)
 		{
 			const auto p1_local = Symbol.m_vPoints[i];
 			const auto p2_local = Symbol.m_vPoints[(i + 1) % Symbol.m_vPoints.size()];
-			const auto cos_r = cos(SymbolBaseRotation);
-			const auto sin_r = sin(SymbolBaseRotation);
 			const auto p1_rotated = vec2(p1_local.x * cos_r - p1_local.y * sin_r, p1_local.x * sin_r + p1_local.y * cos_r);
 			const auto p2_rotated = vec2(p2_local.x * cos_r - p2_local.y * sin_r, p2_local.x * sin_r + p2_local.y * cos_r);
 			const auto p1_world = pBase->GetPos() + p1_rotated * CurrentSymbolScale;
@@ -910,7 +932,7 @@ void CEntityManager::HealingRift(int ClientID, vec2 Position, float RiftRadius, 
 		if(!isPulsing && currentLifetime > fadeOutDuration)
 		{
 			auto NewPos = pBase->GetPos();
-			vec2 TargetFollowPos = pOwnerChar->m_Core.m_Pos - vec2(0, 28.f);
+			vec2 TargetFollowPos = pOwnerChar->m_Core.m_Pos - vec2(0, 48.f);
 			vec2 DirToTarget = normalize(TargetFollowPos - NewPos);
 			float DistToTarget = distance(TargetFollowPos, NewPos);
 			float MoveSpeed = 16.0f;
@@ -948,8 +970,7 @@ void CEntityManager::HealingRift(int ClientID, vec2 Position, float RiftRadius, 
 				for(int i = 0; i < numSerpentsPerSpawn; ++i)
 				{
 					const auto serpentTargetPos = !potentialTargets.empty() ?
-						potentialTargets[rand() % potentialTargets.size()]->GetPos()
-						: centerPos + random_direction() * riftRadius;
+						potentialTargets[rand() % potentialTargets.size()]->GetPos() : random_range_pos(vec2 {}, 128.f);
 					currentSerpentTargets.push_back(serpentTargetPos);
 					new CEntityTeslaSerpent(pBase->GameWorld(), ownerCID, centerPos, serpentTargetPos, totalDamage, 500.f, 2, 0.5f);
 				}
