@@ -11,7 +11,9 @@ class CGuildManager : public MmoComponent
 	~CGuildManager() override
 	{
 		// free data
-		mystd::freeContainer(CGuildHouse::Data(), CGuild::Data(), CGuildWarHandler::Data());
+		mystd::freeContainer(CGuild::Data());
+		mystd::freeContainer(CGuildHouse::Data());
+		mystd::freeContainer(CGuildWarHandler::Data());
 	};
 
 	void OnPreInit() override;
