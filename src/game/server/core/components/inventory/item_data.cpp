@@ -509,13 +509,13 @@ bool CPlayerItem::Save()
 			// remove
 			if(!itemValue)
 			{
-				Database->Execute<DB::REMOVE>("tw_accounts_items", "WHERE ItemID = '{}' AND UserID = '{}'", itemId, userId);
+				// Database->Execute<DB::REMOVE>("tw_accounts_items", "WHERE ItemID = '{}' AND UserID = '{}'", itemId, userId);
 				return;
 			}
 
 			// update
-			Database->Execute<DB::UPDATE>("tw_accounts_items", "Value = '{}', Settings = '{}', Enchant = '{}', Durability = '{}' WHERE UserID = '{}' AND ItemID = '{}'",
-				itemValue, itemSettings, itemEnchant, itemDurability, userId, itemId);
+			//Database->Execute<DB::UPDATE>("tw_accounts_items", "Value = '{}', Settings = '{}', Enchant = '{}', Durability = '{}' WHERE UserID = '{}' AND ItemID = '{}'",
+			//	itemValue, itemSettings, itemEnchant, itemDurability, userId, itemId);
 			dbg_msg("test", "END THREAD UPD ITEM %d", itemId);
 			return;
 		}
@@ -524,8 +524,8 @@ bool CPlayerItem::Save()
 		if(itemValue)
 		{
 			constexpr int newDurability = 100;
-			Database->Execute<DB::INSERT>("tw_accounts_items", "(ItemID, UserID, Value, Settings, Enchant, Durability) VALUES ('{}', '{}', '{}', '{}', '{}', '{}')",
-				itemId, userId, itemValue, itemSettings, itemEnchant, newDurability);
+			//Database->Execute<DB::INSERT>("tw_accounts_items", "(ItemID, UserID, Value, Settings, Enchant, Durability) VALUES ('{}', '{}', '{}', '{}', '{}', '{}')",
+			//	itemId, userId, itemValue, itemSettings, itemEnchant, newDurability);
 			dbg_msg("test", "END INSERT UPD ITEM %d", itemId);
 			return;
 		}
