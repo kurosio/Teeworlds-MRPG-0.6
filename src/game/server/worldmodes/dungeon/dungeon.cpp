@@ -284,8 +284,7 @@ void CGameControllerDungeon::KillAllPlayers() const
 
 void CGameControllerDungeon::UpdateDoorKeyState()
 {
-	for(auto* pDoor = (CEntityDungeonProgressDoor*)GS()->m_World.FindFirst(CGameWorld::ENTTYPE_DUNGEON_DOOR);
-		pDoor; pDoor = (CEntityDungeonProgressDoor*)pDoor->TypeNext())
+	for(auto*& pDoor : m_vpEntLogicDoor)
 	{
 		if(pDoor->Update())
 			GS()->ChatWorld(m_pDungeon->GetWorldID(), "Dungeon:", "Door creaking.. Opened door somewhere!");
@@ -295,8 +294,7 @@ void CGameControllerDungeon::UpdateDoorKeyState()
 
 void CGameControllerDungeon::ResetDoorKeyState()
 {
-	for(auto* pDoor = (CEntityDungeonProgressDoor*)GS()->m_World.FindFirst(CGameWorld::ENTTYPE_DUNGEON_DOOR);
-		pDoor; pDoor = (CEntityDungeonProgressDoor*)pDoor->TypeNext())
+	for(auto*& pDoor : m_vpEntLogicDoor)
 		pDoor->ResetDoor();
 }
 
