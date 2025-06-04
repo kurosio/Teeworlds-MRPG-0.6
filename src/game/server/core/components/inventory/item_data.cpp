@@ -489,32 +489,41 @@ bool CPlayerItem::Save()
 	if(!pPlayer || !pPlayer->IsAuthed())
 		return false;
 
-	int UserID = pPlayer->Account()->GetID();
-	const auto pResCheck = Database->Prepare<DB::SELECT>("ItemID, UserID", "tw_accounts_items", "WHERE ItemID = '{}' AND UserID = '{}'", m_ID, UserID);
-	pResCheck->AtExecute([this, UserID](ResultPtr pRes)
+	int userId = pPlayer->Account()->GetID();
+	int itemId = m_ID;
+	int itemValue = m_Value;
+	int itemSettings = m_Settings;
+	int itemEnchant = m_Enchant;
+	int itemDurability = m_Durability;
+
+	auto pResCheck = Database->Prepare<DB::SELECT>("ItemID, UserID", "tw_accounts_items", "WHERE ItemID = '{}' AND UserID = '{}'", itemId, userId);
+	pResCheck->AtExecute([itemId, userId, itemValue, itemSettings, itemEnchant, itemDurability](ResultPtr pRes)
 	{
+		if(!pRes)
+			return;
+
 		// check database value
-		if(pRes->next())
+		if(pRes && pRes->next())
 		{
-			// remove item
-			if(!m_Value)
+			// remove
+			if(!itemValue)
 			{
-				Database->Execute<DB::REMOVE>("tw_accounts_items", "WHERE ItemID = '{}' AND UserID = '{}'", m_ID, UserID);
+				Database->Execute<DB::REMOVE>("tw_accounts_items", "WHERE ItemID = '{}' AND UserID = '{}'", itemId, userId);
 				return;
 			}
 
-			// update an item
+			// update
 			Database->Execute<DB::UPDATE>("tw_accounts_items", "Value = '{}', Settings = '{}', Enchant = '{}', Durability = '{}' WHERE UserID = '{}' AND ItemID = '{}'",
-				m_Value, m_Settings, m_Enchant, m_Durability, UserID, m_ID);
+				itemValue, itemSettings, itemEnchant, itemDurability, userId, itemId);
 			return;
 		}
 
 		// insert item
-		if(m_Value)
+		if(itemValue)
 		{
-			m_Durability = 100;
-			Database->Execute<DB::INSERT>("tw_accounts_items", "(ItemID, UserID, Value, Settings, Enchant) VALUES ('{}', '{}', '{}', '{}', '{}')",
-				m_ID, UserID, m_Value, m_Settings, m_Enchant);
+			constexpr int newDurability = 100;
+			Database->Execute<DB::INSERT>("tw_accounts_items", "(ItemID, UserID, Value, Settings, Enchant, Durability) VALUES ('{}', '{}', '{}', '{}', '{}', '{}')",
+				itemId, userId, itemValue, itemSettings, itemEnchant, newDurability);
 		}
 	});
 
