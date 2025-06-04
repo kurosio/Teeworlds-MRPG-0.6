@@ -131,12 +131,12 @@ void CEntityFishingRod::FishingTick(CPlayer* pPlayer, CProfession* pFisherman, G
 	}
 
 	// hooking state
-	auto& lastPoint = m_Rope.m_vPoints.back();
 	if(m_Fishing.m_State == FishingNow::HOOKING)
 	{
 		// effect hooking
 		if(m_Fishing.m_HookingTime % Server()->TickSpeed() == 0)
 		{
+			const auto lastPoint = m_Rope.m_vPoints.back();
 			GS()->CreateDeath(lastPoint, m_ClientID);
 			m_Rope.SetForce(vec2(0.f, 5.f));
 		}
@@ -161,6 +161,7 @@ void CEntityFishingRod::FishingTick(CPlayer* pPlayer, CProfession* pFisherman, G
 		// set end point
 		if(!m_Fishing.m_FromPoint)
 		{
+			const auto lastPoint = m_Rope.m_vPoints.back();
 			m_Fishing.m_FromPoint = lastPoint;
 			m_Fishing.m_InterpolatedX = lastPoint.x;
 		}
@@ -190,12 +191,17 @@ void CEntityFishingRod::FishingTick(CPlayer* pPlayer, CProfession* pFisherman, G
 		}
 
 		// smooth moving
-		if(lastPoint.x != m_Fishing.m_InterpolatedX)
-			lastPoint.x += (m_Fishing.m_InterpolatedX - lastPoint.x) * 0.1f;
+		if(!m_Rope.m_vPoints.empty())
+		{
+			auto& lastPointRef = m_Rope.m_vPoints.back();
+			if(lastPointRef.x != m_Fishing.m_InterpolatedX)
+				lastPointRef.x += (m_Fishing.m_InterpolatedX - lastPointRef.x) * 0.1f;
+		}
 
 		// success
 		if(m_Fishing.m_Health <= 0)
 		{
+			auto& lastPointRef = m_Rope.m_vPoints.back();
 			const auto Value = 1 + rand() % 2;
 			const auto ItemID = pNode->m_vItems.getRandomElement();
 			auto* pPlayerItem = pPlayer->GetItem(ItemID);
@@ -205,7 +211,7 @@ void CEntityFishingRod::FishingTick(CPlayer* pPlayer, CProfession* pFisherman, G
 			// create design drop pickup
 			const auto DesignPos = vec2(m_EndRodPoint.x, m_EndRodPoint.y - 24.f);
 			GS()->EntityManager()->DesignRandomDrop(2 + rand() % 2, 8.0f, DesignPos, Server()->TickSpeed(), POWERUP_HEALTH, 0, CmaskOne(pPlayer->GetCID()));
-			lastPoint = m_EndRodPoint;
+			lastPointRef = m_EndRodPoint;
 			m_Fishing.m_State = FishingNow::SUCCESS;
 		}
 
