@@ -848,7 +848,7 @@ void CEntityManager::StartUniversalCast(int ClientID, vec2 TargetPosition, int N
 }
 
 void CEntityManager::HealingRift(int ClientID, vec2 Position, float RiftRadius, float HealRadius, int Lifetime, float SerpentSpawnInterval,
-	int NumSerpentsPerSpawn, int HealAmountPerPulse, int NumOuterSegments, int NumInnerSegments, int NumSparks, EntGroupWeakPtr* pPtr) const
+	int NumSerpentsPerSpawn, int HealAmountPerPulse, int NumOuterSegments, int NumInnerSegments, EntGroupWeakPtr* pPtr) const
 {
 	const auto* pPlayer = GS()->GetPlayer(ClientID, false, true);
 	if(!pPlayer)
@@ -864,7 +864,6 @@ void CEntityManager::HealingRift(int ClientID, vec2 Position, float RiftRadius, 
 	groupPtr->SetConfig("healAmountPerPulse", HealAmountPerPulse);
 	groupPtr->SetConfig("numOuterSegments", NumOuterSegments);
 	groupPtr->SetConfig("numInnerSegments", NumInnerSegments);
-	groupPtr->SetConfig("numSparks", NumSparks);
 	groupPtr->SetConfig("serpentPulseEffectDurationTicks", Server()->TickSpeed() / 2);
 	groupPtr->SetConfig("fadeOutDurationTicks", Server()->TickSpeed());
 
@@ -900,6 +899,7 @@ void CEntityManager::HealingRift(int ClientID, vec2 Position, float RiftRadius, 
 		const int healAmountPerPulse = pBase->GetGroup()->GetConfig("healAmountPerPulse", 10);
 		const int ownerCID = pBase->GetClientID();
 		auto* pOwner = pBase->GetPlayer();
+		auto* pOwnerChar = pBase->GetCharacter();
 
 		// pulsing
 		const int lastSerpentSpawnTick = pBase->GetConfig("lastSerpentSpawnTick", 0);
@@ -910,7 +910,7 @@ void CEntityManager::HealingRift(int ClientID, vec2 Position, float RiftRadius, 
 		if(!isPulsing && currentLifetime > fadeOutDuration)
 		{
 			auto NewPos = pBase->GetPos();
-			vec2 TargetFollowPos = pOwner->GetCharacter()->m_Core.m_Pos - vec2(0, 28.f);
+			vec2 TargetFollowPos = pOwnerChar->m_Core.m_Pos - vec2(0, 28.f);
 			vec2 DirToTarget = normalize(TargetFollowPos - NewPos);
 			float DistToTarget = distance(TargetFollowPos, NewPos);
 			float MoveSpeed = 16.0f;
@@ -932,7 +932,7 @@ void CEntityManager::HealingRift(int ClientID, vec2 Position, float RiftRadius, 
 				pBase->GS()->CreateSound(centerPos, SOUND_NINJA_HIT);
 				pBase->SetConfig("lastSerpentSpawnTick", pBase->Server()->Tick());
 
-				// spawn tesla serpents
+				// serpent
 				std::vector<vec2> currentSerpentTargets;
 				std::vector<CCharacter*> potentialTargets;
 				const auto totalDamage = pOwner->GetTotalAttributeValue(AttributeIdentifier::DMG);
@@ -940,9 +940,8 @@ void CEntityManager::HealingRift(int ClientID, vec2 Position, float RiftRadius, 
 				for(auto* pEnt : vEntities)
 				{
 					auto* pTarget = dynamic_cast<CCharacter*>(pEnt);
-					if(!pTarget || ownerCID == pTarget->GetClientID() || !pTarget->IsAllowedPVP(ownerCID))
+					if(!pTarget || !pTarget->GetPlayer() || ownerCID == pTarget->GetPlayer()->GetCID() || !pTarget->IsAllowedPVP(ownerCID))
 						continue;
-
 					potentialTargets.push_back(pTarget);
 				}
 
@@ -952,18 +951,17 @@ void CEntityManager::HealingRift(int ClientID, vec2 Position, float RiftRadius, 
 						potentialTargets[rand() % potentialTargets.size()]->GetPos()
 						: centerPos + random_direction() * riftRadius;
 					currentSerpentTargets.push_back(serpentTargetPos);
-					new CEntityTeslaSerpent(pBase->GameWorld(), ownerCID, centerPos, serpentTargetPos,
-						totalDamage, 500.f, 2, 0.5f);
+					new CEntityTeslaSerpent(pBase->GameWorld(), ownerCID, centerPos, serpentTargetPos, totalDamage, 500.f, 2, 0.5f);
 				}
 				pBase->SetConfig("recentSerpentTargets", currentSerpentTargets);
 
-				// healing nearby
+				// healing
 				bool ShowRestoreHealth = false;
 				for(auto* pChar = (CCharacter*)pBase->GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); pChar; pChar = (CCharacter*)pChar->TypeNext())
 				{
+					if(!pChar->GetPlayer()) continue;
 					if(distance(pChar->GetPos(), centerPos) > healRadius)
 						continue;
-
 					if(pChar->GetPlayer()->GetCID() == ownerCID || !pChar->IsAllowedPVP(pBase->GetClientID()))
 					{
 						ShowRestoreHealth = true;
@@ -975,12 +973,15 @@ void CEntityManager::HealingRift(int ClientID, vec2 Position, float RiftRadius, 
 					pBase->GS()->EntityManager()->Text(centerPos + vec2(0, -96), 40, fmt_default("{}HP", healAmountPerPulse).c_str());
 					pBase->GS()->CreateSound(centerPos, SOUND_PICKUP_HEALTH);
 				}
+
+				// create hammer effect
+				pBase->GS()->CreateHammerHit(centerPos);
 			}
 		}
 	});
 
 	// register event snap
-	const int NumIDs = NumOuterSegments + NumInnerSegments + NumSparks + (NumSerpentsPerSpawn * 2);
+	const int NumIDs = NumOuterSegments + NumInnerSegments + 2;
 	pRiftController->RegisterEvent(CBaseEntity::EventSnap, NumIDs, [this](CBaseEntity* pBase, int SnappingClient, const std::vector<int>& vIds)
 	{
 		// initialize variables
@@ -990,13 +991,11 @@ void CEntityManager::HealingRift(int ClientID, vec2 Position, float RiftRadius, 
 		const float initialRiftRadius = pBase->GetGroup()->GetConfig("riftRadius", 100.0f);
 		const int numOuterSegments = pBase->GetGroup()->GetConfig("numOuterSegments", 12);
 		const int numInnerSegments = pBase->GetGroup()->GetConfig("numInnerSegments", 8);
-		const int numSparks = pBase->GetGroup()->GetConfig("numSparks", 10);
-		const int lastSerpentSpawnTick = pBase->GetConfig("lastSerpentSpawnTick", 0);
-		const int serpentPulseEffectDuration = pBase->GetGroup()->GetConfig("serpentPulseEffectDurationTicks", pBase->Server()->TickSpeed() / 2);
-		bool isPulsing = ServerTick < lastSerpentSpawnTick + serpentPulseEffectDuration;
-		const std::vector<vec2>& recentSerpentTargets = pBase->GetConfig("recentSerpentTargets", std::vector<vec2>{});
+
+		const int initialLifetime = pBase->GetGroup()->GetConfig("initialLifetimeTicks", pBase->Server()->TickSpeed() * 10);
 		const int currentLifetime = pBase->GetConfig("currentLifetimeTicks", 0);
 		const int fadeOutDuration = pBase->GetGroup()->GetConfig("fadeOutDurationTicks", pBase->Server()->TickSpeed());
+
 		float fadeProgress = 1.0f;
 		bool isFadingOut = false;
 
@@ -1010,18 +1009,22 @@ void CEntityManager::HealingRift(int ClientID, vec2 Position, float RiftRadius, 
 		if(currentVisualRadius < 1.0f && isFadingOut)
 			return;
 
+		const int lastSerpentSpawnTick = pBase->GetConfig("lastSerpentSpawnTick", 0);
+		const int serpentPulseEffectDuration = pBase->GetGroup()->GetConfig("serpentPulseEffectDurationTicks", pBase->Server()->TickSpeed() / 2);
+		bool isPulsing = ServerTick < lastSerpentSpawnTick + serpentPulseEffectDuration;
+
 		// outer ring
 		float OuterAngleStep = 2.0f * pi / std::max(1, numOuterSegments);
-		float OuterRotationPhase = fmod(ServerTick * 0.02f, 2.0f * pi);
+		float OuterRotationPhase = std::fmod(ServerTick * 0.02f, 2.0f * pi);
 		float TimeParamOuter = (float)ServerTick / (float)SERVER_TICK_SPEED;
 		float OuterRadiusModulation = currentVisualRadius * (isPulsing ? 0.15f : 0.05f);
-		float ModulatedOuterRadius = currentVisualRadius + sin(TimeParamOuter * pi * 2.0f * (isPulsing ? 1.0f : 0.3f)) * OuterRadiusModulation;
+		float ModulatedOuterRadius = currentVisualRadius + std::sin(TimeParamOuter * pi * 2.0f * (isPulsing ? 1.0f : 0.3f)) * OuterRadiusModulation;
 		ModulatedOuterRadius = std::max(0.0f, ModulatedOuterRadius);
 
 		for(int i = 0; i < numOuterSegments && currentIdIndex < (int)vIds.size(); ++i)
 		{
-			const auto p1 = centerPos + vec2(cos(OuterAngleStep * i + OuterRotationPhase), sin(OuterAngleStep * i + OuterRotationPhase)) * ModulatedOuterRadius;
-			const auto p2 = centerPos + vec2(cos(OuterAngleStep * (i + 1) + OuterRotationPhase), sin(OuterAngleStep * (i + 1) + OuterRotationPhase)) * ModulatedOuterRadius;
+			const auto p1 = centerPos + vec2(std::cos(OuterAngleStep * i + OuterRotationPhase), std::sin(OuterAngleStep * i + OuterRotationPhase)) * ModulatedOuterRadius;
+			const auto p2 = centerPos + vec2(std::cos(OuterAngleStep * (i + 1) + OuterRotationPhase), std::sin(OuterAngleStep * (i + 1) + OuterRotationPhase)) * ModulatedOuterRadius;
 			int laserTypeOuter = isFadingOut ? LASERTYPE_RIFLE : LASERTYPE_SHOTGUN;
 			int laserSubtypeOuter = (isPulsing && !isFadingOut) ? 1 : 0;
 			pBase->GS()->SnapLaser(SnappingClient, vIds[currentIdIndex++], p1, p2, ServerTick - 1, laserTypeOuter, laserSubtypeOuter, pBase->GetClientID());
@@ -1029,40 +1032,45 @@ void CEntityManager::HealingRift(int ClientID, vec2 Position, float RiftRadius, 
 
 		// inner ring
 		float InnerAngleStep = 2.0f * pi / std::max(1, numInnerSegments);
-		float InnerRotationPhase = fmod(ServerTick * -0.05f, 2.0f * pi);
+		float InnerRotationPhase = std::fmod(ServerTick * -0.05f, 2.0f * pi);
 		float ModulatedInnerRadius = ModulatedOuterRadius * (isPulsing ? 0.4f : 0.6f);
 		ModulatedInnerRadius = std::max(0.0f, ModulatedInnerRadius * fadeProgress);
 		for(int i = 0; i < numInnerSegments && currentIdIndex < (int)vIds.size(); ++i)
 		{
-			const auto p1 = centerPos + vec2(cos(InnerAngleStep * i + InnerRotationPhase), sin(InnerAngleStep * i + InnerRotationPhase)) * ModulatedInnerRadius;
-			const auto p2 = centerPos + vec2(cos(InnerAngleStep * (i + 1) + InnerRotationPhase), sin(InnerAngleStep * (i + 1) + InnerRotationPhase)) * ModulatedInnerRadius;
+			const auto p1 = centerPos + vec2(std::cos(InnerAngleStep * i + InnerRotationPhase), std::sin(InnerAngleStep * i + InnerRotationPhase)) * ModulatedInnerRadius;
+			const auto p2 = centerPos + vec2(std::cos(InnerAngleStep * (i + 1) + InnerRotationPhase), std::sin(InnerAngleStep * (i + 1) + InnerRotationPhase)) * ModulatedInnerRadius;
 			int laserSubtypeInner = (isPulsing && !isFadingOut) ? 1 : 0;
 			pBase->GS()->SnapLaser(SnappingClient, vIds[currentIdIndex++], p1, p2, ServerTick - 1, LASERTYPE_RIFLE, laserSubtypeInner, pBase->GetClientID());
 		}
 
-		// central sparks
-		int effectiveNumSparks = isFadingOut ? (int)(numSparks * fadeProgress) : numSparks;
-		for(int i = 0; i < effectiveNumSparks && currentIdIndex < (int)vIds.size(); ++i)
+		// clock lines
+		if((!isFadingOut || fadeProgress > 0.1f) && ModulatedOuterRadius > 1.0f)
 		{
-			const auto FlickerInterval = (isPulsing && !isFadingOut) ? (int)SERVER_TICK_SPEED / 15 : (int)SERVER_TICK_SPEED / (isFadingOut ? 3 : 6);
-			const auto FlickerDuration = (isPulsing && !isFadingOut) ? (int)SERVER_TICK_SPEED / 20 : (int)SERVER_TICK_SPEED / (isFadingOut ? 4 : 12);
-			if((ServerTick + i * 5) % FlickerInterval > FlickerDuration)
-				continue;
+			float lifetimeProgressRatio = 0.0f;
+			if(initialLifetime > 0)
+				lifetimeProgressRatio = std::clamp(((float)initialLifetime - (float)currentLifetime) / (float)initialLifetime, 0.0f, 1.0f);
 
-			const auto sparkEnd = centerPos + random_direction() * ModulatedInnerRadius * random_float(0.1f, 0.5f) * (isFadingOut ? fadeProgress * 0.5f : 1.0f);
-			pBase->GS()->SnapLaser(SnappingClient, vIds[currentIdIndex++], centerPos, sparkEnd, ServerTick - 1, LASERTYPE_RIFLE, 0, pBase->GetClientID());
+			float minuteHandAngle = -pi / 2.0f + lifetimeProgressRatio * (2.0f * pi);
+			float minuteHandLength = ModulatedOuterRadius * 0.75f;
+			vec2 minuteHandEndPos = centerPos + vec2(std::cos(minuteHandAngle) * minuteHandLength, std::sin(minuteHandAngle) * minuteHandLength);
+			if(currentIdIndex < (int)vIds.size() && minuteHandLength > 1.0f)
+				pBase->GS()->SnapLaser(SnappingClient, vIds[currentIdIndex++], centerPos, minuteHandEndPos, ServerTick - 1, LASERTYPE_DRAGGER, 0, pBase->GetClientID());
+
+			float hourHandAngle = -pi / 2.0f + lifetimeProgressRatio * (2.0f * pi / 6.0f);
+			float hourHandLength = ModulatedOuterRadius * 0.45f;
+			vec2 hourHandEndPos = centerPos + vec2(std::cos(hourHandAngle) * hourHandLength, std::sin(hourHandAngle) * hourHandLength);
+			if(currentIdIndex < (int)vIds.size() && hourHandLength > 1.0f)
+				pBase->GS()->SnapLaser(SnappingClient, vIds[currentIdIndex++], centerPos, hourHandEndPos, ServerTick - 1, LASERTYPE_DRAGGER, 0, pBase->GetClientID());
 		}
 
+		// pulsing effect's
 		if(isPulsing && fadeProgress > 0.5f)
 		{
-			for(const vec2& targetPos : recentSerpentTargets)
+			const int numPulseEffects = 2;
+			for(int i = 0; i < numPulseEffects; ++i)
 			{
-				if(currentIdIndex >= (int)vIds.size())
-					break;
-
-				const auto tendrilStart = centerPos + normalize(targetPos - centerPos) * ModulatedInnerRadius * 0.5f * fadeProgress;
-				const auto tendrilEnd = centerPos + normalize(targetPos - centerPos) * distance(centerPos, targetPos) * fadeProgress;
-				pBase->GS()->SnapLaser(SnappingClient, vIds[currentIdIndex++], tendrilStart, tendrilEnd, ServerTick - 1, LASERTYPE_RIFLE, 1, pBase->GetClientID());
+				float randomAngle = random_float(0.0f, 2.0f * pi);
+				pBase->GS()->CreateDamage(centerPos, pBase->GetClientID(), 1, randomAngle, CmaskOne(SnappingClient));
 			}
 		}
 	});
@@ -1072,6 +1080,7 @@ void CEntityManager::HealingRift(int ClientID, vec2 Position, float RiftRadius, 
 		*pPtr = groupPtr;
 	}
 }
+
 
 void CEntityManager::EffectCircleDamage(int ClientID, int DelayImpulse, int DelayBetweenImpulses, int Repeat) const
 {

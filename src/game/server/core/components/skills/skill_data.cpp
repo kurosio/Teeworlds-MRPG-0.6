@@ -286,14 +286,13 @@ bool CSkill::Use()
 		const auto HealingPerPulse = ManaCost;
 		const auto VisOuter = 10;
 		const auto VisInner = 6;
-		const auto VisSparks = 1;
 
 		// prepare lambda casting
 		auto FuncExecuteHealingRift = [this, RiftRadius, HealRadius, Lifetime, SerpentSpawnInterval, NumSerpentsPerSpawn, HealingPerPulse,
-			VisOuter, VisInner, VisSparks](int FinalClientID, vec2 FinalPosition, EntGroupWeakPtr* pFinalSkillTracker)
+			VisOuter, VisInner](int FinalClientID, vec2 FinalPosition, EntGroupWeakPtr* pFinalSkillTracker)
 		{
 			GS()->EntityManager()->HealingRift(FinalClientID, FinalPosition, RiftRadius, HealRadius, Lifetime,
-				SerpentSpawnInterval, NumSerpentsPerSpawn, HealingPerPulse, VisOuter, VisInner, VisSparks, pFinalSkillTracker);
+				SerpentSpawnInterval, NumSerpentsPerSpawn, HealingPerPulse, VisOuter, VisInner, pFinalSkillTracker);
 		};
 
 		// start casting
