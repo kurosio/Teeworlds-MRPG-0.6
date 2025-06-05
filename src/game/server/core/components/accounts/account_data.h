@@ -198,6 +198,8 @@ public:
 	//
 	int GetFreeSlotsAttributedModules() const;
 	int GetFreeSlotsFunctionalModules() const;
+	int GetUsedSlotsAttributedModules() const { return g_Config.m_SvAttributedModulesSlots - GetFreeSlotsAttributedModules(); }
+	int GetUsedSlotsFunctionalModules() const { return g_Config.m_SvNonAttributedModulesSlots - GetFreeSlotsFunctionalModules(); }
 };
 
 struct CAccountSharedData

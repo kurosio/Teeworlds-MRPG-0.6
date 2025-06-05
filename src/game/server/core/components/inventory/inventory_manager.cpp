@@ -331,14 +331,18 @@ bool CInventoryManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
 	// Equip item
 	if(PPSTR(pCmd, "TOGGLE_EQUIP") == 0)
 	{
+		bool Succesful = false;
 		auto* pPlayerItem = pPlayer->GetItem(Extra1);
 		if(pPlayerItem->IsEquipped())
-			pPlayerItem->UnEquip();
+			Succesful = pPlayerItem->UnEquip();
 		else
-			pPlayerItem->Equip();
+			Succesful = pPlayerItem->Equip();
 
-		pPlayerItem->Save();
-		pPlayer->m_VotesData.UpdateCurrentVotes();
+		if(Succesful)
+		{
+			pPlayerItem->Save();
+			pPlayer->m_VotesData.UpdateCurrentVotes();
+		}
 		return true;
 	}
 
@@ -636,84 +640,61 @@ void CInventoryManager::ShowPlayerModules(CPlayer* pPlayer)
 
 	// initialize variables
 	const auto ClientID = pPlayer->GetCID();
-	const auto& PlayerItems = CPlayerItem::Data()[ClientID];
-	const int MaxAttributedModulesSlots = g_Config.m_SvAttributedModulesSlots;
-	const int MaxFunctionalModulesSlots = g_Config.m_SvNonAttributedModulesSlots;
-	auto functionalModules = PlayerItems | std::views::filter([](const auto& pair)
-	{
-		return pair.second.Info()->IsEquipmentModules() && !pair.second.Info()->HasAttributes() && pair.second.HasItem();
-	});
-	auto statModules = PlayerItems | std::views::filter([](const auto& pair)
-	{
-		return pair.second.Info()->IsEquipmentModules() && pair.second.Info()->HasAttributes() && pair.second.HasItem();
-	});
+	const int MaxAttrSlots = g_Config.m_SvAttributedModulesSlots;
+	const int MaxFuncSlots = g_Config.m_SvNonAttributedModulesSlots;
+	const bool SimpleView = pPlayer->GetItem(itShowOnlyFunctionModules)->GetSettings() > 0;
 
 	// settings
-	const auto* pShowOnlyFunc = pPlayer->GetItem(itShowOnlyFunctionModules);
-	bool IsShowOnlyFunctionEnabled = pShowOnlyFunc->GetSettings() > 0;
-	const char* pStatusShowFunc = IsShowOnlyFunctionEnabled ? "Enabled" : "Disabled";
-	VoteWrapper VModulesSettings(ClientID, VWF_OPEN, "\u2699 Modules settings");
-	VModulesSettings.AddOption("TOGGLE_SETTING", pShowOnlyFunc->GetID(), "[{}] {}", pStatusShowFunc, pShowOnlyFunc->Info()->GetName());
+	VoteWrapper VSettings(ClientID, VWF_OPEN, "\u2699 Modules settings");
+	VSettings.AddOption("TOGGLE_SETTING", itShowOnlyFunctionModules, "[{}] {}",
+		SimpleView ? "Enabled" : "Disabled", pPlayer->GetItem(itShowOnlyFunctionModules)->Info()->GetName());
 	VoteWrapper::AddEmptyline(ClientID);
 
-	// collected boost
-	int collectedNum = 0;
+	// add menus
+	int equippedFunc = 0;
+	int equippedStats = 0;
 	VoteWrapper VCollected(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_STRICT_BOLD, "\u2604 Active Effects Summary");
-	for(const auto& [ItemID, PlayerItem] : functionalModules)
+	VoteWrapper::AddEmptyline(ClientID);
+	VoteWrapper VFunctional(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE, "\u2699 Modules: Functional ({} of {})",
+		pPlayer->Account()->GetUsedSlotsFunctionalModules(), MaxFuncSlots);
+	VoteWrapper::AddEmptyline(ClientID);
+	VoteWrapper VStats(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE, "\u2696 Modules: Stats ({} of {})", pPlayer->Account()->GetUsedSlotsAttributedModules(), MaxAttrSlots);
+	for(const auto& [ItemID, Item] : CPlayerItem::Data()[ClientID])
 	{
-		if(PlayerItem.IsEquipped())
+		const auto* pInfo = Item.Info();
+		if(!pInfo->IsEquipmentModules() || !Item.HasItem())
+			continue;
+
+		auto SortPriority = Item.IsEquipped() ? 1 : 0;
+		const bool HasAttrs = pInfo->HasAttributes();
+		VoteWrapper& TargetList = HasAttrs ? VStats : VFunctional;
+		const auto Description = HasAttrs ? Item.GetStringAttributesInfo(pPlayer) : pInfo->GetDescription();
+		const char* EquippedFlag = Item.IsEquipped() ? "✔ " : "";
+		if(SimpleView)
+			TargetList.AddOption("TOGGLE_EQUIP", ItemID, "{}{}", EquippedFlag, Description).SetSortPriority(SortPriority);
+		else
+			TargetList.AddOption("TOGGLE_EQUIP", ItemID, "{}{}", EquippedFlag, pInfo->GetName()).SetSortPriority(SortPriority);
+
+		if(Item.IsEquipped())
 		{
-			collectedNum++;
-			VCollected.Add("\u2022 {}", PlayerItem.Info()->GetDescription());
+			SortPriority = !HasAttrs ? 1 : 0;
+			VCollected.Add("\u2022 {}", Description).SetSortPriority(SortPriority);
+			HasAttrs ? equippedStats++ : equippedFunc++;
 		}
 	}
-	for(; collectedNum < MaxFunctionalModulesSlots; collectedNum++)
-		VCollected.Add("\u2022");
 
-	collectedNum = 0;
-	for(const auto& [ItemID, PlayerItem] : statModules)
+	// append spaces line
+	for(int i = equippedFunc; i < MaxFuncSlots; ++i) VCollected.Add("\u2022");
+	for(int i = equippedStats; i < MaxAttrSlots; ++i) VCollected.Add("\u2022");
+
+	// sorting all modules groups
+	auto Sorter = [](const CVoteOption& o1, const CVoteOption& o2)
 	{
-		if(PlayerItem.IsEquipped())
-		{
-			collectedNum++;
-			VCollected.Add("\u2022 {}", PlayerItem.GetStringAttributesInfo(pPlayer));
-		}
-	}
-	for(; collectedNum < MaxAttributedModulesSlots; collectedNum++)
-		VCollected.Add("\u2022");
-
-	VoteWrapper::AddEmptyline(ClientID);
-
-	// modules functional
-	const int CurrentFunctionalModulesSlots = MaxFunctionalModulesSlots - pPlayer->Account()->GetFreeSlotsFunctionalModules();
-	VoteWrapper VFunctional(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE,
-		"\u2699 Modules: Functional ({} of {})", CurrentFunctionalModulesSlots, MaxFunctionalModulesSlots);
-	for(const auto& [ItemID, PlayerItem] : functionalModules)
-	{
-		const auto* pItemInfo = PlayerItem.Info();
-		const auto EquippedFlagStr = PlayerItem.IsEquipped() ? "✔ " : "";
-		if(IsShowOnlyFunctionEnabled)
-			VFunctional.AddOption("TOGGLE_EQUIP", pItemInfo->GetID(), "{}{}", EquippedFlagStr, pItemInfo->GetDescription());
-		else
-			VFunctional.AddOption("TOGGLE_EQUIP", pItemInfo->GetID(), "{}{} * {}", EquippedFlagStr, pItemInfo->GetName(), pItemInfo->GetDescription());
-	}
-	if(VFunctional.IsEmpty())
-		VFunctional.Add("No modules available");
-	VoteWrapper::AddEmptyline(ClientID);
-
-	// modules stats
-	const int CurrentAttributedModulesSlots = MaxAttributedModulesSlots - pPlayer->Account()->GetFreeSlotsAttributedModules();
-	VoteWrapper VStats(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "\u2696 Modules: Stats ({} of {})",
-		CurrentAttributedModulesSlots, MaxAttributedModulesSlots);
-	for(const auto& [ItemID, PlayerItem] : statModules)
-	{
-		const auto* pItemInfo = PlayerItem.Info();
-		const auto EquippedFlagStr = PlayerItem.IsEquipped() ? "✔ " : "";
-		if(IsShowOnlyFunctionEnabled)
-			VStats.AddOption("TOGGLE_EQUIP", pItemInfo->GetID(), "{}{}", EquippedFlagStr, PlayerItem.GetStringAttributesInfo(pPlayer));
-		else
-			VStats.AddOption("TOGGLE_EQUIP", pItemInfo->GetID(), "{}{} * {}", EquippedFlagStr, PlayerItem.GetStringAttributesInfo(pPlayer), pItemInfo->GetName());
-	}
-	if(VStats.IsEmpty())
-		VStats.Add("No modules available");
+		if(o1.m_SortPriority != o2.m_SortPriority)
+			return o1.m_SortPriority > o2.m_SortPriority;
+		return std::string_view(o1.m_aDescription) < std::string_view(o2.m_aDescription);
+	};
+	VCollected.Sort(Sorter);
+	VFunctional.Sort(Sorter);
+	VStats.Sort(Sorter);
 }

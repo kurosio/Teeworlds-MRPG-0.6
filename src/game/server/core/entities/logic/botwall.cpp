@@ -36,30 +36,38 @@ void CBotWall::Tick()
 {
 	m_Active = false;
 
+	const bool flagCheckMobBots = (m_Flag & WALLLINEFLAG_MOB_BOT);
+	const bool flagCheckNpcBots = (m_Flag & WALLLINEFLAG_NPC_BOT);
+	const bool flagCheckQuestBots = (m_Flag & WALLLINEFLAG_QUEST_BOT);
 	for(auto* pChar = (CCharacter*)GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); pChar; pChar = (CCharacter*)pChar->TypeNext())
 	{
-		if(!pChar->GetPlayer()->IsBot())
+		auto* pPlayer = pChar->GetPlayer();
+		if(!pPlayer->IsBot())
 			continue;
 
-		const auto pPlayerBot = static_cast<CPlayerBot*>(pChar->GetPlayer());
-		int BotType = pPlayerBot->GetBotType();
-		if((m_Flag & WALLLINEFLAG_MOB_BOT) && (BotType == TYPE_BOT_MOB))
+		auto* pPlayerBot = dynamic_cast<CPlayerBot*>(pPlayer);
+		const int BotType = pPlayerBot->GetBotType();
+		switch(BotType)
 		{
-			HitCharacter(pChar);
-			continue;
-		}
+			case TYPE_BOT_MOB:
+				if(flagCheckMobBots)
+					HitCharacter(pChar);
+				break;
 
-		int MobID = pPlayerBot->GetBotMobID();
-		if((m_Flag & WALLLINEFLAG_NPC_BOT) && (BotType == TYPE_BOT_NPC) && (NpcBotInfo::ms_aNpcBot[MobID].m_Function != FUNCTION_NPC_GUARDIAN))
-		{
-			HitCharacter(pChar);
-			continue;
-		}
+			case TYPE_BOT_NPC:
+				if(flagCheckNpcBots)
+				{
+					const int MobID = pPlayerBot->GetBotMobID();
+					if(NpcBotInfo::ms_aNpcBot[MobID].m_Function != FUNCTION_NPC_GUARDIAN)
+						HitCharacter(pChar);
+				}
+				break;
 
-		if((m_Flag & WALLLINEFLAG_QUEST_BOT) && (BotType == TYPE_BOT_QUEST))
-		{
-			HitCharacter(pChar);
-			continue;
+			case TYPE_BOT_QUEST:
+				if(flagCheckQuestBots)
+					HitCharacter(pChar);
+				break;
+			default: break;
 		}
 	}
 }
