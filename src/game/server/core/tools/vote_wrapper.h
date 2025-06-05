@@ -101,6 +101,12 @@ class CVoteGroup
 	void AddBackpageImpl();
 	void AddItemValueImpl(int ItemID);
 
+	template<typename F> requires std::predicate<F, const CVoteOption&, const CVoteOption&>
+	void Sort(F&& Comparator)
+	{
+		if(!m_vpVotelist.empty())
+			std::sort(m_vpVotelist.begin() + (m_HasTitle ? 1 : 0), m_vpVotelist.end(), std::forward<F>(Comparator));
+	}
 };
 
 #define FMT_LOCALIZE_STR(clientid, text, args) fmt_localize(clientid, text, args).c_str()
@@ -296,6 +302,14 @@ public:
 		const auto pVoteGroup = new CVoteGroup(ClientID, VWF_DISABLED);
 		pVoteGroup->AddItemValueImpl(ItemID);
 		m_pData[ClientID].push_back(pVoteGroup);
+	}
+
+	template<typename F> requires std::predicate<F, const CVoteOption&, const CVoteOption&>
+	VoteWrapper& Sort(F&& Comparator)
+	{
+		if(m_pGroup)
+			m_pGroup->Sort(std::forward<F>(Comparator));
+		return *this;
 	}
 
 	static void RebuildVotes(int ClientID);
