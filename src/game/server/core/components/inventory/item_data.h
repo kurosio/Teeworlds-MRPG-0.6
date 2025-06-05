@@ -20,7 +20,7 @@ protected:
 
 public:
 	CItem() = default;
-	CItem(ItemIdentifier ID, int Value = 0, int Enchant = 0, int Durability = 0, int Settings = 0) :
+	CItem(ItemIdentifier ID, int Value = 0, int Enchant = 0, int Durability = 100, int Settings = 0) :
 		m_ID(ID), m_Value(Value), m_Enchant(Enchant), m_Durability(Durability), m_Settings(Settings)
 	{
 	}

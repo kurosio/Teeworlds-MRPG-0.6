@@ -497,7 +497,7 @@ bool CPlayerItem::Save()
 	int itemDurability = m_Durability;
 
 	auto pResCheck = Database->Prepare<DB::SELECT>("ItemID, UserID", "tw_accounts_items", "WHERE ItemID = '{}' AND UserID = '{}'", itemId, userId);
-	pResCheck->AtExecute([itemId, userId, itemValue, itemSettings, itemEnchant, itemDurability](ResultPtr pRes)
+	pResCheck->AtExecute([this, itemId, userId, itemValue, itemSettings, itemEnchant, itemDurability](ResultPtr pRes)
 	{
 		if(!pRes)
 			return;
@@ -521,8 +521,9 @@ bool CPlayerItem::Save()
 		// insert item
 		if(itemValue)
 		{
-			Database->Execute<DB::INSERT>("tw_accounts_items", "(ItemID, UserID, Value, Settings, Enchant) VALUES ('{}', '{}', '{}', '{}', '{}')",
-				itemId, userId, itemValue, itemSettings, itemEnchant);
+			m_Durability = 100; // TODO: need fix it
+			Database->Execute<DB::INSERT>("tw_accounts_items", "(ItemID, UserID, Value, Settings, Enchant, Durability) VALUES ('{}', '{}', '{}', '{}', '{}', '{}')",
+				itemId, userId, itemValue, itemSettings, itemEnchant, m_Durability);
 			return;
 		}
 
