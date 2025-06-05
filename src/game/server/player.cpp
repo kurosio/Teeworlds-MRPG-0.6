@@ -815,7 +815,7 @@ int CPlayer::GetTotalRawAttributeValue(AttributeIdentifier ID) const
 	}
 
 	// lamba for counting by equipment slots
-	auto addItemEnchantStats = [&](const std::optional<int>& ItemIdOpt)
+	auto addItemEnchantStats = [&](const std::optional<int>& ItemIdOpt) mutable
 	{
 		if(ItemIdOpt && vPlayerItems.contains(*ItemIdOpt))
 		{

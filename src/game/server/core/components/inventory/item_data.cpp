@@ -521,9 +521,8 @@ bool CPlayerItem::Save()
 		// insert item
 		if(itemValue)
 		{
-			constexpr int newDurability = 100;
-			Database->Execute<DB::INSERT>("tw_accounts_items", "(ItemID, UserID, Value, Settings, Enchant, Durability) VALUES ('{}', '{}', '{}', '{}', '{}', '{}')",
-				itemId, userId, itemValue, itemSettings, itemEnchant, newDurability);
+			Database->Execute<DB::INSERT>("tw_accounts_items", "(ItemID, UserID, Value, Settings, Enchant) VALUES ('{}', '{}', '{}', '{}', '{}')",
+				itemId, userId, itemValue, itemSettings, itemEnchant);
 			return;
 		}
 
