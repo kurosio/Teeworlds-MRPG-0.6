@@ -51,8 +51,9 @@ public:
 	char m_aDescription[VOTE_DESC_LENGTH] {};
 	char m_aCommand[VOTE_CMD_LENGTH] {};
 	int m_Depth {};
-	int m_Extra1 { -1 };
-	int m_Extra2 { -1 };
+	int m_Extra1 { NOPE };
+	int m_Extra2 { NOPE };
+	int m_SortPriority { NOPE };
 	bool m_Line { false };
 	bool m_Title { false };
 	VoteOptionCallback m_Callback {};
@@ -106,6 +107,12 @@ class CVoteGroup
 	{
 		if(!m_vpVotelist.empty())
 			std::sort(m_vpVotelist.begin() + (m_HasTitle ? 1 : 0), m_vpVotelist.end(), std::forward<F>(Comparator));
+	}
+
+	void SetLastVoteSortPriority(int Priority)
+	{
+		if(!m_vpVotelist.empty())
+			m_vpVotelist.back().m_SortPriority = Priority;
 	}
 };
 
@@ -309,6 +316,13 @@ public:
 	{
 		if(m_pGroup)
 			m_pGroup->Sort(std::forward<F>(Comparator));
+		return *this;
+	}
+
+	VoteWrapper& SetSortPriority(int Priority) noexcept
+	{
+		if(m_pGroup)
+			m_pGroup->SetLastVoteSortPriority(Priority);
 		return *this;
 	}
 
