@@ -170,8 +170,8 @@ public:
 	int GetTotalDamageByWeapon(int Weapon) const;
 
 private:
-	void TryActivateRingChainLightning(std::optional<int> DamageOpt);
-	int CalculateRingChainLightningCooldown() const;
+	void TryActivateChainLightning(int EquippedItemId, std::optional<int> DamageOpt);
+	int CalculateChainLightningCooldown() const;
 };
 
 #endif

@@ -255,7 +255,7 @@ void CCharacter::FireWeapon()
 	}
 
 	// ring giving lightning
-	TryActivateRingChainLightning(std::nullopt);
+	TryActivateChainLightning(itRingGivingLightning, std::nullopt);
 
 	// fire by weapon
 	const vec2 MouseTarget = vec2(m_LatestInput.m_TargetX, m_LatestInput.m_TargetY);
@@ -1243,7 +1243,7 @@ bool CCharacter::TakeDamage(vec2 Force, int Damage, int FromCID, int Weapon, int
 	if(pFrom && pFrom->GetCharacter() && FromCID != m_pPlayer->GetCID())
 	{
 		// try activate ring giving lightning
-		TryActivateRingChainLightning(Damage);
+		TryActivateChainLightning(itRingReturnLightning, Damage);
 
 		// vampirism replenish your health
 		const auto ChanceVampirism = m_pPlayer->GetTotalAttributeChance(AttributeIdentifier::Vampirism).value_or(0.f);
@@ -1951,22 +1951,22 @@ bool CCharacter::StartConversation(CPlayerBot* pTarget) const
 	return false;
 }
 
-void CCharacter::TryActivateRingChainLightning(std::optional<int> DamageOpt)
+void CCharacter::TryActivateChainLightning(int ByItemId, std::optional<int> DamageOpt)
 {
-	if(m_LastRingChainLightningAttack > Server()->Tick())
+	if(m_LastRingChainLightningAttack > Server()->Tick() || !CItemDescription::Data().contains(ByItemId))
 		return;
 
-	if(m_pPlayer->GetItem(itRingGivingLightning)->IsEquipped() || m_pPlayer->GetItem(itRingPerfectLightning)->IsEquipped())
+	if(m_pPlayer->GetItem(ByItemId)->IsEquipped() || m_pPlayer->GetItem(itRingPerfectLightning)->IsEquipped())
 	{
 		const auto totalDamage = DamageOpt ? *DamageOpt : m_pPlayer->GetTotalAttributeValue(AttributeIdentifier::DMG);
 		const auto totalChainDamage = translate_to_percent_rest(totalDamage, 20);
 
 		new CEntityTeslaSerpent(&GS()->m_World, m_ClientID, m_Pos, random_range_pos(vec2 {}, 128.f), totalChainDamage, 500.f, 8, 0.7f);
-		m_LastRingChainLightningAttack = Server()->Tick() + CalculateRingChainLightningCooldown();
+		m_LastRingChainLightningAttack = Server()->Tick() + CalculateChainLightningCooldown();
 	}
 }
 
-int CCharacter::CalculateRingChainLightningCooldown() const
+int CCharacter::CalculateChainLightningCooldown() const
 {
 	if(m_pPlayer->GetItem(itRingPerfectLightning)->IsEquipped())
 		return (1 + rand() % 2) * Server()->TickSpeed();
