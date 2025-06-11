@@ -386,6 +386,16 @@ void CCharacterBotAI::Move()
 	if(m_pBotPlayer->m_PathHandle.vPath.empty())
 		return;
 
+	// auto enter to teleport confirm tile (door)
+	if(m_pTilesHandler->IsActive(TILE_TELE_FROM_CONFIRM))
+	{
+		ResetHook();
+		m_Core.m_ActiveWeapon = WEAPON_HAMMER;
+		m_Input.m_Fire++;
+		m_LatestInput.m_Fire++;
+		return;
+	}
+
 	// target pos
 	vec2 TargetPos = m_pBotPlayer->m_TargetPos.value_or(m_pBotPlayer->m_PathHandle.vPath.back());
 

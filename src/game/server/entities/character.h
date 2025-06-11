@@ -29,7 +29,6 @@ class CCharacter : public CEntity
 	MACRO_ALLOC_POOL_ID()
 
 	class CPlayer* m_pPlayer {};
-	CTileHandler* m_pTilesHandler {};
 
 	int m_LastWeapon {};
 	int m_QueuedWeapon {};
@@ -69,6 +68,7 @@ class CCharacter : public CEntity
 	void HandleTilesImpl(int Index);
 
 protected:
+	CTileHandler* m_pTilesHandler {};
 	int m_LastDamageByClient {};
 	bool m_Alive {};
 	int m_Health {};
