@@ -354,6 +354,7 @@ bool CPlayerItem::UnEquip()
 
 bool CPlayerItem::Use(int Value)
 {
+	// test
 	Value = Info()->IsType(ItemType::UseSingle) ? 1 : minimum(Value, m_Value);
 	if(Value <= 0)
 		return false;
