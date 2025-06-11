@@ -393,7 +393,6 @@ void CCharacterBotAI::Move()
 		m_Core.m_ActiveWeapon = WEAPON_HAMMER;
 		m_Input.m_Fire++;
 		m_LatestInput.m_Fire++;
-		return;
 	}
 
 	// target pos
