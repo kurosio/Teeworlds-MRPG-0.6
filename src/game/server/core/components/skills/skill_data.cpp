@@ -90,12 +90,6 @@ bool CSkill::Use()
 	const vec2 PlayerPosition = pChar->GetPos();
 	auto& pEntSkillPtr = m_apEntSkillPtrs[m_ID];
 
-	// Attack teleport
-	if(IsActivated(pChar, ManaCost, SKILL_ATTACK_TELEPORT))
-	{
-		new CAttackTeleport(&GS()->m_World, PlayerPosition, pPlayer, GetBonus());
-		return true;
-	}
 
 	// Cure I
 	if(IsActivated(pChar, ManaCost, SKILL_CURE))
@@ -167,7 +161,9 @@ bool CSkill::Use()
 		return true;
 	}
 
-	// Provoke
+	//*
+	//* TANK
+	//*
 	if(IsActivated(pChar, ManaCost, SKILL_PROVOKE))
 	{
 		// provoke mobs
@@ -232,13 +228,6 @@ bool CSkill::Use()
 		return true;
 	}
 
-	if(IsActivated(pChar, ManaCost, SKILL_HEART_TURRET, SKILL_USAGE_RESET))
-	{
-		const auto UpgradeValue = (10 + GetBonus()) * Server()->TickSpeed();
-		GS()->EntityManager()->HealthTurret(ClientID, PlayerPosition, ManaCost, UpgradeValue, 2 * Server()->TickSpeed(), &pEntSkillPtr);
-		GS()->CreateSound(PlayerPosition, SOUND_SKILL_START);
-		return true;
-	}
 
 	if(IsActivated(pChar, ManaCost, SKILL_LAST_STAND, SKILL_USAGE_TOGGLE))
 	{
@@ -248,20 +237,13 @@ bool CSkill::Use()
 		return true;
 	}
 
-	if(IsActivated(pChar, ManaCost, SKILL_MAGIC_BOW, SKILL_USAGE_TOGGLE))
-	{
-		const auto Shots = 1 + GetBonus();
-		const auto Damage = maximum(1, pPlayer->GetTotalAttributeValue(AttributeIdentifier::DMG));
-		GS()->EntityManager()->Bow(ClientID, Damage, Shots, 180.f, 8, &pEntSkillPtr);
-		GS()->CreateSound(PlayerPosition, SOUND_SKILL_START);
-		return true;
-	}
 
-	if(IsActivated(pChar, ManaCost, SKILL_HEALING_AURA, SKILL_USAGE_RESET))
+	//*
+	//* DPS
+	//*
+	if(IsActivated(pChar, ManaCost, SKILL_ATTACK_TELEPORT))
 	{
-		const auto UpgradedValue = minimum(320.f + GetBonus(), 400.f);
-		GS()->EntityManager()->HealingAura(ClientID, PlayerPosition, UpgradedValue, 10 * Server()->TickSpeed(), ManaCost);
-		GS()->CreateSound(PlayerPosition, SOUND_SKILL_START);
+		new CAttackTeleport(&GS()->m_World, PlayerPosition, pPlayer, GetBonus());
 		return true;
 	}
 
@@ -275,8 +257,54 @@ bool CSkill::Use()
 		return true;
 	}
 
+
+	//*
+	//* HEALER
+	//*
+	if(IsActivated(pChar, ManaCost, SKILL_MAGIC_BOW, SKILL_USAGE_TOGGLE))
+	{
+		const auto Shots = 1 + GetBonus();
+		const auto Damage = maximum(1, pPlayer->GetTotalAttributeValue(AttributeIdentifier::DMG));
+		GS()->EntityManager()->Bow(ClientID, Damage, Shots, 180.f, 8, &pEntSkillPtr);
+		GS()->CreateSound(PlayerPosition, SOUND_SKILL_START);
+		return true;
+	}
+
+	if(IsActivated(pChar, ManaCost, SKILL_HEART_TURRET, SKILL_USAGE_RESET))
+	{
+		// initialize
+		const auto UpgradeValue = (10 + GetBonus()) * Server()->TickSpeed();
+		const auto NumCastClicked = 5;
+		auto FuncExecuteHealingRift = [this, UpgradeValue, ManaCost](int FinalClientID, vec2 FinalPosition, EntGroupWeakPtr* pFinalSkillTracker)
+		{
+			GS()->EntityManager()->HealthTurret(FinalClientID, FinalPosition, ManaCost, UpgradeValue, 2 * Server()->TickSpeed(), pFinalSkillTracker);
+		};
+
+		// start casting
+		GS()->EntityManager()->StartUniversalCast(ClientID, PlayerPosition, NumCastClicked, FuncExecuteHealingRift, &pEntSkillPtr);
+		GS()->CreateSound(PlayerPosition, SOUND_SKILL_START);
+		return true;
+	}
+
+	if(IsActivated(pChar, ManaCost, SKILL_HEALING_AURA, SKILL_USAGE_RESET))
+	{
+		// initialize
+		const auto UpgradeValue = minimum(320.f + GetBonus(), 400.f);
+		const auto NumCastClicked = 7;
+		auto FuncExecuteHealingAura = [this, UpgradeValue, ManaCost](int FinalClientID, vec2 FinalPosition, EntGroupWeakPtr* pFinalSkillTracker)
+		{
+			GS()->EntityManager()->HealingAura(FinalClientID, FinalPosition, UpgradeValue, 10 * Server()->TickSpeed(), ManaCost);
+		};
+
+		// start casting
+		GS()->EntityManager()->StartUniversalCast(ClientID, PlayerPosition, NumCastClicked, FuncExecuteHealingAura, nullptr);
+		GS()->CreateSound(PlayerPosition, SOUND_SKILL_START);
+		return true;
+	}
+
 	if(IsActivated(pChar, ManaCost, SKILL_HEALING_RIFT, SKILL_USAGE_RESET))
 	{
+		// initialize
 		const auto NumCastClicked = 20 - GetBonus();
 		const auto RiftRadius = 120.f;
 		const auto HealRadius = 320.f;
@@ -286,8 +314,6 @@ bool CSkill::Use()
 		const auto HealingPerPulse = ManaCost;
 		const auto VisOuter = 10;
 		const auto VisInner = 6;
-
-		// prepare lambda casting
 		auto FuncExecuteHealingRift = [this, RiftRadius, HealRadius, Lifetime, SerpentSpawnInterval, NumSerpentsPerSpawn, HealingPerPulse,
 			VisOuter, VisInner](int FinalClientID, vec2 FinalPosition, EntGroupWeakPtr* pFinalSkillTracker)
 		{
@@ -297,9 +323,9 @@ bool CSkill::Use()
 
 		// start casting
 		GS()->EntityManager()->StartUniversalCast(ClientID, PlayerPosition, NumCastClicked, FuncExecuteHealingRift, &pEntSkillPtr);
+		GS()->CreateSound(PlayerPosition, SOUND_SKILL_START);
 		return true;
 	}
-
 
 	return false;
 }
