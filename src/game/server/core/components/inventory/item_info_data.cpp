@@ -90,6 +90,7 @@ void CItemDescription::InitData(const DBSet& GroupSet, const DBSet& TypeSet)
 			m_PotionContext = Potion;
 		}
 
+		// try to initialize apply bonuses item
 		if(const auto& pBonusJson = pJson["bonus"]; !pBonusJson.is_null())
 		{
 			BonusesContext Bonus;
@@ -102,12 +103,16 @@ void CItemDescription::InitData(const DBSet& GroupSet, const DBSet& TypeSet)
 		}
 
 		// try to initialize random box
-		for(auto& p : pJson["random_box"])
+		if(const auto& pRandomBoxJson = pJson["random_box"]; !pRandomBoxJson.is_null())
 		{
-			const auto ItemID = p.value("item_id", -1);
-			const auto Value = p.value("value", 1);
-			const auto Chance = p.value("chance", 100.0f);
-			m_RandomBox.Add(ItemID, Value, Chance);
+			for(auto& p : pRandomBoxJson)
+			{
+				const auto ItemID = p.value("item_id", -1);
+				const auto Value = p.value("value", 1);
+				const auto Chance = p.value("chance", 100.0f);
+				m_RandomBox.Add(ItemID, Value, Chance);
+			}
+			m_RandomBox.NormalizeChances();
 		}
 	});
 }

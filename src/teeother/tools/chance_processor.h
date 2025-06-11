@@ -23,7 +23,7 @@ public:
 
 	void addElement(const T& Element, double Chance)
 	{
-		if(Chance <= 0.0)
+		if(Chance <= 0.0) [[unlikely]]
 			return;
 
 		m_vElements.push_back({ Element, Chance });
@@ -65,18 +65,24 @@ public:
 
 	void normalizeChances()
 	{
-		if(m_TotalChance <= 0.0 || m_vElements.empty())
+		if(m_vElements.empty() || m_TotalChance <= 0.0) [[unlikely]]
+		{
+			m_TotalChance = 0.0;
 			return;
+		}
 
-		for(auto& e : m_vElements)
-			e.Chance = (e.Chance / m_TotalChance) * 100.0;
+		const double scale = 100.0 / m_TotalChance;
+		std::ranges::for_each(m_vElements, [scale](auto& element)
+		{
+			element.Chance *= scale;
+		});
 
-		m_TotalChance = m_vElements.empty() ? 0.0 : 100.0;
+		m_TotalChance = 100.0;
 	}
 
 	void setEqualChance(double newChance)
 	{
-		if(newChance <= 0.0 || m_vElements.empty())
+		if(newChance <= 0.0 || m_vElements.empty()) [[unlikely]]
 			return;
 
 		for(auto& e : m_vElements)
@@ -87,7 +93,7 @@ public:
 
 	T getRandomElement() const
 	{
-		if(m_vElements.empty())
+		if(m_vElements.empty()) [[unlikely]]
 			return {};
 
 		// using thread_local for not create this every execute
@@ -109,7 +115,7 @@ public:
 
 	void sortElementsByChance()
 	{
-		if(m_vElements.empty())
+		if(m_vElements.empty()) [[unlikely]]
 			return;
 
 		std::sort(m_vElements.begin(), m_vElements.end(), [](const ElementWithChance& a, const ElementWithChance& b) {

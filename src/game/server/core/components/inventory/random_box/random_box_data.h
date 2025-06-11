@@ -27,6 +27,7 @@ public:
 // random box
 class CRandomBox
 {
+	bool m_NormalizedChances {};
 	ChanceProcessor<CRandomItem> m_vItems {};
 
 public:
@@ -35,8 +36,15 @@ public:
 	void Add(int ItemID, int Value, float Chance)
 	{
 		m_vItems.addElement(CRandomItem(ItemID, Value), Chance);
-		m_vItems.normalizeChances();
 		m_vItems.sortElementsByChance();
+	}
+	void NormalizeChances()
+	{
+		if(m_NormalizedChances || m_vItems.isEmpty())
+			return;
+
+		m_vItems.normalizeChances();
+		m_NormalizedChances = true;
 	}
 	bool Start(CPlayer* pPlayer, int Seconds, CPlayerItem* pPlayerUsesItem = nullptr, int UseValue = 1);
 	bool IsEmpty() const { return m_vItems.isEmpty(); }
