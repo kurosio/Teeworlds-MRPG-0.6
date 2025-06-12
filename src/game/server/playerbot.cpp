@@ -321,7 +321,7 @@ int64_t CPlayerBot::GetMaskVisibleForClients() const
 	int64_t Mask = 0;
 	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
-		if(IsActiveForClient(i))
+		if(IsActiveForClient(i) != ESnappingPriority::None)
 			Mask |= CmaskOne(i);
 	}
 
@@ -332,22 +332,22 @@ ESnappingPriority CPlayerBot::IsActiveForClient(int ClientID) const
 {
 	CPlayer* pSnappingPlayer = GS()->GetPlayer(ClientID);
 	if(ClientID < 0 || ClientID >= MAX_PLAYERS || !pSnappingPlayer)
-		return SNAPPING_PRIORITY_NONE;
+		return ESnappingPriority::None;
 
 	if(m_BotType == TYPE_BOT_QUEST)
 	{
 		// is quest not accept
 		const auto QuestID = QuestBotInfo::ms_aQuestBot[m_MobID].m_QuestID;
 		if(pSnappingPlayer->GetQuest(QuestID)->GetState() != QuestState::Accepted)
-			return SNAPPING_PRIORITY_NONE;
+			return ESnappingPriority::None;
 
 		// is step pos not equal current step pos
 		if((QuestBotInfo::ms_aQuestBot[m_MobID].m_StepPos != pSnappingPlayer->GetQuest(QuestID)->GetStepPos()))
-			return SNAPPING_PRIORITY_NONE;
+			return ESnappingPriority::None;
 
 		// is step pos completed
 		if(pSnappingPlayer->GetQuest(QuestID)->GetStepByMob(GetBotMobID())->m_StepComplete)
-			return SNAPPING_PRIORITY_NONE;
+			return ESnappingPriority::None;
 	}
 
 	if(m_BotType == TYPE_BOT_NPC)
@@ -356,20 +356,20 @@ ESnappingPriority CPlayerBot::IsActiveForClient(int ClientID) const
 
 		// always show guardian and nurse
 		if(FunctionNPC == FUNCTION_NPC_GUARDIAN || FunctionNPC == FUNCTION_NPC_NURSE)
-			return SNAPPING_PRIORITY_HIGH;
+			return ESnappingPriority::High;
 
 		// does not show npc what active by quest
 		const auto ActiveByQuest = DataBotInfo::ms_aDataBot[m_BotID].m_aActiveByQuest[ClientID];
 		if(ActiveByQuest)
-			return SNAPPING_PRIORITY_NONE;
+			return ESnappingPriority::None;
 
 		// is active or finished quest show only character
 		const int GivesQuest = GS()->Core()->BotManager()->GetQuestNPC(m_MobID);
 		if(FunctionNPC == FUNCTION_NPC_GIVE_QUEST && pSnappingPlayer->GetQuest(GivesQuest)->GetState() != QuestState::NoAccepted)
-			return SNAPPING_PRIORITY_LOWER;
+			return ESnappingPriority::Lower;
 	}
 
-	return SNAPPING_PRIORITY_HIGH;
+	return ESnappingPriority::High;
 }
 
 void CPlayerBot::HandleTuningParams()
@@ -390,7 +390,7 @@ void CPlayerBot::Snap(int SnappingClient)
 		return;
 
 	// Check if the game is active or if it is active for the snapping client
-	if(!IsActive() || !IsActiveForClient(SnappingClient))
+	if(!IsActive() || IsActiveForClient(SnappingClient) == ESnappingPriority::None)
 		return;
 
 	CNetObj_ClientInfo* pClientInfo = static_cast<CNetObj_ClientInfo*>(Server()->SnapNewItem(NETOBJTYPE_CLIENTINFO, ID, sizeof(CNetObj_ClientInfo)));

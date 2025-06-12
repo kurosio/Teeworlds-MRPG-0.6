@@ -332,7 +332,7 @@ void CGameWorld::UpdatePlayerMaps()
 			}
 
 			// Check if the bot player is not visible for the client
-			if(!pBotPlayer->IsActiveForClient(ClientID))
+			if(pBotPlayer->IsActiveForClient(ClientID) == ESnappingPriority::None)
 			{
 				// Set the distance to a very large value to indicate that the bot is not visible
 				Dist[j].first = 1e10;

@@ -15,11 +15,11 @@ class CMultipleOrbite : public CEntity
 		int m_Orbitetype;
 		bool m_Projectile;
 	};
-	std::vector< SnapItem > m_Items{};
+	std::vector<SnapItem> m_Items {};
 	CEntity* m_pParent {};
 
 public:
-	CMultipleOrbite(CGameWorld *pGameWorld, CEntity* pParent);
+	CMultipleOrbite(CGameWorld* pGameWorld, CEntity* pParents);
 	~CMultipleOrbite() override;
 
 	void Snap(int SnappingClient) override;
@@ -30,7 +30,9 @@ public:
 
 private:
 	vec2 UtilityOrbitePos(int Orbitetype, int Iter) const;
-
+	vec2 RoseCurvePos(float Angle, float Time) const;
+	vec2 HypotrochoidPos(float Angle, float Time) const;
 };
+
 
 #endif

@@ -1,4 +1,4 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
+﻿/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "multiple_orbite.h"
 
@@ -36,6 +36,9 @@ void CMultipleOrbite::Add(bool Projectile, int Value, int Type, int Subtype, int
 
 void CMultipleOrbite::Remove(bool Projectile, int Value, int Type, int Subtype, int Orbitetype)
 {
+	if(m_Items.empty())
+		return;
+
 	auto it = std::remove_if(m_Items.begin(), m_Items.end(),
 		[&](const SnapItem& item)
 	{
@@ -44,16 +47,19 @@ void CMultipleOrbite::Remove(bool Projectile, int Value, int Type, int Subtype, 
 			item.m_Projectile == Projectile &&
 			item.m_Orbitetype == Orbitetype;
 	});
+	if(it == m_Items.end())
+		return;
 
 	int Count = std::distance(it, m_Items.end());
-	Count = minimum(Count, Value);
+	Count = std::min(Count, Value);
 
 	// free snap ids
-	for(auto itDel = m_Items.end() - Count; itDel != m_Items.end(); ++itDel)
+	auto LastIt = m_Items.end();
+	for(auto itDel = LastIt - Count; itDel != LastIt; ++itDel)
 		Server()->SnapFreeID(itDel->m_ID);
 
 	// erase item's
-	m_Items.erase(it, it + Count);
+	m_Items.erase(LastIt - Count, LastIt);
 }
 
 void CMultipleOrbite::Tick()
@@ -67,80 +73,103 @@ void CMultipleOrbite::Tick()
 	m_Pos = m_pParent->GetPos();
 }
 
+vec2 CMultipleOrbite::RoseCurvePos(float Angle, float Time) const
+{
+	const float k = 2.5f;
+	float Theta = Time + Angle;
+	float R = GetRadius() * cos(k * Theta);
+	float X = R * cos(Theta);
+	float Y = R * sin(Theta);
+	return { X, Y };
+}
+
+vec2 CMultipleOrbite::HypotrochoidPos(float Angle, float Time) const
+{
+	const float R = GetRadius();
+	const float r = R / 3.5f;
+	const float d = GetRadius() / 2.0f;
+	float Theta = Time + Angle;
+
+	float X = (R - r) * cos(Theta) + d * cos(((R - r) / r) * Theta);
+	float Y = (R - r) * sin(Theta) - d * sin(((R - r) / r) * Theta);
+	return { X, Y };
+}
+
 vec2 CMultipleOrbite::UtilityOrbitePos(int Orbitetype, int Iter) const
 {
-	float AngleStep = 2.0f * pi / (float)m_Items.size();
+	if(m_Items.empty())
+		return { 0.f, 0.f };
 
-	if(Orbitetype == MULTIPLE_ORBITE_TYPE_DEFAULT)
+	const float AngleStep = 2.0f * pi / (float)m_Items.size();
+	const float BaseAngle = AngleStep * (float)Iter;
+	const float Time = (2.0f * pi * (float)Server()->Tick() / (float)Server()->TickSpeed());
+
+	switch(Orbitetype)
 	{
-		float AngleStart = (2.0f * pi * (float)Server()->Tick() / (float)Server()->TickSpeed()) * 0.55f;
-		float X = GetRadius() * cos(AngleStart + AngleStep * (float)Iter);
-		float Y = GetRadius() * sin(AngleStart + AngleStep * (float)Iter);
-		return { X, Y };
+		case MULTIPLE_ORBITE_TYPE_DEFAULT:
+		{
+			float Angle = Time * 0.55f + BaseAngle;
+			return vec2(GetRadius() * cos(Angle), GetRadius() * sin(Angle));
+		}
+		case MULTIPLE_ORBITE_TYPE_PULSATING:
+		{
+			float Angle = Time * 0.55f + BaseAngle;
+			float Modifier = 0.75f + 0.25f * cos(Time * 2.0f);
+			return vec2(GetRadius() * cos(Angle) * Modifier, GetRadius() * sin(Angle) * Modifier);
+		}
+		case MULTIPLE_ORBITE_TYPE_ELLIPTICAL:
+		{
+			float Angle = Time * 0.55f + BaseAngle;
+			return vec2(GetRadius() * cos(Angle), GetRadius() * 0.5f * sin(Angle));
+		}
+		case MULTIPLE_ORBITE_TYPE_VIBRATION:
+		{
+			float Angle = Time * 0.5f + BaseAngle;
+			float Vibration = sin(Time * 5.0f) * 10.0f;
+			return vec2((GetRadius() + Vibration) * cos(Angle), (GetRadius() + Vibration) * sin(Angle));
+		}
+		case MULTIPLE_ORBITE_TYPE_VARIABLE_RADIUS:
+		{
+			float Angle = Time * 0.5f + BaseAngle;
+			float Radius = GetRadius() + sin(Angle * 0.5f) * 20.0f;
+			return vec2(Radius * cos(Angle), Radius * sin(Angle));
+		}
+		case MULTIPLE_ORBITE_TYPE_EIGHT:
+		{
+			float Angle = Time * 0.5f + BaseAngle;
+			float Denominator = 1 + pow(sin(Angle), 2);
+			float X = GetRadius() * cos(Angle) / Denominator;
+			float Y = GetRadius() * sin(Angle) * cos(Angle) / Denominator;
+			return vec2(X, Y);
+		}
+		case MULTIPLE_ORBITE_TYPE_LOOPING:
+		{
+			float Angle = Time * 0.55f + BaseAngle;
+			float B = 5.f;
+			float X = GetRadius() * cos(Angle) * cos(B * Time * 0.02f);
+			float Y = GetRadius() * sin(Angle) * sin(B * Time * 0.02f);
+			return vec2(X, Y);
+		}
+		case MULTIPLE_ORBITE_TYPE_DYNAMIC_CENTER:
+		{
+			float Angle = Time * 0.55f + BaseAngle;
+			float DynX = sin(Time / 1.2f) * 20.0f;
+			float DynY = cos(Time / 1.6f) * 15.0f;
+			return vec2(DynX + GetRadius() * cos(Angle), DynY + GetRadius() * sin(Angle));
+		}
+
+		case MULTIPLE_ORBITE_TYPE_ROSE:
+		{
+			return RoseCurvePos(BaseAngle, Time * 0.5f);
+		}
+		case MULTIPLE_ORBITE_TYPE_HYPOTROCHOID:
+		{
+			return HypotrochoidPos(BaseAngle, Time * 0.5f);
+		}
+
+		default:
+			return { 0.f, 0.f };
 	}
-	else if(Orbitetype == MULTIPLE_ORBITE_TYPE_PULSATING)
-	{
-		float AngleStart = (2.0f * pi * (float)Server()->Tick() / (float)Server()->TickSpeed()) * 0.55f;
-		float DirectionModifier = cos((float)Server()->Tick() / (float)Server()->TickSpeed() * 2.0f);
-		float X = GetRadius() * cos(AngleStart + AngleStep * (float)Iter) * DirectionModifier;
-		float Y = GetRadius() * sin(AngleStart + AngleStep * (float)Iter) * DirectionModifier;
-		return { X, Y };
-	}
-	else if(Orbitetype == MULTIPLE_ORBITE_TYPE_ELLIPTICAL)
-	{
-		float AngleStart = (2.0f * pi * (float)Server()->Tick() / (float)Server()->TickSpeed()) * 0.55f;
-		float XRadius = GetRadius();
-		float YRadius = GetRadius() * 0.5f;
-		float X = XRadius * cos(AngleStart + AngleStep * (float)Iter);
-		float Y = YRadius * sin(AngleStart + AngleStep * (float)Iter);
-		return { X, Y };
-	}
-	else if(Orbitetype == MULTIPLE_ORBITE_TYPE_VIBRATION)
-	{
-		float AngleStart = (2.0f * pi * (float)Server()->Tick() / (float)Server()->TickSpeed()) * 0.5f;
-		float Vibration = sin((float)Server()->Tick() / (float)Server()->TickSpeed() * 5.0f) * 10.0f;
-		float X = (GetRadius() + Vibration) * cos(AngleStart + AngleStep * (float)Iter);
-		float Y = (GetRadius() + Vibration) * sin(AngleStart + AngleStep * (float)Iter);
-		return { X, Y };
-	}
-	else if(Orbitetype == MULTIPLE_ORBITE_TYPE_VARIABLE_RADIUS)
-	{
-		float AngleStart = (2.0f * pi * (float)Server()->Tick() / (float)Server()->TickSpeed()) * 0.5f;
-		float Radius = GetRadius() + sin(AngleStart * 0.5f) * 20.0f;
-		float X = Radius * cos(AngleStart + AngleStep * (float)Iter);
-		float Y = Radius * sin(AngleStart + AngleStep * (float)Iter);
-		return { X, Y };
-	}
-	else if(Orbitetype == MULTIPLE_ORBITE_TYPE_EIGHT)
-	{
-		float AngleStart = (2.0f * pi * (float)Server()->Tick() / (float)Server()->TickSpeed()) * 0.55f;
-		float A = GetRadius();
-		float B = GetRadius() / 2.f;
-		float X = A * cos(AngleStart + AngleStep * (float)Iter) * cos(AngleStep * (float)Iter);
-		float Y = B * sin(AngleStart + AngleStep * (float)Iter);
-		return { X, Y };
-	}
-	else if(Orbitetype == MULTIPLE_ORBITE_TYPE_LOOPING)
-	{
-		float AngleStart = (2.0f * pi * (float)Server()->Tick() / (float)Server()->TickSpeed()) * 0.55f;
-		float A = GetRadius();
-		float B = 5.f;
-		float X = A * cos(AngleStart + AngleStep * (float)Iter) * cos(B * (float)Server()->Tick() / 50.0f);
-		float Y = A * sin(AngleStart + AngleStep * (float)Iter) * sin(B * (float)Server()->Tick() / 50.0f);
-		return { X, Y };
-	}
-	else if(Orbitetype == MULTIPLE_ORBITE_TYPE_DYNAMIC_CENTER)
-	{
-		float AngleStart = (2.0f * pi * (float)Server()->Tick() / (float)Server()->TickSpeed()) * 0.55f;
-		float DynX = sin((float)Server()->Tick() / 60.0f) * 20.0f;
-		float DynY = cos((float)Server()->Tick() / 80.0f) * 15.0f;
-		vec2 DynamicCenter = { DynX,  DynY };
-		float Radius = GetRadius();
-		float X = (DynamicCenter.x + Radius) * cos(AngleStart + AngleStep * (float)Iter);
-		float Y = (DynamicCenter.y + Radius) * sin(AngleStart + AngleStep * (float)Iter);
-		return { X, Y };
-	}
-	return { 0.f, 0.f };
 }
 
 void CMultipleOrbite::Snap(int SnappingClient)
@@ -153,7 +182,7 @@ void CMultipleOrbite::Snap(int SnappingClient)
 	{
 		const vec2 PosStart = m_Pos + UtilityOrbitePos(Orbitetype, Iter);
 		if(Projectile)
-			GS()->SnapProjectile(SnappingClient, ID, PosStart, {}, Server()->Tick(), Type, m_ClientID);
+			GS()->SnapProjectile(SnappingClient, ID, PosStart, {}, Server()->Tick(), Type);
 		else
 			GS()->SnapPickup(SnappingClient, ID, PosStart, Type, Subtype);
 		Iter++;

@@ -38,7 +38,7 @@ void CQuestNpcAI::Process()
 	{
 		const int CandidateCID = pCandidate->GetCID();
 
-		if(m_pPlayer->IsActive() && m_pPlayer->IsActiveForClient(CandidateCID))
+		if(m_pPlayer->IsActive() && m_pPlayer->IsActiveForClient(CandidateCID) != ESnappingPriority::None)
 		{
 			const vec2& CandidatePos = pCandidate->GetCharacter()->m_Core.m_Pos;
 			const vec2& SelfPos = m_pCharacter->m_Core.m_Pos;

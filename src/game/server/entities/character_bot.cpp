@@ -300,11 +300,11 @@ void CCharacterBotAI::Snap(int SnappingClient)
 	int ID = m_pBotPlayer->GetCID();
 
 	// check active this bot
-	if(!m_pBotPlayer->IsActive() || !m_pBotPlayer->IsActiveForClient(SnappingClient))
+	if(!m_pBotPlayer->IsActive() || m_pBotPlayer->IsActiveForClient(SnappingClient) == ESnappingPriority::None)
 		return;
 
 	// check network clipped and translate state
-	if(NetworkClippedByPriority(SnappingClient, SNAPPING_PRIORITY_LOWER) || !Server()->Translate(ID, SnappingClient))
+	if(NetworkClippedByPriority(SnappingClient, ESnappingPriority::Lower) || !Server()->Translate(ID, SnappingClient))
 		return;
 
 	CNetObj_Character* pCharacter = static_cast<CNetObj_Character*>(Server()->SnapNewItem(NETOBJTYPE_CHARACTER, ID, sizeof(CNetObj_Character)));

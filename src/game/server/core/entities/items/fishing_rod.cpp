@@ -235,7 +235,10 @@ void CEntityFishingRod::Snap(int SnappingClient)
 		return;
 
 	// initialize variables
-	auto& rodIds = GetSnappingGroupIds(ROD);
+	const auto* pvRodIds = FindSnappingGroupIds(ROD);
+	if(!pvRodIds)
+		return;
+
 	const auto curTick = Server()->Tick();
 	const bool facingRight = (pChar->m_LatestInput.m_TargetX > 0.f);
 	const std::array<std::pair<vec2, vec2>, 3> positions = {
@@ -246,18 +249,21 @@ void CEntityFishingRod::Snap(int SnappingClient)
 	} };
 
 	// draw fishingrod segments
-	const auto numSegments = std::min(rodIds.size(), positions.size());
+	const auto numSegments = std::min((*pvRodIds).size(), positions.size());
 	for(size_t i = 0; i < numSegments; ++i)
 	{
 		const auto& [first, second] = positions[i];
 		const auto From = facingRight ? vec2(m_Pos.x + first.x, m_Pos.y + first.y) : vec2(m_Pos.x - first.x, m_Pos.y + first.y);
 		const auto To = facingRight ? vec2(m_Pos.x + second.x, m_Pos.y + second.y) : vec2(m_Pos.x - second.x, m_Pos.y + second.y);
-		GS()->SnapLaser(SnappingClient, rodIds[i], From, To, curTick - 2, LASERTYPE_SHOTGUN);
+		GS()->SnapLaser(SnappingClient, (*pvRodIds)[i], From, To, curTick - 2, LASERTYPE_SHOTGUN);
 		m_EndRodPoint = To;
 	}
 
 	// draw rope
-	auto& ropeIds = GetSnappingGroupIds(ROPE);
+	const auto* pvRopeIds = FindSnappingGroupIds(ROPE);
+	if(!pvRopeIds)
+		return;
+
 	const size_t ropePointCount = m_Rope.m_vPoints.size();
 	if(ropePointCount >= 2)
 	{
@@ -265,7 +271,7 @@ void CEntityFishingRod::Snap(int SnappingClient)
 		{
 			const auto& From = m_Rope.m_vPoints[i];
 			const auto& To = m_Rope.m_vPoints[i + 1];
-			GS()->SnapLaser(SnappingClient, ropeIds[i], From, To, curTick - 6, LASERTYPE_DRAGGER);
+			GS()->SnapLaser(SnappingClient, (*pvRopeIds)[i], From, To, curTick - 6, LASERTYPE_DRAGGER);
 		}
 
 		// draw rod float

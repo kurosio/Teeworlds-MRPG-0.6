@@ -229,11 +229,13 @@ void CEntityQuestAction::Snap(int SnappingClient)
 	if(m_ClientID != SnappingClient || !GetOwnerChar())
 		return;
 
-	auto& visualIdsGroup = GetSnappingGroupIds(VISUAL_GROUP);
-	for(auto& id : visualIdsGroup)
+	if(const auto* pvGroupIds = FindSnappingGroupIds(VISUAL_GROUP))
 	{
-		vec2 randomRangePos = random_range_pos(m_Pos, m_Radius);
-		GS()->SnapProjectile(SnappingClient, id, randomRangePos, { }, Server()->Tick() - 3, WEAPON_HAMMER, m_ClientID);
+		for(const auto& id : *pvGroupIds)
+		{
+			vec2 randomRangePos = random_range_pos(m_Pos, m_Radius);
+			GS()->SnapProjectile(SnappingClient, id, randomRangePos, { }, Server()->Tick() - 3, WEAPON_HAMMER, m_ClientID);
+		}
 	}
 }
 

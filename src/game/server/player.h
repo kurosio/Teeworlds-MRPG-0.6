@@ -114,7 +114,7 @@ public:
 
 	virtual void HandleTuningParams();
 	virtual int64_t GetMaskVisibleForClients() const { return -1; }
-	virtual ESnappingPriority IsActiveForClient(int ClientID) const { return SNAPPING_PRIORITY_HIGH; }
+	virtual ESnappingPriority IsActiveForClient(int ClientID) const { return ESnappingPriority::High; }
 	virtual std::optional<int> GetEquippedSlotItemID(ItemType EquipID) const;
 	virtual bool IsEquippedSlot(ItemType EquipID) const;
 	virtual int GetTotalRawAttributeValue(AttributeIdentifier ID) const;

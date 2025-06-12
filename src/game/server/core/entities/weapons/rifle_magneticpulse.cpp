@@ -115,21 +115,27 @@ void CEntityRifleMagneticPulse::Snap(int SnappingClient)
 	if(m_LastPhase)
 	{
 		// snap inside projectiles cyrcle
-		for(const auto& id : GetSnappingGroupIds(GROUP_PROJECTILE_CYRCLE))
+		if(const auto* pvProjCyrcleIds = FindSnappingGroupIds(GROUP_PROJECTILE_CYRCLE))
 		{
-			const auto RangeRandomPos = random_range_pos(m_Pos, m_Radius);
-			GS()->SnapProjectile(SnappingClient, id, RangeRandomPos, {}, Server()->Tick(), WEAPON_HAMMER, m_ClientID);
+			for(const auto& id : *pvProjCyrcleIds)
+			{
+				const auto RangeRandomPos = random_range_pos(m_Pos, m_Radius);
+				GS()->SnapProjectile(SnappingClient, id, RangeRandomPos, {}, Server()->Tick(), WEAPON_HAMMER, m_ClientID);
+			}
 		}
 
 		// snap cyrcle laser
-		const auto& groupCyrcleIds = GetSnappingGroupIds(GROUP_CYRCLE);
-		const auto AngleStep = 2.0f * pi / static_cast<float>(groupCyrcleIds.size());
-		for(size_t i = 0; i < groupCyrcleIds.size(); ++i)
+		if(const auto* pvCyrcleIds = FindSnappingGroupIds(GROUP_CYRCLE))
 		{
-			const auto nextIndex = (i + 1) % groupCyrcleIds.size();
-			const auto CurrentPos = m_Pos + vec2(m_Radius * cos(AngleStep * i), m_Radius * sin(AngleStep * i));
-			const auto NextPos = m_Pos + vec2(m_Radius * cos(AngleStep * nextIndex), m_Radius * sin(AngleStep * nextIndex));
-			GS()->SnapLaser(SnappingClient, groupCyrcleIds[i], CurrentPos, NextPos, Server()->Tick() - 1);
+			auto sizeNum = (*pvCyrcleIds).size();
+			const auto AngleStep = 2.0f * pi / static_cast<float>(sizeNum);
+			for(size_t i = 0; i < sizeNum; ++i)
+			{
+				const auto nextIndex = (i + 1) % sizeNum;
+				const auto CurrentPos = m_Pos + vec2(m_Radius * cos(AngleStep * i), m_Radius * sin(AngleStep * i));
+				const auto NextPos = m_Pos + vec2(m_Radius * cos(AngleStep * nextIndex), m_Radius * sin(AngleStep * nextIndex));
+				GS()->SnapLaser(SnappingClient, (*pvCyrcleIds)[i], CurrentPos, NextPos, Server()->Tick() - 1);
+			}
 		}
 	}
 

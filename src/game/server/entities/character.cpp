@@ -1942,7 +1942,7 @@ bool CCharacter::StartConversation(CPlayerBot* pTarget) const
 	if(m_pPlayer->IsBot() || !pTarget)
 		return false;
 
-	if(pTarget && pTarget->IsConversational() && pTarget->IsActiveForClient(m_pPlayer->GetCID()))
+	if(pTarget && pTarget->IsConversational() && pTarget->IsActiveForClient(m_pPlayer->GetCID()) != ESnappingPriority::None)
 	{
 		m_pPlayer->m_Dialog.Start(pTarget->GetCID());
 		return true;
