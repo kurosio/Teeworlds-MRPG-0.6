@@ -27,7 +27,7 @@ CEntityTeslaSerpent::CEntityTeslaSerpent(CGameWorld* pGameWorld, int OwnerCID, v
     // append damage by 25% from item
     auto* pOwner = GetOwner();
     if(pOwner && pOwner->GetItem(itTeslaInductiveCoil)->IsEquipped())
-        m_Damage += maximum(1.0f, translate_to_percent(m_Damage, 25.f));
+        m_Damage += maximum(1.0f, translate_to_percent_rest(m_Damage, 25.f));
 }
 
 void CEntityTeslaSerpent::Tick()
@@ -85,6 +85,7 @@ void CEntityTeslaSerpent::CalculateChainLightning()
                     break;
                 }
             }
+
             if(bAlreadyHit)
                 continue;
 
