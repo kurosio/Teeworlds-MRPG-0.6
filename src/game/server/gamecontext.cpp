@@ -320,7 +320,7 @@ void CGS::SnapLaser(int SnappingClient, int ID, const vec2& To, const vec2& From
 		pObj->m_FromX = (int)From.x;
 		pObj->m_FromY = (int)From.y;
 		pObj->m_StartTick = StartTick;
-		pObj->m_Owner = Owner;
+		pObj->m_Owner = Owner < (int)MAX_PLAYERS - 1 ? Owner : -1;
 		pObj->m_Type = LaserType;
 		pObj->m_Subtype = Subtype;
 		pObj->m_SwitchNumber = SwitchNumber;
@@ -388,7 +388,7 @@ void CGS::SnapProjectile(int SnappingClient, int ID, const vec2& Pos, const vec2
 		pProj->m_VelY = round_to_int(Vel.y);
 		pProj->m_Type = Type;
 		pProj->m_StartTick = StartTick;
-		pProj->m_Owner = Owner;
+		pProj->m_Owner = Owner < (int)MAX_PLAYERS - 1 ? Owner : -1;
 		pProj->m_Flags = Flags;
 		pProj->m_SwitchNumber = 0;
 		pProj->m_TuneZone = 0;

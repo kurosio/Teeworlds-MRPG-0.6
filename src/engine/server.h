@@ -62,17 +62,16 @@ public:
 			return true;
 
 		int* pMap = GetIdMap(Client);
-		bool Found = false;
 		for(int i = MAX_PLAYERS; i < VANILLA_MAX_CLIENTS; i++)
 		{
 			if(Target == pMap[i])
 			{
 				Target = i;
-				Found = true;
-				break;
+				return true;
 			}
 		}
-		return Found;
+
+		return false;
 	}
 
 	bool ReverseTranslate(int& Target, int Client)

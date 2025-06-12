@@ -46,13 +46,27 @@ void CEventHandler::Snap(int SnappingClient)
 	{
 		if(SnappingClient == -1 || CmaskIsSet(m_aClientMasks[i], SnappingClient))
 		{
-			CNetEvent_Common *ev = (CNetEvent_Common *)&m_aData[m_aOffsets[i]];
-			if(SnappingClient == -1 || distance(GS()->GetPlayer(SnappingClient)->m_ViewPos, vec2(ev->m_X, ev->m_Y)) < 1500.0f)
+			void* pEventData = &m_aData[m_aOffsets[i]];
+			auto* pCommonEvent = static_cast<CNetEvent_Common*>(pEventData);
+			auto* pSnapPlayer = GS()->GetPlayer(SnappingClient);
+			if(distance(pSnapPlayer->m_ViewPos, vec2(pCommonEvent->m_X, pCommonEvent->m_Y)) > 1500.0)
+				continue;
+
+			if(m_aTypes[i] == NETEVENTTYPE_DEATH)
 			{
-				void *d = GS()->Server()->SnapNewItem(m_aTypes[i], i, m_aSizes[i]);
-				if(d)
-					mem_copy(d, &m_aData[m_aOffsets[i]], m_aSizes[i]);
+				auto* pDeathEvent = static_cast<CNetEvent_Death*>(pEventData);
+				int TranslatedID = pDeathEvent->m_ClientId;
+				if(!GS()->Server()->Translate(TranslatedID, SnappingClient))
+					TranslatedID = (int)VANILLA_MAX_CLIENTS - 1;
+				pDeathEvent->m_ClientId = TranslatedID;
+			}
+
+			// create snapshot
+			if(void* pSnapItem = GS()->Server()->SnapNewItem(m_aTypes[i], i, m_aSizes[i]))
+			{
+				mem_copy(pSnapItem, pEventData, m_aSizes[i]);
 			}
 		}
 	}
 }
+

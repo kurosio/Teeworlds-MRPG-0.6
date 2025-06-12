@@ -197,7 +197,7 @@ void CProjectile::FillExtraInfo(CNetObj_DDNetProjectile* pProj)
 	pProj->m_Y = round_to_int(m_Pos.y * 100.0f);
 	pProj->m_Type = m_Type;
 	pProj->m_StartTick = m_StartTick;
-	pProj->m_Owner = m_Owner;
+	pProj->m_Owner = m_Owner < (int)MAX_PLAYERS - 1 ? m_Owner : -1;
 	pProj->m_Flags = Flags;
 	pProj->m_SwitchNumber = 0;
 	pProj->m_TuneZone = 0;

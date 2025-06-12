@@ -1075,13 +1075,13 @@ void CEntityManager::HealingRift(int ClientID, vec2 Position, float RiftRadius, 
 			float minuteHandLength = ModulatedOuterRadius * 0.75f;
 			vec2 minuteHandEndPos = centerPos + vec2(std::cos(minuteHandAngle) * minuteHandLength, std::sin(minuteHandAngle) * minuteHandLength);
 			if(currentIdIndex < (int)vIds.size() && minuteHandLength > 1.0f)
-				pBase->GS()->SnapLaser(SnappingClient, vIds[currentIdIndex++], centerPos, minuteHandEndPos, ServerTick - 1, LASERTYPE_DRAGGER, 0, pBase->GetClientID());
+				pBase->GS()->SnapLaser(SnappingClient, vIds[currentIdIndex++], centerPos, minuteHandEndPos, ServerTick - 1, LASERTYPE_DOOR, 0, pBase->GetClientID());
 
 			float hourHandAngle = -pi / 2.0f + lifetimeProgressRatio * (2.0f * pi / 6.0f);
 			float hourHandLength = ModulatedOuterRadius * 0.45f;
 			vec2 hourHandEndPos = centerPos + vec2(std::cos(hourHandAngle) * hourHandLength, std::sin(hourHandAngle) * hourHandLength);
 			if(currentIdIndex < (int)vIds.size() && hourHandLength > 1.0f)
-				pBase->GS()->SnapLaser(SnappingClient, vIds[currentIdIndex++], centerPos, hourHandEndPos, ServerTick - 1, LASERTYPE_DRAGGER, 0, pBase->GetClientID());
+				pBase->GS()->SnapLaser(SnappingClient, vIds[currentIdIndex++], centerPos, hourHandEndPos, ServerTick - 1, LASERTYPE_DOOR, 0, pBase->GetClientID());
 		}
 
 		// pulsing effect's
