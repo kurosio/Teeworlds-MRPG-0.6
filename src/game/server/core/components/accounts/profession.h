@@ -25,7 +25,7 @@ protected:
 	CGS* GS() const;
 	CPlayer* GetPlayer() const;
 	std::unordered_map<AttributeIdentifier, int> m_Attributes {};
-	std::unordered_map<AttributeIdentifier, float> m_ExtraPercent {};
+	std::unordered_map<AttributeIdentifier, float> m_Amplifier {};
 	CTeeInfo m_ProfessionSkin {};
 	EquippedSlots m_EquippedSlots {};
 
@@ -46,7 +46,8 @@ public:
 	bool IsProfessionType(int ProfessionType) const { return m_ProfessionType == ProfessionType; }
 	const std::unordered_map<AttributeIdentifier, int>& GetAttributes() const { return m_Attributes; }
 	int GetAttributeValue(AttributeIdentifier ID) const { return m_Attributes.contains(ID) ? m_Attributes.at(ID) : 0; }
-	float GetExtraPercentAttribute(AttributeIdentifier ID) const { return m_ExtraPercent.contains(ID) ? m_ExtraPercent.at(ID) : .0f; }
+	const std::unordered_map<AttributeIdentifier, float>& GetAmplifiers() const { return m_Amplifier; }
+	float GetAmplifier(AttributeIdentifier ID) const { return m_Amplifier.contains(ID) ? m_Amplifier.at(ID) : .0f; }
 	const CTeeInfo& GetTeeInfo() const { return m_ProfessionSkin; }
 	EquippedSlots& GetEquippedSlots() { return m_EquippedSlots; }
 	void ResetUpgrades();
@@ -68,9 +69,7 @@ public:
 		m_Attributes[AttributeIdentifier::Lucky] = 0;
 
 		// extra boost for profession
-		m_ExtraPercent[AttributeIdentifier::HP] = 30.f;
-		m_ExtraPercent[AttributeIdentifier::MP] = 5.f;
-		m_ExtraPercent[AttributeIdentifier::DMG] = 10.f;
+		m_Amplifier[AttributeIdentifier::HP] = 15.f;
 
 		// equip slots
 		m_EquippedSlots.initSlot(ItemType::EquipHammer);
@@ -100,9 +99,7 @@ public:
 		m_Attributes[AttributeIdentifier::AttackSPD] = 0;
 
 		// extra boost for profession
-		m_ExtraPercent[AttributeIdentifier::HP] = 5.f;
-		m_ExtraPercent[AttributeIdentifier::MP] = 15.f;
-		m_ExtraPercent[AttributeIdentifier::DMG] = 30.f;
+		m_Amplifier[AttributeIdentifier::DMG] = 15.f;
 
 		// equip slots
 		m_EquippedSlots.initSlot(ItemType::EquipHammer);
@@ -133,9 +130,7 @@ public:
 		m_Attributes[AttributeIdentifier::Vampirism] = 0;
 
 		// extra boost for profession
-		m_ExtraPercent[AttributeIdentifier::HP] = 15.f;
-		m_ExtraPercent[AttributeIdentifier::MP] = 30.f;
-		m_ExtraPercent[AttributeIdentifier::DMG] = 5.f;
+		m_Amplifier[AttributeIdentifier::MP] = 15.f;
 
 		// equip slots
 		m_EquippedSlots.initSlot(ItemType::EquipHammer);

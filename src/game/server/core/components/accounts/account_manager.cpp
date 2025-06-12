@@ -165,6 +165,14 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		// select war profession
 		VoteWrapper VClassSelector(ClientID, VWF_SEPARATE_OPEN | VWF_ALIGN_TITLE | VWF_STYLE_STRICT_BOLD, "\u2694 Change class profession");
 		VClassSelector.AddMenu(MENU_UPGRADES_ATTRIBUTES_DETAIL, "Player Attributes: Details");
+		if(const auto* pActiveProf = pPlayer->Account()->GetActiveProfession())
+		{
+			for(const auto& [ID, Percent] : pActiveProf->GetAmplifiers())
+			{
+				const auto pAttributeName = GS()->GetAttributeInfo(ID)->GetName();
+				VClassSelector.Add("Class amplifier +{~.2}% to {}", Percent, pAttributeName);
+			}
+		}
 		VClassSelector.AddLine();
 		for(const auto& Prof : pPlayer->Account()->GetProfessions())
 		{

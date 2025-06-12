@@ -840,7 +840,7 @@ int CPlayer::GetTotalRawAttributeValue(AttributeIdentifier ID) const
 			addItemEnchantStats(ItemIdOpt);
 
 		totalValue += pActiveProfession->GetAttributeValue(ID);
-		totalValue += translate_to_percent_rest(totalValue, pActiveProfession->GetExtraPercentAttribute(ID));
+		totalValue += translate_to_percent_rest(totalValue, pActiveProfession->GetAmplifier(ID));
 	}
 
 	// counting by other professions
