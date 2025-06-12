@@ -31,7 +31,7 @@ class DBField
 public:
 	DBField() = delete;
     DBField(size_t UniqueID, const char* pFieldName, const char* pDescription, T DefaultValue = {}, T MaxValue = {})
-		: m_Value(DefaultValue) { init(UniqueID, pFieldName, pDescription); }
+		: m_Value(DefaultValue), m_MaxValue(MaxValue) { init(UniqueID, pFieldName, pDescription); }
 
 	T m_Value{};
     T m_MaxValue{};
