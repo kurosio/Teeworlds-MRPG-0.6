@@ -325,6 +325,7 @@ void CGS::SnapLaser(int SnappingClient, int ID, const vec2& To, const vec2& From
 		pObj->m_Subtype = Subtype;
 		pObj->m_SwitchNumber = SwitchNumber;
 		pObj->m_Flags = Flags;
+		pObj->m_Flags |= LASERFLAG_NO_PREDICT;
 	}
 	else
 	{
@@ -340,7 +341,7 @@ void CGS::SnapLaser(int SnappingClient, int ID, const vec2& To, const vec2& From
 	}
 }
 
-void CGS::SnapPickup(int SnappingClient, int ID, const vec2& Pos, int Type, int SubType) const
+void CGS::SnapPickup(int SnappingClient, int ID, const vec2& Pos, int Type, int SubType, int Flags) const
 {
 	if(GetClientVersion(SnappingClient) >= VERSION_DDNET_ENTITY_NETOBJS)
 	{
@@ -353,6 +354,8 @@ void CGS::SnapPickup(int SnappingClient, int ID, const vec2& Pos, int Type, int 
 		pPickup->m_Type = Type;
 		pPickup->m_Subtype = SubType;
 		pPickup->m_SwitchNumber = 0;
+		pPickup->m_Flags = Flags;
+		pPickup->m_Flags |= PICKUPFLAG_NO_PREDICT;
 	}
 	else
 	{
