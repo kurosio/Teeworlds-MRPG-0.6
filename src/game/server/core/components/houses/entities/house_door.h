@@ -1,8 +1,12 @@
 #ifndef GAME_SERVER_COMPONENT_HOUSE_ENTITIES_DOOR_H
 #define GAME_SERVER_COMPONENT_HOUSE_ENTITIES_DOOR_H
+
 #include <game/server/entity.h>
 
 #include "../base/interface_house.h"
+
+class CHouse;
+class CGuildHouse;
 
 class CDoorDurability
 {
@@ -23,23 +27,25 @@ public:
 	int GetTickShift() const
 	{
 		const int MaxHealth = GetMaxHealth();
+		if(MaxHealth == 0)
+			return 0;
 		return ((MaxHealth - m_Health) * 6) / MaxHealth;
 	}
-	bool IsDestroyed() const { return m_Health <= 0; }
+	constexpr bool IsDestroyed() const { return m_Health <= 0; }
 };
 
 class CEntityHouseDoor : public CEntity
 {
-	enum States
+	enum class State
 	{
-		CLOSED,
-		OPENED
+		Closed,
+		Opened
 	};
 
 	IHouse* m_pHouse {};
 	std::string m_Name {};
 	vec2 m_PosControll {};
-	int m_State {};
+	State m_State {};
 
 	CDoorDurability m_DurabilityManager {};
 
@@ -49,15 +55,16 @@ public:
 	void Tick() override;
 	void Snap(int SnappingClient) override;
 
-	void Open() { m_State = OPENED; }
-	void Close() { m_State = CLOSED; }
+	void Open() { m_State = State::Opened; }
+	void Close() { m_State = State::Closed; }
 	void Reverse();
-	bool IsClosed() const { return m_State == CLOSED; }
-	std::string GetName() { return m_Name; }
+
+	constexpr bool IsClosed() const { return m_State == State::Closed; }
+	const std::string& GetName() const { return m_Name; }
 
 private:
-	bool PlayerHouseTick();
-	bool GuildHouseTick();
+	bool PlayerHouseTick(CHouse* pHouse);
+	bool GuildHouseTick(CGuildHouse* pHouse);
 };
 
 #endif
