@@ -1,11 +1,11 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
+/* If you are missing that file, acquire a complete release at teeworlds.com.          */
 #include "flying_point.h"
 
 #include <game/server/gamecontext.h>
 
 CEntityFlyingPoint::CEntityFlyingPoint(CGameWorld* pGameWorld, vec2 Pos, vec2 InitialVel, int ClientID, int FromID)
-: CEntity(pGameWorld, CGameWorld::ENTTYPE_TOOLS, Pos)
+	: CEntity(pGameWorld, CGameWorld::ENTTYPE_TOOLS, Pos)
 {
 	m_Pos = Pos;
 	m_InitialVel = InitialVel;
@@ -13,13 +13,15 @@ CEntityFlyingPoint::CEntityFlyingPoint(CGameWorld* pGameWorld, vec2 Pos, vec2 In
 	m_ClientID = ClientID;
 	m_FromID = FromID;
 	m_Type = WEAPON_HAMMER;
+	m_Vel = m_InitialVel;
+
 	GameWorld()->InsertEntity(this);
 }
 
 void CEntityFlyingPoint::Tick()
 {
 	// check valid player
-	CPlayer *pPlayer = GS()->GetPlayer(m_ClientID);
+	CPlayer* pPlayer = GS()->GetPlayer(m_ClientID);
 	if(!pPlayer || !pPlayer->GetCharacter())
 	{
 		GameWorld()->DestroyEntity(this);
@@ -47,7 +49,8 @@ void CEntityFlyingPoint::Tick()
 	}
 
 	vec2 Dir = normalize(pPlayer->GetCharacter()->m_Core.m_Pos - m_Pos);
-	m_Pos += Dir*clamp(Dist, 0.0f, 16.0f) * (1.0f - m_InitialAmount) + m_InitialVel * m_InitialAmount;
+	m_Vel = Dir * clamp(Dist, 0.0f, 16.0f) * (1.0f - m_InitialAmount) + m_InitialVel * m_InitialAmount;
+	m_Pos += m_Vel;
 	m_InitialAmount *= 0.98f;
 }
 
@@ -56,14 +59,5 @@ void CEntityFlyingPoint::Snap(int SnappingClient)
 	if(NetworkClipped(SnappingClient))
 		return;
 
-	CNetObj_Projectile *pObj = static_cast<CNetObj_Projectile *>(Server()->SnapNewItem(NETOBJTYPE_PROJECTILE, GetID(), sizeof(CNetObj_Projectile)));
-	if(pObj)
-	{
-		pObj->m_X = (int)m_Pos.x;
-		pObj->m_Y = (int)m_Pos.y;
-		pObj->m_VelX = 0;
-		pObj->m_VelY = 0;
-		pObj->m_StartTick = Server()->Tick();
-		pObj->m_Type = m_Type;
-	}
+	GS()->SnapProjectile(SnappingClient, GetID(), m_Pos, m_Vel, Server()->Tick(), m_Type, m_ClientID);
 }

@@ -9,6 +9,7 @@ class CEntityFlyingPoint : public CEntity
 {
 	typedef std::function<void(class CPlayer*, class CPlayer*)> FlyingPointCallback;
 
+	vec2 m_Vel{};
 	vec2 m_InitialVel{};
 	float m_InitialAmount{};
 	int m_ClientID{};
