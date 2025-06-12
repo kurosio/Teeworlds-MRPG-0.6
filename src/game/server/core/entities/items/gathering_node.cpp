@@ -18,35 +18,33 @@ CEntityGatheringNode::CEntityGatheringNode(CGameWorld* pGameWorld, GatheringNode
 
 void CEntityGatheringNode::SpawnPositions()
 {
-	vec2 newPos = m_Pos;
-	int minimalIterate = 32;
-	std::array<vec2, 4> aDir =
-	{
-		vec2(0, 1),
+	constexpr int MAX_PROBE_DISTANCE = 32;
+	vec2 closestWallPos = m_Pos;
+	float shortestDist = (float)(MAX_PROBE_DISTANCE * MAX_PROBE_DISTANCE) + 1.0f;
+
+	const std::array<vec2, 4> aDir = {
+		vec2(0,  1),
 		vec2(0, -1),
-		vec2(1, 0),
+		vec2(1,  0),
 		vec2(-1, 0)
 	};
 
 	for(const auto& Dir : aDir)
 	{
-		vec2 checkPos = m_Pos;
-		for(int s = 0; s < minimalIterate; ++s)
+		vec2 CollisionPos;
+		vec2 endPos = m_Pos + Dir * MAX_PROBE_DISTANCE;
+		if(GS()->Collision()->IntersectLine(m_Pos, endPos, &CollisionPos, nullptr))
 		{
-			checkPos += Dir;
-			if(GS()->Collision()->CheckPoint(checkPos))
+			const float dist = distance(m_Pos, CollisionPos);
+			if(dist < shortestDist)
 			{
-				newPos = checkPos;
-				minimalIterate = s;
-				break;
+				shortestDist = dist;
+				closestWallPos = CollisionPos;
 			}
 		}
-
-		if(minimalIterate != 32)
-			break;
 	}
 
-	m_Pos = newPos;
+	m_Pos = closestWallPos;
 }
 
 void CEntityGatheringNode::SetSpawn(int Sec)
