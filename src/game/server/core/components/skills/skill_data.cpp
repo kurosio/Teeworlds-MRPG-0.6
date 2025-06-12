@@ -244,6 +244,7 @@ bool CSkill::Use()
 	if(IsActivated(pChar, ManaCost, SKILL_ATTACK_TELEPORT))
 	{
 		new CAttackTeleport(&GS()->m_World, PlayerPosition, pPlayer, GetBonus());
+		GS()->CreateSound(PlayerPosition, SOUND_SKILL_START);
 		return true;
 	}
 
@@ -273,8 +274,8 @@ bool CSkill::Use()
 	if(IsActivated(pChar, ManaCost, SKILL_HEART_TURRET, SKILL_USAGE_RESET))
 	{
 		// initialize
+		constexpr int NumCastClicked = 5;
 		const auto UpgradeValue = (10 + GetBonus()) * Server()->TickSpeed();
-		const auto NumCastClicked = 5;
 		auto FuncExecuteHealingRift = [this, UpgradeValue, ManaCost](int FinalClientID, vec2 FinalPosition, EntGroupWeakPtr* pFinalSkillTracker)
 		{
 			GS()->EntityManager()->HealthTurret(FinalClientID, FinalPosition, ManaCost, UpgradeValue, 2 * Server()->TickSpeed(), pFinalSkillTracker);
@@ -286,11 +287,11 @@ bool CSkill::Use()
 		return true;
 	}
 
-	if(IsActivated(pChar, ManaCost, SKILL_HEALING_AURA, SKILL_USAGE_RESET))
+	if(IsActivated(pChar, ManaCost, SKILL_HEALING_AURA, SKILL_USAGE_NONE))
 	{
 		// initialize
+		constexpr int NumCastClicked = 7;
 		const auto UpgradeValue = minimum(320.f + GetBonus(), 400.f);
-		const auto NumCastClicked = 7;
 		auto FuncExecuteHealingAura = [this, UpgradeValue, ManaCost](int FinalClientID, vec2 FinalPosition, EntGroupWeakPtr* pFinalSkillTracker)
 		{
 			GS()->EntityManager()->HealingAura(FinalClientID, FinalPosition, UpgradeValue, 10 * Server()->TickSpeed(), ManaCost);
@@ -305,20 +306,12 @@ bool CSkill::Use()
 	if(IsActivated(pChar, ManaCost, SKILL_HEALING_RIFT, SKILL_USAGE_RESET))
 	{
 		// initialize
-		const auto NumCastClicked = 20 - GetBonus();
-		const auto RiftRadius = 120.f;
-		const auto HealRadius = 320.f;
-		const auto Lifetime = 15 * Server()->TickSpeed();
-		const auto SerpentSpawnInterval = 1.5f;
-		const auto NumSerpentsPerSpawn = 2;
+		constexpr int NumCastClicked = 16;
+		constexpr int Lifetime = 15 * SERVER_TICK_SPEED;
 		const auto HealingPerPulse = ManaCost;
-		const auto VisOuter = 10;
-		const auto VisInner = 6;
-		auto FuncExecuteHealingRift = [this, RiftRadius, HealRadius, Lifetime, SerpentSpawnInterval, NumSerpentsPerSpawn, HealingPerPulse,
-			VisOuter, VisInner](int FinalClientID, vec2 FinalPosition, EntGroupWeakPtr* pFinalSkillTracker)
+		auto FuncExecuteHealingRift = [this, Lifetime, HealingPerPulse](int FinalClientID, vec2 FinalPosition, EntGroupWeakPtr* pFinalSkillTracker)
 		{
-			GS()->EntityManager()->HealingRift(FinalClientID, FinalPosition, RiftRadius, HealRadius, Lifetime,
-				SerpentSpawnInterval, NumSerpentsPerSpawn, HealingPerPulse, VisOuter, VisInner, pFinalSkillTracker);
+			GS()->EntityManager()->HealingRift(FinalClientID, FinalPosition, 120.f, 320.f, Lifetime, 1.5f, 2, HealingPerPulse, 10, 6, pFinalSkillTracker);
 		};
 
 		// start casting

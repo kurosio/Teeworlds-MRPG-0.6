@@ -5,10 +5,12 @@
 
 #include <game/server/gamecontroller.h>
 
+class CEntityMoneyBag;
 class CGameControllerDefault : public IGameController
 {
 	int m_MoneyBagTick{};
 	PathRequestHandle m_PathMoneyBag{};
+	std::vector<CEntityMoneyBag*> m_vMoneyBags{};
 
 public:
 	CGameControllerDefault(class CGS *pGameServer);

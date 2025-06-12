@@ -185,27 +185,9 @@ T translate_to_percent_rest(T value, float percent)
 {
 	if constexpr(std::is_same_v<T, BigInt>)
 	{
-		try
-		{
-			// try to convert BigInt to double and perform calculation
-			const double value_double = std::stod(value.to_string());
-			const double result = (value_double * percent) / 100.0;
-
-			// convert result to string and find the decimal point
-			std::string resultStr = std::to_string(result);
-			if(const size_t pos = resultStr.find('.'); pos != std::string::npos)
-			{
-				return BigInt(resultStr.substr(0, pos));
-			}
-
-			dbg_msg("math", "no decimal point found in result string. BigInt(0).");
-			return BigInt(0);
-		}
-		catch(...)
-		{
-			dbg_msg("math", "Error during BigInt to double conversion.");
-			return BigInt(0);
-		}
+		constexpr long long scale = 10000;
+		const auto scaled_percent = static_cast<long long>(percent * scale);
+		return (value * scaled_percent) / (100 * scale);
 	}
 	else
 	{
@@ -215,74 +197,39 @@ T translate_to_percent_rest(T value, float percent)
 
 // add to the number a percentage e.g. ((100, 10%) = 110)
 template <PercentCompatible T>
-T add_percent_to_source(T* pvalue, float percent)
+void add_percent_to_source(T& value, float percent)
 {
-	if(pvalue)
-	{
-		if constexpr(std::is_same_v<T, BigInt>)
-		{
-			BigInt result = translate_to_percent_rest(*pvalue, percent);
-			*pvalue += result;
-		}
-		else
-		{
-			T result = translate_to_percent_rest(*pvalue, percent);
-			*pvalue += result;
-		}
-	}
-	return *pvalue;
+	value += translate_to_percent_rest(value, percent);
 }
 
 // translate from the first to the second in percent e.g. ((10, 5) = 50%)
 template <PercentCompatible T>
-float translate_to_percent(T from, T value)
+float translate_to_percent(T from, T value, float maximum_percent)
 {
-	constexpr double min_value = std::numeric_limits<double>::epsilon();
-
 	if constexpr(std::is_same_v<T, BigInt>)
 	{
-		try
-		{
-			const double safe_from = maximum(min_value, std::stod(from.to_string()));
-			const double safe_value = maximum(min_value, std::stod(value.to_string()));
-			return (float)((safe_value * 100.0) / safe_from);
-		}
-		catch(...)
-		{
+		if(from == BigInt(0))
 			return std::numeric_limits<float>::quiet_NaN();
-		}
+
+		constexpr long long scale = 1000000;
+		const auto scaledMaxPercent = static_cast<long long>(maximum_percent * scale);
+		BigInt tempResult = (value * scaledMaxPercent) / from;
+		return static_cast<float>(tempResult.to_long_long()) / static_cast<float>(scale);
 	}
 	else
 	{
-		const double safe_from = std::max(min_value, static_cast<double>(from));
-		return (float)((value * 100.0) / safe_from);
+		constexpr double minValue = std::numeric_limits<double>::epsilon();
+		const double safeFrom = std::max(minValue, static_cast<double>(from));
+		const double result = (static_cast<double>(value) * static_cast<double>(maximum_percent)) / safeFrom;
+		return static_cast<float>(result);
 	}
 }
 
 // translate from the first to the second in percent e.g. ((10, 5, 50) = 25%)
 template <PercentCompatible T>
-float translate_to_percent(T from, T value, float maximum_percent)
+float translate_to_percent(T from, T value)
 {
-	constexpr double min_value = std::numeric_limits<double>::epsilon();
-
-	if constexpr(std::is_same_v<T, BigInt>)
-	{
-		try
-		{
-			const double safe_from = maximum(min_value, std::stod(from.to_string()));
-			const double safe_value = maximum(min_value, std::stod(value.to_string()));
-			return (float)((safe_value * maximum_percent) / safe_from);
-		}
-		catch(...)
-		{
-			return std::numeric_limits<float>::quiet_NaN();
-		}
-	}
-	else
-	{
-		double safe_from = std::max(min_value, static_cast<double>(from));
-		return (float)((value * maximum_percent) / safe_from);
-	}
+	return translate_to_percent(from, value, 100.0f);
 }
 
 constexpr inline uint64_t computeExperience(unsigned Level)
