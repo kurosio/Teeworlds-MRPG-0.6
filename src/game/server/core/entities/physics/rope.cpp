@@ -37,7 +37,6 @@ void RopePhysic::UpdatePhysics(CCollision* pCollision, float PointMass, float Te
         m_vPoints[i] -= correction;
         m_vPoints[i - 1] += correction;
     }
-    // test
 
     // update last mass point
     auto lastIndex = m_vPoints.size() - 1;
