@@ -251,24 +251,26 @@ constexpr inline uint64_t calculate_exp_gain(int factorCount, int baseLevel, int
 	return maximum((uint64_t)1, experience, minimumExperience);
 }
 
-
-constexpr inline uint64_t calculate_gold_gain(int factorCount, int baseLevel, int factorLevel, bool randomBonus = false)
+constexpr inline uint64_t calculate_loot_gain(int baseLevel, int eachLevel, int valuePerStep, bool randomBonus = false)
 {
-	int levelDifference = baseLevel - factorLevel;
-	double multiplier = (levelDifference >= 0)
-		? 1.0 + (levelDifference * 0.05)
-		: 1.0 / (1.0 + (std::abs(levelDifference) * 0.1));
-	unsigned long long baseGold = computeExperience(factorLevel) / factorCount;
-	unsigned long long gold = baseGold / multiplier;
-	unsigned long long minimumGold = baseGold * 0.05;
+	uint64_t gold = 0;
+
+	if(eachLevel > 0)
+	{
+		int bonusSteps = baseLevel / eachLevel;
+		uint64_t bonusAmount = static_cast<uint64_t>(bonusSteps) * valuePerStep;
+		gold += bonusAmount;
+	}
 
 	if(randomBonus)
 	{
-		gold += rand() % (gold / 5 + 1);
-		minimumGold += rand() % (minimumGold / 5 + 1);
+		if(gold > 0)
+			gold += rand() % (gold / 5 + 1);
 	}
 
-	return maximum((unsigned long long)1, gold, minimumGold);
+	uint64_t minimumGold = static_cast<uint64_t>(gold * 0.05);
+	return maximum((uint64_t)1, gold, minimumGold);
 }
+
 
 #endif // BASE_MATH_H
