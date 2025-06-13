@@ -254,9 +254,6 @@ void CCharacter::FireWeapon()
 		}
 	}
 
-	// ring giving lightning
-	TryActivateChainLightning(itRingGivingLightning, std::nullopt);
-
 	// fire by weapon
 	const vec2 MouseTarget = vec2(m_LatestInput.m_TargetX, m_LatestInput.m_TargetY);
 	const vec2 Direction = normalize(MouseTarget);
@@ -1242,8 +1239,9 @@ bool CCharacter::TakeDamage(vec2 Force, int Damage, int FromCID, int Weapon, int
 	int CritDamage = 0;
 	if(pFrom && pFrom->GetCharacter() && FromCID != m_pPlayer->GetCID())
 	{
-		// try activate ring giving lightning
+		// try activate ring lightning
 		TryActivateChainLightning(itRingReturnLightning, Damage);
+		pFrom->GetCharacter()->TryActivateChainLightning(itRingGivingLightning, Damage);
 
 		// vampirism replenish your health
 		const auto ChanceVampirism = m_pPlayer->GetTotalAttributeChance(AttributeIdentifier::Vampirism).value_or(0.f);
@@ -1961,7 +1959,7 @@ bool CCharacter::StartConversation(CPlayerBot* pTarget) const
 
 void CCharacter::TryActivateChainLightning(int ByItemId, std::optional<int> DamageOpt)
 {
-	if(m_LastRingChainLightningAttack > Server()->Tick() || !CItemDescription::Data().contains(ByItemId))
+	if(!m_Alive || m_LastRingChainLightningAttack > Server()->Tick() || !CItemDescription::Data().contains(ByItemId))
 		return;
 
 	if(m_pPlayer->GetItem(ByItemId)->IsEquipped() || m_pPlayer->GetItem(itRingPerfectLightning)->IsEquipped())
