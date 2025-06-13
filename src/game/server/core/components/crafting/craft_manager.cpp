@@ -282,7 +282,8 @@ void CCraftManager::ShowGroupedSelector(CPlayer* pPlayer) const
 	{
 		const auto GroupID = pPlayer->m_VotesData.GetStringMapper().string_to_id(groupName);
 		const char* pSelectStr = GetSelectorStringByCondition(groupIdOpt && (*groupIdOpt) == GroupID);
-		VSG.AddOption("WAREHOUSE_SELECTOR_GROUP", GroupID, "{}({}){SELECTOR}", Instance::Localize(ClientID, groupName.c_str()), subGroupMap.size(), pSelectStr);
+		const auto countItemByGroup = groupedTradesContainer.get_item_group_count(groupName);
+		VSG.AddOption("WAREHOUSE_SELECTOR_GROUP", GroupID, "{}({}){SELECTOR}", Instance::Localize(ClientID, groupName.c_str()), countItemByGroup, pSelectStr);
 	}
 
 	// show selector by subgroup
