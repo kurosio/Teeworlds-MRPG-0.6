@@ -81,7 +81,7 @@ public:
 };
 
 template<typename T>
-constexpr inline vector2_base<T> rotate(const vector2_base<T>& pos, vector2_base<T> curPos, float angle)
+constexpr inline vector2_base<T> rotate(const vector2_base<T>& pos, const vector2_base<T>& curPos, float angle)
 {
 	const float s = sin(33.f + angle);
 	const float c = cos(33.f + angle);
@@ -89,31 +89,11 @@ constexpr inline vector2_base<T> rotate(const vector2_base<T>& pos, vector2_base
 }
 
 template<typename T>
-constexpr inline vector2_base<T> random_range_pos(vector2_base<T> curPos, float radius)
+constexpr inline vector2_base<T> random_range_pos(const vector2_base<T>& curPos, float radius)
 {
 	float angle = random_float(0.0f, 2.0f * pi);
 	float distance = sqrt(random_float()) * radius;
 	return vector2_base<T>((T)curPos.x + distance * cos(angle), (T)curPos.y + distance * sin(angle));
-}
-
-template<typename T>
-constexpr inline T distance(const vector2_base<T> a, const vector2_base<T>& b)
-{
-	return length(a - b);
-}
-
-template<typename T>
-constexpr inline T distance_squared(const vector2_base<T>& a, const vector2_base<T>& b)
-{
-	float dx = a.x - b.x;
-	float dy = a.y - b.y;
-	return dx * dx + dy * dy;
-}
-
-template<typename T>
-constexpr inline T dot(const vector2_base<T> a, const vector2_base<T>& b)
-{
-	return a.x * b.x + a.y * b.y;
 }
 
 template<typename T>
@@ -122,14 +102,99 @@ constexpr inline bool is_negative_vec(const vector2_base<T>& a)
 	return a.x <= T{} || a.y <= T{};
 }
 
-inline float length(const vector2_base<float>& a)
+template<typename T>
+constexpr inline T dot(const vector2_base<T>& a, const vector2_base<T>& b)
+{
+	return a.x * b.x + a.y * b.y;
+}
+
+template<typename T>
+constexpr inline T length_squared(const vector2_base<T>& a)
+{
+	return dot(a, a);
+}
+
+template<typename T>
+constexpr inline T length(const vector2_base<T>& a)
 {
 	return std::sqrt(dot(a, a));
 }
 
-inline float length_squared(const vector2_base<float>& a)
+template<typename T>
+constexpr inline T distance(const vector2_base<T>& a, const vector2_base<T>& b)
 {
-	return dot(a, a);
+	return length(a - b);
+}
+
+template<typename T>
+constexpr inline T distance_squared(const vector2_base<T>& a, const vector2_base<T>& b)
+{
+	const T dx = a.x - b.x;
+	const T dy = a.y - b.y;
+	return dx * dx + dy * dy;
+}
+
+template<std::floating_point T>
+constexpr inline bool closest_point_on_line(const vector2_base<T>& line_pointA, const vector2_base<T>& line_pointB,
+	const vector2_base<T>& target_point, vector2_base<T>& out_pos)
+{
+	constexpr T zero { 0 };
+	const vector2_base<T> AB = line_pointB - line_pointA;
+	const T SquaredMagnitudeAB = dot(AB, AB);
+
+	if(SquaredMagnitudeAB <= zero)
+	{
+		out_pos = line_pointA;
+		return false;
+	}
+
+	const vector2_base<T> AP = target_point - line_pointA;
+	const T APdotAB = dot(AP, AB);
+
+	if(APdotAB <= zero) [[likely]]
+	{
+		out_pos = line_pointA;
+		return false;
+	}
+	else if(APdotAB >= SquaredMagnitudeAB) [[likely]]
+	{
+		out_pos = line_pointB;
+		return false;
+	}
+	else
+	{
+		const T t = APdotAB / SquaredMagnitudeAB;
+		out_pos = line_pointA + AB * t;
+		return true;
+	}
+}
+
+template<std::floating_point T>
+constexpr inline bool is_within_distance_to_segment_sq(T squared_dist, const vector2_base<T>& line_pointA, const vector2_base<T>& line_pointB,
+	const vector2_base<T>& target_point)
+{
+	constexpr T zero { 0 };
+
+	const T dx_ab = line_pointB.x - line_pointA.x;
+	const T dy_ab = line_pointB.y - line_pointA.y;
+	const T dx_ap = target_point.x - line_pointA.x;
+	const T dy_ap = target_point.y - line_pointA.y;
+
+	const T APdotAB = dx_ap * dx_ab + dy_ap * dy_ab;
+	const T SquaredDistAP = dx_ap * dx_ap + dy_ap * dy_ap;
+	const T SquaredMagnitudeAB = dx_ab * dx_ab + dy_ab * dy_ab;
+
+	if(APdotAB <= zero) [[likely]]
+	{
+		return SquaredDistAP < squared_dist;
+	}
+	else if(APdotAB >= SquaredMagnitudeAB) [[likely]]
+	{
+		const T SquaredDistBP = SquaredDistAP - static_cast<T>(2) * APdotAB + SquaredMagnitudeAB;
+		return SquaredDistBP < squared_dist;
+	}
+
+	return SquaredDistAP * SquaredMagnitudeAB - APdotAB * APdotAB < squared_dist * SquaredMagnitudeAB;
 }
 
 constexpr inline float angle(const vector2_base<float>& a)
@@ -185,57 +250,6 @@ inline vector2_base<float> lerp(const vector2_base<float>& start, const vector2_
 typedef vector2_base<float> vec2;
 typedef vector2_base<bool> bvec2;
 typedef vector2_base<int> ivec2;
-
-template<typename T>
-constexpr inline bool closest_point_on_line(const vector2_base<T>& line_pointA, const vector2_base<T>& line_pointB,
-	const vector2_base<T>& target_point, vector2_base<T>& out_pos)
-{
-	const vector2_base<T> AB = line_pointB - line_pointA;
-	const vector2_base<T> AP = target_point - line_pointA;
-	const T SquaredMagnitudeAB = dot(AB, AB);
-	const T APdotAB = dot(AP, AB);
-
-	if(APdotAB <= 0)
-	{
-		out_pos = line_pointA;
-		return true;
-	}
-
-	if(APdotAB >= SquaredMagnitudeAB)
-	{
-		out_pos = line_pointB;
-		return SquaredMagnitudeAB > 0;
-	}
-
-	if(SquaredMagnitudeAB > 0)
-	{
-		const T t = APdotAB / SquaredMagnitudeAB;
-		out_pos = line_pointA + AB * t;
-		return true;
-	}
-
-	return false;
-}
-
-template<typename T>
-constexpr inline bool is_within_distance_to_segment(float dist, const vector2_base<T>& line_pointA, const vector2_base<T>& line_pointB,
-	const vector2_base<T>& target_point)
-{
-	vector2_base<T> IntersectPos;
-	if(closest_point_on_line(line_pointA, line_pointB, target_point, IntersectPos))
-		return distance(IntersectPos, target_point) < dist;
-	return false;
-}
-
-template<typename T>
-constexpr inline bool is_within_distance_to_segment_sq(float squared_dist, const vector2_base<T>& line_pointA, const vector2_base<T>& line_pointB,
-	const vector2_base<T>& target_point)
-{
-	vector2_base<T> IntersectPos;
-	if(closest_point_on_line(line_pointA, line_pointB, target_point, IntersectPos))
-		return distance_squared(IntersectPos, target_point) < squared_dist;
-	return false;
-}
 
 // ------------------------------------
 template<typename T>
