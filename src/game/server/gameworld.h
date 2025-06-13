@@ -51,8 +51,8 @@ public:
 private:
 	CEntity *m_pNextTraverseEntity;
 	CEntity *m_apFirstEntityTypes[NUM_ENTTYPES];
+	std::vector<bool> m_aBotsActive;
 	ska::unordered_set<int> m_aMarkedBotsActive;
-	ska::unordered_map<int, bool> m_aBotsActive;
 	ska::flat_hash_set<CEntity*> m_apEntitiesCollection;
 
 	CGS *m_pGS;

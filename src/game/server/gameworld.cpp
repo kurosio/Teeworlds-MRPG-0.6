@@ -18,7 +18,7 @@ CGameWorld::CGameWorld() : m_pNextTraverseEntity(nullptr)
 	m_apEntitiesCollection.max_load_factor(0.8f);
 	m_apEntitiesCollection.reserve(static_cast<size_t>(NUM_ENTITIES * MAX_CLIENTS * 5));
 	m_aMarkedBotsActive.reserve(MAX_CLIENTS);
-	m_aBotsActive.reserve(MAX_CLIENTS);
+	m_aBotsActive.resize(MAX_CLIENTS, false);
 }
 
 CGameWorld::~CGameWorld()
@@ -298,7 +298,9 @@ void CGameWorld::UpdatePlayerMaps()
 	if(Server()->Tick() % g_Config.m_SvMapUpdateRate != 0)
 		return;
 
+	const float ActiveBotDistSq = static_cast<float>(g_Config.m_SvMapDistanceActveBot) * static_cast<float>(g_Config.m_SvMapDistanceActveBot);
 	std::pair<float, int> Dist[MAX_CLIENTS];
+
 	for(int ClientID = 0; ClientID < MAX_PLAYERS; ClientID++)
 	{
 		CPlayer* pPlayer = GS()->GetPlayer(ClientID);
@@ -314,7 +316,7 @@ void CGameWorld::UpdatePlayerMaps()
 			Dist[j].second = j;
 
 			// Check if the player is a bot and is currently in game
-			CPlayerBot* pBotPlayer = dynamic_cast<CPlayerBot*>(GS()->GetPlayer(j));
+			CPlayer* pBotPlayer = GS()->GetPlayer(j);
 			if(!Server()->ClientIngame(j) || !pBotPlayer || !pBotPlayer->GetCharacter())
 			{
 				// If not, set the distance to a very large value and skip to the next player
@@ -323,8 +325,8 @@ void CGameWorld::UpdatePlayerMaps()
 			}
 
 			// Calculate the distance between the player's view position and the bot's position
-			float Distance = distance(pPlayer->m_ViewPos, pBotPlayer->GetCharacter()->m_Core.m_Pos);
-			if(Distance > (float)g_Config.m_SvMapDistanceActveBot)
+			float DistanceSq = distance_squared(pPlayer->m_ViewPos, pBotPlayer->GetCharacter()->m_Core.m_Pos);
+			if(DistanceSq > ActiveBotDistSq)
 			{
 				// If the distance is greater
 				Dist[j].first = 1e10;
@@ -341,7 +343,7 @@ void CGameWorld::UpdatePlayerMaps()
 			{
 				// Set the distance to 0 and add the actual distance
 				Dist[j].first = 0;
-				Dist[j].first += Distance;
+				Dist[j].first += DistanceSq;
 			}
 		}
 
@@ -397,10 +399,11 @@ void CGameWorld::UpdatePlayerMaps()
 	}
 
 	// Loop through each marked ID in the m_aMarkedBotsActive array
-	m_aBotsActive.clear();
+	m_aBotsActive.assign(MAX_CLIENTS, false);
 	for(auto& markedID : m_aMarkedBotsActive)
 	{
-		m_aBotsActive[markedID] = true;
+		if(markedID >= 0 && markedID < MAX_CLIENTS)
+			m_aBotsActive[markedID] = true;
 	}
 
 	// Clear the list of marked active bots.
