@@ -5,6 +5,7 @@
 
 #include "tools/path_finder_result.h"
 
+constexpr float DOOR_ACTIVATION_RADIUS_SQUARED = 128.f * 128.f;
 constexpr float MAX_PERCENT_ATTRIBUTE_ATTACK_SPEED = 600.f;
 constexpr float MAX_PERCENT_ATTRIBUTE_AMMO_REGEN = 800.f;
 constexpr float MAX_PERCENT_ATTRIBUTE_VAMPIRISM = 30.f;

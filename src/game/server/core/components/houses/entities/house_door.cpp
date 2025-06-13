@@ -108,18 +108,19 @@ bool CEntityHouseDoor::PlayerHouseTick(CHouse* pHouse)
 	if(!pHouse)
 		return false;
 
-	auto* pPlayer = GS()->GetPlayerByUserID(pHouse->GetAccountID());
-
 	// player control
-	if(pPlayer && pPlayer->GetCharacter())
+	if(auto* pPlayer = GS()->GetPlayerByUserID(pHouse->GetAccountID()))
 	{
-		auto* pChar = pPlayer->GetCharacter();
-		if(distance(m_PosControll, pChar->GetMousePos()) < 24.0f)
+		if(auto* pChar = pPlayer->GetCharacter())
 		{
-			if(Server()->Input()->IsKeyClicked(pPlayer->GetCID(), KEY_EVENT_FIRE_HAMMER))
-				Reverse();
+			const auto ClientID = pPlayer->GetCID();
+			if(distance(m_PosControll, pChar->GetMousePos()) < 24.0f)
+			{
+				if(Server()->Input()->IsKeyClicked(ClientID, KEY_EVENT_FIRE_HAMMER))
+					Reverse();
 
-			GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::GameInformation, 10, "Use hammer 'fire.' To operate the door '{}'!", m_Name);
+				GS()->Broadcast(ClientID, BroadcastPriority::GameInformation, 10, "Use hammer 'fire.' To operate the door '{}'!", m_Name);
+			}
 		}
 	}
 
@@ -128,12 +129,10 @@ bool CEntityHouseDoor::PlayerHouseTick(CHouse* pHouse)
 	{
 		for(auto* pChar = (CCharacter*)GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); pChar; pChar = (CCharacter*)pChar->TypeNext())
 		{
-			vec2 IntersectPos;
-			if(closest_point_on_line(m_Pos, m_PosTo, pChar->m_Core.m_Pos, IntersectPos))
+			if(is_within_distance_to_segment_sq(DOOR_ACTIVATION_RADIUS_SQUARED, m_Pos, m_PosTo, pChar->GetPos()))
 			{
 				// only for has access
-				if(distance(pChar->GetPos(), IntersectPos) > 320.f ||
-					pHouse->GetAccountID() == pChar->GetPlayer()->Account()->GetID())
+				if(pHouse->GetAccountID() == pChar->GetPlayer()->Account()->GetID())
 					continue;
 
 				// skip eidolon
@@ -174,14 +173,19 @@ bool CEntityHouseDoor::GuildHouseTick(CGuildHouse* pHouse)
 	// interact with the door
 	for(auto* pChar = (CCharacter*)GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); pChar; pChar = (CCharacter*)pChar->TypeNext())
 	{
-		auto* pCheckGuild = pChar->GetPlayer()->Account()->GetGuild();
-		const auto ClientID = pChar->GetPlayer()->GetCID();
 
 		// interaction by mouse
 		if(distance(m_PosControll, pChar->GetMousePos()) < 24.0f)
 		{
-			if(pCheckGuild && HouseIsPurchased && pCheckGuild->GetID() == pHouse->GetGuild()->GetID() &&
-				pChar->GetPlayer()->Account()->GetGuildMember()->CheckAccess(GUILD_RANK_RIGHT_UPGRADES_HOUSE))
+			// initialize variables
+			const auto* pPlayer = pChar->GetPlayer();
+			const auto* pAccount = pPlayer->Account();
+			const auto* pGuild = pAccount->GetGuild();
+			const auto ClientID = pPlayer->GetCID();
+
+			// check valid
+			if(pGuild && HouseIsPurchased && pGuild->GetID() == pHouse->GetGuild()->GetID() &&
+				pAccount->GetGuildMember()->CheckAccess(GUILD_RANK_RIGHT_UPGRADES_HOUSE))
 			{
 				if(Server()->Input()->IsKeyClicked(ClientID, KEY_EVENT_FIRE_HAMMER))
 					Reverse();
@@ -198,12 +202,11 @@ bool CEntityHouseDoor::GuildHouseTick(CGuildHouse* pHouse)
 		// is closed
 		if(m_State == State::Closed)
 		{
-			vec2 IntersectPos;
-			if(closest_point_on_line(m_Pos, m_PosTo, pChar->m_Core.m_Pos, IntersectPos))
+			if(is_within_distance_to_segment_sq(DOOR_ACTIVATION_RADIUS_SQUARED, m_Pos, m_PosTo, pChar->GetPos()))
 			{
 				// only for has access
-				if(distance(pChar->GetPos(), IntersectPos) > 320.f ||
-					(pCheckGuild && HouseIsPurchased && pCheckGuild->GetID() == pHouse->GetGuild()->GetID()))
+				auto* pGuild = pChar->GetPlayer()->Account()->GetGuild();
+				if(pGuild && HouseIsPurchased && pGuild->GetID() == pHouse->GetGuild()->GetID())
 					continue;
 
 				pChar->SetDoorHit(GetID());

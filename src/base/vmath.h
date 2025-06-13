@@ -187,28 +187,53 @@ typedef vector2_base<bool> bvec2;
 typedef vector2_base<int> ivec2;
 
 template<typename T>
-constexpr inline bool closest_point_on_line(vector2_base<T> line_pointA, vector2_base<T> line_pointB, vector2_base<T> target_point, vector2_base<T>& out_pos)
+constexpr inline bool closest_point_on_line(const vector2_base<T>& line_pointA, const vector2_base<T>& line_pointB,
+	const vector2_base<T>& target_point, vector2_base<T>& out_pos)
 {
-	vector2_base<T> AB = line_pointB - line_pointA;
-	T SquaredMagnitudeAB = dot(AB, AB);
-	if(SquaredMagnitudeAB > 0)
+	const vector2_base<T> AB = line_pointB - line_pointA;
+	const vector2_base<T> AP = target_point - line_pointA;
+	const T SquaredMagnitudeAB = dot(AB, AB);
+	const T APdotAB = dot(AP, AB);
+
+	if(APdotAB <= 0)
 	{
-		vector2_base<T> AP = target_point - line_pointA;
-		T APdotAB = dot(AP, AB);
-		T t = APdotAB / SquaredMagnitudeAB;
-		out_pos = line_pointA + AB * clamp(t, (T)0, (T)1);
+		out_pos = line_pointA;
 		return true;
 	}
-	else
-		return false;
+
+	if(APdotAB >= SquaredMagnitudeAB)
+	{
+		out_pos = line_pointB;
+		return SquaredMagnitudeAB > 0;
+	}
+
+	if(SquaredMagnitudeAB > 0)
+	{
+		const T t = APdotAB / SquaredMagnitudeAB;
+		out_pos = line_pointA + AB * t;
+		return true;
+	}
+
+	return false;
 }
 
 template<typename T>
-constexpr inline bool is_within_distance_on_line(float dist, vector2_base<T> line_pointA, vector2_base<T> line_pointB, vector2_base<T> target_point)
+constexpr inline bool is_within_distance_to_segment(float dist, const vector2_base<T>& line_pointA, const vector2_base<T>& line_pointB,
+	const vector2_base<T>& target_point)
 {
 	vector2_base<T> IntersectPos;
 	if(closest_point_on_line(line_pointA, line_pointB, target_point, IntersectPos))
 		return distance(IntersectPos, target_point) < dist;
+	return false;
+}
+
+template<typename T>
+constexpr inline bool is_within_distance_to_segment_sq(float squared_dist, const vector2_base<T>& line_pointA, const vector2_base<T>& line_pointB,
+	const vector2_base<T>& target_point)
+{
+	vector2_base<T> IntersectPos;
+	if(closest_point_on_line(line_pointA, line_pointB, target_point, IntersectPos))
+		return distance_squared(IntersectPos, target_point) < squared_dist;
 	return false;
 }
 
