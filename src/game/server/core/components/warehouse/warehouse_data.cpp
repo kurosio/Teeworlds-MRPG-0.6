@@ -181,24 +181,9 @@ void CWarehouse::InitData(const DBSet& Type, const std::string& ItemsString, con
 
 	m_GroupedTrades.sort_all_items([](const CTrade* a, const CTrade* b)
 	{
-		const auto aPrice = a->GetItem()->Info()->GetInitialPrice();
-		const auto bPrice = b->GetItem()->Info()->GetInitialPrice();
-
-		if(aPrice != bPrice)
-		{
-			return aPrice < bPrice;
-		}
-
-		const auto aGroup = a->GetItem()->Info()->GetGroup();
-		const auto bGroup = b->GetItem()->Info()->GetGroup();
-		if(aGroup != bGroup)
-		{
-			return aGroup < bGroup;
-		}
-
-		const auto aType = a->GetItem()->Info()->GetType();
-		const auto bType = b->GetItem()->Info()->GetType();
-		return aType < bType;
+		const auto aPrice = a->GetPrice();
+		const auto bPrice = b->GetPrice();
+		return aPrice < bPrice;
 	});
 
 	dbg_msg("warehouse", "'%s' (ID: %d) initialized. Total Items: %zu, Groups: %zu, Currency: %d, WorldID: %d",
