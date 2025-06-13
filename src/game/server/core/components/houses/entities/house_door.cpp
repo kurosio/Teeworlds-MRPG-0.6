@@ -132,7 +132,8 @@ bool CEntityHouseDoor::PlayerHouseTick(CHouse* pHouse)
 			if(closest_point_on_line(m_Pos, m_PosTo, pChar->m_Core.m_Pos, IntersectPos))
 			{
 				// only for has access
-				if(pHouse->GetAccountID() == pChar->GetPlayer()->Account()->GetID())
+				if(distance(pChar->GetPos(), IntersectPos) > 320.f ||
+					pHouse->GetAccountID() == pChar->GetPlayer()->Account()->GetID())
 					continue;
 
 				// skip eidolon
@@ -200,7 +201,9 @@ bool CEntityHouseDoor::GuildHouseTick(CGuildHouse* pHouse)
 			vec2 IntersectPos;
 			if(closest_point_on_line(m_Pos, m_PosTo, pChar->m_Core.m_Pos, IntersectPos))
 			{
-				if(pCheckGuild && HouseIsPurchased && pCheckGuild->GetID() == pHouse->GetGuild()->GetID())
+				// only for has access
+				if(distance(pChar->GetPos(), IntersectPos) > 320.f ||
+					(pCheckGuild && HouseIsPurchased && pCheckGuild->GetID() == pHouse->GetGuild()->GetID()))
 					continue;
 
 				pChar->SetDoorHit(GetID());

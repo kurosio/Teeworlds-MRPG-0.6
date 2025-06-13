@@ -95,13 +95,24 @@ public:
 		if(!m_pResult)
 			return result;
 
-		std::string jsonString = m_pResult->getString(column).c_str();
-		bool hasError = mystd::json::parse(jsonString, [&result](nlohmann::json& j)
-		{
-			result = std::move(j);
-		});
+		const std::string jsonString = m_pResult->getString(column).c_str();
+		if(jsonString.empty())
+			return result;
 
-		dbg_assert(!hasError, fmt_default("JSON from DB for column '{}' failed to parse.", column.c_str()).c_str());
+		try
+		{
+			return nlohmann::json::parse(jsonString);
+		}
+		catch(const nlohmann::json::parse_error& e)
+		{
+			[[unlikely]]
+			{
+				const auto errorMsg = fmt_default("JSON from DB for column '{}' failed to parse: {}", column.c_str(), e.what());
+				dbg_assert(false, errorMsg.c_str());
+				return nullptr;
+			}
+		}
+
 		return result;
 	}
 
@@ -122,14 +133,22 @@ public:
 
 	BigInt getBigInt(const SQLString& column) const
 	{
+		const std::string stringValue = m_pResult->getString(column).c_str();
+		if(stringValue.empty())
+			return BigInt(0);
+
 		try
 		{
-			const std::string stringValue = m_pResult->getString(column).c_str();
 			return BigInt(stringValue);
 		}
 		catch(const SQLException& e)
 		{
-			throw std::runtime_error("Failed to convert column '" + std::string(column.c_str()) + "' to BigInt: " + e.what());
+			[[unlikely]]
+			{
+				const auto errorMsg = fmt_default("Failed to convert column '{}' to BigInt: {}", column.c_str(), e.what());
+				dbg_assert(false, errorMsg.c_str());
+				return BigInt();
+			}
 		}
 	}
 
