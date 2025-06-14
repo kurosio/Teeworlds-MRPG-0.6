@@ -452,7 +452,7 @@ bool CAccountData::RemoveGoldFromBank(int Amount)
 	return false;
 }
 
-void CAccountData::HandleChair(int ChairLevel, uint64_t EachLevel)
+void CAccountData::HandleChair(int ChairLevel)
 {
 	// per every sec
 	const auto* pServer = Instance::Server();
@@ -468,8 +468,8 @@ void CAccountData::HandleChair(int ChairLevel, uint64_t EachLevel)
 	const int ProfessionLevel = pClassProfession->GetLevel();
 	const int MaxGoldCapacity = GetGoldCapacity();
 	const bool IsGoldBagFull = (GetGold() >= MaxGoldCapacity);
-	const auto ExpGain = std::max<uint64_t>(EachLevel, calculate_exp_gain(g_Config.m_SvChairExpFactor, ProfessionLevel, (ChairLevel * EachLevel) + ProfessionLevel));
-	const int GoldGain = IsGoldBagFull ? 0 : maximum((int)EachLevel, (int)calculate_loot_gain(ChairLevel, 1, (int)EachLevel));
+	const auto ExpGain = std::max<uint64_t>(1, calculate_exp_gain(ProfessionLevel, ChairLevel));
+	const int GoldGain = IsGoldBagFull ? 0 : std::max(1, (int)calculate_loot_gain(ChairLevel, 2));
 	const int TotalPercentBonusGold = round_to_int(m_BonusManager.GetTotalBonusPercentage(BONUS_TYPE_GOLD));
 	const int TotalPercentBonusExp = round_to_int(m_BonusManager.GetTotalBonusPercentage(BONUS_TYPE_EXPERIENCE));
 

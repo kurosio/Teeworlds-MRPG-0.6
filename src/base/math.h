@@ -254,27 +254,10 @@ constexpr inline uint64_t calculate_exp_gain(int playerLevel, int factorLevel)
 	return maximum((uint64_t)1, experience, minimumExperience);
 }
 
-
-constexpr inline uint64_t calculate_loot_gain(int baseLevel, int eachLevel, int valuePerStep, bool randomBonus = false)
+constexpr inline uint64_t calculate_loot_gain(int factorLevel, int delimiter)
 {
-	uint64_t gold = 0;
-
-	if(eachLevel > 0)
-	{
-		int bonusSteps = baseLevel / eachLevel;
-		uint64_t bonusAmount = static_cast<uint64_t>(bonusSteps) * valuePerStep;
-		gold += bonusAmount;
-	}
-
-	if(randomBonus)
-	{
-		if(gold > 0)
-			gold += rand() % (gold / 5 + 1);
-	}
-
-	uint64_t minimumGold = static_cast<uint64_t>(gold * 0.05);
-	return maximum((uint64_t)1, gold, minimumGold);
+	uint64_t value = (factorLevel / delimiter);
+	return maximum((uint64_t)1, value);
 }
-
 
 #endif // BASE_MATH_H

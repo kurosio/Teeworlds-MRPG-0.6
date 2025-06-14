@@ -175,7 +175,7 @@ public:
 	void AddGoldToBank(int Amount);
 	bool RemoveGoldFromBank(int Amount);
 	bool SpendCurrency(int Price, int CurrencyItemID = 1); // Returns a boolean value indicating whether the currency was successfully spent or not.
-	void HandleChair(int Level, uint64_t EachLevel);
+	void HandleChair(int Level);
 
 	// Achievements
 	void InitAchievements(const std::string& Data);

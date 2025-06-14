@@ -88,7 +88,7 @@ void CGuildManager::OnCharacterTile(CCharacter* pChr)
 			if(pGuildHouse->GetGuild())
 			{
 				const auto ChairLevel = pGuildHouse->GetGuild()->GetUpgrades().getRef<int>((int)GuildUpgrade::ChairLevel);
-				pPlayer->Account()->HandleChair(ChairLevel, 1);
+				pPlayer->Account()->HandleChair(ChairLevel);
 			}
 		}
 	}

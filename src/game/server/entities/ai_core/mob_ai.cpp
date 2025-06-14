@@ -73,7 +73,7 @@ void CMobAI::OnRewardPlayer(CPlayer* pPlayer, vec2 Force) const
 	{
 		if(pPlayer->Account()->GetGold() < pPlayer->Account()->GetGoldCapacity())
 		{
-			const int goldGain = calculate_loot_gain(MobLevel, 5, 1, true);
+			const int goldGain = calculate_loot_gain(MobLevel, 3);
 
 			if(showMessages)
 				GS()->Chat(ClientID, "You gained {} gold.", goldGain);
@@ -84,13 +84,13 @@ void CMobAI::OnRewardPlayer(CPlayer* pPlayer, vec2 Force) const
 
 	// grinding materials
 	{
-		const int materialGain = calculate_loot_gain(MobLevel, 10, 1, false);
+		const int materialGain = calculate_loot_gain(MobLevel, 10);
 		pPlayer->GetItem(itMaterial)->Add(materialGain);
 	}
 
 	// grinding experience
 	{
-		int expGain = calculate_exp_gain(g_Config.m_SvMobKillExpFactor, PlayerLevel, MobLevel);
+		int expGain = calculate_exp_gain(PlayerLevel, MobLevel);
 		const int expBonusDrop = maximum(expGain / 3, 1);
 
 		GS()->ApplyExperienceMultiplier(&expGain);

@@ -1547,20 +1547,12 @@ void CCharacter::HandleTilesImpl(int Index)
 
 		// chairs
 		if(m_pTilesHandler->IsActive(TILE_CHAIR_LV1))
-		{
-			const auto levelingAppend = 1 + m_pPlayer->Account()->GetLevel() / 10;
-			m_pPlayer->Account()->HandleChair(1, levelingAppend);
-		}
+			m_pPlayer->Account()->HandleChair(1);
 		if(m_pTilesHandler->IsActive(TILE_CHAIR_LV2))
-		{
-			const auto levelingAppend = 1 + m_pPlayer->Account()->GetLevel() / 10;
-			m_pPlayer->Account()->HandleChair(3, levelingAppend);
-		}
+			m_pPlayer->Account()->HandleChair(7);
 		if(m_pTilesHandler->IsActive(TILE_CHAIR_LV3))
-		{
-			const auto levelingAppend = 1 + m_pPlayer->Account()->GetLevel() / 10;
-			m_pPlayer->Account()->HandleChair(5, levelingAppend);
-		}
+			m_pPlayer->Account()->HandleChair(15);
+
 		// locked view cam
 		if(const auto result = GS()->Collision()->TryGetFixedCamPos(m_Pos))
 			m_pPlayer->LockedView().ViewLock(result->first, result->second);

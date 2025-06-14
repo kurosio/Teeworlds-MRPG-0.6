@@ -311,7 +311,7 @@ private:
 	DBFieldContainer m_UpgradesData
 	{
 		DBField<int>((int)GuildUpgrade::AvailableSlots, "AvailableSlots", "Available slots", GUILD_NEW_UPGRADE_SLOTS, GUILD_MAX_SLOTS),
-		DBField<int>((int)GuildUpgrade::ChairLevel, "ChairLevel", "Chair level", GUILD_NEW_UPGRADE_CHAIR, 50),
+		DBField<int>((int)GuildUpgrade::ChairLevel, "ChairLevel", "Chair level", GUILD_NEW_UPGRADE_CHAIR, 100),
 		DBField<int>((int)GuildUpgrade::DoorHealth, "DoorHealth", "Max door health", GUILD_NEW_UPGRADE_DOOR_HEALTH, 20),
 		DBField<int>((int)GuildUpgrade::DecorationSlots, "DecorationSlots", "Decoration slots", GUILD_NEW_UPGRADE_DECORATION_SLOT, 30),
 	};
