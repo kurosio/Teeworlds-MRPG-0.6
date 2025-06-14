@@ -245,17 +245,15 @@ constexpr inline uint64_t computeExperience(unsigned Level)
 	return Level * (static_cast<unsigned long long>(Level) - 1) * 24;
 }
 
-constexpr inline uint64_t calculate_exp_gain(int factorCount, int baseLevel, int factorLevel)
+constexpr inline uint64_t calculate_exp_gain(int playerLevel, int factorLevel)
 {
-	int levelDifference = baseLevel - factorLevel;
-	double multiplier = (levelDifference >= 0)
-		? 1.0 + (levelDifference * 0.05)
-		: 1.0 / (1.0 + (std::abs(levelDifference) * 0.1));
-	uint64_t baseExp = computeExperience(factorLevel) / factorCount;
+	double multiplier = (playerLevel < factorLevel) ? 1.0 / (1.0 + ((factorLevel - playerLevel) * 0.05)) : 1.0;
+	uint64_t baseExp = factorLevel;
 	uint64_t experience = baseExp / multiplier;
 	uint64_t minimumExperience = baseExp * 0.05;
 	return maximum((uint64_t)1, experience, minimumExperience);
 }
+
 
 constexpr inline uint64_t calculate_loot_gain(int baseLevel, int eachLevel, int valuePerStep, bool randomBonus = false)
 {
