@@ -3,23 +3,28 @@
 #include <game/server/gamecontext.h>
 #include <generated/protocol.h>
 
-void CCooldown::Start(int Tick, std::string Name, CCooldownCallback fnCallback)
+void CCooldown::Init(int ClientID)
 {
-	if(m_ClientID < 0 || m_ClientID >= MAX_PLAYERS || m_Active)
+	m_ClientID = ClientID;
+}
+
+void CCooldown::Start(int Ticks, std::string_view Name, CCooldownCallback fnCallback)
+{
+	if(m_ClientID < 0 || m_ClientID >= MAX_PLAYERS || m_Active || Ticks <= 0)
 		return;
 
-	auto* pGS = (CGS*)Instance::GameServerPlayer(m_ClientID);
-	auto* pPlayer = pGS->GetPlayer(m_ClientID, true, true);
-	if(!pPlayer)
+	auto* pGS = static_cast<CGS*>(Instance::GameServerPlayer(m_ClientID));
+	auto* pPlayer = pGS->GetPlayer(m_ClientID);
+	if(!pPlayer || !pPlayer->GetCharacter())
 		return;
 
-	m_Name = std::move(Name);
+	m_Name = Name;
 	m_Callback = std::move(fnCallback);
 	m_Active = true;
 	m_Interrupted = false;
 	m_Pos = pPlayer->m_ViewPos;
-	m_StartedTick = Tick;
-	m_Tick = Tick;
+	m_StartedTick = Ticks;
+	m_Tick = Ticks;
 
 	pGS->CreatePlayerSpawn(m_Pos, CmaskOne(m_ClientID));
 	pPlayer->GetCharacter()->SetEmote(EMOTE_BLINK, (m_Tick / SERVER_TICK_SPEED), true);
@@ -33,6 +38,7 @@ void CCooldown::Reset()
 	m_Active = false;
 	m_Pos = {};
 	m_Interrupted = false;
+	m_Name.clear();
 }
 
 void CCooldown::Tick()
@@ -40,73 +46,71 @@ void CCooldown::Tick()
 	if(!m_Active)
 		return;
 
-	const auto pGS = (CGS*)Instance::GameServerPlayer(m_ClientID);
-	auto* pPlayer = pGS->GetPlayer(m_ClientID, true, true);
-	if(!pPlayer)
+	// check valid
+	const auto* pGS = static_cast<CGS*>(Instance::GameServerPlayer(m_ClientID));
+	auto* pPlayer = pGS->GetPlayer(m_ClientID);
+	if(!pPlayer || !pPlayer->GetCharacter())
 	{
 		Reset();
 		return;
 	}
 
-	if(m_Tick <= 0)
-	{
-		EndCooldown();
-
-		if(m_Callback)
-		{
-			m_Callback();
-		}
-
-		return;
-	}
-
+	// interrupted
 	if(m_Interrupted)
 	{
-		EndCooldown("< Interrupted >");
+		BroadcastCooldownInfo("< Interrupted >");
+		Reset();
 		return;
 	}
 
+	// update tick
+	if(m_Tick-- <= 0)
+	{
+		BroadcastCooldownInfo();
+		if(m_Callback)
+			m_Callback();
+
+		Reset();
+		return;
+	}
+
+	// check player moving and send broadcast info
 	auto* pServer = Instance::Server();
 	if(pServer->Tick() % (pServer->TickSpeed() / 25) == 0)
 	{
-		if(HasPlayerMoved(pPlayer))
+		if(HasPlayerMoved(pPlayer->GetCharacter()))
 		{
 			m_Interrupted = true;
 			return;
 		}
-
-		BroadcastCooldown(pServer);
+		BroadcastCooldownProgress(pServer);
 	}
-
-	m_Tick--;
 }
 
-
-void CCooldown::EndCooldown(const char* pReason)
+bool CCooldown::HasPlayerMoved(CCharacter* pChar) const
 {
-	const auto pGS = (CGS*)Instance::GameServerPlayer(m_ClientID);
+	return distance_squared(m_Pos, pChar->GetPos()) > squared(48.f);
+}
 
-	m_Active = false;
-	pGS->Broadcast(m_ClientID, BroadcastPriority::VeryImportant, 50, pReason);
+void CCooldown::BroadcastCooldownInfo(const char* pReason) const
+{
+	auto* pGS = static_cast<CGS*>(Instance::GameServerPlayer(m_ClientID));
+	pGS->Broadcast(m_ClientID, BroadcastPriority::VeryImportant, 50, pReason ? pReason : "\0");
 	pGS->CreatePlayerSpawn(m_Pos, CmaskOne(m_ClientID));
 }
 
-bool CCooldown::HasPlayerMoved(CPlayer* pPlayer) const
+void CCooldown::BroadcastCooldownProgress(IServer* pServer) const
 {
-	return distance(m_Pos, pPlayer->m_ViewPos) > 48.f;
-}
+	// initialize variables
+	auto* pGS = static_cast<CGS*>(Instance::GameServerPlayer(m_ClientID));
+	const int TickSpeed = pServer->TickSpeed();
+	const int Seconds = m_Tick / TickSpeed;
+	const int Microseconds = (m_Tick % TickSpeed * 100) / TickSpeed;
+	const float currentProgress = translate_to_percent(m_StartedTick, m_Tick);
 
-void CCooldown::BroadcastCooldown(IServer* pServer) const
-{
-	const int seconds = m_Tick / pServer->TickSpeed();
-	const int microseconds = m_Tick % pServer->TickSpeed();
-
-	char timeFormat[32];
-	str_format(timeFormat, sizeof(timeFormat), "%d.%.2ds", seconds, microseconds);
-
-	const float currentProgress = (float)translate_to_percent(m_StartedTick, m_Tick);
+	// send information
+	char aTimeFormat[32];
+	str_format(aTimeFormat, sizeof(aTimeFormat), "%d.%.2ds", Seconds, Microseconds);
 	std::string progressBar = mystd::string::progressBar(100, static_cast<int>(currentProgress), 10, "\u25B0", "\u25B1");
-
-	const auto pGS = (CGS*)Instance::GameServerPlayer(m_ClientID);
-	pGS->Broadcast(m_ClientID, BroadcastPriority::VeryImportant, 10, "{}\n< {} > {} - Action", m_Name, timeFormat, progressBar);
+	pGS->Broadcast(m_ClientID, BroadcastPriority::VeryImportant, 10, "{}\n< {} > {} - Action", m_Name, aTimeFormat, progressBar);
 }

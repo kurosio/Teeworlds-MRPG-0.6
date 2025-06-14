@@ -7,8 +7,8 @@ using CCooldownCallback = std::function<void()>;
 
 class CCooldown
 {
+	int m_ClientID { NOPE };
 	std::string m_Name {};
-	int m_ClientID {};
 	vec2 m_Pos {};
 	int m_Tick {};
 	int m_StartedTick {};
@@ -18,17 +18,18 @@ class CCooldown
 
 public:
 	CCooldown() = default;
-	void Init(int ClientID) { m_ClientID = ClientID; }
-	void Start(int Time, std::string Name, CCooldownCallback fnCallback);
+
+	void Init(int ClientID);
+	void Start(int Time, std::string_view Name, CCooldownCallback fnCallback);
 	void Reset();
-	bool IsActive() const { return m_Active; }
 	void Tick();
 
-private:
-	void EndCooldown(const char* pMessage = "\0");
-	bool HasPlayerMoved(CPlayer* pPlayer) const;
-	void BroadcastCooldown(IServer* pServer) const;
+	[[nodiscard]] constexpr bool IsActive() const { return m_Active; }
 
+private:
+	[[nodiscard]] bool HasPlayerMoved(CCharacter* pChar) const;
+	void BroadcastCooldownInfo(const char* pMessage = nullptr) const;
+	void BroadcastCooldownProgress(IServer* pServer) const;
 };
 
 #endif // GAME_SERVER_CORE_UTILITIES_COOLDOWN_H

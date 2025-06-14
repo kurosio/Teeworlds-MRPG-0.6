@@ -163,6 +163,12 @@ constexpr inline T in_range(T a, T upper)
 	return in_range(a, 0, upper);
 }
 
+template<typename T>
+constexpr T squared(T value)
+{
+	return value * value;
+}
+
 class Chance
 {
 	bool m_State;
