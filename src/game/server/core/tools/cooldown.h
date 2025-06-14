@@ -2,7 +2,8 @@
 #define GAME_SERVER_CORE_UTILITIES_COOLDOWN_H
 
 class CGS;
-class CPlayer;
+class IServer;
+class CCharacter;
 using CCooldownCallback = std::function<void()>;
 
 class CCooldown
