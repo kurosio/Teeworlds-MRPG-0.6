@@ -132,8 +132,10 @@ MACRO_CONFIG_INT(SvAttributedModulesSlots, sv_attributed_modules_slots, 5, 1, 10
 // -----------------------
 // Dungeon sync balance
 // -----------------------
+MACRO_CONFIG_INT(SvDungeonExpMultiplier, sv_dungeon_exp_multiplier, 500, 100, 1000, CFGFLAG_SERVER, "Experience multiplier for completing raid dungeons (percent)")
+MACRO_CONFIG_INT(SvDungeonGoldMultiplier, sv_dungeon_gold_multiplier, 500, 100, 1000, CFGFLAG_SERVER, "Gold multiplier for completing raid dungeons (percent)")
+
 MACRO_CONFIG_INT(SvAvailableDungeonJoin, sv_available_dungeon_join, 1, 0, 1, CFGFLAG_SERVER, "Available join to dungeon world");
-MACRO_CONFIG_INT(SvDungeonExpMultiplier, sv_dungeon_exp_multiplier, 150, 100, 1000, CFGFLAG_SERVER, "Experience multiplier for completing raid dungeons (percent)")
 MACRO_CONFIG_INT(SvDungeonWaitingTime, sv_dungeon_waiting_time, 180, 0, 1020, CFGFLAG_SERVER, "Waiting time for dungeon entry (in seconds)")
 
 // --- PlayerStatConversionFactor ---
@@ -157,15 +159,6 @@ MACRO_CONFIG_INT(SvGuildMediumUpgradePrice, sv_guild_medium_upgrade_price, 25000
 MACRO_CONFIG_INT(SvGuildHighUpgradePrice, sv_guild_high_upgrade_price, 50000, 100, 9000000, CFGFLAG_SERVER, "High upgrade price")
 MACRO_CONFIG_INT(SvGuildWarDurationMinutes, sv_guild_war_duration_minutes, 30, 1, 240, CFGFLAG_SERVER, "Duration of a guild war in minutes")
 
-// -----------------------
-// Experience and Gold Configuration
-// -----------------------
-MACRO_CONFIG_INT(SvMobKillMaterialFactor, sv_mob_kill_material_factor, 10000, 100, 100000, CFGFLAG_SERVER, "Material multiplier for killing mobs")
-MACRO_CONFIG_INT(SvMobKillGoldFactor, sv_mob_kill_gold_factor, 5000, 100, 100000, CFGFLAG_SERVER, "Gold multiplier for killing mobs")
-MACRO_CONFIG_INT(SvMobKillExpFactor, sv_mob_kill_exp_factor, 4000, 100, 100000, CFGFLAG_SERVER, "Experience multiplier for killing mobs")
-
-MACRO_CONFIG_INT(SvChairGoldFactor, sv_chair_gold_factor, 50000, 100, 100000, CFGFLAG_SERVER, "Gold multiplier for using a chair")
-MACRO_CONFIG_INT(SvChairExpFactor, sv_chair_exp_factor, 40000, 1000, 100000, CFGFLAG_SERVER, "Experience multiplier for using a chair")
 
 // -----------------------
 // Crafting and Resource Leveling Configuration

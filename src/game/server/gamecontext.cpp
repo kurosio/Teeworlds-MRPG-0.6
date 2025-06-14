@@ -35,7 +35,6 @@ CGS::CGS()
 	m_pEntityManager = new CEntityManager(this);
 	m_pMmoController = new CMmoController(this);
 
-	m_MultiplierExp = 0;
 	m_pStorage = nullptr;
 	m_pServer = nullptr;
 	m_pController = nullptr;
@@ -742,12 +741,14 @@ void CGS::OnDaytypeChange(int NewDaytype)
 	switch(NewDaytype)
 	{
 		case NIGHT_TYPE:
-			UpdateExpMultiplier();
-			ChatWorld(m_WorldID, "", "Nighttime adventure in the '{}' zone has been boosted by {}%!", pWorldname, m_MultiplierExp);
+			UpdateWorldMultipliers();
+			ChatWorld(m_WorldID, "", "Night has fallen in '{}'!", pWorldname);
+			BroadcastWorld(m_WorldID, BroadcastPriority::VeryImportant, 200, "Rates: Exp {}% | Gold {}%", GetExperienceMultiplier(), GetGoldMultiplier());
 			break;
 		case MORNING_TYPE:
-			ChatWorld(m_WorldID, "", "The exp multiplier in the '{}' zone is 100%.", pWorldname);
-			ResetExpMultiplier();
+			ResetWorldMultipliers();
+			ChatWorld(m_WorldID, "", "The sun rises over '{}'!", pWorldname);
+			BroadcastWorld(m_WorldID, BroadcastPriority::VeryImportant, 200, "Rates: Exp {}% | Gold {}%", GetExperienceMultiplier(), GetGoldMultiplier());
 			break;
 		default: break;
 	}
@@ -1229,7 +1230,7 @@ void CGS::OnClientEnter(int ClientID, bool FirstEnter)
 		return;
 	}
 
-	Chat(ClientID, "Welcome to '{}'! Zone multiplier exp is at '{}%'.", Server()->GetWorldName(m_WorldID), m_MultiplierExp);
+	Chat(ClientID, "Welcome to '{}'!", Server()->GetWorldName(m_WorldID));
 	Core()->AccountManager()->LoadAccount(pPlayer, false);
 	Core()->SaveAccount(m_apPlayers[ClientID], SAVE_POSITION);
 }
@@ -1414,20 +1415,23 @@ bool CGS::SendMenuMotd(CPlayer* pPlayer, int Menulist) const
 	return pPlayer ? Core()->OnSendMenuMotd(pPlayer, Menulist) : false;
 }
 
-void CGS::UpdateExpMultiplier()
+void CGS::UpdateWorldMultipliers()
 {
 	if(IsWorldType(WorldType::Dungeon))
 	{
-		m_MultiplierExp = g_Config.m_SvDungeonExpMultiplier;
+		m_WorldMultipliers.Experience = g_Config.m_SvDungeonExpMultiplier;
+		m_WorldMultipliers.Gold = g_Config.m_SvDungeonGoldMultiplier;
 		return;
 	}
 
-	m_MultiplierExp = (100 + maximum(20, rand() % 200));
+	m_WorldMultipliers.Experience = (100 + maximum(20, rand() % 200));
+	m_WorldMultipliers.Gold = (100 + maximum(20, rand() % 100));
 }
 
-void CGS::ResetExpMultiplier()
+void CGS::ResetWorldMultipliers()
 {
-	m_MultiplierExp = 100;
+	m_WorldMultipliers.Experience = 100;
+	m_WorldMultipliers.Gold = 100;
 }
 
 void CGS::UpdateVotesIfForAll(int MenuList) const
@@ -1566,7 +1570,7 @@ void CGS::InitWorld()
 	}
 
 	// initialize controller and update game state
-	UpdateExpMultiplier();
+	UpdateWorldMultipliers();
 	m_pController->OnInit();
 	m_AllowedPVP = pWorldDetail->HasFlag(WORLD_FLAG_ALLOWED_PVP);
 

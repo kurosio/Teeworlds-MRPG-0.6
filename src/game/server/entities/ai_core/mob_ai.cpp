@@ -73,7 +73,8 @@ void CMobAI::OnRewardPlayer(CPlayer* pPlayer, vec2 Force) const
 	{
 		if(pPlayer->Account()->GetGold() < pPlayer->Account()->GetGoldCapacity())
 		{
-			const int goldGain = calculate_loot_gain(MobLevel, 3);
+			int goldGain = calculate_loot_gain(MobLevel, 3);
+			GS()->ApplyMultiplier(MultiplierType::GOLD, &goldGain);
 
 			if(showMessages)
 				GS()->Chat(ClientID, "You gained {} gold.", goldGain);
@@ -92,8 +93,7 @@ void CMobAI::OnRewardPlayer(CPlayer* pPlayer, vec2 Force) const
 	{
 		int expGain = calculate_exp_gain(PlayerLevel, MobLevel);
 		const int expBonusDrop = maximum(expGain / 3, 1);
-
-		GS()->ApplyExperienceMultiplier(&expGain);
+		GS()->ApplyMultiplier(MultiplierType::EXPERIENCE, &expGain);
 
 		if(showMessages)
 			GS()->Chat(ClientID, "You gained {} exp.", expGain);

@@ -12,6 +12,18 @@
 
 #include "core/mmo_controller.h"
 
+enum class MultiplierType
+{
+	EXPERIENCE,
+	GOLD,
+};
+
+struct WorldMultipliers
+{
+	int Experience { 100 };
+	int Gold { 100 };
+};
+
 class CGS : public IGameServer
 {
 	struct CBroadcastState
@@ -39,7 +51,6 @@ class CGS : public IGameServer
 	class CScenarioPlayerManager* m_pScenarioPlayerManager;
 	class CScenarioGroupManager* m_pScenarioGroupManager;
 
-	int m_MultiplierExp;
 	CPlayer* m_apPlayers[MAX_CLIENTS];
 	CBroadcastState m_aBroadcastStates[MAX_PLAYERS];
 	CCollision m_Collision;
@@ -48,6 +59,7 @@ class CGS : public IGameServer
 	bool m_AllowedPVP;
 	vec2 m_JailPosition;
 	int m_WorldID;
+	WorldMultipliers m_WorldMultipliers;
 
 public:
 	IServer *Server() const { return m_pServer; }
@@ -142,13 +154,22 @@ public:
 	bool HasWorldFlag(int64_t Flag) const;
 
 	template <typename T> requires std::is_integral_v<T>
-	void ApplyExperienceMultiplier(T* pExperience) const
+	void ApplyMultiplier(MultiplierType Type, T* pValue) const
 	{
-		if(pExperience)
+		if(pValue)
 		{
-			*pExperience = translate_to_percent_rest(*pExperience, (float)m_MultiplierExp);
+			float MultiplierPercent = 100.0f;
+			if(Type == MultiplierType::EXPERIENCE)
+				MultiplierPercent = (float)m_WorldMultipliers.Experience;
+			else if(Type == MultiplierType::GOLD)
+				MultiplierPercent = (float)m_WorldMultipliers.Gold;
+
+			*pValue = translate_to_percent_rest(*pValue, MultiplierPercent);
 		}
 	}
+
+	int GetExperienceMultiplier() const { return m_WorldMultipliers.Experience; }
+	int GetGoldMultiplier() const { return m_WorldMultipliers.Gold; }
 
 	bool IsDutyStarted() const;
 	bool IsPlayerInWorld(int ClientID, std::optional<int> WorldIdOpt = std::nullopt) const;
@@ -166,8 +187,8 @@ public:
 private:
 	void InitWorld();
 	void ProcessNicknameChange(CPlayer* pPlayer, const char* pNewNickname) const;
-	void UpdateExpMultiplier();
-	void ResetExpMultiplier();
+	void UpdateWorldMultipliers();
+	void ResetWorldMultipliers();
 
 public:
 	template<typename... Ts> void Chat(int ClientID, const char* pText, const Ts&... args);
