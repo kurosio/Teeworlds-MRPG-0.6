@@ -1430,6 +1430,9 @@ void CGS::UpdateWorldMultipliers()
 
 void CGS::ResetWorldMultipliers()
 {
+	if(IsWorldType(WorldType::Dungeon))
+		return;
+
 	m_WorldMultipliers.Experience = 100;
 	m_WorldMultipliers.Gold = 100;
 }
