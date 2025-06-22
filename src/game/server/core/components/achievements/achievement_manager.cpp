@@ -114,7 +114,7 @@ void CAchievementManager::ShowTypeList(CPlayer* pPlayer, AchievementType Type) c
 
 	// achievements list
 	VoteWrapper(ClientID).Add("\u2263 {} achievements", GetAchievementTypeName(Type));
-	for(auto& pAchievement : achievements)
+	for(const auto& pAchievement : achievements)
 	{
 		const auto* pInfo = pAchievement->Info();
 		if(pInfo->GetType() != Type)
@@ -226,7 +226,7 @@ int CAchievementManager::GetCountByType(AchievementType Type) const
 
 int CAchievementManager::GetCompletedCountByType(int ClientID, AchievementType Type) const
 {
-	auto& pAchievements = CAchievement::Data()[ClientID];
+	const auto& pAchievements = CAchievement::Data()[ClientID];
 	return (int)std::ranges::count_if(pAchievements, [Type](const CAchievement* p)
 	{
 		return p->Info()->GetType() == Type && p->IsCompleted();
@@ -235,7 +235,7 @@ int CAchievementManager::GetCompletedCountByType(int ClientID, AchievementType T
 
 int CAchievementManager::GetCompletedCount(int ClientID) const
 {
-	auto& pAchievements = CAchievement::Data()[ClientID];
+	const auto& pAchievements = CAchievement::Data()[ClientID];
 	return (int)std::ranges::count_if(pAchievements, [](const CAchievement* p)
 	{
 		return p->IsCompleted();

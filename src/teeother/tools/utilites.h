@@ -267,24 +267,25 @@ namespace mystd
 	 */
 	namespace string
 	{
-		inline std::string progressBar(uint64_t maxValue, uint64_t currentValue, int totalSteps, const std::string& Fillsymbols, const std::string& EmptySymbols)
+		inline std::string progressBar(uint64_t maxValue, uint64_t currentValue, int totalSteps, const std::string& FillSymbols, const std::string& EmptySymbols)
 		{
-			std::string resutStr;
-			const auto numFilled = currentValue / totalSteps;
-			const auto numEmpty = maxValue / totalSteps - numFilled;
-			resutStr.reserve(numFilled + numEmpty);
+			if(maxValue == 0)
+				return "";
 
-			for(int i = 0; i < numFilled; i++)
-			{
-				resutStr += Fillsymbols;
-			}
+			currentValue = std::min(currentValue, maxValue);
+			const auto progress = static_cast<double>(currentValue) / maxValue;
+			const auto numFilled = static_cast<int>(progress * totalSteps);
+			const auto numEmpty = totalSteps - numFilled;
 
-			for(int i = 0; i < numEmpty; i++)
-			{
-				resutStr += EmptySymbols;
-			}
+			std::string resultStr;
+			resultStr.reserve(numFilled * FillSymbols.length() + numEmpty * EmptySymbols.length());
+			for(int i = 0; i < numFilled; ++i)
+				resultStr += FillSymbols;
 
-			return resutStr;
+			for(int i = 0; i < numEmpty; ++i)
+				resultStr += EmptySymbols;
+
+			return resultStr;
 		}
 
 		inline std::string trim(std::string_view sv)
