@@ -114,7 +114,7 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		{
 			const auto expNeed = pProfession->GetExpForNextLevel();
 			const auto progress = translate_to_percent(expNeed, pProfession->GetExperience());
-			const auto progressBar = mystd::string::progressBar(100, progress, 20, "\u25B0", "\u25B1");
+			const auto progressBar = mystd::string::progressBar(100, progress, 5, "\u25B0", "\u25B1");
 			Wrapper.MarkList().Add("{} [Lv{} {}] - {~.2}%", name.c_str(), pProfession->GetLevel(), progressBar, progress);
 		};
 
@@ -182,7 +182,7 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 				const char* pProfName = GetProfessionName(Prof.GetProfessionID());
 				const auto expNeed = Prof.GetExpForNextLevel();
 				const int progress = round_to_int(translate_to_percent(expNeed, Prof.GetExperience()));
-				const auto progressBar = mystd::string::progressBar(100, progress, 20, "\u25B0", "\u25B1");
+				const auto progressBar = mystd::string::progressBar(100, progress, 5, "\u25B0", "\u25B1");
 
 				VClassSelector.AddOption("SELECT_CLASS", static_cast<int>(Prof.GetProfessionID()), "({}) {} [Lv{} {} {~.1}%] ({}P)",
 					StrActiveFlag, pProfName, Prof.GetLevel(), progressBar, progress, Prof.GetUpgradePoint());

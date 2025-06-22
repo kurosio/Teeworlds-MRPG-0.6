@@ -136,7 +136,7 @@ void CAchievementManager::AddAchievementDetails(VoteWrapper& VAchievement, const
 	auto addProgressInfo = [&](VoteWrapper& wrapper, auto progress, auto required, std::string action, std::string needed = {})
 	{
 		const auto progressAchievement = translate_to_percent(Required, Progress);
-		const auto progressBar = mystd::string::progressBar(100, (int)progressAchievement, 10, "\u25B0", "\u25B1");
+		const auto progressBar = mystd::string::progressBar(100, (int)progressAchievement, 5, "\u25B0", "\u25B1");
 		wrapper.Add("Progress: {} - {~.2}%", progressBar, progressAchievement);
 		wrapper.Add("Achievement point: {}", pInfo->GetPoint());
 		if(needed.empty())
