@@ -170,7 +170,7 @@ public:
 	BigInt GetTotalGold() const;
 	int GetGoldCapacity() const;
 
-	void AddExperience(uint64_t Value) const;
+	void AddExperience(uint64_t Value, bool ApplyBonuses = true) const;
 	void AddGold(int Value, bool ApplyBonuses = false);
 	void AddGoldToBank(int Amount);
 	bool RemoveGoldFromBank(int Amount);

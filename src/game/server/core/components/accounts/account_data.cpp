@@ -321,7 +321,7 @@ BigInt CAccountData::GetTotalGold() const
 	return pPlayer ? m_Bank + pPlayer->GetItem(itGold)->GetValue() : 0;
 }
 
-void CAccountData::AddExperience(uint64_t Value) const
+void CAccountData::AddExperience(uint64_t Value, bool ApplyBonuses) const
 {
 	auto* pPlayer = GetPlayer();
 	if(!pPlayer)
@@ -337,7 +337,8 @@ void CAccountData::AddExperience(uint64_t Value) const
 
 	// increase exp value
 	const auto OldLevel = pClassProfession->GetLevel();
-	m_BonusManager.ApplyBonuses(BONUS_TYPE_EXPERIENCE, &Value);
+	if(ApplyBonuses)
+		m_BonusManager.ApplyBonuses(BONUS_TYPE_EXPERIENCE, &Value);
 	pClassProfession->AddExperience(Value);
 	if(pClassProfession->GetLevel() > OldLevel)
 	{
@@ -468,36 +469,34 @@ void CAccountData::HandleChair(int ChairLevel)
 	const int ProfessionLevel = pClassProfession->GetLevel();
 	const int MaxGoldCapacity = GetGoldCapacity();
 	const bool IsGoldBagFull = (GetGold() >= MaxGoldCapacity);
-	const auto ExpGain = std::max<uint64_t>(1, calculate_exp_gain(ProfessionLevel, ChairLevel));
-	const int GoldGain = IsGoldBagFull ? 0 : std::max(1, (int)calculate_loot_gain(ChairLevel, 2));
 	const int TotalPercentBonusGold = round_to_int(m_BonusManager.GetTotalBonusPercentage(BONUS_TYPE_GOLD));
 	const int TotalPercentBonusExp = round_to_int(m_BonusManager.GetTotalBonusPercentage(BONUS_TYPE_EXPERIENCE));
 
-	// add exp & gold
-	AddExperience(ExpGain);
-	if(!IsGoldBagFull)
-		AddGold(GoldGain, true);
-
 	// format
-	std::string expStr = "+" + std::to_string(ExpGain);
-	std::string goldStr = GoldGain > 0 ? "+" + std::to_string(GoldGain) : "Bag Full";
+	auto gainExp = std::max<uint64_t>(1, calculate_exp_gain(ProfessionLevel, ChairLevel));
+	int gainGold = IsGoldBagFull ? 0 : std::max(1, (int)calculate_loot_gain(ChairLevel, 2));
+	std::string expStr = fmt_default("+{}", gainExp);
+	std::string goldStr = gainGold > 0 ? fmt_default("+{}", gainGold) : "Bag Full";
 
-	// add bonus information
-	if(TotalPercentBonusExp > 0)
+	// apply bonuses and add info
+	if(TotalPercentBonusExp > 0 && gainExp > 0)
 	{
-		int bonusExpAppendInfo = 0;
-		m_BonusManager.ApplyBonuses(BONUS_TYPE_EXPERIENCE, &bonusExpAppendInfo);
-		expStr += "+" + std::to_string(bonusExpAppendInfo);
-		expStr += " (+" + std::to_string(TotalPercentBonusExp) + "% bonus)";
+		uint64_t bonusExp = 0;
+		m_BonusManager.ApplyBonuses(BONUS_TYPE_EXPERIENCE, &gainExp, &bonusExp);
+		expStr += fmt_default("+{} (+{}% bonus)", bonusExp, TotalPercentBonusExp);
 	}
 
-	if(TotalPercentBonusGold > 0 && GoldGain > 0)
+	if(TotalPercentBonusGold > 0 && gainGold > 0)
 	{
-		int bonusGoldAppendInfo = 0;
-		m_BonusManager.ApplyBonuses(BONUS_TYPE_GOLD, &bonusGoldAppendInfo);
-		goldStr += "+" + std::to_string(bonusGoldAppendInfo);
-		goldStr += " (+" + std::to_string(TotalPercentBonusGold) + "% bonus)";
+		int bonusGold = 0;
+		m_BonusManager.ApplyBonuses(BONUS_TYPE_GOLD, &gainGold, &bonusGold);
+		goldStr += fmt_default("+{} (+{}% bonus)", bonusGold, TotalPercentBonusGold);
 	}
+
+	// add exp & gold
+	AddExperience(gainExp, false);
+	if(!IsGoldBagFull)
+		AddGold(gainGold, false);
 
 	// send broadcast
 	GS()->Broadcast(m_ClientID, BroadcastPriority::MainInformation, 50, "Gold {$} of {$} (Total: {$}) : {}\nExp {}/{} : {}",
