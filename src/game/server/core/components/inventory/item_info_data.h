@@ -10,6 +10,21 @@
 #include "attribute_data.h"
 #include "random_box/random_box_data.h"
 
+enum
+{
+	ITEMFLAG_CANT_DROP = 1 << 0,
+	ITEMFLAG_CANT_TRADE = 1 << 1,
+};
+
+static void initItemFlags(int& outResult, const DBSet& set)
+{
+	outResult = 0;
+	if(set.hasSet("Can't droppable"))
+		outResult |= ITEMFLAG_CANT_DROP;
+	if(set.hasSet("Can't tradeable"))
+		outResult |= ITEMFLAG_CANT_TRADE;
+}
+
 using ItemIdentifier = int;
 class CItemDescription : public MultiworldIdentifiableData < std::map< int, CItemDescription > >
 {
@@ -38,6 +53,7 @@ private:
 	char m_aName[32] {};
 	char m_aDescription[64] {};
 	ItemGroup m_Group {};
+	int m_Flags {};
 	int m_InitialPrice {};
 	ItemType m_Type {};
 	ContainerAttributes m_aAttributes {};
@@ -51,14 +67,15 @@ public:
 	CItemDescription() = default;
 	CItemDescription(ItemIdentifier ID) : m_ID(ID) {}
 
-	void Init(const std::string& Name, const std::string& Description, const DBSet& GroupSet,
-		const DBSet& TypeSet, int InitialPrice, ContainerAttributes aAttributes, const std::string& Data, const std::string& ScenarioData)
+	void Init(const std::string& Name, const std::string& Description, const DBSet& GroupSet, const DBSet& TypeSet, const DBSet& Flags,
+		int InitialPrice, ContainerAttributes aAttributes, const std::string& Data, const std::string& ScenarioData)
 	{
 		m_Data = Data;
 		m_ScenarioData = ScenarioData;
 		str_copy(m_aDescription, Description.c_str(), sizeof(m_aDescription));
 		m_InitialPrice = InitialPrice;
 		m_aAttributes = std::move(aAttributes);
+		initItemFlags(m_Flags, Flags);
 
 		m_pData[m_ID] = *this;
 		m_pData[m_ID].InitData(GroupSet, TypeSet);
@@ -77,6 +94,7 @@ public:
 	bool IsType(ItemType Type) const { return m_Type == Type; }
 	ItemGroup GetGroup() const { return m_Group; }
 	bool IsGroup(ItemGroup Group) const { return m_Group == Group; }
+	bool HasFlag(int Flag) const { return (m_Flags & Flag) != 0; }
 
 	bool IsEquipmentSlot() const
 	{

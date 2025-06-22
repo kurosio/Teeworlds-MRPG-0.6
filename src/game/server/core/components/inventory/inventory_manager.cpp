@@ -35,6 +35,7 @@ void CInventoryManager::OnPreInit()
 		const auto Description = pRes->getString("Description");
 		const auto GroupSet = DBSet(pRes->getString("Group"));
 		const auto TypeSet = DBSet(pRes->getString("Type"));
+		const auto FlagsSet = DBSet(pRes->getString("Flags"));
 		const auto ScenarioData = pRes->getString("ScenarioData");
 		const auto InitialPrice = pRes->getInt("InitialPrice");
 		const auto Data = pRes->getString("Data");
@@ -56,7 +57,7 @@ void CInventoryManager::OnPreInit()
 			}
 		}
 
-		CItemDescription(ItemID).Init(Name, Description, GroupSet, TypeSet, InitialPrice, aContainerAttributes, Data, ScenarioData);
+		CItemDescription(ItemID).Init(Name, Description, GroupSet, TypeSet, FlagsSet, InitialPrice, aContainerAttributes, Data, ScenarioData);
 	}
 
 	ResultPtr pResAtt = Database->Execute<DB::SELECT>("*", "tw_attributes");
@@ -269,11 +270,12 @@ bool CInventoryManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
 
 		auto* pPlayerItem = pPlayer->GetItem(Extra1);
 		ReasonNumber = minimum(AvailableValue, ReasonNumber);
-		pPlayerItem->Drop(ReasonNumber);
-
-		GS()->Broadcast(ClientID, BroadcastPriority::GameInformation, 100, "You drop {} x{}", pPlayerItem->Info()->GetName(), ReasonNumber);
-		GS()->CreateSound(pPlayer->m_ViewPos, SOUND_VOTE_ITEM_DROP);
-		pPlayer->m_VotesData.UpdateCurrentVotes();
+		if(pPlayerItem->Drop(ReasonNumber))
+		{
+			GS()->Broadcast(ClientID, BroadcastPriority::GameInformation, 100, "You drop {} x{}", pPlayerItem->Info()->GetName(), ReasonNumber);
+			GS()->CreateSound(pPlayer->m_ViewPos, SOUND_VOTE_ITEM_DROP);
+			pPlayer->m_VotesData.UpdateCurrentVotes();
+		}
 		return true;
 	}
 
@@ -534,15 +536,17 @@ void CInventoryManager::ItemSelected(CPlayer* pPlayer, const CPlayerItem* pItem)
 		VItem.AddOption("ENCHANT_ITEM", ItemID, "Enchant ({}m)", Price);
 	}
 
-	// not allowed drop equipped hammer or title
-	if(ItemID != pPlayer->GetEquippedSlotItemID(ItemType::EquipHammer) && !pInfo->IsType(ItemType::EquipTitle))
+	// not allowed drop or equipped hammer or title
+	bool IsEquippedHammer = (ItemID == pPlayer->GetEquippedSlotItemID(ItemType::EquipHammer));
+	if(!IsEquippedHammer && !pInfo->IsType(ItemType::EquipTitle))
 	{
 		// can trade
-		if(pInfo->m_InitialPrice > 0)
+		if(!pInfo->HasFlag(ITEMFLAG_CANT_TRADE) && pInfo->GetInitialPrice() > 0)
 			VItem.AddOption("AUCTION_CREATE", ItemID, "Sell at auction");
 
 		// drop
-		VItem.AddOption("DROP_ITEM", ItemID, "Drop");
+		if(!pInfo->HasFlag(ITEMFLAG_CANT_DROP))
+			VItem.AddOption("DROP_ITEM", ItemID, "Drop");
 	}
 }
 

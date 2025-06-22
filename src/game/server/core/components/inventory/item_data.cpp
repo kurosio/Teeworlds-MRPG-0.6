@@ -458,7 +458,7 @@ bool CPlayerItem::Use(int Value)
 bool CPlayerItem::Drop(int Value)
 {
 	Value = minimum(Value, m_Value);
-	if(Value <= 0)
+	if(Value <= 0 || Info()->HasFlag(ITEMFLAG_CANT_DROP))
 		return false;
 
 	const auto* pPlayer = GetPlayer();
