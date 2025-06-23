@@ -564,137 +564,165 @@ void CEntityManager::HealingAura(int ClientID, vec2 Position, float Radius, int 
 void CEntityManager::Bow(int ClientID, int Damage, int FireCount, float ExplosionRadius, int ExplosionCount, EntGroupWeakPtr* pPtr) const
 {
 	const auto* pPlayer = GS()->GetPlayer(ClientID, false, true);
-	if(!pPlayer)
+	if(!pPlayer || !pPlayer->GetCharacter())
 		return;
 
-	// initialize group & config
+	constexpr int MaxChargeTime = 35;
 	const auto groupPtr = CEntityGroup::NewGroup(&GS()->m_World, CGameWorld::ENTTYPE_SKILL, ClientID);
 	groupPtr->SetConfig("damage", Damage);
-	groupPtr->SetConfig("fireCount", FireCount);
+	groupPtr->SetConfig("initialFireCount", FireCount);
 	groupPtr->SetConfig("explosionRadius", ExplosionRadius);
 	groupPtr->SetConfig("explosionCount", ExplosionCount);
 
-	// initialize element & config
-	const auto pBow = groupPtr->CreatePickup(pPlayer->GetCharacter()->GetPos());
+	const auto pBowController = groupPtr->CreateBase(pPlayer->GetCharacter()->GetPos());
+	pBowController->SetConfig("currentFireCount", FireCount);
+	pBowController->SetConfig("chargeTick", 0);
+	pBowController->SetConfig("isCharging", 0);
 
-	// register event tick
-	pBow->RegisterEvent(CBaseEntity::EventTick, [](CBaseEntity* pBase)
+	pBowController->RegisterEvent(CBaseEntity::EventTick, [MaxChargeTime](CBaseEntity* pBase)
 	{
-		// check valid owner char
-		const auto* pOwnerChar = pBase->GetCharacter();
-		if(!pOwnerChar)
-			return;
+		int& CurrentFireCount = pBase->GetRefConfig("currentFireCount", 0);
+		int& IsCharging = pBase->GetRefConfig("isCharging", 0);
+		int& ChargeTick = pBase->GetRefConfig("chargeTick", 0);
 
-		auto& FireCount = pBase->GetGroup()->GetRefConfig("fireCount", 0);
-
-		// freeze input for bow
+		// block input
 		pBase->Server()->Input()->BlockInputGroup(pBase->GetClientID(), BLOCK_INPUT_FIRE);
 		pBase->Server()->Input()->BlockInputGroup(pBase->GetClientID(), BLOCK_INPUT_FREEZE_GUN);
 
-		// check is key clicked
-		if(pBase->Server()->Input()->IsKeyClicked(pBase->GetClientID(), KEY_EVENT_FIRE))
+		// update position
+		auto* pOwnerChar = pBase->GetCharacter();
+		pBase->SetPos(pOwnerChar->GetPos());
+
+		// charging
+		if(pOwnerChar->m_Core.m_Input.m_Fire & 1)
 		{
-			// create fire
-			const auto Direction = normalize(vec2(pOwnerChar->m_Core.m_Input.m_TargetX, pOwnerChar->m_Core.m_Input.m_TargetY));
-			const auto pArrow = pBase->GetGroup()->CreatePickup(pOwnerChar->GetPos());
-			pArrow->SetConfig("direction", Direction);
-			FireCount--;
-
-			// register event tick
-			pArrow->RegisterEvent(CBaseEntity::EventTick, [](CBaseEntity* pBase)
+			if(!IsCharging)
 			{
-				const auto ExplosionRadius = pBase->GetGroup()->GetConfig("explosionRadius", 0.f);
-				const auto ExplosionCount = pBase->GetGroup()->GetConfig("explosionCount", 0);
-				const auto Damage = pBase->GetGroup()->GetConfig("damage", 0);
-				auto Direction = pBase->GetConfig("direction", vec2());
-
-				for(auto* pChar = (CCharacter*)pBase->GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); pChar; pChar = (CCharacter*)pChar->TypeNext())
-				{
-					if(pBase->GetClientID() == pChar->GetPlayer()->GetCID() || !pChar->IsAllowedPVP(pBase->GetClientID()))
-						continue;
-
-					// check distance
-					const auto Distance = distance(pBase->GetPos(), pChar->m_Core.m_Pos);
-					if(Distance < 64.f)
-					{
-						pChar->TakeDamage(Direction, Damage, pBase->GetClientID(), WEAPON_GAME);
-						pBase->GS()->CreateRandomRadiusExplosion(ExplosionCount, ExplosionRadius, pBase->GetPos(), pBase->GetClientID(), WEAPON_GAME, Damage);
-						pBase->MarkForDestroy();
-						return;
-					}
-
-					if(Distance < 300.0f)
-					{
-						vec2 ToEnemy = normalize(pChar->m_Core.m_Pos - pBase->GetPos());
-						Direction = normalize(Direction + ToEnemy * 0.05f);
-						pBase->SetConfig("direction", Direction);
-					}
-				}
-
-				// check collide
-				if(pBase->GS()->Collision()->CheckPoint(pBase->GetPos()))
-				{
-					pBase->GS()->CreateRandomRadiusExplosion(ExplosionCount, ExplosionRadius, pBase->GetPos(), pBase->GetClientID(), WEAPON_GAME, Damage);
-					pBase->MarkForDestroy();
-					return;
-				}
-
-				// update position
-				pBase->SetPos(pBase->GetPos() + Direction * 18.0f);
-			});
-
-			// Register event snap for the fire projectile (drawing the arrow)
-			pArrow->RegisterEvent(CBaseEntity::EventSnap, 3, [](CBaseEntity* pBase, int SnappingClient, const std::vector<int>& vIds)
+				IsCharging = 1;
+				pBase->GS()->CreateSound(pOwnerChar->GetPos(), SOUND_NINJA_HIT);
+			}
+			if(ChargeTick < MaxChargeTime)
 			{
-				const auto Direction = pBase->GetConfig("direction", vec2());
-				auto Pos = pBase->GetPos();
-
-				for(int i = 0; i < (int)vIds.size(); ++i)
-				{
-					vec2 SegmentPos = Pos - Direction * 24.f * i;
-					pBase->GS()->SnapLaser(SnappingClient, vIds[i], SegmentPos, Pos, pBase->Server()->Tick() - 4);
-					Pos = SegmentPos;
-				}
-			});
-
-			// fire count
-			if(!FireCount)
-			{
-				pBase->MarkForDestroy();
-				return;
+				ChargeTick++;
 			}
 		}
+		else if(IsCharging)
+		{
+			IsCharging = 0;
+			float ChargePower = static_cast<float>(ChargeTick) / static_cast<float>(MaxChargeTime);
+			ChargePower = std::max(0.1f, ChargePower);
+			ChargeTick = 0;
+			CurrentFireCount--;
 
-		// update position
-		const auto Angle = std::atan2(pOwnerChar->m_Core.m_Input.m_TargetY, pOwnerChar->m_Core.m_Input.m_TargetX);
-		pBase->SetPos(rotate(vec2(0.f, -56.f), pOwnerChar->GetPos(), Angle));
+			// creating bow and fire
+			pBase->GS()->CreateSound(pOwnerChar->GetPos(), SOUND_SHOTGUN_FIRE);
+			const auto Direction = normalize(vec2(pOwnerChar->m_Core.m_Input.m_TargetX, pOwnerChar->m_Core.m_Input.m_TargetY));
+			const auto ProjStartPos = pOwnerChar->GetPos() + Direction * 40.0f;
+			const auto pArrow = pBase->GetGroup()->CreateBase(ProjStartPos);
+
+			// damage and speed by charge power
+			const float ArrowSpeed = 10.f * (1.0f + (ChargePower * 2.5f));
+			const int ArrowDamage = static_cast<int>(pBase->GetGroup()->GetConfig("damage", 0) * (1.0f + ChargePower));
+			const auto InitialVelocity = Direction * ArrowSpeed;
+
+			pArrow->SetConfig("velocity", InitialVelocity);
+			pArrow->SetConfig("chargePower", ChargePower);
+			pArrow->SetConfig("speed", ArrowSpeed);
+			pArrow->SetConfig("damage", ArrowDamage);
+			pArrow->SetConfig("lifeSpan", pBase->Server()->TickSpeed() * 3);
+
+			// tick
+			pArrow->RegisterEvent(CBaseEntity::EventTick, [](CBaseEntity* pArrowBase)
+			{
+				int& LifeSpan = pArrowBase->GetRefConfig("lifeSpan", 0);
+				vec2& Velocity = pArrowBase->GetRefConfig("velocity", vec2(0, 0));
+				const auto PrevPos = pArrowBase->GetPos();
+				auto NewPos = PrevPos + Velocity;
+
+				Velocity.y += 0.5f;
+				pArrowBase->SetPos(NewPos);
+				LifeSpan--;
+				if(length(Velocity) > 0.0f)
+					pArrowBase->SetConfig("direction", normalize(Velocity));
+
+				auto* pTargetChar = pArrowBase->GameWorld()->IntersectCharacter(PrevPos, NewPos, 24.0f, NewPos, pArrowBase->GetCharacter());
+				bool Collide = pArrowBase->GS()->Collision()->IntersectLineWithInvisible(PrevPos, NewPos, &NewPos, nullptr);
+				if(LifeSpan <= 0 || pArrowBase->GameLayerClipped(NewPos) || Collide || (pTargetChar && pTargetChar->IsAllowedPVP(pArrowBase->GetClientID())))
+				{
+					const auto Damage = pArrowBase->GetConfig("damage", 0);
+					const auto ExplosionRadius = pArrowBase->GetGroup()->GetConfig("explosionRadius", 0.f);
+					const auto ExplosionCount = pArrowBase->GetGroup()->GetConfig("explosionCount", 0);
+					pArrowBase->GS()->CreateSound(NewPos, SOUND_NINJA_HIT);
+
+					if(pTargetChar && pArrowBase->GetCharacter() && pTargetChar->IsAllowedPVP(pArrowBase->GetClientID()))
+						pTargetChar->TakeDamage(normalize(Velocity) * 5.0f, Damage, pArrowBase->GetClientID(), WEAPON_GAME);
+
+					pArrowBase->GS()->CreateRandomRadiusExplosion(ExplosionCount, ExplosionRadius, NewPos, pArrowBase->GetClientID(), WEAPON_GAME, Damage);
+					pArrowBase->MarkForDestroy();
+					return;
+				}
+			});
+
+			pArrow->RegisterEvent(CBaseEntity::EventSnap, 1, [](CBaseEntity* pArrowBase, int SnappingClient, const std::vector<int>& vIds)
+			{
+				if(pArrowBase->NetworkClipped(SnappingClient))
+					return;
+
+				const auto Direction = pArrowBase->GetConfig("direction", vec2(1, 0));
+				const auto Pos = pArrowBase->GetPos();
+				const auto From = Pos - Direction;
+				const auto To = Pos - Direction * 96.f;
+				pArrowBase->GS()->SnapLaser(SnappingClient, vIds[0], From, To, pArrowBase->Server()->Tick() - 3, LASERTYPE_DRAGGER);
+			});
+		}
+
+		// end fire count
+		if(CurrentFireCount <= 0)
+			pBase->MarkForDestroy();
 	});
 
-	// Register event snap
-	std::vector<vec2> vArrowEdges =
+	pBowController->RegisterEvent(CBaseEntity::EventSnap, 7, [MaxChargeTime](CBaseEntity* pBase, int SnappingClient, const std::vector<int>& vIds)
 	{
-		{-60.0f, 0.0f}, {-40.0f, -20.0f}, {-20.0f, -40.0f},
-		{20.0f, -40.0f}, {40.0f, -20.0f}, {60.0f, 0.0f}
-	};
-
-	pBow->RegisterEvent(CBaseEntity::EventSnap, (int)vArrowEdges.size() + 1, [vEdges = vArrowEdges](CBaseEntity* pBase, int SnappingClient, const std::vector<int>& vIds)
-	{
-		// check valid owner char
-		const auto* pOwnerChar = pBase->GetCharacter();
-		if(!pOwnerChar)
+		auto* pOwnerChar = pBase->GetCharacter();
+		if(!pOwnerChar || pBase->NetworkClipped(SnappingClient))
 			return;
 
-		const auto Angle = std::atan2(pOwnerChar->m_Core.m_Input.m_TargetY, pOwnerChar->m_Core.m_Input.m_TargetX);
-		const auto firstPos = vEdges.back();
-		const auto endPos = vEdges.front();
-		const auto Pos = rotate(firstPos, pOwnerChar->GetPos(), Angle);
-		const auto PosTo = rotate(endPos, pOwnerChar->GetPos(), Angle);
-		pBase->GS()->SnapLaser(SnappingClient, vIds[0], Pos, PosTo, pBase->Server()->Tick() - 3, LASERTYPE_SHOTGUN, 0, pBase->GetClientID());
+		const auto ChargeTick = pBase->GetConfig("chargeTick", 0);
+		const float ChargeProgress = (MaxChargeTime > 0) ? static_cast<float>(ChargeTick) / static_cast<float>(MaxChargeTime) : 0.0f;
+		const vec2 Center = pOwnerChar->GetPos();
+		const auto AimAngle = angle(vec2(pOwnerChar->m_Core.m_Input.m_TargetX, pOwnerChar->m_Core.m_Input.m_TargetY));
+		const auto Tick = pBase->Server()->Tick();
 
-		for(size_t i = 0; i < vEdges.size(); ++i)
+		constexpr float BowWidth = 150.0f;
+		constexpr float BowCurveFactor = 30.0f;
+		constexpr int NumSegments = 4;
+
+		int id = 0;
+		vec2 LastPoint;
+		for(int i = 0; i <= NumSegments; i++)
 		{
-			vec2 curPos = rotate(vEdges[i], pOwnerChar->GetPos(), Angle);
-			pBase->GS()->SnapPickup(SnappingClient, vIds[1 + i], curPos, POWERUP_ARMOR);
+			float p = static_cast<float>(i) / NumSegments;
+			float x = -BowWidth / 2.0f + p * BowWidth;
+			float y = BowCurveFactor - (4 * BowCurveFactor / (BowWidth * BowWidth)) * x * x;
+			const auto Point = Center + rotate(vec2(y, x), AimAngle);
+			if(i > 0 && id < (int)vIds.size())
+				pBase->GS()->SnapLaser(SnappingClient, vIds[id++], LastPoint, Point, Tick - 1, LASERTYPE_SHOTGUN);
+
+			LastPoint = Point;
+		}
+
+		const auto DrawBack = -48.0f * ChargeProgress;
+		const auto BowTip1 = Center + rotate(vec2(0.0f, -BowWidth / 2.0f), AimAngle);
+		const auto BowTip2 = Center + rotate(vec2(0.0f, BowWidth / 2.0f), AimAngle);
+		const auto NockingPoint = Center + rotate(vec2(DrawBack, 0.0f), AimAngle);
+		pBase->GS()->SnapLaser(SnappingClient, vIds[id++], BowTip1, NockingPoint, Tick - 1);
+		pBase->GS()->SnapLaser(SnappingClient, vIds[id++], BowTip2, NockingPoint, Tick - 1);
+
+		if(ChargeProgress > 0.05f)
+		{
+			constexpr float ArrowLength = 96.0f;
+			const auto ArrowHead = NockingPoint + rotate(vec2(ArrowLength, 0.0f), AimAngle);
+			pBase->GS()->SnapLaser(SnappingClient, vIds[id++], ArrowHead, NockingPoint, Tick - 3, LASERTYPE_DRAGGER);
 		}
 	});
 

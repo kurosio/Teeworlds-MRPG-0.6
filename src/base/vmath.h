@@ -80,11 +80,20 @@ public:
 	T& operator[](const int index) { return index ? y : x; }
 };
 
+
+template<typename T>
+constexpr inline vector2_base<T> rotate(const vector2_base<T>& v, float angle)
+{
+	float s = sinf(angle);
+	float c = cosf(angle);
+	return vector2_base<T>((T)(c * v.x - s * v.y), (T)(s * v.x + c * v.y));
+}
+
 template<typename T>
 constexpr inline vector2_base<T> rotate(const vector2_base<T>& pos, const vector2_base<T>& curPos, float angle)
 {
-	const float s = sin(33.f + angle);
-	const float c = cos(33.f + angle);
+	float s = sinf(angle);
+	float c = cosf(angle);
 	return vector2_base<T>((T)(curPos.x + pos.x * c - pos.y * s), (T)(curPos.y + pos.x * s + pos.y * c));
 }
 
