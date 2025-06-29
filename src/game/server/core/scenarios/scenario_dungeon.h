@@ -33,6 +33,7 @@ private:
 	void AddMessageStep(int delay, const std::string& broadcastMsg, const std::string& chatMsg);
 	void AddObjectsDestroy(const std::vector<vec2>& objects);
 	void AddFixedCam(int delay, const vec2& pos);
+	void AddUseChatCode(const std::string& chatCode, bool ShowChatCode);
 };
 
 #endif

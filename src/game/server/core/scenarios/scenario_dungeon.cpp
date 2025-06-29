@@ -54,7 +54,7 @@ void CDungeonScenario::ProcessStep(const nlohmann::json& step)
 	else if(action == "fix_cam")
 	{
 		int delay = step.value("delay", 0);
-		vec2 position = { step["position"].value("x", 0.0f), step["position"].value("y", 0.0f) };
+		vec2 position = step.value("position", vec2());
 		AddFixedCam(delay, position);
 	}
 
@@ -63,7 +63,7 @@ void CDungeonScenario::ProcessStep(const nlohmann::json& step)
 	{
 		std::string Key = step.value("key", "");
 		bool Follow = step.value("follow", false);
-		m_vpDoors[Key].m_Pos = step["position"];
+		m_vpDoors[Key].m_Pos = step.value("position", vec2());
 
 		auto& newDoorStep = AddStep();
 		newDoorStep.WhenStarted([Follow, Key, this]()
@@ -95,7 +95,7 @@ void CDungeonScenario::ProcessStep(const nlohmann::json& step)
 	}
 
 	// object destroy
-	else if(action == "object_destroy")
+	else if(action == "object_destroy_task")
 	{
 		std::vector<vec2> objects;
 		if(step.contains("objects") && step["objects"].is_array())
@@ -110,8 +110,16 @@ void CDungeonScenario::ProcessStep(const nlohmann::json& step)
 		AddObjectsDestroy(objects);
 	}
 
+	// chat task
+	else if(action == "use_chat_task")
+	{
+		std::string message = step.value("chat", "@");
+		bool ShowChatCode = step.value("show_chat_code", false);
+		AddUseChatCode(message, ShowChatCode);
+	}
+
 	// defeat
-	else if(action == "defeat_mobs")
+	else if(action == "defeat_mobs_task")
 	{
 		// initialize variables
 		struct DefeatState
@@ -207,6 +215,8 @@ void CDungeonScenario::ProcessStep(const nlohmann::json& step)
 void CDungeonScenario::AddMessageStep(int delay, const std::string& broadcastMsg, const std::string& chatMsg)
 {
 	auto& messageStep = AddStep(delay);
+
+	// when started
 	messageStep.WhenStarted([this, delay, chatMsg, broadcastMsg]()
 	{
 		if(!broadcastMsg.empty())
@@ -227,6 +237,7 @@ void CDungeonScenario::AddObjectsDestroy(const std::vector<vec2>& objects)
 {
 	auto& newStep = AddStep();
 
+	// when started (prepare)
 	newStep.WhenStarted([this, objects]
 	{
 		for(const auto& pos : objects)
@@ -236,6 +247,7 @@ void CDungeonScenario::AddObjectsDestroy(const std::vector<vec2>& objects)
 		}
 	});
 
+	// condition
 	newStep.CheckCondition(ConditionPriority::CONDITION_AND_TIMER, [this]
 	{
 		return std::ranges::all_of(m_vObjectDestroy, [](const auto& uniquePtr)
@@ -244,6 +256,7 @@ void CDungeonScenario::AddObjectsDestroy(const std::vector<vec2>& objects)
 		});
 	});
 
+	// when finished
 	newStep.WhenFinished([this]
 	{
 		m_vObjectDestroy.clear();
@@ -253,6 +266,8 @@ void CDungeonScenario::AddObjectsDestroy(const std::vector<vec2>& objects)
 void CDungeonScenario::AddFixedCam(int delay, const vec2& pos)
 {
 	auto& step = AddStep(delay);
+
+	// when active
 	step.WhenActive([this, pos]()
 	{
 		for(auto* pPlayer : GetPlayers())
@@ -260,3 +275,30 @@ void CDungeonScenario::AddFixedCam(int delay, const vec2& pos)
 	});
 }
 
+void CDungeonScenario::AddUseChatCode(const std::string& chatCode, bool showChatCode)
+{
+	auto& useChatCode = AddStep();
+
+	// when active
+	useChatCode.WhenActive([this, chatCode, showChatCode]()
+	{
+		if(Server()->Tick() % Server()->TickSpeed() != 0)
+			return;
+
+		for(auto* pPlayer : GetPlayers())
+		{
+			std::string_view requiredCode = showChatCode ? chatCode : "required code";
+			GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::MainInformation, Server()->TickSpeed(), "Objective: Write in the chat: '{}'", requiredCode);
+		}
+	});
+
+	// condition
+	useChatCode.CheckCondition(ConditionPriority::CONDITION_AND_TIMER, [this, chatCode]()
+	{
+		for(auto* pPlayer : GetPlayers())
+		{
+			std::string lastMessage = pPlayer->m_aLastMsg;
+			return lastMessage.find(chatCode) == 0;
+		}
+	});
+}
