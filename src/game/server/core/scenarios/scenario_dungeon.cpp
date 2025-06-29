@@ -110,14 +110,6 @@ void CDungeonScenario::ProcessStep(const nlohmann::json& step)
 		AddObjectsDestroy(objects);
 	}
 
-	// chat task
-	else if(action == "use_chat_task")
-	{
-		std::string message = step.value("chat", "@");
-		bool ShowChatCode = step.value("show_chat_code", false);
-		AddUseChatCode(message, ShowChatCode);
-	}
-
 	// defeat
 	else if(action == "defeat_mobs_task")
 	{
@@ -210,6 +202,100 @@ void CDungeonScenario::ProcessStep(const nlohmann::json& step)
 			return pState->SpawnedBotIds.empty();
 		});
 	}
+
+	// movement task
+	else if(action == "movement_task")
+	{
+		int delay = step.value("delay", 0);
+		vec2 position = step.value("position", vec2());
+		bool targetLook = step.value("target_look", true);
+		bool entireGroup = step.value("entire_group", false);
+
+		std::string chatMsg = step.value("chat", "");
+		std::string broadcastMsg = step.value("broadcast", "");
+		std::string fullMsg = step.value("full", "");
+
+		if(!fullMsg.empty())
+			AddMovementTask(delay, position, fullMsg, fullMsg, targetLook, entireGroup);
+		else
+			AddMovementTask(delay, position, broadcastMsg, chatMsg, targetLook, entireGroup);
+	}
+
+	// chat task
+	else if(action == "use_chat_task")
+	{
+		std::string message = step.value("chat", "@");
+		bool ShowChatCode = step.value("show_chat_code", false);
+		AddUseChatCode(message, ShowChatCode);
+	}
+
+	// teleport
+	else if(action == "teleport")
+	{
+		vec2 position = step.value("position", vec2());
+		AddTeleport(position);
+	}
+}
+
+void CDungeonScenario::AddTeleport(const vec2& pos)
+{
+	auto& teleportStep = AddStep();
+
+	// when started (prepare) teleport
+	teleportStep.WhenStarted([this, pos]()
+	{
+		for(const auto* pPlayer : GetPlayers())
+			pPlayer->GetCharacter()->ChangePosition(pos);
+	});
+}
+
+void CDungeonScenario::AddMovementTask(int delay, const vec2& pos, const std::string& broadcastMsg, const std::string& chatMsg, bool targetLook, bool entireGroup)
+{
+	if(targetLook)
+		AddFixedCam(delay, pos);
+
+	auto& moveStep = AddStep();
+
+	// when started (prepare)
+	moveStep.WhenStarted([this, pos, chatMsg]()
+	{
+		m_MovementPos = pos;
+		if(!chatMsg.empty())
+		{
+			for(const auto* pPlayer : GetPlayers())
+				GS()->Chat(pPlayer->GetCID(), chatMsg.c_str());
+		}
+	});
+
+	// when active
+	moveStep.WhenActive([this, broadcastMsg]()
+	{
+		if(Server()->Tick() % (Server()->TickSpeed() / 2) == 0)
+			GS()->CreateHammerHit(m_MovementPos);
+
+		if(!broadcastMsg.empty())
+		{
+			for(const auto* pPlayer : GetPlayers())
+				GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::VeryImportant, Server()->TickSpeed(), broadcastMsg.c_str());
+		}
+	});
+
+	// condition
+	moveStep.CheckCondition(ConditionPriority::CONDITION_AND_TIMER, [this, entireGroup]()
+	{
+		const auto& vPlayers = GetPlayers();
+		auto isInside = [&](const CPlayer* pPlayer)
+		{
+			if(const auto* pChar = pPlayer->GetCharacter())
+				return distance(pChar->GetPos(), m_MovementPos) < 128.f;
+			return false;
+		};
+
+		if(entireGroup)
+			return std::all_of(vPlayers.begin(), vPlayers.end(), isInside);
+		else
+			return std::any_of(vPlayers.begin(), vPlayers.end(), isInside);
+	});
 }
 
 void CDungeonScenario::AddMessageStep(int delay, const std::string& broadcastMsg, const std::string& chatMsg)
@@ -280,25 +366,24 @@ void CDungeonScenario::AddUseChatCode(const std::string& chatCode, bool showChat
 	auto& useChatCode = AddStep();
 
 	// when active
-	useChatCode.WhenActive([this, chatCode, showChatCode]()
+	useChatCode.WhenStarted([this, chatCode, showChatCode]()
 	{
 		if(Server()->Tick() % Server()->TickSpeed() != 0)
 			return;
 
+		std::string requiredCode = showChatCode ? std::string(chatCode) : "hidden code";
 		for(auto* pPlayer : GetPlayers())
-		{
-			std::string_view requiredCode = showChatCode ? chatCode : "required code";
-			GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::MainInformation, Server()->TickSpeed(), "Objective: Write in the chat: '{}'", requiredCode);
-		}
+			GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::MainInformation, Server()->TickSpeed(), "Objective: Write in the chat '{}'", requiredCode);
 	});
 
 	// condition
 	useChatCode.CheckCondition(ConditionPriority::CONDITION_AND_TIMER, [this, chatCode]()
 	{
-		for(auto* pPlayer : GetPlayers())
+		const auto& vPlayers = GetPlayers();
+		return std::any_of(vPlayers.begin(), vPlayers.end(), [chatCode](CPlayer* pPlayer)
 		{
 			std::string lastMessage = pPlayer->m_aLastMsg;
-			return lastMessage.find(chatCode) == 0;
-		}
+			return lastMessage.starts_with(chatCode);
+		});
 	});
 }

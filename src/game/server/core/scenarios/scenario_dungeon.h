@@ -20,6 +20,7 @@ class CDungeonScenario : public GroupScenarioBase, public IEventListener
 	nlohmann::json m_JsonData {};
 	std::vector<std::unique_ptr<CEntityObjectDestroy>> m_vObjectDestroy {};
 	std::map<std::string, GroupDoor> m_vpDoors {};
+	vec2 m_MovementPos {};
 
 public:
 	explicit CDungeonScenario(const nlohmann::json& jsonData);
@@ -29,7 +30,10 @@ protected:
 	void OnSetupScenario() override;
 	void ProcessStep(const nlohmann::json& step);
 
+
 private:
+	void AddTeleport(const vec2& pos);
+	void AddMovementTask(int delay, const vec2& pos, const std::string& broadcastMsg, const std::string& chatMsg, bool targetLook, bool entireGroup);
 	void AddMessageStep(int delay, const std::string& broadcastMsg, const std::string& chatMsg);
 	void AddObjectsDestroy(const std::vector<vec2>& objects);
 	void AddFixedCam(int delay, const vec2& pos);
