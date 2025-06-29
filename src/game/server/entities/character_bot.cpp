@@ -47,7 +47,7 @@ bool CCharacterBotAI::Spawn(CPlayer* pPlayer, vec2 Pos)
 		else if(Bottype == TYPE_BOT_MOB)
 		{
 			const int MobID = m_pBotPlayer->GetBotMobID();
-			m_pAI = std::make_unique<CMobAI>(&MobBotInfo::ms_aMobBot[MobID], m_pBotPlayer, this);
+			m_pAI = std::make_unique<CMobAI>(&m_pBotPlayer->GetMobInfo(), m_pBotPlayer, this);
 		}
 		else if(Bottype == TYPE_BOT_EIDOLON)
 		{

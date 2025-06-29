@@ -229,13 +229,10 @@ void CPlayer::TryCreateEidolon()
 	// try to create eidolon
 	if(const auto* pEidolonData = GS()->GetEidolonByItemID(eidolonItemID.value()))
 	{
-		if(int eidolonCID = GS()->CreateBot(TYPE_BOT_EIDOLON, pEidolonData->GetDataBotID(), m_ClientID); eidolonCID != -1)
+		if(auto pPlayerEidolon = GS()->CreateBot(TYPE_BOT_EIDOLON, pEidolonData->GetDataBotID(), m_ClientID))
 		{
-			if(auto* pEidolonPlayer = dynamic_cast<CPlayerBot*>(GS()->GetPlayer(eidolonCID)))
-			{
-				pEidolonPlayer->m_EidolonItemID = eidolonItemID.value();
-				m_EidolonCID = eidolonCID;
-			}
+			pPlayerEidolon->m_EidolonItemID = eidolonItemID.value();
+			m_EidolonCID = pPlayerEidolon->GetCID();
 		}
 	}
 }

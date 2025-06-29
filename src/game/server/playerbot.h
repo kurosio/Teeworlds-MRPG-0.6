@@ -34,6 +34,7 @@ class CPlayerBot : public CPlayer
 	bool m_DisabledBotDamage{};
 	int m_AllowedSpawn{};
 	CQuestBotMobInfo m_QuestMobInfo{};
+	MobBotInfo m_MobInfo {};
 
 public:
 	int m_LastPosTick{};
@@ -44,11 +45,10 @@ public:
 	CPlayerBot(CGS* pGS, int ClientID, int BotID, int MobID, int SpawnPoint);
 	~CPlayerBot() override;
 
-	void InitQuestBotMobInfo(CQuestBotMobInfo elem);
-	CQuestBotMobInfo& GetQuestBotMobInfo()
-	{
-		return m_QuestMobInfo;
-	}
+	void InitBotMobInfo(const MobBotInfo& elem);
+	void InitQuestBotMobInfo(const CQuestBotMobInfo& elem);
+	CQuestBotMobInfo& GetQuestBotMobInfo() { return m_QuestMobInfo; }
+	MobBotInfo& GetMobInfo() { return m_MobInfo; }
 
 	int GetTeam() override { return TEAM_BLUE; }
 	bool IsBot() const override { return true; }
@@ -85,6 +85,7 @@ public:
 	bool IsConversational() const;
 	void PrepareRespawnTick() override;
 
+	bool IsAllowedSpawn() { return m_AllowedSpawn; }
 	void SetAllowedSpawn(bool Spawn) { m_AllowedSpawn = Spawn; }
 
 	int m_EidolonItemID;

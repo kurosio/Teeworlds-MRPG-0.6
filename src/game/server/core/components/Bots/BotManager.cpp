@@ -250,7 +250,8 @@ void CBotManager::InitMobsBots(const char* pWhereLocalWorld)
 		// create bots
 		for(int c = 0; c < NumberOfMobs; c++)
 		{
-			GS()->CreateBot(TYPE_BOT_MOB, BotID, MobID);
+			if(auto* pPlayerBot = GS()->CreateBot(TYPE_BOT_MOB, BotID, MobID))
+				pPlayerBot->InitBotMobInfo(MobBot);
 		}
 	}
 }

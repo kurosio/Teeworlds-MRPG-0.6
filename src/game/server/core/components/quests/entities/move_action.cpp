@@ -74,18 +74,23 @@ void CEntityQuestAction::Initialize()
 		if(!pPlayerBot)
 		{
 			const auto& DefeatMobInfo = pTaskData->m_DefeatMobInfo;
-			const int MobClientID = GS()->CreateBot(TYPE_BOT_QUEST_MOB, DefeatMobInfo.m_BotID, -1);
-			pPlayerBot = dynamic_cast<CPlayerBot*>(GS()->GetPlayer(MobClientID));
-
-			CQuestBotMobInfo data;
-			data.m_QuestID = m_pStep->m_Bot.m_QuestID;
-			data.m_QuestStep = m_pStep->m_Bot.m_StepPos;
-			data.m_MoveToStep = m_MoveToIndex;
-			data.m_AttributePower = DefeatMobInfo.m_AttributePower;
-			data.m_WorldID = DefeatMobInfo.m_WorldID;
-			data.m_Position = pTaskData->m_Position;
-			pPlayerBot->InitQuestBotMobInfo(data);
-			dbg_msg(PRINT_QUEST_PREFIX, "Creating a objective quest mob!");
+			if(pPlayerBot = GS()->CreateBot(TYPE_BOT_QUEST_MOB, DefeatMobInfo.m_BotID, -1))
+			{
+				CQuestBotMobInfo data;
+				data.m_QuestID = m_pStep->m_Bot.m_QuestID;
+				data.m_QuestStep = m_pStep->m_Bot.m_StepPos;
+				data.m_MoveToStep = m_MoveToIndex;
+				data.m_AttributePower = DefeatMobInfo.m_AttributePower;
+				data.m_WorldID = DefeatMobInfo.m_WorldID;
+				data.m_Position = pTaskData->m_Position;
+				pPlayerBot->InitQuestBotMobInfo(data);
+				dbg_msg(PRINT_QUEST_PREFIX, "Creating a objective quest mob!");
+			}
+			else
+			{
+				MarkForDestroy();
+				return;
+			}
 		}
 
 		pPlayerBot->GetQuestBotMobInfo().m_ActiveForClient[m_ClientID] = true;

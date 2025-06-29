@@ -1497,20 +1497,26 @@ bool CGS::DestroyPlayer(int ClientID)
 	return true;
 }
 
-int CGS::CreateBot(short BotType, int BotID, int SubID)
+CPlayerBot* CGS::CreateBot(short BotType, int BotID, int SubID)
 {
-	int BotClientID = MAX_PLAYERS;
-	while(m_apPlayers[BotClientID])
+	int BotClientID = -1;
+	for(int i = MAX_PLAYERS; i < MAX_CLIENTS; i++)
 	{
-		BotClientID++;
-		if(BotClientID >= MAX_CLIENTS)
-			return -1;
+		if(!m_apPlayers[i])
+		{
+			BotClientID = i;
+			break;
+		}
 	}
+
+	if(BotClientID == -1)
+		return nullptr;
 
 	Server()->InitClientBot(BotClientID);
 	const int AllocMemoryCell = BotClientID + m_WorldID * MAX_CLIENTS;
-	m_apPlayers[BotClientID] = new(AllocMemoryCell) CPlayerBot(this, BotClientID, BotID, SubID, BotType);
-	return BotClientID;
+	CPlayerBot* pBot = new(AllocMemoryCell) CPlayerBot(this, BotClientID, BotID, SubID, BotType);
+	m_apPlayers[BotClientID] = pBot;
+	return pBot;
 }
 
 bool CGS::TakeItemCharacter(int ClientID)

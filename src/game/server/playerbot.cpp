@@ -27,13 +27,19 @@ CPlayerBot::~CPlayerBot()
 	std::memset(DataBotInfo::ms_aDataBot[m_BotID].m_aActiveByQuest, 0, MAX_PLAYERS * sizeof(bool));
 }
 
-void CPlayerBot::InitQuestBotMobInfo(CQuestBotMobInfo elem)
+void CPlayerBot::InitQuestBotMobInfo(const CQuestBotMobInfo& elem)
 {
 	if(m_BotType == TYPE_BOT_QUEST_MOB)
 	{
 		m_QuestMobInfo = elem;
 		std::memset(m_QuestMobInfo.m_ActiveForClient, 0, MAX_PLAYERS * sizeof(bool));
 	}
+}
+
+void CPlayerBot::InitBotMobInfo(const MobBotInfo& elem)
+{
+	if(m_BotType == TYPE_BOT_MOB)
+		m_MobInfo = elem;
 }
 
 void CPlayerBot::InitBasicStats(int StartHP, int StartMP, int MaxHP, int MaxMP)
@@ -136,7 +142,7 @@ void CPlayerBot::PrepareRespawnTick()
 	if(m_BotType == TYPE_BOT_MOB)
 	{
 		m_DisabledBotDamage = false;
-		m_aPlayerTick[Respawn] = Server()->Tick() + Server()->TickSpeed() * MobBotInfo::ms_aMobBot[m_MobID].m_RespawnTick;
+		m_aPlayerTick[Respawn] = Server()->Tick() + Server()->TickSpeed() * m_MobInfo.m_RespawnTick;
 	}
 	else if(m_BotType == TYPE_BOT_QUEST_MOB)
 	{
@@ -245,8 +251,8 @@ int CPlayerBot::GetTotalRawAttributeValue(AttributeIdentifier ID) const
 	}
 	else if(m_BotType == TYPE_BOT_MOB)
 	{
-		const int PowerMob = MobBotInfo::ms_aMobBot[m_MobID].m_Power;
-		const bool IsBoss = MobBotInfo::ms_aMobBot[m_MobID].m_Boss;
+		const int PowerMob = m_MobInfo.m_Power;
+		const bool IsBoss = m_MobInfo.m_Boss;
 		AttributeValue = CalculateAttribute(GS(), this, ID, PowerMob, IsBoss);
 	}
 	else if(m_BotType == TYPE_BOT_QUEST_MOB)
@@ -272,8 +278,8 @@ void CPlayerBot::TryRespawn()
 	if(m_BotType == TYPE_BOT_MOB)
 	{
 		vec2 SpawnPos;
-		const auto RespawnPosition = MobBotInfo::ms_aMobBot[m_MobID].m_Position;
-		const auto Radius = MobBotInfo::ms_aMobBot[m_MobID].m_Radius;
+		const auto RespawnPosition = m_MobInfo.m_Position;
+		const auto Radius = m_MobInfo.m_Radius;
 
 		if(GS()->m_pController->CanSpawn(m_BotType, &SpawnPos, std::make_pair(RespawnPosition, Radius)))
 			FinalSpawnPos = SpawnPos;
@@ -469,7 +475,7 @@ Mood CPlayerBot::GetMoodState() const
 
 int CPlayerBot::GetLevel() const
 {
-	return (m_BotType == TYPE_BOT_MOB ? MobBotInfo::ms_aMobBot[m_MobID].m_Level : 1);
+	return (m_BotType == TYPE_BOT_MOB ? m_MobInfo.m_Level : 1);
 }
 
 void CPlayerBot::GetFormatedName(char* aBuffer, int BufferSize)
@@ -499,7 +505,7 @@ std::optional<int> CPlayerBot::GetEquippedSlotItemID(ItemType EquipID) const
 
 const char* CPlayerBot::GetStatus() const
 {
-	if(m_BotType == TYPE_BOT_MOB && MobBotInfo::ms_aMobBot[m_MobID].m_Boss)
+	if(m_BotType == TYPE_BOT_MOB && m_MobInfo.m_Boss)
 	{
 		return GS()->IsWorldType(WorldType::Dungeon) ? "Boss" : "Raid";
 	}
@@ -529,7 +535,7 @@ int CPlayerBot::GetCurrentWorldID() const
 {
 	switch(m_BotType)
 	{
-		case TYPE_BOT_MOB: return MobBotInfo::ms_aMobBot[m_MobID].m_WorldID;
+		case TYPE_BOT_MOB: return m_MobInfo.m_WorldID;
 		case TYPE_BOT_QUEST_MOB: return m_QuestMobInfo.m_WorldID;
 		case TYPE_BOT_NPC: return NpcBotInfo::ms_aNpcBot[m_MobID].m_WorldID;
 		case TYPE_BOT_EIDOLON: return Server()->GetClientWorldID(m_MobID);
