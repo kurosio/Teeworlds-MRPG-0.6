@@ -12,144 +12,99 @@ class CPlayerItem;
 class CCharacter;
 class CPlayerQuest;
 
+#define LIST_OF_ALL_EVENTS(XEV) \
+    XEV(CharacterDamage,          OnCharacterDamage,         CPlayer* pFrom, CPlayer* pTo, int Damage) \
+    XEV(CharacterDeath,           OnCharacterDeath,          CPlayer* pVictim, CPlayer* pKiller, int Weapon) \
+    XEV(CharacterSpawn,           OnCharacterSpawn,          CPlayer* pPlayer) \
+    XEV(PlayerLogin,              OnPlayerLogin,             CPlayer* pPlayer, CAccountData* pAccount) \
+    XEV(PlayerChat,               OnPlayerChat,              CPlayer* pPlayer, const char* pMessage) \
+    XEV(PlayerProfessionUpgrade,  OnPlayerProfessionUpgrade, CPlayer* pPlayer, int AttributeID) \
+    XEV(PlayerProfessionLeveling, OnPlayerProfessionLeveling,CPlayer* pPlayer, CProfession* pProfession, int NewLevel) \
+    XEV(PlayerProfessionChange,   OnPlayerProfessionChange,  CPlayer* pPlayer, CProfession* pOldProf, CProfession* pNewProf) \
+    XEV(PlayerGotItem,            OnPlayerGotItem,           CPlayer* pPlayer, CPlayerItem* pItem, int Got) \
+    XEV(PlayerLostItem,           OnPlayerLostItem,          CPlayer* pPlayer, CPlayerItem* pItem, int Lost) \
+    XEV(PlayerCraftItem,          OnPlayerCraftItem,         CPlayer* pPlayer, CCraftItem* pCraft) \
+    XEV(PlayerEquipItem,          OnPlayerEquipItem,         CPlayer* pPlayer, CPlayerItem* pItem) \
+    XEV(PlayerUnequipItem,        OnPlayerUnequipItem,       CPlayer* pPlayer, CPlayerItem* pItem) \
+    XEV(PlayerEnchantItem,        OnPlayerEnchantItem,       CPlayer* pPlayer, CPlayerItem* pItem) \
+    XEV(PlayerDurabilityItem,     OnPlayerDurabilityItem,    CPlayer* pPlayer, CPlayerItem* pItem, int OldDurability) \
+    XEV(PlayerQuestChangeState,   OnPlayerQuestChangeState,  CPlayer* pPlayer, CPlayerQuest* pQuest, QuestState NewState)
+
 // event listener
 class IEventListener
 {
-	friend class CEventListenerManager;
-
 public:
 	virtual ~IEventListener() = default;
 
 	enum Type
 	{
-		CharacterDamage,
-		CharacterDeath,
-		CharacterSpawn,
-		PlayerLogin,
-		PlayerChat,
-		PlayerProfessionUpgrade,
-		PlayerProfessionLeveling,
-		PlayerProfessionChange,
-		PlayerGotItem,
-		PlayerLostItem,
-		PlayerCraftItem,
-		PlayerEquipItem,
-		PlayerUnequipItem,
-		PlayerEnchantItem,
-		PlayerDurabilityItem,
-		PlayerQuestChangeState,
+#define XDEF(name, func, ...) name,
+		LIST_OF_ALL_EVENTS(XDEF)
+#undef XDEF
 	};
 
-private:
-	virtual void OnCharacterDamage(CPlayer* pFrom, CPlayer* pTo, int Damage) { }
-	virtual void OnCharacterDeath(CPlayer* pVictim, CPlayer* pKiller, int Weapon) { }
-	virtual void OnCharacterSpawn(CPlayer* pPlayer) { }
-	virtual void OnPlayerLogin(CPlayer* pPlayer, CAccountData* pAccount){ }
-	virtual void OnPlayerChat(CPlayer* pPlayer, const char* pMessage){ }
-	virtual void OnPlayerProfessionUpgrade(CPlayer* pPlayer, int AttributeID) { }
-	virtual void OnPlayerProfessionLeveling(CPlayer* pPlayer, CProfession* pProfession, int NewLevel) { }
-	virtual void OnPlayerProfessionChange(CPlayer* pPlayer, CProfession* pOldProf, CProfession* pNewProf) { }
-	virtual void OnPlayerGotItem(CPlayer* pPlayer, CPlayerItem* pItem, int Got) { }
-	virtual void OnPlayerLostItem(CPlayer* pPlayer, CPlayerItem* pItem, int Lost) { }
-	virtual void OnPlayerCraftItem(CPlayer* pPlayer, CCraftItem* pCraft) { }
-	virtual void OnPlayerEquipItem(CPlayer* pPlayer, CPlayerItem* pItem) { }
-	virtual void OnPlayerUnequipItem(CPlayer* pPlayer, CPlayerItem* pItem) { }
-	virtual void OnPlayerEnchantItem(CPlayer* pPlayer, CPlayerItem* pItem) { }
-	virtual void OnPlayerDurabilityItem(CPlayer* pPlayer, CPlayerItem* pItem, int OldDurability) { }
-	virtual void OnPlayerQuestChangeState(CPlayer* pPlayer, CPlayerQuest* pQuest, QuestState NewState) { }
+#define XDEF(name, func, ...) virtual void func(__VA_ARGS__) {}
+	LIST_OF_ALL_EVENTS(XDEF)
+#undef XDEF
 };
 
 class CEventListenerManager
 {
-	std::recursive_mutex m_Mutex;
-	std::unordered_map<IEventListener::Type, std::vector<IEventListener*>> m_vListeners;
-	std::unordered_map<IEventListener::Type, size_t> m_EventListenerCounts;
+	std::mutex m_Mutex;
+	std::unordered_map<IEventListener::Type, std::unordered_set<IEventListener*>> m_Listeners;
 
 public:
 	void RegisterListener(IEventListener::Type event, IEventListener* listener)
 	{
 		std::unique_lock lock(m_Mutex);
-		auto& listeners = m_vListeners[event];
-
-		if(std::ranges::find(listeners, listener) == listeners.end())
-		{
-			listeners.push_back(listener);
-			m_EventListenerCounts[event]++;
-		}
+		m_Listeners[event].insert(listener);
 	}
 
 	void UnregisterListener(IEventListener::Type event, IEventListener* listener)
 	{
 		std::unique_lock lock(m_Mutex);
-		auto& listeners = m_vListeners[event];
-		listeners.erase(std::ranges::remove(listeners, listener).begin(), listeners.end());
-
-		if(!listeners.empty())
+		if(auto it = m_Listeners.find(event); it != m_Listeners.end())
 		{
-			m_EventListenerCounts[event]--;
-		}
-		else
-		{
-			m_vListeners.erase(event);
-			m_EventListenerCounts.erase(event);
+			it->second.erase(listener);
+			if(it->second.empty())
+				m_Listeners.erase(it);
 		}
 	}
 
 	void LogRegisteredEvents()
 	{
-		std::unique_lock lock(m_Mutex);
 		dbg_msg("EventListenerManager", "Registered events and their listeners:");
 
-		for(const auto& [event, listeners] : m_vListeners)
+		std::unique_lock lock(m_Mutex);
+		for(const auto& [event, listeners] : m_Listeners)
 			dbg_msg("EventListenerManager", "Event: %d, Listeners count: %zu", event, listeners.size());
 	}
 
 	template <IEventListener::Type event, typename... Ts>
 	void Notify(Ts&&... args)
 	{
+		static constexpr auto EventDispatchTable = std::tuple {
+#define XDEF(name, func, ...) &IEventListener::func,
+			LIST_OF_ALL_EVENTS(XDEF)
+#undef XDEF
+		};
+
 		std::unique_lock lock(m_Mutex);
-		if(const auto it = m_vListeners.find(event); it != m_vListeners.end())
+		if(const auto it = m_Listeners.find(event); it != m_Listeners.end())
 		{
-			for(auto* listener : it->second)
-			{
-				if constexpr(event == IEventListener::CharacterDamage)
-					listener->OnCharacterDamage(std::forward<Ts>(args)...);
-				else if constexpr(event == IEventListener::CharacterDeath)
-					listener->OnCharacterDeath(std::forward<Ts>(args)...);
-				else if constexpr(event == IEventListener::CharacterSpawn)
-					listener->OnCharacterSpawn(std::forward<Ts>(args)...);
-				else if constexpr(event == IEventListener::PlayerLogin)
-					listener->OnPlayerLogin(std::forward<Ts>(args)...);
-				else if constexpr(event == IEventListener::PlayerChat)
-					listener->OnPlayerChat(std::forward<Ts>(args)...);
-				else if constexpr(event == IEventListener::PlayerProfessionUpgrade)
-					listener->OnPlayerProfessionUpgrade(std::forward<Ts>(args)...);
-				else if constexpr(event == IEventListener::PlayerProfessionLeveling)
-					listener->OnPlayerProfessionLeveling(std::forward<Ts>(args)...);
-				else if constexpr(event == IEventListener::PlayerProfessionChange)
-					listener->OnPlayerProfessionChange(std::forward<Ts>(args)...);
-				else if constexpr(event == IEventListener::PlayerGotItem)
-					listener->OnPlayerGotItem(std::forward<Ts>(args)...);
-				else if constexpr(event == IEventListener::PlayerLostItem)
-					listener->OnPlayerLostItem(std::forward<Ts>(args)...);
-				else if constexpr(event == IEventListener::PlayerCraftItem)
-					listener->OnPlayerCraftItem(std::forward<Ts>(args)...);
-				else if constexpr(event == IEventListener::PlayerEquipItem)
-					listener->OnPlayerEquipItem(std::forward<Ts>(args)...);
-				else if constexpr(event == IEventListener::PlayerUnequipItem)
-					listener->OnPlayerUnequipItem(std::forward<Ts>(args)...);
-				else if constexpr(event == IEventListener::PlayerEnchantItem)
-					listener->OnPlayerEnchantItem(std::forward<Ts>(args)...);
-				else if constexpr(event == IEventListener::PlayerDurabilityItem)
-					listener->OnPlayerDurabilityItem(std::forward<Ts>(args)...);
-				else if constexpr(event == IEventListener::PlayerQuestChangeState)
-					listener->OnPlayerQuestChangeState(std::forward<Ts>(args)...);
-			}
+			// safety copy listeners / e.g. in cases where the event call is recursive, or in cases where the subscriber unsubscribe in time.
+			const auto pfnMember = std::get<static_cast<size_t>(event)>(EventDispatchTable);
+			auto listenersCopy = it->second;
+			lock.unlock();
+
+			for(auto* pListener : listenersCopy)
+				(pListener->*pfnMember)(std::forward<Ts>(args)...);
 		}
 	}
 };
 
 extern CEventListenerManager g_EventListenerManager;
+#undef LIST_OF_ALL_EVENTS
 
 // scoped event listener (RAII)
 class ScopedEventListener
