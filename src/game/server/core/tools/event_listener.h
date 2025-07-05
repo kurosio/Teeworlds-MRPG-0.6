@@ -26,6 +26,7 @@ public:
 		CharacterDeath,
 		CharacterSpawn,
 		PlayerLogin,
+		PlayerChat,
 		PlayerProfessionUpgrade,
 		PlayerProfessionLeveling,
 		PlayerProfessionChange,
@@ -44,6 +45,7 @@ private:
 	virtual void OnCharacterDeath(CPlayer* pVictim, CPlayer* pKiller, int Weapon) { }
 	virtual void OnCharacterSpawn(CPlayer* pPlayer) { }
 	virtual void OnPlayerLogin(CPlayer* pPlayer, CAccountData* pAccount){ }
+	virtual void OnPlayerChat(CPlayer* pPlayer, const char* pMessage){ }
 	virtual void OnPlayerProfessionUpgrade(CPlayer* pPlayer, int AttributeID) { }
 	virtual void OnPlayerProfessionLeveling(CPlayer* pPlayer, CProfession* pProfession, int NewLevel) { }
 	virtual void OnPlayerProfessionChange(CPlayer* pPlayer, CProfession* pOldProf, CProfession* pNewProf) { }
@@ -99,9 +101,7 @@ public:
 		dbg_msg("EventListenerManager", "Registered events and their listeners:");
 
 		for(const auto& [event, listeners] : m_vListeners)
-		{
 			dbg_msg("EventListenerManager", "Event: %d, Listeners count: %zu", event, listeners.size());
-		}
 	}
 
 	template <IEventListener::Type event, typename... Ts>
@@ -120,6 +120,8 @@ public:
 					listener->OnCharacterSpawn(std::forward<Ts>(args)...);
 				else if constexpr(event == IEventListener::PlayerLogin)
 					listener->OnPlayerLogin(std::forward<Ts>(args)...);
+				else if constexpr(event == IEventListener::PlayerChat)
+					listener->OnPlayerChat(std::forward<Ts>(args)...);
 				else if constexpr(event == IEventListener::PlayerProfessionUpgrade)
 					listener->OnPlayerProfessionUpgrade(std::forward<Ts>(args)...);
 				else if constexpr(event == IEventListener::PlayerProfessionLeveling)
@@ -148,5 +150,68 @@ public:
 };
 
 extern CEventListenerManager g_EventListenerManager;
+
+// scoped event listener (RAII)
+class ScopedEventListener
+{
+	IEventListener* m_pListener {};
+	std::vector<IEventListener::Type> m_vEvents {};
+	bool m_IsRegistered {};
+
+public:
+	ScopedEventListener() = default;
+	~ScopedEventListener()
+	{
+		Unregister();
+	}
+
+	template<typename... TEvents>
+	void Init(IEventListener* pListener, TEvents... events)
+	{
+		static_assert(std::conjunction_v<std::is_same<TEvents, IEventListener::Type>...>,
+			"All events must be type IEventListener::Type");
+
+		Unregister();
+		m_pListener = pListener;
+		m_vEvents.clear();
+		m_vEvents.reserve(sizeof...(events));
+		(m_vEvents.push_back(events), ...);
+	}
+
+	void Init(IEventListener* pListener, const std::vector<IEventListener::Type>& events)
+	{
+		Unregister();
+		m_pListener = pListener;
+		m_vEvents = events;
+	}
+
+	void Register()
+	{
+		if(!m_IsRegistered && m_pListener && !m_vEvents.empty())
+		{
+			for(const auto& event : m_vEvents)
+				g_EventListenerManager.RegisterListener(event, m_pListener);
+
+			m_IsRegistered = true;
+		}
+	}
+
+	void Unregister()
+	{
+		if(m_IsRegistered && m_pListener)
+		{
+			for(const auto& event : m_vEvents)
+				g_EventListenerManager.UnregisterListener(event, m_pListener);
+
+			m_IsRegistered = false;
+		}
+	}
+
+	// disable copying and allow move
+	ScopedEventListener(const ScopedEventListener&) = delete;
+	ScopedEventListener& operator=(const ScopedEventListener&) = delete;
+	ScopedEventListener(ScopedEventListener&&) = default;
+	ScopedEventListener& operator=(ScopedEventListener&&) = default;
+};
 
 #endif
