@@ -922,6 +922,7 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 				SendChat(ClientID, pMsg->m_Team ? CHAT_TEAM : CHAT_ALL, pMsg->m_pMessage);
 
 			// set last message
+			g_EventListenerManager.Notify<IEventListener::PlayerChat>(pPlayer, pMsg->m_pMessage);
 			str_copy(pPlayer->m_aLastMsg, pMsg->m_pMessage, sizeof(pPlayer->m_aLastMsg));
 			return;
 		}
