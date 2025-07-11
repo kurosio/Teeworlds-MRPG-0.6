@@ -2,10 +2,11 @@
 #define GAME_SERVER_CORE_TOOLS_SCENARIO_PLAYER_MANAGER_H
 
 #include "scenario_base.h"
+#include <unordered_map>
+#include <unordered_set>
 
 class CGS;
 
-// hashing function for fast iterate unordered map with pair <client, scenario>
 struct PairIntHash
 {
 	std::size_t operator()(const std::pair<int, int>& p) const noexcept
@@ -32,57 +33,42 @@ public:
 	~CScenarioPlayerManager() = default;
 
 	template<typename T, typename... Args>
-	int RegisterScenario(int ClientID, Args&&... args)
+	int RegisterScenario(int ClientID, Args&&... args) requires std::derived_from<T, PlayerScenarioBase>
 	{
-		static_assert(std::is_base_of_v<PlayerScenarioBase, T>, "T must derive from PlayerScenarioBase for CScenarioPlayerManager");
-
-		// initialize variables
 		int scenarioID = m_NextScenarioID++;
 		auto pScenario = std::make_unique<T>(std::forward<Args>(args)...);
 
-		// initialize scenario
+		// This initialization is now internal to the scenario base class
 		pScenario->m_pGS = m_pGS;
 		pScenario->m_ClientID = ClientID;
 		pScenario->m_ScenarioID = scenarioID;
 		pScenario->Start();
 
-		// check is succesful running
-		if(!pScenario->IsRunning())
-			return -1;
+		if(!pScenario->IsRunning()) return -1;
 
-		// check succesful incerting
 		const ScenarioKey key = { ClientID, scenarioID };
 		auto [it, inserted] = m_vScenarios.emplace(key, std::move(pScenario));
-		if(!inserted)
-			return -1;
+		if(!inserted) return -1;
 
 		m_ClientScenarios[ClientID].insert(scenarioID);
 		return scenarioID;
 	}
 
 	void UpdateClientScenarios(int ClientID);
-
 	void Stop(int ClientID, int ScenarioID) { RemoveScenarioInternal(ClientID, ScenarioID); }
 	void StopAll(int ClientID);
 
 	template<typename T = ScenarioBase>
-	T* GetScenario(int ClientID, int ScenarioID)
+	T* GetScenario(int ClientID, int ScenarioID) requires std::derived_from<T, ScenarioBase>
 	{
-		static_assert(std::is_base_of_v<ScenarioBase, T>, "T must derive from ScenarioBase");
-
 		auto it = m_vScenarios.find({ ClientID, ScenarioID });
 		if(it != m_vScenarios.end() && it->second)
 			return dynamic_cast<T*>(it->second.get());
-
 		return nullptr;
 	}
 
-	PlayerScenarioBase* GetPlayerScenario(int ClientID, int ScenarioID);
 	bool IsActive(int ClientID, int ScenarioID) const noexcept;
 	bool HasActiveScenarios(int ClientID) const noexcept;
-	std::vector<int> GetActiveScenarios(int ClientID) const;
-	size_t GetScenarioCount(int ClientID) const noexcept;
-	size_t GetTotalScenarioCount() const noexcept { return m_vScenarios.size(); }
 	void RemoveClient(int ClientID) { StopAll(ClientID); }
 
 private:

@@ -32,6 +32,6 @@ void CEidolonScenario::SendRandomChatMessage(const std::vector<const char*>& mes
 	if(messages.empty())
 		return;
 
-	const int randIndex = rand() % messages.size();
-	GS()->SendChat(GetClientID(), CHAT_ALL, messages[randIndex]);
+	//const int randIndex = rand() % messages.size();
+	//GS()->SendChat(GetClientID(), CHAT_ALL, messages[randIndex]);
 }

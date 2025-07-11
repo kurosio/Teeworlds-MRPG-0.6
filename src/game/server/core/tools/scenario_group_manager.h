@@ -2,6 +2,7 @@
 #define GAME_SERVER_CORE_TOOLS_SCENARIO_GROUP_MANAGER_H
 
 #include "scenario_base.h"
+#include <unordered_map>
 
 class CGS;
 
@@ -19,26 +20,22 @@ public:
 	~CScenarioGroupManager() = default;
 
 	template<typename T, typename... Args>
-	int RegisterScenario(int ClientID, Args&&... args)
+	int RegisterScenario(int ClientID, Args&&... args) requires std::derived_from<T, GroupScenarioBase>
 	{
-		static_assert(std::is_base_of_v<GroupScenarioBase, T>, "T must derive from GroupScenarioBase for CScenarioGroupManager");
-
 		int scenarioID = m_NextScenarioID++;
 		auto pScenario = std::make_shared<T>(std::forward<Args>(args)...);
-		pScenario->m_ScenarioID = scenarioID;
-		pScenario->m_pGS = m_pGS;
 
-		if(!pScenario->AddParticipant(ClientID))
-			return -1;
+		pScenario->m_pGS = m_pGS;
+		pScenario->m_ScenarioID = scenarioID;
+
+		if(!pScenario->AddParticipant(ClientID)) return -1;
 
 		pScenario->Start();
 
-		if(!pScenario->IsRunning())
-			return -1;
+		if(!pScenario->IsRunning()) return -1;
 
 		auto [it, inserted] = m_vScenarios.emplace(scenarioID, pScenario);
-		if(!inserted)
-			return -1;
+		if(!inserted) return -1;
 
 		return scenarioID;
 	}
@@ -47,22 +44,15 @@ public:
 	void RemoveClient(int ClientID);
 
 	template<typename T = GroupScenarioBase>
-	std::shared_ptr<T> GetScenario(int ScenarioID)
+	std::shared_ptr<T> GetScenario(int ScenarioID) requires std::derived_from<T, GroupScenarioBase>
 	{
-		static_assert(std::is_base_of_v<GroupScenarioBase, T>, "T must derive from GroupScenarioBase");
-
 		auto it = m_vScenarios.find(ScenarioID);
 		if(it != m_vScenarios.end())
 			return std::dynamic_pointer_cast<T>(it->second);
-
 		return nullptr;
 	}
 
 	bool IsActive(int ScenarioID) const;
-	size_t GetScenarioCount() const noexcept { return m_vScenarios.size(); }
-
-private:
-	void RemoveScenarioInternal(int scenarioID);
 };
 
 #endif // GAME_SERVER_CORE_TOOLS_SCENARIO_GROUP_MANAGER_H

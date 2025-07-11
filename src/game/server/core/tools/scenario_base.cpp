@@ -1,13 +1,14 @@
 ﻿#include "scenario_base.h"
-
 #include <game/server/gamecontext.h>
+#include <ranges>
+#include <numeric>
 
 ScenarioBase::~ScenarioBase()
 {
 	if(m_Running)
 		Stop();
 
-	ScenarioBase::OnScenarioEnd();
+	OnScenarioEnd();
 }
 
 void ScenarioBase::Start()
@@ -17,16 +18,17 @@ void ScenarioBase::Start()
 
 	OnSetupScenario();
 
+	if(m_StartStepId.empty() && !m_mSteps.empty())
+		m_StartStepId = m_vStepOrder.front();
+
+	if(m_StartStepId.empty() || !m_mSteps.contains(m_StartStepId))
+		return;
+
 	m_Running = true;
-	m_CurrentStepIndex = 0;
+	m_CurrentStepId = m_StartStepId;
 	m_LastStepTimeTick = 0;
-
 	OnScenarioStart();
-
-	if(!m_vSteps.empty())
-		ExecuteStepStartActions();
-	else
-		Stop();
+	ExecuteStepStartActions();
 }
 
 void ScenarioBase::Stop()
@@ -35,12 +37,10 @@ void ScenarioBase::Stop()
 		return;
 
 	if(!IsFinished())
-	{
 		ExecuteStepEndActions();
-	}
 
 	m_Running = false;
-	m_CurrentStepIndex = m_vSteps.size();
+	m_CurrentStepId = END_SCENARIO_STEP_ID;
 	OnScenarioEnd();
 }
 
@@ -49,23 +49,95 @@ void ScenarioBase::Tick()
 	if(!m_Running || IsFinished())
 		return;
 
-	// check stop condition
 	if(OnStopConditions())
 	{
 		Stop();
 		return;
 	}
 
-	// check pause condition
 	if(OnPauseConditions())
 		return;
 
-	// execute active actions for current step
 	ExecuteStepActiveActions();
 
-	// check if the current step can be concluded
+	if(m_mSteps.contains(m_CurrentStepId) && m_mSteps.at(m_CurrentStepId).m_CompletionLogic == StepCompletionLogic::SEQUENTIAL)
+	{
+		TryAdvanceSequentialComponent();
+	}
+
 	if(CanConcludeCurrentStep())
 		AdvanceStep();
+}
+
+void ScenarioBase::ExecuteStepStartActions()
+{
+	if(IsFinished() || !m_mSteps.contains(m_CurrentStepId))
+		return;
+
+	m_LastStepTimeTick = Server()->Tick();
+	auto& step = m_mSteps.at(m_CurrentStepId);
+
+	if(step.m_CompletionLogic == StepCompletionLogic::SEQUENTIAL)
+	{
+		step.m_CurrentComponentIndex = 0;
+		if(!step.m_vComponents.empty())
+			step.m_vComponents.front()->OnStart();
+	}
+	else
+	{
+		for(const auto& pComponent : step.m_vComponents)
+			pComponent->OnStart();
+	}
+}
+
+void ScenarioBase::ExecuteStepActiveActions()
+{
+	if(IsFinished() || !m_mSteps.contains(m_CurrentStepId))
+		return;
+
+	auto& currentStep = m_mSteps.at(m_CurrentStepId);
+	if(Server()->Tick() % Server()->TickSpeed() == 0 && !currentStep.m_MsgInfo.empty())
+	{
+		if(const auto* pPlayerScenario = dynamic_cast<PlayerScenarioBase*>(this))
+		{
+			if(const auto* pPlayer = pPlayerScenario->GetPlayer())
+				GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::VeryImportant, Server()->TickSpeed(), currentStep.m_MsgInfo.c_str());
+		}
+		else if(auto* pGroupScenario = dynamic_cast<GroupScenarioBase*>(this))
+		{
+			for(const auto& CID : pGroupScenario->GetParticipants())
+				GS()->Broadcast(CID, BroadcastPriority::VeryImportant, Server()->TickSpeed(), currentStep.m_MsgInfo.c_str());
+		}
+	}
+
+	if(currentStep.m_CompletionLogic == StepCompletionLogic::SEQUENTIAL)
+	{
+		if(currentStep.m_CurrentComponentIndex < currentStep.m_vComponents.size())
+			currentStep.m_vComponents[currentStep.m_CurrentComponentIndex]->OnActive();
+	}
+	else
+	{
+		for(const auto& pComponent : currentStep.m_vComponents)
+			pComponent->OnActive();
+	}
+}
+
+void ScenarioBase::ExecuteStepEndActions()
+{
+	if(IsFinished() || !m_mSteps.contains(m_CurrentStepId))
+		return;
+
+	auto& currentStep = m_mSteps.at(m_CurrentStepId);
+	if(currentStep.m_CompletionLogic == StepCompletionLogic::SEQUENTIAL)
+	{
+		if(currentStep.m_CurrentComponentIndex < currentStep.m_vComponents.size())
+			currentStep.m_vComponents[currentStep.m_CurrentComponentIndex]->OnEnd();
+	}
+	else
+	{
+		for(const auto& pComponent : currentStep.m_vComponents)
+			pComponent->OnEnd();
+	}
 }
 
 bool ScenarioBase::CanConcludeCurrentStep() const
@@ -73,72 +145,53 @@ bool ScenarioBase::CanConcludeCurrentStep() const
 	if(IsFinished())
 		return false;
 
-	const Step& currentStep = m_vSteps[m_CurrentStepIndex];
-	bool conditionMet = true;
-	bool timerElapsed = false;
+	const Step& currentStep = m_mSteps.at(m_CurrentStepId);
+	bool conditionMet;
 
-	// check condition if provided
-	if(currentStep.FuncCheckCondition)
-		conditionMet = currentStep.FuncCheckCondition();
-
-	// check timer if provided
-	if(currentStep.DelayTick >= 0)
+	if(currentStep.m_CompletionLogic == StepCompletionLogic::SEQUENTIAL)
 	{
-		long elapsedTick = Server()->Tick() - m_LastStepTimeTick;
-		timerElapsed = elapsedTick >= currentStep.DelayTick;
+		conditionMet = currentStep.m_CurrentComponentIndex >= currentStep.m_vComponents.size();
 	}
 	else
 	{
-		timerElapsed = (currentStep.Priority == ConditionPriority::CONDITION_OR_TIMER);
+		auto isComponentFinished = [&](const auto& p) { return p->IsFinished(); };
+		conditionMet = (currentStep.m_CompletionLogic == StepCompletionLogic::ANY_OF) ?
+			std::ranges::any_of(currentStep.m_vComponents, isComponentFinished) :
+			std::ranges::all_of(currentStep.m_vComponents, isComponentFinished);
 	}
 
-	// evaluate based on priority
-	switch(currentStep.Priority)
+
+	bool timerElapsed = false;
+	if(currentStep.m_DelayTick >= 0)
 	{
-		case ConditionPriority::CONDITION_AND_TIMER:
-			return conditionMet && (currentStep.DelayTick < 0 ? true : timerElapsed);
-		case ConditionPriority::CONDITION_OR_TIMER:
-			return conditionMet || timerElapsed;
-		default:
-			return false;
+		timerElapsed = (Server()->Tick() - m_LastStepTimeTick) >= currentStep.m_DelayTick;
 	}
+	else
+	{
+		timerElapsed = (currentStep.m_Priority == ConditionPriority::CONDITION_OR_TIMER);
+	}
+
+	return (currentStep.m_Priority == ConditionPriority::CONDITION_AND_TIMER) ?
+		(conditionMet && (currentStep.m_DelayTick < 0 || timerElapsed)) :
+		(conditionMet || timerElapsed);
 }
 
-void ScenarioBase::ExecuteStepStartActions()
+void ScenarioBase::TryAdvanceSequentialComponent()
 {
-	if(IsFinished())
+	auto& currentStep = m_mSteps.at(m_CurrentStepId);
+
+	if(currentStep.m_CurrentComponentIndex >= currentStep.m_vComponents.size())
 		return;
 
-	m_LastStepTimeTick = Server()->Tick();
-	const Step& currentStep = m_vSteps[m_CurrentStepIndex];
-	OnStepStart(m_CurrentStepIndex);
+	auto& pCurrentComp = currentStep.m_vComponents[currentStep.m_CurrentComponentIndex];
+	if(pCurrentComp->IsFinished())
+	{
+		pCurrentComp->OnEnd();
+		currentStep.m_CurrentComponentIndex++;
 
-	if(currentStep.FuncOnStart)
-		currentStep.FuncOnStart();
-}
-
-void ScenarioBase::ExecuteStepActiveActions()
-{
-	if(IsFinished())
-		return;
-
-	const Step& currentStep = m_vSteps[m_CurrentStepIndex];
-	OnStepTick(m_CurrentStepIndex);
-
-	if(currentStep.FuncActive)
-		currentStep.FuncActive();
-}
-
-void ScenarioBase::ExecuteStepEndActions()
-{
-	if(IsFinished())
-		return;
-
-	const Step& currentStep = m_vSteps[m_CurrentStepIndex];
-	OnStepEnd(m_CurrentStepIndex);
-
-	if(currentStep.FuncOnEnd)
-		currentStep.FuncOnEnd();
+		if(currentStep.m_CurrentComponentIndex < currentStep.m_vComponents.size())
+			currentStep.m_vComponents[currentStep.m_CurrentComponentIndex]->OnStart();
+	}
 }
 
 void ScenarioBase::AdvanceStep()
@@ -147,27 +200,37 @@ void ScenarioBase::AdvanceStep()
 		return;
 
 	ExecuteStepEndActions();
-	m_CurrentStepIndex++;
 
-	if(IsFinished())
+	std::optional<StepId> nextStepIdOpt;
+	const auto& currentStep = m_mSteps.at(m_CurrentStepId);
+	for(const auto& pComponent : currentStep.m_vComponents)
 	{
-		if(IsRepeatable())
+		auto componentNextId = pComponent->GetNextStepId();
+		if(componentNextId.has_value())
 		{
-			m_CurrentStepIndex = 0;
-			m_LastStepTimeTick = 0;
-			m_vSteps.clear();
-			Start();
-		}
-		else
-		{
-			Stop();
+			nextStepIdOpt = componentNextId;
+			break;
 		}
 	}
-	else
+
+	if(!nextStepIdOpt.has_value())
 	{
-		ExecuteStepStartActions();
+		auto it = std::ranges::find(m_vStepOrder, m_CurrentStepId);
+		if(it != m_vStepOrder.end() && std::next(it) != m_vStepOrder.end())
+			nextStepIdOpt = *std::next(it);
 	}
+
+	const StepId nextStepId = nextStepIdOpt.value_or(END_SCENARIO_STEP_ID);
+	if(nextStepId == END_SCENARIO_STEP_ID || !m_mSteps.contains(nextStepId))
+	{
+		Stop();
+		return;
+	}
+
+	m_CurrentStepId = nextStepId;
+	ExecuteStepStartActions();
 }
+
 
 CGS* ScenarioBase::GS() const
 {
@@ -179,56 +242,18 @@ IServer* ScenarioBase::Server() const
 	return GS()->Server();
 }
 
-// --- Step Builder Methods Implementation ---
-ScenarioBase& ScenarioBase::AddStep(int delayTick)
+[[nodiscard]] ScenarioBase::Step& ScenarioBase::AddStep(StepId id, std::string MsgInfo, int delayTick)
 {
-	m_vSteps.emplace_back(delayTick);
-	OnStepAdded(m_vSteps.back());
-	return *this;
+	m_vStepOrder.push_back(id);
+	auto [it, inserted] = m_mSteps.try_emplace(id, std::move(id), MsgInfo, delayTick);
+	return it->second;
 }
 
-ScenarioBase& ScenarioBase::WhenStarted(const ScenarioAction& pfnOnStart)
-{
-	if(!m_vSteps.empty())
-	{
-		m_vSteps.back().FuncOnStart = pfnOnStart;
-	}
-	return *this;
-}
-
-ScenarioBase& ScenarioBase::WhenActive(const ScenarioAction& pfnActive)
-{
-	if(!m_vSteps.empty())
-	{
-		m_vSteps.back().FuncActive = pfnActive;
-	}
-	return *this;
-}
-
-ScenarioBase& ScenarioBase::WhenFinished(const ScenarioAction& pfnOnEnd)
-{
-	if(!m_vSteps.empty())
-	{
-		m_vSteps.back().FuncOnEnd = pfnOnEnd;
-	}
-	return *this;
-}
-
-ScenarioBase& ScenarioBase::CheckCondition(ConditionPriority priority, const ScenarioCondition& pfnCheckCondition)
-{
-	if(!m_vSteps.empty())
-	{
-		m_vSteps.back().Priority = priority;
-		m_vSteps.back().FuncCheckCondition = pfnCheckCondition;
-	}
-	return *this;
-}
-
-
-// --- PlayerScenarioBase Implementation ---
+// PlayerScenarioBase
 bool PlayerScenarioBase::OnPauseConditions()
 {
-	return !GetCharacter();
+	const auto* p = GetPlayer();
+	return !p || !p->GetCharacter();
 }
 
 bool PlayerScenarioBase::OnStopConditions()
@@ -241,48 +266,36 @@ CPlayer* PlayerScenarioBase::GetPlayer() const
 	return GS()->GetPlayer(m_ClientID);
 }
 
-CCharacter* PlayerScenarioBase::GetCharacter() const
+// GroupScenarioBase
+bool GroupScenarioBase::HasPlayer(CPlayer* pPlayer) const
 {
-	return GS()->GetPlayerChar(m_ClientID);
+	return pPlayer && m_vParticipantIDs.contains(pPlayer->GetCID());
 }
 
-// --- GroupScenarioBase Implementation ---
 std::vector<CPlayer*> GroupScenarioBase::GetPlayers() const
 {
-	std::vector<CPlayer*> vResult {};
-
-	for(auto& clientId : m_vParticipantIDs)
-		vResult.push_back(GS()->GetPlayer(clientId));
-
-	return vResult;
-}
-
-std::vector<CCharacter*> GroupScenarioBase::GetCharacters() const
-{
-	std::vector<CCharacter*> vResult {};
-
-	for(auto& clientId : m_vParticipantIDs)
-		vResult.push_back(GS()->GetPlayerChar(clientId));
-
-	return vResult;
+	auto view = m_vParticipantIDs
+		| std::views::transform([this](int CID) { return GS()->GetPlayer(CID); })
+		| std::views::filter([](CPlayer* pPtr) { return pPtr != nullptr; });
+	return std::vector<CPlayer*>(view.begin(), view.end());
 }
 
 bool GroupScenarioBase::OnPauseConditions()
 {
-	return std::ranges::all_of(m_vParticipantIDs, [this](int ClientID)
-	{
-		return GS()->GetPlayerChar(ClientID) == nullptr;
-	});
+	return std::ranges::all_of(m_vParticipantIDs, [this](int id){ return !GS()->GetPlayerChar(id); });
 }
 
 bool GroupScenarioBase::OnStopConditions()
 {
-	return m_vParticipantIDs.empty() || std::ranges::all_of(m_vParticipantIDs, [this](int ClientID)
-	{
-		return GS()->GetPlayer(ClientID) == nullptr;
-	});
+	return m_vParticipantIDs.empty();
 }
 
+void GroupScenarioBase::OnScenarioEnd()
+{
+	std::vector<int> participants(m_vParticipantIDs.begin(), m_vParticipantIDs.end());
+	for(int id : participants)
+		RemoveParticipant(id);
+}
 bool GroupScenarioBase::AddParticipant(int ClientID)
 {
 	if(m_vParticipantIDs.contains(ClientID))
@@ -294,32 +307,13 @@ bool GroupScenarioBase::AddParticipant(int ClientID)
 
 	return inserted;
 }
-
 bool GroupScenarioBase::RemoveParticipant(int ClientID)
 {
 	if(m_vParticipantIDs.erase(ClientID) > 0)
 	{
-		bool isStopping = !m_Running;
-		OnPlayerLeave(ClientID, isStopping);
+		OnPlayerLeave(ClientID, !IsRunning());
 		return true;
 	}
 
 	return false;
-}
-
-bool GroupScenarioBase::IsParticipant(int ClientID) const
-{
-	return m_vParticipantIDs.contains(ClientID);
-}
-
-int GroupScenarioBase::GetParticipantCount() const
-{
-	return static_cast<int>(m_vParticipantIDs.size());
-}
-
-void GroupScenarioBase::OnScenarioEnd()
-{
-	std::vector<int> participantsToNotify(m_vParticipantIDs.begin(), m_vParticipantIDs.end());
-	for(int clientID : participantsToNotify)
-		OnPlayerLeave(clientID, true);
 }

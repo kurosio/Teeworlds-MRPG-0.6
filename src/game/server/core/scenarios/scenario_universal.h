@@ -34,7 +34,7 @@ protected:
 	void ProcessStep(const nlohmann::json& step);
 
 private:
-	void StepMessage(int delay, const std::string& broadcastMsg, const std::string& chatMsg);
+	/*void StepMessage(int delay, const std::string& broadcastMsg, const std::string& chatMsg);
 	void StepEmote(int emoteType, int emoticonType);
 	void StepShootmarkers(const std::vector<std::pair<vec2, int>>& vShotmarkers);
 	void StepFixedCam(int delay, const vec2& pos);
@@ -45,6 +45,7 @@ private:
 
 	void CreateEntityShootmarkersTask(const vec2& pos, int health);
 	void SendBroadcast(const std::string& text) const;
+	*/
 };
 
 #endif

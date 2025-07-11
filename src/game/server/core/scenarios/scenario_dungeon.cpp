@@ -1,389 +1,518 @@
 #include "scenario_dungeon.h"
-
 #include <game/server/gamecontext.h>
 
-CDungeonScenario::CDungeonScenario(const nlohmann::json& jsonData)
-	: GroupScenarioBase()
+class DefeatMobsComponent final : public Component<CDungeonScenario, DefeatMobsComponent>, public IEventListener
 {
-	m_JsonData = jsonData;
-}
+	enum class EMode { Annihilation, Wave, Survival };
+	inline static EMode GetMode(std::string_view modeStr)
+	{
+		if(modeStr == "wave") return EMode::Wave;
+		else if(modeStr == "survival") return EMode::Survival;
+		else return EMode::Annihilation;
+	}
 
-CDungeonScenario::~CDungeonScenario()
+	ScopedEventListener m_ListenerScope {};
+	struct Properties
+	{
+		int TargetKills {};
+		int Duration {};
+	};
+
+	Properties m_Prop {};
+	std::set<int> m_SpawnedBotIds {};
+	EMode m_Mode {};
+	vec2 m_Position {};
+	float m_Radius {};
+	int m_KillsMade {};
+	int m_TargetTick {};
+	nlohmann::json m_MobsData {};
+
+public:
+	explicit DefeatMobsComponent(const nlohmann::json& j)
+	{
+		InitBaseJsonField(j);
+		m_Mode = GetMode(j.value("mode", ""));
+		m_Radius = j.value("radius", 180.f);
+		m_Position = j.value("position", vec2 {});
+		m_MobsData = j.value("mobs", nlohmann::json::array());
+		m_Prop.TargetKills = j.value("kill_target", (int)NOPE);
+		m_Prop.Duration = j.value("duration", 0);
+		m_ListenerScope.Init(this, IEventListener::CharacterDeath);
+	}
+
+private:
+	void Reset()
+	{
+		m_KillsMade = 0;
+		m_TargetTick = Server()->Tick() + m_Prop.Duration * Server()->TickSpeed();
+	}
+
+	void OnStartImpl() override
+	{
+		m_ListenerScope.Register();
+		Reset();
+
+		for(const auto& mobData : m_MobsData)
+		{
+			const int mobID = mobData.value("mob_id", (int)NOPE);
+			if(!MobBotInfo::ms_aMobBot.contains(mobID))
+				continue;
+
+			// initialize and create new mobs
+			MobBotInfo mobInfo = MobBotInfo::ms_aMobBot[mobID];
+			mobInfo.m_Level = mobData.value("level", 1);
+			mobInfo.m_Power = mobData.value("power", 1);
+			mobInfo.m_Position = m_Position;
+			mobInfo.m_Radius = m_Radius;
+			mobInfo.m_WorldID = GS()->GetWorldID();
+			for(int i = 0; i < mobData.value("count", 1); ++i)
+			{
+				if(auto* pPlayerBot = GS()->CreateBot(TYPE_BOT_MOB, mobInfo.m_BotID, mobID))
+				{
+					pPlayerBot->InitBotMobInfo(mobInfo);
+					pPlayerBot->SetAllowedSpawn(true);
+					m_SpawnedBotIds.insert(pPlayerBot->GetCID());
+				}
+			}
+		}
+	}
+
+	void OnCharacterDeath(CPlayer* pVictim, CPlayer* pKiller, int Weapon) override
+	{
+		if(!pVictim || !m_SpawnedBotIds.contains(pVictim->GetCID()))
+			return;
+
+		bool ShouldDestroy = false;
+		auto* pPlayerBot = static_cast<CPlayerBot*>(pVictim);
+		switch(m_Mode)
+		{
+			default:
+				ShouldDestroy = true;
+				break;
+
+			case EMode::Survival:
+				ShouldDestroy = Server()->Tick() >= m_TargetTick;
+				break;
+
+			case EMode::Wave:
+				ShouldDestroy = ++m_KillsMade >= m_Prop.TargetKills;
+				break;
+		}
+
+		if(ShouldDestroy)
+		{
+			m_SpawnedBotIds.erase(pVictim->GetCID());
+			pPlayerBot->MarkForDestroy();
+		}
+	}
+
+	void OnActiveImpl() override
+	{
+		bool ShouldFinish = false;
+		switch(m_Mode)
+		{
+			default:
+				if(Server()->Tick() % Server()->TickSpeed() == 0)
+				{
+					for(auto& CID : Scenario()->GetParticipants())
+						GS()->Broadcast(CID, BroadcastPriority::TitleInformation, Server()->TickSpeed(),
+							"Objective: Defeat all the mobs. Remaining: {} mobs.", m_SpawnedBotIds.size());
+				}
+
+				ShouldFinish = m_SpawnedBotIds.empty();
+				break;
+
+			case EMode::Wave:
+				if(Server()->Tick() % Server()->TickSpeed() == 0)
+				{
+					for(auto& CID : Scenario()->GetParticipants())
+						GS()->Broadcast(CID, BroadcastPriority::TitleInformation, Server()->TickSpeed(),
+							"Objective: Defeat wave mobs '{} of {}'", m_KillsMade, m_Prop.TargetKills);
+				}
+
+				ShouldFinish = m_KillsMade >= m_Prop.TargetKills;
+				break;
+
+			case EMode::Survival:
+			{
+				const int timeLeft = (m_TargetTick - Server()->Tick()) / Server()->TickSpeed();
+				if(Server()->Tick() % Server()->TickSpeed() == 0 && timeLeft >= 0)
+				{
+					for(auto& CID : Scenario()->GetParticipants())
+						GS()->Broadcast(CID, BroadcastPriority::TitleInformation, Server()->TickSpeed(),
+							"Objective: Survive! Time left: {}s", timeLeft);
+				}
+
+				ShouldFinish = Server()->Tick() >= m_TargetTick;
+				break;
+			}
+		}
+
+		if(ShouldFinish)
+			Finish();
+	}
+
+	void OnEndImpl() override
+	{
+		for(int CID : m_SpawnedBotIds)
+		{
+			if(auto* pPlayer = GS()->GetPlayer(CID))
+				pPlayer->MarkForDestroy();
+		}
+		m_SpawnedBotIds.clear();
+		m_ListenerScope.Unregister();
+	}
+};
+
+class FollowCameraComponent final : public Component<CDungeonScenario, FollowCameraComponent>
 {
+	vec2 m_Pos {};
+	bool m_Smooth {};
+
+public:
+	explicit FollowCameraComponent(const nlohmann::json& j)
+	{
+		InitBaseJsonField(j);
+		m_Pos = j.value("position", vec2());
+		m_Smooth = j.value("smooth", true);
+	}
+
+	void OnActiveImpl() override
+	{
+		if(!m_DelayTick)
+		{
+			Finish();
+			return;
+		}
+
+		for(auto* pPlayer : Scenario()->GetPlayers())
+			pPlayer->LockedView().ViewLock(m_Pos, m_Smooth);
+	}
+};
+
+class MessageComponent final : public Component<GroupScenarioBase, MessageComponent>, public IEventListener
+{
+	std::string m_Broadcast {};
+	std::string m_Chat {};
+
+public:
+	explicit MessageComponent(const nlohmann::json& j)
+	{
+		InitBaseJsonField(j);
+		m_Broadcast = j.value("broadcast", "");
+		m_Chat = j.value("chat", "");
+		if(j.contains("full"))
+			m_Broadcast = m_Chat = j.value("full", "");
+	}
+
+private:
+	void OnStartImpl() override
+	{
+		for(auto* pPlayer : Scenario()->GetPlayers())
+		{
+			if(!m_Chat.empty())
+				GS()->Chat(pPlayer->GetCID(), m_Chat.c_str());
+			if(!m_Broadcast.empty())
+				GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::TitleInformation, m_DelayTick ? m_DelayTick : 100, m_Broadcast.c_str());
+		}
+
+		Finish();
+	}
+};
+
+class DoorControlComponent final : public Component<CDungeonScenario, DoorControlComponent>
+{
+	enum class DoorAction { Create, Remove };
+	std::string m_Key {};
+	vec2 m_Pos {};
+	DoorAction m_Action {};
+
+public:
+	explicit DoorControlComponent(const nlohmann::json& j)
+	{
+		InitBaseJsonField(j);
+		m_Key = j.value("key", "");
+		m_Pos = j.value("position", vec2());
+		auto actionStr = j.value("action", "create");
+		m_Action = actionStr == "remove" ? DoorAction::Remove : DoorAction::Create;
+	}
+
+private:
+	void OnStartImpl() override
+	{
+		if(m_Action == DoorAction::Create)
+		{
+			Scenario()->m_vpDoors[m_Key].m_Pos = m_Pos;
+			Scenario()->m_vpDoors[m_Key].m_EntPtr = std::make_unique<CEntityBaseDoor>(&GS()->m_World, CGameWorld::ENTTYPE_DEFAULT_DOOR, m_Pos, vec2(0, -1));
+		}
+		else if(m_Action == DoorAction::Remove)
+		{
+			if(Scenario()->m_vpDoors.contains(m_Key))
+				Scenario()->m_vpDoors.erase(m_Key);
+		}
+
+		Finish();
+	}
+};
+
+class UseChatComponent final : public Component<CDungeonScenario, UseChatComponent>, public IEventListener
+{
+	ScopedEventListener m_ListenerScope {};
+	std::string m_ChatCode {};
+	bool m_Hidden {};
+
+public:
+	explicit UseChatComponent(const nlohmann::json& j)
+	{
+		InitBaseJsonField(j);
+		m_ChatCode = j.value("code", "");
+		m_Hidden = j.value("hidden", true);
+		m_ListenerScope.Init(this, IEventListener::PlayerChat);
+	}
+
+private:
+	void OnStartImpl() override
+	{
+		m_ListenerScope.Register();
+	}
+
+	void OnActiveImpl() override
+	{
+		if(m_Hidden || Server()->Tick() % Server()->TickSpeed() != 0)
+			return;
+
+		for(auto& CID : Scenario()->GetParticipants())
+			GS()->Broadcast(CID, BroadcastPriority::VeryImportant, Server()->TickSpeed(), "Objective: Write in the chat '{}'", m_ChatCode);
+	}
+
+	void OnPlayerChat(CPlayer* pFrom, const char* pMessage) override
+	{
+		if(Scenario()->HasPlayer(pFrom) && std::string_view(pMessage) == m_ChatCode)
+			Finish();
+	}
+
+	void OnEndImpl() override
+	{
+		m_ListenerScope.Unregister();
+	}
+};
+
+
+struct WaitComponent final : public Component<GroupScenarioBase, WaitComponent>
+{
+	int m_Duration;
+	int m_TargetTick = 0;
+
+	explicit WaitComponent(const nlohmann::json& j)
+	{
+		InitBaseJsonField(j);
+		m_Duration = j.value("duration", 0);
+	}
+
+	void OnStartImpl() override
+	{
+		m_TargetTick = Server()->Tick() + Server()->TickSpeed() * m_Duration;
+	}
+
+	void OnActiveImpl() override
+	{
+		if(m_Duration <= 0 || Server()->Tick() >= m_TargetTick)
+		{
+			Finish();
+		}
+	}
+};
+
+struct MovementCondition final : public Component<GroupScenarioBase, MovementCondition>
+{
+	vec2 m_Position;
+	bool m_EntireGroup;
+
+	explicit MovementCondition(const nlohmann::json& j)
+	{
+		InitBaseJsonField(j);
+		m_Position = j.value("position", vec2());
+		m_EntireGroup = j.value("entire_group", false);
+	}
+
+private:
+	void OnActiveImpl() override
+	{
+		if(Server()->Tick() % (Server()->TickSpeed() / 2) == 0)
+			GS()->CreateHammerHit(m_Position);
+
+		const auto& vpPlayers = Scenario()->GetPlayers();
+		auto IsInsideFunc = [&](const CPlayer* pPlayer)
+		{
+			const auto* pChr = pPlayer->GetCharacter();
+			return pChr && distance(pChr->GetPos(), m_Position) < 128.f;
+		};
+
+		const bool ConditionMet = m_EntireGroup ?
+			(!vpPlayers.empty() && std::all_of(vpPlayers.begin(), vpPlayers.end(), IsInsideFunc)) :
+			std::any_of(vpPlayers.begin(), vpPlayers.end(), IsInsideFunc);
+		if(ConditionMet)
+		{
+			Finish();
+		}
+	}
+};
+
+
+struct ActivatePointComponent final : public Component<GroupScenarioBase, ActivatePointComponent>
+{
+	vec2 m_Position {};
+	bool m_EntireGroup {};
+	int m_Duration {};
+	int m_TargetTick {};
+	int m_ActivationTick {};
+	std::string m_Action {};
+
+	explicit ActivatePointComponent(const nlohmann::json& j)
+	{
+		InitBaseJsonField(j);
+		m_Position = j.value("position", vec2());
+		m_EntireGroup = j.value("entire_group", false);
+		m_Duration = j.value("duration", 0);
+		m_Action = j.value("action_text", "Activating Point");
+	}
+
+private:
+	template<typename... Args>
+	void Broadcast(const char* pFormat, Args&&... args) const
+	{
+		for(auto* pPlayer : Scenario()->GetPlayers())
+			GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::TitleInformation, Server()->TickSpeed(), pFormat, std::forward<Args>(args)...);
+	}
+
+	void BroadcastCooldownProgress() const
+	{
+		// initialize variables
+		const int TicksLeft = m_TargetTick - Server()->Tick();
+		const int SecLeft = std::max(0, TicksLeft / Server()->TickSpeed());
+		const int CentiSecLeft = std::max(0, (TicksLeft % Server()->TickSpeed()) * 100 / Server()->TickSpeed());
+		const float currentProgress = translate_to_percent(m_TargetTick, Server()->Tick());
+
+		// send information
+		char aTimeFormat[32] {};
+		str_format(aTimeFormat, sizeof(aTimeFormat), "%d.%.2ds", SecLeft, CentiSecLeft);
+		std::string progressBar = mystd::string::progressBar(100, static_cast<int>(currentProgress), 10, "\u25B0", "\u25B1");
+		Broadcast("{}\n< {} > {} - Action", m_Action, aTimeFormat, progressBar);
+	}
+
+	void ResetProgress()
+	{
+		m_ActivationTick = 0;
+	}
+
+	void OnStartImpl() override
+	{
+		ResetProgress();
+	}
+
+	void OnActiveImpl() override
+	{
+		if(Server()->Tick() % (Server()->TickSpeed() / 2) == 0)
+			GS()->CreateHammerHit(m_Position);
+
+		const auto& vpPlayers = Scenario()->GetPlayers();
+		auto IsInsideFunc = [&](const CPlayer* pPlayer)
+		{
+			const auto* pChr = pPlayer->GetCharacter();
+			return pChr && distance(pChr->GetPos(), m_Position) < 128.f;
+		};
+
+		// check condition
+		const bool ConditionMet = m_EntireGroup ?
+			(!vpPlayers.empty() && std::all_of(vpPlayers.begin(), vpPlayers.end(), IsInsideFunc)) :
+			std::any_of(vpPlayers.begin(), vpPlayers.end(), IsInsideFunc);
+
+		// nonactive condition
+		if(!ConditionMet)
+		{
+			if(m_ActivationTick != 0)
+			{
+				ResetProgress();
+				Broadcast("< Capture interrupted! >");
+			}
+
+			return;
+		}
+
+		// active condition
+		if(m_Duration <= 0)
+		{
+			Finish();
+			return;
+		}
+
+		if(m_ActivationTick == 0)
+		{
+			m_ActivationTick = Server()->Tick();
+			m_TargetTick = m_ActivationTick + m_Duration * Server()->TickSpeed();
+		}
+
+		if(Server()->Tick() >= m_TargetTick)
+		{
+			Finish();
+			return;
+		}
+		else if(Server()->Tick() % (Server()->TickSpeed() / 5) == 0)
+			BroadcastCooldownProgress();
+	}
+};
+
+CDungeonScenario::CDungeonScenario(const nlohmann::json& jsonData) : GroupScenarioBase(), m_JsonData(jsonData)
+{
+	// register components
+	RegisterComponent<CDungeonScenario, DefeatMobsComponent>("defeat_mobs");
+	RegisterComponent<CDungeonScenario, FollowCameraComponent>("follow_camera");
+	RegisterComponent<CDungeonScenario, DoorControlComponent>("door_control");
+	RegisterComponent<CDungeonScenario, UseChatComponent>("use_chat_code");
+	RegisterComponent<CDungeonScenario, MessageComponent>("message");
+	RegisterComponent<CDungeonScenario, MessageComponent>("broadcast");
+	RegisterComponent<CDungeonScenario, WaitComponent>("wait");
+	RegisterComponent<CDungeonScenario, ActivatePointComponent>("activate_point");
+	RegisterComponent<CDungeonScenario, MovementCondition>("condition_movement");
 }
 
 void CDungeonScenario::OnSetupScenario()
 {
-	if(!m_JsonData.is_object() || !m_JsonData.contains("steps"))
-	{
-		dbg_msg("scenario-tutorial", "Invalid JSON format or missing 'steps'");
+	if(!m_JsonData.is_object() || !m_JsonData.contains("steps") || !m_JsonData["steps"].is_array())
 		return;
-	}
 
-	// initialize steps
-	for(const auto& step : m_JsonData["steps"])
+	// start step by first
+	const auto& steps = m_JsonData["steps"];
+	if(!steps.empty())
+		m_StartStepId = steps[0].value("id", "");
+
+	// setup all steps
+	for(const auto& step : steps)
 		ProcessStep(step);
 }
 
-void CDungeonScenario::ProcessStep(const nlohmann::json& step)
+void CDungeonScenario::ProcessStep(const nlohmann::json& stepJson)
 {
-	// check valid action
-	if(!step.contains("action") || !step["action"].is_string())
-	{
-		dbg_msg("scenario-tutorial", "Missing or invalid 'action' key in JSON");
+	StepId id = stepJson.value("id", "");
+	if(id.empty() || !stepJson.contains("components"))
 		return;
+
+	// add new step
+	auto& newStep = AddStep(id, stepJson.value("msg_info", ""), stepJson.value("delay", -1));
+	if(const auto logic = stepJson.value("completion_logic", "all_of"); logic == "any_of")
+		newStep.m_CompletionLogic = StepCompletionLogic::ANY_OF;
+	else if(logic == "sequential")
+		newStep.m_CompletionLogic = StepCompletionLogic::SEQUENTIAL;
+
+	// add components
+	for(const auto& compJson : stepJson["components"])
+	{
+		const auto type = compJson.value("type", "");
+		if(type.empty())
+			continue;
+
+		auto& componentsList = GetComponents();
+		if(auto it = componentsList.find(type); it != componentsList.end())
+			newStep.AddComponent(it->second(compJson));
 	}
-
-	std::string action = step["action"];
-
-	// message
-	if(action == "message")
-	{
-		int delay = step.value("delay", 0);
-		std::string chatMsg = step.value("chat", "");
-		std::string broadcastMsg = step.value("broadcast", "");
-		std::string fullMsg = step.value("full", "");
-
-		if(!fullMsg.empty())
-			AddMessageStep(delay, fullMsg, fullMsg);
-		else
-			AddMessageStep(delay, broadcastMsg, chatMsg);
-	}
-
-	// fixed cam
-	else if(action == "fix_cam")
-	{
-		int delay = step.value("delay", 0);
-		vec2 position = step.value("position", vec2());
-		AddFixedCam(delay, position);
-	}
-
-	// create door
-	else if(action == "new_door")
-	{
-		std::string Key = step.value("key", "");
-		bool Follow = step.value("follow", false);
-		m_vpDoors[Key].m_Pos = step.value("position", vec2());
-
-		auto& newDoorStep = AddStep();
-		newDoorStep.WhenStarted([Follow, Key, this]()
-		{
-			vec2 Pos = m_vpDoors[Key].m_Pos;
-			m_vpDoors[Key].m_EntPtr = std::make_unique<CEntityBaseDoor>(&GS()->m_World, CGameWorld::ENTTYPE_DEFAULT_DOOR, Pos, vec2(0, -1));
-
-			if(Follow)
-				AddFixedCam(100, Pos);
-		});
-	}
-
-	// remove door
-	else if(action == "remove_door")
-	{
-		std::string Key = step.value("key", "");
-		bool Follow = step.value("follow", false);
-		vec2 DoorPos = m_vpDoors[Key].m_Pos;
-
-		auto& removeDoorStep = AddStep();
-		removeDoorStep.WhenStarted([Follow, DoorPos, Key, this]()
-		{
-			if(m_vpDoors.contains(Key))
-				m_vpDoors.erase(Key);
-
-			if(Follow)
-				AddFixedCam(100, DoorPos);
-		});
-	}
-
-	// object destroy
-	else if(action == "object_destroy_task")
-	{
-		std::vector<vec2> objects;
-		if(step.contains("objects") && step["objects"].is_array())
-		{
-			for(const auto& marker : step["objects"])
-			{
-				vec2 position = { marker["position"].value("x", 0.0f), marker["position"].value("y", 0.0f) };
-				objects.emplace_back(position);
-			}
-		}
-
-		AddObjectsDestroy(objects);
-	}
-
-	// defeat
-	else if(action == "defeat_mobs_task")
-	{
-		// initialize variables
-		struct DefeatState
-		{
-			std::vector<int> SpawnedBotIds;
-			int KillsMade = 0;
-		};
-
-		auto pState = std::make_shared<DefeatState>();
-		const auto& stepData = static_cast<const nlohmann::json&>(step);
-		const std::string Mode = stepData.value("mode", "annihilation");
-		const int KillTarget = stepData.value("kill_target", (int)NOPE);
-
-		// add step
-		auto& defeatMobs = AddStep();
-		defeatMobs.WhenStarted([this, pState, stepData]()
-		{
-			const vec2 pos = stepData.value("position", vec2 {});
-			const float radius = stepData.value("radius", 180.f);
-			for(const auto& mobData : stepData.value("mobs", nlohmann::json::array()))
-			{
-				// check valid default mod data
-				const int mobID = mobData.value("mob_id", (int)NOPE);
-				if(!MobBotInfo::ms_aMobBot.contains(mobID))
-				{
-					dbg_msg("scenario-dungeon", "can't find mobId %d for (defeat task)", mobID);
-					continue;
-				}
-
-				// initialize new mob data
-				MobBotInfo mobInfo = MobBotInfo::ms_aMobBot[mobID];
-				mobInfo.m_Level = mobData.value("level", 1);
-				mobInfo.m_Power = mobData.value("power", 1);
-				mobInfo.m_Position = pos;
-				mobInfo.m_Radius = radius;
-				mobInfo.m_WorldID = GS()->GetWorldID();
-				for(int i = 0; i < mobData.value("count", 1); ++i)
-				{
-					if(auto* pPlayerBot = GS()->CreateBot(TYPE_BOT_MOB, mobInfo.m_BotID, mobID))
-					{
-						pPlayerBot->InitBotMobInfo(mobInfo);
-						pPlayerBot->SetAllowedSpawn(true);
-						pState->SpawnedBotIds.push_back(pPlayerBot->GetCID());
-					}
-				}
-			}
-		});
-
-		// when active
-		defeatMobs.WhenActive([this, pState, Mode, KillTarget]()
-		{
-			for(int BotCID : pState->SpawnedBotIds)
-			{
-				// mode wave
-				if(Mode == "wave")
-				{
-					if(pState->KillsMade >= KillTarget)
-					{
-						GS()->DestroyPlayer(BotCID);
-						continue;
-					}
-
-					auto* pPlayerBot = static_cast<CPlayerBot*>(GS()->GetPlayer(BotCID));
-					if(pPlayerBot && !pPlayerBot->IsAllowedSpawn())
-					{
-						pState->KillsMade++;
-						pPlayerBot->SetAllowedSpawn(true);
-					}
-				}
-				// mode default
-				else
-				{
-					auto* pPlayer = GS()->GetPlayer(BotCID);
-					if(pPlayer && !pPlayer->GetCharacter())
-						GS()->DestroyPlayer(BotCID);
-				}
-			}
-		});
-
-		// condition
-		defeatMobs.CheckCondition(ConditionPriority::CONDITION_AND_TIMER, [this, Mode, pState]()
-		{
-			std::erase_if(pState->SpawnedBotIds, [this](int BotCID)
-			{
-				return GS()->GetPlayer(BotCID) == nullptr;
-			});
-
-			return pState->SpawnedBotIds.empty();
-		});
-	}
-
-	// movement task
-	else if(action == "movement_task")
-	{
-		int delay = step.value("delay", 0);
-		vec2 position = step.value("position", vec2());
-		bool targetLook = step.value("target_look", true);
-		bool entireGroup = step.value("entire_group", false);
-
-		std::string chatMsg = step.value("chat", "");
-		std::string broadcastMsg = step.value("broadcast", "");
-		std::string fullMsg = step.value("full", "");
-
-		if(!fullMsg.empty())
-			AddMovementTask(delay, position, fullMsg, fullMsg, targetLook, entireGroup);
-		else
-			AddMovementTask(delay, position, broadcastMsg, chatMsg, targetLook, entireGroup);
-	}
-
-	// chat task
-	else if(action == "use_chat_task")
-	{
-		std::string message = step.value("chat", "@");
-		bool ShowChatCode = step.value("show_chat_code", false);
-		AddUseChatCode(message, ShowChatCode);
-	}
-
-	// teleport
-	else if(action == "teleport")
-	{
-		vec2 position = step.value("position", vec2());
-		AddTeleport(position);
-	}
-}
-
-void CDungeonScenario::AddTeleport(const vec2& pos)
-{
-	auto& teleportStep = AddStep();
-
-	// when started (prepare) teleport
-	teleportStep.WhenStarted([this, pos]()
-	{
-		for(const auto* pPlayer : GetPlayers())
-			pPlayer->GetCharacter()->ChangePosition(pos);
-	});
-}
-
-void CDungeonScenario::AddMovementTask(int delay, const vec2& pos, const std::string& broadcastMsg, const std::string& chatMsg, bool targetLook, bool entireGroup)
-{
-	if(targetLook)
-		AddFixedCam(delay, pos);
-
-	auto& moveStep = AddStep();
-
-	// when started (prepare)
-	moveStep.WhenStarted([this, pos, chatMsg]()
-	{
-		m_MovementPos = pos;
-		if(!chatMsg.empty())
-		{
-			for(const auto* pPlayer : GetPlayers())
-				GS()->Chat(pPlayer->GetCID(), chatMsg.c_str());
-		}
-	});
-
-	// when active
-	moveStep.WhenActive([this, broadcastMsg]()
-	{
-		if(Server()->Tick() % (Server()->TickSpeed() / 2) == 0)
-			GS()->CreateHammerHit(m_MovementPos);
-
-		if(!broadcastMsg.empty())
-		{
-			for(const auto* pPlayer : GetPlayers())
-				GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::VeryImportant, Server()->TickSpeed(), broadcastMsg.c_str());
-		}
-	});
-
-	// condition
-	moveStep.CheckCondition(ConditionPriority::CONDITION_AND_TIMER, [this, entireGroup]()
-	{
-		const auto& vPlayers = GetPlayers();
-		auto isInside = [&](const CPlayer* pPlayer)
-		{
-			if(const auto* pChar = pPlayer->GetCharacter())
-				return distance(pChar->GetPos(), m_MovementPos) < 128.f;
-			return false;
-		};
-
-		if(entireGroup)
-			return std::all_of(vPlayers.begin(), vPlayers.end(), isInside);
-		else
-			return std::any_of(vPlayers.begin(), vPlayers.end(), isInside);
-	});
-}
-
-void CDungeonScenario::AddMessageStep(int delay, const std::string& broadcastMsg, const std::string& chatMsg)
-{
-	auto& messageStep = AddStep(delay);
-
-	// when started
-	messageStep.WhenStarted([this, delay, chatMsg, broadcastMsg]()
-	{
-		if(!broadcastMsg.empty())
-		{
-			for(auto* pPlayer : GetPlayers())
-				GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::VeryImportant, delay, broadcastMsg.c_str());
-		}
-
-		if(!chatMsg.empty())
-		{
-			for(auto* pPlayer : GetPlayers())
-				GS()->Chat(pPlayer->GetCID(), chatMsg.c_str());
-		}
-	});
-}
-
-void CDungeonScenario::AddObjectsDestroy(const std::vector<vec2>& objects)
-{
-	auto& newStep = AddStep();
-
-	// when started (prepare)
-	newStep.WhenStarted([this, objects]
-	{
-		for(const auto& pos : objects)
-		{
-			auto newObject = std::make_unique<CEntityObjectDestroy>(&GS()->m_World, pos, 3);
-			m_vObjectDestroy.push_back(std::move(newObject));
-		}
-	});
-
-	// condition
-	newStep.CheckCondition(ConditionPriority::CONDITION_AND_TIMER, [this]
-	{
-		return std::ranges::all_of(m_vObjectDestroy, [](const auto& uniquePtr)
-		{
-			return uniquePtr && !uniquePtr->IsActive();
-		});
-	});
-
-	// when finished
-	newStep.WhenFinished([this]
-	{
-		m_vObjectDestroy.clear();
-	});
-}
-
-void CDungeonScenario::AddFixedCam(int delay, const vec2& pos)
-{
-	auto& step = AddStep(delay);
-
-	// when active
-	step.WhenActive([this, pos]()
-	{
-		for(auto* pPlayer : GetPlayers())
-			pPlayer->LockedView().ViewLock(pos, true);
-	});
-}
-
-void CDungeonScenario::AddUseChatCode(const std::string& chatCode, bool showChatCode)
-{
-	auto& useChatCode = AddStep();
-
-	// when active
-	useChatCode.WhenStarted([this, chatCode, showChatCode]()
-	{
-		if(Server()->Tick() % Server()->TickSpeed() != 0)
-			return;
-
-		std::string requiredCode = showChatCode ? std::string(chatCode) : "hidden code";
-		for(auto* pPlayer : GetPlayers())
-			GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::MainInformation, Server()->TickSpeed(), "Objective: Write in the chat '{}'", requiredCode);
-	});
-
-	// condition
-	useChatCode.CheckCondition(ConditionPriority::CONDITION_AND_TIMER, [this, chatCode]()
-	{
-		const auto& vPlayers = GetPlayers();
-		return std::any_of(vPlayers.begin(), vPlayers.end(), [chatCode](CPlayer* pPlayer)
-		{
-			std::string lastMessage = pPlayer->m_aLastMsg;
-			return lastMessage.starts_with(chatCode);
-		});
-	});
 }

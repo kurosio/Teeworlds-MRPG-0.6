@@ -743,12 +743,12 @@ void CGS::OnDaytypeChange(int NewDaytype)
 		case NIGHT_TYPE:
 			UpdateWorldMultipliers();
 			ChatWorld(m_WorldID, "", "Night has fallen in '{}'!", pWorldname);
-			BroadcastWorld(m_WorldID, BroadcastPriority::VeryImportant, 200, "Rates: Exp {}% | Gold {}%", GetExperienceMultiplier(), GetGoldMultiplier());
+			BroadcastWorld(m_WorldID, BroadcastPriority::VeryImportant, 200, "Rates: Exp {}% | Gold {}%", m_Multipliers.Experience, m_Multipliers.Gold);
 			break;
 		case MORNING_TYPE:
 			ResetWorldMultipliers();
 			ChatWorld(m_WorldID, "", "The sun rises over '{}'!", pWorldname);
-			BroadcastWorld(m_WorldID, BroadcastPriority::VeryImportant, 200, "Rates: Exp {}% | Gold {}%", GetExperienceMultiplier(), GetGoldMultiplier());
+			BroadcastWorld(m_WorldID, BroadcastPriority::VeryImportant, 200, "Rates: Exp {}% | Gold {}%", m_Multipliers.Experience, m_Multipliers.Gold);
 			break;
 		default: break;
 	}
@@ -1420,13 +1420,13 @@ void CGS::UpdateWorldMultipliers()
 {
 	if(IsWorldType(WorldType::Dungeon))
 	{
-		m_WorldMultipliers.Experience = g_Config.m_SvDungeonExpMultiplier;
-		m_WorldMultipliers.Gold = g_Config.m_SvDungeonGoldMultiplier;
+		m_Multipliers.Experience = g_Config.m_SvDungeonExpMultiplier;
+		m_Multipliers.Gold = g_Config.m_SvDungeonGoldMultiplier;
 		return;
 	}
 
-	m_WorldMultipliers.Experience = (100 + maximum(20, rand() % 200));
-	m_WorldMultipliers.Gold = (100 + maximum(20, rand() % 100));
+	m_Multipliers.Experience = (100 + maximum(20, rand() % 200));
+	m_Multipliers.Gold = (100 + maximum(20, rand() % 100));
 }
 
 void CGS::ResetWorldMultipliers()
@@ -1434,8 +1434,8 @@ void CGS::ResetWorldMultipliers()
 	if(IsWorldType(WorldType::Dungeon))
 		return;
 
-	m_WorldMultipliers.Experience = 100;
-	m_WorldMultipliers.Gold = 100;
+	m_Multipliers.Experience = 100;
+	m_Multipliers.Gold = 100;
 }
 
 void CGS::UpdateVotesIfForAll(int MenuList) const

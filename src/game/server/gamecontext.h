@@ -8,21 +8,10 @@
 #include "eventhandler.h"
 #include "gamecontroller.h"
 #include "gameworld.h"
+#include "multipliers.h"
 #include "playerbot.h"
 
 #include "core/mmo_controller.h"
-
-enum class MultiplierType
-{
-	EXPERIENCE,
-	GOLD,
-};
-
-struct WorldMultipliers
-{
-	int Experience { 100 };
-	int Gold { 100 };
-};
 
 class CGS : public IGameServer
 {
@@ -59,7 +48,6 @@ class CGS : public IGameServer
 	bool m_AllowedPVP;
 	vec2 m_JailPosition;
 	int m_WorldID;
-	WorldMultipliers m_WorldMultipliers;
 
 public:
 	IServer *Server() const { return m_pServer; }
@@ -77,6 +65,7 @@ public:
 	CEventHandler m_Events;
 	IGameController* m_pController;
 	CGameWorld m_World;
+	Multipliers m_Multipliers;
 
 	CGS();
 	~CGS() override;
@@ -152,25 +141,6 @@ public:
 	int GetWorldID() const { return m_WorldID; }
 	bool IsWorldType(WorldType Type) const;
 	bool HasWorldFlag(int64_t Flag) const;
-
-	template <typename T> requires std::is_integral_v<T>
-	void ApplyMultiplier(MultiplierType Type, T* pValue) const
-	{
-		if(pValue)
-		{
-			float MultiplierPercent = 100.0f;
-			if(Type == MultiplierType::EXPERIENCE)
-				MultiplierPercent = (float)m_WorldMultipliers.Experience;
-			else if(Type == MultiplierType::GOLD)
-				MultiplierPercent = (float)m_WorldMultipliers.Gold;
-
-			*pValue = translate_to_percent_rest(*pValue, MultiplierPercent);
-		}
-	}
-
-	int GetExperienceMultiplier() const { return m_WorldMultipliers.Experience; }
-	int GetGoldMultiplier() const { return m_WorldMultipliers.Gold; }
-
 	bool IsDutyStarted() const;
 	bool IsPlayerInWorld(int ClientID, std::optional<int> WorldIdOpt = std::nullopt) const;
 	bool IsAllowedPVP() const { return m_AllowedPVP; }

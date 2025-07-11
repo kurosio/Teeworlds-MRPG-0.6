@@ -20,7 +20,7 @@ CUniversalScenario::~CUniversalScenario()
 
 bool CUniversalScenario::OnStopConditions()
 {
-	return !GetPlayer() || !GetCharacter();
+	return true;//!GetPlayer() || !GetCharacter();
 }
 
 void CUniversalScenario::OnSetupScenario()
@@ -38,7 +38,7 @@ void CUniversalScenario::OnSetupScenario()
 
 void CUniversalScenario::ProcessStep(const nlohmann::json& step)
 {
-	// check valid action
+	/*// check valid action
 	if(!step.contains("action") || !step["action"].is_string())
 	{
 		dbg_msg("scenario-tutorial", "Missing or invalid 'action' key in JSON");
@@ -333,9 +333,10 @@ void CUniversalScenario::ProcessStep(const nlohmann::json& step)
 	else
 	{
 		dbg_msg("scenario-tutorial", "Unknown action: %s", action.c_str());
-	}
+	}*/
 }
 
+/*
 void CUniversalScenario::StepMovementTask(int delay, const vec2& pos, const std::string& targetLookText, const std::string& broadcastMsg, const std::string& chatMsg, bool targetLook)
 {
 	// is has lockView
@@ -563,3 +564,4 @@ void CUniversalScenario::SendBroadcast(const std::string& text) const
 {
 	GS()->Broadcast(GetClientID(), BroadcastPriority::VeryImportant, 300, text.c_str());
 }
+*/

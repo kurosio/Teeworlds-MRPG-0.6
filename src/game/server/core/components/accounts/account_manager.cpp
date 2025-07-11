@@ -706,7 +706,7 @@ void CAccountManager::LoadAccount(CPlayer* pPlayer, bool FirstInitilize)
 	// Broadcast a message to the player with their current location
 	const int ClientID = pPlayer->GetCID();
 	GS()->Broadcast(ClientID, BroadcastPriority::VeryImportant, 300, "You are currently positioned at {}({})!\n- Rates: Exp {}% | Gold {}%",
-		Server()->GetWorldName(GS()->GetWorldID()), (GS()->IsAllowedPVP() ? "PVE/PVP" : "PVE"), GS()->GetExperienceMultiplier(), GS()->GetGoldMultiplier());
+		Server()->GetWorldName(GS()->GetWorldID()), (GS()->IsAllowedPVP() ? "PVE/PVP" : "PVE"), GS()->m_Multipliers.Experience, GS()->m_Multipliers.Gold);
 
 	// Check if it is not the first initialization
 	if(!FirstInitilize)
