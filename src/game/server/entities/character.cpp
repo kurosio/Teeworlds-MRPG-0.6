@@ -1904,9 +1904,14 @@ bool CCharacter::CanAccessWorld() const
 			m_pPlayer->ChangeWorld(TUTORIAL_WORLD_ID);
 			return false;
 		}*/
+
 		// TODO: remove how realized tutorial scenario
 		if(GS()->IsPlayerInWorld(m_ClientID, TUTORIAL_WORLD_ID))
 		{
+			auto* pNewbieTittle = m_pPlayer->GetItem(itTittleNewbie);
+			if(!pNewbieTittle->HasItem())
+				pNewbieTittle->Add(1);
+
 			m_pPlayer->GetSharedData().ClearSpawnPosition();
 			GS()->Chat(m_pPlayer->GetCID(), "You need to complete the Tutorial.");
 			m_pPlayer->ChangeWorld(BASE_GAME_WORLD_ID);
