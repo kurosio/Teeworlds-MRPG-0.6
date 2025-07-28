@@ -259,24 +259,23 @@ void CEntityManager::HealthTurret(int ClientID, vec2 Position, int RestoreHealth
 		*pPtr = groupPtr;
 }
 
-void CEntityManager::LastStand(int ClientID, vec2 Position, float Radius, int ManaCostPerSec, EntGroupWeakPtr* pPtr) const
+void CEntityManager::LastStand(int ClientID, vec2 Position, float Radius, int PercentManaCostPerSec, EntGroupWeakPtr* pPtr) const
 {
 	// initialize
 	const auto groupPtr = CEntityGroup::NewGroup(&GS()->m_World, CGameWorld::ENTTYPE_SKILL, ClientID);
 	const auto pBase = groupPtr->CreateBase(Position);
 	groupPtr->SetConfig("radius", Radius);
-	groupPtr->SetConfig("manaCostPerSec", ManaCostPerSec);
 
 	// register event tick
-	pBase->RegisterEvent(CBaseEntity::EventTick, [](CBaseEntity* pBase)
+	pBase->RegisterEvent(CBaseEntity::EventTick, [PercentManaCostPerSec](CBaseEntity* pBase)
 	{
 		auto* pChar = pBase->GetCharacter();
-		const auto ManaCostPerSec = pBase->GetGroup()->GetConfig("manaCostPerSec", 0);
 
 		// action
 		if(pBase->Server()->Tick() % pBase->Server()->TickSpeed() == 0)
 		{
-			if(!pChar->TryUseMana(ManaCostPerSec))
+			const int ManaPerSeconds = maximum(1, translate_to_percent_rest(pChar->GetPlayer()->GetMaxMana(), PercentManaCostPerSec));
+			if(!pChar->TryUseMana(ManaPerSeconds))
 			{
 				if(pChar->GetPlayer()->m_Effects.Remove("LastStand"))
 					pBase->GS()->Chat(pBase->GetClientID(), "'Last Stand' effect has been removed.");

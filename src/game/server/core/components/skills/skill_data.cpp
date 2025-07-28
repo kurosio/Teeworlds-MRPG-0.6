@@ -231,8 +231,8 @@ bool CSkill::Use()
 
 	if(IsActivated(pChar, ManaCost, SKILL_LAST_STAND, SKILL_USAGE_TOGGLE))
 	{
-		const int ManaPerSeconds = maximum(1, translate_to_percent_rest(pPlayer->GetMaxMana(), maximum(Info()->GetPercentageCost() - GetBonus(), 15)));
-		GS()->EntityManager()->LastStand(ClientID, PlayerPosition, 96.f, ManaPerSeconds, &pEntSkillPtr);
+		const int PercentManaCost = maximum(Info()->GetPercentageCost() - GetBonus(), 15);
+		GS()->EntityManager()->LastStand(ClientID, PlayerPosition, 96.f, PercentManaCost, &pEntSkillPtr);
 		GS()->CreateSound(PlayerPosition, SOUND_SKILL_START);
 		return true;
 	}
