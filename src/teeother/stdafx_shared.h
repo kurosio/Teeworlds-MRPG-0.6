@@ -19,6 +19,7 @@
 #include <ranges>
 #include <optional>
 #include <variant>
+#include <charconv>
 
 #include <teeother/tools/flat_hash_map/bytell_hash_map.h>
 #include <teeother/tools/flat_hash_map/flat_hash_map.h>
@@ -37,7 +38,7 @@
 #include <base/tl/array.h>
 #include <engine/shared/protocol.h>
 #include <generated/protocol.h>
-#include <teeother/tools/utilites.h>
+#include <teeother/tools/utilities.h>
 #include <game/server/core/mmo_context.h>
 
 #endif //GAME_TEEOTHER_STDAFX_SHARED_H
