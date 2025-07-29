@@ -74,7 +74,7 @@ void CEntityQuestAction::Initialize()
 		if(!pPlayerBot)
 		{
 			const auto& DefeatMobInfo = pTaskData->m_DefeatMobInfo;
-			if(pPlayerBot = GS()->CreateBot(TYPE_BOT_QUEST_MOB, DefeatMobInfo.m_BotID, -1))
+			if(pPlayerBot = GS()->CreateBot(TYPE_BOT_QUEST_MOB, DefeatMobInfo.m_BotID, -1); pPlayerBot)
 			{
 				CQuestBotMobInfo data;
 				data.m_QuestID = m_pStep->m_Bot.m_QuestID;
