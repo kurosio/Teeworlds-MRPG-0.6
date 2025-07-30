@@ -8,9 +8,13 @@ using namespace sqlstr;
 
 #define TW_TABLE_EIDOLON_ENHANCEMENTS "tw_account_eidolon_enhancements"
 
-bool CEidolonManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int Extra1, int Extra2, int ReasonNumber, const char* pReason)
+bool CEidolonManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const std::vector<std::any> &Extras, int ReasonNumber, const char* pReason)
 {
 	const int ClientID = pPlayer->GetCID();
+
+    // TODO: should be per-command
+    const int Extra1 = (!Extras.empty()) ? any_cast<int>(Extras.at(0)) : NOPE;
+
 	if(PPSTR(pCmd, "EIDOLON_SELECT") == 0)
 	{
 		m_EidolonItemSelected[ClientID] = Extra1;
@@ -96,7 +100,7 @@ bool CEidolonManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		if(pPlayerItem->HasItem())
 		{
 			const char* pStateSummon = Instance::Localize(pPlayer->GetCID(), pPlayerItem->IsEquipped() ? "Call off the summoned" : "Summon");
-			VoteWrapper(ClientID).AddOption("TOGGLE_EQUIP", pEidolonInfo->GetItemID(), NOPE, "{} {}", pStateSummon, pEidolonInfo->GetDataBot()->m_aNameBot);
+			VoteWrapper(ClientID).AddOption("TOGGLE_EQUIP", pEidolonInfo->GetItemID(), "{} {}", pStateSummon, pEidolonInfo->GetDataBot()->m_aNameBot);
 		}
 		else
 		{

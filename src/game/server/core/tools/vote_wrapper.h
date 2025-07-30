@@ -3,6 +3,8 @@
 #ifndef GAME_SERVER_CORE_UTILITIES_VOTE_WRAPPER_H
 #define GAME_SERVER_CORE_UTILITIES_VOTE_WRAPPER_H
 
+#include <base/types.h>
+
 // forward declarations
 class CGS;
 class CPlayer;
@@ -51,8 +53,7 @@ public:
 	char m_aDescription[VOTE_DESC_LENGTH] {};
 	char m_aCommand[VOTE_CMD_LENGTH] {};
 	int m_Depth {};
-	int m_Extra1 { NOPE };
-	int m_Extra2 { NOPE };
+    std::vector<std::any> m_Extras; // pretty bad, ideally replace with std::variant?
 	int m_SortPriority { NOPE };
 	bool m_Line { false };
 	bool m_Title { false };
@@ -92,8 +93,8 @@ class CVoteGroup
 	bool HasTitle() const { return m_HasTitle; }
 	bool IsHidden() const;
 
-	void SetVoteTitleImpl(const char* pCmd, int Extra1, int Extra2, const char* pText);
-	void AddVoteImpl(const char* pCmd, int Extra1, int Extra2, const char* pText);
+	void SetVoteTitleImpl(const char* pCmd, std::vector<std::any> Extras, const char* pText);
+	void AddVoteImpl(const char* pCmd, std::vector<std::any> Extras, const char* pText);
 	void SetLastVoteCallback(const VoteOptionCallbackImpl& CallbackImpl, void* pUser) { m_vpVotelist.back().m_Callback = { CallbackImpl, pUser }; }
 	void Reformat(std::string& Buffer);
 
@@ -143,7 +144,7 @@ public:
 	{
 		dbg_assert(ClientID >= 0 && ClientID < MAX_CLIENTS, "Invalid ClientID");
 		m_pGroup = new CVoteGroup(ClientID, VWF_DISABLED);
-		m_pGroup->SetVoteTitleImpl("null", NOPE, NOPE, FMT_LOCALIZE_STR(ClientID, pTitle, args...));
+		m_pGroup->SetVoteTitleImpl("null", {}, FMT_LOCALIZE_STR(ClientID, pTitle, args...));
 		m_pData[ClientID].push_back(m_pGroup);
 	}
 
@@ -152,7 +153,7 @@ public:
 	{
 		dbg_assert(ClientID >= 0 && ClientID < MAX_CLIENTS, "Invalid ClientID");
 		m_pGroup = new CVoteGroup(ClientID, Flags);
-		m_pGroup->SetVoteTitleImpl("null", NOPE, NOPE, FMT_LOCALIZE_STR(ClientID, pTitle, args...));
+		m_pGroup->SetVoteTitleImpl("null", {}, FMT_LOCALIZE_STR(ClientID, pTitle, args...));
 		m_pData[ClientID].push_back(m_pGroup);
 	}
 
@@ -163,7 +164,7 @@ public:
 	template<typename ... Ts>
 	VoteWrapper& SetTitle(const char* pTitle, const Ts&... args) noexcept
 	{
-		m_pGroup->SetVoteTitleImpl("null", NOPE, NOPE, FMT_LOCALIZE_STR(m_pGroup->m_ClientID, pTitle, args...));
+		m_pGroup->SetVoteTitleImpl("null", {}, FMT_LOCALIZE_STR(m_pGroup->m_ClientID, pTitle, args...));
 		return *this;
 	}
 
@@ -171,7 +172,7 @@ public:
 	VoteWrapper& SetTitle(int Flags, const char* pTitle, const Ts&... args) noexcept
 	{
 		m_pGroup->m_Flags = Flags;
-		m_pGroup->SetVoteTitleImpl("null", NOPE, NOPE, FMT_LOCALIZE_STR(m_pGroup->m_ClientID, pTitle, args...));
+		m_pGroup->SetVoteTitleImpl("null", {}, FMT_LOCALIZE_STR(m_pGroup->m_ClientID, pTitle, args...));
 		return *this;
 	}
 
@@ -220,65 +221,57 @@ public:
 	template<typename ... Ts>
 	VoteWrapper& Add(const char* pText, const Ts&... args)
 	{
-		m_pGroup->AddVoteImpl("null", NOPE, NOPE, FMT_LOCALIZE_STR(m_pGroup->m_ClientID, pText, args...));
+		m_pGroup->AddVoteImpl("null", {}, FMT_LOCALIZE_STR(m_pGroup->m_ClientID, pText, args...));
 		return *this;
 	}
 
 	template<typename ... Ts>
 	VoteWrapper& AddMenu(int MenuID, const char* pText, const Ts&... args)
 	{
-		m_pGroup->AddVoteImpl("MENU", MenuID, NOPE, FMT_LOCALIZE_STR(m_pGroup->m_ClientID, pText, args...));
+		m_pGroup->AddVoteImpl("MENU", MakeAnyList(MenuID), FMT_LOCALIZE_STR(m_pGroup->m_ClientID, pText, args...));
 		return *this;
 	}
 
 	template<typename ... Ts>
 	VoteWrapper& AddMenu(int MenuID, int GroupID, const char* pText, const Ts&... args)
 	{
-		m_pGroup->AddVoteImpl("MENU", MenuID, GroupID, FMT_LOCALIZE_STR(m_pGroup->m_ClientID, pText, args...));
+		m_pGroup->AddVoteImpl("MENU", MakeAnyList(MenuID, GroupID), FMT_LOCALIZE_STR(m_pGroup->m_ClientID, pText, args...));
 		return *this;
 	}
 
 	template<typename ... Ts>
 	VoteWrapper& AddOption(const char* pCmd, const char* pText, const Ts&... args)
 	{
-		m_pGroup->AddVoteImpl(pCmd, NOPE, NOPE, FMT_LOCALIZE_STR(m_pGroup->m_ClientID, pText, args...));
+		m_pGroup->AddVoteImpl(pCmd, {}, FMT_LOCALIZE_STR(m_pGroup->m_ClientID, pText, args...));
 		return *this;
 	}
 
 	template<typename ... Ts>
 	VoteWrapper& AddOption(const char* pCmd, int Extra, const char* pText, const Ts&... args)
 	{
-		m_pGroup->AddVoteImpl(pCmd, Extra, NOPE, FMT_LOCALIZE_STR(m_pGroup->m_ClientID, pText, args...));
+		m_pGroup->AddVoteImpl(pCmd, MakeAnyList(Extra), FMT_LOCALIZE_STR(m_pGroup->m_ClientID, pText, args...));
 		return *this;
 	}
 
 	template<typename ... Ts>
-	VoteWrapper& AddOption(const char* pCmd, int Extra1, int Extra2, const char* pText, const Ts&... args)
+	VoteWrapper& AddOption(const char* pCmd, std::vector<std::any> Extras, const char* pText, const Ts&... args)
 	{
-		m_pGroup->AddVoteImpl(pCmd, Extra1, Extra2, FMT_LOCALIZE_STR(m_pGroup->m_ClientID, pText, args...));
+		m_pGroup->AddVoteImpl(pCmd, Extras, FMT_LOCALIZE_STR(m_pGroup->m_ClientID, pText, args...));
 		return *this;
 	}
 
 	template<typename ... Ts>
 	VoteWrapper& AddOptionCallback(void* pUser, const VoteOptionCallbackImpl& CallbackImpl, const char* pText, const Ts&... args)
 	{
-		m_pGroup->AddVoteImpl("CALLBACK_IMPL", NOPE, NOPE, FMT_LOCALIZE_STR(m_pGroup->m_ClientID, pText, args...));
+		m_pGroup->AddVoteImpl("CALLBACK_IMPL", {}, FMT_LOCALIZE_STR(m_pGroup->m_ClientID, pText, args...));
 		m_pGroup->SetLastVoteCallback(CallbackImpl, pUser);
 		return *this;
 	}
 
 	template<typename ... Ts>
-	VoteWrapper& AddOptionCallback(void* pUser, const VoteOptionCallbackImpl& CallbackImpl, int Extra, const char* pText, const Ts&... args)
+	VoteWrapper& AddOptionCallback(void* pUser, const VoteOptionCallbackImpl& CallbackImpl, std::vector<std::any> Extras, const char* pText, const Ts&... args)
 	{
-		m_pGroup->AddVoteImpl("CALLBACK_IMPL", Extra, NOPE, FMT_LOCALIZE_STR(m_pGroup->m_ClientID, pText, args...));
-		m_pGroup->SetLastVoteCallback(CallbackImpl, pUser);
-		return *this;
-	}
-
-	template<typename ... Ts>
-	VoteWrapper& AddOptionCallback(void* pUser, const VoteOptionCallbackImpl& CallbackImpl, int Extra1, int Extra2, const char* pText, const Ts&... args)
-	{
-		m_pGroup->AddVoteImpl("CALLBACK_IMPL", Extra1, Extra2, FMT_LOCALIZE_STR(m_pGroup->m_ClientID, pText, args...));
+		m_pGroup->AddVoteImpl("CALLBACK_IMPL", Extras, FMT_LOCALIZE_STR(m_pGroup->m_ClientID, pText, args...));
 		m_pGroup->SetLastVoteCallback(CallbackImpl, pUser);
 		return *this;
 	}
@@ -399,7 +392,7 @@ public:
 	void SetLastMenuID(int MenuID) { m_LastMenuID = MenuID; }
 	int GetLastMenuID() const { return m_LastMenuID; }
 
-	bool DefaultVoteCommands(const char* pCmd, int Extra1, int Extra2, int ReasonNumber, const char* pReason);
+	bool DefaultVoteCommands(const char* pCmd, std::vector<std::any> Extras, int ReasonNumber, const char* pReason);
 };
 
 #endif

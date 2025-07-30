@@ -946,7 +946,7 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 					if(pActionVote->m_Callback.m_Impl)
 						pActionVote->m_Callback.m_Impl(pPlayer, ReasonNumber, pMsg->m_pReason, pActionVote->m_Callback.m_pData);
 					else
-						OnClientVoteCommand(ClientID, pActionVote->m_aCommand, pActionVote->m_Extra1, pActionVote->m_Extra2, ReasonNumber, pMsg->m_pReason);
+						OnClientVoteCommand(ClientID, pActionVote->m_aCommand, pActionVote->m_Extras, ReasonNumber, pMsg->m_pReason);
 				}
 			}
 			return;
@@ -1447,22 +1447,22 @@ void CGS::UpdateVotesIfForAll(int MenuList) const
 	}
 }
 
-bool CGS::OnClientVoteCommand(int ClientID, const char* pCmd, const int Extra1, const int Extra2, int ReasonNumber, const char* pReason)
+bool CGS::OnClientVoteCommand(int ClientID, const char *pCmd, const std::vector<std::any>& Extras, int ReasonNumber, const char *pReason)
 {
-	CPlayer* pPlayer = GetPlayer(ClientID, false, true);
-	if(!pPlayer)
-	{
-		Chat(ClientID, "Deploy it while still alive!");
-		return true;
-	}
+    CPlayer* pPlayer = GetPlayer(ClientID, false, true);
+    if(!pPlayer)
+    {
+        Chat(ClientID, "Deploy it while still alive!");
+        return true;
+    }
 
-	// parsing default vote commands
-	if(pPlayer->m_VotesData.DefaultVoteCommands(pCmd, Extra1, Extra2, ReasonNumber, pReason))
-		return true;
+    // parsing default vote commands
+    if(pPlayer->m_VotesData.DefaultVoteCommands(pCmd, Extras, ReasonNumber, pReason))
+        return true;
 
-	// parsing everything else
-	const auto csqlReason = sqlstr::CSqlString<64>(pReason);
-	return Core()->OnPlayerVoteCommand(pPlayer, pCmd, Extra1, Extra2, ReasonNumber, csqlReason.cstr());
+    // parsing everything else
+    const auto csqlReason = sqlstr::CSqlString<64>(pReason);
+    return Core()->OnPlayerVoteCommand(pPlayer, pCmd, Extras, ReasonNumber, csqlReason.cstr());
 }
 
 bool CGS::OnClientMotdCommand(int ClientID, const char* pCmd)

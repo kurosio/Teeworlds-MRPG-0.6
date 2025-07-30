@@ -246,9 +246,13 @@ bool CInventoryManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	return false;
 }
 
-bool CInventoryManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const int Extra1, const int Extra2, int ReasonNumber, const char* pReason)
+bool CInventoryManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const std::vector<std::any> &Extras, int ReasonNumber, const char* pReason)
 {
 	const int ClientID = pPlayer->GetCID();
+
+    // TODO: should be per-command
+    const int Extra1 = (!Extras.empty()) ? any_cast<int>(Extras.at(0)) : NOPE;
+    const int Extra2 = (Extras.size() > 1) ? any_cast<int>(Extras.at(1)) : NOPE;
 
 	// filter itmes
 	if(PPSTR(pCmd, "FILTER_ITEMS") == 0)
@@ -627,7 +631,7 @@ void CInventoryManager::ShowPlayerInventory(CPlayer* pPlayer)
 			{
 				pSelected = GetSelectorStringByCondition(pPlayer->m_InventoryItemTypeFilter && *pPlayer->m_InventoryItemTypeFilter == Type);
 				const char* pTypeName = Type == ItemType::Default ? getDefaultTypeName(FilterGroupValue) : GetItemTypeName(Type);
-				VFilterGroup.AddOption("FILTER_ITEMS", (int)FilterGroupValue, (int)Type, "{} ({}){SELECTOR}", pTypeName, vTypeCounts[Type], pSelected);
+				VFilterGroup.AddOption("FILTER_ITEMS", MakeAnyList((int)FilterGroupValue, (int)Type), "{} ({}){SELECTOR}", pTypeName, vTypeCounts[Type], pSelected);
 			}
 		}
 

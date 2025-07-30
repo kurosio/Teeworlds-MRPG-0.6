@@ -53,9 +53,13 @@ void CAethernetManager::OnPlayerLogin(CPlayer* pPlayer)
 	}
 }
 
-bool CAethernetManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const int Extra1, const int Extra2, int ReasonNumber, const char* pReason)
+bool CAethernetManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const std::vector<std::any> &Extras, int ReasonNumber, const char* pReason)
 {
 	const int ClientID = pPlayer->GetCID();
+
+    // TODO: should be per-command
+    const int Extra1 = (!Extras.empty()) ? any_cast<int>(Extras.at(0)) : NOPE;
+    const int Extra2 = (Extras.size() > 1) ? any_cast<int>(Extras.at(1)) : NOPE;
 
 	// Check if the player is trying to teleport to an aether
 	if(PPSTR(pCmd, "AETHER_TELEPORT") == 0)
@@ -148,7 +152,7 @@ void CAethernetManager::ShowMenu(CCharacter* pChar) const
 				if(pPlayer->Account()->IsUnlockedAether(pAether->GetID()))
 				{
 					const int Fee = g_Config.m_SvTeleportFeePerDistance * (pAether->GetWorldID() + 1);
-					VAetherElem.AddOption("AETHER_TELEPORT", pAether->GetID(), Fee, "{} (Fee {$} gold)", pAether->GetName(), Fee);
+					VAetherElem.AddOption("AETHER_TELEPORT", MakeAnyList(pAether->GetID(), Fee), "{} (Fee {$} gold)", pAether->GetName(), Fee);
 					UnlockedPlayerZoneAethers++;
 				}
 			}

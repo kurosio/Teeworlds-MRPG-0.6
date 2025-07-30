@@ -131,8 +131,11 @@ void CCraftManager::CraftItem(CPlayer* pPlayer, CCraftItem* pCraft, int Value) c
 }
 
 
-bool CCraftManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const int Extra1, const int Extra2, int ReasonNumber, const char* pReason)
+bool CCraftManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const std::vector<std::any> &Extras, int ReasonNumber, const char* pReason)
 {
+    // TODO: should be per-command
+    const int Extra1 = (!Extras.empty()) ? any_cast<int>(Extras.at(0)) : NOPE;
+
 	// craft item function
 	if(PPSTR(pCmd, "CRAFT") == 0)
 	{

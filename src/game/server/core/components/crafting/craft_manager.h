@@ -19,7 +19,7 @@ class CCraftManager : public MmoComponent
 
 	void OnInitWorld(const std::string& Where) override;
 	void OnCharacterTile(CCharacter* pChr) override;
-	bool OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int Extra1, int Extra2, int ReasonNumber, const char* pReason) override;
+	bool OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const std::vector<std::any> &Extras, int ReasonNumber, const char* pReason) override;
 	bool OnSendMenuVotes(CPlayer* pPlayer, int Menulist) override;
 
 	void ShowCraftGroup(CPlayer* pPlayer, const std::string& GroupName, const std::vector<CCraftItem*>& vItems) const;

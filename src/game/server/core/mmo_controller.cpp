@@ -256,17 +256,17 @@ void CMmoController::OnCharacterTile(CCharacter* pChr) const
 }
 
 
-bool CMmoController::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const int ExtraValue1, const int ExtraValue2, int ReasonNumber, const char* pReason) const
+bool CMmoController::OnPlayerVoteCommand(CPlayer *pPlayer, const char *pCmd, const std::vector<std::any>& Extras, int ReasonNumber, const char *pReason) const
 {
-	if(!pPlayer)
-		return true;
+    if(!pPlayer)
+        return true;
 
-	for(auto& pComponent : m_System.m_vComponents)
-	{
-		if(pComponent->OnPlayerVoteCommand(pPlayer, pCmd, ExtraValue1, ExtraValue2, ReasonNumber, pReason))
-			return true;
-	}
-	return false;
+    for(auto& pComponent : m_System.m_vComponents)
+    {
+        if(pComponent->OnPlayerVoteCommand(pPlayer, pCmd, Extras, ReasonNumber, pReason))
+            return true;
+    }
+    return false;
 }
 
 

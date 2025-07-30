@@ -6,6 +6,8 @@
 #include <engine/server/sql_string_helpers.h>
 #include "tools/event_listener.h"
 
+#include <any>
+
 // forward declarations
 class CGS;
 class IServer;
@@ -142,14 +144,13 @@ private:
 	 *
 	 * @param pPlayer A pointer to the player object.
 	 * @param pCmd The vote command.
-	 * @param ExtraValue1 The ID of the vote.
-	 * @param ExtraValue2 The second ID of the vote.
+	 * @param Extras Vector of extra arguments.
 	 * @param ReasonNumber The get parameter.
 	 * @param pReason The get text parameter.
 	 *
 	 * @return True if the vote command was handled, false otherwise.
 	 */
-	virtual bool OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const int ExtraValue1, const int ExtraValue2, int ReasonNumber, const char* pReason) { return false; }
+	virtual bool OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const std::vector<std::any> &Extras, int ReasonNumber, const char* pReason) { return false; }
 
 	/**
 	 * @brief Called when a player issues a motd command.

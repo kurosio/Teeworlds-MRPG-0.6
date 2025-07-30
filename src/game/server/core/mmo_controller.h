@@ -5,6 +5,8 @@
 
 #include "mmo_component.h"
 
+#include <any>
+
 class CMmoController
 {
 	CGS* m_pGameServer;
@@ -60,7 +62,7 @@ public:
 	void OnCharacterTile(CCharacter* pChr) const;
 	bool OnSendMenuMotd(CPlayer* pPlayer, int Menulist) const;
 	bool OnSendMenuVotes(CPlayer* pPlayer, int Menulist) const;
-	bool OnPlayerVoteCommand(CPlayer *pPlayer, const char *pCmd, int ExtraValue1, int ExtraValue2, int ReasonNumber, const char *pReason) const;
+	bool OnPlayerVoteCommand(CPlayer *pPlayer, const char *pCmd, const std::vector<std::any>& Extras, int ReasonNumber, const char *pReason) const;
 	bool OnPlayerMotdCommand(CPlayer* pPlayer, CMotdPlayerData* pMotdData, const char* pCmd) const;
 	void OnResetClientData(int ClientID) const;
 	void OnHandleGlobalTimePeriod() const;

@@ -5,8 +5,11 @@
 #include <game/server/gamecontext.h>
 #include "mail_wrapper.h"
 
-bool CMailboxManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int Extra1, int Extra2, int ReasonNumber, const char* pReason)
+bool CMailboxManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const std::vector<std::any> &Extras, int ReasonNumber, const char* pReason)
 {
+    // TODO: should be per-command
+    const int Extra1 = (!Extras.empty()) ? any_cast<int>(Extras.at(0)) : NOPE;
+
 	// accept mail by id
 	if(PPSTR(pCmd, "MAIL_ACCEPT") == 0)
 	{

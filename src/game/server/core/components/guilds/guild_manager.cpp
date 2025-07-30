@@ -94,9 +94,13 @@ void CGuildManager::OnCharacterTile(CCharacter* pChr)
 	}
 }
 
-bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int Extra1, int Extra2, int ReasonNumber, const char* pReason)
+bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const std::vector<std::any> &Extras, int ReasonNumber, const char* pReason)
 {
 	const int ClientID = pPlayer->GetCID();
+
+    // TODO: should be per-command
+    const int Extra1 = (!Extras.empty()) ? any_cast<int>(Extras.at(0)) : NOPE;
+    const int Extra2 = (Extras.size() > 1) ? any_cast<int>(Extras.at(1)) : NOPE;
 
 	// teleport to house
 	if(PPSTR(pCmd, "GUILD_HOUSE_TELEPORT") == 0)
@@ -1364,7 +1368,7 @@ void CGuildManager::ShowMembershipEdit(CPlayer* pPlayer, int AccountID) const
 		{
 			if(pMember->GetRank()->GetID() != pRank->GetID())
 			{
-				VSelector.MarkList().AddOption("GUILD_CHANGE_MEMBER_RANK", AccountID, pRank->GetID(), "Change rank to: {}",
+				VSelector.MarkList().AddOption("GUILD_CHANGE_MEMBER_RANK", MakeAnyList(AccountID, pRank->GetID()), "Change rank to: {}",
 					pRank->GetName(), pRank->GetRights() > GUILD_RANK_RIGHT_DEFAULT ? "*" : "");
 			}
 		}
@@ -1431,7 +1435,7 @@ void CGuildManager::ShowRankEdit(CPlayer* pPlayer, GuildRankIdentifier ID) const
 	for(int i = GUILD_RANK_RIGHT_START; i < GUILD_RANK_RIGHT_END; i++)
 	{
 		bool IsSet = (pRank->GetRights() == static_cast<GuildRankRights>(i));
-		VSelector.AddOption("GUILD_RANK_SET_RIGHTS", pRank->GetID(), i, "[{}] {}", (IsSet ? "✔" : "×"), pRank->GetRightsName((GuildRankRights)i));
+		VSelector.AddOption("GUILD_RANK_SET_RIGHTS", MakeAnyList(pRank->GetID(), i), "[{}] {}", (IsSet ? "✔" : "×"), pRank->GetRightsName((GuildRankRights)i));
 	}
 	VoteWrapper::AddEmptyline(ClientID);
 }
@@ -1557,7 +1561,7 @@ void CGuildManager::ShowFarmzoneEdit(CPlayer* pPlayer, int FarmzoneID) const
 		auto ItemID = Elem.Element;
 		auto* pItemInfo = GS()->GetItemInfo(ItemID);
 		VoteWrapper VPlanted(ClientID, VWF_UNIQUE | VWF_STYLE_SIMPLE, "{} - chance {~.2}%", pItemInfo->GetName(), Elem.Chance);
-		VPlanted.AddOption("GUILD_HOUSE_FARM_ZONE_REMOVE_PLANT", FarmzoneID, ItemID, "Remove {} from plant", pItemInfo->GetName());
+		VPlanted.AddOption("GUILD_HOUSE_FARM_ZONE_REMOVE_PLANT", MakeAnyList(FarmzoneID, ItemID), "Remove {} from plant", pItemInfo->GetName());
 	}
 	VoteWrapper::AddEmptyline(ClientID);
 
@@ -1579,7 +1583,7 @@ void CGuildManager::ShowFarmzoneEdit(CPlayer* pPlayer, int FarmzoneID) const
 		auto* pPlayerItem = pPlayer->GetItem(ID);
 		if(AllowPlant && pPlayerItem->HasItem())
 		{
-			VPossiblePlanting.AddOption("GUILD_HOUSE_FARM_ZONE_TRY_PLANT", FarmzoneID, ID, "Try plant {} (has {})", pPlayerItem->Info()->GetName(), pPlayerItem->GetValue());
+			VPossiblePlanting.AddOption("GUILD_HOUSE_FARM_ZONE_TRY_PLANT", MakeAnyList(FarmzoneID, ID), "Try plant {} (has {})", pPlayerItem->Info()->GetName(), pPlayerItem->GetValue());
 		}
 	}
 
@@ -1642,7 +1646,7 @@ void CGuildManager::ShowFinderDetail(CPlayer* pPlayer, GuildIdentifier ID) const
 
 	// buttom send
 	if(!pPlayer->Account()->HasGuild())
-		VList.AddOption("GUILD_SEND_REQUEST", pGuild->GetID(), pPlayer->Account()->GetID(), "Send request to join");
+		VList.AddOption("GUILD_SEND_REQUEST", MakeAnyList(pGuild->GetID(), pPlayer->Account()->GetID()), "Send request to join");
 	VoteWrapper::AddEmptyline(ClientID);
 }
 

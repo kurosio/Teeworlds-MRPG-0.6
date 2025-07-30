@@ -72,7 +72,7 @@ void CAccountManager::AddMenuProfessionUpgrades(CPlayer* pPlayer, CProfession* p
 		for(auto& [ID, Value] : pProf->GetAttributes())
 		{
 			const auto* pAttribute = GS()->GetAttributeInfo(ID);
-			VUpgrades.AddOption("UPGRADE", (int)ProfID, (int)ID, "Upgrade {} - {} ({} point)", pAttribute->GetName(), Value, pAttribute->GetUpgradePrice());
+			VUpgrades.AddOption("UPGRADE", MakeAnyList((int)ProfID, (int)ID), "Upgrade {} - {} ({} point)", pAttribute->GetName(), Value, pAttribute->GetUpgradePrice());
 		}
 	}
 }
@@ -355,9 +355,13 @@ void CAccountManager::ShowPlayerAttributesByGroup(CPlayer* pPlayer, std::string_
 	}
 }
 
-bool CAccountManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const int Extra1, const int Extra2, int ReasonNumber, const char* pReason)
+bool CAccountManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const std::vector<std::any> &Extras, int ReasonNumber, const char* pReason)
 {
 	const int ClientID = pPlayer->GetCID();
+
+    // TODO: should be per-command
+    const int Extra1 = (!Extras.empty()) ? any_cast<int>(Extras.at(0)) : NOPE;
+    const int Extra2 = (Extras.size() > 1) ? any_cast<int>(Extras.at(1)) : NOPE;
 
 	// select language command
 	if(PPSTR(pCmd, "SELECT_LANGUAGE") == 0)

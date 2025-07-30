@@ -161,9 +161,12 @@ bool CGroupManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	return false;
 }
 
-bool CGroupManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const int Extra1, const int Extra2, int ReasonNumber, const char* pReason)
+bool CGroupManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const std::vector<std::any> &Extras, int ReasonNumber, const char* pReason)
 {
 	const int ClientID = pPlayer->GetCID();
+
+    // TODO: should be per-command
+    const int Extra1 = (!Extras.empty()) ? any_cast<int>(Extras.at(0)) : NOPE;
 
 	// create new group
 	if(PPSTR(pCmd, "GROUP_CREATE") == 0)

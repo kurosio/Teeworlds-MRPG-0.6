@@ -150,7 +150,7 @@ public:
 	CPlayerBot* CreateBot(short BotType, int BotID, int SubID);
 	bool TakeItemCharacter(int ClientID);
 	void UpdateVotesIfForAll(int MenuList) const;
-	bool OnClientVoteCommand(int ClientID, const char* pCmd, int Extra1, int Extra2, int ReasonNumber, const char* pReason);
+	bool OnClientVoteCommand(int ClientID, const char* pCmd, const std::vector<std::any>& Extras, int ReasonNumber, const char* pReason);
 	bool OnClientMotdCommand(int ClientID, const char* pCmd);
 	bool DestroyPlayer(int ClientID);
 

@@ -73,10 +73,15 @@ bool CWarehouseManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 }
 
 
-bool CWarehouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const int Extra1, const int Extra2, int ReasonNumber, const char* pReason)
+bool CWarehouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const std::vector<std::any> &Extras, int ReasonNumber, const char* pReason)
 {
-	if(!pPlayer) return false;
+	if(!pPlayer)
+        return false;
 	const int ClientID = pPlayer->GetCID();
+
+    // TODO: should be per-command
+    const int Extra1 = (!Extras.empty()) ? any_cast<int>(Extras.at(0)) : NOPE;
+    const int Extra2 = (Extras.size() > 1) ? any_cast<int>(Extras.at(1)) : NOPE;
 
 	// repair all items
 	if(PPSTR(pCmd, "REPAIR_ITEMS") == 0)
@@ -356,7 +361,7 @@ void CWarehouseManager::ShowGroupedSelector(CPlayer* pPlayer, CWarehouse* pWareh
 			{
 				const auto sellValue = pItem->GetValue();
 				const auto playerValue = pPlayerItem->GetValue();
-				VGroup.AddOption("WAREHOUSE_SELL_ITEM", pWarehouse->GetID(), pTrade->GetID(), "[{}] Sell {} x{} - {$} {} per unit",
+				VGroup.AddOption("WAREHOUSE_SELL_ITEM", MakeAnyList(pWarehouse->GetID(), pTrade->GetID()), "[{}] Sell {} x{} - {$} {} per unit",
 					playerValue, pItemInfo->GetName(), sellValue, Price, pCurrency->GetName());
 				continue;
 			}
@@ -444,7 +449,7 @@ void CWarehouseManager::ShowTrade(CPlayer* pPlayer, CWarehouse* pWarehouse, int 
 	if(pError != nullptr)
 		VoteWrapper(ClientID).Add(pError);
 	else
-		VoteWrapper(ClientID).AddOption("WAREHOUSE_BUY_ITEM", pWarehouse->GetID(), TradeID, "Buy");
+		VoteWrapper(ClientID).AddOption("WAREHOUSE_BUY_ITEM", MakeAnyList(pWarehouse->GetID(), TradeID), "Buy");
 
 	VoteWrapper::AddEmptyline(ClientID);
 }

@@ -126,9 +126,13 @@ bool CHouseManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
 	return false;
 }
 
-bool CHouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const int Extra1, const int Extra2, int ReasonNumber, const char* pText)
+bool CHouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const std::vector<std::any> &Extras, int ReasonNumber, const char* pText)
 {
 	const int ClientID = pPlayer->GetCID();
+
+    // TODO: should be per-command
+    const int Extra1 = (!Extras.empty()) ? any_cast<int>(Extras.at(0)) : NOPE;
+    const int Extra2 = (Extras.size() > 1) ? any_cast<int>(Extras.at(1)) : NOPE;
 
 	// start decoration edit mode
 	if(PPSTR(pCmd, "HOUSE_DECORATION") == 0)
@@ -512,7 +516,7 @@ void CHouseManager::ShowFarmzoneEdit(CPlayer* pPlayer, int FarmzoneID) const
 		auto ItemID = Elem.Element;
 		auto* pItemInfo = GS()->GetItemInfo(ItemID);
 		VoteWrapper VPlanted(ClientID, VWF_UNIQUE | VWF_STYLE_SIMPLE, "{} - chance {~.2}%", pItemInfo->GetName(), Elem.Chance);
-		VPlanted.AddOption("HOUSE_FARMZONE_REMOVE_PLANT", FarmzoneID, ItemID, "Remove {} from plant", pItemInfo->GetName());
+		VPlanted.AddOption("HOUSE_FARMZONE_REMOVE_PLANT", MakeAnyList(FarmzoneID, ItemID), "Remove {} from plant", pItemInfo->GetName());
 	}
 	VoteWrapper::AddEmptyline(ClientID);
 
@@ -534,7 +538,7 @@ void CHouseManager::ShowFarmzoneEdit(CPlayer* pPlayer, int FarmzoneID) const
 		auto* pPlayerItem = pPlayer->GetItem(ID);
 		if(AllowPlant && pPlayerItem->HasItem())
 		{
-			VPossiblePlanting.AddOption("HOUSE_FARMZONE_TRY_PLANT", FarmzoneID, ID, "Try plant {} (has {})", pPlayerItem->Info()->GetName(), pPlayerItem->GetValue());
+			VPossiblePlanting.AddOption("HOUSE_FARMZONE_TRY_PLANT", MakeAnyList(FarmzoneID, ID), "Try plant {} (has {})", pPlayerItem->Info()->GetName(), pPlayerItem->GetValue());
 		}
 	}
 

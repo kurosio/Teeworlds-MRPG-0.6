@@ -20,7 +20,7 @@ class CGuildManager : public MmoComponent
 	void OnInitWorld(const std::string& SqlQueryWhereWorld) override;
 	void OnTick() override;
 	void OnCharacterTile(CCharacter* pChr) override;
-	bool OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, int Extra1, int Extra2, int ReasonNumber, const char* pReason) override;
+	bool OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const std::vector<std::any> &Extras, int ReasonNumber, const char* pReason) override;
 	bool OnPlayerMotdCommand(CPlayer* pPlayer, CMotdPlayerData* pMotdData, const char* pCmd) override;
 	bool OnSendMenuVotes(CPlayer* pPlayer, int Menulist) override;
 	bool OnSendMenuMotd(CPlayer* pPlayer, int Menulist) override;

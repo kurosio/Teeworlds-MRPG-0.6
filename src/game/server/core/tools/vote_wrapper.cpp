@@ -2,6 +2,8 @@
 
 #include <game/server/gamecontext.h>
 
+#include <utility>
+
 namespace
 {
 	constexpr auto g_VoteStrLineDef = "\u257E\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u257C";
@@ -61,7 +63,7 @@ void CVoteGroup::SetNumeralDepthStyles(std::initializer_list<std::pair<int, int>
 		m_vDepthNumeral[Depth].m_Style = Flag;
 }
 
-void CVoteGroup::SetVoteTitleImpl(const char* pCmd, int Extra1, int Extra2, const char* pText)
+void CVoteGroup::SetVoteTitleImpl(const char* pCmd, std::vector<std::any> Extras, const char* pText)
 {
 	// check player valid
 	if(!m_pPlayer)
@@ -76,7 +78,6 @@ void CVoteGroup::SetVoteTitleImpl(const char* pCmd, int Extra1, int Extra2, cons
 	if(m_Flags & VWF_ALIGN_TITLE && ((pHidden && !pHidden->m_State) || !pHidden))
 	{
 		// initialize variables
-		std::string StrSpace = " ";
 		const int TextLength = str_length(pText);
 		const int SpaceLength = (VOTE_DESC_LENGTH - TextLength) / 2;
 		const bool Styled = m_Flags & (VWF_STYLE_SIMPLE | VWF_STYLE_DOUBLE | VWF_STYLE_STRICT | VWF_STYLE_STRICT_BOLD);
@@ -100,7 +101,7 @@ void CVoteGroup::SetVoteTitleImpl(const char* pCmd, int Extra1, int Extra2, cons
 	{
 		pHidden = m_pPlayer->m_VotesData.EmplaceHidden(m_HiddenID, m_Flags);
 		Prefix += pHidden->m_State ? "\u21BA" : "\u27A4";
-		Extra1 = m_HiddenID;
+        Extras.emplace_back(m_HiddenID);
 		pCmd = "HIDDEN";
 	}
 
@@ -112,8 +113,7 @@ void CVoteGroup::SetVoteTitleImpl(const char* pCmd, int Extra1, int Extra2, cons
 	CVoteOption Vote;
 	str_copy(Vote.m_aDescription, Buffer.c_str(), sizeof(Vote.m_aDescription));
 	str_copy(Vote.m_aCommand, pCmd, sizeof(Vote.m_aCommand));
-	Vote.m_Extra1 = Extra1;
-	Vote.m_Extra2 = Extra2;
+	Vote.m_Extras = std::move(Extras);
 	Vote.m_Title = true;
 
 	if(m_vpVotelist.empty() || !m_HasTitle)
@@ -127,7 +127,7 @@ void CVoteGroup::SetVoteTitleImpl(const char* pCmd, int Extra1, int Extra2, cons
 	}
 }
 
-void CVoteGroup::AddVoteImpl(const char* pCmd, int Extra1, int Extra2, const char* pText)
+void CVoteGroup::AddVoteImpl(const char* pCmd, std::vector<std::any> Extras, const char* pText)
 {
 	// check player valid and hidden status
 	if(!m_pPlayer || IsHidden())
@@ -141,8 +141,7 @@ void CVoteGroup::AddVoteImpl(const char* pCmd, int Extra1, int Extra2, const cha
 	CVoteOption Vote;
 	str_copy(Vote.m_aDescription, Buffer.c_str(), sizeof(Vote.m_aDescription));
 	str_copy(Vote.m_aCommand, pCmd, sizeof(Vote.m_aCommand));
-	Vote.m_Extra1 = Extra1;
-	Vote.m_Extra2 = Extra2;
+	Vote.m_Extras = std::move(Extras);
 	Vote.m_Depth = m_CurrentDepth;
 	m_vpVotelist.emplace_back(Vote);
 	m_GroupSize++;
@@ -215,13 +214,13 @@ void CVoteGroup::AddItemValueImpl(int ItemID)
 	// show gold include bank
 	if(ItemID == itGold)
 	{
-		AddVoteImpl("null", NOPE, NOPE, fmt_localize(m_ClientID, "You have {$} {}(including bank)",
+		AddVoteImpl("null", {}, fmt_localize(m_ClientID, "You have {$} {}(including bank)",
 			m_pPlayer->Account()->GetTotalGold(), GS()->GetItemInfo(ItemID)->GetName()).c_str());
 		return;
 	}
 
 	// add item value
-	AddVoteImpl("null", NOPE, NOPE, fmt_localize(m_ClientID, "You have {} {}",
+	AddVoteImpl("null", {}, fmt_localize(m_ClientID, "You have {} {}",
 		m_pPlayer->GetItem(ItemID)->GetValue(), GS()->GetItemInfo(ItemID)->GetName()).c_str());
 }
 
@@ -272,7 +271,7 @@ void VoteWrapper::RebuildVotes(int ClientID)
 
 		// if the group is an expandable list type, it is empty if there is no element in it
 		if(pGroup->m_HasTitle && pGroup->IsEmpty() && !pGroup->IsHidden())
-			pGroup->AddVoteImpl("null", NOPE, NOPE, "Is empty");
+			pGroup->AddVoteImpl("null", {}, "Is empty");
 
 		// check flag end with line
 		if(pGroup->m_Flags & VWF_SEPARATE)
@@ -472,8 +471,11 @@ void CVotePlayerData::ClearVotes() const
 	Instance::Server()->SendPackMsg(&ClearMsg, MSGFLAG_VITAL, ClientID);
 }
 
-bool CVotePlayerData::DefaultVoteCommands(const char* pCmd, const int Extra1, const int Extra2, int, const char*)
+bool CVotePlayerData::DefaultVoteCommands(const char* pCmd, std::vector<std::any> Extras, int, const char*)
 {
+    const int Extra1 = (!Extras.empty()) ? any_cast<int>(Extras.at(0)) : NOPE;
+    const int Extra2 = (Extras.size() > 1) ? any_cast<int>(Extras.at(1)) : NOPE;
+
 	// is empty
 	if(PPSTR(pCmd, "null") == 0)
 		return true;

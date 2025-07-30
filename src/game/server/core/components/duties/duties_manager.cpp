@@ -80,12 +80,15 @@ bool CDutiesManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 }
 
 
-bool CDutiesManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const int Extra1, const int Extra2, int ReasonNumber, const char* pReason)
+bool CDutiesManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const std::vector<std::any> &Extras, int ReasonNumber, const char* pReason)
 {
 	if(!pPlayer->GetCharacter() || !pPlayer->GetCharacter()->IsAlive())
 		return false;
 
 	const int ClientID = pPlayer->GetCID();
+
+    // TODO: should be per-command
+    const int Extra1 = (!Extras.empty()) ? any_cast<int>(Extras.at(0)) : NOPE;
 
 	// dungeon enter
 	if(PPSTR(pCmd, "DUNGEON_JOIN") == 0)

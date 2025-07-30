@@ -165,9 +165,12 @@ void CAuctionManager::ShowAuctionSlot(CPlayer* pPlayer, int ID) const
 	VInteract.AddOption("AUCTION_BUY", ID, "Buy this slot.");
 }
 
-bool CAuctionManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const int Extra1, const int Extra2, int ReasonNumber, const char* pReason)
+bool CAuctionManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const std::vector<std::any> &Extras, int ReasonNumber, const char* pReason)
 {
 	const int ClientID = pPlayer->GetCID();
+
+    // TODO: should be per-command
+    const int Extra1 = (!Extras.empty()) ? any_cast<int>(Extras.at(0)) : NOPE;
 
 	if(PPSTR(pCmd, "AUCTION_BUY") == 0)
 	{
