@@ -725,6 +725,51 @@ bool CCharacter::RemoveWeapon(int WeaponID)
 }
 
 // This function sets the character's emote and its duration
+void CCharacter::SetEmoticonDDNet(int Emoticon, int Sec, bool SendEmoticion) {
+    int EmoteType = EMOTE_NORMAL;
+    switch(Emoticon)
+    {
+        case EMOTICON_EXCLAMATION:
+        case EMOTICON_GHOST:
+        case EMOTICON_QUESTION:
+        case EMOTICON_WTF:
+            EmoteType = EMOTE_SURPRISE;
+            break;
+        case EMOTICON_DOTDOT:
+        case EMOTICON_DROP:
+        case EMOTICON_ZZZ:
+            EmoteType = EMOTE_BLINK;
+            break;
+        case EMOTICON_EYES:
+        case EMOTICON_HEARTS:
+        case EMOTICON_MUSIC:
+            EmoteType = EMOTE_HAPPY;
+            break;
+        case EMOTICON_OOP:
+        case EMOTICON_SORRY:
+        case EMOTICON_SUSHI:
+            EmoteType = EMOTE_PAIN;
+            break;
+        case EMOTICON_DEVILTEE:
+        case EMOTICON_SPLATTEE:
+        case EMOTICON_ZOMG:
+            EmoteType = EMOTE_ANGRY;
+            break;
+        default:
+            break;
+    }
+
+    if(g_Config.m_SvEmotionalTees)
+    {
+        m_EmoteType = EmoteType;
+        m_EmoteStop = Server()->Tick() + Sec * Server()->TickSpeed();
+    }
+
+	if(SendEmoticion)
+        GS()->SendEmoticon(m_pPlayer->GetCID(), Emoticon);
+}
+
+// This function sets the character's emote and its duration
 void CCharacter::SetEmote(int Emote, int Sec, bool SendEmoticion)
 {
 	// Reset by default emote

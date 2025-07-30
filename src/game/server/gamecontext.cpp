@@ -1057,10 +1057,13 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 
 			// initialize variables
 			const auto pMsg = (CNetMsg_Cl_Emoticon*)pRawMsg;
-			pPlayer->m_aPlayerTick[LastEmote] = Server()->Tick() + (Server()->TickSpeed() / 2);
+			pPlayer->m_aPlayerTick[LastEmote] = Server()->Tick() + g_Config.m_SvPlayerEmoticonDelay * Server()->TickSpeed();
 
 			// send emoticon and use skills by emoticon
-			SendEmoticon(ClientID, pMsg->m_Emoticon);
+            auto *pChar = pPlayer->GetCharacter();
+            if(pChar && pChar->IsAlive())
+                pChar->SetEmoticonDDNet(pMsg->m_Emoticon, 2, true);
+
 			Core()->SkillManager()->UseSkillsByEmoticion(pPlayer, pMsg->m_Emoticon);
 			return;
 		}
