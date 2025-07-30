@@ -1252,9 +1252,14 @@ bool CCharacter::TakeDamage(vec2 Force, int Damage, int FromCID, int Weapon, int
 {
 	// apply force
 	bool CanApplyForce = true;
-	if((ForceFlag & FORCE_FLAG_CANT_ALL) || ((ForceFlag & FORCE_FLAG_CANT_SELF) && m_ClientID == FromCID))
+	if(
+            (ForceFlag & FORCE_FLAG_CANT_ALL) ||
+            ((ForceFlag & FORCE_FLAG_CANT_SELF) && m_ClientID == FromCID) ||
+            (!IsAllowedPVP(FromCID))
+        )
 		CanApplyForce = false;
-	if(ForceFlag < 0 || CanApplyForce)
+
+	if(CanApplyForce)
 	{
 		constexpr float MaximumVel = 24.f;
 		vec2 Temp = m_Core.m_Vel + Force;

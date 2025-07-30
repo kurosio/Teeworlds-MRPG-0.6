@@ -130,7 +130,7 @@ public:
 
 	virtual bool Spawn(class CPlayer* pPlayer, vec2 Pos);
 	virtual void GiveRandomEffects(int To);
-	virtual bool TakeDamage(vec2 Force, int Damage, int FromCID, int Weapon, int ForceFlag = -1);
+	virtual bool TakeDamage(vec2 Force, int Damage, int FromCID, int Weapon, int ForceFlag = 0);
 	virtual void Die(int Killer, int Weapon);
 	virtual void HandleTuning();
 
