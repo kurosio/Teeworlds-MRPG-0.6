@@ -25,8 +25,8 @@ class CSkillManager : public MmoComponent
 	void ShowSkill(CPlayer* pPlayer, int SkillID) const;
 
 public:
-	// use skills by emoticion
-	void UseSkillsByEmoticion(CPlayer* pPlayer, int EmoticionID);
+	// use skills by Emoticon
+	void UseSkillsByEmoticon(CPlayer* pPlayer, int EmoticonID);
 };
 
 #endif

@@ -725,7 +725,7 @@ bool CCharacter::RemoveWeapon(int WeaponID)
 }
 
 // This function sets the character's emote and its duration
-void CCharacter::SetEmoticonDDNet(int Emoticon, int Sec, bool SendEmoticion) {
+void CCharacter::SetEmoticonDDNet(int Emoticon, int Sec, bool SendEmoticon) {
     int EmoteType = EMOTE_NORMAL;
     switch(Emoticon)
     {
@@ -765,12 +765,12 @@ void CCharacter::SetEmoticonDDNet(int Emoticon, int Sec, bool SendEmoticion) {
         m_EmoteStop = Server()->Tick() + Sec * Server()->TickSpeed();
     }
 
-	if(SendEmoticion)
+	if(SendEmoticon)
         GS()->SendEmoticon(m_pPlayer->GetCID(), Emoticon);
 }
 
 // This function sets the character's emote and its duration
-void CCharacter::SetEmote(int Emote, int Sec, bool SendEmoticion)
+void CCharacter::SetEmote(int Emote, int Sec, bool SendEmoticon)
 {
 	// Reset by default emote
 	if(Emote == EMOTE_NORMAL)
@@ -787,8 +787,8 @@ void CCharacter::SetEmote(int Emote, int Sec, bool SendEmoticion)
 		m_EmoteStop = Server()->Tick() + Sec * Server()->TickSpeed();
 	}
 
-	// check if the emoticion should be started
-	if(SendEmoticion)
+	// check if the Emoticon should be started
+	if(SendEmoticon)
 	{
 		if(Emote == EMOTE_BLINK)
 			GS()->SendEmoticon(m_pPlayer->GetCID(), EMOTICON_DOTDOT);

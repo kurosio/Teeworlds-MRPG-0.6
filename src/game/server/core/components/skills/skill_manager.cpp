@@ -32,10 +32,10 @@ void CSkillManager::OnPlayerLogin(CPlayer *pPlayer)
 	{
 		const auto ID = pRes->getInt("SkillID");
 		const auto Level = pRes->getInt("Level");
-		const auto SelectedEmoticion = pRes->getInt("UsedByEmoticon");
+		const auto SelectedEmoticon = pRes->getInt("UsedByEmoticon");
 
 		// init by server
-		CSkill::CreateElement(pPlayer->GetCID(), ID)->Init(Level, SelectedEmoticion);
+		CSkill::CreateElement(pPlayer->GetCID(), ID)->Init(Level, SelectedEmoticon);
 	}
 }
 
@@ -146,7 +146,7 @@ void CSkillManager::ShowSkill(CPlayer* pPlayer, int SkillID) const
 	{
 		VoteWrapper VUsage(ClientID, VWF_OPEN | VWF_STYLE_STRICT, "Usage");
 		VUsage.Add("F1 Bind: (bind 'key' say \"/use_skill {}\")", SkillID);
-		VUsage.AddOption("SKILL_CHANGE_USAGE_EMOTICION", SkillID, "Used on {}", pSkill->GetSelectedEmoticonName());
+		VUsage.AddOption("SKILL_CHANGE_USAGE_EMOTICON", SkillID, "Used on {}", pSkill->GetSelectedEmoticonName());
 		VUsage.AddLine();
 		VoteWrapper::AddEmptyline(ClientID);
 	}
@@ -193,8 +193,8 @@ bool CSkillManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 		return true;
 	}
 
-	// change emoticion function
-	if (PPSTR(pCmd, "SKILL_CHANGE_USAGE_EMOTICION") == 0)
+	// change Emoticon function
+	if (PPSTR(pCmd, "SKILL_CHANGE_USAGE_EMOTICON") == 0)
 	{
 		const int SkillID = Extra1;
 		pPlayer->GetSkill(SkillID)->SelectNextControlEmote();
@@ -204,14 +204,14 @@ bool CSkillManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 	return false;
 }
 
-void CSkillManager::UseSkillsByEmoticion(CPlayer *pPlayer, int EmoticionID)
+void CSkillManager::UseSkillsByEmoticon(CPlayer *pPlayer, int EmoticonID)
 {
 	if(pPlayer && pPlayer->IsAuthed() && pPlayer->GetCharacter())
 	{
 		const int ClientID = pPlayer->GetCID();
 		for(auto& p : CSkill::Data()[ClientID])
 		{
-			if(p->m_SelectedEmoticion == EmoticionID)
+			if(p->m_SelectedEmoticon == EmoticonID)
 				p->Use();
 		}
 	}

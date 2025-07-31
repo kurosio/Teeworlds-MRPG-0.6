@@ -45,18 +45,18 @@ void CSkill::SelectNextControlEmote()
 	if(!pPlayer)
 		return;
 
-	if(m_SelectedEmoticion == -1)
-		m_SelectedEmoticion = 0;
+	if(m_SelectedEmoticon == -1)
+		m_SelectedEmoticon = 0;
 	else
 	{
-		if(m_SelectedEmoticion == NUM_EMOTICONS)
-			m_SelectedEmoticion = -1;
+		if(m_SelectedEmoticon == NUM_EMOTICONS)
+			m_SelectedEmoticon = -1;
 		else
-			m_SelectedEmoticion++;
+			m_SelectedEmoticon++;
 	}
 
 	Database->Execute<DB::UPDATE>("tw_accounts_skills", "UsedByEmoticon = '{}' WHERE SkillID = '{}' AND UserID = '{}'",
-		m_SelectedEmoticion, m_ID, pPlayer->Account()->GetID());
+		m_SelectedEmoticon, m_ID, pPlayer->Account()->GetID());
 }
 
 bool CSkill::Use()
@@ -392,7 +392,7 @@ bool CSkill::Upgrade()
 	else
 	{
 		m_Level = 1;
-		m_SelectedEmoticion = -1;
+		m_SelectedEmoticon = -1;
 		Database->Execute<DB::INSERT>("tw_accounts_skills", "(SkillID, UserID, Level) VALUES ('{}', '{}', '1');", m_ID, pPlayer->Account()->GetID());
 		GS()->Chat(ClientID, "Learned a new skill ['{}']", Info()->GetName());
 	}

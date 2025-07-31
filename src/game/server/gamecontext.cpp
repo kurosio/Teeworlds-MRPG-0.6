@@ -1064,7 +1064,7 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
             if(pChar && pChar->IsAlive())
                 pChar->SetEmoticonDDNet(pMsg->m_Emoticon, 2, true);
 
-			Core()->SkillManager()->UseSkillsByEmoticion(pPlayer, pMsg->m_Emoticon);
+			Core()->SkillManager()->UseSkillsByEmoticon(pPlayer, pMsg->m_Emoticon);
 			return;
 		}
 

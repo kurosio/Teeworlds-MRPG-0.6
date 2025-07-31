@@ -152,8 +152,8 @@ public:
 	void SetSafeFlags(int Flags = SAFEFLAG_DAMAGE_DISABLED | SAFEFLAG_HAMMER_HIT_DISABLED | SAFEFLAG_COLLISION_DISABLED | SAFEFLAG_HOOK_HIT_DISABLED) { m_SafeTickFlags = Flags; }
 	virtual bool IsAllowedPVP(int FromID) const;
 	bool IsAlive() const { return m_Alive; }
-	void SetEmoticonDDNet(int Emoticon, int Sec, bool SendEmoticion);
-	void SetEmote(int Emote, int Sec, bool SendEmoticion);
+	void SetEmoticonDDNet(int Emoticon, int Sec, bool SendEmoticon);
+	void SetEmote(int Emote, int Sec, bool SendEmoticon);
 	void SetWeapon(int Weapon);
 	bool IncreaseHealth(int Amount);
 	bool IncreaseMana(int Amount);

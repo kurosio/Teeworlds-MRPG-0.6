@@ -106,7 +106,7 @@ class CSkill : public MultiworldIdentifiableData< std::map< int, std::deque < CS
 	int m_ID{};
 	int m_ClientID{};
 	int m_Level{};
-	int m_SelectedEmoticion{};
+	int m_SelectedEmoticon{};
 	std::array< std::weak_ptr<CEntityGroup>, NUM_SKILLS > m_apEntSkillPtrs {};
 
 public:
@@ -123,10 +123,10 @@ public:
 	}
 
 	// initialize skill
-	void Init(int Level, int SelectedEmoticion)
+	void Init(int Level, int SelectedEmoticon)
 	{
 		m_Level = Level;
-		m_SelectedEmoticion = SelectedEmoticion;
+		m_SelectedEmoticon = SelectedEmoticon;
 	}
 
 	// getters setters
@@ -157,7 +157,7 @@ public:
 
 	const char* GetSelectedEmoticonName() const
 	{
-		return GetEmoticonNameById(m_SelectedEmoticion);
+		return GetEmoticonNameById(m_SelectedEmoticon);
 	}
 
 	CSkillDescription* Info() const
