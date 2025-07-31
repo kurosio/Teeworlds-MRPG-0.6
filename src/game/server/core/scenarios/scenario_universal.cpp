@@ -538,7 +538,7 @@ void CUniversalScenario::CreateEntityShootmarkersTask(const vec2& pos, int healt
 		int& Health = pBase->GetGroup()->GetRefConfig("health", 0);
 		if(Health <= 0)
 		{
-			pBase->GS()->CreateCyrcleExplosion(6, 64.f, pBase->GetPos(), -1, WEAPON_WORLD, 0);
+			pBase->GS()->CreateCircleExplosion(6, 64.f, pBase->GetPos(), -1, WEAPON_WORLD, 0);
 			pBase->MarkForDestroy();
 			return;
 		}

@@ -6,11 +6,11 @@ class CEntityRifleMagneticPulse : public CEntity
 {
 	enum
 	{
-		GROUP_PROJECTILE_CYRCLE = 0,
-		GROUP_CYRCLE,
+		GROUP_PROJECTILE_CIRCLE = 0,
+		GROUP_CIRCLE,
 
-		NUM_IDS_PROJECTILE_CYRCLE = 2,
-		NUM_IDS_CYRCLE = 8,
+		NUM_IDS_PROJECTILE_CIRCLE = 2,
+		NUM_IDS_CIRCLE = 8,
 	};
 
 	vec2 m_Direction {};

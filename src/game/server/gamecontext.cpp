@@ -193,7 +193,7 @@ void CGS::CreateRandomRadiusExplosion(int ExplosionCount, float Radius, vec2 Pos
 	}
 }
 
-void CGS::CreateCyrcleExplosion(int ExplosionCount, float Radius, vec2 Pos, int Owner, int Weapon, int MaxDamage, int ForceFlag)
+void CGS::CreateCircleExplosion(int ExplosionCount, float Radius, vec2 Pos, int Owner, int Weapon, int MaxDamage, int ForceFlag)
 {
 	const float AngleStep = 2.0f * pi / (float)ExplosionCount;
 

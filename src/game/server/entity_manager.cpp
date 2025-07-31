@@ -146,7 +146,7 @@ void CEntityManager::GravityDisruption(int ClientID, vec2 Position, float Radius
 		// life time
 		if(LifeTime <= 0)
 		{
-			pBase->GS()->CreateCyrcleExplosion(12, Radius, BasePos, pBase->GetClientID(), WEAPON_GAME, Damage);
+			pBase->GS()->CreateCircleExplosion(12, Radius, BasePos, pBase->GetClientID(), WEAPON_GAME, Damage);
 			pBase->MarkForDestroy();
 			return;
 		}
@@ -529,14 +529,14 @@ void CEntityManager::HealingAura(int ClientID, vec2 Position, float Radius, int 
 		const auto Radius = pBase->GetGroup()->GetConfig("radius", 0.f);
 		constexpr float AngleStep = 2.0f * pi / static_cast<float>(NUM_CIRCLES);
 
-		// snap cyrcle
+		// snap circle
 		for(int i = 0; i < NUM_CIRCLES; ++i)
 		{
 			const auto VertexPos = pBase->GetPos() + vec2(Radius * cos(AngleStep * i), Radius * sin(AngleStep * i));
 			pBase->GS()->SnapPickup(SnappingClient, vIds[i], VertexPos, POWERUP_HEALTH);
 		}
 
-		// snap cyrcle connect
+		// snap circle connect
 		for(int i = 0; i < NUM_CIRCLES; ++i)
 		{
 			const auto nextIndex = (i + 1) % NUM_CIRCLES;
@@ -545,7 +545,7 @@ void CEntityManager::HealingAura(int ClientID, vec2 Position, float Radius, int 
 			pBase->GS()->SnapLaser(SnappingClient, vIds[NUM_CIRCLES + i], CurrentPos, NextPos, pBase->Server()->Tick() - 1);
 		}
 
-		// snap hearts inside cyrcle
+		// snap hearts inside circle
 		const auto& heartPositions = pBase->GetConfig("heartPositions", std::vector<vec2>{});
 		for(int i = 0; i < NUM_HEART; ++i)
 		{

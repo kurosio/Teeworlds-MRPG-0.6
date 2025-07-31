@@ -38,8 +38,8 @@ void CEntityRifleMagneticPulse::RunLastPhase()
 	if(!m_LastPhase)
 	{
 		m_LastPhase = true;
-		AddSnappingGroupIds(GROUP_CYRCLE, NUM_IDS_CYRCLE);
-		AddSnappingGroupIds(GROUP_PROJECTILE_CYRCLE, NUM_IDS_PROJECTILE_CYRCLE);
+		AddSnappingGroupIds(GROUP_CIRCLE, NUM_IDS_CIRCLE);
+		AddSnappingGroupIds(GROUP_PROJECTILE_CIRCLE, NUM_IDS_PROJECTILE_CIRCLE);
 	}
 }
 
@@ -114,27 +114,27 @@ void CEntityRifleMagneticPulse::Snap(int SnappingClient)
 
 	if(m_LastPhase)
 	{
-		// snap inside projectiles cyrcle
-		if(const auto* pvProjCyrcleIds = FindSnappingGroupIds(GROUP_PROJECTILE_CYRCLE))
+		// snap inside projectiles circle
+		if(const auto* pvProjCircleIds = FindSnappingGroupIds(GROUP_PROJECTILE_CIRCLE))
 		{
-			for(const auto& id : *pvProjCyrcleIds)
+			for(const auto& id : *pvProjCircleIds)
 			{
 				const auto RangeRandomPos = random_range_pos(m_Pos, m_Radius);
 				GS()->SnapProjectile(SnappingClient, id, RangeRandomPos, {}, Server()->Tick(), WEAPON_HAMMER, m_ClientID);
 			}
 		}
 
-		// snap cyrcle laser
-		if(const auto* pvCyrcleIds = FindSnappingGroupIds(GROUP_CYRCLE))
+		// snap circle laser
+		if(const auto* pvCircleIds = FindSnappingGroupIds(GROUP_CIRCLE))
 		{
-			auto sizeNum = (*pvCyrcleIds).size();
+			auto sizeNum = (*pvCircleIds).size();
 			const auto AngleStep = 2.0f * pi / static_cast<float>(sizeNum);
 			for(size_t i = 0; i < sizeNum; ++i)
 			{
 				const auto nextIndex = (i + 1) % sizeNum;
 				const auto CurrentPos = m_Pos + vec2(m_Radius * cos(AngleStep * i), m_Radius * sin(AngleStep * i));
 				const auto NextPos = m_Pos + vec2(m_Radius * cos(AngleStep * nextIndex), m_Radius * sin(AngleStep * nextIndex));
-				GS()->SnapLaser(SnappingClient, (*pvCyrcleIds)[i], CurrentPos, NextPos, Server()->Tick() - 1);
+				GS()->SnapLaser(SnappingClient, (*pvCircleIds)[i], CurrentPos, NextPos, Server()->Tick() - 1);
 			}
 		}
 	}

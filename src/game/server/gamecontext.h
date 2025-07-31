@@ -85,7 +85,7 @@ public:
 	void CreateDamage(vec2 Pos, int FromCID, int Amount, float Angle = 0.f, int64_t Mask = -1);
 	void CreateHammerHit(vec2 Pos, int64_t Mask = -1);
 	void CreateRandomRadiusExplosion(int ExplosionCount, float Radius, vec2 Pos, int Owner, int Weapon, int MaxDamage, int ForceFlag = 0);
-	void CreateCyrcleExplosion(int ExplosionCount, float Radius, vec2 Pos, int Owner, int Weapon, int MaxDamage, int ForceFlag = 0);
+	void CreateCircleExplosion(int ExplosionCount, float Radius, vec2 Pos, int Owner, int Weapon, int MaxDamage, int ForceFlag = 0);
 	void CreateExplosion(vec2 Pos, int Owner, int Weapon, int MaxDamage, int ForceFlag = 0);
 	void CreatePlayerSpawn(vec2 Pos, int64_t Mask = -1);
 	void CreateDeath(vec2 Pos, int ClientID, int64_t Mask = -1);

@@ -67,7 +67,7 @@ void CEntityRifleTrackedPlazma::Explode()
 {
 	const auto* pOwnerChar = GetOwnerChar();
 	const auto totalDmg = pOwnerChar ? pOwnerChar->GetTotalDamageByWeapon(WEAPON_LASER) : 1;
-	GS()->CreateCyrcleExplosion(2, 32.f, m_Pos, m_ClientID, WEAPON_LASER, totalDmg);
+	GS()->CreateCircleExplosion(2, 32.f, m_Pos, m_ClientID, WEAPON_LASER, totalDmg);
 	GameWorld()->DestroyEntity(this);
 }
 
