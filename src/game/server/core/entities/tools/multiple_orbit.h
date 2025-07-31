@@ -12,7 +12,7 @@ class CMultipleOrbit : public CEntity
 		int m_ID;
 		int m_Type;
 		int m_Subtype;
-		int m_Orbittype;
+		int m_OrbitType;
 		bool m_Projectile;
 	};
 	std::vector<SnapItem> m_Items {};
@@ -25,11 +25,11 @@ public:
 	void Snap(int SnappingClient) override;
 	void Tick() override;
 
-	void Add(bool Projectile, int Value, int Type, int Subtype, int Orbittype);
-	void Remove(bool Projectile, int Value, int Type, int Subtype, int Orbittype);
+	void Add(bool Projectile, int Value, int Type, int Subtype, int OrbitType);
+	void Remove(bool Projectile, int Value, int Type, int Subtype, int OrbitType);
 
 private:
-	vec2 UtilityOrbitPos(int Orbittype, int Iter) const;
+	vec2 UtilityOrbitPos(int OrbitType, int Iter) const;
 	vec2 RoseCurvePos(float Angle, float Time) const;
 	vec2 HypotrochoidPos(float Angle, float Time) const;
 };

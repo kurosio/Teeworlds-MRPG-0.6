@@ -18,7 +18,7 @@ CMultipleOrbit::~CMultipleOrbit()
 	m_Items.clear();
 }
 
-void CMultipleOrbit::Add(bool Projectile, int Value, int Type, int Subtype, int Orbittype)
+void CMultipleOrbit::Add(bool Projectile, int Value, int Type, int Subtype, int OrbitType)
 {
 	m_Items.reserve(m_Items.size() + Value);
 
@@ -28,13 +28,13 @@ void CMultipleOrbit::Add(bool Projectile, int Value, int Type, int Subtype, int 
 		Item.m_ID = Server()->SnapNewID();
 		Item.m_Type = Type;
 		Item.m_Subtype = Subtype;
-		Item.m_Orbittype = Orbittype;
+		Item.m_OrbitType = OrbitType;
 		Item.m_Projectile = Projectile;
 		m_Items.push_back(Item);
 	}
 }
 
-void CMultipleOrbit::Remove(bool Projectile, int Value, int Type, int Subtype, int Orbittype)
+void CMultipleOrbit::Remove(bool Projectile, int Value, int Type, int Subtype, int OrbitType)
 {
 	if(m_Items.empty())
 		return;
@@ -45,7 +45,7 @@ void CMultipleOrbit::Remove(bool Projectile, int Value, int Type, int Subtype, i
 		return item.m_Type == Type &&
 			item.m_Subtype == Subtype &&
 			item.m_Projectile == Projectile &&
-			item.m_Orbittype == Orbittype;
+			item.m_OrbitType == OrbitType;
 	});
 	if(it == m_Items.end())
 		return;
@@ -95,7 +95,7 @@ vec2 CMultipleOrbit::HypotrochoidPos(float Angle, float Time) const
 	return { X, Y };
 }
 
-vec2 CMultipleOrbit::UtilityOrbitPos(int Orbittype, int Iter) const
+vec2 CMultipleOrbit::UtilityOrbitPos(int OrbitType, int Iter) const
 {
 	if(m_Items.empty())
 		return { 0.f, 0.f };
@@ -104,7 +104,7 @@ vec2 CMultipleOrbit::UtilityOrbitPos(int Orbittype, int Iter) const
 	const float BaseAngle = AngleStep * (float)Iter;
 	const float Time = (2.0f * pi * (float)Server()->Tick() / (float)Server()->TickSpeed());
 
-	switch(Orbittype)
+	switch(OrbitType)
 	{
 		case MULTIPLE_ORBIT_TYPE_DEFAULT:
 		{
@@ -178,9 +178,9 @@ void CMultipleOrbit::Snap(int SnappingClient)
 		return;
 
 	int Iter = 0;
-	for(const auto& [ID, Type, Subtype, Orbittype, Projectile] : m_Items)
+	for(const auto& [ID, Type, Subtype, OrbitType, Projectile] : m_Items)
 	{
-		const vec2 PosStart = m_Pos + UtilityOrbitPos(Orbittype, Iter);
+		const vec2 PosStart = m_Pos + UtilityOrbitPos(OrbitType, Iter);
 		if(Projectile)
 			GS()->SnapProjectile(SnappingClient, ID, PosStart, {}, Server()->Tick(), Type);
 		else
