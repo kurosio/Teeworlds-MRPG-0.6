@@ -11,6 +11,8 @@
 #include <engine/server.h>
 #include <engine/storage.h>
 
+#include <generated/version.h>
+
 #include <engine/shared/compression.h>
 #include <engine/shared/econ.h>
 #include <engine/shared/json.h>
@@ -1950,7 +1952,9 @@ int CServer::Run(ILogger* pLogger)
 		Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
 		str_format(aBuf, sizeof(aBuf), "initialized worlds: %d", MultiWorlds()->GetSizeInitilized());
 		Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
-		str_format(aBuf, sizeof(aBuf), "version: %s", GameServer()->NetVersion());
+		str_format(aBuf, sizeof(aBuf), "version: %s", MRPG_VERSION_STRING);
+		Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
+		str_format(aBuf, sizeof(aBuf), "net version: %s", GameServer()->NetVersion());
 		Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", aBuf);
 
 		// process pending commands

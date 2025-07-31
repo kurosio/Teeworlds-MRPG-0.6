@@ -16,7 +16,6 @@
 extern const char* GIT_SHORTREV_HASH;
 
 // mrpg protocol (CLIENT/SERVER SIDE) VERSION
-#define MRPG_PROJECT_VERSION "2.33.1"
 #define MRPG_PROTOCOL_VERSION 2000
 
 #endif

@@ -6,8 +6,10 @@
 #include <game/server/core/components/houses/house_manager.h>
 #include <game/server/core/components/groups/group_manager.h>
 
-#include "components/houses/entities/house_door.h"
+#include <components/houses/entities/house_door.h>
 #include <game/server/gamecontext.h>
+
+#include <generated/version.h>
 
 static bool is_valid_player(CGS* pGS, CPlayer* pPlayer, bool RequiredAuth)
 {
@@ -469,7 +471,7 @@ void CCommandProcessor::ConChatInfo(IConsole::IResult* pResult, void* pUser)
 		return;
 
 	pGS->Chat(ClientID, mystd::aesthetic::wrapLinePillar(10).c_str());
-	pGS->Chat(ClientID, "Mod by 'Kurosio'. Version: {}.", MRPG_PROJECT_VERSION);
+	pGS->Chat(ClientID, "Mod by 'Kurosio'. Version: {}.", MRPG_VERSION_STRING);
 	pGS->Chat(ClientID, "Content manager: 'Halloween'.");
 	pGS->Chat(ClientID, "Discord: '{}'.", g_Config.m_SvDiscordInviteLink);
 	pGS->Chat(ClientID, "More commands in '/cmdlist'.", g_Config.m_SvDiscordInviteLink);

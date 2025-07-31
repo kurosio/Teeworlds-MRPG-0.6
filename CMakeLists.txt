@@ -1,13 +1,25 @@
 cmake_minimum_required(VERSION 3.16...3.19.1)
 
+# Generate version
+file(MAKE_DIRECTORY "${CMAKE_BINARY_DIR}/src/generated/")
+include(${CMAKE_SOURCE_DIR}/cmake/GenerateVersion.cmake)
+
 # Set project version from version.h
-file(STRINGS src/game/version.h VERSION_LINE LIMIT_COUNT 1 REGEX "^#define GAME_RELEASE_VERSION ")
+file(STRINGS ${CMAKE_BINARY_DIR}/src/generated/version.h VERSION_LINE LIMIT_COUNT 1 REGEX "^#define MRPG_VERSION_STRING ")
 if(VERSION_LINE MATCHES "\"([0-9]+)\\.([0-9]+)\\.([0-9]+)\"")
   project(mmoteeworlds VERSION ${CMAKE_MATCH_1}.${CMAKE_MATCH_2}.${CMAKE_MATCH_3})
 elseif(VERSION_LINE MATCHES "\"([0-9]+)\\.([0-9]+)\"")
   project(mmoteeworlds VERSION ${CMAKE_MATCH_1}.${CMAKE_MATCH_2})
 else()
-  message(FATAL_ERROR "Couldn't parse version from src/game/version.h")
+  message(WARNING "Couldn't parse generated version, fallback to src/game/version.h")
+  file(STRINGS src/game/version.h VERSION_LINE LIMIT_COUNT 1 REGEX "^#define GAME_RELEASE_VERSION ")
+  if(VERSION_LINE MATCHES "\"([0-9]+)\\.([0-9]+)\\.([0-9]+)\"")
+    project(mmoteeworlds VERSION ${CMAKE_MATCH_1}.${CMAKE_MATCH_2}.${CMAKE_MATCH_3})
+  elseif(VERSION_LINE MATCHES "\"([0-9]+)\\.([0-9]+)\"")
+    project(mmoteeworlds VERSION ${CMAKE_MATCH_1}.${CMAKE_MATCH_2})
+  else()
+    message(FATAL_ERROR "Couldn't parse version from src/game/version.h")
+  endif()
 endif()
 
 set(ORIGINAL_CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH})
@@ -266,6 +278,7 @@ function(show_dependency_status OUTPUT_NAME NAME REQUIRED)
 endfunction()
 
 message(STATUS "******** Mmo (Teeworlds) ********")
+message(STATUS "Version: ${PROJECT_VERSION}")
 message(STATUS "Target OS: ${TARGET_OS} ${TARGET_BITS}bit")
 message(STATUS "Compiler: ${CMAKE_CXX_COMPILER}")
 message(STATUS "Build type: ${CMAKE_BUILD_TYPE}")
@@ -620,6 +633,7 @@ set(GAME_GENERATED_SHARED
   src/generated/git_revision.cpp
   src/generated/nethash.cpp
   src/generated/protocol.h
+  src/generated/version.h
 )
 
 # Libraries & Deps
