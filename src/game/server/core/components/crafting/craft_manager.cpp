@@ -4,8 +4,7 @@
 
 #include <game/server/gamecontext.h>
 
-#include "../achievements/achievement_data.h"
-#include "../inventory/inventory_manager.h"
+#include <components/inventory/inventory_manager.h>
 
 void CCraftManager::OnInitWorld(const std::string& Where)
 {

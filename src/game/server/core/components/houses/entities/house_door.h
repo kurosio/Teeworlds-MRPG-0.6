@@ -3,7 +3,7 @@
 
 #include <game/server/entity.h>
 
-#include "../base/interface_house.h"
+#include <components/houses/base/interface_house.h>
 
 class CHouse;
 class CGuildHouse;

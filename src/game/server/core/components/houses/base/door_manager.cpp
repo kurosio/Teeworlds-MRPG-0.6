@@ -1,7 +1,7 @@
 #include "door_manager.h"
 #include <game/server/gamecontext.h>
 
-#include "../entities/house_door.h"
+#include <components/houses/entities/house_door.h>
 
 
 CGS* CDoorManager::GS() const

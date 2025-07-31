@@ -5,8 +5,8 @@
 #include <game/server/entity_manager.h>
 #include <game/server/gamecontext.h>
 
-#include "../guild_house_data.h"
-#include "../house_data.h"
+#include <components/houses/guild_house_data.h>
+#include <components/houses/house_data.h>
 
 void CDoorDurability::Init(IHouse* pHouse)
 {

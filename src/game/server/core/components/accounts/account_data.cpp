@@ -5,11 +5,11 @@
 #include <game/server/entity_manager.h>
 #include <game/server/gamecontext.h>
 
-#include "../houses/house_data.h"
-#include "../achievements/achievement_data.h"
-#include "../inventory/inventory_manager.h"
-#include "../guilds/guild_manager.h"
-#include "../worlds/world_manager.h"
+#include <components/houses/house_data.h>
+#include <components/achievements/achievement_data.h>
+#include <components/inventory/inventory_manager.h>
+#include <components/guilds/guild_manager.h>
+#include <components/worlds/world_manager.h>
 
 std::map < int, CAccountData > CAccountData::ms_aData;
 std::map < int, CAccountSharedData > CAccountSharedData::ms_aPlayerSharedData;

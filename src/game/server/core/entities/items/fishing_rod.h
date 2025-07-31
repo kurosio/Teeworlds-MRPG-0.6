@@ -1,7 +1,7 @@
 #ifndef GAME_SERVER_CORE_ENTITIES_TOOLS_FISHING_ROD_H
 #define GAME_SERVER_CORE_ENTITIES_TOOLS_FISHING_ROD_H
 
-#include "../physics/rope.h"
+#include <entities/physics/rope.h>
 #include <game/server/entity.h>
 
 class CPlayer;

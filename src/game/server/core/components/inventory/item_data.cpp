@@ -5,9 +5,8 @@
 #include <game/server/gamecontext.h>
 #include <game/server/entity_manager.h>
 
-#include "../Eidolons/EidolonManager.h"
-#include "../achievements/achievement_data.h"
-#include "../mails/mail_wrapper.h"
+#include <components/Eidolons/EidolonManager.h>
+#include <components/mails/mail_wrapper.h>
 
 CGS* CPlayerItem::GS() const
 {

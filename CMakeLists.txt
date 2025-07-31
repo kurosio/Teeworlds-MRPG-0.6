@@ -1202,6 +1202,7 @@ foreach(target ${TARGETS_OWN})
 
   target_include_directories(${target} PRIVATE ${PROJECT_BINARY_DIR}/src)
   target_include_directories(${target} PRIVATE src)
+  target_include_directories(${target} PRIVATE src/game/server/core)
   target_compile_definitions(${target} PRIVATE $<$<CONFIG:Debug>:CONF_DEBUG>)
   target_include_directories(${target} PRIVATE ${ZLIB_INCLUDE_DIRS})
   target_include_directories(${target} PRIVATE ${CURL_INCLUDE_DIRS})

@@ -1,8 +1,9 @@
 ﻿#include "achievement_listener.h"
 #include "achievement_data.h"
 
-#include "../crafting/craft_data.h"
 #include <game/server/gamecontext.h>
+
+#include <components/crafting/craft_data.h>
 
 CAchievementListener g_AchievementListener;
 

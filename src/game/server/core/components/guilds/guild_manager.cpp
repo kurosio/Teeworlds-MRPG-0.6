@@ -7,7 +7,7 @@
 #include <game/server/core/components/inventory/inventory_manager.h>
 #include <game/server/core/components/mails/mail_wrapper.h>
 
-#include "../houses/entities/house_door.h"
+#include <components/houses/entities/house_door.h>
 
 void CGuildManager::OnPreInit()
 {

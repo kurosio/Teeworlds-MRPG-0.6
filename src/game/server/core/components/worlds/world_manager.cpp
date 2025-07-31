@@ -4,7 +4,7 @@
 
 #include <game/server/gamecontext.h>
 
-#include "../achievements/achievement_data.h"
+#include <components/achievements/achievement_data.h>
 
 CWorldManager::~CWorldManager()
 {
