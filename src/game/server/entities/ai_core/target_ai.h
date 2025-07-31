@@ -18,7 +18,7 @@ class CTargetAI
 {
 	int m_TargetID { -1 };
 	TargetType m_Type { TargetType::Empty };
-	bool m_IsCollised {};
+	bool m_IsCollided {};
 	int m_Aggression {};
 	CCharacterBotAI* m_pCharacter {};
 
@@ -34,7 +34,7 @@ public:
 		{
 			m_TargetID = -1;
 			m_Aggression = 0;
-			m_IsCollised = false;
+			m_IsCollided = false;
 			m_Type = TargetType::Empty;
 		}
 	}
@@ -96,12 +96,12 @@ public:
 
 	bool IsCollided() const
 	{
-		return m_IsCollised;
+		return m_IsCollided;
 	}
 
-	void UpdateCollised(bool Collised)
+	void UpdateCollided(bool Collided)
 	{
-		m_IsCollised = Collised;
+		m_IsCollided = Collided;
 	}
 };
 

@@ -15,11 +15,11 @@ class CEntityFlyingPoint : public CEntity
 	int m_ClientID{};
 	int m_FromID{};
 	int m_Type{};
-	FlyingPointCallback m_pFunctionCollised{};
+	FlyingPointCallback m_pFunctionCollided{};
 
 public:
 	CEntityFlyingPoint(CGameWorld* pGameWorld, vec2 Pos, vec2 InitialVel, int ClientID, int FromID);
-	void Register(FlyingPointCallback pFunc) { m_pFunctionCollised = std::move(pFunc); };
+	void Register(FlyingPointCallback pFunc) { m_pFunctionCollided = std::move(pFunc); };
 	void SetType(int Type) { m_Type = Type; }
 
 	void Tick() override;

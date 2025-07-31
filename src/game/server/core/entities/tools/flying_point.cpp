@@ -39,10 +39,10 @@ void CEntityFlyingPoint::Tick()
 	float Dist = distance(m_Pos, pPlayer->GetCharacter()->m_Core.m_Pos);
 	if(Dist < pPlayer->GetCharacter()->ms_PhysSize)
 	{
-		if(m_pFunctionCollised)
+		if(m_pFunctionCollided)
 		{
 			CPlayer* pFrom = GS()->GetPlayer(m_FromID);
-			m_pFunctionCollised(pFrom ? pFrom : pPlayer, pPlayer);
+			m_pFunctionCollided(pFrom ? pFrom : pPlayer, pPlayer);
 		}
 		GameWorld()->DestroyEntity(this);
 		return;

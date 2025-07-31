@@ -626,9 +626,9 @@ void CCharacterBotAI::UpdateTarget(float Radius) const
 			return;
 		}
 
-		// update collised
+		// update collided
 		const bool IntersectedWithInvisibleLine = GS()->Collision()->IntersectLineWithInvisible(m_Core.m_Pos, pTargetChar->m_Core.m_Pos, nullptr, nullptr);
-		m_pAI->GetTarget()->UpdateCollised(IntersectedWithInvisibleLine);
+		m_pAI->GetTarget()->UpdateCollided(IntersectedWithInvisibleLine);
 
 		// lost target
 		if(pTargetChar->m_Core.m_DamageDisabled || IntersectedWithInvisibleLine)
