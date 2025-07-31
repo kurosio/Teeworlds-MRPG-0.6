@@ -2,8 +2,8 @@
 
 #include <game/server/gamecontext.h>
 
-CEntityBaseDoor::CEntityBaseDoor(CGameWorld* pGameWorld, int Enttype, vec2 Pos, vec2 Direction)
-	: CEntity(pGameWorld, Enttype, Pos, 64)
+CEntityBaseDoor::CEntityBaseDoor(CGameWorld* pGameWorld, int EntType, vec2 Pos, vec2 Direction)
+	: CEntity(pGameWorld, EntType, Pos, 64)
 {
 	GS()->Collision()->FillLengthWall(Direction, &m_Pos, &m_PosTo);
 	GS()->Collision()->SetDoorFromToCollisionAt(m_Pos, m_PosTo, TILE_STOPA, 0, GetID());

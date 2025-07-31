@@ -8,7 +8,7 @@
 class CEntityBaseDoor : public CEntity
 {
 public:
-	CEntityBaseDoor(CGameWorld* pGameWorld, int Enttype, vec2 Pos, vec2 Direction);
+	CEntityBaseDoor(CGameWorld* pGameWorld, int EntType, vec2 Pos, vec2 Direction);
 
 	void Tick() override;
 	void Snap(int SnappingClient) override;
