@@ -260,7 +260,7 @@ enum class Mood : short
 {
 	Normal = 0,
 	Angry,
-	Agressed,
+	Aggressed,
 	Friendly,
 	Quest,
 	Tank,
@@ -272,7 +272,7 @@ constexpr const char* GetMoodName(Mood mood) noexcept
 	{
 		case Mood::Normal:    return "Normal";
 		case Mood::Angry:     return "Angry";
-		case Mood::Agressed:  return "Agressed";
+		case Mood::Aggressed:  return "Aggressed";
 		case Mood::Friendly:  return "Friendly";
 		case Mood::Quest:     return "Quest";
 		case Mood::Tank:      return "Tank";

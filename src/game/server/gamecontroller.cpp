@@ -151,7 +151,7 @@ void IGameController::OnEntity(int Index, vec2 Pos, int Flags)
 	else if(Index == ENTITY_MOB_WALL)
 	{
 		vec2 Direction = GS()->Collision()->GetRotateDirByFlags(Flags);
-		new CBotWall(&GS()->m_World, Pos, Direction, CBotWall::Flags::WALLLINEFLAG_AGRESSED_BOT);
+		new CBotWall(&GS()->m_World, Pos, Direction, CBotWall::Flags::WALLLINEFLAG_AGGRESSED_BOT);
 	}
 
 	else if(Index == ENTITY_PLANT)

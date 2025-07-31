@@ -465,7 +465,7 @@ Mood CPlayerBot::GetMoodState() const
 	{
 		bool IsGuardian = NpcBotInfo::ms_aNpcBot[m_MobID].m_Function == FUNCTION_NPC_GUARDIAN;
 		if(IsGuardian && !pChar->AI()->GetTarget()->IsEmpty())
-			return Mood::Agressed;
+			return Mood::Aggressed;
 
 		return Mood::Friendly;
 	}

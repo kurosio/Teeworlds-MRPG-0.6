@@ -1870,7 +1870,7 @@ They have violet-colored flowers for hands and beady eyes.
 Make pickups grey when you don't need them
 == Делать подбираемые предметы серыми, если они вам не нужны
 
-Agressed
+Aggressed
 == Агрессия
 
 $item_name141
