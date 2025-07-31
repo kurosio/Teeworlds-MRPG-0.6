@@ -243,6 +243,12 @@ void CCraftManager::ShowCraftGroup(CPlayer* pPlayer, const std::string& GroupNam
 	const auto ClientID = pPlayer->GetCID();
 
 	// add group menu
+    std::unordered_map<int, int> DuplicateItems;
+    std::unordered_map<int, int> DuplicateIndex;
+    for (const auto& item : vItems) {
+        ++DuplicateItems[item->GetItem()->GetID()];
+    }
+
 	VoteWrapper VCraftList(ClientID, VWF_STYLE_SIMPLE|VWF_SEPARATE_OPEN, GroupName.c_str());
 	for(auto& pCraft : vItems)
 	{
@@ -251,16 +257,28 @@ void CCraftManager::ShowCraftGroup(CPlayer* pPlayer, const std::string& GroupNam
 		const int Price = pCraft->GetPrice(pPlayer);
 		const auto* pCraftItemInfo = pCraft->GetItem()->Info();
 
+        std::optional<int> DuplicateId = std::nullopt;
+        if(DuplicateItems[ItemID] > 1)
+            DuplicateId = ++DuplicateIndex[ItemID];
+
 		// set title name by enchant type (or stack item, or only once)
 		if(!pCraftItemInfo->IsStackable())
 		{
-			VCraftList.AddMenu(MENU_CRAFTING_SELECT, ID, "{}{} - {$} gold",
-				(pPlayer->GetItem(ItemID)->GetValue() ? "✔ " : "\0"), pCraftItemInfo->GetName(), Price);
+            if(DuplicateId)
+                VCraftList.AddMenu(MENU_CRAFTING_SELECT, ID, "{}{} ({}) - {$} gold",
+                   (pPlayer->GetItem(ItemID)->GetValue() ? "✔ " : "\0"), pCraftItemInfo->GetName(), *DuplicateId, Price);
+            else
+			    VCraftList.AddMenu(MENU_CRAFTING_SELECT, ID, "{}{} - {$} gold",
+				    (pPlayer->GetItem(ItemID)->GetValue() ? "✔ " : "\0"), pCraftItemInfo->GetName(), Price);
 		}
 		else
 		{
-			VCraftList.AddMenu(MENU_CRAFTING_SELECT, ID, "[{}]{} x{} - {$} gold",
-				pPlayer->GetItem(ItemID)->GetValue(), pCraftItemInfo->GetName(), pCraft->GetItem()->GetValue(), Price);
+            if(DuplicateId)
+                VCraftList.AddMenu(MENU_CRAFTING_SELECT, ID, "[{}]{} ({}) x{} - {$} gold",
+                   pPlayer->GetItem(ItemID)->GetValue(), pCraftItemInfo->GetName(), *DuplicateId, pCraft->GetItem()->GetValue(), Price);
+            else
+			    VCraftList.AddMenu(MENU_CRAFTING_SELECT, ID, "[{}]{} x{} - {$} gold",
+				    pPlayer->GetItem(ItemID)->GetValue(), pCraftItemInfo->GetName(), pCraft->GetItem()->GetValue(), Price);
 		}
 	}
 	VoteWrapper::AddEmptyline(ClientID);
