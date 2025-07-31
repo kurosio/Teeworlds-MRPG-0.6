@@ -1,7 +1,7 @@
 #include "draw_board.h"
 
 #include <game/server/gamecontext.h>
-#include "laser_orbite.h"
+#include "laser_orbit.h"
 #include <game/server/entities/pickup.h>
 
 #include <game/server/core/components/inventory/inventory_manager.h>
@@ -217,7 +217,7 @@ CEntityDrawboard::~CEntityDrawboard()
 	for(const auto& pEntity : m_vEntities)
 		delete pEntity;
 
-	delete m_pOrbite;
+	delete m_pOrbit;
 	m_vBrushes.clear();
 	m_vEntities.clear();
 }
@@ -241,10 +241,10 @@ bool CEntityDrawboard::StartDrawing(CPlayer* pPlayer)
 		return false;
 	}
 
-	if(!m_pOrbite)
-		m_pOrbite = new CEntityLaserOrbite(GameWorld(), -1, nullptr, 15, LaserOrbiteType::InsideOrbite, 0.f, m_Radius, LASERTYPE_FREEZE, CmaskOne(pPlayer->GetCID()));
+	if(!m_pOrbit)
+		m_pOrbit = new CEntityLaserOrbit(GameWorld(), -1, nullptr, 15, LaserOrbitType::InsideOrbit, 0.f, m_Radius, LASERTYPE_FREEZE, CmaskOne(pPlayer->GetCID()));
 	else
-		m_pOrbite->AddClientMask(pPlayer->GetCID());
+		m_pOrbit->AddClientMask(pPlayer->GetCID());
 
 	m_vBrushes.emplace(new CBrush(pPlayer, this, &m_ToolEvent));
 	return true;
@@ -333,10 +333,10 @@ void CEntityDrawboard::Tick()
 {
 	if(m_vBrushes.empty())
 	{
-		if(m_pOrbite)
+		if(m_pOrbit)
 		{
-			delete m_pOrbite;
-			m_pOrbite = nullptr;
+			delete m_pOrbit;
+			m_pOrbit = nullptr;
 		}
 		return;
 	}

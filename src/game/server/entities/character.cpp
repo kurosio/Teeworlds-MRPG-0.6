@@ -19,7 +19,7 @@
 #include <game/server/core/entities/group/entitiy_group.h>
 #include <game/server/core/entities/items/gathering_node.h>
 #include <game/server/core/entities/items/fishing_rod.h>
-#include <game/server/core/entities/tools/multiple_orbite.h>
+#include <game/server/core/entities/tools/multiple_orbit.h>
 #include <game/server/core/entities/tools/flying_point.h>
 #include "character_bot.h"
 
@@ -41,7 +41,7 @@ CCharacter::CCharacter(CGameWorld* pWorld)
 CCharacter::~CCharacter()
 {
 	delete m_pTilesHandler;
-	m_pMultipleOrbite = nullptr;
+	m_pMultipleOrbit = nullptr;
 	GS()->m_World.m_Core.m_apCharacters[m_pPlayer->GetCID()] = nullptr;
 }
 
@@ -655,23 +655,23 @@ void CCharacter::HandleHookActions()
 	}
 }
 
-void CCharacter::AddMultipleOrbite(bool Projectile, int Amount, int Type, int Subtype, int Orbitetype)
+void CCharacter::AddMultipleOrbit(bool Projectile, int Amount, int Type, int Subtype, int Orbittype)
 {
-	if(!m_pMultipleOrbite)
+	if(!m_pMultipleOrbit)
 	{
-		m_pMultipleOrbite = new CMultipleOrbite(GameWorld(), this);
-		m_pMultipleOrbite->SetClientID(m_pPlayer->GetCID());
+		m_pMultipleOrbit = new CMultipleOrbit(GameWorld(), this);
+		m_pMultipleOrbit->SetClientID(m_pPlayer->GetCID());
 	}
 
-	m_pMultipleOrbite->Add(Projectile, Amount, Type, Projectile ? 0 : Subtype, Orbitetype);
+	m_pMultipleOrbit->Add(Projectile, Amount, Type, Projectile ? 0 : Subtype, Orbittype);
 }
 
-void CCharacter::RemoveMultipleOrbite(bool Projectile, int Amount, int Type, int Subtype, int Orbitetype) const
+void CCharacter::RemoveMultipleOrbit(bool Projectile, int Amount, int Type, int Subtype, int Orbittype) const
 {
-	if(!m_pMultipleOrbite)
+	if(!m_pMultipleOrbit)
 		return;
 
-	m_pMultipleOrbite->Remove(Projectile, Amount, Type, Projectile ? 0 : Subtype, Orbitetype);
+	m_pMultipleOrbit->Remove(Projectile, Amount, Type, Projectile ? 0 : Subtype, Orbittype);
 }
 
 bool CCharacter::GiveWeapon(int WeaponID, int Ammo)

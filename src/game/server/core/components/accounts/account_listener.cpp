@@ -36,19 +36,19 @@ void CAccountListener::OnCharacterSpawn(CPlayer* pPlayer)
 	{
 		ProfessionIdentifier identifier;
 		int weaponType;
-		int orbiteType;
+		int orbitType;
 	};
 
 	bool bestExpert = false;
 	const auto AccountID = pPlayer->Account()->GetID();
 	static std::array<LevelingData, (int)ProfessionIdentifier::NUM_PROFESSIONS> aLevelingData = {
-		LevelingData{ProfessionIdentifier::Tank, WEAPON_SHOTGUN, MULTIPLE_ORBITE_TYPE_EIGHT},
-		LevelingData{ProfessionIdentifier::Dps, WEAPON_SHOTGUN, MULTIPLE_ORBITE_TYPE_DYNAMIC_CENTER},
-		LevelingData{ProfessionIdentifier::Healer, WEAPON_SHOTGUN, MULTIPLE_ORBITE_TYPE_PULSATING},
-		LevelingData{ProfessionIdentifier::Miner, WEAPON_HAMMER, MULTIPLE_ORBITE_TYPE_EIGHT},
-		LevelingData{ProfessionIdentifier::Farmer, WEAPON_HAMMER, MULTIPLE_ORBITE_TYPE_DYNAMIC_CENTER},
-		LevelingData{ProfessionIdentifier::Fisherman, WEAPON_HAMMER, MULTIPLE_ORBITE_TYPE_PULSATING},
-		LevelingData{ProfessionIdentifier::Loader, WEAPON_HAMMER, MULTIPLE_ORBITE_TYPE_ELLIPTICAL}
+		LevelingData{ProfessionIdentifier::Tank, WEAPON_SHOTGUN, MULTIPLE_ORBIT_TYPE_EIGHT},
+		LevelingData{ProfessionIdentifier::Dps, WEAPON_SHOTGUN, MULTIPLE_ORBIT_TYPE_DYNAMIC_CENTER},
+		LevelingData{ProfessionIdentifier::Healer, WEAPON_SHOTGUN, MULTIPLE_ORBIT_TYPE_PULSATING},
+		LevelingData{ProfessionIdentifier::Miner, WEAPON_HAMMER, MULTIPLE_ORBIT_TYPE_EIGHT},
+		LevelingData{ProfessionIdentifier::Farmer, WEAPON_HAMMER, MULTIPLE_ORBIT_TYPE_DYNAMIC_CENTER},
+		LevelingData{ProfessionIdentifier::Fisherman, WEAPON_HAMMER, MULTIPLE_ORBIT_TYPE_PULSATING},
+		LevelingData{ProfessionIdentifier::Loader, WEAPON_HAMMER, MULTIPLE_ORBIT_TYPE_ELLIPTICAL}
 	};
 
 	for(const auto& data : aLevelingData)
@@ -56,7 +56,7 @@ void CAccountListener::OnCharacterSpawn(CPlayer* pPlayer)
 		const auto& Biggest = m_LevelingTracker.GetTrackingData((int)data.identifier);
 		if(Biggest && AccountID == (*Biggest).AccountID)
 		{
-			pPlayer->GetCharacter()->AddMultipleOrbite(true, 2, data.weaponType, 0, data.orbiteType);
+			pPlayer->GetCharacter()->AddMultipleOrbit(true, 2, data.weaponType, 0, data.orbitType);
 			bestExpert = true;
 		}
 	}

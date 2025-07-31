@@ -5,31 +5,31 @@
 
 #include <game/server/entity.h>
 
-class CMultipleOrbite : public CEntity
+class CMultipleOrbit : public CEntity
 {
 	struct SnapItem
 	{
 		int m_ID;
 		int m_Type;
 		int m_Subtype;
-		int m_Orbitetype;
+		int m_Orbittype;
 		bool m_Projectile;
 	};
 	std::vector<SnapItem> m_Items {};
 	CEntity* m_pParent {};
 
 public:
-	CMultipleOrbite(CGameWorld* pGameWorld, CEntity* pParents);
-	~CMultipleOrbite() override;
+	CMultipleOrbit(CGameWorld* pGameWorld, CEntity* pParents);
+	~CMultipleOrbit() override;
 
 	void Snap(int SnappingClient) override;
 	void Tick() override;
 
-	void Add(bool Projectile, int Value, int Type, int Subtype, int Orbitetype);
-	void Remove(bool Projectile, int Value, int Type, int Subtype, int Orbitetype);
+	void Add(bool Projectile, int Value, int Type, int Subtype, int Orbittype);
+	void Remove(bool Projectile, int Value, int Type, int Subtype, int Orbittype);
 
 private:
-	vec2 UtilityOrbitePos(int Orbitetype, int Iter) const;
+	vec2 UtilityOrbitPos(int Orbittype, int Iter) const;
 	vec2 RoseCurvePos(float Angle, float Time) const;
 	vec2 HypotrochoidPos(float Angle, float Time) const;
 };

@@ -21,7 +21,7 @@ enum
 };
 
 class CPlayerBot;
-class CMultipleOrbite;
+class CMultipleOrbit;
 class CEntityFishingRod;
 
 class CCharacter : public CEntity
@@ -85,7 +85,7 @@ protected:
 	int m_SafeTickFlags {};
 	int m_WaterAir {};
 	std::string m_Zonename {};
-	CMultipleOrbite* m_pMultipleOrbite {};
+	CMultipleOrbit* m_pMultipleOrbit {};
 
 	// misc modules or skills variables
 	int m_LastRingChainLightningAttack {};
@@ -160,8 +160,8 @@ public:
 	bool TryUseMana(int Mana);
 	int Mana() const { return m_Mana; }
 	int Health() const { return m_Health; }
-	void AddMultipleOrbite(bool Projectile, int Amount, int PickupType, int Subtype, int Orbitetype);
-	void RemoveMultipleOrbite(bool Projectile, int Amount, int PickupType, int Subtype, int Orbitetype) const;
+	void AddMultipleOrbit(bool Projectile, int Amount, int PickupType, int Subtype, int Orbittype);
+	void RemoveMultipleOrbit(bool Projectile, int Amount, int PickupType, int Subtype, int Orbittype) const;
 	virtual bool GiveWeapon(int Weapon, int Ammo);
 	bool RemoveWeapon(int Weapon);
 	void ChangePosition(vec2 NewPos);

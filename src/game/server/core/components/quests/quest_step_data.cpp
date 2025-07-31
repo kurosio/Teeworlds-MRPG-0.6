@@ -7,7 +7,7 @@
 #include "quest_manager.h"
 
 #include <game/server/core/entities/items/drop_quest_items.h>
-#include <game/server/core/entities/tools/laser_orbite.h>
+#include <game/server/core/entities/tools/laser_orbit.h>
 
 #include "entities/move_action.h"
 #include "entities/dir_navigator.h"

@@ -102,13 +102,13 @@ void CEntityQuestAction::Initialize()
 	{
 		constexpr auto Radius = 400.f;
 		m_pEntDirNavigator = new CEntityDirNavigator(&GS()->m_World, POWERUP_ARMOR, 0, false, m_ClientID, Radius, m_Pos, pTaskData->m_WorldID);
-		GS()->EntityManager()->LaserOrbite(this, (int)(Radius / 50.f), LaserOrbiteType::InsideOrbite, 0.f, Radius, LASERTYPE_FREEZE, CmaskOne(m_ClientID));
+		GS()->EntityManager()->LaserOrbit(this, (int)(Radius / 50.f), LaserOrbitType::InsideOrbit, 0.f, Radius, LASERTYPE_FREEZE, CmaskOne(m_ClientID));
 	}
 	else if(!pTaskData->m_Navigator)
 	{
 		const auto Radius = 1000.f + random_float(2000.f);
 		m_pEntDirNavigator = new CEntityDirNavigator(&GS()->m_World, POWERUP_ARMOR, 0, false, m_ClientID, Radius, m_Pos, pTaskData->m_WorldID);
-		GS()->EntityManager()->LaserOrbite(this, (int)(Radius / 50.f), LaserOrbiteType::InsideOrbiteRandom, 0.f, Radius, LASERTYPE_FREEZE, CmaskOne(m_ClientID));
+		GS()->EntityManager()->LaserOrbit(this, (int)(Radius / 50.f), LaserOrbitType::InsideOrbitRandom, 0.f, Radius, LASERTYPE_FREEZE, CmaskOne(m_ClientID));
 
 	}
 	else

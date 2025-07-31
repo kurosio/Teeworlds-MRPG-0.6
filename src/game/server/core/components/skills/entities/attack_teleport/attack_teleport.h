@@ -5,7 +5,7 @@
 #include <game/server/entity.h>
 
 class CPlayer;
-class CEntityLaserOrbite;
+class CEntityLaserOrbit;
 
 class CAttackTeleport : public CEntity
 {
@@ -25,7 +25,7 @@ private:
 	int m_SecondPartTimeleft{};
 	int m_SecondPartCombo{};
 	std::vector<CPlayer*> m_vMovingMap{};
-	CEntityLaserOrbite* m_pEntOrbite {};
+	CEntityLaserOrbit* m_pEntOrbit {};
 
 public:
 	CPlayer* m_pPlayer{};

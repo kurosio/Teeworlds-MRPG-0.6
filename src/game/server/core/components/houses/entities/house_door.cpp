@@ -63,7 +63,7 @@ CEntityHouseDoor::CEntityHouseDoor(CGameWorld* pGameWorld, IHouse* pHouse, const
 	// prepare positions
 	GS()->Collision()->FillLengthWall(vec2(0, -1), &m_Pos, &m_PosTo, 32, true, false);
 	GS()->Collision()->SetDoorFromToCollisionAt(m_Pos, m_PosTo, TILE_STOPA, 0, GetID());
-	GS()->EntityManager()->LaserOrbite(this, 4, LaserOrbiteType::Default, 0.f, 16.f, LASERTYPE_DOOR);
+	GS()->EntityManager()->LaserOrbit(this, 4, LaserOrbitType::Default, 0.f, 16.f, LASERTYPE_DOOR);
 
 	// initialize variables
 	m_pHouse = pHouse;

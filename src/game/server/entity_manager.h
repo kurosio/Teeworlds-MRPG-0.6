@@ -10,7 +10,7 @@ class CGS;
 class CEntity;
 class CPlayer;
 class CEntityGroup;
-class CEntityLaserOrbite;
+class CEntityLaserOrbit;
 using EntGroupWeakPtr = std::weak_ptr<CEntityGroup>;
 
 class CEntityManager
@@ -33,11 +33,11 @@ public:
 	void Text(vec2 Pos, int Lifespan, const char* pText, bool* pResult = nullptr) const;
 	void Text(CEntity* pParent, int Lifespan, const char* pText, bool* pResult = nullptr) const;
 
-	// laser orbite
-	void LaserOrbite(int ClientID, int Amount, LaserOrbiteType Type, float Speed, float Radius, int LaserType = LASERTYPE_RIFLE, int64_t Mask = -1) const;
-	void LaserOrbite(CEntity* pParent, int Amount, LaserOrbiteType Type, float Speed, float Radius, int LaserType = LASERTYPE_RIFLE, int64_t Mask = -1) const;
-	void LaserOrbite(CEntityLaserOrbite*& pOut, int ClientID, int Amount, LaserOrbiteType Type, float Speed, float Radius, int LaserType = LASERTYPE_RIFLE, int64_t Mask = -1) const;
-	void LaserOrbite(CEntityLaserOrbite*& pOut, CEntity* pParent, int Amount, LaserOrbiteType Type, float Speed, float Radius, int LaserType = LASERTYPE_RIFLE, int64_t Mask = -1) const;
+	// laser orbit
+	void LaserOrbit(int ClientID, int Amount, LaserOrbitType Type, float Speed, float Radius, int LaserType = LASERTYPE_RIFLE, int64_t Mask = -1) const;
+	void LaserOrbit(CEntity* pParent, int Amount, LaserOrbitType Type, float Speed, float Radius, int LaserType = LASERTYPE_RIFLE, int64_t Mask = -1) const;
+	void LaserOrbit(CEntityLaserOrbit*& pOut, int ClientID, int Amount, LaserOrbitType Type, float Speed, float Radius, int LaserType = LASERTYPE_RIFLE, int64_t Mask = -1) const;
+	void LaserOrbit(CEntityLaserOrbit*& pOut, CEntity* pParent, int Amount, LaserOrbitType Type, float Speed, float Radius, int LaserType = LASERTYPE_RIFLE, int64_t Mask = -1) const;
 
 	// skills
 	void StartUniversalCast(int ClientID, vec2 TargetPosition, int NumClicked,

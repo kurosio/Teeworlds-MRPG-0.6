@@ -44,7 +44,7 @@ public:
 
 		ENTTYPE_DRAW_BOARD,
 
-		ENTYPE_LASER_ORBITE, // always end
+		ENTYPE_LASER_ORBIT, // always end
 		NUM_ENTTYPES
 	};
 

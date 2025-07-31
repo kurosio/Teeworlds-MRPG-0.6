@@ -1,24 +1,24 @@
 ﻿/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#include "multiple_orbite.h"
+#include "multiple_orbit.h"
 
 #include <game/server/gamecontext.h>
 
-CMultipleOrbite::CMultipleOrbite(CGameWorld* pGameWorld, CEntity* pParent)
+CMultipleOrbit::CMultipleOrbit(CGameWorld* pGameWorld, CEntity* pParent)
 	: CEntity(pGameWorld, CGameWorld::ENTTYPE_VISUAL, vec2(0, 0), 64.f)
 {
 	m_pParent = pParent;
 	GameWorld()->InsertEntity(this);
 }
 
-CMultipleOrbite::~CMultipleOrbite()
+CMultipleOrbit::~CMultipleOrbit()
 {
 	for(const auto& pItems : m_Items)
 		Server()->SnapFreeID(pItems.m_ID);
 	m_Items.clear();
 }
 
-void CMultipleOrbite::Add(bool Projectile, int Value, int Type, int Subtype, int Orbitetype)
+void CMultipleOrbit::Add(bool Projectile, int Value, int Type, int Subtype, int Orbittype)
 {
 	m_Items.reserve(m_Items.size() + Value);
 
@@ -28,13 +28,13 @@ void CMultipleOrbite::Add(bool Projectile, int Value, int Type, int Subtype, int
 		Item.m_ID = Server()->SnapNewID();
 		Item.m_Type = Type;
 		Item.m_Subtype = Subtype;
-		Item.m_Orbitetype = Orbitetype;
+		Item.m_Orbittype = Orbittype;
 		Item.m_Projectile = Projectile;
 		m_Items.push_back(Item);
 	}
 }
 
-void CMultipleOrbite::Remove(bool Projectile, int Value, int Type, int Subtype, int Orbitetype)
+void CMultipleOrbit::Remove(bool Projectile, int Value, int Type, int Subtype, int Orbittype)
 {
 	if(m_Items.empty())
 		return;
@@ -45,7 +45,7 @@ void CMultipleOrbite::Remove(bool Projectile, int Value, int Type, int Subtype, 
 		return item.m_Type == Type &&
 			item.m_Subtype == Subtype &&
 			item.m_Projectile == Projectile &&
-			item.m_Orbitetype == Orbitetype;
+			item.m_Orbittype == Orbittype;
 	});
 	if(it == m_Items.end())
 		return;
@@ -62,7 +62,7 @@ void CMultipleOrbite::Remove(bool Projectile, int Value, int Type, int Subtype, 
 	m_Items.erase(LastIt - Count, LastIt);
 }
 
-void CMultipleOrbite::Tick()
+void CMultipleOrbit::Tick()
 {
 	if(!GameWorld()->ExistEntity(m_pParent))
 	{
@@ -73,7 +73,7 @@ void CMultipleOrbite::Tick()
 	m_Pos = m_pParent->GetPos();
 }
 
-vec2 CMultipleOrbite::RoseCurvePos(float Angle, float Time) const
+vec2 CMultipleOrbit::RoseCurvePos(float Angle, float Time) const
 {
 	const float k = 2.5f;
 	float Theta = Time + Angle;
@@ -83,7 +83,7 @@ vec2 CMultipleOrbite::RoseCurvePos(float Angle, float Time) const
 	return { X, Y };
 }
 
-vec2 CMultipleOrbite::HypotrochoidPos(float Angle, float Time) const
+vec2 CMultipleOrbit::HypotrochoidPos(float Angle, float Time) const
 {
 	const float R = GetRadius();
 	const float r = R / 3.5f;
@@ -95,7 +95,7 @@ vec2 CMultipleOrbite::HypotrochoidPos(float Angle, float Time) const
 	return { X, Y };
 }
 
-vec2 CMultipleOrbite::UtilityOrbitePos(int Orbitetype, int Iter) const
+vec2 CMultipleOrbit::UtilityOrbitPos(int Orbittype, int Iter) const
 {
 	if(m_Items.empty())
 		return { 0.f, 0.f };
@@ -104,37 +104,37 @@ vec2 CMultipleOrbite::UtilityOrbitePos(int Orbitetype, int Iter) const
 	const float BaseAngle = AngleStep * (float)Iter;
 	const float Time = (2.0f * pi * (float)Server()->Tick() / (float)Server()->TickSpeed());
 
-	switch(Orbitetype)
+	switch(Orbittype)
 	{
-		case MULTIPLE_ORBITE_TYPE_DEFAULT:
+		case MULTIPLE_ORBIT_TYPE_DEFAULT:
 		{
 			float Angle = Time * 0.55f + BaseAngle;
 			return vec2(GetRadius() * cos(Angle), GetRadius() * sin(Angle));
 		}
-		case MULTIPLE_ORBITE_TYPE_PULSATING:
+		case MULTIPLE_ORBIT_TYPE_PULSATING:
 		{
 			float Angle = Time * 0.55f + BaseAngle;
 			float Modifier = 0.75f + 0.25f * cos(Time * 2.0f);
 			return vec2(GetRadius() * cos(Angle) * Modifier, GetRadius() * sin(Angle) * Modifier);
 		}
-		case MULTIPLE_ORBITE_TYPE_ELLIPTICAL:
+		case MULTIPLE_ORBIT_TYPE_ELLIPTICAL:
 		{
 			float Angle = Time * 0.55f + BaseAngle;
 			return vec2(GetRadius() * cos(Angle), GetRadius() * 0.5f * sin(Angle));
 		}
-		case MULTIPLE_ORBITE_TYPE_VIBRATION:
+		case MULTIPLE_ORBIT_TYPE_VIBRATION:
 		{
 			float Angle = Time * 0.5f + BaseAngle;
 			float Vibration = sin(Time * 5.0f) * 10.0f;
 			return vec2((GetRadius() + Vibration) * cos(Angle), (GetRadius() + Vibration) * sin(Angle));
 		}
-		case MULTIPLE_ORBITE_TYPE_VARIABLE_RADIUS:
+		case MULTIPLE_ORBIT_TYPE_VARIABLE_RADIUS:
 		{
 			float Angle = Time * 0.5f + BaseAngle;
 			float Radius = GetRadius() + sin(Angle * 0.5f) * 20.0f;
 			return vec2(Radius * cos(Angle), Radius * sin(Angle));
 		}
-		case MULTIPLE_ORBITE_TYPE_EIGHT:
+		case MULTIPLE_ORBIT_TYPE_EIGHT:
 		{
 			float Angle = Time * 0.5f + BaseAngle;
 			float Denominator = 1 + pow(sin(Angle), 2);
@@ -142,7 +142,7 @@ vec2 CMultipleOrbite::UtilityOrbitePos(int Orbitetype, int Iter) const
 			float Y = GetRadius() * sin(Angle) * cos(Angle) / Denominator;
 			return vec2(X, Y);
 		}
-		case MULTIPLE_ORBITE_TYPE_LOOPING:
+		case MULTIPLE_ORBIT_TYPE_LOOPING:
 		{
 			float Angle = Time * 0.55f + BaseAngle;
 			float B = 5.f;
@@ -150,7 +150,7 @@ vec2 CMultipleOrbite::UtilityOrbitePos(int Orbitetype, int Iter) const
 			float Y = GetRadius() * sin(Angle) * sin(B * Time * 0.02f);
 			return vec2(X, Y);
 		}
-		case MULTIPLE_ORBITE_TYPE_DYNAMIC_CENTER:
+		case MULTIPLE_ORBIT_TYPE_DYNAMIC_CENTER:
 		{
 			float Angle = Time * 0.55f + BaseAngle;
 			float DynX = sin(Time / 1.2f) * 20.0f;
@@ -158,11 +158,11 @@ vec2 CMultipleOrbite::UtilityOrbitePos(int Orbitetype, int Iter) const
 			return vec2(DynX + GetRadius() * cos(Angle), DynY + GetRadius() * sin(Angle));
 		}
 
-		case MULTIPLE_ORBITE_TYPE_ROSE:
+		case MULTIPLE_ORBIT_TYPE_ROSE:
 		{
 			return RoseCurvePos(BaseAngle, Time * 0.5f);
 		}
-		case MULTIPLE_ORBITE_TYPE_HYPOTROCHOID:
+		case MULTIPLE_ORBIT_TYPE_HYPOTROCHOID:
 		{
 			return HypotrochoidPos(BaseAngle, Time * 0.5f);
 		}
@@ -172,15 +172,15 @@ vec2 CMultipleOrbite::UtilityOrbitePos(int Orbitetype, int Iter) const
 	}
 }
 
-void CMultipleOrbite::Snap(int SnappingClient)
+void CMultipleOrbit::Snap(int SnappingClient)
 {
 	if(NetworkClipped(SnappingClient))
 		return;
 
 	int Iter = 0;
-	for(const auto& [ID, Type, Subtype, Orbitetype, Projectile] : m_Items)
+	for(const auto& [ID, Type, Subtype, Orbittype, Projectile] : m_Items)
 	{
-		const vec2 PosStart = m_Pos + UtilityOrbitePos(Orbitetype, Iter);
+		const vec2 PosStart = m_Pos + UtilityOrbitPos(Orbittype, Iter);
 		if(Projectile)
 			GS()->SnapProjectile(SnappingClient, ID, PosStart, {}, Server()->Tick(), Type);
 		else
