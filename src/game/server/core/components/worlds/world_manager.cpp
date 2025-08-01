@@ -16,25 +16,35 @@ void CWorldManager::OnInitWorld(const std::string& SqlQueryWhereWorld)
 {
 	std::deque<CWorldSwapData> vSwappers{};
 	const auto currentWorldID = GS()->GetWorldID();
-	const auto formatWhere = fmt_default("{} OR `TwoWorldID` = '{}'", SqlQueryWhereWorld, currentWorldID);
+//	const auto formatWhere = fmt_default("{} OR `TwoWorldID` = '{}'", SqlQueryWhereWorld, currentWorldID);
 
 	// initializing world swappers from the database
-	ResultPtr pResSwap = Database->Execute<DB::SELECT>("*", "tw_world_swap", formatWhere.c_str());
+	ResultPtr pResSwap = Database->Execute<DB::SELECT>("*", "tw_world_swap", SqlQueryWhereWorld.c_str());
 	while(pResSwap->next())
 	{
-		const bool IsSecondLocalWorld = pResSwap->getInt("TwoWorldID") == GS()->GetWorldID();
+        std::pair<vec2, vec2> SwapperPos;
+        SwapperPos.first = vec2(pResSwap->getInt("PositionX"), pResSwap->getInt("PositionY"));
+        SwapperPos.second = vec2(pResSwap->getInt("TwoPositionX"), pResSwap->getInt("TwoPositionY"));
 
-		auto [pos1, pos2] = IsSecondLocalWorld
-			? std::make_pair(vec2(pResSwap->getInt("TwoPositionX"), pResSwap->getInt("TwoPositionY")),
-				vec2(pResSwap->getInt("PositionX"), pResSwap->getInt("PositionY")))
-			: std::make_pair(vec2(pResSwap->getInt("PositionX"), pResSwap->getInt("PositionY")),
-				vec2(pResSwap->getInt("TwoPositionX"), pResSwap->getInt("TwoPositionY")));
+        std::pair<int, int> Worlds;
+        Worlds.first = pResSwap->getInt("WorldID") ;
+        Worlds.second = pResSwap->getInt("TwoWorldID");
 
-		auto [world1, world2] = IsSecondLocalWorld
-			? std::make_pair(pResSwap->getInt("TwoWorldID"), pResSwap->getInt("WorldID"))
-			: std::make_pair(pResSwap->getInt("WorldID"), pResSwap->getInt("TwoWorldID"));
-
-		vSwappers.emplace_back(std::make_pair(pos1, pos2), std::make_pair(world1, world2));
+		vSwappers.emplace_back(SwapperPos, Worlds);
+        dbg_msg("SWAPPERS", "[%d](%0.2f;%0.2f) -> [%d](%0.2f;%0.2f)",
+                Worlds.first, SwapperPos.first.x, SwapperPos.first.y,
+                Worlds.second, SwapperPos.second.x, SwapperPos.second.y
+                );
+//        if(Worlds.second == currentWorldID) // two-sided
+//        {
+//            std::swap(SwapperPos.first, SwapperPos.second);
+//            std::swap(Worlds.first, Worlds.second);
+//            vSwappers.emplace_back(SwapperPos, Worlds);
+//            dbg_msg("SWAPPERS", "[%d](%0.2f;0.2f) -> [%d](%0.2f;0.2f)",
+//                    Worlds.first, SwapperPos.first.x, SwapperPos.first.y,
+//                    Worlds.second, SwapperPos.second.x, SwapperPos.second.y
+//            );
+//        }
 	}
 
 	// initializing world data
