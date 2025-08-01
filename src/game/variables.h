@@ -176,6 +176,7 @@ MACRO_CONFIG_INT(SvBankCommissionRate, sv_bank_commission_rate, 5, 0, 100, CFGFL
 // -----------------------
 // Miscellaneous Configuration
 // -----------------------
+MACRO_CONFIG_INT(SvPlayerRespawnTime, sv_player_respawn_time, 3, 0, 999, CFGFLAG_SERVER, "Player respawn time in seconds")
 MACRO_CONFIG_INT(SvEmotionalTees, sv_emotional_tees, 1, 0, 1, CFGFLAG_SERVER, "Whether eye change of tees is enabled with emoticons = 1, not = 0")
 MACRO_CONFIG_INT(SvPlayerEmoticonDelay, sv_player_emoticon_delay, 3, 0, 999999999, CFGFLAG_SERVER, "The time in seconds a player has to wait before allowing the next over-head emoticon")
 MACRO_CONFIG_INT(SvPlayerPeriodCheckInterval, sv_player_check_interval, 600, 1, 144000, CFGFLAG_SERVER, "Time interval for checking player status (in seconds)")

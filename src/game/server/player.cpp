@@ -139,7 +139,7 @@ void CPlayer::Tick()
 			m_pCharacter = nullptr;
 		}
 	}
-	else if(m_WantSpawn && m_aPlayerTick[Respawn] + Server()->TickSpeed() * 3 <= Server()->Tick())
+	else if(m_WantSpawn && m_aPlayerTick[Respawn] + Server()->TickSpeed() * g_Config.m_SvPlayerRespawnTime <= Server()->Tick())
 	{
 		TryRespawn();
 	}
