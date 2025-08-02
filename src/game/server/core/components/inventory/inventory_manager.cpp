@@ -250,15 +250,14 @@ bool CInventoryManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
 {
 	const int ClientID = pPlayer->GetCID();
 
-    // TODO: should be per-command
-    const int Extra1 = (!Extras.empty()) ? any_cast<int>(Extras.at(0)) : NOPE;
-    const int Extra2 = (Extras.size() > 1) ? any_cast<int>(Extras.at(1)) : NOPE;
-
 	// filter itmes
 	if(PPSTR(pCmd, "FILTER_ITEMS") == 0)
 	{
-		pPlayer->m_InventoryItemGroupFilter = Extra1 != NOPE ? std::make_optional<ItemGroup>((ItemGroup)Extra1) : std::nullopt;
-		pPlayer->m_InventoryItemTypeFilter = Extra2 != NOPE ? std::make_optional<ItemType>((ItemType)Extra2) : std::nullopt;
+        const int FilterGroup = GetIfExists<int>(Extras, 0, NOPE);
+        const int FilterValue = GetIfExists<int>(Extras, 1, NOPE);
+
+		pPlayer->m_InventoryItemGroupFilter = FilterGroup != NOPE ? std::make_optional<ItemGroup>((ItemGroup)FilterGroup) : std::nullopt;
+		pPlayer->m_InventoryItemTypeFilter = FilterValue != NOPE ? std::make_optional<ItemType>((ItemType)FilterValue) : std::nullopt;
 		pPlayer->m_VotesData.ResetHidden();
 		pPlayer->m_VotesData.UpdateCurrentVotes();
 		return true;
@@ -268,11 +267,13 @@ bool CInventoryManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
 	if(PPSTR(pCmd, "DROP_ITEM") == 0)
 	{
 		// check available value
-		auto AvailableValue = GetUnfrozenItemValue(pPlayer, Extra1);
+        const int ItemID = GetIfExists<int>(Extras, 0, NOPE);
+
+        auto AvailableValue = GetUnfrozenItemValue(pPlayer, ItemID);
 		if(AvailableValue <= 0)
 			return true;
 
-		auto* pPlayerItem = pPlayer->GetItem(Extra1);
+		auto* pPlayerItem = pPlayer->GetItem(ItemID);
 		ReasonNumber = minimum(AvailableValue, ReasonNumber);
 		if(pPlayerItem->Drop(ReasonNumber))
 		{
@@ -286,12 +287,13 @@ bool CInventoryManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
 	// Use item
 	if(PPSTR(pCmd, "USE_ITEM") == 0)
 	{
+        const int ItemID = GetIfExists<int>(Extras, 0, NOPE);
 		// check available value
-		int AvailableValue = GetUnfrozenItemValue(pPlayer, Extra1);
+		int AvailableValue = GetUnfrozenItemValue(pPlayer, ItemID);
 		if(AvailableValue <= 0)
 			return true;
 
-		auto* pPlayerItem = pPlayer->GetItem(Extra1);
+		auto* pPlayerItem = pPlayer->GetItem(ItemID);
 		ReasonNumber = minimum(AvailableValue, ReasonNumber);
 		pPlayerItem->Use(ReasonNumber);
 		pPlayer->m_VotesData.UpdateCurrentVotes();
@@ -301,8 +303,9 @@ bool CInventoryManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
 	// Enchant item
 	if(PPSTR(pCmd, "ENCHANT_ITEM") == 0)
 	{
+        const int ItemID = GetIfExists<int>(Extras, 0, NOPE);
 		// check enchant max level
-		auto* pPlayerItem = pPlayer->GetItem(Extra1);
+		auto* pPlayerItem = pPlayer->GetItem(ItemID);
 		if(pPlayerItem->IsEnchantMaxLevel())
 		{
 			GS()->Chat(ClientID, "Enchantment level is maximum");
@@ -337,14 +340,15 @@ bool CInventoryManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
 	// Equip item
 	if(PPSTR(pCmd, "TOGGLE_EQUIP") == 0)
 	{
-		bool Succesful = false;
-		auto* pPlayerItem = pPlayer->GetItem(Extra1);
+        const int ItemID = GetIfExists<int>(Extras, 0, NOPE);
+		bool Successful = false;
+		auto* pPlayerItem = pPlayer->GetItem(ItemID);
 		if(pPlayerItem->IsEquipped())
-			Succesful = pPlayerItem->UnEquip();
+            Successful = pPlayerItem->UnEquip();
 		else
-			Succesful = pPlayerItem->Equip();
+            Successful = pPlayerItem->Equip();
 
-		if(Succesful)
+		if(Successful)
 		{
 			pPlayerItem->Save();
 			pPlayer->m_VotesData.UpdateCurrentVotes();
@@ -355,7 +359,8 @@ bool CInventoryManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
 	// Settings
 	if(PPSTR(pCmd, "TOGGLE_SETTING") == 0)
 	{
-		auto* pPlayerItem = pPlayer->GetItem(Extra1);
+        const int ItemID = GetIfExists<int>(Extras, 0, NOPE);
+		auto* pPlayerItem = pPlayer->GetItem(ItemID);
 		if(pPlayerItem->IsEquipped())
 			pPlayerItem->UnEquip();
 		else

@@ -130,10 +130,6 @@ bool CHouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 {
 	const int ClientID = pPlayer->GetCID();
 
-    // TODO: should be per-command
-    const int Extra1 = (!Extras.empty()) ? any_cast<int>(Extras.at(0)) : NOPE;
-    const int Extra2 = (Extras.size() > 1) ? any_cast<int>(Extras.at(1)) : NOPE;
-
 	// start decoration edit mode
 	if(PPSTR(pCmd, "HOUSE_DECORATION") == 0)
 	{
@@ -165,8 +161,8 @@ bool CHouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 		}
 
 		// initialize variables
-		const int& FarmzoneID = Extra1;
-		const ItemIdentifier& ItemID = Extra2;
+		const int& FarmzoneID = GetIfExists<int>(Extras, 0, NOPE);
+		const ItemIdentifier& ItemID = GetIfExists<int>(Extras, 1, NOPE);
 
 		// check farmzone valid
 		auto* pManager = pHouse->GetFarmzonesManager();
@@ -202,8 +198,8 @@ bool CHouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 
 		// initialize variables
 		const int& Useds = maximum(1, ReasonNumber);
-		const int& FarmzoneID = Extra1;
-		const ItemIdentifier& ItemID = Extra2;
+		const int& FarmzoneID = GetIfExists<int>(Extras, 0, NOPE);
+		const ItemIdentifier& ItemID = GetIfExists<int>(Extras, 1, NOPE);
 
 		// check farmzone valid
 		auto* pManager = pHouse->GetFarmzonesManager();
@@ -357,7 +353,7 @@ bool CHouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 		}
 
 		// reverse door house
-		int UniqueDoorID = Extra1;
+		int UniqueDoorID = GetIfExists<int>(Extras, 0, NOPE);
 		pHouse->GetDoorManager()->Reverse(UniqueDoorID);
 		pPlayer->m_VotesData.UpdateVotesIf(MENU_HOUSE_DOOR_LIST);
 		return true;

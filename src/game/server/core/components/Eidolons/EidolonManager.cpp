@@ -12,12 +12,10 @@ bool CEidolonManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, co
 {
 	const int ClientID = pPlayer->GetCID();
 
-    // TODO: should be per-command
-    const int Extra1 = (!Extras.empty()) ? any_cast<int>(Extras.at(0)) : NOPE;
-
 	if(PPSTR(pCmd, "EIDOLON_SELECT") == 0)
 	{
-		m_EidolonItemSelected[ClientID] = Extra1;
+        const int EidolonID = GetIfExists<int>(Extras, 0, NOPE);
+		m_EidolonItemSelected[ClientID] = EidolonID;
 
 		//pPlayer->m_TempMenuValue = MENU_EIDOLON_SELECT;
 		pPlayer->m_VotesData.UpdateVotes(MENU_EIDOLON_SELECT);

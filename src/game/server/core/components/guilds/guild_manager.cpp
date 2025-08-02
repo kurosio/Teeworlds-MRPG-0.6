@@ -98,10 +98,6 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 {
 	const int ClientID = pPlayer->GetCID();
 
-    // TODO: should be per-command
-    const int Extra1 = (!Extras.empty()) ? any_cast<int>(Extras.at(0)) : NOPE;
-    const int Extra2 = (Extras.size() > 1) ? any_cast<int>(Extras.at(1)) : NOPE;
-
 	// teleport to house
 	if(PPSTR(pCmd, "GUILD_HOUSE_TELEPORT") == 0)
 	{
@@ -173,8 +169,10 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 			return true;
 		}
 
+        const int LeaderID = GetIfExists<int>(Extras, 0, NOPE);
+
 		// result
-		switch(pGuild->SetLeader(Extra1))
+		switch(pGuild->SetLeader(LeaderID))
 		{
 			default: GS()->Chat(ClientID, "Unforeseen error."); break;
 			case GuildResult::SET_LEADER_NON_GUILD_PLAYER: GS()->Chat(ClientID, "The player is not a member of your guild"); break;
@@ -199,8 +197,8 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 		}
 
 		// initialize variables
-		const int& MemberUID = Extra1;
-		const GuildRankIdentifier& RankID = Extra2;
+        const int& MemberUID = GetIfExists<int>(Extras, 0, NOPE);
+        const GuildRankIdentifier RankID = GetIfExists<int>(Extras, 1, NOPE);
 		auto pMember = pGuild->GetMembers()->Get(MemberUID);
 
 		// check member valid and result from setrank
@@ -250,15 +248,17 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 			return true;
 		}
 
+        const int AccountID = GetIfExists<int>(Extras, 0, NOPE);
+
 		// check exclude oneself
-		if(pPlayer->Account()->GetID() == Extra1)
+		if(pPlayer->Account()->GetID() == AccountID)
 		{
 			GS()->Chat(ClientID, "You can't kick yourself");
 			return true;
 		}
 
 		// result
-		switch(pPlayer->Account()->GetGuild()->GetMembers()->Kick(Extra1))
+		switch(pPlayer->Account()->GetGuild()->GetMembers()->Kick(AccountID))
 		{
 			default: GS()->Chat(ClientID, "Unforeseen error."); break;
 			case GuildResult::MEMBER_KICK_IS_OWNER: GS()->Chat(ClientID, "You can't kick a leader"); break;
@@ -402,8 +402,10 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 			return true;
 		}
 
+        const int GuildRankID = GetIfExists<int>(Extras, 0, NOPE);
+
 		// check rank valid
-		auto pRank = pGuild->GetRanks()->Get(Extra1);
+		auto pRank = pGuild->GetRanks()->Get(GuildRankID);
 		if(!pRank)
 		{
 			GS()->Chat(ClientID, "Unforeseen error.");
@@ -433,8 +435,10 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 			return true;
 		}
 
+        const int GuildRankID = GetIfExists<int>(Extras, 0, NOPE);
+
 		// check rank valid
-		auto pRank = pGuild->GetRanks()->Get(Extra1);
+		auto pRank = pGuild->GetRanks()->Get(GuildRankID);
 		if(!pRank)
 		{
 			GS()->Chat(ClientID, "Unforeseen error.");
@@ -467,8 +471,10 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 			return true;
 		}
 
+        const int GuildRankID = GetIfExists<int>(Extras, 0, NOPE);
+
 		// check rank valid
-		auto pRank = pGuild->GetRanks()->Get(Extra1);
+		auto pRank = pGuild->GetRanks()->Get(GuildRankID);
 		if(!pRank)
 		{
 			GS()->Chat(ClientID, "Unforeseen error.");
@@ -476,8 +482,10 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 			return true;
 		}
 
+        const int GuildRRights = GetIfExists<int>(Extras, 1, NOPE);
+
 		// check for same of rights
-		const auto Rights = static_cast<GuildRankRights>(Extra2);
+		const auto Rights = static_cast<GuildRankRights>(GuildRRights);
 		if(pRank->GetRights() == Rights)
 		{
 			GS()->Chat(ClientID, "You already have current rights set.");
@@ -501,8 +509,10 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 			return true;
 		}
 
+        const int UserID = GetIfExists<int>(Extras, 0, NOPE);
+
 		// result
-		switch(pGuild->GetMembers()->GetRequests()->Accept(Extra1, pPlayer->Account()->GetGuildMember()))
+		switch(pGuild->GetMembers()->GetRequests()->Accept(UserID, pPlayer->Account()->GetGuildMember()))
 		{
 			default: GS()->Chat(ClientID, "Unforeseen error."); break;
 			case GuildResult::MEMBER_JOIN_ALREADY_IN_GUILD: GS()->Chat(ClientID, "The player is already in a guild"); break;
@@ -526,8 +536,10 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 			return true;
 		}
 
+        const int UserID = GetIfExists<int>(Extras, 0, NOPE);
+
 		// deny the request
-		pGuild->GetMembers()->GetRequests()->Deny(Extra1, pPlayer->Account()->GetGuildMember());
+		pGuild->GetMembers()->GetRequests()->Deny(UserID, pPlayer->Account()->GetGuildMember());
 		GS()->UpdateVotesIfForAll(MENU_GUILD_MEMBER_LIST);
 		GS()->UpdateVotesIfForAll(MENU_GUILD_INVITATIONS);
 		return true;
@@ -559,12 +571,12 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 			return true;
 		}
 
-		// initialize variables
-		const GuildIdentifier& ID = Extra1;
-		const int& AccountID = Extra2;
+        // initialize variables
+        const GuildIdentifier& GuildID = GetIfExists<int>(Extras, 0, NOPE);
+        const int AccountID = GetIfExists<int>(Extras, 1, NOPE);
 
 		// check guild valid
-		auto* pGuild = GetGuildByID(ID);
+		auto* pGuild = GetGuildByID(GuildID);
 		if(!pGuild)
 		{
 			GS()->Chat(ClientID, "Unforeseen error.");
@@ -594,15 +606,17 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 			return true;
 		}
 
+        const GuildIdentifier& GuildID = GetIfExists<int>(Extras, 0, NOPE);
+
 		// check if war and self it's same guild
-		if(pGuild->GetID() == Extra1)
+		if(pGuild->GetID() == GuildID)
 		{
 			GS()->Chat(ClientID, "You can't declare war on your own guild.");
 			return true;
 		}
 
 		// check war guild valid
-		CGuild* pWarGuild = GetGuildByID(Extra1);
+		CGuild* pWarGuild = GetGuildByID(GuildID);
 		if(!pWarGuild)
 		{
 			GS()->Chat(ClientID, "This guild cannot be declared war at this time.");
@@ -643,8 +657,8 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 		}
 
 		// initialize variables
-		const int& FarmzoneID = Extra1;
-		const ItemIdentifier& ItemID = Extra2;
+		const int& FarmzoneID = GetIfExists<int>(Extras, 0, NOPE);
+		const ItemIdentifier& ItemID = GetIfExists<int>(Extras, 1, NOPE);
 
 		// check farmzone valid
 		auto* pManager = pHouse->GetFarmzonesManager();
@@ -688,8 +702,8 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 
 		// initialize variables
 		const int& Useds = maximum(1, ReasonNumber);
-		const int& FarmzoneID = Extra1;
-		const ItemIdentifier& ItemID = Extra2;
+		const int& FarmzoneID = GetIfExists<int>(Extras, 0, NOPE);
+		const ItemIdentifier& ItemID = GetIfExists<int>(Extras, 1, NOPE);
 
 		// check farmzone valid
 		auto* pManager = pHouse->GetFarmzonesManager();
@@ -715,7 +729,7 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 			Chance result(s_GuildChancePlanting);
 			for(int i = 0; i < Useds && !Success; i++)
 			{
-				Success = result() ? true : Success;
+				Success = result() || Success;
 				result.Update();
 			}
 
@@ -757,7 +771,7 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 		}
 
 		// reverse door house
-		int UniqueDoorID = Extra1;
+		int UniqueDoorID = GetIfExists<int>(Extras, 0, NOPE);
 		pHouse->GetDoorManager()->Reverse(UniqueDoorID);
 		GS()->UpdateVotesIfForAll(MENU_GUILD_HOUSE_DOOR_LIST);
 		return true;
@@ -799,7 +813,7 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 		}
 
 		// result
-		const auto UpgrID = (GuildUpgrade)Extra1;
+		const auto UpgrID = (GuildUpgrade)GetIfExists<int>(Extras, 0, NOPE);
 		if(!pGuild->Upgrade(UpgrID))
 		{
 			GS()->Chat(ClientID, "Your guild does not have enough gold, or the maximum upgrade level has been reached.");
@@ -823,7 +837,7 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 		}
 
 		// result
-		pGuild->GetLogger()->SetActivityFlag(Extra1);
+		pGuild->GetLogger()->SetActivityFlag(GetIfExists<int>(Extras, 0, NOPE));
 		GS()->UpdateVotesIfForAll(MENU_GUILD_LOGS);
 		return true;
 	}

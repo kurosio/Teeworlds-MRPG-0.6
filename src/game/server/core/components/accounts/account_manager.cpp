@@ -72,7 +72,7 @@ void CAccountManager::AddMenuProfessionUpgrades(CPlayer* pPlayer, CProfession* p
 		for(auto& [ID, Value] : pProf->GetAttributes())
 		{
 			const auto* pAttribute = GS()->GetAttributeInfo(ID);
-			VUpgrades.AddOption("UPGRADE", MakeAnyList((int)ProfID, (int)ID), "Upgrade {} - {} ({} point)", pAttribute->GetName(), Value, pAttribute->GetUpgradePrice());
+			VUpgrades.AddOption("UPGRADE", MakeAnyList(ProfID, ID), "Upgrade {} - {} ({} point)", pAttribute->GetName(), Value, pAttribute->GetUpgradePrice());
 		}
 	}
 }
@@ -359,14 +359,11 @@ bool CAccountManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, co
 {
 	const int ClientID = pPlayer->GetCID();
 
-    // TODO: should be per-command
-    const int Extra1 = (!Extras.empty()) ? any_cast<int>(Extras.at(0)) : NOPE;
-    const int Extra2 = (Extras.size() > 1) ? any_cast<int>(Extras.at(1)) : NOPE;
-
 	// select language command
 	if(PPSTR(pCmd, "SELECT_LANGUAGE") == 0)
 	{
-		const char* pSelectedLanguage = Server()->Localization()->m_pLanguages[Extra1]->GetFilename();
+        const int LanguageID = GetIfExists<int>(Extras, 0, NOPE);
+		const char* pSelectedLanguage = Server()->Localization()->m_pLanguages[LanguageID]->GetFilename();
 		Server()->SetClientLanguage(ClientID, pSelectedLanguage);
 		GS()->Chat(ClientID, "You have chosen a language \"{}\".", pSelectedLanguage);
 		pPlayer->m_VotesData.UpdateVotesIf(MENU_SETTINGS_LANGUAGE);
@@ -377,8 +374,8 @@ bool CAccountManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, co
 	// upgrade command
 	if(PPSTR(pCmd, "UPGRADE") == 0)
 	{
-		const auto ProfessionID = (ProfessionIdentifier)Extra1;
-		const auto AttributeID = (AttributeIdentifier)Extra2;
+        const auto ProfessionID = GetIfExists<ProfessionIdentifier>(Extras, 0, ProfessionIdentifier::None);
+        const auto AttributeID = GetIfExists<AttributeIdentifier>(Extras, 1, AttributeIdentifier::Unknown);
 
 		// check valid profession
 		auto* pProfession = pPlayer->Account()->GetProfession(ProfessionID);
@@ -408,7 +405,7 @@ bool CAccountManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, co
 	// select class
 	if(PPSTR(pCmd, "SELECT_CLASS") == 0)
 	{
-		const auto ProfessionID = (ProfessionIdentifier)Extra1;
+        const auto ProfessionID = GetIfExists<ProfessionIdentifier>(Extras, 0, ProfessionIdentifier::None);
 
 		// can't change profession in dungeon
 		if(GS()->IsWorldType(WorldType::Dungeon))

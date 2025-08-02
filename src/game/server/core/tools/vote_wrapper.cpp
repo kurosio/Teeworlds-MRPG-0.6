@@ -473,9 +473,6 @@ void CVotePlayerData::ClearVotes() const
 
 bool CVotePlayerData::DefaultVoteCommands(const char* pCmd, std::vector<std::any> Extras, int, const char*)
 {
-    const int Extra1 = (!Extras.empty()) ? any_cast<int>(Extras.at(0)) : NOPE;
-    const int Extra2 = (Extras.size() > 1) ? any_cast<int>(Extras.at(1)) : NOPE;
-
 	// is empty
 	if(PPSTR(pCmd, "null") == 0)
 		return true;
@@ -483,11 +480,13 @@ bool CVotePlayerData::DefaultVoteCommands(const char* pCmd, std::vector<std::any
 	// command menu
 	if(PPSTR(pCmd, "MENU") == 0)
 	{
-		m_ExtraID = Extra2 <= NOPE ? std::nullopt : std::make_optional(Extra2);
+        const int MenuID = GetIfExists<int>(Extras, 0, NOPE);
+        const int GroupID = GetIfExists<int>(Extras, 1, NOPE);
+		m_ExtraID = GroupID <= NOPE ? std::nullopt : std::make_optional(GroupID);
 
 		m_pGS->CreatePlayerSound(m_pPlayer->GetCID(), SOUND_VOTE_MENU_CLICK);
-		ResetHidden(Extra1);
-		UpdateVotes(Extra1);
+		ResetHidden(MenuID);
+		UpdateVotes(MenuID);
 		return true;
 	}
 
@@ -505,7 +504,8 @@ bool CVotePlayerData::DefaultVoteCommands(const char* pCmd, std::vector<std::any
 	// command hidden
 	if(PPSTR(pCmd, "HIDDEN") == 0)
 	{
-		if(VoteGroupHidden* pHidden = GetHidden(Extra1))
+        const int HiddenID = GetIfExists<int>(Extras, 0, NOPE);
+		if(VoteGroupHidden* pHidden = GetHidden(HiddenID))
 		{
 			const bool Value = pHidden->m_State;
 

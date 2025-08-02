@@ -79,10 +79,6 @@ bool CWarehouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
         return false;
 	const int ClientID = pPlayer->GetCID();
 
-    // TODO: should be per-command
-    const int Extra1 = (!Extras.empty()) ? any_cast<int>(Extras.at(0)) : NOPE;
-    const int Extra2 = (Extras.size() > 1) ? any_cast<int>(Extras.at(1)) : NOPE;
-
 	// repair all items
 	if(PPSTR(pCmd, "REPAIR_ITEMS") == 0)
 	{
@@ -95,8 +91,8 @@ bool CWarehouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
 	// buying items from the warehouse
 	if(PPSTR(pCmd, "WAREHOUSE_BUY_ITEM") == 0)
 	{
-		const auto WarehouseID = Extra1;
-		const auto TradeID = Extra2;
+		const auto WarehouseID = GetIfExists<int>(Extras, 0, NOPE);
+		const auto TradeID = GetIfExists<int>(Extras, 1, NOPE);
 		auto* pWarehouse = GetWarehouse(WarehouseID);
 		if(!pWarehouse)
 			return true;
@@ -113,8 +109,8 @@ bool CWarehouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
 	// selling items to the warehouse
 	if(PPSTR(pCmd, "WAREHOUSE_SELL_ITEM") == 0)
 	{
-		const auto WarehouseID = Extra1;
-		const auto TradeID = Extra2;
+        const auto WarehouseID = GetIfExists<int>(Extras, 0, NOPE);
+        const auto TradeID = GetIfExists<int>(Extras, 1, NOPE);
 		const int ValueToSell = ReasonNumber;
 		auto* pWarehouse = GetWarehouse(WarehouseID);
 		if(!pWarehouse)
@@ -132,7 +128,7 @@ bool CWarehouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
 	// loading products into the warehouse
 	if(PPSTR(pCmd, "WAREHOUSE_LOAD_PRODUCTS") == 0)
 	{
-		const auto WarehouseID = Extra1;
+        const auto WarehouseID = GetIfExists<int>(Extras, 0, NOPE);
 		auto* pWarehouse = GetWarehouse(WarehouseID);
 		if(!pWarehouse || !pWarehouse->IsHasFlag(WF_STORAGE))
 			return true;
@@ -166,7 +162,7 @@ bool CWarehouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
 	// unload products from the warehouse
 	if(PPSTR(pCmd, "WAREHOUSE_UNLOAD_PRODUCTS") == 0)
 	{
-		const auto WarehouseID = Extra1;
+        const auto WarehouseID = GetIfExists<int>(Extras, 0, NOPE);
 		auto* pWarehouse = GetWarehouse(WarehouseID);
 		if(!pWarehouse || !pWarehouse->IsHasFlag(WF_STORAGE))
 			return true;
@@ -209,7 +205,8 @@ bool CWarehouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
 
 	if(PPSTR(pCmd, "WAREHOUSE_SELECTOR_GROUP") == 0)
 	{
-		pPlayer->m_GroupFilter = Extra1;
+        const auto GroupID = GetIfExists<int>(Extras, 0, NOPE);
+		pPlayer->m_GroupFilter = GroupID;
 		pPlayer->m_SubgroupFilter = std::nullopt;
 		pPlayer->m_VotesData.UpdateCurrentVotes();
 		return true;
@@ -217,7 +214,8 @@ bool CWarehouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
 
 	if(PPSTR(pCmd, "WAREHOUSE_SELECTOR_SUBGROUP") == 0)
 	{
-		pPlayer->m_SubgroupFilter = Extra1;
+        const auto SubgroupID = GetIfExists<int>(Extras, 0, NOPE);
+		pPlayer->m_SubgroupFilter = SubgroupID;
 		pPlayer->m_VotesData.UpdateCurrentVotes();
 		return true;
 	}

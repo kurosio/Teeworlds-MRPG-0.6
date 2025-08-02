@@ -170,17 +170,12 @@ bool CQuestManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 
 bool CQuestManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const std::vector<std::any> &Extras, int ReasonNumber, const char* pReason)
 {
-	//const int ClientID = pPlayer->GetCID();
-
-    // TODO: should be per-command
-    const int Extra1 = (!Extras.empty()) ? any_cast<int>(Extras.at(0)) : NOPE;
-
-
 	// change quest state refuse or accept
 	if(PPSTR(pCmd, "QUEST_STATE") == 0)
 	{
 		// check valid quest
-		CPlayerQuest* pQuest = pPlayer->GetQuest(Extra1);
+        const int QuestID = GetIfExists<int>(Extras, 0, NOPE);
+		CPlayerQuest* pQuest = pPlayer->GetQuest(QuestID);
 		if(!pQuest || pQuest->IsCompleted())
 			return true;
 

@@ -169,13 +169,10 @@ bool CAuctionManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, co
 {
 	const int ClientID = pPlayer->GetCID();
 
-    // TODO: should be per-command
-    const int Extra1 = (!Extras.empty()) ? any_cast<int>(Extras.at(0)) : NOPE;
-
 	if(PPSTR(pCmd, "AUCTION_BUY") == 0)
 	{
 		// try to buy slot
-		const int SlotID = Extra1;
+        const int SlotID = GetIfExists<int>(Extras, 0, NOPE);
 		if(BuySlot(pPlayer, SlotID))
 			pPlayer->m_VotesData.UpdateVotes(MENU_AUCTION_LIST);
 		return true;
@@ -184,7 +181,7 @@ bool CAuctionManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, co
 	if(PPSTR(pCmd, "AUCTION_NUMBER") == 0)
 	{
 		// initialize variables
-		const int ItemID = Extra1;
+        const int ItemID = GetIfExists<int>(Extras, 0, NOPE);
 		const CPlayerItem* pPlayerItem = pPlayer->GetItem(ItemID);
 		CAuctionSlot* pAuctionData = &pPlayer->GetSharedData().m_TempAuctionSlot;
 		ReasonNumber = minimum(ReasonNumber, pPlayerItem->GetValue());
@@ -213,8 +210,8 @@ bool CAuctionManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, co
 	if(PPSTR(pCmd, "AUCTION_CREATE") == 0)
 	{
 		// initialize variables
-		int ItemID = Extra1;
-		int AvailableValue = Core()->InventoryManager()->GetUnfrozenItemValue(pPlayer, Extra1);
+        int ItemID = GetIfExists<int>(Extras, 0, NOPE);
+		int AvailableValue = Core()->InventoryManager()->GetUnfrozenItemValue(pPlayer, ItemID);
 
 		// check available value
 		if(AvailableValue <= 0)
@@ -234,7 +231,7 @@ bool CAuctionManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, co
 	if(PPSTR(pCmd, "AUCTION_ACCEPT") == 0)
 	{
 		// initialize variables
-		const int ItemID = Extra1;
+        const int ItemID = GetIfExists<int>(Extras, 0, NOPE);
 		const CPlayerItem* pPlayerItem = pPlayer->GetItem(ItemID);
 		CAuctionSlot* pTempSlot = &pPlayer->GetSharedData().m_TempAuctionSlot;
 

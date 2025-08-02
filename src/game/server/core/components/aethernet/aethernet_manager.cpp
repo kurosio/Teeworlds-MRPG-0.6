@@ -57,15 +57,11 @@ bool CAethernetManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
 {
 	const int ClientID = pPlayer->GetCID();
 
-    // TODO: should be per-command
-    const int Extra1 = (!Extras.empty()) ? any_cast<int>(Extras.at(0)) : NOPE;
-    const int Extra2 = (Extras.size() > 1) ? any_cast<int>(Extras.at(1)) : NOPE;
-
 	// Check if the player is trying to teleport to an aether
 	if(PPSTR(pCmd, "AETHER_TELEPORT") == 0)
 	{
-		// Assign the given Extra1 to AetherID and AetherData object
-		AetherIdentifier AetherID = Extra1;
+        // Assign the given Extra1 to AetherID and AetherData object
+        AetherIdentifier AetherID = GetIfExists<int>(Extras, 0, NOPE);
 		CAetherData* pAether = GetAetherByID(AetherID);
 
 		// Check if the AetherData object does not exist
@@ -83,7 +79,8 @@ bool CAethernetManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
 		}
 
 		// Check if the player has enough currency to spend
-		const int& Fee = Extra2;
+        const int& Fee = GetIfExists<int>(Extras, 1, 0);
+
 		if(Fee <= 0 || pPlayer->Account()->SpendCurrency(Fee))
 		{
 			vec2 Position = pAether->GetPosition();

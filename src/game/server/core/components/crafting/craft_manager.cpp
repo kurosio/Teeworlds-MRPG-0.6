@@ -132,19 +132,18 @@ void CCraftManager::CraftItem(CPlayer* pPlayer, CCraftItem* pCraft, int Value) c
 
 bool CCraftManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const std::vector<std::any> &Extras, int ReasonNumber, const char* pReason)
 {
-    // TODO: should be per-command
-    const int Extra1 = (!Extras.empty()) ? any_cast<int>(Extras.at(0)) : NOPE;
-
 	// craft item function
 	if(PPSTR(pCmd, "CRAFT") == 0)
 	{
-		CraftItem(pPlayer, GetCraftByID(Extra1), ReasonNumber);
+        const int CraftID = GetIfExists<int>(Extras, 0, NOPE);
+		CraftItem(pPlayer, GetCraftByID(CraftID), ReasonNumber);
 		return true;
 	}
 
 	if(PPSTR(pCmd, "CRAFT_TAB_SELECT") == 0)
 	{
-		pPlayer->m_ActiveCraftGroupID = Extra1;
+        const int CraftGroupID = GetIfExists<int>(Extras, 0, NOPE);
+		pPlayer->m_ActiveCraftGroupID = CraftGroupID;
 		pPlayer->m_VotesData.UpdateCurrentVotes();
 		return true;
 	}

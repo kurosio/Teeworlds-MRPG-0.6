@@ -87,14 +87,12 @@ bool CDutiesManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, con
 
 	const int ClientID = pPlayer->GetCID();
 
-    // TODO: should be per-command
-    const int Extra1 = (!Extras.empty()) ? any_cast<int>(Extras.at(0)) : NOPE;
-
 	// dungeon enter
 	if(PPSTR(pCmd, "DUNGEON_JOIN") == 0)
 	{
 		// check valid dungeon
-		auto* pDungeon = GetDungeonByID(Extra1);
+        const int DungeonID = GetIfExists<int>(Extras, 0, NOPE);
+		auto* pDungeon = GetDungeonByID(DungeonID);
 		if(!pDungeon)
 			return true;
 
@@ -140,14 +138,16 @@ bool CDutiesManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, con
 	if(PPSTR(pCmd, "PVP_JOIN") == 0)
 	{
 		// check equal player world
-		if(GS()->IsPlayerInWorld(ClientID, Extra1))
+        auto WorldIdOpt = GetIfExists<int>(Extras, 0);
+		if(GS()->IsPlayerInWorld(ClientID, WorldIdOpt))
 		{
 			GS()->Chat(ClientID, "You are already in this dungeon.");
 			pPlayer->m_VotesData.UpdateVotesIf(MENU_DUTIES_LIST);
 			return true;
 		}
 
-		pPlayer->ChangeWorld(Extra1);
+        if(WorldIdOpt.has_value())
+		    pPlayer->ChangeWorld(WorldIdOpt.value());
 		return true;
 	}
 

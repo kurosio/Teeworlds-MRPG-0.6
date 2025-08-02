@@ -178,13 +178,10 @@ void CSkillManager::OnCharacterTile(CCharacter* pChr)
 
 bool CSkillManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const std::vector<std::any> &Extras, int ReasonNumber, const char* pReason)
 {
-    // TODO: should be per-command
-    const int Extra1 = (!Extras.empty()) ? any_cast<int>(Extras.at(0)) : NOPE;
-
 	// learn skill function
 	if (PPSTR(pCmd, "SKILL_LEARN") == 0)
 	{
-		const int SkillID = Extra1;
+        const int SkillID = GetIfExists<int>(Extras, 0, NOPE);
 		if(pPlayer->GetSkill(SkillID)->Upgrade())
 		{
 			pPlayer->m_VotesData.UpdateCurrentVotes();
@@ -196,7 +193,7 @@ bool CSkillManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 	// change Emoticon function
 	if (PPSTR(pCmd, "SKILL_CHANGE_USAGE_EMOTICON") == 0)
 	{
-		const int SkillID = Extra1;
+        const int SkillID = GetIfExists<int>(Extras, 0, NOPE);
 		pPlayer->GetSkill(SkillID)->SelectNextControlEmote();
 		pPlayer->m_VotesData.UpdateCurrentVotes();
 		return true;

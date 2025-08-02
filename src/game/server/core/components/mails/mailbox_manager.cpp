@@ -7,13 +7,11 @@
 
 bool CMailboxManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const std::vector<std::any> &Extras, int ReasonNumber, const char* pReason)
 {
-    // TODO: should be per-command
-    const int Extra1 = (!Extras.empty()) ? any_cast<int>(Extras.at(0)) : NOPE;
-
 	// accept mail by id
 	if(PPSTR(pCmd, "MAIL_ACCEPT") == 0)
 	{
-		if(AcceptMail(pPlayer, Extra1))
+        const int MailID = GetIfExists<int>(Extras, 0, NOPE);
+		if(AcceptMail(pPlayer, MailID))
 			pPlayer->m_VotesData.UpdateVotes(MENU_MAILBOX);
 		else
 			GS()->Chat(pPlayer->GetCID(), "You can't accept the mail attached item's");
@@ -23,7 +21,8 @@ bool CMailboxManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, co
 	// delete mail by id
 	if(PPSTR(pCmd, "MAIL_DELETE") == 0)
 	{
-		DeleteMail(Extra1);
+        const int MailID = GetIfExists<int>(Extras, 0, NOPE);
+		DeleteMail(MailID);
 		pPlayer->m_VotesData.UpdateVotes(MENU_MAILBOX);
 		return true;
 	}

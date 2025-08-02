@@ -165,9 +165,6 @@ bool CGroupManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 {
 	const int ClientID = pPlayer->GetCID();
 
-    // TODO: should be per-command
-    const int Extra1 = (!Extras.empty()) ? any_cast<int>(Extras.at(0)) : NOPE;
-
 	// create new group
 	if(PPSTR(pCmd, "GROUP_CREATE") == 0)
 	{
@@ -181,7 +178,7 @@ bool CGroupManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 	if(PPSTR(pCmd, "GROUP_INVITE") == 0)
 	{
 		// initialize variables
-		const int InvitedCID = Extra1;
+        const int InvitedCID = GetIfExists<int>(Extras, 0, NOPE);
 		const auto pGroup = pPlayer->Account()->GetGroup();
 
 		// check valid group
@@ -255,7 +252,7 @@ bool CGroupManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 	if(PPSTR(pCmd, "GROUP_CHANGE_OWNER") == 0)
 	{
 		// initialize variables
-		const int AccountID = Extra1;
+        const int AccountID = GetIfExists<int>(Extras, 0, NOPE);
 
 		// check player group valid
 		if(const auto pGroup = pPlayer->Account()->GetGroup())
@@ -279,7 +276,7 @@ bool CGroupManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 	if(PPSTR(pCmd, "GROUP_KICK") == 0)
 	{
 		// initialize variables
-		const int AccountID = Extra1;
+        const int AccountID = GetIfExists<int>(Extras, 0, NOPE);
 
 		// check player group valid
 		if(const auto pGroup = pPlayer->Account()->GetGroup())
