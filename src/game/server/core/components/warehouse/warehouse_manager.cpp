@@ -562,7 +562,9 @@ bool CWarehouseManager::SellItem(CPlayer* pPlayer, CWarehouse* pWarehouse, int T
 	const auto Price = pTrade->GetPrice();
 
     if(ValueToSell == -1) // sell all
+    {
         ValueToSell = pPlayer->GetItem(pItem->GetID())->GetValue();
+    }
 
 	const auto TotalValue = ValueToSell * pItem->GetValue();
 	const auto TotalProducts = ValueToSell * pTrade->GetProductsCost();
