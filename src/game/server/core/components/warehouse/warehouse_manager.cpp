@@ -125,6 +125,30 @@ bool CWarehouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
 		return true;
 	}
 
+	// selling items to the warehouse
+	if(PPSTR(pCmd, "WAREHOUSE_SELL_ITEM_MULTIPLE") == 0)
+	{
+        const auto WarehouseID = GetIfExists<int>(Extras, 0, NOPE);
+        const auto TradeIDs = GetIfExists<std::vector<int>>(Extras, 1, {});
+		auto* pWarehouse = GetWarehouse(WarehouseID);
+		if(!pWarehouse)
+			return true;
+
+        bool Sold = false;
+        for (const auto &TradeID: TradeIDs)
+        {
+            if(SellItem(pPlayer, pWarehouse, TradeID, -1))
+                Sold = true;
+        }
+        if(Sold)
+        {
+            GS()->CreateSound(pPlayer->m_ViewPos, SOUND_VOTE_WAREHOUSE_SELL);
+            pPlayer->m_VotesData.UpdateCurrentVotes();
+        }
+
+		return true;
+	}
+
 	// loading products into the warehouse
 	if(PPSTR(pCmd, "WAREHOUSE_LOAD_PRODUCTS") == 0)
 	{
@@ -347,6 +371,15 @@ void CWarehouseManager::ShowGroupedSelector(CPlayer* pPlayer, CWarehouse* pWareh
 			? (*subGroupNameOptStr) : (*groupNameOptStr);
 		VoteWrapper VGroup(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_STRICT_BOLD, "\u25BC {}", Instance::Localize(ClientID, groupName.c_str()));
 
+        // sell everything
+        std::vector<int> vpSellTrades;
+        int SellEverythingPrice = 0;
+        int SellEverythingAmount = 0;
+
+        // delayed votes to make sell everything above
+        std::vector<std::function<void()>> DelayedVotes;
+        auto VGroupRef = std::ref(VGroup);
+
 		for(CTrade* pTrade : *pItemList)
 		{
 			const auto* pItem = pTrade->GetItem();
@@ -359,8 +392,13 @@ void CWarehouseManager::ShowGroupedSelector(CPlayer* pPlayer, CWarehouse* pWareh
 			{
 				const auto sellValue = pItem->GetValue();
 				const auto playerValue = pPlayerItem->GetValue();
-				VGroup.AddOption("WAREHOUSE_SELL_ITEM", MakeAnyList(pWarehouse->GetID(), pTrade->GetID()), "[{}] Sell {} x{} - {$} {} per unit",
-					playerValue, pItemInfo->GetName(), sellValue, Price, pCurrency->GetName());
+                DelayedVotes.emplace_back([=](){
+                    VGroupRef.get().AddOption("WAREHOUSE_SELL_ITEM", MakeAnyList(pWarehouse->GetID(), pTrade->GetID()), "[{}] Sell {} x{} - {$} {} per unit",
+                                     playerValue, pItemInfo->GetName(), sellValue, Price, pCurrency->GetName());
+                });
+                vpSellTrades.emplace_back(pTrade->GetID());
+                SellEverythingAmount += playerValue;
+                SellEverythingPrice += sellValue * Price;
 				continue;
 			}
 
@@ -377,6 +415,12 @@ void CWarehouseManager::ShowGroupedSelector(CPlayer* pPlayer, CWarehouse* pWareh
 					pPlayerItem->GetValue(), pItemInfo->GetName(), pItem->GetValue(), Price, pCurrency->GetName());
 			}
 		}
+
+        VGroup.AddOption("WAREHOUSE_SELL_ITEM_MULTIPLE", MakeAnyList(pWarehouse->GetID(), vpSellTrades), "[{}] Sell everything - {$} {}",
+                         SellEverythingAmount, SellEverythingPrice, pCurrency->GetName());
+        VGroup.AddEmptyline();
+        for (const auto &DelayedVote: DelayedVotes)
+            DelayedVote();
 	}
 }
 
@@ -516,6 +560,9 @@ bool CWarehouseManager::SellItem(CPlayer* pPlayer, CWarehouse* pWarehouse, int T
 	const auto* pCurrency = pWarehouse->GetCurrency();
 	auto* pPlayerCurrencyItem = pPlayer->GetItem(pCurrency->GetID());
 	const auto Price = pTrade->GetPrice();
+
+    if(ValueToSell == -1) // sell all
+        ValueToSell = pPlayer->GetItem(pItem->GetID())->GetValue();
 
 	const auto TotalValue = ValueToSell * pItem->GetValue();
 	const auto TotalProducts = ValueToSell * pTrade->GetProductsCost();
