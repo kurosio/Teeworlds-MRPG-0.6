@@ -1554,7 +1554,7 @@ void CCharacter::HandleTilesImpl(int Index)
 		if(const auto outsPos = GS()->Collision()->TryGetTeleportOut(m_Pos))
 		{
 			GS()->Broadcast(m_ClientID, BroadcastPriority::TitleInformation, Server()->TickSpeed(), "Use the hammer to enter");
-			if(m_Core.m_ActiveWeapon == WEAPON_HAMMER && m_ReloadTimer)
+            if(m_Core.m_ActiveWeapon == WEAPON_HAMMER && m_AttackTick == Server()->Tick() - 1)
 				ChangePosition(outsPos.value());
 		}
 	}
