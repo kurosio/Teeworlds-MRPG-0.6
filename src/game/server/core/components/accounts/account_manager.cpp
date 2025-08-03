@@ -184,7 +184,7 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 				const int progress = round_to_int(translate_to_percent(expNeed, Prof.GetExperience()));
 				const auto progressBar = mystd::string::progressBar(100, progress, 5, "\u25B0", "\u25B1");
 
-				VClassSelector.AddOption("SELECT_CLASS", static_cast<int>(Prof.GetProfessionID()), "({}) {} [Lv{} {} {~.1}%] ({}P)",
+				VClassSelector.AddOption("SELECT_CLASS", MakeAnyList(Prof.GetProfessionID()), "({}) {} [Lv{} {} {~.1}%] ({}P)",
 					StrActiveFlag, pProfName, Prof.GetLevel(), progressBar, progress, Prof.GetUpgradePoint());
 			}
 		}
@@ -405,7 +405,7 @@ bool CAccountManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, co
 	// select class
 	if(PPSTR(pCmd, "SELECT_CLASS") == 0)
 	{
-        const auto ProfessionID = static_cast<ProfessionIdentifier>(GetIfExists<int>(Extras, 0, NOPE));
+        const auto ProfessionID = GetIfExists<ProfessionIdentifier>(Extras, 0, ProfessionIdentifier::None);
 
 		// can't change profession in dungeon
 		if(GS()->IsWorldType(WorldType::Dungeon))
