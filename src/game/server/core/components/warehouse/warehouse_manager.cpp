@@ -129,15 +129,15 @@ bool CWarehouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
 	if(PPSTR(pCmd, "WAREHOUSE_SELL_ITEM_MULTIPLE") == 0)
 	{
         const auto WarehouseID = GetIfExists<int>(Extras, 0, NOPE);
-        const auto TradeIDs = GetIfExists<std::vector<int>>(Extras, 1, {});
+        const auto Trades = GetIfExists<std::vector<std::pair<int, int>>>(Extras, 1, {});
 		auto* pWarehouse = GetWarehouse(WarehouseID);
 		if(!pWarehouse)
 			return true;
 
         bool Sold = false;
-        for (const auto &TradeID: TradeIDs)
+        for (const auto &[TradeID, StackAmount]: Trades)
         {
-            if(SellItem(pPlayer, pWarehouse, TradeID, -1))
+            if(SellItem(pPlayer, pWarehouse, TradeID, StackAmount))
                 Sold = true;
         }
         if(Sold)
@@ -372,7 +372,7 @@ void CWarehouseManager::ShowGroupedSelector(CPlayer* pPlayer, CWarehouse* pWareh
 		VoteWrapper VGroup(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_STRICT_BOLD, "\u25BC {}", Instance::Localize(ClientID, groupName.c_str()));
 
         // sell everything
-        std::vector<int> vpSellTrades;
+        std::vector<std::pair<int, int>> vpSellTrades;
         int SellEverythingPrice = 0;
         int SellEverythingAmount = 0;
 
@@ -396,9 +396,13 @@ void CWarehouseManager::ShowGroupedSelector(CPlayer* pPlayer, CWarehouse* pWareh
                     VGroupRef.get().AddOption("WAREHOUSE_SELL_ITEM", MakeAnyList(pWarehouse->GetID(), pTrade->GetID()), "[{}] Sell {} x{} - {$} {} per unit",
                                      playerValue, pItemInfo->GetName(), sellValue, Price, pCurrency->GetName());
                 });
-                vpSellTrades.emplace_back(pTrade->GetID());
-                SellEverythingAmount += playerValue;
-                SellEverythingPrice += sellValue * Price;
+                if(playerValue > sellValue)
+                {
+                    int sellStacks = (int)(playerValue / sellValue);
+                    SellEverythingAmount += sellStacks * sellValue;
+                    SellEverythingPrice += sellStacks * Price;
+                    vpSellTrades.emplace_back(pTrade->GetID(), sellStacks);
+                }
 				continue;
 			}
 
@@ -560,11 +564,6 @@ bool CWarehouseManager::SellItem(CPlayer* pPlayer, CWarehouse* pWarehouse, int T
 	const auto* pCurrency = pWarehouse->GetCurrency();
 	auto* pPlayerCurrencyItem = pPlayer->GetItem(pCurrency->GetID());
 	const auto Price = pTrade->GetPrice();
-
-    if(ValueToSell == -1) // sell all
-    {
-        ValueToSell = pPlayer->GetItem(pItem->GetID())->GetValue();
-    }
 
 	const auto TotalValue = ValueToSell * pItem->GetValue();
 	const auto TotalProducts = ValueToSell * pTrade->GetProductsCost();
