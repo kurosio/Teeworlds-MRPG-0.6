@@ -405,7 +405,7 @@ bool CAccountManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, co
 	// select class
 	if(PPSTR(pCmd, "SELECT_CLASS") == 0)
 	{
-        const auto ProfessionID = GetIfExists<ProfessionIdentifier>(Extras, 0, ProfessionIdentifier::None);
+        const auto ProfessionID = static_cast<ProfessionIdentifier>(GetIfExists<int>(Extras, 0, NOPE));
 
 		// can't change profession in dungeon
 		if(GS()->IsWorldType(WorldType::Dungeon))
