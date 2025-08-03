@@ -420,9 +420,13 @@ void CWarehouseManager::ShowGroupedSelector(CPlayer* pPlayer, CWarehouse* pWareh
 			}
 		}
 
-        VGroup.AddOption("WAREHOUSE_SELL_ITEM_MULTIPLE", MakeAnyList(pWarehouse->GetID(), vpSellTrades), "[{}] Sell everything - {$} {}",
-                         SellEverythingAmount, SellEverythingPrice, pCurrency->GetName());
-        VGroup.AddEmptyline();
+        if(!IsBuyingAction)
+        {
+            VGroup.AddOption("WAREHOUSE_SELL_ITEM_MULTIPLE", MakeAnyList(pWarehouse->GetID(), vpSellTrades), "[{}] Sell everything - {$} {}",
+                             SellEverythingAmount, SellEverythingPrice, pCurrency->GetName());
+            VGroup.AddEmptyline();
+        }
+
         for (const auto &DelayedVote: DelayedVotes)
             DelayedVote();
 	}
