@@ -1,7 +1,9 @@
 #ifndef GAME_SERVER_CORE_SCENARIOS_SCENARIO_DUNGEON_H
 #define GAME_SERVER_CORE_SCENARIOS_SCENARIO_DUNGEON_H
 
-#include <game/server/core/tools/scenario_base.h>
+#include <scenarios/base/scenario_base.h>
+#include <scenarios/base/scenario_base_group.h>
+
 #include <game/server/core/entities/logic/base_door.h>
 
 class CDungeonScenario final : public GroupScenarioBase

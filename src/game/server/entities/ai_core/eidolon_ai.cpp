@@ -5,8 +5,8 @@
 #include <game/server/entities/character_bot.h>
 #include <game/server/gamecontext.h>
 
-#include <game/server/core/scenarios/scenario_eidolon.h>
-#include <game/server/core/tools/scenario_player_manager.h>
+#include <scenarios/impl/scenario_eidolon.h>
+#include <scenarios/managers/scenario_player_manager.h>
 
 CEidolonAI::CEidolonAI(CPlayerBot* pPlayer, CCharacterBotAI* pCharacter)
 	: CBaseAI(pPlayer, pCharacter) {}

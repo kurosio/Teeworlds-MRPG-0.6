@@ -7,7 +7,7 @@
 #include "worldmodes/dungeon/dungeon.h"
 
 #include "core/components/Bots/BotManager.h"
-#include "core/tools/scenario_player_manager.h"
+#include "core/scenarios/managers//scenario_player_manager.h"
 #include "core/tools/path_finder.h"
 
 MACRO_ALLOC_POOL_ID_IMPL(CPlayerBot, MAX_CLIENTS* ENGINE_MAX_WORLDS + MAX_CLIENTS)

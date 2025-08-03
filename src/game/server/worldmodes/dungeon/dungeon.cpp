@@ -11,8 +11,8 @@
 #include <game/server/core/components/accounts/account_manager.h>
 #include <game/server/core/components/duties/duties_manager.h>
 
-#include <game/server/core/scenarios/scenario_dungeon.h>
-#include <game/server/core/tools/scenario_group_manager.h>
+#include <scenarios/managers/scenario_group_manager.h>
+#include <scenarios/impl/scenario_dungeon.h>
 
 CGameControllerDungeon::CGameControllerDungeon(class CGS* pGS, CDungeonData* pDungeon) : IGameController(pGS)
 {

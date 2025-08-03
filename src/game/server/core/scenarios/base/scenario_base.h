@@ -1,6 +1,9 @@
 ﻿#ifndef GAME_SERVER_CORE_TOOLS_SCENARIO_BASE_H
 #define GAME_SERVER_CORE_TOOLS_SCENARIO_BASE_H
 
+#include <base/types.h>
+#include "component.h"
+
 #include <vector>
 #include <memory>
 #include <functional>
@@ -14,87 +17,6 @@ class CGS;
 class IServer;
 class CPlayer;
 class CCharacter;
-class ScenarioBase;
-using StepId = std::string;
-const StepId END_SCENARIO_STEP_ID = "::end";
-enum class ConditionPriority { CONDITION_AND_TIMER, CONDITION_OR_TIMER };
-enum class StepCompletionLogic { ALL_OF, ANY_OF, SEQUENTIAL };
-
-class IStepComponent
-{
-public:
-	virtual ~IStepComponent() = default;
-	virtual void OnStart() { }
-	virtual void OnActive() { }
-	virtual void OnEnd() { }
-	virtual bool IsFinished() const noexcept { return true; }
-	virtual std::optional<StepId> GetNextStepId() const { return std::nullopt; }
-};
-
-// universal component
-template<typename TBase, typename T>
-class Component : public IStepComponent
-{
-	TBase* m_pScenario {};
-	int m_StartDelayTick {};
-
-protected:
-	bool m_bIsFinished {};
-	std::optional<StepId> m_NextStepId {};
-	int m_DelayTick {};
-
-	CGS* GS() const { return m_pScenario->GS(); }
-	IServer* Server() const { return m_pScenario->Server(); }
-	TBase* Scenario() const { return m_pScenario; }
-
-	virtual void OnStartImpl() { }
-	virtual void OnActiveImpl() { }
-	virtual void OnEndImpl() { }
-	void Finish() { m_bIsFinished = true; }
-
-public:
-	Component() = default;
-	explicit Component(const nlohmann::json& j) { }
-
-	void InitBaseJsonField(const nlohmann::json& j)
-	{
-		if(j.contains("delay"))
-		{
-			m_StartDelayTick = j.value("delay", 0);
-			m_DelayTick = m_StartDelayTick;
-		}
-		if(j.contains("next_step_id"))
-			m_NextStepId = j.value("next_step_id", "");
-	}
-
-	void Init(TBase* pScenario)
-	{
-		m_pScenario = pScenario;
-	}
-
-	void OnStart() final
-	{
-		m_DelayTick = m_StartDelayTick;
-		m_bIsFinished = false;
-		OnStartImpl();
-	}
-
-	void OnActive() final
-	{
-		if(m_DelayTick)
-			m_DelayTick--;
-		if(!IsFinished())
-			OnActiveImpl();
-	}
-
-	void OnEnd() final
-	{
-		OnEndImpl();
-	}
-
-	bool IsFinished() const noexcept override { return m_DelayTick <= 0 && m_bIsFinished; }
-	std::optional<StepId> GetNextStepId() const override { return IsFinished() ? m_NextStepId : std::nullopt; }
-};
 
 class ScenarioBase
 {
@@ -185,44 +107,6 @@ public:
 
 	ComponentsList& GetComponents() { return m_ComponentsRegistered; }
 	bool IsRunning() const noexcept { return m_Running; }
-};
-
-class PlayerScenarioBase : public ScenarioBase
-{
-	friend class CScenarioPlayerManager;
-
-protected:
-	int m_ClientID {};
-	bool OnPauseConditions() override;
-	bool OnStopConditions() override;
-
-public:
-	explicit PlayerScenarioBase(int Flags = FLAG_NONE) : ScenarioBase(Flags) { }
-	CPlayer* GetPlayer() const;
-};
-
-class GroupScenarioBase : public ScenarioBase
-{
-	friend class CScenarioGroupManager;
-
-protected:
-	std::set<int> m_vParticipantIDs {};
-
-	bool OnPauseConditions() override;
-	bool OnStopConditions() override;
-	void OnScenarioEnd() override;
-	virtual void OnPlayerJoin(int ClientID) { }
-	virtual void OnPlayerLeave(int ClientID, bool scenarioEnding) { }
-
-public:
-	explicit GroupScenarioBase(int Flags = FLAG_NONE) : ScenarioBase(Flags) { }
-
-	bool HasPlayer(CPlayer* pPlayer) const;
-	std::vector<CPlayer*> GetPlayers() const;
-
-	virtual bool AddParticipant(int ClientID);
-	virtual bool RemoveParticipant(int ClientID);
-	std::set<int>& GetParticipants() { return m_vParticipantIDs; }
 };
 
 #endif

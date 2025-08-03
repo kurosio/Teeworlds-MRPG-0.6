@@ -3,6 +3,11 @@
 
 #include <any>
 
+using StepId = std::string;
+const StepId END_SCENARIO_STEP_ID = "::end";
+enum class ConditionPriority { CONDITION_AND_TIMER, CONDITION_OR_TIMER };
+enum class StepCompletionLogic { ALL_OF, ANY_OF, SEQUENTIAL };
+
 enum class TRISTATE
 {
 	NONE,

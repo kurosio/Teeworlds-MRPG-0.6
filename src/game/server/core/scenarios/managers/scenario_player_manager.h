@@ -1,7 +1,9 @@
 ﻿#ifndef GAME_SERVER_CORE_TOOLS_SCENARIO_PLAYER_MANAGER_H
 #define GAME_SERVER_CORE_TOOLS_SCENARIO_PLAYER_MANAGER_H
 
-#include "scenario_base.h"
+#include <scenarios/base/scenario_base.h>
+#include <scenarios/base/scenario_base_player.h>
+
 #include <unordered_map>
 #include <unordered_set>
 
