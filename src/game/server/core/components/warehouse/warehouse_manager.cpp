@@ -396,7 +396,7 @@ void CWarehouseManager::ShowGroupedSelector(CPlayer* pPlayer, CWarehouse* pWareh
                     VGroupRef.get().AddOption("WAREHOUSE_SELL_ITEM", MakeAnyList(pWarehouse->GetID(), pTrade->GetID()), "[{}] Sell {} x{} - {$} {} per unit",
                                      playerValue, pItemInfo->GetName(), sellValue, Price, pCurrency->GetName());
                 });
-                if(playerValue > sellValue)
+                if(playerValue >= sellValue)
                 {
                     int sellStacks = (int)(playerValue / sellValue);
                     SellEverythingAmount += sellStacks * sellValue;
