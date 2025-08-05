@@ -1,12 +1,11 @@
-﻿#include "scenario_base.h"
+﻿#include "component_registry.h"
+#include "scenario_base.h"
 
 #include <scenarios/base/scenario_base_player.h>
 #include <scenarios/base/scenario_base_group.h>
-
 #include <game/server/gamecontext.h>
 
 #include <ranges>
-#include <numeric>
 
 ScenarioBase::~ScenarioBase()
 {
@@ -184,7 +183,6 @@ bool ScenarioBase::CanConcludeCurrentStep() const
 void ScenarioBase::TryAdvanceSequentialComponent()
 {
 	auto& currentStep = m_mSteps.at(m_CurrentStepId);
-
 	if(currentStep.m_CurrentComponentIndex >= currentStep.m_vComponents.size())
 		return;
 
@@ -236,15 +234,30 @@ void ScenarioBase::AdvanceStep()
 	ExecuteStepStartActions();
 }
 
+CGS* ScenarioBase::GS() const { return m_pGS; }
+IServer* ScenarioBase::Server() const { return GS()->Server(); }
 
-CGS* ScenarioBase::GS() const
+void ScenarioBase::SetupStep(Step& NewStep, const nlohmann::json& StepJson)
 {
-	return m_pGS;
-}
+	if(const auto logic = StepJson.value("completion_logic", "all_of"); logic == "any_of")
+		NewStep.m_CompletionLogic = StepCompletionLogic::ANY_OF;
+	else if(logic == "sequential")
+		NewStep.m_CompletionLogic = StepCompletionLogic::SEQUENTIAL;
 
-IServer* ScenarioBase::Server() const
-{
-	return GS()->Server();
+	if(StepJson.contains("components"))
+	{
+		for(const auto& CompJson : StepJson["components"])
+		{
+			const auto Type = CompJson.value("type", "");
+			if(Type.empty())
+				continue;
+
+			if(auto pComponent = ComponentRegistry::GetInstance().Create(Type, CompJson, this))
+			{
+				NewStep.AddComponent(std::move(pComponent));
+			}
+		}
+	}
 }
 
 [[nodiscard]] ScenarioBase::Step& ScenarioBase::AddStep(StepId id, std::string MsgInfo, int delayTick)

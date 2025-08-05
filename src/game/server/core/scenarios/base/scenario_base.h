@@ -1,22 +1,12 @@
-﻿#ifndef GAME_SERVER_CORE_TOOLS_SCENARIO_BASE_H
-#define GAME_SERVER_CORE_TOOLS_SCENARIO_BASE_H
+﻿#ifndef GAME_SERVER_CORE_SCENARIOS_BASE_SCENARIO_BASE_H
+#define GAME_SERVER_CORE_SCENARIOS_BASE_SCENARIO_BASE_H
 
 #include <base/types.h>
 #include "component.h"
 
-#include <vector>
-#include <memory>
-#include <functional>
-#include <set>
-#include <string>
-#include <string_view>
-#include <map>
-#include <optional>
-
 class CGS;
 class IServer;
 class CPlayer;
-class CCharacter;
 
 class ScenarioBase
 {
@@ -49,8 +39,6 @@ protected:
 		}
 	};
 
-	using ComponentsList = std::map<std::string, std::function<std::unique_ptr<IStepComponent>(const nlohmann::json&)>, std::less<>>;
-	ComponentsList m_ComponentsRegistered {};
 	int m_ScenarioID {};
 	std::map<StepId, Step, std::less<>> m_mSteps {};
 	std::vector<StepId> m_vStepOrder {};
@@ -60,9 +48,9 @@ protected:
 	bool m_Running {};
 	int m_Flags {};
 
-	virtual void OnSetupScenario() { }
-	virtual void OnScenarioStart() { }
-	virtual void OnScenarioEnd() { }
+	virtual void OnSetupScenario() {}
+	virtual void OnScenarioStart() {}
+	virtual void OnScenarioEnd() {}
 	virtual bool OnPauseConditions() { return false; }
 	virtual bool OnStopConditions() { return false; }
 
@@ -72,6 +60,7 @@ protected:
 	void ExecuteStepActiveActions();
 	void ExecuteStepEndActions();
 	void TryAdvanceSequentialComponent();
+	void SetupStep(Step& NewStep, const nlohmann::json& StepJson);
 
 	[[nodiscard]] Step& AddStep(StepId id, std::string MsgInfo = "", int delayTick = -1);
 
@@ -89,23 +78,6 @@ public:
 	explicit ScenarioBase(int Flags = FLAG_NONE) noexcept : m_Flags(Flags) { }
 	virtual ~ScenarioBase();
 
-	template<typename TBase, typename T>
-	void RegisterComponent(std::string_view name)
-	{
-		static_assert(std::is_base_of_v<ScenarioBase, TBase>, "TBase must derive from ScenarioBase");
-		static_assert(std::is_base_of_v<IStepComponent, T>, "T must derive from IStepComponent");
-
-		m_ComponentsRegistered.emplace(name, [this](const nlohmann::json& j) -> std::unique_ptr<IStepComponent>
-		{
-			auto pPtr = std::make_unique<T>(j);
-			if(auto* pScenario = dynamic_cast<TBase*>(this))
-				pPtr->Init(pScenario);
-
-			return pPtr;
-		});
-	}
-
-	ComponentsList& GetComponents() { return m_ComponentsRegistered; }
 	bool IsRunning() const noexcept { return m_Running; }
 };
 

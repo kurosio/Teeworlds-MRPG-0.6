@@ -5,16 +5,16 @@
 
 bool PlayerScenarioBase::OnPauseConditions()
 {
-    const auto* p = GetPlayer();
-    return !p || !p->GetCharacter();
+	const auto* p = GetPlayer();
+	return !p || !p->GetCharacter();
 }
 
 bool PlayerScenarioBase::OnStopConditions()
 {
-    return !GetPlayer();
+	return !GetPlayer();
 }
 
 CPlayer* PlayerScenarioBase::GetPlayer() const
 {
-    return GS()->GetPlayer(m_ClientID);
+	return GS()->GetPlayer(m_ClientID);
 }

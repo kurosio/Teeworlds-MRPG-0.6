@@ -1,6 +1,9 @@
 #include "scenario_dungeon.h"
 #include <game/server/gamecontext.h>
 
+#include "components/default.h"
+#include <game/server/core/scenarios/base/component_registry.h>
+
 class DefeatMobsComponent final : public Component<CDungeonScenario, DefeatMobsComponent>, public IEventListener
 {
 	enum class EMode { Annihilation, Wave, Survival };
@@ -163,62 +166,7 @@ private:
 		m_ListenerScope.Unregister();
 	}
 };
-
-class FollowCameraComponent final : public Component<CDungeonScenario, FollowCameraComponent>
-{
-	vec2 m_Pos {};
-	bool m_Smooth {};
-
-public:
-	explicit FollowCameraComponent(const nlohmann::json& j)
-	{
-		InitBaseJsonField(j);
-		m_Pos = j.value("position", vec2());
-		m_Smooth = j.value("smooth", true);
-	}
-
-	void OnActiveImpl() override
-	{
-		if(!m_DelayTick)
-		{
-			Finish();
-			return;
-		}
-
-		for(auto* pPlayer : Scenario()->GetPlayers())
-			pPlayer->LockedView().ViewLock(m_Pos, m_Smooth);
-	}
-};
-
-class MessageComponent final : public Component<GroupScenarioBase, MessageComponent>, public IEventListener
-{
-	std::string m_Broadcast {};
-	std::string m_Chat {};
-
-public:
-	explicit MessageComponent(const nlohmann::json& j)
-	{
-		InitBaseJsonField(j);
-		m_Broadcast = j.value("broadcast", "");
-		m_Chat = j.value("chat", "");
-		if(j.contains("full"))
-			m_Broadcast = m_Chat = j.value("full", "");
-	}
-
-private:
-	void OnStartImpl() override
-	{
-		for(auto* pPlayer : Scenario()->GetPlayers())
-		{
-			if(!m_Chat.empty())
-				GS()->Chat(pPlayer->GetCID(), m_Chat.c_str());
-			if(!m_Broadcast.empty())
-				GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::TitleInformation, m_DelayTick ? m_DelayTick : 100, m_Broadcast.c_str());
-		}
-
-		Finish();
-	}
-};
+static ComponentRegistrar<DefeatMobsComponent> registrar_defeat_mobs("defeat_mobs");
 
 class DoorControlComponent final : public Component<CDungeonScenario, DoorControlComponent>
 {
@@ -254,6 +202,7 @@ private:
 		Finish();
 	}
 };
+static ComponentRegistrar<DoorControlComponent> registrar_door_control("door_control");
 
 class UseChatComponent final : public Component<CDungeonScenario, UseChatComponent>, public IEventListener
 {
@@ -296,68 +245,7 @@ private:
 		m_ListenerScope.Unregister();
 	}
 };
-
-
-struct WaitComponent final : public Component<GroupScenarioBase, WaitComponent>
-{
-	int m_Duration;
-	int m_TargetTick = 0;
-
-	explicit WaitComponent(const nlohmann::json& j)
-	{
-		InitBaseJsonField(j);
-		m_Duration = j.value("duration", 0);
-	}
-
-	void OnStartImpl() override
-	{
-		m_TargetTick = Server()->Tick() + Server()->TickSpeed() * m_Duration;
-	}
-
-	void OnActiveImpl() override
-	{
-		if(m_Duration <= 0 || Server()->Tick() >= m_TargetTick)
-		{
-			Finish();
-		}
-	}
-};
-
-struct MovementCondition final : public Component<GroupScenarioBase, MovementCondition>
-{
-	vec2 m_Position;
-	bool m_EntireGroup;
-
-	explicit MovementCondition(const nlohmann::json& j)
-	{
-		InitBaseJsonField(j);
-		m_Position = j.value("position", vec2());
-		m_EntireGroup = j.value("entire_group", false);
-	}
-
-private:
-	void OnActiveImpl() override
-	{
-		if(Server()->Tick() % (Server()->TickSpeed() / 2) == 0)
-			GS()->CreateHammerHit(m_Position);
-
-		const auto& vpPlayers = Scenario()->GetPlayers();
-		auto IsInsideFunc = [&](const CPlayer* pPlayer)
-		{
-			const auto* pChr = pPlayer->GetCharacter();
-			return pChr && distance(pChr->GetPos(), m_Position) < 128.f;
-		};
-
-		const bool ConditionMet = m_EntireGroup ?
-			(!vpPlayers.empty() && std::all_of(vpPlayers.begin(), vpPlayers.end(), IsInsideFunc)) :
-			std::any_of(vpPlayers.begin(), vpPlayers.end(), IsInsideFunc);
-		if(ConditionMet)
-		{
-			Finish();
-		}
-	}
-};
-
+static ComponentRegistrar<UseChatComponent> registrar_use_chat("use_chat_code");
 
 struct ActivatePointComponent final : public Component<GroupScenarioBase, ActivatePointComponent>
 {
@@ -461,19 +349,10 @@ private:
 			BroadcastCooldownProgress();
 	}
 };
+static ComponentRegistrar<ActivatePointComponent> registrar_activate_point("activate_point");
 
 CDungeonScenario::CDungeonScenario(const nlohmann::json& jsonData) : GroupScenarioBase(), m_JsonData(jsonData)
 {
-	// register components
-	RegisterComponent<CDungeonScenario, DefeatMobsComponent>("defeat_mobs");
-	RegisterComponent<CDungeonScenario, FollowCameraComponent>("follow_camera");
-	RegisterComponent<CDungeonScenario, DoorControlComponent>("door_control");
-	RegisterComponent<CDungeonScenario, UseChatComponent>("use_chat_code");
-	RegisterComponent<CDungeonScenario, MessageComponent>("message");
-	RegisterComponent<CDungeonScenario, MessageComponent>("broadcast");
-	RegisterComponent<CDungeonScenario, WaitComponent>("wait");
-	RegisterComponent<CDungeonScenario, ActivatePointComponent>("activate_point");
-	RegisterComponent<CDungeonScenario, MovementCondition>("condition_movement");
 }
 
 void CDungeonScenario::OnSetupScenario()
@@ -497,22 +376,24 @@ void CDungeonScenario::ProcessStep(const nlohmann::json& stepJson)
 	if(id.empty() || !stepJson.contains("components"))
 		return;
 
-	// add new step
-	auto& newStep = AddStep(id, stepJson.value("msg_info", ""), stepJson.value("delay", -1));
+	auto& newStep = AddStep(id,
+		stepJson.value("msg_info", ""),
+		stepJson.value("delay", -1));
+
 	if(const auto logic = stepJson.value("completion_logic", "all_of"); logic == "any_of")
 		newStep.m_CompletionLogic = StepCompletionLogic::ANY_OF;
 	else if(logic == "sequential")
 		newStep.m_CompletionLogic = StepCompletionLogic::SEQUENTIAL;
 
-	// add components
 	for(const auto& compJson : stepJson["components"])
 	{
 		const auto type = compJson.value("type", "");
 		if(type.empty())
 			continue;
 
-		auto& componentsList = GetComponents();
-		if(auto it = componentsList.find(type); it != componentsList.end())
-			newStep.AddComponent(it->second(compJson));
+		if(auto pComponent = ComponentRegistry::GetInstance().Create(type, compJson, this))
+		{
+			newStep.AddComponent(std::move(pComponent));
+		}
 	}
 }
