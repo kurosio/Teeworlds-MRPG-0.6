@@ -8,6 +8,11 @@
 		"file": "ru",
 		"name": "Русский",
 		"parent": "en"
+	},
+	{
+		"file": "cn",
+		"name": "中文",
+		"parent": "en"
 	}
 ]
 }
