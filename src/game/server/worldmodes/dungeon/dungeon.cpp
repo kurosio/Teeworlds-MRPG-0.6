@@ -213,6 +213,10 @@ void CGameControllerDungeon::OnCharacterDeath(CPlayer* pVictim, CPlayer* pKiller
 	{
 		auto* pVictimBot = static_cast<CPlayerBot*>(pVictim);
 
+		// dissable allowed spawn after die (for now) TODO: remove after finish scenario
+		if(m_pDungeon->GetState() >= CDungeonData::STATE_STARTED)
+			pVictimBot->SetAllowedSpawn(false);
+
 		// update progress
 		if(pKiller->GetCID() != pVictim->GetCID() && pVictimBot->GetBotType() == TYPE_BOT_MOB)
 		{
