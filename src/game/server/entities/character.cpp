@@ -1901,6 +1901,10 @@ bool CCharacter::IsAllowedPVP(int FromCID) const
 			|| GS()->Collision()->GetCollisionFlagsAt(pFrom->GetCharacter()->m_Core.m_Pos) & CCollision::COLFLAG_SAFE)
 			return false;
 
+		// skip damage intersect door
+		if(GS()->Collision()->IntersectLineDoor(pFrom->GetCharacter()->m_Core.m_Pos, m_Core.m_Pos))
+			return false;
+
 		if(pFrom->IsBot())
 		{
 			// can damage bot

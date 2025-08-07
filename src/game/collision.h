@@ -136,6 +136,7 @@ public:
 	void SetDoorCollisionAt(float x, float y, int Type, int Flags, int Number = TEAM_ALL);
 	void SetDoorFromToCollisionAt(vec2 From, vec2 To, int Type, int Flags, int Number = TEAM_ALL);
 	void GetDoorTile(int Index, CDoorTile* pDoorTile) const;
+	bool IntersectLineDoor(vec2 From, vec2 To) const;
 
 	// other
 	std::map<int, TextZoneDetail>& GetTextZones() { return m_vZoneTextDetail; }

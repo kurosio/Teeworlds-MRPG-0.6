@@ -645,6 +645,48 @@ void CCollision::GetDoorTile(int Index, CDoorTile* pDoorTile) const
 	*pDoorTile = m_pDoor[Index];
 }
 
+bool CCollision::IntersectLineDoor(vec2 From, vec2 To) const
+{
+	if(!m_pDoor)
+		return false;
+
+	int x0 = round_to_int(From.x) / 32;
+	int y0 = round_to_int(From.y) / 32;
+	const int x1 = round_to_int(To.x) / 32;
+	const int y1 = round_to_int(To.y) / 32;
+	const int dx = abs(x1 - x0);
+	const int sx = x0 < x1 ? 1 : -1;
+	const int dy = -abs(y1 - y0);
+	const int sy = y0 < y1 ? 1 : -1;
+	int err = dx + dy;
+
+	for(;;)
+	{
+		if(x0 >= 0 && x0 < m_Width && y0 >= 0 && y0 < m_Height)
+		{
+			if(m_pDoor[y0 * m_Width + x0].m_Index != 0)
+				return true;
+		}
+
+		if(x0 == x1 && y0 == y1)
+			break;
+
+		const int e2 = 2 * err;
+		if(e2 >= dy)
+		{
+			err += dy;
+			x0 += sx;
+		}
+		if(e2 <= dx)
+		{
+			err += dx;
+			y0 += sy;
+		}
+	}
+
+	return false;
+}
+
 std::optional<vec2> CCollision::TryGetTeleportOut(vec2 currentPos)
 {
 	if(!m_pTele)

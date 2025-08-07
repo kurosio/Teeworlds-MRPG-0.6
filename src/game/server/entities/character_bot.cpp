@@ -223,6 +223,10 @@ bool CCharacterBotAI::IsAllowedPVP(int FromID) const
 		|| GS()->Collision()->GetCollisionFlagsAt(pFromChar->GetPos()) & CCollision::COLFLAG_SAFE)
 		return false;
 
+	// skip damage intersect door
+	if(GS()->Collision()->IntersectLineDoor(pFromChar->m_Core.m_Pos, m_Core.m_Pos))
+		return false;
+
 	return AI()->CanDamage(pFrom);
 }
 
