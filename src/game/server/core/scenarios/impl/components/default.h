@@ -70,9 +70,6 @@ private:
 	{
 		for(const auto* pPlayer : GetPlayers())
 		{
-			if(!pPlayer)
-				continue;
-
 			if(!m_Chat.empty())
 			{
 				GS()->Chat(pPlayer->GetCID(), m_Chat.c_str());
@@ -127,19 +124,13 @@ private:
 		}
 
 		for(auto* pPlayer : GetPlayers())
-		{
-			if(pPlayer)
-				pPlayer->LockedView().ViewLock(m_Pos, m_Smooth);
-		}
+			pPlayer->LockedView().ViewLock(m_Pos, m_Smooth);
 	}
 
 	void OnEndImpl() override
 	{
 		for(auto* pPlayer : GetPlayers())
-		{
-			if(pPlayer)
-				pPlayer->LockedView().Reset();
-		}
+			pPlayer->LockedView().Reset();
 	}
 };
 
@@ -166,18 +157,15 @@ private:
 	void OnActiveImpl() override
 	{
 		const auto vpPlayers = GetPlayers();
-		// Wait until all players have spawned characters
 		for(const auto* pPlayer : vpPlayers)
 		{
 			if(!pPlayer || !pPlayer->GetCharacter())
-				return; // Exit and try again on the next tick
+				return;
 		}
 
-		// All players are ready, perform teleport
+		// all players are ready, perform teleport
 		for(auto* pPlayer : vpPlayers)
-		{
 			pPlayer->GetCharacter()->ChangePosition(m_NewPos);
-		}
 
 		Finish();
 	}
@@ -253,9 +241,6 @@ private:
 
 		auto IsInsideFunc = [&](const CPlayer* pPlayer)
 		{
-			if(!pPlayer)
-				return false;
-
 			const auto* pChr = pPlayer->GetCharacter();
 			return pChr && distance(pChr->GetPos(), m_Position) < 128.f;
 		};
@@ -269,11 +254,8 @@ private:
 			{
 				for(const auto* pPlayer : vpPlayers)
 				{
-					if(pPlayer)
-					{
-						GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::TitleInformation, Server()->TickSpeed(),
-							"Move to the designated area! ({}/{})", NumPlayersInZone, TotalPlayers);
-					}
+					GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::TitleInformation, Server()->TickSpeed(),
+						"Move to the designated area! ({}/{})", NumPlayersInZone, TotalPlayers);
 				}
 			}
 
