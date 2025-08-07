@@ -543,16 +543,23 @@ void CAccountData::AutoEquipSlots(bool OnlyEmptySlots)
 		ItemType::EquipLaser
 	};
 
+	static constexpr std::array<ItemType, 3> DisabledAutoEquipTypes =
+	{
+		ItemType::EquipPotionHeal,
+		ItemType::EquipPotionMana,
+		ItemType::EquipEidolon,
+	};
+
 	// lambda tool
 	auto autoEquipSlotsImpl = [&](const auto& equippedSlots)
 	{
 		for(const auto& [Type, EquippedItemIdOpt] : equippedSlots.getSlots())
 		{
-			// is type potions group disable auto equip
-			if(Type == ItemType::EquipPotionHeal || Type == ItemType::EquipPotionMana)
+			// skip disabled slots
+			if(std::ranges::find(DisabledAutoEquipTypes, Type) != DisabledAutoEquipTypes.end())
 				continue;
 
-			// is only empty slot and weapons always empty
+			// skip only empty slots with non empty
 			if(EquippedItemIdOpt && (OnlyEmptySlots || std::ranges::find(OnlyEmptySlotTypes, Type) != OnlyEmptySlotTypes.end()))
 				continue;
 
