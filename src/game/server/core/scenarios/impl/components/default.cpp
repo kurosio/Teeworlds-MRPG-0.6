@@ -3,6 +3,7 @@
 #include <game/server/core/scenarios/base/component_registry.h>
 
 // universal components
+template struct ComponentRegistrar<ScenarioWaitComponent>;
 template struct ComponentRegistrar<ScenarioMessageComponent>;
 template struct ComponentRegistrar<ScenarioFollowCameraComponent>;
 template struct ComponentRegistrar<ScenarioMovementConditionComponent>;
