@@ -4,6 +4,8 @@
 #include <engine/server.h>
 #include <engine/storage.h>
 
+#include <components/tunes/tune_zone_manager.h>
+
 CMapDetail::~CMapDetail()
 {
 	Unload();
@@ -14,6 +16,11 @@ bool CMapDetail::Load(IStorageEngine* pStorage)
 {
 	char aBuf[IO_MAX_PATH_LENGTH];
 	str_format(aBuf, sizeof(aBuf), "maps/%s", m_pWorldDetail->GetPath());
+
+	const auto NewMapPath = CTuneZoneManager::GetInstance().BakeZonesIntoMap(aBuf, pStorage);
+	if (NewMapPath.has_value()) {
+		str_copy(aBuf, NewMapPath->data());
+	}
 
 	if(!m_pMap->Load(aBuf))
 		return false;
@@ -26,6 +33,8 @@ bool CMapDetail::Load(IStorageEngine* pStorage)
 		m_aSha256 = m_pMap->Sha256();
 		m_aCrc = m_pMap->Crc();
 	}
+
+	CTuneZoneManager::GetInstance().DeleteTempfile(pStorage);
 
 	return true;
 }

@@ -7,15 +7,8 @@
 #include "tools/event_listener.h"
 
 #include <any>
-
-// forward declarations
-class CGS;
-class IServer;
-class CMmoController;
-class CPlayer;
-class CCharacter;
-class CMotdPlayerData;
-class CVotePlayerData;
+#include <vector>
+#include <string>
 
 using namespace sqlstr;
 
@@ -46,12 +39,12 @@ public:
 	virtual ~MmoComponent() = default;
 
 protected:
-	friend CMmoController;
-	CGS* m_GameServer{};
-	IServer* m_pServer{};
-	IConsole* m_pConsole{};
-	IStorageEngine* m_pStorage{};
-	CMmoController* m_Core{};
+	friend class CMmoController;
+	class CGS* m_GameServer{};
+	class IServer* m_pServer{};
+	class IConsole* m_pConsole{};
+	class IStorageEngine* m_pStorage{};
+	class CMmoController* m_Core{};
 
 	CGS* GS() const { return m_GameServer; }
 	IServer* Server() const { return m_pServer; }
@@ -161,7 +154,7 @@ private:
 	 *
 	 * @return True if the motd command was handled, false otherwise.
 	 */
-	virtual bool OnPlayerMotdCommand(CPlayer* pPlayer, CMotdPlayerData* pMotdData, const char* pCmd) { return false; }
+	virtual bool OnPlayerMotdCommand(CPlayer* pPlayer, class CMotdPlayerData* pMotdData, const char* pCmd) { return false; }
 
 	/**
 	 * @brief Called when a player experiences a time period.

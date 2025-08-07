@@ -1,8 +1,7 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#ifndef GAME_TUNING_H
-#define GAME_TUNING_H
-#undef GAME_TUNING_H // this file will be included several times
+
+// this file will be included several times
 
 // physics tuning
 MACRO_TUNING_PARAM(GroundControlSpeed, ground_control_speed, 10.0f)
@@ -60,4 +59,6 @@ MACRO_TUNING_PARAM(LaserFireDelay, laser_fire_delay, 800)
 MACRO_TUNING_PARAM(NinjaFireDelay, ninja_fire_delay, 800)
 MACRO_TUNING_PARAM(HammerHitFireDelay, hammer_hit_fire_delay, 320)
 
-#endif
+MACRO_TUNING_PARAM(GroundElasticityX, ground_elasticity_x, 0)
+MACRO_TUNING_PARAM(GroundElasticityY, ground_elasticity_y, 0)
+

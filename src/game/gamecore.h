@@ -59,6 +59,7 @@ public:
 #include "tuning.h"
 #undef MACRO_TUNING_PARAM
 
+	static const char* Name(int Index) { return ms_apNames[Index]; }
 	static int Num()
 	{
 		return sizeof(CTuningParams) / sizeof(int);
@@ -67,6 +68,9 @@ public:
 	bool Set(const char* pName, float Value);
 	bool Get(int Index, float* pValue) const;
 	bool Get(const char* pName, float* pValue) const;
+
+	std::vector<std::pair<int, float>> GetDiff(CTuningParams *pOther) const;
+	std::vector<std::pair<int, float>> GetDiff() const;
 };
 
 inline void StrToInts(int* pInts, int Num, const char* pStr)

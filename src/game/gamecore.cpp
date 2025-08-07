@@ -45,6 +45,25 @@ bool CTuningParams::Get(const char* pName, float* pValue) const
 	return false;
 }
 
+std::vector<std::pair<int, float>> CTuningParams::GetDiff(CTuningParams *pOther) const {
+	int *OtherRaw = (int*)pOther;
+	int *ThisRaw = (int*)this;
+
+	std::vector<std::pair<int, float>> vDiff;
+
+	for (int i = 0; i < Num(); ++i) {
+		if (OtherRaw[i] != ThisRaw[i])
+			vDiff.emplace_back(i, ThisRaw[i]);
+	}
+
+	return vDiff;
+}
+
+std::vector<std::pair<int, float>> CTuningParams::GetDiff() const {
+	CTuningParams Default;
+	return GetDiff(&Default);
+}
+
 float HermiteBasis1(float v)
 {
 	return 2 * v * v * v - 3 * v * v + 1;
