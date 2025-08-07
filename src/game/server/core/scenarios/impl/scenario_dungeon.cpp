@@ -43,6 +43,8 @@ public:
 		m_ListenerScope.Init(this, IEventListener::CharacterDeath);
 	}
 
+    DECLARE_COMPONENT_NAME("defeat_mobs")
+
 private:
 	void Reset()
 	{
@@ -166,7 +168,7 @@ private:
 		m_ListenerScope.Unregister();
 	}
 };
-static ComponentRegistrar<DefeatMobsComponent> registrar_defeat_mobs("defeat_mobs");
+template struct ComponentRegistrar<DefeatMobsComponent>;
 
 class DoorControlComponent final : public Component<CDungeonScenario, DoorControlComponent>
 {
@@ -185,6 +187,8 @@ public:
 		m_Action = actionStr == "remove" ? DoorAction::Remove : DoorAction::Create;
 	}
 
+    DECLARE_COMPONENT_NAME("door_control")
+
 private:
 	void OnStartImpl() override
 	{
@@ -202,7 +206,7 @@ private:
 		Finish();
 	}
 };
-static ComponentRegistrar<DoorControlComponent> registrar_door_control("door_control");
+template struct ComponentRegistrar<DoorControlComponent>;
 
 class UseChatComponent final : public Component<CDungeonScenario, UseChatComponent>, public IEventListener
 {
@@ -218,6 +222,8 @@ public:
 		m_Hidden = j.value("hidden", true);
 		m_ListenerScope.Init(this, IEventListener::PlayerChat);
 	}
+
+    DECLARE_COMPONENT_NAME("use_chat_code")
 
 private:
 	void OnStartImpl() override
@@ -245,7 +251,7 @@ private:
 		m_ListenerScope.Unregister();
 	}
 };
-static ComponentRegistrar<UseChatComponent> registrar_use_chat("use_chat_code");
+template struct ComponentRegistrar<UseChatComponent>;
 
 struct ActivatePointComponent final : public Component<GroupScenarioBase, ActivatePointComponent>
 {
@@ -256,6 +262,7 @@ struct ActivatePointComponent final : public Component<GroupScenarioBase, Activa
 	int m_ActivationTick {};
 	std::string m_Action {};
 
+public:
 	explicit ActivatePointComponent(const nlohmann::json& j)
 	{
 		InitBaseJsonField(j);
@@ -264,6 +271,8 @@ struct ActivatePointComponent final : public Component<GroupScenarioBase, Activa
 		m_Duration = j.value("duration", 0);
 		m_Action = j.value("action_text", "Activating Point");
 	}
+
+    DECLARE_COMPONENT_NAME("activate_point")
 
 private:
 	template<typename... Args>
@@ -349,7 +358,7 @@ private:
 			BroadcastCooldownProgress();
 	}
 };
-static ComponentRegistrar<ActivatePointComponent> registrar_activate_point("activate_point");
+template struct ComponentRegistrar<ActivatePointComponent>;
 
 CDungeonScenario::CDungeonScenario(const nlohmann::json& jsonData) : GroupScenarioBase(), m_JsonData(jsonData)
 {

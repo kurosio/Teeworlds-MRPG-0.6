@@ -52,13 +52,14 @@ private:
 };
 
 template<IsComponent T>
-class ComponentRegistrar
+struct ComponentRegistrar
 {
 public:
-	explicit ComponentRegistrar(std::string_view name)
-	{
-		ComponentRegistry::GetInstance().Register<T>(name);
-	}
+    // executed at initialization
+    static inline const bool registered = [] {
+        ComponentRegistry::GetInstance().Register<T>(T::Name);
+        return true;
+    }();
 };
 
 #endif

@@ -65,6 +65,8 @@ public:
 			m_Chat = j.value("text", "");
 	}
 
+    DECLARE_COMPONENT_NAME("message")
+
 private:
 	void OnStartImpl() override
 	{
@@ -113,6 +115,8 @@ public:
 		m_Smooth = j.value("smooth", true);
 	}
 
+    DECLARE_COMPONENT_NAME("follow_camera")
+
 private:
 	void OnActiveImpl() override
 	{
@@ -153,6 +157,8 @@ public:
 		m_NewPos = j.value("position", vec2());
 	}
 
+    DECLARE_COMPONENT_NAME("teleport")
+
 private:
 	void OnActiveImpl() override
 	{
@@ -192,6 +198,8 @@ public:
 		m_Duration = j.value("duration", 0);
 	}
 
+    DECLARE_COMPONENT_NAME("wait")
+
 	void OnStartImpl() override
 	{
 		m_TargetTick = Server()->Tick() + Server()->TickSpeed() * m_Duration;
@@ -228,6 +236,8 @@ public:
 		m_Position = j.value("position", vec2());
 		m_EntireGroup = j.value("entire_group", false);
 	}
+
+    DECLARE_COMPONENT_NAME("condition_movement")
 
 private:
 	void OnActiveImpl() override

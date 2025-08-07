@@ -9,6 +9,9 @@ class ScenarioBase;
 class CGS;
 class IServer;
 
+#define DECLARE_COMPONENT_NAME(str) \
+    static constexpr std::string_view Name = str;
+
 class IStepComponent
 {
 public:
