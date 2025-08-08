@@ -5,6 +5,35 @@
 #include <game/gamecore.h>
 #include <game/mapitems.h>
 
+char* SerializeLines(const std::vector<std::string>& vLines, size_t& FinalSize)
+{
+	FinalSize = 0;
+	if(vLines.empty())
+	{
+		return nullptr;
+	}
+
+	for(const auto& Line : vLines)
+	{
+		FinalSize += Line.length() + 1;
+	}
+
+	char* pBuffer = (char*)malloc(FinalSize);
+	if(!pBuffer)
+	{
+		return nullptr;
+	}
+
+	int Offset = 0;
+	for(const auto& Line : vLines)
+	{
+		int Length = Line.length() + 1;
+		mem_copy(pBuffer + Offset, Line.c_str(), Length);
+		Offset += Length;
+	}
+	return pBuffer;
+}
+
 CTuneZoneManager& CTuneZoneManager::GetInstance()
 {
     static CTuneZoneManager instance;
@@ -70,22 +99,37 @@ std::optional<std::string> CTuneZoneManager::BakeZonesIntoMap(const char* pMapNa
 		return std::nullopt;
 	}
 
-    std::vector<std::string> vLines;
-    int TotalLength = 0;
-    for (auto const& [ZoneType, Zone] : m_Zones) {
-        for (auto const& [TuneIndex, TuneValue] : Zone.GetDiff()) {
-            auto Line = fmt_default("tune_zone {} {} {}", GetZoneID(ZoneType), CTuningParams::Name(TuneIndex), TuneValue);
-            vLines.emplace_back(Line);
-            TotalLength += Line.length() + 1;
-        }
-    }
+	std::vector<std::string> vNewCommands;
+	for(auto const& [ZoneType, Zone] : m_Zones)
+	{
+		for(auto const& [TuneIndex, TuneValue] : Zone.GetDiff())
+			vNewCommands.emplace_back(fmt_default("tune_zone {} {} {}", GetZoneID(ZoneType), CTuningParams::Name(TuneIndex), TuneValue));
+	}
 
-    char *pSettings = (char *)malloc(maximum(1, TotalLength));
+	if(vNewCommands.empty())
+		return std::nullopt;
+
+	std::vector<std::string> vLinesToWrite;
+	vLinesToWrite.emplace_back("");
+	vLinesToWrite.emplace_back("# Tune zones generated");
+	vLinesToWrite.insert(vLinesToWrite.end(), vNewCommands.begin(), vNewCommands.end());
+
+	size_t TotalLength = 0;
+	for(const auto& Line : vLinesToWrite)
+		TotalLength += Line.length() + 1;
+
+	char* pSettings = (char*)malloc(TotalLength);
+	if(!pSettings)
+	{
+		dbg_msg("tune_baker", "Failed to allocate memory for settings");
+		return std::nullopt;
+	}
+
 	int Offset = 0;
-	for(auto Line : vLines)
+	for(const auto& Line : vLinesToWrite)
 	{
 		int Length = Line.length() + 1;
-		mem_copy(pSettings + Offset, Line.data(), Length);
+		mem_copy(pSettings + Offset, Line.c_str(), Length);
 		Offset += Length;
 	}
 
@@ -97,7 +141,7 @@ std::optional<std::string> CTuneZoneManager::BakeZonesIntoMap(const char* pMapNa
 	{
 		int TypeId;
 		int ItemId;
-		void *pData = Reader.GetItem(i, &TypeId, &ItemId);
+		void* pData = Reader.GetItem(i, &TypeId, &ItemId);
 		int Size = Reader.GetItemSize(i);
 		CMapItemInfoSettings MapInfo;
 		if(TypeId == MAPITEMTYPE_INFO && ItemId == 0)
@@ -105,18 +149,33 @@ std::optional<std::string> CTuneZoneManager::BakeZonesIntoMap(const char* pMapNa
 			FoundInfo = true;
 			if(Size >= (int)sizeof(CMapItemInfoSettings))
 			{
-				CMapItemInfoSettings *pInfo = (CMapItemInfoSettings *)pData;
+				CMapItemInfoSettings* pInfo = (CMapItemInfoSettings*)pData;
 				if(pInfo->m_Settings > -1)
 				{
 					SettingsIndex = pInfo->m_Settings;
-					char *pMapSettings = (char *)Reader.GetData(SettingsIndex);
-					int DataSize = Reader.GetDataSize(SettingsIndex);
-					if(DataSize == TotalLength && mem_comp(pSettings, pMapSettings, DataSize) == 0)
+					const char* pMapSettings = (const char*)Reader.GetData(SettingsIndex);
+					int OldDataSize = Reader.GetDataSize(SettingsIndex);
+					if(OldDataSize >= TotalLength && mem_comp(pSettings, pMapSettings + (OldDataSize - TotalLength), TotalLength) == 0)
 					{
 						// Configs coincide, no need to update map.
 						free(pSettings);
 						return std::nullopt;
 					}
+
+					size_t NewTotalLength = OldDataSize + TotalLength;
+					char* pCombinedSettings = (char*)malloc(NewTotalLength);
+					if(!pCombinedSettings)
+					{
+						dbg_msg("tune_baker", "Failed to allocate memory for combined settings");
+						free(pSettings);
+						return std::nullopt;
+					}
+					mem_copy(pCombinedSettings, pMapSettings, OldDataSize);
+					mem_copy(pCombinedSettings + OldDataSize, pSettings, TotalLength);
+					free(pSettings);
+
+					pSettings = pCombinedSettings;
+					TotalLength = NewTotalLength;
 					Reader.UnloadData(pInfo->m_Settings);
 				}
 				else
@@ -129,7 +188,7 @@ std::optional<std::string> CTuneZoneManager::BakeZonesIntoMap(const char* pMapNa
 			}
 			else
 			{
-				*(CMapItemInfo *)&MapInfo = *(CMapItemInfo *)pData;
+				*(CMapItemInfo*)&MapInfo = *(CMapItemInfo*)pData;
 				MapInfo.m_Settings = SettingsIndex;
 				pData = &MapInfo;
 				Size = sizeof(MapInfo);
@@ -157,7 +216,8 @@ std::optional<std::string> CTuneZoneManager::BakeZonesIntoMap(const char* pMapNa
 			Writer.AddData(TotalLength, pSettings);
 			continue;
 		}
-		const void *pData = Reader.GetData(i);
+
+		const void* pData = Reader.GetData(i);
 		int Size = Reader.GetDataSize(i);
 		Writer.AddData(Size, pData);
 		Reader.UnloadData(i);
@@ -171,6 +231,7 @@ std::optional<std::string> CTuneZoneManager::BakeZonesIntoMap(const char* pMapNa
 		dbg_msg("tune_baker", "Failed to bake tune zones: failed to open map '%s' for writing", aTemp);
 		return std::nullopt;
 	}
+
 	Writer.Finish();
 	dbg_msg("tune_baker", "Baked tune zones into '%s'", aTemp);
 
