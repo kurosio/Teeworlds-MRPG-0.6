@@ -160,7 +160,7 @@ std::optional<std::string> CTuneZoneManager::BakeZonesIntoMap(const char* pMapNa
 					SettingsIndex = pInfo->m_Settings;
 					const char* pMapSettings = (const char*)Reader.GetData(SettingsIndex);
 					int OldDataSize = Reader.GetDataSize(SettingsIndex);
-					if(OldDataSize >= TotalLength && mem_comp(pSettings, pMapSettings + (OldDataSize - TotalLength), TotalLength) == 0)
+					if((size_t)OldDataSize >= TotalLength && mem_comp(pSettings, pMapSettings + (OldDataSize - TotalLength), TotalLength) == 0)
 					{
 						// Configs coincide, no need to update map.
 						free(pSettings);

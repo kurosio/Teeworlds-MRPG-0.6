@@ -168,7 +168,7 @@ public:
 		RANGE = 1
 	};
 
-	const ECharacterEffect getEffect() const noexcept
+	ECharacterEffect getEffect() const noexcept
 	{
 		return m_Effect;
 	}
