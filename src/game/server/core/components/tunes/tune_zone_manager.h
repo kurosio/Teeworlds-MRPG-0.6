@@ -5,6 +5,11 @@
 #include <optional>
 #include <string>
 
+struct CSoundData
+{
+    std::vector<char> m_vData;
+};
+
 class CTuningParams;
 class IStorageEngine;
 
@@ -19,6 +24,10 @@ enum class ETuneZone
 
 class CTuneZoneManager
 {
+    char m_aDeleteTempfile[128];
+    std::map<std::string, CSoundData> m_Sounds;
+    std::map<ETuneZone, CTuningParams> m_Zones;
+
 public:
     static CTuneZoneManager& GetInstance();
 
@@ -29,6 +38,9 @@ public:
     std::optional<std::string> BakeZonesIntoMap(const char* pMapName, IStorageEngine* pStorage);
 	void DeleteTempfile(IStorageEngine* pStorage);
 
+    void LoadSoundsFromDirectory(const char* pDirectory, IStorageEngine* pStorage);
+    void RegisterSound(const std::string& sName, const void* pData, size_t DataSize);
+
 private:
     CTuneZoneManager();
     ~CTuneZoneManager() = default;
@@ -36,9 +48,6 @@ private:
     CTuneZoneManager(const CTuneZoneManager&) = delete;
     CTuneZoneManager& operator=(const CTuneZoneManager&) = delete;
 
-    std::map<ETuneZone, CTuningParams> m_Zones;
-
-	char m_aDeleteTempfile[128];
 };
 
 #endif // GAME_SERVER_CORE_COMPONENTS_TUNES_TUNE_ZONE_MANAGER_H

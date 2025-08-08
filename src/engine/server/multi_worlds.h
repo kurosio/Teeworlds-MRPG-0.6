@@ -124,12 +124,13 @@ public:
 		m_WasInitilized = 0;
 		m_NextIsReloading = false;
 	}
+
 	~CMultiWorlds()
 	{
 		Clear(true);
 	}
 
-	bool LoadFromDB(IKernel* pKernel);
+	bool LoadFromDB(IKernel* pKernel, IStorageEngine* pStorage);
 
 	CWorld* GetWorld(int WorldID) const
 	{

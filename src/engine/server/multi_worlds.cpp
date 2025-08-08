@@ -80,10 +80,10 @@ bool CMultiWorlds::Init(CWorld* pNewWorld, IKernel* pKernel)
 	return RegisterFail;
 }
 
-bool CMultiWorlds::LoadFromDB(IKernel* pKernel)
+bool CMultiWorlds::LoadFromDB(IKernel* pKernel, IStorageEngine* pStorage)
 {
-	// clear old worlds
-	 Clear(false);
+	CTuneZoneManager::GetInstance().LoadSoundsFromDirectory("server_data/sounds", pStorage);
+	Clear(false);
 
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_worlds");
  	while(pRes->next())

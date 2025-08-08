@@ -146,7 +146,7 @@ int main(int argc, const char** argv)
 		pConsole->ExecuteFile(AUTOEXEC_FILE, -1, true);
 	}
 
-	if(!pServer->MultiWorlds()->LoadFromDB(pKernel))
+	if(!pServer->MultiWorlds()->LoadFromDB(pKernel, pStorage))
 	{
 		dbg_msg("server", "failed to load worlds");
 		return -1;

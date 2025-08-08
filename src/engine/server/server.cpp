@@ -2073,7 +2073,7 @@ int CServer::Run(ILogger* pLogger)
 					}
 
 					// Check if the worlds were loaded successfully
-					if(!MultiWorlds()->LoadFromDB(Kernel()))
+					if(!MultiWorlds()->LoadFromDB(Kernel(), Storage()))
 					{
 						log_error("server", "interfaces for heavy reload could not be updated.");
 						return -1;
