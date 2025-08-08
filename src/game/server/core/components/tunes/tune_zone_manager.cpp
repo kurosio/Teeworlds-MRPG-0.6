@@ -24,10 +24,10 @@ char* SerializeLines(const std::vector<std::string>& vLines, size_t& FinalSize)
 		return nullptr;
 	}
 
-	int Offset = 0;
+	size_t Offset = 0;
 	for(const auto& Line : vLines)
 	{
-		int Length = Line.length() + 1;
+		const size_t Length = Line.length() + 1;
 		mem_copy(pBuffer + Offset, Line.c_str(), Length);
 		Offset += Length;
 	}
@@ -103,6 +103,10 @@ std::optional<std::string> CTuneZoneManager::BakeZonesIntoMap(const char* pMapNa
 		dbg_msg("tune_baker", "Failed to bake tune zones: failed to open map '%s' for reading", pMapName);
 		return std::nullopt;
 	}
+
+	// Cache whole file at once instead of lazy-loading it
+	for(int i = 0; i < Reader.NumData(); ++i)
+		Reader.GetData(i);
 
 	std::vector<std::string> vNewCommands;
 	for(auto const& [ZoneType, Zone] : m_Zones)
@@ -222,10 +226,14 @@ std::optional<std::string> CTuneZoneManager::BakeZonesIntoMap(const char* pMapNa
 			continue;
 		}
 
-		const void* pData = Reader.GetData(i);
-		int Size = Reader.GetDataSize(i);
-		Writer.AddData(Size, pData);
-		Reader.UnloadData(i);
+		int CompressedSize;
+		const void* pRawData = Reader.GetRawData(i, &CompressedSize);
+		if(pRawData)
+		{
+			int UncompressedSize = Reader.GetDataSize(i);
+			Writer.AddDataRaw(pRawData, CompressedSize, UncompressedSize);
+			free((void*)pRawData);
+		}
 	}
 
 	free(pSettings);

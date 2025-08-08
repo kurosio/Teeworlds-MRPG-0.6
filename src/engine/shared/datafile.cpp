@@ -404,6 +404,22 @@ void *CDataFileReader::GetData(int Index)
 	return GetDataImpl(Index, false);
 }
 
+const void* CDataFileReader::GetRawData(int Index, int* pSize) const
+{
+	if(!m_pDataFile || Index < 0 || Index >= m_pDataFile->m_Header.m_NumRawData)
+	{
+		*pSize = 0;
+		return nullptr;
+	}
+
+	*pSize = GetFileDataSize(Index);
+
+	void* pRawData = malloc(*pSize);
+	if(io_seek(m_pDataFile->m_File, m_pDataFile->m_DataStartOffset + m_pDataFile->m_Info.m_pDataOffsets[Index], IOSEEK_START) == 0)
+		io_read(m_pDataFile->m_File, pRawData, *pSize);
+
+	return pRawData;
+}
 void *CDataFileReader::GetDataSwapped(int Index)
 {
 	return GetDataImpl(Index, true);
@@ -749,6 +765,20 @@ int CDataFileWriter::AddDataString(const char *pStr)
 	return AddData(str_length(pStr) + 1, pStr);
 }
 
+int CDataFileWriter::AddDataRaw(const void* pCompressedData, int CompressedSize, int UncompressedSize)
+{
+	m_vDatas.emplace_back();
+	CDataInfo& Info = m_vDatas.back();
+	Info.m_pUncompressedData = nullptr;
+	Info.m_UncompressedSize = UncompressedSize;
+	Info.m_pCompressedData = malloc(CompressedSize);
+	mem_copy(Info.m_pCompressedData, pCompressedData, CompressedSize);
+	Info.m_CompressedSize = CompressedSize;
+	Info.m_CompressionLevel = 0;
+
+	return m_vDatas.size() - 1;
+}
+
 void CDataFileWriter::Finish()
 {
 	dbg_assert((bool)m_File, "File not open");
@@ -757,6 +787,9 @@ void CDataFileWriter::Finish()
 	// so it's delayed until the end so it can be off-loaded to another thread.
 	for(CDataInfo &DataInfo : m_vDatas)
 	{
+		if (DataInfo.m_CompressionLevel == 0)
+			continue;
+
 		unsigned long CompressedSize = compressBound(DataInfo.m_UncompressedSize);
 		DataInfo.m_pCompressedData = malloc(CompressedSize);
 		const int Result = compress2((Bytef *)DataInfo.m_pCompressedData, &CompressedSize, (Bytef *)DataInfo.m_pUncompressedData, DataInfo.m_UncompressedSize, DataInfo.m_CompressionLevel);

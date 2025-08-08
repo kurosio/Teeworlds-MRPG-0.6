@@ -53,6 +53,9 @@ public:
 	void UnloadData(int Index);
 	int NumData() const;
 
+	// YOU MUST FREE MEMORY AFTER USE.
+	const void *GetRawData(int Index, int *pSize) const;
+
 	int GetItemSize(int Index) const;
 	void *GetItem(int Index, int *pType = nullptr, int *pID = nullptr);
 	void GetType(int Type, int *pStart, int *pNum);
@@ -126,6 +129,9 @@ public:
 	int AddData(size_t Size, const void *pData, int CompressionLevel = Z_DEFAULT_COMPRESSION);
 	int AddDataSwapped(size_t Size, const void *pData);
 	int AddDataString(const char *pStr);
+
+	int AddDataRaw(const void* pCompressedData, int CompressedSize, int UncompressedSize);
+
 	void Finish();
 };
 
