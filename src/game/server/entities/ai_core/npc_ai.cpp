@@ -2,6 +2,7 @@
 #include "npc_ai.h"
 #include "mob_ai.h"
 
+#include <game/server/core/components/tunes/tune_zone_manager.h>
 #include <game/server/entities/character_bot.h>
 #include <game/server/gamecontext.h>
 
@@ -68,8 +69,8 @@ void CNpcAI::OnHandleTunning(CTuningParams* pTuning)
 	// walk effect
 	if(Function != FUNCTION_NPC_GUARDIAN || (Function == FUNCTION_NPC_GUARDIAN && m_Target.IsEmpty()))
 	{
-		pTuning->m_GroundControlSpeed = 5.0f;
-		pTuning->m_GroundControlAccel = 1.0f;
+		pTuning->ApplyChanges(CTuneZoneManager::GetInstance().GetParams(ETuneZone::WALKING));
+		m_pCharacter->m_TuneZoneOverride = (int)ETuneZone::WALKING;
 	}
 }
 

@@ -357,6 +357,7 @@ void CCharacterBotAI::Snap(int SnappingClient)
 	pDDNetCharacter->m_StrongWeakId = 0;
 	pDDNetCharacter->m_TargetX = m_Core.m_Input.m_TargetX;
 	pDDNetCharacter->m_TargetY = m_Core.m_Input.m_TargetY;
+	pDDNetCharacter->m_TuneZoneOverride = m_TuneZoneOverride;
 	m_pAI->OnSnapDDNetCharacter(SnappingClient, pDDNetCharacter);
 }
 

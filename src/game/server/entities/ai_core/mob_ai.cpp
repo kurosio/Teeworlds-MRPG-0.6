@@ -3,6 +3,7 @@
 #include <game/server/entity_manager.h>
 #include <game/server/entities/character_bot.h>
 #include <game/server/core/components/quests/quest_manager.h>
+#include <game/server/core/components/tunes/tune_zone_manager.h>
 #include <game/server/gamecontext.h>
 
 CMobAI::CMobAI(MobBotInfo* pNpcInfo, CPlayerBot* pPlayer, CCharacterBotAI* pCharacter)
@@ -49,16 +50,8 @@ void CMobAI::OnHandleTunning(CTuningParams* pTuning)
 	// behavior slower
 	if(m_pMobInfo->HasBehaviorFlag(MOBFLAG_BEHAVIOR_SLOWER))
 	{
-		pTuning->m_Gravity = 0.25f;
-		pTuning->m_GroundJumpImpulse = 8.0f;
-		pTuning->m_AirFriction = 0.75f;
-		pTuning->m_AirControlAccel = 1.0f;
-		pTuning->m_AirControlSpeed = 3.75f;
-		pTuning->m_AirJumpImpulse = 8.0f;
-		pTuning->m_HookFireSpeed = 30.0f;
-		pTuning->m_HookDragAccel = 1.5f;
-		pTuning->m_HookDragSpeed = 8.0f;
-		pTuning->m_PlayerHooking = 0;
+		pTuning->ApplyChanges(CTuneZoneManager::GetInstance().GetParams(ETuneZone::SLOW));
+		m_pCharacter->m_TuneZoneOverride = (int)ETuneZone::SLOW;
 	}
 }
 

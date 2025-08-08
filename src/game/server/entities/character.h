@@ -113,6 +113,7 @@ public:
 	static constexpr int ms_PhysSize = 28;
 	CCharacterCore m_Core {};
 
+	int m_TuneZoneOverride {};
 	int m_MoveRestrictions {};
 	vec2 m_PrevPos {};
 

@@ -1498,7 +1498,7 @@ void CCharacter::Snap(int SnappingClient)
 	pDDNetCharacter->m_FreezeStart = m_Core.m_FreezeStart;
 	pDDNetCharacter->m_TargetX = m_Core.m_Input.m_TargetX;
 	pDDNetCharacter->m_TargetY = m_Core.m_Input.m_TargetY;
-	pDDNetCharacter->m_TuneZoneOverride = -1;
+	pDDNetCharacter->m_TuneZoneOverride = m_TuneZoneOverride;
 }
 
 void CCharacter::PostSnap()
@@ -1670,6 +1670,7 @@ bool CCharacter::HandleHammerActions(vec2 Direction, vec2 ProjStartPos)
 
 void CCharacter::HandleTuning()
 {
+	m_TuneZoneOverride = -1;
 	HandleIndependentTuning();
 }
 

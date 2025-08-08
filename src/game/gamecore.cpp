@@ -44,24 +44,41 @@ bool CTuningParams::Get(const char* pName, float* pValue) const
 
 	return false;
 }
-
-std::vector<std::pair<int, float>> CTuningParams::GetDiff(CTuningParams *pOther) const {
-	int *OtherRaw = (int*)pOther;
-	int *ThisRaw = (int*)this;
-
+std::vector<std::pair<int, float>> CTuningParams::GetDiff(CTuningParams* pOther) const
+{
 	std::vector<std::pair<int, float>> vDiff;
+	int i = 0;
 
-	for (int i = 0; i < Num(); ++i) {
-		if (OtherRaw[i] != ThisRaw[i])
-			vDiff.emplace_back(i, ThisRaw[i]);
-	}
+	#define MACRO_TUNING_PARAM(Name, ScriptName, Value) \
+		if (this->m_##Name != pOther->m_##Name) \
+		{ \
+			vDiff.emplace_back(i, static_cast<float>(this->m_##Name)); \
+		} \
+		i++;
+	#include "tuning.h"
+	#undef MACRO_TUNING_PARAM
 
 	return vDiff;
 }
 
-std::vector<std::pair<int, float>> CTuningParams::GetDiff() const {
+std::vector<std::pair<int, float>> CTuningParams::GetDiff() const
+{
 	CTuningParams Default;
 	return GetDiff(&Default);
+}
+
+void CTuningParams::ApplyChanges(const CTuningParams* pSource)
+{
+	static const CTuningParams s_DefaultParams;
+
+	#define MACRO_TUNING_PARAM(Name, ScriptName, Value) \
+		if (pSource->m_##Name != s_DefaultParams.m_##Name) \
+		{ \
+			this->m_##Name = pSource->m_##Name; \
+		}
+
+	#include "tuning.h"
+	#undef MACRO_TUNING_PARAM
 }
 
 float HermiteBasis1(float v)

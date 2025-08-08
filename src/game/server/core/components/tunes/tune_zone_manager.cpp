@@ -36,58 +36,63 @@ char* SerializeLines(const std::vector<std::string>& vLines, size_t& FinalSize)
 
 CTuneZoneManager& CTuneZoneManager::GetInstance()
 {
-    static CTuneZoneManager instance;
-    return instance;
+	static CTuneZoneManager instance;
+	return instance;
 }
 
 CTuneZoneManager::CTuneZoneManager()
 {
-    dbg_msg("TuneZoneManager", "Initializing Tune Zones...");
+	dbg_msg("TuneZoneManager", "Initializing Tune Zones...");
 
-    CTuningParams Params;
-    m_Zones[ETuneZone::DEFAULT] = Params;
+	CTuningParams Params;
+	m_Zones[ETuneZone::DEFAULT] = Params;
 
-    Params = CTuningParams();
-    Params.m_Gravity = 0.25f;
-    Params.m_GroundJumpImpulse = 8.0f;
-    Params.m_AirFriction = 0.75f;
-    Params.m_AirControlAccel = 1.0f;
-    Params.m_AirControlSpeed = 3.75f;
-    Params.m_AirJumpImpulse = 8.0f;
-    Params.m_HookFireSpeed = 30.0f;
-    Params.m_HookDragAccel = 1.5f;
-    Params.m_HookDragSpeed = 8.0f;
-    Params.m_PlayerHooking = 0;
-    m_Zones[ETuneZone::SLOW] = Params;
+	Params = CTuningParams();
+	Params.m_Gravity = 0.25f;
+	Params.m_GroundJumpImpulse = 8.0f;
+	Params.m_AirFriction = 0.75f;
+	Params.m_AirControlAccel = 1.0f;
+	Params.m_AirControlSpeed = 3.75f;
+	Params.m_AirJumpImpulse = 8.0f;
+	Params.m_HookFireSpeed = 30.0f;
+	Params.m_HookDragAccel = 1.5f;
+	Params.m_HookDragSpeed = 8.0f;
+	Params.m_PlayerHooking = 0;
+	m_Zones[ETuneZone::SLOW] = Params;
 
-    if(m_Zones.size() > NUM_TUNEZONES)
-    {
-        dbg_msg("TuneZoneManager", "Too much tune zones defined");
-    }
+	Params = CTuningParams();
+	Params.m_GroundControlSpeed = 5.0f;
+	Params.m_GroundControlAccel = 1.0f;
+	m_Zones[ETuneZone::WALKING] = Params;
+
+	if(m_Zones.size() > NUM_TUNEZONES)
+	{
+		dbg_msg("TuneZoneManager", "Too much tune zones defined");
+	}
 }
 
 int CTuneZoneManager::GetZoneID(ETuneZone Zone) const
 {
-    return static_cast<int>(Zone);
+	return static_cast<int>(Zone);
 }
 
 const CTuningParams* CTuneZoneManager::GetParams(const ETuneZone Zone) const
 {
-    auto it = m_Zones.find(Zone);
-    if(it != m_Zones.end())
-    {
-        return &it->second;
-    }
-    return nullptr;
+	auto it = m_Zones.find(Zone);
+	if(it != m_Zones.end())
+	{
+		return &it->second;
+	}
+	return nullptr;
 }
 
 const CTuningParams* CTuneZoneManager::GetParams(int ZoneID) const
 {
-    if (ZoneID < 0 || ZoneID >= static_cast<int>(ETuneZone::NUM_TUNE_ZONES))
-    {
-        return nullptr;
-    }
-    return GetParams(static_cast<ETuneZone>(ZoneID));
+	if (ZoneID < 0 || ZoneID >= static_cast<int>(ETuneZone::NUM_TUNE_ZONES))
+	{
+		return nullptr;
+	}
+	return GetParams(static_cast<ETuneZone>(ZoneID));
 }
 
 std::optional<std::string> CTuneZoneManager::BakeZonesIntoMap(const char* pMapName, IStorageEngine* pStorage)
