@@ -69,7 +69,7 @@ void CNpcAI::OnHandleTunning(CTuningParams* pTuning)
 	// walk effect
 	if(Function != FUNCTION_NPC_GUARDIAN || (Function == FUNCTION_NPC_GUARDIAN && m_Target.IsEmpty()))
 	{
-		pTuning->ApplyChanges(CTuneZoneManager::GetInstance().GetParams(ETuneZone::WALKING));
+		pTuning->ApplyDiff(CTuneZoneManager::GetInstance().GetParams(ETuneZone::WALKING));
 		m_pCharacter->m_TuneZoneOverride = (int)ETuneZone::WALKING;
 	}
 }

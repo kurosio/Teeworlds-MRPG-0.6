@@ -67,7 +67,7 @@ std::vector<std::pair<int, float>> CTuningParams::GetDiff() const
 	return GetDiff(&Default);
 }
 
-void CTuningParams::ApplyChanges(const CTuningParams* pSource)
+void CTuningParams::ApplyDiff(const CTuningParams* pSource)
 {
 	static const CTuningParams s_DefaultParams;
 

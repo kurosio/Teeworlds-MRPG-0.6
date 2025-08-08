@@ -50,7 +50,7 @@ void CMobAI::OnHandleTunning(CTuningParams* pTuning)
 	// behavior slower
 	if(m_pMobInfo->HasBehaviorFlag(MOBFLAG_BEHAVIOR_SLOWER))
 	{
-		pTuning->ApplyChanges(CTuneZoneManager::GetInstance().GetParams(ETuneZone::SLOW));
+		pTuning->ApplyDiff(CTuneZoneManager::GetInstance().GetParams(ETuneZone::SLOW));
 		m_pCharacter->m_TuneZoneOverride = (int)ETuneZone::SLOW;
 	}
 }

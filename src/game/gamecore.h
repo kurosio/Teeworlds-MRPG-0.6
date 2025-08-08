@@ -71,7 +71,7 @@ public:
 
 	std::vector<std::pair<int, float>> GetDiff(CTuningParams *pOther) const;
 	std::vector<std::pair<int, float>> GetDiff() const;
-	void ApplyChanges(const CTuningParams* pSource);
+	void ApplyDiff(const CTuningParams* pSource);
 };
 
 inline void StrToInts(int* pInts, int Num, const char* pStr)
