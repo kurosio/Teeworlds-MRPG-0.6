@@ -9,6 +9,7 @@
 
 #include "attribute_data.h"
 #include "random_box/random_box_data.h"
+#include "tools/effect_manager.h"
 
 enum
 {
@@ -31,7 +32,7 @@ class CItemDescription : public MultiworldIdentifiableData < std::map< int, CIte
 public:
 	struct PotionContext
 	{
-		std::string Effect {};
+		ECharacterEffect Effect {};
 		int Value {};
 		int Lifetime {};
 		int Recasttime {};

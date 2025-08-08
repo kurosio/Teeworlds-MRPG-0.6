@@ -41,7 +41,7 @@ void CMobAI::OnGiveRandomEffect(int ClientID)
 
 	if(const auto* pBuff = m_pMobInfo->GetRandomDebuff())
 	{
-		pPlayer->m_Effects.Add(pBuff->getEffect().c_str(), pBuff->getTime(), pBuff->getChance());
+		pPlayer->m_Effects.Add(pBuff->getEffect(), pBuff->getTime(), pBuff->getChance());
 	}
 }
 
@@ -231,7 +231,7 @@ void CMobAI::HandleBehaviors(bool* pbAsleep)
 				auto* pTarget = dynamic_cast<CCharacter*>(pEnt);
 				if(pTarget && pTarget->IsAllowedPVP(m_ClientID))
 				{
-					pTarget->GetPlayer()->m_Effects.Add("Poison", Server()->TickSpeed() * 5);
+					pTarget->GetPlayer()->m_Effects.Add(ECharacterEffect::POISON, Server()->TickSpeed() * 5);
 				}
 			}
 			GS()->CreateDeath(RandomPosition, m_ClientID);

@@ -154,12 +154,12 @@ enum MobBehaviorFlags
 class CMobDebuff
 {
 	float m_Chance {};
-	std::string m_Effect {};
+	ECharacterEffect m_Effect {};
 	std::tuple<int, int> m_Time {};
 
 public:
 	CMobDebuff() = default;
-	CMobDebuff(float Chance, const std::string& Effect, const std::tuple<int, int>& Time)
+	CMobDebuff(float Chance, ECharacterEffect Effect, const std::tuple<int, int>& Time)
 		: m_Chance(Chance), m_Effect(Effect), m_Time(Time) {}
 
 	enum TupleIndices
@@ -168,7 +168,7 @@ public:
 		RANGE = 1
 	};
 
-	const std::string& getEffect() const noexcept
+	const ECharacterEffect getEffect() const noexcept
 	{
 		return m_Effect;
 	}
@@ -210,7 +210,7 @@ public:
 	bool HasBehaviorFlag(int64_t Flag) const { return (m_BehaviorsFlags & Flag) != 0; }
 	const char* GetName() const { return DataBotInfo::ms_aDataBot[m_BotID].m_aNameBot; }
 	std::deque < CMobDebuff >& GetDebuffs() { return m_Effects; }
-	[[nodiscard]] CMobDebuff* GetRandomDebuff() { return m_Effects.empty() ? nullptr : &m_Effects[rand() % m_Effects.size()]; }
+	[[nodiscard]] CMobDebuff* GetRandomDebuff() { return m_Effects.empty() ? nullptr : &m_Effects[secure_rand() % m_Effects.size()]; }
 
 	static bool IsValid(int MobID) { return ms_aMobBot.find(MobID) != ms_aMobBot.end() && DataBotInfo::IsDataBotValid(ms_aMobBot[MobID].m_BotID); }
 	static std::map<int, MobBotInfo> ms_aMobBot;

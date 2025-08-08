@@ -125,7 +125,7 @@ void CAttackTeleport::Tick()
 					const auto SearchPos = pNextChar->GetPos();
 					const auto StunTime = 3;
 
-					if(pNextPlayer->m_Effects.Add("Stun", StunTime * Server()->TickSpeed()))
+					if(pNextPlayer->m_Effects.Add(ECharacterEffect::STUN, StunTime * Server()->TickSpeed()))
 					{
 						GS()->Chat(pNextPlayer->GetCID(), "You have been stunned for '{} seconds'!", StunTime);
 					}

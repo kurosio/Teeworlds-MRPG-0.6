@@ -277,7 +277,7 @@ void CEntityManager::LastStand(int ClientID, vec2 Position, float Radius, int Pe
 			const int ManaPerSeconds = maximum(1, translate_to_percent_rest(pChar->GetPlayer()->GetMaxMana(), PercentManaCostPerSec));
 			if(!pChar->TryUseMana(ManaPerSeconds))
 			{
-				if(pChar->GetPlayer()->m_Effects.Remove("LastStand"))
+				if(pChar->GetPlayer()->m_Effects.Remove(ECharacterEffect::LAST_STAND))
 					pBase->GS()->Chat(pBase->GetClientID(), "'Last Stand' effect has been removed.");
 
 				pBase->GS()->Broadcast(pBase->GetClientID(), BroadcastPriority::MainInformation, 100, "Not enough mana to maintain the shield.");
@@ -286,7 +286,7 @@ void CEntityManager::LastStand(int ClientID, vec2 Position, float Radius, int Pe
 			}
 
 			const auto LastStandTime = 3;
-			pChar->GetPlayer()->m_Effects.Add("LastStand", LastStandTime * pBase->Server()->TickSpeed());
+			pChar->GetPlayer()->m_Effects.Add(ECharacterEffect::LAST_STAND, LastStandTime * pBase->Server()->TickSpeed());
 		}
 
 		pBase->SetPos(pChar->GetPos());

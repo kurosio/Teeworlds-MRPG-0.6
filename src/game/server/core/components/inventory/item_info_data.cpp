@@ -82,7 +82,7 @@ void CItemDescription::InitData(const DBSet& GroupSet, const DBSet& TypeSet)
 		if(const auto& pPotionJson = pJson["potion"]; !pPotionJson.is_null())
 		{
 			PotionContext Potion;
-			Potion.Effect = pPotionJson.value("effect", "");
+			Potion.Effect = EffectFromName(pPotionJson.value("effect", ""));
 			Potion.Value = pPotionJson.value("value", 0);
 			Potion.Lifetime = pPotionJson.value("lifetime", 0);
 			Potion.Recasttime = pPotionJson.value("recast", POTION_RECAST_DEFAULT_TIME);
