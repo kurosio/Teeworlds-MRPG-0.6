@@ -466,13 +466,6 @@ def gen_server_content_header():
 		print("};")
 		print("")
 
-		print("// Intervals in ticks (1 sec = 50 ticks)")
-		print("inline constexpr int g_aSpecialSoundIntervals[SOUND_CUSTOM_COUNT] = {")
-		for e in entries:
-			print(f"\t{e.interval_ticks},")
-		print("};")
-		print("")
-
 		# Constant <ALIAS>_INTERVAL (in ticks)
 		for e in entries:
 			print(f"inline constexpr int {e.enum}_INTERVAL = {e.interval_ticks};")

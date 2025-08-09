@@ -101,7 +101,7 @@ bool CWarehouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
 
 		if(BuyItem(pPlayer, pWarehouse, TradeID))
 		{
-			GS()->CreateSound(pPlayer->m_ViewPos, SOUND_SFX_BUY);
+			GS()->CreateSound(pPlayer->m_ViewPos, SOUND_SFX_TRADE);
 			pPlayer->m_VotesData.UpdateCurrentVotes();
 		}
 
@@ -120,7 +120,7 @@ bool CWarehouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
 
 		if(SellItem(pPlayer, pWarehouse, TradeID, ValueToSell))
 		{
-			GS()->CreateSound(pPlayer->m_ViewPos, SOUND_SFX_SELL);
+			GS()->CreateSound(pPlayer->m_ViewPos, SOUND_SFX_TRADE);
 			pPlayer->m_VotesData.UpdateCurrentVotes();
 		}
 
@@ -144,7 +144,7 @@ bool CWarehouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
         }
         if(Sold)
         {
-            GS()->CreateSound(pPlayer->m_ViewPos, SOUND_SFX_SELL);
+            GS()->CreateSound(pPlayer->m_ViewPos, SOUND_SFX_TRADE);
             pPlayer->m_VotesData.UpdateCurrentVotes();
         }
 
@@ -178,7 +178,7 @@ bool CWarehouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
 			pWarehouse->Storage().Add(Value);
 			pPlayer->Account()->AddGold(Value);
 			GS()->Chat(ClientID, "You loaded '{} products'. Got '{$} gold'.", Value, Value);
-			GS()->CreateSound(pPlayer->m_ViewPos, SOUND_SFX_PRODUCT_LOAD);
+			GS()->CreateSound(pPlayer->m_ViewPos, SOUND_SFX_PRODUCT);
 			pPlayer->m_VotesData.UpdateCurrentVotes();
 		}
 
@@ -222,7 +222,7 @@ bool CWarehouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
 
 			pProductsItem->Add(FinalValue);
 			GS()->Chat(ClientID, "You unloaded '{} products'.", FinalValue);
-			GS()->CreateSound(pPlayer->m_ViewPos, SOUND_SFX_PRODUCT_UNLOAD);
+			GS()->CreateSound(pPlayer->m_ViewPos, SOUND_SFX_PRODUCT);
 			pPlayer->m_VotesData.UpdateCurrentVotes();
 		}
 

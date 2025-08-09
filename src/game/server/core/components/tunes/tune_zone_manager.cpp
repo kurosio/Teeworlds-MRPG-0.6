@@ -1,8 +1,8 @@
 ﻿#include "tune_zone_manager.h"
-#include "generated/server_data.h"
 
 #include <base/format.h>
 #include <engine/shared/datafile.h>
+#include <generated/server_data.h>
 #include <game/gamecore.h>
 #include <game/mapitems.h>
 
