@@ -55,8 +55,8 @@ public:
 	void Tick() override;
 	void Snap(int SnappingClient) override;
 
-	void Open() { m_State = State::Opened; }
-	void Close() { m_State = State::Closed; }
+	void Open();
+	void Close();
 	void Reverse();
 
 	constexpr bool IsClosed() const { return m_State == State::Closed; }

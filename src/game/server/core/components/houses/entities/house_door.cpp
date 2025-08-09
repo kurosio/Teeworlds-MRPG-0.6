@@ -4,6 +4,7 @@
 
 #include <game/server/entity_manager.h>
 #include <game/server/gamecontext.h>
+#include <generated/server_data.h>
 
 #include <components/houses/guild_house_data.h>
 #include <components/houses/house_data.h>
@@ -92,6 +93,25 @@ void CEntityHouseDoor::Tick()
 	{
 		MarkForDestroy();
 		return;
+	}
+}
+
+
+void CEntityHouseDoor::Open()
+{
+	if(m_State != State::Opened)
+	{
+		m_State = State::Opened;
+		GS()->CreateSound(m_Pos, SOUND_SFX_DOOR);
+	}
+}
+
+void CEntityHouseDoor::Close()
+{
+	if(m_State != State::Closed)
+	{
+		m_State = State::Closed;
+		GS()->CreateSound(m_Pos, SOUND_SFX_DOOR);
 	}
 }
 
