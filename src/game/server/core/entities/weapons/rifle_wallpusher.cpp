@@ -11,7 +11,7 @@ CEntityRifleWallPusher::CEntityRifleWallPusher(CGameWorld* pGameWorld, int Owner
 	m_LifeTick = LifeTick;
 	m_ID2 = Server()->SnapNewID();
 
-	GS()->CreateSound(Pos, SOUND_SFX_WEAPON_WALL_PUSHER_START);
+	GS()->CreateSound(Pos, SOUND_SFX_WEAPON_WALL_PUSHER);
 	GameWorld()->InsertEntity(this);
 }
 
@@ -28,10 +28,6 @@ void CEntityRifleWallPusher::Tick()
 		MarkForDestroy();
 		return;
 	}
-
-	// sound
-	if(Server()->Tick() % SOUND_SFX_WEAPON_WALL_PUSHER_BULLET_INTERVAL == 0)
-		GS()->CreateSound(m_Pos, SOUND_SFX_WEAPON_WALL_PUSHER_BULLET);
 
 	// check lifetime
 	m_LifeTick--;
