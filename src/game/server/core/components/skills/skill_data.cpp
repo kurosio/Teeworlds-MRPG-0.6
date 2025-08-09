@@ -4,6 +4,7 @@
 
 #include <game/server/entity_manager.h>
 #include <game/server/gamecontext.h>
+#include <generated/server_data.h>
 
 #include <game/server/entities/character_bot.h>
 #include <game/server/core/entities/group/entitiy_group.h>
@@ -115,7 +116,7 @@ bool CSkill::Use()
 			GS()->CreateDeath(pSearch->GetCharacter()->GetPos(), i);
 		}
 
-		GS()->CreateSound(PlayerPosition, SOUND_SKILL_START);
+		GS()->CreateSound(PlayerPosition, SOUND_SFX_SKILL);
 		return true;
 	}
 
@@ -156,7 +157,7 @@ bool CSkill::Use()
 			GS()->CreateSound(PlayerPosition, SOUND_CTF_GRAB_PL);
 		}
 
-		GS()->CreateSound(PlayerPosition, SOUND_SKILL_START);
+		GS()->CreateSound(PlayerPosition, SOUND_SFX_SKILL);
 		GS()->EntityManager()->Text(PlayerPosition + vec2(0, -96), 40, "RECOVERY AMMO");
 		return true;
 	}
@@ -224,7 +225,7 @@ bool CSkill::Use()
 		const auto UpgradedValue = minimum(200.f + GetBonus(), 400.f);
 		const auto Damage = maximum(1, pPlayer->GetTotalAttributeValue(AttributeIdentifier::DMG));
 		GS()->EntityManager()->GravityDisruption(ClientID, PlayerPosition, UpgradedValue, 10 * Server()->TickSpeed(), Damage, &pEntSkillPtr);
-		GS()->CreateSound(PlayerPosition, SOUND_SKILL_START);
+		GS()->CreateSound(PlayerPosition, SOUND_SFX_SKILL);
 		return true;
 	}
 
@@ -233,7 +234,7 @@ bool CSkill::Use()
 	{
 		const int PercentManaCost = maximum(Info()->GetPercentageCost() - GetBonus(), 15);
 		GS()->EntityManager()->LastStand(ClientID, PlayerPosition, 96.f, PercentManaCost, &pEntSkillPtr);
-		GS()->CreateSound(PlayerPosition, SOUND_SKILL_START);
+		GS()->CreateSound(PlayerPosition, SOUND_SFX_SKILL);
 		return true;
 	}
 
@@ -244,7 +245,7 @@ bool CSkill::Use()
 	if(IsActivated(pChar, ManaCost, SKILL_ATTACK_TELEPORT))
 	{
 		new CAttackTeleport(&GS()->m_World, PlayerPosition, pPlayer, GetBonus());
-		GS()->CreateSound(PlayerPosition, SOUND_SKILL_START);
+		GS()->CreateSound(PlayerPosition, SOUND_SFX_SKILL);
 		return true;
 	}
 
@@ -254,7 +255,7 @@ bool CSkill::Use()
 		const auto Damage = maximum(1, translate_to_percent_rest(pPlayer->GetTotalAttributeValue(AttributeIdentifier::DMG), 5.0f));
 
 		GS()->EntityManager()->FlameWall(ClientID, PlayerPosition, UpgradedValue, 10 * Server()->TickSpeed(), Damage, 0.3f);
-		GS()->CreateSound(PlayerPosition, SOUND_SKILL_START);
+		GS()->CreateSound(PlayerPosition, SOUND_SFX_SKILL);
 		return true;
 	}
 
@@ -267,7 +268,7 @@ bool CSkill::Use()
 		const auto Shots = 1 + GetBonus();
 		const auto Damage = maximum(1, pPlayer->GetTotalAttributeValue(AttributeIdentifier::DMG));
 		GS()->EntityManager()->Bow(ClientID, Damage, Shots, 180.f, 8, &pEntSkillPtr);
-		GS()->CreateSound(PlayerPosition, SOUND_SKILL_START);
+		GS()->CreateSound(PlayerPosition, SOUND_SFX_SKILL);
 		return true;
 	}
 
@@ -283,7 +284,7 @@ bool CSkill::Use()
 
 		// start casting
 		GS()->EntityManager()->StartUniversalCast(ClientID, PlayerPosition, NumCastClicked, FuncExecuteHealingRift, &pEntSkillPtr);
-		GS()->CreateSound(PlayerPosition, SOUND_SKILL_START);
+		GS()->CreateSound(PlayerPosition, SOUND_SFX_SKILL);
 		return true;
 	}
 
@@ -299,7 +300,7 @@ bool CSkill::Use()
 
 		// start casting
 		GS()->EntityManager()->StartUniversalCast(ClientID, PlayerPosition, NumCastClicked, FuncExecuteHealingAura, nullptr);
-		GS()->CreateSound(PlayerPosition, SOUND_SKILL_START);
+		GS()->CreateSound(PlayerPosition, SOUND_SFX_SKILL);
 		return true;
 	}
 
@@ -316,7 +317,7 @@ bool CSkill::Use()
 
 		// start casting
 		GS()->EntityManager()->StartUniversalCast(ClientID, PlayerPosition, NumCastClicked, FuncExecuteHealingRift, &pEntSkillPtr);
-		GS()->CreateSound(PlayerPosition, SOUND_SKILL_START);
+		GS()->CreateSound(PlayerPosition, SOUND_SFX_SKILL);
 		return true;
 	}
 

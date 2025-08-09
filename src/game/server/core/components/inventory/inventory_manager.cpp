@@ -4,6 +4,7 @@
 
 #include <engine/shared/datafile.h>
 #include <game/server/gamecontext.h>
+#include <generated/server_data.h>
 
 #include <game/server/core/components/houses/house_manager.h>
 #include <game/server/core/components/quests/quest_manager.h>
@@ -278,7 +279,7 @@ bool CInventoryManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
 		if(pPlayerItem->Drop(ReasonNumber))
 		{
 			GS()->Broadcast(ClientID, BroadcastPriority::GameInformation, 100, "You drop {} x{}", pPlayerItem->Info()->GetName(), ReasonNumber);
-			GS()->CreateSound(pPlayer->m_ViewPos, SOUND_VOTE_ITEM_DROP);
+			GS()->CreateSound(pPlayer->m_ViewPos, SOUND_SFX_ITEM_DROP);
 			pPlayer->m_VotesData.UpdateCurrentVotes();
 		}
 		return true;

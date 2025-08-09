@@ -3,6 +3,7 @@
 #include "guild_manager.h"
 
 #include <game/server/gamecontext.h>
+#include <generated/server_data.h>
 
 #include <game/server/core/components/inventory/inventory_manager.h>
 #include <game/server/core/components/mails/mail_wrapper.h>
@@ -820,7 +821,7 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 			return true;
 		}
 
-		GS()->CreatePlayerSound(ClientID, SOUND_VOTE_UPGRADE);
+		GS()->CreatePlayerSound(ClientID, SOUND_SFX_UPGRADE);
 		GS()->UpdateVotesIfForAll(MENU_GUILD_UPGRADES);
 		return true;
 	}

@@ -2,6 +2,7 @@
 
 #include <game/server/entity_manager.h>
 #include <game/server/gamecontext.h>
+#include <generated/server_data.h>
 
 #include <game/server/core/components/houses/house_manager.h>
 
@@ -77,13 +78,13 @@ bool CEntityGatheringNode::TakeDamage(CPlayer* pPlayer)
 			EquipID = ItemType::EquipPickaxe;
 			AttributeID = AttributeIdentifier::Efficiency;
 			pProfession = pPlayer->Account()->GetProfession(ProfessionIdentifier::Miner);
-			SoundId = SOUND_GAME_MINER;
+			SoundId = SOUND_SFX_MINER;
 			break;
 		case GATHERING_NODE_PLANT:
 			EquipID = ItemType::EquipRake;
 			AttributeID = AttributeIdentifier::Extraction;
 			pProfession = pPlayer->Account()->GetProfession(ProfessionIdentifier::Farmer);
-			SoundId = SOUND_GAME_FARMER;
+			SoundId = SOUND_SFX_FARMER;
 			break;
 		default:
 			return false;

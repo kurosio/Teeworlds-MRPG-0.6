@@ -1,6 +1,8 @@
 ﻿#include "warehouse_manager.h"
 
 #include <game/server/gamecontext.h>
+#include <generated/server_data.h>
+
 #include <game/server/core/components/inventory/inventory_manager.h>
 
 constexpr int g_UpdateTextLifeTime = SERVER_TICK_SPEED * 3;
@@ -83,7 +85,7 @@ bool CWarehouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
 	if(PPSTR(pCmd, "REPAIR_ITEMS") == 0)
 	{
 		Core()->InventoryManager()->RepairDurabilityItems(pPlayer);
-		GS()->CreateSound(pPlayer->m_ViewPos, SOUND_VOTE_WAREHOUSE_REPAIR_ITEMS);
+		GS()->CreateSound(pPlayer->m_ViewPos, SOUND_SFX_REPAIR);
 		GS()->Chat(ClientID, "All items have been repaired.");
 		return true;
 	}
@@ -99,7 +101,7 @@ bool CWarehouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
 
 		if(BuyItem(pPlayer, pWarehouse, TradeID))
 		{
-			GS()->CreateSound(pPlayer->m_ViewPos, SOUND_VOTE_WAREHOUSE_BUY);
+			GS()->CreateSound(pPlayer->m_ViewPos, SOUND_SFX_BUY);
 			pPlayer->m_VotesData.UpdateCurrentVotes();
 		}
 
@@ -118,7 +120,7 @@ bool CWarehouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
 
 		if(SellItem(pPlayer, pWarehouse, TradeID, ValueToSell))
 		{
-			GS()->CreateSound(pPlayer->m_ViewPos, SOUND_VOTE_WAREHOUSE_SELL);
+			GS()->CreateSound(pPlayer->m_ViewPos, SOUND_SFX_SELL);
 			pPlayer->m_VotesData.UpdateCurrentVotes();
 		}
 
@@ -142,7 +144,7 @@ bool CWarehouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
         }
         if(Sold)
         {
-            GS()->CreateSound(pPlayer->m_ViewPos, SOUND_VOTE_WAREHOUSE_SELL);
+            GS()->CreateSound(pPlayer->m_ViewPos, SOUND_SFX_SELL);
             pPlayer->m_VotesData.UpdateCurrentVotes();
         }
 
@@ -176,7 +178,7 @@ bool CWarehouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
 			pWarehouse->Storage().Add(Value);
 			pPlayer->Account()->AddGold(Value);
 			GS()->Chat(ClientID, "You loaded '{} products'. Got '{$} gold'.", Value, Value);
-			GS()->CreateSound(pPlayer->m_ViewPos, SOUND_VOTE_WAREHOUSE_PRODUCT_LOAD);
+			GS()->CreateSound(pPlayer->m_ViewPos, SOUND_SFX_PRODUCT_LOAD);
 			pPlayer->m_VotesData.UpdateCurrentVotes();
 		}
 
@@ -220,7 +222,7 @@ bool CWarehouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
 
 			pProductsItem->Add(FinalValue);
 			GS()->Chat(ClientID, "You unloaded '{} products'.", FinalValue);
-			GS()->CreateSound(pPlayer->m_ViewPos, SOUND_VOTE_WAREHOUSE_PRODUCT_UNLOAD);
+			GS()->CreateSound(pPlayer->m_ViewPos, SOUND_SFX_PRODUCT_UNLOAD);
 			pPlayer->m_VotesData.UpdateCurrentVotes();
 		}
 

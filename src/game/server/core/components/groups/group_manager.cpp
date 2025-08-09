@@ -5,6 +5,7 @@
 
 #include <game/server/core/tools/vote_optional.h>
 #include <game/server/gamecontext.h>
+#include <generated/server_data.h>
 
 void CGroupManager::OnPreInit()
 {
@@ -227,8 +228,8 @@ bool CGroupManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 						pGroup->Add(pPlayer->Account()->GetID());
 						pGS->Chat(ClientID, "You've accepted the invitation!");
 						pGS->Chat(InvitedCID, "'{}' accepted your invitation!", pGS->Server()->ClientName(ClientID));
-						pGS->CreatePlayerSound(ClientID, SOUND_GUILD_GROUP_ACCEPT);
-						pGS->CreatePlayerSound(InvitedCID, SOUND_GUILD_GROUP_ACCEPT);
+						pGS->CreatePlayerSound(ClientID, SOUND_GAME_ACCEPT_LONG);
+						pGS->CreatePlayerSound(InvitedCID, SOUND_GAME_ACCEPT_LONG);
 					}
 					else
 					{

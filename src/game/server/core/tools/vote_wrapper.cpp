@@ -1,6 +1,7 @@
 ﻿#include "vote_wrapper.h"
 
 #include <game/server/gamecontext.h>
+#include <generated/server_data.h>
 
 #include <utility>
 
@@ -484,7 +485,7 @@ bool CVotePlayerData::DefaultVoteCommands(const char* pCmd, std::vector<std::any
         const int GroupID = GetIfExists<int>(Extras, 1, NOPE);
 		m_ExtraID = GroupID <= NOPE ? std::nullopt : std::make_optional(GroupID);
 
-		m_pGS->CreatePlayerSound(m_pPlayer->GetCID(), SOUND_VOTE_MENU_CLICK);
+		m_pGS->CreatePlayerSound(m_pPlayer->GetCID(), SOUND_UI_MENU_CLICK);
 		ResetHidden(MenuID);
 		UpdateVotes(MenuID);
 		return true;
@@ -493,13 +494,13 @@ bool CVotePlayerData::DefaultVoteCommands(const char* pCmd, std::vector<std::any
 	// command back
 	if(PPSTR(pCmd, "BACK") == 0)
 	{
-		m_pGS->CreatePlayerSound(m_pPlayer->GetCID(), SOUND_VOTE_MENU_CLICK);
+		m_pGS->CreatePlayerSound(m_pPlayer->GetCID(), SOUND_UI_MENU_CLICK);
 		UpdateVotes(m_LastMenuID);
 		return true;
 	}
 
 	// sound effect
-	m_pGS->CreatePlayerSound(m_pPlayer->GetCID(), SOUND_VOTE_ITEM_CLICK);
+	m_pGS->CreatePlayerSound(m_pPlayer->GetCID(), SOUND_UI_MENU_ITEM_CLICK);
 
 	// command hidden
 	if(PPSTR(pCmd, "HIDDEN") == 0)

@@ -2,8 +2,10 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "drop_items.h"
 
-#include <game/server/gamecontext.h>
 #include <base/tl/base.h>
+
+#include <game/server/gamecontext.h>
+#include <generated/server_data.h>
 
 enum
 {
@@ -53,7 +55,7 @@ bool CEntityDropItem::TakeItem(int ClientID)
 	GS()->Broadcast(ClientID, BroadcastPriority::GameWarning, 10, "\0");
 	pPlayer->m_VotesData.UpdateVotesIf(MENU_INVENTORY);
 	pPlayer->m_VotesData.UpdateVotesIf(MENU_EQUIPMENT);
-	GS()->CreatePlayerSound(m_ClientID, SOUND_PICK_UP);
+	GS()->CreatePlayerSound(m_ClientID, SOUND_SFX_PICK_UP);
 	GameWorld()->DestroyEntity(this);
 	return true;
 }

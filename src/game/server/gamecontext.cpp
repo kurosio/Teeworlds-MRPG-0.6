@@ -30,6 +30,7 @@
 
 #include "core/scenarios/managers/scenario_group_manager.h"
 #include "core/scenarios/managers/scenario_player_manager.h"
+#include <generated/server_data.h>
 
 CGS::CGS()
 {
@@ -268,13 +269,13 @@ void CGS::CreateDeath(vec2 Pos, int ClientID, int64_t Mask)
 
 void CGS::CreateSound(vec2 Pos, int Sound, int64_t Mask)
 {
-	if(Sound >= NUM_SOUNDS)
+	if(IsCustomSound(Sound))
 	{
 		if(auto* pEvent = m_Events.Create<CNetEvent_MapSoundWorld>(Mask))
 		{
 			pEvent->m_X = (int)Pos.x;
 			pEvent->m_Y = (int)Pos.y;
-			pEvent->m_SoundId = Sound - NUM_SOUNDS;
+			pEvent->m_SoundId = SpecialSoundToPreparedIndex(Sound);
 		}
 	}
 	else if(Sound >= 0)
@@ -290,10 +291,10 @@ void CGS::CreateSound(vec2 Pos, int Sound, int64_t Mask)
 
 void CGS::CreatePlayerSound(int ClientID, int Sound)
 {
-	if(Sound >= NUM_SOUNDS)
+	if(IsCustomSound(Sound))
 	{
 		CNetMsg_Sv_MapSoundGlobal Msg;
-		Msg.m_SoundId = Sound - NUM_SOUNDS;
+		Msg.m_SoundId = SpecialSoundToPreparedIndex(Sound);
 		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID, -1, m_WorldID);
 	}
 	else if(Sound >= 0)

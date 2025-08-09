@@ -3,6 +3,7 @@
 #include "craft_manager.h"
 
 #include <game/server/gamecontext.h>
+#include <generated/server_data.h>
 
 #include <components/inventory/inventory_manager.h>
 
@@ -125,7 +126,7 @@ void CCraftManager::CraftItem(CPlayer* pPlayer, CCraftItem* pCraft, int Value) c
 
 	// notify event and votes
 	g_EventListenerManager.Notify<IEventListener::PlayerCraftItem>(pPlayer, pCraft);
-	GS()->CreateSound(pPlayer->m_ViewPos, SOUND_VOTE_CRAFT);
+	GS()->CreateSound(pPlayer->m_ViewPos, SOUND_SFX_CRAFT);
 	pPlayer->m_VotesData.UpdateCurrentVotes();
 }
 

@@ -4,6 +4,7 @@
 
 #include <game/server/gamecontext.h>
 #include <game/server/entity_manager.h>
+#include <generated/server_data.h>
 
 #include <components/Eidolons/EidolonManager.h>
 #include <components/mails/mail_wrapper.h>
@@ -299,7 +300,7 @@ bool CPlayerItem::Equip()
 		m_Settings = true;
 		g_EventListenerManager.Notify<IEventListener::PlayerEquipItem>(pPlayer, this);
 		pPlayer->StartUniversalScenario(Info()->GetScenarioData(), EScenarios::SCENARIO_ON_ITEM_EQUIP);
-		GS()->CreateSound(pPlayer->m_ViewPos, SOUND_VOTE_ITEM_EQUIP);
+		GS()->CreateSound(pPlayer->m_ViewPos, SOUND_SFX_ITEM_EQUIP);
 		return Save();
 	}
 
@@ -309,7 +310,7 @@ bool CPlayerItem::Equip()
 	{
 		g_EventListenerManager.Notify<IEventListener::PlayerEquipItem>(pPlayer, this);
 		pPlayer->StartUniversalScenario(Info()->GetScenarioData(), EScenarios::SCENARIO_ON_ITEM_EQUIP);
-		GS()->CreateSound(pPlayer->m_ViewPos, SOUND_VOTE_ITEM_EQUIP);
+		GS()->CreateSound(pPlayer->m_ViewPos, SOUND_SFX_ITEM_EQUIP);
 		return true;
 	}
 
@@ -334,7 +335,7 @@ bool CPlayerItem::UnEquip()
 		m_Settings = false;
 		g_EventListenerManager.Notify<IEventListener::PlayerUnequipItem>(pPlayer, this);
 		pPlayer->StartUniversalScenario(Info()->GetScenarioData(), EScenarios::SCENARIO_ON_ITEM_UNEQUIP);
-		GS()->CreateSound(pPlayer->m_ViewPos, SOUND_VOTE_ITEM_EQUIP);
+		GS()->CreateSound(pPlayer->m_ViewPos, SOUND_SFX_ITEM_EQUIP);
 		return Save();
 	}
 
@@ -344,7 +345,7 @@ bool CPlayerItem::UnEquip()
 	{
 		g_EventListenerManager.Notify<IEventListener::PlayerUnequipItem>(pPlayer, this);
 		pPlayer->StartUniversalScenario(Info()->GetScenarioData(), EScenarios::SCENARIO_ON_ITEM_UNEQUIP);
-		GS()->CreateSound(pPlayer->m_ViewPos, SOUND_VOTE_ITEM_EQUIP);
+		GS()->CreateSound(pPlayer->m_ViewPos, SOUND_SFX_ITEM_EQUIP);
 		return true;
 	}
 
@@ -419,7 +420,7 @@ bool CPlayerItem::Use(int Value)
 			pPlayer->m_Effects.Add(Effect, PotionTime * Server()->TickSpeed());
 			GS()->Chat(m_ClientID, "You used '{} x{}'.", Info()->GetName(), Value);
 			GS()->EntityManager()->Text(pPlayer->m_ViewPos + vec2(0, -140.0f), 70, EffectName(Effect));
-			GS()->CreatePlayerSound(m_ClientID, SOUND_GAME_POTION_START);
+			GS()->CreatePlayerSound(m_ClientID, SOUND_SFX_POTION);
 
 			// Update the recast time based on potion type
 			recastTick = Server()->Tick() + (RecastTime * Server()->TickSpeed());

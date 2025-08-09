@@ -1,5 +1,7 @@
 #include "rifle_magneticpulse.h"
+
 #include <game/server/gamecontext.h>
+#include <generated/server_data.h>
 
 CEntityRifleMagneticPulse::CEntityRifleMagneticPulse(CGameWorld* pGameWorld, int OwnerCID, float Radius, vec2 Pos, vec2 Direction)
 	: CEntity(pGameWorld, CGameWorld::ENTTYPE_LASER, Pos, 24)
@@ -13,7 +15,7 @@ CEntityRifleMagneticPulse::CEntityRifleMagneticPulse(CGameWorld* pGameWorld, int
 		return 0.f + t * (Radius - 0.0f);
 	});
 
-	GS()->CreateSound(m_Pos, SOUND_WEAPONS_MAGNET_IMPULSE_START);
+	GS()->CreateSound(m_Pos, SOUND_SFX_WEAPON_MAGNET_IMPULSE_START);
 	GameWorld()->InsertEntity(this);
 }
 
@@ -84,12 +86,12 @@ void CEntityRifleMagneticPulse::TickLastPhase()
 	// animation
 	if(m_LifeTick <= m_RadiusAnimation.GetDurationTicks())
 	{
-		GS()->CreateSound(m_Pos, SOUND_WEAPONS_MAGNET_IMPULSE_END);
+		GS()->CreateSound(m_Pos, SOUND_SFX_WEAPON_MAGNET_IMPULSE_END);
 		m_RadiusAnimation.Reverse(Server()->Tick());
 	}
 	else if(!m_RadiusAnimation.IsStarted())
 	{
-		GS()->CreateSound(m_Pos, SOUND_WEAPONS_MAGNET_IMPULSE_END);
+		GS()->CreateSound(m_Pos, SOUND_SFX_WEAPON_MAGNET_IMPULSE_END);
 		m_RadiusAnimation.Start(Server()->Tick());
 	}
 

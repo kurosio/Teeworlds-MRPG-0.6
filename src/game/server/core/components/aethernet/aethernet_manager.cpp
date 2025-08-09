@@ -3,6 +3,7 @@
 #include "aethernet_manager.h"
 
 #include <game/server/gamecontext.h>
+#include <generated/server_data.h>
 
 #include <game/server/core/components/guilds/guild_manager.h>
 
@@ -86,12 +87,12 @@ bool CAethernetManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
 			vec2 Position = pAether->GetPosition();
 			if(!GS()->IsPlayerInWorld(ClientID, pAether->GetWorldID()))
 			{
-				GS()->CreateSound(Position, SOUND_AETHER_TELEPORT);
+				GS()->CreateSound(Position, SOUND_SFX_TELEPORT);
 				pPlayer->ChangeWorld(pAether->GetWorldID(), Position);
 			}
 			else
 			{
-				GS()->CreateSound(Position, SOUND_AETHER_TELEPORT);
+				GS()->CreateSound(Position, SOUND_SFX_TELEPORT);
 				pPlayer->GetCharacter()->ChangePosition(Position);
 				pPlayer->m_VotesData.UpdateCurrentVotes();
 			}

@@ -17,10 +17,9 @@ bool CMapDetail::Load(IStorageEngine* pStorage)
 	char aBuf[IO_MAX_PATH_LENGTH];
 	str_format(aBuf, sizeof(aBuf), "maps/%s", m_pWorldDetail->GetPath());
 
-	const auto NewMapPath = CTuneZoneManager::GetInstance().BakeZonesIntoMap(aBuf, pStorage);
-	if (NewMapPath.has_value()) {
+	const auto NewMapPath = CTuneZoneManager::GetInstance().BakePreparedMap(aBuf, pStorage);
+	if (NewMapPath.has_value())
 		str_copy(aBuf, NewMapPath->data());
-	}
 
 	if(!m_pMap->Load(aBuf))
 		return false;
@@ -33,8 +32,6 @@ bool CMapDetail::Load(IStorageEngine* pStorage)
 		m_aSha256 = m_pMap->Sha256();
 		m_aCrc = m_pMap->Crc();
 	}
-
-	CTuneZoneManager::GetInstance().DeleteTempfile(pStorage);
 
 	return true;
 }
@@ -82,10 +79,11 @@ bool CMultiWorlds::Init(CWorld* pNewWorld, IKernel* pKernel)
 
 bool CMultiWorlds::LoadFromDB(IKernel* pKernel, IStorageEngine* pStorage)
 {
+	CTuneZoneManager::GetInstance().LoadSoundsFromDirectory("server_data/sounds", pStorage);
 	Clear(false);
 
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_worlds");
- 	while(pRes->next())
+	while(pRes->next())
 	{
 		const int WorldID = pRes->getInt("ID");
 		dbg_assert(WorldID < ENGINE_MAX_WORLDS, "exceeded pool of allocated memory for worlds");

@@ -1,6 +1,7 @@
 #include "rifle_wallpusher.h"
 
 #include <game/server/gamecontext.h>
+#include <generated/server_data.h>
 
 CEntityRifleWallPusher::CEntityRifleWallPusher(CGameWorld* pGameWorld, int OwnerCID, vec2 Pos, vec2 Direction, int LifeTick)
 : CEntity(pGameWorld, CGameWorld::ENTTYPE_LASER, Pos, 64)
@@ -10,7 +11,7 @@ CEntityRifleWallPusher::CEntityRifleWallPusher(CGameWorld* pGameWorld, int Owner
 	m_LifeTick = LifeTick;
 	m_ID2 = Server()->SnapNewID();
 
-	GS()->CreateSound(Pos, SOUND_WEAPONS_WALL_PUSHER_START);
+	GS()->CreateSound(Pos, SOUND_SFX_WEAPON_WALL_PUSHER_START);
 	GameWorld()->InsertEntity(this);
 }
 
@@ -29,8 +30,8 @@ void CEntityRifleWallPusher::Tick()
 	}
 
 	// sound
-	if(Server()->Tick() % Server()->TickSpeed() * GetSoundInterval(SOUND_WEAPONS_WALL_PUSHER_BULLET) == 0)
-		GS()->CreateSound(m_Pos, SOUND_WEAPONS_WALL_PUSHER_BULLET);
+	if(Server()->Tick() % SOUND_SFX_WEAPON_WALL_PUSHER_BULLET_INTERVAL == 0)
+		GS()->CreateSound(m_Pos, SOUND_SFX_WEAPON_WALL_PUSHER_BULLET);
 
 	// check lifetime
 	m_LifeTick--;

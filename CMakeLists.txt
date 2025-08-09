@@ -472,14 +472,16 @@ function(chash output_file)
 endfunction()
 
 function(generate_source output_file script_parameter)
+  set(extra_depends ${ARGN})
   add_custom_command(OUTPUT ${output_file}
     COMMAND ${Python3_EXECUTABLE} datasrc/compile.py ${script_parameter}
-      > "${PROJECT_BINARY_DIR}/${output_file}"
+            > "${PROJECT_BINARY_DIR}/${output_file}"
     DEPENDS
       datasrc/compile.py
       datasrc/content.py
       datasrc/datatypes.py
       datasrc/network.py
+      ${extra_depends}
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
   )
 endfunction()
@@ -514,13 +516,17 @@ chash("src/generated/nethash.cpp"
   "src/game/gamecore.cpp"
   "${PROJECT_BINARY_DIR}/src/generated/protocol.h"
 )
+
+file(GLOB_RECURSE SOUND_FILES CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/server_data/sounds/*.opus")
+set(SOUND_MANIFEST "${PROJECT_SOURCE_DIR}/server_data/sounds/sound.manifest")
+
 #generate_source("src/generated/client_data.cpp" "client_content_source")
 #generate_source("src/generated/client_data.h" "client_content_header")
 generate_source("src/generated/data_types.h" "content_types_header")
 generate_source("src/generated/protocol.cpp" "network_source")
 generate_source("src/generated/protocol.h" "network_header")
 generate_source("src/generated/server_data.cpp" "server_content_source")
-generate_source("src/generated/server_data.h" "server_content_header")
+generate_source("src/generated/server_data.h" "server_content_header" ${SOUND_MANIFEST} ${SOUND_FILES} datasrc/sound_manifest.py)
 
 ########################################################################
 # SHARED

@@ -1,10 +1,12 @@
 #include "mob_ai.h"
 
+#include <game/server/gamecontext.h>
 #include <game/server/entity_manager.h>
+#include <generated/server_data.h>
+
 #include <game/server/entities/character_bot.h>
 #include <game/server/core/components/quests/quest_manager.h>
 #include <game/server/core/components/tunes/tune_zone_manager.h>
-#include <game/server/gamecontext.h>
 
 CMobAI::CMobAI(MobBotInfo* pNpcInfo, CPlayerBot* pPlayer, CCharacterBotAI* pCharacter)
 	: CBaseAI(pPlayer, pCharacter), m_pMobInfo(pNpcInfo) { }
@@ -29,7 +31,7 @@ void CMobAI::OnSpawn()
 	{
 		EnableBotIndicator(POWERUP_WEAPON, WEAPON_HAMMER);
 		GS()->ChatWorld(m_pMobInfo->m_WorldID, nullptr, "In your zone emerging {}!", m_pMobInfo->GetName());
-		GS()->CreatePlayerSound(-1, SOUND_BOSS_RESPAWN);
+		GS()->CreatePlayerSound(-1, SOUND_GAME_BOSS_RESPAWN);
 	}
 }
 

@@ -2,6 +2,7 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "entity_manager.h"
 #include "gamecontext.h"
+#include <generated/server_data.h>
 
 #include "entities/projectile.h"
 #include "core/entities/group/entitiy_group.h"
@@ -776,7 +777,7 @@ void CEntityManager::StartUniversalCast(int ClientID, vec2 TargetPosition, int N
 	GS()->CreatePlayerSpawn(TargetPosition);
 	GS()->Broadcast(ClientID, BroadcastPriority::GameWarning, SERVER_TICK_SPEED,
 		"Skill Cast. Requires fire pressing '{}' times.", std::max(1, NumRequiredClicks));
-	GS()->CreateSound(TargetPosition, SOUND_SKILL_START);
+	GS()->CreateSound(TargetPosition, SOUND_SFX_SKILL);
 
 	// register event tick
 	pCastingEntity->RegisterEvent(CBaseEntity::EventTick, [this, ActualSkillExecutionFunc, pCastingProcessTracker](CBaseEntity* pBase)

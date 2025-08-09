@@ -4,6 +4,7 @@
 
 #include <game/server/entity_manager.h>
 #include <game/server/gamecontext.h>
+#include <generated/server_data.h>
 
 void CQuestDescription::CReward::ApplyReward(CPlayer* pPlayer) const
 {

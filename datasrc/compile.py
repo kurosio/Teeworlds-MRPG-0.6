@@ -2,6 +2,7 @@ import argparse
 import content
 import network
 
+from sound_manifest import MANIFEST_FILE, SPECIAL_SOUND_BASE_ID, build_entries_with_intervals
 from datatypes import EmitDefinition, EmitTypeDeclaration
 
 def create_enum_table(names, num, start = 0):
@@ -101,7 +102,7 @@ enum
 	WEAPON_SELF = -2, // console kill command
 	WEAPON_WORLD = -1, // death tiles etc
 };
-    
+
 class CNetObjHandler
 {
 	const char *m_pMsgFailedOn;
@@ -290,10 +291,10 @@ void *CNetObjHandler::SecureUnpackObj(int Type, CUnpacker *pUnpacker)
 		m_pObjFailedOn = "(type out of range)";
 		break;
 	}
-	
+
 	if(pUnpacker->Error())
 		m_pObjFailedOn = "(unpack error)";
-	
+
 	if(m_pObjFailedOn)
 		return 0;
 	m_pObjFailedOn = "";
@@ -323,10 +324,10 @@ void *CNetObjHandler::SecureUnpackMsg(int Type, CUnpacker *pUnpacker)
 		m_pMsgFailedOn = "(type out of range)";
 		break;
 	}
-	
+
 	if(pUnpacker->Error())
 		m_pMsgFailedOn = "(unpack error)";
-	
+
 	if(m_pMsgFailedOn)
 		return 0;
 	m_pMsgFailedOn = "";
@@ -437,13 +438,62 @@ def gen_server_content_header():
 	print("#ifndef SERVER_CONTENT_HEADER")
 	print("#define SERVER_CONTENT_HEADER")
 	gen_common_content_header()
-	EmitEnumClass("EServerSound", [f"{i.name.value.upper()}" for i in content.container.server_sounds.items], "NUM_SOUNDS")
-	print(f"static const char* g_apServerSoundNames[static_cast<int>(EServerSound::NUM_SOUNDS)] = {{") # static cast is stupid and weird here https://stackoverflow.com/a/35936719
-	for sound in content.container.server_sounds.items:
-		print(f'\t"{sound.filename.value}",')
-	print("};")
-	print("#endif")
 
+	# enum with sounds
+	entries = build_entries_with_intervals(MANIFEST_FILE)
+	print("// Auto-generated from server_data/sounds/sound.manifest")
+	print("enum ESpecialSound : int")
+	print("{")
+	print("\tSOUND_NOPE = -1,")
+	print(f"\tSOUND_FIRST_CUSTOM = {SPECIAL_SOUND_BASE_ID},")
+	if entries:
+		for i, e in enumerate(entries):
+			print(f"\t{e.enum} = SOUND_FIRST_CUSTOM + {i}, // {e.file}")
+		print(f"\tSOUND_LAST_CUSTOM = SOUND_FIRST_CUSTOM + {len(entries) - 1}")
+	else:
+		print("\tSOUND_LAST_CUSTOM = SOUND_FIRST_CUSTOM - 1")
+	print("};")
+	print("")
+	print("inline constexpr int SOUND_CUSTOM_COUNT = (int)(SOUND_LAST_CUSTOM) - (int)(SOUND_FIRST_CUSTOM) + 1;")
+	print("")
+
+	# Files & intervals
+	if entries:
+		print("// File names (order of manifest)")
+		print("inline constexpr const char* g_apSpecialSoundFiles[SOUND_CUSTOM_COUNT] = {")
+		for e in entries:
+			print(f'\t"{e.file}",')
+		print("};")
+		print("")
+
+		print("// Intervals in ticks (1 sec = 50 ticks)")
+		print("inline constexpr int g_aSpecialSoundIntervals[SOUND_CUSTOM_COUNT] = {")
+		for e in entries:
+			print(f"\t{e.interval_ticks},")
+		print("};")
+		print("")
+
+		# Constant <ALIAS>_INTERVAL (in ticks)
+		for e in entries:
+			print(f"inline constexpr int {e.enum}_INTERVAL = {e.interval_ticks};")
+	else:
+		print("// No custom sounds in manifest")
+		print("inline constexpr const char* const* g_apSpecialSoundFiles = nullptr;")
+	print("")
+
+	# help functions
+	print("inline constexpr int SpecialSoundToPreparedIndex(int SoundId)")
+	print("{")
+	print("\tconst int v = SoundId - SOUND_FIRST_CUSTOM;")
+	print("\treturn (SoundId >= 0 && SoundId < SOUND_CUSTOM_COUNT) ? SoundId : -1;")
+	print("}")
+	print("")
+	print("inline constexpr bool IsCustomSound(int SoundId)")
+	print("{")
+	print("\treturn SoundId >= (int)SOUND_FIRST_CUSTOM && SoundId <= (int)SOUND_LAST_CUSTOM;")
+	print("}")
+	print("")
+	print("#endif")
 
 def gen_server_content_source():
 	print('#include "server_data.h"')

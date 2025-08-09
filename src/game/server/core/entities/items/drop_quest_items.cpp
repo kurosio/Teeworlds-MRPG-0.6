@@ -3,6 +3,7 @@
 #include "drop_quest_items.h"
 
 #include <game/server/gamecontext.h>
+#include <generated/server_data.h>
 
 CDropQuestItem::CDropQuestItem(CGameWorld* pGameWorld, vec2 Pos, vec2 Vel, float AngleForce, int ItemID, int Needed, int QuestID, int Step, int ClientID)
 : CEntity(pGameWorld, CGameWorld::ENTTYPE_PICKUP_QUEST, Pos, 24.0f)
@@ -66,7 +67,7 @@ void CDropQuestItem::Tick()
 		{
 			pPlayerItem->Add(1);
 			GS()->Chat(m_ClientID, "You got '{}'.", pPlayerItem->Info()->GetName());
-			GS()->CreatePlayerSound(m_ClientID, SOUND_PICK_UP);
+			GS()->CreatePlayerSound(m_ClientID, SOUND_SFX_PICK_UP);
 			GameWorld()->DestroyEntity(this);
 			return;
 		}

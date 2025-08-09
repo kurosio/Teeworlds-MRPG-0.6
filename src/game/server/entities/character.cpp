@@ -373,7 +373,7 @@ bool CCharacter::FireHammer(vec2 Direction, vec2 ProjStartPos, int TotalWeaponDa
 		// move and visual effect
 		AddVelocity(Direction * 2.5f);
 		GS()->CreateExplosion(m_Pos, m_ClientID, WEAPON_HAMMER, TotalWeaponDamage);
-		GS()->CreateSound(m_Pos, SOUND_WEAPONS_HAMMER_BLAST_START);
+		GS()->CreateSound(m_Pos, SOUND_SFX_WEAPON_HAMMER_LAMP);
 		return true;
 	}
 
@@ -420,7 +420,7 @@ bool CCharacter::FireGun(vec2 Direction, vec2 ProjStartPos, int TotalWeaponDamag
 	if(EquippedItemIdOpt == itGunPulse)
 	{
 		new CLaser(GameWorld(), m_ClientID, TotalWeaponDamage, m_Pos, Direction, 400.f, true);
-		GS()->CreateSound(m_Pos, SOUND_WEAPONS_GUN_PULSE_START);
+		GS()->CreateSound(m_Pos, SOUND_SFX_WEAPON_GUN_PULSE);
 		return true;
 	}
 
@@ -487,7 +487,7 @@ bool CCharacter::FireGrenade(vec2 Direction, vec2 ProjStartPos, int Damage)
 	{
 		new CEntityGrenadePizdamet(&GS()->m_World, m_ClientID, ProjStartPos, Direction);
 		m_ReloadTimer = Server()->TickSpeed() / 8;
-		GS()->CreateSound(m_Pos, SOUND_WEAPONS_PIZDAMET_START);
+		GS()->CreateSound(m_Pos, SOUND_SFX_WEAPON_PIZDAMET);
 		return true;
 	}
 
@@ -529,7 +529,7 @@ bool CCharacter::FireRifle(vec2 Direction, vec2 ProjStartPos, int TotalWeaponDam
 	if(EquippedItemIdOpt == itRifleTrackedPlazma)
 	{
 		new CEntityRifleTrackedPlazma(&GS()->m_World, m_ClientID, ProjStartPos, Direction);
-		GS()->CreateSound(m_Pos, SOUND_WEAPONS_TRACKED_PLAZMA_START);
+		GS()->CreateSound(m_Pos, SOUND_SFX_WEAPON_TRACKED_PLAZMA);
 		return true;
 	}
 
