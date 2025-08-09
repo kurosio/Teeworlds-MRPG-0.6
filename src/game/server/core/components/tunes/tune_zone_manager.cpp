@@ -276,7 +276,7 @@ void CTuneZoneManager::LoadSoundsFromDirectory(const char* pDirectory, IStorageE
 		if(str_endswith(pName, ".opus"))
 		{
 			auto* pVec = static_cast<std::vector<std::string>*>(pUser);
-			pVec->push_back(pName);
+			pVec->emplace_back(pName);
 		}
 		return 0;
 	};

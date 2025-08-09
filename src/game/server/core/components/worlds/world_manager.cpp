@@ -31,10 +31,6 @@ void CWorldManager::OnInitWorld(const std::string& SqlQueryWhereWorld)
         Worlds.second = pResSwap->getInt("TwoWorldID");
 
 		vSwappers.emplace_back(SwapperPos, Worlds);
-        dbg_msg("SWAPPERS", "[%d](%0.2f;%0.2f) -> [%d](%0.2f;%0.2f)",
-                Worlds.first, SwapperPos.first.x, SwapperPos.first.y,
-                Worlds.second, SwapperPos.second.x, SwapperPos.second.y
-                );
 //        if(Worlds.second == currentWorldID) // two-sided
 //        {
 //            std::swap(SwapperPos.first, SwapperPos.second);
