@@ -34,6 +34,15 @@ def EmitEnum(names, num):
 	print(f"\t{num}")
 	print("};")
 
+def EmitEnumClass(title, names, num):
+	print(f"enum class {title} : int")
+	print("{")
+	print(f"\t{names[0]}=0,")
+	for name in names[1:]:
+		print(f"\t{name},")
+	print(f"\t{num}")
+	print("};")
+
 
 def EmitFlags(names):
 	print("enum")
@@ -428,6 +437,11 @@ def gen_server_content_header():
 	print("#ifndef SERVER_CONTENT_HEADER")
 	print("#define SERVER_CONTENT_HEADER")
 	gen_common_content_header()
+	EmitEnumClass("EServerSound", [f"{i.name.value.upper()}" for i in content.container.server_sounds.items], "NUM_SOUNDS")
+	print(f"static const char* g_apServerSoundNames[static_cast<int>(EServerSound::NUM_SOUNDS)] = {{") # static cast is stupid and weird here https://stackoverflow.com/a/35936719
+	for sound in content.container.server_sounds.items:
+		print(f'\t"{sound.filename.value}",')
+	print("};")
 	print("#endif")
 
 

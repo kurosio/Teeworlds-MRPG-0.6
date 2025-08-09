@@ -82,7 +82,6 @@ bool CMultiWorlds::Init(CWorld* pNewWorld, IKernel* pKernel)
 
 bool CMultiWorlds::LoadFromDB(IKernel* pKernel, IStorageEngine* pStorage)
 {
-	CTuneZoneManager::GetInstance().LoadSoundsFromDirectory("server_data/sounds", pStorage);
 	Clear(false);
 
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_worlds");
