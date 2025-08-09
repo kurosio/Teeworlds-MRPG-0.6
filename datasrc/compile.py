@@ -485,7 +485,7 @@ def gen_server_content_header():
 	print("inline constexpr int SpecialSoundToPreparedIndex(int SoundId)")
 	print("{")
 	print("\tconst int v = SoundId - SOUND_FIRST_CUSTOM;")
-	print("\treturn (SoundId >= 0 && SoundId < SOUND_CUSTOM_COUNT) ? SoundId : -1;")
+	print("\treturn (v >= 0 && v < SOUND_CUSTOM_COUNT) ? v : -1;")
 	print("}")
 	print("")
 	print("inline constexpr bool IsCustomSound(int SoundId)")
