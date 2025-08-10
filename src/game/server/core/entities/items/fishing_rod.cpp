@@ -2,6 +2,7 @@
 
 #include <game/server/gamecontext.h>
 #include <game/server/entity_manager.h>
+#include <generated/server_data.h>
 
 CEntityFishingRod::CEntityFishingRod(CGameWorld* pGameWorld, int ClientID, vec2 Position, vec2 Force)
 	: CEntity(pGameWorld, CGameWorld::ENTTYPE_TOOLS, Position, 0, ClientID)
@@ -10,6 +11,7 @@ CEntityFishingRod::CEntityFishingRod(CGameWorld* pGameWorld, int ClientID, vec2 
 	m_Rope.Init(NUM_ROPE_POINTS, Position, Force);
 	m_Fishing.m_State = FishingNow::WAITING;
 	m_Fishing.m_HookingTime = SERVER_TICK_SPEED * (5 + rand() % 14);
+	m_FloatInWater = false;
 
 	AddSnappingGroupIds(ROD, NUM_ROD_POINTS);
 	AddSnappingGroupIds(ROPE, NUM_ROPE_POINTS);
@@ -74,7 +76,15 @@ void CEntityFishingRod::Tick()
 		// pulling unground water
 		if(m_Fishing.m_State == FishingNow::PULLING)
 			m_Fishing.m_State = FishingNow::AWAY;
+		m_FloatInWater = false;
 		return;
+	}
+
+	// mark float in water and send sound
+	if(!m_FloatInWater)
+	{
+		GS()->CreateSound(TestBox, SOUND_SFX_WATER);
+		m_FloatInWater = true;
 	}
 
 	// check node
@@ -123,7 +133,11 @@ void CEntityFishingRod::FishingTick(CPlayer* pPlayer, CProfession* pFisherman, G
 	if(m_Fishing.m_State == FishingNow::WAITING)
 	{
 		if(m_Fishing.m_HookingTime <= (Server()->TickSpeed() * 3) + 1)
+		{
+			const auto lastPoint = m_Rope.m_vPoints.back();
 			m_Fishing.m_State = FishingNow::HOOKING;
+			GS()->CreateSound(lastPoint, SOUND_SFX_WATER);
+		}
 
 		GS()->Broadcast(m_ClientID, BroadcastPriority::GameInformation, 50, "Waiting for the fish: '{}' : {}",
 			pNode->Name, GS()->GetItemInfo(*EquippedItemID)->GetName());

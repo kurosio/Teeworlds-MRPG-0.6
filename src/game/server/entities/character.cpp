@@ -1564,7 +1564,7 @@ void CCharacter::HandleTilesImpl(int Index)
 	if(IsWaterEnter || m_pTilesHandler->IsExit(TILE_WATER))
 	{
 		if(IsWaterEnter)
-			GS()->CreateSound(m_Core.m_Pos, SOUND_SFX_BUBBLES);
+			GS()->CreateSound(m_Core.m_Pos, SOUND_SFX_WATER);
 		GS()->CreateDeath(m_Pos, m_ClientID);
 	}
 

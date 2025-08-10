@@ -36,6 +36,7 @@ class CEntityFishingRod : public CEntity
 		NUM_ROPE_POINTS = 8,
 	};
 
+	bool m_FloatInWater {};
 	vec2 m_EndRodPoint {};
 	RopePhysic m_Rope {};
 	FishingNow m_Fishing{};
