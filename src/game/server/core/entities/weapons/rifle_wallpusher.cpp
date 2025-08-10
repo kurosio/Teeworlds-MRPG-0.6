@@ -11,7 +11,7 @@ CEntityRifleWallPusher::CEntityRifleWallPusher(CGameWorld* pGameWorld, int Owner
 	m_LifeTick = LifeTick;
 	m_ID2 = Server()->SnapNewID();
 
-	GS()->CreateSound(Pos, SOUND_SFX_WEAPON_WALL_PUSHER);
+	GS()->CreateSound(Pos, SOUND_SFX_WEAPON_PUSHER);
 	GameWorld()->InsertEntity(this);
 }
 

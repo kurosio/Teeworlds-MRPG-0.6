@@ -15,7 +15,7 @@ CEntityRifleMagneticPulse::CEntityRifleMagneticPulse(CGameWorld* pGameWorld, int
 		return 0.f + t * (Radius - 0.0f);
 	});
 
-	GS()->CreateSound(m_Pos, SOUND_SFX_WEAPON_MAGNET_IMPULSE_START);
+	GS()->CreateSound(m_Pos, SOUND_SFX_WEAPON_PLAZMA);
 	GameWorld()->InsertEntity(this);
 }
 
@@ -86,12 +86,12 @@ void CEntityRifleMagneticPulse::TickLastPhase()
 	// animation
 	if(m_LifeTick <= m_RadiusAnimation.GetDurationTicks())
 	{
-		GS()->CreateSound(m_Pos, SOUND_SFX_WEAPON_MAGNET_IMPULSE_END);
+		GS()->CreateSound(m_Pos, SOUND_SFX_WEAPON_IMPULSE);
 		m_RadiusAnimation.Reverse(Server()->Tick());
 	}
 	else if(!m_RadiusAnimation.IsStarted())
 	{
-		GS()->CreateSound(m_Pos, SOUND_SFX_WEAPON_MAGNET_IMPULSE_END);
+		GS()->CreateSound(m_Pos, SOUND_SFX_WEAPON_IMPULSE);
 		m_RadiusAnimation.Start(Server()->Tick());
 	}
 

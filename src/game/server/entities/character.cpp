@@ -373,7 +373,7 @@ bool CCharacter::FireHammer(vec2 Direction, vec2 ProjStartPos, int TotalWeaponDa
 		// move and visual effect
 		AddVelocity(Direction * 2.5f);
 		GS()->CreateExplosion(m_Pos, m_ClientID, WEAPON_HAMMER, TotalWeaponDamage);
-		GS()->CreateSound(m_Pos, SOUND_SFX_WEAPON_HAMMER_LAMP);
+		GS()->CreateSound(m_Pos, SOUND_SFX_WEAPON_DEAF_BLOW);
 		return true;
 	}
 
@@ -420,7 +420,7 @@ bool CCharacter::FireGun(vec2 Direction, vec2 ProjStartPos, int TotalWeaponDamag
 	if(EquippedItemIdOpt == itGunPulse)
 	{
 		new CLaser(GameWorld(), m_ClientID, TotalWeaponDamage, m_Pos, Direction, 400.f, true);
-		GS()->CreateSound(m_Pos, SOUND_SFX_WEAPON_GUN_PULSE);
+		GS()->CreateSound(m_Pos, SOUND_SFX_WEAPON_PULSE);
 		return true;
 	}
 
@@ -529,7 +529,7 @@ bool CCharacter::FireRifle(vec2 Direction, vec2 ProjStartPos, int TotalWeaponDam
 	if(EquippedItemIdOpt == itRifleTrackedPlazma)
 	{
 		new CEntityRifleTrackedPlazma(&GS()->m_World, m_ClientID, ProjStartPos, Direction);
-		GS()->CreateSound(m_Pos, SOUND_SFX_WEAPON_TRACKED_PLAZMA);
+		GS()->CreateSound(m_Pos, SOUND_SFX_WEAPON_PLAZMA);
 		return true;
 	}
 
@@ -1560,8 +1560,11 @@ void CCharacter::HandleTilesImpl(int Index)
 	}
 
 	// water effect enter exit
-	if(m_pTilesHandler->IsEnter(TILE_WATER) || m_pTilesHandler->IsExit(TILE_WATER))
+	bool IsWaterEnter = m_pTilesHandler->IsEnter(TILE_WATER);
+	if(IsWaterEnter || m_pTilesHandler->IsExit(TILE_WATER))
 	{
+		if(IsWaterEnter)
+			GS()->CreateSound(m_Core.m_Pos, SOUND_SFX_BUBBLES);
 		GS()->CreateDeath(m_Pos, m_ClientID);
 	}
 
@@ -1995,6 +1998,8 @@ void CCharacter::ChangePosition(vec2 NewPos)
 	if(!m_Alive)
 		return;
 
+	GS()->CreateSound(m_Core.m_Pos, SOUND_SFX_TELEPORT);
+	GS()->CreateSound(NewPos, SOUND_SFX_TELEPORT);
 	GS()->CreateDeath(m_Core.m_Pos, m_pPlayer->GetCID());
 	GS()->CreatePlayerSpawn(NewPos);
 	m_Core.m_Pos = NewPos;
