@@ -1118,6 +1118,7 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 
 			// Set the DDNet version for the client on the server side
 			Server()->SetClientDDNetVersion(ClientID, DDNetVersion);
+			CreatePlayerSound(ClientID, SOUND_VOICE_KONNICHIWA);
 			return;
 		}
 

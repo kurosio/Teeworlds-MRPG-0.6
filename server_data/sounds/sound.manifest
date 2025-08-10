@@ -28,3 +28,4 @@ SOUND_SFX_WEAPON_PUSHER = sfx/weapon/pusher.opus
 SOUND_SFX_WEAPON_PLAZMA = sfx/weapon/plazma.opus
 SOUND_SFX_WEAPON_PIZDAMET = sfx/weapon/pizdamet.opus
 SOUND_VOICE_ARIGATO = voice/arigato.opus
+SOUND_VOICE_KONNICHIWA = voice/konnichiwa.opus
