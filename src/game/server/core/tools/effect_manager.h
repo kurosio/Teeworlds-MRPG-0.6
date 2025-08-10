@@ -42,10 +42,6 @@ static ECharacterEffect EffectFromName(const char *pName) {
 	return ECharacterEffect::INVALID;
 }
 
-static ECharacterEffect EffectFromName(const std::string& Name) {
-	return EffectFromName(Name.c_str());
-}
-
 class CEffectManager
 {
 	std::unordered_map<ECharacterEffect, int> m_vmEffects;
