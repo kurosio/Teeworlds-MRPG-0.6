@@ -36,14 +36,13 @@ namespace
 	{
 		std::string s = pMapName ? pMapName : "";
 		const size_t slash = s.find_last_of("/\\");
+		const size_t nameStart = (slash == std::string::npos) ? 0 : slash + 1;
 		size_t dot = s.find_last_of('.');
-		if(dot == std::string::npos || (slash != std::string::npos && dot < slash))
+		if(dot == std::string::npos || dot < nameStart)
 			dot = s.size();
-
-		const std::string dir = (slash == std::string::npos) ? "" : s.substr(0, slash + 1);
-		const std::string base = (slash == std::string::npos) ? s.substr(0, dot) : s.substr(slash + 1, dot - (slash + 1));
+		const std::string base = s.substr(nameStart, dot - nameStart);
 		const std::string ext = (dot < s.size()) ? s.substr(dot) : ".map";
-		return dir + base + "_prepared" + ext;
+		return std::string("maps/") + base + "_prepared" + ext;
 	}
 
 	static std::vector<std::string> BuildTuneCommands(const CTuneZoneManager& Mgr)
