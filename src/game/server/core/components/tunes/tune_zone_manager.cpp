@@ -8,52 +8,80 @@
 
 namespace
 {
-	static char* SerializeLines(const std::vector<std::string>& vLines, size_t& FinalSize)
+	static std::vector<char> SerializeZeroSeparated(std::initializer_list<std::string_view> Header,
+		const std::vector<std::string>& Body)
 	{
-		FinalSize = 0;
-		if(vLines.empty())
-			return nullptr;
+		size_t Total = 0;
+		for(auto s : Header)
+			Total += s.size() + 1;
+		for(const auto& s : Body)
+			Total += s.size() + 1;
 
-		FinalSize = std::accumulate(
-			vLines.begin(), vLines.end(), size_t { 0 },
-			[](size_t acc, const std::string& s) { return acc + s.size() + 1; });
+		std::vector<char> Out;
+		Out.resize(Total);
 
-		char* pBuffer = (char*)malloc(FinalSize);
-		if(!pBuffer)
-			return nullptr;
-
-		size_t offset = 0;
-		for(const auto& line : vLines)
+		size_t off = 0;
+		auto Append = [&](std::string_view s)
 		{
-			const size_t len = line.size() + 1;
-			mem_copy(pBuffer + offset, line.c_str(), len);
-			offset += len;
-		}
-		return pBuffer;
+			if(!s.empty())
+				mem_copy(Out.data() + off, s.data(), s.size());
+			off += s.size();
+			Out[off++] = '\0';
+		};
+
+		for(auto s : Header)
+			Append(s);
+		for(const auto& s : Body)
+			Append(s);
+		return Out;
 	}
 
 	static std::string MakePreparedPath(const char* pMapName)
 	{
-		std::string s = pMapName ? pMapName : "";
-		const size_t slash = s.find_last_of("/\\");
-		const size_t nameStart = (slash == std::string::npos) ? 0 : slash + 1;
-		size_t dot = s.find_last_of('.');
-		if(dot == std::string::npos || dot < nameStart)
-			dot = s.size();
-		const std::string base = s.substr(nameStart, dot - nameStart);
-		const std::string ext = (dot < s.size()) ? s.substr(dot) : ".map";
-		return std::string("maps/") + base + "_prepared" + ext;
+		std::string_view s(pMapName ? pMapName : "");
+		const auto slash = s.find_last_of("/\\");
+		const auto nameStart = (slash == std::string::npos) ? 0 : slash + 1;
+		const auto dotPos = s.find_last_of('.');
+		const auto nameEnd = (dotPos == std::string::npos || dotPos < nameStart) ? s.size() : dotPos;
+
+		auto base = std::string(s.substr(nameStart, nameEnd - nameStart));
+		auto ext = (nameEnd < s.size()) ? std::string(s.substr(nameEnd)) : ".map";
+		return "maps/" + base + "_prepared" + ext;
 	}
 
 	static std::vector<std::string> BuildTuneCommands(const CTuneZoneManager& Mgr)
 	{
 		std::vector<std::string> v;
+		v.reserve(16);
+
 		for(const auto& [zoneType, zoneParams] : Mgr.m_Zones)
 		{
-			for(const auto& [tuneIdx, tuneValue] : zoneParams.GetDiff())
+			const auto& diff = zoneParams.GetDiff();
+			v.reserve(v.size() + diff.size());
+			for(const auto& [tuneIdx, tuneValue] : diff)
 				v.emplace_back(fmt_default("tune_zone {} {} {}", Mgr.GetZoneID(zoneType), CTuningParams::Name(tuneIdx), tuneValue));
 		}
+
 		return v;
+	}
+
+	static std::string DataToString(CDataFileReader& R, int DataIndex)
+	{
+		if(DataIndex < 0)
+			return {};
+
+		const auto* p = (const char*)R.GetData(DataIndex);
+		if(!p)
+			return {};
+
+		const int sz = R.GetDataSize(DataIndex);
+		if(sz <= 0)
+			return {};
+
+		if(p[sz - 1] == '\0')
+			return std::string(p);
+
+		return std::string(p, sz);
 	}
 }
 
@@ -172,22 +200,14 @@ void CTuneZoneManager::RegisterSound(const std::string& Name, const void* pData,
 
 std::optional<std::string> CTuneZoneManager::BakePreparedMap(const char* pMapName, IStorageEngine* pStorage)
 {
-	// delta settings
+	// 1. collect delta-settings (string lines of commands).
 	const auto vNewCommands = BuildTuneCommands(*this);
-
-	size_t deltaLen = 0;
-	std::unique_ptr<char, void(*)(void*)> pDelta(nullptr, free);
+	std::vector<char> Delta;
 	if(!vNewCommands.empty())
-	{
-		std::vector<std::string> vLines;
-		vLines.emplace_back("");
-		vLines.emplace_back("# Tune zones generated");
-		vLines.insert(vLines.end(), vNewCommands.begin(), vNewCommands.end());
-		pDelta.reset(SerializeLines(vLines, deltaLen));
-	}
-	const bool hasDelta = pDelta && deltaLen > 0;
+		Delta = SerializeZeroSeparated({ "", "# Tune zones generated" }, vNewCommands);
+	const bool HasDelta = !Delta.empty();
 
-	// collect new sounds by manifest order
+	// 2. collect new sounds by manifest order
 	struct TNewSoundRef
 	{
 		std::string m_Name;
@@ -195,82 +215,33 @@ std::optional<std::string> CTuneZoneManager::BakePreparedMap(const char* pMapNam
 	};
 	std::vector<TNewSoundRef> vNewSounds;
 	vNewSounds.reserve(SOUND_CUSTOM_COUNT);
-
 	for(int i = 0; i < SOUND_CUSTOM_COUNT; ++i)
 	{
-		const std::string fileName = g_apSpecialSoundFiles[i];
-		const auto it = m_Sounds.find(fileName);
+		const char* pRel = g_apSpecialSoundFiles[i];
+		if(!pRel || !*pRel)
+			continue;
+		auto it = m_Sounds.find(pRel);
 		if(it != m_Sounds.end())
-		{
-			vNewSounds.push_back({ fileName, &it->second.m_vData });
-		}
+			vNewSounds.push_back({ pRel, &it->second.m_vData });
 		else
-		{
-			dbg_msg("sound_baker", "Manifest sound missing in loaded set: '%s' (skip)", fileName.c_str());
-		}
+			dbg_msg("sound_baker", "Manifest sound missing in loaded set: '%s' (skip)", pRel);
 	}
-	const int newCount = (int)vNewSounds.size();
+	const int NewCount = (int)vNewSounds.size();
 
-	// open base map
-	CDataFileReader reader;
-	if(!reader.Open(pStorage, pMapName, IStorageEngine::TYPE_ALL))
+
+	// 3. open base map getting settings and sounds
+	CDataFileReader Reader;
+	if(!Reader.Open(pStorage, pMapName, IStorageEngine::TYPE_ALL))
 	{
 		dbg_msg("tune_baker", "Failed to open source map '%s'", pMapName);
 		return std::nullopt;
 	}
-	for(int i = 0; i < reader.NumData(); ++i)
-		reader.GetData(i);
 
-	// settings: source + delta
-	bool hadSettingsOriginally = false;
-	int settingsIndex = -1;
-	std::vector<char> settingsCombined;
+	bool HadSettingsOriginally = false;
+	int SettingsIndex = -1;
+	std::vector<char> SettingsCombined;
+	int SoundItemVersionForNew = 1;
 
-	for(int i = 0; i < reader.NumItems(); ++i)
-	{
-		int typeId, itemId;
-		void* pItem = reader.GetItem(i, &typeId, &itemId);
-		if(typeId == MAPITEMTYPE_INFO && itemId == 0)
-		{
-			const int size = reader.GetItemSize(i);
-			if(size >= (int)sizeof(CMapItemInfoSettings))
-			{
-				auto* pInfo = (CMapItemInfoSettings*)pItem;
-				if(pInfo->m_Settings > -1)
-				{
-					hadSettingsOriginally = true;
-					settingsIndex = pInfo->m_Settings;
-
-					const char* pSet = (const char*)reader.GetData(settingsIndex);
-					const int setSize = reader.GetDataSize(settingsIndex);
-					if(hasDelta)
-					{
-						settingsCombined.resize(setSize + (int)deltaLen);
-						if(setSize > 0)
-							mem_copy(settingsCombined.data(), pSet, setSize);
-						mem_copy(settingsCombined.data() + setSize, pDelta.get(), deltaLen);
-					}
-					else
-					{
-						if(setSize > 0)
-						{
-							settingsCombined.resize(setSize);
-							mem_copy(settingsCombined.data(), pSet, setSize);
-						}
-					}
-				}
-			}
-			break;
-		}
-	}
-
-	if(!hadSettingsOriginally && hasDelta)
-	{
-		settingsIndex = reader.NumData();
-		settingsCombined.assign(pDelta.get(), pDelta.get() + deltaLen);
-	}
-
-	// snapshot source sounds
 	struct TOrigSoundSnap
 	{
 		int m_OldId {};
@@ -280,361 +251,331 @@ std::optional<std::string> CTuneZoneManager::BakePreparedMap(const char* pMapNam
 		int m_External {};
 		std::vector<char> m_Data;
 	};
-
 	std::vector<TOrigSoundSnap> vOrigSnaps;
-	int soundItemVersionForNew = 1;
 
-	for(int i = 0; i < reader.NumItems(); ++i)
+	for(int i = 0; i < Reader.NumItems(); ++i)
 	{
-		int typeId, itemId;
-		void* pItem = reader.GetItem(i, &typeId, &itemId);
-		if(typeId != MAPITEMTYPE_SOUND)
-			continue;
+		int TypeId, ItemId;
+		void* pItem = Reader.GetItem(i, &TypeId, &ItemId);
+		const int ItemSize = Reader.GetItemSize(i);
 
-		const int itemSize = reader.GetItemSize(i);
-		if(itemSize < (int)sizeof(CMapItemSound))
-			continue;
-
-		const auto* pSnd = (const CMapItemSound*)pItem;
-		soundItemVersionForNew = pSnd->m_Version;
-
-		TOrigSoundSnap snap;
-		snap.m_OldId = itemId;
-		snap.m_pItem = pSnd;
-		snap.m_ItemSize = itemSize;
-		snap.m_External = pSnd->m_External;
-
-		if(const auto* pName = (const char*)reader.GetData(pSnd->m_SoundName))
+		if(TypeId == MAPITEMTYPE_INFO && ItemId == 0)
 		{
-			const int nameSize = reader.GetDataSize(pSnd->m_SoundName);
-			if(nameSize > 0)
-				snap.m_Name = (pName[nameSize - 1] == '\0') ? std::string(pName) : std::string(pName, nameSize);
-		}
-
-		if(snap.m_External == 0)
-		{
-			if(const void* pBuf = reader.GetData(pSnd->m_SoundData))
+			if(ItemSize >= (int)sizeof(CMapItemInfoSettings))
 			{
-				const int bufSize = reader.GetDataSize(pSnd->m_SoundData);
-				if(bufSize > 0)
+				auto* pInfo = (CMapItemInfoSettings*)pItem;
+				if(pInfo->m_Settings > -1)
 				{
-					snap.m_Data.resize(bufSize);
-					mem_copy(snap.m_Data.data(), pBuf, bufSize);
+					HadSettingsOriginally = true;
+					SettingsIndex = pInfo->m_Settings;
+
+					const char* pSet = (const char*)Reader.GetData(SettingsIndex);
+					const int SetSize = Reader.GetDataSize(SettingsIndex);
+
+					if(HasDelta)
+					{
+						SettingsCombined.resize(SetSize + (int)Delta.size());
+						if(SetSize > 0)
+							mem_copy(SettingsCombined.data(), pSet, SetSize);
+						mem_copy(SettingsCombined.data() + SetSize, Delta.data(), Delta.size());
+					}
+					else
+					{
+						if(SetSize > 0)
+						{
+							SettingsCombined.resize(SetSize);
+							mem_copy(SettingsCombined.data(), pSet, SetSize);
+						}
+					}
 				}
 			}
+			continue;
 		}
 
-		vOrigSnaps.push_back(std::move(snap));
+		if(TypeId == MAPITEMTYPE_SOUND)
+		{
+			if(ItemSize < (int)sizeof(CMapItemSound))
+				continue;
+
+			const auto* pSnd = (const CMapItemSound*)pItem;
+			SoundItemVersionForNew = pSnd->m_Version;
+
+			TOrigSoundSnap Snap;
+			Snap.m_OldId = ItemId;
+			Snap.m_pItem = pSnd;
+			Snap.m_ItemSize = ItemSize;
+			Snap.m_External = pSnd->m_External;
+			Snap.m_Name = DataToString(Reader, pSnd->m_SoundName);
+
+			if(Snap.m_External == 0)
+			{
+				if(const void* pBuf = Reader.GetData(pSnd->m_SoundData))
+				{
+					const int BufSize = Reader.GetDataSize(pSnd->m_SoundData);
+					if(BufSize > 0)
+					{
+						Snap.m_Data.resize(BufSize);
+						mem_copy(Snap.m_Data.data(), pBuf, BufSize);
+					}
+				}
+			}
+
+			vOrigSnaps.push_back(std::move(Snap));
+			continue;
+		}
 	}
 
-	std::stable_sort(vOrigSnaps.begin(), vOrigSnaps.end(),
+	std::sort(vOrigSnaps.begin(), vOrigSnaps.end(),
 		[](const TOrigSoundSnap& a, const TOrigSoundSnap& b) { return a.m_OldId < b.m_OldId; });
 
-	// checking prepared to actual
-	const std::string preparedPath = MakePreparedPath(pMapName);
-	auto PreparedIsUpToDate = [&](const std::string& path) -> bool
+	// if base map does not hass settings but we has delta creating combined settings.
+	if(!HadSettingsOriginally && HasDelta)
 	{
-		CDataFileReader prep;
-		if(!prep.Open(pStorage, path.c_str(), IStorageEngine::TYPE_ALL))
-			return false;
-		for(int i = 0; i < prep.NumData(); ++i)
-			prep.GetData(i);
+		SettingsIndex = Reader.NumData();
+		SettingsCombined = Delta;
+	}
 
-		// settings - bit a bit
-		int prepSettingsIndex = -1;
-		for(int i = 0; i < prep.NumItems(); ++i)
+	// 4. check is prepared map is updated.
+	const std::string PreparedPath = MakePreparedPath(pMapName);
+	auto PreparedIsUpToDate = [&](const std::string& Path) -> bool
+	{
+		CDataFileReader Prep;
+		if(!Prep.Open(pStorage, Path.c_str(), IStorageEngine::TYPE_ALL))
+			return false;
+
+		// check settings
+		int PrepSettingsIndex = -1;
+		for(int i = 0; i < Prep.NumItems(); ++i)
 		{
-			int typeId, itemId;
-			void* pItem = prep.GetItem(i, &typeId, &itemId);
-			if(typeId == MAPITEMTYPE_INFO && itemId == 0)
+			int TypeId, ItemId;
+			void* pItem = Prep.GetItem(i, &TypeId, &ItemId);
+			if(TypeId == MAPITEMTYPE_INFO && ItemId == 0)
 			{
-				const int size = prep.GetItemSize(i);
-				if(size >= (int)sizeof(CMapItemInfoSettings))
-					prepSettingsIndex = ((CMapItemInfoSettings*)pItem)->m_Settings;
+				if(Prep.GetItemSize(i) >= (int)sizeof(CMapItemInfoSettings))
+					PrepSettingsIndex = ((CMapItemInfoSettings*)pItem)->m_Settings;
 				break;
 			}
 		}
 
-		if(!settingsCombined.empty())
+		if(!SettingsCombined.empty())
 		{
-			if(prepSettingsIndex < 0)
+			if(PrepSettingsIndex < 0)
 			{
-				prep.Close();
+				Prep.Close();
 				return false;
 			}
-
-			const char* pS = (const char*)prep.GetData(prepSettingsIndex);
-			const int sSize = prep.GetDataSize(prepSettingsIndex);
-
-			if(sSize != (int)settingsCombined.size())
+			const char* pS = (const char*)Prep.GetData(PrepSettingsIndex);
+			const int SSize = Prep.GetDataSize(PrepSettingsIndex);
+			if(SSize != (int)SettingsCombined.size() ||
+				(SSize > 0 && mem_comp(pS, SettingsCombined.data(), SSize) != 0))
 			{
-				prep.Close();
-				return false;
-			}
-
-			if(sSize > 0 && mem_comp(pS, settingsCombined.data(), sSize) != 0)
-			{
-				prep.Close();
+				Prep.Close();
 				return false;
 			}
 		}
 		else
 		{
-			if(prepSettingsIndex >= 0 && prep.GetDataSize(prepSettingsIndex) != 0)
+			if(PrepSettingsIndex >= 0 && Prep.GetDataSize(PrepSettingsIndex) != 0)
 			{
-				prep.Close();
+				Prep.Close();
 				return false;
 			}
 		}
 
 		// check sounds
 		std::vector<std::pair<int, const CMapItemSound*>> vPrepSounds;
-		for(int i = 0; i < prep.NumItems(); ++i)
+		vPrepSounds.reserve(NewCount + (int)vOrigSnaps.size());
+		for(int i = 0; i < Prep.NumItems(); ++i)
 		{
-			int typeId, itemId;
-			void* pItem = prep.GetItem(i, &typeId, &itemId);
-			if(typeId == MAPITEMTYPE_SOUND)
+			int TypeId, ItemId;
+			void* pItem = Prep.GetItem(i, &TypeId, &ItemId);
+			if(TypeId == MAPITEMTYPE_SOUND)
 			{
-				if(prep.GetItemSize(i) < (int)sizeof(CMapItemSound))
+				if(Prep.GetItemSize(i) < (int)sizeof(CMapItemSound))
 				{
-					prep.Close();
+					Prep.Close();
 					return false;
 				}
-
-				vPrepSounds.emplace_back(itemId, (const CMapItemSound*)pItem);
+				vPrepSounds.emplace_back(ItemId, (const CMapItemSound*)pItem);
 			}
 		}
 		std::sort(vPrepSounds.begin(), vPrepSounds.end(),
 			[](const auto& a, const auto& b) { return a.first < b.first; });
 
-		if((int)vPrepSounds.size() != newCount + (int)vOrigSnaps.size())
+		if((int)vPrepSounds.size() != NewCount + (int)vOrigSnaps.size())
 		{
-			prep.Close();
+			Prep.Close();
 			return false;
 		}
 
-		// manifest sounds
-		for(int i = 0; i < newCount; ++i)
+		// first sounds from manifest.
+		for(int i = 0; i < NewCount; ++i)
 		{
 			const auto* pS = vPrepSounds[i].second;
 
-			const char* pName = (const char*)prep.GetData(pS->m_SoundName);
-			const int nameSize = prep.GetDataSize(pS->m_SoundName);
-			if(!pName)
+			const std::string Name = DataToString(Prep, pS->m_SoundName);
+			if(Name != vNewSounds[i].m_Name)
 			{
-				prep.Close();
+				Prep.Close();
 				return false;
 			}
 
-			std::string name = (nameSize > 0 && pName[nameSize - 1] == '\0') ? std::string(pName) : std::string(pName, nameSize);
-			if(name != vNewSounds[i].m_Name)
-			{
-				prep.Close();
-				return false;
-			}
+			const void* pBuf = Prep.GetData(pS->m_SoundData);
+			const int BufSize = Prep.GetDataSize(pS->m_SoundData);
+			const auto& Need = *vNewSounds[i].m_pData;
 
-			const void* pBuf = prep.GetData(pS->m_SoundData);
-			const int bufSize = prep.GetDataSize(pS->m_SoundData);
-			const auto& need = *vNewSounds[i].m_pData;
-			if(bufSize != (int)need.size())
+			if(BufSize != (int)Need.size() ||
+				(BufSize > 0 && mem_comp(pBuf, Need.data(), BufSize) != 0) ||
+				pS->m_External != 0)
 			{
-				prep.Close();
-				return false;
-			}
-
-			if(bufSize > 0 && mem_comp(pBuf, need.data(), bufSize) != 0)
-			{
-				prep.Close();
-				return false;
-			}
-
-			if(pS->m_External != 0)
-			{
-				prep.Close();
+				Prep.Close();
 				return false;
 			}
 		}
 
-		// map sounds
+		// other map sounds.
 		for(size_t j = 0; j < vOrigSnaps.size(); ++j)
 		{
-			const auto* pS = vPrepSounds[newCount + (int)j].second;
+			const auto* pS = vPrepSounds[NewCount + (int)j].second;
 
-			const char* pName = (const char*)prep.GetData(pS->m_SoundName);
-			const int nameSize = prep.GetDataSize(pS->m_SoundName);
-			if(!pName)
+			if(DataToString(Prep, pS->m_SoundName) != vOrigSnaps[j].m_Name ||
+				pS->m_External != vOrigSnaps[j].m_External)
 			{
-				prep.Close();
-				return false;
-			}
-
-			std::string name = (nameSize > 0 && pName[nameSize - 1] == '\0') ? std::string(pName) : std::string(pName, nameSize);
-			if(name != vOrigSnaps[j].m_Name)
-			{
-				prep.Close();
-				return false;
-			}
-
-			if(pS->m_External != vOrigSnaps[j].m_External)
-			{
-				prep.Close();
+				Prep.Close();
 				return false;
 			}
 
 			if(vOrigSnaps[j].m_External == 0)
 			{
-				const void* pBuf = prep.GetData(pS->m_SoundData);
-				const int bufSize = prep.GetDataSize(pS->m_SoundData);
-				const auto& need = vOrigSnaps[j].m_Data;
-				if(bufSize != (int)need.size())
-				{
-					prep.Close();
-					return false;
-				}
+				const void* pBuf = Prep.GetData(pS->m_SoundData);
+				const int BufSize = Prep.GetDataSize(pS->m_SoundData);
+				const auto& Need = vOrigSnaps[j].m_Data;
 
-				if(bufSize > 0 && mem_comp(pBuf, need.data(), bufSize) != 0)
+				if(BufSize != (int)Need.size() ||
+					(BufSize > 0 && mem_comp(pBuf, Need.data(), BufSize) != 0))
 				{
-					prep.Close();
+					Prep.Close();
 					return false;
 				}
 			}
 		}
 
-		prep.Close();
+		Prep.Close();
 		return true;
 	};
 
-	if(PreparedIsUpToDate(preparedPath))
+	if(PreparedIsUpToDate(PreparedPath))
 	{
-		dbg_msg("tune_baker", "Prepared is up-to-date: '%s'", preparedPath.c_str());
-		reader.Close();
-		return preparedPath;
+		dbg_msg("tune_baker", "Prepared is up-to-date: '%s'", PreparedPath.c_str());
+		Reader.Close();
+		return PreparedPath;
 	}
 
-	// index data for new sound
-	const int oldNumData = reader.NumData();
-	int nextDataIndex = oldNumData + ((hadSettingsOriginally || settingsCombined.empty()) ? 0 : 1);
-
-	struct TNewIdx { int m_Name; int m_Data; };
-	std::vector<TNewIdx> vNewIdx;
-	vNewIdx.reserve(newCount);
-	for(int i = 0; i < newCount; ++i)
+	// 5. write new map
+	CDataFileWriter Writer;
+	if(!Writer.Open(pStorage, PreparedPath.c_str(), IStorageEngine::TYPE_SAVE))
 	{
-		vNewIdx.push_back({ nextDataIndex, nextDataIndex + 1 });
-		nextDataIndex += 2;
-	}
-
-	// buffer names
-	std::vector<std::vector<char>> vNewNameBuffers;
-	vNewNameBuffers.reserve(newCount);
-	for(const auto& ns : vNewSounds)
-	{
-		auto& buf = vNewNameBuffers.emplace_back(ns.m_Name.begin(), ns.m_Name.end());
-		buf.push_back('\0');
-	}
-
-	// start writing prepared map
-	CDataFileWriter writer;
-	if(!writer.Open(pStorage, preparedPath.c_str(), IStorageEngine::TYPE_SAVE))
-	{
-		dbg_msg("tune_baker", "Failed to open prepared for write: '%s'", preparedPath.c_str());
-		reader.Close();
+		dbg_msg("tune_baker", "Failed to open prepared for write: '%s'", PreparedPath.c_str());
+		Reader.Close();
 		return std::nullopt;
 	}
 
-	// all items, edit info and layertype sounds
-	for(int i = 0; i < reader.NumItems(); ++i)
+	// through all items and add them, replacing INFO and LAYERTYPE_SOUNDS if necessary.
+	const int OldNumData = Reader.NumData();
+	const bool InsertNewSettings = !SettingsCombined.empty() && !HadSettingsOriginally;
+	const int BaseNewDataIndex = OldNumData + (InsertNewSettings ? 1 : 0);
+	for(int i = 0; i < Reader.NumItems(); ++i)
 	{
-		int typeId, itemId;
-		void* pItem = reader.GetItem(i, &typeId, &itemId);
-		const int size = reader.GetItemSize(i);
+		int TypeId, ItemId;
+		void* pItem = Reader.GetItem(i, &TypeId, &ItemId);
+		const int Size = Reader.GetItemSize(i);
 
-		if(typeId == MAPITEMTYPE_SOUND)
+		if(TypeId == MAPITEMTYPE_SOUND)
 			continue;
 
-		if(typeId == MAPITEMTYPE_INFO && itemId == 0)
+		if(TypeId == MAPITEMTYPE_INFO && ItemId == 0)
 		{
-			if(size >= (int)sizeof(CMapItemInfoSettings))
+			if(Size >= (int)sizeof(CMapItemInfoSettings))
 			{
-				CMapItemInfoSettings info = *(CMapItemInfoSettings*)pItem;
-				if(!settingsCombined.empty())
-					info.m_Settings = settingsIndex;
-				writer.AddItem(typeId, itemId, sizeof(info), &info);
+				CMapItemInfoSettings Info = *(CMapItemInfoSettings*)pItem;
+				if(!SettingsCombined.empty())
+					Info.m_Settings = HadSettingsOriginally ? SettingsIndex : OldNumData;
+				Writer.AddItem(TypeId, ItemId, sizeof(Info), &Info);
 			}
 			else
 			{
-				CMapItemInfoSettings info;
-				*(CMapItemInfo*)&info = *(CMapItemInfo*)pItem;
-				info.m_Settings = settingsCombined.empty() ? -1 : settingsIndex;
-				writer.AddItem(MAPITEMTYPE_INFO, 0, sizeof(info), &info);
+				CMapItemInfoSettings Info;
+				*(CMapItemInfo*)&Info = *(CMapItemInfo*)pItem;
+				Info.m_Settings = SettingsCombined.empty() ? -1 : OldNumData;
+				Writer.AddItem(MAPITEMTYPE_INFO, 0, sizeof(Info), &Info);
 			}
 			continue;
 		}
 
-		if(typeId == MAPITEMTYPE_LAYER && size >= (int)sizeof(CMapItemLayer))
+		if(TypeId == MAPITEMTYPE_LAYER && Size >= (int)sizeof(CMapItemLayer))
 		{
 			auto* pBase = (CMapItemLayer*)pItem;
-			if(pBase->m_Type == LAYERTYPE_SOUNDS && size >= (int)sizeof(CMapItemLayerSounds))
+			if(pBase->m_Type == LAYERTYPE_SOUNDS && Size >= (int)sizeof(CMapItemLayerSounds))
 			{
 				CMapItemLayerSounds L = *(CMapItemLayerSounds*)pItem;
 				if(L.m_Sound >= 0)
-					L.m_Sound += newCount;
-				writer.AddItem(typeId, itemId, sizeof(L), &L);
+					L.m_Sound += NewCount;
+				Writer.AddItem(TypeId, ItemId, sizeof(L), &L);
 				continue;
 			}
 		}
 
-		writer.AddItem(typeId, itemId, size, pItem);
+		Writer.AddItem(TypeId, ItemId, Size, pItem);
 	}
 
-	// new sound items (by manifest order)
-	for(int i = 0; i < newCount; ++i)
+	// add sounds first from manifest
+	for(int i = 0; i < NewCount; ++i)
 	{
-		CMapItemSound snd;
-		snd.m_Version = soundItemVersionForNew;
-		snd.m_External = 0;
-		snd.m_SoundName = vNewIdx[i].m_Name;
-		snd.m_SoundData = vNewIdx[i].m_Data;
-		writer.AddItem(MAPITEMTYPE_SOUND, i, sizeof(CMapItemSound), &snd);
+		CMapItemSound Snd;
+		Snd.m_Version = SoundItemVersionForNew;
+		Snd.m_External = 0;
+		Snd.m_SoundName = BaseNewDataIndex + i * 2;
+		Snd.m_SoundData = BaseNewDataIndex + i * 2 + 1;
+		Writer.AddItem(MAPITEMTYPE_SOUND, i, sizeof(CMapItemSound), &Snd);
 	}
 
-	// source sound with shift by id
-	for(const auto& s : vOrigSnaps)
-		writer.AddItem(MAPITEMTYPE_SOUND, s.m_OldId + newCount, s.m_ItemSize, (void*)s.m_pItem);
+	// add map sounds
+	for(const auto& S : vOrigSnaps)
+		Writer.AddItem(MAPITEMTYPE_SOUND, S.m_OldId + NewCount, S.m_ItemSize, (void*)S.m_pItem);
 
-	// copy data from source, replacing/inserting settings
-	for(int di = 0; di < reader.NumData(); ++di)
+	// copy all data chunks from the source map, replacing/inserting settings as necessary
+	for(int di = 0; di < Reader.NumData(); ++di)
 	{
-		if(!settingsCombined.empty() && hadSettingsOriginally && di == settingsIndex)
+		if(!SettingsCombined.empty() && HadSettingsOriginally && di == SettingsIndex)
 		{
-			writer.AddData((int)settingsCombined.size(), settingsCombined.data());
+			Writer.AddData((int)SettingsCombined.size(), SettingsCombined.data());
 			continue;
 		}
-		int compressed = 0;
-		const void* pRaw = reader.GetRawData(di, &compressed);
+		int Compressed = 0;
+		const void* pRaw = Reader.GetRawData(di, &Compressed);
 		if(pRaw)
 		{
-			const int uncompressed = reader.GetDataSize(di);
-			writer.AddDataRaw(pRaw, compressed, uncompressed);
+			const int Uncompressed = Reader.GetDataSize(di);
+			Writer.AddDataRaw(pRaw, Compressed, Uncompressed);
 			free((void*)pRaw);
 		}
 	}
-	if(!settingsCombined.empty() && !hadSettingsOriginally)
-		writer.AddData((int)settingsCombined.size(), settingsCombined.data());
+	if(InsertNewSettings)
+		Writer.AddData((int)SettingsCombined.size(), SettingsCombined.data());
 
-	// add data new sounds
-	for(int i = 0; i < newCount; ++i)
+	// add new sound data : binary file
+	for(int i = 0; i < NewCount; ++i)
 	{
-		const auto& nameBuf = vNewNameBuffers[i];
-		writer.AddData((int)nameBuf.size(), nameBuf.data());
+		const auto& Name = vNewSounds[i].m_Name;
+		Writer.AddData((int)Name.size() + 1, Name.c_str());
 
-		const auto& buf = *vNewSounds[i].m_pData;
-		writer.AddData((int)buf.size(), buf.empty() ? nullptr : buf.data());
+		const auto& Buf = *vNewSounds[i].m_pData;
+		Writer.AddData((int)Buf.size(), Buf.empty() ? nullptr : Buf.data());
 	}
 
-	writer.Finish();
-	reader.Close();
+	Writer.Finish();
+	Reader.Close();
 
-	dbg_msg("tune_baker", "Prepared map written: '%s' (sounds: manifest first, settings appended)", preparedPath.c_str());
-	return preparedPath;
+	dbg_msg("tune_baker", "Prepared map written: '%s' (sounds: manifest first, settings appended)", PreparedPath.c_str());
+	return PreparedPath;
 }
