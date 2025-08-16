@@ -1,5 +1,3 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "skill_data.h"
 
 #include <game/server/entity_manager.h>
@@ -22,21 +20,138 @@ CPlayer* CSkill::GetPlayer() const
 	return GS()->GetPlayer(m_ClientID);
 }
 
+void CSkill::LoadTreeChoicesFromDB()
+{
+	auto* pPlayer = GetPlayer();
+	if(!pPlayer)
+		return;
+
+	// load from database
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_skill_tree", "WHERE UserID = '{}' AND SkillID = '{}'", pPlayer->Account()->GetID(), m_ID);
+	m_TreeSelections.clear();
+	while(pRes->next())
+	{
+		const int L = pRes->getInt("LevelIndex");
+		const int O = pRes->getInt("OptionIndex");
+		if(L > 0 && O > 0)
+			m_TreeSelections[L] = O;
+	}
+}
+
+
+int CSkill::GetTreeNodePriceSP(int LevelIndex, int OptionIndex) const
+{
+	const auto* pTree = CSkillTree::Get(m_ID);
+	if(!pTree)
+		return 0;
+
+	const auto* pOpt = pTree->FindOption(LevelIndex, OptionIndex);
+	return pOpt ? pOpt->PriceSP : 0;
+}
+
+bool CSkill::SetTreeOption(int LevelIndex, int OptionIndex)
+{
+	auto* pPlayer = GetPlayer();
+	if(!pPlayer || !IsLearned())
+		return false;
+
+	const auto* pTree = CSkillTree::Get(m_ID);
+	if(!pTree)
+		return false;
+
+	// check valid index
+	if(LevelIndex <= 0 || LevelIndex > pTree->GetMaxLevels())
+		return false;
+	if(!pTree->HasOption(LevelIndex, OptionIndex))
+		return false;
+
+	// check is next level
+	if(GetSelectedOption(LevelIndex) != 0)
+		return false;
+	if(LevelIndex != (GetTreeProgress() + 1))
+		return false;
+
+	// try spend sp
+	const int CostSP = GetTreeNodePriceSP(LevelIndex, OptionIndex);
+	if(CostSP > 0 && !pPlayer->Account()->SpendCurrency(CostSP, itSkillPoint))
+		return false;
+
+	// update
+	Database->Execute<DB::INSERT>("tw_accounts_skill_tree",
+		"(UserID, SkillID, LevelIndex, OptionIndex) VALUES ('{}','{}','{}','{}')",
+		pPlayer->Account()->GetID(), m_ID, LevelIndex, OptionIndex);
+	m_TreeSelections[LevelIndex] = OptionIndex;
+
+	// message
+	GS()->Chat(pPlayer->GetCID(), "Selected L{} -> Option {} for ['{}'] (cost: {} SP).",
+		LevelIndex, OptionIndex, Info()->GetName(), CostSP);
+	return true;
+}
+
+
+int CSkill::GetResetCostSP() const
+{
+	return Info()->GetPriceSP();
+}
+
+bool CSkill::ResetTree()
+{
+	auto* pPlayer = GetPlayer();
+	if(!pPlayer || !IsLearned())
+		return false;
+
+	// has tree progress
+	if(GetTreeProgress() <= 0)
+		return false;
+
+	// try spend sp
+	const int Cost = GetResetCostSP();
+	if(Cost > 0 && !pPlayer->Account()->SpendCurrency(Cost, itSkillPoint))
+		return false;
+
+	// update & message
+	Database->Execute<DB::REMOVE>("tw_accounts_skill_tree", "WHERE UserID = '{}' AND SkillID = '{}'", pPlayer->Account()->GetID(), m_ID);
+	m_TreeSelections.clear();
+	GS()->Chat(pPlayer->GetCID(), "Skill tree for ['{}'] was reset (cost: {} SP).", Info()->GetName(), Cost);
+	return true;
+}
+
+int CSkill::GetMod(SkillMod Mod) const
+{
+	if(Mod == SkillMod::None)
+		return 0;
+
+	const auto* pTree = CSkillTree::Get(m_ID);
+	if(!pTree)
+		return 0;
+
+	// calculate sum for mod
+	int Sum = 0;
+	for(const auto& [LevelIndex, OptionIndex] : m_TreeSelections)
+	{
+		const auto* pOpt = pTree->FindOption(LevelIndex, OptionIndex);
+		if(pOpt && pOpt->ModType == Mod)
+			Sum += pOpt->ModValue;
+	}
+
+	return Sum;
+}
+
 std::string CSkill::GetStringLevelStatus() const
 {
-	// is not learned
 	if(!IsLearned())
-	{
 		return "(not learned)";
-	}
 
-	// is not maximal level
-	if(m_Level < Info()->GetMaxLevel())
-	{
-		return "(" + std::to_string(m_Level) + " of " + std::to_string(Info()->GetMaxLevel()) + ")";
-	}
+	const auto* pTree = CSkillTree::Get(m_ID);
+	const int TreeMax = pTree ? pTree->GetMaxLevels() : 0;
+	const int Progress = GetTreeProgress();
 
-	// max level
+	if(TreeMax <= 0)
+		return "(learned)";
+
+	if(Progress < TreeMax)
+		return "(" + std::to_string(Progress) + " of " + std::to_string(TreeMax) + ")";
+
 	return "(max)";
 }
 
@@ -63,7 +178,7 @@ void CSkill::SelectNextControlEmote()
 bool CSkill::Use()
 {
 	// check is learned
-	if(m_Level <= 0)
+	if(!m_Learned)
 		return false;
 
 	// check player valid
@@ -87,14 +202,25 @@ bool CSkill::Use()
 
 	// initialize variables
 	const int ClientID = pPlayer->GetCID();
-	const int ManaCost = maximum(1, translate_to_percent_rest(pPlayer->GetMaxMana(), Info()->GetPercentageCost()));
+	const int ManaCost = maximum(1, translate_to_percent_rest(pPlayer->GetMaxMana(), Info()->GetManaCostPct()));
 	const vec2 PlayerPosition = pChar->GetPos();
-	auto& pEntSkillPtr = m_apEntSkillPtrs[m_ID];
-
 
 	// Cure I
 	if(IsActivated(pChar, ManaCost, SKILL_CURE))
 	{
+		// initialize perks
+		const auto Radius = 500.f + GetMod(SkillMod::Radius);
+		const auto Heal = ManaCost + translate_to_percent_rest(ManaCost, (float)GetMod(SkillMod::BonusIncreasePct));
+		const bool PerkCureAlly = GetMod(SkillMod::CureAlly) > 0;
+
+		// is not perk cudre ally
+		if(!PerkCureAlly)
+		{
+			pChar->IncreaseHealth(Heal);
+			GS()->CreateSound(PlayerPosition, SOUND_SFX_SKILL);
+			return true;
+		}
+
 		// cure near players
 		for(int i = 0; i < MAX_PLAYERS; i++)
 		{
@@ -103,7 +229,7 @@ bool CSkill::Use()
 				continue;
 
 			// check distance
-			if(distance(PlayerPosition, pSearch->GetCharacter()->GetPos()) > 800)
+			if(distance(PlayerPosition, pSearch->GetCharacter()->GetPos()) > Radius)
 				continue;
 
 			// dissalow heal for pvp clients
@@ -111,8 +237,7 @@ bool CSkill::Use()
 				continue;
 
 			// create healt
-			const auto PowerLevel = maximum(ManaCost + translate_to_percent_rest(ManaCost, minimum(GetBonus(), 100)), 1);
-			new CHeartHealer(&GS()->m_World, PlayerPosition, pSearch, PowerLevel, pSearch->GetCharacter()->m_Core.m_Vel, true);
+			new CHeartHealer(&GS()->m_World, PlayerPosition, pSearch, Heal, pSearch->GetCharacter()->m_Core.m_Vel, true);
 			GS()->CreateDeath(pSearch->GetCharacter()->GetPos(), i);
 		}
 
@@ -123,6 +248,10 @@ bool CSkill::Use()
 	// Blessing god war
 	if(IsActivated(pChar, ManaCost, SKILL_BLESSING_GOD_WAR))
 	{
+		// initialize perks
+		const auto Radius = 500.f + GetMod(SkillMod::Radius);
+		const auto RestoreAmmoPct = round_to_int(10.f + (float)GetMod(SkillMod::BonusIncreasePct));
+
 		// blessing near players
 		for(int i = 0; i < MAX_PLAYERS; i++)
 		{
@@ -137,7 +266,7 @@ bool CSkill::Use()
 				continue;
 
 			// check valid distance
-			if(distance(PlayerPosition, pSearchChar->GetPos()) > 800)
+			if(distance(PlayerPosition, pSearchChar->GetPos()) > Radius)
 				continue;
 
 			// check allow for pvp
@@ -146,7 +275,7 @@ bool CSkill::Use()
 
 			// restore ammo
 			const int RealAmmo = 10 + pSearchPl->GetTotalAttributeValue(AttributeIdentifier::Ammo);
-			const int RestoreAmmo = translate_to_percent_rest(RealAmmo, minimum(GetBonus(), 100));
+			const int RestoreAmmo = translate_to_percent_rest(RealAmmo, clamp(RestoreAmmoPct, 30, 100));
 
 			for(int j = WEAPON_GUN; j <= WEAPON_LASER; j++)
 			{
@@ -167,6 +296,10 @@ bool CSkill::Use()
 	//*
 	if(IsActivated(pChar, ManaCost, SKILL_PROVOKE))
 	{
+		// initialize perks
+		const auto Radius = 500.f + GetMod(SkillMod::Radius);
+		const auto Agression = 100 + GetMod(SkillMod::BonusIncreaseValue);
+
 		// provoke mobs
 		bool MissedProvoked = false;
 		for(int i = MAX_PLAYERS; i < MAX_CLIENTS; i++)
@@ -182,7 +315,7 @@ bool CSkill::Use()
 				continue;
 
 			// check distance
-			if(distance(PlayerPosition, pSearchChar->GetPos()) > 800)
+			if(distance(PlayerPosition, pSearchChar->GetPos()) > Radius)
 				continue;
 
 			// check allowed pvp
@@ -203,7 +336,7 @@ bool CSkill::Use()
 			}
 
 			// set agression
-			pSearchChar->AI()->GetTarget()->Set(ClientID, GetBonus());
+			pSearchChar->AI()->GetTarget()->Set(ClientID, Agression);
 			GS()->EntityManager()->FlyingPoint(PlayerPosition, i, pSearchPl->GetCharacter()->m_Core.m_Vel);
 			GS()->CreatePlayerSpawn(pSearchPl->GetCharacter()->GetPos());
 			pSearchPl->GetCharacter()->SetEmote(EMOTE_ANGRY, 10, true);
@@ -222,9 +355,13 @@ bool CSkill::Use()
 
 	if(IsActivated(pChar, ManaCost, SKILL_SLEEPY_GRAVITY, SKILL_USAGE_RESET))
 	{
-		const auto UpgradedValue = minimum(200.f + GetBonus(), 400.f);
+		// initialize perks
+		const auto Radius = 160.f + GetMod(SkillMod::Radius);
+		const int Lifetime = (8 + GetMod(SkillMod::Lifetime)) * SERVER_TICK_SPEED;
 		const auto Damage = maximum(1, pPlayer->GetTotalAttributeValue(AttributeIdentifier::DMG));
-		GS()->EntityManager()->GravityDisruption(ClientID, PlayerPosition, UpgradedValue, 10 * Server()->TickSpeed(), Damage, &pEntSkillPtr);
+
+		// create skill
+		GS()->EntityManager()->GravityDisruption(ClientID, PlayerPosition, Radius, Lifetime, Damage, &m_pEntSkillPtrs);
 		GS()->CreateSound(PlayerPosition, SOUND_SFX_SKILL);
 		return true;
 	}
@@ -232,8 +369,12 @@ bool CSkill::Use()
 
 	if(IsActivated(pChar, ManaCost, SKILL_LAST_STAND, SKILL_USAGE_TOGGLE))
 	{
-		const int PercentManaCost = maximum(Info()->GetPercentageCost() - GetBonus(), 15);
-		GS()->EntityManager()->LastStand(ClientID, PlayerPosition, 96.f, PercentManaCost, &pEntSkillPtr);
+		// initialize perks
+		const auto ManaCostPct = maximum(Info()->GetManaCostPct() - GetMod(SkillMod::ManaCostPct), 15);
+		const auto Radius = 90.f + GetMod(SkillMod::Radius);
+
+		// create skill
+		GS()->EntityManager()->LastStand(ClientID, PlayerPosition, Radius, ManaCostPct, &m_pEntSkillPtrs);
 		GS()->CreateSound(PlayerPosition, SOUND_SFX_SKILL);
 		return true;
 	}
@@ -244,17 +385,24 @@ bool CSkill::Use()
 	//*
 	if(IsActivated(pChar, ManaCost, SKILL_ATTACK_TELEPORT))
 	{
-		new CAttackTeleport(&GS()->m_World, PlayerPosition, pPlayer, GetBonus());
+		// initialize perks
+		const auto DamagePct = GetMod(SkillMod::BonusIncreasePct);
+
+		// create skill
+		new CAttackTeleport(&GS()->m_World, PlayerPosition, pPlayer, DamagePct);
 		GS()->CreateSound(PlayerPosition, SOUND_SFX_SKILL);
 		return true;
 	}
 
 	if(IsActivated(pChar, ManaCost, SKILL_FLAME_WALL, SKILL_USAGE_RESET))
 	{
-		const auto UpgradedValue = minimum(200.f + GetBonus(), 320.f);
+		// initialize perks
+		const auto Radius = 180.f + GetMod(SkillMod::Radius);
+		const int Lifetime = (8 + GetMod(SkillMod::Lifetime)) * SERVER_TICK_SPEED;
 		const auto Damage = maximum(1, translate_to_percent_rest(pPlayer->GetTotalAttributeValue(AttributeIdentifier::DMG), 5.0f));
 
-		GS()->EntityManager()->FlameWall(ClientID, PlayerPosition, UpgradedValue, 10 * Server()->TickSpeed(), Damage, 0.3f);
+		// create skill
+		GS()->EntityManager()->FlameWall(ClientID, PlayerPosition, Radius, Lifetime, Damage, 0.3f);
 		GS()->CreateSound(PlayerPosition, SOUND_SFX_SKILL);
 		return true;
 	}
@@ -265,37 +413,49 @@ bool CSkill::Use()
 	//*
 	if(IsActivated(pChar, ManaCost, SKILL_MAGIC_BOW, SKILL_USAGE_TOGGLE))
 	{
-		const auto Shots = 1 + GetBonus();
+		// initialize perks
+		const auto NumShots = 1 + GetMod(SkillMod::BonusIncreaseValue);
+		const auto Radius = 100.f + GetMod(SkillMod::Radius);
+		const auto NumExplosion = round_to_int(Radius / 25.f);
 		const auto Damage = maximum(1, pPlayer->GetTotalAttributeValue(AttributeIdentifier::DMG));
-		GS()->EntityManager()->Bow(ClientID, Damage, Shots, 180.f, 8, &pEntSkillPtr);
+
+		// create skill
+		GS()->EntityManager()->Bow(ClientID, Damage, NumShots, Radius, NumExplosion, &m_pEntSkillPtrs);
 		GS()->CreateSound(PlayerPosition, SOUND_SFX_SKILL);
 		return true;
 	}
 
 	if(IsActivated(pChar, ManaCost, SKILL_HEART_TURRET, SKILL_USAGE_RESET))
 	{
-		// initialize
-		constexpr int NumCastClicked = 5;
-		const auto UpgradeValue = (10 + GetBonus()) * Server()->TickSpeed();
-		auto FuncExecuteHealingRift = [this, UpgradeValue, ManaCost](int FinalClientID, vec2 FinalPosition, EntGroupWeakPtr* pFinalSkillTracker)
+		// initialize perks
+		const int NumCastClicked = 15 - GetMod(SkillMod::CastClick);
+		const int Lifetime = (8 + GetMod(SkillMod::Lifetime)) * SERVER_TICK_SPEED;
+		const auto HealPerTick = ManaCost + translate_to_percent_rest(ManaCost, (float)GetMod(SkillMod::BonusIncreasePct));
+
+		// skill lambda
+		auto FuncExecuteHealingRift = [this, Lifetime, HealPerTick](int CID, vec2 Pos, EntGroupWeakPtr* pSkillTracker)
 		{
-			GS()->EntityManager()->HealthTurret(FinalClientID, FinalPosition, ManaCost, UpgradeValue, 2 * Server()->TickSpeed(), pFinalSkillTracker);
+			GS()->EntityManager()->HealthTurret(CID, Pos, HealPerTick, Lifetime, 2 * Server()->TickSpeed(), pSkillTracker);
 		};
 
 		// start casting
-		GS()->EntityManager()->StartUniversalCast(ClientID, PlayerPosition, NumCastClicked, FuncExecuteHealingRift, &pEntSkillPtr);
+		GS()->EntityManager()->StartUniversalCast(ClientID, PlayerPosition, NumCastClicked, FuncExecuteHealingRift, &m_pEntSkillPtrs);
 		GS()->CreateSound(PlayerPosition, SOUND_SFX_SKILL);
 		return true;
 	}
 
 	if(IsActivated(pChar, ManaCost, SKILL_HEALING_AURA, SKILL_USAGE_NONE))
 	{
-		// initialize
-		constexpr int NumCastClicked = 7;
-		const auto UpgradeValue = minimum(320.f + GetBonus(), 400.f);
-		auto FuncExecuteHealingAura = [this, UpgradeValue, ManaCost](int FinalClientID, vec2 FinalPosition, EntGroupWeakPtr* pFinalSkillTracker)
+		// initialize perks
+		const int NumCastClicked = 15 - GetMod(SkillMod::CastClick);
+		const float Radius = 240.f + (float)GetMod(SkillMod::Radius);
+		const int Lifetime = (8 + GetMod(SkillMod::Lifetime)) * SERVER_TICK_SPEED;
+		const auto HealPerTick = ManaCost + translate_to_percent_rest(ManaCost, (float)GetMod(SkillMod::BonusIncreasePct));
+
+		// skill lambda
+		auto FuncExecuteHealingAura = [this, Radius, Lifetime, HealPerTick](int CID, vec2 Pos, EntGroupWeakPtr* pSkillTracker)
 		{
-			GS()->EntityManager()->HealingAura(FinalClientID, FinalPosition, UpgradeValue, 10 * Server()->TickSpeed(), ManaCost);
+			GS()->EntityManager()->HealingAura(CID, Pos, Radius, Lifetime, HealPerTick);
 		};
 
 		// start casting
@@ -306,17 +466,20 @@ bool CSkill::Use()
 
 	if(IsActivated(pChar, ManaCost, SKILL_HEALING_RIFT, SKILL_USAGE_RESET))
 	{
-		// initialize
-		constexpr int NumCastClicked = 16;
-		constexpr int Lifetime = 15 * SERVER_TICK_SPEED;
-		const auto HealingPerPulse = ManaCost;
-		auto FuncExecuteHealingRift = [this, Lifetime, HealingPerPulse](int FinalClientID, vec2 FinalPosition, EntGroupWeakPtr* pFinalSkillTracker)
+		// initialize perks
+		const int NumCastClicked = 25 - GetMod(SkillMod::CastClick);
+		const float Radius = 240.f + (float)GetMod(SkillMod::Radius);
+		const int Lifetime = (8 + GetMod(SkillMod::Lifetime)) * SERVER_TICK_SPEED;
+		const auto HealPerPulse = ManaCost + translate_to_percent_rest(ManaCost, (float)GetMod(SkillMod::BonusIncreasePct));
+
+		// skill lambda
+		auto FuncExecuteHealingRift = [this, Lifetime, HealPerPulse, Radius](int CID, vec2 Pos, EntGroupWeakPtr* pSkillTracker)
 		{
-			GS()->EntityManager()->HealingRift(FinalClientID, FinalPosition, 120.f, 320.f, Lifetime, 1.5f, 2, HealingPerPulse, 10, 6, pFinalSkillTracker);
+			GS()->EntityManager()->HealingRift(CID, Pos, 120.f, Radius, Lifetime, 1.5f, 2, HealPerPulse, 10, 6, pSkillTracker);
 		};
 
 		// start casting
-		GS()->EntityManager()->StartUniversalCast(ClientID, PlayerPosition, NumCastClicked, FuncExecuteHealingRift, &pEntSkillPtr);
+		GS()->EntityManager()->StartUniversalCast(ClientID, PlayerPosition, NumCastClicked, FuncExecuteHealingRift, &m_pEntSkillPtrs);
 		GS()->CreateSound(PlayerPosition, SOUND_SFX_SKILL);
 		return true;
 	}
@@ -329,15 +492,13 @@ bool CSkill::IsActivated(CCharacter* pChar, int Manacost, int SkillID, int Skill
 	if(m_ID != SkillID)
 		return false;
 
-	auto& skillEntityPtr = m_apEntSkillPtrs[m_ID];
-
 	// reset skill when use
 	if(SkillUsage == SKILL_USAGE_RESET)
 	{
 		if(!pChar->TryUseMana(Manacost))
 			return false;
 
-		if(const auto groupPtr = skillEntityPtr.lock())
+		if(const auto groupPtr = m_pEntSkillPtrs.lock())
 			groupPtr->Clear();
 
 		return true;
@@ -346,7 +507,7 @@ bool CSkill::IsActivated(CCharacter* pChar, int Manacost, int SkillID, int Skill
 	// toggle skill when use
 	if(SkillUsage == SKILL_USAGE_TOGGLE)
 	{
-		if(const auto groupPtr = skillEntityPtr.lock())
+		if(const auto groupPtr = m_pEntSkillPtrs.lock())
 		{
 			GS()->Broadcast(m_ClientID, BroadcastPriority::GameWarning, 100, "The {} has been disabled!", Info()->GetName());
 			groupPtr->Clear();
@@ -372,31 +533,17 @@ bool CSkill::Upgrade()
 
 	// check for maximal leveling
 	const int ClientID = pPlayer->GetCID();
-	if(m_Level >= Info()->GetMaxLevel())
-	{
-		GS()->Chat(ClientID, "You've already reached the maximum level");
+	if(m_Learned)
 		return false;
-	}
 
 	// try spend skill points
 	if(!pPlayer->Account()->SpendCurrency(Info()->GetPriceSP(), itSkillPoint))
 		return false;
 
-	// update level
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_skills", "WHERE SkillID = '{}' AND UserID = '{}'", m_ID, pPlayer->Account()->GetID());
-	if(pRes->next())
-	{
-		m_Level++;
-		Database->Execute<DB::UPDATE>("tw_accounts_skills", "Level = '{}' WHERE SkillID = '{}' AND UserID = '{}'", m_Level, m_ID, pPlayer->Account()->GetID());
-		GS()->Chat(ClientID, "Increased the skill ['{}' level to '{}'].", Info()->GetName(), m_Level);
-	}
-	else
-	{
-		m_Level = 1;
-		m_SelectedEmoticon = -1;
-		Database->Execute<DB::INSERT>("tw_accounts_skills", "(SkillID, UserID, Level) VALUES ('{}', '{}', '1');", m_ID, pPlayer->Account()->GetID());
-		GS()->Chat(ClientID, "Learned a new skill ['{}']", Info()->GetName());
-	}
-
+	// update state learned
+	m_Learned = true;
+	m_SelectedEmoticon = -1;
+	Database->Execute<DB::INSERT>("tw_accounts_skills", "(SkillID, UserID, Level) VALUES ('{}', '{}', '1');", m_ID, pPlayer->Account()->GetID());
+	GS()->Chat(ClientID, "Learned a new skill ['{}']", Info()->GetName());
 	return true;
 }

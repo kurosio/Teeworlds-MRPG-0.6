@@ -1,5 +1,3 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "skill_manager.h"
 
 #include <game/server/gamecontext.h>
@@ -13,16 +11,15 @@ void CSkillManager::OnPreInit()
 		const auto ID = pRes->getInt("ID");
 		const auto Name = pRes->getString("Name");
 		const auto Description = pRes->getString("Description");
-		const auto BoostName = pRes->getString("BoostName");
-		const auto BoostValue = pRes->getInt("BoostValue");
-		const auto PercentageCost = pRes->getInt("PercentageCost");
+		const auto ManaCostPct = pRes->getInt("ManaCostPct");
 		const auto PriceSP = pRes->getInt("PriceSP");
-		const auto MaxLevel = pRes->getInt("MaxLevel");
 		const auto Passive = pRes->getBoolean("Passive");
 		const auto ProfID = (ProfessionIdentifier)pRes->getInt("ProfessionID");
 
-		CSkillDescription(ID).Init(Name, Description, BoostName, BoostValue, ProfID, PercentageCost, PriceSP, MaxLevel, Passive);
+		CSkillDescription::CreateElement(ID)->Init(Name, Description, ProfID, ManaCostPct, PriceSP, Passive);
 	}
+
+	CSkillTree::LoadFromDB();
 }
 
 void CSkillManager::OnPlayerLogin(CPlayer *pPlayer)
@@ -31,11 +28,8 @@ void CSkillManager::OnPlayerLogin(CPlayer *pPlayer)
 	while(pRes->next())
 	{
 		const auto ID = pRes->getInt("SkillID");
-		const auto Level = pRes->getInt("Level");
 		const auto SelectedEmoticon = pRes->getInt("UsedByEmoticon");
-
-		// init by server
-		CSkill::CreateElement(pPlayer->GetCID(), ID)->Init(Level, SelectedEmoticon);
+		CSkill::CreateElement(pPlayer->GetCID(), ID)->Init(true, SelectedEmoticon);
 	}
 }
 
@@ -46,38 +40,10 @@ void CSkillManager::OnClientReset(int ClientID)
 
 bool CSkillManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 {
-	// menu skill list
-	if(Menulist == MENU_SKILL_LIST)
-	{
-		const int ClientID = pPlayer->GetCID();
-
-		// Information
-		VoteWrapper VInfo(ClientID, VWF_SEPARATE|VWF_STYLE_STRICT, "Skill master information");
-		VInfo.AddLine();
-		VInfo.Add("Here you can learn passive and active skills");
-		VInfo.Add("You can bind active skill any button using the console");
-		VInfo.AddLine();
-		VInfo.AddItemValue(itSkillPoint);
-		VoteWrapper::AddEmptyline(ClientID);
-
-		// Skill list by class type
-		const auto ProfID = pPlayer->Account()->GetActiveProfessionID();
-
-		if(ProfID != ProfessionIdentifier::None)
-		{
-			const auto Title = std::string(GetProfessionName(ProfID)) + " skill's";
-			ShowSkillList(pPlayer, Title.c_str(), ProfID);
-			VoteWrapper::AddEmptyline(ClientID);
-		}
-
-		ShowSkillList(pPlayer, "Improving skill's", ProfessionIdentifier::None);
-		return true;
-	}
-
 	// Skill selected detail information
 	if(Menulist == MENU_SKILL_SELECT)
 	{
-		pPlayer->m_VotesData.SetLastMenuID(MENU_SKILL_LIST);
+		pPlayer->m_VotesData.SetLastMenuID(MENU_UPGRADES);
 
 		if(const auto SkillID = pPlayer->m_VotesData.GetExtraID())
 		{
@@ -92,114 +58,138 @@ bool CSkillManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	return false;
 }
 
-void CSkillManager::ShowSkillList(CPlayer* pPlayer, const char* pTitle, ProfessionIdentifier ProfID) const
+void CSkillManager::ShowSkill(CPlayer* pPlayer, int SkillID)
 {
+	// initialize variables
 	const int ClientID = pPlayer->GetCID();
-
-	// iterate skill's for list
-	VoteWrapper VSkills(ClientID, VWF_SEPARATE_OPEN | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, pTitle);
-	for(const auto& [ID, Skill] : CSkillDescription::Data())
-	{
-		if(Skill.m_ProfessionID != ProfID)
-			continue;
-
-		const auto* pSkill = pPlayer->GetSkill(ID);
-		VSkills.AddMenu(MENU_SKILL_SELECT, ID, "{} - {}SP {}", Skill.GetName(), Skill.GetPriceSP(), pSkill->GetStringLevelStatus().c_str());
-	}
-}
-
-void CSkillManager::ShowSkill(CPlayer* pPlayer, int SkillID) const
-{
-	const auto ClientID = pPlayer->GetCID();
 	const auto* pSkill = pPlayer->GetSkill(SkillID);
 	const auto* pInfo = pSkill->Info();
-	const auto* pPlayerSkillPoints = pPlayer->GetItem(itSkillPoint);
-	const auto IsLearned = pSkill->IsLearned();
-	const auto IsPassive = pInfo->IsPassive();
-	const auto IsMaximumLevel = pSkill->GetLevel() >= pInfo->GetMaxLevel();
-	const auto MarkHas = pPlayerSkillPoints->GetValue() >= pInfo->GetPriceSP();
+	const bool Learned = pSkill->IsLearned();
+	const bool Passive = pInfo->IsPassive();
+	const int BaseCost = pInfo->GetPriceSP();
+	const auto* pTree = CSkillTree::Get(SkillID);
+	const int TreeMax = pTree ? pTree->GetMaxLevels() : 0;
+	const int Progress = pSkill->GetTreeProgress();
 
-	// skill want learn information
-	VoteWrapper VSkillWant(ClientID, VWF_STYLE_STRICT_BOLD, "Do you want learn?");
-	VSkillWant.Add(Instance::Localize(ClientID, pInfo->GetDescription()));
-	if(IsLearned)
-	{
-		VSkillWant.Add("{} {} (each level +{})", pSkill->GetBonus(), pInfo->GetBoostName(), pInfo->GetBoostDefault());
-	}
-	if(!IsPassive)
-	{
-		VSkillWant.Add("Mana required {}%", pInfo->GetPercentageCost());
-	}
-	VSkillWant.AddLine();
+	// Header
+	VoteWrapper VHeader(ClientID, VWF_SEPARATE | VWF_STYLE_STRICT_BOLD, pInfo->GetName());
+	VHeader.Add(pInfo->GetDescription());
+	if(!Passive && Learned)
+		VHeader.Add("Mana required {}%", pInfo->GetManaCostPct());
+	VHeader.AddItemValue(itSkillPoint);
 	VoteWrapper::AddEmptyline(ClientID);
 
-	// required sp for learn
-	VoteWrapper VRequired(ClientID, VWF_OPEN | VWF_STYLE_STRICT, "Required");
-	VRequired.ReinitNumeralDepthStyles({{ DEPTH_LVL1, DEPTH_LIST_STYLE_BOLD }});
-	VRequired.MarkList().Add("{} {} x{} ({})", MarkHas ? "\u2714" : "\u2718",
-		pPlayerSkillPoints->Info()->GetName(), pInfo->GetPriceSP(), pPlayerSkillPoints->GetValue());
-	VRequired.AddLine();
-	VoteWrapper::AddEmptyline(ClientID);
-
-	// settings and information about usage
-	if(!IsPassive && IsLearned)
+	// Manage
+	VoteWrapper VManage(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_STRICT, "Manage");
+	if(Learned)
 	{
-		VoteWrapper VUsage(ClientID, VWF_OPEN | VWF_STYLE_STRICT, "Usage");
-		VUsage.Add("F1 Bind: (bind 'key' say \"/use_skill {}\")", SkillID);
-		VUsage.AddOption("SKILL_CHANGE_USAGE_EMOTICON", SkillID, "Used on {}", pSkill->GetSelectedEmoticonName());
-		VUsage.AddLine();
-		VoteWrapper::AddEmptyline(ClientID);
-	}
-
-	// show status and button buy
-	if(IsMaximumLevel)
-	{
-		VoteWrapper(ClientID).Add("- Already been improved to maximum level");
-	}
-	else if(!MarkHas)
-	{
-		VoteWrapper(ClientID).Add("- Not enough skill point's to learn");
+		if(!Passive && Learned)
+		{
+			VManage.Add("F1 Bind: (bind 'key' say \"/use_skill {}\")", SkillID);
+			VManage.AddOption("SKILL_CHANGE_USAGE_EMOTICON", SkillID, "Used on {}", pSkill->GetSelectedEmoticonName());
+		}
+		if(Progress > 0)
+		{
+			const int resetCost = pSkill->GetResetCostSP();
+			VManage.AddOption("SKILL_TREE_RESET", SkillID, "Reset tree (cost: {} SP)", resetCost);
+		}
 	}
 	else
 	{
-		VoteWrapper(ClientID).AddOption("SKILL_LEARN", SkillID, "\u2726 Learn ({} of {} level)", pSkill->GetLevel(), pInfo->GetMaxLevel());
+		VManage.AddOption("SKILL_LEARN", SkillID, "\u2726 Learn base (cost: {} SP)", BaseCost);
 	}
-
-	// add emptyline
 	VoteWrapper::AddEmptyline(ClientID);
-}
 
-void CSkillManager::OnCharacterTile(CCharacter* pChr)
-{
-	CPlayer* pPlayer = pChr->GetPlayer();
-
-	HANDLE_TILE_VOTE_MENU(pPlayer, pChr, TILE_SKILL_ZONE, MENU_SKILL_LIST, {}, {});
-}
-
-bool CSkillManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const std::vector<std::any> &Extras, int ReasonNumber, const char* pReason)
-{
-	// learn skill function
-	if (PPSTR(pCmd, "SKILL_LEARN") == 0)
+	// Skill tree
+	if(Learned && pTree && TreeMax > 0)
 	{
-        const int SkillID = GetIfExists<int>(Extras, 0, NOPE);
-		if(pPlayer->GetSkill(SkillID)->Upgrade())
+		VoteWrapper V(ClientID, VWF_OPEN | VWF_STYLE_STRICT, "Skill Tree ({} of {})", Progress, TreeMax);
+		for(int Level = 1; Level <= TreeMax; ++Level)
 		{
-			pPlayer->m_VotesData.UpdateCurrentVotes();
-		}
+			const auto* pLevel = pTree->GetLevel(Level);
+			if(!pLevel)
+				continue;
 
+			const int Selected = pSkill->GetSelectedOption(Level);
+			const bool Completed = (Selected != 0);
+			const bool Available = (!Completed && Level == (Progress + 1));
+			const bool Locked = (!Completed && !Available);
+			V.Add("{}LV.", Level);
+
+			// is locked for now level
+			if(Locked)
+			{
+				V.Add("\u2718 Hidden level");
+				V.AddLine();
+				continue;
+			}
+
+			// is available for now level
+			if(Available)
+			{
+				for(const auto& Opt : pLevel->Options)
+				{
+					const int cost = pSkill->GetTreeNodePriceSP(Level, Opt.OptionIndex);
+					const auto Modifer = format_skill_modifier(Opt.ModType, Opt.ModValue);
+					V.AddOption("SKILL_SET_UPGRADE", MakeAnyList(SkillID, Level, Opt.OptionIndex), "\u2726 {}{} ({} SP) | {}", Opt.Name, Modifer, cost, Opt.Description);
+				}
+				V.AddLine();
+				continue;
+			}
+
+			// unlocked level options
+			for(const auto& Opt : pLevel->Options)
+			{
+				const char* pSymbol = Selected == Opt.OptionIndex ? "\u2714" : "\u2718";
+				const auto Modifer = format_skill_modifier(Opt.ModType, Opt.ModValue);
+				V.Add("{} {}{} | {}", pSymbol, Opt.Name, Modifer, Opt.Description);
+			}
+			V.AddLine();
+		}
+		VoteWrapper::AddEmptyline(ClientID);
+	}
+}
+
+bool CSkillManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const std::vector<std::any>& Extras, int ReasonNumber, const char* pReason)
+{
+	// Learn base
+	if(PPSTR(pCmd, "SKILL_LEARN") == 0)
+	{
+		const int SkillID = GetIfExists<int>(Extras, 0, NOPE);
+		if(pPlayer->GetSkill(SkillID)->Upgrade())
+			pPlayer->m_VotesData.UpdateCurrentVotes();
 		return true;
 	}
 
-	// change Emoticon function
-	if (PPSTR(pCmd, "SKILL_CHANGE_USAGE_EMOTICON") == 0)
+	if(PPSTR(pCmd, "SKILL_SET_UPGRADE") == 0)
 	{
-        const int SkillID = GetIfExists<int>(Extras, 0, NOPE);
+		const int SkillID = GetIfExists<int>(Extras, 0, NOPE);
+		const int LevelIndex = GetIfExists<int>(Extras, 1, NOPE);
+		const int OptionIndex = GetIfExists<int>(Extras, 2, NOPE);
+		if(pPlayer->GetSkill(SkillID)->SetTreeOption(LevelIndex, OptionIndex))
+			pPlayer->m_VotesData.UpdateCurrentVotes();
+		return true;
+	}
+
+	if(PPSTR(pCmd, "SKILL_TREE_RESET") == 0)
+	{
+		const int SkillID = GetIfExists<int>(Extras, 0, NOPE);
+		if(pPlayer->GetSkill(SkillID)->ResetTree())
+			pPlayer->m_VotesData.UpdateCurrentVotes();
+		return true;
+	}
+
+	if(PPSTR(pCmd, "SKILL_CHANGE_USAGE_EMOTICON") == 0)
+	{
+		const int SkillID = GetIfExists<int>(Extras, 0, NOPE);
 		pPlayer->GetSkill(SkillID)->SelectNextControlEmote();
 		pPlayer->m_VotesData.UpdateCurrentVotes();
 		return true;
 	}
+
 	return false;
 }
+
 
 void CSkillManager::UseSkillsByEmoticon(CPlayer *pPlayer, int EmoticonID)
 {

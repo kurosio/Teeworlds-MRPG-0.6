@@ -6,6 +6,7 @@
 #include <generated/server_data.h>
 
 #include <components/inventory/inventory_manager.h>
+#include <components/mails/mail_wrapper.h>
 
 void CCraftManager::OnInitWorld(const std::string& Where)
 {
@@ -74,6 +75,8 @@ void CCraftManager::CraftItem(CPlayer* pPlayer, CCraftItem* pCraft, int Value) c
 
 	const auto ClientID = pPlayer->GetCID();
 	auto* pPlayerCraftItem = pPlayer->GetItem(*pCraft->GetItem());
+	const auto* pSkillCraft = pPlayer->GetSkill(SKILL_CRAFT_DISCOUNT);
+	Value = pCraft->GetItem()->Info()->IsEnchantable() ? 1 : Value;
 
 	// check if we have all the necessary items
 	std::string missingItems;
@@ -109,20 +112,39 @@ void CCraftManager::CraftItem(CPlayer* pPlayer, CCraftItem* pCraft, int Value) c
 		pPlayer->GetItem(RequiredItem)->Remove(amountToRemove);
 	}
 
-	// add the crafted item to the player's inventory
-	const int itemsPerCraft = pCraft->GetItem()->GetValue();
-	const int totalCraftedItemCount = itemsPerCraft * Value;
-	pPlayerCraftItem->Add(totalCraftedItemCount);
-
-	// report a crafted item, either to everyone or only to a player, depending on its characteristics
-	if(!pPlayerCraftItem->Info()->IsStackable())
+	// calculate extra crafted item
+	int ExtraCraftedItemCount = 0;
+	const int NumPerCraft = pCraft->GetItem()->GetValue();
+	for(int i = 0; i < Value; i++)
 	{
-		GS()->Chat(-1, "'{}' crafted '[{} x{}]'.", Server()->ClientName(ClientID), pPlayerCraftItem->Info()->GetName(), totalCraftedItemCount);
+		float ChanceExtraItem = random_float(100.f);
+		if(ChanceExtraItem < pSkillCraft->GetMod(SkillMod::MasterCraftExtraItemPct))
+			ExtraCraftedItemCount += NumPerCraft;
+	}
+
+	// add the crafted item to the player's inventory
+	const int CraftedItemCount = NumPerCraft * Value;
+	if(ExtraCraftedItemCount > 0 && pPlayerCraftItem->Info()->IsEnchantable())
+	{
+		MailWrapper Mail("System", pPlayer->Account()->GetID(), "Extra craft item.");
+		Mail.AddDescLine("We can't put it in inventory");
+		Mail.AttachItem(*pCraft->GetItem());
+		Mail.Send();
+		pPlayerCraftItem->Add(CraftedItemCount);
 	}
 	else
 	{
-		GS()->Chat(ClientID, "You crafted '[{} x{}]'.", pPlayerCraftItem->Info()->GetName(), totalCraftedItemCount);
+		const int TotalCraftedItemCount = CraftedItemCount + ExtraCraftedItemCount;
+		pPlayerCraftItem->Add(TotalCraftedItemCount);
+
 	}
+
+	// report a crafted item, either to everyone or only to a player, depending on its characteristics
+	std::string ValueInfo = ExtraCraftedItemCount ? fmt_default("{}(+{})", CraftedItemCount, ExtraCraftedItemCount) : fmt_default("{}", CraftedItemCount);
+	if(!pPlayerCraftItem->Info()->IsStackable())
+		GS()->Chat(-1, "'{}' crafted '[{} x{}]'.", Server()->ClientName(ClientID), pPlayerCraftItem->Info()->GetName(), ValueInfo);
+	else
+		GS()->Chat(ClientID, "You crafted '[{} x{}]'.", pPlayerCraftItem->Info()->GetName(), ValueInfo);
 
 	// notify event and votes
 	g_EventListenerManager.Notify<IEventListener::PlayerCraftItem>(pPlayer, pCraft);

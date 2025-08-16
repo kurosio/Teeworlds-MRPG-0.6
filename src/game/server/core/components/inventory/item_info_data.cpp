@@ -225,8 +225,8 @@ std::string CItemDescription::GetStringAttributesInfo(CPlayer* pPlayer, int Ench
 			}
 			else
 			{
-				const int BonusValue = GetEnchantAttributeValue(Att.GetID(), Enchant);
-				strAttributes += fmt_localize(pPlayer->GetCID(), "{}+{$} ", Att.Info()->GetName(), BonusValue);
+				const int BonusIncreaseValue = GetEnchantAttributeValue(Att.GetID(), Enchant);
+				strAttributes += fmt_localize(pPlayer->GetCID(), "{}+{$} ", Att.Info()->GetName(), BonusIncreaseValue);
 			}
 		}
 	}

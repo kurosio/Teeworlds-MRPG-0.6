@@ -713,9 +713,8 @@ void CMmoController::SyncLocalizations() const
 
 		for (const auto& [ID, p] : CSkillDescription::Data())
 		{
-			pLanguage->Updater().Push(p.GetName(), "skill_name", ID);
-			pLanguage->Updater().Push(p.GetDescription(), "skill_description", ID);
-			pLanguage->Updater().Push(p.GetBoostName(), "skill_boost", ID);
+			pLanguage->Updater().Push(p->GetName(), "skill_name", ID);
+			pLanguage->Updater().Push(p->GetDescription(), "skill_description", ID);
 		}
 
 		for (const auto& [ID, p] : CQuestDescription::Data())

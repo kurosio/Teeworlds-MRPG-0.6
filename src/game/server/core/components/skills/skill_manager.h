@@ -16,13 +16,11 @@ class CSkillManager : public MmoComponent
 	void OnPreInit() override;
 	void OnPlayerLogin(CPlayer* pPlayer) override;
 	void OnClientReset(int ClientID) override;
-	void OnCharacterTile(CCharacter* pChr) override;
 	bool OnSendMenuVotes(CPlayer* pPlayer, int Menulist) override;
 	bool OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, const std::vector<std::any> &Extras, int ReasonNumber, const char* pReason) override;
 
 	// vote list's menus
-	void ShowSkillList(CPlayer* pPlayer, const char* pTitle, ProfessionIdentifier ProfID) const;
-	void ShowSkill(CPlayer* pPlayer, int SkillID) const;
+	void ShowSkill(CPlayer* pPlayer, int SkillID);
 
 public:
 	// use skills by Emoticon

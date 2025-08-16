@@ -37,6 +37,7 @@ void CAttackTeleport::Tick()
 	const auto Size = vec2(m_Radius, m_Radius);
 	auto* pOwnerChar = m_pPlayer->GetCharacter();
 	auto* pSearchChar = (CCharacter*)GS()->m_World.ClosestEntity(To, m_Radius, CGameWorld::ENTTYPE_CHARACTER, pOwnerChar);
+	auto* pSkill = m_pPlayer->GetSkill(SKILL_ATTACK_TELEPORT);
 
 	// check collide
 	const bool IsCollide = (GS()->Collision()->TestBox(m_Pos, Size) || GS()->Collision()->TestBox(To, Size)
@@ -87,6 +88,14 @@ void CAttackTeleport::Tick()
 	// second part
 	else
 	{
+		// check unlocked skill combo attack
+		bool UnlockedComboAttack = pSkill->GetMod(SkillMod::AttackTeleportCombo) > 0;
+		if(!UnlockedComboAttack)
+		{
+			GameWorld()->DestroyEntity(this);
+			return;
+		}
+
 		if(!m_vMovingMap.empty() && m_SecondPartTimeleft > 0)
 		{
 			// information about second part
@@ -123,17 +132,22 @@ void CAttackTeleport::Tick()
 				{
 					// take damage and some buffs
 					const auto SearchPos = pNextChar->GetPos();
-					const auto StunTime = 3;
-
-					if(pNextPlayer->m_Effects.Add(ECharacterEffect::STUN, StunTime * Server()->TickSpeed()))
+					const auto EffectTime = 8;
+					if(pSkill->GetMod(SkillMod::AttackTeleportFire))
 					{
-						GS()->Chat(pNextPlayer->GetCID(), "You have been stunned for '{} seconds'!", StunTime);
+						pNextPlayer->m_Effects.Add(ECharacterEffect::FIRE, EffectTime * Server()->TickSpeed());
+						GS()->CreateExplosion(SearchPos, ClientID, WEAPON_GAME, maxDmgSize);
+					}
+					else if(pSkill->GetMod(SkillMod::AttackTeleportStun))
+					{
+						pNextPlayer->m_Effects.Add(ECharacterEffect::STUN, EffectTime * Server()->TickSpeed());
+					}
+					else if(pSkill->GetMod(SkillMod::AttackTeleportRestoreHP))
+					{
+						pOwnerChar->IncreaseHealth(maxDmgSize);
 					}
 
-					GS()->CreateExplosion(SearchPos, ClientID, WEAPON_GAME, maxDmgSize);
-					pOwnerChar->IncreaseHealth(maxDmgSize);
 					pOwnerChar->ChangePosition(pNextChar->GetPos());
-
 					GS()->CreateSound(SearchPos, SOUND_NINJA_FIRE);
 					GS()->CreateSound(SearchPos, SOUND_NINJA_HIT);
 					m_Pos = m_PosTo = SearchPos;

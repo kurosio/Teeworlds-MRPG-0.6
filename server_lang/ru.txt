@@ -1829,6 +1829,90 @@ $item_description387
 Fluff
 == Пух
 
+Allows auto-attack to be used
+== Разрешает авто атаки
+
+Attacks can restore health
+== Атаки восст. ХП
+
+Attacks has Fire effect
+== Атаки имеют эф. поджога
+
+Attacks has Stun effect
+== Атаки имеют эф. оглушения
+
+Chance to get extra item
+== Шанс экстра предмета
+
+Increase aggression
+== Повышает агрессию
+
+Increase healing
+== Повышает лечение
+
+Increase lifetime
+== Повышает время жизни
+
+Increase radius
+== Повышает радиус
+
+Increase restored ammo
+== Повышает вост. патронов
+
+Increases radius of damage
+== Повышает радиус урона
+
+Increases the discount
+== Повышает скидку
+
+Increases the number of shots
+== Повышает количество выстрелов
+
+Reduces mana cost
+== Понижает стоимость маны
+
+Reduces number of cast click
+== Понижает кликов кастования
+
+Restores health to allies as well
+== Вост. также ХП союзникам
+
+Unlock combo attack teleport
+== Разблокирует комбо ат. телепорта
+
+Combo
+== Комбо
+
+Ally
+== Союзник
+
+Mana cost
+== Стоим. маны
+
+Shots
+== Выстрелы
+
+Discount
+== Скидка
+
+Radius of damage
+== Радиус урона
+
+Restore ammo
+== Вост. патроны
+
+Healing
+== Исцеление
+
+Aggression
+== Агрессия
+
+Health
+== Здоровье
+
+Auto fire
+== Авт. выстрел
+
 list
 == список
 
@@ -1888,9 +1972,21 @@ MP 50% 2m
 Here you can choose the language.
 == Здесь вы можете выбрать язык.
 
+\u2718 Hidden level
+== \u2718 Скрытый уровень
+
+Skill Tree ({} of {})
+== Дерево скилла ({} из {})
+
+\u2726 Learn base (cost: {} SP)
+== \u2726 Изучить базу (стоимость: {} SP)
+
+Reset tree (cost: {} SP)
+== Сброс дерева (стоимость {} SP)
+
 $skill_name4
-Proficiency with weapons
-== Авто выстрел
+Master of weapons
+== Мастер оружия
 
 Disband. (in reason send 55428)
 == Распустить. (в причине отправить 55428)
@@ -5507,8 +5603,8 @@ Armor: DPS Role
 == Броня: Дамагер
 
 $skill_name3
-Craft Discount
-== Скидка на крафт
+Master craftsman
+== Мастер ремесла
 
 Every player has the right to rent houses.
 == Каждый игрок имеет право арендовать дома.
@@ -6557,8 +6653,8 @@ Wizard | Teleport power
 == Волшебник | Сила Телепорта.
 
 $skill_description3
-Will give discount on the price of craft items
-== Даст скидку на цену крафтовых предметов
+Improvements that enable you to become a master
+== Улучшения что позволяют быть мастером
 
 $aether5
 Dungeon (Right)
@@ -7619,8 +7715,8 @@ M: Mod Grenade 1
 == /register <имя> <пароль> - новый аккаунт.
 
 $skill_description4
-You can perform an automatic fire
-== Ты можешь выполнять автоматическую стрельбу
+Improving weapon proficiency
+== Повышение мастерства владения оружием
 
 $item_description235
 Warrior armor

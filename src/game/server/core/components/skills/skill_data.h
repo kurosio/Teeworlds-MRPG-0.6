@@ -3,96 +3,55 @@
 #ifndef GAME_SERVER_CORE_COMPONENTS_SKILLS_SKILL_DATA_H
 #define GAME_SERVER_CORE_COMPONENTS_SKILLS_SKILL_DATA_H
 
+#include "skill_tree.h"
+
 class CEntityGroup;
 class CCharacter;
 
 // skill description
-class CSkillDescription : public MultiworldIdentifiableData< std::map < int, CSkillDescription > >
+class CSkillDescription : public MultiworldIdentifiableData< std::map < int, CSkillDescription* > >
 {
 	friend class CSkillManager;
 
-	int m_ID {};
-	char m_aName[32] {};
-	char m_aDescription[64] {};
-	char m_aBoostName[64] {};
-	int m_BoostDefault {};
+	int m_ID{};
+	std::string m_Name{};
+	std::string m_Description{};
 	ProfessionIdentifier m_ProfessionID{};
-	int m_PercentageCost {};
+	int m_ManaCostPct {};
 	int m_PriceSP {};
-	int m_MaxLevel {};
 	bool m_Passive {};
 
 public:
 	// constructors
 	CSkillDescription() = default;
-	CSkillDescription(int ID) : m_ID(ID) {}
+
+	// create a new instance of CSkill
+	static CSkillDescription* CreateElement(int ID) noexcept
+	{
+		auto pData = new CSkillDescription;
+		pData->m_ID = ID;
+		return m_pData[ID] = std::move(pData);
+	}
 
 	// intialize skill description
-	void Init(const std::string& Name, const std::string& Description, const std::string& BonusName, int BonusDefault, 
-		ProfessionIdentifier ProfID, int PercentageCost, int PriceSP, int MaxLevel, bool Passive)
+	void Init(std::string_view Name, std::string_view Description, ProfessionIdentifier ProfID, int ManaCostPct, int PriceSP, bool Passive)
 	{
-		str_copy(m_aName, Name.c_str(), sizeof(m_aName));
-		str_copy(m_aDescription, Description.c_str(), sizeof(m_aDescription));
-		str_copy(m_aBoostName, BonusName.c_str(), sizeof(m_aBoostName));
-		m_BoostDefault = BonusDefault;
+		m_Name = Name;
+		m_Description = Description;
 		m_ProfessionID = ProfID;
-		m_PercentageCost = PercentageCost;
+		m_ManaCostPct = ManaCostPct;
 		m_PriceSP = PriceSP;
-		m_MaxLevel = MaxLevel;
 		m_Passive = Passive;
-		CSkillDescription::m_pData[m_ID] = *this;
 	}
 
 	// getters and setters
-	int GetID() const
-	{
-		return m_ID;
-	}
-
-	const char* GetName() const
-	{
-		return m_aName;
-	}
-
-	const char* GetDescription() const
-	{
-		return m_aDescription;
-	}
-
-	const char* GetBoostName() const
-	{
-		return m_aBoostName;
-	}
-
-	int GetBoostDefault() const
-	{
-		return m_BoostDefault;
-	}
-
-	ProfessionIdentifier GetProfessionID() const
-	{
-		return m_ProfessionID;
-	}
-
-	int GetPercentageCost() const
-	{
-		return m_PercentageCost;
-	}
-
-	int GetPriceSP() const
-	{
-		return m_PriceSP;
-	}
-
-	int GetMaxLevel() const
-	{
-		return m_MaxLevel;
-	}
-
-	bool IsPassive() const
-	{
-		return m_Passive;
-	}
+	int GetID() const { return m_ID; }
+	const char* GetName() const { return m_Name.c_str(); }
+	const char* GetDescription() const { return m_Description.c_str(); }
+	ProfessionIdentifier GetProfessionID() const { return m_ProfessionID; }
+	int GetManaCostPct() const { return m_ManaCostPct; }
+	int GetPriceSP() const { return m_PriceSP; }
+	bool IsPassive() const { return m_Passive; }
 };
 
 // skill data
@@ -105,9 +64,13 @@ class CSkill : public MultiworldIdentifiableData< std::map< int, std::deque < CS
 
 	int m_ID{};
 	int m_ClientID{};
-	int m_Level{};
+	bool m_Learned {};
 	int m_SelectedEmoticon{};
-	std::array< std::weak_ptr<CEntityGroup>, NUM_SKILLS > m_apEntSkillPtrs {};
+	std::weak_ptr<CEntityGroup> m_pEntSkillPtrs {};
+
+	std::unordered_map<int, int> m_TreeSelections;
+	void LoadTreeChoicesFromDB();
+	int GetTreeNodePriceSP(int LevelIndex, int OptionIndex) const;
 
 public:
 	// constructors
@@ -123,54 +86,35 @@ public:
 	}
 
 	// initialize skill
-	void Init(int Level, int SelectedEmoticon)
+	void Init(bool Learned, int SelectedEmoticon)
 	{
-		m_Level = Level;
+		m_Learned = Learned;
 		m_SelectedEmoticon = SelectedEmoticon;
+		LoadTreeChoicesFromDB();
 	}
 
 	// getters setters
-	void SetID(int SkillID)
+	bool SetTreeOption(int LevelIndex, int OptionIndex);
+	int GetTreeProgress() const { return (int)m_TreeSelections.size(); }
+	int GetSelectedOption(int LevelIndex) const
 	{
-		m_ID = SkillID;
+		auto it = m_TreeSelections.find(LevelIndex);
+		return it == m_TreeSelections.end() ? 0 : it->second;
 	}
+	int GetMod(SkillMod Mod) const;
+	int GetResetCostSP() const;
 
-	int GetID() const
-	{
-		return m_ID;
-	}
-
-	bool IsLearned() const
-	{
-		return m_Level > 0;
-	}
-
-	int GetLevel() const
-	{
-		return m_Level;
-	}
-
-	int GetBonus() const
-	{
-		return m_Level * Info()->GetBoostDefault();
-	}
-
-	const char* GetSelectedEmoticonName() const
-	{
-		return GetEmoticonNameById(m_SelectedEmoticon);
-	}
-
-	CSkillDescription* Info() const
-	{
-		return &CSkillDescription::Data()[m_ID];
-	}
-
+	int GetID() const { return m_ID; }
+	bool IsLearned() const { return m_Learned; }
+	const char* GetSelectedEmoticonName() const { return GetEmoticonNameById(m_SelectedEmoticon); }
+	CSkillDescription* Info() const { return CSkillDescription::Data()[m_ID]; }
 	std::string GetStringLevelStatus() const;
 
 	// functions
 	void SelectNextControlEmote();
 	bool Upgrade();
 	bool Use();
+	bool ResetTree();
 
 private:
 	enum

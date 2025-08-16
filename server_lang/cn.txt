@@ -6,6 +6,102 @@ $dialog_quest420
 The deed is done? Good. A grim task, but a necessary one.
 == The deed is done? Good. A grim task, but a necessary one.
 
+Allows auto-attack to be used
+== 允许自动攻击
+
+Attacks can restore health
+== 攻击可以恢复生命值
+
+Attacks has Fire effect
+== 攻击附带燃烧效果
+
+Attacks has Stun effect
+== 攻击附带眩晕效果
+
+Chance to get extra item
+== 几率获得额外物品
+
+Increase aggression
+== 提高仇恨
+
+Increase healing
+== 提高治疗效果
+
+Increase lifetime
+== 延长持续时间
+
+Increase radius
+== 增加范围
+
+Increase restored ammo
+== 增加弹药恢复量
+
+Increases radius of damage
+== 增加伤害范围
+
+Increases the discount
+== 增加折扣
+
+Increases the number of shots
+== 增加射击次数
+
+Reduces mana cost
+== 降低法力消耗
+
+Reduces number of cast click
+== 减少施法点击次数
+
+Restores health to allies as well
+== 同时恢复盟友生命值
+
+Unlock combo attack teleport
+== 解锁连击传送攻击
+
+Combo
+== 连击
+
+Ally
+== 盟友
+
+Mana cost
+== 法力消耗
+
+Shots
+== 射击
+
+Discount
+== 折扣
+
+Radius of damage
+== 伤害范围
+
+Restore ammo
+== 恢复弹药
+
+Healing
+== 治疗
+
+Aggression
+== 仇恨
+
+Health
+== 生命值
+
+Auto fire
+== 自动射击
+
+\u2718 Hidden level
+== \u2718 隱藏層
+
+Skill Tree ({} of {})
+== 技能樹 ({} 的 {})
+
+\u2726 Learn base (cost: {} SP)
+== \u2726 學習基礎（成本：{} SP）
+
+Reset tree (cost: {} SP)
+== 重設樹 (代價: {} SP)
+
 $dialog_quest412
 And who better than you to deliver it, adventurer? Find the lair to the west of here and make an example of exactly four Qiqirn scramblers. We can send no clearer message.
 == And who better than you to deliver it, adventurer? Find the lair to the west of here and make an example of exactly four Qiqirn scramblers. We can send no clearer message.
@@ -156,8 +252,8 @@ Random box.
 == 随机盒子。
 
 $skill_name4
-Proficiency with weapons
-== 武器精通
+Master of weapons
+== 武器大師
 
 ⚙ Main settings
 == ⚙ 主要设置
@@ -2767,8 +2863,8 @@ broken
 == 破碎
 
 $skill_description3
-Will give discount on the price of craft items
-== 将对制作物品的价格给予折扣
+Improvements that enable you to become a master
+== 讓您成為大師的改進
 
 Commision rate: {}%
 == 佣金率：{}%
@@ -5206,8 +5302,8 @@ Sender: {}
 == 发件人：{}
 
 $skill_description4
-You can perform an automatic fire
-== 你可以进行自动射击
+Improving weapon proficiency
+== 提高武器精通程度
 
 $item_name106
 Poison
@@ -6192,8 +6288,8 @@ Time is of the essence, so I shall speak plain.
 == 时间紧迫，我就直说了。
 
 $skill_name3
-Craft Discount
-== 制作折扣
+Master craftsman
+== 大師級工匠
 
 Successfully unbanned!
 == 成功解封！

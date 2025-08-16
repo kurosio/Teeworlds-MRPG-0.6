@@ -175,6 +175,7 @@ bool CPlayerItem::Add(int Value, int StartSettings, int StartEnchant, bool Messa
 			MailWrapper Mail("System", pPlayer->Account()->GetID(), "No place for item.");
 			Mail.AddDescLine("You already have this item.");
 			Mail.AddDescLine("We can't put it in inventory");
+
 			Mail.AttachItem(CItem(m_ID, 1, StartEnchant, 100));
 			Mail.Send();
 			return false;

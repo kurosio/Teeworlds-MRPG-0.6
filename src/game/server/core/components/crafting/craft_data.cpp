@@ -9,8 +9,9 @@ int CCraftItem::GetPrice(CPlayer* pPlayer) const
 	if(pPlayer)
 	{
 		// passive skill discount
-		int skillLevel = pPlayer->GetSkill(SKILL_CRAFT_DISCOUNT)->GetLevel();
-		Discount += translate_to_percent_rest(m_Price, skillLevel);
+		int DiscountPct = pPlayer->GetSkill(SKILL_CRAFT_DISCOUNT)->GetMod(SkillMod::BonusIncreasePct);
+		if(DiscountPct > 0)
+			Discount += translate_to_percent_rest(m_Price, (float)DiscountPct);
 	}
 
 	return maximum(m_Price - Discount, 0);

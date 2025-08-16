@@ -552,7 +552,6 @@ enum EMenuList
 	MENU_JOURNAL_QUEST_DETAILS,
 
 	// Skills
-	MENU_SKILL_LIST,
 	MENU_SKILL_SELECT,
 
 	// Quest menus

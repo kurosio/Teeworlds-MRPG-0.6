@@ -213,7 +213,7 @@ void CCharacter::FireWeapon()
 
 	// Check if the character has learned the skill for using weapons in full auto mode
 	const bool IsCharBot = m_pPlayer->IsBot();
-	bool FullAuto = (IsCharBot || m_pPlayer->GetSkill(SKILL_MASTER_WEAPON)->IsLearned());
+	bool FullAuto = (IsCharBot || m_pPlayer->GetSkill(SKILL_MASTER_WEAPON)->GetMod(SkillMod::MasterWeaponAutoFire) > 0);
 	bool WillFire = CountInput(m_LatestPrevInput.m_Fire, m_LatestInput.m_Fire).m_Presses;
 	if(FullAuto && (m_LatestInput.m_Fire & 1) && m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_Ammo)
 	{
