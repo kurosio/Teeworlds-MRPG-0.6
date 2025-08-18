@@ -51,6 +51,7 @@ public:
 	void HealingAura(int ClientID, vec2 Position, float Radius, int Lifetime, int HealPerTick, EntGroupWeakPtr* pPtr = nullptr) const;
 	void FrostNova(int ClientID, vec2 Position, float Radius, int Damage, int FreezeTime, EntGroupWeakPtr* pPtr = nullptr) const;
 	void Bow(int ClientID, int Damage, int FireCount, float ExplosionRadius, int ExplosionCount, EntGroupWeakPtr* pPtr = nullptr) const;
+	void VoidTether(int ClientID, vec2 Position, float MaxLength, int Duration, int DamagePerSecond, float SlowFactor, EntGroupWeakPtr* pPtr = nullptr) const;
 
 	// effect's
 	void EffectCircleDamage(int ClientID, int DelayImpulse, int DelayBetweenImpulses, int Repeat = -1) const;
