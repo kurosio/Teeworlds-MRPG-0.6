@@ -4,11 +4,12 @@
 enum class SkillMod : int
 {
 	None = 0,
+
+	// base modification
 	ManaCostPct = 1,
 	Radius = 2,
 	CastClick = 3,
 	Lifetime = 4,
-
 	BonusIncreasePct = 5,
 	BonusIncreaseValue = 6,
 	BonusDecreasePct = 7,
@@ -60,34 +61,32 @@ inline std::string format_skill_modifier(SkillMod Mod, int Value)
 
 struct CSkillTreeOption
 {
-	int OptionIndex = 0;
-	std::string Name;
-	std::string Description;
+	std::string Name {};
+	std::string Description {};
 	SkillMod ModType = SkillMod::None;
-	int ModValue = 0;
-	int PriceSP = 0;
+	int ModValue {};
+	int PriceSP {};
 };
 
 struct CSkillTreeLevel
 {
-	int LevelIndex = 0;
-	std::vector<CSkillTreeOption> Options;
+	std::map<int, CSkillTreeOption> Options;
 
 	const CSkillTreeOption* FindOption(int OptionIdx) const
 	{
-		for(const auto& o : Options)
-			if(o.OptionIndex == OptionIdx)
-				return &o;
+		if(const auto it = Options.find(OptionIdx); it != Options.end())
+			return &it->second;
 		return nullptr;
 	}
-	bool HasOption(int OptionIdx) const { return FindOption(OptionIdx) != nullptr; }
+
+	bool HasOption(int OptionIdx) const { return Options.contains(OptionIdx); }
 	size_t GetOptionsCount() const { return Options.size(); }
 };
 
 struct CSkillTree : public MultiworldIdentifiableData< std::unordered_map < int, CSkillTree > >
 {
-	int SkillID = 0;
-	std::vector<CSkillTreeLevel> Levels;
+	int SkillID {};
+	std::map<int, CSkillTreeLevel> Levels {};
 
 	static void LoadFromDB()
 	{
@@ -102,68 +101,46 @@ struct CSkillTree : public MultiworldIdentifiableData< std::unordered_map < int,
 
 			auto& Tree = m_pData[SkillID];
 			Tree.SkillID = SkillID;
-
-			if(LevelIndex <= 0)
+			if(LevelIndex <= 0 || OptionIndex <= 0)
 				continue;
 
-			if((int)Tree.Levels.size() < LevelIndex)
-				Tree.Levels.resize(LevelIndex);
-
-			auto& Level = Tree.Levels[LevelIndex - 1];
-			Level.LevelIndex = LevelIndex;
-
-			if(OptionIndex <= 0)
-				continue;
-
-			CSkillTreeOption Opt;
-			Opt.OptionIndex = OptionIndex;
+			auto& Opt = Tree.Levels[LevelIndex].Options[OptionIndex];
 			Opt.Name = pRes->getString("Name");
 			Opt.Description = pRes->getString("Description");
 			Opt.ModType = static_cast<SkillMod>(pRes->getInt("ModType"));
 			Opt.ModValue = pRes->getInt("ModValue");
 			Opt.PriceSP = pRes->getInt("PriceSP");
-
-			if(!Level.HasOption(OptionIndex))
-				Level.Options.push_back(std::move(Opt));
-		}
-
-		for(auto& [_, Tree] : m_pData)
-		{
-			for(auto& L : Tree.Levels)
-			{
-				std::sort(L.Options.begin(), L.Options.end(),
-					[](const CSkillTreeOption& a, const CSkillTreeOption& b){ return a.OptionIndex < b.OptionIndex; });
-			}
 		}
 	}
 
 	static CSkillTree* Get(int ID)
 	{
-		const auto it = CSkillTree::Data().find(ID);
-		if(it != CSkillTree::Data().end())
+		if(const auto it = CSkillTree::Data().find(ID); it != CSkillTree::Data().end())
 			return &it->second;
 		return nullptr;
 	}
 
 	const CSkillTreeLevel* GetLevel(int LevelIdx) const
 	{
-		if(LevelIdx <= 0 || LevelIdx > (int)Levels.size())
-			return nullptr;
-		return &Levels[LevelIdx - 1];
+		if(const auto it = Levels.find(LevelIdx); it != Levels.end())
+			return &it->second;
+		return nullptr;
 	}
 
-	int GetMaxLevels() const { return (int)Levels.size(); }
+	int GetMaxLevels() const { return Levels.size(); }
 
 	bool HasOption(int LevelIdx, int OptionIdx) const
 	{
-		const auto* pLevel = GetLevel(LevelIdx);
-		return pLevel && pLevel->HasOption(OptionIdx);
+		if(const auto* pLevel = GetLevel(LevelIdx))
+			return pLevel->HasOption(OptionIdx);
+		return false;
 	}
 
 	const CSkillTreeOption* FindOption(int LevelIdx, int OptionIdx) const
 	{
-		const auto* pLevel = GetLevel(LevelIdx);
-		return pLevel ? pLevel->FindOption(OptionIdx) : nullptr;
+		if(const auto* pLevel = GetLevel(LevelIdx))
+			return pLevel->FindOption(OptionIdx);
+		return nullptr;
 	}
 };
 

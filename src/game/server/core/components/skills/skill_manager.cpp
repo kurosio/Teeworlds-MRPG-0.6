@@ -58,7 +58,7 @@ bool CSkillManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	return false;
 }
 
-void CSkillManager::ShowSkill(CPlayer* pPlayer, int SkillID)
+void CSkillManager::ShowSkill(CPlayer * pPlayer, int SkillID)
 {
 	// initialize variables
 	const int ClientID = pPlayer->GetCID();
@@ -83,7 +83,7 @@ void CSkillManager::ShowSkill(CPlayer* pPlayer, int SkillID)
 	VoteWrapper VManage(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_STRICT, "Manage");
 	if(Learned)
 	{
-		if(!Passive && Learned)
+		if(!Passive)
 		{
 			VManage.Add("F1 Bind: (bind 'key' say \"/use_skill {}\")", SkillID);
 			VManage.AddOption("SKILL_CHANGE_USAGE_EMOTICON", SkillID, "Used on {}", pSkill->GetSelectedEmoticonName());
@@ -127,20 +127,20 @@ void CSkillManager::ShowSkill(CPlayer* pPlayer, int SkillID)
 			// is available for now level
 			if(Available)
 			{
-				for(const auto& Opt : pLevel->Options)
+				for(const auto& [OptionIdx, Opt] : pLevel->Options)
 				{
-					const int cost = pSkill->GetTreeNodePriceSP(Level, Opt.OptionIndex);
+					const int cost = pSkill->GetTreeNodePriceSP(Level, OptionIdx);
 					const auto Modifer = format_skill_modifier(Opt.ModType, Opt.ModValue);
-					V.AddOption("SKILL_SET_UPGRADE", MakeAnyList(SkillID, Level, Opt.OptionIndex), "\u2726 {}{} ({} SP) | {}", Opt.Name, Modifer, cost, Opt.Description);
+					V.AddOption("SKILL_SET_UPGRADE", MakeAnyList(SkillID, Level, OptionIdx), "\u2726 {}{} ({} SP) | {}", Opt.Name, Modifer, cost, Opt.Description);
 				}
 				V.AddLine();
 				continue;
 			}
 
 			// unlocked level options
-			for(const auto& Opt : pLevel->Options)
+			for(const auto& [OptionIdx, Opt] : pLevel->Options)
 			{
-				const char* pSymbol = Selected == Opt.OptionIndex ? "\u2714" : "\u2718";
+				const char* pSymbol = Selected == OptionIdx ? "\u2714" : "\u2718";
 				const auto Modifer = format_skill_modifier(Opt.ModType, Opt.ModValue);
 				V.Add("{} {}{} | {}", pSymbol, Opt.Name, Modifer, Opt.Description);
 			}
