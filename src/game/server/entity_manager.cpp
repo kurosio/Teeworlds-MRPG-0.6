@@ -969,6 +969,10 @@ void CEntityManager::HealingRift(int ClientID, vec2 Position, float RiftRadius, 
 				NewPos += DirToTarget * std::min(MoveSpeed, DistToTarget * 0.1f);
 				pBase->SetPos(NewPos);
 			}
+
+			// sound sfx
+			if(pBase->Server()->Tick() % pBase->Server()->TickSpeed() / 4 == 0)
+				pBase->GS()->CreateSound(pBase->GetPos(), SOUND_SFX_TICK);
 		}
 
 		// serpent cooldown
@@ -1189,4 +1193,173 @@ void CEntityManager::EffectCircleDamage(int ClientID, int DelayImpulse, int Dela
 
 		pBase->MarkForDestroy();
 	});
+}
+
+/*
+
+	NEW SKILLS.....
+
+*/
+
+void CEntityManager::VoidTether(int ClientID, vec2 Position, float MaxLength, int Lifetime, int BaseDamage, float SlowFactor, EntGroupWeakPtr* pPtr) const
+{
+	const auto* pOwner = GS()->GetPlayer(ClientID, false, true);
+	if(!pOwner || !pOwner->GetCharacter())
+		return;
+
+	// initialize group
+	auto groupPtr = CEntityGroup::NewGroup(&GS()->m_World, CGameWorld::ENTTYPE_SKILL, ClientID);
+	groupPtr->SetConfig("maxLength", MaxLength);
+	groupPtr->SetConfig("slowFactor", clamp(SlowFactor, 0.0f, 0.9f));
+	groupPtr->SetConfig("baseDamage", BaseDamage);
+
+	// initialize tether
+	auto pTether = groupPtr->CreateBase(Position);
+	pTether->SetConfig("lifetimeTick", Lifetime);
+	pTether->SetConfig("targetCID", -1);
+
+	// register tick event
+	pTether->RegisterEvent(CBaseEntity::EventTick, [](CBaseEntity* pBase)
+	{
+		// lifetime
+		int& Lifetime = pBase->GetRefConfig("lifetimeTick", 0);
+		if(Lifetime-- <= 0)
+		{
+			pBase->GS()->CreateSound(pBase->GetPos(), SOUND_PLAYER_DIE);
+			pBase->MarkForDestroy();
+			return;
+		}
+
+		// check valid owner
+		auto* pOwnerChar = pBase->GetCharacter();
+		if(!pOwnerChar)
+		{
+			pBase->MarkForDestroy();
+			return;
+		}
+
+		// update main position
+		pBase->SetPos(pOwnerChar->GetPos());
+
+		// initialize variables
+		constexpr float ACQUIRE_RANGE_MODIFIER = 1.25f;
+		constexpr float BREAK_RANGE_MODIFIER = 1.6f;
+		int& TargetCID = pBase->GetRefConfig("targetCID", -1);
+		CCharacter* pTargetChar = pBase->GS()->GetPlayerChar(TargetCID);
+		const float MaxLen = pBase->GetGroup()->GetConfig("maxLength", 320.f);
+
+		// getting target
+		if(!pTargetChar)
+		{
+			float bestDist = -1.0f;
+			CCharacter* pBestTarget = nullptr;
+			for(auto* pChar = (CCharacter*)pBase->GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); pChar; pChar = (CCharacter*)pChar->TypeNext())
+			{
+				if(!pChar->GetPlayer() || pChar->GetPlayer()->GetCID() == pBase->GetClientID() || !pChar->IsAllowedPVP(pBase->GetClientID()))
+					continue;
+
+				if(pBase->GS()->Collision()->IntersectLineWithInvisible(pChar->GetPos(), pBase->GetPos(), nullptr, nullptr))
+					continue;
+
+				const float d = distance(pBase->GetPos(), pChar->m_Core.m_Pos);
+				if(d <= MaxLen * ACQUIRE_RANGE_MODIFIER && (bestDist < 0.0f || d < bestDist))
+				{
+					bestDist = d;
+					pBestTarget = pChar;
+				}
+			}
+
+			if(pBestTarget)
+			{
+				pTargetChar = pBestTarget;
+				TargetCID = pTargetChar->GetPlayer()->GetCID();
+			}
+			else
+				return;
+		}
+
+		// check valid target
+		const float d = distance(pBase->GetPos(), pTargetChar->m_Core.m_Pos);
+		if(d > MaxLen * BREAK_RANGE_MODIFIER || !pTargetChar->IsAllowedPVP(pBase->GetClientID()) ||
+			pBase->GS()->Collision()->IntersectLineWithInvisible(pTargetChar->GetPos(), pBase->GetPos(), nullptr, nullptr))
+		{
+			pBase->GS()->CreateSound(pBase->GetPos(), SOUND_WEAPON_NOAMMO);
+			TargetCID = -1;
+			return;
+		}
+
+		// slow effect
+		const float slowPerTick = pBase->GetGroup()->GetConfig("slowFactor", 0.5f) * 0.15f;
+		pTargetChar->SetVelocity(pTargetChar->m_Core.m_Vel * (1.0f - slowPerTick));
+
+		// pull effect
+		constexpr float PULL_START_STRETCH = 0.6f;
+		const float stretch = clamp(d / maximum(1.0f, MaxLen), 0.0f, 2.0f);
+		if(d > MaxLen * PULL_START_STRETCH)
+		{
+			constexpr float PULL_BASE_FORCE = 0.4f;
+			constexpr float PULL_STRETCH_FORCE_MOD = 0.3f;
+			vec2 dir = normalize(pBase->GetPos() - pTargetChar->m_Core.m_Pos);
+			pTargetChar->AddVelocity(dir * (PULL_BASE_FORCE + PULL_STRETCH_FORCE_MOD * stretch));
+		}
+
+		// damage over time (once per second)
+		if(pBase->Server()->Tick() % pBase->Server()->TickSpeed() == 0)
+		{
+			constexpr float DAMAGE_BASE_MOD = 0.75f;
+			constexpr float DAMAGE_STRETCH_MOD = 0.75f;
+			const int BaseDmg = pBase->GetGroup()->GetConfig("baseDamage", 6);
+			const int DmgPerSec = (int)roundf(BaseDmg * (DAMAGE_BASE_MOD + DAMAGE_STRETCH_MOD * stretch));
+
+			if(DmgPerSec > 0)
+			{
+				pTargetChar->TakeDamage(normalize(pTargetChar->m_Core.m_Pos - pBase->GetPos()), DmgPerSec, pBase->GetClientID(), WEAPON_GAME);
+				pBase->GS()->CreateSound(pTargetChar->GetPos(), SOUND_NINJA_HIT);
+			}
+		}
+	});
+
+	// register snap event
+	constexpr int NUM_BEADS = 5;
+	constexpr int NUM_RING_SEGMENTS = 3;
+	const int TOTAL_SNAP_IDS = 1 + NUM_BEADS + NUM_RING_SEGMENTS;
+	pTether->RegisterEvent(CBaseEntity::EventSnap, TOTAL_SNAP_IDS, [](CBaseEntity* pBase, int SnappingClient, const std::vector<int>& vIds)
+	{
+		int idx = 0;
+		vec2 anchor = pBase->GetPos();
+		vec2 targetPos = anchor;
+		int TargetCID = pBase->GetConfig("targetCID", -1);
+
+		// get position from target client id
+		if(TargetCID >= 0)
+		{
+			if(auto* pTarget = pBase->GS()->GetPlayer(TargetCID, false, true))
+				targetPos = pTarget->GetCharacter()->GetPos();
+		}
+
+		// rope line
+		if(idx < (int)vIds.size())
+			pBase->GS()->SnapLaser(SnappingClient, vIds[idx++], anchor, targetPos, pBase->Server()->Tick() - 1, LASERTYPE_DRAGGER, 0, pBase->GetClientID());
+
+		// decorative beads along the rope
+		for(int i = 1; i <= NUM_BEADS && idx < (int)vIds.size(); ++i)
+		{
+			const float t = (float)i / (float)(NUM_BEADS + 1);
+			vec2 beadPos = anchor + (targetPos - anchor) * t;
+			pBase->GS()->SnapPickup(SnappingClient, vIds[idx++], beadPos, (i % 2) ? POWERUP_ARMOR : POWERUP_HEALTH);
+		}
+
+		// small halo ring at the anchor
+		constexpr float RING_RADIUS = 18.f;
+		const float AngleStep = 2.f * pi / (float)NUM_RING_SEGMENTS;
+		for(int i = 0; i < NUM_RING_SEGMENTS && idx < (int)vIds.size(); ++i)
+		{
+			vec2 p1 = anchor + vec2(std::cos(AngleStep * i), std::sin(AngleStep * i)) * RING_RADIUS;
+			vec2 p2 = anchor + vec2(std::cos(AngleStep * (i + 1)), std::sin(AngleStep * (i + 1))) * RING_RADIUS;
+			pBase->GS()->SnapLaser(SnappingClient, vIds[idx++], p1, p2, pBase->Server()->Tick() - 1, LASERTYPE_RIFLE, 0, pBase->GetClientID());
+		}
+	});
+
+	if(pPtr)
+		*pPtr = groupPtr;
 }
