@@ -76,11 +76,12 @@ void CSkillManager::ShowSkill(CPlayer * pPlayer, int SkillID)
 	VHeader.Add(pInfo->GetDescription());
 	if(!Passive && Learned)
 		VHeader.Add("Mana required {}%", pInfo->GetManaCostPct());
-	VHeader.AddItemValue(itSkillPoint);
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// Manage
 	VoteWrapper VManage(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_STRICT, "Manage");
+	VManage.AddItemValue(itSkillPoint);
+	VManage.AddLine();
 	if(Learned)
 	{
 		if(!Passive)

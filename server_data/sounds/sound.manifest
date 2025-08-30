@@ -21,6 +21,7 @@ SOUND_SFX_POTION = sfx/potion.opus
 SOUND_SFX_MINER = sfx/miner.opus
 SOUND_SFX_FARMER = sfx/farmer.opus
 SOUND_SFX_PICK_UP = sfx/pick_up.opus
+SOUND_SFX_TICK = sfx/tick.opus
 SOUND_SFX_WEAPON_PULSE = sfx/weapon/pulse.opus
 SOUND_SFX_WEAPON_DEAF_BLOW = sfx/weapon/deaf_blow.opus
 SOUND_SFX_WEAPON_IMPULSE = sfx/weapon/impulse.opus

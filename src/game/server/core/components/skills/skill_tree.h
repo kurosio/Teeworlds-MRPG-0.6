@@ -5,7 +5,7 @@ enum class SkillMod : int
 {
 	None = 0,
 
-	// base modification
+	// Base modification
 	ManaCostPct = 1,
 	Radius = 2,
 	CastClick = 3,
@@ -15,20 +15,20 @@ enum class SkillMod : int
 	BonusDecreasePct = 7,
 	BonusDecreaseValue = 8,
 
-	// master craftsman
+	// Master craftsman
 	MasterCraftExtraItemPct = 10,
 
-	// attack teleport
-	AttackTeleportCombo = 11,
-	AttackTeleportStun = 12,
-	AttackTeleportFire = 13,
-	AttackTeleportRestoreHP = 14,
+	// Attack teleport
+	AttackTeleportCombo = 11,       // Allow combo attack
+	AttackTeleportStun = 12,        // Attack teleport has stun effect
+	AttackTeleportFire = 13,        // Attack teleport has fire effect
+	AttackTeleportRestoreHP = 14,   // Attack teleport can restore health
 
-	// cure
-	CureAlly = 15,
+	// Cure
+	CureAlly = 15,                  // Cure can restore health for ally
 
-	// master weapon
-	MasterWeaponAutoFire = 16,
+	// Master weapon
+	MasterWeaponAutoFire = 16,      // Auto fire from weapons
 };
 
 inline std::string format_skill_modifier(SkillMod Mod, int Value)
@@ -36,7 +36,7 @@ inline std::string format_skill_modifier(SkillMod Mod, int Value)
 	switch(Mod)
 	{
 		default:
-			return "\0";
+			return "";
 
 		case SkillMod::BonusIncreaseValue:
 		case SkillMod::Radius:
