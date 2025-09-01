@@ -89,8 +89,6 @@ CServer::~CServer()
 	delete m_pRegister;
 	delete m_pMultiWorlds;
 	m_vBaseAccounts.clear();
-
-	Database->DisconnectConnectionHeap();
 }
 
 IGameServer* CServer::GameServer(int WorldID) const

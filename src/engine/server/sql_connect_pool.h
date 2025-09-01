@@ -1,13 +1,15 @@
 #ifndef ENGINE_SERVER_SQL_CONNECT_POOL_H
 #define ENGINE_SERVER_SQL_CONNECT_POOL_H
 
-// fix c++17 error with removed throw()
+// SECTION: Includes and Basic Setup
+// =================================================================
+
 #if __cplusplus >= 201703L
 	#define throw(...)
 	#include <cppconn/driver.h>
 	#include <cppconn/statement.h>
 	#include <cppconn/resultset.h>
-	#undef throw /* reset */
+	#undef throw
 #else
 	#include <cppconn/driver.h>
 	#include <cppconn/statement.h>
@@ -15,12 +17,17 @@
 #endif
 
 #include <cstdarg>
+#include <queue>
+#include <condition_variable>
+#include <memory>
 
 using namespace sql;
+class CConectionPool; // Forward declare
 
-/*
- * enums
- */
+
+// SECTION: Enums and Helper Functions
+// =================================================================
+
 enum class DB
 {
 	SELECT = 0,
@@ -30,74 +37,54 @@ enum class DB
 	OTHER,
 };
 
-/*
- * defined
- */
-#define Database CConectionPool::GetInstance()
-inline std::recursive_mutex g_SqlThreadRecursiveLock;
+// Helper to check for lost connection errors by error code or SQLSTATE.
+// SQLSTATE '08xxx' indicates a connection exception.
+inline bool is_connection_lost(const SQLException& e)
+{
+	const int code = e.getErrorCode();
+	const char* state = e.getSQLStateCStr();
+	return code == 2006 || code == 2013 || (state && std::strncmp(state, "08", 2) == 0);
+}
 
+
+// SECTION: WrapperResultSet Class
+// =================================================================
+
+// WrapperResultSet is now a simple, temporary wrapper around the raw ResultSet pointer.
+// Its lifetime is confined to the scope of a single query execution.
 class WrapperResultSet
 {
 public:
-	explicit WrapperResultSet(ResultSet* pResult) : m_pResult(pResult) {}
+	explicit WrapperResultSet(ResultSet* res) : m_pResult(res) { }
 	~WrapperResultSet() { delete m_pResult; }
 
+	// Delete copy semantics, allow move
 	WrapperResultSet(const WrapperResultSet&) = delete;
 	WrapperResultSet& operator=(const WrapperResultSet&) = delete;
+	WrapperResultSet(WrapperResultSet&&) = default;
+	WrapperResultSet& operator=(WrapperResultSet&&) = default;
 
-	bool getBoolean(const SQLString& column) const
-	{
-		return m_pResult->getBoolean(column);
-	}
+	explicit operator bool() const { return m_pResult != nullptr; }
 
-	int getInt(const SQLString& column) const
-	{
-		return m_pResult->getInt(column);
-	}
-	unsigned int getUInt(const SQLString& column) const
-	{
-		return m_pResult->getUInt(column);
-	}
-
-	int64_t getInt64(const SQLString& column) const
-	{
-		return m_pResult->getInt64(column);
-	}
-
-	uint64_t getUInt64(const SQLString& column) const
-	{
-		return m_pResult->getUInt64(column);
-	}
-
-	float getFloat(const SQLString& column) const
-	{
-		return static_cast<float>(m_pResult->getDouble(column));
-	}
-
-	double getDouble(const SQLString& column) const
-	{
-		return m_pResult->getDouble(column);
-	}
-
-	std::string getString(const SQLString& column) const
-	{
-		return std::string(m_pResult->getString(column).c_str());
-	}
-
-	std::string getDateTime(const SQLString& column) const
-	{
-		return std::string(m_pResult->getString(column).c_str());
-	}
+	// --- Full accessor implementations ---
+	bool getBoolean(const SQLString& column) const { return m_pResult->getBoolean(column); }
+	int getInt(const SQLString& column) const { return m_pResult->getInt(column); }
+	unsigned int getUInt(const SQLString& column) const { return m_pResult->getUInt(column); }
+	int64_t getInt64(const SQLString& column) const { return m_pResult->getInt64(column); }
+	uint64_t getUInt64(const SQLString& column) const { return m_pResult->getUInt64(column); }
+	double getDouble(const SQLString& column) const { return m_pResult->getDouble(column); }
+	float getFloat(const SQLString& column) const { return static_cast<float>(m_pResult->getDouble(column)); }
+	std::string getString(const SQLString& column) const { return std::string(m_pResult->getString(column).c_str()); }
+	std::string getDateTime(const SQLString& column) const { return std::string(m_pResult->getString(column).c_str()); }
+	bool next() const { return m_pResult->next(); }
+	size_t rowsCount() const { return m_pResult->rowsCount(); }
+	size_t getRow() const { return m_pResult->getRow(); }
 
 	nlohmann::json getJson(const SQLString& column) const
 	{
-		nlohmann::json result = nullptr;
-		if(!m_pResult)
-			return result;
-
+		if(!m_pResult) return nullptr;
 		const std::string jsonString = m_pResult->getString(column).c_str();
-		if(jsonString.empty())
-			return result;
+		if(jsonString.empty()) return nullptr;
 
 		try
 		{
@@ -105,37 +92,19 @@ public:
 		}
 		catch(const nlohmann::json::parse_error& e)
 		{
-			[[unlikely]]
-			{
+			[[unlikely]] {
 				const auto errorMsg = fmt_default("JSON from DB for column '{}' failed to parse: {}", column.c_str(), e.what());
 				dbg_assert(false, errorMsg.c_str());
 				return nullptr;
 			}
 		}
-
-		return result;
-	}
-
-	bool next() const
-	{
-		return m_pResult->next();
-	}
-
-	size_t rowsCount() const
-	{
-		return m_pResult->rowsCount();
-	}
-
-	size_t getRow() const
-	{
-		return m_pResult->getRow();
+		return nullptr;
 	}
 
 	BigInt getBigInt(const SQLString& column) const
 	{
 		const std::string stringValue = m_pResult->getString(column).c_str();
-		if(stringValue.empty())
-			return BigInt(0);
+		if(stringValue.empty()) return BigInt();
 
 		try
 		{
@@ -143,8 +112,7 @@ public:
 		}
 		catch(const SQLException& e)
 		{
-			[[unlikely]]
-			{
+			[[unlikely]] {
 				const auto errorMsg = fmt_default("Failed to convert column '{}' to BigInt: {}", column.c_str(), e.what());
 				dbg_assert(false, errorMsg.c_str());
 				return BigInt();
@@ -156,60 +124,80 @@ private:
 	ResultSet* m_pResult;
 };
 
-/*
- * using typename
- */
+
+// SECTION: Type Aliases
+// =================================================================
+
 using ResultPtr = std::shared_ptr<WrapperResultSet>;
 using CallbackResultPtr = std::function<void(ResultPtr)>;
 using CallbackUpdatePtr = std::function<void()>;
 
-/*
- * class
+
+// SECTION: CThreadPool Class
+// =================================================================
+
+/**
+ * @class CThreadPool
+ * @brief Manages a pool of persistent worker threads for executing database tasks.
+ */
+class CThreadPool
+{
+public:
+	CThreadPool(size_t numThreads);
+	~CThreadPool();
+
+	CThreadPool(const CThreadPool&) = delete;
+	CThreadPool& operator=(const CThreadPool&) = delete;
+
+	// Enqueues a task to be executed by a worker thread.
+	// The task must be a callable that accepts a `Connection*`.
+	void Enqueue(std::function<void(Connection*)> task);
+
+private:
+	void WorkerThread();
+
+	std::vector<std::thread> m_vWorkers;
+	std::queue<std::function<void(Connection*)>> m_qTasks;
+	std::mutex m_mxQueue;
+	std::condition_variable m_cvCondition;
+	std::atomic<bool> m_bStop;
+};
+
+
+// SECTION: CConectionPool (Query Manager) Class
+// =================================================================
+
+/**
+ * @class CConectionPool
+ * @brief Manages database query execution, dispatching async tasks to a thread pool.
  */
 class CConectionPool
 {
-	inline static CConectionPool* m_ptrInstance {};
-
 public:
-	static void Initilize()
+	static CConectionPool* GetInstance()
 	{
-		if(!m_ptrInstance)
-			m_ptrInstance = new CConectionPool();
+		static CConectionPool instance;
+		return &instance;
 	}
-	static void Free()
-	{
-		delete m_ptrInstance;
-		m_ptrInstance = nullptr;
-	}
-	static CConectionPool* GetInstance() { return m_ptrInstance; };
 
+	CConectionPool(const CConectionPool&) = delete;
+	CConectionPool& operator=(const CConectionPool&) = delete;
+	static std::unique_ptr<Connection> CreateConnection();
 
 private:
 	CConectionPool();
-
-	Connection* CreateConnection();
-	Connection* GetConnection();
-	void ReleaseConnection(Connection* pConnection);
-	void DisconnectConnection(Connection* pConnection);
-
-	std::list< Connection* > m_ConnList;
-	Driver* m_pDriver;
-
-public:
 	~CConectionPool();
 
-	// functions
-	void DisconnectConnectionHeap();
+	Driver* m_pDriver;
+	std::unique_ptr<CThreadPool> m_pThreadPool;
 
-	// database extraction function
-private:
+public:
 	class CResultBase
 	{
 	protected:
 		friend class CConectionPool;
 		std::string m_Query;
 		DB m_TypeQuery;
-
 	public:
 		const char* GetQueryString() const { return m_Query.c_str(); }
 	};
@@ -225,66 +213,8 @@ private:
 			return *this;
 		}
 
-		[[nodiscard]] ResultPtr Execute() const
-		{
-			const char* pError = nullptr;
-
-			g_SqlThreadRecursiveLock.lock();
-			Database->m_pDriver->threadInit();
-			Connection* pConnection = Database->GetConnection();
-			ResultPtr pResult = nullptr;
-			try
-			{
-				const std::unique_ptr<Statement> pStmt(pConnection->createStatement());
-				pResult = std::make_shared<WrapperResultSet>(pStmt->executeQuery(m_Query.c_str()));
-				pStmt->close();
-			}
-			catch (SQLException& e)
-			{
-				pError = e.what();
-			}
-			Database->ReleaseConnection(std::move(pConnection));
-			Database->m_pDriver->threadEnd();
-			g_SqlThreadRecursiveLock.unlock();
-
-			if (pError != nullptr)
-				dbg_msg("SQL", "%s", pError);
-
-			return std::move(pResult);
-		}
-
-		void AtExecute(const CallbackResultPtr& pCallbackResult)
-		{
-			auto Item = [callback = std::move(pCallbackResult)](const std::string Query)
-			{
-				const char* pError = nullptr;
-
-				g_SqlThreadRecursiveLock.lock();
-				Database->m_pDriver->threadInit();
-				Connection* pConnection = Database->GetConnection();
-				try
-				{
-					const std::unique_ptr<Statement> pStmt(pConnection->createStatement());
-					auto pResult = std::make_shared<WrapperResultSet>(pStmt->executeQuery(Query.c_str()));
-					if(callback)
-					{
-						callback(std::move(pResult));
-					}
-					pStmt->close();
-				}
-				catch (SQLException& e)
-				{
-					pError = e.what();
-				}
-				Database->ReleaseConnection(std::move(pConnection));
-				Database->m_pDriver->threadEnd();
-				g_SqlThreadRecursiveLock.unlock();
-
-				if (pError != nullptr)
-					dbg_msg("SQL", "%s", pError);
-			};
-			std::thread(Item, m_Query).detach();
-		}
+		[[nodiscard]] ResultPtr Execute() const;
+		void AtExecute(CallbackResultPtr pCallbackResult);
 	};
 
 	class CResultQuery : public CResultBase
@@ -294,53 +224,17 @@ private:
 		CResultQuery& UpdateQuery(const char* pTable, const char* pBuffer, Ts&&... args)
 		{
 			std::string strQuery = fmt_default(pBuffer, std::forward<Ts>(args)...);
-
 			if(m_TypeQuery == DB::INSERT)
 				m_Query = fmt_default("INSERT INTO {} {};", pTable, strQuery);
 			else if(m_TypeQuery == DB::UPDATE)
 				m_Query = fmt_default("UPDATE {} SET {};", pTable, strQuery);
 			else if(m_TypeQuery == DB::REMOVE)
 				m_Query = fmt_default("DELETE FROM {} {};", pTable, strQuery);
-
 			return *this;
 		}
 
-		void AtExecute(const CallbackUpdatePtr& pCallbackResult, int DelayMilliseconds = 0)
-		{
-			auto Item = [callback = std::move(pCallbackResult)](const std::string Query, const int Milliseconds)
-			{
-				if (Milliseconds > 0)
-					std::this_thread::sleep_for(std::chrono::milliseconds(Milliseconds));
-
-				const char* pError = nullptr;
-
-				g_SqlThreadRecursiveLock.lock();
-				Database->m_pDriver->threadInit();
-				Connection* pConnection = Database->GetConnection();
-				try
-				{
-					const std::unique_ptr<Statement> pStmt(pConnection->createStatement());
-					pStmt->execute(Query.c_str());
-					if(callback)
-					{
-						callback();
-					}
-					pStmt->close();
-				}
-				catch (SQLException& e)
-				{
-					pError = e.what();
-				}
-				Database->ReleaseConnection(std::move(pConnection));
-				Database->m_pDriver->threadEnd();
-				g_SqlThreadRecursiveLock.unlock();
-
-				if (pError != nullptr)
-					dbg_msg("SQL", "%s", pError);
-			};
-			std::thread(Item, m_Query, DelayMilliseconds).detach();
-		}
-		void Execute(int DelayMilliseconds = 0) { return AtExecute(nullptr, DelayMilliseconds); }
+		void AtExecute(CallbackUpdatePtr pCallbackResult, int DelayMilliseconds = 0);
+		void Execute(int DelayMilliseconds = 0) { AtExecute(nullptr, DelayMilliseconds); }
 	};
 
 	class CResultQueryCustom : public CResultQuery
@@ -355,32 +249,50 @@ private:
 		}
 	};
 
-	// - - - - - - - - - - - - - - - -
-	// select
-	// - - - - - - - - - - - - - - - -
+private:
 	static std::unique_ptr<CResultSelect> PrepareQuerySelect(DB Type, const char* pSelect, const char* pTable, std::string strQuery)
 	{
-		CResultSelect Data;
-		Data.m_Query = std::string("SELECT " + std::string(pSelect) + " FROM " + std::string(pTable) + " " + strQuery + ";");
-		Data.m_TypeQuery = Type;
+		auto Data = std::make_unique<CResultSelect>();
+		Data->m_Query = "SELECT " + std::string(pSelect) + " FROM " + std::string(pTable) + " " + strQuery + ";";
+		Data->m_TypeQuery = Type;
+		return Data;
+	}
 
-		return std::make_unique<CResultSelect>(Data);
+	static std::unique_ptr<CResultQueryCustom> PrepareQueryCustom(DB Type, std::string strQuery)
+	{
+		auto Data = std::make_unique<CResultQueryCustom>();
+		Data->m_Query = std::move(strQuery) + ";";
+		Data->m_TypeQuery = Type;
+		return Data;
+	}
+
+	static std::unique_ptr<CResultQuery> PrepareQueryInsertUpdateDelete(DB Type, const char* pTable, std::string strQuery)
+	{
+		auto Data = std::make_unique<CResultQuery>();
+		Data->m_TypeQuery = Type;
+		if(Type == DB::INSERT)
+			Data->m_Query = "INSERT INTO " + std::string(pTable) + " " + strQuery + ";";
+		else if(Type == DB::UPDATE)
+			Data->m_Query = "UPDATE " + std::string(pTable) + " SET " + strQuery + ";";
+		else if(Type == DB::REMOVE)
+			Data->m_Query = "DELETE FROM " + std::string(pTable) + " " + strQuery + ";";
+		return Data;
 	}
 
 public:
 	template<DB T>
 	static std::enable_if_t<T == DB::SELECT, std::unique_ptr<CResultSelect>> Prepare(const char* pSelect, const char* pTable)
 	{
-		return std::move(PrepareQuerySelect(T, pSelect, pTable, ""));
+		return PrepareQuerySelect(T, pSelect, pTable, "");
 	}
 	template<DB T, typename... Ts>
 	static std::enable_if_t<T == DB::SELECT, std::unique_ptr<CResultSelect>> Prepare(const char* pSelect, const char* pTable, const char* pBuffer, Ts&&... args)
 	{
 		std::string strQuery = fmt_default(pBuffer, std::forward<Ts>(args)...);
-		return std::move(PrepareQuerySelect(T, pSelect, pTable, strQuery));
+		return PrepareQuerySelect(T, pSelect, pTable, std::move(strQuery));
 	}
 
-	template<DB T, typename... Ts>
+	template<DB T>
 	static std::enable_if_t<T == DB::SELECT, ResultPtr> Execute(const char* pSelect, const char* pTable)
 	{
 		return PrepareQuerySelect(T, pSelect, pTable, "")->Execute();
@@ -389,65 +301,24 @@ public:
 	static std::enable_if_t<T == DB::SELECT, ResultPtr> Execute(const char* pSelect, const char* pTable, const char* pBuffer, Ts&&... args)
 	{
 		std::string strQuery = fmt_default(pBuffer, std::forward<Ts>(args)...);
-		return PrepareQuerySelect(T, pSelect, pTable, strQuery)->Execute();
+		return PrepareQuerySelect(T, pSelect, pTable, std::move(strQuery))->Execute();
 	}
 
-	// - - - - - - - - - - - - - - - -
-	// custom
-	// - - - - - - - - - - - - - - - -
-private:
-	static std::unique_ptr<CResultQueryCustom> PrepareQueryCustom(DB Type, std::string strQuery)
-	{
-		CResultQueryCustom Data;
-		Data.m_Query = std::string(strQuery + ";");
-		Data.m_TypeQuery = Type;
-
-		return std::make_unique<CResultQueryCustom>(Data);
-	}
-
-public:
 	template<DB T, int Milliseconds = 0, typename... Ts>
 	static std::enable_if_t<T == DB::OTHER, void> Execute(const char* pBuffer, Ts&&... args)
 	{
 		std::string strQuery = fmt_default(pBuffer, std::forward<Ts>(args)...);
-		PrepareQueryCustom(T, strQuery)->Execute(Milliseconds);
+		PrepareQueryCustom(T, std::move(strQuery))->Execute(Milliseconds);
 	}
 
-	// - - - - - - - - - - - - - - - -
-	// insert : update : delete
-	// - - - - - - - - - - - - - - - -
-private:
-	static std::unique_ptr<CResultQuery> PrepareQueryInsertUpdateDelete(DB Type, const char* pTable, std::string strQuery)
-	{
-		CResultQuery Data;
-		Data.m_TypeQuery = Type;
-
-		if(Type == DB::INSERT)
-		{
-			Data.m_Query = "INSERT INTO ";
-			Data.m_Query.append(pTable).append(" ").append(strQuery).append(";");
-		}
-		else if(Type == DB::UPDATE)
-		{
-			Data.m_Query = "UPDATE ";
-			Data.m_Query.append(pTable).append(" SET ").append(strQuery).append(";");
-		}
-		else if(Type == DB::REMOVE)
-		{
-			Data.m_Query = "DELETE FROM ";
-			Data.m_Query.append(pTable).append(" ").append(strQuery).append(";");
-		}
-
-		return std::make_unique<CResultQuery>(Data);
-	}
-
-public:
 	template<DB T, int Milliseconds = 0, typename... Ts>
 	static std::enable_if_t<(T == DB::INSERT || T == DB::UPDATE || T == DB::REMOVE), void> Execute(const char* pTable, const char* pBuffer, Ts&&... args)
 	{
 		std::string strQuery = fmt_default(pBuffer, std::forward<Ts>(args)...);
-		PrepareQueryInsertUpdateDelete(T, pTable, strQuery)->Execute(Milliseconds);
+		PrepareQueryInsertUpdateDelete(T, pTable, std::move(strQuery))->Execute(Milliseconds);
 	}
 };
 
-#endif
+#define Database CConectionPool::GetInstance()
+
+#endif // ENGINE_SERVER_SQL_CONNECT_POOL_H

@@ -95,7 +95,6 @@ int main(int argc, const char** argv)
 	init_exception_handler();
 #endif
 
-	CConectionPool::Initilize();
 	CServer* pServer = CreateServer();
 	pServer->SetLoggers(pFutureFileLogger, std::move(pStdoutLogger));
 
@@ -188,6 +187,5 @@ int main(int argc, const char** argv)
 	delete pKernel;
 
 	secure_random_uninit();
-	CConectionPool::Free();
 	return Ret;
 }
