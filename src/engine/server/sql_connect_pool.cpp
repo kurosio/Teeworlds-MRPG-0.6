@@ -51,56 +51,77 @@ void CThreadPool::WorkerThread()
 		std::function<void(Connection*)> task;
 
 		// Lock the queue to safely access it.
+		bool timedOut = false;
 		{
 			std::unique_lock<std::mutex> lock(m_mxQueue);
 
 			// Wait until there's a task or the pool is stopping.
 			// The lambda prevents spurious wakeups.
-			m_cvCondition.wait(lock, [this] { return this->m_bStop || !this->m_qTasks.empty(); });
+			if(!m_cvCondition.wait_for(lock, std::chrono::seconds(60), [this]{ return m_bStop || !m_qTasks.empty(); }))
+				timedOut = true;
 
 			// If stopping and no tasks are left, exit the thread's loop.
-			if(this->m_bStop && this->m_qTasks.empty())
+			if(m_bStop && m_qTasks.empty())
 				return;
 
 			// Get the next task from the queue.
-			task = std::move(m_qTasks.front());
-			m_qTasks.pop();
+			if(!m_qTasks.empty())
+			{
+				task = std::move(m_qTasks.front());
+				m_qTasks.pop();
+			}
 		}
 
 		// --- Execute the task ---
-		try
+		if(task)
 		{
-			// Check if the connection is dead. If so, try to reconnect.
-			if(!pConnection || pConnection->isClosed())
+			try
 			{
-				dbg_msg("SQL Worker", "Connection is closed, attempting to reconnect...");
-				pConnection = CConectionPool::CreateConnection();
-			}
+				// Check if the connection is dead. If so, try to reconnect.
+				if(!pConnection || pConnection->isClosed())
+				{
+					dbg_msg("SQL Worker", "Connection is dead, reconnecting for task...");
+					pConnection = CConectionPool::CreateConnection();
+				}
 
-			if(pConnection)
-			{
-				// Execute the actual task (a lambda containing the query logic).
-				// We pass the raw connection pointer to the task.
-				task(pConnection.get());
+				if(pConnection)
+				{
+					// Execute the actual task (a lambda containing the query logic).
+					// We pass the raw connection pointer to the task.
+					task(pConnection.get());
+				}
+				else
+				{
+					dbg_msg("SQL Error", "Worker has no valid connection. Task skipped.");
+				}
 			}
-			else
+			catch(const SQLException& e)
 			{
-				dbg_msg("SQL Error", "Worker failed to establish a database connection. Task skipped.");
+				dbg_msg("SQL Error", "Worker caught SQLException during task: %s. Connection will be reset.", e.what());
+				pConnection = nullptr;
+			}
+			catch(const std::exception& e)
+			{
+				dbg_msg("Error", "Worker caught std::exception during task: %s", e.what());
 			}
 		}
-		catch(const SQLException& e)
+		else if(timedOut)
 		{
-			dbg_msg("SQL Error", "SQLException in worker: %s. Connection will be reset.", e.what());
-			pConnection = nullptr;
+			if(pConnection && !pConnection->isClosed())
+			{
+				try
+				{
+					std::unique_ptr<Statement> pStmt(pConnection->createStatement());
+					pStmt->execute("SELECT 1");
+				}
+				catch(const SQLException& e)
+				{
+					dbg_msg("SQL Worker", "Keep-alive ping failed: %s. Connection will be reset.", e.what());
+					pConnection = nullptr;
+				}
+			}
 		}
-		catch(const std::exception& e)
-		{
-			dbg_msg("Error", "Unhandled std::exception in worker: %s", e.what());
-		}
-		catch(...)
-		{
-			dbg_msg("Error", "Unknown exception caught in worker thread.");
-		}
+
 	}
 }
 
