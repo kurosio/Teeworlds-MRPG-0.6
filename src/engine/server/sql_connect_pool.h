@@ -63,28 +63,30 @@ public:
 	WrapperResultSet& operator=(const WrapperResultSet&) = delete;
 	WrapperResultSet(WrapperResultSet&&) = default;
 	WrapperResultSet& operator=(WrapperResultSet&&) = default;
-
 	explicit operator bool() const { return m_pResult != nullptr; }
 
 	// --- Full accessor implementations ---
-	bool getBoolean(const SQLString& column) const { return m_pResult->getBoolean(column); }
-	int getInt(const SQLString& column) const { return m_pResult->getInt(column); }
-	unsigned int getUInt(const SQLString& column) const { return m_pResult->getUInt(column); }
-	int64_t getInt64(const SQLString& column) const { return m_pResult->getInt64(column); }
-	uint64_t getUInt64(const SQLString& column) const { return m_pResult->getUInt64(column); }
-	double getDouble(const SQLString& column) const { return m_pResult->getDouble(column); }
-	float getFloat(const SQLString& column) const { return static_cast<float>(m_pResult->getDouble(column)); }
-	std::string getString(const SQLString& column) const { return std::string(m_pResult->getString(column).c_str()); }
-	std::string getDateTime(const SQLString& column) const { return std::string(m_pResult->getString(column).c_str()); }
-	bool next() const { return m_pResult->next(); }
-	size_t rowsCount() const { return m_pResult->rowsCount(); }
-	size_t getRow() const { return m_pResult->getRow(); }
+	bool getBoolean(const SQLString& column) const { return m_pResult ? m_pResult->getBoolean(column) : false; }
+	int getInt(const SQLString& column) const { return m_pResult ? m_pResult->getInt(column) : 0; }
+	unsigned int getUInt(const SQLString& column) const { return m_pResult ? m_pResult->getUInt(column) : 0; }
+	int64_t getInt64(const SQLString& column) const { return m_pResult ? m_pResult->getInt64(column) : 0; }
+	uint64_t getUInt64(const SQLString& column) const { return m_pResult ? m_pResult->getUInt64(column) : 0; }
+	double getDouble(const SQLString& column) const { return m_pResult ? m_pResult->getDouble(column) : 0.0; }
+	float getFloat(const SQLString& column) const { return m_pResult ? static_cast<float>(m_pResult->getDouble(column)) : 0.0f; }
+	std::string getString(const SQLString& column) const { return m_pResult ? std::string(m_pResult->getString(column).c_str()) : ""; }
+	std::string getDateTime(const SQLString& column) const { return m_pResult ? std::string(m_pResult->getString(column).c_str()) : ""; }
+	bool next() const { return m_pResult && m_pResult->next(); }
+	size_t rowsCount() const { return m_pResult ? m_pResult->rowsCount() : 0; }
+	size_t getRow() const { return m_pResult ? m_pResult->getRow() : 0; }
 
 	nlohmann::json getJson(const SQLString& column) const
 	{
-		if(!m_pResult) return nullptr;
+		if(!m_pResult)
+			return nullptr;
+
 		const std::string jsonString = m_pResult->getString(column).c_str();
-		if(jsonString.empty()) return nullptr;
+		if(jsonString.empty())
+			return nullptr;
 
 		try
 		{
@@ -103,8 +105,12 @@ public:
 
 	BigInt getBigInt(const SQLString& column) const
 	{
+		if(!m_pResult)
+			return BigInt();
+
 		const std::string stringValue = m_pResult->getString(column).c_str();
-		if(stringValue.empty()) return BigInt();
+		if(stringValue.empty())
+			return BigInt();
 
 		try
 		{
