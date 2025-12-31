@@ -203,6 +203,12 @@ MACRO_CONFIG_STR(SvMySqlPassword, sv_sql_password, 32, "", CFGFLAG_SERVER, "MySQ
 MACRO_CONFIG_INT(SvMySqlPort, sv_sql_port, 3306, 0, 65000, CFGFLAG_SERVER, "MySQL Port")
 MACRO_CONFIG_INT(SvMySqlPoolSize, sv_sql_pool_size, 3, 2, 12, CFGFLAG_SERVER, "MySQL Pool size");
 
+// mysql duration logging and metrics
+MACRO_CONFIG_INT(SvSyncSelectWarnMs, sv_sync_select_warn_ms, 30, 1, 10000, CFGFLAG_SERVER, "MySQL select sync warning ms.");
+MACRO_CONFIG_INT(SvQueueWaitWarnMs, sv_queue_wait_warn_ms, 30, 1, 10000, CFGFLAG_SERVER, "MySQL queue wait warning ms.");
+MACRO_CONFIG_INT(SvQueueWarnSize, sv_queue_warn_size, 50, 1, 10000, CFGFLAG_SERVER, "MySQL queue warn size.");
+
+
 // settings
 MACRO_CONFIG_INT(SvLoltextHspace, sv_loltext_hspace, 7, 7, 25, CFGFLAG_SERVER, "horizontal offset between loltext 'pixels'")
 MACRO_CONFIG_INT(SvLoltextVspace, sv_loltext_vspace, 7, 7, 25, CFGFLAG_SERVER, "vertical offset between loltext 'pixels'")

@@ -18,6 +18,7 @@
 
 #include <cstdarg>
 #include <queue>
+#include <atomic>
 #include <condition_variable>
 #include <memory>
 
@@ -157,16 +158,25 @@ public:
 
 	// Enqueues a task to be executed by a worker thread.
 	// The task must be a callable that accepts a `Connection*`.
-	void Enqueue(std::function<void(Connection*)> task);
+	void Enqueue(std::function<void(Connection*)> task, DB type, std::string query);
 
 private:
+	struct CTask
+	{
+		std::function<void(Connection*)> m_Task;
+		int64_t m_EnqueueTime;
+		DB m_Type;
+		std::string m_Query;
+	};
+
 	void WorkerThread();
 
 	std::vector<std::thread> m_vWorkers;
-	std::queue<std::function<void(Connection*)>> m_qTasks;
+	std::queue<CTask> m_qTasks;
 	std::mutex m_mxQueue;
 	std::condition_variable m_cvCondition;
 	std::atomic<bool> m_bStop;
+	std::atomic<size_t> m_QueueSize { 0 };
 };
 
 

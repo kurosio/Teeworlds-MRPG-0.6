@@ -4,6 +4,35 @@
 // #####################################################
 // THREAD POOL IMPLEMENTATION
 // #####################################################
+namespace
+{
+	const char* DbTypeName(DB type)
+	{
+		switch(type)
+		{
+			case DB::SELECT:
+				return "SELECT";
+			case DB::INSERT:
+				return "INSERT";
+			case DB::UPDATE:
+				return "UPDATE";
+			case DB::REMOVE:
+				return "REMOVE";
+			case DB::OTHER:
+				return "OTHER";
+		}
+		return "UNKNOWN";
+	}
+
+	double DurationMs(int64_t startTicks, int64_t endTicks)
+	{
+		const int64_t freq = time_freq();
+		if(freq <= 0)
+			return 0.0;
+		return static_cast<double>(endTicks - startTicks) * 1000.0 / static_cast<double>(freq);
+	}
+}
+
 CThreadPool::CThreadPool(size_t numThreads) : m_bStop(false)
 {
 	for(size_t i = 0; i < numThreads; ++i)
@@ -28,13 +57,21 @@ CThreadPool::~CThreadPool()
 	}
 }
 
-void CThreadPool::Enqueue(std::function<void(Connection*)> task)
+void CThreadPool::Enqueue(std::function<void(Connection*)> task, DB type, std::string query)
 {
 	// Lock the queue to safely push a new task.
+	size_t queuedSize = 0;
 	{
 		std::unique_lock<std::mutex> lock(m_mxQueue);
-		m_qTasks.push(std::move(task));
+		m_qTasks.emplace(std::move(task), time_get(), type, std::move(query));
+		queuedSize = m_QueueSize.fetch_add(1) + 1;
 	}
+
+	if(queuedSize > static_cast<size_t>(g_Config.m_SvQueueWarnSize))
+	{
+		dbg_msg("SQL Worker", "Queue size high: %zu tasks (latest type: %s).", queuedSize, DbTypeName(type));
+	}
+
 	// Notify one waiting worker thread that a task is available.
 	m_cvCondition.notify_one();
 }
@@ -48,7 +85,8 @@ void CThreadPool::WorkerThread()
 	// The main loop for the worker thread.
 	while(true)
 	{
-		std::function<void(Connection*)> task;
+		CTask task;
+		bool hasTask = false;
 
 		// Lock the queue to safely access it.
 		bool timedOut = false;
@@ -69,11 +107,13 @@ void CThreadPool::WorkerThread()
 			{
 				task = std::move(m_qTasks.front());
 				m_qTasks.pop();
+				m_QueueSize.fetch_sub(1);
+				hasTask = true;
 			}
 		}
 
 		// --- Execute the task ---
-		if(task)
+		if(hasTask)
 		{
 			try
 			{
@@ -88,7 +128,13 @@ void CThreadPool::WorkerThread()
 				{
 					// Execute the actual task (a lambda containing the query logic).
 					// We pass the raw connection pointer to the task.
-					task(pConnection.get());
+					const int64_t startWait = task.m_EnqueueTime;
+					const double waitMs = DurationMs(startWait, time_get());
+					if(waitMs > static_cast<double>(g_Config.m_SvQueueWaitWarnMs))
+					{
+						dbg_msg("SQL Worker", "Task waited %.2fms in queue (type: %s). Query: %s", waitMs, DbTypeName(task.m_Type), task.m_Query.c_str());
+					}
+					task.m_Task(pConnection.get());
 				}
 				else
 				{
@@ -196,15 +242,26 @@ std::unique_ptr<Connection> CConectionPool::CreateConnection()
 		return nullptr;
 	}
 
+	const int64_t start = time_get();
 	try
 	{
 		// Statement and ResultSet are managed by unique_ptr and the returned shared_ptr.
 		std::unique_ptr<Statement> pStmt(pConnection->createStatement());
 		ResultSet* rawResult = pStmt->executeQuery(m_Query.c_str());
+		const double durationMs = DurationMs(start, time_get());
+		if(durationMs > static_cast<double>(g_Config.m_SvSyncSelectWarnMs))
+		{
+			dbg_msg("SQL Warning", "Slow sync SELECT (%.2fms). Query: %s", durationMs, m_Query.c_str());
+		}
 		return std::make_shared<WrapperResultSet>(rawResult);
 	}
 	catch(const SQLException& e)
 	{
+		const double durationMs = DurationMs(start, time_get());
+		if(durationMs > static_cast<double>(g_Config.m_SvSyncSelectWarnMs))
+		{
+			dbg_msg("SQL Warning", "Slow sync SELECT failed (%.2fms). Query: %s", durationMs, m_Query.c_str());
+		}
 		dbg_msg("SQL Error", "Sync SELECT failed: %s. Query: %s", e.what(), m_Query.c_str());
 		return nullptr;
 	}
@@ -243,7 +300,7 @@ void CConectionPool::CResultSelect::AtExecute(CallbackResultPtr pCallbackResult)
 	};
 
 	// Enqueue the task for the thread pool to execute when a worker is free.
-	Database->m_pThreadPool->Enqueue(std::move(task));
+	Database->m_pThreadPool->Enqueue(std::move(task), DB::SELECT, m_Query);
 }
 
 
@@ -276,5 +333,5 @@ void CConectionPool::CResultQuery::AtExecute(CallbackUpdatePtr pCallbackResult, 
 		}
 	};
 
-	Database->m_pThreadPool->Enqueue(std::move(task));
+	Database->m_pThreadPool->Enqueue(std::move(task), m_TypeQuery, m_Query);
 }
