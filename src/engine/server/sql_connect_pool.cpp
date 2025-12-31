@@ -373,7 +373,7 @@ void CConectionPool::CResultSelect::AtExecute(CallbackResultPtr pCallbackResult)
 
 			// Notify the caller of the failure.
 			if(cb)
-				cb(EmptyResult());
+				cb(nullptr);
 		}
 	};
 
