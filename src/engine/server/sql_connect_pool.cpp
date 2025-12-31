@@ -31,6 +31,18 @@ namespace
 			return 0.0;
 		return static_cast<double>(endTicks - startTicks) * 1000.0 / static_cast<double>(freq);
 	}
+
+	std::unique_ptr<Connection>& GetSyncConnection()
+	{
+		thread_local std::unique_ptr<Connection> s_pSyncConnection;
+		if(!s_pSyncConnection || s_pSyncConnection->isClosed())
+		{
+			if(s_pSyncConnection && s_pSyncConnection->isClosed())
+				dbg_msg("SQL Sync", "Connection closed, reconnecting.");
+			s_pSyncConnection = CConectionPool::CreateConnection();
+		}
+		return s_pSyncConnection;
+	}
 }
 
 CThreadPool::CThreadPool(size_t numThreads) : m_bStop(false)
@@ -233,9 +245,8 @@ std::unique_ptr<Connection> CConectionPool::CreateConnection()
 // --- SYNCHRONOUS SELECT ---
 [[nodiscard]] ResultPtr CConectionPool::CResultSelect::Execute() const
 {
-	// Synchronous queries run on the calling thread and use a temporary, single-use connection.
-	// This is simple and avoids complex synchronization with the thread pool.
-	auto pConnection = CConectionPool::CreateConnection();
+	// Synchronous queries run on the calling thread and reuse a thread-local connection.
+	auto& pConnection = GetSyncConnection();
 	if(!pConnection)
 	{
 		dbg_msg("SQL Error", "Sync Execute failed to create a connection.");
@@ -263,6 +274,8 @@ std::unique_ptr<Connection> CConectionPool::CreateConnection()
 			dbg_msg("SQL Warning", "Slow sync SELECT failed (%.2fms). Query: %s", durationMs, m_Query.c_str());
 		}
 		dbg_msg("SQL Error", "Sync SELECT failed: %s. Query: %s", e.what(), m_Query.c_str());
+		if(is_connection_lost(e))
+			pConnection = nullptr;
 		return nullptr;
 	}
 }
