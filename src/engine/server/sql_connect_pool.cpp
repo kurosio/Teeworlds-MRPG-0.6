@@ -6,6 +6,12 @@
 // #####################################################
 namespace
 {
+	ResultPtr EmptyResult()
+	{
+		static ResultPtr s_Empty = std::make_shared<WrapperResultSet>(nullptr);
+		return s_Empty;
+	}
+
 	const char* DbTypeName(DB type)
 	{
 		switch(type)
@@ -250,21 +256,25 @@ std::unique_ptr<Connection> CConectionPool::CreateConnection()
 	if(!pConnection)
 	{
 		dbg_msg("SQL Error", "Sync Execute failed to create a connection.");
-		return nullptr;
+		return EmptyResult();
 	}
+
+	const auto runQuery = [this](Connection* pConnection)
+	{
+		std::unique_ptr<Statement> pStmt(pConnection->createStatement());
+		return ResultPtr(std::make_shared<WrapperResultSet>(pStmt->executeQuery(m_Query.c_str())));
+	};
 
 	const int64_t start = time_get();
 	try
 	{
-		// Statement and ResultSet are managed by unique_ptr and the returned shared_ptr.
-		std::unique_ptr<Statement> pStmt(pConnection->createStatement());
-		ResultSet* rawResult = pStmt->executeQuery(m_Query.c_str());
+		ResultPtr result = runQuery(pConnection.get());
 		const double durationMs = DurationMs(start, time_get());
 		if(durationMs > static_cast<double>(g_Config.m_SvSyncSelectWarnMs))
 		{
 			dbg_msg("SQL Warning", "Slow sync SELECT (%.2fms). Query: %s", durationMs, m_Query.c_str());
 		}
-		return std::make_shared<WrapperResultSet>(rawResult);
+		return result ? result : EmptyResult();
 	}
 	catch(const SQLException& e)
 	{
@@ -275,8 +285,22 @@ std::unique_ptr<Connection> CConectionPool::CreateConnection()
 		}
 		dbg_msg("SQL Error", "Sync SELECT failed: %s. Query: %s", e.what(), m_Query.c_str());
 		if(is_connection_lost(e))
+		{
 			pConnection = nullptr;
-		return nullptr;
+			auto& retryConnection = GetSyncConnection();
+			if(!retryConnection)
+				return EmptyResult();
+
+			try
+			{
+				return runQuery(retryConnection.get());
+			}
+			catch(const SQLException& retryError)
+			{
+				dbg_msg("SQL Error", "Sync SELECT retry failed: %s. Query: %s", retryError.what(), m_Query.c_str());
+			}
+		}
+		return EmptyResult();
 	}
 }
 
@@ -304,7 +328,7 @@ void CConectionPool::CResultSelect::AtExecute(CallbackResultPtr pCallbackResult)
 
 			// Notify the caller of the failure.
 			if(cb)
-				cb(nullptr);
+				cb(EmptyResult());
 
 			// Rethrow to trigger reconnect in the worker
 			if(is_connection_lost(e))
