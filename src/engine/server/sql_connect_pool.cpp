@@ -77,17 +77,42 @@ CThreadPool::~CThreadPool()
 
 void CThreadPool::Enqueue(std::function<void(Connection*, int)> task, DB type, std::string query)
 {
-	// Lock the queue to safely push a new task.
+	CTask newTask{std::move(task), time_get(), type, std::move(query), 0};
+	EnqueueTask(std::move(newTask));
+}
+
+void CThreadPool::EnqueueTask(CTask&& task)
+{
 	size_t queuedSize = 0;
+	const size_t maxQueueSize = static_cast<size_t>(g_Config.m_SvQueueMaxSize);
+	const DB taskType = task.m_Type;
+
 	{
 		std::unique_lock<std::mutex> lock(m_mxQueue);
-		m_qTasks.emplace(std::move(task), time_get(), type, std::move(query), 0);
+		bool warned = false;
+		if(maxQueueSize > 0)
+		{
+			while(!m_bStop.load() && m_QueueSize.load() >= maxQueueSize)
+			{
+				if(!warned)
+				{
+					dbg_msg("SQL Worker", "Queue limit reached (%zu). Waiting to enqueue (type: %s).", maxQueueSize, DbTypeName(task.m_Type));
+					warned = true;
+				}
+				m_cvCondition.wait(lock);
+			}
+		}
+
+		if(m_bStop.load())
+			return;
+
+		m_qTasks.emplace(std::move(task));
 		queuedSize = m_QueueSize.fetch_add(1) + 1;
 	}
 
 	if(queuedSize > static_cast<size_t>(g_Config.m_SvQueueWarnSize))
 	{
-		dbg_msg("SQL Worker", "Queue size high: %zu tasks (latest type: %s).", queuedSize, DbTypeName(type));
+		dbg_msg("SQL Worker", "Queue size high: %zu tasks (latest type: %s).", queuedSize, DbTypeName(taskType));
 	}
 
 	// Notify one waiting worker thread that a task is available.
@@ -130,6 +155,9 @@ void CThreadPool::WorkerThread()
 			}
 		}
 
+		if(hasTask)
+			m_cvCondition.notify_all();
+
 		// --- Execute the task ---
 		if(hasTask)
 		{
@@ -167,12 +195,7 @@ void CThreadPool::WorkerThread()
 					dbg_msg("SQL Worker", "Connection lost during task, retrying once after reconnect. Query: %s", task.m_Query.c_str());
 					CTask retryTask = std::move(task);
 					retryTask.m_RetryCount++;
-					{
-						std::unique_lock<std::mutex> lock(m_mxQueue);
-						m_qTasks.emplace(std::move(retryTask));
-						m_QueueSize.fetch_add(1);
-					}
-					m_cvCondition.notify_one();
+					EnqueueTask(std::move(retryTask));
 				}
 				else
 				{

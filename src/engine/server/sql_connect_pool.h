@@ -170,6 +170,7 @@ private:
 		int m_RetryCount;
 	};
 
+	void EnqueueTask(CTask&& task);
 	void WorkerThread();
 
 	std::vector<std::thread> m_vWorkers;

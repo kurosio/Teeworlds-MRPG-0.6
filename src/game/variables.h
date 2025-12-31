@@ -207,6 +207,7 @@ MACRO_CONFIG_INT(SvMySqlPoolSize, sv_sql_pool_size, 3, 2, 12, CFGFLAG_SERVER, "M
 MACRO_CONFIG_INT(SvSyncSelectWarnMs, sv_sync_select_warn_ms, 30, 1, 10000, CFGFLAG_SERVER, "MySQL select sync warning ms.");
 MACRO_CONFIG_INT(SvQueueWaitWarnMs, sv_queue_wait_warn_ms, 30, 1, 10000, CFGFLAG_SERVER, "MySQL queue wait warning ms.");
 MACRO_CONFIG_INT(SvQueueWarnSize, sv_queue_warn_size, 50, 1, 10000, CFGFLAG_SERVER, "MySQL queue warn size.");
+MACRO_CONFIG_INT(SvQueueMaxSize, sv_queue_max_size, 500, 1, 100000, CFGFLAG_SERVER, "MySQL queue max size (enqueue waits when reached).");
 
 
 // settings
