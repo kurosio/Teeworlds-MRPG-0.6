@@ -190,9 +190,10 @@ void CThreadPool::WorkerThread()
 			catch(const SQLException& e)
 			{
 				const bool connectionLost = is_connection_lost(e);
-				if(connectionLost && task.m_RetryCount < 1)
+				const bool allowRetry = task.m_Type == DB::SELECT;
+				if(connectionLost && allowRetry && task.m_RetryCount < 1)
 				{
-					dbg_msg("SQL Worker", "Connection lost during task, retrying once after reconnect. Query: %s", task.m_Query.c_str());
+					dbg_msg("SQL Worker", "Connection lost during SELECT task, retrying once after reconnect. Query: %s", task.m_Query.c_str());
 					CTask retryTask = std::move(task);
 					retryTask.m_RetryCount++;
 					EnqueueTask(std::move(retryTask));
