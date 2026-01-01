@@ -16,6 +16,7 @@ namespace
 	constexpr int kMaxDmlRetries = 1;
 	constexpr int kBaseRetryDelayMs = 500;
 	constexpr int kConnectRetryDelayMs = 500;
+	constexpr int kQueueWaitTimeoutMs = 1000;
 
 	const char* DbTypeName(DB type)
 	{
@@ -128,7 +129,11 @@ void CThreadPool::EnqueueTask(CTask&& task)
 					dbg_msg("SQL Worker", "Queue limit reached (%zu). Waiting to enqueue (type: %s).", maxQueueSize, DbTypeName(task.m_Type));
 					warned = true;
 				}
-				m_cvCondition.wait(lock);
+				if(m_cvCondition.wait_for(lock, std::chrono::milliseconds(kQueueWaitTimeoutMs)) == std::cv_status::timeout)
+				{
+					dbg_msg("SQL Worker", "Queue enqueue timed out after %dms (type: %s). Task dropped.", kQueueWaitTimeoutMs, DbTypeName(task.m_Type));
+					return;
+				}
 			}
 		}
 
@@ -156,10 +161,8 @@ void CThreadPool::EnqueueRetry(CTask&& task, const char* reason, int maxRetries)
 		return;
 	}
 
-	const int delayMs = kBaseRetryDelayMs * (task.m_RetryCount + 1);
-	dbg_msg("SQL Worker", "%s. Retrying in %dms (attempt %d/%d). Query: %s", reason, delayMs, task.m_RetryCount + 1, maxRetries, task.m_Query.c_str());
+	dbg_msg("SQL Worker", "%s. Retrying (attempt %d/%d). Query: %s", reason, task.m_RetryCount + 1, maxRetries, task.m_Query.c_str());
 	task.m_RetryCount++;
-	std::this_thread::sleep_for(std::chrono::milliseconds(delayMs));
 	task.m_EnqueueTime = time_get();
 	EnqueueTask(std::move(task));
 }
@@ -416,9 +419,7 @@ void CConectionPool::CResultSelect::AtExecute(CallbackResultPtr pCallbackResult)
 		{
 			if(retryCount < kMaxTaskRetries)
 			{
-				const int delayMs = kBaseRetryDelayMs * (retryCount + 1);
-				dbg_msg("SQL Worker", "Async SELECT connection unavailable. Retrying in %dms (attempt %d/%d). Query: %s", delayMs, retryCount + 1, kMaxTaskRetries, query.c_str());
-				std::this_thread::sleep_for(std::chrono::milliseconds(delayMs));
+				dbg_msg("SQL Worker", "Async SELECT connection unavailable. Retrying (attempt %d/%d). Query: %s", retryCount + 1, kMaxTaskRetries, query.c_str());
 				Database->m_pThreadPool->EnqueueWithRetry(*task, DB::SELECT, query, retryCount + 1);
 				return;
 			}
