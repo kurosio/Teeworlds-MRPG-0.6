@@ -56,6 +56,9 @@ bool CAchievement::UpdateProgress(int Criteria, int Progress, int ProgressType)
 	if(m_Completed || !pPlayer)
 		return false;
 
+	const int PreviousProgress = m_Progress;
+	const bool WasCompleted = m_Completed;
+
 	// update the achievement progress
 	switch(ProgressType)
 	{
@@ -89,8 +92,27 @@ bool CAchievement::UpdateProgress(int Criteria, int Progress, int ProgressType)
 		NotifyPlayerProgress();
 	}
 
-	// save
-	pPlayer->Account()->UpdateAchievementProgress(m_pInfo, m_Progress, m_Completed);
+	const bool ProgressChanged = m_Progress != PreviousProgress;
+	const bool CompletionChanged = m_Completed != WasCompleted;
+
+	if(ProgressChanged || CompletionChanged)
+	{
+		const int TickSpeed = Server()->TickSpeed();
+		const int CurrentTick = Server()->Tick();
+		constexpr int SaveIntervalSeconds = 5;
+		const int SaveIntervalTicks = TickSpeed * SaveIntervalSeconds;
+		const bool ShouldPersist = CompletionChanged
+			|| m_LastSaveTick == 0
+			|| (CurrentTick - m_LastSaveTick) >= SaveIntervalTicks;
+
+		if(ShouldPersist)
+		{
+			pPlayer->Account()->UpdateAchievementProgress(m_pInfo, m_Progress, m_Completed);
+			m_LastSavedProgress = m_Progress;
+			m_LastSavedCompleted = m_Completed;
+			m_LastSaveTick = CurrentTick;
+		}
+	}
 	return true;
 }
 
