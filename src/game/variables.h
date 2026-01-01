@@ -208,7 +208,7 @@ MACRO_CONFIG_INT(SvSyncSelectWarnMs, sv_sync_select_warn_ms, 30, 1, 10000, CFGFL
 MACRO_CONFIG_INT(SvQueueWaitWarnMs, sv_queue_wait_warn_ms, 30, 1, 10000, CFGFLAG_SERVER, "MySQL queue wait warning ms.");
 MACRO_CONFIG_INT(SvQueueWarnSize, sv_queue_warn_size, 50, 1, 10000, CFGFLAG_SERVER, "MySQL queue warn size.");
 MACRO_CONFIG_INT(SvQueueMaxSize, sv_queue_max_size, 500, 1, 100000, CFGFLAG_SERVER, "MySQL queue max size (enqueue waits when reached).");
-MACRO_CONFIG_STR(SvSqlLog, sv_sql_log, 128, "sql_log", CFGFLAG_SERVER, "Filename to log failed SQL queries");
+MACRO_CONFIG_STR(SvSqlLog, sv_sql_log, 128, "sql_failed_log.txt", CFGFLAG_SERVER, "Filename to log failed SQL queries");
 
 
 // settings
