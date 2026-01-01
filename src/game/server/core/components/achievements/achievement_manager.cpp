@@ -2,8 +2,108 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "achievement_manager.h"
 
+#include <algorithm>
+#include <map>
+#include <unordered_map>
+#include <unordered_set>
+#include <vector>
+
 #include <game/server/core/components/crafting/craft_manager.h>
 #include <game/server/gamecontext.h>
+
+namespace
+{
+	struct SAchievementLevelInfo
+	{
+		int m_Level {};
+		int m_TotalLevels {};
+	};
+
+	using AchievementGroupKey = std::pair<AchievementType, int>;
+
+	std::unordered_map<const CAchievementInfo*, SAchievementLevelInfo> BuildLevelInfoByAchievement(
+		const std::deque<CAchievement*>& Achievements,
+		AchievementType Type)
+	{
+		std::map<AchievementGroupKey, std::vector<const CAchievementInfo*>> groupedByCriteria;
+		for(const auto* pAchievement : Achievements)
+		{
+			const auto* pInfo = pAchievement->Info();
+			if(pInfo->GetType() != Type)
+				continue;
+
+			groupedByCriteria[{pInfo->GetType(), pInfo->GetCriteria()}].push_back(pInfo);
+		}
+
+		std::unordered_map<const CAchievementInfo*, SAchievementLevelInfo> levelInfoByAchievement;
+		for(auto& [key, grouped] : groupedByCriteria)
+		{
+			std::ranges::sort(grouped, [](const CAchievementInfo* pLeft, const CAchievementInfo* pRight)
+			{
+				if(pLeft->GetRequired() == pRight->GetRequired())
+					return pLeft->GetID() < pRight->GetID();
+				return pLeft->GetRequired() < pRight->GetRequired();
+			});
+
+			const int totalLevels = (int)grouped.size();
+			for(int i = 0; i < totalLevels; ++i)
+			{
+				levelInfoByAchievement[grouped[i]] = { i + 1, totalLevels };
+			}
+		}
+
+		return levelInfoByAchievement;
+	}
+
+	std::unordered_set<const CAchievementInfo*> BuildVisibleAchievements(
+		const std::deque<CAchievement*>& Achievements,
+		AchievementType Type)
+	{
+		std::map<AchievementGroupKey, std::vector<const CAchievement*>> groupedByCriteria;
+		for(const auto* pAchievement : Achievements)
+		{
+			const auto* pInfo = pAchievement->Info();
+			if(pInfo->GetType() != Type)
+				continue;
+
+			groupedByCriteria[{pInfo->GetType(), pInfo->GetCriteria()}].push_back(pAchievement);
+		}
+
+		std::unordered_set<const CAchievementInfo*> visible;
+		for(auto& [key, grouped] : groupedByCriteria)
+		{
+			std::ranges::sort(grouped, [](const CAchievement* pLeft, const CAchievement* pRight)
+			{
+				const auto* pLeftInfo = pLeft->Info();
+				const auto* pRightInfo = pRight->Info();
+				if(pLeftInfo->GetRequired() == pRightInfo->GetRequired())
+					return pLeftInfo->GetID() < pRightInfo->GetID();
+				return pLeftInfo->GetRequired() < pRightInfo->GetRequired();
+			});
+
+			int lastCompletedIndex = -1;
+			for(int i = 0; i < (int)grouped.size(); ++i)
+			{
+				if(grouped[i]->IsCompleted())
+					lastCompletedIndex = i;
+			}
+
+			const int maxVisibleIndex = std::min(lastCompletedIndex + 1, (int)grouped.size() - 1);
+			for(int i = 0; i <= maxVisibleIndex; ++i)
+				visible.insert(grouped[i]->Info());
+		}
+
+		return visible;
+	}
+
+	void AddRewardInfo(VoteWrapper& Wrapper, const CAchievementInfo* pInfo)
+	{
+		if(pInfo->GetPoint() > 0)
+			Wrapper.Add("Points: {}p", pInfo->GetPoint());
+		if(pInfo->RewardExists())
+			Wrapper.Add("Reward: available");
+	}
+}
 
 void CAchievementManager::OnPreInit()
 {
@@ -73,6 +173,7 @@ void CAchievementManager::ShowMenu(CPlayer* pPlayer) const
 	const auto TotalAchievements = GetCount();
 	const auto TotalCompleted = GetCompletedCount(ClientID);
 	const auto Percentage = round_to_int(translate_to_percent(TotalAchievements, TotalCompleted));
+	const auto progressBar = mystd::string::progressBar(100, Percentage, 7, "\u25B0", "\u25B1");
 
 
 	// info
@@ -83,13 +184,14 @@ void CAchievementManager::ShowMenu(CPlayer* pPlayer) const
 
 	// main
 	VoteWrapper VMain(ClientID, VWF_STYLE_STRICT | VWF_ALIGN_TITLE | VWF_SEPARATE, "\u2654 Main information");
-	VMain.Add("{} of {} completed (progress {}%)", TotalCompleted, TotalAchievements, Percentage);
+	VMain.Add("Overall: {} of {} completed", TotalCompleted, TotalAchievements);
+	VMain.Add("Progress: {} {}%", progressBar, Percentage);
 	VMain.Add("Achievement points: {}p", pPlayer->GetItem(itAchievementPoint)->GetValue());
 	VoteWrapper::AddEmptyline(ClientID);
 
 
 	// types
-	VoteWrapper VGroup(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "\u2059 Achievements groups");
+	VoteWrapper VGroup(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "\u2059 Achievement groups");
 	for(int i = (int)AchievementType::DefeatPVP; i <= (int)AchievementType::Leveling; i++)
 	{
 		auto Type = (AchievementType)i;
@@ -104,6 +206,8 @@ void CAchievementManager::ShowTypeList(CPlayer* pPlayer, AchievementType Type) c
 	// initialize variables
 	const int ClientID = pPlayer->GetCID();
 	const auto& achievements = CAchievement::Data()[ClientID];
+	const auto levelInfoByAchievement = BuildLevelInfoByAchievement(achievements, Type);
+	const auto visibleAchievements = BuildVisibleAchievements(achievements, Type);
 
 
 	// info
@@ -119,31 +223,41 @@ void CAchievementManager::ShowTypeList(CPlayer* pPlayer, AchievementType Type) c
 		const auto* pInfo = pAchievement->Info();
 		if(pInfo->GetType() != Type)
 			continue;
+		if(!visibleAchievements.contains(pInfo))
+			continue;
 
 		const auto progress = pAchievement->GetProgress();
 		const auto required = pInfo->GetRequired();
 		const bool completed = pAchievement->IsCompleted();
 		const bool rewardExists = pInfo->RewardExists();
+		const auto levelInfoIt = levelInfoByAchievement.find(pInfo);
+		const int level = levelInfoIt != levelInfoByAchievement.end() ? levelInfoIt->second.m_Level : 0;
+		const int totalLevels = levelInfoIt != levelInfoByAchievement.end() ? levelInfoIt->second.m_TotalLevels : 0;
+		const std::string levelSuffix = totalLevels > 1
+			? " [Level " + std::to_string(level) + "/" + std::to_string(totalLevels) + "]"
+			: "";
 
-		VoteWrapper VAchievement(ClientID, VWF_UNIQUE | VWF_STYLE_SIMPLE, "{} {}{}",
-			completed ? "✔" : "×", pInfo->GetName(), rewardExists ? " : Reward" : "");
-		AddAchievementDetails(VAchievement, pInfo, progress, required);
+		VoteWrapper VAchievement(ClientID, VWF_UNIQUE | VWF_STYLE_SIMPLE, "{} {}{}{}",
+			completed ? "✔" : "○", pInfo->GetName(), levelSuffix, rewardExists ? " : Reward" : "");
+		AddAchievementDetails(VAchievement, pInfo, progress, required, level, totalLevels);
 	}
 }
 
-void CAchievementManager::AddAchievementDetails(VoteWrapper& VAchievement, const CAchievementInfo* pInfo, int Progress, int Required) const
+void CAchievementManager::AddAchievementDetails(VoteWrapper& VAchievement, const CAchievementInfo* pInfo, int Progress, int Required, int Level, int TotalLevels) const
 {
 	auto addProgressInfo = [&](VoteWrapper& wrapper, auto progress, auto required, std::string action, std::string needed = {})
 	{
 		const auto progressAchievement = translate_to_percent(Required, Progress);
 		const auto progressBar = mystd::string::progressBar(100, (int)progressAchievement, 5, "\u25B0", "\u25B1");
 		wrapper.Add("Progress: {} - {~.2}%", progressBar, progressAchievement);
-		wrapper.Add("Achievement point: {}", pInfo->GetPoint());
 		if(needed.empty())
-			wrapper.Add("{} {}/{}", action, progress, required);
+			wrapper.Add("Goal: {} {}/{}", action, progress, required);
 		else
-			wrapper.Add("{} {}/{} {}", action, progress, required, needed);
+			wrapper.Add("Goal: {} {}/{} {}", action, progress, required, needed);
 	};
+
+	if(TotalLevels > 1)
+		VAchievement.Add("Level: {}/{}", Level, TotalLevels);
 
 	switch(const auto Type = pInfo->GetType())
 	{
@@ -185,13 +299,13 @@ void CAchievementManager::AddAchievementDetails(VoteWrapper& VAchievement, const
 		case AchievementType::Equip:
 		{
 			CItemDescription* pItem = GS()->GetItemInfo(pInfo->GetCriteria());
-			VAchievement.Add("Equip {}", pItem->GetName());
+			addProgressInfo(VAchievement, Progress, Required, "Equip", pItem->GetName());
 			break;
 		}
 		case AchievementType::CompleteQuest:
 		{
 			CQuestDescription* pQuestInfo = GS()->GetQuestInfo(pInfo->GetCriteria());
-			VAchievement.Add("Quest {}", pQuestInfo->GetName());
+			addProgressInfo(VAchievement, Progress, Required, "Complete", pQuestInfo->GetName());
 			break;
 		}
 		case AchievementType::Leveling:
@@ -209,6 +323,8 @@ void CAchievementManager::AddAchievementDetails(VoteWrapper& VAchievement, const
 			} break;
 		}
 	}
+
+	AddRewardInfo(VAchievement, pInfo);
 }
 
 int CAchievementManager::GetCount() const

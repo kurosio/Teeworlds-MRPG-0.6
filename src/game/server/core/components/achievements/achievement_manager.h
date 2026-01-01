@@ -20,7 +20,7 @@ class CAchievementManager : public MmoComponent
 
 	void ShowMenu(CPlayer* pPlayer) const;
 	void ShowTypeList(CPlayer* pPlayer, AchievementType Type) const;
-	void AddAchievementDetails(VoteWrapper& VAchievement, const CAchievementInfo* pInfo, int Progress, int Required) const;
+	void AddAchievementDetails(VoteWrapper& VAchievement, const CAchievementInfo* pInfo, int Progress, int Required, int Level = 0, int TotalLevels = 0) const;
 
 public:
 	int GetCountByType(AchievementType Type) const;
