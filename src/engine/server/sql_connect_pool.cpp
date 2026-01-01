@@ -13,12 +13,6 @@ namespace
 		return s_Empty;
 	}
 
-	constexpr int kMaxTaskRetries = 3;
-	constexpr int kMaxDmlRetries = 1;
-	constexpr int kBaseRetryDelayMs = 500;
-	constexpr int kConnectRetryDelayMs = 500;
-	constexpr int kQueueWaitTimeoutMs = 1000;
-
 	const char* DbTypeName(DB type)
 	{
 		switch(type)
@@ -44,7 +38,7 @@ namespace
 
 	int MaxRetriesForType(DB type)
 	{
-		return type == DB::SELECT ? kMaxTaskRetries : kMaxDmlRetries;
+		return type == DB::SELECT ? g_Config.m_SvSqlSelectMaxRetries : g_Config.m_SvSqlDmlMaxRetries;
 	}
 
 	double DurationMs(int64_t startTicks, int64_t endTicks)
@@ -69,13 +63,33 @@ namespace
 		}
 	}
 
-std::unique_ptr<Connection>& GetSyncConnection()
+	void DrainStatementResults(Statement* pStmt)
+	{
+		if(!pStmt)
+			return;
+
+		try
+		{
+			if(auto* pResult = pStmt->getResultSet())
+				std::unique_ptr<ResultSet> pAutoResult(pResult);
+
+			while(pStmt->getMoreResults())
+			{
+				if(auto* pResult = pStmt->getResultSet())
+					std::unique_ptr<ResultSet> pAutoResult(pResult);
+			}
+		}
+		catch(const SQLException& e)
+		{
+			dbg_msg("SQL Error", "Failed to drain statement results: %s", e.what());
+		}
+	}
+
+	std::unique_ptr<Connection>& GetSyncConnection()
 	{
 		thread_local std::unique_ptr<Connection> s_pSyncConnection;
 		if(!s_pSyncConnection || s_pSyncConnection->isClosed())
-		{
-			if(s_pSyncConnection && s_pSyncConnection->isClosed())
-				dbg_msg("SQL Sync", "Connection closed, reconnecting.");
+			{
 			s_pSyncConnection = CConectionPool::CreateConnection();
 		}
 		return s_pSyncConnection;
@@ -120,7 +134,7 @@ void CThreadPool::EnqueueWithRetry(std::function<void(Connection*, int)> task, D
 void CThreadPool::EnqueueTask(CTask&& task)
 {
 	size_t queuedSize = 0;
-	const size_t maxQueueSize = static_cast<size_t>(g_Config.m_SvQueueMaxSize);
+	const size_t maxQueueSize = static_cast<size_t>(g_Config.m_SvSqlQueueMaxSize);
 	const DB taskType = task.m_Type;
 
 	{
@@ -135,9 +149,9 @@ void CThreadPool::EnqueueTask(CTask&& task)
 					dbg_msg("SQL Worker", "Queue limit reached (%zu). Waiting to enqueue (type: %s).", maxQueueSize, DbTypeName(task.m_Type));
 					warned = true;
 				}
-				if(m_cvCondition.wait_for(lock, std::chrono::milliseconds(kQueueWaitTimeoutMs)) == std::cv_status::timeout)
+				if(m_cvCondition.wait_for(lock, std::chrono::milliseconds(g_Config.m_SvSqlQueueWaitTimeoutMs)) == std::cv_status::timeout)
 				{
-					dbg_msg("SQL Worker", "Queue enqueue timed out after %dms (type: %s). Task dropped.", kQueueWaitTimeoutMs, DbTypeName(task.m_Type));
+					dbg_msg("SQL Worker", "Queue enqueue timed out after %dms (type: %s). Task dropped.", g_Config.m_SvSqlQueueWaitTimeoutMs, DbTypeName(task.m_Type));
 					LogLostQuery("enqueue timed out", task.m_Type, task.m_Query);
 					return;
 				}
@@ -151,7 +165,7 @@ void CThreadPool::EnqueueTask(CTask&& task)
 		queuedSize = m_QueueSize.fetch_add(1) + 1;
 	}
 
-	if(queuedSize > static_cast<size_t>(g_Config.m_SvQueueWarnSize))
+	if(queuedSize > static_cast<size_t>(g_Config.m_SvSqlQueueWarnSize))
 	{
 		dbg_msg("SQL Worker", "Queue size high: %zu tasks (latest type: %s).", queuedSize, DbTypeName(taskType));
 	}
@@ -222,7 +236,6 @@ void CThreadPool::WorkerThread()
 				// Check if the connection is dead. If so, try to reconnect.
 				if(!pConnection || pConnection->isClosed())
 				{
-					dbg_msg("SQL Worker", "Connection is dead, reconnecting for task...");
 					pConnection = CConectionPool::CreateConnection();
 				}
 
@@ -232,7 +245,7 @@ void CThreadPool::WorkerThread()
 					// We pass the raw connection pointer to the task.
 					const int64_t startWait = task.m_EnqueueTime;
 					const double waitMs = DurationMs(startWait, time_get());
-					if(waitMs > static_cast<double>(g_Config.m_SvQueueWaitWarnMs))
+					if(waitMs > static_cast<double>(g_Config.m_SvSqlQueueWaitWarnMs))
 					{
 						dbg_msg("SQL Worker", "Task waited %.2fms in queue (type: %s). Query: %s", waitMs, DbTypeName(task.m_Type), task.m_Query.c_str());
 					}
@@ -264,18 +277,8 @@ void CThreadPool::WorkerThread()
 		else if(timedOut)
 		{
 			if(pConnection && !pConnection->isClosed())
-			{
-				try
-				{
-					std::unique_ptr<Statement> pStmt(pConnection->createStatement());
-					pStmt->execute("SELECT 1");
-				}
-				catch(const SQLException& e)
-				{
-					dbg_msg("SQL Worker", "Keep-alive ping failed: %s. Connection will be reset.", e.what());
-					pConnection = nullptr;
-				}
-			}
+				CloseConnectionOnError(pConnection.get(), "SQL Worker idle reset");
+			pConnection = nullptr;
 		}
 
 	}
@@ -311,7 +314,7 @@ std::unique_ptr<Connection> CConectionPool::CreateConnection()
 	static std::atomic<int64_t> s_LastConnectFailure{0};
 	const int64_t now = time_get();
 	const int64_t lastFailure = s_LastConnectFailure.load();
-	if(lastFailure > 0 && DurationMs(lastFailure, now) < kConnectRetryDelayMs)
+	if(lastFailure > 0 && DurationMs(lastFailure, now) < g_Config.m_SvSqlConnectRetryDelayMs)
 		return nullptr;
 
 	try
@@ -371,7 +374,7 @@ std::unique_ptr<Connection> CConectionPool::CreateConnection()
 	{
 		ResultPtr result = runQuery(pConnection.get());
 		const double durationMs = DurationMs(start, time_get());
-		if(durationMs > static_cast<double>(g_Config.m_SvSyncSelectWarnMs))
+		if(durationMs > static_cast<double>(g_Config.m_SvSqlSyncSelectWarnMs))
 		{
 			dbg_msg("SQL Warning", "Slow sync SELECT (%.2fms). Query: %s", durationMs, m_Query.c_str());
 		}
@@ -380,7 +383,7 @@ std::unique_ptr<Connection> CConectionPool::CreateConnection()
 	catch(const SQLException& e)
 	{
 		const double durationMs = DurationMs(start, time_get());
-		if(durationMs > static_cast<double>(g_Config.m_SvSyncSelectWarnMs))
+		if(durationMs > static_cast<double>(g_Config.m_SvSqlSyncSelectWarnMs))
 		{
 			dbg_msg("SQL Warning", "Slow sync SELECT failed (%.2fms). Query: %s", durationMs, m_Query.c_str());
 		}
@@ -389,9 +392,9 @@ std::unique_ptr<Connection> CConectionPool::CreateConnection()
 		{
 			CloseConnectionOnError(pConnection.get(), "Sync SELECT");
 			pConnection = nullptr;
-			for(int attempt = 0; attempt < kMaxTaskRetries; ++attempt)
+			for(int attempt = 0; attempt < g_Config.m_SvSqlSelectMaxRetries; ++attempt)
 			{
-				std::this_thread::sleep_for(std::chrono::milliseconds(kBaseRetryDelayMs * (attempt + 1)));
+				std::this_thread::sleep_for(std::chrono::milliseconds(g_Config.m_SvSqlRetryBaseDelayMs * (attempt + 1)));
 				auto& retryConnection = GetSyncConnection();
 				if(!retryConnection)
 					continue;
@@ -426,12 +429,12 @@ void CConectionPool::CResultSelect::AtExecute(CallbackResultPtr pCallbackResult)
 		auto ownedConnection = CConectionPool::CreateConnection();
 		if(!ownedConnection)
 		{
-			if(retryCount < kMaxTaskRetries)
-			{
-				dbg_msg("SQL Worker", "Async SELECT connection unavailable. Retrying (attempt %d/%d). Query: %s", retryCount + 1, kMaxTaskRetries, query.c_str());
-				Database->m_pThreadPool->EnqueueWithRetry(*task, DB::SELECT, query, retryCount + 1);
-				return;
-			}
+				if(retryCount < g_Config.m_SvSqlSelectMaxRetries)
+				{
+					dbg_msg("SQL Worker", "Async SELECT connection unavailable. Retrying (attempt %d/%d). Query: %s", retryCount + 1, g_Config.m_SvSqlSelectMaxRetries, query.c_str());
+					Database->m_pThreadPool->EnqueueWithRetry(*task, DB::SELECT, query, retryCount + 1);
+					return;
+				}
 			LogLostQuery("async select connection unavailable", DB::SELECT, query);
 			dbg_msg("SQL Error", "Async SELECT failed to create a connection. Query: %s", query.c_str());
 			if(cb)
@@ -485,7 +488,9 @@ void CConectionPool::CResultQuery::AtExecute(CallbackUpdatePtr pCallbackResult, 
 		try
 		{
 			std::unique_ptr<Statement> pStmt(pConnection->createStatement());
-			pStmt->execute(query.c_str());
+			const bool hasResultSet = pStmt->execute(query.c_str());
+			if(hasResultSet)
+				DrainStatementResults(pStmt.get());
 
 			if(cb)
 			{
@@ -497,7 +502,7 @@ void CConectionPool::CResultQuery::AtExecute(CallbackUpdatePtr pCallbackResult, 
 			if(is_connection_lost(e))
 			{
 				CloseConnectionOnError(pConnection, "Async DML");
-				if(retryCount < kMaxDmlRetries)
+				if(retryCount < g_Config.m_SvSqlDmlMaxRetries)
 					throw;
 				LogLostQuery("async dml retries exhausted", type, query);
 			}
