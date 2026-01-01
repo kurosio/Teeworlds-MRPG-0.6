@@ -1,5 +1,6 @@
 #include <base/system.h>
 #include "sql_connect_pool.h"
+#include "sql_lost_query_logger.h"
 
 // #####################################################
 // THREAD POOL IMPLEMENTATION
@@ -34,6 +35,11 @@ namespace
 				return "OTHER";
 		}
 		return "UNKNOWN";
+	}
+
+	void LogLostQuery(const char* reason, DB type, const std::string& query)
+	{
+		CSqlLostQueryLogger::Instance().LogLostQuery(reason, DbTypeName(type), query);
 	}
 
 	int MaxRetriesForType(DB type)
@@ -132,6 +138,7 @@ void CThreadPool::EnqueueTask(CTask&& task)
 				if(m_cvCondition.wait_for(lock, std::chrono::milliseconds(kQueueWaitTimeoutMs)) == std::cv_status::timeout)
 				{
 					dbg_msg("SQL Worker", "Queue enqueue timed out after %dms (type: %s). Task dropped.", kQueueWaitTimeoutMs, DbTypeName(task.m_Type));
+					LogLostQuery("enqueue timed out", task.m_Type, task.m_Query);
 					return;
 				}
 			}
@@ -158,6 +165,7 @@ void CThreadPool::EnqueueRetry(CTask&& task, const char* reason, int maxRetries)
 	if(task.m_RetryCount >= maxRetries)
 	{
 		dbg_msg("SQL Worker", "%s. Dropping task after %d retries. Query: %s", reason, maxRetries, task.m_Query.c_str());
+		LogLostQuery(reason, task.m_Type, task.m_Query);
 		return;
 	}
 
@@ -401,6 +409,7 @@ std::unique_ptr<Connection> CConectionPool::CreateConnection()
 					retryConnection = nullptr;
 				}
 			}
+			LogLostQuery("sync select retries exhausted", DB::SELECT, m_Query);
 		}
 		return EmptyResult();
 	}
@@ -423,6 +432,7 @@ void CConectionPool::CResultSelect::AtExecute(CallbackResultPtr pCallbackResult)
 				Database->m_pThreadPool->EnqueueWithRetry(*task, DB::SELECT, query, retryCount + 1);
 				return;
 			}
+			LogLostQuery("async select connection unavailable", DB::SELECT, query);
 			dbg_msg("SQL Error", "Async SELECT failed to create a connection. Query: %s", query.c_str());
 			if(cb)
 				cb(nullptr);
