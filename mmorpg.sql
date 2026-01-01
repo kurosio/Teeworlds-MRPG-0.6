@@ -325,7 +325,7 @@ CREATE TABLE `tw_accounts_data` (
   `WeekStamp` bigint(20) NOT NULL DEFAULT 0,
   `MonthStamp` bigint(20) NOT NULL DEFAULT 0,
   `Upgrade` int(11) NOT NULL DEFAULT 0,
-  `Achievements` longtext NOT NULL DEFAULT '',
+  `Achievements` longtext NOT NULL DEFAULT '' COMMENT 'deprecated',
   PRIMARY KEY (`ID`),
   UNIQUE KEY `Nick` (`Nick`),
   KEY `tw_accounts_data_ibfk_3` (`WorldID`),
@@ -334,6 +334,26 @@ CREATE TABLE `tw_accounts_data` (
   CONSTRAINT `tw_accounts_data_ibfk_5` FOREIGN KEY (`ID`) REFERENCES `tw_accounts` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE,
   CONSTRAINT `tw_accounts_data_ibfk_6` FOREIGN KEY (`ProfessionID`) REFERENCES `enum_professions` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `tw_accounts_achievements`
+--
+
+DROP TABLE IF EXISTS `tw_accounts_achievements`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!40101 SET character_set_client = utf8 */;
+CREATE TABLE `tw_accounts_achievements` (
+  `AccountID` int(11) NOT NULL,
+  `AchievementType` int(11) NOT NULL,
+  `Criteria` int(11) NOT NULL,
+  `Progress` int(11) NOT NULL DEFAULT 0,
+  `CompletedLevel` int(11) NOT NULL DEFAULT 0,
+  `UpdatedAt` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY `AccountAchievement` (`AccountID`,`AchievementType`,`Criteria`),
+  KEY `AccountID` (`AccountID`),
+  CONSTRAINT `tw_accounts_achievements_ibfk_1` FOREIGN KEY (`AccountID`) REFERENCES `tw_accounts_data` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --

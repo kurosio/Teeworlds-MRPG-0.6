@@ -75,8 +75,6 @@ void CAchievementListener::UpdateAchievement(CPlayer* pPlayer, AchievementType T
 	if(!pPlayer || pPlayer->IsBot())
 		return;
 
-	// initialize variables
-	bool Updated = false;
 	auto& pAchievements = CAchievement::Data()[pPlayer->GetCID()];
 
 	// search for the achievement
@@ -90,14 +88,7 @@ void CAchievementListener::UpdateAchievement(CPlayer* pPlayer, AchievementType T
 
 		if(achievementCriteria <= 0 || achievementCriteria == Criteria)
 		{
-			if(pAchievement->UpdateProgress(Criteria, Progress, ProgressType))
-				Updated = true;
+			pAchievement->UpdateProgress(Criteria, Progress, ProgressType);
 		}
-	}
-
-	// update the achievement progress in the database
-	if(Updated)
-	{
-		pPlayer->GS()->Core()->SaveAccount(pPlayer, SAVE_ACHIEVEMENTS);
 	}
 }

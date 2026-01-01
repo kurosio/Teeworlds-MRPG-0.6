@@ -76,6 +76,9 @@ class CAchievement : public MultiworldIdentifiableData< std::map< int, std::dequ
 	int m_Progress {};
 	bool m_Completed {};
 	bool m_NotifiedSoonComplete {};
+	int m_LastSavedProgress {};
+	bool m_LastSavedCompleted {};
+	int m_LastSaveTick {};
 
 public:
 	explicit CAchievement(CAchievementInfo* pInfo, int ClientID) : m_pInfo(pInfo), m_ClientID(ClientID) {}
@@ -90,6 +93,9 @@ public:
 	{
 		m_Progress = Progress;
 		m_Completed = Completed;
+		m_LastSavedProgress = Progress;
+		m_LastSavedCompleted = Completed;
+		m_LastSaveTick = 0;
 	}
 
 	CAchievementInfo* Info() const { return m_pInfo; }

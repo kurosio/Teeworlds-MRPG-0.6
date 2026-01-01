@@ -17,6 +17,7 @@ class CHouse;
 class GroupData;
 class CGuild;
 class CGuildMemberData;
+class CAchievementInfo;
 
 class CAccountData
 {
@@ -34,7 +35,6 @@ class CAccountData
 	std::weak_ptr<GroupData> m_pGroupData;
 	CGuild* m_pGuildData{};
 	CProfession* m_pActiveProfession {};
-	nlohmann::json m_AchievementsData { };
 	BonusManager m_BonusManager{};
 	PrisonManager m_PrisonManager{};
 	BigInt m_Bank {};
@@ -178,9 +178,8 @@ public:
 	void HandleChair(int Level);
 
 	// Achievements
-	void InitAchievements(const std::string& Data);
-	void UpdateAchievementProgress(int AchievementID, int Progress, bool Completed);
-	nlohmann::json& GetAchievementsData() { return m_AchievementsData; }
+	void InitAchievements();
+	void UpdateAchievementProgress(const CAchievementInfo* pInfo, int Progress, bool Completed);
 
 	// Aethers
 	bool IsUnlockedAether(int AetherID) const { return m_aAetherLocation.find(AetherID) != m_aAetherLocation.end(); }

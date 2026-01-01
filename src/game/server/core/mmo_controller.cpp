@@ -441,13 +441,6 @@ void CMmoController::SaveAccount(CPlayer* pPlayer, int Table) const
 		Database->Execute<DB::UPDATE>("tw_accounts_data", "DailyStamp = '{}', WeekStamp = '{}', MonthStamp = '{}' WHERE ID = '{}'", Daily, Week, Month, AccountID);
 	}
 
-	// save achievements
-	else if(Table == SAVE_ACHIEVEMENTS)
-	{
-		const auto AchievementsData = pAccount->GetAchievementsData().dump();
-		Database->Execute<DB::UPDATE>("tw_accounts_data", "Achievements = '{}' WHERE ID = '{}'", AchievementsData, AccountID);
-	}
-
 	// save language
 	else if(Table == SAVE_LANGUAGE)
 	{

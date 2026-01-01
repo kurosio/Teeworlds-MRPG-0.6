@@ -76,7 +76,6 @@ enum ESaveType
 	SAVE_POSITION,          // Save Position Player
 	SAVE_LANGUAGE,          // Save Language Client
 	SAVE_TIME_PERIODS,      // Save Time Periods
-	SAVE_ACHIEVEMENTS,      // Save Achievements
 };
 
 // world day types
