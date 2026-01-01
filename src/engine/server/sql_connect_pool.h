@@ -44,7 +44,7 @@ inline bool is_connection_lost(const SQLException& e)
 {
 	const int code = e.getErrorCode();
 	const char* state = e.getSQLStateCStr();
-	return code == 2006 || code == 2013 || (state && std::strncmp(state, "08", 2) == 0);
+	return code == 2006 || code == 2013 || code == 2014 || (state && std::strncmp(state, "08", 2) == 0);
 }
 
 

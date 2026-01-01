@@ -69,11 +69,33 @@ namespace
 		}
 	}
 
+	void DrainStatementResults(Statement* pStmt)
+	{
+		if(!pStmt)
+			return;
+
+		try
+		{
+			if(auto* pResult = pStmt->getResultSet())
+				std::unique_ptr<ResultSet> pAutoResult(pResult);
+
+			while(pStmt->getMoreResults())
+			{
+				if(auto* pResult = pStmt->getResultSet())
+					std::unique_ptr<ResultSet> pAutoResult(pResult);
+			}
+		}
+		catch(const SQLException& e)
+		{
+			dbg_msg("SQL Error", "Failed to drain statement results: %s", e.what());
+		}
+	}
+
 std::unique_ptr<Connection>& GetSyncConnection()
 	{
 		thread_local std::unique_ptr<Connection> s_pSyncConnection;
 		if(!s_pSyncConnection || s_pSyncConnection->isClosed())
-		{
+			{
 			if(s_pSyncConnection && s_pSyncConnection->isClosed())
 				dbg_msg("SQL Sync", "Connection closed, reconnecting.");
 			s_pSyncConnection = CConectionPool::CreateConnection();
@@ -485,7 +507,9 @@ void CConectionPool::CResultQuery::AtExecute(CallbackUpdatePtr pCallbackResult, 
 		try
 		{
 			std::unique_ptr<Statement> pStmt(pConnection->createStatement());
-			pStmt->execute(query.c_str());
+			const bool hasResultSet = pStmt->execute(query.c_str());
+			if(hasResultSet)
+				DrainStatementResults(pStmt.get());
 
 			if(cb)
 			{
