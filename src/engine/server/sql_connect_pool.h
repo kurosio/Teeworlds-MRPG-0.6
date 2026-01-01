@@ -56,9 +56,10 @@ inline bool is_connection_lost(const SQLException& e)
 class WrapperResultSet
 {
 public:
-	WrapperResultSet(std::unique_ptr<Statement> stmt, std::unique_ptr<ResultSet> res)
+	WrapperResultSet(std::unique_ptr<Statement> stmt, std::unique_ptr<ResultSet> res, std::shared_ptr<Connection> connection = nullptr)
 		: m_pStmt(std::move(stmt))
 		, m_pResult(std::move(res))
+		, m_pConnection(std::move(connection))
 	{
 	}
 
@@ -133,6 +134,7 @@ public:
 private:
 	std::unique_ptr<Statement> m_pStmt;
 	std::unique_ptr<ResultSet> m_pResult;
+	std::shared_ptr<Connection> m_pConnection;
 };
 
 
@@ -163,6 +165,7 @@ public:
 	// Enqueues a task to be executed by a worker thread.
 	// The task must be a callable that accepts a `Connection*`.
 	void Enqueue(std::function<void(Connection*, int)> task, DB type, std::string query);
+	void EnqueueWithRetry(std::function<void(Connection*, int)> task, DB type, std::string query, int retryCount);
 
 private:
 	struct CTask
@@ -175,6 +178,7 @@ private:
 	};
 
 	void EnqueueTask(CTask&& task);
+	void EnqueueRetry(CTask&& task, const char* reason, int maxRetries);
 	void WorkerThread();
 
 	std::vector<std::thread> m_vWorkers;

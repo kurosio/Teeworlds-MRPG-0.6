@@ -1,5 +1,6 @@
 #include <base/system.h>
 #include "sql_connect_pool.h"
+#include "sql_lost_query_logger.h"
 
 // #####################################################
 // THREAD POOL IMPLEMENTATION
@@ -11,6 +12,12 @@ namespace
 		static ResultPtr s_Empty = std::make_shared<WrapperResultSet>(nullptr, nullptr);
 		return s_Empty;
 	}
+
+	constexpr int kMaxTaskRetries = 3;
+	constexpr int kMaxDmlRetries = 1;
+	constexpr int kBaseRetryDelayMs = 500;
+	constexpr int kConnectRetryDelayMs = 500;
+	constexpr int kQueueWaitTimeoutMs = 1000;
 
 	const char* DbTypeName(DB type)
 	{
@@ -30,6 +37,16 @@ namespace
 		return "UNKNOWN";
 	}
 
+	void LogLostQuery(const char* reason, DB type, const std::string& query)
+	{
+		CSqlLostQueryLogger::Instance().LogLostQuery(reason, DbTypeName(type), query);
+	}
+
+	int MaxRetriesForType(DB type)
+	{
+		return type == DB::SELECT ? kMaxTaskRetries : kMaxDmlRetries;
+	}
+
 	double DurationMs(int64_t startTicks, int64_t endTicks)
 	{
 		const int64_t freq = time_freq();
@@ -38,7 +55,21 @@ namespace
 		return static_cast<double>(endTicks - startTicks) * 1000.0 / static_cast<double>(freq);
 	}
 
-	std::unique_ptr<Connection>& GetSyncConnection()
+	void CloseConnectionOnError(Connection* pConnection, const char* pContext)
+	{
+		if(!pConnection)
+			return;
+		try
+		{
+			pConnection->close();
+		}
+		catch(const SQLException& e)
+		{
+			dbg_msg("SQL Error", "%s: failed to close connection after error: %s", pContext, e.what());
+		}
+	}
+
+std::unique_ptr<Connection>& GetSyncConnection()
 	{
 		thread_local std::unique_ptr<Connection> s_pSyncConnection;
 		if(!s_pSyncConnection || s_pSyncConnection->isClosed())
@@ -77,7 +108,12 @@ CThreadPool::~CThreadPool()
 
 void CThreadPool::Enqueue(std::function<void(Connection*, int)> task, DB type, std::string query)
 {
-	CTask newTask{std::move(task), time_get(), type, std::move(query), 0};
+	EnqueueWithRetry(std::move(task), type, std::move(query), 0);
+}
+
+void CThreadPool::EnqueueWithRetry(std::function<void(Connection*, int)> task, DB type, std::string query, int retryCount)
+{
+	CTask newTask{std::move(task), time_get(), type, std::move(query), retryCount};
 	EnqueueTask(std::move(newTask));
 }
 
@@ -99,7 +135,12 @@ void CThreadPool::EnqueueTask(CTask&& task)
 					dbg_msg("SQL Worker", "Queue limit reached (%zu). Waiting to enqueue (type: %s).", maxQueueSize, DbTypeName(task.m_Type));
 					warned = true;
 				}
-				m_cvCondition.wait(lock);
+				if(m_cvCondition.wait_for(lock, std::chrono::milliseconds(kQueueWaitTimeoutMs)) == std::cv_status::timeout)
+				{
+					dbg_msg("SQL Worker", "Queue enqueue timed out after %dms (type: %s). Task dropped.", kQueueWaitTimeoutMs, DbTypeName(task.m_Type));
+					LogLostQuery("enqueue timed out", task.m_Type, task.m_Query);
+					return;
+				}
 			}
 		}
 
@@ -117,6 +158,21 @@ void CThreadPool::EnqueueTask(CTask&& task)
 
 	// Notify one waiting worker thread that a task is available.
 	m_cvCondition.notify_one();
+}
+
+void CThreadPool::EnqueueRetry(CTask&& task, const char* reason, int maxRetries)
+{
+	if(task.m_RetryCount >= maxRetries)
+	{
+		dbg_msg("SQL Worker", "%s. Dropping task after %d retries. Query: %s", reason, maxRetries, task.m_Query.c_str());
+		LogLostQuery(reason, task.m_Type, task.m_Query);
+		return;
+	}
+
+	dbg_msg("SQL Worker", "%s. Retrying (attempt %d/%d). Query: %s", reason, task.m_RetryCount + 1, maxRetries, task.m_Query.c_str());
+	task.m_RetryCount++;
+	task.m_EnqueueTime = time_get();
+	EnqueueTask(std::move(task));
 }
 
 void CThreadPool::WorkerThread()
@@ -184,19 +240,15 @@ void CThreadPool::WorkerThread()
 				}
 				else
 				{
-					dbg_msg("SQL Error", "Worker has no valid connection. Task skipped.");
+					EnqueueRetry(std::move(task), "Worker has no valid connection", MaxRetriesForType(task.m_Type));
 				}
 			}
 			catch(const SQLException& e)
 			{
 				const bool connectionLost = is_connection_lost(e);
-				const bool allowRetry = task.m_Type == DB::SELECT;
-				if(connectionLost && allowRetry && task.m_RetryCount < 1)
+				if(connectionLost)
 				{
-					dbg_msg("SQL Worker", "Connection lost during SELECT task, retrying once after reconnect. Query: %s", task.m_Query.c_str());
-					CTask retryTask = std::move(task);
-					retryTask.m_RetryCount++;
-					EnqueueTask(std::move(retryTask));
+					EnqueueRetry(std::move(task), "Connection lost during task", MaxRetriesForType(task.m_Type));
 				}
 				else
 				{
@@ -238,7 +290,7 @@ CConectionPool::CConectionPool()
 	try
 	{
 		m_pDriver = get_driver_instance();
-		const auto thread_count = std::max(2u, std::thread::hardware_concurrency());
+		const auto thread_count = std::max(2, g_Config.m_SvMySqlPoolSize);
 		m_pThreadPool = std::make_unique<CThreadPool>(thread_count);
 	}
 	catch(const SQLException& e)
@@ -256,6 +308,12 @@ CConectionPool::~CConectionPool()
 
 std::unique_ptr<Connection> CConectionPool::CreateConnection()
 {
+	static std::atomic<int64_t> s_LastConnectFailure{0};
+	const int64_t now = time_get();
+	const int64_t lastFailure = s_LastConnectFailure.load();
+	if(lastFailure > 0 && DurationMs(lastFailure, now) < kConnectRetryDelayMs)
+		return nullptr;
+
 	try
 	{
 		Driver* pDriver = get_driver_instance();
@@ -275,10 +333,12 @@ std::unique_ptr<Connection> CConectionPool::CreateConnection()
 		pConnection->setClientOption("OPT_WRITE_TIMEOUT", &write_timeout);
 		pConnection->setSchema(g_Config.m_SvMySqlDatabase);
 
+		s_LastConnectFailure.store(0);
 		return pConnection;
 	}
 	catch(const SQLException& e)
 	{
+		s_LastConnectFailure.store(now);
 		dbg_msg("Sql Exception", "Failed to create new SQL connection: %s", e.what());
 		return nullptr;
 	}
@@ -327,19 +387,29 @@ std::unique_ptr<Connection> CConectionPool::CreateConnection()
 		dbg_msg("SQL Error", "Sync SELECT failed: %s. Query: %s", e.what(), m_Query.c_str());
 		if(is_connection_lost(e))
 		{
+			CloseConnectionOnError(pConnection.get(), "Sync SELECT");
 			pConnection = nullptr;
-			auto& retryConnection = GetSyncConnection();
-			if(!retryConnection)
-				return EmptyResult();
+			for(int attempt = 0; attempt < kMaxTaskRetries; ++attempt)
+			{
+				std::this_thread::sleep_for(std::chrono::milliseconds(kBaseRetryDelayMs * (attempt + 1)));
+				auto& retryConnection = GetSyncConnection();
+				if(!retryConnection)
+					continue;
 
-			try
-			{
-				return runQuery(retryConnection.get());
+				try
+				{
+					return runQuery(retryConnection.get());
+				}
+				catch(const SQLException& retryError)
+				{
+					dbg_msg("SQL Error", "Sync SELECT retry failed: %s. Query: %s", retryError.what(), m_Query.c_str());
+					if(!is_connection_lost(retryError))
+						break;
+					CloseConnectionOnError(retryConnection.get(), "Sync SELECT retry");
+					retryConnection = nullptr;
+				}
 			}
-			catch(const SQLException& retryError)
-			{
-				dbg_msg("SQL Error", "Sync SELECT retry failed: %s. Query: %s", retryError.what(), m_Query.c_str());
-			}
+			LogLostQuery("sync select retries exhausted", DB::SELECT, m_Query);
 		}
 		return EmptyResult();
 	}
@@ -349,14 +419,32 @@ std::unique_ptr<Connection> CConectionPool::CreateConnection()
 void CConectionPool::CResultSelect::AtExecute(CallbackResultPtr pCallbackResult)
 {
 	// Package the query logic into a lambda that matches the thread pool's task signature.
-	auto task = [query = m_Query, cb = std::move(pCallbackResult)](Connection* pConnection, int retryCount)
+	auto task = std::make_shared<std::function<void(Connection*, int)>>();
+	*task = [query = m_Query, cb = std::move(pCallbackResult), task](Connection* /*pConnection*/, int retryCount)
 	{
-		// This code will run inside a worker thread using its dedicated connection.
+		// Use a dedicated connection for async SELECT to avoid overlapping result sets on the worker connection.
+		auto ownedConnection = CConectionPool::CreateConnection();
+		if(!ownedConnection)
+		{
+			if(retryCount < kMaxTaskRetries)
+			{
+				dbg_msg("SQL Worker", "Async SELECT connection unavailable. Retrying (attempt %d/%d). Query: %s", retryCount + 1, kMaxTaskRetries, query.c_str());
+				Database->m_pThreadPool->EnqueueWithRetry(*task, DB::SELECT, query, retryCount + 1);
+				return;
+			}
+			LogLostQuery("async select connection unavailable", DB::SELECT, query);
+			dbg_msg("SQL Error", "Async SELECT failed to create a connection. Query: %s", query.c_str());
+			if(cb)
+				cb(EmptyResult());
+			return;
+		}
+		auto sharedConnection = std::shared_ptr<Connection>(ownedConnection.release());
+
 		try
 		{
-			std::unique_ptr<Statement> pStmt(pConnection->createStatement());
+			std::unique_ptr<Statement> pStmt(sharedConnection->createStatement());
 			std::unique_ptr<ResultSet> pResult(pStmt->executeQuery(query.c_str()));
-			auto result = std::make_shared<WrapperResultSet>(std::move(pStmt), std::move(pResult));
+			auto result = std::make_shared<WrapperResultSet>(std::move(pStmt), std::move(pResult), std::move(sharedConnection));
 			if(cb)
 			{
 				cb(std::move(result));
@@ -366,20 +454,22 @@ void CConectionPool::CResultSelect::AtExecute(CallbackResultPtr pCallbackResult)
 		{
 			if(is_connection_lost(e))
 			{
+				CloseConnectionOnError(sharedConnection.get(), "Async SELECT");
 				if(retryCount == 0)
 					throw;
 			}
 
 			dbg_msg("SQL Error", "Async SELECT failed: %s. Query: %s", e.what(), query.c_str());
+			LogLostQuery("async select failed", DB::SELECT, query);
 
 			// Notify the caller of the failure.
 			if(cb)
-				cb(nullptr);
+				cb(EmptyResult());
 		}
 	};
 
 	// Enqueue the task for the thread pool to execute when a worker is free.
-	Database->m_pThreadPool->Enqueue(std::move(task), DB::SELECT, m_Query);
+	Database->m_pThreadPool->Enqueue(*task, DB::SELECT, m_Query);
 }
 
 
@@ -387,7 +477,7 @@ void CConectionPool::CResultSelect::AtExecute(CallbackResultPtr pCallbackResult)
 void CConectionPool::CResultQuery::AtExecute(CallbackUpdatePtr pCallbackResult, int DelayMilliseconds)
 {
 	// Create a lambda task for the DML operation.
-	auto task = [query = m_Query, cb = std::move(pCallbackResult), delay = DelayMilliseconds](Connection* pConnection, int retryCount)
+	auto task = [query = m_Query, cb = std::move(pCallbackResult), delay = DelayMilliseconds, type = m_TypeQuery](Connection* pConnection, int retryCount)
 	{
 		if(delay > 0)
 			std::this_thread::sleep_for(std::chrono::milliseconds(delay));
@@ -406,8 +496,14 @@ void CConectionPool::CResultQuery::AtExecute(CallbackUpdatePtr pCallbackResult, 
 		{
 			if(is_connection_lost(e))
 			{
-				if(retryCount == 0)
+				CloseConnectionOnError(pConnection, "Async DML");
+				if(retryCount < kMaxDmlRetries)
 					throw;
+				LogLostQuery("async dml retries exhausted", type, query);
+			}
+			else
+			{
+				LogLostQuery("async dml failed", type, query);
 			}
 
 			dbg_msg("SQL Error", "Async DML failed: %s. Query: %s", e.what(), query.c_str());
