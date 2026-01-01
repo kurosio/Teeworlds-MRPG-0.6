@@ -435,7 +435,7 @@ void CConectionPool::CResultSelect::AtExecute(CallbackResultPtr pCallbackResult)
 			LogLostQuery("async select connection unavailable", DB::SELECT, query);
 			dbg_msg("SQL Error", "Async SELECT failed to create a connection. Query: %s", query.c_str());
 			if(cb)
-				cb(nullptr);
+				cb(EmptyResult());
 			return;
 		}
 		auto sharedConnection = std::shared_ptr<Connection>(ownedConnection.release());
@@ -464,7 +464,7 @@ void CConectionPool::CResultSelect::AtExecute(CallbackResultPtr pCallbackResult)
 
 			// Notify the caller of the failure.
 			if(cb)
-				cb(nullptr);
+				cb(EmptyResult());
 		}
 	};
 
