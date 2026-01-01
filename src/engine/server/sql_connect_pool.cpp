@@ -91,13 +91,11 @@ namespace
 		}
 	}
 
-std::unique_ptr<Connection>& GetSyncConnection()
+	std::unique_ptr<Connection>& GetSyncConnection()
 	{
 		thread_local std::unique_ptr<Connection> s_pSyncConnection;
 		if(!s_pSyncConnection || s_pSyncConnection->isClosed())
 			{
-			if(s_pSyncConnection && s_pSyncConnection->isClosed())
-				dbg_msg("SQL Sync", "Connection closed, reconnecting.");
 			s_pSyncConnection = CConectionPool::CreateConnection();
 		}
 		return s_pSyncConnection;
@@ -244,7 +242,6 @@ void CThreadPool::WorkerThread()
 				// Check if the connection is dead. If so, try to reconnect.
 				if(!pConnection || pConnection->isClosed())
 				{
-					dbg_msg("SQL Worker", "Connection is dead, reconnecting for task...");
 					pConnection = CConectionPool::CreateConnection();
 				}
 
