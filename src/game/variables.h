@@ -211,8 +211,8 @@ MACRO_CONFIG_INT(SvSqlConnectRetryDelayMs, sv_sql_connect_retry_delay_ms, 500, 5
 MACRO_CONFIG_INT(SvSqlQueueWaitTimeoutMs, sv_sql_queue_wait_timeout_ms, 1000, 100, 10000, CFGFLAG_SERVER, "MySQL enqueue wait timeout (ms) when queue is full")
 
 // mysql metrics and logging
-MACRO_CONFIG_INT(SvSqlSyncSelectWarnMs, sv_sql_sync_select_warn_ms, 30, 1, 10000, CFGFLAG_SERVER, "MySQL sync SELECT warning threshold in ms")
-MACRO_CONFIG_INT(SvSqlQueueWaitWarnMs, sv_sql_queue_wait_warn_ms, 30, 1, 10000, CFGFLAG_SERVER, "MySQL queue wait warning threshold in ms")
+MACRO_CONFIG_INT(SvSqlSyncSelectWarnMs, sv_sql_sync_select_warn_ms, 100, 1, 10000, CFGFLAG_SERVER, "MySQL sync SELECT warning threshold in ms")
+MACRO_CONFIG_INT(SvSqlQueueWaitWarnMs, sv_sql_queue_wait_warn_ms, 200, 1, 10000, CFGFLAG_SERVER, "MySQL queue wait warning threshold in ms")
 MACRO_CONFIG_INT(SvSqlQueueWarnSize, sv_sql_queue_warn_size, 50, 1, 10000, CFGFLAG_SERVER, "MySQL queue size warning threshold")
 MACRO_CONFIG_INT(SvSqlQueueMaxSize, sv_sql_queue_max_size, 500, 1, 100000, CFGFLAG_SERVER, "MySQL queue max size (enqueue waits when reached)")
 MACRO_CONFIG_STR(SvSqlFailedLogFile, sv_sql_failed_log_file, 128, "sql_failed_log.txt", CFGFLAG_SERVER, "Filename to log failed SQL queries")
