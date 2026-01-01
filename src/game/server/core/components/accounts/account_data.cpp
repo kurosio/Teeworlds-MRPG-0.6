@@ -144,10 +144,27 @@ void CAccountData::SaveSharedEquipments()
 
 void CAccountData::InitAchievements()
 {
+	struct SAchievementKey
+	{
+		int m_Type {};
+		int m_Criteria {};
+
+		bool operator<(const SAchievementKey& Other) const
+		{
+			return std::tie(m_Type, m_Criteria) < std::tie(Other.m_Type, Other.m_Criteria);
+		}
+	};
+
+	struct SAchievementProgress
+	{
+		int m_Progress {};
+		int m_CompletedLevel {};
+	};
+
 	// initialize player base
 	const auto* pPlayer = GetPlayer();
 	std::map<int, CAchievement*> m_apReferenceMap {};
-	std::map<std::pair<int, int>, std::pair<int, int>> m_apProgressMap {};
+	std::map<SAchievementKey, SAchievementProgress> m_apProgressMap {};
 	for(const auto& pAchievement : CAchievementInfo::Data())
 	{
 		const int AchievementID = pAchievement->GetID();
@@ -158,26 +175,35 @@ void CAccountData::InitAchievements()
 	const auto pResult = Database->Execute<DB::SELECT>("AchievementType, Criteria, Progress, CompletedLevel", "tw_accounts_achievements", "WHERE AccountID = '{}'", m_ID);
 	while(pResult->next())
 	{
-		const int AchievementType = pResult->getInt("AchievementType");
-		const int Criteria = pResult->getInt("Criteria");
-		const int Progress = pResult->getInt("Progress");
-		const int CompletedLevel = pResult->getInt("CompletedLevel");
-		m_apProgressMap[{AchievementType, Criteria}] = {Progress, CompletedLevel};
+		const SAchievementKey Key
+		{
+			pResult->getInt("AchievementType"),
+			pResult->getInt("Criteria"),
+		};
+		const SAchievementProgress Progress
+		{
+			pResult->getInt("Progress"),
+			pResult->getInt("CompletedLevel"),
+		};
+		m_apProgressMap[Key] = Progress;
 	}
 
 	for(const auto& pAchievement : CAchievementInfo::Data())
 	{
 		const int AchievementID = pAchievement->GetID();
-		const int AchievementType = (int)pAchievement->GetType();
-		const int Criteria = pAchievement->GetCriteria();
-		const auto it = m_apProgressMap.find({AchievementType, Criteria});
+		const SAchievementKey Key
+		{
+			(int)pAchievement->GetType(),
+			pAchievement->GetCriteria(),
+		};
+		const auto it = m_apProgressMap.find(Key);
 		if(it == m_apProgressMap.end())
 			continue;
 
-		const auto [Progress, CompletedLevel] = it->second;
+		const SAchievementProgress& ProgressData = it->second;
 		const int Required = pAchievement->GetRequired();
-		const int ClampedProgress = clamp(Progress, 0, Required);
-		const bool Completed = CompletedLevel >= AchievementID || ClampedProgress >= Required;
+		const int ClampedProgress = clamp(ProgressData.m_Progress, 0, Required);
+		const bool Completed = ProgressData.m_CompletedLevel >= AchievementID || ClampedProgress >= Required;
 
 		if(m_apReferenceMap.contains(AchievementID))
 			m_apReferenceMap[AchievementID]->Init(ClampedProgress, Completed);
@@ -527,10 +553,15 @@ void CAccountData::UpdateAchievementProgress(const CAchievementInfo* pInfo, int 
 	const int Criteria = pInfo->GetCriteria();
 	const int CompletedLevel = Completed ? pInfo->GetID() : 0;
 
-	Database->Execute<DB::INSERT>("tw_accounts_achievements",
+	const char* pQuery =
 		"(AccountID, AchievementType, Criteria, Progress, CompletedLevel, UpdatedAt) "
 		"VALUES ('{}', '{}', '{}', '{}', '{}', CURRENT_TIMESTAMP) "
-		"ON DUPLICATE KEY UPDATE Progress = '{}', CompletedLevel = GREATEST(CompletedLevel, '{}'), UpdatedAt = CURRENT_TIMESTAMP",
+		"ON DUPLICATE KEY UPDATE "
+		"Progress = '{}', "
+		"CompletedLevel = GREATEST(CompletedLevel, '{}'), "
+		"UpdatedAt = CURRENT_TIMESTAMP";
+
+	Database->Execute<DB::INSERT>("tw_accounts_achievements", pQuery,
 		m_ID, AchievementType, Criteria, Progress, CompletedLevel, Progress, CompletedLevel);
 }
 
