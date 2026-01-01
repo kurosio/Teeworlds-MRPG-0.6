@@ -32,7 +32,7 @@ void CSqlLostQueryLogger::EnsureFileLocked(const char* pFilename)
 	}
 
 	m_Filename = pFilename;
-	m_File = io_open(pFilename, IOFLAG_WRITE | IOFLAG_APPEND);
+	m_File = io_open(pFilename, IOFLAG_APPEND);
 }
 
 void CSqlLostQueryLogger::LogLostQuery(const char* pReason, const char* pType, const std::string& Query)
