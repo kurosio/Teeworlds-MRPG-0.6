@@ -13,6 +13,7 @@ namespace
 	}
 
 	constexpr int kMaxTaskRetries = 3;
+	constexpr int kMaxDmlRetries = 1;
 	constexpr int kBaseRetryDelayMs = 500;
 	constexpr int kConnectRetryDelayMs = 500;
 
@@ -32,6 +33,11 @@ namespace
 				return "OTHER";
 		}
 		return "UNKNOWN";
+	}
+
+	int MaxRetriesForType(DB type)
+	{
+		return type == DB::SELECT ? kMaxTaskRetries : kMaxDmlRetries;
 	}
 
 	double DurationMs(int64_t startTicks, int64_t endTicks)
@@ -142,16 +148,16 @@ void CThreadPool::EnqueueTask(CTask&& task)
 	m_cvCondition.notify_one();
 }
 
-void CThreadPool::EnqueueRetry(CTask&& task, const char* reason)
+void CThreadPool::EnqueueRetry(CTask&& task, const char* reason, int maxRetries)
 {
-	if(task.m_RetryCount >= kMaxTaskRetries)
+	if(task.m_RetryCount >= maxRetries)
 	{
-		dbg_msg("SQL Worker", "%s. Dropping task after %d retries. Query: %s", reason, kMaxTaskRetries, task.m_Query.c_str());
+		dbg_msg("SQL Worker", "%s. Dropping task after %d retries. Query: %s", reason, maxRetries, task.m_Query.c_str());
 		return;
 	}
 
 	const int delayMs = kBaseRetryDelayMs * (task.m_RetryCount + 1);
-	dbg_msg("SQL Worker", "%s. Retrying in %dms (attempt %d/%d). Query: %s", reason, delayMs, task.m_RetryCount + 1, kMaxTaskRetries, task.m_Query.c_str());
+	dbg_msg("SQL Worker", "%s. Retrying in %dms (attempt %d/%d). Query: %s", reason, delayMs, task.m_RetryCount + 1, maxRetries, task.m_Query.c_str());
 	task.m_RetryCount++;
 	std::this_thread::sleep_for(std::chrono::milliseconds(delayMs));
 	task.m_EnqueueTime = time_get();
@@ -223,16 +229,15 @@ void CThreadPool::WorkerThread()
 				}
 				else
 				{
-					EnqueueRetry(std::move(task), "Worker has no valid connection");
+					EnqueueRetry(std::move(task), "Worker has no valid connection", MaxRetriesForType(task.m_Type));
 				}
 			}
 			catch(const SQLException& e)
 			{
 				const bool connectionLost = is_connection_lost(e);
-				const bool allowRetry = task.m_Type == DB::SELECT;
-				if(connectionLost && allowRetry)
+				if(connectionLost)
 				{
-					EnqueueRetry(std::move(task), "Connection lost during SELECT task");
+					EnqueueRetry(std::move(task), "Connection lost during task", MaxRetriesForType(task.m_Type));
 				}
 				else
 				{
@@ -373,17 +378,25 @@ std::unique_ptr<Connection> CConectionPool::CreateConnection()
 		{
 			CloseConnectionOnError(pConnection.get(), "Sync SELECT");
 			pConnection = nullptr;
-			auto& retryConnection = GetSyncConnection();
-			if(!retryConnection)
-				return EmptyResult();
+			for(int attempt = 0; attempt < kMaxTaskRetries; ++attempt)
+			{
+				std::this_thread::sleep_for(std::chrono::milliseconds(kBaseRetryDelayMs * (attempt + 1)));
+				auto& retryConnection = GetSyncConnection();
+				if(!retryConnection)
+					continue;
 
-			try
-			{
-				return runQuery(retryConnection.get());
-			}
-			catch(const SQLException& retryError)
-			{
-				dbg_msg("SQL Error", "Sync SELECT retry failed: %s. Query: %s", retryError.what(), m_Query.c_str());
+				try
+				{
+					return runQuery(retryConnection.get());
+				}
+				catch(const SQLException& retryError)
+				{
+					dbg_msg("SQL Error", "Sync SELECT retry failed: %s. Query: %s", retryError.what(), m_Query.c_str());
+					if(!is_connection_lost(retryError))
+						break;
+					CloseConnectionOnError(retryConnection.get(), "Sync SELECT retry");
+					retryConnection = nullptr;
+				}
 			}
 		}
 		return EmptyResult();
@@ -452,7 +465,7 @@ void CConectionPool::CResultSelect::AtExecute(CallbackResultPtr pCallbackResult)
 void CConectionPool::CResultQuery::AtExecute(CallbackUpdatePtr pCallbackResult, int DelayMilliseconds)
 {
 	// Create a lambda task for the DML operation.
-	auto task = [query = m_Query, cb = std::move(pCallbackResult), delay = DelayMilliseconds](Connection* pConnection, int /*retryCount*/)
+	auto task = [query = m_Query, cb = std::move(pCallbackResult), delay = DelayMilliseconds](Connection* pConnection, int retryCount)
 	{
 		if(delay > 0)
 			std::this_thread::sleep_for(std::chrono::milliseconds(delay));
@@ -472,6 +485,8 @@ void CConectionPool::CResultQuery::AtExecute(CallbackUpdatePtr pCallbackResult, 
 			if(is_connection_lost(e))
 			{
 				CloseConnectionOnError(pConnection, "Async DML");
+				if(retryCount < kMaxDmlRetries)
+					throw;
 			}
 
 			dbg_msg("SQL Error", "Async DML failed: %s. Query: %s", e.what(), query.c_str());
