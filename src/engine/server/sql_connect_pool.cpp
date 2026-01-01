@@ -8,7 +8,7 @@ namespace
 {
 	ResultPtr EmptyResult()
 	{
-		static ResultPtr s_Empty = std::make_shared<WrapperResultSet>(nullptr);
+		static ResultPtr s_Empty = std::make_shared<WrapperResultSet>(nullptr, nullptr);
 		return s_Empty;
 	}
 
@@ -302,7 +302,8 @@ std::unique_ptr<Connection> CConectionPool::CreateConnection()
 	const auto runQuery = [this](Connection* pConnection)
 	{
 		std::unique_ptr<Statement> pStmt(pConnection->createStatement());
-		return ResultPtr(std::make_shared<WrapperResultSet>(pStmt->executeQuery(m_Query.c_str())));
+		std::unique_ptr<ResultSet> pResult(pStmt->executeQuery(m_Query.c_str()));
+		return ResultPtr(std::make_shared<WrapperResultSet>(std::move(pStmt), std::move(pResult)));
 	};
 
 	const int64_t start = time_get();
@@ -354,9 +355,8 @@ void CConectionPool::CResultSelect::AtExecute(CallbackResultPtr pCallbackResult)
 		try
 		{
 			std::unique_ptr<Statement> pStmt(pConnection->createStatement());
-			ResultSet* rawResult = pStmt->executeQuery(query.c_str());
-
-			auto result = std::make_shared<WrapperResultSet>(rawResult);
+			std::unique_ptr<ResultSet> pResult(pStmt->executeQuery(query.c_str()));
+			auto result = std::make_shared<WrapperResultSet>(std::move(pStmt), std::move(pResult));
 			if(cb)
 			{
 				cb(std::move(result));

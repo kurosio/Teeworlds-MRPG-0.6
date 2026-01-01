@@ -51,13 +51,16 @@ inline bool is_connection_lost(const SQLException& e)
 // SECTION: WrapperResultSet Class
 // =================================================================
 
-// WrapperResultSet is now a simple, temporary wrapper around the raw ResultSet pointer.
+// WrapperResultSet is a temporary wrapper that owns the Statement and ResultSet.
 // Its lifetime is confined to the scope of a single query execution.
 class WrapperResultSet
 {
 public:
-	explicit WrapperResultSet(ResultSet* res) : m_pResult(res) { }
-	~WrapperResultSet() { delete m_pResult; }
+	WrapperResultSet(std::unique_ptr<Statement> stmt, std::unique_ptr<ResultSet> res)
+		: m_pStmt(std::move(stmt))
+		, m_pResult(std::move(res))
+	{
+	}
 
 	// Delete copy semantics, allow move
 	WrapperResultSet(const WrapperResultSet&) = delete;
@@ -128,7 +131,8 @@ public:
 	}
 
 private:
-	ResultSet* m_pResult;
+	std::unique_ptr<Statement> m_pStmt;
+	std::unique_ptr<ResultSet> m_pResult;
 };
 
 
