@@ -259,7 +259,6 @@ void CAchievementManager::ShowTypeList(CPlayer* pPlayer, AchievementType Type) c
 		const auto progress = pAchievement->GetProgress();
 		const auto required = pInfo->GetRequired();
 		const bool completed = pAchievement->IsCompleted();
-		const bool rewardExists = pInfo->RewardExists();
 		const auto levelInfoIt = levelInfoByAchievement.find(pInfo);
 		const int level = levelInfoIt != levelInfoByAchievement.end() ? levelInfoIt->second.m_Level : 0;
 		const int totalLevels = levelInfoIt != levelInfoByAchievement.end() ? levelInfoIt->second.m_TotalLevels : 0;
@@ -268,7 +267,7 @@ void CAchievementManager::ShowTypeList(CPlayer* pPlayer, AchievementType Type) c
 			: "";
 
 		VoteWrapper VAchievement(ClientID, VWF_UNIQUE | VWF_STYLE_SIMPLE, "{} {}{}{}",
-			completed ? "✔" : "○", pInfo->GetName(), levelSuffix, rewardExists ? " : Reward" : "");
+			completed ? "✔" : "○", pInfo->GetName(), levelSuffix);
 		AddAchievementDetails(VAchievement, pInfo, progress, required, level, totalLevels);
 	}
 }
