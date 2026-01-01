@@ -90,7 +90,7 @@ bool CAchievement::UpdateProgress(int Criteria, int Progress, int ProgressType)
 	}
 
 	// save
-	pPlayer->Account()->UpdateAchievementProgress(m_pInfo->GetID(), m_Progress, m_Completed);
+	pPlayer->Account()->UpdateAchievementProgress(m_pInfo, m_Progress, m_Completed);
 	return true;
 }
 
