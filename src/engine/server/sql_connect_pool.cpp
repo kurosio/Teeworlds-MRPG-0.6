@@ -134,7 +134,7 @@ void CThreadPool::EnqueueWithRetry(std::function<void(Connection*, int)> task, D
 void CThreadPool::EnqueueTask(CTask&& task)
 {
 	size_t queuedSize = 0;
-	const size_t maxQueueSize = static_cast<size_t>(g_Config.m_SvQueueMaxSize);
+	const size_t maxQueueSize = static_cast<size_t>(g_Config.m_SvSqlQueueMaxSize);
 	const DB taskType = task.m_Type;
 
 	{
@@ -165,7 +165,7 @@ void CThreadPool::EnqueueTask(CTask&& task)
 		queuedSize = m_QueueSize.fetch_add(1) + 1;
 	}
 
-	if(queuedSize > static_cast<size_t>(g_Config.m_SvQueueWarnSize))
+	if(queuedSize > static_cast<size_t>(g_Config.m_SvSqlQueueWarnSize))
 	{
 		dbg_msg("SQL Worker", "Queue size high: %zu tasks (latest type: %s).", queuedSize, DbTypeName(taskType));
 	}
@@ -245,7 +245,7 @@ void CThreadPool::WorkerThread()
 					// We pass the raw connection pointer to the task.
 					const int64_t startWait = task.m_EnqueueTime;
 					const double waitMs = DurationMs(startWait, time_get());
-					if(waitMs > static_cast<double>(g_Config.m_SvQueueWaitWarnMs))
+					if(waitMs > static_cast<double>(g_Config.m_SvSqlQueueWaitWarnMs))
 					{
 						dbg_msg("SQL Worker", "Task waited %.2fms in queue (type: %s). Query: %s", waitMs, DbTypeName(task.m_Type), task.m_Query.c_str());
 					}
@@ -374,7 +374,7 @@ std::unique_ptr<Connection> CConectionPool::CreateConnection()
 	{
 		ResultPtr result = runQuery(pConnection.get());
 		const double durationMs = DurationMs(start, time_get());
-		if(durationMs > static_cast<double>(g_Config.m_SvSyncSelectWarnMs))
+		if(durationMs > static_cast<double>(g_Config.m_SvSqlSyncSelectWarnMs))
 		{
 			dbg_msg("SQL Warning", "Slow sync SELECT (%.2fms). Query: %s", durationMs, m_Query.c_str());
 		}
@@ -383,7 +383,7 @@ std::unique_ptr<Connection> CConectionPool::CreateConnection()
 	catch(const SQLException& e)
 	{
 		const double durationMs = DurationMs(start, time_get());
-		if(durationMs > static_cast<double>(g_Config.m_SvSyncSelectWarnMs))
+		if(durationMs > static_cast<double>(g_Config.m_SvSqlSyncSelectWarnMs))
 		{
 			dbg_msg("SQL Warning", "Slow sync SELECT failed (%.2fms). Query: %s", durationMs, m_Query.c_str());
 		}

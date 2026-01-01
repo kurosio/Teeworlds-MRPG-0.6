@@ -37,11 +37,11 @@ void CSqlLostQueryLogger::EnsureFileLocked(const char* pFilename)
 
 void CSqlLostQueryLogger::LogLostQuery(const char* pReason, const char* pType, const std::string& Query)
 {
-	if(g_Config.m_SvSqlLog[0] == '\0')
+	if(g_Config.m_SvSqlFailedLogFile[0] == '\0')
 		return;
 
 	std::lock_guard<std::mutex> lock(m_Mutex);
-	EnsureFileLocked(g_Config.m_SvSqlLog);
+	EnsureFileLocked(g_Config.m_SvSqlFailedLogFile);
 	if(!m_File)
 		return;
 
