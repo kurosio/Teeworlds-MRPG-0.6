@@ -38,6 +38,20 @@ namespace
 		return static_cast<double>(endTicks - startTicks) * 1000.0 / static_cast<double>(freq);
 	}
 
+	void CloseConnectionOnError(Connection* pConnection, const char* pContext)
+	{
+		if(!pConnection)
+			return;
+		try
+		{
+			pConnection->close();
+		}
+		catch(const SQLException& e)
+		{
+			dbg_msg("SQL Error", "%s: failed to close connection after error: %s", pContext, e.what());
+		}
+	}
+
 	std::unique_ptr<Connection>& GetSyncConnection()
 	{
 		thread_local std::unique_ptr<Connection> s_pSyncConnection;
@@ -327,6 +341,7 @@ std::unique_ptr<Connection> CConectionPool::CreateConnection()
 		dbg_msg("SQL Error", "Sync SELECT failed: %s. Query: %s", e.what(), m_Query.c_str());
 		if(is_connection_lost(e))
 		{
+			CloseConnectionOnError(pConnection.get(), "Sync SELECT");
 			pConnection = nullptr;
 			auto& retryConnection = GetSyncConnection();
 			if(!retryConnection)
@@ -362,15 +377,16 @@ void CConectionPool::CResultSelect::AtExecute(CallbackResultPtr pCallbackResult)
 				cb(std::move(result));
 			}
 		}
-		catch(SQLException& e)
+	catch(SQLException& e)
+	{
+		if(is_connection_lost(e))
 		{
-			if(is_connection_lost(e))
-			{
-				if(retryCount == 0)
-					throw;
-			}
+			CloseConnectionOnError(pConnection, "Async SELECT");
+			if(retryCount == 0)
+				throw;
+		}
 
-			dbg_msg("SQL Error", "Async SELECT failed: %s. Query: %s", e.what(), query.c_str());
+		dbg_msg("SQL Error", "Async SELECT failed: %s. Query: %s", e.what(), query.c_str());
 
 			// Notify the caller of the failure.
 			if(cb)
@@ -387,7 +403,7 @@ void CConectionPool::CResultSelect::AtExecute(CallbackResultPtr pCallbackResult)
 void CConectionPool::CResultQuery::AtExecute(CallbackUpdatePtr pCallbackResult, int DelayMilliseconds)
 {
 	// Create a lambda task for the DML operation.
-	auto task = [query = m_Query, cb = std::move(pCallbackResult), delay = DelayMilliseconds](Connection* pConnection, int retryCount)
+	auto task = [query = m_Query, cb = std::move(pCallbackResult), delay = DelayMilliseconds](Connection* pConnection, int /*retryCount*/)
 	{
 		if(delay > 0)
 			std::this_thread::sleep_for(std::chrono::milliseconds(delay));
@@ -402,16 +418,15 @@ void CConectionPool::CResultQuery::AtExecute(CallbackUpdatePtr pCallbackResult, 
 				cb();
 			}
 		}
-		catch(SQLException& e)
+	catch(SQLException& e)
+	{
+		if(is_connection_lost(e))
 		{
-			if(is_connection_lost(e))
-			{
-				if(retryCount == 0)
-					throw;
-			}
-
-			dbg_msg("SQL Error", "Async DML failed: %s. Query: %s", e.what(), query.c_str());
+			CloseConnectionOnError(pConnection, "Async DML");
 		}
+
+		dbg_msg("SQL Error", "Async DML failed: %s. Query: %s", e.what(), query.c_str());
+	}
 	};
 
 	Database->m_pThreadPool->Enqueue(std::move(task), m_TypeQuery, m_Query);
