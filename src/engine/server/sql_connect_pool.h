@@ -165,6 +165,7 @@ public:
 	// Enqueues a task to be executed by a worker thread.
 	// The task must be a callable that accepts a `Connection*`.
 	void Enqueue(std::function<void(Connection*, int)> task, DB type, std::string query);
+	void EnqueueWithRetry(std::function<void(Connection*, int)> task, DB type, std::string query, int retryCount);
 
 private:
 	struct CTask
@@ -177,6 +178,7 @@ private:
 	};
 
 	void EnqueueTask(CTask&& task);
+	void EnqueueRetry(CTask&& task, const char* reason);
 	void WorkerThread();
 
 	std::vector<std::thread> m_vWorkers;
