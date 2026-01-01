@@ -290,7 +290,7 @@ CConectionPool::CConectionPool()
 	try
 	{
 		m_pDriver = get_driver_instance();
-		const auto thread_count = std::max(2u, std::thread::hardware_concurrency());
+		const auto thread_count = std::max(2, g_Config.m_SvMySqlPoolSize);
 		m_pThreadPool = std::make_unique<CThreadPool>(thread_count);
 	}
 	catch(const SQLException& e)
@@ -460,6 +460,7 @@ void CConectionPool::CResultSelect::AtExecute(CallbackResultPtr pCallbackResult)
 			}
 
 			dbg_msg("SQL Error", "Async SELECT failed: %s. Query: %s", e.what(), query.c_str());
+			LogLostQuery("async select failed", DB::SELECT, query);
 
 			// Notify the caller of the failure.
 			if(cb)
@@ -476,7 +477,7 @@ void CConectionPool::CResultSelect::AtExecute(CallbackResultPtr pCallbackResult)
 void CConectionPool::CResultQuery::AtExecute(CallbackUpdatePtr pCallbackResult, int DelayMilliseconds)
 {
 	// Create a lambda task for the DML operation.
-	auto task = [query = m_Query, cb = std::move(pCallbackResult), delay = DelayMilliseconds](Connection* pConnection, int retryCount)
+	auto task = [query = m_Query, cb = std::move(pCallbackResult), delay = DelayMilliseconds, type = m_TypeQuery](Connection* pConnection, int retryCount)
 	{
 		if(delay > 0)
 			std::this_thread::sleep_for(std::chrono::milliseconds(delay));
@@ -498,6 +499,11 @@ void CConectionPool::CResultQuery::AtExecute(CallbackUpdatePtr pCallbackResult, 
 				CloseConnectionOnError(pConnection, "Async DML");
 				if(retryCount < kMaxDmlRetries)
 					throw;
+				LogLostQuery("async dml retries exhausted", type, query);
+			}
+			else
+			{
+				LogLostQuery("async dml failed", type, query);
 			}
 
 			dbg_msg("SQL Error", "Async DML failed: %s. Query: %s", e.what(), query.c_str());
