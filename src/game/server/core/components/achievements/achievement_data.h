@@ -43,6 +43,7 @@ public:
 	const char* GetName() const { return m_aName.c_str(); }
 	AchievementType GetType() const { return m_Type; }
 	nlohmann::json& GetRewardData() { return m_RewardData; }
+	const nlohmann::json& GetRewardData() const { return m_RewardData; }
 	bool RewardExists() const { return !m_RewardData.empty(); }
 
 	// initalize the Aether data

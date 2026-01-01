@@ -9,6 +9,7 @@
 #include <vector>
 
 #include <game/server/core/components/crafting/craft_manager.h>
+#include <game/server/core/components/inventory/item_data.h>
 #include <game/server/gamecontext.h>
 
 namespace
@@ -98,10 +99,39 @@ namespace
 
 	void AddRewardInfo(VoteWrapper& Wrapper, const CAchievementInfo* pInfo)
 	{
-		if(pInfo->GetPoint() > 0)
-			Wrapper.Add("Points: {}p", pInfo->GetPoint());
-		if(pInfo->RewardExists())
-			Wrapper.Add("Reward: available");
+		std::vector<std::string> rewardEntries;
+		rewardEntries.reserve(4);
+
+		const auto& dataJson = pInfo->GetRewardData();
+		if(!dataJson.empty())
+		{
+			if(const int Experience = dataJson.value("exp", 0); Experience > 0)
+				rewardEntries.push_back("Exp " + std::to_string(Experience));
+
+			const CItemsContainer items = dataJson.value("items", CItemsContainer {});
+			for(const auto& item : items)
+			{
+				if(!item.IsValid())
+					continue;
+				rewardEntries.push_back(std::string(item.Info()->GetName()) + " x" + std::to_string(item.GetValue()));
+			}
+		}
+
+		if(const int Points = pInfo->GetPoint(); Points > 0)
+			rewardEntries.push_back("Points " + std::to_string(Points) + "p");
+
+		if(rewardEntries.empty())
+			return;
+
+		std::string rewardText;
+		for(size_t i = 0; i < rewardEntries.size(); ++i)
+		{
+			if(i > 0)
+				rewardText += ", ";
+			rewardText += rewardEntries[i];
+		}
+
+		Wrapper.Add("Rewards: {}", rewardText);
 	}
 }
 
