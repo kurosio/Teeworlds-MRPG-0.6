@@ -286,18 +286,8 @@ void CThreadPool::WorkerThread()
 		else if(timedOut)
 		{
 			if(pConnection && !pConnection->isClosed())
-			{
-				try
-				{
-					std::unique_ptr<Statement> pStmt(pConnection->createStatement());
-					pStmt->execute("SELECT 1");
-				}
-				catch(const SQLException& e)
-				{
-					dbg_msg("SQL Worker", "Keep-alive ping failed: %s. Connection will be reset.", e.what());
-					pConnection = nullptr;
-				}
-			}
+				CloseConnectionOnError(pConnection.get(), "SQL Worker idle reset");
+			pConnection = nullptr;
 		}
 
 	}
