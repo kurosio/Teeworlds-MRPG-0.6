@@ -364,27 +364,37 @@ std::unique_ptr<Connection> CConectionPool::CreateConnection()
 void CConectionPool::CResultSelect::AtExecute(CallbackResultPtr pCallbackResult)
 {
 	// Package the query logic into a lambda that matches the thread pool's task signature.
-	auto task = [query = m_Query, cb = std::move(pCallbackResult)](Connection* pConnection, int retryCount)
+	auto task = [query = m_Query, cb = std::move(pCallbackResult)](Connection* /*pConnection*/, int retryCount)
 	{
-		// This code will run inside a worker thread using its dedicated connection.
+		// Use a dedicated connection for async SELECT to avoid overlapping result sets on the worker connection.
+		auto ownedConnection = CConectionPool::CreateConnection();
+		if(!ownedConnection)
+		{
+			dbg_msg("SQL Error", "Async SELECT failed to create a connection. Query: %s", query.c_str());
+			if(cb)
+				cb(nullptr);
+			return;
+		}
+		auto sharedConnection = std::shared_ptr<Connection>(ownedConnection.release());
+
 		try
 		{
-			std::unique_ptr<Statement> pStmt(pConnection->createStatement());
+			std::unique_ptr<Statement> pStmt(sharedConnection->createStatement());
 			std::unique_ptr<ResultSet> pResult(pStmt->executeQuery(query.c_str()));
-			auto result = std::make_shared<WrapperResultSet>(std::move(pStmt), std::move(pResult));
+			auto result = std::make_shared<WrapperResultSet>(std::move(pStmt), std::move(pResult), std::move(sharedConnection));
 			if(cb)
 			{
 				cb(std::move(result));
 			}
 		}
-	catch(SQLException& e)
-	{
-		if(is_connection_lost(e))
+		catch(SQLException& e)
 		{
-			CloseConnectionOnError(pConnection, "Async SELECT");
-			if(retryCount == 0)
-				throw;
-		}
+			if(is_connection_lost(e))
+			{
+				CloseConnectionOnError(sharedConnection.get(), "Async SELECT");
+				if(retryCount == 0)
+					throw;
+			}
 
 		dbg_msg("SQL Error", "Async SELECT failed: %s. Query: %s", e.what(), query.c_str());
 

@@ -56,9 +56,10 @@ inline bool is_connection_lost(const SQLException& e)
 class WrapperResultSet
 {
 public:
-	WrapperResultSet(std::unique_ptr<Statement> stmt, std::unique_ptr<ResultSet> res)
+	WrapperResultSet(std::unique_ptr<Statement> stmt, std::unique_ptr<ResultSet> res, std::shared_ptr<Connection> connection = nullptr)
 		: m_pStmt(std::move(stmt))
 		, m_pResult(std::move(res))
+		, m_pConnection(std::move(connection))
 	{
 	}
 
@@ -133,6 +134,7 @@ public:
 private:
 	std::unique_ptr<Statement> m_pStmt;
 	std::unique_ptr<ResultSet> m_pResult;
+	std::shared_ptr<Connection> m_pConnection;
 };
 
 
