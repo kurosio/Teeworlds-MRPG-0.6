@@ -1,0 +1,174 @@
+{
+    "editor_data": {
+        "groups": []
+    },
+    "steps": [
+        {
+            "id": "welcome_start",
+            "components": [
+                {
+                    "type": "message",
+                    "mode": "chat",
+                    "text": "Выбери правильное действие и дверь откроется!"
+                },
+                {
+                    "type": "door_control",
+                    "action": "create",
+                    "position": {
+                        "x": 1140,
+                        "y": 529
+                    }
+                },
+                {
+                    "type": "follow_camera",
+                    "position": {
+                        "x": 1140,
+                        "y": 529
+                    },
+                    "delay": 300
+                }
+            ]
+        },
+        {
+            "id": "message_condition_1",
+            "msg_info": "Выбери действие и введи его в чат (hello! или reposka)!",
+            "completion_logic": "any_of",
+            "components": [
+                {
+                    "type": "use_chat_code",
+                    "code": "hello!",
+                    "next_step_id": "fail_message_condition_1"
+                },
+                {
+                    "type": "use_chat_code",
+                    "code": "reposka",
+                    "next_step_id": "succes_message_condition_1"
+                }
+            ]
+        },
+        {
+            "id": "fail_message_condition_1",
+            "delay": 300,
+            "components": [
+                {
+                    "type": "message",
+                    "next_step_id": "message_condition_1",
+                    "mode": "chat",
+                    "text": "Ошибка повтори по новой...."
+                }
+            ]
+        },
+        {
+            "id": "succes_message_condition_1",
+            "components": [
+                {
+                    "type": "door_control",
+                    "action": "remove"
+                },
+                {
+                    "type": "follow_camera",
+                    "position": {
+                        "x": 1140,
+                        "y": 529
+                    },
+                    "delay": 300
+                }
+            ]
+        },
+        {
+            "id": "defeat_mobs_start",
+            "completion_logic": "any_of",
+            "msg_info": "Убейте мобов при этом не убив не одного Living Stone!",
+            "components": [
+                {
+                    "type": "defeat_mobs",
+                    "position": {
+                        "x": 1497,
+                        "y": 529
+                    },
+                    "radius": 200,
+                    "mobs": [
+                        {
+                            "mob_id": 40,
+                            "count": 5,
+                            "level": 3
+                        }
+                    ],
+                    "next_step_id": "success_defeat_start"
+                },
+                {
+                    "type": "defeat_mobs",
+                    "mode": "wave",
+                    "kill_target": 1,
+                    "position": {
+                        "x": 1497,
+                        "y": 529
+                    },
+                    "radius": 200,
+                    "mobs": [
+                        {
+                            "mob_id": 42,
+                            "count": 2,
+                            "level": 3
+                        }
+                    ],
+                    "next_step_id": "fail_defeat_start"
+                }
+            ]
+        },
+        {
+            "id": "fail_defeat_start",
+            "delay": 300,
+            "components": [
+                {
+                    "type": "message",
+                    "next_step_id": "defeat_mobs_start",
+                    "mode": "chat",
+                    "text": "Испытание провалено...... Через несколько секунд начнется заного!"
+                }
+            ]
+        },
+        {
+            "id": "success_defeat_start",
+            "delay": 300,
+            "components": [
+                {
+                    "type": "message",
+                    "mode": "chat",
+                    "text": "Испытание пройдено...... "
+                }
+            ]
+        },
+        {
+            "id": "gffsaa",
+            "components": [
+                {
+                    "type": "message",
+                    "text": "asdasdas",
+                    "mode": "full"
+                },
+                {
+                    "type": "message",
+                    "text": "weqweqweq",
+                    "mode": "full",
+                    "delay": 255
+                },
+                {
+                    "type": "message",
+                    "text": "Новое сообщение",
+                    "mode": "full",
+                    "delay": 350
+                },
+                {
+                    "type": "teleport",
+                    "position": {
+                        "x": 1497,
+                        "y": 529
+                    },
+                    "delay": 350
+                }
+            ],
+            "completion_logic": "sequential"
+        }
+    ]
+}

@@ -1,0 +1,1596 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Редактор Сценариев v30.3 (Исправлено)</title>
+    
+    <!-- Tailwind CSS с плагином для форм -->
+    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+    
+    <!-- Иконки Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Библиотека для Drag-and-Drop -->
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    
+    <style>
+        /* Небольшие кастомные стили */
+        .sortable-ghost {
+            opacity: 0.4;
+            background: #c8ebfb;
+            border: 2px dashed #3498db;
+        }
+        #navigator-tree .sortable-ghost {
+            background: #e0f7fa;
+            border: 1px dashed #3498db;
+            border-radius: 4px;
+        }
+        #navigator-tree .sortable-ghost * {
+            opacity: 0.5;
+        }
+        .nav-component-list.empty-drop-zone {
+            min-height: 30px;
+            background-color: rgba(240, 249, 255, 0.5);
+            border: 1px dashed #93c5fd;
+            border-radius: 4px;
+            margin-top: 4px;
+        }
+        .connection-line {
+            stroke-width: 2px;
+            stroke: #8e44ad; /* purple-600 */
+            fill: none;
+            stroke-dasharray: 5, 5;
+            pointer-events: none;
+        }
+        .connection-arrow {
+            fill: #8e44ad; /* purple-600 */
+            pointer-events: none;
+        }
+        .toggle-checkbox:checked {
+            right: 0;
+            border-color: #2563eb;
+        }
+        .toggle-checkbox:checked + .toggle-label {
+            background-color: #2563eb;
+        }
+        /* Compact navigator styles */
+        .nav-group-wrapper {
+            margin-bottom: 0.5rem; /* 8px */
+            padding: 0.25rem; /* 4px */
+        }
+        .nav-group-header {
+            padding: 0.25rem 0.5rem; /* 4px 8px */
+        }
+        .nav-step-list a, .nav-component-list a {
+            padding: 0.25rem 0.5rem; /* 4px 8px */
+            font-size: 0.875rem; /* 14px */
+        }
+        .nav-component-list {
+            padding-left: 0.75rem; /* 12px */
+            margin-left: 0.5rem; /* 8px */
+        }
+        .nav-group-controls {
+            opacity: 0;
+            transition: opacity 0.2s ease-in-out;
+        }
+        .nav-group-header:hover .nav-group-controls {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 font-sans text-slate-700">
+    <div id="toast-container" class="fixed top-5 right-5 z-[9999] flex flex-col gap-2"></div>
+
+    <header class="bg-white h-[70px] px-8 border-b border-slate-200 flex justify-between items-center sticky top-0 z-50 shadow-sm">
+        <h1 class="text-2xl font-bold text-slate-800 flex items-center gap-3"><i class="fa-solid fa-scroll text-blue-500"></i> Редактор v30.3</h1>
+        <div class="controls flex items-center gap-4">
+            <div class="flex items-center gap-2 text-sm">
+                <label for="arrow-mode-toggle" class="font-medium text-slate-600">Стрелки:</label>
+                <div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+                    <input type="checkbox" name="arrow-mode-toggle" id="arrow-mode-toggle" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"/>
+                    <label for="arrow-mode-toggle" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"></label>
+                </div>
+            </div>
+            <label for="scenario-select" class="text-sm font-medium">Сценарий:</label>
+            <select id="scenario-select" class="text-sm rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"></select>
+            <button id="delete-scenario-btn" title="Удалить текущий сценарий" class="bg-red-100 text-red-600 font-semibold text-sm py-2 px-3 rounded-md hover:bg-red-200 transition-colors">
+                <i class="fa-solid fa-trash-can"></i>
+            </button>
+            <input type="text" id="save-as-filename" placeholder="Сохранить как..." class="text-sm rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+            <button id="save-button" title="Сохранить текущий сценарий" class="bg-blue-600 text-white font-semibold text-sm py-2 px-4 rounded-md hover:bg-blue-700 transition-colors flex items-center gap-2">
+                <i class="fa-solid fa-save"></i> Сохранить
+            </button>
+        </div>
+    </header>
+
+    <div class="main-container flex items-start">
+        <aside id="navigator" class="w-[350px] h-[calc(100vh-70px)] bg-white border-r border-slate-200 sticky top-[70px] overflow-y-auto flex-shrink-0 z-20">
+            <div class="navigator-header p-4 font-semibold border-b border-slate-200 bg-slate-50 sticky top-0 z-10 flex justify-between items-center">
+                <span>Структура сценария</span>
+                <button id="add-group-btn" class="text-sm bg-blue-100 text-blue-700 font-semibold px-2 py-1 rounded hover:bg-blue-200 transition-colors" title="Создать новую группу">
+                    <i class="fa-solid fa-plus"></i> Группа
+                </button>
+            </div>
+            <div id="navigator-tree" class="p-2"></div>
+        </aside>
+
+        <main id="editor-wrapper" class="flex-grow p-8 relative">
+            <div id="editor-container" class="space-y-8"></div>
+             <button id="add-step-button" class="max-w-3xl mx-auto mt-8 w-full py-3 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600 transition-colors flex items-center justify-center gap-2">
+                <i class="fa-solid fa-plus"></i> Добавить Новый Шаг
+            </button>
+        </main>
+    </div>
+    
+    <svg id="connections-svg-container" class="fixed top-0 left-0 w-full h-full pointer-events-none z-10"></svg>
+    
+    <div id="add-component-menu" class="hidden absolute z-[1000] bg-white border border-slate-300 shadow-lg rounded-lg p-2 w-72 flex flex-col gap-1"></div>
+
+    <div id="modal-backdrop" class="hidden fixed inset-0 bg-black/60 z-[200] flex justify-center items-center p-4">
+        <div id="modal-content" class="bg-white p-6 rounded-lg shadow-xl w-full max-w-xl flex flex-col max-h-[90vh]">
+            <h3 id="modal-title" class="text-xl font-bold mb-4 text-slate-800">Редактирование</h3>
+            <div id="modal-form-container" class="overflow-y-auto pr-4 -mr-4"></div>
+            <div class="modal-buttons text-right mt-6 pt-4 border-t border-slate-200">
+                <button id="modal-cancel" class="bg-slate-200 text-slate-700 font-semibold py-2 px-4 rounded-md hover:bg-slate-300 transition-colors">Отмена</button>
+                <button id="modal-save" class="bg-green-500 text-white font-semibold py-2 px-4 rounded-md hover:bg-green-600 transition-colors ml-2">Сохранить</button>
+            </div>
+        </div>
+    </div>
+    
+    <div id="delete-group-modal-backdrop" class="hidden fixed inset-0 bg-black/60 z-[300] flex justify-center items-center p-4">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
+            <h3 class="text-xl font-bold mb-4 text-slate-800">Удалить группу</h3>
+            <p class="text-slate-600 mb-6">Как вы хотите удалить эту группу?</p>
+            <div class="flex justify-end gap-3">
+                <button id="delete-group-cancel-btn" class="bg-slate-200 text-slate-700 font-semibold py-2 px-4 rounded-md hover:bg-slate-300 transition-colors">Отмена</button>
+                <button id="delete-group-only-btn" class="bg-yellow-500 text-white font-semibold py-2 px-4 rounded-md hover:bg-yellow-600 transition-colors">Только группу</button>
+                <button id="delete-group-and-steps-btn" class="bg-red-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-red-700 transition-colors">Группу и шаги</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- TEMPLATES -->
+    <template id="step-card-template">
+        <div class="step-card bg-white rounded-lg border border-slate-200 shadow-md transition-all duration-200 relative z-10">
+            <div class="step-header flex justify-between items-center border-b border-slate-200 p-4">
+                <div class="title text-lg font-bold text-slate-800 flex items-center gap-3 cursor-grab flex-grow">
+                    <i class="fa-solid fa-grip-vertical handle text-slate-400"></i>
+                    <i class="fa-solid fa-chevron-down toggle-icon transition-transform cursor-pointer"></i>
+                    <span>Шаг ID:</span>
+                    <span class="step-id-display font-mono bg-blue-50 text-blue-800 text-sm font-medium px-2 py-1 rounded-md"></span>
+                </div>
+                <div class="step-delay-display hidden text-xs font-medium bg-slate-100 text-slate-500 px-2 py-1 rounded-md ml-auto mr-4 items-center gap-1.5"></div>
+                <div class="controls-container flex items-center gap-1">
+                    <button class="control-btn duplicate-btn w-8 h-8 rounded-full text-slate-500 hover:bg-slate-100 hover:text-orange-500 transition-colors" title="Дублировать шаг"><i class="fa-regular fa-copy"></i></button>
+                    <button class="control-btn delete-btn w-8 h-8 rounded-full text-slate-500 hover:bg-slate-100 hover:text-red-500 transition-colors" title="Удалить шаг"><i class="fa-regular fa-trash-can"></i></button>
+                </div>
+            </div>
+            <div class="step-body p-5 transition-all duration-300">
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">ID Шага (уникальное, латиницей)</label>
+                        <input type="text" class="step-id-input w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Задержка (мс)</label>
+                        <input type="number" class="step-delay-input w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder="0">
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-4 mt-4">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Информация для игрока (msg_info)</label>
+                        <input type="text" class="msg-info-input w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder="Например, 'Найдите выход'">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 mb-1">Логика завершения компонентов</label>
+                        <select class="completion-logic-select w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                            <option value="all_of">Все (all_of)</option>
+                            <option value="any_of">Любой (any_of)</option>
+                            <option value="sequential">Последовательно (sequential)</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="components-container mt-5 pt-5 border-t border-dashed border-slate-200">
+                    <h4 class="font-bold text-slate-800 mb-2">Компоненты</h4>
+                </div>
+                <button class="add-button add-component-btn w-full mt-4 py-2 bg-slate-100 text-slate-600 font-semibold rounded-lg hover:bg-slate-200 transition-colors flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-puzzle-piece"></i> Добавить компонент
+                </button>
+            </div>
+        </div>
+    </template>
+
+    <template id="component-item-template">
+        <div class="component-item bg-white border border-slate-200 p-3 rounded-md mb-2 flex justify-between items-center cursor-grab">
+            <div class="component-info flex-grow flex items-center gap-3">
+                <i class="component-icon text-slate-500 text-lg"></i>
+                <div class="component-text-wrapper">
+                    <div class="component-type text-sm font-bold uppercase text-slate-600"></div>
+                    <div class="component-summary text-sm text-slate-500 mt-0.5"></div>
+                </div>
+            </div>
+            <div class="controls-container flex items-center gap-1">
+                <button class="control-btn edit-btn w-8 h-8 rounded-full text-slate-500 hover:bg-slate-100 hover:text-blue-500 transition-colors" title="Редактировать"><i class="fa-solid fa-pencil"></i></button>
+                <button class="control-btn duplicate-btn w-8 h-8 rounded-full text-slate-500 hover:bg-slate-100 hover:text-orange-500 transition-colors" title="Дублировать"><i class="fa-regular fa-copy"></i></button>
+                <button class="control-btn delete-btn w-8 h-8 rounded-full text-slate-500 hover:bg-slate-100 hover:text-red-500 transition-colors" title="Удалить"><i class="fa-regular fa-trash-can"></i></button>
+            </div>
+        </div>
+    </template>
+
+    <script type="module">
+        class ScenarioEditor {
+            constructor() {
+                this.bindElements();
+                this.initState();
+                this.initialize();
+            }
+
+            bindElements() {
+                this.mainContainer = document.querySelector('.main-container');
+                this.editorContainer = document.getElementById('editor-container');
+                this.navigatorTree = document.getElementById('navigator-tree');
+                this.navigatorElement = document.getElementById('navigator');
+                this.connectionsContainer = document.getElementById('connections-svg-container');
+                this.addStepButton = document.getElementById('add-step-button');
+                this.addGroupButton = document.getElementById('add-group-btn');
+                this.scenarioSelect = document.getElementById('scenario-select');
+                this.deleteScenarioBtn = document.getElementById('delete-scenario-btn');
+                this.saveButton = document.getElementById('save-button');
+                this.saveAsInput = document.getElementById('save-as-filename');
+                this.toastContainer = document.getElementById('toast-container');
+                this.arrowModeToggle = document.getElementById('arrow-mode-toggle');
+                this.modal = { backdrop: document.getElementById('modal-backdrop'), title: document.getElementById('modal-title'), formContainer: document.getElementById('modal-form-container'), saveButton: document.getElementById('modal-save'), cancelButton: document.getElementById('modal-cancel'), context: null };
+                this.deleteGroupModal = {
+                    backdrop: document.getElementById('delete-group-modal-backdrop'),
+                    cancelBtn: document.getElementById('delete-group-cancel-btn'),
+                    deleteOnlyBtn: document.getElementById('delete-group-only-btn'),
+                    deleteAndStepsBtn: document.getElementById('delete-group-and-steps-btn'),
+                    contextGroupId: null
+                };
+                this.addComponentMenu = { element: document.getElementById('add-component-menu'), targetStepId: null };
+                this.templates = { step: document.getElementById('step-card-template'), component: document.getElementById('component-item-template') };
+            }
+
+            initState() {
+                this.arrowMode = 'navigator'; // 'navigator' or 'editor'
+                this.scenarioData = { steps: [], editor_data: { groups: [] } };
+                this.uiState = { collapsedSteps: new Set() }; // Save UI state like collapsed cards
+                this.componentTypes = {
+                    message: { name: 'Сообщение', class: 'info', icon: 'fa-solid fa-comment-dots', desc: 'Показать текст игроку', default: { type: 'message', text: 'Новое сообщение', mode: 'full' } },
+                    wait: { name: 'Ожидание', class: 'info', icon: 'fa-solid fa-clock', desc: 'Пауза в сценарии', default: { type: 'wait', duration: 5 } },
+                    door_control: { name: 'Управление дверью', class: 'interactive', icon: 'fa-solid fa-door-open', desc: 'Создать или удалить дверь', default: { type: 'door_control', action: 'create', position: { x: 100, y: 100 }, key: '' } },
+                    use_chat_code: { name: 'Код в чате', class: 'interactive', icon: 'fa-solid fa-key', desc: 'Переход по кодовому слову', default: { type: 'use_chat_code', code: 'secret', next_step_id: '', hidden: false } },
+                    defeat_mobs: { name: 'Убийство мобов', class: 'combat', icon: 'fa-solid fa-skull-crossbones', desc: 'Боевое испытание', default: { type: 'defeat_mobs', mode: 'annihilation', radius: 100, position: { x: 0, y: 0 }, mobs: [{ mob_id: 21, count: 5, level: 1, power: 1, boss: false }] } },
+                    follow_camera: { name: 'Следование камеры', class: 'camera', icon: 'fa-solid fa-video', desc: 'Переместить камеру к точке', default: { type: 'follow_camera', position: { x: 0, y: 0 }, delay: 300, smooth: true } },
+                    condition_movement: { name: 'Условие: Движение', class: 'interactive', icon: 'fa-solid fa-person-running', desc: 'Переход при достижении точки', default: { type: 'condition_movement', position: { x: 0, y: 0 }, entire_group: true } },
+                    teleport: { name: 'Телепорт', class: 'interactive', icon: 'fa-solid fa-bolt', desc: 'Мгновенное перемещение', default: { type: 'teleport', position: { x: 1497, y: 529 } } },
+                    activate_point: { 
+                        name: 'Точка активации', 
+                        class: 'interactive', 
+                        icon: 'fa-solid fa-location-dot', 
+                        desc: 'Активация по времени в области', 
+                        default: { 
+                            type: 'activate_point', 
+                            position: { x: 400, y: 3000 }, 
+                            duration: 5, 
+                            entire_group: true, 
+                            action_text: 'Перегрузка главного реактора' 
+                        } 
+                    }
+                };
+                this.debouncedUpdate = this.debounce(this.updateStepId, 400);
+                this.sortableInstances = [];
+                this.isTicking = false; // For scroll throttling
+            }
+
+            async initialize() {
+                this.addEventListeners();
+                await this.loadScenarioList();
+            }
+
+            addEventListeners() {
+                this.saveButton.addEventListener('click', () => this.saveScenario());
+                this.scenarioSelect.addEventListener('change', () => this.loadScenario(this.scenarioSelect.value));
+                this.addStepButton.addEventListener('click', () => this.addNewStep());
+                this.addGroupButton.addEventListener('click', () => this.addNewGroup());
+                this.deleteScenarioBtn.addEventListener('click', () => this.deleteScenario());
+                this.modal.saveButton.addEventListener('click', () => this.saveModalChanges());
+                this.modal.cancelButton.addEventListener('click', () => this.closeModal());
+                this.modal.backdrop.addEventListener('click', (e) => { if (e.target === this.modal.backdrop) this.closeModal(); });
+                document.addEventListener('click', (e) => { if (!e.target.closest('.add-component-btn') && !this.addComponentMenu.element.contains(e.target)) this.hideAddComponentMenu(); });
+                this.addComponentMenu.element.addEventListener('click', (e) => this.handleAddComponentAction(e));
+
+                // Delete Group Modal Listeners
+                this.deleteGroupModal.cancelBtn.addEventListener('click', () => this.closeDeleteGroupModal());
+                this.deleteGroupModal.backdrop.addEventListener('click', (e) => { if(e.target === this.deleteGroupModal.backdrop) this.closeDeleteGroupModal(); });
+                this.deleteGroupModal.deleteOnlyBtn.addEventListener('click', () => this.handleDeleteGroup(false));
+                this.deleteGroupModal.deleteAndStepsBtn.addEventListener('click', () => this.handleDeleteGroup(true));
+
+
+                this.arrowModeToggle.addEventListener('change', (e) => {
+                    this.arrowMode = e.target.checked ? 'editor' : 'navigator';
+                    this.drawConnections();
+                });
+
+                const handleEditorEvent = (e) => {
+                    const stepCard = e.target.closest('.step-card');
+                    if (!stepCard) return;
+                    const stepId = stepCard.dataset.stepId;
+                    const componentItem = e.target.closest('.component-item');
+                    const componentId = componentItem?.dataset.componentId;
+
+                    if (e.type === 'click') {
+                        if (e.target.closest('.delete-btn')) this.handleDelete(stepId, componentId);
+                        else if (e.target.closest('.duplicate-btn')) this.handleDuplicate(stepId, componentId);
+                        else if (e.target.closest('.edit-btn')) this.openEditModal(stepId, componentId);
+                        else if (e.target.closest('.add-component-btn')) this.showAddComponentMenu(e.target, stepId);
+                        else if (e.target.closest('.toggle-icon')) {
+                            const isCollapsed = stepCard.querySelector('.step-body').classList.toggle('hidden');
+                            e.target.closest('.toggle-icon').classList.toggle('rotate-[-90deg]', isCollapsed);
+                            if (isCollapsed) {
+                                this.uiState.collapsedSteps.add(stepId);
+                            } else {
+                                this.uiState.collapsedSteps.delete(stepId);
+                            }
+                            this.drawConnections();
+                        }
+                    } else if (e.type === 'dblclick' && componentId) {
+                        this.openEditModal(stepId, componentId);
+                    } else if (e.type === 'input') {
+                        const step = this.findStep(stepId);
+                        if (!step) return;
+                        if (e.target.matches('.step-id-input')) this.debouncedUpdate(step, e.target.value);
+                        else if (e.target.matches('.msg-info-input')) step.msg_info = e.target.value;
+                        else if (e.target.matches('.step-delay-input')) {
+                            step.delay = Number(e.target.value) || 0;
+                            this.updateStepDelayDisplay(stepCard, step.delay);
+                        } else if (e.target.matches('.component-delay-input')) {
+                            const component = this.findComponent(stepId, componentId);
+                            if (component) {
+                                component.delay = Number(e.target.value) || 0;
+                            }
+                        }
+                    } else if (e.type === 'change') {
+                        const step = this.findStep(stepId);
+                        if (!step) return;
+                        if (e.target.matches('.completion-logic-select')) {
+                            const value = e.target.value;
+                            if (value === 'any_of' || value === 'sequential') {
+                                step.completion_logic = value;
+                            } else {
+                                delete step.completion_logic;
+                            }
+                            this.renderAll(); // Re-render to show/hide component delays
+                        }
+                    }
+                };
+
+                ['click', 'dblclick', 'input', 'change'].forEach(eventType => {
+                    this.editorContainer.addEventListener(eventType, handleEditorEvent);
+                });
+
+                // Use a throttled approach for smoother arrow updates on scroll
+                window.addEventListener('scroll', () => {
+                    if (!this.isTicking) {
+                        window.requestAnimationFrame(() => {
+                            this.drawConnections();
+                            this.isTicking = false;
+                        });
+                        this.isTicking = true;
+                    }
+                }, true);
+                window.addEventListener('resize', this.debounce(() => this.drawConnections(), 50));
+            }
+
+            renderAll() {
+                const { groups, ungroupedSteps } = this.getCurrentViewState();
+                this.editorContainer.innerHTML = '';
+                
+                if (this.scenarioData.steps.length === 0) {
+                    this.renderEmptyState();
+                    this.renderNavigator();
+                    return;
+                }
+                
+                const stepMap = new Map(this.scenarioData.steps.map(s => [s.id, s]));
+                const renderedSteps = new Set();
+
+                // Render grouped steps first, in the order defined by viewState
+                groups.forEach(group => {
+                    const groupWrapper = document.createElement('div');
+                    groupWrapper.className = 'step-group-container mb-8';
+                    
+                    if (!group.isDefault && group.steps.length > 0) {
+                        const titleEl = document.createElement('h3');
+                        titleEl.className = 'text-center text-lg font-semibold text-slate-500 tracking-wider uppercase pt-4 pb-2 mb-4 border-b border-slate-200';
+                        titleEl.textContent = group.name;
+                        groupWrapper.appendChild(titleEl);
+                    }
+
+                    const stepListContainer = document.createElement('div');
+                    stepListContainer.className = 'step-group bg-slate-50/70 p-4 rounded-xl border border-slate-200/80 space-y-8 relative z-0';
+                    stepListContainer.dataset.groupId = group.id;
+
+                    group.steps.forEach(stepId => {
+                        const step = stepMap.get(stepId);
+                        if (step && !renderedSteps.has(stepId)) {
+                            try {
+                                stepListContainer.appendChild(this.createStepElement(step));
+                                renderedSteps.add(stepId);
+                            } catch (error) {
+                                console.error(`Error rendering step ${stepId}:`, error);
+                                stepListContainer.appendChild(this.createErrorStepElement(step, error));
+                            }
+                        }
+                    });
+                    
+                    if (stepListContainer.children.length > 0) {
+                        groupWrapper.appendChild(stepListContainer);
+                        this.editorContainer.appendChild(groupWrapper);
+                    }
+                });
+
+                // Render ungrouped steps
+                const ungroupedContainer = document.createElement('div');
+                ungroupedContainer.className = 'step-group bg-slate-50/70 p-4 rounded-xl border border-slate-200/80 space-y-8 relative z-0';
+                ungroupedContainer.dataset.groupId = 'ungrouped';
+                
+                ungroupedSteps.forEach(stepId => {
+                    const step = stepMap.get(stepId);
+                    if (step && !renderedSteps.has(stepId)) {
+                         try {
+                            ungroupedContainer.appendChild(this.createStepElement(step));
+                            renderedSteps.add(stepId);
+                        } catch (error) {
+                            console.error(`Error rendering ungrouped step ${stepId}:`, error);
+                            ungroupedContainer.appendChild(this.createErrorStepElement(step, error));
+                        }
+                    }
+                });
+
+                if (ungroupedContainer.children.length > 0) {
+                    this.editorContainer.appendChild(ungroupedContainer);
+                }
+                
+                this.renderNavigator();
+                this.initAllSortables();
+                requestAnimationFrame(() => this.drawConnections());
+                this.validateAllStepIds();
+            }
+
+            renderEmptyState() {
+                this.editorContainer.innerHTML = `<div class="text-center p-20 my-5 max-w-3xl mx-auto bg-white border-2 border-dashed border-slate-300 rounded-xl"><i class="fa-solid fa-wand-magic-sparkles text-slate-400 text-5xl mb-4"></i><h2 class="text-2xl font-bold text-slate-800">Сценарий пока пуст</h2><p class="text-slate-500 mt-2 mb-6">Начните творить, добавив первый шаг с помощью большой зеленой кнопки ниже.</p></div>`;
+            }
+
+            createStepElement(step) {
+                const stepCard = this.templates.step.content.cloneNode(true).firstElementChild;
+                stepCard.id = `step-card-${step.id}`;
+                stepCard.dataset.stepId = step.id;
+                stepCard.querySelector('.step-id-display').textContent = step.id;
+                stepCard.querySelector('.step-id-input').value = step.id;
+                stepCard.querySelector('.step-delay-input').value = step.delay || '';
+                this.updateStepDelayDisplay(stepCard, step.delay);
+                stepCard.querySelector('.msg-info-input').value = step.msg_info || '';
+                stepCard.querySelector('.completion-logic-select').value = step.completion_logic || 'all_of';
+                const componentsContainer = stepCard.querySelector('.components-container');
+                (step.components || []).forEach((comp, index) => componentsContainer.appendChild(this.createComponentElement(comp, step, index)));
+                
+                if (this.uiState.collapsedSteps.has(step.id)) {
+                    stepCard.querySelector('.step-body').classList.add('hidden');
+                    stepCard.querySelector('.toggle-icon').classList.add('rotate-[-90deg]');
+                }
+
+                return stepCard;
+            }
+
+            updateStepDelayDisplay(stepCard, delay) {
+                const display = stepCard.querySelector('.step-delay-display');
+                if (delay > 0) {
+                    display.innerHTML = `<i class="fa-solid fa-stopwatch"></i> ${delay} мс`;
+                    display.classList.remove('hidden');
+                    display.classList.add('flex');
+                } else {
+                    display.classList.add('hidden');
+                    display.classList.remove('flex');
+                }
+            }
+
+            createErrorStepElement(stepData, error) {
+                const stepCard = this.templates.step.content.cloneNode(true).firstElementChild;
+                stepCard.classList.add('border-red-500', 'bg-red-50');
+                const id = stepData?.id || 'ID_НЕ_УКАЗАН';
+                stepCard.id = `step-card-error-${id}`;
+                stepCard.dataset.stepId = id;
+                stepCard.querySelector('.step-id-display').textContent = id;
+                const body = stepCard.querySelector('.step-body');
+                body.innerHTML = `<h4 class="font-bold text-red-700">Ошибка рендеринга шага</h4><p class="text-sm text-red-600 mt-2">Этот шаг не удалось отобразить. Возможно, данные в файле сценария повреждены. <br><b>Сообщение:</b> ${error.message}</p><p class="text-xs mt-2">Вы можете удалить этот шаг, чтобы исправить сценарий.</p>`;
+                stepCard.querySelector('.duplicate-btn')?.remove();
+                return stepCard;
+            }
+
+            createComponentElement(component, step, index) {
+                const item = this.templates.component.content.cloneNode(true).firstElementChild;
+                item.id = `component-item-${component.component_id}`;
+                item.dataset.componentId = component.component_id;
+                
+                const info = this.componentTypes[component.type] || { class: 'info', name: component.type, icon: 'fa-solid fa-question-circle' };
+                item.querySelector('.component-icon').className = `component-icon ${info.icon}`;
+                item.querySelector('.component-type').textContent = info.name;
+                item.querySelector('.component-summary').innerHTML = this.getComponentSummary(component);
+                
+                const colorClass = { info: 'border-l-blue-500', interactive: 'border-l-orange-500', combat: 'border-l-red-500', camera: 'border-l-teal-500' }[info.class] || 'border-l-slate-500';
+                item.classList.add('border-l-4', colorClass);
+
+                if (step.completion_logic === 'sequential') {
+                    const orderSpan = document.createElement('span');
+                    orderSpan.className = 'mr-2 font-bold text-slate-500';
+                    orderSpan.textContent = `${index + 1}.`;
+                    item.querySelector('.component-info').prepend(orderSpan);
+
+                    const delayWrapper = document.createElement('div');
+                    delayWrapper.className = 'mt-2 flex items-center gap-2';
+                    delayWrapper.innerHTML = `<label class="text-xs font-medium text-slate-600">Задержка (мс):</label>
+                                            <input type="number" class="component-delay-input w-24 text-sm rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" value="${component.delay || 0}">`;
+                    item.querySelector('.component-text-wrapper').appendChild(delayWrapper);
+                }
+
+                return item;
+            }
+
+            renderNavigator() {
+                const { groups, ungroupedSteps } = this.getCurrentViewState();
+                const container = document.createDocumentFragment();
+                const stepMap = new Map(this.scenarioData.steps.map(s => [s.id, s]));
+
+                groups.forEach(group => {
+                    const groupWrapper = this.createNavGroupElement(group);
+                    const stepList = groupWrapper.querySelector('.nav-step-list');
+                    
+                    group.steps.forEach(stepId => {
+                        const step = stepMap.get(stepId);
+                        if (step) stepList.appendChild(this.createNavStepElement(step));
+                    });
+                    
+                    container.appendChild(groupWrapper);
+                });
+
+                const ungroupedWrapper = this.createNavGroupElement({ id: 'ungrouped', name: 'Шаги без группы', collapsed: false, isDefault: true });
+                const ungroupedList = ungroupedWrapper.querySelector('.nav-step-list');
+                
+                ungroupedSteps.forEach(stepId => {
+                     const step = stepMap.get(stepId);
+                     if (step) ungroupedList.appendChild(this.createNavStepElement(step));
+                });
+                container.appendChild(ungroupedWrapper);
+
+                this.navigatorTree.innerHTML = '';
+                this.navigatorTree.appendChild(container);
+                
+                this.addNavigatorEventListeners();
+            }
+
+            createNavGroupElement(group) {
+                const groupWrapper = document.createElement('div');
+                groupWrapper.className = 'nav-group-wrapper mb-2 bg-slate-100/50 rounded-lg p-1';
+                groupWrapper.dataset.groupId = group.id;
+
+                const header = document.createElement('div');
+                header.className = 'nav-group-header flex items-center justify-between p-2 cursor-pointer';
+                
+                const titleWrapper = document.createElement('div');
+                titleWrapper.className = 'flex items-center gap-2';
+
+                const toggleIcon = document.createElement('i');
+                toggleIcon.className = `fa-solid fa-chevron-down text-slate-500 transition-transform duration-200 ${group.collapsed ? 'rotate-[-90deg]' : ''}`;
+                
+                const title = document.createElement('span');
+                title.className = 'font-bold text-slate-800';
+                title.textContent = group.name;
+                if (!group.isDefault) {
+                    title.contentEditable = true;
+                    title.addEventListener('click', (e) => e.stopPropagation());
+                    title.addEventListener('blur', (e) => this.renameGroup(group.id, e.target.textContent));
+                    title.addEventListener('keydown', (e) => { 
+                        if(e.key === 'Enter') {
+                            e.preventDefault();
+                            e.target.blur(); 
+                        }
+                    });
+                }
+
+                titleWrapper.append(toggleIcon, title);
+
+                const controls = document.createElement('div');
+                if (!group.isDefault) {
+                    controls.className = 'nav-group-controls flex items-center gap-2';
+                    const copyBtn = document.createElement('button');
+                    copyBtn.className = 'text-slate-400 hover:text-orange-500 w-6 h-6 rounded flex items-center justify-center';
+                    copyBtn.innerHTML = '<i class="fa-regular fa-copy"></i>';
+                    copyBtn.title = 'Копировать группу';
+                    copyBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        this.duplicateGroup(group.id);
+                    };
+                    controls.appendChild(copyBtn);
+
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'text-slate-400 hover:text-red-500 w-6 h-6 rounded flex items-center justify-center';
+                    deleteBtn.innerHTML = '<i class="fa-solid fa-times"></i>';
+                    deleteBtn.title = 'Удалить группу';
+                    deleteBtn.onclick = (e) => {
+                        e.stopPropagation();
+                        this.openDeleteGroupModal(group.id);
+                    };
+                    controls.appendChild(deleteBtn);
+                }
+
+                header.append(titleWrapper, controls);
+                header.onclick = () => this.toggleGroupCollapse(group.id);
+
+                const stepList = document.createElement('ul');
+                stepList.className = 'nav-step-list pl-2';
+                if (group.collapsed) {
+                    stepList.classList.add('hidden');
+                }
+                
+                groupWrapper.append(header, stepList);
+                return groupWrapper;
+            }
+
+            createNavStepElement(step) {
+                const allStepIds = new Set(this.scenarioData.steps.map(s => s.id));
+                const stepLi = document.createElement('li');
+                stepLi.dataset.stepId = step.id;
+
+                const nextStepInfo = ''; // Removed from navigator view
+                const componentCount = step.components?.length || 0;
+                const componentInfo = `<span class="text-xs font-normal text-slate-400">(${componentCount} комп.)</span>`;
+                
+                stepLi.innerHTML = `<a href="#step-card-${step.id}" data-nav-id="${step.id}" class="flex items-center p-1.5 rounded-md border-b border-transparent hover:bg-slate-200/70"><i class="fa-solid fa-grip-vertical nav-handle text-slate-300 hover:text-slate-500 mr-2 cursor-grab"></i><div class="flex-grow flex justify-between items-center font-semibold text-slate-700 text-sm">
+                                            <span class="flex items-center gap-2">${step.id || '<i>Без ID</i>'} ${componentInfo}</span>
+                                            ${nextStepInfo}
+                                        </div>
+                                    </a>`;
+                
+                const compUl = document.createElement('ul');
+                compUl.className = 'nav-component-list pl-4 ml-3 border-l border-slate-200';
+                compUl.dataset.parentStepId = step.id;
+                if (!step.components || step.components.length === 0) {
+                    compUl.classList.add('empty-drop-zone');
+                }
+                
+                (step.components || []).forEach(comp => {
+                    const compLi = document.createElement('li');
+                    compLi.dataset.componentId = comp.component_id;
+                    const isCompBroken = comp.next_step_id && !allStepIds.has(comp.next_step_id);
+                    const compNextStep = comp.next_step_id ? `<span class="text-xs font-normal text-purple-600">${isCompBroken ? '⚠️' : '→'} ${comp.next_step_id}</span>` : '';
+                    compLi.innerHTML = `<a href="#step-card-${step.id}" data-nav-id="${comp.component_id}" class="flex items-center p-1.5 rounded-md border-b border-transparent hover:bg-slate-200/70 text-sm"><i class="fa-solid fa-grip-vertical nav-handle text-slate-300 hover:text-slate-500 mr-2 cursor-grab"></i><div class="flex-grow flex justify-between items-center text-slate-600">
+                                                <span>↳ ${comp.type}</span>
+                                                ${compNextStep}
+                                            </div>
+                                        </a>`;
+                    compUl.appendChild(compLi);
+                });
+                stepLi.appendChild(compUl);
+                return stepLi;
+            }
+
+            addNavigatorEventListeners() {
+                this.navigatorTree.querySelectorAll('a').forEach(anchor => {
+                    anchor.addEventListener('click', (e) => {
+                        if (e.target.closest('.nav-handle')) return;
+                        e.preventDefault();
+                        const targetElement = document.querySelector(anchor.getAttribute('href'));
+                        if (targetElement) {
+                            targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                            document.querySelectorAll('.step-card.ring-2').forEach(el => el.classList.remove('ring-2', 'ring-blue-500'));
+                            targetElement.classList.add('ring-2', 'ring-blue-500');
+                            setTimeout(() => targetElement.classList.remove('ring-2', 'ring-blue-500'), 1500);
+                        }
+                    });
+                });
+            }
+
+            drawConnections() {
+                this.connectionsContainer.innerHTML = '';
+                if (!this.scenarioData.steps) return;
+
+                this.scenarioData.steps.forEach(step => {
+                    (step.components || []).forEach(comp => {
+                        if (comp.next_step_id) {
+                            this.drawSingleConnection(comp.component_id, comp.next_step_id);
+                        }
+                    });
+                });
+            }
+
+            drawSingleConnection(sourceElementId, targetStepId) {
+                const toStepCard = document.getElementById(`step-card-${targetStepId}`);
+                if (!toStepCard) return;
+
+                let fromElement;
+                if (this.arrowMode === 'navigator') {
+                    fromElement = document.querySelector(`[data-nav-id="${sourceElementId}"]`);
+                } else {
+                    const sourceStepId = this.findComponentStepId(sourceElementId) || sourceElementId;
+                    const sourceStepCard = document.getElementById(`step-card-${sourceStepId}`);
+                    if (sourceStepCard) {
+                         const isSourceCollapsed = sourceStepCard.querySelector('.step-body').classList.contains('hidden');
+                         fromElement = document.getElementById(`component-item-${sourceElementId}`);
+                         if (!fromElement || isSourceCollapsed) {
+                            fromElement = sourceStepCard;
+                         }
+                    }
+                }
+
+                if (!fromElement) return;
+
+                const fromRect = fromElement.getBoundingClientRect();
+                const toRect = toStepCard.getBoundingClientRect();
+
+                let startX, startY, endX, endY, controlX1, controlX2;
+
+                startY = fromRect.top + fromRect.height / 2;
+                endY = toRect.top + toRect.height / 2;
+
+                if (this.arrowMode === 'navigator') {
+                    startX = fromRect.right;
+                    endX = toRect.left;
+                    controlX1 = startX + 60;
+                    controlX2 = endX - 60;
+                } else { // editor mode
+                    startX = fromRect.left;
+                    endX = toRect.left;
+                    const offset = 60;
+                    controlX1 = startX - offset;
+                    controlX2 = endX - offset;
+                }
+
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                path.setAttribute('d', `M ${startX} ${startY} C ${controlX1} ${startY}, ${controlX2} ${endY}, ${endX} ${endY}`);
+                path.classList.add('connection-line');
+                
+                const arrow = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+                arrow.setAttribute('points', `${endX},${endY} ${endX - 10},${endY - 5} ${endX - 10},${endY + 5}`);
+                arrow.classList.add('connection-arrow');
+
+                this.connectionsContainer.appendChild(path);
+                this.connectionsContainer.appendChild(arrow);
+            }
+            
+            addNewStep() {
+                const newId = this.generateUniqueId('step');
+                const newStep = { id: newId, components: [] };
+                this.scenarioData.steps.push(newStep);
+                
+                this.addStepToViewState(newId);
+
+                this.renderAll();
+                const newCard = document.getElementById(`step-card-${newId}`);
+                newCard?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                newCard?.querySelector('.step-id-input')?.focus();
+            }
+
+            handleDelete(stepId, componentId) {
+                if (componentId) {
+                    if (!confirm("Вы уверены, что хотите удалить этот компонент?")) return;
+                    const step = this.findStep(stepId);
+                    if (step) step.components = step.components.filter(c => c.component_id !== componentId);
+                } else {
+                    if (!confirm(`Вы уверены, что хотите удалить шаг "${stepId}"?`)) return;
+                    this.scenarioData.steps = this.scenarioData.steps.filter(s => s.id !== stepId);
+                    this.removeStepFromViewState(stepId);
+                }
+                this.renderAll();
+            }
+
+            handleDuplicate(stepId, componentId) {
+                if (componentId) {
+                    const step = this.findStep(stepId);
+                    const component = this.findComponent(stepId, componentId);
+                    if (step && component) {
+                        const componentIndex = step.components.findIndex(c => c.component_id === componentId);
+                        const newComponent = JSON.parse(JSON.stringify(component));
+                        newComponent.component_id = this.generateUUID();
+                        step.components.splice(componentIndex + 1, 0, newComponent);
+                    }
+                } else {
+                    const step = this.findStep(stepId);
+                    if (step) {
+                        const stepIndex = this.scenarioData.steps.findIndex(s => s.id === stepId);
+                        const newStep = JSON.parse(JSON.stringify(step));
+                        newStep.id = this.generateUniqueId(step.id);
+                        (newStep.components || []).forEach(c => c.component_id = this.generateUUID());
+                        this.scenarioData.steps.splice(stepIndex + 1, 0, newStep);
+                        this.addStepToViewState(newStep.id, stepId);
+                    }
+                }
+                this.renderAll();
+            }
+
+            updateStepId(stepToUpdate, newId) {
+                const oldId = stepToUpdate.id;
+                if (oldId === newId || !newId) return;
+                
+                const isUnique = !this.scenarioData.steps.some(s => s.id === newId);
+                if (!isUnique) {
+                    this.showToast(`ID "${newId}" уже используется!`, 'error');
+                    this.validateAllStepIds(); 
+                    return;
+                }
+
+                stepToUpdate.id = newId;
+                this.scenarioData.steps.forEach(s => {
+                    (s.components || []).forEach(c => {
+                        if (c.next_step_id === oldId) c.next_step_id = newId;
+                    });
+                });
+                this.updateStepIdInViewState(oldId, newId);
+                this.renderAll();
+            }
+
+            openEditModal(stepId, componentId) {
+                const component = this.findComponent(stepId, componentId);
+                if (!component) return;
+                const step = this.findStep(stepId);
+                this.modal.context = { stepId, componentId, data: JSON.parse(JSON.stringify(component)) };
+                const componentInfo = this.componentTypes[component.type] || { name: component.type };
+                this.modal.title.textContent = `Редактирование: ${componentInfo.name}`;
+                this.modal.formContainer.innerHTML = this.buildModalForm(this.modal.context.data, step);
+                this.modal.backdrop.classList.remove('hidden');
+                this.modal.formContainer.querySelector('input, textarea, select')?.focus();
+            }
+
+            closeModal() {
+                this.modal.backdrop.classList.add('hidden');
+                this.modal.context = null;
+            }
+
+            saveModalChanges() {
+                if (!this.modal.context) return;
+                const form = this.modal.formContainer.querySelector('form');
+                const formData = new FormData(form);
+                const editedData = this.modal.context.data;
+                
+                // Handle checkboxes by setting them to false first.
+                if (editedData.type === 'activate_point' || editedData.type === 'condition_movement') {
+                    editedData.entire_group = false;
+                }
+                if (editedData.type === 'follow_camera') {
+                    editedData.smooth = false;
+                }
+                if (editedData.type === 'use_chat_code') {
+                    editedData.hidden = false;
+                }
+
+
+                for (let [key, value] of formData.entries()) {
+                    if (key.startsWith('mobs.')) continue;
+                    
+                    let processedValue;
+                    if (key === 'entire_group' || key === 'smooth' || key === 'hidden') {
+                        processedValue = true;
+                    } else {
+                        const isNumeric = !isNaN(parseFloat(value)) && isFinite(value) && value.trim() !== "";
+                        processedValue = isNumeric ? parseFloat(value) : (value === 'undefined' ? undefined : value);
+                    }
+                    
+                    if (key.includes('.')) {
+                        const keys = key.split('.');
+                        let current = editedData;
+                        for (let i = 0; i < keys.length - 1; i++) current = current[keys[i]] = current[keys[i]] || {};
+                        current[keys[keys.length - 1]] = processedValue;
+                    } else {
+                        editedData[key] = processedValue;
+                    }
+                }
+                if (editedData.type === 'defeat_mobs') {
+                    editedData.mobs = [];
+                    form.querySelectorAll('.mob-item').forEach(item => {
+                        editedData.mobs.push({ mob_id: parseInt(item.querySelector('[name="mobs.mob_id"]').value) || 0, count: parseInt(item.querySelector('[name="mobs.count"]').value) || 1, level: parseInt(item.querySelector('[name="mobs.level"]').value) || 1, power: parseInt(item.querySelector('[name="mobs.power"]').value) || 1, boss: item.querySelector('[name="mobs.boss"]').checked, });
+                    });
+                    if (editedData.mode !== 'survival') delete editedData.duration;
+                    if (editedData.mode !== 'wave') delete editedData.kill_target;
+                }
+
+                const originalComponent = this.findComponent(this.modal.context.stepId, this.modal.context.componentId);
+                Object.assign(originalComponent, editedData);
+
+                if (originalComponent.type === 'door_control' && originalComponent.action === 'remove') {
+                    delete originalComponent.position;
+                }
+
+                this.closeModal();
+                this.renderAll();
+            }
+
+            buildModalForm(data, step) {
+                let formHtml = `<form onsubmit="return false;"><label class="block text-sm font-medium text-slate-700 mb-1">Переход к шагу (если нужно):</label>`;
+                const select = document.createElement('select');
+                select.name = 'next_step_id';
+                select.className = 'w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500';
+                this.populateStepDropdown(select, data.next_step_id);
+                formHtml += select.outerHTML;
+
+                const labelClass = "class='block text-sm font-medium text-slate-700 mb-1'";
+                const inputClass = "class='w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500'";
+
+                // Show delay for sequential logic OR for follow_camera
+                if (data.type === 'follow_camera' || (step && step.completion_logic === 'sequential')) {
+                     formHtml += `<label ${labelClass} class="mt-4">Задержка (мс):</label><input type="number" name="delay" value="${data.delay || 0}" ${inputClass}>`;
+                }
+
+                formHtml += `<hr class="my-5 border-slate-200">`;
+                
+                switch (data.type) {
+                    case 'message': 
+                        formHtml += `<label ${labelClass}>Тип сообщения:</label>
+                                   <select name="mode" ${inputClass}>
+                                       <option value="full" ${data.mode === 'full' ? 'selected' : ''}>Все (Броадкаст и чат)</option>
+                                       <option value="broadcast" ${data.mode === 'broadcast' ? 'selected' : ''}>Броадкаст</option>
+                                       <option value="chat" ${data.mode === 'chat' ? 'selected' : ''}>Чат</option>
+                                   </select>
+                                   <label ${labelClass} class="mt-4">Текст сообщения:</label>
+                                   <textarea name="text" rows="4" ${inputClass}>${data.text || ''}</textarea>`; 
+                        break;
+                    case 'wait': formHtml += `<label ${labelClass}>Длительность (в секундах):</label><input type="number" name="duration" value="${data.duration || 5}" ${inputClass}>`; break;
+                    case 'use_chat_code': 
+                        formHtml += `<label ${labelClass}>Кодовое слово:</label><input type="text" name="code" value="${data.code || ''}" ${inputClass}>
+                                   <div class="mt-4"><label class="flex items-center text-sm"><input type="checkbox" name="hidden" ${data.hidden ? 'checked' : ''} class="rounded border-slate-300 text-blue-600 shadow-sm focus:ring-blue-500 mr-2">Скрыть ключевое слово</label></div>`; 
+                        break;
+                    case 'door_control':
+                        const doorKeys = this.collectAllDoorKeys();
+                        formHtml += `<datalist id="door-keys-list">${doorKeys.map(key => `<option value="${key}">`).join('')}</datalist>
+                                   <label ${labelClass}>Действие:</label><select name="action" ${inputClass}><option value="create" ${data.action === 'create' ? 'selected' : ''}>Создать</option><option value="remove" ${data.action === 'remove' ? 'selected' : ''}>Удалить</option></select>
+                                   <label ${labelClass} class="mt-4">Ключ/Имя двери (key):</label><input type="text" name="key" value="${data.key || ''}" list="door-keys-list" ${inputClass}>
+                                   <div id="door-position-fields" class="${data.action === 'remove' ? 'hidden' : ''}"><div class="grid grid-cols-2 gap-4 mt-4"><div><label ${labelClass}>Позиция X:</label><input type="number" name="position.x" value="${data.position?.x || 0}" ${inputClass}></div><div><label ${labelClass}>Позиция Y:</label><input type="number" name="position.y" value="${data.position?.y || 0}" ${inputClass}></div></div></div>`;
+                        break;
+                    case 'defeat_mobs':
+                        formHtml += this.buildDefeatMobsForm(data);
+                        break;
+                    case 'follow_camera':
+                        formHtml += `<div class="grid grid-cols-2 gap-4 mt-4"><div><label ${labelClass}>Позиция X:</label><input type="number" name="position.x" value="${data.position?.x || 0}" ${inputClass}></div><div><label ${labelClass}>Позиция Y:</label><input type="number" name="position.y" value="${data.position?.y || 0}" ${inputClass}></div></div>
+                                   <div class="mt-4"><label class="flex items-center text-sm"><input type="checkbox" name="smooth" ${data.smooth ? 'checked' : ''} class="rounded border-slate-300 text-blue-600 shadow-sm focus:ring-blue-500 mr-2">Плавное перемещение</label></div>`;
+                        break;
+                    case 'condition_movement':
+                        formHtml += `<div class="grid grid-cols-2 gap-4"><div><label ${labelClass}>Позиция X:</label><input type="number" name="position.x" value="${data.position?.x || 0}" ${inputClass}></div><div><label ${labelClass}>Позиция Y:</label><input type="number" name="position.y" value="${data.position?.y || 0}" ${inputClass}></div></div>
+                                   <div class="mt-4"><label class="flex items-center text-sm"><input type="checkbox" name="entire_group" ${data.entire_group ? 'checked' : ''} class="rounded border-slate-300 text-blue-600 shadow-sm focus:ring-blue-500 mr-2">Для всей группы</label></div>`;
+                        break;
+                    case 'teleport':
+                        formHtml += `<div class="grid grid-cols-2 gap-4"><div><label ${labelClass}>Позиция X:</label><input type="number" name="position.x" value="${data.position?.x || 0}" ${inputClass}></div><div><label ${labelClass}>Позиция Y:</label><input type="number" name="position.y" value="${data.position?.y || 0}" ${inputClass}></div></div>`;
+                        break;
+                    case 'activate_point':
+                        formHtml += `<label ${labelClass}>Текст действия (action_text):</label><input type="text" name="action_text" value="${data.action_text || ''}" ${inputClass}>
+                                   <label ${labelClass} class="mt-4">Длительность активации (сек):</label><input type="number" name="duration" value="${data.duration || 5}" ${inputClass}>
+                                   <div class="grid grid-cols-2 gap-4 mt-4"><div><label ${labelClass}>Позиция X:</label><input type="number" name="position.x" value="${data.position?.x || 0}" ${inputClass}></div><div><label ${labelClass}>Позиция Y:</label><input type="number" name="position.y" value="${data.position?.y || 0}" ${inputClass}></div></div>
+                                   <div class="mt-4"><label class="flex items-center text-sm"><input type="checkbox" name="entire_group" ${data.entire_group ? 'checked' : ''} class="rounded border-slate-300 text-blue-600 shadow-sm focus:ring-blue-500 mr-2">Для всей группы</label></div>`;
+                        break;
+                    default: formHtml += `<p>Просмотр JSON:</p><textarea rows="8" class="w-full font-mono text-xs" readonly>${JSON.stringify(data, null, 2)}</textarea>`;
+                }
+                formHtml += `</form>`;
+                
+                setTimeout(() => {
+                    if (data.type === 'defeat_mobs') this.initDefeatMobsEditor(data);
+                    if (data.type === 'door_control') {
+                        const actionSelect = this.modal.formContainer.querySelector('select[name="action"]');
+                        const positionFields = this.modal.formContainer.querySelector('#door-position-fields');
+                        if (actionSelect && positionFields) {
+                            actionSelect.addEventListener('change', (e) => {
+                                positionFields.classList.toggle('hidden', e.target.value === 'remove');
+                            });
+                        }
+                    }
+                }, 0);
+                return formHtml;
+            }
+
+            buildDefeatMobsForm(data) {
+                const labelClass = "class='block text-sm font-medium text-slate-700 mb-1'";
+                const inputClass = "class='w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500'";
+                return `
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label ${labelClass}>Радиус (radius):</label>
+                            <input type="number" name="radius" value="${data.radius || 100}" ${inputClass}>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-4 mt-4">
+                        <div>
+                            <label ${labelClass}>Позиция X:</label>
+                            <input type="number" name="position.x" value="${data.position?.x || 0}" ${inputClass}>
+                        </div>
+                        <div>
+                            <label ${labelClass}>Позиция Y:</label>
+                            <input type="number" name="position.y" value="${data.position?.y || 0}" ${inputClass}>
+                        </div>
+                    </div>
+                    <hr class="my-4 border-slate-200">
+                    <label ${labelClass}>Режим:</label>
+                    <select name="mode" id="defeat-mobs-mode" ${inputClass}>
+                        <option value="annihilation" ${!data.mode || data.mode === 'annihilation' ? 'selected' : ''}>Уничтожение</option>
+                        <option value="wave" ${data.mode === 'wave' ? 'selected' : ''}>Волна</option>
+                        <option value="survival" ${data.mode === 'survival' ? 'selected' : ''}>Выживание</option>
+                    </select>
+                    <div id="wave-fields-container" class="hidden mt-4">
+                        <label ${labelClass}>Цель убийств (для 'wave'):</label><input type="number" name="kill_target" value="${data.kill_target || 10}" ${inputClass}>
+                    </div>
+                    <div id="survival-fields-container" class="hidden mt-4">
+                        <label ${labelClass}>Длительность в секундах (для 'survival'):</label><input type="number" name="duration" value="${data.duration || 60}" ${inputClass}>
+                    </div>
+                    <h4 class="font-bold text-slate-800 mt-6 mb-2">Список мобов:</h4>
+                    <div id="mobs-list-container" class="space-y-2"></div>
+                    <button type="button" class="add-sub-item-btn mt-2 bg-blue-500 text-white font-semibold text-sm py-1.5 px-3 rounded-md hover:bg-blue-600 transition-colors flex items-center gap-2">
+                        <i class="fa-solid fa-plus"></i> Добавить моба
+                    </button>`;
+            }
+
+            initDefeatMobsEditor(componentData) {
+                const modeSelect = this.modal.formContainer.querySelector('#defeat-mobs-mode');
+                const waveFields = this.modal.formContainer.querySelector('#wave-fields-container');
+                const survivalFields = this.modal.formContainer.querySelector('#survival-fields-container');
+                const toggleModeFields = () => {
+                    const currentMode = modeSelect.value;
+                    waveFields.classList.toggle('hidden', currentMode !== 'wave');
+                    survivalFields.classList.toggle('hidden', currentMode !== 'survival');
+                };
+                modeSelect.addEventListener('change', toggleModeFields);
+                toggleModeFields();
+
+                const container = this.modal.formContainer.querySelector('#mobs-list-container');
+                const addBtn = this.modal.formContainer.querySelector('.add-sub-item-btn');
+                
+                const createMobElement = (mob) => {
+                    const div = document.createElement('div');
+                    div.className = 'mob-item bg-slate-50 p-3 rounded-md border border-slate-200 relative';
+                    const uniqueId = `boss-check-${this.generateUUID()}`;
+                    
+                    div.innerHTML = `
+                        <div class="absolute top-2 right-2"><button type="button" class="remove-mob-btn text-slate-400 hover:text-red-500"><i class="fa-solid fa-times"></i></button></div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div><label class="block text-xs font-medium text-slate-600 mb-1">ID Моба:</label><input type="number" name="mobs.mob_id" value="${mob.mob_id || 0}" class="w-full text-sm rounded-md border-slate-300"></div>
+                            <div><label class="block text-xs font-medium text-slate-600 mb-1">Количество:</label><input type="number" name="mobs.count" value="${mob.count || 1}" class="w-full text-sm rounded-md border-slate-300"></div>
+                            <div><label class="block text-xs font-medium text-slate-600 mb-1">Уровень:</label><input type="number" name="mobs.level" value="${mob.level || 1}" class="w-full text-sm rounded-md border-slate-300"></div>
+                            <div><label class="block text-xs font-medium text-slate-600 mb-1">Сила:</label><input type="number" name="mobs.power" value="${mob.power || 1}" class="w-full text-sm rounded-md border-slate-300"></div>
+                        </div>
+                        <div class="mt-3"><label class="flex items-center text-sm"><input type="checkbox" name="mobs.boss" id="${uniqueId}" ${mob.boss ? 'checked' : ''} class="rounded border-slate-300 text-blue-600 shadow-sm focus:ring-blue-500 mr-2">Является боссом</label></div>`;
+                    div.querySelector('.remove-mob-btn').addEventListener('click', () => div.remove());
+                    return div;
+                };
+
+                (componentData.mobs || []).forEach(mob => container.appendChild(createMobElement(mob)));
+                addBtn.addEventListener('click', () => {
+                    const newMobEl = createMobElement({ mob_id: 21, count: 1, level: 1, power: 1, boss: false });
+                    container.appendChild(newMobEl);
+                    newMobEl.querySelector('input').focus();
+                });
+            }
+
+            async loadScenarioList() {
+                try {
+                    const response = await fetch('api.php?action=list');
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    const data = await response.json();
+                    if (data.success && data.files.length > 0) {
+                        this.scenarioSelect.innerHTML = data.files.map(file => `<option value="${file}">${file}</option>`).join('');
+                        await this.loadScenario(data.files[0]);
+                    } else this.loadScenarioData({ steps: [], editor_data: { groups: [] } }, 'new_scenario.json');
+                } catch (error) {
+                    this.showToast(`Ошибка загрузки списка: ${error.message}`, 'error');
+                }
+            }
+            async loadScenario(filename) {
+                if (!filename) return;
+                try {
+                    const response = await fetch(`api.php?file=${filename}`);
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    const data = await response.json();
+                    if (data.error) throw new Error(data.error);
+                    this.loadScenarioData(data, filename);
+                    this.showToast(`Сценарий "${filename}" загружен.`, 'success');
+                } catch (error) {
+                    this.showToast(`Ошибка загрузки сценария: ${error.message}`, 'error');
+                    this.loadScenarioData({ steps: [], editor_data: { groups: [] } }, filename); // Load empty state on error
+                }
+            }
+            loadScenarioData(data, filename) {
+                if (!data || !Array.isArray(data.steps)) {
+                    this.showToast("Ошибка: формат файла сценария некорректен.", "error");
+                    this.scenarioData = { steps: [], editor_data: { groups: [] } };
+                } else {
+                    this.scenarioData = {
+                        steps: data.steps,
+                        editor_data: data.editor_data || { groups: [] }
+                    };
+                    this.scenarioData.steps.forEach((step, index) => {
+                        if (!step || typeof step !== 'object') step = { id: `invalid_step_${index}` };
+                        if (!step.id) step.id = this.generateUniqueId(`step_${index}`);
+                        (step.components || []).forEach(c => { if (!c.component_id) c.component_id = this.generateUUID(); });
+                    });
+                }
+                this.uiState.collapsedSteps.clear(); // Clear old state on new scenario load
+                this.renderAll();
+            }
+            async saveScenario() {
+                if (!this.validateAllStepIds()) return this.showToast('Есть шаги с некорректными ID. Исправьте!', 'error');
+                let filename = this.saveAsInput.value.trim() || this.scenarioSelect.value;
+                if (!filename) return this.showToast('Введите имя файла для сохранения!', 'error');
+                if (!filename.endsWith('.json')) filename += '.json';
+                
+                const stepMap = new Map(this.scenarioData.steps.map(s => [s.id, s]));
+                const orderedSteps = [];
+                
+                this.scenarioData.editor_data.groups.forEach(group => {
+                    group.steps.forEach(stepId => {
+                        const step = stepMap.get(stepId);
+                        if (step) {
+                            orderedSteps.push(step);
+                        }
+                    });
+                });
+                
+                const stepsInGroups = new Set(orderedSteps.map(s => s.id));
+                this.scenarioData.steps.forEach(step => {
+                    if (!stepsInGroups.has(step.id)) {
+                        orderedSteps.push(step);
+                    }
+                });
+
+                const stepsToSave = JSON.parse(JSON.stringify(orderedSteps));
+
+                stepsToSave.forEach(step => {
+                    (step.components || []).forEach(c => {
+                        delete c.component_id;
+                        if (!c.next_step_id) {
+                            delete c.next_step_id;
+                        }
+                        if (c.type !== 'follow_camera' && (step.completion_logic !== 'sequential' || !c.delay)) {
+                            delete c.delay;
+                        } else if (c.type === 'follow_camera' && !c.delay) {
+                            delete c.delay;
+                        }
+                    });
+                    if (!step.delay) {
+                        delete step.delay;
+                    }
+                    if (step.completion_logic === 'all_of') {
+                        delete step.completion_logic;
+                    }
+                    if (!step.msg_info) {
+                        delete step.msg_info;
+                    }
+                });
+
+                const contentToSave = {
+                    editor_data: this.scenarioData.editor_data,
+                    steps: stepsToSave
+                };
+                
+                try {
+                    const response = await fetch('api.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ filename, content: contentToSave }) });
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    const result = await response.json();
+                    if (result.success) {
+                        this.showToast(result.message, 'success');
+                        const isNewFile = !Array.from(this.scenarioSelect.options).some(opt => opt.value === filename);
+                        if (isNewFile) {
+                            const option = document.createElement('option');
+                            option.value = filename;
+                            option.textContent = filename;
+                            this.scenarioSelect.appendChild(option);
+                        }
+                        this.scenarioSelect.value = filename;
+                        this.saveAsInput.value = '';
+                    } else this.showToast(result.error, 'error');
+                } catch (error) {
+                    this.showToast(`Ошибка сохранения: ${error.message}`, 'error');
+                }
+            }
+
+            async deleteScenario() {
+                const filename = this.scenarioSelect.value;
+                if (!filename || !confirm(`Вы уверены, что хотите удалить сценарий "${filename}"? Это действие необратимо.`)) return;
+
+                try {
+                    const response = await fetch('api.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'delete', filename }) });
+                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                    const result = await response.json();
+                    if (result.success) {
+                        this.showToast(result.message, 'success');
+                        await this.loadScenarioList();
+                    } else {
+                        this.showToast(result.error, 'error');
+                    }
+                } catch (error) {
+                    this.showToast(`Ошибка удаления: ${error.message}`, 'error');
+                }
+            }
+
+            showToast(message, type = 'success') {
+                const toast = document.createElement('div');
+                toast.className = `toast ${type === 'success' ? 'bg-green-500' : 'bg-red-500'} text-white font-semibold py-3 px-5 rounded-lg shadow-lg transition-all duration-300 transform translate-x-full`;
+                toast.textContent = message;
+                this.toastContainer.appendChild(toast);
+                setTimeout(() => toast.classList.remove('translate-x-full'), 10);
+                setTimeout(() => {
+                    toast.classList.add('translate-x-full');
+                    toast.addEventListener('transitionend', () => toast.remove());
+                }, 3000);
+            }
+            debounce(func, delay) {
+                let timeout;
+                return (...args) => {
+                    clearTimeout(timeout);
+                    timeout = setTimeout(() => func.apply(this, args), delay);
+                };
+            }
+            findStep(stepId) { return this.scenarioData.steps.find(s => s.id === stepId); }
+            findComponent(stepId, componentId) { return this.findStep(stepId)?.components.find(c => c.component_id === componentId); }
+            findComponentStepId(componentId) {
+                for (const step of this.scenarioData.steps) {
+                    if (step.components?.some(c => c.component_id === componentId)) {
+                        return step.id;
+                    }
+                }
+                return null;
+            }
+            generateUniqueId(base) {
+                let newId = base.replace(/[^a-zA-Z0-9_]/g, '') || 'step';
+                let counter = 1;
+                const allIds = new Set(this.scenarioData.steps.map(s => s.id));
+                while (allIds.has(newId)) newId = `${base}_${counter++}`;
+                return newId;
+            }
+            generateUUID() { return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)); }
+            populateStepDropdown(select, selectedValue, excludeId = null) {
+                select.innerHTML = `<option value="">-- Не выбрано --</option>` + this.scenarioData.steps.filter(s => s.id !== excludeId).map(s => `<option value="${s.id}" ${s.id === selectedValue ? 'selected' : ''}>${s.id}</option>`).join('');
+            }
+            validateAllStepIds() {
+                const ids = new Map();
+                let allValid = true;
+                this.editorContainer.querySelectorAll('.step-id-input').forEach(input => {
+                    const currentId = input.value.trim();
+                    input.classList.remove('ring-2', 'ring-red-500');
+                    if (!currentId || !/^[a-zA-Z0-9_]+$/.test(currentId) || ids.has(currentId)) {
+                        input.classList.add('ring-2', 'ring-red-500');
+                        allValid = false;
+                        if (ids.has(currentId)) ids.get(currentId).classList.add('ring-2', 'ring-red-500');
+                    } else ids.set(currentId, input);
+                });
+                return allValid;
+            }
+            collectAllDoorKeys() {
+                const keys = new Set();
+                this.scenarioData.steps.forEach(step => {
+                    (step.components || []).forEach(data => {
+                        if (data.type === 'door_control' && data.action === 'create' && data.key) {
+                            keys.add(data.key);
+                        }
+                    });
+                });
+                return Array.from(keys);
+            }
+            getComponentSummary(data) {
+                try {
+                    switch (data.type) {
+                        case 'message': return `"${(data.text || '').substring(0, 50)}..."`;
+                        case 'door_control': return `Действие: <b>${data.action}</b>, Ключ: <b>${data.key || 'нет'}</b>`;
+                        case 'use_chat_code': return `Код: "<b>${data.code}</b>", переход → <b>${data.next_step_id || '?'}</b>`;
+                        case 'defeat_mobs': return `Режим: <b>${data.mode || 'annihilation'}</b>, ${data.mobs?.length || 0} групп(ы)`;
+                        case 'wait': return `Ожидание: <b>${data.duration}</b> сек.`;
+                        case 'follow_camera': return `К точке (<b>${data.position?.x}, ${data.position?.y}</b>), ${data.smooth ? 'плавно' : 'резко'}`;
+                        case 'condition_movement': return `Прийти в точку (<b>${data.position?.x}, ${data.position?.y}</b>), ${data.entire_group ? 'вся группа' : 'один игрок'}`;
+                        case 'teleport': return `В точку (<b>${data.position?.x}, ${data.position?.y}</b>)`;
+                        case 'activate_point': return `Текст: "<b>${data.action_text || ''}</b>", Время: <b>${data.duration}</b> сек.`;
+                        default: return ``;
+                    }
+                } catch { return "Ошибка в данных"; }
+            }
+
+            //==================================================
+            // VIEW STATE MANAGEMENT (Groups, Collapse State)
+            //==================================================
+
+            getCurrentViewState() {
+                const groups = this.scenarioData.editor_data.groups || [];
+                const stepsInGroups = new Set();
+                groups.forEach(g => {
+                    g.steps.forEach(stepId => stepsInGroups.add(stepId));
+                });
+
+                const ungroupedSteps = this.scenarioData.steps
+                    .map(s => s.id)
+                    .filter(id => !stepsInGroups.has(id));
+
+                return { groups, ungroupedSteps };
+            }
+            
+            addNewGroup() {
+                const groups = this.scenarioData.editor_data.groups;
+                const newGroup = {
+                    id: `group_${this.generateUUID()}`,
+                    name: `Новая группа ${groups.length + 1}`,
+                    steps: [],
+                    collapsed: false
+                };
+                groups.push(newGroup);
+                this.renderAll();
+            }
+            
+            openDeleteGroupModal(groupId) {
+                this.deleteGroupModal.contextGroupId = groupId;
+                this.deleteGroupModal.backdrop.classList.remove('hidden');
+            }
+
+            closeDeleteGroupModal() {
+                this.deleteGroupModal.contextGroupId = null;
+                this.deleteGroupModal.backdrop.classList.add('hidden');
+            }
+
+            handleDeleteGroup(deleteSteps) {
+                const groupId = this.deleteGroupModal.contextGroupId;
+                if (!groupId) return;
+
+                const groups = this.scenarioData.editor_data.groups;
+                const groupIndex = groups.findIndex(g => g.id === groupId);
+                if (groupIndex > -1) {
+                    if (deleteSteps) {
+                        const stepsToDelete = new Set(groups[groupIndex].steps);
+                        this.scenarioData.steps = this.scenarioData.steps.filter(s => !stepsToDelete.has(s.id));
+                    }
+                    groups.splice(groupIndex, 1);
+                    this.renderAll();
+                }
+                this.closeDeleteGroupModal();
+            }
+
+            duplicateGroup(groupId) {
+                const groups = this.scenarioData.editor_data.groups;
+                const sourceGroupIndex = groups.findIndex(g => g.id === groupId);
+                if (sourceGroupIndex === -1) return;
+
+                const sourceGroup = groups[sourceGroupIndex];
+                const newGroup = JSON.parse(JSON.stringify(sourceGroup));
+                
+                newGroup.id = `group_${this.generateUUID()}`;
+                newGroup.name = `${sourceGroup.name} (копия)`;
+                newGroup.steps = [];
+
+                const idMap = new Map();
+
+                sourceGroup.steps.forEach(stepId => {
+                    const sourceStep = this.findStep(stepId);
+                    if (sourceStep) {
+                        const newStep = JSON.parse(JSON.stringify(sourceStep));
+                        newStep.id = this.generateUniqueId(sourceStep.id);
+                        idMap.set(sourceStep.id, newStep.id);
+                        
+                        (newStep.components || []).forEach(c => c.component_id = this.generateUUID());
+                        
+                        this.scenarioData.steps.push(newStep);
+                        newGroup.steps.push(newStep.id);
+                    }
+                });
+
+                newGroup.steps.forEach(newStepId => {
+                    const newStep = this.findStep(newStepId);
+                    (newStep.components || []).forEach(c => {
+                        if (c.next_step_id && idMap.has(c.next_step_id)) {
+                            c.next_step_id = idMap.get(c.next_step_id);
+                        }
+                    });
+                });
+
+                groups.splice(sourceGroupIndex + 1, 0, newGroup);
+                this.renderAll();
+            }
+
+            toggleGroupCollapse(groupId) {
+                const groups = this.scenarioData.editor_data.groups;
+                const group = groups.find(g => g.id === groupId);
+                if (group) {
+                    group.collapsed = !group.collapsed;
+                    this.renderNavigator();
+                    this.initAllSortables(); 
+                    requestAnimationFrame(() => this.drawConnections());
+                }
+            }
+            
+            renameGroup(groupId, newName) {
+                const groups = this.scenarioData.editor_data.groups;
+                const group = groups.find(g => g.id === groupId);
+                if (group && group.name !== newName) {
+                    group.name = newName;
+                    this.renderAll();
+                }
+            }
+
+            addStepToViewState(stepId, afterStepId) {
+                const groups = this.scenarioData.editor_data.groups;
+                let targetGroup = null;
+                let targetIndex = -1;
+
+                if (afterStepId) {
+                    for (const group of groups) {
+                        const idx = group.steps.indexOf(afterStepId);
+                        if (idx > -1) {
+                            targetGroup = group;
+                            targetIndex = idx + 1;
+                            break;
+                        }
+                    }
+                }
+
+                if (targetGroup) {
+                    targetGroup.steps.splice(targetIndex, 0, stepId);
+                } else {
+                    let firstGroup = groups.find(g => !g.isDefault);
+                    if (firstGroup) {
+                        firstGroup.steps.push(stepId);
+                    }
+                }
+            }
+            
+            removeStepFromViewState(stepId) {
+                const groups = this.scenarioData.editor_data.groups;
+                groups.forEach(g => {
+                    const index = g.steps.indexOf(stepId);
+                    if (index > -1) {
+                        g.steps.splice(index, 1);
+                    }
+                });
+            }
+
+            updateStepIdInViewState(oldId, newId) {
+                const groups = this.scenarioData.editor_data.groups;
+                groups.forEach(g => {
+                    const index = g.steps.indexOf(oldId);
+                    if (index > -1) {
+                        g.steps[index] = newId;
+                    }
+                });
+            }
+
+            initAllSortables() {
+                this.sortableInstances.forEach(s => s.destroy());
+                this.sortableInstances = [];
+
+                const sortableConfig = (groupName, onEndCallback, handleClass) => ({
+                    group: groupName,
+                    animation: 150,
+                    ghostClass: 'sortable-ghost',
+                    handle: handleClass,
+                    onEnd: onEndCallback
+                });
+                
+                const createOnEndHandler = (callback) => (e) => {
+                    callback(e);
+                    requestAnimationFrame(() => this.renderAll());
+                };
+                
+                // Sort Groups in Navigator
+                const onEndGroupSort = createOnEndHandler(e => {
+                    const movedGroup = this.scenarioData.editor_data.groups.splice(e.oldIndex, 1)[0];
+                    this.scenarioData.editor_data.groups.splice(e.newIndex, 0, movedGroup);
+                });
+                this.sortableInstances.push(new Sortable(this.navigatorTree, sortableConfig('groups', onEndGroupSort, '.nav-group-header')));
+
+                // Sort steps in editor (between groups)
+                document.querySelectorAll('.step-group').forEach(listEl => {
+                     const onEnd = createOnEndHandler(e => {
+                        const stepId = e.item.dataset.stepId;
+                        if (!stepId) return;
+                        const toGroupId = e.to.dataset.groupId;
+                        const viewStateGroups = this.scenarioData.editor_data.groups;
+                        viewStateGroups.forEach(group => {
+                            const index = group.steps.indexOf(stepId);
+                            if (index > -1) group.steps.splice(index, 1);
+                        });
+                        if (toGroupId !== 'ungrouped') {
+                            const targetGroup = viewStateGroups.find(g => g.id === toGroupId);
+                            if (targetGroup) {
+                                const newDomOrder = Array.from(e.to.children).map(li => li.dataset.stepId);
+                                const newIndex = newDomOrder.indexOf(stepId);
+                                if (newIndex > -1) {
+                                    targetGroup.steps.splice(newIndex, 0, stepId);
+                                } else {
+                                    targetGroup.steps.push(stepId);
+                                }
+                            }
+                        }
+                    });
+                    this.sortableInstances.push(new Sortable(listEl, sortableConfig('steps', onEnd, '.handle')));
+                });
+
+                // Sort components within steps (in editor)
+                document.querySelectorAll('.components-container').forEach(c => {
+                    const onEnd = createOnEndHandler(e => {
+                        const fromStep = this.findStep(e.from.closest('.step-card').dataset.stepId);
+                        const toStep = this.findStep(e.to.closest('.step-card').dataset.stepId);
+                        if (fromStep && toStep) {
+                            const [moved] = fromStep.components.splice(e.oldIndex, 1);
+                            toStep.components.splice(e.newIndex, 0, moved);
+                        }
+                    });
+                    this.sortableInstances.push(new Sortable(c, sortableConfig('components', onEnd, '.component-item')));
+                });
+                
+                // Sort steps in navigator
+                document.querySelectorAll('.nav-step-list').forEach(listEl => {
+                    const onEnd = createOnEndHandler(e => {
+                        const stepId = e.item.dataset.stepId;
+                        if (!stepId) return;
+                        const toGroupId = e.to.closest('.nav-group-wrapper').dataset.groupId;
+                        const viewStateGroups = this.scenarioData.editor_data.groups;
+                        viewStateGroups.forEach(group => {
+                            const index = group.steps.indexOf(stepId);
+                            if (index > -1) group.steps.splice(index, 1);
+                        });
+                        if (toGroupId !== 'ungrouped') {
+                            const targetGroup = viewStateGroups.find(g => g.id === toGroupId);
+                            if (targetGroup) {
+                                const newDomOrder = Array.from(e.to.children).map(li => li.dataset.stepId);
+                                const newIndex = newDomOrder.indexOf(stepId);
+                                if (newIndex > -1) {
+                                    targetGroup.steps.splice(newIndex, 0, stepId);
+                                } else {
+                                    targetGroup.steps.push(stepId);
+                                }
+                            }
+                        }
+                    });
+                    this.sortableInstances.push(new Sortable(listEl, sortableConfig('nav-steps', onEnd, '.nav-handle')));
+                });
+
+                // Sort components in navigator
+                document.querySelectorAll('.nav-component-list').forEach(l => {
+                    const onEnd = createOnEndHandler(e => {
+                        const fromStepId = e.from.dataset.parentStepId;
+                        const toStepId = e.to.dataset.parentStepId;
+                        const fromStep = this.findStep(fromStepId);
+                        const toStep = this.findStep(toStepId);
+                        if (fromStep && toStep) {
+                            const componentId = e.item.dataset.componentId;
+                            const oldCompIndex = fromStep.components.findIndex(c => c.component_id === componentId);
+                            if (oldCompIndex > -1) {
+                                const [moved] = fromStep.components.splice(oldCompIndex, 1);
+                                const newCompArray = Array.from(e.to.children).map(li => li.dataset.componentId);
+                                const newCompIndex = newCompArray.indexOf(componentId);
+                                toStep.components.splice(newCompIndex, 0, moved);
+                            }
+                        }
+                    });
+                    this.sortableInstances.push(new Sortable(l, sortableConfig('components', onEnd, '.nav-handle')));
+                });
+            }
+            showAddComponentMenu(button, stepId) {
+                const rect = button.getBoundingClientRect();
+                this.addComponentMenu.targetStepId = stepId;
+                const menu = this.addComponentMenu.element;
+                menu.innerHTML = Object.entries(this.componentTypes).map(([type, info]) =>
+                    `<div class="context-menu-item flex items-center gap-3 p-2 rounded-md hover:bg-slate-100 cursor-pointer" data-type="${type}"><i class="${info.icon} w-5 text-center text-slate-600"></i><div><div class="font-semibold text-slate-800">${info.name}</div><div class="text-xs text-slate-500">${info.desc}</div></div></div>`
+                ).join('');
+                menu.style.top = `${rect.bottom + window.scrollY + 5}px`;
+                menu.style.left = `${rect.left + window.scrollX}px`;
+                menu.classList.remove('hidden');
+            }
+            hideAddComponentMenu() { this.addComponentMenu.element.classList.add('hidden'); }
+            handleAddComponentAction(e) {
+                const item = e.target.closest('.context-menu-item');
+                if (!item) return;
+                const type = item.dataset.type;
+                const step = this.findStep(this.addComponentMenu.targetStepId);
+                if (type && step) {
+                    const newComponent = JSON.parse(JSON.stringify(this.componentTypes[type].default));
+                    newComponent.component_id = this.generateUUID();
+                    step.components = step.components || [];
+                    step.components.push(newComponent);
+                    this.renderAll();
+                }
+                this.hideAddComponentMenu();
+            }
+        }
+        document.addEventListener('DOMContentLoaded', () => new ScenarioEditor());
+    </script>
+</body>
+</html>
