@@ -480,7 +480,8 @@ int CPlayerBot::GetLevel() const
 
 void CPlayerBot::GetFormatedName(char* aBuffer, int BufferSize)
 {
-	if(m_BotType == TYPE_BOT_MOB || m_BotType == TYPE_BOT_QUEST_MOB || (m_BotType == TYPE_BOT_NPC && NpcBotInfo::ms_aNpcBot[m_MobID].m_Function == FUNCTION_NPC_GUARDIAN))
+	if((m_BotType == TYPE_BOT_MOB || m_BotType == TYPE_BOT_QUEST_MOB || (m_BotType == TYPE_BOT_NPC && NpcBotInfo::ms_aNpcBot[m_MobID].m_Function == FUNCTION_NPC_GUARDIAN))
+		&& GetHealth() < GetMaxHealth())
 	{
 		const int PercentHP = translate_to_percent(GetMaxHealth(), GetHealth());
 		str_format(aBuffer, BufferSize, "%s:%d%%", DataBotInfo::ms_aDataBot[m_BotID].m_aNameBot, clamp(PercentHP, 1, 100));
