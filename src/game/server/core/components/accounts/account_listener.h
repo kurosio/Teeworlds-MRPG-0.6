@@ -52,7 +52,6 @@ public:
 
 protected:
 	void OnPlayerLogin(CPlayer* pPlayer, CAccountData* pAccount) override;
-	void OnCharacterSpawn(CPlayer* pPlayer) override;
 	void OnPlayerProfessionLeveling(CPlayer* pPlayer, CProfession* pProfession, int NewLevel) override;
 };
 
