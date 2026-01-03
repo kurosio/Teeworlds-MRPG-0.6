@@ -2,6 +2,8 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "gamecontext.h"
 
+#include <game/server/core/balance/balance.h>
+
 #include <engine/storage.h>
 #include <engine/map.h>
 
@@ -691,6 +693,7 @@ void CGS::OnInit(int WorldID)
 	m_pServer = Kernel()->RequestInterface<IServer>();
 	m_pConsole = Kernel()->RequestInterface<IConsole>();
 	m_pStorage = Kernel()->RequestInterface<IStorageEngine>();
+	Balance::Init();
 
 	m_World.SetGameServer(this);
 	m_Events.SetGameServer(this);
