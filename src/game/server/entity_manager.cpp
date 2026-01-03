@@ -11,7 +11,7 @@
 #include "core/entities/items/drop_items.h"
 #include "core/entities/tools/flying_point.h"
 #include "core/entities/tools/laser_orbit.h"
-#include "core/entities/tools/loltext.h"
+#include "core/entities/tools/text.h"
 
 #include "core/components/skills/entities/heart_healer.h"
 #include "core/entities/weapons/rifle_tesla_serpent.h"
@@ -77,6 +77,11 @@ void CEntityManager::ExpFlyingPoint(vec2 Pos, int ClientID, int Exp, vec2 Force)
 
 void CEntityManager::Text(vec2 Pos, int Lifespan, const char* pText, bool* pResult) const
 {
+	Text(Pos, Lifespan, pText, EEntityTextType::Projectile, pResult);
+}
+
+void CEntityManager::Text(vec2 Pos, int Lifespan, const char* pText, EEntityTextType Type, bool* pResult) const
+{
 	if(!GS()->ArePlayersNearby(Pos, 800))
 	{
 		if(pResult)
@@ -85,20 +90,8 @@ void CEntityManager::Text(vec2 Pos, int Lifespan, const char* pText, bool* pResu
 	}
 	if(pResult)
 		*pResult = true;
-	CLoltext::Create(&GS()->m_World, nullptr, Pos, Lifespan, pText);
-}
 
-void CEntityManager::Text(CEntity* pParent, int Lifespan, const char* pText, bool* pResult) const
-{
-	if(!pParent || !GS()->ArePlayersNearby(pParent->GetPos(), 800))
-	{
-		if(pResult)
-			*pResult = false;
-		return;
-	}
-	if(pResult)
-		*pResult = true;
-	CLoltext::Create(&GS()->m_World, pParent, {}, Lifespan, pText);
+	CEntityText::Create(&GS()->m_World, Pos, Lifespan, pText, Type);
 }
 
 void CEntityManager::LaserOrbit(int ClientID, int Amount, LaserOrbitType Type, float Speed, float Radius, int LaserType, int64_t Mask) const

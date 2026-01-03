@@ -98,7 +98,7 @@ void CGuildHouse::UpdateText(int Lifetime) const
 {
 	// update text
 	const char* pName = IsPurchased() ? m_pGuild->GetName() : "FREE";
-	GS()->EntityManager()->Text(m_TextPosition, Lifetime - 5, pName);
+	GS()->EntityManager()->Text(m_TextPosition, Lifetime, pName, EEntityTextType::Laser);
 }
 
 void CGuildHouse::UpdateGuild(CGuild* pGuild)

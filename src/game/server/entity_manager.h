@@ -31,7 +31,7 @@ public:
 
 	// text
 	void Text(vec2 Pos, int Lifespan, const char* pText, bool* pResult = nullptr) const;
-	void Text(CEntity* pParent, int Lifespan, const char* pText, bool* pResult = nullptr) const;
+	void Text(vec2 Pos, int Lifespan, const char* pText, EEntityTextType Type, bool* pResult = nullptr) const;
 
 	// laser orbit
 	void LaserOrbit(int ClientID, int Amount, LaserOrbitType Type, float Speed, float Radius, int LaserType = LASERTYPE_RIFLE, int64_t Mask = -1) const;

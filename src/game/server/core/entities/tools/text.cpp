@@ -1,45 +1,50 @@
-#include "loltext.h"
+#include "text.h"
 
 #include <engine/server.h>
+#include <game/server/gamecontext.h>
 
-CLolPlasma::CLolPlasma(CGameWorld* pGameWorld, CEntity* pParent, vec2 Pos, int Lifespan)
+namespace
+{
+	constexpr int kCharWidth = 3;
+	constexpr int kCharHeight = 5;
+	constexpr int kCharSpacing = 1;
+	constexpr int kProjectileSpacing = 7;
+	constexpr int kLaserSpacing = 14;
+
+	int EntityTextSpacing(EEntityTextType Type)
+	{
+		return Type == EEntityTextType::Laser ? kLaserSpacing : kProjectileSpacing;
+	}
+}
+
+CEntityTextPixel::CEntityTextPixel(CGameWorld* pGameWorld, vec2 Pos, int Lifespan, EEntityTextType Type)
 	: CEntity(pGameWorld, CGameWorld::ENTTYPE_VISUAL, Pos)
 {
-	m_StartOff = Pos;
-	m_Pos = (pParent ? pParent->GetPos() : vec2(0.0f, 0.0f)) + m_StartOff;
-	m_Life = Lifespan;
-	m_pParent = pParent;
+	m_Pos = Pos;
+	m_Lifetime = Lifespan;
+	m_Type = Type;
 	GameWorld()->InsertEntity(this);
 }
 
-void CLolPlasma::Tick()
+void CEntityTextPixel::Tick()
 {
-	m_Life--;
-	if(!m_Life)
+	m_Lifetime--;
+	if(!m_Lifetime)
 	{
 		GameWorld()->DestroyEntity(this);
 		return;
 	}
-
-	m_Pos = GameWorld()->ExistEntity(m_pParent) ? m_pParent->GetPos() : vec2(0.0f, 0.0f);
-	m_Pos += m_StartOff;
 }
 
-void CLolPlasma::Snap(int SnappingClient)
+void CEntityTextPixel::Snap(int SnappingClient)
 {
 	if(NetworkClipped(SnappingClient))
 		return;
 
-	CNetObj_Projectile* pObj = static_cast<CNetObj_Projectile*>(Server()->SnapNewItem(NETOBJTYPE_PROJECTILE, GetID(), sizeof(CNetObj_Projectile)));
-	if(!pObj)
-		return;
-
-	pObj->m_X = (int)m_Pos.x;
-	pObj->m_Y = (int)m_Pos.y;
-	pObj->m_VelX = 0;
-	pObj->m_VelY = 0;
-	pObj->m_StartTick = Server()->Tick();
-	pObj->m_Type = WEAPON_HAMMER;
+	if(m_Type == EEntityTextType::Laser)
+		GS()->SnapLaser(SnappingClient, GetID(), m_Pos, m_Pos - vec2(0, 1), Server()->Tick(), LASERTYPE_DOOR, 0, -1, LASERFLAG_NO_PREDICT);
+	else
+		GS()->SnapProjectile(SnappingClient, GetID(), m_Pos, {}, Server()->Tick(), WEAPON_HAMMER);
 }
 
 static bool s_aaaChars[256][5][3] = {
@@ -310,7 +315,7 @@ inline static bool HasRepr(char c) // can be removed when we have a full charact
 	return false;
 }
 
-inline static vec2 TextSize(const char* pText)
+inline static vec2 TextSize(const char* pText, EEntityTextType Type)
 {
 	char c;
 	int Count = 0;
@@ -322,12 +327,14 @@ inline static vec2 TextSize(const char* pText)
 			continue;
 		++Count;
 	}//no there ain't linebreaks
-	return vec2(Count * g_Config.m_SvLoltextHspace * 4.0f, g_Config.m_SvLoltextVspace);
+	const int Spacing = EntityTextSpacing(Type);
+	return vec2(Count * Spacing * (kCharWidth + kCharSpacing), Spacing);
 }
 
-void CLoltext::Create(CGameWorld* pGameWorld, CEntity* pParent, vec2 Pos, int Lifespan, const char* pText)
+void CEntityText::Create(CGameWorld* pGameWorld, vec2 Pos, int Lifespan, const char* pText, EEntityTextType Type)
 {
-	vec2 CurPos = Pos - TextSize(pText) * 0.5f;
+	const int Spacing = EntityTextSpacing(Type);
+	vec2 CurPos = Pos - TextSize(pText, Type) * 0.5f;
 
 	char c;
 	while((c = *pText++))
@@ -337,10 +344,10 @@ void CLoltext::Create(CGameWorld* pGameWorld, CEntity* pParent, vec2 Pos, int Li
 		if(c != ' ' && !HasRepr(c))
 			continue;
 
-		for(int y = 0; y < 5/*XXX*/; ++y)
-			for(int x = 0; x < 3/*XXX*/; ++x)
+		for(int y = 0; y < kCharHeight; ++y)
+			for(int x = 0; x < kCharWidth; ++x)
 				if(s_aaaChars[(unsigned)c][y][x])
-					new CLolPlasma(pGameWorld, pParent, CurPos + vec2(x * g_Config.m_SvLoltextHspace, y * g_Config.m_SvLoltextVspace), Lifespan);
-		CurPos.x += 4 * g_Config.m_SvLoltextHspace;
+					new CEntityTextPixel(pGameWorld, CurPos + vec2(x * Spacing, y * Spacing), Lifespan, Type);
+		CurPos.x += (kCharWidth + kCharSpacing) * Spacing;
 	}
 }

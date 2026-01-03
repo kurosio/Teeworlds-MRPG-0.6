@@ -219,8 +219,6 @@ MACRO_CONFIG_STR(SvSqlFailedLogFile, sv_sql_failed_log_file, 128, "sql_failed_lo
 
 
 // settings
-MACRO_CONFIG_INT(SvLoltextHspace, sv_loltext_hspace, 7, 7, 25, CFGFLAG_SERVER, "horizontal offset between loltext 'pixels'")
-MACRO_CONFIG_INT(SvLoltextVspace, sv_loltext_vspace, 7, 7, 25, CFGFLAG_SERVER, "vertical offset between loltext 'pixels'")
 MACRO_CONFIG_INT(SvMaxSmoothViewCamSpeed, sv_max_smooth_view_cam_speed, 64, 32, 256, CFGFLAG_SERVER, "Max smooth view cam speed'")
 
 // ui

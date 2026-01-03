@@ -143,7 +143,7 @@ void CHouse::UpdateText(int Lifetime) const
 
 	// initialize variable with name
 	const char* pName = HasOwner() ? Server()->GetAccountNickname(m_AccountID) : "FREE";
-	GS()->EntityManager()->Text(m_TextPosition.value(), Lifetime - 5, pName);
+	GS()->EntityManager()->Text(m_TextPosition.value(), Lifetime, pName, EEntityTextType::Laser);
 }
 
 bool CHouse::ExtendRentDays(int Days)

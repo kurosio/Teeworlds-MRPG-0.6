@@ -13,6 +13,12 @@ constexpr float MAX_PERCENT_ATTRIBUTE_CRIT_CHANCE = 30.f;
 constexpr float MAX_PERCENT_ATTRIBUTE_LUCKY = 20.f;
 constexpr float MAX_PERCENT_ATTRIBUTE_LUCKY_DROP = 30.f;
 
+enum class EEntityTextType
+{
+	Projectile,
+	Laser,
+};
+
 // gathering node
 struct GatheringNode
 {
