@@ -4,6 +4,8 @@
 #include "entities/progress_door.h"
 #include "dungeon.h"
 
+#include <game/server/core/balance/balance.h>
+
 #include <game/server/entity.h>
 #include <game/server/gamecontext.h>
 #include <game/server/entities/character_bot.h>
@@ -387,8 +389,8 @@ void CGameControllerDungeon::SetMobsSpawn(bool AllowedSpawn)
 
 void CGameControllerDungeon::PrepareSyncFactors(std::map<AttributeIdentifier, int>& vResultMap)
 {
-	vResultMap[AttributeIdentifier::HP] = DEFAULT_BASE_HP;
-	vResultMap[AttributeIdentifier::MP] = DEFAULT_BASE_MP;
+	vResultMap[AttributeIdentifier::HP] = Balance::Get().GetAttributeBase(AttributeIdentifier::HP);
+	vResultMap[AttributeIdentifier::MP] = Balance::Get().GetAttributeBase(AttributeIdentifier::MP);
 
 	for(int i = 0; i < MAX_PLAYERS; i++)
 	{

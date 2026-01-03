@@ -2,6 +2,8 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "player.h"
 
+#include <game/server/core/balance/balance.h>
+
 #include "gamecontext.h"
 #include "worldmodes/dungeon/dungeon.h"
 
@@ -620,14 +622,14 @@ bool CPlayer::IsAuthed() const
 
 int CPlayer::GetMaxHealth() const
 {
-	auto DefaultHP = DEFAULT_BASE_HP + GetTotalAttributeValue(AttributeIdentifier::HP);
+	auto DefaultHP = Balance::Get().GetAttributeBase(AttributeIdentifier::HP) + GetTotalAttributeValue(AttributeIdentifier::HP);
 	Account()->GetBonusManager().ApplyBonuses(BONUS_TYPE_HP, &DefaultHP);
 	return DefaultHP;
 }
 
 int CPlayer::GetMaxMana() const
 {
-	auto DefaultMP = DEFAULT_BASE_MP + GetTotalAttributeValue(AttributeIdentifier::MP);
+	auto DefaultMP = Balance::Get().GetAttributeBase(AttributeIdentifier::MP) + GetTotalAttributeValue(AttributeIdentifier::MP);
 	Account()->GetBonusManager().ApplyBonuses(BONUS_TYPE_MP, &DefaultMP);
 	return DefaultMP;
 }
@@ -868,12 +870,12 @@ std::optional<float> CPlayer::GetTotalAttributeChance(AttributeIdentifier ID) co
 	float base = 0.0f;
 	switch(ID)
 	{
-		case AttributeIdentifier::AttackSPD: base = 100.f; max = MAX_PERCENT_ATTRIBUTE_ATTACK_SPEED; break;
-		case AttributeIdentifier::AmmoRegen: base = 100.f; max = MAX_PERCENT_ATTRIBUTE_AMMO_REGEN; break;
-		case AttributeIdentifier::Vampirism: base = 5.0f; max = MAX_PERCENT_ATTRIBUTE_VAMPIRISM; break;
-		case AttributeIdentifier::Crit: base = 5.0f; max = MAX_PERCENT_ATTRIBUTE_CRIT_CHANCE; break;
-		case AttributeIdentifier::Lucky: base = 5.0f; max = MAX_PERCENT_ATTRIBUTE_LUCKY; break;
-		case AttributeIdentifier::LuckyDropItem: base = 0.0f; max = MAX_PERCENT_ATTRIBUTE_LUCKY_DROP; break;
+		case AttributeIdentifier::AttackSPD: base = 100.f; max = Balance::Get().GetAttributeCap(ID); break;
+		case AttributeIdentifier::AmmoRegen: base = 100.f; max = Balance::Get().GetAttributeCap(ID); break;
+		case AttributeIdentifier::Vampirism: base = 5.0f; max = Balance::Get().GetAttributeCap(ID); break;
+		case AttributeIdentifier::Crit: base = 5.0f; max = Balance::Get().GetAttributeCap(ID); break;
+		case AttributeIdentifier::Lucky: base = 5.0f; max = Balance::Get().GetAttributeCap(ID); break;
+		case AttributeIdentifier::LuckyDropItem: base = 0.0f; max = Balance::Get().GetAttributeCap(ID); break;
 		default: base = 0.f;
 	}
 

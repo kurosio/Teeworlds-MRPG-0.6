@@ -6,12 +6,6 @@
 #include "tools/path_finder_result.h"
 
 constexpr float DOOR_ACTIVATION_RADIUS_SQUARED = 128.f * 128.f;
-constexpr float MAX_PERCENT_ATTRIBUTE_ATTACK_SPEED = 600.f;
-constexpr float MAX_PERCENT_ATTRIBUTE_AMMO_REGEN = 800.f;
-constexpr float MAX_PERCENT_ATTRIBUTE_VAMPIRISM = 30.f;
-constexpr float MAX_PERCENT_ATTRIBUTE_CRIT_CHANCE = 30.f;
-constexpr float MAX_PERCENT_ATTRIBUTE_LUCKY = 20.f;
-constexpr float MAX_PERCENT_ATTRIBUTE_LUCKY_DROP = 30.f;
 
 enum class EEntityTextType
 {
@@ -620,8 +614,6 @@ enum
 		Basic kernel server settings
 		This is where the most basic server settings are stored
 	*/
-	DEFAULT_BASE_HP                = 10,    // default base health
-	DEFAULT_BASE_MP                = 10,    // default base mana
 	MAX_GROUP_MEMBERS              = 4,     // maximum number of players in a group
 	MAX_HOUSE_DOOR_INVITED_PLAYERS = 3,		// maximum player what can have access for house door
 	MAX_DECORATIONS_PER_HOUSE      = 20,    // maximum decorations for houses
@@ -771,6 +763,22 @@ enum class AttributeIdentifier : int
 	ProductCapacity = 22,        // Attribute identifier for loader
 	ATTRIBUTES_NUM,              // The number of total attributes
 };
+
+inline bool IsDamageAttributeIdentifier(AttributeIdentifier ID)
+{
+	switch(ID)
+	{
+		case AttributeIdentifier::DMG:
+		case AttributeIdentifier::HammerDMG:
+		case AttributeIdentifier::GunDMG:
+		case AttributeIdentifier::ShotgunDMG:
+		case AttributeIdentifier::GrenadeDMG:
+		case AttributeIdentifier::RifleDMG:
+			return true;
+		default:
+			return false;
+	}
+}
 
 
 /*

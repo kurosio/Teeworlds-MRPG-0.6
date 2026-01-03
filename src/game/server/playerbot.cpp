@@ -1,6 +1,8 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "playerbot.h"
+
+#include <game/server/core/balance/balance.h>
 #include "gamecontext.h"
 
 #include "entities/character_bot.h"
@@ -196,26 +198,9 @@ static int CalculateAttribute(CGS* pGS, const CPlayerBot* pPlayer, AttributeIden
 		if(pController && pController->GetDungeon())
 		{
 			// calculating stats
-			int MinValue = 0;
-			float BaseFactor = 0.f;
-			if(pAttribute->IsGroup(AttributeGroup::DamageType))
-			{
-				BaseFactor = (float)g_Config.m_SvDunFactDmg / 100.f;
-			}
-			else if(ID == AttributeIdentifier::Crit)
-			{
-				BaseFactor = (float)g_Config.m_SvDunFactCrit / 100.f;
-			}
-			else if(Boss && ID == AttributeIdentifier::HP)
-			{
-				BaseFactor = (float)g_Config.m_SvDunFactBossHp / 100.0f;
-				MinValue = 5;
-			}
-			else
-			{
-				BaseFactor = (float)g_Config.m_SvDunFactOther / 100.f;
-				MinValue = 5;
-			}
+			const auto DungeonFactor = Balance::Get().GetDungeonFactor(ID, Boss);
+			const int MinValue = DungeonFactor.MinValue;
+			const float BaseFactor = DungeonFactor.BaseFactor;
 
 			AttributeValue += pController->CalculateMobAttribute(ID, PowerLevel, BaseFactor, MinValue);
 		}
@@ -224,17 +209,15 @@ static int CalculateAttribute(CGS* pGS, const CPlayerBot* pPlayer, AttributeIden
 	}
 
 	// default
-	float Percent = 100.0f;
-	if(pAttribute->IsGroup(AttributeGroup::DamageType))
-		Percent = 5.0f;
-	else if(pAttribute->IsGroup(AttributeGroup::Dps))
-		Percent = 15.0f;
-	else if(pAttribute->IsGroup(AttributeGroup::Healer))
-		Percent = 20.0f;
+	float Percent = Balance::Get().GetBotGroupPercent(pAttribute->GetGroup());
 
 	// downcast for unhardness boss
 	if(Boss && ID != AttributeIdentifier::HP)
-		Percent /= 10.0f;
+	{
+		const float Divider = Balance::Get().GetBotBossDownscaleDivider();
+		if(Divider > 0.0f)
+			Percent /= Divider;
+	}
 
 	const int SyncPercentSize = maximum(1, translate_to_percent_rest(AttributeValue + PowerLevel, Percent));
 	return SyncPercentSize;

@@ -3,6 +3,8 @@
 #ifndef GAME_SERVER_CORE_COMPONENTS_INVENTORY_ATTRIBUTE_DATA_H
 #define GAME_SERVER_CORE_COMPONENTS_INVENTORY_ATTRIBUTE_DATA_H
 
+#include <game/server/core/balance/balance.h>
+
 using AttributeDescriptionPtr = std::shared_ptr< class CAttributeDescription >;
 
 class CAttributeDescription : public MultiworldIdentifiableData< std::map < AttributeIdentifier, AttributeDescriptionPtr > >
@@ -53,12 +55,12 @@ public:
 		float multiplier = 0.0f;
 		switch(ID)
 		{
-			case AttributeIdentifier::AttackSPD: multiplier = (MAX_PERCENT_ATTRIBUTE_ATTACK_SPEED / g_Config.m_SvReachValueMaxAttackSpeed); break;
-			case AttributeIdentifier::AmmoRegen: multiplier = (MAX_PERCENT_ATTRIBUTE_AMMO_REGEN / g_Config.m_SvReachValueMaxAmmoRegen); break;
-			case AttributeIdentifier::Vampirism: multiplier = (MAX_PERCENT_ATTRIBUTE_VAMPIRISM / g_Config.m_SvReachValueMaxVampirism); break;
-			case AttributeIdentifier::Crit: multiplier = (MAX_PERCENT_ATTRIBUTE_CRIT_CHANCE / g_Config.m_SvReachValueMaxCritChance); break;
-			case AttributeIdentifier::Lucky: multiplier = (MAX_PERCENT_ATTRIBUTE_LUCKY / g_Config.m_SvReachValueMaxLucky); break;
-			case AttributeIdentifier::LuckyDropItem: multiplier = (MAX_PERCENT_ATTRIBUTE_LUCKY_DROP / g_Config.m_SvReachValueMaxLuckyDrop); break;
+			case AttributeIdentifier::AttackSPD: multiplier = (Balance::Get().GetAttributeCap(ID) / g_Config.m_SvReachValueMaxAttackSpeed); break;
+			case AttributeIdentifier::AmmoRegen: multiplier = (Balance::Get().GetAttributeCap(ID) / g_Config.m_SvReachValueMaxAmmoRegen); break;
+			case AttributeIdentifier::Vampirism: multiplier = (Balance::Get().GetAttributeCap(ID) / g_Config.m_SvReachValueMaxVampirism); break;
+			case AttributeIdentifier::Crit: multiplier = (Balance::Get().GetAttributeCap(ID) / g_Config.m_SvReachValueMaxCritChance); break;
+			case AttributeIdentifier::Lucky: multiplier = (Balance::Get().GetAttributeCap(ID) / g_Config.m_SvReachValueMaxLucky); break;
+			case AttributeIdentifier::LuckyDropItem: multiplier = (Balance::Get().GetAttributeCap(ID) / g_Config.m_SvReachValueMaxLuckyDrop); break;
 			default: multiplier = 0.f;
 		}
 
