@@ -1,19 +1,19 @@
 /* Небольшие кастомные стили */
 :root {
-	--scenario-scrollbar-track: #e2e8f0;
-	--scenario-scrollbar-thumb: #60a5fa;
-	--scenario-scrollbar-thumb-hover: #3b82f6;
-	--scenario-bg-main: #0f172a;
-	--scenario-bg-surface: #111827;
-	--scenario-bg-card: #1f2937;
-	--scenario-accent: #38bdf8;
-	--scenario-accent-strong: #0ea5e9;
-	--scenario-text: #e2e8f0;
-	--scenario-text-muted: #94a3b8;
-	--scenario-border: #1e293b;
-	--scenario-success: #22c55e;
-	--scenario-warning: #f59e0b;
-	--scenario-danger: #ef4444;
+	--scenario-scrollbar-track: var(--color-bg-dark);
+	--scenario-scrollbar-thumb: var(--color-accent);
+	--scenario-scrollbar-thumb-hover: var(--color-accent-strong);
+	--scenario-bg-main: var(--color-bg-dark);
+	--scenario-bg-surface: var(--color-bg-medium);
+	--scenario-bg-card: var(--color-bg-light);
+	--scenario-accent: var(--color-accent);
+	--scenario-accent-strong: var(--color-accent-strong);
+	--scenario-text: var(--color-text);
+	--scenario-text-muted: var(--color-text-muted);
+	--scenario-border: var(--color-border);
+	--scenario-success: var(--color-success);
+	--scenario-warning: var(--color-warning);
+	--scenario-danger: var(--color-danger);
 }
 
 body,
@@ -215,46 +215,6 @@ body.scenario-editor .control-btn:hover {
 body.scenario-editor .nav-group-header.bg-blue-50 {
 	background: rgba(56, 189, 248, 0.12);
 	border-color: rgba(56, 189, 248, 0.25);
-}
-body.scenario-editor .scenario-btn {
-	border: 1px solid var(--scenario-border);
-	background: var(--scenario-bg-card);
-	color: var(--scenario-text);
-	box-shadow: 0 6px 16px rgba(15, 23, 42, 0.25);
-}
-body.scenario-editor .scenario-btn:hover {
-	background: rgba(148, 163, 184, 0.14);
-}
-body.scenario-editor .scenario-btn-primary {
-	border: none;
-	background: linear-gradient(90deg, var(--scenario-accent-strong), var(--scenario-accent));
-	color: #fff;
-}
-body.scenario-editor .scenario-btn-primary:hover {
-	filter: brightness(1.05);
-}
-body.scenario-editor .scenario-btn-success {
-	border: none;
-	background: linear-gradient(90deg, #16a34a, var(--scenario-success));
-	color: #fff;
-}
-body.scenario-editor .scenario-btn-warning {
-	border: none;
-	background: linear-gradient(90deg, #f97316, var(--scenario-warning));
-	color: #fff;
-}
-body.scenario-editor .scenario-btn-danger {
-	border: none;
-	background: linear-gradient(90deg, #dc2626, var(--scenario-danger));
-	color: #fff;
-}
-body.scenario-editor .scenario-btn-ghost {
-	background: rgba(56, 189, 248, 0.12);
-	border-color: rgba(56, 189, 248, 0.4);
-	color: var(--scenario-accent);
-}
-body.scenario-editor .scenario-btn-ghost:hover {
-	background: rgba(56, 189, 248, 0.2);
 }
 body.embedded header {
 	position: sticky;

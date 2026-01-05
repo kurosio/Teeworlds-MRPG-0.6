@@ -13,12 +13,14 @@
     
     <!-- Библиотека для Drag-and-Drop -->
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+    <link rel="stylesheet" href="../shared/theme.css">
+    <link rel="stylesheet" href="../shared/components.css">
 	<link rel="stylesheet" href="scenario-editor.css">
 </head>
-<body class="scenario-editor font-sans">
+<body class="scenario-editor font-sans ui-theme ui-scrollbar">
     <div id="toast-container" class="fixed top-5 right-5 z-[9999] flex flex-col gap-2"></div>
 
-    <header class="bg-white h-[70px] px-8 border-b border-slate-200 flex justify-between items-center sticky top-0 z-50 shadow-sm">
+    <header class="bg-white h-[70px] px-8 border-b border-slate-200 flex justify-between items-center sticky top-0 z-50 shadow-sm ui-panel">
         <h1 class="text-2xl font-bold text-slate-800 flex items-center gap-3"><i class="fa-solid fa-scroll text-blue-500"></i> Редактор v30.3</h1>
         <div class="controls flex items-center gap-4">
             <div class="flex items-center gap-2 text-sm">
@@ -29,22 +31,22 @@
                 </div>
             </div>
             <label for="scenario-select" class="text-sm font-medium">Сценарий:</label>
-            <select id="scenario-select" class="text-sm rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"></select>
-            <button id="delete-scenario-btn" title="Удалить текущий сценарий" class="scenario-btn scenario-btn-danger font-semibold text-sm py-2 px-3 rounded-md transition-colors">
+            <select id="scenario-select" class="text-sm rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 ui-select ui-input"></select>
+            <button id="delete-scenario-btn" title="Удалить текущий сценарий" class="ui-btn ui-btn-danger font-semibold text-sm py-2 px-3 rounded-md transition-colors">
                 <i class="fa-solid fa-trash-can"></i>
             </button>
-            <input type="text" id="save-as-filename" placeholder="Сохранить как..." class="text-sm rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-            <button id="save-button" title="Сохранить текущий сценарий" class="scenario-btn scenario-btn-primary font-semibold text-sm py-2 px-4 rounded-md transition-colors flex items-center gap-2">
+            <input type="text" id="save-as-filename" placeholder="Сохранить как..." class="text-sm rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 ui-input">
+            <button id="save-button" title="Сохранить текущий сценарий" class="ui-btn ui-btn-primary font-semibold text-sm py-2 px-4 rounded-md transition-colors flex items-center gap-2">
                 <i class="fa-solid fa-save"></i> Сохранить
             </button>
         </div>
     </header>
 
     <div class="main-container flex items-start">
-        <aside id="navigator" class="w-[350px] h-[calc(100vh-70px)] bg-white border-r border-slate-200 sticky top-[70px] overflow-y-auto flex-shrink-0 z-20">
+        <aside id="navigator" class="w-[350px] h-[calc(100vh-70px)] bg-white border-r border-slate-200 sticky top-[70px] overflow-y-auto flex-shrink-0 z-20 ui-panel">
             <div class="navigator-header p-4 font-semibold border-b border-slate-200 bg-slate-50 sticky top-0 z-10 flex justify-between items-center">
                 <span>Структура сценария</span>
-                <button id="add-group-btn" class="scenario-btn scenario-btn-ghost text-sm font-semibold px-2 py-1 rounded transition-colors" title="Создать новую группу">
+                <button id="add-group-btn" class="ui-btn ui-btn-ghost text-sm font-semibold px-2 py-1 rounded transition-colors" title="Создать новую группу">
                     <i class="fa-solid fa-plus"></i> Группа
                 </button>
             </div>
@@ -53,7 +55,7 @@
 
         <main id="editor-wrapper" class="flex-grow p-8 relative">
             <div id="editor-container" class="space-y-8"></div>
-            <button id="add-step-button" class="scenario-btn scenario-btn-success max-w-3xl mx-auto mt-8 w-full py-3 font-semibold rounded-lg transition-colors flex items-center justify-center gap-2">
+            <button id="add-step-button" class="ui-btn ui-btn-success max-w-3xl mx-auto mt-8 w-full py-3 font-semibold rounded-lg transition-colors flex items-center justify-center gap-2">
                 <i class="fa-solid fa-plus"></i> Добавить Новый Шаг
             </button>
         </main>
@@ -61,34 +63,34 @@
     
     <svg id="connections-svg-container" class="fixed top-0 left-0 w-full h-full pointer-events-none z-10"></svg>
     
-    <div id="add-component-menu" class="hidden absolute z-[1000] bg-white border border-slate-300 shadow-lg rounded-lg p-2 w-72 flex flex-col gap-1"></div>
+    <div id="add-component-menu" class="hidden absolute z-[1000] bg-white border border-slate-300 shadow-lg rounded-lg p-2 w-72 flex flex-col gap-1 ui-panel"></div>
 
     <div id="modal-backdrop" class="hidden fixed inset-0 bg-black/60 z-[200] flex justify-center items-center p-4">
-        <div id="modal-content" class="bg-white p-6 rounded-lg shadow-xl w-full max-w-xl flex flex-col max-h-[90vh]">
+        <div id="modal-content" class="bg-white p-6 rounded-lg shadow-xl w-full max-w-xl flex flex-col max-h-[90vh] ui-panel">
             <h3 id="modal-title" class="text-xl font-bold mb-4 text-slate-800">Редактирование</h3>
             <div id="modal-form-container" class="overflow-y-auto pr-4 -mr-4"></div>
             <div class="modal-buttons text-right mt-6 pt-4 border-t border-slate-200">
-                <button id="modal-cancel" class="scenario-btn scenario-btn-ghost font-semibold py-2 px-4 rounded-md transition-colors">Отмена</button>
-                <button id="modal-save" class="scenario-btn scenario-btn-success font-semibold py-2 px-4 rounded-md transition-colors ml-2">Сохранить</button>
+                <button id="modal-cancel" class="ui-btn ui-btn-ghost font-semibold py-2 px-4 rounded-md transition-colors">Отмена</button>
+                <button id="modal-save" class="ui-btn ui-btn-success font-semibold py-2 px-4 rounded-md transition-colors ml-2">Сохранить</button>
             </div>
         </div>
     </div>
     
     <div id="delete-group-modal-backdrop" class="hidden fixed inset-0 bg-black/60 z-[300] flex justify-center items-center p-4">
-        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
+        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-md ui-panel">
             <h3 class="text-xl font-bold mb-4 text-slate-800">Удалить группу</h3>
             <p class="text-slate-600 mb-6">Как вы хотите удалить эту группу?</p>
             <div class="flex justify-end gap-3">
-                <button id="delete-group-cancel-btn" class="scenario-btn scenario-btn-ghost font-semibold py-2 px-4 rounded-md transition-colors">Отмена</button>
-                <button id="delete-group-only-btn" class="scenario-btn scenario-btn-warning font-semibold py-2 px-4 rounded-md transition-colors">Только группу</button>
-                <button id="delete-group-and-steps-btn" class="scenario-btn scenario-btn-danger font-semibold py-2 px-4 rounded-md transition-colors">Группу и шаги</button>
+                <button id="delete-group-cancel-btn" class="ui-btn ui-btn-ghost font-semibold py-2 px-4 rounded-md transition-colors">Отмена</button>
+                <button id="delete-group-only-btn" class="ui-btn ui-btn-warning font-semibold py-2 px-4 rounded-md transition-colors">Только группу</button>
+                <button id="delete-group-and-steps-btn" class="ui-btn ui-btn-danger font-semibold py-2 px-4 rounded-md transition-colors">Группу и шаги</button>
             </div>
         </div>
     </div>
 
     <!-- TEMPLATES -->
     <template id="step-card-template">
-        <div class="step-card bg-white rounded-lg border border-slate-200 shadow-md transition-all duration-200 relative z-10">
+        <div class="step-card bg-white rounded-lg border border-slate-200 shadow-md transition-all duration-200 relative z-10 ui-panel">
             <div class="step-header flex justify-between items-center border-b border-slate-200 p-4">
                 <div class="title text-lg font-bold text-slate-800 flex items-center gap-3 cursor-grab flex-grow">
                     <i class="fa-solid fa-grip-vertical handle text-slate-400"></i>
@@ -106,21 +108,21 @@
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-1">ID Шага (уникальное, латиницей)</label>
-                        <input type="text" class="step-id-input w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <input type="text" class="step-id-input w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 ui-input">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-1">Задержка (мс)</label>
-                        <input type="number" class="step-delay-input w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder="0">
+                        <input type="number" class="step-delay-input w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 ui-input" placeholder="0">
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-4 mt-4">
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-1">Информация для игрока (msg_info)</label>
-                        <input type="text" class="msg-info-input w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder="Например, 'Найдите выход'">
+                        <input type="text" class="msg-info-input w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 ui-input" placeholder="Например, 'Найдите выход'">
                     </div>
                     <div>
                         <label class="block text-sm font-medium text-slate-700 mb-1">Логика завершения компонентов</label>
-                        <select class="completion-logic-select w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <select class="completion-logic-select w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 ui-select ui-input">
                             <option value="all_of">Все (all_of)</option>
                             <option value="any_of">Любой (any_of)</option>
                             <option value="sequential">Последовательно (sequential)</option>
@@ -130,7 +132,7 @@
                 <div class="components-container mt-5 pt-5 border-t border-dashed border-slate-200">
                     <h4 class="font-bold text-slate-800 mb-2">Компоненты</h4>
                 </div>
-                <button class="add-button add-component-btn scenario-btn scenario-btn-ghost w-full mt-4 py-2 font-semibold rounded-lg transition-colors flex items-center justify-center gap-2">
+                <button class="add-button add-component-btn ui-btn ui-btn-ghost w-full mt-4 py-2 font-semibold rounded-lg transition-colors flex items-center justify-center gap-2">
                     <i class="fa-solid fa-puzzle-piece"></i> Добавить компонент
                 </button>
             </div>
@@ -138,7 +140,7 @@
     </template>
 
     <template id="component-item-template">
-        <div class="component-item bg-white border border-slate-200 p-3 rounded-md mb-2 flex justify-between items-center cursor-grab">
+        <div class="component-item bg-white border border-slate-200 p-3 rounded-md mb-2 flex justify-between items-center cursor-grab ui-panel">
             <div class="component-info flex-grow flex items-center gap-3">
                 <i class="component-icon text-slate-500 text-lg"></i>
                 <div class="component-text-wrapper">
