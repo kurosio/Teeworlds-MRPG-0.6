@@ -96,6 +96,7 @@
             overflow: hidden;
             margin: 16px;
             box-shadow: 0 18px 50px rgba(15, 23, 42, 0.45);
+            gap: 18px;
         }
         body.embedded #navigator {
             height: calc(100vh - 102px);
@@ -150,6 +151,10 @@
             background: #0b1220;
             border-color: #1e293b;
         }
+        body.embedded .nav-group-wrapper {
+            border: 1px solid rgba(56, 189, 248, 0.18);
+            box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.4);
+        }
         body.embedded .nav-group-header {
             background: #111827;
             border-color: #1e293b;
@@ -163,6 +168,16 @@
         body.embedded .nav-component-list a.active {
             background: rgba(56, 189, 248, 0.18);
             border-color: rgba(56, 189, 248, 0.35);
+        }
+        body.embedded .connection-line {
+            stroke: #38bdf8;
+            stroke-width: 3px;
+            stroke-dasharray: 8 6;
+            filter: drop-shadow(0 0 6px rgba(56, 189, 248, 0.45));
+        }
+        body.embedded .connection-arrow {
+            fill: #38bdf8;
+            filter: drop-shadow(0 0 4px rgba(56, 189, 248, 0.45));
         }
         body.embedded .text-slate-800,
         body.embedded .text-slate-700,
@@ -216,6 +231,28 @@
         body.embedded #add-step-button {
             background: #1e293b;
             color: #e2e8f0;
+        }
+        body.embedded .add-button:hover,
+        body.embedded #add-step-button:hover {
+            background: #334155;
+        }
+        body.embedded #add-group-btn {
+            background: #1e293b;
+            color: #e2e8f0;
+            border: 1px solid #334155;
+        }
+        body.embedded #add-group-btn:hover {
+            background: #334155;
+        }
+        body.embedded .modal-buttons button,
+        body.embedded #delete-group-modal-backdrop button {
+            background: #1f2937;
+            border: 1px solid #334155;
+            color: #e2e8f0;
+        }
+        body.embedded .modal-buttons button:hover,
+        body.embedded #delete-group-modal-backdrop button:hover {
+            background: #334155;
         }
     </style>
 </head>
