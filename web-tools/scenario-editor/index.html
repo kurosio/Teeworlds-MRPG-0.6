@@ -93,7 +93,7 @@
             background: #0b1220;
             min-height: calc(100vh - 70px);
             border-radius: 16px;
-            overflow: hidden;
+            overflow: visible;
             margin: 10px 16px 16px;
             box-shadow: 0 18px 50px rgba(15, 23, 42, 0.45);
             gap: 18px;
@@ -551,7 +551,6 @@
                 this.deleteGroupModal.deleteOnlyBtn.addEventListener('click', () => this.handleDeleteGroup(false));
                 this.deleteGroupModal.deleteAndStepsBtn.addEventListener('click', () => this.handleDeleteGroup(true));
 
-
                 this.arrowModeToggle.addEventListener('change', (e) => {
                     this.arrowMode = e.target.checked ? 'editor' : 'navigator';
                     this.drawConnections();
@@ -949,6 +948,25 @@
                             document.querySelectorAll('.step-card.ring-2').forEach(el => el.classList.remove('ring-2', 'ring-blue-500'));
                             targetElement.classList.add('ring-2', 'ring-blue-500');
                             setTimeout(() => targetElement.classList.remove('ring-2', 'ring-blue-500'), 1500);
+						}
+                    });
+					
+                    anchor.addEventListener('dblclick', (e) => {
+                        if (e.target.closest('.nav-handle')) return;
+                        e.preventDefault();
+                        const componentLi = anchor.closest('li[data-component-id]');
+                        if (componentLi) {
+                            const parentStepId = componentLi.closest('ul.nav-component-list')?.dataset.parentStepId;
+                            if (parentStepId && componentLi.dataset.componentId) {
+                                this.openEditModal(parentStepId, componentLi.dataset.componentId);
+                            }
+                            return;
+                        }
+                        const stepLi = anchor.closest('li[data-step-id]');
+                        if (stepLi?.dataset.stepId) {
+                            const targetElement = document.getElementById(`step-card-${stepLi.dataset.stepId}`);
+                            targetElement?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                            targetElement?.querySelector('.step-id-input')?.focus();
                         }
                     });
                 });
