@@ -4,56 +4,55 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Аниме-редактор сценариев</title>
+    <title>Редактор событий</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         :root {
-            --bg-dark: #1e1e3f;
-            --bg-medium: #2a2a55;
-            --bg-light: #4a4a88;
-            --primary: #a259ff;
-            --secondary: #ff7b9b;
-            --accent: #00f6ff;
+            --bg-dark: #0f172a;
+            --bg-medium: #111827;
+            --bg-light: #1e293b;
+            --bg-strong: #0b1220;
+            --primary: #2563eb;
+            --secondary: #38bdf8;
+            --accent: #38bdf8;
             --danger: #ef4444;
-            --warning: #facc15;
-            --text-light: #f0f0ff;
-            --text-dark: #d9d9f3;
+            --warning: #f59e0b;
+            --text-light: #e2e8f0;
+            --text-dark: #94a3b8;
+            --border: #334155;
         }
-        body { font-family: 'Poppins', sans-serif; background-color: var(--bg-dark); color: var(--text-light); overflow: hidden; }
-        #app { background: linear-gradient(135deg, rgba(30, 30, 63, 0.95), rgba(42, 42, 85, 0.95)), url('https://avatars.mds.yandex.net/i?id=23aa7505284061857d31631140f22b09_l-3807742-images-thumbs&n=13'); background-size: cover; backdrop-filter: blur(10px); }
-        aside { background-color: rgba(20, 20, 40, 0.7); border-right-color: var(--bg-light); backdrop-filter: blur(5px); }
-        .sidebar-item { border-left: 4px solid transparent; transition: all 0.3s ease; }
-        .sidebar-item:hover { background-color: rgba(255, 255, 255, 0.05); border-left-color: var(--secondary); transform: translateX(5px); }
-        .sidebar-item.selected { background: linear-gradient(90deg, var(--primary), var(--secondary)); border-left-color: var(--accent); color: white; box-shadow: 0 0 15px var(--primary); }
-        .sidebar-item.selected .text-gray-400 { color: white; }
-        .group-header { background-color: rgba(0,0,0,0.2); border-top: 1px solid var(--bg-light); border-bottom: 1px solid var(--bg-light); margin-top: 8px; margin-bottom: 4px; }
-        .form-input { background-color: var(--bg-medium); border-color: var(--bg-light); color: var(--text-light); border-radius: 8px; transition: all 0.3s ease; }
-        .form-input:focus { background-color: var(--bg-light); border-color: var(--primary); outline: none; box-shadow: 0 0 10px var(--primary); }
-        .btn { border-radius: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; border: 0; box-shadow: 0 2px 10px rgba(0,0,0,0.3); transition: all 0.3s ease; }
-        .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
-        .btn:active { transform: translateY(0px) scale(0.98); box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
-        #add-step-btn { background: linear-gradient(45deg, var(--primary), var(--secondary)); color: white;}
-        #import-json-btn { background: linear-gradient(45deg, var(--accent), #00c4cc); color: var(--bg-dark);}
-        #view-json-btn { background: linear-gradient(45deg, #f97316, #fb923c); color: white;}
-        #delete-all-btn { background: linear-gradient(45deg, var(--danger), #f87171); color: white;}
-        .modal-backdrop { background-color: rgba(30, 30, 63, 0.8); backdrop-filter: blur(5px); }
-        .modal-content { background: var(--bg-medium); border: 1px solid var(--primary); box-shadow: 0 0 30px var(--primary); border-radius: 12px; }
+        body { font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background-color: var(--bg-dark); color: var(--text-light); overflow: hidden; }
+        #app { background: var(--bg-strong); }
+        aside { background-color: var(--bg-medium); border-right-color: var(--bg-light); }
+        .sidebar-item { border-left: 3px solid transparent; transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease; }
+        .sidebar-item:hover { background-color: rgba(56, 189, 248, 0.12); border-left-color: var(--accent); }
+        .sidebar-item.selected { background: rgba(56, 189, 248, 0.18); border-left-color: var(--accent); color: var(--text-light); }
+        .sidebar-item.selected .text-gray-400 { color: var(--text-light); }
+        .group-header { background-color: var(--bg-dark); border-top: 1px solid var(--bg-light); border-bottom: 1px solid var(--bg-light); margin-top: 8px; margin-bottom: 4px; }
+        .form-input { background-color: var(--bg-strong); border-color: var(--bg-light); color: var(--text-light); border-radius: 8px; transition: border-color 0.2s ease, background 0.2s ease; }
+        .form-input:focus { background-color: var(--bg-medium); border-color: var(--secondary); outline: none; box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.2); }
+        .btn { border-radius: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; border: 1px solid var(--border); background: #1f2937; color: var(--text-light); transition: background 0.2s ease, transform 0.2s ease; }
+        .btn:hover { transform: translateY(-1px); background: #334155; }
+        .btn:active { transform: translateY(0px) scale(0.99); }
+        #add-step-btn { background: linear-gradient(90deg, var(--primary), var(--secondary)); border: none; color: white;}
+        #import-json-btn { background: #1f2937; }
+        #view-json-btn { background: #1f2937; }
+        #delete-all-btn { background: #1f2937; }
+        .modal-backdrop { background-color: rgba(15, 23, 42, 0.8); }
+        .modal-content { background: var(--bg-medium); border: 1px solid var(--bg-light); box-shadow: 0 20px 60px rgba(15, 23, 42, 0.45); border-radius: 12px; }
         #undo-toast { transition: transform 0.5s ease, opacity 0.5s ease; transform: translateY(200%); opacity: 0; }
         #undo-toast.show { transform: translateY(0); opacity: 1; }
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: var(--bg-dark); }
-        ::-webkit-scrollbar-thumb { background: linear-gradient(var(--primary), var(--secondary)); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
         .drag-handle { cursor: move; }
-        .dragging { opacity: 0.6; background: var(--primary); }
+        .dragging { opacity: 0.6; background: rgba(56, 189, 248, 0.2); }
         .drag-over { border-top: 2px dashed var(--accent); }
         body.embedded { overflow: auto; }
-        body.embedded #app { min-height: 100vh; height: auto; background: linear-gradient(135deg, rgba(30, 30, 63, 0.98), rgba(42, 42, 85, 0.98)); }
+        body.embedded #app { min-height: 100vh; height: auto; background: var(--bg-strong); }
         body.embedded aside { width: 320px; max-width: 320px; }
-        body.embedded #editor-panel { background: rgba(15, 15, 35, 0.5); border-radius: 16px; margin: 16px; }
+        body.embedded #editor-panel { background: var(--bg-dark); border-radius: 16px; margin: 16px; }
         body.embedded #step-list { padding-bottom: 16px; }
     </style>
 </head>

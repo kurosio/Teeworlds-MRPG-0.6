@@ -1,4 +1,51 @@
 /* Небольшие кастомные стили */
+:root {
+	--scenario-scrollbar-track: #e2e8f0;
+	--scenario-scrollbar-thumb: #60a5fa;
+	--scenario-scrollbar-thumb-hover: #3b82f6;
+}
+
+body,
+#navigator,
+#editor-wrapper,
+#modal-form-container {
+	scrollbar-width: thin;
+	scrollbar-color: var(--scenario-scrollbar-thumb) var(--scenario-scrollbar-track);
+}
+
+body::-webkit-scrollbar,
+#navigator::-webkit-scrollbar,
+#editor-wrapper::-webkit-scrollbar,
+#modal-form-container::-webkit-scrollbar {
+	width: 12px;
+	height: 12px;
+}
+
+body::-webkit-scrollbar-track,
+#navigator::-webkit-scrollbar-track,
+#editor-wrapper::-webkit-scrollbar-track,
+#modal-form-container::-webkit-scrollbar-track {
+	background: var(--scenario-scrollbar-track);
+	border-radius: 999px;
+}
+
+body::-webkit-scrollbar-thumb,
+#navigator::-webkit-scrollbar-thumb,
+#editor-wrapper::-webkit-scrollbar-thumb,
+#modal-form-container::-webkit-scrollbar-thumb {
+	background: linear-gradient(180deg, #93c5fd 0%, var(--scenario-scrollbar-thumb) 60%, #2563eb 100%);
+	border-radius: 999px;
+	border: 3px solid var(--scenario-scrollbar-track);
+	box-shadow: inset 0 0 4px rgba(30, 64, 175, 0.35);
+}
+
+body::-webkit-scrollbar-thumb:hover,
+#navigator::-webkit-scrollbar-thumb:hover,
+#editor-wrapper::-webkit-scrollbar-thumb:hover,
+#modal-form-container::-webkit-scrollbar-thumb:hover {
+	background: linear-gradient(180deg, #bfdbfe 0%, var(--scenario-scrollbar-thumb-hover) 60%, #1d4ed8 100%);
+}
+
 .sortable-ghost {
 	opacity: 0.4;
 	background: #c8ebfb;
@@ -63,6 +110,9 @@
 body.embedded {
 	background: #0f172a;
 	color: #e2e8f0;
+	--scenario-scrollbar-track: rgba(15, 23, 42, 0.9);
+	--scenario-scrollbar-thumb: rgba(56, 189, 248, 0.85);
+	--scenario-scrollbar-thumb-hover: rgba(14, 165, 233, 0.95);
 }
 body.embedded header {
 	position: sticky;
