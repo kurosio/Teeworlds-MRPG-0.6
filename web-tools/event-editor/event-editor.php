@@ -1,3 +1,4 @@
+<?php $embedded = isset($_GET['embedded']); ?>
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -49,9 +50,14 @@
         .drag-handle { cursor: move; }
         .dragging { opacity: 0.6; background: var(--primary); }
         .drag-over { border-top: 2px dashed var(--accent); }
+        body.embedded { overflow: auto; }
+        body.embedded #app { min-height: 100vh; height: auto; background: linear-gradient(135deg, rgba(30, 30, 63, 0.98), rgba(42, 42, 85, 0.98)); }
+        body.embedded aside { width: 320px; max-width: 320px; }
+        body.embedded #editor-panel { background: rgba(15, 15, 35, 0.5); border-radius: 16px; margin: 16px; }
+        body.embedded #step-list { padding-bottom: 16px; }
     </style>
 </head>
-<body class="antialiased">
+<body class="antialiased<?php echo $embedded ? ' embedded' : ''; ?>">
     <div id="app" class="flex h-screen overflow-hidden">
         <aside class="w-1/3 max-w-sm flex flex-col border-r">
             <div class="p-4 border-b border-gray-700 text-center">
