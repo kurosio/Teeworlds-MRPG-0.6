@@ -146,6 +146,39 @@
         body.embedded .add-button {
             color: #e2e8f0;
         }
+        body.embedded input,
+        body.embedded select,
+        body.embedded textarea {
+            background: #0b1220;
+            border-color: #1e293b;
+            color: #e2e8f0;
+        }
+        body.embedded input::placeholder,
+        body.embedded textarea::placeholder {
+            color: #94a3b8;
+        }
+        body.embedded select option {
+            background: #0b1220;
+            color: #e2e8f0;
+        }
+        body.embedded .toggle-label {
+            background-color: #1e293b;
+        }
+        body.embedded .toggle-checkbox:checked + .toggle-label {
+            background-color: #38bdf8;
+        }
+        body.embedded .toggle-checkbox {
+            border-color: #334155;
+            background: #0f172a;
+        }
+        body.embedded .control-btn:hover {
+            background: rgba(148, 163, 184, 0.15);
+        }
+        body.embedded .add-button,
+        body.embedded #add-step-button {
+            background: #1e293b;
+            color: #e2e8f0;
+        }
     </style>
 </head>
 <body class="bg-slate-100 font-sans text-slate-700">
