@@ -79,7 +79,8 @@
         applyEmbeddedState(document.getElementById('app'));
     </script>
 
-    <script>
+    <script type="module">
+    import { eventActionRegistry, formUtils } from '../shared/editor-components.js';
     const App = (() => {
         const DOM = {
             stepList: document.getElementById('step-list'),
@@ -107,9 +108,24 @@
             selectedScenarioEvent: 'general',
         };
         
-        const ACTION_DEFS = {"group_header":{"name":"Заголовок группы","icon":"fa-layer-group","params":{"name":"text"}},"message":{"name":"Сообщение","icon":"fa-comment","params":{"delay":"number","chat":"text","broadcast":"text","full":"text"}},"movement_task":{"name":"Задача на движение","icon":"fa-person-running","params":{"delay":"number","position":"vec2","target_lock_text":"text","target_look":"boolean","chat":"text","broadcast":"text","full":"text"}},"check_has_item":{"name":"Проверить предмет","icon":"fa-box","params":{"item_id":"number","required":"number","remove":"boolean","show_progress":"boolean"}},"reset_quest":{"name":"Сбросить квест","icon":"fa-undo","params":{"quest_id":"number"}},"accept_quest":{"name":"Принять квест","icon":"fa-check-double","params":{"quest_id":"number"}},"new_door":{"name":"Создать дверь","icon":"fa-door-closed","params":{"key":"door_key","follow":"boolean","position":"vec2"}},"remove_door":{"name":"Удалить дверь","icon":"fa-door-open","params":{"key":"door_key","follow":"boolean"}},"pick_item_task":{"name":"Задача на подбор","icon":"fa-hand-sparkles","params":{"position":"vec2","item":"item","chat":"text","broadcast":"text","full":"text"}},"emote":{"name":"Эмоция","icon":"fa-smile","params":{"emote_type":"number","emoticon_type":"number"}},"teleport":{"name":"Телепорт","icon":"fa-plane-departure","params":{"position":"vec2","world_id":"number"}},"use_chat_task":{"name":"Задача на чат","icon":"fa-keyboard","params":{"chat":"text"}},"fix_cam":{"name":"Фиксировать камеру","icon":"fa-camera","params":{"delay":"number","position":"vec2"}},"freeze_movements":{"name":"Заморозить движение","icon":"fa-snowflake","params":{"state":"boolean"}},"check_quest_accepted":{"name":"Проверка: квест принят","icon":"fa-question-circle","params":{"quest_id":"number"}},"check_quest_finished":{"name":"Проверка: квест завершен","icon":"fa-flag-checkered","params":{"quest_id":"number"}},"check_quest_step_finished":{"name":"Проверка: шаг квеста завершен","icon":"fa-list-check","params":{"quest_id":"number","step":"number"}},"shootmarkers":{"name":"Стрельба по маркерам","icon":"fa-crosshairs","params":{"markers":"markers"}}};
+        const ACTION_DEFS = eventActionRegistry;
         const SCENARIO_EVENTS = {"general":"Стандартный","on_recieve_objectives":"При получении задач","on_complete_objectives":"При завершении задач","on_end":"При окончании шага","on_equip":"При экипировке предмета","on_got":"При получении предмета","on_lost":"При потере предмета","on_unequip":"При снятии предмета"};
         const INPUT_CLASS = "w-full p-2 rounded-md ui-input";
+        const FORM_OPTIONS = {
+            inputClass: INPUT_CLASS,
+            textareaClass: `${INPUT_CLASS} min-h-[40px] resize-y`,
+            selectClass: INPUT_CLASS,
+            labelClass: 'block text-sm font-medium text-gray-300 mb-2',
+            wrapperClass: 'p-4 rounded-lg bg-black/10',
+            checkboxLabelClass: 'flex items-center space-x-3 cursor-pointer',
+            checkboxClass: 'h-5 w-5 rounded-md text-primary focus:ring-primary bg-transparent border-light',
+            checkboxTextClass: 'font-medium',
+            subLabelClass: 'block text-xs font-medium text-gray-400 mb-1',
+            listHeaderClass: 'grid grid-cols-3 gap-x-2 items-center px-2 pb-1 text-xs font-bold text-gray-400 uppercase border-b border-gray-600 mb-2',
+            listItemWrapperClass: 'grid grid-cols-3 gap-x-2 items-center relative',
+            listAddClass: 'mt-2 ui-btn ui-btn-primary text-sm py-1 px-3 rounded-md',
+            listRemoveClass: 'text-gray-400 hover:text-secondary',
+        };
 
         const render = () => {
             renderScenarioTypeSelector();
@@ -185,7 +201,8 @@
             const actionOptions = Object.entries(ACTION_DEFS).sort(([,a],[,b]) => a.name.localeCompare(b.name)).map(([key, value]) => `
                 <div class="custom-select-option ui-dropdown-option" data-action-key="${key}"><i class="fas ${value.icon} w-6 text-center ui-text-accent"></i><span>${value.name}</span></div>`
             ).join('');
-            const fieldsHtml = Object.entries(def.params).sort(([keyA], [keyB]) => keyA.localeCompare(keyB)).map(([key, type]) => createFormField(key, type, step)).join('');
+            const formContext = buildFormContext();
+            const fieldsHtml = formUtils.renderFields(def.fields, step, formContext, FORM_OPTIONS);
 
             DOM.editorPanel.innerHTML = `
                 <div class="space-y-6">
@@ -198,35 +215,36 @@
                         </div>
                         <span class="text-lg opacity-50">#${STATE.selectedStepIndex + 1}</span>
                     </div>
-                    ${fieldsHtml}
+                    <form data-editor-form onsubmit="return false;">
+                        ${fieldsHtml}
+                    </form>
                 </div>`;
+            const formEl = DOM.editorPanel.querySelector('form');
+            const handleFormChange = () => {
+                updateCurrentStepFromForm();
+                if (STATE.scenarioSteps[STATE.selectedStepIndex]?.action === 'group_header') {
+                    renderStepList();
+                }
+            };
+            formUtils.initForm(formEl, def.fields, step, formContext, FORM_OPTIONS, handleFormChange);
+            updateCurrentStepFromForm();
         };
 
-        const createFormField = (key, type, data) => {
-            const title = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-            let field = '';
-            const value = data[key];
-            switch (type) {
-                case 'text': field = `<textarea data-key="${key}" class="${INPUT_CLASS} min-h-[40px] resize-y">${value || ''}</textarea>`; break;
-                case 'number': field = `<input type="number" data-key="${key}" value="${value !== undefined ? value : 0}" class="${INPUT_CLASS}">`; break;
-                case 'boolean': field = `<label class="flex items-center space-x-3 cursor-pointer"><input type="checkbox" data-key="${key}" ${value ? 'checked' : ''} class="h-5 w-5 rounded-md text-primary focus:ring-primary bg-transparent border-light"><span class="font-medium">${title}</span></label>`; break;
-                case 'vec2': field = `<div class="grid grid-cols-2 gap-2"><div><label class="block text-xs font-medium text-gray-400 mb-1">X</label><input type="number" step="0.1" data-key="${key}.x" value="${value?.x || 0}" class="${INPUT_CLASS}"></div><div><label class="block text-xs font-medium text-gray-400 mb-1">Y</label><input type="number" step="0.1" data-key="${key}.y" value="${value?.y || 0}" class="${INPUT_CLASS}"></div></div>`; break;
-                case 'item': field = `<div class="grid grid-cols-2 gap-2"><div><label class="block text-xs font-medium text-gray-400 mb-1">ID</label><input type="number" data-key="${key}.id" value="${value?.id || 0}" class="${INPUT_CLASS}"></div><div><label class="block text-xs font-medium text-gray-400 mb-1">Value</label><input type="number" data-key="${key}.value" value="${value?.value || 0}" class="${INPUT_CLASS}"></div></div>`; break;
-                case 'door_key': {
-                    const allKeys = Array.from(new Set(STATE.scenarioSteps.filter(s => s.action === 'new_door' && s.key).map(s => s.key)));
-                    const datalistId = `door-keys-list-${STATE.selectedStepIndex}`;
-                    const optionsHtml = allKeys.map(k => `<option value="${k}"></option>`).join('');
-                    field = `<input type="text" list="${datalistId}" data-key="${key}" value="${value || ''}" class="${INPUT_CLASS}" placeholder="Введите или выберите ключ..."><datalist id="${datalistId}">${optionsHtml}</datalist>`; break;
-                }
-                case 'markers': {
-                    const markers = value || [];
-                    const headerHtml = `<div class="grid grid-cols-3 gap-x-2 items-center px-2 pb-1 text-xs font-bold text-gray-400 uppercase border-b border-gray-600 mb-2"><span>Position X</span><span>Position Y</span><span>Health</span></div>`;
-                    const markersHtml = markers.map((marker, index) => `<div class="grid grid-cols-3 gap-x-2 items-center"><input type="number" step="0.1" value="${marker.position.x}" class="${INPUT_CLASS}" data-marker-index="${index}" data-marker-prop="position.x"><input type="number" step="0.1" value="${marker.position.y}" class="${INPUT_CLASS}" data-marker-index="${index}" data-marker-prop="position.y"><div class="flex items-center gap-2"><input type="number" value="${marker.health}" class="${INPUT_CLASS}" data-marker-index="${index}" data-marker-prop="health"><button class="remove-marker-btn text-gray-400 hover:text-secondary" data-marker-index="${index}"><i class="fas fa-times"></i></button></div></div>`).join('');
-                    field = `<div class="bg-black/20 p-3 rounded-md">${markers.length > 0 ? headerHtml : ''}<div data-key="${key}" class="space-y-2">${markersHtml}</div></div><button class="add-marker-btn mt-2 ui-btn ui-btn-primary text-sm py-1 px-3 rounded-md"><i class="fas fa-plus mr-1"></i>Добавить маркер</button>`; break;
-                }
-            }
-            const containerClass = "p-4 rounded-lg";
-            return type === 'boolean' ? `<div class="${containerClass} hover:bg-black/10">${field}</div>` : `<div class="${containerClass} bg-black/10"><label class="block text-sm font-medium text-gray-300 mb-2">${title}</label>${field}</div>`;
+        const buildFormContext = () => ({
+            doorKeys: Array.from(new Set(STATE.scenarioSteps.filter(s => s.action === 'new_door' && s.key).map(s => s.key))),
+            instanceId: `event-${STATE.selectedStepIndex}`,
+        });
+
+        const updateCurrentStepFromForm = () => {
+            if (STATE.selectedStepIndex === -1) return;
+            const step = STATE.scenarioSteps[STATE.selectedStepIndex];
+            const def = ACTION_DEFS[step.action];
+            const form = DOM.editorPanel.querySelector('form');
+            if (!form || !def) return;
+            const formContext = buildFormContext();
+            const { data, errors } = formUtils.collectFormData(form, def.fields, step, formContext);
+            Object.assign(step, data);
+            formUtils.applyValidation(form, errors, FORM_OPTIONS);
         };
         
         const showUndoToast = (message) => {
@@ -258,29 +276,6 @@
             });
             DOM.confirmButtons.appendChild(cancelButton);
             DOM.confirmModal.style.display = 'flex';
-        };
-
-        const updateStepData = (input) => {
-            if (STATE.selectedStepIndex === -1) return;
-            const currentStep = STATE.scenarioSteps[STATE.selectedStepIndex];
-            const keyPath = input.dataset.key;
-            if (!keyPath) {
-                const key = 'markers';
-                const index = parseInt(input.dataset.markerIndex);
-                if (!currentStep[key]?.[index]) return;
-                const propPath = input.dataset.markerProp;
-                const value = input.type === 'number' ? parseFloat(input.value) : input.value;
-                let obj = currentStep[key][index];
-                const keys = propPath.split('.');
-                keys.slice(0, -1).forEach(k => obj = obj[k] || (obj[k] = {}));
-                obj[keys[keys.length - 1]] = value;
-            } else {
-                const value = input.type === 'checkbox' ? input.checked : (input.type === 'number' ? parseFloat(input.value) || 0 : input.value);
-                const keys = keyPath.split('.');
-                let current = currentStep;
-                keys.slice(0, -1).forEach(key => current = current[key] || (current[key] = {}));
-                current[keys[keys.length - 1]] = value;
-            }
         };
 
         const bindEvents = () => {
@@ -398,16 +393,6 @@
                 }
             });
 
-            DOM.editorPanel.addEventListener('input', e => {
-                 if (STATE.selectedStepIndex !== -1 && e.target.dataset.key) {
-                    updateStepData(e.target);
-                    const step = STATE.scenarioSteps[STATE.selectedStepIndex];
-                    if (step && step.action === 'group_header' && e.target.dataset.key === 'name') {
-                        renderStepList();
-                    }
-                }
-            });
-
             DOM.editorPanel.addEventListener('click', e => {
                 const selectButton = e.target.closest('.custom-select-button');
                 if (selectButton) {
@@ -429,18 +414,6 @@
 
                     render();
                     return;
-                }
-                const markerButton = e.target.closest('.add-marker-btn, .remove-marker-btn');
-                if (markerButton) {
-                    const key = 'markers';
-                    const step = STATE.scenarioSteps[STATE.selectedStepIndex];
-                    if (!step[key]) step[key] = [];
-                    if (markerButton.matches('.add-marker-btn')) {
-                        step[key].push({ position: { x: 0, y: 0 }, health: 1 });
-                    } else {
-                        step[key].splice(parseInt(markerButton.dataset.markerIndex), 1);
-                    }
-                    renderEditorPanel();
                 }
             });
             
