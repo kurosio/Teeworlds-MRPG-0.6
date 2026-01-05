@@ -105,6 +105,10 @@
             gap: 12px;
             flex-wrap: wrap;
         }
+        body.embedded header .controls .relative {
+            width: 44px;
+            height: 22px;
+        }
         body.embedded header .controls label {
             color: #cbd5f5;
         }
@@ -241,11 +245,15 @@
         body.embedded .toggle-label {
             background-color: #1e293b;
             border: 1px solid #334155;
+            height: 22px;
         }
         body.embedded .toggle-checkbox:checked + .toggle-label {
             background-color: #38bdf8;
         }
         body.embedded .toggle-checkbox {
+            width: 22px;
+            height: 22px;
+            border-width: 2px;
             border-color: #334155;
             background: #0f172a;
             box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.15);
@@ -621,6 +629,13 @@
 
             renderAll() {
                 const { groups, ungroupedSteps } = this.getCurrentViewState();
+                this.scenarioData.steps = (this.scenarioData.steps || []).map(step => ({
+                    ...step,
+                    components: (step.components || []).filter(Boolean).map(component => ({
+                        ...component,
+                        component_id: component.component_id || this.generateUUID()
+                    }))
+                }));
                 this.editorContainer.innerHTML = '';
                 
                 if (this.scenarioData.steps.length === 0) {
@@ -746,6 +761,12 @@
             }
 
             createComponentElement(component, step, index) {
+                if (!component) {
+                    return document.createDocumentFragment();
+                }
+                if (!component.component_id) {
+                    component.component_id = this.generateUUID();
+                }
                 const item = this.templates.component.content.cloneNode(true).firstElementChild;
                 item.id = `component-item-${component.component_id}`;
                 item.dataset.componentId = component.component_id;
