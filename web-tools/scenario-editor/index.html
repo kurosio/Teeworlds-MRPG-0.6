@@ -249,6 +249,8 @@
             border-color: #334155;
             background: #0f172a;
             box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.15);
+            top: 0;
+            left: 0;
         }
         body.embedded .control-btn:hover {
             background: rgba(148, 163, 184, 0.15);
@@ -951,6 +953,9 @@
                 let fromElement;
                 if (this.arrowMode === 'navigator') {
                     fromElement = document.querySelector(`[data-nav-id="${sourceElementId}"]`);
+                    if (!fromElement || fromElement.getClientRects().length === 0) {
+                        return;
+                    }
                 } else {
                     const sourceStepId = this.findComponentStepId(sourceElementId) || sourceElementId;
                     const sourceStepCard = document.getElementById(`step-card-${sourceStepId}`);
