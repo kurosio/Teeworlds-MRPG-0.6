@@ -94,7 +94,7 @@
             min-height: calc(100vh - 70px);
             border-radius: 16px;
             overflow: hidden;
-            margin: 16px;
+            margin: 10px 16px 16px;
             box-shadow: 0 18px 50px rgba(15, 23, 42, 0.45);
             gap: 18px;
         }
@@ -173,12 +173,15 @@
             border-color: #1e293b;
         }
         body.embedded .nav-group-wrapper {
-            border: 1px solid #1e293b;
+            border: 1px solid rgba(56, 189, 248, 0.22);
             box-shadow: none;
         }
         body.embedded .nav-group-header {
             background: #0f172a;
-            border-color: #1e293b;
+            border-color: rgba(56, 189, 248, 0.2);
+        }
+        body.embedded .nav-group-header:hover {
+            background: rgba(56, 189, 248, 0.08);
         }
         body.embedded .nav-step-list a,
         body.embedded .nav-component-list a {
@@ -237,6 +240,7 @@
         }
         body.embedded .toggle-label {
             background-color: #1e293b;
+            border: 1px solid #334155;
         }
         body.embedded .toggle-checkbox:checked + .toggle-label {
             background-color: #38bdf8;
@@ -244,6 +248,7 @@
         body.embedded .toggle-checkbox {
             border-color: #334155;
             background: #0f172a;
+            box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.15);
         }
         body.embedded .control-btn:hover {
             background: rgba(148, 163, 184, 0.15);
@@ -252,10 +257,36 @@
         body.embedded #add-step-button {
             background: #1f2937;
             color: #e2e8f0;
+            border: 1px solid #334155;
         }
         body.embedded .add-button:hover,
         body.embedded #add-step-button:hover {
             background: #334155;
+        }
+        body.embedded #add-step-button {
+            background: linear-gradient(90deg, #2563eb, #38bdf8);
+            border: none;
+            color: #f8fafc;
+        }
+        body.embedded #add-step-button:hover {
+            background: linear-gradient(90deg, #1d4ed8, #0ea5e9);
+        }
+        body.embedded #modal-save {
+            background: #22c55e;
+            border-color: #16a34a;
+            color: #f8fafc;
+        }
+        body.embedded #modal-cancel {
+            background: #1f2937;
+            border-color: #334155;
+        }
+        body.embedded #delete-group-and-steps-btn {
+            background: #ef4444;
+            border-color: #dc2626;
+        }
+        body.embedded #delete-group-only-btn {
+            background: #f59e0b;
+            border-color: #d97706;
         }
         body.embedded #add-group-btn {
             background: #1e293b;
@@ -458,7 +489,7 @@
             initState() {
                 this.arrowMode = 'navigator'; // 'navigator' or 'editor'
                 this.scenarioData = { steps: [], editor_data: { groups: [] } };
-                this.uiState = { collapsedSteps: new Set() }; // Save UI state like collapsed cards
+                this.uiState = { collapsedSteps: new Set(), collapsedUngrouped: false }; // Save UI state like collapsed cards
                 this.componentTypes = {
                     message: { name: 'Сообщение', class: 'info', icon: 'fa-solid fa-comment-dots', desc: 'Показать текст игроку', default: { type: 'message', text: 'Новое сообщение', mode: 'full' } },
                     wait: { name: 'Ожидание', class: 'info', icon: 'fa-solid fa-clock', desc: 'Пауза в сценарии', default: { type: 'wait', duration: 5 } },
@@ -758,7 +789,12 @@
                     container.appendChild(groupWrapper);
                 });
 
-                const ungroupedWrapper = this.createNavGroupElement({ id: 'ungrouped', name: 'Шаги без группы', collapsed: false, isDefault: true });
+                const ungroupedWrapper = this.createNavGroupElement({
+                    id: 'ungrouped',
+                    name: 'Шаги без группы',
+                    collapsed: this.uiState.collapsedUngrouped,
+                    isDefault: true
+                });
                 const ungroupedList = ungroupedWrapper.querySelector('.nav-step-list');
                 
                 ungroupedSteps.forEach(stepId => {
@@ -1589,14 +1625,18 @@
             }
 
             toggleGroupCollapse(groupId) {
-                const groups = this.scenarioData.editor_data.groups;
-                const group = groups.find(g => g.id === groupId);
-                if (group) {
-                    group.collapsed = !group.collapsed;
-                    this.renderNavigator();
-                    this.initAllSortables(); 
-                    requestAnimationFrame(() => this.drawConnections());
+                if (groupId === 'ungrouped') {
+                    this.uiState.collapsedUngrouped = !this.uiState.collapsedUngrouped;
+                } else {
+                    const groups = this.scenarioData.editor_data.groups;
+                    const group = groups.find(g => g.id === groupId);
+                    if (group) {
+                        group.collapsed = !group.collapsed;
+                    }
                 }
+                this.renderNavigator();
+                this.initAllSortables();
+                requestAnimationFrame(() => this.drawConnections());
             }
             
             renameGroup(groupId, newName) {
