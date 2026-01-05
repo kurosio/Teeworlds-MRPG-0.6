@@ -236,6 +236,23 @@ body {
     height: 80vh;
 }
 
+.module-shell {
+    background: #0b1220;
+    border-radius: 16px;
+    border: 1px solid var(--border);
+    min-height: 60vh;
+    padding: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    color: var(--text-muted);
+}
+
+.module-shell h3 {
+    margin-top: 12px;
+}
+
 .notice {
     color: var(--text-muted);
     font-size: 14px;
