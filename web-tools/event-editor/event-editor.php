@@ -561,7 +561,32 @@
         return { init };
     })();
 
-    document.addEventListener('DOMContentLoaded', App.init);
+    const EventEditor = (() => {
+        let mounted = false;
+        return {
+            mount(container, options = {}) {
+                if (mounted) {
+                    return;
+                }
+                if (options.embedded) {
+                    document.body.classList.add('embedded');
+                } else {
+                    document.body.classList.remove('embedded');
+                }
+                App.init();
+                mounted = true;
+            },
+            unmount() {
+                mounted = false;
+            },
+        };
+    })();
+
+    window.EventEditor = EventEditor;
+
+    document.addEventListener('DOMContentLoaded', () => {
+        EventEditor.mount(document.body, { embedded: <?php echo $embedded ? 'true' : 'false'; ?> });
+    });
     </script>
 </body>
 </html>

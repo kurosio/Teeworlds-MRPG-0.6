@@ -155,11 +155,6 @@
     </template>
 
     <script type="module">
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('embedded') === '1') {
-            document.body.classList.add('embedded');
-        }
-
         class ScenarioEditor {
             constructor() {
                 this.bindElements();
@@ -1584,7 +1579,34 @@
                 this.hideAddComponentMenu();
             }
         }
-        document.addEventListener('DOMContentLoaded', () => new ScenarioEditor());
+        const ScenarioEditorApp = (() => {
+            let instance = null;
+            return {
+                mount(container, options = {}) {
+                    if (instance) {
+                        return instance;
+                    }
+                    if (options.embedded) {
+                        document.body.classList.add('embedded');
+                    } else {
+                        document.body.classList.remove('embedded');
+                    }
+                    instance = new ScenarioEditor();
+                    return instance;
+                },
+                unmount() {
+                    instance = null;
+                },
+            };
+        })();
+
+        window.ScenarioEditor = ScenarioEditorApp;
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const urlParams = new URLSearchParams(window.location.search);
+            const embedded = urlParams.get('embedded') === '1';
+            ScenarioEditorApp.mount(document.body, { embedded });
+        });
     </script>
 </body>
 </html>
