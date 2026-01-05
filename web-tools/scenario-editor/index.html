@@ -1777,8 +1777,18 @@
                         const fromStep = this.findStep(e.from.closest('.step-card').dataset.stepId);
                         const toStep = this.findStep(e.to.closest('.step-card').dataset.stepId);
                         if (fromStep && toStep) {
-                            const [moved] = fromStep.components.splice(e.oldIndex, 1);
-                            toStep.components.splice(e.newIndex, 0, moved);
+                            const componentId = e.item.dataset.componentId;
+                            if (!componentId) return;
+                            const oldCompIndex = fromStep.components.findIndex(cmp => cmp.component_id === componentId);
+                            if (oldCompIndex === -1) return;
+                            const [moved] = fromStep.components.splice(oldCompIndex, 1);
+                            const newOrder = Array.from(e.to.querySelectorAll('.component-item')).map(el => el.dataset.componentId);
+                            const newIndex = newOrder.indexOf(componentId);
+                            if (newIndex === -1) {
+                                toStep.components.push(moved);
+                            } else {
+                                toStep.components.splice(newIndex, 0, moved);
+                            }
                         }
                     });
                     this.sortableInstances.push(new Sortable(c, sortableConfig('components', onEnd, '.component-item')));
