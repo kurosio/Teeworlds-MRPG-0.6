@@ -17,7 +17,7 @@
     <link rel="stylesheet" href="../shared/components.css">
 	<link rel="stylesheet" href="scenario-editor.css">
 </head>
-<body class="scenario-editor font-sans ui-theme ui-scrollbar">
+<body class="scenario-editor font-sans ui-theme ui-scrollbar ui-embedded-root">
     <div id="toast-container" class="fixed top-5 right-5 z-[9999] flex flex-col gap-2"></div>
 
     <header class="bg-white h-[70px] px-8 border-b border-slate-200 flex justify-between items-center sticky top-0 z-50 shadow-sm ui-panel">
@@ -1581,17 +1581,14 @@
                 this.hideAddComponentMenu();
             }
         }
+		import { applyEmbeddedState } from '../shared/embed.js';
+
         const ScenarioEditorApp = (() => {
             let instance = null;
             return {
                 mount(container, options = {}) {
                     if (instance) {
                         return instance;
-                    }
-                    if (options.embedded) {
-                        document.body.classList.add('embedded');
-                    } else {
-                        document.body.classList.remove('embedded');
                     }
                     instance = new ScenarioEditor();
                     return instance;
@@ -1605,8 +1602,7 @@
         window.ScenarioEditor = ScenarioEditorApp;
 
         document.addEventListener('DOMContentLoaded', () => {
-            const urlParams = new URLSearchParams(window.location.search);
-            const embedded = urlParams.get('embedded') === '1';
+            const embedded = applyEmbeddedState(document.body);
             ScenarioEditorApp.mount(document.body, { embedded });
         });
     </script>

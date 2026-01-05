@@ -1,4 +1,3 @@
-<?php $embedded = isset($_GET['embedded']); ?>
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -10,8 +9,8 @@
     <link rel="stylesheet" href="../shared/theme.css">
     <link rel="stylesheet" href="../shared/components.css">
 </head>
-<body class="antialiased ui-theme ui-scrollbar<?php echo $embedded ? ' embedded' : ''; ?>">
-    <div id="app" class="flex h-screen overflow-hidden ui-app">
+<body class="antialiased ui-theme ui-scrollbar">
+    <div id="app" class="flex h-screen overflow-hidden ui-app ui-embedded-root">
         <aside class="w-1/3 max-w-sm flex flex-col ui-sidebar">
             <div class="p-4 border-b border-gray-700 text-center">
                 <h1 class="text-2xl font-bold text-white tracking-wider ui-title-glow">Редактор</h1>
@@ -73,6 +72,12 @@
         <span id="undo-message"></span>
         <button id="undo-btn" class="font-bold uppercase ui-text-accent">Отменить</button>
     </div>
+
+    <script type="module">
+        import { applyEmbeddedState } from '../shared/embed.js';
+
+        applyEmbeddedState(document.getElementById('app'));
+    </script>
 
     <script>
     const App = (() => {

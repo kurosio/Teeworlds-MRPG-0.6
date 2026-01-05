@@ -231,27 +231,28 @@
     border-top: 2px dashed var(--color-accent);
 }
 
-body.embedded {
-    overflow: auto;
-}
-
-body.embedded #app {
+.ui-embedded-root[data-embedded="1"] {
+    --ui-embed-gap: 16px;
+    --ui-embed-radius: 16px;
+    --ui-embed-padding: 16px;
+    --ui-embed-sidebar-width: 320px;
     min-height: 100vh;
     height: auto;
+    overflow: auto;
     background: var(--color-bg-strong);
 }
 
-body.embedded aside {
-    width: 320px;
-    max-width: 320px;
+.ui-embedded-root[data-embedded="1"] aside {
+    width: var(--ui-embed-sidebar-width);
+    max-width: var(--ui-embed-sidebar-width);
 }
 
-body.embedded #editor-panel {
+.ui-embedded-root[data-embedded="1"] #editor-panel {
     background: var(--color-bg-dark);
-    border-radius: 16px;
-    margin: 16px;
+    border-radius: var(--ui-embed-radius);
+    margin: var(--ui-embed-gap);
 }
 
-body.embedded #step-list {
-    padding-bottom: 16px;
+.ui-embedded-root[data-embedded="1"] #step-list {
+    padding-bottom: var(--ui-embed-padding);
 }
