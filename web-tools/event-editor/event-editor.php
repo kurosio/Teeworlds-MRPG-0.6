@@ -68,6 +68,7 @@
 
     <script src="../editor-core/registry.js"></script>
     <script src="../editor-core/core.js"></script>
+    <script src="../editor-core/field-renderer.js"></script>
     <script src="../editor-core/ui.js"></script>
     <script>
     const App = (() => {
@@ -104,6 +105,25 @@
         const { actionSchemas, applyDefaults } = window.EditorCore.schemas;
         const SCENARIO_EVENTS = {"general":"Стандартный","on_recieve_objectives":"При получении задач","on_complete_objectives":"При завершении задач","on_end":"При окончании шага","on_equip":"При экипировке предмета","on_got":"При получении предмета","on_lost":"При потере предмета","on_unequip":"При снятии предмета"};
         const INPUT_CLASS = "w-full p-2 rounded-md form-input";
+        const FIELD_RENDER_OPTIONS = {
+            classes: {
+                input: INPUT_CLASS,
+                textarea: `${INPUT_CLASS} min-h-[40px] resize-y`,
+                multiselect: INPUT_CLASS,
+                label: 'block text-sm font-medium text-gray-300 mb-2',
+                nestedLabel: 'block text-xs font-medium text-gray-400 mb-1',
+                fieldWrapper: 'p-4 rounded-lg bg-black/10',
+                checkboxWrapper: 'flex items-center space-x-3 cursor-pointer',
+                listWrapper: 'space-y-2',
+                listItem: 'bg-black/20 p-3 rounded-md space-y-2',
+                listAdd: 'add-list-btn mt-2 bg-blue-500 hover:bg-blue-600 text-white text-sm py-1 px-3 rounded-md btn',
+                listRemove: 'remove-list-btn text-gray-400 hover:text-secondary text-sm'
+            },
+            includeName: false,
+            includeDataKey: true,
+            includeDataPath: true,
+            listAddLabel: 'Добавить'
+        };
 
         const render = () => {
             renderScenarioTypeSelector();
@@ -179,7 +199,12 @@
             const actionOptions = Object.entries(actionSchemas).sort(([,a],[,b]) => a.name.localeCompare(b.name)).map(([key, value]) => `
                 <div class="custom-select-option p-2 rounded-md hover:bg-light cursor-pointer flex items-center" data-action-key="${key}"><i class="fas ${value.icon} w-6 text-center mr-2 text-accent"></i><span>${value.name}</span></div>`
             ).join('');
-            const fieldsHtml = Object.entries(def.fields).sort(([keyA], [keyB]) => keyA.localeCompare(keyB)).map(([key, field]) => createFormField(key, field, step)).join('');
+            const fieldsHtml = window.EditorCore.FieldRenderer.renderFields({
+                fields: def.fields,
+                data: step,
+                options: FIELD_RENDER_OPTIONS,
+                sort: true
+            });
 
             DOM.editorPanel.innerHTML = `
                 <div class="space-y-6">
@@ -194,43 +219,6 @@
                     </div>
                     ${fieldsHtml}
                 </div>`;
-        };
-
-        const createFormField = (key, fieldSchema, data) => {
-            const type = fieldSchema.type;
-            const title = fieldSchema.label || key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-            let field = '';
-            const value = data[key];
-            switch (type) {
-                case 'text': {
-                    if (fieldSchema.ui?.type === 'select' && fieldSchema.ui.options?.length) {
-                        field = `<select data-key="${key}" class="${INPUT_CLASS}">` +
-                            fieldSchema.ui.options.map(option => `<option value="${option}" ${value === option ? 'selected' : ''}>${option}</option>`).join('') +
-                            `</select>`;
-                    } else {
-                        field = `<textarea data-key="${key}" class="${INPUT_CLASS} min-h-[40px] resize-y">${value || ''}</textarea>`;
-                    }
-                    break;
-                }
-                case 'number': field = `<input type="number" data-key="${key}" value="${value !== undefined ? value : 0}" class="${INPUT_CLASS}">`; break;
-                case 'boolean': field = `<label class="flex items-center space-x-3 cursor-pointer"><input type="checkbox" data-key="${key}" ${value ? 'checked' : ''} class="h-5 w-5 rounded-md text-primary focus:ring-primary bg-transparent border-light"><span class="font-medium">${title}</span></label>`; break;
-                case 'vec2': field = `<div class="grid grid-cols-2 gap-2"><div><label class="block text-xs font-medium text-gray-400 mb-1">X</label><input type="number" step="0.1" data-key="${key}.x" value="${value?.x || 0}" class="${INPUT_CLASS}"></div><div><label class="block text-xs font-medium text-gray-400 mb-1">Y</label><input type="number" step="0.1" data-key="${key}.y" value="${value?.y || 0}" class="${INPUT_CLASS}"></div></div>`; break;
-                case 'item': field = `<div class="grid grid-cols-2 gap-2"><div><label class="block text-xs font-medium text-gray-400 mb-1">ID</label><input type="number" data-key="${key}.id" value="${value?.id || 0}" class="${INPUT_CLASS}"></div><div><label class="block text-xs font-medium text-gray-400 mb-1">Value</label><input type="number" data-key="${key}.value" value="${value?.value || 0}" class="${INPUT_CLASS}"></div></div>`; break;
-                case 'door_key': {
-                    const allKeys = Array.from(new Set(STATE.scenarioSteps.filter(s => s.action === 'new_door' && s.key).map(s => s.key)));
-                    const datalistId = `door-keys-list-${STATE.selectedStepIndex}`;
-                    const optionsHtml = allKeys.map(k => `<option value="${k}"></option>`).join('');
-                    field = `<input type="text" list="${datalistId}" data-key="${key}" value="${value || ''}" class="${INPUT_CLASS}" placeholder="Введите или выберите ключ..."><datalist id="${datalistId}">${optionsHtml}</datalist>`; break;
-                }
-                case 'markers': {
-                    const markers = value || [];
-                    const headerHtml = `<div class="grid grid-cols-3 gap-x-2 items-center px-2 pb-1 text-xs font-bold text-gray-400 uppercase border-b border-gray-600 mb-2"><span>Position X</span><span>Position Y</span><span>Health</span></div>`;
-                    const markersHtml = markers.map((marker, index) => `<div class="grid grid-cols-3 gap-x-2 items-center"><input type="number" step="0.1" value="${marker.position.x}" class="${INPUT_CLASS}" data-marker-index="${index}" data-marker-prop="position.x"><input type="number" step="0.1" value="${marker.position.y}" class="${INPUT_CLASS}" data-marker-index="${index}" data-marker-prop="position.y"><div class="flex items-center gap-2"><input type="number" value="${marker.health}" class="${INPUT_CLASS}" data-marker-index="${index}" data-marker-prop="health"><button class="remove-marker-btn text-gray-400 hover:text-secondary" data-marker-index="${index}"><i class="fas fa-times"></i></button></div></div>`).join('');
-                    field = `<div class="bg-black/20 p-3 rounded-md">${markers.length > 0 ? headerHtml : ''}<div data-key="${key}" class="space-y-2">${markersHtml}</div></div><button class="add-marker-btn mt-2 bg-blue-500 hover:bg-blue-600 text-white text-sm py-1 px-3 rounded-md btn"><i class="fas fa-plus mr-1"></i>Добавить маркер</button>`; break;
-                }
-            }
-            const containerClass = "p-4 rounded-lg";
-            return type === 'boolean' ? `<div class="${containerClass} hover:bg-black/10">${field}</div>` : `<div class="${containerClass} bg-black/10"><label class="block text-sm font-medium text-gray-300 mb-2">${title}</label>${field}</div>`;
         };
 
         const applyActionDefaults = (step) => {
@@ -275,24 +263,10 @@
         const updateStepData = (input) => {
             if (STATE.selectedStepIndex === -1) return;
             const currentStep = STATE.scenarioSteps[STATE.selectedStepIndex];
-            const keyPath = input.dataset.key;
-            if (!keyPath) {
-                const key = 'markers';
-                const index = parseInt(input.dataset.markerIndex);
-                if (!currentStep[key]?.[index]) return;
-                const propPath = input.dataset.markerProp;
-                const value = input.type === 'number' ? parseFloat(input.value) : input.value;
-                let obj = currentStep[key][index];
-                const keys = propPath.split('.');
-                keys.slice(0, -1).forEach(k => obj = obj[k] || (obj[k] = {}));
-                obj[keys[keys.length - 1]] = value;
-            } else {
-                const value = input.type === 'checkbox' ? input.checked : (input.type === 'number' ? parseFloat(input.value) || 0 : input.value);
-                const keys = keyPath.split('.');
-                let current = currentStep;
-                keys.slice(0, -1).forEach(key => current = current[key] || (current[key] = {}));
-                current[keys[keys.length - 1]] = value;
-            }
+            const keyPath = input.dataset.path || input.dataset.key;
+            if (!keyPath) return;
+            const value = window.EditorCore.FieldRenderer.getInputValue(input);
+            window.EditorCore.FieldRenderer.setValueAtPath(currentStep, keyPath, value);
         };
 
         const bindEvents = () => {
@@ -412,10 +386,10 @@
             });
 
             DOM.editorPanel.addEventListener('input', e => {
-                 if (STATE.selectedStepIndex !== -1 && e.target.dataset.key) {
+                if (STATE.selectedStepIndex !== -1 && (e.target.dataset.key || e.target.dataset.path)) {
                     updateStepData(e.target);
                     const step = STATE.scenarioSteps[STATE.selectedStepIndex];
-                    if (step && step.action === 'group_header' && e.target.dataset.key === 'name') {
+                    if (step && step.action === 'group_header' && (e.target.dataset.key === 'name' || e.target.dataset.path === 'name')) {
                         renderStepList();
                     }
                 }
@@ -443,15 +417,23 @@
                     render();
                     return;
                 }
-                const markerButton = e.target.closest('.add-marker-btn, .remove-marker-btn');
-                if (markerButton) {
-                    const key = 'markers';
+                const listButton = e.target.closest('[data-list-action]');
+                if (listButton) {
                     const step = STATE.scenarioSteps[STATE.selectedStepIndex];
-                    if (!step[key]) step[key] = [];
-                    if (markerButton.matches('.add-marker-btn')) {
-                        step[key].push({ position: { x: 0, y: 0 }, health: 1 });
-                    } else {
-                        step[key].splice(parseInt(markerButton.dataset.markerIndex), 1);
+                    const listPath = listButton.dataset.listPath;
+                    if (!listPath) return;
+                    const listValue = window.EditorCore.FieldRenderer.getValueAtPath(step, listPath) || [];
+                    if (listButton.dataset.listAction === 'add') {
+                        const defaultItemRaw = listButton.dataset.listDefault ? decodeURIComponent(listButton.dataset.listDefault) : null;
+                        const defaultItem = defaultItemRaw ? JSON.parse(defaultItemRaw) : {};
+                        listValue.push(defaultItem);
+                        window.EditorCore.FieldRenderer.setValueAtPath(step, listPath, listValue);
+                    } else if (listButton.dataset.listAction === 'remove') {
+                        const index = parseInt(listButton.dataset.listIndex);
+                        if (!Number.isNaN(index)) {
+                            listValue.splice(index, 1);
+                            window.EditorCore.FieldRenderer.setValueAtPath(step, listPath, listValue);
+                        }
                     }
                     renderEditorPanel();
                 }

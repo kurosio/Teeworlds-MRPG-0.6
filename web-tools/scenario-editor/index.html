@@ -197,6 +197,7 @@
 
     <script src="../editor-core/registry.js"></script>
     <script src="../editor-core/core.js"></script>
+    <script src="../editor-core/field-renderer.js"></script>
     <script src="../editor-core/ui.js"></script>
     <script type="module">
         class ScenarioEditor {
@@ -256,6 +257,13 @@
                 this.modal.saveButton.addEventListener('click', () => this.saveModalChanges());
                 this.modal.cancelButton.addEventListener('click', () => this.closeModal());
                 this.modal.backdrop.addEventListener('click', (e) => { if (e.target === this.modal.backdrop) this.closeModal(); });
+                this.modal.formContainer.addEventListener('click', (e) => {
+                    const listButton = e.target.closest('[data-list-action]');
+                    if (listButton) {
+                        e.preventDefault();
+                        this.handleModalListAction(listButton);
+                    }
+                });
                 document.addEventListener('click', (e) => { if (!e.target.closest('.add-component-btn') && !this.addComponentMenu.element.contains(e.target)) this.hideAddComponentMenu(); });
                 this.addComponentMenu.element.addEventListener('click', (e) => this.handleAddComponentAction(e));
 
@@ -805,47 +813,8 @@
 
             saveModalChanges() {
                 if (!this.modal.context) return;
-                const form = this.modal.formContainer.querySelector('form');
-                const formData = new FormData(form);
-                const editedData = this.modal.context.data;
-                
-                // Handle checkboxes by setting them to false first.
-                if (editedData.type === 'activate_point' || editedData.type === 'condition_movement') {
-                    editedData.entire_group = false;
-                }
-                if (editedData.type === 'follow_camera') {
-                    editedData.smooth = false;
-                }
-                if (editedData.type === 'use_chat_code') {
-                    editedData.hidden = false;
-                }
-
-
-                for (let [key, value] of formData.entries()) {
-                    if (key.startsWith('mobs.')) continue;
-                    
-                    let processedValue;
-                    if (key === 'entire_group' || key === 'smooth' || key === 'hidden') {
-                        processedValue = true;
-                    } else {
-                        const isNumeric = !isNaN(parseFloat(value)) && isFinite(value) && value.trim() !== "";
-                        processedValue = isNumeric ? parseFloat(value) : (value === 'undefined' ? undefined : value);
-                    }
-                    
-                    if (key.includes('.')) {
-                        const keys = key.split('.');
-                        let current = editedData;
-                        for (let i = 0; i < keys.length - 1; i++) current = current[keys[i]] = current[keys[i]] || {};
-                        current[keys[keys.length - 1]] = processedValue;
-                    } else {
-                        editedData[key] = processedValue;
-                    }
-                }
+                const editedData = this.collectModalFormData();
                 if (editedData.type === 'defeat_mobs') {
-                    editedData.mobs = [];
-                    form.querySelectorAll('.mob-item').forEach(item => {
-                        editedData.mobs.push({ mob_id: parseInt(item.querySelector('[name="mobs.mob_id"]').value) || 0, count: parseInt(item.querySelector('[name="mobs.count"]').value) || 1, level: parseInt(item.querySelector('[name="mobs.level"]').value) || 1, power: parseInt(item.querySelector('[name="mobs.power"]').value) || 1, boss: item.querySelector('[name="mobs.boss"]').checked, });
-                    });
                     if (editedData.mode !== 'survival') delete editedData.duration;
                     if (editedData.mode !== 'wave') delete editedData.kill_target;
                 }
@@ -861,6 +830,40 @@
                 this.renderAll();
             }
 
+            collectModalFormData() {
+                const form = this.modal.formContainer.querySelector('form');
+                const editedData = JSON.parse(JSON.stringify(this.modal.context.data));
+                const schemaFields = this.componentTypes[editedData.type]?.fields || {};
+                Object.entries(schemaFields).forEach(([key, field]) => {
+                    if (field.type === 'list') editedData[key] = [];
+                });
+                form.querySelectorAll('[name]').forEach((input) => {
+                    const value = window.EditorCore.FieldRenderer.getInputValue(input);
+                    window.EditorCore.FieldRenderer.setValueAtPath(editedData, input.name, value);
+                });
+                return editedData;
+            }
+
+            handleModalListAction(button) {
+                if (!this.modal.context) return;
+                const step = this.findStep(this.modal.context.stepId);
+                const listPath = button.dataset.listPath;
+                if (!listPath) return;
+                const currentData = this.collectModalFormData();
+                const listValue = window.EditorCore.FieldRenderer.getValueAtPath(currentData, listPath) || [];
+                if (button.dataset.listAction === 'add') {
+                    const defaultItemRaw = button.dataset.listDefault ? decodeURIComponent(button.dataset.listDefault) : null;
+                    const defaultItem = defaultItemRaw ? JSON.parse(defaultItemRaw) : {};
+                    listValue.push(defaultItem);
+                } else if (button.dataset.listAction === 'remove') {
+                    const index = parseInt(button.dataset.listIndex);
+                    if (!Number.isNaN(index)) listValue.splice(index, 1);
+                }
+                window.EditorCore.FieldRenderer.setValueAtPath(currentData, listPath, listValue);
+                this.modal.context.data = currentData;
+                this.modal.formContainer.innerHTML = this.buildModalForm(currentData, step);
+            }
+
             buildModalForm(data, step) {
                 let formHtml = `<form onsubmit="return false;"><label class="block text-sm font-medium text-slate-700 mb-1">Переход к шагу (если нужно):</label>`;
                 const select = document.createElement('select');
@@ -869,157 +872,66 @@
                 this.populateStepDropdown(select, data.next_step_id);
                 formHtml += select.outerHTML;
 
-                const labelClass = "class='block text-sm font-medium text-slate-700 mb-1'";
-                const inputClass = "class='w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500'";
-
                 // Show delay for sequential logic OR for follow_camera
-                if (data.type === 'follow_camera' || (step && step.completion_logic === 'sequential')) {
-                     formHtml += `<label ${labelClass} class="mt-4">Задержка (мс):</label><input type="number" name="delay" value="${data.delay || 0}" ${inputClass}>`;
+                const shouldShowDelay = data.type === 'follow_camera' || (step && step.completion_logic === 'sequential');
+                const componentSchema = this.componentTypes[data.type] || {};
+                const componentFields = componentSchema.fields || {};
+                const filteredFields = Object.fromEntries(Object.entries(componentFields).filter(([key]) => key !== 'next_step_id'));
+                const renderOptions = {
+                    classes: {
+                        input: 'w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500',
+                        textarea: 'w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 min-h-[80px]',
+                        multiselect: 'w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500',
+                        label: 'block text-sm font-medium text-slate-700 mb-1',
+                        nestedLabel: 'block text-xs font-medium text-slate-600 mb-1',
+                        fieldWrapper: 'mt-4',
+                        checkboxWrapper: 'flex items-center gap-2 text-sm',
+                        listWrapper: 'space-y-3',
+                        listItem: 'bg-slate-50 p-3 rounded-md border border-slate-200 space-y-2',
+                        listAdd: 'mt-2 bg-blue-500 text-white font-semibold text-sm py-1.5 px-3 rounded-md hover:bg-blue-600 transition-colors',
+                        listRemove: 'text-sm text-red-600 hover:text-red-700'
+                    },
+                    includeName: true,
+                    includeDataPath: true,
+                    listAddLabel: 'Добавить элемент'
+                };
+
+                if (shouldShowDelay && !filteredFields.delay) {
+                    const delayField = { type: 'number', label: 'Задержка (мс)', ui: { min: 0, max: 600000 } };
+                    formHtml += window.EditorCore.FieldRenderer.renderField({ path: 'delay', field: delayField, data, options: renderOptions });
                 }
 
                 formHtml += `<hr class="my-5 border-slate-200">`;
-                
-                switch (data.type) {
-                    case 'message': 
-                        formHtml += `<label ${labelClass}>Тип сообщения:</label>
-                                   <select name="mode" ${inputClass}>
-                                       <option value="full" ${data.mode === 'full' ? 'selected' : ''}>Все (Броадкаст и чат)</option>
-                                       <option value="broadcast" ${data.mode === 'broadcast' ? 'selected' : ''}>Броадкаст</option>
-                                       <option value="chat" ${data.mode === 'chat' ? 'selected' : ''}>Чат</option>
-                                   </select>
-                                   <label ${labelClass} class="mt-4">Текст сообщения:</label>
-                                   <textarea name="text" rows="4" ${inputClass}>${data.text || ''}</textarea>`; 
-                        break;
-                    case 'wait': formHtml += `<label ${labelClass}>Длительность (в секундах):</label><input type="number" name="duration" value="${data.duration || 5}" ${inputClass}>`; break;
-                    case 'use_chat_code': 
-                        formHtml += `<label ${labelClass}>Кодовое слово:</label><input type="text" name="code" value="${data.code || ''}" ${inputClass}>
-                                   <div class="mt-4"><label class="flex items-center text-sm"><input type="checkbox" name="hidden" ${data.hidden ? 'checked' : ''} class="rounded border-slate-300 text-blue-600 shadow-sm focus:ring-blue-500 mr-2">Скрыть ключевое слово</label></div>`; 
-                        break;
-                    case 'door_control':
-                        const doorKeys = this.collectAllDoorKeys();
-                        formHtml += `<datalist id="door-keys-list">${doorKeys.map(key => `<option value="${key}">`).join('')}</datalist>
-                                   <label ${labelClass}>Действие:</label><select name="action" ${inputClass}><option value="create" ${data.action === 'create' ? 'selected' : ''}>Создать</option><option value="remove" ${data.action === 'remove' ? 'selected' : ''}>Удалить</option></select>
-                                   <label ${labelClass} class="mt-4">Ключ/Имя двери (key):</label><input type="text" name="key" value="${data.key || ''}" list="door-keys-list" ${inputClass}>
-                                   <div id="door-position-fields" class="${data.action === 'remove' ? 'hidden' : ''}"><div class="grid grid-cols-2 gap-4 mt-4"><div><label ${labelClass}>Позиция X:</label><input type="number" name="position.x" value="${data.position?.x || 0}" ${inputClass}></div><div><label ${labelClass}>Позиция Y:</label><input type="number" name="position.y" value="${data.position?.y || 0}" ${inputClass}></div></div></div>`;
-                        break;
-                    case 'defeat_mobs':
-                        formHtml += this.buildDefeatMobsForm(data);
-                        break;
-                    case 'follow_camera':
-                        formHtml += `<div class="grid grid-cols-2 gap-4 mt-4"><div><label ${labelClass}>Позиция X:</label><input type="number" name="position.x" value="${data.position?.x || 0}" ${inputClass}></div><div><label ${labelClass}>Позиция Y:</label><input type="number" name="position.y" value="${data.position?.y || 0}" ${inputClass}></div></div>
-                                   <div class="mt-4"><label class="flex items-center text-sm"><input type="checkbox" name="smooth" ${data.smooth ? 'checked' : ''} class="rounded border-slate-300 text-blue-600 shadow-sm focus:ring-blue-500 mr-2">Плавное перемещение</label></div>`;
-                        break;
-                    case 'condition_movement':
-                        formHtml += `<div class="grid grid-cols-2 gap-4"><div><label ${labelClass}>Позиция X:</label><input type="number" name="position.x" value="${data.position?.x || 0}" ${inputClass}></div><div><label ${labelClass}>Позиция Y:</label><input type="number" name="position.y" value="${data.position?.y || 0}" ${inputClass}></div></div>
-                                   <div class="mt-4"><label class="flex items-center text-sm"><input type="checkbox" name="entire_group" ${data.entire_group ? 'checked' : ''} class="rounded border-slate-300 text-blue-600 shadow-sm focus:ring-blue-500 mr-2">Для всей группы</label></div>`;
-                        break;
-                    case 'teleport':
-                        formHtml += `<div class="grid grid-cols-2 gap-4"><div><label ${labelClass}>Позиция X:</label><input type="number" name="position.x" value="${data.position?.x || 0}" ${inputClass}></div><div><label ${labelClass}>Позиция Y:</label><input type="number" name="position.y" value="${data.position?.y || 0}" ${inputClass}></div></div>`;
-                        break;
-                    case 'activate_point':
-                        formHtml += `<label ${labelClass}>Текст действия (action_text):</label><input type="text" name="action_text" value="${data.action_text || ''}" ${inputClass}>
-                                   <label ${labelClass} class="mt-4">Длительность активации (сек):</label><input type="number" name="duration" value="${data.duration || 5}" ${inputClass}>
-                                   <div class="grid grid-cols-2 gap-4 mt-4"><div><label ${labelClass}>Позиция X:</label><input type="number" name="position.x" value="${data.position?.x || 0}" ${inputClass}></div><div><label ${labelClass}>Позиция Y:</label><input type="number" name="position.y" value="${data.position?.y || 0}" ${inputClass}></div></div>
-                                   <div class="mt-4"><label class="flex items-center text-sm"><input type="checkbox" name="entire_group" ${data.entire_group ? 'checked' : ''} class="rounded border-slate-300 text-blue-600 shadow-sm focus:ring-blue-500 mr-2">Для всей группы</label></div>`;
-                        break;
-                    default: formHtml += `<p>Просмотр JSON:</p><textarea rows="8" class="w-full font-mono text-xs" readonly>${JSON.stringify(data, null, 2)}</textarea>`;
-                }
+                formHtml += window.EditorCore.FieldRenderer.renderFields({
+                    fields: filteredFields,
+                    data,
+                    options: renderOptions
+                });
                 formHtml += `</form>`;
                 
                 setTimeout(() => {
-                    if (data.type === 'defeat_mobs') this.initDefeatMobsEditor(data);
                     if (data.type === 'door_control') {
                         const actionSelect = this.modal.formContainer.querySelector('select[name="action"]');
-                        const positionFields = this.modal.formContainer.querySelector('#door-position-fields');
+                        const positionFields = this.modal.formContainer.querySelector('[data-field-path="position"]');
                         if (actionSelect && positionFields) {
                             actionSelect.addEventListener('change', (e) => {
                                 positionFields.classList.toggle('hidden', e.target.value === 'remove');
                             });
                         }
                     }
+                    if (data.type === 'defeat_mobs') {
+                        const modeSelect = this.modal.formContainer.querySelector('select[name="mode"]');
+                        const killTargetField = this.modal.formContainer.querySelector('[data-field-path="kill_target"]');
+                        const durationField = this.modal.formContainer.querySelector('[data-field-path="duration"]');
+                        const toggleModeFields = () => {
+                            if (killTargetField) killTargetField.classList.toggle('hidden', modeSelect?.value !== 'wave');
+                            if (durationField) durationField.classList.toggle('hidden', modeSelect?.value !== 'survival');
+                        };
+                        modeSelect?.addEventListener('change', toggleModeFields);
+                        toggleModeFields();
+                    }
                 }, 0);
                 return formHtml;
-            }
-
-            buildDefeatMobsForm(data) {
-                const labelClass = "class='block text-sm font-medium text-slate-700 mb-1'";
-                const inputClass = "class='w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500'";
-                return `
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label ${labelClass}>Радиус (radius):</label>
-                            <input type="number" name="radius" value="${data.radius || 100}" ${inputClass}>
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-2 gap-4 mt-4">
-                        <div>
-                            <label ${labelClass}>Позиция X:</label>
-                            <input type="number" name="position.x" value="${data.position?.x || 0}" ${inputClass}>
-                        </div>
-                        <div>
-                            <label ${labelClass}>Позиция Y:</label>
-                            <input type="number" name="position.y" value="${data.position?.y || 0}" ${inputClass}>
-                        </div>
-                    </div>
-                    <hr class="my-4 border-slate-200">
-                    <label ${labelClass}>Режим:</label>
-                    <select name="mode" id="defeat-mobs-mode" ${inputClass}>
-                        <option value="annihilation" ${!data.mode || data.mode === 'annihilation' ? 'selected' : ''}>Уничтожение</option>
-                        <option value="wave" ${data.mode === 'wave' ? 'selected' : ''}>Волна</option>
-                        <option value="survival" ${data.mode === 'survival' ? 'selected' : ''}>Выживание</option>
-                    </select>
-                    <div id="wave-fields-container" class="hidden mt-4">
-                        <label ${labelClass}>Цель убийств (для 'wave'):</label><input type="number" name="kill_target" value="${data.kill_target || 10}" ${inputClass}>
-                    </div>
-                    <div id="survival-fields-container" class="hidden mt-4">
-                        <label ${labelClass}>Длительность в секундах (для 'survival'):</label><input type="number" name="duration" value="${data.duration || 60}" ${inputClass}>
-                    </div>
-                    <h4 class="font-bold text-slate-800 mt-6 mb-2">Список мобов:</h4>
-                    <div id="mobs-list-container" class="space-y-2"></div>
-                    <button type="button" class="add-sub-item-btn mt-2 bg-blue-500 text-white font-semibold text-sm py-1.5 px-3 rounded-md hover:bg-blue-600 transition-colors flex items-center gap-2">
-                        <i class="fa-solid fa-plus"></i> Добавить моба
-                    </button>`;
-            }
-
-            initDefeatMobsEditor(componentData) {
-                const modeSelect = this.modal.formContainer.querySelector('#defeat-mobs-mode');
-                const waveFields = this.modal.formContainer.querySelector('#wave-fields-container');
-                const survivalFields = this.modal.formContainer.querySelector('#survival-fields-container');
-                const toggleModeFields = () => {
-                    const currentMode = modeSelect.value;
-                    waveFields.classList.toggle('hidden', currentMode !== 'wave');
-                    survivalFields.classList.toggle('hidden', currentMode !== 'survival');
-                };
-                modeSelect.addEventListener('change', toggleModeFields);
-                toggleModeFields();
-
-                const container = this.modal.formContainer.querySelector('#mobs-list-container');
-                const addBtn = this.modal.formContainer.querySelector('.add-sub-item-btn');
-                
-                const createMobElement = (mob) => {
-                    const div = document.createElement('div');
-                    div.className = 'mob-item bg-slate-50 p-3 rounded-md border border-slate-200 relative';
-                    const uniqueId = `boss-check-${this.generateUUID()}`;
-                    
-                    div.innerHTML = `
-                        <div class="absolute top-2 right-2"><button type="button" class="remove-mob-btn text-slate-400 hover:text-red-500"><i class="fa-solid fa-times"></i></button></div>
-                        <div class="grid grid-cols-2 gap-4">
-                            <div><label class="block text-xs font-medium text-slate-600 mb-1">ID Моба:</label><input type="number" name="mobs.mob_id" value="${mob.mob_id || 0}" class="w-full text-sm rounded-md border-slate-300"></div>
-                            <div><label class="block text-xs font-medium text-slate-600 mb-1">Количество:</label><input type="number" name="mobs.count" value="${mob.count || 1}" class="w-full text-sm rounded-md border-slate-300"></div>
-                            <div><label class="block text-xs font-medium text-slate-600 mb-1">Уровень:</label><input type="number" name="mobs.level" value="${mob.level || 1}" class="w-full text-sm rounded-md border-slate-300"></div>
-                            <div><label class="block text-xs font-medium text-slate-600 mb-1">Сила:</label><input type="number" name="mobs.power" value="${mob.power || 1}" class="w-full text-sm rounded-md border-slate-300"></div>
-                        </div>
-                        <div class="mt-3"><label class="flex items-center text-sm"><input type="checkbox" name="mobs.boss" id="${uniqueId}" ${mob.boss ? 'checked' : ''} class="rounded border-slate-300 text-blue-600 shadow-sm focus:ring-blue-500 mr-2">Является боссом</label></div>`;
-                    div.querySelector('.remove-mob-btn').addEventListener('click', () => div.remove());
-                    return div;
-                };
-
-                (componentData.mobs || []).forEach(mob => container.appendChild(createMobElement(mob)));
-                addBtn.addEventListener('click', () => {
-                    const newMobEl = createMobElement({ mob_id: 21, count: 1, level: 1, power: 1, boss: false });
-                    container.appendChild(newMobEl);
-                    newMobEl.querySelector('input').focus();
-                });
             }
 
             async loadScenarioList() {
