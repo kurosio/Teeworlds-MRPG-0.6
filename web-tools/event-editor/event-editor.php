@@ -101,7 +101,7 @@
             selectedScenarioEvent: 'general',
         };
         
-        const ACTION_DEFS = {"group_header":{"name":"Заголовок группы","icon":"fa-layer-group","params":{"name":"text"}},"message":{"name":"Сообщение","icon":"fa-comment","params":{"delay":"number","chat":"text","broadcast":"text","full":"text"}},"movement_task":{"name":"Задача на движение","icon":"fa-person-running","params":{"delay":"number","position":"vec2","target_lock_text":"text","target_look":"boolean","chat":"text","broadcast":"text","full":"text"}},"check_has_item":{"name":"Проверить предмет","icon":"fa-box","params":{"item_id":"number","required":"number","remove":"boolean","show_progress":"boolean"}},"reset_quest":{"name":"Сбросить квест","icon":"fa-undo","params":{"quest_id":"number"}},"accept_quest":{"name":"Принять квест","icon":"fa-check-double","params":{"quest_id":"number"}},"new_door":{"name":"Создать дверь","icon":"fa-door-closed","params":{"key":"door_key","follow":"boolean","position":"vec2"}},"remove_door":{"name":"Удалить дверь","icon":"fa-door-open","params":{"key":"door_key","follow":"boolean"}},"pick_item_task":{"name":"Задача на подбор","icon":"fa-hand-sparkles","params":{"position":"vec2","item":"item","chat":"text","broadcast":"text","full":"text"}},"emote":{"name":"Эмоция","icon":"fa-smile","params":{"emote_type":"number","emoticon_type":"number"}},"teleport":{"name":"Телепорт","icon":"fa-plane-departure","params":{"position":"vec2","world_id":"number"}},"use_chat_task":{"name":"Задача на чат","icon":"fa-keyboard","params":{"chat":"text"}},"fix_cam":{"name":"Фиксировать камеру","icon":"fa-camera","params":{"delay":"number","position":"vec2"}},"freeze_movements":{"name":"Заморозить движение","icon":"fa-snowflake","params":{"state":"boolean"}},"check_quest_accepted":{"name":"Проверка: квест принят","icon":"fa-question-circle","params":{"quest_id":"number"}},"check_quest_finished":{"name":"Проверка: квест завершен","icon":"fa-flag-checkered","params":{"quest_id":"number"}},"check_quest_step_finished":{"name":"Проверка: шаг квеста завершен","icon":"fa-list-check","params":{"quest_id":"number","step":"number"}},"shootmarkers":{"name":"Стрельба по маркерам","icon":"fa-crosshairs","params":{"markers":"markers"}}};
+        const { actionSchemas, applyDefaults } = window.EditorCore.schemas;
         const SCENARIO_EVENTS = {"general":"Стандартный","on_recieve_objectives":"При получении задач","on_complete_objectives":"При завершении задач","on_end":"При окончании шага","on_equip":"При экипировке предмета","on_got":"При получении предмета","on_lost":"При потере предмета","on_unequip":"При снятии предмета"};
         const INPUT_CLASS = "w-full p-2 rounded-md form-input";
 
@@ -133,7 +133,7 @@
             }
             let groupSubIndex = 1;
             DOM.stepList.innerHTML = STATE.scenarioSteps.map((step, index) => {
-                const def = ACTION_DEFS[step.action] || { name: step.action, icon: 'fa-question' };
+                const def = actionSchemas[step.action] || { name: step.action, icon: 'fa-question', fields: {} };
                 if (step.action === 'group_header') {
                     groupSubIndex = 1;
                     const isCollapsed = !!step.collapsed;
@@ -175,11 +175,11 @@
                 return;
             }
             const step = STATE.scenarioSteps[STATE.selectedStepIndex];
-            const def = ACTION_DEFS[step.action];
-            const actionOptions = Object.entries(ACTION_DEFS).sort(([,a],[,b]) => a.name.localeCompare(b.name)).map(([key, value]) => `
+            const def = actionSchemas[step.action] || { name: step.action, icon: 'fa-question', fields: {} };
+            const actionOptions = Object.entries(actionSchemas).sort(([,a],[,b]) => a.name.localeCompare(b.name)).map(([key, value]) => `
                 <div class="custom-select-option p-2 rounded-md hover:bg-light cursor-pointer flex items-center" data-action-key="${key}"><i class="fas ${value.icon} w-6 text-center mr-2 text-accent"></i><span>${value.name}</span></div>`
             ).join('');
-            const fieldsHtml = Object.entries(def.params).sort(([keyA], [keyB]) => keyA.localeCompare(keyB)).map(([key, type]) => createFormField(key, type, step)).join('');
+            const fieldsHtml = Object.entries(def.fields).sort(([keyA], [keyB]) => keyA.localeCompare(keyB)).map(([key, field]) => createFormField(key, field, step)).join('');
 
             DOM.editorPanel.innerHTML = `
                 <div class="space-y-6">
@@ -196,12 +196,22 @@
                 </div>`;
         };
 
-        const createFormField = (key, type, data) => {
-            const title = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+        const createFormField = (key, fieldSchema, data) => {
+            const type = fieldSchema.type;
+            const title = fieldSchema.label || key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
             let field = '';
             const value = data[key];
             switch (type) {
-                case 'text': field = `<textarea data-key="${key}" class="${INPUT_CLASS} min-h-[40px] resize-y">${value || ''}</textarea>`; break;
+                case 'text': {
+                    if (fieldSchema.ui?.type === 'select' && fieldSchema.ui.options?.length) {
+                        field = `<select data-key="${key}" class="${INPUT_CLASS}">` +
+                            fieldSchema.ui.options.map(option => `<option value="${option}" ${value === option ? 'selected' : ''}>${option}</option>`).join('') +
+                            `</select>`;
+                    } else {
+                        field = `<textarea data-key="${key}" class="${INPUT_CLASS} min-h-[40px] resize-y">${value || ''}</textarea>`;
+                    }
+                    break;
+                }
                 case 'number': field = `<input type="number" data-key="${key}" value="${value !== undefined ? value : 0}" class="${INPUT_CLASS}">`; break;
                 case 'boolean': field = `<label class="flex items-center space-x-3 cursor-pointer"><input type="checkbox" data-key="${key}" ${value ? 'checked' : ''} class="h-5 w-5 rounded-md text-primary focus:ring-primary bg-transparent border-light"><span class="font-medium">${title}</span></label>`; break;
                 case 'vec2': field = `<div class="grid grid-cols-2 gap-2"><div><label class="block text-xs font-medium text-gray-400 mb-1">X</label><input type="number" step="0.1" data-key="${key}.x" value="${value?.x || 0}" class="${INPUT_CLASS}"></div><div><label class="block text-xs font-medium text-gray-400 mb-1">Y</label><input type="number" step="0.1" data-key="${key}.y" value="${value?.y || 0}" class="${INPUT_CLASS}"></div></div>`; break;
@@ -221,6 +231,14 @@
             }
             const containerClass = "p-4 rounded-lg";
             return type === 'boolean' ? `<div class="${containerClass} hover:bg-black/10">${field}</div>` : `<div class="${containerClass} bg-black/10"><label class="block text-sm font-medium text-gray-300 mb-2">${title}</label>${field}</div>`;
+        };
+
+        const applyActionDefaults = (step) => {
+            const schema = actionSchemas[step.action];
+            if (schema?.fields) {
+                applyDefaults(step, schema.fields);
+            }
+            return step;
         };
         
         const showUndoToast = (message) => {
@@ -293,8 +311,9 @@
                     case 'cancel-add': DOM.addStepModal.style.display = 'none'; break;
                     case 'close-modal': DOM.exportModal.style.display = 'none'; DOM.confirmModal.style.display = 'none'; break;
                     case 'confirm-add': {
-                        const newStep = { action: DOM.actionSelect.value };
-                        if (newStep.action === 'group_header') newStep.name = "Новая группа";
+                        const action = DOM.actionSelect.value;
+                        const newStep = { action };
+                        applyActionDefaults(newStep);
                         const insertionIndex = STATE.selectedStepIndex === -1 ? STATE.scenarioSteps.length : STATE.selectedStepIndex + 1;
                         STATE.scenarioSteps.splice(insertionIndex, 0, newStep);
                         STATE.selectedStepIndex = insertionIndex;
@@ -458,12 +477,12 @@
                         const data = JSON.parse(e.target.result);
                         const keys = Object.keys(data);
                         if (keys.includes('steps')) {
-                            STATE.scenarioSteps = data.steps;
+                            STATE.scenarioSteps = data.steps.map(step => applyActionDefaults(step));
                             STATE.selectedScenarioEvent = 'general';
                         } else {
                             const eventKey = keys.find(k => k !== "steps" && data[k] && Array.isArray(data[k].steps));
                             if (eventKey) {
-                                STATE.scenarioSteps = data[eventKey].steps;
+                                STATE.scenarioSteps = data[eventKey].steps.map(step => applyActionDefaults(step));
                                 STATE.selectedScenarioEvent = eventKey;
                             } else throw new Error('Неверный формат файла.');
                         }
@@ -513,7 +532,7 @@
                 emptyMessage: 'Нет шагов... пока!'
             });
             bindDOM();
-            DOM.actionSelect.innerHTML = Object.entries(ACTION_DEFS).sort(([,a],[,b]) => a.name.localeCompare(b.name))
+            DOM.actionSelect.innerHTML = Object.entries(actionSchemas).sort(([,a],[,b]) => a.name.localeCompare(b.name))
                 .map(([key, value]) => `<option value="${key}">${value.name}</option>`).join('');
             bindEvents();
             render();

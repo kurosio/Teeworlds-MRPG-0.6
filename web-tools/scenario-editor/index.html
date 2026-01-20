@@ -236,29 +236,7 @@
                 this.arrowMode = 'navigator'; // 'navigator' or 'editor'
                 this.scenarioData = { steps: [], editor_data: { groups: [] } };
                 this.uiState = { collapsedSteps: new Set() }; // Save UI state like collapsed cards
-                this.componentTypes = {
-                    message: { name: 'Сообщение', class: 'info', icon: 'fa-solid fa-comment-dots', desc: 'Показать текст игроку', default: { type: 'message', text: 'Новое сообщение', mode: 'full' } },
-                    wait: { name: 'Ожидание', class: 'info', icon: 'fa-solid fa-clock', desc: 'Пауза в сценарии', default: { type: 'wait', duration: 5 } },
-                    door_control: { name: 'Управление дверью', class: 'interactive', icon: 'fa-solid fa-door-open', desc: 'Создать или удалить дверь', default: { type: 'door_control', action: 'create', position: { x: 100, y: 100 }, key: '' } },
-                    use_chat_code: { name: 'Код в чате', class: 'interactive', icon: 'fa-solid fa-key', desc: 'Переход по кодовому слову', default: { type: 'use_chat_code', code: 'secret', next_step_id: '', hidden: false } },
-                    defeat_mobs: { name: 'Убийство мобов', class: 'combat', icon: 'fa-solid fa-skull-crossbones', desc: 'Боевое испытание', default: { type: 'defeat_mobs', mode: 'annihilation', radius: 100, position: { x: 0, y: 0 }, mobs: [{ mob_id: 21, count: 5, level: 1, power: 1, boss: false }] } },
-                    follow_camera: { name: 'Следование камеры', class: 'camera', icon: 'fa-solid fa-video', desc: 'Переместить камеру к точке', default: { type: 'follow_camera', position: { x: 0, y: 0 }, delay: 300, smooth: true } },
-                    condition_movement: { name: 'Условие: Движение', class: 'interactive', icon: 'fa-solid fa-person-running', desc: 'Переход при достижении точки', default: { type: 'condition_movement', position: { x: 0, y: 0 }, entire_group: true } },
-                    teleport: { name: 'Телепорт', class: 'interactive', icon: 'fa-solid fa-bolt', desc: 'Мгновенное перемещение', default: { type: 'teleport', position: { x: 1497, y: 529 } } },
-                    activate_point: { 
-                        name: 'Точка активации', 
-                        class: 'interactive', 
-                        icon: 'fa-solid fa-location-dot', 
-                        desc: 'Активация по времени в области', 
-                        default: { 
-                            type: 'activate_point', 
-                            position: { x: 400, y: 3000 }, 
-                            duration: 5, 
-                            entire_group: true, 
-                            action_text: 'Перегрузка главного реактора' 
-                        } 
-                    }
-                };
+                this.componentTypes = EditorCore.schemas.componentSchemas;
                 this.debouncedUpdate = this.debounce(this.updateStepId, 400);
                 this.sortableInstances = [];
                 this.isTicking = false; // For scroll throttling
@@ -1083,7 +1061,10 @@
                     this.scenarioData.steps.forEach((step, index) => {
                         if (!step || typeof step !== 'object') step = { id: `invalid_step_${index}` };
                         if (!step.id) step.id = this.generateUniqueId(`step_${index}`);
-                        (step.components || []).forEach(c => { if (!c.component_id) c.component_id = this.generateUUID(); });
+                        (step.components || []).forEach(c => {
+                            this.applyComponentDefaults(c);
+                            if (!c.component_id) c.component_id = this.generateUUID();
+                        });
                     });
                 }
                 this.uiState.collapsedSteps.clear(); // Clear old state on new scenario load
@@ -1247,6 +1228,18 @@
                     });
                 });
                 return Array.from(keys);
+            }
+            applyComponentDefaults(component) {
+                const schema = this.componentTypes[component.type];
+                if (schema?.fields) {
+                    EditorCore.schemas.applyDefaults(component, schema.fields);
+                }
+                return component;
+            }
+            createComponentDefaults(type) {
+                const schema = this.componentTypes[type];
+                const defaults = schema?.fields ? EditorCore.schemas.buildDefaults(schema.fields) : {};
+                return { type, ...defaults };
             }
             getComponentSummary(data) {
                 try {
@@ -1559,7 +1552,7 @@
                 const type = item.dataset.type;
                 const step = this.findStep(this.addComponentMenu.targetStepId);
                 if (type && step) {
-                    const newComponent = JSON.parse(JSON.stringify(this.componentTypes[type].default));
+                    const newComponent = this.createComponentDefaults(type);
                     newComponent.component_id = this.generateUUID();
                     step.components = step.components || [];
                     step.components.push(newComponent);
