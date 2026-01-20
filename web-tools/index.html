@@ -11,7 +11,7 @@
     <!-- Иконки Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
-    <link rel="stylesheet" href="../editor-core/editor-theme.css">
+    <link rel="stylesheet" href="editor-core/editor-theme.css">
     
     <!-- Библиотека для Drag-and-Drop -->
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
@@ -195,11 +195,31 @@
         </div>
     </template>
 
-    <script src="../editor-core/registry.js"></script>
-    <script src="../editor-core/core.js"></script>
-    <script src="../editor-core/field-renderer.js"></script>
-    <script src="../editor-core/ui.js"></script>
+    <script src="editor-core/registry.js"></script>
+    <script src="editor-core/core.js"></script>
+    <script src="editor-core/field-renderer.js"></script>
+    <script src="editor-core/ui.js"></script>
+    <script src="editor-core/defaults.js"></script>
+    <script src="editor-core/utils.js"></script>
+    <script src="editor-core/bootstrap.js"></script>
     <script type="module">
+        // Fallback: scenario editor depends on EditorCore.bootstrapEditor(), but in some setups editor-core/bootstrap.js may not load.
+        // If it's missing, define a compatible version here so the editor keeps working.
+        if (typeof window.EditorCore !== "undefined" && typeof window.EditorCore.bootstrapEditor !== "function") {
+            window.EditorCore.bootstrapEditor = ({ mode = "scenario" } = {}) => {
+                if (!window.EditorCore?.UI) throw new Error("EditorCore.UI is missing. Load ui.js first.");
+                if (!window.EditorCore?.defaults) {
+                    // Minimal safe defaults (scenario) in case defaults.js also didn't load.
+                    window.EditorCore.defaults = { getFieldRenderOptions: () => ({ classes: {} }) };
+                }
+                if (mode === "event") window.EditorCore.UI.mountEventEditorUI?.();
+                else window.EditorCore.UI.mountScenarioEditorUI?.();
+                return { fieldRenderOptions: window.EditorCore.defaults.getFieldRenderOptions(mode) };
+            };
+        }
+
+
+
         class ScenarioEditor {
             constructor() {
                 this.bindElements();
@@ -238,13 +258,46 @@
                 this.scenarioData = { steps: [], editor_data: { groups: [] } };
                 this.uiState = { collapsedSteps: new Set() }; // Save UI state like collapsed cards
                 this.componentTypes = EditorCore.schemas.componentSchemas;
-                this.debouncedUpdate = this.debounce(this.updateStepId, 400);
+                this.debouncedUpdate = EditorCore.utils.debounce((step, newId) => this.updateStepId(step, newId), 400);
                 this.sortableInstances = [];
                 this.isTicking = false; // For scroll throttling
+                this.apiBase = ""; // auto-detected base path to api.php
             }
+
+            apiUrl(queryString = '') {
+                const qs = queryString ? (queryString.startsWith('?') || queryString.startsWith('&') ? queryString : '?' + queryString) : '';
+                return `${this.apiBase}api.php${qs}`;
+            }
+
+            async resolveApiBase() {
+                // Try a few likely relative paths until api.php responds.
+                const candidates = ['', './', '../', '../../', '../../../', '../../../../'];
+                for (const base of candidates) {
+                    try {
+                        const url = `${base}api.php?action=list`;
+                        const res = await fetch(url, { cache: 'no-store' });
+                        if (!res) continue;
+                        // Accept any non-404 response; best is 200 OK with JSON.
+                        if (res.status !== 404) {
+                            // If it's OK, lock it in immediately
+                            if (res.ok) {
+                                this.apiBase = base;
+                                return;
+                            }
+                            // If it's e.g. 405/500, still likely correct path — keep it but don't early-return
+                            this.apiBase = base;
+                        }
+                    } catch (_) {
+                        
+                    }
+                }
+                // Fallback: keep empty. The subsequent requests will show the real HTTP status.
+            }
+
 
             async initialize() {
                 this.addEventListeners();
+                await this.resolveApiBase();
                 await this.loadScenarioList();
             }
 
@@ -346,7 +399,7 @@
                         this.isTicking = true;
                     }
                 }, true);
-                window.addEventListener('resize', this.debounce(() => this.drawConnections(), 50));
+                window.addEventListener('resize', EditorCore.utils.debounce(() => this.drawConnections(), 50));
             }
 
             renderAll() {
@@ -440,7 +493,10 @@
                 stepCard.querySelector('.msg-info-input').value = step.msg_info || '';
                 stepCard.querySelector('.completion-logic-select').value = step.completion_logic || 'all_of';
                 const componentsContainer = stepCard.querySelector('.components-container');
-                (step.components || []).forEach((comp, index) => componentsContainer.appendChild(this.createComponentElement(comp, step, index)));
+                (Array.isArray(step.components) ? step.components : (step.components = [])).filter(Boolean).forEach((comp, index) => {
+                    if (!comp.component_id) comp.component_id = this.generateUUID();
+                    componentsContainer.appendChild(this.createComponentElement(comp, step, index));
+                });
                 
                 if (this.uiState.collapsedSteps.has(step.id)) {
                     stepCard.querySelector('.step-body').classList.add('hidden');
@@ -624,7 +680,7 @@
                 compUl.dataset.parentStepId = step.id;
                 EditorCore.UI.applyEmptyStateClass(compUl, (step.components || []).length > 0, 'empty-drop-zone');
                 
-                (step.components || []).forEach(comp => {
+                (step.components || []).filter(Boolean).forEach(comp => {
                     const compLi = document.createElement('li');
                     compLi.dataset.componentId = comp.component_id;
                     const isCompBroken = comp.next_step_id && !allStepIds.has(comp.next_step_id);
@@ -661,8 +717,8 @@
                 if (!this.scenarioData.steps) return;
 
                 this.scenarioData.steps.forEach(step => {
-                    (step.components || []).forEach(comp => {
-                        if (comp.next_step_id) {
+                    (step.components || []).filter(Boolean).forEach(comp => {
+                        if (comp?.next_step_id) {
                             this.drawSingleConnection(comp.component_id, comp.next_step_id);
                         }
                     });
@@ -936,7 +992,7 @@
 
             async loadScenarioList() {
                 try {
-                    const response = await fetch('api.php?action=list');
+                    const response = await fetch(this.apiUrl('action=list'));
                     if (!response.ok) throw new Error(`HTTP ${response.status}`);
                     const data = await response.json();
                     if (data.success && data.files.length > 0) {
@@ -950,7 +1006,7 @@
             async loadScenario(filename) {
                 if (!filename) return;
                 try {
-                    const response = await fetch(`api.php?file=${filename}`);
+                    const response = await fetch(this.apiUrl(`file=${filename}`));
                     if (!response.ok) throw new Error(`HTTP ${response.status}`);
                     const data = await response.json();
                     if (data.error) throw new Error(data.error);
@@ -1001,6 +1057,20 @@
                 });
                 
                 const stepsInGroups = new Set(orderedSteps.map(s => s.id));
+
+                // Preserve manual order for ungrouped steps (if user dragged them).
+                const ed = this.scenarioData.editor_data || {};
+                const ungroupedOrder = Array.isArray(ed.ungrouped_steps) ? ed.ungrouped_steps : [];
+                ungroupedOrder.forEach(stepId => {
+                    if (stepsInGroups.has(stepId)) return;
+                    const step = stepMap.get(stepId);
+                    if (step) {
+                        orderedSteps.push(step);
+                        stepsInGroups.add(step.id);
+                    }
+                });
+
+                // Fallback: append any remaining steps
                 this.scenarioData.steps.forEach(step => {
                     if (!stepsInGroups.has(step.id)) {
                         orderedSteps.push(step);
@@ -1038,7 +1108,7 @@
                 };
                 
                 try {
-                    const response = await fetch('api.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ filename, content: contentToSave }) });
+                    const response = await fetch(this.apiUrl(), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ filename, content: contentToSave }) });
                     if (!response.ok) throw new Error(`HTTP ${response.status}`);
                     const result = await response.json();
                     if (result.success) {
@@ -1063,12 +1133,13 @@
                 if (!filename || !confirm(`Вы уверены, что хотите удалить сценарий "${filename}"? Это действие необратимо.`)) return;
 
                 try {
-                    const response = await fetch('api.php', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'delete', filename }) });
+                    const response = await fetch(this.apiUrl(), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'delete', filename }) });
                     if (!response.ok) throw new Error(`HTTP ${response.status}`);
                     const result = await response.json();
                     if (result.success) {
                         this.showToast(result.message, 'success');
-                        await this.loadScenarioList();
+                        await this.resolveApiBase();
+                await this.loadScenarioList();
                     } else {
                         this.showToast(result.error, 'error');
                     }
@@ -1078,22 +1149,8 @@
             }
 
             showToast(message, type = 'success') {
-                const toast = document.createElement('div');
-                toast.className = `toast ${type === 'success' ? 'bg-green-500' : 'bg-red-500'} text-white font-semibold py-3 px-5 rounded-lg shadow-lg transition-all duration-300 transform translate-x-full`;
-                toast.textContent = message;
-                this.toastContainer.appendChild(toast);
-                setTimeout(() => toast.classList.remove('translate-x-full'), 10);
-                setTimeout(() => {
-                    toast.classList.add('translate-x-full');
-                    toast.addEventListener('transitionend', () => toast.remove());
-                }, 3000);
-            }
-            debounce(func, delay) {
-                let timeout;
-                return (...args) => {
-                    clearTimeout(timeout);
-                    timeout = setTimeout(() => func.apply(this, args), delay);
-                };
+                // Unified toast for all editors.
+                EditorCore.utils.showToast(message, type);
             }
             findStep(stepId) { return this.scenarioData.steps.find(s => s.id === stepId); }
             findComponent(stepId, componentId) { return this.findStep(stepId)?.components.find(c => c.component_id === componentId); }
@@ -1112,7 +1169,7 @@
                 while (allIds.has(newId)) newId = `${base}_${counter++}`;
                 return newId;
             }
-            generateUUID() { return ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, c => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)); }
+            generateUUID() { return EditorCore.utils.uuid(); }
             populateStepDropdown(select, selectedValue, excludeId = null) {
                 select.innerHTML = `<option value="">-- Не выбрано --</option>` + this.scenarioData.steps.filter(s => s.id !== excludeId).map(s => `<option value="${s.id}" ${s.id === selectedValue ? 'selected' : ''}>${s.id}</option>`).join('');
             }
@@ -1173,17 +1230,39 @@
             //==================================================
             // VIEW STATE MANAGEMENT (Groups, Collapse State)
             //==================================================
-
             getCurrentViewState() {
-                const groups = this.scenarioData.editor_data.groups || [];
+                const ed = this.scenarioData.editor_data || (this.scenarioData.editor_data = {});
+                ed.groups = Array.isArray(ed.groups) ? ed.groups : [];
+                ed.ungrouped_steps = Array.isArray(ed.ungrouped_steps) ? ed.ungrouped_steps : [];
+
+                const groups = ed.groups;
                 const stepsInGroups = new Set();
-                groups.forEach(g => {
-                    g.steps.forEach(stepId => stepsInGroups.add(stepId));
+                groups.forEach(g => (g.steps || []).forEach(stepId => stepsInGroups.add(stepId)));
+
+                const allStepIds = (this.scenarioData.steps || []).map(s => s?.id).filter(Boolean);
+                const allIdSet = new Set(allStepIds);
+
+                // Prefer stored order for ungrouped steps, but keep it clean.
+                const ungroupedSet = new Set();
+                const ungroupedSteps = [];
+
+                (ed.ungrouped_steps || []).forEach(id => {
+                    if (allIdSet.has(id) && !stepsInGroups.has(id) && !ungroupedSet.has(id)) {
+                        ungroupedSet.add(id);
+                        ungroupedSteps.push(id);
+                    }
                 });
 
-                const ungroupedSteps = this.scenarioData.steps
-                    .map(s => s.id)
-                    .filter(id => !stepsInGroups.has(id));
+                // Append any missing ungrouped steps in natural (scenarioData.steps) order.
+                allStepIds.forEach(id => {
+                    if (!stepsInGroups.has(id) && !ungroupedSet.has(id)) {
+                        ungroupedSet.add(id);
+                        ungroupedSteps.push(id);
+                    }
+                });
+
+                // Persist the cleaned order so dragging inside "Шаги без группы" stays stable.
+                ed.ungrouped_steps = ungroupedSteps.slice();
 
                 return { groups, ungroupedSteps };
             }
@@ -1338,11 +1417,12 @@
                 this.sortableInstances.forEach(s => s.destroy());
                 this.sortableInstances = [];
 
-                const sortableConfig = (groupName, onEndCallback, handleClass) => ({
+                const sortableConfig = (groupName, onEndCallback, handleClass, extra = {}) => ({
                     group: groupName,
                     animation: 150,
                     ghostClass: 'sortable-ghost',
                     handle: handleClass,
+                    ...extra,
                     onEnd: onEndCallback
                 });
                 
@@ -1360,90 +1440,138 @@
 
                 // Sort steps in editor (between groups)
                 document.querySelectorAll('.step-group').forEach(listEl => {
-                     const onEnd = createOnEndHandler(e => {
-                        const stepId = e.item.dataset.stepId;
+                    const onEnd = createOnEndHandler(e => {
+                        const stepId = e.item?.dataset?.stepId;
                         if (!stepId) return;
-                        const toGroupId = e.to.dataset.groupId;
-                        const viewStateGroups = this.scenarioData.editor_data.groups;
+
+                        const toGroupId = e.to?.dataset?.groupId;
+                        const ed = this.scenarioData.editor_data || (this.scenarioData.editor_data = {});
+                        const viewStateGroups = Array.isArray(ed.groups) ? ed.groups : (ed.groups = []);
+                        ed.ungrouped_steps = Array.isArray(ed.ungrouped_steps) ? ed.ungrouped_steps : [];
+
+                        // Remove step from any group
                         viewStateGroups.forEach(group => {
-                            const index = group.steps.indexOf(stepId);
-                            if (index > -1) group.steps.splice(index, 1);
+                            const idx = (group.steps || []).indexOf(stepId);
+                            if (idx > -1) group.steps.splice(idx, 1);
                         });
-                        if (toGroupId !== 'ungrouped') {
+
+                        // Also remove from stored ungrouped order before re-inserting
+                        const uIdx = ed.ungrouped_steps.indexOf(stepId);
+                        if (uIdx > -1) ed.ungrouped_steps.splice(uIdx, 1);
+
+                        if (toGroupId && toGroupId !== 'ungrouped') {
                             const targetGroup = viewStateGroups.find(g => g.id === toGroupId);
                             if (targetGroup) {
-                                const newDomOrder = Array.from(e.to.children).map(li => li.dataset.stepId);
-                                const newIndex = newDomOrder.indexOf(stepId);
-                                if (newIndex > -1) {
-                                    targetGroup.steps.splice(newIndex, 0, stepId);
-                                } else {
-                                    targetGroup.steps.push(stepId);
-                                }
+                                const newDomOrder = Array.from(e.to.children).map(el => el?.dataset?.stepId).filter(Boolean);
+                                targetGroup.steps = newDomOrder;
                             }
+                        } else {
+                            // Reorder ungrouped steps exactly as DOM shows
+                            const newDomOrder = Array.from(e.to.children).map(el => el?.dataset?.stepId).filter(Boolean);
+                            ed.ungrouped_steps = newDomOrder;
                         }
                     });
-                    this.sortableInstances.push(new Sortable(listEl, sortableConfig('steps', onEnd, '.handle')));
+                    this.sortableInstances.push(new Sortable(listEl, sortableConfig('steps', onEnd, '.handle', { draggable: '.step-card' })));
                 });
 
                 // Sort components within steps (in editor)
-                document.querySelectorAll('.components-container').forEach(c => {
+                document.querySelectorAll('.components-container').forEach(containerEl => {
                     const onEnd = createOnEndHandler(e => {
-                        const fromStep = this.findStep(e.from.closest('.step-card').dataset.stepId);
-                        const toStep = this.findStep(e.to.closest('.step-card').dataset.stepId);
-                        if (fromStep && toStep) {
-                            const [moved] = fromStep.components.splice(e.oldIndex, 1);
-                            toStep.components.splice(e.newIndex, 0, moved);
-                        }
+                        const fromStepId = e.from?.closest('.step-card')?.dataset?.stepId;
+                        const toStepId = e.to?.closest('.step-card')?.dataset?.stepId;
+                        const componentId = e.item?.dataset?.componentId;
+                        if (!fromStepId || !toStepId || !componentId) return;
+
+                        const fromStep = this.findStep(fromStepId);
+                        const toStep = this.findStep(toStepId);
+                        if (!fromStep || !toStep) return;
+
+                        fromStep.components = Array.isArray(fromStep.components) ? fromStep.components.filter(Boolean) : [];
+                        toStep.components = Array.isArray(toStep.components) ? toStep.components.filter(Boolean) : [];
+
+                        const oldIndex = fromStep.components.findIndex(c => c?.component_id === componentId);
+                        if (oldIndex < 0) return;
+
+                        const [moved] = fromStep.components.splice(oldIndex, 1);
+                        if (!moved) return;
+
+                        const newDomOrder = Array.from(e.to.querySelectorAll('.component-item')).map(el => el?.dataset?.componentId).filter(Boolean);
+                        const newIndex = Math.max(0, newDomOrder.indexOf(componentId));
+                        toStep.components.splice(newIndex, 0, moved);
+
+                        // Final safety: never keep holes
+                        fromStep.components = fromStep.components.filter(Boolean);
+                        toStep.components = toStep.components.filter(Boolean);
                     });
-                    this.sortableInstances.push(new Sortable(c, sortableConfig('components', onEnd, '.component-item')));
+                    this.sortableInstances.push(new Sortable(containerEl, sortableConfig('components', onEnd, '.component-item', {
+                        draggable: '.component-item',
+                        filter: 'h4',
+                        preventOnFilter: false
+                    })));
                 });
                 
                 // Sort steps in navigator
                 document.querySelectorAll('.nav-step-list').forEach(listEl => {
                     const onEnd = createOnEndHandler(e => {
-                        const stepId = e.item.dataset.stepId;
+                        const stepId = e.item?.dataset?.stepId;
                         if (!stepId) return;
-                        const toGroupId = e.to.closest('.nav-group-wrapper').dataset.groupId;
-                        const viewStateGroups = this.scenarioData.editor_data.groups;
+
+                        const toGroupId = e.to?.closest('.nav-group-wrapper')?.dataset?.groupId;
+                        const ed = this.scenarioData.editor_data || (this.scenarioData.editor_data = {});
+                        const viewStateGroups = Array.isArray(ed.groups) ? ed.groups : (ed.groups = []);
+                        ed.ungrouped_steps = Array.isArray(ed.ungrouped_steps) ? ed.ungrouped_steps : [];
+
                         viewStateGroups.forEach(group => {
-                            const index = group.steps.indexOf(stepId);
-                            if (index > -1) group.steps.splice(index, 1);
+                            const idx = (group.steps || []).indexOf(stepId);
+                            if (idx > -1) group.steps.splice(idx, 1);
                         });
-                        if (toGroupId !== 'ungrouped') {
+
+                        const uIdx = ed.ungrouped_steps.indexOf(stepId);
+                        if (uIdx > -1) ed.ungrouped_steps.splice(uIdx, 1);
+
+                        if (toGroupId && toGroupId !== 'ungrouped') {
                             const targetGroup = viewStateGroups.find(g => g.id === toGroupId);
                             if (targetGroup) {
-                                const newDomOrder = Array.from(e.to.children).map(li => li.dataset.stepId);
-                                const newIndex = newDomOrder.indexOf(stepId);
-                                if (newIndex > -1) {
-                                    targetGroup.steps.splice(newIndex, 0, stepId);
-                                } else {
-                                    targetGroup.steps.push(stepId);
-                                }
+                                const newDomOrder = Array.from(e.to.children).map(li => li?.dataset?.stepId).filter(Boolean);
+                                targetGroup.steps = newDomOrder;
                             }
+                        } else {
+                            const newDomOrder = Array.from(e.to.children).map(li => li?.dataset?.stepId).filter(Boolean);
+                            ed.ungrouped_steps = newDomOrder;
                         }
                     });
-                    this.sortableInstances.push(new Sortable(listEl, sortableConfig('nav-steps', onEnd, '.nav-handle')));
+                    this.sortableInstances.push(new Sortable(listEl, sortableConfig('nav-steps', onEnd, '.nav-handle', { draggable: 'li' })));
                 });
 
                 // Sort components in navigator
                 document.querySelectorAll('.nav-component-list').forEach(l => {
                     const onEnd = createOnEndHandler(e => {
-                        const fromStepId = e.from.dataset.parentStepId;
-                        const toStepId = e.to.dataset.parentStepId;
+                        const fromStepId = e.from?.dataset?.parentStepId;
+                        const toStepId = e.to?.dataset?.parentStepId;
                         const fromStep = this.findStep(fromStepId);
                         const toStep = this.findStep(toStepId);
-                        if (fromStep && toStep) {
-                            const componentId = e.item.dataset.componentId;
-                            const oldCompIndex = fromStep.components.findIndex(c => c.component_id === componentId);
-                            if (oldCompIndex > -1) {
-                                const [moved] = fromStep.components.splice(oldCompIndex, 1);
-                                const newCompArray = Array.from(e.to.children).map(li => li.dataset.componentId);
-                                const newCompIndex = newCompArray.indexOf(componentId);
-                                toStep.components.splice(newCompIndex, 0, moved);
-                            }
-                        }
+                        if (!fromStep || !toStep) return;
+
+                        const componentId = e.item?.dataset?.componentId;
+                        if (!componentId) return;
+
+                        fromStep.components = Array.isArray(fromStep.components) ? fromStep.components.filter(Boolean) : [];
+                        toStep.components = Array.isArray(toStep.components) ? toStep.components.filter(Boolean) : [];
+
+                        const oldCompIndex = fromStep.components.findIndex(c => c?.component_id === componentId);
+                        if (oldCompIndex < 0) return;
+
+                        const [moved] = fromStep.components.splice(oldCompIndex, 1);
+                        if (!moved) return;
+
+                        const newCompArray = Array.from(e.to.children).map(li => li?.dataset?.componentId).filter(Boolean);
+                        const newCompIndex = newCompArray.indexOf(componentId);
+                        toStep.components.splice(newCompIndex < 0 ? toStep.components.length : newCompIndex, 0, moved);
+
+                        fromStep.components = fromStep.components.filter(Boolean);
+                        toStep.components = toStep.components.filter(Boolean);
                     });
-                    this.sortableInstances.push(new Sortable(l, sortableConfig('components', onEnd, '.nav-handle')));
+                    this.sortableInstances.push(new Sortable(l, sortableConfig('components', onEnd, '.nav-handle', { draggable: 'li' })));
                 });
             }
             showAddComponentMenu(button, stepId) {
@@ -1477,7 +1605,7 @@
             id: 'scenario-editor',
             state: {},
             init: async (app) => {
-                EditorCore.UI.mountScenarioEditorUI();
+                EditorCore.bootstrapEditor({ mode: 'scenario' });
                 EditorCore.UI.mountListContainer({
                     id: 'navigator-tree',
                     parent: document.getElementById('navigator-tree-root'),

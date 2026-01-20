@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="../editor-core/editor-theme.css">
+    <link rel="stylesheet" href="editor-core/editor-theme.css">
     <style>
         body { background-color: var(--editor-bg); color: var(--editor-text); overflow: hidden; }
         #app { background: linear-gradient(135deg, rgba(30, 30, 63, 0.95), rgba(42, 42, 85, 0.95)), url('https://avatars.mds.yandex.net/i?id=23aa7505284061857d31631140f22b09_l-3807742-images-thumbs&n=13'); background-size: cover; backdrop-filter: blur(10px); }
@@ -66,10 +66,13 @@
         </main>
     </div>
 
-    <script src="../editor-core/registry.js"></script>
-    <script src="../editor-core/core.js"></script>
-    <script src="../editor-core/field-renderer.js"></script>
-    <script src="../editor-core/ui.js"></script>
+    <script src="editor-core/registry.js"></script>
+    <script src="editor-core/core.js"></script>
+    <script src="editor-core/field-renderer.js"></script>
+    <script src="editor-core/ui.js"></script>
+    <script src="editor-core/defaults.js"></script>
+    <script src="editor-core/utils.js"></script>
+    <script src="editor-core/bootstrap.js"></script>
     <script>
     const App = (() => {
         let DOM = {};
@@ -104,26 +107,8 @@
         
         const { actionSchemas, applyDefaults } = window.EditorCore.schemas;
         const SCENARIO_EVENTS = {"general":"Стандартный","on_recieve_objectives":"При получении задач","on_complete_objectives":"При завершении задач","on_end":"При окончании шага","on_equip":"При экипировке предмета","on_got":"При получении предмета","on_lost":"При потере предмета","on_unequip":"При снятии предмета"};
-        const INPUT_CLASS = "w-full p-2 rounded-md form-input";
-        const FIELD_RENDER_OPTIONS = {
-            classes: {
-                input: INPUT_CLASS,
-                textarea: `${INPUT_CLASS} min-h-[40px] resize-y`,
-                multiselect: INPUT_CLASS,
-                label: 'block text-sm font-medium text-gray-300 mb-2',
-                nestedLabel: 'block text-xs font-medium text-gray-400 mb-1',
-                fieldWrapper: 'p-4 rounded-lg bg-black/10',
-                checkboxWrapper: 'flex items-center space-x-3 cursor-pointer',
-                listWrapper: 'space-y-2',
-                listItem: 'bg-black/20 p-3 rounded-md space-y-2',
-                listAdd: 'add-list-btn mt-2 bg-blue-500 hover:bg-blue-600 text-white text-sm py-1 px-3 rounded-md btn',
-                listRemove: 'remove-list-btn text-gray-400 hover:text-secondary text-sm'
-            },
-            includeName: false,
-            includeDataKey: true,
-            includeDataPath: true,
-            listAddLabel: 'Добавить'
-        };
+        // Shared boot + shared FieldRenderer options.
+        const { fieldRenderOptions: FIELD_RENDER_OPTIONS } = EditorCore.bootstrapEditor({ mode: 'event' });
 
         const render = () => {
             renderScenarioTypeSelector();
@@ -506,7 +491,6 @@
         };
 
         const init = () => {
-            EditorCore.UI.mountEventEditorUI();
             EditorCore.UI.mountListContainer({
                 id: 'step-list',
                 parent: document.getElementById('step-list-root'),
