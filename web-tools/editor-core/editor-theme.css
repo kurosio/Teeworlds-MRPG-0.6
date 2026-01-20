@@ -1,0 +1,119 @@
+:root {
+  --editor-bg: #1e1e3f;
+  --editor-surface: #2a2a55;
+  --editor-surface-alt: #35356b;
+  --editor-panel: #4a4a88;
+  --editor-border: #4c4c8f;
+  --editor-primary: #a259ff;
+  --editor-secondary: #ff7b9b;
+  --editor-accent: #00f6ff;
+  --editor-danger: #ef4444;
+  --editor-warning: #facc15;
+  --editor-text: #f0f0ff;
+  --editor-text-muted: #c7c7e6;
+  --editor-font: 'Poppins', sans-serif;
+}
+
+.editor-theme {
+  font-family: var(--editor-font);
+  background-color: var(--editor-bg);
+  color: var(--editor-text);
+}
+
+.editor-surface {
+  background-color: var(--editor-surface);
+  border-color: var(--editor-border);
+  color: var(--editor-text);
+}
+
+.editor-panel {
+  background-color: rgba(30, 30, 63, 0.95);
+  border-color: var(--editor-border);
+  color: var(--editor-text);
+}
+
+.editor-card {
+  background-color: var(--editor-surface-alt);
+  border-color: var(--editor-border);
+  color: var(--editor-text);
+}
+
+.editor-accent-text {
+  color: var(--editor-accent);
+}
+
+.editor-muted-text {
+  color: var(--editor-text-muted);
+}
+
+.editor-modal-backdrop {
+  background-color: rgba(30, 30, 63, 0.8);
+  backdrop-filter: blur(5px);
+}
+
+.editor-modal-content {
+  background: var(--editor-surface);
+  border: 1px solid var(--editor-primary);
+  box-shadow: 0 0 30px rgba(162, 89, 255, 0.35);
+  border-radius: 12px;
+  color: var(--editor-text);
+}
+
+.editor-toast-container {
+  position: fixed;
+  top: 1.25rem;
+  right: 1.25rem;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.editor-empty-state {
+  padding: 1rem;
+  text-align: center;
+  color: var(--editor-text-muted);
+  opacity: 0.6;
+}
+
+.editor-list-surface {
+  background-color: rgba(20, 20, 40, 0.7);
+  border-color: var(--editor-border);
+}
+
+.editor-pill {
+  background-color: rgba(0, 0, 0, 0.3);
+  color: var(--editor-text);
+}
+
+.text-accent {
+  color: var(--editor-accent);
+}
+
+.text-secondary {
+  color: var(--editor-secondary);
+}
+
+.text-primary {
+  color: var(--editor-primary);
+}
+
+.bg-light {
+  background-color: var(--editor-panel);
+}
+
+.border-light {
+  border-color: var(--editor-border);
+}
+
+.hover\\:bg-light:hover {
+  background-color: var(--editor-panel);
+}
+
+.hover\\:text-secondary:hover {
+  color: var(--editor-secondary);
+}
+
+.focus\\:ring-primary:focus {
+  box-shadow: 0 0 0 2px rgba(162, 89, 255, 0.35);
+}

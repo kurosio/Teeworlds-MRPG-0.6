@@ -9,56 +9,43 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="../editor-core/editor-theme.css">
     <style>
-        :root {
-            --bg-dark: #1e1e3f;
-            --bg-medium: #2a2a55;
-            --bg-light: #4a4a88;
-            --primary: #a259ff;
-            --secondary: #ff7b9b;
-            --accent: #00f6ff;
-            --danger: #ef4444;
-            --warning: #facc15;
-            --text-light: #f0f0ff;
-            --text-dark: #d9d9f3;
-        }
-        body { font-family: 'Poppins', sans-serif; background-color: var(--bg-dark); color: var(--text-light); overflow: hidden; }
+        body { background-color: var(--editor-bg); color: var(--editor-text); overflow: hidden; }
         #app { background: linear-gradient(135deg, rgba(30, 30, 63, 0.95), rgba(42, 42, 85, 0.95)), url('https://avatars.mds.yandex.net/i?id=23aa7505284061857d31631140f22b09_l-3807742-images-thumbs&n=13'); background-size: cover; backdrop-filter: blur(10px); }
-        aside { background-color: rgba(20, 20, 40, 0.7); border-right-color: var(--bg-light); backdrop-filter: blur(5px); }
+        aside { background-color: rgba(20, 20, 40, 0.7); border-right-color: var(--editor-border); backdrop-filter: blur(5px); }
         .sidebar-item { border-left: 4px solid transparent; transition: all 0.3s ease; }
-        .sidebar-item:hover { background-color: rgba(255, 255, 255, 0.05); border-left-color: var(--secondary); transform: translateX(5px); }
-        .sidebar-item.selected { background: linear-gradient(90deg, var(--primary), var(--secondary)); border-left-color: var(--accent); color: white; box-shadow: 0 0 15px var(--primary); }
+        .sidebar-item:hover { background-color: rgba(255, 255, 255, 0.05); border-left-color: var(--editor-secondary); transform: translateX(5px); }
+        .sidebar-item.selected { background: linear-gradient(90deg, var(--editor-primary), var(--editor-secondary)); border-left-color: var(--editor-accent); color: white; box-shadow: 0 0 15px var(--editor-primary); }
         .sidebar-item.selected .text-gray-400 { color: white; }
-        .group-header { background-color: rgba(0,0,0,0.2); border-top: 1px solid var(--bg-light); border-bottom: 1px solid var(--bg-light); margin-top: 8px; margin-bottom: 4px; }
-        .form-input { background-color: var(--bg-medium); border-color: var(--bg-light); color: var(--text-light); border-radius: 8px; transition: all 0.3s ease; }
-        .form-input:focus { background-color: var(--bg-light); border-color: var(--primary); outline: none; box-shadow: 0 0 10px var(--primary); }
+        .group-header { background-color: rgba(0,0,0,0.2); border-top: 1px solid var(--editor-border); border-bottom: 1px solid var(--editor-border); margin-top: 8px; margin-bottom: 4px; }
+        .form-input { background-color: var(--editor-surface); border-color: var(--editor-panel); color: var(--editor-text); border-radius: 8px; transition: all 0.3s ease; }
+        .form-input:focus { background-color: var(--editor-panel); border-color: var(--editor-primary); outline: none; box-shadow: 0 0 10px var(--editor-primary); }
         .btn { border-radius: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; border: 0; box-shadow: 0 2px 10px rgba(0,0,0,0.3); transition: all 0.3s ease; }
         .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
         .btn:active { transform: translateY(0px) scale(0.98); box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
-        #add-step-btn { background: linear-gradient(45deg, var(--primary), var(--secondary)); color: white;}
-        #import-json-btn { background: linear-gradient(45deg, var(--accent), #00c4cc); color: var(--bg-dark);}
+        #add-step-btn { background: linear-gradient(45deg, var(--editor-primary), var(--editor-secondary)); color: white;}
+        #import-json-btn { background: linear-gradient(45deg, var(--editor-accent), #00c4cc); color: var(--editor-bg);}
         #view-json-btn { background: linear-gradient(45deg, #f97316, #fb923c); color: white;}
-        #delete-all-btn { background: linear-gradient(45deg, var(--danger), #f87171); color: white;}
-        .modal-backdrop { background-color: rgba(30, 30, 63, 0.8); backdrop-filter: blur(5px); }
-        .modal-content { background: var(--bg-medium); border: 1px solid var(--primary); box-shadow: 0 0 30px var(--primary); border-radius: 12px; }
+        #delete-all-btn { background: linear-gradient(45deg, var(--editor-danger), #f87171); color: white;}
         #undo-toast { transition: transform 0.5s ease, opacity 0.5s ease; transform: translateY(200%); opacity: 0; }
         #undo-toast.show { transform: translateY(0); opacity: 1; }
         ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: var(--bg-dark); }
-        ::-webkit-scrollbar-thumb { background: linear-gradient(var(--primary), var(--secondary)); border-radius: 4px; }
+        ::-webkit-scrollbar-track { background: var(--editor-bg); }
+        ::-webkit-scrollbar-thumb { background: linear-gradient(var(--editor-primary), var(--editor-secondary)); border-radius: 4px; }
         .drag-handle { cursor: move; }
-        .dragging { opacity: 0.6; background: var(--primary); }
-        .drag-over { border-top: 2px dashed var(--accent); }
+        .dragging { opacity: 0.6; background: var(--editor-primary); }
+        .drag-over { border-top: 2px dashed var(--editor-accent); }
     </style>
 </head>
-<body class="antialiased">
+<body class="antialiased editor-theme">
     <div id="app" class="flex h-screen overflow-hidden">
         <aside class="w-1/3 max-w-sm flex flex-col border-r">
             <div class="p-4 border-b border-gray-700 text-center">
-                <h1 class="text-2xl font-bold text-white tracking-wider" style="text-shadow: 0 0 5px var(--accent);">Редактор</h1>
+                <h1 class="text-2xl font-bold text-white tracking-wider" style="text-shadow: 0 0 5px var(--editor-accent);">Редактор</h1>
                 <div id="scenario-type-container" class="mt-2"></div>
             </div>
-            <div id="step-list" class="flex-grow overflow-y-auto p-2"></div>
+            <div id="step-list-root" class="flex-grow overflow-y-auto p-2"></div>
             <div id="controls" class="p-4 border-t border-gray-700 space-y-3">
                  <button id="add-step-btn" class="w-full py-3 px-4 btn flex items-center justify-center"><i class="fas fa-plus mr-2"></i> Добавить шаг</button>
                 <div class="grid grid-cols-2 gap-3">
@@ -79,59 +66,30 @@
         </main>
     </div>
 
-    <!-- Modals & Toasts -->
-    <div id="add-step-modal" class="fixed inset-0 z-50 items-center justify-center hidden modal-backdrop">
-        <div class="modal-content p-6 w-full max-w-md">
-            <h3 class="text-xl font-bold mb-4">Выберите тип элемента</h3>
-            <select id="action-select" class="w-full p-2 rounded-md form-input mb-4"></select>
-            <div class="flex justify-end space-x-2">
-                <button data-action="cancel-add" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 btn">Отмена</button>
-                <button data-action="confirm-add" style="background: linear-gradient(45deg, var(--primary), var(--secondary)); color: white;" class="text-white font-bold py-2 px-4 btn">Добавить</button>
-            </div>
-        </div>
-    </div>
-    
-    <div id="export-modal" class="fixed inset-0 z-50 items-center justify-center hidden modal-backdrop">
-        <div class="modal-content p-6 w-full max-w-2xl flex flex-col" style="height: 80vh;">
-            <h3 class="text-xl font-bold mb-4">Экспортированный JSON</h3>
-            <textarea id="json-output" readonly class="w-full flex-grow p-3 rounded-md form-input font-mono text-sm resize-none"></textarea>
-             <div class="flex justify-end space-x-2 mt-4">
-                <button id="copy-json-btn" style="background: linear-gradient(45deg, #22c55e, #4ade80); color: white;" class="py-2 px-4 btn"><i class="fas fa-copy mr-2"></i>Копировать</button>
-                <button data-action="close-modal" class="bg-gray-600 hover:bg-gray-700 text-white font-bold py-2 px-4 btn">Закрыть</button>
-            </div>
-        </div>
-    </div>
-
-    <div id="confirm-modal" class="fixed inset-0 z-50 items-center justify-center hidden modal-backdrop">
-        <div class="modal-content p-6 w-full max-w-lg">
-            <h3 id="confirm-title" class="text-xl font-bold mb-4"></h3>
-            <p id="confirm-message" class="mb-6"></p>
-            <div id="confirm-buttons" class="flex justify-end space-x-3"></div>
-        </div>
-    </div>
-    
-    <div id="undo-toast" class="fixed bottom-5 right-5 z-50 p-4 rounded-lg shadow-lg flex items-center gap-4" style="background-color: var(--bg-medium); border: 1px solid var(--primary);">
-        <span id="undo-message"></span>
-        <button id="undo-btn" class="font-bold uppercase" style="color: var(--accent);">Отменить</button>
-    </div>
-
+    <script src="../editor-core/registry.js"></script>
+    <script src="../editor-core/core.js"></script>
+    <script src="../editor-core/ui.js"></script>
     <script>
     const App = (() => {
-        const DOM = {
-            stepList: document.getElementById('step-list'),
-            editorPanel: document.getElementById('editor-panel'),
-            actionSelect: document.getElementById('action-select'),
-            addStepModal: document.getElementById('add-step-modal'),
-            exportModal: document.getElementById('export-modal'),
-            jsonOutput: document.getElementById('json-output'),
-            importFileInput: document.getElementById('import-file-input'),
-            undoToast: document.getElementById('undo-toast'),
-            undoMessage: document.getElementById('undo-message'),
-            scenarioTypeContainer: document.getElementById('scenario-type-container'),
-            confirmModal: document.getElementById('confirm-modal'),
-            confirmTitle: document.getElementById('confirm-title'),
-            confirmMessage: document.getElementById('confirm-message'),
-            confirmButtons: document.getElementById('confirm-buttons'),
+        let DOM = {};
+
+        const bindDOM = () => {
+            DOM = {
+                stepList: document.getElementById('step-list'),
+                editorPanel: document.getElementById('editor-panel'),
+                actionSelect: document.getElementById('action-select'),
+                addStepModal: document.getElementById('add-step-modal'),
+                exportModal: document.getElementById('export-modal'),
+                jsonOutput: document.getElementById('json-output'),
+                importFileInput: document.getElementById('import-file-input'),
+                undoToast: document.getElementById('undo-toast'),
+                undoMessage: document.getElementById('undo-message'),
+                scenarioTypeContainer: document.getElementById('scenario-type-container'),
+                confirmModal: document.getElementById('confirm-modal'),
+                confirmTitle: document.getElementById('confirm-title'),
+                confirmMessage: document.getElementById('confirm-message'),
+                confirmButtons: document.getElementById('confirm-buttons'),
+            };
         };
 
         const STATE = {
@@ -159,18 +117,18 @@
             ).join('');
             DOM.scenarioTypeContainer.innerHTML = `
                 <div class="relative scenario-type-dropdown">
-                    <button class="custom-select-button flex items-center justify-center w-full text-lg font-semibold text-white cursor-pointer" style="color: var(--accent);">
+                    <button class="custom-select-button flex items-center justify-center w-full text-lg font-semibold text-white cursor-pointer" style="color: var(--editor-accent);">
                         <i class="fas fa-tag mr-2"></i>
                         <span>${SCENARIO_EVENTS[STATE.selectedScenarioEvent]}</span>
                         <i class="fas fa-chevron-down ml-2 text-sm opacity-70"></i>
                     </button>
-                    <div class="custom-select-options hidden absolute top-full left-0 mt-2 w-full max-h-60 overflow-y-auto rounded-lg z-20 p-2" style="background-color: var(--bg-medium); border: 1px solid var(--bg-light);">${optionsHtml}</div>
+                    <div class="custom-select-options hidden absolute top-full left-0 mt-2 w-full max-h-60 overflow-y-auto rounded-lg z-20 p-2" style="background-color: var(--editor-surface); border: 1px solid var(--editor-border);">${optionsHtml}</div>
                 </div>`;
         };
 
         const renderStepList = () => {
             if (STATE.scenarioSteps.length === 0) {
-                DOM.stepList.innerHTML = `<div class="p-4 text-center text-gray-400 opacity-50">Нет шагов... пока!</div>`;
+                EditorCore.UI.renderEmptyList(DOM.stepList, DOM.stepList.dataset.emptyMessage || 'Нет шагов... пока!');
                 return;
             }
             let groupSubIndex = 1;
@@ -227,10 +185,10 @@
                 <div class="space-y-6">
                     <div class="flex items-center justify-between">
                         <div class="relative action-type-dropdown">
-                            <button class="custom-select-button flex items-center text-3xl font-bold text-white cursor-pointer" style="text-shadow: 0 0 3px var(--accent);">
+                            <button class="custom-select-button flex items-center text-3xl font-bold text-white cursor-pointer" style="text-shadow: 0 0 3px var(--editor-accent);">
                                 <i class="fas ${def.icon} mr-3"></i><span>${def.name}</span><i class="fas fa-chevron-down ml-3 text-xl opacity-70"></i>
                             </button>
-                            <div class="custom-select-options hidden absolute top-full left-0 mt-2 w-72 max-h-80 overflow-y-auto rounded-lg z-10 p-2" style="background-color: var(--bg-medium); border: 1px solid var(--bg-light);">${actionOptions}</div>
+                            <div class="custom-select-options hidden absolute top-full left-0 mt-2 w-72 max-h-80 overflow-y-auto rounded-lg z-10 p-2" style="background-color: var(--editor-surface); border: 1px solid var(--editor-border);">${actionOptions}</div>
                         </div>
                         <span class="text-lg opacity-50">#${STATE.selectedStepIndex + 1}</span>
                     </div>
@@ -547,16 +505,24 @@
         };
 
         const init = () => {
+            EditorCore.UI.mountEventEditorUI();
+            EditorCore.UI.mountListContainer({
+                id: 'step-list',
+                parent: document.getElementById('step-list-root'),
+                className: 'space-y-2',
+                emptyMessage: 'Нет шагов... пока!'
+            });
+            bindDOM();
             DOM.actionSelect.innerHTML = Object.entries(ACTION_DEFS).sort(([,a],[,b]) => a.name.localeCompare(b.name))
                 .map(([key, value]) => `<option value="${key}">${value.name}</option>`).join('');
             bindEvents();
             render();
         };
 
-        return { init };
+        return EditorCore.createEditorApp({ id: 'event-editor', init, render, state: STATE });
     })();
 
-    document.addEventListener('DOMContentLoaded', App.init);
+    document.addEventListener('DOMContentLoaded', () => App.mount());
     </script>
 </body>
 </html>

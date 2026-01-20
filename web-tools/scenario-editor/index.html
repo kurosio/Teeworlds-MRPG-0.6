@@ -10,6 +10,8 @@
     
     <!-- Иконки Font Awesome -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+    <link rel="stylesheet" href="../editor-core/editor-theme.css">
     
     <!-- Библиотека для Drag-and-Drop -->
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
@@ -18,12 +20,12 @@
         /* Небольшие кастомные стили */
         .sortable-ghost {
             opacity: 0.4;
-            background: #c8ebfb;
-            border: 2px dashed #3498db;
+            background: rgba(0, 246, 255, 0.1);
+            border: 2px dashed var(--editor-accent);
         }
         #navigator-tree .sortable-ghost {
-            background: #e0f7fa;
-            border: 1px dashed #3498db;
+            background: rgba(162, 89, 255, 0.15);
+            border: 1px dashed var(--editor-primary);
             border-radius: 4px;
         }
         #navigator-tree .sortable-ghost * {
@@ -31,20 +33,20 @@
         }
         .nav-component-list.empty-drop-zone {
             min-height: 30px;
-            background-color: rgba(240, 249, 255, 0.5);
-            border: 1px dashed #93c5fd;
+            background-color: rgba(255, 255, 255, 0.06);
+            border: 1px dashed rgba(0, 246, 255, 0.4);
             border-radius: 4px;
             margin-top: 4px;
         }
         .connection-line {
             stroke-width: 2px;
-            stroke: #8e44ad; /* purple-600 */
+            stroke: var(--editor-primary);
             fill: none;
             stroke-dasharray: 5, 5;
             pointer-events: none;
         }
         .connection-arrow {
-            fill: #8e44ad; /* purple-600 */
+            fill: var(--editor-primary);
             pointer-events: none;
         }
         .toggle-checkbox:checked {
@@ -79,25 +81,23 @@
         }
     </style>
 </head>
-<body class="bg-slate-100 font-sans text-slate-700">
-    <div id="toast-container" class="fixed top-5 right-5 z-[9999] flex flex-col gap-2"></div>
-
-    <header class="bg-white h-[70px] px-8 border-b border-slate-200 flex justify-between items-center sticky top-0 z-50 shadow-sm">
-        <h1 class="text-2xl font-bold text-slate-800 flex items-center gap-3"><i class="fa-solid fa-scroll text-blue-500"></i> Редактор v30.3</h1>
+<body class="editor-theme font-sans text-slate-100">
+    <header class="editor-surface h-[70px] px-8 border-b border-slate-200/30 flex justify-between items-center sticky top-0 z-50 shadow-sm">
+        <h1 class="text-2xl font-bold text-slate-100 flex items-center gap-3"><i class="fa-solid fa-scroll text-blue-300"></i> Редактор v30.3</h1>
         <div class="controls flex items-center gap-4">
             <div class="flex items-center gap-2 text-sm">
-                <label for="arrow-mode-toggle" class="font-medium text-slate-600">Стрелки:</label>
+                <label for="arrow-mode-toggle" class="font-medium text-slate-200">Стрелки:</label>
                 <div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
                     <input type="checkbox" name="arrow-mode-toggle" id="arrow-mode-toggle" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"/>
                     <label for="arrow-mode-toggle" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"></label>
                 </div>
             </div>
-            <label for="scenario-select" class="text-sm font-medium">Сценарий:</label>
-            <select id="scenario-select" class="text-sm rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"></select>
+            <label for="scenario-select" class="text-sm font-medium text-slate-200">Сценарий:</label>
+            <select id="scenario-select" class="text-sm rounded-md border-slate-300/40 bg-slate-900/40 text-slate-100 shadow-sm focus:border-blue-400 focus:ring-blue-400"></select>
             <button id="delete-scenario-btn" title="Удалить текущий сценарий" class="bg-red-100 text-red-600 font-semibold text-sm py-2 px-3 rounded-md hover:bg-red-200 transition-colors">
                 <i class="fa-solid fa-trash-can"></i>
             </button>
-            <input type="text" id="save-as-filename" placeholder="Сохранить как..." class="text-sm rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+            <input type="text" id="save-as-filename" placeholder="Сохранить как..." class="text-sm rounded-md border-slate-300/40 bg-slate-900/40 text-slate-100 shadow-sm focus:border-blue-400 focus:ring-blue-400">
             <button id="save-button" title="Сохранить текущий сценарий" class="bg-blue-600 text-white font-semibold text-sm py-2 px-4 rounded-md hover:bg-blue-700 transition-colors flex items-center gap-2">
                 <i class="fa-solid fa-save"></i> Сохранить
             </button>
@@ -105,17 +105,17 @@
     </header>
 
     <div class="main-container flex items-start">
-        <aside id="navigator" class="w-[350px] h-[calc(100vh-70px)] bg-white border-r border-slate-200 sticky top-[70px] overflow-y-auto flex-shrink-0 z-20">
-            <div class="navigator-header p-4 font-semibold border-b border-slate-200 bg-slate-50 sticky top-0 z-10 flex justify-between items-center">
-                <span>Структура сценария</span>
+        <aside id="navigator" class="w-[350px] h-[calc(100vh-70px)] editor-surface border-r border-slate-200/30 sticky top-[70px] overflow-y-auto flex-shrink-0 z-20">
+            <div class="navigator-header p-4 font-semibold border-b border-slate-200/30 editor-surface sticky top-0 z-10 flex justify-between items-center">
+                <span class="text-slate-100">Структура сценария</span>
                 <button id="add-group-btn" class="text-sm bg-blue-100 text-blue-700 font-semibold px-2 py-1 rounded hover:bg-blue-200 transition-colors" title="Создать новую группу">
                     <i class="fa-solid fa-plus"></i> Группа
                 </button>
             </div>
-            <div id="navigator-tree" class="p-2"></div>
+            <div id="navigator-tree-root" class="p-2"></div>
         </aside>
 
-        <main id="editor-wrapper" class="flex-grow p-8 relative">
+        <main id="editor-wrapper" class="flex-grow p-8 relative editor-panel">
             <div id="editor-container" class="space-y-8"></div>
              <button id="add-step-button" class="max-w-3xl mx-auto mt-8 w-full py-3 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600 transition-colors flex items-center justify-center gap-2">
                 <i class="fa-solid fa-plus"></i> Добавить Новый Шаг
@@ -125,76 +125,53 @@
     
     <svg id="connections-svg-container" class="fixed top-0 left-0 w-full h-full pointer-events-none z-10"></svg>
     
-    <div id="add-component-menu" class="hidden absolute z-[1000] bg-white border border-slate-300 shadow-lg rounded-lg p-2 w-72 flex flex-col gap-1"></div>
-
-    <div id="modal-backdrop" class="hidden fixed inset-0 bg-black/60 z-[200] flex justify-center items-center p-4">
-        <div id="modal-content" class="bg-white p-6 rounded-lg shadow-xl w-full max-w-xl flex flex-col max-h-[90vh]">
-            <h3 id="modal-title" class="text-xl font-bold mb-4 text-slate-800">Редактирование</h3>
-            <div id="modal-form-container" class="overflow-y-auto pr-4 -mr-4"></div>
-            <div class="modal-buttons text-right mt-6 pt-4 border-t border-slate-200">
-                <button id="modal-cancel" class="bg-slate-200 text-slate-700 font-semibold py-2 px-4 rounded-md hover:bg-slate-300 transition-colors">Отмена</button>
-                <button id="modal-save" class="bg-green-500 text-white font-semibold py-2 px-4 rounded-md hover:bg-green-600 transition-colors ml-2">Сохранить</button>
-            </div>
-        </div>
-    </div>
-    
-    <div id="delete-group-modal-backdrop" class="hidden fixed inset-0 bg-black/60 z-[300] flex justify-center items-center p-4">
-        <div class="bg-white p-6 rounded-lg shadow-xl w-full max-w-md">
-            <h3 class="text-xl font-bold mb-4 text-slate-800">Удалить группу</h3>
-            <p class="text-slate-600 mb-6">Как вы хотите удалить эту группу?</p>
-            <div class="flex justify-end gap-3">
-                <button id="delete-group-cancel-btn" class="bg-slate-200 text-slate-700 font-semibold py-2 px-4 rounded-md hover:bg-slate-300 transition-colors">Отмена</button>
-                <button id="delete-group-only-btn" class="bg-yellow-500 text-white font-semibold py-2 px-4 rounded-md hover:bg-yellow-600 transition-colors">Только группу</button>
-                <button id="delete-group-and-steps-btn" class="bg-red-600 text-white font-semibold py-2 px-4 rounded-md hover:bg-red-700 transition-colors">Группу и шаги</button>
-            </div>
-        </div>
-    </div>
+    <div id="add-component-menu" class="hidden absolute z-[1000] editor-card border border-slate-300/40 shadow-lg rounded-lg p-2 w-72 flex flex-col gap-1"></div>
 
     <!-- TEMPLATES -->
     <template id="step-card-template">
-        <div class="step-card bg-white rounded-lg border border-slate-200 shadow-md transition-all duration-200 relative z-10">
-            <div class="step-header flex justify-between items-center border-b border-slate-200 p-4">
-                <div class="title text-lg font-bold text-slate-800 flex items-center gap-3 cursor-grab flex-grow">
+        <div class="step-card editor-card rounded-lg border border-slate-200/30 shadow-md transition-all duration-200 relative z-10">
+            <div class="step-header flex justify-between items-center border-b border-slate-200/30 p-4">
+                <div class="title text-lg font-bold text-slate-100 flex items-center gap-3 cursor-grab flex-grow">
                     <i class="fa-solid fa-grip-vertical handle text-slate-400"></i>
                     <i class="fa-solid fa-chevron-down toggle-icon transition-transform cursor-pointer"></i>
                     <span>Шаг ID:</span>
-                    <span class="step-id-display font-mono bg-blue-50 text-blue-800 text-sm font-medium px-2 py-1 rounded-md"></span>
+                    <span class="step-id-display font-mono bg-blue-500/20 text-blue-100 text-sm font-medium px-2 py-1 rounded-md"></span>
                 </div>
-                <div class="step-delay-display hidden text-xs font-medium bg-slate-100 text-slate-500 px-2 py-1 rounded-md ml-auto mr-4 items-center gap-1.5"></div>
+                <div class="step-delay-display hidden text-xs font-medium bg-slate-800/60 text-slate-200 px-2 py-1 rounded-md ml-auto mr-4 items-center gap-1.5"></div>
                 <div class="controls-container flex items-center gap-1">
-                    <button class="control-btn duplicate-btn w-8 h-8 rounded-full text-slate-500 hover:bg-slate-100 hover:text-orange-500 transition-colors" title="Дублировать шаг"><i class="fa-regular fa-copy"></i></button>
-                    <button class="control-btn delete-btn w-8 h-8 rounded-full text-slate-500 hover:bg-slate-100 hover:text-red-500 transition-colors" title="Удалить шаг"><i class="fa-regular fa-trash-can"></i></button>
+                    <button class="control-btn duplicate-btn w-8 h-8 rounded-full text-slate-300 hover:bg-slate-700/40 hover:text-orange-300 transition-colors" title="Дублировать шаг"><i class="fa-regular fa-copy"></i></button>
+                    <button class="control-btn delete-btn w-8 h-8 rounded-full text-slate-300 hover:bg-slate-700/40 hover:text-red-300 transition-colors" title="Удалить шаг"><i class="fa-regular fa-trash-can"></i></button>
                 </div>
             </div>
             <div class="step-body p-5 transition-all duration-300">
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">ID Шага (уникальное, латиницей)</label>
-                        <input type="text" class="step-id-input w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <label class="block text-sm font-medium text-slate-200 mb-1">ID Шага (уникальное, латиницей)</label>
+                        <input type="text" class="step-id-input w-full rounded-md border-slate-300/40 bg-slate-900/40 text-slate-100 shadow-sm focus:border-blue-400 focus:ring-blue-400">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">Задержка (мс)</label>
-                        <input type="number" class="step-delay-input w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder="0">
+                        <label class="block text-sm font-medium text-slate-200 mb-1">Задержка (мс)</label>
+                        <input type="number" class="step-delay-input w-full rounded-md border-slate-300/40 bg-slate-900/40 text-slate-100 shadow-sm focus:border-blue-400 focus:ring-blue-400" placeholder="0">
                     </div>
                 </div>
                 <div class="grid grid-cols-2 gap-4 mt-4">
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">Информация для игрока (msg_info)</label>
-                        <input type="text" class="msg-info-input w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500" placeholder="Например, 'Найдите выход'">
+                        <label class="block text-sm font-medium text-slate-200 mb-1">Информация для игрока (msg_info)</label>
+                        <input type="text" class="msg-info-input w-full rounded-md border-slate-300/40 bg-slate-900/40 text-slate-100 shadow-sm focus:border-blue-400 focus:ring-blue-400" placeholder="Например, 'Найдите выход'">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-slate-700 mb-1">Логика завершения компонентов</label>
-                        <select class="completion-logic-select w-full rounded-md border-slate-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                        <label class="block text-sm font-medium text-slate-200 mb-1">Логика завершения компонентов</label>
+                        <select class="completion-logic-select w-full rounded-md border-slate-300/40 bg-slate-900/40 text-slate-100 shadow-sm focus:border-blue-400 focus:ring-blue-400">
                             <option value="all_of">Все (all_of)</option>
                             <option value="any_of">Любой (any_of)</option>
                             <option value="sequential">Последовательно (sequential)</option>
                         </select>
                     </div>
                 </div>
-                <div class="components-container mt-5 pt-5 border-t border-dashed border-slate-200">
-                    <h4 class="font-bold text-slate-800 mb-2">Компоненты</h4>
+                <div class="components-container mt-5 pt-5 border-t border-dashed border-slate-200/30">
+                    <h4 class="font-bold text-slate-100 mb-2">Компоненты</h4>
                 </div>
-                <button class="add-button add-component-btn w-full mt-4 py-2 bg-slate-100 text-slate-600 font-semibold rounded-lg hover:bg-slate-200 transition-colors flex items-center justify-center gap-2">
+                <button class="add-button add-component-btn w-full mt-4 py-2 bg-slate-800/70 text-slate-100 font-semibold rounded-lg hover:bg-slate-700 transition-colors flex items-center justify-center gap-2">
                     <i class="fa-solid fa-puzzle-piece"></i> Добавить компонент
                 </button>
             </div>
@@ -202,22 +179,25 @@
     </template>
 
     <template id="component-item-template">
-        <div class="component-item bg-white border border-slate-200 p-3 rounded-md mb-2 flex justify-between items-center cursor-grab">
+        <div class="component-item editor-card border border-slate-200/30 p-3 rounded-md mb-2 flex justify-between items-center cursor-grab">
             <div class="component-info flex-grow flex items-center gap-3">
-                <i class="component-icon text-slate-500 text-lg"></i>
+                <i class="component-icon text-slate-300 text-lg"></i>
                 <div class="component-text-wrapper">
-                    <div class="component-type text-sm font-bold uppercase text-slate-600"></div>
-                    <div class="component-summary text-sm text-slate-500 mt-0.5"></div>
+                    <div class="component-type text-sm font-bold uppercase text-slate-200"></div>
+                    <div class="component-summary text-sm text-slate-300 mt-0.5"></div>
                 </div>
             </div>
             <div class="controls-container flex items-center gap-1">
-                <button class="control-btn edit-btn w-8 h-8 rounded-full text-slate-500 hover:bg-slate-100 hover:text-blue-500 transition-colors" title="Редактировать"><i class="fa-solid fa-pencil"></i></button>
-                <button class="control-btn duplicate-btn w-8 h-8 rounded-full text-slate-500 hover:bg-slate-100 hover:text-orange-500 transition-colors" title="Дублировать"><i class="fa-regular fa-copy"></i></button>
-                <button class="control-btn delete-btn w-8 h-8 rounded-full text-slate-500 hover:bg-slate-100 hover:text-red-500 transition-colors" title="Удалить"><i class="fa-regular fa-trash-can"></i></button>
+                <button class="control-btn edit-btn w-8 h-8 rounded-full text-slate-300 hover:bg-slate-700/40 hover:text-blue-300 transition-colors" title="Редактировать"><i class="fa-solid fa-pencil"></i></button>
+                <button class="control-btn duplicate-btn w-8 h-8 rounded-full text-slate-300 hover:bg-slate-700/40 hover:text-orange-300 transition-colors" title="Дублировать"><i class="fa-regular fa-copy"></i></button>
+                <button class="control-btn delete-btn w-8 h-8 rounded-full text-slate-300 hover:bg-slate-700/40 hover:text-red-300 transition-colors" title="Удалить"><i class="fa-regular fa-trash-can"></i></button>
             </div>
         </div>
     </template>
 
+    <script src="../editor-core/registry.js"></script>
+    <script src="../editor-core/core.js"></script>
+    <script src="../editor-core/ui.js"></script>
     <script type="module">
         class ScenarioEditor {
             constructor() {
@@ -645,27 +625,25 @@
 
                 const nextStepInfo = ''; // Removed from navigator view
                 const componentCount = step.components?.length || 0;
-                const componentInfo = `<span class="text-xs font-normal text-slate-400">(${componentCount} комп.)</span>`;
+                const componentInfo = `<span class="text-xs font-normal text-slate-300">(${componentCount} комп.)</span>`;
                 
-                stepLi.innerHTML = `<a href="#step-card-${step.id}" data-nav-id="${step.id}" class="flex items-center p-1.5 rounded-md border-b border-transparent hover:bg-slate-200/70"><i class="fa-solid fa-grip-vertical nav-handle text-slate-300 hover:text-slate-500 mr-2 cursor-grab"></i><div class="flex-grow flex justify-between items-center font-semibold text-slate-700 text-sm">
+                stepLi.innerHTML = `<a href="#step-card-${step.id}" data-nav-id="${step.id}" class="flex items-center p-1.5 rounded-md border-b border-transparent hover:bg-slate-700/40"><i class="fa-solid fa-grip-vertical nav-handle text-slate-400 hover:text-slate-200 mr-2 cursor-grab"></i><div class="flex-grow flex justify-between items-center font-semibold text-slate-100 text-sm">
                                             <span class="flex items-center gap-2">${step.id || '<i>Без ID</i>'} ${componentInfo}</span>
                                             ${nextStepInfo}
                                         </div>
                                     </a>`;
                 
                 const compUl = document.createElement('ul');
-                compUl.className = 'nav-component-list pl-4 ml-3 border-l border-slate-200';
+                compUl.className = 'nav-component-list pl-4 ml-3 border-l border-slate-200/30';
                 compUl.dataset.parentStepId = step.id;
-                if (!step.components || step.components.length === 0) {
-                    compUl.classList.add('empty-drop-zone');
-                }
+                EditorCore.UI.applyEmptyStateClass(compUl, (step.components || []).length > 0, 'empty-drop-zone');
                 
                 (step.components || []).forEach(comp => {
                     const compLi = document.createElement('li');
                     compLi.dataset.componentId = comp.component_id;
                     const isCompBroken = comp.next_step_id && !allStepIds.has(comp.next_step_id);
-                    const compNextStep = comp.next_step_id ? `<span class="text-xs font-normal text-purple-600">${isCompBroken ? '⚠️' : '→'} ${comp.next_step_id}</span>` : '';
-                    compLi.innerHTML = `<a href="#step-card-${step.id}" data-nav-id="${comp.component_id}" class="flex items-center p-1.5 rounded-md border-b border-transparent hover:bg-slate-200/70 text-sm"><i class="fa-solid fa-grip-vertical nav-handle text-slate-300 hover:text-slate-500 mr-2 cursor-grab"></i><div class="flex-grow flex justify-between items-center text-slate-600">
+                    const compNextStep = comp.next_step_id ? `<span class="text-xs font-normal text-purple-300">${isCompBroken ? '⚠️' : '→'} ${comp.next_step_id}</span>` : '';
+                    compLi.innerHTML = `<a href="#step-card-${step.id}" data-nav-id="${comp.component_id}" class="flex items-center p-1.5 rounded-md border-b border-transparent hover:bg-slate-700/40 text-sm"><i class="fa-solid fa-grip-vertical nav-handle text-slate-400 hover:text-slate-200 mr-2 cursor-grab"></i><div class="flex-grow flex justify-between items-center text-slate-200">
                                                 <span>↳ ${comp.type}</span>
                                                 ${compNextStep}
                                             </div>
@@ -1568,7 +1546,7 @@
                 this.addComponentMenu.targetStepId = stepId;
                 const menu = this.addComponentMenu.element;
                 menu.innerHTML = Object.entries(this.componentTypes).map(([type, info]) =>
-                    `<div class="context-menu-item flex items-center gap-3 p-2 rounded-md hover:bg-slate-100 cursor-pointer" data-type="${type}"><i class="${info.icon} w-5 text-center text-slate-600"></i><div><div class="font-semibold text-slate-800">${info.name}</div><div class="text-xs text-slate-500">${info.desc}</div></div></div>`
+                    `<div class="context-menu-item flex items-center gap-3 p-2 rounded-md hover:bg-slate-700/40 cursor-pointer" data-type="${type}"><i class="${info.icon} w-5 text-center text-slate-200"></i><div><div class="font-semibold text-slate-100">${info.name}</div><div class="text-xs text-slate-300">${info.desc}</div></div></div>`
                 ).join('');
                 menu.style.top = `${rect.bottom + window.scrollY + 5}px`;
                 menu.style.left = `${rect.left + window.scrollX}px`;
@@ -1590,7 +1568,21 @@
                 this.hideAddComponentMenu();
             }
         }
-        document.addEventListener('DOMContentLoaded', () => new ScenarioEditor());
+        const ScenarioApp = EditorCore.createEditorApp({
+            id: 'scenario-editor',
+            state: {},
+            init: async (app) => {
+                EditorCore.UI.mountScenarioEditorUI();
+                EditorCore.UI.mountListContainer({
+                    id: 'navigator-tree',
+                    parent: document.getElementById('navigator-tree-root'),
+                    className: 'space-y-2'
+                });
+                app.state.editor = new ScenarioEditor();
+            }
+        });
+
+        document.addEventListener('DOMContentLoaded', () => ScenarioApp.mount());
     </script>
 </body>
 </html>
