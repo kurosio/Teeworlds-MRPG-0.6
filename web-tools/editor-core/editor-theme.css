@@ -1,119 +1,142 @@
-:root {
-  --editor-bg: #1e1e3f;
-  --editor-surface: #2a2a55;
-  --editor-surface-alt: #35356b;
-  --editor-panel: #4a4a88;
-  --editor-border: #4c4c8f;
-  --editor-primary: #a259ff;
-  --editor-secondary: #ff7b9b;
-  --editor-accent: #00f6ff;
-  --editor-danger: #ef4444;
-  --editor-warning: #facc15;
-  --editor-text: #f0f0ff;
-  --editor-text-muted: #c7c7e6;
-  --editor-font: 'Poppins', sans-serif;
+
+:root{
+  /* Strict, high-contrast dark UI */
+  --editor-bg:#0a0f1b;
+  --editor-surface:#0f172a;
+  --editor-surface-alt:#111c33;
+  --editor-panel:#0c152b;
+  --editor-border:#2a3550;
+  --editor-primary:#4f46e5;
+  --editor-secondary:#7c3aed;
+  --editor-accent:#22c55e;
+  --editor-danger:#ef4444;
+  --editor-warning:#f59e0b;
+  --editor-text:#e5e7eb;
+  --editor-text-muted:#9ca3af;
+  --editor-font:'Inter',ui-sans-serif,system-ui,'Segoe UI',Roboto,Arial,sans-serif;
+  --editor-radius:14px;
 }
 
-.editor-theme {
-  font-family: var(--editor-font);
-  background-color: var(--editor-bg);
-  color: var(--editor-text);
+.editor-theme{font-family:var(--editor-font);background:var(--editor-bg);color:var(--editor-text);} 
+.editor-surface{background:var(--editor-surface);border-color:var(--editor-border);color:var(--editor-text);} 
+.editor-panel{background:rgba(15,23,42,.78);border-color:var(--editor-border);color:var(--editor-text);} 
+.editor-card{background:var(--editor-surface-alt);border-color:var(--editor-border);color:var(--editor-text);} 
+
+.editor-modal-backdrop{background:rgba(2,6,23,.68);backdrop-filter:blur(6px);} 
+.editor-modal-content{background:var(--editor-surface);border:1px solid var(--editor-border);border-radius:var(--editor-radius);box-shadow:0 18px 60px rgba(0,0,0,.55);color:var(--editor-text);} 
+
+.editor-toast-container{position:fixed;top:1.25rem;right:1.25rem;z-index:9999;display:flex;flex-direction:column;gap:.5rem;} 
+.editor-empty-state{padding:1rem;text-align:center;color:var(--editor-text-muted);opacity:.9;} 
+
+.text-accent{color:var(--editor-accent);} 
+.text-secondary{color:var(--editor-secondary);} 
+.text-primary{color:var(--editor-primary);} 
+.bg-light{background:rgba(255,255,255,.05);} 
+.border-light{border-color:rgba(255,255,255,.08);} 
+.hover\\:bg-light:hover{background:rgba(255,255,255,.06);} 
+.hover\\:text-secondary:hover{color:var(--editor-secondary);} 
+.focus\\:ring-primary:focus{box-shadow:0 0 0 3px rgba(79,70,229,.22);} 
+
+.editor-theme input[type="text"],
+.editor-theme input[type="number"],
+.editor-theme input[type="search"],
+.editor-theme textarea,
+.editor-theme select{
+  background:rgba(15,23,42,.65);
+  border:1px solid var(--editor-border);
+  color:var(--editor-text);
+  border-radius:12px;
 }
 
-.editor-surface {
-  background-color: var(--editor-surface);
-  border-color: var(--editor-border);
-  color: var(--editor-text);
-}
+/* Unified form sizing (used by FieldRenderer defaults) */
+.editor-input{width:100%;padding:.55rem .75rem;font-size:.95rem;line-height:1.2;}
+.editor-textarea{min-height:96px;resize:vertical;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;font-size:.9rem;}
 
-.editor-panel {
-  background-color: rgba(30, 30, 63, 0.95);
-  border-color: var(--editor-border);
-  color: var(--editor-text);
-}
+/* Unified field wrappers */
+.editor-field{padding:14px;border-radius:14px;background:rgba(0,0,0,0.12);border:1px solid rgba(255,255,255,0.06);}
+.editor-field-nested{padding:0;border:0;background:transparent;}
+.editor-theme input::placeholder,.editor-theme textarea::placeholder{color:var(--editor-text-muted);opacity:.85;} 
+.editor-theme input:focus,.editor-theme textarea:focus,.editor-theme select:focus{outline:none;border-color:rgba(79,70,229,.85);box-shadow:0 0 0 3px rgba(79,70,229,.22);} 
+.editor-theme select option{background:var(--editor-surface);color:var(--editor-text);} 
 
-.editor-card {
-  background-color: var(--editor-surface-alt);
-  border-color: var(--editor-border);
-  color: var(--editor-text);
-}
+.editor-btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;padding:.6rem .9rem;border-radius:12px;font-weight:600;border:1px solid rgba(255,255,255,.08);transition:transform .12s ease,background-color .12s ease,border-color .12s ease,box-shadow .12s ease,color .12s ease;user-select:none;} 
+.editor-btn:active{transform:translateY(1px);} 
+.editor-btn-secondary{background:rgba(255,255,255,.06);color:var(--editor-text);} 
+.editor-btn-secondary:hover{background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.12);} 
+.editor-btn.active{background:rgba(99,102,241,0.16);border-color:rgba(99,102,241,0.55);} 
 
-.editor-accent-text {
-  color: var(--editor-accent);
-}
+/* List / icon buttons (used by generic list fields) */
+.editor-list-item{background:rgba(0,0,0,0.18);border:1px solid var(--editor-border);border-radius:14px;padding:14px;}
+.editor-row{background:rgba(0,0,0,0.14);border:1px solid var(--editor-border);border-radius:14px;padding:12px;}
+.editor-row:hover{background:rgba(0,0,0,0.18);} 
+.editor-db-alert{padding:10px 12px;border-radius:12px;border:1px solid var(--editor-border);background:rgba(255,255,255,0.03);color:var(--editor-text-muted);} 
+.editor-icon-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:8px 10px;border-radius:12px;border:1px solid var(--editor-border);background:rgba(255,255,255,0.04);color:var(--editor-text);transition:transform .08s ease,background .15s ease,border-color .15s ease;}
+.editor-icon-btn:hover{background:rgba(255,255,255,0.06);border-color:rgba(148,163,184,0.4);} 
+.editor-icon-btn:active{transform:translateY(1px);} 
+.editor-icon-danger{color:rgba(248,113,113,0.95);border-color:rgba(248,113,113,0.35);background:rgba(248,113,113,0.08);} 
+.editor-icon-danger:hover{background:rgba(248,113,113,0.12);border-color:rgba(248,113,113,0.45);} 
+.editor-btn-primary{background:rgba(79,70,229,.92);color:#fff;border-color:rgba(79,70,229,.55);box-shadow:0 10px 30px rgba(79,70,229,.18);} 
+.editor-btn-primary:hover{background:rgba(79,70,229,1);} 
+.editor-btn-danger{background:rgba(239,68,68,.92);color:#fff;border-color:rgba(239,68,68,.55);} 
+.editor-btn-danger:hover{background:rgba(239,68,68,1);} 
 
-.editor-muted-text {
-  color: var(--editor-text-muted);
-}
+/* Small utilities used across editors */
+.editor-muted-text{color:var(--editor-text-muted);}
+.editor-label{color:var(--editor-text);font-weight:600;letter-spacing:.01em;}
+.editor-label-block{display:block;margin-bottom:.35rem;}
+.editor-nested-label{display:block;margin-bottom:.25rem;font-size:.75rem;color:rgba(229,231,235,.85);font-weight:600;}
+.editor-validation-hint{color:rgba(248,113,113,.95);} /* red-400 */
+.editor-invalid{border-color:rgba(248,113,113,.8)!important;box-shadow:0 0 0 3px rgba(248,113,113,.16)!important;}
 
-.editor-modal-backdrop {
-  background-color: rgba(30, 30, 63, 0.8);
-  backdrop-filter: blur(5px);
-}
+/* Unified input + field wrappers (used by FieldRenderer defaults) */
+.editor-input{width:100%;padding:.55rem .75rem;font-size:.95rem;line-height:1.2;}
+.editor-textarea{min-height:96px;resize:vertical;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,'Liberation Mono','Courier New',monospace;font-size:.85rem;}
+.editor-field{padding:14px;border-radius:14px;background:rgba(0,0,0,0.12);border:1px solid rgba(255,255,255,.06);}
+.editor-field-nested{padding:0;border:0;background:transparent;}
 
-.editor-modal-content {
-  background: var(--editor-surface);
-  border: 1px solid var(--editor-primary);
-  box-shadow: 0 0 30px rgba(162, 89, 255, 0.35);
-  border-radius: 12px;
-  color: var(--editor-text);
-}
+/* Better dark form defaults with Tailwind Forms plugin */
+.editor-theme select{color-scheme:dark;}
+.editor-theme input[type="date"],.editor-theme input[type="time"],.editor-theme input[type="datetime-local"]{color-scheme:dark;}
 
-.editor-toast-container {
-  position: fixed;
-  top: 1.25rem;
-  right: 1.25rem;
-  z-index: 9999;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
+/* Toggle */
+.editor-toggle{display:inline-flex;align-items:center;gap:.55rem;user-select:none;}
+.editor-toggle input{position:absolute;opacity:0;pointer-events:none;}
+.editor-toggle-track{width:44px;height:24px;border-radius:999px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.12);position:relative;transition:background .15s ease,border-color .15s ease;}
+.editor-toggle-knob{width:20px;height:20px;border-radius:999px;background:rgba(255,255,255,.88);position:absolute;top:1px;left:1px;transition:transform .15s ease;}
+.editor-toggle[data-checked="1"] .editor-toggle-track{background:rgba(79,70,229,.55);border-color:rgba(79,70,229,.45);}
+.editor-toggle[data-checked="1"] .editor-toggle-knob{transform:translateX(20px);} 
 
-.editor-empty-state {
-  padding: 1rem;
-  text-align: center;
-  color: var(--editor-text-muted);
-  opacity: 0.6;
-}
 
-.editor-list-surface {
-  background-color: rgba(20, 20, 40, 0.7);
-  border-color: var(--editor-border);
-}
+/* Adaptive DB Select (db_select): shows dropdown when DB is connected, otherwise manual ID input */
+.editor-dbselect{display:flex;flex-direction:column;gap:0.5rem;}
+.editor-dbselect-input{display:block;}
+.editor-dbselect-select{display:block;}
+.editor-dbselect[data-db-state="connected"] .editor-dbselect-input{display:none;}
+.editor-dbselect[data-db-state="disconnected"] .editor-dbselect-select{display:none;}
+.editor-dbselect[data-db-state="disconnected"] .editor-dbselect-input{display:block;}
 
-.editor-pill {
-  background-color: rgba(0, 0, 0, 0.3);
-  color: var(--editor-text);
-}
 
-.text-accent {
-  color: var(--editor-accent);
-}
+/* DB select helpers */
+.editor-dbselect-controls{display:flex;align-items:center;gap:0.75rem;}
+.editor-dbselect-meta{font-size:0.85rem;opacity:0.75;}
+.editor-dbselect-more{width:fit-content;}
 
-.text-secondary {
-  color: var(--editor-secondary);
-}
 
-.text-primary {
-  color: var(--editor-primary);
+/* Tailwind Forms plugin class mapping to our sizing */
+.editor-theme .form-input,
+.editor-theme .form-select,
+.editor-theme .form-textarea{
+  width:100%;
+  padding:.55rem .75rem;
+  font-size:.95rem;
+  line-height:1.2;
+  border-radius:12px;
+  background:rgba(15,23,42,.65);
+  border:1px solid var(--editor-border);
+  color:var(--editor-text);
 }
-
-.bg-light {
-  background-color: var(--editor-panel);
-}
-
-.border-light {
-  border-color: var(--editor-border);
-}
-
-.hover\\:bg-light:hover {
-  background-color: var(--editor-panel);
-}
-
-.hover\\:text-secondary:hover {
-  color: var(--editor-secondary);
-}
-
-.focus\\:ring-primary:focus {
-  box-shadow: 0 0 0 2px rgba(162, 89, 255, 0.35);
-}
+.editor-theme .form-textarea{min-height:96px;resize:vertical;}
+/* DBSelect layout polish */
+.editor-dbselect-controls{justify-content:space-between;}
+.editor-dbselect-more{padding:.35rem .6rem;border-radius:10px;font-size:.85rem;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);}
+.editor-dbselect-more:hover{background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.14);}

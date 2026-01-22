@@ -3,61 +3,56 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Аниме-редактор сценариев</title>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Редактор событий</title>
+    <!-- Tailwind (CDN). Load shared config BEFORE tailwindcss. -->
+    <script src="editor-core/tailwind-theme.js"></script>
+    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="editor-core/editor-theme.css">
     <style>
-        body { background-color: var(--editor-bg); color: var(--editor-text); overflow: hidden; }
-        #app { background: linear-gradient(135deg, rgba(30, 30, 63, 0.95), rgba(42, 42, 85, 0.95)), url('https://avatars.mds.yandex.net/i?id=23aa7505284061857d31631140f22b09_l-3807742-images-thumbs&n=13'); background-size: cover; backdrop-filter: blur(10px); }
-        aside { background-color: rgba(20, 20, 40, 0.7); border-right-color: var(--editor-border); backdrop-filter: blur(5px); }
-        .sidebar-item { border-left: 4px solid transparent; transition: all 0.3s ease; }
-        .sidebar-item:hover { background-color: rgba(255, 255, 255, 0.05); border-left-color: var(--editor-secondary); transform: translateX(5px); }
-        .sidebar-item.selected { background: linear-gradient(90deg, var(--editor-primary), var(--editor-secondary)); border-left-color: var(--editor-accent); color: white; box-shadow: 0 0 15px var(--editor-primary); }
-        .sidebar-item.selected .text-gray-400 { color: white; }
-        .group-header { background-color: rgba(0,0,0,0.2); border-top: 1px solid var(--editor-border); border-bottom: 1px solid var(--editor-border); margin-top: 8px; margin-bottom: 4px; }
-        .form-input { background-color: var(--editor-surface); border-color: var(--editor-panel); color: var(--editor-text); border-radius: 8px; transition: all 0.3s ease; }
-        .form-input:focus { background-color: var(--editor-panel); border-color: var(--editor-primary); outline: none; box-shadow: 0 0 10px var(--editor-primary); }
-        .btn { border-radius: 8px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; border: 0; box-shadow: 0 2px 10px rgba(0,0,0,0.3); transition: all 0.3s ease; }
-        .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,0,0,0.5); }
-        .btn:active { transform: translateY(0px) scale(0.98); box-shadow: 0 2px 5px rgba(0,0,0,0.3); }
-        #add-step-btn { background: linear-gradient(45deg, var(--editor-primary), var(--editor-secondary)); color: white;}
-        #import-json-btn { background: linear-gradient(45deg, var(--editor-accent), #00c4cc); color: var(--editor-bg);}
-        #view-json-btn { background: linear-gradient(45deg, #f97316, #fb923c); color: white;}
-        #delete-all-btn { background: linear-gradient(45deg, var(--editor-danger), #f87171); color: white;}
-        #undo-toast { transition: transform 0.5s ease, opacity 0.5s ease; transform: translateY(200%); opacity: 0; }
-        #undo-toast.show { transform: translateY(0); opacity: 1; }
-        ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: var(--editor-bg); }
-        ::-webkit-scrollbar-thumb { background: linear-gradient(var(--editor-primary), var(--editor-secondary)); border-radius: 4px; }
-        .drag-handle { cursor: move; }
-        .dragging { opacity: 0.6; background: var(--editor-primary); }
-        .drag-over { border-top: 2px dashed var(--editor-accent); }
+        body{background:var(--editor-bg);color:var(--editor-text);overflow:hidden;}
+        #app{background:var(--editor-bg);}
+        aside{background:rgba(15,23,42,.78);border-right:1px solid var(--editor-border);backdrop-filter:blur(6px);}
+        .sidebar-item{border-left:3px solid transparent;transition:background .12s ease,border-color .12s ease;}
+        .sidebar-item:hover{background:rgba(255,255,255,.04);}
+        .sidebar-item.selected{background:rgba(99,102,241,.16);border-left-color:var(--editor-primary);color:var(--editor-text);} 
+        .sidebar-item.selected .text-gray-400{color:var(--editor-text-muted);} 
+        .group-header{background:rgba(255,255,255,.03);border-top:1px solid var(--editor-border);border-bottom:1px solid var(--editor-border);margin-top:10px;margin-bottom:6px;}
+        #undo-toast{transition:transform .25s ease,opacity .25s ease;transform:translateY(200%);opacity:0;}
+        #undo-toast.show{transform:translateY(0);opacity:1;}
+        ::-webkit-scrollbar{width:8px;}
+        ::-webkit-scrollbar-track{background:var(--editor-bg);}
+        ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:999px;}
+        ::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.18);}
+        .drag-handle{cursor:move;}
+        .dragging{opacity:.6;}
+        .drag-over{border-top:2px dashed var(--editor-accent);}
     </style>
+
 </head>
 <body class="antialiased editor-theme">
-    <div id="app" class="flex h-screen overflow-hidden">
-        <aside class="w-1/3 max-w-sm flex flex-col border-r">
-            <div class="p-4 border-b border-gray-700 text-center">
-                <h1 class="text-2xl font-bold text-white tracking-wider" style="text-shadow: 0 0 5px var(--editor-accent);">Редактор</h1>
+    <div id="app" class="flex flex-col md:flex-row h-screen overflow-hidden">
+        <aside class="w-full md:w-1/3 md:max-w-sm flex flex-col border-r">
+            <div class="p-4 border-b border-slate-700/40 text-center">
+                <h1 class="text-xl font-semibold text-slate-100">Редактор событий</h1>
                 <div id="scenario-type-container" class="mt-2"></div>
             </div>
             <div id="step-list-root" class="flex-grow overflow-y-auto p-2"></div>
-            <div id="controls" class="p-4 border-t border-gray-700 space-y-3">
-                 <button id="add-step-btn" class="w-full py-3 px-4 btn flex items-center justify-center"><i class="fas fa-plus mr-2"></i> Добавить шаг</button>
+            <div id="controls" class="p-4 border-t border-slate-700/40 space-y-3">
+                 <button id="add-step-btn" class="w-full editor-btn editor-btn-primary"><i class="fas fa-plus mr-2"></i> Добавить шаг</button>
                 <div class="grid grid-cols-2 gap-3">
-                    <button id="import-json-btn" class="w-full py-3 px-4 btn flex items-center justify-center"><i class="fas fa-upload mr-2"></i> Импорт</button>
-                    <button id="view-json-btn" class="w-full py-3 px-4 btn flex items-center justify-center"><i class="fas fa-eye mr-2"></i> Просмотр JSON</button>
+                    <button id="import-json-btn" class="w-full editor-btn editor-btn-secondary"><i class="fas fa-upload mr-2"></i> Импорт</button>
+                    <button id="view-json-btn" class="w-full editor-btn editor-btn-secondary"><i class="fas fa-eye mr-2"></i> Просмотр JSON</button>
                 </div>
-                <button id="delete-all-btn" class="w-full py-3 px-4 btn flex items-center justify-center"><i class="fas fa-bomb mr-2"></i> Удалить все</button>
+                <button id="delete-all-btn" class="w-full editor-btn editor-btn-danger"><i class="fas fa-bomb mr-2"></i> Удалить все</button>
                  <input type="file" id="import-file-input" class="hidden" accept=".json">
             </div>
         </aside>
 
-        <main id="editor-panel" class="w-2/3 flex-grow p-6 overflow-y-auto">
+        <main id="editor-panel" class="w-full md:w-2/3 flex-grow p-4 md:p-6 overflow-y-auto">
              <div class="flex flex-col items-center justify-center h-full text-center text-gray-500 opacity-50">
                 <i class="fas fa-cat fa-5x mb-4 animate-bounce"></i>
                 <h2 class="text-3xl font-semibold">Выберите шаг для редактирования</h2>
@@ -68,8 +63,11 @@
 
     <script src="editor-core/registry.js"></script>
     <script src="editor-core/core.js"></script>
+    <script src="editor-core/db-map.js"></script>
     <script src="editor-core/field-renderer.js"></script>
+    <script src="editor-core/db.js"></script>
     <script src="editor-core/ui.js"></script>
+    <script src="editor-core/ui-manager.js"></script>
     <script src="editor-core/defaults.js"></script>
     <script src="editor-core/utils.js"></script>
     <script src="editor-core/bootstrap.js"></script>
@@ -204,6 +202,12 @@
                     </div>
                     ${fieldsHtml}
                 </div>`;
+
+            // Initialize UI components for newly rendered fields (DB selects, validation hints, toggles).
+            // This is REQUIRED because the editor panel is re-rendered on every selection.
+            if (window.EditorCore?.UIManager) {
+                window.EditorCore.UIManager.init(DOM.editorPanel);
+            }
         };
 
         const applyActionDefaults = (step) => {
@@ -370,7 +374,7 @@
                 }
             });
 
-            DOM.editorPanel.addEventListener('input', e => {
+            const onEditorFieldChange = (e) => {
                 if (STATE.selectedStepIndex !== -1 && (e.target.dataset.key || e.target.dataset.path)) {
                     updateStepData(e.target);
                     const step = STATE.scenarioSteps[STATE.selectedStepIndex];
@@ -378,7 +382,12 @@
                         renderStepList();
                     }
                 }
-            });
+            };
+
+            // Some controls (select/checkbox) primarily emit `change`, while text inputs emit `input`.
+            // Listening to both ensures DB-backed selects correctly update the model and JSON preview.
+            DOM.editorPanel.addEventListener('input', onEditorFieldChange);
+            DOM.editorPanel.addEventListener('change', onEditorFieldChange);
 
             DOM.editorPanel.addEventListener('click', e => {
                 const selectButton = e.target.closest('.custom-select-button');

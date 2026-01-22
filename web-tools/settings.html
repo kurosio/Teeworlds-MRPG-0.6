@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Настройки • Editor Studio</title>
+
+  <link rel="stylesheet" href="editor-core/editor-theme.css" />
+
+  <!-- Fonts + icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Tailwind (CDN). Load shared config BEFORE tailwindcss. -->
+  <script src="editor-core/tailwind-theme.js"></script>
+  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+</head>
+
+<body class="editor-theme">
+  <div class="max-w-5xl mx-auto px-5 py-6">
+    <div class="flex items-start justify-between gap-4">
+      <div>
+        <div class="flex items-center gap-3">
+          <i class="fa-solid fa-gear text-accent text-xl"></i>
+          <h1 class="text-2xl font-bold">Настройки</h1>
+        </div>
+        <p class="editor-muted-text mt-1">Подключение к базе данных и источники данных для редакторов (ID → списки).</p>
+      </div>
+      <button id="btn-test" class="editor-btn editor-btn-secondary">
+        <i class="fa-solid fa-plug-circle-check"></i>
+        <span>Проверить соединение</span>
+      </button>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mt-6">
+      <section class="editor-card border rounded-2xl p-5">
+        <h2 class="text-lg font-semibold">База данных</h2>
+        <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <div class="text-sm font-medium text-slate-200 mb-1">Host</div>
+            <input id="db-host" type="text" class="w-full" placeholder="127.0.0.1" />
+          </div>
+          <div>
+            <div class="text-sm font-medium text-slate-200 mb-1">Port</div>
+            <input id="db-port" type="number" class="w-full" placeholder="3306" />
+          </div>
+          <div>
+            <div class="text-sm font-medium text-slate-200 mb-1">Database</div>
+            <input id="db-name" type="text" class="w-full" placeholder="mmorpg" />
+          </div>
+          <div>
+            <div class="text-sm font-medium text-slate-200 mb-1">User</div>
+            <input id="db-user" type="text" class="w-full" placeholder="root" />
+          </div>
+          <div class="md:col-span-2">
+            <div class="text-sm font-medium text-slate-200 mb-1">Password</div>
+            <input id="db-pass" type="password" class="w-full" placeholder="(не показывается после сохранения)" />
+            <div class="editor-muted-text text-xs mt-1">Пароль хранится на сервере в <code>data/db-config.json</code>. Не используйте боевую БД в публичном окружении.</div>
+          </div>
+        </div>
+
+        <div class="flex flex-wrap gap-2 mt-5">
+          <button id="btn-save" class="editor-btn editor-btn-primary">
+            <i class="fa-solid fa-floppy-disk"></i>
+            <span>Сохранить</span>
+          </button>
+          <button id="btn-reload" class="editor-btn editor-btn-secondary">
+            <i class="fa-solid fa-rotate"></i>
+            <span>Перезагрузить</span>
+          </button>
+        </div>
+
+        <div id="status" class="mt-4 text-sm"></div>
+      </section>
+
+      <section class="editor-card border rounded-2xl p-5">
+        <h2 class="text-lg font-semibold">Источники списков</h2>
+        <p class="editor-muted-text text-sm mt-1">Эти списки используются компонентом <b>DB Select</b> (например, квесты, предметы, миры и т.д.).</p>
+
+        <div class="mt-4 grid grid-cols-2 gap-2">
+          <button class="editor-btn editor-btn-secondary" data-source="quests"><i class="fa-solid fa-scroll"></i><span>Квесты</span></button>
+          <button class="editor-btn editor-btn-secondary" data-source="items"><i class="fa-solid fa-box"></i><span>Предметы</span></button>
+          <button class="editor-btn editor-btn-secondary" data-source="worlds"><i class="fa-solid fa-globe"></i><span>Миры</span></button>
+          <button class="editor-btn editor-btn-secondary" data-source="skills"><i class="fa-solid fa-wand-magic"></i><span>Скиллы</span></button>
+          <button class="editor-btn editor-btn-secondary" data-source="bots"><i class="fa-solid fa-robot"></i><span>Боты / Мобы</span></button>
+        </div>
+
+        <div class="mt-4">
+          <div class="flex items-center gap-2">
+            <i class="fa-solid fa-magnifying-glass text-slate-300"></i>
+            <input id="search" type="search" class="w-full" placeholder="Поиск по названию…" />
+          </div>
+        </div>
+
+        <div id="list" class="mt-4 overflow-auto border border-light rounded-xl" style="max-height: 360px"></div>
+      </section>
+    </div>
+  </div>
+
+  <script src="editor-core/core.js"></script>
+  <script src="editor-core/field-renderer.js"></script>
+  <script src="editor-core/db-map.js"></script>
+  <script src="editor-core/db.js"></script>
+  <script src="editor-core/ui.js"></script>
+  <script src="editor-core/ui-manager.js"></script>
+  <script src="editor-core/defaults.js"></script>
+  <script src="editor-core/utils.js"></script>
+  <script src="editor-core/bootstrap.js"></script>
+
+  <script>
+    // Settings page uses the same core bootstrap (notifications etc.)
+    EditorCore.bootstrapEditor({ mode: 'event' });
+
+    const els = {
+      host: document.getElementById('db-host'),
+      port: document.getElementById('db-port'),
+      name: document.getElementById('db-name'),
+      user: document.getElementById('db-user'),
+      pass: document.getElementById('db-pass'),
+      status: document.getElementById('status'),
+      save: document.getElementById('btn-save'),
+      reload: document.getElementById('btn-reload'),
+      test: document.getElementById('btn-test'),
+      list: document.getElementById('list'),
+      search: document.getElementById('search')
+    };
+
+    let activeSource = 'quests';
+    let loadedItems = [];
+    let loadedOffset = 0;
+    let loadedTotal = null;
+    let loadedHasMore = false;
+
+
+    const setStatus = (html, tone = 'muted') => {
+      const color = tone === 'ok' ? 'text-emerald-300' : tone === 'err' ? 'text-red-300' : 'editor-muted-text';
+      els.status.className = `mt-4 text-sm ${color}`;
+      els.status.innerHTML = html;
+    };
+
+    const loadConfig = async () => {
+      const res = await EditorCore.DB.getConfig();
+      if (!res.ok) {
+        setStatus(res.error || 'Не удалось загрузить конфиг', 'err');
+        return;
+      }
+      const c = res.config || {};
+      els.host.value = c.host || '';
+      els.port.value = c.port || '';
+      els.name.value = c.database || '';
+      els.user.value = c.user || '';
+      els.pass.value = '';
+      setStatus('Конфигурация загружена.', 'ok');
+    };
+
+    const saveConfig = async () => {
+      const payload = {
+        host: els.host.value.trim(),
+        port: Number(els.port.value || 3306),
+        database: els.name.value.trim(),
+        user: els.user.value.trim(),
+        password: els.pass.value
+      };
+      const res = await EditorCore.DB.saveConfig(payload);
+      if (!res.ok) {
+        EditorCore.UI.toast(res.error || 'Ошибка сохранения', 'error');
+        setStatus(res.error || 'Ошибка сохранения', 'err');
+        return;
+      }
+      EditorCore.UI.toast('Сохранено', 'success');
+      setStatus('Сохранено. Пароль не отображается повторно.', 'ok');
+      els.pass.value = '';
+    };
+
+    const testConnection = async () => {
+      const res = await EditorCore.DB.testConnection();
+      if (!res.ok) {
+        EditorCore.UI.toast(res.error || 'Ошибка подключения', 'error');
+        setStatus(res.error || 'Ошибка подключения', 'err');
+        return;
+      }
+      EditorCore.UI.toast('Соединение OK', 'success');
+      setStatus(`Соединение OK. Server: <b>${res.server || 'unknown'}</b>`, 'ok');
+    };
+
+    
+const renderList = (items) => {
+  const meta = `<div class="px-3 py-2 text-xs editor-muted-text border-b border-light flex items-center justify-between gap-3">
+      <div>Показано: <b>${items.length}</b>${(loadedTotal != null) ? ` из <b>${loadedTotal}</b>` : ''}</div>
+      ${loadedHasMore ? `<button id="btn-load-more" class="editor-btn editor-btn-secondary" style="padding:6px 10px">Загрузить ещё</button>` : ''}
+    </div>`;
+
+  if (!items || !items.length) {
+    els.list.innerHTML = meta + `<div class="p-3 editor-muted-text">Нет данных</div>`;
+    return;
+  }
+
+  const rows = items.map(i => {
+    const v = String(i.value);
+    const l = String(i.label);
+    return `<tr class="border-b border-light"><td class="px-3 py-2 font-mono text-slate-200">${v}</td><td class="px-3 py-2 text-slate-100">${l}</td></tr>`;
+  }).join('');
+
+  els.list.innerHTML = meta + `
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="bg-light border-b border-light">
+          <th class="text-left px-3 py-2 text-slate-200">ID</th>
+          <th class="text-left px-3 py-2 text-slate-200">Название</th>
+        </tr>
+      </thead>
+      <tbody>${rows}</tbody>
+    </table>`;
+
+  const btn = document.getElementById('btn-load-more');
+  if (btn) btn.addEventListener('click', () => loadSource({ reset: false }));
+};
+
+
+    
+const loadSource = async ({ reset = true } = {}) => {
+  const q = els.search.value.trim();
+  if (reset) {
+    loadedItems = [];
+    loadedOffset = 0;
+    loadedTotal = null;
+    loadedHasMore = false;
+  }
+
+  const res = await EditorCore.DB.list(activeSource, {
+    search: q,
+    limit: 200,
+    offset: loadedOffset,
+    withTotal: reset
+  });
+
+  if (!res.ok) {
+    loadedItems = [];
+    loadedHasMore = false;
+    renderList([]);
+    EditorCore.UI.toast(res.error || 'Ошибка загрузки списка', 'error');
+    return;
+  }
+
+  const page = res.items || [];
+  loadedItems = loadedItems.concat(page);
+  loadedOffset += page.length;
+  if (reset) loadedTotal = (res.total != null ? res.total : null);
+  loadedHasMore = !!res.has_more;
+
+  renderList(loadedItems);
+};
+
+
+    // Wire UI
+    els.save.addEventListener('click', saveConfig);
+    els.reload.addEventListener('click', loadConfig);
+    els.test.addEventListener('click', testConnection);
+    els.search.addEventListener('input', () => {
+      clearTimeout(window.__dbSearchT);
+      window.__dbSearchT = setTimeout(loadSource, 250);
+    });
+    document.querySelectorAll('[data-source]').forEach(btn => {
+      btn.addEventListener('click', () => {
+        activeSource = btn.dataset.source;
+        document.querySelectorAll('[data-source]').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        loadSource();
+      });
+    });
+
+    // Initial
+    loadConfig().then(loadSource);
+  </script>
+</body>
+</html>

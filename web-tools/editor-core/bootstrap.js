@@ -19,6 +19,12 @@
       window.EditorCore.UI.mountScenarioEditorUI();
     }
 
+    // Core UI init (DB-backed selects, validation hints, etc.)
+    if (window.EditorCore.UIManager?.init) {
+      // fire-and-forget; init is idempotent
+      Promise.resolve().then(() => window.EditorCore.UIManager.init(document));
+    }
+
     return {
       fieldRenderOptions: window.EditorCore.defaults.getFieldRenderOptions(mode),
     };

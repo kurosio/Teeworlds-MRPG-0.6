@@ -1,0 +1,19 @@
+{
+    "editor_data": {
+        "groups": [],
+        "ungrouped_steps": [
+            "step"
+        ]
+    },
+    "steps": [
+        {
+            "id": "step",
+            "components": [
+                {
+                    "type": "wait",
+                    "duration": 5
+                }
+            ]
+        }
+    ]
+}

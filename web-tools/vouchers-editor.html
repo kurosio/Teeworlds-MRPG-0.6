@@ -1,0 +1,447 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Ваучеры</title>
+
+  <link rel="stylesheet" href="editor-core/editor-theme.css" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <script src="editor-core/tailwind-theme.js"></script>
+  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+</head>
+
+<body class="editor-theme antialiased">
+  <div class="flex h-screen overflow-hidden">
+    <!-- Sidebar -->
+    <aside id="sidebar" class="w-full md:w-96 flex-shrink-0 border-r editor-surface flex flex-col">
+      <div class="p-4 border-b border-light flex items-center justify-between gap-3">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background: rgba(99,102,241,.18); border: 1px solid var(--editor-border)">
+            <i class="fa-solid fa-ticket text-accent"></i>
+          </div>
+          <div class="min-w-0">
+            <div class="font-bold text-lg truncate">Ваучеры</div>
+            <div class="text-sm editor-muted-text truncate">CRUD напрямую в БД</div>
+          </div>
+        </div>
+
+        <button id="toggleSidebar" class="md:hidden editor-btn editor-btn-secondary" title="Свернуть/развернуть">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+      </div>
+
+      <div class="p-4 border-b border-light space-y-3">
+        <div class="flex gap-2">
+          <input id="searchInput" class="w-full form-input" placeholder="Поиск по коду..." />
+          <button id="refreshBtn" class="editor-btn editor-btn-secondary" title="Обновить">
+            <i class="fa-solid fa-rotate"></i>
+          </button>
+        </div>
+        <button id="newBtn" class="w-full editor-btn editor-btn-primary">
+          <i class="fa-solid fa-plus"></i>
+          <span>Новый ваучер</span>
+        </button>
+      </div>
+
+      <div id="list" class="flex-grow overflow-y-auto p-2"></div>
+    </aside>
+
+    <!-- Content -->
+    <main class="flex-grow overflow-y-auto p-4 md:p-6">
+      <div class="max-w-4xl mx-auto">
+        <div class="editor-card p-5 md:p-6">
+          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div class="min-w-0">
+              <div class="text-2xl font-bold" id="title">Выберите ваучер</div>
+              <div class="editor-muted-text" id="subtitle">или создайте новый</div>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <button id="pickDateBtn" class="editor-btn editor-btn-secondary" disabled>
+                <i class="fa-solid fa-calendar"></i>
+                <span>Дата</span>
+              </button>
+              <button id="saveBtn" class="editor-btn editor-btn-primary" disabled>
+                <i class="fa-solid fa-floppy-disk"></i>
+                <span>Сохранить</span>
+              </button>
+              <button id="deleteBtn" class="editor-btn editor-btn-danger" disabled>
+                <i class="fa-solid fa-trash"></i>
+                <span>Удалить</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="mt-6 space-y-6">
+            <div id="dbStatus" class="editor-db-alert"></div>
+
+            <div id="formRoot"></div>
+
+            <div class="editor-card p-4">
+              <div class="flex items-center justify-between gap-3">
+                <div>
+                  <div class="font-semibold">Предметы</div>
+                  <div class="editor-muted-text text-sm">Сохраняются в поле Data как JSON</div>
+                </div>
+              </div>
+              <div class="mt-4" id="itemsRoot"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Core -->
+  <script src="editor-core/core.js"></script>
+  <script src="editor-core/utils.js"></script>
+  <script src="editor-core/ui.js"></script>
+  <script src="editor-core/defaults.js"></script>
+  <script src="editor-core/db-map.js"></script>
+  <script src="editor-core/db.js"></script>
+  <script src="editor-core/db-crud.js"></script>
+  <script src="editor-core/ui-manager.js"></script>
+  <script src="editor-core/field-renderer.js"></script>
+  <script src="editor-core/form-runtime.js"></script>
+  <script src="editor-core/bootstrap.js"></script>
+
+  <script>
+    const DOM = {
+      list: document.getElementById('list'),
+      search: document.getElementById('searchInput'),
+      refresh: document.getElementById('refreshBtn'),
+      newBtn: document.getElementById('newBtn'),
+      title: document.getElementById('title'),
+      subtitle: document.getElementById('subtitle'),
+      formRoot: document.getElementById('formRoot'),
+      itemsRoot: document.getElementById('itemsRoot'),
+      save: document.getElementById('saveBtn'),
+      del: document.getElementById('deleteBtn'),
+      pickDate: document.getElementById('pickDateBtn'),
+      dbStatus: document.getElementById('dbStatus'),
+      sidebar: document.getElementById('sidebar'),
+      toggleSidebar: document.getElementById('toggleSidebar'),
+    };
+
+    const RESOURCE = 'vouchers';
+
+    const emptyVoucher = () => ({
+      ID: 0,
+      Code: '',
+      Multiple: 0,
+      ValidUntil: 0,
+      items: [],
+    });
+
+    const fromRow = (row) => {
+      const v = emptyVoucher();
+      v.ID = Number(row.ID || 0);
+      v.Code = String(row.Code || '');
+      v.Multiple = Number(row.Multiple || 0) ? 1 : 0;
+      v.ValidUntil = Number(row.ValidUntil || 0);
+      const data = row.Data;
+      if (data && typeof data === 'object' && Array.isArray(data.items)) {
+        v.items = data.items.map(x => ({ id: Number(x.id||0), value: Number(x.value||0) }));
+      }
+      return v;
+    };
+
+    const toPayload = (v) => ({
+      Code: String(v.Code || ''),
+      Multiple: Number(v.Multiple || 0) ? 1 : 0,
+      ValidUntil: Number(v.ValidUntil || 0),
+      Data: {
+        items: Array.isArray(v.items) ? v.items.map(x => ({ id: Number(x.id||0), value: Number(x.value||0) })) : []
+      }
+    });
+
+    const formatUntil = (sec) => {
+      if (!sec) return '— бессрочно —';
+      const d = new Date(sec * 1000);
+      return d.toLocaleString();
+    };
+
+    const voucherFields = {
+      Code: { type: 'text', label: 'Код', validate: { required: true }, ui: { placeholder: 'Например: MMO_LIVE' } },
+      Multiple: { type: 'toggle', label: 'Множественный' },
+    };
+
+    // Items are rendered as compact rows (table-like) for a cleaner UX.
+    const ITEM_ROW_FIELDS = {
+      id: { type: 'db_select', label: '', ui: { dbKey: 'item', placeholder: 'Предмет (ID:Name)', manualPlaceholder: 'ID предмета', hideLabel: true } },
+      value: { type: 'number', label: '', ui: { min: 1, step: 1, placeholder: 'Кол-во', hideLabel: true } }
+    };
+
+    // Use shared render defaults (same look across editors)
+    const fieldOptions = window.EditorCore.defaults.getFieldRenderOptions('scenario');
+
+    let STATE = {
+      list: [],
+      selectedId: 0,
+      voucher: null,
+      form: null,
+      itemsRootBound: false,
+    };
+
+    const setDirtyUi = (enabled) => {
+      DOM.save.disabled = !enabled;
+      DOM.pickDate.disabled = !enabled;
+      DOM.del.disabled = !enabled || !STATE.selectedId;
+    };
+
+    const setHeader = () => {
+      if (!STATE.voucher) {
+        DOM.title.textContent = 'Выберите ваучер';
+        DOM.subtitle.textContent = 'или создайте новый';
+        setDirtyUi(false);
+        return;
+      }
+      DOM.title.textContent = STATE.voucher.Code ? `Ваучер: ${STATE.voucher.Code}` : 'Новый ваучер';
+      DOM.subtitle.textContent = `ValidUntil: ${formatUntil(STATE.voucher.ValidUntil)}`;
+      setDirtyUi(true);
+    };
+
+    const renderList = () => {
+      const rows = STATE.list;
+      if (!rows.length) {
+        DOM.list.innerHTML = `<div class="p-4 editor-muted-text">Нет ваучеров</div>`;
+        return;
+      }
+      DOM.list.innerHTML = rows.map(r => {
+        const active = r.ID === STATE.selectedId;
+        const badge = r.Multiple ? `<span class="text-xs px-2 py-1 rounded-full" style="background: rgba(16,185,129,.16); border: 1px solid rgba(16,185,129,.3)">multi</span>` : '';
+        return `
+          <button class="w-full text-left p-3 rounded-lg border ${active ? 'bg-light border-slate-400/30' : 'border-light hover:bg-light'}" data-id="${r.ID}">
+            <div class="flex items-center justify-between gap-3">
+              <div class="min-w-0">
+                <div class="font-semibold truncate">${r.Code}</div>
+                <div class="text-sm editor-muted-text truncate">ID: ${r.ID} • ${formatUntil(r.ValidUntil)}</div>
+              </div>
+              ${badge}
+            </div>
+          </button>
+        `;
+      }).join('');
+
+      DOM.list.querySelectorAll('[data-id]').forEach(btn => {
+        btn.addEventListener('click', () => selectVoucher(Number(btn.getAttribute('data-id'))));
+      });
+    };
+
+    const showDbStatus = async () => {
+      const test = await window.EditorCore.DB.testConnection();
+      if (test.ok) {
+        DOM.dbStatus.textContent = 'БД: подключена. Списки предметов будут загружаться автоматически.';
+      } else {
+        DOM.dbStatus.textContent = 'БД: не настроена или недоступна. Поля ID будут доступны для ручного ввода.';
+      }
+    };
+
+    const loadList = async () => {
+      const search = DOM.search.value || '';
+      const res = await window.EditorCore.DBCrud.list(RESOURCE, { search, limit: 200, offset: 0 });
+      STATE.list = (res.rows || []).map(fromRow);
+      renderList();
+    };
+
+    const renderItems = () => {
+      if (!STATE.voucher) {
+        DOM.itemsRoot.innerHTML = '';
+        return;
+      }
+      const items = Array.isArray(STATE.voucher.items) ? STATE.voucher.items : [];
+      if (!items.length) {
+        DOM.itemsRoot.innerHTML = `
+          <div class="editor-muted-text text-sm mb-3">Список пуст. Добавьте предмет.</div>
+          <button type="button" class="editor-btn editor-btn-primary" data-items-action="add"><i class="fa-solid fa-plus"></i><span>Добавить предмет</span></button>
+        `;
+        return;
+      }
+
+      const header = `
+        <div class="hidden md:grid grid-cols-[1fr_160px_40px] gap-3 px-1 mb-2 text-xs editor-muted-text">
+          <div>Предмет</div>
+          <div>Кол-во</div>
+          <div></div>
+        </div>
+      `;
+
+      const rows = items.map((it, idx) => {
+        const idHtml = window.EditorCore.FieldRenderer.renderField({
+          path: `items.${idx}.id`,
+          field: ITEM_ROW_FIELDS.id,
+          data: STATE.voucher,
+          options: fieldOptions,
+          isNested: true
+        });
+        const qtyHtml = window.EditorCore.FieldRenderer.renderField({
+          path: `items.${idx}.value`,
+          field: ITEM_ROW_FIELDS.value,
+          data: STATE.voucher,
+          options: fieldOptions,
+          isNested: true
+        });
+        return `
+          <div class="editor-row grid grid-cols-1 md:grid-cols-[1fr_160px_40px] gap-3 items-end" data-item-row="${idx}">
+            ${idHtml}
+            ${qtyHtml}
+            <button type="button" class="editor-icon-btn editor-icon-danger justify-self-end" title="Удалить" data-items-action="remove" data-items-index="${idx}">
+              <i class="fa-solid fa-trash"></i>
+            </button>
+          </div>
+        `;
+      }).join('');
+
+      DOM.itemsRoot.innerHTML = `
+        ${header}
+        <div class="space-y-2">${rows}</div>
+        <div class="mt-3">
+          <button type="button" class="editor-btn editor-btn-primary" data-items-action="add"><i class="fa-solid fa-plus"></i><span>Добавить предмет</span></button>
+        </div>
+      `;
+
+      // Re-init adaptive db_select + validation for newly rendered controls.
+      window.EditorCore?.UIManager?.init(DOM.itemsRoot);
+    };
+
+    const mountForms = (voucher) => {
+      STATE.form = window.EditorCore.FormRuntime.mount(DOM.formRoot, {
+        fields: voucherFields,
+        data: voucher,
+        fieldOptions
+      });
+      renderItems();
+
+      if (!STATE.itemsRootBound) {
+        STATE.itemsRootBound = true;
+
+        // Bind inputs in custom items UI
+        const onFieldChange = (e) => {
+          const el = e.target;
+          const path = el?.getAttribute?.('data-path');
+          if (!STATE.voucher || !path) return;
+          const val = window.EditorCore.FieldRenderer.getInputValue(el);
+          window.EditorCore.FieldRenderer.setValueAtPath(STATE.voucher, path, val);
+        };
+        DOM.itemsRoot.addEventListener('input', onFieldChange);
+        DOM.itemsRoot.addEventListener('change', onFieldChange);
+
+        DOM.itemsRoot.addEventListener('click', (e) => {
+          const btn = e.target.closest('[data-items-action]');
+          if (!btn || !STATE.voucher) return;
+          const action = btn.getAttribute('data-items-action');
+          STATE.voucher.items = Array.isArray(STATE.voucher.items) ? STATE.voucher.items : [];
+          if (action === 'add') {
+            STATE.voucher.items.push({ id: 0, value: 1 });
+            renderItems();
+          }
+          if (action === 'remove') {
+            const idx = Number(btn.getAttribute('data-items-index'));
+            if (Number.isFinite(idx) && idx >= 0 && idx < STATE.voucher.items.length) {
+              STATE.voucher.items.splice(idx, 1);
+              renderItems();
+            }
+          }
+        });
+      }
+    };
+
+    const selectVoucher = async (id) => {
+      STATE.selectedId = id;
+      const res = await window.EditorCore.DBCrud.get(RESOURCE, id);
+      STATE.voucher = fromRow(res.row);
+      mountForms(STATE.voucher);
+      setHeader();
+      renderList();
+    };
+
+    const newVoucher = () => {
+      STATE.selectedId = 0;
+      STATE.voucher = emptyVoucher();
+      mountForms(STATE.voucher);
+      setHeader();
+      renderList();
+    };
+
+    const saveVoucher = async () => {
+      if (!STATE.voucher) return;
+      // pull latest data from runtimes
+      const v = STATE.form.getData();
+      const payload = toPayload(v);
+      if (!payload.Code || !payload.Code.trim()) {
+        window.EditorCore.UI.toast('Введите код ваучера', 'error');
+        return;
+      }
+      if (STATE.selectedId) {
+        await window.EditorCore.DBCrud.update(RESOURCE, STATE.selectedId, payload);
+        window.EditorCore.UI.toast('Сохранено', 'success');
+      } else {
+        const created = await window.EditorCore.DBCrud.create(RESOURCE, payload);
+        window.EditorCore.UI.toast('Создано', 'success');
+        STATE.selectedId = Number(created.id || 0);
+      }
+      await loadList();
+      if (STATE.selectedId) await selectVoucher(STATE.selectedId);
+    };
+
+    const deleteVoucher = async () => {
+      if (!STATE.selectedId) return;
+      const id = STATE.selectedId;
+      await window.EditorCore.DBCrud.remove(RESOURCE, id);
+      window.EditorCore.UI.toast('Удалено', 'success');
+      STATE.selectedId = 0;
+      STATE.voucher = null;
+      DOM.formRoot.innerHTML = '';
+      DOM.itemsRoot.innerHTML = '';
+      setHeader();
+      await loadList();
+    };
+
+    const pickDate = () => {
+      if (!STATE.voucher) return;
+      window.EditorCore.UI.openDateTimeModal({
+        title: 'Действует до',
+        valueSec: Number(STATE.voucher.ValidUntil || 0),
+        onApply: (sec) => {
+          STATE.voucher.ValidUntil = Number(sec || 0);
+          // re-render header + keep form state in sync
+          STATE.form.setData(STATE.voucher);
+          renderItems();
+          setHeader();
+        }
+      });
+    };
+
+    // Wiring
+    DOM.refresh.addEventListener('click', loadList);
+    DOM.search.addEventListener('input', () => {
+      // lightweight debounce
+      clearTimeout(DOM.search.__t);
+      DOM.search.__t = setTimeout(loadList, 200);
+    });
+    DOM.newBtn.addEventListener('click', newVoucher);
+    DOM.save.addEventListener('click', saveVoucher);
+    DOM.del.addEventListener('click', deleteVoucher);
+    DOM.pickDate.addEventListener('click', pickDate);
+
+    DOM.toggleSidebar?.addEventListener('click', () => {
+      DOM.sidebar.classList.toggle('hidden');
+      DOM.sidebar.classList.toggle('flex');
+    });
+
+    (async () => {
+      // Shared bootstrap (modals, db select init, validation hints, toasts)
+      window.EditorCore.bootstrapEditor({ mode: 'scenario' });
+      // Ensure toast container exists
+      window.EditorCore.UI.mountToastContainer({ id: 'toast-container' });
+      await showDbStatus();
+      await loadList();
+    })();
+  </script>
+</body>
+</html>

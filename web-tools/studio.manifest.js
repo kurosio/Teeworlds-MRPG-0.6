@@ -1,0 +1,28 @@
+// Editor Studio manifest.
+// To add a new editor: add one item into the appropriate group.
+// This keeps Studio shell clean and editor list centralized.
+
+window.STUDIO_MANIFEST = [
+  {
+    id: 'file_editors',
+    title: 'Редакторы файлов',
+    items: [
+      { key: 'scenario', title: 'Сценарии', icon: 'fa-scroll', src: 'scenario-editor.html' },
+      { key: 'event', title: 'События', icon: 'fa-bolt', src: 'event-editor.php' },
+    ]
+  },
+  {
+    id: 'db_editors',
+    title: 'Редакторы БД',
+    items: [
+      { key: 'vouchers', title: 'Ваучеры', icon: 'fa-ticket', src: 'vouchers-editor.html' },
+    ]
+  },
+  {
+    id: 'system',
+    title: 'Система',
+    items: [
+      { key: 'settings', title: 'Настройки', icon: 'fa-gear', src: 'settings.html' },
+    ]
+  }
+];

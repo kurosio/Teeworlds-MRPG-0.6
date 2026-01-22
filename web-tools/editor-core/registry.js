@@ -9,6 +9,15 @@
     ...rest
   });
 
+  // One-liner for DB-backed selects that gracefully fallback to manual ID input when DB is unavailable.
+// Usage: createDbSelect('Квест', 0, 'quest')
+const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, ...rest } = {}) =>
+  createField('db_select', label, defaultValue, {
+    validate,
+    ui: { dbKey, ...ui },
+    ...rest
+  });
+
   const actionSchemas = {
     group_header: {
       name: 'Заголовок группы',
@@ -46,7 +55,7 @@
       name: 'Проверить предмет',
       icon: 'fa-box',
       fields: {
-        item_id: createField('number', 'ID предмета', 0, { ui: { min: 0, max: 999999 } }),
+        item_id: createDbSelect('Предмет', 0, 'item', { ui: { placeholder: '— выберите предмет —' } }),
         required: createField('number', 'Количество', 1, { ui: { min: 1, max: 9999 } }),
         remove: createField('boolean', 'Удалить после проверки', false),
         show_progress: createField('boolean', 'Показать прогресс', false)
@@ -56,14 +65,14 @@
       name: 'Сбросить квест',
       icon: 'fa-undo',
       fields: {
-        quest_id: createField('number', 'ID квеста', 0, { ui: { min: 0, max: 999999 } })
+        quest_id: createDbSelect('Квест', 0, 'quest', { ui: { placeholder: '— выберите квест —' } })
       }
     },
     accept_quest: {
       name: 'Принять квест',
       icon: 'fa-check-double',
       fields: {
-        quest_id: createField('number', 'ID квеста', 0, { ui: { min: 0, max: 999999 } })
+        quest_id: createDbSelect('Квест', 0, 'quest', { ui: { placeholder: '— выберите квест —' } })
       }
     },
     new_door: {
@@ -88,7 +97,7 @@
       icon: 'fa-hand-sparkles',
       fields: {
         position: createField('vec2', 'Позиция', { x: 0, y: 0 }, { ui: { min: -99999, max: 99999, step: 0.1 } }),
-        item: createField('item', 'Предмет', { id: 0, value: 0 }, { ui: { min: 0, max: 999999 } }),
+        item: createField('item', 'Предмет', { id: 0, value: 0 }, { ui: { datasource: 'items', placeholder: '— выберите предмет —', min: 0, max: 999999 } }),
         chat: createField('text', 'Чат', '', { ui: { placeholder: 'Введите текст для чата', format: 'textarea' } }),
         broadcast: createField('text', 'Броадкаст', '', { ui: { placeholder: 'Введите текст для броадкаста', format: 'textarea' } }),
         full: createField('text', 'Полное сообщение', '', { ui: { placeholder: 'Введите полное сообщение', format: 'textarea' } })
@@ -107,7 +116,7 @@
       icon: 'fa-plane-departure',
       fields: {
         position: createField('vec2', 'Позиция', { x: 0, y: 0 }, { ui: { min: -99999, max: 99999, step: 0.1 } }),
-        world_id: createField('number', 'ID мира', 0, { ui: { min: 0, max: 9999 } })
+        world_id: createDbSelect('Мир', 0, 'world', { ui: { placeholder: '— выберите мир —' } })
       }
     },
     use_chat_task: {
@@ -136,21 +145,21 @@
       name: 'Проверка: квест принят',
       icon: 'fa-question-circle',
       fields: {
-        quest_id: createField('number', 'ID квеста', 0, { ui: { min: 0, max: 999999 } })
+        quest_id: createField('db_select', 'Квест', 0, { datasource: 'quests', ui: { placeholder: '— выберите квест —' } })
       }
     },
     check_quest_finished: {
       name: 'Проверка: квест завершен',
       icon: 'fa-flag-checkered',
       fields: {
-        quest_id: createField('number', 'ID квеста', 0, { ui: { min: 0, max: 999999 } })
+        quest_id: createField('db_select', 'Квест', 0, { datasource: 'quests', ui: { placeholder: '— выберите квест —' } })
       }
     },
     check_quest_step_finished: {
       name: 'Проверка: шаг квеста завершен',
       icon: 'fa-list-check',
       fields: {
-        quest_id: createField('number', 'ID квеста', 0, { ui: { min: 0, max: 999999 } }),
+        quest_id: createField('db_select', 'Квест', 0, { datasource: 'quests', ui: { placeholder: '— выберите квест —' } }),
         step: createField('number', 'Номер шага', 0, { ui: { min: 0, max: 9999 } })
       }
     },
@@ -229,8 +238,9 @@
         kill_target: createField('number', 'Цель убийств', 10, { ui: { min: 1, max: 9999 } }),
         duration: createField('number', 'Длительность', 60, { ui: { min: 1, max: 99999 } }),
         mobs: createField('list', 'Мобы', [{ mob_id: 21, count: 5, level: 1, power: 1, boss: false }], {
+          ui: { layout: 'grid', addLabel: 'Добавить моба' },
           itemFields: {
-            mob_id: createField('number', 'ID моба', 21, { ui: { min: 0, max: 999999 } }),
+            mob_id: createDbSelect('Моб', 21, 'mob', { ui: { placeholder: '— выберите моба —' } }),
             count: createField('number', 'Количество', 5, { ui: { min: 1, max: 999 } }),
             level: createField('number', 'Уровень', 1, { ui: { min: 1, max: 999 } }),
             power: createField('number', 'Сила', 1, { ui: { min: 1, max: 999 } }),
