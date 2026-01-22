@@ -147,7 +147,7 @@ void CPlayer::Tick()
 	}
 
 	// update events
-	m_FixedView.Tick(m_ViewPos);
+	m_FixedView.Tick(Server()->TickSpeed(), m_ViewPos);
 	m_Cooldown.Tick();
 	if(m_pMotdMenu)
 	{

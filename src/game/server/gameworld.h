@@ -99,7 +99,7 @@ struct FixedViewCam
 	std::optional<vec2> GetCurrentView() const { return m_CurrentView; }
 
 	void ViewLock(const vec2& Position, bool Smooth = false);
-	void Tick(vec2& playerView);
+	void Tick(int TickSpeed, vec2& playerView);
 	void Reset();
 
 private:
@@ -108,6 +108,8 @@ private:
 	bool m_Locked {};
 	bool m_Moving {};
 	bool m_Smooth {};
+	bool m_Returning {};
+	int m_ReturnTick {};
 };
 
 #endif

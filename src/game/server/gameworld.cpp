@@ -419,15 +419,38 @@ void FixedViewCam::ViewLock(const vec2& Position, bool Smooth)
 	m_Smooth = Smooth;
 	m_Locked = true;
 	m_Moving = true;
+	m_Returning = false;
 }
 
-void FixedViewCam::Tick(vec2& playerView)
+void FixedViewCam::Tick(int TickSpeed, vec2& playerView)
 {
+	if(m_Returning)
+	{
+		const int ReturnSpeed = TickSpeed / 2;
+		if(!m_Smooth || m_ReturnTick >= ReturnSpeed)
+		{
+			m_Returning = false;
+			m_Moving = false;
+			m_CurrentView.reset();
+			return;
+		}
+
+		if(!m_CurrentView.has_value())
+			m_CurrentView = playerView;
+
+		m_ReturnTick = std::min(m_ReturnTick + 1, ReturnSpeed);
+		const float t = static_cast<float>(m_ReturnTick) / static_cast<float>(ReturnSpeed);
+		m_CurrentView = lerp(*m_CurrentView, playerView, t);
+
+		if(m_CurrentView.has_value())
+			playerView = *m_CurrentView;
+		return;
+	}
+
 	if(m_Moving)
 	{
-		const vec2 target = m_Locked ? m_LockedAt : playerView;
+		const vec2 target = m_LockedAt;
 
-		// fast camera
 		if(!m_Smooth)
 		{
 			m_CurrentView = target;
@@ -435,47 +458,28 @@ void FixedViewCam::Tick(vec2& playerView)
 			return;
 		}
 
-		// smooth camera
 		if(!m_CurrentView.has_value())
 			m_CurrentView = playerView;
 
-		// check distance
 		const float distanceToTarget = distance(*m_CurrentView, target);
-		const float minDistanceByState = !m_Locked ? 16.f : 2.f;
+		const float minDistanceByState = 2.f;
+
 		if(distanceToTarget < minDistanceByState)
 		{
-			if(m_Locked)
-				m_CurrentView = target;
-			else
-				m_CurrentView.reset();
-
+			m_CurrentView = target;
 			m_Moving = false;
 		}
-		else // moving
+		else
 		{
 			vec2 nextPos;
-			float lerpFactor = 0.0f;
-
-			// lerp factor
-			if(m_Locked)
+			float lerpFactor = (0.05f + distanceToTarget * 0.001f) * 0.16f;
+			lerpFactor = std::max(lerpFactor, 0.5f * 0.16f);
+			nextPos = lerp(*m_CurrentView, m_LockedAt, lerpFactor);
+			float moveLen = length(nextPos - *m_CurrentView);
+			if(moveLen > 0.0f)
 			{
-				lerpFactor = (0.05f + distanceToTarget * 0.001f) * 0.16f;
-				lerpFactor = std::max(lerpFactor, 0.5f * 0.16f);
-				nextPos = lerp(*m_CurrentView, m_LockedAt, lerpFactor);
-			}
-			else
-			{
-				lerpFactor = 0.72f;
-				nextPos = lerp(*m_CurrentView, playerView, lerpFactor);
-			}
-
-			// speed limit
-			vec2 delta = nextPos - *m_CurrentView;
-			float moveLen = length(delta);
-			if(moveLen > g_Config.m_SvMaxSmoothViewCamSpeed)
-			{
-				delta = normalize(delta) * g_Config.m_SvMaxSmoothViewCamSpeed;
-				nextPos = *m_CurrentView + delta;
+				float speedLerpFactor = std::min(1.0f, g_Config.m_SvMaxSmoothViewCamSpeed / moveLen);
+				nextPos = lerp(*m_CurrentView, nextPos, speedLerpFactor);
 			}
 
 			m_CurrentView = nextPos;
@@ -493,4 +497,6 @@ void FixedViewCam::Reset()
 
 	m_Locked = false;
 	m_Moving = true;
+	m_Returning = true;
+	m_ReturnTick = 0;
 }
