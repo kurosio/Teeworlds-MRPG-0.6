@@ -189,22 +189,28 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 					StrActiveFlag, pProfName, Prof.GetLevel(), progressBar, progress, Prof.GetUpgradePoint());
 			}
 		}
-		VClassSelector.AddLine();
+		VoteWrapper::AddEmptyline(ClientID);
+
+		// skill upgrades
+		VoteWrapper VActiveSkills(ClientID, VWF_SEPARATE_OPEN | VWF_ALIGN_TITLE | VWF_STYLE_STRICT_BOLD, "\u2694 Improving class skills");
 		for(const auto& [ID, pSkillDesc] : CSkillDescription::Data())
 		{
 			if(pSkillDesc->GetProfessionID() == ActiveProfID)
 			{
 				const auto* pSkill = pPlayer->GetSkill(ID);
-				VClassSelector.AddMenu(MENU_SKILL_SELECT, ID, "{} - {}SP {}", pSkillDesc->GetName(), pSkillDesc->GetPriceSP(), pSkill->GetStringLevelStatus().c_str());
+				VActiveSkills.AddMenu(MENU_SKILL_SELECT, ID, "{} - {}SP {}", pSkillDesc->GetName(), pSkillDesc->GetPriceSP(), pSkill->GetStringLevelStatus().c_str());
 			}
 		}
-		VClassSelector.AddLine();
+		VoteWrapper::AddEmptyline(ClientID);
+
+		// skill univirsal
+		VoteWrapper VUniversalSkills(ClientID, VWF_SEPARATE_OPEN | VWF_ALIGN_TITLE | VWF_STYLE_STRICT_BOLD, "\u2694 Improving universal skills");
 		for(const auto& [ID, pSkillDesc] : CSkillDescription::Data())
 		{
 			if(pSkillDesc->GetProfessionID() == ProfessionIdentifier::None)
 			{
 				const auto* pSkill = pPlayer->GetSkill(ID);
-				VClassSelector.AddMenu(MENU_SKILL_SELECT, ID, "{} - {}SP {}", pSkillDesc->GetName(), pSkillDesc->GetPriceSP(), pSkill->GetStringLevelStatus().c_str());
+				VUniversalSkills.AddMenu(MENU_SKILL_SELECT, ID, "{} - {}SP {}", pSkillDesc->GetName(), pSkillDesc->GetPriceSP(), pSkill->GetStringLevelStatus().c_str());
 			}
 		}
 		VoteWrapper::AddEmptyline(ClientID);
