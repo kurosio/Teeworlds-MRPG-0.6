@@ -782,6 +782,9 @@ AccountCodeResult CAccountManager::LoginAccount(int ClientID, const char* pLogin
 	GS()->m_pController->DoTeamChange(pPlayer);
 	LoadAccount(pPlayer, true);
 	g_EventListenerManager.Notify<IEventListener::PlayerLogin>(pPlayer, pPlayer->Account());
+
+	// kill character
+	pPlayer->KillCharacter();
 	return AccountCodeResult::AOP_LOGIN_OK;
 }
 
