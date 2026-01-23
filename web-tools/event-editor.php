@@ -23,10 +23,6 @@
         .group-header{background:rgba(255,255,255,.03);border-top:1px solid var(--editor-border);border-bottom:1px solid var(--editor-border);margin-top:10px;margin-bottom:6px;}
         #undo-toast{transition:transform .25s ease,opacity .25s ease;transform:translateY(200%);opacity:0;}
         #undo-toast.show{transform:translateY(0);opacity:1;}
-        ::-webkit-scrollbar{width:8px;}
-        ::-webkit-scrollbar-track{background:var(--editor-bg);}
-        ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:999px;}
-        ::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.18);}
         .drag-handle{cursor:move;}
         .dragging{opacity:.6;}
         .drag-over{border-top:2px dashed var(--editor-accent);}
@@ -43,7 +39,7 @@
             <div id="step-list-root" class="flex-grow overflow-y-auto p-2"></div>
             <div id="controls" class="p-4 border-t border-slate-700/40 space-y-3">
                  <button id="add-step-btn" class="w-full editor-btn editor-btn-primary"><i class="fas fa-plus mr-2"></i> Добавить шаг</button>
-                <div class="grid grid-cols-2 gap-3">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <button id="import-json-btn" class="w-full editor-btn editor-btn-secondary"><i class="fas fa-upload mr-2"></i> Импорт</button>
                     <button id="view-json-btn" class="w-full editor-btn editor-btn-secondary"><i class="fas fa-eye mr-2"></i> Просмотр JSON</button>
                 </div>

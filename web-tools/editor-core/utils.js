@@ -81,6 +81,58 @@
     return text ? JSON.parse(text) : null;
   };
 
+  // PairList helpers
+  // Used by multiple DB tables where a list of pairs is stored as string:
+  //   "[ItemID/Count],[ItemID/Count]"
+  // Also supports JSON array inputs like: [[id,count],[id,count]] or [{id,value}].
+  const PairList = {
+    parse(input) {
+      if (input == null) return [];
+      if (Array.isArray(input)) {
+        return input
+          .map((x) => {
+            if (Array.isArray(x) && x.length >= 2) return { id: Number(x[0]), value: Number(x[1]) };
+            if (x && typeof x === 'object') return { id: Number(x.id ?? x.ItemID ?? x.item_id ?? x.key), value: Number(x.value ?? x.count ?? x.qty ?? x.amount) };
+            return null;
+          })
+          .filter((x) => x && Number.isFinite(x.id) && x.id > 0 && Number.isFinite(x.value) && x.value > 0);
+      }
+
+      const s = String(input).trim();
+      if (!s) return [];
+
+      // JSON array support
+      if (s[0] === '[') {
+        try {
+          const parsed = JSON.parse(s);
+          if (Array.isArray(parsed)) return PairList.parse(parsed);
+        } catch { /* ignore */ }
+      }
+
+      // String format: [id/value],[id/value]
+      const out = [];
+      const re = /\[(\s*\d+\s*)\/(\s*\d+\s*)\]/g;
+      let m;
+      while ((m = re.exec(s))) {
+        const id = Number(String(m[1]).trim());
+        const value = Number(String(m[2]).trim());
+        if (Number.isFinite(id) && id > 0 && Number.isFinite(value) && value > 0) {
+          out.push({ id, value });
+        }
+      }
+      return out;
+    },
+
+    stringify(list) {
+      if (!Array.isArray(list)) return '';
+      return list
+        .map((x) => ({ id: Number(x?.id), value: Number(x?.value) }))
+        .filter((x) => Number.isFinite(x.id) && x.id > 0 && Number.isFinite(x.value) && x.value > 0)
+        .map((x) => `[${x.id}/${x.value}]`)
+        .join(',');
+    }
+  };
+
   const showToast = (message, type = 'success', opts = {}) => {
     ensureUI();
     const container = window.EditorCore.UI.mountToastContainer({ id: opts.containerId || 'toast-container' });
@@ -114,4 +166,7 @@
     fetchJson,
     showToast,
   };
+
+  // Also expose at top-level for convenience in editors.
+  window.EditorCore.PairList = PairList;
 })();

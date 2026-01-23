@@ -54,6 +54,44 @@ QuestID: { type: 'db_select', label: 'Квест', ui: { dbKey: 'quest' }, valid
 
 Карта ключей хранится в `editor-core/db-map.js`.
 
+## Tags (теги / chips)
+
+Универсальный виджет для полей типа `SET`/массивов (строки) и для списков ID (из БД).
+
+**Возможности:**
+- поиск по вариантам
+- добавление/удаление кликом
+- клавиатура: ↑/↓ выбор, Enter добавить, Backspace удалить последний
+- адаптивная сетка вариантов (на широких экранах несколько колонок)
+
+### 1) Статический список (ручные варианты)
+
+```js
+Debuffs: {
+  type: 'set',
+  label: 'Debuffs',
+  ui: EditorCore.presets.tags({
+    options: ['Slowdown', 'Poison', 'Fire'],
+    placeholder: 'Добавить debuff...'
+  })
+}
+```
+
+### 2) Варианты из БД (храним массив ID)
+
+```js
+DropItems: {
+  type: 'array',
+  label: 'Дроп: предметы',
+  ui: EditorCore.presets.tags({
+    datasource: 'item',   // DBMap key (или прямой source, например 'items')
+    valueType: 'number',  // значения будут числами
+    labelMode: 'id_name', // 'name' | 'id_name'
+    placeholder: 'Добавить предмет...'
+  })
+}
+```
+
 ## Как добавить новый редактор в Studio
 1) Создайте файл `my-editor.html`.
 2) Добавьте его в `studio.manifest.js` в нужную группу.

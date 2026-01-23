@@ -16,6 +16,8 @@ window.STUDIO_MANIFEST = [
     title: 'Редакторы БД',
     items: [
       { key: 'vouchers', title: 'Ваучеры', icon: 'fa-ticket', src: 'vouchers-editor.html' },
+      { key: 'crafts', title: 'Крафты (tw_crafts_list)', icon: 'fa-hammer', src: 'crafts-editor.html' },
+      { key: 'bots_mobs', title: 'Мобы (tw_bots_mobs)', icon: 'fa-skull', src: 'mobs-editor.html' },
     ]
   },
   {

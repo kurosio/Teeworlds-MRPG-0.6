@@ -37,6 +37,38 @@
 
   const getInputValue = (input) => {
     if (!input) return undefined;
+    // Custom widgets can store structured values in hidden inputs.
+    // Example: TagSelect stores JSON array in value.
+    if (input.dataset?.valueType === 'json_array') {
+      const raw = String(input.value || '').trim();
+      if (!raw) return [];
+      try {
+        const arr = JSON.parse(raw);
+        if (Array.isArray(arr)) return arr;
+      } catch { /* ignore */ }
+      // Fallback for legacy formats (CSV)
+      return raw.split(',').map(s => s.trim()).filter(Boolean);
+    }
+
+    // Same as json_array, but coerces values to numbers.
+    // Useful for tags sourced from DB where stored values are numeric IDs.
+    if (input.dataset?.valueType === 'json_array_number') {
+      const raw = String(input.value || '').trim();
+      if (!raw) return [];
+      try {
+        const arr = JSON.parse(raw);
+        if (Array.isArray(arr)) {
+          return arr
+            .map((v) => (v === '' || v == null ? NaN : Number(v)))
+            .filter((n) => Number.isFinite(n));
+        }
+      } catch { /* ignore */ }
+      // Fallback for legacy formats (CSV)
+      return raw
+        .split(',')
+        .map((s) => Number(s.trim()))
+        .filter((n) => Number.isFinite(n));
+    }
     // datetime-local parsing to unix seconds (used by some editors)
     if (input.dataset?.valueType === 'unix_seconds') {
       if (!input.value) return 0;
@@ -65,6 +97,45 @@
   };
 
   const escapeAttr = (value) => String(value).replace(/"/g, '&quot;');
+
+  const normalizeCssSize = (v) => {
+    if (v == null) return '';
+    const s = String(v).trim();
+    if (!s) return '';
+    // Allow numbers as px for convenience
+    if (/^\d+(?:\.\d+)?$/.test(s)) return `${s}px`;
+    return s;
+  };
+
+  // Generic per-control sizing API.
+  // Can be used by input/select/textarea/db_select widgets.
+  // Supported ui props:
+  //  - controlWidth / controlMinWidth / controlMaxWidth
+  //  - controlFlex / controlGrow / controlShrink / controlBasis
+  //  - controlStyle (raw CSS string)
+  const buildControlStyleAttr = (ui = {}) => {
+    const parts = [];
+    const w = normalizeCssSize(ui.controlWidth);
+    const minW = normalizeCssSize(ui.controlMinWidth);
+    const maxW = normalizeCssSize(ui.controlMaxWidth);
+    const basis = normalizeCssSize(ui.controlBasis);
+
+    if (w) parts.push(`width:${w}`);
+    if (minW) parts.push(`min-width:${minW}`);
+    if (maxW) parts.push(`max-width:${maxW}`);
+
+    if (ui.controlFlex) {
+      parts.push(`flex:${String(ui.controlFlex)}`);
+    } else {
+      if (ui.controlGrow !== undefined) parts.push(`flex-grow:${Number(ui.controlGrow)}`);
+      if (ui.controlShrink !== undefined) parts.push(`flex-shrink:${Number(ui.controlShrink)}`);
+      if (basis) parts.push(`flex-basis:${basis}`);
+    }
+
+    if (ui.controlStyle) parts.push(String(ui.controlStyle));
+    const style = parts.filter(Boolean).join(';');
+    return style ? `style="${escapeAttr(style)}"` : '';
+  };
 
   const buildDefaultItem = (field) => {
     if (field?.itemDefault !== undefined) {
@@ -101,8 +172,28 @@
     return attrs.join(' ');
   };
 
+  // For multiselect fields we accept both array values and common DB formats:
+  // - comma-separated string (MySQL SET)
+  // - JSON array string
+  const normalizeMultiValue = (v) => {
+    if (Array.isArray(v)) {
+      return v.map(x => String(x).trim()).filter(Boolean);
+    }
+    if (v == null) return [];
+    const s = String(v).trim();
+    if (!s) return [];
+    // JSON array fallback
+    if (s[0] === '[') {
+      try {
+        const arr = JSON.parse(s);
+        if (Array.isArray(arr)) return arr.map(x => String(x).trim()).filter(Boolean);
+      } catch { /* ignore */ }
+    }
+    return s.split(',').map(x => String(x).trim()).filter(Boolean);
+  };
+
   const renderSelectOptions = (options, value, multiple = false) => {
-    const values = multiple && Array.isArray(value) ? value.map(String) : null;
+    const values = multiple ? normalizeMultiValue(value).map(String) : null;
     return options.map((option) => {
       const optionValue = typeof option === 'object' ? option.value : option;
       const label = typeof option === 'object' ? option.label : option;
@@ -139,14 +230,16 @@
     const includeDataKey = options?.includeDataKey === true;
 
     const renderInput = (type, overrideValue, extraAttrs = '') => {
+      const controlClass = ui.controlClass ? ` ${String(ui.controlClass)}` : '';
+      const styleAttr = buildControlStyleAttr(ui);
       const attrs = buildInputAttributes({
         path,
         field,
-        classes: inputClass,
+        classes: `${inputClass}${controlClass}`,
         includeName,
         includeDataKey,
         includeDataPath,
-        extraAttrs
+        extraAttrs: `${styleAttr} ${extraAttrs}`.trim()
       });
       return `<input type="${type}" value="${escapeAttr(overrideValue ?? '')}" ${attrs}>`;
     };
@@ -171,26 +264,31 @@
     };
 
     const renderTextarea = () => {
+      const controlClass = ui.controlClass ? ` ${String(ui.controlClass)}` : '';
+      const styleAttr = buildControlStyleAttr(ui);
       const attrs = buildInputAttributes({
         path,
         field,
-        classes: textareaClass,
+        classes: `${textareaClass}${controlClass}`,
         includeName,
         includeDataKey,
-        includeDataPath
+        includeDataPath,
+        extraAttrs: styleAttr
       });
       return `<textarea ${attrs}>${value ?? ''}</textarea>`;
     };
 
     const renderSelect = (multiple = false) => {
+      const controlClass = ui.controlClass ? ` ${String(ui.controlClass)}` : '';
+      const styleAttr = buildControlStyleAttr(ui);
       const attrs = buildInputAttributes({
         path,
         field,
-        classes: multiple ? multiSelectClass : inputClass,
+        classes: `${multiple ? multiSelectClass : inputClass}${controlClass}`,
         includeName,
         includeDataKey,
         includeDataPath,
-        extraAttrs: multiple ? 'multiple' : ''
+        extraAttrs: `${styleAttr} ${multiple ? 'multiple' : ''}`.trim()
       });
       return `<select ${attrs}>${renderSelectOptions(ui.options || [], value, multiple)}</select>`;
     };
@@ -280,7 +378,9 @@
     };
 
     
-    const renderDbSelectAdaptive = (multiple = false) => {
+    // Legacy UI: Search input (left) + <select> (right).
+    // Kept as a separate UI component: db_select_search.
+    const renderDbSelectSearch = (multiple = false) => {
       const { ds } = resolveDbParams();
       const showSearch = (ui.showSearch ?? true) && !!ds;
       const searchPh = ui.searchPlaceholder || 'Поиск…';
@@ -326,10 +426,66 @@
       // If we set data-db-state="loading" immediately, CSS hides the <select>
       // and the user may never see dropdown lists if DB state is not flipped.
       // DB.init() will set data-db-state to "connected" / "disconnected".
-      const state = '';
-      return `<div class="editor-dbselect" ${state ? `data-db-state="${state}"` : ''}>${searchHtml}${manualInputHtml}${selectHtml}${controlsHtml}</div>`;
+      // UI: place Search (left) + Select (right) in one row.
+      // We set an optimistic default state="connected" when datasource exists, to avoid
+      // an initial "double" render (manual input + select) before DB.init() flips state.
+      const state = ds ? 'connected' : '';
+      const wrapClass = ui.controlWrapClass ? ` ${String(ui.controlWrapClass)}` : '';
+      const wrapStyle = buildControlStyleAttr(ui);
+      const rowHtml = `<div class="editor-dbselect-row">${searchHtml}${selectHtml}</div>`;
+      return `<div class="editor-dbselect${wrapClass}" ${wrapStyle} ${state ? `data-db-state="${state}"` : ''}>${rowHtml}${manualInputHtml}${controlsHtml}</div>`;
     };
-const renderCheckbox = () => {
+
+    // New default UI: single searchable input with dropdown list.
+    // Visually it's one field (input). Old two-field layout remains available as db_select_search.
+    const renderDbSelectCombo = () => {
+      const { ds, dbKey, placeholder, labelMode } = resolveDbParams();
+      if (!ds) return renderInput('number', value ?? 0);
+
+      const wrapClass = ui.controlWrapClass ? ` ${String(ui.controlWrapClass)}` : '';
+      const wrapStyle = buildControlStyleAttr(ui);
+
+      // Similar defaults to legacy select.
+      const serverSearch = (ui.searchServer ?? (dbKey === 'item'));
+      const searchable = serverSearch ? '1' : '0';
+      const defaultLimit = (dbKey === 'item') ? 1000 : 300;
+      const dbLimit = String(ui.dbLimit || defaultLimit);
+
+      // Stability feature (same as before): keep a bound numeric input as fallback.
+      // When DB is connected, the input is hidden and the combo drives it.
+      const manualInputAttrs = buildInputAttributes({
+        path,
+        field,
+        classes: `${inputClass} editor-dbselect-input editor-dbcombo-bound`,
+        includeName,
+        includeDataKey,
+        includeDataPath,
+        extraAttrs: 'inputmode="numeric"'
+      });
+      const cur = (value ?? 0);
+
+      const searchPh = ui.searchPlaceholder || ui.placeholder || 'Поиск…';
+      const state = ds ? 'connected' : '';
+      const hasVal = (v) => v !== undefined && v !== null && String(v) !== '' && String(v) !== '0';
+      const curVal = hasVal(value) ? String(value) : '';
+
+      return `
+        <div class="editor-dbcombo${wrapClass}" ${wrapStyle} data-db-state="${escapeAttr(state)}"
+             data-datasource="${escapeAttr(ds)}"
+             data-db-searchable="${escapeAttr(searchable)}"
+             data-db-limit="${escapeAttr(dbLimit)}"
+             data-placeholder="${escapeAttr(placeholder)}"
+             data-label-mode="${escapeAttr(String(labelMode))}"
+             data-bind-input-path="${escapeAttr(path)}"
+             data-current-value="${escapeAttr(curVal)}">
+          <div class="editor-dbcombo-control">
+            <input type="search" class="${inputClass} editor-dbcombo-input" placeholder="${escapeAttr(searchPh)}" autocomplete="off" />
+          </div>
+          <div class="editor-dbcombo-dropdown" role="listbox" aria-label="${escapeAttr(label)}"></div>
+          <input type="number" ${manualInputAttrs} value="${escapeAttr(String(cur))}" />
+        </div>`;
+    };
+    const renderCheckbox = () => {
       const attrs = buildInputAttributes({
         path,
         field,
@@ -362,7 +518,8 @@ const renderCheckbox = () => {
         x: { type: 'number', label: 'X', ui: { min: ui.min, max: ui.max, step: ui.step, placeholder: ui.placeholder } },
         y: { type: 'number', label: 'Y', ui: { min: ui.min, max: ui.max, step: ui.step, placeholder: ui.placeholder } }
       };
-      return `<div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">${labelHtml}<div class="grid grid-cols-2 gap-2">${renderComposite(vecFields)}</div>${hintHtml}</div>`;
+      // Responsive: stack on narrow screens
+      return `<div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">${labelHtml}<div class="grid grid-cols-1 sm:grid-cols-2 gap-2">${renderComposite(vecFields)}</div>${hintHtml}</div>`;
     }
 
     if (field.type === 'item') {
@@ -371,7 +528,8 @@ const renderCheckbox = () => {
         id: { type: 'db_select', label: 'Предмет', datasource: itemDs || undefined, ui: { dbKey: ui.dbKey || 'item', placeholder: ui.placeholder || '— выберите предмет —', inputLabel: 'ID', selectLabel: 'Предмет (БД)' } },
         value: { type: 'number', label: 'Value', ui: { min: ui.min, max: ui.max, step: ui.step, placeholder: ui.placeholder } }
       };
-      return `<div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">${labelHtml}<div class="grid grid-cols-2 gap-2">${renderComposite(itemFields)}</div>${hintHtml}</div>`;
+      // Responsive: stack on narrow screens
+      return `<div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">${labelHtml}<div class="grid grid-cols-1 sm:grid-cols-2 gap-2">${renderComposite(itemFields)}</div>${hintHtml}</div>`;
     }
 
     if (field.type === 'list') {
@@ -379,7 +537,16 @@ const renderCheckbox = () => {
       const itemFields = field.itemFields || {};
       const hideLabel = !!(field?.ui?.hideLabel);
       const layout = (field?.ui?.layout || 'stack').toLowerCase();
-      const layoutClass = layout === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 gap-3' : 'space-y-3';
+      const isGrid = layout === 'grid';
+      const layoutClass = isGrid ? 'editor-grid-fields' : 'space-y-3';
+      const gridStyleParts = [];
+      if (isGrid) {
+        if (field?.ui?.gridGap) gridStyleParts.push(`--editor-grid-gap:${String(field.ui.gridGap)}`);
+        if (field?.ui?.gridTemplate) gridStyleParts.push(`--editor-grid-template:${String(field.ui.gridTemplate)}`);
+        if (field?.ui?.gridTemplateMd) gridStyleParts.push(`--editor-grid-template-md:${String(field.ui.gridTemplateMd)}`);
+        if (field?.ui?.gridTemplateLg) gridStyleParts.push(`--editor-grid-template-lg:${String(field.ui.gridTemplateLg)}`);
+      }
+      const gridStyleAttr = gridStyleParts.length ? ` style="${escapeAttr(gridStyleParts.join(';'))}"` : '';
       const listItems = items.map((item, index) => {
         const itemPath = `${path}.${index}`;
         const itemContent = Object.entries(itemFields).map(([key, subField]) => {
@@ -393,8 +560,21 @@ const renderCheckbox = () => {
                 <i class="fa-solid fa-trash"></i>
               </button>
             </div>
-            <div class="${layoutClass}">
-              ${itemContent}
+            <div class="${layoutClass}"${gridStyleAttr}>
+              ${isGrid
+                ? Object.entries(itemFields).map(([key, subField]) => {
+                    const subPath = `${itemPath}.${key}`;
+                    const span = Number(subField?.ui?.colSpan || 1);
+                    const spanMd = Number(subField?.ui?.colSpanMd || span);
+                    const spanLg = Number(subField?.ui?.colSpanLg || spanMd);
+                    let cls = '';
+                    if (span > 1) cls += ` col-span-${span}`;
+                    if (spanMd > 1) cls += ` md:col-span-${spanMd}`;
+                    if (spanLg > 1) cls += ` lg:col-span-${spanLg}`;
+                    const inner = renderField({ path: subPath, field: subField, data, options, isNested: true });
+                    return cls.trim() ? `<div class="${cls.trim()}">${inner}</div>` : inner;
+                  }).join('')
+                : itemContent}
             </div>
           </div>`;
       }).join('');
@@ -409,12 +589,19 @@ const renderCheckbox = () => {
         </div>`;
     }
 
+    // New default db_select: single searchable combo input.
     if (field.type === 'db_select' || ui.type === 'db_select') {
-      return `<div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">${labelHtml}${renderDbSelectAdaptive()}${hintHtml}</div>`;
+      return `<div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">${labelHtml}${renderDbSelectCombo()}${hintHtml}</div>`;
+    }
+
+    // Legacy two-field variant (search + select)
+    if (field.type === 'db_select_search' || ui.type === 'db_select_search') {
+      return `<div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">${labelHtml}${renderDbSelectSearch()}${hintHtml}</div>`;
     }
 
     if (field.type === 'db_multiselect' || ui.type === 'db_multiselect') {
-      return `<div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">${labelHtml}${renderDbSelectAdaptive(true)}${hintHtml}</div>`;
+      // Multiselect keeps the legacy layout for now.
+      return `<div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">${labelHtml}${renderDbSelectSearch(true)}${hintHtml}</div>`;
     }
 
     if (ui.type === 'select') {
@@ -423,6 +610,57 @@ const renderCheckbox = () => {
 
     if (ui.type === 'multiselect') {
       return `<div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">${labelHtml}${renderSelect(true)}${hintHtml}</div>`;
+    }
+
+    if (ui.type === 'tags') {
+      // TagSelect: visual chips + search, value stored in a hidden input as JSON array.
+      const opts = Array.isArray(ui.options) ? ui.options : [];
+      const ph = ui.searchPlaceholder || ui.placeholder || 'Добавить…';
+      const allowCreate = ui.allowCreate ? '1' : '0';
+
+      // Optional DB source for options.
+      // You can pass:
+      // - ui.datasource: DBMap key (e.g. 'item', 'mob') OR direct source name (e.g. 'items')
+      // - ui.labelMode: 'id_name' | 'name' (defaults from DBMap if available)
+      // - ui.valueType: 'string' | 'number' (controls how values are parsed)
+      const dsRaw = String(ui.datasource || ui.dbKey || '').trim();
+      const dsKey = dsRaw;
+      const dsResolved = dsRaw && window.EditorCore?.DB?.resolveSource ? (window.EditorCore.DB.resolveSource(dsRaw) || dsRaw) : dsRaw;
+      const labelMode = String(ui.labelMode || (window.EditorCore?.DBMap?.[dsKey]?.labelMode) || 'id_name').toLowerCase();
+      const valueType = String(ui.valueType || 'string').toLowerCase();
+      const hiddenValueType = valueType === 'number' ? 'json_array_number' : 'json_array';
+
+      const hiddenAttrs = buildInputAttributes({
+        path,
+        field,
+        classes: '',
+        includeName,
+        includeDataKey,
+        includeDataPath,
+        extraAttrs: `type="hidden" data-value-type="${escapeAttr(hiddenValueType)}"`
+      });
+
+      // Keep current value visible for first render.
+      const initial = JSON.stringify(normalizeMultiValue(value));
+      return `
+        <div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">
+          ${labelHtml}
+          <div class="editor-tags"
+               data-tags-options="${escapeAttr(JSON.stringify(opts))}"
+               data-tags-placeholder="${escapeAttr(ph)}"
+               data-tags-allow-create="${allowCreate}"
+               ${dsResolved ? `data-tags-datasource="${escapeAttr(dsResolved)}"` : ''}
+               ${dsResolved ? `data-tags-label-mode="${escapeAttr(labelMode)}"` : ''}
+               data-tags-value-type="${escapeAttr(valueType)}">
+            <input ${hiddenAttrs} value="${escapeAttr(initial)}">
+            <div class="editor-tags-selected"></div>
+            <div class="editor-tags-searchrow">
+              <input type="search" class="${inputClass} editor-tags-search" placeholder="${escapeAttr(ph)}" />
+            </div>
+            <div class="editor-tags-options"></div>
+          </div>
+          ${hintHtml}
+        </div>`;
     }
 
     if (ui.format === 'date' || field.type === 'date') {

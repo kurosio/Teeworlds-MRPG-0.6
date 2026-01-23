@@ -1,334 +1,221 @@
 <?php
-// api/db.php
-// Secure, editor-agnostic DB API used by UI components (DB Select, Settings page)
+// DB list API for DB Select components + settings page.
+// Endpoint: api/db.php
+// Actions:
+//  - get_config (GET)
+//  - save_config (POST)
+//  - test (POST)
+//  - list (GET) : source, search, limit, offset, with_total
+//  - get_one (GET) : source, id
 
 declare(strict_types=1);
 
 header('Content-Type: application/json; charset=utf-8');
-header('X-Content-Type-Options: nosniff');
 
-$method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
-
-// Preflight (optional). In production prefer same-origin and remove '*'.
-if ($method === 'OPTIONS') {
-  header('Access-Control-Allow-Origin: *');
-  header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-  header('Access-Control-Allow-Headers: Content-Type');
-  exit(0);
-}
-
-function json_out(array $payload, int $code = 200): void {
+function respond(array $payload, int $code = 200): void {
   http_response_code($code);
   echo json_encode($payload, JSON_UNESCAPED_UNICODE);
   exit;
 }
 
-$rootDir = dirname(__DIR__); // /web-tools
-$dataDir = $rootDir . DIRECTORY_SEPARATOR . 'data';
-$configPath = $dataDir . DIRECTORY_SEPARATOR . 'db-config.json';
-
-function read_body_json(): array {
+function read_json_body(): array {
   $raw = file_get_contents('php://input');
   if (!$raw) return [];
   $data = json_decode($raw, true);
-  if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
-    json_out(['ok' => false, 'error' => 'Некорректный JSON'], 400);
+  return is_array($data) ? $data : [];
+}
+
+function cfg_path(): string {
+  return dirname(__DIR__) . '/data/db-config.json';
+}
+
+function load_cfg(): array {
+  $path = cfg_path();
+  if (!file_exists($path)) return [];
+  $raw = file_get_contents($path);
+  $cfg = json_decode($raw ?: 'null', true);
+  return is_array($cfg) ? $cfg : [];
+}
+
+function save_cfg(array $cfg): bool {
+  $path = cfg_path();
+  $dir = dirname($path);
+  if (!is_dir($dir)) @mkdir($dir, 0775, true);
+  $json = json_encode($cfg, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+  return file_put_contents($path, $json) !== false;
+}
+
+function db_connect(): mysqli {
+  $cfg = load_cfg();
+  $host = (string)($cfg['host'] ?? '127.0.0.1');
+  $port = (int)($cfg['port'] ?? 3306);
+  $db   = (string)($cfg['database'] ?? '');
+  $user = (string)($cfg['user'] ?? 'root');
+  $pass = (string)($cfg['password'] ?? '');
+
+  mysqli_report(MYSQLI_REPORT_OFF);
+  $mysqli = @new mysqli($host, $user, $pass, $db, $port);
+  if ($mysqli->connect_errno) {
+    throw new RuntimeException('DB connection failed: ' . $mysqli->connect_error);
   }
-  return $data;
+  $mysqli->set_charset('utf8mb4');
+  return $mysqli;
 }
 
-function read_config(string $configPath): array {
-  if (!file_exists($configPath)) return [];
-  $raw = file_get_contents($configPath);
-  if (!$raw) return [];
-  $cfg = json_decode($raw, true);
-  if (json_last_error() !== JSON_ERROR_NONE || !is_array($cfg)) return [];
-  return $cfg;
-}
-
-function ensure_data_dir(string $dataDir): void {
-  if (!is_dir($dataDir)) {
-    if (!mkdir($dataDir, 0750, true) && !is_dir($dataDir)) {
-      json_out(['ok' => false, 'error' => 'Не удалось создать директорию data/'], 500);
-    }
-  }
-}
-
-function write_config(string $dataDir, string $configPath, array $cfg): void {
-  ensure_data_dir($dataDir);
-  $json = json_encode($cfg, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
-  if ($json === false) {
-    json_out(['ok' => false, 'error' => 'Не удалось сериализовать конфиг'], 500);
-  }
-  $ok = file_put_contents($configPath, $json, LOCK_EX);
-  if ($ok === false) {
-    json_out(['ok' => false, 'error' => 'Не удалось сохранить конфиг'], 500);
-  }
-  @chmod($configPath, 0600);
-}
-
-function build_dsn(array $cfg): string {
-  $host = $cfg['host'] ?? '';
-  $port = $cfg['port'] ?? 3306;
-  $db = $cfg['database'] ?? '';
-  if (!$host || !$db) {
-    json_out(['ok' => false, 'error' => 'Конфиг БД не заполнен'], 400);
-  }
-  $port = is_numeric($port) ? (int)$port : 3306;
-  return sprintf('mysql:host=%s;port=%d;dbname=%s;charset=utf8mb4', $host, $port, $db);
-}
-
-function get_pdo(array $cfg): PDO {
-  $dsn = build_dsn($cfg);
-  $user = $cfg['user'] ?? '';
-  $pass = $cfg['password'] ?? '';
-  try {
-    $pdo = new PDO($dsn, $user, $pass, [
-      PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-      PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-      PDO::ATTR_EMULATE_PREPARES => false,
-    ]);
-    return $pdo;
-  } catch (Throwable $e) {
-    json_out(['ok' => false, 'error' => 'Ошибка подключения к БД', 'details' => $e->getMessage()], 500);
-  }
-}
-
-
-function assert_ident(string $name, string $what = 'identifier'): string {
-  // allow `schema.table` (rare) but block everything else
-  if (!preg_match('/^[A-Za-z0-9_]+(\.[A-Za-z0-9_]+)?$/', $name)) {
-    json_out(['ok' => false, 'error' => "Недопустимый {$what}"], 400);
-  }
-  return $name;
-}
-
-function q_ident(string $name): string {
-  // Quote identifiers with backticks. Supports optional schema prefix: a.b
-  $name = assert_ident($name);
-  $parts = explode('.', $name);
-  $parts = array_map(fn($p) => '`' . $p . '`', $parts);
-  return implode('.', $parts);
-}
-
-$action = $_GET['action'] ?? '';
-
-// Whitelisted list sources (db_select / db_multiselect)
-// You can override any source via data/db-sources.json:
-//
-// {
-//   "items":  { "table":"tw_items_list", "value":"ID", "label":"Name" },
-//   "quests": { "table":"tw_quests_list", "value":"ID", "label":"Name" }
-// }
+// Whitelisted sources for DBSelect.
+// Each source returns items {value,label}
 $SOURCES = [
-  'quests' => ['table' => 'tw_quests_list', 'value' => 'ID', 'label' => 'Name'],
-  'items'  => ['table' => 'tw_items_list',  'value' => 'ID', 'label' => 'Name'],
-  'worlds' => ['table' => 'tw_worlds',      'value' => 'ID', 'label' => 'Name'],
-  'skills' => ['table' => 'tw_skills_list', 'value' => 'ID', 'label' => 'Name'],
-  'bots'   => ['table' => 'tw_bots_info',   'value' => 'ID', 'label' => 'Name'],
+  'quests' => ['table' => 'tw_quests_list', 'id' => 'ID', 'label' => 'Name'],
+  'items'  => ['table' => 'tw_items_list',  'id' => 'ID', 'label' => 'Name'],
+  'worlds' => ['table' => 'tw_worlds',      'id' => 'ID', 'label' => 'Name'],
+  'skills' => ['table' => 'tw_skills_list', 'id' => 'ID', 'label' => 'Name'],
+  'bots'   => ['table' => 'tw_bots_info',   'id' => 'ID', 'label' => 'Name'],
 ];
 
-function read_sources_override(string $dataDir): array {
-  $path = $dataDir . '/db-sources.json';
-  if (!is_file($path)) return [];
-  $raw = @file_get_contents($path);
-  if ($raw === false) return [];
-  $j = json_decode($raw, true);
-  return is_array($j) ? $j : [];
-}
+$action = (string)($_GET['action'] ?? '');
 
-function sanitize_ident(string $s): ?string {
-  // allow only simple identifiers: letters/numbers/underscore
-  return preg_match('/^[A-Za-z0-9_]+$/', $s) ? $s : null;
-}
+try {
+  if ($action === 'get_config') {
+    $c = load_cfg();
+    $safe = [
+      'host' => (string)($c['host'] ?? ''),
+      'port' => (int)($c['port'] ?? 3306),
+      'database' => (string)($c['database'] ?? ''),
+      'user' => (string)($c['user'] ?? ''),
+    ];
+    respond(['ok' => true, 'config' => $safe]);
+  }
 
-function resolve_source_def(string $source, array $SOURCES, string $dataDir): array {
-  $def = $SOURCES[$source] ?? [];
-  $over = read_sources_override($dataDir);
-
-  // Apply overrides from data/db-sources.json if present.
-  if (isset($over[$source]) && is_array($over[$source])) {
-    $o = $over[$source];
-    if (isset($o['table'])) {
-      $t = sanitize_ident((string)$o['table']);
-      if ($t) $def['table'] = $t;
+  if ($action === 'save_config') {
+    $body = read_json_body();
+    $prev = load_cfg();
+    $cfg = [
+      'host' => (string)($body['host'] ?? ($prev['host'] ?? '127.0.0.1')),
+      'port' => (int)($body['port'] ?? ($prev['port'] ?? 3306)),
+      'database' => (string)($body['database'] ?? ($prev['database'] ?? '')),
+      'user' => (string)($body['user'] ?? ($prev['user'] ?? 'root')),
+      // if password empty, keep existing
+      'password' => (string)($body['password'] ?? ''),
+    ];
+    if ($cfg['password'] === '' && isset($prev['password'])) {
+      $cfg['password'] = (string)$prev['password'];
     }
-    if (isset($o['value'])) {
-      $v = sanitize_ident((string)$o['value']);
-      if ($v) $def['value'] = $v;
+    if (!save_cfg($cfg)) {
+      respond(['ok' => false, 'error' => 'Failed to save config'], 500);
     }
-    if (isset($o['label'])) {
-      $l = sanitize_ident((string)$o['label']);
-      if ($l) $def['label'] = $l;
+    respond(['ok' => true]);
+  }
+
+  if ($action === 'test') {
+    $mysqli = db_connect();
+    $server = $mysqli->server_info;
+    $mysqli->close();
+    respond(['ok' => true, 'server' => $server]);
+  }
+
+  if ($action === 'list') {
+    $source = (string)($_GET['source'] ?? '');
+    if (!isset($SOURCES[$source])) {
+      respond(['ok' => false, 'error' => 'Unknown source'], 400);
     }
-  }
+    $meta = $SOURCES[$source];
+    $search = trim((string)($_GET['search'] ?? ''));
+    $limit = max(1, min(5000, (int)($_GET['limit'] ?? 1000)));
+    $offset = max(0, (int)($_GET['offset'] ?? 0));
+    $withTotal = (string)($_GET['with_total'] ?? '') === '1';
 
-  return $def;
-}
+    $mysqli = db_connect();
+    $table = $meta['table'];
+    $idCol = $meta['id'];
+    $labelCol = $meta['label'];
 
-
-if ($action === 'get_config' && $method === 'GET') {
-  $cfg = read_config($configPath);
-  // Never return password
-  $out = $cfg;
-  if (isset($out['password'])) unset($out['password']);
-  $out['has_password'] = !empty($cfg['password']);
-  json_out(['ok' => true, 'config' => $out]);
-}
-
-if ($action === 'save_config' && $method === 'POST') {
-  $body = read_body_json();
-  $prev = read_config($configPath);
-
-  $host = trim((string)($body['host'] ?? ''));
-  $db   = trim((string)($body['database'] ?? ''));
-  $user = trim((string)($body['user'] ?? ''));
-  $port = $body['port'] ?? 3306;
-
-  if ($host === '' || $db === '' || $user === '') {
-    json_out(['ok' => false, 'error' => 'Заполните host, database и user'], 400);
-  }
-  if (!is_numeric($port)) {
-    json_out(['ok' => false, 'error' => 'Port должен быть числом'], 400);
-  }
-
-  $new = [
-    'host' => $host,
-    'port' => (int)$port,
-    'database' => $db,
-    'user' => $user,
-  ];
-
-  // Password: keep previous if empty
-  $pwd = (string)($body['password'] ?? '');
-  if ($pwd !== '') {
-    $new['password'] = $pwd;
-  } else if (!empty($prev['password'])) {
-    $new['password'] = $prev['password'];
-  }
-
-  write_config($dataDir, $configPath, $new);
-
-  $out = $new;
-  unset($out['password']);
-  $out['has_password'] = !empty($new['password']);
-  json_out(['ok' => true, 'config' => $out]);
-}
-
-if ($action === 'test' && $method === 'POST') {
-  $cfg = read_config($configPath);
-  if (!$cfg) json_out(['ok' => false, 'error' => 'Конфиг БД не настроен'], 400);
-  $pdo = get_pdo($cfg);
-  $server = null;
-  try {
-    $server = $pdo->query('SELECT VERSION() AS v')->fetch()['v'] ?? null;
-  } catch (Throwable $e) {
-    // ignore
-  }
-  json_out(['ok' => true, 'server' => $server]);
-}
-
-
-if ($action === 'get_one' && $method === 'GET') {
-  $source = (string)($_GET['source'] ?? '');
-  $idRaw = $_GET['id'] ?? null;
-  if ($idRaw === null || $idRaw === '') json_out(['ok' => false, 'error' => 'Не указан id'], 400);
-  $id = is_numeric($idRaw) ? (int)$idRaw : 0;
-  if ($id <= 0) json_out(['ok' => false, 'error' => 'Некорректный id'], 400);
-
-  if (!isset($SOURCES[$source])) {
-    json_out(['ok' => false, 'error' => 'Неизвестный source'], 400);
-  }
-
-  $cfg = read_config($configPath);
-  if (!$cfg) json_out(['ok' => false, 'error' => 'Конфиг БД не настроен'], 400);
-  $pdo = get_pdo($cfg);
-
-  $def = resolve_source_def($source, $SOURCES, $dataDir);
-
-  $tbl = q_ident($def['table']);
-  $colV = q_ident($def['value']);
-  $colL = q_ident($def['label']);
-
-  try {
-    $stmt = $pdo->prepare("SELECT {$colV} AS value, {$colL} AS label FROM {$tbl} WHERE {$colV} = :id LIMIT 1");
-    $stmt->execute([':id' => $id]);
-    $r = $stmt->fetch();
-    if (!$r) json_out(['ok' => true, 'item' => null]);
-    json_out(['ok' => true, 'item' => ['value' => (int)$r['value'], 'label' => (string)$r['label']]]);
-  } catch (Throwable $e) {
-    json_out(['ok' => false, 'error' => 'Ошибка запроса к БД', 'details' => $e->getMessage()], 500);
-  }
-}
-
-if ($action === 'list' && $method === 'GET') {
-  $source = (string)($_GET['source'] ?? '');
-  if (!isset($SOURCES[$source])) {
-    json_out(['ok' => false, 'error' => 'Неизвестный source'], 400);
-  }
-
-  $cfg = read_config($configPath);
-  if (!$cfg) json_out(['ok' => false, 'error' => 'Конфиг БД не настроен'], 400);
-  $pdo = get_pdo($cfg);
-
-  $search = trim((string)($_GET['search'] ?? ''));
-  $limit  = (int)($_GET['limit'] ?? 1000);
-  $offset = (int)($_GET['offset'] ?? 0);
-  $withTotal = (string)($_GET['with_total'] ?? '') === '1';
-
-  if ($limit < 1) $limit = 1;
-  if ($limit > 5000) $limit = 5000;
-  if ($offset < 0) $offset = 0;
-  if ($offset > 2000000) $offset = 2000000;
-  if (mb_strlen($search) > 100) $search = mb_substr($search, 0, 100);
-
-  $def = resolve_source_def($source, $SOURCES, $dataDir);
-
-  $tbl = q_ident($def['table']);
-  $colV = q_ident($def['value']);
-  $colL = q_ident($def['label']);
-
-  $where = '';
-  $params = [];
-  if ($search !== '') {
-    $where = " WHERE {$colL} LIKE :q";
-    $params[':q'] = '%' . $search . '%';
-  }
-
-  $sql = "SELECT {$colV} AS value, {$colL} AS label FROM {$tbl}{$where} ORDER BY {$colV} ASC LIMIT {$limit} OFFSET {$offset}";
-
-  try {
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute($params);
-    $rows = $stmt->fetchAll();
-
-    $items = array_map(function($r) {
-      return [
-        'value' => isset($r['value']) ? (int)$r['value'] : 0,
-        'label' => isset($r['label']) ? (string)$r['label'] : '',
-      ];
-    }, $rows ?: []);
+    $where = '';
+    $types = '';
+    $params = [];
+    if ($search !== '') {
+      $isNum = ctype_digit($search);
+      if ($isNum) {
+        $where = "WHERE `$idCol` = ? OR `$labelCol` LIKE ?";
+        $types = 'is';
+        $params[] = (int)$search;
+        $params[] = '%' . $search . '%';
+      } else {
+        $where = "WHERE `$labelCol` LIKE ?";
+        $types = 's';
+        $params[] = '%' . $search . '%';
+      }
+    }
 
     $total = null;
     if ($withTotal) {
-      $stmt2 = $pdo->prepare("SELECT COUNT(*) AS c FROM {$tbl}{$where}");
-      $stmt2->execute($params);
-      $total = (int)($stmt2->fetch()['c'] ?? 0);
+      $sqlC = "SELECT COUNT(*) AS c FROM `$table` $where";
+      $stmtC = $mysqli->prepare($sqlC);
+      if ($stmtC === false) throw new RuntimeException('Prepare failed');
+      if ($types) $stmtC->bind_param($types, ...$params);
+      $stmtC->execute();
+      $resC = $stmtC->get_result();
+      $rowC = $resC ? $resC->fetch_assoc() : null;
+      $total = $rowC ? (int)$rowC['c'] : 0;
+      $stmtC->close();
     }
 
-    $hasMore = $withTotal ? (($offset + count($items)) < (int)$total) : (count($items) === $limit);
+    $sql = "SELECT `$idCol` AS id, `$labelCol` AS label FROM `$table` $where ORDER BY `$idCol` ASC LIMIT ? OFFSET ?";
+    $stmt = $mysqli->prepare($sql);
+    if ($stmt === false) throw new RuntimeException('Prepare failed');
+    if ($types) {
+      $stmt->bind_param($types . 'ii', ...array_merge($params, [$limit, $offset]));
+    } else {
+      $stmt->bind_param('ii', $limit, $offset);
+    }
+    $stmt->execute();
+    $res = $stmt->get_result();
+    $items = [];
+    while ($r = $res->fetch_assoc()) {
+      $items[] = ['value' => (string)$r['id'], 'label' => (string)($r['label'] ?? '')];
+    }
+    $stmt->close();
+    $mysqli->close();
 
-    json_out([
+    $hasMore = count($items) >= $limit;
+    respond([
       'ok' => true,
       'items' => $items,
-      'limit' => $limit,
-      'offset' => $offset,
-      'total' => $total,
-      'has_more' => $hasMore
+      'has_more' => $hasMore,
+      'total' => $withTotal ? $total : null,
     ]);
-  } catch (Throwable $e) {
-    json_out(['ok' => false, 'error' => 'Ошибка запроса к БД', 'details' => $e->getMessage()], 500);
   }
-}
 
-json_out(['ok' => false, 'error' => 'Unknown action'], 404);
+  if ($action === 'get_one') {
+    $source = (string)($_GET['source'] ?? '');
+    $id = (string)($_GET['id'] ?? '');
+    if (!isset($SOURCES[$source])) {
+      respond(['ok' => false, 'error' => 'Unknown source'], 400);
+    }
+    if ($id === '' || !ctype_digit($id)) {
+      respond(['ok' => false, 'error' => 'Invalid id'], 400);
+    }
+    $meta = $SOURCES[$source];
+    $mysqli = db_connect();
+    $table = $meta['table'];
+    $idCol = $meta['id'];
+    $labelCol = $meta['label'];
+
+    $sql = "SELECT `$idCol` AS id, `$labelCol` AS label FROM `$table` WHERE `$idCol` = ? LIMIT 1";
+    $stmt = $mysqli->prepare($sql);
+    if ($stmt === false) throw new RuntimeException('Prepare failed');
+    $iid = (int)$id;
+    $stmt->bind_param('i', $iid);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    $row = $res ? $res->fetch_assoc() : null;
+    $stmt->close();
+    $mysqli->close();
+    if (!$row) respond(['ok' => true, 'item' => null]);
+    respond(['ok' => true, 'item' => ['value' => (string)$row['id'], 'label' => (string)($row['label'] ?? '')]]);
+  }
+
+  respond(['ok' => false, 'error' => 'Unknown action'], 400);
+
+} catch (Throwable $e) {
+  respond(['ok' => false, 'error' => $e->getMessage()], 500);
+}

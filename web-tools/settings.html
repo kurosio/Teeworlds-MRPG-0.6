@@ -40,23 +40,23 @@
         <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <div class="text-sm font-medium text-slate-200 mb-1">Host</div>
-            <input id="db-host" type="text" class="w-full" placeholder="127.0.0.1" />
+            <input id="db-host" type="text" class="w-full editor-input form-input" placeholder="127.0.0.1" />
           </div>
           <div>
             <div class="text-sm font-medium text-slate-200 mb-1">Port</div>
-            <input id="db-port" type="number" class="w-full" placeholder="3306" />
+            <input id="db-port" type="number" class="w-full editor-input form-input" placeholder="3306" />
           </div>
           <div>
             <div class="text-sm font-medium text-slate-200 mb-1">Database</div>
-            <input id="db-name" type="text" class="w-full" placeholder="mmorpg" />
+            <input id="db-name" type="text" class="w-full editor-input form-input" placeholder="mmorpg" />
           </div>
           <div>
             <div class="text-sm font-medium text-slate-200 mb-1">User</div>
-            <input id="db-user" type="text" class="w-full" placeholder="root" />
+            <input id="db-user" type="text" class="w-full editor-input form-input" placeholder="root" />
           </div>
           <div class="md:col-span-2">
             <div class="text-sm font-medium text-slate-200 mb-1">Password</div>
-            <input id="db-pass" type="password" class="w-full" placeholder="(не показывается после сохранения)" />
+            <input id="db-pass" type="password" class="w-full editor-input form-input" placeholder="(не показывается после сохранения)" />
             <div class="editor-muted-text text-xs mt-1">Пароль хранится на сервере в <code>data/db-config.json</code>. Не используйте боевую БД в публичном окружении.</div>
           </div>
         </div>
@@ -79,7 +79,7 @@
         <h2 class="text-lg font-semibold">Источники списков</h2>
         <p class="editor-muted-text text-sm mt-1">Эти списки используются компонентом <b>DB Select</b> (например, квесты, предметы, миры и т.д.).</p>
 
-        <div class="mt-4 grid grid-cols-2 gap-2">
+        <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
           <button class="editor-btn editor-btn-secondary" data-source="quests"><i class="fa-solid fa-scroll"></i><span>Квесты</span></button>
           <button class="editor-btn editor-btn-secondary" data-source="items"><i class="fa-solid fa-box"></i><span>Предметы</span></button>
           <button class="editor-btn editor-btn-secondary" data-source="worlds"><i class="fa-solid fa-globe"></i><span>Миры</span></button>
@@ -90,7 +90,7 @@
         <div class="mt-4">
           <div class="flex items-center gap-2">
             <i class="fa-solid fa-magnifying-glass text-slate-300"></i>
-            <input id="search" type="search" class="w-full" placeholder="Поиск по названию…" />
+            <input id="search" type="search" class="w-full editor-input form-input" placeholder="Поиск по названию…" />
           </div>
         </div>
 

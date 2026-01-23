@@ -1,0 +1,884 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Крафты • tw_crafts_list</title>
+
+  <link rel="stylesheet" href="editor-core/editor-theme.css" />
+
+  <!-- Fonts + icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <!-- Tailwind (CDN). Load shared config BEFORE tailwindcss. -->
+  <script src="editor-core/tailwind-theme.js"></script>
+  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+
+  <style>
+    /* Craft-specific: compact RequiredItems rows + list cosmetics */
+    .crafts-group-btn{border-bottom:1px solid rgba(255,255,255,.06)}
+    .crafts-item{border-bottom:1px solid rgba(255,255,255,.06)}
+    .crafts-item:last-child{border-bottom:0}
+
+    /* Ingredients header columns (visual wrapper comes from .editor-columns-header)
+       IMPORTANT: must match the list grid template, иначе колонки "уплывают" и элементы начинают давить друг друга.
+       На узких экранах — одна колонка; с md — две колонки. */
+    .crafts-req-columns{grid-template-columns: minmax(0,1fr);} /* < md */
+    @media (min-width:768px){
+      .crafts-req-columns{grid-template-columns: minmax(0,1fr) 160px;}
+    }
+
+    /* Make list add button look like a full-width soft action */
+    #form-req [data-list-action="add"]{width:100%; justify-content:center;}
+
+    /* Flatten ingredient list items to feel like rows */
+    #form-req [data-list-container="RequiredItemsArr"]{counter-reset:reqidx;}
+    #form-req .editor-list-item{
+      position:relative;
+      /* top padding leaves room for the absolute header actions */
+      padding:40px 12px 12px;
+      border-radius:16px;
+      background:rgba(0,0,0,0.16);
+      border:1px solid rgba(255,255,255,0.08);
+    }
+    #form-req .editor-list-item::before{
+      counter-increment:reqidx;
+      content:"#" counter(reqidx);
+      position:absolute;
+      top:10px;
+      left:12px;
+      font-size:11px;
+      color:rgba(229,231,235,0.55);
+    }
+    /* Move remove button to the top-right; hide the built-in index label */
+    #form-req .editor-list-item > .flex{position:absolute; top:8px; right:8px; margin:0; gap:8px;}
+    #form-req .editor-list-item > .flex .editor-muted-text{display:none;}
+
+    /* Reduce nested labels inside ingredient rows; we already have a header row */
+    #form-req .editor-nested-label{display:none;}
+
+    /* Tighter spacing for db_select inside ingredients */
+    #form-req .editor-dbselect{gap:6px;}
+    #form-req .editor-dbselect-search{padding:.45rem .65rem; font-size:.85rem; border-radius:12px;}
+    #form-req .editor-dbselect-controls{gap:8px;}
+    #form-req .editor-dbselect-meta{font-size:11px; color:rgba(229,231,235,0.55)}
+    #form-req .editor-dbselect-more{padding:6px 10px; border-radius:12px; font-size:12px;}
+
+    /* Small screens: force list rows to stack (prevents squeezing/overlap) */
+    #form-req .editor-grid-fields{grid-template-columns: var(--editor-grid-template,1fr);}
+    @media (max-width: 480px){
+      /* extra safety: if some browser still tries to keep 2 columns */
+      #form-req .editor-grid-fields{grid-template-columns:1fr !important;}
+    }
+
+    /* ------------------------------------------------------------------
+       Craft editor: main fields layout (align + simplify)
+       ------------------------------------------------------------------ */
+    #form-main{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start;}
+    #form-main [data-field-path="ItemID"],
+    #form-main [data-field-path="WorldID"]{grid-column:1 / -1;}
+    #form-main .editor-field{padding:12px;border-radius:16px;}
+
+    /* Make numeric fields feel even + aligned */
+    #form-main input[type="number"]{width:100%;}
+
+    /* Bring the clear button closer to the edge (feels tighter) */
+    #form-main .editor-dbcombo-input{padding-right:2.0rem;}
+    #form-main .editor-dbcombo-clear{right:.45rem;width:1.35rem;height:1.35rem;border-radius:10px;}
+
+    @media (max-width: 640px){
+      #form-main{grid-template-columns:1fr;}
+    }
+  </style>
+</head>
+
+<body class="editor-theme">
+  <div class="max-w-7xl mx-auto px-5 py-6">
+    <div class="flex items-start justify-between gap-4">
+      <div>
+        <div class="flex items-center gap-3">
+          <i class="fa-solid fa-hammer text-accent text-xl"></i>
+          <h1 class="text-2xl font-bold">Крафты</h1>
+          <span class="editor-badge">tw_crafts_list</span>
+          <span id="dirty-pill" class="hidden px-2.5 py-1 rounded-full text-xs font-semibold border border-amber-400/30 bg-amber-500/10 text-amber-200">
+            <i class="fa-solid fa-circle-exclamation mr-1"></i>Не сохранено
+          </span>
+        </div>
+        <p class="editor-muted-text mt-1">Группы и подгруппы (GroupName: <code>Armor:Tank</code>) + ингредиенты (RequiredItems).</p>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <button id="btn-refresh" class="editor-btn editor-btn-secondary">
+          <i class="fa-solid fa-rotate"></i><span>Обновить</span>
+        </button>
+        <button id="btn-new" class="editor-btn editor-btn-primary">
+          <i class="fa-solid fa-plus"></i><span>Новый крафт</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-[380px,1fr] gap-5 mt-6">
+      <!-- Sidebar -->
+      <aside class="editor-card border rounded-2xl p-4">
+        <div class="flex items-center justify-between gap-3">
+          <div class="flex items-center gap-2">
+            <div class="text-sm font-semibold">Категории</div>
+            <div class="text-xs editor-muted-text" id="meta-count">—</div>
+          </div>
+          <button id="btn-clear-filters" class="editor-icon-btn" title="Сбросить фильтры">
+            <i class="fa-solid fa-broom"></i>
+          </button>
+        </div>
+
+        <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div>
+            <div class="text-xs editor-muted-text mb-1">Группа</div>
+            <select id="filter-group" class="w-full editor-input form-input"></select>
+          </div>
+          <div>
+            <div class="text-xs editor-muted-text mb-1">Подгруппа</div>
+            <select id="filter-sub" class="w-full editor-input form-input"></select>
+          </div>
+        </div>
+
+        <div class="mt-3">
+          <div class="editor-search">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input id="search" type="search" class="w-full editor-input form-input" placeholder="Поиск по ID / группе / предмету…" />
+          </div>
+          <div class="mt-2 flex items-center justify-between">
+            <div class="text-[11px] editor-muted-text">Советы: Ctrl+S сохранить • Ctrl+N новый • Del удалить</div>
+            <button id="btn-collapse-all" class="editor-icon-btn" title="Свернуть/развернуть группы">
+              <i class="fa-solid fa-layer-group"></i>
+            </button>
+          </div>
+        </div>
+
+        <div id="list" class="mt-4 overflow-auto border border-light rounded-xl bg-black/10 editor-scroll" style="max-height: 590px"></div>
+      </aside>
+
+      <!-- Editor -->
+      <section class="editor-card border rounded-2xl p-4">
+        <div class="editor-sticky-toolbar flex items-start justify-between gap-4">
+          <div>
+            <div class="flex items-center gap-2">
+              <div class="text-lg font-semibold" id="title">Выберите крафт</div>
+              <span class="editor-badge" id="badge-id" style="display:none"></span>
+            </div>
+            <div class="editor-muted-text text-sm mt-1" id="subtitle">—</div>
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button id="btn-delete" class="editor-btn editor-btn-secondary" disabled title="Del">
+              <i class="fa-solid fa-trash"></i><span>Удалить</span>
+            </button>
+            <button id="btn-save" class="editor-btn editor-btn-primary" disabled title="Ctrl+S">
+              <i class="fa-solid fa-floppy-disk"></i><span>Сохранить</span>
+            </button>
+          </div>
+        </div>
+
+        <div class="mt-4">
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 editor-section">
+            <div>
+              <div class="text-sm font-medium text-slate-200 mb-1">Группа</div>
+              <input id="edit-group" type="text" class="w-full editor-input form-input" placeholder="Напр. Armor" list="group-list" />
+              <datalist id="group-list"></datalist>
+            </div>
+            <div>
+              <div class="text-sm font-medium text-slate-200 mb-1">Подгруппа</div>
+              <input id="edit-sub" type="text" class="w-full editor-input form-input" placeholder="Напр. Tank" list="sub-list" />
+              <datalist id="sub-list"></datalist>
+            </div>
+            <div>
+              <div class="text-sm font-medium text-slate-200 mb-1">Итоговое GroupName</div>
+              <div class="editor-readonly" id="groupname-preview">—</div>
+              <div class="editor-muted-text text-xs mt-1">Хранится как <code>GroupName</code> в БД.</div>
+            </div>
+          </div>
+
+		<div class="editor-section">
+		  <h3 class="text-sm font-semibold">Параметры</h3>
+		  <div id="form-main" class="mt-3"></div>
+		</div>
+		<div class="editor-section">
+		  <div class="flex items-center justify-between gap-3">
+			<h3 class="text-sm font-semibold">Ингредиенты (RequiredItems)</h3>
+			<div class="flex items-center gap-2">
+			  <button id="btn-add-req" type="button" class="editor-btn editor-btn-secondary text-sm">
+				<i class="fa-solid fa-plus"></i><span>Добавить</span>
+			  </button>
+			  <button id="btn-toggle-raw" type="button" class="editor-icon-btn" title="Показать/скрыть Raw">
+				<i class="fa-solid fa-code"></i>
+			  </button>
+			</div>
+		  </div>
+		  <div class="editor-muted-text text-xs mt-1">Сохраняется в строковом виде: <code>[ItemID/Count],[ItemID/Count]</code></div>
+		  <div class="editor-columns-header crafts-req-columns">
+			<div>Предмет <span class="muted">(ItemID)</span></div>
+			<div>Кол-во <span class="muted">(Count)</span></div>
+		  </div>
+		  <div id="form-req"></div>
+		  <div class="mt-3">
+			<details id="raw-wrap" class="editor-details">
+			  <summary>Raw RequiredItems <span class="editor-muted-text">(как в БД)</span></summary>
+			  <div class="editor-details-body">
+				<textarea id="raw-required" class="w-full editor-textarea form-textarea" rows="3" readonly></textarea>
+			  </div>
+			</details>
+		  </div>
+		</div>
+
+          <div class="mt-5" id="status"></div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script src="editor-core/core.js"></script>
+  <script src="editor-core/field-renderer.js"></script>
+  <script src="editor-core/form-runtime.js"></script>
+  <script src="editor-core/db-map.js"></script>
+  <script src="editor-core/db.js"></script>
+  <script src="editor-core/db-crud.js"></script>
+  <script src="editor-core/ui.js"></script>
+  <script src="editor-core/ui-manager.js"></script>
+  <script src="editor-core/defaults.js"></script>
+  <script src="editor-core/utils.js"></script>
+  <script src="editor-core/bootstrap.js"></script>
+
+  <script>
+    EditorCore.bootstrapEditor({ mode: 'event' });
+
+    const RESOURCE = 'crafts';
+
+    const els = {
+      refresh: document.getElementById('btn-refresh'),
+      newBtn: document.getElementById('btn-new'),
+      del: document.getElementById('btn-delete'),
+      save: document.getElementById('btn-save'),
+      dirtyPill: document.getElementById('dirty-pill'),
+      status: document.getElementById('status'),
+      list: document.getElementById('list'),
+      metaCount: document.getElementById('meta-count'),
+      filterGroup: document.getElementById('filter-group'),
+      filterSub: document.getElementById('filter-sub'),
+      clearFilters: document.getElementById('btn-clear-filters'),
+      search: document.getElementById('search'),
+      collapseAll: document.getElementById('btn-collapse-all'),
+      title: document.getElementById('title'),
+      subtitle: document.getElementById('subtitle'),
+      badgeId: document.getElementById('badge-id'),
+      editGroup: document.getElementById('edit-group'),
+      editSub: document.getElementById('edit-sub'),
+      groupPreview: document.getElementById('groupname-preview'),
+      groupList: document.getElementById('group-list'),
+      subList: document.getElementById('sub-list'),
+      formMain: document.getElementById('form-main'),
+      formReq: document.getElementById('form-req'),
+      rawRequired: document.getElementById('raw-required'),
+      addReq: document.getElementById('btn-add-req'),
+      toggleRaw: document.getElementById('btn-toggle-raw'),
+      rawWrap: document.getElementById('raw-wrap'),
+    };
+
+
+    // Ingredient UI buttons
+    if (els.addReq) {
+      els.addReq.addEventListener('click', () => {
+        const btn = els.formReq?.querySelector('[data-list-action="add"][data-list-path="RequiredItemsArr"]');
+        if (btn) btn.click();
+      });
+    }
+    if (els.toggleRaw) {
+      els.toggleRaw.addEventListener('click', () => {
+        if (!els.rawWrap) return;
+        els.rawWrap.open = !els.rawWrap.open;
+        if (els.rawWrap.open && els.rawRequired) els.rawRequired.focus();
+      });
+    }
+
+    const STATE = {
+      rows: [],
+      selectedId: null,
+      selected: null, // editor model
+      isDirty: false,
+      filter: { group: '', sub: '' },
+      search: '',
+      ui: {
+        collapsedGroups: new Set(),
+        collapseAll: false,
+      },
+      lookups: {
+        items: new Map(),
+        worlds: new Map(),
+      },
+      groups: new Map(), // group -> Set(sub)
+    };
+
+    const setStatus = (msg, tone = 'muted') => {
+      const cls = tone === 'ok' ? 'text-emerald-300' : tone === 'err' ? 'text-red-300' : 'editor-muted-text';
+      els.status.className = `mt-5 text-sm ${cls}`;
+      els.status.textContent = msg || '';
+    };
+
+    const splitGroupName = (groupName) => {
+      const raw = String(groupName || '').trim();
+      if (!raw) return { group: '', sub: '' };
+      const idx = raw.indexOf(':');
+      if (idx === -1) return { group: raw, sub: '' };
+      return {
+        group: raw.slice(0, idx).trim(),
+        sub: raw.slice(idx + 1).trim(),
+      };
+    };
+
+    const buildGroupName = (group, sub) => {
+      const g = String(group || '').trim();
+      const s = String(sub || '').trim();
+      if (!g && !s) return '';
+      if (g && s) return `${g}:${s}`;
+      return g || s;
+    };
+
+    const getItemLabel = (id) => {
+      const key = String(id ?? '').trim();
+      if (!key) return '';
+      return STATE.lookups.items.get(key) || '';
+    };
+
+    const getWorldLabel = (id) => {
+      const key = String(id ?? '').trim();
+      if (!key) return '';
+      return STATE.lookups.worlds.get(key) || '';
+    };
+
+    const parseRequired = (s) => (window.EditorCore?.PairList?.parse ? window.EditorCore.PairList.parse(s) : []);
+    const stringifyRequired = (arr) => (window.EditorCore?.PairList?.stringify ? window.EditorCore.PairList.stringify(arr) : '');
+
+    const rebuildGroups = () => {
+      const map = new Map();
+      for (const r of STATE.rows) {
+        const { group, sub } = splitGroupName(r.GroupName);
+        const g = group || '(без группы)';
+        if (!map.has(g)) map.set(g, new Set());
+        if (sub) map.get(g).add(sub);
+      }
+      STATE.groups = map;
+
+      // Cleanup collapsed state for removed groups
+      if (STATE.ui?.collapsedGroups?.size) {
+        const next = new Set();
+        for (const g of STATE.ui.collapsedGroups) {
+          if (map.has(g)) next.add(g);
+        }
+        STATE.ui.collapsedGroups = next;
+      }
+    };
+
+    const fillFilterCombos = () => {
+      const groups = Array.from(STATE.groups.keys()).sort((a,b)=>a.localeCompare(b));
+      els.filterGroup.innerHTML = '';
+      els.filterGroup.appendChild(new Option('Все', '', STATE.filter.group === '', STATE.filter.group === ''));
+      for (const g of groups) {
+        els.filterGroup.appendChild(new Option(g, g, STATE.filter.group === g, STATE.filter.group === g));
+      }
+      fillSubFilter();
+    };
+
+    const fillSubFilter = () => {
+      const g = STATE.filter.group;
+      const subs = g && STATE.groups.has(g) ? Array.from(STATE.groups.get(g)).sort((a,b)=>a.localeCompare(b)) : [];
+      els.filterSub.innerHTML = '';
+      els.filterSub.appendChild(new Option('Все', '', STATE.filter.sub === '', STATE.filter.sub === ''));
+      for (const s of subs) {
+        els.filterSub.appendChild(new Option(s, s, STATE.filter.sub === s, STATE.filter.sub === s));
+      }
+      if (STATE.filter.sub && !subs.includes(STATE.filter.sub)) {
+        STATE.filter.sub = '';
+      }
+    };
+
+    const fillEditorDatalists = () => {
+      const groups = Array.from(STATE.groups.keys())
+        .filter(g => g !== '(без группы)')
+        .sort((a,b)=>a.localeCompare(b));
+      els.groupList.innerHTML = groups.map(g => `<option value="${g}"></option>`).join('');
+      updateSubDatalist();
+    };
+
+    const updateSubDatalist = () => {
+      const g = String(els.editGroup.value || '').trim();
+      const subs = (g && STATE.groups.has(g)) ? Array.from(STATE.groups.get(g)).sort((a,b)=>a.localeCompare(b)) : [];
+      els.subList.innerHTML = subs.map(s => `<option value="${s}"></option>`).join('');
+    };
+
+    const markDirty = (dirty = true) => {
+      STATE.isDirty = !!dirty;
+      els.save.disabled = !STATE.selected || !STATE.isDirty;
+
+      // Visual "unsaved" indicator
+      if (els.dirtyPill) {
+        els.dirtyPill.classList.toggle('hidden', !STATE.isDirty);
+      }
+      // Make save button visually pop when there are changes
+      if (els.save) {
+        els.save.classList.toggle('ring-2', STATE.isDirty);
+        els.save.classList.toggle('ring-amber-400/40', STATE.isDirty);
+      }
+    };
+
+    const renderList = () => {
+      const search = String(STATE.search || '').trim().toLowerCase();
+      const fg = STATE.filter.group;
+      const fs = STATE.filter.sub;
+
+      const filtered = STATE.rows.filter(r => {
+        const { group, sub } = splitGroupName(r.GroupName);
+        const g = group || '(без группы)';
+        if (fg && g !== fg) return false;
+        if (fs && sub !== fs) return false;
+        if (!search) return true;
+
+        const idStr = String(r.ID);
+        const itemLabel = getItemLabel(r.ItemID);
+        const gStr = String(r.GroupName || '');
+        const reqStr = String(r.RequiredItems || '');
+        return idStr.includes(search)
+          || gStr.toLowerCase().includes(search)
+          || String(r.ItemID || '').includes(search)
+          || (itemLabel && itemLabel.toLowerCase().includes(search))
+          || reqStr.includes(search);
+      });
+
+      els.metaCount.textContent = `${filtered.length}/${STATE.rows.length}`;
+      if (!filtered.length) {
+        els.list.innerHTML = `
+          <div class="p-5 text-center">
+            <div class="text-sm font-semibold">Ничего не найдено</div>
+            <div class="text-xs editor-muted-text mt-1">Попробуйте изменить фильтры или поиск.</div>
+            <button class="editor-btn editor-btn-secondary mt-3" id="btn-empty-new">
+              <i class="fa-solid fa-plus"></i><span>Создать крафт</span>
+            </button>
+          </div>`;
+        const b = document.getElementById('btn-empty-new');
+        if (b) b.addEventListener('click', () => els.newBtn.click());
+        return;
+      }
+
+      // Group rows by GroupName group
+      const byGroup = new Map();
+      for (const r of filtered) {
+        const { group } = splitGroupName(r.GroupName);
+        const g = group || '(без группы)';
+        if (!byGroup.has(g)) byGroup.set(g, []);
+        byGroup.get(g).push(r);
+      }
+      const groupNames = Array.from(byGroup.keys()).sort((a, b) => a.localeCompare(b));
+
+      const reqCountQuick = (s) => {
+        const str = String(s || '');
+        if (!str) return 0;
+        const m = str.match(/\[/g);
+        return m ? m.length : 0;
+      };
+
+      const html = groupNames.map(g => {
+        const rows = byGroup.get(g) || [];
+        rows.sort((a, b) => Number(a.ID) - Number(b.ID));
+        const isCollapsed = STATE.ui.collapsedGroups.has(g);
+        const icon = isCollapsed ? 'fa-chevron-right' : 'fa-chevron-down';
+
+        const items = rows.map(r => {
+          const isActive = String(r.ID) === String(STATE.selectedId);
+          const itemLabel = getItemLabel(r.ItemID) || (r.ItemID ? `Item #${r.ItemID}` : '—');
+          const { sub } = splitGroupName(r.GroupName);
+          const subStr = sub ? `<span class="editor-muted-text">•</span> <span class="text-slate-200">${sub}</span>` : '';
+          const ing = reqCountQuick(r.RequiredItems);
+          const worldLabel = getWorldLabel(r.WorldID) || (r.WorldID ? `World #${r.WorldID}` : 'All');
+          const price = Number(r.Price || 0);
+          return `
+            <button type="button"
+              class="crafts-item w-full text-left px-3 py-2.5 hover:bg-white/5 transition ${isActive ? 'bg-white/5' : ''}"
+              data-id="${r.ID}">
+              <div class="flex items-start justify-between gap-2">
+                <div class="min-w-0">
+                  <div class="flex items-center gap-2 min-w-0">
+                    <div class="font-semibold text-sm truncate">${itemLabel}</div>
+                    <div class="text-xs editor-muted-text shrink-0">×${r.ItemValue || 1}</div>
+                  </div>
+                  <div class="text-xs mt-0.5 truncate">
+                    <span class="text-slate-200">${g}</span> ${subStr}
+                  </div>
+                  <div class="mt-1 flex flex-wrap gap-1.5">
+                    <span class="px-2 py-0.5 rounded-full text-[11px] border border-white/10 bg-white/5 editor-muted-text">ингр: ${ing}</span>
+                    <span class="px-2 py-0.5 rounded-full text-[11px] border border-white/10 bg-white/5 editor-muted-text">${worldLabel}</span>
+                    ${price ? `<span class=\"px-2 py-0.5 rounded-full text-[11px] border border-white/10 bg-white/5 editor-muted-text\">цена: ${price}</span>` : ''}
+                  </div>
+                </div>
+                <div class="text-xs editor-muted-text shrink-0">#${r.ID}</div>
+              </div>
+              ${isActive ? `<div class="mt-2 h-[2px] rounded-full bg-indigo-400/40"></div>` : ''}
+            </button>`;
+        }).join('');
+
+        return `
+          <div>
+            <button type="button" class="crafts-group-btn w-full px-3 py-2 flex items-center justify-between gap-2 hover:bg-white/5" data-group="${encodeURIComponent(g)}">
+              <div class="flex items-center gap-2">
+                <i class="fa-solid ${icon} text-xs editor-muted-text"></i>
+                <div class="font-semibold text-sm truncate">${g}</div>
+              </div>
+              <div class="text-xs editor-muted-text">${rows.length}</div>
+            </button>
+            <div class="${isCollapsed ? 'hidden' : ''}">
+              ${items}
+            </div>
+          </div>`;
+      }).join('');
+
+      els.list.innerHTML = html;
+      els.list.querySelectorAll('button[data-id]').forEach(btn => {
+        btn.addEventListener('click', () => selectRow(btn.getAttribute('data-id')));
+      });
+      els.list.querySelectorAll('button[data-group]').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const g = decodeURIComponent(btn.getAttribute('data-group') || '');
+          if (!g) return;
+          if (STATE.ui.collapsedGroups.has(g)) STATE.ui.collapsedGroups.delete(g);
+          else STATE.ui.collapsedGroups.add(g);
+          renderList();
+        });
+      });
+
+      // Keep the active item visible
+      if (STATE.selectedId) {
+        const active = els.list.querySelector(`button[data-id="${CSS.escape(String(STATE.selectedId))}"]`);
+        if (active) active.scrollIntoView({ block: 'nearest' });
+      }
+    };
+
+    let runtimeMain = null;
+    let runtimeReq = null;
+
+    const mainFields = {
+      ItemID: { type: 'db_select', label: 'Результат (ItemID)', ui: { dbKey: 'item', placeholder: '— выберите предмет —', searchable: true } },
+      ItemValue: { type: 'number', label: 'Количество (ItemValue)', ui: { min: 1, max: 999999, step: 1 } },
+      Price: { type: 'number', label: 'Цена (Price)', ui: { min: 0, max: 999999999, step: 1 } },
+      WorldID: { type: 'db_select', label: 'Мир (WorldID)', ui: { dbKey: 'world', placeholder: '— выберите мир —', searchable: true, valueType: 'number' } },
+    };
+
+    const reqFields = {
+      RequiredItemsArr: {
+        type: 'list',
+        label: '',
+        // На узких экранах складываем в 1 колонку, чтобы db_select не сжимался до наложений.
+        // С md включаем 2 колонки (Item + Count).
+        ui: { hideLabel: true, addLabel: 'Добавить ингредиент', layout: 'grid', gridTemplate: 'minmax(0,1fr)', gridTemplateMd: 'minmax(0,1fr) 160px', gridGap: '12px' },
+        itemDefault: { id: 0, value: 1 },
+        itemFields: {
+          id: { type: 'db_select', label: 'Предмет', ui: { dbKey: 'item', placeholder: '— выберите предмет —', searchable: true } },
+          value: { type: 'number', label: 'Кол-во', ui: { min: 1, max: 999999, step: 1, controlMinWidth: 120 } },
+        }
+      }
+    };
+
+    const mountForms = () => {
+      runtimeMain = EditorCore.FormRuntime.mount(els.formMain, {
+        fields: mainFields,
+        data: STATE.selected || {},
+        onChange: () => {
+          if (!STATE.selected) return;
+          // normalize
+          const v = Number(STATE.selected.ItemID);
+          if (!Number.isFinite(v)) STATE.selected.ItemID = 0;
+          const raw = stringifyRequired(STATE.selected.RequiredItemsArr || []);
+          els.rawRequired.value = raw;
+          markDirty(true);
+          updateHeader();
+        }
+      });
+
+      runtimeReq = EditorCore.FormRuntime.mount(els.formReq, {
+        fields: reqFields,
+        data: STATE.selected || {},
+        onChange: () => {
+          if (!STATE.selected) return;
+          els.rawRequired.value = stringifyRequired(STATE.selected.RequiredItemsArr || []);
+          markDirty(true);
+        }
+      });
+    };
+
+    const updateHeader = () => {
+      if (!STATE.selected) {
+        els.title.textContent = 'Выберите крафт';
+        els.subtitle.textContent = '—';
+        els.badgeId.style.display = 'none';
+        return;
+      }
+      const itemLabel = getItemLabel(STATE.selected.ItemID) || (STATE.selected.ItemID ? `Item #${STATE.selected.ItemID}` : '—');
+      els.title.textContent = itemLabel;
+      const groupName = buildGroupName(STATE.selected.Group, STATE.selected.SubGroup);
+      const worldLabel = getWorldLabel(STATE.selected.WorldID) || (STATE.selected.WorldID ? `World #${STATE.selected.WorldID}` : 'All');
+      els.subtitle.textContent = `${groupName || '(без группы)'} • ${worldLabel}`;
+      els.badgeId.textContent = `#${STATE.selectedId || 'new'}`;
+      els.badgeId.style.display = 'inline-flex';
+    };
+
+    const applyEditorInputs = () => {
+      if (!STATE.selected) {
+        els.editGroup.value = '';
+        els.editSub.value = '';
+        els.groupPreview.textContent = '—';
+        els.rawRequired.value = '';
+        return;
+      }
+      els.editGroup.value = STATE.selected.Group || '';
+      els.editSub.value = STATE.selected.SubGroup || '';
+      updateSubDatalist();
+      const groupName = buildGroupName(STATE.selected.Group, STATE.selected.SubGroup);
+      els.groupPreview.textContent = groupName || '—';
+      els.rawRequired.value = stringifyRequired(STATE.selected.RequiredItemsArr || []);
+    };
+
+    const setSelected = (row, isNew = false) => {
+      STATE.selectedId = isNew ? null : (row ? row.ID : null);
+      if (!row && !isNew) {
+        STATE.selected = null;
+      } else {
+        const split = splitGroupName(row?.GroupName);
+        STATE.selected = {
+          ID: row?.ID ?? 0,
+          Group: split.group || (STATE.filter.group && STATE.filter.group !== '(без группы)' ? STATE.filter.group : ''),
+          SubGroup: split.sub || (STATE.filter.sub || ''),
+          ItemID: row?.ItemID == null ? 0 : Number(row.ItemID),
+          ItemValue: Number(row?.ItemValue ?? 1),
+          Price: Number(row?.Price ?? 0),
+          WorldID: Number(row?.WorldID ?? 0),
+          RequiredItemsArr: parseRequired(row?.RequiredItems || ''),
+        };
+      }
+
+      els.del.disabled = !STATE.selectedId;
+      els.save.disabled = true;
+      markDirty(false);
+
+      applyEditorInputs();
+      mountForms();
+      updateHeader();
+      renderList();
+    };
+
+    const selectRow = async (id) => {
+      if (!id) return;
+      try {
+        setStatus('Загрузка…');
+        const res = await EditorCore.DBCrud.get(RESOURCE, id);
+        if (!res?.row) {
+          setStatus('Не найдено', 'err');
+          return;
+        }
+        setSelected(res.row, false);
+        setStatus('');
+      } catch (e) {
+        setStatus(String(e?.message || e), 'err');
+        EditorCore.UI.toast(String(e?.message || e), 'error');
+      }
+    };
+
+    const loadLookups = async () => {
+      try {
+        const [itemsRes, worldsRes] = await Promise.all([
+          EditorCore.DB.list('items', { limit: 5000, offset: 0 }),
+          EditorCore.DB.list('worlds', { limit: 5000, offset: 0 }),
+        ]);
+        if (itemsRes?.ok) {
+          STATE.lookups.items = new Map((itemsRes.items || []).map(i => [String(i.value), String(i.label || '')]));
+        }
+        if (worldsRes?.ok) {
+          STATE.lookups.worlds = new Map((worldsRes.items || []).map(i => [String(i.value), String(i.label || '')]));
+        }
+      } catch {
+        // ignore, editor still works with IDs
+      }
+    };
+
+    const loadRows = async () => {
+      try {
+        setStatus('Загрузка списка…');
+        const res = await EditorCore.DBCrud.list(RESOURCE, { search: '', limit: 5000, offset: 0 });
+        STATE.rows = Array.isArray(res?.rows) ? res.rows : [];
+        rebuildGroups();
+        fillFilterCombos();
+        fillEditorDatalists();
+        renderList();
+        setStatus('');
+      } catch (e) {
+        setStatus(String(e?.message || e), 'err');
+        EditorCore.UI.toast(String(e?.message || e), 'error');
+        STATE.rows = [];
+        rebuildGroups();
+        fillFilterCombos();
+        fillEditorDatalists();
+        renderList();
+      }
+    };
+
+    const save = async () => {
+      if (!STATE.selected) return;
+      const groupName = buildGroupName(STATE.selected.Group, STATE.selected.SubGroup);
+      const payload = {
+        GroupName: groupName,
+        ItemID: (Number(STATE.selected.ItemID) || 0) ? Number(STATE.selected.ItemID) : null,
+        ItemValue: Number(STATE.selected.ItemValue || 1),
+        RequiredItems: stringifyRequired(STATE.selected.RequiredItemsArr || []),
+        Price: Number(STATE.selected.Price || 0),
+        WorldID: Number(STATE.selected.WorldID || 0),
+      };
+
+      try {
+        els.save.disabled = true;
+        setStatus('Сохранение…');
+        if (STATE.selectedId) {
+          await EditorCore.DBCrud.update(RESOURCE, STATE.selectedId, payload);
+          EditorCore.UI.toast('Сохранено', 'success');
+        } else {
+          const created = await EditorCore.DBCrud.create(RESOURCE, payload);
+          EditorCore.UI.toast('Создано', 'success');
+          // Reload list and open created row
+          await loadRows();
+          if (created?.id) await selectRow(created.id);
+        }
+        markDirty(false);
+        // refresh list row values
+        await loadRows();
+        setStatus('');
+      } catch (e) {
+        setStatus(String(e?.message || e), 'err');
+        EditorCore.UI.toast(String(e?.message || e), 'error');
+        els.save.disabled = false;
+      }
+    };
+
+    const remove = async () => {
+      if (!STATE.selectedId) return;
+      if (!confirm('Удалить крафт #' + STATE.selectedId + '?')) return;
+      try {
+        setStatus('Удаление…');
+        await EditorCore.DBCrud.remove(RESOURCE, STATE.selectedId);
+        EditorCore.UI.toast('Удалено', 'success');
+        setSelected(null, false);
+        await loadRows();
+        setStatus('');
+      } catch (e) {
+        setStatus(String(e?.message || e), 'err');
+        EditorCore.UI.toast(String(e?.message || e), 'error');
+      }
+    };
+
+    // Bind events
+    els.refresh.addEventListener('click', async () => {
+      await loadLookups();
+      await loadRows();
+    });
+
+    els.clearFilters?.addEventListener('click', () => {
+      STATE.filter.group = '';
+      STATE.filter.sub = '';
+      STATE.search = '';
+      els.search.value = '';
+      fillFilterCombos();
+      renderList();
+    });
+
+    els.collapseAll?.addEventListener('click', () => {
+      const all = Array.from(STATE.groups.keys());
+      if (!all.length) return;
+      const allCollapsed = all.every(g => STATE.ui.collapsedGroups.has(g));
+      STATE.ui.collapsedGroups = allCollapsed ? new Set() : new Set(all);
+      renderList();
+    });
+    els.newBtn.addEventListener('click', () => {
+      const row = {
+        ID: 0,
+        GroupName: buildGroupName(STATE.filter.group && STATE.filter.group !== '(без группы)' ? STATE.filter.group : '', STATE.filter.sub || ''),
+        ItemID: null,
+        ItemValue: 1,
+        RequiredItems: '',
+        Price: 0,
+        WorldID: 0,
+      };
+      setSelected(row, true);
+      setStatus('Создание новой записи… (нажмите Сохранить)');
+    });
+
+    els.filterGroup.addEventListener('change', () => {
+      STATE.filter.group = els.filterGroup.value || '';
+      STATE.filter.sub = '';
+      fillSubFilter();
+      renderList();
+    });
+    els.filterSub.addEventListener('change', () => {
+      STATE.filter.sub = els.filterSub.value || '';
+      renderList();
+    });
+
+    els.search.addEventListener('input', EditorCore.utils.debounce(() => {
+      STATE.search = els.search.value || '';
+      renderList();
+    }, 150));
+
+    const onGroupChanged = () => {
+      if (!STATE.selected) return;
+      STATE.selected.Group = String(els.editGroup.value || '').trim();
+      STATE.selected.SubGroup = String(els.editSub.value || '').trim();
+      updateSubDatalist();
+      const groupName = buildGroupName(STATE.selected.Group, STATE.selected.SubGroup);
+      els.groupPreview.textContent = groupName || '—';
+      markDirty(true);
+      updateHeader();
+    };
+    els.editGroup.addEventListener('input', onGroupChanged);
+    els.editSub.addEventListener('input', onGroupChanged);
+
+    els.save.addEventListener('click', save);
+    els.del.addEventListener('click', remove);
+
+    // Keyboard shortcuts
+    window.addEventListener('keydown', (e) => {
+      const isMac = navigator.platform.toLowerCase().includes('mac');
+      const mod = isMac ? e.metaKey : e.ctrlKey;
+      if (mod && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        if (!els.save.disabled) save();
+      }
+      if (mod && e.key.toLowerCase() === 'n') {
+        e.preventDefault();
+        els.newBtn.click();
+      }
+      if (e.key === 'Delete' && !els.del.disabled) {
+        // prevent accidental delete while typing in inputs
+        const t = e.target;
+        const tag = (t && t.tagName) ? t.tagName.toLowerCase() : '';
+        if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+        remove();
+      }
+    });
+
+    // Warn on unsaved changes
+    window.addEventListener('beforeunload', (e) => {
+      if (!STATE.isDirty) return;
+      e.preventDefault();
+      e.returnValue = '';
+    });
+
+    (async () => {
+      await loadLookups();
+      await loadRows();
+      setSelected(null, false);
+    })();
+  </script>
+</body>
+</html>

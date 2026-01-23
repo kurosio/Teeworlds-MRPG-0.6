@@ -65,4 +65,28 @@
     getFieldRenderOptions,
     FIELD_RENDER_OPTIONS,
   };
+
+  // UI presets to keep schemas small and consistent across editors.
+  // Usage in editor schemas:
+  //   ui: EditorCore.presets.tags({ options:[...], placeholder:'...', allowCreate:false })
+  //   ui: EditorCore.presets.tags({ datasource:'item', valueType:'number', labelMode:'id_name' })
+  window.EditorCore.presets = window.EditorCore.presets || {};
+  window.EditorCore.presets.tags = (cfg = {}) => {
+    const c = cfg || {};
+    const options = Array.isArray(c.options)
+      ? c.options
+      : (typeof c.options === 'string'
+          ? c.options.split(',').map(s => s.trim()).filter(Boolean)
+          : []);
+    return {
+      type: 'tags',
+      options,
+      datasource: c.datasource || c.dbKey || '',
+      labelMode: c.labelMode || undefined,
+      valueType: c.valueType || 'string',
+      allowCreate: !!c.allowCreate,
+      placeholder: c.placeholder || c.searchPlaceholder || 'Добавить…',
+      searchPlaceholder: c.searchPlaceholder || undefined,
+    };
+  };
 })();

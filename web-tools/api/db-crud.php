@@ -1,234 +1,314 @@
 <?php
-// api/db-crud.php
-// Generic CRUD endpoint for DB-backed editors.
+// Generic CRUD API for DB editors.
+// Endpoint: api/db-crud.php
+// Actions (query param action=...):
+//  - list   (GET)  : resource, search, limit, offset
+//  - get    (GET)  : resource, id
+//  - create (POST) : resource, {data:{...}}
+//  - update (POST) : resource, id, {data:{...}}
+//  - delete (POST) : resource, id
 
 declare(strict_types=1);
 
 header('Content-Type: application/json; charset=utf-8');
-header('X-Content-Type-Options: nosniff');
 
-$method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
-
-function json_out(array $payload, int $code = 200): void {
+function respond(array $payload, int $code = 200): void {
   http_response_code($code);
   echo json_encode($payload, JSON_UNESCAPED_UNICODE);
   exit;
 }
 
-$rootDir = dirname(__DIR__); // /web-tools
-$dataDir = $rootDir . DIRECTORY_SEPARATOR . 'data';
-$configPath = $dataDir . DIRECTORY_SEPARATOR . 'db-config.json';
-
-function read_config(string $configPath): array {
-  if (!file_exists($configPath)) return [];
-  $raw = file_get_contents($configPath);
-  if (!$raw) return [];
-  $cfg = json_decode($raw, true);
-  if (json_last_error() !== JSON_ERROR_NONE || !is_array($cfg)) return [];
-  return $cfg;
-}
-
-function read_body_json(): array {
+function read_json_body(): array {
   $raw = file_get_contents('php://input');
   if (!$raw) return [];
   $data = json_decode($raw, true);
-  if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
-    json_out(['ok' => false, 'error' => 'Некорректный JSON'], 400);
-  }
-  return $data;
+  return is_array($data) ? $data : [];
 }
 
-function build_dsn(array $cfg): string {
-  $host = $cfg['host'] ?? '';
-  $port = $cfg['port'] ?? 3306;
-  $db = $cfg['database'] ?? '';
-  if (!$host || !$db) {
-    json_out(['ok' => false, 'error' => 'Конфиг БД не заполнен'], 400);
-  }
-  $port = is_numeric($port) ? (int)$port : 3306;
-  return sprintf('mysql:host=%s;port=%d;dbname=%s;charset=utf8mb4', $host, $port, $db);
+function cfg_path(): string {
+  return dirname(__DIR__) . '/data/db-config.json';
 }
 
-function get_pdo(array $cfg): PDO {
-  $dsn = build_dsn($cfg);
-  $user = $cfg['user'] ?? '';
-  $pass = $cfg['password'] ?? '';
-  try {
-    return new PDO($dsn, $user, $pass, [
-      PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
-      PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
-      PDO::ATTR_EMULATE_PREPARES => false,
-    ]);
-  } catch (Throwable $e) {
-    json_out(['ok' => false, 'error' => 'Ошибка подключения к БД', 'details' => $e->getMessage()], 500);
-  }
+function load_cfg(): array {
+  $path = cfg_path();
+  if (!file_exists($path)) return [];
+  $raw = file_get_contents($path);
+  $cfg = json_decode($raw ?: 'null', true);
+  return is_array($cfg) ? $cfg : [];
 }
 
-// Resource map: define DB-backed entities here.
-// Add new DB editors by adding a resource entry.
+function db_connect(): mysqli {
+  $cfg = load_cfg();
+  $host = (string)($cfg['host'] ?? '127.0.0.1');
+  $port = (int)($cfg['port'] ?? 3306);
+  $db   = (string)($cfg['database'] ?? '');
+  $user = (string)($cfg['user'] ?? 'root');
+  $pass = (string)($cfg['password'] ?? '');
+
+  mysqli_report(MYSQLI_REPORT_OFF);
+  $mysqli = @new mysqli($host, $user, $pass, $db, $port);
+  if ($mysqli->connect_errno) {
+    throw new RuntimeException('DB connection failed: ' . $mysqli->connect_error);
+  }
+  $mysqli->set_charset('utf8mb4');
+  return $mysqli;
+}
+
+function is_assoc(array $arr): bool {
+  $i = 0;
+  foreach ($arr as $k => $_) {
+    if ($k !== $i++) return true;
+  }
+  return false;
+}
+
+// Resource map.
+// IMPORTANT: only whitelisted tables/columns are accessible.
 $RESOURCES = [
+  // Existing editor: vouchers-editor.html
   'vouchers' => [
     'table' => 'tw_voucher',
     'pk' => 'ID',
     'columns' => ['Code', 'Data', 'Multiple', 'ValidUntil'],
-    'search' => 'Code',
-    // per-column type coercion
-    'types' => [
-      'ID' => 'int',
-      'Multiple' => 'bool',
-      'ValidUntil' => 'int',
+    'search' => ['Code', 'ID'],
+    'json' => ['Data'],
+    'order' => 'ID DESC',
+  ],
+  // Existing editor: mobs-editor.html
+  'bots_mobs' => [
+    'table' => 'tw_bots_mobs',
+    'pk' => 'ID',
+    'columns' => [
+      'BotID','WorldID','PositionX','PositionY','Debuffs','Behavior','Level','Power','Number','Respawn','Radius','Boss',
+      'it_drop_0','it_drop_1','it_drop_2','it_drop_3','it_drop_4','it_drop_count','it_drop_chance'
     ],
-    // JSON column transformation
-    'json_columns' => ['Data'],
+    'search' => ['ID','BotID'],
+    'order' => 'ID DESC',
+  ],
+  // New editor: crafts-editor.html
+  'crafts' => [
+    'table' => 'tw_crafts_list',
+    'pk' => 'ID',
+    'columns' => ['GroupName','ItemID','ItemValue','RequiredItems','Price','WorldID'],
+    'search' => ['GroupName','ID','ItemID'],
+    'order' => 'ID ASC',
   ],
 ];
 
-$action = (string)($_GET['action'] ?? '');
-$resource = (string)($_GET['resource'] ?? '');
-
-if (!isset($RESOURCES[$resource])) {
-  json_out(['ok' => false, 'error' => 'Неизвестный resource'], 400);
-}
-
-$cfg = read_config($configPath);
-if (!$cfg) json_out(['ok' => false, 'error' => 'Конфиг БД не настроен'], 400);
-$pdo = get_pdo($cfg);
-
-$def = $RESOURCES[$resource];
-$table = $def['table'];
-$pk = $def['pk'];
-$cols = $def['columns'];
-$searchCol = $def['search'] ?? null;
-$types = $def['types'] ?? [];
-$jsonCols = $def['json_columns'] ?? [];
-
-function coerce_row(array $row, array $types, array $jsonCols): array {
-  foreach ($row as $k => $v) {
-    if (isset($types[$k])) {
-      $t = $types[$k];
-      if ($t === 'int') $row[$k] = (int)$v;
-      if ($t === 'bool') $row[$k] = (int)$v ? 1 : 0;
-    }
-    if (in_array($k, $jsonCols, true)) {
-      $decoded = json_decode((string)$v, true);
-      $row[$k] = (json_last_error() === JSON_ERROR_NONE) ? $decoded : (string)$v;
+function decode_json_cols(array $row, array $jsonCols): array {
+  foreach ($jsonCols as $col) {
+    if (!array_key_exists($col, $row)) continue;
+    $val = $row[$col];
+    if ($val == null) continue;
+    if (is_array($val) || is_object($val)) continue;
+    $s = (string)$val;
+    $trim = trim($s);
+    if ($trim === '') continue;
+    $decoded = json_decode($s, true);
+    if (json_last_error() === JSON_ERROR_NONE) {
+      $row[$col] = $decoded;
     }
   }
   return $row;
 }
 
-function encode_json_columns(array $data, array $jsonCols): array {
-  foreach ($jsonCols as $k) {
-    if (array_key_exists($k, $data) && is_array($data[$k])) {
-      $data[$k] = json_encode($data[$k], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+function encode_json_cols(array $data, array $jsonCols): array {
+  foreach ($jsonCols as $col) {
+    if (!array_key_exists($col, $data)) continue;
+    $v = $data[$col];
+    if (is_array($v) || is_object($v)) {
+      $data[$col] = json_encode($v, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
     }
   }
   return $data;
 }
 
-if ($action === 'list' && $method === 'GET') {
-  $search = trim((string)($_GET['search'] ?? ''));
-  $limit = (int)($_GET['limit'] ?? 100);
-  $offset = (int)($_GET['offset'] ?? 0);
-  if ($limit < 1) $limit = 1;
-  if ($limit > 500) $limit = 500;
-  if ($offset < 0) $offset = 0;
-  if (mb_strlen($search) > 100) $search = mb_substr($search, 0, 100);
-
-  $selectCols = array_merge([$pk], $cols);
-  $selectList = implode(', ', array_map(fn($c) => "$c", $selectCols));
-  $sql = "SELECT $selectList FROM $table";
-  $params = [];
-  if ($search !== '' && $searchCol) {
-    $sql .= " WHERE $searchCol LIKE :q";
-    $params[':q'] = '%' . $search . '%';
+function sanitize_columns(array $data, array $allowed): array {
+  $out = [];
+  foreach ($allowed as $col) {
+    if (array_key_exists($col, $data)) $out[$col] = $data[$col];
   }
-  $sql .= " ORDER BY $pk DESC LIMIT :limit OFFSET :offset";
-
-  try {
-    $stmt = $pdo->prepare($sql);
-    foreach ($params as $k => $v) $stmt->bindValue($k, $v);
-    $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
-    $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
-    $stmt->execute();
-    $rows = $stmt->fetchAll() ?: [];
-    $rows = array_map(fn($r) => coerce_row($r, $types, $jsonCols), $rows);
-    json_out(['ok' => true, 'rows' => $rows]);
-  } catch (Throwable $e) {
-    json_out(['ok' => false, 'error' => 'Ошибка запроса к БД', 'details' => $e->getMessage()], 500);
-  }
+  return $out;
 }
 
-if ($action === 'get' && $method === 'GET') {
-  $id = (int)($_GET['id'] ?? 0);
-  if ($id <= 0) json_out(['ok' => false, 'error' => 'Некорректный ID'], 400);
-  $selectCols = array_merge([$pk], $cols);
-  $selectList = implode(', ', array_map(fn($c) => "$c", $selectCols));
-  try {
-    $stmt = $pdo->prepare("SELECT $selectList FROM $table WHERE $pk = :id LIMIT 1");
-    $stmt->execute([':id' => $id]);
-    $row = $stmt->fetch();
-    if (!$row) json_out(['ok' => false, 'error' => 'Не найдено'], 404);
-    json_out(['ok' => true, 'row' => coerce_row($row, $types, $jsonCols)]);
-  } catch (Throwable $e) {
-    json_out(['ok' => false, 'error' => 'Ошибка запроса к БД', 'details' => $e->getMessage()], 500);
-  }
-}
+$action = (string)($_GET['action'] ?? '');
+$resource = (string)($_GET['resource'] ?? '');
 
-if (($action === 'create' || $action === 'update') && $method === 'POST') {
-  $body = read_body_json();
-  $data = $body['data'] ?? null;
-  if (!is_array($data)) json_out(['ok' => false, 'error' => 'Нет data'], 400);
+try {
+  if (!$action) respond(['ok' => false, 'error' => 'Missing action'], 400);
+  if (!isset($RESOURCES[$resource])) respond(['ok' => false, 'error' => 'Unknown resource'], 400);
+  $R = $RESOURCES[$resource];
+  $table = $R['table'];
+  $pk = $R['pk'];
+  $cols = $R['columns'];
+  $jsonCols = $R['json'] ?? [];
+  $order = $R['order'] ?? "$pk DESC";
+  $searchCols = $R['search'] ?? [$pk];
 
-  // Only allow declared columns
-  $filtered = [];
-  foreach ($cols as $c) {
-    if (array_key_exists($c, $data)) $filtered[$c] = $data[$c];
-  }
-  $filtered = encode_json_columns($filtered, $jsonCols);
+  $mysqli = db_connect();
 
-  try {
-    if ($action === 'create') {
-      $names = array_keys($filtered);
-      $placeholders = array_map(fn($n) => ':' . $n, $names);
-      $sql = sprintf(
-        'INSERT INTO %s (%s) VALUES (%s)',
-        $table,
-        implode(', ', $names),
-        implode(', ', $placeholders)
-      );
-      $stmt = $pdo->prepare($sql);
-      foreach ($filtered as $k => $v) $stmt->bindValue(':' . $k, $v);
-      $stmt->execute();
-      $newId = (int)$pdo->lastInsertId();
-      json_out(['ok' => true, 'id' => $newId]);
+  if ($action === 'list') {
+    $search = trim((string)($_GET['search'] ?? ''));
+    $limit = max(1, min(5000, (int)($_GET['limit'] ?? 100)));
+    $offset = max(0, (int)($_GET['offset'] ?? 0));
+
+    $where = '';
+    $types = '';
+    $params = [];
+    if ($search !== '') {
+      $parts = [];
+      $isNum = ctype_digit($search);
+      foreach ($searchCols as $c) {
+        if ($c === $pk && $isNum) {
+          $parts[] = "`$c` = ?";
+          $types .= 'i';
+          $params[] = (int)$search;
+        } else {
+          $parts[] = "`$c` LIKE ?";
+          $types .= 's';
+          $params[] = '%' . $search . '%';
+        }
+      }
+      if ($parts) $where = 'WHERE ' . implode(' OR ', $parts);
     }
 
-    // update
-    $id = (int)($_GET['id'] ?? 0);
-    if ($id <= 0) json_out(['ok' => false, 'error' => 'Некорректный ID'], 400);
-    $pairs = implode(', ', array_map(fn($n) => "$n = :$n", array_keys($filtered)));
-    $sql = sprintf('UPDATE %s SET %s WHERE %s = :id', $table, $pairs, $pk);
-    $stmt = $pdo->prepare($sql);
-    foreach ($filtered as $k => $v) $stmt->bindValue(':' . $k, $v);
-    $stmt->bindValue(':id', $id, PDO::PARAM_INT);
+    $colSql = '`' . $pk . '`, ' . implode(', ', array_map(fn($c) => '`' . $c . '`', $cols));
+    $sql = "SELECT $colSql FROM `$table` $where ORDER BY $order LIMIT ? OFFSET ?";
+    $stmt = $mysqli->prepare($sql);
+    if ($stmt === false) throw new RuntimeException('Prepare failed');
+    if ($types) {
+      $types2 = $types . 'ii';
+      $params2 = array_merge($params, [$limit, $offset]);
+      $stmt->bind_param($types2, ...$params2);
+    } else {
+      $stmt->bind_param('ii', $limit, $offset);
+    }
     $stmt->execute();
-    json_out(['ok' => true]);
-  } catch (Throwable $e) {
-    json_out(['ok' => false, 'error' => 'Ошибка записи в БД', 'details' => $e->getMessage()], 500);
+    $res = $stmt->get_result();
+    $rows = [];
+    while ($r = $res->fetch_assoc()) {
+      $rows[] = decode_json_cols($r, $jsonCols);
+    }
+    $stmt->close();
+    $hasMore = count($rows) >= $limit;
+    $mysqli->close();
+    respond(['ok' => true, 'rows' => $rows, 'has_more' => $hasMore]);
   }
-}
 
-if ($action === 'delete' && $method === 'POST') {
-  $id = (int)($_GET['id'] ?? 0);
-  if ($id <= 0) json_out(['ok' => false, 'error' => 'Некорректный ID'], 400);
-  try {
-    $stmt = $pdo->prepare("DELETE FROM $table WHERE $pk = :id");
-    $stmt->execute([':id' => $id]);
-    json_out(['ok' => true]);
-  } catch (Throwable $e) {
-    json_out(['ok' => false, 'error' => 'Ошибка удаления', 'details' => $e->getMessage()], 500);
+  if ($action === 'get') {
+    $id = (string)($_GET['id'] ?? '');
+    if ($id === '' || !ctype_digit($id)) respond(['ok' => false, 'error' => 'Invalid id'], 400);
+    $iid = (int)$id;
+    $colSql = '`' . $pk . '`, ' . implode(', ', array_map(fn($c) => '`' . $c . '`', $cols));
+    $sql = "SELECT $colSql FROM `$table` WHERE `$pk` = ? LIMIT 1";
+    $stmt = $mysqli->prepare($sql);
+    if ($stmt === false) throw new RuntimeException('Prepare failed');
+    $stmt->bind_param('i', $iid);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    $row = $res ? $res->fetch_assoc() : null;
+    $stmt->close();
+    $mysqli->close();
+    if (!$row) respond(['ok' => true, 'row' => null]);
+    respond(['ok' => true, 'row' => decode_json_cols($row, $jsonCols)]);
   }
-}
 
-json_out(['ok' => false, 'error' => 'Unknown action'], 404);
+  if ($action === 'create') {
+    $body = read_json_body();
+    $data = is_array($body['data'] ?? null) ? $body['data'] : [];
+    $data = sanitize_columns($data, $cols);
+    $data = encode_json_cols($data, $jsonCols);
+    if (!$data) respond(['ok' => false, 'error' => 'Empty data'], 400);
+
+    $keys = array_keys($data);
+    $placeholders = implode(',', array_fill(0, count($keys), '?'));
+    $colSql = implode(',', array_map(fn($c) => '`' . $c . '`', $keys));
+    $sql = "INSERT INTO `$table` ($colSql) VALUES ($placeholders)";
+    $stmt = $mysqli->prepare($sql);
+    if ($stmt === false) throw new RuntimeException('Prepare failed');
+
+    $types = '';
+    $vals = [];
+    foreach ($keys as $k) {
+      $v = $data[$k];
+      if ($v === null) {
+        // bind null as string, MySQL will coerce (works for ints as well)
+        $types .= 's';
+        $vals[] = null;
+      } elseif (is_int($v) || is_float($v) || (is_string($v) && ctype_digit($v))) {
+        $types .= 'i';
+        $vals[] = (int)$v;
+      } else {
+        $types .= 's';
+        $vals[] = (string)$v;
+      }
+    }
+    $stmt->bind_param($types, ...$vals);
+    $stmt->execute();
+    $newId = (int)$mysqli->insert_id;
+    $stmt->close();
+    $mysqli->close();
+    respond(['ok' => true, 'id' => $newId]);
+  }
+
+  if ($action === 'update') {
+    $id = (string)($_GET['id'] ?? '');
+    if ($id === '' || !ctype_digit($id)) respond(['ok' => false, 'error' => 'Invalid id'], 400);
+    $iid = (int)$id;
+    $body = read_json_body();
+    $data = is_array($body['data'] ?? null) ? $body['data'] : [];
+    $data = sanitize_columns($data, $cols);
+    $data = encode_json_cols($data, $jsonCols);
+    if (!$data) respond(['ok' => false, 'error' => 'Empty data'], 400);
+
+    $keys = array_keys($data);
+    $setSql = implode(', ', array_map(fn($c) => '`' . $c . '` = ?', $keys));
+    $sql = "UPDATE `$table` SET $setSql WHERE `$pk` = ? LIMIT 1";
+    $stmt = $mysqli->prepare($sql);
+    if ($stmt === false) throw new RuntimeException('Prepare failed');
+
+    $types = '';
+    $vals = [];
+    foreach ($keys as $k) {
+      $v = $data[$k];
+      if ($v === null) {
+        $types .= 's';
+        $vals[] = null;
+      } elseif (is_int($v) || is_float($v) || (is_string($v) && ctype_digit($v))) {
+        $types .= 'i';
+        $vals[] = (int)$v;
+      } else {
+        $types .= 's';
+        $vals[] = (string)$v;
+      }
+    }
+    $types .= 'i';
+    $vals[] = $iid;
+
+    $stmt->bind_param($types, ...$vals);
+    $stmt->execute();
+    $stmt->close();
+    $mysqli->close();
+    respond(['ok' => true]);
+  }
+
+  if ($action === 'delete') {
+    $id = (string)($_GET['id'] ?? '');
+    if ($id === '' || !ctype_digit($id)) respond(['ok' => false, 'error' => 'Invalid id'], 400);
+    $iid = (int)$id;
+    $sql = "DELETE FROM `$table` WHERE `$pk` = ? LIMIT 1";
+    $stmt = $mysqli->prepare($sql);
+    if ($stmt === false) throw new RuntimeException('Prepare failed');
+    $stmt->bind_param('i', $iid);
+    $stmt->execute();
+    $stmt->close();
+    $mysqli->close();
+    respond(['ok' => true]);
+  }
+
+  $mysqli->close();
+  respond(['ok' => false, 'error' => 'Unknown action'], 400);
+
+} catch (Throwable $e) {
+  respond(['ok' => false, 'error' => $e->getMessage()], 500);
+}

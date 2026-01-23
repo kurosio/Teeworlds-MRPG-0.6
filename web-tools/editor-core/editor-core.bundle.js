@@ -854,6 +854,17 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
 
   const getInputValue = (input) => {
     if (!input) return undefined;
+    // Custom widgets can store structured values in hidden inputs.
+    // Example: TagSelect stores JSON array in value.
+    if (input.dataset?.valueType === 'json_array') {
+      const raw = String(input.value || '').trim();
+      if (!raw) return [];
+      try {
+        const arr = JSON.parse(raw);
+        if (Array.isArray(arr)) return arr;
+      } catch {}
+      return raw.split(',').map(s => s.trim()).filter(Boolean);
+    }
     // datetime-local parsing to unix seconds (used by some editors)
     if (input.dataset?.valueType === 'unix_seconds') {
       if (!input.value) return 0;
@@ -1121,8 +1132,11 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
            </div>`
         : '';
 
-      const state = useHelperMode ? 'loading' : '';
-      return `<div class="editor-dbselect" ${state ? `data-db-state="${state}"` : ''}>${searchHtml}${manualInputHtml}${selectHtml}${controlsHtml}</div>`;
+      // UI: search (left) + select (right) in one row.
+      // Optimistic default state="connected" when datasource exists to avoid initial double-render.
+      const state = ds ? 'connected' : '';
+      const rowHtml = `<div class="editor-dbselect-row">${searchHtml}${selectHtml}</div>`;
+      return `<div class="editor-dbselect" ${state ? `data-db-state="${state}"` : ''}>${rowHtml}${manualInputHtml}${controlsHtml}</div>`;
     };
 const renderCheckbox = () => {
       const attrs = buildInputAttributes({
@@ -1157,7 +1171,7 @@ const renderCheckbox = () => {
         x: { type: 'number', label: 'X', ui: { min: ui.min, max: ui.max, step: ui.step, placeholder: ui.placeholder } },
         y: { type: 'number', label: 'Y', ui: { min: ui.min, max: ui.max, step: ui.step, placeholder: ui.placeholder } }
       };
-      return `<div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">${labelHtml}<div class="grid grid-cols-2 gap-2">${renderComposite(vecFields)}</div>${hintHtml}</div>`;
+      return `<div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">${labelHtml}<div class="grid grid-cols-1 sm:grid-cols-2 gap-2">${renderComposite(vecFields)}</div>${hintHtml}</div>`;
     }
 
     if (field.type === 'item') {
@@ -1166,7 +1180,7 @@ const renderCheckbox = () => {
         id: { type: 'db_select', label: 'Предмет', datasource: itemDs || undefined, ui: { dbKey: ui.dbKey || 'item', placeholder: ui.placeholder || '— выберите предмет —', inputLabel: 'ID', selectLabel: 'Предмет (БД)' } },
         value: { type: 'number', label: 'Value', ui: { min: ui.min, max: ui.max, step: ui.step, placeholder: ui.placeholder } }
       };
-      return `<div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">${labelHtml}<div class="grid grid-cols-2 gap-2">${renderComposite(itemFields)}</div>${hintHtml}</div>`;
+      return `<div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">${labelHtml}<div class="grid grid-cols-1 sm:grid-cols-2 gap-2">${renderComposite(itemFields)}</div>${hintHtml}</div>`;
     }
 
     if (field.type === 'list') {
@@ -1218,6 +1232,38 @@ const renderCheckbox = () => {
 
     if (ui.type === 'multiselect') {
       return `<div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">${labelHtml}${renderSelect(true)}${hintHtml}</div>`;
+    }
+
+    if (ui.type === 'tags') {
+      // TagSelect: visual chips + search, value stored in a hidden input as JSON array.
+      const opts = Array.isArray(ui.options) ? ui.options : [];
+      const ph = ui.searchPlaceholder || ui.placeholder || 'Добавить…';
+      const allowCreate = ui.allowCreate ? '1' : '0';
+
+      const hiddenAttrs = buildInputAttributes({
+        path,
+        field,
+        classes: '',
+        includeName,
+        includeDataKey,
+        includeDataPath,
+        extraAttrs: 'type="hidden" data-value-type="json_array"'
+      });
+
+      const initial = JSON.stringify(normalizeMultiValue(value));
+      return `
+        <div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">
+          ${labelHtml}
+          <div class="editor-tags" data-tags-options="${escapeAttr(JSON.stringify(opts))}" data-tags-placeholder="${escapeAttr(ph)}" data-tags-allow-create="${allowCreate}">
+            <input ${hiddenAttrs} value="${escapeAttr(initial)}">
+            <div class="editor-tags-selected"></div>
+            <div class="editor-tags-searchrow">
+              <input type="search" class="${inputClass} editor-tags-search" placeholder="${escapeAttr(ph)}" />
+            </div>
+            <div class="editor-tags-options"></div>
+          </div>
+          ${hintHtml}
+        </div>`;
     }
 
     if (ui.format === 'date' || field.type === 'date') {
@@ -1814,6 +1860,130 @@ const renderCheckbox = () => {
 
   const UIManager = {
     async init(root = document) {
+      // 0) TagSelect widgets (chips + search) - no DB required
+      // They store the actual value in a hidden input with data-value-type="json_array".
+      root.querySelectorAll('.editor-tags').forEach((widget) => {
+        if (widget.dataset.tagsInited === '1') return;
+        widget.dataset.tagsInited = '1';
+
+        const hidden = widget.querySelector('input[type="hidden"][data-path]');
+        const selectedWrap = widget.querySelector('.editor-tags-selected');
+        const optionsWrap = widget.querySelector('.editor-tags-options');
+        const search = widget.querySelector('.editor-tags-search');
+
+        const safeJson = (raw, fallback) => {
+          if (!raw) return fallback;
+          try { return JSON.parse(raw); } catch { return fallback; }
+        };
+
+        const normalizeOptions = (raw) => {
+          const arr = Array.isArray(raw) ? raw : [];
+          return arr.map((o) => {
+            if (o && typeof o === 'object') {
+              return { value: String(o.value ?? o.label ?? ''), label: String(o.label ?? o.value ?? '') };
+            }
+            return { value: String(o), label: String(o) };
+          }).filter(o => o.value);
+        };
+
+        const allOptions = normalizeOptions(safeJson(widget.dataset.tagsOptions, []));
+        const allowCreate = widget.dataset.tagsAllowCreate === '1';
+
+        const readValue = () => {
+          const v = window.EditorCore?.FieldRenderer?.getInputValue ? window.EditorCore.FieldRenderer.getInputValue(hidden) : [];
+          return Array.isArray(v) ? v.map(x => String(x)).filter(Boolean) : [];
+        };
+
+        const writeValue = (arr) => {
+          if (!hidden) return;
+          const uniq = Array.from(new Set((Array.isArray(arr) ? arr : []).map(x => String(x)).filter(Boolean)));
+          hidden.value = JSON.stringify(uniq);
+          hidden.dispatchEvent(new Event('input', { bubbles: true }));
+          hidden.dispatchEvent(new Event('change', { bubbles: true }));
+        };
+
+        const escapeHtml = (s) => String(s)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+
+        const render = () => {
+          if (!hidden || !selectedWrap || !optionsWrap) return;
+          const q = String(search?.value || '').trim().toLowerCase();
+          const selected = readValue();
+          const selectedSet = new Set(selected.map(x => x.toLowerCase()));
+
+          if (!selected.length) {
+            selectedWrap.innerHTML = `<div class="editor-tags-empty">Ничего не выбрано</div>`;
+          } else {
+            selectedWrap.innerHTML = selected.map((v) => {
+              const opt = allOptions.find(o => o.value.toLowerCase() === v.toLowerCase());
+              const label = opt ? opt.label : v;
+              return `
+                <button type="button" class="editor-tag" data-tag-remove="${escapeHtml(v)}" title="Убрать">
+                  <span class="editor-tag-label">${escapeHtml(label)}</span>
+                  <span class="editor-tag-x">×</span>
+                </button>`;
+            }).join('');
+          }
+
+          const filtered = allOptions.filter((o) => {
+            if (selectedSet.has(o.value.toLowerCase())) return false;
+            if (!q) return true;
+            return o.label.toLowerCase().includes(q) || o.value.toLowerCase().includes(q);
+          });
+
+          let extraCreate = '';
+          if (allowCreate && q) {
+            const exists = allOptions.some(o => o.value.toLowerCase() === q || o.label.toLowerCase() === q);
+            if (!exists) {
+              extraCreate = `
+                <button type="button" class="editor-tag-option" data-tag-add="${escapeHtml(search.value.trim())}">
+                  + Добавить: <span class="editor-tag-option-strong">${escapeHtml(search.value.trim())}</span>
+                </button>`;
+            }
+          }
+
+          optionsWrap.innerHTML = `
+            <div class="editor-tags-options-inner">
+              ${extraCreate}
+              ${filtered.map((o) => {
+                return `
+                  <button type="button" class="editor-tag-option" data-tag-add="${escapeHtml(o.value)}">
+                    ${escapeHtml(o.label)}
+                  </button>`;
+              }).join('')}
+              ${(!extraCreate && !filtered.length) ? `<div class="editor-tags-empty">Нет вариантов</div>` : ''}
+            </div>`;
+
+          selectedWrap.querySelectorAll('[data-tag-remove]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+              const v = btn.getAttribute('data-tag-remove');
+              writeValue(readValue().filter(x => x.toLowerCase() !== String(v).toLowerCase()));
+              render();
+            });
+          });
+          optionsWrap.querySelectorAll('[data-tag-add]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+              const v = String(btn.getAttribute('data-tag-add') || '').trim();
+              if (!v) return;
+              writeValue(readValue().concat([v]));
+              if (search) search.value = '';
+              render();
+            });
+          });
+        };
+
+        if (search) {
+          search.addEventListener('input', render);
+          search.addEventListener('change', render);
+        }
+
+        render();
+      });
+
       // 1) Dynamic DB selects
       if (window.EditorCore?.DB?.init) {
         await window.EditorCore.DB.init(root);
@@ -1827,8 +1997,20 @@ const renderCheckbox = () => {
           return;
         }
         const failed = sel.dataset.dbFailed === '1';
-        const loaded = sel.dataset.dbLoaded === '1';
-        wrapper.dataset.dbState = (!failed && loaded) ? 'connected' : 'disconnected';
+        if (failed) {
+          wrapper.dataset.dbState = 'disconnected';
+          return;
+        }
+
+        // Searchable selects load incrementally; treat them as "connected" once DB.init has run.
+        if (sel.dataset.dbSearchable === '1') {
+          wrapper.dataset.dbState = 'connected';
+          return;
+        }
+
+        // Bulk selects set dbLoaded. As an extra guard, consider it loaded if it has options.
+        const loaded = sel.dataset.dbLoaded === '1' || (sel.options && sel.options.length > (sel.multiple ? 0 : 1));
+        wrapper.dataset.dbState = loaded ? 'connected' : 'disconnected';
       });
 
       // 2) Toggle state sync (for CSS styling)

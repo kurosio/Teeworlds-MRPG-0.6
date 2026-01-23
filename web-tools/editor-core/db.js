@@ -305,6 +305,353 @@
     }
   };
 
+  // New UI: single searchable input + dropdown ("combo") for db_select.
+  // It binds to an underlying numeric input via data-bind-input-path.
+  const initDbCombo = async (db, combo, root) => {
+    if (!combo || combo.dataset.dbComboInited === '1') return;
+    combo.dataset.dbComboInited = '1';
+
+    const source = combo.dataset.datasource || '';
+    if (!source) return;
+
+    const input = combo.querySelector('.editor-dbcombo-input');
+    const dropdownLocal = combo.querySelector('.editor-dbcombo-dropdown');
+    const clearBtn = combo.querySelector('.editor-dbcombo-clear');
+
+    // Render dropdown in a portal (document.body) so it is never clipped by scroll/overflow containers.
+    // This fixes layout issues inside lists and panels across all editors.
+    let dropdown = dropdownLocal;
+    let portal = null;
+    if (dropdownLocal) {
+      try {
+        portal = document.createElement('div');
+        portal.className = 'editor-dbcombo-dropdown editor-dbcombo-dropdown-portal';
+        portal.setAttribute('role', 'listbox');
+        portal.style.display = 'none';
+        document.body.appendChild(portal);
+        // Hide inline dropdown; we keep it only as a markup anchor for styling defaults.
+        dropdownLocal.style.display = 'none';
+        dropdown = portal;
+      } catch {
+        // If portal creation fails for any reason, gracefully fall back to inline dropdown.
+        dropdown = dropdownLocal;
+        portal = null;
+      }
+    }
+    const bindInputPath = combo.dataset.bindInputPath || '';
+    const placeholder = combo.dataset.placeholder || '— выберите —';
+    const labelMode = (combo.dataset.labelMode || 'id_name').toLowerCase();
+    const pageSize = Number(combo.dataset.dbLimit || 300);
+    const searchable = combo.dataset.dbSearchable === '1';
+
+    const bound = bindInputPath
+      ? root.querySelector(`[data-path="${CSS.escape(bindInputPath)}"]`)
+      : combo.querySelector('input[data-path]');
+
+    const coerceSelected = (v) => {
+      const s = String(v ?? '').trim();
+      if (!s || s === '0') return '';
+      return s;
+    };
+
+    const setDbState = (state) => {
+      combo.setAttribute('data-db-state', state);
+      if (state === 'disconnected') {
+        // Disable the visual combo input (fallback numeric input stays available)
+        if (input) input.disabled = true;
+        if (clearBtn) clearBtn.disabled = true;
+      }
+    };
+
+    const formatLabel = (val, baseLabel) => {
+      const v = String(val);
+      const l = String(baseLabel || '');
+      return labelMode === 'name' ? l : `${v}: ${l}`;
+    };
+
+    const state = {
+      open: false,
+      q: '',
+      items: null,      // for client filter mode
+      activeIndex: -1,
+      lastResults: []
+    };
+
+    const placeDropdown = () => {
+      if (!portal || !input || !dropdown) return;
+      const rect = input.getBoundingClientRect();
+      const margin = 6;
+      const vw = window.innerWidth || document.documentElement.clientWidth || 0;
+      const vh = window.innerHeight || document.documentElement.clientHeight || 0;
+      const availBelow = vh - rect.bottom - margin - 12;
+      const availAbove = rect.top - margin - 12;
+      const preferAbove = availBelow < 160 && availAbove > availBelow;
+
+      // Keep dropdown inside viewport horizontally
+      const left = Math.max(8, Math.min(rect.left, Math.max(8, vw - rect.width - 8)));
+
+      dropdown.style.position = 'fixed';
+      dropdown.style.left = `${left}px`;
+      dropdown.style.right = 'auto';
+      dropdown.style.width = `${Math.max(140, rect.width)}px`;
+      dropdown.style.zIndex = '10000';
+      dropdown.style.maxHeight = `${Math.max(120, Math.min(280, preferAbove ? availAbove : availBelow))}px`;
+
+      if (preferAbove) {
+        dropdown.style.top = '';
+        dropdown.style.bottom = `${Math.max(8, vh - rect.top + margin)}px`;
+      } else {
+        dropdown.style.bottom = '';
+        dropdown.style.top = `${Math.max(8, rect.bottom + margin)}px`;
+      }
+    };
+
+    const close = () => {
+      state.open = false;
+      state.activeIndex = -1;
+      if (dropdown) dropdown.classList.remove('open');
+      if (portal && dropdown) dropdown.style.display = 'none';
+    };
+
+    const open = () => {
+      state.open = true;
+      if (dropdown) dropdown.classList.add('open');
+      if (portal && dropdown) dropdown.style.display = 'block';
+      placeDropdown();
+    };
+
+    if (portal) {
+      const onViewport = () => {
+        if (state.open) placeDropdown();
+      };
+      window.addEventListener('resize', onViewport);
+      // Capture scroll from ANY scrollable parent to keep dropdown aligned
+      window.addEventListener('scroll', onViewport, { capture: true, passive: true });
+    }
+
+    const dispatchBound = () => {
+      if (!bound) return;
+      bound.dispatchEvent(new Event('input', { bubbles: true }));
+      bound.dispatchEvent(new Event('change', { bubbles: true }));
+    };
+
+    const writeBoundValue = (val) => {
+      if (!bound) return;
+      bound.value = val ? String(val) : '0';
+      dispatchBound();
+    };
+
+    const readBoundValue = () => {
+      if (!bound) return '';
+      return coerceSelected(bound.value);
+    };
+
+    const renderList = (items, { emptyText = 'Нет вариантов' } = {}) => {
+      if (!dropdown) return;
+      const arr = Array.isArray(items) ? items : [];
+      state.lastResults = arr;
+
+      if (!arr.length) {
+        dropdown.innerHTML = `<div class="editor-dbcombo-empty">${emptyText}</div>`;
+        return;
+      }
+
+      dropdown.innerHTML = arr.map((it, idx) => {
+        const val = String(it.value);
+        const label = formatLabel(val, it.label);
+        return `<button type="button" class="editor-dbcombo-option" role="option" data-value="${val}" data-index="${idx}">${label.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</button>`;
+      }).join('');
+
+      dropdown.querySelectorAll('.editor-dbcombo-option').forEach((btn) => {
+        btn.addEventListener('click', async () => {
+          const v = String(btn.getAttribute('data-value') || '');
+          if (!v) return;
+          writeBoundValue(v);
+          // Update display label
+          try {
+            const one = await db.getOne(source, v);
+            if (one?.ok && one.item) {
+              input.value = formatLabel(one.item.value, one.item.label);
+            } else {
+              input.value = v;
+            }
+          } catch {
+            input.value = v;
+          }
+          close();
+        });
+      });
+    };
+
+    const ensureDisplay = async () => {
+      if (!input) return;
+      const cur = readBoundValue();
+      if (!cur) {
+        input.value = '';
+        input.placeholder = placeholder;
+        return;
+      }
+      try {
+        const one = await db.getOne(source, cur);
+        if (one?.ok && one.item) {
+          input.value = formatLabel(one.item.value, one.item.label);
+          return;
+        }
+      } catch {}
+      // Fallback: show raw id
+      input.value = cur;
+    };
+
+    const loadClientItemsIfNeeded = async () => {
+      if (state.items) return true;
+      const res = await db.list(source, { limit: 5000, offset: 0 });
+      if (!res?.ok) return false;
+      state.items = res.items || [];
+      return true;
+    };
+
+    const query = async (qRaw) => {
+      if (!input) return;
+      const q = String(qRaw ?? '').trim();
+      state.q = q;
+
+      // If DB is down -> show fallback
+      try {
+        if (searchable) {
+          const res = await db.list(source, { search: q, limit: pageSize, offset: 0, withTotal: false });
+          if (!res?.ok) {
+            setDbState('disconnected');
+            close();
+            return;
+          }
+          setDbState('connected');
+          renderList(res.items || [], { emptyText: q ? 'Ничего не найдено' : 'Нет вариантов' });
+          return;
+        }
+
+        const ok = await loadClientItemsIfNeeded();
+        if (!ok) {
+          setDbState('disconnected');
+          close();
+          return;
+        }
+        setDbState('connected');
+        const needle = q.toLowerCase();
+        const filtered = !needle
+          ? state.items.slice(0, pageSize)
+          : state.items.filter((it) => {
+              const v = String(it.value).toLowerCase();
+              const l = String(it.label || '').toLowerCase();
+              return v.includes(needle) || l.includes(needle) || `${v}: ${l}`.includes(needle);
+            }).slice(0, pageSize);
+        renderList(filtered, { emptyText: q ? 'Ничего не найдено' : 'Нет вариантов' });
+      } catch {
+        setDbState('disconnected');
+        close();
+      }
+    };
+
+    // Events
+    let t = null;
+    const debouncedQuery = (q) => {
+      if (t) clearTimeout(t);
+      t = setTimeout(() => query(q), 150);
+    };
+
+    if (input) {
+      input.addEventListener('focus', () => {
+        open();
+        debouncedQuery(input.value);
+      });
+      input.addEventListener('click', () => {
+        open();
+        debouncedQuery(input.value);
+      });
+      input.addEventListener('input', () => {
+        open();
+        debouncedQuery(input.value);
+      });
+      input.addEventListener('keydown', (e) => {
+        if (!dropdown) return;
+        const opts = Array.from(dropdown.querySelectorAll('.editor-dbcombo-option'));
+
+        if (e.key === 'Escape') {
+          close();
+          return;
+        }
+        if (e.key === 'ArrowDown') {
+          if (!opts.length) return;
+          e.preventDefault();
+          state.activeIndex = Math.min(opts.length - 1, state.activeIndex + 1);
+          opts.forEach(b => b.classList.remove('active'));
+          opts[state.activeIndex]?.classList.add('active');
+          opts[state.activeIndex]?.scrollIntoView?.({ block: 'nearest' });
+          return;
+        }
+        if (e.key === 'ArrowUp') {
+          if (!opts.length) return;
+          e.preventDefault();
+          state.activeIndex = Math.max(0, state.activeIndex - 1);
+          opts.forEach(b => b.classList.remove('active'));
+          opts[state.activeIndex]?.classList.add('active');
+          opts[state.activeIndex]?.scrollIntoView?.({ block: 'nearest' });
+          return;
+        }
+        if (e.key === 'Enter') {
+          // If option is highlighted -> pick it.
+          if (state.activeIndex >= 0 && opts[state.activeIndex]) {
+            e.preventDefault();
+            opts[state.activeIndex].click();
+            return;
+          }
+          // If user typed a pure numeric id -> accept.
+          const raw = String(input.value || '').trim();
+          if (/^\d+$/.test(raw)) {
+            e.preventDefault();
+            writeBoundValue(raw);
+            ensureDisplay();
+            close();
+          }
+        }
+      });
+      input.addEventListener('blur', () => {
+        // Small delay so click on option works.
+        setTimeout(() => {
+          const ae = document.activeElement;
+          if (!combo.contains(ae) && !(portal && portal.contains(ae))) close();
+        }, 150);
+      });
+    }
+
+    if (clearBtn) {
+      clearBtn.addEventListener('click', (e) => {
+        e.preventDefault();
+        writeBoundValue('');
+        if (input) input.value = '';
+        close();
+        if (input) input.focus();
+      });
+    }
+
+    // Close on outside click
+    if (combo.dataset.dbComboOutside !== '1') {
+      combo.dataset.dbComboOutside = '1';
+      document.addEventListener('mousedown', (e) => {
+        if (!combo.contains(e.target) && !(portal && portal.contains(e.target))) close();
+      });
+    }
+
+    // Keep display synced when underlying input changes
+    if (bound && bound.dataset.dbComboSync !== '1') {
+      bound.dataset.dbComboSync = '1';
+      bound.addEventListener('input', ensureDisplay);
+      bound.addEventListener('change', ensureDisplay);
+    }
+
+    // Initial label
+    await ensureDisplay();
+  };
+
   const DB = {
     endpoint: DEFAULT_ENDPOINT,
 
@@ -352,7 +699,8 @@
 
     async init(root = document) {
       const selects = Array.from(root.querySelectorAll('select[data-datasource]'));
-      if (!selects.length) return;
+      const combos = Array.from(root.querySelectorAll('.editor-dbcombo[data-datasource]'));
+      if (!selects.length && !combos.length) return;
 
       const bySource = new Map();
       for (const el of selects) {
@@ -437,6 +785,11 @@
         }
 
         initBulkSelect(source, els, root, items);
+      }
+
+      // Init new db_select combo widgets
+      for (const combo of combos) {
+        await initDbCombo(this, combo, root);
       }
     }
   };

@@ -15,9 +15,17 @@
   --editor-text-muted:#9ca3af;
   --editor-font:'Inter',ui-sans-serif,system-ui,'Segoe UI',Roboto,Arial,sans-serif;
   --editor-radius:14px;
+
+  /* Global sizing + spacing (shared by ALL editors) */
+  --editor-font-size:15px;
+  --editor-line-height:1.35;
+  --editor-control-h:42px;
+  --editor-space:14px;
+  --editor-space-sm:10px;
 }
 
-.editor-theme{font-family:var(--editor-font);background:var(--editor-bg);color:var(--editor-text);} 
+.editor-theme{font-family:var(--editor-font);background:var(--editor-bg);color:var(--editor-text);font-size:var(--editor-font-size);line-height:var(--editor-line-height);} 
+.editor-theme, .editor-theme *{box-sizing:border-box;}
 .editor-surface{background:var(--editor-surface);border-color:var(--editor-border);color:var(--editor-text);} 
 .editor-panel{background:rgba(15,23,42,.78);border-color:var(--editor-border);color:var(--editor-text);} 
 .editor-card{background:var(--editor-surface-alt);border-color:var(--editor-border);color:var(--editor-text);} 
@@ -107,18 +115,39 @@
 .editor-toggle[data-checked="1"] .editor-toggle-knob{transform:translateX(20px);} 
 
 
-/* Adaptive DB Select (db_select): shows dropdown when DB is connected, otherwise manual ID input */
-.editor-dbselect{display:flex;flex-direction:column;gap:0.5rem;}
-.editor-dbselect-input{display:block;}
-.editor-dbselect-select{display:block;}
+/* Adaptive DB Select (db_select): search (left) + select (right) in one row.
+   When DB is disconnected we show only manual ID input. */
+.editor-dbselect{display:flex;flex-direction:column;gap:0.5rem;min-width:0;}
+/*
+  Compatibility note:
+  db_select fields are used inside many different editor layouts (grids, narrow sidebars, nested cards).
+  Flex + hard min-widths can overflow those containers and "stick out".
+  Grid with minmax(0, 1fr) keeps everything inside the field and still renders as: [search | select].
+*/
+.editor-dbselect-row{
+  display:grid;
+  grid-template-columns:minmax(0, 1fr) minmax(0, 1fr);
+  gap:0.5rem;
+  align-items:stretch;
+  min-width:0;
+}
+.editor-dbselect-search,
+.editor-dbselect-select{
+  min-width:0;
+  max-width:100%;
+}
+
+/* By default we keep manual input hidden (we render it for stability, but show it only when needed) */
+.editor-dbselect-input{display:none;}
+
 .editor-dbselect[data-db-state="connected"] .editor-dbselect-input{display:none;}
-.editor-dbselect[data-db-state="disconnected"] .editor-dbselect-select{display:none;}
+.editor-dbselect[data-db-state="disconnected"] .editor-dbselect-row{display:none;}
 .editor-dbselect[data-db-state="disconnected"] .editor-dbselect-input{display:block;}
 
 
 /* DB select helpers */
-.editor-dbselect-controls{display:flex;align-items:center;gap:0.75rem;}
-.editor-dbselect-meta{font-size:0.85rem;opacity:0.75;}
+.editor-dbselect-controls{display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;min-width:0;}
+.editor-dbselect-meta{font-size:0.85rem;opacity:0.75;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .editor-dbselect-more{width:fit-content;}
 
 
@@ -140,3 +169,211 @@
 .editor-dbselect-controls{justify-content:space-between;}
 .editor-dbselect-more{padding:.35rem .6rem;border-radius:10px;font-size:.85rem;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);}
 .editor-dbselect-more:hover{background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.14);}
+
+/* ------------------------------------------------------------------
+   DB Combo (db_select): one input with searchable dropdown
+   ------------------------------------------------------------------ */
+.editor-dbcombo{position:relative;display:flex;flex-direction:column;gap:.45rem;min-width:0;}
+.editor-dbcombo-control{position:relative;min-width:0;}
+.editor-dbcombo-input{padding-right:2.25rem;}
+.editor-dbcombo-clear{
+  position:absolute;right:.6rem;top:50%;transform:translateY(-50%);
+  width:1.5rem;height:1.5rem;border-radius:10px;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.10);
+  color:rgba(255,255,255,.85);
+}
+.editor-dbcombo-clear:hover{background:rgba(255,255,255,.10);border-color:rgba(255,255,255,.14);} 
+.editor-dbcombo-clear:disabled{opacity:.45;cursor:not-allowed;}
+
+.editor-dbcombo-dropdown{
+  display:none;
+  position:absolute;
+  left:0;right:0;
+  top:calc(var(--editor-control-h) + .55rem);
+  z-index:500;
+  max-height:280px;
+  overflow:auto;
+  border-radius:14px;
+  background:rgba(10,16,30,.96);
+  border:1px solid rgba(255,255,255,.10);
+  box-shadow:0 10px 30px rgba(0,0,0,.45);
+  padding:.35rem;
+}
+
+.editor-dbcombo-dropdown-portal{position:fixed;left:0;top:0;right:auto;bottom:auto;z-index:10000;}
+.editor-dbcombo-dropdown.open{display:block;}
+.editor-dbcombo-empty{padding:.65rem .75rem;font-size:.9rem;opacity:.75;}
+.editor-dbcombo-option{
+  display:flex;align-items:center;justify-content:flex-start;text-align:left;
+  width:100%;padding:.5rem .65rem;border-radius:12px;
+  background:rgba(255,255,255,.03);
+  border:1px solid rgba(255,255,255,.06);
+  transition:background .15s ease,border-color .15s ease;
+}
+.editor-dbcombo-option:hover{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.10);} 
+.editor-dbcombo-option.active{background:rgba(99,102,241,0.18);border-color:rgba(99,102,241,0.35);} 
+
+/* Fallback numeric input visibility */
+.editor-dbcombo-bound{display:none;}
+.editor-dbcombo[data-db-state="connected"] .editor-dbcombo-bound{display:none;}
+.editor-dbcombo[data-db-state="disconnected"] .editor-dbcombo-control{display:none;}
+.editor-dbcombo[data-db-state="disconnected"] .editor-dbcombo-dropdown{display:none;}
+.editor-dbcombo[data-db-state="disconnected"] .editor-dbcombo-bound{display:block;}
+
+/* TagSelect (chips + search) */
+.editor-tags{display:flex;flex-direction:column;gap:.6rem;min-width:0;}
+.editor-tags-selected{display:flex;flex-wrap:wrap;gap:.5rem;max-height:7.5rem;overflow:auto;padding-right:.15rem;}
+.editor-tags-empty{font-size:.85rem;opacity:.75;}
+.editor-tag{display:inline-flex;align-items:center;gap:.45rem;max-width:100%;padding:.35rem .55rem;border-radius:999px;background:rgba(79,70,229,.18);border:1px solid rgba(79,70,229,.28);color:rgba(255,255,255,.95);transition:background .15s ease,border-color .15s ease;}
+.editor-tag-label{max-width:22rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.editor-tag:hover{background:rgba(79,70,229,.24);border-color:rgba(79,70,229,.40);}
+.editor-tag-x{opacity:.85;font-weight:700;}
+.editor-tags-searchrow{display:flex;}
+.editor-tags-options{max-height:220px;overflow:auto;border-radius:12px;background:rgba(0,0,0,0.10);border:1px solid rgba(255,255,255,.06);}
+.editor-tags-options-inner{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:.35rem;padding:.4rem;}
+.editor-tag-option{display:flex;align-items:center;justify-content:flex-start;text-align:left;width:100%;padding:.45rem .6rem;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);transition:background .15s ease,border-color .15s ease;}
+.editor-tag-option:hover{background:rgba(255,255,255,.07);border-color:rgba(255,255,255,.10);} 
+.editor-tag-option.active{background:rgba(99,102,241,0.18);border-color:rgba(99,102,241,0.35);} 
+.editor-tag-option-strong{font-weight:700;}
+
+/* ------------------------------------------------------------------
+   Global form + layout alignment (applies to all editors)
+   ------------------------------------------------------------------ */
+
+/* Field wrapper behaves like a consistent vertical stack */
+.editor-field{display:flex;flex-direction:column;gap:.45rem;}
+.editor-field-nested{display:block;}
+.editor-field,.editor-field-nested,.editor-dbcombo,.editor-dbcombo-control{min-width:0;}
+
+/* ------------------------------------------------------------------
+   Unified grid container for list items (layout: 'grid')
+   Allows per-field templates via CSS vars.
+   ------------------------------------------------------------------ */
+.editor-grid-fields{
+  display:grid;
+  gap:var(--editor-grid-gap,.75rem);
+  grid-template-columns:var(--editor-grid-template,1fr);
+  min-width:0;
+}
+@media (min-width:768px){
+  .editor-grid-fields{
+    grid-template-columns:var(--editor-grid-template-md,repeat(2,minmax(0,1fr)));
+  }
+}
+@media (min-width:1024px){
+  .editor-grid-fields{
+    grid-template-columns:var(--editor-grid-template-lg,var(--editor-grid-template-md,repeat(2,minmax(0,1fr))));
+  }
+}
+.editor-theme .grid > *{min-width:0;}
+.editor-label-block{margin-bottom:0;}
+
+/* Consistent control height across inputs/selects */
+.editor-input,
+.editor-theme .form-input,
+.editor-theme .form-select,
+.editor-theme .form-textarea,
+.editor-dbselect-search,
+.editor-dbselect-select,
+.editor-dbselect-input{
+  min-height:var(--editor-control-h);
+}
+
+/* Ensure plain <select> / <textarea> (without Tailwind classes) still look correct */
+.editor-theme select{
+  min-height:var(--editor-control-h);
+  padding:.55rem .75rem;
+  font-size:.95rem;
+  line-height:1.2;
+  border-radius:12px;
+}
+.editor-theme textarea{
+  padding:.65rem .75rem;
+}
+
+/* DBSelect: keep row aligned + prevent overflow in narrow grids */
+.editor-dbselect-row{align-items:stretch;}
+.editor-dbselect-row > *{min-width:0;}
+
+/* Section helper (optional, can be used by editors) */
+.editor-section{
+  background:rgba(0,0,0,0.10);
+  border:1px solid rgba(255,255,255,0.06);
+  border-radius:16px;
+  padding:var(--editor-space);
+}
+.editor-section + .editor-section{margin-top:var(--editor-space);}
+
+
+/* ------------------------------------------------------------------
+   Unified scrollbars (ALL editors)
+   ------------------------------------------------------------------ */
+/* Firefox */
+.editor-theme{scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.14) transparent;}
+.editor-theme *{scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.14) transparent;}
+
+/* WebKit */
+.editor-theme ::-webkit-scrollbar{width:10px;height:10px;}
+.editor-theme ::-webkit-scrollbar-track{background:rgba(0,0,0,.18);border-radius:999px;}
+.editor-theme ::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:999px;border:2px solid rgba(0,0,0,0);background-clip:padding-box;}
+.editor-theme ::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.18);}
+
+/* Optional helper for explicit scroll containers */
+.editor-scroll{overflow:auto;}
+
+/* ------------------------------------------------------------------
+   Shared UI micro-components (keep markup simple across editors)
+   ------------------------------------------------------------------ */
+.editor-badge{display:inline-flex;align-items:center;gap:.35rem;padding:.25rem .55rem;border-radius:999px;font-size:.75rem;font-weight:700;border:1px solid rgba(255,255,255,.10);background:rgba(255,255,255,.06);color:rgba(229,231,235,.95);}
+
+/* Readonly value block that visually matches inputs */
+.editor-readonly{min-height:var(--editor-control-h);padding:.55rem .75rem;border-radius:12px;border:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,0.16);display:flex;align-items:center;color:rgba(229,231,235,.92);}
+
+/* Sticky toolbar (used by editors with long forms) */
+.editor-sticky-toolbar{position:sticky;top:12px;z-index:30;background:linear-gradient(180deg, rgba(17,28,51,.92) 0%, rgba(17,28,51,.78) 100%);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:14px;backdrop-filter:blur(10px);box-shadow:0 18px 50px rgba(0,0,0,.40);}
+
+/* Icon+input search row */
+.editor-search{position:relative;}
+.editor-search i{position:absolute;left:12px;top:50%;transform:translateY(-50%);opacity:.85;}
+.editor-search input{padding-left:2.35rem;}
+
+/* Helper row header for compact list rows */
+.editor-columns-header{display:grid;gap:12px;align-items:center;padding:8px 12px;border:1px solid rgba(255,255,255,.06);border-radius:14px;background:rgba(255,255,255,.03);color:rgba(229,231,235,.78);font-size:12px;margin-top:10px;margin-bottom:10px;}
+.editor-columns-header .muted{color:rgba(229,231,235,.55);}
+
+/* Details (raw blocks) */
+.editor-details{border:1px solid rgba(255,255,255,.06);border-radius:14px;background:rgba(255,255,255,.03);}
+.editor-details summary{cursor:pointer;list-style:none;padding:10px 12px;font-size:12px;color:rgba(229,231,235,.75);display:flex;align-items:center;justify-content:space-between;}
+.editor-details summary::-webkit-details-marker{display:none;}
+.editor-details .editor-details-body{padding:0 12px 12px 12px;}
+
+/* ------------------------------------------------------------------
+   Mobile drawer (off-canvas sidebar)
+   Used by editors that have a left sidebar (mobs / vouchers etc.)
+   ------------------------------------------------------------------ */
+.editor-drawer{min-width:0;}
+.editor-drawer-backdrop{display:none;}
+@media (max-width: 767px){
+  .editor-drawer{position:fixed;top:0;left:0;bottom:0;z-index:600;transform:translateX(-110%);transition:transform .18s ease;width:20rem;max-width:90vw;}
+  .editor-drawer.open{transform:translateX(0);} 
+  .editor-drawer-backdrop{display:block;position:fixed;inset:0;z-index:590;background:rgba(0,0,0,.55);opacity:0;pointer-events:none;transition:opacity .18s ease;}
+  .editor-drawer-backdrop.open{opacity:1;pointer-events:auto;}
+}
+@media (min-width: 768px){
+  .editor-drawer{position:relative;transform:none;z-index:auto;width:auto;max-width:none;}
+  .editor-drawer-backdrop{display:none!important;}
+}
+
+/* ------------------------------------------------------------------
+   Global small-screen tweaks
+   ------------------------------------------------------------------ */
+@media (max-width: 640px) {
+  .editor-tags-selected{max-height:9.5rem;}
+  .editor-tag-label{max-width:14rem;}
+  .editor-tags-options{max-height:180px;}
+  .editor-tags-options-inner{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));}
+  .editor-dbselect-row{grid-template-columns:1fr;}
+  .editor-toast-container{left:1rem;right:1rem;}
+}

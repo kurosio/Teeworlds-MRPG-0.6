@@ -1,0 +1,821 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Мобы — tw_bots_mobs</title>
+
+  <link rel="stylesheet" href="editor-core/editor-theme.css" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <script src="editor-core/tailwind-theme.js"></script>
+  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+</head>
+
+<body class="editor-theme antialiased">
+  <div class="flex h-screen overflow-hidden">
+    <!-- Sidebar -->
+    <aside id="sidebar" class="editor-drawer w-80 md:w-[26rem] flex-shrink-0 border-r editor-surface flex flex-col">
+      <div class="p-4 border-b border-light flex items-center justify-between gap-3">
+        <div class="flex items-center gap-3 min-w-0">
+          <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background: rgba(244,63,94,.14); border: 1px solid var(--editor-border)">
+            <i class="fa-solid fa-skull text-accent"></i>
+          </div>
+          <div class="min-w-0">
+            <div class="font-bold text-lg truncate">Мобы</div>
+            <div class="text-sm editor-muted-text truncate">tw_bots_mobs • точки спавна</div>
+          </div>
+        </div>
+
+        <button id="toggleSidebar" class="md:hidden editor-btn editor-btn-secondary" title="Закрыть меню">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="p-4 border-b border-light space-y-3">
+        <div class="flex gap-2">
+          <input id="searchInput" class="w-full form-input" placeholder="Поиск: ID / имя моба / мир" />
+          <button id="refreshBtn" class="editor-btn editor-btn-secondary" title="Обновить">
+            <i class="fa-solid fa-rotate"></i>
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 gap-2">
+          <select id="filterMob" class="form-input" data-datasource="bots" data-label-mode="id_name" data-db-searchable="1" data-db-limit="300" data-value-type="number">
+            <option value="">Фильтр: моб (из БД)</option>
+          </select>
+          <select id="filterWorld" class="form-input" data-datasource="worlds" data-label-mode="id_name" data-db-searchable="0" data-db-limit="300" data-value-type="number">
+            <option value="">Фильтр: мир (из БД)</option>
+          </select>
+        </div>
+
+        <button id="newBtn" class="w-full editor-btn editor-btn-primary">
+          <i class="fa-solid fa-plus"></i>
+          <span>Новый спавн</span>
+        </button>
+      </div>
+
+      <div id="list" class="flex-grow overflow-y-auto p-2"></div>
+
+      <div class="p-3 border-t border-light">
+        <button id="moreBtn" class="w-full editor-btn editor-btn-secondary hidden">
+          <i class="fa-solid fa-angles-down"></i>
+          <span>Загрузить ещё</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Mobile drawer backdrop -->
+    <div id="drawerBackdrop" class="editor-drawer-backdrop" aria-hidden="true"></div>
+
+    <!-- Content -->
+    <main class="flex-grow overflow-y-auto p-4 md:p-6">
+      <!-- Mobile top bar (open sidebar) -->
+      <header class="md:hidden sticky top-0 z-40 -mx-4 -mt-4 mb-4 px-4 py-3 editor-surface border-b border-light flex items-center justify-between gap-3">
+        <button id="openSidebarBtn" class="editor-btn editor-btn-secondary" title="Меню">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <div class="font-semibold truncate">Мобы</div>
+        <button id="mobileRefreshBtn" class="editor-btn editor-btn-secondary" title="Обновить">
+          <i class="fa-solid fa-rotate"></i>
+        </button>
+      </header>
+      <div class="max-w-5xl mx-auto">
+        <div class="editor-card p-5 md:p-6">
+          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+            <div class="min-w-0">
+              <div class="text-2xl font-bold" id="title">Выберите моба</div>
+              <div class="editor-muted-text" id="subtitle">или создайте новый спавн</div>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <button id="saveBtn" class="editor-btn editor-btn-primary" disabled>
+                <i class="fa-solid fa-floppy-disk"></i>
+                <span>Сохранить</span>
+              </button>
+              <button id="deleteBtn" class="editor-btn editor-btn-danger" disabled>
+                <i class="fa-solid fa-trash"></i>
+                <span>Удалить</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="mt-6 space-y-6">
+            <div id="dbStatus" class="editor-db-alert"></div>
+
+            <div class="editor-card p-4">
+              <div class="flex items-center justify-between gap-3">
+                <div>
+                  <div class="font-semibold">Поля моба</div>
+                  <div class="editor-muted-text text-sm">DB Select показывает названия, но хранит ID</div>
+                </div>
+                <div id="tabRoot"></div>
+              </div>
+
+              <div class="mt-4">
+                <div id="tab_basic" class="space-y-6"></div>
+                <div id="tab_ai" class="space-y-6 hidden"></div>
+                <div id="tab_drop" class="space-y-6 hidden"></div>
+              </div>
+            </div>
+
+            <div class="editor-card p-4">
+              <div class="font-semibold">Подсказки</div>
+              <div class="editor-muted-text text-sm mt-1">
+                Debuffs/Behavior — это SET поля в БД. В редакторе они представлены как теги (удобный мультивыбор).
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Core -->
+  <script src="editor-core/core.js"></script>
+  <script src="editor-core/utils.js"></script>
+  <script src="editor-core/ui.js"></script>
+  <script src="editor-core/defaults.js"></script>
+  <script src="editor-core/db-map.js"></script>
+  <script src="editor-core/db.js"></script>
+  <script src="editor-core/db-crud.js"></script>
+  <script src="editor-core/ui-manager.js"></script>
+  <script src="editor-core/field-renderer.js"></script>
+  <script src="editor-core/bootstrap.js"></script>
+
+  <script>
+    const DOM = {
+      list: document.getElementById('list'),
+      search: document.getElementById('searchInput'),
+      refresh: document.getElementById('refreshBtn'),
+      newBtn: document.getElementById('newBtn'),
+      title: document.getElementById('title'),
+      subtitle: document.getElementById('subtitle'),
+      save: document.getElementById('saveBtn'),
+      del: document.getElementById('deleteBtn'),
+      dbStatus: document.getElementById('dbStatus'),
+      sidebar: document.getElementById('sidebar'),
+      toggleSidebar: document.getElementById('toggleSidebar'),
+      openSidebarBtn: document.getElementById('openSidebarBtn'),
+      drawerBackdrop: document.getElementById('drawerBackdrop'),
+      mobileRefreshBtn: document.getElementById('mobileRefreshBtn'),
+      more: document.getElementById('moreBtn'),
+      filterMob: document.getElementById('filterMob'),
+      filterWorld: document.getElementById('filterWorld'),
+      tabRoot: document.getElementById('tabRoot'),
+      tabBasic: document.getElementById('tab_basic'),
+      tabAi: document.getElementById('tab_ai'),
+      tabDrop: document.getElementById('tab_drop'),
+    };
+
+    const RESOURCE = 'bots_mobs';
+    const fieldOptions = window.EditorCore.defaults.getFieldRenderOptions('scenario');
+
+    const DEBUFFS = ['Slowdown', 'Poison', 'Fire'];
+    const BEHAVIORS = ['sleepy', 'slower', 'poisonous', 'neutral'];
+
+    const emptyMob = () => ({
+      ID: 0,
+      BotID: 0,
+      WorldID: 0,
+      PositionX: 0,
+      PositionY: 0,
+      Debuffs: [],
+      Behavior: [],
+      Level: 1,
+      Power: 10,
+      Number: 1,
+      Respawn: 1,
+      Radius: 800,
+      Boss: 0,
+      drops: [],
+    });
+
+    const splitSet = (v, allowed = null) => {
+      if (!v) return [];
+      const arr = Array.isArray(v)
+        ? v
+        : String(v).split(',').map(s => s.trim()).filter(Boolean);
+
+      // Normalize values to the canonical option list (case-insensitive)
+      if (!allowed || !Array.isArray(allowed) || !allowed.length) return arr;
+      const map = new Map(allowed.map(x => [String(x).toLowerCase(), String(x)]));
+      return arr
+        .map(x => map.get(String(x).toLowerCase()) || String(x))
+        .map(x => String(x).trim())
+        .filter(Boolean);
+    };
+
+    const joinSet = (arr) => {
+      const a = Array.isArray(arr) ? arr.map(x => String(x).trim()).filter(Boolean) : [];
+      return a.length ? a.join(',') : null;
+    };
+
+    const parsePipeNums = (s, asFloat = false) => {
+      const raw = String(s || '');
+      const parts = raw.split('|').filter(x => x !== '');
+      const out = parts.map(p => asFloat ? parseFloat(p) : parseInt(p, 10)).map(n => Number.isFinite(n) ? n : 0);
+      while (out.length < 5) out.push(0);
+      return out.slice(0, 5);
+    };
+
+    const buildPipeNums = (arr) => {
+      const a = Array.isArray(arr) ? arr : [];
+      const five = Array.from({ length: 5 }, (_, i) => {
+        const v = a[i];
+        const n = (typeof v === 'number') ? v : parseFloat(String(v || '0'));
+        return Number.isFinite(n) ? n : 0;
+      });
+      return `|${five.join('|')}|`;
+    };
+
+    const fromRow = (row) => {
+      const m = emptyMob();
+      m.ID = Number(row.ID || 0);
+      m.BotID = Number(row.BotID || 0);
+      m.WorldID = Number(row.WorldID || 0);
+      m.PositionX = Number(row.PositionX || 0);
+      m.PositionY = Number(row.PositionY || 0);
+      m.Debuffs = splitSet(row.Debuffs, DEBUFFS);
+      m.Behavior = splitSet(row.Behavior, BEHAVIORS);
+      m.Level = Number(row.Level || 1);
+      m.Power = Number(row.Power || 10);
+      m.Number = Number(row.Number || 1);
+      m.Respawn = Number(row.Respawn || 1);
+      m.Radius = Number(row.Radius || 800);
+      m.Boss = Number(row.Boss || 0) ? 1 : 0;
+      const counts = parsePipeNums(row.it_drop_count, false);
+      const chances = parsePipeNums(row.it_drop_chance, true);
+      const rawItems = [row.it_drop_0, row.it_drop_1, row.it_drop_2, row.it_drop_3, row.it_drop_4];
+
+      // IMPORTANT: hide NULL drop slots in UI (NULL in DB means "no slot")
+      const pairs = rawItems.map((x, i) => ({
+        item_id: (x === null || x === undefined) ? 0 : Number(x || 0),
+        count: Number(counts[i] || 0),
+        chance: Number(chances[i] || 0),
+      }));
+      m.drops = pairs.filter(p => Number(p.item_id || 0) > 0);
+      return m;
+    };
+
+    const toPayload = (m) => {
+      const src = Array.isArray(m.drops) ? m.drops.slice(0, 5) : [];
+      // Compact: keep only реально выбранные предметы (item_id > 0)
+      const compact = src.filter(d => Number(d?.item_id || 0) > 0).slice(0, 5);
+      // Pad to 5 slots (DB schema)
+      const padded = compact.concat(Array.from({ length: Math.max(0, 5 - compact.length) }, () => ({ item_id: null, count: 0, chance: 0 })));
+
+      const itemCols = padded.map(d => {
+        const id = Number(d?.item_id || 0);
+        return id > 0 ? id : null;
+      });
+
+      // If slot is empty (NULL in DB) we force count/chance to 0
+      const counts = padded.map(d => (Number(d?.item_id || 0) > 0) ? Number(d?.count || 0) : 0);
+      const chances = padded.map(d => {
+        if (Number(d?.item_id || 0) <= 0) return 0;
+        const n = parseFloat(String(d?.chance ?? 0));
+        return Number.isFinite(n) ? n : 0;
+      });
+
+      return {
+        BotID: Number(m.BotID || 0),
+        WorldID: Number(m.WorldID || 0) > 0 ? Number(m.WorldID) : null,
+        PositionX: Number(m.PositionX || 0),
+        PositionY: Number(m.PositionY || 0),
+        Debuffs: joinSet(m.Debuffs),
+        Behavior: joinSet(m.Behavior),
+        Level: Number(m.Level || 1),
+        Power: Number(m.Power || 10),
+        Number: Number(m.Number || 1),
+        Respawn: Number(m.Respawn || 1),
+        Radius: Number(m.Radius || 800),
+        Boss: Number(m.Boss || 0) ? 1 : 0,
+        it_drop_0: itemCols[0],
+        it_drop_1: itemCols[1],
+        it_drop_2: itemCols[2],
+        it_drop_3: itemCols[3],
+        it_drop_4: itemCols[4],
+        it_drop_count: buildPipeNums(counts),
+        it_drop_chance: buildPipeNums(chances),
+      };
+    };
+
+    const getLabelMap = async (source) => {
+      try {
+        const res = await window.EditorCore.DB.list(source, { limit: 5000, offset: 0 });
+        const map = new Map();
+        if (res?.ok && Array.isArray(res.items)) {
+          for (const it of res.items) map.set(String(it.value), String(it.label || ''));
+        }
+        return map;
+      } catch {
+        return new Map();
+      }
+    };
+
+    const formatMobTitle = (row) => {
+      const bot = STATE.lookups.bots.get(String(row.BotID)) || '';
+      return bot ? bot : `BotID: ${row.BotID}`;
+    };
+
+    const formatWorld = (id) => {
+      const w = STATE.lookups.worlds.get(String(id)) || '';
+      return w ? w : (id ? `#${id}` : '—');
+    };
+
+    const setHeader = () => {
+      if (!STATE.mob) {
+        DOM.title.textContent = 'Выберите моба';
+        DOM.subtitle.textContent = 'или создайте новый спавн';
+        DOM.save.disabled = true;
+        DOM.del.disabled = true;
+        return;
+      }
+      const name = STATE.lookups.bots.get(String(STATE.mob.BotID)) || `BotID: ${STATE.mob.BotID}`;
+      const world = formatWorld(STATE.mob.WorldID);
+      DOM.title.textContent = STATE.mob.ID ? `${name}` : 'Новый спавн';
+      DOM.subtitle.textContent = `ID: ${STATE.mob.ID || '—'} • Мир: ${world} • Уровень: ${STATE.mob.Level || 1}`;
+      DOM.save.disabled = false;
+      DOM.del.disabled = !STATE.selectedId;
+    };
+
+    const isNumericSearch = (s) => /^\d+$/.test(String(s || '').trim());
+
+    const applyClientFilters = (rows) => {
+      const q = String(DOM.search.value || '').trim().toLowerCase();
+      const mobFilter = Number(DOM.filterMob.value || 0);
+      const worldFilter = Number(DOM.filterWorld.value || 0);
+
+      return rows.filter(r => {
+        if (mobFilter > 0 && Number(r.BotID) !== mobFilter) return false;
+        if (worldFilter > 0 && Number(r.WorldID) !== worldFilter) return false;
+
+        if (!q) return true;
+        if (isNumericSearch(q)) {
+          const id = String(r.ID || '');
+          const botId = String(r.BotID || '');
+          return id.includes(q) || botId.includes(q);
+        }
+
+        const bot = (STATE.lookups.bots.get(String(r.BotID)) || '').toLowerCase();
+        const world = (STATE.lookups.worlds.get(String(r.WorldID)) || '').toLowerCase();
+        return bot.includes(q) || world.includes(q) || String(r.ID || '').includes(q);
+      });
+    };
+
+    const renderList = () => {
+      const filtered = applyClientFilters(STATE.list);
+
+      if (!STATE.list.length) {
+        DOM.list.innerHTML = `<div class="p-4 editor-muted-text">Нет записей (или БД не настроена)</div>`;
+        return;
+      }
+
+      if (!filtered.length) {
+        DOM.list.innerHTML = `<div class="p-4 editor-muted-text">Ничего не найдено по фильтрам</div>`;
+        return;
+      }
+
+      DOM.list.innerHTML = filtered.map(r => {
+        const active = r.ID === STATE.selectedId;
+        const title = formatMobTitle(r);
+        const world = formatWorld(r.WorldID);
+        const bossBadge = Number(r.Boss || 0)
+          ? `<span class="text-xs px-2 py-1 rounded-full" style="background: rgba(244,63,94,.14); border: 1px solid rgba(244,63,94,.3)">BOSS</span>`
+          : '';
+        return `
+          <button class="w-full text-left p-3 rounded-lg border ${active ? 'bg-light border-slate-400/30' : 'border-light hover:bg-light'}" data-id="${r.ID}">
+            <div class="flex items-center justify-between gap-3">
+              <div class="min-w-0">
+                <div class="font-semibold truncate">${title}</div>
+                <div class="text-sm editor-muted-text truncate">ID: ${r.ID} • Мир: ${world} • Lvl: ${r.Level ?? ''} • X:${r.PositionX ?? ''} Y:${r.PositionY ?? ''}</div>
+              </div>
+              ${bossBadge}
+            </div>
+          </button>
+        `;
+      }).join('');
+
+      DOM.list.querySelectorAll('[data-id]').forEach(btn => {
+        btn.addEventListener('click', () => selectMob(Number(btn.getAttribute('data-id'))));
+      });
+    };
+
+    const renderTabs = () => {
+      window.EditorCore.UI.mountTabs(DOM.tabRoot, {
+        tabs: [
+          { id: 'basic', title: 'Основное', icon: 'fa-sliders' },
+          { id: 'ai', title: 'AI / эффекты', icon: 'fa-brain' },
+          { id: 'drop', title: 'Дроп', icon: 'fa-gift' },
+        ],
+        active: STATE.activeTab,
+        onChange: (id) => {
+          STATE.activeTab = id;
+          syncTabVisibility();
+        }
+      });
+      syncTabVisibility();
+    };
+
+    const syncTabVisibility = () => {
+      DOM.tabBasic.classList.toggle('hidden', STATE.activeTab !== 'basic');
+      DOM.tabAi.classList.toggle('hidden', STATE.activeTab !== 'ai');
+      DOM.tabDrop.classList.toggle('hidden', STATE.activeTab !== 'drop');
+    };
+
+    const fieldsBasic = {
+      BotID: { type: 'db_select', label: 'Моб (BotID)', validate: { required: true }, ui: { dbKey: 'mob', placeholder: '— выберите моба —', searchPlaceholder: 'Поиск моба…' } },
+      WorldID: { type: 'db_select', label: 'Мир (WorldID)', ui: { dbKey: 'world', placeholder: '— выберите мир —', searchPlaceholder: 'Поиск мира…' } },
+      _pos: { type: 'vec2', label: 'Позиция', ui: { hideLabel: false }, itemDefault: undefined },
+      PositionX: { type: 'number', label: 'PositionX', ui: { min: 0, step: 1, placeholder: 'X' } },
+      PositionY: { type: 'number', label: 'PositionY', ui: { min: 0, step: 1, placeholder: 'Y' } },
+      Level: { type: 'number', label: 'Уровень', ui: { min: 1, step: 1 } },
+      Power: { type: 'number', label: 'Сила (Power)', ui: { min: 0, step: 1 } },
+      Number: { type: 'number', label: 'Количество (Number)', ui: { min: 1, step: 1 } },
+      Respawn: { type: 'number', label: 'Респавн (сек)', ui: { min: 0, step: 1 } },
+      Radius: { type: 'number', label: 'Радиус (Radius)', ui: { min: 0, step: 1 } },
+      Boss: { type: 'toggle', label: 'Boss' },
+    };
+
+    // We keep PositionX/PositionY separate, but make layout nicer in the renderer by wrapping into grid.
+    const fieldsAi = {
+      Debuffs: {
+        label: 'Debuffs',
+        ui: EditorCore.presets.tags({
+          options: DEBUFFS,
+          placeholder: 'Добавить debuff…'
+        })
+      },
+      Behavior: {
+        label: 'Behavior',
+        ui: EditorCore.presets.tags({
+          options: BEHAVIORS,
+          placeholder: 'Добавить behavior…'
+        })
+      },
+    };
+
+    const fieldsDrop = {
+      drops: {
+        type: 'list',
+        label: 'Слоты дропа (макс 5)',
+        ui: { addLabel: 'Добавить слот' },
+        itemDefault: { item_id: 0, count: 0, chance: 0 },
+        itemFields: {
+          item_id: { type: 'db_select', label: 'Предмет', ui: { dbKey: 'item', placeholder: '— предмет —', searchPlaceholder: 'Поиск предмета…', searchServer: true, dbLimit: 1000 } },
+          count: { type: 'number', label: 'Кол-во', ui: { min: 0, step: 1 } },
+          chance: { type: 'number', label: 'Шанс (%)', ui: { min: 0, step: 0.1 } },
+        }
+      }
+    };
+
+    const bindSection = (root, fields) => {
+      if (!root) return;
+      const fr = window.EditorCore.FieldRenderer;
+      const render = () => {
+        if (!STATE.mob) {
+          root.innerHTML = `<div class="editor-muted-text">Выберите запись слева</div>`;
+          return;
+        }
+
+        // Custom nicer layout for Position fields (2 columns)
+        if (fields === fieldsBasic) {
+          const basicClone = { ...fieldsBasic };
+          delete basicClone._pos;
+          // Render with a custom wrapper
+          const header = `
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>${window.EditorCore.FieldRenderer.renderField({ path: 'BotID', field: fieldsBasic.BotID, data: STATE.mob, options: fieldOptions })}</div>
+              <div>${window.EditorCore.FieldRenderer.renderField({ path: 'WorldID', field: fieldsBasic.WorldID, data: STATE.mob, options: fieldOptions })}</div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>${window.EditorCore.FieldRenderer.renderField({ path: 'PositionX', field: fieldsBasic.PositionX, data: STATE.mob, options: fieldOptions })}</div>
+              <div>${window.EditorCore.FieldRenderer.renderField({ path: 'PositionY', field: fieldsBasic.PositionY, data: STATE.mob, options: fieldOptions })}</div>
+            </div>
+          `;
+          const restFields = {
+            Level: fieldsBasic.Level,
+            Power: fieldsBasic.Power,
+            Number: fieldsBasic.Number,
+            Respawn: fieldsBasic.Respawn,
+            Radius: fieldsBasic.Radius,
+            Boss: fieldsBasic.Boss,
+          };
+          const rest = window.EditorCore.FieldRenderer.renderFields({ fields: restFields, data: STATE.mob, options: fieldOptions });
+          root.innerHTML = `${header}<div class="grid grid-cols-1 md:grid-cols-2 gap-4">${rest}</div>`;
+        } else {
+          root.innerHTML = fr.renderFields({ fields, data: STATE.mob, options: fieldOptions });
+        }
+
+        window.EditorCore.UIManager.init(root);
+
+        root.querySelectorAll('[data-path]').forEach((el) => {
+          const handler = () => {
+            const path = el.getAttribute('data-path');
+            const val = fr.getInputValue(el);
+            fr.setValueAtPath(STATE.mob, path, val);
+
+            if (el.type === 'checkbox' && el.closest('.editor-toggle')) {
+              el.closest('.editor-toggle')?.setAttribute('data-checked', el.checked ? '1' : '0');
+            }
+
+            // enforce max 5 drops
+            if (path === 'drops' && Array.isArray(STATE.mob.drops)) {
+              STATE.mob.drops = STATE.mob.drops.slice(0, 5);
+            }
+            setHeader();
+          };
+          el.addEventListener('input', handler);
+          el.addEventListener('change', handler);
+        });
+
+        root.querySelectorAll('[data-list-action]').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const action = btn.getAttribute('data-list-action');
+            const listPath = btn.getAttribute('data-list-path');
+            const arr = Array.isArray(fr.getValueAtPath(STATE.mob, listPath)) ? fr.getValueAtPath(STATE.mob, listPath) : [];
+            if (action === 'add') {
+              const payload = btn.getAttribute('data-list-default') || '';
+              let def = {};
+              try { def = JSON.parse(decodeURIComponent(payload)); } catch { def = {}; }
+
+              if (listPath === 'drops') {
+                if (arr.length >= 5) {
+                  window.EditorCore.UI.toast({ message: 'Максимум 5 слотов дропа', type: 'warning' });
+                  return;
+                }
+
+                // If DB slot was NULL, new slot should auto-pick the first item
+                const firstId = Number(STATE?.defaults?.firstItemId || 0);
+                if (!Number(def?.item_id || 0) && firstId > 0) def.item_id = firstId;
+                // sensible defaults
+                if (!Number.isFinite(Number(def?.count))) def.count = 1;
+                if (Number(def.count) <= 0) def.count = 1;
+                if (!Number.isFinite(Number(def?.chance))) def.chance = 0;
+              }
+
+              arr.push(def);
+              fr.setValueAtPath(STATE.mob, listPath, arr);
+              render();
+              setHeader();
+            }
+            if (action === 'remove') {
+              const idx = Number(btn.getAttribute('data-list-index'));
+              if (Number.isFinite(idx) && idx >= 0 && idx < arr.length) {
+                arr.splice(idx, 1);
+                fr.setValueAtPath(STATE.mob, listPath, arr);
+                render();
+                setHeader();
+              }
+            }
+          });
+        });
+      };
+
+      return { render };
+    };
+
+    let SECTIONS = null;
+
+    const renderForm = () => {
+      SECTIONS = {
+        basic: bindSection(DOM.tabBasic, fieldsBasic),
+        ai: bindSection(DOM.tabAi, fieldsAi),
+        drop: bindSection(DOM.tabDrop, fieldsDrop),
+      };
+      SECTIONS.basic?.render();
+      SECTIONS.ai?.render();
+      SECTIONS.drop?.render();
+    };
+
+    const showDbStatus = async () => {
+      const test = await window.EditorCore.DB.testConnection();
+      if (test.ok) {
+        DOM.dbStatus.textContent = 'БД: подключена. DB Select списки загружаются автоматически.';
+      } else {
+        DOM.dbStatus.textContent = 'БД: нет подключения. DB Select будет работать как ручной ввод ID.';
+      }
+    };
+
+    const loadLookups = async () => {
+      STATE.lookups.bots = await getLabelMap('bots');
+      STATE.lookups.worlds = await getLabelMap('worlds');
+    };
+
+    const loadDefaults = async () => {
+      // Used when user clicks "Добавить слот" для дропа
+      STATE.defaults.firstItemId = 0;
+      try {
+        const res = await window.EditorCore.DB.list('items', { limit: 1, offset: 0 });
+        const id = Number(res?.items?.[0]?.value || 0);
+        if (res?.ok && id > 0) STATE.defaults.firstItemId = id;
+      } catch (e) {
+        // ignore
+      }
+    };
+
+    const loadList = async ({ reset = false } = {}) => {
+      if (reset) {
+        STATE.offset = 0;
+        STATE.list = [];
+        STATE.hasMore = true;
+      }
+
+      const q = String(DOM.search.value || '').trim();
+      const numeric = isNumericSearch(q);
+      const limit = 220;
+
+      if (!STATE.hasMore) return;
+
+      try {
+        const res = await window.EditorCore.DBCrud.list(RESOURCE, {
+          search: numeric ? q : '',
+          limit,
+          offset: STATE.offset,
+        });
+        const rows = Array.isArray(res.rows) ? res.rows : [];
+        STATE.list = STATE.list.concat(rows);
+        STATE.offset += rows.length;
+        STATE.hasMore = rows.length === limit;
+      } catch (e) {
+        window.EditorCore.UI.toast({ message: e.message || 'Ошибка загрузки списка', type: 'error' });
+        STATE.hasMore = false;
+      }
+
+      DOM.more.classList.toggle('hidden', !STATE.hasMore);
+      renderList();
+    };
+
+    const selectMob = async (id) => {
+      if (!id) return;
+      try {
+        const res = await window.EditorCore.DBCrud.get(RESOURCE, id);
+        STATE.selectedId = id;
+        STATE.mob = fromRow(res.row);
+        renderList();
+        renderForm();
+        setHeader();
+        STATE._closeDrawer?.();
+      } catch (e) {
+        window.EditorCore.UI.toast({ message: e.message || 'Ошибка загрузки записи', type: 'error' });
+      }
+    };
+
+    const newMob = () => {
+      STATE.selectedId = 0;
+      STATE.mob = emptyMob();
+      renderList();
+      renderForm();
+      setHeader();
+      STATE.activeTab = 'basic';
+      renderTabs();
+      STATE._closeDrawer?.();
+    };
+
+    const saveMob = async () => {
+      if (!STATE.mob) return;
+      if (!Number(STATE.mob.BotID || 0)) {
+        window.EditorCore.UI.toast({ message: 'BotID обязателен', type: 'warning' });
+        return;
+      }
+      const payload = toPayload(STATE.mob);
+
+      try {
+        if (STATE.selectedId) {
+          await window.EditorCore.DBCrud.update(RESOURCE, STATE.selectedId, payload);
+          window.EditorCore.UI.toast({ message: 'Сохранено', type: 'success' });
+        } else {
+          const created = await window.EditorCore.DBCrud.create(RESOURCE, payload);
+          window.EditorCore.UI.toast({ message: 'Создано', type: 'success' });
+          const newId = Number(created?.id || 0);
+          await loadList({ reset: true });
+          if (newId) await selectMob(newId);
+        }
+        // refresh list (keep selected)
+        await loadList({ reset: true });
+        if (STATE.selectedId) {
+          // ensure selected still exists and update title preview
+          const cur = STATE.list.find(x => Number(x.ID) === Number(STATE.selectedId));
+          if (cur) {
+            // keep
+          }
+        }
+        setHeader();
+      } catch (e) {
+        window.EditorCore.UI.toast({ message: e.message || 'Ошибка сохранения', type: 'error' });
+      }
+    };
+
+    const deleteMob = async () => {
+      if (!STATE.selectedId) return;
+      const ok = confirm(`Удалить запись ID=${STATE.selectedId}?`);
+      if (!ok) return;
+      try {
+        await window.EditorCore.DBCrud.remove(RESOURCE, STATE.selectedId);
+        window.EditorCore.UI.toast({ message: 'Удалено', type: 'success' });
+        STATE.selectedId = 0;
+        STATE.mob = null;
+        renderForm();
+        setHeader();
+        await loadList({ reset: true });
+      } catch (e) {
+        window.EditorCore.UI.toast({ message: e.message || 'Ошибка удаления', type: 'error' });
+      }
+    };
+
+    const debounce = (fn, ms = 200) => {
+      let t = null;
+      return (...args) => {
+        clearTimeout(t);
+        t = setTimeout(() => fn(...args), ms);
+      };
+    };
+
+    let STATE = {
+      list: [],
+      offset: 0,
+      hasMore: true,
+      selectedId: 0,
+      mob: null,
+      activeTab: 'basic',
+      lookups: { bots: new Map(), worlds: new Map() },
+      defaults: { firstItemId: 0 }
+    };
+
+    const init = async () => {
+      window.EditorCore.bootstrapEditor({ mode: 'scenario' });
+
+      // Initialize sidebar db selects
+      window.EditorCore.UIManager.init(DOM.sidebar);
+
+      renderTabs();
+
+      await showDbStatus();
+      await loadLookups();
+
+      await loadDefaults();
+
+      // Initial list
+      await loadList({ reset: true });
+
+      DOM.refresh.addEventListener('click', async () => {
+        await loadLookups();
+
+      await loadDefaults();
+        await loadList({ reset: true });
+      });
+
+      DOM.more.addEventListener('click', () => loadList({ reset: false }));
+      DOM.newBtn.addEventListener('click', newMob);
+      DOM.save.addEventListener('click', saveMob);
+      DOM.del.addEventListener('click', deleteMob);
+
+      DOM.search.addEventListener('input', debounce(() => {
+        renderList();
+        // If numeric, refetch server-side
+        if (isNumericSearch(DOM.search.value || '')) loadList({ reset: true });
+      }, 180));
+
+      DOM.filterMob.addEventListener('change', () => renderList());
+      DOM.filterWorld.addEventListener('change', () => renderList());
+
+      // Mobile drawer (sidebar)
+      const isMobile = () => window.matchMedia('(max-width: 767px)').matches;
+      const openDrawer = () => {
+        if (!isMobile()) return;
+        DOM.sidebar.classList.add('open');
+        DOM.drawerBackdrop.classList.add('open');
+      };
+      const closeDrawer = () => {
+        if (!isMobile()) return;
+        DOM.sidebar.classList.remove('open');
+        DOM.drawerBackdrop.classList.remove('open');
+      };
+      DOM.openSidebarBtn?.addEventListener('click', openDrawer);
+      DOM.toggleSidebar?.addEventListener('click', closeDrawer);
+      DOM.drawerBackdrop?.addEventListener('click', closeDrawer);
+
+      // Handy shortcut: refresh from the mobile header
+      DOM.mobileRefreshBtn?.addEventListener('click', () => DOM.refresh.click());
+
+      // Close drawer after selecting/creating a record
+      STATE._closeDrawer = closeDrawer;
+
+      // If we resize to desktop, ensure drawer state doesn't linger
+      window.addEventListener('resize', () => {
+        if (!isMobile()) {
+          DOM.sidebar.classList.remove('open');
+          DOM.drawerBackdrop.classList.remove('open');
+        }
+      });
+    };
+
+    init();
+  </script>
+</body>
+</html>

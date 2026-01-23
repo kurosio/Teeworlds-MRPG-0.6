@@ -19,7 +19,7 @@
 <body class="editor-theme antialiased">
   <div class="flex h-screen overflow-hidden">
     <!-- Sidebar -->
-    <aside id="sidebar" class="w-full md:w-96 flex-shrink-0 border-r editor-surface flex flex-col">
+    <aside id="sidebar" class="editor-drawer w-80 md:w-96 flex-shrink-0 border-r editor-surface flex flex-col">
       <div class="p-4 border-b border-light flex items-center justify-between gap-3">
         <div class="flex items-center gap-3 min-w-0">
           <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background: rgba(99,102,241,.18); border: 1px solid var(--editor-border)">
@@ -31,8 +31,8 @@
           </div>
         </div>
 
-        <button id="toggleSidebar" class="md:hidden editor-btn editor-btn-secondary" title="Свернуть/развернуть">
-          <i class="fa-solid fa-bars"></i>
+        <button id="toggleSidebar" class="md:hidden editor-btn editor-btn-secondary" title="Закрыть меню">
+          <i class="fa-solid fa-xmark"></i>
         </button>
       </div>
 
@@ -52,8 +52,21 @@
       <div id="list" class="flex-grow overflow-y-auto p-2"></div>
     </aside>
 
+    <!-- Mobile drawer backdrop -->
+    <div id="drawerBackdrop" class="editor-drawer-backdrop" aria-hidden="true"></div>
+
     <!-- Content -->
     <main class="flex-grow overflow-y-auto p-4 md:p-6">
+      <!-- Mobile top bar (open sidebar) -->
+      <header class="md:hidden sticky top-0 z-40 -mx-4 -mt-4 mb-4 px-4 py-3 editor-surface border-b border-light flex items-center justify-between gap-3">
+        <button id="openSidebarBtn" class="editor-btn editor-btn-secondary" title="Меню">
+          <i class="fa-solid fa-bars"></i>
+        </button>
+        <div class="font-semibold truncate">Ваучеры</div>
+        <button id="mobileRefreshBtn" class="editor-btn editor-btn-secondary" title="Обновить">
+          <i class="fa-solid fa-rotate"></i>
+        </button>
+      </header>
       <div class="max-w-4xl mx-auto">
         <div class="editor-card p-5 md:p-6">
           <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -126,6 +139,9 @@
       dbStatus: document.getElementById('dbStatus'),
       sidebar: document.getElementById('sidebar'),
       toggleSidebar: document.getElementById('toggleSidebar'),
+      openSidebarBtn: document.getElementById('openSidebarBtn'),
+      drawerBackdrop: document.getElementById('drawerBackdrop'),
+      mobileRefreshBtn: document.getElementById('mobileRefreshBtn'),
     };
 
     const RESOURCE = 'vouchers';
@@ -358,6 +374,7 @@
       mountForms(STATE.voucher);
       setHeader();
       renderList();
+      STATE._closeDrawer?.();
     };
 
     const newVoucher = () => {
@@ -366,6 +383,7 @@
       mountForms(STATE.voucher);
       setHeader();
       renderList();
+      STATE._closeDrawer?.();
     };
 
     const saveVoucher = async () => {
@@ -429,9 +447,32 @@
     DOM.del.addEventListener('click', deleteVoucher);
     DOM.pickDate.addEventListener('click', pickDate);
 
-    DOM.toggleSidebar?.addEventListener('click', () => {
-      DOM.sidebar.classList.toggle('hidden');
-      DOM.sidebar.classList.toggle('flex');
+    // Mobile drawer (sidebar)
+    const isMobile = () => window.matchMedia('(max-width: 767px)').matches;
+    const openDrawer = () => {
+      if (!isMobile()) return;
+      DOM.sidebar.classList.add('open');
+      DOM.drawerBackdrop.classList.add('open');
+    };
+    const closeDrawer = () => {
+      if (!isMobile()) return;
+      DOM.sidebar.classList.remove('open');
+      DOM.drawerBackdrop.classList.remove('open');
+    };
+    DOM.openSidebarBtn?.addEventListener('click', openDrawer);
+    DOM.toggleSidebar?.addEventListener('click', closeDrawer);
+    DOM.drawerBackdrop?.addEventListener('click', closeDrawer);
+    DOM.mobileRefreshBtn?.addEventListener('click', () => DOM.refresh.click());
+
+    // Close drawer after selecting/creating a record
+    STATE._closeDrawer = closeDrawer;
+
+    // If we resize to desktop, ensure drawer state doesn't linger
+    window.addEventListener('resize', () => {
+      if (!isMobile()) {
+        DOM.sidebar.classList.remove('open');
+        DOM.drawerBackdrop.classList.remove('open');
+      }
     });
 
     (async () => {
