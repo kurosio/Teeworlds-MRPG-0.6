@@ -104,7 +104,10 @@ void CPlayer::GetFormatedName(char* aBuffer, int BufferSize)
 void CPlayer::Tick()
 {
 	if(!IsAuthed())
+	{
+		NotAuthTick();
 		return;
+	}
 
 	// do latency stuff
 	{
@@ -575,7 +578,7 @@ void CPlayer::OnPredictedInput(CNetObj_PlayerInput* pNewInput) const
 
 int CPlayer::GetTeam()
 {
-	return IsAuthed() ? TEAM_RED : TEAM_SPECTATORS;
+	return TEAM_RED;
 }
 
 /* #########################################################################
@@ -691,6 +694,31 @@ void CPlayer::FormatBroadcastBasicStats(char* pBuffer, int Size, const char* pAp
 	}
 
 	str_format(pBuffer, Size, "%s%-200s", Result.c_str(), pAppendStr);
+}
+
+void CPlayer::NotAuthTick()
+{
+	if(m_pCharacter)
+	{
+		if(m_pCharacter->IsAlive())
+			m_ViewPos = m_pCharacter->GetPos();
+		else
+		{
+			delete m_pCharacter;
+			m_pCharacter = nullptr;
+		}
+	}
+	else if(m_WantSpawn)
+		TryRespawn();
+
+	if(m_pMotdMenu)
+		m_pMotdMenu->Tick();
+
+	if(Server()->Tick() % (Server()->TickSpeed() * 3) == 0)
+	{
+		GS()->Broadcast(m_ClientID, BroadcastPriority::MainInformation, Server()->TickSpeed() * 3,
+			"You need to register using /register <login> <pass> or /login <login> <pass>.");
+	}
 }
 
 /* #########################################################################

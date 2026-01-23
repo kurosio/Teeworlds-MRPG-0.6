@@ -639,15 +639,25 @@ void CMmoController::AsyncClientEnterMsgInfo(std::string_view ClientName, int Cl
 	AsyncEnterRes->AtExecute([CapturedNickname = std::string(Nickname.cstr()), ClientID](ResultPtr pRes)
 	{
 		auto* pGS = (CGS*)Instance::Server()->GameServerPlayer(ClientID);
+		if(!pGS)
+			return;
 
-		if(!pRes->next())
+		auto* pPlayer = pGS->GetPlayer(ClientID);
+		const bool HasAccount = pRes->next();
+
+		if(!HasAccount)
 		{
 			pGS->Chat(ClientID, "You need to register using /register <login> <pass>!");
 			pGS->Chat(-1, "Apparently, we have a new player, '{}'!", CapturedNickname);
-			return;
 		}
+		else
+			pGS->Chat(ClientID, "You need to log in using /login <user> <pass>!");
 
-		pGS->Chat(ClientID, "You need to log in using /login <user> <pass>!");
+		if(pPlayer && !pPlayer->IsAuthed())
+		{
+			pPlayer->m_AuthMenuAllowRegister = !HasAccount;
+			pGS->SendMenuMotd(pPlayer, MOTD_MENU_AUTH);
+		}
 	});
 }
 

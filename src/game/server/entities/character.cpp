@@ -549,6 +549,10 @@ bool CCharacter::FireRifle(vec2 Direction, vec2 ProjStartPos, int TotalWeaponDam
 
 void CCharacter::HandleWeapons()
 {
+	// skip unauthed player handle weapon
+	if(!m_pPlayer->IsBot() && !m_pPlayer->IsAuthed())
+		return;
+
 	HandleNinja();
 
 	if(m_ReloadTimer)

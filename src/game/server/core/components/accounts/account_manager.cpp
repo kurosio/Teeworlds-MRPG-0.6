@@ -16,6 +16,8 @@ constexpr int LENGTH_LOGPASS_MAX = 12;
 constexpr int LENGTH_LOGPASS_MIN = 4;
 constexpr int LENGTH_PIN_MAX = 6;
 constexpr int LENGTH_PIN_MIN = 4;
+constexpr int AUTH_FIELD_LOGIN = 0;
+constexpr int AUTH_FIELD_PASSWORD = 1;
 
 void CAccountManager::OnPlayerLogin(CPlayer* pPlayer)
 {
@@ -473,6 +475,33 @@ bool CAccountManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
 {
 	int ClientID = pPlayer->GetCID();
 
+	// motd menu auth
+	if(Menulist == MOTD_MENU_AUTH)
+	{
+		if(pPlayer->IsAuthed())
+			return false;
+
+		MotdMenu MAuth(ClientID, "Use chat message like '/<text>' to edit the fields.");
+		MAuth.AddText("Account authorization");
+		MAuth.AddSeparateLine();
+		MAuth.AddLine();
+		MAuth.AddText("Login:");
+		MAuth.AddField(AUTH_FIELD_LOGIN);
+		MAuth.AddLine();
+		MAuth.AddText("Password:");
+		MAuth.AddField(AUTH_FIELD_PASSWORD, MTTEXTINPUTFLAG_PASSWORD);
+		MAuth.AddLine();
+		MAuth.AddSeparateLine();
+
+		if(pPlayer->m_AuthMenuAllowRegister)
+			MAuth.AddOption("AUTH_REGISTER", "Register");
+		else
+			MAuth.AddOption("AUTH_LOGIN", "Log in");
+
+		MAuth.Send(MOTD_MENU_AUTH);
+		return true;
+	}
+
 	// motd menu bank
 	if(Menulist == MOTD_MENU_BANK_MANAGER)
 	{
@@ -560,6 +589,32 @@ bool CAccountManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
 
 bool CAccountManager::OnPlayerMotdCommand(CPlayer* pPlayer, CMotdPlayerData* pMotdData, const char* pCmd)
 {
+	// register by motd menu ui
+	if(strcmp(pCmd, "AUTH_LOGIN") == 0 || strcmp(pCmd, "AUTH_REGISTER") == 0)
+	{
+		const auto LoginOpt = pMotdData->GetFieldStr(AUTH_FIELD_LOGIN);
+		const auto PassOpt = pMotdData->GetFieldStr(AUTH_FIELD_PASSWORD);
+		if(!LoginOpt.has_value() || !PassOpt.has_value())
+		{
+			GS()->Chat(pPlayer->GetCID(), "Please fill in login and password.");
+			return true;
+		}
+
+		if(strcmp(pCmd, "AUTH_LOGIN") == 0)
+		{
+			LoginAccount(pPlayer->GetCID(), LoginOpt->c_str(), PassOpt->c_str());
+			return true;
+		}
+
+		const auto Result = RegisterAccount(pPlayer->GetCID(), LoginOpt->c_str(), PassOpt->c_str());
+		if(Result == AccountCodeResult::AOP_REGISTER_OK)
+		{
+			pPlayer->m_AuthMenuAllowRegister = false;
+			GS()->SendMenuMotd(pPlayer, MOTD_MENU_AUTH);
+		}
+		return true;
+	}
+
 	// deposit bank gold
 	if(strcmp(pCmd, "BANK_DEPOSIT") == 0)
 	{
@@ -647,6 +702,12 @@ AccountCodeResult CAccountManager::RegisterAccount(int ClientID, const char* pLo
 	GS()->Chat(ClientID, "- Registration complete! Don't forget to save your data.");
 	GS()->Chat(ClientID, "# Your nickname is a unique identifier.");
 	GS()->Chat(ClientID, "# Log in: \"/login {} {}\"", cClearLogin.cstr(), cClearPass.cstr());
+	if(auto* pPlayer = GS()->GetPlayer(ClientID, false))
+	{
+		pPlayer->m_AuthMenuAllowRegister = false;
+		if(pPlayer->IsSameMotdMenu(MOTD_MENU_AUTH))
+			GS()->SendMenuMotd(pPlayer, MOTD_MENU_AUTH);
+	}
 	return AccountCodeResult::AOP_REGISTER_OK;
 }
 
@@ -716,6 +777,8 @@ AccountCodeResult CAccountManager::LoginAccount(int ClientID, const char* pLogin
 	GS()->Chat(ClientID, "- Welcome! You've successfully logged in!");
 	if(PinCode.empty())
 		GS()->Chat(ClientID, "PIN is not set, set it using '/set_pin'.");
+	if(pPlayer->m_pMotdMenu)
+		pPlayer->CloseMotdMenu();
 	GS()->m_pController->DoTeamChange(pPlayer);
 	LoadAccount(pPlayer, true);
 	g_EventListenerManager.Notify<IEventListener::PlayerLogin>(pPlayer, pPlayer->Account());
