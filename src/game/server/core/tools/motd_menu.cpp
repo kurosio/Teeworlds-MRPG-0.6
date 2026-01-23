@@ -148,7 +148,7 @@ void MotdMenu::Tick()
 				const auto& [TextID] = m_Points[i].Unpack<int>();
 				pPlayer->m_MotdData.m_CurrentInputField.Active = true;
 				pPlayer->m_MotdData.m_CurrentInputField.TextID = TextID;
-				GS()->Chat(m_ClientID, "[&] Editing a field (use chat)!");
+				GS()->Chat(m_ClientID, "[&] Editing a field (use /<text>)!");
 				updatedMotd = true;
 			}
 
@@ -252,16 +252,28 @@ bool MotdMenu::ApplyFieldEdit(const std::string& Message)
 	if(!textFieldEdit.Active)
 		return false;
 
+	std::string_view messageView = Message;
+	if(messageView.empty() || messageView.front() != '/')
+	{
+		GS()->Chat(m_ClientID, "[&] Use /<text> to edit the field.");
+		return true;
+	}
+
+	messageView.remove_prefix(1);
+	while(!messageView.empty() && messageView.front() == ' ')
+		messageView.remove_prefix(1);
+
+	std::string fieldMessage(messageView);
 	// check flag ony numeric values
 	auto& filedData = vFields[textFieldEdit.TextID];
-	if(filedData.Flags & MTTEXTINPUTFLAG_ONLY_NUMERIC && !std::all_of(filedData.Message.begin(), filedData.Message.end(), isdigit))
+	if(filedData.Flags & MTTEXTINPUTFLAG_ONLY_NUMERIC && !std::all_of(fieldMessage.begin(), fieldMessage.end(), isdigit))
 	{
 		GS()->Chat(m_ClientID, "[&] Only numeric values will be allowed to be entered.");
 		return true;
 	}
 
 	textFieldEdit.Active = false;
-	filedData.Message = Message;
+	filedData.Message = fieldMessage;
 	GS()->Chat(m_ClientID, "[&] Field is been updated!");
 	UpdateMotd();
 	return true;
