@@ -1,6 +1,7 @@
 ﻿#include "motd_menu.h"
 
 #include <game/server/gamecontext.h>
+#include <generated/server_data.h>
 
 CGS* MotdMenu::GS() const
 {
@@ -74,11 +75,13 @@ void MotdMenu::Tick()
 	const auto* pChar = pPlayer->GetCharacter();
 	const auto targetX = pChar->m_Core.m_Input.m_TargetX;
 	const auto targetY = pChar->m_Core.m_Input.m_TargetY;
-	const int visibleItems = pPlayer->m_MotdData.m_ScrollManager.GetMaxVisibleItems();
+	auto& motdData = pPlayer->m_MotdData;
+	auto& currentInputField = motdData.m_CurrentInputField;
+	const int visibleItems = motdData.m_ScrollManager.GetMaxVisibleItems();
 
 	// prepare the buffer for the MOTD
 	int linePos = linePosStart;
-	const auto estimatedSize = 50 + (pPlayer->m_MotdData.m_ScrollManager.GetMaxVisibleItems() * 40) + m_Description.length();
+	const auto estimatedSize = 50 + (motdData.m_ScrollManager.GetMaxVisibleItems() * 40) + m_Description.length();
 	std::string buffer;
 	buffer.reserve(estimatedSize);
 	buffer = Instance::Localize(m_ClientID, "* Self kill - close the motd!\n\n");
@@ -92,12 +95,12 @@ void MotdMenu::Tick()
 		// handle scrolling with key events
 		if(pServer->Input()->IsKeyClicked(m_ClientID, KEY_EVENT_NEXT_WEAPON))
 		{
-			pPlayer->m_MotdData.m_ScrollManager.ScrollUp();
+			motdData.m_ScrollManager.ScrollUp();
 			m_ResendMotdTick = pServer->Tick() + 5;
 		}
 		else if(pServer->Input()->IsKeyClicked(m_ClientID, KEY_EVENT_PREV_WEAPON))
 		{
-			pPlayer->m_MotdData.m_ScrollManager.ScrollDown();
+			motdData.m_ScrollManager.ScrollDown();
 			m_ResendMotdTick = pServer->Tick() + 5;
 		}
 
@@ -105,19 +108,11 @@ void MotdMenu::Tick()
 	}
 
 	// add menu items to buffer
-	int i = pPlayer->m_MotdData.m_ScrollManager.GetScrollPos();
-	for(; i < pPlayer->m_MotdData.m_ScrollManager.GetEndScrollPos() && i < static_cast<int>(m_Points.size()); ++i, ++linePos)
+	int i = motdData.m_ScrollManager.GetScrollPos();
+	for(; i < motdData.m_ScrollManager.GetEndScrollPos() && i < static_cast<int>(m_Points.size()); ++i, ++linePos)
 	{
 		// add scrollbar symbol
 		ApplyScrollbar(pPlayer, i, buffer);
-
-		// empty command only text
-		const auto& command = m_Points[i].m_Command;
-		if(command == "NULL")
-		{
-			buffer.append(m_Points[i].m_aDesc).append("\n");
-			continue;
-		}
 
 		// initialize variables
 		bool updatedMotd = false;
@@ -126,17 +121,35 @@ void MotdMenu::Tick()
 		const bool isSelected = (targetX > -196 && targetX < 196 && targetY >= checkYStart && targetY < checkYEnd);
 		const bool isClicked = isInMenuArea && pServer->Input()->IsKeyClicked(m_ClientID, KEY_EVENT_FIRE);
 
-		// is clicked with active text field editor
-		if(isClicked && isSelected && pPlayer->m_MotdData.m_CurrentInputField.Active)
+		// empty command only text
+		const auto& command = m_Points[i].m_Command;
+		if(command == "NULL")
 		{
+			if(isSelected)
+				motdData.m_HoveredItemIndex = NOPE;
+			buffer.append(m_Points[i].m_aDesc).append("\n");
+			continue;
+		}
+		if(isSelected && motdData.m_HoveredItemIndex != i)
+		{
+			GS()->CreatePlayerSound(m_ClientID, SOUND_SFX_TICK);
+			motdData.m_HoveredItemIndex = i;
+		}
+
+		// is clicked with active text field editor
+		if(isClicked && isSelected && currentInputField.Active)
+		{
+			GS()->CreatePlayerSound(m_ClientID, SOUND_UI_MENU_ITEM_CLICK);
 			GS()->Chat(m_ClientID, "[&] Editing a field is canceled!");
-			pPlayer->m_MotdData.m_CurrentInputField.Active = false;
+			currentInputField.Active = false;
+			motdData.m_HoveredItemIndex = NOPE;
 			updatedMotd = true;
 		}
 		// is hovered and clicked
 		else if(isSelected && isClicked)
 		{
-			pPlayer->m_MotdData.m_pCurrent = &m_Points[i];
+			GS()->CreatePlayerSound(m_ClientID, SOUND_UI_MENU_ITEM_CLICK);
+			motdData.m_pCurrent = &m_Points[i];
 
 			// close option command
 			if(command == "CLOSE")
@@ -149,8 +162,9 @@ void MotdMenu::Tick()
 			if(command == "TEXT_FIELD")
 			{
 				const auto& [TextID] = m_Points[i].Unpack<int>();
-				pPlayer->m_MotdData.m_CurrentInputField.Active = true;
-				pPlayer->m_MotdData.m_CurrentInputField.TextID = TextID;
+				currentInputField.Active = true;
+				currentInputField.TextID = TextID;
+				motdData.m_HoveredItemIndex = NOPE;
 				GS()->Chat(m_ClientID, "[&] Editing a field (use /<text>)!");
 				updatedMotd = true;
 			}
@@ -162,8 +176,9 @@ void MotdMenu::Tick()
 				updatedMotd = true;
 				m_Menulist = MenuID;
 				m_MenuExtra = Extra <= NOPE ? std::nullopt : std::make_optional<int>(Extra);
-				pPlayer->m_MotdData.m_vFields.clear();
-				pPlayer->m_MotdData.m_ScrollManager.Reset();
+				motdData.m_HoveredItemIndex = NOPE;
+				motdData.m_vFields.clear();
+				motdData.m_ScrollManager.Reset();
 
 			}
 
@@ -172,8 +187,9 @@ void MotdMenu::Tick()
 			{
 				updatedMotd = true;
 				m_Menulist = m_LastMenulist;
-				pPlayer->m_MotdData.m_vFields.clear();
-				pPlayer->m_MotdData.m_ScrollManager.Reset();
+				motdData.m_HoveredItemIndex = NOPE;
+				motdData.m_vFields.clear();
+				motdData.m_ScrollManager.Reset();
 			}
 
 			// parse option commands
@@ -201,6 +217,10 @@ void MotdMenu::Tick()
 		buffer.append(m_Points[i].m_aDesc);
 		buffer.append("\n");
 	}
+
+	// reset inside area
+	if(!isInMenuArea)
+		motdData.m_HoveredItemIndex = NOPE;
 
 	if(!m_Description.empty())
 	{
@@ -276,6 +296,7 @@ bool MotdMenu::ApplyFieldEdit(const std::string& Message)
 	}
 
 	textFieldEdit.Active = false;
+	pPlayer->m_MotdData.m_HoveredItemIndex = NOPE;
 	filedData.Message = fieldMessage;
 	GS()->Chat(m_ClientID, "[&] Field is been updated!");
 	UpdateMotd();
@@ -292,6 +313,7 @@ void MotdMenu::ClearMotd()
 	if(pPlayer && pPlayer->m_pMotdMenu)
 	{
 		pPlayer->m_MotdData.m_ScrollManager.Reset();
+		pPlayer->m_MotdData.m_HoveredItemIndex = NOPE;
 		pPlayer->m_MotdData.m_vFields.clear();
 		pPlayer->m_pMotdMenu.reset();
 	}

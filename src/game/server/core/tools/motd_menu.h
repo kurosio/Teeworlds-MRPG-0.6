@@ -167,6 +167,7 @@ public:
 private:
 	MotdOption* m_pCurrent {};
 	ActiveInputTextField m_CurrentInputField {};
+	int m_HoveredItemIndex { NOPE };
 	std::map<int, TextField> m_vFields {};
 	ScrollManager m_ScrollManager { 13 };
 };
