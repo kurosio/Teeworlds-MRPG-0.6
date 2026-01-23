@@ -143,6 +143,13 @@ std::vector<vec2> CPathFinder::FindPath(const ivec2& Start, const ivec2& End)
 	if(m_MapData.IsCollide(Start.x, Start.y) || m_MapData.IsCollide(End.x, End.y))
 		return vPath;
 
+	// skip same
+	if(Start == End)
+	{
+		vPath.emplace_back(static_cast<float>(Start.x) * 32.f + 16.f, static_cast<float>(Start.y) * 32.f + 16.f);
+		return vPath;
+	}
+
 	// initialize variables
 	std::ranges::fill(m_vCostSoFar, std::numeric_limits<int>::max());
 
