@@ -1,6 +1,7 @@
 ﻿#include "tune_zone_manager.h"
 
 #include <base/format.h>
+#include <base/hash.h>
 #include <engine/shared/datafile.h>
 #include <generated/server_data.h>
 #include <game/gamecore.h>
@@ -8,7 +9,7 @@
 
 namespace
 {
-	static std::vector<char> SerializeZeroSeparated(std::initializer_list<std::string_view> Header,
+	static std::vector<char> SerializeZeroSeparated(const std::vector<std::string_view>& Header,
 		const std::vector<std::string>& Body)
 	{
 		size_t Total = 0;
@@ -82,6 +83,30 @@ namespace
 			return std::string(p);
 
 		return std::string(p, sz);
+	}
+
+	static std::optional<std::string> ExtractSourceSha256(const char* pData, int DataSize)
+	{
+		if(!pData || DataSize <= 0)
+			return std::nullopt;
+
+		const std::string_view Prefix = "# source_sha256 ";
+		const char* pCur = pData;
+		const char* pEnd = pData + DataSize;
+		while(pCur < pEnd)
+		{
+			const char* pStart = pCur;
+			while(pCur < pEnd && *pCur)
+				++pCur;
+
+			std::string_view Entry(pStart, pCur - pStart);
+			if(Entry.size() >= Prefix.size() && Entry.compare(0, Prefix.size(), Prefix) == 0)
+				return std::string(Entry.substr(Prefix.size()));
+
+			++pCur;
+		}
+
+		return std::nullopt;
 	}
 }
 
@@ -200,14 +225,9 @@ void CTuneZoneManager::RegisterSound(const std::string& Name, const void* pData,
 
 std::optional<std::string> CTuneZoneManager::BakePreparedMap(const char* pMapName, IStorageEngine* pStorage)
 {
-	// 1. collect delta-settings (string lines of commands).
 	const auto vNewCommands = BuildTuneCommands(*this);
-	std::vector<char> Delta;
-	if(!vNewCommands.empty())
-		Delta = SerializeZeroSeparated({ "", "# Tune zones generated" }, vNewCommands);
-	const bool HasDelta = !Delta.empty();
 
-	// 2. collect new sounds by manifest order
+	// 1. collect new sounds by manifest order
 	struct TNewSoundRef
 	{
 		std::string m_Name;
@@ -229,13 +249,29 @@ std::optional<std::string> CTuneZoneManager::BakePreparedMap(const char* pMapNam
 	const int NewCount = (int)vNewSounds.size();
 
 
-	// 3. open base map getting settings and sounds
+	// 2. open base map getting settings and sounds
 	CDataFileReader Reader;
 	if(!Reader.Open(pStorage, pMapName, IStorageEngine::TYPE_ALL))
 	{
 		dbg_msg("tune_baker", "Failed to open source map '%s'", pMapName);
 		return std::nullopt;
 	}
+
+	const SHA256_DIGEST SourceSha256 = Reader.Sha256();
+	char aSourceSha256[SHA256_MAXSTRSIZE];
+	sha256_str(SourceSha256, aSourceSha256, sizeof(aSourceSha256));
+	const std::string SourceSha256Str = aSourceSha256;
+	const std::string SourceHashLine = fmt_default("# source_sha256 {}", SourceSha256Str);
+
+	std::vector<std::string_view> DeltaHeader;
+	DeltaHeader.reserve(3);
+	DeltaHeader.emplace_back("");
+	if(!vNewCommands.empty())
+		DeltaHeader.emplace_back("# Tune zones generated");
+	DeltaHeader.emplace_back(SourceHashLine);
+
+	const std::vector<char> Delta = SerializeZeroSeparated(DeltaHeader, vNewCommands);
+	const bool HasDelta = !Delta.empty();
 
 	bool HadSettingsOriginally = false;
 	int SettingsIndex = -1;
@@ -357,17 +393,25 @@ std::optional<std::string> CTuneZoneManager::BakePreparedMap(const char* pMapNam
 			}
 		}
 
+		if(PrepSettingsIndex < 0)
+		{
+			Prep.Close();
+			return false;
+		}
+
+		const char* pPrepSettings = (const char*)Prep.GetData(PrepSettingsIndex);
+		const int PrepSettingsSize = Prep.GetDataSize(PrepSettingsIndex);
+		const auto PrepSha256 = ExtractSourceSha256(pPrepSettings, PrepSettingsSize);
+		if(!PrepSha256 || *PrepSha256 != SourceSha256Str)
+		{
+			Prep.Close();
+			return false;
+		}
+
 		if(!SettingsCombined.empty())
 		{
-			if(PrepSettingsIndex < 0)
-			{
-				Prep.Close();
-				return false;
-			}
-			const char* pS = (const char*)Prep.GetData(PrepSettingsIndex);
-			const int SSize = Prep.GetDataSize(PrepSettingsIndex);
-			if(SSize != (int)SettingsCombined.size() ||
-				(SSize > 0 && mem_comp(pS, SettingsCombined.data(), SSize) != 0))
+			if(PrepSettingsSize != (int)SettingsCombined.size() ||
+				(PrepSettingsSize > 0 && mem_comp(pPrepSettings, SettingsCombined.data(), PrepSettingsSize) != 0))
 			{
 				Prep.Close();
 				return false;
@@ -375,7 +419,7 @@ std::optional<std::string> CTuneZoneManager::BakePreparedMap(const char* pMapNam
 		}
 		else
 		{
-			if(PrepSettingsIndex >= 0 && Prep.GetDataSize(PrepSettingsIndex) != 0)
+			if(PrepSettingsSize != 0)
 			{
 				Prep.Close();
 				return false;
