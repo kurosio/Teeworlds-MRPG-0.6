@@ -67,24 +67,27 @@ void MotdMenu::Tick()
 		return;
 
 	// initialize variables
-	constexpr int lineSizeY = 20;
-	constexpr int startLineY = -284;
+	const int lineSizeY = 20;
+	const int startLineY = -278;
+	constexpr int linePosStart = 2;
 	auto* pServer = Instance::Server();
 	const auto* pChar = pPlayer->GetCharacter();
 	const auto targetX = pChar->m_Core.m_Input.m_TargetX;
 	const auto targetY = pChar->m_Core.m_Input.m_TargetY;
+	const int visibleItems = pPlayer->m_MotdData.m_ScrollManager.GetMaxVisibleItems();
 
 	// prepare the buffer for the MOTD
-	int linePos = 2;
+	int linePos = linePosStart;
 	const auto estimatedSize = 50 + (pPlayer->m_MotdData.m_ScrollManager.GetMaxVisibleItems() * 40) + m_Description.length();
 	std::string buffer;
 	buffer.reserve(estimatedSize);
 	buffer = Instance::Localize(m_ClientID, "* Self kill - close the motd!\n\n");
 
 	// key events and freeze input is hovered worked area
-	const int startWorkedAreaY = startLineY;
-	const int endWorkedAreaY = startLineY + 24 * lineSizeY;
-	if((targetX > -196 && targetX < 196 && targetY >= startWorkedAreaY && targetY < endWorkedAreaY))
+	const int startWorkedAreaY = startLineY + linePosStart * lineSizeY;
+	const int endWorkedAreaY = startLineY + (linePosStart + visibleItems) * lineSizeY;
+	const bool isInMenuArea = (targetX > -196 && targetX < 196 && targetY >= startWorkedAreaY && targetY < endWorkedAreaY);
+	if(isInMenuArea)
 	{
 		// handle scrolling with key events
 		if(pServer->Input()->IsKeyClicked(m_ClientID, KEY_EVENT_NEXT_WEAPON))
@@ -121,10 +124,10 @@ void MotdMenu::Tick()
 		const int checkYStart = startLineY + linePos * lineSizeY;
 		const int checkYEnd = startLineY + (linePos + 1) * lineSizeY;
 		const bool isSelected = (targetX > -196 && targetX < 196 && targetY >= checkYStart && targetY < checkYEnd);
-		const bool isClicked = pServer->Input()->IsKeyClicked(m_ClientID, KEY_EVENT_FIRE);
+		const bool isClicked = isInMenuArea && pServer->Input()->IsKeyClicked(m_ClientID, KEY_EVENT_FIRE);
 
 		// is clicked with active text field editor
-		if(isClicked && pPlayer->m_MotdData.m_CurrentInputField.Active)
+		if(isClicked && isSelected && pPlayer->m_MotdData.m_CurrentInputField.Active)
 		{
 			GS()->Chat(m_ClientID, "[&] Editing a field is canceled!");
 			pPlayer->m_MotdData.m_CurrentInputField.Active = false;
