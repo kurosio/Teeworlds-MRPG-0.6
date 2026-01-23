@@ -424,6 +424,9 @@ void FixedViewCam::ViewLock(const vec2& Position, bool Smooth)
 
 void FixedViewCam::Tick(int TickSpeed, vec2& playerView)
 {
+	if(!m_Smooth && m_CurrentView.has_value())
+		playerView = *m_CurrentView;
+
 	if(m_Returning)
 	{
 		const int ReturnSpeed = TickSpeed / 2;
@@ -486,7 +489,7 @@ void FixedViewCam::Tick(int TickSpeed, vec2& playerView)
 		}
 	}
 
-	if(m_CurrentView.has_value())
+	if(m_Smooth && m_CurrentView.has_value())
 		playerView = *m_CurrentView;
 }
 
