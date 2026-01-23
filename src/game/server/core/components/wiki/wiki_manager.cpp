@@ -1,7 +1,29 @@
 #include "wiki_manager.h"
 
+#include <base/system.h>
 #include <engine/shared/linereader.h>
 #include <game/server/gamecontext.h>
+
+namespace
+{
+	bool IsBracketHeading(std::string_view Line, std::string_view& OutPath)
+	{
+		auto trimView = [](std::string_view text)
+		{
+			while(!text.empty() && std::isspace(static_cast<unsigned char>(text.front()))) text.remove_prefix(1);
+			while(!text.empty() && std::isspace(static_cast<unsigned char>(text.back()))) text.remove_suffix(1);
+			return text;
+		};
+
+		Line = trimView(Line);
+		if(Line.size() >= 2 && Line.front() == '[' && Line.back() == ']')
+		{
+			OutPath = Line.substr(1, Line.size() - 2);
+			return !trimView(OutPath).empty();
+		}
+		return false;
+	}
+}
 
 void CWikiManager::OnPreInit()
 {
@@ -10,35 +32,94 @@ void CWikiManager::OnPreInit()
 		return;
 
 	// initialize variables
-	std::string CurrentTitle;
 	std::string CurrentContent;
 	int incrementWikiID = 1;
+	std::unordered_map<std::string, int> PathToID;
+	CWikiData* pCurrentNode = nullptr;
+
+	// try create new node
+	const auto GetOrCreateNode = [&](const std::vector<std::string>& Segments) -> CWikiData*
+	{
+		if(Segments.empty())
+			return nullptr;
+
+		int ParentID = NOPE;
+		std::string Path;
+		CWikiData* pNode = nullptr;
+
+		for(const auto& Segment : Segments)
+		{
+			if(!Path.empty())
+				Path.append("/");
+			Path.append(Segment);
+
+			auto it = PathToID.find(Path);
+			if(it == PathToID.end())
+			{
+				auto pData = CWikiData::CreateElement(incrementWikiID++);
+				pData->Init(Segment, "");
+				pData->SetParentID(ParentID);
+				pNode = pData.get();
+				PathToID[Path] = pData->GetID();
+				if(ParentID != NOPE)
+				{
+					if(auto pParent = GetWikiData(ParentID))
+						pParent->AddChild(pData->GetID());
+				}
+			}
+			else
+				pNode = GetWikiData(it->second);
+
+			if(pNode && ParentID != NOPE && pNode->GetParentID() == NOPE)
+			{
+				pNode->SetParentID(ParentID);
+				if(auto pParent = GetWikiData(ParentID))
+					pParent->AddChild(pNode->GetID());
+			}
+
+			ParentID = pNode ? pNode->GetID() : NOPE;
+		}
+
+		return pNode;
+	};
+
+	// lambda for install content to node
+	const auto FinalizeNodeContent = [&]()
+	{
+		if(pCurrentNode)
+			pCurrentNode->SetContent(CurrentContent);
+		CurrentContent.clear();
+	};
 
 	// parse wiki information
 	for(const char* pLine = Reader.Get(); pLine; pLine = Reader.Get())
 	{
-		if(str_startswith(pLine, "#"))
-		{
-			if(!CurrentTitle.empty() && !CurrentContent.empty())
-			{
-				CWikiData::CreateElement(incrementWikiID++)->Init(CurrentTitle, CurrentContent);
-				CurrentContent.clear();
-			}
+		std::string Line = pLine;
+		const auto TrimmedLine = mystd::string::trim(Line);
+		std::string_view HeadingPath;
 
-			CurrentTitle = pLine + 1;
+		if(IsBracketHeading(TrimmedLine, HeadingPath))
+		{
+			FinalizeNodeContent();
+			pCurrentNode = GetOrCreateNode(mystd::string::split_array_by_delimiter(HeadingPath, '/'));
+		}
+		else if(!TrimmedLine.empty() && TrimmedLine.front() == '#')
+		{
+			FinalizeNodeContent();
+			std::string_view TitleView = TrimmedLine;
+			TitleView.remove_prefix(1);
+			const auto TrimmedTitle = mystd::string::trim(TitleView);
+			pCurrentNode = GetOrCreateNode({ std::string(TrimmedTitle) });
 		}
 		else
 		{
-			CurrentContent += pLine;
+			CurrentContent += Line;
 			CurrentContent += "\n";
 		}
 	}
 
 	// add last element
-	if(!CurrentTitle.empty() && !CurrentContent.empty())
-	{
-		CWikiData::CreateElement(incrementWikiID++)->Init(CurrentTitle, CurrentContent);
-	}
+	FinalizeNodeContent();
 }
 
 void CWikiManager::OnConsoleInit()
@@ -56,28 +137,32 @@ bool CWikiManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
 		MotdMenu Menu(ClientID, MTFLAG_CLOSE_BUTTON);
 		for(const auto& pData : CWikiData::Data())
 		{
-			Menu.AddMenu(MOTD_MENU_WIKI_SELECT, pData->GetID(), pData->GetTitle());
+			if(pData->GetParentID() == NOPE)
+				Menu.AddMenu(MOTD_MENU_WIKI_SELECT, pData->GetID(), pData->GetTitle());
 		}
+		Menu.AddSeparateLine();
 		Menu.Send(MOTD_MENU_WIKI_INFO);
-
 		return true;
 	}
 
 	// motd wiki select
 	if(Menulist == MOTD_MENU_WIKI_SELECT)
 	{
-		pPlayer->m_pMotdMenu->SetLastMenulist(MOTD_MENU_WIKI_INFO);
-
-		std::string Content = "Invalid wiki ID";
 		const auto MotdSelect = pPlayer->m_pMotdMenu->GetMenuExtra();
+		const auto pWikiData = MotdSelect ? GetWikiData(MotdSelect.value()) : nullptr;
 
-		if(const auto pWikiData = GetWikiData(MotdSelect.value_or(NOPE)))
+		MotdMenu Menu(ClientID, pWikiData ? pWikiData->GetContent().c_str() : "Invalid wiki ID");
+		if(pWikiData)
 		{
-			Content = pWikiData->GetContent();
+			for(const auto ChildID : pWikiData->GetChildren())
+			{
+				if(const auto pChild = GetWikiData(ChildID))
+					Menu.AddMenu(MOTD_MENU_WIKI_SELECT, pChild->GetID(), pChild->GetTitle());
+			}
 		}
-
-		MotdMenu Menu(ClientID, Content.c_str());
+		Menu.AddSeparateLine();
 		Menu.AddBackpage();
+		Menu.AddSeparateLine();
 		Menu.Send(MOTD_MENU_WIKI_SELECT);
 		return true;
 	}

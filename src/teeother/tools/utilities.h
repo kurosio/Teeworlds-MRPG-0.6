@@ -308,6 +308,26 @@ namespace mystd
 				return { trim(InputString), {} };
 		}
 
+		inline std::vector<std::string> split_array_by_delimiter(std::string_view InputString, char Delimiter)
+		{
+			std::vector<std::string> Segments;
+			std::string PathLine = mystd::string::trim(InputString);
+			InputString = PathLine;
+			while(!InputString.empty())
+			{
+				const auto Divider = InputString.find('/');
+				auto Segment = InputString.substr(0, Divider);
+				const auto SegmentLine = mystd::string::trim(Segment);
+				Segment = SegmentLine;
+				if(!Segment.empty())
+					Segments.emplace_back(Segment);
+				if(Divider == std::string_view::npos)
+					break;
+				InputString.remove_prefix(Divider + 1);
+			}
+			return Segments;
+		}
+
 		inline std::vector<std::string> split_lines(const std::string& input)
 		{
 			std::vector<std::string> lines;

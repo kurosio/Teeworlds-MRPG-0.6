@@ -173,12 +173,18 @@ void MotdMenu::Tick()
 			if(command == "MENU")
 			{
 				const auto& [MenuID, Extra] = m_Points[i].Unpack<int, int>();
-				updatedMotd = true;
-				m_Menulist = MenuID;
-				m_MenuExtra = Extra <= NOPE ? std::nullopt : std::make_optional<int>(Extra);
-				motdData.m_HoveredItemIndex = NOPE;
-				motdData.m_vFields.clear();
-				motdData.m_ScrollManager.Reset();
+				const auto NewExtra = Extra <= NOPE ? std::nullopt : std::make_optional<int>(Extra);
+				const bool ChangedMenu = MenuID != m_Menulist || NewExtra != m_MenuExtra;
+				if(ChangedMenu)
+				{
+					updatedMotd = true;
+					m_MenuHistory.push_back({ m_Menulist, m_MenuExtra });
+					m_Menulist = MenuID;
+					m_MenuExtra = NewExtra;
+					motdData.m_HoveredItemIndex = NOPE;
+					motdData.m_vFields.clear();
+					motdData.m_ScrollManager.Reset();
+				}
 
 			}
 
@@ -186,7 +192,18 @@ void MotdMenu::Tick()
 			if(command == "BACKPAGE")
 			{
 				updatedMotd = true;
-				m_Menulist = m_LastMenulist;
+				if(!m_MenuHistory.empty())
+				{
+					const auto Back = m_MenuHistory.back();
+					m_MenuHistory.pop_back();
+					m_Menulist = Back.Menulist;
+					m_MenuExtra = Back.MenuExtra;
+				}
+				else
+				{
+					m_Menulist = m_LastMenulist;
+					m_MenuExtra = std::nullopt;
+				}
 				motdData.m_HoveredItemIndex = NOPE;
 				motdData.m_vFields.clear();
 				motdData.m_ScrollManager.Reset();
@@ -257,6 +274,7 @@ void MotdMenu::Send(int Menulist)
 		m_Menulist = Menulist;
 		if(pPlayer->m_pMotdMenu)
 		{
+			m_MenuHistory = pPlayer->m_pMotdMenu->m_MenuHistory;
 			m_LastMenulist = (pPlayer->m_pMotdMenu->m_Menulist != Menulist) ? pPlayer->m_pMotdMenu->m_Menulist : pPlayer->m_pMotdMenu->m_LastMenulist;
 		}
 		pPlayer->m_pMotdMenu = std::make_unique<MotdMenu>(*this);

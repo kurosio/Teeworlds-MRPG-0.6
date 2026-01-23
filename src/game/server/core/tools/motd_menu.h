@@ -30,6 +30,12 @@ class MotdMenu
 
 	std::vector<MotdOption> m_Points {};
 	std::optional<int> m_MenuExtra {};
+	struct MenuState
+	{
+		int Menulist { NOPE };
+		std::optional<int> MenuExtra {};
+	};
+	std::vector<MenuState> m_MenuHistory {};
 	int m_LastMenulist{NOPE};
 	int m_Menulist {NOPE};
 	int m_Flags {};

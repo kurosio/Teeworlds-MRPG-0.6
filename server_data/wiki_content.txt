@@ -1,117 +1,98 @@
-﻿#What is there | Account system
-[Account Leveling] - allows players to progress the levels of individual character classes, including both combat and crafting professions, rather than leveling the account itself. With no level cap, players can continually advance each class. Each new level grants Upgrade Points, which can be spent to enhance abilities, skills, and professions, allowing for ongoing growth and customization across various aspects of gameplay.
+[Account]
+Your account is the foundation of character progression and overall history.
 
-#What is there | Achivement System
-[The Achievement System] - rewards players with Achievement Points for completing various milestones across diverse categories, from item collection to PVP victories. Players can earn special titles and unique items as rewards, marking their accomplishments and progress within the game. This system encourages exploration and mastery across different aspects of gameplay, adding depth and goals for all types of players.
+[Account/Leveling]
+Account Leveling lets you advance individual classes (combat and crafting) instead of a single account level. There is no level cap, and each level grants Upgrade Points to enhance skills, abilities, and professions.
 
-#What is there | Portals = Aethers
-[Aethers] - are mystical gateways found in specific zones that allow players to instantly teleport between worlds for a fee, which varies by distance or destination. Once activated, each Aether unlocks access to new areas within the teleportation network, making exploration, questing, and regrouping with allies faster and more efficient. As players unlock more Aethers, travel across realms becomes streamlined, opening up seamless movement through the gameвЂ™s expansive world.
+[Account/Achievements]
+The Achievement System rewards points for milestones like item collection and PVP victories. Achievements can grant titles and unique items.
 
-#What is there | Mobs & Bosses
-[Mobs & Bosses] - Mobs and bosses with their own artificial intelligence.  Each could be unique. He can be strong or he can be weak. Each mob and boss can drop items.
+[Account/Rank]
+Ranking shows your position among players or guilds.
 
+[Economy]
+The economy ties everything together: resources are gathered, stores are supplied, and player trading shapes demand.
 
+[Economy/Bank]
+The bank keeps your gold safe with a storage fee, protecting it from loss on death.
 
+[Economy/Stores]
+Stores across the world sell different assortments. Buying and selling creates demand and keeps trade moving.
 
+[Economy/Auctions]
+Auctions allow players to sell any item at their own price, enabling player-driven trade.
 
-#Economy | Economy
-[Economy] - In our world, every element is important. You can't just buy it. We have products. So every player contributes to the economy. You can extract and give away resources, in return you replenish stores with products and can buy goods.
+[Economy/Weapons]
+Every weapon is unique and can be used by mobs, NPCs, and players. Weapons can be enchanted, dropped, or shared.
 
-#Economy | Bank system
-[Bank system] - We have a simple banking system, you invest your money and you don't lose it. Yes, there are storage fees, but it's better than losing it in battle.
+[Economy/Housing]
+Maps contain houses and guild houses. Each can be purchased, decorated, and used to grow plants.
 
-#Economy | Lots of stores
-[Lots of stores] - There are stores all over the world and different assortments everywhere. By buying and selling you create a demand for products. 
+[Items]
+Items are found, crafted, or earned. Rare items can be unique to their owners.
 
-#Economy | Auctions
-[Auctions] - Each player can sell any item for any price. That means there is trading between players.
+[Items/Crafting]
+Crafting turns resources into items, from iron ingots to vampire armor. It takes time but pays off.
 
-#Economy | Lots of guns
-[Lots of guns] - Each weapon is unique. Every mob or npc can use them. Even you. Weapons can also be enchanted, thrown away and shared with someone.
+[Items/Enchantments]
+Enchantments improve item attributes and require materials and gold.
 
-#Economy | House plots and guild houses
-[House plots and guild houses] - There are houses and guild houses on the maps. Each house can be purchased for a certain value. You can grow plants in each house. You can invite friends and also hang various decorations on the walls.
+[Character]
+Classes, skills, and professions define your character.
 
+[Character/Classes]
+Class specialization lets you build a strong fighter or a supportive healer. Skill points shape your role and playstyle.
 
+[Character/Skills]
+Use a mix of general and class-specific skills. Activate with /useskill <number>.
 
+[Character/Quests]
+Quests provide unique NPC tasks, rewards, and activity points you can spend on valuable items.
 
-#Items | Items
-[Items] - The MMORPG world is filled with various things that can be found anywhere. You can, for example, mine, collect, create, win. And it may turn out that you have one item that no one else has
+[Character/Mining]
+Mining is a core profession: ore is essential for crafting.
 
-#Items | Crafting System
-[Crafting System] - Using resources you can craft any item. From iron ingots to vampire armor.  You will need to spend some time to craft something. But it's worth it
+[Character/Farming]
+Farming is the simplest profession and rewards you with gold for harvesting crops.
 
-#Items | Enchantments - 
-[Enchantments] - Enchanting in mmorpgs is like an add-on. You can enchant items to increase their characteristics. That is, you need materials and gold to do this
+[Management]
+Menus for account and character management.
 
+[Management/Personal Menu]
+Your personal menu for controlling professions, classes, and core settings.
 
+[Management/Upgrades]
+Upgrades and professions let you customize classes and skills in detail. You can change class outside of combat.
 
-#Character | Class system
-[Class system] - There are special classes that are customized for different game. You can either be strong or a healer. It all depends on your game. There are also skill points that you can use to improve various stats
+[Management/Equipment]
+Equipment shows what you have equipped and lets you swap items.
 
-#Character | Skills
-[Skills] - There are general skills and there are class skills. Each class is different. You can combine different skills to achieve different goals. Activate skill /useskill <number>
-#Quest system
-[Quest system] - Unique quest system. You will listen to npcs, run errands, get rewards. In return, you will receive activity points and spend them on cool things
+[Management/Modules]
+Modules work like equipment slots for special items.
 
-#Character | Mining
-[Mining] - A miner's profession. The basis of all the basics because without it you can't scrap almost anything. Mine ore to craft things. 
+[Management/Inventory]
+Inventory management lets you recycle materials, discard items, or prepare them for sale.
 
-#Character | Farming
-[Farming] - The easiest of professions. is to be a farmer. You can work for the benefit of the settlement and harvest crops. In return, you will get a lot of gold
+[Management/Social]
+Social and group menus handle parties, guilds, and mailbox deliveries.
 
+[Management/Dungeons]
+Dungeons are dangerous raids for solo or group play.
 
+[Management/Group]
+Groups let you team up without damaging each other.
 
+[Management/Guild]
+Guilds allow you to manage upgrades, the guild house, and interactions like wars.
 
-#Management | Personal menu
-[Personal menu] - In the personalized menu, you control the invetarem of professions and classes
+[Management/Guild Finder]
+Use the guild finder to search and join a guild.
 
-#Management | Upgrades and professions
-[Upgrades and professions] - This is where you can customize your classes in detail and can put your skills into the abilities you need.  Also we can change class at any time except in combat. Pay special attention to this because you can develop much faster.
+[Management/Mailbox]
+Your mailbox stores delivered items and messages.
 
-#Management | Equipment
-[Equipment] - The equipment tab shows the items that are currently equipped. In this way you can be effective somewhere. Also in this tab you can both remove an item and put on a corresponding other item.
+[Management/Settings]
+Settings let you change language, titles, and gameplay-related options.
 
-#Management | Modules
-[Modules] - The modules tab is similar to the equipment tab. Here you can wear as many items as you want, as well as special items
-
-
-#Management | Inventory
-[Inventory] - In the inventory tab, you can manage your gear and resources. Here you can find all the equipment and resources you have. You can both recycle some things in material and just throw them away. You can also glamorize certain items and sell them at auction.
-
-#Management | Social and Group menu
-[Social and Group menu] - The social menu is where all of your interactions take place. You can both create groups and guilds, join and leave them. Also here you have a mail in which you will receive some items 
-
-#Management| Dungeons
-[Dungeons] - In this tab, you can raid the most dangerous creatures in the MMORPG world. With friends or alone
-
-#Management | Group
-[Group] - A small tab about the groups. This is where you choose your partners and can team up. You will be in a group and will not deal damage to each other. It is useful when you will do something together
-
-
-#Management | Guild finder
-[Guild finder] - If you are looking for a guild, you can join it in this tab. It works like a search.
-
-#Management | Guild
-[Guild] - The main tab for managing or interacting with guilds. Here you can both improve the guild and manage the guild house.  For example, plant plants, declare war on another guild in the house and much more
-
-#Management | Mailbox
-[Mailbox] Your personal mailbox from which you can receive items
-
-#Management | Settings and Journal
-[Settings and Journal] - Basic settings and account history. Useful if you have lost something or want to change something you don't like. 
-
-#Management | Settings
-[Settings] - In the settings you can: change the language, change the title (can give bonuses) and other settings related to gameplay that can help you for example navigator
-
-#Management | Journal
-[Journal] - The log shows the entire account history from quests
-
-#Ranking information
-[Rank] - A ranking system that shows your place in the player list or guild list
-
-
-
-
-
-
+[Management/Journal]
+The journal tracks account history and quest logs.
