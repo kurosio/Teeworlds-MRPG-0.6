@@ -1,0 +1,337 @@
+/*
+  Editor Template (adaptive, reusable)
+  -------------------------------------------------------------
+  A thin layout layer shared by ALL editors.
+  Keep the core visuals in editor-theme.css; this file adds:
+  - Page shell + header
+  - Sidebar/Main responsive grid
+  - Section blocks + field grids
+  - Reusable "table-like" list mode for list fields
+
+  Minimal setup per editor:
+    <link rel="stylesheet" href="editor-core/editor-theme.css" />
+    <link rel="stylesheet" href="editor-core/editor-template.css" />
+    <body class="editor-theme" data-editor="crafts"> ...
+
+  Optional per-editor overrides:
+    body[data-editor="crafts"]{ --editor-accent: ...; }
+*/
+
+:root{
+  /* Page layout */
+  --editor-page-max: 1280px;
+  --editor-page-pad: 20px;
+  --editor-sidebar-w: 380px;
+
+  /* Card / section tuning */
+  --editor-card-radius: var(--editor-radius, 14px);
+  --editor-card-pad: 18px;
+
+  /* Field grids */
+  --editor-fields-gap: 12px;
+
+  /* Table list mode */
+  --editor-table-idx: 44px;
+  --editor-table-del: 44px;
+  --editor-table-col2: 160px;
+}
+
+/* -------------------------------------------------------------
+   Per-editor presets (thin + optional)
+   ------------------------------------------------------------- */
+body[data-editor="crafts"]{ --editor-accent:#22c55e; }
+body[data-editor="mobs"]{ --editor-accent:#f43f5e; }
+body[data-editor="events"]{ --editor-accent:#60a5fa; }
+body[data-editor="scenario"]{ --editor-accent:#a78bfa; }
+body[data-editor="vouchers"]{ --editor-accent:#f59e0b; }
+
+/* -------------------------------------------------------------
+   Page shell
+   ------------------------------------------------------------- */
+.editor-page{
+  max-width: var(--editor-page-max);
+  margin: 0 auto;
+  padding: var(--editor-page-pad);
+}
+
+.editor-page-header{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap: 14px;
+}
+
+.editor-page-title{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.editor-page-title h1{
+  margin:0;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: .2px;
+  line-height: 1.1;
+}
+
+.editor-page-sub{
+  margin-top: 4px;
+  color: var(--editor-text-muted);
+  font-size: 13px;
+}
+
+.editor-page-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap: 10px;
+  align-items:center;
+}
+
+/* Badge (used already in some editors; keep compatible) */
+.editor-badge{
+  display:inline-flex;
+  align-items:center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  border: 1px solid rgba(255,255,255,.10);
+  background: rgba(255,255,255,.04);
+  color: rgba(229,231,235,.92);
+}
+
+/* -------------------------------------------------------------
+   Sidebar + main grid (works for crafts, vouchers, etc.)
+   ------------------------------------------------------------- */
+.editor-shell{
+  display:grid;
+  grid-template-columns: minmax(260px, var(--editor-sidebar-w)) minmax(0, 1fr);
+  gap: 18px;
+  align-items:start;
+  margin-top: 18px;
+}
+
+.editor-sidebar{
+  position: sticky;
+  top: 16px;
+  align-self: start;
+  min-width: 0;
+}
+
+.editor-main{
+  min-width: 0;
+}
+
+@media (max-width: 1100px){
+  .editor-shell{ grid-template-columns: 1fr; }
+  .editor-sidebar{ position: relative; top: 0; }
+}
+
+/* Standard card wrapper used in template layout */
+.editor-panel-card{
+  background: rgba(255,255,255,.03);
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: calc(var(--editor-card-radius) + 2px);
+  padding: var(--editor-card-pad);
+}
+
+.editor-card-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap: 14px;
+  padding-bottom: 14px;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  margin-bottom: 14px;
+}
+
+.editor-card-head h2{
+  margin:0;
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.editor-card-head .editor-card-sub{
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--editor-text-muted);
+}
+
+/* -------------------------------------------------------------
+   Sections + field grids
+   ------------------------------------------------------------- */
+.editor-section{
+  /* keep existing class from editor-theme.css but allow nicer padding */
+  padding: var(--editor-space, 14px);
+}
+
+.editor-section-head{
+  display:flex;
+  align-items:baseline;
+  justify-content:space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.editor-section-title{
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: .2px;
+}
+
+.editor-section-hint{
+  font-size: 12px;
+  color: var(--editor-text-muted);
+}
+
+/* Generic field grid: 12-column. */
+.editor-fields{
+  display:grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: var(--editor-fields-gap);
+  min-width: 0;
+}
+
+/* span helpers */
+.editor-span-12{grid-column: span 12;}
+.editor-span-8{grid-column: span 8;}
+.editor-span-6{grid-column: span 6;}
+.editor-span-4{grid-column: span 4;}
+.editor-span-3{grid-column: span 3;}
+.editor-span-2{grid-column: span 2;}
+
+@media (max-width: 900px){
+  .editor-span-8,.editor-span-6,.editor-span-4,.editor-span-3,.editor-span-2{grid-column: span 12;}
+}
+
+/* Optional helpers for mounting forms that output .editor-field blocks */
+.editor-form-grid-2{
+  display:grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--editor-fields-gap);
+  align-items:start;
+}
+@media (max-width: 640px){
+  .editor-form-grid-2{ grid-template-columns: 1fr; }
+}
+
+/* -------------------------------------------------------------
+   List "table mode" (reusable for drops, required items, etc.)
+   ------------------------------------------------------------- */
+
+/* Make default list wrapper stable (we replace Tailwind space-y in defaults.js) */
+.editor-list{display:flex;flex-direction:column;gap: 12px;min-width:0;}
+
+/* When listMode=table, FieldRenderer emits .editor-list-table */
+.editor-list-table{
+  gap: 0;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 16px;
+  overflow: clip;
+  background: rgba(0,0,0,.12);
+}
+
+.editor-list-table-header,
+.editor-list-table-row{
+  display:grid;
+  grid-template-columns: var(--editor-list-table-cols, var(--editor-table-idx) minmax(0,1fr) var(--editor-table-col2) var(--editor-table-del));
+  gap: 10px;
+  align-items:center;
+  padding: 10px 12px;
+  min-width: 0;
+}
+
+@media (min-width: 768px){
+  .editor-list-table-header,
+  .editor-list-table-row{
+    grid-template-columns: var(--editor-list-table-cols-md, var(--editor-list-table-cols, var(--editor-table-idx) minmax(0,1fr) var(--editor-table-col2) var(--editor-table-del)));
+  }
+}
+
+.editor-list-table-header{
+  font-size: 12px;
+  color: rgba(229,231,235,.62);
+  background: rgba(255,255,255,.03);
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+
+.editor-list-table-row{
+  border-top: 1px solid rgba(255,255,255,.06);
+}
+.editor-list-table-row:first-of-type{border-top: 0;}
+
+.editor-list-table-idx{
+  font-size: 12px;
+  color: rgba(229,231,235,.55);
+}
+
+/* Place the internal FieldRenderer blocks nicely */
+.editor-list-table-cell{min-width:0;}
+.editor-list-table-cell .editor-field{padding:0;border:0;background:transparent;}
+
+/* Hide nested labels (header already explains the columns) */
+.editor-list-table .editor-nested-label{display:none;}
+
+/* Remove button tighter */
+.editor-list-table-del{
+  justify-self: end;
+}
+
+/* On small screens, stack rows and hide header */
+@media (max-width: 700px){
+  .editor-list-table-header{display:none;}
+  .editor-list-table-row{
+    grid-template-columns: 1fr;
+    gap: 10px;
+    align-items: stretch;
+  }
+  .editor-list-table-idx{display:none;}
+  .editor-list-table-del{justify-self: end;}
+}
+
+/* -------------------------------------------------------------
+   Sidebar list polish (optional)
+   ------------------------------------------------------------- */
+.editor-sidebar-list{
+  border: 1px solid rgba(255,255,255,.08);
+  background: rgba(0,0,0,.12);
+  border-radius: 16px;
+  overflow:auto;
+}
+
+/* Search input with icon (works with your existing .editor-search markup) */
+.editor-search{position:relative;}
+.editor-search i{position:absolute;left:12px;top:50%;transform:translateY(-50%);opacity:.55;pointer-events:none;}
+.editor-search input{padding-left:36px;}
+
+/* -------------------------------------------------------------
+   Unsaved changes pill (shared across DB editors)
+   ------------------------------------------------------------- */
+
+.editor-dirty-pill{
+  display:inline-flex;
+  align-items:center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .15px;
+  color: rgba(253,230,138,.95); /* amber-ish */
+  background: rgba(245,158,11,.12);
+  border: 1px solid rgba(245,158,11,.30);
+  box-shadow: 0 0 0 1px rgba(0,0,0,.10) inset;
+}
+
+.editor-dirty-pill::before{
+  content:"";
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: rgba(245,158,11,.92);
+  box-shadow: 0 0 0 2px rgba(0,0,0,.18);
+}
+
+.editor-dirty-pill.hidden{display:none;}

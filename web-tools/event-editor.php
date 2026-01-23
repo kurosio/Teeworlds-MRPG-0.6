@@ -12,6 +12,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="editor-core/editor-theme.css">
+    <link rel="stylesheet" href="editor-core/editor-template.css">
     <style>
         body{background:var(--editor-bg);color:var(--editor-text);overflow:hidden;}
         #app{background:var(--editor-bg);}
@@ -29,7 +30,7 @@
     </style>
 
 </head>
-<body class="antialiased editor-theme">
+<body class="antialiased editor-theme" data-editor="events">
     <div id="app" class="flex flex-col md:flex-row h-screen overflow-hidden">
         <aside class="w-full md:w-1/3 md:max-w-sm flex flex-col border-r">
             <div class="p-4 border-b border-slate-700/40 text-center">

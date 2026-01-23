@@ -17,7 +17,8 @@
         fieldWrapper: 'editor-field',
         nestedFieldWrapper: 'editor-field-nested',
         checkboxWrapper: 'flex items-center space-x-3 cursor-pointer',
-        listWrapper: 'space-y-2',
+        // Unified list wrapper (spacing + optional table mode)
+        listWrapper: 'editor-list',
         listItem: 'editor-list-item',
         listAdd: 'editor-btn editor-btn-primary text-sm',
         listRemove: 'editor-icon-btn editor-icon-danger',
@@ -38,7 +39,8 @@
         fieldWrapper: 'editor-field',
         nestedFieldWrapper: 'editor-field-nested',
         checkboxWrapper: 'flex items-center space-x-3 cursor-pointer',
-        listWrapper: 'space-y-2',
+        // Unified list wrapper (spacing + optional table mode)
+        listWrapper: 'editor-list',
         listItem: 'editor-list-item',
         listAdd: 'editor-btn editor-btn-primary text-sm',
         listRemove: 'editor-icon-btn editor-icon-danger',

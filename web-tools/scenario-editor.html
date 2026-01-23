@@ -18,12 +18,26 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
     <link rel="stylesheet" href="editor-core/editor-theme.css">
+    <link rel="stylesheet" href="editor-core/editor-template.css">
     
     <!-- Библиотека для Drag-and-Drop -->
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
     
     <style>
         /* Небольшие кастомные стили */
+        :root{ --scenario-header-h: 70px; }
+
+        /* Scenario header should stay in one line; overflow scroll instead of wrapping */
+        #scenario-header{ overflow-x: auto; }
+        #scenario-header, #scenario-header *{ scroll-margin-top: var(--scenario-header-h); }
+        #scenario-header .controls{ flex-wrap: nowrap; }
+        #scenario-header .controls > *{ flex: 0 0 auto; }
+        #scenario-header select, #scenario-header input{ width: clamp(160px, 18vw, 260px); }
+
+        /* Keep the navigator aligned with the real header height (fixes wrap/overlap issues). */
+        @media (min-width: 768px){
+          #navigator{ top: var(--scenario-header-h); height: calc(100vh - var(--scenario-header-h)); }
+        }
         .sortable-ghost {
             opacity: 0.4;
             background: rgba(0, 246, 255, 0.1);
@@ -87,10 +101,10 @@
         }
     </style>
 </head>
-<body class="editor-theme font-sans text-slate-100">
-    <header class="editor-surface h-[70px] px-4 md:px-8 border-b border-slate-200/30 flex flex-wrap justify-between items-center sticky top-0 z-50 shadow-sm gap-3">
-        <h1 class="text-2xl font-bold text-slate-100 flex items-center gap-3"><i class="fa-solid fa-scroll text-blue-300"></i> Редактор v30.3</h1>
-        <div class="controls flex flex-wrap items-center gap-3 w-full md:w-auto">
+<body class="editor-theme font-sans text-slate-100" data-editor="scenario">
+    <header id="scenario-header" class="editor-surface px-4 md:px-8 py-3 border-b border-slate-200/30 flex flex-row flex-nowrap justify-between items-center sticky top-0 z-50 shadow-sm gap-4">
+        <h1 class="text-xl md:text-2xl font-bold text-slate-100 flex items-center gap-3 whitespace-nowrap"><i class="fa-solid fa-scroll text-blue-300"></i> Редактор v30.3</h1>
+        <div class="controls flex flex-nowrap items-center gap-3 min-w-0">
             <div class="flex items-center gap-2 text-sm">
                 <label for="arrow-mode-toggle" class="font-medium text-slate-200">Стрелки:</label>
                 <div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
@@ -99,11 +113,11 @@
                 </div>
             </div>
             <label for="scenario-select" class="text-sm font-medium text-slate-200">Сценарий:</label>
-            <select id="scenario-select" class="form-input w-full sm:w-64"></select>
+            <select id="scenario-select" class="form-input w-full sm:w-64 min-w-[160px] max-w-[260px]"></select>
             <button id="delete-scenario-btn" title="Удалить текущий сценарий" class="editor-btn editor-btn-danger">
                 <i class="fa-solid fa-trash-can"></i>
             </button>
-            <input type="text" id="save-as-filename" placeholder="Сохранить как..." class="form-input w-full sm:w-56">
+            <input type="text" id="save-as-filename" placeholder="Сохранить как..." class="form-input w-full sm:w-56 min-w-[160px] max-w-[260px]">
             <button id="save-button" title="Сохранить текущий сценарий" class="editor-btn editor-btn-primary flex items-center gap-2">
                 <i class="fa-solid fa-save"></i> Сохранить
             </button>
@@ -111,7 +125,7 @@
     </header>
 
     <div class="main-container flex flex-col md:flex-row items-start">
-        <aside id="navigator" class="w-full md:w-[350px] md:h-[calc(100vh-70px)] editor-surface border-r border-slate-200/30 md:sticky md:top-[70px] overflow-y-auto flex-shrink-0 z-20">
+        <aside id="navigator" class="w-full md:w-[350px] editor-surface border-r border-slate-200/30 md:sticky overflow-y-auto flex-shrink-0 z-20">
             <div class="navigator-header p-4 font-semibold border-b border-slate-200/30 editor-surface sticky top-0 z-10 flex justify-between items-center">
                 <span class="text-slate-100">Структура сценария</span>
                 <button id="add-group-btn" class="editor-btn editor-btn-primary text-sm" title="Создать новую группу">
@@ -1624,7 +1638,21 @@
             }
         });
 
-        document.addEventListener('DOMContentLoaded', () => ScenarioApp.mount());
+        document.addEventListener('DOMContentLoaded', () => {
+            ScenarioApp.mount();
+
+            // Sync CSS var with actual header height (fixes top bar/layout when it wraps).
+            const header = document.getElementById('scenario-header');
+            const setHeaderVar = () => {
+                if (!header) return;
+                document.documentElement.style.setProperty('--scenario-header-h', `${header.offsetHeight}px`);
+            };
+            setHeaderVar();
+            const throttled = window.EditorCore?.utils?.rafThrottle ? window.EditorCore.utils.rafThrottle(setHeaderVar) : setHeaderVar;
+            window.addEventListener('resize', throttled);
+            // In case fonts load late
+            setTimeout(setHeaderVar, 50);
+        });
     </script>
 </body>
 </html>

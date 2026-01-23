@@ -894,6 +894,15 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
 
   const escapeAttr = (value) => String(value).replace(/"/g, '&quot;');
 
+  // Used in list/table headers and other HTML fragments.
+  // Some widgets also define a local escapeHtml; this one is a safe outer fallback.
+  const escapeHtml = (s) => String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
   const buildDefaultItem = (field) => {
     if (field?.itemDefault !== undefined) {
       return cloneValue(field.itemDefault);
@@ -1188,7 +1197,62 @@ const renderCheckbox = () => {
       const itemFields = field.itemFields || {};
       const hideLabel = !!(field?.ui?.hideLabel);
       const layout = (field?.ui?.layout || 'stack').toLowerCase();
-      const layoutClass = layout === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 gap-3' : 'space-y-3';
+      const isGrid = layout === 'grid';
+      const listMode = String(field?.ui?.listMode || '').toLowerCase();
+      const isTable = listMode === 'table';
+      const layoutClass = isGrid ? 'editor-grid-fields' : 'space-y-3';
+      const gridStyleParts = [];
+      if (isGrid) {
+        if (field?.ui?.gridGap) gridStyleParts.push(`--editor-grid-gap:${String(field.ui.gridGap)}`);
+        if (field?.ui?.gridTemplate) gridStyleParts.push(`--editor-grid-template:${String(field.ui.gridTemplate)}`);
+        if (field?.ui?.gridTemplateMd) gridStyleParts.push(`--editor-grid-template-md:${String(field.ui.gridTemplateMd)}`);
+        if (field?.ui?.gridTemplateLg) gridStyleParts.push(`--editor-grid-template-lg:${String(field.ui.gridTemplateLg)}`);
+      }
+      const gridStyleAttr = gridStyleParts.length ? ` style="${escapeAttr(gridStyleParts.join(';'))}"` : '';
+
+      if (isTable) {
+        const cols = String(field?.ui?.tableCols || field?.ui?.gridTemplate || 'minmax(0,1fr)');
+        const colsMd = String(field?.ui?.tableColsMd || field?.ui?.gridTemplateMd || cols);
+        const colsStyle = `--editor-list-table-cols: var(--editor-table-idx) ${cols} var(--editor-table-del); --editor-list-table-cols-md: var(--editor-table-idx) ${colsMd} var(--editor-table-del);`;
+
+        const headerMode = field?.ui?.tableHeader;
+        const showHeader = headerMode !== false;
+        const headerLabels = Array.isArray(headerMode)
+          ? headerMode
+          : Object.values(itemFields).map(f => String(f?.label || '').trim()).filter(Boolean);
+
+        const headerHtml = showHeader
+          ? `<div class="editor-list-table-header"><div>#</div>${headerLabels.map(l => `<div>${escapeHtml(l)}</div>`).join('')}<div></div></div>`
+          : '';
+
+        const rowsHtml = items.map((item, index) => {
+          const itemPath = `${path}.${index}`;
+          const cells = Object.keys(itemFields).map((key) => {
+            const subField = itemFields[key];
+            const subPath = `${itemPath}.${key}`;
+            return `<div class="editor-list-table-cell">${renderField({ path: subPath, field: subField, data, options, isNested: true })}</div>`;
+          }).join('');
+          return `
+            <div class="editor-list-table-row" data-list-item="${escapeAttr(itemPath)}">
+              <div class="editor-list-table-idx">#${index + 1}</div>
+              ${cells}
+              <button type="button" class="${listRemoveClass} editor-list-table-del" title="Удалить" data-list-action="remove" data-list-path="${escapeAttr(path)}" data-list-index="${index}">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </div>`;
+        }).join('');
+
+        const defaultItem = buildDefaultItem(field);
+        const defaultPayload = encodeURIComponent(JSON.stringify(defaultItem));
+        return `
+          <div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">
+            ${hideLabel ? '' : labelHtml}
+            <div class="${listWrapperClass} editor-list-table" data-list-container="${escapeAttr(path)}" style="${escapeAttr(colsStyle)}">${headerHtml}${rowsHtml}</div>
+            <button type="button" class="${listAddClass}" data-list-action="add" data-list-path="${escapeAttr(path)}" data-list-default="${defaultPayload}">${field?.ui?.addLabel || options?.listAddLabel || 'Добавить'}</button>
+            ${hintHtml}
+          </div>`;
+      }
+
       const listItems = items.map((item, index) => {
         const itemPath = `${path}.${index}`;
         const itemContent = Object.entries(itemFields).map(([key, subField]) => {
@@ -1202,8 +1266,12 @@ const renderCheckbox = () => {
                 <i class="fa-solid fa-trash"></i>
               </button>
             </div>
-            <div class="${layoutClass}">
-              ${itemContent}
+            <div class="${layoutClass}"${gridStyleAttr}>
+              ${isGrid ? Object.entries(itemFields).map(([key, subField]) => {
+                const subPath = `${itemPath}.${key}`;
+                const inner = renderField({ path: subPath, field: subField, data, options, isNested: true });
+                return inner;
+              }).join('') : itemContent}
             </div>
           </div>`;
       }).join('');
@@ -2072,7 +2140,7 @@ const renderCheckbox = () => {
         fieldWrapper: 'editor-field',
         nestedFieldWrapper: 'editor-field-nested',
         checkboxWrapper: 'flex items-center space-x-3 cursor-pointer',
-        listWrapper: 'space-y-2',
+        listWrapper: 'editor-list',
         listItem: 'editor-list-item',
         listAdd: 'editor-btn editor-btn-primary text-sm',
         listRemove: 'editor-icon-btn editor-icon-danger',
@@ -2093,7 +2161,7 @@ const renderCheckbox = () => {
         fieldWrapper: 'editor-field',
         nestedFieldWrapper: 'editor-field-nested',
         checkboxWrapper: 'flex items-center space-x-3 cursor-pointer',
-        listWrapper: 'space-y-2',
+        listWrapper: 'editor-list',
         listItem: 'editor-list-item',
         listAdd: 'editor-btn editor-btn-primary text-sm',
         listRemove: 'editor-icon-btn editor-icon-danger',

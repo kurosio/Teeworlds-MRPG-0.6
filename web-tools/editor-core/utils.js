@@ -154,6 +154,113 @@
     }, ttl);
   };
 
+  // ------------------------------------------------------------
+  // Dirty (unsaved changes) tracker
+  // ------------------------------------------------------------
+  // Shared helper for DB editors: shows a small "Данные не сохранены" pill
+  // and warns on page unload. Editors can call setClean() after load/save.
+  const ensureDirtyPill = ({
+    id = 'dirty-pill',
+    text = 'Данные не сохранены',
+    saveButton = null,
+    container = null,
+  } = {}) => {
+    let pill = document.getElementById(id);
+    if (pill) return pill;
+
+    pill = document.createElement('span');
+    pill.id = id;
+    pill.className = 'editor-dirty-pill hidden';
+    pill.textContent = text;
+    pill.setAttribute('aria-hidden', 'true');
+
+    // Prefer inserting next to the save button.
+    if (saveButton?.parentElement) {
+      saveButton.parentElement.insertBefore(pill, saveButton);
+      return pill;
+    }
+    if (container) {
+      container.appendChild(pill);
+      return pill;
+    }
+    return pill;
+  };
+
+  const createDirtyTracker = ({
+    root = document,
+    pill = null,
+    beforeUnload = true,
+    onDirtyChange = null,
+  } = {}) => {
+    let dirty = false;
+    let suspendCount = 0;
+
+    const applyUI = () => {
+      if (pill) {
+        pill.classList.toggle('hidden', !dirty);
+        pill.setAttribute('aria-hidden', dirty ? 'false' : 'true');
+      }
+      if (typeof onDirtyChange === 'function') onDirtyChange(dirty);
+    };
+
+    const setDirty = (v) => {
+      const next = !!v;
+      if (next === dirty) return;
+      dirty = next;
+      applyUI();
+    };
+
+    const markDirty = () => {
+      if (suspendCount > 0) return;
+      setDirty(true);
+    };
+
+    const setClean = () => setDirty(false);
+
+    const suspend = (fn) => {
+      suspendCount++;
+      try { return fn?.(); }
+      finally { suspendCount = Math.max(0, suspendCount - 1); }
+    };
+
+    // Capture phase so it works even if editors stopPropagation in handlers.
+    const onAnyInput = () => markDirty();
+    const onAnyClick = (e) => {
+      const t = e.target;
+      if (!t) return;
+      // Buttons that mutate state via core widgets / list actions.
+      if (t.closest?.('[data-list-action],[data-tag-add],[data-tag-remove],[data-items-action]')) {
+        markDirty();
+      }
+    };
+
+    root.addEventListener('input', onAnyInput, true);
+    root.addEventListener('change', onAnyInput, true);
+    root.addEventListener('click', onAnyClick, true);
+
+    const onBeforeUnload = (e) => {
+      if (!dirty) return;
+      e.preventDefault();
+      // Chrome requires returnValue to be set.
+      e.returnValue = '';
+    };
+    if (beforeUnload) window.addEventListener('beforeunload', onBeforeUnload);
+
+    return {
+      isDirty: () => dirty,
+      setDirty,
+      markDirty,
+      setClean,
+      suspend,
+      destroy: () => {
+        root.removeEventListener('input', onAnyInput, true);
+        root.removeEventListener('change', onAnyInput, true);
+        root.removeEventListener('click', onAnyClick, true);
+        if (beforeUnload) window.removeEventListener('beforeunload', onBeforeUnload);
+      }
+    };
+  };
+
   window.EditorCore = window.EditorCore || {};
   window.EditorCore.utils = {
     uuid,
@@ -165,6 +272,14 @@
     readJsonFile,
     fetchJson,
     showToast,
+    ensureDirtyPill,
+    createDirtyTracker,
+  };
+
+  // Convenience alias (so editors can do EditorCore.Dirty.create(...))
+  window.EditorCore.Dirty = {
+    ensurePill: ensureDirtyPill,
+    create: createDirtyTracker,
   };
 
   // Also expose at top-level for convenience in editors.

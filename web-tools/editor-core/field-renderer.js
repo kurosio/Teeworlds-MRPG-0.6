@@ -98,6 +98,15 @@
 
   const escapeAttr = (value) => String(value).replace(/"/g, '&quot;');
 
+  // Used in list/table headers and other HTML fragments.
+  // Keep it here to avoid missing globals in editors.
+  const escapeHtml = (s) => String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
   const normalizeCssSize = (v) => {
     if (v == null) return '';
     const s = String(v).trim();
@@ -538,6 +547,8 @@
       const hideLabel = !!(field?.ui?.hideLabel);
       const layout = (field?.ui?.layout || 'stack').toLowerCase();
       const isGrid = layout === 'grid';
+      const listMode = String(field?.ui?.listMode || '').toLowerCase();
+      const isTable = listMode === 'table';
       const layoutClass = isGrid ? 'editor-grid-fields' : 'space-y-3';
       const gridStyleParts = [];
       if (isGrid) {
@@ -547,6 +558,53 @@
         if (field?.ui?.gridTemplateLg) gridStyleParts.push(`--editor-grid-template-lg:${String(field.ui.gridTemplateLg)}`);
       }
       const gridStyleAttr = gridStyleParts.length ? ` style="${escapeAttr(gridStyleParts.join(';'))}"` : '';
+
+      // Table mode: list renders as aligned rows with optional header.
+      // Works best for simple pairs like [item, count] or [item, value].
+      if (isTable) {
+        const cols = String(field?.ui?.tableCols || field?.ui?.gridTemplate || 'minmax(0,1fr)');
+        const colsMd = String(field?.ui?.tableColsMd || field?.ui?.gridTemplateMd || cols);
+        const colsStyle = `--editor-list-table-cols: var(--editor-table-idx) ${cols} var(--editor-table-del); --editor-list-table-cols-md: var(--editor-table-idx) ${colsMd} var(--editor-table-del);`;
+
+        const headerMode = field?.ui?.tableHeader;
+        const showHeader = headerMode !== false;
+        const headerLabels = Array.isArray(headerMode)
+          ? headerMode
+          : Object.values(itemFields).map(f => String(f?.label || '').trim()).filter(Boolean);
+
+        const headerHtml = showHeader
+          ? `<div class="editor-list-table-header"><div>#</div>${headerLabels.map(l => `<div>${escapeHtml(l)}</div>`).join('')}<div></div></div>`
+          : '';
+
+        const rowsHtml = items.map((item, index) => {
+          const itemPath = `${path}.${index}`;
+          const cells = Object.keys(itemFields).map((key) => {
+            const subField = itemFields[key];
+            const subPath = `${itemPath}.${key}`;
+            return `<div class="editor-list-table-cell">${renderField({ path: subPath, field: subField, data, options, isNested: true })}</div>`;
+          }).join('');
+          return `
+            <div class="editor-list-table-row" data-list-item="${escapeAttr(itemPath)}">
+              <div class="editor-list-table-idx">#${index + 1}</div>
+              ${cells}
+              <button type="button" class="${listRemoveClass} editor-list-table-del" title="Удалить" data-list-action="remove" data-list-path="${escapeAttr(path)}" data-list-index="${index}">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </div>`;
+        }).join('');
+
+        const defaultItem = buildDefaultItem(field);
+        const defaultPayload = encodeURIComponent(JSON.stringify(defaultItem));
+        return `
+          <div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">
+            ${hideLabel ? '' : labelHtml}
+            <div class="${listWrapperClass} editor-list-table" data-list-container="${escapeAttr(path)}" style="${escapeAttr(colsStyle)}">${headerHtml}${rowsHtml}</div>
+            <button type="button" class="${listAddClass}" data-list-action="add" data-list-path="${escapeAttr(path)}" data-list-default="${defaultPayload}">${field?.ui?.addLabel || options?.listAddLabel || 'Добавить'}</button>
+            ${hintHtml}
+          </div>`;
+      }
+
+      // Default list rendering (cards)
       const listItems = items.map((item, index) => {
         const itemPath = `${path}.${index}`;
         const itemContent = Object.entries(itemFields).map(([key, subField]) => {

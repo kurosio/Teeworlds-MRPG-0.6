@@ -6,6 +6,7 @@
   <title>Мобы — tw_bots_mobs</title>
 
   <link rel="stylesheet" href="editor-core/editor-theme.css" />
+  <link rel="stylesheet" href="editor-core/editor-template.css" />
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,7 +17,7 @@
   <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
 </head>
 
-<body class="editor-theme antialiased">
+<body class="editor-theme antialiased" data-editor="mobs">
   <div class="flex h-screen overflow-hidden">
     <!-- Sidebar -->
     <aside id="sidebar" class="editor-drawer w-80 md:w-[26rem] flex-shrink-0 border-r editor-surface flex flex-col">
@@ -92,6 +93,7 @@
               <div class="editor-muted-text" id="subtitle">или создайте новый спавн</div>
             </div>
             <div class="flex flex-wrap gap-2">
+              <span id="dirty-pill" class="editor-dirty-pill hidden" aria-hidden="true">Данные не сохранены</span>
               <button id="saveBtn" class="editor-btn editor-btn-primary" disabled>
                 <i class="fa-solid fa-floppy-disk"></i>
                 <span>Сохранить</span>
@@ -171,6 +173,15 @@
       tabAi: document.getElementById('tab_ai'),
       tabDrop: document.getElementById('tab_drop'),
     };
+
+    // Shared "unsaved changes" indicator (like in crafts)
+    const DIRTY = window.EditorCore?.Dirty?.create
+      ? window.EditorCore.Dirty.create({
+          root: document.querySelector('main') || document,
+          pill: document.getElementById('dirty-pill'),
+          beforeUnload: true,
+        })
+      : null;
 
     const RESOURCE = 'bots_mobs';
     const fieldOptions = window.EditorCore.defaults.getFieldRenderOptions('scenario');
@@ -657,6 +668,7 @@
         const res = await window.EditorCore.DBCrud.get(RESOURCE, id);
         STATE.selectedId = id;
         STATE.mob = fromRow(res.row);
+        DIRTY?.setClean();
         renderList();
         renderForm();
         setHeader();
@@ -669,6 +681,7 @@
     const newMob = () => {
       STATE.selectedId = 0;
       STATE.mob = emptyMob();
+      DIRTY?.setClean();
       renderList();
       renderForm();
       setHeader();
@@ -706,6 +719,7 @@
           }
         }
         setHeader();
+        DIRTY?.setClean();
       } catch (e) {
         window.EditorCore.UI.toast({ message: e.message || 'Ошибка сохранения', type: 'error' });
       }
@@ -720,6 +734,7 @@
         window.EditorCore.UI.toast({ message: 'Удалено', type: 'success' });
         STATE.selectedId = 0;
         STATE.mob = null;
+        DIRTY?.setClean();
         renderForm();
         setHeader();
         await loadList({ reset: true });

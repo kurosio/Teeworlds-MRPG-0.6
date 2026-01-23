@@ -11,6 +11,7 @@
 
 ```html
 <link rel="stylesheet" href="editor-core/editor-theme.css" />
+<link rel="stylesheet" href="editor-core/editor-template.css" />
 <script src="editor-core/tailwind-theme.js"></script>
 <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
 <script src="editor-core/editor-core.bundle.js"></script>
@@ -96,4 +97,38 @@ DropItems: {
 1) Создайте файл `my-editor.html`.
 2) Добавьте его в `studio.manifest.js` в нужную группу.
 3) Используйте `editor-core.editor-core.bundle.js` + `FormRuntime`.
+
+---
+
+## Editor Template (layout) — единый адаптивный макет
+
+В `editor-core/editor-template.css` лежит тонкий слой разметки/макета:
+- `.editor-page` — общий контейнер страницы
+- `.editor-shell` — сетка Sidebar + Main (на мобилке складывается)
+- `.editor-section` + заголовок `.editor-section-head` — секции формы
+- `.editor-form-grid-2` — быстрый 2-колоночный грид для форм
+
+Чтобы включить цветовые пресеты, просто поставьте атрибут:
+
+```html
+<body class="editor-theme" data-editor="crafts">
+```
+
+### Списки как таблица (ровные строки)
+
+Для любых `type:'list'` можно включить режим таблицы:
+
+```js
+RequiredItemsArr: {
+  type: 'list',
+  ui: {
+    listMode: 'table',
+    tableHeader: ['Предмет', 'Кол-во'],
+    tableColsMd: 'minmax(0,1fr) 160px'
+  },
+  itemFields: { ... }
+}
+```
+
+Это даёт ровные колонки на десктопе и аккуратный стек на телефоне.
 

@@ -6,6 +6,7 @@
   <title>Крафты • tw_crafts_list</title>
 
   <link rel="stylesheet" href="editor-core/editor-theme.css" />
+  <link rel="stylesheet" href="editor-core/editor-template.css" />
 
   <!-- Fonts + icons -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -18,85 +19,24 @@
   <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
 
   <style>
-    /* Craft-specific: compact RequiredItems rows + list cosmetics */
+    /* Craft list separators (small local cosmetics; layout comes from editor-template.css) */
     .crafts-group-btn{border-bottom:1px solid rgba(255,255,255,.06)}
     .crafts-item{border-bottom:1px solid rgba(255,255,255,.06)}
     .crafts-item:last-child{border-bottom:0}
 
-    /* Ingredients header columns (visual wrapper comes from .editor-columns-header)
-       IMPORTANT: must match the list grid template, иначе колонки "уплывают" и элементы начинают давить друг друга.
-       На узких экранах — одна колонка; с md — две колонки. */
-    .crafts-req-columns{grid-template-columns: minmax(0,1fr);} /* < md */
-    @media (min-width:768px){
-      .crafts-req-columns{grid-template-columns: minmax(0,1fr) 160px;}
-    }
-
-    /* Make list add button look like a full-width soft action */
-    #form-req [data-list-action="add"]{width:100%; justify-content:center;}
-
-    /* Flatten ingredient list items to feel like rows */
-    #form-req [data-list-container="RequiredItemsArr"]{counter-reset:reqidx;}
-    #form-req .editor-list-item{
-      position:relative;
-      /* top padding leaves room for the absolute header actions */
-      padding:40px 12px 12px;
-      border-radius:16px;
-      background:rgba(0,0,0,0.16);
-      border:1px solid rgba(255,255,255,0.08);
-    }
-    #form-req .editor-list-item::before{
-      counter-increment:reqidx;
-      content:"#" counter(reqidx);
-      position:absolute;
-      top:10px;
-      left:12px;
-      font-size:11px;
-      color:rgba(229,231,235,0.55);
-    }
-    /* Move remove button to the top-right; hide the built-in index label */
-    #form-req .editor-list-item > .flex{position:absolute; top:8px; right:8px; margin:0; gap:8px;}
-    #form-req .editor-list-item > .flex .editor-muted-text{display:none;}
-
-    /* Reduce nested labels inside ingredient rows; we already have a header row */
-    #form-req .editor-nested-label{display:none;}
-
-    /* Tighter spacing for db_select inside ingredients */
-    #form-req .editor-dbselect{gap:6px;}
-    #form-req .editor-dbselect-search{padding:.45rem .65rem; font-size:.85rem; border-radius:12px;}
-    #form-req .editor-dbselect-controls{gap:8px;}
-    #form-req .editor-dbselect-meta{font-size:11px; color:rgba(229,231,235,0.55)}
-    #form-req .editor-dbselect-more{padding:6px 10px; border-radius:12px; font-size:12px;}
-
-    /* Small screens: force list rows to stack (prevents squeezing/overlap) */
-    #form-req .editor-grid-fields{grid-template-columns: var(--editor-grid-template,1fr);}
-    @media (max-width: 480px){
-      /* extra safety: if some browser still tries to keep 2 columns */
-      #form-req .editor-grid-fields{grid-template-columns:1fr !important;}
-    }
-
-    /* ------------------------------------------------------------------
-       Craft editor: main fields layout (align + simplify)
-       ------------------------------------------------------------------ */
-    #form-main{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;align-items:start;}
+    /* Main craft fields: 2-col grid with full-width selects */
+    #form-main{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:start;}
     #form-main [data-field-path="ItemID"],
     #form-main [data-field-path="WorldID"]{grid-column:1 / -1;}
-    #form-main .editor-field{padding:12px;border-radius:16px;}
+    @media (max-width: 640px){#form-main{grid-template-columns:1fr;}}
 
-    /* Make numeric fields feel even + aligned */
-    #form-main input[type="number"]{width:100%;}
-
-    /* Bring the clear button closer to the edge (feels tighter) */
-    #form-main .editor-dbcombo-input{padding-right:2.0rem;}
-    #form-main .editor-dbcombo-clear{right:.45rem;width:1.35rem;height:1.35rem;border-radius:10px;}
-
-    @media (max-width: 640px){
-      #form-main{grid-template-columns:1fr;}
-    }
+    /* Required items: use new listMode=table; button should be full width */
+    #form-req [data-list-action="add"]{width:100%;justify-content:center;}
   </style>
 </head>
 
-<body class="editor-theme">
-  <div class="max-w-7xl mx-auto px-5 py-6">
+<body class="editor-theme" data-editor="crafts">
+  <div class="editor-page">
     <div class="flex items-start justify-between gap-4">
       <div>
         <div class="flex items-center gap-3">
@@ -119,7 +59,7 @@
       </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-[380px,1fr] gap-5 mt-6">
+    <div class="editor-shell">
       <!-- Sidebar -->
       <aside class="editor-card border rounded-2xl p-4">
         <div class="flex items-center justify-between gap-3">
@@ -149,7 +89,8 @@
             <input id="search" type="search" class="w-full editor-input form-input" placeholder="Поиск по ID / группе / предмету…" />
           </div>
           <div class="mt-2 flex items-center justify-between">
-            <div class="text-[11px] editor-muted-text">Советы: Ctrl+S сохранить • Ctrl+N новый • Del удалить</div>
+            <!-- Подсказки по горячим клавишам убраны по просьбе (горячие клавиши отключены в этом редакторе) -->
+            <div></div>
             <button id="btn-collapse-all" class="editor-icon-btn" title="Свернуть/развернуть группы">
               <i class="fa-solid fa-layer-group"></i>
             </button>
@@ -170,10 +111,10 @@
             <div class="editor-muted-text text-sm mt-1" id="subtitle">—</div>
           </div>
           <div class="flex flex-wrap gap-2">
-            <button id="btn-delete" class="editor-btn editor-btn-secondary" disabled title="Del">
+            <button id="btn-delete" class="editor-btn editor-btn-secondary" disabled>
               <i class="fa-solid fa-trash"></i><span>Удалить</span>
             </button>
-            <button id="btn-save" class="editor-btn editor-btn-primary" disabled title="Ctrl+S">
+            <button id="btn-save" class="editor-btn editor-btn-primary" disabled>
               <i class="fa-solid fa-floppy-disk"></i><span>Сохранить</span>
             </button>
           </div>
@@ -215,10 +156,6 @@
 			</div>
 		  </div>
 		  <div class="editor-muted-text text-xs mt-1">Сохраняется в строковом виде: <code>[ItemID/Count],[ItemID/Count]</code></div>
-		  <div class="editor-columns-header crafts-req-columns">
-			<div>Предмет <span class="muted">(ItemID)</span></div>
-			<div>Кол-во <span class="muted">(Count)</span></div>
-		  </div>
 		  <div id="form-req"></div>
 		  <div class="mt-3">
 			<details id="raw-wrap" class="editor-details">
@@ -309,6 +246,7 @@
       ui: {
         collapsedGroups: new Set(),
         collapseAll: false,
+        initCollapsedDone: false,
       },
       lookups: {
         items: new Map(),
@@ -366,6 +304,12 @@
         if (sub) map.get(g).add(sub);
       }
       STATE.groups = map;
+
+      // By default all groups are collapsed (requested)
+      if (!STATE.ui.initCollapsedDone) {
+        STATE.ui.collapsedGroups = new Set(map.keys());
+        STATE.ui.initCollapsedDone = true;
+      }
 
       // Cleanup collapsed state for removed groups
       if (STATE.ui?.collapsedGroups?.size) {
@@ -575,7 +519,8 @@
         label: '',
         // На узких экранах складываем в 1 колонку, чтобы db_select не сжимался до наложений.
         // С md включаем 2 колонки (Item + Count).
-        ui: { hideLabel: true, addLabel: 'Добавить ингредиент', layout: 'grid', gridTemplate: 'minmax(0,1fr)', gridTemplateMd: 'minmax(0,1fr) 160px', gridGap: '12px' },
+        // listMode: 'table' makes list rows aligned (Item + Count on one line) and reusable across editors
+        ui: { hideLabel: true, addLabel: 'Добавить ингредиент', listMode: 'table', tableHeader: ['Предмет', 'Кол-во'], tableCols: 'minmax(0,1fr) var(--editor-table-col2)', tableColsMd: 'minmax(0,1fr) 160px' },
         itemDefault: { id: 0, value: 1 },
         itemFields: {
           id: { type: 'db_select', label: 'Предмет', ui: { dbKey: 'item', placeholder: '— выберите предмет —', searchable: true } },
@@ -846,26 +791,7 @@
     els.save.addEventListener('click', save);
     els.del.addEventListener('click', remove);
 
-    // Keyboard shortcuts
-    window.addEventListener('keydown', (e) => {
-      const isMac = navigator.platform.toLowerCase().includes('mac');
-      const mod = isMac ? e.metaKey : e.ctrlKey;
-      if (mod && e.key.toLowerCase() === 's') {
-        e.preventDefault();
-        if (!els.save.disabled) save();
-      }
-      if (mod && e.key.toLowerCase() === 'n') {
-        e.preventDefault();
-        els.newBtn.click();
-      }
-      if (e.key === 'Delete' && !els.del.disabled) {
-        // prevent accidental delete while typing in inputs
-        const t = e.target;
-        const tag = (t && t.tagName) ? t.tagName.toLowerCase() : '';
-        if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
-        remove();
-      }
-    });
+    // Горячие клавиши в этом редакторе отключены (по просьбе).
 
     // Warn on unsaved changes
     window.addEventListener('beforeunload', (e) => {
