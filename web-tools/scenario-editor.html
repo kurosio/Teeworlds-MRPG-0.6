@@ -25,10 +25,10 @@
     
     <style>
         /* Небольшие кастомные стили */
-        :root{ --scenario-header-h: 70px; }
+        :root{ --scenario-header-h: 84px; }
 
         /* Scenario header should stay in one line; overflow scroll instead of wrapping */
-        #scenario-header{ overflow-x: auto; }
+        #scenario-header{ overflow-x: auto; min-height: var(--scenario-header-h); }
         #scenario-header, #scenario-header *{ scroll-margin-top: var(--scenario-header-h); }
         #scenario-header .controls{ flex-wrap: nowrap; }
         #scenario-header .controls > *{ flex: 0 0 auto; }
@@ -105,9 +105,15 @@
     </style>
 </head>
 <body class="editor-theme font-sans text-slate-100" data-editor="scenario">
-    <header id="scenario-header" class="editor-surface px-4 md:px-8 py-3 border-b border-slate-200/30 flex flex-row flex-nowrap justify-between items-center sticky top-0 z-50 shadow-sm gap-4">
-        <h1 class="text-xl md:text-2xl font-bold text-slate-100 flex items-center gap-3 whitespace-nowrap"><i class="fa-solid fa-scroll text-blue-300"></i> Редактор v30.3</h1>
-        <div class="controls flex flex-nowrap items-center gap-3 min-w-0">
+    <header id="scenario-header" class="editor-page-header editor-surface px-4 md:px-8 py-3 border-b border-slate-200/30 flex flex-row flex-nowrap justify-between items-center sticky top-0 z-50 shadow-sm gap-4">
+        <div class="editor-page-title">
+            <i class="fa-solid fa-scroll text-accent text-xl"></i>
+            <div>
+                <h1>Сценарии</h1>
+            <div class="editor-page-sub">Сценарии: структура шагов, компоненты и связи.</div>
+            </div>
+        </div>
+        <div class="controls editor-page-actions flex flex-nowrap items-center gap-3 min-w-0">
             <div class="scenario-switch-wrap">
                 <span class="scenario-switch-label">Стрелки:</span>
                 <label class="scenario-switch" for="arrow-mode-toggle" aria-label="Стрелки">
@@ -122,6 +128,7 @@
                 <i class="fa-solid fa-trash-can"></i>
             </button>
             <input type="text" id="save-as-filename" placeholder="Сохранить как..." class="form-input w-full sm:w-56 min-w-[160px] max-w-[260px]">
+            <span id="dirty-pill" class="editor-dirty-pill hidden" aria-hidden="true">Данные не сохранены</span>
             <button id="save-button" title="Сохранить текущий сценарий" class="editor-btn editor-btn-primary flex items-center gap-2">
                 <i class="fa-solid fa-save"></i> Сохранить
             </button>
@@ -266,6 +273,7 @@
                 this.deleteScenarioBtn = document.getElementById('delete-scenario-btn');
                 this.saveButton = document.getElementById('save-button');
                 this.saveAsInput = document.getElementById('save-as-filename');
+                this.dirtyPill = document.getElementById('dirty-pill');
                 this.toastContainer = document.getElementById('toast-container');
                 this.arrowModeToggle = document.getElementById('arrow-mode-toggle');
                 this.modal = { backdrop: document.getElementById('modal-backdrop'), title: document.getElementById('modal-title'), formContainer: document.getElementById('modal-form-container'), saveButton: document.getElementById('modal-save'), cancelButton: document.getElementById('modal-cancel'), context: null };
@@ -289,6 +297,17 @@
                 this.sortableInstances = [];
                 this.isTicking = false; // For scroll throttling
                 this.apiBase = ""; // auto-detected base path to api.php
+                this.dirty = EditorCore.Dirty?.create
+                    ? EditorCore.Dirty.create({
+                        root: document.body,
+                        pill: this.dirtyPill,
+                        beforeUnload: true,
+                        onDirtyChange: (dirty) => {
+                            this.saveButton?.classList.toggle('ring-2', dirty);
+                            this.saveButton?.classList.toggle('ring-amber-400/40', dirty);
+                        }
+                      })
+                    : { markDirty: () => {}, setClean: () => {} };
             }
 
             apiUrl(queryString = '') {
@@ -814,6 +833,7 @@
                 this.addStepToViewState(newId);
 
                 this.renderAll();
+                this.dirty.markDirty();
                 const newCard = document.getElementById(`step-card-${newId}`);
                 newCard?.scrollIntoView({ behavior: 'smooth', block: 'center' });
                 newCard?.querySelector('.step-id-input')?.focus();
@@ -830,6 +850,7 @@
                     this.removeStepFromViewState(stepId);
                 }
                 this.renderAll();
+                this.dirty.markDirty();
             }
 
             handleDuplicate(stepId, componentId) {
@@ -854,6 +875,7 @@
                     }
                 }
                 this.renderAll();
+                this.dirty.markDirty();
             }
 
             updateStepId(stepToUpdate, newId) {
@@ -875,6 +897,7 @@
                 });
                 this.updateStepIdInViewState(oldId, newId);
                 this.renderAll();
+                this.dirty.markDirty();
             }
 
             openEditModal(stepId, componentId) {
@@ -913,6 +936,7 @@
 
                 this.closeModal();
                 this.renderAll();
+                this.dirty.markDirty();
             }
 
             collectModalFormData() {
@@ -949,6 +973,7 @@
                 this.modal.formContainer.innerHTML = this.buildModalForm(currentData, step);
                 // Re-init Core enhancements for newly rendered list rows.
                 Promise.resolve().then(() => window.EditorCore?.UIManager?.init?.(this.modal.formContainer));
+                this.dirty.markDirty();
             }
 
             buildModalForm(data, step) {
@@ -1053,6 +1078,7 @@
                 }
                 this.uiState.collapsedSteps.clear(); // Clear old state on new scenario load
                 this.renderAll();
+                this.dirty.setClean();
             }
             async saveScenario() {
                 if (!this.validateAllStepIds()) return this.showToast('Есть шаги с некорректными ID. Исправьте!', 'error');
@@ -1138,6 +1164,7 @@
                         }
                         this.scenarioSelect.value = filename;
                         this.saveAsInput.value = '';
+                        this.dirty.setClean();
                     } else this.showToast(result.error, 'error');
                 } catch (error) {
                     this.showToast(`Ошибка сохранения: ${error.message}`, 'error');
@@ -1293,6 +1320,7 @@
                 };
                 groups.push(newGroup);
                 this.renderAll();
+                this.dirty.markDirty();
             }
             
             openDeleteGroupModal(groupId) {
@@ -1318,6 +1346,7 @@
                     }
                     groups.splice(groupIndex, 1);
                     this.renderAll();
+                    this.dirty.markDirty();
                 }
                 this.closeDeleteGroupModal();
             }
@@ -1444,6 +1473,7 @@
                 
                 const createOnEndHandler = (callback) => (e) => {
                     callback(e);
+                    this.dirty.markDirty();
                     requestAnimationFrame(() => this.renderAll());
                 };
                 
@@ -1624,6 +1654,7 @@
                     step.components = step.components || [];
                     step.components.push(newComponent);
                     this.renderAll();
+                    this.dirty.markDirty();
                 }
                 this.hideAddComponentMenu();
             }

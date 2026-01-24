@@ -37,19 +37,16 @@
 
 <body class="editor-theme" data-editor="crafts">
   <div class="editor-page">
-    <div class="flex items-start justify-between gap-4">
-      <div>
-        <div class="flex items-center gap-3">
-          <i class="fa-solid fa-hammer text-accent text-xl"></i>
-          <h1 class="text-2xl font-bold">Крафты</h1>
-          <span class="editor-badge">tw_crafts_list</span>
-          <span id="dirty-pill" class="hidden px-2.5 py-1 rounded-full text-xs font-semibold border border-amber-400/30 bg-amber-500/10 text-amber-200">
-            <i class="fa-solid fa-circle-exclamation mr-1"></i>Не сохранено
-          </span>
+    <div class="editor-page-header">
+      <div class="editor-page-title">
+        <i class="fa-solid fa-hammer text-accent text-xl"></i>
+        <div>
+          <h1>Крафты</h1>
+          <div class="editor-page-sub">Управление рецептами: группы, подгруппы, итоговый предмет и ингредиенты.</div>
         </div>
-        <p class="editor-muted-text mt-1">Группы и подгруппы (GroupName: <code>Armor:Tank</code>) + ингредиенты (RequiredItems).</p>
       </div>
-      <div class="flex flex-wrap gap-2">
+      <div class="editor-page-actions">
+        <span id="dirty-pill" class="editor-dirty-pill hidden">Данные не сохранены</span>
         <button id="btn-refresh" class="editor-btn editor-btn-secondary">
           <i class="fa-solid fa-rotate"></i><span>Обновить</span>
         </button>
@@ -190,7 +187,7 @@
   <script src="editor-core/bootstrap.js"></script>
 
   <script>
-    EditorCore.bootstrapEditor({ mode: 'event' });
+    const { fieldRenderOptions } = EditorCore.bootstrapEditor({ mode: 'event' });
 
     const RESOURCE = 'crafts';
 
@@ -537,6 +534,7 @@
       runtimeMain = EditorCore.FormRuntime.mount(els.formMain, {
         fields: mainFields,
         data: STATE.selected || {},
+        fieldOptions: fieldRenderOptions,
         onChange: () => {
           if (!STATE.selected) return;
           // normalize
@@ -552,6 +550,7 @@
       runtimeReq = EditorCore.FormRuntime.mount(els.formReq, {
         fields: reqFields,
         data: STATE.selected || {},
+        fieldOptions: fieldRenderOptions,
         onChange: () => {
           if (!STATE.selected) return;
           els.rawRequired.value = stringifyRequired(STATE.selected.RequiredItemsArr || []);

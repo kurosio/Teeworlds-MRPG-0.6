@@ -308,9 +308,9 @@ body[data-editor="aethers"]{ --editor-accent:#fb923c; }
 .editor-list-table-row{
   display:grid;
   grid-template-columns: var(--editor-list-table-cols, var(--editor-table-idx) minmax(0,1fr) var(--editor-table-col2) var(--editor-table-del));
-  gap: 10px;
+  gap: 8px;
   align-items:center;
-  padding: 10px 12px;
+  padding: 8px 12px;
   min-width: 0;
 }
 
@@ -397,12 +397,12 @@ body[data-editor="aethers"]{ --editor-accent:#fb923c; }
 }
 
 .editor-dirty-pill::before{
-  content:"";
-  width: 7px;
-  height: 7px;
-  border-radius: 999px;
-  background: rgba(245,158,11,.92);
-  box-shadow: 0 0 0 2px rgba(0,0,0,.18);
+  content:"\f071";
+  font-family:"Font Awesome 6 Free";
+  font-weight:900;
+  font-size: 12px;
+  line-height: 1;
+  color: rgba(245,158,11,.95);
 }
 
 .editor-dirty-pill.hidden{display:none;}

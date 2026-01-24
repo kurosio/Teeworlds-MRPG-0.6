@@ -164,7 +164,7 @@
           state.rows = typeof cfg.transformList === 'function'
             ? cfg.transformList(rows, { search }) || []
             : rows;
-          setStatus(state.rows.length ? 'Готово.' : 'Список пуст.', state.rows.length ? 'ok' : 'muted');
+          setStatus(state.rows.length ? '' : 'Список пуст.', 'muted');
           renderList();
           if (state.selectedId) {
             const found = state.rows.find(r => Number(r.ID) === Number(state.selectedId));

@@ -30,6 +30,9 @@
     radial-gradient(1200px circle at 15% -10%, rgba(79,70,229,.20), transparent 55%),
     radial-gradient(900px circle at 85% -20%, rgba(34,197,94,.10), transparent 60%),
     var(--editor-bg);
+  background-repeat:no-repeat;
+  background-attachment:fixed;
+  min-height:100vh;
   color:var(--editor-text);
   font-size:var(--editor-font-size);
   line-height:var(--editor-line-height);

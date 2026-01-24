@@ -14,13 +14,13 @@
     <link rel="stylesheet" href="editor-core/editor-theme.css">
     <link rel="stylesheet" href="editor-core/editor-template.css">
     <style>
-        body{background:var(--editor-bg);color:var(--editor-text);overflow:hidden;}
-        #app{background:var(--editor-bg);}
-        aside{background:rgba(15,23,42,.78);border-right:1px solid var(--editor-border);backdrop-filter:blur(6px);}
+        body{background:var(--editor-bg);color:var(--editor-text);}
+        .event-editor-shell{min-height:calc(100vh - 180px);}
+        .event-editor-panel{min-height:520px;}
         .sidebar-item{border-left:3px solid transparent;transition:background .12s ease,border-color .12s ease;}
         .sidebar-item:hover{background:rgba(255,255,255,.04);}
-        .sidebar-item.selected{background:rgba(99,102,241,.16);border-left-color:var(--editor-primary);color:var(--editor-text);} 
-        .sidebar-item.selected .text-gray-400{color:var(--editor-text-muted);} 
+        .sidebar-item.selected{background:rgba(99,102,241,.16);border-left-color:var(--editor-primary);color:var(--editor-text);}
+        .sidebar-item.selected .text-gray-400{color:var(--editor-text-muted);}
         .group-header{background:rgba(255,255,255,.03);border-top:1px solid var(--editor-border);border-bottom:1px solid var(--editor-border);margin-top:10px;margin-bottom:6px;}
         #undo-toast{transition:transform .25s ease,opacity .25s ease;transform:translateY(200%);opacity:0;}
         #undo-toast.show{transform:translateY(0);opacity:1;}
@@ -31,31 +31,59 @@
 
 </head>
 <body class="antialiased editor-theme" data-editor="events">
-    <div id="app" class="flex flex-col md:flex-row h-screen overflow-hidden">
-        <aside class="w-full md:w-1/3 md:max-w-sm flex flex-col border-r">
-            <div class="p-4 border-b border-slate-700/40 text-center">
-                <h1 class="text-xl font-semibold text-slate-100">Редактор событий</h1>
-                <div id="scenario-type-container" class="mt-2"></div>
-            </div>
-            <div id="step-list-root" class="flex-grow overflow-y-auto p-2"></div>
-            <div id="controls" class="p-4 border-t border-slate-700/40 space-y-3">
-                 <button id="add-step-btn" class="w-full editor-btn editor-btn-primary"><i class="fas fa-plus mr-2"></i> Добавить шаг</button>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <button id="import-json-btn" class="w-full editor-btn editor-btn-secondary"><i class="fas fa-upload mr-2"></i> Импорт</button>
-                    <button id="view-json-btn" class="w-full editor-btn editor-btn-secondary"><i class="fas fa-eye mr-2"></i> Просмотр JSON</button>
+    <div class="editor-page">
+        <div class="editor-page-header">
+            <div class="editor-page-title">
+                <i class="fa-solid fa-bolt text-accent text-xl"></i>
+                <div>
+                    <h1>Редактор событий</h1>
+                    <div class="editor-page-sub">Шаги событий, логика действий и экспорт JSON.</div>
                 </div>
-                <button id="delete-all-btn" class="w-full editor-btn editor-btn-danger"><i class="fas fa-bomb mr-2"></i> Удалить все</button>
-                 <input type="file" id="import-file-input" class="hidden" accept=".json">
             </div>
-        </aside>
+            <div class="editor-page-actions">
+                <span id="dirty-pill" class="editor-dirty-pill hidden" aria-hidden="true">Данные не сохранены</span>
+                <button id="add-step-btn" class="editor-btn editor-btn-primary">
+                    <i class="fas fa-plus"></i><span>Добавить шаг</span>
+                </button>
+                <button id="import-json-btn" class="editor-btn editor-btn-secondary">
+                    <i class="fas fa-upload"></i><span>Импорт</span>
+                </button>
+                <button id="view-json-btn" class="editor-btn editor-btn-secondary">
+                    <i class="fas fa-eye"></i><span>Просмотр JSON</span>
+                </button>
+                <button id="delete-all-btn" class="editor-btn editor-btn-danger">
+                    <i class="fas fa-bomb"></i><span>Удалить все</span>
+                </button>
+                <input type="file" id="import-file-input" class="hidden" accept=".json">
+            </div>
+        </div>
 
-        <main id="editor-panel" class="w-full md:w-2/3 flex-grow p-4 md:p-6 overflow-y-auto">
-             <div class="flex flex-col items-center justify-center h-full text-center text-gray-500 opacity-50">
-                <i class="fas fa-cat fa-5x mb-4 animate-bounce"></i>
-                <h2 class="text-3xl font-semibold">Выберите шаг для редактирования</h2>
-                <p>...или создайте новый, чтобы начать приключение!</p>
-            </div>
-        </main>
+        <div class="editor-shell editor-shell--docked event-editor-shell">
+            <aside class="editor-sidebar editor-dock-sidebar">
+                <div class="editor-dock-pad">
+                    <div class="editor-sidebar-head">
+                        <div>
+                            <div class="text-sm font-semibold">Список шагов</div>
+                            <div class="editor-sidebar-meta">Сценарные события</div>
+                        </div>
+                    </div>
+                    <div id="scenario-type-container" class="mt-3"></div>
+                    <div id="step-list-root" class="mt-3 editor-scroll" style="max-height: 590px"></div>
+                </div>
+            </aside>
+
+            <main class="editor-main editor-dock-main">
+                <div class="editor-dock-pad">
+                    <div id="editor-panel" class="event-editor-panel">
+                        <div class="flex flex-col items-center justify-center h-full text-center text-gray-500 opacity-50">
+                            <i class="fas fa-cat fa-5x mb-4 animate-bounce"></i>
+                            <h2 class="text-3xl font-semibold">Выберите шаг для редактирования</h2>
+                            <p>...или создайте новый, чтобы начать приключение!</p>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
     </div>
 
     <script src="editor-core/registry.js"></script>
@@ -104,6 +132,13 @@
         const SCENARIO_EVENTS = {"general":"Стандартный","on_recieve_objectives":"При получении задач","on_complete_objectives":"При завершении задач","on_end":"При окончании шага","on_equip":"При экипировке предмета","on_got":"При получении предмета","on_lost":"При потере предмета","on_unequip":"При снятии предмета"};
         // Shared boot + shared FieldRenderer options.
         const { fieldRenderOptions: FIELD_RENDER_OPTIONS } = EditorCore.bootstrapEditor({ mode: 'event' });
+        const DIRTY = EditorCore.Dirty?.create
+            ? EditorCore.Dirty.create({
+                root: document.body,
+                pill: document.getElementById('dirty-pill'),
+                beforeUnload: true,
+              })
+            : { markDirty: () => {}, setClean: () => {} };
 
         const render = () => {
             renderScenarioTypeSelector();
@@ -278,6 +313,7 @@
                         STATE.scenarioSteps.splice(insertionIndex, 0, newStep);
                         STATE.selectedStepIndex = insertionIndex;
                         render();
+                        DIRTY.markDirty();
                         DOM.addStepModal.style.display = 'none';
                         break;
                     }
@@ -303,6 +339,7 @@
                             STATE.selectedStepIndex = -1;
                             render();
                             showUndoToast('Все шаги удалены.');
+                            DIRTY.markDirty();
                         }
                         break;
                     case 'undo-btn':
@@ -347,6 +384,7 @@
                                 if (STATE.selectedStepIndex >= index) STATE.selectedStepIndex = (index > 0) ? index - 1 : -1;
                                 render();
                                 showUndoToast('Группа с шагами удалена.');
+                                DIRTY.markDirty();
                             }},
                             { text: 'Только заголовок', class: 'bg-yellow-500 hover:bg-yellow-600 text-black font-bold py-2 px-4 btn', onClick: () => {
                                 STATE.undoState = { type: 'single', step: STATE.scenarioSteps[index], index };
@@ -355,6 +393,7 @@
                                 else if (STATE.selectedStepIndex > index) STATE.selectedStepIndex--;
                                 render();
                                 showUndoToast('Заголовок группы удален.');
+                                DIRTY.markDirty();
                             }}
                         ]);
                     } else {
@@ -364,6 +403,7 @@
                         else if (STATE.selectedStepIndex > index) STATE.selectedStepIndex--;
                         render();
                         showUndoToast('Шаг удален.');
+                        DIRTY.markDirty();
                     }
                 } else if (target.matches('.sidebar-item, .sidebar-item *')) {
                     STATE.selectedStepIndex = index;
@@ -406,6 +446,7 @@
                     STATE.scenarioSteps[STATE.selectedStepIndex] = newStep;
 
                     render();
+                    DIRTY.markDirty();
                     return;
                 }
                 const listButton = e.target.closest('[data-list-action]');
@@ -427,6 +468,7 @@
                         }
                     }
                     renderEditorPanel();
+                    DIRTY.markDirty();
                 }
             });
             
@@ -438,6 +480,7 @@
                 } else if (target.matches('.scenario-event-option')) {
                     STATE.selectedScenarioEvent = target.dataset.eventKey;
                     renderScenarioTypeSelector();
+                    DIRTY.markDirty();
                 }
             });
 
@@ -461,6 +504,7 @@
                         }
                         STATE.selectedStepIndex = -1;
                         render();
+                        DIRTY.setClean();
                     } catch (error) { alert(`Ошибка при чтении файла: ${error.message}`); }
                 };
                 reader.readAsText(file);
@@ -491,6 +535,7 @@
                     else if (STATE.draggedIndex < STATE.selectedStepIndex && dropIndex >= STATE.selectedStepIndex) STATE.selectedStepIndex--;
                     else if (STATE.draggedIndex > STATE.selectedStepIndex && dropIndex <= STATE.selectedStepIndex) STATE.selectedStepIndex++;
                     render();
+                    DIRTY.markDirty();
                 }
                 STATE.draggedIndex = null;
             });
