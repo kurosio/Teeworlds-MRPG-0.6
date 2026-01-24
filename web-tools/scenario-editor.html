@@ -69,13 +69,16 @@
             fill: var(--editor-primary);
             pointer-events: none;
         }
-        .toggle-checkbox:checked {
-            right: 0;
-            border-color: #2563eb;
-        }
-        .toggle-checkbox:checked + .toggle-label {
-            background-color: #2563eb;
-        }
+        /* Arrow-mode switch (no tailwind dependency; prevents "giant" stretched toggle) */
+        .scenario-switch-wrap{display:flex;align-items:center;gap:8px;flex:0 0 auto;font-size:14px;}
+        .scenario-switch-label{font-weight:600;color:rgba(226,232,240,.92);white-space:nowrap;}
+        .scenario-switch{position:relative;width:46px;height:24px;display:inline-block;flex:0 0 auto;}
+        .scenario-switch input{position:absolute;inset:0;opacity:0;cursor:pointer;}
+        .scenario-switch .track{position:absolute;inset:0;border-radius:999px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);transition:background .2s,border-color .2s,box-shadow .2s;}
+        .scenario-switch .thumb{position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:999px;background:#fff;transition:transform .2s;box-shadow:0 2px 10px rgba(0,0,0,.35);}
+        .scenario-switch input:checked ~ .track{background:rgba(99,102,241,.9);border-color:rgba(99,102,241,.9);}
+        .scenario-switch input:checked ~ .thumb{transform:translateX(22px);}
+        .scenario-switch input:focus-visible ~ .track{box-shadow:0 0 0 3px rgba(99,102,241,.25);}
         /* Compact navigator styles */
         .nav-group-wrapper {
             margin-bottom: 0.5rem; /* 8px */
@@ -105,12 +108,13 @@
     <header id="scenario-header" class="editor-surface px-4 md:px-8 py-3 border-b border-slate-200/30 flex flex-row flex-nowrap justify-between items-center sticky top-0 z-50 shadow-sm gap-4">
         <h1 class="text-xl md:text-2xl font-bold text-slate-100 flex items-center gap-3 whitespace-nowrap"><i class="fa-solid fa-scroll text-blue-300"></i> Редактор v30.3</h1>
         <div class="controls flex flex-nowrap items-center gap-3 min-w-0">
-            <div class="flex items-center gap-2 text-sm">
-                <label for="arrow-mode-toggle" class="font-medium text-slate-200">Стрелки:</label>
-                <div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
-                    <input type="checkbox" name="arrow-mode-toggle" id="arrow-mode-toggle" class="toggle-checkbox absolute block w-6 h-6 rounded-full bg-white border-4 appearance-none cursor-pointer"/>
-                    <label for="arrow-mode-toggle" class="toggle-label block overflow-hidden h-6 rounded-full bg-gray-300 cursor-pointer"></label>
-                </div>
+            <div class="scenario-switch-wrap">
+                <span class="scenario-switch-label">Стрелки:</span>
+                <label class="scenario-switch" for="arrow-mode-toggle" aria-label="Стрелки">
+                    <input type="checkbox" name="arrow-mode-toggle" id="arrow-mode-toggle" />
+                    <span class="track"></span>
+                    <span class="thumb"></span>
+                </label>
             </div>
             <label for="scenario-select" class="text-sm font-medium text-slate-200">Сценарий:</label>
             <select id="scenario-select" class="form-input w-full sm:w-64 min-w-[160px] max-w-[260px]"></select>

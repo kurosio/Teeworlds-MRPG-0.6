@@ -59,9 +59,10 @@
       </div>
     </div>
 
-    <div class="editor-shell">
-      <!-- Sidebar -->
-      <aside class="editor-card border rounded-2xl p-4">
+    <div class="editor-shell editor-shell--docked">
+      <!-- Sidebar (docked) -->
+      <aside class="editor-sidebar editor-dock-sidebar">
+        <div class="editor-dock-pad">
         <div class="flex items-center justify-between gap-3">
           <div class="flex items-center gap-2">
             <div class="text-sm font-semibold">Категории</div>
@@ -98,10 +99,12 @@
         </div>
 
         <div id="list" class="mt-4 overflow-auto border border-light rounded-xl bg-black/10 editor-scroll" style="max-height: 590px"></div>
+        </div>
       </aside>
 
-      <!-- Editor -->
-      <section class="editor-card border rounded-2xl p-4">
+      <!-- Editor (docked) -->
+      <section class="editor-main editor-dock-main">
+        <div class="editor-dock-pad">
         <div class="editor-sticky-toolbar flex items-start justify-between gap-4">
           <div>
             <div class="flex items-center gap-2">
@@ -168,6 +171,7 @@
 		</div>
 
           <div class="mt-5" id="status"></div>
+        </div>
         </div>
       </section>
     </div>

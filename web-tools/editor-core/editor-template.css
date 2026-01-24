@@ -113,6 +113,45 @@ body[data-editor="vouchers"]{ --editor-accent:#f59e0b; }
   margin-top: 18px;
 }
 
+/* -------------------------------------------------------------
+   Docked layout (single surface): Sidebar + Main share one frame
+   -------------------------------------------------------------
+   Use when you want the sidebar to feel "attached" (not a separate card).
+   Important: do NOT set overflow:hidden (would break sticky sidebars).
+
+   Example:
+     <div class="editor-shell editor-shell--docked">
+       <aside class="editor-sidebar editor-dock-sidebar">...
+       <section class="editor-main editor-dock-main">...
+     </div>
+*/
+.editor-shell--docked{
+  gap: 0;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: calc(var(--editor-card-radius) + 2px);
+  background: rgba(255,255,255,.02);
+}
+
+.editor-shell--docked > .editor-dock-sidebar{
+  border-right: 1px solid rgba(255,255,255,.08);
+  background: rgba(0,0,0,.08);
+}
+
+.editor-shell--docked > .editor-dock-main{
+  background: rgba(255,255,255,.01);
+}
+
+.editor-dock-pad{
+  padding: var(--editor-card-pad);
+}
+
+@media (max-width: 1100px){
+  .editor-shell--docked > .editor-dock-sidebar{
+    border-right: none;
+    border-bottom: 1px solid rgba(255,255,255,.08);
+  }
+}
+
 .editor-sidebar{
   position: sticky;
   top: 16px;
