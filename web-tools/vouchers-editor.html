@@ -41,11 +41,34 @@
       <!-- Sidebar -->
       <aside id="sidebar" class="editor-sidebar editor-dock-sidebar">
         <div class="editor-dock-pad">
-          <div class="editor-search">
-            <i class="fa-solid fa-magnifying-glass"></i>
-            <input id="searchInput" class="w-full editor-input form-input" placeholder="Поиск по коду..." />
+          <div class="editor-sidebar-head">
+            <div>
+              <div class="text-sm font-semibold">Список ваучеров</div>
+              <div class="editor-sidebar-meta">Всего: <span id="count">—</span></div>
+            </div>
           </div>
-          <div id="list" class="mt-4 space-y-2"></div>
+
+          <div class="mt-3">
+            <div class="editor-search">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input id="searchInput" class="w-full editor-input form-input" placeholder="Поиск по коду..." />
+            </div>
+          </div>
+
+          <div class="mt-3 editor-sidebar-filters two-col">
+            <select id="filterMulti" class="w-full editor-input form-input">
+              <option value="">Все типы</option>
+              <option value="single">Одиночные</option>
+              <option value="multi">Множественные</option>
+            </select>
+            <select id="filterStatus" class="w-full editor-input form-input">
+              <option value="">Все сроки</option>
+              <option value="active">Активные</option>
+              <option value="expired">Истёкшие</option>
+            </select>
+          </div>
+
+          <div id="list" class="mt-4 editor-sidebar-list editor-scroll" style="max-height: 590px"></div>
         </div>
       </aside>
 
@@ -111,6 +134,9 @@
     const DOM = {
       list: document.getElementById('list'),
       search: document.getElementById('searchInput'),
+      count: document.getElementById('count'),
+      filterMulti: document.getElementById('filterMulti'),
+      filterStatus: document.getElementById('filterStatus'),
       refresh: document.getElementById('refreshBtn'),
       newBtn: document.getElementById('newBtn'),
       title: document.getElementById('title'),
@@ -212,17 +238,40 @@
       setDirtyUi(true);
     };
 
+    const applyListFilters = (rows) => {
+      const multi = DOM.filterMulti?.value || '';
+      const status = DOM.filterStatus?.value || '';
+      const now = Math.floor(Date.now() / 1000);
+      return rows.filter((r) => {
+        if (multi === 'single' && Number(r.Multiple || 0) !== 0) return false;
+        if (multi === 'multi' && Number(r.Multiple || 0) !== 1) return false;
+        if (status === 'active') {
+          if (Number(r.ValidUntil || 0) > 0 && Number(r.ValidUntil || 0) <= now) return false;
+        }
+        if (status === 'expired') {
+          if (Number(r.ValidUntil || 0) === 0 || Number(r.ValidUntil || 0) > now) return false;
+        }
+        return true;
+      });
+    };
+
     const renderList = () => {
       const rows = STATE.list;
+      if (DOM.count) DOM.count.textContent = rows.length ? `${rows.length}` : '—';
       if (!rows.length) {
-        DOM.list.innerHTML = `<div class="p-4 editor-muted-text">Нет ваучеров</div>`;
+        DOM.list.innerHTML = `<div class="editor-empty-state">Нет ваучеров</div>`;
         return;
       }
-      DOM.list.innerHTML = rows.map(r => {
+      const filtered = applyListFilters(rows);
+      if (!filtered.length) {
+        DOM.list.innerHTML = `<div class="editor-empty-state">Ничего не найдено по фильтрам</div>`;
+        return;
+      }
+      const listHtml = filtered.map(r => {
         const active = r.ID === STATE.selectedId;
         const badge = r.Multiple ? `<span class="text-xs px-2 py-1 rounded-full" style="background: rgba(16,185,129,.16); border: 1px solid rgba(16,185,129,.3)">multi</span>` : '';
         return `
-          <button class="w-full text-left p-3 rounded-lg border ${active ? 'bg-light border-slate-400/30' : 'border-light hover:bg-light'}" data-id="${r.ID}">
+          <button class="w-full text-left editor-row ${active ? 'ring-2 ring-indigo-500/40' : ''}" data-id="${r.ID}">
             <div class="flex items-center justify-between gap-3">
               <div class="min-w-0">
                 <div class="font-semibold truncate">${r.Code}</div>
@@ -233,6 +282,7 @@
           </button>
         `;
       }).join('');
+      DOM.list.innerHTML = `<div class="editor-list">${listHtml}</div>`;
 
       DOM.list.querySelectorAll('[data-id]').forEach(btn => {
         btn.addEventListener('click', () => selectVoucher(Number(btn.getAttribute('data-id'))));
@@ -437,6 +487,8 @@
       clearTimeout(DOM.search.__t);
       DOM.search.__t = setTimeout(loadList, 200);
     });
+    DOM.filterMulti?.addEventListener('change', renderList);
+    DOM.filterStatus?.addEventListener('change', renderList);
     DOM.newBtn.addEventListener('click', newVoucher);
     DOM.save.addEventListener('click', saveVoucher);
     DOM.del.addEventListener('click', deleteVoucher);

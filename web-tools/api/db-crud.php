@@ -101,6 +101,14 @@ $RESOURCES = [
     'search' => ['ID', 'Name', 'Path'],
     'order' => 'ID ASC',
   ],
+  // New editor: aethers-editor.html
+  'aethers' => [
+    'table' => 'tw_aethers',
+    'pk' => 'ID',
+    'columns' => ['Name', 'WorldID', 'TeleX', 'TeleY'],
+    'search' => ['ID', 'Name', 'WorldID'],
+    'order' => 'ID ASC',
+  ],
   // New editor: items-editor.html
   'items' => [
     'table' => 'tw_items_list',

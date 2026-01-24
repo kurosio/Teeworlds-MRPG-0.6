@@ -64,13 +64,16 @@
             </div>
           </div>
 
-          <div class="mt-3">
+          <div class="mt-3 editor-sidebar-filters two-col">
             <select id="filterGroup" class="w-full editor-input form-input">
               <option value="">Все группы</option>
             </select>
+            <select id="filterType" class="w-full editor-input form-input">
+              <option value="">Все типы</option>
+            </select>
           </div>
 
-          <div class="mt-4 space-y-2 overflow-auto editor-scroll" style="max-height: 590px" data-editor-role="list"></div>
+          <div class="mt-4 editor-sidebar-list editor-scroll" style="max-height: 590px" data-editor-role="list"></div>
         </div>
       </aside>
 
@@ -254,10 +257,17 @@
       : { markDirty: () => {}, setClean: () => {} };
 
     const filterGroup = document.getElementById('filterGroup');
+    const filterType = document.getElementById('filterType');
     if (filterGroup) {
       filterGroup.innerHTML = [
         '<option value=\"\">Все группы</option>',
         ...GROUPS.map(group => `<option value=\"${group}\">${group}</option>`),
+      ].join('');
+    }
+    if (filterType) {
+      filterType.innerHTML = [
+        '<option value=\"\">Все типы</option>',
+        ...TYPES.map(type => `<option value=\"${type}\">${type}</option>`),
       ].join('');
     }
 
@@ -268,7 +278,12 @@
       dirty,
       transformList: (rows) => {
         const group = filterGroup?.value || '';
-        const filtered = group ? rows.filter(row => String(row?.Group || '') === group) : rows.slice();
+        const type = filterType?.value || '';
+        const filtered = rows.filter(row => {
+          if (group && String(row?.Group || '') !== group) return false;
+          if (type && String(row?.Type || '') !== type) return false;
+          return true;
+        });
         return filtered.sort((a, b) => {
           const ga = String(a?.Group || '');
           const gb = String(b?.Group || '');
@@ -343,6 +358,9 @@
     });
 
     filterGroup?.addEventListener('change', () => {
+      editor.refresh();
+    });
+    filterType?.addEventListener('change', () => {
       editor.refresh();
     });
   </script>

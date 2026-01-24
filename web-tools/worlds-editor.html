@@ -56,7 +56,13 @@
             </div>
           </div>
 
-          <div class="mt-4 space-y-2 overflow-auto editor-scroll" style="max-height: 590px" data-editor-role="list"></div>
+          <div class="mt-3 editor-sidebar-filters">
+            <select id="filterType" class="w-full editor-input form-input">
+              <option value="">Все типы</option>
+            </select>
+          </div>
+
+          <div class="mt-4 editor-sidebar-list editor-scroll" style="max-height: 590px" data-editor-role="list"></div>
         </div>
       </aside>
 
@@ -116,6 +122,16 @@
       return list.length ? list.join(',') : null;
     };
 
+    const TYPES = [
+      'default',
+      'dungeon',
+      'tutorial',
+      'deep_dungeon',
+      'treasure_dungeon',
+      'pvp',
+      'mini_games',
+    ];
+
     const worldFields = {
       Name: { type: 'text', label: 'Название', validate: { required: true }, ui: { placeholder: 'Например: Gridania' } },
       Path: { type: 'text', label: 'Путь карты', validate: { required: true }, ui: { placeholder: 'main.map' } },
@@ -123,15 +139,7 @@
         label: 'Тип мира',
         ui: {
           type: 'select',
-          options: [
-            { value: 'default', label: 'default' },
-            { value: 'dungeon', label: 'dungeon' },
-            { value: 'tutorial', label: 'tutorial' },
-            { value: 'deep_dungeon', label: 'deep_dungeon' },
-            { value: 'treasure_dungeon', label: 'treasure_dungeon' },
-            { value: 'pvp', label: 'pvp' },
-            { value: 'mini_games', label: 'mini_games' },
-          ]
+          options: TYPES.map((type) => ({ value: type, label: type }))
         }
       },
       Flags: {
@@ -155,11 +163,23 @@
         })
       : { markDirty: () => {}, setClean: () => {} };
 
-    EditorCore.DbEditor.mount(document.body, {
+    const filterType = document.getElementById('filterType');
+    if (filterType) {
+      filterType.innerHTML = [
+        '<option value=\"\">Все типы</option>',
+        ...TYPES.map(type => `<option value=\"${type}\">${type}</option>`),
+      ].join('');
+    }
+
+    const editor = EditorCore.DbEditor.mount(document.body, {
       resource: 'worlds',
       fields: worldFields,
       fieldOptions: fieldRenderOptions,
       dirty,
+      transformList: (rows) => {
+        const type = filterType?.value || '';
+        return type ? rows.filter(row => String(row?.Type || '') === type) : rows;
+      },
       defaults: () => ({
         Name: '',
         Path: '',
@@ -200,6 +220,10 @@
       },
       emptyTitle: 'Выберите мир',
       emptySubtitle: 'или создайте новый',
+    });
+
+    filterType?.addEventListener('change', () => {
+      editor.refresh();
     });
   </script>
 </body>

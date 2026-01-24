@@ -20,15 +20,15 @@
 :root{
   /* Page layout */
   --editor-page-max: 1280px;
-  --editor-page-pad: 20px;
-  --editor-sidebar-w: 380px;
+  --editor-page-pad: 16px;
+  --editor-sidebar-w: 340px;
 
   /* Card / section tuning */
   --editor-card-radius: var(--editor-radius, 14px);
-  --editor-card-pad: 18px;
+  --editor-card-pad: 14px;
 
   /* Field grids */
-  --editor-fields-gap: 12px;
+  --editor-fields-gap: 10px;
 
   /* Table list mode */
   --editor-table-idx: 44px;
@@ -45,6 +45,7 @@ body[data-editor="events"]{ --editor-accent:#60a5fa; }
 body[data-editor="scenario"]{ --editor-accent:#a78bfa; }
 body[data-editor="vouchers"]{ --editor-accent:#f59e0b; }
 body[data-editor="worlds"]{ --editor-accent:#38bdf8; }
+body[data-editor="aethers"]{ --editor-accent:#fb923c; }
 
 /* -------------------------------------------------------------
    Page shell
@@ -59,7 +60,9 @@ body[data-editor="worlds"]{ --editor-accent:#38bdf8; }
   display:flex;
   align-items:flex-start;
   justify-content:space-between;
-  gap: 14px;
+  gap: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(255,255,255,.06);
 }
 
 .editor-page-title{
@@ -90,6 +93,32 @@ body[data-editor="worlds"]{ --editor-accent:#38bdf8; }
   align-items:center;
 }
 
+/* Sidebar header + filters (shared across editors) */
+.editor-sidebar-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 8px;
+}
+
+.editor-sidebar-meta{
+  font-size: 12px;
+  color: var(--editor-text-muted);
+}
+
+.editor-sidebar-filters{
+  display:grid;
+  gap: 8px;
+}
+
+.editor-sidebar-filters.two-col{
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (max-width: 520px){
+  .editor-sidebar-filters.two-col{grid-template-columns: 1fr;}
+}
+
 /* Badge (used already in some editors; keep compatible) */
 .editor-badge{
   display:inline-flex;
@@ -109,9 +138,9 @@ body[data-editor="worlds"]{ --editor-accent:#38bdf8; }
 .editor-shell{
   display:grid;
   grid-template-columns: minmax(260px, var(--editor-sidebar-w)) minmax(0, 1fr);
-  gap: 18px;
+  gap: 14px;
   align-items:start;
-  margin-top: 18px;
+  margin-top: 14px;
 }
 
 /* -------------------------------------------------------------
@@ -131,6 +160,7 @@ body[data-editor="worlds"]{ --editor-accent:#38bdf8; }
   border: 1px solid rgba(255,255,255,.08);
   border-radius: calc(var(--editor-card-radius) + 2px);
   background: rgba(255,255,255,.02);
+  box-shadow: 0 18px 60px rgba(0,0,0,.35);
 }
 
 .editor-shell--docked > .editor-dock-sidebar{
@@ -175,6 +205,7 @@ body[data-editor="worlds"]{ --editor-accent:#38bdf8; }
   border: 1px solid rgba(255,255,255,.08);
   border-radius: calc(var(--editor-card-radius) + 2px);
   padding: var(--editor-card-pad);
+  box-shadow: 0 12px 30px rgba(0,0,0,.35);
 }
 
 .editor-card-head{

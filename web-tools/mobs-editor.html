@@ -40,21 +40,35 @@
     <div class="editor-shell editor-shell--docked">
       <aside id="sidebar" class="editor-sidebar editor-dock-sidebar">
         <div class="editor-dock-pad">
-          <div class="editor-search">
-            <i class="fa-solid fa-magnifying-glass"></i>
-            <input id="searchInput" class="w-full editor-input form-input" placeholder="Поиск: ID / имя моба / мир" />
+          <div class="editor-sidebar-head">
+            <div>
+              <div class="text-sm font-semibold">Список спавнов</div>
+              <div class="editor-sidebar-meta">Всего: <span id="count">—</span></div>
+            </div>
           </div>
 
-          <div class="mt-3 grid grid-cols-1 gap-2">
+          <div class="mt-3">
+            <div class="editor-search">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input id="searchInput" class="w-full editor-input form-input" placeholder="Поиск: ID / имя моба / мир" />
+            </div>
+          </div>
+
+          <div class="mt-3 editor-sidebar-filters two-col">
             <select id="filterMob" class="editor-input form-input" data-datasource="bots" data-label-mode="id_name" data-db-searchable="1" data-db-limit="300" data-value-type="number">
-              <option value="">Фильтр: моб (из БД)</option>
+              <option value="">Фильтр: моб</option>
             </select>
             <select id="filterWorld" class="editor-input form-input" data-datasource="worlds" data-label-mode="id_name" data-db-searchable="0" data-db-limit="300" data-value-type="number">
-              <option value="">Фильтр: мир (из БД)</option>
+              <option value="">Фильтр: мир</option>
+            </select>
+            <select id="filterBoss" class="editor-input form-input">
+              <option value="">Все типы</option>
+              <option value="boss">Только босс</option>
+              <option value="regular">Обычные</option>
             </select>
           </div>
 
-          <div id="list" class="mt-4 space-y-2 overflow-auto editor-scroll" style="max-height: 590px"></div>
+          <div id="list" class="mt-4 editor-sidebar-list editor-scroll" style="max-height: 590px"></div>
 
           <div class="mt-3">
             <button id="moreBtn" class="w-full editor-btn editor-btn-secondary hidden">
@@ -131,6 +145,7 @@
     const DOM = {
       list: document.getElementById('list'),
       search: document.getElementById('searchInput'),
+      count: document.getElementById('count'),
       refresh: document.getElementById('refreshBtn'),
       newBtn: document.getElementById('newBtn'),
       title: document.getElementById('title'),
@@ -142,6 +157,7 @@
       more: document.getElementById('moreBtn'),
       filterMob: document.getElementById('filterMob'),
       filterWorld: document.getElementById('filterWorld'),
+      filterBoss: document.getElementById('filterBoss'),
       tabRoot: document.getElementById('tabRoot'),
       tabBasic: document.getElementById('tab_basic'),
       tabAi: document.getElementById('tab_ai'),
@@ -335,10 +351,13 @@
       const q = String(DOM.search.value || '').trim().toLowerCase();
       const mobFilter = Number(DOM.filterMob.value || 0);
       const worldFilter = Number(DOM.filterWorld.value || 0);
+      const bossFilter = DOM.filterBoss?.value || '';
 
       return rows.filter(r => {
         if (mobFilter > 0 && Number(r.BotID) !== mobFilter) return false;
         if (worldFilter > 0 && Number(r.WorldID) !== worldFilter) return false;
+        if (bossFilter === 'boss' && Number(r.Boss || 0) !== 1) return false;
+        if (bossFilter === 'regular' && Number(r.Boss || 0) === 1) return false;
 
         if (!q) return true;
         if (isNumericSearch(q)) {
@@ -357,16 +376,19 @@
       const filtered = applyClientFilters(STATE.list);
 
       if (!STATE.list.length) {
-        DOM.list.innerHTML = `<div class="p-4 editor-muted-text">Нет записей (или БД не настроена)</div>`;
+        if (DOM.count) DOM.count.textContent = '—';
+        DOM.list.innerHTML = `<div class="editor-empty-state">Нет записей (или БД не настроена)</div>`;
         return;
       }
 
       if (!filtered.length) {
-        DOM.list.innerHTML = `<div class="p-4 editor-muted-text">Ничего не найдено по фильтрам</div>`;
+        if (DOM.count) DOM.count.textContent = `${STATE.list.length}`;
+        DOM.list.innerHTML = `<div class="editor-empty-state">Ничего не найдено по фильтрам</div>`;
         return;
       }
 
-      DOM.list.innerHTML = filtered.map(r => {
+      if (DOM.count) DOM.count.textContent = `${STATE.list.length}`;
+      const listHtml = filtered.map(r => {
         const active = r.ID === STATE.selectedId;
         const title = formatMobTitle(r);
         const world = formatWorld(r.WorldID);
@@ -374,7 +396,7 @@
           ? `<span class="text-xs px-2 py-1 rounded-full" style="background: rgba(244,63,94,.14); border: 1px solid rgba(244,63,94,.3)">BOSS</span>`
           : '';
         return `
-          <button class="w-full text-left p-3 rounded-lg border ${active ? 'bg-light border-slate-400/30' : 'border-light hover:bg-light'}" data-id="${r.ID}">
+          <button class="w-full text-left editor-row ${active ? 'ring-2 ring-indigo-500/40' : ''}" data-id="${r.ID}">
             <div class="flex items-center justify-between gap-3">
               <div class="min-w-0">
                 <div class="font-semibold truncate">${title}</div>
@@ -385,6 +407,7 @@
           </button>
         `;
       }).join('');
+      DOM.list.innerHTML = `<div class="editor-list">${listHtml}</div>`;
 
       DOM.list.querySelectorAll('[data-id]').forEach(btn => {
         btn.addEventListener('click', () => selectMob(Number(btn.getAttribute('data-id'))));
@@ -773,6 +796,7 @@
 
       DOM.filterMob.addEventListener('change', () => renderList());
       DOM.filterWorld.addEventListener('change', () => renderList());
+      DOM.filterBoss?.addEventListener('change', () => renderList());
 
       STATE._closeDrawer = () => {};
     };

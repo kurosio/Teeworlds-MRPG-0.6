@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Аэтры • tw_aethers</title>
+
+  <link rel="stylesheet" href="editor-core/editor-theme.css" />
+  <link rel="stylesheet" href="editor-core/editor-template.css" />
+
+  <!-- Fonts + icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <script src="editor-core/tailwind-theme.js"></script>
+  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+</head>
+
+<body class="editor-theme" data-editor="aethers">
+  <div class="editor-page">
+    <div class="editor-page-header">
+      <div class="editor-page-title">
+        <i class="fa-solid fa-wand-magic-sparkles text-accent text-xl"></i>
+        <div>
+          <h1>Аэтры</h1>
+          <div class="editor-page-sub">Редактор таблицы <code>tw_aethers</code></div>
+        </div>
+      </div>
+      <div class="editor-page-actions">
+        <button class="editor-btn editor-btn-secondary" data-editor-role="refresh">
+          <i class="fa-solid fa-rotate"></i><span>Обновить</span>
+        </button>
+        <button class="editor-btn editor-btn-primary" data-editor-role="new">
+          <i class="fa-solid fa-plus"></i><span>Новый телепорт</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="editor-shell editor-shell--docked">
+      <!-- Sidebar -->
+      <aside class="editor-sidebar editor-dock-sidebar">
+        <div class="editor-dock-pad">
+          <div class="flex items-center justify-between gap-3">
+            <div>
+              <div class="text-sm font-semibold">Список телепортов</div>
+              <div class="text-xs editor-muted-text">Всего: <span data-editor-role="count">—</span></div>
+            </div>
+          </div>
+
+          <div class="mt-3">
+            <div class="editor-search">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input data-editor-role="search" type="search" class="w-full editor-input form-input" placeholder="Поиск по ID/названию/миру…" />
+            </div>
+          </div>
+
+          <div class="mt-3 editor-sidebar-filters">
+            <select id="filterWorld" class="w-full editor-input form-input" data-datasource="worlds" data-label-mode="id_name" data-db-searchable="0" data-db-limit="300" data-value-type="number">
+              <option value="">Все миры</option>
+            </select>
+          </div>
+
+          <div class="mt-4 editor-sidebar-list editor-scroll" style="max-height: 590px" data-editor-role="list"></div>
+        </div>
+      </aside>
+
+      <!-- Main -->
+      <section class="editor-main editor-dock-main">
+        <div class="editor-dock-pad">
+          <div class="editor-sticky-toolbar flex items-start justify-between gap-4">
+            <div>
+              <div class="text-lg font-semibold" data-editor-role="title">Выберите телепорт</div>
+              <div class="editor-muted-text text-sm mt-1" data-editor-role="subtitle">или создайте новый</div>
+            </div>
+            <div class="editor-page-actions">
+              <span id="dirty-pill" class="editor-dirty-pill hidden">Данные не сохранены</span>
+              <button class="editor-btn editor-btn-primary" data-editor-role="save" disabled>
+                <i class="fa-solid fa-floppy-disk"></i><span>Сохранить</span>
+              </button>
+              <button class="editor-btn editor-btn-secondary" data-editor-role="delete" disabled>
+                <i class="fa-solid fa-trash"></i><span>Удалить</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="editor-section mt-4">
+            <div class="editor-form-grid-2" data-editor-role="form"></div>
+          </div>
+
+          <div class="mt-4" data-editor-role="status"></div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script src="editor-core/editor-core.bundle.js"></script>
+  <script src="editor-core/db-editor-runtime.js"></script>
+  <script>
+    const { fieldRenderOptions } = EditorCore.bootstrapEditor({ mode: 'event' });
+
+    const aetherFields = {
+      Name: { type: 'text', label: 'Название', validate: { required: true }, ui: { placeholder: 'Например: Gridania (Center)' } },
+      WorldID: { type: 'db_select', label: 'Мир', validate: { required: true }, ui: { datasource: 'worlds', labelMode: 'id_name', placeholder: '— мир —', searchPlaceholder: 'Поиск мира…' } },
+      TeleX: { type: 'number', label: 'Координата X', ui: { step: 1, placeholder: 'Напр. 19552' } },
+      TeleY: { type: 'number', label: 'Координата Y', ui: { step: 1, placeholder: 'Напр. 4718' } },
+    };
+
+    const dirty = EditorCore.Dirty?.create
+      ? EditorCore.Dirty.create({
+          root: document.querySelector('.editor-main') || document.body,
+          pill: document.getElementById('dirty-pill'),
+          beforeUnload: true,
+        })
+      : { markDirty: () => {}, setClean: () => {} };
+
+    const filterWorld = document.getElementById('filterWorld');
+
+    const editor = EditorCore.DbEditor.mount(document.body, {
+      resource: 'aethers',
+      fields: aetherFields,
+      fieldOptions: fieldRenderOptions,
+      dirty,
+      transformList: (rows) => {
+        const world = Number(filterWorld?.value || 0);
+        if (!world) return rows;
+        return rows.filter(row => Number(row?.WorldID || 0) === world);
+      },
+      defaults: () => ({
+        Name: '',
+        WorldID: 0,
+        TeleX: 0,
+        TeleY: 0,
+      }),
+      rowToModel: (row) => ({
+        Name: String(row?.Name || ''),
+        WorldID: Number(row?.WorldID || 0),
+        TeleX: Number(row?.TeleX || 0),
+        TeleY: Number(row?.TeleY || 0),
+      }),
+      modelToPayload: (model) => ({
+        Name: String(model?.Name || ''),
+        WorldID: Number(model?.WorldID || 0),
+        TeleX: Number(model?.TeleX || 0),
+        TeleY: Number(model?.TeleY || 0),
+      }),
+      listItem: (row) => ({
+        title: row?.Name || `Телепорт #${row?.ID || 0}`,
+        subtitle: `Мир ${row?.WorldID ?? '—'} · ${row?.TeleX ?? '—'}:${row?.TeleY ?? '—'}`
+      }),
+      getTitle: (model, id) => (id ? `Телепорт: ${model?.Name || `#${id}`}` : 'Новый телепорт'),
+      getSubtitle: (model, id) => {
+        if (!model) return '';
+        const world = `Мир: ${model.WorldID || '—'}`;
+        const coords = `Коорд.: ${model.TeleX ?? '—'}:${model.TeleY ?? '—'}`;
+        return id ? `ID ${id} · ${world} · ${coords}` : `${world} · ${coords}`;
+      },
+      emptyTitle: 'Выберите телепорт',
+      emptySubtitle: 'или создайте новый',
+    });
+
+    filterWorld?.addEventListener('change', () => {
+      editor.refresh();
+    });
+  </script>
+</body>
+</html>

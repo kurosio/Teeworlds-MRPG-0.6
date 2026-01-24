@@ -118,7 +118,7 @@
         const rows = state.rows || [];
         if (els.count) els.count.textContent = rows.length ? `${rows.length}` : '—';
         if (!rows.length) {
-          els.list.innerHTML = `<div class="p-3 editor-muted-text">Нет данных</div>`;
+          els.list.innerHTML = `<div class="editor-empty-state">Нет данных</div>`;
           return;
         }
 
@@ -134,7 +134,7 @@
             </button>
           `;
         }).join('');
-        els.list.innerHTML = `<div class="space-y-2">${html}</div>`;
+        els.list.innerHTML = `<div class="editor-list">${html}</div>`;
       };
 
       const selectRow = (row) => {
@@ -169,6 +169,8 @@
           if (state.selectedId) {
             const found = state.rows.find(r => Number(r.ID) === Number(state.selectedId));
             if (found) selectRow(found);
+          } else if (!state.model && state.rows.length) {
+            selectRow(state.rows[0]);
           }
         } catch (err) {
           const msg = err?.message || 'Ошибка загрузки';

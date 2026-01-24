@@ -17,14 +17,24 @@
   --editor-radius:14px;
 
   /* Global sizing + spacing (shared by ALL editors) */
-  --editor-font-size:15px;
+  --editor-font-size:14px;
   --editor-line-height:1.35;
-  --editor-control-h:42px;
-  --editor-space:14px;
-  --editor-space-sm:10px;
+  --editor-control-h:38px;
+  --editor-space:12px;
+  --editor-space-sm:8px;
 }
 
-.editor-theme{font-family:var(--editor-font);background:var(--editor-bg);color:var(--editor-text);font-size:var(--editor-font-size);line-height:var(--editor-line-height);} 
+.editor-theme{
+  font-family:var(--editor-font);
+  background:
+    radial-gradient(1200px circle at 15% -10%, rgba(79,70,229,.20), transparent 55%),
+    radial-gradient(900px circle at 85% -20%, rgba(34,197,94,.10), transparent 60%),
+    var(--editor-bg);
+  color:var(--editor-text);
+  font-size:var(--editor-font-size);
+  line-height:var(--editor-line-height);
+  color-scheme: dark;
+} 
 .editor-theme, .editor-theme *{box-sizing:border-box;}
 .editor-surface{background:var(--editor-surface);border-color:var(--editor-border);color:var(--editor-text);} 
 .editor-panel{background:rgba(15,23,42,.78);border-color:var(--editor-border);color:var(--editor-text);} 
@@ -57,17 +67,23 @@
 }
 
 /* Unified form sizing (used by FieldRenderer defaults) */
-.editor-input{width:100%;padding:.55rem .75rem;font-size:.95rem;line-height:1.2;}
+.editor-input{width:100%;padding:.5rem .65rem;font-size:.9rem;line-height:1.2;}
 .editor-textarea{min-height:96px;resize:vertical;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,"Liberation Mono","Courier New",monospace;font-size:.9rem;}
 
 /* Unified field wrappers */
-.editor-field{padding:14px;border-radius:14px;background:rgba(0,0,0,0.12);border:1px solid rgba(255,255,255,0.06);}
+.editor-field{
+  padding:12px;
+  border-radius:12px;
+  background:rgba(0,0,0,0.12);
+  border:1px solid rgba(255,255,255,0.06);
+  box-shadow:0 10px 24px rgba(0,0,0,.22);
+}
 .editor-field-nested{padding:0;border:0;background:transparent;}
 .editor-theme input::placeholder,.editor-theme textarea::placeholder{color:var(--editor-text-muted);opacity:.85;} 
 .editor-theme input:focus,.editor-theme textarea:focus,.editor-theme select:focus{outline:none;border-color:rgba(79,70,229,.85);box-shadow:0 0 0 3px rgba(79,70,229,.22);} 
 .editor-theme select option{background:var(--editor-surface);color:var(--editor-text);} 
 
-.editor-btn{display:inline-flex;align-items:center;justify-content:center;gap:.5rem;padding:.6rem .9rem;border-radius:12px;font-weight:600;border:1px solid rgba(255,255,255,.08);transition:transform .12s ease,background-color .12s ease,border-color .12s ease,box-shadow .12s ease,color .12s ease;user-select:none;} 
+.editor-btn{display:inline-flex;align-items:center;justify-content:center;gap:.45rem;padding:.5rem .75rem;border-radius:11px;font-weight:600;border:1px solid rgba(255,255,255,.08);transition:transform .12s ease,background-color .12s ease,border-color .12s ease,box-shadow .12s ease,color .12s ease;user-select:none;} 
 .editor-btn:active{transform:translateY(1px);} 
 .editor-btn-secondary{background:rgba(255,255,255,.06);color:var(--editor-text);} 
 .editor-btn-secondary:hover{background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.12);} 
@@ -75,8 +91,15 @@
 
 /* List / icon buttons (used by generic list fields) */
 .editor-list-item{background:rgba(0,0,0,0.18);border:1px solid var(--editor-border);border-radius:14px;padding:14px;}
-.editor-row{background:rgba(0,0,0,0.14);border:1px solid var(--editor-border);border-radius:14px;padding:12px;}
-.editor-row:hover{background:rgba(0,0,0,0.18);} 
+.editor-row{
+  background:rgba(0,0,0,0.14);
+  border:1px solid var(--editor-border);
+  border-radius:12px;
+  padding:10px;
+  transition:background .12s ease,border-color .12s ease,box-shadow .12s ease,transform .12s ease;
+  cursor:pointer;
+}
+.editor-row:hover{background:rgba(0,0,0,0.18);border-color:rgba(99,102,241,.35);box-shadow:0 12px 30px rgba(0,0,0,.35);} 
 .editor-db-alert{padding:10px 12px;border-radius:12px;border:1px solid var(--editor-border);background:rgba(255,255,255,0.03);color:var(--editor-text-muted);} 
 .editor-icon-btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:8px 10px;border-radius:12px;border:1px solid var(--editor-border);background:rgba(255,255,255,0.04);color:var(--editor-text);transition:transform .08s ease,background .15s ease,border-color .15s ease;}
 .editor-icon-btn:hover{background:rgba(255,255,255,0.06);border-color:rgba(148,163,184,0.4);} 
@@ -97,9 +120,15 @@
 .editor-invalid{border-color:rgba(248,113,113,.8)!important;box-shadow:0 0 0 3px rgba(248,113,113,.16)!important;}
 
 /* Unified input + field wrappers (used by FieldRenderer defaults) */
-.editor-input{width:100%;padding:.55rem .75rem;font-size:.95rem;line-height:1.2;}
+.editor-input{width:100%;padding:.5rem .65rem;font-size:.9rem;line-height:1.2;}
 .editor-textarea{min-height:96px;resize:vertical;font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,'Liberation Mono','Courier New',monospace;font-size:.85rem;}
-.editor-field{padding:14px;border-radius:14px;background:rgba(0,0,0,0.12);border:1px solid rgba(255,255,255,.06);}
+.editor-field{
+  padding:12px;
+  border-radius:12px;
+  background:rgba(0,0,0,0.12);
+  border:1px solid rgba(255,255,255,.06);
+  box-shadow:0 10px 24px rgba(0,0,0,.22);
+}
 .editor-field-nested{padding:0;border:0;background:transparent;}
 
 /* Better dark form defaults with Tailwind Forms plugin */
@@ -156,10 +185,10 @@
 .editor-theme .form-select,
 .editor-theme .form-textarea{
   width:100%;
-  padding:.55rem .75rem;
-  font-size:.95rem;
+  padding:.5rem .65rem;
+  font-size:.9rem;
   line-height:1.2;
-  border-radius:12px;
+  border-radius:11px;
   background:rgba(15,23,42,.65);
   border:1px solid var(--editor-border);
   color:var(--editor-text);
@@ -284,10 +313,10 @@
 /* Ensure plain <select> / <textarea> (without Tailwind classes) still look correct */
 .editor-theme select{
   min-height:var(--editor-control-h);
-  padding:.55rem .75rem;
-  font-size:.95rem;
+  padding:.5rem .65rem;
+  font-size:.9rem;
   line-height:1.2;
-  border-radius:12px;
+  border-radius:11px;
 }
 .editor-theme textarea{
   padding:.65rem .75rem;
@@ -332,7 +361,7 @@
 .editor-readonly{min-height:var(--editor-control-h);padding:.55rem .75rem;border-radius:12px;border:1px solid rgba(255,255,255,.08);background:rgba(0,0,0,0.16);display:flex;align-items:center;color:rgba(229,231,235,.92);}
 
 /* Sticky toolbar (used by editors with long forms) */
-.editor-sticky-toolbar{position:sticky;top:12px;z-index:30;background:linear-gradient(180deg, rgba(17,28,51,.92) 0%, rgba(17,28,51,.78) 100%);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:14px;backdrop-filter:blur(10px);box-shadow:0 18px 50px rgba(0,0,0,.40);}
+.editor-sticky-toolbar{position:sticky;top:12px;z-index:30;background:linear-gradient(180deg, rgba(17,28,51,.92) 0%, rgba(17,28,51,.78) 100%);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:12px;backdrop-filter:blur(10px);box-shadow:0 18px 50px rgba(0,0,0,.40);}
 
 /* Icon+input search row */
 .editor-search{position:relative;}
