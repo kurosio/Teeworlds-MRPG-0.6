@@ -938,6 +938,25 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
     return attrs.join(' ');
   };
 
+  // For multiselect fields we accept both array values and common DB formats:
+  // - comma-separated string (MySQL SET)
+  // - JSON array string
+  const normalizeMultiValue = (v) => {
+    if (Array.isArray(v)) {
+      return v.map(x => String(x).trim()).filter(Boolean);
+    }
+    if (v == null) return [];
+    const s = String(v).trim();
+    if (!s) return [];
+    if (s[0] === '[') {
+      try {
+        const arr = JSON.parse(s);
+        if (Array.isArray(arr)) return arr.map(x => String(x).trim()).filter(Boolean);
+      } catch {}
+    }
+    return s.split(',').map(x => String(x).trim()).filter(Boolean);
+  };
+
   const renderSelectOptions = (options, value, multiple = false) => {
     const values = multiple && Array.isArray(value) ? value.map(String) : null;
     return options.map((option) => {
@@ -2354,4 +2373,3 @@ const renderCheckbox = () => {
   window.EditorCore = window.EditorCore || {};
   window.EditorCore.bootstrapEditor = bootstrapEditor;
 })();
-

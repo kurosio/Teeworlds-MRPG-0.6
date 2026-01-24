@@ -93,6 +93,14 @@ $RESOURCES = [
     'search' => ['GroupName','ID','ItemID'],
     'order' => 'ID ASC',
   ],
+  // New editor: worlds-editor.html
+  'worlds' => [
+    'table' => 'tw_worlds',
+    'pk' => 'ID',
+    'columns' => ['Name', 'Path', 'Type', 'Flags', 'RespawnWorldID', 'JailWorldID', 'RequiredLevel'],
+    'search' => ['ID', 'Name', 'Path'],
+    'order' => 'ID ASC',
+  ],
 ];
 
 function decode_json_cols(array $row, array $jsonCols): array {

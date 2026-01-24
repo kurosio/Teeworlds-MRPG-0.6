@@ -17,77 +17,57 @@
   <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
 </head>
 
-<body class="editor-theme antialiased" data-editor="mobs">
-  <div class="flex h-screen overflow-hidden">
-    <!-- Sidebar -->
-    <aside id="sidebar" class="editor-drawer w-80 md:w-[26rem] flex-shrink-0 border-r editor-surface flex flex-col">
-      <div class="p-4 border-b border-light flex items-center justify-between gap-3">
-        <div class="flex items-center gap-3 min-w-0">
-          <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background: rgba(244,63,94,.14); border: 1px solid var(--editor-border)">
-            <i class="fa-solid fa-skull text-accent"></i>
+<body class="editor-theme" data-editor="mobs">
+  <div class="editor-page">
+    <div class="editor-page-header">
+      <div class="editor-page-title">
+        <i class="fa-solid fa-skull text-accent text-xl"></i>
+        <div>
+          <h1>Мобы</h1>
+          <div class="editor-page-sub">tw_bots_mobs • точки спавна</div>
+        </div>
+      </div>
+      <div class="editor-page-actions">
+        <button id="refreshBtn" class="editor-btn editor-btn-secondary" title="Обновить">
+          <i class="fa-solid fa-rotate"></i><span>Обновить</span>
+        </button>
+        <button id="newBtn" class="editor-btn editor-btn-primary">
+          <i class="fa-solid fa-plus"></i><span>Новый спавн</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="editor-shell editor-shell--docked">
+      <aside id="sidebar" class="editor-sidebar editor-dock-sidebar">
+        <div class="editor-dock-pad">
+          <div class="editor-search">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input id="searchInput" class="w-full editor-input form-input" placeholder="Поиск: ID / имя моба / мир" />
           </div>
-          <div class="min-w-0">
-            <div class="font-bold text-lg truncate">Мобы</div>
-            <div class="text-sm editor-muted-text truncate">tw_bots_mobs • точки спавна</div>
+
+          <div class="mt-3 grid grid-cols-1 gap-2">
+            <select id="filterMob" class="editor-input form-input" data-datasource="bots" data-label-mode="id_name" data-db-searchable="1" data-db-limit="300" data-value-type="number">
+              <option value="">Фильтр: моб (из БД)</option>
+            </select>
+            <select id="filterWorld" class="editor-input form-input" data-datasource="worlds" data-label-mode="id_name" data-db-searchable="0" data-db-limit="300" data-value-type="number">
+              <option value="">Фильтр: мир (из БД)</option>
+            </select>
+          </div>
+
+          <div id="list" class="mt-4 space-y-2"></div>
+
+          <div class="mt-3">
+            <button id="moreBtn" class="w-full editor-btn editor-btn-secondary hidden">
+              <i class="fa-solid fa-angles-down"></i>
+              <span>Загрузить ещё</span>
+            </button>
           </div>
         </div>
+      </aside>
 
-        <button id="toggleSidebar" class="md:hidden editor-btn editor-btn-secondary" title="Закрыть меню">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-      </div>
-
-      <div class="p-4 border-b border-light space-y-3">
-        <div class="flex gap-2">
-          <input id="searchInput" class="w-full form-input" placeholder="Поиск: ID / имя моба / мир" />
-          <button id="refreshBtn" class="editor-btn editor-btn-secondary" title="Обновить">
-            <i class="fa-solid fa-rotate"></i>
-          </button>
-        </div>
-
-        <div class="grid grid-cols-1 gap-2">
-          <select id="filterMob" class="form-input" data-datasource="bots" data-label-mode="id_name" data-db-searchable="1" data-db-limit="300" data-value-type="number">
-            <option value="">Фильтр: моб (из БД)</option>
-          </select>
-          <select id="filterWorld" class="form-input" data-datasource="worlds" data-label-mode="id_name" data-db-searchable="0" data-db-limit="300" data-value-type="number">
-            <option value="">Фильтр: мир (из БД)</option>
-          </select>
-        </div>
-
-        <button id="newBtn" class="w-full editor-btn editor-btn-primary">
-          <i class="fa-solid fa-plus"></i>
-          <span>Новый спавн</span>
-        </button>
-      </div>
-
-      <div id="list" class="flex-grow overflow-y-auto p-2"></div>
-
-      <div class="p-3 border-t border-light">
-        <button id="moreBtn" class="w-full editor-btn editor-btn-secondary hidden">
-          <i class="fa-solid fa-angles-down"></i>
-          <span>Загрузить ещё</span>
-        </button>
-      </div>
-    </aside>
-
-    <!-- Mobile drawer backdrop -->
-    <div id="drawerBackdrop" class="editor-drawer-backdrop" aria-hidden="true"></div>
-
-    <!-- Content -->
-    <main class="flex-grow overflow-y-auto p-4 md:p-6">
-      <!-- Mobile top bar (open sidebar) -->
-      <header class="md:hidden sticky top-0 z-40 -mx-4 -mt-4 mb-4 px-4 py-3 editor-surface border-b border-light flex items-center justify-between gap-3">
-        <button id="openSidebarBtn" class="editor-btn editor-btn-secondary" title="Меню">
-          <i class="fa-solid fa-bars"></i>
-        </button>
-        <div class="font-semibold truncate">Мобы</div>
-        <button id="mobileRefreshBtn" class="editor-btn editor-btn-secondary" title="Обновить">
-          <i class="fa-solid fa-rotate"></i>
-        </button>
-      </header>
-      <div class="max-w-5xl mx-auto">
-        <div class="editor-card p-5 md:p-6">
-          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <main class="editor-main editor-dock-main">
+        <div class="editor-dock-pad">
+          <div class="editor-sticky-toolbar flex items-start justify-between gap-4">
             <div class="min-w-0">
               <div class="text-2xl font-bold" id="title">Выберите моба</div>
               <div class="editor-muted-text" id="subtitle">или создайте новый спавн</div>
@@ -130,13 +110,11 @@
                 Debuffs/Behavior — это SET поля в БД. В редакторе они представлены как теги (удобный мультивыбор).
               </div>
             </div>
-
           </div>
         </div>
-      </div>
-    </main>
+      </main>
+    </div>
   </div>
-
   <!-- Core -->
   <script src="editor-core/core.js"></script>
   <script src="editor-core/utils.js"></script>
@@ -161,10 +139,6 @@
       del: document.getElementById('deleteBtn'),
       dbStatus: document.getElementById('dbStatus'),
       sidebar: document.getElementById('sidebar'),
-      toggleSidebar: document.getElementById('toggleSidebar'),
-      openSidebarBtn: document.getElementById('openSidebarBtn'),
-      drawerBackdrop: document.getElementById('drawerBackdrop'),
-      mobileRefreshBtn: document.getElementById('mobileRefreshBtn'),
       more: document.getElementById('moreBtn'),
       filterMob: document.getElementById('filterMob'),
       filterWorld: document.getElementById('filterWorld'),
@@ -759,7 +733,8 @@
       mob: null,
       activeTab: 'basic',
       lookups: { bots: new Map(), worlds: new Map() },
-      defaults: { firstItemId: 0 }
+      defaults: { firstItemId: 0 },
+      _closeDrawer: () => {},
     };
 
     const init = async () => {
@@ -799,35 +774,7 @@
       DOM.filterMob.addEventListener('change', () => renderList());
       DOM.filterWorld.addEventListener('change', () => renderList());
 
-      // Mobile drawer (sidebar)
-      const isMobile = () => window.matchMedia('(max-width: 767px)').matches;
-      const openDrawer = () => {
-        if (!isMobile()) return;
-        DOM.sidebar.classList.add('open');
-        DOM.drawerBackdrop.classList.add('open');
-      };
-      const closeDrawer = () => {
-        if (!isMobile()) return;
-        DOM.sidebar.classList.remove('open');
-        DOM.drawerBackdrop.classList.remove('open');
-      };
-      DOM.openSidebarBtn?.addEventListener('click', openDrawer);
-      DOM.toggleSidebar?.addEventListener('click', closeDrawer);
-      DOM.drawerBackdrop?.addEventListener('click', closeDrawer);
-
-      // Handy shortcut: refresh from the mobile header
-      DOM.mobileRefreshBtn?.addEventListener('click', () => DOM.refresh.click());
-
-      // Close drawer after selecting/creating a record
-      STATE._closeDrawer = closeDrawer;
-
-      // If we resize to desktop, ensure drawer state doesn't linger
-      window.addEventListener('resize', () => {
-        if (!isMobile()) {
-          DOM.sidebar.classList.remove('open');
-          DOM.drawerBackdrop.classList.remove('open');
-        }
-      });
+      STATE._closeDrawer = () => {};
     };
 
     init();

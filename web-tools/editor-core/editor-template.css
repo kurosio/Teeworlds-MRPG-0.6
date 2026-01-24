@@ -44,6 +44,7 @@ body[data-editor="mobs"]{ --editor-accent:#f43f5e; }
 body[data-editor="events"]{ --editor-accent:#60a5fa; }
 body[data-editor="scenario"]{ --editor-accent:#a78bfa; }
 body[data-editor="vouchers"]{ --editor-accent:#f59e0b; }
+body[data-editor="worlds"]{ --editor-accent:#38bdf8; }
 
 /* -------------------------------------------------------------
    Page shell

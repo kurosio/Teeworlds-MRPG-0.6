@@ -10,6 +10,7 @@
 - **event-editor.php** — редактор событий.
 - **settings.html** — вкладка настроек (подключение к БД + просмотр источников списков).
 - **vouchers-editor.html** — редактор ваучеров (CRUD напрямую в БД, использует ядро).
+- **worlds-editor.html** — редактор миров (tw_worlds).
 - **api.php** — файловый API для сценариев (список/загрузка/сохранение JSON в `scenarios/`).
 - **api/db.php** — безопасный DB API (конфиг + справочники для DB Select).
 - **api/db-crud.php** — универсальный CRUD API для DB-редакторов (ресурсы описываются в карте на сервере).
@@ -52,6 +53,7 @@
 
 ### Runtime для быстрых редакторов
 - **form-runtime.js** — минимальный schema-runtime: 2-way binding, list add/remove, переиспользуемый в новых редакторах.
+- **db-editor-runtime.js** — компактный runtime для CRUD-редакторов БД (список + форма + сохранение).
 
 ### Тема
 - **editor-theme.css** — единые CSS variables + строгий UI.

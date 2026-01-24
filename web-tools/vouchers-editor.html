@@ -17,60 +17,42 @@
   <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
 </head>
 
-<body class="editor-theme antialiased" data-editor="vouchers">
-  <div class="flex h-screen overflow-hidden">
-    <!-- Sidebar -->
-    <aside id="sidebar" class="editor-drawer w-80 md:w-96 flex-shrink-0 border-r editor-surface flex flex-col">
-      <div class="p-4 border-b border-light flex items-center justify-between gap-3">
-        <div class="flex items-center gap-3 min-w-0">
-          <div class="w-10 h-10 rounded-xl flex items-center justify-center" style="background: rgba(99,102,241,.18); border: 1px solid var(--editor-border)">
-            <i class="fa-solid fa-ticket text-accent"></i>
-          </div>
-          <div class="min-w-0">
-            <div class="font-bold text-lg truncate">Ваучеры</div>
-            <div class="text-sm editor-muted-text truncate">CRUD напрямую в БД</div>
-          </div>
+<body class="editor-theme" data-editor="vouchers">
+  <div class="editor-page">
+    <div class="editor-page-header">
+      <div class="editor-page-title">
+        <i class="fa-solid fa-ticket text-accent text-xl"></i>
+        <div>
+          <h1>Ваучеры</h1>
+          <div class="editor-page-sub">CRUD напрямую в БД</div>
         </div>
-
-        <button id="toggleSidebar" class="md:hidden editor-btn editor-btn-secondary" title="Закрыть меню">
-          <i class="fa-solid fa-xmark"></i>
+      </div>
+      <div class="editor-page-actions">
+        <button id="refreshBtn" class="editor-btn editor-btn-secondary" title="Обновить">
+          <i class="fa-solid fa-rotate"></i><span>Обновить</span>
+        </button>
+        <button id="newBtn" class="editor-btn editor-btn-primary">
+          <i class="fa-solid fa-plus"></i><span>Новый ваучер</span>
         </button>
       </div>
+    </div>
 
-      <div class="p-4 border-b border-light space-y-3">
-        <div class="flex gap-2">
-          <input id="searchInput" class="w-full form-input" placeholder="Поиск по коду..." />
-          <button id="refreshBtn" class="editor-btn editor-btn-secondary" title="Обновить">
-            <i class="fa-solid fa-rotate"></i>
-          </button>
+    <div class="editor-shell editor-shell--docked">
+      <!-- Sidebar -->
+      <aside id="sidebar" class="editor-sidebar editor-dock-sidebar">
+        <div class="editor-dock-pad">
+          <div class="editor-search">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input id="searchInput" class="w-full editor-input form-input" placeholder="Поиск по коду..." />
+          </div>
+          <div id="list" class="mt-4 space-y-2"></div>
         </div>
-        <button id="newBtn" class="w-full editor-btn editor-btn-primary">
-          <i class="fa-solid fa-plus"></i>
-          <span>Новый ваучер</span>
-        </button>
-      </div>
+      </aside>
 
-      <div id="list" class="flex-grow overflow-y-auto p-2"></div>
-    </aside>
-
-    <!-- Mobile drawer backdrop -->
-    <div id="drawerBackdrop" class="editor-drawer-backdrop" aria-hidden="true"></div>
-
-    <!-- Content -->
-    <main class="flex-grow overflow-y-auto p-4 md:p-6">
-      <!-- Mobile top bar (open sidebar) -->
-      <header class="md:hidden sticky top-0 z-40 -mx-4 -mt-4 mb-4 px-4 py-3 editor-surface border-b border-light flex items-center justify-between gap-3">
-        <button id="openSidebarBtn" class="editor-btn editor-btn-secondary" title="Меню">
-          <i class="fa-solid fa-bars"></i>
-        </button>
-        <div class="font-semibold truncate">Ваучеры</div>
-        <button id="mobileRefreshBtn" class="editor-btn editor-btn-secondary" title="Обновить">
-          <i class="fa-solid fa-rotate"></i>
-        </button>
-      </header>
-      <div class="max-w-4xl mx-auto">
-        <div class="editor-card p-5 md:p-6">
-          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+      <!-- Content -->
+      <main class="editor-main editor-dock-main">
+        <div class="editor-dock-pad">
+          <div class="editor-sticky-toolbar flex items-start justify-between gap-4">
             <div class="min-w-0">
               <div class="text-2xl font-bold" id="title">Выберите ваучер</div>
               <div class="editor-muted-text" id="subtitle">или создайте новый</div>
@@ -108,8 +90,8 @@
             </div>
           </div>
         </div>
-      </div>
-    </main>
+      </main>
+    </div>
   </div>
 
   <!-- Core -->
@@ -140,10 +122,6 @@
       pickDate: document.getElementById('pickDateBtn'),
       dbStatus: document.getElementById('dbStatus'),
       sidebar: document.getElementById('sidebar'),
-      toggleSidebar: document.getElementById('toggleSidebar'),
-      openSidebarBtn: document.getElementById('openSidebarBtn'),
-      drawerBackdrop: document.getElementById('drawerBackdrop'),
-      mobileRefreshBtn: document.getElementById('mobileRefreshBtn'),
     };
 
     // Shared "unsaved changes" indicator + unload warning (like in crafts)
@@ -213,6 +191,7 @@
       voucher: null,
       form: null,
       itemsRootBound: false,
+      _closeDrawer: () => {},
     };
 
     const setDirtyUi = (enabled) => {
@@ -463,33 +442,7 @@
     DOM.del.addEventListener('click', deleteVoucher);
     DOM.pickDate.addEventListener('click', pickDate);
 
-    // Mobile drawer (sidebar)
-    const isMobile = () => window.matchMedia('(max-width: 767px)').matches;
-    const openDrawer = () => {
-      if (!isMobile()) return;
-      DOM.sidebar.classList.add('open');
-      DOM.drawerBackdrop.classList.add('open');
-    };
-    const closeDrawer = () => {
-      if (!isMobile()) return;
-      DOM.sidebar.classList.remove('open');
-      DOM.drawerBackdrop.classList.remove('open');
-    };
-    DOM.openSidebarBtn?.addEventListener('click', openDrawer);
-    DOM.toggleSidebar?.addEventListener('click', closeDrawer);
-    DOM.drawerBackdrop?.addEventListener('click', closeDrawer);
-    DOM.mobileRefreshBtn?.addEventListener('click', () => DOM.refresh.click());
-
-    // Close drawer after selecting/creating a record
-    STATE._closeDrawer = closeDrawer;
-
-    // If we resize to desktop, ensure drawer state doesn't linger
-    window.addEventListener('resize', () => {
-      if (!isMobile()) {
-        DOM.sidebar.classList.remove('open');
-        DOM.drawerBackdrop.classList.remove('open');
-      }
-    });
+    STATE._closeDrawer = () => {};
 
     (async () => {
       // Shared bootstrap (modals, db select init, validation hints, toasts)

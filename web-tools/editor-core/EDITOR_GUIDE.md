@@ -45,6 +45,27 @@ const form = EditorCore.FormRuntime.mount(root, {
 - `db_select` и `db_multiselect` (авто-подгрузка из БД)
 - списки с add/remove
 
+## Быстрый CRUD-редактор (DB)
+Для стандартных таблиц (list + форма + сохранение) используйте `EditorCore.DbEditor`:
+
+```js
+const { fieldRenderOptions } = EditorCore.bootstrapEditor({ mode: 'event' });
+
+EditorCore.DbEditor.mount(document.body, {
+  resource: 'worlds',
+  fields: schemaFields,
+  fieldOptions: fieldRenderOptions,
+  defaults: () => ({ Name: '', Path: '', Type: 'default' }),
+  rowToModel: (row) => ({ ...row }),
+  modelToPayload: (model) => ({ ...model })
+});
+```
+
+Такой runtime уже решает:
+- загрузку списка, поиск, выбор записи
+- сохранение / удаление
+- единый адаптивный макет (через `editor-template.css`)
+
 ## DB Select (db_select)
 - В схеме поля указывайте `ui.dbKey` (предпочтительно) или `ui.datasource`.
 
@@ -131,4 +152,3 @@ RequiredItemsArr: {
 ```
 
 Это даёт ровные колонки на десктопе и аккуратный стек на телефоне.
-
