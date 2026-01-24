@@ -14,6 +14,7 @@
     mob:   { source: 'bots',   labelMode: 'id_name' },
     world: { source: 'worlds', labelMode: 'id_name' },
     skill: { source: 'skills', labelMode: 'id_name' },
+    attribute: { source: 'attributes', labelMode: 'id_name' },
   };
 
   window.EditorCore = window.EditorCore || {};

@@ -101,6 +101,30 @@ $RESOURCES = [
     'search' => ['ID', 'Name', 'Path'],
     'order' => 'ID ASC',
   ],
+  // New editor: items-editor.html
+  'items' => [
+    'table' => 'tw_items_list',
+    'pk' => 'ID',
+    'columns' => [
+      'Comment',
+      'Name',
+      'Description',
+      'Group',
+      'Type',
+      'Flags',
+      'ScenarioData',
+      'InitialPrice',
+      'RequiresProducts',
+      'AT1',
+      'AT2',
+      'ATValue1',
+      'ATValue2',
+      'Data',
+    ],
+    'search' => ['ID', 'Name', 'Description', 'Group', 'Type'],
+    'json' => ['Data'],
+    'order' => 'ID ASC',
+  ],
 ];
 
 function decode_json_cols(array $row, array $jsonCols): array {

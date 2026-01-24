@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Предметы • tw_items_list</title>
+
+  <link rel="stylesheet" href="editor-core/editor-theme.css" />
+  <link rel="stylesheet" href="editor-core/editor-template.css" />
+
+  <!-- Fonts + icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <script src="editor-core/tailwind-theme.js"></script>
+  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+
+  <style>
+    .items-form [data-field-path="Description"],
+    .items-form [data-field-path="ScenarioData"],
+    .items-form [data-field-path="Data"] {
+      grid-column: 1 / -1;
+    }
+  </style>
+</head>
+
+<body class="editor-theme" data-editor="items">
+  <div class="editor-page">
+    <div class="editor-page-header">
+      <div class="editor-page-title">
+        <i class="fa-solid fa-cube text-accent text-xl"></i>
+        <div>
+          <h1>Предметы</h1>
+          <div class="editor-page-sub">Редактор таблицы <code>tw_items_list</code></div>
+        </div>
+      </div>
+      <div class="editor-page-actions">
+        <button class="editor-btn editor-btn-secondary" data-editor-role="refresh">
+          <i class="fa-solid fa-rotate"></i><span>Обновить</span>
+        </button>
+        <button class="editor-btn editor-btn-primary" data-editor-role="new">
+          <i class="fa-solid fa-plus"></i><span>Новый предмет</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="editor-shell editor-shell--docked">
+      <!-- Sidebar -->
+      <aside class="editor-sidebar editor-dock-sidebar">
+        <div class="editor-dock-pad">
+          <div class="flex items-center justify-between gap-3">
+            <div>
+              <div class="text-sm font-semibold">Список предметов</div>
+              <div class="text-xs editor-muted-text">Всего: <span data-editor-role="count">—</span></div>
+            </div>
+          </div>
+
+          <div class="mt-3">
+            <div class="editor-search">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input data-editor-role="search" type="search" class="w-full editor-input form-input" placeholder="Поиск по ID/названию/группе…" />
+            </div>
+          </div>
+
+          <div class="mt-3">
+            <select id="filterGroup" class="w-full editor-input form-input">
+              <option value="">Все группы</option>
+            </select>
+          </div>
+
+          <div class="mt-4 space-y-2 overflow-auto editor-scroll" style="max-height: 590px" data-editor-role="list"></div>
+        </div>
+      </aside>
+
+      <!-- Main -->
+      <section class="editor-main editor-dock-main">
+        <div class="editor-dock-pad">
+          <div class="editor-sticky-toolbar flex items-start justify-between gap-4">
+            <div>
+              <div class="text-lg font-semibold" data-editor-role="title">Выберите предмет</div>
+              <div class="editor-muted-text text-sm mt-1" data-editor-role="subtitle">или создайте новый</div>
+            </div>
+            <div class="editor-page-actions">
+              <span id="dirty-pill" class="editor-dirty-pill hidden">Данные не сохранены</span>
+              <button class="editor-btn editor-btn-primary" data-editor-role="save" disabled>
+                <i class="fa-solid fa-floppy-disk"></i><span>Сохранить</span>
+              </button>
+              <button class="editor-btn editor-btn-secondary" data-editor-role="delete" disabled>
+                <i class="fa-solid fa-trash"></i><span>Удалить</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="editor-section mt-4">
+            <div class="editor-form-grid-2 items-form" data-editor-role="form"></div>
+          </div>
+
+          <div class="editor-muted-text text-xs mt-2">
+            Поле <code>Data</code> сохраняется как JSON (пустое значение будет сохранено как <code>null</code>).
+          </div>
+
+          <div class="mt-4" data-editor-role="status"></div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script src="editor-core/editor-core.bundle.js"></script>
+  <script src="editor-core/db-map.js"></script>
+  <script src="editor-core/db-editor-runtime.js"></script>
+  <script>
+    const { fieldRenderOptions } = EditorCore.bootstrapEditor({ mode: 'event' });
+
+    const GROUPS = [
+      'Other',
+      'Usable',
+      'Resource',
+      'Quest',
+      'Settings',
+      'Equipment',
+      'Decoration',
+      'Potion',
+      'Currency',
+    ];
+
+    const TYPES = [
+      'Default',
+      'Equip hammer',
+      'Equip gun',
+      'Equip shotgun',
+      'Equip grenade',
+      'Equip rifle',
+      'Equip pickaxe',
+      'Equip rake',
+      'Equip fishrod',
+      'Equip gloves',
+      'Equip armor (tank)',
+      'Equip armor (dps)',
+      'Equip armor (healer)',
+      'Equip helmet (tank)',
+      'Equip helmet (dps)',
+      'Equip helmet (healer)',
+      'Equip eidolon',
+      'Equip title',
+      'Equip potion HP',
+      'Equip potion MP',
+      'Single use x1',
+      'Multiple use x99',
+      'Resource harvestable',
+      'Resource mineable',
+      'Resource fishes',
+    ];
+
+    const FLAGS = ["Can't droppable", "Can't tradeable"];
+
+    const parseSet = (value, allowed = []) => {
+      if (!value) return [];
+      const list = Array.isArray(value)
+        ? value.map(v => String(v).trim()).filter(Boolean)
+        : String(value)
+          .split(',')
+          .map(v => v.trim())
+          .filter(Boolean);
+
+      if (!allowed.length) return list;
+      const map = new Map(allowed.map(v => [String(v).toLowerCase(), String(v)]));
+      return list.map(v => map.get(String(v).toLowerCase()) || v);
+    };
+
+    const joinSet = (value) => {
+      const list = Array.isArray(value) ? value.map(v => String(v).trim()).filter(Boolean) : [];
+      return list.length ? list.join(',') : null;
+    };
+
+    const toNullableInt = (value) => {
+      if (value === null || value === undefined || value === '') return null;
+      const num = Number(value);
+      if (!Number.isFinite(num)) return null;
+      return Math.trunc(num);
+    };
+
+    const toNullableId = (value) => {
+      const num = toNullableInt(value);
+      if (!num || num <= 0) return null;
+      return num;
+    };
+
+    const toJsonPayload = (value, label) => {
+      if (value === null || value === undefined) return null;
+      if (typeof value === 'object') return value;
+      const raw = String(value).trim();
+      if (!raw) return null;
+      try {
+        return JSON.parse(raw);
+      } catch (err) {
+        throw new Error(`Поле ${label}: неверный JSON`);
+      }
+    };
+
+    const toJsonString = (value) => {
+      if (value === null || value === undefined || value === '') return '';
+      if (typeof value === 'string') return value;
+      try {
+        return JSON.stringify(value, null, 2);
+      } catch (err) {
+        return String(value);
+      }
+    };
+
+    const itemFields = {
+      Comment: { type: 'text', label: 'Комментарий', ui: { placeholder: 'Опционально' } },
+      Name: { type: 'text', label: 'Название', validate: { required: true } },
+      Description: { type: 'textarea', label: 'Описание', ui: { rows: 2 } },
+      Group: {
+        label: 'Группа',
+        ui: {
+          type: 'select',
+          options: GROUPS.map(value => ({ value, label: value })),
+        }
+      },
+      Type: {
+        label: 'Тип',
+        ui: {
+          type: 'select',
+          options: TYPES.map(value => ({ value, label: value })),
+        }
+      },
+      Flags: {
+        label: 'Флаги',
+        ui: {
+          type: 'tags',
+          options: FLAGS,
+          placeholder: 'Добавить флаг…',
+        }
+      },
+      ScenarioData: { type: 'textarea', label: 'ScenarioData', ui: { rows: 3, placeholder: 'JSON или произвольный текст' } },
+      InitialPrice: { type: 'number', label: 'Начальная цена', ui: { min: 0, step: 1 } },
+      RequiresProducts: { type: 'number', label: 'Требует продуктов', ui: { min: 0, step: 1 } },
+      AT1: { type: 'db_select', label: 'Атрибут 1', ui: { dbKey: 'attribute', placeholder: '— атрибут —' } },
+      AT2: { type: 'db_select', label: 'Атрибут 2', ui: { dbKey: 'attribute', placeholder: '— атрибут —' } },
+      ATValue1: { type: 'number', label: 'Значение атрибута 1', ui: { step: 1 } },
+      ATValue2: { type: 'number', label: 'Значение атрибута 2', ui: { step: 1 } },
+      Data: { type: 'textarea', label: 'Data (JSON)', ui: { rows: 6, placeholder: '{"key": "value"}' } },
+    };
+
+    const dirty = EditorCore.Dirty?.create
+      ? EditorCore.Dirty.create({
+          root: document.querySelector('.editor-main') || document.body,
+          pill: document.getElementById('dirty-pill'),
+          beforeUnload: true,
+        })
+      : { markDirty: () => {}, setClean: () => {} };
+
+    const filterGroup = document.getElementById('filterGroup');
+    if (filterGroup) {
+      filterGroup.innerHTML = [
+        '<option value=\"\">Все группы</option>',
+        ...GROUPS.map(group => `<option value=\"${group}\">${group}</option>`),
+      ].join('');
+    }
+
+    const editor = EditorCore.DbEditor.mount(document.body, {
+      resource: 'items',
+      fields: itemFields,
+      fieldOptions: fieldRenderOptions,
+      dirty,
+      transformList: (rows) => {
+        const group = filterGroup?.value || '';
+        const filtered = group ? rows.filter(row => String(row?.Group || '') === group) : rows.slice();
+        return filtered.sort((a, b) => {
+          const ga = String(a?.Group || '');
+          const gb = String(b?.Group || '');
+          if (ga !== gb) return ga.localeCompare(gb, 'ru');
+          const na = String(a?.Name || '');
+          const nb = String(b?.Name || '');
+          if (na !== nb) return na.localeCompare(nb, 'ru');
+          return Number(a?.ID || 0) - Number(b?.ID || 0);
+        });
+      },
+      defaults: () => ({
+        Comment: '',
+        Name: '',
+        Description: '',
+        Group: 'Quest',
+        Type: 'Default',
+        Flags: [],
+        ScenarioData: '',
+        InitialPrice: 0,
+        RequiresProducts: 0,
+        AT1: 0,
+        AT2: 0,
+        ATValue1: 0,
+        ATValue2: 0,
+        Data: '',
+      }),
+      rowToModel: (row) => ({
+        Comment: String(row?.Comment || ''),
+        Name: String(row?.Name || ''),
+        Description: String(row?.Description || ''),
+        Group: String(row?.Group || 'Quest'),
+        Type: String(row?.Type || 'Default'),
+        Flags: parseSet(row?.Flags, FLAGS),
+        ScenarioData: row?.ScenarioData == null ? '' : String(row?.ScenarioData),
+        InitialPrice: Number(row?.InitialPrice ?? 0),
+        RequiresProducts: Number(row?.RequiresProducts ?? 0),
+        AT1: Number(row?.AT1 ?? 0),
+        AT2: Number(row?.AT2 ?? 0),
+        ATValue1: Number(row?.ATValue1 ?? 0),
+        ATValue2: Number(row?.ATValue2 ?? 0),
+        Data: toJsonString(row?.Data),
+      }),
+      modelToPayload: (model) => ({
+        Comment: String(model?.Comment || ''),
+        Name: String(model?.Name || ''),
+        Description: String(model?.Description || ''),
+        Group: String(model?.Group || 'Quest'),
+        Type: String(model?.Type || 'Default'),
+        Flags: joinSet(model?.Flags),
+        ScenarioData: model?.ScenarioData ? String(model.ScenarioData) : null,
+        InitialPrice: toNullableInt(model?.InitialPrice),
+        RequiresProducts: toNullableInt(model?.RequiresProducts),
+        AT1: toNullableId(model?.AT1),
+        AT2: toNullableId(model?.AT2),
+        ATValue1: toNullableInt(model?.ATValue1),
+        ATValue2: toNullableInt(model?.ATValue2),
+        Data: toJsonPayload(model?.Data, 'Data'),
+      }),
+      listItem: (row) => ({
+        title: row?.Name || `Предмет #${row?.ID || 0}`,
+        subtitle: `${row?.Group || '—'} · ID ${row?.ID ?? '—'}`,
+      }),
+      getTitle: (model, id) => (id ? `Предмет: ${model?.Name || `#${id}`}` : 'Новый предмет'),
+      getSubtitle: (model, id) => {
+        if (!model) return '';
+        const group = model.Group ? `Группа: ${model.Group}` : 'Группа: —';
+        const type = model.Type ? `Тип: ${model.Type}` : 'Тип: —';
+        return id ? `ID ${id} · ${group} · ${type}` : `${group} · ${type}`;
+      },
+      emptyTitle: 'Выберите предмет',
+      emptySubtitle: 'или создайте новый',
+    });
+
+    filterGroup?.addEventListener('change', () => {
+      editor.refresh();
+    });
+  </script>
+</body>
+</html>

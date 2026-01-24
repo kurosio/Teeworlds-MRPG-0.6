@@ -70,6 +70,7 @@ $SOURCES = [
   'worlds' => ['table' => 'tw_worlds',      'id' => 'ID', 'label' => 'Name'],
   'skills' => ['table' => 'tw_skills_list', 'id' => 'ID', 'label' => 'Name'],
   'bots'   => ['table' => 'tw_bots_info',   'id' => 'ID', 'label' => 'Name'],
+  'attributes' => ['table' => 'tw_attributes', 'id' => 'ID', 'label' => 'Name'],
 ];
 
 $action = (string)($_GET['action'] ?? '');

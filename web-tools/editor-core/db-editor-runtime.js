@@ -160,7 +160,10 @@
         setStatus('Загрузка списка…');
         try {
           const res = await window.EditorCore.DBCrud.list(resource, { search, limit: 5000, offset: 0 });
-          state.rows = Array.isArray(res.rows) ? res.rows : [];
+          const rows = Array.isArray(res.rows) ? res.rows : [];
+          state.rows = typeof cfg.transformList === 'function'
+            ? cfg.transformList(rows, { search }) || []
+            : rows;
           setStatus(state.rows.length ? 'Готово.' : 'Список пуст.', state.rows.length ? 'ok' : 'muted');
           renderList();
           if (state.selectedId) {
