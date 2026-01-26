@@ -52,8 +52,7 @@ CCommandProcessor::CCommandProcessor(CGS* pGS)
 	AddCommand("help", "", ConChatCmdList, pServer, "Get help on commands");
 	AddCommand("rules", "", ConChatRules, pServer, "View game rules");
 	AddCommand("info", "", ConChatInfo, pServer, "Game information/wiki");
-	AddCommand("wiki", "", ConChatWiki, pServer, "Game information/wiki");
-	AddCommand("bonuses", "", ConChatBonuses, pServer, "Information on bonuses");
+	AddCommand("assistant", "", ConChatAssistant, pServer, "Personal assistant dashboard");
 }
 
 CCommandProcessor::~CCommandProcessor()
@@ -426,8 +425,7 @@ void CCommandProcessor::ConChatCmdList(IConsole::IResult* pResult, void* pUser)
 		pGS->Chat(ClientID, "/voucher <voucher> - get voucher special items.");
 		pGS->Chat(ClientID, "/use_skill <uid> - use skill by uid.");
 		pGS->Chat(ClientID, "/use_item <uid> - use item by uid.");
-		pGS->Chat(ClientID, "/wiki - wiki information about mod.");
-		pGS->Chat(ClientID, "/bonuses - active bonuses.");
+		pGS->Chat(ClientID, "/assistant - personal progress assistant.");
 
 	}
 	else if(Page == 2)
@@ -477,7 +475,7 @@ void CCommandProcessor::ConChatInfo(IConsole::IResult* pResult, void* pUser)
 	pGS->Chat(ClientID, "More commands in '/cmdlist'.", g_Config.m_SvDiscordInviteLink);
 }
 
-void CCommandProcessor::ConChatWiki(IConsole::IResult* pResult, void* pUser)
+void CCommandProcessor::ConChatAssistant(IConsole::IResult* pResult, void* pUser)
 {
 	const int ClientID = pResult->GetClientID();
 	auto* pGS = GetCommandResultGameServer(ClientID, pUser);
@@ -485,20 +483,7 @@ void CCommandProcessor::ConChatWiki(IConsole::IResult* pResult, void* pUser)
 	if(!is_valid_player(pGS, pPlayer, true))
 		return;
 
-	// send wiki info
-	pGS->SendMenuMotd(pPlayer, MOTD_MENU_WIKI_INFO);
-}
-
-void CCommandProcessor::ConChatBonuses(IConsole::IResult* pResult, void* pUser)
-{
-	const int ClientID = pResult->GetClientID();
-	auto* pGS = GetCommandResultGameServer(ClientID, pUser);
-	auto* pPlayer = pGS->GetPlayer(ClientID);
-	if(!is_valid_player(pGS, pPlayer, true))
-		return;
-
-	// send bonuses info
-	pGS->SendMenuMotd(pPlayer, MOTD_MENU_BONUSES_INFO);
+	pGS->SendMenuMotd(pPlayer, MOTD_MENU_PERSONAL_ASSISTANT);
 }
 
 void CCommandProcessor::ConChatVoucher(IConsole::IResult* pResult, void* pUser)

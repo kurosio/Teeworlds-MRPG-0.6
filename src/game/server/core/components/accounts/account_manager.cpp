@@ -466,8 +466,8 @@ void CAccountManager::OnCharacterTile(CCharacter* pChr)
 	CPlayer* pPlayer = pChr->GetPlayer();
 	int ClientID = pPlayer->GetCID();
 
-	HANDLE_TILE_MOTD_MENU(pPlayer, pChr, TILE_INFO_BONUSES, MOTD_MENU_BONUSES_INFO)
-	HANDLE_TILE_MOTD_MENU(pPlayer, pChr, TILE_INFO_WANTED, MOTD_MENU_WANTED_INFO)
+	//HANDLE_TILE_MOTD_MENU(pPlayer, pChr, TILE_INFO_BONUSES, MOTD_MENU_BONUSES_INFO)
+	//HANDLE_TILE_MOTD_MENU(pPlayer, pChr, TILE_INFO_WANTED, MOTD_MENU_WANTED_INFO)
 	HANDLE_TILE_MOTD_MENU(pPlayer, pChr, TILE_BANK_MANAGER, MOTD_MENU_BANK_MANAGER)
 }
 
@@ -527,7 +527,7 @@ bool CAccountManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
 	if(Menulist == MOTD_MENU_BONUSES_INFO)
 	{
 		int position = 1;
-		MotdMenu MBonuses(ClientID, MTFLAG_CLOSE_BUTTON, "All bonuses overlap, the minimum increase cannot be lower than 1 point.");
+		MotdMenu MBonuses(ClientID, "All bonuses overlap, the minimum increase cannot be lower than 1 point.");
 		MBonuses.AddText("Active bonuses \u2696");
 		MBonuses.AddSeparateLine();
 		for(auto& bonus : pPlayer->Account()->GetBonusManager().GetTemporaryBonuses())
@@ -548,6 +548,8 @@ bool CAccountManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
 			MBonuses.AddSeparateLine();
 		}
 
+		MBonuses.AddBackpage();
+		MBonuses.AddSeparateLine();
 		MBonuses.Send(MOTD_MENU_BONUSES_INFO);
 		return true;
 	}
@@ -580,7 +582,62 @@ bool CAccountManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
 			MWanted.AddSeparateLine();
 		}
 
+		MWanted.AddBackpage();
+		MWanted.AddSeparateLine();
 		MWanted.Send(MOTD_MENU_WANTED_INFO);
+		return true;
+	}
+
+	// motd menu personal assistant
+	if(Menulist == MOTD_MENU_PERSONAL_ASSISTANT)
+	{
+		auto* pAccount = pPlayer->Account();
+		const auto gold = pAccount->GetGold();
+		const auto goldCapacity = pAccount->GetGoldCapacity();
+		const auto bankGold = pAccount->GetBankManager();
+		const auto crimeScore = pAccount->GetCrime();
+
+		// personal assistant
+		MotdMenu MAssistant(ClientID, MTFLAG_CLOSE_BUTTON, "Quick tips update as you progress.");
+		MAssistant.AddText("Personal assistant \u2633");
+		MAssistant.AddSeparateLine();
+		MAssistant.AddText("Profession: {}", GetProfessionName(pAccount->GetActiveProfessionID()));
+		MAssistant.AddText("Level {}.", pAccount->GetLevel());
+		MAssistant.AddText("Gold: {$}/{$}", gold, goldCapacity);
+		MAssistant.AddText("Bank: {$}", bankGold);
+		MAssistant.AddText("Crime score: {}", crimeScore);
+		MAssistant.AddText("World: {}", Server()->GetWorldName(pPlayer->GetCurrentWorldID()));
+		MAssistant.AddText("Unspent UP: {}", pAccount->GetTotalProfessionsUpgradePoints());
+		MAssistant.AddSeparateLine();
+
+		// recommendations
+		MAssistant.AddText("Recommendations:");
+		bool hasRecommendation = false;
+		if(goldCapacity > 0 && gold >= (goldCapacity * 8) / 10)
+		{
+			MAssistant.AddText("- Consider depositing gold to avoid loss.");
+			hasRecommendation = true;
+		}
+		if(crimeScore > 0)
+		{
+			MAssistant.AddText("- Your crime score attracts bounty hunters.");
+			hasRecommendation = true;
+		}
+		if(pAccount->GetTotalProfessionsUpgradePoints() > 0)
+		{
+			MAssistant.AddText("- Spend upgrade points to strengthen your profession.");
+			hasRecommendation = true;
+		}
+		if(!hasRecommendation)
+			MAssistant.AddText("- Everything looks good. Keep it up!");
+		MAssistant.AddSeparateLine();
+
+		// quick actions
+		MAssistant.AddText("Quick actions:");
+		MAssistant.AddMenu(MOTD_MENU_BONUSES_INFO, NOPE, "\u2696 Active bonuses");
+		MAssistant.AddMenu(MOTD_MENU_WANTED_INFO, NOPE, "\u2694 Wanted list");
+		MAssistant.AddMenu(MOTD_MENU_WIKI_INFO, NOPE, "\u2605 Wiki guide");
+		MAssistant.Send(MOTD_MENU_PERSONAL_ASSISTANT);
 		return true;
 	}
 

@@ -23,8 +23,7 @@ class CCommandProcessor
 	static void ConChatRules(IConsole::IResult* pResult, void* pUserData);
 	static void ConChatVoucher(IConsole::IResult* pResult, void* pUserData);
 	static void ConChatInfo(IConsole::IResult* pResult, void* pUserData);
-	static void ConChatWiki(IConsole::IResult* pResult, void* pUserData);
-	static void ConChatBonuses(IConsole::IResult* pResult, void* pUserData);
+	static void ConChatAssistant(IConsole::IResult* pResult, void* pUserData);
 
 public:
 	CCommandProcessor(CGS* pGS);

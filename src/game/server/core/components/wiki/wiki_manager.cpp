@@ -134,12 +134,14 @@ bool CWikiManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
 	// motd wiki information
 	if(Menulist == MOTD_MENU_WIKI_INFO)
 	{
-		MotdMenu Menu(ClientID, MTFLAG_CLOSE_BUTTON);
+		MotdMenu Menu(ClientID);
 		for(const auto& pData : CWikiData::Data())
 		{
 			if(pData->GetParentID() == NOPE)
 				Menu.AddMenu(MOTD_MENU_WIKI_SELECT, pData->GetID(), pData->GetTitle());
 		}
+		Menu.AddSeparateLine();
+		Menu.AddBackpage();
 		Menu.AddSeparateLine();
 		Menu.Send(MOTD_MENU_WIKI_INFO);
 		return true;
