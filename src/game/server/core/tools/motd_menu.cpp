@@ -3,6 +3,61 @@
 #include <game/server/gamecontext.h>
 #include <generated/server_data.h>
 
+namespace
+{
+	int Utf8ByteOffset(const std::string& Text, int CharIndex)
+	{
+		int Offset = 0;
+		const char* pStr = Text.c_str();
+		for(int i = 0; i < CharIndex && pStr[Offset]; ++i)
+			Offset = str_utf8_forward(pStr, Offset);
+		return Offset;
+	}
+
+	std::string BuildScrollableText(MotdOption& Opt, int Tick, int TickSpeed)
+	{
+		// calc visible window and scroll bounds
+		const int Visible = maximum(0, MOTD_MENU_TEXT_LIMIT - MOTD_MENU_TEXT_ELLIPSIS);
+		const int MaxOff = maximum(0, Opt.m_FullDescLength - Visible);
+		if(MaxOff <= 0)
+			return Opt.m_FullDesc;
+
+		// init first scroll tick
+		const int FastDelay = maximum(1, TickSpeed / 3);
+		if(Opt.m_NextScrollTick < 0)
+			Opt.m_NextScrollTick = Tick + FastDelay;
+
+		// advance scroll
+		if(Tick >= Opt.m_NextScrollTick)
+		{
+			Opt.m_ScrollOffset = (Opt.m_ScrollOffset + 1) % (MaxOff + 1);
+			const int RevealIndex = Opt.m_ScrollOffset + Visible;
+			int Delay = FastDelay;
+
+			if(RevealIndex >= Opt.m_FullDescLength)
+				Delay = TickSpeed;
+			else
+			{
+				const int RevealByte = Utf8ByteOffset(Opt.m_FullDesc, RevealIndex);
+				if(Opt.m_FullDesc[RevealByte] == ' ')
+					Delay = TickSpeed;
+			}
+
+			Opt.m_NextScrollTick = Tick + Delay;
+		}
+
+		// build current visible slice
+		const int Start = Utf8ByteOffset(Opt.m_FullDesc, Opt.m_ScrollOffset);
+		const int End = Utf8ByteOffset(Opt.m_FullDesc, Opt.m_ScrollOffset + Visible);
+		std::string Out = Opt.m_FullDesc.substr(Start, End - Start);
+
+		// append ellipsis if not at the end
+		if(Opt.m_ScrollOffset < MaxOff)
+			Out += "..";
+		return Out;
+	}
+}
+
 CGS* MotdMenu::GS() const
 {
 	return (CGS*)Instance::GameServerPlayer(m_ClientID);
@@ -122,12 +177,18 @@ void MotdMenu::Tick()
 		const bool isClicked = isInMenuArea && pServer->Input()->IsKeyClicked(m_ClientID, KEY_EVENT_FIRE);
 
 		// empty command only text
-		const auto& command = m_Points[i].m_Command;
+		auto& option = m_Points[i];
+		const auto& command = option.m_Command;
 		if(command == "NULL")
 		{
 			if(isSelected)
 				motdData.m_HoveredItemIndex = NOPE;
-			buffer.append(m_Points[i].m_aDesc).append("\n");
+
+			bool ScrollableText = option.m_FullDescLength > MOTD_MENU_TEXT_LIMIT;
+			if(ScrollableText)
+				buffer.append(BuildScrollableText(option, pServer->Tick(), pServer->TickSpeed())).append("\n");
+			else
+				buffer.append(option.m_aDesc).append("\n");
 			continue;
 		}
 		if(isSelected && motdData.m_HoveredItemIndex != i)

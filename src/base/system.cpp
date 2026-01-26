@@ -2838,6 +2838,19 @@ int str_length(const char *str)
 	return (int)strlen(str);
 }
 
+
+int str_utf8_length(const char* str)
+{
+	int Offset = 0;
+	int Length = 0;
+	while(str[Offset])
+	{
+		Offset = str_utf8_forward(str, Offset);
+		++Length;
+	}
+	return Length;
+}
+
 int str_format_v(char *buffer, int buffer_size, const char *format, va_list args)
 {
 #if defined(CONF_FAMILY_WINDOWS)

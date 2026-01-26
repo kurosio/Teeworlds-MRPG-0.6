@@ -3,6 +3,9 @@
 #include "event_listener.h"
 #include "options_packer.h"
 
+constexpr int MOTD_MENU_TEXT_LIMIT = 24;
+constexpr int MOTD_MENU_TEXT_ELLIPSIS = 2;
+
 enum MotdMenuFlags
 {
 	// motd menu flags
@@ -19,6 +22,10 @@ class MotdOption : public OptionPacker
 public:
 	std::string m_Command { "NULL" };
 	char m_aDesc[32] {};
+	std::string m_FullDesc {};
+	int m_FullDescLength {};
+	int m_ScrollOffset {};
+	int m_NextScrollTick { -1 };
 };
 
 class CGS;
@@ -59,7 +66,10 @@ public:
 	template <typename... Ts>
 	void AddText(std::string_view description, const Ts&... args)
 	{
-		AddImpl("NULL", fmt_localize(m_ClientID, description.data(), args...));
+		auto localized = fmt_localize(m_ClientID, description.data(), args...);
+		auto& option = AddImpl("NULL", localized);
+		option.m_FullDesc = std::move(localized);
+		option.m_FullDescLength = str_utf8_length(option.m_FullDesc);
 	}
 
 	template <typename... Ts>

@@ -1251,6 +1251,7 @@ void str_truncate(char *dst, int dst_size, const char *src, int truncation_len);
  * @return Length of string in bytes excluding the zero termination.
  */
 int str_length(const char *str);
+int str_utf8_length(const char *str);
 
 /**
  * Performs printf formatting into a buffer.
