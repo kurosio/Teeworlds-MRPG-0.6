@@ -595,7 +595,6 @@ bool CAccountManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
 		const auto gold = pAccount->GetGold();
 		const auto goldCapacity = pAccount->GetGoldCapacity();
 		const auto bankGold = pAccount->GetBankManager();
-		const auto crimeScore = pAccount->GetCrime();
 
 		// personal assistant
 		MotdMenu MAssistant(ClientID, MTFLAG_CLOSE_BUTTON, "Quick tips update as you progress.");
@@ -610,6 +609,9 @@ bool CAccountManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
 		MAssistant.AddText("Recommendations:");
 		bool hasRecommendation = false;
 		const int mailCount = Core()->MailboxManager()->GetMailCount(pAccount->GetID());
+		const auto crimeScore = pAccount->GetCrime();
+		const auto totalProfUP = pAccount->GetTotalProfessionsUpgradePoints();
+
 		if(mailCount > 0)
 		{
 			MAssistant.AddText("- You have {} mail waiting for you.", mailCount);
@@ -625,7 +627,6 @@ bool CAccountManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
 			MAssistant.AddText("- Your crime score attracts bounty hunters.");
 			hasRecommendation = true;
 		}
-		const auto totalProfUP = pAccount->GetTotalProfessionsUpgradePoints();
 		if(totalProfUP > 0)
 		{
 			MAssistant.AddText("- Spend {} upgrade points to strengthen your profession.", totalProfUP);
