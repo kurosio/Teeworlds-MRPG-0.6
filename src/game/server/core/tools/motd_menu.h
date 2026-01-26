@@ -69,7 +69,7 @@ public:
 		auto localized = fmt_localize(m_ClientID, description.data(), args...);
 		auto& option = AddImpl("NULL", localized);
 		option.m_FullDesc = std::move(localized);
-		option.m_FullDescLength = str_utf8_length(option.m_FullDesc);
+		option.m_FullDescLength = str_utf8_length(option.m_FullDesc.c_str());
 	}
 
 	template <typename... Ts>
