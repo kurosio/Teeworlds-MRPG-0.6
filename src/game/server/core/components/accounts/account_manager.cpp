@@ -599,20 +599,22 @@ bool CAccountManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
 
 		// personal assistant
 		MotdMenu MAssistant(ClientID, MTFLAG_CLOSE_BUTTON, "Quick tips update as you progress.");
-		MAssistant.AddText("Personal assistant \u2633");
-		MAssistant.AddSeparateLine();
 		MAssistant.AddText("Profession: {}", GetProfessionName(pAccount->GetActiveProfessionID()));
 		MAssistant.AddText("Level {}.", pAccount->GetLevel());
 		MAssistant.AddText("Gold: {$}/{$}", gold, goldCapacity);
 		MAssistant.AddText("Bank: {$}", bankGold);
-		MAssistant.AddText("Crime score: {}", crimeScore);
 		MAssistant.AddText("World: {}", Server()->GetWorldName(pPlayer->GetCurrentWorldID()));
-		MAssistant.AddText("Unspent UP: {}", pAccount->GetTotalProfessionsUpgradePoints());
 		MAssistant.AddSeparateLine();
 
 		// recommendations
 		MAssistant.AddText("Recommendations:");
 		bool hasRecommendation = false;
+		const int mailCount = Core()->MailboxManager()->GetMailCount(pAccount->GetID());
+		if(mailCount > 0)
+		{
+			MAssistant.AddText("- You have {} mail waiting for you.", mailCount);
+			hasRecommendation = true;
+		}
 		if(goldCapacity > 0 && gold >= (goldCapacity * 8) / 10)
 		{
 			MAssistant.AddText("- Consider depositing gold to avoid loss.");
@@ -623,9 +625,10 @@ bool CAccountManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
 			MAssistant.AddText("- Your crime score attracts bounty hunters.");
 			hasRecommendation = true;
 		}
-		if(pAccount->GetTotalProfessionsUpgradePoints() > 0)
+		const auto totalProfUP = pAccount->GetTotalProfessionsUpgradePoints();
+		if(totalProfUP > 0)
 		{
-			MAssistant.AddText("- Spend upgrade points to strengthen your profession.");
+			MAssistant.AddText("- Spend {} upgrade points to strengthen your profession.", totalProfUP);
 			hasRecommendation = true;
 		}
 		if(!hasRecommendation)
@@ -637,6 +640,7 @@ bool CAccountManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
 		MAssistant.AddMenu(MOTD_MENU_BONUSES_INFO, NOPE, "\u2696 Active bonuses");
 		MAssistant.AddMenu(MOTD_MENU_WANTED_INFO, NOPE, "\u2694 Wanted list");
 		MAssistant.AddMenu(MOTD_MENU_WIKI_INFO, NOPE, "\u2605 Wiki guide");
+		MAssistant.AddSeparateLine();
 		MAssistant.Send(MOTD_MENU_PERSONAL_ASSISTANT);
 		return true;
 	}
