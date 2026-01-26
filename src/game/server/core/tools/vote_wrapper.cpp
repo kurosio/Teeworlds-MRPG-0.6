@@ -368,18 +368,20 @@ void VoteWrapper::RebuildVotes(int ClientID)
 
 CVoteOption* VoteWrapper::GetOptionVoteByAction(int ClientID, const char* pActionName)
 {
+	if(!pActionName || pActionName[0] == '\0')
+		return nullptr;
+
 	// find the vote option with the matching action name
+	const int ActionLen = str_length(pActionName);
 	for(const auto& iterGroup : Data()[ClientID])
 	{
-		auto iter = std::ranges::find_if(iterGroup->m_vpVotelist, [pActionName](const CVoteOption& vote)
+		auto iter = std::ranges::find_if(iterGroup->m_vpVotelist, [pActionName, ActionLen](const CVoteOption& vote)
 		{
-			return str_utf8_comp_nocase_num(pActionName, vote.m_aDescription, str_length(pActionName)) == 0;
+			return str_utf8_comp_nocase_num(pActionName, vote.m_aDescription, ActionLen) == 0;
 		});
 
 		if(iter != iterGroup->m_vpVotelist.end())
-		{
 			return &(*iter);
-		}
 	}
 
 	return nullptr;
