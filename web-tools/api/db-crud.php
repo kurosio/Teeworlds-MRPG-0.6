@@ -133,6 +133,23 @@ $RESOURCES = [
     'json' => ['Data'],
     'order' => 'ID ASC',
   ],
+  // New editor: quests-editor.html
+  'quests' => [
+    'table' => 'tw_quests_list',
+    'pk' => 'ID',
+    'columns' => ['NextQuestID', 'Name', 'Money', 'Exp', 'Flags'],
+    'search' => ['ID', 'Name', 'NextQuestID'],
+    'order' => 'ID ASC',
+  ],
+  // New editor: quests-editor.html (quest steps)
+  'quest_bots' => [
+    'table' => 'tw_bots_quest',
+    'pk' => 'ID',
+    'columns' => ['BotID', 'QuestID', 'Step', 'WorldID', 'PosX', 'PosY', 'AutoFinish', 'DialogData', 'ScenarioData', 'TasksData'],
+    'search' => ['ID', 'QuestID', 'BotID', 'Step'],
+    'json' => ['DialogData', 'TasksData'],
+    'order' => 'ID ASC',
+  ],
 ];
 
 function decode_json_cols(array $row, array $jsonCols): array {

@@ -314,139 +314,57 @@
       return { ds: ds || '', dbKey, placeholder, labelMode };
     };
 
-    // Direct DB select (binds to data model).
-    // It can be enhanced with search UI via data-db-searchable + data-db-limit.
-    const renderDbSelectDirect = (multiple = false) => {
-      const { ds, dbKey, placeholder, labelMode } = resolveDbParams();
-      if (!ds) {
-        // Fallback: show plain input if datasource missing
-        return renderInput('number', value ?? 0);
-      }
+    const renderTagsWidget = ({
+      options = [],
+      datasource = '',
+      labelMode,
+      valueType = 'string',
+      placeholder,
+      searchPlaceholder,
+      allowCreate = false,
+    } = {}) => {
+      const ph = placeholder || searchPlaceholder || 'Добавить…';
+      const dsResolved = datasource
+        ? (window.EditorCore?.DB?.resolveSource ? (window.EditorCore.DB.resolveSource(datasource) || datasource) : datasource)
+        : '';
+      const dsKey = datasource || '';
+      const resolvedLabelMode = String(labelMode || (window.EditorCore?.DBMap?.[dsKey]?.labelMode) || 'id_name').toLowerCase();
+      const resolvedValueType = String(valueType || 'string').toLowerCase();
+      const hiddenValueType = resolvedValueType === 'number' ? 'json_array_number' : 'json_array';
 
-      // Search for ALL db_select types. For multiselect we default to client filter (bulk-load) to keep it simple.
-      const serverSearch = (ui.searchServer ?? (dbKey === 'item'));
-      const searchable = multiple ? '0' : (serverSearch ? '1' : '0');
-
-      const defaultLimit = (dbKey === 'item') ? 1000 : 300;
-      const dbLimit = String(ui.dbLimit || defaultLimit);
-
-      const valueType = ui.valueType || field.valueType || (multiple ? 'string' : 'number');
-
-      const attrs = buildInputAttributes({
+      const hiddenAttrs = buildInputAttributes({
         path,
         field,
-        classes: multiple ? multiSelectClass : inputClass,
+        classes: '',
         includeName,
         includeDataKey,
         includeDataPath,
-        extraAttrs: `${multiple ? 'multiple' : ''} data-datasource="${escapeAttr(ds)}" data-placeholder="${escapeAttr(placeholder)}" data-label-mode="${escapeAttr(String(labelMode))}" data-db-searchable="${escapeAttr(searchable)}" data-db-limit="${escapeAttr(dbLimit)}" data-value-type="${escapeAttr(String(valueType))}"`
+        extraAttrs: `type="hidden" data-value-type="${escapeAttr(hiddenValueType)}"`
       });
 
-      // Options will be loaded by EditorCore.DB.init(). Keep a minimal placeholder.
-      const hasVal = (v) => v !== undefined && v !== null && String(v) !== '' && String(v) !== '0';
-      let initialOptions = '';
-      if (multiple) {
-        const arr = Array.isArray(value) ? value : [];
-        const uniq = Array.from(new Set(arr.map(x => String(x)).filter(hasVal)));
-        // In multiselect we don't show an empty placeholder option (it is confusing).
-        initialOptions = uniq.length
-          ? uniq.map(id => `<option value="${escapeAttr(id)}" selected>${escapeAttr(id)}: …</option>`).join('')
-          : '';
-      } else {
-        const cur = hasVal(value) ? String(value) : '';
-        initialOptions = `<option value="">${escapeAttr(placeholder)}</option>`;
-        if (cur) initialOptions += `<option value="${escapeAttr(cur)}" selected>${escapeAttr(cur)}: …</option>`;
-      }
-
-      // Keep initial selection visible even before DB options are loaded.
-      // DB.init() will replace the "…"-label with a real name.
-      return `<select ${attrs} data-current-value="${escapeAttr(String(value ?? ''))}" ${multiple ? `data-current-values="${escapeAttr(JSON.stringify(Array.isArray(value)?value:[]))}"` : ``}>${initialOptions}</select>`;
-    };
-
-    // Helper DB select (does NOT bind to data model). It only syncs into the bound input via data-bind-input-path.
-    const renderDbSelectHelper = ({ bindInputPath, multiple = false } = {}) => {
-      const { ds, dbKey, placeholder, labelMode } = resolveDbParams();
-      const classes = multiple ? multiSelectClass : inputClass;
-      if (!ds) return '';
-
-      // Search is available for all DB selects.
-      // Two modes:
-      // - server search (data-db-searchable=1) => query DB by 'search' and render first N rows
-      // - client filter (data-db-searchable=0) => bulk-load options, search filters locally
-      const serverSearch = (ui.searchServer ?? (dbKey === 'item'));
-      const searchable = serverSearch ? '1' : '0';
-
-      // Default: show more than 213 items for large sources (like items)
-      const defaultLimit = (dbKey === 'item') ? 1000 : 300;
-      const dbLimit = String(ui.dbLimit || defaultLimit);
-
-      const valueType = ui.valueType || field.valueType || 'string';
-
-      const extraAttrs = `${multiple ? 'multiple' : ''} data-datasource="${escapeAttr(ds)}" data-bind-input-path="${escapeAttr(bindInputPath || '')}" data-placeholder="${escapeAttr(placeholder)}" data-label-mode="${escapeAttr(String(labelMode))}" data-db-searchable="${escapeAttr(searchable)}" data-db-limit="${escapeAttr(dbLimit)}" data-value-type="${escapeAttr(String(valueType))}"`;
-      return `<select class="${classes} editor-dbselect-select" ${extraAttrs}><option value="">${escapeAttr(placeholder)}</option></select>`;
-    };
-
-    
-    // Legacy UI: Search input (left) + <select> (right).
-    // Kept as a separate UI component: db_select_search.
-    const renderDbSelectSearch = (multiple = false) => {
-      const { ds } = resolveDbParams();
-      const showSearch = (ui.showSearch ?? true) && !!ds;
-      const searchPh = ui.searchPlaceholder || 'Поиск…';
-      const searchHtml = showSearch
-        ? `<input type="search" class="${inputClass} editor-dbselect-search" placeholder="${escapeAttr(searchPh)}" />`
-        : '';
-
-      // Stability feature:
-      // For single-value db_select we always render a manual ID input bound to the data model.
-      // The DB dropdown becomes a helper that syncs into the input. If DB is unavailable,
-      // the user can still type the ID.
-      const useHelperMode = !multiple && (ui.fallbackInput ?? true) && !!ds;
-
-      const manualInputHtml = useHelperMode
-        ? (() => {
-            const attrs = buildInputAttributes({
-              path,
-              field,
-              classes: `${inputClass} editor-dbselect-input`,
-              includeName,
-              includeDataKey,
-              includeDataPath,
-              extraAttrs: 'inputmode="numeric"'
-            });
-            const cur = (value ?? 0);
-            return `<input type="number" ${attrs} value="${escapeAttr(String(cur))}" />`;
-          })()
-        : '';
-
-      const selectHtml = useHelperMode
-        ? renderDbSelectHelper({ bindInputPath: path, multiple: false })
-        : renderDbSelectDirect(multiple);
-
-      const controlsHtml = ds
-        ? `<div class="editor-dbselect-controls">
-             <button type="button" class="editor-btn editor-dbselect-more hidden">Ещё</button>
-             <div class="editor-dbselect-meta"></div>
-           </div>`
-        : '';
-
-      // IMPORTANT:
-      // Do NOT force an initial "loading" state here.
-      // If we set data-db-state="loading" immediately, CSS hides the <select>
-      // and the user may never see dropdown lists if DB state is not flipped.
-      // DB.init() will set data-db-state to "connected" / "disconnected".
-      // UI: place Search (left) + Select (right) in one row.
-      // We set an optimistic default state="connected" when datasource exists, to avoid
-      // an initial "double" render (manual input + select) before DB.init() flips state.
-      const state = ds ? 'connected' : '';
-      const wrapClass = ui.controlWrapClass ? ` ${String(ui.controlWrapClass)}` : '';
-      const wrapStyle = buildControlStyleAttr(ui);
-      const rowHtml = `<div class="editor-dbselect-row">${searchHtml}${selectHtml}</div>`;
-      return `<div class="editor-dbselect${wrapClass}" ${wrapStyle} ${state ? `data-db-state="${state}"` : ''}>${rowHtml}${manualInputHtml}${controlsHtml}</div>`;
+      const initial = JSON.stringify(normalizeMultiValue(value));
+      return `
+        <div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">
+          ${labelHtml}
+          <div class="editor-tags"
+               data-tags-options="${escapeAttr(JSON.stringify(options))}"
+               data-tags-placeholder="${escapeAttr(ph)}"
+               data-tags-allow-create="${allowCreate ? '1' : '0'}"
+               ${dsResolved ? `data-tags-datasource="${escapeAttr(dsResolved)}"` : ''}
+               ${dsResolved ? `data-tags-label-mode="${escapeAttr(resolvedLabelMode)}"` : ''}
+               data-tags-value-type="${escapeAttr(resolvedValueType)}">
+            <input ${hiddenAttrs} value="${escapeAttr(initial)}">
+            <div class="editor-tags-selected"></div>
+            <div class="editor-tags-searchrow">
+              <input type="search" class="${inputClass} editor-tags-search" placeholder="${escapeAttr(ph)}" />
+            </div>
+            <div class="editor-tags-options"></div>
+          </div>
+          ${hintHtml}
+        </div>`;
     };
 
     // New default UI: single searchable input with dropdown list.
-    // Visually it's one field (input). Old two-field layout remains available as db_select_search.
     const renderDbSelectCombo = () => {
       const { ds, dbKey, placeholder, labelMode } = resolveDbParams();
       if (!ds) return renderInput('number', value ?? 0);
@@ -648,18 +566,22 @@
     }
 
     // New default db_select: single searchable combo input.
-    if (field.type === 'db_select' || ui.type === 'db_select') {
+    if (field.type === 'db_select' || ui.type === 'db_select' || field.type === 'db_select_search' || ui.type === 'db_select_search') {
       return `<div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">${labelHtml}${renderDbSelectCombo()}${hintHtml}</div>`;
     }
 
-    // Legacy two-field variant (search + select)
-    if (field.type === 'db_select_search' || ui.type === 'db_select_search') {
-      return `<div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">${labelHtml}${renderDbSelectSearch()}${hintHtml}</div>`;
-    }
-
     if (field.type === 'db_multiselect' || ui.type === 'db_multiselect') {
-      // Multiselect keeps the legacy layout for now.
-      return `<div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">${labelHtml}${renderDbSelectSearch(true)}${hintHtml}</div>`;
+      const options = Array.isArray(ui.options) ? ui.options : [];
+      const dsRaw = String(ui.datasource || ui.dbKey || field.datasource || '').trim();
+      return renderTagsWidget({
+        options,
+        datasource: dsRaw,
+        labelMode: ui.labelMode,
+        valueType: ui.valueType || 'number',
+        placeholder: ui.placeholder,
+        searchPlaceholder: ui.searchPlaceholder,
+        allowCreate: ui.allowCreate,
+      });
     }
 
     if (ui.type === 'select') {
@@ -671,54 +593,17 @@
     }
 
     if (ui.type === 'tags') {
-      // TagSelect: visual chips + search, value stored in a hidden input as JSON array.
       const opts = Array.isArray(ui.options) ? ui.options : [];
-      const ph = ui.searchPlaceholder || ui.placeholder || 'Добавить…';
-      const allowCreate = ui.allowCreate ? '1' : '0';
-
-      // Optional DB source for options.
-      // You can pass:
-      // - ui.datasource: DBMap key (e.g. 'item', 'mob') OR direct source name (e.g. 'items')
-      // - ui.labelMode: 'id_name' | 'name' (defaults from DBMap if available)
-      // - ui.valueType: 'string' | 'number' (controls how values are parsed)
       const dsRaw = String(ui.datasource || ui.dbKey || '').trim();
-      const dsKey = dsRaw;
-      const dsResolved = dsRaw && window.EditorCore?.DB?.resolveSource ? (window.EditorCore.DB.resolveSource(dsRaw) || dsRaw) : dsRaw;
-      const labelMode = String(ui.labelMode || (window.EditorCore?.DBMap?.[dsKey]?.labelMode) || 'id_name').toLowerCase();
-      const valueType = String(ui.valueType || 'string').toLowerCase();
-      const hiddenValueType = valueType === 'number' ? 'json_array_number' : 'json_array';
-
-      const hiddenAttrs = buildInputAttributes({
-        path,
-        field,
-        classes: '',
-        includeName,
-        includeDataKey,
-        includeDataPath,
-        extraAttrs: `type="hidden" data-value-type="${escapeAttr(hiddenValueType)}"`
+      return renderTagsWidget({
+        options: opts,
+        datasource: dsRaw,
+        labelMode: ui.labelMode,
+        valueType: ui.valueType || 'string',
+        placeholder: ui.placeholder,
+        searchPlaceholder: ui.searchPlaceholder,
+        allowCreate: ui.allowCreate,
       });
-
-      // Keep current value visible for first render.
-      const initial = JSON.stringify(normalizeMultiValue(value));
-      return `
-        <div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">
-          ${labelHtml}
-          <div class="editor-tags"
-               data-tags-options="${escapeAttr(JSON.stringify(opts))}"
-               data-tags-placeholder="${escapeAttr(ph)}"
-               data-tags-allow-create="${allowCreate}"
-               ${dsResolved ? `data-tags-datasource="${escapeAttr(dsResolved)}"` : ''}
-               ${dsResolved ? `data-tags-label-mode="${escapeAttr(labelMode)}"` : ''}
-               data-tags-value-type="${escapeAttr(valueType)}">
-            <input ${hiddenAttrs} value="${escapeAttr(initial)}">
-            <div class="editor-tags-selected"></div>
-            <div class="editor-tags-searchrow">
-              <input type="search" class="${inputClass} editor-tags-search" placeholder="${escapeAttr(ph)}" />
-            </div>
-            <div class="editor-tags-options"></div>
-          </div>
-          ${hintHtml}
-        </div>`;
     }
 
     if (ui.format === 'date' || field.type === 'date') {

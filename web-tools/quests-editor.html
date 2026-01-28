@@ -1,0 +1,1753 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Квесты • tw_quests_list + tw_bots_quest</title>
+
+  <link rel="stylesheet" href="editor-core/editor-theme.css" />
+  <link rel="stylesheet" href="editor-core/editor-template.css" />
+
+  <!-- Fonts + icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <script src="editor-core/tailwind-theme.js"></script>
+  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+
+  <style>
+    body[data-editor="quests"]{ --editor-accent:#8b5cf6; }
+
+    .quest-tree{
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      font-size: 13px;
+    }
+
+    .quest-node{
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:12px;
+      padding:10px;
+      background: rgba(255,255,255,.03);
+    }
+
+    .quest-node-header{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+      padding-bottom:8px;
+      border-bottom:1px dashed rgba(255,255,255,.08);
+    }
+
+    .quest-node-title{
+      display:flex;
+      align-items:center;
+      gap:8px;
+      font-weight:600;
+      cursor:pointer;
+    }
+
+    .quest-node-title .badge{
+      font-size:11px;
+      padding:2px 6px;
+      border-radius:999px;
+      background:rgba(139,92,246,.2);
+      color:#c4b5fd;
+    }
+
+    .quest-node-meta{
+      font-size:11px;
+      color:var(--editor-text-muted);
+    }
+
+    .step-list{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      margin-top:10px;
+    }
+
+    .step-node{
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+      padding:8px 10px;
+      border-radius:10px;
+      border:1px solid rgba(255,255,255,.08);
+      background: rgba(0,0,0,.18);
+    }
+
+    .step-node-header{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+      cursor:pointer;
+    }
+
+    .step-node-actions{
+      display:flex;
+      align-items:center;
+      gap:6px;
+    }
+
+    .step-node-level{
+      width:64px;
+      text-align:center;
+    }
+
+    .step-node-title{
+      display:flex;
+      align-items:center;
+      gap:6px;
+      font-weight:600;
+    }
+
+    .step-node-sub{
+      font-size:11px;
+      color:var(--editor-text-muted);
+    }
+
+    .task-list{
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+      margin-left:12px;
+    }
+
+    .task-node{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:6px;
+      padding:6px 8px;
+      border-radius:8px;
+      border:1px solid rgba(255,255,255,.06);
+      background: rgba(255,255,255,.02);
+      cursor:pointer;
+    }
+
+    .task-node small{
+      color:var(--editor-text-muted);
+    }
+
+    .tree-selected{
+      box-shadow: 0 0 0 2px rgba(139,92,246,.4);
+    }
+
+    .tree-drag-over{
+      border-color: rgba(59,130,246,.7);
+      background: rgba(59,130,246,.12);
+    }
+
+    .editor-mini-panel{
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:12px;
+      padding:12px;
+      background: rgba(255,255,255,.02);
+    }
+
+    .editor-mini-panel h3{
+      font-size:13px;
+      font-weight:600;
+      margin-bottom:8px;
+    }
+
+    .step-section{
+      padding:12px;
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:12px;
+      background: rgba(255,255,255,.02);
+    }
+
+    .step-section + .step-section{
+      margin-top:12px;
+    }
+
+    .step-section-title{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+      font-weight:600;
+      margin-bottom:8px;
+    }
+
+    .step-section-sub{
+      font-size:12px;
+      color:var(--editor-text-muted);
+      margin-bottom:8px;
+    }
+
+    .task-editor-section{
+      border:1px solid rgba(255,255,255,.06);
+      border-radius:12px;
+      background: rgba(0,0,0,.2);
+      margin-bottom:10px;
+      overflow:hidden;
+    }
+
+    .task-editor-header{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+      padding:10px 12px;
+      cursor:pointer;
+      background: rgba(255,255,255,.03);
+    }
+
+    .task-editor-header h4{
+      margin:0;
+      font-size:13px;
+      font-weight:600;
+    }
+
+    .task-editor-content{
+      padding:12px;
+      display:none;
+    }
+
+    .task-editor-content.is-open{
+      display:block;
+    }
+
+    .is-hidden{
+      display:none !important;
+    }
+
+    .step-base-grid{
+      display:grid;
+      grid-template-columns: minmax(0,1fr);
+      gap:16px;
+    }
+
+    @media (min-width: 640px){
+      .step-base-grid{
+        grid-template-columns: repeat(2, minmax(0,1fr));
+      }
+    }
+
+    .step-base-grid .editor-field{
+      grid-column: 1 / -1;
+    }
+
+    .step-base-grid .editor-field[data-field-path="BotID"],
+    .step-base-grid .editor-field[data-field-path="QuestID"]{
+      grid-column: span 1;
+    }
+
+    .task-item{
+      border:1px solid rgba(255,255,255,.08);
+      border-radius:10px;
+      padding:10px;
+      background: rgba(255,255,255,.02);
+      margin-bottom:8px;
+    }
+
+    .task-item-header{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:8px;
+    }
+
+    .task-item-summary{
+      font-size:12px;
+      color:var(--editor-text-muted);
+    }
+
+    .task-item-actions{
+      display:flex;
+      align-items:center;
+      gap:6px;
+    }
+
+    .task-item-body{
+      margin-top:8px;
+      display:grid;
+      gap:8px;
+    }
+
+    .task-item.is-collapsed .task-item-body{
+      display:none;
+    }
+
+    .task-item-body label{
+      font-size:12px;
+      color:var(--editor-text-muted);
+    }
+
+    .task-item-grid{
+      display:grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap:8px;
+    }
+
+    .task-item-handle{
+      cursor:grab;
+      color:var(--editor-text-muted);
+    }
+
+    .task-item-subgroup{
+      border:1px dashed rgba(255,255,255,.08);
+      border-radius:10px;
+      padding:8px;
+    }
+  </style>
+</head>
+
+<body class="editor-theme" data-editor="quests">
+  <div class="editor-page">
+    <div class="editor-page-header">
+      <div class="editor-page-title">
+        <i class="fa-solid fa-scroll text-accent text-xl"></i>
+        <div>
+          <h1>Квесты</h1>
+          <div class="editor-page-sub">Дерево квестов, шаги мобов и задачи: всё в одном редакторе.</div>
+        </div>
+      </div>
+      <div class="editor-page-actions">
+        <button id="refreshBtn" class="editor-btn editor-btn-secondary">
+          <i class="fa-solid fa-rotate"></i><span>Обновить</span>
+        </button>
+        <button id="saveBtn" class="editor-btn editor-btn-primary">
+          <i class="fa-solid fa-floppy-disk"></i><span>Сохранить</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="editor-shell editor-shell--docked">
+      <aside class="editor-sidebar editor-dock-sidebar">
+        <div class="editor-dock-pad">
+          <div class="editor-sidebar-head">
+            <div>
+              <div class="text-sm font-semibold">Дерево квестов</div>
+              <div class="editor-sidebar-meta">Квесты: <span id="questCount">—</span> · Шаги: <span id="stepCount">—</span></div>
+            </div>
+            <button id="newQuestBtn" class="editor-btn editor-btn-secondary" title="Новый квест">
+              <i class="fa-solid fa-plus"></i>
+            </button>
+          </div>
+
+          <div class="mt-3">
+            <div class="editor-search">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input id="searchInput" class="w-full editor-input form-input" placeholder="Поиск по квесту / шагу / мобу" />
+            </div>
+          </div>
+
+          <div id="tree" class="mt-4 quest-tree editor-scroll" style="max-height: 620px"></div>
+        </div>
+      </aside>
+
+      <main class="editor-main editor-dock-main">
+        <div class="editor-dock-pad">
+          <div class="editor-sticky-toolbar flex items-start justify-between gap-4">
+            <div class="min-w-0">
+              <div class="text-2xl font-bold" id="editorTitle">Выберите элемент дерева</div>
+              <div class="editor-muted-text" id="editorSubtitle">квест, шаг или задачу</div>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <span id="dirty-pill" class="editor-dirty-pill hidden">Данные не сохранены</span>
+              <button id="newStepBtn" class="editor-btn editor-btn-secondary" disabled>
+                <i class="fa-solid fa-person-walking"></i><span>Новый шаг</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="mt-6 space-y-6">
+            <div id="editorEmpty" class="editor-card p-6">
+              <div class="font-semibold">Редактор квестов</div>
+              <div class="editor-muted-text text-sm mt-2">
+                Выберите элемент слева, чтобы увидеть его настройки. Шаги можно перетаскивать между квестами,
+                а задачи — между шагами мобов.
+              </div>
+            </div>
+
+            <div id="questEditor" class="editor-card p-6 hidden">
+              <div class="flex items-center justify-between gap-3">
+                <div>
+                  <div class="font-semibold">Настройки квеста</div>
+                  <div class="editor-muted-text text-sm">Имя квеста ограничено 24 символами (лимит C++/DB).</div>
+                </div>
+              </div>
+              <div id="questForm" class="mt-4"></div>
+            </div>
+
+            <div id="stepEditor" class="editor-card p-6 hidden">
+              <div class="flex items-center justify-between gap-3">
+                <div>
+                  <div class="font-semibold">Шаг моба</div>
+                  <div class="editor-muted-text text-sm">Настройки tw_bots_quest + задачи и диалоги.</div>
+                </div>
+              <div class="editor-muted-text text-xs">AutoFinish: авто-завершение шага при выполнении условий.</div>
+              </div>
+              <div class="mt-4">
+                <div class="step-section">
+                  <div class="step-section-title">
+                    <span>Диалоги</span>
+                    <span class="editor-muted-text text-xs">Side/Left/Right/Action</span>
+                  </div>
+                  <div class="step-section-sub">Реплики отображаются в порядке списка. Для автора используйте side = author.</div>
+                  <div id="dialogForm"></div>
+                </div>
+                <div class="step-section">
+                  <div class="step-section-title">Остальная часть редактирования моба</div>
+                  <div id="stepBaseForm" class="step-base-grid"></div>
+                </div>
+                <div class="step-section">
+                  <div class="step-section-title">Задачи</div>
+                  <div id="stepTasksEditor"></div>
+                </div>
+              </div>
+            </div>
+
+            <div id="taskEditor" class="editor-card p-6 hidden">
+              <div class="flex items-center justify-between gap-3">
+                <div>
+                  <div class="font-semibold">Задача</div>
+                  <div class="editor-muted-text text-sm">Редактирование выбранной задачи (TasksData).</div>
+                </div>
+              </div>
+              <div id="taskForm" class="mt-4"></div>
+            </div>
+
+            <div class="editor-card p-4">
+              <div class="font-semibold">Подсказки по ограничениям C++</div>
+              <ul class="mt-2 text-sm space-y-1 text-slate-300">
+                <li>Имя квеста: до 24 символов (tw_quests_list.Name, varchar(24)).</li>
+                <li>Флаги квеста: только один тип (Type main/side/daily/weekly/repeatable) + доп. флаги.</li>
+                <li>AutoFinish: логическое значение (включено/выключено).</li>
+                <li>Тип задач: required_items (default/pickup/show), defeat_bots, move_to, reward_items.</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
+  <script src="editor-core/editor-core.bundle.js"></script>
+  <script src="editor-core/form-runtime.js"></script>
+  <script>
+    const { fieldRenderOptions } = EditorCore.bootstrapEditor({ mode: 'event' });
+
+    const DOM = {
+      tree: document.getElementById('tree'),
+      questCount: document.getElementById('questCount'),
+      stepCount: document.getElementById('stepCount'),
+      search: document.getElementById('searchInput'),
+      refresh: document.getElementById('refreshBtn'),
+      save: document.getElementById('saveBtn'),
+      newQuest: document.getElementById('newQuestBtn'),
+      newStep: document.getElementById('newStepBtn'),
+      title: document.getElementById('editorTitle'),
+      subtitle: document.getElementById('editorSubtitle'),
+      empty: document.getElementById('editorEmpty'),
+      questEditor: document.getElementById('questEditor'),
+      stepEditor: document.getElementById('stepEditor'),
+      taskEditor: document.getElementById('taskEditor'),
+      questForm: document.getElementById('questForm'),
+      stepBaseForm: document.getElementById('stepBaseForm'),
+      stepTasksEditor: document.getElementById('stepTasksEditor'),
+      dialogForm: document.getElementById('dialogForm'),
+      taskForm: document.getElementById('taskForm'),
+      dirtyPill: document.getElementById('dirty-pill'),
+    };
+
+    const STATE = {
+      quests: [],
+      steps: [],
+      selected: null,
+      dirtyQuests: new Set(),
+      dirtySteps: new Set(),
+    };
+
+    const QuestFlags = {
+      typeMain: 'Type main',
+      typeSide: 'Type side',
+      typeDaily: 'Type daily',
+      typeWeekly: 'Type weekly',
+      typeRepeatable: 'Type repeatable',
+      cantRefuse: "Can't refuse",
+      noActivity: 'No activity point',
+    };
+
+    const taskDefault = () => ({
+      required_items: [],
+      reward_items: [],
+      defeat_bots: [],
+      move_to: [],
+    });
+
+    const normalizeTasks = (raw) => {
+      const base = taskDefault();
+      if (!raw || typeof raw !== 'object') return base;
+      const copy = { ...base, ...raw };
+      copy.required_items = Array.isArray(copy.required_items) ? copy.required_items : [];
+      copy.reward_items = Array.isArray(copy.reward_items) ? copy.reward_items : [];
+      copy.defeat_bots = Array.isArray(copy.defeat_bots) ? copy.defeat_bots : [];
+      copy.move_to = Array.isArray(copy.move_to) ? copy.move_to : [];
+
+      copy.move_to = copy.move_to.map((entry) => {
+        const pick = entry?.pick_up_item || {};
+        const req = entry?.required_item || {};
+        const inter = entry?.interactive || {};
+        const defeat = entry?.defeat_bot || {};
+        return {
+          step: entry?.step ?? 1,
+          name: entry?.name ?? 'Demands a bit of action',
+          completion_text: entry?.completion_text ?? '',
+          x: entry?.x ?? 0,
+          y: entry?.y ?? 0,
+          world_id: entry?.world_id ?? 0,
+          mode: entry?.mode ?? 'move',
+          navigator: entry?.navigator ?? 'true',
+          cooldown: entry?.cooldown ?? 0,
+          pick_up_item_id: pick?.id ?? 0,
+          pick_up_item_value: pick?.value ?? 0,
+          required_item_id: req?.id ?? 0,
+          required_item_value: req?.value ?? 0,
+          interactive_x: inter?.x ?? 0,
+          interactive_y: inter?.y ?? 0,
+          defeat_bot_id: defeat?.id ?? 0,
+          defeat_bot_attribute_power: defeat?.attribute_power ?? 10,
+          defeat_bot_world_id: defeat?.world_id ?? 0,
+        };
+      });
+
+      return copy;
+    };
+
+    const denormalizeTasks = (normalized) => {
+      const raw = taskDefault();
+      if (!normalized || typeof normalized !== 'object') return raw;
+      raw.required_items = Array.isArray(normalized.required_items) ? normalized.required_items : [];
+      raw.reward_items = Array.isArray(normalized.reward_items) ? normalized.reward_items : [];
+      raw.defeat_bots = Array.isArray(normalized.defeat_bots) ? normalized.defeat_bots : [];
+      raw.move_to = Array.isArray(normalized.move_to) ? normalized.move_to.map((entry) => {
+        const out = {
+          step: entry?.step ?? 1,
+          name: entry?.name ?? 'Demands a bit of action',
+          completion_text: entry?.completion_text ?? '',
+          x: entry?.x ?? 0,
+          y: entry?.y ?? 0,
+          world_id: entry?.world_id ?? 0,
+          mode: entry?.mode ?? 'move',
+          navigator: entry?.navigator ?? 'true',
+          cooldown: entry?.cooldown ?? 0,
+        };
+
+        if (entry?.pick_up_item_id) {
+          out.pick_up_item = { id: Number(entry.pick_up_item_id), value: Number(entry?.pick_up_item_value || 0) };
+        }
+        if (entry?.required_item_id) {
+          out.required_item = { id: Number(entry.required_item_id), value: Number(entry?.required_item_value || 0) };
+        }
+        if (entry?.interactive_x || entry?.interactive_y) {
+          out.interactive = { x: Number(entry?.interactive_x || 0), y: Number(entry?.interactive_y || 0) };
+        }
+        if (entry?.defeat_bot_id) {
+          out.defeat_bot = {
+            id: Number(entry.defeat_bot_id),
+            attribute_power: Number(entry?.defeat_bot_attribute_power || 10),
+            world_id: Number(entry?.defeat_bot_world_id || 0),
+          };
+        }
+
+        return out;
+      }) : [];
+      return raw;
+    };
+
+    const parseFlags = (raw) => {
+      const parts = Array.isArray(raw)
+        ? raw
+        : String(raw || '')
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean);
+      const type = parts.find((flag) => flag.startsWith('Type')) || QuestFlags.typeMain;
+      return {
+        type,
+        cantRefuse: parts.includes(QuestFlags.cantRefuse),
+        noActivity: parts.includes(QuestFlags.noActivity),
+      };
+    };
+
+    const buildFlags = (flagModel) => {
+      const list = [];
+      if (flagModel?.type) list.push(flagModel.type);
+      if (flagModel?.cantRefuse) list.push(QuestFlags.cantRefuse);
+      if (flagModel?.noActivity) list.push(QuestFlags.noActivity);
+      return list.join(',');
+    };
+
+    const formatTaskLabel = (entry) => {
+      if (!entry) return '—';
+      if (entry.kind === 'required_items') {
+        return `Предмет #${entry.id || 0} ×${entry.value || 0}`;
+      }
+      if (entry.kind === 'reward_items') {
+        return `Награда #${entry.id || 0} ×${entry.value || 0}`;
+      }
+      if (entry.kind === 'defeat_bots') {
+        return `Убить моба #${entry.id || 0} ×${entry.value || 0}`;
+      }
+      if (entry.kind === 'move_to') {
+        return entry.name || 'Перемещение';
+      }
+      return 'Задача';
+    };
+
+    const buildTaskEntries = (step) => {
+      const tasks = step?.TasksData || taskDefault();
+      const entries = [];
+      tasks.required_items.forEach((item, index) => {
+        entries.push({ kind: 'required_items', index, id: item?.id, value: item?.value, type: item?.type || 'default' });
+      });
+      tasks.reward_items.forEach((item, index) => {
+        entries.push({ kind: 'reward_items', index, id: item?.id, value: item?.value });
+      });
+      tasks.defeat_bots.forEach((item, index) => {
+        entries.push({ kind: 'defeat_bots', index, id: item?.id, value: item?.value });
+      });
+      tasks.move_to.forEach((item, index) => {
+        entries.push({
+          kind: 'move_to',
+          index,
+          name: item?.name,
+          world_id: item?.world_id,
+          mode: item?.mode,
+        });
+      });
+      return entries;
+    };
+
+    const questFields = {
+      Name: { type: 'text', label: 'Имя квеста', validate: { required: true }, ui: { placeholder: 'Название квеста' } },
+      NextQuestID: { type: 'db_select', label: 'Следующий квест', ui: { dbKey: 'quest', placeholder: '— не задано —' } },
+      Money: { type: 'number', label: 'Награда (деньги)', ui: { min: 0, step: 1, placeholder: '0' } },
+      Exp: { type: 'number', label: 'Награда (опыт)', ui: { min: 0, step: 1, placeholder: '0' } },
+      Type: {
+        type: 'select',
+        label: 'Тип квеста',
+        ui: {
+          options: [QuestFlags.typeMain, QuestFlags.typeSide, QuestFlags.typeDaily, QuestFlags.typeWeekly, QuestFlags.typeRepeatable],
+        }
+      },
+      CantRefuse: { type: 'toggle', label: 'Нельзя отказаться' },
+      NoActivity: { type: 'toggle', label: 'Без очков активности' },
+    };
+
+    const stepBaseFields = {
+      BotID: { type: 'db_select', label: 'Моб (BotID)', ui: { dbKey: 'mob', placeholder: '— моб —', searchPlaceholder: 'Поиск моба…' } },
+      QuestID: { type: 'db_select', label: 'Квест', ui: { dbKey: 'quest', placeholder: '— квест —', searchPlaceholder: 'Поиск квеста…' } },
+      Step: { type: 'number', label: 'Позиция шага', ui: { min: 1, step: 1 } },
+      WorldID: { type: 'db_select', label: 'Мир', ui: { dbKey: 'world', placeholder: '— мир —', searchPlaceholder: 'Поиск мира…' } },
+      Position: { type: 'vec2', label: 'Позиция', ui: { step: 1 } },
+      AutoFinish: { type: 'toggle', label: 'AutoFinish' },
+      ScenarioData: { type: 'textarea', label: 'Scenario JSON', ui: { placeholder: '{...}', rows: 6 } },
+    };
+
+    const dialogFields = {
+      DialogData: {
+        type: 'list',
+        label: 'Диалоги',
+        itemFields: {
+          text: { type: 'textarea', label: 'Текст', ui: { rows: 2, placeholder: 'Диалог...' } },
+          side: { type: 'select', label: 'Сторона', ui: { options: ['default', 'author', 'thoughts'] } },
+          left_speaker_id: { type: 'number', label: 'Left speaker ID', ui: { step: 1 } },
+          right_speaker_id: { type: 'number', label: 'Right speaker ID', ui: { step: 1 } },
+          action: { type: 'toggle', label: 'Action' },
+        },
+        ui: {
+          listMode: 'table',
+          tableHeader: ['Текст', 'Side', 'Left', 'Right', 'Action'],
+          tableCols: 'minmax(260px,2fr) minmax(120px,1fr) 90px 90px 90px',
+          addLabel: 'Добавить реплику',
+        },
+      }
+    };
+
+    const taskFieldSets = {
+      required_items: {
+        id: { type: 'db_select', label: 'Предмет', ui: { dbKey: 'item', placeholder: '— предмет —' } },
+        value: { type: 'number', label: 'Количество', ui: { min: 1, step: 1 } },
+        type: { type: 'select', label: 'Тип', ui: { options: ['default', 'pickup', 'show'] } },
+      },
+      reward_items: {
+        id: { type: 'db_select', label: 'Предмет', ui: { dbKey: 'item', placeholder: '— предмет —' } },
+        value: { type: 'number', label: 'Количество', ui: { min: 1, step: 1 } },
+      },
+      defeat_bots: {
+        id: { type: 'db_select', label: 'Моб', ui: { dbKey: 'mob', placeholder: '— моб —' } },
+        value: { type: 'number', label: 'Количество', ui: { min: 1, step: 1 } },
+      },
+      move_to: {
+        step: { type: 'number', label: 'Шаг', ui: { min: 1, step: 1 } },
+        name: { type: 'text', label: 'Название' },
+        completion_text: { type: 'text', label: 'Текст завершения' },
+        mode: { type: 'select', label: 'Режим', ui: { options: ['move', 'move_press', 'move_follow_press', 'defeat_bot'] } },
+        navigator: { type: 'select', label: 'Навигатор', ui: { options: ['true', 'false'] } },
+        cooldown: { type: 'number', label: 'Cooldown', ui: { min: 0, step: 1 } },
+        world_id: { type: 'db_select', label: 'Мир', ui: { dbKey: 'world', placeholder: '— мир —' } },
+        x: { type: 'number', label: 'X', ui: { step: 1 } },
+        y: { type: 'number', label: 'Y', ui: { step: 1 } },
+        pick_up_item_id: { type: 'db_select', label: 'Pick up item', ui: { dbKey: 'item', placeholder: '— предмет —' } },
+        pick_up_item_value: { type: 'number', label: 'Pick up value', ui: { min: 1, step: 1 } },
+        required_item_id: { type: 'db_select', label: 'Required item', ui: { dbKey: 'item', placeholder: '— предмет —' } },
+        required_item_value: { type: 'number', label: 'Required value', ui: { min: 1, step: 1 } },
+        interactive_x: { type: 'number', label: 'Interactive X', ui: { step: 1 } },
+        interactive_y: { type: 'number', label: 'Interactive Y', ui: { step: 1 } },
+        defeat_bot_id: { type: 'db_select', label: 'Defeat bot', ui: { dbKey: 'mob', placeholder: '— моб —' } },
+        defeat_bot_attribute_power: { type: 'number', label: 'Defeat power', ui: { min: 1, step: 1 } },
+        defeat_bot_world_id: { type: 'db_select', label: 'Defeat world', ui: { dbKey: 'world', placeholder: '— мир —' } },
+      },
+    };
+
+    let questFormRuntime = null;
+    let stepBaseFormRuntime = null;
+    let stepTasksSortable = {};
+    let dialogFormRuntime = null;
+    let taskFormRuntime = null;
+
+    const setDirty = () => {
+      const dirty = STATE.dirtyQuests.size > 0 || STATE.dirtySteps.size > 0;
+      DOM.dirtyPill.classList.toggle('hidden', !dirty);
+    };
+
+    const updateCounts = () => {
+      DOM.questCount.textContent = STATE.quests.length;
+      DOM.stepCount.textContent = STATE.steps.length;
+    };
+
+    const markQuestDirty = (id) => {
+      if (!id) return;
+      STATE.dirtyQuests.add(id);
+      setDirty();
+    };
+
+    const markStepDirty = (id) => {
+      if (!id) return;
+      STATE.dirtySteps.add(id);
+      setDirty();
+    };
+
+    const syncQuestModel = (data) => {
+      const quest = STATE.quests.find((q) => q.ID === STATE.selected?.id);
+      if (!quest) return;
+      quest.Name = String(data?.Name || '');
+      quest.NextQuestID = Number(data?.NextQuestID || 0);
+      quest.Money = Number(data?.Money || 0);
+      quest.Exp = Number(data?.Exp || 0);
+      quest.Flags = buildFlags({
+        type: data?.Type || QuestFlags.typeMain,
+        cantRefuse: !!data?.CantRefuse,
+        noActivity: !!data?.NoActivity,
+      });
+      markQuestDirty(quest.ID);
+      renderTree();
+    };
+
+    const syncStepBaseModel = (data) => {
+      const step = STATE.steps.find((s) => s.ID === STATE.selected?.id);
+      if (!step) return;
+      step.BotID = Number(data?.BotID || 0);
+      step.QuestID = Number(data?.QuestID || 0);
+      step.Step = Number(data?.Step || 1);
+      step.WorldID = Number(data?.WorldID || 0) || null;
+      step.PosX = Number(data?.Position?.x || 0);
+      step.PosY = Number(data?.Position?.y || 0);
+      step.AutoFinish = data?.AutoFinish ? 'Partial' : null;
+      step.ScenarioData = String(data?.ScenarioData || '');
+      markStepDirty(step.ID);
+      renderTree();
+    };
+
+    const syncStepTasksModel = (nextTasks) => {
+      const step = STATE.steps.find((s) => s.ID === STATE.selected?.id);
+      if (!step) return;
+      step.TasksData = normalizeTasks(nextTasks);
+      markStepDirty(step.ID);
+      renderTree();
+    };
+
+    const TASK_SECTIONS = [
+      { id: 'reward_items', title: 'Предметы будут получены по завершению' },
+      { id: 'required_items', title: 'Предметы необходимые для завершения' },
+      { id: 'defeat_bots', title: 'Боты которых необходимо победить для завершения' },
+      { id: 'move_to', title: 'Цели которые необходимо выполнить для завершения' },
+    ];
+
+    const buildTaskSummary = (sectionId, item) => {
+      if (!item) return '—';
+      if (sectionId === 'reward_items') return `#${item.id || 0} ×${item.value || 0}`;
+      if (sectionId === 'required_items') return `#${item.id || 0} ×${item.value || 0} (${item.type || 'default'})`;
+      if (sectionId === 'defeat_bots') return `#${item.id || 0} ×${item.value || 0}`;
+      if (sectionId === 'move_to') return item.name || `Цель (${item.mode || 'move'})`;
+      return '—';
+    };
+
+    const getTaskList = (tasks, sectionId) => {
+      if (!tasks[sectionId] || !Array.isArray(tasks[sectionId])) tasks[sectionId] = [];
+      return tasks[sectionId];
+    };
+
+    const setTaskValue = (tasks, sectionId, index, key, value) => {
+      const list = getTaskList(tasks, sectionId);
+      if (!list[index]) list[index] = {};
+      list[index][key] = value;
+    };
+
+    const ensureMoveToDefaults = (item) => ({
+      step: item.step ?? 1,
+      navigator: item.navigator ?? 'true',
+      name: item.name ?? '',
+      x: item.x ?? 0,
+      y: item.y ?? 0,
+      world_id: item.world_id ?? 0,
+      mode: item.mode ?? 'move',
+      cooldown: item.cooldown ?? 0,
+      completion_text: item.completion_text ?? '',
+      interactive_x: item.interactive_x ?? 0,
+      interactive_y: item.interactive_y ?? 0,
+      defeat_bot_id: item.defeat_bot_id ?? 0,
+      defeat_bot_attribute_power: item.defeat_bot_attribute_power ?? 10,
+      defeat_bot_world_id: item.defeat_bot_world_id ?? 0,
+      required_item_id: item.required_item_id ?? 0,
+      required_item_value: item.required_item_value ?? 0,
+      pick_up_item_id: item.pick_up_item_id ?? 0,
+      pick_up_item_value: item.pick_up_item_value ?? 0,
+    });
+
+    const updateMoveToVisibility = (listEl, tasks) => {
+      if (!listEl) return;
+      listEl.querySelectorAll('[data-task-item="move_to"]').forEach((itemEl) => {
+        const idx = Number(itemEl.getAttribute('data-task-index'));
+        const move = tasks.move_to?.[idx] || {};
+        const mode = move.mode || 'move';
+        itemEl.querySelectorAll('[data-move-modes]').forEach((group) => {
+          const modes = group.getAttribute('data-move-modes')?.split(',') || [];
+          group.classList.toggle('is-hidden', !modes.includes(mode));
+        });
+      });
+    };
+
+    const renderTasksEditor = (step) => {
+      if (!DOM.stepTasksEditor) return;
+      const tasks = step?.TasksData || taskDefault();
+      const sectionsHtml = TASK_SECTIONS.map((section) => `
+        <section class="task-editor-section" data-task-section="${section.id}">
+          <div class="task-editor-header">
+            <h4>${section.title}</h4>
+            <i class="fa-solid fa-chevron-down"></i>
+          </div>
+          <div class="task-editor-content">
+            <div class="task-items" data-task-items="${section.id}"></div>
+            <button type="button" class="editor-btn editor-btn-secondary mt-3" data-task-add="${section.id}">
+              <i class="fa-solid fa-plus"></i><span>Добавить</span>
+            </button>
+          </div>
+        </section>
+      `).join('');
+      DOM.stepTasksEditor.innerHTML = sectionsHtml;
+
+      TASK_SECTIONS.forEach((section) => {
+        const content = DOM.stepTasksEditor.querySelector(`[data-task-section="${section.id}"] .task-editor-content`);
+        const header = DOM.stepTasksEditor.querySelector(`[data-task-section="${section.id}"] .task-editor-header`);
+        const listEl = DOM.stepTasksEditor.querySelector(`[data-task-items="${section.id}"]`);
+        const addBtn = DOM.stepTasksEditor.querySelector(`[data-task-add="${section.id}"]`);
+        const list = getTaskList(tasks, section.id);
+
+        if (header && content) {
+          content.classList.toggle('is-open', list.length > 0);
+          header.addEventListener('click', () => {
+            content.classList.toggle('is-open');
+          });
+        }
+
+        const renderDbCombo = ({
+          source,
+          value,
+          label,
+          sectionId,
+          index,
+          key,
+          placeholder,
+          searchPlaceholder,
+          searchable = false,
+          limit = 300,
+        }) => {
+          const path = `tasks.${sectionId}.${index}.${key}`;
+          const searchPh = searchPlaceholder || placeholder || 'Поиск…';
+          return `
+          <div>
+            <label>${label}</label>
+            <div class="editor-dbcombo"
+              data-datasource="${source}"
+              data-db-state="connected"
+              data-db-searchable="${searchable ? '1' : '0'}"
+              data-db-limit="${limit}"
+              data-placeholder="${placeholder}"
+              data-label-mode="id_name"
+              data-bind-input-path="${path}"
+              data-current-value="${value || ''}">
+              <div class="editor-dbcombo-control">
+                <input type="search" class="editor-input form-input editor-dbcombo-input" placeholder="${searchPh}" autocomplete="off">
+              </div>
+              <div class="editor-dbcombo-dropdown" role="listbox" aria-label="${label}"></div>
+              <input
+                class="editor-input form-input editor-dbselect-input editor-dbcombo-bound"
+                type="number"
+                data-path="${path}"
+                data-task-field="${sectionId}"
+                data-task-index="${index}"
+                data-task-key="${key}"
+                data-value-type="number"
+                value="${value || 0}">
+            </div>
+          </div>
+        `;
+        };
+
+        const renderItemBody = (item, index) => {
+          if (section.id === 'reward_items') {
+            return `
+              <div class="task-item-grid">
+                ${renderDbCombo({
+                  source: 'items',
+                  value: item.id,
+                  label: 'Предмет',
+                  sectionId: section.id,
+                  index,
+                  key: 'id',
+                  placeholder: '— предмет —',
+                  searchable: true,
+                  limit: 1000,
+                })}
+                <div>
+                  <label>Количество</label>
+                  <input class="editor-input form-input" type="number" min="1" value="${item.value || ''}" data-task-field="${section.id}" data-task-index="${index}" data-task-key="value">
+                </div>
+              </div>
+            `;
+          }
+          if (section.id === 'required_items') {
+            return `
+              <div class="task-item-grid">
+                ${renderDbCombo({
+                  source: 'items',
+                  value: item.id,
+                  label: 'Предмет',
+                  sectionId: section.id,
+                  index,
+                  key: 'id',
+                  placeholder: '— предмет —',
+                  searchable: true,
+                  limit: 1000,
+                })}
+                <div>
+                  <label>Количество</label>
+                  <input class="editor-input form-input" type="number" min="1" value="${item.value || ''}" data-task-field="${section.id}" data-task-index="${index}" data-task-key="value">
+                </div>
+                <div>
+                  <label>Тип</label>
+                  <select class="editor-input form-input" data-task-field="${section.id}" data-task-index="${index}" data-task-key="type">
+                    <option value="default" ${item.type === 'default' ? 'selected' : ''}>Отдать</option>
+                    <option value="show" ${item.type === 'show' ? 'selected' : ''}>Показать</option>
+                    <option value="pickup" ${item.type === 'pickup' ? 'selected' : ''}>Подобрать</option>
+                  </select>
+                </div>
+              </div>
+            `;
+          }
+          if (section.id === 'defeat_bots') {
+            return `
+              <div class="task-item-grid">
+                ${renderDbCombo({
+                  source: 'bots',
+                  value: item.id,
+                  label: 'Моб',
+                  sectionId: section.id,
+                  index,
+                  key: 'id',
+                  placeholder: '— моб —',
+                  searchable: false,
+                  limit: 500,
+                })}
+                <div>
+                  <label>Количество</label>
+                  <input class="editor-input form-input" type="number" min="1" value="${item.value || ''}" data-task-field="${section.id}" data-task-index="${index}" data-task-key="value">
+                </div>
+              </div>
+            `;
+          }
+          if (section.id === 'move_to') {
+            const move = ensureMoveToDefaults(item);
+            return `
+              <div class="task-item-body">
+                <div class="task-item-grid">
+                  <div>
+                    <label>Шаг</label>
+                    <input class="editor-input form-input" type="number" min="1" value="${move.step}" data-task-field="${section.id}" data-task-index="${index}" data-task-key="step">
+                  </div>
+                  <div>
+                    <label>Навигатор</label>
+                    <select class="editor-input form-input" data-task-field="${section.id}" data-task-index="${index}" data-task-key="navigator">
+                      <option value="true" ${move.navigator === 'true' ? 'selected' : ''}>Да</option>
+                      <option value="false" ${move.navigator === 'false' ? 'selected' : ''}>Нет</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label>Название цели</label>
+                    <input class="editor-input form-input" type="text" value="${move.name || ''}" data-task-field="${section.id}" data-task-index="${index}" data-task-key="name">
+                  </div>
+                </div>
+                <div class="task-item-grid">
+                  <div>
+                    <label>Координата X</label>
+                    <input class="editor-input form-input" type="number" value="${move.x}" data-task-field="${section.id}" data-task-index="${index}" data-task-key="x">
+                  </div>
+                  <div>
+                    <label>Координата Y</label>
+                    <input class="editor-input form-input" type="number" value="${move.y}" data-task-field="${section.id}" data-task-index="${index}" data-task-key="y">
+                  </div>
+                  ${renderDbCombo({
+                    source: 'worlds',
+                    value: move.world_id,
+                    label: 'ID мира',
+                    sectionId: section.id,
+                    index,
+                    key: 'world_id',
+                    placeholder: '— мир —',
+                    searchable: false,
+                    limit: 500,
+                  })}
+                </div>
+                <div class="task-item-grid">
+                  <div>
+                    <label>Режим</label>
+                    <select class="editor-input form-input" data-task-field="${section.id}" data-task-index="${index}" data-task-key="mode">
+                      <option value="move" ${move.mode === 'move' ? 'selected' : ''}>Просто встать</option>
+                      <option value="move_press" ${move.mode === 'move_press' ? 'selected' : ''}>Требуется нажать</option>
+                      <option value="move_follow_press" ${move.mode === 'move_follow_press' ? 'selected' : ''}>Навестись и нажать</option>
+                      <option value="defeat_bot" ${move.mode === 'defeat_bot' ? 'selected' : ''}>Победить моба</option>
+                    </select>
+                  </div>
+                  <div data-move-modes="move,move_press,move_follow_press">
+                    <label>Кулдаун</label>
+                    <input class="editor-input form-input" type="number" min="0" value="${move.cooldown || ''}" data-task-field="${section.id}" data-task-index="${index}" data-task-key="cooldown">
+                  </div>
+                  <div>
+                    <label>Текст завершения</label>
+                    <input class="editor-input form-input" type="text" value="${move.completion_text || ''}" data-task-field="${section.id}" data-task-index="${index}" data-task-key="completion_text">
+                  </div>
+                </div>
+                <div class="task-item-subgroup" data-move-modes="move_follow_press">
+                  <div class="task-item-grid">
+                    <div>
+                      <label>Interactive X</label>
+                      <input class="editor-input form-input" type="number" value="${move.interactive_x || ''}" data-task-field="${section.id}" data-task-index="${index}" data-task-key="interactive_x">
+                    </div>
+                    <div>
+                      <label>Interactive Y</label>
+                      <input class="editor-input form-input" type="number" value="${move.interactive_y || ''}" data-task-field="${section.id}" data-task-index="${index}" data-task-key="interactive_y">
+                    </div>
+                  </div>
+                </div>
+                <div class="task-item-subgroup" data-move-modes="defeat_bot">
+                  <div class="task-item-grid">
+                    ${renderDbCombo({
+                      source: 'bots',
+                      value: move.defeat_bot_id,
+                      label: 'Моб для победы',
+                      sectionId: section.id,
+                      index,
+                      key: 'defeat_bot_id',
+                      placeholder: '— моб —',
+                      searchable: false,
+                      limit: 500,
+                    })}
+                    <div>
+                      <label>Сила атрибута</label>
+                      <input class="editor-input form-input" type="number" value="${move.defeat_bot_attribute_power || 10}" data-task-field="${section.id}" data-task-index="${index}" data-task-key="defeat_bot_attribute_power">
+                    </div>
+                    ${renderDbCombo({
+                      source: 'worlds',
+                      value: move.defeat_bot_world_id,
+                      label: 'ID мира',
+                      sectionId: section.id,
+                      index,
+                      key: 'defeat_bot_world_id',
+                      placeholder: '— мир —',
+                      searchable: false,
+                      limit: 500,
+                    })}
+                  </div>
+                </div>
+                <div class="task-item-subgroup" data-move-modes="move_press,move_follow_press">
+                  <div class="task-item-grid">
+                    ${renderDbCombo({
+                      source: 'items',
+                      value: move.required_item_id,
+                      label: 'Требуемый предмет',
+                      sectionId: section.id,
+                      index,
+                      key: 'required_item_id',
+                      placeholder: '— предмет —',
+                      searchable: true,
+                      limit: 1000,
+                    })}
+                    <div>
+                      <label>Требуемый предмет кол-во</label>
+                      <input class="editor-input form-input" type="number" value="${move.required_item_value || ''}" data-task-field="${section.id}" data-task-index="${index}" data-task-key="required_item_value">
+                    </div>
+                  </div>
+                </div>
+                <div class="task-item-subgroup" data-move-modes="move_press,move_follow_press,defeat_bot">
+                  <div class="task-item-grid">
+                    ${renderDbCombo({
+                      source: 'items',
+                      value: move.pick_up_item_id,
+                      label: 'Предмет для подбора',
+                      sectionId: section.id,
+                      index,
+                      key: 'pick_up_item_id',
+                      placeholder: '— предмет —',
+                      searchable: true,
+                      limit: 1000,
+                    })}
+                    <div>
+                      <label>Предмет для подбора кол-во</label>
+                      <input class="editor-input form-input" type="number" value="${move.pick_up_item_value || ''}" data-task-field="${section.id}" data-task-index="${index}" data-task-key="pick_up_item_value">
+                    </div>
+                  </div>
+                </div>
+              </div>
+            `;
+          }
+          return '';
+        };
+
+        listEl.innerHTML = list.map((item, index) => `
+          <div class="task-item" data-task-item="${section.id}" data-task-index="${index}">
+            <div class="task-item-header">
+              <div>
+                <span class="editor-badge">#${index + 1}</span>
+                <span class="task-item-summary">${buildTaskSummary(section.id, item)}</span>
+              </div>
+              <div class="task-item-actions">
+                <span class="task-item-handle"><i class="fa-solid fa-arrows-up-down-left-right"></i></span>
+                <button type="button" class="editor-btn editor-btn-secondary" data-task-toggle="${section.id}" data-task-index="${index}">
+                  <i class="fa-solid fa-chevron-down"></i>
+                </button>
+                <button type="button" class="editor-btn editor-btn-secondary" data-task-remove="${section.id}" data-task-index="${index}">
+                  <i class="fa-solid fa-trash"></i>
+                </button>
+              </div>
+            </div>
+            <div class="task-item-body">${renderItemBody(item, index)}</div>
+          </div>
+        `).join('') || '<div class="editor-muted-text text-sm">Нет элементов</div>';
+
+        if (section.id === 'move_to') {
+          updateMoveToVisibility(listEl, tasks);
+        }
+
+        if (listEl) {
+          EditorCore.DB.init(listEl);
+        }
+
+        if (window.Sortable && listEl) {
+          if (stepTasksSortable[section.id]) stepTasksSortable[section.id].destroy();
+          stepTasksSortable[section.id] = new Sortable(listEl, {
+            handle: '.task-item-handle',
+            animation: 150,
+            onEnd: (evt) => {
+              const items = getTaskList(tasks, section.id);
+              const [moved] = items.splice(evt.oldIndex, 1);
+              items.splice(evt.newIndex, 0, moved);
+              syncStepTasksModel(tasks);
+              renderTasksEditor(step);
+            }
+          });
+        }
+
+        listEl.querySelectorAll('[data-task-remove]').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const idx = Number(btn.getAttribute('data-task-index'));
+            const items = getTaskList(tasks, section.id);
+            items.splice(idx, 1);
+            syncStepTasksModel(tasks);
+            renderTasksEditor(step);
+          });
+        });
+
+        listEl.querySelectorAll('[data-task-toggle]').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const idx = Number(btn.getAttribute('data-task-index'));
+            const item = listEl.querySelector(`[data-task-item="${section.id}"][data-task-index="${idx}"]`);
+            if (item) item.classList.toggle('is-collapsed');
+          });
+        });
+
+        listEl.querySelectorAll('[data-task-field]').forEach((input) => {
+          const handler = () => {
+            const sectionId = input.getAttribute('data-task-field');
+            const idx = Number(input.getAttribute('data-task-index'));
+            const key = input.getAttribute('data-task-key');
+            let value = input.value;
+            const valueType = input.dataset.valueType;
+            if (valueType === 'number') value = input.value === '' ? 0 : Number(input.value);
+            else if (input.type === 'number') value = input.value === '' ? 0 : Number(input.value);
+            setTaskValue(tasks, sectionId, idx, key, value);
+            syncStepTasksModel(tasks);
+            const summary = listEl.querySelector(`[data-task-item="${sectionId}"][data-task-index="${idx}"] .task-item-summary`);
+            if (summary) summary.textContent = buildTaskSummary(sectionId, getTaskList(tasks, sectionId)[idx]);
+            if (sectionId === 'move_to') updateMoveToVisibility(listEl, tasks);
+          };
+          input.addEventListener('input', handler);
+          input.addEventListener('change', handler);
+        });
+
+        addBtn?.addEventListener('click', () => {
+          const items = getTaskList(tasks, section.id);
+          if (section.id === 'move_to') {
+            items.push(ensureMoveToDefaults({}));
+          } else if (section.id === 'required_items') {
+            items.push({ id: 0, value: 1, type: 'default' });
+          } else {
+            items.push({ id: 0, value: 1 });
+          }
+          syncStepTasksModel(tasks);
+          renderTasksEditor(step);
+        });
+      });
+    };
+
+    const syncDialogModel = (data) => {
+      const step = STATE.steps.find((s) => s.ID === STATE.selected?.id);
+      if (!step) return;
+      step.DialogData = Array.isArray(data?.DialogData) ? data.DialogData : [];
+      markStepDirty(step.ID);
+      renderTree();
+    };
+
+    const syncTaskModel = (data) => {
+      const task = STATE.selected?.task;
+      const step = STATE.steps.find((s) => s.ID === STATE.selected?.id);
+      if (!task || !step) return;
+      const tasks = step.TasksData || taskDefault();
+      if (!tasks[task.kind]) return;
+      tasks[task.kind][task.index] = {
+        ...tasks[task.kind][task.index],
+        ...data,
+      };
+      step.TasksData = normalizeTasks(tasks);
+      markStepDirty(step.ID);
+      renderTree();
+    };
+
+    const buildTreeHtml = () => {
+      const search = String(DOM.search.value || '').toLowerCase();
+      const questMap = new Map(STATE.quests.map((q) => [q.ID, q]));
+      const stepsByQuest = new Map();
+
+      STATE.steps.forEach((step) => {
+        if (!stepsByQuest.has(step.QuestID)) stepsByQuest.set(step.QuestID, []);
+        stepsByQuest.get(step.QuestID).push(step);
+      });
+
+      const questItems = STATE.quests
+        .filter((quest) => {
+          if (!search) return true;
+          return String(quest.Name || '').toLowerCase().includes(search) || String(quest.ID).includes(search);
+        })
+        .sort((a, b) => a.ID - b.ID)
+        .map((quest) => {
+          const steps = (stepsByQuest.get(quest.ID) || []).sort((a, b) => (a.Step - b.Step) || (a.ID - b.ID));
+          const stepHtml = steps
+            .filter((step) => {
+              if (!search) return true;
+              return String(step.BotID).includes(search) || String(step.ID).includes(search) || String(step.Step).includes(search);
+            })
+            .map((step) => {
+              const tasks = buildTaskEntries(step);
+              const tasksHtml = tasks.map((task) => {
+                const taskSelected = STATE.selected?.type === 'task' && STATE.selected?.task?.kind === task.kind && STATE.selected?.task?.index === task.index && STATE.selected?.id === step.ID;
+                return `
+                  <div class="task-node ${taskSelected ? 'tree-selected' : ''}" draggable="true" data-node-type="task" data-step-id="${step.ID}" data-task-kind="${task.kind}" data-task-index="${task.index}">
+                    <div>${formatTaskLabel(task)}</div>
+                    <small>${task.kind}</small>
+                  </div>`;
+              }).join('');
+
+              const stepSelected = STATE.selected?.type === 'step' && STATE.selected?.id === step.ID;
+              return `
+                <div class="step-node ${stepSelected ? 'tree-selected' : ''}" draggable="true" data-node-type="step" data-id="${step.ID}">
+                  <div class="step-node-header">
+                    <div class="step-node-title">
+                      <i class="fa-solid fa-person-walking text-accent"></i>
+                      <span>Шаг ${step.Step}</span>
+                      <span class="editor-badge">#${step.ID}</span>
+                    </div>
+                    <div class="step-node-actions">
+                      <input
+                        class="editor-input form-input step-node-level"
+                        type="number"
+                        min="1"
+                        step="1"
+                        value="${Number(step.Step || 1)}"
+                        title="Позиция шага"
+                        data-step-level-id="${step.ID}"
+                      />
+                      <div class="step-node-sub">Mob ${step.BotID || '—'} · World ${step.WorldID ?? '—'}</div>
+                    </div>
+                  </div>
+                  <div class="task-list">${tasksHtml || '<div class="editor-muted-text text-xs">Нет задач</div>'}</div>
+                </div>`;
+            }).join('');
+
+          const questSelected = STATE.selected?.type === 'quest' && STATE.selected?.id === quest.ID;
+          return `
+            <div class="quest-node ${questSelected ? 'tree-selected' : ''}" data-node-type="quest" data-id="${quest.ID}">
+              <div class="quest-node-header">
+                <div class="quest-node-title">
+                  <i class="fa-solid fa-flag text-accent"></i>
+                  <span>${quest.Name || 'Без имени'}</span>
+                  <span class="badge">#${quest.ID}</span>
+                </div>
+                <div class="quest-node-meta">Шагов: ${steps.length}</div>
+              </div>
+              <div class="step-list">${stepHtml || '<div class="editor-muted-text text-xs mt-2">Нет шагов</div>'}</div>
+            </div>`;
+        });
+
+      return questItems.join('') || '<div class="editor-muted-text text-sm">Квесты не найдены</div>';
+    };
+
+    const renderTree = () => {
+      DOM.tree.innerHTML = buildTreeHtml();
+      bindTreeEvents();
+      updateCounts();
+    };
+
+    const showEditor = (type) => {
+      DOM.empty.classList.toggle('hidden', !!type);
+      DOM.questEditor.classList.toggle('hidden', type !== 'quest');
+      DOM.stepEditor.classList.toggle('hidden', type !== 'step');
+      DOM.taskEditor.classList.toggle('hidden', type !== 'task');
+    };
+
+    const selectQuest = (quest) => {
+      STATE.selected = { type: 'quest', id: quest.ID };
+      DOM.title.textContent = quest.Name ? `Квест: ${quest.Name}` : `Квест #${quest.ID}`;
+      DOM.subtitle.textContent = `ID ${quest.ID} · Следующий: ${quest.NextQuestID || '—'}`;
+      DOM.newStep.disabled = false;
+
+      const flags = parseFlags(quest.Flags);
+      const model = {
+        Name: quest.Name || '',
+        NextQuestID: Number(quest.NextQuestID || 0),
+        Money: Number(quest.Money || 0),
+        Exp: Number(quest.Exp || 0),
+        Type: flags.type || QuestFlags.typeMain,
+        CantRefuse: !!flags.cantRefuse,
+        NoActivity: !!flags.noActivity,
+      };
+
+      questFormRuntime = EditorCore.FormRuntime.mount(DOM.questForm, {
+        fields: questFields,
+        data: model,
+        fieldOptions: fieldRenderOptions,
+        onChange: syncQuestModel,
+      });
+      const nameInput = DOM.questForm.querySelector('input[name="Name"]');
+      if (nameInput) nameInput.setAttribute('maxlength', '24');
+
+      showEditor('quest');
+      renderTree();
+    };
+
+    const selectStep = (step) => {
+      STATE.selected = { type: 'step', id: step.ID };
+      DOM.title.textContent = `Шаг моба #${step.ID}`;
+      DOM.subtitle.textContent = `Квест ${step.QuestID || '—'} · Шаг ${step.Step || 1}`;
+      DOM.newStep.disabled = false;
+
+      const model = {
+        BotID: Number(step.BotID || 0),
+        QuestID: Number(step.QuestID || 0),
+        Step: Number(step.Step || 1),
+        WorldID: Number(step.WorldID || 0),
+        Position: { x: Number(step.PosX || 0), y: Number(step.PosY || 0) },
+        AutoFinish: step.AutoFinish === 'Partial',
+        ScenarioData: step.ScenarioData || '',
+        required_items: step.TasksData?.required_items || [],
+        reward_items: step.TasksData?.reward_items || [],
+        defeat_bots: step.TasksData?.defeat_bots || [],
+        move_to: step.TasksData?.move_to || [],
+      };
+
+      stepBaseFormRuntime = EditorCore.FormRuntime.mount(DOM.stepBaseForm, {
+        fields: stepBaseFields,
+        data: model,
+        fieldOptions: fieldRenderOptions,
+        onChange: syncStepBaseModel,
+      });
+
+      renderTasksEditor(step);
+
+      dialogFormRuntime = EditorCore.FormRuntime.mount(DOM.dialogForm, {
+        fields: dialogFields,
+        data: { DialogData: step.DialogData || [] },
+        fieldOptions: fieldRenderOptions,
+        onChange: syncDialogModel,
+      });
+
+      showEditor('step');
+      renderTree();
+    };
+
+    const selectTask = (step, task) => {
+      STATE.selected = { type: 'task', id: step.ID, task: { ...task } };
+      DOM.title.textContent = `Задача в шаге #${step.ID}`;
+      DOM.subtitle.textContent = `${task.kind} · индекс ${task.index + 1}`;
+      DOM.newStep.disabled = false;
+
+      const entry = step.TasksData?.[task.kind]?.[task.index] || {};
+      const model = { ...entry };
+
+      const fields = taskFieldSets[task.kind] || {};
+      taskFormRuntime = EditorCore.FormRuntime.mount(DOM.taskForm, {
+        fields,
+        data: model,
+        fieldOptions: fieldRenderOptions,
+        onChange: syncTaskModel,
+      });
+
+      showEditor('task');
+      renderTree();
+    };
+
+    const bindTreeEvents = () => {
+      DOM.tree.querySelectorAll('[data-node-type="quest"]').forEach((el) => {
+        el.addEventListener('click', (event) => {
+          const id = Number(event.currentTarget.getAttribute('data-id'));
+          const quest = STATE.quests.find((q) => q.ID === id);
+          if (quest) selectQuest(quest);
+        });
+
+        el.addEventListener('dragover', (event) => {
+          const payload = event.dataTransfer?.getData('text/plain') || '';
+          if (!payload) return;
+          const data = safeParse(payload);
+          if (data?.type !== 'step') return;
+          event.preventDefault();
+          el.classList.add('tree-drag-over');
+        });
+
+        el.addEventListener('dragleave', () => {
+          el.classList.remove('tree-drag-over');
+        });
+
+        el.addEventListener('drop', (event) => {
+          el.classList.remove('tree-drag-over');
+          const payload = event.dataTransfer?.getData('text/plain') || '';
+          const data = safeParse(payload);
+          if (!data || data.type !== 'step') return;
+          event.preventDefault();
+          const questId = Number(el.getAttribute('data-id'));
+          moveStepToQuest(data.id, questId);
+        });
+      });
+
+      DOM.tree.querySelectorAll('[data-node-type="step"]').forEach((el) => {
+        el.addEventListener('click', (event) => {
+          event.stopPropagation();
+          const id = Number(event.currentTarget.getAttribute('data-id'));
+          const step = STATE.steps.find((s) => s.ID === id);
+          if (step) selectStep(step);
+        });
+
+        el.addEventListener('dragstart', (event) => {
+          const id = Number(event.currentTarget.getAttribute('data-id'));
+          event.dataTransfer.setData('text/plain', JSON.stringify({ type: 'step', id }));
+          event.dataTransfer.effectAllowed = 'move';
+        });
+
+        el.addEventListener('dragover', (event) => {
+          const payload = event.dataTransfer?.getData('text/plain') || '';
+          const data = safeParse(payload);
+          if (!data || data.type !== 'task') return;
+          event.preventDefault();
+          el.classList.add('tree-drag-over');
+        });
+
+        el.addEventListener('dragleave', () => {
+          el.classList.remove('tree-drag-over');
+        });
+
+        el.addEventListener('drop', (event) => {
+          el.classList.remove('tree-drag-over');
+          const payload = event.dataTransfer?.getData('text/plain') || '';
+          const data = safeParse(payload);
+          if (!data || data.type !== 'task') return;
+          event.preventDefault();
+          const targetStepId = Number(el.getAttribute('data-id'));
+          moveTaskToStep(data, targetStepId);
+        });
+      });
+
+      DOM.tree.querySelectorAll('[data-node-type="task"]').forEach((el) => {
+        el.addEventListener('click', (event) => {
+          event.stopPropagation();
+          const stepId = Number(event.currentTarget.getAttribute('data-step-id'));
+          const kind = event.currentTarget.getAttribute('data-task-kind');
+          const index = Number(event.currentTarget.getAttribute('data-task-index'));
+          const step = STATE.steps.find((s) => s.ID === stepId);
+          if (!step) return;
+          selectTask(step, { kind, index });
+        });
+
+        el.addEventListener('dragstart', (event) => {
+          const stepId = Number(event.currentTarget.getAttribute('data-step-id'));
+          const kind = event.currentTarget.getAttribute('data-task-kind');
+          const index = Number(event.currentTarget.getAttribute('data-task-index'));
+          event.dataTransfer.setData('text/plain', JSON.stringify({ type: 'task', stepId, kind, index }));
+          event.dataTransfer.effectAllowed = 'move';
+        });
+      });
+
+      DOM.tree.querySelectorAll('[data-step-level-id]').forEach((input) => {
+        input.addEventListener('click', (event) => {
+          event.stopPropagation();
+        });
+        input.addEventListener('input', (event) => {
+          event.stopPropagation();
+          const id = Number(event.currentTarget.getAttribute('data-step-level-id'));
+          const step = STATE.steps.find((s) => s.ID === id);
+          if (!step) return;
+          const value = Math.max(1, Number(event.currentTarget.value || 1));
+          step.Step = value;
+          event.currentTarget.value = value;
+          markStepDirty(step.ID);
+          renderTree();
+          if (STATE.selected?.type === 'step' && STATE.selected?.id === step.ID) {
+            selectStep(step);
+          }
+        });
+      });
+    };
+
+    const safeParse = (raw) => {
+      try {
+        return JSON.parse(raw);
+      } catch {
+        return null;
+      }
+    };
+
+    const moveStepToQuest = (stepId, questId) => {
+      const step = STATE.steps.find((s) => s.ID === stepId);
+      if (!step || step.QuestID === questId) return;
+      step.QuestID = questId;
+      markStepDirty(step.ID);
+      renderTree();
+      if (STATE.selected?.type === 'step' && STATE.selected?.id === stepId) {
+        selectStep(step);
+      }
+      EditorCore.UI.toast(`Шаг #${stepId} перенесён в квест #${questId}`, 'success');
+    };
+
+    const moveTaskToStep = (payload, targetStepId) => {
+      const sourceStep = STATE.steps.find((s) => s.ID === payload.stepId);
+      const targetStep = STATE.steps.find((s) => s.ID === targetStepId);
+      if (!sourceStep || !targetStep) return;
+      if (payload.stepId === targetStepId) return;
+
+      const sourceTasks = sourceStep.TasksData || taskDefault();
+      const targetTasks = targetStep.TasksData || taskDefault();
+      const list = sourceTasks[payload.kind];
+      if (!Array.isArray(list)) return;
+      const [item] = list.splice(payload.index, 1);
+      if (!item) return;
+      if (!Array.isArray(targetTasks[payload.kind])) targetTasks[payload.kind] = [];
+      targetTasks[payload.kind].push(item);
+
+      sourceStep.TasksData = normalizeTasks(sourceTasks);
+      targetStep.TasksData = normalizeTasks(targetTasks);
+      markStepDirty(sourceStep.ID);
+      markStepDirty(targetStep.ID);
+      renderTree();
+      if (STATE.selected?.type === 'task') {
+        if (STATE.selected.id === payload.stepId) {
+          selectTask(targetStep, { kind: payload.kind, index: targetTasks[payload.kind].length - 1 });
+        }
+      }
+      EditorCore.UI.toast(`Задача перенесена в шаг #${targetStepId}`, 'success');
+    };
+
+    const loadData = async () => {
+      DOM.tree.innerHTML = '<div class="editor-muted-text text-sm">Загрузка...</div>';
+      try {
+        const [questsRes, stepsRes] = await Promise.all([
+          EditorCore.DBCrud.list('quests', { limit: 5000 }),
+          EditorCore.DBCrud.list('quest_bots', { limit: 5000 }),
+        ]);
+
+        STATE.quests = (questsRes?.rows || []).map((row) => ({
+          ID: Number(row.ID),
+          Name: String(row.Name || ''),
+          NextQuestID: Number(row.NextQuestID || 0),
+          Money: Number(row.Money || 0),
+          Exp: Number(row.Exp || 0),
+          Flags: row.Flags || QuestFlags.typeMain,
+        }));
+
+        STATE.steps = (stepsRes?.rows || []).map((row) => ({
+          ID: Number(row.ID),
+          BotID: Number(row.BotID || 0),
+          QuestID: Number(row.QuestID || 0),
+          Step: Number(row.Step || 1),
+          WorldID: row.WorldID == null ? null : Number(row.WorldID),
+          PosX: Number(row.PosX || 0),
+          PosY: Number(row.PosY || 0),
+          AutoFinish: row.AutoFinish || null,
+          DialogData: Array.isArray(row.DialogData) ? row.DialogData : [],
+          ScenarioData: row.ScenarioData || '',
+          TasksData: normalizeTasks(row.TasksData),
+        }));
+
+        STATE.dirtyQuests.clear();
+        STATE.dirtySteps.clear();
+        setDirty();
+        renderTree();
+      } catch (error) {
+        DOM.tree.innerHTML = '<div class="editor-muted-text text-sm">Не удалось загрузить данные</div>';
+        EditorCore.UI.toast(error.message || 'Ошибка загрузки', 'error');
+      }
+    };
+
+    const saveAll = async () => {
+      const quests = Array.from(STATE.dirtyQuests);
+      const steps = Array.from(STATE.dirtySteps);
+      if (!quests.length && !steps.length) {
+        EditorCore.UI.toast('Нет изменений для сохранения', 'info');
+        return;
+      }
+
+      DOM.save.disabled = true;
+      try {
+        for (const id of quests) {
+          const quest = STATE.quests.find((q) => q.ID === id);
+          if (!quest) continue;
+          await EditorCore.DBCrud.update('quests', id, {
+            Name: quest.Name,
+            NextQuestID: quest.NextQuestID || null,
+            Money: quest.Money,
+            Exp: quest.Exp,
+            Flags: quest.Flags || QuestFlags.typeMain,
+          });
+        }
+
+        for (const id of steps) {
+          const step = STATE.steps.find((s) => s.ID === id);
+          if (!step) continue;
+          const rawTasks = denormalizeTasks(step.TasksData);
+          await EditorCore.DBCrud.update('quest_bots', id, {
+            BotID: step.BotID,
+            QuestID: step.QuestID,
+            Step: step.Step,
+            WorldID: step.WorldID == null ? null : step.WorldID,
+            PosX: step.PosX,
+            PosY: step.PosY,
+            AutoFinish: step.AutoFinish || null,
+            DialogData: step.DialogData?.length ? step.DialogData : null,
+            ScenarioData: step.ScenarioData || null,
+            TasksData: rawTasks,
+          });
+        }
+
+        STATE.dirtyQuests.clear();
+        STATE.dirtySteps.clear();
+        setDirty();
+        EditorCore.UI.toast('Изменения сохранены', 'success');
+      } catch (error) {
+        EditorCore.UI.toast(error.message || 'Ошибка сохранения', 'error');
+      } finally {
+        DOM.save.disabled = false;
+      }
+    };
+
+    const createQuest = async () => {
+      DOM.newQuest.disabled = true;
+      try {
+        const payload = {
+          Name: 'Новый квест',
+          NextQuestID: null,
+          Money: 0,
+          Exp: 0,
+          Flags: QuestFlags.typeMain,
+        };
+        const res = await EditorCore.DBCrud.create('quests', payload);
+        await loadData();
+        const quest = STATE.quests.find((q) => q.ID === res.id);
+        if (quest) selectQuest(quest);
+      } catch (error) {
+        EditorCore.UI.toast(error.message || 'Ошибка создания квеста', 'error');
+      } finally {
+        DOM.newQuest.disabled = false;
+      }
+    };
+
+    const createStep = async () => {
+      const stepQuestId = STATE.selected?.type === 'quest'
+        ? STATE.selected.id
+        : STATE.selected?.type === 'step'
+          ? STATE.steps.find((s) => s.ID === STATE.selected.id)?.QuestID
+          : null;
+      if (!stepQuestId) return;
+
+      DOM.newStep.disabled = true;
+      try {
+        const payload = {
+          BotID: 0,
+          QuestID: stepQuestId,
+          Step: 1,
+          WorldID: null,
+          PosX: 0,
+          PosY: 0,
+          AutoFinish: null,
+          DialogData: null,
+          ScenarioData: null,
+          TasksData: taskDefault(),
+        };
+        const res = await EditorCore.DBCrud.create('quest_bots', payload);
+        await loadData();
+        const step = STATE.steps.find((s) => s.ID === res.id);
+        if (step) selectStep(step);
+      } catch (error) {
+        EditorCore.UI.toast(error.message || 'Ошибка создания шага', 'error');
+      } finally {
+        DOM.newStep.disabled = false;
+      }
+    };
+
+    DOM.refresh.addEventListener('click', loadData);
+    DOM.save.addEventListener('click', saveAll);
+    DOM.newQuest.addEventListener('click', createQuest);
+    DOM.newStep.addEventListener('click', createStep);
+    DOM.search.addEventListener('input', renderTree);
+
+    loadData();
+  </script>
+</body>
+</html>

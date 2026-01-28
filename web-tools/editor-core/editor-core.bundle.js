@@ -1063,110 +1063,100 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
       return { ds: ds || '', dbKey, placeholder, labelMode };
     };
 
-    // Direct DB select (binds to data model).
-    // It can be enhanced with search UI via data-db-searchable + data-db-limit.
-    const renderDbSelectDirect = (multiple = false) => {
-      const { ds, dbKey, placeholder, labelMode } = resolveDbParams();
-      if (!ds) {
-        // Fallback: show plain input if datasource missing
-        return renderInput('number', value ?? 0);
-      }
+    const renderTagsWidget = ({
+      options = [],
+      datasource = '',
+      labelMode,
+      valueType = 'string',
+      placeholder,
+      searchPlaceholder,
+      allowCreate = false,
+    } = {}) => {
+      const ph = placeholder || searchPlaceholder || 'Добавить…';
+      const dsResolved = datasource
+        ? (window.EditorCore?.DB?.resolveSource ? (window.EditorCore.DB.resolveSource(datasource) || datasource) : datasource)
+        : '';
+      const dsKey = datasource || '';
+      const resolvedLabelMode = String(labelMode || (window.EditorCore?.DBMap?.[dsKey]?.labelMode) || 'id_name').toLowerCase();
+      const resolvedValueType = String(valueType || 'string').toLowerCase();
+      const hiddenValueType = resolvedValueType === 'number' ? 'json_array_number' : 'json_array';
 
-      // Search for ALL db_select types. For multiselect we default to client filter (bulk-load) to keep it simple.
-      const serverSearch = (ui.searchServer ?? (dbKey === 'item'));
-      const searchable = multiple ? '0' : (serverSearch ? '1' : '0');
-
-      const defaultLimit = (dbKey === 'item') ? 1000 : 300;
-      const dbLimit = String(ui.dbLimit || defaultLimit);
-
-      const valueType = ui.valueType || field.valueType || (multiple ? 'string' : 'number');
-
-      const attrs = buildInputAttributes({
+      const hiddenAttrs = buildInputAttributes({
         path,
         field,
-        classes: multiple ? multiSelectClass : inputClass,
+        classes: '',
         includeName,
         includeDataKey,
         includeDataPath,
-        extraAttrs: `${multiple ? 'multiple' : ''} data-datasource="${escapeAttr(ds)}" data-placeholder="${escapeAttr(placeholder)}" data-label-mode="${escapeAttr(String(labelMode))}" data-db-searchable="${escapeAttr(searchable)}" data-db-limit="${escapeAttr(dbLimit)}" data-value-type="${escapeAttr(String(valueType))}"`
+        extraAttrs: `type="hidden" data-value-type="${escapeAttr(hiddenValueType)}"`
       });
 
-      // Options will be loaded by EditorCore.DB.init(). Keep a minimal placeholder.
-      return `<select ${attrs}><option value="">${escapeAttr(placeholder)}</option></select>`;
+      const initial = JSON.stringify(normalizeMultiValue(value));
+      return `
+        <div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">
+          ${labelHtml}
+          <div class="editor-tags"
+               data-tags-options="${escapeAttr(JSON.stringify(options))}"
+               data-tags-placeholder="${escapeAttr(ph)}"
+               data-tags-allow-create="${allowCreate ? '1' : '0'}"
+               ${dsResolved ? `data-tags-datasource="${escapeAttr(dsResolved)}"` : ''}
+               ${dsResolved ? `data-tags-label-mode="${escapeAttr(resolvedLabelMode)}"` : ''}
+               data-tags-value-type="${escapeAttr(resolvedValueType)}">
+            <input ${hiddenAttrs} value="${escapeAttr(initial)}">
+            <div class="editor-tags-selected"></div>
+            <div class="editor-tags-searchrow">
+              <input type="search" class="${inputClass} editor-tags-search" placeholder="${escapeAttr(ph)}" />
+            </div>
+            <div class="editor-tags-options"></div>
+          </div>
+          ${hintHtml}
+        </div>`;
     };
 
-    // Helper DB select (does NOT bind to data model). It only syncs into the bound input via data-bind-input-path.
-    const renderDbSelectHelper = ({ bindInputPath, multiple = false } = {}) => {
+    // New default UI: single searchable input with dropdown list.
+    const renderDbSelectCombo = () => {
       const { ds, dbKey, placeholder, labelMode } = resolveDbParams();
-      const classes = multiple ? multiSelectClass : inputClass;
-      if (!ds) return '';
+      if (!ds) return renderInput('number', value ?? 0);
 
-      // Search is available for all DB selects.
-      // Two modes:
-      // - server search (data-db-searchable=1) => query DB by 'search' and render first N rows
-      // - client filter (data-db-searchable=0) => bulk-load options, search filters locally
       const serverSearch = (ui.searchServer ?? (dbKey === 'item'));
       const searchable = serverSearch ? '1' : '0';
-
-      // Default: show more than 213 items for large sources (like items)
       const defaultLimit = (dbKey === 'item') ? 1000 : 300;
       const dbLimit = String(ui.dbLimit || defaultLimit);
 
-      const valueType = ui.valueType || field.valueType || 'string';
+      const manualInputAttrs = buildInputAttributes({
+        path,
+        field,
+        classes: `${inputClass} editor-dbselect-input editor-dbcombo-bound`,
+        includeName,
+        includeDataKey,
+        includeDataPath,
+        extraAttrs: 'inputmode="numeric"'
+      });
+      const cur = (value ?? 0);
 
-      const extraAttrs = `${multiple ? 'multiple' : ''} data-datasource="${escapeAttr(ds)}" data-bind-input-path="${escapeAttr(bindInputPath || '')}" data-placeholder="${escapeAttr(placeholder)}" data-label-mode="${escapeAttr(String(labelMode))}" data-db-searchable="${escapeAttr(searchable)}" data-db-limit="${escapeAttr(dbLimit)}" data-value-type="${escapeAttr(String(valueType))}"`;
-      return `<select class="${classes} editor-dbselect-select" ${extraAttrs}><option value="">${escapeAttr(placeholder)}</option></select>`;
-    };
-
-    
-    const renderDbSelectAdaptive = (multiple = false) => {
-      const { ds } = resolveDbParams();
-      const showSearch = (ui.showSearch ?? true) && !!ds;
-      const searchPh = ui.searchPlaceholder || 'Поиск…';
-      const searchHtml = showSearch
-        ? `<input type="search" class="${inputClass} editor-dbselect-search" placeholder="${escapeAttr(searchPh)}" />`
-        : '';
-
-      // Stability feature:
-      // For single-value db_select we always render a manual ID input bound to the data model.
-      // The DB dropdown becomes a helper that syncs into the input. If DB is unavailable,
-      // the user can still type the ID.
-      const useHelperMode = !multiple && (ui.fallbackInput ?? true) && !!ds;
-
-      const manualInputHtml = useHelperMode
-        ? (() => {
-            const attrs = buildInputAttributes({
-              path,
-              field,
-              classes: `${inputClass} editor-dbselect-input`,
-              includeName,
-              includeDataKey,
-              includeDataPath,
-              extraAttrs: 'inputmode="numeric"'
-            });
-            const cur = (value ?? 0);
-            return `<input type="number" ${attrs} value="${escapeAttr(String(cur))}" />`;
-          })()
-        : '';
-
-      const selectHtml = useHelperMode
-        ? renderDbSelectHelper({ bindInputPath: path, multiple: false })
-        : renderDbSelectDirect(multiple);
-
-      const controlsHtml = ds
-        ? `<div class="editor-dbselect-controls">
-             <button type="button" class="editor-btn editor-dbselect-more hidden">Ещё</button>
-             <div class="editor-dbselect-meta"></div>
-           </div>`
-        : '';
-
-      // UI: search (left) + select (right) in one row.
-      // Optimistic default state="connected" when datasource exists to avoid initial double-render.
+      const searchPh = ui.searchPlaceholder || ui.placeholder || 'Поиск…';
       const state = ds ? 'connected' : '';
-      const rowHtml = `<div class="editor-dbselect-row">${searchHtml}${selectHtml}</div>`;
-      return `<div class="editor-dbselect" ${state ? `data-db-state="${state}"` : ''}>${rowHtml}${manualInputHtml}${controlsHtml}</div>`;
+      const hasVal = (v) => v !== undefined && v !== null && String(v) !== '' && String(v) !== '0';
+      const curVal = hasVal(value) ? String(value) : '';
+
+      return `
+        <div class="editor-dbcombo" data-db-state="${escapeAttr(state)}"
+             data-datasource="${escapeAttr(ds)}"
+             data-db-searchable="${escapeAttr(searchable)}"
+             data-db-limit="${escapeAttr(dbLimit)}"
+             data-placeholder="${escapeAttr(placeholder)}"
+             data-label-mode="${escapeAttr(String(labelMode))}"
+             data-bind-input-path="${escapeAttr(path)}"
+             data-current-value="${escapeAttr(curVal)}">
+          <div class="editor-dbcombo-control">
+            <input type="search" class="${inputClass} editor-dbcombo-input" placeholder="${escapeAttr(searchPh)}" autocomplete="off" />
+          </div>
+          <div class="editor-dbcombo-dropdown" role="listbox" aria-label="${escapeAttr(label)}"></div>
+          <input type="number" ${manualInputAttrs} value="${escapeAttr(String(cur))}" />
+        </div>`;
     };
-const renderCheckbox = () => {
+
+    const renderCheckbox = () => {
       const attrs = buildInputAttributes({
         path,
         field,
@@ -1305,12 +1295,22 @@ const renderCheckbox = () => {
         </div>`;
     }
 
-    if (field.type === 'db_select' || ui.type === 'db_select') {
-      return `<div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">${labelHtml}${renderDbSelectAdaptive()}${hintHtml}</div>`;
+    if (field.type === 'db_select' || ui.type === 'db_select' || field.type === 'db_select_search' || ui.type === 'db_select_search') {
+      return `<div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">${labelHtml}${renderDbSelectCombo()}${hintHtml}</div>`;
     }
 
     if (field.type === 'db_multiselect' || ui.type === 'db_multiselect') {
-      return `<div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">${labelHtml}${renderDbSelectAdaptive(true)}${hintHtml}</div>`;
+      const opts = Array.isArray(ui.options) ? ui.options : [];
+      const dsRaw = String(ui.datasource || ui.dbKey || field.datasource || '').trim();
+      return renderTagsWidget({
+        options: opts,
+        datasource: dsRaw,
+        labelMode: ui.labelMode,
+        valueType: ui.valueType || 'number',
+        placeholder: ui.placeholder,
+        searchPlaceholder: ui.searchPlaceholder,
+        allowCreate: ui.allowCreate,
+      });
     }
 
     if (ui.type === 'select') {
@@ -1322,35 +1322,17 @@ const renderCheckbox = () => {
     }
 
     if (ui.type === 'tags') {
-      // TagSelect: visual chips + search, value stored in a hidden input as JSON array.
       const opts = Array.isArray(ui.options) ? ui.options : [];
-      const ph = ui.searchPlaceholder || ui.placeholder || 'Добавить…';
-      const allowCreate = ui.allowCreate ? '1' : '0';
-
-      const hiddenAttrs = buildInputAttributes({
-        path,
-        field,
-        classes: '',
-        includeName,
-        includeDataKey,
-        includeDataPath,
-        extraAttrs: 'type="hidden" data-value-type="json_array"'
+      const dsRaw = String(ui.datasource || ui.dbKey || '').trim();
+      return renderTagsWidget({
+        options: opts,
+        datasource: dsRaw,
+        labelMode: ui.labelMode,
+        valueType: ui.valueType || 'string',
+        placeholder: ui.placeholder,
+        searchPlaceholder: ui.searchPlaceholder,
+        allowCreate: ui.allowCreate,
       });
-
-      const initial = JSON.stringify(normalizeMultiValue(value));
-      return `
-        <div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">
-          ${labelHtml}
-          <div class="editor-tags" data-tags-options="${escapeAttr(JSON.stringify(opts))}" data-tags-placeholder="${escapeAttr(ph)}" data-tags-allow-create="${allowCreate}">
-            <input ${hiddenAttrs} value="${escapeAttr(initial)}">
-            <div class="editor-tags-selected"></div>
-            <div class="editor-tags-searchrow">
-              <input type="search" class="${inputClass} editor-tags-search" placeholder="${escapeAttr(ph)}" />
-            </div>
-            <div class="editor-tags-options"></div>
-          </div>
-          ${hintHtml}
-        </div>`;
     }
 
     if (ui.format === 'date' || field.type === 'date') {
@@ -1617,6 +1599,288 @@ const renderCheckbox = () => {
     await loadPage({ reset: true });
   };
 
+  // New UI: single searchable input + dropdown ("combo") for db_select.
+  // It binds to an underlying numeric input via data-bind-input-path.
+  const initDbCombo = async (db, combo, root) => {
+    if (!combo || combo.dataset.dbComboInited === '1') return;
+    combo.dataset.dbComboInited = '1';
+
+    const source = combo.dataset.datasource || '';
+    if (!source) return;
+
+    const input = combo.querySelector('.editor-dbcombo-input');
+    const dropdownLocal = combo.querySelector('.editor-dbcombo-dropdown');
+    const clearBtn = combo.querySelector('.editor-dbcombo-clear');
+
+    let dropdown = dropdownLocal;
+    let portal = null;
+    if (dropdownLocal) {
+      try {
+        portal = document.createElement('div');
+        portal.className = 'editor-dbcombo-dropdown editor-dbcombo-dropdown-portal';
+        portal.setAttribute('role', 'listbox');
+        portal.style.display = 'none';
+        document.body.appendChild(portal);
+        dropdownLocal.style.display = 'none';
+        dropdown = portal;
+      } catch {
+        dropdown = dropdownLocal;
+        portal = null;
+      }
+    }
+    const bindInputPath = combo.dataset.bindInputPath || '';
+    const placeholder = combo.dataset.placeholder || '— выберите —';
+    const labelMode = (combo.dataset.labelMode || 'id_name').toLowerCase();
+    const pageSize = Number(combo.dataset.dbLimit || 300);
+    const searchable = combo.dataset.dbSearchable === '1';
+
+    const bound = bindInputPath
+      ? root.querySelector(`[data-path="${CSS.escape(bindInputPath)}"]`)
+      : combo.querySelector('input[data-path]');
+
+    const coerceSelected = (v) => {
+      const s = String(v ?? '').trim();
+      if (!s || s === '0') return '';
+      return s;
+    };
+
+    const setDbState = (state) => {
+      combo.setAttribute('data-db-state', state);
+      if (state === 'disconnected') {
+        if (input) input.disabled = true;
+        if (clearBtn) clearBtn.disabled = true;
+      }
+    };
+
+    const formatLabel = (val, baseLabel) => {
+      const v = String(val);
+      const l = String(baseLabel || '');
+      return labelMode === 'name' ? l : `${v}: ${l}`;
+    };
+
+    const state = {
+      open: false,
+      q: '',
+      items: null,
+      activeIndex: -1,
+      lastResults: []
+    };
+
+    const placeDropdown = () => {
+      if (!portal || !dropdown || !input) return;
+      const rect = input.getBoundingClientRect();
+      const vw = window.innerWidth || document.documentElement.clientWidth || 0;
+      const vh = window.innerHeight || document.documentElement.clientHeight || 0;
+      const margin = 6;
+      const availBelow = vh - rect.bottom - margin - 12;
+      const availAbove = rect.top - margin - 12;
+      const preferAbove = availBelow < 160 && availAbove > availBelow;
+      const maxHeight = Math.max(140, Math.min(320, preferAbove ? availAbove : availBelow));
+      const left = Math.max(8, Math.min(rect.left, Math.max(8, vw - rect.width - 8)));
+
+      dropdown.style.width = `${Math.max(160, rect.width)}px`;
+      dropdown.style.left = `${left}px`;
+      dropdown.style.maxHeight = `${maxHeight}px`;
+      if (preferAbove) {
+        dropdown.style.top = '';
+        dropdown.style.bottom = `${Math.max(8, vh - rect.top + margin)}px`;
+      } else {
+        const top = Math.min(Math.max(8, rect.bottom + margin), Math.max(8, vh - maxHeight - 8));
+        dropdown.style.bottom = '';
+        dropdown.style.top = `${top}px`;
+      }
+    };
+
+    const close = () => {
+      state.open = false;
+      state.activeIndex = -1;
+      if (dropdown) dropdown.classList.remove('open');
+      if (portal && dropdown) dropdown.style.display = 'none';
+    };
+
+    const open = () => {
+      state.open = true;
+      if (dropdown) dropdown.classList.add('open');
+      if (portal && dropdown) dropdown.style.display = 'block';
+      placeDropdown();
+    };
+
+    if (portal) {
+      const onViewport = () => {
+        if (state.open) placeDropdown();
+      };
+      window.addEventListener('resize', onViewport);
+      window.addEventListener('scroll', onViewport, { capture: true, passive: true });
+    }
+
+    const dispatchBound = () => {
+      if (!bound) return;
+      bound.dispatchEvent(new Event('input', { bubbles: true }));
+      bound.dispatchEvent(new Event('change', { bubbles: true }));
+    };
+
+    const writeBoundValue = (val) => {
+      if (!bound) return;
+      bound.value = val ? String(val) : '0';
+      dispatchBound();
+    };
+
+    const readBoundValue = () => {
+      if (!bound) return '';
+      return coerceSelected(bound.value);
+    };
+
+    const renderList = (items, { emptyText = 'Нет вариантов' } = {}) => {
+      if (!dropdown) return;
+      const arr = Array.isArray(items) ? items : [];
+      state.lastResults = arr;
+
+      if (!arr.length) {
+        dropdown.innerHTML = `<div class="editor-dbcombo-empty">${emptyText}</div>`;
+        return;
+      }
+
+      dropdown.innerHTML = arr.map((it, idx) => {
+        const val = String(it.value);
+        const label = formatLabel(it.value, it.label);
+        return `<button type="button" class="editor-dbcombo-option" role="option" data-value="${val}" data-index="${idx}">${label.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</button>`;
+      }).join('');
+
+      dropdown.querySelectorAll('.editor-dbcombo-option').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const val = btn.getAttribute('data-value') || '';
+          writeBoundValue(val);
+          input.value = val ? formatLabel(val, state.lastResults[Number(btn.dataset.index || 0)]?.label || '') : '';
+          close();
+        });
+      });
+    };
+
+    const ensureCurrentLabel = async () => {
+      if (!input) return;
+      const cur = readBoundValue();
+      if (!cur) {
+        input.value = '';
+        return;
+      }
+      try {
+        const one = await db.getOne(source, cur);
+        if (one?.ok && one.item) {
+          input.value = formatLabel(one.item.value, one.item.label || '');
+          return;
+        }
+      } catch {}
+      input.value = cur;
+    };
+
+    const loadClientItemsIfNeeded = async () => {
+      if (state.items) return true;
+      const res = await db.list(source, { limit: 5000, offset: 0 });
+      if (!res?.ok) return false;
+      state.items = res.items || [];
+      return true;
+    };
+
+    const query = async (qRaw) => {
+      if (!input) return;
+      const q = String(qRaw ?? '').trim();
+      state.q = q;
+
+      try {
+        if (searchable) {
+          const res = await db.list(source, { search: q, limit: pageSize, offset: 0, withTotal: false });
+          if (!res?.ok) {
+            setDbState('disconnected');
+            close();
+            return;
+          }
+          setDbState('connected');
+          renderList(res.items || [], { emptyText: q ? 'Ничего не найдено' : 'Нет вариантов' });
+          return;
+        }
+
+        const ok = await loadClientItemsIfNeeded();
+        if (!ok) {
+          setDbState('disconnected');
+          close();
+          return;
+        }
+        setDbState('connected');
+        const needle = q.toLowerCase();
+        const filtered = !needle
+          ? state.items.slice(0, pageSize)
+          : state.items.filter((it) => {
+              const v = String(it.value).toLowerCase();
+              const l = String(it.label || '').toLowerCase();
+              return v.includes(needle) || l.includes(needle) || `${v}: ${l}`.includes(needle);
+            }).slice(0, pageSize);
+        renderList(filtered, { emptyText: q ? 'Ничего не найдено' : 'Нет вариантов' });
+      } catch {
+        setDbState('disconnected');
+        close();
+      }
+    };
+
+    let t = null;
+    const debouncedQuery = (q) => {
+      if (t) clearTimeout(t);
+      t = setTimeout(() => query(q), 150);
+    };
+
+    const setActive = (next) => {
+      if (!dropdown) return;
+      const opts = Array.from(dropdown.querySelectorAll('.editor-dbcombo-option'));
+      if (!opts.length) return;
+      state.activeIndex = Math.max(0, Math.min(next, opts.length - 1));
+      opts.forEach((btn, idx) => btn.classList.toggle('active', idx === state.activeIndex));
+      if (state.activeIndex >= 0) {
+        const active = opts[state.activeIndex];
+        active.scrollIntoView({ block: 'nearest' });
+      }
+    };
+
+    const onKey = (evt) => {
+      if (!state.open && (evt.key === 'ArrowDown' || evt.key === 'ArrowUp')) {
+        open();
+        query(input.value || '');
+      }
+      if (!state.open) return;
+      if (evt.key === 'ArrowDown') {
+        evt.preventDefault();
+        setActive(state.activeIndex + 1);
+      } else if (evt.key === 'ArrowUp') {
+        evt.preventDefault();
+        setActive(state.activeIndex - 1);
+      } else if (evt.key === 'Enter') {
+        evt.preventDefault();
+        const opt = dropdown.querySelectorAll('.editor-dbcombo-option')[state.activeIndex];
+        if (opt) opt.click();
+      } else if (evt.key === 'Escape') {
+        close();
+      }
+    };
+
+    if (input) {
+      input.addEventListener('focus', () => {
+        open();
+        query(input.value || '');
+      });
+      input.addEventListener('input', (evt) => {
+        if (!state.open) open();
+        debouncedQuery(evt.target.value || '');
+      });
+      input.addEventListener('keydown', onKey);
+    }
+
+    document.addEventListener('click', (evt) => {
+      if (!combo.contains(evt.target) && !(portal && portal.contains(evt.target))) {
+        close();
+      }
+    });
+
+    await ensureCurrentLabel();
+  };
+
   const initBulkSelect = (source, els, root, items) => {
     for (const el of els) {
       const wrapper = el.closest('.editor-dbselect');
@@ -1753,7 +2017,8 @@ const renderCheckbox = () => {
 
     async init(root = document) {
       const selects = Array.from(root.querySelectorAll('select[data-datasource]'));
-      if (!selects.length) return;
+      const combos = Array.from(root.querySelectorAll('.editor-dbcombo[data-datasource]'));
+      if (!selects.length && !combos.length) return;
 
       const bySource = new Map();
       for (const el of selects) {
@@ -1766,10 +2031,13 @@ const renderCheckbox = () => {
       for (const [source, els] of bySource.entries()) {
         // show loading
         for (const el of els) {
-          const current = el.value || '';
+          const current = el.value || el.dataset.currentValue || '';
           if (!el.dataset.dbLoaded) {
-            el.innerHTML = '';
-            el.appendChild(new Option('Загрузка…', current, true, true));
+            const hasMeaningful = !!current && current !== '0';
+            if (!hasMeaningful && (!el.options || el.options.length <= 1)) {
+              el.innerHTML = '';
+              el.appendChild(new Option('Загрузка…', '', true, true));
+            }
           }
           el.disabled = true;
         }
@@ -1832,6 +2100,10 @@ const renderCheckbox = () => {
         }
 
         initBulkSelect(source, els, root, items);
+      }
+
+      for (const combo of combos) {
+        await initDbCombo(this, combo, root);
       }
     }
   };

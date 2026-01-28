@@ -386,8 +386,8 @@
       const availBelow = vh - rect.bottom - margin - 12;
       const availAbove = rect.top - margin - 12;
       const preferAbove = availBelow < 160 && availAbove > availBelow;
+      const maxHeight = Math.max(140, Math.min(320, preferAbove ? availAbove : availBelow));
 
-      // Keep dropdown inside viewport horizontally
       const left = Math.max(8, Math.min(rect.left, Math.max(8, vw - rect.width - 8)));
 
       dropdown.style.position = 'fixed';
@@ -395,14 +395,15 @@
       dropdown.style.right = 'auto';
       dropdown.style.width = `${Math.max(140, rect.width)}px`;
       dropdown.style.zIndex = '10000';
-      dropdown.style.maxHeight = `${Math.max(120, Math.min(280, preferAbove ? availAbove : availBelow))}px`;
+      dropdown.style.maxHeight = `${maxHeight}px`;
 
       if (preferAbove) {
         dropdown.style.top = '';
         dropdown.style.bottom = `${Math.max(8, vh - rect.top + margin)}px`;
       } else {
+        const top = Math.min(Math.max(8, rect.bottom + margin), Math.max(8, vh - maxHeight - 8));
         dropdown.style.bottom = '';
-        dropdown.style.top = `${Math.max(8, rect.bottom + margin)}px`;
+        dropdown.style.top = `${top}px`;
       }
     };
 

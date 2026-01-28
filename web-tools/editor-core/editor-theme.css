@@ -147,42 +147,6 @@
 .editor-toggle[data-checked="1"] .editor-toggle-knob{transform:translateX(20px);} 
 
 
-/* Adaptive DB Select (db_select): search (left) + select (right) in one row.
-   When DB is disconnected we show only manual ID input. */
-.editor-dbselect{display:flex;flex-direction:column;gap:0.5rem;min-width:0;}
-/*
-  Compatibility note:
-  db_select fields are used inside many different editor layouts (grids, narrow sidebars, nested cards).
-  Flex + hard min-widths can overflow those containers and "stick out".
-  Grid with minmax(0, 1fr) keeps everything inside the field and still renders as: [search | select].
-*/
-.editor-dbselect-row{
-  display:grid;
-  grid-template-columns:minmax(0, 1fr) minmax(0, 1fr);
-  gap:0.5rem;
-  align-items:stretch;
-  min-width:0;
-}
-.editor-dbselect-search,
-.editor-dbselect-select{
-  min-width:0;
-  max-width:100%;
-}
-
-/* By default we keep manual input hidden (we render it for stability, but show it only when needed) */
-.editor-dbselect-input{display:none;}
-
-.editor-dbselect[data-db-state="connected"] .editor-dbselect-input{display:none;}
-.editor-dbselect[data-db-state="disconnected"] .editor-dbselect-row{display:none;}
-.editor-dbselect[data-db-state="disconnected"] .editor-dbselect-input{display:block;}
-
-
-/* DB select helpers */
-.editor-dbselect-controls{display:flex;align-items:center;gap:0.75rem;flex-wrap:wrap;min-width:0;}
-.editor-dbselect-meta{font-size:0.85rem;opacity:0.75;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
-.editor-dbselect-more{width:fit-content;}
-
-
 /* Tailwind Forms plugin class mapping to our sizing */
 .editor-theme .form-input,
 .editor-theme .form-select,
@@ -197,10 +161,6 @@
   color:var(--editor-text);
 }
 .editor-theme .form-textarea{min-height:96px;resize:vertical;}
-/* DBSelect layout polish */
-.editor-dbselect-controls{justify-content:space-between;}
-.editor-dbselect-more{padding:.35rem .6rem;border-radius:10px;font-size:.85rem;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.10);}
-.editor-dbselect-more:hover{background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.14);}
 
 /* ------------------------------------------------------------------
    DB Combo (db_select): one input with searchable dropdown
@@ -306,10 +266,7 @@
 .editor-input,
 .editor-theme .form-input,
 .editor-theme .form-select,
-.editor-theme .form-textarea,
-.editor-dbselect-search,
-.editor-dbselect-select,
-.editor-dbselect-input{
+.editor-theme .form-textarea{
   min-height:var(--editor-control-h);
 }
 
@@ -324,10 +281,6 @@
 .editor-theme textarea{
   padding:.65rem .75rem;
 }
-
-/* DBSelect: keep row aligned + prevent overflow in narrow grids */
-.editor-dbselect-row{align-items:stretch;}
-.editor-dbselect-row > *{min-width:0;}
 
 /* Section helper (optional, can be used by editors) */
 .editor-section{
@@ -406,6 +359,5 @@
   .editor-tag-label{max-width:14rem;}
   .editor-tags-options{max-height:180px;}
   .editor-tags-options-inner{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));}
-  .editor-dbselect-row{grid-template-columns:1fr;}
   .editor-toast-container{left:1rem;right:1rem;}
 }

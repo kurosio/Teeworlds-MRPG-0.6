@@ -11,19 +11,9 @@
 
 // One-liner for DB-backed selects.
 // New default UI (db_select): single searchable input with dropdown.
-// Legacy two-field UI (db_select_search): search + select.
 // Usage: createDbSelect('Квест', 0, 'quest')
 const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, ...rest } = {}) =>
   createField('db_select', label, defaultValue, {
-    validate,
-    ui: { dbKey, ...ui },
-    ...rest
-  });
-
-// Legacy variant (kept for cases where you want a separate search input + <select> list).
-// Usage: createDbSelectSearch('Предмет', 0, 'item')
-const createDbSelectSearch = (label, defaultValue, dbKey, { ui = {}, validate = null, ...rest } = {}) =>
-  createField('db_select_search', label, defaultValue, {
     validate,
     ui: { dbKey, ...ui },
     ...rest
