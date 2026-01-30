@@ -150,7 +150,7 @@
       renderNav(sidebarNav, e.key, term);
       renderNav(mobileNav, e.key, term);
       frame.src = e.src;
-      localStorage.setItem('studio.activeEditor', e.key);
+      storageSet('studio.activeEditor', e.key);
       if (location.hash !== '#' + e.key) location.hash = e.key;
 
       if (mobileTitle) mobileTitle.textContent = e.title || 'Editor Studio';
@@ -182,6 +182,20 @@
       }
     };
 
+    const safeStorage = (() => {
+      try {
+        const key = '__studio_test__';
+        localStorage.setItem(key, '1');
+        localStorage.removeItem(key);
+        return localStorage;
+      } catch (err) {
+        return null;
+      }
+    })();
+
+    const storageGet = (key) => safeStorage?.getItem(key) || '';
+    const storageSet = (key, value) => safeStorage?.setItem(key, value);
+
     document.addEventListener('keydown', (event) => {
       const tag = event.target?.tagName;
       const isTyping = tag === 'INPUT' || tag === 'TEXTAREA' || event.target?.isContentEditable;
@@ -196,7 +210,7 @@
     });
 
     openNewTab.addEventListener('click', () => {
-      const key = (location.hash || '').replace('#', '') || localStorage.getItem('studio.activeEditor') || EDITORS[0].key;
+      const key = (location.hash || '').replace('#', '') || storageGet('studio.activeEditor') || EDITORS[0].key;
       const e = byKey(key);
       window.open(e.src, '_blank', 'noopener');
     });
@@ -211,7 +225,7 @@
     });
 
     // Initial editor selection: hash > localStorage > default
-    const initial = (location.hash || '').replace('#', '') || localStorage.getItem('studio.activeEditor') || EDITORS[0].key;
+    const initial = (location.hash || '').replace('#', '') || storageGet('studio.activeEditor') || EDITORS[0].key;
     openEditor(initial);
   </script>
 </body>

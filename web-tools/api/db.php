@@ -5,6 +5,7 @@
 //  - get_config (GET)
 //  - save_config (POST)
 //  - test (POST)
+//  - test_skins (POST)
 //  - list (GET) : source, search, limit, offset, with_total
 //  - get_one (GET) : source, id
 
@@ -45,6 +46,36 @@ function save_cfg(array $cfg): bool {
   return file_put_contents($path, $json) !== false;
 }
 
+function test_http_endpoint(string $url): array {
+  if (!filter_var($url, FILTER_VALIDATE_URL)) {
+    return ['ok' => false, 'error' => 'Invalid URL'];
+  }
+  if (!function_exists('curl_init')) {
+    return ['ok' => false, 'error' => 'cURL extension is not available'];
+  }
+  $ch = curl_init($url);
+  curl_setopt_array($ch, [
+    CURLOPT_RETURNTRANSFER => true,
+    CURLOPT_FOLLOWLOCATION => true,
+    CURLOPT_MAXREDIRS => 3,
+    CURLOPT_TIMEOUT => 8,
+    CURLOPT_CONNECTTIMEOUT => 3,
+    CURLOPT_USERAGENT => 'EditorStudio/1.0',
+  ]);
+  curl_exec($ch);
+  $err = curl_error($ch);
+  $code = (int)curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+  curl_close($ch);
+
+  if ($err) {
+    return ['ok' => false, 'error' => $err];
+  }
+  if ($code < 200 || $code >= 400) {
+    return ['ok' => false, 'error' => 'HTTP status ' . $code, 'status' => $code];
+  }
+  return ['ok' => true, 'status' => $code];
+}
+
 function db_connect(): mysqli {
   $cfg = load_cfg();
   $host = (string)($cfg['host'] ?? '127.0.0.1');
@@ -83,6 +114,7 @@ try {
       'port' => (int)($c['port'] ?? 3306),
       'database' => (string)($c['database'] ?? ''),
       'user' => (string)($c['user'] ?? ''),
+      'skins_api' => (string)($c['skins_api'] ?? ''),
     ];
     respond(['ok' => true, 'config' => $safe]);
   }
@@ -97,6 +129,7 @@ try {
       'user' => (string)($body['user'] ?? ($prev['user'] ?? 'root')),
       // if password empty, keep existing
       'password' => (string)($body['password'] ?? ''),
+      'skins_api' => trim((string)($body['skins_api'] ?? ($prev['skins_api'] ?? ''))),
     ];
     if ($cfg['password'] === '' && isset($prev['password'])) {
       $cfg['password'] = (string)$prev['password'];
@@ -112,6 +145,20 @@ try {
     $server = $mysqli->server_info;
     $mysqli->close();
     respond(['ok' => true, 'server' => $server]);
+  }
+
+  if ($action === 'test_skins') {
+    $body = read_json_body();
+    $cfg = load_cfg();
+    $url = trim((string)($body['url'] ?? ($cfg['skins_api'] ?? '')));
+    if ($url === '') {
+      respond(['ok' => false, 'error' => 'Skins API URL is empty'], 400);
+    }
+    $res = test_http_endpoint($url);
+    if (!$res['ok']) {
+      respond(['ok' => false, 'error' => $res['error'] ?? 'Skins API error', 'status' => $res['status'] ?? null], 502);
+    }
+    respond(['ok' => true, 'status' => $res['status'] ?? 200]);
   }
 
   if ($action === 'list') {

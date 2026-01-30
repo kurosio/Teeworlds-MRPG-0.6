@@ -717,6 +717,10 @@
       return fetchJson(`${this.endpoint}?action=test`, { method: 'POST', body: {} });
     },
 
+    async testSkins({ url = '' } = {}) {
+      return fetchJson(`${this.endpoint}?action=test_skins`, { method: 'POST', body: { url } });
+    },
+
     async getOne(source, id) {
       const key = `one:${source}:${id}`;
       const cached = cacheGet(key);

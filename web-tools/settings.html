@@ -60,6 +60,18 @@
             <input id="db-pass" type="password" class="w-full editor-input form-input" placeholder="(не показывается после сохранения)" />
             <div class="editor-muted-text text-xs mt-1">Пароль хранится на сервере в <code>data/db-config.json</code>. Не используйте боевую БД в публичном окружении.</div>
           </div>
+          <div class="md:col-span-2">
+            <div class="text-sm font-medium text-slate-200 mb-1">Skins API</div>
+            <input id="skins-api" type="url" class="w-full editor-input form-input" placeholder="https://skins.example.com/api" />
+            <div class="editor-muted-text text-xs mt-1">URL до сервиса, который отдаёт скины. Сохраните перед использованием в редакторах.</div>
+            <div class="flex flex-wrap gap-2 mt-3">
+              <button id="btn-test-skins" class="editor-btn editor-btn-secondary">
+                <i class="fa-solid fa-plug-circle-check"></i>
+                <span>Проверить Skins API</span>
+              </button>
+            </div>
+            <div id="skins-status" class="mt-3 text-xs"></div>
+          </div>
         </div>
 
         <div class="flex flex-wrap gap-2 mt-5">
@@ -124,6 +136,9 @@
       save: document.getElementById('btn-save'),
       reload: document.getElementById('btn-reload'),
       test: document.getElementById('btn-test'),
+      skinsApi: document.getElementById('skins-api'),
+      skinsTest: document.getElementById('btn-test-skins'),
+      skinsStatus: document.getElementById('skins-status'),
       list: document.getElementById('list'),
       search: document.getElementById('search')
     };
@@ -141,6 +156,12 @@
       els.status.innerHTML = html;
     };
 
+    const setSkinsStatus = (html, tone = 'muted') => {
+      const color = tone === 'ok' ? 'text-emerald-300' : tone === 'err' ? 'text-red-300' : 'editor-muted-text';
+      els.skinsStatus.className = `mt-3 text-xs ${color}`;
+      els.skinsStatus.innerHTML = html;
+    };
+
     const loadConfig = async () => {
       const res = await EditorCore.DB.getConfig();
       if (!res.ok) {
@@ -153,7 +174,9 @@
       els.name.value = c.database || '';
       els.user.value = c.user || '';
       els.pass.value = '';
+      els.skinsApi.value = c.skins_api || '';
       setStatus('Конфигурация загружена.', 'ok');
+      setSkinsStatus('Используйте кнопку ниже, чтобы проверить соединение.', 'muted');
     };
 
     const saveConfig = async () => {
@@ -162,7 +185,8 @@
         port: Number(els.port.value || 3306),
         database: els.name.value.trim(),
         user: els.user.value.trim(),
-        password: els.pass.value
+        password: els.pass.value,
+        skins_api: els.skinsApi.value.trim()
       };
       const res = await EditorCore.DB.saveConfig(payload);
       if (!res.ok) {
@@ -184,6 +208,18 @@
       }
       EditorCore.UI.toast('Соединение OK', 'success');
       setStatus(`Соединение OK. Server: <b>${res.server || 'unknown'}</b>`, 'ok');
+    };
+
+    const testSkinsConnection = async () => {
+      const url = els.skinsApi.value.trim();
+      const res = await EditorCore.DB.testSkins({ url });
+      if (!res.ok) {
+        EditorCore.UI.toast(res.error || 'Ошибка подключения к Skins API', 'error');
+        setSkinsStatus(res.error || 'Ошибка подключения к Skins API', 'err');
+        return;
+      }
+      EditorCore.UI.toast('Skins API отвечает', 'success');
+      setSkinsStatus(`Skins API доступен. Статус: <b>${res.status || 'OK'}</b>`, 'ok');
     };
 
     
@@ -259,6 +295,7 @@ const loadSource = async ({ reset = true } = {}) => {
     els.save.addEventListener('click', saveConfig);
     els.reload.addEventListener('click', loadConfig);
     els.test.addEventListener('click', testConnection);
+    els.skinsTest.addEventListener('click', testSkinsConnection);
     els.search.addEventListener('input', () => {
       clearTimeout(window.__dbSearchT);
       window.__dbSearchT = setTimeout(loadSource, 250);
