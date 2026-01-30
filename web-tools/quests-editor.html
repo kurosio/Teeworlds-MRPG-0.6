@@ -394,6 +394,16 @@
               <i class="fa-solid fa-magnifying-glass"></i>
               <input id="searchInput" class="w-full editor-input form-input" placeholder="Поиск по квесту / шагу / мобу" />
             </div>
+            <div class="mt-2">
+              <select id="typeFilter" class="w-full editor-input form-input">
+                <option value="all">Все типы квестов</option>
+                <option value="Type main">Основные</option>
+                <option value="Type side">Побочные</option>
+                <option value="Type daily">Ежедневные</option>
+                <option value="Type weekly">Еженедельные</option>
+                <option value="Type repeatable">Повторяемые</option>
+              </select>
+            </div>
           </div>
 
           <div id="tree" class="mt-4 quest-tree editor-scroll" style="max-height: 620px"></div>
@@ -512,6 +522,7 @@
       stepTasksEditor: document.getElementById('stepTasksEditor'),
       dialogForm: document.getElementById('dialogForm'),
       dirtyPill: document.getElementById('dirty-pill'),
+      typeFilter: document.getElementById('typeFilter'),
     };
 
     const STATE = {
@@ -1344,6 +1355,8 @@
 
     const buildTreeHtml = () => {
       const search = String(DOM.search.value || '').toLowerCase();
+      const questTypeFilter = DOM.typeFilter?.value || 'all';
+      const activeTypeFilter = questTypeFilter !== 'all' ? questTypeFilter : null;
       const hasSearch = search.length > 0;
       const questMap = new Map(STATE.quests.map((q) => [q.ID, q]));
       const stepsByQuest = new Map();
@@ -1355,6 +1368,7 @@
 
       const questItems = STATE.quests
         .filter((quest) => {
+          if (activeTypeFilter && parseFlags(quest.Flags).type !== activeTypeFilter) return false;
           if (!search) return true;
           return String(quest.Name || '').toLowerCase().includes(search) || String(quest.ID).includes(search);
         })
@@ -1769,6 +1783,7 @@
     DOM.newQuest.addEventListener('click', createQuest);
     DOM.newStep.addEventListener('click', createStep);
     DOM.search.addEventListener('input', renderTree);
+    DOM.typeFilter.addEventListener('change', renderTree);
 
     loadData();
   </script>
