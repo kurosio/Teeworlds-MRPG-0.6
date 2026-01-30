@@ -1291,11 +1291,16 @@
 
       renderTasksEditor(step);
 
+      const speakerOptions = EditorCore.DialogEditor.buildSpeakerOptions(
+        STATE.lookups?.bots,
+        dialogExtraSpeakers,
+      );
       dialogFormRuntime = EditorCore.DialogEditor.mount(DOM.dialogForm, {
         data: { DialogData: step.DialogData || [] },
         fieldOptions: fieldRenderOptions,
         sideOptions: dialogSideOptions,
         extraSpeakers: dialogExtraSpeakers,
+        speakerOptions,
         onChange: syncDialogModel,
       });
       applyDialogConstraints(dialogFormRuntime.getData());

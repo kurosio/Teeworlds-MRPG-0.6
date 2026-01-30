@@ -13,6 +13,27 @@
       return [...base, ...entries];
     },
 
+    buildSpeakerOptions(map, extraSpeakers = []) {
+      const options = [];
+      const seen = new Set();
+      if (Array.isArray(extraSpeakers)) {
+        extraSpeakers.forEach((opt) => {
+          const value = Number(opt?.value);
+          if (!Number.isFinite(value) || seen.has(value)) return;
+          seen.add(value);
+          options.push({ value, label: String(opt?.label ?? value) });
+        });
+      }
+      const candidates = DialogEditor.buildSpeakerCandidates(map);
+      candidates.forEach((value) => {
+        if (value <= 0 || seen.has(value)) return;
+        seen.add(value);
+        const label = map?.get(String(value)) || '';
+        options.push({ value, label: label ? label : `#${value}` });
+      });
+      return options;
+    },
+
     getSideConfig(side) {
       if (side === 'author') return { left: false, right: false };
       if (side === 'thoughts') return { left: true, right: false };
@@ -122,8 +143,12 @@
     buildFields({
       sideOptions = [],
       extraSpeakers = [],
+      speakerOptions = [],
       textPlaceholder = 'Диалог...',
     } = {}) {
+      const speakerList = Array.isArray(speakerOptions) && speakerOptions.length
+        ? speakerOptions
+        : extraSpeakers;
       return {
         DialogData: {
           type: 'list',
@@ -142,12 +167,11 @@
               ui: { rows: 2, placeholder: textPlaceholder, hideLabel: true, colSpan: 4 }
             },
             left_speaker_id: {
-              type: 'db_select',
+              type: 'select',
               label: 'Left',
               ui: {
-                dbKey: 'mob',
-                extraOptions: extraSpeakers,
-                placeholder: '— левый —',
+                type: 'select',
+                options: speakerList,
                 hideLabel: true,
                 controlMinWidth: 140,
               }
@@ -158,12 +182,11 @@
               ui: { type: 'select', options: sideOptions, hideLabel: true, controlMinWidth: 120 }
             },
             right_speaker_id: {
-              type: 'db_select',
+              type: 'select',
               label: 'Right',
               ui: {
-                dbKey: 'mob',
-                extraOptions: extraSpeakers,
-                placeholder: '— правый —',
+                type: 'select',
+                options: speakerList,
                 hideLabel: true,
                 controlMinWidth: 140,
               }
@@ -186,11 +209,17 @@
       fieldOptions,
       sideOptions = [],
       extraSpeakers = [],
+      speakerOptions = [],
       textPlaceholder = 'Диалог...',
       onChange,
     } = {}) {
       const state = { data: data || { DialogData: [] } };
-      const fields = DialogEditor.buildFields({ sideOptions, extraSpeakers, textPlaceholder });
+      const fields = DialogEditor.buildFields({
+        sideOptions,
+        extraSpeakers,
+        speakerOptions,
+        textPlaceholder,
+      });
       const itemFields = fields?.DialogData?.itemFields || {};
       const defaults = fields?.DialogData?.itemDefault || {};
 
