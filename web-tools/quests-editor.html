@@ -112,14 +112,14 @@
       color:var(--editor-text-muted);
     }
 
-    .task-list{
-      display:flex;
-      flex-direction:column;
-      gap:4px;
+    .step-node-tabs{
+      display:grid;
+      grid-template-columns:repeat(3, minmax(0,1fr));
+      gap:6px;
       margin-left:12px;
     }
 
-    .task-node{
+    .step-node-tab{
       display:flex;
       align-items:center;
       justify-content:space-between;
@@ -129,9 +129,17 @@
       border:1px solid rgba(255,255,255,.06);
       background: rgba(255,255,255,.02);
       cursor:pointer;
+      font-size:11px;
+      color:var(--editor-text);
     }
 
-    .task-node small{
+    .step-node-tab.is-active{
+      border-color: rgba(139,92,246,.7);
+      background: rgba(139,92,246,.18);
+      color:#ddd6fe;
+    }
+
+    .step-node-tab small{
       color:var(--editor-text-muted);
     }
 
@@ -181,6 +189,16 @@
       font-size:12px;
       color:var(--editor-text-muted);
       margin-bottom:8px;
+    }
+
+    .step-tabs{
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+    }
+
+    .step-tab-panel.is-hidden{
+      display:none;
     }
 
     .task-editor-section{
@@ -355,7 +373,7 @@
           <div class="editor-sticky-toolbar flex items-start justify-between gap-4">
             <div class="min-w-0">
               <div class="text-2xl font-bold" id="editorTitle">Выберите элемент дерева</div>
-              <div class="editor-muted-text" id="editorSubtitle">квест, шаг или задачу</div>
+              <div class="editor-muted-text" id="editorSubtitle">квест или шаг моба</div>
             </div>
             <div class="flex flex-wrap gap-2">
               <span id="dirty-pill" class="editor-dirty-pill hidden">Данные не сохранены</span>
@@ -369,8 +387,7 @@
             <div id="editorEmpty" class="editor-card p-6">
               <div class="font-semibold">Редактор квестов</div>
               <div class="editor-muted-text text-sm mt-2">
-                Выберите элемент слева, чтобы увидеть его настройки. Шаги можно перетаскивать между квестами,
-                а задачи — между шагами мобов.
+                Выберите элемент слева, чтобы увидеть его настройки. Шаги можно перетаскивать между квестами.
               </div>
             </div>
 
@@ -390,24 +407,33 @@
                   <div class="font-semibold">Шаг моба</div>
                   <div class="editor-muted-text text-sm">Настройки tw_bots_quest + задачи и диалоги.</div>
                 </div>
-              <div class="editor-muted-text text-xs">AutoFinish: авто-завершение шага при выполнении условий.</div>
               </div>
               <div class="mt-4">
-                <div class="step-section">
-                  <div class="step-section-title">
-                    <span>Диалоги</span>
-                    <span class="editor-muted-text text-xs">Side/Left/Right/Action</span>
+                <div class="step-tabs">
+                  <div id="stepTabs"></div>
+                  <div class="step-tab-panel" data-step-tab-panel="mob">
+                    <div class="step-section">
+                      <div class="step-section-title">Редактор моба</div>
+                      <div class="step-section-sub">AutoFinish: авто-завершение шага при выполнении условий.</div>
+                      <div id="stepBaseForm" class="step-base-grid"></div>
+                    </div>
                   </div>
-                  <div class="step-section-sub">Реплики отображаются в порядке списка. Для автора используйте side = author.</div>
-                  <div id="dialogForm"></div>
-                </div>
-                <div class="step-section">
-                  <div class="step-section-title">Остальная часть редактирования моба</div>
-                  <div id="stepBaseForm" class="step-base-grid"></div>
-                </div>
-                <div class="step-section">
-                  <div class="step-section-title">Задачи</div>
-                  <div id="stepTasksEditor"></div>
+                  <div class="step-tab-panel is-hidden" data-step-tab-panel="dialog">
+                    <div class="step-section">
+                      <div class="step-section-title">
+                        <span>Редактор диалога</span>
+                        <span class="editor-muted-text text-xs">Side/Left/Right/Action</span>
+                      </div>
+                      <div class="step-section-sub">Реплики отображаются в порядке списка. Для автора используйте side = author.</div>
+                      <div id="dialogForm"></div>
+                    </div>
+                  </div>
+                  <div class="step-tab-panel is-hidden" data-step-tab-panel="tasks">
+                    <div class="step-section">
+                      <div class="step-section-title">Редактор задач</div>
+                      <div id="stepTasksEditor"></div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
@@ -448,6 +474,7 @@
       questEditor: document.getElementById('questEditor'),
       stepEditor: document.getElementById('stepEditor'),
       questForm: document.getElementById('questForm'),
+      stepTabs: document.getElementById('stepTabs'),
       stepBaseForm: document.getElementById('stepBaseForm'),
       stepTasksEditor: document.getElementById('stepTasksEditor'),
       dialogForm: document.getElementById('dialogForm'),
@@ -460,6 +487,7 @@
       selected: null,
       dirtyQuests: new Set(),
       dirtySteps: new Set(),
+      stepTab: 'mob',
     };
 
     const QuestFlags = {
@@ -582,47 +610,6 @@
       return list.join(',');
     };
 
-    const formatTaskLabel = (entry) => {
-      if (!entry) return '—';
-      if (entry.kind === 'required_items') {
-        return `Предмет #${entry.id || 0} ×${entry.value || 0}`;
-      }
-      if (entry.kind === 'reward_items') {
-        return `Награда #${entry.id || 0} ×${entry.value || 0}`;
-      }
-      if (entry.kind === 'defeat_bots') {
-        return `Убить моба #${entry.id || 0} ×${entry.value || 0}`;
-      }
-      if (entry.kind === 'move_to') {
-        return entry.name || 'Перемещение';
-      }
-      return 'Задача';
-    };
-
-    const buildTaskEntries = (step) => {
-      const tasks = step?.TasksData || taskDefault();
-      const entries = [];
-      tasks.required_items.forEach((item, index) => {
-        entries.push({ kind: 'required_items', index, id: item?.id, value: item?.value, type: item?.type || 'default' });
-      });
-      tasks.reward_items.forEach((item, index) => {
-        entries.push({ kind: 'reward_items', index, id: item?.id, value: item?.value });
-      });
-      tasks.defeat_bots.forEach((item, index) => {
-        entries.push({ kind: 'defeat_bots', index, id: item?.id, value: item?.value });
-      });
-      tasks.move_to.forEach((item, index) => {
-        entries.push({
-          kind: 'move_to',
-          index,
-          name: item?.name,
-          world_id: item?.world_id,
-          mode: item?.mode,
-        });
-      });
-      return entries;
-    };
-
     const questFields = {
       Name: { type: 'text', label: 'Имя квеста', validate: { required: true }, ui: { placeholder: 'Название квеста' } },
       NextQuestID: { type: 'db_select', label: 'Следующий квест', ui: { dbKey: 'quest', placeholder: '— не задано —' } },
@@ -673,6 +660,34 @@
     let stepBaseFormRuntime = null;
     let stepTasksSortable = {};
     let dialogFormRuntime = null;
+    let stepTabsUi = null;
+
+    const setActiveStepTab = (tabId) => {
+      const next = STEP_TABS.some((tab) => tab.id === tabId) ? tabId : STEP_TABS[0]?.id;
+      if (!next) return;
+      STATE.stepTab = next;
+      DOM.stepEditor?.querySelectorAll('[data-step-tab-panel]').forEach((panel) => {
+        panel.classList.toggle('is-hidden', panel.getAttribute('data-step-tab-panel') !== next);
+      });
+      if (stepTabsUi) stepTabsUi.setActive(next);
+    };
+
+    const ensureStepTabs = () => {
+      if (!DOM.stepTabs) return;
+      if (!stepTabsUi) {
+        stepTabsUi = EditorCore.UI.mountTabs(DOM.stepTabs, {
+          tabs: STEP_TABS.map((tab) => ({ id: tab.id, title: tab.title, icon: tab.icon })),
+          active: STATE.stepTab,
+          onChange: (id) => {
+            setActiveStepTab(id);
+            renderTree();
+          },
+        });
+      } else {
+        stepTabsUi.setActive(STATE.stepTab);
+      }
+      setActiveStepTab(STATE.stepTab);
+    };
 
     const setDirty = () => {
       const dirty = STATE.dirtyQuests.size > 0 || STATE.dirtySteps.size > 0;
@@ -740,6 +755,12 @@
       { id: 'required_items', title: 'Предметы необходимые для завершения' },
       { id: 'defeat_bots', title: 'Боты которых необходимо победить для завершения' },
       { id: 'move_to', title: 'Цели которые необходимо выполнить для завершения' },
+    ];
+
+    const STEP_TABS = [
+      { id: 'mob', title: 'Редактор моба', short: 'Моб', hint: 'параметры', icon: 'fa-person-walking' },
+      { id: 'dialog', title: 'Редактор диалога', short: 'Диалог', hint: 'реплики', icon: 'fa-comments' },
+      { id: 'tasks', title: 'Редактор задач', short: 'Задачи', hint: 'условия', icon: 'fa-list-check' },
     ];
 
     const buildTaskSummary = (sectionId, item) => {
@@ -1242,6 +1263,7 @@
         onChange: syncDialogModel,
       });
 
+      ensureStepTabs();
       showEditor('step');
       renderTree();
     };
@@ -1270,17 +1292,19 @@
               return String(step.BotID).includes(search) || String(step.ID).includes(search) || String(step.Step).includes(search);
             })
             .map((step) => {
-              const tasks = buildTaskEntries(step);
-              const tasksHtml = tasks.map((task) => {
-                const taskSelected = STATE.selected?.type === 'task' && STATE.selected?.task?.kind === task.kind && STATE.selected?.task?.index === task.index && STATE.selected?.id === step.ID;
-                return `
-                  <div class="task-node ${taskSelected ? 'tree-selected' : ''}" draggable="true" data-node-type="task" data-step-id="${step.ID}" data-task-kind="${task.kind}" data-task-index="${task.index}">
-                    <div>${formatTaskLabel(task)}</div>
-                    <small>${task.kind}</small>
-                  </div>`;
-              }).join('');
-
               const stepSelected = STATE.selected?.type === 'step' && STATE.selected?.id === step.ID;
+              const activeTab = stepSelected ? STATE.stepTab : null;
+              const stepTabs = STEP_TABS.map((tab) => `
+                <button
+                  type="button"
+                  class="step-node-tab ${activeTab === tab.id ? 'is-active' : ''}"
+                  data-step-id="${step.ID}"
+                  data-step-tab="${tab.id}"
+                  title="${tab.title}">
+                  <span>${tab.short}</span>
+                  <small>${tab.hint}</small>
+                </button>
+              `).join('');
               return `
                 <div class="step-node ${stepSelected ? 'tree-selected' : ''}" draggable="true" data-node-type="step" data-id="${step.ID}">
                   <div class="step-node-header">
@@ -1302,7 +1326,7 @@
                       <div class="step-node-sub">Mob ${step.BotID || '—'} · World ${step.WorldID ?? '—'}</div>
                     </div>
                   </div>
-                  <div class="task-list">${tasksHtml || '<div class="editor-muted-text text-xs">Нет задач</div>'}</div>
+                  <div class="step-node-tabs">${stepTabs}</div>
                 </div>`;
             }).join('');
 
@@ -1371,14 +1395,6 @@
       mountStepEditor(step);
     };
 
-    const selectTask = (step, task) => {
-      STATE.selected = { type: 'task', id: step.ID, task: { ...task } };
-      mountStepEditor(step, {
-        title: `Задача в шаге #${step.ID}`,
-        subtitle: `${task.kind} · индекс ${task.index + 1}`,
-      });
-    };
-
     const bindTreeEvents = () => {
       DOM.tree.querySelectorAll('[data-node-type="quest"]').forEach((el) => {
         el.addEventListener('click', (event) => {
@@ -1424,47 +1440,17 @@
           event.dataTransfer.setData('text/plain', JSON.stringify({ type: 'step', id }));
           event.dataTransfer.effectAllowed = 'move';
         });
-
-        el.addEventListener('dragover', (event) => {
-          const payload = event.dataTransfer?.getData('text/plain') || '';
-          const data = safeParse(payload);
-          if (!data || data.type !== 'task') return;
-          event.preventDefault();
-          el.classList.add('tree-drag-over');
-        });
-
-        el.addEventListener('dragleave', () => {
-          el.classList.remove('tree-drag-over');
-        });
-
-        el.addEventListener('drop', (event) => {
-          el.classList.remove('tree-drag-over');
-          const payload = event.dataTransfer?.getData('text/plain') || '';
-          const data = safeParse(payload);
-          if (!data || data.type !== 'task') return;
-          event.preventDefault();
-          const targetStepId = Number(el.getAttribute('data-id'));
-          moveTaskToStep(data, targetStepId);
-        });
       });
 
-      DOM.tree.querySelectorAll('[data-node-type="task"]').forEach((el) => {
-        el.addEventListener('click', (event) => {
+      DOM.tree.querySelectorAll('[data-step-tab]').forEach((btn) => {
+        btn.addEventListener('click', (event) => {
           event.stopPropagation();
-          const stepId = Number(event.currentTarget.getAttribute('data-step-id'));
-          const kind = event.currentTarget.getAttribute('data-task-kind');
-          const index = Number(event.currentTarget.getAttribute('data-task-index'));
+          const stepId = Number(btn.getAttribute('data-step-id'));
+          const tabId = btn.getAttribute('data-step-tab');
           const step = STATE.steps.find((s) => s.ID === stepId);
           if (!step) return;
-          selectTask(step, { kind, index });
-        });
-
-        el.addEventListener('dragstart', (event) => {
-          const stepId = Number(event.currentTarget.getAttribute('data-step-id'));
-          const kind = event.currentTarget.getAttribute('data-task-kind');
-          const index = Number(event.currentTarget.getAttribute('data-task-index'));
-          event.dataTransfer.setData('text/plain', JSON.stringify({ type: 'task', stepId, kind, index }));
-          event.dataTransfer.effectAllowed = 'move';
+          STATE.stepTab = tabId;
+          selectStep(step);
         });
       });
 
@@ -1507,34 +1493,6 @@
         selectStep(step);
       }
       EditorCore.UI.toast(`Шаг #${stepId} перенесён в квест #${questId}`, 'success');
-    };
-
-    const moveTaskToStep = (payload, targetStepId) => {
-      const sourceStep = STATE.steps.find((s) => s.ID === payload.stepId);
-      const targetStep = STATE.steps.find((s) => s.ID === targetStepId);
-      if (!sourceStep || !targetStep) return;
-      if (payload.stepId === targetStepId) return;
-
-      const sourceTasks = sourceStep.TasksData || taskDefault();
-      const targetTasks = targetStep.TasksData || taskDefault();
-      const list = sourceTasks[payload.kind];
-      if (!Array.isArray(list)) return;
-      const [item] = list.splice(payload.index, 1);
-      if (!item) return;
-      if (!Array.isArray(targetTasks[payload.kind])) targetTasks[payload.kind] = [];
-      targetTasks[payload.kind].push(item);
-
-      sourceStep.TasksData = normalizeTasks(sourceTasks);
-      targetStep.TasksData = normalizeTasks(targetTasks);
-      markStepDirty(sourceStep.ID);
-      markStepDirty(targetStep.ID);
-      renderTree();
-      if (STATE.selected?.type === 'task') {
-        if (STATE.selected.id === payload.stepId) {
-          selectTask(targetStep, { kind: payload.kind, index: targetTasks[payload.kind].length - 1 });
-        }
-      }
-      EditorCore.UI.toast(`Задача перенесена в шаг #${targetStepId}`, 'success');
     };
 
     const loadData = async () => {
