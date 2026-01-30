@@ -53,8 +53,8 @@
         }
         .nav-component-list.empty-drop-zone {
             min-height: 30px;
-            background-color: rgba(255, 255, 255, 0.06);
-            border: 1px dashed rgba(0, 246, 255, 0.4);
+            background-color: var(--editor-soft-bg-strong);
+            border: 1px dashed var(--editor-primary);
             border-radius: 4px;
             margin-top: 4px;
         }
@@ -71,10 +71,10 @@
         }
         /* Arrow-mode switch (no tailwind dependency; prevents "giant" stretched toggle) */
         .scenario-switch-wrap{display:flex;align-items:center;gap:8px;flex:0 0 auto;font-size:14px;}
-        .scenario-switch-label{font-weight:600;color:rgba(226,232,240,.92);white-space:nowrap;}
+        .scenario-switch-label{font-weight:600;color:var(--editor-text-muted);white-space:nowrap;}
         .scenario-switch{position:relative;width:46px;height:24px;display:inline-block;flex:0 0 auto;}
         .scenario-switch input{position:absolute;inset:0;opacity:0;cursor:pointer;}
-        .scenario-switch .track{position:absolute;inset:0;border-radius:999px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.18);transition:background .2s,border-color .2s,box-shadow .2s;}
+        .scenario-switch .track{position:absolute;inset:0;border-radius:999px;background:var(--editor-light-bg);border:1px solid var(--editor-light-border);transition:background .2s,border-color .2s,box-shadow .2s;}
         .scenario-switch .thumb{position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:999px;background:#fff;transition:transform .2s;box-shadow:0 2px 10px rgba(0,0,0,.35);}
         .scenario-switch input:checked ~ .track{background:rgba(99,102,241,.9);border-color:rgba(99,102,241,.9);}
         .scenario-switch input:checked ~ .thumb{transform:translateX(22px);}

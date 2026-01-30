@@ -46,6 +46,10 @@ body[data-editor="scenario"]{ --editor-accent:#a78bfa; }
 body[data-editor="vouchers"]{ --editor-accent:#f59e0b; }
 body[data-editor="worlds"]{ --editor-accent:#38bdf8; }
 body[data-editor="aethers"]{ --editor-accent:#fb923c; }
+body[data-editor="quests"]{ --editor-accent:#8b5cf6; }
+body[data-editor="bots_npc"]{ --editor-accent:#38bdf8; }
+body[data-editor="bots_info"]{ --editor-accent:#f97316; }
+body[data-editor="items"]{ --editor-accent:#22c55e; }
 
 /* -------------------------------------------------------------
    Page shell
@@ -62,7 +66,7 @@ body[data-editor="aethers"]{ --editor-accent:#fb923c; }
   justify-content:space-between;
   gap: 12px;
   padding-bottom: 10px;
-  border-bottom: 1px solid rgba(255,255,255,.06);
+  border-bottom: 1px solid var(--editor-soft-border);
 }
 
 .editor-page-title{
@@ -127,9 +131,9 @@ body[data-editor="aethers"]{ --editor-accent:#fb923c; }
   padding: 6px 10px;
   border-radius: 999px;
   font-size: 12px;
-  border: 1px solid rgba(255,255,255,.10);
-  background: rgba(255,255,255,.04);
-  color: rgba(229,231,235,.92);
+  border: 1px solid var(--editor-badge-border);
+  background: var(--editor-badge-bg);
+  color: var(--editor-text);
 }
 
 /* -------------------------------------------------------------
@@ -157,19 +161,19 @@ body[data-editor="aethers"]{ --editor-accent:#fb923c; }
 */
 .editor-shell--docked{
   gap: 0;
-  border: 1px solid rgba(255,255,255,.08);
+  border: 1px solid var(--editor-soft-border);
   border-radius: calc(var(--editor-card-radius) + 2px);
-  background: rgba(255,255,255,.02);
+  background: var(--editor-shell-bg);
   box-shadow: 0 18px 60px rgba(0,0,0,.35);
 }
 
 .editor-shell--docked > .editor-dock-sidebar{
-  border-right: 1px solid rgba(255,255,255,.08);
-  background: rgba(0,0,0,.08);
+  border-right: 1px solid var(--editor-soft-border);
+  background: var(--editor-shell-sidebar-bg);
 }
 
 .editor-shell--docked > .editor-dock-main{
-  background: rgba(255,255,255,.01);
+  background: var(--editor-shell-main-bg);
 }
 
 .editor-dock-pad{
@@ -179,7 +183,7 @@ body[data-editor="aethers"]{ --editor-accent:#fb923c; }
 @media (max-width: 1100px){
   .editor-shell--docked > .editor-dock-sidebar{
     border-right: none;
-    border-bottom: 1px solid rgba(255,255,255,.08);
+    border-bottom: 1px solid var(--editor-soft-border);
   }
 }
 
@@ -201,8 +205,8 @@ body[data-editor="aethers"]{ --editor-accent:#fb923c; }
 
 /* Standard card wrapper used in template layout */
 .editor-panel-card{
-  background: rgba(255,255,255,.03);
-  border: 1px solid rgba(255,255,255,.08);
+  background: var(--editor-soft-bg);
+  border: 1px solid var(--editor-soft-border);
   border-radius: calc(var(--editor-card-radius) + 2px);
   padding: var(--editor-card-pad);
   box-shadow: 0 12px 30px rgba(0,0,0,.35);
@@ -214,7 +218,7 @@ body[data-editor="aethers"]{ --editor-accent:#fb923c; }
   justify-content:space-between;
   gap: 14px;
   padding-bottom: 14px;
-  border-bottom: 1px solid rgba(255,255,255,.08);
+  border-bottom: 1px solid var(--editor-soft-border);
   margin-bottom: 14px;
 }
 

@@ -109,6 +109,19 @@
 
         <div id="list" class="mt-4 overflow-auto border border-light rounded-xl" style="max-height: 360px"></div>
       </section>
+
+      <section class="editor-card border rounded-2xl p-5">
+        <h2 class="text-lg font-semibold">Внешний вид</h2>
+        <p class="editor-muted-text text-sm mt-1">Выберите тему оформления для всех редакторов.</p>
+
+        <div class="mt-4">
+          <label class="text-sm font-medium editor-muted-text mb-1 block" for="theme-select">Тема</label>
+          <select id="theme-select" class="w-full editor-input form-input">
+            <option value="dark">Тёмная</option>
+            <option value="light">Светлая</option>
+          </select>
+        </div>
+      </section>
     </div>
   </div>
 
@@ -140,7 +153,8 @@
       skinsTest: document.getElementById('btn-test-skins'),
       skinsStatus: document.getElementById('skins-status'),
       list: document.getElementById('list'),
-      search: document.getElementById('search')
+      search: document.getElementById('search'),
+      themeSelect: document.getElementById('theme-select')
     };
 
     let activeSource = 'quests';
@@ -149,6 +163,11 @@
     let loadedTotal = null;
     let loadedHasMore = false;
 
+    const syncThemeSelect = () => {
+      if (window.EditorCore?.theme?.get && els.themeSelect) {
+        els.themeSelect.value = EditorCore.theme.get();
+      }
+    };
 
     const setStatus = (html, tone = 'muted') => {
       const color = tone === 'ok' ? 'text-emerald-300' : tone === 'err' ? 'text-red-300' : 'editor-muted-text';
@@ -177,6 +196,7 @@
       els.skinsApi.value = c.skins_api || '';
       setStatus('Конфигурация загружена.', 'ok');
       setSkinsStatus('Используйте кнопку ниже, чтобы проверить соединение.', 'muted');
+      syncThemeSelect();
     };
 
     const saveConfig = async () => {
@@ -300,6 +320,14 @@ const loadSource = async ({ reset = true } = {}) => {
       clearTimeout(window.__dbSearchT);
       window.__dbSearchT = setTimeout(loadSource, 250);
     });
+    if (els.themeSelect) {
+      els.themeSelect.addEventListener('change', (event) => {
+        const value = event.target.value;
+        if (window.EditorCore?.theme?.set) {
+          EditorCore.theme.set(value);
+        }
+      });
+    }
     document.querySelectorAll('[data-source]').forEach(btn => {
       btn.addEventListener('click', () => {
         activeSource = btn.dataset.source;
@@ -310,6 +338,7 @@ const loadSource = async ({ reset = true } = {}) => {
     });
 
     // Initial
+    syncThemeSelect();
     loadConfig().then(loadSource);
   </script>
 </body>

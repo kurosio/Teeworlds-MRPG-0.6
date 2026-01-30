@@ -18,7 +18,6 @@
   <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
 
   <style>
-    body[data-editor="quests"]{ --editor-accent:#8b5cf6; }
 
     .quest-tree{
       display:flex;
@@ -28,10 +27,10 @@
     }
 
     .quest-node{
-      border:1px solid rgba(255,255,255,.08);
+      border:1px solid var(--editor-soft-border);
       border-radius:12px;
       padding:10px;
-      background: rgba(255,255,255,.03);
+      background: var(--editor-soft-bg);
     }
 
     .quest-node-header{
@@ -40,7 +39,7 @@
       justify-content:space-between;
       gap:8px;
       padding-bottom:8px;
-      border-bottom:1px dashed rgba(255,255,255,.08);
+      border-bottom:1px dashed var(--editor-soft-border);
     }
 
     .quest-node-title{
@@ -58,8 +57,8 @@
       width:28px;
       height:28px;
       border-radius:8px;
-      border:1px solid rgba(255,255,255,.06);
-      background: rgba(255,255,255,.02);
+      border:1px solid var(--editor-soft-border);
+      background: var(--editor-soft-bg);
       color:var(--editor-text-muted);
       cursor:pointer;
       flex-shrink:0;
@@ -71,8 +70,8 @@
     }
 
     .quest-node.is-expanded .quest-node-toggle{
-      border-color: rgba(139,92,246,.5);
-      color:#ddd6fe;
+      border-color: var(--editor-accent);
+      color: var(--editor-accent);
     }
 
     .quest-node.is-expanded .quest-node-toggle i{
@@ -87,8 +86,9 @@
       font-size:11px;
       padding:2px 6px;
       border-radius:999px;
-      background:rgba(139,92,246,.2);
-      color:#c4b5fd;
+      background: var(--editor-light-bg);
+      border:1px solid var(--editor-soft-border);
+      color: var(--editor-accent);
     }
 
     .quest-node-meta{
@@ -109,8 +109,8 @@
       gap:6px;
       padding:8px 10px;
       border-radius:10px;
-      border:1px solid rgba(255,255,255,.08);
-      background: rgba(0,0,0,.18);
+      border:1px solid var(--editor-soft-border);
+      background: var(--editor-field-bg);
     }
 
     .step-node-header{
@@ -143,8 +143,8 @@
       width:32px;
       height:32px;
       border-radius:999px;
-      border:1px solid rgba(255,255,255,.12);
-      background: rgba(255,255,255,.06);
+      border:1px solid var(--editor-soft-border-strong);
+      background: var(--editor-soft-bg-strong);
       display:flex;
       align-items:center;
       justify-content:center;
@@ -178,17 +178,17 @@
       gap:6px;
       padding:6px 8px;
       border-radius:8px;
-      border:1px solid rgba(255,255,255,.06);
-      background: rgba(255,255,255,.02);
+      border:1px solid var(--editor-soft-border);
+      background: var(--editor-soft-bg);
       cursor:pointer;
       font-size:11px;
       color:var(--editor-text);
     }
 
     .step-node-tab.is-active{
-      border-color: rgba(139,92,246,.7);
-      background: rgba(139,92,246,.18);
-      color:#ddd6fe;
+      border-color: var(--editor-accent);
+      background: var(--editor-light-bg);
+      color: var(--editor-accent);
     }
 
     .step-node-tab small{
@@ -196,19 +196,19 @@
     }
 
     .tree-selected{
-      box-shadow: 0 0 0 2px rgba(139,92,246,.4);
+      box-shadow: 0 0 0 2px rgba(99,102,241,.35);
     }
 
     .tree-drag-over{
-      border-color: rgba(59,130,246,.7);
-      background: rgba(59,130,246,.12);
+      border-color: var(--editor-primary);
+      background: var(--editor-light-bg);
     }
 
     .editor-mini-panel{
-      border:1px solid rgba(255,255,255,.08);
+      border:1px solid var(--editor-soft-border);
       border-radius:12px;
       padding:12px;
-      background: rgba(255,255,255,.02);
+      background: var(--editor-soft-bg);
     }
 
     .editor-mini-panel h3{
@@ -219,9 +219,9 @@
 
     .step-section{
       padding:12px;
-      border:1px solid rgba(255,255,255,.08);
+      border:1px solid var(--editor-soft-border);
       border-radius:12px;
-      background: rgba(255,255,255,.02);
+      background: var(--editor-soft-bg);
     }
 
     .step-section + .step-section{
