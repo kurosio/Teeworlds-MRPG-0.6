@@ -1,6 +1,6 @@
 (() => {
   // Lightweight CRUD runtime for DB editors.
-  // Requires: editor-core.bundle.js (DBCrud + FormRuntime + FieldRenderer + UIManager).
+  // Requires: editor-core/*.js (DBCrud + FormRuntime + FieldRenderer + UIManager).
 
   const escapeHtml = (value) => String(value ?? '')
     .replace(/&/g, '&amp;')

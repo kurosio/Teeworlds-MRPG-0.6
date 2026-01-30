@@ -6,18 +6,28 @@
 - Минимум копипасты при создании нового редактора.
 
 ## Что использовать
-### 1) Подключение Core одним скриптом
-Рекомендуемый вариант (вместо множества `<script ...>`):
+### 1) Подключение Core
+Рекомендуемый вариант (стабильный набор модулей в правильном порядке):
 
 ```html
 <link rel="stylesheet" href="editor-core/editor-theme.css" />
 <link rel="stylesheet" href="editor-core/editor-template.css" />
 <script src="editor-core/tailwind-theme.js"></script>
 <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
-<script src="editor-core/editor-core.bundle.js"></script>
+<script src="editor-core/core.js"></script>
+<script src="editor-core/field-renderer.js"></script>
+<script src="editor-core/form-runtime.js"></script>
+<script src="editor-core/db-map.js"></script>
+<script src="editor-core/db.js"></script>
+<script src="editor-core/db-crud.js"></script>
+<script src="editor-core/ui.js"></script>
+<script src="editor-core/ui-manager.js"></script>
+<script src="editor-core/defaults.js"></script>
+<script src="editor-core/utils.js"></script>
+<script src="editor-core/bootstrap.js"></script>
 ```
 
-> Если нужен `registry.js` (только для схем), подключайте его отдельно перед bundle.
+> Если нужен `registry.js` (только для схем), подключайте его отдельно перед `core.js`.
 
 ### 2) Быстрый старт страницы
 
@@ -117,7 +127,7 @@ DropItems: {
 ## Как добавить новый редактор в Studio
 1) Создайте файл `my-editor.html`.
 2) Добавьте его в `studio.manifest.js` в нужную группу.
-3) Используйте `editor-core.editor-core.bundle.js` + `FormRuntime`.
+3) Используйте набор `editor-core/*.js` + `FormRuntime`.
 
 ---
 
