@@ -406,3 +406,105 @@ body[data-editor="aethers"]{ --editor-accent:#fb923c; }
 }
 
 .editor-dirty-pill.hidden{display:none;}
+
+/* -------------------------------------------------------------
+   Task/dialog items (shared dialog/task editors)
+   ------------------------------------------------------------- */
+.editor-item{
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:10px;
+  padding:10px;
+  background: rgba(255,255,255,.02);
+  margin-bottom:8px;
+}
+
+.editor-item.is-selected{
+  border-color: rgba(139,92,246,.65);
+  box-shadow: 0 0 0 1px rgba(139,92,246,.4);
+}
+
+.editor-item-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+}
+
+.editor-item-summary{
+  font-size:12px;
+  color:var(--editor-text-muted);
+}
+
+.editor-item-actions{
+  display:flex;
+  align-items:center;
+  gap:6px;
+}
+
+.editor-item-body{
+  margin-top:8px;
+  display:grid;
+  gap:8px;
+}
+
+.editor-item.is-collapsed .editor-item-body{
+  display:none;
+}
+
+.editor-item-body label{
+  font-size:12px;
+  color:var(--editor-text-muted);
+}
+
+.editor-item-grid{
+  display:grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap:8px;
+}
+
+.editor-item-handle{
+  cursor:grab;
+  color:var(--editor-text-muted);
+}
+
+.editor-item-subgroup{
+  border:1px dashed rgba(255,255,255,.08);
+  border-radius:10px;
+  padding:8px;
+}
+
+/* -------------------------------------------------------------
+   Task editor sections
+   ------------------------------------------------------------- */
+.editor-task-section{
+  border:1px solid rgba(255,255,255,.06);
+  border-radius:12px;
+  background: rgba(0,0,0,.2);
+  margin-bottom:10px;
+  overflow:hidden;
+}
+
+.editor-task-header{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  padding:10px 12px;
+  cursor:pointer;
+  background: rgba(255,255,255,.03);
+}
+
+.editor-task-header h4{
+  margin:0;
+  font-size:13px;
+  font-weight:600;
+}
+
+.editor-task-content{
+  padding:12px;
+  display:none;
+}
+
+.editor-task-content.is-open{
+  display:block;
+}

@@ -244,14 +244,14 @@
           const text = String(item?.text || '').trim();
           const summary = text ? (text.length > 70 ? `${text.slice(0, 70)}…` : text) : '—';
           return `
-            <div class="task-item" data-dialog-item="${index}">
-              <div class="task-item-header">
+            <div class="editor-item" data-dialog-item="${index}">
+              <div class="editor-item-header">
                 <div>
                   <span class="editor-badge">#${index + 1}</span>
-                  <span class="task-item-summary">${summary}</span>
+                  <span class="editor-item-summary">${summary}</span>
                 </div>
-                <div class="task-item-actions">
-                  <span class="task-item-handle"><i class="fa-solid fa-arrows-up-down-left-right"></i></span>
+                <div class="editor-item-actions">
+                  <span class="editor-item-handle"><i class="fa-solid fa-arrows-up-down-left-right"></i></span>
                   <button type="button" class="editor-btn editor-btn-secondary" data-dialog-toggle="${index}">
                     <i class="fa-solid fa-chevron-down"></i>
                   </button>
@@ -260,9 +260,9 @@
                   </button>
                 </div>
               </div>
-              <div class="task-item-body">
+              <div class="editor-item-body">
                 <div>${renderItemField(index, 'text')}</div>
-                <div class="task-item-grid">
+                <div class="editor-item-grid">
                   ${renderItemField(index, 'left_speaker_id')}
                   ${renderItemField(index, 'side')}
                   ${renderItemField(index, 'right_speaker_id')}
@@ -274,7 +274,7 @@
         }).join('') || '<div class="editor-muted-text text-sm">Нет элементов</div>';
 
         root.innerHTML = `
-          <div class="task-items" data-dialog-items="list">${itemsHtml}</div>
+          <div class="editor-items" data-dialog-items="list">${itemsHtml}</div>
           <button type="button" class="editor-btn editor-btn-secondary mt-3" data-dialog-add="1">
             <i class="fa-solid fa-plus"></i><span>Добавить реплику</span>
           </button>
@@ -286,7 +286,7 @@
         if (window.Sortable && listEl) {
           if (state.sortable) state.sortable.destroy();
           state.sortable = new Sortable(listEl, {
-            handle: '.task-item-handle',
+            handle: '.editor-item-handle',
             animation: 150,
             onEnd: (evt) => {
               const items = Array.isArray(state.data.DialogData) ? state.data.DialogData : [];
@@ -342,7 +342,7 @@
               const item = state.data.DialogData?.[index];
               const text = String(item?.text || '').trim();
               const summary = text ? (text.length > 70 ? `${text.slice(0, 70)}…` : text) : '—';
-              const summaryEl = root.querySelector(`[data-dialog-item="${index}"] .task-item-summary`);
+              const summaryEl = root.querySelector(`[data-dialog-item="${index}"] .editor-item-summary`);
               if (summaryEl) summaryEl.textContent = summary;
             }
             if (typeof onChange === 'function') onChange(state.data, { path, value: val });
