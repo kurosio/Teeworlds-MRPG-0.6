@@ -51,6 +51,38 @@
       cursor:pointer;
     }
 
+    .quest-node-toggle{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      width:28px;
+      height:28px;
+      border-radius:8px;
+      border:1px solid rgba(255,255,255,.06);
+      background: rgba(255,255,255,.02);
+      color:var(--editor-text-muted);
+      cursor:pointer;
+      flex-shrink:0;
+      transition: transform .15s ease, color .15s ease, border-color .15s ease;
+    }
+
+    .quest-node-toggle i{
+      transition: transform .15s ease;
+    }
+
+    .quest-node.is-expanded .quest-node-toggle{
+      border-color: rgba(139,92,246,.5);
+      color:#ddd6fe;
+    }
+
+    .quest-node.is-expanded .quest-node-toggle i{
+      transform: rotate(90deg);
+    }
+
+    .quest-node.is-collapsed .step-list{
+      display:none;
+    }
+
     .quest-node-title .badge{
       font-size:11px;
       padding:2px 6px;
@@ -488,6 +520,7 @@
       selected: null,
       dirtyQuests: new Set(),
       dirtySteps: new Set(),
+      expandedQuests: new Set(),
       lookups: {
         bots: new Map(),
         worlds: new Map(),
@@ -621,9 +654,10 @@
       Money: { type: 'number', label: 'Награда (деньги)', ui: { min: 0, step: 1, placeholder: '0' } },
       Exp: { type: 'number', label: 'Награда (опыт)', ui: { min: 0, step: 1, placeholder: '0' } },
       Type: {
-        type: 'select',
+        type: 'text',
         label: 'Тип квеста',
         ui: {
+          type: 'select',
           options: [QuestFlags.typeMain, QuestFlags.typeSide, QuestFlags.typeDaily, QuestFlags.typeWeekly, QuestFlags.typeRepeatable],
         }
       },
@@ -1310,6 +1344,7 @@
 
     const buildTreeHtml = () => {
       const search = String(DOM.search.value || '').toLowerCase();
+      const hasSearch = search.length > 0;
       const questMap = new Map(STATE.quests.map((q) => [q.ID, q]));
       const stepsByQuest = new Map();
 
@@ -1325,6 +1360,11 @@
         })
         .sort((a, b) => a.ID - b.ID)
         .map((quest) => {
+          const isExpanded = hasSearch || STATE.expandedQuests.has(quest.ID);
+          const questClasses = [
+            'quest-node',
+            isExpanded ? 'is-expanded' : 'is-collapsed',
+          ];
           const steps = (stepsByQuest.get(quest.ID) || []).sort((a, b) => (a.Step - b.Step) || (a.ID - b.ID));
           const stepHtml = steps
             .filter((step) => {
@@ -1374,7 +1414,7 @@
 
           const questSelected = STATE.selected?.type === 'quest' && STATE.selected?.id === quest.ID;
           return `
-            <div class="quest-node ${questSelected ? 'tree-selected' : ''}" data-node-type="quest" data-id="${quest.ID}">
+            <div class="${questClasses.join(' ')} ${questSelected ? 'tree-selected' : ''}" data-node-type="quest" data-id="${quest.ID}">
               <div class="quest-node-header">
                 <div class="quest-node-title">
                   <i class="fa-solid fa-flag text-accent"></i>
@@ -1382,6 +1422,14 @@
                   <span class="badge">#${quest.ID}</span>
                 </div>
                 <div class="quest-node-meta">Шагов: ${steps.length}</div>
+                <button
+                  type="button"
+                  class="quest-node-toggle"
+                  data-quest-toggle="${quest.ID}"
+                  title="${isExpanded ? 'Свернуть шаги' : 'Развернуть шаги'}"
+                  aria-expanded="${isExpanded}">
+                  <i class="fa-solid fa-chevron-right"></i>
+                </button>
               </div>
               <div class="step-list">${stepHtml || '<div class="editor-muted-text text-xs mt-2">Нет шагов</div>'}</div>
             </div>`;
@@ -1434,6 +1482,7 @@
 
     const selectStep = (step) => {
       STATE.selected = { type: 'step', id: step.ID };
+      if (step.QuestID) STATE.expandedQuests.add(step.QuestID);
       mountStepEditor(step);
     };
 
@@ -1466,6 +1515,20 @@
           event.preventDefault();
           const questId = Number(el.getAttribute('data-id'));
           moveStepToQuest(data.id, questId);
+        });
+      });
+
+      DOM.tree.querySelectorAll('[data-quest-toggle]').forEach((btn) => {
+        btn.addEventListener('click', (event) => {
+          event.stopPropagation();
+          const questId = Number(btn.getAttribute('data-quest-toggle'));
+          if (!questId) return;
+          if (STATE.expandedQuests.has(questId)) {
+            STATE.expandedQuests.delete(questId);
+          } else {
+            STATE.expandedQuests.add(questId);
+          }
+          renderTree();
         });
       });
 
@@ -1584,6 +1647,7 @@
         }));
         STATE.lookups.bots = botLabels;
         STATE.lookups.worlds = worldLabels;
+        STATE.expandedQuests.clear();
 
         STATE.dirtyQuests.clear();
         STATE.dirtySteps.clear();
