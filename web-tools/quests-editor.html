@@ -487,6 +487,10 @@
       selected: null,
       dirtyQuests: new Set(),
       dirtySteps: new Set(),
+      lookups: {
+        bots: new Map(),
+        worlds: new Map(),
+      },
       stepTab: 'mob',
     };
 
@@ -748,6 +752,26 @@
       step.TasksData = normalizeTasks(nextTasks);
       markStepDirty(step.ID);
       renderTree();
+    };
+
+    const getLabelMap = async (source) => {
+      try {
+        const res = await EditorCore.DB.list(source, { limit: 5000, offset: 0 });
+        const map = new Map();
+        if (res?.ok && Array.isArray(res.items)) {
+          for (const it of res.items) map.set(String(it.value), String(it.label || ''));
+        }
+        return map;
+      } catch {
+        return new Map();
+      }
+    };
+
+    const formatLookupLabel = (map, id) => {
+      const numeric = Number(id || 0);
+      if (!numeric) return '—';
+      const label = map?.get(String(numeric)) || '';
+      return label ? label : `#${numeric}`;
     };
 
     const TASK_SECTIONS = [
@@ -1294,6 +1318,8 @@
             .map((step) => {
               const stepSelected = STATE.selected?.type === 'step' && STATE.selected?.id === step.ID;
               const activeTab = stepSelected ? STATE.stepTab : null;
+              const mobLabel = formatLookupLabel(STATE.lookups?.bots, step.BotID);
+              const worldLabel = formatLookupLabel(STATE.lookups?.worlds, step.WorldID);
               const stepTabs = STEP_TABS.map((tab) => `
                 <button
                   type="button"
@@ -1323,7 +1349,7 @@
                         title="Позиция шага"
                         data-step-level-id="${step.ID}"
                       />
-                      <div class="step-node-sub">Mob ${step.BotID || '—'} · World ${step.WorldID ?? '—'}</div>
+                      <div class="step-node-sub">Mob ${mobLabel} · World ${worldLabel}</div>
                     </div>
                   </div>
                   <div class="step-node-tabs">${stepTabs}</div>
@@ -1498,9 +1524,11 @@
     const loadData = async () => {
       DOM.tree.innerHTML = '<div class="editor-muted-text text-sm">Загрузка...</div>';
       try {
-        const [questsRes, stepsRes] = await Promise.all([
+        const [questsRes, stepsRes, botLabels, worldLabels] = await Promise.all([
           EditorCore.DBCrud.list('quests', { limit: 5000 }),
           EditorCore.DBCrud.list('quest_bots', { limit: 5000 }),
+          getLabelMap('bots'),
+          getLabelMap('worlds'),
         ]);
 
         STATE.quests = (questsRes?.rows || []).map((row) => ({
@@ -1525,6 +1553,8 @@
           ScenarioData: row.ScenarioData || '',
           TasksData: normalizeTasks(row.TasksData),
         }));
+        STATE.lookups.bots = botLabels;
+        STATE.lookups.worlds = worldLabels;
 
         STATE.dirtyQuests.clear();
         STATE.dirtySteps.clear();
