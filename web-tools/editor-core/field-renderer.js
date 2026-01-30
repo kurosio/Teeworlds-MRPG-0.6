@@ -233,6 +233,9 @@
     const hintHtml = field?.validate
       ? `<div class="editor-validation-hint hidden" data-hint-for="${escapeAttr(path)}"></div>`
       : '';
+    const helpText = ui.help || ui.description || field?.help || '';
+    const helpHtml = helpText ? `<div class="editor-help-text">${escapeHtml(helpText)}</div>` : '';
+    const footerHtml = `${helpHtml}${hintHtml}`;
 
     const includeName = options?.includeName !== false;
     const includeDataPath = options?.includeDataPath !== false;
@@ -360,7 +363,7 @@
             </div>
             <div class="editor-tags-options"></div>
           </div>
-          ${hintHtml}
+          ${footerHtml}
         </div>`;
     };
 
@@ -407,6 +410,9 @@
              data-current-value="${escapeAttr(curVal)}">
           <div class="editor-dbcombo-control">
             <input type="search" class="${inputClass} editor-dbcombo-input" placeholder="${escapeAttr(searchPh)}" autocomplete="off" />
+            <button type="button" class="editor-dbcombo-clear" title="Очистить" aria-label="Очистить выбор">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
           </div>
           <div class="editor-dbcombo-dropdown" role="listbox" aria-label="${escapeAttr(label)}"></div>
           <input type="number" ${manualInputAttrs} value="${escapeAttr(String(cur))}" />
@@ -433,11 +439,11 @@
     };
 
     if (field.type === 'boolean') {
-      return `<div class="${fieldWrapperClass}">${renderCheckbox()}${hintHtml}</div>`;
+      return `<div class="${fieldWrapperClass}">${renderCheckbox()}${footerHtml}</div>`;
     }
 
     if (field.type === 'toggle' || ui.type === 'toggle') {
-      return `<div class="${fieldWrapperClass}">${renderToggle()}${hintHtml}</div>`;
+      return `<div class="${fieldWrapperClass}">${renderToggle()}${footerHtml}</div>`;
     }
 
     if (field.type === 'vec2') {
@@ -446,7 +452,7 @@
         y: { type: 'number', label: 'Y', ui: { min: ui.min, max: ui.max, step: ui.step, placeholder: ui.placeholder } }
       };
       // Responsive: stack on narrow screens
-      return `<div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">${labelHtml}<div class="grid grid-cols-1 sm:grid-cols-2 gap-2">${renderComposite(vecFields)}</div>${hintHtml}</div>`;
+      return `<div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">${labelHtml}<div class="grid grid-cols-1 sm:grid-cols-2 gap-2">${renderComposite(vecFields)}</div>${footerHtml}</div>`;
     }
 
     if (field.type === 'item') {
@@ -456,7 +462,7 @@
         value: { type: 'number', label: 'Value', ui: { min: ui.min, max: ui.max, step: ui.step, placeholder: ui.placeholder } }
       };
       // Responsive: stack on narrow screens
-      return `<div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">${labelHtml}<div class="grid grid-cols-1 sm:grid-cols-2 gap-2">${renderComposite(itemFields)}</div>${hintHtml}</div>`;
+      return `<div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">${labelHtml}<div class="grid grid-cols-1 sm:grid-cols-2 gap-2">${renderComposite(itemFields)}</div>${footerHtml}</div>`;
     }
 
     if (field.type === 'list') {
@@ -494,7 +500,8 @@
           ? `<div class="editor-list-table-header"><div>#</div>${headerLabels.map(l => `<div>${escapeHtml(l)}</div>`).join('')}<div></div></div>`
           : '';
 
-        const rowsHtml = items.map((item, index) => {
+        const emptyMessage = field?.ui?.emptyMessage || 'Список пуст';
+        const rowsHtml = items.length ? items.map((item, index) => {
           const itemPath = `${path}.${index}`;
           const cells = Object.keys(itemFields).map((key) => {
             const subField = itemFields[key];
@@ -509,7 +516,8 @@
                 <i class="fa-solid fa-trash"></i>
               </button>
             </div>`;
-        }).join('');
+        }).join('')
+          : `<div class="editor-empty-state">${escapeHtml(emptyMessage)}</div>`;
 
         const defaultItem = buildDefaultItem(field);
         const defaultPayload = encodeURIComponent(JSON.stringify(defaultItem));
@@ -518,7 +526,7 @@
             ${hideLabel ? '' : labelHtml}
             <div class="${listWrapperClass} editor-list-table" data-list-container="${escapeAttr(path)}" style="${escapeAttr(colsStyle)}">${headerHtml}${rowsHtml}</div>
             <button type="button" class="${listAddClass}" data-list-action="add" data-list-path="${escapeAttr(path)}" data-list-default="${defaultPayload}">${field?.ui?.addLabel || options?.listAddLabel || 'Добавить'}</button>
-            ${hintHtml}
+            ${footerHtml}
           </div>`;
       }
 
@@ -554,20 +562,22 @@
             </div>
           </div>`;
       }).join('');
+      const emptyMessage = field?.ui?.emptyMessage || 'Список пуст';
+      const listContent = listItems || `<div class="editor-empty-state">${escapeHtml(emptyMessage)}</div>`;
       const defaultItem = buildDefaultItem(field);
       const defaultPayload = encodeURIComponent(JSON.stringify(defaultItem));
       return `
         <div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">
           ${hideLabel ? '' : labelHtml}
-          <div class="${listWrapperClass}" data-list-container="${escapeAttr(path)}">${listItems}</div>
+          <div class="${listWrapperClass}" data-list-container="${escapeAttr(path)}">${listContent}</div>
           <button type="button" class="${listAddClass}" data-list-action="add" data-list-path="${escapeAttr(path)}" data-list-default="${defaultPayload}">${field?.ui?.addLabel || options?.listAddLabel || 'Добавить'}</button>
-          ${hintHtml}
+          ${footerHtml}
         </div>`;
     }
 
     // New default db_select: single searchable combo input.
     if (field.type === 'db_select' || ui.type === 'db_select' || field.type === 'db_select_search' || ui.type === 'db_select_search') {
-      return `<div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">${labelHtml}${renderDbSelectCombo()}${hintHtml}</div>`;
+      return `<div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">${labelHtml}${renderDbSelectCombo()}${footerHtml}</div>`;
     }
 
     if (field.type === 'db_multiselect' || ui.type === 'db_multiselect') {
@@ -585,11 +595,11 @@
     }
 
     if (ui.type === 'select') {
-      return `<div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">${labelHtml}${renderSelect(false)}${hintHtml}</div>`;
+      return `<div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">${labelHtml}${renderSelect(false)}${footerHtml}</div>`;
     }
 
     if (ui.type === 'multiselect') {
-      return `<div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">${labelHtml}${renderSelect(true)}${hintHtml}</div>`;
+      return `<div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">${labelHtml}${renderSelect(true)}${footerHtml}</div>`;
     }
 
     if (ui.type === 'tags') {
@@ -607,30 +617,30 @@
     }
 
     if (ui.format === 'date' || field.type === 'date') {
-      return `<div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">${labelHtml}${renderInput('date', value)}${hintHtml}</div>`;
+      return `<div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">${labelHtml}${renderInput('date', value)}${footerHtml}</div>`;
     }
 
     if (ui.format === 'time' || field.type === 'time') {
-      return `<div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">${labelHtml}${renderInput('time', value)}${hintHtml}</div>`;
+      return `<div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">${labelHtml}${renderInput('time', value)}${footerHtml}</div>`;
     }
 
     if (ui.format === 'datetime' || ui.format === 'datetime-local' || field.type === 'datetime') {
-      return `<div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">${labelHtml}${renderInput('datetime-local', value)}${hintHtml}</div>`;
+      return `<div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">${labelHtml}${renderInput('datetime-local', value)}${footerHtml}</div>`;
     }
 
     if (ui.format === 'password' || field.type === 'password') {
-      return `<div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">${labelHtml}${renderInput('password', value ?? '')}${hintHtml}</div>`;
+      return `<div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">${labelHtml}${renderInput('password', value ?? '')}${footerHtml}</div>`;
     }
 
     if (ui.format === 'textarea' || ui.type === 'textarea') {
-      return `<div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">${labelHtml}${renderTextarea()}${hintHtml}</div>`;
+      return `<div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">${labelHtml}${renderTextarea()}${footerHtml}</div>`;
     }
 
     if (field.type === 'number') {
-      return `<div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">${labelHtml}${renderInput('number', value ?? 0)}${hintHtml}</div>`;
+      return `<div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">${labelHtml}${renderInput('number', value ?? 0)}${footerHtml}</div>`;
     }
 
-    return `<div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">${labelHtml}${renderInput('text', value ?? '')}${hintHtml}</div>`;
+    return `<div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">${labelHtml}${renderInput('text', value ?? '')}${footerHtml}</div>`;
   };
 
   const renderFields = ({ fields, data, options, sort = false }) => {

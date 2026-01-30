@@ -436,10 +436,16 @@
       bound.dispatchEvent(new Event('change', { bubbles: true }));
     };
 
+    const updateClearState = (val) => {
+      if (!clearBtn) return;
+      clearBtn.disabled = !val;
+    };
+
     const writeBoundValue = (val) => {
       if (!bound) return;
       bound.value = val ? String(val) : '0';
       dispatchBound();
+      updateClearState(val);
     };
 
     const readBoundValue = () => {
@@ -487,6 +493,7 @@
     const ensureDisplay = async () => {
       if (!input) return;
       const cur = readBoundValue();
+      updateClearState(cur);
       if (!cur) {
         input.value = '';
         input.placeholder = placeholder;

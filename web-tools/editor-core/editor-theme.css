@@ -48,6 +48,7 @@
 
 .editor-toast-container{position:fixed;top:1.25rem;right:1.25rem;z-index:9999;display:flex;flex-direction:column;gap:.5rem;} 
 .editor-empty-state{padding:1rem;text-align:center;color:var(--editor-text-muted);opacity:.9;} 
+.editor-help-text{font-size:.8rem;color:var(--editor-text-muted);opacity:.9;} 
 
 .text-accent{color:var(--editor-accent);} 
 .text-secondary{color:var(--editor-secondary);} 

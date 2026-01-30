@@ -43,6 +43,10 @@
         </div>
       </div>
 
+      <div class="p-3 border-b border-light">
+        <input id="studioSearch" type="search" class="w-full form-input" placeholder="Поиск редактора..." />
+      </div>
+
       <div id="studioNav" class="flex-grow overflow-y-auto p-2"></div>
 
       <div class="p-3 border-t border-light flex gap-2">
@@ -78,6 +82,9 @@
           <div class="font-bold">Меню</div>
           <button id="mobileCloseBtn" class="editor-btn editor-btn-secondary"><i class="fa-solid fa-xmark"></i></button>
         </div>
+        <div class="p-3 border-b border-light">
+          <input id="mobileSearch" type="search" class="w-full form-input" placeholder="Поиск редактора..." />
+        </div>
         <div id="mobileNav" class="flex-grow overflow-y-auto p-2"></div>
       </div>
     </div>
@@ -94,34 +101,54 @@
     const mobileMenuBtn = document.getElementById('mobileMenuBtn');
     const mobileCloseBtn = document.getElementById('mobileCloseBtn');
     const mobileNewTabBtn = document.getElementById('mobileNewTabBtn');
+    const studioSearch = document.getElementById('studioSearch');
+    const mobileSearch = document.getElementById('mobileSearch');
 
     const GROUPS = Array.isArray(window.STUDIO_MANIFEST) ? window.STUDIO_MANIFEST : [];
     const EDITORS = GROUPS.flatMap(g => g.items || []);
 
     const byKey = (key) => EDITORS.find(e => e.key === key) || EDITORS[0];
 
-    const renderNav = (root, activeKey) => {
+    let activeKey = '';
+
+    const getSearchTerm = () => String(studioSearch?.value || mobileSearch?.value || '').trim();
+
+    const renderNav = (root, active, term = '') => {
       root.innerHTML = '';
+      const q = term.toLowerCase();
+      let hasItems = false;
       for (const g of GROUPS) {
+        const items = (g.items || []).filter((e) => {
+          if (!q) return true;
+          const hay = `${e.title || ''} ${e.key || ''}`.toLowerCase();
+          return hay.includes(q);
+        });
+        if (!items.length) continue;
+        hasItems = true;
         const header = document.createElement('div');
         header.className = 'px-3 pt-3 pb-2 text-xs tracking-wider uppercase editor-muted-text';
         header.textContent = g.title || 'Группа';
         root.appendChild(header);
 
-        for (const e of (g.items || [])) {
+        for (const e of items) {
           const btn = document.createElement('button');
-          btn.className = `studio-item w-full text-left p-3 rounded-xl border ${e.key === activeKey ? 'active' : 'border-light hover:bg-light'} flex items-center gap-3`;
+          btn.className = `studio-item w-full text-left p-3 rounded-xl border ${e.key === active ? 'active' : 'border-light hover:bg-light'} flex items-center gap-3`;
           btn.innerHTML = `<i class="fa-solid ${e.icon} w-5 text-center"></i><div class="min-w-0"><div class="font-semibold truncate">${e.title}</div><div class="text-xs editor-muted-text truncate">${e.key}</div></div>`;
           btn.addEventListener('click', () => openEditor(e.key, { closeMobile: true }));
           root.appendChild(btn);
         }
       }
+      if (!hasItems) {
+        root.innerHTML = `<div class="editor-empty-state">Ничего не найдено</div>`;
+      }
     };
 
     const openEditor = (key, { closeMobile = false } = {}) => {
       const e = byKey(key);
-      renderNav(sidebarNav, e.key);
-      renderNav(mobileNav, e.key);
+      activeKey = e.key;
+      const term = getSearchTerm();
+      renderNav(sidebarNav, e.key, term);
+      renderNav(mobileNav, e.key, term);
       frame.src = e.src;
       localStorage.setItem('studio.activeEditor', e.key);
       if (location.hash !== '#' + e.key) location.hash = e.key;
@@ -129,6 +156,44 @@
       if (mobileTitle) mobileTitle.textContent = e.title || 'Editor Studio';
       if (closeMobile && mobileOverlay) mobileOverlay.classList.add('hidden');
     };
+
+    const syncSearchValue = (value, source) => {
+      const term = String(value || '').trim();
+      if (studioSearch && source !== studioSearch) studioSearch.value = term;
+      if (mobileSearch && source !== mobileSearch) mobileSearch.value = term;
+      renderNav(sidebarNav, activeKey, term);
+      renderNav(mobileNav, activeKey, term);
+    };
+
+    studioSearch?.addEventListener('input', (event) => {
+      syncSearchValue(event.target.value, event.target);
+    });
+    mobileSearch?.addEventListener('input', (event) => {
+      syncSearchValue(event.target.value, event.target);
+    });
+
+    const focusSearch = () => {
+      const onMobile = window.matchMedia('(max-width: 767px)').matches;
+      if (onMobile) {
+        mobileOverlay?.classList.remove('hidden');
+        mobileSearch?.focus();
+      } else {
+        studioSearch?.focus();
+      }
+    };
+
+    document.addEventListener('keydown', (event) => {
+      const tag = event.target?.tagName;
+      const isTyping = tag === 'INPUT' || tag === 'TEXTAREA' || event.target?.isContentEditable;
+      if (isTyping && event.key === '/') return;
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        focusSearch();
+      } else if (event.key === '/' && !event.ctrlKey && !event.metaKey && !event.altKey) {
+        event.preventDefault();
+        focusSearch();
+      }
+    });
 
     openNewTab.addEventListener('click', () => {
       const key = (location.hash || '').replace('#', '') || localStorage.getItem('studio.activeEditor') || EDITORS[0].key;
