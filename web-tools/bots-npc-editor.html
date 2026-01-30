@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>NPC — tw_bots_npc</title>
+
+  <link rel="stylesheet" href="editor-core/editor-theme.css" />
+  <link rel="stylesheet" href="editor-core/editor-template.css" />
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+
+  <script src="editor-core/tailwind-theme.js"></script>
+  <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
+
+  <style>
+    body[data-editor="bots_npc"]{ --editor-accent:#38bdf8; }
+    .npc-skin-frame{
+      background: var(--editor-surface);
+      border: 1px solid var(--editor-border);
+    }
+    .npc-skin-frame img{
+      image-rendering: pixelated;
+    }
+  </style>
+</head>
+
+<body class="editor-theme" data-editor="bots_npc">
+  <div class="editor-page">
+    <div class="editor-page-header">
+      <div class="editor-page-title">
+        <i class="fa-solid fa-user-ninja text-accent text-xl"></i>
+        <div>
+          <h1>NPC</h1>
+          <div class="editor-page-sub">NPC-боты: позиция, эмоции, связанный диалог.</div>
+        </div>
+      </div>
+      <div class="editor-page-actions">
+        <button class="editor-btn editor-btn-secondary" data-editor-role="refresh">
+          <i class="fa-solid fa-rotate"></i><span>Обновить</span>
+        </button>
+        <button class="editor-btn editor-btn-primary" data-editor-role="new">
+          <i class="fa-solid fa-plus"></i><span>Новый NPC</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="editor-shell editor-shell--docked">
+      <aside class="editor-sidebar editor-dock-sidebar">
+        <div class="editor-dock-pad">
+          <div class="flex items-center justify-between gap-3">
+            <div>
+              <div class="text-sm font-semibold">Список NPC</div>
+              <div class="text-xs editor-muted-text">Всего: <span data-editor-role="count">—</span></div>
+            </div>
+          </div>
+
+          <div class="mt-3">
+            <div class="editor-search">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input data-editor-role="search" type="search" class="w-full editor-input form-input" placeholder="Поиск по ID/боту/миру…" />
+            </div>
+          </div>
+
+          <div class="mt-4 editor-sidebar-list editor-scroll" style="max-height: 590px" data-editor-role="list"></div>
+        </div>
+      </aside>
+
+      <section class="editor-main editor-dock-main">
+        <div class="editor-dock-pad">
+          <div class="editor-sticky-toolbar flex items-start justify-between gap-4">
+            <div>
+              <div class="text-lg font-semibold" data-editor-role="title">Выберите NPC</div>
+              <div class="editor-muted-text text-sm mt-1" data-editor-role="subtitle">или создайте нового</div>
+            </div>
+            <div class="editor-page-actions">
+              <span id="dirty-pill" class="editor-dirty-pill hidden">Данные не сохранены</span>
+              <button class="editor-btn editor-btn-primary" data-editor-role="save" disabled>
+                <i class="fa-solid fa-floppy-disk"></i><span>Сохранить</span>
+              </button>
+              <button class="editor-btn editor-btn-secondary" data-editor-role="delete" disabled>
+                <i class="fa-solid fa-trash"></i><span>Удалить</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="editor-section mt-4">
+            <div class="editor-card p-4">
+              <div class="flex items-center justify-between gap-3">
+                <div>
+                  <div class="font-semibold">Параметры NPC</div>
+                  <div class="editor-muted-text text-sm">Вкладки: основное и диалог.</div>
+                </div>
+                <div id="tabRoot"></div>
+              </div>
+
+              <div class="mt-4">
+                <div id="tab_basic" class="space-y-6">
+                  <div class="grid gap-4 md:grid-cols-[220px,1fr] items-start">
+                    <div class="editor-card p-4 flex flex-col items-center gap-3">
+                      <div class="text-xs uppercase tracking-wider editor-muted-text">Skin</div>
+                      <div class="npc-skin-frame w-36 h-36 rounded-2xl flex items-center justify-center">
+                        <img id="npcSkinPreview" class="w-28 h-28" alt="Skin preview" />
+                      </div>
+                      <div id="npcSkinMeta" class="text-xs editor-muted-text text-center">Скин не загружен</div>
+                    </div>
+                    <div class="editor-form-grid-2" id="formBasic"></div>
+                  </div>
+                </div>
+
+                <div id="tab_dialog" class="space-y-6 hidden">
+                  <div id="dialogForm"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mt-4" data-editor-role="status"></div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script src="editor-core/core.js"></script>
+  <script src="editor-core/field-renderer.js"></script>
+  <script src="editor-core/form-runtime.js"></script>
+  <script src="editor-core/dialog-editor.js"></script>
+  <script src="editor-core/db-map.js"></script>
+  <script src="editor-core/db.js"></script>
+  <script src="editor-core/db-crud.js"></script>
+  <script src="editor-core/ui.js"></script>
+  <script src="editor-core/ui-manager.js"></script>
+  <script src="editor-core/defaults.js"></script>
+  <script src="editor-core/utils.js"></script>
+  <script src="editor-core/bootstrap.js"></script>
+
+  <script>
+    const { fieldRenderOptions } = EditorCore.bootstrapEditor({ mode: 'event' });
+
+    const DOM = {
+      list: document.querySelector('[data-editor-role="list"]'),
+      search: document.querySelector('[data-editor-role="search"]'),
+      refresh: document.querySelector('[data-editor-role="refresh"]'),
+      newBtn: document.querySelector('[data-editor-role="new"]'),
+      title: document.querySelector('[data-editor-role="title"]'),
+      subtitle: document.querySelector('[data-editor-role="subtitle"]'),
+      save: document.querySelector('[data-editor-role="save"]'),
+      del: document.querySelector('[data-editor-role="delete"]'),
+      status: document.querySelector('[data-editor-role="status"]'),
+      count: document.querySelector('[data-editor-role="count"]'),
+      tabRoot: document.getElementById('tabRoot'),
+      tabBasic: document.getElementById('tab_basic'),
+      tabDialog: document.getElementById('tab_dialog'),
+      formBasic: document.getElementById('formBasic'),
+      dialogForm: document.getElementById('dialogForm'),
+      skinPreview: document.getElementById('npcSkinPreview'),
+      skinMeta: document.getElementById('npcSkinMeta'),
+    };
+
+    const dirty = EditorCore.Dirty?.create
+      ? EditorCore.Dirty.create({
+          root: document.querySelector('.editor-main') || document.body,
+          pill: document.getElementById('dirty-pill'),
+          beforeUnload: true,
+        })
+      : { markDirty: () => {}, setClean: () => {} };
+
+    const DIALOG_SIDE_OPTIONS = [
+      { value: 'default', label: 'говорит для' },
+      { value: 'author', label: 'автор' },
+      { value: 'thoughts', label: 'мысли' },
+    ];
+
+    const DIALOG_EXTRA_SPEAKERS = [
+      { value: -1, label: 'Игрок' },
+      { value: 0, label: 'Текущий бот' },
+    ];
+
+    const STATE = {
+      rows: [],
+      selectedId: 0,
+      model: null,
+      lookups: {
+        bots: new Map(),
+        worlds: new Map(),
+        quests: new Map(),
+        botSkins: new Map(),
+      },
+      skinsApi: '',
+      forms: {
+        basic: null,
+        dialog: null,
+      }
+    };
+
+    const BASIC_FIELDS = {
+      BotID: {
+        type: 'db_select',
+        label: 'NPC (BotID)',
+        validate: { required: true },
+        ui: { dbKey: 'mob', placeholder: '— бот —', searchPlaceholder: 'Поиск бота…' }
+      },
+      WorldID: {
+        type: 'db_select',
+        label: 'Мир (WorldID)',
+        ui: { dbKey: 'world', placeholder: '— мир —', searchPlaceholder: 'Поиск мира…' }
+      },
+      PosX: {
+        type: 'number',
+        label: 'PosX',
+        ui: { min: 0, step: 1 }
+      },
+      PosY: {
+        type: 'number',
+        label: 'PosY',
+        ui: { min: 0, step: 1 }
+      },
+      GiveQuestID: {
+        type: 'db_select',
+        label: 'Квест (GiveQuestID)',
+        ui: { dbKey: 'quest', placeholder: '— без квеста —', searchPlaceholder: 'Поиск квеста…' }
+      },
+      Function: {
+        type: 'number',
+        label: 'Function',
+        ui: { step: 1, placeholder: '-1' }
+      },
+      Static: {
+        type: 'toggle',
+        label: 'Static'
+      },
+      Emote: {
+        label: 'Emote',
+        ui: {
+          type: 'select',
+          options: [
+            { value: '', label: '— нет —' },
+            { value: 'Pain', label: 'Pain' },
+            { value: 'Happy', label: 'Happy' },
+            { value: 'Surprise', label: 'Surprise' },
+            { value: 'Angry', label: 'Angry' },
+            { value: 'Blink', label: 'Blink' },
+          ]
+        }
+      }
+    };
+
+    const emptyModel = () => ({
+      ID: 0,
+      BotID: 0,
+      PosX: 0,
+      PosY: 0,
+      GiveQuestID: 0,
+      DialogData: [],
+      Function: -1,
+      Static: 0,
+      Emote: '',
+      WorldID: 0,
+    });
+
+    const normalizeDialogData = (raw) => {
+      if (!raw) return [];
+      if (Array.isArray(raw)) return raw;
+      if (typeof raw === 'string') {
+        try {
+          const parsed = JSON.parse(raw);
+          return Array.isArray(parsed) ? parsed : [];
+        } catch {
+          return [];
+        }
+      }
+      return [];
+    };
+
+    const toModel = (row) => ({
+      ID: Number(row?.ID || 0),
+      BotID: Number(row?.BotID || 0),
+      PosX: Number(row?.PosX || 0),
+      PosY: Number(row?.PosY || 0),
+      GiveQuestID: Number(row?.GiveQuestID || 0),
+      DialogData: normalizeDialogData(row?.DialogData),
+      Function: Number(row?.Function ?? -1),
+      Static: Number(row?.Static ?? 0) ? 1 : 0,
+      Emote: row?.Emote || '',
+      WorldID: Number(row?.WorldID || 0),
+    });
+
+    const toPayload = (model) => {
+      const questId = Number(model?.GiveQuestID || 0);
+      const worldId = Number(model?.WorldID || 0);
+      const dialog = Array.isArray(model?.DialogData) ? model.DialogData : [];
+      return {
+        BotID: Number(model?.BotID || 0),
+        PosX: Number(model?.PosX || 0),
+        PosY: Number(model?.PosY || 0),
+        GiveQuestID: questId > 0 ? questId : null,
+        DialogData: dialog.length ? dialog : null,
+        Function: Number.isFinite(Number(model?.Function)) ? Number(model.Function) : -1,
+        Static: model?.Static ? 1 : 0,
+        Emote: model?.Emote ? String(model.Emote) : null,
+        WorldID: worldId > 0 ? worldId : null,
+      };
+    };
+
+    const setStatus = (html = '', tone = 'muted') => {
+      if (!DOM.status) return;
+      const cls = tone === 'ok'
+        ? 'text-emerald-300'
+        : tone === 'err'
+          ? 'text-red-300'
+          : 'editor-muted-text';
+      DOM.status.className = `text-sm ${cls}`;
+      DOM.status.innerHTML = html;
+    };
+
+    const setButtons = (enabled) => {
+      if (DOM.save) DOM.save.disabled = !enabled;
+      if (DOM.del) DOM.del.disabled = !enabled || !STATE.selectedId;
+    };
+
+    const formatLookup = (map, id, fallback = '—') => {
+      if (!id) return fallback;
+      const val = map.get(String(id)) || '';
+      return val || fallback;
+    };
+
+    const setHeader = () => {
+      if (!DOM.title && !DOM.subtitle) return;
+      if (!STATE.model) {
+        if (DOM.title) DOM.title.textContent = 'Выберите NPC';
+        if (DOM.subtitle) DOM.subtitle.textContent = 'или создайте нового';
+        return;
+      }
+      const botName = formatLookup(STATE.lookups.bots, STATE.model.BotID, `Бот #${STATE.model.BotID || '—'}`);
+      if (DOM.title) DOM.title.textContent = botName || `NPC #${STATE.selectedId || 'new'}`;
+      const world = formatLookup(STATE.lookups.worlds, STATE.model.WorldID, '—');
+      if (DOM.subtitle) {
+        DOM.subtitle.textContent = `ID: ${STATE.selectedId || 'new'} • Мир: ${world} • X:${STATE.model.PosX} Y:${STATE.model.PosY}`;
+      }
+    };
+
+    const updateSkinPreview = () => {
+      if (!DOM.skinPreview || !DOM.skinMeta) return;
+      if (!STATE.model) {
+        DOM.skinPreview.src = '';
+        DOM.skinMeta.textContent = 'Скин не выбран.';
+        return;
+      }
+      const skinInfo = STATE.lookups.botSkins?.get(String(STATE.model.BotID));
+      if (!skinInfo || !STATE.skinsApi) {
+        DOM.skinPreview.src = '';
+        DOM.skinMeta.textContent = 'Скин не загружен';
+        return;
+      }
+      const url = EditorCore.utils.renderSkinApiUrl(STATE.skinsApi, skinInfo);
+      DOM.skinPreview.src = url;
+      DOM.skinMeta.textContent = `${skinInfo.name || 'default'}`;
+    };
+
+    const showEmptyForm = () => {
+      const emptyHtml = '<div class="editor-muted-text">Выберите запись слева</div>';
+      DOM.formBasic.innerHTML = emptyHtml;
+      DOM.dialogForm.innerHTML = emptyHtml;
+    };
+
+    const applyDialogConstraints = (data, meta = {}) => {
+      if (!window.EditorCore?.DialogEditor) return;
+      const speakerCandidates = window.EditorCore.DialogEditor.buildSpeakerCandidates(
+        STATE.lookups?.bots,
+        DIALOG_EXTRA_SPEAKERS,
+      );
+      window.EditorCore.DialogEditor.applyConstraints({
+        root: DOM.dialogForm,
+        data,
+        meta,
+        sideOptions: DIALOG_SIDE_OPTIONS,
+        speakerCandidates,
+      });
+    };
+
+    const mountForms = () => {
+      if (!STATE.model) {
+        showEmptyForm();
+        STATE.forms.basic = null;
+        STATE.forms.dialog = null;
+        return;
+      }
+
+      const onChange = (data, meta) => {
+        STATE.model = data;
+        dirty.markDirty();
+        if (meta?.path === 'BotID') updateSkinPreview();
+      };
+
+      if (!STATE.forms.basic) {
+        STATE.forms.basic = EditorCore.FormRuntime.mount(DOM.formBasic, {
+          fields: BASIC_FIELDS,
+          data: STATE.model,
+          fieldOptions: fieldRenderOptions,
+          onChange,
+        });
+      } else {
+        STATE.forms.basic.setData(STATE.model);
+      }
+
+      const speakerOptions = EditorCore.DialogEditor.buildSpeakerOptions(
+        STATE.lookups?.bots,
+        DIALOG_EXTRA_SPEAKERS,
+      );
+
+      if (!STATE.forms.dialog) {
+        STATE.forms.dialog = EditorCore.DialogEditor.mount(DOM.dialogForm, {
+          data: { DialogData: STATE.model.DialogData || [] },
+          fieldOptions: fieldRenderOptions,
+          sideOptions: DIALOG_SIDE_OPTIONS,
+          extraSpeakers: DIALOG_EXTRA_SPEAKERS,
+          speakerOptions,
+          onChange: (data, meta) => {
+            STATE.model.DialogData = Array.isArray(data?.DialogData) ? data.DialogData : [];
+            applyDialogConstraints(data, meta);
+            if (typeof requestAnimationFrame === 'function') {
+              requestAnimationFrame(() => applyDialogConstraints(data, meta));
+            }
+            dirty.markDirty();
+          },
+        });
+      } else {
+        STATE.forms.dialog.setData({ DialogData: STATE.model.DialogData || [] });
+        applyDialogConstraints(STATE.forms.dialog.getData());
+      }
+
+      updateSkinPreview();
+    };
+
+    const renderList = () => {
+      const rows = STATE.rows || [];
+      if (DOM.count) DOM.count.textContent = rows.length ? `${rows.length}` : '—';
+      if (!DOM.list) return;
+      if (!rows.length) {
+        DOM.list.innerHTML = '<div class="editor-empty-state">Нет данных</div>';
+        return;
+      }
+
+      const search = String(DOM.search?.value || '').trim().toLowerCase();
+      const filtered = rows.filter((row) => {
+        if (!search) return true;
+        if (/^\d+$/.test(search)) {
+          const id = String(row.ID || '');
+          const botId = String(row.BotID || '');
+          return id.includes(search) || botId.includes(search);
+        }
+        const botName = (STATE.lookups.bots.get(String(row.BotID)) || '').toLowerCase();
+        const worldName = (STATE.lookups.worlds.get(String(row.WorldID)) || '').toLowerCase();
+        return botName.includes(search) || worldName.includes(search);
+      });
+
+      if (!filtered.length) {
+        DOM.list.innerHTML = '<div class="editor-empty-state">Ничего не найдено</div>';
+        return;
+      }
+
+      const skinsApi = STATE.skinsApi || '';
+      const html = filtered.map((row) => {
+        const active = Number(row?.ID) === Number(STATE.selectedId);
+        const botName = formatLookup(STATE.lookups.bots, row.BotID, `Бот #${row.BotID || '—'}`);
+        const worldName = formatLookup(STATE.lookups.worlds, row.WorldID, '—');
+        const questName = formatLookup(STATE.lookups.quests, row.GiveQuestID, '—');
+        const skinInfo = STATE.lookups.botSkins?.get(String(row.BotID));
+        const skinUrl = (skinInfo && skinsApi)
+          ? EditorCore.utils.renderSkinApiUrl(skinsApi, skinInfo)
+          : '';
+        const skinPreview = skinUrl
+          ? `<img class="w-9 h-9 rounded-full border border-light object-cover" src="${skinUrl}" alt="skin" loading="lazy" />`
+          : `<div class="w-9 h-9 rounded-full border border-light bg-light flex items-center justify-center text-[10px] text-slate-300">—</div>`;
+        return `
+          <button type="button" class="w-full text-left editor-row ${active ? 'ring-2 ring-indigo-500/40' : ''}" data-id="${row?.ID}">
+            <div class="flex items-center gap-3">
+              ${skinPreview}
+              <div class="min-w-0">
+                <div class="font-semibold truncate">${botName}</div>
+                <div class="text-xs editor-muted-text truncate">ID: ${row?.ID} • Мир: ${worldName} • Квест: ${questName}</div>
+              </div>
+            </div>
+          </button>
+        `;
+      }).join('');
+      DOM.list.innerHTML = `<div class="editor-list">${html}</div>`;
+    };
+
+    const selectRow = (row) => {
+      if (!row) {
+        STATE.selectedId = 0;
+        STATE.model = null;
+        dirty.setClean();
+        mountForms();
+        renderList();
+        setHeader();
+        setButtons(false);
+        return;
+      }
+      STATE.selectedId = Number(row.ID || 0);
+      STATE.model = toModel(row);
+      dirty.setClean();
+      mountForms();
+      renderList();
+      setHeader();
+      setButtons(true);
+    };
+
+    const loadList = async () => {
+      const search = DOM.search?.value?.trim() || '';
+      setStatus('Загрузка списка…');
+      try {
+        const res = await EditorCore.DBCrud.list('bots_npc', { search, limit: 5000, offset: 0 });
+        STATE.rows = Array.isArray(res.rows) ? res.rows : [];
+        setStatus(STATE.rows.length ? '' : 'Список пуст.', 'muted');
+        renderList();
+        if (STATE.selectedId) {
+          const found = STATE.rows.find(r => Number(r.ID) === Number(STATE.selectedId));
+          if (found) selectRow(found);
+        } else if (!STATE.model && STATE.rows.length) {
+          selectRow(STATE.rows[0]);
+        }
+      } catch (err) {
+        const msg = err?.message || 'Ошибка загрузки';
+        setStatus(msg, 'err');
+        EditorCore.UI.toast(msg, 'error');
+      }
+    };
+
+    const createNew = () => {
+      STATE.selectedId = 0;
+      STATE.model = emptyModel();
+      dirty.setClean();
+      mountForms();
+      renderList();
+      setHeader();
+      setButtons(true);
+    };
+
+    const save = async () => {
+      if (!STATE.model) return;
+      setStatus('Сохранение…');
+      try {
+        const payload = toPayload(STATE.model);
+        if (STATE.selectedId) {
+          await EditorCore.DBCrud.update('bots_npc', STATE.selectedId, payload);
+          setStatus('Изменения сохранены.', 'ok');
+          EditorCore.UI.toast('Сохранено', 'success');
+        } else {
+          const res = await EditorCore.DBCrud.create('bots_npc', payload);
+          STATE.selectedId = Number(res.id || 0);
+          setStatus('Запись создана.', 'ok');
+          EditorCore.UI.toast('Создано', 'success');
+        }
+        dirty.setClean();
+        await loadList();
+      } catch (err) {
+        const msg = err?.message || 'Ошибка сохранения';
+        setStatus(msg, 'err');
+        EditorCore.UI.toast(msg, 'error');
+      }
+    };
+
+    const remove = async () => {
+      if (!STATE.selectedId) return;
+      if (!confirm('Удалить запись?')) return;
+      setStatus('Удаление…');
+      try {
+        await EditorCore.DBCrud.remove('bots_npc', STATE.selectedId);
+        EditorCore.UI.toast('Удалено', 'success');
+        setStatus('Удалено.', 'ok');
+        selectRow(null);
+        await loadList();
+      } catch (err) {
+        const msg = err?.message || 'Ошибка удаления';
+        setStatus(msg, 'err');
+        EditorCore.UI.toast(msg, 'error');
+      }
+    };
+
+    const tabs = EditorCore.UI.mountTabs(DOM.tabRoot, {
+      tabs: [
+        { id: 'basic', title: 'Основное', icon: 'fa-bars-staggered' },
+        { id: 'dialog', title: 'Диалог', icon: 'fa-comments' },
+      ],
+      active: 'basic',
+      onChange: (id) => {
+        DOM.tabBasic.classList.toggle('hidden', id !== 'basic');
+        DOM.tabDialog.classList.toggle('hidden', id !== 'dialog');
+      }
+    });
+
+    if (tabs?.getActive) {
+      const active = tabs.getActive();
+      DOM.tabBasic.classList.toggle('hidden', active !== 'basic');
+      DOM.tabDialog.classList.toggle('hidden', active !== 'dialog');
+    }
+
+    DOM.list?.addEventListener('click', (event) => {
+      const btn = event.target?.closest?.('[data-id]');
+      if (!btn) return;
+      const id = Number(btn.getAttribute('data-id') || 0);
+      const row = STATE.rows.find(r => Number(r.ID) === id);
+      if (row) selectRow(row);
+    });
+
+    DOM.refresh?.addEventListener('click', loadList);
+    DOM.newBtn?.addEventListener('click', createNew);
+    DOM.save?.addEventListener('click', save);
+    DOM.del?.addEventListener('click', remove);
+
+    if (DOM.search) {
+      DOM.search.addEventListener('input', EditorCore.utils.debounce(loadList, 250));
+    }
+
+    const getLabelMap = async (source) => {
+      try {
+        const res = await window.EditorCore.DB.list(source, { limit: 5000, offset: 0 });
+        const map = new Map();
+        if (res?.ok && Array.isArray(res.items)) {
+          for (const it of res.items) map.set(String(it.value), String(it.label || ''));
+        }
+        return map;
+      } catch {
+        return new Map();
+      }
+    };
+
+    const loadLookups = async () => {
+      STATE.lookups.bots = await getLabelMap('bots');
+      STATE.lookups.worlds = await getLabelMap('worlds');
+      STATE.lookups.quests = await getLabelMap('quests');
+      STATE.lookups.botSkins = await EditorCore.utils.getBotSkinsMap();
+      STATE.skinsApi = await EditorCore.utils.getSkinsApi();
+    };
+
+    const init = async () => {
+      await loadLookups();
+      await loadList();
+      setHeader();
+      updateSkinPreview();
+    };
+
+    init();
+  </script>
+</body>
+</html>

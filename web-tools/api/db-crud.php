@@ -103,6 +103,25 @@ $RESOURCES = [
     'search' => ['ID', 'Name'],
     'order' => 'ID ASC',
   ],
+  // New editor: bots-npc-editor.html
+  'bots_npc' => [
+    'table' => 'tw_bots_npc',
+    'pk' => 'ID',
+    'columns' => [
+      'BotID',
+      'PosX',
+      'PosY',
+      'GiveQuestID',
+      'DialogData',
+      'Function',
+      'Static',
+      'Emote',
+      'WorldID',
+    ],
+    'search' => ['ID', 'BotID', 'WorldID'],
+    'json' => ['DialogData'],
+    'order' => 'ID ASC',
+  ],
   // New editor: crafts-editor.html
   'crafts' => [
     'table' => 'tw_crafts_list',
