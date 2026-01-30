@@ -139,6 +139,26 @@
       font-weight:600;
     }
 
+    .step-node-preview{
+      width:32px;
+      height:32px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      overflow:hidden;
+      flex-shrink:0;
+    }
+
+    .step-node-preview img{
+      width:100%;
+      height:100%;
+      object-fit:cover;
+      display:block;
+    }
+
     .step-node-sub{
       font-size:11px;
       color:var(--editor-text-muted);
@@ -479,16 +499,6 @@
                 </div>
               </div>
             </div>
-
-            <div class="editor-card p-4">
-              <div class="font-semibold">Подсказки по ограничениям C++</div>
-              <ul class="mt-2 text-sm space-y-1 text-slate-300">
-                <li>Имя квеста: до 24 символов (tw_quests_list.Name, varchar(24)).</li>
-                <li>Флаги квеста: только один тип (Type main/side/daily/weekly/repeatable) + доп. флаги.</li>
-                <li>AutoFinish: логическое значение (включено/выключено).</li>
-                <li>Тип задач: required_items (default/pickup/show), defeat_bots, move_to, reward_items.</li>
-              </ul>
-            </div>
           </div>
         </div>
       </main>
@@ -544,7 +554,9 @@
       lookups: {
         bots: new Map(),
         worlds: new Map(),
+        botSkins: new Map(),
       },
+      skinsApi: '',
       stepTab: 'mob',
     };
 
@@ -1399,6 +1411,13 @@
               const activeTab = stepSelected ? STATE.stepTab : null;
               const mobLabel = formatLookupLabel(STATE.lookups?.bots, step.BotID);
               const worldLabel = formatLookupLabel(STATE.lookups?.worlds, step.WorldID);
+              const skinInfo = STATE.lookups?.botSkins?.get(String(step.BotID));
+              const skinUrl = (skinInfo && STATE.skinsApi)
+                ? window.EditorCore.utils.renderSkinApiUrl(STATE.skinsApi, skinInfo)
+                : '';
+              const skinPreview = skinUrl
+                ? `<img src="${skinUrl}" alt="skin" loading="lazy" />`
+                : '';
               const stepTabs = STEP_TABS.map((tab) => `
                 <button
                   type="button"
@@ -1414,9 +1433,10 @@
                 <div class="step-node ${stepSelected ? 'tree-selected' : ''}" draggable="true" data-node-type="step" data-id="${step.ID}">
                   <div class="step-node-header">
                     <div class="step-node-title">
-                      <i class="fa-solid fa-person-walking text-accent"></i>
-                      <span>Шаг ${step.Step}</span>
+                      <div class="step-node-preview">${skinPreview}</div>
+					  <div class="step-node-sub">${mobLabel}\n${worldLabel}</div>
                       <span class="editor-badge">#${step.ID}</span>
+                      <i class="fa-solid fa-person-walking text-accent"></i>
                     </div>
                     <div class="step-node-actions">
                       <input
@@ -1428,7 +1448,6 @@
                         title="Позиция шага"
                         data-step-level-id="${step.ID}"
                       />
-                      <div class="step-node-sub">Mob ${mobLabel} · World ${worldLabel}</div>
                     </div>
                   </div>
                   <div class="step-node-tabs">${stepTabs}</div>
@@ -1639,11 +1658,13 @@
     const loadData = async () => {
       DOM.tree.innerHTML = '<div class="editor-muted-text text-sm">Загрузка...</div>';
       try {
-        const [questsRes, stepsRes, botLabels, worldLabels] = await Promise.all([
+        const [questsRes, stepsRes, botLabels, worldLabels, botSkins, skinsApi] = await Promise.all([
           EditorCore.DBCrud.list('quests', { limit: 5000 }),
           EditorCore.DBCrud.list('quest_bots', { limit: 5000 }),
           getLabelMap('bots'),
           getLabelMap('worlds'),
+          EditorCore.utils.getBotSkinsMap(),
+          EditorCore.utils.getSkinsApi(),
         ]);
 
         STATE.quests = (questsRes?.rows || []).map((row) => ({
@@ -1670,6 +1691,8 @@
         }));
         STATE.lookups.bots = botLabels;
         STATE.lookups.worlds = worldLabels;
+        STATE.lookups.botSkins = botSkins;
+        STATE.skinsApi = skinsApi;
         STATE.expandedQuests.clear();
 
         STATE.dirtyQuests.clear();

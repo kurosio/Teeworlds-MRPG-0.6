@@ -93,6 +93,47 @@
     return qs ? `${base}?${qs}` : base;
   };
 
+  const parseSkinInfo = (raw) => {
+    if (!raw) return null;
+    try {
+      const data = typeof raw === 'string' ? JSON.parse(raw) : raw;
+      if (!data || typeof data !== 'object') return null;
+      const name = data.skin || 'default';
+      const custom = Number(data.custom_color ?? data.customColor ?? 0);
+      const body = custom ? (data.color_body ?? data.colorBody ?? '') : '';
+      const foot = custom ? (data.color_feet ?? data.color_feer ?? data.colorFeet ?? '') : '';
+      return { name, body, foot };
+    } catch {
+      return null;
+    }
+  };
+
+  const getBotSkinsMap = async () => {
+    if (!window.EditorCore?.DBCrud) return new Map();
+    try {
+      const res = await window.EditorCore.DBCrud.list('bots_info', { limit: 5000, offset: 0 });
+      const rows = Array.isArray(res.rows) ? res.rows : [];
+      const map = new Map();
+      for (const row of rows) {
+        const skin = parseSkinInfo(row.JsonTeeInfo);
+        if (skin) map.set(String(row.ID), skin);
+      }
+      return map;
+    } catch {
+      return new Map();
+    }
+  };
+
+  const getSkinsApi = async () => {
+    if (!window.EditorCore?.DB?.getConfig) return '';
+    try {
+      const res = await window.EditorCore.DB.getConfig();
+      return res?.ok ? String(res.config?.skins_api || '') : '';
+    } catch {
+      return '';
+    }
+  };
+
   // PairList helpers
   // Used by multiple DB tables where a list of pairs is stored as string:
   //   "[ItemID/Count],[ItemID/Count]"
@@ -284,6 +325,9 @@
     readJsonFile,
     fetchJson,
     renderSkinApiUrl,
+    parseSkinInfo,
+    getBotSkinsMap,
+    getSkinsApi,
     showToast,
     ensureDirtyPill,
     createDirtyTracker,
