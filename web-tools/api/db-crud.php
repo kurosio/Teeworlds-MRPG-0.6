@@ -89,7 +89,17 @@ $RESOURCES = [
   'bots_info' => [
     'table' => 'tw_bots_info',
     'pk' => 'ID',
-    'columns' => ['Name', 'JsonTeeInfo'],
+    'columns' => [
+      'Name',
+      'JsonTeeInfo',
+      'EquippedModules',
+      'SlotHammer',
+      'SlotGun',
+      'SlotShotgun',
+      'SlotGrenade',
+      'SlotRifle',
+      'SlotArmor',
+    ],
     'search' => ['ID', 'Name'],
     'order' => 'ID ASC',
   ],

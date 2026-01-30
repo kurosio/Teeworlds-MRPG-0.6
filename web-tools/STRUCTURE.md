@@ -10,6 +10,7 @@
 - **event-editor.php** — редактор событий.
 - **settings.html** — вкладка настроек (подключение к БД + просмотр источников списков).
 - **vouchers-editor.html** — редактор ваучеров (CRUD напрямую в БД, использует ядро).
+- **bots-info-editor.html** — редактор ботов (tw_bots_info).
 - **worlds-editor.html** — редактор миров (tw_worlds).
 - **aethers-editor.html** — редактор телепортов Aethers (tw_aethers).
 - **api.php** — файловый API для сценариев (список/загрузка/сохранение JSON в `scenarios/`).
