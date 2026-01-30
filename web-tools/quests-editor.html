@@ -249,6 +249,11 @@
       margin-bottom:8px;
     }
 
+    .task-item.is-selected{
+      border-color: rgba(139,92,246,.65);
+      box-shadow: 0 0 0 1px rgba(139,92,246,.4);
+    }
+
     .task-item-header{
       display:flex;
       align-items:center;
@@ -407,16 +412,6 @@
               </div>
             </div>
 
-            <div id="taskEditor" class="editor-card p-6 hidden">
-              <div class="flex items-center justify-between gap-3">
-                <div>
-                  <div class="font-semibold">Задача</div>
-                  <div class="editor-muted-text text-sm">Редактирование выбранной задачи (TasksData).</div>
-                </div>
-              </div>
-              <div id="taskForm" class="mt-4"></div>
-            </div>
-
             <div class="editor-card p-4">
               <div class="font-semibold">Подсказки по ограничениям C++</div>
               <ul class="mt-2 text-sm space-y-1 text-slate-300">
@@ -452,12 +447,10 @@
       empty: document.getElementById('editorEmpty'),
       questEditor: document.getElementById('questEditor'),
       stepEditor: document.getElementById('stepEditor'),
-      taskEditor: document.getElementById('taskEditor'),
       questForm: document.getElementById('questForm'),
       stepBaseForm: document.getElementById('stepBaseForm'),
       stepTasksEditor: document.getElementById('stepTasksEditor'),
       dialogForm: document.getElementById('dialogForm'),
-      taskForm: document.getElementById('taskForm'),
       dirtyPill: document.getElementById('dirty-pill'),
     };
 
@@ -676,47 +669,10 @@
       }
     };
 
-    const taskFieldSets = {
-      required_items: {
-        id: { type: 'db_select', label: 'Предмет', ui: { dbKey: 'item', placeholder: '— предмет —' } },
-        value: { type: 'number', label: 'Количество', ui: { min: 1, step: 1 } },
-        type: { type: 'select', label: 'Тип', ui: { options: ['default', 'pickup', 'show'] } },
-      },
-      reward_items: {
-        id: { type: 'db_select', label: 'Предмет', ui: { dbKey: 'item', placeholder: '— предмет —' } },
-        value: { type: 'number', label: 'Количество', ui: { min: 1, step: 1 } },
-      },
-      defeat_bots: {
-        id: { type: 'db_select', label: 'Моб', ui: { dbKey: 'mob', placeholder: '— моб —' } },
-        value: { type: 'number', label: 'Количество', ui: { min: 1, step: 1 } },
-      },
-      move_to: {
-        step: { type: 'number', label: 'Шаг', ui: { min: 1, step: 1 } },
-        name: { type: 'text', label: 'Название' },
-        completion_text: { type: 'text', label: 'Текст завершения' },
-        mode: { type: 'select', label: 'Режим', ui: { options: ['move', 'move_press', 'move_follow_press', 'defeat_bot'] } },
-        navigator: { type: 'select', label: 'Навигатор', ui: { options: ['true', 'false'] } },
-        cooldown: { type: 'number', label: 'Cooldown', ui: { min: 0, step: 1 } },
-        world_id: { type: 'db_select', label: 'Мир', ui: { dbKey: 'world', placeholder: '— мир —' } },
-        x: { type: 'number', label: 'X', ui: { step: 1 } },
-        y: { type: 'number', label: 'Y', ui: { step: 1 } },
-        pick_up_item_id: { type: 'db_select', label: 'Pick up item', ui: { dbKey: 'item', placeholder: '— предмет —' } },
-        pick_up_item_value: { type: 'number', label: 'Pick up value', ui: { min: 1, step: 1 } },
-        required_item_id: { type: 'db_select', label: 'Required item', ui: { dbKey: 'item', placeholder: '— предмет —' } },
-        required_item_value: { type: 'number', label: 'Required value', ui: { min: 1, step: 1 } },
-        interactive_x: { type: 'number', label: 'Interactive X', ui: { step: 1 } },
-        interactive_y: { type: 'number', label: 'Interactive Y', ui: { step: 1 } },
-        defeat_bot_id: { type: 'db_select', label: 'Defeat bot', ui: { dbKey: 'mob', placeholder: '— моб —' } },
-        defeat_bot_attribute_power: { type: 'number', label: 'Defeat power', ui: { min: 1, step: 1 } },
-        defeat_bot_world_id: { type: 'db_select', label: 'Defeat world', ui: { dbKey: 'world', placeholder: '— мир —' } },
-      },
-    };
-
     let questFormRuntime = null;
     let stepBaseFormRuntime = null;
     let stepTasksSortable = {};
     let dialogFormRuntime = null;
-    let taskFormRuntime = null;
 
     const setDirty = () => {
       const dirty = STATE.dirtyQuests.size > 0 || STATE.dirtySteps.size > 0;
@@ -865,9 +821,12 @@
         const listEl = DOM.stepTasksEditor.querySelector(`[data-task-items="${section.id}"]`);
         const addBtn = DOM.stepTasksEditor.querySelector(`[data-task-add="${section.id}"]`);
         const list = getTaskList(tasks, section.id);
+        const hasSelectedTask = STATE.selected?.type === 'task'
+          && STATE.selected?.id === step?.ID
+          && STATE.selected?.task?.kind === section.id;
 
         if (header && content) {
-          content.classList.toggle('is-open', list.length > 0);
+          content.classList.toggle('is-open', list.length > 0 || hasSelectedTask);
           header.addEventListener('click', () => {
             content.classList.toggle('is-open');
           });
@@ -1136,8 +1095,13 @@
           return '';
         };
 
-        listEl.innerHTML = list.map((item, index) => `
-          <div class="task-item" data-task-item="${section.id}" data-task-index="${index}">
+        listEl.innerHTML = list.map((item, index) => {
+          const isSelected = STATE.selected?.type === 'task'
+            && STATE.selected?.id === step?.ID
+            && STATE.selected?.task?.kind === section.id
+            && STATE.selected?.task?.index === index;
+          return `
+          <div class="task-item ${isSelected ? 'is-selected' : ''}" data-task-item="${section.id}" data-task-index="${index}">
             <div class="task-item-header">
               <div>
                 <span class="editor-badge">#${index + 1}</span>
@@ -1155,7 +1119,8 @@
             </div>
             <div class="task-item-body">${renderItemBody(item, index)}</div>
           </div>
-        `).join('') || '<div class="editor-muted-text text-sm">Нет элементов</div>';
+        `;
+        }).join('') || '<div class="editor-muted-text text-sm">Нет элементов</div>';
 
         if (section.id === 'move_to') {
           updateMoveToVisibility(listEl, tasks);
@@ -1240,18 +1205,44 @@
       renderTree();
     };
 
-    const syncTaskModel = (data) => {
-      const task = STATE.selected?.task;
-      const step = STATE.steps.find((s) => s.ID === STATE.selected?.id);
-      if (!task || !step) return;
-      const tasks = step.TasksData || taskDefault();
-      if (!tasks[task.kind]) return;
-      tasks[task.kind][task.index] = {
-        ...tasks[task.kind][task.index],
-        ...data,
+    const mountStepEditor = (step, overrides = {}) => {
+      const title = overrides.title || `Шаг моба #${step.ID}`;
+      const subtitle = overrides.subtitle || `Квест ${step.QuestID || '—'} · Шаг ${step.Step || 1}`;
+      DOM.title.textContent = title;
+      DOM.subtitle.textContent = subtitle;
+      DOM.newStep.disabled = false;
+
+      const model = {
+        BotID: Number(step.BotID || 0),
+        QuestID: Number(step.QuestID || 0),
+        Step: Number(step.Step || 1),
+        WorldID: Number(step.WorldID || 0),
+        Position: { x: Number(step.PosX || 0), y: Number(step.PosY || 0) },
+        AutoFinish: step.AutoFinish === 'Partial',
+        ScenarioData: step.ScenarioData || '',
+        required_items: step.TasksData?.required_items || [],
+        reward_items: step.TasksData?.reward_items || [],
+        defeat_bots: step.TasksData?.defeat_bots || [],
+        move_to: step.TasksData?.move_to || [],
       };
-      step.TasksData = normalizeTasks(tasks);
-      markStepDirty(step.ID);
+
+      stepBaseFormRuntime = EditorCore.FormRuntime.mount(DOM.stepBaseForm, {
+        fields: stepBaseFields,
+        data: model,
+        fieldOptions: fieldRenderOptions,
+        onChange: syncStepBaseModel,
+      });
+
+      renderTasksEditor(step);
+
+      dialogFormRuntime = EditorCore.FormRuntime.mount(DOM.dialogForm, {
+        fields: dialogFields,
+        data: { DialogData: step.DialogData || [] },
+        fieldOptions: fieldRenderOptions,
+        onChange: syncDialogModel,
+      });
+
+      showEditor('step');
       renderTree();
     };
 
@@ -1343,7 +1334,6 @@
       DOM.empty.classList.toggle('hidden', !!type);
       DOM.questEditor.classList.toggle('hidden', type !== 'quest');
       DOM.stepEditor.classList.toggle('hidden', type !== 'step');
-      DOM.taskEditor.classList.toggle('hidden', type !== 'task');
     };
 
     const selectQuest = (quest) => {
@@ -1378,63 +1368,15 @@
 
     const selectStep = (step) => {
       STATE.selected = { type: 'step', id: step.ID };
-      DOM.title.textContent = `Шаг моба #${step.ID}`;
-      DOM.subtitle.textContent = `Квест ${step.QuestID || '—'} · Шаг ${step.Step || 1}`;
-      DOM.newStep.disabled = false;
-
-      const model = {
-        BotID: Number(step.BotID || 0),
-        QuestID: Number(step.QuestID || 0),
-        Step: Number(step.Step || 1),
-        WorldID: Number(step.WorldID || 0),
-        Position: { x: Number(step.PosX || 0), y: Number(step.PosY || 0) },
-        AutoFinish: step.AutoFinish === 'Partial',
-        ScenarioData: step.ScenarioData || '',
-        required_items: step.TasksData?.required_items || [],
-        reward_items: step.TasksData?.reward_items || [],
-        defeat_bots: step.TasksData?.defeat_bots || [],
-        move_to: step.TasksData?.move_to || [],
-      };
-
-      stepBaseFormRuntime = EditorCore.FormRuntime.mount(DOM.stepBaseForm, {
-        fields: stepBaseFields,
-        data: model,
-        fieldOptions: fieldRenderOptions,
-        onChange: syncStepBaseModel,
-      });
-
-      renderTasksEditor(step);
-
-      dialogFormRuntime = EditorCore.FormRuntime.mount(DOM.dialogForm, {
-        fields: dialogFields,
-        data: { DialogData: step.DialogData || [] },
-        fieldOptions: fieldRenderOptions,
-        onChange: syncDialogModel,
-      });
-
-      showEditor('step');
-      renderTree();
+      mountStepEditor(step);
     };
 
     const selectTask = (step, task) => {
       STATE.selected = { type: 'task', id: step.ID, task: { ...task } };
-      DOM.title.textContent = `Задача в шаге #${step.ID}`;
-      DOM.subtitle.textContent = `${task.kind} · индекс ${task.index + 1}`;
-      DOM.newStep.disabled = false;
-
-      const entry = step.TasksData?.[task.kind]?.[task.index] || {};
-      const model = { ...entry };
-
-      const fields = taskFieldSets[task.kind] || {};
-      taskFormRuntime = EditorCore.FormRuntime.mount(DOM.taskForm, {
-        fields,
-        data: model,
-        fieldOptions: fieldRenderOptions,
-        onChange: syncTaskModel,
+      mountStepEditor(step, {
+        title: `Задача в шаге #${step.ID}`,
+        subtitle: `${task.kind} · индекс ${task.index + 1}`,
       });
-
-      showEditor('task');
-      renderTree();
     };
 
     const bindTreeEvents = () => {
