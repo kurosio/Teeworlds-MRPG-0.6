@@ -319,6 +319,45 @@
       }
     };
 
+    const parseSkinInfo = (raw) => {
+      if (!raw) return null;
+      try {
+        const data = typeof raw === 'string' ? JSON.parse(raw) : raw;
+        if (!data || typeof data !== 'object') return null;
+        const name = data.skin || 'default';
+        const custom = Number(data.custom_color ?? data.customColor ?? 0);
+        const body = custom ? (data.color_body ?? data.colorBody ?? '') : '';
+        const foot = custom ? (data.color_feet ?? data.color_feer ?? data.colorFeet ?? '') : '';
+        return { name, body, foot };
+      } catch {
+        return null;
+      }
+    };
+
+    const getBotSkinsMap = async () => {
+      try {
+        const res = await window.EditorCore.DBCrud.list('bots_info', { limit: 5000, offset: 0 });
+        const rows = Array.isArray(res.rows) ? res.rows : [];
+        const map = new Map();
+        for (const row of rows) {
+          const skin = parseSkinInfo(row.JsonTeeInfo);
+          if (skin) map.set(String(row.ID), skin);
+        }
+        return map;
+      } catch {
+        return new Map();
+      }
+    };
+
+    const getSkinsApi = async () => {
+      try {
+        const res = await window.EditorCore.DB.getConfig();
+        return res?.ok ? String(res.config?.skins_api || '') : '';
+      } catch {
+        return '';
+      }
+    };
+
     const formatMobTitle = (row) => {
       const bot = STATE.lookups.bots.get(String(row.BotID)) || '';
       return bot ? bot : `BotID: ${row.BotID}`;
@@ -392,15 +431,25 @@
         const active = r.ID === STATE.selectedId;
         const title = formatMobTitle(r);
         const world = formatWorld(r.WorldID);
+        const skinInfo = STATE.lookups.botSkins?.get(String(r.BotID));
+        const skinUrl = (skinInfo && STATE.skinsApi)
+          ? window.EditorCore.utils.renderSkinApiUrl(STATE.skinsApi, skinInfo)
+          : '';
+        const skinPreview = skinUrl
+          ? `<img class="w-9 h-9 rounded-full border border-light object-cover" src="${skinUrl}" alt="skin" loading="lazy" />`
+          : `<div class="w-9 h-9 rounded-full border border-light bg-light"></div>`;
         const bossBadge = Number(r.Boss || 0)
           ? `<span class="text-xs px-2 py-1 rounded-full" style="background: rgba(244,63,94,.14); border: 1px solid rgba(244,63,94,.3)">BOSS</span>`
           : '';
         return `
           <button class="w-full text-left editor-row ${active ? 'ring-2 ring-indigo-500/40' : ''}" data-id="${r.ID}">
             <div class="flex items-center justify-between gap-3">
-              <div class="min-w-0">
-                <div class="font-semibold truncate">${title}</div>
-                <div class="text-sm editor-muted-text truncate">ID: ${r.ID} • Мир: ${world} • Lvl: ${r.Level ?? ''} • X:${r.PositionX ?? ''} Y:${r.PositionY ?? ''}</div>
+              <div class="min-w-0 flex items-center gap-3">
+                ${skinPreview}
+                <div class="min-w-0">
+                  <div class="font-semibold truncate">${title}</div>
+                  <div class="text-sm editor-muted-text truncate">ID: ${r.ID} • Мир: ${world} • Lvl: ${r.Level ?? ''} • X:${r.PositionX ?? ''} Y:${r.PositionY ?? ''}</div>
+                </div>
               </div>
               ${bossBadge}
             </div>
@@ -613,6 +662,8 @@
     const loadLookups = async () => {
       STATE.lookups.bots = await getLabelMap('bots');
       STATE.lookups.worlds = await getLabelMap('worlds');
+      STATE.lookups.botSkins = await getBotSkinsMap();
+      STATE.skinsApi = await getSkinsApi();
     };
 
     const loadDefaults = async () => {
@@ -755,7 +806,8 @@
       selectedId: 0,
       mob: null,
       activeTab: 'basic',
-      lookups: { bots: new Map(), worlds: new Map() },
+      lookups: { bots: new Map(), worlds: new Map(), botSkins: new Map() },
+      skinsApi: '',
       defaults: { firstItemId: 0 },
       _closeDrawer: () => {},
     };

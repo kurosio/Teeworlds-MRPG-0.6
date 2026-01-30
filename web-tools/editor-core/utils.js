@@ -81,6 +81,18 @@
     return text ? JSON.parse(text) : null;
   };
 
+  const renderSkinApiUrl = (baseUrl, { name, body, foot } = {}) => {
+    const trimmed = String(baseUrl || '').trim();
+    if (!trimmed) return '';
+    const [base, query = ''] = trimmed.split('?');
+    const params = new URLSearchParams(query);
+    if (name != null && name !== '') params.set('name', String(name));
+    if (body != null && body !== '') params.set('body', String(body));
+    if (foot != null && foot !== '') params.set('foot', String(foot));
+    const qs = params.toString();
+    return qs ? `${base}?${qs}` : base;
+  };
+
   // PairList helpers
   // Used by multiple DB tables where a list of pairs is stored as string:
   //   "[ItemID/Count],[ItemID/Count]"
@@ -271,6 +283,7 @@
     downloadJson,
     readJsonFile,
     fetchJson,
+    renderSkinApiUrl,
     showToast,
     ensureDirtyPill,
     createDirtyTracker,

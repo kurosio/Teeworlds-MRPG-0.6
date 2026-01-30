@@ -85,6 +85,14 @@ $RESOURCES = [
     'search' => ['ID','BotID'],
     'order' => 'ID DESC',
   ],
+  // Support mobs editor list with skin previews
+  'bots_info' => [
+    'table' => 'tw_bots_info',
+    'pk' => 'ID',
+    'columns' => ['Name', 'JsonTeeInfo'],
+    'search' => ['ID', 'Name'],
+    'order' => 'ID ASC',
+  ],
   // New editor: crafts-editor.html
   'crafts' => [
     'table' => 'tw_crafts_list',
