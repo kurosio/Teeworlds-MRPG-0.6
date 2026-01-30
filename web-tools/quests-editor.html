@@ -455,6 +455,8 @@
       selected: null,
       dirtyQuests: new Set(),
       dirtySteps: new Set(),
+      newSteps: new Set(),
+      lastQuestScrollId: null,
       expandedQuests: new Set(),
       lookups: {
         bots: new Map(),
@@ -463,6 +465,7 @@
       },
       skinsApi: '',
       stepTab: 'mob',
+      nextTempStepId: -1,
     };
 
     const QuestFlags = {
@@ -647,7 +650,7 @@
           active: STATE.stepTab,
           onChange: (id) => {
             setActiveStepTab(id);
-            renderTree();
+            renderTree({ preserveScroll: true });
           },
         });
       } else {
@@ -691,7 +694,7 @@
         noActivity: !!data?.NoActivity,
       });
       markQuestDirty(quest.ID);
-      renderTree();
+      renderTree({ preserveScroll: true });
     };
 
     const syncStepBaseModel = (data) => {
@@ -706,7 +709,7 @@
       step.AutoFinish = data?.AutoFinish ? 'Partial' : null;
       step.ScenarioData = String(data?.ScenarioData || '');
       markStepDirty(step.ID);
-      renderTree();
+      renderTree({ preserveScroll: true });
     };
 
     const syncStepTasksModel = (nextTasks) => {
@@ -1276,7 +1279,7 @@
 
       ensureStepTabs();
       showEditor('step');
-      renderTree();
+      renderTree({ preserveScroll: true });
     };
 
     const buildTreeHtml = () => {
@@ -1292,14 +1295,23 @@
         stepsByQuest.get(step.QuestID).push(step);
       });
 
-      const questItems = STATE.quests
+      const questList = STATE.quests
         .filter((quest) => {
           if (activeTypeFilter && parseFlags(quest.Flags).type !== activeTypeFilter) return false;
           if (!search) return true;
           return String(quest.Name || '').toLowerCase().includes(search) || String(quest.ID).includes(search);
         })
-        .sort((a, b) => a.ID - b.ID)
-        .map((quest) => {
+        .sort((a, b) => a.ID - b.ID);
+
+      if (STATE.lastQuestScrollId) {
+        const selectedIndex = questList.findIndex((quest) => quest.ID === STATE.lastQuestScrollId);
+        if (selectedIndex > 0) {
+          const [selectedQuest] = questList.splice(selectedIndex, 1);
+          questList.unshift(selectedQuest);
+        }
+      }
+
+      const questItems = questList.map((quest) => {
           const isExpanded = hasSearch || STATE.expandedQuests.has(quest.ID);
           const questClasses = [
             'quest-node',
@@ -1385,10 +1397,12 @@
       return questItems.join('') || '<div class="editor-muted-text text-sm">Квесты не найдены</div>';
     };
 
-    const renderTree = () => {
+    const renderTree = ({ preserveScroll = false } = {}) => {
+      const scrollTop = DOM.tree?.scrollTop ?? 0;
       DOM.tree.innerHTML = buildTreeHtml();
       bindTreeEvents();
       updateCounts();
+      if (preserveScroll && DOM.tree) DOM.tree.scrollTop = scrollTop;
     };
 
     const showEditor = (type) => {
@@ -1398,7 +1412,10 @@
     };
 
     const selectQuest = (quest) => {
+      const previousQuestId = STATE.lastQuestScrollId;
+      const shouldResetScroll = previousQuestId !== quest.ID;
       STATE.selected = { type: 'quest', id: quest.ID };
+      STATE.lastQuestScrollId = quest.ID;
       DOM.title.textContent = quest.Name ? `Квест: ${quest.Name}` : `Квест #${quest.ID}`;
       DOM.subtitle.textContent = `ID ${quest.ID} · Следующий: ${quest.NextQuestID || '—'}`;
       DOM.newStep.disabled = false;
@@ -1424,7 +1441,8 @@
       if (nameInput) nameInput.setAttribute('maxlength', '24');
 
       showEditor('quest');
-      renderTree();
+      renderTree({ preserveScroll: !shouldResetScroll });
+      if (shouldResetScroll && DOM.tree) DOM.tree.scrollTop = 0;
     };
 
     const selectStep = (step) => {
@@ -1475,7 +1493,7 @@
           } else {
             STATE.expandedQuests.add(questId);
           }
-          renderTree();
+          renderTree({ preserveScroll: true });
         });
       });
 
@@ -1516,7 +1534,7 @@
         step.Step = value;
         input.value = value;
         markStepDirty(step.ID);
-        renderTree();
+        renderTree({ preserveScroll: true });
         if (STATE.selected?.type === 'step' && STATE.selected?.id === step.ID) {
           selectStep(step);
         }
@@ -1553,7 +1571,7 @@
       if (!step || step.QuestID === questId) return;
       step.QuestID = questId;
       markStepDirty(step.ID);
-      renderTree();
+      renderTree({ preserveScroll: true });
       if (STATE.selected?.type === 'step' && STATE.selected?.id === stepId) {
         selectStep(step);
       }
@@ -1602,6 +1620,9 @@
 
         STATE.dirtyQuests.clear();
         STATE.dirtySteps.clear();
+        STATE.newSteps.clear();
+        STATE.nextTempStepId = -1;
+        STATE.lastQuestScrollId = null;
         setDirty();
         renderTree();
       } catch (error) {
@@ -1612,8 +1633,9 @@
 
     const saveAll = async () => {
       const quests = Array.from(STATE.dirtyQuests);
-      const steps = Array.from(STATE.dirtySteps);
-      if (!quests.length && !steps.length) {
+      const newSteps = Array.from(STATE.newSteps);
+      const steps = Array.from(STATE.dirtySteps).filter((id) => !STATE.newSteps.has(id));
+      if (!quests.length && !steps.length && !newSteps.length) {
         EditorCore.UI.toast('Нет изменений для сохранения', 'info');
         return;
       }
@@ -1630,6 +1652,33 @@
             Exp: quest.Exp,
             Flags: quest.Flags || QuestFlags.typeMain,
           });
+        }
+
+        for (const id of newSteps) {
+          const step = STATE.steps.find((s) => s.ID === id);
+          if (!step) continue;
+          const rawTasks = denormalizeTasks(step.TasksData);
+          const res = await EditorCore.DBCrud.create('quest_bots', {
+            BotID: step.BotID,
+            QuestID: step.QuestID,
+            Step: step.Step,
+            WorldID: step.WorldID == null ? null : step.WorldID,
+            PosX: step.PosX,
+            PosY: step.PosY,
+            AutoFinish: step.AutoFinish || null,
+            DialogData: step.DialogData?.length ? step.DialogData : null,
+            ScenarioData: step.ScenarioData || null,
+            TasksData: rawTasks,
+          });
+          const newId = Number(res?.id || 0);
+          if (newId) {
+            if (STATE.selected?.type === 'step' && STATE.selected?.id === step.ID) {
+              STATE.selected.id = newId;
+            }
+            STATE.dirtySteps.delete(step.ID);
+            STATE.newSteps.delete(step.ID);
+            step.ID = newId;
+          }
         }
 
         for (const id of steps) {
@@ -1652,7 +1701,18 @@
 
         STATE.dirtyQuests.clear();
         STATE.dirtySteps.clear();
+        STATE.newSteps.clear();
         setDirty();
+        if (STATE.selected?.type === 'step') {
+          const step = STATE.steps.find((s) => s.ID === STATE.selected?.id);
+          if (step) {
+            selectStep(step);
+          } else {
+            renderTree({ preserveScroll: true });
+          }
+        } else {
+          renderTree({ preserveScroll: true });
+        }
         EditorCore.UI.toast('Изменения сохранены', 'success');
       } catch (error) {
         EditorCore.UI.toast(error.message || 'Ошибка сохранения', 'error');
@@ -1690,29 +1750,27 @@
           : null;
       if (!stepQuestId) return;
 
-      DOM.newStep.disabled = true;
-      try {
-        const payload = {
-          BotID: 0,
-          QuestID: stepQuestId,
-          Step: 1,
-          WorldID: null,
-          PosX: 0,
-          PosY: 0,
-          AutoFinish: null,
-          DialogData: null,
-          ScenarioData: null,
-          TasksData: taskDefault(),
-        };
-        const res = await EditorCore.DBCrud.create('quest_bots', payload);
-        await loadData();
-        const step = STATE.steps.find((s) => s.ID === res.id);
-        if (step) selectStep(step);
-      } catch (error) {
-        EditorCore.UI.toast(error.message || 'Ошибка создания шага', 'error');
-      } finally {
-        DOM.newStep.disabled = false;
-      }
+      const questSteps = STATE.steps.filter((step) => step.QuestID === stepQuestId);
+      const maxStep = questSteps.reduce((max, step) => Math.max(max, Number(step.Step || 0)), 0);
+      const tempId = STATE.nextTempStepId--;
+      const step = {
+        ID: tempId,
+        BotID: 0,
+        QuestID: stepQuestId,
+        Step: Math.max(1, maxStep + 1),
+        WorldID: null,
+        PosX: 0,
+        PosY: 0,
+        AutoFinish: null,
+        DialogData: [],
+        ScenarioData: '',
+        TasksData: taskDefault(),
+      };
+      STATE.steps.push(step);
+      STATE.newSteps.add(step.ID);
+      STATE.expandedQuests.add(stepQuestId);
+      markStepDirty(step.ID);
+      selectStep(step);
     };
 
     DOM.refresh.addEventListener('click', loadData);
