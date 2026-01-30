@@ -370,6 +370,24 @@
     // New default UI: single searchable input with dropdown list.
     const renderDbSelectCombo = () => {
       const { ds, dbKey, placeholder, labelMode } = resolveDbParams();
+      const rawFilter = ui.dbFilter || field.dbFilter;
+      const dbFilter = (() => {
+        if (!rawFilter || typeof rawFilter !== 'object') return null;
+        const key = String(rawFilter.key || rawFilter.column || '').trim();
+        if (!key) return null;
+        const rawValues = rawFilter.values ?? rawFilter.value ?? rawFilter.val ?? '';
+        const values = Array.isArray(rawValues)
+          ? rawValues.map(v => String(v ?? '').trim()).filter(Boolean)
+          : [String(rawValues ?? '').trim()].filter(Boolean);
+        if (!values.length) return null;
+        return { key, values };
+      })();
+      const filterAttrs = dbFilter
+        ? (dbFilter.values.length > 1
+          ? ` data-db-filter-key="${escapeAttr(dbFilter.key)}" data-db-filter-values="${escapeAttr(JSON.stringify(dbFilter.values))}"`
+          : ` data-db-filter-key="${escapeAttr(dbFilter.key)}" data-db-filter-value="${escapeAttr(dbFilter.values[0])}"`
+        )
+        : '';
       const extraOptionsRaw = ui.extraOptions || field.extraOptions;
       const extraOptions = Array.isArray(extraOptionsRaw) ? extraOptionsRaw : [];
       const extraOptionsAttr = extraOptions.length
@@ -410,7 +428,7 @@
              data-db-searchable="${escapeAttr(searchable)}"
              data-db-limit="${escapeAttr(dbLimit)}"
              data-placeholder="${escapeAttr(placeholder)}"
-             data-label-mode="${escapeAttr(String(labelMode))}"${extraOptionsAttr}
+             data-label-mode="${escapeAttr(String(labelMode))}"${extraOptionsAttr}${filterAttrs}
              data-bind-input-path="${escapeAttr(path)}"
              data-current-value="${escapeAttr(curVal)}">
           <div class="editor-dbcombo-control">

@@ -97,7 +97,7 @@ function db_connect(): mysqli {
 // Each source returns items {value,label}
 $SOURCES = [
   'quests' => ['table' => 'tw_quests_list', 'id' => 'ID', 'label' => 'Name'],
-  'items'  => ['table' => 'tw_items_list',  'id' => 'ID', 'label' => 'Name'],
+  'items'  => ['table' => 'tw_items_list',  'id' => 'ID', 'label' => 'Name', 'filters' => ['Type', 'Group']],
   'worlds' => ['table' => 'tw_worlds',      'id' => 'ID', 'label' => 'Name'],
   'skills' => ['table' => 'tw_skills_list', 'id' => 'ID', 'label' => 'Name'],
   'bots'   => ['table' => 'tw_bots_info',   'id' => 'ID', 'label' => 'Name'],
@@ -168,6 +168,9 @@ try {
     }
     $meta = $SOURCES[$source];
     $search = trim((string)($_GET['search'] ?? ''));
+    $filterKey = trim((string)($_GET['filter_key'] ?? ''));
+    $filterValue = trim((string)($_GET['filter_value'] ?? ''));
+    $filterValuesRaw = trim((string)($_GET['filter_values'] ?? ''));
     $limit = max(1, min(5000, (int)($_GET['limit'] ?? 1000)));
     $offset = max(0, (int)($_GET['offset'] ?? 0));
     $withTotal = (string)($_GET['with_total'] ?? '') === '1';
@@ -177,22 +180,48 @@ try {
     $idCol = $meta['id'];
     $labelCol = $meta['label'];
 
-    $where = '';
+    if ($filterKey !== '') {
+      $allowed = $meta['filters'] ?? [];
+      if (!in_array($filterKey, $allowed, true)) {
+        respond(['ok' => false, 'error' => 'Invalid filter key'], 400);
+      }
+    }
+
+    $whereParts = [];
     $types = '';
     $params = [];
     if ($search !== '') {
       $isNum = ctype_digit($search);
       if ($isNum) {
-        $where = "WHERE `$idCol` = ? OR `$labelCol` LIKE ?";
-        $types = 'is';
+        $whereParts[] = "(`$idCol` = ? OR `$labelCol` LIKE ?)";
+        $types .= 'is';
         $params[] = (int)$search;
         $params[] = '%' . $search . '%';
       } else {
-        $where = "WHERE `$labelCol` LIKE ?";
-        $types = 's';
+        $whereParts[] = "`$labelCol` LIKE ?";
+        $types .= 's';
         $params[] = '%' . $search . '%';
       }
     }
+    $filterValues = [];
+    if ($filterValuesRaw !== '') {
+      $decoded = json_decode($filterValuesRaw, true);
+      if (is_array($decoded)) {
+        $filterValues = array_values(array_filter(array_map('trim', $decoded), static fn($v) => $v !== ''));
+      } else {
+        $filterValues = array_values(array_filter(array_map('trim', explode(',', $filterValuesRaw)), static fn($v) => $v !== ''));
+      }
+    } elseif ($filterValue !== '') {
+      $filterValues = [$filterValue];
+    }
+
+    if ($filterKey !== '' && $filterValues) {
+      $placeholders = implode(',', array_fill(0, count($filterValues), '?'));
+      $whereParts[] = "`$filterKey` IN ($placeholders)";
+      $types .= str_repeat('s', count($filterValues));
+      $params = array_merge($params, $filterValues);
+    }
+    $where = $whereParts ? ('WHERE ' . implode(' AND ', $whereParts)) : '';
 
     $total = null;
     if ($withTotal) {

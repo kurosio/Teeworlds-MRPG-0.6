@@ -228,32 +228,68 @@
       SlotHammer: {
         type: 'db_select',
         label: 'Молот',
-        ui: { dbKey: 'item', placeholder: '— предмет —', searchPlaceholder: 'Поиск предмета…', valueType: 'number' }
+        ui: {
+          dbKey: 'item',
+          placeholder: '— предмет —',
+          searchPlaceholder: 'Поиск предмета…',
+          valueType: 'number',
+          dbFilter: { key: 'Type', value: 'Equip hammer' }
+        }
       },
       SlotGun: {
         type: 'db_select',
         label: 'Пистолет',
-        ui: { dbKey: 'item', placeholder: '— предмет —', searchPlaceholder: 'Поиск предмета…', valueType: 'number' }
+        ui: {
+          dbKey: 'item',
+          placeholder: '— предмет —',
+          searchPlaceholder: 'Поиск предмета…',
+          valueType: 'number',
+          dbFilter: { key: 'Type', value: 'Equip gun' }
+        }
       },
       SlotShotgun: {
         type: 'db_select',
         label: 'Дробовик',
-        ui: { dbKey: 'item', placeholder: '— предмет —', searchPlaceholder: 'Поиск предмета…', valueType: 'number' }
+        ui: {
+          dbKey: 'item',
+          placeholder: '— предмет —',
+          searchPlaceholder: 'Поиск предмета…',
+          valueType: 'number',
+          dbFilter: { key: 'Type', value: 'Equip shotgun' }
+        }
       },
       SlotGrenade: {
         type: 'db_select',
         label: 'Гранатомёт',
-        ui: { dbKey: 'item', placeholder: '— предмет —', searchPlaceholder: 'Поиск предмета…', valueType: 'number' }
+        ui: {
+          dbKey: 'item',
+          placeholder: '— предмет —',
+          searchPlaceholder: 'Поиск предмета…',
+          valueType: 'number',
+          dbFilter: { key: 'Type', value: 'Equip grenade' }
+        }
       },
       SlotRifle: {
         type: 'db_select',
         label: 'Лазер',
-        ui: { dbKey: 'item', placeholder: '— предмет —', searchPlaceholder: 'Поиск предмета…', valueType: 'number' }
+        ui: {
+          dbKey: 'item',
+          placeholder: '— предмет —',
+          searchPlaceholder: 'Поиск предмета…',
+          valueType: 'number',
+          dbFilter: { key: 'Type', value: 'Equip rifle' }
+        }
       },
       SlotArmor: {
         type: 'db_select',
         label: 'Броня',
-        ui: { dbKey: 'item', placeholder: '— предмет —', searchPlaceholder: 'Поиск предмета…', valueType: 'number' }
+        ui: {
+          dbKey: 'item',
+          placeholder: '— предмет —',
+          searchPlaceholder: 'Поиск предмета…',
+          valueType: 'number',
+          dbFilter: { key: 'Type', values: ['Equip armor (tank)', 'Equip armor (dps)', 'Equip armor (healer)'] }
+        }
       }
     };
 

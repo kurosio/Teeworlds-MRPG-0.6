@@ -38,6 +38,25 @@
   };
   const cacheSet = (key, value) => cache.set(key, { ts: Date.now(), value });
 
+  const readFilter = (el) => {
+    if (!el) return null;
+    const key = String(el.dataset.dbFilterKey || '').trim();
+    if (!key) return null;
+    const rawValues = el.dataset.dbFilterValues;
+    if (rawValues) {
+      try {
+        const parsed = JSON.parse(rawValues);
+        if (Array.isArray(parsed)) {
+          const values = parsed.map(v => String(v ?? '').trim()).filter(Boolean);
+          if (values.length) return { key, values };
+        }
+      } catch {}
+    }
+    const value = String(el.dataset.dbFilterValue ?? '').trim();
+    if (value === '') return null;
+    return { key, values: [value] };
+  };
+
   const getSelectedValue = (el, { bindInputPath, root }) => {
     if (bindInputPath) {
       const input = root.querySelector(`[data-path="${CSS.escape(bindInputPath)}"]`);
@@ -82,6 +101,7 @@
     const labelMode = (el.dataset.labelMode || 'id_name').toLowerCase();
     const pageSize = Number(el.dataset.dbLimit || 300);
     const multiple = !!el.multiple;
+    const filter = readFilter(el);
 
     const state = { q: '', loaded: 0, total: null, hasMore: false };
 
@@ -154,7 +174,14 @@
       }
 
       el.disabled = true;
-      const res = await db.list(source, { search: state.q, limit: pageSize, offset: state.loaded, withTotal: true });
+      const res = await db.list(source, {
+        search: state.q,
+        limit: pageSize,
+        offset: state.loaded,
+        withTotal: true,
+        filterKey: filter?.key,
+        filterValues: filter?.values
+      });
       if (!res?.ok) {
         el.dataset.dbFailed = '1';
         el.dataset.dbLoaded = '0';
@@ -342,6 +369,7 @@
     const labelMode = (combo.dataset.labelMode || 'id_name').toLowerCase();
     const pageSize = Number(combo.dataset.dbLimit || 300);
     const searchable = combo.dataset.dbSearchable === '1';
+    const filter = readFilter(combo);
     const extraOptions = (() => {
       const raw = String(combo.dataset.extraOptions || '').trim();
       if (!raw) return [];
@@ -558,7 +586,7 @@
 
     const loadClientItemsIfNeeded = async () => {
       if (state.items) return true;
-      const res = await db.list(source, { limit: 5000, offset: 0 });
+      const res = await db.list(source, { limit: 5000, offset: 0, filterKey: filter?.key, filterValues: filter?.values });
       if (!res?.ok) return false;
       state.items = res.items || [];
       return true;
@@ -572,7 +600,14 @@
       // If DB is down -> show fallback
       try {
         if (searchable) {
-          const res = await db.list(source, { search: q, limit: pageSize, offset: 0, withTotal: false });
+          const res = await db.list(source, {
+            search: q,
+            limit: pageSize,
+            offset: 0,
+            withTotal: false,
+            filterKey: filter?.key,
+            filterValues: filter?.values
+          });
           if (!res?.ok) {
             setDbState('disconnected');
             close();
@@ -731,13 +766,26 @@
       return res;
     },
 
-    async list(source, { search = '', limit = 1000, offset = 0, withTotal = false } = {}) {
-      const key = `list:${source}:${search}:${limit}:${offset}:${withTotal ? 1 : 0}`;
+    async list(source, { search = '', limit = 1000, offset = 0, withTotal = false, filterKey = '', filterValue = '', filterValues = [] } = {}) {
+      const resolvedFilterKey = String(filterKey || '');
+      const normalizedValues = Array.isArray(filterValues)
+        ? filterValues.map(v => String(v ?? '').trim()).filter(Boolean)
+        : (filterValue ? [String(filterValue)] : []);
+      const resolvedFilterValue = normalizedValues.join('|');
+      const key = `list:${source}:${search}:${limit}:${offset}:${withTotal ? 1 : 0}:${resolvedFilterKey}:${resolvedFilterValue}`;
       const cached = cacheGet(key);
       if (cached) return cached;
 
       const params = { action: 'list', source, search, limit: String(limit), offset: String(offset) };
       if (withTotal) params.with_total = '1';
+      if (resolvedFilterKey && normalizedValues.length) {
+        params.filter_key = resolvedFilterKey;
+        if (normalizedValues.length > 1) {
+          params.filter_values = JSON.stringify(normalizedValues);
+        } else {
+          params.filter_value = normalizedValues[0];
+        }
+      }
       const qs = new URLSearchParams(params).toString();
 
       const res = await fetchJson(`${this.endpoint}?${qs}`);
@@ -754,11 +802,16 @@
       for (const el of selects) {
         const source = el.dataset.datasource;
         if (!source) continue;
-        if (!bySource.has(source)) bySource.set(source, []);
-        bySource.get(source).push(el);
+        const filter = readFilter(el);
+        const filterKey = filter ? `${filter.key}=${filter.values.join('|')}` : '';
+        const groupKey = `${source}::${filterKey}`;
+        if (!bySource.has(groupKey)) {
+          bySource.set(groupKey, { source, filter, els: [] });
+        }
+        bySource.get(groupKey).els.push(el);
       }
 
-      for (const [source, els] of bySource.entries()) {
+      for (const { source, filter, els } of bySource.values()) {
         // show loading
         for (const el of els) {
           const current = el.value || el.dataset.currentValue || '';
@@ -786,7 +839,7 @@
           // For non-searchable selects of the same source in the same root, also populate them (bulk).
           const bulkEls = els.filter(e => e.dataset.dbSearchable !== '1');
           if (bulkEls.length) {
-            const res = await this.list(source, { limit: 5000, offset: 0 });
+            const res = await this.list(source, { limit: 5000, offset: 0, filterKey: filter?.key, filterValues: filter?.values });
             if (!res?.ok) {
               for (const el of bulkEls) {
                 el.disabled = true;
@@ -810,7 +863,7 @@
         let ok = true;
 
         while (true) {
-          const res = await this.list(source, { limit: PAGE, offset });
+          const res = await this.list(source, { limit: PAGE, offset, filterKey: filter?.key, filterValues: filter?.values });
           if (!res?.ok) { ok = false; break; }
           const page = res.items || [];
           items = items.concat(page);
