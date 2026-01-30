@@ -370,6 +370,11 @@
     // New default UI: single searchable input with dropdown list.
     const renderDbSelectCombo = () => {
       const { ds, dbKey, placeholder, labelMode } = resolveDbParams();
+      const extraOptionsRaw = ui.extraOptions || field.extraOptions;
+      const extraOptions = Array.isArray(extraOptionsRaw) ? extraOptionsRaw : [];
+      const extraOptionsAttr = extraOptions.length
+        ? ` data-extra-options="${escapeAttr(JSON.stringify(extraOptions))}"`
+        : '';
       if (!ds) return renderInput('number', value ?? 0);
 
       const wrapClass = ui.controlWrapClass ? ` ${String(ui.controlWrapClass)}` : '';
@@ -405,7 +410,7 @@
              data-db-searchable="${escapeAttr(searchable)}"
              data-db-limit="${escapeAttr(dbLimit)}"
              data-placeholder="${escapeAttr(placeholder)}"
-             data-label-mode="${escapeAttr(String(labelMode))}"
+             data-label-mode="${escapeAttr(String(labelMode))}"${extraOptionsAttr}
              data-bind-input-path="${escapeAttr(path)}"
              data-current-value="${escapeAttr(curVal)}">
           <div class="editor-dbcombo-control">

@@ -455,6 +455,7 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
   <script src="editor-core/editor-core.bundle.js"></script>
+  <script src="editor-core/dialog-editor.js"></script>
   <script src="editor-core/form-runtime.js"></script>
   <script>
     const { fieldRenderOptions } = EditorCore.bootstrapEditor({ mode: 'event' });
@@ -640,25 +641,16 @@
       ScenarioData: { type: 'textarea', label: 'Scenario JSON', ui: { placeholder: '{...}', rows: 6 } },
     };
 
-    const dialogFields = {
-      DialogData: {
-        type: 'list',
-        label: 'Диалоги',
-        itemFields: {
-          text: { type: 'textarea', label: 'Текст', ui: { rows: 2, placeholder: 'Диалог...' } },
-          side: { type: 'select', label: 'Сторона', ui: { options: ['default', 'author', 'thoughts'] } },
-          left_speaker_id: { type: 'number', label: 'Left speaker ID', ui: { step: 1 } },
-          right_speaker_id: { type: 'number', label: 'Right speaker ID', ui: { step: 1 } },
-          action: { type: 'toggle', label: 'Action' },
-        },
-        ui: {
-          listMode: 'table',
-          tableHeader: ['Текст', 'Side', 'Left', 'Right', 'Action'],
-          tableCols: 'minmax(260px,2fr) minmax(120px,1fr) 90px 90px 90px',
-          addLabel: 'Добавить реплику',
-        },
-      }
-    };
+    const dialogSideOptions = [
+      { value: 'default', label: 'speak for' },
+      { value: 'author', label: 'author' },
+      { value: 'thoughts', label: 'thoughts' },
+    ];
+
+    const dialogExtraSpeakers = [
+      { value: -1, label: 'Player' },
+      { value: 0, label: 'Default bot' },
+    ];
 
     let questFormRuntime = null;
     let stepBaseFormRuntime = null;
@@ -1242,9 +1234,28 @@
       });
     };
 
-    const syncDialogModel = (data) => {
+    const applyDialogConstraints = (data, meta = {}) => {
+      if (!window.EditorCore?.DialogEditor) return;
+      const speakerCandidates = window.EditorCore.DialogEditor.buildSpeakerCandidates(
+        STATE.lookups?.bots,
+        dialogExtraSpeakers,
+      );
+      window.EditorCore.DialogEditor.applyConstraints({
+        root: DOM.dialogForm,
+        data,
+        meta,
+        sideOptions: dialogSideOptions,
+        speakerCandidates,
+      });
+    };
+
+    const syncDialogModel = (data, meta = {}) => {
       const step = STATE.steps.find((s) => s.ID === STATE.selected?.id);
       if (!step) return;
+      applyDialogConstraints(data, meta);
+      if (typeof requestAnimationFrame === 'function') {
+        requestAnimationFrame(() => applyDialogConstraints(data, meta));
+      }
       step.DialogData = Array.isArray(data?.DialogData) ? data.DialogData : [];
       markStepDirty(step.ID);
       renderTree();
@@ -1280,12 +1291,14 @@
 
       renderTasksEditor(step);
 
-      dialogFormRuntime = EditorCore.FormRuntime.mount(DOM.dialogForm, {
-        fields: dialogFields,
+      dialogFormRuntime = EditorCore.DialogEditor.mount(DOM.dialogForm, {
         data: { DialogData: step.DialogData || [] },
         fieldOptions: fieldRenderOptions,
+        sideOptions: dialogSideOptions,
+        extraSpeakers: dialogExtraSpeakers,
         onChange: syncDialogModel,
       });
+      applyDialogConstraints(dialogFormRuntime.getData());
 
       ensureStepTabs();
       showEditor('step');

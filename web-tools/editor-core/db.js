@@ -343,6 +343,19 @@
     const labelMode = (combo.dataset.labelMode || 'id_name').toLowerCase();
     const pageSize = Number(combo.dataset.dbLimit || 300);
     const searchable = combo.dataset.dbSearchable === '1';
+    const extraOptions = (() => {
+      const raw = String(combo.dataset.extraOptions || '').trim();
+      if (!raw) return [];
+      try {
+        const parsed = JSON.parse(raw);
+        if (!Array.isArray(parsed)) return [];
+        return parsed
+          .filter((opt) => opt && typeof opt === 'object' && opt.value !== undefined)
+          .map((opt) => ({ value: String(opt.value), label: String(opt.label ?? opt.value) }));
+      } catch {
+        return [];
+      }
+    })();
 
     const bound = bindInputPath
       ? root.querySelector(`[data-path="${CSS.escape(bindInputPath)}"]`)
@@ -367,6 +380,22 @@
       const v = String(val);
       const l = String(baseLabel || '');
       return labelMode === 'name' ? l : `${v}: ${l}`;
+    };
+
+    const findExtraOption = (val) => {
+      const key = String(val ?? '');
+      return extraOptions.find((opt) => String(opt.value) === key) || null;
+    };
+
+    const filterExtraOptions = (query) => {
+      if (!extraOptions.length) return [];
+      const q = String(query || '').trim().toLowerCase();
+      if (!q) return extraOptions;
+      return extraOptions.filter((opt) => {
+        const value = String(opt.value || '').toLowerCase();
+        const label = String(opt.label || '').toLowerCase();
+        return value.includes(q) || label.includes(q);
+      });
     };
 
     const state = {
@@ -456,14 +485,29 @@
     const renderList = (items, { emptyText = 'Нет вариантов' } = {}) => {
       if (!dropdown) return;
       const arr = Array.isArray(items) ? items : [];
-      state.lastResults = arr;
+      const combined = [];
+      const seen = new Set();
+      const extras = filterExtraOptions(state.q);
+      extras.forEach((opt) => {
+        const value = String(opt.value);
+        if (seen.has(value)) return;
+        combined.push({ value, label: opt.label, isExtra: true });
+        seen.add(value);
+      });
+      arr.forEach((it) => {
+        const value = String(it.value);
+        if (seen.has(value)) return;
+        combined.push({ value, label: it.label, isExtra: false });
+        seen.add(value);
+      });
+      state.lastResults = combined;
 
-      if (!arr.length) {
+      if (!combined.length) {
         dropdown.innerHTML = `<div class="editor-dbcombo-empty">${emptyText}</div>`;
         return;
       }
 
-      dropdown.innerHTML = arr.map((it, idx) => {
+      dropdown.innerHTML = combined.map((it, idx) => {
         const val = String(it.value);
         const label = formatLabel(val, it.label);
         return `<button type="button" class="editor-dbcombo-option" role="option" data-value="${val}" data-index="${idx}">${label.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</button>`;
@@ -474,6 +518,12 @@
           const v = String(btn.getAttribute('data-value') || '');
           if (!v) return;
           writeBoundValue(v);
+          const picked = state.lastResults[Number(btn.getAttribute('data-index'))];
+          if (picked?.isExtra) {
+            input.value = formatLabel(picked.value, picked.label);
+            close();
+            return;
+          }
           // Update display label
           try {
             const one = await db.getOne(source, v);
@@ -497,6 +547,11 @@
       if (!cur) {
         input.value = '';
         input.placeholder = placeholder;
+        return;
+      }
+      const extra = findExtraOption(cur);
+      if (extra) {
+        input.value = formatLabel(extra.value, extra.label);
         return;
       }
       try {
