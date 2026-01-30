@@ -415,9 +415,6 @@
              data-current-value="${escapeAttr(curVal)}">
           <div class="editor-dbcombo-control">
             <input type="search" class="${inputClass} editor-dbcombo-input" placeholder="${escapeAttr(searchPh)}" autocomplete="off" />
-            <button type="button" class="editor-dbcombo-clear" title="Очистить" aria-label="Очистить выбор">
-              <i class="fa-solid fa-xmark"></i>
-            </button>
           </div>
           <div class="editor-dbcombo-dropdown" role="listbox" aria-label="${escapeAttr(label)}"></div>
           <input type="number" ${manualInputAttrs} value="${escapeAttr(String(cur))}" />

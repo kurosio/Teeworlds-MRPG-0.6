@@ -743,7 +743,6 @@
       if (!step) return;
       step.TasksData = normalizeTasks(nextTasks);
       markStepDirty(step.ID);
-      renderTree();
     };
 
     const getLabelMap = async (source) => {
@@ -774,9 +773,9 @@
     ];
 
     const STEP_TABS = [
-      { id: 'mob', title: 'Редактор моба', short: 'Моб', hint: 'параметры', icon: 'fa-person-walking' },
-      { id: 'dialog', title: 'Редактор диалога', short: 'Диалог', hint: 'реплики', icon: 'fa-comments' },
-      { id: 'tasks', title: 'Редактор задач', short: 'Задачи', hint: 'условия', icon: 'fa-list-check' },
+      { id: 'mob', title: 'Редактор моба', short: 'Моб', hint: '', icon: 'fa-person-walking' },
+      { id: 'dialog', title: 'Редактор диалога', short: 'Диалог', hint: '', icon: 'fa-comments' },
+      { id: 'tasks', title: 'Редактор задач', short: 'Задачи', hint: '', icon: 'fa-list-check' },
     ];
 
     const buildTaskSummary = (sectionId, item) => {
@@ -1258,7 +1257,6 @@
       }
       step.DialogData = Array.isArray(data?.DialogData) ? data.DialogData : [];
       markStepDirty(step.ID);
-      renderTree();
     };
 
     const mountStepEditor = (step, overrides = {}) => {
@@ -1498,23 +1496,36 @@
         });
       });
 
+      const updateStepLevel = (input, options = {}) => {
+        const id = Number(input.getAttribute('data-step-level-id'));
+        const step = STATE.steps.find((s) => s.ID === id);
+        if (!step) return;
+        const nextValue = Number(input.value || step.Step || 1);
+        const value = Number.isFinite(nextValue) ? Math.max(1, nextValue) : Math.max(1, step.Step || 1);
+        if (step.Step === value && !options.forceSync) return;
+        step.Step = value;
+        input.value = value;
+        markStepDirty(step.ID);
+        renderTree();
+        if (STATE.selected?.type === 'step' && STATE.selected?.id === step.ID) {
+          selectStep(step);
+        }
+      };
+
       DOM.tree.querySelectorAll('[data-step-level-id]').forEach((input) => {
         input.addEventListener('click', (event) => {
           event.stopPropagation();
         });
         input.addEventListener('input', (event) => {
           event.stopPropagation();
-          const id = Number(event.currentTarget.getAttribute('data-step-level-id'));
-          const step = STATE.steps.find((s) => s.ID === id);
-          if (!step) return;
-          const value = Math.max(1, Number(event.currentTarget.value || 1));
-          step.Step = value;
-          event.currentTarget.value = value;
-          markStepDirty(step.ID);
-          renderTree();
-          if (STATE.selected?.type === 'step' && STATE.selected?.id === step.ID) {
-            selectStep(step);
-          }
+        });
+        input.addEventListener('change', (event) => {
+          event.stopPropagation();
+          updateStepLevel(event.currentTarget, { forceSync: true });
+        });
+        input.addEventListener('blur', (event) => {
+          event.stopPropagation();
+          updateStepLevel(event.currentTarget);
         });
       });
     };

@@ -1158,9 +1158,6 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
              data-current-value="${escapeAttr(curVal)}">
           <div class="editor-dbcombo-control">
             <input type="search" class="${inputClass} editor-dbcombo-input" placeholder="${escapeAttr(searchPh)}" autocomplete="off" />
-            <button type="button" class="editor-dbcombo-clear" title="Очистить" aria-label="Очистить выбор">
-              <i class="fa-solid fa-xmark"></i>
-            </button>
           </div>
           <div class="editor-dbcombo-dropdown" role="listbox" aria-label="${escapeAttr(label)}"></div>
           <input type="number" ${manualInputAttrs} value="${escapeAttr(String(cur))}" />
@@ -1625,7 +1622,6 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
 
     const input = combo.querySelector('.editor-dbcombo-input');
     const dropdownLocal = combo.querySelector('.editor-dbcombo-dropdown');
-    const clearBtn = combo.querySelector('.editor-dbcombo-clear');
 
     let dropdown = dropdownLocal;
     let portal = null;
@@ -1676,7 +1672,6 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
       combo.setAttribute('data-db-state', state);
       if (state === 'disconnected') {
         if (input) input.disabled = true;
-        if (clearBtn) clearBtn.disabled = true;
       }
     };
 
@@ -1763,16 +1758,10 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
       bound.dispatchEvent(new Event('change', { bubbles: true }));
     };
 
-    const updateClearState = (val) => {
-      if (!clearBtn) return;
-      clearBtn.disabled = !val;
-    };
-
     const writeBoundValue = (val) => {
       if (!bound) return;
       bound.value = val ? String(val) : '0';
       dispatchBound();
-      updateClearState(val);
     };
 
     const readBoundValue = () => {
@@ -1829,7 +1818,6 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
     const ensureCurrentLabel = async () => {
       if (!input) return;
       const cur = readBoundValue();
-      updateClearState(cur);
       if (!cur) {
         input.value = '';
         input.placeholder = placeholder;

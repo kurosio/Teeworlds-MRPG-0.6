@@ -111,9 +111,7 @@
           const applyComboState = (combo, enabled) => {
             if (!combo) return;
             const comboInput = combo.querySelector('.editor-dbcombo-input');
-            const comboClear = combo.querySelector('.editor-dbcombo-clear');
             if (comboInput) comboInput.disabled = !enabled;
-            if (comboClear) comboClear.disabled = !enabled;
             combo.classList.toggle('is-disabled', !enabled);
           };
           if (leftInput) {

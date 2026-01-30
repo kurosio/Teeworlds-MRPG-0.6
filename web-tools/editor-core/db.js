@@ -316,7 +316,6 @@
 
     const input = combo.querySelector('.editor-dbcombo-input');
     const dropdownLocal = combo.querySelector('.editor-dbcombo-dropdown');
-    const clearBtn = combo.querySelector('.editor-dbcombo-clear');
 
     // Render dropdown in a portal (document.body) so it is never clipped by scroll/overflow containers.
     // This fixes layout issues inside lists and panels across all editors.
@@ -372,7 +371,6 @@
       if (state === 'disconnected') {
         // Disable the visual combo input (fallback numeric input stays available)
         if (input) input.disabled = true;
-        if (clearBtn) clearBtn.disabled = true;
       }
     };
 
@@ -465,16 +463,10 @@
       bound.dispatchEvent(new Event('change', { bubbles: true }));
     };
 
-    const updateClearState = (val) => {
-      if (!clearBtn) return;
-      clearBtn.disabled = !val;
-    };
-
     const writeBoundValue = (val) => {
       if (!bound) return;
       bound.value = val ? String(val) : '0';
       dispatchBound();
-      updateClearState(val);
     };
 
     const readBoundValue = () => {
@@ -543,7 +535,6 @@
     const ensureDisplay = async () => {
       if (!input) return;
       const cur = readBoundValue();
-      updateClearState(cur);
       if (!cur) {
         input.value = '';
         input.placeholder = placeholder;
@@ -683,16 +674,6 @@
           const ae = document.activeElement;
           if (!combo.contains(ae) && !(portal && portal.contains(ae))) close();
         }, 150);
-      });
-    }
-
-    if (clearBtn) {
-      clearBtn.addEventListener('click', (e) => {
-        e.preventDefault();
-        writeBoundValue('');
-        if (input) input.value = '';
-        close();
-        if (input) input.focus();
       });
     }
 
