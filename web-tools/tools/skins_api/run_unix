@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# run from this script's folder
+cd "$(dirname "${BASH_SOURCE[0]}")"
+exec python3 -m uvicorn main:app --reload --host 127.0.0.1 --port 8000
