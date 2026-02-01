@@ -207,23 +207,41 @@
     const cols = Array.isArray(cfg?.columns) ? cfg.columns : [];
     const rows = Array.isArray(cfg?.rows) ? cfg.rows : [];
     if (!rows.length) {
-      root.innerHTML = `<div class="p-3 editor-muted-text">Нет данных</div>`;
+      root.textContent = '';
+      const empty = document.createElement('div');
+      empty.className = 'p-3 editor-muted-text';
+      empty.textContent = 'Нет данных';
+      root.appendChild(empty);
       return;
     }
-    const thead = cols.map(c => `<th class="text-left px-3 py-2 text-slate-200">${c.title}</th>`).join('');
-    const tbody = rows.map(r => {
-      const tds = cols.map(c => {
-        const v = r[c.key];
-        const cls = c.mono ? 'font-mono text-slate-200' : 'text-slate-100';
-        return `<td class="px-3 py-2 ${cls}">${String(v ?? '')}</td>`;
-      }).join('');
-      return `<tr class="border-b border-light">${tds}</tr>`;
-    }).join('');
-    root.innerHTML = `
-      <table class="w-full text-sm">
-        <thead><tr class="bg-light border-b border-light">${thead}</tr></thead>
-        <tbody>${tbody}</tbody>
-      </table>`;
+    root.textContent = '';
+    const table = document.createElement('table');
+    table.className = 'w-full text-sm';
+    const thead = document.createElement('thead');
+    const headRow = document.createElement('tr');
+    headRow.className = 'bg-light border-b border-light';
+    cols.forEach((col) => {
+      const th = document.createElement('th');
+      th.className = 'text-left px-3 py-2 text-slate-200';
+      th.textContent = col.title;
+      headRow.appendChild(th);
+    });
+    thead.appendChild(headRow);
+    const tbody = document.createElement('tbody');
+    rows.forEach((row) => {
+      const tr = document.createElement('tr');
+      tr.className = 'border-b border-light';
+      cols.forEach((col) => {
+        const td = document.createElement('td');
+        td.className = `px-3 py-2 ${col.mono ? 'font-mono text-slate-200' : 'text-slate-100'}`;
+        td.textContent = String(row?.[col.key] ?? '');
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    });
+    table.appendChild(thead);
+    table.appendChild(tbody);
+    root.appendChild(table);
   };
 
   /**

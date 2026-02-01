@@ -57,7 +57,7 @@
         return { ...(model || {}) };
       };
 
-      const setStatus = (html = '', tone = 'muted') => {
+      const setStatus = (message = '', tone = 'muted') => {
         if (!els.status) return;
         const cls = tone === 'ok'
           ? 'text-emerald-300'
@@ -65,7 +65,7 @@
             ? 'text-red-300'
             : 'editor-muted-text';
         els.status.className = `text-sm ${cls}`;
-        els.status.innerHTML = html;
+        els.status.textContent = message;
       };
 
       const setHeader = () => {
