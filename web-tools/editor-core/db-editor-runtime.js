@@ -2,12 +2,7 @@
   // Lightweight CRUD runtime for DB editors.
   // Requires: editor-core/*.js (DBCrud + FormRuntime + FieldRenderer + UIManager).
 
-  const escapeHtml = (value) => String(value ?? '')
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
+  const escapeHtml = (...args) => window.EditorCore.utils.escapeHtml(...args);
 
   const queryRole = (root, role) => root.querySelector(`[data-editor-role="${role}"]`);
 

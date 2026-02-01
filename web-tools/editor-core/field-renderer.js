@@ -96,16 +96,8 @@
     return input.value;
   };
 
-  const escapeAttr = (value) => String(value).replace(/"/g, '&quot;');
-
-  // Used in list/table headers and other HTML fragments.
-  // Keep it here to avoid missing globals in editors.
-  const escapeHtml = (s) => String(s)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;')
-    .replace(/'/g, '&#39;');
+  const escapeAttr = (...args) => window.EditorCore.utils.escapeAttr(...args);
+  const escapeHtml = (...args) => window.EditorCore.utils.escapeHtml(...args);
 
   const normalizeCssSize = (v) => {
     if (v == null) return '';

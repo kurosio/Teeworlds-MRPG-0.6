@@ -64,12 +64,7 @@
         try { return JSON.parse(raw); } catch { return fallback; }
       };
 
-      const escapeHtml = (s) => String(s)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
+      const escapeHtml = (...args) => window.EditorCore.utils.escapeHtml(...args);
 
       const normalizeOptions = (raw) => {
         const arr = Array.isArray(raw) ? raw : [];

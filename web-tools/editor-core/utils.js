@@ -16,6 +16,15 @@
     };
   };
 
+  const escapeAttr = (value) => String(value).replace(/"/g, '&quot;');
+
+  const escapeHtml = (s) => String(s)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+
   const rafThrottle = (fn) => {
     let ticking = false;
     let lastArgs = null;
@@ -318,6 +327,8 @@
   window.EditorCore.utils = {
     uuid,
     debounce,
+    escapeAttr,
+    escapeHtml,
     rafThrottle,
     copyText,
     downloadText,
