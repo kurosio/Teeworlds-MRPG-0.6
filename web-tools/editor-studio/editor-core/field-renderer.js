@@ -207,6 +207,37 @@
     const value = getValueAtPath(data, path);
     const label = field.label || path.split('.').slice(-1)[0];
     const ui = field.ui || {};
+
+    // field visibility
+    // supports:
+    //  - ui.showWhen: boolean | function(data, ctx) => boolean
+    //  - field.showWhen / field.visible: same as above
+    //  - ui.showWhen: { path, equals } | { path, in: [] }
+    const isFieldVisible = (() => {
+      const spec = ui?.showWhen ?? field?.showWhen ?? field?.visible;
+      if (spec === undefined) return true;
+      const ctx = { path, field, value };
+      try {
+        if (typeof spec === 'function') return !!spec(data, ctx);
+        if (typeof spec === 'boolean') return spec;
+        if (spec && typeof spec === 'object') {
+          const p = spec.path;
+          if (!p) return true;
+          const cur = getValueAtPath(data, p);
+          if (Object.prototype.hasOwnProperty.call(spec, 'equals')) {
+            return String(cur) === String(spec.equals);
+          }
+          if (Array.isArray(spec.in)) {
+            return spec.in.map(String).includes(String(cur));
+          }
+        }
+      } catch {
+        return true;
+      }
+      return true;
+    })();
+
+    if (!isFieldVisible) return '';
     const showLabel = ui.hideLabel !== true;
     const inputClass = options?.classes?.input || '';
     const baseLabelClass = options?.classes?.label || '';
@@ -294,7 +325,20 @@
         includeDataPath,
         extraAttrs: `${styleAttr} ${multiple ? 'multiple' : ''}`.trim()
       });
-      return `<select ${attrs}>${renderSelectOptions(ui.options || [], value, multiple)}</select>`;
+      const selectOptions = (() => {
+        const spec = ui.options;
+        if (typeof spec === 'function') {
+          try {
+            const out = spec(data, { path, field, value, multiple });
+            return Array.isArray(out) ? out : [];
+          } catch (err) {
+            console.warn('field-renderer: options() failed for', path, err);
+            return [];
+          }
+        }
+        return Array.isArray(spec) ? spec : [];
+      })();
+      return `<select ${attrs}>${renderSelectOptions(selectOptions, value, multiple)}</select>`;
     };
 
     const resolveDbParams = () => {

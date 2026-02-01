@@ -14,9 +14,9 @@
     .crafts-item:last-child{border-bottom:0}
 
     /* Main craft fields: 2-col grid with full-width selects */
-    #form-main{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:start;}
-    #form-main [data-field-path="ItemID"],
-    #form-main [data-field-path="WorldID"]{grid-column:1 / -1;}
+    #form-main{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-items:start;}
+    #form-main [data-field-path="ItemID"]{grid-column:1 / -1;},
+    #form-main [data-field-path="WorldID"]
     @media (max-width: 640px){#form-main{grid-template-columns:1fr;}}
 
     /* Required items: use new listMode=table; button should be full width */
@@ -134,7 +134,7 @@
 		</div>
 		<div class="editor-section">
 		  <div class="flex items-center justify-between gap-3">
-			<h3 class="text-sm font-semibold">Ингредиенты (RequiredItems)</h3>
+			<h3 class="text-sm font-semibold">Ингредиенты</h3>
 			<div class="flex items-center gap-2">
 			  <button id="btn-add-req" type="button" class="editor-btn editor-btn-secondary text-sm">
 				<i class="fa-solid fa-plus"></i><span>Добавить</span>
@@ -144,7 +144,6 @@
 			  </button>
 			</div>
 		  </div>
-		  <div class="editor-muted-text text-xs mt-1">Сохраняется в строковом виде: <code>[ItemID/Count],[ItemID/Count]</code></div>
 		  <div id="form-req"></div>
 		  <div class="mt-3">
 			<details id="raw-wrap" class="editor-details">
@@ -485,10 +484,10 @@
     let runtimeReq = null;
 
     const mainFields = {
-      ItemID: { type: 'db_select', label: 'Результат (ItemID)', ui: { dbKey: 'item', placeholder: '— выберите предмет —', searchable: true } },
-      ItemValue: { type: 'number', label: 'Количество (ItemValue)', ui: { min: 1, max: 999999, step: 1 } },
-      Price: { type: 'number', label: 'Цена (Price)', ui: { min: 0, max: 999999999, step: 1 } },
-      WorldID: { type: 'db_select', label: 'Мир (WorldID)', ui: { dbKey: 'world', placeholder: '— выберите мир —', searchable: true, valueType: 'number' } },
+      ItemID: { type: 'db_select', label: 'Результат', ui: { dbKey: 'item', placeholder: '— выберите предмет —', searchable: true } },
+      ItemValue: { type: 'number', label: 'Количество', ui: { min: 1, max: 999999, step: 1 } },
+      Price: { type: 'number', label: 'Цена', ui: { min: 0, max: 999999999, step: 1 } },
+      WorldID: { type: 'db_select', label: 'Мир', ui: { dbKey: 'world', placeholder: '— выберите мир —', searchable: true, valueType: 'number' } },
     };
 
     const reqFields = {

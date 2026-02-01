@@ -7,9 +7,10 @@
   <script src="editor-core/page-loader.js" data-mode="event"></script>
 
   <style>
-    .items-form [data-field-path="Description"],
-    .items-form [data-field-path="ScenarioData"],
-    .items-form [data-field-path="Data"] {
+    .items-form [data-field-path="Comment"],
+    .items-form [data-field-path="Group"],
+    .items-form [data-field-path="Type"],
+    .items-form [data-field-path="Flags"]{
       grid-column: 1 / -1;
     }
   </style>
@@ -114,33 +115,80 @@
       'Currency',
     ];
 
-    const TYPES = [
+    const TYPE_RULES = (() => {
+      const resource = [
+        'Default',
+        'Resource harvestable',
+        'Resource mineable',
+        'Resource fishes',
+      ];
+
+      const usable = [
+        'Single use x1',
+        'Multiple use x99',
+      ];
+
+      const equipment = [
+        'Default',
+        'Equip hammer',
+        'Equip gun',
+        'Equip shotgun',
+        'Equip grenade',
+        'Equip rifle',
+        'Equip pickaxe',
+        'Equip rake',
+        'Equip fishrod',
+        'Equip gloves',
+        'Equip armor (tank)',
+        'Equip armor (dps)',
+        'Equip armor (healer)',
+        'Equip helmet (tank)',
+        'Equip helmet (dps)',
+        'Equip helmet (healer)',
+        'Equip eidolon',
+        'Equip title',
+      ];
+
+      const potion = [
+        'Equip potion HP',
+        'Equip potion MP',
+      ];
+
+      return {
+        resource,
+        usable,
+        equipment,
+        potion,
+      };
+    })();
+
+    // ------------------------------------------------------------
+    // group -> type rules (shared util)
+    // ------------------------------------------------------------
+
+    const TypeRule = window.EditorCore?.DependentSelect?.create({
+      dependsOnPath: 'Group',
+      valuePath: 'Type',
+      defaultValue: 'Default',
+      hideWhen: ['Currency', 'Quest', 'Settings', 'Decoration', 'Other'],
+      allowAllWhenMissing: false,
+      mapping: {
+        Resource: TYPE_RULES.resource,
+        Usable: TYPE_RULES.usable,
+        Equipment: TYPE_RULES.equipment,
+        Potion: TYPE_RULES.potion,
+      },
+    });
+
+    // sidebar + default selector options
+    const TYPES_ALL = Array.from(new Set([
+      ...TYPE_RULES.resource,
+      ...TYPE_RULES.usable,
+      ...TYPE_RULES.equipment,
+      ...TYPE_RULES.potion,
       'Default',
-      'Equip hammer',
-      'Equip gun',
-      'Equip shotgun',
-      'Equip grenade',
-      'Equip rifle',
-      'Equip pickaxe',
-      'Equip rake',
-      'Equip fishrod',
-      'Equip gloves',
-      'Equip armor (tank)',
-      'Equip armor (dps)',
-      'Equip armor (healer)',
-      'Equip helmet (tank)',
-      'Equip helmet (dps)',
-      'Equip helmet (healer)',
-      'Equip eidolon',
-      'Equip title',
-      'Equip potion HP',
-      'Equip potion MP',
-      'Single use x1',
-      'Multiple use x99',
-      'Resource harvestable',
-      'Resource mineable',
-      'Resource fishes',
-    ];
+    ]));
+
 
     const FLAGS = ["Can't droppable", "Can't tradeable"];
 
@@ -213,7 +261,41 @@
         label: 'Тип',
         ui: {
           type: 'select',
-          options: TYPES.map(value => ({ value, label: value })),
+          ...(TypeRule?.fieldUI ? TypeRule.fieldUI() : {}),
+        }
+      },
+      AT1: {
+        type: 'db_select',
+        label: 'Атрибут 1',
+        ui: {
+          dbKey: 'attribute',
+          placeholder: '— атрибут —',
+          showWhen: (data) => String(data?.Group || '') === 'Equipment',
+        }
+      },
+      ATValue1: {
+        type: 'number',
+        label: 'Значение атрибута 1',
+        ui: {
+          step: 1,
+          showWhen: (data) => String(data?.Group || '') === 'Equipment',
+        }
+      },
+      AT2: {
+        type: 'db_select',
+        label: 'Атрибут 2',
+        ui: {
+          dbKey: 'attribute',
+          placeholder: '— атрибут —',
+          showWhen: (data) => String(data?.Group || '') === 'Equipment',
+        }
+      },
+      ATValue2: {
+        type: 'number',
+        label: 'Значение атрибута 2',
+        ui: {
+          step: 1,
+          showWhen: (data) => String(data?.Group || '') === 'Equipment',
         }
       },
       Flags: {
@@ -224,13 +306,9 @@
           placeholder: 'Добавить флаг…',
         }
       },
-      ScenarioData: { type: 'textarea', label: 'ScenarioData', ui: { rows: 3, placeholder: 'JSON или произвольный текст' } },
       InitialPrice: { type: 'number', label: 'Начальная цена', ui: { min: 0, step: 1 } },
       RequiresProducts: { type: 'number', label: 'Требует продуктов', ui: { min: 0, step: 1 } },
-      AT1: { type: 'db_select', label: 'Атрибут 1', ui: { dbKey: 'attribute', placeholder: '— атрибут —' } },
-      AT2: { type: 'db_select', label: 'Атрибут 2', ui: { dbKey: 'attribute', placeholder: '— атрибут —' } },
-      ATValue1: { type: 'number', label: 'Значение атрибута 1', ui: { step: 1 } },
-      ATValue2: { type: 'number', label: 'Значение атрибута 2', ui: { step: 1 } },
+      ScenarioData: { type: 'textarea', label: 'ScenarioData', ui: { rows: 3, placeholder: 'JSON или произвольный текст' } },
       Data: { type: 'textarea', label: 'Data (JSON)', ui: { rows: 6, placeholder: '{"key": "value"}' } },
     };
 
@@ -250,12 +328,34 @@
         ...GROUPS.map(group => `<option value=\"${group}\">${group}</option>`),
       ].join('');
     }
-    if (filterType) {
+    const renderTypeFilterOptions = () => {
+      if (!filterType) return;
+
+      const group = String(filterGroup?.value || '').trim();
+
+      if (TypeRule?.syncFilterSelect) {
+        TypeRule.syncFilterSelect(filterType, {
+          keyValue: group,
+          allOptions: TYPES_ALL,
+          anyValue: '',
+          anyLabel: 'Все типы',
+          hideMode: 'display',
+        });
+        return;
+      }
+
+      // fallback (should not happen)
+      filterType.disabled = false;
+      filterType.style.display = '';
+      const prev = String(filterType.value || '');
       filterType.innerHTML = [
         '<option value=\"\">Все типы</option>',
-        ...TYPES.map(type => `<option value=\"${type}\">${type}</option>`),
+        ...TYPES_ALL.map(type => `<option value=\"${type}\">${type}</option>`),
       ].join('');
-    }
+      filterType.value = (prev && TYPES_ALL.includes(prev)) ? prev : '';
+    };
+
+    renderTypeFilterOptions();
 
     const editor = EditorCore.DbEditor.mount(document.body, {
       resource: 'items',
@@ -301,7 +401,9 @@
         Name: String(row?.Name || ''),
         Description: String(row?.Description || ''),
         Group: String(row?.Group || 'Quest'),
-        Type: String(row?.Type || 'Default'),
+        Type: TypeRule?.normalizeValue
+          ? TypeRule.normalizeValue(row?.Group || 'Quest', row?.Type || 'Default', row)
+          : (row?.Type || 'Default'),
         Flags: parseSet(row?.Flags, FLAGS),
         ScenarioData: row?.ScenarioData == null ? '' : String(row?.ScenarioData),
         InitialPrice: Number(row?.InitialPrice ?? 0),
@@ -312,22 +414,27 @@
         ATValue2: Number(row?.ATValue2 ?? 0),
         Data: toJsonString(row?.Data),
       }),
-      modelToPayload: (model) => ({
+      modelToPayload: (model) => {
+        const isEquipment = String(model?.Group || '') === 'Equipment';
+        return ({
         Comment: String(model?.Comment || ''),
         Name: String(model?.Name || ''),
         Description: String(model?.Description || ''),
         Group: String(model?.Group || 'Quest'),
-        Type: String(model?.Type || 'Default'),
+        Type: TypeRule?.normalizeValue
+          ? TypeRule.normalizeValue(model?.Group || 'Quest', model?.Type || 'Default', model)
+          : (model?.Type || 'Default'),
         Flags: joinSet(model?.Flags),
         ScenarioData: model?.ScenarioData ? String(model.ScenarioData) : null,
         InitialPrice: toNullableInt(model?.InitialPrice),
         RequiresProducts: toNullableInt(model?.RequiresProducts),
-        AT1: toNullableId(model?.AT1),
-        AT2: toNullableId(model?.AT2),
-        ATValue1: toNullableInt(model?.ATValue1),
-        ATValue2: toNullableInt(model?.ATValue2),
+        AT1: isEquipment ? toNullableId(model?.AT1) : null,
+        ATValue1: isEquipment ? toNullableInt(model?.ATValue1) : null,
+        AT2: isEquipment ? toNullableId(model?.AT2) : null,
+        ATValue2: isEquipment ? toNullableInt(model?.ATValue2) : null,
         Data: toJsonPayload(model?.Data, 'Data'),
-      }),
+        });
+      },
       listItem: (row) => ({
         title: row?.Name || `Предмет #${row?.ID || 0}`,
         subtitle: `${row?.Group || '—'} · ID ${row?.ID ?? '—'}`,
@@ -341,9 +448,17 @@
       },
       emptyTitle: 'Выберите предмет',
       emptySubtitle: 'или создайте новый',
+
+      // group switching toggles fields (attributes + type rules), so we normalize and rerender
+      rerenderOnChange: (model, meta) => {
+        if (meta?.path !== 'Group') return false;
+        if (TypeRule?.normalizeModel) TypeRule.normalizeModel(model);
+        return true;
+      },
     });
 
     filterGroup?.addEventListener('change', () => {
+      renderTypeFilterOptions();
       editor.refresh();
     });
     filterType?.addEventListener('change', () => {

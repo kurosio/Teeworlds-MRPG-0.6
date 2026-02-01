@@ -21,6 +21,7 @@
     '<script src="editor-core/registry.js"></script>',
     '<script src="editor-core/core.js"></script>',
     '<script src="editor-core/field-renderer.js"></script>',
+    '<script src="editor-core/dependent-select.js"></script>',
     '<script src="editor-core/form-runtime.js"></script>',
     '<script src="editor-core/dialog-editor.js"></script>',
     '<script src="editor-core/db-map.js"></script>',

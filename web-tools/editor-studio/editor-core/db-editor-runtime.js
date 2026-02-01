@@ -97,9 +97,23 @@
             fields: cfg.fields || {},
             data: state.model,
             fieldOptions,
-            onChange: (data) => {
+            onChange: (data, meta) => {
               state.model = data;
               state.dirty?.markDirty?.();
+
+              // Some forms have conditional fields (e.g. item group -> attributes).
+              // If caller specifies rerender triggers, force a form rerender.
+              const paths = cfg.rerenderOnChangePaths;
+              const shouldRerender = (() => {
+                if (Array.isArray(paths) && meta?.path) return paths.includes(meta.path);
+                if (typeof cfg.rerenderOnChange === 'function') return !!cfg.rerenderOnChange(state.model, meta);
+                return false;
+              })();
+
+              if (shouldRerender) {
+                // keep model as source of truth
+                state.form?.setData?.(state.model);
+              }
             }
           });
         } else {
