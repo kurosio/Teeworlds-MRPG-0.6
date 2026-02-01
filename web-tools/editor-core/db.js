@@ -1,11 +1,29 @@
 (() => {
   const DEFAULT_ENDPOINT = 'api/db.php';
+  const MAINT_ENDPOINT = 'api/db-maintenance.php';
 
   const safeJson = async (res) => {
     const text = await res.text();
+    if (!text) return null;
     try {
       return JSON.parse(text);
     } catch {
+      const startObj = text.indexOf('{');
+      const startArr = text.indexOf('[');
+      let start = -1;
+      if (startObj >= 0 && startArr >= 0) start = Math.min(startObj, startArr);
+      else start = Math.max(startObj, startArr);
+      if (start >= 0) {
+        const endObj = text.lastIndexOf('}');
+        const endArr = text.lastIndexOf(']');
+        const end = Math.max(endObj, endArr);
+        if (end > start) {
+          const slice = text.slice(start, end + 1);
+          try {
+            return JSON.parse(slice);
+          } catch {}
+        }
+      }
       return { ok: false, error: 'Invalid JSON response', raw: text };
     }
   };
@@ -18,6 +36,9 @@
       credentials: 'same-origin'
     });
     const json = await safeJson(res);
+    if (!json && res.ok) {
+      return { ok: true };
+    }
     if (!res.ok) {
       return { ok: false, error: json?.error || `HTTP ${res.status}`, details: json };
     }
@@ -754,6 +775,22 @@
 
     async testSkins({ url = '' } = {}) {
       return fetchJson(`${this.endpoint}?action=test_skins`, { method: 'POST', body: { url } });
+    },
+
+    async listDumps() {
+      return fetchJson(`${MAINT_ENDPOINT}?action=list_dumps`);
+    },
+
+    async createDump(payload) {
+      return fetchJson(`${MAINT_ENDPOINT}?action=create_dump`, { method: 'POST', body: payload });
+    },
+
+    async restoreDump(payload) {
+      return fetchJson(`${MAINT_ENDPOINT}?action=restore_dump`, { method: 'POST', body: payload });
+    },
+
+    async deleteDump(payload) {
+      return fetchJson(`${MAINT_ENDPOINT}?action=delete_dump`, { method: 'POST', body: payload });
     },
 
     async getOne(source, id) {

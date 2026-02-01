@@ -9,6 +9,7 @@
 - **scenario-editor.html** — редактор сценариев.
 - **event-editor.php** — редактор событий.
 - **settings.html** — вкладка настроек (подключение к БД + просмотр источников списков).
+- **database.html** — вкладка управления БД (подключение, дампы, восстановление).
 - **vouchers-editor.html** — редактор ваучеров (CRUD напрямую в БД, использует ядро).
 - **bots-info-editor.html** — редактор ботов (tw_bots_info).
 - **bots-npc-editor.html** — редактор NPC (tw_bots_npc).
@@ -16,6 +17,8 @@
 - **aethers-editor.html** — редактор телепортов Aethers (tw_aethers).
 - **api.php** — файловый API для сценариев (список/загрузка/сохранение JSON в `scenarios/`).
 - **api/db.php** — безопасный DB API (конфиг + справочники для DB Select).
+- **api/db-core.php** — общие helper-функции для DB API (конфиг + подключение).
+- **api/db-maintenance.php** — API для дампов/восстановления БД.
 - **api/db-crud.php** — универсальный CRUD API для DB-редакторов (ресурсы описываются в карте на сервере).
 
 ## 2) editor-core/ — единый набор UI-компонентов и утилит

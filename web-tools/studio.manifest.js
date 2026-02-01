@@ -31,6 +31,7 @@ window.STUDIO_MANIFEST = [
     title: 'Система',
     items: [
       { key: 'settings', title: 'Настройки', icon: 'fa-gear', src: 'settings.html' },
+      { key: 'database', title: 'База данных', icon: 'fa-database', src: 'database.html' },
     ]
   }
 ];
