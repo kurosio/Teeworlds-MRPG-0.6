@@ -317,7 +317,7 @@
           <div class="mt-3">
             <div class="editor-search">
               <i class="fa-solid fa-magnifying-glass"></i>
-              <input id="searchInput" class="w-full editor-input form-input" placeholder="Поиск по квесту / шагу / мобу" />
+              <input id="searchInput" class="w-full editor-input form-input" placeholder="Поиск по квесту / шагу / мобу / миру" />
             </div>
             <div class="mt-2">
               <select id="typeFilter" class="w-full editor-input form-input">
@@ -344,8 +344,11 @@
             </div>
             <div class="flex flex-wrap gap-2">
               <span id="dirty-pill" class="editor-dirty-pill hidden">Данные не сохранены</span>
-              <button id="newStepBtn" class="editor-btn editor-btn-secondary" disabled>
+              <button id="newStepBtn" class="editor-btn editor-btn-secondary hidden" disabled>
                 <i class="fa-solid fa-person-walking"></i><span>Новый шаг</span>
+              </button>
+              <button id="deleteBtn" class="editor-btn editor-btn-danger hidden" disabled>
+                <i class="fa-solid fa-trash"></i><span>Удалить</span>
               </button>
             </div>
           </div>
@@ -435,6 +438,7 @@
       save: document.getElementById('saveBtn'),
       newQuest: document.getElementById('newQuestBtn'),
       newStep: document.getElementById('newStepBtn'),
+      deleteBtn: document.getElementById('deleteBtn'),
       title: document.getElementById('editorTitle'),
       subtitle: document.getElementById('editorSubtitle'),
       empty: document.getElementById('editorEmpty'),
@@ -1282,13 +1286,21 @@
       renderTree({ preserveScroll: true });
     };
 
+    const normalizeSearch = (value) => String(value || '').toLowerCase();
+
     const buildTreeHtml = () => {
-      const search = String(DOM.search.value || '').toLowerCase();
+      const search = normalizeSearch(DOM.search.value || '');
+      const searchTokens = search.split(/\s+/).filter(Boolean);
       const questTypeFilter = DOM.typeFilter?.value || 'all';
       const activeTypeFilter = questTypeFilter !== 'all' ? questTypeFilter : null;
-      const hasSearch = search.length > 0;
+      const hasSearch = searchTokens.length > 0;
       const questMap = new Map(STATE.quests.map((q) => [q.ID, q]));
       const stepsByQuest = new Map();
+      const matchesSearch = (value) => {
+        if (!hasSearch) return true;
+        const text = normalizeSearch(value);
+        return searchTokens.every((token) => text.includes(token));
+      };
 
       STATE.steps.forEach((step) => {
         if (!stepsByQuest.has(step.QuestID)) stepsByQuest.set(step.QuestID, []);
@@ -1298,8 +1310,8 @@
       const questList = STATE.quests
         .filter((quest) => {
           if (activeTypeFilter && parseFlags(quest.Flags).type !== activeTypeFilter) return false;
-          if (!search) return true;
-          return String(quest.Name || '').toLowerCase().includes(search) || String(quest.ID).includes(search);
+          if (!hasSearch) return true;
+          return matchesSearch(`${quest.Name || ''} ${quest.ID}`);
         })
         .sort((a, b) => a.ID - b.ID);
 
@@ -1320,8 +1332,16 @@
           const steps = (stepsByQuest.get(quest.ID) || []).sort((a, b) => (a.Step - b.Step) || (a.ID - b.ID));
           const stepHtml = steps
             .filter((step) => {
-              if (!search) return true;
-              return String(step.BotID).includes(search) || String(step.ID).includes(search) || String(step.Step).includes(search);
+              if (!hasSearch) return true;
+              const botLabel = formatLookupLabel(STATE.lookups?.bots, step.BotID);
+              const worldLabel = formatLookupLabel(STATE.lookups?.worlds, step.WorldID);
+              return matchesSearch([
+                step.BotID,
+                step.ID,
+                step.Step,
+                botLabel,
+                worldLabel,
+              ].join(' '));
             })
             .map((step) => {
               const stepSelected = STATE.selected?.type === 'step' && STATE.selected?.id === step.ID;
@@ -1405,10 +1425,37 @@
       if (preserveScroll && DOM.tree) DOM.tree.scrollTop = scrollTop;
     };
 
+    const debouncedRenderTree = EditorCore.utils.debounce(() => renderTree(), 200);
+
+    const setDeleteButtonState = (options = {}) => {
+      if (!DOM.deleteBtn) return;
+      const { enabled = false, label = 'Удалить' } = options;
+      DOM.deleteBtn.disabled = !enabled;
+      DOM.deleteBtn.classList.toggle('hidden', !enabled);
+      const text = DOM.deleteBtn.querySelector('span');
+      if (text) text.textContent = label;
+    };
+
+    const setNewStepButtonState = (enabled) => {
+      if (!DOM.newStep) return;
+      DOM.newStep.disabled = !enabled;
+      DOM.newStep.classList.toggle('hidden', !enabled);
+    };
+
     const showEditor = (type) => {
       DOM.empty.classList.toggle('hidden', !!type);
       DOM.questEditor.classList.toggle('hidden', type !== 'quest');
       DOM.stepEditor.classList.toggle('hidden', type !== 'step');
+      if (type === 'quest') {
+        setDeleteButtonState({ enabled: true, label: 'Удалить квест' });
+        setNewStepButtonState(true);
+      } else if (type === 'step') {
+        setDeleteButtonState({ enabled: true, label: 'Удалить шаг' });
+        setNewStepButtonState(true);
+      } else {
+        setDeleteButtonState({ enabled: false, label: 'Удалить' });
+        setNewStepButtonState(false);
+      }
     };
 
     const selectQuest = (quest) => {
@@ -1418,7 +1465,8 @@
       STATE.lastQuestScrollId = quest.ID;
       DOM.title.textContent = quest.Name ? `Квест: ${quest.Name}` : `Квест #${quest.ID}`;
       DOM.subtitle.textContent = `ID ${quest.ID} · Следующий: ${quest.NextQuestID || '—'}`;
-      DOM.newStep.disabled = false;
+      setNewStepButtonState(true);
+      setDeleteButtonState({ enabled: true, label: 'Удалить квест' });
 
       const flags = parseFlags(quest.Flags);
       const model = {
@@ -1448,7 +1496,90 @@
     const selectStep = (step) => {
       STATE.selected = { type: 'step', id: step.ID };
       if (step.QuestID) STATE.expandedQuests.add(step.QuestID);
+      setNewStepButtonState(true);
+      setDeleteButtonState({ enabled: true, label: 'Удалить шаг' });
       mountStepEditor(step);
+    };
+
+    const removeQuest = async () => {
+      if (STATE.selected?.type !== 'quest') return;
+      const questId = STATE.selected.id;
+      if (!questId) return;
+      const quest = STATE.quests.find((q) => q.ID === questId);
+      const questName = quest?.Name ? `«${quest.Name}»` : `#${questId}`;
+      if (!confirm(`Удалить квест ${questName} и все его шаги?`)) return;
+
+      setDeleteButtonState({ enabled: false, label: 'Удаление…' });
+      try {
+        const stepsToRemove = STATE.steps.filter((step) => step.QuestID === questId);
+        const remoteSteps = stepsToRemove.filter((step) => step.ID > 0);
+        for (const step of remoteSteps) {
+          await EditorCore.DBCrud.remove('quest_bots', step.ID);
+        }
+
+        await EditorCore.DBCrud.remove('quests', questId);
+
+        STATE.steps = STATE.steps.filter((step) => step.QuestID !== questId);
+        STATE.quests = STATE.quests.filter((q) => q.ID !== questId);
+        stepsToRemove.forEach((step) => {
+          STATE.dirtySteps.delete(step.ID);
+          STATE.newSteps.delete(step.ID);
+        });
+        STATE.dirtyQuests.delete(questId);
+        STATE.expandedQuests.delete(questId);
+        setDirty();
+
+        STATE.selected = null;
+        showEditor(null);
+        setNewStepButtonState(false);
+        DOM.title.textContent = 'Выберите элемент дерева';
+        DOM.subtitle.textContent = 'квест или шаг моба';
+        renderTree();
+        EditorCore.UI.toast('Квест удалён', 'success');
+      } catch (error) {
+        setDeleteButtonState({ enabled: true, label: 'Удалить квест' });
+        EditorCore.UI.toast(error.message || 'Ошибка удаления', 'error');
+      }
+    };
+
+    const removeStep = async () => {
+      if (STATE.selected?.type !== 'step') return;
+      const stepId = STATE.selected.id;
+      const step = STATE.steps.find((item) => item.ID === stepId);
+      if (!step) return;
+      if (!confirm(`Удалить шаг #${stepId}?`)) return;
+
+      setDeleteButtonState({ enabled: false, label: 'Удаление…' });
+      try {
+        if (step.ID > 0) {
+          await EditorCore.DBCrud.remove('quest_bots', step.ID);
+        }
+        STATE.steps = STATE.steps.filter((item) => item.ID !== stepId);
+        STATE.dirtySteps.delete(stepId);
+        STATE.newSteps.delete(stepId);
+        setDirty();
+
+        const quest = STATE.quests.find((q) => q.ID === step.QuestID);
+        if (quest) {
+          selectQuest(quest);
+        } else {
+          STATE.selected = null;
+          showEditor(null);
+          setNewStepButtonState(false);
+          DOM.title.textContent = 'Выберите элемент дерева';
+          DOM.subtitle.textContent = 'квест или шаг моба';
+          renderTree();
+        }
+        EditorCore.UI.toast('Шаг удалён', 'success');
+      } catch (error) {
+        setDeleteButtonState({ enabled: true, label: 'Удалить шаг' });
+        EditorCore.UI.toast(error.message || 'Ошибка удаления', 'error');
+      }
+    };
+
+    const removeSelected = async () => {
+      if (STATE.selected?.type === 'quest') await removeQuest();
+      else if (STATE.selected?.type === 'step') await removeStep();
     };
 
     const bindTreeEvents = () => {
@@ -1777,7 +1908,8 @@
     DOM.save.addEventListener('click', saveAll);
     DOM.newQuest.addEventListener('click', createQuest);
     DOM.newStep.addEventListener('click', createStep);
-    DOM.search.addEventListener('input', renderTree);
+    DOM.deleteBtn.addEventListener('click', removeSelected);
+    DOM.search.addEventListener('input', debouncedRenderTree);
     DOM.typeFilter.addEventListener('change', renderTree);
 
     loadData();
