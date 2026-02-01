@@ -4,15 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Редактор событий</title>
-    <!-- Tailwind (CDN). Load shared config BEFORE tailwindcss. -->
-    <script src="editor-core/tailwind-theme.js"></script>
-    <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="editor-core/editor-theme.css">
-    <link rel="stylesheet" href="editor-core/editor-template.css">
+    <script src="editor-core/page-loader.js" data-mode="event"></script>
     <style>
         body{background:var(--editor-bg);color:var(--editor-text);}
         .event-editor-shell{min-height:calc(100vh - 180px);}
@@ -86,16 +78,6 @@
         </div>
     </div>
 
-    <script src="editor-core/registry.js"></script>
-    <script src="editor-core/core.js"></script>
-    <script src="editor-core/db-map.js"></script>
-    <script src="editor-core/field-renderer.js"></script>
-    <script src="editor-core/db.js"></script>
-    <script src="editor-core/ui.js"></script>
-    <script src="editor-core/ui-manager.js"></script>
-    <script src="editor-core/defaults.js"></script>
-    <script src="editor-core/utils.js"></script>
-    <script src="editor-core/bootstrap.js"></script>
     <script>
     const App = (() => {
         let DOM = {};
@@ -131,7 +113,7 @@
         const { actionSchemas, applyDefaults } = window.EditorCore.schemas;
         const SCENARIO_EVENTS = {"general":"Стандартный","on_recieve_objectives":"При получении задач","on_complete_objectives":"При завершении задач","on_end":"При окончании шага","on_equip":"При экипировке предмета","on_got":"При получении предмета","on_lost":"При потере предмета","on_unequip":"При снятии предмета"};
         // Shared boot + shared FieldRenderer options.
-        const { fieldRenderOptions: FIELD_RENDER_OPTIONS } = EditorCore.bootstrapEditor({ mode: 'event' });
+        const { fieldRenderOptions: FIELD_RENDER_OPTIONS } = window.EditorCoreBootstrap || EditorCore.bootstrapEditor({ mode: 'event' });
         const DIRTY = EditorCore.Dirty?.create
             ? EditorCore.Dirty.create({
                 root: document.body,

@@ -7,36 +7,22 @@
 
 ## Что использовать
 ### 1) Подключение Core
-Рекомендуемый вариант (стабильный набор модулей в правильном порядке):
+Рекомендуемый вариант (единый набор модулей + порядок в одном месте):
 
 ```html
-<link rel="stylesheet" href="editor-core/editor-theme.css" />
-<link rel="stylesheet" href="editor-core/editor-template.css" />
-<script src="editor-core/tailwind-theme.js"></script>
-<script src="https://cdn.tailwindcss.com?plugins=forms"></script>
-<script src="editor-core/core.js"></script>
-<script src="editor-core/field-renderer.js"></script>
-<script src="editor-core/form-runtime.js"></script>
-<script src="editor-core/db-map.js"></script>
-<script src="editor-core/db.js"></script>
-<script src="editor-core/db-crud.js"></script>
-<script src="editor-core/ui.js"></script>
-<script src="editor-core/ui-manager.js"></script>
-<script src="editor-core/defaults.js"></script>
-<script src="editor-core/utils.js"></script>
-<script src="editor-core/bootstrap.js"></script>
+<script src="editor-core/page-loader.js" data-mode="event"></script>
 ```
 
-> Если нужен `registry.js` (только для схем), подключайте его отдельно перед `core.js`.
+`data-mode` принимает `event` или `scenario`. Лоадер подключает шрифты, tailwind, стили и все модули `editor-core` в правильной очередности, а также сохраняет результат `bootstrapEditor` в `window.EditorCoreBootstrap`.
 
 ### 2) Быстрый старт страницы
 
 ```js
-const { fieldRenderOptions } = EditorCore.bootstrapEditor({ mode: 'event' });
+const { fieldRenderOptions } = window.EditorCoreBootstrap || EditorCore.bootstrapEditor({ mode: 'event' });
 ```
 
-- `mode: 'scenario'` — для сценарных страниц с модальным редактором.
-- `mode: 'event'` — для редакторов шагов/действий (похоже на `event-editor.php`).
+- `data-mode="scenario"` — для сценарных страниц с модальным редактором.
+- `data-mode="event"` — для редакторов шагов/действий (похоже на `event-editor.php`).
 
 ### 3) Формы из схемы (рекомендуется)
 Если редактор — это "форма по схеме", используйте `EditorCore.FormRuntime`:
@@ -59,7 +45,7 @@ const form = EditorCore.FormRuntime.mount(root, {
 Для стандартных таблиц (list + форма + сохранение) используйте `EditorCore.DbEditor`:
 
 ```js
-const { fieldRenderOptions } = EditorCore.bootstrapEditor({ mode: 'event' });
+const { fieldRenderOptions } = window.EditorCoreBootstrap || EditorCore.bootstrapEditor({ mode: 'event' });
 
 EditorCore.DbEditor.mount(document.body, {
   resource: 'worlds',

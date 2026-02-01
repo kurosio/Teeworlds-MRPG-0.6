@@ -81,18 +81,7 @@
 2) Подключите ядро (минимум):
 
 ```html
-<link rel="stylesheet" href="editor-core/editor-theme.css" />
-<script src="editor-core/core.js"></script>
-<script src="editor-core/field-renderer.js"></script>
-<script src="editor-core/db.js"></script>
-<script src="editor-core/ui.js"></script>
-<script src="editor-core/ui-manager.js"></script>
-<script src="editor-core/defaults.js"></script>
-<script src="editor-core/utils.js"></script>
-<script src="editor-core/bootstrap.js"></script>
-<script>
-  EditorCore.bootstrapEditor({ mode: 'scenario' });
-</script>
+<script src="editor-core/page-loader.js" data-mode="scenario"></script>
 ```
 
 3) Добавьте редактор в `studio.manifest.js` (в нужную группу):
