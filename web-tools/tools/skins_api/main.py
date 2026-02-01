@@ -12,6 +12,7 @@ import httpx
 import numpy as np
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.responses import Response
+from urllib.parse import quote
 from PIL import Image
 
 
@@ -41,7 +42,7 @@ _LEG_Y0_FRAC = 1 / 4
 _LEG_Y1_FRAC = 3 / 4
 _LEG_X0_FRAC = 6 / 8
 
-_NAME_RX = re.compile(r"^[A-Za-z0-9._-]{1,64}$")
+_NAME_RX = re.compile(r"^[A-Za-z0-9._\- ]{1,64}$")
 
 
 # ------------------------------
@@ -234,8 +235,10 @@ def _open_cached_sheet(path: Path) -> Optional[Image.Image]:
 
 
 async def _download_sheet(client: httpx.AsyncClient, stem: str) -> Optional[bytes]:
+    encoded = quote(stem, safe="._-")
+
     for tpl in _REMOTE_CANDIDATES:
-        url = tpl.format(name=stem)
+        url = tpl.format(name=encoded)
 
         # small retry
         for _ in range(2):
@@ -262,7 +265,8 @@ async def _download_sheet(client: httpx.AsyncClient, stem: str) -> Optional[byte
 
 
 async def _get_sheet(client: httpx.AsyncClient, stem: str) -> Image.Image:
-    cache_path = _CACHE_DIR / f"{stem}.png"
+    cache_key = quote(stem, safe="._-")
+    cache_path = _CACHE_DIR / f"{cache_key}.png"
 
     # try cache first
     cached = _open_cached_sheet(cache_path)
