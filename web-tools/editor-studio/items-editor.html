@@ -304,10 +304,29 @@
           type: 'tags',
           options: FLAGS,
           placeholder: 'Добавить флаг…',
+		  showWhen: (data) => !['Settings', 'Quest', 'Currency'].includes(data?.Group ?? ''),
         }
       },
-      InitialPrice: { type: 'number', label: 'Начальная цена', ui: { min: 0, step: 1 } },
-      RequiresProducts: { type: 'number', label: 'Требует продуктов', ui: { min: 0, step: 1 } },
+      InitialPrice: 
+	  { 
+        type: 'number', 
+        label: 'Начальная цена', 
+        ui: { 
+		  min: 0, 
+		  step: 1,
+		  showWhen: (data) => !['Settings', 'Quest', 'Currency'].includes(data?.Group ?? ''),
+        } 
+	  },
+      RequiresProducts: 
+	  { 
+	    type: 'number', 
+		label: 'Требует продуктов', 
+		ui: { 
+		  min: 0,
+		  step: 1,
+		  showWhen: (data) => !['Settings', 'Quest', 'Currency'].includes(data?.Group ?? ''),
+		} 
+	  },
       ScenarioData: { type: 'textarea', label: 'ScenarioData', ui: { rows: 3, placeholder: 'JSON или произвольный текст' } },
       Data: { type: 'textarea', label: 'Data (JSON)', ui: { rows: 6, placeholder: '{"key": "value"}' } },
     };
