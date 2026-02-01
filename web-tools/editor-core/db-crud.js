@@ -2,19 +2,38 @@
   // Generic CRUD client for DB-backed editors.
   // Requires api/db-crud.php on server.
   const API = 'api/db-crud.php';
+  const FETCH_TIMEOUT_MS = 10000;
+  const LOG_ERRORS = false;
+
+  const normalizeError = (err) => {
+    if (err?.name === 'AbortError') return new Error('Request timed out');
+    if (err instanceof TypeError) return new Error('Network error');
+    if (err instanceof Error) return err;
+    return new Error('Network error');
+  };
 
   const jsonFetch = async (url, options = {}) => {
-    const res = await fetch(url, {
-      credentials: 'same-origin',
-      headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
-      ...options
-    });
-    const text = await res.text();
-    let payload = null;
-    try { payload = text ? JSON.parse(text) : null; } catch { payload = { ok: false, error: 'Invalid JSON response', raw: text }; }
-    if (!res.ok) throw new Error(payload?.error || `HTTP ${res.status}`);
-    if (payload && payload.ok === false) throw new Error(payload.error || 'Request failed');
-    return payload;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+    try {
+      const res = await fetch(url, {
+        credentials: 'same-origin',
+        headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
+        signal: controller.signal,
+        ...options
+      });
+      const text = await res.text();
+      let payload = null;
+      try { payload = text ? JSON.parse(text) : null; } catch { payload = { ok: false, error: 'Invalid JSON response', raw: text }; }
+      if (!res.ok) throw new Error(payload?.error || `HTTP ${res.status}`);
+      if (payload && payload.ok === false) throw new Error(payload.error || 'Request failed');
+      return payload;
+    } catch (err) {
+      if (LOG_ERRORS) console.warn('[db-crud] fetch failed', err);
+      throw normalizeError(err);
+    } finally {
+      clearTimeout(timeoutId);
+    }
   };
 
   const qs = (obj) => Object.entries(obj)

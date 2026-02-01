@@ -28,21 +28,40 @@
     }
   };
 
+  const FETCH_TIMEOUT_MS = 10000;
+  const LOG_ERRORS = false;
+
+  const errorMessage = (err) => {
+    if (err?.name === 'AbortError') return 'Request timed out';
+    if (err instanceof TypeError) return 'Network error';
+    return err?.message || 'Network error';
+  };
+
   const fetchJson = async (url, { method = 'GET', body = null } = {}) => {
-    const res = await fetch(url, {
-      method,
-      headers: body ? { 'Content-Type': 'application/json' } : undefined,
-      body: body ? JSON.stringify(body) : undefined,
-      credentials: 'same-origin'
-    });
-    const json = await safeJson(res);
-    if (!json && res.ok) {
-      return { ok: true };
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+    try {
+      const res = await fetch(url, {
+        method,
+        headers: body ? { 'Content-Type': 'application/json' } : undefined,
+        body: body ? JSON.stringify(body) : undefined,
+        credentials: 'same-origin',
+        signal: controller.signal
+      });
+      const json = await safeJson(res);
+      if (!json && res.ok) {
+        return { ok: true };
+      }
+      if (!res.ok) {
+        return { ok: false, error: json?.error || `HTTP ${res.status}`, details: json };
+      }
+      return json;
+    } catch (err) {
+      if (LOG_ERRORS) console.warn('[db] fetch failed', err);
+      return { ok: false, error: errorMessage(err) };
+    } finally {
+      clearTimeout(timeoutId);
     }
-    if (!res.ok) {
-      return { ok: false, error: json?.error || `HTTP ${res.status}`, details: json };
-    }
-    return json;
   };
 
   const cache = new Map();
