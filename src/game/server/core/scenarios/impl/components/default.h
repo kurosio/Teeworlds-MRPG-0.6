@@ -361,4 +361,174 @@ private:
 	}
 };
 
+/**
+ * @class DefeatMobsComponent
+ * @brief A component that spawns mobs and completes once defeat conditions are met.
+ *
+ * The component is configured via a JSON object with the following fields:
+ * @param mode (string): "annihilation", "wave", or "survival".
+ * @param mobs (array): List of mob definitions with mob_id, count, level, power.
+ * @param position (vec2): Center position for mob spawn.
+ * @param radius (float): Spawn radius.
+ * @param kill_target (int): Target kills for "wave" mode (defaults to number spawned).
+ * @param duration (int): Duration in seconds for "survival" mode.
+ */
+class DefeatMobsComponent final : public PlayerAwareComponent<DefeatMobsComponent>, public IEventListener
+{
+	enum class EMode { Annihilation, Wave, Survival };
+	static EMode GetMode(std::string_view modeStr)
+	{
+		if(modeStr == "wave")
+			return EMode::Wave;
+		if(modeStr == "survival")
+			return EMode::Survival;
+		return EMode::Annihilation;
+	}
+
+	ScopedEventListener m_ListenerScope {};
+	int m_TargetKills {};
+	int m_Duration {};
+	std::unordered_set<int> m_SpawnedBotIds {};
+	EMode m_Mode {};
+	vec2 m_Position {};
+	float m_Radius {};
+	int m_KillsMade {};
+	int m_TargetTick {};
+	nlohmann::json m_MobsData {};
+
+public:
+	explicit DefeatMobsComponent(const nlohmann::json& j)
+	{
+		InitBaseJsonField(j);
+		m_Mode = GetMode(j.value("mode", ""));
+		m_Radius = j.value("radius", 180.f);
+		m_Position = j.value("position", vec2 {});
+		m_MobsData = j.value("mobs", nlohmann::json::array());
+		m_TargetKills = j.value("kill_target", (int)NOPE);
+		m_Duration = j.value("duration", 0);
+		m_ListenerScope.Init(this, IEventListener::CharacterDeath);
+	}
+
+	DECLARE_COMPONENT_NAME("defeat_mobs")
+
+private:
+	void Reset()
+	{
+		m_KillsMade = 0;
+		m_TargetTick = Server()->Tick() + m_Duration * Server()->TickSpeed();
+	}
+
+	void OnStartImpl() override
+	{
+		m_ListenerScope.Register();
+		Reset();
+
+		for(const auto& mobData : m_MobsData)
+		{
+			const int mobID = mobData.value("mob_id", (int)NOPE);
+			if(!MobBotInfo::ms_aMobBot.contains(mobID))
+				continue;
+
+			// initialize and create new mobs
+			MobBotInfo mobInfo = MobBotInfo::ms_aMobBot[mobID];
+			mobInfo.m_Level = mobData.value("level", 1);
+			mobInfo.m_Power = mobData.value("power", 1);
+			mobInfo.m_Position = m_Position;
+			mobInfo.m_Radius = m_Radius;
+			mobInfo.m_WorldID = GS()->GetWorldID();
+			for(int i = 0; i < mobData.value("count", 1); ++i)
+			{
+				if(auto* pPlayerBot = GS()->CreateBot(TYPE_BOT_MOB, mobInfo.m_BotID, mobID))
+				{
+					pPlayerBot->InitBotMobInfo(mobInfo);
+					pPlayerBot->SetAllowedSpawn(true);
+					m_SpawnedBotIds.insert(pPlayerBot->GetCID());
+				}
+			}
+		}
+
+		if(m_Mode == EMode::Wave && m_TargetKills <= 0)
+			m_TargetKills = static_cast<int>(m_SpawnedBotIds.size());
+	}
+
+	void OnCharacterDeath(CPlayer* pVictim, CPlayer* pKiller, int Weapon) override
+	{
+		if(!pVictim || !m_SpawnedBotIds.contains(pVictim->GetCID()))
+			return;
+
+		m_SpawnedBotIds.erase(pVictim->GetCID());
+		if(auto* pPlayerBot = dynamic_cast<CPlayerBot*>(pVictim))
+			pPlayerBot->MarkForDestroy();
+
+		if(m_Mode == EMode::Wave)
+			++m_KillsMade;
+	}
+
+	void OnActiveImpl() override
+	{
+		const int tickSpeed = Server()->TickSpeed();
+		const bool shouldBroadcast = (Server()->Tick() % tickSpeed == 0);
+		bool shouldFinish = false;
+
+		switch(m_Mode)
+		{
+			default:
+				if(shouldBroadcast)
+				{
+					for(auto* pPlayer : GetPlayers())
+					{
+						GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::TitleInformation, tickSpeed,
+							"Objective: Defeat all the mobs. Remaining: {} mobs.", m_SpawnedBotIds.size());
+					}
+				}
+
+				shouldFinish = m_SpawnedBotIds.empty();
+				break;
+
+			case EMode::Wave:
+				if(shouldBroadcast)
+				{
+					for(auto* pPlayer : GetPlayers())
+					{
+						GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::TitleInformation, tickSpeed,
+							"Objective: Defeat wave mobs '{} of {}'", m_KillsMade, m_TargetKills);
+					}
+				}
+
+				shouldFinish = (m_TargetKills <= 0) || (m_KillsMade >= m_TargetKills);
+				break;
+
+			case EMode::Survival:
+			{
+				const int timeLeft = (m_TargetTick - Server()->Tick()) / tickSpeed;
+				if(shouldBroadcast && timeLeft >= 0)
+				{
+					for(auto* pPlayer : GetPlayers())
+					{
+						GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::TitleInformation, tickSpeed,
+							"Objective: Survive! Time left: {}s", timeLeft);
+					}
+				}
+
+				shouldFinish = Server()->Tick() >= m_TargetTick;
+				break;
+			}
+		}
+
+		if(shouldFinish)
+			Finish();
+	}
+
+	void OnEndImpl() override
+	{
+		for(int CID : m_SpawnedBotIds)
+		{
+			if(auto* pPlayer = GS()->GetPlayer(CID))
+				pPlayer->MarkForDestroy();
+		}
+		m_SpawnedBotIds.clear();
+		m_ListenerScope.Unregister();
+	}
+};
+
 #endif
