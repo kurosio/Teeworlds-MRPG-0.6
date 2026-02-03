@@ -11,8 +11,6 @@ ScenarioBase::~ScenarioBase()
 {
 	if(m_Running)
 		Stop();
-
-	OnScenarioEnd();
 }
 
 void ScenarioBase::Start()
@@ -61,6 +59,12 @@ void ScenarioBase::Tick()
 
 	if(OnPauseConditions())
 		return;
+
+	if(!m_mSteps.contains(m_CurrentStepId))
+	{
+		Stop();
+		return;
+	}
 
 	ExecuteStepActiveActions();
 
@@ -262,7 +266,8 @@ void ScenarioBase::SetupStep(Step& NewStep, const nlohmann::json& StepJson)
 
 [[nodiscard]] ScenarioBase::Step& ScenarioBase::AddStep(StepId id, std::string MsgInfo, int delayTick)
 {
-	m_vStepOrder.push_back(id);
-	auto [it, inserted] = m_mSteps.try_emplace(id, std::move(id), MsgInfo, delayTick);
+	auto [it, inserted] = m_mSteps.try_emplace(id, id, MsgInfo, delayTick);
+	if(inserted)
+		m_vStepOrder.push_back(it->first);
 	return it->second;
 }

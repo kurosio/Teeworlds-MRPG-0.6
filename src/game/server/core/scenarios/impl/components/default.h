@@ -310,7 +310,9 @@ private:
 		for(auto* pPlayer : vpPlayers)
 		{
 			if(!pPlayer || !pPlayer->GetCharacter())
-				pPlayer->GetCharacter()->MovingDisable(m_State);
+				continue;
+
+			pPlayer->GetCharacter()->MovingDisable(m_State);
 		}
 
 		Finish();
