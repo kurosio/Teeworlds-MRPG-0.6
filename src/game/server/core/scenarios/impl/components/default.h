@@ -251,8 +251,9 @@ private:
 
 		auto IsInsideFunc = [&](const CPlayer* pPlayer)
 		{
+			const auto Dist = m_EntireGroup ? 256.0f : 128.f;
 			const auto* pChr = pPlayer->GetCharacter();
-			return pChr && distance(pChr->GetPos(), m_Position) < 128.f;
+			return pChr && distance(pChr->GetPos(), m_Position) < Dist;
 		};
 
 		bool ConditionMet = false;
@@ -277,9 +278,84 @@ private:
 		}
 
 		if(ConditionMet)
-		{
 			Finish();
+	}
+};
+
+/**
+ * @class ScenarioMovingDisableComponent
+ * @brief A component that enables or disables movement for all participants.
+ *
+ * The component waits until all players have an active character before applying the state.
+ * The component is configured via a JSON object with the following field:
+ * @param state (bool): True disables movement, false enables it.
+ */
+class ScenarioMovingDisableComponent final : public PlayerAwareComponent<ScenarioMovingDisableComponent>
+{
+	bool m_State {};
+
+public:
+	explicit ScenarioMovingDisableComponent(const nlohmann::json& j)
+	{
+		InitBaseJsonField(j);
+		m_State = j.value("state", true);
+	}
+
+	DECLARE_COMPONENT_NAME("moving_disable")
+
+private:
+	void OnActiveImpl() override
+	{
+		const auto vpPlayers = GetPlayers();
+		for(auto* pPlayer : vpPlayers)
+		{
+			if(!pPlayer || !pPlayer->GetCharacter())
+				pPlayer->GetCharacter()->MovingDisable(m_State);
 		}
+
+		Finish();
+	}
+};
+
+/**
+ * @class ScenarioEmoteComponent
+ * @brief A component that plays an emote and optional emoticon for all participants.
+ *
+ * The component waits until all players have an active character before performing the emote.
+ * The component is configured via a JSON object with the following fields:
+ * @param emote_type (int): Character emote type (defaults to EMOTE_NORMAL).
+ * @param emoticon_type (int): Emoticon type to send (-1 disables).
+ */
+class ScenarioEmoteComponent final : public PlayerAwareComponent<ScenarioEmoteComponent>
+{
+	int m_EmoteType {};
+	int m_EmoticonType {};
+
+public:
+	explicit ScenarioEmoteComponent(const nlohmann::json& j)
+	{
+		InitBaseJsonField(j);
+		m_EmoteType = j.value("emote_type", (int)EMOTE_NORMAL);
+		m_EmoticonType = j.value("emoticon_type", -1);
+	}
+
+	DECLARE_COMPONENT_NAME("emote")
+
+private:
+	void OnStartImpl() override
+	{
+		const auto vpPlayers = GetPlayers();
+		for(auto* pPlayer : vpPlayers)
+		{
+			if(!pPlayer || !pPlayer->GetCharacter())
+				continue;
+
+			pPlayer->GetCharacter()->SetEmote(m_EmoteType, 1, false);
+			if(m_EmoticonType >= 0)
+				GS()->SendEmoticon(pPlayer->GetCID(), m_EmoticonType);
+		}
+
+		Finish();
 	}
 };
 

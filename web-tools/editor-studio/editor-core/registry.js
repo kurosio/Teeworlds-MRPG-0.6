@@ -280,6 +280,25 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
         position: createField('vec2', 'Позиция', { x: 1497, y: 529 }, { ui: { min: -99999, max: 99999, step: 0.1 } })
       }
     },
+	moving_disable: {
+      name: 'Отключение движения',
+      class: 'interactive',
+      icon: 'fa-solid fa-person-walking-dashed-line-arrow-right',
+      desc: 'Включить или выключить движение',
+      fields: {
+        state: createField('boolean', 'Отключить', true)
+      }
+    },
+    emote: {
+      name: 'Эмоция',
+      class: 'interactive',
+      icon: 'fa-solid fa-face-smile',
+      desc: 'Показать эмоцию и иконку',
+      fields: {
+        emote_type: createField('number', 'Тип эмоции', 0, { ui: { min: 0, max: 6 } }),
+        emoticon_type: createField('number', 'Тип иконки', -1, { ui: { min: -1, max: 999 } })
+      }
+    },
     activate_point: {
       name: 'Точка активации',
       class: 'interactive',
