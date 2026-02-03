@@ -1332,17 +1332,6 @@
               const skinPreview = skinUrl
                 ? `<img src="${skinUrl}" alt="skin" loading="lazy" />`
                 : '';
-              const stepTabs = STEP_TABS.map((tab) => `
-                <button
-                  type="button"
-                  class="step-node-tab ${activeTab === tab.id ? 'is-active' : ''}"
-                  data-step-id="${step.ID}"
-                  data-step-tab="${tab.id}"
-                  title="${tab.title}">
-                  <span>${tab.short}</span>
-                  <small>${tab.hint}</small>
-                </button>
-              `).join('');
               return `
                 <div class="step-node ${stepSelected ? 'tree-selected' : ''}" draggable="true" data-node-type="step" data-id="${step.ID}">
                   <div class="step-node-header">
@@ -1364,7 +1353,6 @@
                       />
                     </div>
                   </div>
-                  <div class="step-node-tabs">${stepTabs}</div>
                 </div>`;
             }).join('');
 
