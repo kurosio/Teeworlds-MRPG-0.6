@@ -15,6 +15,7 @@ protected:
 public:
 	explicit PlayerScenarioBase(int Flags = FLAG_NONE) : ScenarioBase(Flags) { }
 	CPlayer* GetPlayer() const;
+	int GetClientID() const { return m_ClientID; }
 };
 
 #endif

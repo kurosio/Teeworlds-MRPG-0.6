@@ -387,10 +387,10 @@ void MotdMenu::ClearMotd()
 	auto* pServer = Instance::Server();
 	auto* pPlayer = GetPlayer();
 
-	m_Points.clear();
-	pServer->SendMotd(m_ClientID, "");
 	if(pPlayer && pPlayer->m_pMotdMenu)
 	{
+		m_Points.clear();
+		pServer->SendMotd(m_ClientID, "");
 		pPlayer->m_MotdData.m_ScrollManager.Reset();
 		pPlayer->m_MotdData.m_HoveredItemIndex = NOPE;
 		pPlayer->m_MotdData.m_vFields.clear();

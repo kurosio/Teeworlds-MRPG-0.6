@@ -79,7 +79,8 @@ private:
 
 			if(!m_Broadcast.empty())
 			{
-				GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::TitleInformation, Server()->TickSpeed(), m_Broadcast.c_str());
+				int Time = std::max(GetDelayTick(), Server()->TickSpeed());
+				GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::TitleInformation, Time, m_Broadcast.c_str());
 			}
 		}
 
@@ -103,7 +104,6 @@ private:
 class ScenarioFollowCameraComponent final : public PlayerAwareComponent<ScenarioFollowCameraComponent>
 {
 	vec2 m_Pos {};
-	int m_Delay {};
 	bool m_Smooth {};
 
 public:
@@ -111,7 +111,6 @@ public:
 	{
 		InitBaseJsonField(j);
 		m_Pos = j.value("position", vec2());
-		m_Delay = j.value("delay", 200);
 		m_Smooth = j.value("smooth", true);
 	}
 
@@ -120,8 +119,7 @@ public:
 private:
 	void OnActiveImpl() override
 	{
-		m_Delay--;
-		if(m_Delay <= 0)
+		if(GetDelayTick() <= 0)
 		{
 			Finish();
 			return;

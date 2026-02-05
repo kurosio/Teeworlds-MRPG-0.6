@@ -5,6 +5,361 @@
 #include <game/server/core/entities/items/drop_items.h>
 #include <game/server/core/entities/group/entitiy_group.h>
 #include <game/server/entities/projectile.h>
+#include <game/server/core/scenarios/base/component_registry.h>
+
+namespace
+{
+	class UniversalDoorControlComponent final : public Component<CUniversalScenario, UniversalDoorControlComponent>
+	{
+		enum class DoorAction { Create, Remove };
+		std::string m_Key {};
+		vec2 m_Pos {};
+		DoorAction m_Action {};
+
+	public:
+		explicit UniversalDoorControlComponent(const nlohmann::json& j)
+		{
+			InitBaseJsonField(j);
+			m_Key = j.value("key", "");
+			m_Pos = j.value("position", vec2 {});
+			m_Action = j.value("action", "create") == "remove" ? DoorAction::Remove : DoorAction::Create;
+		}
+
+		DECLARE_COMPONENT_NAME("universal_door_control")
+
+	private:
+		void OnStartImpl() override
+		{
+			if(m_Key.empty())
+			{
+				Finish();
+				return;
+			}
+
+			if(m_Action == DoorAction::Create)
+				Scenario()->CreatePersonalDoor(m_Key, m_Pos);
+			else
+				Scenario()->RemovePersonalDoor(m_Key);
+			Finish();
+		}
+	};
+
+	class UniversalUseChatComponent final : public Component<CUniversalScenario, UniversalUseChatComponent>, public IEventListener
+	{
+		ScopedEventListener m_ListenerScope {};
+		std::string m_ChatCode {};
+
+	public:
+		explicit UniversalUseChatComponent(const nlohmann::json& j)
+		{
+			InitBaseJsonField(j);
+			m_ChatCode = j.value("chat", "@");
+			m_ListenerScope.Init(this, IEventListener::PlayerChat);
+		}
+
+		DECLARE_COMPONENT_NAME("universal_use_chat")
+
+	private:
+		void OnStartImpl() override { m_ListenerScope.Register(); }
+
+		void OnActiveImpl() override
+		{
+			if(Server()->Tick() % Server()->TickSpeed() == 0)
+				GS()->Broadcast(Scenario()->GetClientID(), BroadcastPriority::MainInformation, Server()->TickSpeed(), "Objective: Write in the chat: '{}'", m_ChatCode);
+		}
+
+		void OnPlayerChat(CPlayer* pFrom, const char* pMessage) override
+		{
+			if(!pFrom || pFrom->GetCID() != Scenario()->GetClientID())
+				return;
+
+			if(std::string_view(pMessage).find(m_ChatCode) == 0)
+				Finish();
+		}
+
+		void OnEndImpl() override { m_ListenerScope.Unregister(); }
+	};
+
+	class UniversalConditionItemComponent final : public Component<CUniversalScenario, UniversalConditionItemComponent>
+	{
+		int m_ItemID {};
+		int m_Required {};
+		bool m_Remove {};
+		bool m_ShowProgress {};
+
+	public:
+		explicit UniversalConditionItemComponent(const nlohmann::json& j)
+		{
+			InitBaseJsonField(j);
+			m_ItemID = j.value("item_id", -1);
+			m_Required = j.value("required", 0);
+			m_Remove = j.value("remove", false);
+			m_ShowProgress = j.value("show_progress", false);
+		}
+
+		DECLARE_COMPONENT_NAME("universal_condition_item")
+
+	private:
+		void OnActiveImpl() override
+		{
+			auto* pPlayer = Scenario()->GetPlayer();
+			if(!pPlayer || m_ItemID < 0)
+				return;
+
+			auto* pItem = pPlayer->GetItem(m_ItemID);
+			if(!pItem)
+				return;
+
+			if(m_ShowProgress && Server()->Tick() % Server()->TickSpeed() == 0)
+				GS()->Broadcast(Scenario()->GetClientID(), BroadcastPriority::GameBasicStats, Server()->TickSpeed(),
+					"Objective: to get {} ({} of {}).", pItem->Info()->GetName(), pItem->GetValue(), m_Required);
+
+			if(pItem->GetValue() >= m_Required)
+			{
+				if(m_Remove)
+					pItem->Remove(m_Required);
+				Finish();
+			}
+		}
+	};
+
+	class UniversalQuestActionComponent final : public Component<CUniversalScenario, UniversalQuestActionComponent>
+	{
+		enum class Action { Reset, Accept };
+		int m_QuestID {};
+		Action m_Action {};
+
+	public:
+		explicit UniversalQuestActionComponent(const nlohmann::json& j)
+		{
+			InitBaseJsonField(j);
+			m_QuestID = j.value("quest_id", -1);
+			m_Action = j.value("action", "reset") == "accept" ? Action::Accept : Action::Reset;
+		}
+
+		DECLARE_COMPONENT_NAME("universal_quest_action")
+
+	private:
+		void OnStartImpl() override
+		{
+			auto* pPlayer = Scenario()->GetPlayer();
+			if(!pPlayer || m_QuestID <= 0)
+			{
+				Finish();
+				return;
+			}
+
+			auto* pQuest = pPlayer->GetQuest(m_QuestID);
+			if(!pQuest)
+			{
+				Finish();
+				return;
+			}
+
+			if(m_Action == Action::Reset)
+				pQuest->Reset();
+			else
+			{
+				if(pQuest->IsAccepted())
+					pQuest->Reset();
+				pQuest->Accept();
+			}
+			Finish();
+		}
+	};
+
+	class UniversalQuestConditionComponent final : public Component<CUniversalScenario, UniversalQuestConditionComponent>
+	{
+		enum class Condition { Accepted, Finished, StepFinished };
+		int m_QuestID {};
+		int m_Step {};
+		Condition m_Condition {};
+
+	public:
+		explicit UniversalQuestConditionComponent(const nlohmann::json& j)
+		{
+			InitBaseJsonField(j);
+			m_QuestID = j.value("quest_id", -1);
+			m_Step = j.value("step", -1);
+			const auto Type = j.value("condition", "accepted");
+			if(Type == "finished")
+				m_Condition = Condition::Finished;
+			else if(Type == "step_finished")
+				m_Condition = Condition::StepFinished;
+			else
+				m_Condition = Condition::Accepted;
+		}
+
+		DECLARE_COMPONENT_NAME("universal_quest_condition")
+
+	private:
+		void OnActiveImpl() override
+		{
+			auto* pPlayer = Scenario()->GetPlayer();
+			if(!pPlayer || m_QuestID <= 0)
+				return;
+			auto* pQuest = pPlayer->GetQuest(m_QuestID);
+			if(!pQuest)
+				return;
+
+			bool Complete = false;
+			switch(m_Condition)
+			{
+				case Condition::Accepted: Complete = pQuest->IsAccepted(); break;
+				case Condition::Finished: Complete = pQuest->IsCompleted(); break;
+				case Condition::StepFinished: Complete = pQuest->GetStepPos() > m_Step; break;
+			}
+
+			if(Complete)
+				Finish();
+		}
+	};
+
+	class UniversalTeleportComponent final : public Component<CUniversalScenario, UniversalTeleportComponent>
+	{
+		vec2 m_Pos {};
+		int m_WorldID {};
+
+	public:
+		explicit UniversalTeleportComponent(const nlohmann::json& j)
+		{
+			InitBaseJsonField(j);
+			m_Pos = j.value("position", vec2 {});
+			m_WorldID = j.value("world_id", -1);
+		}
+
+		DECLARE_COMPONENT_NAME("universal_teleport")
+
+	private:
+		void OnActiveImpl() override
+		{
+			if(GetDelayTick() <= 0)
+				Finish();
+		}
+
+		void OnEndImpl() override
+		{
+			auto* pPlayer = Scenario()->GetPlayer();
+			if(!pPlayer || !pPlayer->GetCharacter())
+				return;
+
+			if(m_WorldID >= 0 && !GS()->IsPlayerInWorld(Scenario()->GetClientID(), m_WorldID))
+				pPlayer->ChangeWorld(m_WorldID, m_Pos);
+			else
+				pPlayer->GetCharacter()->ChangePosition(m_Pos);
+			pPlayer->m_VotesData.UpdateCurrentVotes();
+		}
+	};
+
+	class UniversalPickItemTaskComponent final : public Component<CUniversalScenario, UniversalPickItemTaskComponent>
+	{
+		vec2 m_Pos {};
+		CItem m_Item {};
+		std::string m_Chat {};
+		std::string m_Broadcast {};
+		CEntityDropItem* m_pEntDroppedItem {};
+
+	public:
+		explicit UniversalPickItemTaskComponent(const nlohmann::json& j)
+		{
+			InitBaseJsonField(j);
+			m_Pos = j.value("position", vec2 {});
+			m_Chat = j.value("chat", "");
+			m_Broadcast = j.value("broadcast", "");
+			if(j.contains("item"))
+				j["item"].get_to(m_Item);
+		}
+
+		DECLARE_COMPONENT_NAME("universal_pick_item_task")
+
+	private:
+		void OnStartImpl() override
+		{
+			auto* pPlayer = Scenario()->GetPlayer();
+			if(!pPlayer || !m_Item.IsValid())
+			{
+				Finish();
+				return;
+			}
+
+			if(!m_Item.Info()->IsStackable() && pPlayer->GetItem(m_Item)->HasItem())
+			{
+				Finish();
+				return;
+			}
+
+			const float Angle = angle(normalize(vec2 {}));
+			m_pEntDroppedItem = new CEntityDropItem(&GS()->m_World, m_Pos, vec2 {}, Angle, m_Item, Scenario()->GetClientID());
+			if(m_pEntDroppedItem)
+			{
+				GS()->CreatePlayerSpawn(m_Pos, CmaskOne(Scenario()->GetClientID()));
+				if(!m_Chat.empty())
+					GS()->Chat(Scenario()->GetClientID(), m_Chat.c_str());
+			}
+		}
+
+		void OnActiveImpl() override
+		{
+			if(!m_pEntDroppedItem)
+			{
+				Finish();
+				return;
+			}
+
+			m_pEntDroppedItem->SetLifetime(Server()->TickSpeed() * g_Config.m_SvDroppedItemLifetime);
+			if(!m_Broadcast.empty())
+				GS()->Broadcast(Scenario()->GetClientID(), BroadcastPriority::VeryImportant, Server()->TickSpeed(), m_Broadcast.c_str());
+
+			if(!GS()->m_World.ExistEntity(m_pEntDroppedItem))
+			{
+				m_pEntDroppedItem = nullptr;
+				Finish();
+			}
+		}
+	};
+
+	class UniversalShootmarkersComponent final : public Component<CUniversalScenario, UniversalShootmarkersComponent>
+	{
+		std::vector<std::pair<vec2, int>> m_vMarkers {};
+
+	public:
+		explicit UniversalShootmarkersComponent(const nlohmann::json& j)
+		{
+			InitBaseJsonField(j);
+			if(j.contains("markers") && j["markers"].is_array())
+			{
+				for(const auto& Marker : j["markers"])
+					m_vMarkers.emplace_back(Marker.value("position", vec2 {}), Marker.value("health", 1));
+			}
+		}
+
+		DECLARE_COMPONENT_NAME("universal_shootmarkers")
+
+	private:
+		void OnStartImpl() override
+		{
+			Scenario()->ResetShootmarkers();
+			for(const auto& [Pos, Health] : m_vMarkers)
+				Scenario()->CreateShootmarker(Pos, Health);
+		}
+
+		void OnActiveImpl() override
+		{
+			GS()->Broadcast(Scenario()->GetClientID(), BroadcastPriority::VeryImportant, Server()->TickSpeed(), "Shoot the targets!");
+			if(Scenario()->IsShootmarkersDestroyed())
+				Finish();
+		}
+	};
+
+	template struct ComponentRegistrar<UniversalDoorControlComponent>;
+	template struct ComponentRegistrar<UniversalUseChatComponent>;
+	template struct ComponentRegistrar<UniversalConditionItemComponent>;
+	template struct ComponentRegistrar<UniversalQuestActionComponent>;
+	template struct ComponentRegistrar<UniversalQuestConditionComponent>;
+	template struct ComponentRegistrar<UniversalTeleportComponent>;
+	template struct ComponentRegistrar<UniversalPickItemTaskComponent>;
+	template struct ComponentRegistrar<UniversalShootmarkersComponent>;
+}
 
 CUniversalScenario::CUniversalScenario(const nlohmann::json& jsonData)
 	: PlayerScenarioBase()
@@ -20,521 +375,81 @@ CUniversalScenario::~CUniversalScenario()
 
 bool CUniversalScenario::OnStopConditions()
 {
-	return true;//!GetPlayer() || !GetCharacter();
+	return PlayerScenarioBase::OnStopConditions() || !GS()->GetPlayerChar(m_ClientID);
 }
 
 void CUniversalScenario::OnSetupScenario()
 {
-	if(!m_JsonData.is_object() || !m_JsonData.contains("steps"))
-	{
-		dbg_msg("scenario-tutorial", "Invalid JSON format or missing 'steps'");
+	if(!m_JsonData.is_object() || !m_JsonData.contains("steps") || !m_JsonData["steps"].is_array())
 		return;
-	}
 
-	// initialize steps
-	for(const auto& step : m_JsonData["steps"])
+	// start step by first
+	const auto& steps = m_JsonData["steps"];
+	if(!steps.empty())
+		m_StartStepId = steps[0].value("id", "");
+
+	// setup all steps
+	for(const auto& step : steps)
 		ProcessStep(step);
 }
 
-void CUniversalScenario::ProcessStep(const nlohmann::json& step)
+void CUniversalScenario::ProcessStep(const nlohmann::json& stepJson)
 {
-	/*// check valid action
-	if(!step.contains("action") || !step["action"].is_string())
-	{
-		dbg_msg("scenario-tutorial", "Missing or invalid 'action' key in JSON");
+	StepId id = stepJson.value("id", "");
+	if(id.empty() || !stepJson.contains("components"))
 		return;
-	}
 
-	std::string action = step["action"];
-	if(action == "check_has_item")
+	auto& newStep = AddStep(id,
+		stepJson.value("msg_info", ""),
+		stepJson.value("delay", -1));
+
+	if(const auto logic = stepJson.value("completion_logic", "all_of"); logic == "any_of")
+		newStep.m_CompletionLogic = StepCompletionLogic::ANY_OF;
+	else if(logic == "sequential")
+		newStep.m_CompletionLogic = StepCompletionLogic::SEQUENTIAL;
+
+	for(const auto& compJson : stepJson["components"])
 	{
-		int itemID = step.value("item_id", -1);
-		int required = step.value("required", 0);
-		bool remove = step.value("remove", false);
-		bool showProgress = step.value("show_progress", false);
+		const auto type = compJson.value("type", "");
+		if(type.empty())
+			continue;
 
-		auto& hasItemStep = AddStep();
-		if(showProgress)
+		if(auto pComponent = ComponentRegistry::GetInstance().Create(type, compJson, this))
 		{
-			hasItemStep.WhenActive([this, itemID, required]()
-			{
-				if(Server()->Tick() % Server()->TickSpeed() == 0)
-				{
-					auto* pItem = GetPlayer()->GetItem(itemID);
-					GS()->Broadcast(GetClientID(), BroadcastPriority::GameBasicStats, Server()->TickSpeed(),
-						"Objective: to get {} ({} of {}).", pItem->Info()->GetName(), pItem->GetValue(), required);
-				}
-			});
-		}
-		if(remove)
-		{
-			hasItemStep.WhenFinished([this, itemID, required]()
-			{
-				GetPlayer()->GetItem(itemID)->Remove(required);
-			});
-		}
-
-		hasItemStep.CheckCondition(ConditionPriority::CONDITION_AND_TIMER, [this, itemID, required]()
-		{
-			return GetPlayer()->GetItem(itemID)->GetValue() >= required;
-		});
-	}
-
-	// reset quest
-	else if(action == "reset_quest")
-	{
-		const auto QuestID = step.value("quest_id", -1);
-		auto& resetQuestStep = AddStep();
-		resetQuestStep.WhenStarted([QuestID, this]()
-		{
-			if(QuestID > 0)
-			{
-				const auto* pPlayer = GetPlayer();
-				auto* pQuest = pPlayer->GetQuest(QuestID);
-				pQuest->Reset();
-			}
-		});
-	}
-
-	// reset quest
-	else if(action == "accept_quest")
-	{
-		const auto QuestID = step.value("quest_id", -1);
-		auto& acceptQuestStep = AddStep();
-		acceptQuestStep.WhenStarted([QuestID, this]()
-		{
-			if(QuestID > 0)
-			{
-				const auto* pPlayer = GetPlayer();
-				auto* pQuest = pPlayer->GetQuest(QuestID);
-				if(pQuest->IsAccepted())
-					pQuest->Reset();
-				pQuest->Accept();
-			}
-		});
-	}
-
-	// create new door
-	else if(action == "new_door")
-	{
-		bool Follow = step.value("follow", false);
-		std::string Key = step.value("key", "");
-		m_vpPersonalDoors[Key].m_Pos =
-		{
-			step["position"].value("x", 0.0f),
-			step["position"].value("y", 0.0f)
-		};
-
-		auto& newDoorStep = AddStep();
-		newDoorStep.WhenStarted([Key, this]()
-		{
-			vec2 Pos = m_vpPersonalDoors[Key].m_Pos;
-			m_vpPersonalDoors[Key].m_EntPtr = std::make_unique<CEntityPersonalDoor>(&GS()->m_World, GetClientID(), Pos, vec2(0, -1));
-		});
-
-		if(Follow)
-		{
-			StepMessage(0, "The door's locked!", "\0");
-			StepFixedCam(100, m_vpPersonalDoors[Key].m_Pos);
+			newStep.AddComponent(std::move(pComponent));
 		}
 	}
-
-	// remove door
-	else if(action == "remove_door")
-	{
-		bool Follow = step.value("follow", false);
-		std::string Key = step.value("key", "");
-		vec2 DoorPos = m_vpPersonalDoors[Key].m_Pos;
-
-		auto& removeDoorStep = AddStep();
-		removeDoorStep.WhenStarted([Follow, Key, this]()
-		{
-			if(m_vpPersonalDoors.contains(Key))
-			{
-				m_vpPersonalDoors.erase(Key);
-			}
-		});
-
-		if(Follow)
-		{
-			StepMessage(0, "The door's is oppened!", "\0");
-			StepFixedCam(100, DoorPos);
-		}
-	}
-
-	// message
-	else if(action == "message")
-	{
-		int delay = step.value("delay", 0);
-		std::string chatMsg = step.value("chat", "");
-		std::string broadcastMsg = step.value("broadcast", "");
-		std::string fullMsg = step.value("full", "");
-
-		if(!fullMsg.empty())
-			StepMessage(delay, fullMsg, fullMsg);
-		else
-			StepMessage(delay, broadcastMsg, chatMsg);
-	}
-
-	// dropped item task
-	else if(action == "pick_item_task")
-	{
-		if(!step.contains("item"))
-			return;
-
-		vec2 position =
-		{
-			step["position"].value("x", 0.0f),
-			step["position"].value("y", 0.0f)
-		};
-		std::string chatMsg = step.value("chat", "");
-		std::string broadcastMsg = step.value("broadcast", "");
-		std::string fullMsg = step.value("full", "");
-
-		if(!fullMsg.empty())
-			StepPickItemTask(position, step["item"], fullMsg, fullMsg);
-		else
-			StepPickItemTask(position, step["item"], broadcastMsg, chatMsg);
-	}
-
-	// emote message
-	else if(action == "emote")
-	{
-		int emoteType = step.value("emote_type", (int)EMOTE_NORMAL);
-		int emoticonType = step.value("emoticon_type", -1);
-
-		StepEmote(emoteType, emoticonType);
-	}
-
-	// teleport
-	else if(action == "teleport")
-	{
-		vec2 position =
-		{
-			step["position"].value("x", 0.0f),
-			step["position"].value("y", 0.0f)
-		};
-		int worldID = step.value("world_id", -1);
-		StepTeleport(position, worldID);
-	}
-
-	// chat task
-	else if(action == "use_chat_task")
-	{
-		auto& useChatTaskStep = AddStep();
-		std::string message = step.value("chat", "@");
-		useChatTaskStep.WhenActive([this, message]()
-		{
-			if(Server()->Tick() % Server()->TickSpeed() == 0)
-			{
-				GS()->Broadcast(GetClientID(), BroadcastPriority::MainInformation, Server()->TickSpeed(), "Objective: Write in the chat: '{}'", message);
-			}
-		});
-		useChatTaskStep.CheckCondition(ConditionPriority::CONDITION_AND_TIMER, [this, message]()
-		{
-			std::string lastMessage = GetPlayer()->m_aLastMsg;
-			return lastMessage.find(message) == 0;
-		});
-	}
-
-	// movement task
-	else if(action == "movement_task")
-	{
-		int delay = step.value("delay", 0);
-		vec2 position =
-		{
-			step["position"].value("x", 0.0f),
-			step["position"].value("y", 0.0f)
-		};
-		std::string targetLookText = step.value("target_lock_text", "");
-		bool targetLook = step.value("target_look", true);
-
-		std::string chatMsg = step.value("chat", "");
-		std::string broadcastMsg = step.value("broadcast", "");
-		std::string fullMsg = step.value("full", "");
-
-		if(!fullMsg.empty())
-			StepMovementTask(delay, position, targetLookText, fullMsg, fullMsg, targetLook);
-		else
-			StepMovementTask(delay, position, targetLookText, broadcastMsg, chatMsg, targetLook);
-	}
-
-	// fixed cam
-	else if(action == "fix_cam")
-	{
-		int delay = step.value("delay", 0);
-		vec2 position = { step["position"].value("x", 0.0f), step["position"].value("y", 0.0f) };
-		StepFixedCam(delay, position);
-	}
-
-	// freeze movements
-	else if(action == "freeze_movements")
-	{
-		bool freezeState = step.value("state", false);
-		StepMovingDisable(freezeState);
-	}
-
-	// check quest accepted
-	else if(action == "check_quest_accepted")
-	{
-		if(int questID = step.value("quest_id", -1); questID > 0)
-		{
-			auto& checkQuestAcceptedState = AddStep();
-			checkQuestAcceptedState.CheckCondition(ConditionPriority::CONDITION_AND_TIMER, [this, questID]()
-			{
-				return GetPlayer()->GetQuest(questID)->IsAccepted();
-			});
-		}
-	}
-
-	// check quest completed
-	else if(action == "check_quest_finished")
-	{
-		if(int questID = step.value("quest_id", -1); questID > 0)
-		{
-			auto& checkQuestFinishedState = AddStep();
-			checkQuestFinishedState.CheckCondition(ConditionPriority::CONDITION_AND_TIMER, [this, questID]()
-			{
-				return GetPlayer()->GetQuest(questID)->IsCompleted();
-			});
-		}
-	}
-
-	// check quest step completed
-	else if(action == "check_quest_step_finished")
-	{
-		if(int questID = step.value("quest_id", -1); questID > 0)
-		{
-			auto stepQuest = step.value("step", -1);
-			auto& checkQuestStepFinishedState = AddStep();
-			checkQuestStepFinishedState.CheckCondition(ConditionPriority::CONDITION_AND_TIMER, [this, questID, stepQuest]()
-			{
-				return GetPlayer()->GetQuest(questID)->GetStepPos() > stepQuest;
-			});
-		}
-	}
-
-	// shotmarks
-	else if(action == "shootmarkers")
-	{
-		std::vector<std::pair<vec2, int>> markers;
-		if(step.contains("markers") && step["markers"].is_array())
-		{
-			for(const auto& marker : step["markers"])
-			{
-				vec2 position = { marker["position"].value("x", 0.0f), marker["position"].value("y", 0.0f) };
-				int health = marker.value("health", 1);
-				markers.emplace_back(position, health);
-			}
-		}
-
-		StepShootmarkers(markers);
-	}
-	else
-	{
-		dbg_msg("scenario-tutorial", "Unknown action: %s", action.c_str());
-	}*/
 }
 
-/*
-void CUniversalScenario::StepMovementTask(int delay, const vec2& pos, const std::string& targetLookText, const std::string& broadcastMsg, const std::string& chatMsg, bool targetLook)
+void CUniversalScenario::CreatePersonalDoor(const std::string& key, const vec2& pos)
 {
-	// is has lockView
-	if(targetLook)
+	m_vpPersonalDoors[key].m_Pos = pos;
+	m_vpPersonalDoors[key].m_EntPtr = std::make_unique<CEntityPersonalDoor>(&GS()->m_World, GetClientID(), pos, vec2(0, -1));
+}
+
+void CUniversalScenario::RemovePersonalDoor(const std::string& key)
+{
+	if(m_vpPersonalDoors.contains(key))
+		m_vpPersonalDoors.erase(key);
+}
+
+bool CUniversalScenario::IsShootmarkersDestroyed() const
+{
+	return std::ranges::all_of(m_vpShootmarkers, [](const std::weak_ptr<CEntityGroup>& weakPtr)
 	{
-		StepMovingDisable(true);
-
-		auto& lockStep = AddStep(delay);
-		lockStep.WhenStarted([this, pos]()
-		{
-			m_MovementPos = pos;
-		});
-		lockStep.WhenActive([this, targetLookText]()
-		{
-			if(Server()->Tick() % (Server()->TickSpeed() / 2) == 0)
-			{
-				GS()->CreateHammerHit(m_MovementPos, CmaskOne(GetClientID()));
-			}
-
-			GetPlayer()->LockedView().ViewLock(m_MovementPos, true);
-			SendBroadcast(targetLookText);
-		});
-
-		StepMovingDisable(false);
-	}
-
-	// movements
-	auto& moveStep = AddStep();
-	moveStep.WhenStarted([this, chatMsg]()
-	{
-		GetCharacter()->MovingDisable(false);
-
-		if(!chatMsg.empty())
-			GS()->Chat(GetClientID(), chatMsg.c_str());
-	});
-	moveStep.WhenActive([this, broadcastMsg]()
-	{
-		if(Server()->Tick() % (Server()->TickSpeed() / 2) == 0)
-		{
-			GS()->CreateHammerHit(m_MovementPos, CmaskOne(GetClientID()));
-		}
-
-		if(!broadcastMsg.empty())
-			GS()->Broadcast(GetClientID(), BroadcastPriority::VeryImportant, Server()->TickSpeed(), broadcastMsg.c_str());
-	});
-	moveStep.CheckCondition(ConditionPriority::CONDITION_AND_TIMER, [this]()
-	{
-		return distance(GetCharacter()->GetPos(), m_MovementPos) < 32.f;
+		return weakPtr.expired();
 	});
 }
 
-void CUniversalScenario::StepPickItemTask(const vec2& pos, const nlohmann::json& itemJson, const std::string& broadcastMsg, const std::string& chatMsg)
+void CUniversalScenario::CreateShootmarker(const vec2& pos, int health)
 {
-	auto& pickItemStep = AddStep();
-
-	CItem item;
-	itemJson.get_to(item);
-	if(!item.IsValid())
-	{
-		dbg_msg("scenario-universal", "skip step (StepPickItemTask) invalid item.");
-		return;
-	}
-
-	pickItemStep.WhenStarted([this, pos, item, chatMsg]()
-	{
-		if(!item.Info()->IsStackable() && GetPlayer()->GetItem(item)->HasItem())
-			return;
-
-		const float Angle = angle(normalize(vec2 {}));
-		m_pEntDroppedItem = new CEntityDropItem(&GS()->m_World, pos, vec2{ }, Angle, item, GetClientID());
-		if(m_pEntDroppedItem)
-		{
-			GS()->CreatePlayerSpawn(pos, CmaskOne(GetClientID()));
-			if(!chatMsg.empty())
-				GS()->Chat(GetClientID(), chatMsg.c_str());
-		}
-	});
-	pickItemStep.WhenActive([this, broadcastMsg]()
-	{
-		if(m_pEntDroppedItem)
-		{
-			m_pEntDroppedItem->SetLifetime(Server()->TickSpeed() * g_Config.m_SvDroppedItemLifetime);
-			if(!broadcastMsg.empty())
-				GS()->Broadcast(GetClientID(), BroadcastPriority::VeryImportant, Server()->TickSpeed(), broadcastMsg.c_str());
-		}
-	});
-	pickItemStep.CheckCondition(ConditionPriority::CONDITION_AND_TIMER, [this, item]()
-	{
-		if(!GS()->m_World.ExistEntity(m_pEntDroppedItem))
-		{
-			m_pEntDroppedItem = nullptr;
-			return true;
-		}
-		return false;
-	});
-}
-
-void CUniversalScenario::StepFixedCam(int delay, const vec2& pos)
-{
-	auto& step = AddStep(delay);
-	step.WhenActive([this, pos]()
-	{
-		GetPlayer()->LockedView().ViewLock(pos, true);
-	});
-}
-
-void CUniversalScenario::StepTeleport(const vec2& pos, int worldID)
-{
-	auto& teleportStep = AddStep();
-	teleportStep.WhenStarted([this, pos, worldID]()
-	{
-		auto* pPlayer = GetPlayer();
-		if(worldID >= 0 && !GS()->IsPlayerInWorld(GetClientID(), worldID))
-		{
-			pPlayer->ChangeWorld(worldID, pos);
-			return;
-		}
-
-		pPlayer->GetCharacter()->ChangePosition(pos);
-		pPlayer->m_VotesData.UpdateCurrentVotes();
-	});
-}
-
-void CUniversalScenario::StepMovingDisable(bool State)
-{
-	auto& movingStep = AddStep();
-	movingStep.WhenStarted([this, State]()
-	{
-		GetCharacter()->MovingDisable(State);
-	});
-}
-
-
-void CUniversalScenario::StepShootmarkers(const std::vector<std::pair<vec2, int>>& vShotmarkers)
-{
-	auto& stepCreateShootmarkers = AddStep();
-	stepCreateShootmarkers.WhenStarted([this, vShotmarkers]()
-	{
-		for(const auto& [position, health] : vShotmarkers)
-			CreateEntityShootmarkersTask(position, health);
-	});
-
-	for(const auto& [position, health] : vShotmarkers)
-		StepFixedCam(100, position);
-
-	auto& stepShootmarkers = AddStep();
-	stepShootmarkers.WhenActive([this]()
-	{
-		GS()->Broadcast(GetClientID(), BroadcastPriority::VeryImportant, Server()->TickSpeed(), "Shoot the targets!");
-	});
-	stepShootmarkers.CheckCondition(ConditionPriority::CONDITION_AND_TIMER, [this]()
-	{
-		return std::ranges::all_of(m_vpShootmarkers, [](const std::weak_ptr<CEntityGroup>& weakPtr)
-		{
-			return weakPtr.expired();
-		});
-	});
-}
-
-void CUniversalScenario::StepMessage(int delay, const std::string& broadcastMsg, const std::string& chatMsg)
-{
-	auto& messageStep = AddStep(delay);
-	messageStep.WhenStarted([this, delay, chatMsg, broadcastMsg]()
-	{
-		if(!broadcastMsg.empty())
-		{
-			GS()->Broadcast(GetClientID(), BroadcastPriority::VeryImportant, delay, broadcastMsg.c_str());
-		}
-
-		if(!chatMsg.empty())
-		{
-			GS()->Chat(GetClientID(), chatMsg.c_str());
-		}
-	});
-}
-
-void CUniversalScenario::StepEmote(int emoteType, int emoticonType)
-{
-	auto& emoteStep = AddStep();
-	emoteStep.WhenStarted([this, emoteType, emoticonType]()
-	{
-		GetCharacter()->SetEmote(emoteType, 1, false);
-		GS()->SendEmoticon(GetClientID(), emoticonType);
-	});
-}
-
-void CUniversalScenario::CreateEntityShootmarkersTask(const vec2& pos, int health)
-{
-	// initialize group
 	auto groupPtr = CEntityGroup::NewGroup(&GS()->m_World, CGameWorld::ENTTYPE_ACTION, GetClientID());
 	groupPtr->SetConfig("health", health);
 
-	// initialize effect
 	const auto pEntity = groupPtr->CreatePickup(pos);
 	pEntity->SetMask(CmaskOne(GetClientID()));
 	pEntity->RegisterEvent(CBaseEntity::EventTick, [](CBaseEntity* pBase)
 	{
-		// health
 		int& Health = pBase->GetGroup()->GetRefConfig("health", 0);
 		if(Health <= 0)
 		{
@@ -543,7 +458,6 @@ void CUniversalScenario::CreateEntityShootmarkersTask(const vec2& pos, int healt
 			return;
 		}
 
-		// destroy projectiles
 		for(auto* pProj = (CProjectile*)pBase->GameWorld()->FindFirst(CGameWorld::ENTTYPE_PROJECTILE); pProj; pProj = (CProjectile*)pProj->TypeNext())
 		{
 			if(!CmaskIsSet(pBase->GetMask(), pProj->GetOwnerCID()))
@@ -557,11 +471,11 @@ void CUniversalScenario::CreateEntityShootmarkersTask(const vec2& pos, int healt
 			}
 		}
 	});
+
 	m_vpShootmarkers.emplace_back(groupPtr);
 }
 
-void CUniversalScenario::SendBroadcast(const std::string& text) const
+void CUniversalScenario::ResetShootmarkers()
 {
-	GS()->Broadcast(GetClientID(), BroadcastPriority::VeryImportant, 300, text.c_str());
+	m_vpShootmarkers.clear();
 }
-*/

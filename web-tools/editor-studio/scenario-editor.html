@@ -110,6 +110,8 @@
             </div>
             <label for="scenario-select" class="text-sm font-medium text-slate-200">Сценарий:</label>
             <select id="scenario-select" class="form-input w-full sm:w-64 min-w-[160px] max-w-[260px]"></select>
+            <label for="scenario-mode-select" class="text-sm font-medium text-slate-200">Режим:</label>
+            <select id="scenario-mode-select" class="form-input w-full sm:w-64 min-w-[160px] max-w-[260px]"></select>
             <button id="delete-scenario-btn" title="Удалить текущий сценарий" class="editor-btn editor-btn-danger">
                 <i class="fa-solid fa-trash-can"></i>
             </button>
@@ -246,6 +248,7 @@
                 this.addStepButton = document.getElementById('add-step-button');
                 this.addGroupButton = document.getElementById('add-group-btn');
                 this.scenarioSelect = document.getElementById('scenario-select');
+                this.scenarioModeSelect = document.getElementById('scenario-mode-select');
                 this.deleteScenarioBtn = document.getElementById('delete-scenario-btn');
                 this.saveButton = document.getElementById('save-button');
                 this.saveAsInput = document.getElementById('save-as-filename');
@@ -268,7 +271,10 @@
                 this.arrowMode = 'navigator'; // 'navigator' or 'editor'
                 this.scenarioData = { steps: [], editor_data: { groups: [] } };
                 this.uiState = { collapsedSteps: new Set() }; // Save UI state like collapsed cards
-                this.componentTypes = EditorCore.schemas.componentSchemas;
+                this.allComponentTypes = EditorCore.schemas.componentSchemas;
+                this.scenarioModes = EditorCore.schemas.scenarioModeSchemas || {};
+                this.currentMode = 'default';
+                this.componentTypes = this.getComponentTypesByMode(this.currentMode);
                 this.debouncedUpdate = EditorCore.utils.debounce((step, newId) => this.updateStepId(step, newId), 400);
                 this.sortableInstances = [];
                 this.isTicking = false; // For scroll throttling
@@ -284,6 +290,104 @@
                         }
                       })
                     : { markDirty: () => {}, setClean: () => {} };
+            }
+
+            setupModeSelector() {
+                if (!this.scenarioModeSelect) {
+                    return;
+                }
+
+                const modes = Object.entries(this.scenarioModes);
+                if (modes.length === 0) {
+                    this.scenarioModeSelect.innerHTML = '<option value="default">default</option>';
+                    this.currentMode = 'default';
+                    this.componentTypes = this.getComponentTypesByMode(this.currentMode);
+                    return;
+                }
+
+                this.scenarioModeSelect.innerHTML = modes
+                    .map(([key, info]) => `<option value="${key}">${info.label || key}</option>`)
+                    .join('');
+
+                this.currentMode = modes[0][0];
+                this.scenarioModeSelect.value = this.currentMode;
+                this.componentTypes = this.getComponentTypesByMode(this.currentMode);
+            }
+
+            getComponentTypesByMode(mode) {
+                const modeConfig = this.scenarioModes[mode];
+                if (!modeConfig || !Array.isArray(modeConfig.componentTypes)) {
+                    return this.allComponentTypes;
+                }
+
+                return modeConfig.componentTypes.reduce((acc, type) => {
+                    const schema = this.allComponentTypes[type];
+                    if (schema) {
+                        acc[type] = schema;
+                    }
+                    return acc;
+                }, {});
+            }
+
+            detectModeFromScenarioData(data) {
+                if (!data || !Array.isArray(data.steps)) {
+                    return this.currentMode || 'default';
+                }
+
+                const modePriority = ['universal', 'dungeon'];
+                const modeTypes = Object.fromEntries(
+                    Object.entries(this.scenarioModes).map(([mode, config]) => [mode, new Set(config.componentTypes || [])])
+                );
+
+                for (const mode of modePriority) {
+                    const availableTypes = modeTypes[mode];
+                    if (!availableTypes) {
+                        continue;
+                    }
+
+                    const hasExclusiveType = data.steps.some(step =>
+                        Array.isArray(step.components) && step.components.some(comp => {
+                            const type = comp?.type;
+                            if (!type || !availableTypes.has(type)) {
+                                return false;
+                            }
+
+                            return !Object.entries(modeTypes)
+                                .filter(([otherMode]) => otherMode !== mode)
+                                .some(([, otherTypes]) => otherTypes.has(type));
+                        })
+                    );
+
+                    if (hasExclusiveType) {
+                        return mode;
+                    }
+                }
+
+                return data.scenario_mode && this.scenarioModes[data.scenario_mode]
+                    ? data.scenario_mode
+                    : (this.currentMode || 'default');
+            }
+
+            applyMode(mode, { markDirty = false } = {}) {
+                const normalizedMode = this.scenarioModes[mode] ? mode : 'default';
+                this.currentMode = normalizedMode;
+                this.componentTypes = this.getComponentTypesByMode(normalizedMode);
+
+                if (this.scenarioModeSelect) {
+                    this.scenarioModeSelect.value = normalizedMode;
+                    const modeConfig = this.scenarioModes[normalizedMode];
+                    this.scenarioModeSelect.title = modeConfig?.description || '';
+                }
+
+                this.scenarioData.scenario_mode = normalizedMode;
+                if (markDirty) {
+                    this.dirty.markDirty();
+                }
+            }
+
+            handleModeChange(mode) {
+                this.applyMode(mode, { markDirty: true });
+                this.renderAll();
             }
 
             apiUrl(queryString = '') {
@@ -318,6 +422,7 @@
 
 
             async initialize() {
+                this.setupModeSelector();
                 this.addEventListeners();
                 await this.resolveApiBase();
                 await this.loadScenarioList();
@@ -326,6 +431,7 @@
             addEventListeners() {
                 this.saveButton.addEventListener('click', () => this.saveScenario());
                 this.scenarioSelect.addEventListener('change', () => this.loadScenario(this.scenarioSelect.value));
+                this.scenarioModeSelect?.addEventListener('change', () => this.handleModeChange(this.scenarioModeSelect.value));
                 this.addStepButton.addEventListener('click', () => this.addNewStep());
                 this.addGroupButton.addEventListener('click', () => this.addNewGroup());
                 this.deleteScenarioBtn.addEventListener('click', () => this.deleteScenario());
@@ -1052,6 +1158,7 @@
                         });
                     });
                 }
+                this.applyMode(this.detectModeFromScenarioData(data));
                 this.uiState.collapsedSteps.clear(); // Clear old state on new scenario load
                 this.renderAll();
                 this.dirty.setClean();
@@ -1121,6 +1228,7 @@
                 });
 
                 const contentToSave = {
+                    scenario_mode: this.currentMode,
                     editor_data: this.scenarioData.editor_data,
                     steps: stepsToSave
                 };
@@ -1235,11 +1343,27 @@
                         case 'message': return `"${(data.text || '').substring(0, 50)}..."`;
                         case 'door_control': return `Действие: <b>${data.action}</b>, Ключ: <b>${data.key || 'нет'}</b>`;
                         case 'use_chat_code': return `Код: "<b>${data.code}</b>", переход → <b>${data.next_step_id || '?'}</b>`;
+                        case 'universal_use_chat': return `Чат-команда: <b>${data.chat || '?'}</b>`;
+                        case 'check_has_item': return `Предмет: <b>${data.item_id || '?'}</b>, нужно: <b>${data.required || 1}</b>`;
+                        case 'universal_condition_item': return `Предмет: <b>${data.item_id || '?'}</b>, нужно: <b>${data.required || 1}</b>`;
+                        case 'reset_quest': return `Сброс квеста: <b>${data.quest_id || '?'}</b>`;
+                        case 'accept_quest': return `Принять квест: <b>${data.quest_id || '?'}</b>`;
+                        case 'universal_quest_action': return `Квест: <b>${data.quest_id || '?'}</b>, действие: <b>${data.action || '?'}</b>`;
+                        case 'check_quest_accepted': return `Проверка принятия квеста: <b>${data.quest_id || '?'}</b>`;
+                        case 'check_quest_finished': return `Проверка завершения квеста: <b>${data.quest_id || '?'}</b>`;
+                        case 'check_quest_step_finished': return `Квест: <b>${data.quest_id || '?'}</b>, шаг > <b>${data.step ?? 0}</b>`;
+                        case 'universal_quest_condition': return `Квест: <b>${data.quest_id || '?'}</b>, условие: <b>${data.condition || '?'}</b>`;
+                        case 'pick_item_task': return `Подбор предмета: <b>${data.item?.id || '?'}</b> x <b>${data.item?.value || 0}</b>`;
+                        case 'universal_pick_item_task': return `Подбор предмета: <b>${data.item?.id || '?'}</b> x <b>${data.item?.value || 0}</b>`;
+                        case 'shootmarkers': return `Маркеры: <b>${data.markers?.length || 0}</b>`;
+                        case 'universal_shootmarkers': return `Маркеры: <b>${data.markers?.length || 0}</b>`;
                         case 'defeat_mobs': return `Режим: <b>${data.mode || 'annihilation'}</b>, ${data.mobs?.length || 0} групп(ы)`;
                         case 'wait': return `Ожидание: <b>${data.duration}</b> сек.`;
                         case 'follow_camera': return `К точке (<b>${data.position?.x}, ${data.position?.y}</b>), ${data.smooth ? 'плавно' : 'резко'}`;
                         case 'condition_movement': return `Прийти в точку (<b>${data.position?.x}, ${data.position?.y}</b>), ${data.entire_group ? 'вся группа' : 'один игрок'}`;
                         case 'teleport': return `В точку (<b>${data.position?.x}, ${data.position?.y}</b>)`;
+                        case 'universal_teleport': return `В точку (<b>${data.position?.x}, ${data.position?.y}</b>) / мир <b>${data.world_id ?? -1}</b>`;
+                        case 'universal_door_control': return `Действие: <b>${data.action}</b>, Ключ: <b>${data.key || 'нет'}</b>`;
                         case 'activate_point': return `Текст: "<b>${data.action_text || ''}</b>", Время: <b>${data.duration}</b> сек.`;
                         default: return ``;
                     }

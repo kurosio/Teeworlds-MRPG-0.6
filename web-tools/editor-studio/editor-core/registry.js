@@ -225,6 +225,188 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
         hidden: createField('boolean', 'Скрыть', false)
       }
     },
+    check_has_item: {
+      name: 'Проверить предмет',
+      class: 'condition',
+      icon: 'fa-solid fa-box-open',
+      desc: 'Проверка наличия предмета в инвентаре',
+      fields: {
+        item_id: createDbSelect('Предмет', 0, 'item', { ui: { placeholder: '— выберите предмет —' } }),
+        required: createField('number', 'Количество', 1, { ui: { min: 1, max: 9999 } }),
+        remove: createField('boolean', 'Удалить после проверки', false),
+        show_progress: createField('boolean', 'Показать прогресс', false)
+      }
+    },
+    reset_quest: {
+      name: 'Сбросить квест',
+      class: 'quest',
+      icon: 'fa-solid fa-rotate-left',
+      desc: 'Сброс состояния квеста',
+      fields: {
+        quest_id: createDbSelect('Квест', 0, 'quest', { ui: { placeholder: '— выберите квест —' } })
+      }
+    },
+    accept_quest: {
+      name: 'Принять квест',
+      class: 'quest',
+      icon: 'fa-solid fa-clipboard-check',
+      desc: 'Выдать игроку квест',
+      fields: {
+        quest_id: createDbSelect('Квест', 0, 'quest', { ui: { placeholder: '— выберите квест —' } })
+      }
+    },
+    check_quest_accepted: {
+      name: 'Квест принят',
+      class: 'condition',
+      icon: 'fa-solid fa-circle-check',
+      desc: 'Проверка принятия квеста',
+      fields: {
+        quest_id: createDbSelect('Квест', 0, 'quest', { ui: { placeholder: '— выберите квест —' } })
+      }
+    },
+    check_quest_finished: {
+      name: 'Квест завершён',
+      class: 'condition',
+      icon: 'fa-solid fa-flag-checkered',
+      desc: 'Проверка завершения квеста',
+      fields: {
+        quest_id: createDbSelect('Квест', 0, 'quest', { ui: { placeholder: '— выберите квест —' } })
+      }
+    },
+    check_quest_step_finished: {
+      name: 'Шаг квеста завершён',
+      class: 'condition',
+      icon: 'fa-solid fa-list-check',
+      desc: 'Проверка прогресса шага квеста',
+      fields: {
+        quest_id: createDbSelect('Квест', 0, 'quest', { ui: { placeholder: '— выберите квест —' } }),
+        step: createField('number', 'Номер шага', 0, { ui: { min: 0, max: 9999 } })
+      }
+    },
+    pick_item_task: {
+      name: 'Задача подобрать предмет',
+      class: 'interactive',
+      icon: 'fa-solid fa-hand',
+      desc: 'Создать задачу на подбор предмета',
+      fields: {
+        position: createField('vec2', 'Позиция', { x: 0, y: 0 }, { ui: { min: -99999, max: 99999, step: 0.1 } }),
+        item: createField('item', 'Предмет', { id: 0, value: 0 }, { ui: { datasource: 'items', placeholder: '— выберите предмет —', min: 0, max: 999999 } }),
+        chat: createField('text', 'Чат', '', { ui: { placeholder: 'Введите текст для чата', format: 'textarea' } }),
+        broadcast: createField('text', 'Броадкаст', '', { ui: { placeholder: 'Введите текст для броадкаста', format: 'textarea' } })
+      }
+    },
+    shootmarkers: {
+      name: 'Маркеры стрельбы',
+      class: 'combat',
+      icon: 'fa-solid fa-bullseye',
+      desc: 'Уничтожение маркеров выстрелами',
+      fields: {
+        markers: createField('list', 'Маркеры', [], {
+          itemFields: {
+            position: createField('vec2', 'Позиция', { x: 0, y: 0 }, { ui: { min: -99999, max: 99999, step: 0.1 } }),
+            health: createField('number', 'Здоровье', 1, { ui: { min: 1, max: 9999 } })
+          },
+          ui: { placeholder: 'Добавьте маркер' }
+        })
+      }
+    },
+
+    universal_door_control: {
+      name: 'Universal: управление дверью',
+      class: 'interactive',
+      icon: 'fa-solid fa-door-open',
+      desc: 'Управление персональной дверью в universal сценарии',
+      fields: {
+        action: createField('text', 'Действие', 'create', {
+          ui: { type: 'select', options: ['create', 'remove'] }
+        }),
+        position: createField('vec2', 'Позиция', { x: 100, y: 100 }, { ui: { min: -99999, max: 99999, step: 0.1 } }),
+        key: createField('text', 'Ключ', '', { ui: { placeholder: 'Введите ключ двери' } })
+      }
+    },
+    universal_use_chat: {
+      name: 'Universal: код в чате',
+      class: 'interactive',
+      icon: 'fa-solid fa-key',
+      desc: 'Ожидание команды в чате',
+      fields: {
+        chat: createField('text', 'Текст в чате', '/rules', { ui: { placeholder: 'Введите ожидаемую команду' } })
+      }
+    },
+    universal_condition_item: {
+      name: 'Universal: проверка предмета',
+      class: 'condition',
+      icon: 'fa-solid fa-box-open',
+      desc: 'Проверка наличия предмета',
+      fields: {
+        item_id: createDbSelect('Предмет', 0, 'item', { ui: { placeholder: '— выберите предмет —' } }),
+        required: createField('number', 'Количество', 1, { ui: { min: 1, max: 9999 } }),
+        remove: createField('boolean', 'Удалить после проверки', false),
+        show_progress: createField('boolean', 'Показать прогресс', false)
+      }
+    },
+    universal_quest_action: {
+      name: 'Universal: действие квеста',
+      class: 'quest',
+      icon: 'fa-solid fa-clipboard-check',
+      desc: 'Принятие или сброс квеста',
+      fields: {
+        quest_id: createDbSelect('Квест', 0, 'quest', { ui: { placeholder: '— выберите квест —' } }),
+        action: createField('text', 'Действие', 'accept', {
+          ui: { type: 'select', options: ['accept', 'reset'] }
+        })
+      }
+    },
+    universal_quest_condition: {
+      name: 'Universal: условие квеста',
+      class: 'condition',
+      icon: 'fa-solid fa-list-check',
+      desc: 'Проверка состояния квеста',
+      fields: {
+        quest_id: createDbSelect('Квест', 0, 'quest', { ui: { placeholder: '— выберите квест —' } }),
+        condition: createField('text', 'Условие', 'accepted', {
+          ui: { type: 'select', options: ['accepted', 'finished', 'step_finished'] }
+        }),
+        step: createField('number', 'Номер шага', 0, { ui: { min: 0, max: 9999 } })
+      }
+    },
+    universal_teleport: {
+      name: 'Universal: телепорт',
+      class: 'interactive',
+      icon: 'fa-solid fa-bolt',
+      desc: 'Телепорт/смена мира',
+      fields: {
+        position: createField('vec2', 'Позиция', { x: 1497, y: 529 }, { ui: { min: -99999, max: 99999, step: 0.1 } }),
+        world_id: createField('number', 'ID мира', -1, { ui: { min: -1, max: 999999 } })
+      }
+    },
+    universal_pick_item_task: {
+      name: 'Universal: задача подбора',
+      class: 'interactive',
+      icon: 'fa-solid fa-hand',
+      desc: 'Задача подобрать предмет',
+      fields: {
+        position: createField('vec2', 'Позиция', { x: 0, y: 0 }, { ui: { min: -99999, max: 99999, step: 0.1 } }),
+        item: createField('item', 'Предмет', { id: 0, value: 0 }, { ui: { datasource: 'items', placeholder: '— выберите предмет —', min: 0, max: 999999 } }),
+        chat: createField('text', 'Чат', '', { ui: { placeholder: 'Введите текст для чата', format: 'textarea' } }),
+        broadcast: createField('text', 'Броадкаст', '', { ui: { placeholder: 'Введите текст для броадкаста', format: 'textarea' } })
+      }
+    },
+    universal_shootmarkers: {
+      name: 'Universal: маркеры стрельбы',
+      class: 'combat',
+      icon: 'fa-solid fa-bullseye',
+      desc: 'Уничтожение маркеров выстрелами',
+      fields: {
+        markers: createField('list', 'Маркеры', [], {
+          itemFields: {
+            position: createField('vec2', 'Позиция', { x: 0, y: 0 }, { ui: { min: -99999, max: 99999, step: 0.1 } }),
+            health: createField('number', 'Здоровье', 1, { ui: { min: 1, max: 9999 } })
+          },
+          ui: { placeholder: 'Добавьте маркер' }
+        })
+      }
+    },
     defeat_mobs: {
       name: 'Убийство мобов',
       class: 'combat',
@@ -313,6 +495,63 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
     }
   };
 
+
+
+  const scenarioModeSchemas = {
+    default: {
+      label: 'Default (components/default.h)',
+      description: 'Базовые компоненты из default.h',
+      componentTypes: [
+        'message',
+        'wait',
+        'follow_camera',
+        'condition_movement',
+        'teleport',
+        'moving_disable',
+        'emote',
+        'defeat_mobs'
+      ]
+    },
+    dungeon: {
+      label: 'Dungeon (scenario_dungeon.h)',
+      description: 'Компоненты группового dungeon-сценария',
+      componentTypes: [
+        'message',
+        'wait',
+        'follow_camera',
+        'condition_movement',
+        'teleport',
+        'moving_disable',
+        'emote',
+        'defeat_mobs',
+        'door_control',
+        'use_chat_code',
+        'activate_point'
+      ]
+    },
+    universal: {
+      label: 'Universal (scenario_universal.h)',
+      description: 'Компоненты и legacy-адаптеры universal-сценария',
+      componentTypes: [
+        'message',
+        'wait',
+        'follow_camera',
+        'condition_movement',
+        'teleport',
+        'moving_disable',
+        'emote',
+        'universal_door_control',
+        'universal_use_chat',
+        'universal_condition_item',
+        'universal_quest_action',
+        'universal_quest_condition',
+        'universal_teleport',
+        'universal_pick_item_task',
+        'universal_shootmarkers'
+      ]
+    }
+  };
+
   const register = (id, app) => {
     if (!id) {
       throw new Error('Editor registry requires an id.');
@@ -352,6 +591,7 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
   window.EditorCore.schemas = {
     actionSchemas,
     componentSchemas,
+    scenarioModeSchemas,
     applyDefaults,
     buildDefaults
   };

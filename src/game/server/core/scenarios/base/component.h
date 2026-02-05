@@ -85,6 +85,11 @@ public:
 		OnEndImpl();
 	}
 
+	int GetDelayTick() const noexcept
+	{
+		return m_DelayTick;
+	}
+
 	bool IsFinished() const noexcept override
 	{
 		return m_DelayTick <= 0 && m_bIsFinished;
