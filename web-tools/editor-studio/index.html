@@ -25,7 +25,25 @@
     html, body { height: 100%; }
     body { overflow: hidden; }
     .studio-iframe { width: 100%; height: 100%; border: 0; background: var(--editor-bg); }
-    .studio-item.active { background: rgba(99, 102, 241, 0.16); border-color: var(--editor-primary); }
+    .studio-item {
+      transition: background-color .14s ease, border-color .14s ease, transform .1s ease, box-shadow .14s ease;
+    }
+    .studio-item:hover { transform: translateY(-1px); }
+    .studio-item:focus-visible {
+      outline: none;
+      border-color: var(--editor-primary);
+      box-shadow: 0 0 0 3px rgba(99, 102, 241, .28);
+    }
+    .studio-item.active {
+      background: rgba(99, 102, 241, 0.16);
+      border-color: var(--editor-primary);
+      box-shadow: 0 0 0 1px rgba(99, 102, 241, .3);
+    }
+    .studio-item.active i { color: var(--editor-primary); }
+    @media (prefers-reduced-motion: reduce) {
+      .studio-item,
+      .studio-item:hover { transition: none; transform: none; }
+    }
   </style>
 </head>
 
@@ -107,7 +125,7 @@
     const GROUPS = Array.isArray(window.STUDIO_MANIFEST) ? window.STUDIO_MANIFEST : [];
     const EDITORS = GROUPS.flatMap(g => g.items || []);
 
-    const byKey = (key) => EDITORS.find(e => e.key === key) || EDITORS[0];
+    const byKey = (key) => EDITORS.find(e => e.key === key) || EDITORS[0] || null;
 
     let activeKey = '';
 
@@ -117,6 +135,7 @@
       root.innerHTML = '';
       const q = term.toLowerCase();
       let hasItems = false;
+      const fragment = document.createDocumentFragment();
       for (const g of GROUPS) {
         const items = (g.items || []).filter((e) => {
           if (!q) return true;
@@ -128,27 +147,38 @@
         const header = document.createElement('div');
         header.className = 'px-3 pt-3 pb-2 text-xs tracking-wider uppercase editor-muted-text';
         header.textContent = g.title || 'Группа';
-        root.appendChild(header);
+        fragment.appendChild(header);
 
         for (const e of items) {
           const btn = document.createElement('button');
           btn.className = `studio-item w-full text-left p-3 rounded-xl border ${e.key === active ? 'active' : 'border-light hover:bg-light'} flex items-center gap-3`;
           btn.innerHTML = `<i class="fa-solid ${e.icon} w-5 text-center"></i><div class="min-w-0"><div class="font-semibold truncate">${e.title}</div><div class="text-xs editor-muted-text truncate">${e.key}</div></div>`;
           btn.addEventListener('click', () => openEditor(e.key, { closeMobile: true }));
-          root.appendChild(btn);
+          fragment.appendChild(btn);
         }
       }
       if (!hasItems) {
         root.innerHTML = `<div class="editor-empty-state">Ничего не найдено</div>`;
+        return;
       }
+      root.appendChild(fragment);
+    };
+
+    const renderAllNavs = (active, term = '') => {
+      renderNav(sidebarNav, active, term);
+      renderNav(mobileNav, active, term);
     };
 
     const openEditor = (key, { closeMobile = false } = {}) => {
       const e = byKey(key);
+      if (!e) {
+        frame.src = '';
+        renderAllNavs('', getSearchTerm());
+        return;
+      }
       activeKey = e.key;
       const term = getSearchTerm();
-      renderNav(sidebarNav, e.key, term);
-      renderNav(mobileNav, e.key, term);
+      renderAllNavs(e.key, term);
       frame.src = e.src;
       storageSet('studio.activeEditor', e.key);
       if (location.hash !== '#' + e.key) location.hash = e.key;
@@ -161,8 +191,7 @@
       const term = String(value || '').trim();
       if (studioSearch && source !== studioSearch) studioSearch.value = term;
       if (mobileSearch && source !== mobileSearch) mobileSearch.value = term;
-      renderNav(sidebarNav, activeKey, term);
-      renderNav(mobileNav, activeKey, term);
+      renderAllNavs(activeKey, term);
     };
 
     studioSearch?.addEventListener('input', (event) => {
@@ -210,8 +239,10 @@
     });
 
     openNewTab.addEventListener('click', () => {
-      const key = (location.hash || '').replace('#', '') || storageGet('studio.activeEditor') || EDITORS[0].key;
+      const fallbackKey = EDITORS[0]?.key || '';
+      const key = (location.hash || '').replace('#', '') || storageGet('studio.activeEditor') || fallbackKey;
       const e = byKey(key);
+      if (!e) return;
       window.open(e.src, '_blank', 'noopener');
     });
 
@@ -225,7 +256,7 @@
     });
 
     // Initial editor selection: hash > localStorage > default
-    const initial = (location.hash || '').replace('#', '') || storageGet('studio.activeEditor') || EDITORS[0].key;
+    const initial = (location.hash || '').replace('#', '') || storageGet('studio.activeEditor') || EDITORS[0]?.key || '';
     openEditor(initial);
   </script>
 </body>

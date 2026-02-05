@@ -440,6 +440,8 @@
                 this.debouncedUpdate = EditorCore.utils.debounce((step, newId) => this.updateStepId(step, newId), 400);
                 this.sortableInstances = [];
                 this.isTicking = false; // For scroll throttling
+                this.stepIndex = new Map();
+                this.componentStepIndex = new Map();
                 this.apiBase = ""; // auto-detected base path to api.php
                 this.embed = {
                     enabled: false,
@@ -817,6 +819,7 @@
             }
 
             renderAll() {
+                this.rebuildDataIndexes();
                 const { groups, ungroupedSteps } = this.getCurrentViewState();
                 this.editorContainer.innerHTML = '';
                 this.renderScenarioOverview(groups, ungroupedSteps);
@@ -999,6 +1002,7 @@
                 const { groups, ungroupedSteps } = this.getCurrentViewState();
                 const container = document.createDocumentFragment();
                 const stepMap = new Map(this.scenarioData.steps.map(s => [s.id, s]));
+                const allStepIds = new Set(this.scenarioData.steps.map(s => s.id));
 
                 groups.forEach(group => {
                     const groupWrapper = this.createNavGroupElement(group);
@@ -1006,7 +1010,7 @@
                     
                     group.steps.forEach(stepId => {
                         const step = stepMap.get(stepId);
-                        if (step) stepList.appendChild(this.createNavStepElement(step));
+                        if (step) stepList.appendChild(this.createNavStepElement(step, allStepIds));
                     });
                     
                     container.appendChild(groupWrapper);
@@ -1017,7 +1021,7 @@
                 
                 ungroupedSteps.forEach(stepId => {
                      const step = stepMap.get(stepId);
-                     if (step) ungroupedList.appendChild(this.createNavStepElement(step));
+                     if (step) ungroupedList.appendChild(this.createNavStepElement(step, allStepIds));
                 });
                 container.appendChild(ungroupedWrapper);
 
@@ -1121,8 +1125,7 @@
                 return groupWrapper;
             }
 
-            createNavStepElement(step) {
-                const allStepIds = new Set(this.scenarioData.steps.map(s => s.id));
+            createNavStepElement(step, allStepIds) {
                 const stepLi = document.createElement('li');
                 stepLi.dataset.stepId = step.id;
 
@@ -1177,16 +1180,19 @@
                 this.connectionsContainer.innerHTML = '';
                 if (!this.scenarioData.steps) return;
 
+                const fragment = document.createDocumentFragment();
                 this.scenarioData.steps.forEach(step => {
-                    (step.components || []).filter(Boolean).forEach(comp => {
+                    (step.components || []).forEach(comp => {
                         if (comp?.next_step_id) {
-                            this.drawSingleConnection(comp.component_id, comp.next_step_id);
+                            this.drawSingleConnection(comp.component_id, comp.next_step_id, fragment);
                         }
                     });
                 });
+
+                this.connectionsContainer.appendChild(fragment);
             }
 
-            drawSingleConnection(sourceElementId, targetStepId) {
+            drawSingleConnection(sourceElementId, targetStepId, container = this.connectionsContainer) {
                 const toStepCard = document.getElementById(`step-card-${targetStepId}`);
                 if (!toStepCard) return;
 
@@ -1194,7 +1200,7 @@
                 if (this.arrowMode === 'navigator') {
                     fromElement = document.querySelector(`[data-nav-id="${sourceElementId}"]`);
                 } else {
-                    const sourceStepId = this.findComponentStepId(sourceElementId) || sourceElementId;
+                    const sourceStepId = this.componentStepIndex.get(sourceElementId) || this.findComponentStepId(sourceElementId) || sourceElementId;
                     const sourceStepCard = document.getElementById(`step-card-${sourceStepId}`);
                     if (sourceStepCard) {
                          const isSourceCollapsed = sourceStepCard.querySelector('.step-body').classList.contains('hidden');
@@ -1236,8 +1242,8 @@
                 arrow.setAttribute('points', `${endX},${endY} ${endX - 10},${endY - 5} ${endX - 10},${endY + 5}`);
                 arrow.classList.add('connection-arrow');
 
-                this.connectionsContainer.appendChild(path);
-                this.connectionsContainer.appendChild(arrow);
+                container.appendChild(path);
+                container.appendChild(arrow);
             }
             
             addNewStep() {
@@ -1963,15 +1969,23 @@
                 // Unified toast for all editors.
                 EditorCore.utils.showToast(message, type);
             }
-            findStep(stepId) { return this.scenarioData.steps.find(s => s.id === stepId); }
+            rebuildDataIndexes() {
+                this.stepIndex = new Map();
+                this.componentStepIndex = new Map();
+
+                this.scenarioData.steps.forEach(step => {
+                    this.stepIndex.set(step.id, step);
+                    (step.components || []).forEach(component => {
+                        if (component?.component_id) {
+                            this.componentStepIndex.set(component.component_id, step.id);
+                        }
+                    });
+                });
+            }
+            findStep(stepId) { return this.stepIndex.get(stepId) || null; }
             findComponent(stepId, componentId) { return this.findStep(stepId)?.components.find(c => c.component_id === componentId); }
             findComponentStepId(componentId) {
-                for (const step of this.scenarioData.steps) {
-                    if (step.components?.some(c => c.component_id === componentId)) {
-                        return step.id;
-                    }
-                }
-                return null;
+                return this.componentStepIndex.get(componentId) || null;
             }
             generateUniqueId(base) {
                 const normalizedBase = String(base || '').replace(/[^a-zA-Z0-9_]/g, '') || 'step';
