@@ -11,13 +11,23 @@
     
     <style>
         /* Небольшие кастомные стили */
-        :root{ --scenario-header-h: 72px; }
+        :root{ --scenario-header-h: 72px; --scenario-top-h: 126px; }
+
+        #scenario-top-chrome {
+            position: sticky;
+            top: 0;
+            z-index: 55;
+            backdrop-filter: blur(8px);
+            background: color-mix(in srgb, var(--editor-surface) 92%, transparent);
+            border-bottom: 1px solid color-mix(in srgb, var(--editor-light-border) 55%, transparent);
+            box-shadow: 0 8px 30px rgba(6, 12, 28, 0.16);
+        }
 
         /* Compact adaptive header: keep controls visible without horizontal scroll. */
-        #scenario-header{ overflow-x: hidden; min-height: var(--scenario-header-h); }
-        #scenario-header, #scenario-header *{ scroll-margin-top: var(--scenario-header-h); }
+        #scenario-header{ overflow-x: hidden; min-height: var(--scenario-header-h); background: transparent; border-bottom: 1px solid color-mix(in srgb, var(--editor-light-border) 45%, transparent); }
+        #scenario-top-chrome, #scenario-top-chrome *{ scroll-margin-top: var(--scenario-top-h); }
         #scenario-header .editor-page-title{ flex: 1 1 auto; min-width: 220px; }
-        #scenario-header .controls{ flex-wrap: wrap; justify-content: flex-end; gap: 0.5rem; }
+        #scenario-header .controls{ flex-wrap: wrap; justify-content: flex-end; gap: 0.5rem; align-items: center; }
         #scenario-header .controls > *{ flex: 0 0 auto; }
         #scenario-header select, #scenario-header input{ width: clamp(130px, 14vw, 210px); }
         #scenario-header .scenario-control-label{ font-size: 12px; }
@@ -25,9 +35,9 @@
             #scenario-header .scenario-control-label{ display: none; }
         }
 
-        /* Keep the navigator aligned with the real header height (fixes wrap/overlap issues). */
+        /* Keep the navigator aligned with the real top chrome height (fixes wrap/overlap issues). */
         @media (min-width: 768px){
-          #navigator{ top: var(--scenario-header-h); height: calc(100vh - var(--scenario-header-h)); }
+          #navigator{ top: var(--scenario-top-h); height: calc(100vh - var(--scenario-top-h)); }
         }
         .sortable-ghost {
             opacity: 0.4;
@@ -93,10 +103,82 @@
         .nav-group-header:hover .nav-group-controls {
             opacity: 1;
         }
+
+        .scenario-overview {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.65rem;
+            padding: 0.75rem 1rem;
+            border-bottom: none;
+            background:
+                radial-gradient(circle at 15% -20%, color-mix(in srgb, var(--editor-primary) 18%, transparent), transparent 58%),
+                color-mix(in srgb, var(--editor-soft-bg-strong) 88%, transparent);
+        }
+        .scenario-overview-card {
+            min-width: 130px;
+            padding: 0.55rem 0.75rem;
+            border-radius: 10px;
+            border: 1px solid color-mix(in srgb, var(--editor-light-border) 70%, transparent);
+            background: color-mix(in srgb, var(--editor-surface) 92%, transparent);
+            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+        }
+        .scenario-overview-card .label {
+            color: var(--editor-text-muted);
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 700;
+        }
+        .scenario-overview-card .value {
+            margin-top: 0.2rem;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--editor-text);
+        }
+        .scenario-overview-card.is-wide {
+            min-width: 220px;
+            flex: 1 1 auto;
+        }
+
+        .step-card {
+            transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
+            background: linear-gradient(145deg, color-mix(in srgb, var(--editor-surface) 95%, #2d3558 5%), color-mix(in srgb, var(--editor-surface) 98%, transparent));
+            border-color: color-mix(in srgb, var(--editor-light-border) 80%, transparent);
+            box-shadow: 0 8px 22px rgba(12, 18, 38, 0.12);
+        }
+        .step-card:hover {
+            transform: translateY(-1px);
+            border-color: color-mix(in srgb, var(--editor-primary) 40%, var(--editor-light-border));
+            box-shadow: 0 12px 28px rgba(6, 12, 26, 0.2);
+        }
+
+        .component-item {
+            border-color: color-mix(in srgb, var(--editor-light-border) 78%, transparent);
+            background: color-mix(in srgb, var(--editor-soft-bg) 92%, transparent);
+            transition: border-color 0.15s ease, transform 0.15s ease;
+        }
+        .component-item:hover {
+            transform: translateX(1px);
+            border-color: color-mix(in srgb, var(--editor-primary) 35%, var(--editor-light-border));
+        }
+
+        #add-step-button {
+            position: sticky;
+            bottom: 1rem;
+            z-index: 12;
+            box-shadow: 0 16px 28px rgba(11, 18, 37, 0.3);
+        }
+
+        @media (max-width: 767px) {
+            .scenario-overview { padding: 0.7rem 0.8rem; }
+            .scenario-overview-card { flex: 1 1 calc(50% - 0.65rem); min-width: 0; }
+            .scenario-overview-card.is-wide { flex-basis: 100%; }
+        }
     </style>
 </head>
 <body class="editor-theme font-sans text-slate-100" data-editor="scenario">
-    <header id="scenario-header" class="editor-page-header editor-surface px-4 md:px-6 py-3 border-b border-slate-200/30 flex flex-row flex-wrap justify-between items-start sticky top-0 z-50 shadow-sm gap-3">
+    <div id="scenario-top-chrome">
+    <header id="scenario-header" class="editor-page-header editor-surface px-4 md:px-6 py-3 flex flex-row flex-wrap justify-between items-start gap-3">
         <div class="editor-page-title">
             <i class="fa-solid fa-scroll text-accent text-xl"></i>
             <div>
@@ -132,6 +214,14 @@
             </button>
         </div>
     </header>
+
+    <section class="scenario-overview" aria-label="Сводка сценария">
+        <article class="scenario-overview-card"><div class="label">Шаги</div><div class="value" id="scenario-stat-steps">0</div></article>
+        <article class="scenario-overview-card"><div class="label">Компоненты</div><div class="value" id="scenario-stat-components">0</div></article>
+        <article class="scenario-overview-card"><div class="label">Группы</div><div class="value" id="scenario-stat-groups">0</div></article>
+        <article class="scenario-overview-card is-wide"><div class="label">Текущий контекст</div><div class="value text-base" id="scenario-stat-context">—</div></article>
+    </section>
+</div>
 
     <div class="main-container flex flex-col md:flex-row items-start">
         <aside id="navigator" class="w-full md:w-[350px] editor-surface border-r border-slate-200/30 md:sticky overflow-y-auto flex-shrink-0 z-20">
@@ -276,6 +366,12 @@
                 this.saveAsInput = document.getElementById('save-as-filename');
                 this.dirtyPill = document.getElementById('dirty-pill');
                 this.toastContainer = document.getElementById('toast-container');
+                this.stats = {
+                    steps: document.getElementById('scenario-stat-steps'),
+                    components: document.getElementById('scenario-stat-components'),
+                    groups: document.getElementById('scenario-stat-groups'),
+                    context: document.getElementById('scenario-stat-context')
+                };
                 this.jsonPreviewModal = {
                     backdrop: document.getElementById('json-preview-modal'),
                     output: document.getElementById('json-preview-output'),
@@ -593,7 +689,8 @@
             renderAll() {
                 const { groups, ungroupedSteps } = this.getCurrentViewState();
                 this.editorContainer.innerHTML = '';
-                
+                this.renderScenarioOverview(groups, ungroupedSteps);
+
                 if (this.scenarioData.steps.length === 0) {
                     this.renderEmptyState();
                     this.renderNavigator();
@@ -668,6 +765,26 @@
 
             renderEmptyState() {
                 this.editorContainer.innerHTML = `<div class="text-center p-20 my-5 max-w-3xl mx-auto bg-white border-2 border-dashed border-slate-300 rounded-xl"><i class="fa-solid fa-wand-magic-sparkles text-slate-400 text-5xl mb-4"></i><h2 class="text-2xl font-bold text-slate-800">Сценарий пока пуст</h2><p class="text-slate-500 mt-2 mb-6">Начните творить, добавив первый шаг с помощью большой зеленой кнопки ниже.</p></div>`;
+            }
+
+            renderScenarioOverview(groups, ungroupedSteps) {
+                if (!this.stats) {
+                    return;
+                }
+
+                const stepsCount = this.scenarioData.steps.length;
+                const componentsCount = this.scenarioData.steps.reduce((sum, step) => sum + ((step.components || []).filter(Boolean).length), 0);
+                const groupsCount = (groups || []).filter(group => !group.isDefault).length;
+                const activeEvent = this.scenarioEvents[this.selectedScenarioEvent] || this.selectedScenarioEvent;
+                const modeLabel = this.scenarioModes[this.currentMode]?.label || this.currentMode;
+                const groupedStepsCount = stepsCount - (ungroupedSteps?.length || 0);
+
+                this.stats.steps && (this.stats.steps.textContent = String(stepsCount));
+                this.stats.components && (this.stats.components.textContent = String(componentsCount));
+                this.stats.groups && (this.stats.groups.textContent = String(groupsCount));
+                if (this.stats.context) {
+                    this.stats.context.textContent = `${modeLabel} · ${activeEvent} · в группах: ${groupedStepsCount}`;
+                }
             }
 
             createStepElement(step) {
@@ -1889,17 +2006,29 @@
         document.addEventListener('DOMContentLoaded', () => {
             ScenarioApp.mount();
 
-            // Sync CSS var with actual header height (fixes top bar/layout when it wraps).
+            // Sync CSS vars with actual top chrome height (stable sticky header + navigator offset).
             const header = document.getElementById('scenario-header');
-            const setHeaderVar = () => {
-                if (!header) return;
-                document.documentElement.style.setProperty('--scenario-header-h', `${header.offsetHeight}px`);
+            const topChrome = document.getElementById('scenario-top-chrome');
+            const syncTopVars = () => {
+                if (header) {
+                    document.documentElement.style.setProperty('--scenario-header-h', `${header.offsetHeight}px`);
+                }
+                if (topChrome) {
+                    document.documentElement.style.setProperty('--scenario-top-h', `${topChrome.offsetHeight}px`);
+                }
             };
-            setHeaderVar();
-            const throttled = window.EditorCore?.utils?.rafThrottle ? window.EditorCore.utils.rafThrottle(setHeaderVar) : setHeaderVar;
+
+            const throttled = window.EditorCore?.utils?.rafThrottle ? window.EditorCore.utils.rafThrottle(syncTopVars) : syncTopVars;
+            syncTopVars();
             window.addEventListener('resize', throttled);
-            // In case fonts load late
-            setTimeout(setHeaderVar, 50);
+
+            if (window.ResizeObserver && topChrome) {
+                const observer = new ResizeObserver(throttled);
+                observer.observe(topChrome);
+            }
+
+            // In case fonts load late.
+            setTimeout(syncTopVars, 80);
         });
     </script>
 </body>
