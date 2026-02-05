@@ -11,14 +11,19 @@
     
     <style>
         /* Небольшие кастомные стили */
-        :root{ --scenario-header-h: 84px; }
+        :root{ --scenario-header-h: 72px; }
 
-        /* Scenario header should stay in one line; overflow scroll instead of wrapping */
-        #scenario-header{ overflow-x: auto; min-height: var(--scenario-header-h); }
+        /* Compact adaptive header: keep controls visible without horizontal scroll. */
+        #scenario-header{ overflow-x: hidden; min-height: var(--scenario-header-h); }
         #scenario-header, #scenario-header *{ scroll-margin-top: var(--scenario-header-h); }
-        #scenario-header .controls{ flex-wrap: nowrap; }
+        #scenario-header .editor-page-title{ flex: 1 1 auto; min-width: 220px; }
+        #scenario-header .controls{ flex-wrap: wrap; justify-content: flex-end; gap: 0.5rem; }
         #scenario-header .controls > *{ flex: 0 0 auto; }
-        #scenario-header select, #scenario-header input{ width: clamp(160px, 18vw, 260px); }
+        #scenario-header select, #scenario-header input{ width: clamp(130px, 14vw, 210px); }
+        #scenario-header .scenario-control-label{ font-size: 12px; }
+        @media (max-width: 1100px){
+            #scenario-header .scenario-control-label{ display: none; }
+        }
 
         /* Keep the navigator aligned with the real header height (fixes wrap/overlap issues). */
         @media (min-width: 768px){
@@ -91,7 +96,7 @@
     </style>
 </head>
 <body class="editor-theme font-sans text-slate-100" data-editor="scenario">
-    <header id="scenario-header" class="editor-page-header editor-surface px-4 md:px-8 py-3 border-b border-slate-200/30 flex flex-row flex-nowrap justify-between items-center sticky top-0 z-50 shadow-sm gap-4">
+    <header id="scenario-header" class="editor-page-header editor-surface px-4 md:px-6 py-3 border-b border-slate-200/30 flex flex-row flex-wrap justify-between items-start sticky top-0 z-50 shadow-sm gap-3">
         <div class="editor-page-title">
             <i class="fa-solid fa-scroll text-accent text-xl"></i>
             <div>
@@ -108,15 +113,20 @@
                     <span class="thumb"></span>
                 </label>
             </div>
-            <label for="scenario-select" class="text-sm font-medium text-slate-200">Сценарий:</label>
-            <select id="scenario-select" class="form-input w-full sm:w-64 min-w-[160px] max-w-[260px]"></select>
-            <label for="scenario-mode-select" class="text-sm font-medium text-slate-200">Режим:</label>
-            <select id="scenario-mode-select" class="form-input w-full sm:w-64 min-w-[160px] max-w-[260px]"></select>
+            <label for="scenario-select" class="scenario-control-label text-sm font-medium text-slate-200">Сценарий:</label>
+            <select id="scenario-select" title="Сценарий" class="form-input w-full sm:w-56 min-w-[130px] max-w-[210px]"></select>
+            <label for="scenario-mode-select" class="scenario-control-label text-sm font-medium text-slate-200">Режим:</label>
+            <select id="scenario-mode-select" title="Режим" class="form-input w-full sm:w-56 min-w-[130px] max-w-[210px]"></select>
+            <label for="scenario-event-select" class="scenario-control-label text-sm font-medium text-slate-200">Событие:</label>
+            <select id="scenario-event-select" title="Сценарное событие" class="form-input w-full sm:w-56 min-w-[130px] max-w-[210px]"></select>
             <button id="delete-scenario-btn" title="Удалить текущий сценарий" class="editor-btn editor-btn-danger">
                 <i class="fa-solid fa-trash-can"></i>
             </button>
-            <input type="text" id="save-as-filename" placeholder="Сохранить как..." class="form-input w-full sm:w-56 min-w-[160px] max-w-[260px]">
+            <input type="text" id="save-as-filename" placeholder="Сохранить как..." class="form-input w-full sm:w-48 min-w-[130px] max-w-[210px]">
             <span id="dirty-pill" class="editor-dirty-pill hidden" aria-hidden="true">Данные не сохранены</span>
+            <button id="preview-json-button" title="Предпросмотр JSON" class="editor-btn editor-btn-secondary flex items-center gap-2">
+                <i class="fa-solid fa-code"></i> JSON
+            </button>
             <button id="save-button" title="Сохранить текущий сценарий" class="editor-btn editor-btn-primary flex items-center gap-2">
                 <i class="fa-solid fa-save"></i> Сохранить
             </button>
@@ -145,6 +155,17 @@
     <svg id="connections-svg-container" class="fixed top-0 left-0 w-full h-full pointer-events-none z-10"></svg>
     
     <div id="add-component-menu" class="hidden absolute z-[1000] editor-card border border-slate-300/40 shadow-lg rounded-lg p-2 w-72 flex flex-col gap-1"></div>
+
+    <div id="json-preview-modal" class="hidden fixed inset-0 editor-modal-backdrop z-[350] flex justify-center items-center p-4">
+        <div class="editor-modal-content p-6 rounded-lg shadow-xl w-full max-w-4xl h-[80vh] flex flex-col">
+            <h3 class="text-xl font-bold mb-4">Предпросмотр JSON</h3>
+            <textarea id="json-preview-output" readonly class="w-full flex-grow p-3 rounded-md form-input font-mono text-sm resize-none"></textarea>
+            <div class="text-right mt-4 pt-3 border-t border-slate-200/30">
+                <button id="json-preview-copy" class="editor-btn editor-btn-secondary">Копировать</button>
+                <button id="json-preview-close" class="editor-btn editor-btn-primary ml-2">Закрыть</button>
+            </div>
+        </div>
+    </div>
 
     <!-- TEMPLATES -->
     <template id="step-card-template">
@@ -224,8 +245,7 @@
                     // Minimal safe defaults (scenario) in case defaults.js also didn't load.
                     window.EditorCore.defaults = { getFieldRenderOptions: () => ({ classes: {} }) };
                 }
-                if (mode === "event") window.EditorCore.UI.mountEventEditorUI?.();
-                else window.EditorCore.UI.mountScenarioEditorUI?.();
+                window.EditorCore.UI.mountScenarioEditorUI?.();
                 return { fieldRenderOptions: window.EditorCore.defaults.getFieldRenderOptions(mode) };
             };
         }
@@ -249,11 +269,19 @@
                 this.addGroupButton = document.getElementById('add-group-btn');
                 this.scenarioSelect = document.getElementById('scenario-select');
                 this.scenarioModeSelect = document.getElementById('scenario-mode-select');
+                this.scenarioEventSelect = document.getElementById('scenario-event-select');
+                this.previewJsonButton = document.getElementById('preview-json-button');
                 this.deleteScenarioBtn = document.getElementById('delete-scenario-btn');
                 this.saveButton = document.getElementById('save-button');
                 this.saveAsInput = document.getElementById('save-as-filename');
                 this.dirtyPill = document.getElementById('dirty-pill');
                 this.toastContainer = document.getElementById('toast-container');
+                this.jsonPreviewModal = {
+                    backdrop: document.getElementById('json-preview-modal'),
+                    output: document.getElementById('json-preview-output'),
+                    copyBtn: document.getElementById('json-preview-copy'),
+                    closeBtn: document.getElementById('json-preview-close')
+                };
                 this.arrowModeToggle = document.getElementById('arrow-mode-toggle');
                 this.modal = { backdrop: document.getElementById('modal-backdrop'), title: document.getElementById('modal-title'), formContainer: document.getElementById('modal-form-container'), saveButton: document.getElementById('modal-save'), cancelButton: document.getElementById('modal-cancel'), context: null };
                 this.deleteGroupModal = {
@@ -274,6 +302,17 @@
                 this.allComponentTypes = EditorCore.schemas.componentSchemas;
                 this.scenarioModes = EditorCore.schemas.scenarioModeSchemas || {};
                 this.currentMode = 'default';
+                this.scenarioEvents = {
+                    general: 'Стандартный',
+                    on_recieve_objectives: 'При получении задач',
+                    on_complete_objectives: 'При завершении задач',
+                    on_end: 'При окончании шага',
+                    on_equip: 'При экипировке предмета',
+                    on_got: 'При получении предмета',
+                    on_lost: 'При потере предмета',
+                    on_unequip: 'При снятии предмета'
+                };
+                this.selectedScenarioEvent = 'general';
                 this.componentTypes = this.getComponentTypesByMode(this.currentMode);
                 this.debouncedUpdate = EditorCore.utils.debounce((step, newId) => this.updateStepId(step, newId), 400);
                 this.sortableInstances = [];
@@ -312,6 +351,18 @@
                 this.currentMode = modes[0][0];
                 this.scenarioModeSelect.value = this.currentMode;
                 this.componentTypes = this.getComponentTypesByMode(this.currentMode);
+            }
+
+            setupScenarioEventSelector() {
+                if (!this.scenarioEventSelect) {
+                    return;
+                }
+
+                this.scenarioEventSelect.innerHTML = Object.entries(this.scenarioEvents)
+                    .map(([key, label]) => `<option value="${key}">${label}</option>`)
+                    .join('');
+
+                this.scenarioEventSelect.value = this.selectedScenarioEvent;
             }
 
             getComponentTypesByMode(mode) {
@@ -423,21 +474,30 @@
 
             async initialize() {
                 this.setupModeSelector();
+                this.setupScenarioEventSelector();
                 this.addEventListeners();
                 await this.resolveApiBase();
                 await this.loadScenarioList();
             }
 
             addEventListeners() {
+                this.previewJsonButton?.addEventListener('click', () => this.openJsonPreview());
                 this.saveButton.addEventListener('click', () => this.saveScenario());
                 this.scenarioSelect.addEventListener('change', () => this.loadScenario(this.scenarioSelect.value));
                 this.scenarioModeSelect?.addEventListener('change', () => this.handleModeChange(this.scenarioModeSelect.value));
+                this.scenarioEventSelect?.addEventListener('change', () => {
+                    this.selectedScenarioEvent = this.scenarioEventSelect.value || 'general';
+                    this.dirty.markDirty();
+                });
                 this.addStepButton.addEventListener('click', () => this.addNewStep());
                 this.addGroupButton.addEventListener('click', () => this.addNewGroup());
                 this.deleteScenarioBtn.addEventListener('click', () => this.deleteScenario());
                 this.modal.saveButton.addEventListener('click', () => this.saveModalChanges());
                 this.modal.cancelButton.addEventListener('click', () => this.closeModal());
                 this.modal.backdrop.addEventListener('click', (e) => { if (e.target === this.modal.backdrop) this.closeModal(); });
+                this.jsonPreviewModal.closeBtn?.addEventListener('click', () => this.closeJsonPreview());
+                this.jsonPreviewModal.copyBtn?.addEventListener('click', () => this.copyJsonPreview());
+                this.jsonPreviewModal.backdrop?.addEventListener('click', (e) => { if (e.target === this.jsonPreviewModal.backdrop) this.closeJsonPreview(); });
                 this.modal.formContainer.addEventListener('click', (e) => {
                     const listButton = e.target.closest('[data-list-action]');
                     if (listButton) {
@@ -1141,13 +1201,28 @@
                 }
             }
             loadScenarioData(data, filename) {
-                if (!data || !Array.isArray(data.steps)) {
+                let payload = data;
+                this.selectedScenarioEvent = 'general';
+
+                if (payload && !Array.isArray(payload.steps)) {
+                    const eventKey = Object.keys(this.scenarioEvents).find((key) => key !== 'general' && Array.isArray(payload?.[key]?.steps));
+                    if (eventKey) {
+                        payload = payload[eventKey];
+                        this.selectedScenarioEvent = eventKey;
+                    }
+                }
+
+                if (this.scenarioEventSelect) {
+                    this.scenarioEventSelect.value = this.selectedScenarioEvent;
+                }
+
+                if (!payload || !Array.isArray(payload.steps)) {
                     this.showToast("Ошибка: формат файла сценария некорректен.", "error");
                     this.scenarioData = { steps: [], editor_data: { groups: [] } };
                 } else {
                     this.scenarioData = {
-                        steps: data.steps,
-                        editor_data: data.editor_data || { groups: [] }
+                        steps: payload.steps,
+                        editor_data: payload.editor_data || { groups: [] }
                     };
                     this.scenarioData.steps.forEach((step, index) => {
                         if (!step || typeof step !== 'object') step = { id: `invalid_step_${index}` };
@@ -1158,20 +1233,15 @@
                         });
                     });
                 }
-                this.applyMode(this.detectModeFromScenarioData(data));
+                this.applyMode(this.detectModeFromScenarioData(payload));
                 this.uiState.collapsedSteps.clear(); // Clear old state on new scenario load
                 this.renderAll();
                 this.dirty.setClean();
             }
-            async saveScenario() {
-                if (!this.validateAllStepIds()) return this.showToast('Есть шаги с некорректными ID. Исправьте!', 'error');
-                let filename = this.saveAsInput.value.trim() || this.scenarioSelect.value;
-                if (!filename) return this.showToast('Введите имя файла для сохранения!', 'error');
-                if (!filename.endsWith('.json')) filename += '.json';
-                
+            buildScenarioContent() {
                 const stepMap = new Map(this.scenarioData.steps.map(s => [s.id, s]));
                 const orderedSteps = [];
-                
+
                 this.scenarioData.editor_data.groups.forEach(group => {
                     group.steps.forEach(stepId => {
                         const step = stepMap.get(stepId);
@@ -1180,10 +1250,8 @@
                         }
                     });
                 });
-                
-                const stepsInGroups = new Set(orderedSteps.map(s => s.id));
 
-                // Preserve manual order for ungrouped steps (if user dragged them).
+                const stepsInGroups = new Set(orderedSteps.map(s => s.id));
                 const ed = this.scenarioData.editor_data || {};
                 const ungroupedOrder = Array.isArray(ed.ungrouped_steps) ? ed.ungrouped_steps : [];
                 ungroupedOrder.forEach(stepId => {
@@ -1195,7 +1263,6 @@
                     }
                 });
 
-                // Fallback: append any remaining steps
                 this.scenarioData.steps.forEach(step => {
                     if (!stepsInGroups.has(step.id)) {
                         orderedSteps.push(step);
@@ -1203,7 +1270,6 @@
                 });
 
                 const stepsToSave = JSON.parse(JSON.stringify(orderedSteps));
-
                 stepsToSave.forEach(step => {
                     (step.components || []).forEach(c => {
                         delete c.component_id;
@@ -1227,11 +1293,24 @@
                     }
                 });
 
-                const contentToSave = {
+                const payload = {
                     scenario_mode: this.currentMode,
                     editor_data: this.scenarioData.editor_data,
                     steps: stepsToSave
                 };
+
+                return this.selectedScenarioEvent === 'general'
+                    ? payload
+                    : { [this.selectedScenarioEvent]: payload };
+            }
+
+            async saveScenario() {
+                if (!this.validateAllStepIds()) return this.showToast('Есть шаги с некорректными ID. Исправьте!', 'error');
+                let filename = this.saveAsInput.value.trim() || this.scenarioSelect.value;
+                if (!filename) return this.showToast('Введите имя файла для сохранения!', 'error');
+                if (!filename.endsWith('.json')) filename += '.json';
+                
+                const contentToSave = this.buildScenarioContent();
                 
                 try {
                     const response = await fetch(this.apiUrl(), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ filename, content: contentToSave }) });
@@ -1272,6 +1351,40 @@
                     }
                 } catch (error) {
                     this.showToast(`Ошибка удаления: ${error.message}`, 'error');
+                }
+            }
+
+            openJsonPreview() {
+                if (!this.jsonPreviewModal.backdrop || !this.jsonPreviewModal.output) {
+                    return;
+                }
+
+                this.jsonPreviewModal.output.value = JSON.stringify(this.buildScenarioContent(), null, 2);
+                this.jsonPreviewModal.backdrop.classList.remove('hidden');
+            }
+
+            closeJsonPreview() {
+                this.jsonPreviewModal.backdrop?.classList.add('hidden');
+            }
+
+            async copyJsonPreview() {
+                const value = this.jsonPreviewModal.output?.value || '';
+                if (!value) {
+                    return;
+                }
+
+                try {
+                    if (navigator.clipboard?.writeText) {
+                        await navigator.clipboard.writeText(value);
+                    } else {
+                        this.jsonPreviewModal.output.focus();
+                        this.jsonPreviewModal.output.select();
+                        document.execCommand('copy');
+                    }
+
+                    this.showToast('JSON скопирован.', 'success');
+                } catch (error) {
+                    this.showToast(`Не удалось скопировать JSON: ${error.message}`, 'error');
                 }
             }
 
@@ -1763,7 +1876,7 @@
             id: 'scenario-editor',
             state: {},
             init: async (app) => {
-                window.EditorCoreBootstrap = window.EditorCoreBootstrap || EditorCore.bootstrapEditor({ mode: 'scenario' });
+                window.EditorCoreBootstrap = window.EditorCoreBootstrap || EditorCore.bootstrapEditor();
                 EditorCore.UI.mountListContainer({
                     id: 'navigator-tree',
                     parent: document.getElementById('navigator-tree-root'),

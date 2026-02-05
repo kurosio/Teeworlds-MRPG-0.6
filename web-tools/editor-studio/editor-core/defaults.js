@@ -27,34 +27,11 @@
       includeName: true,
       includeDataPath: true,
       includeDataKey: false,
-    },
-
-    event: {
-      classes: {
-        input: INPUT_CLASS,
-        textarea: `${INPUT_CLASS} editor-textarea`,
-        multiselect: INPUT_CLASS,
-        label: 'editor-label editor-label-block text-sm',
-        nestedLabel: 'editor-nested-label',
-        fieldWrapper: 'editor-field',
-        nestedFieldWrapper: 'editor-field-nested',
-        checkboxWrapper: 'flex items-center space-x-3 cursor-pointer',
-        // Unified list wrapper (spacing + optional table mode)
-        listWrapper: 'editor-list',
-        listItem: 'editor-list-item',
-        listAdd: 'editor-btn editor-btn-primary text-sm',
-        listRemove: 'editor-icon-btn editor-icon-danger',
-        checkbox: '',
-      },
-      includeName: false,
-      includeDataPath: true,
-      includeDataKey: true,
-      listAddLabel: 'Добавить',
     }
   };
 
-  const getFieldRenderOptions = (mode = 'scenario') => {
-    const base = FIELD_RENDER_OPTIONS[mode] || FIELD_RENDER_OPTIONS.scenario;
+  const getFieldRenderOptions = () => {
+    const base = FIELD_RENDER_OPTIONS.scenario;
     // return a shallow clone so editors can mutate safely
     return {
       ...base,
@@ -69,9 +46,6 @@
   };
 
   // UI presets to keep schemas small and consistent across editors.
-  // Usage in editor schemas:
-  //   ui: EditorCore.presets.tags({ options:[...], placeholder:'...', allowCreate:false })
-  //   ui: EditorCore.presets.tags({ datasource:'item', valueType:'number', labelMode:'id_name' })
   window.EditorCore.presets = window.EditorCore.presets || {};
   window.EditorCore.presets.tags = (cfg = {}) => {
     const c = cfg || {};

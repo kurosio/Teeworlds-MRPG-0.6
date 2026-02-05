@@ -2,9 +2,6 @@
   if (window.__editorCorePageLoader) return;
   window.__editorCorePageLoader = true;
 
-  const currentScript = document.currentScript;
-  const mode = currentScript?.dataset?.mode || currentScript?.getAttribute('data-mode');
-  const bootstrapMode = mode || 'scenario';
 
   const linkTags = [
     '<link rel="preconnect" href="https://fonts.googleapis.com">',
@@ -35,7 +32,7 @@
     '<script src="editor-core/db-editor-runtime.js"></script>',
     `<script>
       if (window.EditorCore?.bootstrapEditor) {
-        window.EditorCoreBootstrap = window.EditorCore.bootstrapEditor({ mode: ${JSON.stringify(bootstrapMode)} });
+        window.EditorCoreBootstrap = window.EditorCore.bootstrapEditor();
       }
     </script>`
   ];

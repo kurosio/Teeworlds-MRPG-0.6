@@ -8,7 +8,6 @@ window.STUDIO_MANIFEST = [
     title: 'Редакторы файлов',
     items: [
       { key: 'scenario', title: 'Сценарии', icon: 'fa-scroll', src: 'scenario-editor.html' },
-      { key: 'event', title: 'События', icon: 'fa-bolt', src: 'event-editor.php' },
     ]
   },
   {

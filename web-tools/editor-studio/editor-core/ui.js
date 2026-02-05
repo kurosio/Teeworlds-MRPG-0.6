@@ -51,62 +51,6 @@
     container.classList.toggle(emptyClass, !hasItems);
   };
 
-  const mountEventEditorUI = () => {
-    mountModal({
-      id: 'add-step-modal',
-      html: `
-        <div id="add-step-modal" class="fixed inset-0 z-50 items-center justify-center hidden editor-modal-backdrop">
-          <div class="editor-modal-content p-6 w-full max-w-md">
-            <h3 class="text-xl font-bold mb-4">Выберите тип элемента</h3>
-            <select id="action-select" class="w-full p-2 rounded-md form-input mb-4"></select>
-            <div class="flex justify-end space-x-2">
-              <button data-action="cancel-add" class="editor-btn editor-btn-secondary">Отмена</button>
-              <button data-action="confirm-add" class="editor-btn editor-btn-primary">Добавить</button>
-            </div>
-          </div>
-        </div>
-      `
-    });
-
-    mountModal({
-      id: 'export-modal',
-      html: `
-        <div id="export-modal" class="fixed inset-0 z-50 items-center justify-center hidden editor-modal-backdrop">
-          <div class="editor-modal-content p-6 w-full max-w-2xl flex flex-col" style="height: 80vh;">
-            <h3 class="text-xl font-bold mb-4">Экспортированный JSON</h3>
-            <textarea id="json-output" readonly class="w-full flex-grow p-3 rounded-md form-input font-mono text-sm resize-none"></textarea>
-            <div class="flex justify-end space-x-2 mt-4">
-              <button id="copy-json-btn" class="editor-btn editor-btn-primary"><i class="fas fa-copy mr-2"></i>Копировать</button>
-              <button data-action="close-modal" class="editor-btn editor-btn-secondary">Закрыть</button>
-            </div>
-          </div>
-        </div>
-      `
-    });
-
-    mountModal({
-      id: 'confirm-modal',
-      html: `
-        <div id="confirm-modal" class="fixed inset-0 z-50 items-center justify-center hidden editor-modal-backdrop">
-          <div class="editor-modal-content p-6 w-full max-w-lg">
-            <h3 id="confirm-title" class="text-xl font-bold mb-4"></h3>
-            <p id="confirm-message" class="mb-6"></p>
-            <div id="confirm-buttons" class="flex justify-end space-x-3"></div>
-          </div>
-        </div>
-      `
-    });
-
-    mountModal({
-      id: 'undo-toast',
-      html: `
-        <div id="undo-toast" class="fixed bottom-5 right-5 z-50 p-4 rounded-lg shadow-lg flex items-center gap-4 editor-modal-content">
-          <span id="undo-message"></span>
-          <button id="undo-btn" class="editor-btn editor-btn-secondary">Отменить</button>
-        </div>
-      `
-    });
-  };
 
   const mountScenarioEditorUI = () => {
     mountToastContainer({ id: 'toast-container' });
@@ -320,7 +264,6 @@
     mountListContainer,
     renderEmptyList,
     applyEmptyStateClass,
-    mountEventEditorUI,
     mountScenarioEditorUI,
     toast,
     mountTabs,

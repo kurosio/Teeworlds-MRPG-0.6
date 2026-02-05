@@ -10,19 +10,18 @@
 Рекомендуемый вариант (единый набор модулей + порядок в одном месте):
 
 ```html
-<script src="editor-core/page-loader.js" data-mode="event"></script>
+<script src="editor-core/page-loader.js" data-mode="scenario"></script>
 ```
 
-`data-mode` принимает `event` или `scenario`. Лоадер подключает шрифты, tailwind, стили и все модули `editor-core` в правильной очередности, а также сохраняет результат `bootstrapEditor` в `window.EditorCoreBootstrap`.
+`data-mode` поддерживается для совместимости; базовый UI инициализируется в сценарном режиме. Лоадер подключает шрифты, tailwind, стили и все модули `editor-core` в правильной очередности, а также сохраняет результат `bootstrapEditor` в `window.EditorCoreBootstrap`.
 
 ### 2) Быстрый старт страницы
 
 ```js
-const { fieldRenderOptions } = window.EditorCoreBootstrap || EditorCore.bootstrapEditor({ mode: 'event' });
+const { fieldRenderOptions } = window.EditorCoreBootstrap || EditorCore.bootstrapEditor();
 ```
 
-- `data-mode="scenario"` — для сценарных страниц с модальным редактором.
-- `data-mode="event"` — для редакторов шагов/действий (похоже на `event-editor.php`).
+- `data-mode="scenario"` — основной режим сценарных страниц с модальным редактором.
 
 ### 3) Формы из схемы (рекомендуется)
 Если редактор — это "форма по схеме", используйте `EditorCore.FormRuntime`:
@@ -45,7 +44,7 @@ const form = EditorCore.FormRuntime.mount(root, {
 Для стандартных таблиц (list + форма + сохранение) используйте `EditorCore.DbEditor`:
 
 ```js
-const { fieldRenderOptions } = window.EditorCoreBootstrap || EditorCore.bootstrapEditor({ mode: 'event' });
+const { fieldRenderOptions } = window.EditorCoreBootstrap || EditorCore.bootstrapEditor();
 
 EditorCore.DbEditor.mount(document.body, {
   resource: 'worlds',
