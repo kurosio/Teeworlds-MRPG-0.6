@@ -472,7 +472,7 @@ private:
 };
 
 /**
- * @class DefeatMobsComponent
+ * @class ScenarioDefeatMobsComponent
  * @brief A component that spawns mobs and completes once defeat conditions are met.
  *
  * The component is configured via a JSON object with the following fields:
@@ -483,7 +483,7 @@ private:
  * @param kill_target (int): Target kills for "wave" mode (defaults to number spawned).
  * @param duration (int): Duration in seconds for "survival" mode.
  */
-class DefeatMobsComponent final : public PlayerAwareComponent<DefeatMobsComponent>, public IEventListener
+class ScenarioDefeatMobsComponent final : public PlayerAwareComponent<ScenarioDefeatMobsComponent>, public IEventListener
 {
 	enum class EMode { Annihilation, Wave, Survival };
 	static EMode GetMode(std::string_view modeStr)
@@ -507,7 +507,7 @@ class DefeatMobsComponent final : public PlayerAwareComponent<DefeatMobsComponen
 	nlohmann::json m_MobsData {};
 
 public:
-	explicit DefeatMobsComponent(const nlohmann::json& j)
+	explicit ScenarioDefeatMobsComponent(const nlohmann::json& j)
 	{
 		InitBaseJsonField(j);
 		m_Mode = GetMode(j.value("mode", ""));

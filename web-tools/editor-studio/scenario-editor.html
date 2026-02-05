@@ -185,6 +185,7 @@
                 <h1>Сценарии</h1>
             <div class="editor-page-sub">Сценарии: структура шагов, компоненты и связи.</div>
             </div>
+            <span id="dirty-pill" class="editor-dirty-pill hidden" aria-hidden="true">Данные не сохранены</span>
         </div>
         <div class="controls editor-page-actions flex flex-nowrap items-center gap-3 min-w-0">
             <div class="scenario-switch-wrap">
@@ -205,9 +206,11 @@
                 <i class="fa-solid fa-trash-can"></i>
             </button>
             <input type="text" id="save-as-filename" placeholder="Сохранить как..." class="form-input w-full sm:w-48 min-w-[130px] max-w-[210px]">
-            <span id="dirty-pill" class="editor-dirty-pill hidden" aria-hidden="true">Данные не сохранены</span>
             <button id="preview-json-button" title="Предпросмотр JSON" class="editor-btn editor-btn-secondary flex items-center gap-2">
                 <i class="fa-solid fa-code"></i> JSON
+            </button>
+            <button id="import-json-button" title="Импорт шагов из JSON текста" class="editor-btn editor-btn-secondary flex items-center gap-2">
+                <i class="fa-solid fa-file-import"></i> Импорт
             </button>
             <button id="save-button" title="Сохранить текущий сценарий" class="editor-btn editor-btn-primary flex items-center gap-2">
                 <i class="fa-solid fa-save"></i> Сохранить
@@ -253,6 +256,29 @@
             <div class="text-right mt-4 pt-3 border-t border-slate-200/30">
                 <button id="json-preview-copy" class="editor-btn editor-btn-secondary">Копировать</button>
                 <button id="json-preview-close" class="editor-btn editor-btn-primary ml-2">Закрыть</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="json-import-modal" class="hidden fixed inset-0 editor-modal-backdrop z-[360] flex justify-center items-center p-4">
+        <div class="editor-modal-content p-6 rounded-lg shadow-xl w-full max-w-4xl h-[80vh] flex flex-col gap-4">
+            <div>
+                <h3 class="text-xl font-bold">Импорт шагов из JSON</h3>
+                <p class="text-sm text-slate-300 mt-1">Можно вставить массив шагов, объект сценария (<code>{"steps": [...]}</code>) или JSON события (<code>{"on_end": {"steps": [...]}}</code>).</p>
+            </div>
+            <textarea id="json-import-input" class="w-full flex-grow p-3 rounded-md form-input font-mono text-sm resize-none" placeholder='[{"id":"step_1","components":[]}]'></textarea>
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-3 border-t border-slate-200/30">
+                <label class="text-sm flex items-center gap-2">
+                    Режим импорта:
+                    <select id="json-import-mode" class="form-input">
+                        <option value="replace">Заменить текущие шаги</option>
+                        <option value="append">Добавить к текущим шагам</option>
+                    </select>
+                </label>
+                <div class="text-right">
+                    <button id="json-import-apply" class="editor-btn editor-btn-primary">Импортировать</button>
+                    <button id="json-import-close" class="editor-btn editor-btn-secondary ml-2">Закрыть</button>
+                </div>
             </div>
         </div>
     </div>
@@ -361,6 +387,7 @@
                 this.scenarioModeSelect = document.getElementById('scenario-mode-select');
                 this.scenarioEventSelect = document.getElementById('scenario-event-select');
                 this.previewJsonButton = document.getElementById('preview-json-button');
+                this.importJsonButton = document.getElementById('import-json-button');
                 this.deleteScenarioBtn = document.getElementById('delete-scenario-btn');
                 this.saveButton = document.getElementById('save-button');
                 this.saveAsInput = document.getElementById('save-as-filename');
@@ -377,6 +404,13 @@
                     output: document.getElementById('json-preview-output'),
                     copyBtn: document.getElementById('json-preview-copy'),
                     closeBtn: document.getElementById('json-preview-close')
+                };
+                this.jsonImportModal = {
+                    backdrop: document.getElementById('json-import-modal'),
+                    input: document.getElementById('json-import-input'),
+                    mode: document.getElementById('json-import-mode'),
+                    applyBtn: document.getElementById('json-import-apply'),
+                    closeBtn: document.getElementById('json-import-close')
                 };
                 this.arrowModeToggle = document.getElementById('arrow-mode-toggle');
                 this.modal = { backdrop: document.getElementById('modal-backdrop'), title: document.getElementById('modal-title'), formContainer: document.getElementById('modal-form-container'), saveButton: document.getElementById('modal-save'), cancelButton: document.getElementById('modal-cancel'), context: null };
@@ -578,6 +612,7 @@
 
             addEventListeners() {
                 this.previewJsonButton?.addEventListener('click', () => this.openJsonPreview());
+                this.importJsonButton?.addEventListener('click', () => this.openJsonImport());
                 this.saveButton.addEventListener('click', () => this.saveScenario());
                 this.scenarioSelect.addEventListener('change', () => this.loadScenario(this.scenarioSelect.value));
                 this.scenarioModeSelect?.addEventListener('change', () => this.handleModeChange(this.scenarioModeSelect.value));
@@ -594,6 +629,9 @@
                 this.jsonPreviewModal.closeBtn?.addEventListener('click', () => this.closeJsonPreview());
                 this.jsonPreviewModal.copyBtn?.addEventListener('click', () => this.copyJsonPreview());
                 this.jsonPreviewModal.backdrop?.addEventListener('click', (e) => { if (e.target === this.jsonPreviewModal.backdrop) this.closeJsonPreview(); });
+                this.jsonImportModal.closeBtn?.addEventListener('click', () => this.closeJsonImport());
+                this.jsonImportModal.applyBtn?.addEventListener('click', () => this.applyJsonImport());
+                this.jsonImportModal.backdrop?.addEventListener('click', (e) => { if (e.target === this.jsonImportModal.backdrop) this.closeJsonImport(); });
                 this.modal.formContainer.addEventListener('click', (e) => {
                     const listButton = e.target.closest('[data-list-action]');
                     if (listButton) {
@@ -1342,9 +1380,15 @@
                         editor_data: payload.editor_data || { groups: [] }
                     };
                     this.scenarioData.steps.forEach((step, index) => {
-                        if (!step || typeof step !== 'object') step = { id: `invalid_step_${index}` };
+                        if (!step || typeof step !== 'object') {
+                            step = { id: `invalid_step_${index}`, components: [] };
+                            this.scenarioData.steps[index] = step;
+                        }
                         if (!step.id) step.id = this.generateUniqueId(`step_${index}`);
-                        (step.components || []).forEach(c => {
+                        if (!Array.isArray(step.components)) {
+                            step.components = [];
+                        }
+                        step.components.forEach(c => {
                             this.applyComponentDefaults(c);
                             if (!c.component_id) c.component_id = this.generateUUID();
                         });
@@ -1505,6 +1549,149 @@
                 }
             }
 
+            openJsonImport() {
+                if (!this.jsonImportModal.backdrop || !this.jsonImportModal.input) {
+                    return;
+                }
+
+                this.jsonImportModal.input.value = '';
+                this.jsonImportModal.mode.value = 'replace';
+                this.jsonImportModal.backdrop.classList.remove('hidden');
+                this.jsonImportModal.input.focus();
+            }
+
+            closeJsonImport() {
+                this.jsonImportModal.backdrop?.classList.add('hidden');
+            }
+
+            normalizeImportedPayload(rawData) {
+                if (Array.isArray(rawData)) {
+                    return { steps: rawData, scenarioMode: null, editorData: null, eventKey: null };
+                }
+
+                if (rawData && Array.isArray(rawData.steps)) {
+                    return {
+                        steps: rawData.steps,
+                        scenarioMode: rawData.scenario_mode || null,
+                        editorData: rawData.editor_data || null,
+                        eventKey: null
+                    };
+                }
+
+                if (rawData && typeof rawData === 'object') {
+                    const eventKey = Object.keys(this.scenarioEvents).find((key) => key !== 'general' && Array.isArray(rawData?.[key]?.steps));
+                    if (eventKey) {
+                        const eventPayload = rawData[eventKey] || {};
+                        return {
+                            steps: eventPayload.steps,
+                            scenarioMode: eventPayload.scenario_mode || null,
+                            editorData: eventPayload.editor_data || null,
+                            eventKey
+                        };
+                    }
+                }
+
+                return null;
+            }
+
+            applyJsonImport() {
+                const text = this.jsonImportModal.input?.value?.trim();
+                if (!text) {
+                    this.showToast('Вставьте JSON для импорта.', 'warning');
+                    return;
+                }
+
+                let parsed;
+                try {
+                    parsed = JSON.parse(text);
+                } catch (error) {
+                    this.showToast(`Некорректный JSON: ${error.message}`, 'error');
+                    return;
+                }
+
+                const importedPayload = this.normalizeImportedPayload(parsed);
+                const importedSteps = importedPayload?.steps;
+                if (!Array.isArray(importedSteps)) {
+                    this.showToast('Не удалось найти шаги. Ожидается массив шагов или объект с полем steps.', 'error');
+                    return;
+                }
+
+                const safeImportedSteps = importedSteps
+                    .filter(step => step && typeof step === 'object')
+                    .map(step => JSON.parse(JSON.stringify(step)));
+
+                if (safeImportedSteps.length === 0) {
+                    this.showToast('Импорт не выполнен: список шагов пуст.', 'warning');
+                    return;
+                }
+
+                const mode = this.jsonImportModal.mode?.value || 'replace';
+                const baseSteps = mode === 'append' ? this.scenarioData.steps : [];
+                const existingIds = new Set(baseSteps.map(step => step.id));
+                const makeUniqueId = (baseId) => {
+                    const normalizedBase = String(baseId || '').replace(/[^a-zA-Z0-9_]/g, '') || 'step';
+                    let candidate = normalizedBase;
+                    let counter = 1;
+                    while (existingIds.has(candidate)) {
+                        candidate = `${normalizedBase}_${counter++}`;
+                    }
+                    return candidate;
+                };
+
+                safeImportedSteps.forEach((step, index) => {
+                    const preferredId = typeof step.id === 'string' ? step.id.trim() : '';
+                    step.id = makeUniqueId(preferredId || `imported_step_${index + 1}`);
+                    existingIds.add(step.id);
+
+                    if (!Array.isArray(step.components)) {
+                        step.components = [];
+                    }
+
+                    step.components = step.components.filter(component => component && typeof component === 'object');
+                    step.components.forEach(component => {
+                        this.applyComponentDefaults(component);
+                        if (!component.component_id) {
+                            component.component_id = this.generateUUID();
+                        }
+                    });
+                });
+
+                this.scenarioData.steps = [...baseSteps, ...safeImportedSteps];
+                this.scenarioData.editor_data = this.scenarioData.editor_data || { groups: [] };
+                this.scenarioData.editor_data.groups = mode === 'append'
+                    ? (Array.isArray(this.scenarioData.editor_data.groups) ? this.scenarioData.editor_data.groups : [])
+                    : [];
+                this.scenarioData.editor_data.ungrouped_steps = this.scenarioData.steps.map(step => step.id);
+
+                const importedScenarioMode = importedPayload?.scenarioMode;
+                if (mode === 'replace') {
+                    const detectedMode = this.detectModeFromScenarioData({
+                        steps: safeImportedSteps,
+                        scenario_mode: importedScenarioMode || this.currentMode
+                    });
+                    this.applyMode(importedScenarioMode || detectedMode, { markDirty: false });
+                    if (importedPayload?.eventKey) {
+                        this.selectedScenarioEvent = importedPayload.eventKey;
+                        if (this.scenarioEventSelect) {
+                            this.scenarioEventSelect.value = this.selectedScenarioEvent;
+                        }
+                    }
+                    if (importedPayload?.editorData && typeof importedPayload.editorData === 'object') {
+                        this.scenarioData.editor_data = {
+                            ...importedPayload.editorData,
+                            groups: Array.isArray(importedPayload.editorData.groups) ? importedPayload.editorData.groups : [],
+                            ungrouped_steps: this.scenarioData.steps.map(step => step.id)
+                        };
+                    }
+                }
+
+                this.uiState.collapsedSteps.clear();
+                this.renderAll();
+                this.dirty.markDirty();
+                this.closeJsonImport();
+                this.showToast(`Импортировано шагов: ${safeImportedSteps.length}.`, 'success');
+            }
+
             showToast(message, type = 'success') {
                 // Unified toast for all editors.
                 EditorCore.utils.showToast(message, type);
@@ -1520,10 +1707,11 @@
                 return null;
             }
             generateUniqueId(base) {
-                let newId = base.replace(/[^a-zA-Z0-9_]/g, '') || 'step';
+                const normalizedBase = String(base || '').replace(/[^a-zA-Z0-9_]/g, '') || 'step';
+                let newId = normalizedBase;
                 let counter = 1;
                 const allIds = new Set(this.scenarioData.steps.map(s => s.id));
-                while (allIds.has(newId)) newId = `${base}_${counter++}`;
+                while (allIds.has(newId)) newId = `${normalizedBase}_${counter++}`;
                 return newId;
             }
             generateUUID() { return EditorCore.utils.uuid(); }

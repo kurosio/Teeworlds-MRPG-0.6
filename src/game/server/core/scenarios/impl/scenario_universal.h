@@ -30,7 +30,7 @@ public:
 	void CreatePersonalDoor(const std::string& key, const vec2& pos);
 	void RemovePersonalDoor(const std::string& key);
 	void ResetShootmarkers();
-	bool AllShootmarkersDestroyed() const;
+	bool IsShootmarkersDestroyed() const;
 	void CreateShootmarker(const vec2& pos, int health);
 
 protected:
