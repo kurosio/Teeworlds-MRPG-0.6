@@ -494,7 +494,6 @@
 
 /* Scenario field + overlay */
 .editor-scenario-toolbar{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;}
-.editor-scenario-toolbar [data-scenario-mode-select]{width:160px;max-width:100%;}
 .editor-scenario-overlay-panel{width:min(1320px,96vw);height:min(900px,92vh);display:flex;flex-direction:column;padding:0;overflow:hidden;}
 .editor-scenario-overlay-header{display:flex;align-items:center;justify-content:space-between;gap:.75rem;padding:12px 14px;border-bottom:1px solid var(--editor-border);background:var(--editor-soft-bg);}
 .editor-scenario-overlay-title{font-size:1rem;font-weight:700;}

@@ -198,8 +198,6 @@
             </div>
             <label for="scenario-select" class="scenario-control-label text-sm font-medium text-slate-200">Сценарий:</label>
             <select id="scenario-select" title="Сценарий" class="form-input w-full sm:w-56 min-w-[130px] max-w-[210px]"></select>
-            <label for="scenario-mode-select" class="scenario-control-label text-sm font-medium text-slate-200">Режим:</label>
-            <select id="scenario-mode-select" title="Режим" class="form-input w-full sm:w-56 min-w-[130px] max-w-[210px]"></select>
             <button id="delete-scenario-btn" title="Удалить текущий сценарий" class="editor-btn editor-btn-danger">
                 <i class="fa-solid fa-trash-can"></i>
             </button>
@@ -382,7 +380,6 @@
                 this.addStepButton = document.getElementById('add-step-button');
                 this.addGroupButton = document.getElementById('add-group-btn');
                 this.scenarioSelect = document.getElementById('scenario-select');
-                this.scenarioModeSelect = document.getElementById('scenario-mode-select');
                 this.previewJsonButton = document.getElementById('preview-json-button');
                 this.importJsonButton = document.getElementById('import-json-button');
                 this.deleteScenarioBtn = document.getElementById('delete-scenario-btn');
@@ -464,26 +461,17 @@
             }
 
             setupModeSelector() {
-                if (!this.scenarioModeSelect) {
-                    return;
-                }
-
                 const modes = Object.entries(this.scenarioModes);
-                if (modes.length === 0) {
-                    this.scenarioModeSelect.innerHTML = '<option value="default">default</option>';
-                    this.currentMode = 'default';
+                if (modes.length > 0) {
+                    this.currentMode = modes[0][0];
                     this.componentTypes = this.getComponentTypesByMode(this.currentMode);
                     return;
                 }
 
-                this.scenarioModeSelect.innerHTML = modes
-                    .map(([key, info]) => `<option value="${key}">${info.label || key}</option>`)
-                    .join('');
-
-                this.currentMode = modes[0][0];
-                this.scenarioModeSelect.value = this.currentMode;
+                this.currentMode = 'default';
                 this.componentTypes = this.getComponentTypesByMode(this.currentMode);
             }
+
 
             isKnownScenarioEvent(eventKey) {
                 return typeof eventKey === 'string' && eventKey !== 'general' && Object.prototype.hasOwnProperty.call(this.scenarioEvents, eventKey);
@@ -573,23 +561,12 @@
                 const normalizedMode = this.scenarioModes[mode] ? mode : 'default';
                 this.currentMode = normalizedMode;
                 this.componentTypes = this.getComponentTypesByMode(normalizedMode);
-
-                if (this.scenarioModeSelect) {
-                    this.scenarioModeSelect.value = normalizedMode;
-                    const modeConfig = this.scenarioModes[normalizedMode];
-                    this.scenarioModeSelect.title = modeConfig?.description || '';
-                }
-
                 this.scenarioData.scenario_mode = normalizedMode;
                 if (markDirty) {
                     this.dirty.markDirty();
                 }
             }
 
-            handleModeChange(mode) {
-                this.applyMode(mode, { markDirty: true });
-                this.renderAll();
-            }
 
             apiUrl(queryString = '') {
                 const qs = queryString ? (queryString.startsWith('?') || queryString.startsWith('&') ? queryString : '?' + queryString) : '';
@@ -694,12 +671,6 @@
                         this.embed.initialized = true;
                         this.dirty.setClean();
                     }
-                    if (msg?.type === 'scenario-editor:set-mode') {
-                        const mode = String(msg.mode || '').trim();
-                        if (!mode) return;
-                        this.applyMode(mode, { markDirty: true });
-                        this.renderAll();
-                    }
                 });
 
                 if (window.parent && window.parent !== window) {
@@ -741,7 +712,6 @@
                     else this.saveScenario();
                 });
                 this.scenarioSelect.addEventListener('change', () => this.loadScenario(this.scenarioSelect.value));
-                this.scenarioModeSelect?.addEventListener('change', () => this.handleModeChange(this.scenarioModeSelect.value));
                 this.addStepButton.addEventListener('click', () => this.addNewStep());
                 this.addGroupButton.addEventListener('click', () => this.addNewGroup());
                 this.deleteScenarioBtn.addEventListener('click', () => this.deleteScenario());

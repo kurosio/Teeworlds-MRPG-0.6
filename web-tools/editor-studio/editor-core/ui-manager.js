@@ -372,17 +372,6 @@
       // 0.1) Scenario field launcher (opens embedded scenario editor overlay)
       if (root?.dataset?.scenarioOverlayBound !== '1') {
         root.dataset.scenarioOverlayBound = '1';
-        root.addEventListener('change', (event) => {
-          const select = event.target?.closest?.('[data-scenario-mode-select]');
-          if (!select) return;
-          const field = select.closest('[data-scenario-field="1"]');
-          if (!field) return;
-          const mode = String(select.value || 'universal').toLowerCase() === 'dungeon' ? 'dungeon' : 'universal';
-          field.dataset.scenarioMode = mode;
-          const modeLabel = field.querySelector('[data-scenario-mode-label]');
-          if (modeLabel) modeLabel.textContent = mode === 'dungeon' ? 'Dungeon' : 'Universal';
-        });
-
         root.addEventListener('click', (event) => {
           const btn = event.target?.closest?.('[data-action="open-scenario-editor"]');
           if (!btn) return;
@@ -392,8 +381,7 @@
           const hidden = field.querySelector('input[type="hidden"][data-scenario-value="1"]');
           if (!hidden) return;
 
-          const modeSelect = field.querySelector('[data-scenario-mode-select]');
-          const mode = String(modeSelect?.value || field.dataset.scenarioMode || 'universal').toLowerCase() === 'dungeon'
+          const mode = String(field.dataset.scenarioMode || 'universal').toLowerCase() === 'dungeon'
             ? 'dungeon'
             : 'universal';
 
@@ -403,15 +391,10 @@
             title: `Редактирование: ${fieldLabel}`,
             mode,
             scenarioText: String(hidden.value || ''),
-            onApply: (scenarioText, nextMode) => {
+            onApply: (scenarioText) => {
               hidden.value = String(scenarioText || '');
               hidden.dispatchEvent(new Event('input', { bubbles: true }));
               hidden.dispatchEvent(new Event('change', { bubbles: true }));
-
-              if (modeSelect) {
-                modeSelect.value = String(nextMode || mode || 'universal') === 'dungeon' ? 'dungeon' : 'universal';
-                modeSelect.dispatchEvent(new Event('change', { bubbles: true }));
-              }
 
               const status = field.querySelector('[data-scenario-status]');
               if (status) {

@@ -107,11 +107,6 @@
               <div class="editor-muted-text text-xs" data-role="subtitle">Изменения применяются только после нажатия «Применить»</div>
             </div>
             <div class="editor-scenario-overlay-controls">
-              <label class="editor-muted-text text-xs" for="scenario-overlay-mode">Тип</label>
-              <select id="scenario-overlay-mode" class="editor-input form-input" data-role="mode">
-                <option value="universal">Universal</option>
-                <option value="dungeon">Dungeon</option>
-              </select>
               <button type="button" class="editor-icon-btn" title="Закрыть" data-role="close"><i class="fa-solid fa-xmark"></i></button>
             </div>
           </div>
@@ -128,12 +123,10 @@
   const openScenarioFieldOverlay = (cfg = {}) => {
     const modal = mountScenarioFieldOverlay();
     const frame = modal.querySelector('[data-role="frame"]');
-    const modeSelect = modal.querySelector('[data-role="mode"]');
     const titleEl = modal.querySelector('[data-role="title"]');
     const closeBtn = modal.querySelector('[data-role="close"]');
 
     const initialMode = String(cfg.mode || 'universal').toLowerCase() === 'dungeon' ? 'dungeon' : 'universal';
-    modeSelect.value = initialMode;
     if (titleEl) titleEl.textContent = cfg.title || 'Редактор сценария';
 
     const close = () => {
@@ -142,7 +135,6 @@
       frame.src = 'about:blank';
       window.removeEventListener('message', onMessage);
       closeBtn.onclick = null;
-      modeSelect.onchange = null;
     };
 
     const onMessage = (event) => {
@@ -151,13 +143,13 @@
       if (data?.type === 'scenario-editor:ready') {
         frame.contentWindow?.postMessage({
           type: 'scenario-editor:init',
-          mode: modeSelect.value,
+          mode: initialMode,
           scenarioText: String(cfg.scenarioText || ''),
         }, '*');
       }
       if (data?.type === 'scenario-editor:apply') {
         if (typeof cfg.onApply === 'function') {
-          cfg.onApply(String(data.scenarioText || ''), String(data.mode || modeSelect.value || 'universal'));
+          cfg.onApply(String(data.scenarioText || ''));
         }
         close();
       }
@@ -168,10 +160,6 @@
 
     window.addEventListener('message', onMessage);
     closeBtn.onclick = () => close();
-    modeSelect.onchange = () => {
-      const mode = modeSelect.value === 'dungeon' ? 'dungeon' : 'universal';
-      frame.contentWindow?.postMessage({ type: 'scenario-editor:set-mode', mode }, '*');
-    };
     modal.addEventListener('click', (e) => {
       if (e.target === modal) close();
     }, { once: true });

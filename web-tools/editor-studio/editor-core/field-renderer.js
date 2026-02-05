@@ -331,10 +331,6 @@
         <div class="editor-scenario-field" data-scenario-field="1" data-scenario-mode="${escapeAttr(mode)}" data-scenario-path="${escapeAttr(path)}" data-scenario-label="${escapeAttr(label)}">
           <input ${hiddenAttrs} value="${escapeAttr(valueText)}">
           <div class="editor-scenario-toolbar">
-            <select class="editor-input form-input" data-scenario-mode-select>
-              <option value="universal" ${mode === 'universal' ? 'selected' : ''}>Universal</option>
-              <option value="dungeon" ${mode === 'dungeon' ? 'selected' : ''}>Dungeon</option>
-            </select>
             <button type="button" class="editor-btn editor-btn-secondary" data-action="open-scenario-editor">
               <i class="fa-solid fa-scroll"></i>
               <span>Открыть редактор сценария</span>
