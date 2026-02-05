@@ -593,7 +593,7 @@
       WorldID: { type: 'db_select', label: 'Мир', ui: { dbKey: 'world', placeholder: '— мир —', searchPlaceholder: 'Поиск мира…' } },
       Position: { type: 'vec2', label: 'Позиция', ui: { step: 1 } },
       AutoFinish: { type: 'toggle', label: 'AutoFinish' },
-      ScenarioData: { type: 'textarea', label: 'Scenario JSON', ui: { placeholder: '{...}', rows: 6 } },
+      ScenarioData: { type: 'scenario', label: 'Scenario JSON', ui: { scenarioMode: 'universal' } },
     };
 
     const dialogSideOptions = [

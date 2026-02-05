@@ -313,6 +313,39 @@
       return `<textarea ${attrs}>${value ?? ''}</textarea>`;
     };
 
+    const renderScenarioField = () => {
+      const mode = String(ui.scenarioMode || 'universal').toLowerCase();
+      const modeLabel = mode === 'dungeon' ? 'Dungeon' : 'Universal';
+      const valueText = value == null ? '' : String(value);
+      const hasValue = valueText.trim().length > 0;
+      const hiddenAttrs = buildInputAttributes({
+        path,
+        field,
+        classes: 'editor-scenario-hidden',
+        includeName,
+        includeDataKey,
+        includeDataPath,
+        extraAttrs: 'type="hidden" data-scenario-value="1"'
+      });
+      return `
+        <div class="editor-scenario-field" data-scenario-field="1" data-scenario-mode="${escapeAttr(mode)}" data-scenario-path="${escapeAttr(path)}" data-scenario-label="${escapeAttr(label)}">
+          <input ${hiddenAttrs} value="${escapeAttr(valueText)}">
+          <div class="editor-scenario-toolbar">
+            <select class="editor-input form-input" data-scenario-mode-select>
+              <option value="universal" ${mode === 'universal' ? 'selected' : ''}>Universal</option>
+              <option value="dungeon" ${mode === 'dungeon' ? 'selected' : ''}>Dungeon</option>
+            </select>
+            <button type="button" class="editor-btn editor-btn-secondary" data-action="open-scenario-editor">
+              <i class="fa-solid fa-scroll"></i>
+              <span>Открыть редактор сценария</span>
+            </button>
+          </div>
+          <div class="editor-muted-text text-xs mt-2">
+            Тип сценария: <b data-scenario-mode-label>${escapeHtml(modeLabel)}</b> · <span data-scenario-status>${hasValue ? 'JSON задан' : 'JSON не задан'}</span>
+          </div>
+        </div>`;
+    };
+
     const renderSelect = (multiple = false) => {
       const controlClass = ui.controlClass ? ` ${String(ui.controlClass)}` : '';
       const styleAttr = buildControlStyleAttr(ui);
@@ -690,6 +723,10 @@
 
     if (ui.format === 'textarea' || ui.type === 'textarea') {
       return `<div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">${labelHtml}${renderTextarea()}${footerHtml}</div>`;
+    }
+
+    if (field.type === 'scenario' || ui.type === 'scenario') {
+      return `<div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">${labelHtml}${renderScenarioField()}${footerHtml}</div>`;
     }
 
     if (field.type === 'number') {

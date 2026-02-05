@@ -369,6 +369,60 @@
       // Fire and forget inside init (awaited so first render gets real labels if DB is fast)
       await hydrateTagsFromDB();
 
+      // 0.1) Scenario field launcher (opens embedded scenario editor overlay)
+      if (root?.dataset?.scenarioOverlayBound !== '1') {
+        root.dataset.scenarioOverlayBound = '1';
+        root.addEventListener('change', (event) => {
+          const select = event.target?.closest?.('[data-scenario-mode-select]');
+          if (!select) return;
+          const field = select.closest('[data-scenario-field="1"]');
+          if (!field) return;
+          const mode = String(select.value || 'universal').toLowerCase() === 'dungeon' ? 'dungeon' : 'universal';
+          field.dataset.scenarioMode = mode;
+          const modeLabel = field.querySelector('[data-scenario-mode-label]');
+          if (modeLabel) modeLabel.textContent = mode === 'dungeon' ? 'Dungeon' : 'Universal';
+        });
+
+        root.addEventListener('click', (event) => {
+          const btn = event.target?.closest?.('[data-action="open-scenario-editor"]');
+          if (!btn) return;
+          const field = btn.closest('[data-scenario-field="1"]');
+          if (!field) return;
+
+          const hidden = field.querySelector('input[type="hidden"][data-scenario-value="1"]');
+          if (!hidden) return;
+
+          const modeSelect = field.querySelector('[data-scenario-mode-select]');
+          const mode = String(modeSelect?.value || field.dataset.scenarioMode || 'universal').toLowerCase() === 'dungeon'
+            ? 'dungeon'
+            : 'universal';
+
+          const fieldLabel = field.dataset.scenarioLabel || 'Сценарий';
+
+          window.EditorCore?.UI?.openScenarioFieldOverlay?.({
+            title: `Редактирование: ${fieldLabel}`,
+            mode,
+            scenarioText: String(hidden.value || ''),
+            onApply: (scenarioText, nextMode) => {
+              hidden.value = String(scenarioText || '');
+              hidden.dispatchEvent(new Event('input', { bubbles: true }));
+              hidden.dispatchEvent(new Event('change', { bubbles: true }));
+
+              if (modeSelect) {
+                modeSelect.value = String(nextMode || mode || 'universal') === 'dungeon' ? 'dungeon' : 'universal';
+                modeSelect.dispatchEvent(new Event('change', { bubbles: true }));
+              }
+
+              const status = field.querySelector('[data-scenario-status]');
+              if (status) {
+                const hasValue = String(hidden.value || '').trim().length > 0;
+                status.textContent = hasValue ? 'JSON задан' : 'JSON не задан';
+              }
+            }
+          });
+        });
+      }
+
       // 1) Dynamic DB selects
       if (window.EditorCore?.DB?.init) {
         await window.EditorCore.DB.init(root);

@@ -21,6 +21,7 @@ window.STUDIO_MANIFEST = [
       { key: 'bots_mobs', title: 'Мобы', icon: 'fa-skull', src: 'mobs-editor.html' },
       { key: 'bots_npc', title: 'NPC', icon: 'fa-user-ninja', src: 'bots-npc-editor.html' },
       { key: 'quests', title: 'Квесты', icon: 'fa-scroll', src: 'quests-editor.html' },
+      { key: 'dungeons', title: 'Подземелья', icon: 'fa-dungeon', src: 'dungeons-editor.html' },
       { key: 'worlds', title: 'Миры', icon: 'fa-globe', src: 'worlds-editor.html' },
       { key: 'aethers', title: 'Телепорты (Aether)', icon: 'fa-wand-magic-sparkles', src: 'aethers-editor.html' },
     ]

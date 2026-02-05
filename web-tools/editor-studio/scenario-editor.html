@@ -444,6 +444,12 @@
                 this.sortableInstances = [];
                 this.isTicking = false; // For scroll throttling
                 this.apiBase = ""; // auto-detected base path to api.php
+                this.embed = {
+                    enabled: false,
+                    initialized: false,
+                    mode: null,
+                    scenarioText: ""
+                };
                 this.dirty = EditorCore.Dirty?.create
                     ? EditorCore.Dirty.create({
                         root: document.body,
@@ -616,9 +622,113 @@
             }
 
 
+            initEmbedMode() {
+                const params = new URLSearchParams(window.location.search || '');
+                this.embed.enabled = params.get('embed') === '1';
+                this.embed.mode = params.get('mode') || null;
+                if (!this.embed.enabled) {
+                    return;
+                }
+
+                document.body.classList.add('scenario-editor-embedded');
+                if (this.scenarioSelect) this.scenarioSelect.disabled = true;
+                if (this.saveAsInput) this.saveAsInput.disabled = true;
+
+                if (this.deleteScenarioBtn) this.deleteScenarioBtn.classList.add('hidden');
+                if (this.previewJsonButton) this.previewJsonButton.classList.add('hidden');
+                if (this.importJsonButton) this.importJsonButton.classList.add('hidden');
+
+                if (this.saveButton) {
+                    this.saveButton.innerHTML = '<i class="fa-solid fa-check"></i><span>Применить</span>';
+                }
+
+                const titleEl = document.querySelector('#scenario-header .editor-page-title h1');
+                const subtitleEl = document.querySelector('#scenario-header .editor-page-title .editor-muted-text');
+                if (titleEl) titleEl.textContent = 'Встроенный редактор сценария';
+                if (subtitleEl) subtitleEl.textContent = 'Результат будет передан обратно в выбранное поле.';
+            }
+
+            normalizeExternalScenarioData(raw) {
+                if (raw == null) {
+                    return { scenario_mode: this.embed.mode || this.currentMode || 'universal', steps: [], editor_data: { groups: [] } };
+                }
+
+                let parsed = raw;
+                if (typeof parsed === 'string') {
+                    const text = parsed.trim();
+                    if (!text) {
+                        return { scenario_mode: this.embed.mode || this.currentMode || 'universal', steps: [], editor_data: { groups: [] } };
+                    }
+                    try {
+                        parsed = JSON.parse(text);
+                    } catch (err) {
+                        this.showToast('Входной сценарий повреждён, загружено пустое состояние.', 'warning');
+                        return { scenario_mode: this.embed.mode || this.currentMode || 'universal', steps: [], editor_data: { groups: [] } };
+                    }
+                }
+
+                if (!parsed || typeof parsed !== 'object') {
+                    return { scenario_mode: this.embed.mode || this.currentMode || 'universal', steps: [], editor_data: { groups: [] } };
+                }
+
+                return parsed;
+            }
+
+            setupEmbedBridge() {
+                if (!this.embed.enabled) {
+                    return;
+                }
+
+                window.addEventListener('message', (event) => {
+                    const msg = event.data || {};
+                    if (msg?.type === 'scenario-editor:init') {
+                        const payload = this.normalizeExternalScenarioData(msg.scenarioText);
+                        this.embed.scenarioText = String(msg.scenarioText || '');
+                        this.embed.mode = String(msg.mode || this.embed.mode || '').trim() || this.embed.mode;
+                        this.loadScenarioData(payload, 'embedded_scenario.json');
+                        const forcedMode = this.embed.mode || payload?.scenario_mode || this.currentMode;
+                        if (forcedMode) {
+                            this.applyMode(forcedMode, { markDirty: false });
+                        }
+                        this.renderAll();
+                        this.embed.initialized = true;
+                        this.dirty.setClean();
+                    }
+                    if (msg?.type === 'scenario-editor:set-mode') {
+                        const mode = String(msg.mode || '').trim();
+                        if (!mode) return;
+                        this.applyMode(mode, { markDirty: true });
+                        this.renderAll();
+                    }
+                });
+
+                if (window.parent && window.parent !== window) {
+                    window.parent.postMessage({ type: 'scenario-editor:ready' }, '*');
+                }
+            }
+
+            applyEmbeddedScenario() {
+                const scenarioText = JSON.stringify(this.buildScenarioContent(), null, 2);
+                if (window.parent && window.parent !== window) {
+                    window.parent.postMessage({
+                        type: 'scenario-editor:apply',
+                        scenarioText,
+                        mode: this.currentMode || 'universal'
+                    }, '*');
+                }
+            }
+
+
             async initialize() {
                 this.setupModeSelector();
+                this.initEmbedMode();
                 this.addEventListeners();
+
+                if (this.embed.enabled) {
+                    this.setupEmbedBridge();
+                    return;
+                }
+
                 await this.resolveApiBase();
                 await this.loadScenarioList();
             }
@@ -626,7 +736,10 @@
             addEventListeners() {
                 this.previewJsonButton?.addEventListener('click', () => this.openJsonPreview());
                 this.importJsonButton?.addEventListener('click', () => this.openJsonImport());
-                this.saveButton.addEventListener('click', () => this.saveScenario());
+                this.saveButton.addEventListener('click', () => {
+                    if (this.embed.enabled) this.applyEmbeddedScenario();
+                    else this.saveScenario();
+                });
                 this.scenarioSelect.addEventListener('change', () => this.loadScenario(this.scenarioSelect.value));
                 this.scenarioModeSelect?.addEventListener('change', () => this.handleModeChange(this.scenarioModeSelect.value));
                 this.addStepButton.addEventListener('click', () => this.addNewStep());

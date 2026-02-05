@@ -170,6 +170,15 @@ $RESOURCES = [
     'json' => ['Data'],
     'order' => 'ID ASC',
   ],
+
+  // New editor: dungeons-editor.html
+  'dungeons' => [
+    'table' => 'tw_dungeons',
+    'pk' => 'ID',
+    'columns' => ['Level', 'DoorX', 'DoorY', 'Scenario', 'WorldID'],
+    'search' => ['ID', 'Level', 'WorldID'],
+    'order' => 'ID ASC',
+  ],
   // New editor: quests-editor.html
   'quests' => [
     'table' => 'tw_quests_list',

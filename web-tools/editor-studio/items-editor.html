@@ -327,7 +327,7 @@
 		  showWhen: (data) => !['Settings', 'Quest', 'Currency'].includes(data?.Group ?? ''),
 		} 
 	  },
-      ScenarioData: { type: 'textarea', label: 'ScenarioData', ui: { rows: 3, placeholder: 'JSON или произвольный текст' } },
+      ScenarioData: { type: 'scenario', label: 'ScenarioData', ui: { scenarioMode: 'universal' } },
       Data: { type: 'textarea', label: 'Data (JSON)', ui: { rows: 6, placeholder: '{"key": "value"}' } },
     };
 

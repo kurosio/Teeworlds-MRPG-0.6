@@ -93,6 +93,94 @@
    * Notifications (toasts)
    * Unified helper so editors can call EditorCore.UI.toast(...)
    */
+
+
+  const mountScenarioFieldOverlay = ({ id = 'scenario-field-overlay', parent = document.body } = {}) => {
+    let modal = document.getElementById(id);
+    if (modal) return modal;
+    modal = createElementFromHTML(`
+      <div id="${id}" class="hidden fixed inset-0 editor-modal-backdrop z-[520] p-4">
+        <div class="editor-modal-content editor-scenario-overlay-panel">
+          <div class="editor-scenario-overlay-header">
+            <div class="editor-scenario-overlay-title-wrap">
+              <div class="editor-scenario-overlay-title" data-role="title">Редактор сценария</div>
+              <div class="editor-muted-text text-xs" data-role="subtitle">Изменения применяются только после нажатия «Применить»</div>
+            </div>
+            <div class="editor-scenario-overlay-controls">
+              <label class="editor-muted-text text-xs" for="scenario-overlay-mode">Тип</label>
+              <select id="scenario-overlay-mode" class="editor-input form-input" data-role="mode">
+                <option value="universal">Universal</option>
+                <option value="dungeon">Dungeon</option>
+              </select>
+              <button type="button" class="editor-icon-btn" title="Закрыть" data-role="close"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+          </div>
+          <div class="editor-scenario-overlay-body">
+            <iframe class="editor-scenario-overlay-frame" data-role="frame" src="about:blank"></iframe>
+          </div>
+        </div>
+      </div>
+    `);
+    parent.appendChild(modal);
+    return modal;
+  };
+
+  const openScenarioFieldOverlay = (cfg = {}) => {
+    const modal = mountScenarioFieldOverlay();
+    const frame = modal.querySelector('[data-role="frame"]');
+    const modeSelect = modal.querySelector('[data-role="mode"]');
+    const titleEl = modal.querySelector('[data-role="title"]');
+    const closeBtn = modal.querySelector('[data-role="close"]');
+
+    const initialMode = String(cfg.mode || 'universal').toLowerCase() === 'dungeon' ? 'dungeon' : 'universal';
+    modeSelect.value = initialMode;
+    if (titleEl) titleEl.textContent = cfg.title || 'Редактор сценария';
+
+    const close = () => {
+      modal.classList.add('hidden');
+      modal.classList.remove('flex');
+      frame.src = 'about:blank';
+      window.removeEventListener('message', onMessage);
+      closeBtn.onclick = null;
+      modeSelect.onchange = null;
+    };
+
+    const onMessage = (event) => {
+      if (event.source !== frame.contentWindow) return;
+      const data = event.data || {};
+      if (data?.type === 'scenario-editor:ready') {
+        frame.contentWindow?.postMessage({
+          type: 'scenario-editor:init',
+          mode: modeSelect.value,
+          scenarioText: String(cfg.scenarioText || ''),
+        }, '*');
+      }
+      if (data?.type === 'scenario-editor:apply') {
+        if (typeof cfg.onApply === 'function') {
+          cfg.onApply(String(data.scenarioText || ''), String(data.mode || modeSelect.value || 'universal'));
+        }
+        close();
+      }
+      if (data?.type === 'scenario-editor:close') {
+        close();
+      }
+    };
+
+    window.addEventListener('message', onMessage);
+    closeBtn.onclick = () => close();
+    modeSelect.onchange = () => {
+      const mode = modeSelect.value === 'dungeon' ? 'dungeon' : 'universal';
+      frame.contentWindow?.postMessage({ type: 'scenario-editor:set-mode', mode }, '*');
+    };
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) close();
+    }, { once: true });
+
+    frame.src = `scenario-editor.html?embed=1&mode=${encodeURIComponent(initialMode)}`;
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+  };
+
   const toast = (message, type = 'success', opts = {}) => {
     if (window.EditorCore?.utils?.showToast) {
       return window.EditorCore.utils.showToast(message, type, {
@@ -268,6 +356,8 @@
     toast,
     mountTabs,
     renderTable,
-    openDateTimeModal
+    openDateTimeModal,
+    mountScenarioFieldOverlay,
+    openScenarioFieldOverlay
   };
 })();

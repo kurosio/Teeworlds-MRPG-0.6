@@ -491,3 +491,14 @@
   .editor-tags-options-inner{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));}
   .editor-toast-container{left:1rem;right:1rem;}
 }
+
+/* Scenario field + overlay */
+.editor-scenario-toolbar{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;}
+.editor-scenario-toolbar [data-scenario-mode-select]{width:160px;max-width:100%;}
+.editor-scenario-overlay-panel{width:min(1320px,96vw);height:min(900px,92vh);display:flex;flex-direction:column;padding:0;overflow:hidden;}
+.editor-scenario-overlay-header{display:flex;align-items:center;justify-content:space-between;gap:.75rem;padding:12px 14px;border-bottom:1px solid var(--editor-border);background:var(--editor-soft-bg);}
+.editor-scenario-overlay-title{font-size:1rem;font-weight:700;}
+.editor-scenario-overlay-controls{display:flex;align-items:center;gap:.55rem;}
+.editor-scenario-overlay-controls select{min-height:38px;}
+.editor-scenario-overlay-body{flex:1;min-height:0;}
+.editor-scenario-overlay-frame{display:block;width:100%;height:100%;border:0;background:var(--editor-bg);}
