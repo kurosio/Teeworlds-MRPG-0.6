@@ -200,8 +200,6 @@
             <select id="scenario-select" title="Сценарий" class="form-input w-full sm:w-56 min-w-[130px] max-w-[210px]"></select>
             <label for="scenario-mode-select" class="scenario-control-label text-sm font-medium text-slate-200">Режим:</label>
             <select id="scenario-mode-select" title="Режим" class="form-input w-full sm:w-56 min-w-[130px] max-w-[210px]"></select>
-            <label for="scenario-event-select" class="scenario-control-label text-sm font-medium text-slate-200">Событие:</label>
-            <select id="scenario-event-select" title="Сценарное событие" class="form-input w-full sm:w-56 min-w-[130px] max-w-[210px]"></select>
             <button id="delete-scenario-btn" title="Удалить текущий сценарий" class="editor-btn editor-btn-danger">
                 <i class="fa-solid fa-trash-can"></i>
             </button>
@@ -385,7 +383,6 @@
                 this.addGroupButton = document.getElementById('add-group-btn');
                 this.scenarioSelect = document.getElementById('scenario-select');
                 this.scenarioModeSelect = document.getElementById('scenario-mode-select');
-                this.scenarioEventSelect = document.getElementById('scenario-event-select');
                 this.previewJsonButton = document.getElementById('preview-json-button');
                 this.importJsonButton = document.getElementById('import-json-button');
                 this.deleteScenarioBtn = document.getElementById('delete-scenario-btn');
@@ -442,7 +439,6 @@
                     on_lost: 'При потере предмета',
                     on_unequip: 'При снятии предмета'
                 };
-                this.selectedScenarioEvent = 'general';
                 this.componentTypes = this.getComponentTypesByMode(this.currentMode);
                 this.debouncedUpdate = EditorCore.utils.debounce((step, newId) => this.updateStepId(step, newId), 400);
                 this.sortableInstances = [];
@@ -483,16 +479,34 @@
                 this.componentTypes = this.getComponentTypesByMode(this.currentMode);
             }
 
-            setupScenarioEventSelector() {
-                if (!this.scenarioEventSelect) {
-                    return;
+            isKnownScenarioEvent(eventKey) {
+                return typeof eventKey === 'string' && eventKey !== 'general' && Object.prototype.hasOwnProperty.call(this.scenarioEvents, eventKey);
+            }
+
+            normalizeGroup(group) {
+                if (!group || typeof group !== 'object') {
+                    return null;
                 }
 
-                this.scenarioEventSelect.innerHTML = Object.entries(this.scenarioEvents)
-                    .map(([key, label]) => `<option value="${key}">${label}</option>`)
-                    .join('');
+                const normalized = {
+                    ...group,
+                    id: typeof group.id === 'string' && group.id ? group.id : `group_${this.generateUUID()}`,
+                    name: typeof group.name === 'string' && group.name ? group.name : 'Группа',
+                    steps: Array.isArray(group.steps) ? group.steps.filter(stepId => typeof stepId === 'string' && stepId) : [],
+                    collapsed: Boolean(group.collapsed)
+                };
 
-                this.scenarioEventSelect.value = this.selectedScenarioEvent;
+                if (this.isKnownScenarioEvent(group.event_key)) {
+                    normalized.event_key = group.event_key;
+                } else {
+                    delete normalized.event_key;
+                }
+
+                return normalized;
+            }
+
+            getGroupEventLabel(eventKey) {
+                return this.isKnownScenarioEvent(eventKey) ? (this.scenarioEvents[eventKey] || eventKey) : 'Без события';
             }
 
             getComponentTypesByMode(mode) {
@@ -604,7 +618,6 @@
 
             async initialize() {
                 this.setupModeSelector();
-                this.setupScenarioEventSelector();
                 this.addEventListeners();
                 await this.resolveApiBase();
                 await this.loadScenarioList();
@@ -616,10 +629,6 @@
                 this.saveButton.addEventListener('click', () => this.saveScenario());
                 this.scenarioSelect.addEventListener('change', () => this.loadScenario(this.scenarioSelect.value));
                 this.scenarioModeSelect?.addEventListener('change', () => this.handleModeChange(this.scenarioModeSelect.value));
-                this.scenarioEventSelect?.addEventListener('change', () => {
-                    this.selectedScenarioEvent = this.scenarioEventSelect.value || 'general';
-                    this.dirty.markDirty();
-                });
                 this.addStepButton.addEventListener('click', () => this.addNewStep());
                 this.addGroupButton.addEventListener('click', () => this.addNewGroup());
                 this.deleteScenarioBtn.addEventListener('click', () => this.deleteScenario());
@@ -813,7 +822,6 @@
                 const stepsCount = this.scenarioData.steps.length;
                 const componentsCount = this.scenarioData.steps.reduce((sum, step) => sum + ((step.components || []).filter(Boolean).length), 0);
                 const groupsCount = (groups || []).filter(group => !group.isDefault).length;
-                const activeEvent = this.scenarioEvents[this.selectedScenarioEvent] || this.selectedScenarioEvent;
                 const modeLabel = this.scenarioModes[this.currentMode]?.label || this.currentMode;
                 const groupedStepsCount = stepsCount - (ungroupedSteps?.length || 0);
 
@@ -821,7 +829,8 @@
                 this.stats.components && (this.stats.components.textContent = String(componentsCount));
                 this.stats.groups && (this.stats.groups.textContent = String(groupsCount));
                 if (this.stats.context) {
-                    this.stats.context.textContent = `${modeLabel} · ${activeEvent} · в группах: ${groupedStepsCount}`;
+                    const eventGroupsCount = (groups || []).filter(group => this.isKnownScenarioEvent(group.event_key)).length;
+                    this.stats.context.textContent = `${modeLabel} · event-групп: ${eventGroupsCount} · в группах: ${groupedStepsCount}`;
                 }
             }
 
@@ -942,13 +951,13 @@
 
                 const header = document.createElement('div');
                 header.className = 'nav-group-header flex items-center justify-between p-2 cursor-pointer';
-                
+
                 const titleWrapper = document.createElement('div');
                 titleWrapper.className = 'flex items-center gap-2';
 
                 const toggleIcon = document.createElement('i');
                 toggleIcon.className = `fa-solid fa-chevron-down text-slate-500 transition-transform duration-200 ${group.collapsed ? 'rotate-[-90deg]' : ''}`;
-                
+
                 const title = document.createElement('span');
                 title.className = 'font-bold text-slate-100';
                 title.textContent = group.name;
@@ -956,19 +965,45 @@
                     title.contentEditable = true;
                     title.addEventListener('click', (e) => e.stopPropagation());
                     title.addEventListener('blur', (e) => this.renameGroup(group.id, e.target.textContent));
-                    title.addEventListener('keydown', (e) => { 
+                    title.addEventListener('keydown', (e) => {
                         if(e.key === 'Enter') {
                             e.preventDefault();
-                            e.target.blur(); 
+                            e.target.blur();
                         }
                     });
+
+                    if (this.isKnownScenarioEvent(group.event_key)) {
+                        const eventBadge = document.createElement('span');
+                        eventBadge.className = 'text-[11px] font-semibold px-2 py-0.5 rounded-full bg-indigo-500/25 text-indigo-100 border border-indigo-300/30';
+                        eventBadge.textContent = '(Событие)';
+                        eventBadge.title = `${group.event_key} · ${this.getGroupEventLabel(group.event_key)}`;
+                        titleWrapper.appendChild(eventBadge);
+                    }
                 }
 
-                titleWrapper.append(toggleIcon, title);
+                titleWrapper.prepend(toggleIcon);
+                titleWrapper.insertBefore(title, titleWrapper.children[1] || null);
 
                 const controls = document.createElement('div');
                 if (!group.isDefault) {
                     controls.className = 'nav-group-controls flex items-center gap-2';
+
+                    const eventSelect = document.createElement('select');
+                    eventSelect.className = 'form-input text-xs h-7 min-w-[170px] max-w-[190px]';
+                    eventSelect.title = 'Тип события для группы';
+                    const eventOptions = ['<option value="">Без события</option>']
+                        .concat(Object.entries(this.scenarioEvents)
+                            .filter(([key]) => key !== 'general')
+                            .map(([key, label]) => `<option value="${key}" ${group.event_key === key ? 'selected' : ''}>${label}</option>`));
+                    eventSelect.innerHTML = eventOptions.join('');
+                    eventSelect.value = this.isKnownScenarioEvent(group.event_key) ? group.event_key : '';
+                    eventSelect.onclick = (e) => e.stopPropagation();
+                    eventSelect.onchange = (e) => {
+                        e.stopPropagation();
+                        this.setGroupEventKey(group.id, e.target.value || null);
+                    };
+                    controls.appendChild(eventSelect);
+
                     const copyBtn = document.createElement('button');
                     copyBtn.className = 'text-slate-400 hover:text-orange-500 w-6 h-6 rounded flex items-center justify-center';
                     copyBtn.innerHTML = '<i class="fa-regular fa-copy"></i>';
@@ -1356,19 +1391,105 @@
                 }
             }
             loadScenarioData(data, filename) {
-                let payload = data;
-                this.selectedScenarioEvent = 'general';
+                const raw = data;
 
-                if (payload && !Array.isArray(payload.steps)) {
-                    const eventKey = Object.keys(this.scenarioEvents).find((key) => key !== 'general' && Array.isArray(payload?.[key]?.steps));
-                    if (eventKey) {
-                        payload = payload[eventKey];
-                        this.selectedScenarioEvent = eventKey;
-                    }
-                }
+                const isObjectPayload = raw && typeof raw === 'object' && !Array.isArray(raw);
+                const eventEntries = isObjectPayload
+                    ? Object.keys(this.scenarioEvents)
+                        .filter((key) => key !== 'general' && Array.isArray(raw?.[key]?.steps))
+                        .map((eventKey) => [eventKey, raw[eventKey]])
+                    : [];
 
-                if (this.scenarioEventSelect) {
-                    this.scenarioEventSelect.value = this.selectedScenarioEvent;
+                let payload = raw;
+
+                if (eventEntries.length > 0) {
+                    const basePayload = (isObjectPayload && Array.isArray(raw.steps))
+                        ? raw
+                        : { scenario_mode: null, steps: [], editor_data: { groups: [] } };
+
+                    const mergedSteps = [];
+                    const mergedGroups = [];
+                    const seenIds = new Set();
+
+                    const pushStepWithUniqueId = (sourceStep, fallbackBaseId) => {
+                        const clonedStep = JSON.parse(JSON.stringify(sourceStep));
+                        const baseId = typeof clonedStep.id === 'string' && clonedStep.id.trim() ? clonedStep.id.trim() : fallbackBaseId;
+                        let finalId = baseId;
+                        let counter = 1;
+                        while (seenIds.has(finalId)) {
+                            finalId = `${baseId}_${counter++}`;
+                        }
+                        seenIds.add(finalId);
+                        clonedStep.id = finalId;
+                        mergedSteps.push(clonedStep);
+                        return { originalId: baseId, finalId };
+                    };
+
+                    (Array.isArray(basePayload.steps) ? basePayload.steps : []).forEach((step, index) => {
+                        if (!step || typeof step !== 'object') {
+                            return;
+                        }
+                        pushStepWithUniqueId(step, `step_${index + 1}`);
+                    });
+
+                    const baseGroups = Array.isArray(basePayload.editor_data?.groups) ? basePayload.editor_data.groups : [];
+                    baseGroups.forEach((group) => {
+                        const normalizedGroup = this.normalizeGroup(group);
+                        if (!normalizedGroup) {
+                            return;
+                        }
+                        delete normalizedGroup.event_key;
+                        mergedGroups.push(normalizedGroup);
+                    });
+
+                    eventEntries.forEach(([eventKey, eventPayload]) => {
+                        const safeEventPayload = eventPayload && typeof eventPayload === 'object' ? eventPayload : {};
+                        const sourceSteps = Array.isArray(safeEventPayload.steps) ? safeEventPayload.steps : [];
+                        const idMap = new Map();
+                        const eventSteps = [];
+
+                        sourceSteps.forEach((sourceStep, index) => {
+                            if (!sourceStep || typeof sourceStep !== 'object') {
+                                return;
+                            }
+                            const mapped = pushStepWithUniqueId(sourceStep, `${eventKey}_step_${index + 1}`);
+                            idMap.set(mapped.originalId, mapped.finalId);
+                            eventSteps.push(mergedSteps[mergedSteps.length - 1]);
+                        });
+
+                        eventSteps.forEach((step) => {
+                            if (!step || !Array.isArray(step.components)) {
+                                return;
+                            }
+                            step.components.forEach((component) => {
+                                if (component?.next_step_id && idMap.has(component.next_step_id)) {
+                                    component.next_step_id = idMap.get(component.next_step_id);
+                                }
+                            });
+                        });
+
+                        const sourceGroups = Array.isArray(safeEventPayload.editor_data?.groups) ? safeEventPayload.editor_data.groups : [];
+                        sourceGroups.forEach((group) => {
+                            const normalizedGroup = this.normalizeGroup(group);
+                            if (!normalizedGroup) {
+                                return;
+                            }
+                            normalizedGroup.event_key = eventKey;
+                            normalizedGroup.steps = normalizedGroup.steps
+                                .map((stepId) => idMap.get(stepId) || stepId)
+                                .filter((stepId) => seenIds.has(stepId));
+                            mergedGroups.push(normalizedGroup);
+                        });
+                    });
+
+                    payload = {
+                        scenario_mode: basePayload.scenario_mode || eventEntries[0]?.[1]?.scenario_mode || this.currentMode,
+                        steps: mergedSteps,
+                        editor_data: {
+                            ...(basePayload.editor_data || {}),
+                            groups: mergedGroups
+                        }
+                    };
                 }
 
                 if (!payload || !Array.isArray(payload.steps)) {
@@ -1377,7 +1498,12 @@
                 } else {
                     this.scenarioData = {
                         steps: payload.steps,
-                        editor_data: payload.editor_data || { groups: [] }
+                        editor_data: {
+                            ...(payload.editor_data || {}),
+                            groups: (Array.isArray(payload.editor_data?.groups) ? payload.editor_data.groups : [])
+                                .map((group) => this.normalizeGroup(group))
+                                .filter(Boolean)
+                        }
                     };
                     this.scenarioData.steps.forEach((step, index) => {
                         if (!step || typeof step !== 'object') {
@@ -1401,68 +1527,109 @@
             }
             buildScenarioContent() {
                 const stepMap = new Map(this.scenarioData.steps.map(s => [s.id, s]));
-                const orderedSteps = [];
-
-                this.scenarioData.editor_data.groups.forEach(group => {
-                    group.steps.forEach(stepId => {
-                        const step = stepMap.get(stepId);
-                        if (step) {
-                            orderedSteps.push(step);
-                        }
-                    });
-                });
-
-                const stepsInGroups = new Set(orderedSteps.map(s => s.id));
                 const ed = this.scenarioData.editor_data || {};
+                const groups = (Array.isArray(ed.groups) ? ed.groups : [])
+                    .map((group) => this.normalizeGroup(group))
+                    .filter(Boolean);
                 const ungroupedOrder = Array.isArray(ed.ungrouped_steps) ? ed.ungrouped_steps : [];
-                ungroupedOrder.forEach(stepId => {
-                    if (stepsInGroups.has(stepId)) return;
-                    const step = stepMap.get(stepId);
-                    if (step) {
-                        orderedSteps.push(step);
-                        stepsInGroups.add(step.id);
-                    }
-                });
 
-                this.scenarioData.steps.forEach(step => {
-                    if (!stepsInGroups.has(step.id)) {
-                        orderedSteps.push(step);
-                    }
-                });
-
-                const stepsToSave = JSON.parse(JSON.stringify(orderedSteps));
-                stepsToSave.forEach(step => {
-                    (step.components || []).forEach(c => {
-                        delete c.component_id;
-                        if (!c.next_step_id) {
-                            delete c.next_step_id;
+                const cloneSteps = (steps) => {
+                    const stepsToSave = JSON.parse(JSON.stringify(steps));
+                    stepsToSave.forEach(step => {
+                        (step.components || []).forEach(c => {
+                            delete c.component_id;
+                            if (!c.next_step_id) {
+                                delete c.next_step_id;
+                            }
+                            if (c.type !== 'follow_camera' && (step.completion_logic !== 'sequential' || !c.delay)) {
+                                delete c.delay;
+                            } else if (c.type === 'follow_camera' && !c.delay) {
+                                delete c.delay;
+                            }
+                        });
+                        if (!step.delay) {
+                            delete step.delay;
                         }
-                        if (c.type !== 'follow_camera' && (step.completion_logic !== 'sequential' || !c.delay)) {
-                            delete c.delay;
-                        } else if (c.type === 'follow_camera' && !c.delay) {
-                            delete c.delay;
+                        if (step.completion_logic === 'all_of') {
+                            delete step.completion_logic;
+                        }
+                        if (!step.msg_info) {
+                            delete step.msg_info;
                         }
                     });
-                    if (!step.delay) {
-                        delete step.delay;
-                    }
-                    if (step.completion_logic === 'all_of') {
-                        delete step.completion_logic;
-                    }
-                    if (!step.msg_info) {
-                        delete step.msg_info;
-                    }
-                });
-
-                const payload = {
-                    scenario_mode: this.currentMode,
-                    editor_data: this.scenarioData.editor_data,
-                    steps: stepsToSave
+                    return stepsToSave;
                 };
 
-                return this.selectedScenarioEvent === 'general'
-                    ? payload
-                    : { [this.selectedScenarioEvent]: payload };
+                const collectPayloadForGroups = (targetGroups, includeUngrouped) => {
+                    const orderedSteps = [];
+                    const orderedStepIds = new Set();
+
+                    targetGroups.forEach((group) => {
+                        group.steps.forEach((stepId) => {
+                            const step = stepMap.get(stepId);
+                            if (step && !orderedStepIds.has(step.id)) {
+                                orderedSteps.push(step);
+                                orderedStepIds.add(step.id);
+                            }
+                        });
+                    });
+
+                    if (includeUngrouped) {
+                        const allGroupedStepIds = new Set();
+                        groups.forEach((group) => (group.steps || []).forEach((stepId) => allGroupedStepIds.add(stepId)));
+
+                        ungroupedOrder.forEach((stepId) => {
+                            if (orderedStepIds.has(stepId) || allGroupedStepIds.has(stepId)) {
+                                return;
+                            }
+                            const step = stepMap.get(stepId);
+                            if (step) {
+                                orderedSteps.push(step);
+                                orderedStepIds.add(step.id);
+                            }
+                        });
+
+                        this.scenarioData.steps.forEach((step) => {
+                            if (!orderedStepIds.has(step.id) && !allGroupedStepIds.has(step.id)) {
+                                orderedSteps.push(step);
+                                orderedStepIds.add(step.id);
+                            }
+                        });
+                    }
+
+                    return {
+                        scenario_mode: this.currentMode,
+                        editor_data: {
+                            ...ed,
+                            groups: targetGroups.map((group) => {
+                                const cloned = { ...group };
+                                delete cloned.event_key;
+                                return cloned;
+                            }),
+                            ungrouped_steps: orderedSteps.map((step) => step.id)
+                        },
+                        steps: cloneSteps(orderedSteps)
+                    };
+                };
+
+                const eventKeysFromGroups = Array.from(new Set(groups
+                    .map((group) => group.event_key)
+                    .filter((eventKey) => this.isKnownScenarioEvent(eventKey))));
+
+                const baseGroups = groups.filter((group) => !this.isKnownScenarioEvent(group.event_key));
+                const basePayload = collectPayloadForGroups(baseGroups, true);
+
+                if (eventKeysFromGroups.length === 0) {
+                    return basePayload;
+                }
+
+                const content = { ...basePayload };
+                eventKeysFromGroups.forEach((eventKey) => {
+                    const eventGroups = groups.filter((group) => group.event_key === eventKey);
+                    content[eventKey] = collectPayloadForGroups(eventGroups, false);
+                });
+
+                return content;
             }
 
             async saveScenario() {
@@ -1579,7 +1746,20 @@
                 }
 
                 if (rawData && typeof rawData === 'object') {
-                    const eventKey = Object.keys(this.scenarioEvents).find((key) => key !== 'general' && Array.isArray(rawData?.[key]?.steps));
+                    const eventKeys = Object.keys(this.scenarioEvents)
+                        .filter((key) => key !== 'general' && Array.isArray(rawData?.[key]?.steps));
+
+                    if (eventKeys.length > 1) {
+                        return {
+                            steps: [],
+                            scenarioMode: null,
+                            editorData: null,
+                            eventKey: null,
+                            multiEventData: Object.fromEntries(eventKeys.map((key) => [key, rawData[key]]))
+                        };
+                    }
+
+                    const eventKey = eventKeys[0];
                     if (eventKey) {
                         const eventPayload = rawData[eventKey] || {};
                         return {
@@ -1670,16 +1850,20 @@
                         scenario_mode: importedScenarioMode || this.currentMode
                     });
                     this.applyMode(importedScenarioMode || detectedMode, { markDirty: false });
-                    if (importedPayload?.eventKey) {
-                        this.selectedScenarioEvent = importedPayload.eventKey;
-                        if (this.scenarioEventSelect) {
-                            this.scenarioEventSelect.value = this.selectedScenarioEvent;
-                        }
-                    }
                     if (importedPayload?.editorData && typeof importedPayload.editorData === 'object') {
+                        const groups = Array.isArray(importedPayload.editorData.groups) ? importedPayload.editorData.groups : [];
                         this.scenarioData.editor_data = {
                             ...importedPayload.editorData,
-                            groups: Array.isArray(importedPayload.editorData.groups) ? importedPayload.editorData.groups : [],
+                            groups: groups.map((group) => {
+                                const normalizedGroup = this.normalizeGroup(group);
+                                if (!normalizedGroup) {
+                                    return null;
+                                }
+                                if (this.isKnownScenarioEvent(importedPayload?.eventKey)) {
+                                    normalizedGroup.event_key = importedPayload.eventKey;
+                                }
+                                return normalizedGroup;
+                            }).filter(Boolean),
                             ungrouped_steps: this.scenarioData.steps.map(step => step.id)
                         };
                     }
@@ -1796,7 +1980,10 @@
                 ed.groups = Array.isArray(ed.groups) ? ed.groups : [];
                 ed.ungrouped_steps = Array.isArray(ed.ungrouped_steps) ? ed.ungrouped_steps : [];
 
-                const groups = ed.groups;
+                const groups = ed.groups
+                    .map((group) => this.normalizeGroup(group))
+                    .filter(Boolean);
+                ed.groups = groups;
                 const stepsInGroups = new Set();
                 groups.forEach(g => (g.steps || []).forEach(stepId => stepsInGroups.add(stepId)));
 
@@ -1834,7 +2021,7 @@
                     id: `group_${this.generateUUID()}`,
                     name: `Новая группа ${groups.length + 1}`,
                     steps: [],
-                    collapsed: false
+                    collapsed: false,
                 };
                 groups.push(newGroup);
                 this.renderAll();
@@ -1928,6 +2115,23 @@
                     group.name = newName;
                     this.renderAll();
                 }
+            }
+
+            setGroupEventKey(groupId, eventKey) {
+                const groups = this.scenarioData.editor_data.groups;
+                const group = groups.find(g => g.id === groupId);
+                if (!group) {
+                    return;
+                }
+
+                if (this.isKnownScenarioEvent(eventKey)) {
+                    group.event_key = eventKey;
+                } else {
+                    delete group.event_key;
+                }
+
+                this.renderAll();
+                this.dirty.markDirty();
             }
 
             addStepToViewState(stepId, afterStepId) {
