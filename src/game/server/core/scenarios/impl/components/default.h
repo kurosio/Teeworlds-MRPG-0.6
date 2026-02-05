@@ -317,6 +317,118 @@ private:
 	}
 };
 
+class ScenarioQuestActionComponent final : public PlayerAwareComponent<ScenarioQuestActionComponent>
+{
+	enum class Action { Reset, Accept };
+	int m_QuestID {};
+	Action m_Action {};
+
+public:
+	explicit ScenarioQuestActionComponent(const nlohmann::json& j)
+	{
+		InitBaseJsonField(j);
+		m_QuestID = j.value("quest_id", -1);
+		m_Action = j.value("action", "reset") == "accept" ? Action::Accept : Action::Reset;
+	}
+
+	DECLARE_COMPONENT_NAME("quest_action")
+
+private:
+	void OnStartImpl() override
+	{
+		if(m_QuestID <= 0)
+		{
+			Finish();
+			return;
+		}
+
+		for(auto* pPlayer : GetPlayers())
+		{
+			if(!pPlayer)
+				continue;
+
+			auto* pQuest = pPlayer->GetQuest(m_QuestID);
+			if(!pQuest)
+				continue;
+
+			if(m_Action == Action::Reset)
+				pQuest->Reset();
+			else
+			{
+				if(pQuest->IsAccepted())
+					pQuest->Reset();
+				pQuest->Accept();
+			}
+		}
+
+		Finish();
+	}
+};
+
+class ScenarioQuestConditionComponent final : public PlayerAwareComponent<ScenarioQuestConditionComponent>
+{
+	enum class Condition { Accepted, Finished, StepFinished };
+	int m_QuestID {};
+	int m_Step {};
+	Condition m_Condition {};
+	bool m_EntireGroup {};
+
+public:
+	explicit ScenarioQuestConditionComponent(const nlohmann::json& j)
+	{
+		InitBaseJsonField(j);
+		m_QuestID = j.value("quest_id", -1);
+		m_Step = j.value("step", -1);
+		m_EntireGroup = j.value("entire_group", false);
+		const auto type = j.value("condition", "accepted");
+		if(type == "finished")
+			m_Condition = Condition::Finished;
+		else if(type == "step_finished")
+			m_Condition = Condition::StepFinished;
+		else
+			m_Condition = Condition::Accepted;
+	}
+
+	DECLARE_COMPONENT_NAME("quest_condition")
+
+private:
+	void OnActiveImpl() override
+	{
+		if(m_QuestID <= 0)
+			return;
+
+		const auto vpPlayers = GetPlayers();
+		if(vpPlayers.empty())
+			return;
+
+		auto IsConditionComplete = [&](CPlayer* pPlayer) -> bool
+		{
+			if(!pPlayer)
+				return false;
+
+			auto* pQuest = pPlayer->GetQuest(m_QuestID);
+			if(!pQuest)
+				return false;
+
+			switch(m_Condition)
+			{
+				case Condition::Accepted: return pQuest->IsAccepted();
+				case Condition::Finished: return pQuest->IsCompleted();
+				case Condition::StepFinished: return pQuest->GetStepPos() > m_Step;
+			}
+
+			return false;
+		};
+
+		const bool complete = m_EntireGroup
+			? std::all_of(vpPlayers.begin(), vpPlayers.end(), IsConditionComplete)
+			: std::any_of(vpPlayers.begin(), vpPlayers.end(), IsConditionComplete);
+
+		if(complete)
+			Finish();
+	}
+};
+
 /**
  * @class ScenarioEmoteComponent
  * @brief A component that plays an emote and optional emoticon for all participants.

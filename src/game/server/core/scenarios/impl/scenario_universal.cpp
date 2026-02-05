@@ -123,98 +123,6 @@ namespace
 		}
 	};
 
-	class UniversalQuestActionComponent final : public Component<CUniversalScenario, UniversalQuestActionComponent>
-	{
-		enum class Action { Reset, Accept };
-		int m_QuestID {};
-		Action m_Action {};
-
-	public:
-		explicit UniversalQuestActionComponent(const nlohmann::json& j)
-		{
-			InitBaseJsonField(j);
-			m_QuestID = j.value("quest_id", -1);
-			m_Action = j.value("action", "reset") == "accept" ? Action::Accept : Action::Reset;
-		}
-
-		DECLARE_COMPONENT_NAME("universal_quest_action")
-
-	private:
-		void OnStartImpl() override
-		{
-			auto* pPlayer = Scenario()->GetPlayer();
-			if(!pPlayer || m_QuestID <= 0)
-			{
-				Finish();
-				return;
-			}
-
-			auto* pQuest = pPlayer->GetQuest(m_QuestID);
-			if(!pQuest)
-			{
-				Finish();
-				return;
-			}
-
-			if(m_Action == Action::Reset)
-				pQuest->Reset();
-			else
-			{
-				if(pQuest->IsAccepted())
-					pQuest->Reset();
-				pQuest->Accept();
-			}
-			Finish();
-		}
-	};
-
-	class UniversalQuestConditionComponent final : public Component<CUniversalScenario, UniversalQuestConditionComponent>
-	{
-		enum class Condition { Accepted, Finished, StepFinished };
-		int m_QuestID {};
-		int m_Step {};
-		Condition m_Condition {};
-
-	public:
-		explicit UniversalQuestConditionComponent(const nlohmann::json& j)
-		{
-			InitBaseJsonField(j);
-			m_QuestID = j.value("quest_id", -1);
-			m_Step = j.value("step", -1);
-			const auto Type = j.value("condition", "accepted");
-			if(Type == "finished")
-				m_Condition = Condition::Finished;
-			else if(Type == "step_finished")
-				m_Condition = Condition::StepFinished;
-			else
-				m_Condition = Condition::Accepted;
-		}
-
-		DECLARE_COMPONENT_NAME("universal_quest_condition")
-
-	private:
-		void OnActiveImpl() override
-		{
-			auto* pPlayer = Scenario()->GetPlayer();
-			if(!pPlayer || m_QuestID <= 0)
-				return;
-			auto* pQuest = pPlayer->GetQuest(m_QuestID);
-			if(!pQuest)
-				return;
-
-			bool Complete = false;
-			switch(m_Condition)
-			{
-				case Condition::Accepted: Complete = pQuest->IsAccepted(); break;
-				case Condition::Finished: Complete = pQuest->IsCompleted(); break;
-				case Condition::StepFinished: Complete = pQuest->GetStepPos() > m_Step; break;
-			}
-
-			if(Complete)
-				Finish();
-		}
-	};
-
 	class UniversalTeleportComponent final : public Component<CUniversalScenario, UniversalTeleportComponent>
 	{
 		vec2 m_Pos {};
@@ -354,8 +262,6 @@ namespace
 	template struct ComponentRegistrar<UniversalDoorControlComponent>;
 	template struct ComponentRegistrar<UniversalUseChatComponent>;
 	template struct ComponentRegistrar<UniversalConditionItemComponent>;
-	template struct ComponentRegistrar<UniversalQuestActionComponent>;
-	template struct ComponentRegistrar<UniversalQuestConditionComponent>;
 	template struct ComponentRegistrar<UniversalTeleportComponent>;
 	template struct ComponentRegistrar<UniversalPickItemTaskComponent>;
 	template struct ComponentRegistrar<UniversalShootmarkersComponent>;

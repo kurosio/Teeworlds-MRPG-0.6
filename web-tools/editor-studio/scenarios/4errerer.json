@@ -44,7 +44,7 @@
                     "text": "Выбери правильное действие и дверь откроется!"
                 },
                 {
-                    "type": "door_control",
+                    "type": "dungeon_door_control",
                     "action": "create",
                     "position": {
                         "x": 1140,
@@ -70,13 +70,13 @@
             "completion_logic": "any_of",
             "components": [
                 {
-                    "type": "use_chat_code",
+                    "type": "dungeon_use_chat_code",
                     "code": "hello!",
                     "next_step_id": "fail_message_condition_1",
                     "hidden": true
                 },
                 {
-                    "type": "use_chat_code",
+                    "type": "dungeon_use_chat_code",
                     "code": "reposka",
                     "next_step_id": "succes_message_condition_1",
                     "hidden": true
@@ -99,7 +99,7 @@
             "id": "succes_message_condition_1",
             "components": [
                 {
-                    "type": "door_control",
+                    "type": "dungeon_door_control",
                     "action": "remove",
                     "position": {
                         "x": 100,

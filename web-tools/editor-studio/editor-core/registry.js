@@ -161,7 +161,8 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
       icon: 'fa-list-check',
       fields: {
         quest_id: createField('db_select', 'Квест', 0, { datasource: 'quests', ui: { placeholder: '— выберите квест —' } }),
-        step: createField('number', 'Номер шага', 0, { ui: { min: 0, max: 9999 } })
+        step: createField('number', 'Номер шага', 0, { ui: { min: 0, max: 9999 } }),
+        entire_group: createField('boolean', 'Требовать для всей группы', false)
       }
     },
     shootmarkers: {
@@ -201,11 +202,11 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
         duration: createField('number', 'Длительность', 5, { ui: { min: 1, max: 9999 } })
       }
     },
-    door_control: {
-      name: 'Управление дверью',
+    dungeon_door_control: {
+      name: 'Dungeon: управление дверью',
       class: 'interactive',
       icon: 'fa-solid fa-door-open',
-      desc: 'Создать или удалить дверь',
+      desc: 'Управление дверью dungeon-сценария',
       fields: {
         action: createField('text', 'Действие', 'create', {
           ui: { type: 'select', options: ['create', 'remove'] }
@@ -214,11 +215,11 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
         key: createField('text', 'Ключ', '', { ui: { placeholder: 'Введите ключ двери' } })
       }
     },
-    use_chat_code: {
-      name: 'Код в чате',
+    dungeon_use_chat_code: {
+      name: 'Dungeon: код в чате',
       class: 'interactive',
       icon: 'fa-solid fa-key',
-      desc: 'Переход по кодовому слову',
+      desc: 'Условие чата dungeon-сценария',
       fields: {
         code: createField('text', 'Код', 'secret', { ui: { placeholder: 'Введите кодовое слово' } }),
         next_step_id: createField('text', 'Следующий шаг', ''),
@@ -280,7 +281,8 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
       desc: 'Проверка прогресса шага квеста',
       fields: {
         quest_id: createDbSelect('Квест', 0, 'quest', { ui: { placeholder: '— выберите квест —' } }),
-        step: createField('number', 'Номер шага', 0, { ui: { min: 0, max: 9999 } })
+        step: createField('number', 'Номер шага', 0, { ui: { min: 0, max: 9999 } }),
+        entire_group: createField('boolean', 'Требовать для всей группы', false)
       }
     },
     pick_item_task: {
@@ -345,11 +347,11 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
         show_progress: createField('boolean', 'Показать прогресс', false)
       }
     },
-    universal_quest_action: {
-      name: 'Universal: действие квеста',
+    quest_action: {
+      name: 'Действие квеста',
       class: 'quest',
       icon: 'fa-solid fa-clipboard-check',
-      desc: 'Принятие или сброс квеста',
+      desc: 'Принятие или сброс квеста для участников сценария',
       fields: {
         quest_id: createDbSelect('Квест', 0, 'quest', { ui: { placeholder: '— выберите квест —' } }),
         action: createField('text', 'Действие', 'accept', {
@@ -357,17 +359,18 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
         })
       }
     },
-    universal_quest_condition: {
-      name: 'Universal: условие квеста',
+    quest_condition: {
+      name: 'Условие квеста',
       class: 'condition',
       icon: 'fa-solid fa-list-check',
-      desc: 'Проверка состояния квеста',
+      desc: 'Проверка состояния квеста для участников сценария',
       fields: {
         quest_id: createDbSelect('Квест', 0, 'quest', { ui: { placeholder: '— выберите квест —' } }),
         condition: createField('text', 'Условие', 'accepted', {
           ui: { type: 'select', options: ['accepted', 'finished', 'step_finished'] }
         }),
-        step: createField('number', 'Номер шага', 0, { ui: { min: 0, max: 9999 } })
+        step: createField('number', 'Номер шага', 0, { ui: { min: 0, max: 9999 } }),
+        entire_group: createField('boolean', 'Требовать для всей группы', false)
       }
     },
     universal_teleport: {
@@ -481,11 +484,11 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
         emoticon_type: createField('number', 'Тип иконки', -1, { ui: { min: -1, max: 999 } })
       }
     },
-    activate_point: {
-      name: 'Точка активации',
+    dungeon_activate_point: {
+      name: 'Dungeon: точка активации',
       class: 'interactive',
       icon: 'fa-solid fa-location-dot',
-      desc: 'Активация по времени в области',
+      desc: 'Точка активации dungeon-сценария',
       fields: {
         position: createField('vec2', 'Позиция', { x: 400, y: 3000 }, { ui: { min: -99999, max: 99999, step: 0.1 } }),
         duration: createField('number', 'Длительность', 5, { ui: { min: 1, max: 9999 } }),
@@ -497,54 +500,43 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
 
 
 
+  const defaultScenarioComponentTypes = [
+    'message',
+    'wait',
+    'follow_camera',
+    'condition_movement',
+    'teleport',
+    'moving_disable',
+    'emote',
+    'quest_action',
+    'quest_condition',
+    'defeat_mobs'
+  ];
+
   const scenarioModeSchemas = {
     default: {
       label: 'Default (components/default.h)',
       description: 'Базовые компоненты из default.h',
-      componentTypes: [
-        'message',
-        'wait',
-        'follow_camera',
-        'condition_movement',
-        'teleport',
-        'moving_disable',
-        'emote',
-        'defeat_mobs'
-      ]
+      componentTypes: [...defaultScenarioComponentTypes]
     },
     dungeon: {
       label: 'Dungeon (scenario_dungeon.h)',
       description: 'Компоненты группового dungeon-сценария',
       componentTypes: [
-        'message',
-        'wait',
-        'follow_camera',
-        'condition_movement',
-        'teleport',
-        'moving_disable',
-        'emote',
-        'defeat_mobs',
-        'door_control',
-        'use_chat_code',
-        'activate_point'
+        ...defaultScenarioComponentTypes,
+        'dungeon_door_control',
+        'dungeon_use_chat_code',
+        'dungeon_activate_point'
       ]
     },
     universal: {
       label: 'Universal (scenario_universal.h)',
       description: 'Компоненты и legacy-адаптеры universal-сценария',
       componentTypes: [
-        'message',
-        'wait',
-        'follow_camera',
-        'condition_movement',
-        'teleport',
-        'moving_disable',
-        'emote',
+        ...defaultScenarioComponentTypes,
         'universal_door_control',
         'universal_use_chat',
         'universal_condition_item',
-        'universal_quest_action',
-        'universal_quest_condition',
         'universal_teleport',
         'universal_pick_item_task',
         'universal_shootmarkers'

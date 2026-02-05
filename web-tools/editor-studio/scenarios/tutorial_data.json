@@ -503,7 +503,7 @@
             "components": [
                 {
                     "quest_id": 1,
-                    "type": "universal_quest_action",
+                    "type": "quest_action",
                     "action": "reset"
                 },
                 {
@@ -539,7 +539,7 @@
                 },
                 {
                     "quest_id": 1,
-                    "type": "universal_quest_action",
+                    "type": "quest_action",
                     "action": "accept"
                 },
                 {
@@ -564,7 +564,7 @@
                 {
                     "quest_id": 1,
                     "step": 2,
-                    "type": "universal_quest_condition",
+                    "type": "quest_condition",
                     "condition": "step_finished"
                 },
                 {

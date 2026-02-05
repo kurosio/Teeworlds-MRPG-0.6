@@ -1012,7 +1012,7 @@
                 const originalComponent = this.findComponent(this.modal.context.stepId, this.modal.context.componentId);
                 Object.assign(originalComponent, editedData);
 
-                if (originalComponent.type === 'door_control' && originalComponent.action === 'remove') {
+                if (originalComponent.type === 'dungeon_door_control' && originalComponent.action === 'remove') {
                     delete originalComponent.position;
                 }
 
@@ -1089,7 +1089,7 @@
                 formHtml += `</form>`;
 
                 setTimeout(() => {
-                    if (data.type === 'door_control') {
+                    if (data.type === 'dungeon_door_control') {
                         const actionSelect = this.modal.formContainer.querySelector('select[name="action"]');
                         const positionFields = this.modal.formContainer.querySelector('[data-field-path="position"]');
                         if (actionSelect && positionFields) {
@@ -1318,7 +1318,7 @@
                 const keys = new Set();
                 this.scenarioData.steps.forEach(step => {
                     (step.components || []).forEach(data => {
-                        if (data.type === 'door_control' && data.action === 'create' && data.key) {
+                        if (data.type === 'dungeon_door_control' && data.action === 'create' && data.key) {
                             keys.add(data.key);
                         }
                     });
@@ -1341,18 +1341,18 @@
                 try {
                     switch (data.type) {
                         case 'message': return `"${(data.text || '').substring(0, 50)}..."`;
-                        case 'door_control': return `Действие: <b>${data.action}</b>, Ключ: <b>${data.key || 'нет'}</b>`;
-                        case 'use_chat_code': return `Код: "<b>${data.code}</b>", переход → <b>${data.next_step_id || '?'}</b>`;
+                        case 'dungeon_door_control': return `Действие: <b>${data.action}</b>, Ключ: <b>${data.key || 'нет'}</b>`;
+                        case 'dungeon_use_chat_code': return `Код: "<b>${data.code}</b>", переход → <b>${data.next_step_id || '?'}</b>`;
                         case 'universal_use_chat': return `Чат-команда: <b>${data.chat || '?'}</b>`;
                         case 'check_has_item': return `Предмет: <b>${data.item_id || '?'}</b>, нужно: <b>${data.required || 1}</b>`;
                         case 'universal_condition_item': return `Предмет: <b>${data.item_id || '?'}</b>, нужно: <b>${data.required || 1}</b>`;
                         case 'reset_quest': return `Сброс квеста: <b>${data.quest_id || '?'}</b>`;
                         case 'accept_quest': return `Принять квест: <b>${data.quest_id || '?'}</b>`;
-                        case 'universal_quest_action': return `Квест: <b>${data.quest_id || '?'}</b>, действие: <b>${data.action || '?'}</b>`;
+                        case 'quest_action': return `Квест: <b>${data.quest_id || '?'}</b>, действие: <b>${data.action || '?'}</b>`;
                         case 'check_quest_accepted': return `Проверка принятия квеста: <b>${data.quest_id || '?'}</b>`;
                         case 'check_quest_finished': return `Проверка завершения квеста: <b>${data.quest_id || '?'}</b>`;
                         case 'check_quest_step_finished': return `Квест: <b>${data.quest_id || '?'}</b>, шаг > <b>${data.step ?? 0}</b>`;
-                        case 'universal_quest_condition': return `Квест: <b>${data.quest_id || '?'}</b>, условие: <b>${data.condition || '?'}</b>`;
+                        case 'quest_condition': return `Квест: <b>${data.quest_id || '?'}</b>, условие: <b>${data.condition || '?'}</b>${data.entire_group ? ', вся группа' : ''}`;
                         case 'pick_item_task': return `Подбор предмета: <b>${data.item?.id || '?'}</b> x <b>${data.item?.value || 0}</b>`;
                         case 'universal_pick_item_task': return `Подбор предмета: <b>${data.item?.id || '?'}</b> x <b>${data.item?.value || 0}</b>`;
                         case 'shootmarkers': return `Маркеры: <b>${data.markers?.length || 0}</b>`;
@@ -1364,7 +1364,7 @@
                         case 'teleport': return `В точку (<b>${data.position?.x}, ${data.position?.y}</b>)`;
                         case 'universal_teleport': return `В точку (<b>${data.position?.x}, ${data.position?.y}</b>) / мир <b>${data.world_id ?? -1}</b>`;
                         case 'universal_door_control': return `Действие: <b>${data.action}</b>, Ключ: <b>${data.key || 'нет'}</b>`;
-                        case 'activate_point': return `Текст: "<b>${data.action_text || ''}</b>", Время: <b>${data.duration}</b> сек.`;
+                        case 'dungeon_activate_point': return `Текст: "<b>${data.action_text || ''}</b>", Время: <b>${data.duration}</b> сек.`;
                         default: return ``;
                     }
                 } catch { return "Ошибка в данных"; }

@@ -21,7 +21,7 @@ public:
 		m_Action = actionStr == "remove" ? DoorAction::Remove : DoorAction::Create;
 	}
 
-    DECLARE_COMPONENT_NAME("door_control")
+    DECLARE_COMPONENT_NAME("dungeon_door_control")
 
 private:
 	void OnStartImpl() override
@@ -57,7 +57,7 @@ public:
 		m_ListenerScope.Init(this, IEventListener::PlayerChat);
 	}
 
-    DECLARE_COMPONENT_NAME("use_chat_code")
+    DECLARE_COMPONENT_NAME("dungeon_use_chat_code")
 
 private:
 	void OnStartImpl() override
@@ -106,7 +106,7 @@ public:
 		m_Action = j.value("action_text", "Activating Point");
 	}
 
-    DECLARE_COMPONENT_NAME("activate_point")
+    DECLARE_COMPONENT_NAME("dungeon_activate_point")
 
 private:
 	template<typename... Args>
