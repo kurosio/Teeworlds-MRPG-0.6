@@ -126,6 +126,7 @@
     const EDITORS = GROUPS.flatMap(g => g.items || []);
 
     const byKey = (key) => EDITORS.find(e => e.key === key) || EDITORS[0] || null;
+    const normalizeEditorKey = (value) => String(value || '').replace(/^#/, '').trim();
 
     let activeKey = '';
 
@@ -169,7 +170,7 @@
       renderNav(mobileNav, active, term);
     };
 
-    const openEditor = (key, { closeMobile = false } = {}) => {
+    const openEditor = (key, { closeMobile = false, syncHash = true } = {}) => {
       const e = byKey(key);
       if (!e) {
         frame.src = '';
@@ -181,7 +182,7 @@
       renderAllNavs(e.key, term);
       frame.src = e.src;
       storageSet('studio.activeEditor', e.key);
-      if (location.hash !== '#' + e.key) location.hash = e.key;
+      if (syncHash && location.hash !== '#' + e.key) location.hash = e.key;
 
       if (mobileTitle) mobileTitle.textContent = e.title || 'Editor Studio';
       if (closeMobile && mobileOverlay) mobileOverlay.classList.add('hidden');
@@ -240,7 +241,7 @@
 
     openNewTab.addEventListener('click', () => {
       const fallbackKey = EDITORS[0]?.key || '';
-      const key = (location.hash || '').replace('#', '') || storageGet('studio.activeEditor') || fallbackKey;
+      const key = normalizeEditorKey(location.hash) || storageGet('studio.activeEditor') || fallbackKey;
       const e = byKey(key);
       if (!e) return;
       window.open(e.src, '_blank', 'noopener');
@@ -255,8 +256,36 @@
       if (e.target === mobileOverlay) mobileOverlay.classList.add('hidden');
     });
 
+    let isHashSync = false;
+    const replaceHash = (key) => {
+      if (location.hash === '#' + key) return;
+      const url = new URL(location.href);
+      url.hash = key;
+      isHashSync = true;
+      history.replaceState(null, '', url);
+      isHashSync = false;
+    };
+
+    window.addEventListener('hashchange', () => {
+      if (isHashSync) return;
+
+      const hashKey = normalizeEditorKey(location.hash);
+      const editor = EDITORS.find((entry) => entry.key === hashKey);
+
+      if (editor) {
+        if (editor.key !== activeKey) openEditor(editor.key, { syncHash: false });
+        return;
+      }
+
+      const fallbackEditor = byKey(normalizeEditorKey(storageGet('studio.activeEditor')));
+      if (!fallbackEditor) return;
+
+      if (fallbackEditor.key !== activeKey) openEditor(fallbackEditor.key, { syncHash: false });
+      replaceHash(fallbackEditor.key);
+    });
+
     // Initial editor selection: hash > localStorage > default
-    const initial = (location.hash || '').replace('#', '') || storageGet('studio.activeEditor') || EDITORS[0]?.key || '';
+    const initial = normalizeEditorKey(location.hash) || storageGet('studio.activeEditor') || EDITORS[0]?.key || '';
     openEditor(initial);
   </script>
 </body>
