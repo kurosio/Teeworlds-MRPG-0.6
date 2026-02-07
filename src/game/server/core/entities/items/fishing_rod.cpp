@@ -255,7 +255,7 @@ void CEntityFishingRod::FishingTick(CPlayer* pPlayer, CProfession* pFisherman, G
 		auto health = m_Fishing.m_Health;
 		auto maxHP = pNode->Health;
 		const auto Sec = m_Fishing.m_HookingTime / Server()->TickSpeed();
-		const auto ProgressBar = mystd::string::progressBar(Server()->TickSpeed() * 3, m_Fishing.m_HookingTime, 20, "\u25B0", "\u25B1");
+		const auto ProgressBar = mystd::string::progressBar(Server()->TickSpeed() * 3, m_Fishing.m_HookingTime, 10, "\u25B0", "\u25B1");
 		GS()->Broadcast(m_ClientID, BroadcastPriority::GameInformation, 50, "'{}'(HP {}/{}) [{}|{}s] : {}",
 			pNode->Name, health, maxHP, ProgressBar, Sec, GS()->GetItemInfo(*EquippedItemID)->GetName());
 	}
