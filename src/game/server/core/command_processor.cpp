@@ -33,9 +33,7 @@ CCommandProcessor::CCommandProcessor(CGS* pGS)
 	IServer* pServer = m_pGS->Server();
 	AddCommand("login", "s[username] s[password]", ConChatLogin, pServer, "User login (authentication)");
 	AddCommand("register", "s[username] s[password]", ConChatRegister, pServer, "Register a new account");
-
 	AddCommand("change_password", "s[old_password] s[new_password] ?s[pin]", ConChatChangePassword, pServer, "Change account password");
-
 	AddCommand("set_pin", "s[password] s[new_pin]", ConChatSetPin, pServer, "Set pincode account");
 	AddCommand("change_pin", "s[old_pin] s[new_pin]", ConChatChangePin, pServer, "Change pincode account");
 
@@ -53,6 +51,9 @@ CCommandProcessor::CCommandProcessor(CGS* pGS)
 	AddCommand("rules", "", ConChatRules, pServer, "View game rules");
 	AddCommand("info", "", ConChatInfo, pServer, "Game information/wiki");
 	AddCommand("assistant", "", ConChatAssistant, pServer, "Personal assistant dashboard");
+
+	// other
+	AddCommand("timeout", "?s[code]", ConChatTimeoutGuest, pServer, "Timeout auth code");
 }
 
 CCommandProcessor::~CCommandProcessor()
@@ -484,6 +485,17 @@ void CCommandProcessor::ConChatAssistant(IConsole::IResult* pResult, void* pUser
 		return;
 
 	pGS->SendMenuMotd(pPlayer, MOTD_MENU_PERSONAL_ASSISTANT);
+}
+
+void CCommandProcessor::ConChatTimeoutGuest(IConsole::IResult* pResult, void* pUser)
+{
+	const int ClientID = pResult->GetClientID();
+	auto* pGS = GetCommandResultGameServer(ClientID, pUser);
+	auto* pPlayer = pGS->GetPlayer(ClientID);
+	if(!is_valid_player(pGS, pPlayer, false) || pPlayer->IsAuthed())
+		return;
+
+	// int timeoutCode pResult->GetString(0);
 }
 
 void CCommandProcessor::ConChatVoucher(IConsole::IResult* pResult, void* pUser)
