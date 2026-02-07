@@ -127,8 +127,11 @@
 
     const byKey = (key) => EDITORS.find(e => e.key === key) || EDITORS[0] || null;
     const normalizeEditorKey = (value) => String(value || '').replace(/^#/, '').trim();
+    const DIRTY_STATUS_TIMEOUT = 350;
 
     let activeKey = '';
+    let dirtyStatusRequestSeq = 0;
+    let openEditorRequestSeq = 0;
 
     const getSearchTerm = () => String(studioSearch?.value || mobileSearch?.value || '').trim();
 
@@ -170,13 +173,53 @@
       renderNav(mobileNav, active, term);
     };
 
-    const openEditor = (key, { closeMobile = false, syncHash = true } = {}) => {
+    const requestFrameDirtyStatus = () => {
+      const frameWindow = frame?.contentWindow;
+      if (!frameWindow || !activeKey) return Promise.resolve({ supported: false, dirty: false });
+      const requestId = `dirty:${Date.now()}:${++dirtyStatusRequestSeq}`;
+
+      return new Promise((resolve) => {
+        let done = false;
+        let timer = null;
+
+        const finish = (result) => {
+          if (done) return;
+          done = true;
+          window.removeEventListener('message', onMessage);
+          if (timer) clearTimeout(timer);
+          resolve(result);
+        };
+
+        const onMessage = (event) => {
+          if (event.source !== frameWindow) return;
+          const data = event.data || {};
+          if (data?.type !== 'editor-shell:dirty-status' || data.requestId !== requestId) return;
+          finish({ supported: true, dirty: !!data.dirty });
+        };
+
+        window.addEventListener('message', onMessage);
+        timer = setTimeout(() => finish({ supported: false, dirty: false }), DIRTY_STATUS_TIMEOUT);
+        frameWindow.postMessage({ type: 'editor-shell:request-dirty-status', requestId }, '*');
+      });
+    };
+
+    const openEditor = async (key, { closeMobile = false, syncHash = true } = {}) => {
+      const requestSeq = ++openEditorRequestSeq;
       const e = byKey(key);
       if (!e) {
         frame.src = '';
         renderAllNavs('', getSearchTerm());
         return;
       }
+      if (activeKey && e.key !== activeKey) {
+        const dirtyState = await requestFrameDirtyStatus();
+        if (requestSeq !== openEditorRequestSeq) return;
+        if (dirtyState.supported && dirtyState.dirty) {
+          const approved = confirm('Есть несохранённые изменения. Продолжить без сохранения?');
+          if (!approved) return;
+        }
+      }
+      if (requestSeq !== openEditorRequestSeq) return;
       activeKey = e.key;
       const term = getSearchTerm();
       renderAllNavs(e.key, term);

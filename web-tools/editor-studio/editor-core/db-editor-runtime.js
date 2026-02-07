@@ -37,6 +37,11 @@
         dirty: cfg.dirty || null,
       };
 
+      const canDiscardDirty = () => {
+        if (!state.dirty?.isDirty?.()) return true;
+        return confirm('Есть несохранённые изменения. Продолжить без сохранения?');
+      };
+
       const makeDefault = () => {
         if (typeof cfg.defaults === 'function') return cfg.defaults();
         return cfg.defaults ? { ...cfg.defaults } : {};
@@ -146,7 +151,14 @@
         els.list.innerHTML = `<div class="editor-list">${html}</div>`;
       };
 
-      const selectRow = (row) => {
+      const selectRow = (row, options = {}) => {
+        const confirmDirty = options?.confirmDirty !== false;
+        const nextId = Number(row?.ID || 0);
+        const currentId = Number(state.selectedId || 0);
+
+        if (nextId && nextId === currentId) return true;
+        if (confirmDirty && !canDiscardDirty()) return false;
+
         if (!row) {
           state.selectedId = 0;
           state.model = null;
@@ -154,7 +166,7 @@
           renderForm();
           renderList();
           setHeader();
-          return;
+          return true;
         }
         state.selectedId = Number(row.ID || 0);
         state.model = toModel(row);
@@ -162,6 +174,7 @@
         renderForm();
         renderList();
         setHeader();
+        return true;
       };
 
       const loadList = async () => {
@@ -189,6 +202,7 @@
       };
 
       const createNew = () => {
+        if (!canDiscardDirty()) return false;
         state.selectedId = 0;
         state.model = makeDefault();
         state.dirty?.setClean?.();
@@ -196,6 +210,18 @@
         renderList();
         setHeader();
         setButtons(true);
+        return true;
+      };
+
+      const onDirtyStatusRequest = (event) => {
+        if (event.source !== window.parent) return;
+        const data = event.data || {};
+        if (data?.type !== 'editor-shell:request-dirty-status') return;
+        window.parent.postMessage({
+          type: 'editor-shell:dirty-status',
+          requestId: data.requestId,
+          dirty: !!state.dirty?.isDirty?.(),
+        }, '*');
       };
 
       const save = async () => {
@@ -230,7 +256,8 @@
           await window.EditorCore.DBCrud.remove(resource, state.selectedId);
           toast('Удалено', 'success');
           setStatus('Удалено.', 'ok');
-          selectRow(null);
+          state.dirty?.setClean?.();
+          selectRow(null, { confirmDirty: false });
           await loadList();
         } catch (err) {
           const msg = err?.message || 'Ошибка удаления';
@@ -258,6 +285,8 @@
         els.search.addEventListener('input', debounce(loadList, 250));
       }
 
+      window.addEventListener('message', onDirtyStatusRequest);
+
       loadList();
       setHeader();
 
@@ -265,6 +294,9 @@
         refresh: loadList,
         selectRow,
         setStatus,
+        destroy: () => {
+          window.removeEventListener('message', onDirtyStatusRequest);
+        },
       };
     }
   };
