@@ -79,10 +79,13 @@ void CEntityFishingRod::Tick()
 	const auto EquippedFishrodItemIdOpt = pPlayer->GetEquippedSlotItemID(ItemType::EquipFishrod);
 	if(!EquippedFishrodItemIdOpt.has_value())
 	{
-		GS()->Chat(m_ClientID, "To start fishing, equip your fishing rod!");
+		GS()->Chat(m_ClientID, "To start fishing, equip a fishing rod.");
 		MarkForDestroy();
 		return;
 	}
+
+	const auto* pRodInfo = GS()->GetItemInfo(*EquippedFishrodItemIdOpt);
+	const char* pRodName = pRodInfo->GetName();
 
 	// update
 	m_Pos = pChar->m_Core.m_Pos;
@@ -117,7 +120,7 @@ void CEntityFishingRod::Tick()
 	auto* pNode = GS()->Collision()->GetFishNode(switchNumber);
 	if(!pNode)
 	{
-		GS()->Broadcast(m_ClientID, BroadcastPriority::GameInformation, 50, "There are no fish in the area!");
+		GS()->Broadcast(m_ClientID, BroadcastPriority::GameInformation, 50, "There are no fish in this area.");
 		return;
 	}
 
@@ -130,10 +133,10 @@ void CEntityFishingRod::Tick()
 	}
 
 	// fishing logic
-	FishingTick(pPlayer, pFisherman, pNode, EquippedFishrodItemIdOpt);
+	FishingTick(pPlayer, pFisherman, pNode, pRodName);
 }
 
-void CEntityFishingRod::FishingTick(CPlayer* pPlayer, CProfession* pFisherman, GatheringNode* pNode, std::optional<int> EquippedItemID)
+void CEntityFishingRod::FishingTick(CPlayer* pPlayer, CProfession* pFisherman, GatheringNode* pNode, const char* pRodName)
 {
 	m_Fishing.m_HookingTime--;
 
@@ -164,8 +167,8 @@ void CEntityFishingRod::FishingTick(CPlayer* pPlayer, CProfession* pFisherman, G
 			GS()->CreateSound(lastPoint, SOUND_SFX_WATER);
 		}
 
-		GS()->Broadcast(m_ClientID, BroadcastPriority::GameInformation, 50, "Waiting for the fish: '{}' : {}",
-			pNode->Name, GS()->GetItemInfo(*EquippedItemID)->GetName());
+		GS()->Broadcast(m_ClientID, BroadcastPriority::GameInformation, 50, "Waiting for fish: '{}' | Rod: {}",
+			pNode->Name, pRodName);
 		return;
 	}
 
@@ -256,8 +259,8 @@ void CEntityFishingRod::FishingTick(CPlayer* pPlayer, CProfession* pFisherman, G
 		auto maxHP = pNode->Health;
 		const auto Sec = m_Fishing.m_HookingTime / Server()->TickSpeed();
 		const auto ProgressBar = mystd::string::progressBar(Server()->TickSpeed() * 3, m_Fishing.m_HookingTime, 10, "\u25B0", "\u25B1");
-		GS()->Broadcast(m_ClientID, BroadcastPriority::GameInformation, 50, "'{}'(HP {}/{}) [{}|{}s] : {}",
-			pNode->Name, health, maxHP, ProgressBar, Sec, GS()->GetItemInfo(*EquippedItemID)->GetName());
+		GS()->Broadcast(m_ClientID, BroadcastPriority::GameInformation, 50, "'{}' (HP {}/{}) [{} | {}s] | Rod: {}",
+			pNode->Name, health, maxHP, ProgressBar, Sec, pRodName);
 	}
 }
 

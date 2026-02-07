@@ -49,7 +49,7 @@ public:
 	CEntityFishingRod(CGameWorld* pGameWorld, int ClientID, vec2 Position, vec2 Force);
 	~CEntityFishingRod() override;
 
-	void FishingTick(CPlayer* pPlayer, CProfession* pFisherman, GatheringNode* pNode, std::optional<int> EquippedItemID);
+	void FishingTick(CPlayer* pPlayer, CProfession* pFisherman, GatheringNode* pNode, const char* pRodName);
 	bool IsWaitingState() const { return m_Fishing.m_State == FishingNow::WAITING; }
 
 	void Tick() override;
