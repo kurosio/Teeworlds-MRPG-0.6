@@ -10,14 +10,14 @@ void MailWrapper::Send()
 	CGS* pGS = (CGS*)Instance::GameServer();
 
 	// send information about new message
-	const bool LocalMsg = pGS->ChatAccount(m_AccountID, "[Mailbox] New letter ({})!", m_Title);
+	const bool LocalMsg = pGS->ChatAccount(m_AccountID, "[Mail] New mail: {}", m_Title);
 	if(LocalMsg)
 	{
 		const int LetterCount = pGS->Core()->MailboxManager()->GetMailCount(m_AccountID);
 		if(LetterCount >= (int)MAIL_MAX_CAPACITY)
 		{
-			pGS->ChatAccount(m_AccountID, "[Mailbox] Your mailbox is full you can't get.");
-			pGS->ChatAccount(m_AccountID, "[Mailbox] It will come after you clear your mailbox.");
+			pGS->ChatAccount(m_AccountID, "[Mail] Mailbox is full.");
+			pGS->ChatAccount(m_AccountID, "[Mail] Clear old mails to receive new ones.");
 		}
 	}
 

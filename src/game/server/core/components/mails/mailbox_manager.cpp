@@ -14,7 +14,7 @@ bool CMailboxManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, co
 		if(AcceptMail(pPlayer, MailID))
 			pPlayer->m_VotesData.UpdateVotes(MENU_MAILBOX);
 		else
-			GS()->Chat(pPlayer->GetCID(), "You can't accept the mail attached item's");
+			GS()->Chat(pPlayer->GetCID(), "Can't claim: no free slot for attached items.");
 		return true;
 	}
 
@@ -23,6 +23,15 @@ bool CMailboxManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, co
 	{
         const int MailID = GetIfExists<int>(Extras, 0, NOPE);
 		DeleteMail(MailID);
+		pPlayer->m_VotesData.UpdateVotes(MENU_MAILBOX);
+		return true;
+	}
+
+	// delete all read mails
+	if(PPSTR(pCmd, "MAIL_DELETE_READ") == 0)
+	{
+		DeleteReadMails(pPlayer->Account()->GetID());
+		GS()->Chat(pPlayer->GetCID(), "All read mails deleted.");
 		pPlayer->m_VotesData.UpdateVotes(MENU_MAILBOX);
 		return true;
 	}
@@ -105,33 +114,38 @@ void CMailboxManager::ShowMailboxList(CPlayer *pPlayer)
 
 	// information
 	const int ClientID = pPlayer->GetCID();
-	VoteWrapper VInfo(ClientID, VWF_SEPARATE | VWF_STYLE_STRICT_BOLD, "Information about mailbox");
-	VInfo.Add("You can interact with your mail");
-	VInfo.Add("Receive as well as delete mails");
+	VoteWrapper VInfo(ClientID, VWF_SEPARATE | VWF_STYLE_STRICT_BOLD, "Mailbox help");
+	VInfo.Add("Open mail to read and claim items.");
+	VInfo.Add("Use Claim to get items, Delete to remove.");
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// unreaded mails
 	VoteWrapper VUnreadList(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE,
-		"\u2709 List of unread mails ({} of {})", (int)vUnreadMails.size(), (int)MAIL_MAX_CAPACITY);
+		"\u2709 Unread: {} / {}", (int)vUnreadMails.size(), (int)MAIL_MAX_CAPACITY);
 	for(auto& p : vUnreadMails)
-		VUnreadList.AddMenu(MENU_MAILBOX_SELECT, p.m_ID, "{} (UID:{})", p.m_Name,p.m_ID);
+		VUnreadList.AddMenu(MENU_MAILBOX_SELECT, p.m_ID, "{} [#{}]", p.m_Name,p.m_ID);
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// readed mails
 	VoteWrapper VReadList(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE,
-		"\u2709 List of read mails ({} of {})", (int)vReadedMails.size(), (int)MAIL_MAX_CAPACITY);
+		"\u2709 Read: {} / {}", (int)vReadedMails.size(), (int)MAIL_MAX_CAPACITY);
 	for(auto& p : vReadedMails)
-		VReadList.AddMenu(MENU_MAILBOX_SELECT, p.m_ID, "{} (UID:{})", p.m_Name, p.m_ID);
+		VReadList.AddMenu(MENU_MAILBOX_SELECT, p.m_ID, "{} [#{}]", p.m_Name, p.m_ID);
+
+	if(!vReadedMails.empty())
+		VoteWrapper(ClientID).AddOption("MAIL_DELETE_READ", "Delete all read");
 	VoteWrapper::AddEmptyline(ClientID);
 }
 
 void CMailboxManager::ShowMail(int MailID, CPlayer* pPlayer) const
 {
-	int ClientID = pPlayer->GetCID();
+	const int ClientID = pPlayer->GetCID();
+	const int AccountID = pPlayer->Account()->GetID();
+
 	MarkReadedMail(MailID);
 
 	// found from database by mail id
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_mailbox", "WHERE ID = '{}'", MailID);
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_accounts_mailbox", "WHERE ID = '{}' AND UserID = '{}'", MailID, AccountID);
 	if(pRes->next())
 	{
 		// get the information to create an object
@@ -158,13 +172,13 @@ void CMailboxManager::ShowMail(int MailID, CPlayer* pPlayer) const
 		VoteWrapper VInfo(ClientID, VWF_SEPARATE | VWF_STYLE_STRICT_BOLD, "{}", Name);
 		for(auto& pLine : vDescriptions)
 			VInfo.Add(pLine.c_str());
-		VInfo.Add("Sender: {}", Sender);
+		VInfo.Add("From: {}", Sender);
 		VoteWrapper::AddEmptyline(ClientID);
 
 		// show attached item's information
 		if(!vAttachedItems.empty())
 		{
-			VoteWrapper VAttached(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_STRICT, "Attached items");
+			VoteWrapper VAttached(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_STRICT, "Items inside");
 			VAttached.ReinitNumeralDepthStyles({ { DEPTH_LVL1, DEPTH_LIST_STYLE_BOLD } });
 			for(auto& pItem : vAttachedItems)
 				VAttached.MarkList().Add("{}x{$} ({$})", pItem.Info()->GetName(), pItem.GetValue(), pPlayer->GetItem(pItem)->GetValue());
@@ -172,7 +186,7 @@ void CMailboxManager::ShowMail(int MailID, CPlayer* pPlayer) const
 		}
 
 		// add buttons
-		VoteWrapper(ClientID).AddOption("MAIL_ACCEPT", MailID, "Accept");
+		VoteWrapper(ClientID).AddOption("MAIL_ACCEPT", MailID, "Claim");
 		VoteWrapper(ClientID).AddOption("MAIL_DELETE", MailID, "Delete");
 		VoteWrapper::AddEmptyline(ClientID);
 	}
@@ -180,7 +194,7 @@ void CMailboxManager::ShowMail(int MailID, CPlayer* pPlayer) const
 
 bool CMailboxManager::AcceptMail(CPlayer* pPlayer, int MailID)
 {
-	ResultPtr pRes = Database->Execute<DB::SELECT>("AttachedItems", "tw_accounts_mailbox", "WHERE ID = '{}'", MailID);
+	ResultPtr pRes = Database->Execute<DB::SELECT>("AttachedItems", "tw_accounts_mailbox", "WHERE ID = '{}' AND UserID = '{}'", MailID, pPlayer->Account()->GetID());
 	if(!pRes->next())
 		return false;
 
@@ -202,7 +216,7 @@ bool CMailboxManager::AcceptMail(CPlayer* pPlayer, int MailID)
 		else
 		{
 			pPlayerItem->Add(pItem.GetValue(), 0, pItem.GetEnchant());
-			GS()->Chat(pPlayer->GetCID(), "You received an attached item ['{}'].", pItem.Info()->GetName());
+			GS()->Chat(pPlayer->GetCID(), "Item received: {}.", pItem.Info()->GetName());
 		}
 	}
 
@@ -213,8 +227,8 @@ bool CMailboxManager::AcceptMail(CPlayer* pPlayer, int MailID)
 	// send mail only with unaccable items
 	if(!vCannotAcceptableItems.empty())
 	{
-		MailWrapper Mail("System", pPlayer->Account()->GetID(), "Cannot be accepted.");
-		Mail.AddDescLine("The reason you already have the item");
+		MailWrapper Mail("System", pPlayer->Account()->GetID(), "Could not claim all items");
+		Mail.AddDescLine("Some items were already owned.");
 		for(const auto& pItem : vCannotAcceptableItems)
 			Mail.AttachItem(pItem);
 		Mail.Send();
@@ -223,6 +237,11 @@ bool CMailboxManager::AcceptMail(CPlayer* pPlayer, int MailID)
 	// is empty letter
 	DeleteMail(MailID);
 	return true;
+}
+
+void CMailboxManager::DeleteReadMails(int AccountID) const
+{
+	Database->Execute<DB::REMOVE>("tw_accounts_mailbox", "WHERE UserID = '{}' AND Readed = '1'", AccountID);
 }
 
 void CMailboxManager::MarkReadedMail(int MailID) const

@@ -19,13 +19,10 @@ public:
 	void ShowMail(int MailID, CPlayer *pPlayer) const;
 
 private:
-	// accept mail by id
+
 	bool AcceptMail(CPlayer* pPlayer, int MailID);
-
-	// mark mail readed by id
+	void DeleteReadMails(int AccountID) const;
 	void MarkReadedMail(int MailID) const;
-
-	// delete mail by id
 	void DeleteMail(int MailID) const;
 };
 
