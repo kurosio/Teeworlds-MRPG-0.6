@@ -31,10 +31,16 @@
 
       const state = {
         rows: [],
+        rowsRaw: [],
+        search: '',
         selectedId: 0,
         model: null,
         form: null,
         dirty: cfg.dirty || null,
+        searchRequest: {
+          token: 0,
+          controller: null,
+        },
       };
 
       const canDiscardDirty = () => {
@@ -151,6 +157,38 @@
         els.list.innerHTML = `<div class="editor-list">${html}</div>`;
       };
 
+
+      const searchCfg = cfg.searchOptions || {};
+      const localMinLength = Number(searchCfg.localMinLength ?? 2);
+
+      const normalizeSearchText = (value) => String(value || '').trim();
+
+      const filterRowsLocally = (rows, search) => {
+        const q = normalizeSearchText(search).toLowerCase();
+        if (!q) return rows.slice();
+        return rows.filter((row) => {
+          const name = String(row?.Name || '').toLowerCase();
+          const id = String(row?.ID || '').toLowerCase();
+          return name.includes(q) || id.includes(q);
+        });
+      };
+
+      const applyRows = (rows, { search, isRaw = false } = {}) => {
+        const safeRows = Array.isArray(rows) ? rows : [];
+        if (isRaw) state.rowsRaw = safeRows;
+        state.search = normalizeSearchText(search ?? state.search);
+        state.rows = safeRows;
+        setStatus(state.rows.length ? '' : 'Список пуст.', 'muted');
+        renderList();
+
+        if (state.selectedId) {
+          const found = state.rows.find(r => Number(r.ID) === Number(state.selectedId));
+          if (found) selectRow(found);
+        } else if (!state.model && state.rows.length) {
+          selectRow(state.rows[0]);
+        }
+      };
+
       const selectRow = (row, options = {}) => {
         const confirmDirty = options?.confirmDirty !== false;
         const nextId = Number(row?.ID || 0);
@@ -177,24 +215,45 @@
         return true;
       };
 
-      const loadList = async () => {
-        const search = els.search?.value?.trim() || '';
-        setStatus('Загрузка списка…');
+      const loadList = async (options = {}) => {
+        const { forceServer = false, silent = false } = options;
+        const search = normalizeSearchText(els.search?.value);
+        state.search = search;
+
+        const canUseLocal = !forceServer
+          && Array.isArray(state.rowsRaw)
+          && state.rowsRaw.length
+          && search.length < localMinLength;
+
+        if (canUseLocal) {
+          const filtered = filterRowsLocally(state.rowsRaw, search);
+          applyRows(filtered, { search });
+          return;
+        }
+
+        const token = state.searchRequest.token + 1;
+        state.searchRequest.token = token;
+        state.searchRequest.controller?.abort?.();
+        const controller = new AbortController();
+        state.searchRequest.controller = controller;
+
+        if (!silent) setStatus(search ? 'Идёт поиск…' : 'Загрузка списка…');
         try {
-          const res = await window.EditorCore.DBCrud.list(resource, { search, limit: 5000, offset: 0 });
+          const res = await window.EditorCore.DBCrud.list(resource, {
+            search,
+            limit: 5000,
+            offset: 0,
+            signal: controller.signal,
+          });
+          if (token !== state.searchRequest.token) return;
+
           const rows = Array.isArray(res.rows) ? res.rows : [];
-          state.rows = typeof cfg.transformList === 'function'
+          const transformed = typeof cfg.transformList === 'function'
             ? cfg.transformList(rows, { search }) || []
             : rows;
-          setStatus(state.rows.length ? '' : 'Список пуст.', 'muted');
-          renderList();
-          if (state.selectedId) {
-            const found = state.rows.find(r => Number(r.ID) === Number(state.selectedId));
-            if (found) selectRow(found);
-          } else if (!state.model && state.rows.length) {
-            selectRow(state.rows[0]);
-          }
+          applyRows(transformed, { search, isRaw: true });
         } catch (err) {
+          if (controller.signal.aborted || token !== state.searchRequest.token) return;
           const msg = err?.message || 'Ошибка загрузки';
           setStatus(msg, 'err');
           toast(msg, 'error');
@@ -282,7 +341,22 @@
       els.del?.addEventListener('click', remove);
 
       if (els.search) {
-        els.search.addEventListener('input', debounce(loadList, 250));
+        const clearSearch = () => {
+          if (!els.search.value) return;
+          els.search.value = '';
+          loadList({ silent: true });
+        };
+
+        const clearBtn = root.querySelector('[data-editor-role="search-clear"]');
+        clearBtn?.addEventListener('click', clearSearch);
+
+        els.search.addEventListener('keydown', (event) => {
+          if (event.key !== 'Escape') return;
+          event.preventDefault();
+          clearSearch();
+        });
+
+        els.search.addEventListener('input', debounce(() => loadList(), 250));
       }
 
       window.addEventListener('message', onDirtyStatusRequest);
@@ -295,6 +369,7 @@
         selectRow,
         setStatus,
         destroy: () => {
+          state.searchRequest.controller?.abort?.();
           window.removeEventListener('message', onDirtyStatusRequest);
         },
       };

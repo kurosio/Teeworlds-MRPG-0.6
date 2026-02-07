@@ -13,14 +13,27 @@
   };
 
   const jsonFetch = async (url, options = {}) => {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+    const timeoutController = new AbortController();
+    const externalSignal = options.signal;
+    const signal = (!externalSignal)
+      ? timeoutController.signal
+      : (typeof AbortSignal !== 'undefined' && typeof AbortSignal.any === 'function')
+        ? AbortSignal.any([timeoutController.signal, externalSignal])
+        : (() => {
+            const fallback = new AbortController();
+            const onAbort = () => fallback.abort();
+            if (externalSignal.aborted) fallback.abort();
+            else externalSignal.addEventListener('abort', onAbort, { once: true });
+            timeoutController.signal.addEventListener('abort', onAbort, { once: true });
+            return fallback.signal;
+          })();
+    const timeoutId = setTimeout(() => timeoutController.abort(), FETCH_TIMEOUT_MS);
     try {
       const res = await fetch(url, {
         credentials: 'same-origin',
         headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
-        signal: controller.signal,
-        ...options
+        ...options,
+        signal,
       });
       const text = await res.text();
       let payload = null;
@@ -42,8 +55,8 @@
     .join('&');
 
   const DBCrud = {
-    async list(resource, { search = '', limit = 100, offset = 0 } = {}) {
-      return jsonFetch(`${API}?${qs({ action: 'list', resource, search, limit, offset })}`);
+    async list(resource, { search = '', limit = 100, offset = 0, signal } = {}) {
+      return jsonFetch(`${API}?${qs({ action: 'list', resource, search, limit, offset })}`, { signal });
     },
     async get(resource, id) {
       return jsonFetch(`${API}?${qs({ action: 'get', resource, id })}`);
