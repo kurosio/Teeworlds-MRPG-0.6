@@ -5,6 +5,7 @@
 #include <game/server/entity.h>
 
 class CPlayer;
+class CCharacter;
 class CProfession;
 struct GatheringNode;
 class CEntityFishingRod : public CEntity
@@ -40,6 +41,9 @@ class CEntityFishingRod : public CEntity
 	vec2 m_EndRodPoint {};
 	RopePhysic m_Rope {};
 	FishingNow m_Fishing{};
+
+	vec2 CalculateRodPoint(bool FacingRight, size_t Segment) const;
+	void UpdateRodEndPoint(const CCharacter* pChar);
 
 public:
 	CEntityFishingRod(CGameWorld* pGameWorld, int ClientID, vec2 Position, vec2 Force);

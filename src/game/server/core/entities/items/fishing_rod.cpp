@@ -24,6 +24,30 @@ CEntityFishingRod::~CEntityFishingRod()
 		pChar->m_pFishingRod = nullptr;
 }
 
+vec2 CEntityFishingRod::CalculateRodPoint(bool FacingRight, size_t Segment) const
+{
+	static constexpr std::array<std::pair<vec2, vec2>, NUM_ROD_POINTS> s_aRodPositions = { {
+		{ vec2(0, 0),		vec2(100, -60) },
+		{ vec2(100, -60),	vec2(140, -50) },
+		{ vec2(140, -50),	vec2(160, -40) }
+	} };
+
+	if(Segment >= s_aRodPositions.size())
+		return m_Pos;
+
+	const auto& To = s_aRodPositions[Segment].second;
+	return FacingRight ? vec2(m_Pos.x + To.x, m_Pos.y + To.y) : vec2(m_Pos.x - To.x, m_Pos.y + To.y);
+}
+
+void CEntityFishingRod::UpdateRodEndPoint(const CCharacter* pChar)
+{
+	if(!pChar)
+		return;
+
+	const bool FacingRight = pChar->m_LatestInput.m_TargetX > 0.f;
+	m_EndRodPoint = CalculateRodPoint(FacingRight, NUM_ROD_POINTS - 1);
+}
+
 void CEntityFishingRod::Tick()
 {
 	// check valid
@@ -62,6 +86,7 @@ void CEntityFishingRod::Tick()
 
 	// update
 	m_Pos = pChar->m_Core.m_Pos;
+	UpdateRodEndPoint(pChar);
 	m_Rope.UpdatePhysics(GS()->Collision(), 3.0f, 16.f, 64.f);
 	m_Rope.m_vPoints[0] = m_EndRodPoint;
 
@@ -194,12 +219,9 @@ void CEntityFishingRod::FishingTick(CPlayer* pPlayer, CProfession* pFisherman, G
 			constexpr int IGNORE_POINTS = 3;
 			float percentHP = translate_to_percent(pNode->Health, m_Fishing.m_Health);
 			float percentPoints = translate_to_percent((size_t)NUM_ROPE_POINTS, m_Rope.m_vPoints.size());
-			while(percentPoints > percentHP)
+			while(percentPoints > percentHP && m_Rope.m_vPoints.size() > IGNORE_POINTS)
 			{
-				if(m_Rope.m_vPoints.size() <= IGNORE_POINTS)
-					break;
 				m_Rope.m_vPoints.erase(m_Rope.m_vPoints.begin() + 1);
-				m_Rope.m_vPoints.shrink_to_fit();
 				percentPoints = translate_to_percent((size_t)NUM_ROPE_POINTS, m_Rope.m_vPoints.size());
 			}
 		}
@@ -255,22 +277,14 @@ void CEntityFishingRod::Snap(int SnappingClient)
 
 	const auto curTick = Server()->Tick();
 	const bool facingRight = (pChar->m_LatestInput.m_TargetX > 0.f);
-	const std::array<std::pair<vec2, vec2>, 3> positions = {
-	{
-		{ vec2(0, 0),    vec2(100, -60) },
-		{ vec2(100, -60),vec2(140, -50) },
-		{ vec2(140, -50),vec2(160, -40) }
-	} };
 
 	// draw fishingrod segments
-	const auto numSegments = std::min((*pvRodIds).size(), positions.size());
+	const auto numSegments = minimum((*pvRodIds).size(), (size_t)NUM_ROD_POINTS);
 	for(size_t i = 0; i < numSegments; ++i)
 	{
-		const auto& [first, second] = positions[i];
-		const auto From = facingRight ? vec2(m_Pos.x + first.x, m_Pos.y + first.y) : vec2(m_Pos.x - first.x, m_Pos.y + first.y);
-		const auto To = facingRight ? vec2(m_Pos.x + second.x, m_Pos.y + second.y) : vec2(m_Pos.x - second.x, m_Pos.y + second.y);
+		const auto From = (i == 0) ? m_Pos : CalculateRodPoint(facingRight, i - 1);
+		const auto To = CalculateRodPoint(facingRight, i);
 		GS()->SnapLaser(SnappingClient, (*pvRodIds)[i], From, To, curTick - 2, LASERTYPE_SHOTGUN);
-		m_EndRodPoint = To;
 	}
 
 	// draw rope
