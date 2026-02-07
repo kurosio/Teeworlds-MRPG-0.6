@@ -259,13 +259,14 @@ namespace
 		}
 	};
 
-	template struct ComponentRegistrar<UniversalDoorControlComponent>;
-	template struct ComponentRegistrar<UniversalUseChatComponent>;
-	template struct ComponentRegistrar<UniversalConditionItemComponent>;
-	template struct ComponentRegistrar<UniversalTeleportComponent>;
-	template struct ComponentRegistrar<UniversalPickItemTaskComponent>;
-	template struct ComponentRegistrar<UniversalShootmarkersComponent>;
 }
+
+template struct ComponentRegistrar<UniversalDoorControlComponent>;
+template struct ComponentRegistrar<UniversalUseChatComponent>;
+template struct ComponentRegistrar<UniversalConditionItemComponent>;
+template struct ComponentRegistrar<UniversalTeleportComponent>;
+template struct ComponentRegistrar<UniversalPickItemTaskComponent>;
+template struct ComponentRegistrar<UniversalShootmarkersComponent>;
 
 CUniversalScenario::CUniversalScenario(const nlohmann::json& jsonData)
 	: PlayerScenarioBase()
