@@ -299,7 +299,7 @@
             toast('Создано', 'success');
           }
           state.dirty?.setClean?.();
-          await loadList();
+          await loadList({ forceServer: true });
         } catch (err) {
           const msg = err?.message || 'Ошибка сохранения';
           setStatus(msg, 'err');
@@ -315,9 +315,8 @@
           await window.EditorCore.DBCrud.remove(resource, state.selectedId);
           toast('Удалено', 'success');
           setStatus('Удалено.', 'ok');
-          state.dirty?.setClean?.();
           selectRow(null, { confirmDirty: false });
-          await loadList();
+          await loadList({ forceServer: true });
         } catch (err) {
           const msg = err?.message || 'Ошибка удаления';
           setStatus(msg, 'err');
