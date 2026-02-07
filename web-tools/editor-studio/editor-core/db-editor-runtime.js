@@ -42,6 +42,7 @@
           controller: null,
         },
       };
+      let listRequestSeq = 0;
 
       const canDiscardDirty = () => {
         if (!state.dirty?.isDirty?.()) return true;
@@ -216,6 +217,7 @@
       };
 
       const loadList = async (options = {}) => {
+        const requestId = ++listRequestSeq;
         const { forceServer = false, silent = false } = options;
         const search = normalizeSearchText(els.search?.value);
         state.search = search;
@@ -245,6 +247,7 @@
             offset: 0,
             signal: controller.signal,
           });
+          if (requestId !== listRequestSeq) return;
           if (token !== state.searchRequest.token) return;
 
           const rows = Array.isArray(res.rows) ? res.rows : [];
@@ -253,7 +256,7 @@
             : rows;
           applyRows(transformed, { search, isRaw: true });
         } catch (err) {
-          if (controller.signal.aborted || token !== state.searchRequest.token) return;
+          if (requestId !== listRequestSeq || controller.signal.aborted || token !== state.searchRequest.token) return;
           const msg = err?.message || 'Ошибка загрузки';
           setStatus(msg, 'err');
           toast(msg, 'error');
