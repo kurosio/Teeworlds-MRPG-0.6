@@ -139,7 +139,7 @@ void CCommandProcessor::ConChatRegister(IConsole::IResult* pResult, void* pUser)
 	if(!pPlayer)
 		return;
 
-	if(pPlayer->IsAuthed())
+	if(pPlayer->IsAuthed() && pPlayer->m_GuestLogin.empty())
 	{
 		pGS->Chat(ClientID, "Sign out first before you create a new account.");
 		return;

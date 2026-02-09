@@ -667,30 +667,27 @@ void CMmoController::AsyncClientEnterMsgInfo(std::string_view ClientName, int Cl
 		const bool IsGuest = Login == GuestCredential;
 		const bool HasTimeoutCode = !TimeoutCode.empty();
 		pPlayer->m_WaitingGuestTimeoutAuth = false;
-		pPlayer->m_GuestLogin.clear();
 
 		// guest auth (timeout or unsafe)
 		if(IsGuest)
 		{
 			if(HasTimeoutCode)
-			{
 				pPlayer->m_WaitingGuestTimeoutAuth = true;
-				pPlayer->m_GuestLogin = GuestCredential;
-			}
 			else
-			{
 				pGS->Core()->AccountManager()->LoginAccountRaw(ClientID, GuestCredential.c_str(), GuestCredential.c_str());
-			}
 
+			pPlayer->m_GuestLogin = GuestCredential;
 		}
-
-		// default auth menu
-		if(pPlayer && !pPlayer->IsAuthed())
+		else
 		{
-			pPlayer->m_AuthMenuAllowRegister = !HasAccount;
-			pGS->SendMenuMotd(pPlayer, MOTD_MENU_AUTH);
+			if(pPlayer && !pPlayer->IsAuthed())
+			{
+				pPlayer->m_AuthMenuAllowRegister = !HasAccount;
+				pGS->SendMenuMotd(pPlayer, MOTD_MENU_AUTH);
+			}
+			pGS->Chat(ClientID, "You need to log in using /login <user> <pass>!");
+			pPlayer->m_GuestLogin.clear();
 		}
-		pGS->Chat(ClientID, "You need to log in using /login <user> <pass>!");
 	});
 }
 
@@ -698,7 +695,7 @@ void CMmoController::AsyncClientEnterMsgInfo(std::string_view ClientName, int Cl
 // dump dialogs for translate
 void CMmoController::SyncLocalizations() const
 {
-	// check action state
+	// check action states
 	static std::mutex ms_mtxDump;
 	if(!ms_mtxDump.try_lock())
 	{
