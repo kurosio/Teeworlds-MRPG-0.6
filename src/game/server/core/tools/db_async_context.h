@@ -4,6 +4,7 @@
 #include <engine/server.h>
 
 class CGS;
+class CPlayer;
 
 namespace DbAsync
 {
@@ -23,9 +24,9 @@ namespace DbAsync
 		int GetWorldID() const { return m_WorldID; }
 
 		IServer* Server() const { return Instance::Server(); }
-		CGS* GS() const { return static_cast<CGS*>(Instance::GameServer(m_WorldID)); }
-		CGS* GS(int WorldID) const { return static_cast<CGS*>(Instance::GameServer(WorldID)); }
-		CPlayer* GetPlayer(bool CheckAuth = false, bool CheckCharacter = false) const { return GS()->GetPlayer(GetClientID(), CheckAuth, CheckCharacter); }
+		CGS* GS() const;
+		CGS* GS(int WorldID) const;
+		CPlayer* GetPlayer(bool CheckAuth = false, bool CheckCharacter = false) const;
 
 	private:
 		static int ResolveClientWorldID(int ClientID) { return Instance::Server()->GetClientWorldID(ClientID); }
