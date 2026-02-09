@@ -6,9 +6,11 @@
 #include <game/server/gamecontext.h>
 #include <generated/server_data.h>
 
+
 #include <game/server/core/components/inventory/inventory_manager.h>
 #include <game/server/core/components/mails/mailbox_manager.h>
 #include <game/server/core/components/worlds/world_data.h>
+#include <game/server/core/tools/db_async_context.h>
 
 #include <teeother/components/localization.h>
 
@@ -18,6 +20,63 @@ constexpr int LENGTH_PIN_MAX = 6;
 constexpr int LENGTH_PIN_MIN = 4;
 constexpr int AUTH_FIELD_LOGIN = 0;
 constexpr int AUTH_FIELD_PASSWORD = 1;
+
+namespace DbRegistration
+{
+	struct CRegistrationPayload
+	{
+		CAccountManager* m_pAccountManager{};
+		int m_InitID{};
+		std::string m_Login{};
+		std::string m_Password{};
+		std::string m_Nickname{};
+	};
+	using CRegistrationContextPtr = std::shared_ptr<DbAsync::CContext<CRegistrationPayload>>;
+
+	static void AuthorizeAfterSuccess(const CRegistrationContextPtr& pContext)
+	{
+		auto* pGS = pContext->GS();
+		const auto& Data = pContext->Data();
+		pContext->Server()->UpdateAccountBase(Data.m_InitID, Data.m_Nickname, g_Config.m_SvMinRating);
+		pGS->Chat(pContext->GetClientID(), "- Registration complete! Don't forget to save your data.");
+		pGS->Chat(pContext->GetClientID(), "# Your nickname is a unique identifier.");
+
+		if(auto* pPlayer = pContext->GetPlayer(false))
+		{
+			pPlayer->m_AuthMenuAllowRegister = false;
+			if(pPlayer->IsSameMotdMenu(MOTD_MENU_AUTH))
+				pGS->SendMenuMotd(pPlayer, MOTD_MENU_AUTH);
+		}
+
+		const auto LoginResult = Data.m_pAccountManager->LoginAccount(pContext->GetClientID(), Data.m_Login.c_str(), Data.m_Password.c_str());
+		if(LoginResult != AccountCodeResult::AOP_LOGIN_OK)
+			pGS->Chat(pContext->GetClientID(), "Automatic authorization failed. Please use /login {} {}", Data.m_Login.c_str(), Data.m_Password.c_str());
+	}
+
+	static void OnInsertAccount(const CRegistrationContextPtr& pContext, bool Success)
+	{
+		if(!Success)
+		{
+			Database->Execute<DB::REMOVE>("tw_accounts", "WHERE ID = '{}'", pContext->Data().m_InitID);
+			pContext->GS()->Chat(pContext->GetClientID(), "Registration failed. Please try again later.");
+			return;
+		}
+
+		AuthorizeAfterSuccess(pContext);
+	}
+
+	static void OnInsertAccountData(const CRegistrationContextPtr& pContext, bool Success)
+	{
+		if(!Success)
+		{
+			pContext->GS()->Chat(pContext->GetClientID(), "Registration failed. Please try again later.");
+			return;
+		}
+
+		Database->Execute<DB::INSERT>([pContext](bool DataSuccess) { OnInsertAccount(pContext, DataSuccess); },
+			"tw_accounts_data", "(ID, Nick) VALUES ('{}', '{}')", pContext->Data().m_InitID, pContext->Data().m_Nickname.c_str());
+	}
+}
 
 void CAccountManager::OnPlayerLogin(CPlayer* pPlayer)
 {
@@ -756,20 +815,15 @@ AccountCodeResult CAccountManager::RegisterAccount(int ClientID, const char* pLo
 	// generate a random password salt
 	char aSalt[32] = { 0 };
 	secure_random_password(aSalt, sizeof(aSalt), 24);
-	Database->Execute<DB::INSERT>("tw_accounts", "(ID, Username, Password, PasswordSalt, RegisterDate, RegisteredIP) VALUES ('{}', '{}', '{}', '{}', UTC_TIMESTAMP(), '{}')", InitID, cClearLogin.cstr(), HashPassword(cClearPass.cstr(), aSalt).c_str(), aSalt, aAddrStr);
-	Database->Execute<DB::INSERT, 100>("tw_accounts_data", "(ID, Nick) VALUES ('{}', '{}')", InitID, cClearNick.cstr());
+	const auto AccountPasswordHash = HashPassword(cClearPass.cstr(), aSalt);
+	auto pRegistrationContext = DbAsync::MakeContext<DbRegistration::CRegistrationPayload>(ClientID,
+		DbRegistration::CRegistrationPayload{ this, InitID, cClearLogin.cstr(), cClearPass.cstr(), cClearNick.cstr() });
 
-	// information
-	Server()->UpdateAccountBase(InitID, cClearNick.cstr(), g_Config.m_SvMinRating);
-	GS()->Chat(ClientID, "- Registration complete! Don't forget to save your data.");
-	GS()->Chat(ClientID, "# Your nickname is a unique identifier.");
-	GS()->Chat(ClientID, "# Log in: \"/login {} {}\"", cClearLogin.cstr(), cClearPass.cstr());
-	if(auto* pPlayer = GS()->GetPlayer(ClientID, false))
-	{
-		pPlayer->m_AuthMenuAllowRegister = false;
-		if(pPlayer->IsSameMotdMenu(MOTD_MENU_AUTH))
-			GS()->SendMenuMotd(pPlayer, MOTD_MENU_AUTH);
-	}
+	// start inserting account to database
+	Database->Execute<DB::INSERT>([pRegistrationContext](bool Success) { DbRegistration::OnInsertAccountData(pRegistrationContext, Success); },
+		"tw_accounts", "(ID, Username, Password, PasswordSalt, RegisterDate, RegisteredIP) VALUES ('{}', '{}', '{}', '{}', UTC_TIMESTAMP(), '{}')",
+		InitID, cClearLogin.cstr(), AccountPasswordHash.c_str(), aSalt, aAddrStr);
+
 	return AccountCodeResult::AOP_REGISTER_OK;
 }
 
