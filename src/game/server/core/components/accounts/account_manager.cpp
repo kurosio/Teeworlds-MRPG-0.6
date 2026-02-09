@@ -127,6 +127,10 @@ class DbAuthorization
 		}
 
 		const auto& Data = pContext->Data();
+		pPlayer->m_WaitingGuestTimeoutAuth = false;
+		if(!pPlayer->m_GuestLogin.empty() && Data.m_Login != pPlayer->m_GuestLogin)
+			pPlayer->m_GuestLogin.clear();
+
 		pPlayer->Account()->Init(Data.m_AccountID, pContext->GetClientID(), Data.m_Login.c_str(), Data.m_Language, Data.m_LoginDate, std::move(pRes));
 		pContext->GS()->Chat(pContext->GetClientID(), "- Welcome! You've successfully logged in!");
 		if(Data.m_PinCode.empty())
