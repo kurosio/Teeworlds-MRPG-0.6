@@ -143,7 +143,7 @@ private:
 
 using ResultPtr = std::shared_ptr<WrapperResultSet>;
 using CallbackResultPtr = std::function<void(ResultPtr)>;
-using CallbackUpdatePtr = std::function<void()>;
+using CallbackUpdatePtr = std::function<void(bool)>;
 
 
 // SECTION: CThreadPool Class
@@ -260,7 +260,8 @@ public:
 		}
 
 		void AtExecute(CallbackUpdatePtr pCallbackResult, int DelayMilliseconds = 0);
-		void Execute(int DelayMilliseconds = 0) { AtExecute(nullptr, DelayMilliseconds); }
+		void Execute(CallbackUpdatePtr pCallbackResult, int DelayMilliseconds = 0) { AtExecute(std::move(pCallbackResult), DelayMilliseconds); }
+		void Execute(int DelayMilliseconds = 0) { AtExecute(CallbackUpdatePtr(), DelayMilliseconds); }
 	};
 
 	class CResultQueryCustom : public CResultQuery
@@ -336,12 +337,24 @@ public:
 		std::string strQuery = fmt_default(pBuffer, std::forward<Ts>(args)...);
 		PrepareQueryCustom(T, std::move(strQuery))->Execute(Milliseconds);
 	}
+	template<DB T, int Milliseconds = 0, typename... Ts>
+	static std::enable_if_t<T == DB::OTHER, void> Execute(CallbackUpdatePtr pCallbackResult, const char* pBuffer, Ts&&... args)
+	{
+		std::string strQuery = fmt_default(pBuffer, std::forward<Ts>(args)...);
+		PrepareQueryCustom(T, std::move(strQuery))->AtExecute(std::move(pCallbackResult), Milliseconds);
+	}
 
 	template<DB T, int Milliseconds = 0, typename... Ts>
 	static std::enable_if_t<(T == DB::INSERT || T == DB::UPDATE || T == DB::REMOVE), void> Execute(const char* pTable, const char* pBuffer, Ts&&... args)
 	{
 		std::string strQuery = fmt_default(pBuffer, std::forward<Ts>(args)...);
 		PrepareQueryInsertUpdateDelete(T, pTable, std::move(strQuery))->Execute(Milliseconds);
+	}
+	template<DB T, int Milliseconds = 0, typename... Ts>
+	static std::enable_if_t<(T == DB::INSERT || T == DB::UPDATE || T == DB::REMOVE), void> Execute(CallbackUpdatePtr pCallbackResult, const char* pTable, const char* pBuffer, Ts&&... args)
+	{
+		std::string strQuery = fmt_default(pBuffer, std::forward<Ts>(args)...);
+		PrepareQueryInsertUpdateDelete(T, pTable, std::move(strQuery))->AtExecute(std::move(pCallbackResult), Milliseconds);
 	}
 };
 
