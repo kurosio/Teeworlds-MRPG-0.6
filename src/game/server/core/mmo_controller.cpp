@@ -649,8 +649,12 @@ void CMmoController::AsyncClientEnterMsgInfo(std::string_view ClientName, int Cl
 
 		// create guest account
 		const bool HasAccount = pRes->next();
+		const std::string GuestCredential = std::string("Guest-") + CapturedNickname;
+		pPlayer->m_WaitingGuestTimeoutAuth = false;
 		if(!HasAccount)
 		{
+			pPlayer->m_GuestLogin = GuestCredential;
+
 			pGS->Chat(-1, "Apparently, we have a new player, '{}'!", CapturedNickname);
 			pGS->Chat(ClientID, mystd::aesthetic::lineWaves<12>().c_str());
 			pGS->Chat(ClientID, "You are using guest mode.");
@@ -661,32 +665,29 @@ void CMmoController::AsyncClientEnterMsgInfo(std::string_view ClientName, int Cl
 		}
 
 		// initialize variables
-		const std::string GuestCredential = std::string("Guest-") + CapturedNickname;
 		const auto Login = pRes->getString("Username");
 		const auto TimeoutCode = pRes->getString("TimeoutCode");
 		const bool IsGuest = Login == GuestCredential;
 		const bool HasTimeoutCode = !TimeoutCode.empty();
-		pPlayer->m_WaitingGuestTimeoutAuth = false;
 
 		// guest auth (timeout or unsafe)
 		if(IsGuest)
 		{
+			pPlayer->m_GuestLogin = GuestCredential;
 			if(HasTimeoutCode)
 				pPlayer->m_WaitingGuestTimeoutAuth = true;
 			else
 				pGS->Core()->AccountManager()->LoginAccountRaw(ClientID, GuestCredential.c_str(), GuestCredential.c_str());
-
-			pPlayer->m_GuestLogin = GuestCredential;
 		}
 		else
 		{
+			pPlayer->m_GuestLogin.clear();
 			if(pPlayer && !pPlayer->IsAuthed())
 			{
 				pPlayer->m_AuthMenuAllowRegister = !HasAccount;
 				pGS->SendMenuMotd(pPlayer, MOTD_MENU_AUTH);
 			}
 			pGS->Chat(ClientID, "You need to log in using /login <user> <pass>!");
-			pPlayer->m_GuestLogin.clear();
 		}
 	});
 }
