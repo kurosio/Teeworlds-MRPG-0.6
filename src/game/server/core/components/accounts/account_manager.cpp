@@ -21,6 +21,134 @@ constexpr int LENGTH_PIN_MIN = 4;
 constexpr int AUTH_FIELD_LOGIN = 0;
 constexpr int AUTH_FIELD_PASSWORD = 1;
 
+namespace
+{
+	bool CheckLoginPasswordLength(CGS* pGS, int ClientID, const char* pLogin, const char* pPassword)
+	{
+		const int LengthLogin = str_length(pLogin);
+		const int LengthPassword = str_length(pPassword);
+		if(LengthLogin <= LENGTH_LOGPASS_MAX && LengthLogin >= LENGTH_LOGPASS_MIN
+			&& LengthPassword <= LENGTH_LOGPASS_MAX && LengthPassword >= LENGTH_LOGPASS_MIN)
+			return true;
+
+		pGS->Chat(ClientID, "The username and password must each contain '{} - {} characters'.", LENGTH_LOGPASS_MIN, LENGTH_LOGPASS_MAX);
+		return false;
+	}
+}
+
+class DbAuthorization
+{
+	struct CAuthorizationPayload
+	{
+		CAccountManager* m_pAccountManager{};
+		std::string m_Login{};
+		std::string m_Password{};
+		int m_AccountID{};
+		std::string m_Language{};
+		std::string m_LoginDate{};
+		std::string m_PinCode{};
+	};
+	using CAuthorizationContextPtr = std::shared_ptr<DbAsync::CContext<CAuthorizationPayload>>;
+
+	static void OnCheckNickname(const CAuthorizationContextPtr& pContext, ResultPtr pRes)
+	{
+		auto* pPlayer = pContext->GetPlayer(false);
+		if(!pPlayer)
+			return;
+
+		if(!pRes->next())
+		{
+			pContext->GS()->Chat(pContext->GetClientID(), "Sorry, we couldn't locate your username in our system.");
+			return;
+		}
+
+		auto& Data = pContext->Data();
+		Data.m_AccountID = pRes->getInt("ID");
+		auto pCheck = Database->Prepare<DB::SELECT>("ID, LoginDate, Language, PinCode, Password, PasswordSalt",
+			"tw_accounts", "WHERE Username = '{}' AND ID = '{}'", Data.m_Login, Data.m_AccountID);
+		pCheck->AtExecute([pContext](ResultPtr pCheckRes) { OnCheckCredentials(pContext, pCheckRes); });
+	}
+
+	static void OnCheckCredentials(const CAuthorizationContextPtr& pContext, ResultPtr pRes)
+	{
+		auto* pPlayer = pContext->GetPlayer(false);
+		if(!pPlayer)
+			return;
+
+		if(!pRes->next() || (pRes->getString("Password") != CAccountManager::HashPassword(pContext->Data().m_Password, pRes->getString("PasswordSalt"))))
+		{
+			pContext->GS()->Chat(pContext->GetClientID(), "Oops, that doesn't seem to be the right login or password");
+			return;
+		}
+
+		auto& Data = pContext->Data();
+		Data.m_Language = pRes->getString("Language");
+		Data.m_LoginDate = pRes->getString("LoginDate");
+		Data.m_PinCode = pRes->getString("PinCode");
+		auto pBan = Database->Prepare<DB::SELECT>("BannedUntil, Reason", "tw_accounts_bans", "WHERE AccountId = '{}' AND current_timestamp() < `BannedUntil`", Data.m_AccountID);
+		pBan->AtExecute([pContext](ResultPtr pBanRes) { OnCheckBans(pContext, pBanRes); });
+	}
+
+	static void OnCheckBans(const CAuthorizationContextPtr& pContext, ResultPtr pRes)
+	{
+		auto* pPlayer = pContext->GetPlayer(false);
+		if(!pPlayer)
+			return;
+
+		if(pRes->next())
+		{
+			const auto BannedUntil = pRes->getString("BannedUntil");
+			const auto Reason = pRes->getString("Reason");
+			pContext->GS()->Chat(pContext->GetClientID(), "You account was suspended until '{}' with the reason of '{}'.", BannedUntil, Reason);
+			return;
+		}
+
+		if(pContext->GS()->GetPlayerByUserID(pContext->Data().m_AccountID) != nullptr)
+		{
+			pContext->GS()->Chat(pContext->GetClientID(), "The account is already in the game.");
+			return;
+		}
+
+		auto pData = Database->Prepare<DB::SELECT>("*", "tw_accounts_data", "WHERE ID = '{}'", pContext->Data().m_AccountID);
+		pData->AtExecute([pContext](ResultPtr pDataRes) { OnLoadAccountData(pContext, pDataRes); });
+	}
+
+
+	static void OnLoadAccountData(const CAuthorizationContextPtr& pContext, ResultPtr pRes)
+	{
+		auto* pPlayer = pContext->GetPlayer(false);
+		if(!pPlayer)
+			return;
+
+		if(!pRes->next())
+		{
+			pContext->GS()->Chat(pContext->GetClientID(), "Authorization failed due to account data loading issue.");
+			return;
+		}
+
+		const auto& Data = pContext->Data();
+		pPlayer->Account()->Init(Data.m_AccountID, pContext->GetClientID(), Data.m_Login.c_str(), Data.m_Language, Data.m_LoginDate, std::move(pRes));
+		pContext->GS()->Chat(pContext->GetClientID(), "- Welcome! You've successfully logged in!");
+		if(Data.m_PinCode.empty())
+			pContext->GS()->Chat(pContext->GetClientID(), "PIN is not set, set it using '/set_pin'.");
+		if(pPlayer->m_pMotdMenu)
+			pPlayer->CloseMotdMenu();
+		pContext->GS()->m_pController->DoTeamChange(pPlayer);
+		Data.m_pAccountManager->LoadAccount(pPlayer, true);
+		g_EventListenerManager.Notify<IEventListener::PlayerLogin>(pPlayer, pPlayer->Account());
+		pPlayer->KillCharacter();
+	}
+
+public:
+	static void StartAuthorization(CAccountManager* pMgr, int ClientID, std::string Login, std::string Pass, std::string Nick, bool AutoAuthorization = false)
+	{
+		auto pContext = DbAsync::MakeContext<DbAuthorization::CAuthorizationPayload>(ClientID,
+			DbAuthorization::CAuthorizationPayload { pMgr, Login, Pass, 0, {}, {}, {}, AutoAuthorization });
+		auto pAuth = Database->Prepare<DB::SELECT>("ID", "tw_accounts_data", "WHERE Nick = '{}'", Nick);
+		pAuth->AtExecute([pContext](ResultPtr pRes) { DbAuthorization::OnCheckNickname(pContext, pRes); });
+	}
+};
+
 class DbRegistration
 {
 	struct CRegistrationPayload
@@ -116,8 +244,7 @@ class DbRegistration
 				pGS->SendMenuMotd(pPlayer, MOTD_MENU_AUTH);
 		}
 
-		if(Data.m_pAccountManager->LoginAccount(pContext->GetClientID(), Data.m_Login.c_str(), Data.m_Password.c_str()) != AccountCodeResult::AOP_LOGIN_OK)
-			pGS->Chat(pContext->GetClientID(), "Automatic authorization failed. Please use /login {} {}", Data.m_Login, Data.m_Password);
+		DbAuthorization::StartAuthorization(Data.m_pAccountManager, pContext->GetClientID(), Data.m_Login, Data.m_Password, Data.m_Nickname, true);
 	}
 
 public:
@@ -837,14 +964,8 @@ std::string CAccountManager::HashPassword(const std::string& Password, const std
 
 AccountCodeResult CAccountManager::RegisterAccount(int ClientID, const char* pLogin, const char* pPassword)
 {
-	// check length
-	const int LengthLogin = str_length(pLogin);
-	const int LengthPassword = str_length(pPassword);
-	if(LengthLogin > LENGTH_LOGPASS_MAX || LengthLogin < LENGTH_LOGPASS_MIN || LengthPassword > LENGTH_LOGPASS_MAX || LengthPassword < LENGTH_LOGPASS_MIN)
-	{
-		GS()->Chat(ClientID, "The username and password must each contain '{} - {} characters'.", LENGTH_LOGPASS_MIN, LENGTH_LOGPASS_MAX);
+	if(!CheckLoginPasswordLength(GS(), ClientID, pLogin, pPassword))
 		return AccountCodeResult::AOP_MISMATCH_LENGTH_SYMBOLS;
-	}
 
 	// convert the login and password to CSqlString objects
 	const auto cClearLogin = CSqlString<32>(pLogin);
@@ -867,73 +988,13 @@ AccountCodeResult CAccountManager::LoginAccount(int ClientID, const char* pLogin
 	if(!pPlayer)
 		return AccountCodeResult::AOP_UNKNOWN;
 
-	// check valid login and password
-	const int LengthLogin = str_length(pLogin);
-	const int LengthPassword = str_length(pPassword);
-	if(LengthLogin > LENGTH_LOGPASS_MAX || LengthLogin < LENGTH_LOGPASS_MIN || LengthPassword > LENGTH_LOGPASS_MAX || LengthPassword < LENGTH_LOGPASS_MIN)
-	{
-		GS()->Chat(ClientID, "The username and password must each contain '{} - {} characters'.", LENGTH_LOGPASS_MIN, LENGTH_LOGPASS_MAX);
+	if(!CheckLoginPasswordLength(GS(), ClientID, pLogin, pPassword))
 		return AccountCodeResult::AOP_MISMATCH_LENGTH_SYMBOLS;
-	}
 
-	// initialize sql string
 	const auto sqlStrLogin = CSqlString<32>(pLogin);
 	const auto sqlStrPass = CSqlString<32>(pPassword);
 	const auto sqlStrNick = CSqlString<32>(Server()->ClientName(ClientID));
-
-	// check if the account exists
-	ResultPtr pResAccount = Database->Execute<DB::SELECT>("*", "tw_accounts_data", "WHERE Nick = '{}'", sqlStrNick.cstr());
-	if(!pResAccount->next())
-	{
-		GS()->Chat(ClientID, "Sorry, we couldn't locate your username in our system.");
-		return AccountCodeResult::AOP_NICKNAME_NOT_EXIST;
-	}
-	int AccountID = pResAccount->getInt("ID");
-
-	// check is login and password correct
-	ResultPtr pResCheck = Database->Execute<DB::SELECT>("ID, LoginDate, Language, PinCode, Password, PasswordSalt",
-		"tw_accounts", "WHERE Username = '{}' AND ID = '{}'", sqlStrLogin.cstr(), AccountID);
-	if(!pResCheck->next() || str_comp(pResCheck->getString("Password").c_str(), HashPassword(sqlStrPass.cstr(), pResCheck->getString("PasswordSalt").c_str()).c_str()) != 0)
-	{
-		GS()->Chat(ClientID, "Oops, that doesn't seem to be the right login or password");
-		return AccountCodeResult::AOP_LOGIN_WRONG;
-	}
-
-	// check if the account is banned
-	ResultPtr pResBan = Database->Execute<DB::SELECT>("BannedUntil, Reason", "tw_accounts_bans", "WHERE AccountId = '{}' AND current_timestamp() < `BannedUntil`", AccountID);
-	if(pResBan->next())
-	{
-		const auto BannedUntil = pResBan->getString("BannedUntil");
-		const auto Reason = pResBan->getString("Reason");
-		GS()->Chat(ClientID, "You account was suspended until '{}' with the reason of '{}'.", BannedUntil, Reason);
-		return AccountCodeResult::AOP_ACCOUNT_BANNED;
-	}
-
-	// check is player ingame
-	if(GS()->GetPlayerByUserID(AccountID) != nullptr)
-	{
-		GS()->Chat(ClientID, "The account is already in the game.");
-		return AccountCodeResult::AOP_ALREADY_IN_GAME;
-	}
-
-	// Update player account information from the database
-	const auto Language = pResCheck->getString("Language");
-	const auto LoginDate = pResCheck->getString("LoginDate");
-	const auto PinCode = pResCheck->getString("PinCode");
-	pPlayer->Account()->Init(AccountID, ClientID, sqlStrLogin.cstr(), Language, LoginDate, std::move(pResAccount));
-
-	// Send success messages to the client
-	GS()->Chat(ClientID, "- Welcome! You've successfully logged in!");
-	if(PinCode.empty())
-		GS()->Chat(ClientID, "PIN is not set, set it using '/set_pin'.");
-	if(pPlayer->m_pMotdMenu)
-		pPlayer->CloseMotdMenu();
-	GS()->m_pController->DoTeamChange(pPlayer);
-	LoadAccount(pPlayer, true);
-	g_EventListenerManager.Notify<IEventListener::PlayerLogin>(pPlayer, pPlayer->Account());
-
-	// kill character
-	pPlayer->KillCharacter();
+	DbAuthorization::StartAuthorization(this, ClientID, sqlStrLogin.cstr(), sqlStrPass.cstr(), sqlStrNick.cstr());
 	return AccountCodeResult::AOP_LOGIN_OK;
 }
 
