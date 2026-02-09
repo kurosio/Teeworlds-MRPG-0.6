@@ -139,7 +139,7 @@ void CCommandProcessor::ConChatRegister(IConsole::IResult* pResult, void* pUser)
 	if(!pPlayer)
 		return;
 
-	if(pPlayer->IsAuthed() && pPlayer->m_GuestLogin.empty())
+	if(pPlayer->IsAuthed() && pPlayer->GetSharedData().m_GuestLogin.empty())
 	{
 		pGS->Chat(ClientID, "Sign out first before you create a new account.");
 		return;
@@ -502,8 +502,8 @@ void CCommandProcessor::ConChatTimeoutGuest(IConsole::IResult* pResult, void* pU
 		return;
 	}
 
-	if(pPlayer->m_WaitingGuestTimeoutAuth && !pPlayer->m_GuestLogin.empty())
-		pGS->Core()->AccountManager()->TryLoginGuestByTimeoutCode(ClientID, pGS->Server()->ClientName(ClientID), pTimeoutCode, pPlayer->m_GuestLogin.c_str());
+	if(pPlayer->GetSharedData().m_WaitingGuestTimeoutAuth && !pPlayer->GetSharedData().m_GuestLogin.empty())
+		pGS->Core()->AccountManager()->TryLoginGuestByTimeoutCode(ClientID, pGS->Server()->ClientName(ClientID), pTimeoutCode, pPlayer->GetSharedData().m_GuestLogin.c_str());
 }
 
 void CCommandProcessor::ConChatVoucher(IConsole::IResult* pResult, void* pUser)

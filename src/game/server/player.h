@@ -68,8 +68,6 @@ public:
 	std::optional<int> m_GroupFilter{};
 	std::optional<int> m_SubgroupFilter {};
 	bool m_AuthMenuAllowRegister {};
-	bool m_WaitingGuestTimeoutAuth {};
-	std::string m_GuestLogin {};
 
 
 	char m_aLastMsg[256]{};

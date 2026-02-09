@@ -206,6 +206,10 @@ struct CAccountSharedData
 	int m_LastKilledByWeapon;
 	CAuctionSlot m_TempAuctionSlot;
 
+	// guest account data
+	bool m_WaitingGuestTimeoutAuth {};
+	std::string m_GuestLogin {};
+
 	// temp for searching
 	char m_aGuildSearchBuf[32];
 	char m_aPlayerSearchBuf[32];

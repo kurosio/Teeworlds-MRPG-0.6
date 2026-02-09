@@ -650,10 +650,10 @@ void CMmoController::AsyncClientEnterMsgInfo(std::string_view ClientName, int Cl
 		// create guest account
 		const bool HasAccount = pRes->next();
 		const std::string GuestCredential = CAccountManager::BuildGuestCredential(CapturedNickname.c_str());
-		pPlayer->m_WaitingGuestTimeoutAuth = false;
+		pPlayer->GetSharedData().m_WaitingGuestTimeoutAuth = false;
 		if(!HasAccount)
 		{
-			pPlayer->m_GuestLogin = GuestCredential;
+			pPlayer->GetSharedData().m_GuestLogin = GuestCredential;
 
 			pGS->Chat(-1, "Apparently, we have a new player, '{}'!", CapturedNickname);
 			pGS->Chat(ClientID, mystd::aesthetic::lineWaves<12>().c_str());
@@ -673,15 +673,15 @@ void CMmoController::AsyncClientEnterMsgInfo(std::string_view ClientName, int Cl
 		// guest auth (timeout or unsafe)
 		if(IsGuest)
 		{
-			pPlayer->m_GuestLogin = GuestCredential;
+			pPlayer->GetSharedData().m_GuestLogin = GuestCredential;
 			if(HasTimeoutCode)
-				pPlayer->m_WaitingGuestTimeoutAuth = true;
+				pPlayer->GetSharedData().m_WaitingGuestTimeoutAuth = true;
 			else
 				pGS->Core()->AccountManager()->LoginAccountRaw(ClientID, GuestCredential.c_str(), GuestCredential.c_str());
 		}
 		else
 		{
-			pPlayer->m_GuestLogin.clear();
+			pPlayer->GetSharedData().m_GuestLogin.clear();
 			if(pPlayer && !pPlayer->IsAuthed())
 			{
 				pPlayer->m_AuthMenuAllowRegister = !HasAccount;
