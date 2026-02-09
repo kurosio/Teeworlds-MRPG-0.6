@@ -140,10 +140,10 @@ class DbAuthorization
 	}
 
 public:
-	static void StartAuthorization(CAccountManager* pMgr, int ClientID, std::string Login, std::string Pass, std::string Nick, bool AutoAuthorization = false)
+	static void StartAuthorization(CAccountManager* pMgr, int ClientID, std::string Login, std::string Pass, std::string Nick)
 	{
 		auto pContext = DbAsync::MakeContext<DbAuthorization::CAuthorizationPayload>(ClientID,
-			DbAuthorization::CAuthorizationPayload { pMgr, Login, Pass, 0, {}, {}, {}, AutoAuthorization });
+			DbAuthorization::CAuthorizationPayload { pMgr, Login, Pass, 0, {}, {}, {} });
 		auto pAuth = Database->Prepare<DB::SELECT>("ID", "tw_accounts_data", "WHERE Nick = '{}'", Nick);
 		pAuth->AtExecute([pContext](ResultPtr pRes) { DbAuthorization::OnCheckNickname(pContext, pRes); });
 	}
@@ -244,7 +244,7 @@ class DbRegistration
 				pGS->SendMenuMotd(pPlayer, MOTD_MENU_AUTH);
 		}
 
-		DbAuthorization::StartAuthorization(Data.m_pAccountManager, pContext->GetClientID(), Data.m_Login, Data.m_Password, Data.m_Nickname, true);
+		DbAuthorization::StartAuthorization(Data.m_pAccountManager, pContext->GetClientID(), Data.m_Login, Data.m_Password, Data.m_Nickname);
 	}
 
 public:
