@@ -23,16 +23,6 @@ constexpr int AUTH_FIELD_PASSWORD = 1;
 
 namespace
 {
-	std::string BuildGuestCredential(const char* pNickname)
-	{
-		return std::string("Guest-") + pNickname;
-	}
-
-	bool IsGuestCredentialForNickname(const std::string& Login, const char* pNickname)
-	{
-		return Login == BuildGuestCredential(pNickname);
-	}
-
 	bool CheckLoginPasswordLength(CGS* pGS, int ClientID, const char* pLogin, const char* pPassword)
 	{
 		const int LengthLogin = str_length(pLogin);
@@ -215,7 +205,7 @@ class DbRegistration
 			const auto AccountID = pRes->getInt("ID");
 			const auto CurrentLogin = pRes->getString("Username");
 			const auto TimeoutCode = pRes->getString("TimeoutCode");
-			if(!IsGuestCredentialForNickname(CurrentLogin, Data.m_Nickname.c_str()))
+			if(!CAccountManager::IsGuestCredentialForNickname(CurrentLogin, Data.m_Nickname.c_str()))
 			{
 				pGS->Chat(ClientID, "Sorry, but that game nickname is already taken by another player. To regain access, reach out to the support team or alter your nickname.");
 				pGS->Chat(ClientID, "Discord: \"{}\".", g_Config.m_SvDiscordInviteLink);
@@ -1003,6 +993,16 @@ bool CAccountManager::OnPlayerMotdCommand(CPlayer* pPlayer, CMotdPlayerData* pMo
 	return false;
 }
 
+std::string CAccountManager::BuildGuestCredential(const char* pNickname)
+{
+	return std::string("Guest-") + pNickname;
+}
+
+bool CAccountManager::IsGuestCredentialForNickname(std::string_view Login, const char* pNickname)
+{
+	return Login == BuildGuestCredential(pNickname);
+}
+
 std::string CAccountManager::HashPassword(const std::string& Password, const std::string& Salt)
 {
 	std::string plaintext = Salt + Password + Salt;
@@ -1038,7 +1038,7 @@ AccountCodeResult CAccountManager::RegisterAccountRaw(int ClientID, const char* 
 
 AccountCodeResult CAccountManager::RegisterGuestAccount(int ClientID, const char* pNickname)
 {
-	const auto GuestCredential = BuildGuestCredential(pNickname);
+	const auto GuestCredential = CAccountManager::BuildGuestCredential(pNickname);
 	RegisterAccountRaw(ClientID, GuestCredential.c_str(), GuestCredential.c_str());
 	return AccountCodeResult::AOP_REGISTER_OK;
 }

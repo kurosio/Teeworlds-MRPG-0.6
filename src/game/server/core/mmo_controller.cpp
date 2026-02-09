@@ -649,7 +649,7 @@ void CMmoController::AsyncClientEnterMsgInfo(std::string_view ClientName, int Cl
 
 		// create guest account
 		const bool HasAccount = pRes->next();
-		const std::string GuestCredential = std::string("Guest-") + CapturedNickname;
+		const std::string GuestCredential = CAccountManager::BuildGuestCredential(CapturedNickname.c_str());
 		pPlayer->m_WaitingGuestTimeoutAuth = false;
 		if(!HasAccount)
 		{

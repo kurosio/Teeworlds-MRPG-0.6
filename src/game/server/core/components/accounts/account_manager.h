@@ -55,7 +55,10 @@ public:
 		return CAccountData::ms_aData.contains(ClientID);
 	}
 
+	static std::string BuildGuestCredential(const char* pNickname);
+	static bool IsGuestCredentialForNickname(std::string_view Login, const char* pNickname);
 	static std::string HashPassword(const std::string& Password, const std::string& Salt);
+
 	void UseVoucher(int ClientID, const char* pVoucher) const;
 	void ShowPlayerAttributesByGroup(CPlayer* pPlayer, std::string_view Title, AttributeGroup Group) const;
 
