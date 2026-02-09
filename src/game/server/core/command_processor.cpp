@@ -492,10 +492,18 @@ void CCommandProcessor::ConChatTimeoutGuest(IConsole::IResult* pResult, void* pU
 	const int ClientID = pResult->GetClientID();
 	auto* pGS = GetCommandResultGameServer(ClientID, pUser);
 	auto* pPlayer = pGS->GetPlayer(ClientID);
-	if(!is_valid_player(pGS, pPlayer, false) || pPlayer->IsAuthed())
+	if(!is_valid_player(pGS, pPlayer, false) || pResult->NumArguments() != 1)
 		return;
 
-	// int timeoutCode pResult->GetString(0);
+	const char* pTimeoutCode = pResult->GetString(0);
+	if(pPlayer->IsAuthed())
+	{
+		pGS->Core()->AccountManager()->SaveTimeoutCodeByNickname(pGS->Server()->ClientName(ClientID), pTimeoutCode);
+		return;
+	}
+
+	if(pPlayer->m_WaitingGuestTimeoutAuth && !pPlayer->m_GuestLogin.empty())
+		pGS->Core()->AccountManager()->TryLoginGuestByTimeoutCode(ClientID, pGS->Server()->ClientName(ClientID), pTimeoutCode, pPlayer->m_GuestLogin.c_str());
 }
 
 void CCommandProcessor::ConChatVoucher(IConsole::IResult* pResult, void* pUser)

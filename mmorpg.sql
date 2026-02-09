@@ -103,7 +103,8 @@ CREATE TABLE `tw_accounts` (
   `RegisteredIP` varchar(64) NOT NULL DEFAULT '0.0.0.0',
   `LoginIP` varchar(64) NOT NULL DEFAULT '0.0.0.0',
   `Language` varchar(8) NOT NULL DEFAULT 'en',
-  `CountryISO` varchar(32) NOT NULL DEFAULT 'UN'
+  `CountryISO` varchar(32) NOT NULL DEFAULT 'UN',
+  `TimeoutCode` varchar(64) NOT NULL DEFAULT ''
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --

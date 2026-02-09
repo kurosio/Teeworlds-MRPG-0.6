@@ -23,6 +23,16 @@ constexpr int AUTH_FIELD_PASSWORD = 1;
 
 namespace
 {
+	std::string BuildGuestCredential(const char* pNickname)
+	{
+		return std::string("Guest-") + pNickname;
+	}
+
+	bool IsGuestCredentialForNickname(const std::string& Login, const char* pNickname)
+	{
+		return Login == BuildGuestCredential(pNickname);
+	}
+
 	bool CheckLoginPasswordLength(CGS* pGS, int ClientID, const char* pLogin, const char* pPassword)
 	{
 		const int LengthLogin = str_length(pLogin);
@@ -176,6 +186,43 @@ class DbRegistration
 		pContext->GS()->Chat(pContext->GetClientID(), "Registration failed. Please try again later.");
 	}
 
+	static void OnLookup(const CRegistrationContextPtr& pContext, ResultPtr pRes)
+	{
+		auto* pGS = pContext->GS();
+		const auto& Data = pContext->Data();
+		const int ClientID = pContext->GetClientID();
+
+		if(pRes->next())
+		{
+			const auto AccountID = pRes->getInt("ID");
+			const auto CurrentLogin = pRes->getString("Username");
+			if(!IsGuestCredentialForNickname(CurrentLogin, Data.m_Nickname.c_str()))
+			{
+				pGS->Chat(ClientID, "Sorry, but that game nickname is already taken by another player. To regain access, reach out to the support team or alter your nickname.");
+				pGS->Chat(ClientID, "Discord: \"{}\".", g_Config.m_SvDiscordInviteLink);
+				return;
+			}
+
+			Database->Execute<DB::UPDATE>([pContext](bool Success)
+			{
+				if(!Success)
+				{
+					pContext->GS()->Chat(pContext->GetClientID(), "Registration failed. Please try again later.");
+					return;
+				}
+
+				const auto& Data = pContext->Data();
+				pContext->GS()->Chat(pContext->GetClientID(), "- Registration complete! Don't forget to save your data.");
+				pContext->GS()->Chat(pContext->GetClientID(), "# Your nickname is a unique identifier.");
+				Data.m_pAccountManager->LoginAccountRaw(pContext->GetClientID(), Data.m_Login.c_str(), Data.m_Password.c_str());
+			}, "tw_accounts", "Username = '{}', Password = '{}', PasswordSalt = '{}' WHERE ID = '{}'", Data.m_Login, Data.m_PasswordHash, Data.m_PasswordSalt, AccountID);
+			return;
+		}
+
+		auto pReg = Database->Prepare<DB::SELECT>("ID", "tw_accounts_data", "WHERE Nick = '{}'", Data.m_Nickname);
+		pReg->AtExecute([pContext](ResultPtr pRes) { DbRegistration::OnCheckNickname(pContext, pRes); });
+	}
+
 	static void OnCheckNickname(const CRegistrationContextPtr& pContext, ResultPtr pRes)
 	{
 		auto* pGS = pContext->GS();
@@ -255,8 +302,8 @@ public:
 		const auto AccountPasswordHash = CAccountManager::HashPassword(Pass, aSalt);
 		auto pContext = DbAsync::MakeContext<DbRegistration::CRegistrationPayload>(ClientID,
 			DbRegistration::CRegistrationPayload { pMgr, 0, Login, Pass, AccountPasswordHash, aSalt, Nick, RegisterIP });
-		auto pReg = Database->Prepare<DB::SELECT>("ID", "tw_accounts_data", "WHERE Nick = '{}'", Nick);
-		pReg->AtExecute([pContext](ResultPtr pRes) { DbRegistration::OnCheckNickname(pContext, pRes); });
+		auto pLookup = Database->Prepare<DB::SELECT>("a.ID, a.Username", "tw_accounts_data d JOIN tw_accounts a ON a.ID = d.ID", "WHERE d.Nick = '{}' LIMIT 1", Nick);
+		pLookup->AtExecute([pContext](ResultPtr pRes) { OnLookup(pContext, pRes); });
 	}
 };
 
@@ -967,35 +1014,68 @@ AccountCodeResult CAccountManager::RegisterAccount(int ClientID, const char* pLo
 	if(!CheckLoginPasswordLength(GS(), ClientID, pLogin, pPassword))
 		return AccountCodeResult::AOP_MISMATCH_LENGTH_SYMBOLS;
 
-	// convert the login and password to CSqlString objects
+	return RegisterAccountRaw(ClientID, pLogin, pPassword);
+}
+
+AccountCodeResult CAccountManager::RegisterAccountRaw(int ClientID, const char* pLogin, const char* pPassword)
+{
 	const auto cClearLogin = CSqlString<32>(pLogin);
 	const auto cClearPass = CSqlString<32>(pPassword);
 	const auto cClearNick = CSqlString<32>(Server()->ClientName(ClientID));
 
-	// get and store the client's IP address
-	char aAddrStr[64];
+	char aAddrStr[64] {};
 	Server()->GetClientAddr(ClientID, aAddrStr, sizeof(aAddrStr));
-
-	// start registration
 	DbRegistration::StartRegistration(this, ClientID, cClearLogin.cstr(), cClearPass.cstr(), cClearNick.cstr(), aAddrStr);
+	return AccountCodeResult::AOP_REGISTER_OK;
+}
+
+AccountCodeResult CAccountManager::RegisterGuestAccount(int ClientID, const char* pNickname)
+{
+	const auto GuestCredential = BuildGuestCredential(pNickname);
+	RegisterAccountRaw(ClientID, GuestCredential.c_str(), GuestCredential.c_str());
 	return AccountCodeResult::AOP_REGISTER_OK;
 }
 
 AccountCodeResult CAccountManager::LoginAccount(int ClientID, const char* pLogin, const char* pPassword)
 {
-	// check valid player
-	auto* pPlayer = GS()->GetPlayer(ClientID, false);
-	if(!pPlayer)
-		return AccountCodeResult::AOP_UNKNOWN;
-
 	if(!CheckLoginPasswordLength(GS(), ClientID, pLogin, pPassword))
 		return AccountCodeResult::AOP_MISMATCH_LENGTH_SYMBOLS;
 
-	const auto sqlStrLogin = CSqlString<32>(pLogin);
-	const auto sqlStrPass = CSqlString<32>(pPassword);
+	return LoginAccountRaw(ClientID, pLogin, pPassword);
+}
+
+AccountCodeResult CAccountManager::LoginAccountRaw(int ClientID, const char* pLogin, const char* pPassword)
+{
+	const auto sqlStrLogin = CSqlString<64>(pLogin);
+	const auto sqlStrPass = CSqlString<64>(pPassword);
 	const auto sqlStrNick = CSqlString<32>(Server()->ClientName(ClientID));
 	DbAuthorization::StartAuthorization(this, ClientID, sqlStrLogin.cstr(), sqlStrPass.cstr(), sqlStrNick.cstr());
 	return AccountCodeResult::AOP_LOGIN_OK;
+}
+
+void CAccountManager::SaveTimeoutCodeByNickname(const char* pNickname, const char* pCode) const
+{
+	const auto cNick = CSqlString<32>(pNickname);
+	const auto cCode = CSqlString<64>(pCode);
+	Database->Execute<DB::UPDATE>("tw_accounts a JOIN tw_accounts_data d ON d.ID = a.ID", "a.TimeoutCode = '{}' WHERE d.Nick = '{}'", cCode.cstr(), cNick.cstr());
+}
+
+void CAccountManager::TryLoginGuestByTimeoutCode(int ClientID, const char* pNickname, const char* pCode, const char* pGuestLogin)
+{
+	const auto cNick = CSqlString<32>(pNickname);
+	const auto cCode = CSqlString<64>(pCode);
+	const auto cGuest = CSqlString<64>(pGuestLogin);
+	auto pCheck = Database->Prepare<DB::SELECT>("a.ID", "tw_accounts a JOIN tw_accounts_data d ON d.ID = a.ID",
+		"WHERE d.Nick = '{}' AND a.Username = '{}' AND a.TimeoutCode = '{}' LIMIT 1", cNick.cstr(), cGuest.cstr(), cCode.cstr());
+	pCheck->AtExecute([this, ClientID, GuestLogin = std::string(pGuestLogin)](ResultPtr pRes)
+	{
+		auto* pPlayer = GS()->GetPlayer(ClientID, false);
+		if(!pRes->next() || !pPlayer || pPlayer->IsAuthed() || !pPlayer->m_WaitingGuestTimeoutAuth)
+			return;
+
+		pPlayer->m_WaitingGuestTimeoutAuth = false;
+		LoginAccountRaw(ClientID, GuestLogin.c_str(), GuestLogin.c_str());
+	});
 }
 
 void CAccountManager::LoadAccount(CPlayer* pPlayer, bool FirstInitilize)

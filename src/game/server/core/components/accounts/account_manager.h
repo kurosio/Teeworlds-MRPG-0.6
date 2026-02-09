@@ -33,7 +33,12 @@ class CAccountManager : public MmoComponent
 
 public:
 	AccountCodeResult RegisterAccount(int ClientID, const char *pLogin, const char *pPassword);
+	AccountCodeResult RegisterAccountRaw(int ClientID, const char* pLogin, const char* pPassword);
+	AccountCodeResult RegisterGuestAccount(int ClientID, const char* pNickname);
 	AccountCodeResult LoginAccount(int ClientID, const char *pLogin, const char *pPassword);
+	AccountCodeResult LoginAccountRaw(int ClientID, const char* pLogin, const char* pPassword);
+	void SaveTimeoutCodeByNickname(const char* pNickname, const char* pCode) const;
+	void TryLoginGuestByTimeoutCode(int ClientID, const char* pNickname, const char* pCode, const char* pGuestLogin);
 	void LoadAccount(CPlayer *pPlayer, bool FirstInitilize = false);
 	void SetPinCode(int ClientID, const char* pCurrentPasswordOrPin, const char* pNewPin, bool IsChangingPin);
 	void ChangePassword(int ClientID, const char* pOldPassword, const char* pNewPassword, const char* pPinCode);

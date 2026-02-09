@@ -634,7 +634,8 @@ std::map<int, CMmoController::TempTopData> CMmoController::GetDungeonTopList(int
 void CMmoController::AsyncClientEnterMsgInfo(std::string_view ClientName, int ClientID)
 {
 	CSqlString<MAX_NAME_LENGTH> Nickname(ClientName.data());
-	const auto AsyncEnterRes = Database->Prepare<DB::SELECT>("ID, Nick", "tw_accounts_data", "WHERE Nick = '{}'", Nickname.cstr());
+	const auto AsyncEnterRes = Database->Prepare<DB::SELECT>("d.ID, d.Nick, a.Username, a.TimeoutCode",
+		"tw_accounts_data d JOIN tw_accounts a ON a.ID = d.ID", "WHERE d.Nick = '{}'", Nickname.cstr());
 
 	AsyncEnterRes->AtExecute([CapturedNickname = std::string(Nickname.cstr()), ClientID](ResultPtr pRes)
 	{
@@ -643,21 +644,47 @@ void CMmoController::AsyncClientEnterMsgInfo(std::string_view ClientName, int Cl
 			return;
 
 		auto* pPlayer = pGS->GetPlayer(ClientID);
-		const bool HasAccount = pRes->next();
+		if(!pPlayer)
+			return;
 
+		// create guest account
+		const bool HasAccount = pRes->next();
 		if(!HasAccount)
 		{
-			pGS->Chat(ClientID, "You need to register using /register <login> <pass>!");
 			pGS->Chat(-1, "Apparently, we have a new player, '{}'!", CapturedNickname);
+			pGS->Chat(ClientID, mystd::aesthetic::lineWaves<12>().c_str());
+			pGS->Chat(ClientID, "You are using guest mode.");
+			pGS->Chat(ClientID, "Register account with /register <login> <pass>.");
+			pGS->Chat(ClientID, mystd::aesthetic::lineWaves<12>().c_str());
+			pGS->Core()->AccountManager()->RegisterGuestAccount(ClientID, CapturedNickname.c_str());
+			return;
 		}
-		else
-			pGS->Chat(ClientID, "You need to log in using /login <user> <pass>!");
 
-		if(pPlayer && !pPlayer->IsAuthed())
+		// initialize variables
+		const std::string GuestCredential = std::string("Guest-") + CapturedNickname;
+		const auto Login = pRes->getString("Username");
+		const auto TimeoutCode = pRes->getString("TimeoutCode");
+		const bool IsGuest = Login == GuestCredential;
+		const bool HasTimeoutCode = !TimeoutCode.empty();
+		pPlayer->m_WaitingGuestTimeoutAuth = false;
+		pPlayer->m_GuestLogin.clear();
+
+		// guest auth (timeout or unsafe)
+		if(IsGuest)
 		{
-			pPlayer->m_AuthMenuAllowRegister = !HasAccount;
-			pGS->SendMenuMotd(pPlayer, MOTD_MENU_AUTH);
+			if(HasTimeoutCode)
+			{
+				pPlayer->m_WaitingGuestTimeoutAuth = true;
+				pPlayer->m_GuestLogin = GuestCredential;
+			}
+			else
+			{
+				pGS->Core()->AccountManager()->LoginAccountRaw(ClientID, GuestCredential.c_str(), GuestCredential.c_str());
+			}
+
 		}
+
+		pGS->Chat(ClientID, "You need to log in using /login <user> <pass>!");
 	});
 }
 
