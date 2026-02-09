@@ -684,6 +684,12 @@ void CMmoController::AsyncClientEnterMsgInfo(std::string_view ClientName, int Cl
 
 		}
 
+		// default auth menu
+		if(pPlayer && !pPlayer->IsAuthed())
+		{
+			pPlayer->m_AuthMenuAllowRegister = !HasAccount;
+			pGS->SendMenuMotd(pPlayer, MOTD_MENU_AUTH);
+		}
 		pGS->Chat(ClientID, "You need to log in using /login <user> <pass>!");
 	});
 }

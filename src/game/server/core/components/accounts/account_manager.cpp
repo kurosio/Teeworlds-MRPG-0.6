@@ -219,8 +219,9 @@ class DbRegistration
 			return;
 		}
 
-		auto pReg = Database->Prepare<DB::SELECT>("ID", "tw_accounts_data", "WHERE Nick = '{}'", Data.m_Nickname);
-		pReg->AtExecute([pContext](ResultPtr pRes) { DbRegistration::OnCheckNickname(pContext, pRes); });
+		auto pLookup = Database->Prepare<DB::SELECT>("a.ID, a.Username", "tw_accounts_data d JOIN tw_accounts a ON a.ID = d.ID",
+			"WHERE d.Nick = '{}' LIMIT 1", Data.m_Nickname);
+		pLookup->AtExecute([pContext](ResultPtr pRes) { OnLookup(pContext, pRes); });
 	}
 
 	static void OnCheckNickname(const CRegistrationContextPtr& pContext, ResultPtr pRes)
@@ -302,8 +303,8 @@ public:
 		const auto AccountPasswordHash = CAccountManager::HashPassword(Pass, aSalt);
 		auto pContext = DbAsync::MakeContext<DbRegistration::CRegistrationPayload>(ClientID,
 			DbRegistration::CRegistrationPayload { pMgr, 0, Login, Pass, AccountPasswordHash, aSalt, Nick, RegisterIP });
-		auto pLookup = Database->Prepare<DB::SELECT>("a.ID, a.Username", "tw_accounts_data d JOIN tw_accounts a ON a.ID = d.ID", "WHERE d.Nick = '{}' LIMIT 1", Nick);
-		pLookup->AtExecute([pContext](ResultPtr pRes) { OnLookup(pContext, pRes); });
+		auto pReg = Database->Prepare<DB::SELECT>("ID", "tw_accounts_data", "WHERE Nick = '{}'", Nick);
+		pReg->AtExecute([pContext](ResultPtr pRes) { DbRegistration::OnCheckNickname(pContext, pRes); });
 	}
 };
 
