@@ -8,6 +8,98 @@
 
 #include <components/Eidolons/EidolonManager.h>
 #include <components/mails/mail_wrapper.h>
+#include <game/server/core/tools/db_async_context.h>
+
+namespace
+{
+	class DbInventorySave
+	{
+		inline static std::unordered_map<uint64_t, uint64_t> ms_PendingSerials {};
+		inline static std::mutex ms_PendingSerialsLock {};
+
+		struct CSavePayload
+		{
+			int m_UserID{};
+			int m_ItemID{};
+			int m_Value{};
+			int m_Settings{};
+			int m_Enchant{};
+			int m_Durability{};
+			uint64_t m_Key{};
+			uint64_t m_Serial{};
+		};
+		using CSaveContextPtr = std::shared_ptr<DbAsync::CContext<CSavePayload>>;
+		static uint64_t MakeKey(int UserID, int ItemID)
+		{
+			return (static_cast<uint64_t>(static_cast<uint32_t>(UserID)) << 32) | static_cast<uint32_t>(ItemID);
+		}
+
+		static bool IsLatest(const CSaveContextPtr& pContext)
+		{
+			std::lock_guard<std::mutex> Guard(ms_PendingSerialsLock);
+			const auto& Data = pContext->Data();
+			const auto it = ms_PendingSerials.find(Data.m_Key);
+			return it != ms_PendingSerials.end() && it->second == Data.m_Serial;
+		}
+
+		static uint64_t NextSerial(uint64_t Key)
+		{
+			std::lock_guard<std::mutex> Guard(ms_PendingSerialsLock);
+			return ++ms_PendingSerials[Key];
+		}
+
+		static bool ConsumeLatest(const CSaveContextPtr& pContext)
+		{
+			std::lock_guard<std::mutex> Guard(ms_PendingSerialsLock);
+			const auto& Data = pContext->Data();
+			const auto it = ms_PendingSerials.find(Data.m_Key);
+			if(it == ms_PendingSerials.end() || it->second != Data.m_Serial)
+				return false;
+
+			ms_PendingSerials.erase(it);
+			return true;
+		}
+
+		static void OnFinalize(const CSaveContextPtr& pContext, bool)
+		{
+			ConsumeLatest(pContext);
+		}
+
+		static void OnWrite(const CSaveContextPtr& pContext)
+		{
+			if(!IsLatest(pContext))
+				return;
+
+			const auto& Data = pContext->Data();
+			if(Data.m_Value <= 0)
+			{
+				Database->Execute<DB::REMOVE>([pContext](bool Success) { OnFinalize(pContext, Success); },
+					"tw_accounts_items", "WHERE ItemID = '{}' AND UserID = '{}'", Data.m_ItemID, Data.m_UserID);
+				return;
+			}
+
+			Database->Execute<DB::INSERT>([pContext](bool Success) { OnFinalize(pContext, Success); },
+				"tw_accounts_items",
+				"(ItemID, UserID, Value, Settings, Enchant, Durability) VALUES ('{}', '{}', '{}', '{}', '{}', '{}') "
+				"ON DUPLICATE KEY UPDATE Value = '{}', Settings = '{}', Enchant = '{}', Durability = '{}'",
+				Data.m_ItemID, Data.m_UserID, Data.m_Value, Data.m_Settings, Data.m_Enchant, Data.m_Durability,
+				Data.m_Value, Data.m_Settings, Data.m_Enchant, Data.m_Durability);
+		}
+
+	public:
+		static void Start(CPlayer* pPlayer, int ItemID, int Value, int Settings, int Enchant, int Durability)
+		{
+			const int UserID = pPlayer->Account()->GetID();
+			const uint64_t Key = MakeKey(UserID, ItemID);
+			const uint64_t Serial = NextSerial(Key);
+			auto pContext = DbAsync::MakeContext<CSavePayload>(pPlayer->GetCID(), CSavePayload {
+				UserID, ItemID, Value, Settings, Enchant, Durability > 0 ? Durability : 100, Key, Serial,
+			});
+
+			OnWrite(pContext);
+		}
+	};
+}
 
 CGS* CPlayerItem::GS() const
 {
@@ -490,45 +582,7 @@ bool CPlayerItem::Save()
 	if(!pPlayer || !pPlayer->IsAuthed())
 		return false;
 
-	int userId = pPlayer->Account()->GetID();
-	int itemId = m_ID;
-	int itemValue = m_Value;
-	int itemSettings = m_Settings;
-	int itemEnchant = m_Enchant;
-	int itemDurability = m_Durability;
-
-	auto pResCheck = Database->Prepare<DB::SELECT>("ItemID, UserID", "tw_accounts_items", "WHERE ItemID = '{}' AND UserID = '{}'", itemId, userId);
-	pResCheck->AtExecute([this, itemId, userId, itemValue, itemSettings, itemEnchant, itemDurability](ResultPtr pRes)
-	{
-		if(!pRes)
-			return;
-
-		// check database value
-		if(pRes && pRes->next())
-		{
-			// remove
-			if(!itemValue)
-			{
-				Database->Execute<DB::REMOVE>("tw_accounts_items", "WHERE ItemID = '{}' AND UserID = '{}'", itemId, userId);
-				return;
-			}
-
-			// update
-			Database->Execute<DB::UPDATE>("tw_accounts_items", "Value = '{}', Settings = '{}', Enchant = '{}', Durability = '{}' WHERE UserID = '{}' AND ItemID = '{}'",
-				itemValue, itemSettings, itemEnchant, itemDurability, userId, itemId);
-			return;
-		}
-
-		// insert item
-		if(itemValue)
-		{
-			m_Durability = 100; // TODO: need fix it
-			Database->Execute<DB::INSERT>("tw_accounts_items", "(ItemID, UserID, Value, Settings, Enchant, Durability) VALUES ('{}', '{}', '{}', '{}', '{}', '{}')",
-				itemId, userId, itemValue, itemSettings, itemEnchant, m_Durability);
-			return;
-		}
-
-	});
+	DbInventorySave::Start(pPlayer, m_ID, m_Value, m_Settings, m_Enchant, m_Durability);
 
 	return true;
 }
