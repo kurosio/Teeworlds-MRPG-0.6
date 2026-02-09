@@ -21,7 +21,7 @@ constexpr int LENGTH_PIN_MIN = 4;
 constexpr int AUTH_FIELD_LOGIN = 0;
 constexpr int AUTH_FIELD_PASSWORD = 1;
 
-namespace DbRegistration
+class DbRegistration
 {
 	struct CRegistrationPayload
 	{
@@ -29,9 +29,77 @@ namespace DbRegistration
 		int m_InitID{};
 		std::string m_Login{};
 		std::string m_Password{};
+		std::string m_PasswordHash{};
+		std::string m_PasswordSalt{};
 		std::string m_Nickname{};
+		std::string m_RegisteredIP{};
 	};
 	using CRegistrationContextPtr = std::shared_ptr<DbAsync::CContext<CRegistrationPayload>>;
+
+	static void CleanupAccountOnError(const CRegistrationContextPtr& pContext)
+	{
+		const auto& Data = pContext->Data();
+		if(Data.m_InitID > 0)
+			Database->Execute<DB::REMOVE>("tw_accounts", "WHERE ID = '{}'", Data.m_InitID);
+		else
+			Database->Execute<DB::REMOVE>("tw_accounts", "WHERE Username = '{}' AND Password = '{}' AND PasswordSalt = '{}' ORDER BY ID DESC LIMIT 1",
+				Data.m_Login, Data.m_PasswordHash, Data.m_PasswordSalt);
+
+		pContext->GS()->Chat(pContext->GetClientID(), "Registration failed. Please try again later.");
+	}
+
+	static void OnCheckNickname(const CRegistrationContextPtr& pContext, ResultPtr pRes)
+	{
+		auto* pGS = pContext->GS();
+		if(pRes->next())
+		{
+			pGS->Chat(pContext->GetClientID(), "Sorry, but that game nickname is already taken by another player. To regain access, reach out to the support team or alter your nickname.");
+			pGS->Chat(pContext->GetClientID(), "Discord: \"{}\".", g_Config.m_SvDiscordInviteLink);
+			return;
+		}
+
+		const auto& Data = pContext->Data();
+		Database->Execute<DB::INSERT>([pContext](bool Success) { OnInsertAccount(pContext, Success); },
+			"tw_accounts", "(Username, Password, PasswordSalt, RegisterDate, RegisteredIP) VALUES ('{}', '{}', '{}', UTC_TIMESTAMP(), '{}')",
+			Data.m_Login, Data.m_PasswordHash, Data.m_PasswordSalt, Data.m_RegisteredIP);
+	}
+
+	static void OnInsertAccount(const CRegistrationContextPtr& pContext, bool Success)
+	{
+		if(!Success)
+		{
+			CleanupAccountOnError(pContext);
+			return;
+		}
+
+		const auto& Data = pContext->Data();
+		auto pInitID = Database->Prepare<DB::SELECT>("ID", "tw_accounts", "ORDER BY ID DESC LIMIT 1", Data.m_Login, Data.m_PasswordHash, Data.m_PasswordSalt);
+		pInitID->AtExecute([pContext](ResultPtr pRes) { OnResolveAccountID(pContext, pRes); });
+	}
+
+	static void OnResolveAccountID(const CRegistrationContextPtr& pContext, ResultPtr pRes)
+	{
+		if(!pRes->next())
+		{
+			CleanupAccountOnError(pContext);
+			return;
+		}
+
+		pContext->Data().m_InitID = pRes->getInt("ID");
+		Database->Execute<DB::INSERT>([pContext](bool Success) { OnInsertAccountData(pContext, Success); },
+			"tw_accounts_data", "(ID, Nick) VALUES ('{}', '{}')", pContext->Data().m_InitID, pContext->Data().m_Nickname);
+	}
+
+	static void OnInsertAccountData(const CRegistrationContextPtr& pContext, bool Success)
+	{
+		if(!Success)
+		{
+			CleanupAccountOnError(pContext);
+			return;
+		}
+
+		AuthorizeAfterSuccess(pContext);
+	}
 
 	static void AuthorizeAfterSuccess(const CRegistrationContextPtr& pContext)
 	{
@@ -48,35 +116,23 @@ namespace DbRegistration
 				pGS->SendMenuMotd(pPlayer, MOTD_MENU_AUTH);
 		}
 
-		const auto LoginResult = Data.m_pAccountManager->LoginAccount(pContext->GetClientID(), Data.m_Login.c_str(), Data.m_Password.c_str());
-		if(LoginResult != AccountCodeResult::AOP_LOGIN_OK)
-			pGS->Chat(pContext->GetClientID(), "Automatic authorization failed. Please use /login {} {}", Data.m_Login.c_str(), Data.m_Password.c_str());
+		if(Data.m_pAccountManager->LoginAccount(pContext->GetClientID(), Data.m_Login.c_str(), Data.m_Password.c_str()) != AccountCodeResult::AOP_LOGIN_OK)
+			pGS->Chat(pContext->GetClientID(), "Automatic authorization failed. Please use /login {} {}", Data.m_Login, Data.m_Password);
 	}
 
-	static void OnInsertAccount(const CRegistrationContextPtr& pContext, bool Success)
+public:
+	static void StartRegistration(CAccountManager* pMgr, int ClientID, std::string Login, std::string Pass, std::string Nick, std::string RegisterIP)
 	{
-		if(!Success)
-		{
-			Database->Execute<DB::REMOVE>("tw_accounts", "WHERE ID = '{}'", pContext->Data().m_InitID);
-			pContext->GS()->Chat(pContext->GetClientID(), "Registration failed. Please try again later.");
-			return;
-		}
-
-		AuthorizeAfterSuccess(pContext);
+		char aSalt[32] = { 0 };
+		secure_random_password(aSalt, sizeof(aSalt), 24);
+		const auto AccountPasswordHash = CAccountManager::HashPassword(Pass, aSalt);
+		auto pContext = DbAsync::MakeContext<DbRegistration::CRegistrationPayload>(ClientID,
+			DbRegistration::CRegistrationPayload { pMgr, 0, Login, Pass, AccountPasswordHash, aSalt, Nick, RegisterIP });
+		auto pReg = Database->Prepare<DB::SELECT>("ID", "tw_accounts_data", "WHERE Nick = '{}'", Nick);
+		pReg->AtExecute([pContext](ResultPtr pRes) { DbRegistration::OnCheckNickname(pContext, pRes); });
 	}
+};
 
-	static void OnInsertAccountData(const CRegistrationContextPtr& pContext, bool Success)
-	{
-		if(!Success)
-		{
-			pContext->GS()->Chat(pContext->GetClientID(), "Registration failed. Please try again later.");
-			return;
-		}
-
-		Database->Execute<DB::INSERT>([pContext](bool DataSuccess) { OnInsertAccount(pContext, DataSuccess); },
-			"tw_accounts_data", "(ID, Nick) VALUES ('{}', '{}')", pContext->Data().m_InitID, pContext->Data().m_Nickname.c_str());
-	}
-}
 
 void CAccountManager::OnPlayerLogin(CPlayer* pPlayer)
 {
@@ -177,7 +233,7 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 			const auto expNeed = pProfession->GetExpForNextLevel();
 			const auto progress = translate_to_percent(expNeed, pProfession->GetExperience());
 			const auto progressBar = mystd::string::progressBar(100, progress, 5, "\u25B0", "\u25B1");
-			Wrapper.MarkList().Add("{} [Lv{} {}] - {~.2}%", name.c_str(), pProfession->GetLevel(), progressBar, progress);
+			Wrapper.MarkList().Add("{} [Lv{} {}] - {~.2}%", name, pProfession->GetLevel(), progressBar, progress);
 		};
 
 		// Leveling information (war)
@@ -259,7 +315,7 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 			if(pSkillDesc->GetProfessionID() == ActiveProfID)
 			{
 				const auto* pSkill = pPlayer->GetSkill(ID);
-				VActiveSkills.AddMenu(MENU_SKILL_SELECT, ID, "{} - {}SP {}", pSkillDesc->GetName(), pSkillDesc->GetPriceSP(), pSkill->GetStringLevelStatus().c_str());
+				VActiveSkills.AddMenu(MENU_SKILL_SELECT, ID, "{} - {}SP {}", pSkillDesc->GetName(), pSkillDesc->GetPriceSP(), pSkill->GetStringLevelStatus());
 			}
 		}
 		VoteWrapper::AddEmptyline(ClientID);
@@ -271,7 +327,7 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 			if(pSkillDesc->GetProfessionID() == ProfessionIdentifier::None)
 			{
 				const auto* pSkill = pPlayer->GetSkill(ID);
-				VUniversalSkills.AddMenu(MENU_SKILL_SELECT, ID, "{} - {}SP {}", pSkillDesc->GetName(), pSkillDesc->GetPriceSP(), pSkill->GetStringLevelStatus().c_str());
+				VUniversalSkills.AddMenu(MENU_SKILL_SELECT, ID, "{} - {}SP {}", pSkillDesc->GetName(), pSkillDesc->GetPriceSP(), pSkill->GetStringLevelStatus());
 			}
 		}
 		VoteWrapper::AddEmptyline(ClientID);
@@ -790,40 +846,17 @@ AccountCodeResult CAccountManager::RegisterAccount(int ClientID, const char* pLo
 		return AccountCodeResult::AOP_MISMATCH_LENGTH_SYMBOLS;
 	}
 
-	// check register state
-	const auto cClearNick = CSqlString<32>(Server()->ClientName(ClientID));
-	ResultPtr pRes = Database->Execute<DB::SELECT>("ID", "tw_accounts_data", "WHERE Nick = '{}'", cClearNick.cstr());
-	if(pRes->next())
-	{
-		GS()->Chat(ClientID, "Sorry, but that game nickname is already taken by another player. To regain access, reach out to the support team or alter your nickname.");
-		GS()->Chat(ClientID, "Discord: \"{}\".", g_Config.m_SvDiscordInviteLink);
-		return AccountCodeResult::AOP_NICKNAME_ALREADY_EXIST;
-	}
-
-	// get the highest ID from the tw_accounts table
-	ResultPtr pResID = Database->Execute<DB::SELECT>("ID", "tw_accounts", "ORDER BY ID DESC LIMIT 1");
-	const int InitID = pResID->next() ? pResID->getInt("ID") + 1 : 1;
-
 	// convert the login and password to CSqlString objects
 	const auto cClearLogin = CSqlString<32>(pLogin);
 	const auto cClearPass = CSqlString<32>(pPassword);
+	const auto cClearNick = CSqlString<32>(Server()->ClientName(ClientID));
 
 	// get and store the client's IP address
 	char aAddrStr[64];
 	Server()->GetClientAddr(ClientID, aAddrStr, sizeof(aAddrStr));
 
-	// generate a random password salt
-	char aSalt[32] = { 0 };
-	secure_random_password(aSalt, sizeof(aSalt), 24);
-	const auto AccountPasswordHash = HashPassword(cClearPass.cstr(), aSalt);
-	auto pRegistrationContext = DbAsync::MakeContext<DbRegistration::CRegistrationPayload>(ClientID,
-		DbRegistration::CRegistrationPayload{ this, InitID, cClearLogin.cstr(), cClearPass.cstr(), cClearNick.cstr() });
-
-	// start inserting account to database
-	Database->Execute<DB::INSERT>([pRegistrationContext](bool Success) { DbRegistration::OnInsertAccountData(pRegistrationContext, Success); },
-		"tw_accounts", "(ID, Username, Password, PasswordSalt, RegisterDate, RegisteredIP) VALUES ('{}', '{}', '{}', '{}', UTC_TIMESTAMP(), '{}')",
-		InitID, cClearLogin.cstr(), AccountPasswordHash.c_str(), aSalt, aAddrStr);
-
+	// start registration
+	DbRegistration::StartRegistration(this, ClientID, cClearLogin.cstr(), cClearPass.cstr(), cClearNick.cstr(), aAddrStr);
 	return AccountCodeResult::AOP_REGISTER_OK;
 }
 
@@ -1151,7 +1184,7 @@ void CAccountManager::ChangePassword(int ClientID, const char* pOldPassword, con
 	secure_random_password(aNewSalt, sizeof(aNewSalt), 24);
 	const CSqlString<32> sqlNewPassword(pNewPassword);
 	const std::string HashedNewPassword = HashPassword(sqlNewPassword.cstr(), aNewSalt);
-	Database->Execute<DB::UPDATE>("tw_accounts", "Password = '{}', PasswordSalt = '{}' WHERE ID = '{}'", HashedNewPassword.c_str(), aNewSalt, AccountID);
+	Database->Execute<DB::UPDATE>("tw_accounts", "Password = '{}', PasswordSalt = '{}' WHERE ID = '{}'", HashedNewPassword, aNewSalt, AccountID);
 
 	// information
 	GS()->Chat(ClientID, "Your password has been successfully changed!");
@@ -1249,7 +1282,7 @@ bool CAccountManager::BanAccount(CPlayer* pPlayer, CTimePeriod Time, const std::
 
 	// Ban the account
 	Database->Execute<DB::INSERT>("tw_accounts_bans", "(AccountId, BannedUntil, Reason) VALUES ('{}', '{}', '{}')",
-		pPlayer->Account()->GetID(), std::string("current_timestamp + " + Time.asSqlInterval()).c_str(), Reason.c_str());
+		pPlayer->Account()->GetID(), std::string("current_timestamp + " + Time.asSqlInterval()), Reason);
 	GS()->Server()->Kick(pPlayer->GetCID(), "Your account was banned");
 	m_GameServer->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "BanAccount", "Successfully banned!");
 	return true;
@@ -1289,9 +1322,9 @@ std::vector<CAccountManager::AccBan> CAccountManager::BansAccount() const
 	{
 		int ID = pResBan->getInt("Id");
 		int AccountID = pResBan->getInt("AccountId");
-		std::string BannedUntil = pResBan->getString("BannedUntil").c_str();
+		std::string BannedUntil = pResBan->getString("BannedUntil");
 		std::string PlayerNickname = Server()->GetAccountNickname(AccountID);
-		std::string Reason = pResBan->getString("Reason").c_str();
+		std::string Reason = pResBan->getString("Reason");
 		out.emplace_back(ID, BannedUntil, std::move(PlayerNickname), std::move(Reason));
 	}
 

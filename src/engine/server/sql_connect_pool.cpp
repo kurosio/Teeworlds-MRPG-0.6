@@ -89,11 +89,51 @@ namespace
 	{
 		thread_local std::unique_ptr<Connection> s_pSyncConnection;
 		if(!s_pSyncConnection || s_pSyncConnection->isClosed())
-			{
+		{
 			s_pSyncConnection = CConectionPool::CreateConnection();
 		}
 		return s_pSyncConnection;
 	}
+
+	template<typename TCallback>
+	class CAsyncQueryContext
+	{
+		std::string m_Query;
+		DB m_Type;
+		TCallback m_Callback;
+		int m_DelayMilliseconds;
+
+	public:
+		CAsyncQueryContext(std::string Query, DB Type, TCallback Callback, int DelayMilliseconds = 0)
+			: m_Query(std::move(Query)), m_Type(Type), m_Callback(std::move(Callback)), m_DelayMilliseconds(DelayMilliseconds)
+		{
+		}
+
+		const std::string& Query() const { return m_Query; }
+		DB Type() const { return m_Type; }
+		int DelayMilliseconds() const { return m_DelayMilliseconds; }
+
+		const TCallback& Callback() const { return m_Callback; }
+	};
+
+	void NotifySelect(const CallbackResultPtr& Callback, ResultPtr pResult)
+	{
+		if(!Callback)
+			return;
+
+		Callback(std::move(pResult));
+	}
+
+	void NotifyDml(const CallbackUpdatePtr& Callback, bool Success)
+	{
+		if(!Callback)
+			return;
+
+		Callback(Success);
+	}
+
+	using CAsyncSelectContext = CAsyncQueryContext<CallbackResultPtr>;
+	using CAsyncDmlContext = CAsyncQueryContext<CallbackUpdatePtr>;
 }
 
 CThreadPool::CThreadPool(size_t numThreads) : m_bStop(false)
@@ -421,85 +461,80 @@ std::unique_ptr<Connection> CConectionPool::CreateConnection()
 // --- ASYNCHRONOUS SELECT ---
 void CConectionPool::CResultSelect::AtExecute(CallbackResultPtr pCallbackResult)
 {
-	// Package the query logic into a lambda that matches the thread pool's task signature.
-	auto task = std::make_shared<std::function<void(Connection*, int)>>();
-	*task = [query = m_Query, cb = std::move(pCallbackResult), task](Connection* /*pConnection*/, int retryCount)
+	auto pContext = std::make_shared<CAsyncSelectContext>(m_Query, DB::SELECT, std::move(pCallbackResult));
+	auto pTask = std::make_shared<std::function<void(Connection*, int)>>();
+	*pTask = [pContext, pTask](Connection* /*pConnection*/, int RetryCount)
 	{
 		// Use a dedicated connection for async SELECT to avoid overlapping result sets on the worker connection.
 		auto ownedConnection = CConectionPool::CreateConnection();
 		if(!ownedConnection)
 		{
-				if(retryCount < g_Config.m_SvSqlSelectMaxRetries)
-				{
-					dbg_msg("SQL Worker", "Async SELECT connection unavailable. Retrying (attempt %d/%d). Query: %s", retryCount + 1, g_Config.m_SvSqlSelectMaxRetries, query.c_str());
-					Database->m_pThreadPool->EnqueueWithRetry(*task, DB::SELECT, query, retryCount + 1);
-					return;
-				}
-			LogLostQuery("async select connection unavailable", DB::SELECT, query);
-			dbg_msg("SQL Error", "Async SELECT failed to create a connection. Query: %s", query.c_str());
-			if(cb)
-				cb(EmptyResult());
+			if(RetryCount < g_Config.m_SvSqlSelectMaxRetries)
+			{
+				dbg_msg("SQL Worker", "Async SELECT connection unavailable. Retrying (attempt %d/%d). Query: %s", RetryCount + 1, g_Config.m_SvSqlSelectMaxRetries, pContext->Query().c_str());
+				Database->m_pThreadPool->EnqueueWithRetry(*pTask, pContext->Type(), pContext->Query(), RetryCount + 1);
+				return;
+			}
+
+			LogLostQuery("async select connection unavailable", pContext->Type(), pContext->Query());
+			dbg_msg("SQL Error", "Async SELECT failed to create a connection. Query: %s", pContext->Query().c_str());
+			NotifySelect(pContext->Callback(), EmptyResult());
 			return;
 		}
+
 		auto sharedConnection = std::shared_ptr<Connection>(ownedConnection.release());
 
 		try
 		{
 			std::unique_ptr<Statement> pStmt(sharedConnection->createStatement());
-			std::unique_ptr<ResultSet> pResult(pStmt->executeQuery(query.c_str()));
+			std::unique_ptr<ResultSet> pResult(pStmt->executeQuery(pContext->Query().c_str()));
 			auto result = std::make_shared<WrapperResultSet>(std::move(pStmt), std::move(pResult), std::move(sharedConnection));
-			if(cb)
-			{
-				cb(std::move(result));
-			}
+			NotifySelect(pContext->Callback(), std::move(result));
 		}
 		catch(SQLException& e)
 		{
 			if(is_connection_lost(e))
 			{
 				CloseConnectionOnError(sharedConnection.get(), "Async SELECT");
-				if(retryCount == 0)
+				if(RetryCount == 0)
 					throw;
 			}
 
-			dbg_msg("SQL Error", "Async SELECT failed: %s. Query: %s", e.what(), query.c_str());
-			LogLostQuery("async select failed", DB::SELECT, query);
+			dbg_msg("SQL Error", "Async SELECT failed: %s. Query: %s", e.what(), pContext->Query().c_str());
+			LogLostQuery("async select failed", pContext->Type(), pContext->Query());
 
 			// Notify the caller of the failure.
-			if(cb)
-				cb(EmptyResult());
+			NotifySelect(pContext->Callback(), EmptyResult());
 		}
 	};
 
-	// Enqueue the task for the thread pool to execute when a worker is free.
-	Database->m_pThreadPool->Enqueue(*task, DB::SELECT, m_Query);
+	Database->m_pThreadPool->Enqueue(*pTask, pContext->Type(), pContext->Query());
 }
 
 
 // --- ASYNCHRONOUS DML (INSERT/UPDATE/DELETE) ---
 void CConectionPool::CResultQuery::AtExecute(CallbackUpdatePtr pCallbackResult, int DelayMilliseconds)
 {
-	// Create a lambda task for the DML operation.
-	auto task = std::make_shared<std::function<void(Connection*, int)>>();
-	*task = [query = m_Query, cb = std::move(pCallbackResult), delay = DelayMilliseconds, type = m_TypeQuery, task](Connection* /*pConnection*/, int retryCount)
+	auto pContext = std::make_shared<CAsyncDmlContext>(m_Query, m_TypeQuery, std::move(pCallbackResult), DelayMilliseconds);
+	auto pTask = std::make_shared<std::function<void(Connection*, int)>>();
+	*pTask = [pContext, pTask](Connection* /*pConnection*/, int RetryCount)
 	{
-		if(delay > 0)
-			std::this_thread::sleep_for(std::chrono::milliseconds(delay));
+		if(pContext->DelayMilliseconds() > 0)
+			std::this_thread::sleep_for(std::chrono::milliseconds(pContext->DelayMilliseconds()));
 
 		auto ownedConnection = CConectionPool::CreateConnection();
 		if(!ownedConnection)
 		{
-			if(retryCount < g_Config.m_SvSqlDmlMaxRetries)
+			if(RetryCount < g_Config.m_SvSqlDmlMaxRetries)
 			{
-				dbg_msg("SQL Worker", "Async DML connection unavailable. Retrying (attempt %d/%d). Query: %s", retryCount + 1, g_Config.m_SvSqlDmlMaxRetries, query.c_str());
-				Database->m_pThreadPool->EnqueueWithRetry(*task, type, query, retryCount + 1);
+				dbg_msg("SQL Worker", "Async DML connection unavailable. Retrying (attempt %d/%d). Query: %s", RetryCount + 1, g_Config.m_SvSqlDmlMaxRetries, pContext->Query().c_str());
+				Database->m_pThreadPool->EnqueueWithRetry(*pTask, pContext->Type(), pContext->Query(), RetryCount + 1);
 				return;
 			}
 
-			LogLostQuery("async dml connection unavailable", type, query);
-			dbg_msg("SQL Error", "Async DML failed to create a connection. Query: %s", query.c_str());
-			if(cb)
-				cb(false);
+			LogLostQuery("async dml connection unavailable", pContext->Type(), pContext->Query());
+			dbg_msg("SQL Error", "Async DML failed to create a connection. Query: %s", pContext->Query().c_str());
+			NotifyDml(pContext->Callback(), false);
 			return;
 		}
 
@@ -508,37 +543,33 @@ void CConectionPool::CResultQuery::AtExecute(CallbackUpdatePtr pCallbackResult, 
 		try
 		{
 			std::unique_ptr<Statement> pStmt(sharedConnection->createStatement());
-			const bool hasResultSet = pStmt->execute(query.c_str());
+			const bool hasResultSet = pStmt->execute(pContext->Query().c_str());
 			if(hasResultSet)
 				DrainStatementResults(pStmt.get());
 
-			if(cb)
-			{
-				cb(true);
-			}
+			NotifyDml(pContext->Callback(), true);
 		}
 		catch(SQLException& e)
 		{
 			if(is_connection_lost(e))
 			{
 				CloseConnectionOnError(sharedConnection.get(), "Async DML");
-				if(retryCount < g_Config.m_SvSqlDmlMaxRetries)
+				if(RetryCount < g_Config.m_SvSqlDmlMaxRetries)
 				{
-					Database->m_pThreadPool->EnqueueWithRetry(*task, type, query, retryCount + 1);
+					Database->m_pThreadPool->EnqueueWithRetry(*pTask, pContext->Type(), pContext->Query(), RetryCount + 1);
 					return;
 				}
-				LogLostQuery("async dml retries exhausted", type, query);
+				LogLostQuery("async dml retries exhausted", pContext->Type(), pContext->Query());
 			}
 			else
 			{
-				LogLostQuery("async dml failed", type, query);
+				LogLostQuery("async dml failed", pContext->Type(), pContext->Query());
 			}
 
-			dbg_msg("SQL Error", "Async DML failed: %s. Query: %s", e.what(), query.c_str());
-			if(cb)
-				cb(false);
+			dbg_msg("SQL Error", "Async DML failed: %s. Query: %s", e.what(), pContext->Query().c_str());
+			NotifyDml(pContext->Callback(), false);
 		}
 	};
 
-	Database->m_pThreadPool->Enqueue(*task, m_TypeQuery, m_Query);
+	Database->m_pThreadPool->Enqueue(*pTask, pContext->Type(), pContext->Query());
 }
