@@ -10,7 +10,7 @@ namespace DbAsync
 	// context base
 	class CContextBase
 	{
-		int m_ClientID {};
+		int m_ClientID { -1 };
 		int m_WorldID { INITIALIZER_WORLD_ID };
 
 	public:
