@@ -37,7 +37,8 @@ void CGameControllerTutorial::Tick()
 bool CGameControllerTutorial::OnCharacterSpawn(CCharacter* pChr)
 {
 	// start tutorial scenario
-	pChr->GetPlayer()->StartUniversalScenario(m_JsonTutorialData.dump(), EScenarios::SCENARIO_TUTORIAL);
+	if(pChr->GetPlayer()->IsAuthed())
+		pChr->GetPlayer()->StartUniversalScenario(m_JsonTutorialData.dump(), EScenarios::SCENARIO_TUTORIAL);
 	return IGameController::OnCharacterSpawn(pChr);
 }
 
