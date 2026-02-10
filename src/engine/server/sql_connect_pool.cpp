@@ -124,12 +124,12 @@ namespace
 		Callback(std::move(pResult));
 	}
 
-	void NotifyDml(const CallbackUpdatePtr& Callback, bool Success)
+	void NotifyDml(const CallbackUpdatePtr& Callback, bool Updated)
 	{
 		if(!Callback)
 			return;
 
-		Callback(Success);
+		Callback(Updated);
 	}
 
 	using CAsyncSelectContext = CAsyncQueryContext<CallbackResultPtr>;
@@ -544,10 +544,11 @@ void CConectionPool::CResultQuery::AtExecute(CallbackUpdatePtr pCallbackResult, 
 		{
 			std::unique_ptr<Statement> pStmt(sharedConnection->createStatement());
 			const bool hasResultSet = pStmt->execute(pContext->Query().c_str());
+			const bool hasUpdated = !hasResultSet && pStmt->getUpdateCount() > 0;
 			if(hasResultSet)
 				DrainStatementResults(pStmt.get());
 
-			NotifyDml(pContext->Callback(), true);
+			NotifyDml(pContext->Callback(), hasUpdated);
 		}
 		catch(SQLException& e)
 		{

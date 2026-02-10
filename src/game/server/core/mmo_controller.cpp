@@ -656,10 +656,10 @@ void CMmoController::AsyncClientEnterMsgInfo(std::string_view ClientName, int Cl
 			pPlayer->GetSharedData().m_GuestLogin = GuestCredential;
 
 			pGS->Chat(-1, "Apparently, we have a new player, '{}'!", CapturedNickname);
-			pGS->Chat(ClientID, mystd::aesthetic::lineWaves<12>().c_str());
+			pGS->Chat(ClientID, mystd::aesthetic::wrapLinePillar(12).c_str());
 			pGS->Chat(ClientID, "You are using guest mode.");
 			pGS->Chat(ClientID, "Register account with /register <login> <pass>.");
-			pGS->Chat(ClientID, mystd::aesthetic::lineWaves<12>().c_str());
+			pGS->Chat(ClientID, mystd::aesthetic::wrapLinePillar(12).c_str());
 			pGS->Core()->AccountManager()->RegisterGuestAccount(ClientID, CapturedNickname.c_str());
 			return;
 		}

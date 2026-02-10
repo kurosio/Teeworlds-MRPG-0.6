@@ -183,6 +183,7 @@ void CPlayer::PostTick()
 		Account()->GetBonusManager().PostTick();
 		Account()->GetPrisonManager().PostTick();
 		m_Effects.PostTick();
+		Account()->UpdateAuthTimeoutCodeIfNeeded();
 	}
 
 	// update view pos for spectators

@@ -127,6 +127,8 @@ public:
 	void FormatBroadcastBasicStats(char* pBuffer, int Size, const char* pAppendStr = "\0") const;
 	void NotAuthTick();
 
+	bool IsGuestLogin() const { return !GetSharedData().m_GuestLogin.empty(); }
+
 	virtual void Tick();
 	virtual void PostTick();
 	virtual void Snap(int SnappingClient);

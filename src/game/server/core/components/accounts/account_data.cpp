@@ -10,6 +10,7 @@
 #include <components/inventory/inventory_manager.h>
 #include <components/guilds/guild_manager.h>
 #include <components/worlds/world_manager.h>
+#include <tools/db_async_context.h>
 
 std::map < int, CAccountData > CAccountData::ms_aData;
 std::map < int, CAccountSharedData > CAccountSharedData::ms_aPlayerSharedData;
@@ -751,4 +752,25 @@ int CAccountData::GetFreeSlotsFunctionalModules() const
 	}
 
 	return FreeSlots;
+}
+
+void CAccountData::UpdateAuthTimeoutCodeIfNeeded()
+{
+	auto* pPlayer = GetPlayer();
+	if(pPlayer && pPlayer->IsAuthed() && !pPlayer->GetSharedData().m_TimeoutCode.empty())
+	{
+		const auto cNick = CSqlString<32>(Instance::Server()->ClientName(pPlayer->GetCID()));
+		const auto cCode = CSqlString<64>(pPlayer->GetSharedData().m_TimeoutCode.c_str());
+		auto pContext = DbAsync::MakeContext(pPlayer->GetCID());
+		Database->Execute<DB::UPDATE>([pContext](bool Updated)
+		{
+			if(Updated)
+			{
+				pContext->GS()->Chat(pContext->GetClientID(), "Timeout code has been updated!");
+				pContext->GS()->Chat(pContext->GetClientID(), "You will now use it to authorize your account.");
+			}
+		},
+		"tw_accounts a JOIN tw_accounts_data d ON d.ID = a.ID", "a.TimeoutCode = '{}' WHERE d.Nick = '{}' AND a.TimeoutCode != '{}'", cCode.cstr(), cNick.cstr(), cCode.cstr());
+		pPlayer->GetSharedData().m_TimeoutCode.clear();
+	}
 }

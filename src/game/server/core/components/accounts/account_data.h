@@ -199,6 +199,9 @@ public:
 	int GetFreeSlotsFunctionalModules() const;
 	int GetUsedSlotsAttributedModules() const { return g_Config.m_SvAttributedModulesSlots - GetFreeSlotsAttributedModules(); }
 	int GetUsedSlotsFunctionalModules() const { return g_Config.m_SvNonAttributedModulesSlots - GetFreeSlotsFunctionalModules(); }
+
+	//
+	void UpdateAuthTimeoutCodeIfNeeded();
 };
 
 struct CAccountSharedData
@@ -208,6 +211,7 @@ struct CAccountSharedData
 
 	// guest account data
 	bool m_WaitingGuestTimeoutAuth {};
+	std::string m_TimeoutCode {};
 	std::string m_GuestLogin {};
 
 	// temp for searching

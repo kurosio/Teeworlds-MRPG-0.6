@@ -73,12 +73,12 @@ namespace
 			const auto& Data = pContext->Data();
 			if(Data.m_Value <= 0)
 			{
-				Database->Execute<DB::REMOVE>([pContext](bool Success) { OnFinalize(pContext, Success); },
+				Database->Execute<DB::REMOVE>([pContext](bool Updated) { OnFinalize(pContext, Updated); },
 					"tw_accounts_items", "WHERE ItemID = '{}' AND UserID = '{}'", Data.m_ItemID, Data.m_UserID);
 				return;
 			}
 
-			Database->Execute<DB::INSERT>([pContext](bool Success) { OnFinalize(pContext, Success); },
+			Database->Execute<DB::INSERT>([pContext](bool Updated) { OnFinalize(pContext, Updated); },
 				"tw_accounts_items",
 				"(ItemID, UserID, Value, Settings, Enchant, Durability) VALUES ('{}', '{}', '{}', '{}', '{}', '{}') "
 				"ON DUPLICATE KEY UPDATE Value = '{}', Settings = '{}', Enchant = '{}', Durability = '{}'",

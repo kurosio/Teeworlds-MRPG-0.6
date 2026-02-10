@@ -51,6 +51,16 @@ namespace DbAsync
 		const TPayload* operator->() const { return &m_Payload; }
 	};
 
+	inline static std::shared_ptr<CContextBase> MakeContext(int ClientID)
+	{
+		return std::make_shared<CContextBase>(ClientID, INITIALIZER_WORLD_ID);
+	}
+
+	inline static std::shared_ptr<CContextBase> MakeContextInWorld(int ClientID, int WorldID)
+	{
+		return std::make_shared<CContextBase>(ClientID, WorldID);
+	}
+
 	template<typename TPayload, typename... TArgs>
 	std::shared_ptr<CContext<TPayload>> MakeContext(int ClientID, TArgs&&... Args)
 	{

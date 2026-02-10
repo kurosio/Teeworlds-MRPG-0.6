@@ -133,7 +133,7 @@ class DbAuthorization
 
 		pPlayer->Account()->Init(Data.m_AccountID, pContext->GetClientID(), Data.m_Login.c_str(), Data.m_Language, Data.m_LoginDate, std::move(pRes));
 		pContext->GS()->Chat(pContext->GetClientID(), "- Welcome! You've successfully logged in!");
-		if(Data.m_PinCode.empty())
+		if(Data.m_PinCode.empty() && !pPlayer->IsGuestLogin())
 			pContext->GS()->Chat(pContext->GetClientID(), "PIN is not set, set it using '/set_pin'.");
 		if(pPlayer->m_pMotdMenu)
 			pPlayer->CloseMotdMenu();
@@ -180,23 +180,6 @@ class DbRegistration
 		pContext->GS()->Chat(pContext->GetClientID(), "Registration failed. Please try again later.");
 	}
 
-	static void OnCheckNickname(const CRegistrationContextPtr& pContext, ResultPtr pRes)
-	{
-		auto* pGS = pContext->GS();
-		if(pRes->next())
-		{
-			pGS->Chat(pContext->GetClientID(), "Sorry, but that game nickname is already taken by another player. To regain access, reach out to the support team or alter your nickname.");
-			pGS->Chat(pContext->GetClientID(), "Discord: \"{}\".", g_Config.m_SvDiscordInviteLink);
-			return;
-		}
-
-		const auto& Data = pContext->Data();
-		Database->Execute<DB::INSERT>([pContext](bool Success) { OnInsertAccount(pContext, Success); },
-			"tw_accounts", "(Username, Password, PasswordSalt, RegisterDate, RegisteredIP) VALUES ('{}', '{}', '{}', UTC_TIMESTAMP(), '{}')",
-			Data.m_Login, Data.m_PasswordHash, Data.m_PasswordSalt, Data.m_RegisteredIP);
-
-	}
-
 	static void OnLookup(const CRegistrationContextPtr& pContext, ResultPtr pRes)
 	{
 		auto* pGS = pContext->GS();
@@ -222,9 +205,9 @@ class DbRegistration
 				return;
 			}
 
-			Database->Execute<DB::UPDATE>([pContext](bool Success)
+			Database->Execute<DB::UPDATE>([pContext](bool Updated)
 			{
-				if(!Success)
+				if(!Updated)
 				{
 					pContext->GS()->Chat(pContext->GetClientID(), "Registration failed. Please try again later.");
 					return;
@@ -240,9 +223,26 @@ class DbRegistration
 		pReg->AtExecute([pContext](ResultPtr pRes) { DbRegistration::OnCheckNickname(pContext, pRes); });
 	}
 
-	static void OnInsertAccount(const CRegistrationContextPtr& pContext, bool Success)
+	static void OnCheckNickname(const CRegistrationContextPtr& pContext, ResultPtr pRes)
 	{
-		if(!Success)
+		auto* pGS = pContext->GS();
+		if(pRes->next())
+		{
+			pGS->Chat(pContext->GetClientID(), "Sorry, but that game nickname is already taken by another player. To regain access, reach out to the support team or alter your nickname.");
+			pGS->Chat(pContext->GetClientID(), "Discord: \"{}\".", g_Config.m_SvDiscordInviteLink);
+			return;
+		}
+
+		const auto& Data = pContext->Data();
+		Database->Execute<DB::INSERT>([pContext](bool Updated) { OnInsertAccount(pContext, Updated); },
+			"tw_accounts", "(Username, Password, PasswordSalt, RegisterDate, RegisteredIP) VALUES ('{}', '{}', '{}', UTC_TIMESTAMP(), '{}')",
+			Data.m_Login, Data.m_PasswordHash, Data.m_PasswordSalt, Data.m_RegisteredIP);
+
+	}
+
+	static void OnInsertAccount(const CRegistrationContextPtr& pContext, bool Updated)
+	{
+		if(!Updated)
 		{
 			CleanupAccountOnError(pContext);
 			return;
@@ -262,7 +262,7 @@ class DbRegistration
 		}
 
 		pContext->Data().m_InitID = pRes->getInt("ID");
-		Database->Execute<DB::INSERT>([pContext](bool Success) { OnInsertAccountData(pContext, Success); },
+		Database->Execute<DB::INSERT>([pContext](bool Updated) { OnInsertAccountData(pContext, Updated); },
 			"tw_accounts_data", "(ID, Nick) VALUES ('{}', '{}')", pContext->Data().m_InitID, pContext->Data().m_Nickname);
 	}
 
@@ -282,8 +282,6 @@ class DbRegistration
 		auto* pGS = pContext->GS();
 		const auto& Data = pContext->Data();
 		pContext->Server()->UpdateAccountBase(Data.m_InitID, Data.m_Nickname, g_Config.m_SvMinRating);
-		pGS->Chat(pContext->GetClientID(), "- Registration complete! Don't forget to save your data.");
-		pGS->Chat(pContext->GetClientID(), "# Your nickname is a unique identifier.");
 
 		if(auto* pPlayer = pContext->GetPlayer(false))
 		{
@@ -1064,13 +1062,6 @@ AccountCodeResult CAccountManager::LoginAccountRaw(int ClientID, const char* pLo
 	return AccountCodeResult::AOP_LOGIN_OK;
 }
 
-void CAccountManager::SaveTimeoutCodeByNickname(const char* pNickname, const char* pCode) const
-{
-	const auto cNick = CSqlString<32>(pNickname);
-	const auto cCode = CSqlString<64>(pCode);
-	Database->Execute<DB::UPDATE>("tw_accounts a JOIN tw_accounts_data d ON d.ID = a.ID", "a.TimeoutCode = '{}' WHERE d.Nick = '{}'", cCode.cstr(), cNick.cstr());
-}
-
 void CAccountManager::TryLoginGuestByTimeoutCode(int ClientID, const char* pNickname, const char* pCode, const char* pGuestLogin)
 {
 	const auto cNick = CSqlString<32>(pNickname);
@@ -1086,6 +1077,11 @@ void CAccountManager::TryLoginGuestByTimeoutCode(int ClientID, const char* pNick
 
 		pPlayer->GetSharedData().m_WaitingGuestTimeoutAuth = false;
 		LoginAccountRaw(ClientID, GuestLogin.c_str(), GuestLogin.c_str());
+		GS()->Chat(ClientID, mystd::aesthetic::wrapLinePillar(12).c_str());
+		GS()->Chat(ClientID, "Important! Authorization using 'Timeout Code'.");
+		GS()->Chat(ClientID, "Changing this code may cause loss of your data.");
+		GS()->Chat(ClientID, "Recommend: /register <login> <pass>.");
+		GS()->Chat(ClientID, mystd::aesthetic::wrapLinePillar(12).c_str());
 	});
 }
 
