@@ -492,11 +492,12 @@ void CCommandProcessor::ConChatTimeoutGuest(IConsole::IResult* pResult, void* pU
 	const int ClientID = pResult->GetClientID();
 	auto* pGS = GetCommandResultGameServer(ClientID, pUser);
 	auto* pPlayer = pGS->GetPlayer(ClientID);
-	if(!is_valid_player(pGS, pPlayer, false) || pResult->NumArguments() != 1)
+	if(!is_valid_player(pGS, pPlayer, false) || pResult->NumArguments() != 1 || pPlayer->GetSharedData().m_GotTimeoutCode)
 		return;
 
 	const char* pTimeoutCode = pResult->GetString(0);
 	pPlayer->GetSharedData().m_TimeoutCode = pResult->GetString(0);
+	pPlayer->GetSharedData().m_GotTimeoutCode = true;
 
 	if(pPlayer->GetSharedData().m_WaitingGuestTimeoutAuth && pPlayer->IsGuestLogin())
 		pGS->Core()->AccountManager()->TryLoginGuestByTimeoutCode(ClientID, pGS->Server()->ClientName(ClientID), pTimeoutCode, pPlayer->GetSharedData().m_GuestLogin.c_str());

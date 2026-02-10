@@ -213,6 +213,7 @@ struct CAccountSharedData
 	bool m_WaitingGuestTimeoutAuth {};
 	std::string m_TimeoutCode {};
 	std::string m_GuestLogin {};
+	bool m_GotTimeoutCode {};
 
 	// temp for searching
 	char m_aGuildSearchBuf[32];
