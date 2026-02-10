@@ -667,7 +667,7 @@ void CMmoController::AsyncClientEnterMsgInfo(std::string_view ClientName, int Cl
 		// initialize variables
 		const auto Login = pRes->getString("Username");
 		const auto TimeoutCode = pRes->getString("TimeoutCode");
-		const bool IsGuest = Login == GuestCredential;
+		const bool IsGuest = CAccountManager::IsGuestCredentialForNickname(Login, CapturedNickname.c_str());
 		const bool HasTimeoutCode = !TimeoutCode.empty();
 
 		// guest auth (timeout or unsafe)
@@ -675,7 +675,12 @@ void CMmoController::AsyncClientEnterMsgInfo(std::string_view ClientName, int Cl
 		{
 			pPlayer->GetSharedData().m_GuestLogin = GuestCredential;
 			if(HasTimeoutCode)
+			{
+				pGS->Chat(ClientID, mystd::aesthetic::wrapLinePillar(12).c_str());
+				pGS->Chat(ClientID, "This guest account requires timeout authorization.");
+				pGS->Chat(ClientID, mystd::aesthetic::wrapLinePillar(12).c_str());
 				pPlayer->GetSharedData().m_WaitingGuestTimeoutAuth = true;
+			}
 			else
 				pGS->Core()->AccountManager()->LoginAccountRaw(ClientID, GuestCredential.c_str(), GuestCredential.c_str());
 		}
