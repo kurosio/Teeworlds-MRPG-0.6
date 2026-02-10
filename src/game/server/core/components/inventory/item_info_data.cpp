@@ -214,6 +214,9 @@ int CItemDescription::GetTotalAttributesLevel(int Enchant) const
 
 std::string CItemDescription::GetStringAttributesInfo(CPlayer* pPlayer, int Enchant) const
 {
+	if(m_aAttributes.empty())
+		return "unattributed";
+
 	std::string strAttributes {};
 	for(const auto& Att : m_aAttributes)
 	{
@@ -230,7 +233,7 @@ std::string CItemDescription::GetStringAttributesInfo(CPlayer* pPlayer, int Ench
 			}
 		}
 	}
-	return strAttributes.empty() ? "unattributed" : strAttributes;
+	return strAttributes;
 }
 
 std::string CItemDescription::GetStringEnchantLevel(int Enchant) const
