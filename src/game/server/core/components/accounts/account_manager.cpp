@@ -1122,7 +1122,7 @@ void CAccountManager::LoadAccount(CPlayer* pPlayer, bool FirstInitilize)
 			if(auto pItem = pPlayer->GetItem(id))
 			{
 				if(!pItem->HasItem())
-					pItem->Add(1, defaultValue);
+					pItem->Add(1, defaultValue, 0, false);
 			}
 		}
 	};
