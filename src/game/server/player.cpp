@@ -718,7 +718,7 @@ void CPlayer::NotAuthTick()
 	if(Server()->Tick() % (Server()->TickSpeed() * 3) == 0)
 	{
 		GS()->Broadcast(m_ClientID, BroadcastPriority::MainInformation, Server()->TickSpeed() * 3,
-			"You need to register using /register <login> <pass> or /login <login> <pass>.");
+			"Authorization required: /login <login> <pass>.\nNew player? Use /register <login> <pass>.");
 	}
 }
 

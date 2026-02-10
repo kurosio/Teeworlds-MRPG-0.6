@@ -216,13 +216,13 @@ struct CAccountSharedData
 	bool m_GotTimeoutCode {};
 
 	// temp for searching
-	char m_aGuildSearchBuf[32];
-	char m_aPlayerSearchBuf[32];
+	char m_aGuildSearchBuf[32] {};
+	char m_aPlayerSearchBuf[32] {};
 
 	// player stats
-	int m_Health;
-	int m_Mana;
-	int m_Ping;
+	int m_Health {};
+	int m_Mana {};
+	int m_Ping {};
 
 	// dungeon
 	int m_TempStartDungeonTick {};

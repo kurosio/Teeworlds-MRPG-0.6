@@ -58,7 +58,7 @@ class DbAuthorization
 
 		if(!pRes->next())
 		{
-			pContext->GS()->Chat(pContext->GetClientID(), "Sorry, we couldn't locate your username in our system.");
+			pContext->GS()->Chat(pContext->GetClientID(), "Login failed: account with this nickname was not found.");
 			return;
 		}
 
@@ -77,7 +77,7 @@ class DbAuthorization
 
 		if(!pRes->next() || (pRes->getString("Password") != CAccountManager::HashPassword(pContext->Data().m_Password, pRes->getString("PasswordSalt"))))
 		{
-			pContext->GS()->Chat(pContext->GetClientID(), "Oops, that doesn't seem to be the right login or password");
+			pContext->GS()->Chat(pContext->GetClientID(), "Login failed: incorrect login or password.");
 			return;
 		}
 
@@ -99,13 +99,14 @@ class DbAuthorization
 		{
 			const auto BannedUntil = pRes->getString("BannedUntil");
 			const auto Reason = pRes->getString("Reason");
-			pContext->GS()->Chat(pContext->GetClientID(), "You account was suspended until '{}' with the reason of '{}'.", BannedUntil, Reason);
+			pContext->GS()->Chat(pContext->GetClientID(), "Account is temporarily blocked.");
+			pContext->GS()->Chat(pContext->GetClientID(), "Until: '{}'. Reason: '{}'.", BannedUntil, Reason);
 			return;
 		}
 
 		if(pContext->GS()->GetPlayerByUserID(pContext->Data().m_AccountID) != nullptr)
 		{
-			pContext->GS()->Chat(pContext->GetClientID(), "The account is already in the game.");
+			pContext->GS()->Chat(pContext->GetClientID(), "This account is already online.");
 			return;
 		}
 
@@ -122,7 +123,8 @@ class DbAuthorization
 
 		if(!pRes->next())
 		{
-			pContext->GS()->Chat(pContext->GetClientID(), "Authorization failed due to account data loading issue.");
+			pContext->GS()->Chat(pContext->GetClientID(), "Login failed: account data could not be loaded.");
+			pContext->GS()->Chat(pContext->GetClientID(), "Please reconnect and try again.");
 			return;
 		}
 
@@ -132,9 +134,12 @@ class DbAuthorization
 			pPlayer->GetSharedData().m_GuestLogin.clear();
 
 		pPlayer->Account()->Init(Data.m_AccountID, pContext->GetClientID(), Data.m_Login.c_str(), Data.m_Language, Data.m_LoginDate, std::move(pRes));
-		pContext->GS()->Chat(pContext->GetClientID(), "- Welcome! You've successfully logged in!");
+		pContext->GS()->Chat(pContext->GetClientID(), "Login successful. Welcome back!");
 		if(Data.m_PinCode.empty() && !pPlayer->IsGuestLogin())
-			pContext->GS()->Chat(pContext->GetClientID(), "PIN is not set, set it using '/set_pin'.");
+		{
+			pContext->GS()->Chat(pContext->GetClientID(), "Security recommendation: set a PIN code.");
+			pContext->GS()->Chat(pContext->GetClientID(), "Command: /set_pin <current_password> <new_pin>.");
+		}
 		if(pPlayer->m_pMotdMenu)
 			pPlayer->CloseMotdMenu();
 		pContext->GS()->m_pController->DoTeamChange(pPlayer);
@@ -177,7 +182,8 @@ class DbRegistration
 			Database->Execute<DB::REMOVE>("tw_accounts", "WHERE Username = '{}' AND Password = '{}' AND PasswordSalt = '{}' ORDER BY ID DESC LIMIT 1",
 				Data.m_Login, Data.m_PasswordHash, Data.m_PasswordSalt);
 
-		pContext->GS()->Chat(pContext->GetClientID(), "Registration failed. Please try again later.");
+		pContext->GS()->Chat(pContext->GetClientID(), "Registration failed due to server error.");
+		pContext->GS()->Chat(pContext->GetClientID(), "Please try again a bit later.");
 	}
 
 	static void OnLookup(const CRegistrationContextPtr& pContext, ResultPtr pRes)
@@ -194,14 +200,16 @@ class DbRegistration
 			const auto TimeoutCode = pRes->getString("TimeoutCode");
 			if(!CAccountManager::IsGuestCredentialForNickname(CurrentLogin, Data.m_Nickname.c_str()))
 			{
-				pGS->Chat(ClientID, "Sorry, but that game nickname is already taken by another player. To regain access, reach out to the support team or alter your nickname.");
+				pGS->Chat(ClientID, "This nickname is already linked to another account.");
+				pGS->Chat(ClientID, "Change nickname or contact support for recovery.");
 				pGS->Chat(ClientID, "Discord: \"{}\".", g_Config.m_SvDiscordInviteLink);
 				return;
 			}
 
 			if(!TimeoutCode.empty() && !pPlayer->IsAuthed())
 			{
-				pGS->Chat(ClientID, "This nickname is protected by timeout code. Complete authorization first.");
+				pGS->Chat(ClientID, "This nickname is protected by timeout code.");
+				pGS->Chat(ClientID, "First complete authorization of the previous account.");
 				return;
 			}
 
@@ -209,12 +217,14 @@ class DbRegistration
 			{
 				if(!Updated)
 				{
-					pContext->GS()->Chat(pContext->GetClientID(), "Registration failed. Please try again later.");
+					pContext->GS()->Chat(pContext->GetClientID(), "Registration update failed.");
+					pContext->GS()->Chat(pContext->GetClientID(), "Please try again later.");
 					return;
 				}
 
-				pContext->GS()->Chat(pContext->GetClientID(), "- Registration complete! Don't forget to save your data.");
-				pContext->GS()->Chat(pContext->GetClientID(), "# Your nickname is a unique identifier.");
+				pContext->GS()->Chat(pContext->GetClientID(), "Registration completed successfully.");
+				pContext->GS()->Chat(pContext->GetClientID(), "Remember your login and password.");
+				pContext->GS()->Chat(pContext->GetClientID(), "Your nickname is your unique game identifier.");
 			}, "tw_accounts", "Username = '{}', Password = '{}', PasswordSalt = '{}' WHERE ID = '{}'", Data.m_Login, Data.m_PasswordHash, Data.m_PasswordSalt, AccountID);
 			return;
 		}
@@ -228,7 +238,8 @@ class DbRegistration
 		auto* pGS = pContext->GS();
 		if(pRes->next())
 		{
-			pGS->Chat(pContext->GetClientID(), "Sorry, but that game nickname is already taken by another player. To regain access, reach out to the support team or alter your nickname.");
+			pGS->Chat(pContext->GetClientID(), "This nickname is already linked to another account.");
+			pGS->Chat(pContext->GetClientID(), "Change nickname or contact support for recovery.");
 			pGS->Chat(pContext->GetClientID(), "Discord: \"{}\".", g_Config.m_SvDiscordInviteLink);
 			return;
 		}
@@ -769,8 +780,8 @@ bool CAccountManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
 		if(pPlayer->IsAuthed())
 			return false;
 
-		MotdMenu MAuth(ClientID, "Use chat message like '/<text>' to edit the fields.");
-		MAuth.AddText("Account authorization");
+		MotdMenu MAuth(ClientID, "Use commands in chat: '/<text>' to edit fields.");
+		MAuth.AddText("Account login / registration");
 		MAuth.AddSeparateLine();
 		MAuth.AddLine();
 		MAuth.AddText("Login:");
@@ -782,7 +793,7 @@ bool CAccountManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
 		MAuth.AddSeparateLine();
 
 		if(pPlayer->m_AuthMenuAllowRegister)
-			MAuth.AddOption("AUTH_REGISTER", "Register");
+			MAuth.AddOption("AUTH_REGISTER", "Create account");
 		else
 			MAuth.AddOption("AUTH_LOGIN", "Log in");
 
@@ -946,7 +957,7 @@ bool CAccountManager::OnPlayerMotdCommand(CPlayer* pPlayer, CMotdPlayerData* pMo
 		const auto PassOpt = pMotdData->GetFieldStr(AUTH_FIELD_PASSWORD);
 		if(!LoginOpt.has_value() || !PassOpt.has_value())
 		{
-			GS()->Chat(pPlayer->GetCID(), "Please fill in login and password.");
+			GS()->Chat(pPlayer->GetCID(), "Fill both fields: login and password.");
 			return true;
 		}
 
@@ -1078,9 +1089,9 @@ void CAccountManager::TryLoginGuestByTimeoutCode(int ClientID, const char* pNick
 		pPlayer->GetSharedData().m_WaitingGuestTimeoutAuth = false;
 		LoginAccountRaw(ClientID, GuestLogin.c_str(), GuestLogin.c_str());
 		GS()->Chat(ClientID, mystd::aesthetic::wrapLinePillar(12).c_str());
-		GS()->Chat(ClientID, "Important! Authorization using 'Timeout Code'.");
-		GS()->Chat(ClientID, "Changing this code may cause loss of your data.");
-		GS()->Chat(ClientID, "Recommend: /register <login> <pass>.");
+		GS()->Chat(ClientID, "Timeout authorization successful.");
+		GS()->Chat(ClientID, "Do not change timeout code, or you may lose access.");
+		GS()->Chat(ClientID, "Recommended next step: /register <login> <pass>.");
 		GS()->Chat(ClientID, mystd::aesthetic::wrapLinePillar(12).c_str());
 	});
 }

@@ -977,7 +977,7 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 				return;
 
 			pPlayer->m_aPlayerTick[LastChangeTeam] = Server()->Tick() + Server()->TickSpeed();
-			const char* pMsgText = !pPlayer->IsAuthed() ? "Use /register <name> <pass>\nOr /login <name> <pass>." : "Team change is not allowed.";
+			const char* pMsgText = !pPlayer->IsAuthed() ? "Authorization required.\n/login <login> <pass> or /register <login> <pass>." : "Team change is not allowed.";
 			Broadcast(pPlayer->GetCID(), BroadcastPriority::MainInformation, 100, pMsgText);
 			return;
 		}

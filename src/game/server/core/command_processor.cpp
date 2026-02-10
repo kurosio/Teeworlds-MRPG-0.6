@@ -421,8 +421,8 @@ void CCommandProcessor::ConChatCmdList(IConsole::IResult* pResult, void* pUser)
 	pGS->Chat(ClientID, mystd::aesthetic::boardPillar(fmt_localize(ClientID, "Command list [{} of {}]", Page, MaxPage), 6).c_str());
 	if(Page == 1)
 	{
-		pGS->Chat(ClientID, "/register <name> <pass> - new account.");
-		pGS->Chat(ClientID, "/login <name> <pass> - log in account.");
+		pGS->Chat(ClientID, "/register <login> <pass> - create account.");
+		pGS->Chat(ClientID, "/login <login> <pass> - log in to account.");
 		pGS->Chat(ClientID, "/voucher <voucher> - get voucher special items.");
 		pGS->Chat(ClientID, "/use_skill <uid> - use skill by uid.");
 		pGS->Chat(ClientID, "/use_item <uid> - use item by uid.");

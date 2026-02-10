@@ -656,10 +656,9 @@ void CMmoController::AsyncClientEnterMsgInfo(std::string_view ClientName, int Cl
 			pPlayer->GetSharedData().m_GuestLogin = GuestCredential;
 
 			pGS->Chat(-1, "Apparently, we have a new player, '{}'!", CapturedNickname);
-			pGS->Chat(ClientID, mystd::aesthetic::wrapLinePillar(12).c_str());
-			pGS->Chat(ClientID, "You are using guest mode.");
-			pGS->Chat(ClientID, "Register account with /register <login> <pass>.");
-			pGS->Chat(ClientID, mystd::aesthetic::wrapLinePillar(12).c_str());
+			pGS->Chat(ClientID, "You are now in guest mode.");
+			pGS->Chat(ClientID, "Progress can be lost in guest mode.");
+			pGS->Chat(ClientID, "Create account: /register <login> <pass>.");
 			pGS->Core()->AccountManager()->RegisterGuestAccount(ClientID, CapturedNickname.c_str());
 			return;
 		}
@@ -676,9 +675,7 @@ void CMmoController::AsyncClientEnterMsgInfo(std::string_view ClientName, int Cl
 			pPlayer->GetSharedData().m_GuestLogin = GuestCredential;
 			if(HasTimeoutCode)
 			{
-				pGS->Chat(ClientID, mystd::aesthetic::wrapLinePillar(12).c_str());
-				pGS->Chat(ClientID, "This guest account requires timeout authorization.");
-				pGS->Chat(ClientID, mystd::aesthetic::wrapLinePillar(12).c_str());
+				pGS->Chat(ClientID, "Guest account is protected by timeout code.");
 				pPlayer->GetSharedData().m_WaitingGuestTimeoutAuth = true;
 			}
 			else
@@ -692,7 +689,8 @@ void CMmoController::AsyncClientEnterMsgInfo(std::string_view ClientName, int Cl
 				pPlayer->m_AuthMenuAllowRegister = !HasAccount;
 				pGS->SendMenuMotd(pPlayer, MOTD_MENU_AUTH);
 			}
-			pGS->Chat(ClientID, "You need to log in using /login <user> <pass>!");
+			pGS->Chat(ClientID, "Please log in: /login <login> <pass>.");
+			pGS->Chat(ClientID, "If you are new, register: /register <login> <pass>.");
 		}
 	});
 }
