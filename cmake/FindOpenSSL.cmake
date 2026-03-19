@@ -1,63 +1,43 @@
-# out
-# - OPENSSL_CRYPTO_LIBRARY - (libcrypto)
-# - OPENSSL_SSL_LIBRARY - (libssl)
-# - OPENSSL_LIBRARIES - (libcrypto + libssl)
-
 if(NOT CMAKE_CROSSCOMPILING)
   find_package(PkgConfig QUIET)
   pkg_check_modules(PC_SSL libssl)
   pkg_check_modules(PC_CRYPTO libcrypto)
 endif()
 
-# libiraries
 set_extra_dirs_lib(OPENSSL openssl)
 find_library(OPENSSL_SSL_LIBRARY
-  NAMES "libssl"
+  NAMES "ssl"
   HINTS ${PC_SSL_LIBDIR} ${PC_SSL_LIBRARY_DIRS} ${HINTS_OPENSSL_LIBDIR}
   PATHS ${PATHS_OPENSSL_LIBDIR}
   ${CROSSCOMPILING_NO_CMAKE_SYSTEM_PATH})
 find_library(OPENSSL_CRYPTO_LIBRARY
-  NAMES "libcrypto"
+  NAMES "crypto"
   HINTS ${PC_CRYPTO_LIBDIR} ${PC_CRYPTO_LIBRARY_DIRS} ${HINTS_OPENSSL_LIBDIR}
   PATHS ${PATHS_OPENSSL_LIBDIR}
   ${CROSSCOMPILING_NO_CMAKE_SYSTEM_PATH})
 
-# includes
 set_extra_dirs_include(OPENSSL openssl "${OPENSSL_CRYPTO_LIBRARY}")
-find_path(OPENSSL_INCLUDEDIR 
+find_path(OPENSSL_INCLUDE_DIR
   NAMES "openssl/conf.h"
   HINTS ${PC_CRYPTO_INCLUDEDIR} ${PC_CRYPTO_INCLUDE_DIR} ${HINTS_OPENSSL_INCLUDEDIR} 
   PATHS ${PATHS_OPENSSL_INCLUDEDIR}
   ${CROSSCOMPILING_NO_CMAKE_SYSTEM_PATH})
 
-# mark found
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(OpenSSL DEFAULT_MSG OPENSSL_CRYPTO_LIBRARY OPENSSL_INCLUDEDIR)
-mark_as_advanced(OPENSSL_CRYPTO_LIBRARY OPENSSL_INCLUDEDIR)
+find_package_handle_standard_args(OpenSSL DEFAULT_MSG OPENSSL_SSL_LIBRARY OPENSSL_CRYPTO_LIBRARY OPENSSL_INCLUDE_DIR)
+mark_as_advanced(OPENSSL_SSL_LIBRARY OPENSSL_CRYPTO_LIBRARY OPENSSL_INCLUDE_DIR)
 
-# so that we have the same variables for all searches
-set(OPENSSL_LIBRARIES)
-set(OPENSSL_INCLUDE_DIRS)
-
-if(OPENSSL_FOUND)
-  is_bundled(OPENSSL_BUNDLED "${OPENSSL_LIBRARIES}")
-  set(OPENSSL_LIBRARIES ${OPENSSL_CRYPTO_LIBRARY} ${OPENSSL_SSL_LIBRARY})
-  set(OPENSSL_INCLUDE_DIRS ${OPENSSL_INCLUDEDIR})
-  set(OPENSSL_COPY_FILES)
-else()
+if(NOT OPENSSL_FOUND)
   # search original module path
+  # https://cmake.org/cmake/help/v3.6/module/FindOpenSSL.html
   set(CMAKE_MODULE_PATH ${ORIGINAL_CMAKE_MODULE_PATH})
   find_package(OpenSSL QUIET)
   set(CMAKE_MODULE_PATH ${OWN_CMAKE_MODULE_PATH})
-  
-  # https://cmake.org/cmake/help/v3.6/module/FindOpenSSL.html
-  if(OPENSSL_FOUND)
-    set(OPENSSL_LIBRARIES ${OPENSSL_LIBRARIES})
-    set(OPENSSL_INCLUDE_DIRS ${OPENSSL_INCLUDE_DIR})
-    set(OPENSSL_COPY_FILES)
-  else()
-    set(OPENSSL_SSL_LIBRARY "")
-    set(OPENSSL_CRYPTO_LIBRARY "")
-    set(OPENSSL_COPY_FILES)
-  endif()
+endif()
+
+if(OPENSSL_FOUND)
+  is_bundled(OPENSSL_BUNDLED "${OPENSSL_SSL_LIBRARY}")
+  set(OPENSSL_LIBRARIES ${OPENSSL_CRYPTO_LIBRARY} ${OPENSSL_SSL_LIBRARY})
+  set(OPENSSL_INCLUDE_DIRS ${OPENSSL_INCLUDE_DIR})
+  set(OPENSSL_COPY_FILES)
 endif()
