@@ -227,17 +227,10 @@ find_package(ZLIB)
 find_package(Curl)
 find_package(OpenSSL)
 #find_package(ICU)
-find_package(MySQL)
+find_package(MariaDB)
 #find_package(DiscordGameSDK)
 #find_package(GLEW)
 find_package(SQLite3)
-
-## boost
-if(POLICY CMP0167)
-  cmake_policy(SET CMP0167 OLD)
-endif()
-set(BOOST_INCLUDEDIR "libraries/boost/include") # hint
-find_package(Boost 1.69 REQUIRED) # smart_ptr (header-only)
 
 # another packages
 find_package(Git)
@@ -292,7 +285,7 @@ if(TARGET_OS AND TARGET_OS STREQUAL "mac")
 endif()
 
 if(SERVER_COMPILE)
-  show_dependency_status("MySQL" MYSQL TRUE)
+  show_dependency_status("MariaDB" MARIADB TRUE)
   show_dependency_status("OpenSSL" OPENSSL FALSE)
   show_dependency_status("SQLite3" SQLite3 TRUE)
 endif()
@@ -450,7 +443,7 @@ file(COPY ${COPY_DATA_FILES} DESTINATION .)
 set(COPY_FILES_SERVER
   #${ICU_COPY_FILES}
   ${CURL_COPY_FILES}
-  ${MYSQL_COPY_FILES}
+  ${MARIADB_COPY_FILES}
   ${OPENSSL_COPY_FILES}
   ${SQLite3_COPY_FILES}
 )
@@ -759,15 +752,13 @@ if(SERVER_COMPILE)
   set(SERVER_SRC ${ENGINE_SERVER} ${GAME_SERVER} ${GAME_GENERATED_SERVER} ${LOCALIZED_SERVER})
 
   set(SERVER_INCLUDES_DIRS
-    ${Boost_INCLUDE_DIRS}
-    ${MYSQL_INCLUDE_DIRS}
+    ${MARIADB_INCLUDE_DIRS}
     ${SQLite3_INCLUDE_DIRS}
     ${LIBMAXMINDDB_INCLUDE_DIR}
   )
   set(SERVER_LIBRARIES
-    ${MYSQL_LIBRARIES}
+    ${MARIADB_LIBRARIES}
     ${SQLite3_LIBRARIES}
-    ${Boost_LIBRARIES} # empty, but will be here for the future
   )
   set(DEPS_SERVER ${DEPS})
 
@@ -1242,8 +1233,8 @@ foreach(target ${TARGETS_OWN})
 	target_include_directories(${target} PRIVATE ${OPENSSL_INCLUDE_DIRS})
   endif()
 
-  if(MYSQL_FOUND)
-	target_include_directories(${target} PRIVATE ${MYSQL_INCLUDE_DIRS})
+  if(MARIADB_FOUND)
+	target_include_directories(${target} PRIVATE ${MARIADB_INCLUDE_DIRS})
   endif()
 endforeach()
 

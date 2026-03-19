@@ -296,7 +296,7 @@ void CThreadPool::WorkerThread()
 					EnqueueRetry(std::move(task), "Worker has no valid connection", MaxRetriesForType(task.m_Type));
 				}
 			}
-			catch(const SQLException& e)
+			catch(SQLException& e)
 			{
 				const bool connectionLost = is_connection_lost(e);
 				if(connectionLost)
@@ -332,7 +332,7 @@ CConectionPool::CConectionPool()
 {
 	try
 	{
-		m_pDriver = get_driver_instance();
+		m_pDriver = mariadb::get_driver_instance();
 		const auto thread_count = std::max(2, g_Config.m_SvMySqlPoolSize);
 		m_pThreadPool = std::make_unique<CThreadPool>(thread_count);
 	}
@@ -359,22 +359,25 @@ std::unique_ptr<Connection> CConectionPool::CreateConnection()
 
 	try
 	{
-		Driver* pDriver = get_driver_instance();
+		Driver* pDriver = mariadb::get_driver_instance();
+
 		std::string Hostname(g_Config.m_SvMySqlHost);
 		Hostname.append(":" + std::to_string(g_Config.m_SvMySqlPort));
-		auto pConnection = std::unique_ptr<Connection>(pDriver->connect(Hostname.c_str(), g_Config.m_SvMySqlLogin, g_Config.m_SvMySqlPassword));
 
 		// Set connection options
-		constexpr bool reconnect = true;
-		constexpr int  connect_timeout = 10;
-		constexpr int  read_timeout = 30;
-		constexpr int  write_timeout = 30;
-		pConnection->setClientOption("OPT_CHARSET_NAME", "utf8mb4");
-		pConnection->setClientOption("OPT_RECONNECT", &reconnect);
-		pConnection->setClientOption("OPT_CONNECT_TIMEOUT", &connect_timeout);
-		pConnection->setClientOption("OPT_READ_TIMEOUT", &read_timeout);
-		pConnection->setClientOption("OPT_WRITE_TIMEOUT", &write_timeout);
-		pConnection->setSchema(g_Config.m_SvMySqlDatabase);
+		ConnectOptionsMap connection_properties;
+
+		connection_properties["hostName"] = Hostname;
+		connection_properties["user"] = g_Config.m_SvMySqlLogin;
+		connection_properties["password"] = g_Config.m_SvMySqlPassword;
+		connection_properties["schema"] = g_Config.m_SvMySqlDatabase;
+
+		// connection_properties["OPT_CHARSET_NAME"] = "utf8mb4"; // didn't find this one https://mariadb.com/docs/connectors/mariadb-connector-cpp/connect-with-mariadb-connectorcpp#optional-connection-parameters
+		connection_properties["autoReconnect"] = "true";
+		connection_properties["connectTimeout"] = "10";
+		connection_properties["socketTimeout"] = "30";
+
+		auto pConnection = std::unique_ptr<Connection>(pDriver->connect(connection_properties));
 
 		s_LastConnectFailure.store(0);
 		return pConnection;
@@ -420,7 +423,7 @@ std::unique_ptr<Connection> CConectionPool::CreateConnection()
 		}
 		return result ? result : EmptyResult();
 	}
-	catch(const SQLException& e)
+	catch(SQLException& e)
 	{
 		const double durationMs = DurationMs(start, time_get());
 		if(durationMs > static_cast<double>(g_Config.m_SvSqlSyncSelectWarnMs))
@@ -443,7 +446,7 @@ std::unique_ptr<Connection> CConectionPool::CreateConnection()
 				{
 					return runQuery(retryConnection.get());
 				}
-				catch(const SQLException& retryError)
+				catch(SQLException& retryError)
 				{
 					dbg_msg("SQL Error", "Sync SELECT retry failed: %s. Query: %s", retryError.what(), m_Query.c_str());
 					if(!is_connection_lost(retryError))

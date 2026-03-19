@@ -4,23 +4,16 @@
 // SECTION: Includes and Basic Setup
 // =================================================================
 
-#if __cplusplus >= 201703L
-	#define throw(...)
-	#include <cppconn/driver.h>
-	#include <cppconn/statement.h>
-	#include <cppconn/resultset.h>
-	#undef throw
-#else
-	#include <cppconn/driver.h>
-	#include <cppconn/statement.h>
-	#include <cppconn/resultset.h>
-#endif
+#include <mariadb/conncpp/Driver.hpp>
+#include <mariadb/conncpp/Exception.hpp>
+#include <mariadb/conncpp/ResultSet.hpp>
+#include <mariadb/conncpp/Statement.hpp>
 
-#include <cstdarg>
-#include <queue>
 #include <atomic>
 #include <condition_variable>
+#include <cstdarg>
 #include <memory>
+#include <queue>
 
 using namespace sql;
 class CConectionPool; // Forward declare
@@ -40,7 +33,7 @@ enum class DB
 
 // Helper to check for lost connection errors by error code or SQLSTATE.
 // SQLSTATE '08xxx' indicates a connection exception.
-inline bool is_connection_lost(const SQLException& e)
+inline bool is_connection_lost(SQLException& e)
 {
 	const int code = e.getErrorCode();
 	const char* state = e.getSQLStateCStr();
