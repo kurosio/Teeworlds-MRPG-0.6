@@ -1,7 +1,7 @@
 # out
 # - OPENSSL_CRYPTO_LIBRARY - (libcrypto)
 # - OPENSSL_SSL_LIBRARY - (libssl)
-# - OPENSSL_LIBRARY - (libcrypto + libssl)
+# - OPENSSL_LIBRARIES - (libcrypto + libssl)
 
 if(NOT CMAKE_CROSSCOMPILING)
   find_package(PkgConfig QUIET)
@@ -36,25 +36,14 @@ find_package_handle_standard_args(OpenSSL DEFAULT_MSG OPENSSL_CRYPTO_LIBRARY OPE
 mark_as_advanced(OPENSSL_CRYPTO_LIBRARY OPENSSL_INCLUDEDIR)
 
 # so that we have the same variables for all searches
-set(OPENSSL_LIBRARY)
+set(OPENSSL_LIBRARIES)
 set(OPENSSL_INCLUDE_DIRS)
 
 if(OPENSSL_FOUND)
-  # bundled
-  set(OPENSSL_LIBRARY ${OPENSSL_CRYPTO_LIBRARY} ${OPENSSL_SSL_LIBRARY})
+  is_bundled(OPENSSL_BUNDLED "${OPENSSL_LIBRARIES}")
+  set(OPENSSL_LIBRARIES ${OPENSSL_CRYPTO_LIBRARY} ${OPENSSL_SSL_LIBRARY})
   set(OPENSSL_INCLUDE_DIRS ${OPENSSL_INCLUDEDIR})
-  is_bundled(OPENSSL_BUNDLED "${OPENSSL_LIBRARY}")
-  
-  # copy dll files
   set(OPENSSL_COPY_FILES)
-  if(TARGET_OS AND TARGET_OS STREQUAL "windows")
-    if(TARGET_BITS EQUAL 32)
-      set(OPENSSL_COPY_FILES "${EXTRA_OPENSSL_LIBDIR}/libcrypto-1_1.dll" "${EXTRA_OPENSSL_LIBDIR}/libssl-1_1.dll")
-    elseif(TARGET_BITS EQUAL 64)
-      set(OPENSSL_COPY_FILES "${EXTRA_OPENSSL_LIBDIR}/libcrypto-1_1-x64.dll" "${EXTRA_OPENSSL_LIBDIR}/libssl-1_1-x64.dll")
-	endif()
-	list(APPEND OPENSSL_COPY_FILES "${EXTRA_OPENSSL_LIBDIR}/ssleay32.dll" "${EXTRA_OPENSSL_LIBDIR}/libeay32.dll")
-  endif()
 else()
   # search original module path
   set(CMAKE_MODULE_PATH ${ORIGINAL_CMAKE_MODULE_PATH})
@@ -63,10 +52,12 @@ else()
   
   # https://cmake.org/cmake/help/v3.6/module/FindOpenSSL.html
   if(OPENSSL_FOUND)
-    set(OPENSSL_LIBRARY ${OPENSSL_LIBRARIES})
+    set(OPENSSL_LIBRARIES ${OPENSSL_LIBRARIES})
     set(OPENSSL_INCLUDE_DIRS ${OPENSSL_INCLUDE_DIR})
+    set(OPENSSL_COPY_FILES)
   else()
     set(OPENSSL_SSL_LIBRARY "")
     set(OPENSSL_CRYPTO_LIBRARY "")
+    set(OPENSSL_COPY_FILES)
   endif()
 endif()
