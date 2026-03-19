@@ -486,6 +486,14 @@ function(generate_source output_file script_parameter)
   )
 endfunction()
 
+function(generate_source_now output_file script_parameter)
+  execute_process(
+          COMMAND ${Python3_EXECUTABLE} datasrc/compile.py ${script_parameter}
+          OUTPUT_FILE "${PROJECT_BINARY_DIR}/${output_file}"
+          WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+  )
+endfunction()
+
 file(MAKE_DIRECTORY "${PROJECT_BINARY_DIR}/src/generated/")
 if(GIT_FOUND)
   execute_process(COMMAND ${GIT_EXECUTABLE} rev-parse --git-dir
@@ -527,6 +535,8 @@ generate_source("src/generated/protocol.cpp" "network_source")
 generate_source("src/generated/protocol.h" "network_header")
 generate_source("src/generated/server_data.cpp" "server_content_source")
 generate_source("src/generated/server_data.h" "server_content_header" ${SOUND_MANIFEST} ${SOUND_FILES} datasrc/sound_manifest.py)
+
+generate_source_now("src/generated/protocol.h" "network_header") # Precompiled header dependency
 
 ########################################################################
 # SHARED
@@ -1210,7 +1220,7 @@ foreach(target ${TARGETS_OWN})
   set_property(TARGET ${target} PROPERTY CXX_EXTENSIONS OFF)
 
   if(MSVC)
-	target_compile_options(${target} PRIVATE /W3)
+	target_compile_options(${target} PRIVATE /W0)
 	target_compile_options(${target} PRIVATE /wd4244) # Possible loss of data (float -> int, int -> float, etc.).
 	target_compile_options(${target} PRIVATE /wd4267) # Possible loss of data (size_t - int on win64).
 	target_compile_options(${target} PRIVATE /wd4800) # Implicit conversion of int to bool.
