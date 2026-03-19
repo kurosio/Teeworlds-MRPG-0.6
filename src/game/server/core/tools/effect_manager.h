@@ -10,7 +10,7 @@ enum class ECharacterEffect {
 	FIRE,
 };
 
-static const char *EffectName(const ECharacterEffect Effect) {
+inline const char *EffectName(const ECharacterEffect Effect) {
 	switch (Effect) {
 		case ECharacterEffect::SLOWNESS:
 			return "Slowness";
@@ -25,10 +25,9 @@ static const char *EffectName(const ECharacterEffect Effect) {
 		default:
 			return "Invalid";
 	}
-	return "Invalid";
 }
 
-static ECharacterEffect EffectFromName(const char *pName) {
+inline ECharacterEffect EffectFromName(const char *pName) {
 	if(str_comp_nocase(pName, "Slowness") == 0)
 		return ECharacterEffect::SLOWNESS;
 	if(str_comp_nocase(pName, "Stun") == 0)

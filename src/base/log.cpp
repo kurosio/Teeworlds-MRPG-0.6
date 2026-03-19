@@ -448,7 +448,7 @@ void CFutureLogger::Set(std::shared_ptr<ILogger> pLogger)
 {
 	const CLockScope LockScope(m_PendingLock);
 	std::shared_ptr<ILogger> pNullLogger;
-	if(!std::atomic_compare_exchange_strong_explicit(&m_pLogger, &pNullLogger, pLogger, std::memory_order_acq_rel, std::memory_order_acq_rel))
+	if(m_pLogger.compare_exchange_strong(pNullLogger, pLogger, std::memory_order_acq_rel, std::memory_order_acq_rel))
 	{
 		dbg_assert(false, "future logger has already been set and can only be set once");
 	}
@@ -456,7 +456,7 @@ void CFutureLogger::Set(std::shared_ptr<ILogger> pLogger)
 
 	for(const auto &Pending : m_vPending)
 	{
-		m_pLogger->Log(&Pending);
+		Log(&Pending);
 	}
 	m_vPending.clear();
 	m_vPending.shrink_to_fit();

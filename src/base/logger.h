@@ -225,7 +225,7 @@ std::unique_ptr<ILogger> log_logger_windows_debugger();
 class CFutureLogger : public ILogger
 {
 private:
-	std::shared_ptr<ILogger> m_pLogger;
+	std::atomic<std::shared_ptr<ILogger>> m_pLogger;
 	std::vector<CLogMessage> m_vPending;
 	CLock m_PendingLock;
 

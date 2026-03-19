@@ -35,7 +35,7 @@ void QuestDatafile::Create() const
 			Append["defeat"].push_back({ { "id", p.m_BotID }, { "count", 0 }, { "complete", false } });
 		}
 
-		for(auto& p : pStep->m_Bot.m_vRequiredMoveAction)
+		for([[maybe_unused]] auto& p : pStep->m_Bot.m_vRequiredMoveAction)
 		{
 			Append["move_to"].push_back({ { "complete", false } });
 		}
