@@ -43,8 +43,7 @@ jobs:
       if: contains(matrix.os, 'ubuntu')
       run: |
         sudo apt-get update -y
-        sudo apt-get install pkg-config cmake libicu-dev libssl-dev libcurl4-openssl-dev -y
-        sudo apt-get install libboost-dev libmariadb-dev libmysqlcppconn-dev -y
+        sudo apt-get install pkg-config cmake libssl-dev libmariadbcpp-dev -y
     - name: Build
       env: ${{ matrix.env }}
       run: |
