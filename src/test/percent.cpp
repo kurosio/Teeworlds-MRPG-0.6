@@ -8,17 +8,17 @@ TEST(Percent, AddProcentToSource)
 {
 	// int
 	int SourceInt = 4096;
-	add_percent_to_source(&SourceInt, 50.0f);
+	add_percent_to_source(SourceInt, 50.0f);
 	EXPECT_EQ(SourceInt, 6144);
 
 	// float
 	float SourceFloat = 192.055f;
-	add_percent_to_source(&SourceFloat, 100.0f);
+	add_percent_to_source(SourceFloat, 100.0f);
 	EXPECT_FLOAT_EQ(SourceFloat, 384.11f);
 
 	// double
 	double SourceDouble = 200.0000428482;
-	add_percent_to_source(&SourceDouble, 100.0f);
+	add_percent_to_source(SourceDouble, 100.0f);
 	EXPECT_DOUBLE_EQ(SourceDouble, 400.0000856964);
 }
 
