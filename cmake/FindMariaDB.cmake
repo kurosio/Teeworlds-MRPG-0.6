@@ -57,7 +57,7 @@ if(MARIADB_FOUND)
 
   if(MARIADB_BUNDLED AND TARGET_OS STREQUAL "windows")
     set(MARIADB_COPY_FILES
-            "${EXTRA_MARIADB_LIBDIR}/libmariadb.dll"
+            "${EXTRA_MARIADB_LIBDIR}/mariadbcpp.dll"
     )
   else()
     set(MARIADB_COPY_FILES)
