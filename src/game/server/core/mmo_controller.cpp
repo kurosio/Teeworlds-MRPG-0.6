@@ -161,6 +161,7 @@ bool CMmoController::OnSendMenuVotes(CPlayer* pPlayer, int Menulist) const
 	{
 		const auto pProfName = GetProfessionName(pPlayer->Account()->GetActiveProfessionID());
 		const auto expForLevel = computeExperience(pPlayer->Account()->GetLevel());
+		const auto spAmount = pPlayer->GetItem(itSkillPoint)->GetValue();
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
 		// Statistics menu
@@ -174,6 +175,7 @@ bool CMmoController::OnSendMenuVotes(CPlayer* pPlayer, int Menulist) const
 		// Personal Menu
 		VoteWrapper VPersonal(ClientID, VWF_ALIGN_TITLE, "\u262A Personal Menu");
 		VPersonal.AddMenu(MENU_UPGRADES, "\u2657 Upgrades & Professions ({}p)", pPlayer->Account()->GetTotalProfessionsUpgradePoints());
+		VPersonal.AddMenu(MENU_SKILLS, "\u2654 Skills ({}sp)", spAmount);
 		VPersonal.AddMenu(MENU_ACHIEVEMENTS, "\u2654 Achievements");
 		VPersonal.AddMenu(MENU_EQUIPMENT, "\u26B0 Equipments");
 		VPersonal.AddMenu(MENU_MODULES, "\u26B1 Modules");

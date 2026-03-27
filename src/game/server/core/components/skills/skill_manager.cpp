@@ -43,7 +43,7 @@ bool CSkillManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	// Skill selected detail information
 	if(Menulist == MENU_SKILL_SELECT)
 	{
-		pPlayer->m_VotesData.SetLastMenuID(MENU_UPGRADES);
+		pPlayer->m_VotesData.SetLastMenuID(MENU_SKILLS);
 
 		if(const auto SkillID = pPlayer->m_VotesData.GetExtraID())
 		{
