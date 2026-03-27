@@ -543,7 +543,7 @@ bool CSkill::Upgrade()
 	// update state learned
 	m_Learned = true;
 	m_SelectedEmoticon = -1;
-	Database->Execute<DB::INSERT>("tw_accounts_skills", "(SkillID, UserID, Level) VALUES ('{}', '{}', '1');", m_ID, pPlayer->Account()->GetID());
+	Database->Execute<DB::INSERT>("tw_accounts_skills", "(SkillID, UserID, UsedByEmoticon) VALUES ('{}', '{}', '{}');", m_ID, pPlayer->Account()->GetID(), m_SelectedEmoticon);
 	GS()->Chat(ClientID, "Learned a new skill ['{}']", Info()->GetName());
 	return true;
 }
