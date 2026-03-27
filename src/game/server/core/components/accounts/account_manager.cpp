@@ -527,31 +527,60 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 
 		const auto ActiveProfID = pPlayer->Account()->GetActiveProfessionID();
 		const auto spAmount = pPlayer->GetItem(itSkillPoint)->GetValue();
-
-		// skill upgrades
-		VoteWrapper VActiveSkills(ClientID, VWF_SEPARATE_OPEN | VWF_ALIGN_TITLE | VWF_STYLE_STRICT_BOLD, "\u2694 Improving class skills");
-		VActiveSkills.Add("Current class: {}", GetProfessionName(ActiveProfID));
-		VActiveSkills.Add("SP: {}", spAmount);
-		for(const auto& [ID, pSkillDesc] : CSkillDescription::Data())
+		const auto GetSkillStateIcon = [spAmount](const CSkillDescription* pSkillDesc, const CSkill* pSkill) -> const char*
 		{
-			if(pSkillDesc->GetProfessionID() == ActiveProfID)
+			if(pSkill->IsLearned())
+				return "\u2714";
+			if(spAmount >= pSkillDesc->GetPriceSP())
+				return "\u2726";
+			return "\u2022";
+		};
+		const auto AddSkillSection = [&](VoteWrapper& VSection, ProfessionIdentifier ProfID)
+		{
+			int Total = 0;
+			int Learned = 0;
+			int AvailableToLearn = 0;
+			for(const auto& [ID, pSkillDesc] : CSkillDescription::Data())
 			{
+				if(pSkillDesc->GetProfessionID() != ProfID)
+					continue;
+
 				const auto* pSkill = pPlayer->GetSkill(ID);
-				VActiveSkills.AddMenu(MENU_SKILL_SELECT, ID, "{} - {}SP {}", pSkillDesc->GetName(), pSkillDesc->GetPriceSP(), pSkill->GetStringLevelStatus());
+				Total++;
+				if(pSkill->IsLearned())
+					Learned++;
+				else if(spAmount >= pSkillDesc->GetPriceSP())
+					AvailableToLearn++;
 			}
-		}
+
+			VSection.Add("Learned: {}/{}  |  Ready to learn: {}", Learned, Total, AvailableToLearn);
+			VSection.AddLine();
+
+			for(const auto& [ID, pSkillDesc] : CSkillDescription::Data())
+			{
+				if(pSkillDesc->GetProfessionID() != ProfID)
+					continue;
+
+				const auto* pSkill = pPlayer->GetSkill(ID);
+				const char* pIcon = GetSkillStateIcon(pSkillDesc, pSkill);
+				VSection.AddMenu(MENU_SKILL_SELECT, ID, "{} {} - {}SP | {}",
+					pIcon, pSkillDesc->GetName(), pSkillDesc->GetPriceSP(), pSkill->GetStringLevelStatus());
+			}
+		};
+
+		VoteWrapper VSkillsInfo(ClientID, VWF_SEPARATE_OPEN | VWF_ALIGN_TITLE | VWF_STYLE_STRICT_BOLD, "\u2654 Skills");
+		VSkillsInfo.Add("Active class: {}", GetProfessionName(ActiveProfID));
+		VSkillsInfo.Add("Available SP: {}", spAmount);
 		VoteWrapper::AddEmptyline(ClientID);
 
-		// skill univirsal
-		VoteWrapper VUniversalSkills(ClientID, VWF_SEPARATE_OPEN | VWF_ALIGN_TITLE | VWF_STYLE_STRICT_BOLD, "\u2694 Improving universal skills");
-		for(const auto& [ID, pSkillDesc] : CSkillDescription::Data())
-		{
-			if(pSkillDesc->GetProfessionID() == ProfessionIdentifier::None)
-			{
-				const auto* pSkill = pPlayer->GetSkill(ID);
-				VUniversalSkills.AddMenu(MENU_SKILL_SELECT, ID, "{} - {}SP {}", pSkillDesc->GetName(), pSkillDesc->GetPriceSP(), pSkill->GetStringLevelStatus());
-			}
-		}
+		// class skills
+		VoteWrapper VActiveSkills(ClientID, VWF_SEPARATE_OPEN | VWF_ALIGN_TITLE | VWF_STYLE_STRICT_BOLD, "\u2694 Class skills");
+		AddSkillSection(VActiveSkills, ActiveProfID);
+		VoteWrapper::AddEmptyline(ClientID);
+
+		// universal skills
+		VoteWrapper VUniversalSkills(ClientID, VWF_SEPARATE_OPEN | VWF_ALIGN_TITLE | VWF_STYLE_STRICT_BOLD, "\u2694 Universal skills");
+		AddSkillSection(VUniversalSkills, ProfessionIdentifier::None);
 		VoteWrapper::AddEmptyline(ClientID);
 
 		// Add back page
