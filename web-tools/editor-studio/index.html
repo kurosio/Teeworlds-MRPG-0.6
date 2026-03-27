@@ -48,7 +48,7 @@
 </head>
 
 <body class="editor-theme" data-editor="home">
-  <div class="h-screen flex overflow-hidden">
+  <div id="studioApp" class="h-screen flex overflow-hidden hidden">
     <!-- Sidebar (adaptive) -->
     <aside id="studioSidebar" class="editor-surface border-r w-80 flex-shrink-0 hidden md:flex flex-col">
       <div class="h-16 border-b border-light flex items-center justify-between px-4">
@@ -108,11 +108,42 @@
     </div>
   </div>
 
+  <div id="authOverlay" class="fixed inset-0 z-[500]">
+    <div class="absolute inset-0" style="background: rgba(2,6,23,.82)"></div>
+    <div class="absolute inset-0 flex items-center justify-center p-4">
+      <div class="editor-surface border border-light rounded-2xl p-6 w-full max-w-md shadow-2xl">
+        <div class="flex items-center gap-3 mb-2">
+          <i class="fa-solid fa-shield-halved text-accent"></i>
+          <h2 class="text-xl font-bold">Авторизация Editor Studio</h2>
+        </div>
+        <p class="editor-muted-text text-sm mb-4">Для работы с редактором требуется вход администратора.</p>
+
+        <div class="space-y-3">
+          <div>
+            <div class="text-sm font-medium text-slate-200 mb-1">Логин</div>
+            <input id="auth-user" type="text" class="w-full form-input" value="admin" autocomplete="username" />
+          </div>
+          <div>
+            <div class="text-sm font-medium text-slate-200 mb-1">Пароль</div>
+            <input id="auth-pass" type="password" class="w-full form-input" value="admin1" autocomplete="current-password" />
+          </div>
+        </div>
+
+        <button id="auth-login-btn" class="editor-btn editor-btn-primary w-full mt-4">
+          <i class="fa-solid fa-right-to-bracket"></i>
+          <span>Войти как администратор</span>
+        </button>
+        <div id="auth-status" class="text-sm mt-3 editor-muted-text"></div>
+      </div>
+    </div>
+  </div>
+
   <script>
     const frame = document.getElementById('editor-frame');
     const openNewTab = document.getElementById('open-new-tab');
 
     const sidebarNav = document.getElementById('studioNav');
+    const studioApp = document.getElementById('studioApp');
     const mobileOverlay = document.getElementById('mobileOverlay');
     const mobileNav = document.getElementById('mobileNav');
     const mobileTitle = document.getElementById('mobileTitle');
@@ -125,6 +156,12 @@
     const GROUPS = Array.isArray(window.STUDIO_MANIFEST) ? window.STUDIO_MANIFEST : [];
     const EDITORS = GROUPS.flatMap(g => g.items || []);
 
+    const authOverlay = document.getElementById('authOverlay');
+    const authUser = document.getElementById('auth-user');
+    const authPass = document.getElementById('auth-pass');
+    const authLoginBtn = document.getElementById('auth-login-btn');
+    const authStatus = document.getElementById('auth-status');
+
     const byKey = (key) => EDITORS.find(e => e.key === key) || EDITORS[0] || null;
     const normalizeEditorKey = (value) => String(value || '').replace(/^#/, '').trim();
     const DIRTY_STATUS_TIMEOUT = 350;
@@ -132,6 +169,58 @@
     let activeKey = '';
     let dirtyStatusRequestSeq = 0;
     let openEditorRequestSeq = 0;
+    let isAuthorized = false;
+    let isAuthRequestInFlight = false;
+
+    const setAuthStatus = (text = '', tone = 'muted') => {
+      if (!authStatus) return;
+      const color = tone === 'ok' ? 'text-emerald-300' : tone === 'err' ? 'text-red-300' : 'editor-muted-text';
+      authStatus.className = `text-sm mt-3 ${color}`;
+      authStatus.textContent = text;
+    };
+
+    const setAuthOverlay = (visible) => {
+      authOverlay?.classList.toggle('hidden', !visible);
+      studioApp?.classList.toggle('hidden', visible);
+      if (visible) {
+        authUser?.focus();
+        document.body.style.overflow = 'hidden';
+      } else {
+        document.body.style.overflow = '';
+      }
+    };
+
+    const authRequest = async (action, payload = null) => {
+      const options = {
+        method: payload ? 'POST' : 'GET',
+        credentials: 'same-origin',
+        headers: payload ? { 'Content-Type': 'application/json' } : undefined,
+        body: payload ? JSON.stringify(payload) : undefined,
+      };
+      const res = await fetch(`api/auth.php?action=${encodeURIComponent(action)}`, options);
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || !json?.ok) {
+        return { ok: false, error: json?.error || `HTTP ${res.status}` };
+      }
+      return json;
+    };
+
+    const ensureAuthorized = async () => {
+      if (isAuthRequestInFlight) return false;
+      isAuthRequestInFlight = true;
+      const status = await authRequest('status');
+      isAuthRequestInFlight = false;
+      if (status.ok && status.authorized) {
+        isAuthorized = true;
+        setAuthOverlay(false);
+        return true;
+      }
+      isAuthorized = false;
+      frame.src = 'about:blank';
+      setAuthStatus('Введите данные администратора для входа.');
+      setAuthOverlay(true);
+      return false;
+    };
 
     const getSearchTerm = () => String(studioSearch?.value || mobileSearch?.value || '').trim();
 
@@ -204,6 +293,10 @@
     };
 
     const openEditor = async (key, { closeMobile = false, syncHash = true } = {}) => {
+      if (!isAuthorized) {
+        await ensureAuthorized();
+        if (!isAuthorized) return;
+      }
       const requestSeq = ++openEditorRequestSeq;
       const e = byKey(key);
       if (!e) {
@@ -283,6 +376,7 @@
     });
 
     openNewTab.addEventListener('click', () => {
+      if (!isAuthorized) return;
       const fallbackKey = EDITORS[0]?.key || '';
       const key = normalizeEditorKey(location.hash) || storageGet('studio.activeEditor') || fallbackKey;
       const e = byKey(key);
@@ -310,6 +404,7 @@
     };
 
     window.addEventListener('hashchange', () => {
+      if (!isAuthorized) return;
       if (isHashSync) return;
 
       const hashKey = normalizeEditorKey(location.hash);
@@ -327,9 +422,52 @@
       replaceHash(fallbackEditor.key);
     });
 
+    window.addEventListener('message', (event) => {
+      const data = event.data || {};
+      if (data?.type !== 'editor-shell:auth-required') return;
+      isAuthorized = false;
+      setAuthStatus('Сессия истекла. Повторите вход администратора.', 'err');
+      setAuthOverlay(true);
+      frame.src = 'about:blank';
+    });
+
+    authLoginBtn?.addEventListener('click', async () => {
+      if (isAuthRequestInFlight) return;
+      const user = String(authUser?.value || 'admin').trim() || 'admin';
+      const password = String(authPass?.value || '');
+      if (!password) {
+        setAuthStatus('Введите пароль администратора.', 'err');
+        return;
+      }
+      authLoginBtn.disabled = true;
+      isAuthRequestInFlight = true;
+      setAuthStatus('Проверяем доступ...');
+      const login = await authRequest('login', { user, password });
+      authLoginBtn.disabled = false;
+      isAuthRequestInFlight = false;
+      if (!login.ok) {
+        setAuthStatus(login.error || 'Ошибка авторизации.', 'err');
+        return;
+      }
+      isAuthorized = true;
+      setAuthStatus('Вход выполнен.', 'ok');
+      setAuthOverlay(false);
+      const fallbackKey = normalizeEditorKey(location.hash) || storageGet('studio.activeEditor') || EDITORS[0]?.key || '';
+      openEditor(fallbackKey);
+    });
+
+    authPass?.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        authLoginBtn?.click();
+      }
+    });
+
     // Initial editor selection: hash > localStorage > default
     const initial = normalizeEditorKey(location.hash) || storageGet('studio.activeEditor') || EDITORS[0]?.key || '';
-    openEditor(initial);
+    ensureAuthorized().then((ok) => {
+      if (ok) openEditor(initial);
+    });
   </script>
 </body>
 </html>

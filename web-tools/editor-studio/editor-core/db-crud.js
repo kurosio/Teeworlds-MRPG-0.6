@@ -12,6 +12,12 @@
     return new Error('Network error');
   };
 
+  const notifyAuthRequired = () => {
+    try {
+      window.top?.postMessage({ type: 'editor-shell:auth-required' }, '*');
+    } catch {}
+  };
+
   const jsonFetch = async (url, options = {}) => {
     const timeoutController = new AbortController();
     const externalSignal = options.signal;
@@ -38,6 +44,9 @@
       const text = await res.text();
       let payload = null;
       try { payload = text ? JSON.parse(text) : null; } catch { payload = { ok: false, error: 'Invalid JSON response', raw: text }; }
+      if (res.status === 401) {
+        notifyAuthRequired();
+      }
       if (!res.ok) throw new Error(payload?.error || `HTTP ${res.status}`);
       if (payload && payload.ok === false) throw new Error(payload.error || 'Request failed');
       return payload;

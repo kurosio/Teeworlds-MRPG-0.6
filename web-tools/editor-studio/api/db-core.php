@@ -36,6 +36,20 @@ function save_cfg(array $cfg): bool {
   return file_put_contents($path, $json) !== false;
 }
 
+function start_editor_session(): void {
+  if (session_status() === PHP_SESSION_ACTIVE) return;
+  $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
+  session_set_cookie_params([
+    'lifetime' => 0,
+    'path' => '/',
+    'domain' => '',
+    'secure' => $isHttps,
+    'httponly' => true,
+    'samesite' => 'Lax',
+  ]);
+  session_start();
+}
+
 function test_http_endpoint(string $url): array {
   if (!filter_var($url, FILTER_VALIDATE_URL)) {
     return ['ok' => false, 'error' => 'Invalid URL'];
@@ -64,6 +78,15 @@ function test_http_endpoint(string $url): array {
     return ['ok' => false, 'error' => 'HTTP status ' . $code, 'status' => $code];
   }
   return ['ok' => true, 'status' => $code];
+}
+
+
+function ensure_editor_auth(): void {
+  start_editor_session();
+  $authorized = isset($_SESSION['editor_studio_auth']) && $_SESSION['editor_studio_auth'] === true;
+  if (!$authorized) {
+    respond(['ok' => false, 'error' => 'Unauthorized'], 401);
+  }
 }
 
 function db_connect_server(): mysqli {

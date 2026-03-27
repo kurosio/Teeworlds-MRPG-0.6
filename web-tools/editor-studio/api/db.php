@@ -15,6 +15,8 @@ header('Content-Type: application/json; charset=utf-8');
 
 require_once __DIR__ . '/db-core.php';
 
+ensure_editor_auth();
+
 // Whitelisted sources for DBSelect.
 // Each source returns items {value,label}
 $SOURCES = [

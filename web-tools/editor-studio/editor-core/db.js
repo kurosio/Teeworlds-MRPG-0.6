@@ -37,6 +37,12 @@
     return err?.message || 'Network error';
   };
 
+  const notifyAuthRequired = () => {
+    try {
+      window.top?.postMessage({ type: 'editor-shell:auth-required' }, '*');
+    } catch {}
+  };
+
   const fetchJson = async (url, { method = 'GET', body = null } = {}) => {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
@@ -49,6 +55,9 @@
         signal: controller.signal
       });
       const json = await safeJson(res);
+      if (res.status === 401) {
+        notifyAuthRequired();
+      }
       if (!json && res.ok) {
         return { ok: true };
       }

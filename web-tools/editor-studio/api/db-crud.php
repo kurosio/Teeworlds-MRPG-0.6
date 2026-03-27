@@ -11,6 +11,25 @@
 declare(strict_types=1);
 
 header('Content-Type: application/json; charset=utf-8');
+header('X-Content-Type-Options: nosniff');
+
+
+if (session_status() !== PHP_SESSION_ACTIVE) {
+  $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
+  session_set_cookie_params([
+    'lifetime' => 0,
+    'path' => '/',
+    'domain' => '',
+    'secure' => $isHttps,
+    'httponly' => true,
+    'samesite' => 'Lax',
+  ]);
+  session_start();
+}
+if (!isset($_SESSION['editor_studio_auth']) || $_SESSION['editor_studio_auth'] !== true) {
+  respond(['ok' => false, 'error' => 'Unauthorized'], 401);
+}
+
 
 function respond(array $payload, int $code = 200): void {
   http_response_code($code);

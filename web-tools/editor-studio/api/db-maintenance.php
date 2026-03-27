@@ -14,6 +14,8 @@ header('Content-Type: application/json; charset=utf-8');
 
 require_once __DIR__ . '/db-core.php';
 
+ensure_editor_auth();
+
 function dumps_dir(): string {
   return dirname(__DIR__) . '/data/db-dumps';
 }

@@ -4,5 +4,7 @@
     "database": "test",
     "user": "root",
     "password": "",
-    "skins_api": "http:\/\/127.0.0.1:8000\/render?"
+    "skins_api": "http:\/\/127.0.0.1:8000\/render?",
+    "editor_user": "admin",
+    "editor_password": "admin1"
 }
