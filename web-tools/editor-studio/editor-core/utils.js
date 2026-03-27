@@ -25,6 +25,13 @@
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#39;');
 
+  const cssEscape = (value) => {
+    const raw = String(value ?? '');
+    if (window.CSS?.escape) return window.CSS.escape(raw);
+    // Conservative fallback for старых браузеров/webview без CSS.escape.
+    return raw.replace(/["\\#.:;,[\](){}<>*+~|=^$`'\/\s]/g, '\\$&');
+  };
+
   const rafThrottle = (fn) => {
     let ticking = false;
     let lastArgs = null;
@@ -329,6 +336,7 @@
     debounce,
     escapeAttr,
     escapeHtml,
+    cssEscape,
     rafThrottle,
     copyText,
     downloadText,

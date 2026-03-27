@@ -1,4 +1,5 @@
 (() => {
+  const cssEscape = (...args) => window.EditorCore?.utils?.cssEscape?.(...args) ?? String(args[0] ?? '');
   const DEFAULT_ENDPOINT = 'api/db.php';
   const MAINT_ENDPOINT = 'api/db-maintenance.php';
 
@@ -108,7 +109,7 @@
 
   const getSelectedValue = (el, { bindInputPath, root }) => {
     if (bindInputPath) {
-      const input = root.querySelector(`[data-path="${CSS.escape(bindInputPath)}"]`);
+      const input = root.querySelector(`[data-path="${cssEscape(bindInputPath)}"]`);
       const v = input ? String(input.value || '') : '';
       return v === '0' ? '' : v;
     }
@@ -183,7 +184,7 @@
 
     const syncSelectToInput = () => {
       if (!bindInputPath) return;
-      const input = root.querySelector(`[data-path="${CSS.escape(bindInputPath)}"]`);
+      const input = root.querySelector(`[data-path="${cssEscape(bindInputPath)}"]`);
       if (!input) return;
       input.value = (el.value === '' ? '0' : String(el.value));
       input.dispatchEvent(new Event('input', { bubbles: true }));
@@ -192,7 +193,7 @@
 
     const syncInputToSelect = () => {
       if (!bindInputPath) return;
-      const input = root.querySelector(`[data-path="${CSS.escape(bindInputPath)}"]`);
+      const input = root.querySelector(`[data-path="${cssEscape(bindInputPath)}"]`);
       if (!input) return;
       const v = String(input.value || '0');
       const has = Array.from(el.options).some(o => o.value === v);
@@ -204,7 +205,7 @@
       el.dataset.dbBindInit = '1';
       el.addEventListener('change', syncSelectToInput);
 
-      const input = root.querySelector(`[data-path="${CSS.escape(bindInputPath)}"]`);
+      const input = root.querySelector(`[data-path="${cssEscape(bindInputPath)}"]`);
       if (input && input.dataset.dbSelectSync !== '1') {
         input.dataset.dbSelectSync = '1';
         input.addEventListener('input', syncInputToSelect);
@@ -357,7 +358,7 @@
       if (bindInputPath && el.dataset.dbBindInit !== '1') {
         el.dataset.dbBindInit = '1';
         const syncToInput = () => {
-          const input = root.querySelector(`[data-path="${CSS.escape(bindInputPath)}"]`);
+          const input = root.querySelector(`[data-path="${cssEscape(bindInputPath)}"]`);
           if (!input) return;
           input.value = (el.value === '' ? '0' : String(el.value));
           input.dispatchEvent(new Event('input', { bubbles: true }));
@@ -365,7 +366,7 @@
         };
         el.addEventListener('change', syncToInput);
 
-        const input = root.querySelector(`[data-path="${CSS.escape(bindInputPath)}"]`);
+        const input = root.querySelector(`[data-path="${cssEscape(bindInputPath)}"]`);
         if (input && input.dataset.dbSelectSync !== '1') {
           input.dataset.dbSelectSync = '1';
           const syncToSelect = () => {
@@ -434,7 +435,7 @@
     })();
 
     const bound = bindInputPath
-      ? root.querySelector(`[data-path="${CSS.escape(bindInputPath)}"]`)
+      ? root.querySelector(`[data-path="${cssEscape(bindInputPath)}"]`)
       : combo.querySelector('input[data-path]');
 
     const coerceSelected = (v) => {

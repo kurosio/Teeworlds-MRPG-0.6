@@ -271,6 +271,7 @@
 
     const parseRequired = (s) => (window.EditorCore?.PairList?.parse ? window.EditorCore.PairList.parse(s) : []);
     const stringifyRequired = (arr) => (window.EditorCore?.PairList?.stringify ? window.EditorCore.PairList.stringify(arr) : '');
+    const cssEscape = (...args) => window.EditorCore?.utils?.cssEscape?.(...args) ?? String(args[0] ?? '');
 
     const rebuildGroups = () => {
       const map = new Map();
@@ -475,7 +476,7 @@
 
       // Keep the active item visible
       if (STATE.selectedId) {
-        const active = els.list.querySelector(`button[data-id="${CSS.escape(String(STATE.selectedId))}"]`);
+        const active = els.list.querySelector(`button[data-id="${cssEscape(String(STATE.selectedId))}"]`);
         if (active) active.scrollIntoView({ block: 'nearest' });
       }
     };

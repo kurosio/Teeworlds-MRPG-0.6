@@ -1,4 +1,5 @@
 (() => {
+  const cssEscape = (...args) => window.EditorCore?.utils?.cssEscape?.(...args) ?? String(args[0] ?? '');
   const parseValidateSpec = (raw) => {
     if (!raw) return null;
     try {
@@ -449,7 +450,7 @@
         const spec = parseValidateSpec(el.getAttribute('data-validate'));
         if (!spec) continue;
         const path = el.getAttribute('data-path') || el.getAttribute('name') || el.getAttribute('data-key');
-        const hint = path ? root.querySelector(`[data-hint-for="${CSS.escape(path)}"]`) : null;
+        const hint = path ? root.querySelector(`[data-hint-for="${cssEscape(path)}"]`) : null;
 
         const run = () => {
           const value = window.EditorCore?.FieldRenderer?.getInputValue
