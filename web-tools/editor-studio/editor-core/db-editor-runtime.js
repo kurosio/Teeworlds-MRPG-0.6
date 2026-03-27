@@ -5,6 +5,15 @@
   const escapeHtml = (...args) => window.EditorCore.utils.escapeHtml(...args);
 
   const queryRole = (root, role) => root.querySelector(`[data-editor-role="${role}"]`);
+  const cloneData = (value) => {
+    if (value === null || value === undefined) return value;
+    if (typeof structuredClone === 'function') return structuredClone(value);
+    try {
+      return JSON.parse(JSON.stringify(value));
+    } catch (err) {
+      return value;
+    }
+  };
 
   const DbEditor = {
     mount(root, cfg = {}) {
@@ -19,6 +28,7 @@
         title: queryRole(root, 'title'),
         subtitle: queryRole(root, 'subtitle'),
         save: queryRole(root, 'save'),
+        cancel: queryRole(root, 'cancel'),
         del: queryRole(root, 'delete'),
         form: queryRole(root, 'form'),
         status: queryRole(root, 'status'),
@@ -35,6 +45,8 @@
         search: '',
         selectedId: 0,
         model: null,
+        persistedModel: null,
+        lastSelectedIdBeforeCreate: 0,
         form: null,
         dirty: cfg.dirty || null,
         searchRequest: {
@@ -93,7 +105,12 @@
       };
 
       const setButtons = (enabled) => {
+        const canCancel = enabled && !!state.dirty?.isDirty?.();
         if (els.save) els.save.disabled = !enabled;
+        if (els.cancel) {
+          els.cancel.disabled = !canCancel;
+          els.cancel.classList.toggle('hidden', !canCancel);
+        }
         if (els.del) els.del.disabled = !enabled || !state.selectedId;
       };
 
@@ -126,6 +143,7 @@
                 // keep model as source of truth
                 state.form?.setData?.(state.model);
               }
+              setButtons(true);
             }
           });
         } else {
@@ -201,6 +219,7 @@
         if (!row) {
           state.selectedId = 0;
           state.model = null;
+          state.persistedModel = null;
           state.dirty?.setClean?.();
           renderForm();
           renderList();
@@ -209,6 +228,7 @@
         }
         state.selectedId = Number(row.ID || 0);
         state.model = toModel(row);
+        state.persistedModel = cloneData(state.model);
         state.dirty?.setClean?.();
         renderForm();
         renderList();
@@ -265,13 +285,42 @@
 
       const createNew = () => {
         if (!canDiscardDirty()) return false;
+        state.lastSelectedIdBeforeCreate = Number(state.selectedId || 0);
         state.selectedId = 0;
-        state.model = makeDefault();
+        state.model = cloneData(makeDefault());
+        state.persistedModel = null;
         state.dirty?.setClean?.();
         renderForm();
         renderList();
         setHeader();
         setButtons(true);
+        return true;
+      };
+
+      const cancelLocalChanges = () => {
+        if (!state.model) return false;
+
+        // cancel creation of local draft
+        if (!state.selectedId) {
+          const fallbackId = Number(state.lastSelectedIdBeforeCreate || 0);
+          const fallbackRow = fallbackId
+            ? state.rows.find((row) => Number(row?.ID || 0) === fallbackId)
+              || state.rowsRaw.find((row) => Number(row?.ID || 0) === fallbackId)
+            : null;
+          if (fallbackRow) selectRow(fallbackRow, { confirmDirty: false });
+          else selectRow(null, { confirmDirty: false });
+          setStatus('Создание записи отменено.', 'ok');
+          return true;
+        }
+
+        if (!state.dirty?.isDirty?.()) return false;
+        state.model = cloneData(state.persistedModel || state.model);
+        state.dirty?.setClean?.();
+        renderForm();
+        renderList();
+        setHeader();
+        setButtons(true);
+        setStatus('Локальные изменения отменены.', 'ok');
         return true;
       };
 
@@ -298,6 +347,7 @@
           } else {
             const res = await window.EditorCore.DBCrud.create(resource, payload);
             state.selectedId = Number(res.id || 0);
+            state.lastSelectedIdBeforeCreate = 0;
             setStatus('Запись создана.', 'ok');
             toast('Создано', 'success');
           }
@@ -340,6 +390,7 @@
       els.refresh?.addEventListener('click', loadList);
       els.newBtn?.addEventListener('click', createNew);
       els.save?.addEventListener('click', save);
+      els.cancel?.addEventListener('click', cancelLocalChanges);
       els.del?.addEventListener('click', remove);
 
       if (els.search) {

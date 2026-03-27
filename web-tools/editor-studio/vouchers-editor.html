@@ -80,6 +80,10 @@
                 <i class="fa-solid fa-floppy-disk"></i>
                 <span>Сохранить</span>
               </button>
+              <button id="cancelBtn" class="editor-btn editor-btn-secondary hidden" disabled>
+                <i class="fa-solid fa-rotate-left"></i>
+                <span>Отменить</span>
+              </button>
               <button id="deleteBtn" class="editor-btn editor-btn-danger" disabled>
                 <i class="fa-solid fa-trash"></i>
                 <span>Удалить</span>
@@ -121,6 +125,7 @@
       formRoot: document.getElementById('formRoot'),
       itemsRoot: document.getElementById('itemsRoot'),
       save: document.getElementById('saveBtn'),
+      cancel: document.getElementById('cancelBtn'),
       del: document.getElementById('deleteBtn'),
       pickDate: document.getElementById('pickDateBtn'),
       dbStatus: document.getElementById('dbStatus'),
@@ -191,14 +196,19 @@
     let STATE = {
       list: [],
       selectedId: 0,
+      lastSelectedIdBeforeCreate: 0,
       voucher: null,
+      persistedVoucher: null,
       form: null,
       itemsRootBound: false,
       _closeDrawer: () => {},
     };
 
     const setDirtyUi = (enabled) => {
+      const canCancel = enabled && !!DIRTY?.isDirty?.();
       DOM.save.disabled = !enabled;
+      DOM.cancel.disabled = !canCancel;
+      DOM.cancel.classList.toggle('hidden', !canCancel);
       DOM.pickDate.disabled = !enabled;
       DOM.del.disabled = !enabled || !STATE.selectedId;
     };
@@ -371,12 +381,14 @@
           STATE.voucher.items = Array.isArray(STATE.voucher.items) ? STATE.voucher.items : [];
           if (action === 'add') {
             STATE.voucher.items.push({ id: 0, value: 1 });
+            DIRTY?.markDirty?.();
             renderItems();
           }
           if (action === 'remove') {
             const idx = Number(btn.getAttribute('data-items-index'));
             if (Number.isFinite(idx) && idx >= 0 && idx < STATE.voucher.items.length) {
               STATE.voucher.items.splice(idx, 1);
+              DIRTY?.markDirty?.();
               renderItems();
             }
           }
@@ -388,6 +400,9 @@
       STATE.selectedId = id;
       const res = await window.EditorCore.DBCrud.get(RESOURCE, id);
       STATE.voucher = fromRow(res.row);
+      STATE.persistedVoucher = (typeof structuredClone === 'function')
+        ? structuredClone(STATE.voucher)
+        : JSON.parse(JSON.stringify(STATE.voucher));
       mountForms(STATE.voucher);
       DIRTY?.setClean();
       setHeader();
@@ -396,8 +411,10 @@
     };
 
     const newVoucher = () => {
+      STATE.lastSelectedIdBeforeCreate = Number(STATE.selectedId || 0);
       STATE.selectedId = 0;
       STATE.voucher = emptyVoucher();
+      STATE.persistedVoucher = null;
       mountForms(STATE.voucher);
       DIRTY?.setClean();
       setHeader();
@@ -421,10 +438,37 @@
         const created = await window.EditorCore.DBCrud.create(RESOURCE, payload);
         window.EditorCore.UI.toast('Создано', 'success');
         STATE.selectedId = Number(created.id || 0);
+        STATE.lastSelectedIdBeforeCreate = 0;
       }
       await loadList();
       if (STATE.selectedId) await selectVoucher(STATE.selectedId);
       DIRTY?.setClean();
+    };
+
+    const cancelVoucherChanges = async () => {
+      if (!STATE.voucher || !DIRTY?.isDirty?.()) return;
+      if (!STATE.selectedId) {
+        const fallbackId = Number(STATE.lastSelectedIdBeforeCreate || 0);
+        if (fallbackId > 0) {
+          await selectVoucher(fallbackId);
+        } else {
+          STATE.voucher = null;
+          STATE.persistedVoucher = null;
+          STATE.selectedId = 0;
+          DOM.formRoot.innerHTML = '';
+          DOM.itemsRoot.innerHTML = '';
+          DIRTY?.setClean();
+          setHeader();
+          renderList();
+        }
+        return;
+      }
+      STATE.voucher = (typeof structuredClone === 'function')
+        ? structuredClone(STATE.persistedVoucher || STATE.voucher)
+        : JSON.parse(JSON.stringify(STATE.persistedVoucher || STATE.voucher));
+      mountForms(STATE.voucher);
+      DIRTY?.setClean();
+      setHeader();
     };
 
     const deleteVoucher = async () => {
@@ -468,6 +512,7 @@
     DOM.filterStatus?.addEventListener('change', renderList);
     DOM.newBtn.addEventListener('click', newVoucher);
     DOM.save.addEventListener('click', saveVoucher);
+    DOM.cancel.addEventListener('click', cancelVoucherChanges);
     DOM.del.addEventListener('click', deleteVoucher);
     DOM.pickDate.addEventListener('click', pickDate);
 

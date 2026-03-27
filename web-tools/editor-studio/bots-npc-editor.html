@@ -70,6 +70,9 @@
               <button class="editor-btn editor-btn-primary" data-editor-role="save" disabled>
                 <i class="fa-solid fa-floppy-disk"></i><span>Сохранить</span>
               </button>
+              <button class="editor-btn editor-btn-secondary hidden" data-editor-role="cancel" disabled>
+                <i class="fa-solid fa-rotate-left"></i><span>Отменить</span>
+              </button>
               <button class="editor-btn editor-btn-secondary" data-editor-role="delete" disabled>
                 <i class="fa-solid fa-trash"></i><span>Удалить</span>
               </button>
@@ -124,6 +127,7 @@
       title: document.querySelector('[data-editor-role="title"]'),
       subtitle: document.querySelector('[data-editor-role="subtitle"]'),
       save: document.querySelector('[data-editor-role="save"]'),
+      cancel: document.querySelector('[data-editor-role="cancel"]'),
       del: document.querySelector('[data-editor-role="delete"]'),
       status: document.querySelector('[data-editor-role="status"]'),
       count: document.querySelector('[data-editor-role="count"]'),
@@ -158,7 +162,9 @@
     const STATE = {
       rows: [],
       selectedId: 0,
+      lastSelectedIdBeforeCreate: 0,
       model: null,
+      persistedModel: null,
       lookups: {
         bots: new Map(),
         worlds: new Map(),
@@ -169,6 +175,16 @@
       forms: {
         basic: null,
         dialog: null,
+      }
+    };
+
+    const cloneData = (value) => {
+      if (value === null || value === undefined) return value;
+      if (typeof structuredClone === 'function') return structuredClone(value);
+      try {
+        return JSON.parse(JSON.stringify(value));
+      } catch (err) {
+        return value;
       }
     };
 
@@ -293,7 +309,12 @@
     };
 
     const setButtons = (enabled) => {
+      const canCancel = enabled && !!dirty.isDirty?.();
       if (DOM.save) DOM.save.disabled = !enabled;
+      if (DOM.cancel) {
+        DOM.cancel.disabled = !canCancel;
+        DOM.cancel.classList.toggle('hidden', !canCancel);
+      }
       if (DOM.del) DOM.del.disabled = !enabled || !STATE.selectedId;
     };
 
@@ -368,6 +389,7 @@
       const onChange = (data, meta) => {
         STATE.model = data;
         dirty.markDirty();
+        setButtons(true);
         if (meta?.path === 'BotID') updateSkinPreview();
       };
 
@@ -401,6 +423,7 @@
               requestAnimationFrame(() => applyDialogConstraints(data, meta));
             }
             dirty.markDirty();
+            setButtons(true);
           },
         });
       } else {
@@ -470,6 +493,7 @@
       if (!row) {
         STATE.selectedId = 0;
         STATE.model = null;
+        STATE.persistedModel = null;
         dirty.setClean();
         mountForms();
         renderList();
@@ -479,6 +503,7 @@
       }
       STATE.selectedId = Number(row.ID || 0);
       STATE.model = toModel(row);
+      STATE.persistedModel = cloneData(STATE.model);
       dirty.setClean();
       mountForms();
       renderList();
@@ -508,13 +533,36 @@
     };
 
     const createNew = () => {
+      STATE.lastSelectedIdBeforeCreate = Number(STATE.selectedId || 0);
       STATE.selectedId = 0;
       STATE.model = emptyModel();
+      STATE.persistedModel = null;
       dirty.setClean();
       mountForms();
       renderList();
       setHeader();
       setButtons(true);
+    };
+
+    const cancelLocalChanges = () => {
+      if (!STATE.model || !dirty.isDirty?.()) return;
+      if (!STATE.selectedId) {
+        const fallbackId = Number(STATE.lastSelectedIdBeforeCreate || 0);
+        const fallbackRow = fallbackId
+          ? STATE.rows.find((row) => Number(row?.ID || 0) === fallbackId)
+          : null;
+        if (fallbackRow) selectRow(fallbackRow);
+        else selectRow(null);
+        setStatus('Создание записи отменено.', 'ok');
+        return;
+      }
+      STATE.model = cloneData(STATE.persistedModel || STATE.model);
+      dirty.setClean();
+      mountForms();
+      renderList();
+      setHeader();
+      setButtons(true);
+      setStatus('Локальные изменения отменены.', 'ok');
     };
 
     const save = async () => {
@@ -529,6 +577,7 @@
         } else {
           const res = await EditorCore.DBCrud.create('bots_npc', payload);
           STATE.selectedId = Number(res.id || 0);
+          STATE.lastSelectedIdBeforeCreate = 0;
           setStatus('Запись создана.', 'ok');
           EditorCore.UI.toast('Создано', 'success');
         }
@@ -587,6 +636,7 @@
     DOM.refresh?.addEventListener('click', loadList);
     DOM.newBtn?.addEventListener('click', createNew);
     DOM.save?.addEventListener('click', save);
+    DOM.cancel?.addEventListener('click', cancelLocalChanges);
     DOM.del?.addEventListener('click', remove);
 
     if (DOM.search) {

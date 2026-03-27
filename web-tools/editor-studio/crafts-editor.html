@@ -100,6 +100,9 @@
             <div class="editor-muted-text text-sm mt-1" id="subtitle">—</div>
           </div>
           <div class="flex flex-wrap gap-2">
+            <button id="btn-cancel" class="editor-btn editor-btn-secondary hidden" disabled>
+              <i class="fa-solid fa-rotate-left"></i><span>Отменить</span>
+            </button>
             <button id="btn-delete" class="editor-btn editor-btn-secondary" disabled>
               <i class="fa-solid fa-trash"></i><span>Удалить</span>
             </button>
@@ -172,6 +175,7 @@
       newBtn: document.getElementById('btn-new'),
       del: document.getElementById('btn-delete'),
       save: document.getElementById('btn-save'),
+      cancel: document.getElementById('btn-cancel'),
       dirtyPill: document.getElementById('dirty-pill'),
       status: document.getElementById('status'),
       list: document.getElementById('list'),
@@ -216,7 +220,9 @@
     const STATE = {
       rows: [],
       selectedId: null,
+      lastSelectedIdBeforeCreate: null,
       selected: null, // editor model
+      originalSelected: null,
       isDirty: false,
       filter: { group: '', sub: '' },
       search: '',
@@ -339,6 +345,11 @@
     const markDirty = (dirty = true) => {
       STATE.isDirty = !!dirty;
       els.save.disabled = !STATE.selected || !STATE.isDirty;
+      const canCancel = !!STATE.selected && STATE.isDirty;
+      if (els.cancel) {
+        els.cancel.disabled = !canCancel;
+        els.cancel.classList.toggle('hidden', !canCancel);
+      }
 
       // Visual "unsaved" indicator
       if (els.dirtyPill) {
@@ -569,9 +580,11 @@
     };
 
     const setSelected = (row, isNew = false) => {
+      const prevId = STATE.selectedId;
       STATE.selectedId = isNew ? null : (row ? row.ID : null);
       if (!row && !isNew) {
         STATE.selected = null;
+        STATE.originalSelected = null;
       } else {
         const split = splitGroupName(row?.GroupName);
         STATE.selected = {
@@ -584,6 +597,8 @@
           WorldID: Number(row?.WorldID ?? 0),
           RequiredItemsArr: parseRequired(row?.RequiredItems || ''),
         };
+        STATE.originalSelected = isNew ? null : JSON.parse(JSON.stringify(STATE.selected));
+        if (isNew) STATE.lastSelectedIdBeforeCreate = prevId;
       }
 
       els.del.disabled = !STATE.selectedId;
@@ -672,6 +687,7 @@
         } else {
           const created = await EditorCore.DBCrud.create(RESOURCE, payload);
           EditorCore.UI.toast('Создано', 'success');
+          STATE.lastSelectedIdBeforeCreate = null;
           // Reload list and open created row
           await loadRows();
           if (created?.id) await selectRow(created.id);
@@ -701,6 +717,24 @@
         setStatus(String(e?.message || e), 'err');
         EditorCore.UI.toast(String(e?.message || e), 'error');
       }
+    };
+
+    const cancelChanges = async () => {
+      if (!STATE.selected || !STATE.isDirty) return;
+      if (!STATE.selectedId) {
+        const fallback = STATE.lastSelectedIdBeforeCreate;
+        if (fallback) await selectRow(fallback);
+        else setSelected(null, false);
+        setStatus('Создание записи отменено.', 'ok');
+        return;
+      }
+      STATE.selected = JSON.parse(JSON.stringify(STATE.originalSelected || STATE.selected));
+      markDirty(false);
+      applyEditorInputs();
+      runtimeMain?.setData?.(STATE.selected);
+      runtimeReq?.setData?.(STATE.selected);
+      updateHeader();
+      setStatus('Локальные изменения отменены.', 'ok');
     };
 
     // Bind events
@@ -769,6 +803,7 @@
     els.editSub.addEventListener('input', onGroupChanged);
 
     els.save.addEventListener('click', save);
+    els.cancel.addEventListener('click', cancelChanges);
     els.del.addEventListener('click', remove);
 
     // Горячие клавиши в этом редакторе отключены (по просьбе).

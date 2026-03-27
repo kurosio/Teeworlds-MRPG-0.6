@@ -260,14 +260,27 @@
     pill = null,
     beforeUnload = true,
     onDirtyChange = null,
+    cancelButtons = null,
   } = {}) => {
     let dirty = false;
     let suspendCount = 0;
+    const resolvedCancelButtons = (() => {
+      if (Array.isArray(cancelButtons)) return cancelButtons.filter(Boolean);
+      if (cancelButtons) return [cancelButtons].filter(Boolean);
+      if (!pill?.parentElement) return [];
+      return Array.from(pill.parentElement.querySelectorAll('[data-editor-role="cancel"], #cancelBtn, #btn-cancel'));
+    })();
 
     const applyUI = () => {
       if (pill) {
         pill.classList.toggle('hidden', !dirty);
         pill.setAttribute('aria-hidden', dirty ? 'false' : 'true');
+      }
+      if (resolvedCancelButtons.length) {
+        resolvedCancelButtons.forEach((btn) => {
+          btn.classList.toggle('hidden', !dirty);
+          btn.disabled = !dirty;
+        });
       }
       if (typeof onDirtyChange === 'function') onDirtyChange(dirty);
     };

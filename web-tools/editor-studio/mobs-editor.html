@@ -82,6 +82,10 @@
                 <i class="fa-solid fa-floppy-disk"></i>
                 <span>Сохранить</span>
               </button>
+              <button id="cancelBtn" class="editor-btn editor-btn-secondary hidden" disabled>
+                <i class="fa-solid fa-rotate-left"></i>
+                <span>Отменить</span>
+              </button>
               <button id="deleteBtn" class="editor-btn editor-btn-danger" disabled>
                 <i class="fa-solid fa-trash"></i>
                 <span>Удалить</span>
@@ -131,6 +135,7 @@
       title: document.getElementById('title'),
       subtitle: document.getElementById('subtitle'),
       save: document.getElementById('saveBtn'),
+      cancel: document.getElementById('cancelBtn'),
       del: document.getElementById('deleteBtn'),
       dbStatus: document.getElementById('dbStatus'),
       sidebar: document.getElementById('sidebar'),
@@ -309,20 +314,36 @@
       return w ? w : (id ? `#${id}` : '—');
     };
 
+    const cloneData = (value) => {
+      if (value === null || value === undefined) return value;
+      if (typeof structuredClone === 'function') return structuredClone(value);
+      try {
+        return JSON.parse(JSON.stringify(value));
+      } catch (err) {
+        return value;
+      }
+    };
+
+    const setActionButtons = (enabled) => {
+      const canCancel = enabled && !!DIRTY?.isDirty?.();
+      DOM.save.disabled = !enabled;
+      DOM.del.disabled = !enabled || !STATE.selectedId;
+      DOM.cancel.disabled = !canCancel;
+      DOM.cancel.classList.toggle('hidden', !canCancel);
+    };
+
     const setHeader = () => {
       if (!STATE.mob) {
         DOM.title.textContent = 'Выберите моба';
         DOM.subtitle.textContent = 'или создайте новый спавн';
-        DOM.save.disabled = true;
-        DOM.del.disabled = true;
+        setActionButtons(false);
         return;
       }
       const name = STATE.lookups.bots.get(String(STATE.mob.BotID)) || `BotID: ${STATE.mob.BotID}`;
       const world = formatWorld(STATE.mob.WorldID);
       DOM.title.textContent = STATE.mob.ID ? `${name}` : 'Новый спавн';
       DOM.subtitle.textContent = `ID: ${STATE.mob.ID || '—'} • Мир: ${world} • Уровень: ${STATE.mob.Level || 1}`;
-      DOM.save.disabled = false;
-      DOM.del.disabled = !STATE.selectedId;
+      setActionButtons(true);
     };
 
     const isNumericSearch = (s) => /^\d+$/.test(String(s || '').trim());
@@ -527,6 +548,7 @@
               STATE.mob.drops = STATE.mob.drops.slice(0, 5);
             }
             setHeader();
+            setActionButtons(true);
           };
           el.addEventListener('input', handler);
           el.addEventListener('change', handler);
@@ -561,6 +583,8 @@
               fr.setValueAtPath(STATE.mob, listPath, arr);
               render();
               setHeader();
+              DIRTY?.markDirty?.();
+              setActionButtons(true);
             }
             if (action === 'remove') {
               const idx = Number(btn.getAttribute('data-list-index'));
@@ -569,6 +593,8 @@
                 fr.setValueAtPath(STATE.mob, listPath, arr);
                 render();
                 setHeader();
+                DIRTY?.markDirty?.();
+                setActionButtons(true);
               }
             }
           });
@@ -657,6 +683,7 @@
         const res = await window.EditorCore.DBCrud.get(RESOURCE, id);
         STATE.selectedId = id;
         STATE.mob = fromRow(res.row);
+        STATE.persistedMob = cloneData(STATE.mob);
         DIRTY?.setClean();
         renderList();
         renderForm();
@@ -668,8 +695,10 @@
     };
 
     const newMob = () => {
+      STATE.lastSelectedIdBeforeCreate = Number(STATE.selectedId || 0);
       STATE.selectedId = 0;
       STATE.mob = emptyMob();
+      STATE.persistedMob = null;
       DIRTY?.setClean();
       renderList();
       renderForm();
@@ -695,6 +724,7 @@
           const created = await window.EditorCore.DBCrud.create(RESOURCE, payload);
           window.EditorCore.UI.toast({ message: 'Создано', type: 'success' });
           const newId = Number(created?.id || 0);
+          STATE.lastSelectedIdBeforeCreate = 0;
           await loadList({ reset: true });
           if (newId) await selectMob(newId);
         }
@@ -732,6 +762,28 @@
       }
     };
 
+    const cancelMobChanges = async () => {
+      if (!STATE.mob || !DIRTY?.isDirty?.()) return;
+      if (!STATE.selectedId) {
+        const fallbackId = Number(STATE.lastSelectedIdBeforeCreate || 0);
+        if (fallbackId > 0) await selectMob(fallbackId);
+        else {
+          STATE.mob = null;
+          STATE.selectedId = 0;
+          STATE.persistedMob = null;
+          DIRTY?.setClean();
+          renderForm();
+          setHeader();
+          renderList();
+        }
+        return;
+      }
+      STATE.mob = cloneData(STATE.persistedMob || STATE.mob);
+      DIRTY?.setClean();
+      renderForm();
+      setHeader();
+    };
+
     const debounce = (fn, ms = 200) => {
       let t = null;
       return (...args) => {
@@ -745,7 +797,9 @@
       offset: 0,
       hasMore: true,
       selectedId: 0,
+      lastSelectedIdBeforeCreate: 0,
       mob: null,
+      persistedMob: null,
       activeTab: 'basic',
       lookups: { bots: new Map(), worlds: new Map(), botSkins: new Map() },
       skinsApi: '',
@@ -779,6 +833,7 @@
       DOM.more.addEventListener('click', () => loadList({ reset: false }));
       DOM.newBtn.addEventListener('click', newMob);
       DOM.save.addEventListener('click', saveMob);
+      DOM.cancel.addEventListener('click', cancelMobChanges);
       DOM.del.addEventListener('click', deleteMob);
 
       DOM.search.addEventListener('input', debounce(() => {
