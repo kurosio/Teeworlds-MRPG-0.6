@@ -197,10 +197,11 @@ void CSkillManager::UseSkillsByEmoticon(CPlayer *pPlayer, int EmoticonID)
 	if(pPlayer && pPlayer->IsAuthed() && pPlayer->GetCharacter())
 	{
 		const int ClientID = pPlayer->GetCID();
-		for(auto& p : CSkill::Data()[ClientID])
+		for(auto& SkillDataPair : CSkill::Data()[ClientID])
 		{
-			if(p->m_SelectedEmoticon == EmoticonID)
-				p->Use();
+			auto& SkillData = SkillDataPair.second;
+			if(SkillData.m_SelectedEmoticon == EmoticonID)
+				SkillData.Use();
 		}
 	}
 }

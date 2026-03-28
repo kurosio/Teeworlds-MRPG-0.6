@@ -55,7 +55,7 @@ public:
 };
 
 // skill data
-class CSkill : public MultiworldIdentifiableData< std::map< int, std::deque < CSkill* > > >
+class CSkill : public MultiworldIdentifiableData< std::map< int, std::map < int, CSkill > > >
 {
 	friend class CSkillManager;
 
@@ -79,10 +79,10 @@ public:
 	// create a new instance of CSkill
 	static CSkill* CreateElement(int ClientID, const int& SkillID) noexcept
 	{
-		auto pData = new CSkill;
-		pData->m_ID = SkillID;
-		pData->m_ClientID = ClientID;
-		return m_pData[ClientID].emplace_back(pData);
+		auto& Data = m_pData[ClientID][SkillID];
+		Data.m_ID = SkillID;
+		Data.m_ClientID = ClientID;
+		return &Data;
 	}
 
 	// initialize skill

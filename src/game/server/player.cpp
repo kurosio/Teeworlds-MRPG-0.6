@@ -793,12 +793,10 @@ CSkill* CPlayer::GetSkill(int SkillID) const
 	dbg_assert(skillsDescription.contains(SkillID), "invalid referring to the CSkill");
 
 	auto& playerSkills = CSkill::Data()[m_ClientID];
-	const auto iter = std::ranges::find_if(playerSkills, [SkillID](const auto* pSkill)
-	{
-		return pSkill->GetID() == SkillID;
-	});
+	if(!playerSkills.contains(SkillID))
+		return CSkill::CreateElement(m_ClientID, SkillID);
 
-	return (iter == playerSkills.end() ? CSkill::CreateElement(m_ClientID, SkillID) : *iter);
+	return &playerSkills[SkillID];
 }
 
 CPlayerQuest* CPlayer::GetQuest(QuestIdentifier ID) const
