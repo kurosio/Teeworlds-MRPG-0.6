@@ -28145,7 +28145,7 @@ CREATE TABLE `tw_bots_mobs` (
   `PositionX` int(11) NOT NULL,
   `PositionY` int(11) NOT NULL,
   `Debuffs` set('Slowdown','Poison','Fire') DEFAULT NULL,
-  `Behavior` set('sleepy','slower','poisonous','neutral') DEFAULT NULL,
+  `Behavior` set('sleepy','slower','poisonous','neutral','skills_base','skills_tank','skills_dps','skills_healer') DEFAULT NULL,
   `Level` int(11) NOT NULL DEFAULT 1,
   `Power` int(11) NOT NULL DEFAULT 10,
   `Number` int(11) NOT NULL DEFAULT 1,
