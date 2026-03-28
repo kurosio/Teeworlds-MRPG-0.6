@@ -399,10 +399,10 @@ bool CMobAI::TryUseTankSkill()
 	const bool NeedProtection = MaxHealth > 0 && m_pCharacter->Health() <= GetPercentValue(MaxHealth, 65);
 	if(NeedProtection)
 	{
-		const int ManaCost = GetPercentValue(MaxMana, 20);
+		const int ManaCost = GetPercentValue(MaxMana, 10);
 		if(TryUseManaAndShowText(ManaCost, "MOB TANK"))
 		{
-			GS()->EntityManager()->LastStand(m_ClientID, m_pCharacter->GetPos(), 192.f, 10);
+			GS()->EntityManager()->LastStand(m_ClientID, m_pCharacter->GetPos(), 192.f, maximum(1, ManaCost / 2));
 			return true;
 		}
 		return false;
@@ -411,8 +411,8 @@ bool CMobAI::TryUseTankSkill()
 	// provoke-style aggro usage when there is no active target.
 	if(m_Target.IsEmpty())
 	{
-		const int ManaCost = GetPercentValue(MaxMana, 12);
-		return TryUseManaAndShowText(ManaCost, "U NOOB", 20);
+		const int ManaCost = GetPercentValue(MaxMana, 5);
+		return TryUseManaAndShowText(ManaCost, "U NOOB", 40);
 	}
 
 	return false;
