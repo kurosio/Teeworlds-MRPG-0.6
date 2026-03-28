@@ -10,7 +10,7 @@ class CEntityLaserOrbit;
 class CAttackTeleport : public CEntity
 {
 public:
-	CAttackTeleport(CGameWorld *pGameWorld, vec2 Pos, CPlayer* pPlayer, int SkillBonus);
+	CAttackTeleport(CGameWorld *pGameWorld, vec2 Pos, CPlayer* pPlayer, int SkillBonus, std::optional<vec2> Direction = std::nullopt);
 	~CAttackTeleport() override;
 
 	void Snap(int SnappingClient) override;

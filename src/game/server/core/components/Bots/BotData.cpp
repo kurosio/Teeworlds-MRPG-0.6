@@ -18,6 +18,14 @@ void MobBotInfo::InitBehaviors(const DBSet& Behavior)
 		m_BehaviorsFlags |= MOBFLAG_BEHAVIOR_POISONOUS;
 	if(Behavior.hasSet("neutral"))
 		m_BehaviorsFlags |= MOBFLAG_BEHAVIOR_NEUTRAL;
+	if(Behavior.hasSet("skills_base"))
+		m_BehaviorsFlags |= MOBFLAG_BEHAVIOR_BASE_SKILLS;
+	if(Behavior.hasSet("skills_tank"))
+		m_BehaviorsFlags |= MOBFLAG_BEHAVIOR_TANK_SKILLS;
+	if(Behavior.hasSet("skills_dps"))
+		m_BehaviorsFlags |= MOBFLAG_BEHAVIOR_DPS_SKILLS;
+	if(Behavior.hasSet("skills_healer"))
+		m_BehaviorsFlags |= MOBFLAG_BEHAVIOR_HEALER_SKILLS;
 }
 
 /************************************************************************/

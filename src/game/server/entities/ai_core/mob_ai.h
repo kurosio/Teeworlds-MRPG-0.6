@@ -8,6 +8,7 @@ class MobBotInfo;
 class CMobAI final : public CBaseAI
 {
 	int m_BehaviorPoisonedNextTick {};
+	int m_BehaviorSkillNextTick {};
 	bool m_BehaviorNeutral {};
 	MobBotInfo* m_pMobInfo {};
 
@@ -26,6 +27,12 @@ public:
 
 private:
 	void HandleBehaviors(bool* pbAsleep);
+	void HandleSkillBehaviors();
+	bool TryUseBaseSkill();
+	bool TryUseHealerSkill();
+	bool TryUseTankSkill();
+	bool TryUseDpsSkill();
+	static int GetPercentValue(int MaxValue, int Percent);
 	void ShowHealth() const;
 };
 

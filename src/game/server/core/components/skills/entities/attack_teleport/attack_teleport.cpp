@@ -4,11 +4,14 @@
 
 #include <game/server/gamecontext.h>
 
-CAttackTeleport::CAttackTeleport(CGameWorld *pGameWorld, vec2 Pos, CPlayer* pPlayer, int SkillBonus)
+CAttackTeleport::CAttackTeleport(CGameWorld *pGameWorld, vec2 Pos, CPlayer* pPlayer, int SkillBonus, std::optional<vec2> Direction)
 : CEntity(pGameWorld, CGameWorld::ENTTYPE_SKILL, Pos, 28.0f)
 {
 	m_pPlayer = pPlayer;
-	m_Direction = (m_pPlayer ? vec2(m_pPlayer->m_pLastInput->m_TargetX, m_pPlayer->m_pLastInput->m_TargetY) : vec2(0, 0));
+	if(Direction.has_value())
+		m_Direction = *Direction;
+	else
+		m_Direction = (m_pPlayer ? vec2(m_pPlayer->m_pLastInput->m_TargetX, m_pPlayer->m_pLastInput->m_TargetY) : vec2(0, 0));
 	m_SkillBonus = SkillBonus;
 	m_LifeSpan = Server()->TickSpeed();
 	GameWorld()->InsertEntity(this);
@@ -42,7 +45,7 @@ void CAttackTeleport::Tick()
 	// check collide
 	const bool IsCollide = (GS()->Collision()->TestBox(m_Pos, Size) || GS()->Collision()->TestBox(To, Size)
 		|| GS()->m_World.IntersectClosestDoorEntity(m_Pos, m_Radius) || GS()->m_World.IntersectClosestDoorEntity(To, m_Radius));
-	const bool IsAllowedPVP = (pSearchChar && pSearchChar->IsAlive() && pSearchChar->IsAllowedPVP(ClientID));
+	const bool IsAllowedPVP = (pSearchChar && pSearchChar->IsAlive() && ClientID != pSearchChar->GetClientID() && pSearchChar->IsAllowedPVP(ClientID));
 
 	// first part
 	if(!m_SecondPart)
