@@ -10,7 +10,17 @@
     .items-form [data-field-path="Comment"],
     .items-form [data-field-path="Group"],
     .items-form [data-field-path="Type"],
-    .items-form [data-field-path="Flags"]{
+    .items-form [data-field-path="Flags"],
+    .items-form [data-field-path="DataEditorType"],
+    .items-form [data-field-path="DataRandomBoxItems"],
+    .items-form [data-field-path="DataBonusAmount"],
+    .items-form [data-field-path="DataBonusType"],
+    .items-form [data-field-path="DataBonusDurationValue"],
+    .items-form [data-field-path="DataBonusDurationUnit"],
+    .items-form [data-field-path="DataPotionEffect"],
+    .items-form [data-field-path="DataPotionValue"],
+    .items-form [data-field-path="DataPotionLifetime"],
+    .items-form [data-field-path="DataPotionRecast"]{
       grid-column: 1 / -1;
     }
   </style>
@@ -94,7 +104,8 @@
           </div>
 
           <div class="editor-muted-text text-xs mt-2">
-            Поле <code>Data</code> сохраняется как JSON (пустое значение будет сохранено как <code>null</code>).
+            Поле <code>Data</code> формируется автоматически на основе выбранного типа Data-редактора
+            (если тип не выбран, будет сохранено <code>null</code>).
           </div>
 
           <div class="mt-4" data-editor-role="status"></div>
@@ -239,14 +250,147 @@
       }
     };
 
-    const toJsonString = (value) => {
-      if (value === null || value === undefined || value === '') return '';
-      if (typeof value === 'string') return value;
+    const safeToJsonPayload = (value) => {
       try {
-        return JSON.stringify(value, null, 2);
+        return toJsonPayload(value, 'Data');
       } catch (err) {
-        return String(value);
+        return null;
       }
+    };
+
+    const DATA_EDITOR_NONE = 'none';
+    const DATA_EDITOR_RANDOM_BOX = 'random_box';
+    const DATA_EDITOR_BONUS = 'bonus';
+    const DATA_EDITOR_POTION = 'potion';
+
+    const DATA_EDITOR_RULES = {
+      Usable: [
+        { value: DATA_EDITOR_NONE, label: 'Без данных' },
+        { value: DATA_EDITOR_RANDOM_BOX, label: 'Рандом Бокс' },
+        { value: DATA_EDITOR_BONUS, label: 'Бонус' },
+      ],
+      Potion: [
+        { value: DATA_EDITOR_NONE, label: 'Без данных' },
+        { value: DATA_EDITOR_POTION, label: 'Зелье' },
+      ],
+    };
+
+    const BONUS_TYPES = [
+      { value: 1, label: 'Опыт (BONUS_TYPE_EXPERIENCE)' },
+      { value: 2, label: 'Золото (BONUS_TYPE_GOLD)' },
+      { value: 3, label: 'HP (BONUS_TYPE_HP)' },
+      { value: 4, label: 'MP (BONUS_TYPE_MP)' },
+    ];
+
+    const BONUS_DURATION_UNITS = [
+      { value: 'minutes', label: 'Минуты' },
+      { value: 'hour', label: 'Часы' },
+      { value: 'days', label: 'Дни' },
+    ];
+
+    const getAvailableDataEditors = (group) => {
+      const key = String(group || '');
+      return (DATA_EDITOR_RULES[key] || [{ value: DATA_EDITOR_NONE, label: 'Без данных' }]).map((entry) => ({
+        value: String(entry.value),
+        label: String(entry.label),
+      }));
+    };
+
+    const getDefaultDataEditor = (group) => getAvailableDataEditors(group)[0]?.value || DATA_EDITOR_NONE;
+
+    const normalizeDataEditor = (group, value) => {
+      const current = String(value || DATA_EDITOR_NONE);
+      const available = getAvailableDataEditors(group).map((entry) => entry.value);
+      return available.includes(current) ? current : getDefaultDataEditor(group);
+    };
+
+    const inferDataEditorType = (group, data) => {
+      const safeGroup = String(group || '');
+      if (safeGroup === 'Usable' && data && typeof data === 'object' && Array.isArray(data.random_box)) {
+        return DATA_EDITOR_RANDOM_BOX;
+      }
+      if (safeGroup === 'Usable' && data && typeof data === 'object' && data.bonus && typeof data.bonus === 'object') {
+        return DATA_EDITOR_BONUS;
+      }
+      if (safeGroup === 'Potion' && data && typeof data === 'object' && data.potion && typeof data.potion === 'object') {
+        return DATA_EDITOR_POTION;
+      }
+      return getDefaultDataEditor(safeGroup);
+    };
+
+    const normalizeRandomBoxItems = (items) => {
+      if (!Array.isArray(items)) return [];
+      return items.map((entry) => ({
+        item_id: toNullableId(entry?.item_id) || 0,
+        value: toNullableInt(entry?.value) ?? 1,
+        chance: Number.isFinite(Number(entry?.chance)) ? Number(entry.chance) : 0,
+      }));
+    };
+
+    const normalizePotionData = (potion) => ({
+      effect: String(potion?.effect || ''),
+      value: toNullableInt(potion?.value) ?? 0,
+      lifetime: toNullableInt(potion?.lifetime) ?? 0,
+      recast: toNullableInt(potion?.recast) ?? 0,
+    });
+
+    const normalizeBonusData = (bonus) => ({
+      amount: toNullableInt(bonus?.amount) ?? 0,
+      duration_minutes: toNullableInt(bonus?.duration_minutes) ?? 0,
+      duration_hours: toNullableInt(bonus?.duration_hours) ?? 0,
+      duration_days: toNullableInt(bonus?.duration_days) ?? 0,
+      type: toNullableInt(bonus?.type) ?? 1,
+    });
+
+    const getBonusDurationUi = (bonus) => {
+      if ((bonus?.duration_days ?? 0) > 0) return { unit: 'days', value: bonus.duration_days };
+      if ((bonus?.duration_hours ?? 0) > 0) return { unit: 'hours', value: bonus.duration_hours };
+      return { unit: 'minutes', value: Math.max(0, toNullableInt(bonus?.duration_minutes) ?? 0) };
+    };
+
+    const buildDataPayload = (model) => {
+      const editorType = normalizeDataEditor(model?.Group, model?.DataEditorType);
+
+      if (editorType === DATA_EDITOR_RANDOM_BOX) {
+        const items = normalizeRandomBoxItems(model?.DataRandomBoxItems)
+          .filter((entry) => toNullableId(entry?.item_id) && (toNullableInt(entry?.value) ?? 0) > 0 && Number(entry?.chance) > 0)
+          .map((entry) => ({
+            item_id: toNullableId(entry.item_id),
+            value: toNullableInt(entry.value),
+            chance: Number(entry.chance),
+          }));
+
+        return items.length ? { random_box: items } : null;
+      }
+
+      if (editorType === DATA_EDITOR_BONUS) {
+        const amount = Math.max(0, toNullableInt(model?.DataBonusAmount) ?? 0);
+        const bonusType = toNullableInt(model?.DataBonusType) ?? 1;
+        const durationUnit = String(model?.DataBonusDurationUnit || 'minutes');
+        const durationValue = Math.max(0, toNullableInt(model?.DataBonusDurationValue) ?? 0);
+
+        return {
+          bonus: {
+            amount,
+            duration_minutes: durationUnit === 'minutes' ? durationValue : 0,
+            duration_hours: durationUnit === 'hours' ? durationValue : 0,
+            duration_days: durationUnit === 'days' ? durationValue : 0,
+            type: [1, 2, 3, 4].includes(bonusType) ? bonusType : 1,
+          }
+        };
+      }
+
+      if (editorType === DATA_EDITOR_POTION) {
+        const potion = {
+          effect: String(model?.DataPotionEffect || '').trim(),
+          value: toNullableInt(model?.DataPotionValue) ?? 0,
+          lifetime: toNullableInt(model?.DataPotionLifetime) ?? 0,
+          recast: toNullableInt(model?.DataPotionRecast) ?? 0,
+        };
+        return { potion };
+      }
+
+      return null;
     };
 
     const itemFields = {
@@ -331,7 +475,102 @@
 		} 
 	  },
       ScenarioData: { type: 'scenario', label: 'ScenarioData', ui: { scenarioMode: 'universal' } },
-      Data: { type: 'textarea', label: 'Data (JSON)', ui: { rows: 6, placeholder: '{"key": "value"}' } },
+      DataEditorType: {
+        label: 'Тип Data',
+        ui: {
+          type: 'select',
+          options: (data) => getAvailableDataEditors(data?.Group),
+        },
+      },
+      DataRandomBoxItems: {
+        type: 'list',
+        label: 'Random Box предметы',
+        ui: {
+          addLabel: 'Добавить предмет',
+          listMode: 'table',
+          tableHeader: ['Предмет', 'Количество', 'Шанс (%)'],
+          tableCols: 'minmax(0,1fr) 140px 140px',
+          tableColsMd: 'minmax(0,1fr) 160px 160px',
+          showWhen: (data) => String(data?.DataEditorType || '') === DATA_EDITOR_RANDOM_BOX,
+        },
+        itemDefault: { item_id: 0, value: 1, chance: 0 },
+        itemFields: {
+          item_id: { type: 'db_select', label: 'Предмет', ui: { dbKey: 'item', placeholder: '— предмет —', searchPlaceholder: 'Поиск предмета…' } },
+          value: { type: 'number', label: 'Количество', ui: { min: 1, step: 1 } },
+          chance: { type: 'number', label: 'Шанс (%)', ui: { min: 0, step: 0.1 } },
+        },
+      },
+      DataPotionEffect: {
+        type: 'text',
+        label: 'Эффект',
+        ui: {
+          placeholder: 'Tiny heal',
+          showWhen: (data) => String(data?.DataEditorType || '') === DATA_EDITOR_POTION,
+        },
+      },
+      DataPotionValue: {
+        type: 'number',
+        label: 'Количество',
+        ui: {
+          min: 0,
+          step: 1,
+          showWhen: (data) => String(data?.DataEditorType || '') === DATA_EDITOR_POTION,
+        },
+      },
+      DataPotionLifetime: {
+        type: 'number',
+        label: 'Время',
+        ui: {
+          min: 0,
+          step: 1,
+          showWhen: (data) => String(data?.DataEditorType || '') === DATA_EDITOR_POTION,
+        },
+      },
+      DataPotionRecast: {
+        type: 'number',
+        label: 'Перезарядка',
+        ui: {
+          min: 0,
+          step: 1,
+          showWhen: (data) => String(data?.DataEditorType || '') === DATA_EDITOR_POTION,
+        },
+      },
+      DataBonusAmount: {
+        type: 'number',
+        label: 'Бонус: количество',
+        ui: {
+          min: 0,
+          step: 1,
+          showWhen: (data) => String(data?.DataEditorType || '') === DATA_EDITOR_BONUS,
+        },
+      },
+      DataBonusType: {
+        label: 'Бонус: тип',
+        ui: {
+          type: 'select',
+          options: BONUS_TYPES.map((entry) => ({ value: String(entry.value), label: entry.label })),
+          valueType: 'number',
+          showWhen: (data) => String(data?.DataEditorType || '') === DATA_EDITOR_BONUS,
+        },
+      },
+      DataBonusDurationValue: {
+        type: 'number',
+        label: 'Бонус: время',
+        ui: {
+          min: 0,
+          step: 1,
+          placeholder: 'Значение длительности',
+          showWhen: (data) => String(data?.DataEditorType || '') === DATA_EDITOR_BONUS,
+        },
+      },
+      DataBonusDurationUnit: {
+        label: 'Ед. измерения времени',
+        ui: {
+          type: 'select',
+          options: BONUS_DURATION_UNITS,
+          showWhen: (data) => String(data?.DataEditorType || '') === DATA_EDITOR_BONUS,
+        },
+      },
     };
 
     const dirty = EditorCore.Dirty?.create
@@ -416,28 +655,55 @@
         AT2: 0,
         ATValue1: 0,
         ATValue2: 0,
-        Data: '',
+        DataEditorType: DATA_EDITOR_NONE,
+        DataRandomBoxItems: [],
+        DataBonusAmount: 0,
+        DataBonusType: 1,
+        DataBonusDurationValue: 0,
+        DataBonusDurationUnit: 'minutes',
+        DataPotionEffect: '',
+        DataPotionValue: 0,
+        DataPotionLifetime: 0,
+        DataPotionRecast: 0,
       }),
-      rowToModel: (row) => ({
-        Comment: String(row?.Comment || ''),
-        Name: String(row?.Name || ''),
-        Description: String(row?.Description || ''),
-        Group: String(row?.Group || 'Quest'),
-        Type: TypeRule?.normalizeValue
-          ? TypeRule.normalizeValue(row?.Group || 'Quest', row?.Type || 'Default', row)
-          : (row?.Type || 'Default'),
-        Flags: parseSet(row?.Flags, FLAGS),
-        ScenarioData: row?.ScenarioData == null ? '' : String(row?.ScenarioData),
-        InitialPrice: Number(row?.InitialPrice ?? 0),
-        RequiresProducts: Number(row?.RequiresProducts ?? 0),
-        AT1: Number(row?.AT1 ?? 0),
-        AT2: Number(row?.AT2 ?? 0),
-        ATValue1: Number(row?.ATValue1 ?? 0),
-        ATValue2: Number(row?.ATValue2 ?? 0),
-        Data: toJsonString(row?.Data),
-      }),
+      rowToModel: (row) => {
+        const group = String(row?.Group || 'Quest');
+        const dataPayload = safeToJsonPayload(row?.Data);
+        const dataEditorType = normalizeDataEditor(group, inferDataEditorType(group, dataPayload));
+        const bonus = normalizeBonusData(dataPayload?.bonus);
+        const bonusDurationUi = getBonusDurationUi(bonus);
+
+        return ({
+          Comment: String(row?.Comment || ''),
+          Name: String(row?.Name || ''),
+          Description: String(row?.Description || ''),
+          Group: group,
+          Type: TypeRule?.normalizeValue
+            ? TypeRule.normalizeValue(group, row?.Type || 'Default', row)
+            : (row?.Type || 'Default'),
+          Flags: parseSet(row?.Flags, FLAGS),
+          ScenarioData: row?.ScenarioData == null ? '' : String(row?.ScenarioData),
+          InitialPrice: Number(row?.InitialPrice ?? 0),
+          RequiresProducts: Number(row?.RequiresProducts ?? 0),
+          AT1: Number(row?.AT1 ?? 0),
+          AT2: Number(row?.AT2 ?? 0),
+          ATValue1: Number(row?.ATValue1 ?? 0),
+          ATValue2: Number(row?.ATValue2 ?? 0),
+          DataEditorType: dataEditorType,
+          DataRandomBoxItems: normalizeRandomBoxItems(dataPayload?.random_box),
+          DataBonusAmount: bonus.amount,
+          DataBonusType: bonus.type,
+          DataBonusDurationValue: bonusDurationUi.value,
+          DataBonusDurationUnit: bonusDurationUi.unit,
+          DataPotionEffect: normalizePotionData(dataPayload?.potion).effect,
+          DataPotionValue: normalizePotionData(dataPayload?.potion).value,
+          DataPotionLifetime: normalizePotionData(dataPayload?.potion).lifetime,
+          DataPotionRecast: normalizePotionData(dataPayload?.potion).recast,
+        });
+      },
       modelToPayload: (model) => {
         const isEquipment = String(model?.Group || '') === 'Equipment';
+        const normalizedDataEditorType = normalizeDataEditor(model?.Group, model?.DataEditorType);
         return ({
         Comment: String(model?.Comment || ''),
         Name: String(model?.Name || ''),
@@ -454,7 +720,7 @@
         ATValue1: isEquipment ? toNullableInt(model?.ATValue1) : null,
         AT2: isEquipment ? toNullableId(model?.AT2) : null,
         ATValue2: isEquipment ? toNullableInt(model?.ATValue2) : null,
-        Data: toJsonPayload(model?.Data, 'Data'),
+        Data: buildDataPayload({ ...model, DataEditorType: normalizedDataEditorType }),
         });
       },
       listItem: (row) => ({
@@ -473,9 +739,14 @@
 
       // group switching toggles fields (attributes + type rules), so we normalize and rerender
       rerenderOnChange: (model, meta) => {
-        if (meta?.path !== 'Group') return false;
+        if (meta?.path === 'Group') {
+          model.DataEditorType = normalizeDataEditor(model?.Group, model?.DataEditorType);
+          if (TypeRule?.normalizeModel) TypeRule.normalizeModel(model);
+          return true;
+        }
+        if (meta?.path === 'DataEditorType') return true;
         if (TypeRule?.normalizeModel) TypeRule.normalizeModel(model);
-        return true;
+        return false;
       },
     });
 
