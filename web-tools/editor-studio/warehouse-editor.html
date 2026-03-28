@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Warehouse • tw_warehouses</title>
+
+  <script src="editor-core/page-loader.js" data-mode="event"></script>
+
+  <style>
+    .warehouse-group-btn{border-bottom:1px solid var(--editor-soft-border)}
+    .warehouse-item{border-bottom:1px solid var(--editor-soft-border)}
+    .warehouse-item:last-child{border-bottom:0}
+
+    #form-main{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:start;}
+    #form-main [data-field-path="Name"]{grid-column:1 / -1;}
+    #form-main [data-field-path="StorageData"]{grid-column:1 / -1;}
+    @media (max-width: 640px){#form-main{grid-template-columns:1fr;}}
+
+    .trade-row{display:grid;grid-template-columns:minmax(0,1.2fr) 110px 110px 110px 44px;gap:8px;align-items:center;}
+    .trade-row .editor-btn{padding-left:0;padding-right:0;justify-content:center;}
+    @media (max-width: 900px){
+      .trade-row{grid-template-columns:minmax(0,1fr) repeat(3,90px) 40px;gap:6px;}
+    }
+  </style>
+</head>
+
+<body class="editor-theme" data-editor="warehouse">
+  <div class="editor-page">
+    <div class="editor-page-header">
+      <div class="editor-page-title">
+        <i class="fa-solid fa-warehouse text-accent text-xl"></i>
+        <div>
+          <h1>Warehouse / Shop</h1>
+          <div class="editor-page-sub">Управление <code>tw_warehouses</code> и Trades через массив с группировкой.</div>
+        </div>
+      </div>
+      <div class="editor-page-actions">
+        <span id="dirty-pill" class="editor-dirty-pill hidden">Данные не сохранены</span>
+        <button id="btn-refresh" class="editor-btn editor-btn-secondary">
+          <i class="fa-solid fa-rotate"></i><span>Обновить</span>
+        </button>
+        <button id="btn-new" class="editor-btn editor-btn-primary">
+          <i class="fa-solid fa-plus"></i><span>Новый Warehouse</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="editor-shell editor-shell--docked">
+      <aside class="editor-sidebar editor-dock-sidebar">
+        <div class="editor-dock-pad">
+          <div class="flex items-center justify-between gap-3">
+            <div class="flex items-center gap-2">
+              <div class="text-sm font-semibold">Список</div>
+              <div class="text-xs editor-muted-text" id="meta-count">—</div>
+            </div>
+          </div>
+
+          <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div>
+              <div class="text-xs editor-muted-text mb-1">World</div>
+              <select id="filter-world" class="w-full editor-input form-input"></select>
+            </div>
+            <div>
+              <div class="text-xs editor-muted-text mb-1">Type</div>
+              <select id="filter-type" class="w-full editor-input form-input">
+                <option value="">Все</option>
+                <option value="buying">buying</option>
+                <option value="selling">selling</option>
+                <option value="storage">storage</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="mt-3 editor-search">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input id="search" type="search" class="w-full editor-input form-input" placeholder="Поиск по ID / имени / валюте…" />
+          </div>
+
+          <div id="list" class="mt-4 overflow-auto border border-light rounded-xl bg-black/10 editor-scroll" style="max-height: 590px"></div>
+        </div>
+      </aside>
+
+      <section class="editor-main editor-dock-main">
+        <div class="editor-dock-pad">
+          <div class="editor-sticky-toolbar flex items-start justify-between gap-4">
+            <div>
+              <div class="flex items-center gap-2">
+                <div class="text-lg font-semibold" id="title">Выберите Warehouse</div>
+                <span class="editor-badge" id="badge-id" style="display:none"></span>
+              </div>
+              <div class="editor-muted-text text-sm mt-1" id="subtitle">—</div>
+            </div>
+            <div class="flex flex-wrap gap-2">
+              <button id="btn-cancel" class="editor-btn editor-btn-secondary hidden" disabled>
+                <i class="fa-solid fa-rotate-left"></i><span>Отменить</span>
+              </button>
+              <button id="btn-delete" class="editor-btn editor-btn-secondary" disabled>
+                <i class="fa-solid fa-trash"></i><span>Удалить</span>
+              </button>
+              <button id="btn-save" class="editor-btn editor-btn-primary" disabled>
+                <i class="fa-solid fa-floppy-disk"></i><span>Сохранить</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="mt-4">
+            <div class="editor-section">
+              <h3 class="text-sm font-semibold">Основные поля</h3>
+              <div id="form-main" class="mt-3"></div>
+            </div>
+
+            <div class="editor-section">
+              <div class="flex items-center justify-between gap-3">
+                <h3 class="text-sm font-semibold">Trades (массив с группировкой)</h3>
+                <div class="flex items-center gap-2">
+                  <button id="btn-add-trade-group" type="button" class="editor-btn editor-btn-secondary text-sm">
+                    <i class="fa-solid fa-layer-group"></i><span>Группа</span>
+                  </button>
+                  <button id="btn-add-trade" type="button" class="editor-btn editor-btn-secondary text-sm">
+                    <i class="fa-solid fa-plus"></i><span>Позиция</span>
+                  </button>
+                </div>
+              </div>
+              <div id="trades-groups" class="mt-3 space-y-3"></div>
+              <div class="mt-3">
+                <details id="raw-wrap" class="editor-details">
+                  <summary>Raw Trades <span class="editor-muted-text">(как в БД)</span></summary>
+                  <div class="editor-details-body">
+                    <textarea id="raw-trades" class="w-full editor-textarea form-textarea" rows="7" readonly></textarea>
+                  </div>
+                </details>
+              </div>
+            </div>
+
+            <div class="mt-5" id="status"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </div>
+
+  <script>
+    const { fieldRenderOptions } = window.EditorCoreBootstrap || EditorCore.bootstrapEditor({ mode: 'event' });
+    const RESOURCE = 'warehouses';
+
+    const els = {
+      refresh: document.getElementById('btn-refresh'),
+      newBtn: document.getElementById('btn-new'),
+      del: document.getElementById('btn-delete'),
+      save: document.getElementById('btn-save'),
+      cancel: document.getElementById('btn-cancel'),
+      dirtyPill: document.getElementById('dirty-pill'),
+      status: document.getElementById('status'),
+      list: document.getElementById('list'),
+      metaCount: document.getElementById('meta-count'),
+      filterWorld: document.getElementById('filter-world'),
+      filterType: document.getElementById('filter-type'),
+      search: document.getElementById('search'),
+      title: document.getElementById('title'),
+      subtitle: document.getElementById('subtitle'),
+      badgeId: document.getElementById('badge-id'),
+      formMain: document.getElementById('form-main'),
+      tradesGroups: document.getElementById('trades-groups'),
+      addTradeGroup: document.getElementById('btn-add-trade-group'),
+      addTrade: document.getElementById('btn-add-trade'),
+      rawTrades: document.getElementById('raw-trades'),
+    };
+
+    const STATE = {
+      rows: [],
+      selectedId: null,
+      selected: null,
+      originalSelected: null,
+      lastSelectedIdBeforeCreate: null,
+      isDirty: false,
+      filter: { world: '', type: '' },
+      search: '',
+      lookups: {
+        itemOptions: [],
+        collectionMap: new Map(),
+        worlds: new Map(),
+      },
+    };
+
+    const cssEscape = (...args) => window.EditorCore?.utils?.cssEscape?.(...args) ?? String(args[0] ?? '');
+
+    const setStatus = (msg, tone = 'muted') => {
+      const cls = tone === 'ok' ? 'text-emerald-300' : tone === 'err' ? 'text-red-300' : 'editor-muted-text';
+      els.status.className = `mt-5 text-sm ${cls}`;
+      els.status.textContent = msg || '';
+    };
+
+    const splitGroupLabel = (raw) => {
+      const s = String(raw || '').trim();
+      if (!s) return { group: '', sub: '' };
+      const idx = s.indexOf(':');
+      if (idx === -1) return { group: s, sub: '' };
+      return { group: s.slice(0, idx).trim(), sub: s.slice(idx + 1).trim() };
+    };
+
+    const buildGroupLabel = (group, sub) => {
+      const g = String(group || '').trim();
+      const s = String(sub || '').trim();
+      if (!g && !s) return 'Misc';
+      if (g && s) return `${g}:${s}`;
+      return g || s;
+    };
+
+    const parseTypeSet = (v) => {
+      if (!v) return [];
+      if (Array.isArray(v)) return v.map(x => String(x).trim()).filter(Boolean);
+      return String(v).split(',').map(x => x.trim()).filter(Boolean);
+    };
+
+    const stringifyTypeSet = (arr) => {
+      const uniq = Array.from(new Set((Array.isArray(arr) ? arr : []).map(x => String(x).trim()).filter(Boolean)));
+      return uniq.join(',');
+    };
+
+    const parseTrades = (raw) => {
+      const text = String(raw || '').replace(/\r/g, '');
+      const lines = text.split('\n');
+      const groups = [];
+      let current = { group: 'Misc', sub: '', entries: [] };
+      groups.push(current);
+
+      const ensureCurrent = () => {
+        if (!current) {
+          current = { group: 'Misc', sub: '', entries: [] };
+          groups.push(current);
+        }
+      };
+
+      for (const lineRaw of lines) {
+        const line = String(lineRaw || '').trim();
+        if (!line) continue;
+        if (line.startsWith('*')) {
+          const { group, sub } = splitGroupLabel(line.slice(1));
+          current = { group: group || 'Misc', sub, entries: [] };
+          groups.push(current);
+          continue;
+        }
+
+        ensureCurrent();
+
+        const coll = line.match(/^\[COLLECTION\(([^:)]+):([^\)]+)\)\]$/i);
+        if (coll) {
+          current.entries.push({
+            kind: 'collection',
+            collection_group: coll[1].trim(),
+            collection_sub: coll[2].trim(),
+            raw: line,
+          });
+          continue;
+        }
+
+        const item = line.match(/^\[(\d+)\/(\d+)\(([^\)]+)\)\]$/);
+        if (item) {
+          const priceExpr = String(item[3] || '').trim();
+          const [price, priceAlt] = priceExpr.includes('/') ? priceExpr.split('/', 2) : [priceExpr, ''];
+          current.entries.push({
+            kind: 'item',
+            item_id: Number(item[1] || 0),
+            amount: Number(item[2] || 1),
+            price: Number(price || 0),
+            price_alt: Number(priceAlt || 0),
+            raw: line,
+          });
+          continue;
+        }
+
+        current.entries.push({ kind: 'raw', raw: line });
+      }
+
+      return groups.filter(g => (g.entries || []).length);
+    };
+
+    const stringifyTrades = (groups) => {
+      const lines = [];
+      const src = Array.isArray(groups) ? groups : [];
+      src.forEach((g, gIndex) => {
+        const label = buildGroupLabel(g.group, g.sub);
+        if (gIndex > 0 || label !== 'Misc') lines.push(`*${label}`);
+        const entries = Array.isArray(g.entries) ? g.entries : [];
+        entries.forEach((e) => {
+          const kind = String(e?.kind || 'item');
+          if (kind === 'collection') {
+            const cGroup = String(e.collection_group || '').trim();
+            const cSub = String(e.collection_sub || '').trim();
+            if (cGroup && cSub) lines.push(`[COLLECTION(${cGroup}:${cSub})]`);
+            else if (e.raw) lines.push(String(e.raw));
+            return;
+          }
+          if (kind === 'raw') {
+            if (e.raw) lines.push(String(e.raw));
+            return;
+          }
+          const itemId = Number(e.item_id || 0);
+          const amount = Math.max(1, Number(e.amount || 1));
+          const price = Number(e.price || 0);
+          const priceAlt = Number(e.price_alt || 0);
+          if (itemId <= 0) return;
+          const priceExpr = priceAlt > 0 ? `${price}/${priceAlt}` : `${price}`;
+          lines.push(`[${itemId}/${amount}(${priceExpr})]`);
+        });
+        lines.push('');
+      });
+      while (lines.length && lines[lines.length - 1] === '') lines.pop();
+      return lines.join('\n');
+    };
+
+    const emptyModel = () => ({
+      ID: 0,
+      Name: '',
+      TypeArr: ['buying'],
+      TradesArr: [],
+      PosX: 0,
+      PosY: 0,
+      StorageData: '',
+      Currency: 1,
+      WorldID: 0,
+    });
+
+    const fromRow = (row) => ({
+      ID: Number(row?.ID || 0),
+      Name: String(row?.Name || ''),
+      TypeArr: parseTypeSet(row?.Type),
+      TradesArr: parseTrades(row?.Trades || ''),
+      PosX: Number(row?.PosX || 0),
+      PosY: Number(row?.PosY || 0),
+      StorageData: row?.StorageData == null ? '' : String(row.StorageData),
+      Currency: Number(row?.Currency || 1),
+      WorldID: Number(row?.WorldID || 0),
+    });
+
+    const toPayload = (m) => ({
+      Name: String(m.Name || '').trim() || 'Business',
+      Type: stringifyTypeSet(m.TypeArr),
+      Trades: stringifyTrades(m.TradesArr),
+      PosX: Number(m.PosX || 0),
+      PosY: Number(m.PosY || 0),
+      StorageData: String(m.StorageData || ''),
+      Currency: Number(m.Currency || 1),
+      WorldID: Number(m.WorldID || 0),
+    });
+
+    const getWorldLabel = (id) => STATE.lookups.worlds.get(String(id || '')) || '';
+    const getCollectionSubs = (group) => {
+      const set = STATE.lookups.collectionMap.get(String(group || '').trim());
+      return set ? Array.from(set).sort((a, b) => a.localeCompare(b)) : [];
+    };
+
+    const buildItemComboHtml = (gi, ei, itemId = 0) => {
+      const path = `TradesArr.${gi}.entries.${ei}.item_id`;
+      const cur = Number(itemId || 0);
+      return `<div class="editor-dbcombo" data-db-state="connected"
+          data-datasource="items"
+          data-db-searchable="1"
+          data-db-limit="1000"
+          data-placeholder="— Предмет —"
+          data-label-mode="id_name"
+          data-bind-input-path="${path}"
+          data-current-value="${cur > 0 ? String(cur) : ''}">
+        <div class="editor-dbcombo-control">
+          <input type="search" class="editor-input form-input editor-dbcombo-input" placeholder="Поиск предмета..." autocomplete="off" />
+        </div>
+        <div class="editor-dbcombo-dropdown" role="listbox" aria-label="Предмет"></div>
+        <input type="number" class="editor-input form-input editor-dbselect-input editor-dbcombo-bound" data-field="item_id" data-path="${path}" value="${cur}" />
+      </div>`;
+    };
+
+    const buildCollectionGroupOptionsHtml = (selectedGroup = '') => {
+      const selected = String(selectedGroup || '').trim();
+      const groups = Array.from(STATE.lookups.collectionMap.keys()).sort((a, b) => a.localeCompare(b));
+      const out = ['<option value="">— Group —</option>'];
+      groups.forEach((g) => out.push(`<option value="${g.replace(/"/g, '&quot;')}" ${g === selected ? 'selected' : ''}>${g}</option>`));
+      return out.join('');
+    };
+
+    const buildCollectionSubOptionsHtml = (group = '', selectedSub = '') => {
+      const selected = String(selectedSub || '').trim();
+      const subs = getCollectionSubs(group);
+      const out = ['<option value="">— Sub —</option>'];
+      subs.forEach((s) => out.push(`<option value="${s.replace(/"/g, '&quot;')}" ${s === selected ? 'selected' : ''}>${s}</option>`));
+      return out.join('');
+    };
+
+    const markDirty = (dirty = true) => {
+      STATE.isDirty = !!dirty;
+      els.save.disabled = !STATE.selected || !STATE.isDirty;
+      const canCancel = !!STATE.selected && STATE.isDirty;
+      els.cancel.disabled = !canCancel;
+      els.cancel.classList.toggle('hidden', !canCancel);
+      if (els.dirtyPill) els.dirtyPill.classList.toggle('hidden', !STATE.isDirty);
+      els.save.classList.toggle('ring-2', STATE.isDirty);
+      els.save.classList.toggle('ring-amber-400/40', STATE.isDirty);
+    };
+
+    const fillWorldFilter = () => {
+      const worlds = Array.from(STATE.lookups.worlds.entries())
+        .map(([value, label]) => ({ value, label }))
+        .sort((a, b) => Number(a.value) - Number(b.value));
+      els.filterWorld.innerHTML = '<option value="">Все</option>';
+      worlds.forEach((w) => {
+        els.filterWorld.appendChild(new Option(`#${w.value} ${w.label || ''}`.trim(), w.value, STATE.filter.world === w.value, STATE.filter.world === w.value));
+      });
+    };
+
+    const renderList = () => {
+      const search = String(STATE.search || '').trim().toLowerCase();
+      const fw = String(STATE.filter.world || '');
+      const ft = String(STATE.filter.type || '');
+
+      const filtered = STATE.rows.filter((r) => {
+        const typeArr = parseTypeSet(r.Type);
+        if (fw && String(r.WorldID) !== fw) return false;
+        if (ft && !typeArr.includes(ft)) return false;
+        if (!search) return true;
+        const hay = `${r.ID} ${r.Name || ''} ${r.Currency || ''} ${r.WorldID || ''}`.toLowerCase();
+        return hay.includes(search);
+      });
+
+      els.metaCount.textContent = `${filtered.length}/${STATE.rows.length}`;
+      if (!filtered.length) {
+        els.list.innerHTML = `<div class="p-5 text-center"><div class="text-sm font-semibold">Ничего не найдено</div></div>`;
+        return;
+      }
+
+      const byWorld = new Map();
+      filtered.forEach((r) => {
+        const w = String(r.WorldID || 0);
+        if (!byWorld.has(w)) byWorld.set(w, []);
+        byWorld.get(w).push(r);
+      });
+
+      const html = Array.from(byWorld.keys()).sort((a,b) => Number(a)-Number(b)).map((wid) => {
+        const rows = byWorld.get(wid) || [];
+        const worldLabel = getWorldLabel(wid) || `World #${wid}`;
+        const rowsHtml = rows.map((r) => {
+          const isActive = String(r.ID) === String(STATE.selectedId);
+          const type = parseTypeSet(r.Type).join(', ') || '—';
+          const tradesCount = parseTrades(r.Trades || '').reduce((sum, g) => sum + ((g.entries || []).length), 0);
+          return `<button type="button" class="warehouse-item w-full text-left px-3 py-2.5 hover:bg-white/5 transition ${isActive ? 'bg-white/5' : ''}" data-id="${r.ID}">
+            <div class="flex items-start justify-between gap-2">
+              <div class="min-w-0">
+                <div class="font-semibold text-sm truncate">${r.Name || '(без имени)'}</div>
+                <div class="text-xs editor-muted-text mt-0.5">${type}</div>
+                <div class="mt-1 flex flex-wrap gap-1.5">
+                  <span class="px-2 py-0.5 rounded-full text-[11px] border border-white/10 bg-white/5 editor-muted-text">Trades: ${tradesCount}</span>
+                  <span class="px-2 py-0.5 rounded-full text-[11px] border border-white/10 bg-white/5 editor-muted-text">Cur: ${r.Currency || 0}</span>
+                </div>
+              </div>
+              <div class="text-xs editor-muted-text shrink-0">#${r.ID}</div>
+            </div>
+          </button>`;
+        }).join('');
+
+        return `<div>
+          <div class="warehouse-group-btn w-full px-3 py-2 flex items-center justify-between gap-2">
+            <div class="font-semibold text-sm truncate">${worldLabel}</div>
+            <div class="text-xs editor-muted-text">${rows.length}</div>
+          </div>
+          <div>${rowsHtml}</div>
+        </div>`;
+      }).join('');
+
+      els.list.innerHTML = html;
+      els.list.querySelectorAll('button[data-id]').forEach((btn) => btn.addEventListener('click', () => selectRow(btn.getAttribute('data-id'))));
+
+      if (STATE.selectedId) {
+        const active = els.list.querySelector(`button[data-id="${cssEscape(String(STATE.selectedId))}"]`);
+        if (active) active.scrollIntoView({ block: 'nearest' });
+      }
+    };
+
+    let runtimeMain = null;
+    const mainFields = {
+      Name: { type: 'text', label: 'Название', ui: { placeholder: 'Weapons Shop' } },
+      TypeArr: { type: 'multiselect', label: 'Type', ui: { options: [
+        { value: 'buying', label: 'buying' },
+        { value: 'selling', label: 'selling' },
+        { value: 'storage', label: 'storage' },
+      ] } },
+      Currency: { type: 'db_select', label: 'Currency', ui: { dbKey: 'item', placeholder: 'ID валюты', valueType: 'number', searchable: true } },
+      WorldID: { type: 'db_select', label: 'World', ui: { dbKey: 'world', placeholder: 'ID мира', valueType: 'number', searchable: true } },
+      PosX: { type: 'number', label: 'PosX', ui: { step: 1 } },
+      PosY: { type: 'number', label: 'PosY', ui: { step: 1 } },
+      StorageData: { type: 'textarea', label: 'StorageData (JSON)', ui: { rows: 4, placeholder: '{"position":{"x":0,"y":0},"value":"1"}' } },
+    };
+
+    const mountMainForm = () => {
+      runtimeMain = EditorCore.FormRuntime.mount(els.formMain, {
+        fields: mainFields,
+        data: STATE.selected || {},
+        fieldOptions: fieldRenderOptions,
+        onChange: () => {
+          if (!STATE.selected) return;
+          if (!Array.isArray(STATE.selected.TypeArr)) STATE.selected.TypeArr = parseTypeSet(STATE.selected.TypeArr);
+          syncRawTrades();
+          markDirty(true);
+          updateHeader();
+        }
+      });
+    };
+
+    const syncRawTrades = () => {
+      if (!STATE.selected) {
+        els.rawTrades.value = '';
+        return;
+      }
+      els.rawTrades.value = stringifyTrades(STATE.selected.TradesArr || []);
+    };
+
+    const renderTradesEditor = () => {
+      if (!STATE.selected) {
+        els.tradesGroups.innerHTML = '<div class="editor-empty-state">Выберите запись</div>';
+        syncRawTrades();
+        return;
+      }
+      const groups = Array.isArray(STATE.selected.TradesArr) ? STATE.selected.TradesArr : [];
+      if (!groups.length) {
+        els.tradesGroups.innerHTML = '<div class="editor-empty-state">Trades пуст. Добавьте группу или позицию.</div>';
+        syncRawTrades();
+        return;
+      }
+
+      els.tradesGroups.innerHTML = groups.map((g, gi) => {
+        const label = buildGroupLabel(g.group, g.sub);
+        const rows = (Array.isArray(g.entries) ? g.entries : []).map((e, ei) => {
+          if (e.kind === 'collection') {
+            return `<div class="trade-row" data-gi="${gi}" data-ei="${ei}">
+              <select data-field="collection_group" class="editor-input form-input">${buildCollectionGroupOptionsHtml(e.collection_group || '')}</select>
+              <select data-field="collection_sub" class="editor-input form-input">${buildCollectionSubOptionsHtml(e.collection_group || '', e.collection_sub || '')}</select>
+              <input disabled class="editor-input form-input" value="COLLECTION" />
+              <input disabled class="editor-input form-input" value="—" />
+              <button class="editor-btn editor-btn-secondary" data-action="del-entry" data-gi="${gi}" data-ei="${ei}" title="Удалить">×</button>
+            </div>`;
+          }
+          if (e.kind === 'raw') {
+            return `<div class="trade-row" data-gi="${gi}" data-ei="${ei}">
+              <input data-field="raw" class="editor-input form-input" value="${String(e.raw || '').replace(/"/g, '&quot;')}" placeholder="Raw line" />
+              <input disabled class="editor-input form-input" value="—" />
+              <input disabled class="editor-input form-input" value="—" />
+              <input disabled class="editor-input form-input" value="—" />
+              <button class="editor-btn editor-btn-secondary" data-action="del-entry" data-gi="${gi}" data-ei="${ei}" title="Удалить">×</button>
+            </div>`;
+          }
+          return `<div class="trade-row" data-gi="${gi}" data-ei="${ei}">
+            <div>${buildItemComboHtml(gi, ei, e.item_id)}</div>
+            <input data-field="amount" type="number" min="1" class="editor-input form-input" value="${Math.max(1, Number(e.amount || 1))}" placeholder="Кол-во" />
+            <input data-field="price" type="number" class="editor-input form-input" value="${Number(e.price || 0)}" placeholder="Цена 1" />
+            <input data-field="price_alt" type="number" class="editor-input form-input" value="${Number(e.price_alt || 0)}" placeholder="Цена 2" />
+            <button class="editor-btn editor-btn-secondary" data-action="del-entry" data-gi="${gi}" data-ei="${ei}" title="Удалить">×</button>
+          </div>`;
+        }).join('');
+
+        return `<div class="border border-light rounded-xl p-3">
+          <div class="flex items-center justify-between gap-2 mb-2">
+            <div class="flex items-center gap-2 w-full">
+              <input data-gfield="group" data-gi="${gi}" class="editor-input form-input" value="${String(g.group || '').replace(/"/g, '&quot;')}" placeholder="Group" />
+              <input data-gfield="sub" data-gi="${gi}" class="editor-input form-input" value="${String(g.sub || '').replace(/"/g, '&quot;')}" placeholder="Subgroup" />
+            </div>
+            <button class="editor-btn editor-btn-secondary" data-action="del-group" data-gi="${gi}" title="Удалить группу"><i class="fa-solid fa-trash"></i></button>
+          </div>
+          <div class="text-xs editor-muted-text mb-2">${label} • позиций: ${(g.entries || []).length}</div>
+          <div class="space-y-2">${rows || '<div class="editor-muted-text text-sm">Нет позиций.</div>'}</div>
+          <div class="mt-2 flex flex-wrap gap-2">
+            <button class="editor-btn editor-btn-secondary text-sm" data-action="add-item" data-gi="${gi}"><i class="fa-solid fa-plus"></i><span>Item</span></button>
+            <button class="editor-btn editor-btn-secondary text-sm" data-action="add-collection" data-gi="${gi}"><i class="fa-solid fa-boxes-stacked"></i><span>Collection</span></button>
+            <button class="editor-btn editor-btn-secondary text-sm" data-action="add-raw" data-gi="${gi}"><i class="fa-solid fa-code"></i><span>Raw</span></button>
+          </div>
+        </div>`;
+      }).join('');
+
+      els.tradesGroups.querySelectorAll('[data-gfield]').forEach((inp) => {
+        inp.addEventListener('input', () => {
+          const gi = Number(inp.getAttribute('data-gi'));
+          const key = inp.getAttribute('data-gfield');
+          if (!Number.isInteger(gi) || !key || !STATE.selected?.TradesArr?.[gi]) return;
+          STATE.selected.TradesArr[gi][key] = inp.value;
+          syncRawTrades();
+          markDirty(true);
+        });
+      });
+
+      els.tradesGroups.querySelectorAll('.trade-row [data-field]').forEach((inp) => {
+        const onChange = () => {
+          const row = inp.closest('.trade-row');
+          if (!row) return;
+          const gi = Number(row.getAttribute('data-gi'));
+          const ei = Number(row.getAttribute('data-ei'));
+          const field = inp.getAttribute('data-field');
+          const entry = STATE.selected?.TradesArr?.[gi]?.entries?.[ei];
+          if (!entry || !field) return;
+          if (field === 'collection_group') {
+            entry.collection_group = String(inp.value || '').trim();
+            const subs = getCollectionSubs(entry.collection_group);
+            if (entry.collection_sub && !subs.includes(entry.collection_sub)) {
+              entry.collection_sub = '';
+            }
+            syncRawTrades();
+            markDirty(true);
+            renderTradesEditor();
+            return;
+          } else if (field === 'collection_sub') {
+            entry.collection_sub = String(inp.value || '').trim();
+          } else if (field === 'raw') {
+            entry.raw = inp.value;
+          } else {
+            entry[field] = Number(inp.value || 0);
+          }
+          syncRawTrades();
+          markDirty(true);
+        };
+        inp.addEventListener('input', onChange);
+        inp.addEventListener('change', onChange);
+      });
+
+      els.tradesGroups.querySelectorAll('[data-action]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const action = btn.getAttribute('data-action');
+          const gi = Number(btn.getAttribute('data-gi'));
+          const ei = Number(btn.getAttribute('data-ei'));
+          const groupsRef = STATE.selected?.TradesArr;
+          if (!Array.isArray(groupsRef)) return;
+
+          if (action === 'del-group' && Number.isInteger(gi) && groupsRef[gi]) {
+            groupsRef.splice(gi, 1);
+          }
+          if (action === 'add-item' && Number.isInteger(gi) && groupsRef[gi]) {
+            groupsRef[gi].entries.push({ kind: 'item', item_id: 0, amount: 1, price: 0, price_alt: 0 });
+          }
+          if (action === 'add-collection' && Number.isInteger(gi) && groupsRef[gi]) {
+            groupsRef[gi].entries.push({ kind: 'collection', collection_group: '', collection_sub: '' });
+          }
+          if (action === 'add-raw' && Number.isInteger(gi) && groupsRef[gi]) {
+            groupsRef[gi].entries.push({ kind: 'raw', raw: '' });
+          }
+          if (action === 'del-entry' && Number.isInteger(gi) && Number.isInteger(ei) && groupsRef[gi]?.entries?.[ei]) {
+            groupsRef[gi].entries.splice(ei, 1);
+          }
+
+          syncRawTrades();
+          markDirty(true);
+          renderTradesEditor();
+        });
+      });
+
+      window.EditorCore?.DB?.init?.(els.tradesGroups);
+      syncRawTrades();
+    };
+
+    const updateHeader = () => {
+      if (!STATE.selected) {
+        els.title.textContent = 'Выберите Warehouse';
+        els.subtitle.textContent = '—';
+        els.badgeId.style.display = 'none';
+        return;
+      }
+      const worldLabel = getWorldLabel(STATE.selected.WorldID) || `World #${STATE.selected.WorldID || 0}`;
+      const typeLabel = stringifyTypeSet(STATE.selected.TypeArr || []);
+      els.title.textContent = STATE.selected.Name || '(без имени)';
+      els.subtitle.textContent = `${worldLabel} • ${typeLabel || 'no type'}`;
+      els.badgeId.textContent = `#${STATE.selectedId || 'new'}`;
+      els.badgeId.style.display = 'inline-flex';
+    };
+
+    const setSelected = (row, isNew = false) => {
+      const prevId = STATE.selectedId;
+      STATE.selectedId = isNew ? null : (row ? row.ID : null);
+
+      if (!row && !isNew) {
+        STATE.selected = null;
+        STATE.originalSelected = null;
+      } else {
+        const model = isNew ? emptyModel() : fromRow(row);
+        if (isNew && STATE.filter.world) model.WorldID = Number(STATE.filter.world || 0);
+        STATE.selected = model;
+        STATE.originalSelected = isNew ? null : JSON.parse(JSON.stringify(model));
+        if (isNew) STATE.lastSelectedIdBeforeCreate = prevId;
+      }
+
+      els.del.disabled = !STATE.selectedId;
+      markDirty(false);
+      mountMainForm();
+      renderTradesEditor();
+      updateHeader();
+      renderList();
+    };
+
+    const selectRow = async (id) => {
+      if (!id) return;
+      try {
+        setStatus('Загрузка…');
+        const res = await EditorCore.DBCrud.get(RESOURCE, id);
+        if (!res?.row) return setStatus('Не найдено', 'err');
+        setSelected(res.row, false);
+        setStatus('');
+      } catch (e) {
+        setStatus(String(e?.message || e), 'err');
+      }
+    };
+
+    const loadLookups = async () => {
+      try {
+        const [itemsCrudRes, worldsRes] = await Promise.all([
+          EditorCore.DBCrud.list('items', { search: '', limit: 5000, offset: 0 }),
+          EditorCore.DB.list('worlds', { limit: 5000, offset: 0 }),
+        ]);
+        if (itemsCrudRes?.ok && Array.isArray(itemsCrudRes.rows)) {
+          const rows = itemsCrudRes.rows || [];
+          STATE.lookups.itemOptions = rows.map((r) => ({
+            id: Number(r.ID || 0),
+            label: String(r.Name || ''),
+            group: String(r.Group || '').trim(),
+            type: String(r.Type || '').trim(),
+          })).filter((x) => x.id > 0).sort((a, b) => a.id - b.id);
+
+          const coll = new Map();
+          STATE.lookups.itemOptions.forEach((it) => {
+            const g = String(it.group || '').trim();
+            const t = String(it.type || '').trim();
+            if (!g || !t) return;
+            if (!coll.has(g)) coll.set(g, new Set());
+            coll.get(g).add(t);
+          });
+          STATE.lookups.collectionMap = coll;
+        }
+        if (worldsRes?.ok) STATE.lookups.worlds = new Map((worldsRes.items || []).map(i => [String(i.value), String(i.label || '')]));
+      } catch {}
+      fillWorldFilter();
+    };
+
+    const loadRows = async () => {
+      try {
+        setStatus('Загрузка списка…');
+        const res = await EditorCore.DBCrud.list(RESOURCE, { search: '', limit: 5000, offset: 0 });
+        STATE.rows = Array.isArray(res?.rows) ? res.rows : [];
+        renderList();
+        setStatus('');
+      } catch (e) {
+        STATE.rows = [];
+        renderList();
+        setStatus(String(e?.message || e), 'err');
+      }
+    };
+
+    const save = async () => {
+      if (!STATE.selected) return;
+      const payload = toPayload(STATE.selected);
+      try {
+        els.save.disabled = true;
+        setStatus('Сохранение…');
+        if (STATE.selectedId) {
+          await EditorCore.DBCrud.update(RESOURCE, STATE.selectedId, payload);
+          EditorCore.UI.toast('Сохранено', 'success');
+        } else {
+          const created = await EditorCore.DBCrud.create(RESOURCE, payload);
+          EditorCore.UI.toast('Создано', 'success');
+          await loadRows();
+          if (created?.id) await selectRow(created.id);
+        }
+        markDirty(false);
+        await loadRows();
+        setStatus('');
+      } catch (e) {
+        setStatus(String(e?.message || e), 'err');
+        els.save.disabled = false;
+      }
+    };
+
+    const remove = async () => {
+      if (!STATE.selectedId) return;
+      if (!confirm('Удалить Warehouse #' + STATE.selectedId + '?')) return;
+      try {
+        setStatus('Удаление…');
+        await EditorCore.DBCrud.remove(RESOURCE, STATE.selectedId);
+        setSelected(null, false);
+        await loadRows();
+        setStatus('');
+      } catch (e) {
+        setStatus(String(e?.message || e), 'err');
+      }
+    };
+
+    const cancelChanges = async () => {
+      if (!STATE.selected || !STATE.isDirty) return;
+      if (!STATE.selectedId) {
+        if (STATE.lastSelectedIdBeforeCreate) await selectRow(STATE.lastSelectedIdBeforeCreate);
+        else setSelected(null, false);
+        return;
+      }
+      STATE.selected = JSON.parse(JSON.stringify(STATE.originalSelected || STATE.selected));
+      markDirty(false);
+      runtimeMain?.setData?.(STATE.selected);
+      renderTradesEditor();
+      updateHeader();
+      setStatus('Локальные изменения отменены.', 'ok');
+    };
+
+    els.refresh.addEventListener('click', async () => {
+      await loadLookups();
+      await loadRows();
+    });
+
+    els.newBtn.addEventListener('click', () => setSelected(emptyModel(), true));
+    els.save.addEventListener('click', save);
+    els.del.addEventListener('click', remove);
+    els.cancel?.addEventListener('click', cancelChanges);
+
+    els.filterWorld.addEventListener('change', () => { STATE.filter.world = String(els.filterWorld.value || ''); renderList(); });
+    els.filterType.addEventListener('change', () => { STATE.filter.type = String(els.filterType.value || ''); renderList(); });
+    els.search.addEventListener('input', () => { STATE.search = String(els.search.value || ''); renderList(); });
+
+    els.addTradeGroup.addEventListener('click', () => {
+      if (!STATE.selected) return;
+      if (!Array.isArray(STATE.selected.TradesArr)) STATE.selected.TradesArr = [];
+      STATE.selected.TradesArr.push({ group: '', sub: '', entries: [] });
+      markDirty(true);
+      renderTradesEditor();
+    });
+
+    els.addTrade.addEventListener('click', () => {
+      if (!STATE.selected) return;
+      if (!Array.isArray(STATE.selected.TradesArr) || !STATE.selected.TradesArr.length) {
+        STATE.selected.TradesArr = [{ group: '', sub: '', entries: [] }];
+      }
+      STATE.selected.TradesArr[0].entries.push({ kind: 'item', item_id: 0, amount: 1, price: 0, price_alt: 0 });
+      markDirty(true);
+      renderTradesEditor();
+    });
+
+    window.addEventListener('beforeunload', (e) => {
+      if (!STATE.isDirty) return;
+      e.preventDefault();
+      e.returnValue = '';
+    });
+
+    (async () => {
+      await loadLookups();
+      await loadRows();
+      setSelected(null, false);
+      setStatus('');
+    })();
+  </script>
+</body>
+</html>

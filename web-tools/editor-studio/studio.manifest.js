@@ -16,6 +16,7 @@ window.STUDIO_MANIFEST = [
     items: [
       { key: 'vouchers', title: 'Ваучеры', icon: 'fa-ticket', src: 'vouchers-editor.html' },
       { key: 'crafts', title: 'Крафты', icon: 'fa-hammer', src: 'crafts-editor.html' },
+      { key: 'warehouses', title: 'Warehouse', icon: 'fa-warehouse', src: 'warehouse-editor.html' },
       { key: 'items', title: 'Предметы', icon: 'fa-cube', src: 'items-editor.html' },
       { key: 'bots_info', title: 'Боты', icon: 'fa-robot', src: 'bots-info-editor.html' },
       { key: 'bots_mobs', title: 'Мобы', icon: 'fa-skull', src: 'mobs-editor.html' },

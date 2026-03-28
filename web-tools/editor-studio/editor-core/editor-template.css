@@ -50,6 +50,7 @@ body[data-editor="quests"]{ --editor-accent:#8b5cf6; }
 body[data-editor="bots_npc"]{ --editor-accent:#38bdf8; }
 body[data-editor="bots_info"]{ --editor-accent:#f97316; }
 body[data-editor="items"]{ --editor-accent:#22c55e; }
+body[data-editor="warehouse"]{ --editor-accent:#14b8a6; }
 
 /* -------------------------------------------------------------
    Page shell

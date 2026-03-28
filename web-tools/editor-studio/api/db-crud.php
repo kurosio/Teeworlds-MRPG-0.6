@@ -149,6 +149,15 @@ $RESOURCES = [
     'search' => ['GroupName','ID','ItemID'],
     'order' => 'ID ASC',
   ],
+  // New editor: warehouse-editor.html
+  'warehouses' => [
+    'table' => 'tw_warehouses',
+    'pk' => 'ID',
+    'columns' => ['Name','Type','Trades','PosX','PosY','StorageData','Currency','WorldID'],
+    'search' => ['ID','Name','Type','WorldID','Currency'],
+    'order' => 'ID ASC',
+  ],
+
   // New editor: worlds-editor.html
   'worlds' => [
     'table' => 'tw_worlds',
