@@ -274,11 +274,19 @@ int CMobAI::GetPercentValue(int MaxValue, int Percent)
 
 void CMobAI::HandleSkillBehaviors()
 {
+	// recovery mana
+	if(Server()->Tick() % (Server()->TickSpeed() * 3) == 0)
+	{
+		if(m_pPlayer->GetMana() < m_pPlayer->GetMaxMana())
+			m_pCharacter->IncreaseMana(m_pPlayer->GetMaxMana() / 10);
+	}
+
+	// check next skill tick
 	if(m_BehaviorSkillNextTick > Server()->Tick())
 		return;
 
 	const bool UsedSkill = TryUseBaseSkill() || TryUseHealerSkill() || TryUseTankSkill() || TryUseDpsSkill();
-	const int CooldownSeconds = UsedSkill ? 2 : 1;
+	const int CooldownSeconds = UsedSkill ? (2 + rand() % 5) : 1;
 	m_BehaviorSkillNextTick = Server()->Tick() + (Server()->TickSpeed() * CooldownSeconds);
 }
 
