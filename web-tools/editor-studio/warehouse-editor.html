@@ -207,14 +207,19 @@
       return g || s;
     };
 
+    const TYPE_FLAGS = ['buying', 'selling', 'storage'];
+
     const parseTypeSet = (v) => {
       if (!v) return [];
-      if (Array.isArray(v)) return v.map(x => String(x).trim()).filter(Boolean);
-      return String(v).split(',').map(x => x.trim()).filter(Boolean);
+      const source = Array.isArray(v) ? v : String(v).split(',');
+      const normalized = source
+        .map((x) => String(x).trim().toLowerCase())
+        .filter((x) => TYPE_FLAGS.includes(x));
+      return Array.from(new Set(normalized));
     };
 
     const stringifyTypeSet = (arr) => {
-      const uniq = Array.from(new Set((Array.isArray(arr) ? arr : []).map(x => String(x).trim()).filter(Boolean)));
+      const uniq = parseTypeSet(arr);
       return uniq.join(',');
     };
 
@@ -477,7 +482,7 @@
     let runtimeMain = null;
     const mainFields = {
       Name: { type: 'text', label: 'Название', ui: { placeholder: 'Weapons Shop' } },
-      TypeArr: { type: 'multiselect', label: 'Type', ui: { options: [
+      TypeArr: { type: 'text', label: 'Флаги', ui: { type: 'tags', allowCreate: false, placeholder: 'Добавить флаг...', options: [
         { value: 'buying', label: 'buying' },
         { value: 'selling', label: 'selling' },
         { value: 'storage', label: 'storage' },
