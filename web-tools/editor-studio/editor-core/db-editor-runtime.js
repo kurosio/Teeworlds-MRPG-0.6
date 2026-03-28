@@ -249,7 +249,10 @@
 
         if (canUseLocal) {
           const filtered = filterRowsLocally(state.rowsRaw, search);
-          applyRows(filtered, { search });
+          const transformed = typeof cfg.transformList === 'function'
+            ? cfg.transformList(filtered, { search }) || []
+            : filtered;
+          applyRows(transformed, { search });
           return;
         }
 
