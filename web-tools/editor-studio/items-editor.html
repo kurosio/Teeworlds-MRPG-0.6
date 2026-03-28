@@ -8,9 +8,6 @@
 
   <style>
     .items-form [data-field-path="Comment"],
-    .items-form [data-field-path="Group"],
-    .items-form [data-field-path="Type"],
-    .items-form [data-field-path="Flags"],
     .items-form [data-field-path="DataEditorType"],
     .items-form [data-field-path="DataRandomBoxItems"],
     .items-form [data-field-path="DataBonusAmount"],
@@ -284,7 +281,7 @@
 
     const BONUS_DURATION_UNITS = [
       { value: 'minutes', label: 'Минуты' },
-      { value: 'hour', label: 'Часы' },
+      { value: 'hours', label: 'Часы' },
       { value: 'days', label: 'Дни' },
     ];
 
@@ -454,6 +451,7 @@
 		  showWhen: (data) => !['Settings', 'Quest', 'Currency'].includes(data?.Group ?? ''),
         }
       },
+      ScenarioData: { type: 'scenario', label: 'ScenarioData', ui: { scenarioMode: 'universal' } },
       InitialPrice: 
 	  { 
         type: 'number', 
@@ -474,8 +472,7 @@
 		  showWhen: (data) => !['Settings', 'Quest', 'Currency'].includes(data?.Group ?? ''),
 		} 
 	  },
-      ScenarioData: { type: 'scenario', label: 'ScenarioData', ui: { scenarioMode: 'universal' } },
-      DataEditorType: {
+	  DataEditorType: {
         label: 'Тип Data',
         ui: {
           type: 'select',
@@ -510,7 +507,7 @@
       },
       DataPotionValue: {
         type: 'number',
-        label: 'Количество',
+        label: 'Число',
         ui: {
           min: 0,
           step: 1,
@@ -519,7 +516,7 @@
       },
       DataPotionLifetime: {
         type: 'number',
-        label: 'Время',
+        label: 'Время (сек.)',
         ui: {
           min: 0,
           step: 1,
@@ -528,7 +525,7 @@
       },
       DataPotionRecast: {
         type: 'number',
-        label: 'Перезарядка',
+        label: 'Время перезарядки (сек.)',
         ui: {
           min: 0,
           step: 1,
