@@ -285,9 +285,41 @@ void CMobAI::HandleSkillBehaviors()
 	if(m_BehaviorSkillNextTick > Server()->Tick())
 		return;
 
-	const bool UsedSkill = TryUseBaseSkill() || TryUseHealerSkill() || TryUseTankSkill() || TryUseDpsSkill();
+	std::array<bool(CMobAI::*)(), 4> aSkillActions = {
+		&CMobAI::TryUseBaseSkill,
+		&CMobAI::TryUseHealerSkill,
+		&CMobAI::TryUseTankSkill,
+		&CMobAI::TryUseDpsSkill,
+	};
+
+	// êandomize the order every cycle.
+	for(size_t i = 0; i < aSkillActions.size(); i++)
+	{
+		const size_t SwapIndex = i + (size_t)(rand() % (int)(aSkillActions.size() - i));
+		std::swap(aSkillActions[i], aSkillActions[SwapIndex]);
+	}
+
+	bool UsedSkill = false;
+	for(const auto& pAction : aSkillActions)
+	{
+		if((this->*pAction)())
+		{
+			UsedSkill = true;
+			break;
+		}
+	}
+
 	const int CooldownSeconds = UsedSkill ? (2 + rand() % 5) : 1;
 	m_BehaviorSkillNextTick = Server()->Tick() + (Server()->TickSpeed() * CooldownSeconds);
+}
+
+bool CMobAI::TryUseManaAndShowText(int ManaCost, const char* pText, int TextSize)
+{
+	if(!m_pCharacter->TryUseMana(ManaCost))
+		return false;
+
+	GS()->EntityManager()->Text(m_pCharacter->GetPos() + vec2(0, -96), TextSize, pText);
+	return true;
 }
 
 bool CMobAI::TryUseBaseSkill()
@@ -300,13 +332,14 @@ bool CMobAI::TryUseBaseSkill()
 		return false;
 
 	const int ManaCost = GetPercentValue(m_pPlayer->GetMaxMana(), 8);
-	if(!m_pCharacter->TryUseMana(ManaCost))
-		return false;
+	if(TryUseManaAndShowText(ManaCost, "MOB CURE"))
+	{
+		const int Heal = ManaCost + GetPercentValue(ManaCost, 60);
+		m_pCharacter->IncreaseHealth(Heal);
+		return true;
+	}
 
-	const int Heal = ManaCost + GetPercentValue(ManaCost, 60);
-	m_pCharacter->IncreaseHealth(Heal);
-	GS()->EntityManager()->Text(m_pCharacter->GetPos() + vec2(0, -96), 30, "MOB CURE");
-	return true;
+	return false;
 }
 
 bool CMobAI::TryUseHealerSkill()
@@ -314,7 +347,7 @@ bool CMobAI::TryUseHealerSkill()
 	if(!m_pMobInfo->HasBehaviorFlag(MOBFLAG_BEHAVIOR_HEALER_SKILLS))
 		return false;
 
-	const int SelfMaxHealth = m_pPlayer->GetMaxHealth();
+	const auto SelfMaxHealth = m_pPlayer->GetMaxHealth();
 	const bool NeedSelfHeal = SelfMaxHealth > 0 && m_pCharacter->Health() <= GetPercentValue(SelfMaxHealth, 70);
 	bool NeedPartyHeal = false;
 
@@ -325,11 +358,12 @@ bool CMobAI::TryUseHealerSkill()
 		if(!pNearby || pNearby == m_pCharacter || !pNearby->GetPlayer() || !pNearby->GetPlayer()->IsBot())
 			continue;
 
-		const auto* pNearbyBot = dynamic_cast<CPlayerBot*>(pNearby->GetPlayer());
-		if(!pNearbyBot || pNearbyBot->GetBotType() != TYPE_BOT_MOB)
+		// Only support allies in party-heal check.
+		if(pNearby->IsAllowedPVP(m_ClientID))
 			continue;
 
-		if(pNearby->Health() <= GetPercentValue(pNearbyBot->GetMaxHealth(), 60))
+		const auto NearbyMaxHealth = pNearby->GetPlayer()->GetMaxHealth();
+		if(NearbyMaxHealth > 0 && pNearby->Health() <= GetPercentValue(NearbyMaxHealth, 60))
 		{
 			NeedPartyHeal = true;
 			break;
@@ -339,16 +373,17 @@ bool CMobAI::TryUseHealerSkill()
 	if(!NeedSelfHeal && !NeedPartyHeal)
 		return false;
 
-	const int ManaCost = GetPercentValue(m_pPlayer->GetMaxMana(), 18);
-	if(!m_pCharacter->TryUseMana(ManaCost))
-		return false;
+	const int ManaCost = GetPercentValue(m_pPlayer->GetMaxMana(), 50);
+	if(TryUseManaAndShowText(ManaCost, "MOB HEALER"))
+	{
+		const auto Radius = 128.f;
+		const auto Lifetime = 5 * Server()->TickSpeed();
+		const auto HealPerTick = maximum(1, ManaCost / 2);
+		GS()->EntityManager()->HealingRift(m_ClientID, m_pCharacter->GetPos(), Radius, 400.f, Lifetime, 1.5f, 2, HealPerTick, 6, 3, nullptr);
+		return true;
+	}
 
-	const int Radius = 220;
-	const int Lifetime = 3 * Server()->TickSpeed();
-	const int HealPerTick = maximum(1, ManaCost / 2);
-	GS()->EntityManager()->HealingAura(m_ClientID, m_pCharacter->GetPos(), Radius, Lifetime, HealPerTick);
-	GS()->EntityManager()->Text(m_pCharacter->GetPos() + vec2(0, -96), 30, "MOB HEALER");
-	return true;
+	return false;
 }
 
 bool CMobAI::TryUseTankSkill()
@@ -365,23 +400,19 @@ bool CMobAI::TryUseTankSkill()
 	if(NeedProtection)
 	{
 		const int ManaCost = GetPercentValue(MaxMana, 20);
-		if(!m_pCharacter->TryUseMana(ManaCost))
-			return false;
-
-		GS()->EntityManager()->LastStand(m_ClientID, m_pCharacter->GetPos(), 192.f, 10);
-		GS()->EntityManager()->Text(m_pCharacter->GetPos() + vec2(0, -96), 30, "MOB TANK");
-		return true;
+		if(TryUseManaAndShowText(ManaCost, "MOB TANK"))
+		{
+			GS()->EntityManager()->LastStand(m_ClientID, m_pCharacter->GetPos(), 192.f, 10);
+			return true;
+		}
+		return false;
 	}
 
-	// Provoke-style aggro usage when there is no active target.
+	// provoke-style aggro usage when there is no active target.
 	if(m_Target.IsEmpty())
 	{
 		const int ManaCost = GetPercentValue(MaxMana, 12);
-		if(!m_pCharacter->TryUseMana(ManaCost))
-			return false;
-
-		GS()->EntityManager()->Text(m_pCharacter->GetPos() + vec2(0, -96), 20, "PROVOKE (U NOOB)");
-		return true;
+		return TryUseManaAndShowText(ManaCost, "PROVOKE (U NOOB)", 20);
 	}
 
 	return false;
@@ -396,25 +427,28 @@ bool CMobAI::TryUseDpsSkill()
 	if(!pTargetChar || distance(m_pCharacter->GetPos(), pTargetChar->GetPos()) > 512.f)
 		return false;
 
-	const int ManaCost = GetPercentValue(m_pPlayer->GetMaxMana(), 22);
-	if(!m_pCharacter->TryUseMana(ManaCost))
-		return false;
+	const int ManaCostAtackTeleport = GetPercentValue(m_pPlayer->GetMaxMana(), 10);
+	const int ManaCostFlameWall = GetPercentValue(m_pPlayer->GetMaxMana(), 25);
 
-	if(rand() % 2 == 0)
+	if(rand() % 2 == 0 && TryUseManaAndShowText(ManaCostAtackTeleport, "MOB ATTACK TELEPORT"))
 	{
 		const int DamageBonusPct = clamp(m_pMobInfo->m_Power / 8, 1, 30);
 		const vec2 Dir = normalize(pTargetChar->GetPos() - m_pCharacter->GetPos());
 		new CAttackTeleport(&GS()->m_World, m_pCharacter->GetPos(), m_pPlayer, DamageBonusPct, Dir);
-		GS()->EntityManager()->Text(m_pCharacter->GetPos() + vec2(0, -96), 30, "MOB ATTACK TELEPORT");
 		return true;
 	}
 
-	const float Radius = 180.0f;
-	const int Lifetime = 2 * Server()->TickSpeed();
-	const int Damage = maximum(1, m_pMobInfo->m_Power / 3);
-	GS()->EntityManager()->FlameWall(m_ClientID, m_pCharacter->GetPos(), Radius, Lifetime, Damage, 0.45f);
-	GS()->EntityManager()->Text(m_pCharacter->GetPos() + vec2(0, -96), 30, "MOB DPS");
-	return true;
+	if(TryUseManaAndShowText(ManaCostFlameWall, "MOB FLAME WALL"))
+	{
+		const float Radius = 180.0f;
+		const int Lifetime = 2 * Server()->TickSpeed();
+		const int Damage = maximum(1, m_pMobInfo->m_Power / 3);
+		GS()->EntityManager()->FlameWall(m_ClientID, m_pCharacter->GetPos(), Radius, Lifetime, Damage, 0.45f);
+		GS()->EntityManager()->Text(m_pCharacter->GetPos() + vec2(0, -96), 30, "MOB DPS");
+		return true;
+	}
+
+	return false;
 }
 
 void CMobAI::ShowHealth() const
