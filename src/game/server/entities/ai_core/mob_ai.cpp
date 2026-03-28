@@ -292,7 +292,7 @@ void CMobAI::HandleSkillBehaviors()
 		&CMobAI::TryUseDpsSkill,
 	};
 
-	// êandomize the order every cycle.
+	// randomize the order every cycle.
 	for(size_t i = 0; i < aSkillActions.size(); i++)
 	{
 		const size_t SwapIndex = i + (size_t)(rand() % (int)(aSkillActions.size() - i));
@@ -412,7 +412,7 @@ bool CMobAI::TryUseTankSkill()
 	if(m_Target.IsEmpty())
 	{
 		const int ManaCost = GetPercentValue(MaxMana, 12);
-		return TryUseManaAndShowText(ManaCost, "PROVOKE (U NOOB)", 20);
+		return TryUseManaAndShowText(ManaCost, "U NOOB", 20);
 	}
 
 	return false;
