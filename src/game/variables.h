@@ -202,6 +202,7 @@ MACRO_CONFIG_STR(SvMySqlLogin, sv_sql_login, 32, "root", CFGFLAG_SERVER, "MySQL 
 MACRO_CONFIG_STR(SvMySqlPassword, sv_sql_password, 32, "", CFGFLAG_SERVER, "MySQL Password")
 MACRO_CONFIG_INT(SvMySqlPort, sv_sql_port, 3306, 0, 65000, CFGFLAG_SERVER, "MySQL Port")
 MACRO_CONFIG_INT(SvMySqlPoolSize, sv_sql_pool_size, 3, 2, 12, CFGFLAG_SERVER, "MySQL Pool size");
+MACRO_CONFIG_INT(SvMySqlUseTls, sv_sql_use_tls, 0, 0, 1, CFGFLAG_SERVER, "Enable TLS/SSL for MySQL connection (0 = off, 1 = on)")
 
 // mysql retry and timeout tuning
 MACRO_CONFIG_INT(SvSqlSelectMaxRetries, sv_sql_select_max_retries, 3, 0, 10, CFGFLAG_SERVER, "MySQL max retries for SELECT tasks")

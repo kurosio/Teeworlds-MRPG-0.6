@@ -376,6 +376,7 @@ std::unique_ptr<Connection> CConectionPool::CreateConnection()
 		connection_properties["autoReconnect"] = "true";
 		connection_properties["connectTimeout"] = "10";
 		connection_properties["socketTimeout"] = "30";
+		connection_properties["useTls"] = g_Config.m_SvMySqlUseTls ? "true" : "false";
 
 		auto pConnection = std::unique_ptr<Connection>(pDriver->connect(connection_properties));
 
