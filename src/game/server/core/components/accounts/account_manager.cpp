@@ -140,12 +140,17 @@ class DbAuthorization
 			pContext->GS()->Chat(pContext->GetClientID(), "Security recommendation: set a PIN code.");
 			pContext->GS()->Chat(pContext->GetClientID(), "Command: /set_pin <current_password> <new_pin>.");
 		}
-		if(pPlayer->m_pMotdMenu)
-			pPlayer->CloseMotdMenu();
-		pContext->GS()->m_pController->DoTeamChange(pPlayer);
-		Data.m_pAccountManager->LoadAccount(pPlayer, true);
-		g_EventListenerManager.Notify<IEventListener::PlayerLogin>(pPlayer, pPlayer->Account());
-		pPlayer->KillCharacter();
+		auto* pInitGS = static_cast<CGS*>(Instance::GameServerPlayer(pContext->GetClientID()));
+		auto* pInitPlayer = pInitGS ? pInitGS->GetPlayer(pContext->GetClientID(), false) : nullptr;
+		if(!pInitGS || !pInitPlayer)
+			return;
+
+		if(pInitPlayer->m_pMotdMenu)
+			pInitPlayer->CloseMotdMenu();
+		pInitGS->m_pController->DoTeamChange(pInitPlayer);
+		Data.m_pAccountManager->LoadAccount(pInitPlayer, true);
+		g_EventListenerManager.Notify<IEventListener::PlayerLogin>(pInitPlayer, pInitPlayer->Account());
+		pInitPlayer->KillCharacter();
 	}
 
 public:
@@ -1149,8 +1154,17 @@ void CAccountManager::TryLoginGuestByTimeoutCode(int ClientID, const char* pNick
 
 void CAccountManager::LoadAccount(CPlayer* pPlayer, bool FirstInitilize)
 {
-	if(!pPlayer || !pPlayer->IsAuthed() || !GS()->IsPlayerInWorld(pPlayer->GetCID()))
+	if(!pPlayer || !pPlayer->IsAuthed())
 		return;
+
+	// load same player context
+	if(!GS()->IsPlayerInWorld(pPlayer->GetCID()))
+	{
+		auto* pActiveGS = static_cast<CGS*>(Instance::GameServerPlayer(pPlayer->GetCID()));
+		if(auto* pActivePlayer = pActiveGS->GetPlayer(pPlayer->GetCID(), false))
+			pActiveGS->Core()->AccountManager()->LoadAccount(pActivePlayer, FirstInitilize);
+		return;
+	}
 
 	auto* pAccount = pPlayer->Account();
 
