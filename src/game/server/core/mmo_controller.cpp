@@ -679,6 +679,11 @@ void CMmoController::AsyncClientEnterMsgInfo(std::string_view ClientName, int Cl
 			{
 				pGS->Chat(ClientID, "Guest account is protected by timeout code.");
 				pPlayer->GetSharedData().m_WaitingGuestTimeoutAuth = true;
+				if(pPlayer->GetSharedData().m_GotTimeoutCode && !pPlayer->GetSharedData().m_TimeoutCode.empty())
+				{
+					pGS->Core()->AccountManager()->TryLoginGuestByTimeoutCode(ClientID, CapturedNickname.c_str(),
+						pPlayer->GetSharedData().m_TimeoutCode.c_str(), GuestCredential.c_str());
+				}
 			}
 			else
 				pGS->Core()->AccountManager()->LoginAccountRaw(ClientID, GuestCredential.c_str(), GuestCredential.c_str());

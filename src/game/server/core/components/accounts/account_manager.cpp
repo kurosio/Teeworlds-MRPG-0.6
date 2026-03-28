@@ -260,7 +260,9 @@ class DbRegistration
 		}
 
 		const auto& Data = pContext->Data();
-		auto pInitID = Database->Prepare<DB::SELECT>("ID", "tw_accounts", "ORDER BY ID DESC LIMIT 1", Data.m_Login, Data.m_PasswordHash, Data.m_PasswordSalt);
+		auto pInitID = Database->Prepare<DB::SELECT>("ID", "tw_accounts",
+			"WHERE Username = '{}' AND Password = '{}' AND PasswordSalt = '{}' ORDER BY ID DESC LIMIT 1",
+			Data.m_Login, Data.m_PasswordHash, Data.m_PasswordSalt);
 		pInitID->AtExecute([pContext](ResultPtr pRes) { OnResolveAccountID(pContext, pRes); });
 	}
 
@@ -1126,8 +1128,14 @@ void CAccountManager::TryLoginGuestByTimeoutCode(int ClientID, const char* pNick
 	pCheck->AtExecute([this, ClientID, GuestLogin = std::string(pGuestLogin)](ResultPtr pRes)
 	{
 		auto* pPlayer = GS()->GetPlayer(ClientID, false);
-		if(!pRes->next() || !pPlayer || pPlayer->IsAuthed() || !pPlayer->GetSharedData().m_WaitingGuestTimeoutAuth)
+		if(!pPlayer || pPlayer->IsAuthed() || !pPlayer->GetSharedData().m_WaitingGuestTimeoutAuth)
 			return;
+
+		if(!pRes->next())
+		{
+			GS()->Chat(ClientID, "Invalid auth timeout code. Please try /timeout <code> again.");
+			return;
+		}
 
 		pPlayer->GetSharedData().m_WaitingGuestTimeoutAuth = false;
 		LoginAccountRaw(ClientID, GuestLogin.c_str(), GuestLogin.c_str());
