@@ -409,6 +409,8 @@ void CWarehouseManager::ShowGroupedSelector(CPlayer* pPlayer, CWarehouse* pWareh
 			}
 
 			// buy
+			const bool HasAttrs = pItemInfo->HasAttributes();
+			const auto pDescription = HasAttrs ? pItemInfo->GetStringAttributesInfo(pPlayer, pItem->GetEnchant()) : pItemInfo->GetDescription();
 			if(!pItemInfo->IsStackable())
 			{
 				const bool HasItem = pPlayerItem->HasItem();
@@ -420,6 +422,8 @@ void CWarehouseManager::ShowGroupedSelector(CPlayer* pPlayer, CWarehouse* pWareh
 				VGroup.AddMenu(MENU_WAREHOUSE_ITEM_SELECT, pTrade->GetID(), "[{}] {} x{} - {$} {}",
 					pPlayerItem->GetValue(), pItemInfo->GetName(), pItem->GetValue(), Price, pCurrency->GetName());
 			}
+			VGroup.Add("- {}", pDescription);
+			VGroup.AddLine();
 		}
 
         if(!IsBuyingAction)
