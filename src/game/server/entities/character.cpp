@@ -14,6 +14,7 @@
 #include <game/server/core/components/groups/group_data.h>
 #include <game/server/core/components/guilds/guild_manager.h>
 #include <game/server/core/components/quests/quest_manager.h>
+#include <game/server/core/components/tunes/tune_zone_manager.h>
 #include <game/server/core/components/worlds/world_data.h>
 
 #include <game/server/core/entities/group/entitiy_group.h>
@@ -1082,13 +1083,9 @@ void CCharacter::HandleWater(CTuningParams* pTuningParams)
 	// apply physics
 	bool hasDriverKit = m_pPlayer->GetItem(itDiversKit)->IsEquipped();
 	bool isKeptAfloat = m_pPlayer->GetItem(itLifePreserver)->IsEquipped() || hasDriverKit;
-	pTuningParams->m_Gravity = isKeptAfloat ? -0.05f : 0.15f;
-	pTuningParams->m_GroundFriction = 0.95f;
-	pTuningParams->m_GroundControlSpeed = 250.0f / Server()->TickSpeed();
-	pTuningParams->m_GroundControlAccel = 1.5f;
-	pTuningParams->m_AirFriction = 0.95f;
-	pTuningParams->m_AirControlSpeed = 250.0f / Server()->TickSpeed();
-	pTuningParams->m_AirControlAccel = 1.5f;
+	pTuningParams->ApplyDiff(CTuneZoneManager::GetInstance().GetParams(ETuneZone::WATER));
+	pTuningParams->m_Gravity = isKeptAfloat ? -0.05f : pTuningParams->m_Gravity;
+	m_TuneZoneOverride = static_cast<int>(ETuneZone::WATER);
 	SetEmote(EMOTE_BLINK, 1, false);
 
 	// is has driver kit disable water air system

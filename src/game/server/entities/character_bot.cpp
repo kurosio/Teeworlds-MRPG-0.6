@@ -379,6 +379,7 @@ void CCharacterBotAI::ProcessBot()
 
 void CCharacterBotAI::HandleTuning()
 {
+	m_TuneZoneOverride = -1;
 	CTuningParams* pTuningParams = &m_pBotPlayer->m_NextTuningParams;
 	m_pAI->OnHandleTunning(pTuningParams);
 	HandleIndependentTuning();

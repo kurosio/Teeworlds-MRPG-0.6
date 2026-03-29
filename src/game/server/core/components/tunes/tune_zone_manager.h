@@ -14,6 +14,7 @@ enum class ETuneZone
 	DEFAULT = 0,
 	SLOW,
 	WALKING,
+	WATER,
 
 	NUM_TUNE_ZONES
 };

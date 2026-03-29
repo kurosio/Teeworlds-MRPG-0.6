@@ -117,7 +117,7 @@ namespace
 		if(!pData || DataSize <= 0)
 			return std::nullopt;
 
-		const std::string_view Prefix = "# source_sha256 ";
+		const std::string_view Prefix = "# sha256 ";
 		const char* pCur = pData;
 		const char* pEnd = pData + DataSize;
 		while(pCur < pEnd)
@@ -167,6 +167,16 @@ CTuneZoneManager::CTuneZoneManager()
 	params.m_GroundControlSpeed = 5.0f;
 	params.m_GroundControlAccel = 1.0f;
 	m_Zones[ETuneZone::WALKING] = params;
+
+	params = CTuningParams();
+	params.m_Gravity = 0.15f;
+	params.m_GroundFriction = 0.95f;
+	params.m_GroundControlSpeed = 250.0f / SERVER_TICK_SPEED;
+	params.m_GroundControlAccel = 1.5f;
+	params.m_AirFriction = 0.95f;
+	params.m_AirControlSpeed = 250.0f / SERVER_TICK_SPEED;
+	params.m_AirControlAccel = 1.5f;
+	m_Zones[ETuneZone::WATER] = params;
 
 	if(m_Zones.size() > NUM_TUNEZONES)
 		dbg_msg("TuneZoneManager", "Too much tune zones defined");
@@ -288,15 +298,12 @@ std::optional<std::string> CTuneZoneManager::BakePreparedMap(const char* pMapNam
 	char aSourceSha256[SHA256_MAXSTRSIZE];
 	sha256_str(SourceSha256, aSourceSha256, sizeof(aSourceSha256));
 	const std::string SourceSha256Str = aSourceSha256;
-	const std::string SourceHashLine = fmt_default("# source_sha256 {}", SourceSha256Str);
+	const std::string SourceHashLine = fmt_default("# sha256 {}", SourceSha256Str);
 
-	std::vector<std::string_view> DeltaHeader;
-	DeltaHeader.reserve(2);
-	if(!vNewCommands.empty())
-		DeltaHeader.emplace_back("# Tune zones generated");
-	DeltaHeader.emplace_back(SourceHashLine);
+	std::vector<std::string> DeltaBody = vNewCommands;
+	DeltaBody.emplace_back(SourceHashLine);
 
-	const std::vector<char> Delta = SerializeZeroSeparated(DeltaHeader, vNewCommands);
+	const std::vector<char> Delta = SerializeZeroSeparated({}, DeltaBody);
 	const bool HasDelta = !Delta.empty();
 
 	bool HadSettingsOriginally = false;
