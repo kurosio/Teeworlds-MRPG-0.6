@@ -171,10 +171,10 @@ CTuneZoneManager::CTuneZoneManager()
 	params = CTuningParams();
 	params.m_Gravity = 0.15f;
 	params.m_GroundFriction = 0.95f;
-	params.m_GroundControlSpeed = 250.0f / SERVER_TICK_SPEED;
+	params.m_GroundControlSpeed = 5.f;
 	params.m_GroundControlAccel = 1.5f;
 	params.m_AirFriction = 0.95f;
-	params.m_AirControlSpeed = 250.0f / SERVER_TICK_SPEED;
+	params.m_AirControlSpeed = 5.f;
 	params.m_AirControlAccel = 1.5f;
 	m_Zones[ETuneZone::WATER] = params;
 
