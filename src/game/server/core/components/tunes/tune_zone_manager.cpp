@@ -539,6 +539,8 @@ std::optional<std::string> CTuneZoneManager::BakePreparedMap(const char* pMapNam
 	}
 
 	// 5. write new map
+	pStorage->CreateFolder("maps", IStorageEngine::TYPE_SAVE);
+
 	CDataFileWriter Writer;
 	if(!Writer.Open(pStorage, PreparedPath.c_str(), IStorageEngine::TYPE_SAVE))
 	{
