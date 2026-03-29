@@ -128,6 +128,13 @@ bool CEntityHouseDoor::PlayerHouseTick(CHouse* pHouse)
 	if(!pHouse)
 		return false;
 
+	// open doors in houses without an owner
+	if(!pHouse->HasOwner() && m_State == State::Closed)
+	{
+		Open();
+		return true;
+	}
+
 	// player control
 	if(auto* pPlayer = GS()->GetPlayerByUserID(pHouse->GetAccountID()))
 	{
@@ -177,7 +184,7 @@ bool CEntityHouseDoor::GuildHouseTick(CGuildHouse* pHouse)
 	if(!pHouse)
 		return false;
 
-	// check if the house is purchased
+	// open doors in houses without an owner
 	const bool HouseIsPurchased = pHouse->IsPurchased();
 	if(!HouseIsPurchased && m_State == State::Closed)
 	{
