@@ -75,7 +75,7 @@ class TeeworldsEconClient:
                 # step 1: reading
                 try:
                     initial_prompt_bytes = await asyncio.wait_for(
-                        self.reader.readuntil(b'\n'),
+                        self.reader.readline(),
                         timeout=ECON_AUTH_TIMEOUT
                     )
                     initial_prompt = initial_prompt_bytes.decode('utf-8', 'ignore').strip()
@@ -95,7 +95,7 @@ class TeeworldsEconClient:
 
                 # step 3: read result by password
                 auth_response_bytes = await asyncio.wait_for(
-                    self.reader.readuntil(b'\n'),
+                    self.reader.readline(),
                     timeout=ECON_AUTH_TIMEOUT
                 )
                 auth_response = auth_response_bytes.decode('utf-8', 'ignore').strip()
@@ -132,7 +132,7 @@ class TeeworldsEconClient:
 
         try:
             data = await asyncio.wait_for(
-                self.reader.readuntil(b'\n'),
+                self.reader.readline(),
                 timeout=ECON_READ_TIMEOUT
             )
             # readuntil can return empty bytes is connection closed \n

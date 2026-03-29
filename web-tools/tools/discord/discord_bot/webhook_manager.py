@@ -19,6 +19,7 @@ class WebhookManager:
         self._target_channel_id: Optional[int] = None
         self._target_channel: Optional[discord.TextChannel] = None
         self._init_lock = asyncio.Lock()
+        self._send_lock = asyncio.Lock()
 
     async def initialize(self, channel_id: int):
         """Sets the target channel and attempts to find or create the webhook."""
@@ -111,31 +112,44 @@ class WebhookManager:
         webhook_username = username[:80]
         content = content[:2000]
 
-        try:
-            logger.debug(f"WebhookManager: Sending via webhook '{webhook_to_use.name}': User='{webhook_username}', Avatar='{avatar_url}', Content='{content[:50]}...'")
-            await webhook_to_use.send(
-                content=content,
-                username=webhook_username,
-                avatar_url=avatar_url if avatar_url else discord.utils.MISSING,
-                allowed_mentions=discord.AllowedMentions.none()
-            )
-        except discord.NotFound:
-             logger.error(f"WebhookManager: Webhook {webhook_to_use.id} not found during send (deleted?). Resetting.")
-             async with self._init_lock:
-                 self.webhook = None
-             await self._send_fallback(username, content)
-        except discord.Forbidden as e:
-             logger.error(f"WebhookManager: Permission error sending webhook message: {e.text}")
-             await self._send_fallback(username, content)
-        except discord.HTTPException as e:
-            logger.error(f"WebhookManager: Webhook send failed (HTTP {e.status}): {e.text}")
-            if e.status == 404:
-                 logger.error("WebhookManager: Got 404 on send, resetting.")
-                 async with self._init_lock: self.webhook = None
-                 await self._send_fallback(username, content)
-        except Exception as e:
-            logger.exception(f"WebhookManager: Unexpected error sending webhook message: {e}")
-            await self._send_fallback(username, content)
+        async with self._send_lock:
+            for attempt in range(2):
+                try:
+                    logger.debug(f"WebhookManager: Sending via webhook '{webhook_to_use.name}': User='{webhook_username}', Avatar='{avatar_url}', Content='{content[:50]}...', Attempt={attempt+1}")
+                    await webhook_to_use.send(
+                        content=content,
+                        username=webhook_username,
+                        avatar_url=avatar_url if avatar_url else discord.utils.MISSING,
+                        allowed_mentions=discord.AllowedMentions.none()
+                    )
+                    return
+                except discord.NotFound:
+                     logger.error(f"WebhookManager: Webhook {webhook_to_use.id} not found during send (deleted?). Resetting.")
+                     async with self._init_lock:
+                         self.webhook = None
+                     await self._send_fallback(username, content)
+                     return
+                except discord.Forbidden as e:
+                     logger.error(f"WebhookManager: Permission error sending webhook message: {e.text}")
+                     await self._send_fallback(username, content)
+                     return
+                except discord.HTTPException as e:
+                    logger.error(f"WebhookManager: Webhook send failed (HTTP {e.status}): {e.text}")
+                    if e.status == 404:
+                         logger.error("WebhookManager: Got 404 on send, resetting.")
+                         async with self._init_lock:
+                             self.webhook = None
+                         await self._send_fallback(username, content)
+                         return
+                    if attempt == 0 and e.status in (429, 500, 502, 503, 504):
+                        await asyncio.sleep(1.0)
+                        continue
+                    await self._send_fallback(username, content)
+                    return
+                except Exception as e:
+                    logger.exception(f"WebhookManager: Unexpected error sending webhook message: {e}")
+                    await self._send_fallback(username, content)
+                    return
 
 
     async def _send_fallback(self, username: str, content: str):

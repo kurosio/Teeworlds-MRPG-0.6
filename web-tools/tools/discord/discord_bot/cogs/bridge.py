@@ -8,7 +8,7 @@ from typing import cast, Optional, Dict
 # Project imports
 from config import (WEBHOOK_SERVER_SKIN, WEBHOOK_UNKNOWN_SKIN, DISCORD_CHANNEL_ID,
                     RECONNECT_DELAY, POLL_INTERVAL, SERVER_TAG_TEEWORLDS, COMMAND_PREFIX,
-                    ECON_READ_TIMEOUT)
+                    ECON_READ_TIMEOUT, WEBHOOK_SEND_TIMEOUT, PLAYER_CACHE_TIMEOUT)
 from models.econ import EconMessage, EconChatMessage
 from services.teeworlds_client import TeeworldsEconClient
 from services.server_status import ServerStatusService
@@ -282,8 +282,13 @@ class BridgeCog(commands.Cog):
 
             player_data: Optional[Dict] = None
             try:
-                current_player_cache = await self.status_service.get_player_cache()
+                current_player_cache = await asyncio.wait_for(
+                    self.status_service.get_player_cache(),
+                    timeout=PLAYER_CACHE_TIMEOUT
+                )
                 player_data = current_player_cache.get(normalized_nick)
+            except asyncio.TimeoutError:
+                 logger.warning(f"Player cache lookup timed out for {normalized_nick}.")
             except Exception as e:
                  logger.error(f"Failed getting player cache for {normalized_nick}: {e}")
 
@@ -327,11 +332,19 @@ class BridgeCog(commands.Cog):
         if avatar_url_to_use is None:
             avatar_url_to_use = get_skin_url(WEBHOOK_UNKNOWN_SKIN, 0, 0)
 
-        await self.webhook_manager.send(
-            username=webhook_username,
-            content=final_message_content,
-            avatar_url=avatar_url_to_use
-        )
+        try:
+            await asyncio.wait_for(
+                self.webhook_manager.send(
+                    username=webhook_username,
+                    content=final_message_content,
+                    avatar_url=avatar_url_to_use
+                ),
+                timeout=WEBHOOK_SEND_TIMEOUT
+            )
+        except asyncio.TimeoutError:
+            logger.warning(
+                f"Webhook send timed out after {WEBHOOK_SEND_TIMEOUT}s for user '{webhook_username}'."
+            )
 
 
 # setup
