@@ -3,6 +3,7 @@ import re
 import urllib.parse
 import logging
 from typing import Optional, Dict
+from config import SKIN_API_URL
 
 logger = logging.getLogger("TeeworldsBridge.Utils")
 
@@ -296,14 +297,19 @@ def normalize_nickname(nickname: str) -> str:
 
 
 def get_skin_url(skin_name: str, use_custom_color: bool, body_color: int, feet_color: int) -> str:
-    """Generates a URL to render a Teeworlds skin."""
+    """Generates a URL to render a Teeworlds skin via skins_api."""
     if not skin_name:
         skin_name = "default"
-        
-    skin_name_quoted = urllib.parse.quote(skin_name, safe=':/')
-    skin_api_url = f"https://discreet-savory-crustacean.glitch.me/render/{skin_name_quoted}"
-    if use_custom_color: skin_api_url = f"{skin_api_url}/{body_color}/{feet_color}"
-    logger.debug(f"Generated skin URL with custom colors (Glitch): {skin_api_url}")
+
+    base_url = (SKIN_API_URL or "http://127.0.0.1:8000/render").rstrip("/")
+    params = {"name": skin_name}
+    if use_custom_color:
+        params["body"] = str(body_color)
+        params["foot"] = str(feet_color)
+
+    query = urllib.parse.urlencode(params, quote_via=urllib.parse.quote)
+    skin_api_url = f"{base_url}?{query}"
+    logger.debug(f"Generated skin URL: {skin_api_url}")
     return skin_api_url
 
 

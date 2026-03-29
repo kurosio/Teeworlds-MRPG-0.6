@@ -1,13 +1,12 @@
 # discord_bot/cogs/bridge.py
 import asyncio
 import discord
-from discord.ext import commands, tasks
+from discord.ext import commands
 import logging
-from typing import cast, Optional
-import urllib.parse
+from typing import cast, Optional, Dict
 
 # Project imports
-from config import (WEBHOOK_NAME, WEBHOOK_SERVER_SKIN, WEBHOOK_UNKNOWN_SKIN, DISCORD_CHANNEL_ID, 
+from config import (WEBHOOK_SERVER_SKIN, WEBHOOK_UNKNOWN_SKIN, DISCORD_CHANNEL_ID,
                     RECONNECT_DELAY, POLL_INTERVAL, SERVER_TAG_TEEWORLDS, COMMAND_PREFIX,
                     ECON_READ_TIMEOUT)
 from models.econ import EconMessage, EconChatMessage
@@ -309,7 +308,7 @@ class BridgeCog(commands.Cog):
                       webhook_username = nickname[:80]
 
         if avatar_url_to_use is None:
-            avatar_url_to_use = WEBHOOK_UNKNOWN_SKIN
+            avatar_url_to_use = get_skin_url(WEBHOOK_UNKNOWN_SKIN, False, 0, 0)
 
         await self.webhook_manager.send(
             username=webhook_username,

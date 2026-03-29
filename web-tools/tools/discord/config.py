@@ -36,6 +36,8 @@ STATUS_UPDATE_INTERVAL_MINUTES = 2
 
 # --- Server Status ---
 MASTER_SERVER_API_URL = "https://master1.ddnet.org/ddnet/15/servers.json"
-SKIN_API_URL = ""
+# skins_api endpoint (used by bridge avatar rendering)
+# local default: http://127.0.0.1:8000/render
+SKIN_API_URL = "http://127.0.0.1:8000/render"
 GAME_SERVER_ADDRESS = "103.27.156.253:8310"
 SHOW_JOIN_BUTTON = True
