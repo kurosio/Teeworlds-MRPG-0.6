@@ -296,14 +296,14 @@ def normalize_nickname(nickname: str) -> str:
     return normalized
 
 
-def get_skin_url(skin_name: str, use_custom_color: bool, body_color: int, feet_color: int) -> str:
+def get_skin_url(skin_name: str, body_color: int, feet_color: int) -> str:
     """Generates a URL to render a Teeworlds skin via skins_api."""
     if not skin_name:
         skin_name = "default"
 
     base_url = (SKIN_API_URL or "http://127.0.0.1:8000/render").rstrip("/")
     params = {"name": skin_name}
-    if use_custom_color:
+    if int(body_color or 0) != 0 or int(feet_color or 0) != 0:
         params["body"] = str(body_color)
         params["foot"] = str(feet_color)
 

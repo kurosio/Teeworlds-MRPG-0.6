@@ -17,7 +17,6 @@ class ServerStatusService:
         self.player_cache: Dict[str, Dict[str, Any]] = {}
         self._cache_lock = asyncio.Lock()
 
-
     async def _fetch_master_server_data(self) -> Optional[Union[Dict, List]]:
         """Fetches the full server list from the master server API."""
         try:
@@ -100,14 +99,32 @@ class ServerStatusService:
                             log_sample = False
 
                         normalized_name = normalize_nickname(player_name)
+                        skin_raw = client.get("skin", {})
+                        skin_name = "default"
+                        if isinstance(skin_raw, dict):
+                            skin_name = str(skin_raw.get("name", "default") or "default")
+                        elif isinstance(skin_raw, str) and skin_raw.strip():
+                            skin_name = skin_raw.strip()
+
+                        body_color = client.get("color_body", client.get("body_color", None))
+                        feet_color = client.get("color_feet", client.get("feet_color", None))
+                        if isinstance(skin_raw, dict):
+                            if body_color is None:
+                                body_color = skin_raw.get("color_body", skin_raw.get("body_color", 0))
+                            if feet_color is None:
+                                feet_color = skin_raw.get("color_feet", skin_raw.get("feet_color", 0))
+
+                        body_color = int(body_color or 0)
+                        feet_color = int(feet_color or 0)
+
                         new_player_data[normalized_name] = {
                             "name": player_name,
                             "clan": client.get("clan", ""),
                             "country": client.get("country", -1),
-                            "skin": client.get("skin", {}),
-                            "use_custom_color": client.get("use_custom_color", False),
-                            "body_color": client.get("color_body", 0),
-                            "feet_color": client.get("color_feet", 0),
+                            "skin": skin_raw,
+                            "skin_name": skin_name,
+                            "body_color": body_color,
+                            "feet_color": feet_color,
                         }
         else:
             self.logger.info("No server info or no clients section, clearing player cache.")
@@ -142,11 +159,9 @@ class ServerStatusService:
 
          if player_data:
              self.logger.debug(f"Cache hit for skin info: '{normalized_nickname}'")
-             skin_data = player_data.get("skin", {})
-             skin_name = str(skin_data.get("name", "default") if isinstance(skin_data, dict) else "default")
+             skin_name = str(player_data.get("skin_name", "default") or "default")
              return {
                  "skin_name": skin_name,
-                 "use_custom_color": player_data.get("use_custom_color", False),
                  "body_color": player_data.get("body_color", 0),
                  "feet_color": player_data.get("feet_color", 0),
              }

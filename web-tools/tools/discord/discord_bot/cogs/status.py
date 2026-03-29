@@ -36,8 +36,19 @@ class StatusCog(commands.Cog):
             self._ready_event.set()
             return
 
-        # search channel
+        # search channel (cache first, then API fetch fallback)
         channel = self.bot.get_channel(STATUS_CHANNEL_ID)
+        if channel is None:
+            try:
+                channel = await self.bot.fetch_channel(STATUS_CHANNEL_ID)
+                logger.debug(f"Status Cog fetched channel {STATUS_CHANNEL_ID} via API.")
+            except discord.NotFound:
+                logger.error(f"Status channel {STATUS_CHANNEL_ID} was not found via API.")
+            except discord.Forbidden:
+                logger.error(f"Missing permissions to fetch status channel {STATUS_CHANNEL_ID} via API.")
+            except discord.HTTPException as e:
+                logger.error(f"HTTP error while fetching status channel {STATUS_CHANNEL_ID}: {e}")
+
         if not isinstance(channel, discord.TextChannel):
             logger.critical(f"Status channel {STATUS_CHANNEL_ID} not found or not text! Status updates disabled.")
             self.status_channel = None

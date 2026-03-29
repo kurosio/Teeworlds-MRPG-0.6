@@ -91,11 +91,22 @@ class WebhookManager:
         """Sends a message using the managed webhook."""
         async with self._init_lock:
              webhook_to_use = self.webhook
+             channel_id = self._target_channel_id
 
         if not webhook_to_use:
-            logger.warning("WebhookManager: Webhook is not available. Attempting fallback.")
-            await self._send_fallback(username, content)
-            return
+            if channel_id is not None:
+                logger.warning(f"WebhookManager: Webhook unavailable. Trying reinitialize for channel {channel_id}.")
+                try:
+                    await self.initialize(channel_id)
+                except Exception as e:
+                    logger.error(f"WebhookManager: Reinitialize failed: {e}")
+                async with self._init_lock:
+                    webhook_to_use = self.webhook
+
+            if not webhook_to_use:
+                logger.warning("WebhookManager: Webhook is still unavailable. Attempting fallback.")
+                await self._send_fallback(username, content)
+                return
 
         webhook_username = username[:80]
         content = content[:2000]

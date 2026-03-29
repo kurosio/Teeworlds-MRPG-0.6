@@ -41,8 +41,19 @@ class BridgeCog(commands.Cog):
         """Called once the bot is ready. Finds channel, initializes webhook, starts monitor."""
         logger.info("Bridge Cog: Bot is ready. Initializing...")
 
-        # search channel
+        # search channel (cache first, then API fetch fallback)
         channel = self.bot.get_channel(DISCORD_CHANNEL_ID)
+        if channel is None:
+            try:
+                channel = await self.bot.fetch_channel(DISCORD_CHANNEL_ID)
+                logger.debug(f"Bridge Cog fetched channel {DISCORD_CHANNEL_ID} via API.")
+            except discord.NotFound:
+                logger.error(f"Bridge channel {DISCORD_CHANNEL_ID} was not found via API.")
+            except discord.Forbidden:
+                logger.error(f"Missing permissions to fetch bridge channel {DISCORD_CHANNEL_ID} via API.")
+            except discord.HTTPException as e:
+                logger.error(f"HTTP error while fetching bridge channel {DISCORD_CHANNEL_ID}: {e}")
+
         if not isinstance(channel, discord.TextChannel):
             logger.critical(f"Bridge channel {DISCORD_CHANNEL_ID} not found or not text! Bridge disabled.")
             self.target_channel = None
@@ -141,7 +152,9 @@ class BridgeCog(commands.Cog):
              return
 
         # format msg for teeworlds
-        tw_message = f"{SERVER_TAG_TEEWORLDS} {author_name}: {content}"
+        # sanitize author display name for single-line relay in game chat
+        safe_author_name = clean_message(author_name).replace(":", " ").strip() or "DiscordUser"
+        tw_message = f"{SERVER_TAG_TEEWORLDS} {safe_author_name}: {content}"
 
         logger.info(f"📤 Relaying to Teeworlds: {author_name}: {content[:100]}...")
         if self.econ_client:
@@ -258,7 +271,7 @@ class BridgeCog(commands.Cog):
         if nickname == '***':
             webhook_username = "Teeworlds Event"
             try:
-                 avatar_url_to_use = get_skin_url(WEBHOOK_SERVER_SKIN, False, 0, 0)
+                 avatar_url_to_use = get_skin_url(WEBHOOK_SERVER_SKIN, 0, 0)
             except Exception as e: logger.warning(f"Failed system skin URL: {e}")
 
         # player messages
@@ -279,14 +292,18 @@ class BridgeCog(commands.Cog):
                 country_code = player_data.get("country", -1)
                 flag_emoji = get_flag_emoji(country_code)
                 skin_data = player_data.get("skin", {})
-                skin_name = str(skin_data.get("name", "default") if isinstance(skin_data, dict) else "default")
-                use_custom_color = player_data.get("use_custom_color", False)
+                skin_name = str(player_data.get("skin_name", "default") or "default")
+                if skin_name == "default" and isinstance(skin_data, dict):
+                    skin_name = str(skin_data.get("name", "default") or "default")
+                elif skin_name == "default" and isinstance(skin_data, str) and skin_data.strip():
+                    skin_name = skin_data.strip()
+
                 body_color = player_data.get("body_color", 0)
                 feet_color = player_data.get("feet_color", 0)
 
                 try:
                     avatar_url_to_use = get_skin_url(
-                        skin_name, use_custom_color, body_color, feet_color
+                        skin_name, body_color, feet_color
                     )
                     logger.debug(f"Generated skin URL for '{nickname}': {avatar_url_to_use}")
                 except Exception as e:
@@ -294,7 +311,7 @@ class BridgeCog(commands.Cog):
             else:
                 logger.debug(f"No player data/skin info found for '{normalized_nick}'. Using defaults.")
                 flag_emoji = get_flag_emoji(-1)
-                try: avatar_url_to_use = get_skin_url("default", False, 0, 0)
+                try: avatar_url_to_use = get_skin_url("default", 0, 0)
                 except Exception: pass
 
             potential_username = f"{nickname} ({flag_emoji})"
@@ -308,7 +325,7 @@ class BridgeCog(commands.Cog):
                       webhook_username = nickname[:80]
 
         if avatar_url_to_use is None:
-            avatar_url_to_use = get_skin_url(WEBHOOK_UNKNOWN_SKIN, False, 0, 0)
+            avatar_url_to_use = get_skin_url(WEBHOOK_UNKNOWN_SKIN, 0, 0)
 
         await self.webhook_manager.send(
             username=webhook_username,
