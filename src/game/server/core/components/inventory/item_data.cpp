@@ -512,7 +512,6 @@ bool CPlayerItem::Use(int Value)
 
 			pPlayer->m_Effects.Add(Effect, PotionTime * Server()->TickSpeed());
 			GS()->Chat(m_ClientID, "You used '{} x{}'.", Info()->GetName(), Value);
-			GS()->EntityManager()->Text(pPlayer->m_ViewPos + vec2(0, -140.0f), 70, EffectName(Effect));
 			GS()->CreatePlayerSound(m_ClientID, SOUND_SFX_POTION);
 
 			// Update the recast time based on potion type
