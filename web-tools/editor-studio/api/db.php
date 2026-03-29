@@ -39,6 +39,7 @@ try {
       'database' => (string)($c['database'] ?? ''),
       'user' => (string)($c['user'] ?? ''),
       'skins_api' => (string)($c['skins_api'] ?? ''),
+      'editor_user' => (string)($c['editor_user'] ?? 'admin'),
     ];
     respond(['ok' => true, 'config' => $safe]);
   }
@@ -54,9 +55,20 @@ try {
       // if password empty, keep existing
       'password' => (string)($body['password'] ?? ''),
       'skins_api' => trim((string)($body['skins_api'] ?? ($prev['skins_api'] ?? ''))),
+      'editor_user' => trim((string)($body['editor_user'] ?? ($prev['editor_user'] ?? 'admin'))),
+      'editor_password' => (string)($body['editor_password'] ?? ''),
     ];
     if ($cfg['password'] === '' && isset($prev['password'])) {
       $cfg['password'] = (string)$prev['password'];
+    }
+    if ($cfg['editor_user'] === '') {
+      $cfg['editor_user'] = (string)($prev['editor_user'] ?? 'admin');
+      if ($cfg['editor_user'] === '') {
+        $cfg['editor_user'] = 'admin';
+      }
+    }
+    if ($cfg['editor_password'] === '' && isset($prev['editor_password'])) {
+      $cfg['editor_password'] = (string)$prev['editor_password'];
     }
     if (!save_cfg($cfg)) {
       respond(['ok' => false, 'error' => 'Failed to save config'], 500);
