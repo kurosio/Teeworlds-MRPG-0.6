@@ -37,6 +37,33 @@ namespace
 		return Out;
 	}
 
+	static std::vector<char> MergeZeroSeparated(const char* pBase, int BaseSize, const std::vector<char>& Extra)
+	{
+		std::vector<char> Out;
+		if(pBase && BaseSize > 0)
+		{
+			Out.resize(BaseSize);
+			mem_copy(Out.data(), pBase, BaseSize);
+
+			// Remove trailing separators to avoid introducing an empty command
+			// between original and appended settings blocks.
+			while(!Out.empty() && Out.back() == '\0')
+				Out.pop_back();
+		}
+
+		if(!Extra.empty())
+		{
+			if(!Out.empty())
+				Out.push_back('\0');
+
+			const size_t OldSize = Out.size();
+			Out.resize(OldSize + Extra.size());
+			mem_copy(Out.data() + OldSize, Extra.data(), Extra.size());
+		}
+
+		return Out;
+	}
+
 	static std::string MakePreparedPath(const char* pMapName)
 	{
 		std::string_view s(pMapName ? pMapName : "");
@@ -264,8 +291,7 @@ std::optional<std::string> CTuneZoneManager::BakePreparedMap(const char* pMapNam
 	const std::string SourceHashLine = fmt_default("# source_sha256 {}", SourceSha256Str);
 
 	std::vector<std::string_view> DeltaHeader;
-	DeltaHeader.reserve(3);
-	DeltaHeader.emplace_back("");
+	DeltaHeader.reserve(2);
 	if(!vNewCommands.empty())
 		DeltaHeader.emplace_back("# Tune zones generated");
 	DeltaHeader.emplace_back(SourceHashLine);
@@ -310,10 +336,7 @@ std::optional<std::string> CTuneZoneManager::BakePreparedMap(const char* pMapNam
 
 					if(HasDelta)
 					{
-						SettingsCombined.resize(SetSize + (int)Delta.size());
-						if(SetSize > 0)
-							mem_copy(SettingsCombined.data(), pSet, SetSize);
-						mem_copy(SettingsCombined.data() + SetSize, Delta.data(), Delta.size());
+						SettingsCombined = MergeZeroSeparated(pSet, SetSize, Delta);
 					}
 					else
 					{
