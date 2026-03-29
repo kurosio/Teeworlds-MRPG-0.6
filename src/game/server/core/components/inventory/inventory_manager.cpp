@@ -682,17 +682,17 @@ void CInventoryManager::ShowPlayerModules(CPlayer* pPlayer)
 		auto SortPriority = Item.IsEquipped() ? 1 : 0;
 		const bool HasAttrs = pInfo->HasAttributes();
 		VoteWrapper& TargetList = HasAttrs ? VStats : VFunctional;
-		const auto Description = HasAttrs ? Item.GetStringAttributesInfo(pPlayer) : pInfo->GetDescription();
+		const auto pDescription = HasAttrs ? Item.GetStringAttributesInfo(pPlayer) : pInfo->GetDescription();
 		const char* EquippedFlag = Item.IsEquipped() ? "✔ " : "";
 		if(SimpleView)
-			TargetList.AddOption("TOGGLE_EQUIP", ItemID, "{}{}", EquippedFlag, Description).SetSortPriority(SortPriority);
+			TargetList.AddOption("TOGGLE_EQUIP", ItemID, "{}{}", EquippedFlag, pDescription).SetSortPriority(SortPriority);
 		else
 			TargetList.AddOption("TOGGLE_EQUIP", ItemID, "{}{}", EquippedFlag, pInfo->GetName()).SetSortPriority(SortPriority);
 
 		if(Item.IsEquipped())
 		{
 			SortPriority = !HasAttrs ? 1 : 0;
-			VCollected.Add("\u2022 {}", Description).SetSortPriority(SortPriority);
+			VCollected.Add("\u2022 {}", pDescription).SetSortPriority(SortPriority);
 			HasAttrs ? equippedStats++ : equippedFunc++;
 		}
 	}

@@ -283,6 +283,8 @@ void CCraftManager::ShowCraftGroup(CPlayer* pPlayer, const std::string& GroupNam
             DuplicateId = ++DuplicateIndex[ItemID];
 
 		// set title name by enchant type (or stack item, or only once)
+		const bool HasAttrs = pCraftItemInfo->HasAttributes();
+		const auto pDescription = HasAttrs ? pCraftItemInfo->GetStringAttributesInfo(pPlayer, pCraft->GetItem()->GetEnchant()) : pCraftItemInfo->GetDescription();
 		if(!pCraftItemInfo->IsStackable())
 		{
             if(DuplicateId)
@@ -291,6 +293,8 @@ void CCraftManager::ShowCraftGroup(CPlayer* pPlayer, const std::string& GroupNam
             else
 			    VCraftList.AddMenu(MENU_CRAFTING_SELECT, ID, "{}{} - {$} gold",
 				    (pPlayer->GetItem(ItemID)->GetValue() ? "✔ " : "\0"), pCraftItemInfo->GetName(), Price);
+			VCraftList.Add("- {}", pDescription);
+			VCraftList.AddLine();
 		}
 		else
 		{
@@ -300,6 +304,8 @@ void CCraftManager::ShowCraftGroup(CPlayer* pPlayer, const std::string& GroupNam
             else
 			    VCraftList.AddMenu(MENU_CRAFTING_SELECT, ID, "[{}]{} x{} - {$} gold",
 				    pPlayer->GetItem(ItemID)->GetValue(), pCraftItemInfo->GetName(), pCraft->GetItem()->GetValue(), Price);
+			VCraftList.Add("- {}", pDescription);
+			VCraftList.AddLine();
 		}
 	}
 	VoteWrapper::AddEmptyline(ClientID);
