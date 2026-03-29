@@ -44,7 +44,7 @@ void RatingSystem::UpdateRating(CGS* pGS, bool Won, int OpponentRating, int Oppo
 	if(!m_pAccount)
 		return;
 
-	// elo rating calculation
+	// elo rating calculation.
 	double ExpectedScore = 1.0 / (1.0 + std::pow(10, (OpponentRating - m_Rating) / 400.0));
 	int Score = Won ? 1 : 0;
 
