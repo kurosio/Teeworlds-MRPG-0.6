@@ -3,6 +3,7 @@
 #ifndef GAME_COLLISION_H
 #define GAME_COLLISION_H
 
+#include <string_view>
 #include <base/vmath.h>
 
 class CTile;
@@ -46,6 +47,10 @@ public:
 		std::vector<vec2> vPositions {};
 		std::string Text {};
 	};
+	struct ActionZoneDetail
+	{
+		std::string Name {};
+	};
 
 	struct FixedCamZoneDetail
 	{
@@ -69,6 +74,7 @@ private:
 	std::vector<FixedCamZoneDetail> m_vFixedCamZones {};
 	std::map<int, ZoneDetail> m_vZoneDetail {};
 	std::map<int, TextZoneDetail> m_vZoneTextDetail {};
+	std::map<int, ActionZoneDetail> m_vActionZoneDetail {};
 	std::unordered_map<int, GatheringNode> m_vOreNodes {};
 	std::unordered_map<int, GatheringNode> m_vPlantNodes {};
 	std::unordered_map<int, GatheringNode> m_vFishNodes {};
@@ -141,6 +147,7 @@ public:
 	// other
 	std::map<int, TextZoneDetail>& GetTextZones() { return m_vZoneTextDetail; }
 	std::optional<ZoneDetail> GetZonedetail(vec2 Pos) const;
+	bool IsActiveActionZone(std::string_view ActionZoneName, vec2 Pos) const;
 	std::optional<vec2> TryGetTeleportOut(vec2 currentPos);
 	std::optional<std::pair<vec2, bool>> TryGetFixedCamPos(vec2 currentPos) const;
 	const std::unordered_map<int, GatheringNode>& GetOreNodes() const { return m_vOreNodes; }

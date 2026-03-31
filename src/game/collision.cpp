@@ -177,6 +177,17 @@ void CCollision::InitSettings()
 			initGatheringNode("#node_plant", settings, i, m_vPlantNodes);
 			initGatheringNode("#node_fish", settings, i, m_vFishNodes);
 		}
+
+		// initialize action zones details
+		{
+			ActionZoneDetail detail;
+			const auto Identity = std::string("#action_zone ").append(std::to_string(i));
+			if(mystd::loadSettings<std::string>(Identity, settings, &detail.Name))
+			{
+				dbg_msg("map-init", "Action zone '%s' (switch: %d) initialized", detail.Name.c_str(), i);
+				m_vActionZoneDetail[i] = detail;
+			}
+		}
 	}
 }
 
@@ -580,6 +591,19 @@ std::optional<CCollision::ZoneDetail> CCollision::GetZonedetail(vec2 Pos) const
 		return m_vZoneDetail.at(Number);
 
 	return std::nullopt;
+}
+
+bool CCollision::IsActiveActionZone(std::string_view ActionZoneName, vec2 Pos) const
+{
+	if(ActionZoneName.empty())
+		return false;
+
+	const auto switchNumber = GetSwitchTileNumberAtTileIndex(Pos, TILE_SW_ZONE);
+	if(!switchNumber || !m_vActionZoneDetail.contains(*switchNumber))
+		return false;
+
+	const auto& detail = m_vActionZoneDetail.at(*switchNumber);
+	return detail.Name == ActionZoneName;
 }
 
 std::optional<std::pair<vec2, bool>> CCollision::TryGetFixedCamPos(vec2 currentPos) const
