@@ -83,7 +83,7 @@ public:
 	{
 		m_Value = Value;
 		m_Enchant = Enchant;
-		m_Durability = Durability;
+		m_Durability = (Durability > 0 ? Durability : 100);
 		m_Settings = Settings;
 		CPlayerItem::m_pData[m_ClientID][m_ID] = *this;
 	}
