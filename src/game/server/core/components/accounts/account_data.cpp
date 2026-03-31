@@ -605,7 +605,12 @@ void CAccountData::AutoEquipSlots(bool OnlyEmptySlots)
 			// try equip best item
 			auto* pBestItem = GS()->Core()->InventoryManager()->GetBestEquipmentSlotItem(pPlayer, Type);
 			if(pBestItem && pBestItem->Equip())
-				GS()->Chat(pPlayer->GetCID(), "Auto equip '{} - {}'.", pBestItem->Info()->GetName(), pBestItem->GetStringAttributesInfo(pPlayer));
+			{
+				if(pBestItem->Info()->HasAttributes())
+					GS()->Chat(pPlayer->GetCID(), "Auto equip '{} - {}'.", pBestItem->Info()->GetName(), pBestItem->GetStringAttributesInfo(pPlayer));
+				else
+					GS()->Chat(pPlayer->GetCID(), "Auto equip '{}'.", pBestItem->Info()->GetName());
+			}
 		}
 	};
 

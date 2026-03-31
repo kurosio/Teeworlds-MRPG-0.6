@@ -314,7 +314,10 @@ bool CPlayerItem::Add(int Value, int StartSettings, int StartEnchant, bool Messa
 	if(ShouldAutoEquip() && !IsEquipped())
 	{
 		Equip();
-		GS()->Chat(ClientID, "Auto equip '{} - {}'.", Info()->GetName(), GetStringAttributesInfo(pPlayer));
+		if(Info()->HasAttributes())
+			GS()->Chat(ClientID, "Auto equip '{} - {}'.", Info()->GetName(), GetStringAttributesInfo(pPlayer));
+		else
+			GS()->Chat(ClientID, "Auto equip '{}'.", Info()->GetName());
 	}
 
 	// disable notify about items for special group and types
