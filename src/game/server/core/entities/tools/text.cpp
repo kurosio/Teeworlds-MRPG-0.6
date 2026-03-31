@@ -308,9 +308,10 @@ static bool s_aaaChars[256][5][3] = {
 
 inline static bool HasRepr(char c) // can be removed when we have a full character set
 {
+	const unsigned char CharIndex = static_cast<unsigned char>(c);
 	for(int y = 0; y < 5; ++y)
 		for(int x = 0; x < 3; ++x)
-			if(s_aaaChars[(unsigned)c][y][x])
+			if(s_aaaChars[CharIndex][y][x])
 				return true;
 	return false;
 }
@@ -346,7 +347,7 @@ void CEntityText::Create(CGameWorld* pGameWorld, vec2 Pos, int Lifespan, const c
 
 		for(int y = 0; y < kCharHeight; ++y)
 			for(int x = 0; x < kCharWidth; ++x)
-				if(s_aaaChars[(unsigned)c][y][x])
+				if(s_aaaChars[static_cast<unsigned char>(c)][y][x])
 					new CEntityTextPixel(pGameWorld, CurPos + vec2(x * Spacing, y * Spacing), Lifespan, Type);
 		CurPos.x += (kCharWidth + kCharSpacing) * Spacing;
 	}
