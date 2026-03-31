@@ -471,7 +471,7 @@ void CCommandProcessor::ConChatInfo(IConsole::IResult* pResult, void* pUser)
 
 	pGS->Chat(ClientID, mystd::aesthetic::wrapLinePillar(10).c_str());
 	pGS->Chat(ClientID, "Mod by 'Kurosio'. Version: {}.", MRPG_VERSION_STRING);
-	pGS->Chat(ClientID, "Content manager: 'Halloween'.");
+	pGS->Chat(ClientID, "Content manager: '{}'.", g_Config.m_SvContentManagerCredits);
 	pGS->Chat(ClientID, "Discord: '{}'.", g_Config.m_SvDiscordInviteLink);
 	pGS->Chat(ClientID, "More commands in '/cmdlist'.", g_Config.m_SvDiscordInviteLink);
 }
