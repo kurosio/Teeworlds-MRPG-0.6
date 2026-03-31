@@ -584,6 +584,7 @@ void CHouseManager::ShowMenu(CPlayer* pPlayer) const
 	VoteWrapper VInfo(ClientID, VWF_SEPARATE | VWF_STYLE_STRICT_BOLD, "\u2747 Information about house");
 	VInfo.Add("Class: {}", pHouse->GetClassName());
 	VInfo.Add("Bank: {$}", pHouse->GetBankManager()->Get());
+	VInfo.Add("Days left: {}", pHouse->GetRentDays());
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// house bank
