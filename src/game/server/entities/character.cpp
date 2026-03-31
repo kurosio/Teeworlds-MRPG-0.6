@@ -132,6 +132,39 @@ bool CCharacter::IsCollisionFlag(int Flag) const
 	return false;
 }
 
+bool CCharacter::IsEnterActionZone(std::string_view ActionZoneName)
+{
+	if(!m_pTilesHandler->IsEnter(TILE_SW_ACTION_ZONE))
+		return false;
+
+	if(ActionZoneName.empty())
+		return true;
+
+	return GS()->Collision()->IsActiveActionZone(ActionZoneName, m_Pos);
+}
+
+bool CCharacter::IsActiveActionZone(std::string_view ActionZoneName) const
+{
+	if(!m_pTilesHandler->IsActive(TILE_SW_ACTION_ZONE))
+		return false;
+
+	if(ActionZoneName.empty())
+		return true;
+
+	return GS()->Collision()->IsActiveActionZone(ActionZoneName, m_Pos);
+}
+
+bool CCharacter::IsLeaveActionZone(std::string_view ActionZoneName)
+{
+	if(!m_pTilesHandler->IsExit(TILE_SW_ACTION_ZONE))
+		return false;
+
+	if(ActionZoneName.empty())
+		return true;
+
+	return GS()->Collision()->IsActiveActionZone(ActionZoneName, m_PrevPos);
+}
+
 CPlayer* CCharacter::GetHookedPlayer() const
 {
 	if(m_Core.m_HookState == HOOK_GRABBED)
@@ -1572,6 +1605,30 @@ void CCharacter::HandleTilesImpl(int Index)
 	// handle locked view camera and tile interactions if the player is not a bot
 	if(!m_pPlayer->IsBot())
 	{
+		// tutorial skip action zone
+		if(GS()->IsPlayerInWorld(m_ClientID, TUTORIAL_WORLD_ID)
+			&& IsEnterActionZone("SKIP_TUTORIAL"))
+		{
+			auto* pNewbieTitle = m_pPlayer->GetItem(itTittleNewbie);
+			if(!pNewbieTitle->HasItem())
+				pNewbieTitle->Add(1, 0, 0, false);
+
+			m_pPlayer->GetSharedData().ClearSpawnPosition();
+			GS()->Chat(m_ClientID, "Tutorial skipped.");
+			m_pPlayer->ChangeWorld(BASE_GAME_WORLD_ID);
+			return;
+		}
+
+		// tutorial start action zone
+		if(!GS()->IsPlayerInWorld(m_ClientID, TUTORIAL_WORLD_ID)
+			&& IsEnterActionZone("START_TUTORIAL"))
+		{
+			m_pPlayer->GetSharedData().ClearSpawnPosition();
+			GS()->Chat(m_ClientID, "Tutorial started.");
+			m_pPlayer->ChangeWorld(TUTORIAL_WORLD_ID);
+			return;
+		}
+
 		// fishing information
 		if(m_pTilesHandler->IsEnter(TILE_FISHING_MODE))
 		{

@@ -598,7 +598,7 @@ bool CCollision::IsActiveActionZone(std::string_view ActionZoneName, vec2 Pos) c
 	if(ActionZoneName.empty())
 		return false;
 
-	const auto switchNumber = GetSwitchTileNumberAtTileIndex(Pos, TILE_SW_ZONE);
+	const auto switchNumber = GetSwitchTileNumberAtTileIndex(Pos, TILE_SW_ACTION_ZONE);
 	if(!switchNumber || !m_vActionZoneDetail.contains(*switchNumber))
 		return false;
 

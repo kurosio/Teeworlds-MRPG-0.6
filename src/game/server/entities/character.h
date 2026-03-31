@@ -146,6 +146,9 @@ public:
 	void ResetInput();
 	bool IsGrounded() const;
 	bool IsCollisionFlag(int Flag) const;
+	bool IsEnterActionZone(std::string_view ActionZoneName);
+	bool IsActiveActionZone(std::string_view ActionZoneName) const;
+	bool IsLeaveActionZone(std::string_view ActionZoneName);
 	CPlayer* GetHookedPlayer() const;
 	void SetDoorHit(int ID = TEAM_ALL);
 

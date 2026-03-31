@@ -514,7 +514,7 @@
       "id": "part_3_1",
       "components": [
         {
-          "quest_id": 1,
+          "quest_id": 100,
           "type": "quest_action",
           "action": "reset"
         },
@@ -550,7 +550,7 @@
           "execution_time": 500
         },
         {
-          "quest_id": 1,
+          "quest_id": 100,
           "type": "quest_action",
           "action": "accept"
         },
@@ -574,10 +574,10 @@
           "action": "remove"
         },
         {
-          "quest_id": 1,
+          "quest_id": 100,
           "step": 2,
           "type": "quest_condition",
-          "condition": "step_finished",
+          "condition": "finished",
           "entire_group": false
         },
         {
