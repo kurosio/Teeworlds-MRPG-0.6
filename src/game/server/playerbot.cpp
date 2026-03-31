@@ -310,7 +310,7 @@ int64_t CPlayerBot::GetMaskVisibleForClients() const
 	int64_t Mask = 0;
 	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
-		if(IsVisibleForClient(i))
+		if(IsActiveForClient(i) != ESnappingPriority::None)
 			Mask |= CmaskOne(i);
 	}
 
