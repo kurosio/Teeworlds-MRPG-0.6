@@ -41,6 +41,55 @@
 #include "server_logger.h"
 #include "geo_ip.h"
 
+namespace
+{
+std::string GetJoinFloodKey(const NETADDR *pAddr)
+{
+	if(!pAddr)
+		return {};
+
+	char aAddr[NETADDR_MAXSTRSIZE]{};
+	net_addr_str(pAddr, aAddr, sizeof(aAddr), false);
+	std::string Addr = aAddr;
+
+	// Flood control by IPv4 subnet up to the second dot: 192.168.
+	const auto FirstDot = Addr.find('.');
+	if(FirstDot != std::string::npos)
+	{
+		const auto SecondDot = Addr.find('.', FirstDot + 1);
+		if(SecondDot != std::string::npos)
+			return Addr.substr(0, SecondDot);
+	}
+
+	// Fallback for non-IPv4/unknown formatting.
+	return Addr;
+}
+
+bool IsJoinFlood(const NETADDR *pAddr, int Tick, int TickSpeed, int *pCurrentHits = nullptr, std::string *pSubnetKey = nullptr)
+{
+	if(g_Config.m_SvJoinFloodTime <= 0 || g_Config.m_SvJoinFloodSubnetLimit <= 0 || !pAddr)
+		return false;
+
+	const std::string SubnetKey = GetJoinFloodKey(pAddr);
+	if(SubnetKey.empty())
+		return false;
+
+	static std::unordered_map<std::string, std::deque<int>> s_SubnetJoinTicks;
+	auto &JoinTicks = s_SubnetJoinTicks[SubnetKey];
+	const int WindowTicks = TickSpeed * g_Config.m_SvJoinFloodTime;
+	const int MinTick = Tick - WindowTicks;
+	while(!JoinTicks.empty() && JoinTicks.front() < MinTick)
+		JoinTicks.pop_front();
+
+	JoinTicks.push_back(Tick);
+	if(pCurrentHits)
+		*pCurrentHits = (int)JoinTicks.size();
+	if(pSubnetKey)
+		*pSubnetKey = SubnetKey;
+	return (int)JoinTicks.size() > g_Config.m_SvJoinFloodSubnetLimit;
+}
+}
+
 void CServer::CClient::Reset()
 {
 	// reset input
@@ -55,6 +104,7 @@ void CServer::CClient::Reset()
 	m_SnapRate = SNAPRATE_INIT;
 	m_Score = -1;
 	m_NextMapChunk = 0;
+	m_JoinFloodChecked = false;
 }
 
 CServer::CServer()
@@ -1057,6 +1107,19 @@ void CServer::UpdateClientRconCommands()
 void CServer::ProcessClientPacket(CNetChunk* pPacket)
 {
 	int ClientID = pPacket->m_ClientID;
+	int JoinHits = 0;
+	if(m_aClients[ClientID].m_State <= CClient::STATE_AUTH && !m_aClients[ClientID].m_JoinFloodChecked)
+	{
+		std::string JoinSubnet;
+		m_aClients[ClientID].m_JoinFloodChecked = true;
+		if(IsJoinFlood(m_NetServer.ClientAddr(ClientID), Tick(), TickSpeed(), &JoinHits, &JoinSubnet))
+		{
+			Console()->PrintFormat(IConsole::OUTPUT_LEVEL_STANDARD, "security", "Join flood detected from subnet '%s' (%d joins in %d sec). Kicking CID=%d", JoinSubnet.c_str(), JoinHits, g_Config.m_SvJoinFloodTime, ClientID);
+			Kick(ClientID, "Join flood protection");
+			return;
+		}
+	}
+
 	CUnpacker Unpacker;
 	Unpacker.Reset(pPacket->m_pData, pPacket->m_DataSize);
 	CMsgPacker Packer(NETMSG_EX, true);

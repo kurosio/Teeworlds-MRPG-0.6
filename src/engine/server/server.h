@@ -109,6 +109,7 @@ public:
 
 		int m_ClientVersion;
 		bool m_IsClientMRPG;
+		bool m_JoinFloodChecked;
 		void Reset();
 
 		// DDRace

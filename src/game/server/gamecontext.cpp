@@ -1214,36 +1214,6 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 
 void CGS::OnClientConnected(int ClientID)
 {
-	if(g_Config.m_SvJoinFloodTime > 0 && g_Config.m_SvJoinFloodSubnetLimit > 0)
-	{
-		char aAddr[NETADDR_MAXSTRSIZE]{};
-		Server()->GetClientAddr(ClientID, aAddr, sizeof(aAddr));
-
-		std::string Addr = aAddr;
-		const auto AddressEnd = Addr.rfind(':');
-		if(AddressEnd != std::string::npos)
-			Addr.resize(AddressEnd);
-
-		std::string SubnetKey = Addr;
-		if(const auto LastDot = Addr.rfind('.'); LastDot != std::string::npos)
-			SubnetKey = Addr.substr(0, LastDot);
-
-		static std::unordered_map<std::string, std::deque<int>> s_SubnetJoinTicks;
-		auto& JoinTicks = s_SubnetJoinTicks[SubnetKey];
-		const int WindowTicks = Server()->TickSpeed() * g_Config.m_SvJoinFloodTime;
-		const int MinTick = Server()->Tick() - WindowTicks;
-		while(!JoinTicks.empty() && JoinTicks.front() < MinTick)
-			JoinTicks.pop_front();
-
-		JoinTicks.push_back(Server()->Tick());
-		if((int)JoinTicks.size() > g_Config.m_SvJoinFloodSubnetLimit)
-		{
-			Console()->PrintFormat(IConsole::OUTPUT_LEVEL_STANDARD, "security", "Join flood detected from subnet '%s' (%d joins in %d sec). Kicking CID=%d", SubnetKey.c_str(), (int)JoinTicks.size(), g_Config.m_SvJoinFloodTime, ClientID);
-			Server()->Kick(ClientID, "Join flood protection");
-			return;
-		}
-	}
-
 	if(!m_apPlayers[ClientID])
 	{
 		const int AllocMemoryCell = ClientID + m_WorldID * MAX_CLIENTS;
