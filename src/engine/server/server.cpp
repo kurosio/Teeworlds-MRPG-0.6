@@ -1212,7 +1212,7 @@ void CServer::ProcessClientPacket(CNetChunk* pPacket)
 			int Size = Unpacker.GetInt();
 
 			// check to error
-			if(Unpacker.Error() || Size / 4 > MAX_INPUT_SIZE)
+			if(Unpacker.Error() || Size / 4 > MAX_INPUT_SIZE || IntendedTick < MIN_TICK || IntendedTick >= MAX_TICK)
 				return;
 
 			// update snapshot rate
@@ -1249,8 +1249,12 @@ void CServer::ProcessClientPacket(CNetChunk* pPacket)
 			int InputSize = Size / 4;
 			for(int i = 0; i < InputSize; i++)
 				currentInput.m_aData[i] = Unpacker.GetInt();
+			for(int i = InputSize; i < MAX_INPUT_SIZE; i++)
+				currentInput.m_aData[i] = 0;
+			if(Unpacker.Error())
+				return;
 
-			mem_copy(client.m_LatestInput.m_aData, currentInput.m_aData, InputSize * sizeof(int));
+			mem_copy(client.m_LatestInput.m_aData, currentInput.m_aData, sizeof(client.m_LatestInput.m_aData));
 
 			client.m_CurrentInput = (client.m_CurrentInput + 1) % 200;
 
