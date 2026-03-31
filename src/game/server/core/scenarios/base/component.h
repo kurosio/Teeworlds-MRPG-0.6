@@ -27,13 +27,13 @@ public:
 template<typename TBase, typename T>
 class Component : public IStepComponent
 {
-	int m_StartDelayTick {};
+	int m_StartExecutionTimeTick {};
 
 protected:
 	TBase* m_pScenario {};
 	bool m_bIsFinished {};
 	std::optional<StepId> m_NextStepId {};
-	int m_DelayTick {};
+	int m_ExecutionTimeTick {};
 
 	CGS* GS() const { return m_pScenario ? m_pScenario->GS() : nullptr; }
 	IServer* Server() const { return m_pScenario ? m_pScenario->Server() : nullptr; }
@@ -50,11 +50,12 @@ public:
 
 	void InitBaseJsonField(const nlohmann::json& j)
 	{
-		if(j.contains("delay"))
-		{
-			m_StartDelayTick = j.value("delay", 0);
-			m_DelayTick = m_StartDelayTick;
-		}
+		if(j.contains("execution_time"))
+			m_StartExecutionTimeTick = j.value("execution_time", 0);
+		else if(j.contains("delay")) // legacy key
+			m_StartExecutionTimeTick = j.value("delay", 0);
+
+		m_ExecutionTimeTick = m_StartExecutionTimeTick;
 
 		if(j.contains("next_step_id"))
 			m_NextStepId = j.value("next_step_id", "");
@@ -67,15 +68,15 @@ public:
 
 	void OnStart() final
 	{
-		m_DelayTick = m_StartDelayTick;
+		m_ExecutionTimeTick = m_StartExecutionTimeTick;
 		m_bIsFinished = false;
 		OnStartImpl();
 	}
 
 	void OnActive() final
 	{
-		if(m_DelayTick)
-			m_DelayTick--;
+		if(m_ExecutionTimeTick)
+			m_ExecutionTimeTick--;
 		if(!IsFinished())
 			OnActiveImpl();
 	}
@@ -85,14 +86,14 @@ public:
 		OnEndImpl();
 	}
 
-	int GetDelayTick() const noexcept
+	int GetExecutionTimeTick() const noexcept
 	{
-		return m_DelayTick;
+		return m_ExecutionTimeTick;
 	}
 
 	bool IsFinished() const noexcept override
 	{
-		return m_DelayTick <= 0 && m_bIsFinished;
+		return m_ExecutionTimeTick <= 0 && m_bIsFinished;
 	}
 
 	std::optional<StepId> GetNextStepId() const override

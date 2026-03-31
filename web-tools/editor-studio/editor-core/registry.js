@@ -187,6 +187,7 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
       icon: 'fa-solid fa-comment-dots',
       desc: 'Показать текст игроку',
       fields: {
+        execution_time: createField('number', 'Время выполнения (мс)', 0, { ui: { min: 0, max: 600000 } }),
         text: createField('text', 'Текст', 'Новое сообщение', { ui: { placeholder: 'Введите текст сообщения', format: 'textarea' } }),
         mode: createField('text', 'Режим', 'full', {
           ui: { type: 'select', options: ['full', 'broadcast', 'chat'] }
@@ -442,7 +443,7 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
       desc: 'Переместить камеру к точке',
       fields: {
         position: createField('vec2', 'Позиция', { x: 0, y: 0 }, { ui: { min: -99999, max: 99999, step: 0.1 } }),
-        delay: createField('number', 'Задержка', 300, { ui: { min: 0, max: 600000 } }),
+        execution_time: createField('number', 'Время выполнения (мс)', 300, { ui: { min: 0, max: 600000 } }),
         smooth: createField('boolean', 'Плавно', true)
       }
     },
@@ -480,6 +481,7 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
       icon: 'fa-solid fa-face-smile',
       desc: 'Показать эмоцию и иконку',
       fields: {
+        execution_time: createField('number', 'Время выполнения (мс)', 0, { ui: { min: 0, max: 600000 } }),
         emote_type: createField('number', 'Тип эмоции', 0, { ui: { min: 0, max: 6 } }),
         emoticon_type: createField('number', 'Тип иконки', -1, { ui: { min: -1, max: 999 } })
       }

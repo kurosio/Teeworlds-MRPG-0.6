@@ -79,7 +79,7 @@ private:
 
 			if(!m_Broadcast.empty())
 			{
-				int Time = std::max(GetDelayTick(), Server()->TickSpeed());
+				int Time = std::max(GetExecutionTimeTick(), Server()->TickSpeed());
 				GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::TitleInformation, Time, m_Broadcast.c_str());
 			}
 		}
@@ -95,7 +95,7 @@ private:
  * This is useful for creating cutscenes or directing player focus.
  * The component is configured via a JSON object with the following fields:
  * @param position (vec2): The world coordinate where the camera will be locked.
- * @param delay (int): The duration, in game ticks, for which the camera lock will be active.
+ * @param execution_time (int): The duration, in game ticks, for which the camera lock will be active.
  * @param smooth (bool): If true, the camera will move smoothly to the target position.
  *
  * During its active phase, it continuously applies the camera lock. Upon completion, it
@@ -119,7 +119,7 @@ public:
 private:
 	void OnActiveImpl() override
 	{
-		if(GetDelayTick() <= 0)
+		if(GetExecutionTimeTick() <= 0)
 		{
 			Finish();
 			return;

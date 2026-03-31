@@ -437,6 +437,7 @@
                     on_unequip: 'При снятии предмета'
                 };
                 this.componentTypes = this.getComponentTypesByMode(this.currentMode);
+                this.executionTimeComponentTypes = new Set(['follow_camera', 'message', 'emote']);
                 this.debouncedUpdate = EditorCore.utils.debounce((step, newId) => this.updateStepId(step, newId), 400);
                 this.sortableInstances = [];
                 this.isTicking = false; // For scroll throttling
@@ -783,7 +784,7 @@
                         } else if (e.target.matches('.component-delay-input')) {
                             const component = this.findComponent(stepId, componentId);
                             if (component) {
-                                component.delay = Number(e.target.value) || 0;
+                                component.execution_time = Number(e.target.value) || 0;
                             }
                         }
                     } else if (e.type === 'change') {
@@ -796,7 +797,7 @@
                             } else {
                                 delete step.completion_logic;
                             }
-                            this.renderAll(); // Re-render to show/hide component delays
+                            this.renderAll(); // Re-render to refresh sequential order visuals and fields
                         }
                     }
                 };
@@ -987,11 +988,13 @@
                     orderSpan.className = 'mr-2 font-bold text-slate-500';
                     orderSpan.textContent = `${index + 1}.`;
                     item.querySelector('.component-info').prepend(orderSpan);
+                }
 
+                if (this.executionTimeComponentTypes.has(component.type)) {
                     const delayWrapper = document.createElement('div');
                     delayWrapper.className = 'mt-2 flex items-center gap-2';
-                    delayWrapper.innerHTML = `<label class="text-xs font-medium text-slate-600">Задержка (мс):</label>
-                                            <input type="number" class="component-delay-input editor-input form-input w-24 text-sm" value="${component.delay || 0}">`;
+                    delayWrapper.innerHTML = `<label class="text-xs font-medium text-slate-600">Время выполнения (мс):</label>
+                                            <input type="number" class="component-delay-input editor-input form-input w-24 text-sm" value="${component.execution_time || component.delay || 0}">`;
                     item.querySelector('.component-text-wrapper').appendChild(delayWrapper);
                 }
 
@@ -1408,15 +1411,15 @@
                 this.populateStepDropdown(select, data.next_step_id);
                 formHtml += select.outerHTML;
 
-                // Show delay for sequential logic OR for follow_camera
-                const shouldShowDelay = data.type === 'follow_camera' || (step && step.completion_logic === 'sequential');
+                // Show execution time only for components where it is used by gameplay logic.
+                const shouldShowExecutionTime = this.executionTimeComponentTypes.has(data.type);
                 const componentSchema = this.componentTypes[data.type] || {};
                 const componentFields = componentSchema.fields || {};
-                const filteredFields = Object.fromEntries(Object.entries(componentFields).filter(([key]) => key !== 'next_step_id'));
+                const filteredFields = Object.fromEntries(Object.entries(componentFields).filter(([key]) => key !== 'next_step_id' && key !== 'delay'));
 
-                if (shouldShowDelay && !filteredFields.delay) {
-                    const delayField = { type: 'number', label: 'Задержка (мс)', ui: { min: 0, max: 600000 } };
-                    formHtml += window.EditorCore.FieldRenderer.renderField({ path: 'delay', field: delayField, data, options: renderOptions });
+                if (shouldShowExecutionTime && !filteredFields.execution_time) {
+                    const executionTimeField = { type: 'number', label: 'Время выполнения (мс)', ui: { min: 0, max: 600000 } };
+                    formHtml += window.EditorCore.FieldRenderer.renderField({ path: 'execution_time', field: executionTimeField, data, options: renderOptions });
                 }
 
                 formHtml += `<hr class="my-5 border-slate-700/40">`;
@@ -1626,15 +1629,17 @@
                     const stepsToSave = JSON.parse(JSON.stringify(steps));
                     stepsToSave.forEach(step => {
                         (step.components || []).forEach(c => {
+                            if (typeof c.execution_time === 'undefined' && typeof c.delay !== 'undefined') {
+                                c.execution_time = c.delay;
+                            }
                             delete c.component_id;
                             if (!c.next_step_id) {
                                 delete c.next_step_id;
                             }
-                            if (c.type !== 'follow_camera' && (step.completion_logic !== 'sequential' || !c.delay)) {
-                                delete c.delay;
-                            } else if (c.type === 'follow_camera' && !c.delay) {
-                                delete c.delay;
+                            if (!this.executionTimeComponentTypes.has(c.type) || !c.execution_time) {
+                                delete c.execution_time;
                             }
+                            delete c.delay;
                         });
                         if (!step.delay) {
                             delete step.delay;
@@ -2025,6 +2030,9 @@
                 return Array.from(keys);
             }
             applyComponentDefaults(component) {
+                if (typeof component?.execution_time === 'undefined' && typeof component?.delay !== 'undefined') {
+                    component.execution_time = component.delay;
+                }
                 const schema = this.componentTypes[component.type];
                 if (schema?.fields) {
                     EditorCore.schemas.applyDefaults(component, schema.fields);

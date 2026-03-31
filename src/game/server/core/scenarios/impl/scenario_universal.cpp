@@ -141,7 +141,7 @@ namespace
 	private:
 		void OnActiveImpl() override
 		{
-			if(GetDelayTick() <= 0)
+			if(GetExecutionTimeTick() <= 0)
 				Finish();
 		}
 
