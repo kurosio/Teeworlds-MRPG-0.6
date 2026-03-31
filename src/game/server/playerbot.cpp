@@ -342,7 +342,7 @@ bool CPlayerBot::IsValidSnappingClient(int ClientID) const
 ESnappingPriority CPlayerBot::GetQuestBotSnappingPriority(const CPlayer* pSnappingPlayer) const
 {
 	const auto QuestID = QuestBotInfo::ms_aQuestBot[m_MobID].m_QuestID;
-	const auto* pQuest = pSnappingPlayer->GetQuest(QuestID);
+	auto* pQuest = pSnappingPlayer->GetQuest(QuestID);
 	if(!pQuest)
 		return ESnappingPriority::None;
 
