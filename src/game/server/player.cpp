@@ -408,7 +408,8 @@ void CPlayer::RefreshClanTagString()
 	// is not authed send only clan
 	if(!IsAuthed())
 	{
-		str_copy(m_aRotateClanBuffer, Server()->ClientClan(m_ClientID), sizeof(m_aRotateClanBuffer));
+		str_copy(m_aRotateClanBuffer, "Unauthorized", sizeof(m_aRotateClanBuffer));
+		str_copy(m_aInitialClanBuffer, m_aRotateClanBuffer, sizeof(m_aInitialClanBuffer));
 		return;
 	}
 
