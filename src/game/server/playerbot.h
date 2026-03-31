@@ -73,6 +73,8 @@ public:
 
 	int64_t GetMaskVisibleForClients() const override;
 	ESnappingPriority IsActiveForClient(int ClientID) const override;
+	bool IsVisibleForClient(int ClientID) const;
+	bool IsVisibleForClient(int ClientID, ESnappingPriority RequiredPriority) const;
 	std::optional<int> GetEquippedSlotItemID(ItemType EquipID) const override;
 	int GetTotalRawAttributeValue(AttributeIdentifier ID) const override;
 
@@ -96,6 +98,9 @@ public:
 
 private:
 	ska::unordered_map< int, std::unique_ptr<CPlayerItem> > m_Items {};
+	ESnappingPriority GetQuestBotSnappingPriority(const CPlayer* pSnappingPlayer) const;
+	ESnappingPriority GetNpcSnappingPriority(const CPlayer* pSnappingPlayer, int ClientID) const;
+	bool IsValidSnappingClient(int ClientID) const;
 
 	void GetFormatedName(char* aBuffer, int BufferSize) override;
 	int GetLevel() const;

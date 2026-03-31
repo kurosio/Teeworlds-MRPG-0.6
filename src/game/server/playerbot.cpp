@@ -310,53 +310,90 @@ int64_t CPlayerBot::GetMaskVisibleForClients() const
 	int64_t Mask = 0;
 	for(int i = 0; i < MAX_PLAYERS; i++)
 	{
-		if(IsActiveForClient(i) != ESnappingPriority::None)
+		if(IsVisibleForClient(i))
 			Mask |= CmaskOne(i);
 	}
 
 	return Mask;
 }
 
-ESnappingPriority CPlayerBot::IsActiveForClient(int ClientID) const
+bool CPlayerBot::IsVisibleForClient(int ClientID) const
 {
-	CPlayer* pSnappingPlayer = GS()->GetPlayer(ClientID);
-	if(ClientID < 0 || ClientID >= MAX_PLAYERS || !pSnappingPlayer)
+	return IsVisibleForClient(ClientID, ESnappingPriority::None);
+}
+
+bool CPlayerBot::IsVisibleForClient(int ClientID, ESnappingPriority RequiredPriority) const
+{
+	if(!IsActive())
+		return false;
+
+	const ESnappingPriority Priority = IsActiveForClient(ClientID);
+	if(Priority == ESnappingPriority::None)
+		return false;
+
+	return Priority >= RequiredPriority;
+}
+
+bool CPlayerBot::IsValidSnappingClient(int ClientID) const
+{
+	return ClientID >= 0 && ClientID < MAX_PLAYERS && GS()->GetPlayer(ClientID) != nullptr;
+}
+
+ESnappingPriority CPlayerBot::GetQuestBotSnappingPriority(const CPlayer* pSnappingPlayer) const
+{
+	const auto QuestID = QuestBotInfo::ms_aQuestBot[m_MobID].m_QuestID;
+	const auto* pQuest = pSnappingPlayer->GetQuest(QuestID);
+	if(!pQuest)
 		return ESnappingPriority::None;
 
+	// is quest not accept
+	if(pQuest->GetState() != QuestState::Accepted)
+		return ESnappingPriority::None;
+
+	// is step pos not equal current step pos
+	if(QuestBotInfo::ms_aQuestBot[m_MobID].m_StepPos != pQuest->GetStepPos())
+		return ESnappingPriority::None;
+
+	// is step pos completed
+	auto* pStep = pQuest->GetStepByMob(GetBotMobID());
+	if(!pStep || pStep->m_StepComplete)
+		return ESnappingPriority::None;
+
+	return ESnappingPriority::High;
+}
+
+ESnappingPriority CPlayerBot::GetNpcSnappingPriority(const CPlayer* pSnappingPlayer, int ClientID) const
+{
+	const auto FunctionNPC = NpcBotInfo::ms_aNpcBot[m_MobID].m_Function;
+
+	// always show guardian and nurse
+	if(FunctionNPC == FUNCTION_NPC_GUARDIAN || FunctionNPC == FUNCTION_NPC_NURSE)
+		return ESnappingPriority::High;
+
+	// does not show npc what active by quest
+	if(DataBotInfo::ms_aDataBot[m_BotID].m_aActiveByQuest[ClientID])
+		return ESnappingPriority::None;
+
+	// is active or finished quest show only character
+	const int GivesQuest = GS()->Core()->BotManager()->GetQuestNPC(m_MobID);
+	if(FunctionNPC == FUNCTION_NPC_GIVE_QUEST && pSnappingPlayer->GetQuest(GivesQuest)->GetState() != QuestState::NoAccepted)
+		return ESnappingPriority::Lower;
+
+	return ESnappingPriority::High;
+}
+
+ESnappingPriority CPlayerBot::IsActiveForClient(int ClientID) const
+{
+	if(!IsValidSnappingClient(ClientID))
+		return ESnappingPriority::None;
+
+	const CPlayer* pSnappingPlayer = GS()->GetPlayer(ClientID);
+
 	if(m_BotType == TYPE_BOT_QUEST)
-	{
-		// is quest not accept
-		const auto QuestID = QuestBotInfo::ms_aQuestBot[m_MobID].m_QuestID;
-		if(pSnappingPlayer->GetQuest(QuestID)->GetState() != QuestState::Accepted)
-			return ESnappingPriority::None;
-
-		// is step pos not equal current step pos
-		if((QuestBotInfo::ms_aQuestBot[m_MobID].m_StepPos != pSnappingPlayer->GetQuest(QuestID)->GetStepPos()))
-			return ESnappingPriority::None;
-
-		// is step pos completed
-		if(pSnappingPlayer->GetQuest(QuestID)->GetStepByMob(GetBotMobID())->m_StepComplete)
-			return ESnappingPriority::None;
-	}
+		return GetQuestBotSnappingPriority(pSnappingPlayer);
 
 	if(m_BotType == TYPE_BOT_NPC)
-	{
-		const auto FunctionNPC = NpcBotInfo::ms_aNpcBot[m_MobID].m_Function;
-
-		// always show guardian and nurse
-		if(FunctionNPC == FUNCTION_NPC_GUARDIAN || FunctionNPC == FUNCTION_NPC_NURSE)
-			return ESnappingPriority::High;
-
-		// does not show npc what active by quest
-		const auto ActiveByQuest = DataBotInfo::ms_aDataBot[m_BotID].m_aActiveByQuest[ClientID];
-		if(ActiveByQuest)
-			return ESnappingPriority::None;
-
-		// is active or finished quest show only character
-		const int GivesQuest = GS()->Core()->BotManager()->GetQuestNPC(m_MobID);
-		if(FunctionNPC == FUNCTION_NPC_GIVE_QUEST && pSnappingPlayer->GetQuest(GivesQuest)->GetState() != QuestState::NoAccepted)
-			return ESnappingPriority::Lower;
-	}
+		return GetNpcSnappingPriority(pSnappingPlayer, ClientID);
 
 	return ESnappingPriority::High;
 }
@@ -379,7 +416,7 @@ void CPlayerBot::Snap(int SnappingClient)
 		return;
 
 	// Check if the game is active or if it is active for the snapping client
-	if(!IsActive() || IsActiveForClient(SnappingClient) == ESnappingPriority::None)
+	if(!IsVisibleForClient(SnappingClient))
 		return;
 
 	CNetObj_ClientInfo* pClientInfo = static_cast<CNetObj_ClientInfo*>(Server()->SnapNewItem(NETOBJTYPE_CLIENTINFO, ID, sizeof(CNetObj_ClientInfo)));

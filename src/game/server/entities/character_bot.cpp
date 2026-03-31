@@ -304,7 +304,7 @@ void CCharacterBotAI::Snap(int SnappingClient)
 	int ID = m_pBotPlayer->GetCID();
 
 	// check active this bot
-	if(!m_pBotPlayer->IsActive() || m_pBotPlayer->IsActiveForClient(SnappingClient) == ESnappingPriority::None)
+	if(!m_pBotPlayer->IsVisibleForClient(SnappingClient))
 		return;
 
 	// check network clipped and translate state
