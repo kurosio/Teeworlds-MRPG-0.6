@@ -269,7 +269,7 @@ class BridgeCog(commands.Cog):
 
         # system messages
         if nickname == '***':
-            webhook_username = "Teeworlds Event"
+            webhook_username = "Server"
             try:
                  avatar_url_to_use = get_skin_url(WEBHOOK_SERVER_SKIN, 0, 0)
             except Exception as e: logger.warning(f"Failed system skin URL: {e}")

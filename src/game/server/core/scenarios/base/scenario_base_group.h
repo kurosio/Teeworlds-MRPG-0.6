@@ -24,7 +24,7 @@ public:
 
 	virtual bool AddParticipant(int ClientID);
 	virtual bool RemoveParticipant(int ClientID);
-	std::set<int>& GetParticipants() { return m_vParticipantIDs; }
+	std::set<int> GetParticipants() const { return m_vParticipantIDs; }
 };
 
 #endif

@@ -144,7 +144,9 @@ private:
 	void OnActiveImpl() override
 	{
 		if(Server()->Tick() % (Server()->TickSpeed() / 2) == 0)
-			GS()->CreateHammerHit(m_Position);
+		{
+			GS()->CreateHammerHit(m_Position, Scenario()->GetClientsMask());
+		}
 
 		const auto& vpPlayers = Scenario()->GetPlayers();
 		auto IsInsideFunc = [&](const CPlayer* pPlayer)

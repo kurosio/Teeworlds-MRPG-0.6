@@ -13,6 +13,22 @@ ScenarioBase::~ScenarioBase()
 		Stop();
 }
 
+int64_t ScenarioBase::GetClientsMask() const
+{
+	if(const auto* pPlayerScenario = dynamic_cast<const PlayerScenarioBase*>(this))
+		return CmaskOne(pPlayerScenario->GetClientID());
+
+	if(const auto* pGroupScenario = dynamic_cast<const GroupScenarioBase*>(this))
+	{
+		int64_t Mask = 0;
+		for(const int CID : pGroupScenario->GetParticipants())
+			Mask |= CmaskOne(CID);
+		return Mask;
+	}
+
+	return CmaskAll();
+}
+
 void ScenarioBase::Start()
 {
 	if(m_Running)

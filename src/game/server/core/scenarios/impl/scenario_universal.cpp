@@ -200,7 +200,7 @@ namespace
 			m_pEntDroppedItem = new CEntityDropItem(&GS()->m_World, m_Pos, vec2 {}, Angle, m_Item, Scenario()->GetClientID());
 			if(m_pEntDroppedItem)
 			{
-				GS()->CreatePlayerSpawn(m_Pos, CmaskOne(Scenario()->GetClientID()));
+				GS()->CreatePlayerSpawn(m_Pos, Scenario()->GetClientsMask());
 				if(!m_Chat.empty())
 					GS()->Chat(Scenario()->GetClientID(), m_Chat.c_str());
 			}
@@ -373,7 +373,7 @@ void CUniversalScenario::CreateShootmarker(const vec2& pos, int health)
 			if(distance(pBase->GetPos(), pProj->GetCurrentPos()) < 48.f)
 			{
 				Health -= 1;
-				pBase->GS()->CreateDamage(pBase->GetPos(), pBase->GetClientID(), 1, random_angle(), CmaskOne(pBase->GetClientID()));
+				pBase->GS()->CreateDamage(pBase->GetPos(), pBase->GetClientID(), 1, random_angle(), pBase->GetMask());
 				pProj->MarkForDestroy();
 			}
 		}

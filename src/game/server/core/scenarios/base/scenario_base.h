@@ -73,6 +73,7 @@ private:
 public:
 	CGS* GS() const;
 	IServer* Server() const;
+	int64_t GetClientsMask() const;
 
 	enum Flags { FLAG_NONE = 0, FLAG_REPEATABLE = 1 << 0 };
 	explicit ScenarioBase(int Flags = FLAG_NONE) noexcept : m_Flags(Flags) { }
