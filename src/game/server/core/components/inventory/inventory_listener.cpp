@@ -22,11 +22,17 @@ void CInventoryListener::Initialize()
 
 void CInventoryListener::OnCharacterSpawn(CPlayer* pPlayer)
 {
+	if(!pPlayer)
+		return;
+
 	UpdateAttributesFull(pPlayer);
 }
 
 void CInventoryListener::OnPlayerLogin(CPlayer* pPlayer, CAccountData* pAccount)
 {
+	if(!pPlayer || !pAccount)
+		return;
+
 	pAccount->AutoEquipSlots(true);
 }
 
@@ -77,6 +83,9 @@ void CInventoryListener::OnPlayerEnchantItem(CPlayer* pPlayer, CPlayerItem* pIte
 
 void CInventoryListener::UpdateAttributesForItem(CPlayer* pPlayer, CPlayerItem* pItem)
 {
+	if(!pPlayer || !pItem || !pItem->Info())
+		return;
+
 	// update tracking attributes based on item attributes
 	for(const auto& AttributeInfo : pItem->Info()->GetAttributes())
 	{
@@ -103,6 +112,9 @@ void CInventoryListener::UpdateAttributesForItem(CPlayer* pPlayer, CPlayerItem* 
 
 void CInventoryListener::UpdateAttributesFull(CPlayer* pPlayer)
 {
+	if(!pPlayer)
+		return;
+
 	// update total player stats
 	for(auto& [Id, Info] : CAttributeDescription::Data())
 	{
