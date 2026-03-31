@@ -78,15 +78,20 @@ bool IsJoinFlood(const NETADDR *pAddr, int Tick, int TickSpeed, int *pCurrentHit
 	auto &JoinTicks = s_SubnetJoinTicks[SubnetKey];
 	const int WindowTicks = TickSpeed * g_Config.m_SvJoinFloodTime;
 	const int MinTick = Tick - WindowTicks;
-	while(!JoinTicks.empty() && JoinTicks.front() < MinTick)
+	while(!JoinTicks.empty() && JoinTicks.front() <= MinTick)
 		JoinTicks.pop_front();
 
-	JoinTicks.push_back(Tick);
+	if(JoinTicks.empty())
+		s_SubnetJoinTicks.erase(SubnetKey);
+
+	auto &CurrentJoinTicks = s_SubnetJoinTicks[SubnetKey];
+
+	CurrentJoinTicks.push_back(Tick);
 	if(pCurrentHits)
-		*pCurrentHits = (int)JoinTicks.size();
+		*pCurrentHits = (int)CurrentJoinTicks.size();
 	if(pSubnetKey)
 		*pSubnetKey = SubnetKey;
-	return (int)JoinTicks.size() > g_Config.m_SvJoinFloodSubnetLimit;
+	return (int)CurrentJoinTicks.size() > g_Config.m_SvJoinFloodSubnetLimit;
 }
 }
 
