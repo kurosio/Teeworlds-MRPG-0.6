@@ -1,721 +1,734 @@
 {
-    "scenario_mode": "universal",
-    "editor_data": {
-        "groups": [
-            {
-                "id": "group_3c34b8ab-1d92-4488-a4b5-83460ca74631",
-                "name": "Stage 1",
-                "steps": [
-                    "part_1_1",
-                    "part_1_2",
-                    "part_1_3"
-                ],
-                "collapsed": true
-            },
-            {
-                "id": "group_30ebe1cd-bf17-4413-8389-cb28e0c8c9ea",
-                "name": "Stage 2",
-                "steps": [
-                    "part_2_1",
-                    "part_2_2",
-                    "part_2_3",
-                    "part_2_4",
-                    "part_2_5"
-                ],
-                "collapsed": true
-            },
-            {
-                "id": "group_296b7f81-cc45-41f1-bc96-8621c263d8d4",
-                "name": "Stage 3",
-                "steps": [
-                    "part_3_1",
-                    "part_3_2",
-                    "part_3_3"
-                ],
-                "collapsed": false
-            }
+  "scenario_mode": "universal",
+  "editor_data": {
+    "groups": [
+      {
+        "id": "group_3c34b8ab-1d92-4488-a4b5-83460ca74631",
+        "name": "Stage 1",
+        "steps": [
+          "part_1_1",
+          "part_1_2",
+          "part_1_3"
         ],
-        "ungrouped_steps": []
-    },
-    "steps": [
-        {
-            "id": "part_1_1",
-            "components": [
-                {
-                    "key": "door_1_1",
-                    "position": {
-                        "x": 1049,
-                        "y": 1009
-                    },
-                    "type": "universal_door_control",
-                    "action": "create"
-                },
-                {
-                    "type": "message",
-                    "mode": "broadcast",
-                    "text": "This tutorial will help you get familiar with the world of MMORPG\nand introduce you to the basics of the game.",
-                    "delay": 200
-                },
-                {
-                    "type": "message",
-                    "mode": "chat",
-                    "text": "Start with an exciting tutorial and complete your first quest. Ready for the adventure?",
-                    "delay": 200
-                },
-                {
-                    "type": "message",
-                    "mode": "broadcast",
-                    "text": "Let's start by going through the introductory course.",
-                    "delay": 150
-                },
-                {
-                    "type": "message",
-                    "mode": "broadcast",
-                    "text": "Pay attention to what I will write to you.\nSoon, a door will open before you, leading to a new training area.",
-                    "delay": 400
-                },
-                {
-                    "type": "message",
-                    "mode": "chat",
-                    "text": "A door has opened before you, proceed to the new area."
-                },
-                {
-                    "key": "door_1_1",
-                    "type": "universal_door_control",
-                    "action": "remove",
-                    "next_step_id": "part_1_2",
-                    "position": {
-                        "x": 0,
-                        "y": 0
-                    }
-                }
-            ],
-            "completion_logic": "sequential"
-        },
-        {
-            "id": "part_1_2",
-            "components": [
-                {
-                    "key": "door_1_2",
-                    "position": {
-                        "x": 2016,
-                        "y": 768
-                    },
-                    "type": "universal_door_control",
-                    "action": "create"
-                },
-                {
-                    "type": "follow_camera",
-                    "position": {
-                        "x": 1632,
-                        "y": 960
-                    },
-                    "delay": 150,
-                    "smooth": true
-                },
-                {
-                    "type": "condition_movement",
-                    "position": {
-                        "x": 1632,
-                        "y": 960
-                    },
-                    "entire_group": true
-                },
-                {
-                    "type": "message",
-                    "mode": "broadcast",
-                    "text": "The map may contain various objects: blocks, platforms,\nchests, NPCs (non-player characters), and much more.\nThere are no specific goals, offering endless gameplay.",
-                    "delay": 400
-                },
-                {
-                    "type": "message",
-                    "mode": "chat",
-                    "text": "Read carefully — it will help you dive into the gameplay more quickly."
-                },
-                {
-                    "key": "door_1_2",
-                    "type": "universal_door_control",
-                    "action": "remove"
-                }
-            ],
-            "completion_logic": "sequential"
-        },
-        {
-            "id": "part_1_3",
-            "components": [
-                {
-                    "type": "follow_camera",
-                    "position": {
-                        "x": 2624,
-                        "y": 864
-                    },
-                    "delay": 150,
-                    "smooth": true
-                },
-                {
-                    "type": "condition_movement",
-                    "position": {
-                        "x": 2624,
-                        "y": 864
-                    },
-                    "entire_group": true
-                },
-                {
-                    "type": "message",
-                    "mode": "chat",
-                    "text": "In the voting list, you can control your character, interact with the inventory, adjust attributes, and much more."
-                },
-                {
-                    "type": "message",
-                    "mode": "broadcast",
-                    "text": "The interface contains important information.",
-                    "delay": 200
-                },
-                {
-                    "type": "message",
-                    "mode": "chat",
-                    "text": "On the left, all your stats are displayed for easier gameplay. At the bottom, you'll also find information during battles. Pay attention to this."
-                },
-                {
-                    "type": "message",
-                    "mode": "broadcast",
-                    "text": "The interface contains important information.",
-                    "delay": 200
-                },
-                {
-                    "type": "message",
-                    "mode": "chat",
-                    "text": "There are also in-game chat commands that you can explore by using '\/cmdlist'."
-                },
-                {
-                    "type": "message",
-                    "mode": "chat",
-                    "text": "I also recommend reviewing the rules by using the '\/rules' command."
-                },
-                {
-                    "chat": "\/rules",
-                    "type": "universal_use_chat"
-                },
-                {
-                    "type": "message",
-                    "mode": "broadcast",
-                    "text": "While you're reading the rules,\nI'll prepare the next training area for you.",
-                    "delay": 500
-                },
-                {
-                    "position": {
-                        "x": 267,
-                        "y": 1594
-                    },
-                    "type": "universal_teleport",
-                    "world_id": 0
-                }
-            ],
-            "delay": 150,
-            "completion_logic": "sequential"
-        },
-        {
-            "id": "part_2_1",
-            "components": [
-                {
-                    "key": "door_2_1",
-                    "position": {
-                        "x": 856,
-                        "y": 1777
-                    },
-                    "type": "universal_door_control",
-                    "action": "create"
-                },
-                {
-                    "type": "message",
-                    "mode": "broadcast",
-                    "text": "I'm sure you won't have any trouble with movement.",
-                    "delay": 150
-                },
-                {
-                    "type": "message",
-                    "mode": "broadcast",
-                    "text": "This features the minimum difficulty level for playing an MMORPG.",
-                    "delay": 200
-                },
-                {
-                    "key": "door_2_1",
-                    "type": "universal_door_control",
-                    "action": "remove"
-                }
-            ],
-            "completion_logic": "sequential"
-        },
-        {
-            "id": "part_2_2",
-            "components": [
-                {
-                    "key": "door_2_2",
-                    "position": {
-                        "x": 1329,
-                        "y": 1777
-                    },
-                    "type": "universal_door_control",
-                    "action": "create"
-                },
-                {
-                    "type": "message",
-                    "mode": "chat",
-                    "text": "Let's start by learning double jumps."
-                },
-                {
-                    "type": "moving_disable",
-                    "state": true
-                },
-                {
-                    "type": "follow_camera",
-                    "position": {
-                        "x": 1267,
-                        "y": 1777
-                    },
-                    "delay": 150,
-                    "smooth": true
-                },
-                {
-                    "type": "moving_disable",
-                    "state": false
-                },
-                {
-                    "type": "condition_movement",
-                    "position": {
-                        "x": 1267,
-                        "y": 1777
-                    },
-                    "entire_group": true
-                },
-                {
-                    "key": "door_2_2",
-                    "type": "universal_door_control",
-                    "action": "remove"
-                }
-            ],
-            "completion_logic": "sequential"
-        },
-        {
-            "id": "part_2_3",
-            "components": [
-                {
-                    "type": "message",
-                    "mode": "chat",
-                    "text": "Let's try to overcome this obstacle."
-                },
-                {
-                    "key": "door_2_3",
-                    "position": {
-                        "x": 1696,
-                        "y": 1169
-                    },
-                    "type": "universal_door_control",
-                    "action": "create"
-                },
-                {
-                    "type": "moving_disable",
-                    "state": true
-                },
-                {
-                    "type": "follow_camera",
-                    "position": {
-                        "x": 1502,
-                        "y": 1169
-                    },
-                    "delay": 150,
-                    "smooth": true
-                },
-                {
-                    "type": "moving_disable",
-                    "state": false
-                },
-                {
-                    "type": "condition_movement",
-                    "position": {
-                        "x": 1502,
-                        "y": 1169
-                    },
-                    "entire_group": true
-                },
-                {
-                    "position": {
-                        "x": 1622,
-                        "y": 1169
-                    },
-                    "item": {
-                        "id": 3,
-                        "value": 1
-                    },
-                    "broadcast": "Pick up the item that appeared nearby by using\nthe hammer strike!",
-                    "type": "universal_pick_item_task"
-                },
-                {
-                    "key": "door_2_3",
-                    "type": "universal_door_control",
-                    "action": "remove"
-                }
-            ],
-            "completion_logic": "sequential"
-        },
-        {
-            "id": "part_2_4",
-            "components": [
-                {
-                    "key": "door_2_4",
-                    "position": {
-                        "x": 2440,
-                        "y": 1777
-                    },
-                    "type": "universal_door_control",
-                    "action": "create"
-                },
-                {
-                    "type": "message",
-                    "mode": "chat",
-                    "text": "Let's practice our shooting skills.",
-                    "delay": 30
-                },
-                {
-                    "markers": [
-                        {
-                            "position": {
-                                "x": 2127,
-                                "y": 1165
-                            },
-                            "health": 3
-                        },
-                        {
-                            "position": {
-                                "x": 2304,
-                                "y": 1357
-                            },
-                            "health": 3
-                        },
-                        {
-                            "position": {
-                                "x": 2531,
-                                "y": 1470
-                            },
-                            "health": 3
-                        },
-                        {
-                            "position": {
-                                "x": 1713,
-                                "y": 1655
-                            },
-                            "health": 3
-                        }
-                    ],
-                    "type": "universal_shootmarkers"
-                },
-                {
-                    "key": "door_2_4",
-                    "type": "universal_door_control",
-                    "action": "remove"
-                }
-            ],
-            "completion_logic": "sequential"
-        },
-        {
-            "id": "part_2_5",
-            "components": [
-                {
-                    "type": "moving_disable",
-                    "state": true
-                },
-                {
-                    "type": "follow_camera",
-                    "position": {
-                        "x": 3089,
-                        "y": 1777
-                    },
-                    "delay": 150,
-                    "smooth": true
-                },
-                {
-                    "type": "moving_disable",
-                    "state": false
-                },
-                {
-                    "type": "condition_movement",
-                    "position": {
-                        "x": 3089,
-                        "y": 1777
-                    },
-                    "entire_group": true
-                },
-                {
-                    "type": "message",
-                    "mode": "chat",
-                    "text": "Let's test your accuracy one last time."
-                },
-                {
-                    "markers": [
-                        {
-                            "position": {
-                                "x": 2852,
-                                "y": 1405
-                            },
-                            "health": 3
-                        },
-                        {
-                            "position": {
-                                "x": 3008,
-                                "y": 1405
-                            },
-                            "health": 3
-                        },
-                        {
-                            "position": {
-                                "x": 3165,
-                                "y": 1405
-                            },
-                            "health": 3
-                        },
-                        {
-                            "position": {
-                                "x": 3333,
-                                "y": 1405
-                            },
-                            "health": 3
-                        }
-                    ],
-                    "type": "universal_shootmarkers"
-                },
-                {
-                    "type": "message",
-                    "mode": "broadcast",
-                    "text": "Congratulations, you've mastered the basic movement elements.",
-                    "delay": 200
-                },
-                {
-                    "type": "message",
-                    "mode": "broadcast",
-                    "text": "I'm preparing a new training area for you.",
-                    "delay": 500
-                }
-            ],
-            "completion_logic": "sequential"
-        },
-        {
-            "id": "part_3_1",
-            "components": [
-                {
-                    "quest_id": 1,
-                    "type": "quest_action",
-                    "action": "reset"
-                },
-                {
-                    "key": "door_3_1",
-                    "position": {
-                        "x": 910,
-                        "y": 2193
-                    },
-                    "type": "universal_door_control",
-                    "action": "create"
-                },
-                {
-                    "key": "door_3_2",
-                    "position": {
-                        "x": 2996,
-                        "y": 2225
-                    },
-                    "type": "universal_door_control",
-                    "action": "create"
-                },
-                {
-                    "position": {
-                        "x": 264,
-                        "y": 2001
-                    },
-                    "type": "universal_teleport"
-                },
-                {
-                    "type": "message",
-                    "mode": "broadcast",
-                    "text": "Now, let's explore the classics of MMORPG.\nI'm preparing a quest for you.",
-                    "delay": 500
-                },
-                {
-                    "quest_id": 1,
-                    "type": "quest_action",
-                    "action": "accept"
-                },
-                {
-                    "type": "message",
-                    "mode": "chat",
-                    "text": "Reach the NPC (non-player character)."
-                },
-                {
-                    "type": "follow_camera",
-                    "position": {
-                        "x": 810,
-                        "y": 2193
-                    },
-                    "delay": 150,
-                    "smooth": true
-                },
-                {
-                    "key": "door_3_1",
-                    "type": "universal_door_control",
-                    "action": "remove"
-                },
-                {
-                    "quest_id": 1,
-                    "step": 2,
-                    "type": "quest_condition",
-                    "condition": "step_finished"
-                },
-                {
-                    "key": "door_3_2",
-                    "type": "universal_door_control",
-                    "action": "remove"
-                }
-            ],
-            "completion_logic": "sequential"
-        },
-        {
-            "id": "part_3_2",
-            "components": [
-                {
-                    "type": "message",
-                    "mode": "broadcast",
-                    "text": "Your inventory stores all the items you've collected.\nYou can equip, unequip, or discard items.\nSome items can be used by clicking in the voting menu.",
-                    "delay": 300
-                },
-                {
-                    "type": "message",
-                    "mode": "chat",
-                    "text": "These are plantations, which are part of agriculture. Collect one plant!"
-                },
-                {
-                    "type": "follow_camera",
-                    "position": {
-                        "x": 3510,
-                        "y": 2257
-                    },
-                    "delay": 200,
-                    "smooth": true
-                },
-                {
-                    "type": "message",
-                    "mode": "chat",
-                    "text": "Hit the hearts with the hammer, and you'll see the plant collection process."
-                },
-                {
-                    "item_id": 40,
-                    "required": 1,
-                    "show_progress": true,
-                    "type": "universal_condition_item",
-                    "remove": false
-                },
-                {
-                    "type": "message",
-                    "mode": "chat",
-                    "text": "Take them to the house and process them by clicking the appropriate buttons in the voting menu. Click on 'Craft'."
-                },
-                {
-                    "type": "moving_disable",
-                    "state": true
-                },
-                {
-                    "type": "follow_camera",
-                    "position": {
-                        "x": 3774,
-                        "y": 2193
-                    },
-                    "delay": 150,
-                    "smooth": true
-                },
-                {
-                    "type": "moving_disable",
-                    "state": false
-                },
-                {
-                    "type": "condition_movement",
-                    "position": {
-                        "x": 3774,
-                        "y": 2193
-                    },
-                    "entire_group": true
-                },
-                {
-                    "type": "message",
-                    "mode": "chat",
-                    "text": "Here, you can use the services of the craftsman. Use the collected items to create what is needed to continue."
-                },
-                {
-                    "type": "message",
-                    "mode": "chat",
-                    "text": "To do this, open the voting list in the special zone from the menu and select the required item."
-                },
-                {
-                    "item_id": 41,
-                    "required": 1,
-                    "remove": true,
-                    "show_progress": true,
-                    "type": "universal_condition_item"
-                }
-            ],
-            "completion_logic": "sequential"
-        },
-        {
-            "id": "part_3_3",
-            "components": [
-                {
-                    "key": "door_4_1",
-                    "position": {
-                        "x": 2966,
-                        "y": 1201
-                    },
-                    "type": "universal_door_control",
-                    "action": "create"
-                },
-                {
-                    "position": {
-                        "x": 2762,
-                        "y": 1201
-                    },
-                    "type": "universal_teleport"
-                },
-                {
-                    "type": "message",
-                    "mode": "broadcast",
-                    "text": "Congratulations on completing the tutorial!",
-                    "delay": 200
-                },
-                {
-                    "type": "message",
-                    "mode": "broadcast",
-                    "text": "I'm sure you've learned something.",
-                    "delay": 200
-                },
-                {
-                    "type": "message",
-                    "mode": "broadcast",
-                    "text": "Here's a little gift from me.",
-                    "delay": 100
-                },
-                {
-                    "position": {
-                        "x": 2879,
-                        "y": 1201
-                    },
-                    "item": {
-                        "id": 30,
-                        "value": 1
-                    },
-                    "broadcast": "Pick up the item that appeared nearby by using\nthe hammer strike!",
-                    "type": "universal_pick_item_task"
-                },
-                {
-                    "key": "door_4_1",
-                    "type": "universal_door_control",
-                    "action": "remove"
-                }
-            ],
-            "completion_logic": "sequential"
-        }
+        "collapsed": true
+      },
+      {
+        "id": "group_30ebe1cd-bf17-4413-8389-cb28e0c8c9ea",
+        "name": "Stage 2",
+        "steps": [
+          "part_2_1",
+          "part_2_2",
+          "part_2_3",
+          "part_2_4",
+          "part_2_5"
+        ],
+        "collapsed": true
+      },
+      {
+        "id": "group_296b7f81-cc45-41f1-bc96-8621c263d8d4",
+        "name": "Stage 3",
+        "steps": [
+          "part_3_1",
+          "part_3_2",
+          "part_3_3"
+        ],
+        "collapsed": false
+      }
+    ],
+    "ungrouped_steps": [
+      "part_1_1",
+      "part_1_2",
+      "part_1_3",
+      "part_2_1",
+      "part_2_2",
+      "part_2_3",
+      "part_2_4",
+      "part_2_5",
+      "part_3_1",
+      "part_3_2",
+      "part_3_3"
     ]
+  },
+  "steps": [
+    {
+      "id": "part_1_1",
+      "components": [
+        {
+          "key": "door_1_1",
+          "position": {
+            "x": 1049,
+            "y": 1009
+          },
+          "type": "universal_door_control",
+          "action": "create"
+        },
+        {
+          "type": "message",
+          "mode": "broadcast",
+          "text": "This tutorial will help you get familiar with the world of MMORPG\nand introduce you to the basics of the game.",
+          "execution_time": 200
+        },
+        {
+          "type": "message",
+          "mode": "chat",
+          "text": "Start with an exciting tutorial and complete your first quest. Ready for the adventure?",
+          "execution_time": 200
+        },
+        {
+          "type": "message",
+          "mode": "broadcast",
+          "text": "Let's start by going through the introductory course.",
+          "execution_time": 150
+        },
+        {
+          "type": "message",
+          "mode": "broadcast",
+          "text": "Pay attention to what I will write to you.\nSoon, a door will open before you, leading to a new training area.",
+          "execution_time": 400
+        },
+        {
+          "type": "message",
+          "mode": "chat",
+          "text": "A door has opened before you, proceed to the new area."
+        },
+        {
+          "key": "door_1_1",
+          "type": "universal_door_control",
+          "action": "remove",
+          "next_step_id": "part_1_2",
+          "position": {
+            "x": 0,
+            "y": 0
+          }
+        }
+      ],
+      "completion_logic": "sequential"
+    },
+    {
+      "id": "part_1_2",
+      "components": [
+        {
+          "key": "door_1_2",
+          "position": {
+            "x": 2016,
+            "y": 768
+          },
+          "type": "universal_door_control",
+          "action": "create"
+        },
+        {
+          "type": "follow_camera",
+          "position": {
+            "x": 1632,
+            "y": 960
+          },
+          "smooth": true,
+          "execution_time": 150
+        },
+        {
+          "type": "condition_movement",
+          "position": {
+            "x": 1632,
+            "y": 960
+          },
+          "entire_group": true
+        },
+        {
+          "type": "message",
+          "mode": "broadcast",
+          "text": "The map may contain various objects: blocks, platforms,\nchests, NPCs (non-player characters), and much more.\nThere are no specific goals, offering endless gameplay.",
+          "execution_time": 400
+        },
+        {
+          "type": "message",
+          "mode": "chat",
+          "text": "Read carefully — it will help you dive into the gameplay more quickly."
+        },
+        {
+          "key": "door_1_2",
+          "type": "universal_door_control",
+          "action": "remove"
+        }
+      ],
+      "completion_logic": "sequential"
+    },
+    {
+      "id": "part_1_3",
+      "components": [
+        {
+          "type": "follow_camera",
+          "position": {
+            "x": 2624,
+            "y": 864
+          },
+          "smooth": true,
+          "execution_time": 150
+        },
+        {
+          "type": "condition_movement",
+          "position": {
+            "x": 2624,
+            "y": 864
+          },
+          "entire_group": true
+        },
+        {
+          "type": "message",
+          "mode": "chat",
+          "text": "In the voting list, you can control your character, interact with the inventory, adjust attributes, and much more."
+        },
+        {
+          "type": "message",
+          "mode": "broadcast",
+          "text": "The interface contains important information.",
+          "execution_time": 200
+        },
+        {
+          "type": "message",
+          "mode": "chat",
+          "text": "On the left, all your stats are displayed for easier gameplay. At the bottom, you'll also find information during battles. Pay attention to this."
+        },
+        {
+          "type": "message",
+          "mode": "broadcast",
+          "text": "The interface contains important information.",
+          "execution_time": 200
+        },
+        {
+          "type": "message",
+          "mode": "chat",
+          "text": "There are also in-game chat commands that you can explore by using '/cmdlist'."
+        },
+        {
+          "type": "message",
+          "mode": "chat",
+          "text": "I also recommend reviewing the rules by using the '/rules' command."
+        },
+        {
+          "chat": "/rules",
+          "type": "universal_use_chat"
+        },
+        {
+          "type": "message",
+          "mode": "broadcast",
+          "text": "While you're reading the rules,\nI'll prepare the next training area for you.",
+          "execution_time": 500
+        },
+        {
+          "position": {
+            "x": 267,
+            "y": 1594
+          },
+          "type": "universal_teleport",
+          "world_id": 0
+        }
+      ],
+      "delay": 150,
+      "completion_logic": "sequential"
+    },
+    {
+      "id": "part_2_1",
+      "components": [
+        {
+          "key": "door_2_1",
+          "position": {
+            "x": 856,
+            "y": 1777
+          },
+          "type": "universal_door_control",
+          "action": "create"
+        },
+        {
+          "type": "message",
+          "mode": "broadcast",
+          "text": "I'm sure you won't have any trouble with movement.",
+          "execution_time": 150
+        },
+        {
+          "type": "message",
+          "mode": "broadcast",
+          "text": "This features the minimum difficulty level for playing an MMORPG.",
+          "execution_time": 200
+        },
+        {
+          "key": "door_2_1",
+          "type": "universal_door_control",
+          "action": "remove"
+        }
+      ],
+      "completion_logic": "sequential"
+    },
+    {
+      "id": "part_2_2",
+      "components": [
+        {
+          "key": "door_2_2",
+          "position": {
+            "x": 1329,
+            "y": 1777
+          },
+          "type": "universal_door_control",
+          "action": "create"
+        },
+        {
+          "type": "message",
+          "mode": "chat",
+          "text": "Let's start by learning double jumps."
+        },
+        {
+          "type": "moving_disable",
+          "state": true
+        },
+        {
+          "type": "follow_camera",
+          "position": {
+            "x": 1267,
+            "y": 1777
+          },
+          "smooth": true,
+          "execution_time": 150
+        },
+        {
+          "type": "moving_disable",
+          "state": false
+        },
+        {
+          "type": "condition_movement",
+          "position": {
+            "x": 1267,
+            "y": 1777
+          },
+          "entire_group": true
+        },
+        {
+          "key": "door_2_2",
+          "type": "universal_door_control",
+          "action": "remove"
+        }
+      ],
+      "completion_logic": "sequential"
+    },
+    {
+      "id": "part_2_3",
+      "components": [
+        {
+          "type": "message",
+          "mode": "chat",
+          "text": "Let's try to overcome this obstacle."
+        },
+        {
+          "key": "door_2_3",
+          "position": {
+            "x": 1696,
+            "y": 1169
+          },
+          "type": "universal_door_control",
+          "action": "create"
+        },
+        {
+          "type": "moving_disable",
+          "state": true
+        },
+        {
+          "type": "follow_camera",
+          "position": {
+            "x": 1502,
+            "y": 1169
+          },
+          "smooth": true,
+          "execution_time": 150
+        },
+        {
+          "type": "moving_disable",
+          "state": false
+        },
+        {
+          "type": "condition_movement",
+          "position": {
+            "x": 1502,
+            "y": 1169
+          },
+          "entire_group": true
+        },
+        {
+          "position": {
+            "x": 1622,
+            "y": 1169
+          },
+          "item": {
+            "id": 3,
+            "value": 1
+          },
+          "broadcast": "Pick up the item that appeared nearby by using\nthe hammer strike!",
+          "type": "universal_pick_item_task"
+        },
+        {
+          "key": "door_2_3",
+          "type": "universal_door_control",
+          "action": "remove"
+        }
+      ],
+      "completion_logic": "sequential"
+    },
+    {
+      "id": "part_2_4",
+      "components": [
+        {
+          "key": "door_2_4",
+          "position": {
+            "x": 2440,
+            "y": 1777
+          },
+          "type": "universal_door_control",
+          "action": "create"
+        },
+        {
+          "type": "message",
+          "mode": "chat",
+          "text": "Let's practice our shooting skills.",
+          "execution_time": 30
+        },
+        {
+          "markers": [
+            {
+              "position": {
+                "x": 2127,
+                "y": 1165
+              },
+              "health": 3
+            },
+            {
+              "position": {
+                "x": 2304,
+                "y": 1357
+              },
+              "health": 3
+            },
+            {
+              "position": {
+                "x": 2531,
+                "y": 1470
+              },
+              "health": 3
+            },
+            {
+              "position": {
+                "x": 1713,
+                "y": 1655
+              },
+              "health": 3
+            }
+          ],
+          "type": "universal_shootmarkers"
+        },
+        {
+          "key": "door_2_4",
+          "type": "universal_door_control",
+          "action": "remove"
+        }
+      ],
+      "completion_logic": "sequential"
+    },
+    {
+      "id": "part_2_5",
+      "components": [
+        {
+          "type": "moving_disable",
+          "state": true
+        },
+        {
+          "type": "follow_camera",
+          "position": {
+            "x": 3089,
+            "y": 1777
+          },
+          "smooth": true,
+          "execution_time": 150
+        },
+        {
+          "type": "moving_disable",
+          "state": false
+        },
+        {
+          "type": "condition_movement",
+          "position": {
+            "x": 3089,
+            "y": 1777
+          },
+          "entire_group": true
+        },
+        {
+          "type": "message",
+          "mode": "chat",
+          "text": "Let's test your accuracy one last time."
+        },
+        {
+          "markers": [
+            {
+              "position": {
+                "x": 2852,
+                "y": 1405
+              },
+              "health": 3
+            },
+            {
+              "position": {
+                "x": 3008,
+                "y": 1405
+              },
+              "health": 3
+            },
+            {
+              "position": {
+                "x": 3165,
+                "y": 1405
+              },
+              "health": 3
+            },
+            {
+              "position": {
+                "x": 3333,
+                "y": 1405
+              },
+              "health": 3
+            }
+          ],
+          "type": "universal_shootmarkers"
+        },
+        {
+          "type": "message",
+          "mode": "broadcast",
+          "text": "Congratulations, you've mastered the basic movement elements.",
+          "execution_time": 200
+        },
+        {
+          "type": "message",
+          "mode": "broadcast",
+          "text": "I'm preparing a new training area for you.",
+          "execution_time": 500
+        }
+      ],
+      "completion_logic": "sequential"
+    },
+    {
+      "id": "part_3_1",
+      "components": [
+        {
+          "quest_id": 1,
+          "type": "quest_action",
+          "action": "reset"
+        },
+        {
+          "key": "door_3_1",
+          "position": {
+            "x": 910,
+            "y": 2193
+          },
+          "type": "universal_door_control",
+          "action": "create"
+        },
+        {
+          "key": "door_3_2",
+          "position": {
+            "x": 2996,
+            "y": 2225
+          },
+          "type": "universal_door_control",
+          "action": "create"
+        },
+        {
+          "position": {
+            "x": 264,
+            "y": 2001
+          },
+          "type": "universal_teleport"
+        },
+        {
+          "type": "message",
+          "mode": "broadcast",
+          "text": "Now, let's explore the classics of MMORPG.\nI'm preparing a quest for you.",
+          "execution_time": 500
+        },
+        {
+          "quest_id": 1,
+          "type": "quest_action",
+          "action": "accept"
+        },
+        {
+          "type": "message",
+          "mode": "chat",
+          "text": "Reach the NPC (non-player character)."
+        },
+        {
+          "type": "follow_camera",
+          "position": {
+            "x": 810,
+            "y": 2193
+          },
+          "smooth": true,
+          "execution_time": 150
+        },
+        {
+          "key": "door_3_1",
+          "type": "universal_door_control",
+          "action": "remove"
+        },
+        {
+          "quest_id": 1,
+          "step": 2,
+          "type": "quest_condition",
+          "condition": "step_finished",
+          "entire_group": false
+        },
+        {
+          "key": "door_3_2",
+          "type": "universal_door_control",
+          "action": "remove"
+        }
+      ],
+      "completion_logic": "sequential"
+    },
+    {
+      "id": "part_3_2",
+      "components": [
+        {
+          "type": "message",
+          "mode": "broadcast",
+          "text": "Your inventory stores all the items you've collected.\nYou can equip, unequip, or discard items.\nSome items can be used by clicking in the voting menu.",
+          "execution_time": 300
+        },
+        {
+          "type": "message",
+          "mode": "chat",
+          "text": "These are plantations, which are part of agriculture. Collect one plant!"
+        },
+        {
+          "type": "follow_camera",
+          "position": {
+            "x": 3510,
+            "y": 2257
+          },
+          "smooth": true,
+          "execution_time": 200
+        },
+        {
+          "type": "message",
+          "mode": "chat",
+          "text": "Hit the hearts with the hammer, and you'll see the plant collection process."
+        },
+        {
+          "item_id": 40,
+          "required": 1,
+          "show_progress": true,
+          "type": "universal_condition_item",
+          "remove": false
+        },
+        {
+          "type": "message",
+          "mode": "chat",
+          "text": "Take them to the house and process them by clicking the appropriate buttons in the voting menu. Click on 'Craft'."
+        },
+        {
+          "type": "moving_disable",
+          "state": true
+        },
+        {
+          "type": "follow_camera",
+          "position": {
+            "x": 3774,
+            "y": 2193
+          },
+          "smooth": true,
+          "execution_time": 150
+        },
+        {
+          "type": "moving_disable",
+          "state": false
+        },
+        {
+          "type": "condition_movement",
+          "position": {
+            "x": 3774,
+            "y": 2193
+          },
+          "entire_group": true
+        },
+        {
+          "type": "message",
+          "mode": "chat",
+          "text": "Here, you can use the services of the craftsman. Use the collected items to create what is needed to continue."
+        },
+        {
+          "type": "message",
+          "mode": "chat",
+          "text": "To do this, open the voting list in the special zone from the menu and select the required item."
+        },
+        {
+          "item_id": 41,
+          "required": 1,
+          "remove": true,
+          "show_progress": true,
+          "type": "universal_condition_item"
+        }
+      ],
+      "completion_logic": "sequential"
+    },
+    {
+      "id": "part_3_3",
+      "components": [
+        {
+          "key": "door_4_1",
+          "position": {
+            "x": 2966,
+            "y": 1201
+          },
+          "type": "universal_door_control",
+          "action": "create"
+        },
+        {
+          "position": {
+            "x": 2762,
+            "y": 1201
+          },
+          "type": "universal_teleport"
+        },
+        {
+          "type": "message",
+          "mode": "broadcast",
+          "text": "Congratulations on completing the tutorial!",
+          "execution_time": 200
+        },
+        {
+          "type": "message",
+          "mode": "broadcast",
+          "text": "I'm sure you've learned something.",
+          "execution_time": 200
+        },
+        {
+          "type": "message",
+          "mode": "broadcast",
+          "text": "Here's a little gift from me.",
+          "execution_time": 100
+        },
+        {
+          "position": {
+            "x": 2879,
+            "y": 1201
+          },
+          "item": {
+            "id": 30,
+            "value": 1
+          },
+          "broadcast": "Pick up the item that appeared nearby by using\nthe hammer strike!",
+          "type": "universal_pick_item_task"
+        },
+        {
+          "key": "door_4_1",
+          "type": "universal_door_control",
+          "action": "remove"
+        }
+      ],
+      "completion_logic": "sequential"
+    }
+  ]
 }

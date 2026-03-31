@@ -994,7 +994,7 @@
                     const delayWrapper = document.createElement('div');
                     delayWrapper.className = 'mt-2 flex items-center gap-2';
                     delayWrapper.innerHTML = `<label class="text-xs font-medium text-slate-600">Время выполнения (мс):</label>
-                                            <input type="number" class="component-delay-input editor-input form-input w-24 text-sm" value="${component.execution_time || component.delay || 0}">`;
+                                            <input type="number" class="component-delay-input editor-input form-input w-24 text-sm" value="${component.execution_time || 0}">`;
                     item.querySelector('.component-text-wrapper').appendChild(delayWrapper);
                 }
 
@@ -1629,9 +1629,6 @@
                     const stepsToSave = JSON.parse(JSON.stringify(steps));
                     stepsToSave.forEach(step => {
                         (step.components || []).forEach(c => {
-                            if (typeof c.execution_time === 'undefined' && typeof c.delay !== 'undefined') {
-                                c.execution_time = c.delay;
-                            }
                             delete c.component_id;
                             if (!c.next_step_id) {
                                 delete c.next_step_id;
@@ -2030,9 +2027,6 @@
                 return Array.from(keys);
             }
             applyComponentDefaults(component) {
-                if (typeof component?.execution_time === 'undefined' && typeof component?.delay !== 'undefined') {
-                    component.execution_time = component.delay;
-                }
                 const schema = this.componentTypes[component.type];
                 if (schema?.fields) {
                     EditorCore.schemas.applyDefaults(component, schema.fields);

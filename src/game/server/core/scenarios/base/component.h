@@ -52,8 +52,6 @@ public:
 	{
 		if(j.contains("execution_time"))
 			m_StartExecutionTimeTick = j.value("execution_time", 0);
-		else if(j.contains("delay")) // legacy key
-			m_StartExecutionTimeTick = j.value("delay", 0);
 
 		m_ExecutionTimeTick = m_StartExecutionTimeTick;
 
