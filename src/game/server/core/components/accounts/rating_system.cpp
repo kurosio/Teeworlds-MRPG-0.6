@@ -4,18 +4,26 @@
 #include <game/server/gamecontext.h>
 #include "account_data.h"
 
-constexpr double DECAY_FACTOR = 0.01;
-constexpr double LEVEL_FACTOR = 0.05;
-
-inline static std::string getFileName(int AccountID)
+namespace
 {
-	return std::string("server_data/account_rating/raiting_").append(std::to_string(AccountID)).append("AID").append(".json");
+	constexpr int MAX_HISTORY_SIZE = 20;
+	constexpr int RANK_COUNT = 6;
+	constexpr double EXPECTED_SCORE_DIVISOR = 500.0;
+	constexpr double LEVEL_ADVANTAGE_FACTOR = 0.02;
+	constexpr double UPSET_WIN_BONUS_FACTOR = 0.05;
+	constexpr int MAX_UPSET_BONUS = 8;
+	constexpr int MAX_STREAK_BONUS = 5;
+
+	std::string GetRatingFileName(int AccountID)
+	{
+		return std::string("server_data/account_rating/raiting_").append(std::to_string(AccountID)).append("AID").append(".json");
+	}
 }
 
 void RatingSystem::Init(CAccountData* pAccount)
 {
 	m_pAccount = pAccount;
-	m_FileName = getFileName(pAccount->GetID());
+	m_FileName = GetRatingFileName(pAccount->GetID());
 	Load();
 }
 
@@ -44,75 +52,123 @@ void RatingSystem::UpdateRating(CGS* pGS, bool Won, int OpponentRating, int Oppo
 	if(!m_pAccount)
 		return;
 
-	// elo rating calculation.
-	double ExpectedScore = 1.0 / (1.0 + std::pow(10, (OpponentRating - m_Rating) / 400.0));
+	// Elo-like expectation.
+	const double ExpectedScore = 1.0 / (1.0 + std::pow(10.0, (OpponentRating - m_Rating) / EXPECTED_SCORE_DIVISOR));
 	int Score = Won ? 1 : 0;
-
-	// adjust rating change based on result
 	double RatingChange = g_Config.m_SvRatingCoefficientBase * (Score - ExpectedScore);
 
-	// adjust for level difference
-	int LevelDifference = m_pAccount->GetLevel() - OpponentLevel;
-	RatingChange *= (1.0 + LEVEL_FACTOR * std::abs(LevelDifference));
+	// Small reward for winning against stronger opponents.
+	if(Won && OpponentRating > m_Rating)
+	{
+		const int RatingGap = OpponentRating - m_Rating;
+		RatingChange += minimum(MAX_UPSET_BONUS, static_cast<int>(std::round(RatingGap * UPSET_WIN_BONUS_FACTOR)));
+	}
 
-	// further adjustments for high ratings
-	if(m_Rating >= g_Config.m_SvMaxRating)
-		RatingChange *= 0.5;
+	// Level difference should matter, but only slightly.
+	const int LevelDifference = m_pAccount->GetLevel() - OpponentLevel;
+	RatingChange *= (1.0 + LEVEL_ADVANTAGE_FACTOR * std::clamp(LevelDifference, -6, 6));
 
-	// apply decay factor
-	double Decay = 1.0 - DECAY_FACTOR * std::min(m_Rating, g_Config.m_SvMaxRating) / g_Config.m_SvMaxRating;
-	RatingChange *= Decay;
+	// Winning streak bonus improves motivation to keep playing.
+	int StreakBonus = 0;
+	if(Won)
+	{
+		for(auto it = m_vHistory.rbegin(); it != m_vHistory.rend() && *it == 1; ++it)
+			StreakBonus++;
+		RatingChange += minimum(StreakBonus, MAX_STREAK_BONUS);
+	}
 
-	// update rating and track history
 	int OldRating = m_Rating;
-	m_Rating = std::clamp(static_cast<int>(std::round(m_Rating + RatingChange)), g_Config.m_SvMinRating, g_Config.m_SvMaxRating);
+	m_Rating = std::clamp(m_Rating + static_cast<int>(std::round(RatingChange)), g_Config.m_SvMinRating, g_Config.m_SvMaxRating);
 	m_Played++;
 
-	// update history
 	m_vHistory.push_back(Score);
-	if(m_vHistory.size() > 20)
-		m_vHistory.erase(m_vHistory.begin(), m_vHistory.begin() + (m_vHistory.size() - 20));
+	if(m_vHistory.size() > MAX_HISTORY_SIZE)
+		m_vHistory.erase(m_vHistory.begin(), m_vHistory.begin() + (m_vHistory.size() - MAX_HISTORY_SIZE));
 
-	// update won and lose
 	if(Won)
 		m_Wins++;
 	else
 		m_Losses++;
 
-	// notify player of rating change
-	int RatingDiff = m_Rating - OldRating;
+	const int RatingDiff = m_Rating - OldRating;
 	if(RatingDiff != 0 && pGS)
 	{
 		const char* Message = RatingDiff > 0 ?
-			"Your rating increased by {}({}) points ({}).":
-			"Your rating decreased by {}({}) points ({}).";
+			"Rating +{} -> {} ({})":
+			"Rating -{} -> {} ({})";
 		pGS->Chat(m_pAccount->GetClientID(), Message, std::abs(RatingDiff), m_Rating, GetRankName());
-		pGS->Chat(m_pAccount->GetClientID(), "Wins: {} / Losses: {} / Win rate: {~.2}%.", GetWins(), GetLosses(), GetWinRate());
+		pGS->Chat(m_pAccount->GetClientID(), "Progress to {}: {}/{} pts.", GetNextRankName(), GetRankPointsProgress(), GetRankPointsRequired());
 		Save();
 	}
 
 	UpdateClient();
 }
 
+std::vector<RatingSystem::RankInfo> RatingSystem::BuildRanks() const
+{
+	std::vector<RankInfo> vRanks;
+	vRanks.reserve(RANK_COUNT);
+
+	const int Range = maximum(1, g_Config.m_SvMaxRating - g_Config.m_SvMinRating);
+	const int Step = maximum(1, Range / (RANK_COUNT - 1));
+	vRanks.push_back({g_Config.m_SvMinRating, "Bronze"});
+	vRanks.push_back({g_Config.m_SvMinRating + Step * 1, "Silver"});
+	vRanks.push_back({g_Config.m_SvMinRating + Step * 2, "Gold"});
+	vRanks.push_back({g_Config.m_SvMinRating + Step * 3, "Platinum"});
+	vRanks.push_back({g_Config.m_SvMinRating + Step * 4, "Diamond"});
+	vRanks.push_back({g_Config.m_SvMaxRating, "Legend"});
+	return vRanks;
+}
+
+int RatingSystem::GetCurrentRankIndex(const std::vector<RankInfo>& vRanks) const
+{
+	int RankIndex = 0;
+	for(size_t i = 0; i < vRanks.size(); i++)
+	{
+		if(m_Rating >= vRanks[i].m_MinRating)
+			RankIndex = static_cast<int>(i);
+	}
+	return RankIndex;
+}
+
 std::string RatingSystem::GetRankName() const
 {
-	static const std::array<std::pair<double, std::string>, 5> Ranks =
-	{
-		std::make_pair(22.0, "Bronze"),
-		std::make_pair(44.0, "Silver"),
-		std::make_pair(66.0, "Gold"),
-		std::make_pair(88.0, "Platinum"),
-		std::make_pair(100.0, "Legend")
-	};
+	const auto vRanks = BuildRanks();
+	const int RankIndex = GetCurrentRankIndex(vRanks);
+	return vRanks[RankIndex].m_pName;
+}
 
-	double Percent = 100.0 * (m_Rating - g_Config.m_SvMinRating) / (g_Config.m_SvMaxRating - g_Config.m_SvMinRating);
-	for(const auto& [threshold, rank] : Ranks)
-	{
-		if(Percent <= threshold)
-			return rank;
-	}
+std::string RatingSystem::GetNextRankName() const
+{
+	const auto vRanks = BuildRanks();
+	const int RankIndex = GetCurrentRankIndex(vRanks);
+	const bool IsLastRank = RankIndex >= static_cast<int>(vRanks.size()) - 1;
+	return IsLastRank ? "Legend" : vRanks[RankIndex + 1].m_pName;
+}
 
-	return "Legend";
+int RatingSystem::GetRankPointsProgress() const
+{
+	const auto vRanks = BuildRanks();
+	const int RankIndex = GetCurrentRankIndex(vRanks);
+	const bool IsLastRank = RankIndex >= static_cast<int>(vRanks.size()) - 1;
+	if(IsLastRank)
+		return GetRankPointsRequired();
+
+	const int RankFloor = vRanks[RankIndex].m_MinRating;
+	return maximum(0, m_Rating - RankFloor);
+}
+
+int RatingSystem::GetRankPointsRequired() const
+{
+	const auto vRanks = BuildRanks();
+	const int RankIndex = GetCurrentRankIndex(vRanks);
+	const bool IsLastRank = RankIndex >= static_cast<int>(vRanks.size()) - 1;
+	if(IsLastRank)
+		return 0;
+
+	const int RankFloor = vRanks[RankIndex].m_MinRating;
+	const int NextRankFloor = vRanks[RankIndex + 1].m_MinRating;
+	return maximum(1, NextRankFloor - RankFloor);
 }
 
 void RatingSystem::Create()

@@ -414,6 +414,8 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		// Ranking information
 		VoteWrapper VRating(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "Rating information");
 		VRating.Add("Rating: {}({})", pAccount->GetRatingSystem().GetRating(), pAccount->GetRatingSystem().GetRankName());
+		VRating.Add("Progress to {}: {}/{}", pAccount->GetRatingSystem().GetNextRankName(),
+			pAccount->GetRatingSystem().GetRankPointsProgress(), pAccount->GetRatingSystem().GetRankPointsRequired());
 		VRating.Add("Played: {}", pAccount->GetRatingSystem().GetPlayed());
 		VRating.Add("Win: {} / Losses: {}", pAccount->GetRatingSystem().GetWins(), pAccount->GetRatingSystem().GetLosses());
 		VRating.Add("Win rate: {~.2}%", pAccount->GetRatingSystem().GetWinRate());
