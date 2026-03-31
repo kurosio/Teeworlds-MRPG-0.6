@@ -37,7 +37,7 @@ public:
 	template<typename T, typename... Args>
 	int RegisterScenario(int ClientID, Args&&... args) requires std::derived_from<T, PlayerScenarioBase>
 	{
-		int scenarioID = m_NextScenarioID++;
+		const int scenarioID = m_NextScenarioID;
 		auto pScenario = std::make_unique<T>(std::forward<Args>(args)...);
 
 		// This initialization is now internal to the scenario base class
@@ -46,13 +46,16 @@ public:
 		pScenario->m_ScenarioID = scenarioID;
 		pScenario->Start();
 
-		if(!pScenario->IsRunning()) return -1;
+		if(!pScenario->IsRunning())
+			return -1;
 
 		const ScenarioKey key = { ClientID, scenarioID };
 		auto [it, inserted] = m_vScenarios.emplace(key, std::move(pScenario));
-		if(!inserted) return -1;
+		if(!inserted)
+			return -1;
 
 		m_ClientScenarios[ClientID].insert(scenarioID);
+		++m_NextScenarioID;
 		return scenarioID;
 	}
 

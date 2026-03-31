@@ -61,8 +61,13 @@ bool CScenarioPlayerManager::HasActiveScenarios(int ClientID) const noexcept
 bool CScenarioPlayerManager::RemoveScenarioInternal(int ClientID, int ScenarioID)
 {
 	const ScenarioKey key = { ClientID, ScenarioID };
-	if(m_vScenarios.erase(key) == 0)
+	auto scenarioIt = m_vScenarios.find(key);
+	if(scenarioIt == m_vScenarios.end())
 		return false;
+
+	if(scenarioIt->second && scenarioIt->second->IsRunning())
+		scenarioIt->second->Stop();
+	m_vScenarios.erase(scenarioIt);
 
 	auto clientIt = m_ClientScenarios.find(ClientID);
 	if(clientIt != m_ClientScenarios.end())

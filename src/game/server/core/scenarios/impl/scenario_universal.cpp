@@ -302,30 +302,17 @@ void CUniversalScenario::OnSetupScenario()
 
 void CUniversalScenario::ProcessStep(const nlohmann::json& stepJson)
 {
+	if(!stepJson.is_object())
+		return;
+
 	StepId id = stepJson.value("id", "");
-	if(id.empty() || !stepJson.contains("components"))
+	if(id.empty() || !stepJson.contains("components") || !stepJson["components"].is_array())
 		return;
 
 	auto& newStep = AddStep(id,
 		stepJson.value("msg_info", ""),
 		stepJson.value("delay", -1));
-
-	if(const auto logic = stepJson.value("completion_logic", "all_of"); logic == "any_of")
-		newStep.m_CompletionLogic = StepCompletionLogic::ANY_OF;
-	else if(logic == "sequential")
-		newStep.m_CompletionLogic = StepCompletionLogic::SEQUENTIAL;
-
-	for(const auto& compJson : stepJson["components"])
-	{
-		const auto type = compJson.value("type", "");
-		if(type.empty())
-			continue;
-
-		if(auto pComponent = ComponentRegistry::GetInstance().Create(type, compJson, this))
-		{
-			newStep.AddComponent(std::move(pComponent));
-		}
-	}
+	SetupStep(newStep, stepJson);
 }
 
 void CUniversalScenario::CreatePersonalDoor(const std::string& key, const vec2& pos)

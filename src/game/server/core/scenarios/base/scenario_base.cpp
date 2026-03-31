@@ -37,7 +37,13 @@ void ScenarioBase::Start()
 	OnSetupScenario();
 
 	if(m_StartStepId.empty() && !m_mSteps.empty())
-		m_StartStepId = m_vStepOrder.front();
+	{
+		// avoid undefined behavior when steps were added without AddStep().
+		if(!m_vStepOrder.empty())
+			m_StartStepId = m_vStepOrder.front();
+		else
+			m_StartStepId = m_mSteps.begin()->first;
+	}
 
 	if(m_StartStepId.empty() || !m_mSteps.contains(m_StartStepId))
 		return;
@@ -259,15 +265,21 @@ IServer* ScenarioBase::Server() const { return GS()->Server(); }
 
 void ScenarioBase::SetupStep(Step& NewStep, const nlohmann::json& StepJson)
 {
+	if(!StepJson.is_object())
+		return;
+
 	if(const auto logic = StepJson.value("completion_logic", "all_of"); logic == "any_of")
 		NewStep.m_CompletionLogic = StepCompletionLogic::ANY_OF;
 	else if(logic == "sequential")
 		NewStep.m_CompletionLogic = StepCompletionLogic::SEQUENTIAL;
 
-	if(StepJson.contains("components"))
+	if(StepJson.contains("components") && StepJson["components"].is_array())
 	{
 		for(const auto& CompJson : StepJson["components"])
 		{
+			if(!CompJson.is_object())
+				continue;
+
 			const auto Type = CompJson.value("type", "");
 			if(Type.empty())
 				continue;
