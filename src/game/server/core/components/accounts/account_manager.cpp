@@ -296,7 +296,6 @@ class DbRegistration
 
 	static void AuthorizeAfterSuccess(const CRegistrationContextPtr& pContext)
 	{
-		auto* pGS = pContext->GS();
 		const auto& Data = pContext->Data();
 		pContext->Server()->UpdateAccountBase(Data.m_InitID, Data.m_Nickname, g_Config.m_SvMinRating);
 		DbAuthorization::StartAuthorization(Data.m_pAccountManager, pContext->GetClientID(), Data.m_Login, Data.m_Password, Data.m_Nickname);

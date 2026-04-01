@@ -78,16 +78,15 @@ bool CCharacter::Spawn(CPlayer* pPlayer, vec2 Pos)
 
 	if(!m_pPlayer->IsBot())
 	{
-		m_pPlayer->m_MoodState = m_pPlayer->GetMoodState();
+		const bool Spawned = GS()->m_pController->OnCharacterSpawn(this);
+		if(!Spawned)
+			return false;
 
+		m_pPlayer->m_MoodState = m_pPlayer->GetMoodState();
 		GS()->Core()->QuestManager()->Update(m_pPlayer);
 		GS()->Core()->QuestManager()->TryAcceptNextQuestChainAll(m_pPlayer);
-
 		m_pPlayer->m_VotesData.UpdateCurrentVotes();
 		GS()->MarkUpdatedBroadcast(m_ClientID);
-
-		const bool Spawned = GS()->m_pController->OnCharacterSpawn(this);
-		return Spawned;
 	}
 
 	return true;
@@ -583,10 +582,6 @@ bool CCharacter::FireRifle(vec2 Direction, vec2 ProjStartPos, int TotalWeaponDam
 
 void CCharacter::HandleWeapons()
 {
-	// skip unauthed player handle weapon
-	if(!m_pPlayer->IsBot() && !m_pPlayer->IsAuthed())
-		return;
-
 	HandleNinja();
 
 	if(m_ReloadTimer)
