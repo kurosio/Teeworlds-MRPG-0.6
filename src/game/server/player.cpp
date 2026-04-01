@@ -886,21 +886,34 @@ void CPlayer::ShowHealthNickname(int Sec)
 	m_ShowHealthNicknameTick = Server()->Tick() + (Server()->TickSpeed() * Sec);
 }
 
-void CPlayer::ChangeWorld(int WorldID, std::optional<vec2> newWorldPosition)
+bool CPlayer::PendingChangeWorld()
 {
+	if(!m_PendingChangeWorldID.has_value())
+		return false;
+
+	const int WorldID = m_PendingChangeWorldID.value();
+	auto NewWorldPosition = m_PendingChangeWorldPosition;
+	m_PendingChangeWorldID.reset();
+	m_PendingChangeWorldPosition.reset();
+
 	// reset dungeon temporary data
 	auto& tempData = GetSharedData();
 	tempData.m_TempDungeonReady = false;
 
 	// if new position is provided, set the teleport position
-	if(newWorldPosition.has_value())
-	{
-		tempData.SetSpawnPosition(newWorldPosition.value());
-	}
+	if(NewWorldPosition.has_value())
+		tempData.SetSpawnPosition(NewWorldPosition.value());
 
 	// change the player's world
 	Account()->m_aHistoryWorld.push_front(WorldID);
 	Server()->ChangeWorld(m_ClientID, WorldID);
+	return true;
+}
+
+void CPlayer::ChangeWorld(int WorldID, std::optional<vec2> newWorldPosition)
+{
+	m_PendingChangeWorldID = WorldID;
+	m_PendingChangeWorldPosition = newWorldPosition;
 }
 
 int CPlayer::GetCurrentWorldID() const

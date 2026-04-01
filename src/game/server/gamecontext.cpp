@@ -780,6 +780,9 @@ void CGS::OnTick()
 			continue;
 		}
 
+		if(pPlayer->PendingChangeWorld())
+			continue;
+
 		pPlayer->Tick();
 		pPlayer->PostTick();
 		ScenarioPlayerManager()->UpdateClientScenarios(ClientID);
