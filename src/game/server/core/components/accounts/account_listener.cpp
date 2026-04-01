@@ -30,30 +30,68 @@ void CAccountListener::OnPlayerProfessionLeveling(CPlayer* pPlayer, CProfession*
 // leveling tracker
 void CLevelingTracker::LoadTrackingData()
 {
+	//  try load datafile
 	ByteArray RawData;
 	if(!mystd::file::load(LEVELING_TRACKING_FILE_NAME, &RawData))
 	{
-		SaveTrackingData();
-		return;
-	}
-
-	std::string rawString = (char*)RawData.data();
-	bool hasError = mystd::json::parse(rawString, [this](nlohmann::json& jsonData)
-	{
-		for(const auto& item : jsonData["tracking"])
-		{
-			int professionID = item.value("profession_id", -1);
-			TrackingLevelingData data = item.value("detail", TrackingLevelingData {});
-			m_vTrackingData[professionID] = data;
-		}
-	});
-
-	if(hasError)
-	{
-		dbg_msg("leveling_tracking", "Error with initialized '%s'. Creating new...", LEVELING_TRACKING_FILE_NAME);
 		m_vTrackingData.clear();
-		SaveTrackingData();
 	}
+	else
+	{
+		std::string RawString((const char*)RawData.data(), RawData.size());
+		const bool HasError = mystd::json::parse(RawString, [this](nlohmann::json& jsonData)
+		{
+			for(const auto& item : jsonData["tracking"])
+			{
+				const int ProfessionID = item.value("profession_id", -1);
+				if(ProfessionID < 0)
+					continue;
+
+				TrackingLevelingData Data = item.value("detail", TrackingLevelingData {});
+				if(Data.AccountID <= 0 || Data.Level <= 0)
+					continue;
+
+				m_vTrackingData[ProfessionID] = Data;
+			}
+		});
+
+		if(HasError)
+		{
+			dbg_msg("leveling_tracking", "Error with initialized '%s'. Creating new...", LEVELING_TRACKING_FILE_NAME);
+			m_vTrackingData.clear();
+		}
+	}
+
+	// sync by database
+	auto pRes = Database->Execute<DB::SELECT>("UserID, ProfessionID, Data", "tw_accounts_professions", "");
+	std::unordered_map<int, TrackingLevelingData> vFreshTracking {};
+	while(pRes->next())
+	{
+		const int ProfessionID = pRes->getInt("ProfessionID");
+		const int AccountID = pRes->getInt("UserID");
+		if(ProfessionID < 0 || AccountID <= 0)
+			continue;
+
+		int Level = 1;
+		const auto Data = pRes->getString("Data");
+		const bool ParseError = mystd::json::parse(Data, [&Level](nlohmann::json& jsonData)
+		{
+			Level = maximum(1, jsonData.value("level", 1));
+		});
+
+		if(ParseError)
+			continue;
+
+		auto& Entry = vFreshTracking[ProfessionID];
+		if(Level > Entry.Level)
+		{
+			Entry.AccountID = AccountID;
+			Entry.Level = Level;
+		}
+	}
+
+	m_vTrackingData = std::move(vFreshTracking);
+	SaveTrackingData();
 }
 
 
@@ -86,7 +124,6 @@ void CLevelingTracker::UpdateTrackingDataIfNecessary(CPlayer* pPlayer, int Profe
 	auto& TrackingData = m_vTrackingData[ProfessionID];
 	if(NewLevel > TrackingData.Level)
 	{
-		TrackingData.AccountID = pPlayer->Account()->GetID();
 		TrackingData.AccountID = pPlayer->Account()->GetID();
 		TrackingData.Level = NewLevel;
 		SaveTrackingData();
