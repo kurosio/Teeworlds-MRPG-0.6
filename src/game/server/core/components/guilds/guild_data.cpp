@@ -190,8 +190,14 @@ bool CGuild::StartWar(CGuild* pTargetGuild)
 		return false;
 
 	CGuildWarHandler* pWarHandler = CGuildWarHandler::CreateElement();
-	time_t TimeUntilEnd = time(nullptr) + (g_Config.m_SvGuildWarDurationMinutes * 60);
-	pWarHandler->Init({ this, pTargetGuild, 0 }, { pTargetGuild, this, 0 }, TimeUntilEnd);
+	const time_t TimeNow = time(nullptr);
+	const time_t TimeUntilPreparationEnd = TimeNow + (g_Config.m_SvGuildWarPreparationMinutes * 60);
+	const time_t TimeUntilSiegeEnd = TimeUntilPreparationEnd + (g_Config.m_SvGuildWarDurationMinutes * 60);
+	const time_t TimeUntilCooldownEnd = TimeUntilSiegeEnd + (g_Config.m_SvGuildWarHouseCooldownMinutes * 60);
+	pWarHandler->Init({ this, pTargetGuild, 0 }, { pTargetGuild, this, 0 }, TimeUntilPreparationEnd, TimeUntilSiegeEnd, TimeUntilCooldownEnd);
+
+	GS()->ChatGuild(GetID(), "War declared against '{}'. Preparation started.", pTargetGuild->GetName());
+	GS()->ChatGuild(pTargetGuild->GetID(), "Guild '{}' declared war on you. Prepare your defense.", GetName());
 	return true;
 }
 

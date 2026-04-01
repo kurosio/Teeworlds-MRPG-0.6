@@ -30,7 +30,20 @@ public:
 class CGuildWarHandler : public MultiworldIdentifiableData<std::deque <CGuildWarHandler*>>
 {
 	friend class CGuildWarData;
-	time_t m_TimeUntilEnd {};
+	enum class Stage
+	{
+		Preparation,
+		Siege,
+		Cooldown,
+		Finished,
+	};
+
+	time_t m_TimeUntilPreparationEnd {};
+	time_t m_TimeUntilSiegeEnd {};
+	time_t m_TimeUntilCooldownEnd {};
+	Stage m_Stage { Stage::Preparation };
+	bool m_CoreUnlocked {};
+	bool m_DefenseLost {};
 	std::pair<CGuildWarData*, CGuildWarData*> m_pWarData;
 
 public:
@@ -43,8 +56,13 @@ public:
 	}
 
 	void FormatTimeLeft(char* pBuf, int Size) const;
-	void Init(const CGuildWarData& WarData1, const CGuildWarData& WarData2, time_t TimeUntilEnd);
+	void Init(const CGuildWarData& WarData1, const CGuildWarData& WarData2, time_t TimeUntilPreparationEnd, time_t TimeUntilSiegeEnd, time_t TimeUntilCooldownEnd);
 	std::pair<CGuildWarData* , CGuildWarData*> GetWarData() const { return m_pWarData; }
+	bool IsSiegeActive() const { return m_Stage == Stage::Siege; }
+	bool IsCoreUnlocked() const { return m_CoreUnlocked; }
+	bool CanDamageDoors(const CGuild* pAttacker, const CGuild* pDefender) const;
+	void OnRequiredDoorDestroyed(const CGuild* pDefender);
+	void MarkDefenseLost(const CGuild* pDefender, const char* pReason);
 
 	void Handle();
 	void End();

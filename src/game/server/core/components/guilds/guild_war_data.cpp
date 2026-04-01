@@ -2,7 +2,10 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "guild_war_data.h"
 
+#include <game/server/gamecontext.h>
 #include <game/server/core/components/guilds/guild_data.h>
+#include <game/server/core/components/houses/guild_house_data.h>
+#include <components/houses/entities/house_door.h>
 
 CGuildWarData::CGuildWarData(CGuild* pGuild, CGuild* pTargetGuild, int Score)
 {
@@ -34,34 +37,121 @@ CGuildWarHandler::~CGuildWarHandler()
 
 void CGuildWarHandler::FormatTimeLeft(char* pBuf, int Size) const
 {
-	time_t TimeLeft = m_TimeUntilEnd - time(nullptr);
-	str_format(pBuf, Size, "%02dh %02dm", (int)TimeLeft / 3600, (int)(TimeLeft / 60) % 60);
+	const time_t CurrentTime = time(nullptr);
+	time_t TimeLeft = 0;
+	const char* pState = "Finished";
+
+	switch(m_Stage)
+	{
+		case Stage::Preparation:
+			TimeLeft = m_TimeUntilPreparationEnd - CurrentTime;
+			pState = "Preparation";
+			break;
+		case Stage::Siege:
+			TimeLeft = m_TimeUntilSiegeEnd - CurrentTime;
+			pState = "Siege";
+			break;
+		case Stage::Cooldown:
+			TimeLeft = m_TimeUntilCooldownEnd - CurrentTime;
+			pState = "Cooldown";
+			break;
+		default:
+			break;
+	}
+
+	TimeLeft = maximum<time_t>(0, TimeLeft);
+	str_format(pBuf, Size, "%s: %02dh %02dm", pState, (int)TimeLeft / 3600, (int)(TimeLeft / 60) % 60);
 }
 
-void CGuildWarHandler::Init(const CGuildWarData& WarData1, const CGuildWarData& WarData2, time_t TimeUntilEnd)
+void CGuildWarHandler::Init(const CGuildWarData& WarData1, const CGuildWarData& WarData2, time_t TimeUntilPreparationEnd, time_t TimeUntilSiegeEnd, time_t TimeUntilCooldownEnd)
 {
 	m_pWarData = { new CGuildWarData(WarData1), new CGuildWarData(WarData2) };
 	m_pWarData.first->m_pWarHandler = this;
 	m_pWarData.second->m_pWarHandler = this;
 	m_pWarData.first->m_pGuild->m_pWar = m_pWarData.first;
 	m_pWarData.second->m_pGuild->m_pWar = m_pWarData.second;
-	m_TimeUntilEnd = TimeUntilEnd;
+	m_TimeUntilPreparationEnd = TimeUntilPreparationEnd;
+	m_TimeUntilSiegeEnd = TimeUntilSiegeEnd;
+	m_TimeUntilCooldownEnd = TimeUntilCooldownEnd;
+	m_Stage = Stage::Preparation;
+	m_CoreUnlocked = false;
+	m_DefenseLost = false;
 
 	Database->Execute<DB::INSERT>(TW_GUILDS_WARS_TABLE, "(TimeUntilEnd, GuildID1, GuildID2) VALUES ('{}', '{}', '{}')",
-		m_TimeUntilEnd, m_pWarData.first->m_pGuild->GetID(), m_pWarData.second->m_pGuild->GetID());
+		m_TimeUntilCooldownEnd, m_pWarData.first->m_pGuild->GetID(), m_pWarData.second->m_pGuild->GetID());
 	dbg_msg("test", "creating war handler");
+}
+
+bool CGuildWarHandler::CanDamageDoors(const CGuild* pAttacker, const CGuild* pDefender) const
+{
+	if(!pAttacker || !pDefender || !IsSiegeActive() || m_DefenseLost)
+		return false;
+
+	return (m_pWarData.first->GetGuild() == pAttacker && m_pWarData.second->GetGuild() == pDefender) ||
+		(m_pWarData.second->GetGuild() == pAttacker && m_pWarData.first->GetGuild() == pDefender);
+}
+
+void CGuildWarHandler::OnRequiredDoorDestroyed(const CGuild* pDefender)
+{
+	if(!IsSiegeActive() || m_CoreUnlocked || !pDefender || !pDefender->GetHouse())
+		return;
+
+	const auto& Doors = pDefender->GetHouse()->GetDoorManager()->GetContainer();
+	const bool AllDestroyed = std::all_of(Doors.begin(), Doors.end(), [](const auto& pDoor)
+	{
+		return pDoor.second->IsDestroyed();
+	});
+
+	if(AllDestroyed)
+	{
+		auto* pGS = (CGS*)Instance::GameServerPlayer(INITIALIZER_WORLD_ID);
+		m_CoreUnlocked = true;
+		pGS->ChatGuild(m_pWarData.first->GetGuild()->GetID(), "All required doors are destroyed. Core/relic access is now open.");
+		pGS->ChatGuild(m_pWarData.second->GetGuild()->GetID(), "All required doors are destroyed. Core/relic access is now open.");
+		Save();
+	}
+}
+
+void CGuildWarHandler::MarkDefenseLost(const CGuild* pDefender, const char* pReason)
+{
+	if(!IsSiegeActive() || m_DefenseLost || !pDefender)
+		return;
+
+	m_DefenseLost = true;
+	m_Stage = Stage::Cooldown;
+	auto* pGS = (CGS*)Instance::GameServerPlayer(INITIALIZER_WORLD_ID);
+	const auto pAttackerGuild = m_pWarData.first->GetGuild() == pDefender ? m_pWarData.second->GetGuild() : m_pWarData.first->GetGuild();
+	pGS->ChatGuild(pAttackerGuild->GetID(), "Defender lost siege: {}.", pReason);
+	pGS->ChatGuild(pDefender->GetID(), "Your defense is lost: {}.", pReason);
+	Save();
 }
 
 void CGuildWarHandler::Handle()
 {
-	// check end state
-	if(time(nullptr) >= m_TimeUntilEnd)
+	const time_t CurrentTime = time(nullptr);
+	if(m_Stage == Stage::Preparation && CurrentTime >= m_TimeUntilPreparationEnd)
+	{
+		auto* pGS = (CGS*)Instance::GameServerPlayer(INITIALIZER_WORLD_ID);
+		m_Stage = Stage::Siege;
+		pGS->ChatGuild(m_pWarData.first->GetGuild()->GetID(), "Siege window is now open. Attackers can damage doors.");
+		pGS->ChatGuild(m_pWarData.second->GetGuild()->GetID(), "Siege window is now open. Attackers can damage doors.");
+		Save();
+	}
+
+	if(m_Stage == Stage::Siege && (CurrentTime >= m_TimeUntilSiegeEnd))
+	{
+		auto* pGS = (CGS*)Instance::GameServerPlayer(INITIALIZER_WORLD_ID);
+		m_Stage = Stage::Cooldown;
+		pGS->ChatGuild(m_pWarData.first->GetGuild()->GetID(), "Siege is over. House entered protection cooldown.");
+		pGS->ChatGuild(m_pWarData.second->GetGuild()->GetID(), "Siege is over. House entered protection cooldown.");
+		Save();
+	}
+
+	if(m_Stage == Stage::Cooldown && CurrentTime >= m_TimeUntilCooldownEnd)
 	{
 		End();
 		return;
 	}
-
-	//dbg_msg("test", "%ld - %ld", time(nullptr), m_TimeUntilEnd);
 }
 
 void CGuildWarHandler::End()
@@ -82,5 +172,5 @@ void CGuildWarHandler::End()
 void CGuildWarHandler::Save() const
 {
 	Database->Execute<DB::UPDATE>(TW_GUILDS_WARS_TABLE, "TimeUntilEnd = '{}', Score1 = '{}', Score2 = '{}' WHERE GuildID1 = '{}' AND GuildID2 = '{}'",
-		m_TimeUntilEnd, m_pWarData.first->GetScore(), m_pWarData.second->GetScore(), m_pWarData.first->GetGuild()->GetID(), m_pWarData.second->GetGuild()->GetID());
+		m_TimeUntilCooldownEnd, m_pWarData.first->GetScore(), m_pWarData.second->GetScore(), m_pWarData.first->GetGuild()->GetID(), m_pWarData.second->GetGuild()->GetID());
 }

@@ -157,7 +157,10 @@ MACRO_CONFIG_INT(SvMaxAuctionSlots, sv_max_auction_slots, 50, 10, 300, CFGFLAG_S
 MACRO_CONFIG_INT(SvGuildLowUpgradePrice, sv_guild_low_upgrade_price, 10000, 100, 9000000, CFGFLAG_SERVER, "Low upgrade price")
 MACRO_CONFIG_INT(SvGuildMediumUpgradePrice, sv_guild_medium_upgrade_price, 25000, 100, 9000000, CFGFLAG_SERVER, "Medium upgrade price")
 MACRO_CONFIG_INT(SvGuildHighUpgradePrice, sv_guild_high_upgrade_price, 50000, 100, 9000000, CFGFLAG_SERVER, "High upgrade price")
-MACRO_CONFIG_INT(SvGuildWarDurationMinutes, sv_guild_war_duration_minutes, 30, 1, 240, CFGFLAG_SERVER, "Duration of a guild war in minutes")
+MACRO_CONFIG_INT(SvGuildWarPreparationMinutes, sv_guild_war_preparation_minutes, 5, 1, 180, CFGFLAG_SERVER, "Preparation time before the siege starts")
+MACRO_CONFIG_INT(SvGuildWarDurationMinutes, sv_guild_war_duration_minutes, 20, 1, 240, CFGFLAG_SERVER, "Duration of active guild siege in minutes")
+MACRO_CONFIG_INT(SvGuildWarHouseCooldownMinutes, sv_guild_war_house_cooldown_minutes, 60, 1, 1440, CFGFLAG_SERVER, "Guild house protection cooldown after siege")
+MACRO_CONFIG_INT(SvGuildWarDoorDamage, sv_guild_war_door_damage, 25, 1, 10000, CFGFLAG_SERVER, "Damage dealt to guild doors by attackers per hit")
 
 
 // -----------------------

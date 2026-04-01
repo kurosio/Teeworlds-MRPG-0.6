@@ -1719,7 +1719,9 @@ void CGuildManager::ShowDeclareWarMenu(int ClientID) const
 	// TODO
 	VoteWrapper VWar(ClientID);
 	VWar.Add("\u2646 Declare war on another guild");
-	VWar.Add("Cooldown: {# (minute|minutes)}", 10);
+	VWar.Add("Preparation: {# (minute|minutes)}", g_Config.m_SvGuildWarPreparationMinutes);
+	VWar.Add("Siege window: {# (minute|minutes)}", g_Config.m_SvGuildWarDurationMinutes);
+	VWar.Add("House cooldown: {# (minute|minutes)}", g_Config.m_SvGuildWarHouseCooldownMinutes);
 	VWar.AddLine();
 
 	if(pGuild->GetWar())

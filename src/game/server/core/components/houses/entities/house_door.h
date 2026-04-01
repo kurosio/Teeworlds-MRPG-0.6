@@ -58,8 +58,10 @@ public:
 	void Open();
 	void Close();
 	void Reverse();
+	bool TryDamage(int Damage);
 
 	constexpr bool IsClosed() const { return m_State == State::Closed; }
+	bool IsDestroyed() const { return m_DurabilityManager.IsDestroyed(); }
 	const std::string& GetName() const { return m_Name; }
 
 private:

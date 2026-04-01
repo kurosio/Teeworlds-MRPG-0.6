@@ -8,6 +8,7 @@
 
 #include <components/houses/guild_house_data.h>
 #include <components/houses/house_data.h>
+#include <game/server/core/components/guilds/guild_data.h>
 
 void CDoorDurability::Init(IHouse* pHouse)
 {
@@ -123,6 +124,19 @@ void CEntityHouseDoor::Reverse()
 		Open();
 }
 
+bool CEntityHouseDoor::TryDamage(int Damage)
+{
+	if(!IsClosed() || m_DurabilityManager.IsDestroyed())
+		return false;
+
+	const bool IsAlive = m_DurabilityManager.TakeDamage(Damage);
+	if(!IsAlive)
+	{
+		Open();
+	}
+	return true;
+}
+
 bool CEntityHouseDoor::PlayerHouseTick(CHouse* pHouse)
 {
 	if(!pHouse)
@@ -221,8 +235,31 @@ bool CEntityHouseDoor::GuildHouseTick(CGuildHouse* pHouse)
 			}
 			else
 			{
-				// TODO: Add logic durability house.
-				GS()->Broadcast(ClientID, BroadcastPriority::GameInformation, 10, "You do not have access to '{}' door!", m_Name);
+				auto* pDefenderGuild = HouseIsPurchased ? pHouse->GetGuild() : nullptr;
+				auto* pWarData = pGuild ? pGuild->GetWar() : nullptr;
+				if(pWarData && pDefenderGuild &&
+					pWarData->GetHandler()->CanDamageDoors(pGuild, pDefenderGuild))
+				{
+					if(Server()->Input()->IsKeyClicked(ClientID, KEY_EVENT_FIRE_HAMMER))
+					{
+						if(TryDamage(g_Config.m_SvGuildWarDoorDamage))
+							GS()->EntityManager()->DesignRandomDrop(3 + rand() % 3, 12.0f,
+								m_PosControll, Server()->TickSpeed(), POWERUP_ARMOR, 0, CmaskOne(pPlayer->GetCID()));
+
+						if(IsDestroyed())
+						{
+							pWarData->GetHandler()->OnRequiredDoorDestroyed(pDefenderGuild);
+							GS()->Chat(ClientID, "Door '{}' destroyed.", m_Name);
+						}
+						else
+						{
+							GS()->Broadcast(ClientID, BroadcastPriority::GameInformation, 100, "Siege hit '{}': {}/{} HP.",
+								m_Name, m_DurabilityManager.GetHealth(), m_DurabilityManager.GetMaxHealth());
+						}
+					}
+				}
+				else
+					GS()->Broadcast(ClientID, BroadcastPriority::GameInformation, 10, "You do not have access to '{}' door!", m_Name);
 			}
 		}
 
