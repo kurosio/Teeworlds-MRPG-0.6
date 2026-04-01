@@ -20,6 +20,7 @@ public:
 	void Init(IHouse* pHouse);
 	bool IncreaseHealth(int Health);
 	bool TakeDamage(int Damage);
+	void Restore();
 	void Tick();
 
 	int GetHealth() const { return m_Health; }
@@ -58,6 +59,7 @@ public:
 	void Open();
 	void Close();
 	void Reverse();
+	void Restore();
 	bool TryDamage(int Damage);
 
 	constexpr bool IsClosed() const { return m_State == State::Closed; }

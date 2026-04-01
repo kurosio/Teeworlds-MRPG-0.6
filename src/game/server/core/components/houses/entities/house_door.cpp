@@ -33,6 +33,12 @@ bool CDoorDurability::TakeDamage(int Damage)
 	return m_Health > 0;
 }
 
+void CDoorDurability::Restore()
+{
+	m_Health = GetMaxHealth();
+	m_LastDamageTick = Instance::Server()->Tick();
+}
+
 void CDoorDurability::Tick()
 {
 	auto* pServer = Instance::Server();
@@ -122,6 +128,12 @@ void CEntityHouseDoor::Reverse()
 		Close();
 	else
 		Open();
+}
+
+void CEntityHouseDoor::Restore()
+{
+	m_DurabilityManager.Restore();
+	Close();
 }
 
 bool CEntityHouseDoor::TryDamage(int Damage)

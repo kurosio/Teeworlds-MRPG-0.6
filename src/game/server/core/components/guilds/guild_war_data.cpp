@@ -7,6 +7,22 @@
 #include <game/server/core/components/houses/guild_house_data.h>
 #include <components/houses/entities/house_door.h>
 
+namespace
+{
+	void RestoreGuildDoors(CGuild* pGuild)
+	{
+		if(!pGuild || !pGuild->GetHouse())
+			return;
+
+		auto& Doors = pGuild->GetHouse()->GetDoorManager()->GetContainer();
+		for(auto& [DoorID, pDoor] : Doors)
+		{
+			if(pDoor)
+				pDoor->Restore();
+		}
+	}
+}
+
 CGuildWarData::CGuildWarData(CGuild* pGuild, CGuild* pTargetGuild, int Score)
 {
 	m_pGuild = pGuild;
@@ -74,7 +90,6 @@ void CGuildWarHandler::Init(const CGuildWarData& WarData1, const CGuildWarData& 
 	m_TimeUntilSiegeEnd = TimeUntilSiegeEnd;
 	m_TimeUntilCooldownEnd = TimeUntilCooldownEnd;
 	m_Stage = Stage::Preparation;
-	m_CoreUnlocked = false;
 	m_DefenseLost = false;
 
 	Database->Execute<DB::INSERT>(TW_GUILDS_WARS_TABLE, "(TimeUntilEnd, GuildID1, GuildID2) VALUES ('{}', '{}', '{}')",
@@ -93,11 +108,11 @@ bool CGuildWarHandler::CanDamageDoors(const CGuild* pAttacker, const CGuild* pDe
 
 void CGuildWarHandler::OnRequiredDoorDestroyed(const CGuild* pDefender)
 {
-	if(!IsSiegeActive() || m_CoreUnlocked || !pDefender || !pDefender->GetHouse())
+	if(!IsSiegeActive() || m_DefenseLost || !pDefender || !pDefender->GetHouse())
 		return;
 
 	const auto& Doors = pDefender->GetHouse()->GetDoorManager()->GetContainer();
-	const bool AllDestroyed = std::all_of(Doors.begin(), Doors.end(), [](const auto& pDoor)
+	const bool AllDestroyed = std::ranges::all_of(Doors, [](const auto& pDoor)
 	{
 		return pDoor.second->IsDestroyed();
 	});
@@ -105,10 +120,27 @@ void CGuildWarHandler::OnRequiredDoorDestroyed(const CGuild* pDefender)
 	if(AllDestroyed)
 	{
 		auto* pGS = (CGS*)Instance::GameServerPlayer(INITIALIZER_WORLD_ID);
-		m_CoreUnlocked = true;
-		pGS->ChatGuild(m_pWarData.first->GetGuild()->GetID(), "All required doors are destroyed. Core/relic access is now open.");
-		pGS->ChatGuild(m_pWarData.second->GetGuild()->GetID(), "All required doors are destroyed. Core/relic access is now open.");
-		Save();
+		const auto* pAttackerGuild = m_pWarData.first->GetGuild() == pDefender ? m_pWarData.second->GetGuild() : m_pWarData.first->GetGuild();
+		const int BankLossPercent = clamp(g_Config.m_SvGuildWarDefeatBankLossPercent, 0, 100);
+		const auto DefenderBank = pDefender->GetBankManager()->Get();
+		const auto PenaltyRaw = (DefenderBank * BankLossPercent) / 100;
+
+		if(PenaltyRaw > 0)
+		{
+			if(pDefender->GetBankManager()->Spend(PenaltyRaw))
+				pAttackerGuild->GetBankManager()->Add(PenaltyRaw);
+		}
+
+		pGS->ChatGuild(m_pWarData.first->GetGuild()->GetID(),
+			"All defending doors are destroyed. {} lost the war. {}% of treasury ({$} gold) transferred to '{}'.",
+			pDefender->GetName(), BankLossPercent, PenaltyRaw, pAttackerGuild->GetName());
+		pGS->ChatGuild(m_pWarData.second->GetGuild()->GetID(),
+			"All defending doors are destroyed. {} lost the war. {}% of treasury ({$} gold) transferred to '{}'.",
+			pDefender->GetName(), BankLossPercent, PenaltyRaw, pAttackerGuild->GetName());
+
+		MarkDefenseLost(pDefender, "all guild house doors destroyed");
+		RestoreGuildDoors(m_pWarData.first->GetGuild());
+		RestoreGuildDoors(m_pWarData.second->GetGuild());
 	}
 }
 

@@ -161,6 +161,7 @@ MACRO_CONFIG_INT(SvGuildWarPreparationMinutes, sv_guild_war_preparation_minutes,
 MACRO_CONFIG_INT(SvGuildWarDurationMinutes, sv_guild_war_duration_minutes, 20, 1, 240, CFGFLAG_SERVER, "Duration of active guild siege in minutes")
 MACRO_CONFIG_INT(SvGuildWarHouseCooldownMinutes, sv_guild_war_house_cooldown_minutes, 60, 1, 1440, CFGFLAG_SERVER, "Guild house protection cooldown after siege")
 MACRO_CONFIG_INT(SvGuildWarDoorDamage, sv_guild_war_door_damage, 25, 1, 10000, CFGFLAG_SERVER, "Damage dealt to guild doors by attackers per hit")
+MACRO_CONFIG_INT(SvGuildWarDefeatBankLossPercent, sv_guild_war_defeat_bank_loss_percent, 20, 0, 100, CFGFLAG_SERVER, "Percent of defender guild bank lost after all guild house doors are destroyed")
 
 
 // -----------------------

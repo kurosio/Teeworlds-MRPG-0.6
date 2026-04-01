@@ -623,6 +623,18 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 			GS()->Chat(ClientID, "This guild cannot be declared war at this time.");
 			return true;
 		}
+		
+		if(pGuild->GetMembers()->GetOnlineCount() < 1)
+		{
+			GS()->Chat(ClientID, "At least 1 online member from your guild is required to start a war.");
+			return true;
+		}
+
+		if(pWarGuild->GetMembers()->GetOnlineCount() < 1)
+		{
+			GS()->Chat(ClientID, "The target guild must have at least 1 online member to start a war.");
+			return true;
+		}
 
 		// result
 		if(pGuild->StartWar(pWarGuild))
