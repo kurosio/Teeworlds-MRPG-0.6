@@ -149,7 +149,6 @@ class DbAuthorization
 		pInitGS->m_pController->DoTeamChange(pInitPlayer);
 		Data.m_pAccountManager->LoadAccount(pInitPlayer, true);
 		g_EventListenerManager.Notify<IEventListener::PlayerLogin>(pInitPlayer, pInitPlayer->Account());
-		pInitPlayer->KillCharacter();
 	}
 
 public:
