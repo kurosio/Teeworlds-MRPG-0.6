@@ -5,6 +5,7 @@
 
 #include "ringbuffer.h"
 #include "stun.h"
+#include "connection_flood_protection.h"
 
 #include <base/math.h>
 #include <base/system.h>
@@ -382,6 +383,7 @@ class CNetServer
 	int m_VConnNum;
 
 	CSpamConn m_aSpamConns[NET_CONNLIMIT_IPS];
+	CConnectionFloodProtection m_ConnectionFloodProtection;
 
 	CNetRecvUnpacker m_RecvUnpacker;
 
@@ -394,6 +396,7 @@ class CNetServer
 
 	int TryAcceptClient(NETADDR &Addr, SECURITY_TOKEN SecurityToken, bool VanillaAuth = false, SECURITY_TOKEN Token = 0);
 	int NumClientsWithAddr(NETADDR Addr);
+	int NumOccupiedClientSlots() const;
 	bool Connlimit(NETADDR Addr);
 	void SendMsgs(NETADDR &Addr, const CPacker **ppMsgs, int Num);
 

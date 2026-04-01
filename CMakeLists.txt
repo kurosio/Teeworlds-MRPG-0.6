@@ -588,6 +588,8 @@ set_src(ENGINE_SHARED GLOB src/engine/shared
   config.cpp
   config.h
   config_variables.h
+  connection_flood_protection.cpp
+  connection_flood_protection.h
   console.cpp
   console.h
   datafile.cpp

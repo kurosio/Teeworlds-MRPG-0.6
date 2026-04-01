@@ -58,6 +58,7 @@ bool CNetServer::Open(NETADDR BindAddr, CNetBan *pNetBan, int MaxClients, int Ma
 
 	m_VConnNum = 0;
 	m_VConnFirst = 0;
+	m_ConnectionFloodProtection.Reset();
 
 	secure_random_fill(m_aSecurityTokenSeed, sizeof(m_aSecurityTokenSeed));
 
@@ -206,6 +207,16 @@ int CNetServer::TryAcceptClient(NETADDR &Addr, SECURITY_TOKEN SecurityToken, boo
 		return -1; // failed to add client
 	}
 
+	const auto FloodDecision = m_ConnectionFloodProtection.OnConnectionAttempt(Addr, NumOccupiedClientSlots(), MaxClients());
+	if(FloodDecision != CConnectionFloodProtection::DECISION_ALLOW)
+	{
+		const char *pReason = FloodDecision == CConnectionFloodProtection::DECISION_DROP_SUBNET ?
+								  "Connection flood detected from your network" :
+								  "Server is temporarily busy, try again in a moment";
+		CNetBase::SendControlMsg(m_Socket, &Addr, 0, NET_CTRLMSG_CLOSE, pReason, str_length(pReason) + 1, SecurityToken);
+		return -1;
+	}
+
 	// check for sv_max_clients_per_ip
 	if(NumClientsWithAddr(Addr) + 1 > m_MaxClientsPerIP)
 	{
@@ -235,6 +246,7 @@ int CNetServer::TryAcceptClient(NETADDR &Addr, SECURITY_TOKEN SecurityToken, boo
 
 	// init connection slot
 	m_aSlots[Slot].m_Connection.DirectInit(Addr, SecurityToken, Token);
+	m_ConnectionFloodProtection.OnSuccessfulConnect(Addr);
 
 	if(VanillaAuth)
 	{
@@ -258,6 +270,17 @@ int CNetServer::TryAcceptClient(NETADDR &Addr, SECURITY_TOKEN SecurityToken, boo
 		m_pfnNewClient(Slot, m_pUser);
 
 	return Slot; // done
+}
+
+int CNetServer::NumOccupiedClientSlots() const
+{
+	int Occupied = 0;
+	for(int i = 0; i < MaxClients(); ++i)
+	{
+		if(m_aSlots[i].m_Connection.State() != NET_CONNSTATE_OFFLINE)
+			Occupied++;
+	}
+	return Occupied;
 }
 
 void CNetServer::SendMsgs(NETADDR &Addr, const CPacker **ppMsgs, int Num)
