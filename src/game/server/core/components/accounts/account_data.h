@@ -210,10 +210,9 @@ struct CAccountSharedData
 	CAuctionSlot m_TempAuctionSlot;
 
 	// guest account data
-	bool m_WaitingGuestTimeoutAuth {};
+	int m_AuthType {};
 	std::string m_TimeoutCode {};
 	std::string m_GuestLogin {};
-	bool m_GotTimeoutCode {};
 
 	// temp for searching
 	char m_aGuildSearchBuf[32] {};

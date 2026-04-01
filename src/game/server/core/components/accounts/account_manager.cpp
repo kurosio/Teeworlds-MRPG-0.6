@@ -129,7 +129,6 @@ class DbAuthorization
 		}
 
 		const auto& Data = pContext->Data();
-		pPlayer->GetSharedData().m_WaitingGuestTimeoutAuth = false;
 		if(!pPlayer->GetSharedData().m_GuestLogin.empty() && Data.m_Login != pPlayer->GetSharedData().m_GuestLogin)
 			pPlayer->GetSharedData().m_GuestLogin.clear();
 
@@ -300,14 +299,6 @@ class DbRegistration
 		auto* pGS = pContext->GS();
 		const auto& Data = pContext->Data();
 		pContext->Server()->UpdateAccountBase(Data.m_InitID, Data.m_Nickname, g_Config.m_SvMinRating);
-
-		if(auto* pPlayer = pContext->GetPlayer(false))
-		{
-			pPlayer->m_AuthMenuAllowRegister = false;
-			if(pPlayer->IsSameMotdMenu(MOTD_MENU_AUTH))
-				pGS->SendMenuMotd(pPlayer, MOTD_MENU_AUTH);
-		}
-
 		DbAuthorization::StartAuthorization(Data.m_pAccountManager, pContext->GetClientID(), Data.m_Login, Data.m_Password, Data.m_Nickname);
 	}
 
@@ -826,33 +817,6 @@ bool CAccountManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
 {
 	int ClientID = pPlayer->GetCID();
 
-	// motd menu auth
-	if(Menulist == MOTD_MENU_AUTH)
-	{
-		if(pPlayer->IsAuthed())
-			return false;
-
-		MotdMenu MAuth(ClientID, "Use commands in chat: '/<text>' to edit fields.");
-		MAuth.AddText("Account login / registration");
-		MAuth.AddSeparateLine();
-		MAuth.AddLine();
-		MAuth.AddText("Login:");
-		MAuth.AddField(AUTH_FIELD_LOGIN);
-		MAuth.AddLine();
-		MAuth.AddText("Password:");
-		MAuth.AddField(AUTH_FIELD_PASSWORD, MTTEXTINPUTFLAG_PASSWORD);
-		MAuth.AddLine();
-		MAuth.AddSeparateLine();
-
-		if(pPlayer->m_AuthMenuAllowRegister)
-			MAuth.AddOption("AUTH_REGISTER", "Create account");
-		else
-			MAuth.AddOption("AUTH_LOGIN", "Log in");
-
-		MAuth.Send(MOTD_MENU_AUTH);
-		return true;
-	}
-
 	// motd menu bank
 	if(Menulist == MOTD_MENU_BANK_MANAGER)
 	{
@@ -1002,32 +966,6 @@ bool CAccountManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
 
 bool CAccountManager::OnPlayerMotdCommand(CPlayer* pPlayer, CMotdPlayerData* pMotdData, const char* pCmd)
 {
-	// register by motd menu ui
-	if(strcmp(pCmd, "AUTH_LOGIN") == 0 || strcmp(pCmd, "AUTH_REGISTER") == 0)
-	{
-		const auto LoginOpt = pMotdData->GetFieldStr(AUTH_FIELD_LOGIN);
-		const auto PassOpt = pMotdData->GetFieldStr(AUTH_FIELD_PASSWORD);
-		if(!LoginOpt.has_value() || !PassOpt.has_value())
-		{
-			GS()->Chat(pPlayer->GetCID(), "Fill both fields: login and password.");
-			return true;
-		}
-
-		if(strcmp(pCmd, "AUTH_LOGIN") == 0)
-		{
-			LoginAccount(pPlayer->GetCID(), LoginOpt->c_str(), PassOpt->c_str());
-			return true;
-		}
-
-		const auto Result = RegisterAccount(pPlayer->GetCID(), LoginOpt->c_str(), PassOpt->c_str());
-		if(Result == AccountCodeResult::AOP_REGISTER_OK)
-		{
-			pPlayer->m_AuthMenuAllowRegister = false;
-			GS()->SendMenuMotd(pPlayer, MOTD_MENU_AUTH);
-		}
-		return true;
-	}
-
 	// deposit bank gold
 	if(strcmp(pCmd, "BANK_DEPOSIT") == 0)
 	{
@@ -1135,16 +1073,15 @@ void CAccountManager::TryLoginGuestByTimeoutCode(int ClientID, const char* pNick
 	pCheck->AtExecute([this, ClientID, GuestLogin = std::string(pGuestLogin)](ResultPtr pRes)
 	{
 		auto* pPlayer = GS()->GetPlayer(ClientID, false);
-		if(!pPlayer || pPlayer->IsAuthed() || !pPlayer->GetSharedData().m_WaitingGuestTimeoutAuth)
+		if(!pPlayer || pPlayer->IsAuthed())
 			return;
 
 		if(!pRes->next())
 		{
-			GS()->Chat(ClientID, "Invalid auth timeout code. Please try /timeout <code> again.");
+			GS()->Chat(ClientID, "Invalid timeout code. Please try /timeout <code> again.");
 			return;
 		}
 
-		pPlayer->GetSharedData().m_WaitingGuestTimeoutAuth = false;
 		LoginAccountRaw(ClientID, GuestLogin.c_str(), GuestLogin.c_str());
 		GS()->Chat(ClientID, mystd::aesthetic::wrapLinePillar(12).c_str());
 		GS()->Chat(ClientID, "Timeout authorization successful.");

@@ -776,6 +776,5 @@ void CAccountData::UpdateAuthTimeoutCodeIfNeeded()
 			}
 		},
 		"tw_accounts a JOIN tw_accounts_data d ON d.ID = a.ID", "a.TimeoutCode = '{}' WHERE d.Nick = '{}' AND a.TimeoutCode != '{}'", cCode.cstr(), cNick.cstr(), cCode.cstr());
-		pPlayer->GetSharedData().m_TimeoutCode.clear();
 	}
 }

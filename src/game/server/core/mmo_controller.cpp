@@ -649,19 +649,17 @@ void CMmoController::AsyncClientEnterMsgInfo(std::string_view ClientName, int Cl
 		if(!pPlayer)
 			return;
 
-		// create guest account
+		// first enter
 		const bool HasAccount = pRes->next();
 		const std::string GuestCredential = CAccountManager::BuildGuestCredential(CapturedNickname.c_str());
-		pPlayer->GetSharedData().m_WaitingGuestTimeoutAuth = false;
+		pPlayer->GetSharedData().m_AuthType = AUTH_TYPE_NONE;
 		if(!HasAccount)
 		{
+			pPlayer->GetSharedData().m_AuthType = AUTH_TYPE_REGISTRATION;
 			pPlayer->GetSharedData().m_GuestLogin = GuestCredential;
-
 			pGS->Chat(-1, "Apparently, we have a new player, '{}'!", CapturedNickname);
-			pGS->Chat(ClientID, "You are now in guest mode.");
-			pGS->Chat(ClientID, "Progress can be lost in guest mode.");
-			pGS->Chat(ClientID, "Create account: /register <login> <pass>.");
-			pGS->Core()->AccountManager()->RegisterGuestAccount(ClientID, CapturedNickname.c_str());
+			pGS->Chat(ClientID, "Register with /register <login> <pass>.");
+			pGS->Chat(ClientID, "Play as a guest via 'Esc → Play' and save progress later.");
 			return;
 		}
 
@@ -671,33 +669,23 @@ void CMmoController::AsyncClientEnterMsgInfo(std::string_view ClientName, int Cl
 		const bool IsGuest = CAccountManager::IsGuestCredentialForNickname(Login, CapturedNickname.c_str());
 		const bool HasTimeoutCode = !TimeoutCode.empty();
 
-		// guest auth (timeout or unsafe)
+		// guest or default auth
 		if(IsGuest)
 		{
 			pPlayer->GetSharedData().m_GuestLogin = GuestCredential;
+			pGS->Chat(ClientID, "Press ESC and click 'Play' to continue as guest.");
 			if(HasTimeoutCode)
 			{
+				pPlayer->GetSharedData().m_AuthType = AUTH_TYPE_TIMEOUT;
 				pGS->Chat(ClientID, "Guest account is protected by timeout code.");
-				pPlayer->GetSharedData().m_WaitingGuestTimeoutAuth = true;
-				if(pPlayer->GetSharedData().m_GotTimeoutCode && !pPlayer->GetSharedData().m_TimeoutCode.empty())
-				{
-					pGS->Core()->AccountManager()->TryLoginGuestByTimeoutCode(ClientID, CapturedNickname.c_str(),
-						pPlayer->GetSharedData().m_TimeoutCode.c_str(), GuestCredential.c_str());
-				}
 			}
 			else
-				pGS->Core()->AccountManager()->LoginAccountRaw(ClientID, GuestCredential.c_str(), GuestCredential.c_str());
+				pPlayer->GetSharedData().m_AuthType = AUTH_TYPE_GUEST;
 		}
 		else
 		{
-			pPlayer->GetSharedData().m_GuestLogin.clear();
-			if(pPlayer && !pPlayer->IsAuthed())
-			{
-				pPlayer->m_AuthMenuAllowRegister = !HasAccount;
-				pGS->SendMenuMotd(pPlayer, MOTD_MENU_AUTH);
-			}
-			pGS->Chat(ClientID, "Please log in: /login <login> <pass>.");
-			pGS->Chat(ClientID, "If you are new, register: /register <login> <pass>.");
+			pPlayer->GetSharedData().m_AuthType = AUTH_TYPE_LOGIN;
+			pGS->Chat(ClientID, "Use /login <login> <pass> to sign in.");
 		}
 	});
 }

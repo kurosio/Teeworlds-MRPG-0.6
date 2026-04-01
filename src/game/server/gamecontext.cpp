@@ -977,9 +977,50 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 				return;
 
 			pPlayer->m_aPlayerTick[LastChangeTeam] = Server()->Tick() + Server()->TickSpeed();
-			const char* pMsgText = !pPlayer->IsAuthed() ? "Authorization required.\n/login <login> <pass> or /register <login> <pass>." : "Team change is not allowed.";
-			Broadcast(pPlayer->GetCID(), BroadcastPriority::MainInformation, 100, pMsgText);
+
+			// already authed
+			if(pPlayer->IsAuthed())
+			{
+				Broadcast(pPlayer->GetCID(), BroadcastPriority::MainInformation, 100, "Team change is not allowed.");
+				return;
+			}
+
+			// initialize variables
+			const auto ClientCID = pPlayer->GetCID();
+			const auto& SharedData = pPlayer->GetSharedData();
+			const auto Nickname = Server()->ClientName(ClientCID);
+
+			// logic auth / register
+			if(SharedData.m_AuthType == AUTH_TYPE_NONE)
+				Chat(ClientCID, "Guest mode is unavailable. Please try again later.");
+			else if(SharedData.m_AuthType == AUTH_TYPE_REGISTRATION)
+			{
+				Core()->AccountManager()->RegisterGuestAccount(ClientCID, Nickname);
+				Chat(ClientCID, "Guest account created. Entering the game...");
+			}
+			else if(SharedData.m_AuthType == AUTH_TYPE_TIMEOUT)
+			{
+				if(SharedData.m_TimeoutCode.empty())
+				{
+					Chat(ClientCID, "Guest account is protected by timeout code.");
+					Chat(ClientCID, "Set timeout code and press 'Play' again.");
+					Chat(ClientCID, "Use: /timeout <code>.");
+				}
+				else
+					Core()->AccountManager()->TryLoginGuestByTimeoutCode(ClientCID, Nickname, SharedData.m_TimeoutCode.c_str(), SharedData.m_GuestLogin.c_str());
+			}
+			else if(SharedData.m_AuthType == AUTH_TYPE_GUEST)
+			{
+				Core()->AccountManager()->LoginAccountRaw(ClientCID, SharedData.m_GuestLogin.c_str(), SharedData.m_GuestLogin.c_str());
+				Chat(ClientCID, "Entering the game in guest mode...");
+			}
+			else if(SharedData.m_AuthType == AUTH_TYPE_LOGIN)
+			{
+				Broadcast(pPlayer->GetCID(), BroadcastPriority::MainInformation, 100, "Authorization required.\nUse /login <login> <pass>.");
+			}
+
 			return;
+
 		}
 
 		if(MsgID == NETMSGTYPE_CL_SETSPECTATORMODE)

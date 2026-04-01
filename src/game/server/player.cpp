@@ -104,10 +104,7 @@ void CPlayer::GetFormatedName(char* aBuffer, int BufferSize)
 void CPlayer::Tick()
 {
 	if(!IsAuthed())
-	{
-		NotAuthTick();
 		return;
-	}
 
 	// do latency stuff
 	{
@@ -408,8 +405,7 @@ void CPlayer::RefreshClanTagString()
 	// is not authed send only clan
 	if(!IsAuthed())
 	{
-		str_copy(m_aRotateClanBuffer, "Unauthorized", sizeof(m_aRotateClanBuffer));
-		str_copy(m_aInitialClanBuffer, m_aRotateClanBuffer, sizeof(m_aInitialClanBuffer));
+		str_copy(m_aRotateClanBuffer, Server()->ClientClan(m_ClientID), sizeof(m_aRotateClanBuffer));
 		return;
 	}
 
@@ -580,7 +576,7 @@ void CPlayer::OnPredictedInput(CNetObj_PlayerInput* pNewInput) const
 
 int CPlayer::GetTeam()
 {
-	return TEAM_RED;
+	return IsAuthed() ? TEAM_RED : TEAM_SPECTATORS;
 }
 
 /* #########################################################################
@@ -696,31 +692,6 @@ void CPlayer::FormatBroadcastBasicStats(char* pBuffer, int Size, const char* pAp
 	}
 
 	str_format(pBuffer, Size, "%s%-200s", Result.c_str(), pAppendStr);
-}
-
-void CPlayer::NotAuthTick()
-{
-	if(m_pCharacter)
-	{
-		if(m_pCharacter->IsAlive())
-			m_ViewPos = m_pCharacter->GetPos();
-		else
-		{
-			delete m_pCharacter;
-			m_pCharacter = nullptr;
-		}
-	}
-	else if(m_WantSpawn)
-		TryRespawn();
-
-	if(m_pMotdMenu)
-		m_pMotdMenu->Tick();
-
-	if(Server()->Tick() % (Server()->TickSpeed() * 3) == 0)
-	{
-		GS()->Broadcast(m_ClientID, BroadcastPriority::MainInformation, Server()->TickSpeed() * 3,
-			"Authorization required: /login <login> <pass>.\nNew player? Use /register <login> <pass>.");
-	}
 }
 
 /* #########################################################################

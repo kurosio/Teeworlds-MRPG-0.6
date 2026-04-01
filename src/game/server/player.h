@@ -67,8 +67,6 @@ public:
 	std::optional<ItemType> m_InventoryItemTypeFilter{};
 	std::optional<int> m_GroupFilter{};
 	std::optional<int> m_SubgroupFilter {};
-	bool m_AuthMenuAllowRegister {};
-
 
 	char m_aLastMsg[256]{};
 	StructLatency m_Latency;
@@ -125,7 +123,6 @@ public:
 	int GetTotalAttributeValue(AttributeIdentifier AttributeID) const;
 	void UpdateTotalAttributeValue(AttributeIdentifier AttributeID, int Value) { m_aStats[AttributeID] = Value; }
 	void FormatBroadcastBasicStats(char* pBuffer, int Size, const char* pAppendStr = "\0") const;
-	void NotAuthTick();
 
 	bool IsGuestLogin() const { return !GetSharedData().m_GuestLogin.empty(); }
 

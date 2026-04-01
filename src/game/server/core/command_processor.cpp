@@ -500,10 +500,6 @@ void CCommandProcessor::ConChatTimeoutGuest(IConsole::IResult* pResult, void* pU
 		return;
 
 	pPlayer->GetSharedData().m_TimeoutCode = pTimeoutCode;
-	pPlayer->GetSharedData().m_GotTimeoutCode = true;
-
-	if(pPlayer->GetSharedData().m_WaitingGuestTimeoutAuth && pPlayer->IsGuestLogin())
-		pGS->Core()->AccountManager()->TryLoginGuestByTimeoutCode(ClientID, pGS->Server()->ClientName(ClientID), pTimeoutCode, pPlayer->GetSharedData().m_GuestLogin.c_str());
 }
 
 void CCommandProcessor::ConChatVoucher(IConsole::IResult* pResult, void* pUser)
