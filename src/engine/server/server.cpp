@@ -77,21 +77,19 @@ bool IsJoinFlood(const NETADDR *pAddr, int Tick, int TickSpeed, int *pCurrentHit
 	static std::unordered_map<std::string, std::deque<int>> s_SubnetJoinTicks;
 	auto &JoinTicks = s_SubnetJoinTicks[SubnetKey];
 	const int WindowTicks = TickSpeed * g_Config.m_SvJoinFloodTime;
-	const int MinTick = Tick - WindowTicks;
-	while(!JoinTicks.empty() && JoinTicks.front() <= MinTick)
-		JoinTicks.pop_front();
-
-	if(JoinTicks.empty())
-		s_SubnetJoinTicks.erase(SubnetKey);
-
-	auto &CurrentJoinTicks = s_SubnetJoinTicks[SubnetKey];
-
-	CurrentJoinTicks.push_back(Tick);
-	if(pCurrentHits)
-		*pCurrentHits = (int)CurrentJoinTicks.size();
-	if(pSubnetKey)
-		*pSubnetKey = SubnetKey;
-	return (int)CurrentJoinTicks.size() > g_Config.m_SvJoinFloodSubnetLimit;
+        const int MinTick = Tick - WindowTicks;
+        while(!JoinTicks.empty() && JoinTicks.front() <= MinTick)
+                JoinTicks.pop_front();
+        const bool Flooded = (int)JoinTicks.size() >= g_Config.m_SvJoinFloodSubnetLimit;
+        if(!Flooded)
+                JoinTicks.push_back(Tick);
+        if(JoinTicks.empty())
+                s_SubnetJoinTicks.erase(SubnetKey);
+        if(pCurrentHits)
+                *pCurrentHits = (int)JoinTicks.size();
+        if(pSubnetKey)
+                *pSubnetKey = SubnetKey;
+        return Flooded;
 }
 }
 
