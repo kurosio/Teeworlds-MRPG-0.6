@@ -1876,7 +1876,7 @@ CREATE TABLE `tw_quests_list` (
   `Name` varchar(24) NOT NULL DEFAULT 'Quest name',
   `Money` int(11) NOT NULL,
   `Exp` int(11) NOT NULL,
-  `Flags` set('Type main','Type side','Type daily','Type weekly','Type repeatable','Can''t refuse','No activity point') NOT NULL DEFAULT 'Type main'
+  `Flags` set('Type main','Type side','Type daily','Type weekly','Type repeatable','Can''t refuse','No activity point','Tutorial') NOT NULL DEFAULT 'Type main'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -1884,7 +1884,7 @@ CREATE TABLE `tw_quests_list` (
 --
 
 INSERT INTO `tw_quests_list` (`ID`, `NextQuestID`, `Name`, `Money`, `Exp`, `Flags`) VALUES
-(1, 2, 'First quest', 0, 0, 'Type main,Can\'t refuse'),
+(1, 2, 'First quest', 0, 0, 'Type main,Can\'t refuse','Tutorial'),
 (2, 3, 'Coming to Gridania', 5, 10, 'Type main,Can\'t refuse'),
 (3, 4, 'Close to Home', 10, 50, 'Type main,Can\'t refuse'),
 (4, 5, 'To the Bannock', 10, 10, 'Type main,Can\'t refuse'),
