@@ -54,6 +54,11 @@ CCommandProcessor::CCommandProcessor(CGS* pGS)
 
 	// other
 	AddCommand("timeout", "?s[code]", ConChatTimeoutGuest, pServer, "Timeout auth code");
+
+	// ddnet placeholders
+	// TODO: make use of them
+	AddCommand("showothers", "?i['0'|'1'|'2']", ConChatPlaceholder, pServer, "Placeholder");
+	AddCommand("showall", "?i['0'|'1']", ConChatPlaceholder, pServer, "Placeholder");
 }
 
 CCommandProcessor::~CCommandProcessor()
@@ -520,6 +525,8 @@ void CCommandProcessor::ConChatVoucher(IConsole::IResult* pResult, void* pUser)
 	str_copy(aVoucher, pResult->GetString(0), sizeof(aVoucher));
 	pGS->Core()->AccountManager()->UseVoucher(ClientID, aVoucher);
 }
+
+void CCommandProcessor::ConChatPlaceholder(IConsole::IResult* pResult, void* pUser) {}
 
 /************************************************************************/
 /*  Command system                                                      */

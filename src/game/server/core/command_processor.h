@@ -27,6 +27,8 @@ class CCommandProcessor
 
 	static void ConChatTimeoutGuest(IConsole::IResult* pResult, void* pUserData);
 
+	static void ConChatPlaceholder(IConsole::IResult* pResult, void* pUserData);
+
 public:
 	CCommandProcessor(CGS* pGS);
 	~CCommandProcessor();
