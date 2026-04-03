@@ -1608,6 +1608,16 @@ void CCharacter::HandleTilesImpl(int Index)
 			if(!pNewbieTitle->HasItem())
 				pNewbieTitle->Add(1, 0, 0, false);
 
+			auto pTutorialQuests = Database->GetInstance()->Execute<DB::SELECT>("ID", "tw_quests_list", "WHERE FIND_IN_SET('Tutorial', Flags) != 0 ORDER BY ID ASC");
+			while (pTutorialQuests->next()) {
+				auto *pQuest = m_pPlayer->GetQuest(pTutorialQuests->getInt("ID"));
+				if (pQuest && !pQuest->IsCompleted()) {
+					if (!pQuest->IsAccepted())
+						pQuest->Accept();
+					pQuest->SkipObjectivesAndFinish();
+				}
+			}
+
 			m_pPlayer->GetSharedData().ClearSpawnPosition();
 			GS()->Chat(m_ClientID, "Tutorial skipped.");
 			m_pPlayer->ChangeWorld(BASE_GAME_WORLD_ID);

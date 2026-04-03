@@ -283,6 +283,15 @@ CQuestStep* CPlayerQuest::GetStepByMob(int MobID)
     return iter != m_vObjectives.end() ? *iter : nullptr;
 }
 
+void CPlayerQuest::SkipObjectivesAndFinish() {
+	while (!IsCompleted()) {
+		for(const auto& pObjective : m_vObjectives) {
+			pObjective->Finish(true);
+			UpdateStepProgress();
+		}
+	}
+}
+
 void CPlayerQuest::SetNewState(QuestState State)
 {
 	if(m_State != State)

@@ -124,9 +124,9 @@ bool CQuestStep::IsComplete()
 	return true;
 }
 
-bool CQuestStep::Finish()
+bool CQuestStep::Finish(bool Force)
 {
-	if(!IsComplete())
+	if(!Force && !IsComplete())
 		return false;
 
 	m_StepComplete = true;

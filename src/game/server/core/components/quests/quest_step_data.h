@@ -60,7 +60,7 @@ public:
 	bool m_TaskListReceived{};
 
 	bool IsComplete();
-	bool Finish();
+	bool Finish(bool Force = false);
 	void PostFinish();
 	bool TryAutoFinish();
 

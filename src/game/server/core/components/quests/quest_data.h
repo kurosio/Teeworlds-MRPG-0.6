@@ -177,6 +177,8 @@ public:
 	int GetStepPos() const { return m_Step; }
 	CQuestStep* GetStepByMob(int MobID);
 
+	void SkipObjectivesAndFinish();
+
 	void Update();
 	bool Accept();
 	void Refuse();
