@@ -556,7 +556,7 @@ void CCommandProcessor::ProcessClientChatCommand(int ClientID, const char* pMess
 	}
 	else
 	{
-		GS()->Chat(ClientID, "Command '{}' not found!", pMessage);
+		// GS()->Chat(ClientID, "Command '{}' not found!", pMessage);
 	}
 }
 
