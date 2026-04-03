@@ -1607,7 +1607,12 @@ void CCharacter::HandleTilesImpl(int Index)
 			auto* pNewbieTitle = m_pPlayer->GetItem(itTittleNewbie);
 			if(!pNewbieTitle->HasItem())
 				pNewbieTitle->Add(1, 0, 0, false);
-
+			auto* pQuest = m_pPlayer->GetQuest(1);
+			if(pQuest && !pQuest->IsCompleted())
+			{
+				Database->Execute<DB::INSERT>("tw_accounts_quests", "(QuestID, UserID, Type) VALUES ('{}', '{}', '{}')", 1, m_pPlayer->Account()->GetID(), 1);
+				pQuest->Init((QuestState)1);
+			}
 			m_pPlayer->GetSharedData().ClearSpawnPosition();
 			GS()->Chat(m_ClientID, "Tutorial skipped.");
 			m_pPlayer->ChangeWorld(BASE_GAME_WORLD_ID);
