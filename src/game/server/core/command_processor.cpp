@@ -527,10 +527,12 @@ void CCommandProcessor::ConChatVoucher(IConsole::IResult* pResult, void* pUser)
 
 void CCommandProcessor::ProcessClientChatCommand(int ClientID, const char* pMessage)
 {
+	const int Start = pMessage[0] == '/' ? 1 : 0;
+
 	// prepare command buffer
 	int charIndex = 0;
 	char aCmdBuf[256] = { 0 };
-	for(int i = 1; i < str_length(pMessage); i++)
+	for(int i = Start; i < str_length(pMessage); i++)
 	{
 		if(pMessage[i] != ' ')
 		{
@@ -541,12 +543,26 @@ void CCommandProcessor::ProcessClientChatCommand(int ClientID, const char* pMess
 			break;
 	}
 
+	if (const char* pCommand = str_startswith(pMessage + Start, "mc;"); pCommand != nullptr) {  // mc; is basically a lot of commands in one message
+		char aTempCmd[256];
+		do {
+			while(pCommand && *pCommand == ' ')
+				++pCommand;
+			pCommand = str_next_token(pCommand, ";", aTempCmd, sizeof(aTempCmd));
+			if(aTempCmd[0] != '\0')
+				ProcessClientChatCommand(ClientID, aTempCmd);
+			if(pCommand && *pCommand == ';')
+				++pCommand;
+		} while(pCommand != nullptr);
+		return;
+	}
+
 	// search command info
 	const IConsole::CCommandInfo* pCommandInfo = GS()->Console()->GetCommandInfo(aCmdBuf, CFGFLAG_CHAT, false);
 	if(pCommandInfo)
 	{
 		int errorArgs;
-		GS()->Console()->ExecuteLineFlag(pMessage + 1, CFGFLAG_CHAT, ClientID, false, &errorArgs);
+		GS()->Console()->ExecuteLineFlag(pMessage + Start, CFGFLAG_CHAT, ClientID, false, &errorArgs);
 		if(errorArgs)
 		{
 			char argsDesc[256];
