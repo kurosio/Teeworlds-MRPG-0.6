@@ -52,6 +52,7 @@ public:
 	void Update(CPlayer* pPlayer);
 	void TryAcceptNextQuestChain(CPlayer* pPlayer, int BaseQuestID) const;
 	void TryAcceptNextQuestChainAll(CPlayer* pPlayer) const;
+	void SkipTutorialQuests(CPlayer* pPlayer) const;
 	int GetUnfrozenItemValue(CPlayer* pPlayer, int ItemID) const;
 	int GetCountCompletedQuests(int ClientID) const;
 };

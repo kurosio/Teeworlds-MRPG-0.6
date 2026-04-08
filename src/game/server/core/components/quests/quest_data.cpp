@@ -139,7 +139,9 @@ bool CPlayerQuest::Accept()
 	Database->Execute<DB::INSERT>("tw_accounts_quests", "(QuestID, UserID, Type) VALUES ('{}', '{}', '{}')", m_ID, pPlayer->Account()->GetID(), (int)m_State);
 
 	// message about quest accept state
-	if(Info()->HasFlag(QUEST_FLAG_TYPE_MAIN))
+	if(Info()->HasFlag(QUEST_FLAG_TUTORIAL))
+		GS()->Chat(m_ClientID, "Tutorial quest: '{}' accepted!", Info()->GetName());
+	else if(Info()->HasFlag(QUEST_FLAG_TYPE_MAIN))
 		GS()->Chat(m_ClientID, "Main quest: '{}' accepted!", Info()->GetName());
 	else if(Info()->HasFlag(QUEST_FLAG_TYPE_DAILY))
 		GS()->Chat(m_ClientID, "Daily quest: '{}' accepted!", Info()->GetName());
@@ -226,9 +228,15 @@ void CPlayerQuest::UpdateStepProgress()
 		return;
 	}
 
-	// daily quest
 	int ActivityPoints = 0;
-	if(Info()->HasFlag(QUEST_FLAG_TYPE_DAILY))
+
+	// tutorial quest
+	if(Info()->HasFlag(QUEST_FLAG_TUTORIAL))
+	{
+		GS()->Chat(-1, "{} completed tutorial quest \"{}\".", GS()->Server()->ClientName(m_ClientID), Info()->GetName());
+	}
+	// daily quest
+	else if(Info()->HasFlag(QUEST_FLAG_TYPE_DAILY))
 	{
 		ActivityPoints = g_Config.m_SvDailyActivityCoin;
 		GS()->Chat(-1, "{} completed daily quest \"{}\".", GS()->Server()->ClientName(m_ClientID), Info()->GetName());
@@ -283,12 +291,12 @@ CQuestStep* CPlayerQuest::GetStepByMob(int MobID)
     return iter != m_vObjectives.end() ? *iter : nullptr;
 }
 
-void CPlayerQuest::SkipObjectivesAndFinish() {
-	while (!IsCompleted()) {
-		for(const auto& pObjective : m_vObjectives) {
+void CPlayerQuest::SkipObjectivesAndFinish()
+{
+	while(!IsCompleted())
+	{
+		for(const auto& pObjective : m_vObjectives)
 			pObjective->Finish(true);
-			UpdateStepProgress();
-		}
 	}
 }
 

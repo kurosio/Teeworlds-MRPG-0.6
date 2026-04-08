@@ -70,13 +70,9 @@ void CQuestManager::OnPreInit()
 		if(pPrevQuest != nullptr)
 			continue;
 
-		const auto Flags = pQuest->GetFlags();
 		auto* pNextQuest = pQuest->GetNextQuest();
 		while(pNextQuest != nullptr)
-		{
-			pNextQuest->SetFlags(Flags);
 			pNextQuest = pNextQuest->GetNextQuest();
-		}
 	}
 }
 
@@ -566,6 +562,25 @@ void CQuestManager::TryAcceptNextQuestChainAll(CPlayer* pPlayer) const
 		if(pair.second->GetState() == QuestState::Finished)
 			TryAcceptNextQuestChain(pPlayer, pair.first);
 	});
+}
+
+void CQuestManager::SkipTutorialQuests(CPlayer* pPlayer) const
+{
+	const int ClientID = pPlayer->GetCID();
+	for(const auto& [QuestID, pQuestInfo] : CQuestDescription::Data())
+	{
+		if(!pQuestInfo->HasFlag(QUEST_FLAG_TUTORIAL))
+			continue;
+
+		auto* pQuest = pPlayer->GetQuest(QuestID);
+		if(!pQuest || pQuest->IsCompleted())
+			continue;
+
+		if(!pQuest->IsAccepted())
+			pQuest->Accept();
+
+		pQuest->SkipObjectivesAndFinish();
+	}
 }
 
 int CQuestManager::GetUnfrozenItemValue(CPlayer* pPlayer, int ItemID) const

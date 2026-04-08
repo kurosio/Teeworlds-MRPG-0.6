@@ -22,6 +22,7 @@ enum
 
 	QUEST_FLAG_CANT_REFUSE = 1 << 5,
 	QUEST_FLAG_NO_ACTIVITY_POINT = 1 << 6,
+	QUEST_FLAG_TUTORIAL = 1 << 7,
 
 	QUEST_FLAG_GRANTED_FROM_CHAIN = 1 << 9,
 	QUEST_FLAG_GRANTED_FROM_NPC = 1 << 10,
@@ -86,7 +87,9 @@ public:
 	void InitFlags(const DBSet& FlagSet)
 	{
 		// initialize type flags
-		if(FlagSet.hasSet("Type main"))
+		if(FlagSet.hasSet("Tutorial"))
+			m_Flags |= QUEST_FLAG_TUTORIAL;
+		else if(FlagSet.hasSet("Type main"))
 			m_Flags |= QUEST_FLAG_TYPE_MAIN;
 		else if(FlagSet.hasSet("Type side"))
 			m_Flags |= QUEST_FLAG_TYPE_SIDE;
