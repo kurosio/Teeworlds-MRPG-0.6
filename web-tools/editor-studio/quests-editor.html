@@ -316,6 +316,7 @@
                 <option value="Type daily">Ежедневные</option>
                 <option value="Type weekly">Еженедельные</option>
                 <option value="Type repeatable">Повторяемые</option>
+                <option value="Tutorial">Tutorial</option>
               </select>
             </div>
           </div>
@@ -457,7 +458,18 @@
       typeRepeatable: 'Type repeatable',
       cantRefuse: "Can't refuse",
       noActivity: 'No activity point',
+      tutorial: 'Tutorial',
     };
+    const QUEST_FLAG_OPTIONS = [
+      QuestFlags.typeMain,
+      QuestFlags.typeSide,
+      QuestFlags.typeDaily,
+      QuestFlags.typeWeekly,
+      QuestFlags.typeRepeatable,
+      QuestFlags.cantRefuse,
+      QuestFlags.noActivity,
+      QuestFlags.tutorial,
+    ];
 
     const taskDefault = () => ({
       required_items: [],
@@ -547,43 +559,38 @@
     };
 
     const parseFlags = (raw) => {
-      const parts = Array.isArray(raw)
-        ? raw
-        : String(raw || '')
-            .split(',')
-            .map((s) => s.trim())
-            .filter(Boolean);
-      const type = parts.find((flag) => flag.startsWith('Type')) || QuestFlags.typeMain;
-      return {
-        type,
-        cantRefuse: parts.includes(QuestFlags.cantRefuse),
-        noActivity: parts.includes(QuestFlags.noActivity),
-      };
+      const source = Array.isArray(raw) ? raw : String(raw || '').split(',');
+      const values = [];
+      for (const entry of source) {
+        const flag = String(entry || '').trim();
+        if (!flag || !QUEST_FLAG_OPTIONS.includes(flag) || values.includes(flag)) continue;
+        values.push(flag);
+      }
+      const hasTypeFlag = values.some((flag) => flag.startsWith('Type'));
+      const hasTutorialFlag = values.includes(QuestFlags.tutorial);
+      if (!hasTypeFlag && !hasTutorialFlag) {
+        values.unshift(QuestFlags.typeMain);
+      }
+      return values;
     };
 
-    const buildFlags = (flagModel) => {
-      const list = [];
-      if (flagModel?.type) list.push(flagModel.type);
-      if (flagModel?.cantRefuse) list.push(QuestFlags.cantRefuse);
-      if (flagModel?.noActivity) list.push(QuestFlags.noActivity);
-      return list.join(',');
-    };
+    const buildFlags = (flags) => parseFlags(flags).join(',');
 
     const questFields = {
       Name: { type: 'text', label: 'Имя квеста', validate: { required: true }, ui: { placeholder: 'Название квеста' } },
       NextQuestID: { type: 'db_select', label: 'Следующий квест', ui: { dbKey: 'quest', placeholder: '— не задано —' } },
       Money: { type: 'number', label: 'Награда (деньги)', ui: { min: 0, step: 1, placeholder: '0' } },
       Exp: { type: 'number', label: 'Награда (опыт)', ui: { min: 0, step: 1, placeholder: '0' } },
-      Type: {
+      Flags: {
         type: 'text',
-        label: 'Тип квеста',
+        label: 'Флаги',
         ui: {
-          type: 'select',
-          options: [QuestFlags.typeMain, QuestFlags.typeSide, QuestFlags.typeDaily, QuestFlags.typeWeekly, QuestFlags.typeRepeatable],
-        }
+          type: 'tags',
+          options: QUEST_FLAG_OPTIONS,
+          allowCreate: false,
+          placeholder: 'Добавить флаг…',
+        },
       },
-      CantRefuse: { type: 'toggle', label: 'Нельзя отказаться' },
-      NoActivity: { type: 'toggle', label: 'Без очков активности' },
     };
 
     const stepBaseFields = {
@@ -669,11 +676,7 @@
       quest.NextQuestID = Number(data?.NextQuestID || 0);
       quest.Money = Number(data?.Money || 0);
       quest.Exp = Number(data?.Exp || 0);
-      quest.Flags = buildFlags({
-        type: data?.Type || QuestFlags.typeMain,
-        cantRefuse: !!data?.CantRefuse,
-        noActivity: !!data?.NoActivity,
-      });
+      quest.Flags = buildFlags(data?.Flags);
       markQuestDirty(quest.ID);
       renderTree({ preserveScroll: true });
     };
@@ -1286,7 +1289,7 @@
 
       const questList = STATE.quests
         .filter((quest) => {
-          if (activeTypeFilter && parseFlags(quest.Flags).type !== activeTypeFilter) return false;
+          if (activeTypeFilter && !parseFlags(quest.Flags).includes(activeTypeFilter)) return false;
           if (!hasSearch) return true;
           return matchesSearch(`${quest.Name || ''} ${quest.ID}`);
         })
@@ -1433,15 +1436,12 @@
       setNewStepButtonState(true);
       setDeleteButtonState({ enabled: true, label: 'Удалить квест' });
 
-      const flags = parseFlags(quest.Flags);
       const model = {
         Name: quest.Name || '',
         NextQuestID: Number(quest.NextQuestID || 0),
         Money: Number(quest.Money || 0),
         Exp: Number(quest.Exp || 0),
-        Type: flags.type || QuestFlags.typeMain,
-        CantRefuse: !!flags.cantRefuse,
-        NoActivity: !!flags.noActivity,
+        Flags: parseFlags(quest.Flags),
       };
 
       questFormRuntime = EditorCore.FormRuntime.mount(DOM.questForm, {
