@@ -108,6 +108,7 @@ public:
 	CNetObj_PlayerInput m_Input {};
 	CNetObj_PlayerInput m_LatestPrevInput {};
 	CNetObj_PlayerInput m_LatestInput {};
+	bool m_AutoFishingEnabled {};
 	CEntityFishingRod* m_pFishingRod {};
 
 	static constexpr int ms_PhysSize = 28;

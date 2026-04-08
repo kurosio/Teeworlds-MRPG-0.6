@@ -70,6 +70,7 @@ bool CCharacter::Spawn(CPlayer* pPlayer, vec2 Pos)
 	m_Core.m_CollisionDisabled = false;
 	m_Core.m_WorldID = m_pPlayer->GetCurrentWorldID();
 	m_ReckoningTick = 0;
+	m_AutoFishingEnabled = false;
 	m_SendCore = {};
 	m_NumInputs = 0;
 	GS()->m_World.m_Core.m_apCharacters[m_ClientID] = &m_Core;
@@ -262,23 +263,6 @@ void CCharacter::FireWeapon()
 	// Check if the player is not a bot
 	if(!IsCharBot)
 	{
-		// fishing mode
-		if(m_pTilesHandler->IsActive(TILE_FISHING_MODE))
-		{
-			if(m_pFishingRod && m_pFishingRod->IsWaitingState())
-				delete m_pFishingRod;
-
-			if(!m_pFishingRod)
-			{
-				const auto ForceX = m_LatestInput.m_TargetX * 0.08f;
-				const auto ForceY = m_LatestInput.m_TargetY * 0.08f;
-				m_pFishingRod = new CEntityFishingRod(&GS()->m_World, m_ClientID, m_Core.m_Pos, vec2(ForceX, ForceY));
-				m_ReloadTimer = Server()->TickSpeed();
-			}
-
-			return;
-		}
-
 		// Check if the active weapon has no ammo
 		if(!m_Core.m_aWeapons[m_Core.m_ActiveWeapon].m_Ammo)
 		{
@@ -1629,11 +1613,65 @@ void CCharacter::HandleTilesImpl(int Index)
 		// fishing information
 		if(m_pTilesHandler->IsEnter(TILE_FISHING_MODE))
 		{
-			GS()->Broadcast(m_ClientID, BroadcastPriority::GameBasicStats, 100, "Use 'Fire' to start fishing!");
+			GS()->Broadcast(m_ClientID, BroadcastPriority::GameBasicStats, 100, "'Fire' - to start fishing. 'Vote yes' - to start auto fishing.");
 		}
-		else if(m_pTilesHandler->IsExit(TILE_FISHING_MODE) && m_pFishingRod)
+
+		if(m_pTilesHandler->IsActive(TILE_FISHING_MODE))
 		{
-			delete m_pFishingRod;
+			auto ResetWaitingRod = [this]()
+			{
+				if(m_pFishingRod)
+					delete m_pFishingRod;
+			};
+			bool FirePressed = false;
+
+			if(!m_pFishingRod || (m_pFishingRod && m_pFishingRod->IsWaitingState()))
+			{
+				if(Server()->Input()->IsKeyClicked(m_ClientID, KEY_EVENT_VOTE_YES))
+				{
+					if(!m_AutoFishingEnabled)
+					{
+						m_AutoFishingEnabled = true;
+						GS()->Chat(m_ClientID, "Auto fishing enabled.");
+						GS()->Chat(m_ClientID, "Reel-in strikes now happen once per second.");
+					}
+
+					ResetWaitingRod();
+				}
+				else if(Server()->Input()->IsKeyClicked(m_ClientID, KEY_EVENT_FIRE))
+				{
+					if(m_AutoFishingEnabled)
+					{
+						m_AutoFishingEnabled = false;
+						GS()->Chat(m_ClientID, "Auto fishing disabled.");
+						GS()->Chat(m_ClientID, "Reel-in strikes now depend on 'Fire' clicks.");
+					}
+
+					ResetWaitingRod();
+					FirePressed = true;
+				}
+			}
+
+			// start fishing by manual or auto mode
+			if(m_AutoFishingEnabled || FirePressed)
+			{
+				if(!m_pFishingRod)
+				{
+					const float ForceX = m_LatestInput.m_TargetX * 0.08f;
+					const float ForceY = m_LatestInput.m_TargetY * 0.08f;
+					m_pFishingRod = new CEntityFishingRod(&GS()->m_World, m_ClientID, m_Core.m_Pos, vec2(ForceX, ForceY), m_AutoFishingEnabled);
+					m_ReloadTimer = Server()->TickSpeed();
+				}
+
+				return;
+			}
+		}
+
+		if(m_pTilesHandler->IsExit(TILE_FISHING_MODE))
+		{
+			m_AutoFishingEnabled = false;
+			if(m_pFishingRod)
+				delete m_pFishingRod;
 		}
 
 		// zone information

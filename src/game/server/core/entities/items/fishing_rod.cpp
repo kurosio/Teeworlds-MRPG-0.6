@@ -4,7 +4,7 @@
 #include <game/server/entity_manager.h>
 #include <generated/server_data.h>
 
-CEntityFishingRod::CEntityFishingRod(CGameWorld* pGameWorld, int ClientID, vec2 Position, vec2 Force)
+CEntityFishingRod::CEntityFishingRod(CGameWorld* pGameWorld, int ClientID, vec2 Position, vec2 Force, bool AutoMode)
 	: CEntity(pGameWorld, CGameWorld::ENTTYPE_TOOLS, Position, 0, ClientID)
 {
 	m_EndRodPoint = Position;
@@ -12,6 +12,8 @@ CEntityFishingRod::CEntityFishingRod(CGameWorld* pGameWorld, int ClientID, vec2 
 	m_Fishing.m_State = FishingNow::WAITING;
 	m_Fishing.m_HookingTime = SERVER_TICK_SPEED * (5 + rand() % 14);
 	m_FloatInWater = false;
+	m_AutoMode = AutoMode;
+	m_LastAutoPullTick = 0;
 
 	AddSnappingGroupIds(ROD, NUM_ROD_POINTS);
 	AddSnappingGroupIds(ROPE, NUM_ROPE_POINTS);
@@ -164,11 +166,12 @@ void CEntityFishingRod::FishingTick(CPlayer* pPlayer, CProfession* pFisherman, G
 		{
 			const auto lastPoint = m_Rope.m_vPoints.back();
 			m_Fishing.m_State = FishingNow::HOOKING;
+			m_LastAutoPullTick = Server()->Tick();
 			GS()->CreateSound(lastPoint, SOUND_SFX_WATER);
 		}
 
-		GS()->Broadcast(m_ClientID, BroadcastPriority::GameInformation, 50, "Waiting for fish: '{}' | Rod: {}",
-			pNode->Name, pRodName);
+		GS()->Broadcast(m_ClientID, BroadcastPriority::GameInformation, 50, "Waiting for fish: '{}' | Rod: {} | Mode: {}",
+			pNode->Name, pRodName, m_AutoMode ? "Auto" : "Manual");
 		return;
 	}
 
@@ -185,11 +188,14 @@ void CEntityFishingRod::FishingTick(CPlayer* pPlayer, CProfession* pFisherman, G
 
 		// input key fire
 		Server()->Input()->BlockInputGroup(m_ClientID, BLOCK_INPUT_FIRE);
-		if(Server()->Input()->IsKeyClicked(m_ClientID, KEY_EVENT_FIRE))
+		const bool ManualPull = !m_AutoMode && Server()->Input()->IsKeyClicked(m_ClientID, KEY_EVENT_FIRE);
+		const bool AutoPull = m_AutoMode && (Server()->Tick() - m_LastAutoPullTick) >= Server()->TickSpeed();
+		if(ManualPull || AutoPull)
 		{
 			m_Fishing.m_State = FishingNow::PULLING;
 			m_Fishing.m_Health = pNode->Health;
 			m_Fishing.m_HookingTime = Server()->TickSpeed() * 3;
+			m_LastAutoPullTick = Server()->Tick();
 		}
 
 		const auto Sec = m_Fishing.m_HookingTime / Server()->TickSpeed();
@@ -210,10 +216,13 @@ void CEntityFishingRod::FishingTick(CPlayer* pPlayer, CProfession* pFisherman, G
 
 		// input key fire
 		Server()->Input()->BlockInputGroup(m_ClientID, BLOCK_INPUT_FIRE);
-		if(Server()->Input()->IsKeyClicked(m_ClientID, KEY_EVENT_FIRE))
+		const bool ManualPull = !m_AutoMode && Server()->Input()->IsKeyClicked(m_ClientID, KEY_EVENT_FIRE);
+		const bool AutoPull = m_AutoMode && (Server()->Tick() - m_LastAutoPullTick) >= Server()->TickSpeed();
+		if(ManualPull || AutoPull)
 		{
 			const auto Damage = maximum(1, pPlayer->GetTotalAttributeValue(AttributeIdentifier::Patience));
 			m_Fishing.m_Health = maximum(m_Fishing.m_Health - Damage, 0);
+			m_LastAutoPullTick = Server()->Tick();
 
 			const auto totalDamage = pNode->Health - m_Fishing.m_Health;
 			float percentDmg = translate_to_percent(pNode->Health, totalDamage);

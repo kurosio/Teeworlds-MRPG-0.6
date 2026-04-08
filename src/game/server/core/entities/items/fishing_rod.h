@@ -38,6 +38,8 @@ class CEntityFishingRod : public CEntity
 	};
 
 	bool m_FloatInWater {};
+	bool m_AutoMode {};
+	int m_LastAutoPullTick {};
 	vec2 m_EndRodPoint {};
 	RopePhysic m_Rope {};
 	FishingNow m_Fishing{};
@@ -46,7 +48,7 @@ class CEntityFishingRod : public CEntity
 	void UpdateRodEndPoint(const CCharacter* pChar);
 
 public:
-	CEntityFishingRod(CGameWorld* pGameWorld, int ClientID, vec2 Position, vec2 Force);
+	CEntityFishingRod(CGameWorld* pGameWorld, int ClientID, vec2 Position, vec2 Force, bool AutoMode);
 	~CEntityFishingRod() override;
 
 	void FishingTick(CPlayer* pPlayer, CProfession* pFisherman, GatheringNode* pNode, const char* pRodName);
