@@ -22,7 +22,7 @@ public:
 
 class CPlayerBot : public CPlayer
 {
-	MACRO_ALLOC_POOL_ID()
+	MACRO_ALLOC_HEAP()
 
 	int m_BotType {};
 	int m_BotID {};

@@ -56,6 +56,7 @@ CPlayer::CPlayer(CGS* pGS, int ClientID) : m_pGS(pGS), m_ClientID(ClientID)
 CPlayer::~CPlayer()
 {
 	// free data
+	TryRemoveEidolon();
 	if(m_pCharacter)
 	{
 		delete m_pCharacter;

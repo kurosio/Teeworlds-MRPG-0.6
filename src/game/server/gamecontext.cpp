@@ -1541,7 +1541,7 @@ bool CGS::OnClientMotdCommand(int ClientID, const char* pCmd)
 
 bool CGS::DestroyPlayer(int ClientID)
 {
-	if(ClientID < 0 || ClientID > MAX_CLIENTS || !m_apPlayers[ClientID])
+	if(ClientID < 0 || ClientID >= MAX_CLIENTS || !m_apPlayers[ClientID])
 		return false;
 
 	if(m_apPlayers[ClientID]->GetCharacter())
@@ -1567,8 +1567,7 @@ CPlayerBot* CGS::CreateBot(short BotType, int BotID, int SubID)
 		return nullptr;
 
 	Server()->InitClientBot(BotClientID);
-	const int AllocMemoryCell = BotClientID + m_WorldID * MAX_CLIENTS;
-	CPlayerBot* pBot = new(AllocMemoryCell) CPlayerBot(this, BotClientID, BotID, SubID, BotType);
+	CPlayerBot* pBot = new CPlayerBot(this, BotClientID, BotID, SubID, BotType);
 	m_apPlayers[BotClientID] = pBot;
 	return pBot;
 }
