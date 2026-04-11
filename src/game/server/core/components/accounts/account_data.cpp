@@ -15,6 +15,26 @@
 std::map < int, CAccountData > CAccountData::ms_aData;
 std::map < int, CAccountSharedData > CAccountSharedData::ms_aPlayerSharedData;
 
+namespace
+{
+	int GetFreeModuleSlotsByType(int ClientID, int MaxSlots, bool WithAttributes)
+	{
+		int FreeSlots = MaxSlots;
+		for(auto& [ID, Item] : CPlayerItem::Data()[ClientID])
+		{
+			if(Item.Info()->IsEquipmentModules() && Item.Info()->HasAttributes() == WithAttributes && Item.IsEquipped())
+			{
+				if(!FreeSlots)
+					Item.UnEquip();
+				else
+					FreeSlots--;
+			}
+		}
+
+		return FreeSlots;
+	}
+}
+
 CGS* CAccountData::GS() const
 {
 	return (CGS*)Instance::GameServerPlayer(m_ClientID);
@@ -28,7 +48,11 @@ CPlayer* CAccountData::GetPlayer() const
 void CAccountData::ChangeProfession(ProfessionIdentifier Profession)
 {
 	auto* pOldProfession = m_pActiveProfession;
-	m_pActiveProfession = GetProfession(Profession);
+	auto* pNewProfession = GetProfession(Profession);
+	if(!pNewProfession || pOldProfession == pNewProfession)
+		return;
+
+	m_pActiveProfession = pNewProfession;
 
 	// notify event listener
 	g_EventListenerManager.Notify<IEventListener::PlayerProfessionChange>(GetPlayer(), pOldProfession, m_pActiveProfession);
@@ -97,6 +121,8 @@ void CAccountData::Init(int ID, int ClientID, const char* pLogin, std::string La
 
 void CAccountData::InitProfessions()
 {
+	m_vProfessions.clear();
+
 	// initialize base professions
 	m_vProfessions.push_back(CTankProfession());
 	m_vProfessions.push_back(CDPSProfession());
@@ -726,38 +752,12 @@ std::optional<int> CAccountData::GetEquippedSlotItemID(ItemType Type) const
 
 int CAccountData::GetFreeSlotsAttributedModules() const
 {
-	int FreeSlots = g_Config.m_SvAttributedModulesSlots;
-
-	for(auto& [ID, Item] : CPlayerItem::Data()[m_ClientID])
-	{
-		if(Item.Info()->IsEquipmentModules() && Item.Info()->HasAttributes() && Item.IsEquipped())
-		{
-			if(!FreeSlots)
-				Item.UnEquip();
-			else
-				FreeSlots--;
-		}
-	}
-
-	return FreeSlots;
+	return GetFreeModuleSlotsByType(m_ClientID, g_Config.m_SvAttributedModulesSlots, true);
 }
 
 int CAccountData::GetFreeSlotsFunctionalModules() const
 {
-	int FreeSlots = g_Config.m_SvNonAttributedModulesSlots;
-
-	for(auto& [ID, Item] : CPlayerItem::Data()[m_ClientID])
-	{
-		if(Item.Info()->IsEquipmentModules() && !Item.Info()->HasAttributes() && Item.IsEquipped())
-		{
-			if(!FreeSlots)
-				Item.UnEquip();
-			else
-				FreeSlots--;
-		}
-	}
-
-	return FreeSlots;
+	return GetFreeModuleSlotsByType(m_ClientID, g_Config.m_SvNonAttributedModulesSlots, false);
 }
 
 void CAccountData::UpdateAuthTimeoutCodeIfNeeded()
