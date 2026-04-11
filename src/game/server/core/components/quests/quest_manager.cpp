@@ -566,7 +566,6 @@ void CQuestManager::TryAcceptNextQuestChainAll(CPlayer* pPlayer) const
 
 void CQuestManager::SkipTutorialQuests(CPlayer* pPlayer) const
 {
-	const int ClientID = pPlayer->GetCID();
 	for(const auto& [QuestID, pQuestInfo] : CQuestDescription::Data())
 	{
 		if(!pQuestInfo->HasFlag(QUEST_FLAG_TUTORIAL))
