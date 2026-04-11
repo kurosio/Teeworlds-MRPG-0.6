@@ -859,7 +859,9 @@ int CPlayer::GetTotalRawAttributeValue(AttributeIdentifier ID) const
 			addItemEnchantStats(ItemIdOpt);
 
 		totalValue += pActiveProfession->GetAttributeValue(ID);
-		totalValue += std::max(1, translate_to_percent_rest(totalValue, pActiveProfession->GetAmplifier(ID)));
+		const float amplifier = pActiveProfession->GetAmplifier(ID);
+		if(amplifier > 0.0f)
+			totalValue += translate_to_percent_rest(totalValue, amplifier);
 	}
 
 	// counting by other professions
