@@ -511,10 +511,18 @@ void CPlayer::TryRespawn()
 	{
 		int AllocMemoryCell = MAX_CLIENTS * GS()->GetWorldID() + m_ClientID;
 		m_pCharacter = new(AllocMemoryCell) CCharacter(&GS()->m_World);
-		m_pCharacter->Spawn(this, *FinalSpawnPos);
-		GS()->CreatePlayerSpawn(*FinalSpawnPos);
-		GetSharedData().ClearSpawnPosition();
-		m_WantSpawn = false;
+		const bool Spawned = m_pCharacter->Spawn(this, *FinalSpawnPos);
+		if(Spawned)
+		{
+			GS()->CreatePlayerSpawn(*FinalSpawnPos);
+			GetSharedData().ClearSpawnPosition();
+			m_WantSpawn = false;
+		}
+		else
+		{
+			delete m_pCharacter;
+			m_pCharacter = nullptr;
+		}
 	}
 }
 
