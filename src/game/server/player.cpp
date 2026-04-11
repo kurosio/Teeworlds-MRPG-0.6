@@ -104,7 +104,7 @@ void CPlayer::GetFormatedName(char* aBuffer, int BufferSize)
 
 void CPlayer::Tick()
 {
-	if(!IsAuthed())
+	if(!IsAuthed() || !Account()->IsReadyToPlay())
 		return;
 
 	const int TickSpeed = Server()->TickSpeed();
@@ -648,7 +648,6 @@ bool CPlayer::IsAuthed() const
 		return Account()->GetID() > 0;
 	return false;
 }
-
 
 int CPlayer::GetMaxHealth() const
 {

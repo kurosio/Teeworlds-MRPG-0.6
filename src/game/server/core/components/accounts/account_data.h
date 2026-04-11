@@ -26,6 +26,7 @@ class CAccountData
 	int m_ClientID {};
 
 	int m_ID {};
+	bool m_ReadyToPlay {};
 	std::string m_Login{};
 	std::string m_LastLoginDate{};
 	int m_CrimeScore {};
@@ -106,6 +107,8 @@ public:
 	void InitSharedEquipments(const std::string& EquippedSlots);
 	void SaveSharedEquipments();
 	int GetID() const { return m_ID; }
+	void SetReadyToPlay(bool State) { m_ReadyToPlay = State; }
+	bool IsReadyToPlay() const { return m_ReadyToPlay; }
 
 	/*
 	 * Group functions: house system

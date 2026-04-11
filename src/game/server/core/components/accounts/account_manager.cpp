@@ -1152,6 +1152,7 @@ void CAccountManager::LoadAccount(CPlayer* pPlayer, bool FirstInitilize)
 
 	// update player time periods
 	Core()->OnHandlePlayerTimePeriod(pPlayer);
+	pAccount->SetReadyToPlay(true);
 
 	// notify about rank
 	const int Rank = Server()->GetAccountRank(pAccount->GetID());

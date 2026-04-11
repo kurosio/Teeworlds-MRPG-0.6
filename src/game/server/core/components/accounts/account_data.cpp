@@ -60,6 +60,7 @@ void CAccountData::Init(int ID, int ClientID, const char* pLogin, std::string La
 	m_LastLoginDate = LoginDate;
 	m_ID = ID;
 	m_ClientID = ClientID;
+	m_ReadyToPlay = false;
 	m_CrimeScore = pResult->getInt("CrimeScore");
 	m_aHistoryWorld.push_front(pResult->getInt("WorldID"));
 	m_Bank = pResult->getString("Bank");
