@@ -36,7 +36,7 @@ namespace
 	}
 }
 
-std::string BuildItemSourceHint(CGS* pGS, int ItemID)
+std::string ItemHelper::BuildSourceHint(CGS* pGS, int ItemID)
 {
 	if(!pGS)
 		return "Ask players/NPCs";

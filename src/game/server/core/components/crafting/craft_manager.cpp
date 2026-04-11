@@ -253,7 +253,7 @@ void CCraftManager::ShowCraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const
 			VCraftRequired.MarkList().Add("{} {} x{} ({})", hasEnoughItems ? "\u2714" : "\u2718",
 				pRequiredItem.Info()->GetName(), pRequiredItem.GetValue(), pPlayerItem->GetValue());
 			if(SourceView)
-				VCraftRequired.Add("  ↳ source: ({})", BuildItemSourceHint(GS(), pRequiredItem.GetID()));
+				VCraftRequired.Add("  ↳ source: ({})", ItemHelper::BuildSourceHint(GS(), pRequiredItem.GetID()));
 		}
 		VCraftRequired.EndDepth();
 	}
