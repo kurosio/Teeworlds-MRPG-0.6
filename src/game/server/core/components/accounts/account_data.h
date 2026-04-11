@@ -223,6 +223,9 @@ struct CAccountSharedData
 	int m_Mana {};
 	int m_Ping {};
 
+	// other
+	int m_ActivityCoinRewardInterval {};
+
 	// dungeon
 	int m_TempStartDungeonTick {};
 	bool m_TempDungeonReady {};

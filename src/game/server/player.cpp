@@ -172,14 +172,15 @@ void CPlayer::Tick()
 	const int RewardIntervalTicks = g_Config.m_SvActivityCoinPeriodicRewardInterval * 60 * TickSpeed;
 	if(RewardIntervalTicks > 0)
 	{
-		if(m_aPlayerTick[ActivityCoinReward] <= 0)
-			m_aPlayerTick[ActivityCoinReward] = CurrentTick + RewardIntervalTicks;
-		else if(CurrentTick >= m_aPlayerTick[ActivityCoinReward])
+		auto& SharedData = GetSharedData();
+		if(SharedData.m_ActivityCoinRewardInterval <= 0)
+			SharedData.m_ActivityCoinRewardInterval = CurrentTick + RewardIntervalTicks;
+		else if(CurrentTick >= SharedData.m_ActivityCoinRewardInterval)
 		{
 			auto* pActCoin = GetItem(itActivityCoin);
 			const int RewardCoins = g_Config.m_SvActivityCoinPeriodicRewardAmount;
 			pActCoin->Add(RewardCoins, 0, 0, false);
-			m_aPlayerTick[ActivityCoinReward] = CurrentTick + RewardIntervalTicks;
+			SharedData.m_ActivityCoinRewardInterval = CurrentTick + RewardIntervalTicks;
 			GS()->Chat(m_ClientID, "You received '{} {}({$})' for being online.", pActCoin->Info()->GetName(), RewardCoins, pActCoin->GetValue());
 		}
 	}

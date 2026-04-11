@@ -133,7 +133,6 @@ enum ETickState
 	ManaPotionRecast,
 	RefreshClanTitle,
 	RefreshNickLeveling,
-	ActivityCoinReward,
 	LastSetSpectatorMode,
 	NUM_TICK,
 };
