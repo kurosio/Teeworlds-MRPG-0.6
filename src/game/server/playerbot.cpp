@@ -298,8 +298,16 @@ void CPlayerBot::TryRespawn()
 	{
 		const int AllocMemoryCell = m_ClientID + GS()->GetWorldID() * MAX_CLIENTS;
 		m_pCharacter = new(AllocMemoryCell) CCharacterBotAI(&GS()->m_World);
-		m_pCharacter->Spawn(this, *FinalSpawnPos);
-		GS()->CreatePlayerSpawn(*FinalSpawnPos, GetMaskVisibleForClients());
+		const bool Spawned = m_pCharacter->Spawn(this, *FinalSpawnPos);
+		if(Spawned)
+		{
+			GS()->CreatePlayerSpawn(*FinalSpawnPos, GetMaskVisibleForClients());
+		}
+		else
+		{
+			delete m_pCharacter;
+			m_pCharacter = nullptr;
+		}
 	}
 }
 
