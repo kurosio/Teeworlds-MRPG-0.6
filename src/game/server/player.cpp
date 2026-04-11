@@ -781,7 +781,7 @@ CPlayerItem* CPlayer::GetItem(ItemIdentifier ID)
 	auto& playerItems = CPlayerItem::Data()[m_ClientID];
 	if(!playerItems.contains(ID))
 	{
-		CPlayerItem(ID, m_ClientID).Init({}, {}, {}, {});
+		CPlayerItem(ID, m_ClientID).Init(0, 0, 100, 0);
 	}
 
 	return &playerItems[ID];
