@@ -189,7 +189,7 @@ void CEntityFishingRod::FishingTick(CPlayer* pPlayer, CProfession* pFisherman, G
 		// input key fire
 		Server()->Input()->BlockInputGroup(m_ClientID, BLOCK_INPUT_FIRE);
 		const bool ManualPull = !m_AutoMode && Server()->Input()->IsKeyClicked(m_ClientID, KEY_EVENT_FIRE);
-		const bool AutoPull = m_AutoMode && (Server()->Tick() - m_LastAutoPullTick) >= Server()->TickSpeed();
+		const bool AutoPull = m_AutoMode && (Server()->Tick() - m_LastAutoPullTick) >= (Server()->TickSpeed() - 1);
 		if(ManualPull || AutoPull)
 		{
 			m_Fishing.m_State = FishingNow::PULLING;
@@ -217,7 +217,7 @@ void CEntityFishingRod::FishingTick(CPlayer* pPlayer, CProfession* pFisherman, G
 		// input key fire
 		Server()->Input()->BlockInputGroup(m_ClientID, BLOCK_INPUT_FIRE);
 		const bool ManualPull = !m_AutoMode && Server()->Input()->IsKeyClicked(m_ClientID, KEY_EVENT_FIRE);
-		const bool AutoPull = m_AutoMode && (Server()->Tick() - m_LastAutoPullTick) >= Server()->TickSpeed();
+		const bool AutoPull = m_AutoMode && (Server()->Tick() - m_LastAutoPullTick) >= (Server()->TickSpeed() - 1);
 		if(ManualPull || AutoPull)
 		{
 			const auto Damage = maximum(1, pPlayer->GetTotalAttributeValue(AttributeIdentifier::Patience));
