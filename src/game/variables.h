@@ -107,11 +107,13 @@ MACRO_CONFIG_INT(SvWarehouseProductsCanTake, sv_warehouse_products_can_take, 50,
 MACRO_CONFIG_INT(SvGatheringEntitiesPerTile, sv_gathering_entities_per_tile, 2, 1, 4, CFGFLAG_SERVER, "Number of entities that can be gathering from a single tile")
 MACRO_CONFIG_INT(SvUpdateEntityTextNames, sv_update_ent_text_names, 50, 25, 1000, CFGFLAG_SERVER, "Frequency of updating entity text names")
 
-MACRO_CONFIG_INT(SvMainQuestActivityCoin, sv_main_quest_activity_coin, 10, 1, 100000, CFGFLAG_SERVER, "Activity coin reward for completing a main quest")
-MACRO_CONFIG_INT(SvSideQuestActivityCoin, sv_side_quest_activity_coin, 10, 1, 100000, CFGFLAG_SERVER, "Activity coin reward for completing a side quest")
-MACRO_CONFIG_INT(SvRepeatableActivityCoin, sv_repeatable_quest_activity_coin, 5, 1, 100000, CFGFLAG_SERVER, "Activity coin reward for completing a repeatable quest")
-MACRO_CONFIG_INT(SvDailyActivityCoin, sv_daily_quest_quest_activity_coin, 10, 1, 100000, CFGFLAG_SERVER, "Activity coin reward for completing a daily quest")
-MACRO_CONFIG_INT(SvWeeklyActivityCoin, sv_weekly_quest_activity_coin, 40, 1, 100000, CFGFLAG_SERVER, "Activity coin reward for completing a weekly quest")
+MACRO_CONFIG_INT(SvActivityCoinMainQuestReward, sv_activity_coin_main_quest, 10, 1, 100000, CFGFLAG_SERVER, "Activity Coin reward for completing a main quest")
+MACRO_CONFIG_INT(SvActivityCoinSideQuestReward, sv_activity_coin_side_quest, 10, 1, 100000, CFGFLAG_SERVER, "Activity Coin reward for completing a side quest")
+MACRO_CONFIG_INT(SvActivityCoinRepeatableQuestReward, sv_activity_coin_repeat_quest, 5, 1, 100000, CFGFLAG_SERVER, "Activity Coin reward for completing a repeatable quest")
+MACRO_CONFIG_INT(SvActivityCoinDailyQuestReward, sv_activity_coin_daily_quest, 10, 1, 100000, CFGFLAG_SERVER, "Activity Coin reward for completing a daily quest")
+MACRO_CONFIG_INT(SvActivityCoinWeeklyQuestReward, sv_activity_coin_weekly_quest, 40, 1, 100000, CFGFLAG_SERVER, "Activity Coin reward for completing a weekly quest")
+MACRO_CONFIG_INT(SvActivityCoinPeriodicRewardInterval, sv_activity_coin_reward_interval, 10, 1, 1440, CFGFLAG_SERVER, "Interval in minutes between periodic Activity Coin rewards while online")
+MACRO_CONFIG_INT(SvActivityCoinPeriodicRewardAmount, sv_activity_coin_reward_amount, 10, 1, 100000, CFGFLAG_SERVER, "Amount of Activity Coins granted periodically while online")
 
 MACRO_CONFIG_INT(SvDroppedItemLifetime, sv_dropped_item_lifetime, 20, 5, 60, CFGFLAG_SERVER, "Lifetime dropped item in seconds")
 MACRO_CONFIG_INT(SvDropsCurrencyFromMobs, sv_drops_currency_from_mobs, 0, 0, 1, CFGFLAG_SERVER, "Drops currency from mobs. 0 - to inventory, 1 - to pickup.")

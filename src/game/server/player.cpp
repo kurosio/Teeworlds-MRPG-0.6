@@ -107,6 +107,9 @@ void CPlayer::Tick()
 	if(!IsAuthed())
 		return;
 
+	const int TickSpeed = Server()->TickSpeed();
+	const int CurrentTick = Server()->Tick();
+
 	// do latency stuff
 	{
 		int Latency = Server()->GetClientLatency(m_ClientID);
@@ -117,9 +120,9 @@ void CPlayer::Tick()
 			m_Latency.m_AccumMin = minimum(m_Latency.m_AccumMin, Latency);
 		}
 		// each second
-		if(Server()->Tick() % Server()->TickSpeed() == 0)
+		if(CurrentTick % TickSpeed == 0)
 		{
-			m_Latency.m_Avg = m_Latency.m_Accum / Server()->TickSpeed();
+			m_Latency.m_Avg = m_Latency.m_Accum / TickSpeed;
 			m_Latency.m_Max = m_Latency.m_AccumMax;
 			m_Latency.m_Min = m_Latency.m_AccumMin;
 			m_Latency.m_Accum = 0;
@@ -142,13 +145,13 @@ void CPlayer::Tick()
 			m_pCharacter = nullptr;
 		}
 	}
-	else if(m_WantSpawn && m_aPlayerTick[Respawn] + Server()->TickSpeed() * g_Config.m_SvPlayerRespawnTime <= Server()->Tick())
+	else if(m_WantSpawn && m_aPlayerTick[Respawn] + TickSpeed * g_Config.m_SvPlayerRespawnTime <= CurrentTick)
 	{
 		TryRespawn();
 	}
 
 	// update events
-	m_FixedView.Tick(Server()->TickSpeed(), m_ViewPos);
+	m_FixedView.Tick(TickSpeed, m_ViewPos);
 	m_Cooldown.Tick();
 	if(m_pMotdMenu)
 	{
@@ -164,6 +167,22 @@ void CPlayer::Tick()
 
 	if(m_PlayerFlags & PLAYERFLAG_IN_MENU)
 		m_VotesData.ApplyVoteUpdaterData();
+
+	// periodic activity coin reward
+	const int RewardIntervalTicks = g_Config.m_SvActivityCoinPeriodicRewardInterval * 60 * TickSpeed;
+	if(RewardIntervalTicks > 0)
+	{
+		if(m_aPlayerTick[ActivityCoinReward] <= 0)
+			m_aPlayerTick[ActivityCoinReward] = CurrentTick + RewardIntervalTicks;
+		else if(CurrentTick >= m_aPlayerTick[ActivityCoinReward])
+		{
+			auto* pActCoin = GetItem(itActivityCoin);
+			const int RewardCoins = g_Config.m_SvActivityCoinPeriodicRewardAmount;
+			pActCoin->Add(RewardCoins, 0, 0, false);
+			m_aPlayerTick[ActivityCoinReward] = CurrentTick + RewardIntervalTicks;
+			GS()->Chat(m_ClientID, "You received '{} {}({$})' for being online.", pActCoin->Info()->GetName(), RewardCoins, pActCoin->GetValue());
+		}
+	}
 }
 
 void CPlayer::PostTick()

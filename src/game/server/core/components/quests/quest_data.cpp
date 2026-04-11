@@ -221,7 +221,7 @@ void CPlayerQuest::UpdateStepProgress()
 	if(Info()->HasFlag(QUEST_FLAG_TYPE_REPEATABLE))
 	{
 		if(CanGotActivityPoints)
-			pPlayer->GetItem(itActivityCoin)->Add(g_Config.m_SvRepeatableActivityCoin);
+			pPlayer->GetItem(itActivityCoin)->Add(g_Config.m_SvActivityCoinRepeatableQuestReward);
 
 		GS()->Chat(-1, "{} completed repeatable quest \"{}\".", GS()->Server()->ClientName(m_ClientID), Info()->GetName());
 		Reset();
@@ -238,25 +238,25 @@ void CPlayerQuest::UpdateStepProgress()
 	// daily quest
 	else if(Info()->HasFlag(QUEST_FLAG_TYPE_DAILY))
 	{
-		ActivityPoints = g_Config.m_SvDailyActivityCoin;
+		ActivityPoints = g_Config.m_SvActivityCoinDailyQuestReward;
 		GS()->Chat(-1, "{} completed daily quest \"{}\".", GS()->Server()->ClientName(m_ClientID), Info()->GetName());
 	}
 	// weekly quest
 	else if(Info()->HasFlag(QUEST_FLAG_TYPE_WEEKLY))
 	{
-		ActivityPoints = g_Config.m_SvWeeklyActivityCoin;
+		ActivityPoints = g_Config.m_SvActivityCoinWeeklyQuestReward;
 		GS()->Chat(-1, "{} completed weekly quest \"{}\".", GS()->Server()->ClientName(m_ClientID), Info()->GetName());
 	}
 	// main quest
 	else if(Info()->HasFlag(QUEST_FLAG_TYPE_MAIN))
 	{
-		ActivityPoints = g_Config.m_SvMainQuestActivityCoin;
+		ActivityPoints = g_Config.m_SvActivityCoinMainQuestReward;
 		GS()->Chat(-1, "{} completed main quest \"{}\".", GS()->Server()->ClientName(m_ClientID), Info()->GetName());
 	}
 	// side quest
 	else
 	{
-		ActivityPoints = g_Config.m_SvSideQuestActivityCoin;
+		ActivityPoints = g_Config.m_SvActivityCoinSideQuestReward;
 		GS()->Chat(-1, "{} completed side quest \"{}\".", GS()->Server()->ClientName(m_ClientID), Info()->GetName());
 	}
 
