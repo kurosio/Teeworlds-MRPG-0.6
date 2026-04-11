@@ -799,7 +799,8 @@ void CGS::OnTick()
 void CGS::OnTickGlobal()
 {
 	// send chat messages with interval
-	if(Server()->Tick() % (Server()->TickSpeed() * g_Config.m_SvChatMessageInterval) == 0)
+	const int ChatMessageIntervalTicks = Server()->TickSpeed() * g_Config.m_SvChatMessageInterval;
+	if(ChatMessageIntervalTicks > 0 && Server()->Tick() % ChatMessageIntervalTicks == 0)
 	{
 		static const std::deque<std::string> vMessages = {
 			"[INFO] We recommend that you use the function in F1 console \"ui_close_window_after_changing_setting 0\", this will allow the voting menu not to close after clicking to vote.",
@@ -813,11 +814,12 @@ void CGS::OnTickGlobal()
 	}
 
 	// send top messages with interval
-	if(Server()->Tick() % (Server()->TickSpeed() * g_Config.m_SvChatTopMessageInterval) == 0)
+	const int ChatTopMessageIntervalTicks = Server()->TickSpeed() * g_Config.m_SvChatTopMessageInterval;
+	if(ChatTopMessageIntervalTicks > 0 && Server()->Tick() % ChatTopMessageIntervalTicks == 0)
 	{
 		const auto RandomType = (ToplistType)(rand() % (int)ToplistType::NUM_TOPLIST_TYPES);
 		auto vResult = Core()->GetTopList(RandomType, 2);
-		if(vResult.size() < 2)
+		if(vResult.size() < 3)
 			return;
 
 		if(RandomType == ToplistType::PlayerExpert)
