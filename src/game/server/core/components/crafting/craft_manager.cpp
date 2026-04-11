@@ -7,6 +7,7 @@
 
 #include <components/inventory/inventory_manager.h>
 #include <components/mails/mail_wrapper.h>
+#include <tools/item_source_helper.h>
 
 void CCraftManager::OnInitWorld(const std::string& Where)
 {
@@ -212,6 +213,13 @@ void CCraftManager::ShowCraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const
 	if(!pCraft || pCraft->GetWorldID() != GS()->GetWorldID())
 		return;
 
+	// settings
+	const bool SourceView = pPlayer->GetItem(itShowItemSourceHint)->GetSettings() > 0;
+	VoteWrapper VSettings(ClientID, VWF_OPEN, "\u2699 Crafting settings");
+	VSettings.AddOption("TOGGLE_SETTING", itShowItemSourceHint, "[{}] {}",
+		SourceView ? "Enabled" : "Disabled", pPlayer->GetItem(itShowItemSourceHint)->Info()->GetName());
+	VoteWrapper::AddEmptyline(ClientID);
+
 	// detail information
 	VoteWrapper VCraftItem(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_STRICT_BOLD, "\u2692 Detail information");
 	CItemDescription* pCraftItemInfo = pCraft->GetItem()->Info();
@@ -244,6 +252,8 @@ void CCraftManager::ShowCraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const
 			bool hasEnoughItems = pPlayerItem->GetValue() >= pRequiredItem.GetValue();
 			VCraftRequired.MarkList().Add("{} {} x{} ({})", hasEnoughItems ? "\u2714" : "\u2718",
 				pRequiredItem.Info()->GetName(), pRequiredItem.GetValue(), pPlayerItem->GetValue());
+			if(SourceView)
+				VCraftRequired.Add("  ↳ source: ({})", BuildItemSourceHint(GS(), pRequiredItem.GetID()));
 		}
 		VCraftRequired.EndDepth();
 	}

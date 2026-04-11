@@ -1148,6 +1148,7 @@ void CAccountManager::LoadAccount(CPlayer* pPlayer, bool FirstInitilize)
 			{ itShowQuestStarNavigator, 1 },
 			{ itShowDetailGainMessages, 0 },
 			{ itShowOnlyFunctionModules, 1 },
+			{ itShowItemSourceHint, 0 },
 		});
 
 	// update player time periods
