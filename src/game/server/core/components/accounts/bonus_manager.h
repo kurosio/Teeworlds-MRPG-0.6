@@ -90,9 +90,7 @@ public:
 		}
 
 		if(pBonusValue)
-		{
-			*pBonusValue = Result;
-		}
+			*pBonusValue += Result;
 	}
 	float GetTotalBonusPercentage(int bonusType) const;
 	std::string GetBonusActivitiesString() const;

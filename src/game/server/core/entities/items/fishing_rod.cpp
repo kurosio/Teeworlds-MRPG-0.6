@@ -254,7 +254,7 @@ void CEntityFishingRod::FishingTick(CPlayer* pPlayer, CProfession* pFisherman, G
 			int Value = 1 + rand() % 2;
 			const auto ItemID = pNode->m_vItems.getRandomElement();
 			auto* pPlayerItem = pPlayer->GetItem(ItemID);
-			GS()->Core()->MiniEventsManager()->ApplyBonus(MiniEventType::FishingDrop, Value);
+			GS()->Core()->MiniEventsManager()->ApplyBonus(MiniEventType::FishingDrop, &Value);
 			pFisherman->AddExperience(pNode->Level * 2);
 			pPlayerItem->Add(Value);
 

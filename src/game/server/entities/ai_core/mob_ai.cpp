@@ -73,7 +73,6 @@ void CMobAI::OnRewardPlayer(CPlayer* pPlayer, vec2 Force) const
 		{
 			int goldGain = calculate_loot_gain(MobLevel, 3);
 			GS()->m_Multipliers.Apply(Multipliers::GOLD, goldGain);
-			GS()->Core()->MiniEventsManager()->ApplyBonus(MiniEventType::GoldGain, goldGain);
 
 			if(showMessages)
 				GS()->Chat(ClientID, "You gained {} gold.", goldGain);
@@ -85,7 +84,7 @@ void CMobAI::OnRewardPlayer(CPlayer* pPlayer, vec2 Force) const
 	// grinding materials
 	{
 		int materialGain = calculate_loot_gain(MobLevel, 10);
-		GS()->Core()->MiniEventsManager()->ApplyBonus(MiniEventType::MobDrop, materialGain);
+		GS()->Core()->MiniEventsManager()->ApplyBonus(MiniEventType::MobDrop, &materialGain);
 		pPlayer->GetItem(itMaterial)->Add(materialGain);
 	}
 
@@ -94,7 +93,6 @@ void CMobAI::OnRewardPlayer(CPlayer* pPlayer, vec2 Force) const
 		int expGain = calculate_exp_gain(PlayerLevel, MobLevel);
 		const int expBonusDrop = maximum(expGain / 3, 1);
 		GS()->m_Multipliers.Apply(Multipliers::EXPERIENCE, expGain);
-		GS()->Core()->MiniEventsManager()->ApplyBonus(MiniEventType::ExpGain, expGain);
 
 		if(showMessages)
 			GS()->Chat(ClientID, "You gained {} exp.", expGain);
@@ -117,7 +115,7 @@ void CMobAI::OnRewardPlayer(CPlayer* pPlayer, vec2 Force) const
 
 			const float RandomDrop = clamp(m_pMobInfo->m_aRandomItem[i] + ActiveLuckyDrop, 0.0f, 100.0f);
 			const vec2 ForceRandom = random_range_pos(Force, 4.f);
-			GS()->Core()->MiniEventsManager()->ApplyBonus(MiniEventType::MobDrop, DropValue);
+			GS()->Core()->MiniEventsManager()->ApplyBonus(MiniEventType::MobDrop, &DropValue);
 
 			CItem DropItem;
 			DropItem.SetID(DropID);
@@ -148,7 +146,7 @@ void CMobAI::OnRewardPlayer(CPlayer* pPlayer, vec2 Force) const
 		if(random_float(100.f) <= BaseChance)
 		{
 			int SkillPointAmount = 1;
-			GS()->Core()->MiniEventsManager()->ApplyBonus(MiniEventType::SkillPointDrop, SkillPointAmount);
+			GS()->Core()->MiniEventsManager()->ApplyBonus(MiniEventType::SkillPointDrop, &SkillPointAmount);
 			CPlayerItem* pPlayerItem = pPlayer->GetItem(itSkillPoint);
 			pPlayerItem->Add(SkillPointAmount);
 			GS()->Chat(ClientID, "Skill points increased. Now you have '{} SP'!", pPlayerItem->GetValue());

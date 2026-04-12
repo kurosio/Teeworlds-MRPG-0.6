@@ -47,7 +47,26 @@ public:
 	void OnTick() override;
 
 	bool IsActive() const;
-	void ApplyBonus(MiniEventType Type, int& Value) const;
+
+	template <typename T> requires std::is_integral_v<T>
+	void ApplyBonus(MiniEventType Type, T* pValue, T* pBonusValue = nullptr) const
+	{
+		if(!IsActive() || m_Data.m_Type != Type || !pValue || *pValue <= 0)
+			return;
+
+		auto Result = maximum((T)1, (T)translate_to_percent_rest(*pValue, (float)m_Data.m_BonusPercent));
+		*pValue += Result;
+
+		if(pBonusValue)
+			*pBonusValue += Result;
+	}
+	int GetBonusPercent(MiniEventType Type) const
+	{
+		if(IsActive() && m_Data.m_Type == Type)
+			return m_Data.m_BonusPercent;
+		return 0;
+	}
+	int GetBonusPercent() const { return GetBonusPercent(m_Data.m_Type); }
 	void FormatBroadcastLine(std::string& Result) const;
 
 private:

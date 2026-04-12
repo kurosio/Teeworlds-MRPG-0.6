@@ -14,6 +14,7 @@
 #include "core/components/Eidolons/EidolonInfoData.h"
 #include "core/components/guilds/guild_manager.h"
 #include "core/components/quests/quest_manager.h"
+#include "core/components/events/mini_events_manager.h"
 
 #include "core/components/inventory/item_data.h"
 #include "core/components/skills/skill_data.h"

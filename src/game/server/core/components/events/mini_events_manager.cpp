@@ -52,14 +52,6 @@ bool CMiniEventsManager::IsActive() const
 	return m_Data.IsActive(Server()->Tick()) && g_Config.m_SvMiniEventsEnabled;
 }
 
-void CMiniEventsManager::ApplyBonus(MiniEventType Type, int& Value) const
-{
-	if(!IsActive() || m_Data.m_Type != Type || Value <= 0)
-		return;
-
-	Value += maximum(1, translate_to_percent_rest(Value, (float)m_Data.m_BonusPercent));
-}
-
 void CMiniEventsManager::StartRandomMiniEvent()
 {
 	const auto Tick = Server()->Tick();

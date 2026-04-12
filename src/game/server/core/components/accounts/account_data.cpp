@@ -11,6 +11,7 @@
 #include <components/guilds/guild_manager.h>
 #include <components/worlds/world_manager.h>
 #include <tools/db_async_context.h>
+#include <components/events/mini_events_manager.h>
 
 std::map < int, CAccountData > CAccountData::ms_aData;
 std::map < int, CAccountSharedData > CAccountSharedData::ms_aPlayerSharedData;
@@ -407,6 +408,8 @@ void CAccountData::AddExperience(uint64_t Value, bool ApplyBonuses) const
 	const auto OldLevel = pClassProfession->GetLevel();
 	if(ApplyBonuses)
 		m_BonusManager.ApplyBonuses(BONUS_TYPE_EXPERIENCE, &Value);
+	GS()->Core()->MiniEventsManager()->ApplyBonus(MiniEventType::ExpGain, &Value);
+
 	pClassProfession->AddExperience(Value);
 	if(pClassProfession->GetLevel() > OldLevel)
 	{
@@ -438,6 +441,7 @@ void CAccountData::AddGold(int Value, bool ApplyBonuses)
 	// apply bonuses
 	if(ApplyBonuses)
 		m_BonusManager.ApplyBonuses(BONUS_TYPE_GOLD, &Value);
+	GS()->Core()->MiniEventsManager()->ApplyBonus(MiniEventType::GoldGain, &Value);
 
 	// add gold
 	pPlayer->GetItem(itGold)->Add(Value);
@@ -534,11 +538,12 @@ void CAccountData::HandleChair(int ChairLevel)
 		return;
 
 	// initialize variables
+	auto* pMiniEvents = GS()->Core()->MiniEventsManager();
 	const int ProfessionLevel = pClassProfession->GetLevel();
 	const int MaxGoldCapacity = GetGoldCapacity();
 	const bool IsGoldBagFull = (GetGold() >= MaxGoldCapacity);
-	const int TotalPercentBonusGold = round_to_int(m_BonusManager.GetTotalBonusPercentage(BONUS_TYPE_GOLD));
-	const int TotalPercentBonusExp = round_to_int(m_BonusManager.GetTotalBonusPercentage(BONUS_TYPE_EXPERIENCE));
+	const int TotalPercentBonusGold = round_to_int(m_BonusManager.GetTotalBonusPercentage(BONUS_TYPE_GOLD)) + pMiniEvents->GetBonusPercent(MiniEventType::GoldGain);
+	const int TotalPercentBonusExp = round_to_int(m_BonusManager.GetTotalBonusPercentage(BONUS_TYPE_EXPERIENCE)) + pMiniEvents->GetBonusPercent(MiniEventType::ExpGain);
 
 	// format
 	auto gainExp = std::max<uint64_t>(1, calculate_exp_gain(ProfessionLevel, ChairLevel));
@@ -551,6 +556,7 @@ void CAccountData::HandleChair(int ChairLevel)
 	{
 		uint64_t bonusExp = 0;
 		m_BonusManager.ApplyBonuses(BONUS_TYPE_EXPERIENCE, &gainExp, &bonusExp);
+		pMiniEvents->ApplyBonus(MiniEventType::ExpGain, &gainExp, &bonusExp);
 		expStr += fmt_default("+{} (+{}% bonus)", bonusExp, TotalPercentBonusExp);
 	}
 

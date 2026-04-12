@@ -145,9 +145,9 @@ void CEntityGatheringNode::Die(CPlayer* pPlayer, CProfession* pProfession)
 	auto* pPlayerItem = pPlayer->GetItem(ItemID);
 
 	if(m_Type == GATHERING_NODE_ORE)
-		GS()->Core()->MiniEventsManager()->ApplyBonus(MiniEventType::MiningDrop, Value);
+		GS()->Core()->MiniEventsManager()->ApplyBonus(MiniEventType::MiningDrop, &Value);
 	else if(m_Type == GATHERING_NODE_PLANT)
-		GS()->Core()->MiniEventsManager()->ApplyBonus(MiniEventType::FarmerDrop, Value);
+		GS()->Core()->MiniEventsManager()->ApplyBonus(MiniEventType::FarmerDrop, &Value);
 
 	pProfession->AddExperience(m_pNode->Level);
 	pPlayerItem->Add(Value);
