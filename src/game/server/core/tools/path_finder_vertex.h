@@ -68,6 +68,7 @@ public:
 	// initialize the graph with the given number of vertices
 	void init(int vertices)
 	{
+		clear();
 		m_initilized = true;
 		m_numVertices = vertices;
 		m_adjLists = new std::list<int>[m_numVertices];

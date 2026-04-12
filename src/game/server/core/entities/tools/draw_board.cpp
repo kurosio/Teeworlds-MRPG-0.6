@@ -246,7 +246,7 @@ bool CEntityDrawboard::StartDrawing(CPlayer* pPlayer)
 	else
 		m_pOrbit->AddClientMask(pPlayer->GetCID());
 
-	m_vBrushes.emplace(new CBrush(pPlayer, this, &m_ToolEvent));
+	m_vBrushes.emplace(pBrush);
 	return true;
 }
 

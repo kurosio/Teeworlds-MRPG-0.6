@@ -26,6 +26,10 @@ void CGameControllerDefault::Tick()
 
 void CGameControllerDefault::TryGenerateMoneyBag()
 {
+	// clear container for invalid money bags
+	std::erase_if(m_vMoneyBags, [this](CEntityMoneyBag* pMoneyBag)
+	{ return !GS()->m_World.ExistEntity(pMoneyBag); });
+
 	if(m_vMoneyBags.size() >= MAX_MONEY_BAGS_ON_WORLD)
 		return;
 
