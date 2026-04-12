@@ -27,8 +27,8 @@ class CServer : public IServer
 
 	class IConsole* m_pConsole {};
 	class IStorageEngine* m_pStorage {};
-	class CMultiWorlds* m_pMultiWorlds;
-	class CServerBan* m_pServerBan;
+	class CMultiWorlds* m_pMultiWorlds {};
+	class CServerBan* m_pServerBan {};
 	class IRegister* m_pRegister{};
 
 public:

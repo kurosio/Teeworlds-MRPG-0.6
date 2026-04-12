@@ -141,6 +141,8 @@ CServer::CServer()
 
 CServer::~CServer()
 {
+	delete m_pLocalization;
+	delete m_pServerBan;
 	delete m_pRegister;
 	delete m_pMultiWorlds;
 	m_vBaseAccounts.clear();
@@ -2265,6 +2267,9 @@ int CServer::Run(ILogger* pLogger)
 	}
 
 	delete m_pInputKeys;
+	m_pInputKeys = nullptr;
+	delete m_pLocalization;
+	m_pLocalization = nullptr;
 	m_Econ.Shutdown();
 	m_NetServer.Close();
 	m_pRegister->OnShutdown();
