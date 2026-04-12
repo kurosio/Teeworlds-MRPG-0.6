@@ -51,14 +51,18 @@ public:
 	template <typename T> requires std::is_integral_v<T>
 	void ApplyBonus(MiniEventType Type, T* pValue, T* pBonusValue = nullptr) const
 	{
-		if(!IsActive() || m_Data.m_Type != Type || !pValue || *pValue <= 0)
+		if(!pValue || *pValue <= 0)
 			return;
 
-		auto Result = maximum((T)1, (T)translate_to_percent_rest(*pValue, (float)m_Data.m_BonusPercent));
-		*pValue += Result;
+		const int BonusPercent = GetBonusPercent(Type);
+		if(BonusPercent <= 0)
+			return;
+
+		const auto BonusValue = maximum((T)1, (T)translate_to_percent_rest(*pValue, (float)BonusPercent));
+		*pValue += BonusValue;
 
 		if(pBonusValue)
-			*pBonusValue += Result;
+			*pBonusValue += BonusValue;
 	}
 	int GetBonusPercent(MiniEventType Type) const
 	{

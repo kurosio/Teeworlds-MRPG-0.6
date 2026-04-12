@@ -75,19 +75,15 @@ public:
 	template <typename T> requires std::is_integral_v<T>
 	void ApplyBonuses(int bonusType, T* pValue, T* pBonusValue = nullptr) const
 	{
-		auto Result = (T)0;
+		if(!pValue || *pValue <= 0)
+			return;
 
-		for(const TemporaryBonus& bonus : m_vTemporaryBonuses)
-		{
-			if(bonus.Type == bonusType)
-			{
-				if(pValue)
-				{
-					Result += maximum((T)1, (T)translate_to_percent_rest(*pValue, bonus.Amount));
-					*pValue += Result;
-				}
-			}
-		}
+		const float TotalPercent = GetTotalBonusPercentage(bonusType);
+		if(TotalPercent <= 0.0f)
+			return;
+
+		const auto Result = maximum((T)1, (T)translate_to_percent_rest(*pValue, TotalPercent));
+		*pValue += Result;
 
 		if(pBonusValue)
 			*pBonusValue += Result;

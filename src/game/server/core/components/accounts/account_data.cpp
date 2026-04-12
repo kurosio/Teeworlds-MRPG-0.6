@@ -564,6 +564,7 @@ void CAccountData::HandleChair(int ChairLevel)
 	{
 		int bonusGold = 0;
 		m_BonusManager.ApplyBonuses(BONUS_TYPE_GOLD, &gainGold, &bonusGold);
+		pMiniEvents->ApplyBonus(MiniEventType::GoldGain, &gainGold, &bonusGold);
 		goldStr += fmt_default("+{} (+{}% bonus)", bonusGold, TotalPercentBonusGold);
 	}
 

@@ -22,7 +22,7 @@
 #include "core/components/worlds/world_data.h"
 
 #include "core/tools/vote_optional.h"
-#include "core/scenarios/managers//scenario_player_manager.h"
+#include "core/scenarios/managers/scenario_player_manager.h"
 #include "core/scenarios/impl/scenario_universal.h"
 
 MACRO_ALLOC_POOL_ID_IMPL(CPlayer, MAX_CLIENTS * ENGINE_MAX_WORLDS + MAX_CLIENTS)
