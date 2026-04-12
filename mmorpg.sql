@@ -29805,7 +29805,8 @@ INSERT INTO `tw_items_list` (`Comment`, `ID`, `Name`, `Description`, `Group`, `T
 ('Не реализ', 404, 'Ring of Perfect Lightning', 'Chance to retaliate and attack with lightning', 'Equipment', 'Default', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
 ('Не реализ', 405, 'Tesla Inductive Coil', 'Increases electro damage by 25%', 'Equipment', 'Default', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
 (NULL, 406, 'GOLD 50% 3d', 'Boost GOLD 50% 3d', 'Usable', 'Single use x1', 'Can\'t droppable,Can\'t tradeable', NULL, NULL, NULL, NULL, NULL, NULL, NULL, '{\r\n  \"bonus\": {\r\n    \"amount\": 50,\r\n    \"duration_days\": 3,\r\n    \"type\": 2\r\n  }\r\n}'),
-(NULL, 407, 'EXP 50% 3d', 'Boost EXP 50% 3d', 'Usable', 'Single use x1', 'Can\'t droppable,Can\'t tradeable', NULL, NULL, NULL, NULL, NULL, NULL, NULL, '{\n  \"bonus\": {\n    \"amount\": 50,\n    \"duration_days\": 3,\n    \"type\": 1\n  }\n}');
+(NULL, 407, 'EXP 50% 3d', 'Boost EXP 50% 3d', 'Usable', 'Single use x1', 'Can\'t droppable,Can\'t tradeable', NULL, NULL, NULL, NULL, NULL, NULL, NULL, '{\n  \"bonus\": {\n    \"amount\": 50,\n    \"duration_days\": 3,\n    \"type\": 1\n  }\n}'),
+(NULL, 409, 'Show source item in craft', 'Setting game', 'Settings', 'Default', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
 
 -- --------------------------------------------------------
 
@@ -30834,7 +30835,7 @@ ALTER TABLE `tw_houses_decorations`
 -- AUTO_INCREMENT для таблицы `tw_items_list`
 --
 ALTER TABLE `tw_items_list`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=408;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=410;
 
 --
 -- AUTO_INCREMENT для таблицы `tw_logics_worlds`

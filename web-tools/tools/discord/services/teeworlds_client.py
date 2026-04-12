@@ -195,8 +195,10 @@ class TeeworldsEconClient:
                 logger.warning("Cannot send message: Econ not connected.")
                 return False
 
-            # clean unsupport symbols
+            # clean unsupported symbols
             cleaned_message = clean_message(text_to_say)
+            # ECON is line-based; strip line breaks/tabs to avoid command injection
+            cleaned_message = cleaned_message.replace('\r', ' ').replace('\n', ' ').replace('\t', ' ').strip()
             if not cleaned_message:
                  logger.warning("Attempted to send an empty or non-printable message.")
                  return False
