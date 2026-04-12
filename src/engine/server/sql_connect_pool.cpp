@@ -183,6 +183,66 @@ namespace
 			}
 		};
 	}
+
+	std::function<void(Connection*, int)> CreateAsyncDmlTask(const std::shared_ptr<CAsyncDmlContext>& pContext, CThreadPool* pThreadPool)
+	{
+		return [pContext, pThreadPool](Connection* /*pConnection*/, int RetryCount)
+		{
+			if(pContext->DelayMilliseconds() > 0)
+				std::this_thread::sleep_for(std::chrono::milliseconds(pContext->DelayMilliseconds()));
+
+			auto ownedConnection = CConectionPool::CreateConnection();
+			if(!ownedConnection)
+			{
+				if(RetryCount < g_Config.m_SvSqlDmlMaxRetries)
+				{
+					dbg_msg("SQL Worker", "Async DML connection unavailable. Retrying (attempt %d/%d). Query: %s", RetryCount + 1, g_Config.m_SvSqlDmlMaxRetries, pContext->Query().c_str());
+					if(pThreadPool)
+						pThreadPool->EnqueueWithRetry(CreateAsyncDmlTask(pContext, pThreadPool), pContext->Type(), pContext->Query(), RetryCount + 1);
+					return;
+				}
+
+				LogLostQuery("async dml connection unavailable", pContext->Type(), pContext->Query());
+				dbg_msg("SQL Error", "Async DML failed to create a connection. Query: %s", pContext->Query().c_str());
+				NotifyDml(pContext->Callback(), false);
+				return;
+			}
+
+			auto sharedConnection = std::shared_ptr<Connection>(ownedConnection.release());
+
+			try
+			{
+				std::unique_ptr<Statement> pStmt(sharedConnection->createStatement());
+				const bool hasResultSet = pStmt->execute(pContext->Query().c_str());
+				const bool hasUpdated = !hasResultSet && pStmt->getUpdateCount() > 0;
+				if(hasResultSet)
+					DrainStatementResults(pStmt.get());
+
+				NotifyDml(pContext->Callback(), hasUpdated);
+			}
+			catch(SQLException& e)
+			{
+				if(is_connection_lost(e))
+				{
+					CloseConnectionOnError(sharedConnection.get(), "Async DML");
+					if(RetryCount < g_Config.m_SvSqlDmlMaxRetries)
+					{
+						if(pThreadPool)
+							pThreadPool->EnqueueWithRetry(CreateAsyncDmlTask(pContext, pThreadPool), pContext->Type(), pContext->Query(), RetryCount + 1);
+						return;
+					}
+					LogLostQuery("async dml retries exhausted", pContext->Type(), pContext->Query());
+				}
+				else
+				{
+					LogLostQuery("async dml failed", pContext->Type(), pContext->Query());
+				}
+
+				dbg_msg("SQL Error", "Async DML failed: %s. Query: %s", e.what(), pContext->Query().c_str());
+				NotifyDml(pContext->Callback(), false);
+			}
+		};
+	}
 }
 
 CThreadPool::CThreadPool(size_t numThreads) : m_bStop(false)
@@ -530,61 +590,12 @@ void CConectionPool::CResultSelect::AtExecute(CallbackResultPtr pCallbackResult)
 void CConectionPool::CResultQuery::AtExecute(CallbackUpdatePtr pCallbackResult, int DelayMilliseconds)
 {
 	auto pContext = std::make_shared<CAsyncDmlContext>(m_Query, m_TypeQuery, std::move(pCallbackResult), DelayMilliseconds);
-	auto pTask = std::make_shared<std::function<void(Connection*, int)>>();
-	*pTask = [pContext, pTask](Connection* /*pConnection*/, int RetryCount)
+	CThreadPool* pThreadPool = Database->m_pThreadPool.get();
+	if(!pThreadPool)
 	{
-		if(pContext->DelayMilliseconds() > 0)
-			std::this_thread::sleep_for(std::chrono::milliseconds(pContext->DelayMilliseconds()));
-
-		auto ownedConnection = CConectionPool::CreateConnection();
-		if(!ownedConnection)
-		{
-			if(RetryCount < g_Config.m_SvSqlDmlMaxRetries)
-			{
-				dbg_msg("SQL Worker", "Async DML connection unavailable. Retrying (attempt %d/%d). Query: %s", RetryCount + 1, g_Config.m_SvSqlDmlMaxRetries, pContext->Query().c_str());
-				Database->m_pThreadPool->EnqueueWithRetry(*pTask, pContext->Type(), pContext->Query(), RetryCount + 1);
-				return;
-			}
-
-			LogLostQuery("async dml connection unavailable", pContext->Type(), pContext->Query());
-			dbg_msg("SQL Error", "Async DML failed to create a connection. Query: %s", pContext->Query().c_str());
-			NotifyDml(pContext->Callback(), false);
-			return;
-		}
-
-		auto sharedConnection = std::shared_ptr<Connection>(ownedConnection.release());
-
-		try
-		{
-			std::unique_ptr<Statement> pStmt(sharedConnection->createStatement());
-			const bool hasResultSet = pStmt->execute(pContext->Query().c_str());
-			const bool hasUpdated = !hasResultSet && pStmt->getUpdateCount() > 0;
-			if(hasResultSet)
-				DrainStatementResults(pStmt.get());
-
-			NotifyDml(pContext->Callback(), hasUpdated);
-		}
-		catch(SQLException& e)
-		{
-			if(is_connection_lost(e))
-			{
-				CloseConnectionOnError(sharedConnection.get(), "Async DML");
-				if(RetryCount < g_Config.m_SvSqlDmlMaxRetries)
-				{
-					Database->m_pThreadPool->EnqueueWithRetry(*pTask, pContext->Type(), pContext->Query(), RetryCount + 1);
-					return;
-				}
-				LogLostQuery("async dml retries exhausted", pContext->Type(), pContext->Query());
-			}
-			else
-			{
-				LogLostQuery("async dml failed", pContext->Type(), pContext->Query());
-			}
-
-			dbg_msg("SQL Error", "Async DML failed: %s. Query: %s", e.what(), pContext->Query().c_str());
-			NotifyDml(pContext->Callback(), false);
-		}
-	};
-
-	Database->m_pThreadPool->Enqueue(*pTask, pContext->Type(), pContext->Query());
+		dbg_msg("SQL Error", "Async DML failed to enqueue: thread pool unavailable. Query: %s", pContext->Query().c_str());
+		NotifyDml(pContext->Callback(), false);
+		return;
+	}
+	pThreadPool->Enqueue(CreateAsyncDmlTask(pContext, pThreadPool), pContext->Type(), pContext->Query());
 }
