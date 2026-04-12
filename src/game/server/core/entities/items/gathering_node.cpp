@@ -5,6 +5,7 @@
 #include <generated/server_data.h>
 
 #include <game/server/core/components/houses/house_manager.h>
+#include <game/server/core/components/events/mini_events_manager.h>
 
 CEntityGatheringNode::CEntityGatheringNode(CGameWorld* pGameWorld, GatheringNode* pNode, vec2 Pos, int Type)
 : CEntity(pGameWorld, CGameWorld::ENTTYPE_GATHERING_NODE, Pos, PickupPhysSize)
@@ -139,9 +140,15 @@ void CEntityGatheringNode::Die(CPlayer* pPlayer, CProfession* pProfession)
 	if(m_CurrentHealth > 0 || m_pNode->m_vItems.isEmpty())
 		return;
 
-	const auto Value = 1 + rand() % 2;
+	int Value = 1 + rand() % 2;
 	const auto ItemID = m_pNode->m_vItems.getRandomElement();
 	auto* pPlayerItem = pPlayer->GetItem(ItemID);
+
+	if(m_Type == GATHERING_NODE_ORE)
+		GS()->Core()->MiniEventsManager()->ApplyBonus(MiniEventType::MiningDrop, Value);
+	else if(m_Type == GATHERING_NODE_PLANT)
+		GS()->Core()->MiniEventsManager()->ApplyBonus(MiniEventType::FarmerDrop, Value);
+
 	pProfession->AddExperience(m_pNode->Level);
 	pPlayerItem->Add(Value);
 	SetSpawn(20);

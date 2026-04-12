@@ -29,6 +29,7 @@ class CMmoController
 	class CSkillManager* m_pSkillManager;
 	class CWorldManager* m_pWorldManager;
 	class CEidolonManager* m_pEidolonManager;
+	class CMiniEventsManager* m_pMiniEventsManager;
 
 public:
 	explicit CMmoController(CGS *pGameServer);
@@ -52,6 +53,7 @@ public:
 	CGroupManager* GroupManager() const { return m_pGroupManager; }
 	CSkillManager* SkillManager() const { return m_pSkillManager; }
 	CWorldManager *WorldManager() const { return m_pWorldManager; }
+	CMiniEventsManager* MiniEventsManager() const { return m_pMiniEventsManager; }
 
 	// global systems
 	void OnInit(IServer* pServer, IConsole* pConsole, IStorageEngine* pStorage);

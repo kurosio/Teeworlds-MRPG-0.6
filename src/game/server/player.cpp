@@ -711,6 +711,9 @@ void CPlayer::FormatBroadcastBasicStats(char* pBuffer, int Size, const char* pAp
 		Result += "\n" + BonusActivitiesStr;
 	}
 
+	// active mini-event info
+	GS()->Core()->MiniEventsManager()->FormatBroadcastLine(Result);
+
 	// normalize lines
 	constexpr int MaxLines = 20;
 	const auto Lines = std::ranges::count(Result, '\n');

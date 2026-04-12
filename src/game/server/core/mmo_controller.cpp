@@ -22,6 +22,7 @@
 #include "components/warehouse/warehouse_manager.h"
 #include "components/wiki/wiki_manager.h"
 #include "components/worlds/world_manager.h"
+#include "components/events/mini_events_manager.h"
 #include "components/accounts/account_listener.h"
 #include "components/inventory/inventory_listener.h"
 
@@ -48,6 +49,7 @@ CMmoController::CMmoController(CGS* pGameServer) : m_pGameServer(pGameServer)
 	m_System.add(m_pAccountManager = new CAccountManager);
 	m_System.add(m_pMailboxManager = new CMailboxManager);
 	m_System.add(new CWikiManager);
+	m_System.add(m_pMiniEventsManager = new CMiniEventsManager);
 
 }
 

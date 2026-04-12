@@ -13,22 +13,23 @@ class CCharacter;
 class CPlayerQuest;
 
 #define LIST_OF_ALL_EVENTS(XEV) \
-    XEV(CharacterDamage,          OnCharacterDamage,         CPlayer* pFrom, CPlayer* pTo, int Damage) \
-    XEV(CharacterDeath,           OnCharacterDeath,          CPlayer* pVictim, CPlayer* pKiller, int Weapon) \
-    XEV(CharacterSpawn,           OnCharacterSpawn,          CPlayer* pPlayer) \
-    XEV(PlayerLogin,              OnPlayerLogin,             CPlayer* pPlayer, CAccountData* pAccount) \
-    XEV(PlayerChat,               OnPlayerChat,              CPlayer* pPlayer, const char* pMessage) \
-    XEV(PlayerProfessionUpgrade,  OnPlayerProfessionUpgrade, CPlayer* pPlayer, int AttributeID) \
-    XEV(PlayerProfessionLeveling, OnPlayerProfessionLeveling,CPlayer* pPlayer, CProfession* pProfession, int NewLevel) \
-    XEV(PlayerProfessionChange,   OnPlayerProfessionChange,  CPlayer* pPlayer, CProfession* pOldProf, CProfession* pNewProf) \
-    XEV(PlayerGotItem,            OnPlayerGotItem,           CPlayer* pPlayer, CPlayerItem* pItem, int Got) \
-    XEV(PlayerLostItem,           OnPlayerLostItem,          CPlayer* pPlayer, CPlayerItem* pItem, int Lost) \
-    XEV(PlayerCraftItem,          OnPlayerCraftItem,         CPlayer* pPlayer, CCraftItem* pCraft) \
-    XEV(PlayerEquipItem,          OnPlayerEquipItem,         CPlayer* pPlayer, CPlayerItem* pItem) \
-    XEV(PlayerUnequipItem,        OnPlayerUnequipItem,       CPlayer* pPlayer, CPlayerItem* pItem) \
-    XEV(PlayerEnchantItem,        OnPlayerEnchantItem,       CPlayer* pPlayer, CPlayerItem* pItem) \
-    XEV(PlayerDurabilityItem,     OnPlayerDurabilityItem,    CPlayer* pPlayer, CPlayerItem* pItem, int OldDurability) \
-    XEV(PlayerQuestChangeState,   OnPlayerQuestChangeState,  CPlayer* pPlayer, CPlayerQuest* pQuest, QuestState NewState)
+    XEV(CharacterDamage,                OnCharacterDamage,                CPlayer* pFrom, CPlayer* pTo, int Damage) \
+    XEV(CharacterDeath,                 OnCharacterDeath,                 CPlayer* pVictim, CPlayer* pKiller, int Weapon) \
+    XEV(CharacterSpawn,                 OnCharacterSpawn,                 CPlayer* pPlayer) \
+    XEV(PlayerLogin,                    OnPlayerLogin,                    CPlayer* pPlayer, CAccountData* pAccount) \
+    XEV(PlayerChat,                     OnPlayerChat,                     CPlayer* pPlayer, const char* pMessage) \
+    XEV(PlayerProfessionUpgrade,        OnPlayerProfessionUpgrade,        CPlayer* pPlayer, int AttributeID) \
+    XEV(PlayerProfessionLeveling,       OnPlayerProfessionLeveling,       CPlayer* pPlayer, CProfession* pProfession, int NewLevel) \
+    XEV(PlayerProfessionExperience,     OnPlayerProfessionExperience,     CPlayer* pPlayer, CProfession* pProfession, uint64_t& Experience) \
+    XEV(PlayerProfessionChange,         OnPlayerProfessionChange,         CPlayer* pPlayer, CProfession* pOldProf, CProfession* pNewProf) \
+    XEV(PlayerGotItem,                  OnPlayerGotItem,                  CPlayer* pPlayer, CPlayerItem* pItem, int Got) \
+    XEV(PlayerLostItem,                 OnPlayerLostItem,                 CPlayer* pPlayer, CPlayerItem* pItem, int Lost) \
+    XEV(PlayerCraftItem,                OnPlayerCraftItem,                CPlayer* pPlayer, CCraftItem* pCraft) \
+    XEV(PlayerEquipItem,                OnPlayerEquipItem,                CPlayer* pPlayer, CPlayerItem* pItem) \
+    XEV(PlayerUnequipItem,              OnPlayerUnequipItem,              CPlayer* pPlayer, CPlayerItem* pItem) \
+    XEV(PlayerEnchantItem,              OnPlayerEnchantItem,              CPlayer* pPlayer, CPlayerItem* pItem) \
+    XEV(PlayerDurabilityItem,           OnPlayerDurabilityItem,           CPlayer* pPlayer, CPlayerItem* pItem, int OldDurability) \
+    XEV(PlayerQuestChangeState,         OnPlayerQuestChangeState,         CPlayer* pPlayer, CPlayerQuest* pQuest, QuestState NewState)
 
 // event listener
 class IEventListener

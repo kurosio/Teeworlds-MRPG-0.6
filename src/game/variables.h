@@ -180,6 +180,17 @@ MACRO_CONFIG_INT(SvArrestGoldOnDeath, sv_arrest_gold_on_death, 30, 0, 100, CFGFL
 MACRO_CONFIG_INT(SvBankCommissionRate, sv_bank_commission_rate, 5, 0, 100, CFGFLAG_SERVER, "Commission rate for bank transactions (in percentage)")
 
 // -----------------------
+// Mini-events
+// -----------------------
+MACRO_CONFIG_INT(SvMiniEventsEnabled, sv_mini_events_enabled, 1, 0, 1, CFGFLAG_SERVER, "Enable global mini-events system")
+MACRO_CONFIG_INT(SvMiniEventsIntervalMinMinutes, sv_mini_events_interval_min, 30, 1, 1440, CFGFLAG_SERVER, "Minimal minutes before a random mini-event can start")
+MACRO_CONFIG_INT(SvMiniEventsIntervalMaxMinutes, sv_mini_events_interval_max, 90, 1, 1440, CFGFLAG_SERVER, "Maximum minutes before a random mini-event can start")
+MACRO_CONFIG_INT(SvMiniEventsDurationMinMinutes, sv_mini_events_duration_min, 2, 2, 60, CFGFLAG_SERVER, "Minimal mini-event duration in minutes")
+MACRO_CONFIG_INT(SvMiniEventsDurationMaxMinutes, sv_mini_events_duration_max, 5, 2, 60, CFGFLAG_SERVER, "Maximum mini-event duration in minutes")
+MACRO_CONFIG_INT(SvMiniEventsBonusMinPercent, sv_mini_events_min_percent, 200, 1, 500, CFGFLAG_SERVER, "Minimal random mini-event bonus percent")
+MACRO_CONFIG_INT(SvMiniEventsBonusMaxPercent, sv_mini_events_max_percent, 500, 1, 500, CFGFLAG_SERVER, "Maximum random mini-event bonus percent")
+
+// -----------------------
 // Miscellaneous Configuration
 // -----------------------
 MACRO_CONFIG_INT(SvPlayerRespawnTime, sv_player_respawn_time, 3, 0, 999, CFGFLAG_SERVER, "Player respawn time in seconds")

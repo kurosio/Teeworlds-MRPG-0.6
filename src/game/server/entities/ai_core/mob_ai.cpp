@@ -9,6 +9,7 @@
 #include <game/server/core/components/quests/quest_manager.h>
 #include <game/server/core/components/tunes/tune_zone_manager.h>
 #include <game/server/core/components/skills/entities/attack_teleport/attack_teleport.h>
+#include <game/server/core/components/events/mini_events_manager.h>
 
 CMobAI::CMobAI(MobBotInfo* pNpcInfo, CPlayerBot* pPlayer, CCharacterBotAI* pCharacter)
 	: CBaseAI(pPlayer, pCharacter), m_pMobInfo(pNpcInfo) { }
@@ -72,6 +73,7 @@ void CMobAI::OnRewardPlayer(CPlayer* pPlayer, vec2 Force) const
 		{
 			int goldGain = calculate_loot_gain(MobLevel, 3);
 			GS()->m_Multipliers.Apply(Multipliers::GOLD, goldGain);
+			GS()->Core()->MiniEventsManager()->ApplyBonus(MiniEventType::GoldGain, goldGain);
 
 			if(showMessages)
 				GS()->Chat(ClientID, "You gained {} gold.", goldGain);
@@ -82,7 +84,8 @@ void CMobAI::OnRewardPlayer(CPlayer* pPlayer, vec2 Force) const
 
 	// grinding materials
 	{
-		const int materialGain = calculate_loot_gain(MobLevel, 10);
+		int materialGain = calculate_loot_gain(MobLevel, 10);
+		GS()->Core()->MiniEventsManager()->ApplyBonus(MiniEventType::MobDrop, materialGain);
 		pPlayer->GetItem(itMaterial)->Add(materialGain);
 	}
 
@@ -91,6 +94,7 @@ void CMobAI::OnRewardPlayer(CPlayer* pPlayer, vec2 Force) const
 		int expGain = calculate_exp_gain(PlayerLevel, MobLevel);
 		const int expBonusDrop = maximum(expGain / 3, 1);
 		GS()->m_Multipliers.Apply(Multipliers::EXPERIENCE, expGain);
+		GS()->Core()->MiniEventsManager()->ApplyBonus(MiniEventType::ExpGain, expGain);
 
 		if(showMessages)
 			GS()->Chat(ClientID, "You gained {} exp.", expGain);
@@ -106,13 +110,14 @@ void CMobAI::OnRewardPlayer(CPlayer* pPlayer, vec2 Force) const
 		for(int i = 0; i < MAX_DROPPED_FROM_MOBS; i++)
 		{
 			const int DropID = m_pMobInfo->m_aDropItem[i];
-			const int DropValue = m_pMobInfo->m_aValueItem[i];
+			int DropValue = m_pMobInfo->m_aValueItem[i];
 
 			if(DropID <= 0 || DropValue <= 0)
 				continue;
 
 			const float RandomDrop = clamp(m_pMobInfo->m_aRandomItem[i] + ActiveLuckyDrop, 0.0f, 100.0f);
 			const vec2 ForceRandom = random_range_pos(Force, 4.f);
+			GS()->Core()->MiniEventsManager()->ApplyBonus(MiniEventType::MobDrop, DropValue);
 
 			CItem DropItem;
 			DropItem.SetID(DropID);
@@ -142,8 +147,10 @@ void CMobAI::OnRewardPlayer(CPlayer* pPlayer, vec2 Force) const
 		// try generate chance
 		if(random_float(100.f) <= BaseChance)
 		{
+			int SkillPointAmount = 1;
+			GS()->Core()->MiniEventsManager()->ApplyBonus(MiniEventType::SkillPointDrop, SkillPointAmount);
 			CPlayerItem* pPlayerItem = pPlayer->GetItem(itSkillPoint);
-			pPlayerItem->Add(1);
+			pPlayerItem->Add(SkillPointAmount);
 			GS()->Chat(ClientID, "Skill points increased. Now you have '{} SP'!", pPlayerItem->GetValue());
 		}
 	}

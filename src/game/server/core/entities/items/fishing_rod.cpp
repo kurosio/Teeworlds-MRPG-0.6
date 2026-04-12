@@ -2,6 +2,7 @@
 
 #include <game/server/gamecontext.h>
 #include <game/server/entity_manager.h>
+#include <game/server/core/components/events/mini_events_manager.h>
 #include <generated/server_data.h>
 
 CEntityFishingRod::CEntityFishingRod(CGameWorld* pGameWorld, int ClientID, vec2 Position, vec2 Force, bool AutoMode)
@@ -250,9 +251,10 @@ void CEntityFishingRod::FishingTick(CPlayer* pPlayer, CProfession* pFisherman, G
 		if(m_Fishing.m_Health <= 0)
 		{
 			auto& lastPointRef = m_Rope.m_vPoints.back();
-			const auto Value = 1 + rand() % 2;
+			int Value = 1 + rand() % 2;
 			const auto ItemID = pNode->m_vItems.getRandomElement();
 			auto* pPlayerItem = pPlayer->GetItem(ItemID);
+			GS()->Core()->MiniEventsManager()->ApplyBonus(MiniEventType::FishingDrop, Value);
 			pFisherman->AddExperience(pNode->Level * 2);
 			pPlayerItem->Add(Value);
 
