@@ -68,11 +68,12 @@ void CMiniEventsManager::StartRandomMiniEvent()
 	m_Data.m_EndTick = Tick + (TickSpeed * 60 * DurationMinutes);
 	m_Data.m_NextRollTick = 0;
 
-	GS()->ChatWorld(GS()->GetWorldID(), "", "======= Event Started! =======");
-	GS()->ChatWorld(GS()->GetWorldID(), "", "{} bonus: +{}%", GetMiniEventName(m_Data.m_Type), m_Data.m_BonusPercent);
-	GS()->ChatWorld(GS()->GetWorldID(), "", "Duration: {} min.", DurationMinutes);
-	GS()->ChatWorld(GS()->GetWorldID(), "", "Don't miss your chance!");
-	GS()->ChatWorld(GS()->GetWorldID(), "", "===============================");
+	GS()->ChatWorld(GS()->GetWorldID(), "", mystd::aesthetic::wrapLinePillar(8).c_str());
+	GS()->ChatWorld(GS()->GetWorldID(), "", "- Event Started!");
+	GS()->ChatWorld(GS()->GetWorldID(), "", "- {} bonus: +{}%", GetMiniEventName(m_Data.m_Type), m_Data.m_BonusPercent);
+	GS()->ChatWorld(GS()->GetWorldID(), "", "- Duration: {} min.", DurationMinutes);
+	GS()->ChatWorld(GS()->GetWorldID(), "", "- Don't miss your chance!");
+	GS()->ChatWorld(GS()->GetWorldID(), "", mystd::aesthetic::wrapLinePillar(8).c_str());
 
 }
 
