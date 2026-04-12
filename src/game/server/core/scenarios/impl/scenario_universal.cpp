@@ -214,15 +214,16 @@ namespace
 				return;
 			}
 
-			m_pEntDroppedItem->SetLifetime(Server()->TickSpeed() * g_Config.m_SvDroppedItemLifetime);
-			if(!m_Broadcast.empty())
-				GS()->Broadcast(Scenario()->GetClientID(), BroadcastPriority::VeryImportant, Server()->TickSpeed(), m_Broadcast.c_str());
-
 			if(!GS()->m_World.ExistEntity(m_pEntDroppedItem))
 			{
 				m_pEntDroppedItem = nullptr;
 				Finish();
+				return;
 			}
+
+			m_pEntDroppedItem->SetLifetime(Server()->TickSpeed() * g_Config.m_SvDroppedItemLifetime);
+			if(!m_Broadcast.empty())
+				GS()->Broadcast(Scenario()->GetClientID(), BroadcastPriority::VeryImportant, Server()->TickSpeed(), m_Broadcast.c_str());
 		}
 	};
 
