@@ -21,7 +21,7 @@ void CMiniEventsManager::ScheduleNextRoll()
 	const auto MinInterval = maximum(1, g_Config.m_SvMiniEventsIntervalMinMinutes);
 	const auto MaxInterval = maximum(MinInterval, g_Config.m_SvMiniEventsIntervalMaxMinutes);
 	const int IntervalMinutes = MinInterval + rand() % (MaxInterval - MinInterval + 1);
-	m_Data.Reset(Server()->Tick() + (TickSpeed * IntervalMinutes));
+	m_Data.Reset(Server()->Tick() + (TickSpeed * 60 * IntervalMinutes));
 }
 
 void CMiniEventsManager::OnInitWorld(const std::string&)
