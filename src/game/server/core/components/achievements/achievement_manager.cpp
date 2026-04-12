@@ -20,60 +20,33 @@ namespace
 		int m_TotalLevels {};
 	};
 
-	using AchievementGroupKey = std::pair<AchievementType, int>;
+	struct SAchievementChain
+	{
+		int m_Criteria {};
+		std::vector<const CAchievement*> m_vAchievements {};
+	};
 
-	std::unordered_map<const CAchievementInfo*, SAchievementLevelInfo> BuildLevelInfoByAchievement(
+	std::vector<SAchievementChain> BuildAchievementChains(
 		const std::deque<CAchievement*>& Achievements,
 		AchievementType Type)
 	{
-		std::map<AchievementGroupKey, std::vector<const CAchievementInfo*>> groupedByCriteria;
+		std::map<int, SAchievementChain> groupedByCriteria;
 		for(const auto* pAchievement : Achievements)
 		{
 			const auto* pInfo = pAchievement->Info();
 			if(pInfo->GetType() != Type)
 				continue;
 
-			groupedByCriteria[{pInfo->GetType(), pInfo->GetCriteria()}].push_back(pInfo);
+			auto& chain = groupedByCriteria[pInfo->GetCriteria()];
+			chain.m_Criteria = pInfo->GetCriteria();
+			chain.m_vAchievements.push_back(pAchievement);
 		}
 
-		std::unordered_map<const CAchievementInfo*, SAchievementLevelInfo> levelInfoByAchievement;
-		for(auto& [key, grouped] : groupedByCriteria)
+		std::vector<SAchievementChain> vChains;
+		vChains.reserve(groupedByCriteria.size());
+		for(auto& [criteria, chain] : groupedByCriteria)
 		{
-			std::ranges::sort(grouped, [](const CAchievementInfo* pLeft, const CAchievementInfo* pRight)
-			{
-				if(pLeft->GetRequired() == pRight->GetRequired())
-					return pLeft->GetID() < pRight->GetID();
-				return pLeft->GetRequired() < pRight->GetRequired();
-			});
-
-			const int totalLevels = (int)grouped.size();
-			for(int i = 0; i < totalLevels; ++i)
-			{
-				levelInfoByAchievement[grouped[i]] = { i + 1, totalLevels };
-			}
-		}
-
-		return levelInfoByAchievement;
-	}
-
-	std::unordered_set<const CAchievementInfo*> BuildVisibleAchievements(
-		const std::deque<CAchievement*>& Achievements,
-		AchievementType Type)
-	{
-		std::map<AchievementGroupKey, std::vector<const CAchievement*>> groupedByCriteria;
-		for(const auto* pAchievement : Achievements)
-		{
-			const auto* pInfo = pAchievement->Info();
-			if(pInfo->GetType() != Type)
-				continue;
-
-			groupedByCriteria[{pInfo->GetType(), pInfo->GetCriteria()}].push_back(pAchievement);
-		}
-
-		std::unordered_set<const CAchievementInfo*> visible;
-		for(auto& [key, grouped] : groupedByCriteria)
-		{
-			std::ranges::sort(grouped, [](const CAchievement* pLeft, const CAchievement* pRight)
+			std::ranges::sort(chain.m_vAchievements, [](const CAchievement* pLeft, const CAchievement* pRight)
 			{
 				const auto* pLeftInfo = pLeft->Info();
 				const auto* pRightInfo = pRight->Info();
@@ -82,16 +55,44 @@ namespace
 				return pLeftInfo->GetRequired() < pRightInfo->GetRequired();
 			});
 
-			int lastCompletedIndex = -1;
-			for(int i = 0; i < (int)grouped.size(); ++i)
+			vChains.emplace_back(std::move(chain));
+		}
+
+		return vChains;
+	}
+
+	std::unordered_map<const CAchievementInfo*, SAchievementLevelInfo> BuildLevelInfoByAchievement(
+		const std::vector<SAchievementChain>& vChains)
+	{
+		std::unordered_map<const CAchievementInfo*, SAchievementLevelInfo> levelInfoByAchievement;
+		for(const auto& chain : vChains)
+		{
+			const int totalLevels = (int)chain.m_vAchievements.size();
+			for(int i = 0; i < totalLevels; ++i)
 			{
-				if(grouped[i]->IsCompleted())
+				const auto* pInfo = chain.m_vAchievements[i]->Info();
+				levelInfoByAchievement[pInfo] = { i + 1, totalLevels };
+			}
+		}
+		return levelInfoByAchievement;
+	}
+
+	std::unordered_set<const CAchievementInfo*> BuildVisibleAchievements(
+		const std::vector<SAchievementChain>& vChains)
+	{
+		std::unordered_set<const CAchievementInfo*> visible;
+		for(const auto& chain : vChains)
+		{
+			int lastCompletedIndex = -1;
+			for(int i = 0; i < (int)chain.m_vAchievements.size(); ++i)
+			{
+				if(chain.m_vAchievements[i]->IsCompleted())
 					lastCompletedIndex = i;
 			}
 
-			const int maxVisibleIndex = std::min(lastCompletedIndex + 1, (int)grouped.size() - 1);
+			const int maxVisibleIndex = std::min(lastCompletedIndex + 1, (int)chain.m_vAchievements.size() - 1);
 			for(int i = 0; i <= maxVisibleIndex; ++i)
-				visible.insert(grouped[i]->Info());
+				visible.insert(chain.m_vAchievements[i]->Info());
 		}
 
 		return visible;
@@ -236,8 +237,9 @@ void CAchievementManager::ShowTypeList(CPlayer* pPlayer, AchievementType Type) c
 	// initialize variables
 	const int ClientID = pPlayer->GetCID();
 	const auto& achievements = CAchievement::Data()[ClientID];
-	const auto levelInfoByAchievement = BuildLevelInfoByAchievement(achievements, Type);
-	const auto visibleAchievements = BuildVisibleAchievements(achievements, Type);
+	const auto chains = BuildAchievementChains(achievements, Type);
+	const auto levelInfoByAchievement = BuildLevelInfoByAchievement(chains);
+	const auto visibleAchievements = BuildVisibleAchievements(chains);
 
 
 	// info
@@ -248,27 +250,28 @@ void CAchievementManager::ShowTypeList(CPlayer* pPlayer, AchievementType Type) c
 
 	// achievements list
 	VoteWrapper(ClientID).Add("\u2263 {} achievements", GetAchievementTypeName(Type));
-	for(const auto& pAchievement : achievements)
+	for(const auto& chain : chains)
 	{
-		const auto* pInfo = pAchievement->Info();
-		if(pInfo->GetType() != Type)
-			continue;
-		if(!visibleAchievements.contains(pInfo))
-			continue;
+		for(const auto* pAchievement : chain.m_vAchievements)
+		{
+			const auto* pInfo = pAchievement->Info();
+			if(!visibleAchievements.contains(pInfo))
+				continue;
 
-		const auto progress = pAchievement->GetProgress();
-		const auto required = pInfo->GetRequired();
-		const bool completed = pAchievement->IsCompleted();
-		const auto levelInfoIt = levelInfoByAchievement.find(pInfo);
-		const int level = levelInfoIt != levelInfoByAchievement.end() ? levelInfoIt->second.m_Level : 0;
-		const int totalLevels = levelInfoIt != levelInfoByAchievement.end() ? levelInfoIt->second.m_TotalLevels : 0;
-		const std::string levelSuffix = totalLevels > 1
-			? " [Level " + std::to_string(level) + "/" + std::to_string(totalLevels) + "]"
-			: "";
+			const auto progress = pAchievement->GetProgress();
+			const auto required = pInfo->GetRequired();
+			const bool completed = pAchievement->IsCompleted();
+			const auto levelInfoIt = levelInfoByAchievement.find(pInfo);
+			const int level = levelInfoIt != levelInfoByAchievement.end() ? levelInfoIt->second.m_Level : 0;
+			const int totalLevels = levelInfoIt != levelInfoByAchievement.end() ? levelInfoIt->second.m_TotalLevels : 0;
+			const std::string levelSuffix = totalLevels > 1
+				? " [Level " + std::to_string(level) + "/" + std::to_string(totalLevels) + "]"
+				: "";
 
-		VoteWrapper VAchievement(ClientID, VWF_UNIQUE | VWF_STYLE_SIMPLE, "{} {}{}{}",
-			completed ? "✔" : "○", pInfo->GetName(), levelSuffix);
-		AddAchievementDetails(VAchievement, pInfo, progress, required, level, totalLevels);
+			VoteWrapper VAchievement(ClientID, VWF_UNIQUE | VWF_STYLE_SIMPLE, "{} {}{}",
+				completed ? "✔" : "○", pInfo->GetName(), levelSuffix);
+			AddAchievementDetails(VAchievement, pInfo, progress, required, level, totalLevels);
+		}
 	}
 }
 
@@ -276,7 +279,7 @@ void CAchievementManager::AddAchievementDetails(VoteWrapper& VAchievement, const
 {
 	auto addProgressInfo = [&](VoteWrapper& wrapper, auto progress, auto required, std::string action, std::string needed = {})
 	{
-		const auto progressAchievement = translate_to_percent(Required, Progress);
+		const auto progressAchievement = translate_to_percent(required, progress);
 		const auto progressBar = mystd::string::progressBar(100, (int)progressAchievement, 5, "\u25B0", "\u25B1");
 		wrapper.Add("Progress: {} - {~.2}%", progressBar, progressAchievement);
 		if(needed.empty())
