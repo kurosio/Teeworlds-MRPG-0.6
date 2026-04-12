@@ -300,9 +300,7 @@ void CThreadPool::EnqueueTask(CTask&& task)
 				}
 				if(m_cvCondition.wait_for(lock, std::chrono::milliseconds(g_Config.m_SvSqlQueueWaitTimeoutMs)) == std::cv_status::timeout)
 				{
-					dbg_msg("SQL Worker", "Queue enqueue timed out after %dms (type: %s). Task dropped.", g_Config.m_SvSqlQueueWaitTimeoutMs, DbTypeName(task.m_Type));
-					LogLostQuery("enqueue timed out", task.m_Type, task.m_Query);
-					return;
+					dbg_msg("SQL Worker", "Queue enqueue waited %dms and is still full (type: %s). Continuing to wait.", g_Config.m_SvSqlQueueWaitTimeoutMs, DbTypeName(task.m_Type));
 				}
 			}
 		}
