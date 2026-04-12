@@ -21,10 +21,10 @@ void CMiniEventsManager::ScheduleNextRoll()
 	const auto MinInterval = maximum(1, g_Config.m_SvMiniEventsIntervalMinMinutes);
 	const auto MaxInterval = maximum(MinInterval, g_Config.m_SvMiniEventsIntervalMaxMinutes);
 	const int IntervalMinutes = MinInterval + rand() % (MaxInterval - MinInterval + 1);
-	m_Data.Reset(Server()->Tick() + (TickSpeed * 60 * IntervalMinutes));
+	m_Data.Reset(Server()->Tick() + (TickSpeed * IntervalMinutes));
 }
 
-void CMiniEventsManager::OnPostInit()
+void CMiniEventsManager::OnInitWorld(const std::string&)
 {
 	ScheduleNextRoll();
 }
@@ -60,19 +60,25 @@ void CMiniEventsManager::StartRandomMiniEvent()
 	const auto MaxDuration = maximum(MinDuration, g_Config.m_SvMiniEventsDurationMaxMinutes);
 	const auto MinBonus = maximum(1, g_Config.m_SvMiniEventsBonusMinPercent);
 	const auto MaxBonus = maximum(MinBonus, g_Config.m_SvMiniEventsBonusMaxPercent);
+	const auto DurationMinutes = MinDuration + rand() % (MaxDuration - MinDuration + 1);
 
 	m_Data.m_Type = gs_aMiniEvents[rand() % gs_aMiniEvents.size()];
 	m_Data.m_BonusPercent = MinBonus + rand() % (MaxBonus - MinBonus + 1);
 	m_Data.m_StartTick = Tick;
-	m_Data.m_EndTick = Tick + (TickSpeed * 60 * (MinDuration + rand() % (MaxDuration - MinDuration + 1)));
+	m_Data.m_EndTick = Tick + (TickSpeed * 60 * DurationMinutes);
 	m_Data.m_NextRollTick = 0;
 
-	GS()->ChatWorld(GS()->GetWorldID(), "", "Mini-event started: {} +{}%", GetMiniEventName(m_Data.m_Type), m_Data.m_BonusPercent);
+	GS()->ChatWorld(GS()->GetWorldID(), "", "======= Event Started! =======");
+	GS()->ChatWorld(GS()->GetWorldID(), "", "{} bonus: +{}%", GetMiniEventName(m_Data.m_Type), m_Data.m_BonusPercent);
+	GS()->ChatWorld(GS()->GetWorldID(), "", "Duration: {} min.", DurationMinutes);
+	GS()->ChatWorld(GS()->GetWorldID(), "", "Don't miss your chance!");
+	GS()->ChatWorld(GS()->GetWorldID(), "", "===============================");
+
 }
 
 void CMiniEventsManager::StopMiniEvent()
 {
-	GS()->ChatWorld(GS()->GetWorldID(), "", "Mini-event ended: {}.", GetMiniEventName(m_Data.m_Type));
+	GS()->ChatWorld(GS()->GetWorldID(), "", "Event ended: {}.", GetMiniEventName(m_Data.m_Type));
 	ScheduleNextRoll();
 }
 
