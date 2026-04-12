@@ -1056,7 +1056,7 @@ void CServer::SendRconLogLine(int ClientID, const CLogMessage* pMessage)
 	{
 		for(int i = 0; i < MAX_PLAYERS; i++)
 		{
-			if(m_aClients[i].m_State != CClient::STATE_EMPTY && m_aClients[i].m_Authed >= AUTHED_MOD)
+			if(m_aClients[i].m_State != CClient::STATE_EMPTY && m_aClients[i].m_Authed == AUTHED_ADMIN)
 			{
 				SendRconLine(i, pLine);
 			}
