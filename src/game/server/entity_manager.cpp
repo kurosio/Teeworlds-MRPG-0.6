@@ -577,13 +577,18 @@ void CEntityManager::Bow(int ClientID, int Damage, int FireCount, float Explosio
 		int& CurrentFireCount = pBase->GetRefConfig("currentFireCount", 0);
 		int& IsCharging = pBase->GetRefConfig("isCharging", 0);
 		int& ChargeTick = pBase->GetRefConfig("chargeTick", 0);
+		auto* pOwnerChar = pBase->GetCharacter();
+		if(!pOwnerChar)
+		{
+			pBase->MarkForDestroy();
+			return;
+		}
 
 		// block input
 		pBase->Server()->Input()->BlockInputGroup(pBase->GetClientID(), BLOCK_INPUT_FIRE);
 		pBase->Server()->Input()->BlockInputGroup(pBase->GetClientID(), BLOCK_INPUT_FREEZE_GUN);
 
 		// update position
-		auto* pOwnerChar = pBase->GetCharacter();
 		pBase->SetPos(pOwnerChar->GetPos());
 
 		// charging
