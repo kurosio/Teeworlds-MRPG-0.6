@@ -180,9 +180,35 @@ void CPlayer::Tick()
 		{
 			auto* pActCoin = GetItem(itActivityCoin);
 			const int RewardCoins = g_Config.m_SvActivityCoinPeriodicRewardAmount;
-			pActCoin->Add(RewardCoins, 0, 0, false);
+			SharedData.m_ActivityRewardStreak = minimum(SharedData.m_ActivityRewardStreak + 1, 15);
+			const int StreakMultiplier = 1 + (SharedData.m_ActivityRewardStreak / 3);
+			const int FinalRewardCoins = maximum(RewardCoins, RewardCoins * StreakMultiplier);
+
+			// active session streak reward
+			pActCoin->Add(FinalRewardCoins, 0, 0, false);
+			GS()->Chat(m_ClientID, "You received '{} {}({$})'. Activity streak: {}x.",
+				pActCoin->Info()->GetName(), FinalRewardCoins, pActCoin->GetValue(), StreakMultiplier);
+
+			// roulette charge
+			SharedData.m_ActivityRouletteCharge++;
+			if(SharedData.m_ActivityRouletteCharge >= 3)
+			{
+				SharedData.m_ActivityRouletteCharge = 0;
+				const int Roll = rand() % 100;
+				if(Roll < 50)
+				{
+					const int BonusGold = maximum(50, 100 + (Account()->GetLevel() * 100));
+					Account()->AddGold(BonusGold);
+					GS()->Chat(m_ClientID, "Activity roulette: jackpot! +{} gold.", BonusGold);
+				}
+				else
+				{
+					const int BonusExp = maximum(100, 200 + (Account()->GetLevel() * 40));
+					Account()->AddExperience(BonusExp);
+					GS()->Chat(m_ClientID, "Activity roulette: knowledge surge! +{} experience.", BonusExp);
+				}
+			}
 			SharedData.m_ActivityCoinRewardInterval = CurrentTick + RewardIntervalTicks;
-			GS()->Chat(m_ClientID, "You received '{} {}({$})' for being online.", pActCoin->Info()->GetName(), RewardCoins, pActCoin->GetValue());
 		}
 	}
 }

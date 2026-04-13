@@ -228,6 +228,8 @@ struct CAccountSharedData
 
 	// other
 	int m_ActivityCoinRewardInterval {};
+	int m_ActivityRewardStreak {};
+	int m_ActivityRouletteCharge {};
 
 	// dungeon
 	int m_TempStartDungeonTick {};
