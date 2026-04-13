@@ -19,6 +19,7 @@ struct MiniEventData
 {
 	MiniEventType m_Type {MiniEventType::None};
 	int m_BonusPercent {};
+	int m_ChainLevel {};
 	int m_StartTick {};
 	int m_EndTick {};
 	int m_NextRollTick {};
@@ -32,6 +33,7 @@ struct MiniEventData
 	{
 		m_Type = MiniEventType::None;
 		m_BonusPercent = 0;
+		m_ChainLevel = 0;
 		m_StartTick = 0;
 		m_EndTick = 0;
 		m_NextRollTick = NextRollTick;
@@ -64,17 +66,13 @@ public:
 		if(pBonusValue)
 			*pBonusValue += BonusValue;
 	}
-	int GetBonusPercent(MiniEventType Type) const
-	{
-		if(IsActive() && m_Data.m_Type == Type)
-			return m_Data.m_BonusPercent;
-		return 0;
-	}
+	int GetBonusPercent(MiniEventType Type) const;
 	int GetBonusPercent() const { return GetBonusPercent(m_Data.m_Type); }
 	void FormatBroadcastLine(std::string& Result) const;
 
 private:
 	void ScheduleNextRoll();
+	void ScheduleQuickRoll(int MinSeconds, int MaxSeconds);
 	void StartRandomMiniEvent();
 	void StopMiniEvent();
 

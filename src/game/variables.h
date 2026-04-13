@@ -189,6 +189,10 @@ MACRO_CONFIG_INT(SvMiniEventsDurationMinMinutes, sv_mini_events_duration_min, 2,
 MACRO_CONFIG_INT(SvMiniEventsDurationMaxMinutes, sv_mini_events_duration_max, 5, 2, 60, CFGFLAG_SERVER, "Maximum mini-event duration in minutes")
 MACRO_CONFIG_INT(SvMiniEventsBonusMinPercent, sv_mini_events_min_percent, 200, 1, 500, CFGFLAG_SERVER, "Minimal random mini-event bonus percent")
 MACRO_CONFIG_INT(SvMiniEventsBonusMaxPercent, sv_mini_events_max_percent, 500, 1, 500, CFGFLAG_SERVER, "Maximum random mini-event bonus percent")
+MACRO_CONFIG_INT(SvMiniEventsChainChancePercent, sv_mini_events_chain_chance, 35, 0, 100, CFGFLAG_SERVER, "Chance in percent to trigger a quick chained mini-event")
+MACRO_CONFIG_INT(SvMiniEventsChainMax, sv_mini_events_chain_max, 3, 0, 10, CFGFLAG_SERVER, "Maximum sequential chain level for chained mini-events")
+MACRO_CONFIG_INT(SvMiniEventsChainBonusStepPercent, sv_mini_events_chain_bonus_step, 50, 0, 500, CFGFLAG_SERVER, "Additional bonus percent added for each chain level")
+MACRO_CONFIG_INT(SvMiniEventsFinalMinuteRushPercent, sv_mini_events_final_minute_rush, 75, 0, 500, CFGFLAG_SERVER, "Additional bonus percent applied during the final minute of a mini-event")
 
 // -----------------------
 // Miscellaneous Configuration

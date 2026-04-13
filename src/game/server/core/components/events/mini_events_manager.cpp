@@ -24,6 +24,19 @@ void CMiniEventsManager::ScheduleNextRoll()
 	m_Data.Reset(Server()->Tick() + (TickSpeed * 60 * IntervalMinutes));
 }
 
+void CMiniEventsManager::ScheduleQuickRoll(int MinSeconds, int MaxSeconds)
+{
+	const auto TickSpeed = Server()->TickSpeed();
+	const auto MinDelay = maximum(5, MinSeconds);
+	const auto MaxDelay = maximum(MinDelay, MaxSeconds);
+	const auto DelaySeconds = MinDelay + rand() % (MaxDelay - MinDelay + 1);
+	m_Data.m_Type = MiniEventType::None;
+	m_Data.m_BonusPercent = 0;
+	m_Data.m_StartTick = 0;
+	m_Data.m_EndTick = 0;
+	m_Data.m_NextRollTick = Server()->Tick() + (TickSpeed * DelaySeconds);
+}
+
 void CMiniEventsManager::OnInitWorld(const std::string&)
 {
 	ScheduleNextRoll();
@@ -67,12 +80,18 @@ void CMiniEventsManager::StartRandomMiniEvent()
 	m_Data.m_StartTick = Tick;
 	m_Data.m_EndTick = Tick + (TickSpeed * 60 * DurationMinutes);
 	m_Data.m_NextRollTick = 0;
+	m_Data.m_ChainLevel = maximum(0, m_Data.m_ChainLevel);
 
 	GS()->ChatWorld(GS()->GetWorldID(), "", mystd::aesthetic::wrapLinePillar(8).c_str());
-	GS()->ChatWorld(GS()->GetWorldID(), "", "- Event Started!");
-	GS()->ChatWorld(GS()->GetWorldID(), "", "- {} bonus: +{}%", GetMiniEventName(m_Data.m_Type), m_Data.m_BonusPercent);
+	GS()->ChatWorld(GS()->GetWorldID(), "", "- Event Started! {}", m_Data.m_ChainLevel > 0 ? "(Chain Rush)" : "");
+	GS()->ChatWorld(GS()->GetWorldID(), "", "- {} bonus: +{}%", GetMiniEventName(m_Data.m_Type), GetBonusPercent(m_Data.m_Type));
+	if(m_Data.m_ChainLevel > 0)
+	{
+		GS()->ChatWorld(GS()->GetWorldID(), "", "- Chain level {} grants +{}%.", m_Data.m_ChainLevel,
+			m_Data.m_ChainLevel * g_Config.m_SvMiniEventsChainBonusStepPercent);
+	}
+	GS()->ChatWorld(GS()->GetWorldID(), "", "- Final minute enters Frenzy: +{}%.", g_Config.m_SvMiniEventsFinalMinuteRushPercent);
 	GS()->ChatWorld(GS()->GetWorldID(), "", "- Duration: {} min.", DurationMinutes);
-	GS()->ChatWorld(GS()->GetWorldID(), "", "- Don't miss your chance!");
 	GS()->ChatWorld(GS()->GetWorldID(), "", mystd::aesthetic::wrapLinePillar(8).c_str());
 
 }
@@ -80,6 +99,22 @@ void CMiniEventsManager::StartRandomMiniEvent()
 void CMiniEventsManager::StopMiniEvent()
 {
 	GS()->ChatWorld(GS()->GetWorldID(), "", "Event ended: {}.", GetMiniEventName(m_Data.m_Type));
+
+	const auto MaxChainLevel = maximum(0, g_Config.m_SvMiniEventsChainMax);
+	const auto ChainChance = clamp(g_Config.m_SvMiniEventsChainChancePercent, 0, 100);
+	const auto CanContinueChain = m_Data.m_ChainLevel < MaxChainLevel;
+	const auto WantsContinue = (rand() % 100) < ChainChance;
+	if(CanContinueChain && WantsContinue)
+	{
+		++m_Data.m_ChainLevel;
+		GS()->ChatWorld(GS()->GetWorldID(), "", mystd::aesthetic::wrapLinePillar(8).c_str());
+		GS()->ChatWorld(GS()->GetWorldID(), "", "A chain anomaly appears!", m_Data.m_ChainLevel);
+		GS()->ChatWorld(GS()->GetWorldID(), "", "Next mini-event in a few seconds (Lv.{})!", m_Data.m_ChainLevel);
+		GS()->ChatWorld(GS()->GetWorldID(), "", mystd::aesthetic::wrapLinePillar(8).c_str());
+		ScheduleQuickRoll(20, 80);
+		return;
+	}
+
 	ScheduleNextRoll();
 }
 
@@ -107,4 +142,19 @@ const char* CMiniEventsManager::GetMiniEventName(MiniEventType Type)
 		case MiniEventType::SkillPointDrop: return "SP Drop";
 		default: return "Unknown";
 	}
+}
+
+int CMiniEventsManager::GetBonusPercent(MiniEventType Type) const
+{
+	if(!IsActive() || m_Data.m_Type != Type)
+		return 0;
+
+	auto BonusPercent = m_Data.m_BonusPercent;
+	BonusPercent += m_Data.m_ChainLevel * g_Config.m_SvMiniEventsChainBonusStepPercent;
+	const auto RemainingTick = maximum(0, m_Data.m_EndTick - Server()->Tick());
+	const auto RemainingSec = RemainingTick / Server()->TickSpeed();
+	if(RemainingSec <= 60)
+		BonusPercent += maximum(0, g_Config.m_SvMiniEventsFinalMinuteRushPercent);
+
+	return BonusPercent;
 }
