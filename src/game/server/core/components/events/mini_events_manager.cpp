@@ -90,7 +90,6 @@ void CMiniEventsManager::StartRandomMiniEvent()
 		GS()->ChatWorld(GS()->GetWorldID(), "", "- Chain level {} grants +{}%.", m_Data.m_ChainLevel,
 			m_Data.m_ChainLevel * g_Config.m_SvMiniEventsChainBonusStepPercent);
 	}
-	GS()->ChatWorld(GS()->GetWorldID(), "", "- Final minute enters Frenzy: +{}%.", g_Config.m_SvMiniEventsFinalMinuteRushPercent);
 	GS()->ChatWorld(GS()->GetWorldID(), "", "- Duration: {} min.", DurationMinutes);
 	GS()->ChatWorld(GS()->GetWorldID(), "", mystd::aesthetic::wrapLinePillar(8).c_str());
 
@@ -153,8 +152,5 @@ int CMiniEventsManager::GetBonusPercent(MiniEventType Type) const
 	BonusPercent += m_Data.m_ChainLevel * g_Config.m_SvMiniEventsChainBonusStepPercent;
 	const auto RemainingTick = maximum(0, m_Data.m_EndTick - Server()->Tick());
 	const auto RemainingSec = RemainingTick / Server()->TickSpeed();
-	if(RemainingSec <= 60)
-		BonusPercent += maximum(0, g_Config.m_SvMiniEventsFinalMinuteRushPercent);
-
 	return BonusPercent;
 }
