@@ -1115,7 +1115,7 @@ void CServer::ProcessClientPacket(CNetChunk* pPacket)
 {
 	int ClientID = pPacket->m_ClientID;
 	int JoinHits = 0;
-	if(m_aClients[ClientID].m_State <= CClient::STATE_CONNECTING && !m_aClients[ClientID].m_JoinFloodChecked)
+	if(m_aClients[ClientID].m_State <= CClient::STATE_CONNECTING && !m_aClients[ClientID].m_JoinFloodChecked && !m_aClients[ClientID].m_ChangeWorld)
 	{
 		std::string JoinSubnet;
 		m_aClients[ClientID].m_JoinFloodChecked = true;
