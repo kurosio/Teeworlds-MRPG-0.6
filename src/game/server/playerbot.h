@@ -87,6 +87,8 @@ public:
 	bool IsConversational() const;
 	void PrepareRespawnTick() override;
 
+	int CalculateAttribute(AttributeIdentifier ID, int PowerLevel, bool Boss) const;
+
 	bool IsAllowedSpawn() { return m_AllowedSpawn; }
 	void SetAllowedSpawn(bool Spawn) { m_AllowedSpawn = Spawn; }
 

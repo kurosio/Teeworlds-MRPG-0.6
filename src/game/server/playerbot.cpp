@@ -9,7 +9,7 @@
 #include "worldmodes/dungeon/dungeon.h"
 
 #include "core/components/Bots/BotManager.h"
-#include "core/scenarios/managers//scenario_player_manager.h"
+#include "core/scenarios/managers/scenario_player_manager.h"
 #include "core/tools/path_finder.h"
 
 CPlayerBot::CPlayerBot(CGS* pGS, int ClientID, int BotID, int MobID, int SpawnPoint)
@@ -174,9 +174,9 @@ void CPlayerBot::PrepareRespawnTick()
 	m_WantSpawn = true;
 }
 
-static int CalculateAttribute(CGS* pGS, const CPlayerBot* pPlayer, AttributeIdentifier ID, int PowerLevel, bool Boss)
+int CPlayerBot::CalculateAttribute(AttributeIdentifier ID, int PowerLevel, bool Boss) const
 {
-	const auto* pAttribute = pGS->GetAttributeInfo(ID);
+	const auto* pAttribute = GS()->GetAttributeInfo(ID);
 	if(!pAttribute)
 		return 0;
 
@@ -185,14 +185,14 @@ static int CalculateAttribute(CGS* pGS, const CPlayerBot* pPlayer, AttributeIden
 	// from equipment
 	for(unsigned i = 0; i < (unsigned)ItemType::NUM_EQUIPPED; i++)
 	{
-		if(const auto ItemID = pPlayer->GetEquippedSlotItemID((ItemType)i))
-			AttributeValue += pGS->GetItemInfo(ItemID.value())->GetEnchantAttributeValue(ID);
+		if(const auto ItemID = GetEquippedSlotItemID((ItemType)i))
+			AttributeValue += GS()->GetItemInfo(ItemID.value())->GetEnchantAttributeValue(ID);
 	}
 
 	// is dungeon world
-	if(pGS->IsWorldType(WorldType::Dungeon))
+	if(GS()->IsWorldType(WorldType::Dungeon))
 	{
-		const auto* pController = dynamic_cast<CGameControllerDungeon*>(pGS->m_pController);
+		const auto* pController = dynamic_cast<CGameControllerDungeon*>(GS()->m_pController);
 		if(pController && pController->GetDungeon())
 		{
 			// calculating stats
@@ -228,22 +228,22 @@ int CPlayerBot::GetTotalRawAttributeValue(AttributeIdentifier ID) const
 	if(m_BotType == TYPE_BOT_EIDOLON)
 	{
 		const auto* pOwner = GetEidolonOwner();
-		AttributeValue = CalculateAttribute(GS(), this, ID, pOwner->GetTotalAttributeValue(AttributeIdentifier::EidolonPWR), false);
+		AttributeValue = CalculateAttribute(ID, pOwner->GetTotalAttributeValue(AttributeIdentifier::EidolonPWR), false);
 	}
 	else if(m_BotType == TYPE_BOT_MOB)
 	{
 		const int PowerMob = m_MobInfo.m_Power;
 		const bool IsBoss = m_MobInfo.m_Boss;
-		AttributeValue = CalculateAttribute(GS(), this, ID, PowerMob, IsBoss);
+		AttributeValue = CalculateAttribute(ID, PowerMob, IsBoss);
 	}
 	else if(m_BotType == TYPE_BOT_QUEST_MOB)
 	{
 		const int PowerQuestMob = m_QuestMobInfo.m_AttributePower;
-		AttributeValue = CalculateAttribute(GS(), this, ID, PowerQuestMob, true);
+		AttributeValue = CalculateAttribute(ID, PowerQuestMob, true);
 	}
 	else if(m_BotType == TYPE_BOT_NPC)
 	{
-		AttributeValue = CalculateAttribute(GS(), this, ID, 10, false);
+		AttributeValue = CalculateAttribute(ID, 10, false);
 	}
 
 	return AttributeValue;
