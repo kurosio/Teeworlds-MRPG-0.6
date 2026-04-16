@@ -211,7 +211,7 @@ private:
 	void OnStartImpl() override
 	{
 		if(auto* pController = dynamic_cast<CGameControllerDungeon*>(GS()->m_pController))
-			pController->CompleteDungeon();
+			pController->FinishDungeon();
 
 		Finish();
 	}

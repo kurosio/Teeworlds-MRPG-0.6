@@ -621,7 +621,6 @@ private:
 				if(auto* pPlayerBot = GS()->CreateBot(TYPE_BOT_MOB, mobInfo.m_BotID, spawnMobID))
 				{
 					pPlayerBot->InitBotMobInfo(mobInfo);
-					pPlayerBot->SetAllowedSpawn(true);
 					m_SpawnedBotIds.insert(pPlayerBot->GetCID());
 				}
 			}
