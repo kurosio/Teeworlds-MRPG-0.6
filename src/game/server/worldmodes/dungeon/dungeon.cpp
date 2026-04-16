@@ -45,6 +45,11 @@ CGameControllerDungeon::~CGameControllerDungeon()
 	m_vpEntLogicDoor.clear();
 }
 
+void CGameControllerDungeon::CompleteDungeon()
+{
+	ChangeState(CDungeonData::STATE_FINISHED);
+}
+
 void CGameControllerDungeon::ChangeState(int State)
 {
 	const auto CurrentState = m_pDungeon->GetState();

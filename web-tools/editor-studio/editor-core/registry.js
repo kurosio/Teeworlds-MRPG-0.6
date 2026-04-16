@@ -514,6 +514,13 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
         entire_group: createField('boolean', 'Вся группа', true),
         action_text: createField('text', 'Текст действия', 'Перегрузка главного реактора', { ui: { placeholder: 'Описание действия', format: 'textarea' } })
       }
+    },
+    dungeon_complete: {
+      name: 'Dungeon: завершить темницу',
+      class: 'interactive',
+      icon: 'fa-solid fa-flag-checkered',
+      desc: 'Принудительно завершить dungeon-сценарий',
+      fields: {}
     }
   };
 
@@ -545,7 +552,8 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
         ...defaultScenarioComponentTypes,
         'dungeon_door_control',
         'dungeon_use_chat_code',
-        'dungeon_activate_point'
+        'dungeon_activate_point',
+        'dungeon_complete'
       ]
     },
     universal: {

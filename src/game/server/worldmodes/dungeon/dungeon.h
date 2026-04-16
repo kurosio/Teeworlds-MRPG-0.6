@@ -41,6 +41,7 @@ public:
 	int CalculateMobAttribute(AttributeIdentifier ID, int PowerLevel, float BaseFactor, int MinValue) const;
 	int GetAttributeDungeonSync(AttributeIdentifier ID) const;
 	void RefreshSyncAttributes();
+	void CompleteDungeon();
 
 	const std::map<AttributeIdentifier, int>& GetSyncFactor() const { return m_vSyncFactor; }
 	CDungeonData* GetDungeon() const { return m_pDungeon; }

@@ -1,5 +1,6 @@
 #include "scenario_dungeon.h"
 #include <game/server/gamecontext.h>
+#include <game/server/worldmodes/dungeon/dungeon.h>
 
 #include "components/default.h"
 #include <game/server/core/scenarios/base/component_registry.h>
@@ -195,6 +196,27 @@ private:
 	}
 };
 template struct ComponentRegistrar<ActivatePointComponent>;
+
+class CompleteDungeonComponent final : public Component<CDungeonScenario, CompleteDungeonComponent>
+{
+public:
+	explicit CompleteDungeonComponent(const nlohmann::json& j)
+	{
+		InitBaseJsonField(j);
+	}
+
+	DECLARE_COMPONENT_NAME("dungeon_complete")
+
+private:
+	void OnStartImpl() override
+	{
+		if(auto* pController = dynamic_cast<CGameControllerDungeon*>(GS()->m_pController))
+			pController->CompleteDungeon();
+
+		Finish();
+	}
+};
+template struct ComponentRegistrar<CompleteDungeonComponent>;
 
 CDungeonScenario::CDungeonScenario(const nlohmann::json& jsonData) : GroupScenarioBase(), m_JsonData(jsonData)
 {

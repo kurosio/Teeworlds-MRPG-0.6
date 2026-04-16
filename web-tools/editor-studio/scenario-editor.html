@@ -2095,6 +2095,7 @@
                         case 'universal_teleport': return `В точку (<b>${data.position?.x}, ${data.position?.y}</b>) / мир <b>${data.world_id ?? -1}</b>`;
                         case 'universal_door_control': return `Действие: <b>${data.action}</b>, Ключ: <b>${data.key || 'нет'}</b>`;
                         case 'dungeon_activate_point': return `Текст: "<b>${data.action_text || ''}</b>", Время: <b>${data.duration}</b> сек.`;
+                        case 'dungeon_complete': return `Завершение темницы`;
                         default: return ``;
                     }
                 } catch { return "Ошибка в данных"; }
