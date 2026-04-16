@@ -219,7 +219,11 @@ void CDutiesManager::ShowDungeonInfo(CPlayer* pPlayer, CDungeonData* pDungeon) c
 	// records
 	VoteWrapper VRecords(ClientID, VWF_SEPARATE_OPEN| VWF_STYLE_SIMPLE, "Records of passing");
 	auto vTopRecords = Core()->GetDungeonTopList(pDungeon->GetID(), 5);
-	for(auto& [Pos, RowData] : vTopRecords)
+	if(vTopRecords.empty())
+	{
+		VRecords.Add("No records yet.");
+	}
+	else for(auto& [Pos, RowData] : vTopRecords)
 	{
 		char aBuf[128];
 		auto Time = RowData.Data["Time"].to_int();

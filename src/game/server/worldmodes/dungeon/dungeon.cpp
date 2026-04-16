@@ -47,7 +47,6 @@ void CGameControllerDungeon::ChangeState(int State)
 	{
 		// update
 		m_EndTick = 0;
-		m_FinishTick = 0;
 		m_SafetyTick = 0;
 		m_WaitingTick = 0;
 		m_LastWaitingTick = 0;
@@ -91,17 +90,16 @@ void CGameControllerDungeon::ChangeState(int State)
 	else if(State == CDungeonData::STATE_FINISHED)
 	{
 		// update
-		m_FinishTick = Server()->TickSpeed() * 20;
+		m_EndTick = Server()->TickSpeed() * 20;
 
-		// update finish time
-		// TODO: replace
+		// update finish time and save best records
 		for(int i = 0; i < MAX_PLAYERS; i++)
 		{
 			auto* pPlayer = GS()->GetPlayer(i);
 			if(!pPlayer || pPlayer->GetTeam() == TEAM_SPECTATORS || !GS()->IsPlayerInWorld(i, m_pDungeon->GetWorldID()))
 				continue;
 
-			//int FinishTime = Server()->Tick() - pPlayer->GetSharedData().m_TempStartDungeonTick;
+			SaveDungeonRecord(pPlayer);
 			GS()->Chat(-1, "'{}' finished '{}'.", Server()->ClientName(i), m_pDungeon->GetName());
 		}
 	}
@@ -111,15 +109,22 @@ void CGameControllerDungeon::ChangeState(int State)
 void CGameControllerDungeon::Process()
 {
 	const auto PlayersNum = GetPlayersNum();
-	const auto State = m_pDungeon->GetState();
 	const auto WorldID = m_pDungeon->GetWorldID();
 	m_pDungeon->UpdatePlayers(PlayersNum);
 
+	auto State = m_pDungeon->GetState();
+
 	// update inactive and waiting state
 	if(PlayersNum < 1 && State != CDungeonData::STATE_INACTIVE)
+	{
 		ChangeState(CDungeonData::STATE_INACTIVE);
+		State = m_pDungeon->GetState();
+	}
 	else if(PlayersNum >= 1 && State == CDungeonData::STATE_INACTIVE)
+	{
 		ChangeState(CDungeonData::STATE_WAITING);
+		State = m_pDungeon->GetState();
+	}
 
 	// waiting state
 	if(State == CDungeonData::STATE_WAITING)
@@ -164,21 +169,20 @@ void CGameControllerDungeon::Process()
 			if(!m_SafetyTick)
 				GS()->ChatWorld(WorldID, "Dungeon:", "The security timer is over, be careful!");
 		}
-
 	}
 
 	// finished
 	else if(State == CDungeonData::STATE_FINISHED)
 	{
-		m_FinishTick--;
-
-		if(m_FinishTick)
+		if(m_EndTick)
 		{
-			const auto Sec = m_FinishTick / Server()->TickSpeed();
+			const auto Sec = m_EndTick / Server()->TickSpeed();
 			GS()->BroadcastWorld(WorldID, BroadcastPriority::VeryImportant, 500, "Dungeon ended {} sec!", Sec);
 		}
-		else
-			KillAllPlayers();
+		else if(PlayersNum < 1)
+		{
+			ChangeState(CDungeonData::STATE_INACTIVE);
+		}
 	}
 }
 
@@ -191,10 +195,12 @@ void CGameControllerDungeon::OnCharacterDeath(CPlayer* pVictim, CPlayer* pKiller
 bool CGameControllerDungeon::OnCharacterSpawn(CCharacter* pChr)
 {
 	const auto State = m_pDungeon->GetState();
-	const int ClientID = pChr->GetPlayer()->GetCID();
+	auto* pPlayer = pChr->GetPlayer();
+	const int ClientID = pPlayer->GetCID();
 
 	if(State >= CDungeonData::STATE_STARTED)
 	{
+		// update scenario and add participant by start
 		if(!GS()->ScenarioGroupManager()->IsActive(m_ScenarioID))
 			m_ScenarioID = GS()->ScenarioGroupManager()->RegisterScenario<CDungeonScenario>(ClientID, m_pDungeon->GetScenario());
 		else if(auto pScenario = GS()->ScenarioGroupManager()->GetScenario(m_ScenarioID))
@@ -202,13 +208,12 @@ bool CGameControllerDungeon::OnCharacterSpawn(CCharacter* pChr)
 		else
 			dbg_assert(false, "Failed to register scenario id for dungeon.");
 
-		// player died after the safety timer ended
-		if(!m_SafetyTick)
+		// player died after the safety timer ended or dungeon finished
+		if(!m_SafetyTick || (m_SafetyTick && State == CDungeonData::STATE_FINISHED))
 		{
 			GS()->Chat(ClientID, "You were thrown out of dungeon!");
-
-			const int LatestCorrectWorldID = GS()->Core()->AccountManager()->GetLastVisitedWorldID(pChr->GetPlayer());
-			pChr->GetPlayer()->ChangeWorld(LatestCorrectWorldID);
+			const int LatestCorrectWorldID = GS()->Core()->AccountManager()->GetLastVisitedWorldID(pPlayer);
+			pPlayer->ChangeWorld(LatestCorrectWorldID);
 			if(auto pScenario = GS()->ScenarioGroupManager()->GetScenario(m_ScenarioID))
 				pScenario->RemoveParticipant(ClientID);
 			return false;
@@ -239,9 +244,7 @@ void CGameControllerDungeon::KillAllPlayers() const
 	{
 		auto* pCharacter = GS()->GetPlayerChar(i);
 		if(pCharacter && GS()->IsPlayerInWorld(i, m_pDungeon->GetWorldID()))
-		{
 			pCharacter->Die(i, WEAPON_WORLD);
-		}
 	}
 }
 
@@ -317,4 +320,35 @@ void CGameControllerDungeon::Snap()
 	pGameInfoEx->m_Flags = GAMEINFOFLAG_GAMETYPE_PLUS | GAMEINFOFLAG_ALLOW_HOOK_COLL | GAMEINFOFLAG_PREDICT_VANILLA;
 	pGameInfoEx->m_Flags2 = GAMEINFOFLAG2_GAMETYPE_CITY | GAMEINFOFLAG2_ALLOW_X_SKINS | GAMEINFOFLAG2_HUD_DDRACE | GAMEINFOFLAG2_HUD_HEALTH_ARMOR | GAMEINFOFLAG2_HUD_AMMO;
 	pGameInfoEx->m_Version = GAMEINFO_CURVERSION;
+}
+
+void CGameControllerDungeon::SaveDungeonRecord(const CPlayer* pPlayer) const
+{
+	if(!pPlayer || !pPlayer->Account())
+		return;
+
+	const int StartTick = pPlayer->GetSharedData().m_TempStartDungeonTick;
+	if(StartTick <= 0)
+		return;
+
+	const int FinishTime = std::max(1, Server()->Tick() - StartTick);
+	const int AccountID = pPlayer->Account()->GetID();
+	const int DungeonID = m_pDungeon->GetID();
+
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_dungeons_records",
+		"WHERE UserID = '{}' AND DungeonID = '{}' ORDER BY Time ASC LIMIT 1", AccountID, DungeonID);
+
+	if(!pRes->next())
+	{
+		Database->Execute<DB::INSERT>("tw_dungeons_records", "(UserID, DungeonID, Time) VALUES ('{}', '{}', '{}')",
+			AccountID, DungeonID, FinishTime);
+		return;
+	}
+
+	const int BestTime = pRes->getInt("Time");
+	if(FinishTime < BestTime)
+	{
+		const int RecordID = pRes->getInt("ID");
+		Database->Execute<DB::UPDATE>("tw_dungeons_records", "Time = '{}' WHERE ID = '{}'", FinishTime, RecordID);
+	}
 }

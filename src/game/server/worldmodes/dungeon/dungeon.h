@@ -18,10 +18,10 @@ class CGameControllerDungeon : public IGameController
 	int m_StartedPlayersNum {};
 	int m_LastWaitingTick {};
 	int m_WaitingTick {};
-	int m_FinishTick {};
 	int m_SafetyTick {};
 	int m_EndTick {};
 	int m_ShiftRoundStartTick {};
+	bool m_EjectPlayersOnSpawn {};
 
 public:
 	CGameControllerDungeon(class CGS* pGS, CDungeonData* pDungeon);
@@ -43,6 +43,7 @@ private:
 	void ChangeState(int State);
 	void Process();
 	void KillAllPlayers() const;
+	void SaveDungeonRecord(const class CPlayer* pPlayer) const;
 };
 
 #endif

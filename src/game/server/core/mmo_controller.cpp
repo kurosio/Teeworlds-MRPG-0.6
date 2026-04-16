@@ -622,7 +622,7 @@ std::map<int, CMmoController::TempTopData> CMmoController::GetDungeonTopList(int
 {
 	std::map<int, TempTopData> vResult {};
 
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_dungeons_records", "WHERE DungeonID = '{}' ORDER BY Time DESC LIMIT {}", DungeonID, Rows);
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_dungeons_records", "WHERE DungeonID = '{}' ORDER BY Time ASC LIMIT {}", DungeonID, Rows);
 	while(pRes->next())
 	{
 		const auto Rank = pRes->getRow();
