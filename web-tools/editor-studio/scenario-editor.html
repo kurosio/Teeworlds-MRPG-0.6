@@ -1151,9 +1151,9 @@
                     const compLi = document.createElement('li');
                     compLi.dataset.componentId = comp.component_id;
                     const isCompBroken = comp.next_step_id && !allStepIds.has(comp.next_step_id);
-                    const compNextStep = comp.next_step_id ? `<span class="text-xs font-normal text-purple-300">${isCompBroken ? '⚠️' : '→'} ${comp.next_step_id}</span>` : '';
-                    compLi.innerHTML = `<a href="#step-card-${step.id}" data-nav-id="${comp.component_id}" class="flex items-center p-1.5 rounded-md border-b border-transparent hover:bg-slate-700/40 text-sm"><i class="fa-solid fa-grip-vertical nav-handle text-slate-400 hover:text-slate-200 mr-2 cursor-grab"></i><div class="flex-grow flex justify-between items-center text-slate-200">
-                                                <span>↳ ${comp.type}</span>
+                    const compNextStep = comp.next_step_id ? `<span class="text-[11px] font-normal text-purple-300 break-all text-right">${isCompBroken ? '⚠️' : '→'} ${comp.next_step_id}</span>` : '';
+                    compLi.innerHTML = `<a href="#step-card-${step.id}" data-nav-id="${comp.component_id}" class="flex items-center p-1.5 rounded-md border-b border-transparent hover:bg-slate-700/40 text-xs"><i class="fa-solid fa-grip-vertical nav-handle text-slate-400 hover:text-slate-200 mr-2 cursor-grab"></i><div class="flex-grow min-w-0 flex justify-between items-start gap-2 text-slate-300">
+                                                <span class="break-all">↳ ${comp.type}</span>
                                                 ${compNextStep}
                                             </div>
                                         </a>`;
