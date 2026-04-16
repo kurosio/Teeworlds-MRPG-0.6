@@ -557,7 +557,7 @@ void CAccountData::HandleChair(int ChairLevel)
 		uint64_t bonusExp = 0;
 		m_BonusManager.ApplyBonuses(BONUS_TYPE_EXPERIENCE, &gainExp, &bonusExp);
 		pMiniEvents->ApplyBonus(MiniEventType::ExpGain, &gainExp, &bonusExp);
-		expStr += fmt_default("+{} (+{}% bonus)", bonusExp, TotalPercentBonusExp);
+		expStr += fmt_default(" (+{} bonus, +{}%)", bonusExp, TotalPercentBonusExp);
 	}
 
 	if(TotalPercentBonusGold > 0 && gainGold > 0)
@@ -565,7 +565,7 @@ void CAccountData::HandleChair(int ChairLevel)
 		int bonusGold = 0;
 		m_BonusManager.ApplyBonuses(BONUS_TYPE_GOLD, &gainGold, &bonusGold);
 		pMiniEvents->ApplyBonus(MiniEventType::GoldGain, &gainGold, &bonusGold);
-		goldStr += fmt_default("+{} (+{}% bonus)", bonusGold, TotalPercentBonusGold);
+		goldStr += fmt_default(" (+{} bonus, +{}%)", bonusGold, TotalPercentBonusGold);
 	}
 
 	// add exp & gold

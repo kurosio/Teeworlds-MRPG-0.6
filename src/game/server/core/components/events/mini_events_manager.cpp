@@ -124,8 +124,9 @@ void CMiniEventsManager::FormatBroadcastLine(std::string& Result) const
 
 	const auto RemainingTick = maximum(0, m_Data.m_EndTick - Server()->Tick());
 	const auto RemainingSec = RemainingTick / Server()->TickSpeed();
+	const auto BonusPercent = GetBonusPercent(m_Data.m_Type);
 	Result += "\n";
-	Result += fmt_default("{} +{}% | {}s", GetMiniEventName(m_Data.m_Type), m_Data.m_BonusPercent, RemainingSec);
+	Result += fmt_default("{} +{}% | {}s", GetMiniEventName(m_Data.m_Type), BonusPercent, RemainingSec);
 }
 
 const char* CMiniEventsManager::GetMiniEventName(MiniEventType Type)
