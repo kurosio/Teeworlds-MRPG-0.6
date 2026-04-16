@@ -101,13 +101,6 @@ void CInventoryListener::UpdateAttributesForItem(CPlayer* pPlayer, CPlayerItem* 
 		pCharacter->UpdateEquippedStats(pItem->GetID());
 		pPlayer->GS()->MarkUpdatedBroadcast(pPlayer->GetCID());
 	}
-
-	// refresh sync attributes
-	if(pPlayer->GS()->IsDutyStarted())
-	{
-		if(auto* pController = dynamic_cast<CGameControllerDungeon*>(pPlayer->GS()->m_pController))
-			pController->RefreshSyncAttributes();
-	}
 }
 
 void CInventoryListener::UpdateAttributesFull(CPlayer* pPlayer)

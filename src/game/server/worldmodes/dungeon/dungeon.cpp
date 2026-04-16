@@ -1,7 +1,6 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "entities/waiting_door.h"
-#include "entities/progress_door.h"
 #include "dungeon.h"
 
 #include <game/server/core/balance/balance.h>
@@ -20,32 +19,16 @@ CGameControllerDungeon::CGameControllerDungeon(class CGS* pGS, CDungeonData* pDu
 {
 	m_GameFlags = 0;
 	m_pDungeon = pDungeon;
-
-	// create waiting door
 	m_pEntWaitingDoor = new CEntityDungeonWaitingDoor(&GS()->m_World, pDungeon->GetWaitingDoorPos());
-
-	// create logic doors
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_dungeons_door", "WHERE DungeonID = '{}'", pDungeon->GetID());
-	while(pRes->next())
-	{
-		const auto RequiredBotID = pRes->getInt("BotID");
-		const auto DoorPos = vec2(pRes->getInt("PosX"), pRes->getInt("PosY"));
-		m_vpEntLogicDoor.emplace_back(new CEntityDungeonProgressDoor(&GS()->m_World, DoorPos, RequiredBotID));
-	}
-
-	// update state
 	ChangeState(CDungeonData::STATE_INACTIVE);
 }
 
 CGameControllerDungeon::~CGameControllerDungeon()
 {
 	delete m_pEntWaitingDoor;
-	for(auto*& pEnt : m_vpEntLogicDoor)
-		delete pEnt;
-	m_vpEntLogicDoor.clear();
 }
 
-void CGameControllerDungeon::CompleteDungeon()
+void CGameControllerDungeon::FinishDungeon()
 {
 	ChangeState(CDungeonData::STATE_FINISHED);
 }
@@ -69,10 +52,7 @@ void CGameControllerDungeon::ChangeState(int State)
 		m_WaitingTick = 0;
 		m_LastWaitingTick = 0;
 		m_StartedPlayersNum = 0;
-		m_pDungeon->UpdateProgress(0);
 		m_pEntWaitingDoor->Close();
-		SetMobsSpawn(false);
-		ResetDoorKeyState();
 	}
 
 	// waiting state
@@ -94,13 +74,10 @@ void CGameControllerDungeon::ChangeState(int State)
 		}
 
 		// update
-		m_vSyncFactor.clear();
-		PrepareSyncFactors(m_vSyncFactor);
 		m_StartedPlayersNum = GetPlayersNum();
 		m_SafetyTick = Server()->TickSpeed() * 30;
 		m_EndTick = Server()->TickSpeed() * 600;
 		m_pEntWaitingDoor->Open();
-		SetMobsSpawn(true);
 		KillAllPlayers();
 
 		// information
@@ -115,7 +92,6 @@ void CGameControllerDungeon::ChangeState(int State)
 	{
 		// update
 		m_FinishTick = Server()->TickSpeed() * 20;
-		SetMobsSpawn(false);
 
 		// update finish time
 		// TODO: replace
@@ -189,11 +165,6 @@ void CGameControllerDungeon::Process()
 				GS()->ChatWorld(WorldID, "Dungeon:", "The security timer is over, be careful!");
 		}
 
-		// finish is successfully completed
-		if(GetRemainingMobsNum() <= 0)
-		{
-			ChangeState(CDungeonData::STATE_FINISHED);
-		}
 	}
 
 	// finished
@@ -215,24 +186,6 @@ void CGameControllerDungeon::Process()
 void CGameControllerDungeon::OnCharacterDeath(CPlayer* pVictim, CPlayer* pKiller, int Weapon)
 {
 	IGameController::OnCharacterDeath(pVictim, pKiller, Weapon);
-
-	if(pVictim->IsBot())
-	{
-		auto* pVictimBot = static_cast<CPlayerBot*>(pVictim);
-
-		// dissable allowed spawn after die (for now) TODO: remove after finish scenario
-		if(m_pDungeon->GetState() >= CDungeonData::STATE_STARTED)
-			pVictimBot->SetAllowedSpawn(false);
-
-		// update progress
-		if(pKiller->GetCID() != pVictim->GetCID() && pVictimBot->GetBotType() == TYPE_BOT_MOB)
-		{
-			const int Progress = 100 - translate_to_percent(GetTotalMobsNum(), GetRemainingMobsNum());
-			GS()->ChatWorld(m_pDungeon->GetWorldID(), "Dungeon:", "The dungeon is completed on [{}%]", Progress);
-			m_pDungeon->UpdateProgress(Progress);
-			UpdateDoorKeyState();
-		}
-	}
 }
 
 bool CGameControllerDungeon::OnCharacterSpawn(CCharacter* pChr)
@@ -243,9 +196,9 @@ bool CGameControllerDungeon::OnCharacterSpawn(CCharacter* pChr)
 	if(State >= CDungeonData::STATE_STARTED)
 	{
 		if(!GS()->ScenarioGroupManager()->IsActive(m_ScenarioID))
-			m_ScenarioID = GS()->ScenarioGroupManager()->RegisterScenario<CDungeonScenario>(pChr->GetPlayer()->GetCID(), m_pDungeon->GetScenario());
+			m_ScenarioID = GS()->ScenarioGroupManager()->RegisterScenario<CDungeonScenario>(ClientID, m_pDungeon->GetScenario());
 		else if(auto pScenario = GS()->ScenarioGroupManager()->GetScenario(m_ScenarioID))
-			pScenario->AddParticipant(pChr->GetPlayer()->GetCID());
+			pScenario->AddParticipant(ClientID);
 		else
 			dbg_assert(false, "Failed to register scenario id for dungeon.");
 
@@ -256,6 +209,8 @@ bool CGameControllerDungeon::OnCharacterSpawn(CCharacter* pChr)
 
 			const int LatestCorrectWorldID = GS()->Core()->AccountManager()->GetLastVisitedWorldID(pChr->GetPlayer());
 			pChr->GetPlayer()->ChangeWorld(LatestCorrectWorldID);
+			if(auto pScenario = GS()->ScenarioGroupManager()->GetScenario(m_ScenarioID))
+				pScenario->RemoveParticipant(ClientID);
 			return false;
 		}
 
@@ -284,59 +239,10 @@ void CGameControllerDungeon::KillAllPlayers() const
 	{
 		auto* pCharacter = GS()->GetPlayerChar(i);
 		if(pCharacter && GS()->IsPlayerInWorld(i, m_pDungeon->GetWorldID()))
+		{
 			pCharacter->Die(i, WEAPON_WORLD);
+		}
 	}
-}
-
-
-void CGameControllerDungeon::UpdateDoorKeyState()
-{
-	for(auto*& pDoor : m_vpEntLogicDoor)
-	{
-		if(pDoor->Update())
-			GS()->ChatWorld(m_pDungeon->GetWorldID(), "Dungeon:", "Door creaking.. Opened door somewhere!");
-	}
-}
-
-
-void CGameControllerDungeon::ResetDoorKeyState()
-{
-	for(auto*& pDoor : m_vpEntLogicDoor)
-		pDoor->ResetDoor();
-}
-
-
-int CGameControllerDungeon::GetTotalMobsNum() const
-{
-	int NumMobs = 0;
-
-	for(int i = MAX_PLAYERS; i < MAX_CLIENTS; i++)
-	{
-		auto* pPlayer = static_cast<CPlayerBot*>(GS()->GetPlayer(i));
-		if(!pPlayer || pPlayer->GetBotType() != TYPE_BOT_MOB)
-			continue;
-
-		NumMobs++;
-	}
-
-	return NumMobs;
-}
-
-
-int CGameControllerDungeon::GetRemainingMobsNum() const
-{
-	int LeftMobs = 0;
-
-	for(int i = MAX_PLAYERS; i < MAX_CLIENTS; i++)
-	{
-		auto* pPlayer = dynamic_cast<CPlayerBot*>(GS()->GetPlayer(i));
-		if(!pPlayer || !pPlayer->GetCharacter() || pPlayer->GetBotType() != TYPE_BOT_MOB)
-			continue;
-
-		LeftMobs++;
-	}
-
-	return LeftMobs;
 }
 
 
@@ -375,106 +281,6 @@ int CGameControllerDungeon::GetPlayersNum() const
 
 	return PlayersNum;
 }
-
-
-void CGameControllerDungeon::SetMobsSpawn(bool AllowedSpawn)
-{
-	for(int i = MAX_PLAYERS; i < MAX_CLIENTS; i++)
-	{
-		auto* pPlayer = dynamic_cast<CPlayerBot*>(GS()->GetPlayer(i));
-		if(pPlayer && pPlayer->GetBotType() == TYPE_BOT_MOB)
-		{
-			pPlayer->SetAllowedSpawn(AllowedSpawn);
-
-			if(!AllowedSpawn && pPlayer->GetCharacter())
-				pPlayer->GetCharacter()->Die(i, WEAPON_WORLD);
-		}
-	}
-}
-
-void CGameControllerDungeon::PrepareSyncFactors(std::map<AttributeIdentifier, int>& vResultMap)
-{
-	vResultMap[AttributeIdentifier::HP] = Balance::Get().GetAttributeBase(AttributeIdentifier::HP);
-	vResultMap[AttributeIdentifier::MP] = Balance::Get().GetAttributeBase(AttributeIdentifier::MP);
-
-	for(int i = 0; i < MAX_PLAYERS; i++)
-	{
-		auto* pPlayer = GS()->GetPlayer(i, true);
-		if(!pPlayer || pPlayer->GetTeam() == TEAM_SPECTATORS || !GS()->IsPlayerInWorld(i, m_pDungeon->GetWorldID()))
-			continue;
-
-		for(auto ID = (int)AttributeIdentifier::DMG; ID < (int)AttributeIdentifier::ATTRIBUTES_NUM; ID++)
-		{
-			const auto AttributeID = (AttributeIdentifier)ID;
-			vResultMap[AttributeID] += pPlayer->GetTotalRawAttributeValue(AttributeID);
-		}
-	}
-}
-
-
-int CGameControllerDungeon::CalculateMobAttribute(AttributeIdentifier ID, int PowerLevel, float BaseFactor, int MinValue) const
-{
-	auto PlayersTotalAttribute = GetAttributeDungeonSync(ID);
-	auto PlayersNum = m_StartedPlayersNum;
-	float PowerLevelMultiplier = 1.0f + (PowerLevel - 1) * 0.15f;
-	auto AttributeValue = static_cast<int>(PlayersTotalAttribute * BaseFactor * PowerLevelMultiplier / std::sqrt(PlayersNum));
-	return std::max(MinValue, AttributeValue);
-}
-
-
-int CGameControllerDungeon::GetAttributeDungeonSync(AttributeIdentifier ID) const
-{
-	return m_vSyncFactor.contains(ID) ? m_vSyncFactor.at(ID) : 0;
-}
-
-
-void CGameControllerDungeon::RefreshSyncAttributes()
-{
-	bool Refresh = false;
-	bool RefreshUnchangedData = false;
-	std::map<AttributeIdentifier, int> vCurrentMap {};
-	PrepareSyncFactors(vCurrentMap);
-
-	for(auto& [ID, Value] : m_vSyncFactor)
-	{
-		if(vCurrentMap[ID] > Value)
-		{
-			Value = vCurrentMap[ID];
-			Refresh = true;
-			RefreshUnchangedData = (!RefreshUnchangedData && (ID == AttributeIdentifier::HP || ID == AttributeIdentifier::MP)) || RefreshUnchangedData;
-		}
-	}
-
-	if(Refresh)
-	{
-		for(int i = MAX_PLAYERS; i < MAX_CLIENTS; i++)
-		{
-			auto* pPlayerBot = dynamic_cast<CPlayerBot*>(GS()->GetPlayer(i));
-			if(!pPlayerBot || !pPlayerBot->GetCharacter())
-				continue;
-
-			// update total player stats
-			for(auto& [Id, Info] : CAttributeDescription::Data())
-			{
-				auto totalAttribute = pPlayerBot->GetTotalRawAttributeValue(Id);
-				pPlayerBot->UpdateTotalAttributeValue(Id, totalAttribute);
-			}
-
-			// refresh unchanged data
-			if(RefreshUnchangedData)
-			{
-				const int MaxStartHP = pPlayerBot->GetTotalAttributeValue(AttributeIdentifier::HP);
-				const int MaxStartMP = pPlayerBot->GetTotalAttributeValue(AttributeIdentifier::MP);
-				pPlayerBot->InitBasicStats(MaxStartHP, MaxStartMP, MaxStartHP, MaxStartMP);
-
-				auto* pChar = pPlayerBot->GetCharacter();
-				pChar->IncreaseHealth(MaxStartHP);
-				pChar->IncreaseMana(MaxStartMP);
-			}
-		}
-	}
-}
-
 
 void CGameControllerDungeon::Tick()
 {

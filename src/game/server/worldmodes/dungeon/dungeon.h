@@ -8,17 +8,13 @@
 #include <game/server/core/components/duties/dungeon_data.h>
 
 class CEntityDungeonWaitingDoor;
-class CEntityDungeonProgressDoor;
 
 class CGameControllerDungeon : public IGameController
 {
 	CDungeonData* m_pDungeon {};
 	CEntityDungeonWaitingDoor* m_pEntWaitingDoor {};
-	std::vector< CEntityDungeonProgressDoor* > m_vpEntLogicDoor {};
 
-	std::map<AttributeIdentifier, int> m_vSyncFactor {};
 	int m_ScenarioID {};
-
 	int m_StartedPlayersNum {};
 	int m_LastWaitingTick {};
 	int m_WaitingTick {};
@@ -37,28 +33,16 @@ public:
 	void OnCharacterDeath(class CPlayer* pVictim, class CPlayer* pKiller, int Weapon) override;
 	bool OnCharacterSpawn(class CCharacter* pChr) override;
 
-	void PrepareSyncFactors(std::map<AttributeIdentifier, int>& vResultMap);
-	int CalculateMobAttribute(AttributeIdentifier ID, int PowerLevel, float BaseFactor, int MinValue) const;
-	int GetAttributeDungeonSync(AttributeIdentifier ID) const;
-	void RefreshSyncAttributes();
-	void CompleteDungeon();
-
-	const std::map<AttributeIdentifier, int>& GetSyncFactor() const { return m_vSyncFactor; }
 	CDungeonData* GetDungeon() const { return m_pDungeon; }
+	void FinishDungeon();
 
 private:
 	int GetPlayersReadyNum() const;
 	int GetPlayersNum() const;
-	int GetRemainingMobsNum() const;
-	int GetTotalMobsNum() const;
 
 	void ChangeState(int State);
 	void Process();
-	void SetMobsSpawn(bool AllowedSpawn);
 	void KillAllPlayers() const;
-
-	void UpdateDoorKeyState();
-	void ResetDoorKeyState();
 };
 
 #endif

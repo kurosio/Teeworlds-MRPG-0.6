@@ -32,7 +32,6 @@ class CPlayerBot : public CPlayer
 	int m_MaxMana{};
 	int m_Mana{};
 	bool m_DisabledBotDamage{};
-	int m_AllowedSpawn{};
 	CQuestBotMobInfo m_QuestMobInfo{};
 	MobBotInfo m_MobInfo {};
 
@@ -88,9 +87,6 @@ public:
 	void PrepareRespawnTick() override;
 
 	int CalculateAttribute(AttributeIdentifier ID, int PowerLevel, bool Boss) const;
-
-	bool IsAllowedSpawn() { return m_AllowedSpawn; }
-	void SetAllowedSpawn(bool Spawn) { m_AllowedSpawn = Spawn; }
 
 	int m_EidolonItemID;
 	CPlayer* GetEidolonOwner() const;

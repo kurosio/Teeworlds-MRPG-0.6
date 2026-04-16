@@ -16,7 +16,6 @@ CPlayerBot::CPlayerBot(CGS* pGS, int ClientID, int BotID, int MobID, int SpawnPo
 	: CPlayer(pGS, ClientID), m_BotType(SpawnPoint), m_BotID(BotID), m_MobID(MobID)
 {
 	m_OldTargetPos = vec2(0, 0);
-	m_AllowedSpawn = true;
 	m_Items.reserve(CItemDescription::Data().size());
 
 	CPlayerBot::PrepareRespawnTick();
@@ -234,9 +233,6 @@ int CPlayerBot::GetTotalRawAttributeValue(AttributeIdentifier ID) const
 
 void CPlayerBot::TryRespawn()
 {
-	if(!m_AllowedSpawn)
-		return;
-
 	std::optional<vec2> FinalSpawnPos = std::nullopt;
 
 	if(m_BotType == TYPE_BOT_MOB)
