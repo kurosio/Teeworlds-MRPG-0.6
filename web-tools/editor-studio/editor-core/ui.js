@@ -59,9 +59,9 @@
       id: 'modal-backdrop',
       html: `
         <div id="modal-backdrop" class="hidden fixed inset-0 editor-modal-backdrop z-[200] flex justify-center items-center p-4">
-          <div id="modal-content" class="editor-modal-content p-6 rounded-lg shadow-xl w-full max-w-xl flex flex-col max-h-[90vh]">
+          <div id="modal-content" class="editor-modal-content p-6 rounded-lg shadow-xl w-full max-w-4xl flex flex-col max-h-[92vh]">
             <h3 id="modal-title" class="text-xl font-bold mb-4">Редактирование</h3>
-            <div id="modal-form-container" class="overflow-y-auto pr-4 -mr-4"></div>
+            <div id="modal-form-container" class="overflow-y-auto pr-2 -mr-1 flex-1"></div>
             <div class="modal-buttons text-right mt-6 pt-4 border-t border-slate-200/30">
               <button id="modal-cancel" class="editor-btn editor-btn-secondary">Отмена</button>
               <button id="modal-save" class="editor-btn editor-btn-primary ml-2">Сохранить</button>

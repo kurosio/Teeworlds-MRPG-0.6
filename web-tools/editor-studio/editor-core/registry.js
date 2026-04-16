@@ -424,14 +424,31 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
         position: createField('vec2', 'Позиция', { x: 0, y: 0 }, { ui: { min: -99999, max: 99999, step: 0.1 } }),
         kill_target: createField('number', 'Цель убийств', 10, { ui: { min: 1, max: 9999 } }),
         duration: createField('number', 'Длительность', 60, { ui: { min: 1, max: 99999 } }),
-        mobs: createField('list', 'Мобы', [{ mob_id: 21, count: 5, level: 1, power: 1, boss: false }], {
-          ui: { layout: 'grid', addLabel: 'Добавить моба' },
+        mobs: createField('list', 'Мобы', [{ bot_id: 0, level: 1, power: 1, count: 5, boss: false, Behavior: [], Debuffs: [], drops: [] }], {
+          ui: { layout: 'stack', addLabel: 'Добавить моба' },
           itemFields: {
-            mob_id: createDbSelect('Моб', 21, 'mob', { ui: { placeholder: '— выберите моба —' } }),
-            count: createField('number', 'Количество', 5, { ui: { min: 1, max: 999 } }),
+            bot_id: createDbSelect('BotID', 0, 'mob', { ui: { placeholder: '— выберите моба —' } }),
             level: createField('number', 'Уровень', 1, { ui: { min: 1, max: 999 } }),
             power: createField('number', 'Сила', 1, { ui: { min: 1, max: 999 } }),
-            boss: createField('boolean', 'Босс', false)
+            count: createField('number', 'Количество', 5, { ui: { min: 1, max: 999 } }),
+            boss: createField('boolean', 'Босс', false),
+            Behavior: {
+              label: 'Behavior',
+              ui: { type: 'tags', options: ['sleepy', 'slower', 'poisonous', 'neutral', 'skills_base', 'skills_tank', 'skills_dps', 'skills_healer'], placeholder: 'Добавить behavior…' }
+            },
+            Debuffs: {
+              label: 'Debuffs',
+              ui: { type: 'tags', options: ['Slowdown', 'Poison', 'Fire'], placeholder: 'Добавить debuff…' }
+            },
+            drops: createField('list', 'Слоты дропа (макс 5)', [], {
+              ui: { addLabel: 'Добавить слот' },
+              itemDefault: { item_id: 0, count: 1, chance: 0 },
+              itemFields: {
+                item_id: createDbSelect('Предмет', 0, 'item', { ui: { placeholder: '— предмет —', searchServer: true, dbLimit: 1000 } }),
+                count: createField('number', 'Кол-во', 1, { ui: { min: 1, max: 9999 } }),
+                chance: createField('number', 'Шанс (%)', 0, { ui: { min: 0, max: 100, step: 0.1 } }),
+              }
+            })
           }
         })
       }

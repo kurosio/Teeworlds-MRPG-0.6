@@ -479,7 +479,7 @@ private:
  *
  * The component is configured via a JSON object with the following fields:
  * @param mode (string): "annihilation", "wave", or "survival".
- * @param mobs (array): List of mob definitions with mob_id, count, level, power.
+ * @param mobs (array): List of mob definitions with bot_id, count, level, power.
  * @param position (vec2): Center position for mob spawn.
  * @param radius (float): Spawn radius.
  * @param kill_target (int): Target kills for "wave" mode (defaults to number spawned).
@@ -507,6 +507,7 @@ class ScenarioDefeatMobsComponent final : public PlayerAwareComponent<ScenarioDe
 	int m_KillsMade {};
 	int m_TargetTick {};
 	nlohmann::json m_MobsData {};
+	static inline std::atomic<int> ms_NextReservedMobID { -1 };
 
 public:
 	explicit ScenarioDefeatMobsComponent(const nlohmann::json& j)
@@ -537,20 +538,84 @@ private:
 
 		for(const auto& mobData : m_MobsData)
 		{
-			const int mobID = mobData.value("mob_id", (int)NOPE);
-			if(!MobBotInfo::ms_aMobBot.contains(mobID))
+			const int botID = mobData.value("bot_id", (int)NOPE);
+			if(!DataBotInfo::IsDataBotValid(botID))
 				continue;
 
-			// initialize and create new mobs
-			MobBotInfo mobInfo = MobBotInfo::ms_aMobBot[mobID];
+			const int spawnMobID = ms_NextReservedMobID.fetch_sub(1);
+			MobBotInfo mobInfo {};
+			mobInfo.m_BotID = botID;
+
 			mobInfo.m_Level = mobData.value("level", 1);
 			mobInfo.m_Power = mobData.value("power", 1);
+			mobInfo.m_Boss = mobData.value("boss", false);
 			mobInfo.m_Position = m_Position;
 			mobInfo.m_Radius = m_Radius;
 			mobInfo.m_WorldID = GS()->GetWorldID();
+
+			// initialize behavior
+			if(const auto behaviorJson = mobData.value("Behavior", nlohmann::json::array()); behaviorJson.is_array())
+			{
+				std::string behaviorSet {};
+				for(const auto& entry : behaviorJson)
+				{
+					if(!entry.is_string())
+						continue;
+					if(!behaviorSet.empty())
+						behaviorSet.append(",");
+					behaviorSet.append(entry.get<std::string>());
+				}
+				if(!behaviorSet.empty())
+					mobInfo.InitBehaviors(DBSet(behaviorSet));
+			}
+
+			// initialize debuffs
+			if(const auto debuffsJson = mobData.value("Debuffs", nlohmann::json::array()); debuffsJson.is_array())
+			{
+				std::string debuffSet {};
+				for(const auto& entry : debuffsJson)
+				{
+					if(!entry.is_string())
+						continue;
+					if(!debuffSet.empty())
+						debuffSet.append(",");
+					debuffSet.append(entry.get<std::string>());
+				}
+				if(!debuffSet.empty())
+					mobInfo.InitDebuffs(5, 5, 5.0f, DBSet(debuffSet));
+			}
+
+			// initialize drops
+			if(const auto dropsJson = mobData.value("drops", nlohmann::json::array()); dropsJson.is_array())
+			{
+				for(int i = 0; i < MAX_DROPPED_FROM_MOBS; ++i)
+				{
+					mobInfo.m_aDropItem[i] = 0;
+					mobInfo.m_aValueItem[i] = 0;
+					mobInfo.m_aRandomItem[i] = 0.f;
+				}
+
+				int slot = 0;
+				for(const auto& dropData : dropsJson)
+				{
+					if(slot >= MAX_DROPPED_FROM_MOBS)
+						break;
+
+					const int itemID = dropData.value("item_id", 0);
+					if(itemID <= 0)
+						continue;
+
+					mobInfo.m_aDropItem[slot] = itemID;
+					mobInfo.m_aValueItem[slot] = maximum(1, dropData.value("count", 1));
+					mobInfo.m_aRandomItem[slot] = maximum(0.0f, dropData.value("chance", 0.0f));
+					++slot;
+				}
+			}
+
+			// amount
 			for(int i = 0; i < mobData.value("count", 1); ++i)
 			{
-				if(auto* pPlayerBot = GS()->CreateBot(TYPE_BOT_MOB, mobInfo.m_BotID, mobID))
+				if(auto* pPlayerBot = GS()->CreateBot(TYPE_BOT_MOB, mobInfo.m_BotID, spawnMobID))
 				{
 					pPlayerBot->InitBotMobInfo(mobInfo);
 					pPlayerBot->SetAllowedSpawn(true);

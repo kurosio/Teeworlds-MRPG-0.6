@@ -169,6 +169,16 @@
             box-shadow: 0 16px 28px rgba(11, 18, 37, 0.3);
         }
 
+        /* Wider and more comfortable component modal for large component forms. */
+        #modal-content.scenario-modal-wide {
+            width: min(1400px, 96vw);
+            max-width: min(1400px, 96vw);
+            min-height: min(860px, 92vh);
+        }
+        #modal-content.scenario-modal-wide #modal-form-container {
+            padding-right: 0.5rem;
+        }
+
         @media (max-width: 767px) {
             .scenario-overview { padding: 0.7rem 0.8rem; }
             .scenario-overview-card { flex: 1 1 calc(50% - 0.65rem); min-width: 0; }
@@ -1331,6 +1341,8 @@
                 this.modal.context = { stepId, componentId, data: JSON.parse(JSON.stringify(component)) };
                 const componentInfo = this.componentTypes[component.type] || { name: component.type };
                 this.modal.title.textContent = `Редактирование: ${componentInfo.name}`;
+                const modalContent = this.modal.backdrop?.querySelector('#modal-content');
+                modalContent?.classList.add('scenario-modal-wide');
                 this.modal.formContainer.innerHTML = this.buildModalForm(this.modal.context.data, step);
                 // IMPORTANT: modal content is dynamic. Re-run Core init so db_select, validation, toggles, etc. work.
                 Promise.resolve().then(() => window.EditorCore?.UIManager?.init?.(this.modal.formContainer));
@@ -1339,6 +1351,8 @@
             }
 
             closeModal() {
+                const modalContent = this.modal.backdrop?.querySelector('#modal-content');
+                modalContent?.classList.remove('scenario-modal-wide');
                 this.modal.backdrop.classList.add('hidden');
                 this.modal.context = null;
             }
@@ -1349,6 +1363,17 @@
                 if (editedData.type === 'defeat_mobs') {
                     if (editedData.mode !== 'survival') delete editedData.duration;
                     if (editedData.mode !== 'wave') delete editedData.kill_target;
+                    if (Array.isArray(editedData.mobs)) {
+                        editedData.mobs = editedData.mobs.map((mob) => {
+                            const normalized = { ...mob };
+                            const botId = Number(normalized.bot_id || 0);
+                            normalized.bot_id = botId > 0 ? botId : 0;
+                            normalized.Debuffs = Array.isArray(normalized.Debuffs) ? normalized.Debuffs : [];
+                            normalized.Behavior = Array.isArray(normalized.Behavior) ? normalized.Behavior : [];
+                            normalized.drops = Array.isArray(normalized.drops) ? normalized.drops.slice(0, 5) : [];
+                            return normalized;
+                        });
+                    }
                 }
 
                 const originalComponent = this.findComponent(this.modal.context.stepId, this.modal.context.componentId);
@@ -1387,6 +1412,10 @@
                 if (button.dataset.listAction === 'add') {
                     const defaultItemRaw = button.dataset.listDefault ? decodeURIComponent(button.dataset.listDefault) : null;
                     const defaultItem = defaultItemRaw ? JSON.parse(defaultItemRaw) : {};
+                    if (listPath.endsWith('.drops') && listValue.length >= 5) {
+                        this.showToast('Максимум 5 слотов дропа', 'warning');
+                        return;
+                    }
                     listValue.push(defaultItem);
                 } else if (button.dataset.listAction === 'remove') {
                     const index = parseInt(button.dataset.listIndex);
