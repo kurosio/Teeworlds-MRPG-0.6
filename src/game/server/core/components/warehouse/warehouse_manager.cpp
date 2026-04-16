@@ -498,8 +498,8 @@ void CWarehouseManager::ShowTrade(CPlayer* pPlayer, CWarehouse* pWarehouse, int 
 		pError = "- You can't buy more than one item";
 	else if(pWarehouse->IsHasFlag(WF_STORAGE) && pWarehouse->Storage().GetValue() < pTrade->GetProductsCost())
 		pError = "- Not enough products to buy";
-	else if(pPlayer->Account()->GetTotalGold() < pTrade->GetPrice())
-		pError = "- Not enough gold to buy";
+	else if(PlayerCurrencyValue < pTrade->GetPrice())
+		pError = "- Not enough currency to buy";
 
 	// add element
 	if(pError != nullptr)

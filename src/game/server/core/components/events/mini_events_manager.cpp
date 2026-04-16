@@ -150,7 +150,5 @@ int CMiniEventsManager::GetBonusPercent(MiniEventType Type) const
 
 	auto BonusPercent = m_Data.m_BonusPercent;
 	BonusPercent += m_Data.m_ChainLevel * g_Config.m_SvMiniEventsChainBonusStepPercent;
-	const auto RemainingTick = maximum(0, m_Data.m_EndTick - Server()->Tick());
-	const auto RemainingSec = RemainingTick / Server()->TickSpeed();
 	return BonusPercent;
 }
