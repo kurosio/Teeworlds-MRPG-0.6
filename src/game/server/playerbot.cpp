@@ -189,23 +189,6 @@ int CPlayerBot::CalculateAttribute(AttributeIdentifier ID, int PowerLevel, bool 
 			AttributeValue += GS()->GetItemInfo(ItemID.value())->GetEnchantAttributeValue(ID);
 	}
 
-	// is dungeon world
-	if(GS()->IsWorldType(WorldType::Dungeon))
-	{
-		const auto* pController = dynamic_cast<CGameControllerDungeon*>(GS()->m_pController);
-		if(pController && pController->GetDungeon())
-		{
-			// calculating stats
-			const auto DungeonFactor = Balance::Get().GetDungeonFactor(ID, Boss);
-			const int MinValue = DungeonFactor.MinValue;
-			const float BaseFactor = DungeonFactor.BaseFactor;
-
-			AttributeValue += pController->CalculateMobAttribute(ID, PowerLevel, BaseFactor, MinValue);
-		}
-
-		return AttributeValue;
-	}
-
 	// default
 	float Percent = Balance::Get().GetBotGroupPercent(pAttribute->GetGroup());
 

@@ -5,6 +5,7 @@
 #include <scenarios/base/scenario_base_group.h>
 #include <scenarios/base/scenario_base_player.h>
 #include <game/server/core/tools/event_listener.h>
+#include <game/server/core/balance/balance.h>
 #include <game/server/gamecontext.h>
 
 /**
@@ -536,6 +537,8 @@ private:
 		m_ListenerScope.Register();
 		Reset();
 
+		const auto vpPlayers = GetPlayers();
+		const bool IsGroupScenario = dynamic_cast<GroupScenarioBase*>(Scenario()) != nullptr;
 		for(const auto& mobData : m_MobsData)
 		{
 			const int botID = mobData.value("bot_id", (int)NOPE);
@@ -547,7 +550,7 @@ private:
 			mobInfo.m_BotID = botID;
 
 			mobInfo.m_Level = mobData.value("level", 1);
-			mobInfo.m_Power = mobData.value("power", 1);
+			mobInfo.m_Power = Balance::Get().CalculateScenarioMobPower(vpPlayers, mobData.value("power", 1), IsGroupScenario);
 			mobInfo.m_Boss = mobData.value("boss", false);
 			mobInfo.m_Position = m_Position;
 			mobInfo.m_Radius = m_Radius;

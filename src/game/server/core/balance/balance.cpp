@@ -1,6 +1,6 @@
 #include "balance.h"
 
-#include <mutex>
+#include <game/server/player.h>
 
 Balance& Balance::Get()
 {
@@ -37,32 +37,6 @@ int Balance::GetAttributeBase(AttributeIdentifier ID) const
 	return m_AttributeBase[ToIndex(ID)];
 }
 
-Balance::DungeonFactor Balance::GetDungeonFactor(AttributeIdentifier ID, bool IsBoss) const
-{
-	DungeonFactor Result {};
-	if(IsDamageAttributeIdentifier(ID))
-	{
-		Result.BaseFactor = m_DungeonFactors.DamagePercent / 100.0f;
-	}
-	else if(ID == AttributeIdentifier::Crit)
-	{
-		Result.BaseFactor = m_DungeonFactors.CritPercent / 100.0f;
-	}
-	else if(IsBoss && ID == AttributeIdentifier::HP)
-	{
-		Result.BaseFactor = m_DungeonFactors.BossHpPercent / 100.0f;
-		Result.MinValue = m_DungeonFactors.BossMinValue;
-		return Result;
-	}
-	else
-	{
-		Result.BaseFactor = m_DungeonFactors.OtherPercent / 100.0f;
-	}
-
-	Result.MinValue = m_DungeonFactors.MinValue;
-	return Result;
-}
-
 float Balance::GetBotGroupPercent(AttributeGroup Group) const
 {
 	switch(Group)
@@ -83,6 +57,40 @@ float Balance::GetBotBossDownscaleDivider() const
 	return m_BotGroupScaling.BossDownscaleDivider;
 }
 
+int Balance::CalculateScenarioMobPower(const std::vector<CPlayer*>& vpPlayers, int BasePower, bool IsGroupScenario) const
+{
+	const auto& Scaling = m_ScenarioMobPowerScaling;
+	if(vpPlayers.empty())
+		return std::clamp(BasePower, Scaling.MinPower, Scaling.MaxPower);
+
+	const float StatWeight = IsGroupScenario ? Scaling.GroupStatWeight : Scaling.SoloStatWeight;
+	const int ValidPlayersNum = static_cast<int>(std::count_if(vpPlayers.begin(), vpPlayers.end(), [](const CPlayer* pPlayer)
+	{
+		return pPlayer != nullptr;
+	}));
+	if(ValidPlayersNum <= 0)
+		return std::clamp(BasePower, Scaling.MinPower, Scaling.MaxPower);
+
+	int64_t TotalAttributeBudget = 0;
+	for(const auto* pPlayer : vpPlayers)
+	{
+		if(!pPlayer)
+			continue;
+
+		for(int ID = (int)AttributeIdentifier::DMG; ID < (int)AttributeIdentifier::ATTRIBUTES_NUM; ID++)
+		{
+			const auto AttributeID = (AttributeIdentifier)ID;
+			TotalAttributeBudget += pPlayer->GetTotalRawAttributeValue(AttributeID);
+		}
+	}
+
+	const float AverageAttributeBudget = static_cast<float>(TotalAttributeBudget) / static_cast<float>(ValidPlayersNum);
+	const float AttributePowerPart = (AverageAttributeBudget / std::max(1.0f, Scaling.AvgAttributeDivider)) * StatWeight;
+	const int GroupPlayersBonus = IsGroupScenario ? std::max(0, ValidPlayersNum - 1) * Scaling.GroupPerPlayerBonus : 0;
+	const int FinalPower = BasePower + static_cast<int>(AttributePowerPart) + GroupPlayersBonus;
+	return std::clamp(FinalPower, Scaling.MinPower, Scaling.MaxPower);
+}
+
 void Balance::Initialize()
 {
 	m_AttributeCaps.fill(0.0f);
@@ -97,19 +105,19 @@ void Balance::Initialize()
 	m_AttributeBase[ToIndex(AttributeIdentifier::HP)] = 10;
 	m_AttributeBase[ToIndex(AttributeIdentifier::MP)] = 10;
 
-	m_DungeonFactors = {
-		15.0f,  // DamagePercent
-		7.0f,   // CritPercent
-		50.0f,  // OtherPercent
-		300.0f, // BossHpPercent
-		5,      // MinValue
-		5,      // BossMinValue
-	};
-
 	m_BotGroupScaling = {
 		5.0f,  // DamagePercent
 		15.0f, // DpsPercent
 		20.0f, // HealerPercent
 		10.0f, // BossDownscaleDivider
+	};
+
+	m_ScenarioMobPowerScaling = {
+		1,      // MinPower
+		10000,  // MaxPower
+		0.60f,  // SoloStatWeight
+		0.85f,  // GroupStatWeight
+		2,      // GroupPerPlayerBonus
+		75.0f,  // AvgAttributeDivider
 	};
 }
