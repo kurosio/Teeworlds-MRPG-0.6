@@ -266,7 +266,7 @@ private:
 			{
 				for(const auto* pPlayer : vpPlayers)
 				{
-					GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::TitleInformation, Server()->TickSpeed(),
+					GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::GameWarning, Server()->TickSpeed(),
 						"Move to the designated area! ({}/{})", NumPlayersInZone, TotalPlayers);
 				}
 			}
@@ -657,7 +657,7 @@ private:
 				{
 					for(auto* pPlayer : GetPlayers())
 					{
-						GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::TitleInformation, tickSpeed,
+						GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::GameWarning, tickSpeed,
 							"Objective: Defeat all the mobs. Remaining: {} mobs.", m_SpawnedBotIds.size());
 					}
 				}
@@ -670,7 +670,7 @@ private:
 				{
 					for(auto* pPlayer : GetPlayers())
 					{
-						GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::TitleInformation, tickSpeed,
+						GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::GameWarning, tickSpeed,
 							"Objective: Defeat wave mobs '{} of {}'", m_KillsMade, m_TargetKills);
 					}
 				}
@@ -685,7 +685,7 @@ private:
 				{
 					for(auto* pPlayer : GetPlayers())
 					{
-						GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::TitleInformation, tickSpeed,
+						GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::GameWarning, tickSpeed,
 							"Objective: Survive! Time left: {}s", timeLeft);
 					}
 				}
