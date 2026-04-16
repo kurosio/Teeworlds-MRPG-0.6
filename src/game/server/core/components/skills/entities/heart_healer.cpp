@@ -11,7 +11,7 @@ CHeartHealer::CHeartHealer(CGameWorld *pGameWorld, vec2 Pos, CPlayer *pPlayer, i
 	// set the values by arguments
 	m_Pos = Pos;
 	m_InitialVel = InitialVel/2;
-	m_pPlayer = pPlayer;
+	m_ClientID = pPlayer ? pPlayer->GetCID() : -1;
 	m_InitialAmount = 1.0f;
 	m_Health = Health;
 	m_ShowInformation = ShowInformation;
@@ -22,14 +22,15 @@ CHeartHealer::CHeartHealer(CGameWorld *pGameWorld, vec2 Pos, CPlayer *pPlayer, i
 void CHeartHealer::Tick()
 {
 	// check if there is a player or not to use his functions
-	if(!m_pPlayer || !m_pPlayer->GetCharacter())
+	CPlayer *pPlayer = GS()->GetPlayer(m_ClientID);
+	if(!pPlayer || !pPlayer->GetCharacter())
 	{
 		GameWorld()->DestroyEntity(this);
 		return;
 	}
 
 	// if the distance is greater than 24.0
-	CCharacter *pChar = m_pPlayer->GetCharacter();
+	CCharacter *pChar = pPlayer->GetCharacter();
 	float Dist = distance(m_Pos, pChar->m_Core.m_Pos);
 	if(Dist > 24.0f)
 	{

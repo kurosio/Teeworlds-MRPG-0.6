@@ -8,7 +8,7 @@ class CPlayer;
 
 class CHeartHealer : public CEntity
 {
-	CPlayer *m_pPlayer;
+	int m_ClientID {};
 	vec2 m_InitialVel;
 	float m_InitialAmount;
 	int m_Health;
