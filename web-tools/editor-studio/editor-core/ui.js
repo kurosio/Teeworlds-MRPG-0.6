@@ -99,7 +99,7 @@
     let modal = document.getElementById(id);
     if (modal) return modal;
     modal = createElementFromHTML(`
-      <div id="${id}" class="hidden fixed inset-0 editor-modal-backdrop z-[520] p-4">
+      <div id="${id}" class="hidden fixed inset-0 editor-modal-backdrop z-[520]">
         <div class="editor-modal-content editor-scenario-overlay-panel">
           <div class="editor-scenario-overlay-header">
             <div class="editor-scenario-overlay-title-wrap">
