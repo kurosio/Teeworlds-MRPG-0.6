@@ -209,7 +209,7 @@ class DbRegistration
 				return;
 			}
 
-			if(!TimeoutCode.empty() && (!pPlayer->IsAuthed() || pPlayer->IsGuestLogin()))
+			if(!TimeoutCode.empty() && !pPlayer->IsAuthed())
 			{
 				pGS->Chat(ClientID, "This nickname is protected by timeout code.");
 				pGS->Chat(ClientID, "First complete authorization of the previous account.");
