@@ -630,7 +630,7 @@ void CPlayer::OnPredictedInput(CNetObj_PlayerInput* pNewInput) const
 		m_pCharacter->OnPredictedInput(pNewInput);
 }
 
-int CPlayer::GetTeam()
+int CPlayer::GetTeam() const
 {
 	return IsAuthed() ? TEAM_RED : TEAM_SPECTATORS;
 }

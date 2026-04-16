@@ -50,7 +50,7 @@ public:
 	CQuestBotMobInfo& GetQuestBotMobInfo() { return m_QuestMobInfo; }
 	MobBotInfo& GetMobInfo() { return m_MobInfo; }
 
-	int GetTeam() override { return TEAM_BLUE; }
+	int GetTeam() const override { return TEAM_BLUE; }
 	bool IsBot() const override { return true; }
 	int GetBotID() const { return m_BotID; }
 	int GetBotType() const { return m_BotType; }

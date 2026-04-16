@@ -105,7 +105,7 @@ public:
 	bool IsMarkedForDestroy() const { return m_MarkForDestroy; }
 
 	virtual bool IsBot() const { return false; }
-	virtual int GetTeam();
+	virtual int GetTeam() const;
 	virtual	int GetCurrentWorldID() const;
 	virtual const CTeeInfo& GetTeeInfo() const;
 	virtual int GetMaxHealth() const;
