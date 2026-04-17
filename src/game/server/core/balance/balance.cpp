@@ -115,9 +115,9 @@ void Balance::Initialize()
 	m_ScenarioMobPowerScaling = {
 		1,      // MinPower
 		10000,  // MaxPower
-		0.50f,  // SoloStatWeight
-		0.75f,  // GroupStatWeight
+		0.45f,  // SoloStatWeight
+		0.60f,  // GroupStatWeight
 		1,      // GroupPerPlayerBonus
-		85.0f,  // AvgAttributeDivider
+		95.0f,  // AvgAttributeDivider
 	};
 }
