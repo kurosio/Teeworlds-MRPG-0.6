@@ -2176,6 +2176,7 @@ int CServer::Run(ILogger* pLogger)
 							m_aClients[ClientID].Reset();
 							m_aClients[ClientID].m_State = CClient::STATE_CONNECTING;
 							m_aClients[ClientID].m_ChangeWorld = false;
+							m_aClients[ClientID].m_JoinFloodChecked = true;
 
 							// send map to client
 							SendMap(ClientID);
