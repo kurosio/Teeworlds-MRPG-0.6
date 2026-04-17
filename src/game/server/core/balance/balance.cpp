@@ -116,7 +116,7 @@ void Balance::Initialize()
 		1,      // MinPower
 		10000,  // MaxPower
 		0.45f,  // SoloStatWeight
-		0.60f,  // GroupStatWeight
+		0.70f,  // GroupStatWeight
 		1,      // GroupPerPlayerBonus
 		95.0f,  // AvgAttributeDivider
 	};

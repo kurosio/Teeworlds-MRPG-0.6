@@ -635,12 +635,16 @@ private:
 		if(!pVictim || !m_SpawnedBotIds.contains(pVictim->GetCID()))
 			return;
 
-		m_SpawnedBotIds.erase(pVictim->GetCID());
-		if(auto* pPlayerBot = dynamic_cast<CPlayerBot*>(pVictim))
-			pPlayerBot->MarkForDestroy();
-
-		if(m_Mode == EMode::Wave)
+		if(m_Mode == EMode::Annihilation)
+		{
+			m_SpawnedBotIds.erase(pVictim->GetCID());
+			if(auto* pPlayerBot = dynamic_cast<CPlayerBot*>(pVictim))
+				pPlayerBot->MarkForDestroy();
+		}
+		else if(m_Mode == EMode::Wave)
+		{
 			++m_KillsMade;
+		}
 	}
 
 	void OnActiveImpl() override
@@ -700,13 +704,16 @@ private:
 
 	void OnEndImpl() override
 	{
+		m_ListenerScope.Unregister();
 		for(int CID : m_SpawnedBotIds)
 		{
 			if(auto* pPlayer = GS()->GetPlayer(CID))
+			{
+				pPlayer->KillCharacter(WEAPON_WORLD);
 				pPlayer->MarkForDestroy();
+			}
 		}
 		m_SpawnedBotIds.clear();
-		m_ListenerScope.Unregister();
 	}
 };
 
