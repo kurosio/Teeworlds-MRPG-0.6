@@ -3,14 +3,15 @@
 #include "rhythm.h"
 
 #include <game/server/gamecontext.h>
+#include "entities/rhythm_field.h"
 
 CGameControllerRhythm::CGameControllerRhythm(CGS* pGameServer)
-	: CGameControllerDefault(pGameServer)
+	: IGameController(pGameServer)
 {
 }
 
 void CGameControllerRhythm::OnInit()
 {
-	CGameControllerDefault::OnInit();
+	IGameController::OnInit();
 	GS()->ChatWorld(GS()->GetWorldID(), nullptr, "Rhythm world is active! Stay on beat.");
 }
