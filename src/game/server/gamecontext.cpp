@@ -8,6 +8,7 @@
 #include <engine/map.h>
 
 #include "worldmodes/default.h"
+#include "worldmodes/rhythm/rhythm.h"
 #include "worldmodes/tutorial.h"
 #include "worldmodes/dungeon/dungeon.h"
 
@@ -1623,6 +1624,12 @@ void CGS::InitWorld()
 		{
 			m_pController = new CGameControllerTutorial(this);
 			worldTypeStr = "Tutorial";
+			break;
+		}
+		case WorldType::Rhythm:
+		{
+			m_pController = new CGameControllerRhythm(this);
+			worldTypeStr = "Rhythm";
 			break;
 		}
 		default:

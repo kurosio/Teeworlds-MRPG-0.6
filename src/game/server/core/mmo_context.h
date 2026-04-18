@@ -152,6 +152,7 @@ enum class WorldType : int
 	Default,
 	Tutorial,
 	MiniGames,
+	Rhythm,
 	Dungeon,
 	DeepDungeon,
 	TreasureDungeon,

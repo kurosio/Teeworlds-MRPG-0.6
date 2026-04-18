@@ -21,6 +21,8 @@ public:
 			m_Type = WorldType::Default;
 		else if(Type == "mini_games")
 			m_Type = WorldType::MiniGames;
+		else if(Type == "rhythm")
+			m_Type = WorldType::Rhythm;
 		else if(Type == "dungeon")
 			m_Type = WorldType::Dungeon;
 		else if(Type == "deep_dungeon")

@@ -2169,7 +2169,7 @@ CREATE TABLE `tw_worlds` (
   `ID` int(11) NOT NULL,
   `Name` varchar(256) NOT NULL,
   `Path` varchar(256) NOT NULL,
-  `Type` enum('default','dungeon','tutorial','deep_dungeon','treasure_dungeon','pvp','mini_games') NOT NULL,
+  `Type` enum('default','dungeon','tutorial','deep_dungeon','treasure_dungeon','pvp','mini_games','rhythm') NOT NULL,
   `Flags` set('rating_system','crime_score','lost_gold_death','spawn_full_mana','allowed_pvp') DEFAULT NULL,
   `RespawnWorldID` int(11) NOT NULL,
   `JailWorldID` int(11) NOT NULL,
@@ -2187,8 +2187,7 @@ INSERT INTO `tw_worlds` (`ID`, `Name`, `Path`, `Type`, `Flags`, `RespawnWorldID`
 (3, 'Default - dm1 (TEST)', 'pvp/dm1-mmorpg.map', 'pvp', 'rating_system,lost_gold_death,spawn_full_mana,allowed_pvp', 3, 1, 20),
 (4, 'Default - dm9 (TEST)', 'pvp/dm9-mmorpg.map', 'pvp', 'rating_system,lost_gold_death,spawn_full_mana,allowed_pvp', 4, 1, 20),
 (5, 'Sea', 'worlds/sea.map', 'default', 'rating_system,crime_score,lost_gold_death,allowed_pvp', 1, 1, 5),
-(6, 'Forest', 'worlds/Forest.map', 'default', 'rating_system,lost_gold_death,allowed_pvp', 1, 1, 15),
-(7, 'Tutorilishe', 'tutorial.map', 'tutorial', NULL, 0, 0, 1);
+(6, 'Forest', 'worlds/Forest.map', 'default', 'rating_system,lost_gold_death,allowed_pvp', 1, 1, 15);
 
 -- --------------------------------------------------------
 
