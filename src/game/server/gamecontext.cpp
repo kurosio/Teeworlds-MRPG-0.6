@@ -274,7 +274,7 @@ void CGS::CreateSound(vec2 Pos, int Sound, int64_t Mask)
 {
 	if(IsCustomSound(Sound))
 	{
-		if(Server()->GetWorldDetail(m_WorldID)->HasFlag(WORLD_FLAG_NO_PREPARE_MAP))
+		if(HasWorldFlag(WORLD_FLAG_NO_PREPARE_MAP))
 			return;
 
 		if(auto* pEvent = m_Events.Create<CNetEvent_MapSoundWorld>(Mask))
@@ -299,7 +299,7 @@ void CGS::CreatePlayerSound(int ClientID, int Sound)
 {
 	if(IsCustomSound(Sound))
 	{
-		if(Server()->GetWorldDetail(m_WorldID)->HasFlag(WORLD_FLAG_NO_PREPARE_MAP))
+		if(HasWorldFlag(WORLD_FLAG_NO_PREPARE_MAP))
 			return;
 
 		CNetMsg_Sv_MapSoundGlobal Msg;
@@ -755,12 +755,10 @@ void CGS::OnDaytypeChange(int NewDaytype)
 		case NIGHT_TYPE:
 			UpdateWorldMultipliers();
 			ChatWorld(m_WorldID, "", "Night has fallen in '{}'!", pWorldname);
-			BroadcastWorld(m_WorldID, BroadcastPriority::VeryImportant, 200, "Rates: Exp {}% | Gold {}%", m_Multipliers.Experience, m_Multipliers.Gold);
 			break;
 		case MORNING_TYPE:
 			ResetWorldMultipliers();
 			ChatWorld(m_WorldID, "", "The sun rises over '{}'!", pWorldname);
-			BroadcastWorld(m_WorldID, BroadcastPriority::VeryImportant, 200, "Rates: Exp {}% | Gold {}%", m_Multipliers.Experience, m_Multipliers.Gold);
 			break;
 		default: break;
 	}
@@ -1480,6 +1478,13 @@ bool CGS::SendMenuMotd(CPlayer* pPlayer, int Menulist) const
 
 void CGS::UpdateWorldMultipliers()
 {
+	if(HasWorldFlag(WORLD_FLAG_NO_MULTIPLIER))
+	{
+		m_Multipliers.Experience = 100;
+		m_Multipliers.Gold = 100;
+		return;
+	}
+
 	if(IsWorldType(WorldType::Dungeon))
 	{
 		m_Multipliers.Experience = g_Config.m_SvDungeonExpMultiplier;
@@ -1489,15 +1494,17 @@ void CGS::UpdateWorldMultipliers()
 
 	m_Multipliers.Experience = (100 + maximum(20, rand() % 200));
 	m_Multipliers.Gold = (100 + maximum(20, rand() % 100));
+	BroadcastWorld(m_WorldID, BroadcastPriority::VeryImportant, 200, "Rates: Exp {}% | Gold {}%", m_Multipliers.Experience, m_Multipliers.Gold);
 }
 
 void CGS::ResetWorldMultipliers()
 {
-	if(IsWorldType(WorldType::Dungeon))
+	if(IsWorldType(WorldType::Dungeon) || HasWorldFlag(WORLD_FLAG_NO_MULTIPLIER))
 		return;
 
 	m_Multipliers.Experience = 100;
 	m_Multipliers.Gold = 100;
+	BroadcastWorld(m_WorldID, BroadcastPriority::VeryImportant, 200, "Rates: Exp {}% | Gold {}%", m_Multipliers.Experience, m_Multipliers.Gold);
 }
 
 void CGS::UpdateVotesIfForAll(int MenuList) const

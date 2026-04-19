@@ -2097,7 +2097,8 @@ int CServer::Run(ILogger* pLogger)
 						for(int i = 0; i < MultiWorlds()->GetSizeInitilized(); i++)
 						{
 							IGameServer* pGameServer = MultiWorlds()->GetWorld(i)->GameServer();
-							pGameServer->OnDaytypeChange(m_GameTypeday);
+							if(!MultiWorlds()->GetWorld(i)->GetDetail()->HasFlag(WORLD_FLAG_NO_DAYTIME))
+								pGameServer->OnDaytypeChange(m_GameTypeday);
 						}
 					}
 

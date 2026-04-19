@@ -54,6 +54,10 @@ public:
 			m_Flags |= WORLD_FLAG_ALLOWED_PVP;
 		if(FlagsSet.hasSet("no_prepare_map"))
 			m_Flags |= WORLD_FLAG_NO_PREPARE_MAP;
+		if(FlagsSet.hasSet("no_multiplier"))
+			m_Flags |= WORLD_FLAG_NO_MULTIPLIER;
+		if(FlagsSet.hasSet("no_daytime"))
+			m_Flags |= WORLD_FLAG_NO_DAYTIME;
 	}
 
 	int GetRespawnWorldID() const
