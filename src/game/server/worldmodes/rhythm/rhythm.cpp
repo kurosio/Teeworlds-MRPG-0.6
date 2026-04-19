@@ -12,6 +12,7 @@
 #include <game/server/entities/character.h>
 #include <game/server/entity_manager.h>
 #include <game/server/gamecontext.h>
+#include <game/server/core/components/accounts/account_manager.h>
 
 #include "entities/rhythm_field.h"
 #include <generated/server_data.h>
@@ -161,7 +162,19 @@ void CGameControllerRhythm::Tick()
 		if(m_FinishTick > 0)
 			m_FinishTick--;
 		else if(m_FinishTick == 0)
+		{
+			for(int ClientID = 0; ClientID < MAX_PLAYERS; ++ClientID)
+			{
+				auto* pPlayer = GS()->GetPlayer(ClientID);
+				if(!pPlayer || !GS()->IsPlayerInWorld(ClientID, GS()->GetWorldID()))
+					continue;
+
+				const int LatestCorrectWorldID = GS()->Core()->AccountManager()->GetLastVisitedWorldID(pPlayer);
+				pPlayer->ChangeWorld(LatestCorrectWorldID);
+			}
+
 			ChangeState(EStageState::STATE_WARMUP);
+		}
 	}
 
 	IGameController::Tick();

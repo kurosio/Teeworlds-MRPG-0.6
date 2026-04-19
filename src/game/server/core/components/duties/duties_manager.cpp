@@ -306,6 +306,11 @@ void CDutiesManager::ShowInsideMenu(CPlayer* pPlayer) const
 		VoteWrapper(ClientID).AddOption("DUTIES_EXIT", "Exit from PvP");
 		VoteWrapper::AddEmptyline(ClientID);
 	}
+	else if(GS()->IsWorldType(WorldType::Rhythm))
+	{
+		VoteWrapper(ClientID).AddOption("DUTIES_EXIT", "Exit from Rhythm");
+		VoteWrapper::AddEmptyline(ClientID);
+	}
 }
 
 void CDutiesManager::ShowPvpInfo(CPlayer* pPlayer, int WorldID) const
@@ -339,7 +344,6 @@ void CDutiesManager::ShowRhythmInfo(CPlayer* pPlayer, int WorldID) const
 {
 	const auto ClientID = pPlayer->GetCID();
 	const auto ClientsNum = Server()->GetClientsCountByWorld(WorldID);
-	const auto* pDetail = Server()->GetWorldDetail(WorldID);
 	const char* pStatus = (ClientsNum > 0 ? "Active" : "Waiting");
 	const char* pName = Server()->GetWorldName(WorldID);
 
