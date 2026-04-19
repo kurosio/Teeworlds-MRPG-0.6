@@ -168,8 +168,11 @@ bool CDutiesManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, con
 	// rhythm enter
 	if(PPSTR(pCmd, "RHYTHM_JOIN") == 0)
 	{
+		auto WorldIdOpt = GetIfExists<int>(Extras, 0);
+		if(!WorldIdOpt.has_value())
+			return true;
+
 		// check equal player world
-        auto WorldIdOpt = GetIfExists<int>(Extras, 0);
 		if(GS()->IsPlayerInWorld(ClientID, WorldIdOpt))
 		{
 			GS()->Chat(ClientID, "You are already in this rhythm mode.");
@@ -177,8 +180,18 @@ bool CDutiesManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, con
 			return true;
 		}
 
-        if(WorldIdOpt.has_value())
-		    pPlayer->ChangeWorld(WorldIdOpt.value());
+		// check is started
+		auto* pWorldGS = dynamic_cast<CGS*>(Server()->GameServer(WorldIdOpt.value()));
+		if(pWorldGS && pWorldGS->IsDutyStarted())
+		{
+			GS()->Chat(ClientID, "Rhythm round already active. Wait for the next one.");
+			pPlayer->m_VotesData.UpdateVotesIf(MENU_DUTIES_LIST);
+			return true;
+		}
+
+		// join
+		GS()->Chat(-1, "'{}' joined to '{}'!", Server()->ClientName(ClientID), Server()->GetWorldName(WorldIdOpt.value()));
+		pPlayer->ChangeWorld(WorldIdOpt.value());
 		return true;
 	}
 
@@ -198,7 +211,6 @@ void CDutiesManager::ShowDutiesList(CPlayer* pPlayer, WorldType Type) const
 {
 	const int ClientID = pPlayer->GetCID();
 
-	// default dungeon type
 	if(Type == WorldType::Dungeon)
 	{
 		VoteWrapper VDungeon(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "\u262C Dungeons");

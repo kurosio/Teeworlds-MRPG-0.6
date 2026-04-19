@@ -14,6 +14,7 @@ public:
 	void OnInit() override;
 	void Tick() override;
 	void Snap() override;
+	bool IsRoundActive() const { return m_State == EStageState::STATE_ACTIVE; }
 
 private:
 	enum class EStageState

@@ -863,8 +863,8 @@ void CGameControllerRhythm::SaveRhythmResults()
 			Database->Execute<DB::UPDATE>("tw_rhythm_records", "Score = '{}' WHERE ID = '{}'", Points, RecordID);
 		}
 
-		GS()->Chat(ClientID, "Rhythm result: {} points (Perfect: {}, Good: {}, Bad: {}, Miss: {}).",
-			Points, Score.m_Perfect, Score.m_Good, Score.m_Bad, Score.m_Miss);
+		GS()->Chat(-1, "'{}' finished '{}' with {} points!",
+			Server()->ClientName(ClientID), Server()->GetWorldName(GS()->GetWorldID()), Points);
 	}
 }
 
