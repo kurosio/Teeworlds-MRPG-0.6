@@ -32,7 +32,7 @@ bool CDutiesManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		// add selector
 		VoteWrapper VSelectorType(ClientID, VWF_SEPARATE_OPEN|VWF_ALIGN_TITLE|VWF_STYLE_STRICT_BOLD, "\u261C Duties list");
 		VSelectorType.AddMenu(MENU_DUTIES_LIST, (int)WorldType::MiniGames, "\u2659 Mini-games ({})", GetWorldsCountByType(WorldType::MiniGames));
-		VSelectorType.AddMenu(MENU_DUTIES_LIST, (int)WorldType::Rhythm, "\u2659 Rhythm ({})", GetWorldsCountByType(WorldType::Rhythm));
+		VSelectorType.AddMenu(MENU_DUTIES_LIST, (int)WorldType::Rhythm, "\u266C Rhythm ({})", GetWorldsCountByType(WorldType::Rhythm));
 		VSelectorType.AddMenu(MENU_DUTIES_LIST, (int)WorldType::Dungeon, "\u262C Dungeons ({})", GetWorldsCountByType(WorldType::Dungeon));
 		VSelectorType.AddMenu(MENU_DUTIES_LIST, (int)WorldType::DeepDungeon, "\u262A Deep dungeons ({})", GetWorldsCountByType(WorldType::DeepDungeon));
 		VSelectorType.AddMenu(MENU_DUTIES_LIST, (int)WorldType::TreasureDungeon, "\u2619 Treasure dungeons ({})", GetWorldsCountByType(WorldType::TreasureDungeon));
