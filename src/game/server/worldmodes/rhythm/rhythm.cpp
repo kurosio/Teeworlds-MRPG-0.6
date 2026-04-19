@@ -38,6 +38,7 @@ CGameControllerRhythm::CGameControllerRhythm(CGS* pGameServer)
 	m_FieldAnchorPos = vec2(0.0f, 0.0f);
 	m_FieldAnchorValid = false;
 	mem_zero(m_aLanePressTick, sizeof(m_aLanePressTick));
+	mem_zero(m_aLaneHoldTick, sizeof(m_aLaneHoldTick));
 	mem_zero(m_aLaneLastHitTick, sizeof(m_aLaneLastHitTick));
 	mem_zero(m_aLanePressId, sizeof(m_aLanePressId));
 	mem_zero(m_aLanePressUsedId, sizeof(m_aLanePressUsedId));
@@ -398,6 +399,7 @@ void CGameControllerRhythm::ResetClientState(int ClientID)
 	for(int LaneIndex = 0; LaneIndex < ms_LaneCount; ++LaneIndex)
 	{
 		m_aLanePressTick[ClientID][LaneIndex] = SRhythmFieldConfig::s_InvalidPressTick;
+		m_aLaneHoldTick[ClientID][LaneIndex] = SRhythmFieldConfig::s_InvalidPressTick;
 		m_aLaneLastHitTick[ClientID][LaneIndex] = SRhythmFieldConfig::s_InvalidPressTick;
 	}
 	mem_zero(m_aLanePressId[ClientID], sizeof(m_aLanePressId[ClientID]));
@@ -511,11 +513,15 @@ void CGameControllerRhythm::ProcessPlayerInput(int ClientID, const CNetObj_Playe
 		return;
 
 	CNetObj_PlayerInput& PrevInput = m_aPrevInputs[ClientID];
-
 	const bool aLanePressed[ms_LaneCount] = {
 		Input.m_Direction < 0 && PrevInput.m_Direction >= 0,
 		(Input.m_Jump & 1) != 0 && (PrevInput.m_Jump & 1) == 0,
 		Input.m_Direction > 0 && PrevInput.m_Direction <= 0,
+	};
+	const bool aLaneHeld[ms_LaneCount] = {
+		Input.m_Direction < 0,
+		(Input.m_Jump & 1) != 0,
+		Input.m_Direction > 0,
 	};
 
 	for(int LaneIndex = 0; LaneIndex < ms_LaneCount; ++LaneIndex)
@@ -525,6 +531,8 @@ void CGameControllerRhythm::ProcessPlayerInput(int ClientID, const CNetObj_Playe
 			m_aLanePressId[ClientID][LaneIndex]++;
 			m_aLanePressTick[ClientID][LaneIndex] = CurrentTick;
 		}
+		if(aLaneHeld[LaneIndex])
+			m_aLaneHoldTick[ClientID][LaneIndex] = CurrentTick;
 	}
 
 	const vec2 HitPos = m_pRhythmField->HitZonePos();
@@ -555,7 +563,14 @@ void CGameControllerRhythm::ProcessPlayerInput(int ClientID, const CNetObj_Playe
 			if(m_aLanePressId[ClientID][LaneIndex] == m_aLanePressUsedId[ClientID][LaneIndex])
 				continue;
 
-			const int RawDelta = std::abs(m_aLanePressTick[ClientID][LaneIndex] - NoteTick);
+
+			int RawDelta = std::abs(m_aLanePressTick[ClientID][LaneIndex] - NoteTick);
+			if(RawDelta > SRhythmFieldConfig::s_BadWindowTicks && aLaneHeld[LaneIndex])
+			{
+				const int HeldDelta = std::abs(m_aLaneHoldTick[ClientID][LaneIndex] - NoteTick);
+				if(HeldDelta <= SRhythmFieldConfig::s_BadWindowTicks)
+					RawDelta = HeldDelta;
+			}
 			if(RawDelta > SRhythmFieldConfig::s_BadWindowTicks)
 				continue;
 

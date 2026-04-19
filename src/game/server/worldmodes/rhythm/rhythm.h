@@ -101,6 +101,7 @@ private:
 
 	std::array<CNetObj_PlayerInput, MAX_PLAYERS> m_aPrevInputs{};
 	int m_aLanePressTick[MAX_PLAYERS][ms_LaneCount]{};
+	int m_aLaneHoldTick[MAX_PLAYERS][ms_LaneCount]{};
 	int m_aLaneLastHitTick[MAX_PLAYERS][ms_LaneCount]{};
 	uint16_t m_aLanePressId[MAX_PLAYERS][ms_LaneCount]{};
 	uint16_t m_aLanePressUsedId[MAX_PLAYERS][ms_LaneCount]{};
