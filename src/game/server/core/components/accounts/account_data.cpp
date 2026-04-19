@@ -407,8 +407,10 @@ void CAccountData::AddExperience(uint64_t Value, bool ApplyBonuses) const
 	// increase exp value
 	const auto OldLevel = pClassProfession->GetLevel();
 	if(ApplyBonuses)
+	{
 		m_BonusManager.ApplyBonuses(BONUS_TYPE_EXPERIENCE, &Value);
-	GS()->Core()->MiniEventsManager()->ApplyBonus(MiniEventType::ExpGain, &Value);
+		GS()->Core()->MiniEventsManager()->ApplyBonus(MiniEventType::ExpGain, &Value);
+	}
 
 	pClassProfession->AddExperience(Value);
 	if(pClassProfession->GetLevel() > OldLevel)
@@ -440,8 +442,10 @@ void CAccountData::AddGold(int Value, bool ApplyBonuses)
 
 	// apply bonuses
 	if(ApplyBonuses)
+	{
 		m_BonusManager.ApplyBonuses(BONUS_TYPE_GOLD, &Value);
-	GS()->Core()->MiniEventsManager()->ApplyBonus(MiniEventType::GoldGain, &Value);
+		GS()->Core()->MiniEventsManager()->ApplyBonus(MiniEventType::GoldGain, &Value);
+	}
 
 	// add gold
 	pPlayer->GetItem(itGold)->Add(Value);
