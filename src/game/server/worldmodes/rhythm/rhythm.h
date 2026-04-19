@@ -110,7 +110,6 @@ private:
 	int m_CurrentHoldSegment{};
 	int m_EndTick{};
 	int m_FinishTick{};
-	bool m_RoundFinished{};
 	bool m_ResultsSaved{};
 
 	std::array<CNetObj_PlayerInput, MAX_PLAYERS> m_aPrevInputs{};

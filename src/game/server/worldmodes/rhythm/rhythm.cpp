@@ -73,7 +73,6 @@ void CGameControllerRhythm::OnInit()
 	m_CurrentNote = 0;
 	m_NextSpawnNote = 0;
 	m_CurrentHoldSegment = 0;
-	m_RoundFinished = false;
 	m_ResultsSaved = false;
 	m_EndTick = 0;
 	m_FinishTick = 0;
@@ -97,7 +96,7 @@ void CGameControllerRhythm::Tick()
 	else if(m_State == EStageState::STATE_WAIT)
 		ChangeState(EStageState::STATE_WARMUP);
 
-	// is active warmup
+	// Warmup state
 	if(m_State == EStageState::STATE_WARMUP)
 	{
 		// warmup sound notify
@@ -108,6 +107,7 @@ void CGameControllerRhythm::Tick()
 			Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, -1, -1, GS()->GetWorldID());
 		}
 
+		// warmup tick
 		if(m_WarmupTick > 0)
 			m_WarmupTick--;
 		if(m_WarmupTick == 0)
@@ -115,11 +115,12 @@ void CGameControllerRhythm::Tick()
 	}
 
 
-	// update active state
-	if(m_State == EStageState::STATE_ACTIVE && !m_RoundFinished)
+	// Active state
+	if(m_State == EStageState::STATE_ACTIVE)
 	{
 		for(int ClientID = 0; ClientID < MAX_PLAYERS; ++ClientID)
 		{
+			// check valid
 			auto* pPlayer = GS()->GetPlayer(ClientID);
 			if(!pPlayer || !GS()->GetPlayerChar(ClientID))
 			{
@@ -127,11 +128,23 @@ void CGameControllerRhythm::Tick()
 				continue;
 			}
 
+			// update field anchor
 			if(m_FieldAnchorValid)
+			{
+				if(Server()->Tick() % (Server()->TickSpeed() / 2) == 0)
+				{
+					char aBuf[32];
+					str_format(aBuf, sizeof(aBuf), "%d", ScorePoints(m_aScores[ClientID]));
+					const auto TextPos = vec2(m_FieldAnchorPos.x, m_FieldAnchorPos.y + 96.f);
+					GS()->EntityManager()->TextMask(CmaskOne(ClientID), TextPos, 25, EEntityTextType::Laser, aBuf);
+				}
+
 				pPlayer->LockedView().ViewLock(m_FieldAnchorPos + vec2(SRhythmFieldConfig::s_FieldViewOffsetX, SRhythmFieldConfig::s_FieldViewOffsetY));
+			}
 			else
 				pPlayer->LockedView().Reset();
 
+			// update input
 			if(m_State == EStageState::STATE_ACTIVE && pPlayer->m_pLastInput)
 				ProcessPlayerInput(ClientID, *pPlayer->m_pLastInput, CurrentTick);
 		}
@@ -139,10 +152,10 @@ void CGameControllerRhythm::Tick()
 		UpdateNotes();
 		if(CurrentTick > m_EndTick)
 		{
-			m_RoundFinished = true;
 			ChangeState(EStageState::STATE_FINISHED);
 			GS()->ChatWorld(GS()->GetWorldID(), nullptr, "Rhythm round finished.");
 		}
+
 	}
 	else if(m_State == EStageState::STATE_FINISHED)
 	{
@@ -234,29 +247,37 @@ void CGameControllerRhythm::ChangeState(EStageState State)
 	m_State = State;
 	if(m_State == EStageState::STATE_WARMUP)
 	{
-		m_WarmupTick = Server()->TickSpeed() * 15;
-		m_FieldAnchorValid = FindFieldAnchorFromMap(m_FieldAnchorPos);
-	}
-
-	if(m_State == EStageState::STATE_ACTIVE)
-	{
-		// reset old field
 		if(m_pRhythmField)
 		{
 			m_pRhythmField->Reset();
 			m_pRhythmField = nullptr;
 		}
 
-		if(m_FieldAnchorValid && !m_pRhythmField)
+		m_FinishTick = 0;
+		m_CurrentNote = 0;
+		m_NextSpawnNote = 0;
+		m_CurrentHoldSegment = 0;
+		m_ResultsSaved = false;
+		m_EndTick = 0;
+		m_WarmupTick = Server()->TickSpeed() * 15;
+		m_FieldAnchorValid = FindFieldAnchorFromMap(m_FieldAnchorPos);
+		for(int ClientID = 0; ClientID < MAX_PLAYERS; ++ClientID)
+			ResetClientState(ClientID);
+	}
+
+	if(m_State == EStageState::STATE_ACTIVE)
+	{
+		if(!m_FieldAnchorValid)
+			return;
+
+		// create rhythm field
+		const vec2 FieldPos = m_FieldAnchorPos;
+		const float Bpm = m_Meta.m_Bpm > 0.0f ? m_Meta.m_Bpm : 120.0f;
+		m_pRhythmField = new CRhythmField(&GS()->m_World, FieldPos, Bpm, 32.0f);
+		if(m_pRhythmField)
 		{
-			const vec2 FieldPos = m_FieldAnchorPos;
-			const float Bpm = m_Meta.m_Bpm > 0.0f ? m_Meta.m_Bpm : 120.0f;
-			m_pRhythmField = new CRhythmField(&GS()->m_World, FieldPos, Bpm, 32.0f);
-			if(m_pRhythmField)
-			{
-				m_pRhythmField->SetAutoSpawn(false);
-				m_pRhythmField->SetHitZone(FieldPos);
-			}
+			m_pRhythmField->SetAutoSpawn(false);
+			m_pRhythmField->SetHitZone(FieldPos);
 		}
 
 		// start music
@@ -269,14 +290,13 @@ void CGameControllerRhythm::ChangeState(EStageState State)
 		m_CurrentNote = 0;
 		m_NextSpawnNote = 0;
 		m_CurrentHoldSegment = 0;
-		m_RoundFinished = false;
 		m_ResultsSaved = false;
 		m_EndTick = m_RoundStartTick + round_to_int(m_Meta.m_DurationSeconds * Server()->TickSpeed());
-		m_FinishTick = 0;
 		RebuildTickTimings();
 		return;
 	}
 
+	// finished
 	if(m_State == EStageState::STATE_FINISHED)
 	{
 		m_FinishTick = Server()->TickSpeed() * 10;
@@ -284,18 +304,6 @@ void CGameControllerRhythm::ChangeState(EStageState State)
 	}
 
 	// warmup reset
-	m_WarmupTick = Server()->TickSpeed() * 15;
-	m_RoundStartTick = Server()->Tick();
-	m_CurrentNote = 0;
-	m_NextSpawnNote = 0;
-	m_CurrentHoldSegment = 0;
-	m_RoundFinished = false;
-	m_ResultsSaved = false;
-	m_EndTick = 0;
-	m_FinishTick = 0;
-	RebuildTickTimings();
-	for(int ClientID = 0; ClientID < MAX_PLAYERS; ++ClientID)
-		ResetClientState(ClientID);
 	GS()->ChatWorld(GS()->GetWorldID(), nullptr, "Warmup started. New rhythm round begins in {} sec.", m_WarmupTick / Server()->TickSpeed());
 }
 
@@ -536,7 +544,7 @@ void CGameControllerRhythm::ScoreHit(int ClientID, int RatingDelta)
 		m_aScores[ClientID].m_LastGrade = ERhythmHitGrade::MISS;
 	}
 
-	const auto TextPos = vec2(m_FieldAnchorPos.x, m_FieldAnchorPos.y + 64.f);
+	const auto TextPos = vec2(m_FieldAnchorPos.x, m_FieldAnchorPos.y + 48.f);
 	GS()->EntityManager()->TextMask(CmaskOne(ClientID), TextPos, 10, EEntityTextType::Projectile, pText);
 }
 

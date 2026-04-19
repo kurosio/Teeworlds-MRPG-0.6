@@ -274,6 +274,9 @@ void CGS::CreateSound(vec2 Pos, int Sound, int64_t Mask)
 {
 	if(IsCustomSound(Sound))
 	{
+		if(Server()->GetWorldDetail(m_WorldID)->HasFlag(WORLD_FLAG_NO_PREPARE_MAP))
+			return;
+
 		if(auto* pEvent = m_Events.Create<CNetEvent_MapSoundWorld>(Mask))
 		{
 			pEvent->m_X = (int)Pos.x;
@@ -296,6 +299,9 @@ void CGS::CreatePlayerSound(int ClientID, int Sound)
 {
 	if(IsCustomSound(Sound))
 	{
+		if(Server()->GetWorldDetail(m_WorldID)->HasFlag(WORLD_FLAG_NO_PREPARE_MAP))
+			return;
+
 		CNetMsg_Sv_MapSoundGlobal Msg;
 		Msg.m_SoundId = SpecialSoundToPreparedIndex(Sound);
 		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID, -1, m_WorldID);
