@@ -214,7 +214,7 @@ bool CGameControllerRhythm::ParseStepBits(const nlohmann::json& Value, uint8_t* 
 	if(BitsStr.size() != 4)
 		return false;
 
-	const uint8_t aFlags[4] = {STEP_BIT_LEFT, STEP_BIT_RIGHT, STEP_BIT_UP, STEP_BIT_DOWN};
+	const uint8_t aFlags[4] = { STEP_BIT_LEFT, STEP_BIT_DOWN, STEP_BIT_UP, STEP_BIT_RIGHT };
 	uint8_t Bits = 0;
 	for(int i = 0; i < 4; ++i)
 	{
@@ -417,7 +417,7 @@ bool CGameControllerRhythm::LoadDanceMapData(const char* pMapName)
 		ParsedHold.m_IsHold = true;
 		if(ParsedHold.m_Time < 0.0 || ParsedHold.m_TimeEnd < ParsedHold.m_Time || !ParseStepBits(Hold["step_bits"], &ParsedHold.m_StepBits))
 			continue;
-		if(ParsedHold.m_StepBits == STEP_BIT_UP || ParsedHold.m_StepBits == STEP_BIT_DOWN || ParsedHold.m_StepBits == STEP_BIT_RIGHT)
+		if(ParsedHold.m_StepBits == STEP_BIT_UP || ParsedHold.m_StepBits == STEP_BIT_DOWN)
 			ParsedHold.m_StepBits = STEP_BIT_UP | STEP_BIT_DOWN;
 		m_vNotes.push_back(ParsedHold);
 	}

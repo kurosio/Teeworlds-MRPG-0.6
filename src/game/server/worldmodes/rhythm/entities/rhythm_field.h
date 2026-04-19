@@ -11,7 +11,7 @@ struct SRhythmFieldConfig
 {
 	static constexpr int s_LaneCount = 3;
 	static constexpr float s_LaneWidth = 128.0f;
-	static constexpr float s_FieldHeight = 324.0f;
+	static constexpr float s_FieldHeight = 364.0f;
 	static constexpr float s_SpawnOffset = 256.0f;
 	static constexpr float s_ArrowTravelDistance = s_FieldHeight + s_SpawnOffset;
 	static constexpr float s_ReferenceBpm = 120.0f;

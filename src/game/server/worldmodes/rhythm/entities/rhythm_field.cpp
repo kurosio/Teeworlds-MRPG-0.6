@@ -125,13 +125,13 @@ void CRhythmField::UpdateBeatTiming()
 	if(m_Bpm <= 0.0f)
 		m_Bpm = 120.0f;
 
-	m_FieldScale = std::clamp(SRhythmFieldConfig::s_ReferenceBpm / m_Bpm, SRhythmFieldConfig::s_MinFieldScale, SRhythmFieldConfig::s_MaxFieldScale);
-	m_ArrowTravelDistance = SRhythmFieldConfig::s_FieldHeight * m_FieldScale;
-	m_SpawnOffset = SRhythmFieldConfig::s_SpawnOffset * m_FieldScale;
+	m_FieldScale = 1.0f;
+	m_ArrowTravelDistance = SRhythmFieldConfig::s_FieldHeight;
+	m_SpawnOffset = SRhythmFieldConfig::s_SpawnOffset;
 
 	m_BeatPeriod = 60.0f / m_Bpm;
 	m_BeatIntervalTicks = std::max(1, (int)std::round(m_BeatPeriod * Server()->TickSpeed()));
-	m_SpawnIntervalTicks = std::max(1, (int)std::round((m_Bpm / 60.0f) * Server()->TickSpeed()));
+	m_SpawnIntervalTicks = std::max(1, (int)std::round((60.0f / m_Bpm) * Server()->TickSpeed()));
 }
 
 void CRhythmField::SpawnLaneArrow(int LaneIndex, int HitTick, int HoldDurationTicks)
