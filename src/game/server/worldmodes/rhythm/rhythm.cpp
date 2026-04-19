@@ -852,7 +852,11 @@ void CGameControllerRhythm::SaveRhythmResults()
 		if(!(Score.m_Perfect || Score.m_Good || Score.m_Bad || Score.m_Miss))
 			continue;
 
-		Server()->SetClientScore(ClientID, Points);
+		// give material
+		const int MaterialReward = maximum(1, Points / 3);
+		pPlayer->GetItem(itMaterial)->Add(MaterialReward, 0, 0, false);
+		GS()->Chat(ClientID, "You received {} materials for completing Rhythm!", MaterialReward);
+
 		const int AccountID = pPlayer->Account()->GetID();
 		const int WorldID = GS()->GetWorldID();
 		ResultPtr pRes = Database->Execute<DB::SELECT>("ID, Score", "tw_rhythm_records",
