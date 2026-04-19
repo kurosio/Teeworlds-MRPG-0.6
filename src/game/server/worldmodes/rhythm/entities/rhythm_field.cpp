@@ -6,19 +6,17 @@
 #include <generated/protocol.h>
 #include <game/server/gamecontext.h>
 
-CRhythmField::CRhythmField(CGameWorld *pGameWorld, vec2 Pos, float Bpm, float HitRadius) :
+CRhythmField::CRhythmField(CGameWorld *pGameWorld, vec2 Pos, float Bpm) :
 	CEntity(pGameWorld, CGameWorld::ENTTYPE_TOOLS, Pos),
 	m_Bpm(Bpm),
 	m_BeatPeriod(0.0f),
 	m_BeatIntervalTicks(0),
 	m_SpawnIntervalTicks(0),
 	m_NextSpawnTick(0),
-	m_FieldScale(1.0f),
 	m_SpawnOffset(SRhythmFieldConfig::s_SpawnOffset),
 	m_ArrowTravelDistance(SRhythmFieldConfig::s_FieldHeight),
 	m_AutoSpawn(true),
-	m_HitZonePos(Pos),
-	m_HitZoneRadius(HitRadius)
+	m_HitZonePos(Pos)
 {
 	m_HitLineLaserId = -1;
 	EnsureSnapIds();
@@ -81,12 +79,6 @@ void CRhythmField::Snap(int SnappingClient)
 	GS()->SnapLaser(SnappingClient, m_HitLineLaserId, HitTo, HitFrom, Server()->Tick(), LASERTYPE_DOOR);
 }
 
-void CRhythmField::SetBpm(float Bpm)
-{
-	m_Bpm = Bpm;
-	UpdateBeatTiming();
-}
-
 void CRhythmField::SetAutoSpawn(bool Auto)
 {
 	m_AutoSpawn = Auto;
@@ -125,7 +117,6 @@ void CRhythmField::UpdateBeatTiming()
 	if(m_Bpm <= 0.0f)
 		m_Bpm = 120.0f;
 
-	m_FieldScale = 1.0f;
 	m_ArrowTravelDistance = SRhythmFieldConfig::s_FieldHeight;
 	m_SpawnOffset = SRhythmFieldConfig::s_SpawnOffset;
 
@@ -134,26 +125,23 @@ void CRhythmField::UpdateBeatTiming()
 	m_SpawnIntervalTicks = std::max(1, (int)std::round((60.0f / m_Bpm) * Server()->TickSpeed()));
 }
 
-void CRhythmField::SpawnLaneArrow(int LaneIndex, int HitTick, int HoldDurationTicks)
+void CRhythmField::SpawnLaneArrow(int LaneIndex, int HitTick)
 {
 	const float HalfWidth = SRhythmFieldConfig::s_LaneWidth * 1.5f;
 	const float X = m_HitZonePos.x - HalfWidth + SRhythmFieldConfig::s_LaneWidth * (LaneIndex + 0.5f);
 	const vec2 Origin(X, m_HitZonePos.y - m_ArrowTravelDistance - m_SpawnOffset);
 	const vec2 Direction(0.0f, 1.0f);
 
-	SpawnArrow(Origin, Direction, HitTick, LaneIndex, HoldDurationTicks);
+	SpawnArrow(Origin, Direction, HitTick, LaneIndex);
 }
 
-void CRhythmField::SpawnArrow(vec2 Origin, vec2 Direction, int HitTick, int LaneIndex, int HoldDurationTicks)
+void CRhythmField::SpawnArrow(vec2 Origin, vec2 Direction, int HitTick, int LaneIndex)
 {
 	const int TravelTicks = std::max(1, HitTick - Server()->Tick());
 	const float Distance = std::max(1.0f, dot(m_HitZonePos - Origin, Direction));
 	const float SpeedPerTick = Distance / (float)TravelTicks;
-	const float WeaponSpeed = GS()->Tuning()->m_GunSpeed;
-	const float VelScale = Distance * Server()->TickSpeed() / (WeaponSpeed * TravelTicks);
-	const float TailLength = HoldDurationTicks > 0 ? SpeedPerTick * HoldDurationTicks : 0.0f;
-	const float MissY = m_HitZonePos.y + SRhythmFieldConfig::s_MissOffset + TailLength;
-	new CRhythmArrow(&GS()->m_World, this, Origin, Direction, SpeedPerTick, HitTick, LaneIndex, MissY, VelScale, TailLength);
+	const float MissY = m_HitZonePos.y + SRhythmFieldConfig::s_MissOffset;
+	new CRhythmArrow(&GS()->m_World, this, Origin, Direction, SpeedPerTick, HitTick, LaneIndex, MissY);
 }
 
 void CRhythmField::SpawnArrow()

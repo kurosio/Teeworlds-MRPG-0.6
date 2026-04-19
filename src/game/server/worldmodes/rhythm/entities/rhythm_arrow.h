@@ -11,7 +11,7 @@ class CRhythmField;
 class CRhythmArrow : public CEntity
 {
 public:
-	CRhythmArrow(CGameWorld *pGameWorld, CRhythmField *pField, vec2 Origin, vec2 Direction, float SpeedPerTick, int HitTick, int LaneIndex, float MissY, float VelScale, float TailLength);
+	CRhythmArrow(CGameWorld *pGameWorld, CRhythmField *pField, vec2 Origin, vec2 Direction, float SpeedPerTick, int HitTick, int LaneIndex, float MissY);
 	~CRhythmArrow() override;
 
 	void Reset() override;
@@ -39,9 +39,6 @@ private:
 	int m_HitTick;
 	int m_LaneIndex;
 	float m_MissY;
-	float m_VelScale;
-	float m_TailLength;
-	int m_TailLaserId;
 	CClientMask m_HiddenMask;
 };
 

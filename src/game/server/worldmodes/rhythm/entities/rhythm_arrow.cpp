@@ -7,7 +7,7 @@
 #include <generated/protocol.h>
 #include <game/server/gamecontext.h>
 
-CRhythmArrow::CRhythmArrow(CGameWorld *pGameWorld, CRhythmField *pField, vec2 Origin, vec2 Direction, float SpeedPerTick, int HitTick, int LaneIndex, float MissY, float VelScale, float TailLength) :
+CRhythmArrow::CRhythmArrow(CGameWorld *pGameWorld, CRhythmField *pField, vec2 Origin, vec2 Direction, float SpeedPerTick, int HitTick, int LaneIndex, float MissY) :
 	CEntity(pGameWorld, CGameWorld::ENTTYPE_TOOLS, Origin),
 	m_pField(pField),
 	m_Origin(Origin),
@@ -17,13 +17,8 @@ CRhythmArrow::CRhythmArrow(CGameWorld *pGameWorld, CRhythmField *pField, vec2 Or
 	m_SpawnTick(Server()->Tick()),
 	m_HitTick(HitTick),
 	m_LaneIndex(LaneIndex),
-	m_MissY(MissY),
-	m_VelScale(VelScale),
-	m_TailLength(TailLength),
-	m_TailLaserId(-1)
+	m_MissY(MissY)
 {
-	if(m_TailLength > 0.0f)
-		m_TailLaserId = Server()->SnapNewID();
 	if(m_pField)
 		m_pField->RegisterArrow(this);
 
@@ -53,11 +48,6 @@ void CRhythmArrow::Snap(int SnappingClient)
 		return;
 
 	GS()->SnapPickup(SnappingClient, GetID(), m_Pos, POWERUP_ARMOR);
-	if(m_TailLaserId >= 0 && m_TailLength > 0.0f)
-	{
-		const vec2 TailPos = m_Pos - m_Direction * m_TailLength;
-		GS()->SnapLaser(SnappingClient, m_TailLaserId, m_Pos, TailPos, Server()->Tick(), LASERTYPE_SHOTGUN);
-	}
 }
 
 void CRhythmArrow::DetachField()
@@ -81,6 +71,4 @@ CRhythmArrow::~CRhythmArrow()
 {
 	if(m_pField)
 		m_pField->UnregisterArrow(this);
-	if(m_TailLaserId >= 0)
-		Server()->SnapFreeID(m_TailLaserId);
 }

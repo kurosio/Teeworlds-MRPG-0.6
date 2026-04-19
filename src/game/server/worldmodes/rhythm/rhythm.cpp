@@ -29,15 +29,6 @@ namespace
 	{
 		return ClientID >= 0 && ClientID < MAX_PLAYERS;
 	}
-
-	bool IsLaneHeld(const CNetObj_PlayerInput& Input, int LaneIndex)
-	{
-		if(LaneIndex == 0)
-			return Input.m_Direction < 0;
-		if(LaneIndex == 1)
-			return (Input.m_Jump & 1) != 0;
-		return Input.m_Direction > 0;
-	}
 }
 
 CGameControllerRhythm::CGameControllerRhythm(CGS* pGameServer)
@@ -48,15 +39,9 @@ CGameControllerRhythm::CGameControllerRhythm(CGS* pGameServer)
 	m_FieldAnchorValid = false;
 	mem_zero(m_aLanePressTick, sizeof(m_aLanePressTick));
 	mem_zero(m_aLaneLastHitTick, sizeof(m_aLaneLastHitTick));
-	mem_zero(m_aLaneHoldTick, sizeof(m_aLaneHoldTick));
-	mem_zero(m_aLaneHoldStartTick, sizeof(m_aLaneHoldStartTick));
-	mem_zero(m_aLaneHoldEndTick, sizeof(m_aLaneHoldEndTick));
-	mem_zero(m_aLaneHoldActive, sizeof(m_aLaneHoldActive));
-	mem_zero(m_aLaneHoldEndEffectPlayed, sizeof(m_aLaneHoldEndEffectPlayed));
 	mem_zero(m_aLanePressId, sizeof(m_aLanePressId));
 	mem_zero(m_aLanePressUsedId, sizeof(m_aLanePressUsedId));
 	mem_zero(m_aNoteLaneHitMask, sizeof(m_aNoteLaneHitMask));
-	mem_zero(m_aHoldSegmentLaneHitMask, sizeof(m_aHoldSegmentLaneHitMask));
 	for(auto &Score : m_aScores)
 		Score = {};
 }
@@ -68,7 +53,6 @@ void CGameControllerRhythm::OnInit()
 	m_RoundStartTick = 0;
 	m_CurrentNote = 0;
 	m_NextSpawnNote = 0;
-	m_CurrentHoldSegment = 0;
 	m_ResultsSaved = false;
 	m_EndTick = 0;
 	m_FinishTick = 0;
@@ -137,7 +121,7 @@ void CGameControllerRhythm::Tick()
 				pPlayer->LockedView().Reset();
 
 			// update input
-			if(m_State == EStageState::STATE_ACTIVE && pPlayer->m_pLastInput)
+			if(pPlayer->m_pLastInput)
 				ProcessPlayerInput(ClientID, *pPlayer->m_pLastInput, CurrentTick);
 		}
 
@@ -238,11 +222,6 @@ void CGameControllerRhythm::RebuildTickTimings()
 	m_vNoteTicks.reserve(m_vNotes.size());
 	for(const auto &Note : m_vNotes)
 		m_vNoteTicks.push_back(NoteTimeToTick(Note.m_Time));
-
-	m_vHoldSegmentTicks.clear();
-	m_vHoldSegmentTicks.reserve(m_vHoldSegments.size());
-	for(const auto &Segment : m_vHoldSegments)
-		m_vHoldSegmentTicks.push_back(NoteTimeToTick(Segment.m_Time));
 }
 
 void CGameControllerRhythm::ChangeState(EStageState State)
@@ -262,7 +241,6 @@ void CGameControllerRhythm::ChangeState(EStageState State)
 		m_FinishTick = 0;
 		m_CurrentNote = 0;
 		m_NextSpawnNote = 0;
-		m_CurrentHoldSegment = 0;
 		m_ResultsSaved = false;
 		m_EndTick = 0;
 		m_WarmupTick = Server()->TickSpeed() * 30;
@@ -294,7 +272,7 @@ void CGameControllerRhythm::ChangeState(EStageState State)
 		// create rhythm field
 		const vec2 FieldPos = m_FieldAnchorPos;
 		const float Bpm = m_Meta.m_Bpm > 0.0f ? m_Meta.m_Bpm : 120.0f;
-		m_pRhythmField = new CRhythmField(&GS()->m_World, FieldPos, Bpm, 32.0f);
+		m_pRhythmField = new CRhythmField(&GS()->m_World, FieldPos, Bpm);
 		if(m_pRhythmField)
 		{
 			m_pRhythmField->SetAutoSpawn(false);
@@ -305,7 +283,6 @@ void CGameControllerRhythm::ChangeState(EStageState State)
 		m_RoundStartTick = Server()->Tick();
 		m_CurrentNote = 0;
 		m_NextSpawnNote = 0;
-		m_CurrentHoldSegment = 0;
 		m_ResultsSaved = false;
 		m_EndTick = m_RoundStartTick + round_to_int(m_Meta.m_DurationSeconds * Server()->TickSpeed());
 		RebuildTickTimings();
@@ -377,9 +354,8 @@ bool CGameControllerRhythm::LoadDanceMapData(const char* pMapName)
 
 	const nlohmann::json& Meta = JsonData["meta"];
 	const nlohmann::json& Notes = JsonData["notes"];
-	const nlohmann::json& Holds = JsonData["holds"];
 
-	if(!Meta.is_object() || !Notes.is_array() || !Holds.is_array())
+	if(!Meta.is_object() || !Notes.is_array())
 		return false;
 
 	const auto AudioFile = Meta.value("audio_file", std::string());
@@ -389,7 +365,6 @@ bool CGameControllerRhythm::LoadDanceMapData(const char* pMapName)
 	m_Meta.m_DurationSeconds = Meta.value("duration_seconds", 0.0f);
 	m_Meta.m_NotesCount = Meta.value("notes_count", 0);
 	m_Meta.m_TapCount = Meta.value("tap_count", 0);
-	m_Meta.m_HoldsCount = Meta.value("holds_count", 0);
 	m_Meta.m_ParticleFallSpeed = Meta.value("particle_fall_speed", SRhythmFieldConfig::s_DefaultFallSpeedPerBeat);
 
 	for(const auto& Note : Notes)
@@ -399,27 +374,9 @@ bool CGameControllerRhythm::LoadDanceMapData(const char* pMapName)
 
 		CNote ParsedNote{};
 		ParsedNote.m_Time = Note.value("t", -1.0);
-		ParsedNote.m_TimeEnd = ParsedNote.m_Time;
-		ParsedNote.m_IsHold = false;
 		if(ParsedNote.m_Time < 0.0 || !ParseStepBits(Note["step_bits"], &ParsedNote.m_StepBits))
 			continue;
 		m_vNotes.push_back(ParsedNote);
-	}
-
-	for(const auto& Hold : Holds)
-	{
-		if(!Hold.is_object())
-			continue;
-
-		CNote ParsedHold{};
-		ParsedHold.m_Time = Hold.value("t", -1.0);
-		ParsedHold.m_TimeEnd = Hold.value("t_end", -1.0);
-		ParsedHold.m_IsHold = true;
-		if(ParsedHold.m_Time < 0.0 || ParsedHold.m_TimeEnd < ParsedHold.m_Time || !ParseStepBits(Hold["step_bits"], &ParsedHold.m_StepBits))
-			continue;
-		if(ParsedHold.m_StepBits == STEP_BIT_UP || ParsedHold.m_StepBits == STEP_BIT_DOWN)
-			ParsedHold.m_StepBits = STEP_BIT_UP | STEP_BIT_DOWN;
-		m_vNotes.push_back(ParsedHold);
 	}
 
 	std::stable_sort(m_vNotes.begin(), m_vNotes.end(), [](const CNote& Left, const CNote& Right)
@@ -427,22 +384,6 @@ bool CGameControllerRhythm::LoadDanceMapData(const char* pMapName)
 		return Left.m_Time < Right.m_Time;
 	});
 
-	m_vHoldSegments.clear();
-	for(const auto& Note : m_vNotes)
-	{
-		if(!Note.m_IsHold)
-			continue;
-		const double Duration = Note.m_TimeEnd - Note.m_Time;
-		for(int SegmentIndex = 1; SegmentIndex <= 3; ++SegmentIndex)
-		{
-			const double SegmentTime = Note.m_Time + Duration * (SegmentIndex / 3.0);
-			m_vHoldSegments.push_back({SegmentTime, Note.m_StepBits});
-		}
-	}
-	std::stable_sort(m_vHoldSegments.begin(), m_vHoldSegments.end(), [](const CHoldSegment& Left, const CHoldSegment& Right)
-	{
-		return Left.m_Time < Right.m_Time;
-	});
 	RebuildTickTimings();
 
 	return true;
@@ -454,80 +395,15 @@ void CGameControllerRhythm::ResetClientState(int ClientID)
 		return;
 
 	m_aPrevInputs[ClientID] = CNetObj_PlayerInput{};
-	m_aLatestInputs[ClientID] = CNetObj_PlayerInput{};
 	for(int LaneIndex = 0; LaneIndex < ms_LaneCount; ++LaneIndex)
 	{
 		m_aLanePressTick[ClientID][LaneIndex] = SRhythmFieldConfig::s_InvalidPressTick;
 		m_aLaneLastHitTick[ClientID][LaneIndex] = SRhythmFieldConfig::s_InvalidPressTick;
-		m_aLaneHoldTick[ClientID][LaneIndex] = SRhythmFieldConfig::s_InvalidPressTick;
-		m_aLaneHoldStartTick[ClientID][LaneIndex] = SRhythmFieldConfig::s_InvalidPressTick;
-		m_aLaneHoldEndTick[ClientID][LaneIndex] = SRhythmFieldConfig::s_InvalidPressTick;
-		m_aLaneHoldActive[ClientID][LaneIndex] = false;
-		m_aLaneHoldEndEffectPlayed[ClientID][LaneIndex] = false;
 	}
 	mem_zero(m_aLanePressId[ClientID], sizeof(m_aLanePressId[ClientID]));
 	mem_zero(m_aLanePressUsedId[ClientID], sizeof(m_aLanePressUsedId[ClientID]));
 	m_aNoteLaneHitMask[ClientID] = 0;
-	m_aHoldSegmentLaneHitMask[ClientID] = 0;
 	m_aScores[ClientID] = {};
-}
-
-void CGameControllerRhythm::TryStartHold(int ClientID, int LaneIndex, int PressTick, int HitWindowTicks)
-{
-	if(!IsValidClientID(ClientID) || PressTick == SRhythmFieldConfig::s_InvalidPressTick)
-		return;
-
-	if(m_aLaneHoldActive[ClientID][LaneIndex] && PressTick <= m_aLaneHoldEndTick[ClientID][LaneIndex])
-		return;
-
-	const int HoldWindowTicks = SRhythmFieldConfig::s_BadWindowTicks + HitWindowTicks;
-	int BestNoteIndex = -1;
-	int BestDelta = 0;
-
-	for(int NoteIndex = m_CurrentNote; NoteIndex < (int)m_vNotes.size(); ++NoteIndex)
-	{
-		const CNote& Note = m_vNotes[NoteIndex];
-		if(!Note.m_IsHold)
-			continue;
-
-		const int NoteTick = m_vNoteTicks[NoteIndex];
-		if(NoteTick < PressTick - HoldWindowTicks)
-			continue;
-		if(NoteTick > PressTick + HoldWindowTicks)
-			break;
-
-		const int NoteEndTick = NoteTimeToTick(Note.m_TimeEnd);
-		if(PressTick > NoteEndTick + HoldWindowTicks)
-			continue;
-
-		int aLaneBits[ms_LaneCount];
-		FillLaneBits(Note.m_StepBits, aLaneBits);
-		if(!aLaneBits[LaneIndex])
-			continue;
-
-		const int RawDelta = std::abs(PressTick - NoteTick);
-		if(BestNoteIndex == -1 || RawDelta < BestDelta)
-		{
-			BestNoteIndex = NoteIndex;
-			BestDelta = RawDelta;
-		}
-	}
-
-	if(BestNoteIndex == -1)
-		return;
-
-	const CNote& Note = m_vNotes[BestNoteIndex];
-	const int NoteTick = m_vNoteTicks[BestNoteIndex];
-	const int NoteEndTick = NoteTimeToTick(Note.m_TimeEnd);
-	m_aLaneHoldActive[ClientID][LaneIndex] = true;
-	m_aLaneHoldStartTick[ClientID][LaneIndex] = NoteTick;
-	m_aLaneHoldEndTick[ClientID][LaneIndex] = NoteEndTick;
-	m_aLaneHoldTick[ClientID][LaneIndex] = PressTick;
-	m_aLaneHoldEndEffectPlayed[ClientID][LaneIndex] = false;
-	m_aLanePressUsedId[ClientID][LaneIndex] = m_aLanePressId[ClientID][LaneIndex];
-
-	const int RatingDelta = maximum(0, BestDelta - HitWindowTicks);
-	ScoreHit(ClientID, RatingDelta);
 }
 
 void CGameControllerRhythm::ScoreHit(int ClientID, int RatingDelta)
@@ -635,18 +511,11 @@ void CGameControllerRhythm::ProcessPlayerInput(int ClientID, const CNetObj_Playe
 		return;
 
 	CNetObj_PlayerInput& PrevInput = m_aPrevInputs[ClientID];
-	m_aLatestInputs[ClientID] = Input;
-	const int HitWindowTicks = SRhythmFieldConfig::s_HitWindowTicks;
 
 	const bool aLanePressed[ms_LaneCount] = {
 		Input.m_Direction < 0 && PrevInput.m_Direction >= 0,
 		(Input.m_Jump & 1) != 0 && (PrevInput.m_Jump & 1) == 0,
 		Input.m_Direction > 0 && PrevInput.m_Direction <= 0,
-	};
-	const bool aLaneHeld[ms_LaneCount] = {
-		Input.m_Direction < 0,
-		(Input.m_Jump & 1) != 0,
-		Input.m_Direction > 0,
 	};
 
 	for(int LaneIndex = 0; LaneIndex < ms_LaneCount; ++LaneIndex)
@@ -656,16 +525,6 @@ void CGameControllerRhythm::ProcessPlayerInput(int ClientID, const CNetObj_Playe
 			m_aLanePressId[ClientID][LaneIndex]++;
 			m_aLanePressTick[ClientID][LaneIndex] = CurrentTick;
 		}
-		if(aLaneHeld[LaneIndex])
-			m_aLaneHoldTick[ClientID][LaneIndex] = CurrentTick;
-	}
-
-	for(int LaneIndex = 0; LaneIndex < ms_LaneCount; ++LaneIndex)
-	{
-		if(aLanePressed[LaneIndex])
-			TryStartHold(ClientID, LaneIndex, m_aLanePressTick[ClientID][LaneIndex], HitWindowTicks);
-		else if(aLaneHeld[LaneIndex] && !m_aLaneHoldActive[ClientID][LaneIndex])
-			TryStartHold(ClientID, LaneIndex, m_aLaneHoldTick[ClientID][LaneIndex], HitWindowTicks);
 	}
 
 	const vec2 HitPos = m_pRhythmField->HitZonePos();
@@ -673,9 +532,6 @@ void CGameControllerRhythm::ProcessPlayerInput(int ClientID, const CNetObj_Playe
 	for(int NoteIndex = m_CurrentNote; NoteIndex < (int)m_vNotes.size(); ++NoteIndex)
 	{
 		const CNote& Note = m_vNotes[NoteIndex];
-		if(Note.m_IsHold)
-			continue;
-
 		const int NoteTick = m_vNoteTicks[NoteIndex];
 		if(CurrentTick < NoteTick - SRhythmFieldConfig::s_BadWindowTicks)
 			break;
@@ -699,18 +555,7 @@ void CGameControllerRhythm::ProcessPlayerInput(int ClientID, const CNetObj_Playe
 			if(m_aLanePressId[ClientID][LaneIndex] == m_aLanePressUsedId[ClientID][LaneIndex])
 				continue;
 
-			int PressTick = m_aLanePressTick[ClientID][LaneIndex];
-			int RawDelta = std::abs(PressTick - NoteTick);
-			if(RawDelta > SRhythmFieldConfig::s_BadWindowTicks && aLaneHeld[LaneIndex])
-			{
-				const int HeldTick = m_aLaneHoldTick[ClientID][LaneIndex];
-				const int HeldDelta = std::abs(HeldTick - NoteTick);
-				if(HeldDelta <= SRhythmFieldConfig::s_BadWindowTicks)
-				{
-					PressTick = HeldTick;
-					RawDelta = HeldDelta;
-				}
-			}
+			const int RawDelta = std::abs(m_aLanePressTick[ClientID][LaneIndex] - NoteTick);
 			if(RawDelta > SRhythmFieldConfig::s_BadWindowTicks)
 				continue;
 
@@ -737,14 +582,12 @@ void CGameControllerRhythm::UpdateNotes()
 	{
 		const CNote& Note = m_vNotes[m_NextSpawnNote];
 		const int NoteTick = m_vNoteTicks[m_NextSpawnNote];
-		const int NoteEndTick = Note.m_IsHold ? NoteTimeToTick(Note.m_TimeEnd) : NoteTick;
-		const int HoldDurationTicks = maximum(0, NoteEndTick - NoteTick);
 		int aLaneBits[ms_LaneCount];
 		FillLaneBits(Note.m_StepBits, aLaneBits);
 		for(int LaneIndex = 0; LaneIndex < ms_LaneCount; ++LaneIndex)
 		{
 			if(aLaneBits[LaneIndex])
-				m_pRhythmField->SpawnLaneArrow(LaneIndex, NoteTick, HoldDurationTicks);
+				m_pRhythmField->SpawnLaneArrow(LaneIndex, NoteTick);
 		}
 		++m_NextSpawnNote;
 	}
@@ -757,16 +600,6 @@ void CGameControllerRhythm::UpdateNotes()
 			break;
 
 		const bool WindowExpired = CurrentTick > NoteTick + SRhythmFieldConfig::s_BadWindowTicks;
-		if(Note.m_IsHold)
-		{
-			if(!WindowExpired)
-				break;
-			++m_CurrentNote;
-			for(int i = 0; i < MAX_PLAYERS; ++i)
-				m_aNoteLaneHitMask[i] = 0;
-			continue;
-		}
-
 		int aLaneBits[ms_LaneCount];
 		FillLaneBits(Note.m_StepBits, aLaneBits);
 		if(WindowExpired)
@@ -796,60 +629,6 @@ void CGameControllerRhythm::UpdateNotes()
 		for(int i = 0; i < MAX_PLAYERS; ++i)
 			m_aNoteLaneHitMask[i] = 0;
 	}
-
-	const int HoldWindowTicks = SRhythmFieldConfig::s_BadWindowTicks;
-	while(m_CurrentHoldSegment < (int)m_vHoldSegments.size())
-	{
-		const CHoldSegment& Segment = m_vHoldSegments[m_CurrentHoldSegment];
-		const int SegmentTick = m_vHoldSegmentTicks[m_CurrentHoldSegment];
-		if(CurrentTick < SegmentTick - HoldWindowTicks)
-			break;
-
-		int aLaneBits[ms_LaneCount];
-		FillLaneBits(Segment.m_StepBits, aLaneBits);
-		for(int i = 0; i < MAX_PLAYERS; ++i)
-		{
-			if(!IsActivePlayer(i))
-				continue;
-
-			for(int LaneIndex = 0; LaneIndex < ms_LaneCount; ++LaneIndex)
-			{
-				if(!aLaneBits[LaneIndex])
-					continue;
-				const uint8_t LaneMask = 1u << LaneIndex;
-				if(m_aHoldSegmentLaneHitMask[i] & LaneMask)
-					continue;
-				if(!m_aLaneHoldActive[i][LaneIndex] || !IsLaneHeld(m_aLatestInputs[i], LaneIndex))
-					continue;
-
-				const int RawDelta = std::abs(m_aLaneHoldTick[i][LaneIndex] - SegmentTick);
-				if(RawDelta > HoldWindowTicks)
-					continue;
-
-				ScoreHit(i, RawDelta);
-				m_aHoldSegmentLaneHitMask[i] |= LaneMask;
-			}
-		}
-
-		if(CurrentTick <= SegmentTick + HoldWindowTicks)
-			break;
-
-		for(int i = 0; i < MAX_PLAYERS; ++i)
-		{
-			for(int LaneIndex = 0; LaneIndex < ms_LaneCount; ++LaneIndex)
-			{
-				if(!aLaneBits[LaneIndex])
-					continue;
-				const uint8_t LaneMask = 1u << LaneIndex;
-				if(m_aHoldSegmentLaneHitMask[i] & LaneMask)
-					continue;
-				m_aScores[i].m_Miss++;
-				m_aScores[i].m_LastGrade = ERhythmHitGrade::MISS;
-			}
-			m_aHoldSegmentLaneHitMask[i] = 0;
-		}
-		++m_CurrentHoldSegment;
-	}
 }
 
 void CGameControllerRhythm::SaveRhythmResults()
@@ -870,23 +649,12 @@ void CGameControllerRhythm::SaveRhythmResults()
 		pPlayer->GetItem(itMaterial)->Add(MaterialReward, 0, 0, false);
 		GS()->Chat(ClientID, "You received {} materials for completing Rhythm!", MaterialReward);
 
+		// update
 		const int AccountID = pPlayer->Account()->GetID();
 		const int WorldID = GS()->GetWorldID();
-		ResultPtr pRes = Database->Execute<DB::SELECT>("ID, Score", "tw_rhythm_records",
-			"WHERE UserID = '{}' AND WorldID = '{}' ORDER BY Score DESC LIMIT 1", AccountID, WorldID);
-		if(!pRes->next())
-		{
-			Database->Execute<DB::INSERT>("tw_rhythm_records", "(UserID, WorldID, Score) VALUES ('{}', '{}', '{}')",
-				AccountID, WorldID, Points);
-		}
-		else if(Points > pRes->getInt("Score"))
-		{
-			const int RecordID = pRes->getInt("ID");
-			Database->Execute<DB::UPDATE>("tw_rhythm_records", "Score = '{}' WHERE ID = '{}'", Points, RecordID);
-		}
-
-		GS()->Chat(-1, "'{}' finished '{}' with {} points!",
-			Server()->ClientName(ClientID), Server()->GetWorldName(GS()->GetWorldID()), Points);
+		Database->Execute<DB::INSERT>("tw_rhythm_records", "(UserID, WorldID, Score) VALUES ('{}', '{}', '{}') "
+			"ON DUPLICATE KEY UPDATE Score = GREATEST(Score, VALUES(Score))", AccountID, WorldID, Points);
+		GS()->Chat(-1, "'{}' finished '{}' with {} points!", Server()->ClientName(ClientID), Server()->GetWorldName(WorldID), Points);
 	}
 }
 
