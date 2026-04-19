@@ -8,7 +8,7 @@
 #include <game/server/gamecontext.h>
 
 CGameControllerTutorial::CGameControllerTutorial(class CGS* pGS)
-	: IGameController(pGS)
+	: CGameControllerDefault(pGS)
 {
 	m_GameFlags = 0;
 }
@@ -31,7 +31,7 @@ void CGameControllerTutorial::OnInit()
 
 void CGameControllerTutorial::Tick()
 {
-	IGameController::Tick();
+	CGameControllerDefault::Tick();
 }
 
 bool CGameControllerTutorial::OnCharacterSpawn(CCharacter* pChr)
@@ -39,7 +39,7 @@ bool CGameControllerTutorial::OnCharacterSpawn(CCharacter* pChr)
 	// start tutorial scenario
 	if(pChr->GetPlayer()->IsAuthed())
 		pChr->GetPlayer()->StartUniversalScenario(m_JsonTutorialData.dump(), EScenarios::SCENARIO_TUTORIAL);
-	return IGameController::OnCharacterSpawn(pChr);
+	return CGameControllerDefault::OnCharacterSpawn(pChr);
 }
 
 void CGameControllerTutorial::Snap()

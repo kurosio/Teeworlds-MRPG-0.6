@@ -4,12 +4,12 @@
 #define GAME_SERVER_WORLDMODES_DUNGEON_DUNGEON_H
 
 #include <game/server/entity.h>
-#include <game/server/gamecontroller.h>
+#include <game/server/worldmodes/default.h>
 #include <game/server/core/components/duties/dungeon_data.h>
 
 class CEntityDungeonWaitingDoor;
 
-class CGameControllerDungeon : public IGameController
+class CGameControllerDungeon : public CGameControllerDefault
 {
 	CDungeonData* m_pDungeon {};
 	CEntityDungeonWaitingDoor* m_pEntWaitingDoor {};

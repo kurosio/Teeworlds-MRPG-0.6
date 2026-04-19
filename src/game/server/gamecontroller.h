@@ -21,15 +21,13 @@ class IGameController
 		float m_Score{};
 		bool m_Got{};
 	};
+protected:
+	CGS* GS() const { return m_pGS; }
+	IServer* Server() const { return m_pServer; }
+
 	std::array<std::vector<vec2>, NUM_SPAWN> m_aaSpawnPoints{};
 	void EvaluateSpawnType(CSpawnEval* Pos, int Type, std::pair<vec2, float> LimiterSpread) const;
-
-protected:
-	CGS *GS() const { return m_pGS; }
-	IServer *Server() const { return m_pServer; }
-
 	int m_GameFlags{};
-
 	void UpdateGameInfo(int ClientID);
 
 public:
@@ -46,8 +44,8 @@ public:
 	virtual void OnEntity(int Index, vec2 Pos, int Flags);
 	virtual void OnEntitySwitch(int Index, vec2 Pos, int Flags, int Number);
 
-	void OnPlayerConnect(class CPlayer *pPlayer);
-	void OnPlayerDisconnect(class CPlayer *pPlayer);
+	virtual void OnPlayerConnect(class CPlayer *pPlayer);
+	virtual void OnPlayerDisconnect(class CPlayer *pPlayer);
 
 	// general
 	virtual void Snap();

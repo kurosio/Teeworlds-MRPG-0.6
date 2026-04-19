@@ -15,7 +15,7 @@
 #include <scenarios/managers/scenario_group_manager.h>
 #include <scenarios/impl/scenario_dungeon.h>
 
-CGameControllerDungeon::CGameControllerDungeon(class CGS* pGS, CDungeonData* pDungeon) : IGameController(pGS)
+CGameControllerDungeon::CGameControllerDungeon(class CGS* pGS, CDungeonData* pDungeon) : CGameControllerDefault(pGS)
 {
 	m_GameFlags = 0;
 	m_pDungeon = pDungeon;
@@ -189,7 +189,7 @@ void CGameControllerDungeon::Process()
 
 void CGameControllerDungeon::OnCharacterDeath(CPlayer* pVictim, CPlayer* pKiller, int Weapon)
 {
-	IGameController::OnCharacterDeath(pVictim, pKiller, Weapon);
+	CGameControllerDefault::OnCharacterDeath(pVictim, pKiller, Weapon);
 }
 
 bool CGameControllerDungeon::OnCharacterSpawn(CCharacter* pChr)
@@ -219,7 +219,7 @@ bool CGameControllerDungeon::OnCharacterSpawn(CCharacter* pChr)
 			return false;
 		}
 
-		IGameController::OnCharacterSpawn(pChr);
+		CGameControllerDefault::OnCharacterSpawn(pChr);
 		return true;
 	}
 
@@ -233,7 +233,7 @@ bool CGameControllerDungeon::OnCharacterSpawn(CCharacter* pChr)
 		pPlayer->m_VotesData.UpdateVotesIf(MENU_DUTIES_LIST);
 	}
 
-	IGameController::OnCharacterSpawn(pChr);
+	CGameControllerDefault::OnCharacterSpawn(pChr);
 	return true;
 }
 
@@ -295,7 +295,7 @@ void CGameControllerDungeon::Tick()
 	}
 
 	Process();
-	IGameController::Tick();
+	CGameControllerDefault::Tick();
 }
 
 void CGameControllerDungeon::Snap()

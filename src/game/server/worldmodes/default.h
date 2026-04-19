@@ -15,6 +15,15 @@ class CGameControllerDefault : public IGameController
 public:
 	CGameControllerDefault(class CGS *pGameServer);
 
+	void OnCharacterDamage(class CPlayer* pFrom, class CPlayer* pTo, int Damage) override;
+	void OnCharacterDeath(class CPlayer* pVictim, class CPlayer* pKiller, int Weapon) override;
+	bool OnCharacterSpawn(class CCharacter* pChr) override;
+	bool OnCharacterBotSpawn(class CCharacterBotAI* pChr) override;
+	void OnEntity(int Index, vec2 Pos, int Flags) override;
+	void OnEntitySwitch(int Index, vec2 Pos, int Flags, int Number) override;
+	void OnPlayerConnect(class CPlayer* pPlayer) override;
+	void OnPlayerDisconnect(class CPlayer* pPlayer) override;
+
 	void Tick() override;
 
 	void TryGenerateMoneyBag();

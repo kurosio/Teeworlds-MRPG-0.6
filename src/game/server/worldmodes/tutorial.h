@@ -3,9 +3,9 @@
 #ifndef GAME_SERVER_GAMEMODES_TUTORIAL_H
 #define GAME_SERVER_GAMEMODES_TUTORIAL_H
 
-#include <game/server/gamecontroller.h>
+#include "default.h"
 
-class CGameControllerTutorial : public IGameController
+class CGameControllerTutorial : public CGameControllerDefault
 {
 	nlohmann::json m_JsonTutorialData{};
 
