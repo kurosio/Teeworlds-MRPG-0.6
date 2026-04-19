@@ -377,6 +377,16 @@ vec2 CCollision::GetRotateDirByFlags(int Flags)
 	return {0, -1};
 }
 
+vec2 CCollision::GetPos(int Index) const
+{
+	if(Index < 0)
+		return vec2(0, 0);
+
+	int x = Index % m_Width;
+	int y = Index / m_Width;
+	return vec2(x * 32 + 16, y * 32 + 16);
+}
+
 int CCollision::GetMainTileIndex(int Index) const
 {
 	if(Index < 0)

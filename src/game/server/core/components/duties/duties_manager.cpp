@@ -32,6 +32,7 @@ bool CDutiesManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		// add selector
 		VoteWrapper VSelectorType(ClientID, VWF_SEPARATE_OPEN|VWF_ALIGN_TITLE|VWF_STYLE_STRICT_BOLD, "\u261C Duties list");
 		VSelectorType.AddMenu(MENU_DUTIES_LIST, (int)WorldType::MiniGames, "\u2659 Mini-games ({})", GetWorldsCountByType(WorldType::MiniGames));
+		VSelectorType.AddMenu(MENU_DUTIES_LIST, (int)WorldType::Rhythm, "\u2659 Rhythm ({})", GetWorldsCountByType(WorldType::Rhythm));
 		VSelectorType.AddMenu(MENU_DUTIES_LIST, (int)WorldType::Dungeon, "\u262C Dungeons ({})", GetWorldsCountByType(WorldType::Dungeon));
 		VSelectorType.AddMenu(MENU_DUTIES_LIST, (int)WorldType::DeepDungeon, "\u262A Deep dungeons ({})", GetWorldsCountByType(WorldType::DeepDungeon));
 		VSelectorType.AddMenu(MENU_DUTIES_LIST, (int)WorldType::TreasureDungeon, "\u2619 Treasure dungeons ({})", GetWorldsCountByType(WorldType::TreasureDungeon));
@@ -70,6 +71,19 @@ bool CDutiesManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 
 		if(const auto WorldID = pPlayer->m_VotesData.GetExtraID())
 			ShowPvpInfo(pPlayer, WorldID.value());
+
+		// add backpage
+		VoteWrapper::AddBackpage(ClientID);
+		return true;
+	}
+
+	// rhythm select
+	if(Menulist == MENU_RHYTHM_SELECT)
+	{
+		pPlayer->m_VotesData.SetLastMenuID(MENU_DUTIES_LIST);
+
+		if(const auto WorldID = pPlayer->m_VotesData.GetExtraID())
+			ShowRhythmInfo(pPlayer, WorldID.value());
 
 		// add backpage
 		VoteWrapper::AddBackpage(ClientID);
@@ -151,6 +165,23 @@ bool CDutiesManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, con
 		return true;
 	}
 
+	// rhythm enter
+	if(PPSTR(pCmd, "RHYTHM_JOIN") == 0)
+	{
+		// check equal player world
+        auto WorldIdOpt = GetIfExists<int>(Extras, 0);
+		if(GS()->IsPlayerInWorld(ClientID, WorldIdOpt))
+		{
+			GS()->Chat(ClientID, "You are already in this rhythm mode.");
+			pPlayer->m_VotesData.UpdateVotesIf(MENU_DUTIES_LIST);
+			return true;
+		}
+
+        if(WorldIdOpt.has_value())
+		    pPlayer->ChangeWorld(WorldIdOpt.value());
+		return true;
+	}
+
 	//dungeon exit
 	if(PPSTR(pCmd, "DUTIES_EXIT") == 0)
 	{
@@ -188,6 +219,20 @@ void CDutiesManager::ShowDutiesList(CPlayer* pPlayer, WorldType Type) const
 				const auto ClientsNum = Server()->GetClientsCountByWorld(i);
 				const char* pStatus = (ClientsNum > 0 ? "Active" : "Waiting");
 				VPvP.AddMenu(MENU_PVP_SELECT, i, "{} : {}", Server()->GetWorldName(i), pStatus);
+			}
+		}
+	}
+	else if(Type == WorldType::Rhythm)
+	{
+		VoteWrapper VPvP(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "\u262C Rhythm");
+		for(int i = 0; i < Server()->GetWorldsSize(); i++)
+		{
+			const auto* pDetail = Server()->GetWorldDetail(i);
+			if(pDetail->GetType() == WorldType::Rhythm)
+			{
+				const auto ClientsNum = Server()->GetClientsCountByWorld(i);
+				const char* pStatus = (ClientsNum > 0 ? "Active" : "Waiting");
+				VPvP.AddMenu(MENU_RHYTHM_SELECT, i, "{} : {}", Server()->GetWorldName(i), pStatus);
 			}
 		}
 	}
@@ -276,6 +321,31 @@ void CDutiesManager::ShowPvpInfo(CPlayer* pPlayer, int WorldID) const
 
 	// records
 	VoteWrapper VRecords(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "Best PvP players");
+	VRecords.Add("Coming...");
+}
+
+void CDutiesManager::ShowRhythmInfo(CPlayer* pPlayer, int WorldID) const
+{
+	const auto ClientID = pPlayer->GetCID();
+	const auto ClientsNum = Server()->GetClientsCountByWorld(WorldID);
+	const auto* pDetail = Server()->GetWorldDetail(WorldID);
+	const char* pStatus = (ClientsNum > 0 ? "Active" : "Waiting");
+	const char* pName = Server()->GetWorldName(WorldID);
+
+	// info
+	VoteWrapper VInfo(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_DOUBLE | VWF_ALIGN_TITLE, "\u2692 Detail information");
+	VInfo.Add("Name: {}", pName);
+	VInfo.Add("Status: {}", pStatus);
+	VInfo.Add("Players in-game: {}", ClientsNum);
+	VoteWrapper::AddEmptyline(ClientID);
+
+	// options
+	VoteWrapper VOptions(ClientID);
+	VOptions.AddOption("RHYTHM_JOIN", WorldID, "Join to the Rhythm");
+	VoteWrapper::AddEmptyline(ClientID);
+
+	// records
+	VoteWrapper VRecords(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "Best Rhythm players");
 	VRecords.Add("Coming...");
 }
 

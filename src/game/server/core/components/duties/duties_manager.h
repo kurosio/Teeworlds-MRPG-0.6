@@ -20,8 +20,8 @@ public:
 
 	void ShowDungeonInfo(CPlayer* pPlayer, CDungeonData* pDungeon) const;
 	void ShowInsideMenu(CPlayer* pPlayer) const;
-
 	void ShowPvpInfo(CPlayer* pPlayer, int WorldID) const;
+	void ShowRhythmInfo(CPlayer* pPlayer, int WorldID) const;
 
 	CDungeonData* GetDungeonByID(int DungeonID) const;
 	CDungeonData* GetDungeonByWorldID(int WorldID) const;

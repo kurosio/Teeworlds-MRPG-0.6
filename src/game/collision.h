@@ -108,6 +108,9 @@ public:
 	vec2 GetRotateDirByFlags(int Flags);
 	CLayers* GetLayers() const { return m_pLayers; }
 
+	// tile pos
+	vec2 GetPos(int Index) const;
+
 	// tile index
 	int GetMainTileIndex(int Index) const;
 	int GetFrontTileIndex(int Index) const;
