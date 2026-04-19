@@ -52,6 +52,8 @@ public:
 			m_Flags |= WORLD_FLAG_SPAWN_FULL_MANA;
 		if(FlagsSet.hasSet("allowed_pvp"))
 			m_Flags |= WORLD_FLAG_ALLOWED_PVP;
+		if(FlagsSet.hasSet("no_prepare_map"))
+			m_Flags |= WORLD_FLAG_NO_PREPARE_MAP;
 	}
 
 	int GetRespawnWorldID() const

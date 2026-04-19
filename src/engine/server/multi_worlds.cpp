@@ -16,8 +16,8 @@ bool CMapDetail::Load(IStorageEngine* pStorage)
 {
 	char aBuf[IO_MAX_PATH_LENGTH];
 	str_format(aBuf, sizeof(aBuf), "maps/%s", m_pWorldDetail->GetPath());
-
-	const auto NewMapPath = CTuneZoneManager::GetInstance().BakePreparedMap(aBuf, pStorage);
+	const bool PrepareMap = !m_pWorldDetail->GetDetail()->HasFlag(WORLD_FLAG_NO_PREPARE_MAP);
+	const auto NewMapPath = PrepareMap ? CTuneZoneManager::GetInstance().BakePreparedMap(aBuf, pStorage) : std::nullopt;
 	if (NewMapPath.has_value())
 		str_copy(aBuf, NewMapPath->data());
 

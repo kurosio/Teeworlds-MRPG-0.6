@@ -166,6 +166,7 @@ enum WorldFlags
 	WORLD_FLAG_LOST_DEATH_GOLD = 1 << 2,
 	WORLD_FLAG_SPAWN_FULL_MANA = 1 << 3,
 	WORLD_FLAG_ALLOWED_PVP = 1 << 4,
+	WORLD_FLAG_NO_PREPARE_MAP = 1 << 5,
 };
 
 // drawboard events

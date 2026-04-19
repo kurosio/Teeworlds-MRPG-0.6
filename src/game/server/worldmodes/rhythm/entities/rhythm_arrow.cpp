@@ -52,16 +52,7 @@ void CRhythmArrow::Snap(int SnappingClient)
 	if(SnappingClient >= 0 && m_HiddenMask.test(SnappingClient))
 		return;
 
-	const int SnappingClientVersion = GS()->GetClientVersion(SnappingClient);
-	float StartVelScale = m_VelScale;
-	if(StartVelScale <= 0.0f)
-	{
-		const float Speed = GS()->Tuning()->m_GunSpeed;
-		StartVelScale = Speed > 0.0f ? (m_Speed * Server()->TickSpeed()) / Speed : 0.0f;
-	}
-
-	const vec2 StartVel = m_Direction * StartVelScale;
-	GS()->SnapProjectile(SnappingClient, GetID(), m_Origin * 100.0f, StartVel * 1e6f, m_SpawnTick, WEAPON_GUN);
+	GS()->SnapPickup(SnappingClient, GetID(), m_Pos, POWERUP_ARMOR);
 	if(m_TailLaserId >= 0 && m_TailLength > 0.0f)
 	{
 		const vec2 TailPos = m_Pos - m_Direction * m_TailLength;
