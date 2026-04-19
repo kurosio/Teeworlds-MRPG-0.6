@@ -30,6 +30,7 @@ public:
 	void ExpFlyingPoint(vec2 Pos, int ClientID, int Exp, vec2 Force = vec2(0.0f, 0.0f)) const;
 
 	// text
+	void TextMask(int64_t Mask, vec2 Pos, int Lifespan, EEntityTextType Type, const char* pText) const;
 	void Text(vec2 Pos, int Lifespan, const char* pText, bool* pResult = nullptr) const;
 	void Text(vec2 Pos, int Lifespan, const char* pText, EEntityTextType Type, bool* pResult = nullptr) const;
 

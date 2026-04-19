@@ -17,12 +17,13 @@ namespace
 	}
 }
 
-CEntityTextPixel::CEntityTextPixel(CGameWorld* pGameWorld, vec2 Pos, int Lifespan, EEntityTextType Type)
+CEntityTextPixel::CEntityTextPixel(CGameWorld* pGameWorld, vec2 Pos, int Lifespan, EEntityTextType Type, int64_t Mask)
 	: CEntity(pGameWorld, CGameWorld::ENTTYPE_VISUAL, Pos)
 {
 	m_Pos = Pos;
 	m_Lifetime = Lifespan;
 	m_Type = Type;
+	m_Mask = Mask;
 	GameWorld()->InsertEntity(this);
 }
 
@@ -38,7 +39,7 @@ void CEntityTextPixel::Tick()
 
 void CEntityTextPixel::Snap(int SnappingClient)
 {
-	if(NetworkClipped(SnappingClient))
+	if(NetworkClipped(SnappingClient) || !CmaskIsSet(m_Mask, SnappingClient))
 		return;
 
 	if(m_Type == EEntityTextType::Laser)
@@ -332,7 +333,7 @@ inline static vec2 TextSize(const char* pText, EEntityTextType Type)
 	return vec2(Count * Spacing * (kCharWidth + kCharSpacing), Spacing);
 }
 
-void CEntityText::Create(CGameWorld* pGameWorld, vec2 Pos, int Lifespan, const char* pText, EEntityTextType Type)
+void CEntityText::Create(CGameWorld* pGameWorld, vec2 Pos, int Lifespan, const char* pText, EEntityTextType Type, int64_t Mask)
 {
 	const int Spacing = EntityTextSpacing(Type);
 	vec2 CurPos = Pos - TextSize(pText, Type) * 0.5f;
@@ -348,7 +349,7 @@ void CEntityText::Create(CGameWorld* pGameWorld, vec2 Pos, int Lifespan, const c
 		for(int y = 0; y < kCharHeight; ++y)
 			for(int x = 0; x < kCharWidth; ++x)
 				if(s_aaaChars[static_cast<unsigned char>(c)][y][x])
-					new CEntityTextPixel(pGameWorld, CurPos + vec2(x * Spacing, y * Spacing), Lifespan, Type);
+					new CEntityTextPixel(pGameWorld, CurPos + vec2(x * Spacing, y * Spacing), Lifespan, Type, Mask);
 		CurPos.x += (kCharWidth + kCharSpacing) * Spacing;
 	}
 }

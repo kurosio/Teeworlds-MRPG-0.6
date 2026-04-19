@@ -7,10 +7,11 @@ class CEntityTextPixel : public CEntity
 {
 private:
 	int m_Lifetime;
+	int64_t m_Mask;
 	EEntityTextType m_Type;
 
 public:
-	CEntityTextPixel(CGameWorld* pGameWorld, vec2 Pos, int Lifespan, EEntityTextType Type);
+	CEntityTextPixel(CGameWorld* pGameWorld, vec2 Pos, int Lifespan, EEntityTextType Type, int64_t Mask = -1);
 
 	void Tick() override;
 	void Snap(int SnappingClient) override;
@@ -19,7 +20,7 @@ public:
 class CEntityText
 {
 public:
-	static void Create(CGameWorld* pGameWorld, vec2 Pos, int Lifespan, const char* pText, EEntityTextType Type = EEntityTextType::Projectile);
+	static void Create(CGameWorld* pGameWorld, vec2 Pos, int Lifespan, const char* pText, EEntityTextType Type = EEntityTextType::Projectile, int64_t Mask = -1);
 };
 
 #endif

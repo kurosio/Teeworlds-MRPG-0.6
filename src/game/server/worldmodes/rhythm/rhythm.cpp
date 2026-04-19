@@ -15,6 +15,7 @@
 #include <generated/protocol.h>
 #include <game/gamecore.h>
 #include <game/server/entities/character.h>
+#include <game/server/entity_manager.h>
 #include <game/server/gamecontext.h>
 
 #include "entities/rhythm_field.h"
@@ -31,6 +32,15 @@ namespace
 	bool IsValidClientID(int ClientID)
 	{
 		return ClientID >= 0 && ClientID < MAX_PLAYERS;
+	}
+
+	bool IsLaneHeld(const CNetObj_PlayerInput& Input, int LaneIndex)
+	{
+		if(LaneIndex == 0)
+			return Input.m_Direction < 0;
+		if(LaneIndex == 1)
+			return (Input.m_Jump & 1) != 0;
+		return Input.m_Direction > 0;
 	}
 }
 
@@ -182,7 +192,7 @@ bool CGameControllerRhythm::ParseStepBits(const nlohmann::json& Value, uint8_t* 
 
 	const std::string BitsStr = Value.get<std::string>();
 	const char* pBits = BitsStr.c_str();
-	if(str_length(pBits) != 4)
+	if(BitsStr.size() != 4)
 		return false;
 
 	const uint8_t aFlags[4] = {STEP_BIT_LEFT, STEP_BIT_RIGHT, STEP_BIT_UP, STEP_BIT_DOWN};
@@ -315,7 +325,7 @@ bool CGameControllerRhythm::OnCharacterSpawn(CCharacter* pChr)
 bool CGameControllerRhythm::LoadDanceMapData(const char* pMapName)
 {
 	char aFilename[IO_MAX_PATH_LENGTH];
-	str_format(aFilename, sizeof(aFilename), "maps/%s.json", pMapName);
+	str_format(aFilename, sizeof(aFilename), "maps/rhythm/%s.json", pMapName);
 
 	void* pFileData = nullptr;
 	unsigned FileSize = 0;
@@ -501,18 +511,22 @@ void CGameControllerRhythm::ScoreHit(int ClientID, int RatingDelta)
 	if(!IsValidClientID(ClientID))
 		return;
 
+	const char* pText = "MISS";
 	if(RatingDelta <= SRhythmFieldConfig::s_PerfectWindowTicks)
 	{
+		pText = "PERFECT";
 		m_aScores[ClientID].m_Perfect++;
 		m_aScores[ClientID].m_LastGrade = ERhythmHitGrade::PERFECT;
 	}
 	else if(RatingDelta <= SRhythmFieldConfig::s_GoodWindowTicks)
 	{
+		pText = "GOOD";
 		m_aScores[ClientID].m_Good++;
 		m_aScores[ClientID].m_LastGrade = ERhythmHitGrade::GOOD;
 	}
 	else if(RatingDelta <= SRhythmFieldConfig::s_BadWindowTicks)
 	{
+		pText = "BAD";
 		m_aScores[ClientID].m_Bad++;
 		m_aScores[ClientID].m_LastGrade = ERhythmHitGrade::BAD;
 	}
@@ -521,6 +535,9 @@ void CGameControllerRhythm::ScoreHit(int ClientID, int RatingDelta)
 		m_aScores[ClientID].m_Miss++;
 		m_aScores[ClientID].m_LastGrade = ERhythmHitGrade::MISS;
 	}
+
+	const auto TextPos = vec2(m_FieldAnchorPos.x, m_FieldAnchorPos.y + 64.f);
+	GS()->EntityManager()->TextMask(CmaskOne(ClientID), TextPos, 10, EEntityTextType::Projectile, pText);
 }
 
 int CGameControllerRhythm::ScorePoints(const SRhythmScore& Score) const
@@ -535,11 +552,11 @@ void CGameControllerRhythm::ProcessPlayerInput(int ClientID, const CNetObj_Playe
 
 	CNetObj_PlayerInput& PrevInput = m_aPrevInputs[ClientID];
 	m_aLatestInputs[ClientID] = Input;
-	const int HitWindowTicks = 0;
+	const int HitWindowTicks = SRhythmFieldConfig::s_HitWindowTicks;
 
 	const bool aLanePressed[ms_LaneCount] = {
 		Input.m_Direction < 0 && PrevInput.m_Direction >= 0,
-		CountInput(PrevInput.m_Jump, Input.m_Jump).m_Presses > 0,
+		(Input.m_Jump & 1) != 0 && (PrevInput.m_Jump & 1) == 0,
 		Input.m_Direction > 0 && PrevInput.m_Direction <= 0,
 	};
 	const bool aLaneHeld[ms_LaneCount] = {
@@ -590,6 +607,8 @@ void CGameControllerRhythm::ProcessPlayerInput(int ClientID, const CNetObj_Playe
 
 			const uint8_t LaneMask = 1u << LaneIndex;
 			if(m_aNoteLaneHitMask[ClientID] & LaneMask)
+				continue;
+			if(m_aLaneLastHitTick[ClientID][LaneIndex] == NoteTick)
 				continue;
 			if(m_pRhythmField->IsHiddenArrowForClient(LaneIndex, NoteTick, ClientID))
 				continue;
@@ -693,15 +712,6 @@ void CGameControllerRhythm::UpdateNotes()
 	}
 
 	const int HoldWindowTicks = SRhythmFieldConfig::s_BadWindowTicks;
-	auto LaneHeld = [](const CNetObj_PlayerInput& Input, int LaneIndex)
-	{
-		if(LaneIndex == 0)
-			return Input.m_Direction < 0;
-		if(LaneIndex == 1)
-			return (Input.m_Jump & 1) != 0;
-		return Input.m_Direction > 0;
-	};
-
 	while(m_CurrentHoldSegment < (int)m_vHoldSegments.size())
 	{
 		const CHoldSegment& Segment = m_vHoldSegments[m_CurrentHoldSegment];
@@ -720,7 +730,7 @@ void CGameControllerRhythm::UpdateNotes()
 				const uint8_t LaneMask = 1u << LaneIndex;
 				if(m_aHoldSegmentLaneHitMask[i] & LaneMask)
 					continue;
-				if(!m_aLaneHoldActive[i][LaneIndex] || !LaneHeld(m_aLatestInputs[i], LaneIndex))
+				if(!m_aLaneHoldActive[i][LaneIndex] || !IsLaneHeld(m_aLatestInputs[i], LaneIndex))
 					continue;
 
 				const int RawDelta = std::abs(m_aLaneHoldTick[i][LaneIndex] - SegmentTick);

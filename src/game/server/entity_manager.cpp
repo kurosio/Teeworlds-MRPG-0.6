@@ -75,6 +75,11 @@ void CEntityManager::ExpFlyingPoint(vec2 Pos, int ClientID, int Exp, vec2 Force)
 	});
 }
 
+void CEntityManager::TextMask(int64_t Mask, vec2 Pos, int Lifespan, EEntityTextType Type, const char* pText) const
+{
+	CEntityText::Create(&GS()->m_World, Pos, Lifespan, pText, Type, Mask);
+}
+
 void CEntityManager::Text(vec2 Pos, int Lifespan, const char* pText, bool* pResult) const
 {
 	Text(Pos, Lifespan, pText, EEntityTextType::Projectile, pResult);
