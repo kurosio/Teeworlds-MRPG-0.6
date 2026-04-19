@@ -252,7 +252,7 @@ void CGameControllerRhythm::ChangeState(EStageState State)
 		m_CurrentHoldSegment = 0;
 		m_ResultsSaved = false;
 		m_EndTick = 0;
-		m_WarmupTick = Server()->TickSpeed() * 15;
+		m_WarmupTick = Server()->TickSpeed() * 30;
 		m_FieldAnchorValid = FindFieldAnchorFromMap(m_FieldAnchorPos);
 		for(int ClientID = 0; ClientID < MAX_PLAYERS; ++ClientID)
 			ResetClientState(ClientID);
@@ -265,7 +265,18 @@ void CGameControllerRhythm::ChangeState(EStageState State)
 
 		// reset client data
 		for(int ClientID = 0; ClientID < MAX_PLAYERS; ++ClientID)
+		{
+			// start music
+			auto* pPlayer = GS()->GetPlayer(ClientID);
+			if(pPlayer && GS()->IsPlayerInWorld(ClientID, GS()->GetWorldID()))
+			{
+				CNetMsg_Sv_MapSoundGlobal Msg;
+				Msg.m_SoundId = (int)SoundRhythm::MUSIC;
+				Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID, -1, GS()->GetWorldID());
+			}
+
 			ResetClientState(ClientID);
+		}
 
 		// create rhythm field
 		const vec2 FieldPos = m_FieldAnchorPos;
@@ -276,11 +287,6 @@ void CGameControllerRhythm::ChangeState(EStageState State)
 			m_pRhythmField->SetAutoSpawn(false);
 			m_pRhythmField->SetHitZone(FieldPos);
 		}
-
-		// start music
-		CNetMsg_Sv_MapSoundGlobal Msg;
-		Msg.m_SoundId = (int)SoundRhythm::MUSIC;
-		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, -1, -1, GS()->GetWorldID());
 
 		// prepare
 		m_RoundStartTick = Server()->Tick();
@@ -698,7 +704,6 @@ void CGameControllerRhythm::ProcessPlayerInput(int ClientID, const CNetObj_Playe
 			const float X = HitPos.x - HalfWidth + SRhythmFieldConfig::s_LaneWidth * (LaneIndex + 0.5f);
 			const vec2 EffectPos(X, HitPos.y);
 			GS()->CreateHammerHit(EffectPos, CmaskOne(ClientID));
-			GS()->CreateSound(EffectPos, SOUND_PICKUP_HEALTH, CmaskOne(ClientID));
 			ScoreHit(ClientID, RawDelta);
 			m_pRhythmField->HideArrowForClient(LaneIndex, NoteTick, ClientID);
 			m_aNoteLaneHitMask[ClientID] |= LaneMask;
