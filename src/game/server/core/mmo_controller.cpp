@@ -634,6 +634,23 @@ std::map<int, CMmoController::TempTopData> CMmoController::GetDungeonTopList(int
 	return vResult;
 }
 
+std::map<int, CMmoController::TempTopData> CMmoController::GetRhythmTopList(int WorldID, int Rows) const
+{
+	std::map<int, TempTopData> vResult {};
+
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_rhythm_records",
+		"WHERE WorldID = '{}' ORDER BY Score DESC LIMIT {}", WorldID, Rows);
+	while(pRes->next())
+	{
+		const auto Rank = pRes->getRow();
+		auto& field = vResult[Rank];
+		field.Name = GS()->Server()->GetAccountNickname(pRes->getInt("UserID"));
+		field.Data["Score"] = pRes->getInt("Score");
+	}
+
+	return vResult;
+}
+
 
 void CMmoController::AsyncClientEnterMsgInfo(std::string_view ClientName, int ClientID)
 {

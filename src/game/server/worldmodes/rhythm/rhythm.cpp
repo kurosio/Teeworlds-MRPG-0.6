@@ -4,11 +4,6 @@
 
 #include <base/math.h>
 #include <base/system.h>
-
-#include <algorithm>
-#include <cmath>
-#include <string>
-
 #include <engine/shared/config.h>
 #include <engine/storage.h>
 
@@ -120,13 +115,9 @@ void CGameControllerRhythm::Tick()
 	{
 		for(int ClientID = 0; ClientID < MAX_PLAYERS; ++ClientID)
 		{
-			// check valid
 			auto* pPlayer = GS()->GetPlayer(ClientID);
-			if(!pPlayer || !GS()->GetPlayerChar(ClientID))
-			{
-				ResetClientState(ClientID);
+			if(!pPlayer || !GS()->IsPlayerInWorld(ClientID, GS()->GetWorldID()) || !GS()->GetPlayerChar(ClientID))
 				continue;
-			}
 
 			// update field anchor
 			if(m_FieldAnchorValid)
@@ -149,7 +140,9 @@ void CGameControllerRhythm::Tick()
 				ProcessPlayerInput(ClientID, *pPlayer->m_pLastInput, CurrentTick);
 		}
 
+		UpdateScoreBroadcasts();
 		UpdateNotes();
+
 		if(CurrentTick > m_EndTick)
 		{
 			ChangeState(EStageState::STATE_FINISHED);
@@ -269,6 +262,10 @@ void CGameControllerRhythm::ChangeState(EStageState State)
 	{
 		if(!m_FieldAnchorValid)
 			return;
+
+		// reset client data
+		for(int ClientID = 0; ClientID < MAX_PLAYERS; ++ClientID)
+			ResetClientState(ClientID);
 
 		// create rhythm field
 		const vec2 FieldPos = m_FieldAnchorPos;
@@ -553,6 +550,66 @@ int CGameControllerRhythm::ScorePoints(const SRhythmScore& Score) const
 	return Score.m_Perfect * 3 + Score.m_Good * 2 + Score.m_Bad;
 }
 
+bool CGameControllerRhythm::IsActivePlayer(int ClientID) const
+{
+	return GS()->GetPlayer(ClientID) && GS()->GetPlayerChar(ClientID) &&
+		GS()->IsPlayerInWorld(ClientID, GS()->GetWorldID());
+}
+
+std::string CGameControllerRhythm::BuildTopScoresBroadcastText(int MaxRows) const
+{
+	std::vector<std::pair<std::string, int>> vTop;
+	vTop.reserve(MAX_PLAYERS);
+	for(int ClientID = 0; ClientID < MAX_PLAYERS; ++ClientID)
+	{
+		if(!IsActivePlayer(ClientID))
+			continue;
+
+		const auto* pName = Server()->ClientName(ClientID);
+		if(!pName || !pName[0])
+			continue;
+		vTop.emplace_back(pName, ScorePoints(m_aScores[ClientID]));
+	}
+
+	std::stable_sort(vTop.begin(), vTop.end(), [](const auto& Left, const auto& Right)
+	{
+		if(Left.second != Right.second)
+			return Left.second > Right.second;
+		return Left.first < Right.first;
+	});
+
+	if(vTop.empty())
+		return "No active players.";
+
+	const int Lines = minimum(MaxRows, (int)vTop.size());
+	std::string Result;
+	Result.reserve(128);
+	for(int i = 0; i < Lines; ++i)
+	{
+		if(i > 0)
+			Result.push_back('\n');
+
+		char aLine[96];
+		str_format(aLine, sizeof(aLine), "%d. %s %d", i + 1, vTop[i].first.c_str(), vTop[i].second);
+		Result += aLine;
+	}
+	return Result;
+}
+
+void CGameControllerRhythm::UpdateScoreBroadcasts()
+{
+	std::string Text = BuildTopScoresBroadcastText(3);
+	Text += std::string(64, ' ');
+
+	for(int ClientID = 0; ClientID < MAX_PLAYERS; ++ClientID)
+	{
+		if(!IsActivePlayer(ClientID))
+			continue;
+
+		GS()->Broadcast(ClientID, BroadcastPriority::VeryImportant, 25, "{}", Text.c_str());
+	}
+}
+
 void CGameControllerRhythm::ProcessPlayerInput(int ClientID, const CNetObj_PlayerInput& Input, int CurrentTick)
 {
 	if(!m_pRhythmField)
@@ -640,8 +697,8 @@ void CGameControllerRhythm::ProcessPlayerInput(int ClientID, const CNetObj_Playe
 
 			const float X = HitPos.x - HalfWidth + SRhythmFieldConfig::s_LaneWidth * (LaneIndex + 0.5f);
 			const vec2 EffectPos(X, HitPos.y);
-			GS()->CreateExplosion(EffectPos, -1, WEAPON_GRENADE, 0);
-			GS()->CreateSound(EffectPos, SOUND_PICKUP_HEALTH);
+			GS()->CreateHammerHit(EffectPos, CmaskOne(ClientID));
+			GS()->CreateSound(EffectPos, SOUND_PICKUP_HEALTH, CmaskOne(ClientID));
 			ScoreHit(ClientID, RawDelta);
 			m_pRhythmField->HideArrowForClient(LaneIndex, NoteTick, ClientID);
 			m_aNoteLaneHitMask[ClientID] |= LaneMask;
@@ -698,6 +755,9 @@ void CGameControllerRhythm::UpdateNotes()
 		{
 			for(int i = 0; i < MAX_PLAYERS; ++i)
 			{
+				if(!IsActivePlayer(i))
+					continue;
+
 				for(int LaneIndex = 0; LaneIndex < ms_LaneCount; ++LaneIndex)
 				{
 					if(!aLaneBits[LaneIndex])
@@ -731,6 +791,9 @@ void CGameControllerRhythm::UpdateNotes()
 		FillLaneBits(Segment.m_StepBits, aLaneBits);
 		for(int i = 0; i < MAX_PLAYERS; ++i)
 		{
+			if(!IsActivePlayer(i))
+				continue;
+
 			for(int LaneIndex = 0; LaneIndex < ms_LaneCount; ++LaneIndex)
 			{
 				if(!aLaneBits[LaneIndex])
@@ -776,7 +839,7 @@ void CGameControllerRhythm::SaveRhythmResults()
 	for(int ClientID = 0; ClientID < MAX_PLAYERS; ++ClientID)
 	{
 		auto* pPlayer = GS()->GetPlayer(ClientID);
-		if(!pPlayer || !GS()->GetPlayerChar(ClientID))
+		if(!IsActivePlayer(ClientID) || !pPlayer->IsAuthed())
 			continue;
 
 		const auto& Score = m_aScores[ClientID];
@@ -785,6 +848,21 @@ void CGameControllerRhythm::SaveRhythmResults()
 			continue;
 
 		Server()->SetClientScore(ClientID, Points);
+		const int AccountID = pPlayer->Account()->GetID();
+		const int WorldID = GS()->GetWorldID();
+		ResultPtr pRes = Database->Execute<DB::SELECT>("ID, Score", "tw_rhythm_records",
+			"WHERE UserID = '{}' AND WorldID = '{}' ORDER BY Score DESC LIMIT 1", AccountID, WorldID);
+		if(!pRes->next())
+		{
+			Database->Execute<DB::INSERT>("tw_rhythm_records", "(UserID, WorldID, Score) VALUES ('{}', '{}', '{}')",
+				AccountID, WorldID, Points);
+		}
+		else if(Points > pRes->getInt("Score"))
+		{
+			const int RecordID = pRes->getInt("ID");
+			Database->Execute<DB::UPDATE>("tw_rhythm_records", "Score = '{}' WHERE ID = '{}'", Points, RecordID);
+		}
+
 		GS()->Chat(ClientID, "Rhythm result: {} points (Perfect: {}, Good: {}, Bad: {}, Miss: {}).",
 			Points, Score.m_Perfect, Score.m_Good, Score.m_Bad, Score.m_Miss);
 	}

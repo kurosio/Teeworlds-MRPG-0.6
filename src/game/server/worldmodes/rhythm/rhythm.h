@@ -5,10 +5,6 @@
 
 #include <game/server/gamecontroller.h>
 
-#include <array>
-#include <cstdint>
-#include <vector>
-
 class CRhythmField;
 
 class CGameControllerRhythm : public IGameController
@@ -89,6 +85,9 @@ private:
 	void FillLaneBits(uint8_t StepBits, int (&aLaneBits)[ms_LaneCount]) const;
 	void ScoreHit(int ClientID, int RatingDelta);
 	int ScorePoints(const SRhythmScore& Score) const;
+	bool IsActivePlayer(int ClientID) const;
+	void UpdateScoreBroadcasts();
+	std::string BuildTopScoresBroadcastText(int MaxRows) const;
 	void ResetClientState(int ClientID);
 	void SaveRhythmResults();
 	bool FindFieldAnchorFromMap(vec2& OutPos) const;

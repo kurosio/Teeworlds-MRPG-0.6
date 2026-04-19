@@ -81,6 +81,7 @@ public:
 	};
 	std::map<int, TempTopData> GetTopList(ToplistType Type, int Rows) const;
 	std::map<int, TempTopData> GetDungeonTopList(int DungeonID, int Rows) const;
+	std::map<int, TempTopData> GetRhythmTopList(int WorldID, int Rows) const;
 	void ShowTopList(class VoteWrapper* pWrapper, int ClientID, ToplistType Type, int Rows) const;
 };
 

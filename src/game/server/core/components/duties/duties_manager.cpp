@@ -253,7 +253,6 @@ void CDutiesManager::ShowDungeonInfo(CPlayer* pPlayer, CDungeonData* pDungeon) c
 	VInfo.Add("Recommended classes: ALL"); // TODO;
 	VInfo.Add("Status: {}", pStatus);
 	VInfo.Add("Players in-game: {}", pDungeon->GetPlayersNum());
-	VInfo.Add("Current passing progress: {}", pDungeon->GetProgress());
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// options
@@ -337,6 +336,9 @@ void CDutiesManager::ShowRhythmInfo(CPlayer* pPlayer, int WorldID) const
 	VInfo.Add("Name: {}", pName);
 	VInfo.Add("Status: {}", pStatus);
 	VInfo.Add("Players in-game: {}", ClientsNum);
+	VInfo.Add("Goal: hit notes on beat.");
+	VInfo.Add("Controls: Left / Jump / Right.");
+	VInfo.Add("Tip: perfect timing gives max score.");
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// options
@@ -346,7 +348,15 @@ void CDutiesManager::ShowRhythmInfo(CPlayer* pPlayer, int WorldID) const
 
 	// records
 	VoteWrapper VRecords(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "Best Rhythm players");
-	VRecords.Add("Coming...");
+	auto vTopRecords = Core()->GetRhythmTopList(WorldID, 5);
+	if(vTopRecords.empty())
+	{
+		VRecords.Add("No records yet.");
+	}
+	else for(auto& [Pos, RowData] : vTopRecords)
+	{
+		VRecords.Add("{}. {} - {} score.", Pos, RowData.Name, RowData.Data["Score"].to_int());
+	}
 }
 
 
