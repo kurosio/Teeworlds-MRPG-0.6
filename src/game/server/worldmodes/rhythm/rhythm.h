@@ -78,6 +78,9 @@ private:
 	static constexpr uint8_t STEP_BIT_UP = 1 << 2;
 	static constexpr uint8_t STEP_BIT_DOWN = 1 << 3;
 
+	void OnEntity(int Index, vec2 Pos, int Flags) override;
+	bool OnCharacterSpawn(class CCharacter* pChr) override;
+
 	bool LoadDanceMapData(const char* pMapName);
 	bool ParseStepBits(const nlohmann::json& Value, uint8_t* pOut) const;
 	void UpdateNotes();

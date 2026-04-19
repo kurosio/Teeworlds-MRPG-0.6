@@ -296,6 +296,22 @@ void CGameControllerRhythm::FillLaneBits(uint8_t StepBits, int (&aLaneBits)[ms_L
 	aLaneBits[2] = StepBits & STEP_BIT_RIGHT;
 }
 
+void CGameControllerRhythm::OnEntity(int Index, vec2 Pos, int Flags)
+{
+	if(Index == ENTITY_SPAWN)
+	{
+		m_aaSpawnPoints[SPAWN_HUMAN].push_back(Pos);
+	}
+}
+
+bool CGameControllerRhythm::OnCharacterSpawn(CCharacter* pChr)
+{
+	pChr->IncreaseHealth(1000);
+	pChr->IncreaseMana(10);
+	pChr->GiveWeapon(WEAPON_HAMMER, -1);
+	return true;
+}
+
 bool CGameControllerRhythm::LoadDanceMapData(const char* pMapName)
 {
 	char aFilename[IO_MAX_PATH_LENGTH];
