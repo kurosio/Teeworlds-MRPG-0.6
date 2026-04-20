@@ -447,8 +447,7 @@ bool CMobAI::TryUseDpsSkill()
 	{
 		const float Radius = 180.0f;
 		const int Lifetime = 2 * Server()->TickSpeed();
-		const int Damage = maximum(1, m_pMobInfo->m_Power / 5);
-		GS()->EntityManager()->FlameWall(m_ClientID, m_pCharacter->GetPos(), Radius, Lifetime, Damage, 0.45f);
+		GS()->EntityManager()->FlameWall(m_ClientID, m_pCharacter->GetPos(), Radius, Lifetime, 1, 0.45f);
 		GS()->EntityManager()->Text(m_pCharacter->GetPos() + vec2(0, -96), 30, "MOB DPS");
 		return true;
 	}
