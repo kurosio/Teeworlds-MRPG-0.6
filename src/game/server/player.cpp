@@ -6,6 +6,7 @@
 
 #include "gamecontext.h"
 #include "worldmodes/dungeon/dungeon.h"
+#include "worldmodes/rhythm/rhythm.h"
 
 #include "core/components/accounts/account_manager.h"
 #include "core/components/achievements/achievement_manager.h"
@@ -774,16 +775,31 @@ bool CPlayer::ParseVoteOptionResult(int Vote)
 
 	if(Vote == 1)
 	{
-		// dungeon change ready state
+		auto ToggleReady = [&]()
+		{
+			GetSharedData().m_TempDutiesReady = !GetSharedData().m_TempDutiesReady;
+			GS()->Chat(m_ClientID, "You changed the ready mode to \"{}\"!", GetSharedData().m_TempDutiesReady ? "ready" : "not ready");
+			return true;
+		};
+
+		// dungeon
 		if(GS()->IsWorldType(WorldType::Dungeon))
 		{
 			auto* pController = dynamic_cast<CGameControllerDungeon*>(GS()->m_pController);
 			if(!pController || !pController->GetDungeon() || pController->GetDungeon()->IsPlaying())
 				return false;
 
-			GetSharedData().m_TempDungeonReady = !GetSharedData().m_TempDungeonReady;
-			GS()->Chat(m_ClientID, "You changed the ready mode to \"{}\"!", GetSharedData().m_TempDungeonReady ? "ready" : "not ready");
-			return true;
+			return ToggleReady();
+		}
+
+		// rhythm
+		else if(GS()->IsWorldType(WorldType::Rhythm))
+		{
+			auto* pController = dynamic_cast<CGameControllerRhythm*>(GS()->m_pController);
+			if(!pController || pController->IsRoundActive())
+				return false;
+
+			return ToggleReady();
 		}
 	}
 	else
@@ -956,9 +972,9 @@ bool CPlayer::PendingChangeWorld()
 	m_PendingChangeWorldID.reset();
 	m_PendingChangeWorldPosition.reset();
 
-	// reset dungeon temporary data
+	// reset duties temporary data
 	auto& tempData = GetSharedData();
-	tempData.m_TempDungeonReady = false;
+	tempData.m_TempDutiesReady = false;
 
 	// if new position is provided, set the teleport position
 	if(NewWorldPosition.has_value())

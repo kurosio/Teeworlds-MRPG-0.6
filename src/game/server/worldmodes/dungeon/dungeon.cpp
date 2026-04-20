@@ -48,8 +48,8 @@ void CGameControllerDungeon::ChangeState(int State)
 		// update
 		m_EndTick = 0;
 		m_SafetyTick = 0;
-		m_WaitingTick = 0;
-		m_LastWaitingTick = 0;
+		m_WarmupTick = 0;
+		m_LastWarmupTick = 0;
 		m_StartedPlayersNum = 0;
 		m_pEntWaitingDoor->Close();
 	}
@@ -58,7 +58,7 @@ void CGameControllerDungeon::ChangeState(int State)
 	else if(State == CDungeonData::STATE_WAITING)
 	{
 		// update
-		m_WaitingTick = Server()->TickSpeed() * g_Config.m_SvDungeonWaitingTime;
+		m_WarmupTick = Server()->TickSpeed() * g_Config.m_SvDutiesWarmup;
 	}
 
 	// started state
@@ -129,28 +129,28 @@ void CGameControllerDungeon::Process()
 	// waiting state
 	if(State == CDungeonData::STATE_WAITING)
 	{
-		if(m_WaitingTick)
+		if(m_WarmupTick)
 		{
 			// the ability to start prematurely on readiness
 			const int PlayersReadyNum = GetPlayersReadyNum();
-			if(PlayersReadyNum >= PlayersNum && m_WaitingTick > 10 * Server()->TickSpeed())
+			if(PlayersReadyNum >= PlayersNum && m_WarmupTick > 10 * Server()->TickSpeed())
 			{
-				m_LastWaitingTick = m_WaitingTick;
-				m_WaitingTick = 10 * Server()->TickSpeed();
+				m_LastWarmupTick = m_WarmupTick;
+				m_WarmupTick = 10 * Server()->TickSpeed();
 			}
-			else if(PlayersReadyNum < PlayersNum && m_LastWaitingTick > 0)
+			else if(PlayersReadyNum < PlayersNum && m_LastWarmupTick > 0)
 			{
-				const int SkippedTick = 10 * Server()->TickSpeed() - m_WaitingTick;
-				m_WaitingTick = m_LastWaitingTick - SkippedTick;
-				m_LastWaitingTick = 0;
+				const int SkippedTick = 10 * Server()->TickSpeed() - m_WarmupTick;
+				m_WarmupTick = m_LastWarmupTick - SkippedTick;
+				m_LastWarmupTick = 0;
 			}
 
 			// output before the start of the passage
 			GS()->BroadcastWorld(WorldID, BroadcastPriority::VeryImportant, 100, "Players {}/{} ready \u2014 press 'Vote yes' to join in!", PlayersReadyNum, PlayersNum);
 
 			// update waiting time
-			m_WaitingTick--;
-			if(!m_WaitingTick)
+			m_WarmupTick--;
+			if(!m_WarmupTick)
 			{
 				ChangeState(CDungeonData::STATE_STARTED);
 			}
@@ -260,7 +260,7 @@ int CGameControllerDungeon::GetPlayersReadyNum() const
 		if(!pPlayer || pPlayer->GetTeam() == TEAM_SPECTATORS || !GS()->IsPlayerInWorld(i, WorldID))
 			continue;
 
-		if(pPlayer->GetSharedData().m_TempDungeonReady)
+		if(pPlayer->GetSharedData().m_TempDutiesReady)
             ReadyPlayers++;
     }
 
@@ -308,7 +308,7 @@ void CGameControllerDungeon::Snap()
 	pGameInfoObj->m_GameFlags = m_GameFlags;
 	pGameInfoObj->m_GameStateFlags = 0;
 	pGameInfoObj->m_RoundStartTick = m_ShiftRoundStartTick;
-	pGameInfoObj->m_WarmupTimer = m_WaitingTick;
+	pGameInfoObj->m_WarmupTimer = m_WarmupTick;
 	pGameInfoObj->m_RoundNum = 0;
 	pGameInfoObj->m_RoundCurrent = 1;
 

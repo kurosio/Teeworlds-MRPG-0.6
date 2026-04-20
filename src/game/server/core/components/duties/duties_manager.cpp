@@ -110,14 +110,6 @@ bool CDutiesManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, con
 		if(!pDungeon)
 			return true;
 
-		// avaialbe dungeon join
-		if(!g_Config.m_SvAvailableDungeonJoin)
-		{
-			GS()->Chat(ClientID, "Dungeons disabled by server.");
-			pPlayer->m_VotesData.UpdateVotesIf(MENU_DUTIES_LIST);
-			return true;
-		}
-
 		// check equal player world
 		if(GS()->IsPlayerInWorld(ClientID, pDungeon->GetWorldID()))
 		{

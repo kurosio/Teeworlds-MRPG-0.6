@@ -77,6 +77,8 @@ private:
 	void ScoreHit(int ClientID, int RatingDelta);
 	int ScorePoints(const SRhythmScore& Score) const;
 	bool IsActivePlayer(int ClientID) const;
+	int GetPlayersNum() const;
+	int GetPlayersReadyNum() const;
 	void UpdateScoreBroadcasts();
 	std::string BuildTopScoresBroadcastText(int MaxRows) const;
 	void ResetClientState(int ClientID);
@@ -92,6 +94,7 @@ private:
 	CRhythmField* m_pRhythmField{};
 	EStageState m_State{EStageState::STATE_WARMUP};
 	int m_WarmupTick{};
+	int m_LastWarmupTick{};
 	int m_RoundStartTick{};
 	int m_CurrentNote{};
 	int m_NextSpawnNote{};

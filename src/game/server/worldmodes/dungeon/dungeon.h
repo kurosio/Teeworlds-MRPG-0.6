@@ -16,8 +16,8 @@ class CGameControllerDungeon : public CGameControllerDefault
 
 	int m_ScenarioID {};
 	int m_StartedPlayersNum {};
-	int m_LastWaitingTick {};
-	int m_WaitingTick {};
+	int m_LastWarmupTick {};
+	int m_WarmupTick {};
 	int m_SafetyTick {};
 	int m_EndTick {};
 	int m_ShiftRoundStartTick {};

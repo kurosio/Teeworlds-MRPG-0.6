@@ -132,19 +132,15 @@ MACRO_CONFIG_INT(SvNonAttributedModulesSlots, sv_non_attributed_modules_slots, 5
 MACRO_CONFIG_INT(SvAttributedModulesSlots, sv_attributed_modules_slots, 5, 1, 1000, CFGFLAG_SERVER, "Maximum attributed modules slots.");
 
 // -----------------------
+// Duties System Configuration
+// -----------------------
+MACRO_CONFIG_INT(SvDutiesWarmup, sv_duties_warmup, 180, 0, 1020, CFGFLAG_SERVER, "Warmup time for duties entry (in seconds)")
+
+// -----------------------
 // Dungeon sync balance
 // -----------------------
 MACRO_CONFIG_INT(SvDungeonExpMultiplier, sv_dungeon_exp_multiplier, 500, 100, 1000, CFGFLAG_SERVER, "Experience multiplier for completing raid dungeons (percent)")
 MACRO_CONFIG_INT(SvDungeonGoldMultiplier, sv_dungeon_gold_multiplier, 500, 100, 1000, CFGFLAG_SERVER, "Gold multiplier for completing raid dungeons (percent)")
-
-MACRO_CONFIG_INT(SvAvailableDungeonJoin, sv_available_dungeon_join, 1, 0, 1, CFGFLAG_SERVER, "Available join to dungeon world");
-MACRO_CONFIG_INT(SvDungeonWaitingTime, sv_dungeon_waiting_time, 180, 0, 1020, CFGFLAG_SERVER, "Waiting time for dungeon entry (in seconds)")
-
-// --- PlayerStatConversionFactor ---
-MACRO_CONFIG_INT(SvDunFactDmg, sv_dun_fact_dmg, 15, 1, 500, CFGFLAG_SERVER, "Dungeon: factor attributes (percent of player total stat)");
-MACRO_CONFIG_INT(SvDunFactCrit, sv_dun_fact_crit, 7, 1, 500, CFGFLAG_SERVER, "Dungeon: factor for CritChance attribute (percent of player total stat)");
-MACRO_CONFIG_INT(SvDunFactOther, sv_dun_fact_other, 50, 1, 500, CFGFLAG_SERVER, "Dungeon: factor for OtherType attributes (percent of player total stat)");
-MACRO_CONFIG_INT(SvDunFactBossHp, sv_dun_fact_boos_hp, 300, 1, 2000, CFGFLAG_SERVER, "Dungeon: factor for Boss HP (percent of player total stat)");
 
 // -----------------------
 // Auction System Configuration

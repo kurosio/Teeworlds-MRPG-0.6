@@ -51,6 +51,7 @@ void CGameControllerRhythm::OnInit()
 {
 	// initialize variables
 	m_WarmupTick = 0;
+	m_LastWarmupTick = 0;
 	m_RoundStartTick = 0;
 	m_CurrentNote = 0;
 	m_NextSpawnNote = 0;
@@ -69,10 +70,10 @@ void CGameControllerRhythm::OnInit()
 void CGameControllerRhythm::Tick()
 {
 	const int CurrentTick = Server()->Tick();
-	const auto ClientsNum = Server()->GetClientsCountByWorld(GS()->GetWorldID());
+	const int PlayersNum = GetPlayersNum();
 
 	// update start or end by player count
-	if(ClientsNum <= 0)
+	if(PlayersNum <= 0)
 		ChangeState(EStageState::STATE_WAIT);
 	else if(m_State == EStageState::STATE_WAIT)
 		ChangeState(EStageState::STATE_WARMUP);
@@ -80,6 +81,21 @@ void CGameControllerRhythm::Tick()
 	// Warmup state
 	if(m_State == EStageState::STATE_WARMUP)
 	{
+		const int PlayersReadyNum = GetPlayersReadyNum();
+		if(PlayersReadyNum >= PlayersNum && PlayersNum > 0 && m_WarmupTick > 10 * Server()->TickSpeed())
+		{
+			m_LastWarmupTick = m_WarmupTick;
+			m_WarmupTick = 10 * Server()->TickSpeed();
+		}
+		else if(PlayersReadyNum < PlayersNum && m_LastWarmupTick > 0)
+		{
+			const int SkippedTick = 10 * Server()->TickSpeed() - m_WarmupTick;
+			m_WarmupTick = m_LastWarmupTick - SkippedTick;
+			m_LastWarmupTick = 0;
+		}
+
+		GS()->BroadcastWorld(GS()->GetWorldID(), BroadcastPriority::VeryImportant, 100, "Players {}/{} ready — press 'Vote yes' to join in!", PlayersReadyNum, PlayersNum);
+
 		// warmup sound notify
 		if(m_WarmupTick == Server()->TickSpeed() * 3)
 		{
@@ -232,7 +248,8 @@ void CGameControllerRhythm::ChangeState(EStageState State)
 		m_NextSpawnNote = 0;
 		m_ResultsSaved = false;
 		m_EndTick = 0;
-		m_WarmupTick = Server()->TickSpeed() * 30;
+		m_LastWarmupTick = 0;
+		m_WarmupTick = Server()->TickSpeed() * g_Config.m_SvDutiesWarmup;
 		m_FieldAnchorValid = FindFieldAnchorFromMap(m_FieldAnchorPos);
 		for(int ClientID = 0; ClientID < MAX_PLAYERS; ++ClientID)
 			ResetClientState(ClientID);
@@ -493,6 +510,37 @@ void CGameControllerRhythm::UpdateScoreBroadcasts()
 
 		GS()->Broadcast(ClientID, BroadcastPriority::VeryImportant, 25, "{}", Text.c_str());
 	}
+}
+
+int CGameControllerRhythm::GetPlayersNum() const
+{
+	int PlayersNum = 0;
+	for(int i = 0; i < MAX_PLAYERS; i++)
+	{
+		auto* pPlayer = GS()->GetPlayer(i);
+		if(!pPlayer || pPlayer->GetTeam() == TEAM_SPECTATORS || !GS()->IsPlayerInWorld(i, GS()->GetWorldID()))
+			continue;
+
+		PlayersNum++;
+	}
+
+	return PlayersNum;
+}
+
+int CGameControllerRhythm::GetPlayersReadyNum() const
+{
+	int ReadyPlayers = 0;
+	for(int i = 0; i < MAX_PLAYERS; i++)
+	{
+		auto* pPlayer = GS()->GetPlayer(i);
+		if(!pPlayer || pPlayer->GetTeam() == TEAM_SPECTATORS || !GS()->IsPlayerInWorld(i, GS()->GetWorldID()))
+			continue;
+
+		if(pPlayer->GetSharedData().m_TempDutiesReady)
+			ReadyPlayers++;
+	}
+
+	return ReadyPlayers;
 }
 
 void CGameControllerRhythm::ProcessPlayerInput(int ClientID, const CNetObj_PlayerInput& Input, int CurrentTick)

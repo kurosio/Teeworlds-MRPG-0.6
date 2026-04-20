@@ -231,9 +231,9 @@ struct CAccountSharedData
 	int m_ActivityRewardStreak {};
 	int m_ActivityRouletteCharge {};
 
-	// dungeon
+	// duties
 	int m_TempStartDungeonTick {};
-	bool m_TempDungeonReady {};
+	bool m_TempDutiesReady {};
 
 	void SetSpawnPosition(vec2 Position)
 	{
