@@ -37,6 +37,58 @@ class TeeworldsEconClient:
         )
 
 
+    @staticmethod
+    def _decode_line(data: bytes) -> str:
+        """Decodes bytes from econ stream into stripped UTF-8 text."""
+        return data.decode('utf-8', 'ignore').strip()
+
+
+    @staticmethod
+    def _is_auth_success(auth_response: str) -> bool:
+        """Checks whether econ auth response indicates success."""
+        return (
+            not auth_response
+            or "Authentication successful" in auth_response
+            or "authenticated" in auth_response.lower()
+        )
+
+
+    async def _disconnect_on_error(self, reason: str, exc: Exception, level: str = "warning"):
+        """Logs a connection related error and closes current econ connection."""
+        message = f"{reason}: {exc}. Disconnecting."
+        if level == "error":
+            logger.error(message)
+        else:
+            logger.warning(message)
+        await self._close_connection(reason=f"{reason}: {exc}")
+
+
+    def _parse_chat_message(self, cleaned_line: str) -> Optional[EconMessage]:
+        """Parses chat-related econ output into an EconMessage."""
+        system_chat_match = self.system_chat_pattern.search(cleaned_line)
+        if system_chat_match:
+            nickname = system_chat_match.group(1).strip()
+            message = system_chat_match.group(2).strip()
+            if message:
+                logger.debug(f"Parsed as System Chat -> Nick: '{nickname}', Msg: '{message[:50]}...'")
+                return EconChatMessage(type="chat", nickname=nickname, message=message)
+            return None
+
+        chat_match = self.chat_pattern.search(cleaned_line)
+        if not chat_match:
+            return None
+
+        nickname = chat_match.group(1).strip()
+        message = chat_match.group(2).strip()
+        if message.startswith(SERVER_TAG_TEEWORLDS):
+            logger.debug(f"Ignoring own bridge message from '{nickname}'")
+            return None
+        if message:
+            logger.debug(f"Parsed as Player Chat -> Nick: '{nickname}', Msg: '{message[:50]}...'")
+            return EconChatMessage(type="chat", nickname=nickname, message=message)
+        return None
+
+
     async def _close_connection(self, reason: str = "Requested"):
         """Closes the connection streams and updates status."""
         if self.writer and not self.writer.is_closing():
@@ -78,7 +130,7 @@ class TeeworldsEconClient:
                         self.reader.readline(),
                         timeout=ECON_AUTH_TIMEOUT
                     )
-                    initial_prompt = initial_prompt_bytes.decode('utf-8', 'ignore').strip()
+                    initial_prompt = self._decode_line(initial_prompt_bytes)
                     logger.debug(f"Connect: Received initial prompt/message: '{initial_prompt}'")
                 except asyncio.TimeoutError:
                     logger.debug("Connect: No initial prompt received within timeout, proceeding.")
@@ -98,11 +150,11 @@ class TeeworldsEconClient:
                     self.reader.readline(),
                     timeout=ECON_AUTH_TIMEOUT
                 )
-                auth_response = auth_response_bytes.decode('utf-8', 'ignore').strip()
+                auth_response = self._decode_line(auth_response_bytes)
                 logger.debug(f"Connect: Final auth response received: '{auth_response}'")
 
                 # step 4: check result
-                if "Authentication successful" in auth_response or "authenticated" in auth_response.lower() or not auth_response:
+                if self._is_auth_success(auth_response):
                      self._connected = True
                      logger.info("✅ Econ connected and authenticated successfully.")
                      return True
@@ -148,39 +200,16 @@ class TeeworldsEconClient:
                 return None
 
             logger.debug(f"Econ Raw Cleaned: '{cleaned_line}'")
-
-            # message parsin logic
-            system_chat_match = self.system_chat_pattern.search(cleaned_line)
-            if system_chat_match:
-                nickname = system_chat_match.group(1).strip() # "***"
-                message = system_chat_match.group(2).strip()
-                if message:
-                    logger.debug(f"Parsed as System Chat -> Nick: '{nickname}', Msg: '{message[:50]}...'")
-                    return EconChatMessage(type="chat", nickname=nickname, message=message)
-                else: return None
-
-            chat_match = self.chat_pattern.search(cleaned_line)
-            if chat_match:
-                nickname = chat_match.group(1).strip()
-                message = chat_match.group(2).strip()
-                if message.startswith(SERVER_TAG_TEEWORLDS):
-                    logger.debug(f"Ignoring own bridge message from '{nickname}'")
-                    return None
-                if message:
-                    logger.debug(f"Parsed as Player Chat -> Nick: '{nickname}', Msg: '{message[:50]}...'")
-                    return EconChatMessage(type="chat", nickname=nickname, message=message)
-                else: return None
+            return self._parse_chat_message(cleaned_line)
 
         except asyncio.TimeoutError:
             logger.debug(f"Econ read timed out after {ECON_READ_TIMEOUT}s.")
             return None
         except asyncio.IncompleteReadError as e:
-            logger.warning(f"⚠️ Econ incomplete read (connection likely lost): {e}. Disconnecting.")
-            await self._close_connection(reason=f"IncompleteReadError: {e}")
+            await self._disconnect_on_error("⚠️ Econ incomplete read (connection likely lost)", e)
             return None
         except (ConnectionResetError, BrokenPipeError, OSError) as e:
-            logger.warning(f"⚠️ Econ read error (connection lost): {e}. Disconnecting.")
-            await self._close_connection(reason=f"Connection error: {e}")
+            await self._disconnect_on_error("⚠️ Econ read error (connection lost)", e)
             return None
         except Exception as e:
             logger.exception(f"💥 Unexpected error receiving/parsing Econ message: {e}")
@@ -217,8 +246,7 @@ class TeeworldsEconClient:
                         await asyncio.sleep(0.3)
                 return True
             except (ConnectionResetError, BrokenPipeError, OSError) as e:
-                logger.error(f"❌ Econ send error (connection lost): {e}. Disconnecting.")
-                await self._close_connection(reason=f"Send error: {e}")
+                await self._disconnect_on_error("❌ Econ send error (connection lost)", e, level="error")
                 return False
             except Exception as e:
                 logger.exception(f"💥 Failed to send message via Econ: {e}")

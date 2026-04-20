@@ -17,6 +17,29 @@ class ServerStatusService:
         self.player_cache: Dict[str, Dict[str, Any]] = {}
         self._cache_lock = asyncio.Lock()
 
+    @staticmethod
+    def _resolve_skin_name(skin_raw: Any) -> str:
+        """Returns normalized skin name from API payload."""
+        if isinstance(skin_raw, dict):
+            return str(skin_raw.get("name", "default") or "default")
+        if isinstance(skin_raw, str) and skin_raw.strip():
+            return skin_raw.strip()
+        return "default"
+
+    @staticmethod
+    def _resolve_skin_colors(client: Dict[str, Any], skin_raw: Any) -> Tuple[int, int]:
+        """Returns body/feet colors from top-level or nested skin fields."""
+        body_color = client.get("color_body", client.get("body_color"))
+        feet_color = client.get("color_feet", client.get("feet_color"))
+
+        if isinstance(skin_raw, dict):
+            if body_color is None:
+                body_color = skin_raw.get("color_body", skin_raw.get("body_color", 0))
+            if feet_color is None:
+                feet_color = skin_raw.get("color_feet", skin_raw.get("feet_color", 0))
+
+        return int(body_color or 0), int(feet_color or 0)
+
     async def _fetch_master_server_data(self) -> Optional[Union[Dict, List]]:
         """Fetches the full server list from the master server API."""
         try:
@@ -100,22 +123,8 @@ class ServerStatusService:
 
                         normalized_name = normalize_nickname(player_name)
                         skin_raw = client.get("skin", {})
-                        skin_name = "default"
-                        if isinstance(skin_raw, dict):
-                            skin_name = str(skin_raw.get("name", "default") or "default")
-                        elif isinstance(skin_raw, str) and skin_raw.strip():
-                            skin_name = skin_raw.strip()
-
-                        body_color = client.get("color_body", client.get("body_color", None))
-                        feet_color = client.get("color_feet", client.get("feet_color", None))
-                        if isinstance(skin_raw, dict):
-                            if body_color is None:
-                                body_color = skin_raw.get("color_body", skin_raw.get("body_color", 0))
-                            if feet_color is None:
-                                feet_color = skin_raw.get("color_feet", skin_raw.get("feet_color", 0))
-
-                        body_color = int(body_color or 0)
-                        feet_color = int(feet_color or 0)
+                        skin_name = self._resolve_skin_name(skin_raw)
+                        body_color, feet_color = self._resolve_skin_colors(client, skin_raw)
 
                         new_player_data[normalized_name] = {
                             "name": player_name,
