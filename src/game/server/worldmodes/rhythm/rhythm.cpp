@@ -161,7 +161,11 @@ void CGameControllerRhythm::Tick()
 		}
 
 		if(m_FinishTick > 0)
+		{
+			const int Sec = m_FinishTick / Server()->TickSpeed();
+			GS()->BroadcastWorld(GS()->GetWorldID(), BroadcastPriority::VeryImportant, 500, "Exit from Rhythm in {} sec!", Sec);
 			m_FinishTick--;
+		}
 		else if(m_FinishTick == 0)
 		{
 			for(int ClientID = 0; ClientID < MAX_PLAYERS; ++ClientID)
@@ -184,9 +188,6 @@ void CGameControllerRhythm::Tick()
 void CGameControllerRhythm::Snap()
 {
 	int GameStateFlags = 0;
-	if(m_State == EStageState::STATE_FINISHED)
-		GameStateFlags |= GAMESTATEFLAG_GAMEOVER;
-
 	const int WarmupTimer = m_State == EStageState::STATE_WARMUP ? m_WarmupTick : 0;
 	constexpr int Flags = GAMEINFOFLAG_GAMETYPE_PLUS | GAMEINFOFLAG_ALLOW_HOOK_COLL | GAMEINFOFLAG_PREDICT_VANILLA;
 	constexpr int Flags2 = GAMEINFOFLAG2_GAMETYPE_CITY | GAMEINFOFLAG2_ALLOW_X_SKINS | GAMEINFOFLAG2_HUD_DDRACE;
