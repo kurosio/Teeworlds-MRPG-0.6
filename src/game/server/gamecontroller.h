@@ -24,6 +24,7 @@ class IGameController
 protected:
 	CGS* GS() const { return m_pGS; }
 	IServer* Server() const { return m_pServer; }
+	void SnapGameInfo(int RoundStartTick, int WarmupTimer, int GameStateFlags, int Flags, int Flags2) const;
 
 	std::array<std::vector<vec2>, NUM_SPAWN> m_aaSpawnPoints{};
 	void EvaluateSpawnType(CSpawnEval* Pos, int Type, std::pair<vec2, float> LimiterSpread) const;

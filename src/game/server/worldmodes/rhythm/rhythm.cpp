@@ -167,26 +167,14 @@ void CGameControllerRhythm::Tick()
 
 void CGameControllerRhythm::Snap()
 {
-	auto* pGameInfoObj = (CNetObj_GameInfo*)Server()->SnapNewItem(NETOBJTYPE_GAMEINFO, 0, sizeof(CNetObj_GameInfo));
-	if(!pGameInfoObj)
-		return;
-
-	pGameInfoObj->m_GameFlags = m_GameFlags;
-	pGameInfoObj->m_GameStateFlags = 0;
+	int GameStateFlags = 0;
 	if(m_State == EStageState::STATE_FINISHED)
-		pGameInfoObj->m_GameStateFlags |= GAMESTATEFLAG_GAMEOVER;
-	pGameInfoObj->m_RoundStartTick = m_RoundStartTick;
-	pGameInfoObj->m_WarmupTimer = m_State == EStageState::STATE_WARMUP ? m_WarmupTick : 0;
-	pGameInfoObj->m_RoundNum = 0;
-	pGameInfoObj->m_RoundCurrent = 1;
+		GameStateFlags |= GAMESTATEFLAG_GAMEOVER;
 
-	auto* pGameInfoEx = (CNetObj_GameInfoEx*)Server()->SnapNewItem(NETOBJTYPE_GAMEINFOEX, 0, sizeof(CNetObj_GameInfoEx));
-	if(!pGameInfoEx)
-		return;
-
-	pGameInfoEx->m_Flags = GAMEINFOFLAG_GAMETYPE_PLUS | GAMEINFOFLAG_ALLOW_HOOK_COLL | GAMEINFOFLAG_PREDICT_VANILLA;
-	pGameInfoEx->m_Flags2 = GAMEINFOFLAG2_GAMETYPE_CITY | GAMEINFOFLAG2_ALLOW_X_SKINS | GAMEINFOFLAG2_HUD_DDRACE;
-	pGameInfoEx->m_Version = GAMEINFO_CURVERSION;
+	const int WarmupTimer = m_State == EStageState::STATE_WARMUP ? m_WarmupTick : 0;
+	constexpr int Flags = GAMEINFOFLAG_GAMETYPE_PLUS | GAMEINFOFLAG_ALLOW_HOOK_COLL | GAMEINFOFLAG_PREDICT_VANILLA;
+	constexpr int Flags2 = GAMEINFOFLAG2_GAMETYPE_CITY | GAMEINFOFLAG2_ALLOW_X_SKINS | GAMEINFOFLAG2_HUD_DDRACE;
+	SnapGameInfo(m_RoundStartTick, WarmupTimer, GameStateFlags, Flags, Flags2);
 }
 
 bool CGameControllerRhythm::ParseStepBits(const nlohmann::json& Value, uint8_t* pOut) const

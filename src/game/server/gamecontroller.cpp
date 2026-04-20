@@ -12,14 +12,8 @@ IGameController::IGameController(CGS* pGS)
 	m_pServer = m_pGS->Server();
 }
 
-void IGameController::OnCharacterDamage(CPlayer* pFrom, CPlayer* pTo, int Damage)
-{
-}
-
-void IGameController::OnCharacterDeath(CPlayer* pVictim, CPlayer* pKiller, int Weapon)
-{
-}
-
+void IGameController::OnCharacterDamage(CPlayer* pFrom, CPlayer* pTo, int Damage) {}
+void IGameController::OnCharacterDeath(CPlayer* pVictim, CPlayer* pKiller, int Weapon) {}
 bool IGameController::OnCharacterSpawn(CCharacter* pChr)
 {
 	return true;
@@ -30,80 +24,43 @@ bool IGameController::OnCharacterBotSpawn(CCharacterBotAI* pChr)
 	return true;
 }
 
-void IGameController::OnEntity(int Index, vec2 Pos, int Flags)
-{
-}
+void IGameController::OnEntity(int Index, vec2 Pos, int Flags) {}
+void IGameController::OnEntitySwitch(int Index, vec2 Pos, int Flags, int Number) {}
+void IGameController::OnPlayerConnect(CPlayer* pPlayer) {}
+void IGameController::OnPlayerDisconnect(CPlayer* pPlayer) {}
+void IGameController::Tick() { }
+void IGameController::UpdateGameInfo(int ClientID) { }
 
-void IGameController::OnEntitySwitch(int Index, vec2 Pos, int Flags, int Number)
+void IGameController::SnapGameInfo(int RoundStartTick, int WarmupTimer, int GameStateFlags, int Flags, int Flags2) const
 {
-}
+	auto* pGameInfoObj = (CNetObj_GameInfo*)Server()->SnapNewItem(NETOBJTYPE_GAMEINFO, 0, sizeof(CNetObj_GameInfo));
+	if(!pGameInfoObj)
+		return;
 
-void IGameController::OnPlayerConnect(CPlayer* pPlayer)
-{
-}
+	pGameInfoObj->m_GameFlags = m_GameFlags;
+	pGameInfoObj->m_GameStateFlags = GameStateFlags;
+	pGameInfoObj->m_RoundStartTick = RoundStartTick;
+	pGameInfoObj->m_WarmupTimer = WarmupTimer;
+	pGameInfoObj->m_RoundNum = 0;
+	pGameInfoObj->m_RoundCurrent = 1;
 
-void IGameController::OnPlayerDisconnect(CPlayer* pPlayer)
-{
+	auto* pGameInfoEx = (CNetObj_GameInfoEx*)Server()->SnapNewItem(NETOBJTYPE_GAMEINFOEX, 0, sizeof(CNetObj_GameInfoEx));
+	if(!pGameInfoEx)
+		return;
+
+	pGameInfoEx->m_Flags = Flags;
+	pGameInfoEx->m_Flags2 = Flags2;
+	pGameInfoEx->m_Version = GAMEINFO_CURVERSION;
 }
 
 // general
 void IGameController::Snap()
 {
-	// vanilla snap
-	CNetObj_GameInfo* pGameInfoObj = (CNetObj_GameInfo*)Server()->SnapNewItem(NETOBJTYPE_GAMEINFO, 0, sizeof(CNetObj_GameInfo));
-	if(!pGameInfoObj)
-		return;
-
-	pGameInfoObj->m_GameFlags = m_GameFlags;
-	pGameInfoObj->m_GameStateFlags = 0;
-	pGameInfoObj->m_RoundStartTick = Server()->GetOffsetGameTime();
-	pGameInfoObj->m_WarmupTimer = 0;
-	pGameInfoObj->m_RoundNum = 0;
-	pGameInfoObj->m_RoundCurrent = 1;
-
-	// ddnet snap
-	CNetObj_GameInfoEx* pGameInfoEx = (CNetObj_GameInfoEx*)Server()->SnapNewItem(NETOBJTYPE_GAMEINFOEX, 0, sizeof(CNetObj_GameInfoEx));
-	if(!pGameInfoEx)
-		return;
-
-	pGameInfoEx->m_Flags = GAMEINFOFLAG_GAMETYPE_PLUS | GAMEINFOFLAG_ALLOW_HOOK_COLL | GAMEINFOFLAG_ALLOW_ZOOM
+	constexpr int Flags = GAMEINFOFLAG_GAMETYPE_PLUS | GAMEINFOFLAG_ALLOW_HOOK_COLL | GAMEINFOFLAG_ALLOW_ZOOM
 		| GAMEINFOFLAG_PREDICT_VANILLA | GAMEINFOFLAG_PREDICT_DDRACE_TILES;
-	pGameInfoEx->m_Flags2 = GAMEINFOFLAG2_GAMETYPE_CITY | GAMEINFOFLAG2_ALLOW_X_SKINS | GAMEINFOFLAG2_HUD_DDRACE
+	constexpr int Flags2 = GAMEINFOFLAG2_GAMETYPE_CITY | GAMEINFOFLAG2_ALLOW_X_SKINS | GAMEINFOFLAG2_HUD_DDRACE
 		| GAMEINFOFLAG2_HUD_HEALTH_ARMOR | GAMEINFOFLAG2_HUD_AMMO | GAMEINFOFLAG2_NO_WEAK_HOOK;
-	pGameInfoEx->m_Version = GAMEINFO_CURVERSION;
-}
-
-void IGameController::Tick() { }
-
-void IGameController::UpdateGameInfo(int ClientID)
-{
-	/*	CNetMsg_Sv_GameInfo GameInfoMsg;
-		GameInfoMsg.m_GameFlags = m_GameFlags;
-		GameInfoMsg.m_ScoreLimit = 0;
-		GameInfoMsg.m_TimeLimit = 0;
-		GameInfoMsg.m_MatchNum = 0;
-		GameInfoMsg.m_MatchCurrent = 0;
-
-		if(ClientID == -1)
-		{
-			for(int i = 0; i < MAX_PLAYERS; ++i)
-			{
-				if(!GS()->m_apPlayers[i] || !Server()->ClientIngame(i))
-					continue;
-
-				if((!GS()->IsMmoClient(i) && Server()->GetClientProtocolVersion(i) < MIN_RACE_CLIENTVERSION))
-					GameInfoMsg.m_GameFlags &= ~GAMEFLAG_RACE;
-
-				Server()->SendPackMsg(&GameInfoMsg, MSGFLAG_VITAL|MSGFLAG_NORECORD, i, Server()->GetClientWorldID(ClientID));
-			}
-		}
-		else
-		{
-			if((!GS()->IsMmoClient(ClientID) && Server()->GetClientProtocolVersion(ClientID) < MIN_RACE_CLIENTVERSION))
-				GameInfoMsg.m_GameFlags &= ~GAMEFLAG_RACE;
-
-			Server()->SendPackMsg(&GameInfoMsg, MSGFLAG_VITAL|MSGFLAG_NORECORD, ClientID, Server()->GetClientWorldID(ClientID));
-		}*/
+	SnapGameInfo(Server()->GetOffsetGameTime(), 0, 0, Flags, Flags2);
 }
 
 bool IGameController::CanSpawn(int SpawnType, vec2* pOutPos, std::pair<vec2, float> LimiterSpread) const
