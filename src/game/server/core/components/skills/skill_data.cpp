@@ -467,7 +467,7 @@ bool CSkill::Use()
 	if(IsActivated(pChar, ManaCost, SKILL_HEALING_RIFT, SKILL_USAGE_RESET))
 	{
 		// initialize perks
-		const int NumCastClicked = 25 - GetMod(SkillMod::CastClick);
+		const int NumCastClicked = 20 - GetMod(SkillMod::CastClick);
 		const float Radius = 240.f + (float)GetMod(SkillMod::Radius);
 		const int Lifetime = (8 + GetMod(SkillMod::Lifetime)) * SERVER_TICK_SPEED;
 		const auto HealPerPulse = ManaCost + translate_to_percent_rest(ManaCost, (float)GetMod(SkillMod::BonusIncreasePct));
