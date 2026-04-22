@@ -408,6 +408,25 @@ bool CCharacter::FireGun(vec2 Direction, vec2 ProjStartPos, int TotalWeaponDamag
 		return true;
 	}
 
+	// kill gun
+	if(EquippedItemIdOpt == itKillGun)
+	{
+		const auto MouseTarget = vec2(m_LatestInput.m_TargetX, m_LatestInput.m_TargetY);
+		const auto Lifetime = (int)(Server()->TickSpeed() * GS()->Tuning()->m_GunLifetime);
+		for(int i = -1; i <= 1; i++)
+		{
+			const float Spreading = 0.1f * i;
+			const float a = angle(Direction) + Spreading;
+			const vec2 Dir = vec2(cosf(a), sinf(a));
+			new CProjectile(GameWorld(), WEAPON_GUN, m_pPlayer->GetCID(), ProjStartPos,
+				Dir, Lifetime, false, 0, -1, MouseTarget, WEAPON_GUN);
+		}
+
+		m_ReloadTimer = Server()->TickSpeed() / 8;
+		GS()->CreateSound(m_Pos, SOUND_GUN_FIRE);
+		return true;
+	}
+
 	// default gun
 	const auto MouseTarget = vec2(m_LatestInput.m_TargetX, m_LatestInput.m_TargetY);
 	const auto Lifetime = (int)(Server()->TickSpeed() * GS()->Tuning()->m_GunLifetime);
@@ -429,7 +448,7 @@ bool CCharacter::FireShotgun(vec2 Direction, vec2 ProjStartPos, int Damage)
 	}
 
 	// default shotgun
-	constexpr int ShotSpread = 5;
+	int ShotSpread = EquippedItemIdOpt == itBurstShotgun ? 9 : 5;
 	const int Lifetime = (int)(Server()->TickSpeed() * GS()->Tuning()->m_ShotgunLifetime);
 	const bool IsExplosive = m_pPlayer->GetItem(itExplosiveShotgun)->IsEquipped();
 	for(int i = 0; i < ShotSpread; ++i)
@@ -452,6 +471,9 @@ bool CCharacter::FireShotgun(vec2 Direction, vec2 ProjStartPos, int Damage)
 			WEAPON_SHOTGUN);
 	}
 
+	if(EquippedItemIdOpt == itBurstShotgun)
+		m_ReloadTimer = Server()->TickSpeed() / 5;
+
 	GS()->CreateSound(m_Pos, SOUND_SHOTGUN_FIRE);
 	return true;
 }
@@ -470,8 +492,27 @@ bool CCharacter::FireGrenade(vec2 Direction, vec2 ProjStartPos, int Damage)
 	if(EquippedItemIdOpt == itPizdamet)
 	{
 		new CEntityGrenadePizdamet(&GS()->m_World, m_ClientID, ProjStartPos, Direction);
-		m_ReloadTimer = Server()->TickSpeed() / 8;
+		m_ReloadTimer = Server()->TickSpeed() / 10;
 		GS()->CreateSound(m_Pos, SOUND_SFX_WEAPON_PIZDAMET);
+		return true;
+	}
+
+	// injury grenade
+	if(EquippedItemIdOpt == itInjuryGrenade)
+	{
+		const auto MouseTarget = vec2(m_LatestInput.m_TargetX, m_LatestInput.m_TargetY);
+		const int Lifetime = (int)(Server()->TickSpeed() * GS()->Tuning()->m_GrenadeLifetime * 0.8f);
+		for(int i = -1; i <= 1; i++)
+		{
+			const float Spreading = 0.12f * i;
+			const float a = angle(Direction) + Spreading;
+			const vec2 Dir = vec2(cosf(a), sinf(a)) * (1.0f - absolute(i) * 0.1f);
+			new CProjectile(GameWorld(), WEAPON_GRENADE, m_pPlayer->GetCID(), ProjStartPos,
+				Dir, Lifetime, true, 0, SOUND_GRENADE_EXPLODE, MouseTarget, WEAPON_GRENADE);
+		}
+
+		m_ReloadTimer = Server()->TickSpeed() / 3;
+		GS()->CreateSound(m_Pos, SOUND_GRENADE_FIRE);
 		return true;
 	}
 
@@ -521,6 +562,22 @@ bool CCharacter::FireRifle(vec2 Direction, vec2 ProjStartPos, int TotalWeaponDam
 	if(EquippedItemIdOpt == itRifleTeslaSerpent)
 	{
 		new CEntityTeslaSerpent(&GS()->m_World, m_ClientID, ProjStartPos, Direction, TotalWeaponDamage, 400.f, 3, 0.5f);
+		GS()->CreateSound(m_Pos, SOUND_LASER_FIRE);
+		return true;
+	}
+
+	// laser damager
+	if(EquippedItemIdOpt == itLaserDamager)
+	{
+		for(int i = -1; i <= 1; i++)
+		{
+			const float Spreading = 0.1f * i;
+			const float a = angle(Direction) + Spreading;
+			const vec2 Dir = vec2(cosf(a), sinf(a));
+			new CLaser(&GS()->m_World, m_ClientID, TotalWeaponDamage, ProjStartPos, Dir, GS()->Tuning()->m_LaserReach * 0.75f, false);
+		}
+
+		m_ReloadTimer = Server()->TickSpeed() / 4;
 		GS()->CreateSound(m_Pos, SOUND_LASER_FIRE);
 		return true;
 	}
