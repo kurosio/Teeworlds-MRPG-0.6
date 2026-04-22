@@ -382,8 +382,9 @@
           const hidden = field.querySelector('input[type="hidden"][data-scenario-value="1"]');
           if (!hidden) return;
 
-          const mode = String(field.dataset.scenarioMode || 'universal').toLowerCase() === 'dungeon'
-            ? 'dungeon'
+          const requestedMode = String(field.dataset.scenarioMode || 'universal').toLowerCase();
+          const mode = requestedMode === 'dungeon' || requestedMode === 'world'
+            ? requestedMode
             : 'universal';
 
           const fieldLabel = field.dataset.scenarioLabel || 'Сценарий';

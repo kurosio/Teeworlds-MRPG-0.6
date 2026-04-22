@@ -12,6 +12,7 @@ class ScenarioBase
 {
 	friend class CScenarioPlayerManager;
 	friend class CScenarioGroupManager;
+	friend class CScenarioWorldManager;
 	CGS* m_pGS {};
 
 protected:

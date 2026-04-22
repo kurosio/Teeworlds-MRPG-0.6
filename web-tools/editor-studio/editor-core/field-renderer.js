@@ -315,7 +315,7 @@
 
     const renderScenarioField = () => {
       const mode = String(ui.scenarioMode || 'universal').toLowerCase();
-      const modeLabel = mode === 'dungeon' ? 'Dungeon' : 'Universal';
+      const modeLabel = mode === 'dungeon' ? 'Dungeon' : (mode === 'world' ? 'World' : 'Universal');
       const valueText = value == null ? '' : String(value);
       const hasValue = valueText.trim().length > 0;
       const hiddenAttrs = buildInputAttributes({

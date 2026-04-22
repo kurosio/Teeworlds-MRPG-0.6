@@ -568,6 +568,11 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
         'universal_pick_item_task',
         'universal_shootmarkers'
       ]
+    },
+    world: {
+      label: 'World (scenario_world.h)',
+      description: 'Мировой сценарий для всех игроков в текущем мире',
+      componentTypes: [...defaultScenarioComponentTypes]
     }
   };
 

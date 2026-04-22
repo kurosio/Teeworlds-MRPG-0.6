@@ -39,6 +39,7 @@ class CGS : public IGameServer
 	class CPathFinder* m_pPathFinder;
 	class CScenarioPlayerManager* m_pScenarioPlayerManager;
 	class CScenarioGroupManager* m_pScenarioGroupManager;
+	class CScenarioWorldManager* m_pScenarioWorldManager;
 
 	CPlayer* m_apPlayers[MAX_CLIENTS];
 	CBroadcastState m_aBroadcastStates[MAX_PLAYERS];
@@ -61,6 +62,7 @@ public:
 	CTuningParams *Tuning() { return &m_Tuning; }
 	CScenarioGroupManager* ScenarioGroupManager() const { return m_pScenarioGroupManager; }
 	CScenarioPlayerManager* ScenarioPlayerManager() const { return m_pScenarioPlayerManager; }
+	CScenarioWorldManager* ScenarioWorldManager() const { return m_pScenarioWorldManager; }
 
 	CEventHandler m_Events;
 	IGameController* m_pController;

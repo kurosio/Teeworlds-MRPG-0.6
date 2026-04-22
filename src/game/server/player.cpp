@@ -24,7 +24,9 @@
 
 #include "core/tools/vote_optional.h"
 #include "core/scenarios/managers/scenario_player_manager.h"
+#include "core/scenarios/managers/scenario_world_manager.h"
 #include "core/scenarios/impl/scenario_universal.h"
+#include "core/scenarios/impl/scenario_world.h"
 
 MACRO_ALLOC_POOL_ID_IMPL(CPlayer, MAX_CLIENTS * ENGINE_MAX_WORLDS + MAX_CLIENTS)
 
@@ -1020,13 +1022,12 @@ void CPlayer::StartUniversalScenario(const std::string& ScenarioData, int Scenar
 			case SCENARIO_ON_ITEM_GOT: ObjElem = "on_got"; break;
 			case SCENARIO_ON_ITEM_LOST: ObjElem = "on_lost"; break;
 			case SCENARIO_ON_ITEM_UNEQUIP: ObjElem = "on_unequip"; break;
+			case SCENARIO_ON_ITEM_USE: ObjElem = "on_use"; break;
 		}
 
 		// start scenario
 		const auto& scenarioJsonData = ObjElem.empty() ? pJson : pJson[ObjElem];
 		if(!scenarioJsonData.empty())
-		{
 			GS()->ScenarioPlayerManager()->RegisterScenario<CUniversalScenario>(m_ClientID, scenarioJsonData);
-		}
 	});
 }

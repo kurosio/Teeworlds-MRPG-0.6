@@ -33,6 +33,7 @@
 
 #include "core/scenarios/managers/scenario_group_manager.h"
 #include "core/scenarios/managers/scenario_player_manager.h"
+#include "core/scenarios/managers/scenario_world_manager.h"
 #include <generated/server_data.h>
 
 CGS::CGS()
@@ -47,6 +48,7 @@ CGS::CGS()
 	m_pPathFinder = nullptr;
 	m_pScenarioPlayerManager = nullptr;
 	m_pScenarioGroupManager = nullptr;
+	m_pScenarioWorldManager = nullptr;
 	mem_zero(m_apPlayers, sizeof(m_apPlayers));
 	mem_zero(m_aBroadcastStates, sizeof(m_aBroadcastStates));
 }
@@ -67,6 +69,7 @@ CGS::~CGS()
 	delete m_pEntityManager;
 	delete m_pScenarioPlayerManager;
 	delete m_pScenarioGroupManager;
+	delete m_pScenarioWorldManager;
 }
 
 CCharacter* CGS::GetPlayerChar(int ClientID) const
@@ -736,6 +739,7 @@ void CGS::OnInit(int WorldID)
 	m_pPathFinder = new CPathFinder(&m_Collision);
 	m_pScenarioPlayerManager = new CScenarioPlayerManager(this);
 	m_pScenarioGroupManager = new CScenarioGroupManager(this);
+	m_pScenarioWorldManager = new CScenarioWorldManager(this);
 }
 
 void CGS::OnConsoleInit()
@@ -799,6 +803,7 @@ void CGS::OnTick()
 	Core()->OnTick();
 	UpdateCollisionZones();
 	ScenarioGroupManager()->UpdateScenarios();
+	ScenarioWorldManager()->UpdateScenarios();
 }
 
 void CGS::OnTickGlobal()
@@ -1283,6 +1288,7 @@ void CGS::OnClientEnter(int ClientID, bool FirstEnter)
 
 	m_pController->OnPlayerConnect(pPlayer);
 	m_pCommandProcessor->SendClientCommandsInfo(this, ClientID);
+	ScenarioWorldManager()->HandleClientEnter(ClientID);
 
 	if(FirstEnter)
 	{
@@ -1301,6 +1307,7 @@ void CGS::OnClientDrop(int ClientID, const char* pReason)
 	// remove client from scenarios
 	ScenarioPlayerManager()->RemoveClient(ClientID);
 	ScenarioGroupManager()->RemoveClient(ClientID);
+	ScenarioWorldManager()->RemoveClient(ClientID);
 
 	// check valid player
 	auto*& pPlayer = m_apPlayers[ClientID];
@@ -1390,6 +1397,7 @@ void CGS::OnClientPrepareChangeWorld(int ClientID)
 	// remove client from scenarios
 	ScenarioPlayerManager()->RemoveClient(ClientID);
 	ScenarioGroupManager()->RemoveClient(ClientID);
+	ScenarioWorldManager()->RemoveClient(ClientID);
 
 	// prepare and delete player
 	if(m_apPlayers[ClientID])

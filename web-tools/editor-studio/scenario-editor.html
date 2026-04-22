@@ -444,6 +444,7 @@
                     on_equip: 'При экипировке предмета',
                     on_got: 'При получении предмета',
                     on_lost: 'При потере предмета',
+                    on_use: 'При использовании предмета',
                     on_unequip: 'При снятии предмета'
                 };
                 this.componentTypes = this.getComponentTypesByMode(this.currentMode);
@@ -536,7 +537,7 @@
                     return this.currentMode || 'default';
                 }
 
-                const modePriority = ['universal', 'dungeon'];
+                const modePriority = ['universal', 'dungeon', 'world'];
                 const modeTypes = Object.fromEntries(
                     Object.entries(this.scenarioModes).map(([mode, config]) => [mode, new Set(config.componentTypes || [])])
                 );
