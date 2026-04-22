@@ -451,7 +451,17 @@
 		  showWhen: (data) => !['Settings', 'Quest', 'Currency'].includes(data?.Group ?? ''),
         }
       },
-      ScenarioData: { type: 'scenario', label: 'ScenarioData', ui: { scenarioMode: 'universal' } },
+      ScenarioMode: {
+        label: 'Тип сценария',
+        ui: {
+          type: 'select',
+          options: [
+            { value: 'universal', label: 'Одиночный (Universal)' },
+            { value: 'world', label: 'Мировой (World)' },
+          ],
+        }
+      },
+      ScenarioData: { type: 'scenario', label: 'ScenarioData', ui: { scenarioModePath: 'ScenarioMode' } },
       InitialPrice: 
 	  { 
         type: 'number', 
@@ -645,6 +655,7 @@
         Group: 'Quest',
         Type: 'Default',
         Flags: [],
+        ScenarioMode: 'universal',
         ScenarioData: '',
         InitialPrice: 0,
         RequiresProducts: 0,
@@ -679,6 +690,10 @@
             ? TypeRule.normalizeValue(group, row?.Type || 'Default', row)
             : (row?.Type || 'Default'),
           Flags: parseSet(row?.Flags, FLAGS),
+          ScenarioMode: (() => {
+            const mode = row?.ScenarioMode == null ? 'universal' : String(row?.ScenarioMode || 'universal');
+            return mode === 'world' ? 'world' : 'universal';
+          })(),
           ScenarioData: row?.ScenarioData == null ? '' : String(row?.ScenarioData),
           InitialPrice: Number(row?.InitialPrice ?? 0),
           RequiresProducts: Number(row?.RequiresProducts ?? 0),
@@ -710,6 +725,7 @@
           ? TypeRule.normalizeValue(model?.Group || 'Quest', model?.Type || 'Default', model)
           : (model?.Type || 'Default'),
         Flags: joinSet(model?.Flags),
+        ScenarioMode: model?.ScenarioMode ? String(model.ScenarioMode) : 'universal',
         ScenarioData: model?.ScenarioData ? String(model.ScenarioData) : null,
         InitialPrice: toNullableInt(model?.InitialPrice),
         RequiresProducts: toNullableInt(model?.RequiresProducts),
@@ -742,6 +758,7 @@
           return true;
         }
         if (meta?.path === 'DataEditorType') return true;
+        if (meta?.path === 'ScenarioMode') return true;
         if (TypeRule?.normalizeModel) TypeRule.normalizeModel(model);
         return false;
       },

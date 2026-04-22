@@ -185,6 +185,7 @@ $RESOURCES = [
       'Group',
       'Type',
       'Flags',
+      'ScenarioMode',
       'ScenarioData',
       'InitialPrice',
       'RequiresProducts',

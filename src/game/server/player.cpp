@@ -1006,6 +1006,11 @@ const CTeeInfo& CPlayer::GetTeeInfo() const
 
 void CPlayer::StartUniversalScenario(const std::string& ScenarioData, int ScenarioID)
 {
+	StartScenarioByType(ScenarioData, ScenarioID, "universal");
+}
+
+void CPlayer::StartScenarioByType(const std::string& ScenarioData, int ScenarioID, const std::string& ScenarioType)
+{
 	if(ScenarioData.empty())
 		return;
 
@@ -1028,6 +1033,13 @@ void CPlayer::StartUniversalScenario(const std::string& ScenarioData, int Scenar
 		// start scenario
 		const auto& scenarioJsonData = ObjElem.empty() ? pJson : pJson[ObjElem];
 		if(!scenarioJsonData.empty())
-			GS()->ScenarioPlayerManager()->RegisterScenario<CUniversalScenario>(m_ClientID, scenarioJsonData);
+		{
+			const std::string ScenarioMode = str_comp_nocase(ScenarioType.c_str(), "world") == 0 ? "world" : "universal";
+
+			if(ScenarioMode == "world")
+				GS()->ScenarioWorldManager()->RegisterScenario<CWorldScenario>(GetCurrentWorldID(), scenarioJsonData);
+			else
+				GS()->ScenarioPlayerManager()->RegisterScenario<CUniversalScenario>(m_ClientID, scenarioJsonData);
+		}
 	});
 }

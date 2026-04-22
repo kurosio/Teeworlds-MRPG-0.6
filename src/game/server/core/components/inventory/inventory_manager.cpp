@@ -38,6 +38,7 @@ void CInventoryManager::OnPreInit()
 		const auto TypeSet = DBSet(pRes->getString("Type"));
 		const auto FlagsSet = DBSet(pRes->getString("Flags"));
 		const auto ScenarioData = pRes->getString("ScenarioData");
+		const auto ScenarioMode = pRes->getString("ScenarioMode");
 		const auto InitialPrice = pRes->getInt("InitialPrice");
 		const auto Data = pRes->getString("Data");
 
@@ -58,7 +59,7 @@ void CInventoryManager::OnPreInit()
 			}
 		}
 
-		CItemDescription(ItemID).Init(Name, Description, GroupSet, TypeSet, FlagsSet, InitialPrice, aContainerAttributes, Data, ScenarioData);
+		CItemDescription(ItemID).Init(Name, Description, GroupSet, TypeSet, FlagsSet, InitialPrice, aContainerAttributes, Data, ScenarioData, ScenarioMode);
 	}
 
 	ResultPtr pResAtt = Database->Execute<DB::SELECT>("*", "tw_attributes");

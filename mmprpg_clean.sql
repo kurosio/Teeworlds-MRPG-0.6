@@ -1386,6 +1386,7 @@ CREATE TABLE `tw_items_list` (
   `Type` enum('Default','Equip hammer','Equip gun','Equip shotgun','Equip grenade','Equip rifle','Equip pickaxe','Equip rake','Equip fishrod','Equip gloves','Equip armor (tank)','Equip armor (dps)','Equip armor (healer)','Equip helmet (tank)','Equip helmet (dps)','Equip helmet (healer)','Equip eidolon','Equip title','Equip potion HP','Equip potion MP','Single use x1','Multiple use x99','Resource harvestable','Resource mineable','Resource fishes') NOT NULL DEFAULT 'Default',
   `Flags` set('Can''t droppable','Can''t tradeable') DEFAULT NULL,
   `ScenarioData` longtext DEFAULT NULL,
+  `ScenarioMode` enum('universal','world') NOT NULL DEFAULT 'universal',
   `InitialPrice` int(11) DEFAULT NULL,
   `RequiresProducts` int(11) DEFAULT NULL,
   `AT1` int(11) DEFAULT NULL,

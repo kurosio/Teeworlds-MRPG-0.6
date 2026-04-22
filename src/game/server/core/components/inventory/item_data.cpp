@@ -282,7 +282,7 @@ bool CPlayerItem::Add(int Value, int StartSettings, int StartEnchant, bool Messa
 	{
 		m_Enchant = StartEnchant;
 		m_Settings = StartSettings;
-		pPlayer->StartUniversalScenario(Info()->GetScenarioData(), EScenarios::SCENARIO_ON_ITEM_GOT);
+		pPlayer->StartScenarioByType(Info()->GetScenarioData(), EScenarios::SCENARIO_ON_ITEM_GOT, Info()->GetScenarioMode());
 	}
 
 	// sync gold and bank
@@ -354,7 +354,7 @@ bool CPlayerItem::Remove(int Value)
 		if(m_Value <= Value)
 		{
 			UnEquip();
-			pPlayer->StartUniversalScenario(Info()->GetScenarioData(), EScenarios::SCENARIO_ON_ITEM_LOST);
+			pPlayer->StartScenarioByType(Info()->GetScenarioData(), EScenarios::SCENARIO_ON_ITEM_LOST, Info()->GetScenarioMode());
 		}
 
 		m_Value -= Value;
@@ -395,7 +395,7 @@ bool CPlayerItem::Equip()
 
 		m_Settings = true;
 		g_EventListenerManager.Notify<IEventListener::PlayerEquipItem>(pPlayer, this);
-		pPlayer->StartUniversalScenario(Info()->GetScenarioData(), EScenarios::SCENARIO_ON_ITEM_EQUIP);
+		pPlayer->StartScenarioByType(Info()->GetScenarioData(), EScenarios::SCENARIO_ON_ITEM_EQUIP, Info()->GetScenarioMode());
 		GS()->CreateSound(pPlayer->m_ViewPos, SOUND_SFX_ITEM_EQUIP);
 		return Save();
 	}
@@ -405,7 +405,7 @@ bool CPlayerItem::Equip()
 	if(pAccount->EquipItem(m_ID))
 	{
 		g_EventListenerManager.Notify<IEventListener::PlayerEquipItem>(pPlayer, this);
-		pPlayer->StartUniversalScenario(Info()->GetScenarioData(), EScenarios::SCENARIO_ON_ITEM_EQUIP);
+		pPlayer->StartScenarioByType(Info()->GetScenarioData(), EScenarios::SCENARIO_ON_ITEM_EQUIP, Info()->GetScenarioMode());
 		GS()->CreateSound(pPlayer->m_ViewPos, SOUND_SFX_ITEM_EQUIP);
 		return true;
 	}
@@ -430,7 +430,7 @@ bool CPlayerItem::UnEquip()
 
 		m_Settings = false;
 		g_EventListenerManager.Notify<IEventListener::PlayerUnequipItem>(pPlayer, this);
-		pPlayer->StartUniversalScenario(Info()->GetScenarioData(), EScenarios::SCENARIO_ON_ITEM_UNEQUIP);
+		pPlayer->StartScenarioByType(Info()->GetScenarioData(), EScenarios::SCENARIO_ON_ITEM_UNEQUIP, Info()->GetScenarioMode());
 		GS()->CreateSound(pPlayer->m_ViewPos, SOUND_SFX_ITEM_EQUIP);
 		return Save();
 	}
@@ -440,7 +440,7 @@ bool CPlayerItem::UnEquip()
 	if(pAccount->UnequipItem(m_ID))
 	{
 		g_EventListenerManager.Notify<IEventListener::PlayerUnequipItem>(pPlayer, this);
-		pPlayer->StartUniversalScenario(Info()->GetScenarioData(), EScenarios::SCENARIO_ON_ITEM_UNEQUIP);
+		pPlayer->StartScenarioByType(Info()->GetScenarioData(), EScenarios::SCENARIO_ON_ITEM_UNEQUIP, Info()->GetScenarioMode());
 		GS()->CreateSound(pPlayer->m_ViewPos, SOUND_SFX_ITEM_EQUIP);
 		return true;
 	}
@@ -457,6 +457,8 @@ bool CPlayerItem::Use(int Value)
 	auto* pPlayer = GetPlayer();
 	if(!pPlayer || !pPlayer->IsAuthed())
 		return false;
+
+	pPlayer->StartScenarioByType(Info()->GetScenarioData(), EScenarios::SCENARIO_ON_ITEM_USE, Info()->GetScenarioMode());
 
 	// survial capsule experience
 	if(m_ID == itCapsuleSurvivalExperience && Remove(Value))

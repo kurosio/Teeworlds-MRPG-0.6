@@ -60,6 +60,7 @@ private:
 	ContainerAttributes m_aAttributes {};
 	std::string m_Data {};
 	std::string m_ScenarioData {};
+	std::string m_ScenarioMode { "universal" };
 	CRandomBox m_RandomBox {};
 	std::optional<PotionContext> m_PotionContext {};
 	std::optional<BonusesContext> m_BonusContext {};
@@ -69,10 +70,11 @@ public:
 	CItemDescription(ItemIdentifier ID) : m_ID(ID) {}
 
 	void Init(const std::string& Name, const std::string& Description, const DBSet& GroupSet, const DBSet& TypeSet, const DBSet& Flags,
-		int InitialPrice, ContainerAttributes aAttributes, const std::string& Data, const std::string& ScenarioData)
+		int InitialPrice, ContainerAttributes aAttributes, const std::string& Data, const std::string& ScenarioData, const std::string& ScenarioMode)
 	{
 		m_Data = Data;
 		m_ScenarioData = ScenarioData;
+		m_ScenarioMode = ScenarioMode.empty() ? "universal" : ScenarioMode;
 		str_copy(m_aDescription, Description.c_str(), sizeof(m_aDescription));
 		m_InitialPrice = InitialPrice;
 		m_aAttributes = std::move(aAttributes);
@@ -88,6 +90,7 @@ public:
 	// main functions
 	ItemIdentifier GetID() const { return m_ID; }
 	std::string GetScenarioData() const { return m_ScenarioData; }
+	std::string GetScenarioMode() const { return m_ScenarioMode; }
 	const char* GetName() const { return m_aName; }
 	const char* GetDescription() const { return m_aDescription; }
 	int GetInitialPrice() const { return m_InitialPrice; }

@@ -314,8 +314,17 @@
     };
 
     const renderScenarioField = () => {
-      const mode = String(ui.scenarioMode || 'universal').toLowerCase();
-      const modeLabel = mode === 'dungeon' ? 'Dungeon' : (mode === 'world' ? 'World' : 'Universal');
+      const modeRaw = (() => {
+        if (ui.scenarioModePath) {
+          return getValueAtPath(data, String(ui.scenarioModePath));
+        }
+        if (typeof ui.scenarioMode === 'function') {
+          return ui.scenarioMode(data, { path, field, value });
+        }
+        return ui.scenarioMode;
+      })();
+      const mode = String(modeRaw || 'universal').toLowerCase();
+      const modeLabel = mode === 'world' ? 'World' : 'Universal';
       const valueText = value == null ? '' : String(value);
       const hasValue = valueText.trim().length > 0;
       const hiddenAttrs = buildInputAttributes({
