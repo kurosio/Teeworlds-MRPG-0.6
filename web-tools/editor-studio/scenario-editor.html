@@ -1161,11 +1161,15 @@
                 (step.components || []).filter(Boolean).forEach(comp => {
                     const compLi = document.createElement('li');
                     compLi.dataset.componentId = comp.component_id;
-                    const isCompBroken = comp.next_step_id && !allStepIds.has(comp.next_step_id);
-                    const compNextStep = comp.next_step_id ? `<span class="text-[11px] font-normal text-purple-300 break-all text-right">${isCompBroken ? '⚠️' : '→'} ${comp.next_step_id}</span>` : '';
+                    const links = this.getComponentLinks(comp);
+                    const linksText = links.map((link) => {
+                        const isBroken = !allStepIds.has(link.targetId);
+                        const tag = link.label ? `${link.label}: ` : '';
+                        return `<span class="text-[11px] font-normal text-purple-300 break-all text-right">${isBroken ? '⚠️' : '→'} ${tag}${link.targetId}</span>`;
+                    }).join('');
                     compLi.innerHTML = `<a href="#step-card-${step.id}" data-nav-id="${comp.component_id}" class="flex items-center p-1.5 rounded-md border-b border-transparent hover:bg-slate-700/40 text-xs"><i class="fa-solid fa-grip-vertical nav-handle text-slate-400 hover:text-slate-200 mr-2 cursor-grab"></i><div class="flex-grow min-w-0 flex justify-between items-start gap-2 text-slate-300">
                                                 <span class="break-all">↳ ${comp.type}</span>
-                                                ${compNextStep}
+                                                ${linksText}
                                             </div>
                                         </a>`;
                     compUl.appendChild(compLi);
@@ -1197,9 +1201,7 @@
                 const fragment = document.createDocumentFragment();
                 this.scenarioData.steps.forEach(step => {
                     (step.components || []).forEach(comp => {
-                        if (comp?.next_step_id) {
-                            this.drawSingleConnection(comp.component_id, comp.next_step_id, fragment);
-                        }
+                        this.getComponentLinks(comp).forEach((link) => this.drawSingleConnection(comp.component_id, link.targetId, fragment));
                     });
                 });
 
@@ -1327,7 +1329,9 @@
                 stepToUpdate.id = newId;
                 this.scenarioData.steps.forEach(s => {
                     (s.components || []).forEach(c => {
-                        if (c.next_step_id === oldId) c.next_step_id = newId;
+                        this.getComponentLinkFields(c).forEach((field) => {
+                            if (c[field] === oldId) c[field] = newId;
+                        });
                     });
                 });
                 this.updateStepIdInViewState(oldId, newId);
@@ -1445,12 +1449,23 @@
                 const shouldShowExecutionTime = this.executionTimeComponentTypes.has(data.type);
                 const componentSchema = this.componentTypes[data.type] || {};
                 const componentFields = componentSchema.fields || {};
-                const filteredFields = Object.fromEntries(Object.entries(componentFields).filter(([key]) => key !== 'next_step_id' && key !== 'delay'));
+                const componentLinkFields = Array.isArray(componentSchema.linkTargets) ? componentSchema.linkTargets : [];
+                const filteredFields = Object.fromEntries(Object.entries(componentFields).filter(([key]) => key !== 'next_step_id' && key !== 'delay' && !componentLinkFields.includes(key)));
 
                 if (shouldShowExecutionTime && !filteredFields.execution_time) {
                     const executionTimeField = { type: 'number', label: 'Время выполнения (мс)', ui: { min: 0, max: 600000 } };
                     formHtml += window.EditorCore.FieldRenderer.renderField({ path: 'execution_time', field: executionTimeField, data, options: renderOptions });
                 }
+
+                componentLinkFields.forEach((field) => {
+                    const label = this.formatLinkFieldLabel(field);
+                    const stepSelect = document.createElement('select');
+                    stepSelect.name = field;
+                    stepSelect.className = renderOptions.classes.input;
+                    this.populateStepDropdown(stepSelect, data[field], step?.id);
+                    formHtml += `<label class="${renderOptions.classes.label}">${label}:</label>`;
+                    formHtml += stepSelect.outerHTML;
+                });
 
                 formHtml += `<hr class="my-5 border-slate-700/40">`;
                 formHtml += window.EditorCore.FieldRenderer.renderFields({
@@ -1584,9 +1599,12 @@
                                 return;
                             }
                             step.components.forEach((component) => {
-                                if (component?.next_step_id && idMap.has(component.next_step_id)) {
-                                    component.next_step_id = idMap.get(component.next_step_id);
-                                }
+                                this.getComponentLinkFields(component).forEach((field) => {
+                                    const target = component?.[field];
+                                    if (target && idMap.has(target)) {
+                                        component[field] = idMap.get(target);
+                                    }
+                                });
                             });
                         });
 
@@ -1660,9 +1678,11 @@
                     stepsToSave.forEach(step => {
                         (step.components || []).forEach(c => {
                             delete c.component_id;
-                            if (!c.next_step_id) {
-                                delete c.next_step_id;
-                            }
+                            this.getComponentLinkFields(c).forEach((field) => {
+                                if (!c[field]) {
+                                    delete c[field];
+                                }
+                            });
                             if (!this.executionTimeComponentTypes.has(c.type) || !c.execution_time) {
                                 delete c.execution_time;
                             }
@@ -2019,6 +2039,37 @@
             findComponentStepId(componentId) {
                 return this.componentStepIndex.get(componentId) || null;
             }
+            getComponentLinkFields(component) {
+                if (!component || typeof component !== 'object') {
+                    return ['next_step_id'];
+                }
+
+                const schema = this.componentTypes[component.type] || this.allComponentTypes[component.type] || {};
+                const schemaLinks = Array.isArray(schema.linkTargets) ? schema.linkTargets.filter(Boolean) : [];
+                const fallbackLinks = ['next_step_id'];
+                const knownFields = [...new Set([...schemaLinks, ...fallbackLinks])];
+                return knownFields.filter((field) => Object.prototype.hasOwnProperty.call(component, field) || field === 'next_step_id');
+            }
+            getComponentLinks(component) {
+                return this.getComponentLinkFields(component)
+                    .map((field) => ({
+                        field,
+                        label: field === 'next_step_id' ? '' : field.replace('_step_id', '').replaceAll('_', ' '),
+                        targetId: String(component?.[field] || '').trim()
+                    }))
+                    .filter((link) => !!link.targetId);
+            }
+            formatLinkFieldLabel(field) {
+                const map = {
+                    next_step_id: 'Переход к шагу (если нужно)',
+                    target_step_id: 'Целевой шаг',
+                    true_step_id: 'Шаг для TRUE',
+                    false_step_id: 'Шаг для FALSE',
+                    in_range_step_id: 'Шаг в диапазоне',
+                    out_of_range_step_id: 'Шаг вне диапазона'
+                };
+                return map[field] || field.replaceAll('_', ' ');
+            }
             generateUniqueId(base) {
                 const normalizedBase = String(base || '').replace(/[^a-zA-Z0-9_]/g, '') || 'step';
                 let newId = normalizedBase;
@@ -2072,6 +2123,7 @@
                 try {
                     switch (data.type) {
                         case 'message': return `"${(data.text || '').substring(0, 50)}..."`;
+                        case 'branch_random': return `Случайная ветка: <b>${data.chance_percent ?? 50}%</b> (T → <b>${data.true_step_id || '?'}</b>, F → <b>${data.false_step_id || '?'}</b>)`;
                         case 'dungeon_door_control': return `Действие: <b>${data.action}</b>, Ключ: <b>${data.key || 'нет'}</b>`;
                         case 'dungeon_use_chat_code': return `Код: "<b>${data.code}</b>", переход → <b>${data.next_step_id || '?'}</b>`;
                         case 'universal_use_chat': return `Чат-команда: <b>${data.chat || '?'}</b>`;
@@ -2217,9 +2269,11 @@
                 newGroup.steps.forEach(newStepId => {
                     const newStep = this.findStep(newStepId);
                     (newStep.components || []).forEach(c => {
-                        if (c.next_step_id && idMap.has(c.next_step_id)) {
-                            c.next_step_id = idMap.get(c.next_step_id);
-                        }
+                        this.getComponentLinkFields(c).forEach((field) => {
+                            if (c[field] && idMap.has(c[field])) {
+                                c[field] = idMap.get(c[field]);
+                            }
+                        });
                     });
                 });
 

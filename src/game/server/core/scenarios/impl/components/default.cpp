@@ -4,6 +4,7 @@
 
 // universal components
 template struct ComponentRegistrar<ScenarioWaitComponent>;
+template struct ComponentRegistrar<ScenarioBranchRandomComponent>;
 template struct ComponentRegistrar<ScenarioMessageComponent>;
 template struct ComponentRegistrar<ScenarioFollowCameraComponent>;
 template struct ComponentRegistrar<ScenarioMovementConditionComponent>;

@@ -203,6 +203,18 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
         duration: createField('number', 'Длительность', 5, { ui: { min: 1, max: 9999 } })
       }
     },
+    branch_random: {
+      name: 'Случайная ветка',
+      class: 'logic',
+      icon: 'fa-solid fa-shuffle',
+      desc: 'Ветвление по вероятности',
+      fields: {
+        chance_percent: createField('number', 'Шанс true (%)', 50, { ui: { min: 0, max: 100 } }),
+        true_step_id: createField('text', 'Ветка TRUE', '', { ui: { placeholder: 'ID шага при успехе' } }),
+        false_step_id: createField('text', 'Ветка FALSE', '', { ui: { placeholder: 'ID шага при провале' } })
+      },
+      linkTargets: ['true_step_id', 'false_step_id']
+    },
     dungeon_door_control: {
       name: 'Dungeon: управление дверью',
       class: 'interactive',
@@ -527,6 +539,7 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
 
 
   const defaultScenarioComponentTypes = [
+    'branch_random',
     'message',
     'wait',
     'follow_camera',

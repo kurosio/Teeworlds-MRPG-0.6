@@ -214,6 +214,42 @@ public:
 };
 
 /**
+ * @class ScenarioBranchRandomComponent
+ * @brief Random branch node (blueprint-style branch with chance).
+ *
+ * JSON fields:
+ * @param chance_percent (int): chance [0..100] to take true_step_id.
+ * @param true_step_id (string): step id when random check passes.
+ * @param false_step_id (string): step id when random check fails.
+ */
+class ScenarioBranchRandomComponent final : public Component<ScenarioBase, ScenarioBranchRandomComponent>
+{
+	int m_ChancePercent {};
+	StepId m_TrueStepId {};
+	StepId m_FalseStepId {};
+
+public:
+	explicit ScenarioBranchRandomComponent(const nlohmann::json& j)
+	{
+		InitBaseJsonField(j);
+		m_ChancePercent = clamp(j.value("chance_percent", 50), 0, 100);
+		m_TrueStepId = j.value("true_step_id", StepId {});
+		m_FalseStepId = j.value("false_step_id", StepId {});
+	}
+
+	DECLARE_COMPONENT_NAME("branch_random")
+
+private:
+	void OnStartImpl() override
+	{
+		const int roll = rand() % 100;
+		const bool passed = roll < m_ChancePercent;
+		m_NextStepId = passed ? m_TrueStepId : m_FalseStepId;
+		Finish();
+	}
+};
+
+/**
  * @class ScenarioMovementConditionComponent
  * @brief A conditional component that finishes only when participants have moved to a designated area.
  *
