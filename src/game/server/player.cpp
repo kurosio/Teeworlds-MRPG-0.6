@@ -1015,7 +1015,7 @@ void CPlayer::StartScenarioByType(const std::string& ScenarioData, int ScenarioI
 		return;
 
 	// parse scenario
-	mystd::json::parse(ScenarioData, [ScenarioID, this](nlohmann::json& pJson)
+	mystd::json::parse(ScenarioData, [ScenarioType, ScenarioID, this](nlohmann::json& pJson)
 	{
 		std::string ObjElem {};
 		switch(ScenarioID)
@@ -1034,7 +1034,7 @@ void CPlayer::StartScenarioByType(const std::string& ScenarioData, int ScenarioI
 		const auto& scenarioJsonData = ObjElem.empty() ? pJson : pJson[ObjElem];
 		if(!scenarioJsonData.empty())
 		{
-			const std::string ScenarioMode = str_comp_nocase(ScenarioType.c_str(), "world") == 0 ? "world" : "universal";
+			const std::string ScenarioMode = (ScenarioType == "world" ? "world" : "universal");
 
 			if(ScenarioMode == "world")
 				GS()->ScenarioWorldManager()->RegisterScenario<CWorldScenario>(GetCurrentWorldID(), scenarioJsonData);
