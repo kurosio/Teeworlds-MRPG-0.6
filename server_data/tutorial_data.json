@@ -6,11 +6,12 @@
         "id": "group_3c34b8ab-1d92-4488-a4b5-83460ca74631",
         "name": "Stage 1",
         "steps": [
+          "start",
           "part_1_1",
           "part_1_2",
           "part_1_3"
         ],
-        "collapsed": true
+        "collapsed": false
       },
       {
         "id": "group_30ebe1cd-bf17-4413-8389-cb28e0c8c9ea",
@@ -36,6 +37,7 @@
       }
     ],
     "ungrouped_steps": [
+      "start",
       "part_1_1",
       "part_1_2",
       "part_1_3",
@@ -50,6 +52,19 @@
     ]
   },
   "steps": [
+    {
+      "id": "start",
+      "components": [
+        {
+          "type": "condition_movement",
+          "position": {
+            "x": 560,
+            "y": 1009
+          },
+          "entire_group": true
+        }
+      ]
+    },
     {
       "id": "part_1_1",
       "components": [

@@ -811,27 +811,29 @@ void CAccountManager::OnCharacterTile(CCharacter* pChr)
 	// selector language by action tile
 	const auto TrySelectLanguageInActionZone = [&](const char* pActionZone, const char* pLanguageFile, const char* pLanguageName)
 	{
-		// information
-		if(pChr->GetTiles()->IsEnterActionZone(pActionZone, EActionZonePosition::MOUSE))
-		{
-			GS()->Broadcast(ClientID, BroadcastPriority::MainInformation, Server()->TickSpeed() / 2, "Language: {}\nPress fire (mouse) to select.", pLanguageName);
-		}
-
 		// select language
-		if(pChr->GetTiles()->IsActiveActionZone(pActionZone, EActionZonePosition::MOUSE) && Server()->Input()->IsKeyClicked(ClientID, KEY_EVENT_FIRE))
+		auto SelectLanguage = [&]()
 		{
-			if(str_comp(pPlayer->GetLanguage(), pLanguageFile) == 0)
-				return;
-
 			Server()->SetClientLanguage(ClientID, pLanguageFile);
-			GS()->Chat(ClientID, "Language selected: {}.", pLanguageName);
+			GS()->Chat(ClientID, "You have chosen a language \"{}\".", pLanguageName);
 			Core()->SaveAccount(pPlayer, SAVE_LANGUAGE);
 			pPlayer->m_VotesData.UpdateVotesIf(MENU_SETTINGS_LANGUAGE);
+		};
+
+		const bool InPlayerZone = pChr->GetTiles()->IsActiveActionZone(pActionZone, EActionZonePosition::PLAYER);
+		const bool InMouseZone = pChr->GetTiles()->IsActiveActionZone(pActionZone, EActionZonePosition::MOUSE);
+		const bool LanguageChanged = str_comp(pPlayer->GetLanguage(), pLanguageFile) != 0;
+		if(LanguageChanged && (InPlayerZone || (InMouseZone && Server()->Input()->IsKeyClicked(ClientID, KEY_EVENT_FIRE))))
+			SelectLanguage();
+		if(InMouseZone)
+		{
+			GS()->Broadcast(ClientID, BroadcastPriority::VeryImportant, Server()->TickSpeed() / 2,
+				"Language: {}\nPress fire (mouse) to select.", pLanguageName);
 		}
 
 		// leavce
 		if(pChr->GetTiles()->IsLeaveActionZone(pActionZone, EActionZonePosition::MOUSE))
-			GS()->Broadcast(ClientID, BroadcastPriority::MainInformation, 1, "");
+			GS()->Broadcast(ClientID, BroadcastPriority::VeryImportant, 1, "");
 	};
 	TrySelectLanguageInActionZone("LANG_EN", "en", "English");
 	TrySelectLanguageInActionZone("LANG_RU", "ru", "Russian");
