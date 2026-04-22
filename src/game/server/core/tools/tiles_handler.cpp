@@ -3,6 +3,15 @@
 #include "tiles_handler.h"
 
 #include <game/collision.h>
+#include <game/server/entities/character.h>
+
+namespace
+{
+	bool IsPosInActionZone(CCollision* pCollision, vec2 Pos, std::string_view ActionZoneName)
+	{
+		return pCollision->IsActiveActionZone(ActionZoneName, Pos);
+	}
+}
 
 void CTileHandler::Handle(int Index)
 {
@@ -28,6 +37,18 @@ void CTileHandler::Handle(int Index)
 				m_MarkedTiles[i] = TileIndex;
 			}
 		}
+	}
+
+	// handle action zone
+	m_aActionZonePrevPos[(int)EActionZonePosition::PLAYER] = m_aActionZonePos[(int)EActionZonePosition::PLAYER];
+	m_aActionZonePrevPos[(int)EActionZonePosition::MOUSE] = m_aActionZonePos[(int)EActionZonePosition::MOUSE];
+	m_aActionZonePos[(int)EActionZonePosition::PLAYER] = m_pCharacter->GetPos();
+	m_aActionZonePos[(int)EActionZonePosition::MOUSE] = m_pCharacter->GetMousePos();
+	if(!m_ActionZonePosInitialized)
+	{
+		m_aActionZonePrevPos[(int)EActionZonePosition::PLAYER] = m_aActionZonePos[(int)EActionZonePosition::PLAYER];
+		m_aActionZonePrevPos[(int)EActionZonePosition::MOUSE] = m_aActionZonePos[(int)EActionZonePosition::MOUSE];
+		m_ActionZonePosInitialized = true;
 	}
 }
 
@@ -57,4 +78,25 @@ bool CTileHandler::IsExit(int TileIndex)
 		}
 	}
 	return Exited;
+}
+
+bool CTileHandler::IsEnterActionZone(std::string_view ActionZoneName, EActionZonePosition Position) const
+{
+	const int PositionIndex = (int)Position;
+	const bool IsCurrent = IsPosInActionZone(m_pCollision, m_aActionZonePos[PositionIndex], ActionZoneName);
+	const bool IsPrev = IsPosInActionZone(m_pCollision, m_aActionZonePrevPos[PositionIndex], ActionZoneName);
+	return IsCurrent && !IsPrev;
+}
+
+bool CTileHandler::IsLeaveActionZone(std::string_view ActionZoneName, EActionZonePosition Position) const
+{
+	const int PositionIndex = (int)Position;
+	const bool IsCurrent = IsPosInActionZone(m_pCollision, m_aActionZonePos[PositionIndex], ActionZoneName);
+	const bool IsPrev = IsPosInActionZone(m_pCollision, m_aActionZonePrevPos[PositionIndex], ActionZoneName);
+	return !IsCurrent && IsPrev;
+}
+
+bool CTileHandler::IsActiveActionZone(std::string_view ActionZoneName, EActionZonePosition Position) const
+{
+	return IsPosInActionZone(m_pCollision, m_aActionZonePos[(int)Position], ActionZoneName);
 }

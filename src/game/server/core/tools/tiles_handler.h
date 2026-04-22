@@ -4,6 +4,12 @@
 #define GAME_SERVER_CORE_TOOLS_TILES_HANDLER_H
 
 constexpr int TILES_LAYER_NUM = 3;
+enum class EActionZonePosition
+{
+	PLAYER = 0,
+	MOUSE,
+	NUM_POSITIONS
+};
 
 #define HANDLE_TILE_MOTD_MENU(pPlayer, pChr, tile, motdMenu) \
 	if(pChr->GetTiles()->IsEnter(tile)) \
@@ -50,6 +56,9 @@ class CTileHandler
 	int m_MarkedTiles[TILES_LAYER_NUM] {};
 	int m_MarkEnter[TILES_LAYER_NUM] {};
 	int m_MarkExit[TILES_LAYER_NUM] {};
+	vec2 m_aActionZonePos[(int)EActionZonePosition::NUM_POSITIONS] {};
+	vec2 m_aActionZonePrevPos[(int)EActionZonePosition::NUM_POSITIONS] {};
+	bool m_ActionZonePosInitialized {};
 	int m_MoveRestrictions {};
 
 public:
@@ -62,10 +71,13 @@ public:
 	bool IsEnter(int TileIndex);
 	bool IsExit(int TileIndex);
 	bool IsActive(int TileIndex) const { return m_MarkedTiles[0] == TileIndex || m_MarkedTiles[1] == TileIndex || m_MarkedTiles[2] == TileIndex; }
+	bool IsEnterActionZone(std::string_view ActionZoneName, EActionZonePosition Position = EActionZonePosition::PLAYER) const;
+	bool IsLeaveActionZone(std::string_view ActionZoneName, EActionZonePosition Position = EActionZonePosition::PLAYER) const;
+	bool IsActiveActionZone(std::string_view ActionZoneName, EActionZonePosition Position = EActionZonePosition::PLAYER) const;
 
 	// fold expression helpers
 	template <typename ... Ts> bool AreAnyEnter(const Ts... args) { return ((IsEnter(args)) || ...); }
-	template <typename ... Ts> bool AreAnyExit(const Ts... args) { return ((IsEnter(args)) || ...); }
+	template <typename ... Ts> bool AreAnyExit(const Ts... args) { return ((IsExit(args)) || ...); }
 	template <typename ... Ts> bool AreAnyActive(const Ts... args) const { return ((IsActive(args)) || ...); }
 };
 

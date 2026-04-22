@@ -132,39 +132,6 @@ bool CCharacter::IsCollisionFlag(int Flag) const
 	return false;
 }
 
-bool CCharacter::IsEnterActionZone(std::string_view ActionZoneName)
-{
-	if(!m_pTilesHandler->IsEnter(TILE_SW_ACTION_ZONE))
-		return false;
-
-	if(ActionZoneName.empty())
-		return true;
-
-	return GS()->Collision()->IsActiveActionZone(ActionZoneName, m_Pos);
-}
-
-bool CCharacter::IsActiveActionZone(std::string_view ActionZoneName) const
-{
-	if(!m_pTilesHandler->IsActive(TILE_SW_ACTION_ZONE))
-		return false;
-
-	if(ActionZoneName.empty())
-		return true;
-
-	return GS()->Collision()->IsActiveActionZone(ActionZoneName, m_Pos);
-}
-
-bool CCharacter::IsLeaveActionZone(std::string_view ActionZoneName)
-{
-	if(!m_pTilesHandler->IsExit(TILE_SW_ACTION_ZONE))
-		return false;
-
-	if(ActionZoneName.empty())
-		return true;
-
-	return GS()->Collision()->IsActiveActionZone(ActionZoneName, m_PrevPos);
-}
-
 CPlayer* CCharacter::GetHookedPlayer() const
 {
 	if(m_Core.m_HookState == HOOK_GRABBED)
@@ -1586,7 +1553,7 @@ void CCharacter::HandleTilesImpl(int Index)
 	{
 		// tutorial skip action zone
 		if(GS()->IsPlayerInWorld(m_ClientID, TUTORIAL_WORLD_ID)
-			&& IsEnterActionZone("SKIP_TUTORIAL"))
+			&& GetTiles()->IsEnterActionZone("SKIP_TUTORIAL"))
 		{
 			auto* pNewbieTitle = m_pPlayer->GetItem(itTittleNewbie);
 			if(!pNewbieTitle->HasItem())
@@ -1602,7 +1569,7 @@ void CCharacter::HandleTilesImpl(int Index)
 
 		// tutorial start action zone
 		if(!GS()->IsPlayerInWorld(m_ClientID, TUTORIAL_WORLD_ID)
-			&& IsEnterActionZone("START_TUTORIAL"))
+			&& GetTiles()->IsEnterActionZone("START_TUTORIAL"))
 		{
 			m_pPlayer->GetSharedData().ClearSpawnPosition();
 			GS()->Chat(m_ClientID, "Tutorial started.");

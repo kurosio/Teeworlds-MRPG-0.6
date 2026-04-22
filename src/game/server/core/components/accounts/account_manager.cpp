@@ -806,9 +806,36 @@ void CAccountManager::OnCharacterTile(CCharacter* pChr)
 	CPlayer* pPlayer = pChr->GetPlayer();
 	int ClientID = pPlayer->GetCID();
 
-	//HANDLE_TILE_MOTD_MENU(pPlayer, pChr, TILE_INFO_BONUSES, MOTD_MENU_BONUSES_INFO)
-	//HANDLE_TILE_MOTD_MENU(pPlayer, pChr, TILE_INFO_WANTED, MOTD_MENU_WANTED_INFO)
 	HANDLE_TILE_MOTD_MENU(pPlayer, pChr, TILE_BANK_MANAGER, MOTD_MENU_BANK_MANAGER)
+
+	// selector language by action tile
+	const auto TrySelectLanguageInActionZone = [&](const char* pActionZone, const char* pLanguageFile, const char* pLanguageName)
+	{
+		// information
+		if(pChr->GetTiles()->IsEnterActionZone(pActionZone, EActionZonePosition::MOUSE))
+		{
+			GS()->Broadcast(ClientID, BroadcastPriority::MainInformation, Server()->TickSpeed() / 2, "Language: {}\nPress fire (mouse) to select.", pLanguageName);
+		}
+
+		// select language
+		if(pChr->GetTiles()->IsActiveActionZone(pActionZone, EActionZonePosition::MOUSE) && Server()->Input()->IsKeyClicked(ClientID, KEY_EVENT_FIRE))
+		{
+			if(str_comp(pPlayer->GetLanguage(), pLanguageFile) == 0)
+				return;
+
+			Server()->SetClientLanguage(ClientID, pLanguageFile);
+			GS()->Chat(ClientID, "Language selected: {}.", pLanguageName);
+			Core()->SaveAccount(pPlayer, SAVE_LANGUAGE);
+			pPlayer->m_VotesData.UpdateVotesIf(MENU_SETTINGS_LANGUAGE);
+		}
+
+		// leavce
+		if(pChr->GetTiles()->IsLeaveActionZone(pActionZone, EActionZonePosition::MOUSE))
+			GS()->Broadcast(ClientID, BroadcastPriority::MainInformation, 1, "");
+	};
+	TrySelectLanguageInActionZone("LANG_EN", "en", "English");
+	TrySelectLanguageInActionZone("LANG_RU", "ru", "Russian");
+	TrySelectLanguageInActionZone("LANG_CN", "cn", "Chinese");
 }
 
 bool CAccountManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
