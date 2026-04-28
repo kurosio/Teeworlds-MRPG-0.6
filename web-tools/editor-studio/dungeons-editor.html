@@ -88,7 +88,6 @@
     };
 
     const fields = {
-      Level: { type: 'number', label: 'Уровень', ui: { min: 1, step: 1 } },
       WorldID: { type: 'db_select', label: 'Мир', ui: { dbKey: 'world', placeholder: '— мир —' } },
       DoorX: { type: 'number', label: 'DoorX', ui: { step: 1 } },
       DoorY: { type: 'number', label: 'DoorY', ui: { step: 1 } },
@@ -109,21 +108,18 @@
       fieldOptions: fieldRenderOptions,
       dirty,
       defaults: () => ({
-        Level: 1,
         WorldID: 0,
         DoorX: 0,
         DoorY: 0,
         Scenario: '',
       }),
       rowToModel: (row) => ({
-        Level: Number(row?.Level ?? 1),
         WorldID: Number(row?.WorldID ?? 0),
         DoorX: Number(row?.DoorX ?? 0),
         DoorY: Number(row?.DoorY ?? 0),
         Scenario: row?.Scenario == null ? '' : String(row?.Scenario),
       }),
       modelToPayload: (model) => ({
-        Level: Math.max(1, toNullableInt(model?.Level, 1)),
         WorldID: toNullableInt(model?.WorldID, 0),
         DoorX: toNullableInt(model?.DoorX, 0),
         DoorY: toNullableInt(model?.DoorY, 0),
@@ -131,14 +127,13 @@
       }),
       listItem: (row) => ({
         title: `Dungeon #${row?.ID || 0}`,
-        subtitle: `Lvl ${row?.Level || 1} · World ${row?.WorldID || '—'}`,
+        subtitle: `World ${row?.WorldID || '—'}`,
       }),
       getTitle: (_model, id) => (id ? `Подземелье #${id}` : 'Новое подземелье'),
       getSubtitle: (model, id) => {
         if (!model) return '';
-        const lvl = Number(model?.Level || 1);
         const world = Number(model?.WorldID || 0);
-        return id ? `ID ${id} · Lvl ${lvl} · World ${world || '—'}` : `Lvl ${lvl} · World ${world || '—'}`;
+        return id ? `ID ${id} · World ${world || '—'}` : `World ${world || '—'}`;
       },
       emptyTitle: 'Выберите подземелье',
       emptySubtitle: 'или создайте новое',

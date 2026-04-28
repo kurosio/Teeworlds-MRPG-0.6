@@ -10,13 +10,12 @@ void CDutiesManager::OnPreInit()
 	while(pRes->next())
 	{
 		const int ID = pRes->getInt("ID");
-		auto Level = pRes->getInt("Level");
 		auto WaitingDoorPos = vec2(pRes->getInt("DoorX"), pRes->getInt("DoorY"));
 		auto WorldID = pRes->getInt("WorldID");
 		auto Scenario = pRes->getJson("Scenario");
 
 		auto* pDungeon = CDungeonData::CreateElement(ID);
-		pDungeon->Init(WaitingDoorPos, Level, WorldID, Scenario);
+		pDungeon->Init(WaitingDoorPos, WorldID, Scenario);
 	}
 }
 

@@ -9,7 +9,6 @@ class CDungeonData : public MultiworldIdentifiableData< std::deque< CDungeonData
 	CGS* GS() const;
 
 	int m_ID {};
-	int m_Level {};
 	vec2 m_WaitingDoorPos {};
 
 	int m_State {};
@@ -35,9 +34,8 @@ public:
 		return m_pData.emplace_back(std::move(pData));
 	}
 
-	void Init(const vec2& WaitingDoorPos, int Level, int WorldID, const nlohmann::json& Scenario)
+	void Init(const vec2& WaitingDoorPos, int WorldID, const nlohmann::json& Scenario)
 	{
-		m_Level = Level;
 		m_WorldID = WorldID;
 		m_WaitingDoorPos = WaitingDoorPos;
 		m_State = STATE_UNINITIALIZED;
@@ -45,7 +43,7 @@ public:
 	}
 
 	int GetID() const { return m_ID; }
-	int GetLevel() const { return m_Level; }
+	int GetLevel() const;
 	const char* GetName() const;
 	vec2 GetWaitingDoorPos() const { return m_WaitingDoorPos; }
 	int GetWorldID() const { return m_WorldID; }
