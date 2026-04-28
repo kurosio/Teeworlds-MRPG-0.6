@@ -409,17 +409,18 @@ bool CCharacter::FireGun(vec2 Direction, vec2 ProjStartPos, int TotalWeaponDamag
 	}
 
 	// kill gun
+	const auto ExplodeModule = m_pPlayer->GetItem(itExplosiveGun)->IsEquipped();
+	const auto MouseTarget = vec2(m_LatestInput.m_TargetX, m_LatestInput.m_TargetY);
+	const auto Lifetime = (int)(Server()->TickSpeed() * GS()->Tuning()->m_GunLifetime);
 	if(EquippedItemIdOpt == itKillGun)
 	{
-		const auto MouseTarget = vec2(m_LatestInput.m_TargetX, m_LatestInput.m_TargetY);
-		const auto Lifetime = (int)(Server()->TickSpeed() * GS()->Tuning()->m_GunLifetime);
 		for(int i = -1; i <= 1; i++)
 		{
 			const float Spreading = 0.1f * i;
 			const float a = angle(Direction) + Spreading;
 			const vec2 Dir = vec2(cosf(a), sinf(a));
 			new CProjectile(GameWorld(), WEAPON_GUN, m_pPlayer->GetCID(), ProjStartPos,
-				Dir, Lifetime, false, 0, -1, MouseTarget, WEAPON_GUN);
+				Dir, Lifetime, ExplodeModule, 0, -1, MouseTarget, WEAPON_GUN);
 		}
 
 		m_ReloadTimer = Server()->TickSpeed() / 8;
@@ -428,9 +429,6 @@ bool CCharacter::FireGun(vec2 Direction, vec2 ProjStartPos, int TotalWeaponDamag
 	}
 
 	// default gun
-	const auto MouseTarget = vec2(m_LatestInput.m_TargetX, m_LatestInput.m_TargetY);
-	const auto Lifetime = (int)(Server()->TickSpeed() * GS()->Tuning()->m_GunLifetime);
-	const auto ExplodeModule = m_pPlayer->GetItem(itExplosiveGun)->IsEquipped();
 	new CProjectile(GameWorld(), WEAPON_GUN, m_pPlayer->GetCID(), ProjStartPos,
 		Direction, Lifetime, ExplodeModule, 0, -1, MouseTarget, WEAPON_GUN);
 	GS()->CreateSound(m_Pos, SOUND_GUN_FIRE);
