@@ -58,6 +58,8 @@ public:
 			m_Flags |= WORLD_FLAG_NO_MULTIPLIER;
 		if(FlagsSet.hasSet("no_daytime"))
 			m_Flags |= WORLD_FLAG_NO_DAYTIME;
+		if(FlagsSet.hasSet("no_moneybag"))
+			m_Flags |= WORLD_FLAG_NO_MONEYBAG;
 	}
 
 	int GetRespawnWorldID() const

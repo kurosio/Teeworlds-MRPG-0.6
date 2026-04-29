@@ -169,6 +169,7 @@ enum WorldFlags
 	WORLD_FLAG_NO_PREPARE_MAP = 1 << 5,
 	WORLD_FLAG_NO_MULTIPLIER = 1 << 6,
 	WORLD_FLAG_NO_DAYTIME = 1 << 7,
+	WORLD_FLAG_NO_MONEYBAG = 1 << 8,
 };
 
 // drawboard events

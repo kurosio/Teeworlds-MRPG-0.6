@@ -247,6 +247,10 @@ void CGameControllerDefault::Tick()
 
 void CGameControllerDefault::TryGenerateMoneyBag()
 {
+	// dissabled by world flag
+	if(GS()->HasWorldFlag(WORLD_FLAG_NO_MONEYBAG))
+		return;
+
 	// clear container for invalid money bags
 	std::erase_if(m_vMoneyBags, [this](CEntityMoneyBag* pMoneyBag)
 	{ return !GS()->m_World.ExistEntity(pMoneyBag); });
