@@ -126,7 +126,7 @@ bool CDutiesManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, con
 		}
 
 		// check valid level
-		if(pPlayer->Account()->GetLevel() < pDungeon->GetLevel())
+		if(pPlayer->Account()->GetLevel() < Server()->GetWorldDetail(pDungeon->GetWorldID())->GetRequiredLevel())
 		{
 			GS()->Chat(ClientID, "Your level is low to pass this dungeon.");
 			pPlayer->m_VotesData.UpdateVotesIf(MENU_DUTIES_LIST);
@@ -147,6 +147,14 @@ bool CDutiesManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, con
 		if(GS()->IsPlayerInWorld(ClientID, WorldIdOpt))
 		{
 			GS()->Chat(ClientID, "You are already in this dungeon.");
+			pPlayer->m_VotesData.UpdateVotesIf(MENU_DUTIES_LIST);
+			return true;
+		}
+
+		// check valid level
+		if(pPlayer->Account()->GetLevel() < Server()->GetWorldDetail(WorldIdOpt.value())->GetRequiredLevel())
+		{
+			GS()->Chat(ClientID, "Your level is low to pass.");
 			pPlayer->m_VotesData.UpdateVotesIf(MENU_DUTIES_LIST);
 			return true;
 		}
@@ -180,6 +188,14 @@ bool CDutiesManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, con
 			return true;
 		}
 
+		// check valid level
+		if(pPlayer->Account()->GetLevel() < Server()->GetWorldDetail(WorldIdOpt.value())->GetRequiredLevel())
+		{
+			GS()->Chat(ClientID, "Your level is low to pass.");
+			pPlayer->m_VotesData.UpdateVotesIf(MENU_DUTIES_LIST);
+			return true;
+		}
+
 		// join
 		GS()->Chat(-1, "'{}' joined to '{}'!", Server()->ClientName(ClientID), Server()->GetWorldName(WorldIdOpt.value()));
 		pPlayer->ChangeWorld(WorldIdOpt.value());
@@ -207,7 +223,7 @@ void CDutiesManager::ShowDutiesList(CPlayer* pPlayer, WorldType Type) const
 		VoteWrapper VDungeon(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "\u262C Dungeons");
 		for(const auto* pDungeon : CDungeonData::Data())
 		{
-			const char* pStatus = (pDungeon->IsPlaying() ? "Active dungeon" : "Waiting players");
+			const char* pStatus = (pDungeon->IsPlaying() ? "Active" : "Waiting");
 			VDungeon.AddMenu(MENU_DUNGEON_SELECT, pDungeon->GetID(), "Lv{}. {} : {}", pDungeon->GetLevel(), pDungeon->GetName(), pStatus);
 		}
 	}
