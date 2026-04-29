@@ -177,6 +177,7 @@
       Number: 1,
       Respawn: 1,
       Radius: 800,
+	  ActiveRadius: 0,
       Boss: 0,
       drops: [],
     });
@@ -233,6 +234,7 @@
       m.Number = Number(row.Number || 1);
       m.Respawn = Number(row.Respawn || 1);
       m.Radius = Number(row.Radius || 800);
+      m.ActiveRadius = Number(row.ActiveRadius || 0);
       m.Boss = Number(row.Boss || 0) ? 1 : 0;
       const counts = parsePipeNums(row.it_drop_count, false);
       const chances = parsePipeNums(row.it_drop_chance, true);
@@ -280,6 +282,7 @@
         Number: Number(m.Number || 1),
         Respawn: Number(m.Respawn || 1),
         Radius: Number(m.Radius || 800),
+        ActiveRadius: Number(m.ActiveRadius || 0),
         Boss: Number(m.Boss || 0) ? 1 : 0,
         it_drop_0: itemCols[0],
         it_drop_1: itemCols[1],
@@ -458,6 +461,7 @@
       Number: { type: 'number', label: 'Количество (Number)', ui: { min: 1, step: 1 } },
       Respawn: { type: 'number', label: 'Респавн (сек)', ui: { min: 0, step: 1 } },
       Radius: { type: 'number', label: 'Радиус (Radius)', ui: { min: 0, step: 1 } },
+      ActiveRadius: { type: 'number', label: 'Радиус Активности (0 - по умолч.)', ui: { min: 0, step: 1 } },
       Boss: { type: 'toggle', label: 'Boss' },
     };
 
@@ -523,6 +527,7 @@
             Number: fieldsBasic.Number,
             Respawn: fieldsBasic.Respawn,
             Radius: fieldsBasic.Radius,
+            ActiveRadius: fieldsBasic.ActiveRadius,
             Boss: fieldsBasic.Boss,
           };
           const rest = window.EditorCore.FieldRenderer.renderFields({ fields: restFields, data: STATE.mob, options: fieldOptions });

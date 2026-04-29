@@ -541,6 +541,7 @@ class ScenarioDefeatMobsComponent final : public PlayerAwareComponent<ScenarioDe
 	EMode m_Mode {};
 	vec2 m_Position {};
 	float m_Radius {};
+	float m_ActiveRadius {};
 	int m_KillsMade {};
 	int m_TargetTick {};
 	nlohmann::json m_MobsData {};
@@ -556,6 +557,8 @@ public:
 		m_MobsData = j.value("mobs", nlohmann::json::array());
 		m_TargetKills = j.value("kill_target", (int)NOPE);
 		m_Duration = j.value("duration", 0);
+		m_ActiveRadius = j.value("activeradius", (float)g_Config.m_SvMapDistanceActveBot);
+		m_ActiveRadius = m_ActiveRadius > 1.f ? m_ActiveRadius : g_Config.m_SvMapDistanceActveBot;
 		m_ListenerScope.Init(this, IEventListener::CharacterDeath);
 	}
 
@@ -590,6 +593,7 @@ private:
 			mobInfo.m_Boss = mobData.value("boss", false);
 			mobInfo.m_Position = m_Position;
 			mobInfo.m_Radius = m_Radius;
+			mobInfo.m_ActiveRadius = m_ActiveRadius;
 			mobInfo.m_WorldID = GS()->GetWorldID();
 
 			// initialize behavior

@@ -203,6 +203,7 @@ public:
 	int m_RespawnTick {};
 	int m_WorldID {};
 	float m_Radius {};
+	float m_ActiveRadius{};
 	int m_aDropItem[MAX_DROPPED_FROM_MOBS] {};
 	int m_aValueItem[MAX_DROPPED_FROM_MOBS] {};
 	float m_aRandomItem[MAX_DROPPED_FROM_MOBS] {};

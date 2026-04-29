@@ -298,7 +298,6 @@ void CGameWorld::UpdatePlayerMaps()
 	if(Server()->Tick() % g_Config.m_SvMapUpdateRate != 0)
 		return;
 
-	const float ActiveBotDistSq = static_cast<float>(g_Config.m_SvMapDistanceActveBot) * static_cast<float>(g_Config.m_SvMapDistanceActveBot);
 	std::pair<float, int> Dist[MAX_CLIENTS];
 
 	for(int ClientID = 0; ClientID < MAX_PLAYERS; ClientID++)
@@ -316,7 +315,7 @@ void CGameWorld::UpdatePlayerMaps()
 			Dist[j].second = j;
 
 			// Check if the player is a bot and is currently in game
-			CPlayer* pBotPlayer = GS()->GetPlayer(j);
+			auto* pBotPlayer = static_cast<CPlayerBot*>(GS()->GetPlayer(j));
 			if(!Server()->ClientIngame(j) || !pBotPlayer || !pBotPlayer->GetCharacter())
 			{
 				// If not, set the distance to a very large value and skip to the next player
@@ -325,6 +324,7 @@ void CGameWorld::UpdatePlayerMaps()
 			}
 
 			// Calculate the distance between the player's view position and the bot's position
+			const float ActiveBotDistSq = pBotPlayer->GetActiveDistance() * pBotPlayer->GetActiveDistance();
 			float DistanceSq = distance_squared(pPlayer->m_ViewPos, pBotPlayer->GetCharacter()->m_Core.m_Pos);
 			if(DistanceSq > ActiveBotDistSq)
 			{

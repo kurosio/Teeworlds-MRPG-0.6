@@ -104,6 +104,13 @@ CPlayer* CPlayerBot::GetEidolonOwner() const
 	return GS()->GetPlayer(m_MobID);
 }
 
+float CPlayerBot::GetActiveDistance() const
+{
+	if(m_BotType != TYPE_BOT_MOB)
+		return g_Config.m_SvMapDistanceActveBot;
+	return m_MobInfo.m_ActiveRadius;
+}
+
 CPlayerItem* CPlayerBot::GetItem(ItemIdentifier ID)
 {
 	dbg_assert(CItemDescription::Data().find(ID) != CItemDescription::Data().end(), "invalid referring to the CPlayerItem (from playerbot.h)");

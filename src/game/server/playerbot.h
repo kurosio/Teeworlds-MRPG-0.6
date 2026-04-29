@@ -91,6 +91,7 @@ public:
 	int m_EidolonItemID;
 	CPlayer* GetEidolonOwner() const;
 	bool IsDisabledBotDamage() const { return m_DisabledBotDamage; }
+	float GetActiveDistance() const;
 
 	CPlayerItem* GetItem(ItemIdentifier ID) override;
 

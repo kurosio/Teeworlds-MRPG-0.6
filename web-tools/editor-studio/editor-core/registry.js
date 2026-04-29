@@ -432,7 +432,8 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
         mode: createField('text', 'Режим', 'annihilation', {
           ui: { type: 'select', options: ['annihilation', 'wave', 'survival'] }
         }),
-        radius: createField('number', 'Радиус', 100, { ui: { min: 0, max: 99999 } }),
+        radius: createField('number', 'Радиус', 800, { ui: { min: 0, max: 99999 } }),
+        activeradius: createField('number', 'Радиус Активности (0 - по умолч.)', 0, { ui: { min: 0, max: 999999 } }),
         position: createField('vec2', 'Позиция', { x: 0, y: 0 }, { ui: { min: -99999, max: 99999, step: 0.1 } }),
         kill_target: createField('number', 'Цель убийств', 10, { ui: { min: 1, max: 9999 } }),
         duration: createField('number', 'Длительность', 60, { ui: { min: 1, max: 99999 } }),

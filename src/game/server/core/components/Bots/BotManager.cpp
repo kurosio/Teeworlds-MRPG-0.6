@@ -210,8 +210,10 @@ void CBotManager::InitMobsBots(const char* pWhereLocalWorld)
 		const auto Level = pRes->getInt("Level");
 		const auto RespawnTick = pRes->getInt("Respawn");
 		const auto Radius = (float)pRes->getInt("Radius");
+		auto ActiveRadius = (float)pRes->getInt("ActiveRadius");
 		const auto Behavior = pRes->getString("Behavior");
 		const auto WorldID = pRes->getInt("WorldID");
+		ActiveRadius = ActiveRadius > 1.f ? ActiveRadius : g_Config.m_SvMapDistanceActveBot;
 
 		// create new structure
 		MobBotInfo MobBot;
@@ -222,6 +224,7 @@ void CBotManager::InitMobsBots(const char* pWhereLocalWorld)
 		MobBot.m_Level = Level;
 		MobBot.m_RespawnTick = RespawnTick;
 		MobBot.m_Radius = Radius;
+		MobBot.m_ActiveRadius = ActiveRadius;
 		MobBot.m_WorldID = WorldID;
 
 		// initialize behaviors
