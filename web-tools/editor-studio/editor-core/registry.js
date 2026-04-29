@@ -442,7 +442,7 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
           itemFields: {
             bot_id: createDbSelect('BotID', 0, 'mob', { ui: { placeholder: '— выберите моба —' } }),
             level: createField('number', 'Уровень', 1, { ui: { min: 1, max: 999 } }),
-            power: createField('number', 'Сила', 1, { ui: { min: 1, max: 999 } }),
+            power: createField('number', 'Сила', 1, { ui: { min: 1, max: 99999 } }),
             count: createField('number', 'Количество', 5, { ui: { min: 1, max: 999 } }),
             boss: createField('boolean', 'Босс', false),
             Behavior: {
