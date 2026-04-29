@@ -28,22 +28,49 @@ bool CDutiesManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
 
-		// add selector
-		VoteWrapper VSelectorType(ClientID, VWF_SEPARATE_OPEN|VWF_ALIGN_TITLE|VWF_STYLE_STRICT_BOLD, "\u261C Duties list");
-		VSelectorType.AddMenu(MENU_DUTIES_LIST, (int)WorldType::MiniGames, "\u2659 Mini-games ({})", GetWorldsCountByType(WorldType::MiniGames));
-		VSelectorType.AddMenu(MENU_DUTIES_LIST, (int)WorldType::Rhythm, "\u266C Rhythm ({})", GetWorldsCountByType(WorldType::Rhythm));
-		VSelectorType.AddMenu(MENU_DUTIES_LIST, (int)WorldType::Dungeon, "\u262C Dungeons ({})", GetWorldsCountByType(WorldType::Dungeon));
-		VSelectorType.AddMenu(MENU_DUTIES_LIST, (int)WorldType::DeepDungeon, "\u262A Deep dungeons ({})", GetWorldsCountByType(WorldType::DeepDungeon));
-		VSelectorType.AddMenu(MENU_DUTIES_LIST, (int)WorldType::TreasureDungeon, "\u2619 Treasure dungeons ({})", GetWorldsCountByType(WorldType::TreasureDungeon));
-		VSelectorType.AddMenu(MENU_DUTIES_LIST, (int)WorldType::PvP, "\u2694 PvP ({})", GetWorldsCountByType(WorldType::PvP));
-		VoteWrapper::AddEmptyline(ClientID);
-
 		// inside menu
 		ShowInsideMenu(pPlayer);
 
-		// dungeon list
-		if(const auto Type = pPlayer->m_VotesData.GetExtraID())
-			ShowDutiesList(pPlayer, (WorldType)(*Type));
+		// dungeons
+		VoteWrapper VDungeon(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "\u262C Dungeons ({})", GetWorldsCountByType(WorldType::Dungeon));
+		for(const auto* pDungeon : CDungeonData::Data())
+		{
+			const char* pStatus = (pDungeon->IsPlaying() ? "Active" : "Waiting");
+			VDungeon.AddMenu(MENU_DUNGEON_SELECT, pDungeon->GetID(), "Lv{}. {} : {}", pDungeon->GetLevel(), pDungeon->GetName(), pStatus);
+		}
+		VoteWrapper::AddEmptyline(ClientID);
+
+		// pvp
+		VoteWrapper VPvP(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "\u2694 PvP ({})", GetWorldsCountByType(WorldType::PvP));
+		for(int i = 0; i < Server()->GetWorldsSize(); i++)
+		{
+			const auto* pDetail = Server()->GetWorldDetail(i);
+			if(pDetail->GetType() == WorldType::PvP)
+			{
+				const auto ClientsNum = Server()->GetClientsCountByWorld(i);
+				const char* pStatus = (ClientsNum > 0 ? "Active" : "Waiting");
+				VPvP.AddMenu(MENU_PVP_SELECT, i, "Lv{}. {} : {}", pDetail->GetRequiredLevel(), Server()->GetWorldName(i), pStatus);
+			}
+		}
+		VoteWrapper::AddEmptyline(ClientID);
+
+		// Mini-games
+		VoteWrapper VMiniGames(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "\u266C Mini-games ({})", GetWorldsCountByType(WorldType::MiniGames));
+		VoteWrapper::AddEmptyline(ClientID);
+
+		// Rhythm
+		VoteWrapper VRhythm(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "\u266C Rhythm ({})", GetWorldsCountByType(WorldType::Rhythm));
+		for(int i = 0; i < Server()->GetWorldsSize(); i++)
+		{
+			const auto* pDetail = Server()->GetWorldDetail(i);
+			if(pDetail->GetType() == WorldType::Rhythm)
+			{
+				const auto ClientsNum = Server()->GetClientsCountByWorld(i);
+				const char* pStatus = (ClientsNum > 0 ? "Active" : "Waiting");
+				VRhythm.AddMenu(MENU_RHYTHM_SELECT, i, "Lv{}. {} : {}", pDetail->GetRequiredLevel(), Server()->GetWorldName(i), pStatus);
+			}
+		}
+		VoteWrapper::AddEmptyline(ClientID);
 
 		// add backpage buttom
 		VoteWrapper::AddBackpage(ClientID);
@@ -211,50 +238,6 @@ bool CDutiesManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, con
 	}
 
 	return false;
-}
-
-
-void CDutiesManager::ShowDutiesList(CPlayer* pPlayer, WorldType Type) const
-{
-	const int ClientID = pPlayer->GetCID();
-
-	if(Type == WorldType::Dungeon)
-	{
-		VoteWrapper VDungeon(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "\u262C Dungeons");
-		for(const auto* pDungeon : CDungeonData::Data())
-		{
-			const char* pStatus = (pDungeon->IsPlaying() ? "Active" : "Waiting");
-			VDungeon.AddMenu(MENU_DUNGEON_SELECT, pDungeon->GetID(), "Lv{}. {} : {}", pDungeon->GetLevel(), pDungeon->GetName(), pStatus);
-		}
-	}
-	else if(Type == WorldType::PvP)
-	{
-		VoteWrapper VPvP(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "\u262C PvP");
-		for(int i = 0; i < Server()->GetWorldsSize(); i++)
-		{
-			const auto* pDetail = Server()->GetWorldDetail(i);
-			if(pDetail->GetType() == WorldType::PvP)
-			{
-				const auto ClientsNum = Server()->GetClientsCountByWorld(i);
-				const char* pStatus = (ClientsNum > 0 ? "Active" : "Waiting");
-				VPvP.AddMenu(MENU_PVP_SELECT, i, "{} : {}", Server()->GetWorldName(i), pStatus);
-			}
-		}
-	}
-	else if(Type == WorldType::Rhythm)
-	{
-		VoteWrapper VPvP(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "\u262C Rhythm");
-		for(int i = 0; i < Server()->GetWorldsSize(); i++)
-		{
-			const auto* pDetail = Server()->GetWorldDetail(i);
-			if(pDetail->GetType() == WorldType::Rhythm)
-			{
-				const auto ClientsNum = Server()->GetClientsCountByWorld(i);
-				const char* pStatus = (ClientsNum > 0 ? "Active" : "Waiting");
-				VPvP.AddMenu(MENU_RHYTHM_SELECT, i, "{} : {}", Server()->GetWorldName(i), pStatus);
-			}
-		}
-	}
 }
 
 void CDutiesManager::ShowDungeonInfo(CPlayer* pPlayer, CDungeonData* pDungeon) const
