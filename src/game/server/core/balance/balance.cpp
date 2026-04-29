@@ -1,5 +1,7 @@
 #include "balance.h"
 
+#include <engine/server.h>
+#include <game/server/gamecontext.h>
 #include <game/server/player.h>
 
 Balance& Balance::Get()
@@ -63,7 +65,7 @@ int Balance::CalculateScenarioMobPower(const std::vector<CPlayer*>& vpPlayers, i
 	if(vpPlayers.empty())
 		return std::clamp(BasePower, Scaling.MinPower, Scaling.MaxPower);
 
-	const float StatWeight = IsGroupScenario ? Scaling.GroupStatWeight : Scaling.SoloStatWeight;
+	const float StatWeight = IsGroupScenario ? Scaling.GroupStatBaseWeight : Scaling.SoloStatBaseWeight;
 	const int ValidPlayersNum = static_cast<int>(std::count_if(vpPlayers.begin(), vpPlayers.end(), [](const CPlayer* pPlayer)
 	{
 		return pPlayer != nullptr;
@@ -71,23 +73,25 @@ int Balance::CalculateScenarioMobPower(const std::vector<CPlayer*>& vpPlayers, i
 	if(ValidPlayersNum <= 0)
 		return std::clamp(BasePower, Scaling.MinPower, Scaling.MaxPower);
 
-	int64_t TotalAttributeBudget = 0;
+	float AttributePowerPart = 0.f;
 	for(const auto* pPlayer : vpPlayers)
 	{
 		if(!pPlayer)
 			continue;
 
+		int64_t TotalAttributeBudget = 0;
 		for(int ID = (int)AttributeIdentifier::DMG; ID < (int)AttributeIdentifier::ATTRIBUTES_NUM; ID++)
 		{
 			const auto AttributeID = (AttributeIdentifier)ID;
-			TotalAttributeBudget += pPlayer->GetTotalRawAttributeValue(AttributeID);
+			const auto* pGS = pPlayer->GS();
+			const auto* pAttInfo = pGS->GetAttributeInfo(AttributeID);
+			if(pAttInfo->IsGroup(AttributeGroup::Tank) || pAttInfo->IsGroup(AttributeGroup::Healer) || pAttInfo->IsGroup(AttributeGroup::Dps))
+				TotalAttributeBudget += pPlayer->GetTotalRawAttributeValue(AttributeID);
 		}
+		AttributePowerPart += TotalAttributeBudget * (StatWeight * (float)BasePower);
 	}
 
-	const float AverageAttributeBudget = static_cast<float>(TotalAttributeBudget) / static_cast<float>(ValidPlayersNum);
-	const float AttributePowerPart = (AverageAttributeBudget / std::max(1.0f, Scaling.AvgAttributeDivider)) * StatWeight;
-	const int GroupPlayersBonus = IsGroupScenario ? std::max(0, ValidPlayersNum - 1) * Scaling.GroupPerPlayerBonus : 0;
-	const int FinalPower = BasePower + static_cast<int>(AttributePowerPart) + GroupPlayersBonus;
+	const int FinalPower = static_cast<int>(AttributePowerPart);
 	return std::clamp(FinalPower, Scaling.MinPower, Scaling.MaxPower);
 }
 
@@ -115,9 +119,7 @@ void Balance::Initialize()
 	m_ScenarioMobPowerScaling = {
 		1,      // MinPower
 		10000,  // MaxPower
-		0.45f,  // SoloStatWeight
-		0.80f,  // GroupStatWeight
-		1,      // GroupPerPlayerBonus
-		95.0f,  // AvgAttributeDivider
+		0.0055f,  // SoloStatBaseWeight
+		0.0055f,  // GroupStatBaseWeight
 	};
 }

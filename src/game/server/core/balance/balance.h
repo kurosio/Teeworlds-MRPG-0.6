@@ -32,10 +32,8 @@ private:
 	{
 		int MinPower {};
 		int MaxPower {};
-		float SoloStatWeight {};
-		float GroupStatWeight {};
-		int GroupPerPlayerBonus {};
-		float AvgAttributeDivider {};
+		float SoloStatBaseWeight {};
+		float GroupStatBaseWeight {};
 	};
 
 	std::array<float, kAttributeCount> m_AttributeCaps {};
