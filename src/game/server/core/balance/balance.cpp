@@ -113,7 +113,7 @@ void Balance::Initialize()
 		4.0f,  // DamagePercent
 		15.0f, // DpsPercent
 		20.0f, // HealerPercent
-		10.0f, // BossDownscaleDivider
+		30.0f, // BossDownscaleDivider
 	};
 
 	m_ScenarioMobPowerScaling = {
