@@ -23,6 +23,7 @@ bool CVoteOptional::ExecuteVote(bool voteState)
         voteStatusMsg.m_Yes = voteState;
         voteStatusMsg.m_No = !voteState;
         voteStatusMsg.m_Pass = 0;
+        GS()->CreatePlayerSound(m_ClientID, voteState ? SOUND_CTF_CAPTURE : SOUND_CTF_DROP);
         Server()->SendPackMsg(&voteStatusMsg, MSGFLAG_VITAL, m_ClientID);
 
         m_CloseTime = time_get() + (time_freq() / 2);
