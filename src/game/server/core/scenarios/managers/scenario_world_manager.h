@@ -47,8 +47,8 @@ public:
 
 		PendingScenarioStart pendingStart;
 		pendingStart.m_pScenario = pScenario;
-		pendingStart.m_StartAt = time_get() + time_freq() * SCENARIO_JOIN_VOTE_SECONDS;
-		m_vPendingStarts.emplace(scenarioID, std::move(pendingStart));
+		pendingStart.m_StartAt = time_get() + time_freq() * WORLD_SCENARIO_JOIN_VOTE_SEC;
+		m_vPendingStarts.try_emplace(scenarioID, pendingStart);
 
 		for(int ClientID = 0; ClientID < MAX_CLIENTS; ++ClientID)
 		{
