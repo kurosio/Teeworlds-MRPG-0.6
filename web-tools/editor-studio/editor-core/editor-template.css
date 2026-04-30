@@ -19,9 +19,9 @@
 
 :root{
   /* Page layout */
-  --editor-page-max: 1280px;
+  --editor-page-max: 1360px;
   --editor-page-pad: 16px;
-  --editor-sidebar-w: 340px;
+  --editor-sidebar-w: 320px;
 
   /* Card / section tuning */
   --editor-card-radius: var(--editor-radius, 14px);
@@ -76,12 +76,26 @@ body[data-editor="warehouse"]{ --editor-accent:#14b8a6; }
   gap: 10px;
   min-width: 0;
 }
+.editor-page-title::before{
+  content:"✦";
+  width:28px;
+  height:28px;
+  border-radius:999px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  font-size:14px;
+  background:var(--editor-icon-bg);
+  color:var(--editor-icon-color);
+  box-shadow:inset 0 0 0 1px var(--editor-soft-border);
+  flex:0 0 28px;
+}
 
 .editor-page-title h1{
   margin:0;
   font-size: 22px;
-  font-weight: 800;
-  letter-spacing: .2px;
+  font-weight: 700;
+  letter-spacing: .1px;
   line-height: 1.1;
 }
 
@@ -165,7 +179,7 @@ body[data-editor="warehouse"]{ --editor-accent:#14b8a6; }
   border: 1px solid var(--editor-soft-border);
   border-radius: calc(var(--editor-card-radius) + 2px);
   background: var(--editor-shell-bg);
-  box-shadow: 0 18px 60px rgba(0,0,0,.35);
+  box-shadow: 0 10px 28px rgba(9,12,18,.2);
 }
 
 .editor-shell--docked > .editor-dock-sidebar{
@@ -210,7 +224,7 @@ body[data-editor="warehouse"]{ --editor-accent:#14b8a6; }
   border: 1px solid var(--editor-soft-border);
   border-radius: calc(var(--editor-card-radius) + 2px);
   padding: var(--editor-card-pad);
-  box-shadow: 0 12px 30px rgba(0,0,0,.35);
+  box-shadow: 0 8px 24px rgba(9,12,18,.16);
 }
 
 .editor-card-head{
@@ -226,7 +240,23 @@ body[data-editor="warehouse"]{ --editor-accent:#14b8a6; }
 .editor-card-head h2{
   margin:0;
   font-size: 16px;
-  font-weight: 800;
+  font-weight: 700;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.editor-card-head h2::before{
+  content:"•";
+  width:20px;
+  height:20px;
+  border-radius:999px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  font-size:16px;
+  line-height:1;
+  background:var(--editor-icon-bg);
+  color:var(--editor-icon-color);
 }
 
 .editor-card-head .editor-card-sub{
@@ -253,8 +283,16 @@ body[data-editor="warehouse"]{ --editor-accent:#14b8a6; }
 
 .editor-section-title{
   font-size: 13px;
-  font-weight: 800;
-  letter-spacing: .2px;
+  font-weight: 700;
+  letter-spacing: .1px;
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+.editor-section-title::before{
+  content:"▸";
+  color:var(--editor-icon-color);
+  font-size:12px;
 }
 
 .editor-section-hint{
@@ -267,6 +305,7 @@ body[data-editor="warehouse"]{ --editor-accent:#14b8a6; }
   display:grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
   gap: var(--editor-fields-gap);
+  align-items:stretch;
   min-width: 0;
 }
 
@@ -287,7 +326,7 @@ body[data-editor="warehouse"]{ --editor-accent:#14b8a6; }
   display:grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--editor-fields-gap);
-  align-items:start;
+  align-items:stretch;
 }
 @media (max-width: 640px){
   .editor-form-grid-2{ grid-template-columns: 1fr; }
@@ -346,6 +385,9 @@ body[data-editor="warehouse"]{ --editor-accent:#14b8a6; }
 /* Place the internal FieldRenderer blocks nicely */
 .editor-list-table-cell{min-width:0;}
 .editor-list-table-cell .editor-field{padding:0;border:0;background:transparent;}
+.editor-list-table-cell .editor-field .editor-input,
+.editor-list-table-cell .editor-field .form-input,
+.editor-list-table-cell .editor-field .form-select{min-height:36px;}
 
 /* Hide nested labels (header already explains the columns) */
 .editor-list-table .editor-nested-label{display:none;}
