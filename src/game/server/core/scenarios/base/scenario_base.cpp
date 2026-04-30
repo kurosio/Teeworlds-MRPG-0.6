@@ -131,12 +131,12 @@ void ScenarioBase::ExecuteStepActiveActions()
 		if(const auto* pPlayerScenario = dynamic_cast<PlayerScenarioBase*>(this))
 		{
 			if(const auto* pPlayer = pPlayerScenario->GetPlayer())
-				GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::VeryImportant, Server()->TickSpeed(), currentStep.m_MsgInfo.c_str());
+				GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::GameWarning, Server()->TickSpeed(), currentStep.m_MsgInfo.c_str());
 		}
 		else if(auto* pGroupScenario = dynamic_cast<GroupScenarioBase*>(this))
 		{
 			for(const auto& CID : pGroupScenario->GetParticipants())
-				GS()->Broadcast(CID, BroadcastPriority::VeryImportant, Server()->TickSpeed(), currentStep.m_MsgInfo.c_str());
+				GS()->Broadcast(CID, BroadcastPriority::GameWarning, Server()->TickSpeed(), currentStep.m_MsgInfo.c_str());
 		}
 	}
 

@@ -21,8 +21,9 @@
 #include "core/components/skills/skill_data.h"
 #include "core/components/groups/group_data.h"
 #include "core/components/worlds/world_data.h"
-
 #include "core/tools/vote_optional.h"
+
+#include "core/scenarios/managers/scenario_group_manager.h"
 #include "core/scenarios/managers/scenario_player_manager.h"
 #include "core/scenarios/managers/scenario_world_manager.h"
 #include "core/scenarios/impl/scenario_universal.h"
@@ -740,6 +741,12 @@ void CPlayer::FormatBroadcastBasicStats(char* pBuffer, int Size, const char* pAp
 	{
 		Result += "\n" + BonusActivitiesStr;
 	}
+
+	// active group scenario lives info (dungeon/world)
+	if(auto pScenario = GS()->ScenarioGroupManager()->GetActiveScenarioByPlayer(m_ClientID); pScenario && pScenario->GetGroupLives() > 0)
+		Result += "\n" + fmt_localize(m_ClientID, "Group lives: {}", pScenario->GetGroupLives());
+	else if(auto pScenario = GS()->ScenarioWorldManager()->GetActiveScenarioByWorld(GetCurrentWorldID()); pScenario && pScenario->GetGroupLives() > 0)
+		Result += "\n" + fmt_localize(m_ClientID, "Group lives: {}", pScenario->GetGroupLives());
 
 	// active mini-event info
 	GS()->Core()->MiniEventsManager()->FormatBroadcastLine(Result);

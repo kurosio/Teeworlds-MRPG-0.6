@@ -55,6 +55,17 @@ public:
 	}
 
 	bool IsActive(int ScenarioID) const;
+
+	std::shared_ptr<GroupScenarioBase> GetActiveScenarioByPlayer(int ClientID) const
+	{
+		for(const auto& [id, pScenario] : m_vScenarios)
+		{
+			if(pScenario && pScenario->IsRunning() && pScenario->GetParticipants().contains(ClientID))
+				return pScenario;
+		}
+
+		return nullptr;
+	}
 };
 
 #endif // GAME_SERVER_CORE_TOOLS_SCENARIO_GROUP_MANAGER_H
