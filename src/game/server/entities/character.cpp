@@ -2034,7 +2034,7 @@ bool CCharacter::IsAllowedPVP(int FromCID) const
 		else
 		{
 			// anti pvp on safe world or dungeon
-			if(!GS()->IsAllowedPVP() || GS()->IsWorldType(WorldType::Dungeon))
+			if(!GS()->IsAllowedPVP())
 				return false;
 
 			// only for unself player

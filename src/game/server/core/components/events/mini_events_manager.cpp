@@ -44,7 +44,7 @@ void CMiniEventsManager::OnInitWorld(const std::string&)
 
 void CMiniEventsManager::OnTick()
 {
-	if(!g_Config.m_SvMiniEventsEnabled || GS()->HasWorldFlag(WORLD_FLAG_NO_MULTIPLIER))
+	if(!g_Config.m_SvMiniEventsEnabled || GS()->HasWorldFlag(WORLD_FLAG_NO_MULTIPLIER) || GS()->IsWorldType(WorldType::Dungeon))
 		return;
 
 	const auto Tick = Server()->Tick();
