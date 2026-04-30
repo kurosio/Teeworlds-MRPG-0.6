@@ -7,7 +7,11 @@
 #include <game/server/gamecontext.h>
 
 CNpcAI::CNpcAI(NpcBotInfo* pNpcInfo, CPlayerBot* pPlayer, CCharacterBotAI* pCharacter)
-	: CBaseAI(pPlayer, pCharacter), m_pNpcInfo(pNpcInfo) {}
+	: CBaseAI(pPlayer, pCharacter), m_pNpcInfo(pNpcInfo)
+{
+	m_DefaultMoveDirection = (rand() % 2 == 0) ? -1 : 1;
+	m_DefaultMoveNextTick = Server()->Tick() + Server()->TickSpeed() * 2;
+}
 
 bool CNpcAI::CanDamage(CPlayer* pFrom)
 {
@@ -141,6 +145,33 @@ void CNpcAI::ProcessGuardianNPC() const
 	}
 }
 
+
+void CNpcAI::UpdateDefaultMovementDirection(bool HasPlayerNearby, bool HasGroundAhead)
+{
+	if(m_pNpcInfo->m_Static || HasPlayerNearby || !HasGroundAhead)
+	{
+		m_pCharacter->m_Input.m_Direction = 0;
+		return;
+	}
+
+	if(Server()->Tick() >= m_DefaultMoveNextTick)
+	{
+		if(rand() % 5 == 0)
+			m_DefaultMoveDirection = -m_DefaultMoveDirection;
+		else if(rand() % 3 == 0)
+			m_DefaultMoveDirection = (rand() % 2 == 0) ? -1 : 1;
+
+		const int MinTicks = Server()->TickSpeed() / 3;
+		const int MaxTicks = Server()->TickSpeed() * 2;
+		m_DefaultMoveNextTick = Server()->Tick() + MinTicks + rand() % MaxTicks;
+
+		if(rand() % 3 == 0)
+			m_DefaultMoveDirection = 0;
+	}
+
+	m_pCharacter->m_Input.m_Direction = m_DefaultMoveDirection;
+}
+
 void CNpcAI::ProcessDefaultNPC()
 {
 	const float collisionWidth = GS()->Collision()->GetWidth() * 32.0f;
@@ -177,13 +208,15 @@ void CNpcAI::ProcessDefaultNPC()
 	{
 		m_pCharacter->m_Input.m_TargetY = (rand() % 9) - 4;
 	}
-	m_pCharacter->m_Input.m_TargetX = m_pCharacter->m_Input.m_Direction * 10 + 1;
 
-	// random direction moving
-	if(!HasPlayerNearby && !m_pNpcInfo->m_Static && rand() % 50 == 0)
-	{
-		m_pCharacter->m_Input.m_Direction = -1 + rand() % 3;
-	}
+	// update movement direction
+	const float Radius = m_pCharacter->GetRadius();
+	const float ForwardX = m_pCharacter->GetPos().x + m_pCharacter->m_Input.m_Direction * (Radius + 16.0f);
+	const float FootY = m_pCharacter->GetPos().y + Radius + 10.0f;
+	const bool HasGroundAhead = GS()->Collision()->CheckPoint(ForwardX + 8.0f, FootY)
+		|| GS()->Collision()->CheckPoint(ForwardX - 8.0f, FootY);
+	UpdateDefaultMovementDirection(HasPlayerNearby, HasGroundAhead);
+	m_pCharacter->m_Input.m_TargetX = m_pCharacter->m_Input.m_Direction * 10 + 1;
 }
 
 void CNpcAI::Process()

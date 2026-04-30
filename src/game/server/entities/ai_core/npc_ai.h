@@ -9,6 +9,9 @@ class CNpcAI final : public CBaseAI
 {
 	NpcBotInfo* m_pNpcInfo {};
 
+	int m_DefaultMoveDirection {};
+	int m_DefaultMoveNextTick {};
+
 public:
 	CNpcAI(NpcBotInfo* pNpcInfo, CPlayerBot* pPlayer, CCharacterBotAI* pCharacter);
 
@@ -26,6 +29,7 @@ public:
 private:
 	void ProcessGuardianNPC() const;
 	void ProcessDefaultNPC();
+	void UpdateDefaultMovementDirection(bool HasPlayerNearby, bool HasGroundAhead);
 };
 
 #endif
