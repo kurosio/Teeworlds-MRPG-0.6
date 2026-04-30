@@ -239,6 +239,36 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
         hidden: createField('boolean', 'Скрыть', false)
       }
     },
+    dungeon_group_lives: {
+      name: 'Dungeon: управление жизнями группы',
+      class: 'logic',
+      icon: 'fa-solid fa-heart-circle-minus',
+      desc: 'Установить / добавить / убрать жизни группы в dungeon-сценарии',
+      fields: {
+        action: createField('text', 'Операция', 'set', {
+          ui: {
+            type: 'select',
+            options: ['set', 'add', 'sub']
+          }
+        }),
+        value: createField('number', 'Количество жизней', 1, { ui: { min: 0, max: 9999 } })
+      }
+    },
+    world_group_lives: {
+      name: 'World: управление жизнями группы',
+      class: 'logic',
+      icon: 'fa-solid fa-earth-europe',
+      desc: 'Установить / добавить / убрать жизни группы в world-сценарии',
+      fields: {
+        action: createField('text', 'Операция', 'set', {
+          ui: {
+            type: 'select',
+            options: ['set', 'add', 'sub']
+          }
+        }),
+        value: createField('number', 'Количество жизней', 1, { ui: { min: 0, max: 9999 } })
+      }
+    },
     check_has_item: {
       name: 'Проверить предмет',
       class: 'condition',
@@ -566,6 +596,7 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
         ...defaultScenarioComponentTypes,
         'dungeon_door_control',
         'dungeon_use_chat_code',
+        'dungeon_group_lives',
         'dungeon_activate_point',
         'dungeon_complete'
       ]
@@ -586,7 +617,10 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
     world: {
       label: 'World (scenario_world.h)',
       description: 'Мировой сценарий для всех игроков в текущем мире',
-      componentTypes: [...defaultScenarioComponentTypes]
+      componentTypes: [
+        ...defaultScenarioComponentTypes,
+        'world_group_lives'
+      ]
     }
   };
 

@@ -1,4 +1,41 @@
 #include "scenario_world.h"
+#include "components/default.h"
+#include <game/server/core/scenarios/base/component_registry.h>
+
+class WorldGroupLivesComponent final : public Component<GroupScenarioBase, WorldGroupLivesComponent>
+{
+	enum class EAction { Set, Add, Subtract };
+	EAction m_Action { EAction::Set };
+	int m_Value {};
+
+public:
+	explicit WorldGroupLivesComponent(const nlohmann::json& j)
+	{
+		InitBaseJsonField(j);
+		const auto action = j.value("action", "set");
+		m_Value = j.value("value", 0);
+		if(action == "add")
+			m_Action = EAction::Add;
+		else if(action == "sub" || action == "subtract")
+			m_Action = EAction::Subtract;
+	}
+
+	DECLARE_COMPONENT_NAME("world_group_lives")
+
+private:
+	void OnStartImpl() override
+	{
+		if(m_Action == EAction::Set)
+			Scenario()->SetGroupLives(m_Value);
+		else if(m_Action == EAction::Add)
+			Scenario()->AddGroupLives(m_Value);
+		else
+			Scenario()->AddGroupLives(-m_Value);
+
+		Finish();
+	}
+};
+template struct ComponentRegistrar<WorldGroupLivesComponent>;
 
 CWorldScenario::CWorldScenario(const nlohmann::json& jsonData)
 	: WorldScenarioBase()
@@ -17,6 +54,29 @@ void CWorldScenario::OnSetupScenario()
 
 	for(const auto& step : steps)
 		ProcessStep(step);
+}
+
+void CWorldScenario::OnScenarioStart()
+{
+	m_EventListener.Init(this, IEventListener::CharacterDeath);
+	m_EventListener.Register();
+}
+
+void CWorldScenario::OnScenarioEnd()
+{
+	m_EventListener.Unregister();
+	WorldScenarioBase::OnScenarioEnd();
+}
+
+void CWorldScenario::OnCharacterDeath(CPlayer* pVictim, CPlayer* pKiller, int Weapon)
+{
+	if(!pVictim || pVictim->IsBot() || !HasPlayer(pVictim))
+		return;
+
+	if(ConsumeGroupLife())
+		GS()->ChatWorld(GetWorldID(), "World scenario", "Group lives left: {}.", GetGroupLives());
+	else
+		RemoveParticipant(pVictim->GetCID());
 }
 
 void CWorldScenario::ProcessStep(const nlohmann::json& stepJson)

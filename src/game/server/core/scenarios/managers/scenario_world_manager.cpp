@@ -50,6 +50,23 @@ bool CScenarioWorldManager::IsActive(int ScenarioID) const
 	return (it != m_vScenarios.end() && it->second && it->second->IsRunning());
 }
 
+std::shared_ptr<WorldScenarioBase> CScenarioWorldManager::GetActiveScenarioByWorld(int WorldID) const
+{
+	for(const auto& [id, pScenario] : m_vScenarios)
+	{
+		if(pScenario && pScenario->IsRunning() && pScenario->GetWorldID() == WorldID)
+			return pScenario;
+	}
+
+	for(const auto& [id, pendingStart] : m_vPendingStarts)
+	{
+		if(pendingStart.m_pScenario && pendingStart.m_pScenario->GetWorldID() == WorldID)
+			return pendingStart.m_pScenario;
+	}
+
+	return nullptr;
+}
+
 void CScenarioWorldManager::TryFinalizePendingStart(int ScenarioID)
 {
 	auto pendingIt = m_vPendingStarts.find(ScenarioID);

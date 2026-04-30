@@ -34,6 +34,9 @@ public:
 	template<typename T, typename... Args>
 	int RegisterScenario(int WorldID, Args&&... args) requires std::derived_from<T, WorldScenarioBase>
 	{
+		if(GetActiveScenarioByWorld(WorldID))
+			return -1;
+
 		const int scenarioID = m_NextScenarioID++;
 		auto pScenario = std::make_shared<T>(std::forward<Args>(args)...);
 
@@ -74,6 +77,7 @@ public:
 	}
 
 	bool IsActive(int ScenarioID) const;
+	std::shared_ptr<WorldScenarioBase> GetActiveScenarioByWorld(int WorldID) const;
 };
 
 #endif

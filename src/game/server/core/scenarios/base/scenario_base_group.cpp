@@ -3,8 +3,6 @@
 #include <game/server/gamecontext.h>
 #include <game/server/player.h>
 
-#include <ranges>
-
 // GroupScenarioBase
 bool GroupScenarioBase::HasPlayer(CPlayer* pPlayer) const
 {
@@ -55,4 +53,13 @@ bool GroupScenarioBase::RemoveParticipant(int ClientID)
 	}
 
 	return false;
+}
+
+bool GroupScenarioBase::ConsumeGroupLife()
+{
+	if(m_GroupLives <= 0)
+		return false;
+
+	--m_GroupLives;
+	return true;
 }

@@ -218,6 +218,41 @@ private:
 };
 template struct ComponentRegistrar<CompleteDungeonComponent>;
 
+class DungeonGroupLivesComponent final : public Component<GroupScenarioBase, DungeonGroupLivesComponent>
+{
+	enum class EAction { Set, Add, Subtract };
+	EAction m_Action { EAction::Set };
+	int m_Value {};
+
+public:
+	explicit DungeonGroupLivesComponent(const nlohmann::json& j)
+	{
+		InitBaseJsonField(j);
+		const auto action = j.value("action", "set");
+		m_Value = j.value("value", 0);
+		if(action == "add")
+			m_Action = EAction::Add;
+		else if(action == "sub" || action == "subtract")
+			m_Action = EAction::Subtract;
+	}
+
+	DECLARE_COMPONENT_NAME("dungeon_group_lives")
+
+private:
+	void OnStartImpl() override
+	{
+		if(m_Action == EAction::Set)
+			Scenario()->SetGroupLives(m_Value);
+		else if(m_Action == EAction::Add)
+			Scenario()->AddGroupLives(m_Value);
+		else
+			Scenario()->AddGroupLives(-m_Value);
+
+		Finish();
+	}
+};
+template struct ComponentRegistrar<DungeonGroupLivesComponent>;
+
 CDungeonScenario::CDungeonScenario(const nlohmann::json& jsonData) : GroupScenarioBase(), m_JsonData(jsonData)
 {
 }
@@ -235,6 +270,29 @@ void CDungeonScenario::OnSetupScenario()
 	// setup all steps
 	for(const auto& step : steps)
 		ProcessStep(step);
+}
+
+void CDungeonScenario::OnScenarioStart()
+{
+	m_EventListener.Init(this, IEventListener::CharacterDeath);
+	m_EventListener.Register();
+}
+
+void CDungeonScenario::OnScenarioEnd()
+{
+	m_EventListener.Unregister();
+	GroupScenarioBase::OnScenarioEnd();
+}
+
+void CDungeonScenario::OnCharacterDeath(CPlayer* pVictim, CPlayer* pKiller, int Weapon)
+{
+	if(!pVictim || pVictim->IsBot() || !HasPlayer(pVictim))
+		return;
+
+	if(ConsumeGroupLife())
+		GS()->ChatWorld(GS()->GetWorldID(), "Dungeon scenario", "Group lives left: {}.", GetGroupLives());
+	else
+		RemoveParticipant(pVictim->GetCID());
 }
 
 void CDungeonScenario::ProcessStep(const nlohmann::json& stepJson)

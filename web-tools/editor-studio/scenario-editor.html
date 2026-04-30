@@ -2126,6 +2126,8 @@
                         case 'branch_random': return `Случайная ветка: <b>${data.chance_percent ?? 50}%</b> (T → <b>${data.true_step_id || '?'}</b>, F → <b>${data.false_step_id || '?'}</b>)`;
                         case 'dungeon_door_control': return `Действие: <b>${data.action}</b>, Ключ: <b>${data.key || 'нет'}</b>`;
                         case 'dungeon_use_chat_code': return `Код: "<b>${data.code}</b>", переход → <b>${data.next_step_id || '?'}</b>`;
+                        case 'dungeon_group_lives': return `Жизни группы (Dungeon): <b>${data.action || 'set'}</b> на <b>${data.value ?? 0}</b>`;
+                        case 'world_group_lives': return `Жизни группы (World): <b>${data.action || 'set'}</b> на <b>${data.value ?? 0}</b>`;
                         case 'universal_use_chat': return `Чат-команда: <b>${data.chat || '?'}</b>`;
                         case 'check_has_item': return `Предмет: <b>${data.item_id || '?'}</b>, нужно: <b>${data.required || 1}</b>`;
                         case 'universal_condition_item': return `Предмет: <b>${data.item_id || '?'}</b>, нужно: <b>${data.required || 1}</b>`;

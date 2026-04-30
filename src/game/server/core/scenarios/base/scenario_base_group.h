@@ -9,6 +9,7 @@ class GroupScenarioBase : public ScenarioBase
 
 protected:
 	std::set<int> m_vParticipantIDs {};
+	int m_GroupLives { 0 };
 
 	bool OnPauseConditions() override;
 	bool OnStopConditions() override;
@@ -25,6 +26,11 @@ public:
 	virtual bool AddParticipant(int ClientID);
 	virtual bool RemoveParticipant(int ClientID);
 	std::set<int> GetParticipants() const { return m_vParticipantIDs; }
+
+	int GetGroupLives() const { return m_GroupLives; }
+	void SetGroupLives(int Lives) { m_GroupLives = Lives > 0 ? Lives : 0; }
+	void AddGroupLives(int Lives) { m_GroupLives = (m_GroupLives + Lives) > 0 ? (m_GroupLives + Lives) : 0; }
+	bool ConsumeGroupLife();
 };
 
 #endif

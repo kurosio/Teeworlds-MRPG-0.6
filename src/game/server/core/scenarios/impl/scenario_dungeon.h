@@ -4,10 +4,12 @@
 #include <scenarios/base/scenario_base_group.h>
 
 #include <game/server/core/entities/logic/base_door.h>
+#include <game/server/core/tools/event_listener.h>
 
-class CDungeonScenario final : public GroupScenarioBase
+class CDungeonScenario final : public GroupScenarioBase, public IEventListener
 {
 	nlohmann::json m_JsonData {};
+	ScopedEventListener m_EventListener {};
 
 public:
 	struct GroupDoor
@@ -24,6 +26,9 @@ public:
 protected:
 	void OnSetupScenario() override;
 	void ProcessStep(const nlohmann::json& step);
+	void OnScenarioStart() override;
+	void OnScenarioEnd() override;
+	void OnCharacterDeath(CPlayer* pVictim, CPlayer* pKiller, int Weapon) override;
 };
 
 #endif
