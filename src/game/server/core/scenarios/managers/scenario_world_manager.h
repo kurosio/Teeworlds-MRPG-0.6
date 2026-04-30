@@ -3,8 +3,7 @@
 
 #include <scenarios/base/scenario_base_world.h>
 #include <game/server/gamecontext.h>
-
-#include <unordered_map>
+#include <game/server/core/tools/vote_optional.h>
 
 class CGS;
 
@@ -15,6 +14,18 @@ class CScenarioWorldManager
 	CGS* m_pGS {};
 	int m_NextScenarioID = 1;
 	ScenarioMap m_vScenarios {};
+
+	struct PendingScenarioStart
+	{
+		std::shared_ptr<WorldScenarioBase> m_pScenario {};
+		time_t m_StartAt {};
+		std::set<int> m_JoinedPlayers {};
+		std::set<int> m_DeclinedPlayers {};
+	};
+	std::unordered_map<int, PendingScenarioStart> m_vPendingStarts {};
+
+	void TryFinalizePendingStart(int ScenarioID);
+	void AttachVoteForPlayer(int ScenarioID, int ClientID);
 
 public:
 	explicit CScenarioWorldManager(CGS* pGS) : m_pGS(pGS) { };
@@ -30,28 +41,28 @@ public:
 		pScenario->m_WorldID = WorldID;
 		pScenario->m_ScenarioID = scenarioID;
 
+		auto [it, inserted] = m_vScenarios.emplace(scenarioID, pScenario);
+		if(!inserted)
+			return -1;
+
+		PendingScenarioStart pendingStart;
+		pendingStart.m_pScenario = pScenario;
+		pendingStart.m_StartAt = time_get() + time_freq() * SCENARIO_JOIN_VOTE_SECONDS;
+		m_vPendingStarts.emplace(scenarioID, std::move(pendingStart));
+
 		for(int ClientID = 0; ClientID < MAX_CLIENTS; ++ClientID)
 		{
 			if(!m_pGS->Server()->ClientIngame(ClientID))
 				continue;
 
-			pScenario->AddParticipant(ClientID);
+			AttachVoteForPlayer(scenarioID, ClientID);
 		}
-
-		pScenario->Start();
-		if(!pScenario->IsRunning())
-			return -1;
-
-		auto [it, inserted] = m_vScenarios.emplace(scenarioID, pScenario);
-		if(!inserted)
-			return -1;
 
 		return scenarioID;
 	}
 
 	void UpdateScenarios();
 	void RemoveClient(int ClientID);
-	void HandleClientEnter(int ClientID);
 
 	template<typename T = WorldScenarioBase>
 	std::shared_ptr<T> GetScenario(int ScenarioID) requires std::derived_from<T, WorldScenarioBase>

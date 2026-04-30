@@ -1288,7 +1288,6 @@ void CGS::OnClientEnter(int ClientID, bool FirstEnter)
 
 	m_pController->OnPlayerConnect(pPlayer);
 	m_pCommandProcessor->SendClientCommandsInfo(this, ClientID);
-	ScenarioWorldManager()->HandleClientEnter(ClientID);
 
 	if(FirstEnter)
 	{

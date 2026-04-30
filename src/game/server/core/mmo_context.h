@@ -644,6 +644,7 @@ enum
 	MAX_DROPPED_FROM_MOBS          = 5,     // maximum number of items dropped from mobs
 	MAX_HOUSE_RENT_DAYS            = 7,     // Max rent duration for a guild house
 	DEFAULT_HOUSE_DOOR_HEALTH      = 10000, // default house door hp
+	WORLD_SCENARIO_JOIN_VOTE_SEC   = 30,    // seconds to join world scenario
 
 	// items
 	NOPE                           = -1,
