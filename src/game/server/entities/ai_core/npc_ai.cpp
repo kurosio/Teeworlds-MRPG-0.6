@@ -170,6 +170,7 @@ void CNpcAI::UpdateDefaultMovementDirection(bool HasPlayerNearby, bool HasGround
 	}
 
 	m_pCharacter->m_Input.m_Direction = m_DefaultMoveDirection;
+	m_pCharacter->m_Input.m_TargetX = m_pCharacter->m_Input.m_Direction * 10 + 1;
 }
 
 void CNpcAI::ProcessDefaultNPC()
@@ -216,7 +217,6 @@ void CNpcAI::ProcessDefaultNPC()
 	const bool HasGroundAhead = GS()->Collision()->CheckPoint(ForwardX + 8.0f, FootY)
 		|| GS()->Collision()->CheckPoint(ForwardX - 8.0f, FootY);
 	UpdateDefaultMovementDirection(HasPlayerNearby, HasGroundAhead);
-	m_pCharacter->m_Input.m_TargetX = m_pCharacter->m_Input.m_Direction * 10 + 1;
 }
 
 void CNpcAI::Process()
