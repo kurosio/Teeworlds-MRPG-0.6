@@ -47,9 +47,9 @@ void CGameControllerDungeon::ChangeState(int State)
 	{
 		// update
 		m_EndTick = 0;
-		m_SafetyTick = 0;
 		m_WarmupTick = 0;
 		m_LastWarmupTick = 0;
+		m_ScenarioID = 0;
 		m_StartedPlayersNum = 0;
 		m_pEntWaitingDoor->Close();
 	}
@@ -74,14 +74,12 @@ void CGameControllerDungeon::ChangeState(int State)
 
 		// update
 		m_StartedPlayersNum = GetPlayersNum();
-		m_SafetyTick = Server()->TickSpeed() * 30;
 		m_EndTick = Server()->TickSpeed() * 600;
 		m_pEntWaitingDoor->Open();
 		KillAllPlayers();
 
 		// information
 		const auto WorldID = m_pDungeon->GetWorldID();
-		GS()->ChatWorld(WorldID, "Dungeon:", "The security timer is enabled for 30 seconds!");
 		GS()->ChatWorld(WorldID, "Dungeon:", "You are given 10 minutes to complete of dungeon!");
 		GS()->BroadcastWorld(WorldID, BroadcastPriority::VeryImportant, 500, "Dungeon started!");
 	}
@@ -159,18 +157,6 @@ void CGameControllerDungeon::Process()
 		m_ShiftRoundStartTick = Server()->Tick();
 	}
 
-	// started
-	else if(State == CDungeonData::STATE_STARTED)
-	{
-		// security tick during which time the player will not return to the old world
-		if(m_SafetyTick)
-		{
-			m_SafetyTick--;
-			if(!m_SafetyTick)
-				GS()->ChatWorld(WorldID, "Dungeon:", "The security timer is over, be careful!");
-		}
-	}
-
 	// finished
 	else if(State == CDungeonData::STATE_FINISHED)
 	{
@@ -200,21 +186,24 @@ bool CGameControllerDungeon::OnCharacterSpawn(CCharacter* pChr)
 
 	if(State >= CDungeonData::STATE_STARTED)
 	{
-		// update scenario and add participant by start
-		if(!GS()->ScenarioGroupManager()->IsActive(m_ScenarioID))
+		// register scenario only once per dungeon run
+		auto pScenario = GS()->ScenarioGroupManager()->GetScenario(m_ScenarioID);
+		if(m_ScenarioID <= 0)
+		{
 			m_ScenarioID = GS()->ScenarioGroupManager()->RegisterScenario<CDungeonScenario>(ClientID, m_pDungeon->GetScenario());
-		else if(auto pScenario = GS()->ScenarioGroupManager()->GetScenario(m_ScenarioID))
+			pScenario = GS()->ScenarioGroupManager()->GetScenario(m_ScenarioID);
+		}
+		else if(pScenario)
 			pScenario->AddParticipant(ClientID);
-		else
-			dbg_assert(false, "Failed to register scenario id for dungeon.");
 
-		// player died after the safety timer ended or dungeon finished
-		if(!m_SafetyTick || (m_SafetyTick && State == CDungeonData::STATE_FINISHED))
+		// scenario is no longer active is out of lives/participation or finish
+		const bool DungeonFinished = (State == CDungeonData::STATE_FINISHED);
+		if(!pScenario || DungeonFinished)
 		{
 			GS()->Chat(ClientID, "You were thrown out of dungeon!");
 			const int LatestCorrectWorldID = GS()->Core()->AccountManager()->GetLastVisitedWorldID(pPlayer);
 			pPlayer->ChangeWorld(LatestCorrectWorldID);
-			if(auto pScenario = GS()->ScenarioGroupManager()->GetScenario(m_ScenarioID))
+			if(pScenario)
 				pScenario->RemoveParticipant(ClientID);
 			return false;
 		}
