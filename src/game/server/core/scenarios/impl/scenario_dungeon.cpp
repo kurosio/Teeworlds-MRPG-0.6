@@ -72,7 +72,7 @@ private:
 			return;
 
 		for(auto& CID : Scenario()->GetParticipants())
-			GS()->Broadcast(CID, BroadcastPriority::VeryImportant, Server()->TickSpeed(), "Objective: Write in the chat '{}'", m_ChatCode);
+			GS()->Broadcast(CID, BroadcastPriority::GameAlert, Server()->TickSpeed(), "Objective: Write in the chat '{}'", m_ChatCode);
 	}
 
 	void OnPlayerChat(CPlayer* pFrom, const char* pMessage) override

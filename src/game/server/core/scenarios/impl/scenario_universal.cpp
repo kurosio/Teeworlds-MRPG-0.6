@@ -65,7 +65,7 @@ namespace
 		void OnActiveImpl() override
 		{
 			if(Server()->Tick() % Server()->TickSpeed() == 0)
-				GS()->Broadcast(Scenario()->GetClientID(), BroadcastPriority::MainInformation, Server()->TickSpeed(), "Objective: Write in the chat: '{}'", m_ChatCode);
+				GS()->Broadcast(Scenario()->GetClientID(), BroadcastPriority::GameAlert, Server()->TickSpeed(), "Objective: Write in the chat: '{}'", m_ChatCode);
 		}
 
 		void OnPlayerChat(CPlayer* pFrom, const char* pMessage) override
@@ -223,7 +223,7 @@ namespace
 
 			m_pEntDroppedItem->SetLifetime(Server()->TickSpeed() * g_Config.m_SvDroppedItemLifetime);
 			if(!m_Broadcast.empty())
-				GS()->Broadcast(Scenario()->GetClientID(), BroadcastPriority::VeryImportant, Server()->TickSpeed(), m_Broadcast.c_str());
+				GS()->Broadcast(Scenario()->GetClientID(), BroadcastPriority::GameAlert, Server()->TickSpeed(), m_Broadcast.c_str());
 		}
 	};
 
@@ -254,7 +254,7 @@ namespace
 
 		void OnActiveImpl() override
 		{
-			GS()->Broadcast(Scenario()->GetClientID(), BroadcastPriority::VeryImportant, Server()->TickSpeed(), "Shoot the targets!");
+			GS()->Broadcast(Scenario()->GetClientID(), BroadcastPriority::GameAlert, Server()->TickSpeed(), "Shoot the targets!");
 			if(Scenario()->IsShootmarkersDestroyed())
 				Finish();
 		}

@@ -741,6 +741,8 @@ enum class BroadcastPriority
 	GameInformation,
 	GamePriority,
 	GameWarning,
+	GameHighlight,
+	GameAlert,
 	HiddenBroadcast,
 	MainInformation,
 	TitleInformation,
