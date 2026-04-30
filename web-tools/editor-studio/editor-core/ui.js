@@ -126,7 +126,10 @@
     const titleEl = modal.querySelector('[data-role="title"]');
     const closeBtn = modal.querySelector('[data-role="close"]');
 
-    const initialMode = String(cfg.mode || 'universal').toLowerCase() === 'dungeon' ? 'dungeon' : 'universal';
+    const requestedMode = String(cfg.mode || 'universal').toLowerCase();
+    const initialMode = requestedMode === 'dungeon' || requestedMode === 'world'
+      ? requestedMode
+      : 'universal';
     if (titleEl) titleEl.textContent = cfg.title || 'Редактор сценария';
 
     const close = () => {
