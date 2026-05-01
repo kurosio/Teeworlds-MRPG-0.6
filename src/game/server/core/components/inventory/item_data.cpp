@@ -497,9 +497,10 @@ bool CPlayerItem::Use(int Value)
 			for(const auto& RewardEntry : pUseData->vRewards)
 			{
 				const auto* pRewardInfo = GS()->GetItemInfo(RewardEntry.ItemID);
-				GS()->ChatWorld(pUseData->WorldID, "", "- {} x{} ({}%).", pRewardInfo->GetName(), RewardEntry.Value, RewardEntry.Chance);
+				GS()->ChatWorld(pUseData->WorldID, "", "- {} x{} ({~.2}%).", pRewardInfo->GetName(), RewardEntry.Value, RewardEntry.Chance);
 			}
 		}
+		GS()->ChatWorld(pUseData->WorldID, "", mystd::aesthetic::boardConfident("World scenario", 7).c_str());
 		pPlayer->StartScenarioByType(Info()->GetScenarioData(), EScenarios::SCENARIO_ON_ITEM_USE, Info()->GetScenarioMode());
 		Remove(Value);
 		return true;
