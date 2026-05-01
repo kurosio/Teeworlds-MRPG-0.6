@@ -489,8 +489,9 @@ bool CPlayerItem::Use(int Value)
 		}
 
 		// start scenario
-		GS()->ChatWorld(pUseData->WorldID, "", mystd::aesthetic::boardConfident("World scenario triggered by a [{}]", 3).c_str(), Server()->ClientName(m_ClientID));
+		GS()->ChatWorld(pUseData->WorldID, "", mystd::aesthetic::boardConfident("World scenario", 7).c_str());
 		GS()->ChatWorld(pUseData->WorldID, "", "Scenario name: {}", pUseData->Name);
+		GS()->ChatWorld(pUseData->WorldID, "", "Triggered by: {}", Server()->ClientName(m_ClientID));
 		if(!pUseData->vRewards.empty())
 		{
 			for(const auto& RewardEntry : pUseData->vRewards)
