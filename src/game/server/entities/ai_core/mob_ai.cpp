@@ -113,7 +113,9 @@ void CMobAI::OnRewardPlayer(CPlayer* pPlayer, vec2 Force) const
 			if(DropID <= 0 || DropValue <= 0)
 				continue;
 
-			const float RandomDrop = clamp(m_pMobInfo->m_aRandomItem[i] + ActiveLuckyDrop, 0.0f, 100.0f);
+			const float BaseDropChance = m_pMobInfo->m_aRandomItem[i];
+			const float LuckyDropBonus = BaseDropChance * (ActiveLuckyDrop / 100.0f);
+			const float RandomDrop = clamp(BaseDropChance + LuckyDropBonus, 0.0f, 100.0f);
 			const vec2 ForceRandom = random_range_pos(Force, 4.f);
 			GS()->Core()->MiniEventsManager()->ApplyBonus(MiniEventType::MobDrop, &DropValue);
 
