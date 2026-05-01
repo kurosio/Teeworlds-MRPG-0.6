@@ -45,6 +45,11 @@ public:
 		int DurationMinutes {};
 		float Amount {};
 	};
+	struct UseScenarioContext
+	{
+		std::string Name {};
+		int WorldID { -1 };
+	};
 	using ContainerAttributes = std::deque< CAttribute >;
 
 private:
@@ -64,6 +69,7 @@ private:
 	CRandomBox m_RandomBox {};
 	std::optional<PotionContext> m_PotionContext {};
 	std::optional<BonusesContext> m_BonusContext {};
+	std::optional<UseScenarioContext> m_UseScenarioContext {};
 
 public:
 	CItemDescription() = default;
@@ -119,6 +125,7 @@ public:
 	ContainerAttributes& GetAttributes() { return m_aAttributes; }
 	std::optional<PotionContext>& GetPotionContext() { return m_PotionContext; }
 	std::optional<BonusesContext>& GetBonusContext() { return m_BonusContext; }
+	std::optional<UseScenarioContext>& GetUseScenarioContext() { return m_UseScenarioContext; }
 
 	bool IsStackable() const;
 	bool IsEnchantable() const;

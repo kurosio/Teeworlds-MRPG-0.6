@@ -114,6 +114,15 @@ void CItemDescription::InitData(const DBSet& GroupSet, const DBSet& TypeSet)
 			}
 			m_RandomBox.NormalizeChances();
 		}
+
+		// use context for item-triggered scenarios
+		if(const auto& pUseDataJson = pJson["use_scenario"]; !pUseDataJson.is_null())
+		{
+			UseScenarioContext UseData;
+			UseData.Name = pUseDataJson.value("name", "");
+			UseData.WorldID = pUseDataJson.value("world_id", -1);
+			m_UseScenarioContext = std::move(UseData);
+		}
 	});
 }
 

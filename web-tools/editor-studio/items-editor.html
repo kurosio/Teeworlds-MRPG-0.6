@@ -259,12 +259,14 @@
     const DATA_EDITOR_RANDOM_BOX = 'random_box';
     const DATA_EDITOR_BONUS = 'bonus';
     const DATA_EDITOR_POTION = 'potion';
+    const DATA_EDITOR_USE_SCENARIO = 'use_scenario';
 
     const DATA_EDITOR_RULES = {
       Usable: [
         { value: DATA_EDITOR_NONE, label: 'Без данных' },
         { value: DATA_EDITOR_RANDOM_BOX, label: 'Рандом Бокс' },
         { value: DATA_EDITOR_BONUS, label: 'Бонус' },
+        { value: DATA_EDITOR_USE_SCENARIO, label: 'Запуск сценария' },
       ],
       Potion: [
         { value: DATA_EDITOR_NONE, label: 'Без данных' },
@@ -308,6 +310,9 @@
       }
       if (safeGroup === 'Usable' && data && typeof data === 'object' && data.bonus && typeof data.bonus === 'object') {
         return DATA_EDITOR_BONUS;
+      }
+      if (safeGroup === 'Usable' && data && typeof data === 'object' && data.use_scenario && typeof data.use_scenario === 'object') {
+        return DATA_EDITOR_USE_SCENARIO;
       }
       if (safeGroup === 'Potion' && data && typeof data === 'object' && data.potion && typeof data.potion === 'object') {
         return DATA_EDITOR_POTION;
@@ -385,6 +390,17 @@
           recast: toNullableInt(model?.DataPotionRecast) ?? 0,
         };
         return { potion };
+      }
+
+      if (editorType === DATA_EDITOR_USE_SCENARIO) {
+        const worldId = toNullableInt(model?.DataScenarioWorldID);
+        const name = String(model?.DataScenarioName || '').trim();
+        return {
+          use_scenario: {
+            name,
+            world_id: worldId ?? -1,
+          },
+        };
       }
 
       return null;
@@ -578,6 +594,23 @@
           showWhen: (data) => String(data?.DataEditorType || '') === DATA_EDITOR_BONUS,
         },
       },
+      DataScenarioName: {
+        type: 'text',
+        label: 'Имя сценария',
+        ui: {
+          placeholder: 'Название сценария/активатора',
+          showWhen: (data) => String(data?.DataEditorType || '') === DATA_EDITOR_USE_SCENARIO,
+        },
+      },
+      DataScenarioWorldID: {
+        type: 'db_select',
+        label: 'Мир (WorldID)',
+        ui: {
+          dbKey: 'world',
+          placeholder: '— выберите мир —',
+          showWhen: (data) => String(data?.DataEditorType || '') === DATA_EDITOR_USE_SCENARIO,
+        },
+      },
     };
 
     const dirty = EditorCore.Dirty?.create
@@ -673,6 +706,8 @@
         DataPotionValue: 0,
         DataPotionLifetime: 0,
         DataPotionRecast: 0,
+        DataScenarioName: '',
+        DataScenarioWorldID: 0,
       }),
       rowToModel: (row) => {
         const group = String(row?.Group || 'Quest');
@@ -711,6 +746,8 @@
           DataPotionValue: normalizePotionData(dataPayload?.potion).value,
           DataPotionLifetime: normalizePotionData(dataPayload?.potion).lifetime,
           DataPotionRecast: normalizePotionData(dataPayload?.potion).recast,
+          DataScenarioName: String(dataPayload?.use_scenario?.name || ''),
+          DataScenarioWorldID: Number(dataPayload?.use_scenario?.world_id ?? 0),
         });
       },
       modelToPayload: (model) => {
