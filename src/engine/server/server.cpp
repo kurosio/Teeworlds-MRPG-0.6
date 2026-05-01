@@ -74,7 +74,12 @@ bool IsJoinFlood(const NETADDR *pAddr, int Tick, int TickSpeed, int *pCurrentHit
 	if(SubnetKey.empty())
 		return false;
 
+	static int s_LastTick = -1;
 	static std::unordered_map<std::string, std::deque<int>> s_SubnetJoinTicks;
+	if(s_LastTick >= 0 && Tick < s_LastTick)
+		s_SubnetJoinTicks.clear();
+	s_LastTick = Tick;
+
 	auto &JoinTicks = s_SubnetJoinTicks[SubnetKey];
 	const int WindowTicks = TickSpeed * g_Config.m_SvJoinFloodTime;
 	const int MinTick = Tick - WindowTicks;
