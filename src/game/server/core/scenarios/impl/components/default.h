@@ -757,4 +757,31 @@ private:
 	}
 };
 
+class ScenarioGroupFlagsComponent final : public Component<ScenarioBase, ScenarioGroupFlagsComponent>
+{
+	int m_FlagsToApply { GroupScenarioBase::SCENARIOFLAG_NONE };
+
+public:
+	explicit ScenarioGroupFlagsComponent(const nlohmann::json& j)
+	{
+		InitBaseJsonField(j);
+		if(j.value("disable_group_damage", false))
+			m_FlagsToApply |= GroupScenarioBase::SCENARIOFLAG_DISABLE_GROUP_DAMAGE;
+		if(j.value("disable_group_collision", false))
+			m_FlagsToApply |= GroupScenarioBase::SCENARIOFLAG_DISABLE_GROUP_COLLISION;
+		if(j.value("disable_group_hooking", false))
+			m_FlagsToApply |= GroupScenarioBase::SCENARIOFLAG_DISABLE_GROUP_HOOKING;
+	}
+
+	DECLARE_COMPONENT_NAME("set_group_flags")
+
+private:
+	void OnStartImpl() override
+	{
+		if(auto* pGroupScenario = dynamic_cast<GroupScenarioBase*>(Scenario()))
+			pGroupScenario->SetScenarioFlags(m_FlagsToApply);
+		Finish();
+	}
+};
+
 #endif

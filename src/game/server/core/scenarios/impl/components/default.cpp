@@ -14,3 +14,4 @@ template struct ComponentRegistrar<ScenarioQuestActionComponent>;
 template struct ComponentRegistrar<ScenarioQuestConditionComponent>;
 template struct ComponentRegistrar<ScenarioEmoteComponent>;
 template struct ComponentRegistrar<ScenarioDefeatMobsComponent>;
+template struct ComponentRegistrar<ScenarioGroupFlagsComponent>;

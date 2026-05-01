@@ -1906,6 +1906,16 @@ void CCharacter::HandleSafeFlags()
 	m_Core.m_HookHitDisabled = false;
 	m_Core.m_DamageDisabled = false;
 
+	if(auto pScenario = GS()->ScenarioGroupManager()->GetActiveScenarioByPlayer(m_ClientID); pScenario)
+	{
+		if(pScenario->HasScenarioFlag(GroupScenarioBase::SCENARIOFLAG_DISABLE_GROUP_COLLISION))
+			m_Core.m_CollisionDisabled = true;
+		if(pScenario->HasScenarioFlag(GroupScenarioBase::SCENARIOFLAG_DISABLE_GROUP_HOOKING))
+			m_Core.m_HookHitDisabled = true;
+		if(pScenario->HasScenarioFlag(GroupScenarioBase::SCENARIOFLAG_DISABLE_GROUP_DAMAGE))
+			m_Core.m_DamageDisabled = true;
+	}
+
 	// set full safe for collision flag safe
 	if(GS()->Collision()->CheckPoint(m_Core.m_Pos, CCollision::COLFLAG_SAFE))
 		SetSafeFlags();

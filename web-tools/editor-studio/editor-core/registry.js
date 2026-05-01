@@ -269,6 +269,17 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
         value: createField('number', 'Количество жизней', 1, { ui: { min: 0, max: 9999 } })
       }
     },
+    set_group_flags: {
+      name: 'Установить флаги группы',
+      class: 'logic',
+      icon: 'fa-solid fa-flag',
+      desc: 'Установить базовые флаги только для group-сценариев',
+      fields: {
+        disable_group_damage: createField('boolean', 'disable_group_damage', false),
+        disable_group_collision: createField('boolean', 'disable_group_collision', false),
+        disable_group_hooking: createField('boolean', 'disable_group_hooking', false)
+      }
+    },
     check_has_item: {
       name: 'Проверить предмет',
       class: 'condition',
@@ -594,6 +605,7 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
       description: 'Компоненты группового dungeon-сценария',
       componentTypes: [
         ...defaultScenarioComponentTypes,
+        'set_group_flags',
         'dungeon_door_control',
         'dungeon_use_chat_code',
         'dungeon_group_lives',
@@ -619,6 +631,7 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
       description: 'Мировой сценарий для всех игроков в текущем мире',
       componentTypes: [
         ...defaultScenarioComponentTypes,
+        'set_group_flags',
         'world_group_lives'
       ]
     }
