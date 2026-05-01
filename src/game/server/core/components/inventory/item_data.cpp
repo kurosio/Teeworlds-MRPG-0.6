@@ -9,6 +9,7 @@
 #include <components/Eidolons/EidolonManager.h>
 #include <components/mails/mail_wrapper.h>
 #include <game/server/core/tools/db_async_context.h>
+#include <game/server/core/scenarios/managers/scenario_world_manager.h>
 
 namespace
 {
@@ -470,10 +471,19 @@ bool CPlayerItem::Use(int Value)
 			return false;
 		}
 
+		if(GS()->ScenarioWorldManager()->GetActiveScenarioByWorld(pUseData->WorldID))
+		{
+			GS()->Chat(m_ClientID, "World scenario is already active in this world.");
+			return false;
+		}
+
 		GS()->ChatWorld(pUseData->WorldID, "World scenario", "Name: {}", pUseData->Name);
 		GS()->ChatWorld(pUseData->WorldID, "", "All players have been invited to participate.");
+		pPlayer->StartScenarioByType(Info()->GetScenarioData(), EScenarios::SCENARIO_ON_ITEM_USE, Info()->GetScenarioMode());
 		Remove(Value);
+		return true;
 	}
+
 	pPlayer->StartScenarioByType(Info()->GetScenarioData(), EScenarios::SCENARIO_ON_ITEM_USE, Info()->GetScenarioMode());
 
 	// survial capsule experience
