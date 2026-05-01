@@ -59,13 +59,16 @@ private:
 			for(const int ClientID : Scenario()->GetParticipants())
 			{
 				auto* pPlayer = GS()->GetPlayer(ClientID);
-				if(pPlayer && pPlayer->IsAuthed())
+				if(!pPlayer)
+					continue;
+
+				for(const auto& Reward : Scenario()->GetContextRewards())
 				{
-					for(const auto& Reward : Scenario()->GetContextRewards())
+					auto* pItem = pPlayer->GetItem(Reward.m_ItemID);
+					if(pItem && random_float(100.0f) < Reward.m_Chance)
 					{
-						auto* pItem = pPlayer->GetItem(Reward.m_ItemID);
-						if(pItem && random_float(100.0f) < Reward.m_Chance)
-							pItem->Add(Reward.m_Value, 0, 0, false);
+						pItem->Add(Reward.m_Value, 0, 0, false);
+						GS()->Chat(ClientID, "World scenario reward: {} x{}.", pItem->Info()->GetName(), Reward.m_Value);
 					}
 				}
 			}
