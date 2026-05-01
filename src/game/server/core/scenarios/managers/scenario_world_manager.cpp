@@ -67,6 +67,17 @@ std::shared_ptr<WorldScenarioBase> CScenarioWorldManager::GetActiveScenarioByWor
 	return nullptr;
 }
 
+std::shared_ptr<WorldScenarioBase> CScenarioWorldManager::GetActiveScenarioByPlayer(int ClientID) const
+{
+	for(const auto& [id, pScenario] : m_vScenarios)
+	{
+		if(pScenario && pScenario->IsRunning() && pScenario->GetParticipants().contains(ClientID))
+			return pScenario;
+	}
+
+	return nullptr;
+}
+
 void CScenarioWorldManager::TryFinalizePendingStart(int ScenarioID)
 {
 	auto pendingIt = m_vPendingStarts.find(ScenarioID);

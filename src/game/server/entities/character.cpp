@@ -11,6 +11,7 @@
 #include "projectile.h"
 
 #include <game/server/core/scenarios/managers/scenario_group_manager.h>
+#include <game/server/core/scenarios/managers/scenario_world_manager.h>
 
 #include <game/server/core/components/Bots/BotData.h>
 #include <game/server/core/components/groups/group_data.h>
@@ -34,6 +35,17 @@
 #include <game/server/core/entities/weapons/rifle_trackedplazma.h>
 
 MACRO_ALLOC_POOL_ID_IMPL(CCharacter, MAX_CLIENTS* ENGINE_MAX_WORLDS + MAX_CLIENTS)
+
+static bool HasScenarioFlagForPlayer(const CGS* pGS, int ClientID, GroupScenarioBase::ScenarioFlags Flag)
+{
+	if(const auto pGroupScenario = pGS->ScenarioGroupManager()->GetActiveScenarioByPlayer(ClientID); pGroupScenario && pGroupScenario->HasScenarioFlag(Flag))
+		return true;
+
+	if(const auto pWorldScenario = pGS->ScenarioWorldManager()->GetActiveScenarioByPlayer(ClientID); pWorldScenario && pWorldScenario->HasScenarioFlag(Flag))
+		return true;
+
+	return false;
+}
 
 CCharacter::CCharacter(CGameWorld* pWorld)
 	: CEntity(pWorld, CGameWorld::ENTTYPE_CHARACTER, vec2(0, 0), ms_PhysSize)
@@ -1908,16 +1920,13 @@ void CCharacter::HandleSafeFlags()
 	m_Core.m_HookHitDisabled = false;
 	m_Core.m_DamageDisabled = false;
 
-	// apply scenario group flags
-	if(auto pScenario = GS()->ScenarioGroupManager()->GetActiveScenarioByPlayer(m_ClientID); pScenario)
-	{
-		if(pScenario->HasScenarioFlag(GroupScenarioBase::SCENARIOFLAG_DISABLE_GROUP_COLLISION))
-			m_Core.m_CollisionDisabled = true;
-		if(pScenario->HasScenarioFlag(GroupScenarioBase::SCENARIOFLAG_DISABLE_GROUP_HOOKING))
-			m_Core.m_HookHitDisabled = true;
-		if(pScenario->HasScenarioFlag(GroupScenarioBase::SCENARIOFLAG_DISABLE_GROUP_DAMAGE))
-			m_Core.m_DamageDisabled = true;
-	}
+	// apply scenario flags (group/world)
+	if(HasScenarioFlagForPlayer(GS(), m_ClientID, GroupScenarioBase::SCENARIOFLAG_DISABLE_GROUP_COLLISION))
+		m_Core.m_CollisionDisabled = true;
+	if(HasScenarioFlagForPlayer(GS(), m_ClientID, GroupScenarioBase::SCENARIOFLAG_DISABLE_GROUP_HOOKING))
+		m_Core.m_HookHitDisabled = true;
+	if(HasScenarioFlagForPlayer(GS(), m_ClientID, GroupScenarioBase::SCENARIOFLAG_DISABLE_GROUP_DAMAGE))
+		m_Core.m_DamageDisabled = true;
 
 	// set full safe for collision flag safe
 	if(GS()->Collision()->CheckPoint(m_Core.m_Pos, CCollision::COLFLAG_SAFE))
@@ -2059,6 +2068,14 @@ bool CCharacter::IsAllowedPVP(int FromCID) const
 				{
 					auto pFromScenario = GS()->ScenarioGroupManager()->GetActiveScenarioByPlayer(FromCID);
 					if(pToScenario == pFromScenario && pToScenario->HasScenarioFlag(GroupScenarioBase::SCENARIOFLAG_DISABLE_GROUP_PVP))
+						return false;
+				}
+
+				auto pToWorldScenario = GS()->ScenarioWorldManager()->GetActiveScenarioByPlayer(m_pPlayer->GetCID());
+				if(pToWorldScenario)
+				{
+					auto pFromWorldScenario = GS()->ScenarioWorldManager()->GetActiveScenarioByPlayer(FromCID);
+					if(pToWorldScenario == pFromWorldScenario && pToWorldScenario->HasScenarioFlag(GroupScenarioBase::SCENARIOFLAG_DISABLE_GROUP_PVP))
 						return false;
 				}
 

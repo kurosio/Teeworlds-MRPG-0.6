@@ -489,18 +489,8 @@ bool CPlayerItem::Use(int Value)
 		}
 
 		// start scenario
-		GS()->ChatWorld(pUseData->WorldID, "", mystd::aesthetic::boardConfident("World scenario", 7).c_str());
-		GS()->ChatWorld(pUseData->WorldID, "", "Scenario name: {}", pUseData->Name);
-		GS()->ChatWorld(pUseData->WorldID, "", "Triggered by: {}", Server()->ClientName(m_ClientID));
-		if(!pUseData->vRewards.empty())
-		{
-			for(const auto& RewardEntry : pUseData->vRewards)
-			{
-				const auto* pRewardInfo = GS()->GetItemInfo(RewardEntry.ItemID);
-				GS()->ChatWorld(pUseData->WorldID, "", "- {} x{} ({~.2}%).", pRewardInfo->GetName(), RewardEntry.Value, RewardEntry.Chance);
-			}
-		}
-		GS()->ChatWorld(pUseData->WorldID, "", mystd::aesthetic::boardConfident("World scenario", 7).c_str());
+		GS()->ChatWorld(pUseData->WorldID, "", "{}", pUseData->Name);
+		GS()->ChatWorld(pUseData->WorldID, "", "Triggered by {}", Server()->ClientName(m_ClientID));
 		pPlayer->StartScenarioByType(Info()->GetScenarioData(), EScenarios::SCENARIO_ON_ITEM_USE, Info()->GetScenarioMode());
 		Remove(Value);
 		return true;

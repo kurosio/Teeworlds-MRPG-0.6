@@ -78,6 +78,7 @@ public:
 
 	bool IsActive(int ScenarioID) const;
 	std::shared_ptr<WorldScenarioBase> GetActiveScenarioByWorld(int WorldID) const;
+	std::shared_ptr<WorldScenarioBase> GetActiveScenarioByPlayer(int ClientID) const;
 };
 
 #endif
