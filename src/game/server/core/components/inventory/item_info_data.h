@@ -49,6 +49,13 @@ public:
 	{
 		std::string Name {};
 		int WorldID { -1 };
+		struct RewardEntry
+		{
+			int ItemID {};
+			int Value {};
+			float Chance { 100.0f };
+		};
+		std::vector<RewardEntry> vRewards {};
 	};
 	using ContainerAttributes = std::deque< CAttribute >;
 

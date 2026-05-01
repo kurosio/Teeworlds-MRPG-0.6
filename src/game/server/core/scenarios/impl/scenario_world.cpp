@@ -1,6 +1,7 @@
 #include "scenario_world.h"
 #include "components/default.h"
 #include <game/server/core/scenarios/base/component_registry.h>
+#include <game/server/player.h>
 
 class WorldGroupLivesComponent final : public Component<GroupScenarioBase, WorldGroupLivesComponent>
 {
@@ -36,6 +37,45 @@ private:
 	}
 };
 template struct ComponentRegistrar<WorldGroupLivesComponent>;
+
+class WorldCompleteComponent final : public Component<CWorldScenario, WorldCompleteComponent>
+{
+	bool m_Successful {};
+
+public:
+	explicit WorldCompleteComponent(const nlohmann::json& j)
+	{
+		InitBaseJsonField(j);
+		m_Successful = j.value("successful", true);
+	}
+
+	DECLARE_COMPONENT_NAME("world_complete")
+
+private:
+	void OnStartImpl() override
+	{
+		if(m_Successful)
+		{
+			for(const int ClientID : Scenario()->GetParticipants())
+			{
+				auto* pPlayer = GS()->GetPlayer(ClientID);
+				if(pPlayer && pPlayer->IsAuthed())
+				{
+					for(const auto& Reward : Scenario()->GetContextRewards())
+					{
+						auto* pItem = pPlayer->GetItem(Reward.m_ItemID);
+						if(pItem && random_float(100.0f) < Reward.m_Chance)
+							pItem->Add(Reward.m_Value, 0, 0, false);
+					}
+				}
+			}
+		}
+
+		m_NextStepId = END_SCENARIO_STEP_ID;
+		Finish();
+	}
+};
+template struct ComponentRegistrar<WorldCompleteComponent>;
 
 CWorldScenario::CWorldScenario(const nlohmann::json& jsonData)
 	: WorldScenarioBase()

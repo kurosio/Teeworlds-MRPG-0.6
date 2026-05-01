@@ -269,6 +269,15 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
         value: createField('number', 'Количество жизней', 1, { ui: { min: 0, max: 9999 } })
       }
     },
+    world_complete: {
+      name: 'World: завершить сценарий',
+      class: 'interactive',
+      icon: 'fa-solid fa-flag-checkered',
+      desc: 'Принудительно завершить world-сценарий',
+      fields: {
+        successful: createField('boolean', 'Успешно', true)
+      }
+    },
     set_group_flags: {
       name: 'Установить флаги группы',
       class: 'logic',
@@ -633,7 +642,8 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
       componentTypes: [
         ...defaultScenarioComponentTypes,
         'set_group_flags',
-        'world_group_lives'
+        'world_group_lives',
+        'world_complete'
       ]
     }
   };

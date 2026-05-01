@@ -121,6 +121,22 @@ void CItemDescription::InitData(const DBSet& GroupSet, const DBSet& TypeSet)
 			UseScenarioContext UseData;
 			UseData.Name = pUseDataJson.value("name", "");
 			UseData.WorldID = pUseDataJson.value("world_id", -1);
+			if(const auto& pRewardsJson = pUseDataJson["rewards"]; pRewardsJson.is_array())
+			{
+				for(const auto& RewardJson : pRewardsJson)
+				{
+					const int ItemID = RewardJson.value("item_id", -1);
+					const int Value = RewardJson.value("value", 0);
+					if(ItemID <= 0 || Value <= 0 || !CItemDescription::Data().contains(ItemID))
+						continue;
+
+					UseScenarioContext::RewardEntry RewardEntry;
+					RewardEntry.ItemID = ItemID;
+					RewardEntry.Value = Value;
+					RewardEntry.Chance = clamp(RewardJson.value("chance", 100.0f), 0.0f, 100.0f);
+					UseData.vRewards.push_back(RewardEntry);
+				}
+			}
 			m_UseScenarioContext = std::move(UseData);
 		}
 	});

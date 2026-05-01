@@ -6,11 +6,23 @@
 
 class CWorldScenario : public WorldScenarioBase, public IEventListener
 {
+public:
+	struct RewardEntry
+	{
+		int m_ItemID {};
+		int m_Value {};
+		float m_Chance {};
+	};
+
+private:
 	nlohmann::json m_JsonData {};
 	ScopedEventListener m_EventListener {};
+	std::vector<RewardEntry> m_vRewards {};
 
 public:
 	explicit CWorldScenario(const nlohmann::json& jsonData);
+	void SetContextRewards(const std::vector<RewardEntry>& vRewards) { m_vRewards = vRewards; }
+	const std::vector<RewardEntry>& GetContextRewards() const { return m_vRewards; }
 
 protected:
 	void OnSetupScenario() override;

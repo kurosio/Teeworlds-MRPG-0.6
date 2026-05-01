@@ -395,10 +395,18 @@
       if (editorType === DATA_EDITOR_USE_SCENARIO) {
         const worldId = toNullableInt(model?.DataScenarioWorldID);
         const name = String(model?.DataScenarioName || '').trim();
+        const rewards = normalizeRandomBoxItems(model?.DataScenarioRewards)
+          .filter((entry) => toNullableId(entry?.item_id) && (toNullableInt(entry?.value) ?? 0) > 0 && Number(entry?.chance) > 0)
+          .map((entry) => ({
+            item_id: toNullableId(entry.item_id),
+            value: toNullableInt(entry.value) ?? 1,
+            chance: Number(entry.chance),
+          }));
         return {
           use_scenario: {
             name,
             world_id: worldId ?? -1,
+            rewards,
           },
         };
       }
@@ -611,6 +619,18 @@
           showWhen: (data) => String(data?.DataEditorType || '') === DATA_EDITOR_USE_SCENARIO,
         },
       },
+      DataScenarioRewards: {
+        type: 'list',
+        label: 'Награды сценария',
+        itemFields: {
+          item_id: { type: 'db_select', label: 'Предмет', ui: { dbKey: 'item', placeholder: '— выберите предмет —' } },
+          value: { type: 'number', label: 'Количество', ui: { min: 1, max: 999999, step: 1 } },
+          chance: { type: 'number', label: 'Шанс (%)', ui: { min: 0, max: 100, step: 0.01 } },
+        },
+        ui: {
+          showWhen: (data) => String(data?.DataEditorType || '') === DATA_EDITOR_USE_SCENARIO,
+        },
+      },
     };
 
     const dirty = EditorCore.Dirty?.create
@@ -708,6 +728,7 @@
         DataPotionRecast: 0,
         DataScenarioName: '',
         DataScenarioWorldID: 0,
+        DataScenarioRewards: [],
       }),
       rowToModel: (row) => {
         const group = String(row?.Group || 'Quest');
@@ -748,6 +769,7 @@
           DataPotionRecast: normalizePotionData(dataPayload?.potion).recast,
           DataScenarioName: String(dataPayload?.use_scenario?.name || ''),
           DataScenarioWorldID: Number(dataPayload?.use_scenario?.world_id ?? 0),
+          DataScenarioRewards: normalizeRandomBoxItems(dataPayload?.use_scenario?.rewards),
         });
       },
       modelToPayload: (model) => {
