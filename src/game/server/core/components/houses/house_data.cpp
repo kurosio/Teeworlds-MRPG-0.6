@@ -140,7 +140,6 @@ void CHouse::UpdateText(int Lifetime) const
 	if(!m_TextPosition.has_value())
 		return;
 
-
 	// initialize variable with name
 	const char* pName = HasOwner() ? Server()->GetAccountNickname(m_AccountID) : "FREE";
 	GS()->EntityManager()->Text(m_TextPosition.value(), Lifetime, pName);

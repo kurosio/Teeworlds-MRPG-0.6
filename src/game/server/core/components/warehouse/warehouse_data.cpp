@@ -223,13 +223,10 @@ CItemDescription* CWarehouse::GetCurrency() const
 	return &CItemDescription::Data()[m_Currency];
 }
 
-void CWarehouse::CStorage::UpdateText(int LifeTime) const
+void CWarehouse::CStorage::UpdateText(CGS* pGS, int LifeTime) const
 {
-	if(!m_pWarehouse)
+	if(!pGS || !m_pWarehouse || (pGS->GetWorldID() != m_pWarehouse->GetWorldID()) || !m_pWarehouse->IsHasFlag(WF_STORAGE))
 		return;
-
-	const auto* pGS = (CGS*)Instance::GameServer(m_pWarehouse->GetWorldID());
-	if(!pGS) return;
 
 	if(m_TextPos.x != 0 || m_TextPos.y != 0)
 		pGS->EntityManager()->Text(m_TextPos, LifeTime - 5, m_Value.to_string().c_str());

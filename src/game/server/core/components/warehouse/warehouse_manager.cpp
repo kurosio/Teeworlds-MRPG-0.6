@@ -30,10 +30,7 @@ void CWarehouseManager::OnTick()
 	if(Server()->Tick() % g_UpdateTextLifeTime == 0)
 	{
 		for(const auto pWarehouse : CWarehouse::Data())
-		{
-			if(pWarehouse->IsHasFlag(WF_STORAGE))
-				pWarehouse->Storage().UpdateText(g_UpdateTextLifeTime);
-		}
+			pWarehouse->Storage().UpdateText(GS(), g_UpdateTextLifeTime);
 	}
 }
 

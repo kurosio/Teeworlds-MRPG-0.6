@@ -4,6 +4,7 @@
 #include <teeother/tools/grouped_container.h>
 #include <game/server/core/components/inventory/item_data.h>
 
+class CGS;
 class CTrade;
 using ContainerTradingList = std::deque<CTrade>;
 
@@ -90,7 +91,7 @@ class CWarehouse : public MultiworldIdentifiableData<std::deque<CWarehouse*>>
 		vec2 GetTextPos() const { return m_TextPos; }
 		void SetTextPos(vec2 Pos) { m_TextPos = Pos; }
 		void SetValue(const BigInt& Value) { m_Value = Value; }
-		void UpdateText(int LifeTime) const;
+		void UpdateText(CGS* pGS, int LifeTime) const;
 	};
 
 	int m_ID {};
