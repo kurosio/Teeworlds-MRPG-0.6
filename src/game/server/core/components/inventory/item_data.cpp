@@ -472,7 +472,9 @@ bool CPlayerItem::Use(int Value)
 
 		GS()->ChatWorld(pUseData->WorldID, "World scenario", "Name: {}", pUseData->Name);
 		GS()->ChatWorld(pUseData->WorldID, "World scenario", "All players have been invited to participate.");
+		Remove(Value);
 	}
+	pPlayer->StartScenarioByType(Info()->GetScenarioData(), EScenarios::SCENARIO_ON_ITEM_USE, Info()->GetScenarioMode());
 
 	// survial capsule experience
 	if(m_ID == itCapsuleSurvivalExperience && Remove(Value))
@@ -563,8 +565,6 @@ bool CPlayerItem::Use(int Value)
 		return true;
 	}
 
-	pPlayer->StartScenarioByType(Info()->GetScenarioData(), EScenarios::SCENARIO_ON_ITEM_USE, Info()->GetScenarioMode());
-	Remove(Value);
 	return true;
 }
 
