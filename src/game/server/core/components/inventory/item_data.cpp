@@ -459,15 +459,20 @@ bool CPlayerItem::Use(int Value)
 		return false;
 
 	// try use scenario
-	if(const auto& pUseData = Info()->GetUseScenarioContext(); pUseData.has_value() && pUseData->WorldID >= 0 && pUseData->WorldID != pPlayer->GetCurrentWorldID())
+	if(const auto& pUseData = Info()->GetUseScenarioContext(); pUseData.has_value())
 	{
-		const char* pRequiredWorldName = Server()->GetWorldName(pUseData->WorldID);
-		const char* pCurrentWorldName = Server()->GetWorldName(pPlayer->GetCurrentWorldID());
-		const char* pScenarioName = pUseData->Name.empty() ? Info()->GetName() : pUseData->Name.c_str();
-		GS()->Chat(m_ClientID, "Use '{}' in world '{}' (you are in '{}').", pScenarioName, pRequiredWorldName, pCurrentWorldName);
-		return false;
+		if(pUseData->WorldID >= 0 && pUseData->WorldID != pPlayer->GetCurrentWorldID())
+		{
+			const char* pRequiredWorldName = Server()->GetWorldName(pUseData->WorldID);
+			const char* pCurrentWorldName = Server()->GetWorldName(pPlayer->GetCurrentWorldID());
+			const char* pScenarioName = pUseData->Name.empty() ? Info()->GetName() : pUseData->Name.c_str();
+			GS()->Chat(m_ClientID, "Use '{}' in world '{}' (you are in '{}').", pScenarioName, pRequiredWorldName, pCurrentWorldName);
+			return false;
+		}
+
+		GS()->ChatWorld(pUseData->WorldID, "World scenario", "Name: {}", pUseData->Name);
+		GS()->ChatWorld(pUseData->WorldID, "World scenario", "All players have been invited to participate.");
 	}
-	pPlayer->StartScenarioByType(Info()->GetScenarioData(), EScenarios::SCENARIO_ON_ITEM_USE, Info()->GetScenarioMode());
 
 	// survial capsule experience
 	if(m_ID == itCapsuleSurvivalExperience && Remove(Value))
@@ -558,6 +563,8 @@ bool CPlayerItem::Use(int Value)
 		return true;
 	}
 
+	pPlayer->StartScenarioByType(Info()->GetScenarioData(), EScenarios::SCENARIO_ON_ITEM_USE, Info()->GetScenarioMode());
+	Remove(Value);
 	return true;
 }
 
