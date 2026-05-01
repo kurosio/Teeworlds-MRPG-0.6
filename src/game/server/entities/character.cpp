@@ -10,6 +10,8 @@
 #include "laser.h"
 #include "projectile.h"
 
+#include <game/server/core/scenarios/managers/scenario_group_manager.h>
+
 #include <game/server/core/components/Bots/BotData.h>
 #include <game/server/core/components/groups/group_data.h>
 #include <game/server/core/components/guilds/guild_manager.h>
@@ -1906,6 +1908,7 @@ void CCharacter::HandleSafeFlags()
 	m_Core.m_HookHitDisabled = false;
 	m_Core.m_DamageDisabled = false;
 
+	// apply scenario group flags
 	if(auto pScenario = GS()->ScenarioGroupManager()->GetActiveScenarioByPlayer(m_ClientID); pScenario)
 	{
 		if(pScenario->HasScenarioFlag(GroupScenarioBase::SCENARIOFLAG_DISABLE_GROUP_COLLISION))
@@ -2050,6 +2053,15 @@ bool CCharacter::IsAllowedPVP(int FromCID) const
 			// only for unself player
 			if(FromCID != m_pPlayer->GetCID())
 			{
+				// is same group scenario has flag disable group pvp
+				auto pToScenario = GS()->ScenarioGroupManager()->GetActiveScenarioByPlayer(m_pPlayer->GetCID());
+				if(pToScenario)
+				{
+					auto pFromScenario = GS()->ScenarioGroupManager()->GetActiveScenarioByPlayer(FromCID);
+					if(pToScenario == pFromScenario && pToScenario->HasScenarioFlag(GroupScenarioBase::SCENARIOFLAG_DISABLE_GROUP_PVP))
+						return false;
+				}
+
 				// anti pvp for guild players
 				if(m_pPlayer->Account()->IsClientSameGuild(FromCID))
 					return false;

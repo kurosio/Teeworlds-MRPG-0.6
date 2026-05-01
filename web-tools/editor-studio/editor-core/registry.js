@@ -277,7 +277,8 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
       fields: {
         disable_group_damage: createField('boolean', 'disable_group_damage', false),
         disable_group_collision: createField('boolean', 'disable_group_collision', false),
-        disable_group_hooking: createField('boolean', 'disable_group_hooking', false)
+        disable_group_hooking: createField('boolean', 'disable_group_hooking', false),
+        disable_group_pvp: createField('boolean', 'disable_group_pvp', false)
       }
     },
     check_has_item: {

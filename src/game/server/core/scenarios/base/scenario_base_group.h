@@ -26,6 +26,7 @@ public:
 		SCENARIOFLAG_DISABLE_GROUP_DAMAGE = 1 << 0,
 		SCENARIOFLAG_DISABLE_GROUP_COLLISION = 1 << 1,
 		SCENARIOFLAG_DISABLE_GROUP_HOOKING = 1 << 2,
+		SCENARIOFLAG_DISABLE_GROUP_PVP = 1 << 3,
 	};
 
 	explicit GroupScenarioBase(int Flags = FLAG_NONE) : ScenarioBase(Flags) { }

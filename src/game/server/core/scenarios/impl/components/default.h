@@ -185,7 +185,7 @@ private:
  * The component is configured via a JSON object with the following field:
  * @param duration (int): The duration of the wait, in seconds.
  */
-class ScenarioWaitComponent final : public Component<ScenarioBase, ScenarioWaitComponent>
+class ScenarioWaitComponent final : public PlayerAwareComponent<ScenarioWaitComponent>
 {
 	int m_Duration;
 	int m_TargetTick = 0;
@@ -222,7 +222,7 @@ public:
  * @param true_step_id (string): step id when random check passes.
  * @param false_step_id (string): step id when random check fails.
  */
-class ScenarioBranchRandomComponent final : public Component<ScenarioBase, ScenarioBranchRandomComponent>
+class ScenarioBranchRandomComponent final : public PlayerAwareComponent<ScenarioBranchRandomComponent>
 {
 	int m_ChancePercent {};
 	StepId m_TrueStepId {};
@@ -757,7 +757,7 @@ private:
 	}
 };
 
-class ScenarioGroupFlagsComponent final : public Component<ScenarioBase, ScenarioGroupFlagsComponent>
+class ScenarioGroupFlagsComponent final : public PlayerAwareComponent<ScenarioGroupFlagsComponent>
 {
 	int m_FlagsToApply { GroupScenarioBase::SCENARIOFLAG_NONE };
 
@@ -771,6 +771,8 @@ public:
 			m_FlagsToApply |= GroupScenarioBase::SCENARIOFLAG_DISABLE_GROUP_COLLISION;
 		if(j.value("disable_group_hooking", false))
 			m_FlagsToApply |= GroupScenarioBase::SCENARIOFLAG_DISABLE_GROUP_HOOKING;
+		if(j.value("disable_group_pvp", false))
+			m_FlagsToApply |= GroupScenarioBase::SCENARIOFLAG_DISABLE_GROUP_PVP;
 	}
 
 	DECLARE_COMPONENT_NAME("set_group_flags")
