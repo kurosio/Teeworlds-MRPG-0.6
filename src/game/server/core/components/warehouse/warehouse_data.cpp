@@ -229,5 +229,5 @@ void CWarehouse::CStorage::UpdateText(CGS* pGS, int LifeTime) const
 		return;
 
 	if(m_TextPos.x != 0 || m_TextPos.y != 0)
-		pGS->EntityManager()->Text(m_TextPos, LifeTime - 5, m_Value.to_string().c_str());
+		pGS->EntityManager()->Text(m_TextPos, LifeTime, m_Value.to_string().c_str());
 }

@@ -32,15 +32,14 @@ void CHouseManager::OnInitWorld(const std::string& SqlQueryWhereWorld)
 
 void CHouseManager::OnTick()
 {
-	// check if we are in the main world
-	if(GS()->GetWorldID() != INITIALIZER_WORLD_ID)
-		return;
-
-	// update houses text
-	if(Server()->Tick() % g_Config.m_SvUpdateEntityTextNames == 0)
+	// update houses text only from main world its will call creating text on house world
+	if(GS()->GetWorldID() == INITIALIZER_WORLD_ID)
 	{
-		for(const auto& p : CHouse::Data())
-			p->UpdateText(g_Config.m_SvUpdateEntityTextNames);
+		if(Server()->Tick() % g_Config.m_SvUpdateEntityTextNames == 0)
+		{
+			for(const auto& p : CHouse::Data())
+				p->UpdateText(g_Config.m_SvUpdateEntityTextNames);
+		}
 	}
 }
 

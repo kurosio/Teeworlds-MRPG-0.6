@@ -56,22 +56,22 @@ void CGuildManager::OnInitWorld(const std::string& SqlQueryWhereWorld)
 
 void CGuildManager::OnTick()
 {
-	// check if we are in the main world
-	if(GS()->GetWorldID() != INITIALIZER_WORLD_ID)
-		return;
-
-	// update guild wars
-	if(Server()->Tick() % Server()->TickSpeed() == 0)
+	// update guilds only from main world its will call on guilds world
+	if(GS()->GetWorldID() == INITIALIZER_WORLD_ID)
 	{
-		for(auto& pWarHandler : CGuildWarHandler::Data())
-			pWarHandler->Handle();
-	}
+		// update guild wars
+		if(Server()->Tick() % Server()->TickSpeed() == 0)
+		{
+			for(auto& pWarHandler : CGuildWarHandler::Data())
+				pWarHandler->Handle();
+		}
 
-	// update guild houses text
-	if(Server()->Tick() % g_Config.m_SvUpdateEntityTextNames == 0)
-	{
-		for(const auto& p : CGuildHouse::Data())
-			p->UpdateText(g_Config.m_SvUpdateEntityTextNames);
+		// update guild houses text
+		if(Server()->Tick() % g_Config.m_SvUpdateEntityTextNames == 0)
+		{
+			for(const auto& p : CGuildHouse::Data())
+				p->UpdateText(g_Config.m_SvUpdateEntityTextNames);
+		}
 	}
 }
 
@@ -623,7 +623,7 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 			GS()->Chat(ClientID, "This guild cannot be declared war at this time.");
 			return true;
 		}
-		
+
 		if(pGuild->GetMembers()->GetOnlineCount() < 1)
 		{
 			GS()->Chat(ClientID, "At least 1 online member from your guild is required to start a war.");
