@@ -707,6 +707,10 @@
         debouncedQuery(input.value);
       });
       input.addEventListener('input', () => {
+        const raw = String(input.value || '').trim();
+        if (!raw) {
+          writeBoundValue('');
+        }
         open();
         debouncedQuery(input.value);
       });
