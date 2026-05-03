@@ -61,7 +61,7 @@ int CGuildHouse::GetRentPrice() const
 const char* CGuildHouse::GetOwnerName() const
 {
 	if(!m_pGuild)
-		return "FREE";
+		return "NONE";
 	return m_pGuild->GetName();
 }
 
@@ -97,7 +97,7 @@ bool CGuildHouse::ReduceRentDays(int Days)
 void CGuildHouse::UpdateText(int Lifetime) const
 {
 	// update text
-	const char* pName = IsPurchased() ? m_pGuild->GetName() : "FREE";
+	const char* pName = IsPurchased() ? m_pGuild->GetName() : "NONE";
 	GS()->EntityManager()->Text(m_TextPosition, Lifetime, pName);
 }
 
