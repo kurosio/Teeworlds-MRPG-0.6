@@ -27,7 +27,10 @@ void RconProcessor::Init(IConsole* pConsole, IServer* pServer)
 
 	pConsole->Register("jail", "i[cid]i[sec]", CFGFLAG_SERVER, ConJail, pServer, "Imprison a player for a set number of seconds");
 	pConsole->Register("unjail", "i[cid]", CFGFLAG_SERVER, ConUnjail, pServer, "Release the player from prison");
-
+	// allow jail for moderators
+	pConsole->FindCommand("jail", CFGFLAG_SERVER)->SetAccessLevel(IConsole::ACCESS_LEVEL_MOD);
+	pConsole->FindCommand("unjail", CFGFLAG_SERVER)->SetAccessLevel(IConsole::ACCESS_LEVEL_MOD);
+	
 	// tools
 	pConsole->Register("tele_by_mouse", "", CFGFLAG_SERVER, ConTeleportByMouse, pServer, "Teleport by mouse");
 	pConsole->Register("tele_by_pos", "i[x]i[y]?i[world_id]", CFGFLAG_SERVER, ConTeleportByPos, pServer, "Teleport by pos");
