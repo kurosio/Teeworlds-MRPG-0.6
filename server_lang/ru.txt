@@ -4456,8 +4456,8 @@ Your guild does not have a house.
 Agressed
 == Агрессия
 
-Price
-== Цена
+Buying price
+== Цена покупки
 
 $dialog_quest250
 Ready for inspection are we? Right, then! Eyes forward! Back straight!
@@ -6001,8 +6001,8 @@ Use '/set_pin' to set your PIN.
 ⚐ Quest Details
 == ⚐ Детали задания
 
-Rent
-== Аренда
+Daily rent
+== Посуточная аренда
 
 $item_name75
 J: Stone rake

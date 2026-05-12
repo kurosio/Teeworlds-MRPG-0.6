@@ -553,11 +553,11 @@ void CHouseManager::ShowDetail(CPlayer* pPlayer, CHouse* pHouse)
 	// house detail purchease
 	MotdMenu MHouseDetail(ClientID, MTFLAG_CLOSE_BUTTON, "Every player has the right to rent houses.\nAn admission price is required for rentals.");
 	MHouseDetail.AddText("Class: {}", pHouse->GetClassName());
-	MHouseDetail.AddText("Rent: {$}", pHouse->GetRentPrice());
+	MHouseDetail.AddText("Daily rent: {$}", pHouse->GetRentPrice());
 	MHouseDetail.AddSeparateLine();
 	if(!pHouse->HasOwner())
 	{
-		MHouseDetail.AddText("Price: {$}", pHouse->GetInitialFee());
+		MHouseDetail.AddText("Buying price: {$}", pHouse->GetInitialFee());
 		MHouseDetail.AddOption("HOUSE_BUY", "Purchase").Pack(pHouse);
 	}
 	else
