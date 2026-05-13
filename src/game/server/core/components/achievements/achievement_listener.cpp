@@ -67,7 +67,7 @@ void CAchievementListener::OnPlayerGotItem(CPlayer* pPlayer, CPlayerItem* pItem,
 
 void CAchievementListener::OnPlayerCraftItem(CPlayer* pPlayer, CCraftItem* pCraft, int Amount, int Extra)
 {
-	UpdateAchievement(pPlayer, AchievementType::CraftItem, pCraft->GetID(), pCraft->GetItem()->GetValue(), PROGRESS_ACCUMULATE);
+	UpdateAchievement(pPlayer, AchievementType::CraftItem, pCraft->GetID(), Amount + Extra, PROGRESS_ACCUMULATE);
 }
 
 void CAchievementListener::UpdateAchievement(CPlayer* pPlayer, AchievementType Type, int Criteria, int Progress, int ProgressType) const
