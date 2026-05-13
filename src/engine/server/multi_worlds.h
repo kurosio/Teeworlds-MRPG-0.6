@@ -18,6 +18,7 @@ class CMapDetail
 	unsigned m_aCrc{};
 	unsigned char* m_apData{};
 	unsigned int m_aSize{};
+	char m_aMapDownloadUrl[256];
 
 public:
 	CMapDetail(CWorld* pWorldDetail)
@@ -27,6 +28,7 @@ public:
 		m_aCrc = 0;
 		m_apData = nullptr;
 		m_aSize = 0;
+		m_aMapDownloadUrl[0] = '\0';
 	}
 	~CMapDetail();
 
@@ -61,6 +63,11 @@ public:
 	unsigned int GetSize() const
 	{
 		return m_aSize;
+	}
+
+	const char* GetMapDownloadUrl() const
+	{
+		return m_aMapDownloadUrl;
 	}
 };
 

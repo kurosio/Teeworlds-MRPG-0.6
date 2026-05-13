@@ -1038,7 +1038,7 @@ void CServer::SendMap(int ClientID)
 		Msg.AddRaw(&Sha256.data, sizeof(Sha256.data));
 		Msg.AddInt(pMapDetail->GetCrc());
 		Msg.AddInt(pMapDetail->GetSize());
-		Msg.AddString("", 0); // HTTPS map download URL
+		Msg.AddString(g_Config.m_SvMapsHttpsDownload ? pMapDetail->GetMapDownloadUrl() : "", 0); // HTTPS map download URL
 		SendMsg(&Msg, MSGFLAG_VITAL, ClientID);
 	}
 

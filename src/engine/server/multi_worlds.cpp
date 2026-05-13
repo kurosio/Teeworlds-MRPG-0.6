@@ -3,6 +3,7 @@
 #include <engine/map.h>
 #include <engine/server.h>
 #include <engine/storage.h>
+#include <engine/shared/http.h>
 
 #include <components/tunes/tune_zone_manager.h>
 
@@ -31,6 +32,11 @@ bool CMapDetail::Load(IStorageEngine* pStorage)
 		m_apData = (unsigned char*)pData;
 		m_aSha256 = m_pMap->Sha256();
 		m_aCrc = m_pMap->Crc();
+
+		char aEscaped[256];
+		str_format(aBuf, sizeof(aBuf), "%s_%s.map", m_pWorldDetail->GetName(), m_aSha256);
+		EscapeUrl(aEscaped, aBuf);
+		str_format(m_aMapDownloadUrl, sizeof(m_aMapDownloadUrl), "%s%s", g_Config.m_SvMapsBaseUrl, aEscaped);
 	}
 
 	return true;
