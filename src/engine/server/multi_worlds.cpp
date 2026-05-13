@@ -33,8 +33,11 @@ bool CMapDetail::Load(IStorageEngine* pStorage)
 		m_aSha256 = m_pMap->Sha256();
 		m_aCrc = m_pMap->Crc();
 
+		char aSha256[SHA256_MAXSTRSIZE];
+		sha256_str(m_aSha256, aSha256, sizeof(aSha256));
+
 		char aEscaped[256];
-		str_format(aBuf, sizeof(aBuf), "%s_%s.map", m_pWorldDetail->GetName(), m_aSha256);
+		str_format(aBuf, sizeof(aBuf), "%s_%s.map", m_pWorldDetail->GetName(), aSha256);
 		EscapeUrl(aEscaped, aBuf);
 		str_format(m_aMapDownloadUrl, sizeof(m_aMapDownloadUrl), "%s%s", g_Config.m_SvMapsBaseUrl, aEscaped);
 	}
