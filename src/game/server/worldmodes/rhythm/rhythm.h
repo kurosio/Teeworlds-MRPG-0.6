@@ -89,7 +89,7 @@ private:
 	void UpdateScoreBroadcasts();
 	std::string BuildTopScoresBroadcastText(int MaxRows) const;
 	void ResetClientState(int ClientID);
-	void SaveRhythmResults();
+	void SaveRhythmResults() const;
 	bool FindFieldAnchorFromMap(vec2& OutPos) const;
 	int NoteTimeToTick(double NoteTime) const;
 	void ChangeState(EStageState State);

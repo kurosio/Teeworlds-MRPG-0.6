@@ -747,7 +747,7 @@ void CGameControllerRhythm::UpdateNotes()
 	}
 }
 
-void CGameControllerRhythm::SaveRhythmResults()
+void CGameControllerRhythm::SaveRhythmResults() const
 {
 	for(int ClientID = 0; ClientID < MAX_PLAYERS; ++ClientID)
 	{
