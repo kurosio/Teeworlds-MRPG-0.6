@@ -1719,12 +1719,12 @@ void CGuildManager::ShowDetail(CPlayer* pPlayer, CGuildHouse* pHouse) const
 	MHouseDetail.AddText("House HID:[{}]", HouseID);
 	MHouseDetail.AddText("Farm {(zone|zones): #}", (int)pHouse->GetFarmzonesManager()->GetContainer().size());
 	MHouseDetail.AddText("{(Door|Doors): #}", (int)pHouse->GetDoorManager()->GetContainer().size());
-	MHouseDetail.AddText("Rent: {$}", pHouse->GetRentPrice());
+	MHouseDetail.AddText("Daily rent: {$}", pHouse->GetRentPrice());
 	MHouseDetail.AddSeparateLine();
 	if(!pHouse->IsPurchased())
 	{
 		auto* pGuild = pPlayer->Account()->GetGuild();
-		MHouseDetail.AddText("Price: {$}", pHouse->GetInitialFee());
+		MHouseDetail.AddText("Buying price: {$}", pHouse->GetInitialFee());
 
 		if(pGuild && pPlayer->Account()->GetGuildMember()->CheckAccess(GUILD_RANK_RIGHT_LEADER))
 		{

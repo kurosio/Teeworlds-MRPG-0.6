@@ -1116,8 +1116,8 @@ $dialog_quest640
 None in Gridania can doubt your worth, <player>...
 == 格里达尼亚无人能怀疑你的价值，<player>……
 
-Price
-== 价格
+Buying price
+== 购买价
 
 \n\n\n\n\nLv{}[{}]\nHP {$}/{$}\nMP {$}/{$}\nGold {$} of {$}\nBank {$}
 == \n\n\n\n\n等级{}[{}]\n生命值 {$}/{$}\n法力值 {$}/{$}\n金币 {$} of {$}\n银行 {$}
@@ -2741,8 +2741,8 @@ $quest_name8
 Surveying the Damage
 == 勘察损失
 
-Rent
-== 租金
+Daily rent
+== 日租金
 
 Has guild: {}
 == 有公会：{}
