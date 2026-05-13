@@ -27,7 +27,7 @@ protected:
 	void OnCharacterDamage(CPlayer* pFrom, CPlayer* pTo, int Damage) override;
 	void OnCharacterDeath(CPlayer* pVictim, CPlayer* pKiller, int Weapon) override;
 	void OnPlayerGotItem(CPlayer* pPlayer, CPlayerItem* pItem, int Got) override;
-	void OnPlayerCraftItem(CPlayer* pPlayer, CCraftItem* pCraft) override;
+	void OnPlayerCraftItem(CPlayer* pPlayer, CCraftItem* pCraft, int Amount, int Extra) override;
 	void OnPlayerEquipItem(CPlayer* pPlayer, CPlayerItem* pItem) override;
 	void OnPlayerProfessionLeveling(CPlayer* pPlayer, CProfession* pProfession, int NewLevel) override;
 	void OnPlayerQuestChangeState(CPlayer* pPlayer, CPlayerQuest* pQuest, QuestState NewState) override;

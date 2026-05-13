@@ -24,7 +24,7 @@ class CPlayerQuest;
     XEV(PlayerProfessionChange,         OnPlayerProfessionChange,         CPlayer* pPlayer, CProfession* pOldProf, CProfession* pNewProf) \
     XEV(PlayerGotItem,                  OnPlayerGotItem,                  CPlayer* pPlayer, CPlayerItem* pItem, int Got) \
     XEV(PlayerLostItem,                 OnPlayerLostItem,                 CPlayer* pPlayer, CPlayerItem* pItem, int Lost) \
-    XEV(PlayerCraftItem,                OnPlayerCraftItem,                CPlayer* pPlayer, CCraftItem* pCraft) \
+    XEV(PlayerCraftItem,                OnPlayerCraftItem,                CPlayer* pPlayer, CCraftItem* pCraft, int Amount, int Extra) \
     XEV(PlayerEquipItem,                OnPlayerEquipItem,                CPlayer* pPlayer, CPlayerItem* pItem) \
     XEV(PlayerUnequipItem,              OnPlayerUnequipItem,              CPlayer* pPlayer, CPlayerItem* pItem) \
     XEV(PlayerEnchantItem,              OnPlayerEnchantItem,              CPlayer* pPlayer, CPlayerItem* pItem) \

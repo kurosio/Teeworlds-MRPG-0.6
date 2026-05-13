@@ -148,7 +148,7 @@ void CCraftManager::CraftItem(CPlayer* pPlayer, CCraftItem* pCraft, int Value) c
 		GS()->Chat(ClientID, "You crafted '[{} x{}]'.", pPlayerCraftItem->Info()->GetName(), ValueInfo);
 
 	// notify event and votes
-	g_EventListenerManager.Notify<IEventListener::PlayerCraftItem>(pPlayer, pCraft);
+	g_EventListenerManager.Notify<IEventListener::PlayerCraftItem>(pPlayer, pCraft, CraftedItemCount, ExtraCraftedItemCount);
 	GS()->CreateSound(pPlayer->m_ViewPos, SOUND_SFX_CRAFT);
 	pPlayer->m_VotesData.UpdateCurrentVotes();
 }
