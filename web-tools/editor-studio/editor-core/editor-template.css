@@ -555,3 +555,39 @@ body[data-editor="warehouse"]{ --editor-accent:#14b8a6; }
 .editor-task-content.is-open{
   display:block;
 }
+
+/* -------------------------------------------------------------
+   Productivity modes (global)
+   ------------------------------------------------------------- */
+body.editor-compact{
+  --editor-page-pad: 12px;
+  --editor-card-pad: 10px;
+  --editor-fields-gap: 8px;
+}
+
+body.editor-compact .editor-sticky-toolbar{
+  padding: 10px;
+}
+
+body.editor-compact .editor-row{
+  padding: 8px;
+}
+
+body.editor-focus .editor-shell{
+  grid-template-columns: minmax(220px, 260px) minmax(0, 1fr);
+}
+
+body.editor-focus .editor-page-sub,
+body.editor-focus .editor-sidebar-meta{
+  opacity: .72;
+}
+
+body.editor-focus .editor-sidebar-list{
+  max-height: 72vh !important;
+}
+
+@media (max-width: 1100px){
+  body.editor-focus .editor-shell{
+    grid-template-columns: 1fr;
+  }
+}

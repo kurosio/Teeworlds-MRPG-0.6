@@ -20,6 +20,243 @@
     hintEl.classList.remove('hidden');
   };
 
+  const Productivity = (() => {
+    const LS_KEY = 'editor-core:productivity-prefs:v1';
+    const esc = (value) => window.EditorCore?.utils?.escapeHtml
+      ? window.EditorCore.utils.escapeHtml(value)
+      : String(value ?? '');
+
+    const getPrefs = () => {
+      try {
+        const parsed = JSON.parse(localStorage.getItem(LS_KEY) || '{}');
+        return {
+          compact: parsed.compact === true,
+          focus: parsed.focus === true,
+        };
+      } catch {
+        return { compact: false, focus: false };
+      }
+    };
+
+    const savePrefs = (prefs) => {
+      try {
+        localStorage.setItem(LS_KEY, JSON.stringify({
+          compact: !!prefs.compact,
+          focus: !!prefs.focus,
+        }));
+      } catch {
+        // ignore storage failures
+      }
+    };
+
+    const findActions = (root = document) => {
+      const bySelectors = (selectors) => {
+        for (const sel of selectors) {
+          const el = root.querySelector(sel) || document.querySelector(sel);
+          if (el) return el;
+        }
+        return null;
+      };
+
+      return {
+        save: bySelectors(['[data-editor-role="save"]', '#saveBtn', '#btn-save']),
+        newItem: bySelectors(['[data-editor-role="new"]', '#newBtn', '#btn-new']),
+        refresh: bySelectors(['[data-editor-role="refresh"]', '#refreshBtn', '#btn-refresh']),
+        remove: bySelectors(['[data-editor-role="delete"]', '#deleteBtn', '#btn-delete']),
+        cancel: bySelectors(['[data-editor-role="cancel"]', '#cancelBtn', '#btn-cancel']),
+        search: bySelectors([
+          '[data-editor-role="search"]',
+          '#searchInput',
+          'input[type="search"]',
+          '.editor-search input',
+        ]),
+        list: bySelectors(['[data-editor-role="list"]', '#list', '.editor-sidebar-list']),
+      };
+    };
+
+    const clickIfEnabled = (el) => {
+      if (!el || el.disabled) return false;
+      el.click();
+      return true;
+    };
+
+    const focusSearch = (el) => {
+      if (!el) return false;
+      el.focus();
+      el.select?.();
+      return true;
+    };
+
+    const moveSelection = (listRoot, direction = 1) => {
+      if (!listRoot) return false;
+      const rows = Array.from(listRoot.querySelectorAll('.editor-row'));
+      if (!rows.length) return false;
+      const active = rows.findIndex((r) => r.classList.contains('editor-row-active'));
+      const next = Math.max(0, Math.min(rows.length - 1, active < 0 ? 0 : active + direction));
+      rows[next]?.click();
+      rows[next]?.scrollIntoView?.({ block: 'nearest' });
+      return true;
+    };
+
+    const mountPalette = (root = document) => {
+      let modal = document.getElementById('editor-command-palette');
+      if (modal) return modal;
+      modal = document.createElement('div');
+      modal.id = 'editor-command-palette';
+      modal.className = 'hidden fixed inset-0 editor-modal-backdrop z-[550] items-start justify-center p-4';
+      modal.innerHTML = `
+        <div class="editor-modal-content w-full max-w-xl mt-10 p-4">
+          <div class="flex items-center justify-between gap-3 mb-3">
+            <div class="font-semibold">Command Palette</div>
+            <button type="button" class="editor-icon-btn" data-role="close" title="Close">
+              <i class="fa-solid fa-xmark"></i>
+            </button>
+          </div>
+          <div class="editor-muted-text text-xs mb-3">Shortcuts: Ctrl/Cmd+S save, Ctrl/Cmd+N new, Ctrl/Cmd+K palette</div>
+          <div class="grid gap-2" data-role="actions"></div>
+        </div>
+      `;
+      (document.body || root).appendChild(modal);
+      return modal;
+    };
+
+    const setMode = (mode, enabled, prefs) => {
+      if (mode === 'compact') {
+        document.body.classList.toggle('editor-compact', enabled);
+        prefs.compact = enabled;
+      }
+      if (mode === 'focus') {
+        document.body.classList.toggle('editor-focus', enabled);
+        prefs.focus = enabled;
+      }
+      savePrefs(prefs);
+    };
+
+    const renderPalette = (palette, root, prefs) => {
+      const actionsWrap = palette.querySelector('[data-role="actions"]');
+      if (!actionsWrap) return;
+      const actions = findActions(root);
+      const rows = [
+        { id: 'save', label: 'Save (Ctrl/Cmd+S)', run: () => clickIfEnabled(actions.save) },
+        { id: 'new', label: 'New record (Ctrl/Cmd+N)', run: () => clickIfEnabled(actions.newItem) },
+        { id: 'refresh', label: 'Refresh list', run: () => clickIfEnabled(actions.refresh) },
+        { id: 'search', label: 'Focus search (Ctrl/Cmd+F)', run: () => focusSearch(actions.search) },
+        { id: 'prev', label: 'Previous row (Alt+ArrowUp)', run: () => moveSelection(actions.list, -1) },
+        { id: 'next', label: 'Next row (Alt+ArrowDown)', run: () => moveSelection(actions.list, +1) },
+        { id: 'compact', label: prefs.compact ? 'Disable compact mode' : 'Enable compact mode', run: () => setMode('compact', !prefs.compact, prefs) },
+        { id: 'focus', label: prefs.focus ? 'Disable focus mode' : 'Enable focus mode', run: () => setMode('focus', !prefs.focus, prefs) },
+      ];
+
+      actionsWrap.innerHTML = rows
+        .map((r) => `<button type="button" class="editor-btn editor-btn-secondary justify-start text-left" data-action="${esc(r.id)}">${esc(r.label)}</button>`)
+        .join('');
+
+      actionsWrap.querySelectorAll('[data-action]').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          const id = btn.getAttribute('data-action');
+          const row = rows.find((r) => r.id === id);
+          if (!row) return;
+          row.run();
+          renderPalette(palette, root, prefs);
+        });
+      });
+    };
+
+    const mountQuickTools = (root = document, prefs) => {
+      const host = root.querySelector('.editor-page-actions') || document.querySelector('.editor-page-actions');
+      if (!host || host.querySelector('[data-editor-quick-tools="1"]')) return;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'editor-btn editor-btn-secondary';
+      btn.setAttribute('data-editor-quick-tools', '1');
+      btn.title = 'Open command palette';
+      btn.innerHTML = '<i class="fa-solid fa-bolt"></i><span>Tools</span>';
+      host.appendChild(btn);
+
+      const palette = mountPalette(root);
+      const close = () => {
+        palette.classList.add('hidden');
+        palette.classList.remove('flex');
+      };
+      const open = () => {
+        renderPalette(palette, root, prefs);
+        palette.classList.remove('hidden');
+        palette.classList.add('flex');
+      };
+      btn.addEventListener('click', open);
+      palette.querySelector('[data-role="close"]')?.addEventListener('click', close);
+      palette.addEventListener('click', (e) => {
+        if (e.target === palette) close();
+      });
+    };
+
+    const bindShortcuts = (root = document, prefs) => {
+      if (root.__editorShortcutsBound === true) return;
+      root.__editorShortcutsBound = true;
+
+      document.addEventListener('keydown', (e) => {
+        const key = String(e.key || '').toLowerCase();
+        const ctrl = e.ctrlKey || e.metaKey;
+        const actions = findActions(root);
+
+        if (ctrl && key === 's') {
+          e.preventDefault();
+          if (clickIfEnabled(actions.save)) return;
+        }
+        if (ctrl && key === 'n') {
+          e.preventDefault();
+          if (clickIfEnabled(actions.newItem)) return;
+        }
+        if (ctrl && key === 'f') {
+          e.preventDefault();
+          if (focusSearch(actions.search)) return;
+        }
+        if (ctrl && key === 'k') {
+          e.preventDefault();
+          const palette = mountPalette(root);
+          renderPalette(palette, root, prefs);
+          palette.classList.remove('hidden');
+          palette.classList.add('flex');
+          return;
+        }
+        if (e.altKey && key === 'arrowdown') {
+          e.preventDefault();
+          moveSelection(actions.list, +1);
+          return;
+        }
+        if (e.altKey && key === 'arrowup') {
+          e.preventDefault();
+          moveSelection(actions.list, -1);
+          return;
+        }
+        if (key === 'escape') {
+          const palette = document.getElementById('editor-command-palette');
+          if (palette && !palette.classList.contains('hidden')) {
+            e.preventDefault();
+            palette.classList.add('hidden');
+            palette.classList.remove('flex');
+            return;
+          }
+          if (document.activeElement && typeof document.activeElement.blur === 'function') {
+            document.activeElement.blur();
+          }
+        }
+      });
+    };
+
+    const init = (root = document) => {
+      if (document.body?.dataset?.editorProductivityKit === '1') return;
+      if (document.body) document.body.dataset.editorProductivityKit = '1';
+      const prefs = getPrefs();
+      setMode('compact', prefs.compact, prefs);
+      setMode('focus', prefs.focus, prefs);
+      mountQuickTools(root, prefs);
+      bindShortcuts(root, prefs);
+    };
+
+    return { init };
+  })();
+
   const validateValue = ({ value, spec, inputType }) => {
     if (!spec) return { ok: true, message: '' };
     const message = spec.message || 'Некорректное значение';
@@ -467,6 +704,9 @@
         el.addEventListener('change', run);
         run();
       }
+
+      // 3) Global productivity utilities (hotkeys + command palette + view modes)
+      Productivity.init(root);
     }
   };
 
