@@ -20,9 +20,10 @@ class RconProcessor
 	static void ConUnBanAcc(IConsole::IResult* pResult, void* pUserData);
 	static void ConBansAcc(IConsole::IResult* pResult, void* pUserData);
 
-	static void ConTeleportByMouse(IConsole::IResult* pResult, void* pUserData);
-	static void ConTeleportByPos(IConsole::IResult* pResult, void* pUserData);
-	static void ConTeleportByClient(IConsole::IResult* pResult, void* pUserData);
+	static void ConTeleportToMousePos(IConsole::IResult* pResult, void* pUserData);
+	static void ConTeleportToPos(IConsole::IResult* pResult, void* pUserData);
+	static void ConTeleportToClient(IConsole::IResult* pResult, void* pUserData);
+	static void ConTeleportClient(IConsole::IResult* pResult, void* pUserData);
 	static void ConPosition(IConsole::IResult* pResult, void* pUserData);
 
 	static void ConJail(IConsole::IResult* pResult, void* pUserData);

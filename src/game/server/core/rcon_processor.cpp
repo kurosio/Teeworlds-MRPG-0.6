@@ -29,9 +29,10 @@ void RconProcessor::Init(IConsole* pConsole, IServer* pServer)
 	pConsole->Register("unjail", "i[cid]", CFGFLAG_SERVER, ConUnjail, pServer, "Release the player from prison");
 
 	// tools
-	pConsole->Register("tele_by_mouse", "", CFGFLAG_SERVER, ConTeleportByMouse, pServer, "Teleport by mouse");
-	pConsole->Register("tele_by_pos", "i[x]i[y]?i[world_id]", CFGFLAG_SERVER, ConTeleportByPos, pServer, "Teleport by pos");
-	pConsole->Register("tele_by_client", "i[cid]", CFGFLAG_SERVER, ConTeleportByClient, pServer, "Teleport by client");
+	pConsole->Register("tele_to_cursor", "", CFGFLAG_SERVER, ConTeleportToMousePos, pServer, "Teleport to mouse pos");
+	pConsole->Register("tele_to_pos", "i[x]i[y]?i[world_id]", CFGFLAG_SERVER, ConTeleportToPos, pServer, "Teleport to world pos");
+	pConsole->Register("tele_to_client", "i[cid]", CFGFLAG_SERVER, ConTeleportToClient, pServer, "Teleport to client");
+	pConsole->Register("tele_client", "i[actor]i[target]", CFGFLAG_SERVER, ConTeleportClient, pServer, "Teleport client to another client");
 	pConsole->Register("position", "?i[cid]", CFGFLAG_SERVER, ConPosition, pServer, "Get position by client (default self position)");
 	pConsole->Register("quest", "?s[state]?i[quest_id]", CFGFLAG_SERVER, ConQuest, pServer, "Accept or reset the quest with the specified ID");
 
@@ -89,7 +90,7 @@ void RconProcessor::ConUnjail(IConsole::IResult* pResult, void* pUser)
 }
 
 
-void RconProcessor::ConTeleportByMouse(IConsole::IResult* pResult, void* pUser)
+void RconProcessor::ConTeleportToMousePos(IConsole::IResult* pResult, void* pUser)
 {
 	const auto ClientID = pResult->GetClientID();
 	auto* pGS = GetCommandResultGameServer(ClientID, pUser);
@@ -103,7 +104,7 @@ void RconProcessor::ConTeleportByMouse(IConsole::IResult* pResult, void* pUser)
 }
 
 
-void RconProcessor::ConTeleportByPos(IConsole::IResult* pResult, void* pUser)
+void RconProcessor::ConTeleportToPos(IConsole::IResult* pResult, void* pUser)
 {
 	IServer* pServer = (IServer*)pUser;
 	const auto ClientID = pResult->GetClientID();
@@ -130,7 +131,7 @@ void RconProcessor::ConTeleportByPos(IConsole::IResult* pResult, void* pUser)
 }
 
 
-void RconProcessor::ConTeleportByClient(IConsole::IResult* pResult, void* pUser)
+void RconProcessor::ConTeleportToClient(IConsole::IResult* pResult, void* pUser)
 {
 	IServer* pServer = (IServer*)pUser;
 	auto ClientID = pResult->GetInteger(0);
@@ -138,7 +139,7 @@ void RconProcessor::ConTeleportByClient(IConsole::IResult* pResult, void* pUser)
 	auto* pPlayer = pGS->GetPlayer(ClientID);
 	if(!pPlayer || !pPlayer->GetCharacter())
 	{
-		pGS->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "teleport by client", "I can't find the player, or he's dead");
+		pGS->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "teleport to client", "I can't find the player, or he's dead");
 		return;
 	}
 
@@ -160,6 +161,48 @@ void RconProcessor::ConTeleportByClient(IConsole::IResult* pResult, void* pUser)
 	else
 	{
 		pPlayer->GetCharacter()->ChangePosition(NewPos);
+	}
+}
+
+
+void RconProcessor::ConTeleportClient(IConsole::IResult *pResult, void *pUser)
+{
+	IServer* pServer = (IServer*)pUser;
+	auto IssuerID = pResult->GetClientID();
+	auto* pIssuerGS = GetCommandResultGameServer(IssuerID, pUser);
+
+	auto ActorID = pResult->GetInteger(0);
+	auto* pActorGS = GetCommandResultGameServer(ActorID, pUser);
+	auto* pActor = pActorGS->GetPlayer(ActorID);
+
+	if(!pActor || !pActor->GetCharacter())
+	{
+		pIssuerGS->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "teleport client", "I can't find the actor player, or he's dead");
+		return;
+	}
+
+	auto TargetID = pResult->GetInteger(1);
+	auto* pTargetGS = GetCommandResultGameServer(TargetID, pUser);
+	auto* pTarget = pTargetGS->GetPlayer(TargetID);
+
+	if(!pTarget || !pTarget->GetCharacter())
+	{
+		pIssuerGS->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "teleport client", "I can't find the target player, or he's dead");
+		return;
+	}
+
+	const auto NewPos = pTarget->GetCharacter()->m_Core.m_Pos;
+	const auto NewWorldID = pServer->GetClientWorldID(TargetID);
+
+	// teleport client
+	if(pActor->GetCurrentWorldID() != NewWorldID)
+	{
+		pActor->GetSharedData().SetSpawnPosition(NewPos);
+		pServer->ChangeWorld(ActorID, NewWorldID);
+	}
+	else
+	{
+		pActor->GetCharacter()->ChangePosition(NewPos);
 	}
 }
 
