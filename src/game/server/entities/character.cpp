@@ -2017,6 +2017,24 @@ void CCharacter::UpdateEquippedStats(std::optional<int> UpdatedItemID)
 	}
 }
 
+vec2 CCharacter::GetMousePos() const
+{
+	auto Target = vec2(m_Core.m_Input.m_TargetX, m_Core.m_Input.m_TargetY);
+	auto Position = m_Core.m_Pos;
+	auto &CameraInfo = GetPlayer()->m_CameraInfo;
+
+	vec2 TargetCameraOffset(0, 0);
+	float l = length(Target);
+
+	if(l > 0.0001f) // make sure that this isn't 0
+	{
+		float OffsetAmount = maximum(l - CameraInfo.m_Deadzone, 0.0f) * (CameraInfo.m_FollowFactor / 100.0f);
+		TargetCameraOffset = normalize_pre_length(Target, l) * OffsetAmount;
+	}
+
+	return Position + (Target - TargetCameraOffset) * CameraInfo.m_Zoom + TargetCameraOffset;
+}
+
 void CCharacter::HandlePlayer()
 {
 	if(!m_pPlayer->IsAuthed())

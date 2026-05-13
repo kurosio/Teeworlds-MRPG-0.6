@@ -56,6 +56,24 @@ public:
 	CGS* GS() const { return m_pGS; }
 	FixedViewCam& LockedView() { return m_FixedView; }
 
+	class CCameraInfo
+	{
+		friend class CCharacter;
+		bool m_HasCameraInfo;
+		float m_Zoom;
+		int m_Deadzone;
+		int m_FollowFactor;
+
+	public:
+		void Write(const CNetMsg_Cl_CameraInfo *pMsg)
+		{
+			m_HasCameraInfo = true;
+			m_Zoom = pMsg->m_Zoom / 1000.0f;
+			m_Deadzone = pMsg->m_Deadzone;
+			m_FollowFactor = pMsg->m_FollowFactor;
+		}
+	} m_CameraInfo;
+
 	vec2 m_ViewPos{};
 	int m_PlayerFlags{};
 	int m_aPlayerTick[NUM_TICK]{};

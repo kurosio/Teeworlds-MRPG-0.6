@@ -1196,6 +1196,11 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 			return;
 		}
 
+		if(MsgID == NETMSGTYPE_CL_CAMERAINFO)
+		{
+			pPlayer->m_CameraInfo.Write(static_cast<CNetMsg_Cl_CameraInfo *>(pRawMsg));
+		}
+
 		// custom
 		if(MsgID == NETMSGTYPE_CL_ISMRPGSERVER)
 		{
