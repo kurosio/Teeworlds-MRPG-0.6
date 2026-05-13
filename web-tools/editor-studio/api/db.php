@@ -11,11 +11,9 @@
 
 declare(strict_types=1);
 
-header('Content-Type: application/json; charset=utf-8');
-
 require_once __DIR__ . '/db-core.php';
 
-ensure_editor_auth();
+bootstrap_editor_api(true);
 
 // Whitelisted sources for DBSelect.
 // Each source returns items {value,label}
@@ -40,6 +38,8 @@ try {
       'user' => (string)($c['user'] ?? ''),
       'skins_api' => (string)($c['skins_api'] ?? ''),
       'editor_user' => (string)($c['editor_user'] ?? 'admin'),
+      'allow_remote_editor' => (bool)($c['allow_remote_editor'] ?? false),
+      'allowed_editor_ips' => is_array($c['allowed_editor_ips'] ?? null) ? array_values($c['allowed_editor_ips']) : [],
     ];
     respond(['ok' => true, 'config' => $safe]);
   }
@@ -57,6 +57,8 @@ try {
       'skins_api' => trim((string)($body['skins_api'] ?? ($prev['skins_api'] ?? ''))),
       'editor_user' => trim((string)($body['editor_user'] ?? ($prev['editor_user'] ?? 'admin'))),
       'editor_password' => (string)($body['editor_password'] ?? ''),
+      'allow_remote_editor' => (bool)($body['allow_remote_editor'] ?? ($prev['allow_remote_editor'] ?? false)),
+      'allowed_editor_ips' => is_array($body['allowed_editor_ips'] ?? null) ? array_values($body['allowed_editor_ips']) : (is_array($prev['allowed_editor_ips'] ?? null) ? array_values($prev['allowed_editor_ips']) : []),
     ];
     if ($cfg['password'] === '' && isset($prev['password'])) {
       $cfg['password'] = (string)$prev['password'];
@@ -108,6 +110,7 @@ try {
     $filterValue = trim((string)($_GET['filter_value'] ?? ''));
     $filterValuesRaw = trim((string)($_GET['filter_values'] ?? ''));
     $limit = max(1, min(5000, (int)($_GET['limit'] ?? 1000)));
+    $fetchLimit = min(5001, $limit + 1);
     $offset = max(0, (int)($_GET['offset'] ?? 0));
     $withTotal = (string)($_GET['with_total'] ?? '') === '1';
 
@@ -176,9 +179,9 @@ try {
     $stmt = $mysqli->prepare($sql);
     if ($stmt === false) throw new RuntimeException('Prepare failed');
     if ($types) {
-      $stmt->bind_param($types . 'ii', ...array_merge($params, [$limit, $offset]));
+      $stmt->bind_param($types . 'ii', ...array_merge($params, [$fetchLimit, $offset]));
     } else {
-      $stmt->bind_param('ii', $limit, $offset);
+      $stmt->bind_param('ii', $fetchLimit, $offset);
     }
     $stmt->execute();
     $res = $stmt->get_result();
@@ -189,7 +192,10 @@ try {
     $stmt->close();
     $mysqli->close();
 
-    $hasMore = count($items) >= $limit;
+    $hasMore = count($items) > $limit;
+    if ($hasMore) {
+      $items = array_slice($items, 0, $limit);
+    }
     respond([
       'ok' => true,
       'items' => $items,

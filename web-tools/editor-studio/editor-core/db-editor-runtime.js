@@ -53,6 +53,7 @@
           token: 0,
           controller: null,
         },
+        visibleCount: 250,
       };
       let listRequestSeq = 0;
 
@@ -161,7 +162,8 @@
           return;
         }
 
-        const html = rows.map((row) => {
+        const visibleRows = rows.slice(0, state.visibleCount);
+        const html = visibleRows.map((row) => {
           const label = typeof cfg.listItem === 'function'
             ? cfg.listItem(row)
             : { title: row?.Name || `#${row?.ID}`, subtitle: row?.Path || '' };
@@ -173,7 +175,13 @@
             </button>
           `;
         }).join('');
-        els.list.innerHTML = `<div class="editor-list">${html}</div>`;
+        const hasMore = rows.length > visibleRows.length;
+        const more = hasMore
+          ? `<div class="pt-2"><button type="button" class="editor-btn editor-btn-secondary w-full" data-editor-role="list-more">Показать ещё (${rows.length - visibleRows.length})</button></div>`
+          : '';
+        window.requestAnimationFrame(() => {
+          els.list.innerHTML = `<div class="editor-list">${html}${more}</div>`;
+        });
       };
 
 
@@ -197,6 +205,7 @@
         if (isRaw) state.rowsRaw = safeRows;
         state.search = normalizeSearchText(search ?? state.search);
         state.rows = safeRows;
+        state.visibleCount = 250;
         setStatus(state.rows.length ? '' : 'Список пуст.', 'muted');
         renderList();
 
@@ -266,7 +275,7 @@
         try {
           const res = await window.EditorCore.DBCrud.list(resource, {
             search,
-            limit: 5000,
+            limit: 2000,
             offset: 0,
             signal: controller.signal,
           });
@@ -382,6 +391,12 @@
 
       if (els.list) {
         els.list.addEventListener('click', (event) => {
+          const moreBtn = event.target?.closest?.('[data-editor-role="list-more"]');
+          if (moreBtn) {
+            state.visibleCount += 250;
+            renderList();
+            return;
+          }
           const btn = event.target?.closest?.('[data-id]');
           if (!btn) return;
           const id = Number(btn.getAttribute('data-id') || 0);

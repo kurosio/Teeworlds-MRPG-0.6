@@ -60,6 +60,16 @@
             </div>
             <div id="skins-status" class="mt-3 text-xs"></div>
           </div>
+          <div class="md:col-span-2 editor-section">
+            <div class="text-sm font-medium text-slate-200 mb-1">Network Access</div>
+            <label id="remote-access-toggle" class="editor-toggle mb-2" data-checked="0">
+              <input id="allow-remote-editor" type="checkbox" />
+              <span class="editor-toggle-track"><span class="editor-toggle-knob"></span></span>
+              <span class="text-sm">Allow remote API access</span>
+            </label>
+            <div class="editor-muted-text text-xs mb-2">By default editor API is localhost-only. If enabled, only allowlist IP/CIDR can access.</div>
+            <textarea id="allowed-editor-ips" class="w-full editor-input form-textarea" placeholder="192.168.1.25&#10;192.168.1.0/24&#10;10.10.0.5"></textarea>
+          </div>
         </div>
 
         <div class="flex flex-wrap gap-2 mt-5">
@@ -128,6 +138,9 @@
       reload: document.getElementById('btn-reload'),
       test: document.getElementById('btn-test'),
       skinsApi: document.getElementById('skins-api'),
+      allowRemoteEditor: document.getElementById('allow-remote-editor'),
+      allowedEditorIps: document.getElementById('allowed-editor-ips'),
+      remoteAccessToggle: document.getElementById('remote-access-toggle'),
       skinsTest: document.getElementById('btn-test-skins'),
       skinsStatus: document.getElementById('skins-status'),
       list: document.getElementById('list'),
@@ -172,6 +185,9 @@
       els.user.value = c.user || '';
       els.pass.value = '';
       els.skinsApi.value = c.skins_api || '';
+      els.allowRemoteEditor.checked = !!c.allow_remote_editor;
+      els.remoteAccessToggle.dataset.checked = els.allowRemoteEditor.checked ? '1' : '0';
+      els.allowedEditorIps.value = Array.isArray(c.allowed_editor_ips) ? c.allowed_editor_ips.join('\n') : '';
       setStatus('Конфигурация загружена.', 'ok');
       setSkinsStatus('Используйте кнопку ниже, чтобы проверить соединение.', 'muted');
       syncThemeSelect();
@@ -184,7 +200,12 @@
         database: els.name.value.trim(),
         user: els.user.value.trim(),
         password: els.pass.value,
-        skins_api: els.skinsApi.value.trim()
+        skins_api: els.skinsApi.value.trim(),
+        allow_remote_editor: !!els.allowRemoteEditor.checked,
+        allowed_editor_ips: els.allowedEditorIps.value
+          .split(/\r?\n/)
+          .map(v => v.trim())
+          .filter(Boolean)
       };
       const res = await EditorCore.DB.saveConfig(payload);
       if (!res.ok) {
@@ -294,6 +315,9 @@ const loadSource = async ({ reset = true } = {}) => {
     els.reload.addEventListener('click', loadConfig);
     els.test.addEventListener('click', testConnection);
     els.skinsTest.addEventListener('click', testSkinsConnection);
+    els.allowRemoteEditor.addEventListener('change', () => {
+      els.remoteAccessToggle.dataset.checked = els.allowRemoteEditor.checked ? '1' : '0';
+    });
     els.search.addEventListener('input', () => {
       clearTimeout(window.__dbSearchT);
       window.__dbSearchT = setTimeout(loadSource, 250);

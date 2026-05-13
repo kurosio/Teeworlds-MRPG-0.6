@@ -8,12 +8,9 @@
 
 declare(strict_types=1);
 
-header('Content-Type: application/json; charset=utf-8');
-header('X-Content-Type-Options: nosniff');
-
 require_once __DIR__ . '/db-core.php';
 
-start_editor_session();
+bootstrap_editor_api(false);
 
 $action = (string)($_GET['action'] ?? 'status');
 

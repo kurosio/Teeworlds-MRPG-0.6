@@ -3,6 +3,17 @@
 
 declare(strict_types=1);
 
+function apply_security_headers(): void {
+  header('Content-Type: application/json; charset=utf-8');
+  header('X-Content-Type-Options: nosniff');
+  header('X-Frame-Options: SAMEORIGIN');
+  header('Referrer-Policy: same-origin');
+  header('Cross-Origin-Resource-Policy: same-origin');
+  header('Cross-Origin-Opener-Policy: same-origin');
+  header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+  header('Pragma: no-cache');
+}
+
 function respond(array $payload, int $code = 200): void {
   http_response_code($code);
   echo json_encode($payload, JSON_UNESCAPED_UNICODE);
@@ -48,6 +59,94 @@ function start_editor_session(): void {
     'samesite' => 'Lax',
   ]);
   session_start();
+}
+
+function get_request_ip(): string {
+  $candidates = [
+    (string)($_SERVER['REMOTE_ADDR'] ?? ''),
+    trim((string)($_SERVER['HTTP_X_FORWARDED_FOR'] ?? '')),
+    trim((string)($_SERVER['HTTP_X_REAL_IP'] ?? '')),
+  ];
+  foreach ($candidates as $candidate) {
+    if ($candidate === '') continue;
+    $parts = array_map('trim', explode(',', $candidate));
+    foreach ($parts as $part) {
+      if (filter_var($part, FILTER_VALIDATE_IP)) {
+        return $part;
+      }
+    }
+  }
+  return '';
+}
+
+function ip_is_loopback(string $ip): bool {
+  if ($ip === '') return false;
+  return $ip === '127.0.0.1' || $ip === '::1';
+}
+
+function ip_in_cidrs(string $ip, array $cidrs): bool {
+  if ($ip === '' || !$cidrs) return false;
+  foreach ($cidrs as $raw) {
+    $cidr = trim((string)$raw);
+    if ($cidr === '') continue;
+    if (strpos($cidr, '/') === false) {
+      if (hash_equals($cidr, $ip)) return true;
+      continue;
+    }
+    [$base, $prefix] = explode('/', $cidr, 2);
+    $prefixNum = (int)$prefix;
+    $ipBin = @inet_pton($ip);
+    $baseBin = @inet_pton($base);
+    if ($ipBin === false || $baseBin === false || strlen($ipBin) !== strlen($baseBin)) continue;
+    $bits = strlen($ipBin) * 8;
+    if ($prefixNum < 0 || $prefixNum > $bits) continue;
+    $bytes = intdiv($prefixNum, 8);
+    $rem = $prefixNum % 8;
+    $ok = true;
+    for ($i = 0; $i < $bytes; $i++) {
+      if (ord($ipBin[$i]) !== ord($baseBin[$i])) {
+        $ok = false;
+        break;
+      }
+    }
+    if (!$ok) continue;
+    if ($rem > 0) {
+      $mask = 0xFF << (8 - $rem);
+      if ((ord($ipBin[$bytes]) & $mask) !== (ord($baseBin[$bytes]) & $mask)) {
+        continue;
+      }
+    }
+    return true;
+  }
+  return false;
+}
+
+function enforce_network_policy(array $cfg): void {
+  $allowRemote = (bool)($cfg['allow_remote_editor'] ?? false);
+  if ($allowRemote) {
+    $allowed = $cfg['allowed_editor_ips'] ?? [];
+    if (!is_array($allowed) || !$allowed) return;
+    $ip = get_request_ip();
+    if (!ip_in_cidrs($ip, $allowed)) {
+      respond(['ok' => false, 'error' => 'Access denied for this IP'], 403);
+    }
+    return;
+  }
+  $ip = get_request_ip();
+  if (!ip_is_loopback($ip)) {
+    respond(['ok' => false, 'error' => 'Editor API is available only from localhost'], 403);
+  }
+}
+
+function bootstrap_editor_api(bool $requireAuth = true): void {
+  apply_security_headers();
+  $cfg = load_cfg();
+  enforce_network_policy($cfg);
+  if ($requireAuth) {
+    ensure_editor_auth();
+  } else {
+    start_editor_session();
+  }
 }
 
 function test_http_endpoint(string $url): array {

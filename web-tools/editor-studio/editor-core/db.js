@@ -479,7 +479,9 @@
       q: '',
       items: null,      // for client filter mode
       activeIndex: -1,
-      lastResults: []
+      lastResults: [],
+      querySeq: 0,
+      queryController: null,
     };
 
     const placeDropdown = () => {
@@ -646,6 +648,10 @@
       if (!input) return;
       const q = String(qRaw ?? '').trim();
       state.q = q;
+      const querySeq = ++state.querySeq;
+      state.queryController?.abort?.();
+      state.queryController = new AbortController();
+      const signal = state.queryController.signal;
 
       // If DB is down -> show fallback
       try {
@@ -656,8 +662,10 @@
             offset: 0,
             withTotal: false,
             filterKey: filter?.key,
-            filterValues: filter?.values
+            filterValues: filter?.values,
+            signal
           });
+          if (querySeq !== state.querySeq || signal.aborted) return;
           if (!res?.ok) {
             setDbState('disconnected');
             close();
@@ -669,6 +677,7 @@
         }
 
         const ok = await loadClientItemsIfNeeded();
+        if (querySeq !== state.querySeq || signal.aborted) return;
         if (!ok) {
           setDbState('disconnected');
           close();
@@ -684,7 +693,8 @@
               return v.includes(needle) || l.includes(needle) || `${v}: ${l}`.includes(needle);
             }).slice(0, pageSize);
         renderList(filtered, { emptyText: q ? 'Ничего не найдено' : 'Нет вариантов' });
-      } catch {
+      } catch (err) {
+        if (signal.aborted || querySeq !== state.querySeq) return;
         setDbState('disconnected');
         close();
       }
@@ -836,7 +846,7 @@
       return res;
     },
 
-    async list(source, { search = '', limit = 1000, offset = 0, withTotal = false, filterKey = '', filterValue = '', filterValues = [] } = {}) {
+    async list(source, { search = '', limit = 1000, offset = 0, withTotal = false, filterKey = '', filterValue = '', filterValues = [], signal = null } = {}) {
       const resolvedFilterKey = String(filterKey || '');
       const normalizedValues = Array.isArray(filterValues)
         ? filterValues.map(v => String(v ?? '').trim()).filter(Boolean)
@@ -858,7 +868,7 @@
       }
       const qs = new URLSearchParams(params).toString();
 
-      const res = await fetchJson(`${this.endpoint}?${qs}`);
+      const res = await fetchJson(`${this.endpoint}?${qs}`, { signal });
       if (res?.ok) cacheSet(key, res);
       return res;
     },

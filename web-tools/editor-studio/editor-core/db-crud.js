@@ -4,6 +4,9 @@
   const API = 'api/db-crud.php';
   const FETCH_TIMEOUT_MS = 10000;
   const LOG_ERRORS = false;
+  const LIST_CACHE_TTL_MS = 30 * 1000;
+  const listCache = new Map();
+  const inflight = new Map();
 
   const normalizeError = (err) => {
     if (err?.name === 'AbortError') return new Error('Request timed out');
@@ -65,18 +68,37 @@
 
   const DBCrud = {
     async list(resource, { search = '', limit = 100, offset = 0, signal } = {}) {
-      return jsonFetch(`${API}?${qs({ action: 'list', resource, search, limit, offset })}`, { signal });
+      const key = `list:${resource}:${search}:${limit}:${offset}`;
+      const now = Date.now();
+      const cached = listCache.get(key);
+      if (cached && (now - cached.ts) < LIST_CACHE_TTL_MS) {
+        return cached.value;
+      }
+      if (!signal && inflight.has(key)) {
+        return inflight.get(key);
+      }
+      const req = jsonFetch(`${API}?${qs({ action: 'list', resource, search, limit, offset })}`, { signal })
+        .then((res) => {
+          if (res?.ok) listCache.set(key, { ts: Date.now(), value: res });
+          return res;
+        })
+        .finally(() => inflight.delete(key));
+      if (!signal) inflight.set(key, req);
+      return req;
     },
     async get(resource, id) {
       return jsonFetch(`${API}?${qs({ action: 'get', resource, id })}`);
     },
     async create(resource, data) {
+      listCache.clear();
       return jsonFetch(`${API}?${qs({ action: 'create', resource })}`, { method: 'POST', body: JSON.stringify({ data }) });
     },
     async update(resource, id, data) {
+      listCache.clear();
       return jsonFetch(`${API}?${qs({ action: 'update', resource, id })}`, { method: 'POST', body: JSON.stringify({ data }) });
     },
     async remove(resource, id) {
+      listCache.clear();
       return jsonFetch(`${API}?${qs({ action: 'delete', resource, id })}`, { method: 'POST', body: JSON.stringify({}) });
     }
   };

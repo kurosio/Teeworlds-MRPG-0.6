@@ -10,76 +10,9 @@
 
 declare(strict_types=1);
 
-header('Content-Type: application/json; charset=utf-8');
-header('X-Content-Type-Options: nosniff');
+require_once __DIR__ . '/db-core.php';
 
-
-if (session_status() !== PHP_SESSION_ACTIVE) {
-  $isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off');
-  session_set_cookie_params([
-    'lifetime' => 0,
-    'path' => '/',
-    'domain' => '',
-    'secure' => $isHttps,
-    'httponly' => true,
-    'samesite' => 'Lax',
-  ]);
-  session_start();
-}
-if (!isset($_SESSION['editor_studio_auth']) || $_SESSION['editor_studio_auth'] !== true) {
-  respond(['ok' => false, 'error' => 'Unauthorized'], 401);
-}
-
-
-function respond(array $payload, int $code = 200): void {
-  http_response_code($code);
-  echo json_encode($payload, JSON_UNESCAPED_UNICODE);
-  exit;
-}
-
-function read_json_body(): array {
-  $raw = file_get_contents('php://input');
-  if (!$raw) return [];
-  $data = json_decode($raw, true);
-  return is_array($data) ? $data : [];
-}
-
-function cfg_path(): string {
-  return dirname(__DIR__) . '/data/db-config.json';
-}
-
-function load_cfg(): array {
-  $path = cfg_path();
-  if (!file_exists($path)) return [];
-  $raw = file_get_contents($path);
-  $cfg = json_decode($raw ?: 'null', true);
-  return is_array($cfg) ? $cfg : [];
-}
-
-function db_connect(): mysqli {
-  $cfg = load_cfg();
-  $host = (string)($cfg['host'] ?? '127.0.0.1');
-  $port = (int)($cfg['port'] ?? 3306);
-  $db   = (string)($cfg['database'] ?? '');
-  $user = (string)($cfg['user'] ?? 'root');
-  $pass = (string)($cfg['password'] ?? '');
-
-  mysqli_report(MYSQLI_REPORT_OFF);
-  $mysqli = @new mysqli($host, $user, $pass, $db, $port);
-  if ($mysqli->connect_errno) {
-    throw new RuntimeException('DB connection failed: ' . $mysqli->connect_error);
-  }
-  $mysqli->set_charset('utf8mb4');
-  return $mysqli;
-}
-
-function is_assoc(array $arr): bool {
-  $i = 0;
-  foreach ($arr as $k => $_) {
-    if ($k !== $i++) return true;
-  }
-  return false;
-}
+bootstrap_editor_api(true);
 
 // Resource map.
 // IMPORTANT: only whitelisted tables/columns are accessible.
@@ -263,6 +196,23 @@ function sanitize_columns(array $data, array $allowed): array {
   return $out;
 }
 
+function bind_type_for_value(mixed $value): string {
+  if ($value === null) return 's';
+  if (is_int($value)) return 'i';
+  if (is_float($value)) return 'd';
+  if (is_bool($value)) return 'i';
+  if (is_string($value) && preg_match('/^-?\d+$/', $value) === 1) return 'i';
+  if (is_string($value) && is_numeric($value)) return 'd';
+  return 's';
+}
+
+function normalize_bind_value(mixed $value, string $type): mixed {
+  if ($value === null) return null;
+  if ($type === 'i') return (int)$value;
+  if ($type === 'd') return (float)$value;
+  return (string)$value;
+}
+
 $action = (string)($_GET['action'] ?? '');
 $resource = (string)($_GET['resource'] ?? '');
 
@@ -282,6 +232,7 @@ try {
   if ($action === 'list') {
     $search = trim((string)($_GET['search'] ?? ''));
     $limit = max(1, min(5000, (int)($_GET['limit'] ?? 100)));
+    $fetchLimit = min(5001, $limit + 1);
     $offset = max(0, (int)($_GET['offset'] ?? 0));
 
     $where = '';
@@ -310,10 +261,10 @@ try {
     if ($stmt === false) throw new RuntimeException('Prepare failed');
     if ($types) {
       $types2 = $types . 'ii';
-      $params2 = array_merge($params, [$limit, $offset]);
+      $params2 = array_merge($params, [$fetchLimit, $offset]);
       $stmt->bind_param($types2, ...$params2);
     } else {
-      $stmt->bind_param('ii', $limit, $offset);
+      $stmt->bind_param('ii', $fetchLimit, $offset);
     }
     $stmt->execute();
     $res = $stmt->get_result();
@@ -322,7 +273,10 @@ try {
       $rows[] = decode_json_cols($r, $jsonCols);
     }
     $stmt->close();
-    $hasMore = count($rows) >= $limit;
+    $hasMore = count($rows) > $limit;
+    if ($hasMore) {
+      $rows = array_slice($rows, 0, $limit);
+    }
     $mysqli->close();
     respond(['ok' => true, 'rows' => $rows, 'has_more' => $hasMore]);
   }
@@ -363,17 +317,9 @@ try {
     $vals = [];
     foreach ($keys as $k) {
       $v = $data[$k];
-      if ($v === null) {
-        // bind null as string, MySQL will coerce (works for ints as well)
-        $types .= 's';
-        $vals[] = null;
-      } elseif (is_int($v) || is_float($v) || (is_string($v) && ctype_digit($v))) {
-        $types .= 'i';
-        $vals[] = (int)$v;
-      } else {
-        $types .= 's';
-        $vals[] = (string)$v;
-      }
+      $t = bind_type_for_value($v);
+      $types .= $t;
+      $vals[] = normalize_bind_value($v, $t);
     }
     $stmt->bind_param($types, ...$vals);
     $stmt->execute();
@@ -403,16 +349,9 @@ try {
     $vals = [];
     foreach ($keys as $k) {
       $v = $data[$k];
-      if ($v === null) {
-        $types .= 's';
-        $vals[] = null;
-      } elseif (is_int($v) || is_float($v) || (is_string($v) && ctype_digit($v))) {
-        $types .= 'i';
-        $vals[] = (int)$v;
-      } else {
-        $types .= 's';
-        $vals[] = (string)$v;
-      }
+      $t = bind_type_for_value($v);
+      $types .= $t;
+      $vals[] = normalize_bind_value($v, $t);
     }
     $types .= 'i';
     $vals[] = $iid;

@@ -10,11 +10,9 @@
 
 declare(strict_types=1);
 
-header('Content-Type: application/json; charset=utf-8');
-
 require_once __DIR__ . '/db-core.php';
 
-ensure_editor_auth();
+bootstrap_editor_api(true);
 
 function dumps_dir(): string {
   return dirname(__DIR__) . '/data/db-dumps';
