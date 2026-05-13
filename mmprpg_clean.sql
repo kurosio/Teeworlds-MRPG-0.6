@@ -1,11 +1,11 @@
 -- phpMyAdmin SQL Dump
--- version 5.2.2
+-- version 5.2.1deb3
 -- https://www.phpmyadmin.net/
 --
--- Host: mariadb
--- Generation Time: Mar 19, 2026 at 07:05 PM
--- Server version: 10.11.14-MariaDB-ubu2204
--- PHP Version: 8.2.27
+-- Host: localhost:3306
+-- Generation Time: May 13, 2026 at 08:23 PM
+-- Server version: 10.11.14-MariaDB-0ubuntu0.24.04.1-log
+-- PHP Version: 8.3.6
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -18,7 +18,7 @@ SET time_zone = "+00:00";
 /*!40101 SET NAMES utf8mb4 */;
 
 --
--- Database: `mrpg_dev`
+-- Database: `mmotee`
 --
 
 -- --------------------------------------------------------
@@ -289,7 +289,7 @@ INSERT INTO `tw_achievements` (`ID`, `Type`, `Criteria`, `Required`, `Name`, `Re
 (12, 1, 0, 15000, 'PVP 3.3 | Scarred face', '{\r\n    \"exp\": 10000,\r\n    \"items\": [\r\n        {\r\n            \"id\": 1,\r\n            \"value\": 20000\r\n        }\r\n    ]\r\n}', 55),
 (13, 1, 0, 20000, 'PVP 3.4 | Dominator', '{\r\n    \"exp\": 15000,\r\n    \"items\": [\r\n        {\r\n            \"id\": 1,\r\n            \"value\": 30000\r\n        }\r\n    ]\r\n}', 60),
 (14, 1, 0, 50000, 'PVP 3.5 | Legend of the DM', '{\r\n    \"exp\": 30000,\r\n    \"items\": [\r\n        {\r\n            \"id\": 140,\r\n            \"value\": 1\r\n        }\r\n    ]\r\n}', 99),
-(16, 2, 0, 1, 'PVE 1.1 | Rookie in the MMORPG', '{\r\n    \"exp\": 10,\r\n    \"items\": [\r\n        {\r\n            \"id\": 1,\r\n            \"value\": 5\r\n        }\r\n    ]\r\n}', 1),
+(16, 2, 0, 1, 'PVE 1.1 | Rookie in the MMORPG', '{\n    \"exp\": 10,\n    \"items\": [\n        {\n            \"id\": 1,\n            \"value\": 5\n        }\n    ]\n}', 1),
 (17, 2, 0, 50, 'PVE 1.2 | First booty?', '{\r\n    \"exp\": 20,\r\n    \"items\": [\r\n        {\r\n            \"id\": 1,\r\n            \"value\": 50\r\n        }\r\n    ]\r\n}', 1),
 (18, 2, 0, 200, 'PVE 1.3 | Hunter\'s apprentice', '{\r\n    \"exp\": 60,\r\n    \"items\": [\r\n        {\r\n            \"id\": 1,\r\n            \"value\": 100\r\n        }\r\n    ]\r\n}', 1),
 (19, 2, 0, 800, 'PVE 1.4 | Defender of Gridania', '{\r\n    \"exp\": 400,\r\n    \"items\": [\r\n        {\r\n            \"id\": 1,\r\n            \"value\": 1000\r\n        }\r\n    ]\r\n}', 1),
@@ -534,8 +534,8 @@ CREATE TABLE `tw_bots_info` (
 --
 
 INSERT INTO `tw_bots_info` (`ID`, `Name`, `JsonTeeInfo`, `EquippedModules`, `SlotHammer`, `SlotGun`, `SlotShotgun`, `SlotGrenade`, `SlotRifle`, `SlotArmor`) VALUES
-(1, 'Batya', '{\"color_body\":65408,\"color_feet\":65408,\"custom_color\":0,\"skin\":\"chinese_by_whis\"}', '0', 2, 3, 4, 5, 6, NULL),
-(2, 'Mamya', '{\"color_body\":65408,\"color_feet\":65408,\"custom_color\":0,\"skin\":\"giraffe\"}', '0', 2, 3, 4, 5, 6, NULL),
+(1, 'Batya', '{\"skin\":\"chinese_by_whis\",\"custom_color\":1,\"color_body\":0,\"color_feet\":0}', '0', 2, 3, 4, 5, 6, NULL),
+(2, 'Mamya', '{\"skin\":\"giraffe\",\"custom_color\":0,\"color_body\":0,\"color_feet\":0}', '0', 2, 3, 4, 5, 6, NULL),
 (3, 'Bertennant', '{\"color_body\":65408,\"color_feet\":65408,\"custom_color\":0,\"skin\":\"wartee\"}', '0', 2, 3, 4, 5, 6, NULL),
 (4, 'Protector', '{\"color_body\":65408,\"color_feet\":65408,\"custom_color\":0,\"skin\":\"Soldier\"}', '90,91,35,36,37,20', 102, 151, 4, 100, 101, 84),
 (5, 'Lead', '{\"color_body\":65408,\"color_feet\":65408,\"custom_color\":0,\"skin\":\"TFT_Ninja\"}', '0', 2, 3, 4, 5, 6, NULL),
@@ -587,7 +587,7 @@ INSERT INTO `tw_bots_info` (`ID`, `Name`, `JsonTeeInfo`, `EquippedModules`, `Slo
 (51, 'Chameleon', '{\"color_body\":1507072,\"color_feet\":2359295,\"custom_color\":0,\"skin\":\"Exotix\"}', '0', 2, NULL, NULL, 4, NULL, NULL),
 (52, 'Swamp Ghost ', '{\"color_body\":1507072,\"color_feet\":2359295,\"custom_color\":0,\"skin\":\"ghost_greensward\"}', '66,19', 2, 3, NULL, NULL, NULL, NULL),
 (53, 'Ghost', '{\"color_body\":65408,\"color_feet\":65408,\"custom_color\":0,\"skin\":\"ghost\"}', '66', 2, NULL, NULL, NULL, NULL, NULL),
-(54, 'Guardian', '{\"color_body\":65408,\"color_feet\":65408,\"custom_color\":0,\"skin\":\"roman\"}', '90,91,35,36,37,20', 99, 151, 4, 100, 150, 84),
+(54, 'Guardian', '{\"skin\":\"Corredor medieval\",\"custom_color\":0,\"color_body\":0,\"color_feet\":0}', '90,91,35,36,37,20', 99, 151, 4, 100, 150, 84),
 (55, 'Pig', '{\"color_body\":65408,\"color_feet\":65408,\"custom_color\":0,\"skin\":\"oink\"}', '0', 2, NULL, NULL, NULL, NULL, NULL),
 (56, 'Ogre', '{\"color_body\":65408,\"color_feet\":65408,\"custom_color\":0,\"skin\":\"defatulYoda\"}', '0', 2, NULL, NULL, NULL, NULL, 28),
 (57, 'HarryPotter', '{\"color_body\":65408,\"color_feet\":65408,\"custom_color\":0,\"skin\":\"grosboule\"}', '0', 2, 3, 4, 5, 6, NULL),
@@ -633,7 +633,17 @@ INSERT INTO `tw_bots_info` (`ID`, `Name`, `JsonTeeInfo`, `EquippedModules`, `Slo
 (1050, 'Mantis', '{\"color_body\":65408,\"color_feet\":65408,\"custom_color\":0,\"skin\":\"Praying Mantis\"}', '0', 2, NULL, NULL, NULL, NULL, NULL),
 (1051, 'Punster', '{\"color_body\":65408,\"color_feet\":65408,\"custom_color\":0,\"skin\":\"punster\"}', '0', 2, NULL, NULL, NULL, NULL, NULL),
 (1052, 'Fat frog', '{\"color_body\":65408,\"color_feet\":65408,\"custom_color\":0,\"skin\":\"fat_frog\"}', '0', 2, NULL, NULL, NULL, NULL, NULL),
-(1053, 'Dage', '{\"color_body\":65408,\"color_feet\":65408,\"custom_color\":0,\"skin\":\"M_dage\"}', '0', 2, NULL, NULL, NULL, NULL, NULL);
+(1053, 'Dage', '{\"color_body\":65408,\"color_feet\":65408,\"custom_color\":0,\"skin\":\"M_dage\"}', '0', 2, NULL, NULL, NULL, NULL, NULL),
+(1054, 'Garmoshka', '{\"skin\":\"00_cool_bear\",\"custom_color\":0,\"color_body\":0,\"color_feet\":0}', '0', 2, 3, 4, 5, 6, NULL),
+(1055, 'Healer', '{\"skin\":\"10yinyin\",\"custom_color\":0,\"color_body\":0,\"color_feet\":0}', '0', 2, 3, 4, 5, 6, 241),
+(1056, 'DPS', '{\"skin\":\"darknami\",\"custom_color\":0,\"color_body\":0,\"color_feet\":0}', '0', 2, 151, 4, 100, 324, 234),
+(1057, 'Tank', '{\"skin\":\"brownbear\",\"custom_color\":0,\"color_body\":0,\"color_feet\":0}', '0', 2, 3, 4, 5, 6, 84),
+(1058, 'Craftsman', '{\"color_body\":14745344,\"color_feet\":5111552,\"custom_color\":0,\"skin\":\"coala\"}', '0', 2, 3, 4, 5, 6, NULL),
+(1059, 'Voodoo', '{\"skin\":\"begoggled\",\"custom_color\":0,\"color_body\":0,\"color_feet\":0}', '404,405,316', 2, NULL, NULL, NULL, NULL, 84),
+(1060, 'Big Pig', '{\"skin\":\"oink\",\"custom_color\":0,\"color_body\":0,\"color_feet\":0}', '0', 2, NULL, NULL, NULL, NULL, NULL),
+(1061, 'Wild bear', '{\"skin\":\"Zombie_brownbear\",\"custom_color\":0,\"color_body\":0,\"color_feet\":0}', '0', 2, NULL, NULL, NULL, NULL, NULL),
+(1062, 'Mummy bear', '{\"skin\":\"Zombie_brownbear\",\"custom_color\":0,\"color_body\":0,\"color_feet\":0}', '0', 2, NULL, NULL, NULL, NULL, NULL),
+(1063, 'Glow bear', '{\"color_body\":14745344,\"color_feet\":5111552,\"custom_color\":0,\"skin\":\"glow_brownbear\"}', '0', 2, 3, 4, 5, 6, NULL);
 
 -- --------------------------------------------------------
 
@@ -648,12 +658,13 @@ CREATE TABLE `tw_bots_mobs` (
   `PositionX` int(11) NOT NULL,
   `PositionY` int(11) NOT NULL,
   `Debuffs` set('Slowdown','Poison','Fire') DEFAULT NULL,
-  `Behavior` set('sleepy','slower','poisonous','neutral') DEFAULT NULL,
+  `Behavior` set('sleepy','slower','poisonous','neutral','skills_base','skills_tank','skills_healer','skills_dps') DEFAULT NULL,
   `Level` int(11) NOT NULL DEFAULT 1,
   `Power` int(11) NOT NULL DEFAULT 10,
   `Number` int(11) NOT NULL DEFAULT 1,
   `Respawn` int(11) NOT NULL DEFAULT 1,
   `Radius` int(11) NOT NULL DEFAULT 800,
+  `ActiveRadius` int(11) DEFAULT NULL,
   `Boss` tinyint(1) NOT NULL DEFAULT 0,
   `it_drop_0` int(11) DEFAULT NULL,
   `it_drop_1` int(11) DEFAULT NULL,
@@ -668,83 +679,75 @@ CREATE TABLE `tw_bots_mobs` (
 -- Dumping data for table `tw_bots_mobs`
 --
 
-INSERT INTO `tw_bots_mobs` (`ID`, `BotID`, `WorldID`, `PositionX`, `PositionY`, `Debuffs`, `Behavior`, `Level`, `Power`, `Number`, `Respawn`, `Radius`, `Boss`, `it_drop_0`, `it_drop_1`, `it_drop_2`, `it_drop_3`, `it_drop_4`, `it_drop_count`, `it_drop_chance`) VALUES
-(1, 31, 1, 11296, 4384, 'Poison', NULL, 2, 10, 2, 5, 800, 0, 22, 107, NULL, NULL, NULL, '|1|1|0|0|0|', '|30|15|0|0|0|'),
-(2, 32, 1, 10048, 4384, NULL, 'slower', 2, 10, 2, 5, 800, 0, 33, 107, NULL, NULL, NULL, '|1|1|0|0|0|', '|30|17|0|0|0|'),
-(3, 33, 1, 8704, 4384, NULL, NULL, 3, 15, 4, 8, 800, 0, 105, 113, NULL, NULL, NULL, '|1|1|0|0|0|', '|10|10|0|0|0|'),
-(4, 34, 1, 9888, 5728, NULL, NULL, 5, 25, 5, 12, 1152, 0, 112, NULL, NULL, NULL, NULL, '|1|0|0|0|0|', '|30|0|0|0|0|'),
-(5, 35, 1, 8512, 4416, 'Fire', 'sleepy', 4, 80, 1, 1100, 448, 1, 111, NULL, NULL, NULL, NULL, '|1|0|0|0|0|', '|20|0|0|0|0|'),
-(6, 49, 1, 9888, 5728, 'Poison', 'sleepy', 6, 120, 1, 1000, 1152, 1, 105, 134, NULL, NULL, NULL, '|15|1|0|0|0|', '|50|1|0|0|0|'),
-(8, 46, 1, 9728, 4416, 'Slowdown', 'sleepy,poisonous', 3, 60, 1, 900, 640, 1, 137, 125, NULL, NULL, NULL, '|10|1|0|0|0|', '|5|15|0|0|0|'),
-(9, 55, 1, 17255, 4319, NULL, 'sleepy,neutral', 1, 5, 4, 4, 1000, 0, 173, 186, 107, NULL, NULL, '|1|1|1|0|0|', '|20|15|10|0|0|'),
-(10, 36, 1, 8352, 2656, NULL, NULL, 20, 100, 4, 12, 960, 0, 110, 107, 116, NULL, NULL, '|1|1|1|0|0|', '|30|10|30|0|0|'),
-(11, 42, 1, 5856, 2944, NULL, NULL, 21, 105, 5, 13, 960, 0, 110, 107, NULL, NULL, NULL, '|2|1|0|0|0|', '|30|25|0|0|0|'),
-(12, 38, 1, 7456, 6240, 'Poison', NULL, 20, 100, 3, 12, 1184, 0, 92, 105, NULL, NULL, NULL, '|5|3|0|0|0|', '|50|15|0|0|0|'),
-(13, 47, 1, 7456, 6240, 'Poison', 'slower,poisonous', 21, 105, 5, 14, 1184, 0, 92, NULL, NULL, NULL, NULL, '|3|0|0|0|0|', '|30|0|0|0|0|'),
-(14, 48, 1, 5632, 6048, 'Slowdown,Poison', 'sleepy,slower,poisonous', 21, 420, 1, 1500, 320, 1, 92, 105, 128, NULL, NULL, '|4|2|1|0|0|', '|70|50|100|0|0|'),
-(15, 39, 1, 6400, 4352, NULL, 'slower', 21, 105, 4, 12, 1120, 0, 107, 110, NULL, NULL, NULL, '|5|4|0|0|0|', '|30|30|0|0|0|'),
-(16, 50, 1, 8352, 2656, NULL, NULL, 21, 420, 1, 1800, 960, 1, 110, 116, 107, NULL, NULL, '|5|5|1|0|0|', '|50|40|30|0|0|'),
-(17, 51, 1, 5856, 2944, 'Slowdown,Poison,Fire', 'sleepy,slower', 22, 440, 1, 2000, 320, 1, 110, 115, 111, NULL, NULL, '|10|20|15|0|0|', '|30|50|30|0|0|'),
-(18, 52, 1, 5536, 4160, 'Slowdown', 'sleepy,slower', 22, 440, 1, 2300, 320, 1, 137, 115, NULL, 113, 111, '|8|5|0|4|40|', '|70|30|0|70|40|'),
-(19, 40, 1, 3424, 3616, 'Slowdown', NULL, 40, 200, 5, 15, 1120, 0, 109, 50, NULL, NULL, NULL, '|2|1|0|0|0|', '|40|100|0|0|0|'),
-(20, 41, 1, 3424, 3936, 'Slowdown,Fire', 'slower', 41, 820, 1, 3500, 320, 1, 127, 109, NULL, NULL, NULL, '|5|2|0|0|0|', '|30|100|0|0|0|'),
-(21, 45, 1, 2624, 4960, NULL, NULL, 42, 210, 5, 13, 640, 0, 115, NULL, NULL, NULL, NULL, '|5|0|0|0|0|', '|10|0|0|0|0|'),
-(22, 53, 1, 4032, 5824, NULL, NULL, 43, 215, 5, 13, 768, 0, 115, 113, NULL, NULL, NULL, '|5|1|0|0|0|', '|10|1|0|0|0|'),
-(23, 56, 1, 2624, 6208, NULL, NULL, 44, 220, 5, 14, 512, 0, 114, 113, 109, 120, NULL, '|1|1|1|1|0|', '|60|20|30|1|0|'),
-(24, 77, 1, 1248, 6176, NULL, 'sleepy,slower', 46, 230, 4, 12, 576, 0, NULL, NULL, 107, NULL, NULL, '|1|1|1|0|0|', '|20|15|10|0|0|'),
-(25, 43, 1, 28224, 2944, NULL, 'sleepy', 60, 300, 5, 13, 448, 0, 111, 114, 125, NULL, NULL, '|5|1|1|0|0|', '|10|20|5|0|0|'),
-(27, 58, 2, 3864, 0, NULL, 'slower', 12, 2, 15, 7, 800, 0, 221, NULL, NULL, NULL, NULL, '|1|0|0|0|0|', '|8|0|0|0|0|'),
-(28, 59, 2, 7409, 270, NULL, NULL, 13, 1, 10, 6, 800, 0, 221, NULL, NULL, NULL, NULL, '|1|0|0|0|0|', '|10|0|0|0|0|'),
-(29, 60, 2, 5337, 2764, NULL, NULL, 14, 1, 14, 7, 800, 0, 221, NULL, NULL, NULL, NULL, '|1|0|0|0|0|', '|12|0|0|0|0|'),
-(30, 62, 2, 7896, 1713, NULL, 'slower,poisonous', 40, 8, 2, 1, 800, 1, 221, NULL, NULL, NULL, NULL, '|1|0|0|0|0|', '|14|0|0|0|0|'),
-(31, 63, 2, 2382, 1587, NULL, 'slower', 16, 1, 12, 6, 800, 0, 221, NULL, NULL, NULL, NULL, '|0|0|0|0|0|', '|0|0|0|0|0|'),
-(32, 64, 2, 1993, 3601, NULL, NULL, 17, 3, 16, 8, 800, 0, 221, NULL, NULL, NULL, NULL, '|1|0|0|0|0|', '|12|0|0|0|0|'),
-(33, 65, 2, 7798, 3505, NULL, 'slower,poisonous', 80, 15, 1, 1, 400, 1, 221, 317, NULL, NULL, NULL, '|5|1|0|0|0|', '|100|20|0|0|0|'),
-(34, 44, 1, 26400, 4576, 'Poison', 'slower', 61, 305, 2, 11, 416, 0, 114, 105, NULL, NULL, NULL, '|1|1|0|0|0|', '|40|10|0|0|0|'),
-(35, 44, 1, 28192, 4608, 'Poison', 'slower', 61, 305, 2, 11, 320, 0, 114, 105, NULL, NULL, NULL, '|1|1|0|0|0|', '|40|10|0|0|0|'),
-(36, 44, 1, 28064, 5760, 'Poison', 'slower', 61, 305, 2, 11, 320, 0, 114, 105, NULL, NULL, NULL, '|1|1|0|0|0|', '|40|10|0|0|0|'),
-(37, 44, 1, 26400, 5728, 'Poison', 'slower', 61, 305, 2, 11, 320, 0, 114, 105, NULL, NULL, NULL, '|1|1|0|0|0|', '|40|10|0|0|0|'),
-(38, 44, 1, 25376, 6432, 'Poison', 'slower', 61, 305, 2, 11, 320, 0, 114, 105, NULL, NULL, NULL, '|1|1|0|0|0|', '|40|10|0|0|0|'),
-(39, 67, 1, 29088, 3744, 'Slowdown', NULL, 31, 305, 3, 12, 544, 0, 113, 125, NULL, NULL, NULL, '|5|1|0|0|0|', '|40|40|0|0|0|'),
-(40, 67, 1, 27136, 3808, 'Slowdown', NULL, 31, 305, 3, 12, 448, 0, 113, 125, NULL, NULL, NULL, '|5|1|0|0|0|', '|40|40|0|0|0|'),
-(41, 68, 1, 30528, 5664, NULL, 'slower', 32, 310, 5, 13, 960, 0, 111, NULL, NULL, NULL, NULL, '|5|0|0|0|0|', '|35|0|0|0|0|'),
-(42, 71, 1, 20544, 4992, 'Slowdown', 'neutral', 1, 5, 2, 3, 960, 0, NULL, 173, 35, 54, NULL, '|1|2|1|1|0|', '|0|50|25|5|0|'),
-(43, 71, 1, 22816, 5792, 'Slowdown', 'neutral', 1, 5, 2, 3, 800, 0, NULL, 173, 35, 54, NULL, '|1|2|1|1|0|', '|0|50|25|5|0|'),
-(44, 71, 1, 6688, 1120, 'Slowdown', 'neutral', 1, 5, 5, 4, 1184, 0, NULL, 173, 35, 54, NULL, '|0|2|1|1|0|', '|0|50|25|5|0|'),
-(45, 70, 1, 6432, 192, 'Poison', 'slower,neutral', 1, 5, 2, 3, 544, 0, NULL, 223, 67, NULL, NULL, '|0|1|5|0|0|', '|0|10|25|0|0|'),
-(46, 70, 1, 9280, 1536, 'Poison', 'slower,neutral', 1, 5, 2, 3, 320, 0, NULL, 223, 67, NULL, NULL, '|0|1|5|0|0|', '|0|10|25|0|0|'),
-(47, 70, 1, 14784, 2048, 'Poison', 'slower,neutral', 1, 5, 3, 4, 960, 0, NULL, 223, 67, NULL, NULL, '|0|1|5|0|0|', '|0|10|25|0|0|'),
-(48, 70, 1, 27872, 928, 'Poison', 'slower,neutral', 1, 5, 3, 4, 576, 0, NULL, 223, 67, NULL, NULL, '|0|1|5|0|0|', '|0|10|25|0|0|'),
-(49, 66, 1, 3168, 1248, NULL, 'sleepy', 5, 25, 8, 13, 1280, 0, NULL, 1, 307, NULL, NULL, '|0|50|1|0|0|', '|0|10|10|0|0|'),
-(50, 72, 1, 19808, 2688, NULL, 'neutral', 1, 5, 3, 4, 320, 0, NULL, NULL, NULL, NULL, NULL, '|0|0|0|0|0|', '|0|0|0|0|0|'),
-(51, 72, 1, 22944, 2560, NULL, 'neutral', 1, 5, 5, 4, 640, 0, NULL, NULL, NULL, NULL, NULL, '|0|0|0|0|0|', '|0|0|0|0|0|'),
-(52, 73, 1, 25088, 3328, 'Poison', 'neutral', 1, 5, 3, 4, 480, 0, NULL, 223, 121, 122, NULL, '|0|1|1|0|0|', '|0|3|3|0|0|'),
-(53, 73, 1, 12640, 2496, 'Poison', 'neutral', 1, 5, 3, 4, 320, 0, NULL, 223, 121, 122, NULL, '|0|1|1|0|0|', '|0|3|3|0|0|'),
-(54, 74, 1, 15392, 672, 'Slowdown,Poison', 'slower,neutral', 1, 5, 3, 4, 384, 0, NULL, 105, NULL, NULL, NULL, '|0|1|0|0|0|', '|0|10|0|0|0|'),
-(55, 74, 1, 20832, 928, 'Slowdown,Poison', 'slower,neutral', 1, 5, 3, 4, 448, 0, NULL, 105, NULL, NULL, NULL, '|0|1|0|0|0|', '|0|10|0|0|0|'),
-(56, 75, 1, 24448, 4224, 'Slowdown', 'neutral', 1, 5, 7, 5, 640, 0, 136, NULL, NULL, NULL, NULL, '|1|0|0|0|0|', '|1|0|0|0|0|'),
-(57, 76, 1, 29504, 1984, NULL, 'slower', 1, 5, 3, 4, 320, 0, NULL, NULL, NULL, NULL, NULL, '|0|0|0|0|0|', '|0|0|0|0|0|'),
-(61, 69, 1, 1, 1, NULL, 'sleepy,slower', 1, 5, 5, 1, 1, 0, 173, 186, 107, NULL, NULL, '|1|1|1|0|0|', '|20|15|10|0|0|'),
-(100, 32, 6, 2560, 5952, NULL, 'slower', 2, 10, 4, 5, 800, 0, NULL, 107, NULL, NULL, NULL, '|0|1|0|0|0|', '|0|17|0|0|0|'),
-(101, 1036, 6, 1600, 4384, 'Poison', NULL, 3, 15, 4, 8, 1120, 0, 106, 107, 369, 370, NULL, '|1|1|1|1|0|', '|30|17|5|0.2|0|'),
-(102, 1037, 6, 3616, 3296, NULL, NULL, 4, 20, 4, 9, 672, 0, 371, 372, NULL, NULL, NULL, '|1|1|0|0|0|', '|15|7|0|0|0|'),
-(103, 1038, 6, 1088, 3040, NULL, NULL, 5, 100, 1, 120, 640, 1, 374, 107, NULL, NULL, NULL, '|2|15|0|0|0|', '|50|50|0|0|0|'),
-(104, 1039, 6, 4864, 4704, NULL, NULL, 5, 35, 4, 11, 640, 0, 376, 107, NULL, NULL, NULL, '|1|1|0|0|0|', '|10|17|0|0|0|'),
-(105, 1040, 6, 6304, 3744, NULL, NULL, 6, 30, 3, 10, 480, 0, 379, 107, NULL, NULL, NULL, '|1|1|0|0|0|', '|10|17|0|0|0|'),
-(106, 1041, 6, 7808, 4992, NULL, NULL, 7, 35, 6, 12, 800, 0, 381, 107, 105, NULL, NULL, '|1|1|1|0|0|', '|10|17|13|0|0|'),
-(107, 1042, 6, 7584, 2784, 'Slowdown', NULL, 8, 40, 8, 15, 640, 0, 111, 107, 113, NULL, NULL, '|2|1|1|0|0|', '|15|17|10|0|0|'),
-(108, 1043, 6, 10880, 5152, NULL, NULL, 8, 40, 3, 10, 576, 0, 124, 107, 125, NULL, NULL, '|20|1|1|0|0|', '|15|17|5|0|0|'),
-(109, 1044, 6, 9984, 3744, NULL, NULL, 9, 45, 4, 11, 512, 0, 116, 110, NULL, NULL, NULL, '|1|1|0|0|0|', '|10|15|0|0|0|'),
-(110, 1045, 6, 13792, 5696, NULL, NULL, 10, 50, 4, 11, 640, 0, 110, 107, NULL, NULL, NULL, '|2|1|0|0|0|', '|10|17|0|0|0|'),
-(111, 1046, 6, 10272, 2432, NULL, NULL, 11, 55, 6, 13, 960, 0, 387, 107, NULL, NULL, NULL, '|1|1|0|0|0|', '|30|17|0|0|0|'),
-(112, 1047, 6, 13984, 1984, NULL, NULL, 12, 60, 7, 14, 960, 0, 389, 107, NULL, NULL, NULL, '|1|1|0|0|0|', '|10|17|0|0|0|'),
-(113, 1048, 6, 3744, 1664, NULL, NULL, 13, 65, 3, 11, 512, 0, 372, 107, NULL, NULL, NULL, '|1|1|0|0|0|', '|30|17|0|0|0|'),
-(114, 1049, 6, 4864, 128, NULL, NULL, 14, 70, 5, 13, 736, 0, 92, 107, 391, NULL, NULL, '|1|1|1|0|0|', '|5|17|30|0|0|'),
-(115, 1050, 6, 10368, 448, NULL, NULL, 15, 75, 7, 15, 1600, 0, 393, 107, NULL, NULL, NULL, '|1|1|0|0|0|', '|15|17|0|0|0|'),
-(116, 1051, 6, 6688, 1824, NULL, NULL, 16, 80, 3, 11, 320, 0, 116, 107, NULL, NULL, NULL, '|1|1|0|0|0|', '|35|17|0|0|0|'),
-(117, 1052, 6, 5216, 1216, NULL, NULL, 17, 340, 1, 120, 128, 1, 106, 107, 325, NULL, NULL, '|1|1|1|0|0|', '|25|17|5|0|0|'),
-(118, 1053, 6, 8864, 1856, NULL, NULL, 18, 360, 1, 120, 128, 1, 111, 107, 317, NULL, NULL, '|10|1|1|0|0|', '|50|17|5|0|0|'),
-(120, 1, 1, 6176, 7360, NULL, NULL, 43, 322, 5, 50, 640, 0, NULL, NULL, NULL, NULL, NULL, '|0|0|0|0|0|', '|0|0|0|0|0|');
+INSERT INTO `tw_bots_mobs` (`ID`, `BotID`, `WorldID`, `PositionX`, `PositionY`, `Debuffs`, `Behavior`, `Level`, `Power`, `Number`, `Respawn`, `Radius`, `ActiveRadius`, `Boss`, `it_drop_0`, `it_drop_1`, `it_drop_2`, `it_drop_3`, `it_drop_4`, `it_drop_count`, `it_drop_chance`) VALUES
+(1, 31, 1, 11296, 4384, 'Poison', NULL, 2, 10, 2, 5, 800, NULL, 0, 22, 107, NULL, NULL, NULL, '|1|1|0|0|0|', '|30|15|0|0|0|'),
+(2, 32, 1, 10048, 4384, NULL, 'slower', 2, 10, 2, 5, 800, NULL, 0, 33, 107, NULL, NULL, NULL, '|1|1|0|0|0|', '|30|17|0|0|0|'),
+(3, 33, 1, 8704, 4384, NULL, NULL, 3, 15, 4, 8, 800, NULL, 0, 105, 113, NULL, NULL, NULL, '|1|1|0|0|0|', '|10|10|0|0|0|'),
+(4, 34, 1, 9888, 5728, NULL, NULL, 5, 25, 5, 12, 1152, NULL, 0, 112, NULL, NULL, NULL, NULL, '|1|0|0|0|0|', '|30|0|0|0|0|'),
+(5, 35, 1, 8512, 4416, 'Fire', 'sleepy,skills_tank', 4, 80, 1, 1100, 448, NULL, 1, 111, NULL, NULL, NULL, NULL, '|1|0|0|0|0|', '|20|0|0|0|0|'),
+(6, 49, 1, 9888, 5728, 'Poison', 'sleepy', 6, 120, 1, 1000, 1152, NULL, 1, 105, 134, NULL, NULL, NULL, '|15|1|0|0|0|', '|50|1|0|0|0|'),
+(8, 46, 1, 9728, 4416, 'Slowdown', 'sleepy,poisonous,skills_dps', 3, 100, 1, 900, 640, 0, 1, 137, 125, NULL, NULL, NULL, '|10|1|0|0|0|', '|5|15|0|0|0|'),
+(9, 55, 1, 17255, 4319, NULL, 'slower,neutral', 1, 8, 5, 4, 1000, 0, 0, 186, 107, 412, NULL, NULL, '|1|1|1|0|0|', '|15|15|1|0|0|'),
+(10, 36, 1, 8352, 2656, NULL, NULL, 20, 100, 4, 12, 960, NULL, 0, 110, 107, 116, NULL, NULL, '|1|1|1|0|0|', '|30|10|30|0|0|'),
+(11, 42, 1, 5856, 2944, NULL, NULL, 21, 105, 5, 13, 960, NULL, 0, 110, 107, NULL, NULL, NULL, '|2|1|0|0|0|', '|30|25|0|0|0|'),
+(12, 38, 1, 7456, 6240, 'Poison', NULL, 20, 100, 3, 12, 1184, NULL, 0, 92, 105, NULL, NULL, NULL, '|5|3|0|0|0|', '|50|15|0|0|0|'),
+(13, 47, 1, 7456, 6240, 'Poison', 'slower,poisonous', 21, 105, 5, 14, 1184, NULL, 0, 92, NULL, NULL, NULL, NULL, '|3|0|0|0|0|', '|30|0|0|0|0|'),
+(14, 48, 1, 5632, 6048, 'Slowdown,Poison', 'sleepy,slower,poisonous', 21, 620, 1, 1500, 320, 0, 1, 92, 105, 128, NULL, NULL, '|4|2|1|0|0|', '|70|50|100|0|0|'),
+(15, 39, 1, 6400, 4352, NULL, 'slower', 21, 105, 4, 12, 1120, NULL, 0, 107, 110, NULL, NULL, NULL, '|5|4|0|0|0|', '|30|30|0|0|0|'),
+(16, 50, 1, 8352, 2656, NULL, NULL, 21, 420, 1, 1800, 960, NULL, 1, 110, 116, 107, NULL, NULL, '|5|5|1|0|0|', '|50|40|30|0|0|'),
+(17, 51, 1, 5856, 2944, 'Slowdown,Poison,Fire', 'sleepy,slower', 22, 660, 1, 2000, 320, 0, 1, 110, 115, 111, NULL, NULL, '|10|20|15|0|0|', '|30|50|30|0|0|'),
+(18, 52, 1, 5536, 4160, 'Slowdown', 'sleepy,slower', 22, 660, 1, 2300, 320, 0, 1, 137, 115, 113, 111, NULL, '|8|5|4|40|0|', '|70|30|70|40|0|'),
+(19, 40, 1, 3424, 3616, 'Slowdown', NULL, 40, 200, 5, 15, 1120, NULL, 0, 109, 50, NULL, NULL, NULL, '|2|1|0|0|0|', '|40|100|0|0|0|'),
+(20, 41, 1, 3424, 3936, 'Slowdown,Fire', 'slower', 41, 1040, 1, 3500, 320, 0, 1, 127, 109, NULL, NULL, NULL, '|5|2|0|0|0|', '|30|100|0|0|0|'),
+(21, 45, 1, 2624, 4960, NULL, NULL, 42, 210, 5, 13, 640, NULL, 0, 115, NULL, NULL, NULL, NULL, '|5|0|0|0|0|', '|10|0|0|0|0|'),
+(22, 53, 1, 4032, 5824, NULL, NULL, 43, 215, 5, 13, 768, NULL, 0, 115, 113, NULL, NULL, NULL, '|5|1|0|0|0|', '|10|1|0|0|0|'),
+(23, 56, 1, 2624, 6208, NULL, NULL, 44, 220, 5, 14, 512, NULL, 0, 114, 113, 109, 120, NULL, '|1|1|1|1|0|', '|60|20|30|1|0|'),
+(24, 77, 1, 1248, 6176, NULL, 'sleepy,slower', 46, 230, 4, 12, 576, NULL, 0, NULL, NULL, 107, NULL, NULL, '|1|1|1|0|0|', '|20|15|10|0|0|'),
+(25, 43, 1, 28224, 2944, NULL, 'sleepy', 60, 300, 5, 13, 448, NULL, 0, 111, 114, 125, NULL, NULL, '|5|1|1|0|0|', '|10|20|5|0|0|'),
+(34, 44, 1, 26400, 4576, 'Poison', 'slower', 61, 305, 2, 11, 416, NULL, 0, 114, 105, NULL, NULL, NULL, '|1|1|0|0|0|', '|40|10|0|0|0|'),
+(35, 44, 1, 28192, 4608, 'Poison', 'slower', 61, 305, 2, 11, 320, NULL, 0, 114, 105, NULL, NULL, NULL, '|1|1|0|0|0|', '|40|10|0|0|0|'),
+(36, 44, 1, 28064, 5760, 'Poison', 'slower', 61, 305, 2, 11, 320, NULL, 0, 114, 105, NULL, NULL, NULL, '|1|1|0|0|0|', '|40|10|0|0|0|'),
+(37, 44, 1, 26400, 5728, 'Poison', 'slower', 61, 305, 2, 11, 320, NULL, 0, 114, 105, NULL, NULL, NULL, '|1|1|0|0|0|', '|40|10|0|0|0|'),
+(38, 44, 1, 25376, 6432, 'Poison', 'slower', 61, 305, 2, 11, 320, NULL, 0, 114, 105, NULL, NULL, NULL, '|1|1|0|0|0|', '|40|10|0|0|0|'),
+(39, 67, 1, 29088, 3744, 'Slowdown', NULL, 31, 305, 3, 12, 544, NULL, 0, 113, 125, NULL, NULL, NULL, '|5|1|0|0|0|', '|40|40|0|0|0|'),
+(40, 67, 1, 27136, 3808, 'Slowdown', NULL, 31, 305, 3, 12, 448, NULL, 0, 113, 125, NULL, NULL, NULL, '|5|1|0|0|0|', '|40|40|0|0|0|'),
+(41, 68, 1, 30528, 5664, NULL, 'slower', 32, 310, 5, 13, 960, NULL, 0, 111, NULL, NULL, NULL, NULL, '|5|0|0|0|0|', '|35|0|0|0|0|'),
+(42, 71, 1, 20544, 4992, 'Slowdown', 'neutral', 1, 5, 2, 3, 960, NULL, 0, NULL, 173, 35, 54, NULL, '|1|2|1|1|0|', '|0|50|25|5|0|'),
+(43, 71, 1, 22816, 5792, 'Slowdown', 'neutral', 1, 5, 2, 3, 800, NULL, 0, NULL, 173, 35, 54, NULL, '|1|2|1|1|0|', '|0|50|25|5|0|'),
+(44, 71, 1, 6688, 1120, 'Slowdown', 'neutral', 1, 5, 5, 4, 1184, NULL, 0, NULL, 173, 35, 54, NULL, '|0|2|1|1|0|', '|0|50|25|5|0|'),
+(45, 70, 1, 6432, 192, 'Poison', 'slower,neutral', 1, 5, 2, 3, 544, 0, 0, 223, 67, 415, NULL, NULL, '|1|5|1|0|0|', '|10|25|1|0|0|'),
+(46, 70, 1, 9280, 1536, 'Poison', 'slower,neutral', 1, 5, 2, 3, 320, 0, 0, 223, 67, 415, NULL, NULL, '|1|5|1|0|0|', '|10|25|1|0|0|'),
+(47, 70, 1, 14784, 2048, 'Poison', 'slower,neutral', 1, 5, 3, 4, 960, 0, 0, 223, 67, 415, NULL, NULL, '|1|5|1|0|0|', '|10|25|1|0|0|'),
+(48, 70, 1, 27872, 928, 'Poison', 'slower,neutral', 1, 5, 3, 4, 576, 0, 0, 223, 67, 415, NULL, NULL, '|1|5|1|0|0|', '|10|25|1|0|0|'),
+(49, 66, 1, 3168, 1248, NULL, 'sleepy', 5, 25, 8, 13, 1280, 0, 0, 1, 307, 411, NULL, NULL, '|50|1|1|0|0|', '|10|10|1|0|0|'),
+(52, 73, 1, 25088, 3328, 'Poison', 'neutral', 1, 5, 3, 4, 480, NULL, 0, NULL, 223, 121, 122, NULL, '|0|1|1|0|0|', '|0|3|3|0|0|'),
+(53, 73, 1, 12640, 2496, 'Poison', 'neutral', 1, 5, 3, 4, 320, NULL, 0, NULL, 223, 121, 122, NULL, '|0|1|1|0|0|', '|0|3|3|0|0|'),
+(54, 74, 1, 15392, 672, 'Slowdown,Poison', 'slower,neutral', 1, 5, 3, 4, 384, NULL, 0, NULL, 105, NULL, NULL, NULL, '|0|1|0|0|0|', '|0|10|0|0|0|'),
+(55, 74, 1, 20832, 928, 'Slowdown,Poison', 'slower,neutral', 1, 5, 3, 4, 448, NULL, 0, NULL, 105, NULL, NULL, NULL, '|0|1|0|0|0|', '|0|10|0|0|0|'),
+(56, 75, 1, 24448, 4224, 'Slowdown', 'neutral', 1, 5, 7, 5, 640, NULL, 0, 136, NULL, NULL, NULL, NULL, '|1|0|0|0|0|', '|1|0|0|0|0|'),
+(57, 76, 1, 29504, 1984, NULL, 'slower', 1, 5, 3, 4, 320, NULL, 0, NULL, NULL, NULL, NULL, NULL, '|0|0|0|0|0|', '|0|0|0|0|0|'),
+(61, 69, 1, 1, 1, NULL, 'sleepy,slower', 1, 5, 5, 1, 1, NULL, 0, 173, 186, 107, NULL, NULL, '|1|1|1|0|0|', '|20|15|10|0|0|'),
+(100, 32, 6, 2560, 5952, NULL, 'slower', 2, 10, 4, 5, 800, NULL, 0, NULL, 107, NULL, NULL, NULL, '|0|1|0|0|0|', '|0|17|0|0|0|'),
+(101, 1036, 6, 1600, 4384, 'Poison', NULL, 3, 15, 4, 8, 1120, NULL, 0, 106, 107, 369, 370, NULL, '|1|1|1|1|0|', '|30|17|5|0.2|0|'),
+(102, 1037, 6, 3616, 3296, NULL, NULL, 4, 20, 4, 9, 672, NULL, 0, 371, 372, NULL, NULL, NULL, '|1|1|0|0|0|', '|15|7|0|0|0|'),
+(103, 1038, 6, 1088, 3040, NULL, NULL, 5, 260, 1, 120, 640, 0, 1, 374, 107, NULL, NULL, NULL, '|2|15|0|0|0|', '|50|50|0|0|0|'),
+(104, 1039, 6, 4864, 4704, NULL, NULL, 5, 35, 4, 11, 640, NULL, 0, 376, 107, NULL, NULL, NULL, '|1|1|0|0|0|', '|10|17|0|0|0|'),
+(105, 1040, 6, 6304, 3744, NULL, NULL, 6, 30, 3, 10, 480, NULL, 0, 379, 107, NULL, NULL, NULL, '|1|1|0|0|0|', '|10|17|0|0|0|'),
+(106, 1041, 6, 7808, 4992, NULL, NULL, 7, 35, 6, 12, 800, NULL, 0, 381, 107, 105, NULL, NULL, '|1|1|1|0|0|', '|10|17|13|0|0|'),
+(107, 1042, 6, 7584, 2784, 'Slowdown', NULL, 8, 40, 8, 15, 640, NULL, 0, 111, 107, 113, NULL, NULL, '|2|1|1|0|0|', '|15|17|10|0|0|'),
+(108, 1043, 6, 10880, 5152, NULL, NULL, 8, 40, 3, 10, 576, NULL, 0, 124, 107, 125, NULL, NULL, '|20|1|1|0|0|', '|15|17|5|0|0|'),
+(109, 1044, 6, 9984, 3744, NULL, NULL, 9, 45, 4, 11, 512, NULL, 0, 116, 110, NULL, NULL, NULL, '|1|1|0|0|0|', '|10|15|0|0|0|'),
+(110, 1045, 6, 13792, 5696, NULL, NULL, 10, 50, 4, 11, 640, NULL, 0, 110, 107, NULL, NULL, NULL, '|2|1|0|0|0|', '|10|17|0|0|0|'),
+(111, 1046, 6, 10272, 2432, NULL, NULL, 11, 55, 6, 13, 960, NULL, 0, 387, 107, NULL, NULL, NULL, '|1|1|0|0|0|', '|30|17|0|0|0|'),
+(112, 1047, 6, 13984, 1984, NULL, NULL, 12, 60, 7, 14, 960, NULL, 0, 389, 107, NULL, NULL, NULL, '|1|1|0|0|0|', '|10|17|0|0|0|'),
+(113, 1048, 6, 3744, 1664, NULL, NULL, 13, 65, 3, 11, 512, NULL, 0, 372, 107, NULL, NULL, NULL, '|1|1|0|0|0|', '|30|17|0|0|0|'),
+(114, 1049, 6, 4864, 128, NULL, NULL, 14, 70, 5, 13, 736, NULL, 0, 92, 107, 391, NULL, NULL, '|1|1|1|0|0|', '|5|17|30|0|0|'),
+(115, 1050, 6, 10368, 448, NULL, NULL, 15, 75, 7, 15, 1600, NULL, 0, 393, 107, NULL, NULL, NULL, '|1|1|0|0|0|', '|15|17|0|0|0|'),
+(116, 1051, 6, 6688, 1824, NULL, NULL, 16, 80, 3, 11, 320, NULL, 0, 116, 107, NULL, NULL, NULL, '|1|1|0|0|0|', '|35|17|0|0|0|'),
+(117, 1052, 6, 5216, 1216, NULL, NULL, 17, 560, 1, 120, 128, 0, 1, 106, 107, 325, NULL, NULL, '|1|1|1|0|0|', '|25|17|5|0|0|'),
+(118, 1053, 6, 8864, 1856, NULL, NULL, 18, 580, 1, 120, 128, 0, 1, 111, 107, 317, NULL, NULL, '|10|1|1|0|0|', '|50|17|5|0|0|'),
+(120, 1, 1, 6176, 7360, NULL, NULL, 43, 322, 5, 50, 640, NULL, 0, NULL, NULL, NULL, NULL, NULL, '|0|0|0|0|0|', '|0|0|0|0|0|'),
+(122, 2, 1, 3123, 123, 'Slowdown', NULL, 1, 10, 5, 1, 800, NULL, 0, 6, NULL, NULL, NULL, NULL, '|1|0|0|0|0|', '|0|0|0|0|0|');
 
 -- --------------------------------------------------------
 
@@ -770,7 +773,7 @@ CREATE TABLE `tw_bots_npc` (
 --
 
 INSERT INTO `tw_bots_npc` (`ID`, `BotID`, `PosX`, `PosY`, `GiveQuestID`, `DialogData`, `Function`, `Static`, `Emote`, `WorldID`) VALUES
-(1, 1, 19278, 3953, NULL, '[{\"text\":\"If you found me, you must have forgotten something. Okay, I\'ll say it again.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"The voting menu has all the important settings for you. There you can change the class. Pump up your skills that you have. Manage your inventory, such as throwing away items and disassemble them into materials and also enchant. Manage guilds, create groups to play together, In the settings you can disable settings and change the language or anything else.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"In the crafting area: Required items quantity. Craft button. Immediately I tell you that crafting can be paid. In the window where the reason you can select the number of items to craft instead of clicking constantly\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"In farming and mining zones. you gather resources. Which you can also use in crafting. These resources provide a stable economy. You mine, you can buy things. You can buy things with products. You can also carry products and get gold for it.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"There are homes you can buy them from. All functions in the voting menu. These are your houses and you can use them as you like. Bring your friends or be alone there, for example.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"If you forgot what how to use skils or where to buy. Buy them here next to need skills to raise or pump them. The usual command to use skills /use_skill number\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"action\":true,\"text\":\"Pump yourself up first, then go into battle!\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', -1, 1, 'Blink', 1),
+(1, 1, 19278, 3953, 1, '[\n    {\n        \"text\": \"If you found me, you must have forgotten something. Okay, I\'ll say it again.\",\n        \"side\": \"default\",\n        \"left_speaker_id\": 0,\n        \"right_speaker_id\": -1\n    },\n    {\n        \"text\": \"The voting menu has all the important settings for you. There you can change the class. Pump up your skills that you have. Manage your inventory, such as throwing away items and disassemble them into materials and also enchant. Manage guilds, create groups to play together, In the settings you can disable settings and change the language or anything else.\",\n        \"side\": \"default\",\n        \"left_speaker_id\": 0,\n        \"right_speaker_id\": -1\n    },\n    {\n        \"text\": \"In the crafting area: Required items quantity. Craft button. Immediately I tell you that crafting can be paid. In the window where the reason you can select the number of items to craft instead of clicking constantly\",\n        \"side\": \"default\",\n        \"left_speaker_id\": 0,\n        \"right_speaker_id\": -1\n    },\n    {\n        \"text\": \"In farming and mining zones. you gather resources. Which you can also use in crafting. These resources provide a stable economy. You mine, you can buy things. You can buy things with products. You can also carry products and get gold for it.\",\n        \"side\": \"default\",\n        \"left_speaker_id\": 0,\n        \"right_speaker_id\": -1\n    },\n    {\n        \"text\": \"There are homes you can buy them from. All functions in the voting menu. These are your houses and you can use them as you like. Bring your friends or be alone there, for example.\",\n        \"side\": \"default\",\n        \"left_speaker_id\": 0,\n        \"right_speaker_id\": -1\n    },\n    {\n        \"text\": \"If you forgot what how to use skils or where to buy. Buy them here next to need skills to raise or pump them. The usual command to use skills \\/use_skill number\",\n        \"side\": \"default\",\n        \"left_speaker_id\": 0,\n        \"right_speaker_id\": -1\n    },\n    {\n        \"action\": true,\n        \"text\": \"Pump yourself up first, then go into battle!\",\n        \"side\": \"default\",\n        \"left_speaker_id\": 0,\n        \"right_speaker_id\": -1\n    }\n]', -1, 1, 'Blink', 1),
 (3, 16, 15153, 1393, NULL, '[{\"action\":true,\"text\":\"Hey, stranger. Have you come to sell your harvest?\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', -1, 1, NULL, 1),
 (4, 26, 21678, 6033, NULL, '[{\"action\":true,\"text\":\"Hi. Got the rock again, huh? All right, spill it while I\'m being nice.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', -1, 1, 'Surprise', 1),
 (5, 6, 22609, 2961, NULL, '[{\"action\":true,\"text\":\"Hey, stranger. Help yourself to any beverage you want. Even the illegal stuff. Heehee.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', -1, 1, 'Happy', 1),
@@ -793,7 +796,8 @@ INSERT INTO `tw_bots_npc` (`ID`, `BotID`, `PosX`, `PosY`, `GiveQuestID`, `Dialog
 (22, 54, 16619, 1073, NULL, '[{\"action\":true,\"text\":\"Look, don\'t distract me. I\'m keeping order here.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', 2, 0, 'Angry', 1),
 (23, 54, 25760, 1777, NULL, '[{\"action\":true,\"text\":\"Look, don\'t distract me. I\'m keeping order here.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', 2, 0, 'Angry', 1),
 (24, 54, 28116, 2161, NULL, '[{\"action\":true,\"text\":\"Look, don\'t distract me. I\'m keeping order here.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', 2, 0, 'Angry', 1),
-(25, 54, 19786, 5329, NULL, '[{\"action\":true,\"text\":\"Look, don\'t distract me. I\'m keeping order here.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', 2, 0, 'Angry', 1);
+(25, 54, 19786, 5329, NULL, '[{\"action\":true,\"text\":\"Look, don\'t distract me. I\'m keeping order here.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', 2, 0, 'Angry', 1),
+(27, 1058, 21304, 4433, NULL, NULL, -1, 0, 'Blink', 1);
 
 -- --------------------------------------------------------
 
@@ -820,8 +824,8 @@ CREATE TABLE `tw_bots_quest` (
 --
 
 INSERT INTO `tw_bots_quest` (`ID`, `BotID`, `QuestID`, `Step`, `WorldID`, `PosX`, `PosY`, `AutoFinish`, `DialogData`, `ScenarioData`, `TasksData`) VALUES
-(1, 1, 1, 1, 0, 817, 2193, 'Partial', '[{\"text\":\"Oh, it\'s good to see you <player>!\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"I have a little favor to ask of you. Do you see this <item_31>?\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"It contains important supplies for <bot_2> that he needs urgently.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"action\":true,\"text\":\"Can I ask you to deliver it?\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', '{\"on_recieve_objectives\":{\"steps\":[{\"action\":\"message\",\"chat\":\"You can use special items(door\'s), by hammer hit!\"},{\"action\":\"fix_cam\",\"delay\":100,\"position\":{\"x\":1404,\"y\":2193}},{\"action\":\"fix_cam\",\"delay\":100,\"position\":{\"x\":2002,\"y\":2065}}]},\"on_end\":{\"steps\":[{\"action\":\"fix_cam\",\"delay\":100,\"position\":{\"x\":2949,\"y\":2225}}]}}', '{\n    \"move_to\": [\n        {\n            \"navigator\": \"true\",\n            \"name\": \"Take the crate\",\n            \"completion_text\": \"You picked up the box\",\n            \"x\": 2006,\n            \"y\": 2065,\n            \"mode\": \"move_press\",\n            \"cooldown\": 3,\n            \"pick_up_item\": {\n                \"id\": 31,\n                \"value\": 1\n            }\n        }\n    ]\n}'),
-(2, 2, 1, 2, 0, 2949, 2225, NULL, '[{\"text\":\"Oh, hey! You look like you brought something.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"Is it from <bot_1>\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"action\":true,\"text\":\"Thank you so much! It\'s exactly what I\'ve been waiting for. You\'ve helped me more than you can imagine.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', NULL, '{\n    \"required_items\": [\n        {\n            \"id\": 31,\n            \"value\": 1\n        }\n    ]\n}'),
+(1, 1, 100, 1, 0, 817, 2193, 'Partial', '[{\"text\":\"Oh, it\'s good to see you <player>!\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"I have a little favor to ask of you. Do you see this <item_31>?\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"It contains important supplies for <bot_2> that he needs urgently.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"action\":true,\"text\":\"Can I ask you to deliver it?\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', '{\n  \"scenario_mode\": \"universal\",\n  \"editor_data\": {\n    \"groups\": [],\n    \"ungrouped_steps\": []\n  },\n  \"steps\": [],\n  \"on_recieve_objectives\": {\n    \"scenario_mode\": \"universal\",\n    \"editor_data\": {\n      \"groups\": [\n        {\n          \"id\": \"group_d31b3aab-a8c1-4fbb-b346-d50b003e786a\",\n          \"name\": \"ev1\",\n          \"steps\": [\n            \"step\"\n          ],\n          \"collapsed\": false\n        }\n      ],\n      \"ungrouped_steps\": [\n        \"step\"\n      ]\n    },\n    \"steps\": [\n      {\n        \"id\": \"step\",\n        \"components\": [\n          {\n            \"type\": \"message\",\n            \"text\": \"You can use special items(door\'s), by hammer hit!\",\n            \"mode\": \"chat\"\n          },\n          {\n            \"type\": \"follow_camera\",\n            \"position\": {\n              \"x\": 1404,\n              \"y\": 2193\n            },\n            \"execution_time\": 150,\n            \"smooth\": true\n          },\n          {\n            \"type\": \"follow_camera\",\n            \"position\": {\n              \"x\": 2002,\n              \"y\": 2065\n            },\n            \"execution_time\": 150,\n            \"smooth\": true\n          }\n        ],\n        \"completion_logic\": \"sequential\"\n      }\n    ]\n  },\n  \"on_end\": {\n    \"scenario_mode\": \"universal\",\n    \"editor_data\": {\n      \"groups\": [\n        {\n          \"id\": \"group_1802c6a8-9539-4414-9158-2f2fb80c9565\",\n          \"name\": \"ev2\",\n          \"steps\": [\n            \"step_1\"\n          ],\n          \"collapsed\": false\n        }\n      ],\n      \"ungrouped_steps\": [\n        \"step_1\"\n      ]\n    },\n    \"steps\": [\n      {\n        \"id\": \"step_1\",\n        \"components\": [\n          {\n            \"type\": \"follow_camera\",\n            \"position\": {\n              \"x\": 2949,\n              \"y\": 2225\n            },\n            \"execution_time\": 150,\n            \"smooth\": true\n          }\n        ]\n      }\n    ]\n  }\n}', '{\n    \"move_to\": [\n        {\n            \"navigator\": \"true\",\n            \"name\": \"Take the crate\",\n            \"completion_text\": \"You picked up the box\",\n            \"x\": 2006,\n            \"y\": 2065,\n            \"mode\": \"move_press\",\n            \"cooldown\": 3,\n            \"pick_up_item\": {\n                \"id\": 31,\n                \"value\": 1\n            }\n        }\n    ]\n}'),
+(2, 2, 100, 2, 0, 2949, 2225, NULL, '[\n    {\n        \"text\": \"Oh, hey! You look like you brought something.\",\n        \"side\": \"default\",\n        \"left_speaker_id\": 0,\n        \"right_speaker_id\": -1\n    },\n    {\n        \"text\": \"Is it from <bot_1>\",\n        \"side\": \"default\",\n        \"left_speaker_id\": 0,\n        \"right_speaker_id\": -1\n    },\n    {\n        \"action\": true,\n        \"text\": \"Thank you so much! It\'s exactly what I\'ve been waiting for. You\'ve helped me more than you can imagine.\",\n        \"side\": \"default\",\n        \"left_speaker_id\": 0,\n        \"right_speaker_id\": -1\n    }\n]', NULL, '{\n    \"required_items\": [\n        {\n            \"id\": 31,\n            \"value\": 1\n        }\n    ],\n    \"reward_items\": [],\n    \"defeat_bots\": [],\n    \"move_to\": []\n}'),
 (3, 3, 2, 1, 1, 19550, 4305, 'Partial', '[{\"text\":\"Another green adventurer, I presume?\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"I thought as much. We cannot allow strangers to wander Gridania unchecked and untested.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"Before you rush off and begin pestering every second citizen for work, I suggest you make yourself known at the Carline Canopy. That\'s the headquarters of the local Adventurers\' Guild, in case you were wondering.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"action\":true,\"text\":\"The Carline Canopy is the building you see behind me. Speak to Mother Miounne within, and she will take you in hand.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]\r\n', NULL, '{\n    \"move_to\": [\n        {\n            \"step\": 1,\n            \"navigator\": \"true\",\n            \"name\": \"Find Miounne\",\n            \"x\": 22192,\n            \"y\": 3313,\n            \"mode\": \"move\",\n            \"cooldown\": 3\n        }\n    ]\n}'),
 (4, 6, 2, 2, 1, 22989, 3281, NULL, '[{\"text\":\"Well, well, what have we here?\",\"side\":\"default\",\"left_speaker_id\":-1,\"right_speaker_id\":0},{\"text\":\"A wide-eyed and wondering young adventurer, come to put your name down at the guild, I assume?\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"Actually...haven\'t you registered with us already? There\'s something strikingly familiar about you, but I can\'t for the life of me remember when or where we might have met.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"Oh, I probably just have you confused with another adventurer─dozens of you come through here every day, after all. Now, where was I? Ah, yes.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"Welcome. Miounne\'s my name, or Mother Miounne as most call me, and the Carline Canopy is my place.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"As the head of the Adventurers\' Guild in Gridania, I have the honor of providing guidance to the fledgling heroes who pass through our gates.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"No matter your ambitions, the guild is here to help you attain them.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"In return, we expect you to fulfill your duties as an adventurer by assisting the people of Gridania. A fine deal, wouldn\'t you agree?\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"To an outsider\'s eyes, all may seem well with our nation, but naught could be further from the truth. The people live in a state of constant apprehension.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"The Ixal and various gangs of common bandits provide an unending supply of trouble─trouble compounded by the ever-present threat of the Garlean Empire to the north. And that is to say nothing of the Calamity...\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"Even now, the wounds have barely begun to heal. Ah, but I speak of it as if you were there. Forgive me. Five years past, Eorzea was well-nigh laid to waste when a dread wyrm emerged from within the lesser moon, Dalamud, and rained fire upon the realm. It is this which people call “the Calamity.”\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"Scarcely a square malm of the Twelveswood was spared the devastation. Yet despite the forest\'s extensive wounds, not a soul among us can recall precisely how it all happened.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"I am well aware of how improbable that must sound to an outsider... It is improbable. But it\'s also true. For reasons we can ill explain, the facts surrounding the Calamity are shrouded in mystery. There are as many versions of events as there are people willing to recount them.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"Yet amidst the hazy recollections and conflicting accounts, all agree on one thing: that Eorzea was saved from certain doom by a band of valiant adventurers.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"Whatever else we\'ve misremembered, none of us have forgotten the heroes who risked life and limb for the sake of the realm. And yet...whenever we try to say their names, the words die upon our lips.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"And whenever we try to call their faces to mind, we see naught but silhouettes amidst a blinding glare.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"Thus have these adventurers come to be known as “the Warriors of Light.”\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"...Ahem. Pray do not feel daunted by the deeds of legends. We do not ask that you become another Warrior of Light, only that you do what you can to assist the people of Gridania.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"Great or small, every contribution counts. I trust you will play your part.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"You have my gratitude!\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"All that\'s left, then, is to conclude the business of registration. Here\'s a quill. Scrawl your name right there.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"Oh, and I would appreciate it if you used your real name─there is a special place in the seventh hell for those who use “amusing” aliases.\",\"side\":\"default\",\"left_speaker_id\":-1,\"right_speaker_id\":0},{\"text\":\"...Forename Surname, hm? And you\'re quite sure that isn\'t an amusing alias?\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"action\":true,\"text\":\"Very well. From this moment forward, you are a registered adventurer of Gridania, nation blessed of the elementals and the bounty of the Twelveswood. The guild expects great things from you.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]\r\n', NULL, NULL),
 (5, 5, 2, 3, 1, 22865, 3249, NULL, '[{\"action\":true,\"text\":\"Look at what just arrived─another godsdamned adventurer...\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]\n', NULL, NULL),
@@ -829,7 +833,7 @@ INSERT INTO `tw_bots_quest` (`ID`, `BotID`, `QuestID`, `Step`, `WorldID`, `PosX`
 (7, 5, 2, 4, 1, 22865, 3249, NULL, '[{\"text\":\"Ordinarily, the forest funguars that inhabit the Central Shroud are naught more than a nuisance.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"However, we have received reports that vast clouds of the creatures\' spores have rendered parts of the Twelveswood impassable, and ruined crops besides.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"We periodically cull the funguar population in order to prevent such occurrences, but the creatures have taken to spawning out of season, making it ever more difficult to keep their numbers in check.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"Though this is indeed a troubling development, the Gods\' Quiver has more pressing concerns and can ill afford to waste time fighting funguars.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"If you wish to prove yourself, go to the Central Shroud and exterminate six of the pests. Use caution and approach them one at a time, lest your adventuring career be cut disappointingly short.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"Don\'t you start with that. Adventurers are the very salve that Gridania needs.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"The Elder Seedseer herself bade us welcome them with open arms. Do you mean to disregard her will?\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"Don\'t you start with that. Adventurers are the very salve that Gridania needs.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"The Elder Seedseer herself bade us welcome them with open arms. Do you mean to disregard her will?\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"Of course not! Lest you forget, it is my sworn duty to uphold the peace! Am I to blame if outsiders bring mistrust upon themselves?\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"You─adventurer! Mind that you do not cause any trouble here, or I shall personally cast you out of this realm and into the seventh hell.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"Of course not! Lest you forget, it is my sworn duty to uphold the peace! Am I to blame if outsiders bring mistrust upon themselves?\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"action\":true,\"text\":\"You─adventurer! Mind that you do not cause any trouble here, or I shall personally cast you out of this realm and into the seventh hell.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', NULL, NULL),
 (8, 6, 2, 5, 1, 22989, 3281, NULL, '[{\"text\":\"Ahem. Pay that outburst no mind. He meant only to...counsel you. Suspicious characters have been prowling the Twelveswood of late, you see, and the Wood Wailers feel they cannot afford to take any chances.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"As is often the way with folk who live in isolation, Gridanians are wont to mistrust things they do not well know, your good self included. Fear not, however─given a catalog of exemplary deeds, and no more than a handful of years, the locals will surely warm to you.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"On behalf of my fellow citizens, I welcome you to Gridania. May you come to consider our nation as your own in time.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"action\":true,\"text\":\"Now then, you may depend on old Mother Miounne to teach you a few things that every adventurer should know.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]\n', NULL, NULL),
 (9, 6, 3, 1, 1, 22989, 3281, 'Partial', '[{\"text\":\"Let us begin at the beginning, shall we? Now that you are a formal member of the Adventurers\' Guild, we must be sure you have a firm grasp of the fundamentals of adventuring. To that end, I have three tasks I wish you to perform.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"Your first task is to visit the aetheryte. This massive crystal stands in the middle of the aetheryte plaza, not far from the Carline Canopy.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"As a device that enables instantaneous transportation, the aetheryte plays a key role in the life of the ever-wandering adventurer.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"action\":true,\"text\":\"Once you have located the crystal, all you need do is touch its surface. A member of the Wood Wailers will be present to offer further instruction.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', NULL, '{\n    \"move_to\": [\n        {\n            \"step\": 1,\n            \"navigator\": \"false\",\n            \"name\": \"Visit the aetheryte\",\n            \"completion_text\": \"You have visited aetheryte\",\n            \"x\": 19551,\n            \"y\": 4694,\n            \"world_id\": 1,\n            \"mode\": \"move\"\n        }\n    ]\n}'),
-(10, 6, 3, 2, 1, 22989, 3281, NULL, '[{\"text\":\"For your second task, you are to visit the Conjurers\' Guild.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"action\":true,\"text\":\"There is no better place to learn the arts of conjury. Speak with Madelle, and she will explain the benefits of joining the guild.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', '{\"on_end\":{\"steps\":[{\"action\":\"fix_cam\",\"delay\":100,\"position\":{\"x\":19475,\"y\":3217}}]}}', NULL),
+(10, 6, 3, 2, 1, 22989, 3281, NULL, '[{\"text\":\"For your second task, you are to visit the Conjurers\' Guild.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"action\":true,\"text\":\"There is no better place to learn the arts of conjury. Speak with Madelle, and she will explain the benefits of joining the guild.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', '{\n  \"scenario_mode\": \"universal\",\n  \"editor_data\": {\n    \"groups\": [],\n    \"ungrouped_steps\": []\n  },\n  \"steps\": [],\n  \"on_end\": {\n    \"scenario_mode\": \"universal\",\n    \"editor_data\": {\n      \"groups\": [\n        {\n          \"id\": \"group_1802c6a8-9539-4414-9158-2f2fb80c9565\",\n          \"name\": \"on_end\",\n          \"steps\": [\n            \"step_1\"\n          ],\n          \"collapsed\": false\n        }\n      ],\n      \"ungrouped_steps\": [\n        \"step_1\"\n      ]\n    },\n    \"steps\": [\n      {\n        \"id\": \"step_1\",\n        \"components\": [\n          {\n            \"type\": \"follow_camera\",\n            \"position\": {\n              \"x\": 19475,\n              \"y\": 3217\n            },\n            \"execution_time\": 100,\n            \"smooth\": true\n          }\n        ],\n        \"completion_logic\": \"sequential\"\n      }\n    ]\n  }\n}', NULL),
 (14, 7, 3, 3, 1, 19475, 3217, NULL, '[{\"text\":\"You seek the secrets of conjury, adventurer? Then search no longer, for you have found your way to the Conjurers\' Guild.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"It is at Miounne\'s request that you have come? Then allow me to provide you with an overview of what it is to be a conjurer.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"Conjury is the art of healing and purification. Its practitioners harness the power of nature, that they might bring about change in the form of spells.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"Primitive magic such as that once wrought by individuals known as mages─meaning those with the ability to manipulate aether─has existed since the dawn of time.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"It was not until some five centuries ago that conjury emerged from this shapeless agglomeration of spells and charms─an event which led to the founding of Gridania.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"In those dark days, the elementals would not suffer man\'s presence in the Twelveswood, forcing our forebears to make their homes beneath the earth, in the great subterranean city of Gelmorra.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"But their desire to settle in the Twelveswood continued to burn fiercely; time and again they sought to curry the elementals\' favor.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"Unlike men and other creatures bound in temples of flesh, the elementals are beings of pure aether. Recognizing this, the mages of eld reasoned that their talent for aetheric manipulation might allow them to commune with these theretofore enigmatic entities.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"It took five long decades, but our forebears finally succeeded. Their reward: the elementals\' permission to dwell in the Twelveswood. So it was that the nation of Gridania was born.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"Since that time, the elementals have taught us to live as one with nature, speaking to all Gridanians through the Hearers─those mages who are able to commune with them.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"And for their intimacy with the elementals, the Hearers would go on to attain greater mastery over the forces of nature. Thus did they conceive the art of conjury.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"I hope this has helped you gain a greater understanding of the Conjurers\' Guild.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"Should you wish to delve further into the mysteries of conjury, then I urge you to consider joining our ranks.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"action\":true,\"text\":\"I can begin your initiation whenever you desire. Call upon me when you are ready to take the first step.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', NULL, NULL),
 (15, 6, 3, 4, 1, 22989, 3281, NULL, '[{\"text\":\"For your second task, you are to visit the Archers\' Guild.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"action\":true,\"text\":\"There is no better place to learn the arts of the bow. Speak with Athelyna, and she will explain the benefits of joining the guild.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', NULL, NULL),
 (16, 8, 3, 5, 1, 19396, 3409, NULL, '[{\"text\":\"Greetings, friend. You have found your way to the Archers\' Guild. Do you seek to uncover the secrets of our art?\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"Ah, now that I think on it, you have the look of one who has received Mother Miounne\'s “gentle” instruction. Very well, I shall give you a brief introduction to archery and the Archers\' Guild.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"The skills practiced by our archers allow them to gauge an enemy\'s weaknesses from afar, and turn the tide of a battle with a single, well-placed arrow. Should you join us, you will be taught to do the same.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"Archery as practiced in Gridania was born of two distinct styles of bowmanship.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"The first was devised by the longbow sentries of the Elezen who once ruled the lowlands, while the second belonged to the shortbow hunters of the formerly nomadic Miqo\'te. As you will doubtless be aware, both races ultimately came to call the Twelveswood home.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"Though the two peoples began as rivals, they gradually learned to live together in harmony. During this time, they learned from one another, their two schools of archery intermingling to give birth to the art as it is known today.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"For a time, the bow was used primarily for hunting. But as the hunters vied with one another to prove who was the better shot, there emerged a group of archers whose ultimate goal lay not in the practical pursuit of prey, but in perfection.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"Thus was the Archers\' Guild born from the ranks of the Trappers\' League.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"It is the way of the guild to promote greatness in archery through friendly competition. And the results of our methods can be seen in the vaunted archers of the Gods\' Quiver, many of whom spent their formative years loosing arrows at the guild\'s practice butts.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"I hope this gives you a better idea of who we are, and what we do here. Oho, did I see the spark of ambition flare within your eyes?\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"If you wish to draw a string with the finest archers in Eorzea, look no further than the Archers\' Guild.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"action\":true,\"text\":\"Before you can enlist, however, you must gain the approval of the guildmaster. Once you are ready to proceed, speak with me again and we can begin seeing about your enrollment.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', NULL, NULL),
@@ -838,9 +842,9 @@ INSERT INTO `tw_bots_quest` (`ID`, `BotID`, `QuestID`, `Step`, `WorldID`, `PosX`
 (19, 6, 3, 8, 1, 22989, 3281, NULL, '[{\"text\":\"For your third and final task, I would have you visit the markets at the heart of Old Gridania\'s commercial district. There you shall find weapons and armor, and all the various items that an adventurer might need on his/her travels.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"There is, however, more to the markets than buying and selling goods. Speak with Parsemontret, and listen well to his counsel.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"The master merchant can be...uncooperative at times, so be sure to offer him one of my famous eel pies. Like so many men, he is much more charitable when his stomach is full. Here, I made a batch not long ago.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"You have your tasks. May Nophica guide your path.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"Ah, and one more thing: should you happen to come across any citizens in need, don\'t be afraid to proffer a helping hand. I am certain they will be pleased to meet an adventurer in whom they can confide their woes.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"Granted, the work they offer is unlikely to be of realm-shattering importance─but prove your worth and build a reputation, and in time folk will be more inclined to entrust you with matters of moment.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"action\":true,\"text\":\"I also suggest that you lend an ear to the Smith here in the Canopy. The Smiths are trusted representatives of the Adventurers\' Guild, and are an invaluable source of advice for neophyte heroes seeking to attain greatness.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', NULL, NULL),
 (20, 10, 3, 9, 1, 23127, 3281, NULL, '[{\"text\":\"Greetings, adventurer. I see you are faithfully following Mother Miounne\'s instructions.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"Allow me to offer you a bit of instruction myself. I am Nicia of the Wood Wailers, and I know a thing or two about the aetheryte─yes, that big crystal right there.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"Aetherytes are devices that tap into aetherial energies, and are primarily used as a means to travel swiftly from one place to another.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"Return and Teleport─the most common transportation spells─make direct use of the aetherytes and their connection to the flow of aether.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"And as these devices are found in almost every corner of Eorzea, any adventurer worthy of the name will wish to seek out and attune himself/herself to each one.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"Truly, few things in this world are so useful to an intrepid explorer.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"But you need not locate them all at once. Before rushing out into the wilds, I suggest you start with the aetherytes found here in Gridania.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"action\":true,\"text\":\"Should you wish to learn more about the aetheryte or transportation magic, I am here to answer your questions.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', NULL, NULL),
 (21, 6, 3, 10, 1, 22989, 3281, NULL, '[{\"text\":\"The conquering hero returns. You have completed my little tasks, I trust?\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"The three locations you visited will feature prominently in your life as an adventurer─it is best you grow familiar with them as soon as possible.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"And you took the time to listen to the woes of the citizenry? I cannot emphasize enough how important it is to lend your talents to one and all, no matter how trivial the matter may seem.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"action\":true,\"text\":\"I am thankful that you are an obliging sort,. It is adventurers like you who will win the hearts of the locals and pave the way for those who follow. I pray Gridania can rely on your aid in its struggles to come.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', NULL, NULL),
-(22, 6, 4, 1, 1, 22989, 3281, 'Partial', '[{\"text\":\"<player>, have you visited the Bannock on your wanderings?\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"It is a training ground found just outside the city where the soldiers of the Order of the Twin Adder are drilled in swordplay and other martial matters.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"I mention this because an acquaintance of mine -- a gentleman by the name of Galfrid -- is an instructor there, and I think you may be of use to him. Go and introduce yourself, and find out if there is anything you can do to help.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"action\":true,\"text\":\"Mind you do not stray far from the path -- the Twelveswood is no place for merry strolls through the underbrush.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', '{\"on_recieve_objectives\":{\"steps\":[{\"action\":\"fix_cam\",\"delay\":100,\"position\":{\"x\":13660,\"y\":4369}}]}}', '{\n    \"move_to\": [\n        {\n            \"step\": 1,\n            \"navigator\": \"true\",\n            \"name\": \"The instructor at the Bannock is in need of a help\",\n            \"completion_text\": \"Talk to the instructor.\",\n            \"x\": 13660,\n            \"y\": 4369,\n            \"world_id\": 1,\n            \"mode\": \"move_press\",\n            \"cooldown\": 3\n        }\n    ]\n}'),
+(22, 6, 4, 1, 1, 22989, 3281, 'Partial', '[{\"text\":\"<player>, have you visited the Bannock on your wanderings?\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"It is a training ground found just outside the city where the soldiers of the Order of the Twin Adder are drilled in swordplay and other martial matters.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"I mention this because an acquaintance of mine -- a gentleman by the name of Galfrid -- is an instructor there, and I think you may be of use to him. Go and introduce yourself, and find out if there is anything you can do to help.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"action\":true,\"text\":\"Mind you do not stray far from the path -- the Twelveswood is no place for merry strolls through the underbrush.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', '{\n  \"scenario_mode\": \"universal\",\n  \"editor_data\": {\n    \"groups\": [],\n    \"ungrouped_steps\": []\n  },\n  \"steps\": [],\n  \"on_recieve_objectives\": {\n    \"scenario_mode\": \"universal\",\n    \"editor_data\": {\n      \"groups\": [\n        {\n          \"id\": \"group_1802c6a8-9539-4414-9158-2f2fb80c9565\",\n          \"name\": \"v1\",\n          \"steps\": [\n            \"step_1\"\n          ],\n          \"collapsed\": true\n        }\n      ],\n      \"ungrouped_steps\": [\n        \"step_1\"\n      ]\n    },\n    \"steps\": [\n      {\n        \"id\": \"step_1\",\n        \"components\": [\n          {\n            \"type\": \"follow_camera\",\n            \"position\": {\n              \"x\": 13660,\n              \"y\": 4369\n            },\n            \"execution_time\": 100,\n            \"smooth\": true\n          }\n        ],\n        \"completion_logic\": \"sequential\"\n      }\n    ]\n  }\n}', '{\n    \"move_to\": [\n        {\n            \"step\": 1,\n            \"navigator\": \"true\",\n            \"name\": \"The instructor at the Bannock is in need of a help\",\n            \"completion_text\": \"Talk to the instructor.\",\n            \"x\": 13660,\n            \"y\": 4369,\n            \"world_id\": 1,\n            \"mode\": \"move_press\",\n            \"cooldown\": 3\n        }\n    ]\n}'),
 (23, 11, 4, 2, 1, 13542, 4369, NULL, '[{\"text\":\"Greetings, <player>. Miounne sent word to expect you.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"My name is Galfrid, and I am responsible for training our Twin Adder recruits.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"I thank you for volunteering your assistance. The Twelveswood is much changed since the calamitous arrival of the Seventh Umbral Era five years ago.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"The power of the elementals wanes, and the harmony of the forest gives way to chaos. A great abundance of life has been lost as the strong run rampant, stifling the weak and new-sprung.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"Though it may not appear so to the eyes of an outsider, the Twelveswood is ailing -- its once rich variety a fading memory.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"For the citizens of Gridania, the restoration of the forest is a sacred duty. And it is my hope that adventurers such as you will offer to aid them in their struggle.\",\"side\":\"default\",\"left_speaker_id\":-1,\"right_speaker_id\":0},{\"action\":true,\"text\":\"Listen to their requests, and do all that you can. May the elementals bless your endeavors, <player>.\",\"side\":\"default\",\"left_speaker_id\":-1,\"right_speaker_id\":0}]', NULL, NULL),
-(24, 11, 5, 1, 1, 13542, 4369, NULL, '[{\"text\":\"I see you are eager to lend a hand, <player>. That is well. But I cannot in good conscience send you into the forest until I have established that your equipment is equal to the task.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"It bears repeating that, in the five years since the dawn of the Seventh Umbral Era, many of the Twelveswood\'s creatures have transformed into vicious, bloodthirsty monsters. Venturing into the forest without the proper gear is tantamount to suicide.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"I suggest you take some time to evaluate your equipment. Once you deem your armor to be of sufficient quality, present yourself to me for inspection.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"action\":true,\"text\":\"System: Equip your head, body, hands, legs, and feet with gear of item level 5 or above before returning to speak with Galfrid.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', '{\"on_recieve_objectives\":{\"steps\":[{\"action\":\"message\",\"chat\":\"Something you can buy at the store!\"},{\"action\":\"fix_cam\",\"delay\":200,\"position\":{\"x\":21063,\"y\":3867}},{\"action\":\"message\",\"chat\":\"And something you can create in the \'Craft guild\'.\"},{\"action\":\"fix_cam\",\"delay\":80,\"position\":{\"x\":21459,\"y\":4341}}]}}', '{\r\n    \"required_items\": [\r\n        {\r\n            \"id\": 3,\r\n            \"value\": 1,\r\n            \"type\": \"show\"\r\n        },\r\n        {\r\n            \"id\": 4,\r\n            \"value\": 1,\r\n            \"type\": \"show\"\r\n        }\r\n    ]\r\n}'),
+(24, 11, 5, 1, 1, 13542, 4369, NULL, '[{\"text\":\"I see you are eager to lend a hand, <player>. That is well. But I cannot in good conscience send you into the forest until I have established that your equipment is equal to the task.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"It bears repeating that, in the five years since the dawn of the Seventh Umbral Era, many of the Twelveswood\'s creatures have transformed into vicious, bloodthirsty monsters. Venturing into the forest without the proper gear is tantamount to suicide.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"I suggest you take some time to evaluate your equipment. Once you deem your armor to be of sufficient quality, present yourself to me for inspection.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"action\":true,\"text\":\"System: Equip your head, body, hands, legs, and feet with gear of item level 5 or above before returning to speak with Galfrid.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', '{\n  \"scenario_mode\": \"universal\",\n  \"editor_data\": {\n    \"groups\": [],\n    \"ungrouped_steps\": []\n  },\n  \"steps\": [],\n  \"on_recieve_objectives\": {\n    \"scenario_mode\": \"universal\",\n    \"editor_data\": {\n      \"groups\": [\n        {\n          \"id\": \"group_1802c6a8-9539-4414-9158-2f2fb80c9565\",\n          \"name\": \"v1\",\n          \"steps\": [\n            \"step_1\"\n          ],\n          \"collapsed\": true\n        }\n      ],\n      \"ungrouped_steps\": [\n        \"step_1\"\n      ]\n    },\n    \"steps\": [\n      {\n        \"id\": \"step_1\",\n        \"components\": [\n          {\n            \"type\": \"message\",\n            \"text\": \"Something you can buy at the store!\",\n            \"mode\": \"chat\"\n          },\n          {\n            \"type\": \"follow_camera\",\n            \"position\": {\n              \"x\": 21063,\n              \"y\": 3867\n            },\n            \"execution_time\": 200,\n            \"smooth\": true\n          },\n          {\n            \"type\": \"message\",\n            \"text\": \"And something you can create in the \'Craft guild\'.\",\n            \"mode\": \"chat\"\n          },\n          {\n            \"type\": \"follow_camera\",\n            \"position\": {\n              \"x\": 21459,\n              \"y\": 4341\n            },\n            \"execution_time\": 200,\n            \"smooth\": true\n          }\n        ],\n        \"completion_logic\": \"sequential\"\n      }\n    ]\n  }\n}', '{\r\n    \"required_items\": [\r\n        {\r\n            \"id\": 3,\r\n            \"value\": 1,\r\n            \"type\": \"show\"\r\n        },\r\n        {\r\n            \"id\": 4,\r\n            \"value\": 1,\r\n            \"type\": \"show\"\r\n        }\r\n    ]\r\n}'),
 (25, 11, 5, 2, 1, 13542, 4369, NULL, '[{\"text\":\"Ready for inspection are we? Right, then! Eyes forward! Back straight!\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"Hmmm... Yes, I think you pass muster.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"You would be surprised at how many young, promising soldiers get themselves killed by rushing off into the woods without first donning a decent set of armor.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"action\":true,\"text\":\"Your equipment, however, should provide the required degree of protection. Consider yourself ready for duty, <player>.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', NULL, NULL),
 (26, 11, 6, 1, 1, 13542, 4369, 'Partial', '[{\"text\":\"Ah, <player>. By your tireless efforts, you have proven yourself a friend to Gridania. I believe you can be trusted with sensitive intelligence.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"I would assign you a mission of considerable import, yet the need for secrecy prevents me from disclosing its details until you have pledged your participation. I am authorized to tell you only that it concerns suspicious activity in the Twelveswood. Say that you will lend us your aid, and I shall proceed with the briefing.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"Good. Time is of the essence, so listen well.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"You will by now have heard that a suspicious individual has been seen prowling the Twelveswood.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"And you may also be aware that Ixali activity has risen sharply in the region of late. What you may not know is that this increase coincided almost exactly with the first recorded sighting of the aforementioned individual.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"Suspecting a connection, we tightened our surveillance in hopes of tracking down our unknown visitor. Alas, our quarry is proving to be exceedingly elusive -- almost as if he knows our movements ahead of time.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"But where whole units have failed, a lone adventurer may yet succeed. Acting independently and covertly, you may be able to close in on our quarry unnoticed.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"Fear and anxiety are beginning to take their toll upon the citizenry, <player>. For their sake, I ask that you aid us in this investigation.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"You have my gratitude. With your help, I am hopeful we will shed light upon this mystery.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"Begin your search at Lifemend Stump. It is there that the majority of the sightings took place.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"action\":true,\"text\":\"Be forewarned: my people cannot offer you support, lest our quarry catch scent of our presence and evade us yet again. Proceed with caution.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', NULL, '{\n    \"move_to\": [\n        {\n            \"step\": 1,\n            \"navigator\": \"true\",\n            \"name\": \"\\\"See what\'s dangerous in the forest\",\n            \"completion_text\": \"See what\'s dangerous in the forest\",\n            \"x\": 12278,\n            \"y\": 4273,\n            \"world_id\": 1,\n            \"mode\": \"move\"\n        },\n        {\n            \"step\": 2,\n            \"navigator\": \"true\",\n            \"name\": \"Galfrid asks you to investigate the Stump of Life.\",\n            \"completion_text\": \"You have removed the sword from Lifemend Stump. Take it back to the Bannock and show it to Galfrid.\",\n            \"x\": 9746,\n            \"y\": 4543,\n            \"world_id\": 1,\n            \"mode\": \"move_press\",\n            \"pick_up_item\": {\n                \"id\": 21,\n                \"value\": 1\n            }\n        }\n    ]\n}'),
 (27, 11, 6, 2, 1, 13542, 4369, NULL, '[{\"text\":\"<player>! It is good to see you back!\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"One of our patrols sent word that you had been spotted doing battle with enraged treants. I am relieved to find you none the worse for the experience.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"But tell me, what were you able to discover at Lifemend Stump?\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"A sword in the stump, and a dead Ixal? Hmmm...\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"I can say with absolute certainty that this blade is of Ixali origin. It is of a kind used exclusively in the beastmen\'s rituals.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"The Ixal rarely set foot in the Central Shroud, so tight is our guard over the area. What purpose could have driven them to take such a risk? I fear something is afoot...\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"What\'s that? A dubious couple sporting peculiar spectacles? Hah hah hah!\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"So you have finally been acquainted with Yda and Papalymo! Lay your suspicions to rest -- Gridania counts them among her staunchest allies. Both are scholars hailing from a distant land, and have been with us since before the Calamity.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"Their garb may appear outlandish, and their exchanges baffling, but never once have they given us cause to doubt them.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"Indeed, they often assist the Gods\' Quiver and the Wood Wailers in their work -- much as I hope you will in the days to come, <player>.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"Although our unknown visitor eludes us still, owing to your efforts, we have acquired important intelligence on the Ixali threat. You have my gratitude.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"action\":true,\"text\":\"We are fortunate indeed to have a capable adventurer such as you aiding us. I pray you will continue to serve the people of Gridania in whatever capacity you are able.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', NULL, '{\n    \"required_items\": [\n        {\n            \"id\": 21,\n            \"value\": 1,\n            \"type\": \"default\"\n        }\n    ]\n}'),
@@ -886,31 +890,15 @@ INSERT INTO `tw_bots_quest` (`ID`, `BotID`, `QuestID`, `Step`, `WorldID`, `PosX`
 (67, 6, 22, 4, 1, 22989, 3281, NULL, '[{\"text\":\"Back from your trip to the Carpenters\' Guild? Let\'s see what you have in that box.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"Ahhh...this is by far the finest Monoa mask I have ever laid eyes upon. The timbermaster has truly outdone himself this time.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"In case he didn\'t mention, the mask is crafted from consecrated lumber rendered up by the Guardian Tree, solely for use in the ceremony. In other words, it is priceless—Mother bids you to handle it with care.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"action\":true,\"text\":\"And with that, your preparations are complete. The venue should just about be in order as well. If you have any questions, now\'s the time to ask them.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', NULL, '{\r\n    \"reward_items\": [\r\n        {\r\n            \"id\": 49,\r\n            \"value\": 1\r\n        }\r\n    ],\r\n    \"required_items\": [\r\n        {\r\n            \"id\": 48,\r\n            \"value\": 1,\r\n            \"type\": \"show\"\r\n        }\r\n    ]\r\n}'),
 (68, 6, 23, 1, 1, 22989, 3281, NULL, '[{\"text\":\"Now that you have the Monoa mask, all that\'s left is to participate in the ceremony.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"Perchance you are feeling nervous, but never fear—despite all the pomp surrounding the role, there really is nothing to being Emissary.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"All you are required to do is wear the mask, stand up straight, and look dignified. The more involved aspects of the proceedings will be handled by others. Simple, no?\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"The ceremony will be held at Mih Khetto\'s Amphitheatre. When you are ready, make yourself known to the caretaker there—a woman named Estaine.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"action\":true,\"text\":\"Oh, and be sure to wear your mask or she may not recognize you. Now, off you go, <player>, and good luck!\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', NULL, '{\r\n    \"required_items\": [\r\n        {\r\n            \"id\": 49,\r\n            \"value\": 1,\r\n            \"type\": \"default\"\r\n        }\r\n    ]\r\n}'),
 (69, 30, 23, 2, 1, 12526, 2545, NULL, '[{\"text\":\"I have looked forward to your coming. But tell me, are you recovered?\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"action\":true,\"text\":\"I am most glad of that. Now, I hope you will not doubt the earnestness of my concern...but I would ask a favor of you. Nor can I deny that I summoned you here in part with this in mind. Know, however, that I proceed only upon the understanding that you are rested and well.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', NULL, ''),
-(70, 8, 25, 1, 1, 19396, 3409, 'Partial', '[{\"action\":true,\"text\":\"Ah, there you are. I hear you\'re looking for a little adventure. Well, if you\'re really up for it, I\'ve got something for you. But I\'m warning you, it\'s no laughing matter. It\'s about Les. I\'m short on supplies again. Bring 50 anole carcasses and 50 chigoe carcasses and their eggs, 25 apiece.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', NULL, '{\n    \"required_items\": [\n        {\n            \"id\": 22,\n            \"value\": 25,\n            \"type\": \"default\"\n        },\n        {\n            \"id\": 33,\n            \"value\": 25,\n            \"type\": \"default\"\n        }\n    ],\n    \"defeat_bots\": [\n        {\n            \"id\": 31,\n            \"value\": 50\n        },\n        {\n            \"id\": 32,\n            \"value\": 50\n        }\n    ]\n}'),
-(71, 8, 26, 1, 1, 19396, 3409, 'Partial', '[{\"action\":true,\"text\":\"I really need feathers for my arrows. Bring me at least 50 of them.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', NULL, '{\n    \"required_items\": [\n        {\n            \"id\": 116,\n            \"value\": 50,\n            \"type\": \"default\"\n        }\n    ]\n}'),
-(72, 8, 27, 1, 1, 19396, 3409, 'Partial', '[{\"action\":true,\"text\":\"Hi. Here\'s the thing. I can\'t handle a flying beast infestation on my own. If we don\'t do something now, it\'ll be too late. Why don\'t we reduce their population?\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', NULL, '{\n    \"defeat_bots\": [\n        {\n            \"id\": 36,\n            \"value\": 100\n        },\n        {\n            \"id\": 50,\n            \"value\": 15\n        }\n    ]\n}'),
-(73, 8, 28, 1, 1, 19396, 3409, 'Partial', '[{\"action\":true,\"text\":\"Stranger, we all need your help. We\'re under attack by flying beasts. Please help us.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', NULL, '{\r\n    \"move_to\": [\r\n        {\r\n            \"navigator\": \"true\",\r\n            \"name\": \"Repel an attack\",\r\n            \"x\": 16224,\r\n            \"y\": 1600,\r\n            \"world_id\": 1,\r\n            \"mode\": \"defeat_bot\",\r\n            \"defeat_bot\": {\r\n                \"id\": 36,\r\n                \"attribute_power\": 60\r\n            }\r\n        },\r\n        {\r\n            \"navigator\": \"true\",\r\n            \"name\": \"Repel an attack\",\r\n            \"x\": 17248,\r\n            \"y\": 1120,\r\n            \"world_id\": 1,\r\n            \"mode\": \"defeat_bot\",\r\n            \"defeat_bot\": {\r\n                \"id\": 36,\r\n                \"attribute_power\": 60\r\n            }\r\n        },\r\n        {\r\n            \"navigator\": \"true\",\r\n            \"name\": \"Repel an attack\",\r\n            \"x\": 22432,\r\n            \"y\": 1919,\r\n            \"world_id\": 1,\r\n            \"mode\": \"defeat_bot\",\r\n            \"defeat_bot\": {\r\n                \"id\": 36,\r\n                \"attribute_power\": 60\r\n            }\r\n        },\r\n        {\r\n            \"navigator\": \"true\",\r\n            \"name\": \"Repel an attack\",\r\n            \"x\": 22816,\r\n            \"y\": 2048,\r\n            \"world_id\": 1,\r\n            \"mode\": \"defeat_bot\",\r\n            \"defeat_bot\": {\r\n                \"id\": 36,\r\n                \"attribute_power\": 60\r\n            }\r\n        },\r\n        {\r\n            \"navigator\": \"true\",\r\n            \"name\": \"Repel an attack\",\r\n            \"x\": 17655,\r\n            \"y\": 4497,\r\n            \"world_id\": 1,\r\n            \"mode\": \"defeat_bot\",\r\n            \"defeat_bot\": {\r\n                \"id\": 36,\r\n                \"attribute_power\": 60,\r\n                \"world_id\": 1\r\n            }\r\n        },\r\n        {\r\n            \"navigator\": \"true\",\r\n            \"name\": \"Repel an attack\",\r\n            \"x\": 25696,\r\n            \"y\": 3296,\r\n            \"world_id\": 1,\r\n            \"mode\": \"defeat_bot\",\r\n            \"defeat_bot\": {\r\n                \"id\": 36,\r\n                \"attribute_power\": 60\r\n            }\r\n        }\r\n    ]\r\n}'),
-(74, 8, 29, 1, 1, 19396, 3409, 'Partial', '[{\"action\":true,\"text\":\"Hi. I need iron, as always. Not many people are helping. Bring me 25 bars of iron. I really need them to make arrows.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', NULL, '{\n    \"required_items\": [\n        {\n            \"id\": 72,\n            \"value\": 25,\n            \"type\": \"default\"\n        }\n    ]\n}'),
-(75, 9, 30, 1, 1, 19862, 3473, 'Partial', '[{\"action\":true,\"text\":\"Hello, stranger. Do you like to hunt? We should hunt wild animals. I think 50 carcasses of each critter will be enough.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', NULL, '{\n    \"defeat_bots\": [\n        {\n            \"id\": 39,\n            \"value\": 50\n        },\n        {\n            \"id\": 42,\n            \"value\": 50\n        }\n    ]\n}'),
-(76, 9, 31, 1, 1, 19862, 3473, 'Partial', '[{\"action\":true,\"text\":\"Hi. Did you hear there\'s a ghost living in the swamps? Get rid of him. Only for sure. They say it keeps showing up. But try it anyway.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', NULL, '{\r\n    \"defeat_bots\": [\r\n        {\r\n            \"id\": 52,\r\n            \"value\": 10\r\n        }\r\n    ]\r\n}'),
-(77, 9, 32, 1, 1, 19862, 3473, 'Partial', '[{\"action\":true,\"text\":\"Hi. There\'s an orc settlement on the left in the steppe. You know what scares me? There\'s an ogre that just showed up and he\'s got dynamite in his head, you know? Okay, one, but they keep coming. You should visit them like this. I hope you come back with some ogre trophies.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', NULL, '{\r\n    \"defeat_bots\": [\r\n        {\r\n            \"id\": 41,\r\n            \"value\": 10\r\n        }\r\n    ]\r\n}'),
-(78, 9, 33, 1, 1, 19862, 3473, 'Partial', '[{\"action\":true,\"text\":\"Aapphpphpph. Hello stranger. You smell that foul odor. It\'s the mushrooms. They\'re getting big and plentiful. Please get rid of them. I think there\'s some kind of magic involved. Good luck, traveler.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', NULL, '{\n    \"defeat_bots\": [\n        {\n            \"id\": 49,\n            \"value\": 5\n        },\n        {\n            \"id\": 34,\n            \"value\": 80\n        }\n    ]\n}'),
-(79, 9, 34, 1, 1, 19862, 3473, 'Partial', '[{\"action\":true,\"text\":\"Hi. My guys need good armor and a great hammer. Bring them to me. I owe you one\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', NULL, '{\r\n    \"required_items\": [\r\n        {\r\n            \"id\": 82,\r\n            \"value\": 1,\r\n            \"type\": \"default\"\r\n        }\r\n    ]\r\n}'),
-(80, 7, 35, 1, 1, 19475, 3217, 'Partial', '[{\"action\":true,\"text\":\"Hello stranger. I\'m studying the fragments of darkness, if you could bring them to me.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', NULL, '{\n    \"required_items\": [\n        {\n            \"id\": 111,\n            \"value\": 50,\n            \"type\": \"default\"\n        }\n    ]\n}'),
-(81, 7, 36, 1, 1, 19475, 3217, 'Partial', '[{\"action\":true,\"text\":\"Hey, stranger. I want you to see how our aethers works. Find this location in the swamps.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', NULL, '{\n    \"move_to\": [\n        {\n            \"step\": 1,\n            \"navigator\": \"true\",\n            \"name\": \"To get to aether\",\n            \"x\": 8063,\n            \"y\": 3781,\n            \"world_id\": 1,\n            \"mode\": \"move\"\n        }\n    ]\n}'),
-(82, 7, 37, 1, 1, 19475, 3217, 'Partial', '[{\"action\":true,\"text\":\"Hello, stranger. Between the prairie and the plain, there\'s some kind of creature. It changes color. It\'s very frightening to the people of Gridania. You can reduce their numbers. Destroy 25 of the creatures.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', NULL, '{\r\n    \"defeat_bots\": [\r\n        {\r\n            \"id\": 51,\r\n            \"value\": 10\r\n        }\r\n    ]\r\n}'),
-(83, 7, 38, 1, 1, 19475, 3217, 'Partial', '[{\"action\":true,\"text\":\"Hi. I\'m still learning the elements of dark creatures and substances. But there are still a lot of kinda dead and kinda not dead dolls walking around near the cemetery. You can make the world a more peaceful place. Destroy 50 dolls\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', NULL, '{\n    \"defeat_bots\": [\n        {\n            \"id\": 43,\n            \"value\": 50\n        }\n    ]\n}'),
-(84, 7, 39, 1, 1, 19475, 3217, 'Partial', '[{\"action\":true,\"text\":\"Hi. There\'s a dungeon behind the cemetery. I don\'t know where it came from, but there\'s too many zombies. Can you figure it out? I\'d appreciate it if you could kill 50 zombies.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', NULL, '{\n    \"defeat_bots\": [\n        {\n            \"id\": 44,\n            \"value\": 50\n        }\n    ]\n}'),
 (85, 8, 40, 1, 1, 19396, 3409, 'Partial', '[{\"text\":\"We periodically exterminate populations of forest dwellers and borderlands to prevent such accidents, but these creatures have begun spawning out of season, and so it is becoming increasingly difficult to control their numbers.If you want to prove yourself, go to the forest and border zones and eliminate 20 pests each in all zones.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"action\":true,\"text\":\"Be careful and approach them one at a time so your adventurer career doesn\'t get cut short.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', NULL, '{\n    \"defeat_bots\": [\n        {\n            \"id\": 31,\n            \"value\": 20\n        },\n        {\n            \"id\": 32,\n            \"value\": 20\n        },\n        {\n            \"id\": 33,\n            \"value\": 20\n        },\n        {\n            \"id\": 34,\n            \"value\": 20\n        },\n        {\n            \"id\": 36,\n            \"value\": 20\n        },\n        {\n            \"id\": 42,\n            \"value\": 20\n        }\n    ]\n}'),
-(86, 1, 1, 3, 1, 19548, 4305, NULL, '[{\"text\":\"Wait, you left so quickly, I\'d listen now if I were you. Just listen. This world is unlike any other, it\'s very exciting and full of possibilities. So, step one! You need to open the menu where you normally vote. It\'s called the Voting Panel. \",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"text\":\"This is a very important panel, because you will interact with it most often. Your first task is to select the player\'s class. How to do this: 1. Go to the voting menu2. Click on upgrades and professions3. There will be a section at the top. Select a class. Choose the one you like.\",\"side\":\"thoughts\",\"left_speaker_id\":0,\"right_speaker_id\":0},{\"action\":true,\"text\":\"4. Don\'t miss the most important part! Familiarize yourself with the other buttons. Give it a try, you won\'t lose anything.5.  The most important thing!!!! when you familiarize yourself. The heart or  shield next to you is the navigator. It will help you always find your way\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', '{\"on_end\":{\"steps\":[{\"action\":\"fix_cam\",\"delay\":150,\"position\":{\"x\":21125,\"y\":4433}}]}}', NULL),
-(87, 1, 1, 4, 1, 21125, 4433, NULL, '[{\"text\":\"Where to start, actually. Remember we talked about the voting panel, we always interact through it, like if it\'s different stores, houses, craft places, etc. There are so many different interactions.And so click on the panel. At the top will be information about it, also pay attention to it.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"action\":true,\"text\":\"At the bottom are all the crafting items. They are divided into groups. To craft something, you need to click on the item and it will say:Required items: item - quantity.And then the graph of crafting (gold). Click on it. And we create an item. To avoid wasting time, you can specify the number of items in the field where you specify the reason.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', '{\"on_recieve_objectives\":{\"steps\":[{\"action\":\"message\",\"chat\":\"You can craft some item\'s here!\"},{\"action\":\"fix_cam\",\"delay\":150,\"position\":{\"x\":21540,\"y\":4351}}]},\"on_end\":{\"steps\":[{\"action\":\"fix_cam\",\"delay\":150,\"position\":{\"x\":22405,\"y\":4721}}]}}', NULL),
-(88, 1, 1, 5, 1, 22356, 4721, NULL, '[{\"action\":true,\"text\":\"So we\'re the ones with the ore. I think you already know how to process it. This is for your practice.  We have 5 stones to mine. It\'s not that hard, but it\'ll be a lot of fun afterwards. Oh yes when you mine or farm you can get different items than just 1.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', '{\"on_recieve_objectives\":{\"steps\":[{\"action\":\"message\",\"chat\":\"In this point\'s you can mining ores!\"},{\"action\":\"fix_cam\",\"delay\":150,\"position\":{\"x\":22587,\"y\":4721}},{\"action\":\"fix_cam\",\"delay\":150,\"position\":{\"x\":23278,\"y\":4497}}]},\"on_end\":{\"steps\":[{\"action\":\"fix_cam\",\"delay\":150,\"position\":{\"x\":21986,\"y\":6001}}]}}', '{\n    \"required_items\": [\n        {\n            \"id\": 173,\n            \"value\": 5,\n            \"type\": \"show\"\n        }\n    ]\n}'),
-(89, 1, 1, 6, 1, 21986, 6001, 'Partial', '[{\"text\":\"Okay. This is one of the stores where you can sell certain things. Give him the stones. Remember how we talked through our voting menu. Oh, I almost forgot. We have a little bit of an economy here. That is, each player contributes to the economy, he mines ore and the store in turn makes products from it. And these products you can transfer to other stores where you can buy something and get gold for it! Work as a courier and for money. \",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"action\":true,\"text\":\"Unfortunately, without products you can\'t buy anything, alas. And so your task is to sell 5 stones. Try it. I\'ll go somewhere else and you catch up with me. Follow your heart navigator . But sell first!\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', '{\"on_recieve_objectives\":{\"steps\":[{\"action\":\"message\",\"chat\":\"Here you can sell ores!\"},{\"action\":\"fix_cam\",\"delay\":150,\"position\":{\"x\":21678,\"y\":6033}}]},\"on_end\":{\"steps\":[{\"action\":\"fix_cam\",\"delay\":150,\"position\":{\"x\":18254,\"y\":3057}}]}}', '{\n    \"move_to\": [\n        {\n            \"step\": 1,\n            \"navigator\": \"true\",\n            \"name\": \"Go to the Store\",\n            \"x\": 21769,\n            \"y\": 6065,\n            \"world_id\": 1,\n            \"mode\": \"move\",\n            \"cooldown\": 1,\n            \"completion_text\": \"Sell the stones\"\n        }\n    ]\n}'),
-(90, 1, 1, 7, 1, 18254, 3057, NULL, '[{\"text\":\"I think you sold the stones and didn\'t keep them in your pockets. Heh-heh-heh. Remember we talked about classes?Well, look, each class has its own abilities. And then there\'s general abilities. I guess if you\'re interested, you can look it up and click on it. So to make a long story short. You pump your skills and then you can do a bind on a certain button with a certain skill that you pump and you can quickly use it during the battle. Use it! Useful thing\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"action\":true,\"text\":\"In the meantime, I\'ll move on. Study\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', '{\"on_recieve_objectives\":{\"steps\":[{\"action\":\"message\",\"chat\":\"Here you can learn your first skill!\"},{\"action\":\"fix_cam\",\"delay\":150,\"position\":{\"x\":17927,\"y\":2965}}]},\"on_end\":{\"steps\":[{\"action\":\"fix_cam\",\"delay\":150,\"position\":{\"x\":17345,\"y\":5265}}]}}', NULL),
-(91, 1, 1, 8, 1, 17345, 5265, NULL, '[{\"action\":true,\"text\":\"It\'s a quiet neighborhood. You can buy a house here. Or buy a guild house if you are a guild leader. You can decorate your house, add friends, open doors, grow crops in your house. There are certain places where you can buy a house. Look for them, and you will find them. Let\'s move on\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', '{\"on_recieve_objectives\":{\"steps\":[{\"action\":\"message\",\"chat\":\"Here you got your first house!\"},{\"action\":\"fix_cam\",\"delay\":80,\"position\":{\"x\":17958,\"y\":5297}},{\"action\":\"fix_cam\",\"delay\":80,\"position\":{\"x\":16868,\"y\":5265}},{\"action\":\"fix_cam\",\"delay\":80,\"position\":{\"x\":18749,\"y\":5073}},{\"action\":\"fix_cam\",\"delay\":80,\"position\":{\"x\":19242,\"y\":5585}}]},\"on_end\":{\"steps\":[{\"action\":\"fix_cam\",\"delay\":150,\"position\":{\"x\":16980,\"y\":2385}}]}}', NULL),
-(92, 1, 1, 9, 1, 16980, 2385, NULL, '[{\"action\":true,\"text\":\"It\'s a bank. This is where you can deposit your money. It\'s important. First of all, you can lose some of it during battles. You need to enter the territory of the bank and press the respawn button. After you do this, a window will open where you will need to point the cursor at the tabs: Deposit / Withdraw. Try if you have sold stones put the money in the bank. And I\'ll move on.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', '{\"on_recieve_objectives\":{\"steps\":[{\"action\":\"message\",\"chat\":\"Here you can use bank managing!\"},{\"action\":\"fix_cam\",\"delay\":80,\"position\":{\"x\":17644,\"y\":2321}}]},\"on_end\":{\"steps\":[{\"action\":\"fix_cam\",\"delay\":150,\"position\":{\"x\":16051,\"y\":2289}}]}}', NULL),
-(93, 1, 1, 10, 1, 16051, 2289, NULL, '[{\"action\":true,\"text\":\"And this is our farm. This is where the plants are grown. This is where you can harvest your crops and sell them. Let me show you\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', '{\"on_recieve_objectives\":{\"steps\":[{\"action\":\"message\",\"chat\":\"Here you can planting!\"},{\"action\":\"fix_cam\",\"delay\":100,\"position\":{\"x\":15584,\"y\":2321}},{\"action\":\"fix_cam\",\"delay\":100,\"position\":{\"x\":13962,\"y\":2321}}]},\"on_end\":{\"steps\":[{\"action\":\"fix_cam\",\"delay\":150,\"position\":{\"x\":15352,\"y\":1425}}]}}', NULL),
-(94, 1, 1, 11, 1, 15352, 1425, NULL, '[{\"action\":true,\"text\":\"Well, that\'s the last part. This is where you can sell your harvest. These crops are also processed into products like in the miner\'s store. Don\'t forget to carry food if you want to buy something. And don\'t forget to upgrade your skills, if you remember where. There you can pump the efficiency of the miner and farmer. And that\'s not all I told you! Find Bertennant. He will tell you. If anything, you can always find me\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', NULL, NULL),
+(86, 1, 1, 1, 1, 19548, 4305, NULL, '[\n    {\n        \"text\": \"Wait, you left so quickly, I\'d listen now if I were you. Just listen. This world is unlike any other, it\'s very exciting and full of possibilities. So, step one! You need to open the menu where you normally vote. It\'s called the Voting Panel. \",\n        \"side\": \"default\",\n        \"left_speaker_id\": 0,\n        \"right_speaker_id\": -1\n    },\n    {\n        \"text\": \"This is a very important panel, because you will interact with it most often. Your first task is to select the player\'s class. How to do this: 1. Go to the voting menu2. Click on upgrades and professions3. There will be a section at the top. Select a class. Choose the one you like.\",\n        \"side\": \"thoughts\",\n        \"left_speaker_id\": 0,\n        \"right_speaker_id\": 0\n    },\n    {\n        \"action\": true,\n        \"text\": \"4. Don\'t miss the most important part! Familiarize yourself with the other buttons. Give it a try, you won\'t lose anything.5.  The most important thing!!!! when you familiarize yourself. The heart or  shield next to you is the navigator. It will help you always find your way\",\n        \"side\": \"default\",\n        \"left_speaker_id\": 0,\n        \"right_speaker_id\": -1\n    }\n]', '{\n  \"scenario_mode\": \"universal\",\n  \"editor_data\": {\n    \"groups\": [],\n    \"ungrouped_steps\": []\n  },\n  \"steps\": [],\n  \"on_end\": {\n    \"scenario_mode\": \"universal\",\n    \"editor_data\": {\n      \"groups\": [\n        {\n          \"id\": \"group_1802c6a8-9539-4414-9158-2f2fb80c9565\",\n          \"name\": \"v1\",\n          \"steps\": [\n            \"step_1\"\n          ],\n          \"collapsed\": true\n        }\n      ],\n      \"ungrouped_steps\": [\n        \"step_1\"\n      ]\n    },\n    \"steps\": [\n      {\n        \"id\": \"step_1\",\n        \"components\": [\n          {\n            \"type\": \"follow_camera\",\n            \"position\": {\n              \"x\": 21125,\n              \"y\": 4433\n            },\n            \"execution_time\": 150,\n            \"smooth\": true\n          }\n        ],\n        \"completion_logic\": \"sequential\"\n      }\n    ]\n  }\n}', '{\n    \"required_items\": [],\n    \"reward_items\": [],\n    \"defeat_bots\": [],\n    \"move_to\": []\n}'),
+(87, 1, 1, 2, 1, 21125, 4433, NULL, '[{\"text\":\"Where to start, actually. Remember we talked about the voting panel, we always interact through it, like if it\'s different stores, houses, craft places, etc. There are so many different interactions.And so click on the panel. At the top will be information about it, also pay attention to it.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"action\":true,\"text\":\"At the bottom are all the crafting items. They are divided into groups. To craft something, you need to click on the item and it will say:Required items: item - quantity.And then the graph of crafting (gold). Click on it. And we create an item. To avoid wasting time, you can specify the number of items in the field where you specify the reason.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', '{\n  \"scenario_mode\": \"universal\",\n  \"editor_data\": {\n    \"groups\": [],\n    \"ungrouped_steps\": []\n  },\n  \"steps\": [],\n  \"on_recieve_objectives\": {\n    \"scenario_mode\": \"universal\",\n    \"editor_data\": {\n      \"groups\": [\n        {\n          \"id\": \"group_1802c6a8-9539-4414-9158-2f2fb80c9565\",\n          \"name\": \"v1\",\n          \"steps\": [\n            \"step_1\"\n          ],\n          \"collapsed\": false\n        }\n      ],\n      \"ungrouped_steps\": [\n        \"step_1\"\n      ]\n    },\n    \"steps\": [\n      {\n        \"id\": \"step_1\",\n        \"components\": [\n          {\n            \"type\": \"message\",\n            \"text\": \"You can craft some item\'s here!\",\n            \"mode\": \"chat\"\n          },\n          {\n            \"type\": \"follow_camera\",\n            \"position\": {\n              \"x\": 21540,\n              \"y\": 4351\n            },\n            \"execution_time\": 150,\n            \"smooth\": true\n          }\n        ],\n        \"completion_logic\": \"sequential\"\n      }\n    ]\n  },\n  \"on_end\": {\n    \"scenario_mode\": \"universal\",\n    \"editor_data\": {\n      \"groups\": [\n        {\n          \"id\": \"group_ccda4353-c2c6-4458-994f-e2d973d34fc3\",\n          \"name\": \"v2\",\n          \"steps\": [\n            \"step\"\n          ],\n          \"collapsed\": false\n        }\n      ],\n      \"ungrouped_steps\": [\n        \"step\"\n      ]\n    },\n    \"steps\": [\n      {\n        \"id\": \"step\",\n        \"components\": [\n          {\n            \"type\": \"follow_camera\",\n            \"position\": {\n              \"x\": 22405,\n              \"y\": 4721\n            },\n            \"execution_time\": 150,\n            \"smooth\": true\n          }\n        ]\n      }\n    ]\n  }\n}', NULL),
+(88, 1, 1, 3, 1, 22356, 4721, NULL, '[{\"action\":true,\"text\":\"So we\'re the ones with the ore. I think you already know how to process it. This is for your practice.  We have 5 stones to mine. It\'s not that hard, but it\'ll be a lot of fun afterwards. Oh yes when you mine or farm you can get different items than just 1.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', '{\n  \"scenario_mode\": \"universal\",\n  \"editor_data\": {\n    \"groups\": [],\n    \"ungrouped_steps\": []\n  },\n  \"steps\": [],\n  \"on_recieve_objectives\": {\n    \"scenario_mode\": \"universal\",\n    \"editor_data\": {\n      \"groups\": [\n        {\n          \"id\": \"group_d31b3aab-a8c1-4fbb-b346-d50b003e786a\",\n          \"name\": \"ev1\",\n          \"steps\": [\n            \"step\"\n          ],\n          \"collapsed\": false\n        }\n      ],\n      \"ungrouped_steps\": [\n        \"step\"\n      ]\n    },\n    \"steps\": [\n      {\n        \"id\": \"step\",\n        \"components\": [\n          {\n            \"type\": \"message\",\n            \"text\": \"In this point\'s you can mining ores!\",\n            \"mode\": \"chat\"\n          },\n          {\n            \"type\": \"follow_camera\",\n            \"position\": {\n              \"x\": 22587,\n              \"y\": 4721\n            },\n            \"execution_time\": 150,\n            \"smooth\": true\n          },\n          {\n            \"type\": \"follow_camera\",\n            \"position\": {\n              \"x\": 23278,\n              \"y\": 4497\n            },\n            \"execution_time\": 150,\n            \"smooth\": true\n          }\n        ],\n        \"completion_logic\": \"sequential\"\n      }\n    ]\n  },\n  \"on_end\": {\n    \"scenario_mode\": \"universal\",\n    \"editor_data\": {\n      \"groups\": [\n        {\n          \"id\": \"group_1802c6a8-9539-4414-9158-2f2fb80c9565\",\n          \"name\": \"ev2\",\n          \"steps\": [\n            \"step_1\"\n          ],\n          \"collapsed\": false\n        }\n      ],\n      \"ungrouped_steps\": [\n        \"step_1\"\n      ]\n    },\n    \"steps\": [\n      {\n        \"id\": \"step_1\",\n        \"components\": [\n          {\n            \"type\": \"follow_camera\",\n            \"position\": {\n              \"x\": 21986,\n              \"y\": 6001\n            },\n            \"execution_time\": 300,\n            \"smooth\": true\n          }\n        ]\n      }\n    ]\n  }\n}', '{\n    \"required_items\": [\n        {\n            \"id\": 173,\n            \"value\": 5,\n            \"type\": \"show\"\n        }\n    ]\n}'),
+(89, 1, 1, 4, 1, 21986, 6001, 'Partial', '[{\"text\":\"Okay. This is one of the stores where you can sell certain things. Give him the stones. Remember how we talked through our voting menu. Oh, I almost forgot. We have a little bit of an economy here. That is, each player contributes to the economy, he mines ore and the store in turn makes products from it. And these products you can transfer to other stores where you can buy something and get gold for it! Work as a courier and for money. \",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"action\":true,\"text\":\"Unfortunately, without products you can\'t buy anything, alas. And so your task is to sell 5 stones. Try it. I\'ll go somewhere else and you catch up with me. Follow your heart navigator . But sell first!\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', '{\n  \"scenario_mode\": \"universal\",\n  \"editor_data\": {\n    \"groups\": [],\n    \"ungrouped_steps\": []\n  },\n  \"steps\": [],\n  \"on_recieve_objectives\": {\n    \"scenario_mode\": \"universal\",\n    \"editor_data\": {\n      \"groups\": [\n        {\n          \"id\": \"group_1802c6a8-9539-4414-9158-2f2fb80c9565\",\n          \"name\": \"v1\",\n          \"steps\": [\n            \"step_1\"\n          ],\n          \"collapsed\": false\n        }\n      ],\n      \"ungrouped_steps\": [\n        \"step_1\"\n      ]\n    },\n    \"steps\": [\n      {\n        \"id\": \"step_1\",\n        \"components\": [\n          {\n            \"type\": \"message\",\n            \"text\": \"Here you can sell ores!\",\n            \"mode\": \"chat\"\n          },\n          {\n            \"type\": \"follow_camera\",\n            \"position\": {\n              \"x\": 21678,\n              \"y\": 6033\n            },\n            \"execution_time\": 150,\n            \"smooth\": true\n          }\n        ],\n        \"completion_logic\": \"sequential\"\n      }\n    ]\n  },\n  \"on_end\": {\n    \"scenario_mode\": \"universal\",\n    \"editor_data\": {\n      \"groups\": [\n        {\n          \"id\": \"group_ccda4353-c2c6-4458-994f-e2d973d34fc3\",\n          \"name\": \"v2\",\n          \"steps\": [\n            \"step\"\n          ],\n          \"collapsed\": false\n        }\n      ],\n      \"ungrouped_steps\": [\n        \"step\"\n      ]\n    },\n    \"steps\": [\n      {\n        \"id\": \"step\",\n        \"components\": [\n          {\n            \"type\": \"follow_camera\",\n            \"position\": {\n              \"x\": 18254,\n              \"y\": 3057\n            },\n            \"execution_time\": 150,\n            \"smooth\": true\n          }\n        ]\n      }\n    ]\n  }\n}', '{\n    \"move_to\": [\n        {\n            \"step\": 1,\n            \"navigator\": \"true\",\n            \"name\": \"Go to the Store\",\n            \"x\": 21769,\n            \"y\": 6065,\n            \"world_id\": 1,\n            \"mode\": \"move\",\n            \"cooldown\": 1,\n            \"completion_text\": \"Sell the stones\"\n        }\n    ]\n}'),
+(91, 1, 1, 5, 1, 17345, 5265, NULL, '[{\"action\":true,\"text\":\"It\'s a quiet neighborhood. You can buy a house here. Or buy a guild house if you are a guild leader. You can decorate your house, add friends, open doors, grow crops in your house. There are certain places where you can buy a house. Look for them, and you will find them. Let\'s move on\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', '{\n  \"scenario_mode\": \"universal\",\n  \"editor_data\": {\n    \"groups\": [],\n    \"ungrouped_steps\": []\n  },\n  \"steps\": [],\n  \"on_recieve_objectives\": {\n    \"scenario_mode\": \"universal\",\n    \"editor_data\": {\n      \"groups\": [\n        {\n          \"id\": \"group_1802c6a8-9539-4414-9158-2f2fb80c9565\",\n          \"name\": \"v1\",\n          \"steps\": [\n            \"step_1\"\n          ],\n          \"collapsed\": false\n        }\n      ],\n      \"ungrouped_steps\": [\n        \"step_1\"\n      ]\n    },\n    \"steps\": [\n      {\n        \"id\": \"step_1\",\n        \"components\": [\n          {\n            \"type\": \"message\",\n            \"text\": \"Here you got your first house!\",\n            \"mode\": \"chat\"\n          },\n          {\n            \"type\": \"follow_camera\",\n            \"position\": {\n              \"x\": 17958,\n              \"y\": 5297\n            },\n            \"execution_time\": 80,\n            \"smooth\": true\n          },\n          {\n            \"type\": \"follow_camera\",\n            \"position\": {\n              \"x\": 16868,\n              \"y\": 5265\n            },\n            \"execution_time\": 80,\n            \"smooth\": true\n          },\n          {\n            \"type\": \"follow_camera\",\n            \"position\": {\n              \"x\": 18749,\n              \"y\": 5073\n            },\n            \"execution_time\": 80,\n            \"smooth\": true\n          },\n          {\n            \"type\": \"follow_camera\",\n            \"position\": {\n              \"x\": 19242,\n              \"y\": 5585\n            },\n            \"execution_time\": 80,\n            \"smooth\": true\n          }\n        ],\n        \"completion_logic\": \"sequential\"\n      }\n    ]\n  },\n  \"on_end\": {\n    \"scenario_mode\": \"universal\",\n    \"editor_data\": {\n      \"groups\": [\n        {\n          \"id\": \"group_ccda4353-c2c6-4458-994f-e2d973d34fc3\",\n          \"name\": \"v2\",\n          \"steps\": [\n            \"step\"\n          ],\n          \"collapsed\": false\n        }\n      ],\n      \"ungrouped_steps\": [\n        \"step\"\n      ]\n    },\n    \"steps\": [\n      {\n        \"id\": \"step\",\n        \"components\": [\n          {\n            \"type\": \"follow_camera\",\n            \"position\": {\n              \"x\": 16980,\n              \"y\": 2385\n            },\n            \"execution_time\": 150,\n            \"smooth\": true\n          }\n        ]\n      }\n    ]\n  }\n}', NULL),
+(92, 1, 1, 6, 1, 16980, 2385, NULL, '[{\"action\":true,\"text\":\"It\'s a bank. This is where you can deposit your money. It\'s important. First of all, you can lose some of it during battles. You need to enter the territory of the bank and press the respawn button. After you do this, a window will open where you will need to point the cursor at the tabs: Deposit / Withdraw. Try if you have sold stones put the money in the bank. And I\'ll move on.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', '{\n  \"scenario_mode\": \"universal\",\n  \"editor_data\": {\n    \"groups\": [],\n    \"ungrouped_steps\": []\n  },\n  \"steps\": [],\n  \"on_recieve_objectives\": {\n    \"scenario_mode\": \"universal\",\n    \"editor_data\": {\n      \"groups\": [\n        {\n          \"id\": \"group_1802c6a8-9539-4414-9158-2f2fb80c9565\",\n          \"name\": \"v1\",\n          \"steps\": [\n            \"step_1\"\n          ],\n          \"collapsed\": false\n        }\n      ],\n      \"ungrouped_steps\": [\n        \"step_1\"\n      ]\n    },\n    \"steps\": [\n      {\n        \"id\": \"step_1\",\n        \"components\": [\n          {\n            \"type\": \"message\",\n            \"text\": \"Here you can use bank managing!\",\n            \"mode\": \"chat\"\n          },\n          {\n            \"type\": \"follow_camera\",\n            \"position\": {\n              \"x\": 17644,\n              \"y\": 2321\n            },\n            \"execution_time\": 150,\n            \"smooth\": true\n          }\n        ],\n        \"completion_logic\": \"sequential\"\n      }\n    ]\n  },\n  \"on_end\": {\n    \"scenario_mode\": \"universal\",\n    \"editor_data\": {\n      \"groups\": [\n        {\n          \"id\": \"group_ccda4353-c2c6-4458-994f-e2d973d34fc3\",\n          \"name\": \"v2\",\n          \"steps\": [\n            \"step\"\n          ],\n          \"collapsed\": false\n        }\n      ],\n      \"ungrouped_steps\": [\n        \"step\"\n      ]\n    },\n    \"steps\": [\n      {\n        \"id\": \"step\",\n        \"components\": [\n          {\n            \"type\": \"follow_camera\",\n            \"position\": {\n              \"x\": 16051,\n              \"y\": 2289\n            },\n            \"execution_time\": 150,\n            \"smooth\": true\n          }\n        ]\n      }\n    ]\n  }\n}', NULL),
+(93, 1, 1, 7, 1, 16051, 2289, NULL, '[{\"action\":true,\"text\":\"And this is our farm. This is where the plants are grown. This is where you can harvest your crops and sell them. Let me show you\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', '{\n  \"scenario_mode\": \"universal\",\n  \"editor_data\": {\n    \"groups\": [],\n    \"ungrouped_steps\": []\n  },\n  \"steps\": [],\n  \"on_recieve_objectives\": {\n    \"scenario_mode\": \"universal\",\n    \"editor_data\": {\n      \"groups\": [\n        {\n          \"id\": \"group_1802c6a8-9539-4414-9158-2f2fb80c9565\",\n          \"name\": \"v1\",\n          \"steps\": [\n            \"step_1\"\n          ],\n          \"collapsed\": false\n        }\n      ],\n      \"ungrouped_steps\": [\n        \"step_1\"\n      ]\n    },\n    \"steps\": [\n      {\n        \"id\": \"step_1\",\n        \"components\": [\n          {\n            \"type\": \"message\",\n            \"text\": \"Here you can planting!\",\n            \"mode\": \"chat\"\n          },\n          {\n            \"type\": \"follow_camera\",\n            \"position\": {\n              \"x\": 15584,\n              \"y\": 2321\n            },\n            \"execution_time\": 100,\n            \"smooth\": true\n          },\n          {\n            \"type\": \"follow_camera\",\n            \"position\": {\n              \"x\": 13962,\n              \"y\": 2321\n            },\n            \"execution_time\": 100,\n            \"smooth\": true\n          }\n        ],\n        \"completion_logic\": \"sequential\"\n      }\n    ]\n  },\n  \"on_end\": {\n    \"scenario_mode\": \"universal\",\n    \"editor_data\": {\n      \"groups\": [\n        {\n          \"id\": \"group_ccda4353-c2c6-4458-994f-e2d973d34fc3\",\n          \"name\": \"v2\",\n          \"steps\": [\n            \"step\"\n          ],\n          \"collapsed\": false\n        }\n      ],\n      \"ungrouped_steps\": [\n        \"step\"\n      ]\n    },\n    \"steps\": [\n      {\n        \"id\": \"step\",\n        \"components\": [\n          {\n            \"type\": \"follow_camera\",\n            \"position\": {\n              \"x\": 15352,\n              \"y\": 1425\n            },\n            \"execution_time\": 150,\n            \"smooth\": true\n          }\n        ]\n      }\n    ]\n  }\n}', NULL),
+(94, 1, 1, 8, 1, 15352, 1425, NULL, '[{\"action\":true,\"text\":\"Well, that\'s the last part. This is where you can sell your harvest. These crops are also processed into products like in the miner\'s store. Don\'t forget to carry food if you want to buy something. And don\'t forget to upgrade your skills, if you remember where. There you can pump the efficiency of the miner and farmer. And that\'s not all I told you! Find Bertennant. He will tell you. If anything, you can always find me\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', NULL, NULL),
 (95, 16, 42, 1, 1, 15153, 1393, 'Partial', '[{\"action\":true,\"text\":\"Hi. This is a difficult time in our community. I was wondering if I could ask you to harvest some of the stock. Bring me 500 wheat. I will reward you\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', NULL, '{\n    \"required_items\": [\n        {\n            \"id\": 70,\n            \"value\": 500,\n            \"type\": \"default\"\n        }\n    ]\n}'),
 (96, 16, 43, 1, 1, 15153, 1393, 'Partial', '[{\"action\":true,\"text\":\"Hi. My ranch needs building materials. Can you bring me 500 stones?  That\'d be great. Thanks.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', NULL, '{\n    \"required_items\": [\n        {\n            \"id\": 173,\n            \"value\": 500,\n            \"type\": \"default\"\n        }\n    ]\n}'),
 (97, 16, 44, 1, 1, 15153, 1393, 'Partial', '[{\"action\":true,\"text\":\"Hi. As you know, raw food doesn\'t taste very good. Get me some 200 coal so I can cook over a fire. Uh-huh. Berries on a coal fire.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', NULL, '{\n    \"required_items\": [\n        {\n            \"id\": 50,\n            \"value\": 200,\n            \"type\": \"default\"\n        }\n    ]\n}'),
@@ -927,7 +915,7 @@ INSERT INTO `tw_bots_quest` (`ID`, `BotID`, `QuestID`, `Step`, `WorldID`, `PosX`
 (108, 26, 55, 1, 1, 21678, 6033, NULL, '[{\"action\":true,\"text\":\"Hello. We have a contract with a partner, but we are running out of time. We need to find 300 ores of iron ore. Can you bring it over?\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', NULL, '{\r\n    \"required_items\": [\r\n        {\r\n            \"id\": 54,\r\n            \"value\": 300,\r\n            \"type\": \"default\"\r\n        }\r\n    ]\r\n}'),
 (109, 26, 56, 1, 1, 21678, 6033, NULL, '[{\"action\":true,\"text\":\"Hello. There are mushrooms growing at one of our mines outside of town. We need to reduce their population.  \",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', NULL, '{\r\n    \"defeat_bots\": [\r\n        {\r\n            \"id\": 34,\r\n            \"value\": 50\r\n        }\r\n    ]\r\n}'),
 (110, 6, 57, 1, 1, 22609, 2961, '', '[{\"action\":true,\"text\":\"There\'s no easier task. Bring me 100 pig meat\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', NULL, '{\r\n    \"required_items\": [\r\n        {\r\n            \"id\": 186,\r\n            \"value\": 100,\r\n            \"type\": \"default\"\r\n        }\r\n    ]\r\n}'),
-(111, 57, 58, 1, 1, 17550, 3665, 'Partial', '[{\"text\":\"To do that, do some work for me.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"action\":true,\"text\":\"You ready for your feat? Good! Because the state of our toilets and showers requires heroic intervention. Go in there and restore them to their former glory. or at least clean.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', '{\"on_recieve_objectives\":{\"steps\":[{\"action\":\"fix_cam\",\"delay\":70,\"position\":{\"x\":17919,\"y\":3889}}]}}', '{\n    \"reward_items\": [\n        {\n            \"id\": 256,\n            \"value\": 1\n        }\n    ],\n    \"move_to\": [\n        {\n            \"step\": 1,\n            \"navigator\": \"true\",\n            \"name\": \"Cleaning sink\",\n            \"x\": 17715,\n            \"y\": 3889,\n            \"mode\": \"move_press\",\n            \"cooldown\": 10,\n            \"completion_text\": \"You cleaned the sink.\"\n        },\n        {\n            \"step\": 1,\n            \"navigator\": \"true\",\n            \"name\": \"Cleaning sink\",\n            \"x\": 17775,\n            \"y\": 3889,\n            \"mode\": \"move_press\",\n            \"cooldown\": 10,\n            \"completion_text\": \"You cleaned the sink.\"\n        },\n        {\n            \"step\": 1,\n            \"navigator\": \"true\",\n            \"name\": \"Cleaning sink\",\n            \"x\": 17838,\n            \"y\": 3889,\n            \"mode\": \"move_press\",\n            \"cooldown\": 10,\n            \"completion_text\": \"You cleaned the sink.\"\n        },\n        {\n            \"step\": 2,\n            \"navigator\": \"true\",\n            \"name\": \"Cleaning toilet\",\n            \"x\": 17969,\n            \"y\": 3857,\n            \"mode\": \"move_press\",\n            \"cooldown\": 10,\n            \"completion_text\": \"You cleaned the toilet.\"\n        },\n        {\n            \"step\": 2,\n            \"navigator\": \"true\",\n            \"name\": \"Cleaning toilet\",\n            \"x\": 18097,\n            \"y\": 3857,\n            \"mode\": \"move_press\",\n            \"cooldown\": 10,\n            \"completion_text\": \"You cleaned the toilet.\"\n        },\n        {\n            \"step\": 2,\n            \"navigator\": \"true\",\n            \"name\": \"Cleaning toilet\",\n            \"x\": 18225,\n            \"y\": 3857,\n            \"mode\": \"move_press\",\n            \"cooldown\": 10,\n            \"completion_text\": \"You cleaned the toilet.\"\n        }\n    ]\n}'),
+(111, 57, 58, 1, 1, 17550, 3665, 'Partial', '[{\"text\":\"To do that, do some work for me.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1},{\"action\":true,\"text\":\"You ready for your feat? Good! Because the state of our toilets and showers requires heroic intervention. Go in there and restore them to their former glory. or at least clean.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', '{\n  \"scenario_mode\": \"universal\",\n  \"editor_data\": {\n    \"groups\": [],\n    \"ungrouped_steps\": []\n  },\n  \"steps\": [],\n  \"on_recieve_objectives\": {\n    \"scenario_mode\": \"universal\",\n    \"editor_data\": {\n      \"groups\": [\n        {\n          \"id\": \"group_1802c6a8-9539-4414-9158-2f2fb80c9565\",\n          \"name\": \"v1\",\n          \"steps\": [\n            \"step_1\"\n          ],\n          \"collapsed\": false\n        }\n      ],\n      \"ungrouped_steps\": [\n        \"step_1\"\n      ]\n    },\n    \"steps\": [\n      {\n        \"id\": \"step_1\",\n        \"components\": [\n          {\n            \"type\": \"follow_camera\",\n            \"position\": {\n              \"x\": 17919,\n              \"y\": 3889\n            },\n            \"execution_time\": 70,\n            \"smooth\": true\n          }\n        ],\n        \"completion_logic\": \"sequential\"\n      }\n    ]\n  }\n}', '{\n    \"reward_items\": [\n        {\n            \"id\": 256,\n            \"value\": 1\n        }\n    ],\n    \"move_to\": [\n        {\n            \"step\": 1,\n            \"navigator\": \"true\",\n            \"name\": \"Cleaning sink\",\n            \"x\": 17715,\n            \"y\": 3889,\n            \"mode\": \"move_press\",\n            \"cooldown\": 10,\n            \"completion_text\": \"You cleaned the sink.\"\n        },\n        {\n            \"step\": 1,\n            \"navigator\": \"true\",\n            \"name\": \"Cleaning sink\",\n            \"x\": 17775,\n            \"y\": 3889,\n            \"mode\": \"move_press\",\n            \"cooldown\": 10,\n            \"completion_text\": \"You cleaned the sink.\"\n        },\n        {\n            \"step\": 1,\n            \"navigator\": \"true\",\n            \"name\": \"Cleaning sink\",\n            \"x\": 17838,\n            \"y\": 3889,\n            \"mode\": \"move_press\",\n            \"cooldown\": 10,\n            \"completion_text\": \"You cleaned the sink.\"\n        },\n        {\n            \"step\": 2,\n            \"navigator\": \"true\",\n            \"name\": \"Cleaning toilet\",\n            \"x\": 17969,\n            \"y\": 3857,\n            \"mode\": \"move_press\",\n            \"cooldown\": 10,\n            \"completion_text\": \"You cleaned the toilet.\"\n        },\n        {\n            \"step\": 2,\n            \"navigator\": \"true\",\n            \"name\": \"Cleaning toilet\",\n            \"x\": 18097,\n            \"y\": 3857,\n            \"mode\": \"move_press\",\n            \"cooldown\": 10,\n            \"completion_text\": \"You cleaned the toilet.\"\n        },\n        {\n            \"step\": 2,\n            \"navigator\": \"true\",\n            \"name\": \"Cleaning toilet\",\n            \"x\": 18225,\n            \"y\": 3857,\n            \"mode\": \"move_press\",\n            \"cooldown\": 10,\n            \"completion_text\": \"You cleaned the toilet.\"\n        }\n    ]\n}'),
 (112, 26, 59, 1, 1, 21678, 6033, NULL, '[{\"action\":true,\"text\":\"Hi. There are places that need to be explored for new ores can you help?\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', NULL, '{\r\n    \"move_to\": [\r\n        {\r\n            \"step\": 1,\r\n            \"navigator\": \"true\",\r\n            \"name\": \"Explore the place\",\r\n            \"x\": 7587,\r\n            \"y\": 1777,\r\n            \"world_id\": 1,\r\n            \"mode\": \"move_press\",\r\n            \"cooldown\": 50\r\n        },\r\n        {\r\n            \"step\": 1,\r\n            \"navigator\": \"true\",\r\n            \"name\": \"Explore the place\",\r\n            \"x\": 23857,\r\n            \"y\": 5009,\r\n            \"world_id\": 1,\r\n            \"mode\": \"move_press\",\r\n            \"cooldown\": 50\r\n        },\r\n        {\r\n            \"step\": 1,\r\n            \"navigator\": \"true\",\r\n            \"name\": \"Explore the place\",\r\n            \"x\": 23761,\r\n            \"y\": 5649,\r\n            \"world_id\": 1,\r\n            \"mode\": \"move_press\",\r\n            \"cooldown\": 50\r\n        },\r\n        {\r\n            \"step\": 1,\r\n            \"navigator\": \"true\",\r\n            \"name\": \"Explore the place\",\r\n            \"x\": 22322,\r\n            \"y\": 5489,\r\n            \"world_id\": 1,\r\n            \"mode\": \"move_press\",\r\n            \"cooldown\": 50\r\n        },\r\n        {\r\n            \"step\": 1,\r\n            \"navigator\": \"true\",\r\n            \"name\": \"Explore the place\",\r\n            \"x\": 9263,\r\n            \"y\": 5457,\r\n            \"world_id\": 1,\r\n            \"mode\": \"move_press\"\r\n        }\r\n    ]\r\n}'),
 (113, 26, 60, 1, 1, 21678, 6033, NULL, '[{\"action\":true,\"text\":\"Hi need to find some items. They have value to someone. Bring them in, please.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', NULL, '{\r\n    \"move_to\": [\r\n        {\r\n            \"step\": 1,\r\n            \"navigator\": \"true\",\r\n            \"name\": \"Find items\",\r\n            \"x\": 6336,\r\n            \"y\": 433,\r\n            \"world_id\": 1,\r\n            \"mode\": \"move_follow_press\",\r\n            \"cooldown\": 15,\r\n            \"interactive\": {\r\n                \"x\": 6336,\r\n                \"y\": 433\r\n            }\r\n        },\r\n        {\r\n            \"step\": 1,\r\n            \"navigator\": \"true\",\r\n            \"name\": \"Find items\",\r\n            \"x\": 23272,\r\n            \"y\": 5713,\r\n            \"world_id\": 1,\r\n            \"mode\": \"move_follow_press\",\r\n            \"cooldown\": 15,\r\n            \"interactive\": {\r\n                \"x\": 23272,\r\n                \"y\": 5713\r\n            }\r\n        },\r\n        {\r\n            \"step\": 1,\r\n            \"navigator\": \"true\",\r\n            \"name\": \"Find items\",\r\n            \"x\": 29742,\r\n            \"y\": 2193,\r\n            \"world_id\": 1,\r\n            \"mode\": \"move_follow_press\",\r\n            \"cooldown\": 15,\r\n            \"interactive\": {\r\n                \"x\": 29742,\r\n                \"y\": 2193\r\n            }\r\n        }\r\n    ]\r\n}'),
 (114, 26, 61, 1, 1, 21678, 6033, NULL, '[{\"action\":true,\"text\":\"Hi. Some of the mines are blocked. I need help clearing them out.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', NULL, '{\r\n    \"move_to\": [\r\n        {\r\n            \"step\": 1,\r\n            \"navigator\": \"true\",\r\n            \"name\": \"Clear the wreckage\",\r\n            \"x\": 23793,\r\n            \"y\": 5041,\r\n            \"world_id\": 1,\r\n            \"mode\": \"move_press\",\r\n            \"cooldown\": 120\r\n        },\r\n        {\r\n            \"step\": 1,\r\n            \"navigator\": \"true\",\r\n            \"name\": \"Clear the wreckage\",\r\n            \"x\": 23761,\r\n            \"y\": 5649,\r\n            \"world_id\": 1,\r\n            \"mode\": \"move_press\",\r\n            \"cooldown\": 120\r\n        },\r\n        {\r\n            \"step\": 1,\r\n            \"navigator\": \"true\",\r\n            \"name\": \"Clear the wreckage\",\r\n            \"x\": 22318,\r\n            \"y\": 5489,\r\n            \"world_id\": 1,\r\n            \"mode\": \"move_press\",\r\n            \"cooldown\": 120\r\n        }\r\n    ]\r\n}'),
@@ -943,8 +931,8 @@ INSERT INTO `tw_bots_quest` (`ID`, `BotID`, `QuestID`, `Step`, `WorldID`, `PosX`
 (124, 6, 69, 1, 1, 22609, 2961, '', '[{\"action\":true,\"text\":\"Hi. No one\'s taking care of my trees. Will you help me? I need to water them. Please, please, please.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', NULL, '{\r\n    \"move_to\": [\r\n        {\r\n            \"step\": 1,\r\n            \"navigator\": \"true\",\r\n            \"name\": \"Water the trees\",\r\n            \"x\": 12177,\r\n            \"y\": 3185,\r\n            \"world_id\": 1,\r\n            \"mode\": \"move_follow_press\",\r\n            \"cooldown\": 150,\r\n            \"interactive\": {\r\n                \"x\": 12177,\r\n                \"y\": 3105\r\n            }\r\n        },\r\n        {\r\n            \"step\": 1,\r\n            \"navigator\": \"true\",\r\n            \"name\": \"Water the trees\",\r\n            \"x\": 17459,\r\n            \"y\": 1617,\r\n            \"world_id\": 1,\r\n            \"mode\": \"move_follow_press\",\r\n            \"cooldown\": 120,\r\n            \"interactive\": {\r\n                \"x\": 17459,\r\n                \"y\": 1557\r\n            }\r\n        },\r\n        {\r\n            \"navigator\": \"true\",\r\n            \"name\": \"Water the trees\",\r\n            \"x\": 6345,\r\n            \"y\": 433,\r\n            \"world_id\": 1,\r\n            \"mode\": \"move_follow_press\",\r\n            \"cooldown\": 120,\r\n            \"interactive\": {\r\n                \"x\": 6345,\r\n                \"y\": 373\r\n            }\r\n        }\r\n    ]\r\n}'),
 (125, 6, 70, 1, 1, 22609, 2961, '', '[{\"action\":true,\"text\":\"Hello, adventurer! I would need you to deliver a package to Jackson, the miner. He needs these healing potions because, you know, mining is hard, haha! Would you mind helping me out? Of course, I can pay you!\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', NULL, '{\r\n    \"move_to\": [\r\n        {\r\n            \"step\": 1,\r\n            \"navigator\": \"true\",\r\n            \"name\": \"Pick up potions\",\r\n            \"x\": 22702,\r\n            \"y\": 2897,\r\n            \"world_id\": 1,\r\n            \"mode\": \"move_press\",\r\n            \"cooldown\": 15\r\n        },\r\n        {\r\n            \"step\": 1,\r\n            \"navigator\": \"true\",\r\n            \"name\": \"Pick up potions\",\r\n            \"x\": 23296,\r\n            \"y\": 3313,\r\n            \"world_id\": 1,\r\n            \"mode\": \"move_press\",\r\n            \"cooldown\": 15\r\n        },\r\n        {\r\n            \"step\": 1,\r\n            \"navigator\": \"true\",\r\n            \"name\": \"Pick up potions\",\r\n            \"x\": 22576,\r\n            \"y\": 3313,\r\n            \"world_id\": 1,\r\n            \"mode\": \"move_press\"\r\n        }\r\n    ]\r\n}'),
 (126, 26, 70, 2, 1, 21678, 6033, NULL, '[{\"action\":true,\"text\":\"Hi. I think you are from Mother Miounne. Thank you very much.\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', NULL, ''),
-(127, 7, 71, 1, 1, 19475, 3217, 'Partial', '[{\"action\":true,\"text\":\"Muahaha! What a great day, adventurer. I need magic matter in order to make my special concoctions, but it seems like I ran out of those. Would you mind lending me some help?\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', NULL, '{\r\n    \"required_items\": [\r\n        {\r\n            \"id\": 115,\r\n            \"value\": 20,\r\n            \"type\": \"default\"\r\n        }\r\n    ],\r\n    \"defeat_bots\": [\r\n        {\r\n            \"id\": 45,\r\n            \"value\": 5\r\n        }\r\n    ]\r\n}'),
-(128, 9, 72, 1, 1, 19862, 3473, 'Partial', '[{\"action\":true,\"text\":\"The King of the sea has come back! You must  confront this giant Octopus at once, adventurer. This monster has caused way too much harm in the past, and this time, we must fend it off again! Fortunately, it hasn\'t emerged from the sea yet. You must not allow it to reach the land, or else this whole city will be in danger!\",\"side\":\"default\",\"left_speaker_id\":0,\"right_speaker_id\":-1}]', NULL, '{\r\n    \"move_to\": [\r\n        {\r\n            \"step\": 1,\r\n            \"navigator\": \"true\",\r\n            \"name\": \"Kill Octopus\",\r\n            \"x\": 891,\r\n            \"y\": 2458,\r\n            \"world_id\": 1,\r\n            \"mode\": \"defeat_bot\",\r\n            \"defeat_bot\": {\r\n                \"id\": 69,\r\n                \"attribute_power\": 500,\r\n                \"world_id\": 1\r\n            },\r\n            \"pick_up_item\": {\r\n                \"id\": 7,\r\n                \"value\": 50\r\n            }\r\n        }\r\n    ]\r\n}');
+(277, 1, 73, 1, NULL, 0, 0, NULL, '[\n    {\n        \"text\": \"кцукцу\",\n        \"side\": \"default\",\n        \"left_speaker_id\": 0,\n        \"right_speaker_id\": -1,\n        \"action\": true\n    }\n]', NULL, '{\n    \"required_items\": [],\n    \"reward_items\": [],\n    \"defeat_bots\": [],\n    \"move_to\": []\n}'),
+(278, 1, 73, 2, NULL, 0, 0, NULL, '[\n    {\n        \"text\": \"423423423\",\n        \"side\": \"default\",\n        \"left_speaker_id\": 0,\n        \"right_speaker_id\": -1,\n        \"action\": false\n    }\n]', NULL, '{\n    \"required_items\": [],\n    \"reward_items\": [],\n    \"defeat_bots\": [],\n    \"move_to\": []\n}');
 
 -- --------------------------------------------------------
 
@@ -968,168 +956,151 @@ CREATE TABLE `tw_crafts_list` (
 
 INSERT INTO `tw_crafts_list` (`ID`, `GroupName`, `ItemID`, `ItemValue`, `RequiredItems`, `Price`, `WorldID`) VALUES
 (1, 'First start', 41, 1, '[40/1]', 0, 0),
-(2, 'Resources:Mine', 36, 1, '[50/20],[35/20]', 30, 1),
-(3, 'Resources:Mine', 72, 1, '[50/40],[54/20]', 80, 1),
-(4, 'Resources:Mine', 74, 1, '[50/150],[56/100]', 550, 1),
-(12, 'Armor:Tank', 82, 1, '[50/200],[72/24],[108/8],[37/1],[341/1]', 15900, 1),
-(13, 'Armor:Tank', 83, 1, '[50/250],[73/30],[108/25],[82/1],[341/1]', 31690, 1),
-(14, 'Armor:Tank', 84, 1, '[50/300],[74/50],[108/25],[83/1],[341/1]', 72325, 1),
-(15, 'Tools:Rake', 26, 1, '[50/180],[72/12],[108/5],[39/1],[340/1]', 6004, 1),
-(16, 'Tools:Rake', 42, 1, '[50/180],[73/12],[26/1],[340/1]', 10230, 1),
-(17, 'Tools:Rake', 62, 1, '[50/250],[74/24],[42/1],[340/1]', 30070, 1),
-(18, 'Tools:Pickaxe', 27, 1, '[50/200],[72/15],[108/5],[39/1],[339/1]', 6264, 1),
-(19, 'Tools:Pickaxe', 43, 1, '[50/180],[73/12],[27/1],[339/1]', 11365, 1),
-(20, 'Tools:Pickaxe', 63, 1, '[50/250],[74/12],[43/1],[339/1]', 23470, 1),
-(23, 'Resources:Special', 108, 1, '[107/5]', 50, 1),
-(32, 'Resources:Mine', 73, 1, '[50/100],[55/60]', 280, 1),
-(40, 'Armor:Tank', 37, 1, '[50/100],[36/24],[28/1],[341/1]', 7820, 1),
-(41, 'Tools:Rake', 38, 1, '[50/80],[36/12],[340/1]', 1440, 1),
-(42, 'Tools:Pickaxe', 39, 1, '[50/100],[36/15],[339/1]', 1550, 1),
-(43, 'Tools:Rod', 174, 1, '[72/50],[233/15],[274/1],[343/1]', 18880, 1),
-(44, 'Modules:Ammo', 60, 1, '[72/1],[108/1],[152/1]', 5200, 1),
-(45, 'Modules:Ammo Regen', 69, 1, '[72/5],[152/1],[50/1000]', 6400, 1),
-(46, 'Tools:Pickaxe', 76, 1, '[173/30],[107/2]', 60, 1),
-(47, 'Tools:Rake', 75, 1, '[173/30],[107/2]', 60, 1),
-(48, 'Other:Title', 187, 1, '[186/500],[29/100]', 55500, 1),
-(49, 'Modules:Lucky Drop', 81, 1, '[186/1000],[107/100],[152/1]', 17500, 1),
-(50, 'Modules:DMG', 126, 1, '[110/200],[113/150],[111/25],[109/150],[152/5]', 42900, 1),
-(51, 'Armor:Tank', 28, 1, '[108/25],[341/1]', 8000, 1),
-(52, 'Tools:Gloves', 189, 1, '[50/180],[72/10],[108/5],[188/1],[342/1]', 6820, 1),
-(53, 'Tools:Gloves', 190, 1, '[50/200],[73/15],[189/1],[342/1]', 11775, 1),
-(54, 'Tools:Gloves', 188, 1, '[50/80],[36/10],[192/1],[342/1]', 3890, 1),
-(55, 'Tools:Gloves', 191, 1, '[50/250],[74/20],[190/1],[342/1]', 34970, 1),
-(56, 'Tools:Gloves', 192, 1, '[108/15],[342/1]', 3800, 1),
-(60, 'Weapons:SpecialWeapons', 99, 1, '[2/1],[315/10],[115/100],[214/500],[7/999999]', 12004393, 1),
-(61, 'Weapons:SpecialWeapons', 101, 1, '[6/1],[314/10],[215/500],[7/999999]', 12006793, 1),
-(62, 'Weapons:SpecialWeapons', 102, 1, '[2/1],[315/10],[127/100],[216/500],[7/999999]', 12012293, 1),
-(63, 'Weapons:SpecialWeapons', 103, 1, '[6/1],[314/10],[217/500],[7/999999]', 12006793, 1),
-(64, 'Weapons:SpecialWeapons', 151, 1, '[3/1],[311/10],[218/500],[7/999999]', 12002393, 1),
-(65, 'Weapons:SpecialWeapons', 100, 1, '[5/1],[313/10],[227/100],[127/100],[219/500],[7/999999]', 12117293, 1),
-(66, 'Weapons:SpecialWeapons', 150, 1, '[6/1],[314/10],[220/500],[7/999999]', 12006793, 1),
-(67, 'Resources:Special', 106, 1, '[105/25]', 325, 1),
-(68, 'Resources:Special', 104, 1, '[92/10]', 220, 1),
-(69, 'Resources:Special', 127, 1, '[123/25],[50/100]', 975, 1),
-(70, 'Resources:Special', 120, 1, '[104/200]', 32800, 1),
-(71, 'Resources:Special', 115, 1, '[121/70]', 490, 1),
-(73, 'Tools:Rod', 222, 1, '[7/50],[107/10],[343/1]', 3500, 1),
-(74, 'Resources:Farm', 226, 1, '[223/50]', 300, 1),
-(75, 'Resources:Farm', 227, 1, '[224/100]', 600, 1),
-(76, 'Modules:Product Capacity', 228, 1, '[226/150],[152/1]', 83750, 1),
-(77, 'Modules:Efficiency', 119, 1, '[226/100],[108/100],[152/1]', 69500, 1),
-(78, 'Other:Drafts', 214, 1, '[281/100],[315/50],[7/9999999]', 70074993, 1),
-(79, 'Other:Drafts', 215, 1, '[115/999999],[7/9999999]', 101999961, 1),
-(80, 'Other:Drafts', 216, 1, '[7/9999999]', 69999993, 1),
-(81, 'Other:Drafts', 217, 1, '[115/999999],[7/9999999]', 101999961, 1),
-(82, 'Other:Drafts', 218, 1, '[115/999999],[7/9999999]', 101999961, 1),
-(83, 'Other:Drafts', 219, 1, '[127/999999],[7/9999999]', 180999882, 1),
-(84, 'Other:Drafts', 220, 1, '[115/999999],[7/9999999]', 101999961, 1),
-(85, 'Modules:Lucky Drop', 135, 1, '[226/100],[7/5000],[152/1]', 92500, 1),
-(86, 'Modules:Hammer DMG', 229, 1, '[115/50],[111/400],[73/50],[152/3]', 39400, 1),
-(87, 'Modules:Attack SPD', 230, 1, '[115/50],[111/400],[127/10],[134/1],[138/5000],[152/5]', 43495, 1),
-(88, 'Modules:Rifle DMG', 231, 1, '[372/100],[136/5],[152/2]', 16450, 1),
-(89, 'Modules:Patience', 232, 1, '[108/200],[104/50],[233/50],[58/500],[61/500],[68/250],[71/250],[152/1]', 49750, 1),
-(90, 'Resources:Farm', 134, 1, '[122/250],[121/500]', 5250, 1),
-(91, 'Other:Special', 89, 1, '[134/100],[115/500]', 214500, 1),
-(92, 'Resources:Special', 138, 5, '[113/5]', 180, 1),
-(93, 'Resources:Special', 138, 10, '[125/1]', 117, 1),
-(94, 'Modules:DMG', 87, 1, '[113/100],[125/50],[138/100],[108/50],[104/25],[152/5]', 44650, 1),
-(95, 'Armor:Dps', 234, 1, '[108/13],[186/100],[341/1]', 7660, 1),
-(96, 'Armor:Dps', 235, 1, '[36/13],[22/80],[33/80],[341/1],[234/1]', 9950, 1),
-(97, 'Armor:Dps', 236, 1, '[72/12],[116/50],[393/25],[387/50],[341/1],[235/1]', 20510, 1),
-(98, 'Armor:Dps', 237, 1, '[73/15],[110/150],[106/50],[116/150],[341/1],[236/1]', 46150, 1),
-(99, 'Armor:Healer', 238, 1, '[108/13],[70/100],[58/100],[61/100],[341/1]', 7160, 1),
-(100, 'Armor:Healer', 239, 1, '[36/12],[61/400],[67/200],[68/100],[108/25],[238/1],[341/1]', 12860, 1),
-(101, 'Armor:Healer', 240, 1, '[72/12],[71/400],[108/40],[239/1],[341/1]', 20160, 1),
-(102, 'Armor:Healer', 241, 1, '[73/15],[226/40],[108/50],[240/1],[341/1]', 56200, 1),
-(104, 'Modules:MP', 242, 1, '[121/70],[115/10],[108/50],[152/1]', 11810, 1),
-(105, 'Modules:Crit', 243, 1, '[115/50],[111/400],[125/100],[152/2]', 32100, 1),
-(106, 'Resources:Special', 233, 1, '[175/14],[176/8]', 126, 1),
-(108, 'Modules:Attack SPD', 259, 1, '[233/100],[152/2]', 24600, 1),
-(109, 'Modules:HP', 260, 1, '[137/800]', 35200, 1),
-(110, 'Modules:Vampirism', 51, 1, '[111/800],[121/150],[122/120],[152/3]', 34490, 1),
-(111, 'Other:Title', 261, 1, '[70/500],[29/100]', 50500, 1),
-(112, 'Other:Title', 262, 1, '[35/250],[29/100]', 50500, 1),
-(113, 'Modules:HP', 263, 1, '[108/50],[152/1]', 11000, 1),
+(2, 'Resources:Miner', 36, 1, '[50/12],[35/20]', 30, 1),
+(3, 'Resources:Miner', 72, 1, '[50/16],[54/20]', 80, 1),
+(4, 'Resources:Miner', 74, 1, '[50/24],[56/30]', 180, 1),
+(13, 'Armor:Tank', 83, 1, '[50/200],[73/35],[108/18],[82/1]', 18000, 1),
+(14, 'Armor:Tank', 84, 1, '[50/200],[74/40],[108/20],[83/1]', 38000, 1),
+(15, 'Tools:Farmer(Rake)', 26, 1, '[50/180],[72/16],[108/5],[39/1]', 4500, 1),
+(16, 'Tools:Farmer(Rake)', 42, 1, '[50/180],[73/20],[26/1]', 10000, 1),
+(17, 'Tools:Farmer(Rake)', 62, 1, '[50/250],[74/24],[42/1]', 30000, 1),
+(18, 'Tools:Miner(Pickaxe)', 27, 1, '[50/200],[72/16],[108/5],[39/1]', 7000, 1),
+(19, 'Tools:Miner(Pickaxe)', 43, 1, '[50/180],[73/20],[27/1]', 12000, 1),
+(20, 'Tools:Miner(Pickaxe)', 63, 1, '[50/250],[74/24],[43/1]', 30000, 1),
+(23, 'Resources:Other', 108, 1, '[107/3]', 50, 1),
+(32, 'Resources:Miner', 73, 1, '[50/20],[55/30]', 130, 1),
+(40, 'Armor:Tank', 37, 1, '[50/100],[36/24],[28/1]', 1200, 1),
+(41, 'Tools:Farmer(Rake)', 38, 1, '[50/80],[36/12]', 1000, 1),
+(42, 'Tools:Miner(Pickaxe)', 39, 1, '[50/100],[36/12]', 1200, 1),
+(43, 'Tools:Fisherman(Rod)', 174, 1, '[72/16],[233/15],[274/1]', 12000, 1),
+(44, 'Modules:Weapon-related', 60, 1, '[72/1],[108/1],[152/1]', 5200, 1),
+(45, 'Modules:Weapon-related', 69, 1, '[72/5],[152/1],[50/1000]', 6400, 1),
+(46, 'Tools:Miner(Pickaxe)', 76, 1, '[173/30],[107/2]', 60, 1),
+(47, 'Tools:Farmer(Rake)', 75, 1, '[173/30],[107/2]', 60, 1),
+(49, 'Modules:Player-related', 81, 1, '[186/1000],[107/100],[152/1]', 8500, 1),
+(50, 'Modules:Class-related', 126, 1, '[110/200],[113/150],[111/25],[109/150],[152/5]', 17600, 1),
+(51, 'Armor:Tank', 28, 1, '[108/20]', 240, 1),
+(52, 'Tools:Loader(Gloves)', 189, 1, '[50/180],[72/16],[108/5],[188/1]', 7000, 1),
+(53, 'Tools:Loader(Gloves)', 190, 1, '[50/200],[73/20],[189/1]', 12000, 1),
+(54, 'Tools:Loader(Gloves)', 188, 1, '[50/80],[36/12],[192/1]', 3200, 1),
+(55, 'Tools:Loader(Gloves)', 191, 1, '[50/250],[74/24],[190/1]', 35000, 1),
+(56, 'Tools:Loader(Gloves)', 192, 1, '[108/10]', 1200, 1),
+(60, 'Weapons:★★★★★', 99, 1, '[214/100]', 100000, 1),
+(61, 'Weapons:★★★★★', 101, 1, '[215/100]', 100000, 1),
+(62, 'Weapons:★★★★★', 102, 1, '[216/100]', 100000, 1),
+(63, 'Weapons:★★★★★', 103, 1, '[217/100]', 100000, 1),
+(64, 'Weapons:★★★★★', 151, 1, '[218/100]', 100000, 1),
+(65, 'Weapons:★★★★★', 100, 1, '[219/100]', 100000, 1),
+(66, 'Weapons:★★★★★', 150, 1, '[220/100]', 100000, 1),
+(67, 'Resources:Other', 106, 1, '[105/15]', 250, 1),
+(68, 'Resources:Other', 104, 1, '[92/6]', 220, 1),
+(69, 'Resources:Other', 127, 1, '[123/18],[50/100]', 400, 1),
+(70, 'Resources:Other', 120, 1, '[104/200]', 25000, 1),
+(71, 'Resources:Farmer', 115, 1, '[121/70]', 320, 1),
+(73, 'Tools:Fisherman(Rod)', 222, 1, '[7/50],[107/10]', 1000, 1),
+(74, 'Resources:Farmer', 226, 1, '[223/40]', 300, 1),
+(75, 'Resources:Farmer', 227, 1, '[224/80]', 400, 1),
+(76, 'Modules:Work-related', 228, 1, '[226/150],[152/1]', 20000, 1),
+(77, 'Modules:Work-related', 119, 1, '[226/100],[108/100],[152/1]', 14000, 1),
+(85, 'Modules:Player-related', 135, 1, '[226/100],[7/5000],[152/1]', 24000, 1),
+(86, 'Modules:Weapon-related', 229, 1, '[115/50],[111/400],[73/50],[152/3]', 14000, 1),
+(87, 'Modules:Weapon-related', 230, 1, '[115/50],[111/400],[127/10],[134/1],[138/5000],[152/5]', 15000, 1),
+(88, 'Modules:Weapon-related', 231, 1, '[372/100],[136/5],[152/2]', 8500, 1),
+(89, 'Modules:Work-related', 232, 1, '[108/200],[104/50],[233/50],[58/500],[61/500],[68/250],[71/250],[152/1]', 10000, 1),
+(90, 'Resources:Farmer', 134, 1, '[122/250],[121/500]', 1000, 1),
+(92, 'Resources:Other', 138, 5, '[113/3]', 120, 1),
+(93, 'Resources:Other', 138, 10, '[125/1]', 150, 1),
+(94, 'Modules:Class-related', 87, 1, '[113/100],[125/50],[138/100],[108/50],[104/25],[152/5]', 18000, 1),
+(95, 'Armor:Dps', 234, 1, '[108/13],[186/100]', 7660, 1),
+(96, 'Armor:Dps', 235, 1, '[36/13],[22/80],[33/80],[234/1]', 9950, 1),
+(97, 'Armor:Dps', 236, 1, '[72/12],[116/50],[393/25],[387/50],[235/1]', 20510, 1),
+(98, 'Armor:Dps', 237, 1, '[73/15],[110/150],[106/50],[116/150],[236/1]', 46150, 1),
+(99, 'Armor:Healer', 238, 1, '[108/5],[70/70],[58/70],[61/20]', 400, 1),
+(100, 'Armor:Healer', 239, 1, '[36/12],[61/240],[67/120],[108/20],[238/1]', 2400, 1),
+(101, 'Armor:Healer', 240, 1, '[72/12],[68/320],[108/40],[239/1]', 5000, 1),
+(102, 'Armor:Healer', 241, 1, '[73/15],[226/40],[108/50],[240/1]', 56200, 1),
+(104, 'Modules:HP & MP-related', 242, 1, '[121/70],[115/10],[108/50],[152/1]', 8000, 1),
+(105, 'Modules:Class-related', 243, 1, '[115/50],[111/400],[125/100],[152/2]', 15400, 1),
+(106, 'Resources:Fishing', 233, 1, '[175/14],[176/8]', 125, 1),
+(108, 'Modules:Weapon-related', 259, 1, '[233/100],[152/2]', 8500, 1),
+(109, 'Modules:HP & MP-related', 260, 1, '[137/800]', 12500, 1),
+(110, 'Modules:Class-related', 51, 1, '[111/800],[121/150],[122/120],[152/3]', 15800, 1),
+(113, 'Modules:HP & MP-related', 263, 1, '[108/50],[152/1]', 8000, 1),
 (115, 'Potion:HP', 267, 1, '[376/10],[122/50],[266/2],[115/75],[138/500],[112/25],[106/5]', 24415, 1),
 (116, 'Potion:HP', 268, 1, '[376/20],[122/100],[267/2],[115/150],[138/1000],[112/50],[106/10]', 108830, 1),
 (117, 'Potion:MP', 272, 1, '[371/10],[121/50],[271/2],[115/75],[138/500],[112/25],[106/5]', 24055, 1),
 (118, 'Potion:MP', 273, 1, '[371/20],[121/100],[272/2],[115/150],[138/1000],[112/50],[106/10]', 108110, 1),
-(119, 'Tools:Rod', 274, 1, '[36/50],[233/15],[222/1],[343/1]', 7140, 1),
-(120, 'Tools:Rod', 275, 1, '[73/50],[233/15],[174/1],[343/1]', 34130, 1),
-(121, 'Tools:Rod', 276, 1, '[74/50],[233/15],[275/1],[343/1]', 75880, 1),
-(123, 'Resources:Mine', 281, 1, '[50/200],[277/100]', 700, 1),
-(124, 'Resources:Mine', 282, 1, '[50/300],[278/100]', 900, 1),
-(125, 'Resources:Mine', 283, 1, '[50/400],[279/100]', 1100, 1),
-(126, 'Resources:Mine', 284, 1, '[50/500],[280/100]', 1300, 1),
-(127, 'Modules:Attack SPD', 285, 1, '[230/1],[386/1],[281/500],[152/1]', 562400, 1),
-(128, 'Modules:HP', 286, 1, '[7/99999],[281/1000],[152/3]', 1414993, 1),
-(129, 'Armor:Dps', 288, 1, '[7/9999999],[74/50],[341/1]', 70032493, 1),
-(130, 'Armor:Healer', 289, 1, '[7/9999999],[74/50],[341/1]', 70032493, 1),
-(131, 'Armor:Tank', 287, 1, '[7/9999999],[281/100],[341/1]', 70074993, 1),
-(132, 'Armor:Dps', 290, 1, '[7/9999999],[281/50],[341/1]', 70039993, 1),
-(133, 'Armor:Healer', 291, 1, '[7/9999999],[281/50],[341/1]', 70039993, 1),
-(134, 'Modules:Lucky Drop', 292, 1, '[7/999999],[282/1000]', 7899993, 1),
-(135, 'Modules:MP', 293, 1, '[7/999999],[282/1000],[152/3]', 7914993, 1),
-(136, 'Armor:Tank', 294, 1, '[7/9999999],[282/150],[341/1]', 70139993, 1),
-(137, 'Armor:Dps', 295, 1, '[7/9999999],[282/75],[341/1]', 70072493, 1),
-(138, 'Armor:Healer', 296, 1, '[7/9999999],[282/75],[341/1]', 70072493, 1),
-(139, 'Modules:Ammo Regen', 297, 1, '[7/9999999],[283/1000],[152/5]', 71124993, 1),
-(140, 'Modules:HP', 298, 1, '[7/99999],[283/1000],[152/3]', 1814993, 1),
-(141, 'Armor:Tank', 299, 1, '[7/9999999],[283/75],[341/1]', 70087493, 1),
-(142, 'Armor:Dps', 300, 1, '[7/9999999],[379/500],[283/100],[341/1]', 70153493, 1),
-(143, 'Armor:Healer', 301, 1, '[7/9999999],[283/100],[341/1]', 70114993, 1),
-(144, 'Modules:Crit', 302, 1, '[7/99999],[284/1000],[152/5]', 2024993, 1),
-(145, 'Modules:Ammo', 303, 1, '[7/999999],[284/1000],[152/5]', 8324993, 1),
-(146, 'Armor:Tank', 304, 1, '[7/9999999],[284/300],[341/1]', 70394993, 1),
-(147, 'Armor:Dps', 305, 1, '[7/9999999],[284/150],[341/1]', 70199993, 1),
-(148, 'Armor:Healer', 306, 1, '[7/9999999],[284/150],[341/1]', 70199993, 1),
-(149, 'Resources:Special', 7, 10, '[124/1000]', 9000, 1),
-(150, 'Resources:Special', 311, 1, '[3/1]', 400, 1),
-(151, 'Resources:Special', 312, 1, '[4/1]', 700, 1),
-(152, 'Resources:Special', 313, 1, '[5/1]', 1200, 1),
-(153, 'Resources:Special', 314, 1, '[6/1]', 1800, 1),
-(154, 'Resources:Special', 315, 1, '[2/1]', 200, 1),
-(155, 'Modules:Active Modules', 316, 1, '[315/10],[2/1],[317/100],[152/1]', 66000, 1),
-(156, 'Modules:Active Modules', 320, 1, '[318/1],[319/1],[7/10000],[152/1]', 145000, 1),
-(159, 'Modules:Active Modules', 64, 1, '[370/25],[325/100],[117/100],[106/100],[152/5]', 594600, 1),
-(160, 'Modules:Active Modules', 65, 1, '[326/100],[127/100],[106/100],[152/5]', 1037600, 1),
-(161, 'Modules:Active Modules', 66, 1, '[327/100],[117/100],[128/100],[152/3]', 1180500, 1),
-(162, 'Modules:Active Modules', 19, 1, '[328/100],[127/1000],[311/50],[152/5]', 1146000, 1),
-(163, 'Modules:Active Modules', 20, 1, '[328/100],[127/1000],[312/50],[152/10]', 1180500, 1),
-(164, 'Modules:Active Modules', 323, 1, '[70/10000],[58/10000],[186/10000],[72/25],[104/50],[152/1]', 155200, 1),
-(165, 'Modules:Gold Capacity', 331, 1, '[108/100],[117/500],[330/1],[152/2]', 774875, 1),
-(166, 'Modules:Gold Capacity', 334, 1, '[108/1000],[104/250],[333/1],[17/10000],[152/5]', 321000, 1),
-(167, 'Helmet:Tank', 349, 1, '[108/13],[341/1],[365/1]', 9060, 1),
-(168, 'Helmet:Tank', 350, 1, '[50/50],[36/12],[349/1],[365/1]', 3910, 1),
-(169, 'Helmet:Tank', 351, 1, '[50/100],[72/12],[108/4],[350/1],[365/1]', 7540, 1),
-(170, 'Helmet:Tank', 352, 1, '[50/125],[73/15],[108/13],[351/1],[365/1]', 18385, 1),
-(171, 'Helmet:Tank', 353, 1, '[50/150],[74/25],[108/13],[352/1],[365/1]', 37960, 1),
-(172, 'Helmet:Dps', 354, 1, '[108/7],[186/50],[365/1]', 3890, 1),
-(173, 'Helmet:Dps', 355, 1, '[36/7],[22/40],[33/40],[365/1],[354/1]', 4990, 1),
-(174, 'Helmet:Dps', 356, 1, '[72/12],[116/50],[393/25],[387/50],[365/1],[355/1]', 14510, 1),
-(175, 'Helmet:Dps', 357, 1, '[73/7],[110/75],[106/25],[116/75],[365/1],[356/1]', 22935, 1),
-(176, 'Helmet:Healer', 358, 1, '[108/7],[70/50],[58/50],[61/50],[365/1]', 3640, 1),
-(177, 'Helmet:Healer', 359, 1, '[36/6],[61/200],[67/100],[68/50],[108/13],[358/1],[365/1]', 6490, 1),
-(178, 'Helmet:Healer', 360, 1, '[72/6],[71/200],[108/20],[359/1],[365/1]', 12580, 1),
-(179, 'Helmet:Healer', 361, 1, '[73/7],[226/20],[108/25],[360/1],[365/1]', 30460, 1),
-(180, 'Modules:Eidolon PWR', 373, 1, '[371/10],[223/100],[152/1]', 5930, 1),
-(181, 'Modules:MP', 375, 1, '[374/100],[173/10000],[152/1]', 23400, 1),
+(119, 'Tools:Fisherman(Rod)', 274, 1, '[36/12],[233/10],[222/1]', 4500, 1),
+(120, 'Tools:Fisherman(Rod)', 275, 1, '[73/20],[233/20],[174/1]', 31000, 1),
+(121, 'Tools:Fisherman(Rod)', 276, 1, '[74/24],[233/25],[275/1]', 70000, 1),
+(123, 'Resources:Miner', 281, 1, '[50/28],[277/30]', 230, 1),
+(124, 'Resources:Miner', 282, 1, '[50/32],[278/30]', 280, 1),
+(125, 'Resources:Miner', 283, 1, '[50/36],[279/30]', 330, 1),
+(126, 'Resources:Miner', 284, 1, '[50/40],[280/40]', 380, 1),
+(127, 'Modules:Weapon-related', 285, 1, '[230/1],[386/1],[281/500],[152/1]', 60000, 1),
+(128, 'Modules:HP & MP-related', 286, 1, '[281/50],[152/3]', 50000, 1),
+(129, 'Armor:Dps', 288, 1, '[92/100],[74/40],[116/180],[237/1]', 70032, 1),
+(130, 'Armor:Healer', 289, 1, '[74/30],[226/50],[108/60],[241/1]', 72000, 1),
+(131, 'Armor:Tank', 287, 1, '[7/9999999],[281/100]', 70074993, 1),
+(132, 'Armor:Dps', 290, 1, '[7/9999999],[281/50]', 70039993, 1),
+(133, 'Armor:Healer', 291, 1, '[7/9999999],[281/50]', 70039993, 1),
+(134, 'Modules:Player-related', 292, 1, '[282/100]', 80000, 1),
+(135, 'Modules:HP & MP-related', 293, 1, '[282/100],[152/3]', 55000, 1),
+(136, 'Armor:Tank', 294, 1, '[7/9999999],[282/150]', 70139993, 1),
+(137, 'Armor:Dps', 295, 1, '[7/9999999],[282/75]', 70072493, 1),
+(138, 'Armor:Healer', 296, 1, '[7/9999999],[282/75]', 70072493, 1),
+(139, 'Modules:Weapon-related', 297, 1, '[283/50],[152/5]', 50000, 1),
+(140, 'Modules:HP & MP-related', 298, 1, '[283/100],[152/3]', 66500, 1),
+(141, 'Armor:Tank', 299, 1, '[7/9999999],[283/75]', 70087493, 1),
+(142, 'Armor:Dps', 300, 1, '[7/9999999],[379/500],[283/100]', 70153493, 1),
+(143, 'Armor:Healer', 301, 1, '[7/9999999],[283/100]', 70114993, 1),
+(144, 'Modules:Class-related', 302, 1, '[7/99999],[284/1000],[152/5]', 2024993, 1),
+(145, 'Modules:Weapon-related', 303, 1, '[284/100],[152/5]', 60000, 1),
+(146, 'Armor:Tank', 304, 1, '[7/9999999],[284/300]', 70394993, 1),
+(147, 'Armor:Dps', 305, 1, '[7/9999999],[284/150]', 70199993, 1),
+(148, 'Armor:Healer', 306, 1, '[7/9999999],[284/150]', 70199993, 1),
+(149, 'Resources:Other', 7, 10, '[124/100]', 10, 1),
+(155, 'Modules:★★★★★', 316, 1, '[315/10],[2/1],[317/100],[152/1]', 66000, 1),
+(156, 'Modules:★★★★★', 320, 1, '[318/1],[319/1],[7/10000],[152/1]', 145000, 1),
+(159, 'Modules:★★★★★', 64, 1, '[325/100]', 100000, 1),
+(160, 'Modules:★★★★★', 65, 1, '[326/100]', 100000, 1),
+(161, 'Modules:★★★★★', 66, 1, '[327/100]', 100000, 1),
+(162, 'Modules:★★★★★', 19, 1, '[328/100]', 100000, 1),
+(163, 'Modules:★★★★★', 20, 1, '[328/100]', 100000, 1),
+(165, 'Modules:Player-related', 331, 1, '[108/100],[117/500],[330/1],[152/2]', 120000, 1),
+(166, 'Modules:Player-related', 334, 1, '[108/1000],[104/250],[333/1],[17/10000],[152/5]', 80000, 1),
+(167, 'Helmet:Tank', 349, 1, '[108/8]', 150, 1),
+(168, 'Helmet:Tank', 350, 1, '[50/50],[36/10],[349/1]', 1000, 1),
+(169, 'Helmet:Tank', 351, 1, '[50/100],[72/14],[108/4],[350/1]', 10000, 1),
+(170, 'Helmet:Tank', 352, 1, '[50/125],[73/18],[108/13],[351/1]', 28000, 1),
+(171, 'Helmet:Tank', 353, 1, '[50/150],[74/22],[108/13],[352/1]', 60000, 1),
+(172, 'Helmet:Dps', 354, 1, '[108/7],[186/50]', 1000, 1),
+(173, 'Helmet:Dps', 355, 1, '[36/6],[22/40],[33/40],[354/1]', 3000, 1),
+(174, 'Helmet:Dps', 356, 1, '[72/8],[116/40],[393/24],[387/40],[355/1]', 10000, 1),
+(175, 'Helmet:Dps', 357, 1, '[73/10],[110/62],[106/24],[116/62],[356/1]', 28000, 1),
+(176, 'Helmet:Healer', 358, 1, '[108/8],[70/32],[58/32],[61/32]', 1000, 1),
+(177, 'Helmet:Healer', 359, 1, '[36/6],[61/240],[67/120],[108/13],[358/1]', 3000, 1),
+(178, 'Helmet:Healer', 360, 1, '[72/6],[68/240],[108/20],[359/1],[71/120]', 10000, 1),
+(179, 'Helmet:Healer', 361, 1, '[73/7],[226/20],[108/25],[360/1]', 28000, 1),
+(180, 'Modules:Eidolon (Pet)-related', 373, 1, '[371/10],[223/100],[152/1]', 5930, 1),
+(181, 'Modules:HP & MP-related', 375, 1, '[374/100],[173/10000],[152/1]', 14500, 1),
 (182, 'Food / Boosters', 377, 1, '[376/10],[371/10]', 1020, 1),
-(183, 'Modules:Eidolon PWR', 378, 1, '[376/100],[173/10000],[104/500],[108/100],[226/100],[152/1]', 168400, 1),
+(183, 'Modules:Eidolon (Pet)-related', 378, 1, '[376/100],[173/10000],[104/500],[108/100],[226/100],[152/1]', 168400, 1),
 (184, 'Food / Boosters', 380, 1, '[379/10],[371/20]', 1430, 1),
-(185, 'Modules:Hammer DMG', 382, 1, '[381/100],[152/1]', 11000, 1),
-(186, 'Modules:Crit', 383, 1, '[381/100],[106/100],[152/1]', 12500, 1),
-(187, 'Modules:Lucky', 385, 1, '[81/1],[384/100],[152/1]', 17000, 1),
-(188, 'Modules:Crit', 386, 1, '[110/500],[169/20],[152/1]', 162500, 1),
-(189, 'Resources:Special', 104, 5, '[387/15]', 570, 1),
+(185, 'Modules:Weapon-related', 382, 1, '[381/100],[152/1]', 11000, 1),
+(186, 'Modules:Class-related', 383, 1, '[381/100],[106/100],[152/1]', 7500, 1),
+(187, 'Modules:Class-related', 385, 1, '[81/1],[384/100],[152/1]', 21000, 1),
+(188, 'Modules:Class-related', 386, 1, '[110/500],[169/20],[152/1]', 72500, 1),
+(189, 'Resources:Other', 104, 5, '[387/15]', 570, 1),
 (190, 'Resources:Eidolons', 390, 1, '[389/100],[136/100],[111/100],[115/100]', 21500, 1),
 (191, 'Food / Boosters', 392, 1, '[391/50]', 2650, 1),
-(192, 'Modules:HP', 394, 1, '[393/500],[152/1]', 45000, 1),
-(193, 'Modules:Patience', 395, 1, '[307/5],[233/20],[36/5],[115/2],[152/1]', 8314, 1),
+(192, 'Modules:HP & MP-related', 394, 1, '[393/500],[152/1]', 36000, 1),
+(193, 'Modules:Work-related', 395, 1, '[307/5],[233/20],[36/5],[115/2],[152/1]', 4800, 1),
 (194, 'Food / Boosters', 396, 1, '[71/50],[70/500]', 800, 1),
-(195, 'Modules:Patience', 397, 1, '[104/150],[152/1]', 29600, 1),
-(196, 'Modules:Extraction', 398, 1, '[104/150],[7/350],[152/1]', 32050, 1),
-(197, 'Modules:Active Modules', 404, 1, '[388/1],[403/1],[152/5]', 120000, 1);
+(195, 'Modules:Work-related', 397, 1, '[104/150],[152/1]', 9800, 1),
+(196, 'Modules:Work-related', 398, 1, '[104/150],[7/350],[152/1]', 12000, 1),
+(197, 'Modules:★★★★★', 404, 1, '[388/1],[403/1]', 100000, 1),
+(201, 'Armor:Tank', 82, 1, '[72/30],[50/150],[37/1]', 3000, 1);
 
 -- --------------------------------------------------------
 
@@ -1139,6 +1110,7 @@ INSERT INTO `tw_crafts_list` (`ID`, `GroupName`, `ItemID`, `ItemValue`, `Require
 
 CREATE TABLE `tw_dungeons` (
   `ID` int(11) NOT NULL,
+  `Level` int(11) NOT NULL DEFAULT 1,
   `DoorX` int(11) NOT NULL DEFAULT 0,
   `DoorY` int(11) NOT NULL DEFAULT 0,
   `Scenario` longtext DEFAULT NULL,
@@ -1149,8 +1121,9 @@ CREATE TABLE `tw_dungeons` (
 -- Dumping data for table `tw_dungeons`
 --
 
-INSERT INTO `tw_dungeons` (`ID`, `DoorX`, `DoorY`, `Scenario`, `WorldID`) VALUES
-(1, 1105, 529, '{\n    \"editor_data\": {\n        \"groups\": []\n    },\n    \"steps\": [\n        {\n            \"id\": \"welcome_start\",\n            \"components\": [\n                {\n                    \"type\": \"message\",\n                    \"mode\": \"chat\",\n                    \"text\": \"Выбери правильное действие и дверь откроется!\"\n                },\n                {\n                    \"type\": \"door_control\",\n                    \"action\": \"create\",\n                    \"position\": {\n                        \"x\": 1140,\n                        \"y\": 529\n                    }\n                },\n                {\n                    \"type\": \"follow_camera\",\n                    \"position\": {\n                        \"x\": 1140,\n                        \"y\": 529\n                    },\n                    \"delay\": 300\n                }\n            ]\n        },\n        {\n            \"id\": \"message_condition_1\",\n            \"msg_info\": \"Выбери действие и введи его в чат (hello! или reposka)!\",\n            \"completion_logic\": \"any_of\",\n            \"components\": [\n                {\n                    \"type\": \"use_chat_code\",\n                    \"code\": \"hello!\",\n                    \"next_step_id\": \"fail_message_condition_1\"\n                },\n                {\n                    \"type\": \"use_chat_code\",\n                    \"code\": \"reposka\",\n                    \"next_step_id\": \"succes_message_condition_1\"\n                }\n            ]\n        },\n        {\n            \"id\": \"fail_message_condition_1\",\n            \"delay\": 300,\n            \"components\": [\n                {\n                    \"type\": \"message\",\n                    \"next_step_id\": \"message_condition_1\",\n                    \"mode\": \"chat\",\n                    \"text\": \"Ошибка повтори по новой....\"\n                }\n            ]\n        },\n        {\n            \"id\": \"succes_message_condition_1\",\n            \"components\": [\n                {\n                    \"type\": \"door_control\",\n                    \"action\": \"remove\"\n                },\n                {\n                    \"type\": \"follow_camera\",\n                    \"position\": {\n                        \"x\": 1140,\n                        \"y\": 529\n                    },\n                    \"delay\": 300\n                }\n            ]\n        },\n        {\n            \"id\": \"defeat_mobs_start\",\n            \"completion_logic\": \"any_of\",\n            \"msg_info\": \"Убейте мобов при этом не убив не одного Living Stone!\",\n            \"components\": [\n                {\n                    \"type\": \"defeat_mobs\",\n                    \"position\": {\n                        \"x\": 1497,\n                        \"y\": 529\n                    },\n                    \"radius\": 200,\n                    \"mobs\": [\n                        {\n                            \"mob_id\": 40,\n                            \"count\": 5,\n                            \"level\": 3\n                        }\n                    ],\n                    \"next_step_id\": \"success_defeat_start\"\n                },\n                {\n                    \"type\": \"defeat_mobs\",\n                    \"mode\": \"wave\",\n                    \"kill_target\": 1,\n                    \"position\": {\n                        \"x\": 1497,\n                        \"y\": 529\n                    },\n                    \"radius\": 200,\n                    \"mobs\": [\n                        {\n                            \"mob_id\": 42,\n                            \"count\": 2,\n                            \"level\": 3\n                        }\n                    ],\n                    \"next_step_id\": \"fail_defeat_start\"\n                }\n            ]\n        },\n        {\n            \"id\": \"fail_defeat_start\",\n            \"delay\": 300,\n            \"components\": [\n                {\n                    \"type\": \"message\",\n                    \"next_step_id\": \"defeat_mobs_start\",\n                    \"mode\": \"chat\",\n                    \"text\": \"Испытание провалено...... Через несколько секунд начнется заного!\"\n                }\n            ]\n        },\n        {\n            \"id\": \"success_defeat_start\",\n            \"delay\": 300,\n            \"components\": [\n                {\n                    \"type\": \"message\",\n                    \"mode\": \"chat\",\n                    \"text\": \"Испытание пройдено...... \"\n                }\n            ]\n        },\n        {\n            \"id\": \"gffsaa\",\n            \"components\": [\n                {\n                    \"type\": \"message\",\n                    \"text\": \"asdasdas\",\n                    \"mode\": \"full\"\n                },\n                {\n                    \"type\": \"message\",\n                    \"text\": \"weqweqweq\",\n                    \"mode\": \"full\",\n                    \"delay\": 255\n                },\n                {\n                    \"type\": \"message\",\n                    \"text\": \"Новое сообщение\",\n                    \"mode\": \"full\",\n                    \"delay\": 350\n                },\n                {\n                    \"type\": \"teleport\",\n                    \"position\": {\n                        \"x\": 1497,\n                        \"y\": 529\n                    },\n                    \"delay\": 350\n                }\n            ],\n            \"completion_logic\": \"sequential\"\n        }\n    ]\n}', 2);
+INSERT INTO `tw_dungeons` (`ID`, `Level`, `DoorX`, `DoorY`, `Scenario`, `WorldID`) VALUES
+(1, 1, 1105, 529, '{\n  \"scenario_mode\": \"dungeon\",\n  \"editor_data\": {\n    \"groups\": [\n      {\n        \"id\": \"group_292ad524-3d9c-4582-b293-9d5261ed8d80\",\n        \"name\": \"1PART\",\n        \"steps\": [\n          \"mobp1\"\n        ],\n        \"collapsed\": false\n      },\n      {\n        \"id\": \"group_1270251d-3c24-427c-9d2e-1dd7811332d0\",\n        \"name\": \"2PART\",\n        \"steps\": [\n          \"mobp1_2\"\n        ],\n        \"collapsed\": false\n      },\n      {\n        \"id\": \"group_179d61ca-6c71-4fe1-b814-d27d769516f8\",\n        \"name\": \"3PART\",\n        \"steps\": [\n          \"mobp1_3\"\n        ],\n        \"collapsed\": false\n      },\n      {\n        \"id\": \"group_2a893d3f-ebb3-4592-8dfe-211e2a3be5d9\",\n        \"name\": \"4PART-BOSS\",\n        \"steps\": [\n          \"mobp1_4_BOSS\"\n        ],\n        \"collapsed\": false\n      },\n      {\n        \"id\": \"group_438256a7-32e6-4822-bea1-8f7aca7edaa7\",\n        \"name\": \"5PART\",\n        \"steps\": [\n          \"mobp2\"\n        ],\n        \"collapsed\": false\n      },\n      {\n        \"id\": \"group_9c854a2f-aac1-410b-b469-f4ed79c0584d\",\n        \"name\": \"6PART\",\n        \"steps\": [\n          \"mobp2_1\"\n        ],\n        \"collapsed\": false\n      },\n      {\n        \"id\": \"group_e73e6048-6a70-4760-9b8c-c723c6229a82\",\n        \"name\": \"7PART-BOSS\",\n        \"steps\": [\n          \"mobp2_2\"\n        ],\n        \"collapsed\": false\n      }\n    ],\n    \"ungrouped_steps\": [\n      \"mobp1\",\n      \"mobp1_2\",\n      \"mobp1_3\",\n      \"mobp1_4_BOSS\",\n      \"mobp2\",\n      \"mobp2_1\",\n      \"mobp2_2\"\n    ]\n  },\n  \"steps\": [\n    {\n      \"id\": \"mobp1\",\n      \"components\": [\n        {\n          \"type\": \"dungeon_door_control\",\n          \"action\": \"create\",\n          \"position\": {\n            \"x\": 5215,\n            \"y\": 529\n          },\n          \"key\": \"doorp1\"\n        },\n        {\n          \"type\": \"follow_camera\",\n          \"position\": {\n            \"x\": 3864,\n            \"y\": 128\n          },\n          \"execution_time\": 50,\n          \"smooth\": true\n        },\n        {\n          \"type\": \"defeat_mobs\",\n          \"mode\": \"wave\",\n          \"radius\": 800,\n          \"position\": {\n            \"x\": 3864,\n            \"y\": 1\n          },\n          \"kill_target\": 50,\n          \"duration\": 60,\n          \"mobs\": [\n            {\n              \"bot_id\": 58,\n              \"level\": 5,\n              \"power\": 18,\n              \"count\": 12,\n              \"boss\": false,\n              \"Behavior\": [\n                \"slower\"\n              ],\n              \"Debuffs\": [\n                \"Slowdown\"\n              ],\n              \"drops\": [\n                {\n                  \"item_id\": 410,\n                  \"count\": 1,\n                  \"chance\": 3\n                }\n              ]\n            }\n          ],\n          \"activeradius\": 0\n        },\n        {\n          \"type\": \"follow_camera\",\n          \"position\": {\n            \"x\": 5215,\n            \"y\": 529\n          },\n          \"execution_time\": 50,\n          \"smooth\": true\n        },\n        {\n          \"type\": \"dungeon_door_control\",\n          \"action\": \"remove\",\n          \"key\": \"doorp1\"\n        }\n      ],\n      \"completion_logic\": \"sequential\"\n    },\n    {\n      \"id\": \"mobp1_2\",\n      \"components\": [\n        {\n          \"type\": \"dungeon_door_control\",\n          \"action\": \"create\",\n          \"position\": {\n            \"x\": 6298,\n            \"y\": 1105\n          },\n          \"key\": \"doorp1_2\"\n        },\n        {\n          \"type\": \"dungeon_door_control\",\n          \"action\": \"create\",\n          \"position\": {\n            \"x\": 7910,\n            \"y\": 465\n          },\n          \"key\": \"doorp1_2_1\"\n        },\n        {\n          \"type\": \"defeat_mobs\",\n          \"mode\": \"annihilation\",\n          \"radius\": 800,\n          \"position\": {\n            \"x\": 7409,\n            \"y\": 270\n          },\n          \"kill_target\": 10,\n          \"duration\": 60,\n          \"mobs\": [\n            {\n              \"bot_id\": 59,\n              \"level\": 6,\n              \"power\": 14,\n              \"count\": 5,\n              \"boss\": false,\n              \"Behavior\": [\n                \"slower\"\n              ],\n              \"Debuffs\": [\n                \"Fire\"\n              ],\n              \"drops\": [\n                {\n                  \"item_id\": 410,\n                  \"count\": 1,\n                  \"chance\": 3\n                }\n              ]\n            }\n          ],\n          \"activeradius\": 0\n        },\n        {\n          \"type\": \"follow_camera\",\n          \"position\": {\n            \"x\": 6298,\n            \"y\": 1105\n          },\n          \"execution_time\": 50,\n          \"smooth\": true\n        },\n        {\n          \"type\": \"dungeon_door_control\",\n          \"action\": \"remove\",\n          \"key\": \"doorp1_2\"\n        },\n        {\n          \"type\": \"follow_camera\",\n          \"position\": {\n            \"x\": 7910,\n            \"y\": 465\n          },\n          \"execution_time\": 50,\n          \"smooth\": true\n        },\n        {\n          \"type\": \"dungeon_door_control\",\n          \"action\": \"remove\",\n          \"key\": \"doorp1_2_1\"\n        }\n      ],\n      \"completion_logic\": \"sequential\"\n    },\n    {\n      \"id\": \"mobp1_3\",\n      \"components\": [\n        {\n          \"type\": \"dungeon_door_control\",\n          \"action\": \"create\",\n          \"position\": {\n            \"x\": 6222,\n            \"y\": 2769\n          },\n          \"key\": \"doorp1_3_0\"\n        },\n        {\n          \"type\": \"dungeon_door_control\",\n          \"action\": \"create\",\n          \"position\": {\n            \"x\": 4489,\n            \"y\": 2833\n          },\n          \"key\": \"doorp1_3_1\"\n        },\n        {\n          \"type\": \"defeat_mobs\",\n          \"mode\": \"annihilation\",\n          \"radius\": 800,\n          \"position\": {\n            \"x\": 5405,\n            \"y\": 2737\n          },\n          \"kill_target\": 10,\n          \"duration\": 60,\n          \"mobs\": [\n            {\n              \"bot_id\": 60,\n              \"level\": 8,\n              \"power\": 20,\n              \"count\": 14,\n              \"boss\": false,\n              \"Behavior\": [],\n              \"Debuffs\": [],\n              \"drops\": [\n                {\n                  \"item_id\": 410,\n                  \"count\": 1,\n                  \"chance\": 3\n                }\n              ]\n            }\n          ],\n          \"activeradius\": 0\n        },\n        {\n          \"type\": \"follow_camera\",\n          \"position\": {\n            \"x\": 6222,\n            \"y\": 2769\n          },\n          \"execution_time\": 50,\n          \"smooth\": true\n        },\n        {\n          \"type\": \"dungeon_door_control\",\n          \"action\": \"remove\",\n          \"key\": \"doorp1_3_0\"\n        }\n      ],\n      \"completion_logic\": \"sequential\"\n    },\n    {\n      \"id\": \"mobp1_4_BOSS\",\n      \"components\": [\n        {\n          \"type\": \"dungeon_door_control\",\n          \"action\": \"create\",\n          \"position\": {\n            \"x\": 8483,\n            \"y\": 1873\n          },\n          \"key\": \"doorp1_4\"\n        },\n        {\n          \"type\": \"defeat_mobs\",\n          \"mode\": \"annihilation\",\n          \"radius\": 800,\n          \"position\": {\n            \"x\": 7896,\n            \"y\": 1713\n          },\n          \"kill_target\": 10,\n          \"duration\": 60,\n          \"mobs\": [\n            {\n              \"bot_id\": 62,\n              \"level\": 10,\n              \"power\": 400,\n              \"count\": 1,\n              \"boss\": true,\n              \"Behavior\": [\n                \"slower\",\n                \"skills_base\",\n                \"skills_healer\"\n              ],\n              \"Debuffs\": [],\n              \"drops\": [\n                {\n                  \"item_id\": 410,\n                  \"count\": 2,\n                  \"chance\": 100\n                }\n              ]\n            }\n          ],\n          \"activeradius\": 0\n        },\n        {\n          \"type\": \"follow_camera\",\n          \"position\": {\n            \"x\": 8483,\n            \"y\": 1873\n          },\n          \"execution_time\": 50,\n          \"smooth\": true\n        },\n        {\n          \"type\": \"dungeon_door_control\",\n          \"action\": \"remove\",\n          \"key\": \"doorp1_4\"\n        },\n        {\n          \"type\": \"follow_camera\",\n          \"position\": {\n            \"x\": 4489,\n            \"y\": 2833\n          },\n          \"execution_time\": 50,\n          \"smooth\": true\n        },\n        {\n          \"type\": \"dungeon_door_control\",\n          \"action\": \"remove\",\n          \"key\": \"doorp1_3_1\"\n        }\n      ],\n      \"completion_logic\": \"sequential\"\n    },\n    {\n      \"id\": \"mobp2\",\n      \"components\": [\n        {\n          \"type\": \"dungeon_door_control\",\n          \"action\": \"create\",\n          \"position\": {\n            \"x\": 784,\n            \"y\": 2737\n          },\n          \"key\": \"doorp2_0\"\n        },\n        {\n          \"type\": \"defeat_mobs\",\n          \"mode\": \"annihilation\",\n          \"radius\": 800,\n          \"position\": {\n            \"x\": 1944,\n            \"y\": 3409\n          },\n          \"kill_target\": 10,\n          \"duration\": 60,\n          \"mobs\": [\n            {\n              \"bot_id\": 63,\n              \"level\": 8,\n              \"power\": 25,\n              \"count\": 10,\n              \"boss\": false,\n              \"Behavior\": [\n                \"slower\",\n                \"skills_base\"\n              ],\n              \"Debuffs\": [],\n              \"drops\": [\n                {\n                  \"item_id\": 410,\n                  \"count\": 1,\n                  \"chance\": 4\n                }\n              ]\n            }\n          ],\n          \"activeradius\": 0\n        },\n        {\n          \"type\": \"follow_camera\",\n          \"position\": {\n            \"x\": 784,\n            \"y\": 2737\n          },\n          \"execution_time\": 50,\n          \"smooth\": true\n        },\n        {\n          \"type\": \"dungeon_door_control\",\n          \"action\": \"remove\",\n          \"key\": \"doorp2_0\"\n        }\n      ],\n      \"completion_logic\": \"sequential\"\n    },\n    {\n      \"id\": \"mobp2_1\",\n      \"components\": [\n        {\n          \"type\": \"dungeon_door_control\",\n          \"action\": \"create\",\n          \"position\": {\n            \"x\": 3687,\n            \"y\": 1937\n          },\n          \"key\": \"doorp2_1\"\n        },\n        {\n          \"type\": \"defeat_mobs\",\n          \"mode\": \"annihilation\",\n          \"radius\": 800,\n          \"position\": {\n            \"x\": 2382,\n            \"y\": 1587\n          },\n          \"kill_target\": 10,\n          \"duration\": 60,\n          \"mobs\": [\n            {\n              \"bot_id\": 64,\n              \"level\": 8,\n              \"power\": 20,\n              \"count\": 16,\n              \"boss\": false,\n              \"Behavior\": [\n                \"skills_base\"\n              ],\n              \"Debuffs\": [],\n              \"drops\": [\n                {\n                  \"item_id\": 410,\n                  \"count\": 1,\n                  \"chance\": 4\n                }\n              ]\n            }\n          ],\n          \"activeradius\": 0\n        },\n        {\n          \"type\": \"follow_camera\",\n          \"position\": {\n            \"x\": 3687,\n            \"y\": 1937\n          },\n          \"execution_time\": 50,\n          \"smooth\": true\n        },\n        {\n          \"type\": \"dungeon_door_control\",\n          \"action\": \"remove\",\n          \"key\": \"doorp2_1\"\n        },\n        {\n          \"type\": \"follow_camera\",\n          \"position\": {\n            \"x\": 7798,\n            \"y\": 3505\n          },\n          \"execution_time\": 200,\n          \"smooth\": true\n        }\n      ],\n      \"completion_logic\": \"sequential\"\n    },\n    {\n      \"id\": \"mobp2_2\",\n      \"components\": [\n        {\n          \"type\": \"follow_camera\",\n          \"position\": {\n            \"x\": 7798,\n            \"y\": 3505\n          },\n          \"execution_time\": 50,\n          \"smooth\": true\n        },\n        {\n          \"type\": \"defeat_mobs\",\n          \"mode\": \"annihilation\",\n          \"radius\": 600,\n          \"position\": {\n            \"x\": 7747,\n            \"y\": 3505\n          },\n          \"kill_target\": 10,\n          \"duration\": 60,\n          \"mobs\": [\n            {\n              \"bot_id\": 65,\n              \"level\": 15,\n              \"power\": 500,\n              \"count\": 1,\n              \"boss\": true,\n              \"Behavior\": [\n                \"skills_base\",\n                \"skills_dps\",\n                \"slower\",\n                \"poisonous\"\n              ],\n              \"Debuffs\": [],\n              \"drops\": [\n                {\n                  \"item_id\": 410,\n                  \"count\": 3,\n                  \"chance\": 100\n                }\n              ]\n            }\n          ],\n          \"activeradius\": 0\n        },\n        {\n          \"type\": \"dungeon_complete\"\n        }\n      ],\n      \"completion_logic\": \"sequential\"\n    }\n  ]\n}', 2),
+(5, 1, 0, 0, '{\n  \"scenario_mode\": \"dungeon\",\n  \"editor_data\": {\n    \"groups\": [\n      {\n        \"id\": \"group_8b8e2b9a-086a-4b41-a0b0-cba7588bbaa0\",\n        \"name\": \"WAVE1\",\n        \"steps\": [\n          \"prepare\",\n          \"defeat\"\n        ],\n        \"collapsed\": false\n      },\n      {\n        \"id\": \"group_61c5f97b-a006-4e34-a9bf-831467d26d11\",\n        \"name\": \"FINISH\",\n        \"steps\": [\n          \"step_1\"\n        ],\n        \"collapsed\": false\n      }\n    ],\n    \"ungrouped_steps\": [\n      \"prepare\",\n      \"defeat\",\n      \"step_1\"\n    ]\n  },\n  \"steps\": [\n    {\n      \"id\": \"prepare\",\n      \"components\": [\n        {\n          \"type\": \"set_group_lives\",\n          \"action\": \"set\",\n          \"value\": 3\n        },\n        {\n          \"type\": \"message\",\n          \"execution_time\": 200,\n          \"text\": \"DEFEAT 3 GREAT COMMANDERS\",\n          \"mode\": \"full\"\n        },\n        {\n          \"type\": \"wait\",\n          \"duration\": 3\n        }\n      ],\n      \"completion_logic\": \"sequential\"\n    },\n    {\n      \"id\": \"defeat\",\n      \"components\": [\n        {\n          \"type\": \"defeat_mobs\",\n          \"mode\": \"annihilation\",\n          \"radius\": 1600,\n          \"position\": {\n            \"x\": 7360,\n            \"y\": 1760\n          },\n          \"kill_target\": 300,\n          \"duration\": 60,\n          \"mobs\": [\n            {\n              \"bot_id\": 1055,\n              \"level\": 15,\n              \"power\": 1000,\n              \"count\": 1,\n              \"boss\": true,\n              \"Behavior\": [\n                \"skills_base\",\n                \"skills_healer\"\n              ],\n              \"Debuffs\": [],\n              \"drops\": [\n                {\n                  \"item_id\": 410,\n                  \"count\": 10,\n                  \"chance\": 100\n                }\n              ]\n            },\n            {\n              \"bot_id\": 1057,\n              \"level\": 15,\n              \"power\": 1000,\n              \"count\": 1,\n              \"boss\": true,\n              \"Behavior\": [\n                \"skills_tank\",\n                \"skills_base\"\n              ],\n              \"Debuffs\": [],\n              \"drops\": [\n                {\n                  \"item_id\": 410,\n                  \"count\": 10,\n                  \"chance\": 100\n                }\n              ]\n            },\n            {\n              \"bot_id\": 1056,\n              \"level\": 15,\n              \"power\": 900,\n              \"count\": 1,\n              \"boss\": true,\n              \"Behavior\": [\n                \"skills_dps\",\n                \"skills_base\"\n              ],\n              \"Debuffs\": [],\n              \"drops\": [\n                {\n                  \"item_id\": 410,\n                  \"count\": 10,\n                  \"chance\": 100\n                }\n              ]\n            }\n          ],\n          \"activeradius\": 10000\n        }\n      ]\n    },\n    {\n      \"id\": \"step_1\",\n      \"components\": [\n        {\n          \"type\": \"dungeon_complete\"\n        }\n      ]\n    }\n  ]\n}', 11);
 
 -- --------------------------------------------------------
 
@@ -1278,10 +1251,10 @@ CREATE TABLE `tw_guilds_houses` (
 --
 
 INSERT INTO `tw_guilds_houses` (`ID`, `GuildID`, `InitialFee`, `RentDays`, `Doors`, `Farmzones`, `Properties`, `WorldID`) VALUES
-(1, NULL, 10000, 3, '[\r\n    {\r\n        \"name\": \"Front Door\",\r\n        \"position\": {\"x\": 17827, \"y\": 1617}\r\n    },\r\n    {\r\n        \"name\": \"Back Door\",\r\n        \"position\": {\"x\": 19769, \"y\": 2257}\r\n    },\r\n    {\r\n        \"name\": \"Farm zone\",\r\n        \"position\": {\"x\": 18326, \"y\": 1905}\r\n    },\r\n    {\r\n        \"name\": \"Farm zone\",\r\n        \"position\": {\"x\": 19228, \"y\": 2257}\r\n    }\r\n]', '[\n    {\n        \"items\": \"121,122\",\n        \"name\": \"FarmZone 2\",\n        \"position\": {\n            \"x\": 18127.0,\n            \"y\": 1905.0\n        },\n        \"radius\": 224\n    },\n    {\n        \"items\": \"224,223\",\n        \"name\": \"FarmZone 1\",\n        \"position\": {\n            \"x\": 19027.0,\n            \"y\": 2257.0\n        },\n        \"radius\": 224\n    }\n]', '{\r\n    \"position\": {\"x\": 18720, \"y\": 1568},\r\n    \"text_position\": {\"x\": 19456, \"y\": 1648},\r\n    \"radius\": 1376\r\n}', 1),
-(2, NULL, 9000, 6, '[\n    {\n        \"name\": \"Door\",\n        \"position\": {\"x\": 15686, \"y\": 3313}\n    },\n    {\n        \"name\": \"Bedroom\",\n        \"position\": {\"x\": 15246, \"y\": 2961}\n    },\n    {\n        \"name\": \"Farm zone\",\n        \"position\": {\"x\": 14888, \"y\": 3313}\n    }\n]', '[\n    {\n        \"items\": \"224\",\n        \"name\": \"FarmZone 1\",\n        \"position\": {\n            \"x\": 14708.0,\n            \"y\": 3313.0\n        },\n        \"radius\": 192\n    }\n]', '{\r\n    \"position\": {\"x\": 15200, \"y\": 3008},\r\n    \"text_position\": {\"x\": 15663, \"y\": 2576},\r\n    \"radius\": 864\r\n}', 1),
-(3, NULL, 8000, 0, '[\r\n    {\r\n        \"name\": \"Front Door\",\r\n        \"position\": {\"x\": 12408, \"y\": 849}\r\n    },\r\n    {\r\n        \"name\": \"Back Door\",\r\n        \"position\": {\"x\": 10660, \"y\": 945}\r\n    },\r\n    {\r\n        \"name\": \"Farm zone\",\r\n        \"position\": {\"x\": 11200, \"y\": 928}\r\n    }\r\n]', '[\n    {\n        \"items\": \"223\",\n        \"name\": \"FarmZone\",\n        \"position\": {\n            \"x\": 11744.0,\n            \"y\": 928.0\n        },\n        \"radius\": 256\n    }\n]', '{\r\n    \"position\": {\"x\": 11520, \"y\": 544},\r\n    \"text_position\": {\"x\": 11528, \"y\": 1040},\r\n    \"radius\": 1120\r\n}', 1),
-(4, NULL, 7000, 6, '[\r\n    {\r\n        \"name\": \"Front Door\",\r\n        \"position\": {\"x\": 16244, \"y\": 5073}\r\n    },\r\n    {\r\n        \"name\": \"Farm zone\",\r\n        \"position\": {\"x\": 16832, \"y\": 6208}\r\n    }\r\n]', '[\n    {\n        \"items\": \"\",\n        \"name\": \"FarmZone\",\n        \"position\": {\n            \"x\": 16928.0,\n            \"y\": 4768.0\n        },\n        \"radius\": 128\n    }\n]', '{\r\n    \"position\": {\"x\": 16352, \"y\": 4704},\r\n    \"text_position\": {\"x\": 16016, \"y\": 5185},\r\n    \"radius\": 736\r\n}', 1),
+(1, 4, 10000, 3, '[\r\n    {\r\n        \"name\": \"Front Door\",\r\n        \"position\": {\"x\": 17827, \"y\": 1617}\r\n    },\r\n    {\r\n        \"name\": \"Back Door\",\r\n        \"position\": {\"x\": 19769, \"y\": 2257}\r\n    },\r\n    {\r\n        \"name\": \"Farm zone\",\r\n        \"position\": {\"x\": 18326, \"y\": 1905}\r\n    },\r\n    {\r\n        \"name\": \"Farm zone\",\r\n        \"position\": {\"x\": 19228, \"y\": 2257}\r\n    }\r\n]', '[\n    {\n        \"items\": \"121,122\",\n        \"name\": \"FarmZone 2\",\n        \"position\": {\n            \"x\": 18127.0,\n            \"y\": 1905.0\n        },\n        \"radius\": 224\n    },\n    {\n        \"items\": \"224,223\",\n        \"name\": \"FarmZone 1\",\n        \"position\": {\n            \"x\": 19027.0,\n            \"y\": 2257.0\n        },\n        \"radius\": 224\n    }\n]', '{\r\n    \"position\": {\"x\": 18720, \"y\": 1568},\r\n    \"text_position\": {\"x\": 19456, \"y\": 1648},\r\n    \"radius\": 1376\r\n}', 1),
+(2, NULL, 9000, 2, '[\n    {\n        \"name\": \"Door\",\n        \"position\": {\"x\": 15686, \"y\": 3313}\n    },\n    {\n        \"name\": \"Bedroom\",\n        \"position\": {\"x\": 15246, \"y\": 2961}\n    },\n    {\n        \"name\": \"Farm zone\",\n        \"position\": {\"x\": 14888, \"y\": 3313}\n    }\n]', '[\n    {\n        \"items\": \"224\",\n        \"name\": \"FarmZone 1\",\n        \"position\": {\n            \"x\": 14708.0,\n            \"y\": 3313.0\n        },\n        \"radius\": 192\n    }\n]', '{\r\n    \"position\": {\"x\": 15200, \"y\": 3008},\r\n    \"text_position\": {\"x\": 15663, \"y\": 2576},\r\n    \"radius\": 864\r\n}', 1),
+(3, NULL, 8000, 3, '[\r\n    {\r\n        \"name\": \"Front Door\",\r\n        \"position\": {\"x\": 12408, \"y\": 849}\r\n    },\r\n    {\r\n        \"name\": \"Back Door\",\r\n        \"position\": {\"x\": 10660, \"y\": 945}\r\n    },\r\n    {\r\n        \"name\": \"Farm zone\",\r\n        \"position\": {\"x\": 11200, \"y\": 928}\r\n    }\r\n]', '[\n    {\n        \"items\": \"223\",\n        \"name\": \"FarmZone\",\n        \"position\": {\n            \"x\": 11744.0,\n            \"y\": 928.0\n        },\n        \"radius\": 256\n    }\n]', '{\r\n    \"position\": {\"x\": 11520, \"y\": 544},\r\n    \"text_position\": {\"x\": 11528, \"y\": 1040},\r\n    \"radius\": 1120\r\n}', 1),
+(4, 3, 7000, 1, '[\r\n    {\r\n        \"name\": \"Front Door\",\r\n        \"position\": {\"x\": 16244, \"y\": 5073}\r\n    },\r\n    {\r\n        \"name\": \"Farm zone\",\r\n        \"position\": {\"x\": 16832, \"y\": 6208}\r\n    }\r\n]', '[\n    {\n        \"items\": \"\",\n        \"name\": \"FarmZone\",\n        \"position\": {\n            \"x\": 16928.0,\n            \"y\": 4768.0\n        },\n        \"radius\": 128\n    }\n]', '{\r\n    \"position\": {\"x\": 16352, \"y\": 4704},\r\n    \"text_position\": {\"x\": 16016, \"y\": 5185},\r\n    \"radius\": 736\r\n}', 1),
 (5, NULL, 6000, 6, '[\r\n    {\r\n        \"name\": \"Front Door\",\r\n        \"position\": {\"x\": 26242, \"y\": 2449}\r\n    },\r\n    {\r\n        \"name\": \"Farm zone\",\r\n        \"position\": {\"x\": 26432, \"y\": 2208}\r\n    }\r\n]', '[\n    {\n        \"name\": \"FarmZone\",\n        \"position\": {\n            \"x\": 26368,\n            \"y\": 2208\n        },\n        \"items\": \"70\",\n        \"radius\": 96\n    }\n]', '{\r\n    \"position\": {\"x\": 26592, \"y\": 2304},\r\n    \"text_position\": {\"x\": 26627, \"y\": 2642},\r\n    \"radius\": 512\r\n}', 1),
 (6, NULL, 5000, 6, '[\r\n    {\r\n        \"name\": \"Front Door\",\r\n        \"position\": {\"x\": 27766, \"y\": 1873}\r\n    },\r\n    {\r\n        \"name\": \"Farm zone\",\r\n        \"position\": {\"x\": 27872, \"y\": 1536}\r\n    }\r\n]', '[\n    {\n        \"name\": \"FarmZone\",\n        \"position\": {\n            \"x\": 27968,\n            \"y\": 1536\n        },\n        \"items\": \"70\",\n        \"radius\": 96\n    }\n]', '{\r\n    \"position\": {\"x\": 27712, \"y\": 1536},\r\n    \"text_position\": {\"x\": 28067, \"y\": 1248},\r\n    \"radius\": 840\r\n}', 1);
 
@@ -1313,6 +1286,20 @@ CREATE TABLE `tw_guilds_ranks` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `tw_guilds_wars`
+--
+
+CREATE TABLE `tw_guilds_wars` (
+  `GuildID1` int(11) NOT NULL,
+  `GuildID2` int(11) NOT NULL,
+  `TimeUntilEnd` bigint(20) NOT NULL,
+  `Score1` int(11) NOT NULL DEFAULT 0,
+  `Score2` int(11) NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `tw_houses`
 --
 
@@ -1334,19 +1321,19 @@ CREATE TABLE `tw_houses` (
 --
 
 INSERT INTO `tw_houses` (`ID`, `UserID`, `InitialFee`, `RentDays`, `Class`, `Bank`, `Doors`, `Farmzones`, `Properties`, `WorldID`) VALUES
-(1, NULL, 10000, 0, 'House 1', '0', '[\n    {\n        \"name\": \"Main door\",\n        \"position\": {\"x\": 17736, \"y\": 5329}\n    }\n]', NULL, '{\r\n    \"position\": {\"x\": 17933, \"y\": 5265},\r\n    \"text_position\": {\"x\": 17936, \"y\": 5182}\r\n}', 1),
+(1, NULL, 10000, 3, 'House 1', '0', '[\n    {\n        \"name\": \"Main door\",\n        \"position\": {\"x\": 17736, \"y\": 5329}\n    }\n]', NULL, '{\r\n    \"position\": {\"x\": 17933, \"y\": 5265},\r\n    \"text_position\": {\"x\": 17936, \"y\": 5182}\r\n}', 1),
 (2, NULL, 15000, 0, 'House 2', '0', '[\r\n    {\r\n        \"name\": \"Main door\",\r\n        \"position\": {\"x\": 18538, \"y\": 5105}\r\n    }\r\n]', NULL, '{\r\n    \"position\": {\"x\": 18734, \"y\": 5073},\r\n    \"text_position\": {\"x\": 18734, \"y\": 4947}\r\n}', 1),
 (3, NULL, 15000, 0, 'House 3', '0', '[\r\n    {\r\n        \"name\": \"Main door\",\r\n        \"position\": {\"x\": 19021, \"y\": 5617}\r\n    }\r\n]', NULL, '{\r\n    \"position\": {\"x\": 19214, \"y\": 5585},\r\n    \"text_position\": {\"x\": 19214, \"y\": 5458}\r\n}', 1),
 (4, NULL, 10000, 3, 'House 4', '0', '[\r\n    {\r\n        \"name\": \"Main door\",\r\n        \"position\": {\"x\": 18216, \"y\": 16065}\r\n    }\r\n]', NULL, '{\r\n    \"position\": {\"x\": 18414, \"y\": 6033},\r\n    \"text_position\": {\"x\": 18414, \"y\": 5902}\r\n}', 1),
-(5, NULL, 7000, 0, 'House 5', '0', '[\r\n    {\r\n        \"name\": \"Main door\",\r\n        \"position\": {\"x\": 17815, \"y\": 5841}\r\n    }\r\n]', NULL, '{\r\n    \"position\": {\"x\": 17617, \"y\": 5809},\r\n    \"text_position\": {\"x\": 17617, \"y\": 5684}\r\n}', 1),
-(6, NULL, 7000, 3, 'House 6', '0', '[\r\n    {\r\n        \"name\": \"Main door\",\r\n        \"position\": {\"x\": 17015, \"y\": 6161}\r\n    }\r\n]', NULL, '{\r\n    \"position\": {\"x\": 16817, \"y\": 6129},\r\n    \"text_position\": {\"x\": 16817, \"y\": 6000}\r\n}', 1),
+(5, 373, 7000, 0, 'House 5', '3000', '[\r\n    {\r\n        \"name\": \"Main door\",\r\n        \"position\": {\"x\": 17815, \"y\": 5841}\r\n    }\r\n]', NULL, '{\r\n    \"position\": {\"x\": 17617, \"y\": 5809},\r\n    \"text_position\": {\"x\": 17617, \"y\": 5684}\r\n}', 1),
+(6, NULL, 7000, 0, 'House 6', '0', '[\r\n    {\r\n        \"name\": \"Main door\",\r\n        \"position\": {\"x\": 17015, \"y\": 6161}\r\n    }\r\n]', NULL, '{\r\n    \"position\": {\"x\": 16817, \"y\": 6129},\r\n    \"text_position\": {\"x\": 16817, \"y\": 6000}\r\n}', 1),
 (7, NULL, 5000, 0, 'House 7', '0', '[\r\n    {\r\n        \"name\": \"Main door\",\r\n        \"position\": {\"x\": 16239, \"y\": 5649}\r\n    }\r\n]', NULL, '{\r\n    \"position\": {\"x\": 16049, \"y\": 5617},\r\n    \"text_position\": {\"x\": 16049, \"y\": 5488}\r\n}', 1),
-(8, NULL, 5000, 3, 'House 8', '0', '[\r\n    {\r\n        \"name\": \"Main door\",\r\n        \"position\": {\"x\": 16617, \"y\": 5297}\r\n    }\r\n]', NULL, '{\r\n    \"position\": {\"x\": 16846, \"y\": 5265},\r\n    \"text_position\": {\"x\": 16846, \"y\": 5140}\r\n}', 1),
+(8, 244, 5000, 4, 'House 8', '88900', '[\r\n    {\r\n        \"name\": \"Main door\",\r\n        \"position\": {\"x\": 16617, \"y\": 5297}\r\n    }\r\n]', NULL, '{\r\n    \"position\": {\"x\": 16846, \"y\": 5265},\r\n    \"text_position\": {\"x\": 16846, \"y\": 5140}\r\n}', 1),
 (9, NULL, 30000, 0, 'Left apartments 1', '0', '[\r\n    {\r\n        \"name\": \"Main door\",\r\n        \"position\": {\"x\": 13201, \"y\": 913}\r\n    },\r\n    {\r\n        \"name\": \"Back door\",\r\n        \"position\": {\"x\": 14322, \"y\": 913}\r\n    }\r\n]', '[\n    {\n        \"items\": \"223\",\n        \"name\": \"Vegetable garden\",\n        \"position\": {\n            \"x\": 13754.0,\n            \"y\": 945.0\n        },\n        \"radius\": 192\n    }\n]', '{\r\n    \"position\": {\"x\": 13169, \"y\": 945},\r\n    \"text_position\": {\"x\": 13759, \"y\": 881}\r\n}', 1),
 (10, NULL, 25000, 1, 'Left apartments 2', '0', '[\r\n    {\r\n        \"name\": \"Main door\",\r\n        \"position\": {\"x\": 13202, \"y\": 753}\r\n    },\r\n    {\r\n        \"name\": \"Back door\",\r\n        \"position\": {\"x\": 14322, \"y\": 753}\r\n    }\r\n]', '[\n    {\n        \"items\": \"71\",\n        \"name\": \"Vegetable garden\",\n        \"position\": {\n            \"x\": 13754.0,\n            \"y\": 785.0\n        },\n        \"radius\": 192\n    }\n]', '{\r\n    \"position\": {\"x\": 13169, \"y\": 785},\r\n    \"text_position\": {\"x\": 13759, \"y\": 721}\r\n}', 1),
 (11, NULL, 20000, 0, 'Left apartments 3', '0', '[\r\n    {\r\n        \"name\": \"Main door\",\r\n        \"position\": {\"x\": 13202, \"y\": 593}\r\n    },\r\n    {\r\n        \"name\": \"Back door\",\r\n        \"position\": {\"x\": 14325, \"y\": 593}\r\n    }\r\n]', '[\n    {\n        \"items\": \"224\",\n        \"name\": \"Vegetable garden\",\n        \"position\": {\n            \"x\": 13754.0,\n            \"y\": 625.0\n        },\n        \"radius\": 192\n    }\n]', '{\r\n    \"position\": {\"x\": 13169, \"y\": 625},\r\n    \"text_position\": {\"x\": 13759, \"y\": 561}\r\n}', 1),
-(12, NULL, 15000, 0, 'Left apartments 4', '0', '[\r\n    {\r\n        \"name\": \"Main door\",\r\n        \"position\": {\"x\": 13225, \"y\": 433}\r\n    },\r\n    {\r\n        \"name\": \"Back door\",\r\n        \"position\": {\"x\": 14302, \"y\": 433}\r\n    }\r\n]', '[\n    {\n        \"items\": \"121,122\",\n        \"name\": \"Vegetable garden\",\n        \"position\": {\n            \"x\": 13754.0,\n            \"y\": 465.0\n        },\n        \"radius\": 192\n    }\n]', '{\r\n    \"position\": {\"x\": 13169, \"y\": 465},\r\n    \"text_position\": {\"x\": 13759, \"y\": 401}\r\n}', 1),
-(13, NULL, 10000, 3, 'Left apartments 5', '0', '[\r\n    {\r\n        \"name\": \"Main door\",\r\n        \"position\": {\"x\": 13236, \"y\": 273}\r\n    },\r\n    {\r\n        \"name\": \"Back door\",\r\n        \"position\": {\"x\": 14292, \"y\": 273}\r\n    }\r\n]', '[\n    {\n        \"items\": \"225\",\n        \"name\": \"Vegetable garden\",\n        \"position\": {\n            \"x\": 13754.0,\n            \"y\": 305.0\n        },\n        \"radius\": 192\n    }\n]', '{\r\n    \"position\": {\"x\": 13201, \"y\": 305},\r\n    \"text_position\": {\"x\": 13759, \"y\": 229}\r\n}', 1),
+(12, NULL, 15000, 0, 'Left apartments 4', '0', '[\r\n    {\r\n        \"name\": \"Main door\",\r\n        \"position\": {\"x\": 13225, \"y\": 433}\r\n    },\r\n    {\r\n        \"name\": \"Back door\",\r\n        \"position\": {\"x\": 14302, \"y\": 433}\r\n    }\r\n]', '[\n    {\n        \"items\": \"61\",\n        \"name\": \"Vegetable garden\",\n        \"position\": {\n            \"x\": 13754.0,\n            \"y\": 465.0\n        },\n        \"radius\": 192\n    }\n]', '{\r\n    \"position\": {\"x\": 13169, \"y\": 465},\r\n    \"text_position\": {\"x\": 13759, \"y\": 401}\r\n}', 1),
+(13, NULL, 10000, 0, 'Left apartments 5', '0', '[\r\n    {\r\n        \"name\": \"Main door\",\r\n        \"position\": {\"x\": 13236, \"y\": 273}\r\n    },\r\n    {\r\n        \"name\": \"Back door\",\r\n        \"position\": {\"x\": 14292, \"y\": 273}\r\n    }\r\n]', '[\n    {\n        \"items\": \"225\",\n        \"name\": \"Vegetable garden\",\n        \"position\": {\n            \"x\": 13754.0,\n            \"y\": 305.0\n        },\n        \"radius\": 192\n    }\n]', '{\r\n    \"position\": {\"x\": 13201, \"y\": 305},\r\n    \"text_position\": {\"x\": 13759, \"y\": 229}\r\n}', 1),
 (19, NULL, 15000, 0, '(R/L) Apartments 1', '0', '[\r\n    {\r\n        \"name\": \"Main door\",\r\n        \"position\": {\"x\": 23439, \"y\": 1745}\r\n    }\r\n]', '[\r\n    {\r\n        \"items\": \"58\",\r\n        \"name\": \"Vegetable garden\",\r\n        \"position\": {\r\n            \"x\": 23559,\r\n            \"y\": 1553\r\n        },\r\n        \"radius\": 192\r\n    }\r\n]', '{\r\n    \"position\": {\"x\": 23404, \"y\": 1745},\r\n    \"text_position\": {\"x\": 23729, \"y\": 1486}\r\n}', 1),
 (20, NULL, 15000, 0, '(R/L) Apartments 2', '0', '[\r\n    {\r\n        \"name\": \"Main door\",\r\n        \"position\": {\"x\": 23439, \"y\": 1329}\r\n    }\r\n]', '[\r\n    {\r\n        \"items\": \"58\",\r\n        \"name\": \"Vegetable garden\",\r\n        \"position\": {\r\n            \"x\": 23559,\r\n            \"y\": 1137\r\n        },\r\n        \"radius\": 192\r\n    }\r\n]', '{\r\n    \"position\": {\"x\": 23404, \"y\": 1329},\r\n    \"text_position\": {\"x\": 23729, \"y\": 1070}\r\n}', 1),
 (21, NULL, 15000, 0, '(R/L) Apartments 3', '0', '[\r\n    {\r\n        \"name\": \"Main door\",\r\n        \"position\": {\"x\": 23439, \"y\": 913}\r\n    }\r\n]', '[\r\n    {\r\n        \"items\": \"58\",\r\n        \"name\": \"Vegetable garden\",\r\n        \"position\": {\r\n            \"x\": 23559,\r\n            \"y\": 721\r\n        },\r\n        \"radius\": 192\r\n    }\r\n]', '{\r\n    \"position\": {\"x\": 23404, \"y\": 913},\r\n    \"text_position\": {\"x\": 23729, \"y\": 654}\r\n}', 1),
@@ -1400,418 +1387,409 @@ CREATE TABLE `tw_items_list` (
 -- Dumping data for table `tw_items_list`
 --
 
-INSERT INTO `tw_items_list` (`Comment`, `ID`, `Name`, `Description`, `Group`, `Type`, `Flags`, `ScenarioData`, `InitialPrice`, `RequiresProducts`, `AT1`, `AT2`, `ATValue1`, `ATValue2`, `Data`) VALUES
-(NULL, 1, 'Gold', 'Major currency', 'Currency', 'Default', NULL, NULL, 7, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 2, 'Hammer', 'A normal hammer', 'Equipment', 'Equip hammer', NULL, NULL, 200, NULL, 13, 3, 3, 5, NULL),
-(NULL, 3, 'Gun', 'Conventional weapon', 'Equipment', 'Equip gun', NULL, NULL, 400, NULL, 14, NULL, 1, NULL, NULL),
-(NULL, 4, 'Shotgun', 'Conventional weapon', 'Equipment', 'Equip shotgun', NULL, NULL, 700, NULL, 15, NULL, 1, NULL, NULL),
-(NULL, 5, 'Grenade', 'Conventional weapon', 'Equipment', 'Equip grenade', NULL, NULL, 1200, NULL, 16, NULL, 3, NULL, NULL),
-(NULL, 6, 'Rifle', 'Conventional weapon', 'Equipment', 'Equip rifle', NULL, NULL, 1800, NULL, 17, NULL, 5, NULL, NULL),
-(NULL, 7, 'Material', 'Required to improve weapons', 'Currency', 'Default', NULL, NULL, 7, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 8, 'Product', 'Required to shop', 'Currency', 'Default', NULL, NULL, 7, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 9, 'Skill point', 'Skill point', 'Currency', 'Default', NULL, NULL, 5000, NULL, NULL, NULL, NULL, NULL, NULL),
-('Не реализ', 10, 'Achievement point', 'Achievement Point', 'Currency', 'Default', NULL, NULL, 1000, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 11, 'Pickup Shotgun', 'Decoration for house!', 'Decoration', 'Default', NULL, NULL, 10000, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 12, 'Pickup Grenade', 'Decoration for house!', 'Decoration', 'Default', NULL, NULL, 10000, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 13, 'Pickup Mana', 'Decoration for house!', 'Decoration', 'Default', NULL, NULL, 10000, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 14, 'CHANGE SHIT', 'CHANGE SHIT', 'Other', 'Default', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 15, 'CHANGE SHIT', 'CHANGE SHIT', 'Other', 'Default', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 16, 'Capsule survival experience', 'You got 10-50 class experience', 'Usable', 'Multiple use x99', NULL, NULL, 350, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 17, 'Little bag of gold', 'You got 10-50 gold', 'Usable', 'Multiple use x99', NULL, NULL, 8, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 18, 'Pickup Health', 'Decoration for house!', 'Decoration', 'Default', NULL, NULL, 10000, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 19, 'Explosive for gun', 'Explosive bullets (gun)', 'Equipment', 'Default', NULL, NULL, 50000, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 20, 'Explosive for shotgun', 'Explosive bullets (shotgun)', 'Equipment', 'Default', NULL, NULL, 70000, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 21, 'Sword', 'A regular sword', 'Quest', 'Default', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 22, 'Chigoe egg', 'The egg that Chigoe lays', 'Resource', 'Default', NULL, NULL, 16, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 23, 'Survey records', 'Strange incomprehensible records', 'Quest', 'Default', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 24, 'Toolbox', 'A drawer full of tools', 'Quest', 'Default', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 25, 'Show equipment description', 'Settings game.', 'Settings', 'Default', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 26, 'Iron rake', 'The usual iron rake', 'Equipment', 'Equip rake', NULL, NULL, 5690, NULL, 12, NULL, 5, NULL, NULL),
-(NULL, 27, 'Iron pickaxe', 'The usual iron pickaxe', 'Equipment', 'Equip pickaxe', NULL, NULL, 6825, NULL, 11, NULL, 5, NULL, NULL),
-('Power 20', 28, 'Leather armor', 'Lightweight armor', 'Equipment', 'Equip armor (tank)', NULL, NULL, 2000, NULL, 5, NULL, 24, 6, NULL),
-(NULL, 29, 'Activity coin', 'Coins that are given out for activity', 'Currency', 'Default', NULL, NULL, 500, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 30, 'Rookie', 'Rookie title', 'Equipment', 'Equip title', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 31, 'Crate', 'Crate', 'Quest', 'Default', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 32, 'Surveyor\'s rope', 'Ordinary surveyor\'s rope.', 'Quest', 'Default', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 33, 'Anole egg', 'It\'s a strange-looking and disgusting egg.', 'Resource', 'Default', NULL, NULL, 16, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 34, 'Show critical damage', 'Settings game.', 'Settings', 'Default', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 35, 'Copper ore', 'Copper ore', 'Resource', 'Resource mineable', NULL, NULL, 2, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 36, 'Copper ingot', 'Processed copper', 'Resource', 'Default', NULL, NULL, 60, NULL, NULL, NULL, NULL, NULL, NULL),
-('Power 50', 37, 'Copper armor', 'Armor made of copper', 'Equipment', 'Equip armor (tank)', NULL, NULL, 7820, NULL, 5, 7, 65, 15, NULL),
-(NULL, 38, 'Copper rake', 'The usual copper rake', 'Equipment', 'Equip rake', NULL, NULL, 1440, NULL, 12, NULL, 2, NULL, NULL),
-(NULL, 39, 'Copper pickaxe', 'The usual copper pickaxe', 'Equipment', 'Equip pickaxe', NULL, NULL, 3264, NULL, 11, NULL, 2, NULL, NULL),
-(NULL, 40, 'Green grass', 'It looks like ordinary green grass.', 'Resource', 'Resource harvestable', NULL, NULL, 0, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 41, 'Treated green grass', 'Compressed processed grass', 'Quest', 'Default', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 42, 'Titanium rake', 'The usual titanium rake.', 'Equipment', 'Equip rake', NULL, NULL, 15620, NULL, 12, NULL, 8, NULL, NULL),
-(NULL, 43, 'Titanium pickaxe', 'The usual titanium pickaxe.', 'Equipment', 'Equip pickaxe', NULL, NULL, 15620, NULL, 11, NULL, 8, NULL, NULL),
-(NULL, 44, 'Leather bag', 'Just leather bag.', 'Quest', 'Default', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 45, 'Cargo', 'Very valuable cargo.', 'Quest', 'Default', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 46, 'Leia\'s egg', 'The egg that Leia needs', 'Quest', 'Default', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 47, 'Letter ', 'Stamped letter', 'Quest', 'Default', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 48, 'Artifact', 'A magical thing', 'Quest', 'Default', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 49, 'Monoa mask', 'Its a beautiful mask', 'Equipment', 'Default', NULL, NULL, NULL, NULL, 5, 7, 5, 5, NULL),
-(NULL, 50, 'Coal', 'Black fuel', 'Resource', 'Resource mineable', NULL, NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 51, 'Vampire ring', 'The ring that draws out life', 'Equipment', 'Default', NULL, NULL, 32904, NULL, 8, NULL, 134, NULL, NULL),
-('Не реализ', 52, 'Vampire armor', 'Armor that sucks the life', 'Equipment', 'Default', NULL, NULL, NULL, NULL, 5, 8, 50, 50, NULL),
-(NULL, 53, 'AmmoModule', 'AmmoModuleNPC', 'Equipment', 'Default', NULL, NULL, NULL, NULL, 10, 9, 1000, 1000, NULL),
-(NULL, 54, 'Iron ore', 'Ordinary iron ore', 'Resource', 'Resource mineable', NULL, NULL, 2, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 55, 'Titanium ore', 'Solid titanium ore', 'Resource', 'Resource mineable', NULL, NULL, 3, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 56, 'Adamantite ore', 'The strongest adamantite ore', 'Resource', 'Resource mineable', NULL, NULL, 4, NULL, NULL, NULL, NULL, NULL, NULL),
-('Не реализ', 57, 'EIDOL #1', '', 'Equipment', 'Equip eidolon', NULL, NULL, NULL, NULL, 19, NULL, 25, NULL, NULL),
-(NULL, 58, 'Corn', 'Farm-grown Corn', 'Resource', 'Resource harvestable', NULL, NULL, 2, NULL, NULL, NULL, NULL, NULL, NULL),
-('Не реализ', 59, 'EIDOL #2', '', 'Equipment', 'Equip eidolon', NULL, NULL, NULL, NULL, 19, NULL, 25, NULL, NULL),
-(NULL, 60, 'Bullet belt', 'Belt of the sharpshooter', 'Equipment', 'Default', NULL, NULL, 12545, NULL, 10, NULL, 5, NULL, NULL),
-(NULL, 61, 'Tomato', 'Farm-grown Tomato', 'Resource', 'Resource harvestable', NULL, NULL, 3, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 62, 'Adamantium rake', 'The usual adamantium rake.', 'Equipment', 'Equip rake', NULL, NULL, 50000, NULL, 12, NULL, 12, NULL, NULL),
-(NULL, 63, 'Adamantium pickaxe', 'The usual adamantium pickaxe.', 'Equipment', 'Equip pickaxe', NULL, NULL, 44250, NULL, 11, NULL, 12, NULL, NULL),
-(NULL, 64, 'Poison hook', 'Inflicts gradual damage.', 'Equipment', 'Default', NULL, NULL, 999999, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 65, 'Explosive impulse hook', 'Inflicts gradual explode damage.', 'Equipment', 'Default', NULL, NULL, 9999999, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 66, 'Magic spider hook', 'It\'s sticky to the air.', 'Equipment', 'Default', NULL, NULL, 999999, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 67, 'Strawberries', 'Farm-grown Strawberries', 'Resource', 'Resource harvestable', NULL, NULL, 4, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 68, 'Cabbage', 'Farm-grown Cabbage', 'Resource', 'Resource harvestable', NULL, NULL, 5, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 69, 'Bullet generator', 'Spits out lead on command', 'Equipment', 'Default', NULL, NULL, 17775, NULL, 9, NULL, 10, NULL, NULL),
-(NULL, 70, 'Wheat', 'Farm-grown Wheat', 'Resource', 'Resource harvestable', NULL, NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 71, 'Pumpkin', 'Farm-grown Pumpkin', 'Resource', 'Resource harvestable', NULL, NULL, 6, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 72, 'Iron ingot', 'Iron ingot', 'Resource', 'Default', NULL, NULL, 80, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 73, 'Titanium ingot', 'Titanium ingot', 'Resource', 'Default', NULL, NULL, 280, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 74, 'Adamantite ingot', 'Adamantite ingot', 'Resource', 'Default', NULL, NULL, 550, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 75, 'Stone rake', 'The usual stone rake.', 'Equipment', 'Equip rake', NULL, NULL, 5, NULL, 12, NULL, 1, NULL, NULL),
-(NULL, 76, 'Stone pickaxe', 'The usual stone pickaxe.', 'Equipment', 'Equip pickaxe', NULL, NULL, 5, NULL, 11, NULL, 1, NULL, NULL),
-(NULL, 77, 'Kit start', 'Novice kit', 'Usable', 'Multiple use x99', NULL, NULL, 1500, NULL, NULL, NULL, NULL, NULL, '{\r\n  \"random_box\": [\r\n    {\r\n      \"item_id\": 1,\r\n      \"value\": 3,\r\n      \"chance\": 29.41\r\n    },\r\n    {\r\n      \"item_id\": 1,\r\n      \"value\": 50,\r\n      \"chance\": 35.29\r\n    },\r\n    {\r\n      \"item_id\": 1,\r\n      \"value\": 150,\r\n      \"chance\": 17.65\r\n    },\r\n    {\r\n      \"item_id\": 1,\r\n      \"value\": 300,\r\n      \"chance\": 8.63\r\n    },\r\n    {\r\n      \"item_id\": 1,\r\n      \"value\": 700,\r\n      \"chance\": 1.96\r\n    },\r\n    {\r\n      \"item_id\": 76,\r\n      \"value\": 1,\r\n      \"chance\": 10.0\r\n    },\r\n    {\r\n      \"item_id\": 75,\r\n      \"value\": 1,\r\n      \"chance\": 10.0\r\n    },\r\n    {\r\n      \"item_id\": 7,\r\n      \"value\": 5,\r\n      \"chance\": 68.97\r\n    },\r\n    {\r\n      \"item_id\": 7,\r\n      \"value\": 20,\r\n      \"chance\": 27.59\r\n    },\r\n    {\r\n      \"item_id\": 7,\r\n      \"value\": 50,\r\n      \"chance\": 3.45\r\n    },\r\n    {\r\n      \"item_id\": 28,\r\n      \"value\": 1,\r\n      \"chance\": 25.0\r\n    },\r\n    {\r\n      \"item_id\": 238,\r\n      \"value\": 1,\r\n      \"chance\": 25.0\r\n    },\r\n    {\r\n      \"item_id\": 234,\r\n      \"value\": 1,\r\n      \"chance\": 25.0\r\n    },\r\n    {\r\n      \"item_id\": 222,\r\n      \"value\": 1,\r\n      \"chance\": 10.0\r\n    }\r\n  ]\r\n}'),
-('Botmodule', 78, 'VampireModule', 'VampireModuleNPC', 'Equipment', 'Default', NULL, NULL, NULL, NULL, 8, NULL, 10000, NULL, NULL),
-('Не реализ', 79, 'EIDOL Box', 'EIDOL Box', 'Usable', 'Single use x1', NULL, 'EIDOL Box', NULL, NULL, NULL, NULL, NULL, NULL, '{\n  \"random_box\": [\n    {\n      \"item_id\": 57,\n      \"value\": 1,\n      \"chance\": 5\n    },\n    {\n      \"item_id\": 59,\n      \"value\": 1,\n      \"chance\": 5\n    },\n    {\n      \"item_id\": 80,\n      \"value\": 1,\n      \"chance\": 5\n    },\n    {\n      \"item_id\": 88,\n      \"value\": 1,\n      \"chance\": 5\n    },\n    {\n      \"item_id\": 1,\n      \"value\": 100,\n      \"chance\": 70\n    },\n    {\n      \"item_id\": 1,\n      \"value\": 500,\n      \"chance\": 50\n    },\n    {\n      \"item_id\": 1,\n      \"value\": 5000,\n      \"chance\": 20\n    }\n  ]\n}'),
-('Не реализ', 80, 'EIDOL #3', '', 'Equipment', 'Equip eidolon', NULL, NULL, NULL, NULL, 19, NULL, 25, NULL, NULL),
-(NULL, 81, 'Pigs tail', 'A strangely lucky pig\'s tail', 'Equipment', 'Default', NULL, NULL, 9000, NULL, 18, NULL, 100, NULL, NULL),
-('Power 100', 82, 'Iron armor', 'Iron armor', 'Equipment', 'Equip armor (tank)', NULL, NULL, 15040, NULL, 5, 7, 120, 30, NULL),
-('Power 150', 83, 'Titanium armor', 'Titanium armor', 'Equipment', 'Equip armor (tank)', NULL, NULL, 36525, NULL, 5, 7, 180, 45, NULL),
-('Power 200', 84, 'Adamantium armor', 'Adamantium armor', 'Equipment', 'Equip armor (tank)', NULL, NULL, 81925, NULL, 5, 7, 240, 60, NULL),
-(NULL, 85, 'Thorny Ring', 'A ring of sharp, cursed briars', 'Equipment', 'Default', NULL, NULL, 99999, NULL, 9, NULL, 10, NULL, NULL),
-(NULL, 86, 'Thorny Necklace', 'Choker of blood-seeking thorns', 'Equipment', 'Default', NULL, NULL, 999999, NULL, 5, 7, 10, 10, NULL),
-(NULL, 87, 'Bone Armillae', 'Armbands carved from monster bone', 'Equipment', 'Default', NULL, NULL, 7850, NULL, 1, NULL, 1, NULL, NULL),
-('Не реализ', 88, 'EIDOL #4', '', 'Equipment', 'Equip eidolon', NULL, NULL, NULL, NULL, 19, NULL, 25, NULL, NULL),
-(NULL, 89, 'Eidolon Crystal', 'Required to improve eidolons', 'Currency', 'Default', NULL, NULL, 4616400, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 90, 'Ammo Box', 'A box that magically refills', 'Equipment', 'Default', NULL, NULL, 5000, NULL, 10, NULL, 20, NULL, NULL),
-(NULL, 91, 'Ammo Generator', 'Generates ammunition', 'Equipment', 'Default', NULL, NULL, 5000, NULL, 9, NULL, 26, NULL, NULL),
-(NULL, 92, 'Web', 'A spider\'s web', 'Resource', 'Default', NULL, NULL, 22, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 93, 'Show quest star navigation', 'Settings game.', 'Settings', 'Default', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 94, 'Pickup Laser', 'Decoration for house!', 'Decoration', 'Default', NULL, NULL, 10000, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 95, 'Ticket guild', 'Command: /gcreate <name>', 'Other', 'Default', NULL, NULL, 100000, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 96, 'Customizer', 'Customizer for personal skins', 'Equipment', 'Default', NULL, NULL, 5000, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 97, 'Damage Equalizer', 'Disabled self dmg.', 'Equipment', 'Default', NULL, NULL, 80000, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 98, 'Show detail gain messages', 'Settings game.', 'Settings', 'Default', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-('Не реализ', 99, 'Hammer Lamp', 'Hammer Lamp', 'Equipment', 'Equip hammer', NULL, NULL, 9999999, NULL, 13, 3, 5, 5, NULL),
-('Не реализ', 100, 'Pizdamet', 'Pizdamet', 'Equipment', 'Equip grenade', NULL, NULL, 9999999, NULL, 16, NULL, 2, NULL, NULL),
-('Не реализ', 101, 'Wall Pusher', 'Plazma wall', 'Equipment', 'Equip rifle', NULL, NULL, 999999, NULL, 17, NULL, 3, NULL, NULL),
-('Не реализ', 102, 'Hammer Blast', 'Hammer Blast', 'Equipment', 'Equip hammer', NULL, NULL, 999999, NULL, 13, 3, 3, 5, NULL),
-('Не реализ', 103, 'Magnetic Pulse', 'Conventional weapon', 'Equipment', 'Equip rifle', NULL, NULL, 999999, NULL, 17, NULL, 4, NULL, NULL),
-(NULL, 104, 'Thread', 'Thread', 'Resource', 'Default', NULL, NULL, 164, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 105, 'Weak poison', 'A little weak poison', 'Resource', 'Default', NULL, NULL, 13, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 106, 'Poison', 'Concentrated poison', 'Resource', 'Default', NULL, NULL, 15, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 107, 'Untreated Leather', 'Untreated Leather', 'Resource', 'Default', NULL, NULL, 5, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 108, 'Leather', 'Treated leather', 'Resource', 'Default', NULL, NULL, 50, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 109, 'Teeth', 'The teeth', 'Resource', 'Default', NULL, NULL, 33, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 110, 'Claws ', 'The claws of the beast', 'Resource', 'Default', NULL, NULL, 35, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 111, 'Fragments of Darkness', 'Very dark fragments', 'Resource', 'Default', NULL, NULL, 22, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 112, 'Mushroom extract', 'Mushroom substance', 'Resource', 'Default', NULL, NULL, 16, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 113, 'Bone', 'Someone\'s bone', 'Resource', 'Default', NULL, NULL, 36, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 114, 'Rotten meat', 'Meat that\'s gone bad', 'Resource', 'Default', NULL, NULL, 55, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 115, 'Magic Matter', 'The matter that radiates magic', 'Resource', 'Default', NULL, NULL, 32, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 116, 'Feather', 'The feather of the beast', 'Resource', 'Default', NULL, NULL, 73, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 117, 'Hook parts', 'Hook parts', 'Resource', 'Default', NULL, NULL, 1500, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 118, 'A ring of greed', 'A cursed ring that desires gold', 'Equipment', 'Default', NULL, NULL, NULL, NULL, 20, NULL, 500, NULL, NULL),
-(NULL, 119, 'Miner tools', 'Sturdy tools to unearth gems', 'Equipment', 'Default', NULL, NULL, 72750, NULL, 11, NULL, 3, NULL, NULL),
-('Мусор?', 120, 'Banner', 'One of the items to create a guild', 'Resource', 'Default', NULL, NULL, 1468, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 121, 'Mana Flower', 'Magic pours out of this flower', 'Resource', 'Resource harvestable', NULL, NULL, 7, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 122, 'Life Flower', 'Life pours out of this flower', 'Resource', 'Resource harvestable', NULL, NULL, 7, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 123, 'Explosives', 'A lot of explosive substances', 'Resource', 'Default', NULL, NULL, 35, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 124, 'Trash', 'Trash', 'Resource', 'Default', NULL, NULL, 9, 1, NULL, NULL, NULL, NULL, NULL),
-(NULL, 125, 'Skull', 'Someone\'s skull', 'Resource', 'Default', NULL, NULL, 117, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 126, 'Rage amulet', 'The amulet of rage', 'Equipment', 'Default', NULL, NULL, 28750, NULL, 1, NULL, 1, NULL, NULL),
-(NULL, 127, 'Explosive Powder', 'Very explosive', 'Resource', 'Default', NULL, NULL, 111, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 128, 'Spider Egg', 'Spider Egg', 'Resource', 'Default', NULL, NULL, 155, NULL, NULL, NULL, NULL, NULL, NULL),
-('Не реализ', 129, 'Wooden Crate', 'Wooden Crate', 'Usable', 'Single use x1', NULL, NULL, 99999, NULL, NULL, NULL, NULL, NULL, NULL),
-('Не реализ', 130, 'Iron crate', 'Iron crate', 'Usable', 'Single use x1', NULL, NULL, 999999, NULL, NULL, NULL, NULL, NULL, NULL),
-('Не реализ', 131, 'Golden Crate', 'Golden Crate', 'Usable', 'Single use x1', NULL, NULL, 9999999, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 132, 'Beer', 'A little mana boost', 'Usable', 'Single use x1', NULL, NULL, 1000, NULL, NULL, NULL, NULL, NULL, '{\r\n  \"bonus\": {\r\n    \"amount\": 2,\r\n    \"duration_minutes\": 15,\r\n    \"type\": 4\r\n  }\r\n}'),
-('BotModule', 133, 'SpeedModule', 'SpeedModuleNPC', 'Equipment', 'Default', NULL, NULL, NULL, NULL, 2, NULL, 1000, NULL, NULL),
-(NULL, 134, 'Life crystal', 'The life-giving crystal', 'Resource', 'Default', NULL, NULL, 1985, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 135, 'Hoarder bag', 'A bag that is bigger inside', 'Equipment', 'Default', NULL, NULL, 87500, NULL, 6, 18, 200, 134, NULL),
-(NULL, 136, 'Aether crystal', 'Aether crystal', 'Resource', 'Default', NULL, NULL, 70, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 137, 'Slime', 'A piece of slime', 'Resource', 'Default', NULL, NULL, 44, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 138, 'Bone meal', 'Bone meal', 'Resource', 'Default', NULL, NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 139, 'WarLord', 'You already have combat experience', 'Equipment', 'Equip title', NULL, NULL, NULL, NULL, 1, NULL, 2, NULL, NULL),
-(NULL, 140, 'Legend of the DM', 'You\'ve been through the whole ordeal of murder.', 'Equipment', 'Equip title', NULL, NULL, NULL, NULL, 1, 2, 1, 150, NULL),
-(NULL, 141, 'The Legendary Traveler', 'You already know and feel this place', 'Equipment', 'Equip title', NULL, NULL, NULL, NULL, 5, NULL, 100, NULL, NULL),
-(NULL, 142, 'Dungeon King', 'You\'re a pain to the dark world', 'Equipment', 'Equip title', NULL, NULL, NULL, NULL, 5, 7, 100, 100, NULL),
-(NULL, 143, 'Tank Lord', 'The armor is a part of you.', 'Equipment', 'Equip title', NULL, NULL, NULL, NULL, 5, 6, 50, 1655, NULL),
-(NULL, 144, 'DMG Lord', 'One touch, destruction', 'Equipment', 'Equip title', NULL, NULL, NULL, NULL, 1, 2, 2, 75, NULL),
-(NULL, 145, 'The Lord Healer', 'The earth before you blooms', 'Equipment', 'Equip title', NULL, NULL, NULL, NULL, 5, 7, 50, 150, NULL),
-(NULL, 146, 'Lord of the Ore', 'You make everything out of nothing', 'Equipment', 'Equip title', NULL, NULL, NULL, NULL, 18, 11, 1500, 5, NULL),
-(NULL, 147, 'Harvest King', 'You know nature better than anyone', 'Equipment', 'Equip title', NULL, NULL, NULL, NULL, 12, 18, 5, 1500, NULL),
-(NULL, 148, 'The Overlord of Damage', 'Nothing but nothing', 'Equipment', 'Equip title', NULL, NULL, NULL, NULL, 1, 3, 5, 5, NULL),
-(NULL, 149, 'King of Gold', 'You\'re respected. And they give you a discount', 'Equipment', 'Equip title', NULL, NULL, NULL, NULL, 20, NULL, 25000, NULL, NULL),
-('Не реализ', 150, 'Tracked Plazma', 'Tracked Plazma', 'Equipment', 'Equip rifle', NULL, NULL, 999999, NULL, 17, NULL, 6, NULL, NULL),
-('Не реализ', 151, 'Gun Pulse', 'Gun Pulse', 'Equipment', 'Equip gun', NULL, NULL, NULL, NULL, 14, NULL, 3, NULL, NULL),
-(NULL, 152, 'Module parts', 'Assembly components', 'Resource', 'Default', NULL, NULL, 5000, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 153, 'Weapons parts', 'Need it for a gun?', 'Resource', 'Default', NULL, NULL, 500, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 167, 'Ancient remains', 'The ancient remains of someone', 'Resource', 'Default', NULL, NULL, 1000, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 168, 'Ancient coin', 'The ancient coin', 'Other', 'Default', NULL, NULL, 5000, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 169, 'Ancient adornment', 'The ancient adornment', 'Other', 'Default', NULL, NULL, 7000, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 170, 'Ancient relic', 'The ancient relic', 'Other', 'Default', NULL, NULL, 10000, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 171, 'Ancient component', 'The ancient component', 'Other', 'Default', NULL, NULL, 15000, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 172, 'Ancient artifact', 'The ancient artifact', 'Other', 'Default', NULL, NULL, 50000, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 173, 'Stone', 'Just stone', 'Resource', 'Resource mineable', NULL, NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 174, 'Iron fish rod', 'The usual fishing rod.', 'Equipment', 'Equip fishrod', NULL, NULL, 14940, NULL, 21, NULL, 5, NULL, NULL),
-(NULL, 175, 'Crucian Carp', 'Common river fish', 'Resource', 'Resource fishes', NULL, NULL, 5, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 176, 'Northern Pike', 'Aggressive freshwater', 'Resource', 'Resource fishes', NULL, NULL, 7, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 177, 'Perch', 'Sleek and swift swimmer', 'Resource', 'Resource fishes', NULL, NULL, 10, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 178, 'Zander', 'Popular sport catch', 'Resource', 'Resource fishes', NULL, NULL, 12, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 179, 'Bream', 'Smooth, tasty fish', 'Resource', 'Resource fishes', NULL, NULL, 15, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 180, 'Catfish', 'Large, hard-to-catch fish', 'Resource', 'Resource fishes', NULL, NULL, 20, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 181, 'Trout', 'Vibrant, agile swimmer', 'Resource', 'Resource fishes', NULL, NULL, 22, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 182, 'Salmon', 'Premium, rich in flavor', 'Resource', 'Resource fishes', NULL, NULL, 25, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 183, 'Sturgeon', 'Ancient, prized catch', 'Resource', 'Resource fishes', NULL, NULL, 28, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 184, 'Swordfish', 'Dramatic giant hunter', 'Resource', 'Resource fishes', NULL, NULL, 30, NULL, NULL, NULL, NULL, NULL, NULL),
-('Не реализ', 185, 'Magnet for items', 'Magnetizes items meant for you', 'Equipment', 'Default', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 186, 'Pig meat', 'The meat of a pig? Old version', 'Resource', 'Default', NULL, NULL, 11, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 187, 'Scavenger', 'Title for DPS', 'Equipment', 'Equip title', NULL, NULL, 7000, NULL, 2, 4, 50, 50, NULL),
-(NULL, 188, 'Copper gloves', 'The usual copper loader gloves', 'Equipment', 'Equip gloves', NULL, NULL, 3240, NULL, 22, NULL, 15, NULL, NULL),
-(NULL, 189, 'Iron gloves', 'The usual iron loader gloves', 'Equipment', 'Equip gloves', NULL, NULL, 5375, NULL, 22, NULL, 25, NULL, NULL),
-(NULL, 190, 'Titanium gloves', 'The usual titanium loader gloves', 'Equipment', 'Equip gloves', NULL, NULL, 21720, NULL, 22, NULL, 50, NULL, NULL),
-(NULL, 191, 'Adamantium gloves', 'The usual adamantium loader gloves', 'Equipment', 'Equip gloves', NULL, NULL, 37850, NULL, 22, NULL, 100, NULL, NULL),
-(NULL, 192, 'Leather gloves', 'The usual leather loader gloves', 'Equipment', 'Equip gloves', NULL, NULL, 1510, NULL, 22, NULL, 10, NULL, NULL),
-(NULL, 193, 'HP 2% 30m', 'Boost HP 2% 30m', 'Usable', 'Single use x1', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '{\r\n  \"bonus\": {\r\n    \"amount\": 2,\r\n    \"duration_minutes\": 30,\r\n    \"type\": 3\r\n  }\r\n}'),
-(NULL, 194, 'MP 2% 30m', 'Boost MP 2% 30m', 'Usable', 'Single use x1', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '{\r\n  \"bonus\": {\r\n    \"amount\": 2,\r\n    \"duration_minutes\": 30,\r\n    \"type\": 4\r\n  }\r\n}'),
-(NULL, 195, 'EXP 2% 30m', 'Boost EXP 2% 30m', 'Usable', 'Single use x1', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '{\r\n  \"bonus\": {\r\n    \"amount\": 2,\r\n    \"duration_minutes\": 15,\r\n    \"type\": 1\r\n  }\r\n}'),
-(NULL, 196, 'GOLD 2% 30m', 'Boost GOLD 2% 30m', 'Usable', 'Single use x1', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '{\r\n  \"bonus\": {\r\n    \"amount\": 2,\r\n    \"duration_minutes\": 30,\r\n    \"type\": 2\r\n  }\r\n}'),
-(NULL, 197, 'HP 5% 10m', 'Boost HP 5% 10m', 'Usable', 'Single use x1', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '{\r\n  \"bonus\": {\r\n    \"amount\": 5,\r\n    \"duration_minutes\": 10,\r\n    \"type\": 3\r\n  }\r\n}'),
-(NULL, 198, 'EXP 5% 10m', 'Boost EXP 5% 10m', 'Usable', 'Single use x1', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '{\r\n  \"bonus\": {\r\n    \"amount\": 5,\r\n    \"duration_minutes\": 10,\r\n    \"type\": 1\r\n  }\r\n}'),
-(NULL, 199, 'GOLD 5% 10m', 'Boost GOLD 5% 10m', 'Usable', 'Single use x1', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '{\r\n  \"bonus\": {\r\n    \"amount\": 5,\r\n    \"duration_minutes\": 10,\r\n    \"type\": 2\r\n  }\r\n}'),
-(NULL, 200, 'HP 5% 2d', 'Boost HP 5% 2d', 'Usable', 'Single use x1', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '{\r\n  \"bonus\": {\r\n    \"amount\": 5,\r\n    \"duration_days\": 2,\r\n    \"type\": 3\r\n  }\r\n}'),
-(NULL, 201, 'MP 5% 2d', 'Boost MP 5% 2d', 'Usable', 'Single use x1', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '{\r\n  \"bonus\": {\r\n    \"amount\": 5,\r\n    \"duration_days\": 2,\r\n    \"type\": 4\r\n  }\r\n}'),
-(NULL, 202, 'EXP 5% 2d', 'Boost EXP 5% 2d', 'Usable', 'Single use x1', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '{\r\n  \"bonus\": {\r\n    \"amount\": 5,\r\n    \"duration_days\": 2,\r\n    \"type\": 1\r\n  }\r\n}'),
-(NULL, 203, 'GOLD 5% 2d', 'Boost GOLD 5% 2d', 'Usable', 'Single use x1', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '{\r\n  \"bonus\": {\r\n    \"amount\": 5,\r\n    \"duration_days\": 2,\r\n    \"type\": 2\r\n  }\r\n}'),
-(NULL, 204, 'HP 50% 2m', 'Boost HP 50% 2m', 'Usable', 'Single use x1', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '{\r\n  \"bonus\": {\r\n    \"amount\": 50,\r\n    \"duration_minutes\": 2,\r\n    \"type\": 3\r\n  }\r\n}'),
-(NULL, 205, 'MP 50% 2m', 'Boost MP 50% 2m', 'Usable', 'Single use x1', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '{\n  \"bonus\": {\n    \"amount\": 50,\n    \"duration_minutes\": 2,\n    \"type\": 4\n  }\n}'),
-(NULL, 206, 'EXP 50% 2m', 'Boost EXP 50% 2m', 'Usable', 'Single use x1', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '{\r\n  \"bonus\": {\r\n    \"amount\": 50,\r\n    \"duration_minutes\": 2,\r\n    \"type\": 1\r\n  }\r\n}'),
-(NULL, 207, 'GOLD 50% 2m', 'Boost GOLD 50% 2m', 'Usable', 'Single use x1', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '{\r\n  \"bonus\": {\r\n    \"amount\": 50,\r\n    \"duration_minutes\": 2,\r\n    \"type\": 2\r\n  }\r\n}'),
-(NULL, 208, 'Kill Gun', 'Improved regular gun', 'Equipment', 'Equip gun', NULL, NULL, 21000, NULL, 14, 6, 4, 1, NULL),
-(NULL, 209, 'Burst shotgun', 'Improved burst shotgun', 'Equipment', 'Equip shotgun', NULL, NULL, 70000, NULL, 15, 18, 2, 1, NULL),
-(NULL, 210, 'Injury grenade', 'Improved burst grenade', 'Equipment', 'Equip grenade', NULL, NULL, 140000, NULL, 16, 7, 6, 3, NULL),
-(NULL, 211, 'Laser damager', 'Improved burst laser', 'Equipment', 'Equip rifle', NULL, NULL, 280000, NULL, 17, 3, 8, 1, NULL),
-(NULL, 212, 'Decoration box', 'Decor house (HP/MP)', 'Usable', 'Multiple use x99', NULL, NULL, 1500, NULL, NULL, NULL, NULL, NULL, '{\r\n  \"random_box\": [\r\n    {\r\n      \"item_id\": 1,\r\n      \"value\": 3,\r\n      \"chance\": 29.41\r\n    },\r\n    {\r\n      \"item_id\": 1,\r\n      \"value\": 50,\r\n      \"chance\": 35.29\r\n    },\r\n    {\r\n      \"item_id\": 1,\r\n      \"value\": 150,\r\n      \"chance\": 17.65\r\n    },\r\n    {\r\n      \"item_id\": 1,\r\n      \"value\": 300,\r\n      \"chance\": 8.63\r\n    },\r\n    {\r\n      \"item_id\": 1,\r\n      \"value\": 700,\r\n      \"chance\": 1.96\r\n    },\r\n    {\r\n      \"item_id\": 7,\r\n      \"value\": 5,\r\n      \"chance\": 68.97\r\n    },\r\n    {\r\n      \"item_id\": 7,\r\n      \"value\": 20,\r\n      \"chance\": 27.59\r\n    },\r\n    {\r\n      \"item_id\": 7,\r\n      \"value\": 50,\r\n      \"chance\": 3.45\r\n    },\r\n    {\r\n      \"item_id\": 7,\r\n      \"value\": 13,\r\n      \"chance\": 2\r\n    },\r\n    {\r\n      \"item_id\": 18,\r\n      \"value\": 1,\r\n      \"chance\": 1\r\n    },\r\n    {\r\n      \"item_id\": 13,\r\n      \"value\": 1,\r\n      \"chance\": 1\r\n    }\r\n  ]\r\n}'),
-(NULL, 213, 'Decoration chest', 'Decor house (weapons)', 'Usable', 'Multiple use x99', NULL, NULL, 1500, NULL, NULL, NULL, NULL, NULL, '{\r\n  \"random_box\": [\r\n    {\r\n      \"item_id\": 1,\r\n      \"value\": 3,\r\n      \"chance\": 29.41\r\n    },\r\n    {\r\n      \"item_id\": 1,\r\n      \"value\": 50,\r\n      \"chance\": 35.29\r\n    },\r\n    {\r\n      \"item_id\": 1,\r\n      \"value\": 150,\r\n      \"chance\": 17.65\r\n    },\r\n    {\r\n      \"item_id\": 1,\r\n      \"value\": 300,\r\n      \"chance\": 8.63\r\n    },\r\n    {\r\n      \"item_id\": 1,\r\n      \"value\": 700,\r\n      \"chance\": 1.96\r\n    },\r\n    {\r\n      \"item_id\": 7,\r\n      \"value\": 5,\r\n      \"chance\": 68.97\r\n    },\r\n    {\r\n      \"item_id\": 7,\r\n      \"value\": 20,\r\n      \"chance\": 27.59\r\n    },\r\n    {\r\n      \"item_id\": 7,\r\n      \"value\": 50,\r\n      \"chance\": 3.45\r\n    },\r\n    {\r\n      \"item_id\": 7,\r\n      \"value\": 13,\r\n      \"chance\": 2\r\n    },\r\n    {\r\n      \"item_id\": 11,\r\n      \"value\": 1,\r\n      \"chance\": 2\r\n    },\r\n    {\r\n      \"item_id\": 12,\r\n      \"value\": 1,\r\n      \"chance\": 1.5\r\n    },\r\n    {\r\n      \"item_id\": 94,\r\n      \"value\": 1,\r\n      \"chance\": 1\r\n    }\r\n  ]\r\n}'),
-(NULL, 214, 'Draft Hammer Lamp', 'Draft Hammer Lamp', 'Other', 'Default', NULL, NULL, 10000, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 215, 'Draft Wall Pusher', 'Draft Wall Pusher', 'Other', 'Default', NULL, NULL, 10000, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 216, 'Draft Hammer Blast', 'Draft Hammer Blast', 'Other', 'Default', NULL, NULL, 10000, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 217, 'Draft Magnetic Pulse', 'Draft Magnetic Pulse', 'Other', 'Default', NULL, NULL, 10000, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 218, 'Draft Gun Pulse', 'Draft Gun Pulse', 'Other', 'Default', NULL, NULL, 10000, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 219, 'Draft Pizdamet', 'Draft Pizdamet', 'Other', 'Default', NULL, NULL, 10000, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 220, 'Draft Tracked Plazma', 'Draft Tracked Plazma', 'Other', 'Default', NULL, NULL, 10000, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 221, 'Draft box', 'Draft box', 'Usable', 'Multiple use x99', NULL, NULL, 20, NULL, NULL, NULL, NULL, NULL, '{\n    \"random_box\": [\n        {\n            \"item_id\": 1,\n            \"value\": 3,\n            \"chance\": 29.41\n        },\n        {\n            \"item_id\": 1,\n            \"value\": 50,\n            \"chance\": 35.29\n        },\n        {\n            \"item_id\": 1,\n            \"value\": 150,\n            \"chance\": 17.65\n        },\n        {\n            \"item_id\": 1,\n            \"value\": 300,\n            \"chance\": 8.63\n        },\n        {\n            \"item_id\": 1,\n            \"value\": 700,\n            \"chance\": 1.96\n        },\n        {\n            \"item_id\": 7,\n            \"value\": 5,\n            \"chance\": 68.97\n        },\n        {\n            \"item_id\": 7,\n            \"value\": 20,\n            \"chance\": 27.59\n        },\n        {\n            \"item_id\": 7,\n            \"value\": 50,\n            \"chance\": 3.45\n        },\n        {\n            \"item_id\": 7,\n            \"value\": 13,\n            \"chance\": 2\n        },\n        {\n            \"item_id\": 214,\n            \"value\": 1,\n            \"chance\": 1\n        },\n        {\n            \"item_id\": 215,\n            \"value\": 1,\n            \"chance\": 1\n        },\n        {\n            \"item_id\": 216,\n            \"value\": 1,\n            \"chance\": 1\n        },\n        {\n            \"item_id\": 217,\n            \"value\": 1,\n            \"chance\": 1\n        },\n        {\n            \"item_id\": 218,\n            \"value\": 1,\n            \"chance\": 1\n        },\n        {\n            \"item_id\": 219,\n            \"value\": 1,\n            \"chance\": 1\n        },\n        {\n            \"item_id\": 220,\n            \"value\": 1,\n            \"chance\": 1\n        },\n        {\n            \"item_id\": 403,\n            \"value\": 1,\n            \"chance\": 0.05\n        }\n    ]\n}'),
-(NULL, 222, 'Homemade rod', 'The usual homemade rod', 'Equipment', 'Equip fishrod', NULL, NULL, 450, NULL, 21, NULL, 1, NULL, NULL),
-(NULL, 223, 'Сotton', 'Farm-grown cotton', 'Resource', 'Resource harvestable', NULL, NULL, 6, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 224, 'Sunflower', 'Farm-grown sunflower', 'Resource', 'Resource harvestable', NULL, NULL, 6, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 225, 'Black truffle', 'Farm-grown black truffle', 'Resource', 'Resource harvestable', NULL, NULL, 7, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 226, 'Сloth', 'Cloth', 'Resource', 'Default', NULL, NULL, 525, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 227, 'Oil', 'Vegetable oil', 'Resource', 'Default', NULL, NULL, 1010, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 228, 'Small bag', 'A small pouch for holding coins', 'Equipment', 'Default', NULL, NULL, 36750, NULL, 22, NULL, 50, NULL, NULL),
-(NULL, 229, 'Hand-to-hand ring', 'A ring that empowers your fists', 'Equipment', 'Default', NULL, NULL, 188000, NULL, 13, NULL, 2, NULL, NULL),
-(NULL, 230, 'Quick amulet', 'An amulet that hastens your step', 'Equipment', 'Default', NULL, NULL, 204900, NULL, 2, NULL, 75, NULL, NULL),
-(NULL, 231, 'Laser sight', 'A sight for unerring accuracy', 'Equipment', 'Default', NULL, NULL, NULL, NULL, 17, NULL, 1, NULL, NULL),
-(NULL, 232, 'Fishing box', 'A box with every lure you need', 'Equipment', 'Default', NULL, NULL, 43750, NULL, 21, NULL, 2, NULL, NULL),
-(NULL, 233, 'Fish scales', 'Fish scales', 'Resource', 'Default', NULL, NULL, 146, NULL, NULL, NULL, NULL, NULL, NULL),
-('Power 20', 234, 'Meat armor', 'Meat armor', 'Equipment', 'Equip armor (dps)', NULL, NULL, 2000, NULL, 5, 7, 23, 10, NULL),
-('Power 50', 235, 'Warrior armor', 'Warrior armor', 'Equipment', 'Equip armor (dps)', NULL, NULL, 7000, NULL, 5, 7, 56, 25, NULL),
-('Power 100', 236, 'Hunter armor', 'Hunter armor', 'Equipment', 'Equip armor (dps)', NULL, NULL, 20000, NULL, 5, 7, 112, 50, NULL),
-('Power 150', 237, 'Bersek armor', 'Bersek armor', 'Equipment', 'Equip armor (dps)', NULL, NULL, 40000, NULL, 5, 7, 168, 75, NULL),
-('Power 20', 238, 'Plant armor', 'Plant armor', 'Equipment', 'Equip armor (healer)', NULL, NULL, 2000, NULL, 5, 7, 16, 10, NULL),
-('Power 50', 239, 'Priests robes', 'Priests robes', 'Equipment', 'Equip armor (healer)', NULL, NULL, 7000, NULL, 5, 7, 40, 24, NULL),
-('Power 100', 240, 'Cloak of life', 'Cloak of life', 'Equipment', 'Equip armor (healer)', NULL, NULL, 20000, NULL, 5, 7, 80, 48, NULL),
-('Power 150', 241, 'Healer cloak', 'Healer cloak', 'Equipment', 'Equip armor (healer)', NULL, NULL, 40000, NULL, 5, 7, 120, 72, NULL),
-(NULL, 242, 'Magic bandage', 'A bandage that seals any wound', 'Equipment', 'Default', NULL, NULL, 14290, NULL, 7, NULL, 25, NULL, NULL),
-(NULL, 243, 'Rage belt', 'A belt that fuels your battle fury', 'Equipment', 'Default', NULL, NULL, 151000, NULL, 4, NULL, 50, NULL, NULL),
-(NULL, 244, 'Gridans', 'Gridans coins', 'Currency', 'Default', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 245, 'Warrior', 'Warrior', 'Equipment', 'Equip title', NULL, NULL, NULL, NULL, 1, NULL, 1, NULL, NULL),
-(NULL, 246, 'Guner', 'Guner', 'Equipment', 'Equip title', NULL, NULL, NULL, NULL, 14, NULL, 1, NULL, NULL),
-(NULL, 247, 'ShotGuner', 'ShotGuner', 'Equipment', 'Equip title', NULL, NULL, NULL, NULL, 15, NULL, 1, NULL, NULL),
-(NULL, 248, 'Grenader', 'Grenader', 'Equipment', 'Equip title', NULL, NULL, NULL, NULL, 16, NULL, 1, NULL, NULL),
-(NULL, 249, 'Lasertee', 'Lasertee', 'Equipment', 'Equip title', NULL, NULL, NULL, NULL, 17, NULL, 1, NULL, NULL),
-(NULL, 250, 'Lucker', 'Lucker', 'Equipment', 'Equip title', NULL, NULL, NULL, NULL, 6, NULL, 1000, NULL, NULL),
-(NULL, 251, 'Mugger', 'Mugger', 'Equipment', 'Equip title', NULL, NULL, NULL, NULL, 20, NULL, 2500, NULL, NULL),
-(NULL, 252, 'Fisherman', 'Fisherman', 'Equipment', 'Equip title', NULL, NULL, NULL, NULL, 21, NULL, 3, NULL, NULL),
-(NULL, 253, 'Miner', 'Miner', 'Equipment', 'Equip title', NULL, NULL, NULL, NULL, 11, NULL, 3, NULL, NULL),
-(NULL, 254, 'Farmer', 'Farmer', 'Equipment', 'Equip title', NULL, NULL, NULL, NULL, 12, NULL, 3, NULL, NULL),
-(NULL, 255, 'Murderer', 'Murderer', 'Equipment', 'Equip title', NULL, NULL, NULL, NULL, 4, NULL, 3500, NULL, NULL),
-(NULL, 256, 'Pack of cigarettes', 'Reduces jail time', 'Other', 'Default', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 257, 'Booster box', 'Booster box', 'Usable', 'Multiple use x99', NULL, NULL, 1500, NULL, NULL, NULL, NULL, NULL, '{\n  \"random_box\": [\n    {\n      \"item_id\": 193,\n      \"value\": 1,\n      \"chance\": 60\n    },\n    {\n      \"item_id\": 194,\n      \"value\": 1,\n      \"chance\": 60\n    },\n    {\n      \"item_id\": 195,\n      \"value\": 1,\n      \"chance\": 60\n    },\n    {\n      \"item_id\": 196,\n      \"value\": 1,\n      \"chance\": 60\n    },\n    {\n      \"item_id\": 197,\n      \"value\": 1,\n      \"chance\": 30\n    },\n    {\n      \"item_id\": 198,\n      \"value\": 1,\n      \"chance\": 30\n    },\n    {\n      \"item_id\": 199,\n      \"value\": 1,\n      \"chance\": 30\n    },\n    {\n      \"item_id\": 200,\n      \"value\": 1,\n      \"chance\": 10\n    },\n    {\n      \"item_id\": 201,\n      \"value\": 1,\n      \"chance\": 10\n    },\n    {\n      \"item_id\": 202,\n      \"value\": 1,\n      \"chance\": 10\n    },\n    {\n      \"item_id\": 203,\n      \"value\": 1,\n      \"chance\": 10\n    },\n    {\n      \"item_id\": 204,\n      \"value\": 1,\n      \"chance\": 5\n    },\n    {\n      \"item_id\": 205,\n      \"value\": 1,\n      \"chance\": 5\n    },\n    {\n      \"item_id\": 206,\n      \"value\": 1,\n      \"chance\": 5\n    },\n    {\n      \"item_id\": 207,\n      \"value\": 1,\n      \"chance\": 5\n    },\n    {\n      \"item_id\": 1,\n      \"value\": 1000,\n      \"chance\": 20\n    },\n    {\n      \"item_id\": 1,\n      \"value\": 500,\n      \"chance\": 40\n    },\n    {\n      \"item_id\": 1,\n      \"value\": 250,\n      \"chance\": 70\n    },\n    {\n      \"item_id\": 7,\n      \"value\": 1000,\n      \"chance\": 5\n    },\n    {\n      \"item_id\": 7,\n      \"value\": 500,\n      \"chance\": 20\n    },\n    {\n      \"item_id\": 7,\n      \"value\": 100,\n      \"chance\": 40\n    },\n    {\n      \"item_id\": 7,\n      \"value\": 50,\n      \"chance\": 70\n    }\n  ]\n}'),
-(NULL, 258, 'Title box', 'Title box', 'Usable', 'Multiple use x99', NULL, NULL, 10000, NULL, NULL, NULL, NULL, NULL, '{\n  \"random_box\": [\n    {\n      \"item_id\": 245,\n      \"value\": 1,\n      \"chance\": 5\n    },\n    {\n      \"item_id\": 246,\n      \"value\": 1,\n      \"chance\": 5\n    },\n    {\n      \"item_id\": 247,\n      \"value\": 1,\n      \"chance\": 5\n    },\n    {\n      \"item_id\": 248,\n      \"value\": 1,\n      \"chance\": 5\n    },\n    {\n      \"item_id\": 249,\n      \"value\": 1,\n      \"chance\": 5\n    },\n    {\n      \"item_id\": 250,\n      \"value\": 1,\n      \"chance\": 1\n    },\n    {\n      \"item_id\": 251,\n      \"value\": 1,\n      \"chance\": 1\n    },\n    {\n      \"item_id\": 252,\n      \"value\": 1,\n      \"chance\": 1\n    },\n    {\n      \"item_id\": 253,\n      \"value\": 1,\n      \"chance\": 1\n    },\n    {\n      \"item_id\": 254,\n      \"value\": 1,\n      \"chance\": 1\n    },\n    {\n      \"item_id\": 255,\n      \"value\": 1,\n      \"chance\": 1\n    },\n    {\n      \"item_id\": 1,\n      \"value\": 1000,\n      \"chance\": 20\n    },\n    {\n      \"item_id\": 1,\n      \"value\": 500,\n      \"chance\": 40\n    },\n    {\n      \"item_id\": 1,\n      \"value\": 250,\n      \"chance\": 70\n    },\n    {\n      \"item_id\": 7,\n      \"value\": 1000,\n      \"chance\": 5\n    },\n    {\n      \"item_id\": 7,\n      \"value\": 500,\n      \"chance\": 20\n    },\n    {\n      \"item_id\": 7,\n      \"value\": 100,\n      \"chance\": 40\n    },\n    {\n      \"item_id\": 7,\n      \"value\": 50,\n      \"chance\": 70\n    }\n  ]\n}'),
-(NULL, 259, 'Scaly armbands', 'Armbands of hardened dragonscale', 'Equipment', 'Default', NULL, NULL, 15300, NULL, 2, NULL, 25, NULL, NULL),
-(NULL, 260, 'Slime lining', 'Oozing, acid-proof inner layer', 'Equipment', 'Default', NULL, NULL, 22100, NULL, 5, NULL, 25, NULL, NULL),
-(NULL, 261, 'Fiber', 'Title for Healer', 'Equipment', 'Equip title', NULL, NULL, 7000, NULL, 5, 7, 7, 1, NULL),
-(NULL, 262, 'Rust', 'Title for Tank', 'Equipment', 'Equip title', NULL, NULL, 7000, NULL, 5, NULL, 8, NULL, NULL),
-(NULL, 263, 'Leather shoulderpads', 'Tough, reinforced shoulder guards', 'Equipment', 'Default', NULL, NULL, 5750, NULL, 5, NULL, 10, NULL, NULL),
-(NULL, 264, 'HP Potion I', 'Restores health', 'Potion', 'Equip potion HP', NULL, NULL, 1000, NULL, NULL, NULL, NULL, NULL, '{\r\n  \"potion\": {\r\n    \"effect\": \"Tiny heal\",\r\n    \"value\": 1,\r\n    \"lifetime\": 10,\r\n    \"recast\": 50\r\n    }\r\n}'),
-(NULL, 265, 'HP Potion II', 'Restores health', 'Potion', 'Equip potion HP', NULL, NULL, 5000, NULL, NULL, NULL, NULL, NULL, '{\r\n  \"potion\": {\r\n    \"effect\": \"Tiny heal\",\r\n    \"value\": 3,\r\n    \"lifetime\": 10,\r\n    \"recast\": 50\r\n    }\r\n}'),
-(NULL, 266, 'HP Potion III', 'Restores health', 'Potion', 'Equip potion HP', NULL, NULL, 10000, NULL, NULL, NULL, NULL, NULL, '{\r\n  \"potion\": {\r\n    \"effect\": \"Tiny heal\",\r\n    \"value\": 5,\r\n    \"lifetime\": 10,\r\n    \"recast\": 50\r\n    }\r\n}'),
-(NULL, 267, 'HP Potion IV', 'Restores health', 'Potion', 'Equip potion HP', NULL, NULL, 50000, NULL, NULL, NULL, NULL, NULL, '{\r\n  \"potion\": {\r\n    \"effect\": \"Tiny heal\",\r\n    \"value\": 10,\r\n    \"lifetime\": 10,\r\n    \"recast\": 50\r\n    }\r\n}'),
-(NULL, 268, 'HP Potion V', 'Restores health', 'Potion', 'Equip potion HP', NULL, NULL, 100000, NULL, NULL, NULL, NULL, NULL, '{\r\n  \"potion\": {\r\n    \"effect\": \"Tiny heal\",\r\n    \"value\": 20,\r\n    \"lifetime\": 10,\r\n    \"recast\": 50\r\n    }\r\n}'),
-(NULL, 269, 'Mana Potion I', 'Restores mana', 'Potion', 'Equip potion MP', NULL, NULL, 1000, NULL, NULL, NULL, NULL, NULL, '{\r\n  \"potion\": {\r\n    \"effect\": \"Tiny MP\",\r\n    \"value\": 1,\r\n    \"lifetime\": 10,\r\n    \"recast\": 50\r\n    }\r\n}'),
-(NULL, 270, 'Mana Potion II', 'Restores mana', 'Potion', 'Equip potion MP', NULL, NULL, 5000, NULL, NULL, NULL, NULL, NULL, '{\r\n  \"potion\": {\r\n    \"effect\": \"Tiny MP\",\r\n    \"value\": 3,\r\n    \"lifetime\": 10,\r\n    \"recast\": 50\r\n    }\r\n}'),
-(NULL, 271, 'Mana Potion III', 'Restores mana', 'Potion', 'Equip potion MP', NULL, NULL, 10000, NULL, NULL, NULL, NULL, NULL, '{\r\n  \"potion\": {\r\n    \"effect\": \"Tiny MP\",\r\n    \"value\": 5,\r\n    \"lifetime\": 10,\r\n    \"recast\": 50\r\n    }\r\n}'),
-(NULL, 272, 'Mana Potion IV', 'Restores mana', 'Potion', 'Equip potion MP', NULL, NULL, 50000, NULL, NULL, NULL, NULL, NULL, '{\r\n  \"potion\": {\r\n    \"effect\": \"Tiny MP\",\r\n    \"value\": 10,\r\n    \"lifetime\": 10,\r\n    \"recast\": 50\r\n    }\r\n}'),
-(NULL, 273, 'Mana Potion V', 'Restores mana', 'Potion', 'Equip potion MP', NULL, NULL, 100000, NULL, NULL, NULL, NULL, NULL, '{\r\n  \"potion\": {\r\n    \"effect\": \"Tiny MP\",\r\n    \"value\": 20,\r\n    \"lifetime\": 10,\r\n    \"recast\": 50\r\n    }\r\n}'),
-(NULL, 274, 'Copper rod', 'The usual Copper rod', 'Equipment', 'Equip fishrod', NULL, NULL, 9690, NULL, 21, NULL, 3, NULL, NULL),
-(NULL, 275, 'Titanium rod', 'The usual Titanium rod', 'Equipment', 'Equip fishrod', NULL, NULL, 43190, NULL, 21, NULL, 7, NULL, NULL),
-(NULL, 276, 'Adamantite rod', 'The usual Adamantite rod', 'Equipment', 'Equip fishrod', NULL, NULL, 64690, NULL, 21, NULL, 10, NULL, NULL),
-(NULL, 277, 'Moonsteel ore', 'Moonsteel ore', 'Resource', 'Resource mineable', NULL, NULL, 5, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 278, 'Sunbronze ore', 'Sunbronze ore', 'Resource', 'Resource mineable', NULL, NULL, 6, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 279, 'Aquaforged ore', 'Aquaforged ore', 'Resource', 'Resource mineable', NULL, NULL, 7, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 280, 'Elementium ore', 'Elementium ore', 'Resource', 'Resource mineable', NULL, NULL, 8, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 281, 'Moonsteel ingot', 'Moonsteel ingot', 'Resource', 'Default', NULL, NULL, 700, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 282, 'Sunbronze ingot', 'Sunbronze ingot', 'Resource', 'Default', NULL, NULL, 900, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 283, 'Aquaforged ingot', 'Aquaforged ingot', 'Resource', 'Default', NULL, NULL, 1100, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 284, 'Elementium ingot', 'Elementium ingot', 'Resource', 'Default', NULL, NULL, 1300, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 285, 'Crescent Edge', 'A blade shaped like the new moon', 'Equipment', 'Default', NULL, NULL, 99999999, NULL, 2, 4, 100, 500, NULL),
-(NULL, 286, 'Moonward Plates', 'Armor that wards off moonlight', 'Equipment', 'Default', NULL, NULL, 9999999, NULL, 5, 7, 80, 45, NULL),
-(NULL, 287, 'Moonsteal armor', 'Moonsteal armor', 'Equipment', 'Equip armor (tank)', NULL, NULL, 999999, NULL, 5, 7, 150, 30, NULL),
-(NULL, 288, 'Adamager armor', 'Adamager armor', 'Equipment', 'Equip armor (dps)', NULL, NULL, 999999, NULL, 5, 7, 90, 60, NULL),
-(NULL, 289, 'Adamler Mantle', 'Adamler Mantle', 'Equipment', 'Equip armor (healer)', NULL, NULL, 999999, NULL, 5, 7, 75, 75, NULL),
-(NULL, 290, 'Lunar armor', 'Lunar armor', 'Equipment', 'Equip armor (dps)', NULL, NULL, 999999, NULL, 5, 7, 108, 72, NULL),
-(NULL, 291, 'Darkmoon armor', 'Darkmoon armor', 'Equipment', 'Equip armor (healer)', NULL, NULL, 999999, NULL, 5, 7, 90, 90, NULL),
-(NULL, 292, 'Ring of the Sun', 'A ring that burns with solar fire', 'Equipment', 'Default', NULL, NULL, 9999999, NULL, 1, 18, 1, 1500, NULL),
-(NULL, 293, 'Codex of Sunlight', 'A tome filled with holy light', 'Equipment', 'Default', NULL, NULL, 9999999, NULL, 7, NULL, 150, NULL, NULL),
-(NULL, 294, 'Sunbronze armor', 'Sunbronze armor', 'Equipment', 'Equip armor (tank)', NULL, NULL, 999999, NULL, 5, 7, 175, 35, NULL),
-(NULL, 295, 'Lightcrit armor', 'Lightcrit armor', 'Equipment', 'Equip armor (dps)', NULL, NULL, 999999, NULL, 5, 7, 126, 84, NULL),
-(NULL, 296, 'Bright armor', 'Bright armor', 'Equipment', 'Equip armor (healer)', NULL, NULL, 999999, NULL, 5, 7, 105, 105, NULL),
-(NULL, 297, 'Hydro-generator', 'Generates ammo from air', 'Equipment', 'Default', NULL, NULL, 9999999, NULL, 9, NULL, 300, NULL, NULL),
-(NULL, 298, 'Amphora of Life', 'A jar that holds healing nectar', 'Equipment', 'Default', NULL, NULL, 9999999, NULL, 5, NULL, 160, NULL, NULL),
-(NULL, 299, 'Aquaforged armor', 'Aquaforged armor', 'Equipment', 'Equip armor (tank)', NULL, NULL, 999999, NULL, 6, 7, 200, 40, NULL),
-(NULL, 300, 'StormWave armor', 'StormWave armor', 'Equipment', 'Equip armor (dps)', NULL, NULL, 999999, NULL, 5, 7, 144, 96, NULL),
-(NULL, 301, 'Armor of Life', 'Armor of Life', 'Equipment', 'Equip armor (healer)', NULL, NULL, 999999, NULL, 5, 7, 120, 120, NULL),
-(NULL, 302, 'Elementium Accumulative', 'Stores raw elemental power', 'Equipment', 'Default', NULL, NULL, 9999999, NULL, 3, 4, 1, 4000, NULL),
-(NULL, 303, 'Elementium ammo', 'Ammo charged with raw elements', 'Equipment', 'Default', NULL, NULL, 9999999, NULL, 10, NULL, 100, NULL, NULL),
-(NULL, 304, 'Elementium armor', 'Elementium armor', 'Equipment', 'Equip armor (tank)', NULL, NULL, 999999, NULL, 5, 7, 225, 45, NULL),
-(NULL, 305, 'Absorbing armor', 'Absorbing armor', 'Equipment', 'Equip armor (dps)', NULL, NULL, 999999, NULL, 5, 7, 162, 108, NULL),
-(NULL, 306, 'Adaptive armor', 'Adaptive armor', 'Equipment', 'Equip armor (healer)', NULL, NULL, 999999, NULL, 5, 7, 135, 135, NULL),
-(NULL, 307, 'Pearls', 'Pearls', 'Resource', 'Default', NULL, NULL, 36, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 308, 'Weapons box', 'Weapons box', 'Usable', 'Multiple use x99', NULL, NULL, 5000, 500, NULL, NULL, NULL, NULL, '{\n  \"random_box\": [\n    {\n      \"item_id\": 2,\n      \"value\": 1,\n      \"chance\": 80\n    },\n    {\n      \"item_id\": 3,\n      \"value\": 1,\n      \"chance\": 75\n    },\n    {\n      \"item_id\": 4,\n      \"value\": 1,\n      \"chance\": 70\n    },\n    {\n      \"item_id\": 5,\n      \"value\": 1,\n      \"chance\": 65\n    },\n    {\n      \"item_id\": 6,\n      \"value\": 1,\n      \"chance\": 60\n    },\n    {\n      \"item_id\": 2,\n      \"value\": 1,\n      \"chance\": 80\n    },\n    {\n      \"item_id\": 1,\n      \"value\": 1000,\n      \"chance\": 20\n    },\n    {\n      \"item_id\": 1,\n      \"value\": 500,\n      \"chance\": 40\n    },\n    {\n      \"item_id\": 1,\n      \"value\": 250,\n      \"chance\": 70\n    },\n    {\n      \"item_id\": 7,\n      \"value\": 250,\n      \"chance\": 5\n    },\n    {\n      \"item_id\": 7,\n      \"value\": 120,\n      \"chance\": 20\n    },\n    {\n      \"item_id\": 7,\n      \"value\": 50,\n      \"chance\": 40\n    },\n    {\n      \"item_id\": 7,\n      \"value\": 12,\n      \"chance\": 70\n    }\n  ]\n}'),
-(NULL, 309, 'Module box', 'Module box', 'Usable', 'Multiple use x99', NULL, NULL, 7000, 750, NULL, NULL, NULL, NULL, '{\r\n  \"random_box\": [\r\n    {\r\n      \"item_id\": 90,\r\n      \"value\": 1,\r\n      \"chance\": 6\r\n    },\r\n    {\r\n      \"item_id\": 91,\r\n      \"value\": 1,\r\n      \"chance\": 6\r\n    },\r\n    {\r\n      \"item_id\": 87,\r\n      \"value\": 1,\r\n      \"chance\": 0.5\r\n    },\r\n    {\r\n      \"item_id\": 60,\r\n      \"value\": 1,\r\n      \"chance\": 5\r\n    },\r\n    {\r\n      \"item_id\": 242,\r\n      \"value\": 1,\r\n      \"chance\": 4\r\n    },\r\n    {\r\n      \"item_id\": 259,\r\n      \"value\": 1,\r\n      \"chance\": 3\r\n    },\r\n    {\r\n      \"item_id\": 69,\r\n      \"value\": 1,\r\n      \"chance\": 2\r\n    },\r\n    {\r\n      \"item_id\": 260,\r\n      \"value\": 1,\r\n      \"chance\": 1\r\n    },\r\n    {\r\n      \"item_id\": 126,\r\n      \"value\": 1,\r\n      \"chance\": 0.5\r\n    },\r\n    {\r\n      \"item_id\": 1,\r\n      \"value\": 1000,\r\n      \"chance\": 20\r\n    },\r\n    {\r\n      \"item_id\": 1,\r\n      \"value\": 500,\r\n      \"chance\": 40\r\n    },\r\n    {\r\n      \"item_id\": 1,\r\n      \"value\": 250,\r\n      \"chance\": 70\r\n    },\r\n    {\r\n      \"item_id\": 7,\r\n      \"value\": 250,\r\n      \"chance\": 5\r\n    },\r\n    {\r\n      \"item_id\": 7,\r\n      \"value\": 125,\r\n      \"chance\": 20\r\n    },\r\n    {\r\n      \"item_id\": 7,\r\n      \"value\": 25,\r\n      \"chance\": 40\r\n    },\r\n    {\r\n      \"item_id\": 7,\r\n      \"value\": 12,\r\n      \"chance\": 70\r\n    }\r\n  ]\r\n}'),
-(NULL, 310, 'Material Box', 'Material Box', 'Usable', 'Multiple use x99', NULL, NULL, 1000, 250, NULL, NULL, NULL, NULL, '{\r\n  \"random_box\": [\r\n    {\r\n      \"item_id\": 124,\r\n      \"value\": 1,\r\n      \"chance\": 100\r\n    },\r\n    {\r\n      \"item_id\": 124,\r\n      \"value\": 5,\r\n      \"chance\": 80\r\n    },\r\n    {\r\n      \"item_id\": 124,\r\n      \"value\": 10,\r\n      \"chance\": 70\r\n    },\r\n    {\r\n      \"item_id\": 124,\r\n      \"value\": 25,\r\n      \"chance\": 100\r\n    },\r\n    {\r\n      \"item_id\": 124,\r\n      \"value\": 50,\r\n      \"chance\": 60\r\n    },\r\n    {\r\n      \"item_id\": 124,\r\n      \"value\": 100,\r\n      \"chance\": 50\r\n    },\r\n    {\r\n      \"item_id\": 124,\r\n      \"value\": 200,\r\n      \"chance\": 25\r\n    },\r\n    {\r\n      \"item_id\": 124,\r\n      \"value\": 500,\r\n      \"chance\": 10\r\n    },\r\n    {\r\n      \"item_id\": 7,\r\n      \"value\": 1,\r\n      \"chance\": 80\r\n    },\r\n    {\r\n      \"item_id\": 7,\r\n      \"value\": 5,\r\n      \"chance\": 60\r\n    },\r\n    {\r\n      \"item_id\": 7,\r\n      \"value\": 10,\r\n      \"chance\": 50\r\n    },\r\n    {\r\n      \"item_id\": 7,\r\n      \"value\": 25,\r\n      \"chance\": 50\r\n    },\r\n    {\r\n      \"item_id\": 7,\r\n      \"value\": 50,\r\n      \"chance\": 40\r\n    },\r\n    {\r\n      \"item_id\": 7,\r\n      \"value\": 100,\r\n      \"chance\": 20\r\n    },\r\n    {\r\n      \"item_id\": 7,\r\n      \"value\": 200,\r\n      \"chance\": 10\r\n    },\r\n    {\r\n      \"item_id\": 7,\r\n      \"value\": 500,\r\n      \"chance\": 5\r\n    }\r\n  ]\r\n}'),
-(NULL, 311, 'Gun parts', 'Gun parts', 'Resource', 'Default', NULL, NULL, 200, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 312, 'Shotgun parts', 'Shotgun parts', 'Resource', 'Default', NULL, NULL, 390, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 313, 'Grenade parts', 'Grenade parts', 'Resource', 'Default', NULL, NULL, 400, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 314, 'Laser parts', 'Laser parts', 'Resource', 'Default', NULL, NULL, 500, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 315, 'Hammer parts', 'Hammer parts', 'Resource', 'Default', NULL, NULL, 100, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 316, 'Basic Hammer+', 'Increases the radius of the hit', 'Equipment', 'Default', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 317, 'Draft Hammer+', 'Draft Hammer+', 'Other', 'Default', NULL, NULL, 598, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 318, 'Breathing Reed', 'Double the time underwater', 'Equipment', 'Default', NULL, NULL, 45000, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 319, 'Life Preserver', 'Keeps player afloat', 'Equipment', 'Default', NULL, NULL, 25000, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 320, 'Diver\'s kit', 'Can\'t drown, keeps player afloat.', 'Equipment', 'Default', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 321, 'Sunken Fishing Crate', 'Sunken Fishing Crate', 'Usable', 'Multiple use x99', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '{\r\n	\"random_box\": [\r\n		{\r\n			\"item_id\": 319,\r\n			\"value\": 1,\r\n			\"chance\": 0.5\r\n		},\r\n		{\r\n			\"item_id\": 323,\r\n			\"value\": 1,\r\n			\"chance\": 1\r\n		},\r\n		{\r\n			\"item_id\": 124,\r\n			\"value\": 1,\r\n			\"chance\": 30\r\n		},\r\n		{\r\n			\"item_id\": 124,\r\n			\"value\": 2,\r\n			\"chance\": 15\r\n		},\r\n		{\r\n			\"item_id\": 175,\r\n			\"value\": 3,\r\n			\"chance\": 25\r\n		},\r\n		{\r\n			\"item_id\": 176,\r\n			\"value\": 2,\r\n			\"chance\": 20\r\n		},\r\n		{\r\n			\"item_id\": 177,\r\n			\"value\": 1,\r\n			\"chance\": 15\r\n		},\r\n		{\r\n			\"item_id\": 1,\r\n			\"value\": 25,\r\n			\"chance\": 40\r\n		},\r\n		{\r\n			\"item_id\": 1,\r\n			\"value\": 75,\r\n			\"chance\": 30\r\n		},\r\n		{\r\n			\"item_id\": 7,\r\n			\"value\": 10,\r\n			\"chance\": 40\r\n		},\r\n		{\r\n			\"item_id\": 7,\r\n			\"value\": 25,\r\n			\"chance\": 30\r\n		},\r\n		{\r\n			\"item_id\": 233,\r\n			\"value\": 1,\r\n			\"chance\": 10\r\n		}\r\n	]\r\n}'),
-(NULL, 322, 'Old Captain\'s Chest', 'Old Captain\'s Chest', 'Usable', 'Multiple use x99', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, '{\n	\"random_box\": [\n		{\n			\"item_id\": 318,\n			\"value\": 1,\n			\"chance\": 0.5\n		},\n		{\n			\"item_id\": 323,\n			\"value\": 1,\n			\"chance\": 1\n		},\n		{\n			\"item_id\": 168,\n			\"value\": 1,\n			\"chance\": 8\n		},\n		{\n			\"item_id\": 169,\n			\"value\": 1,\n			\"chance\": 5\n		},\n		{\n			\"item_id\": 307,\n			\"value\": 3,\n			\"chance\": 15\n		},\n		{\n			\"item_id\": 1,\n			\"value\": 50,\n			\"chance\": 30\n		},\n		{\n			\"item_id\": 1,\n			\"value\": 100,\n			\"chance\": 10\n		},\n		{\n			\"item_id\": 7,\n			\"value\": 30,\n			\"chance\": 25\n		},\n		{\n			\"item_id\": 7,\n			\"value\": 50,\n			\"chance\": 10\n		},\n		{\n			\"item_id\": 113,\n			\"value\": 2,\n			\"chance\": 20\n		}\n	]\n}'),
-('не реализ', 323, 'Fish bait', 'Increases chance of hooking by 30%', 'Equipment', 'Default', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-('Не реализ', 324, 'Tesla serpent', 'Creates lightning', 'Equipment', 'Equip rifle', NULL, NULL, NULL, NULL, 17, NULL, 4, NULL, NULL),
-(NULL, 325, 'Draft Poison Hook', 'Draft Poison Hook', 'Other', 'Default', NULL, NULL, 2931, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 326, 'Draft Explosion Hook', 'Draft Explosion Hook', 'Other', 'Default', NULL, NULL, 10000, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 327, 'Draft Spider Hook', 'Draft Spider Hook', 'Other', 'Default', NULL, NULL, 10000, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 328, 'Draft Explosion Mod', 'Draft Explosion Mod', 'Other', 'Default', NULL, NULL, 10000, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 329, '(S) Money Bag', 'Small money bag', 'Equipment', 'Default', NULL, NULL, 1070, NULL, 20, NULL, 500, NULL, NULL),
-(NULL, 330, '(M) Money Bag', 'Medium money bag', 'Equipment', 'Default', NULL, NULL, 2875, NULL, 20, NULL, 1000, NULL, NULL),
-(NULL, 331, '(B) Money Bag', 'Big money bag', 'Equipment', 'Default', NULL, NULL, 13950, NULL, 20, NULL, 5000, NULL, NULL),
-(NULL, 332, '(S) Backpack gold', 'Small backpack gold', 'Equipment', 'Default', NULL, NULL, NULL, NULL, 20, NULL, 10000, NULL, NULL),
-(NULL, 333, '(M) Backpack gold', 'Medium backpack gold', 'Equipment', 'Default', NULL, NULL, 55000, NULL, 20, NULL, 50000, NULL, NULL),
-(NULL, 334, '(B) Backpack gold', 'Big backpack gold', 'Equipment', 'Default', NULL, NULL, NULL, NULL, 20, NULL, 100000, NULL, NULL),
-(NULL, 335, 'Mod Gun 1', 'Increased damage for gun', 'Equipment', 'Default', NULL, NULL, 50000, NULL, 14, NULL, 1, NULL, NULL),
-(NULL, 336, 'Mod Shotgun 1', 'Increased damage for shotgun', 'Equipment', 'Default', NULL, NULL, 70000, NULL, 15, NULL, 1, NULL, NULL),
-(NULL, 337, 'Mod Grenade 1', 'Increased damage for grenade', 'Equipment', 'Default', NULL, NULL, 100000, NULL, 16, NULL, 1, NULL, NULL),
-(NULL, 338, 'Mod Laser 1', 'Increased damage for laser', 'Equipment', 'Default', NULL, NULL, 150000, NULL, 17, NULL, 1, NULL, NULL),
-(NULL, 339, 'Pickaxe template', 'Used to craft a pickaxe', 'Resource', 'Default', NULL, NULL, 1000, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 340, 'Rake template', 'Used to craft a Rake', 'Resource', 'Default', NULL, NULL, 1000, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 341, 'Armor template', 'Used to craft a Armor', 'Resource', 'Default', NULL, NULL, 5000, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 342, 'Gloves template', 'Used to craft a Gloves', 'Resource', 'Default', NULL, NULL, 2000, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 343, 'Rod template', 'Used to craft a Rod', 'Resource', 'Default', NULL, NULL, 3000, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 344, 'Heart of health', 'A gem that pulses with vitality', 'Equipment', 'Default', NULL, NULL, 25000, NULL, 5, NULL, 5, NULL, NULL),
-(NULL, 345, 'Mana Shield', 'A barrier of pure arcane force', 'Equipment', 'Default', NULL, NULL, 25000, NULL, 7, NULL, 5, NULL, NULL),
-(NULL, 346, 'Chigoe paw', 'A lucky charm from a sand flea', 'Equipment', 'Default', NULL, NULL, 80000, NULL, 18, NULL, 10, NULL, NULL),
-(NULL, 347, 'Belt with pockets', 'A belt with many hidden pouches', 'Equipment', 'Default', NULL, NULL, 70000, NULL, 22, NULL, 20, NULL, NULL),
-(NULL, 348, 'Mini accelerator', 'Device that grants a burst of regen', 'Equipment', 'Default', NULL, NULL, 100000, NULL, 2, NULL, 15, NULL, NULL),
-('Power 20', 349, 'Leather hat', 'Leather hat', 'Equipment', 'Equip helmet (tank)', NULL, NULL, 1000, NULL, 6, NULL, 53, NULL, NULL),
-('Power 50', 350, 'Copper Helmet', 'Copper helmet', 'Equipment', 'Equip helmet (tank)', NULL, NULL, 3500, NULL, 6, NULL, 133, NULL, NULL),
-('Power 100', 351, 'Iron Helmet', 'Iron helmet', 'Equipment', 'Equip helmet (tank)', NULL, NULL, 10000, NULL, 6, NULL, 266, NULL, NULL),
-('Power 150', 352, 'Titanium Helmet', 'Titanium helmet', 'Equipment', 'Equip helmet (tank)', NULL, NULL, 20000, NULL, 6, NULL, 400, NULL, NULL),
-('Power 200', 353, 'Adamantium Helmet', 'Adamantium helmet', 'Equipment', 'Equip helmet (tank)', NULL, NULL, 40000, NULL, 6, NULL, 533, NULL, NULL),
-('Power 20', 354, 'Meat Hood', 'Meat hood', 'Equipment', 'Equip helmet (dps)', NULL, NULL, 1000, NULL, 2, 4, 4, 30, NULL),
-('Power 50', 355, 'Warrior Mask', 'Warrior Mask', 'Equipment', 'Equip helmet (dps)', NULL, NULL, 3500, NULL, 2, 4, 10, 80, NULL),
-('Power 100', 356, 'Hunter Helmet', 'Hunter helmet', 'Equipment', 'Equip helmet (dps)', NULL, NULL, 10000, NULL, 2, 4, 20, 150, NULL),
-('Power 150', 357, 'Bersek Helmet', 'Bersek helmet', 'Equipment', 'Equip helmet (dps)', NULL, NULL, 20000, NULL, 2, 4, 30, 220, NULL),
-('Power 20', 358, 'Plant Mask', 'Plant mask', 'Equipment', 'Equip helmet (healer)', NULL, NULL, 1000, NULL, 8, NULL, 40, NULL, NULL),
-('Power 50', 359, 'Priest Hood', 'Priest hood', 'Equipment', 'Equip helmet (healer)', NULL, NULL, 3500, NULL, 8, NULL, 100, NULL, NULL),
-('Power 100', 360, 'Wreath of Life', 'Wreath of life', 'Equipment', 'Equip helmet (healer)', NULL, NULL, 10000, NULL, 8, NULL, 200, NULL, NULL),
-('Power 150', 361, 'Healer Hood', 'Healer hood', 'Equipment', 'Equip helmet (healer)', NULL, NULL, 20000, NULL, 8, NULL, 300, NULL, NULL),
-(NULL, 362, 'Gingerbread of exp', 'A little EXP boost', 'Usable', 'Single use x1', NULL, NULL, 1000, NULL, NULL, NULL, NULL, NULL, '{\r\n  \"bonus\": {\r\n    \"amount\": 2,\r\n    \"duration_minutes\": 15,\r\n    \"type\": 1\r\n  }\r\n}'),
-(NULL, 363, 'Meat kebabs', 'A little HP boost', 'Usable', 'Single use x1', NULL, NULL, 1000, NULL, NULL, NULL, NULL, NULL, '{\r\n  \"bonus\": {\r\n    \"amount\": 2,\r\n    \"duration_minutes\": 15,\r\n    \"type\": 3\r\n  }\r\n}'),
-(NULL, 364, 'Golden apple salad', 'A little GOLD boost', 'Usable', 'Single use x1', NULL, NULL, 1000, NULL, NULL, NULL, NULL, NULL, '{\r\n  \"bonus\": {\r\n    \"amount\": 2,\r\n    \"duration_minutes\": 15,\r\n    \"type\": 2\r\n  }\r\n}'),
-(NULL, 365, 'Helmet template', 'Used to craft a Helmet', 'Resource', 'Default', NULL, NULL, 2500, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 366, 'Ammo belt', 'Belt of bullets', 'Equipment', 'Default', NULL, NULL, 2500, NULL, 10, NULL, 10, NULL, NULL),
-(NULL, 367, 'Small box of ammo', 'Box of bullets', 'Equipment', 'Default', NULL, NULL, 1250, NULL, 10, NULL, 5, NULL, NULL),
-(NULL, 368, 'Ammo backpack', 'Backpack of bullets', 'Equipment', 'Default', NULL, NULL, 10000, NULL, 10, NULL, 50, NULL, NULL),
-(NULL, 369, 'Reactive enzyme', 'Reactive enzyme', 'Resource', 'Default', NULL, NULL, 62, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 370, 'Heart of acid', 'Heart of acid', 'Resource', 'Default', NULL, NULL, 5000, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 371, 'Catnip', 'Cats really like it', 'Resource', 'Default', NULL, NULL, 33, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 372, 'Cats eye', 'Cats eye', 'Resource', 'Default', NULL, NULL, 61, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 373, 'Purr Bag', 'A bag that calms anxious minds', 'Equipment', 'Default', NULL, NULL, 1024, NULL, 5, 19, 25, 12, NULL),
-(NULL, 374, 'Meme Fragment', 'Part of something bigger. The spirit of memes is felt.', 'Resource', 'Default', NULL, NULL, 84, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 375, 'Wisdom Stone', 'It is said to contain a bit of Cheems wisdom', 'Equipment', 'Default', NULL, NULL, 1200, NULL, 7, NULL, NULL, 35, NULL),
-(NULL, 376, 'Eucalyptus Leaf', 'Eucalyptus Leaf', 'Resource', 'Default', NULL, NULL, 69, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 377, 'Boosted Tea', 'Boosted Tea', 'Usable', 'Single use x1', NULL, NULL, 135, NULL, NULL, NULL, NULL, NULL, '{\r\n  \"bonus\": {\r\n    \"amount\": 4,\r\n    \"duration_minutes\": 10,\r\n    \"type\": 4\r\n  }\r\n}'),
-(NULL, 378, 'Protective Totem', 'A small idol that wards off evil', 'Equipment', 'Default', NULL, NULL, 1600, NULL, 5, 19, 30, 50, NULL),
-(NULL, 379, 'Cyan Droplet', 'Cyan Droplet', 'Resource', 'Default', NULL, NULL, 77, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 380, 'Energy Booster', 'Energy Booster', 'Usable', 'Single use x1', NULL, NULL, 170, NULL, NULL, NULL, NULL, NULL, '{\r\n  \"bonus\": {\r\n    \"amount\": 4,\r\n    \"duration_minutes\": 15,\r\n    \"type\": 1\r\n  }\r\n}'),
-(NULL, 381, 'Coconut shell', 'Coconut shell', 'Resource', 'Default', NULL, NULL, 60, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 382, 'Shell Hammer', 'A hammer made of a giant shell', 'Equipment', 'Default', NULL, NULL, 1250, NULL, 13, NULL, 1, NULL, NULL),
-(NULL, 383, 'Improved bullet tips', 'Rounds that can pierce any armor', 'Equipment', 'Default', NULL, NULL, 1250, NULL, 4, NULL, 200, NULL, NULL),
-(NULL, 384, 'Dragon scales', 'Dragon scales', 'Resource', 'Default', NULL, NULL, 30, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 385, 'Golden Dragon Scale', 'A scale that resists fire and magic', 'Equipment', 'Default', NULL, NULL, 30, NULL, 6, NULL, 334, NULL, NULL),
-(NULL, 386, 'Amulet Fox Luck', 'A charm that grants foxy cunning', 'Equipment', 'Default', NULL, NULL, 2500, NULL, 4, NULL, 400, NULL, NULL),
-(NULL, 387, 'Fluff', 'Fluff', 'Resource', 'Default', NULL, NULL, 38, NULL, NULL, NULL, NULL, NULL, NULL),
-('Не реализ', 388, 'Ring of Return Lightning', 'Chance to reflect harm as lightning', 'Equipment', 'Default', NULL, NULL, 50000, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 389, 'Witch Dust', 'A shimmering powder with mystical powers', 'Resource', 'Default', NULL, NULL, 91, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 390, 'Summoning Orb', 'Element for summoning', 'Resource', 'Default', NULL, NULL, 1250, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 391, 'Tea Leaf', 'Tea Leaf', 'Resource', 'Default', NULL, NULL, 53, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 392, 'Tea', 'Simple tea', 'Usable', 'Single use x1', NULL, NULL, 100, NULL, NULL, NULL, NULL, NULL, '{\r\n  \"bonus\": {\r\n    \"amount\": 4,\r\n    \"duration_minutes\": 10,\r\n    \"type\": 1\r\n  }\r\n}'),
-(NULL, 393, 'Chitin', 'Chitin', 'Resource', 'Default', NULL, NULL, 80, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 394, 'Chitinous shield', 'A shield of insectoid plates', 'Equipment', 'Default', NULL, NULL, 1800, NULL, 5, NULL, 80, NULL, NULL),
-(NULL, 395, 'Anglers Ring', 'A ring that lures fish to bite', 'Equipment', 'Default', NULL, NULL, 9170, NULL, 21, NULL, 1, NULL, NULL),
-(NULL, 396, 'Pumpkin Pie', 'Pumpkin Pie', 'Usable', 'Single use x1', NULL, NULL, 250, NULL, NULL, NULL, NULL, NULL, '{\r\n  \"bonus\": {\r\n    \"amount\": 5,\r\n    \"duration_minutes\": 5,\r\n    \"type\": 4\r\n  }\r\n}'),
-(NULL, 397, 'Fish net', 'A net to catch both fish and foe', 'Equipment', 'Default', NULL, NULL, 8300, NULL, 21, NULL, 1, NULL, NULL),
-(NULL, 398, 'Harvest basket', 'A basket that never overflows', 'Equipment', 'Default', NULL, NULL, 2500, NULL, 12, NULL, 1, NULL, NULL),
-(NULL, 399, '(T) Tome of \"Upgr-Reset\"', 'Skill reset for tank', 'Usable', 'Single use x1', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 400, '(D) Tome of \"Upgr-Reset\"', 'Skill reset for DPS', 'Usable', 'Single use x1', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 401, '(H) Tome of \"Upgr-Reset\"', 'Skill reset for Healer', 'Usable', 'Single use x1', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 402, 'Show only function (modules)', 'Setting game', 'Settings', 'Default', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-('Не реализ', 403, 'Ring of Giving Lightning', 'Chance to imbue attacks with lightning', 'Equipment', 'Default', NULL, NULL, 45000, NULL, NULL, NULL, NULL, NULL, NULL),
-('Не реализ', 404, 'Ring of Perfect Lightning', 'Chance to retaliate and attack with lightning', 'Equipment', 'Default', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-('Не реализ', 405, 'Tesla Inductive Coil', 'Increases electro damage by 25%', 'Equipment', 'Default', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL),
-(NULL, 406, 'GOLD 50% 3d', 'Boost GOLD 50% 3d', 'Usable', 'Single use x1', 'Can\'t droppable,Can\'t tradeable', NULL, NULL, NULL, NULL, NULL, NULL, NULL, '{\r\n  \"bonus\": {\r\n    \"amount\": 50,\r\n    \"duration_days\": 3,\r\n    \"type\": 2\r\n  }\r\n}'),
-(NULL, 407, 'EXP 50% 3d', 'Boost EXP 50% 3d', 'Usable', 'Single use x1', 'Can\'t droppable,Can\'t tradeable', NULL, NULL, NULL, NULL, NULL, NULL, NULL, '{\n  \"bonus\": {\n    \"amount\": 50,\n    \"duration_days\": 3,\n    \"type\": 1\n  }\n}');
-
--- --------------------------------------------------------
-
---
--- Table structure for table `tw_logics_worlds`
---
-
-CREATE TABLE `tw_logics_worlds` (
-  `ID` int(11) NOT NULL,
-  `MobID` int(11) NOT NULL,
-  `Mode` int(11) NOT NULL DEFAULT 0 COMMENT '(1,3) 0 up 1 left',
-  `ParseInt` int(11) NOT NULL COMMENT '(2) health (3)itemid key',
-  `PosX` int(11) NOT NULL,
-  `PosY` int(11) NOT NULL,
-  `WorldID` int(11) NOT NULL,
-  `Comment` varchar(64) NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci ROW_FORMAT=COMPACT;
+INSERT INTO `tw_items_list` (`Comment`, `ID`, `Name`, `Description`, `Group`, `Type`, `Flags`, `ScenarioData`, `ScenarioMode`, `InitialPrice`, `RequiresProducts`, `AT1`, `AT2`, `ATValue1`, `ATValue2`, `Data`) VALUES
+(NULL, 1, 'Gold', 'Major currency', 'Currency', 'Default', NULL, NULL, 'universal', 7, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 2, 'Hammer', 'A normal hammer', 'Equipment', 'Equip hammer', NULL, NULL, 'universal', 200, NULL, 13, 3, 3, 5, NULL),
+(NULL, 3, 'Gun', 'Conventional weapon', 'Equipment', 'Equip gun', NULL, NULL, 'universal', 400, NULL, 14, NULL, 1, NULL, NULL),
+(NULL, 4, 'Shotgun', 'Conventional weapon', 'Equipment', 'Equip shotgun', NULL, NULL, 'universal', 700, NULL, 15, NULL, 1, NULL, NULL),
+(NULL, 5, 'Grenade', 'Conventional weapon', 'Equipment', 'Equip grenade', NULL, NULL, 'universal', 1200, NULL, 16, NULL, 3, NULL, NULL),
+(NULL, 6, 'Rifle', 'Conventional weapon', 'Equipment', 'Equip rifle', NULL, NULL, 'universal', 1800, NULL, 17, NULL, 5, NULL, NULL),
+(NULL, 7, 'Material', 'Required to improve weapons', 'Currency', 'Default', NULL, NULL, 'universal', 7, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 8, 'Product', 'Required to shop', 'Currency', 'Default', NULL, NULL, 'universal', 7, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 9, 'Skill point', 'Skill point', 'Currency', 'Default', NULL, NULL, 'universal', 5000, NULL, NULL, NULL, NULL, NULL, NULL),
+('Не реализ', 10, 'Achievement point', 'Achievement Point', 'Currency', 'Default', NULL, NULL, 'universal', 1000, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 11, 'Pickup Shotgun', 'Decoration for house!', 'Decoration', 'Default', NULL, NULL, 'universal', 10000, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 12, 'Pickup Grenade', 'Decoration for house!', 'Decoration', 'Default', NULL, NULL, 'universal', 10000, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 13, 'Pickup Mana', 'Decoration for house!', 'Decoration', 'Default', NULL, NULL, 'universal', 10000, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 14, 'CHANGE SHIT', 'CHANGE SHIT', 'Other', 'Default', NULL, NULL, 'universal', NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 15, 'CHANGE SHIT', 'CHANGE SHIT', 'Other', 'Default', NULL, NULL, 'universal', NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 16, 'Capsule survival experience', 'You got 10-50 class experience', 'Usable', 'Multiple use x99', NULL, NULL, 'universal', 350, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 17, 'Little bag of gold', 'You got 10-50 gold', 'Usable', 'Multiple use x99', NULL, NULL, 'universal', 8, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 18, 'Pickup Health', 'Decoration for house!', 'Decoration', 'Default', NULL, NULL, 'universal', 10000, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 19, 'Explosive for gun', 'Explosive bullets (gun)', 'Equipment', 'Default', NULL, NULL, 'universal', 50000, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 20, 'Explosive for shotgun', 'Explosive bullets (shotgun)', 'Equipment', 'Default', NULL, NULL, 'universal', 70000, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 21, 'Sword', 'A regular sword', 'Quest', 'Default', NULL, NULL, 'universal', NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 22, 'Chigoe egg', 'The egg that Chigoe lays', 'Resource', 'Default', NULL, NULL, 'universal', 16, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 23, 'Survey records', 'Strange incomprehensible records', 'Quest', 'Default', NULL, NULL, 'universal', NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 24, 'Toolbox', 'A drawer full of tools', 'Quest', 'Default', NULL, NULL, 'universal', NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 25, 'Show equipment description', 'Settings game.', 'Settings', 'Default', NULL, NULL, 'universal', NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 26, 'Iron rake', 'The usual iron rake', 'Equipment', 'Equip rake', NULL, NULL, 'universal', 5690, NULL, 12, NULL, 5, NULL, NULL),
+(NULL, 27, 'Iron pickaxe', 'The usual iron pickaxe', 'Equipment', 'Equip pickaxe', NULL, NULL, 'universal', 6825, NULL, 11, NULL, 5, NULL, NULL),
+('Power 20', 28, 'Leather armor', 'Lightweight armor', 'Equipment', 'Equip armor (tank)', NULL, NULL, 'universal', 2000, NULL, 5, NULL, 24, 6, NULL),
+(NULL, 29, 'Activity coin', 'Coins that are given out for activity', 'Currency', 'Default', NULL, NULL, 'universal', 500, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 30, 'Rookie', 'Rookie title', 'Equipment', 'Equip title', NULL, NULL, 'universal', NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 31, 'Crate', 'Crate', 'Quest', 'Default', NULL, NULL, 'universal', NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 32, 'Surveyor\'s rope', 'Ordinary surveyor\'s rope.', 'Quest', 'Default', NULL, NULL, 'universal', NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 33, 'Anole egg', 'It\'s a strange-looking and disgusting egg.', 'Resource', 'Default', NULL, NULL, 'universal', 16, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 34, 'Show critical damage', 'Settings game.', 'Settings', 'Default', NULL, NULL, 'universal', NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 35, 'Copper ore', 'Copper ore', 'Resource', 'Resource mineable', NULL, NULL, 'universal', 2, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 36, 'Copper ingot', 'Processed copper', 'Resource', 'Default', NULL, NULL, 'universal', 60, NULL, NULL, NULL, NULL, NULL, NULL),
+('Power 50', 37, 'Copper armor', 'Armor made of copper', 'Equipment', 'Equip armor (tank)', NULL, NULL, 'universal', 7820, NULL, 5, 7, 65, 15, NULL),
+(NULL, 38, 'Copper rake', 'The usual copper rake', 'Equipment', 'Equip rake', NULL, NULL, 'universal', 1440, NULL, 12, NULL, 2, NULL, NULL),
+(NULL, 39, 'Copper pickaxe', 'The usual copper pickaxe', 'Equipment', 'Equip pickaxe', NULL, NULL, 'universal', 3264, NULL, 11, NULL, 2, NULL, NULL),
+(NULL, 40, 'Green grass', 'It looks like ordinary green grass.', 'Resource', 'Resource harvestable', NULL, NULL, 'universal', 0, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 41, 'Treated green grass', 'Compressed processed grass', 'Quest', 'Default', NULL, NULL, 'universal', NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 42, 'Titanium rake', 'The usual titanium rake.', 'Equipment', 'Equip rake', NULL, NULL, 'universal', 15620, NULL, 12, NULL, 8, NULL, NULL),
+(NULL, 43, 'Titanium pickaxe', 'The usual titanium pickaxe.', 'Equipment', 'Equip pickaxe', NULL, NULL, 'universal', 15620, NULL, 11, NULL, 8, NULL, NULL),
+(NULL, 44, 'Leather bag', 'Just leather bag.', 'Quest', 'Default', NULL, NULL, 'universal', NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 45, 'Cargo', 'Very valuable cargo.', 'Quest', 'Default', NULL, NULL, 'universal', NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 46, 'Leia\'s egg', 'The egg that Leia needs', 'Quest', 'Default', NULL, NULL, 'universal', NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 47, 'Letter ', 'Stamped letter', 'Quest', 'Default', NULL, NULL, 'universal', NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 48, 'Artifact', 'A magical thing', 'Quest', 'Default', NULL, NULL, 'universal', NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 49, 'Monoa mask', 'Its a beautiful mask', 'Equipment', 'Default', NULL, NULL, 'universal', NULL, NULL, 5, 7, 5, 5, NULL),
+(NULL, 50, 'Coal', 'Black fuel', 'Resource', 'Resource mineable', NULL, NULL, 'universal', 1, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 51, 'Vampire ring', 'The ring that draws out life', 'Equipment', 'Default', NULL, NULL, 'universal', 32904, NULL, 8, NULL, 134, NULL, NULL),
+('Не реализ', 52, 'Vampire armor', 'Armor that sucks the life', 'Equipment', 'Default', NULL, NULL, 'universal', NULL, NULL, 5, 8, 50, 50, NULL),
+(NULL, 53, 'AmmoModule', 'AmmoModuleNPC', 'Equipment', 'Default', NULL, NULL, 'universal', NULL, NULL, 10, 9, 1000, 1000, NULL),
+(NULL, 54, 'Iron ore', 'Ordinary iron ore', 'Resource', 'Resource mineable', NULL, NULL, 'universal', 2, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 55, 'Titanium ore', 'Solid titanium ore', 'Resource', 'Resource mineable', NULL, NULL, 'universal', 3, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 56, 'Adamantite ore', 'The strongest adamantite ore', 'Resource', 'Resource mineable', NULL, NULL, 'universal', 4, NULL, NULL, NULL, NULL, NULL, NULL),
+('Не реализ', 57, 'EIDOL #1', '', 'Equipment', 'Equip eidolon', NULL, NULL, 'universal', NULL, NULL, 19, NULL, 25, NULL, NULL),
+(NULL, 58, 'Corn', 'Farm-grown Corn', 'Resource', 'Resource harvestable', NULL, NULL, 'universal', 2, NULL, NULL, NULL, NULL, NULL, NULL),
+('Не реализ', 59, 'EIDOL #2', '', 'Equipment', 'Equip eidolon', NULL, NULL, 'universal', NULL, NULL, 19, NULL, 25, NULL, NULL),
+(NULL, 60, 'Bullet belt', 'Belt of the sharpshooter', 'Equipment', 'Default', NULL, NULL, 'universal', 12545, NULL, 10, NULL, 5, NULL, NULL),
+(NULL, 61, 'Tomato', 'Farm-grown Tomato', 'Resource', 'Resource harvestable', NULL, NULL, 'universal', 3, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 62, 'Adamantium rake', 'The usual adamantium rake.', 'Equipment', 'Equip rake', NULL, NULL, 'universal', 50000, NULL, 12, NULL, 12, NULL, NULL),
+(NULL, 63, 'Adamantium pickaxe', 'The usual adamantium pickaxe.', 'Equipment', 'Equip pickaxe', NULL, NULL, 'universal', 44250, NULL, 11, NULL, 12, NULL, NULL),
+(NULL, 64, 'Poison hook', 'Inflicts gradual damage.', 'Equipment', 'Default', NULL, NULL, 'universal', 999999, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 65, 'Explosive impulse hook', 'Inflicts gradual explode damage.', 'Equipment', 'Default', NULL, NULL, 'universal', 9999999, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 66, 'Magic spider hook', 'It\'s sticky to the air.', 'Equipment', 'Default', NULL, NULL, 'universal', 999999, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 67, 'Strawberries', 'Farm-grown Strawberries', 'Resource', 'Resource harvestable', NULL, NULL, 'universal', 4, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 68, 'Cabbage', 'Farm-grown Cabbage', 'Resource', 'Resource harvestable', NULL, NULL, 'universal', 5, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 69, 'Bullet generator', 'Spits out lead on command', 'Equipment', 'Default', NULL, NULL, 'universal', 17775, NULL, 9, NULL, 10, NULL, NULL),
+(NULL, 70, 'Wheat', 'Farm-grown Wheat', 'Resource', 'Resource harvestable', NULL, NULL, 'universal', 1, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 71, 'Pumpkin', 'Farm-grown Pumpkin', 'Resource', 'Resource harvestable', NULL, NULL, 'universal', 6, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 72, 'Iron ingot', 'Iron ingot', 'Resource', 'Default', NULL, NULL, 'universal', 80, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 73, 'Titanium ingot', 'Titanium ingot', 'Resource', 'Default', NULL, NULL, 'universal', 280, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 74, 'Adamantite ingot', 'Adamantite ingot', 'Resource', 'Default', NULL, NULL, 'universal', 550, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 75, 'Stone rake', 'The usual stone rake.', 'Equipment', 'Equip rake', NULL, NULL, 'universal', 5, NULL, 12, NULL, 1, NULL, NULL),
+(NULL, 76, 'Stone pickaxe', 'The usual stone pickaxe.', 'Equipment', 'Equip pickaxe', NULL, NULL, 'universal', 5, NULL, 11, NULL, 1, NULL, NULL),
+(NULL, 77, 'Kit start', 'Novice kit', 'Usable', 'Multiple use x99', NULL, NULL, 'universal', 1500, NULL, NULL, NULL, NULL, NULL, '{\r\n  \"random_box\": [\r\n    {\r\n      \"item_id\": 1,\r\n      \"value\": 3,\r\n      \"chance\": 29.41\r\n    },\r\n    {\r\n      \"item_id\": 1,\r\n      \"value\": 50,\r\n      \"chance\": 35.29\r\n    },\r\n    {\r\n      \"item_id\": 1,\r\n      \"value\": 150,\r\n      \"chance\": 17.65\r\n    },\r\n    {\r\n      \"item_id\": 1,\r\n      \"value\": 300,\r\n      \"chance\": 8.63\r\n    },\r\n    {\r\n      \"item_id\": 1,\r\n      \"value\": 700,\r\n      \"chance\": 1.96\r\n    },\r\n    {\r\n      \"item_id\": 76,\r\n      \"value\": 1,\r\n      \"chance\": 10.0\r\n    },\r\n    {\r\n      \"item_id\": 75,\r\n      \"value\": 1,\r\n      \"chance\": 10.0\r\n    },\r\n    {\r\n      \"item_id\": 7,\r\n      \"value\": 5,\r\n      \"chance\": 68.97\r\n    },\r\n    {\r\n      \"item_id\": 7,\r\n      \"value\": 20,\r\n      \"chance\": 27.59\r\n    },\r\n    {\r\n      \"item_id\": 7,\r\n      \"value\": 50,\r\n      \"chance\": 3.45\r\n    },\r\n    {\r\n      \"item_id\": 28,\r\n      \"value\": 1,\r\n      \"chance\": 25.0\r\n    },\r\n    {\r\n      \"item_id\": 238,\r\n      \"value\": 1,\r\n      \"chance\": 25.0\r\n    },\r\n    {\r\n      \"item_id\": 234,\r\n      \"value\": 1,\r\n      \"chance\": 25.0\r\n    },\r\n    {\r\n      \"item_id\": 222,\r\n      \"value\": 1,\r\n      \"chance\": 10.0\r\n    }\r\n  ]\r\n}'),
+('Botmodule', 78, 'VampireModule', 'VampireModuleNPC', 'Equipment', 'Default', NULL, NULL, 'universal', NULL, NULL, 8, NULL, 10000, NULL, NULL),
+('Не реализ', 79, 'EIDOL Box', 'EIDOL Box', 'Usable', 'Single use x1', NULL, 'EIDOL Box', 'universal', NULL, NULL, NULL, NULL, NULL, NULL, '{\n  \"random_box\": [\n    {\n      \"item_id\": 57,\n      \"value\": 1,\n      \"chance\": 5\n    },\n    {\n      \"item_id\": 59,\n      \"value\": 1,\n      \"chance\": 5\n    },\n    {\n      \"item_id\": 80,\n      \"value\": 1,\n      \"chance\": 5\n    },\n    {\n      \"item_id\": 88,\n      \"value\": 1,\n      \"chance\": 5\n    },\n    {\n      \"item_id\": 1,\n      \"value\": 100,\n      \"chance\": 70\n    },\n    {\n      \"item_id\": 1,\n      \"value\": 500,\n      \"chance\": 50\n    },\n    {\n      \"item_id\": 1,\n      \"value\": 5000,\n      \"chance\": 20\n    }\n  ]\n}'),
+('Не реализ', 80, 'EIDOL #3', '', 'Equipment', 'Equip eidolon', NULL, NULL, 'universal', NULL, NULL, 19, NULL, 25, NULL, NULL),
+(NULL, 81, 'Pigs tail', 'A strangely lucky pig\'s tail', 'Equipment', 'Default', NULL, NULL, 'universal', 9000, NULL, 18, NULL, 100, NULL, NULL),
+('Power 100', 82, 'Iron armor', 'Iron armor', 'Equipment', 'Equip armor (tank)', NULL, NULL, 'universal', 15040, NULL, 5, 7, 120, 30, NULL),
+('Power 150', 83, 'Titanium armor', 'Titanium armor', 'Equipment', 'Equip armor (tank)', NULL, NULL, 'universal', 36525, NULL, 5, 7, 180, 45, NULL),
+('Power 200', 84, 'Adamantium armor', 'Adamantium armor', 'Equipment', 'Equip armor (tank)', NULL, NULL, 'universal', 81925, 0, 5, 7, 270, 60, NULL),
+(NULL, 85, 'Thorny Ring', 'A ring of sharp, cursed briars', 'Equipment', 'Default', NULL, NULL, 'universal', 99999, NULL, 9, NULL, 10, NULL, NULL),
+(NULL, 86, 'Thorny Necklace', 'Choker of blood-seeking thorns', 'Equipment', 'Default', NULL, NULL, 'universal', 999999, NULL, 5, 7, 10, 10, NULL),
+(NULL, 87, 'Bone Armillae', 'Armbands carved from monster bone', 'Equipment', 'Default', NULL, NULL, 'universal', 7850, NULL, 1, NULL, 1, NULL, NULL),
+('Не реализ', 88, 'EIDOL #4', '', 'Equipment', 'Equip eidolon', NULL, NULL, 'universal', NULL, NULL, 19, NULL, 25, NULL, NULL),
+(NULL, 89, 'Eidolon Crystal', 'Required to improve eidolons', 'Currency', 'Default', NULL, NULL, 'universal', 4616400, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 90, 'Ammo Box', 'A box that magically refills', 'Equipment', 'Default', NULL, NULL, 'universal', 5000, NULL, 10, NULL, 20, NULL, NULL),
+(NULL, 91, 'Ammo Generator', 'Generates ammunition', 'Equipment', 'Default', NULL, NULL, 'universal', 5000, NULL, 9, NULL, 26, NULL, NULL),
+(NULL, 92, 'Web', 'A spider\'s web', 'Resource', 'Default', NULL, NULL, 'universal', 22, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 93, 'Show quest star navigation', 'Settings game.', 'Settings', 'Default', NULL, NULL, 'universal', NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 94, 'Pickup Laser', 'Decoration for house!', 'Decoration', 'Default', NULL, NULL, 'universal', 10000, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 95, 'Ticket guild', 'Command: /gcreate <name>', 'Other', 'Default', NULL, NULL, 'universal', 100000, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 96, 'Customizer', 'Customizer for personal skins', 'Equipment', 'Default', NULL, NULL, 'universal', 5000, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 97, 'Damage Equalizer', 'Disabled self dmg.', 'Equipment', 'Default', NULL, NULL, 'universal', 80000, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 98, 'Show detail gain messages', 'Settings game.', 'Settings', 'Default', NULL, NULL, 'universal', NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+('Не реализ', 99, 'Hammer Lamp', 'Hammer Lamp', 'Equipment', 'Equip hammer', NULL, NULL, 'universal', 9999999, NULL, 13, 3, 5, 5, NULL),
+('Не реализ', 100, 'Pizdamet', 'Pizdamet', 'Equipment', 'Equip grenade', NULL, NULL, 'universal', 9999999, NULL, 16, NULL, 2, NULL, NULL),
+('Не реализ', 101, 'Wall Pusher', 'Plazma wall', 'Equipment', 'Equip rifle', NULL, NULL, 'universal', 999999, NULL, 17, NULL, 3, NULL, NULL),
+('Не реализ', 102, 'Hammer Blast', 'Hammer Blast', 'Equipment', 'Equip hammer', NULL, NULL, 'universal', 999999, NULL, 13, 3, 3, 5, NULL),
+('Не реализ', 103, 'Magnetic Pulse', 'Conventional weapon', 'Equipment', 'Equip rifle', NULL, NULL, 'universal', 999999, NULL, 17, NULL, 4, NULL, NULL),
+(NULL, 104, 'Thread', 'Thread', 'Resource', 'Default', NULL, NULL, 'universal', 164, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 105, 'Weak poison', 'A little weak poison', 'Resource', 'Default', NULL, NULL, 'universal', 13, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 106, 'Poison', 'Concentrated poison', 'Resource', 'Default', NULL, NULL, 'universal', 15, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 107, 'Untreated Leather', 'Untreated Leather', 'Resource', 'Default', NULL, NULL, 'universal', 5, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 108, 'Leather', 'Treated leather', 'Resource', 'Default', NULL, NULL, 'universal', 50, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 109, 'Teeth', 'The teeth', 'Resource', 'Default', NULL, NULL, 'universal', 33, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 110, 'Claws ', 'The claws of the beast', 'Resource', 'Default', NULL, NULL, 'universal', 35, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 111, 'Fragments of Darkness', 'Very dark fragments', 'Resource', 'Default', NULL, NULL, 'universal', 22, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 112, 'Mushroom extract', 'Mushroom substance', 'Resource', 'Default', NULL, NULL, 'universal', 16, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 113, 'Bone', 'Someone\'s bone', 'Resource', 'Default', NULL, NULL, 'universal', 36, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 114, 'Rotten meat', 'Meat that\'s gone bad', 'Resource', 'Default', NULL, NULL, 'universal', 55, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 115, 'Magic Matter', 'The matter that radiates magic', 'Resource', 'Default', NULL, NULL, 'universal', 32, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 116, 'Feather', 'The feather of the beast', 'Resource', 'Default', NULL, NULL, 'universal', 73, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 117, 'Hook parts', 'Hook parts', 'Resource', 'Default', NULL, NULL, 'universal', 1500, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 118, 'A ring of greed', 'A cursed ring that desires gold', 'Equipment', 'Default', NULL, NULL, 'universal', NULL, NULL, 20, NULL, 500, NULL, NULL),
+(NULL, 119, 'Miner tools', 'Sturdy tools to unearth gems', 'Equipment', 'Default', NULL, NULL, 'universal', 72750, NULL, 11, NULL, 3, NULL, NULL),
+('Мусор?', 120, 'Banner', 'One of the items to create a guild', 'Resource', 'Default', NULL, NULL, 'universal', 1468, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 121, 'Mana Flower', 'Magic pours out of this flower', 'Resource', 'Resource harvestable', NULL, NULL, 'universal', 7, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 122, 'Life Flower', 'Life pours out of this flower', 'Resource', 'Resource harvestable', NULL, NULL, 'universal', 7, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 123, 'Explosives', 'A lot of explosive substances', 'Resource', 'Default', NULL, NULL, 'universal', 35, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 124, 'Trash', 'Trash', 'Resource', 'Default', NULL, NULL, 'universal', 9, 1, NULL, NULL, NULL, NULL, NULL),
+(NULL, 125, 'Skull', 'Someone\'s skull', 'Resource', 'Default', NULL, NULL, 'universal', 117, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 126, 'Rage amulet', 'The amulet of rage', 'Equipment', 'Default', NULL, NULL, 'universal', 28750, NULL, 1, NULL, 1, NULL, NULL),
+(NULL, 127, 'Explosive Powder', 'Very explosive', 'Resource', 'Default', NULL, NULL, 'universal', 111, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 128, 'Spider Egg', 'Spider Egg', 'Resource', 'Default', NULL, NULL, 'universal', 155, NULL, NULL, NULL, NULL, NULL, NULL),
+('Не реализ', 129, 'Wooden Crate', 'Wooden Crate', 'Usable', 'Single use x1', NULL, NULL, 'universal', 99999, NULL, NULL, NULL, NULL, NULL, NULL),
+('Не реализ', 130, 'Iron crate', 'Iron crate', 'Usable', 'Single use x1', NULL, NULL, 'universal', 999999, NULL, NULL, NULL, NULL, NULL, NULL),
+('Не реализ', 131, 'Golden Crate', 'Golden Crate', 'Usable', 'Single use x1', NULL, NULL, 'universal', 9999999, NULL, NULL, NULL, NULL, NULL, NULL),
+('', 132, 'Beer', 'Boost +2% MP (15 min)', 'Usable', 'Single use x1', NULL, NULL, 'universal', 1000, 0, NULL, NULL, NULL, NULL, '{\n    \"bonus\": {\n        \"amount\": 2,\n        \"duration_minutes\": 15,\n        \"duration_hours\": 0,\n        \"duration_days\": 0,\n        \"type\": 4\n    }\n}'),
+('BotModule', 133, 'SpeedModule', 'SpeedModuleNPC', 'Equipment', 'Default', NULL, NULL, 'universal', NULL, NULL, 2, NULL, 1000, NULL, NULL),
+(NULL, 134, 'Life crystal', 'The life-giving crystal', 'Resource', 'Default', NULL, NULL, 'universal', 1985, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 135, 'Hoarder bag', 'A bag that is bigger inside', 'Equipment', 'Default', NULL, NULL, 'universal', 87500, NULL, 6, 18, 200, 134, NULL),
+(NULL, 136, 'Aether crystal', 'Aether crystal', 'Resource', 'Default', NULL, NULL, 'universal', 70, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 137, 'Slime', 'A piece of slime', 'Resource', 'Default', NULL, NULL, 'universal', 44, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 138, 'Bone meal', 'Bone meal', 'Resource', 'Default', NULL, NULL, 'universal', 1, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 139, 'WarLord', 'You already have combat experience', 'Equipment', 'Equip title', NULL, NULL, 'universal', NULL, NULL, 1, NULL, 2, NULL, NULL),
+(NULL, 140, 'Legend of the DM', 'You\'ve been through the whole ordeal of murder.', 'Equipment', 'Equip title', NULL, NULL, 'universal', NULL, NULL, 1, 2, 1, 150, NULL),
+(NULL, 141, 'The Legendary Traveler', 'You already know and feel this place', 'Equipment', 'Equip title', NULL, NULL, 'universal', NULL, NULL, 5, NULL, 100, NULL, NULL),
+(NULL, 142, 'Dungeon King', 'You\'re a pain to the dark world', 'Equipment', 'Equip title', NULL, NULL, 'universal', NULL, NULL, 5, 7, 100, 100, NULL),
+(NULL, 143, 'Tank Lord', 'The armor is a part of you.', 'Equipment', 'Equip title', NULL, NULL, 'universal', NULL, NULL, 5, 6, 50, 1655, NULL),
+(NULL, 144, 'DMG Lord', 'One touch, destruction', 'Equipment', 'Equip title', NULL, NULL, 'universal', NULL, NULL, 1, 2, 2, 75, NULL),
+(NULL, 145, 'The Lord Healer', 'The earth before you blooms', 'Equipment', 'Equip title', NULL, NULL, 'universal', NULL, NULL, 5, 7, 50, 150, NULL),
+(NULL, 146, 'Lord of the Ore', 'You make everything out of nothing', 'Equipment', 'Equip title', NULL, NULL, 'universal', NULL, NULL, 18, 11, 1500, 5, NULL),
+(NULL, 147, 'Harvest King', 'You know nature better than anyone', 'Equipment', 'Equip title', NULL, NULL, 'universal', NULL, NULL, 12, 18, 5, 1500, NULL),
+(NULL, 148, 'The Overlord of Damage', 'Nothing but nothing', 'Equipment', 'Equip title', NULL, NULL, 'universal', NULL, NULL, 1, 3, 5, 5, NULL),
+(NULL, 149, 'King of Gold', 'You\'re respected. And they give you a discount', 'Equipment', 'Equip title', NULL, NULL, 'universal', NULL, NULL, 20, NULL, 25000, NULL, NULL),
+('Не реализ', 150, 'Tracked Plazma', 'Tracked Plazma', 'Equipment', 'Equip rifle', NULL, NULL, 'universal', 999999, NULL, 17, NULL, 6, NULL, NULL),
+('Не реализ', 151, 'Gun Pulse', 'Gun Pulse', 'Equipment', 'Equip gun', NULL, NULL, 'universal', NULL, NULL, 14, NULL, 3, NULL, NULL),
+(NULL, 152, 'Module parts', 'Assembly components', 'Resource', 'Default', NULL, NULL, 'universal', 5000, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 153, 'Weapons parts', 'Need it for a gun?', 'Resource', 'Default', NULL, NULL, 'universal', 500, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 167, 'Ancient remains', 'The ancient remains of someone', 'Resource', 'Default', NULL, NULL, 'universal', 1000, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 168, 'Ancient coin', 'The ancient coin', 'Other', 'Default', NULL, NULL, 'universal', 5000, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 169, 'Ancient adornment', 'The ancient adornment', 'Other', 'Default', NULL, NULL, 'universal', 7000, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 170, 'Ancient relic', 'The ancient relic', 'Other', 'Default', NULL, NULL, 'universal', 10000, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 171, 'Ancient component', 'The ancient component', 'Other', 'Default', NULL, NULL, 'universal', 15000, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 172, 'Ancient artifact', 'The ancient artifact', 'Other', 'Default', NULL, NULL, 'universal', 50000, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 173, 'Stone', 'Just stone', 'Resource', 'Resource mineable', NULL, NULL, 'universal', 1, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 174, 'Iron fish rod', 'The usual fishing rod.', 'Equipment', 'Equip fishrod', NULL, NULL, 'universal', 14940, NULL, 21, NULL, 5, NULL, NULL),
+(NULL, 175, 'Crucian Carp', 'Common river fish', 'Resource', 'Resource fishes', NULL, NULL, 'universal', 5, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 176, 'Northern Pike', 'Aggressive freshwater', 'Resource', 'Resource fishes', NULL, NULL, 'universal', 7, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 177, 'Perch', 'Sleek and swift swimmer', 'Resource', 'Resource fishes', NULL, NULL, 'universal', 10, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 178, 'Zander', 'Popular sport catch', 'Resource', 'Resource fishes', NULL, NULL, 'universal', 12, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 179, 'Bream', 'Smooth, tasty fish', 'Resource', 'Resource fishes', NULL, NULL, 'universal', 15, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 180, 'Catfish', 'Large, hard-to-catch fish', 'Resource', 'Resource fishes', NULL, NULL, 'universal', 20, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 181, 'Trout', 'Vibrant, agile swimmer', 'Resource', 'Resource fishes', NULL, NULL, 'universal', 22, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 182, 'Salmon', 'Premium, rich in flavor', 'Resource', 'Resource fishes', NULL, NULL, 'universal', 25, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 183, 'Sturgeon', 'Ancient, prized catch', 'Resource', 'Resource fishes', NULL, NULL, 'universal', 28, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 184, 'Swordfish', 'Dramatic giant hunter', 'Resource', 'Resource fishes', NULL, NULL, 'universal', 30, NULL, NULL, NULL, NULL, NULL, NULL),
+('Не реализ', 185, 'Magnet for items', 'Magnetizes items meant for you', 'Equipment', 'Default', NULL, NULL, 'universal', NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 186, 'Pig meat', 'The meat of a pig? Old version', 'Resource', 'Default', NULL, NULL, 'universal', 11, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 187, 'Scavenger', 'Title for DPS', 'Equipment', 'Equip title', NULL, NULL, 'universal', 7000, NULL, 2, 4, 50, 50, NULL),
+(NULL, 188, 'Copper gloves', 'The usual copper loader gloves', 'Equipment', 'Equip gloves', NULL, NULL, 'universal', 3240, NULL, 22, NULL, 15, NULL, NULL),
+(NULL, 189, 'Iron gloves', 'The usual iron loader gloves', 'Equipment', 'Equip gloves', NULL, NULL, 'universal', 5375, NULL, 22, NULL, 25, NULL, NULL),
+(NULL, 190, 'Titanium gloves', 'The usual titanium loader gloves', 'Equipment', 'Equip gloves', NULL, NULL, 'universal', 21720, NULL, 22, NULL, 50, NULL, NULL),
+(NULL, 191, 'Adamantium gloves', 'The usual adamantium loader gloves', 'Equipment', 'Equip gloves', NULL, NULL, 'universal', 37850, NULL, 22, NULL, 100, NULL, NULL),
+(NULL, 192, 'Leather gloves', 'The usual leather loader gloves', 'Equipment', 'Equip gloves', NULL, NULL, 'universal', 1510, NULL, 22, NULL, 10, NULL, NULL),
+(NULL, 193, 'HP 2% 30m', 'Boost HP 2% 30m', 'Usable', 'Single use x1', NULL, NULL, 'universal', NULL, NULL, NULL, NULL, NULL, NULL, '{\r\n  \"bonus\": {\r\n    \"amount\": 2,\r\n    \"duration_minutes\": 30,\r\n    \"type\": 3\r\n  }\r\n}'),
+('', 194, 'MP 2% 30m', 'Boost MP 2% 30m', 'Usable', 'Single use x1', NULL, NULL, 'universal', 0, 0, NULL, NULL, NULL, NULL, '{\n    \"bonus\": {\n        \"amount\": 2,\n        \"duration_minutes\": 30,\n        \"duration_hours\": 0,\n        \"duration_days\": 0,\n        \"type\": 4\n    }\n}'),
+(NULL, 195, 'EXP 2% 30m', 'Boost EXP 2% 30m', 'Usable', 'Single use x1', NULL, NULL, 'universal', NULL, NULL, NULL, NULL, NULL, NULL, '{\r\n  \"bonus\": {\r\n    \"amount\": 2,\r\n    \"duration_minutes\": 15,\r\n    \"type\": 1\r\n  }\r\n}'),
+(NULL, 196, 'GOLD 2% 30m', 'Boost GOLD 2% 30m', 'Usable', 'Single use x1', NULL, NULL, 'universal', NULL, NULL, NULL, NULL, NULL, NULL, '{\r\n  \"bonus\": {\r\n    \"amount\": 2,\r\n    \"duration_minutes\": 30,\r\n    \"type\": 2\r\n  }\r\n}'),
+(NULL, 197, 'HP 5% 10m', 'Boost HP 5% 10m', 'Usable', 'Single use x1', NULL, NULL, 'universal', NULL, NULL, NULL, NULL, NULL, NULL, '{\r\n  \"bonus\": {\r\n    \"amount\": 5,\r\n    \"duration_minutes\": 10,\r\n    \"type\": 3\r\n  }\r\n}'),
+(NULL, 198, 'EXP 5% 10m', 'Boost EXP 5% 10m', 'Usable', 'Single use x1', NULL, NULL, 'universal', NULL, NULL, NULL, NULL, NULL, NULL, '{\r\n  \"bonus\": {\r\n    \"amount\": 5,\r\n    \"duration_minutes\": 10,\r\n    \"type\": 1\r\n  }\r\n}'),
+(NULL, 199, 'GOLD 5% 10m', 'Boost GOLD 5% 10m', 'Usable', 'Single use x1', NULL, NULL, 'universal', NULL, NULL, NULL, NULL, NULL, NULL, '{\r\n  \"bonus\": {\r\n    \"amount\": 5,\r\n    \"duration_minutes\": 10,\r\n    \"type\": 2\r\n  }\r\n}'),
+(NULL, 200, 'HP 5% 2d', 'Boost HP 5% 2d', 'Usable', 'Single use x1', NULL, NULL, 'universal', NULL, NULL, NULL, NULL, NULL, NULL, '{\r\n  \"bonus\": {\r\n    \"amount\": 5,\r\n    \"duration_days\": 2,\r\n    \"type\": 3\r\n  }\r\n}'),
+('', 201, 'MP 5% 2d', 'Boost MP 5% 2d', 'Usable', 'Single use x1', NULL, NULL, 'universal', 0, 0, NULL, NULL, NULL, NULL, '{\n    \"bonus\": {\n        \"amount\": 5,\n        \"duration_minutes\": 0,\n        \"duration_hours\": 0,\n        \"duration_days\": 2,\n        \"type\": 4\n    }\n}'),
+(NULL, 202, 'EXP 5% 2d', 'Boost EXP 5% 2d', 'Usable', 'Single use x1', NULL, NULL, 'universal', NULL, NULL, NULL, NULL, NULL, NULL, '{\r\n  \"bonus\": {\r\n    \"amount\": 5,\r\n    \"duration_days\": 2,\r\n    \"type\": 1\r\n  }\r\n}'),
+(NULL, 203, 'GOLD 5% 2d', 'Boost GOLD 5% 2d', 'Usable', 'Single use x1', NULL, NULL, 'universal', NULL, NULL, NULL, NULL, NULL, NULL, '{\r\n  \"bonus\": {\r\n    \"amount\": 5,\r\n    \"duration_days\": 2,\r\n    \"type\": 2\r\n  }\r\n}'),
+(NULL, 204, 'HP 50% 2m', 'Boost HP 50% 2m', 'Usable', 'Single use x1', NULL, NULL, 'universal', NULL, NULL, NULL, NULL, NULL, NULL, '{\r\n  \"bonus\": {\r\n    \"amount\": 50,\r\n    \"duration_minutes\": 2,\r\n    \"type\": 3\r\n  }\r\n}'),
+('', 205, 'MP 50% 2m', 'Boost MP 50% 2m', 'Usable', 'Single use x1', NULL, NULL, 'universal', 0, 0, NULL, NULL, NULL, NULL, '{\n    \"bonus\": {\n        \"amount\": 50,\n        \"duration_minutes\": 2,\n        \"duration_hours\": 0,\n        \"duration_days\": 0,\n        \"type\": 4\n    }\n}'),
+(NULL, 206, 'EXP 50% 2m', 'Boost EXP 50% 2m', 'Usable', 'Single use x1', NULL, NULL, 'universal', NULL, NULL, NULL, NULL, NULL, NULL, '{\r\n  \"bonus\": {\r\n    \"amount\": 50,\r\n    \"duration_minutes\": 2,\r\n    \"type\": 1\r\n  }\r\n}'),
+(NULL, 207, 'GOLD 50% 2m', 'Boost GOLD 50% 2m', 'Usable', 'Single use x1', NULL, NULL, 'universal', NULL, NULL, NULL, NULL, NULL, NULL, '{\r\n  \"bonus\": {\r\n    \"amount\": 50,\r\n    \"duration_minutes\": 2,\r\n    \"type\": 2\r\n  }\r\n}'),
+(NULL, 208, 'Kill Gun', 'Improved regular gun', 'Equipment', 'Equip gun', NULL, NULL, 'universal', 21000, NULL, 14, 6, 4, 1, NULL),
+(NULL, 209, 'Burst shotgun', 'Improved burst shotgun', 'Equipment', 'Equip shotgun', NULL, NULL, 'universal', 70000, NULL, 15, 18, 2, 1, NULL),
+(NULL, 210, 'Injury grenade', 'Improved burst grenade', 'Equipment', 'Equip grenade', NULL, NULL, 'universal', 140000, NULL, 16, 7, 6, 3, NULL),
+(NULL, 211, 'Laser damager', 'Improved burst laser', 'Equipment', 'Equip rifle', NULL, NULL, 'universal', 280000, NULL, 17, 3, 8, 1, NULL),
+(NULL, 212, 'Decoration box', 'Decor house (HP/MP)', 'Usable', 'Multiple use x99', NULL, NULL, 'universal', 1500, NULL, NULL, NULL, NULL, NULL, '{\r\n  \"random_box\": [\r\n    {\r\n      \"item_id\": 1,\r\n      \"value\": 3,\r\n      \"chance\": 29.41\r\n    },\r\n    {\r\n      \"item_id\": 1,\r\n      \"value\": 50,\r\n      \"chance\": 35.29\r\n    },\r\n    {\r\n      \"item_id\": 1,\r\n      \"value\": 150,\r\n      \"chance\": 17.65\r\n    },\r\n    {\r\n      \"item_id\": 1,\r\n      \"value\": 300,\r\n      \"chance\": 8.63\r\n    },\r\n    {\r\n      \"item_id\": 1,\r\n      \"value\": 700,\r\n      \"chance\": 1.96\r\n    },\r\n    {\r\n      \"item_id\": 7,\r\n      \"value\": 5,\r\n      \"chance\": 68.97\r\n    },\r\n    {\r\n      \"item_id\": 7,\r\n      \"value\": 20,\r\n      \"chance\": 27.59\r\n    },\r\n    {\r\n      \"item_id\": 7,\r\n      \"value\": 50,\r\n      \"chance\": 3.45\r\n    },\r\n    {\r\n      \"item_id\": 7,\r\n      \"value\": 13,\r\n      \"chance\": 2\r\n    },\r\n    {\r\n      \"item_id\": 18,\r\n      \"value\": 1,\r\n      \"chance\": 1\r\n    },\r\n    {\r\n      \"item_id\": 13,\r\n      \"value\": 1,\r\n      \"chance\": 1\r\n    }\r\n  ]\r\n}'),
+(NULL, 213, 'Decoration chest', 'Decor house (weapons)', 'Usable', 'Multiple use x99', NULL, NULL, 'universal', 1500, NULL, NULL, NULL, NULL, NULL, '{\r\n  \"random_box\": [\r\n    {\r\n      \"item_id\": 1,\r\n      \"value\": 3,\r\n      \"chance\": 29.41\r\n    },\r\n    {\r\n      \"item_id\": 1,\r\n      \"value\": 50,\r\n      \"chance\": 35.29\r\n    },\r\n    {\r\n      \"item_id\": 1,\r\n      \"value\": 150,\r\n      \"chance\": 17.65\r\n    },\r\n    {\r\n      \"item_id\": 1,\r\n      \"value\": 300,\r\n      \"chance\": 8.63\r\n    },\r\n    {\r\n      \"item_id\": 1,\r\n      \"value\": 700,\r\n      \"chance\": 1.96\r\n    },\r\n    {\r\n      \"item_id\": 7,\r\n      \"value\": 5,\r\n      \"chance\": 68.97\r\n    },\r\n    {\r\n      \"item_id\": 7,\r\n      \"value\": 20,\r\n      \"chance\": 27.59\r\n    },\r\n    {\r\n      \"item_id\": 7,\r\n      \"value\": 50,\r\n      \"chance\": 3.45\r\n    },\r\n    {\r\n      \"item_id\": 7,\r\n      \"value\": 13,\r\n      \"chance\": 2\r\n    },\r\n    {\r\n      \"item_id\": 11,\r\n      \"value\": 1,\r\n      \"chance\": 2\r\n    },\r\n    {\r\n      \"item_id\": 12,\r\n      \"value\": 1,\r\n      \"chance\": 1.5\r\n    },\r\n    {\r\n      \"item_id\": 94,\r\n      \"value\": 1,\r\n      \"chance\": 1\r\n    }\r\n  ]\r\n}'),
+(NULL, 214, 'Draft Hammer Lamp', 'Draft Hammer Lamp', 'Other', 'Default', NULL, NULL, 'universal', 10000, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 215, 'Draft Wall Pusher', 'Draft Wall Pusher', 'Other', 'Default', NULL, NULL, 'universal', 10000, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 216, 'Draft Hammer Blast', 'Draft Hammer Blast', 'Other', 'Default', NULL, NULL, 'universal', 10000, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 217, 'Draft Magnetic Pulse', 'Draft Magnetic Pulse', 'Other', 'Default', NULL, NULL, 'universal', 10000, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 218, 'Draft Gun Pulse', 'Draft Gun Pulse', 'Other', 'Default', NULL, NULL, 'universal', 10000, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 219, 'Draft Pizdamet', 'Draft Pizdamet', 'Other', 'Default', NULL, NULL, 'universal', 10000, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 220, 'Draft Tracked Plazma', 'Draft Tracked Plazma', 'Other', 'Default', NULL, NULL, 'universal', 10000, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 221, 'Draft box', 'Draft box', 'Usable', 'Multiple use x99', NULL, NULL, 'universal', 20, NULL, NULL, NULL, NULL, NULL, '{\n    \"random_box\": [\n        {\n            \"item_id\": 1,\n            \"value\": 3,\n            \"chance\": 29.41\n        },\n        {\n            \"item_id\": 1,\n            \"value\": 50,\n            \"chance\": 35.29\n        },\n        {\n            \"item_id\": 1,\n            \"value\": 150,\n            \"chance\": 17.65\n        },\n        {\n            \"item_id\": 1,\n            \"value\": 300,\n            \"chance\": 8.63\n        },\n        {\n            \"item_id\": 1,\n            \"value\": 700,\n            \"chance\": 1.96\n        },\n        {\n            \"item_id\": 7,\n            \"value\": 5,\n            \"chance\": 68.97\n        },\n        {\n            \"item_id\": 7,\n            \"value\": 20,\n            \"chance\": 27.59\n        },\n        {\n            \"item_id\": 7,\n            \"value\": 50,\n            \"chance\": 3.45\n        },\n        {\n            \"item_id\": 7,\n            \"value\": 13,\n            \"chance\": 2\n        },\n        {\n            \"item_id\": 214,\n            \"value\": 1,\n            \"chance\": 1\n        },\n        {\n            \"item_id\": 215,\n            \"value\": 1,\n            \"chance\": 1\n        },\n        {\n            \"item_id\": 216,\n            \"value\": 1,\n            \"chance\": 1\n        },\n        {\n            \"item_id\": 217,\n            \"value\": 1,\n            \"chance\": 1\n        },\n        {\n            \"item_id\": 218,\n            \"value\": 1,\n            \"chance\": 1\n        },\n        {\n            \"item_id\": 219,\n            \"value\": 1,\n            \"chance\": 1\n        },\n        {\n            \"item_id\": 220,\n            \"value\": 1,\n            \"chance\": 1\n        },\n        {\n            \"item_id\": 403,\n            \"value\": 1,\n            \"chance\": 0.05\n        }\n    ]\n}'),
+(NULL, 222, 'Homemade rod', 'The usual homemade rod', 'Equipment', 'Equip fishrod', NULL, NULL, 'universal', 450, NULL, 21, NULL, 1, NULL, NULL),
+(NULL, 223, 'Сotton', 'Farm-grown cotton', 'Resource', 'Resource harvestable', NULL, NULL, 'universal', 6, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 224, 'Sunflower', 'Farm-grown sunflower', 'Resource', 'Resource harvestable', NULL, NULL, 'universal', 6, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 225, 'Black truffle', 'Farm-grown black truffle', 'Resource', 'Resource harvestable', NULL, NULL, 'universal', 7, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 226, 'Сloth', 'Cloth', 'Resource', 'Default', NULL, NULL, 'universal', 525, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 227, 'Oil', 'Vegetable oil', 'Resource', 'Default', NULL, NULL, 'universal', 1010, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 228, 'Small bag', 'A small pouch for holding coins', 'Equipment', 'Default', NULL, NULL, 'universal', 36750, NULL, 22, NULL, 50, NULL, NULL),
+(NULL, 229, 'Hand-to-hand ring', 'A ring that empowers your fists', 'Equipment', 'Default', NULL, NULL, 'universal', 188000, NULL, 13, NULL, 2, NULL, NULL),
+(NULL, 230, 'Quick amulet', 'An amulet that hastens your step', 'Equipment', 'Default', NULL, NULL, 'universal', 204900, NULL, 2, NULL, 75, NULL, NULL),
+(NULL, 231, 'Laser sight', 'A sight for unerring accuracy', 'Equipment', 'Default', NULL, NULL, 'universal', NULL, NULL, 17, NULL, 1, NULL, NULL),
+(NULL, 232, 'Fishing box', 'A box with every lure you need', 'Equipment', 'Default', NULL, NULL, 'universal', 43750, NULL, 21, NULL, 2, NULL, NULL),
+(NULL, 233, 'Fish scales', 'Fish scales', 'Resource', 'Default', NULL, NULL, 'universal', 146, NULL, NULL, NULL, NULL, NULL, NULL),
+('Power 20', 234, 'Meat armor', 'Meat armor', 'Equipment', 'Equip armor (dps)', NULL, NULL, 'universal', 2000, NULL, 5, 7, 23, 10, NULL),
+('Power 50', 235, 'Warrior armor', 'Warrior armor', 'Equipment', 'Equip armor (dps)', NULL, NULL, 'universal', 7000, NULL, 5, 7, 56, 25, NULL),
+('Power 100', 236, 'Hunter armor', 'Hunter armor', 'Equipment', 'Equip armor (dps)', NULL, NULL, 'universal', 20000, NULL, 5, 7, 112, 50, NULL),
+('Power 150', 237, 'Bersek armor', 'Bersek armor', 'Equipment', 'Equip armor (dps)', NULL, NULL, 'universal', 40000, NULL, 5, 7, 168, 75, NULL),
+('Power 20', 238, 'Plant armor', 'Plant armor', 'Equipment', 'Equip armor (healer)', NULL, NULL, 'universal', 2000, NULL, 5, 7, 16, 10, NULL),
+('Power 50', 239, 'Priests robes', 'Priests robes', 'Equipment', 'Equip armor (healer)', NULL, NULL, 'universal', 7000, NULL, 5, 7, 40, 24, NULL),
+('Power 100', 240, 'Cloak of life', 'Cloak of life', 'Equipment', 'Equip armor (healer)', NULL, NULL, 'universal', 20000, NULL, 5, 7, 80, 48, NULL),
+('Power 150', 241, 'Healer cloak', 'Healer cloak', 'Equipment', 'Equip armor (healer)', NULL, NULL, 'universal', 40000, NULL, 5, 7, 120, 72, NULL),
+(NULL, 242, 'Magic bandage', 'A bandage that seals any wound', 'Equipment', 'Default', NULL, NULL, 'universal', 14290, NULL, 7, NULL, 25, NULL, NULL),
+(NULL, 243, 'Rage belt', 'A belt that fuels your battle fury', 'Equipment', 'Default', NULL, NULL, 'universal', 151000, NULL, 4, NULL, 50, NULL, NULL),
+(NULL, 244, 'Gridans', 'Gridans coins', 'Currency', 'Default', NULL, NULL, 'universal', NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 245, 'Warrior', 'Warrior', 'Equipment', 'Equip title', NULL, NULL, 'universal', NULL, NULL, 1, NULL, 1, NULL, NULL),
+(NULL, 246, 'Guner', 'Guner', 'Equipment', 'Equip title', NULL, NULL, 'universal', NULL, NULL, 14, NULL, 1, NULL, NULL),
+(NULL, 247, 'ShotGuner', 'ShotGuner', 'Equipment', 'Equip title', NULL, NULL, 'universal', NULL, NULL, 15, NULL, 1, NULL, NULL),
+(NULL, 248, 'Grenader', 'Grenader', 'Equipment', 'Equip title', NULL, NULL, 'universal', NULL, NULL, 16, NULL, 1, NULL, NULL),
+(NULL, 249, 'Lasertee', 'Lasertee', 'Equipment', 'Equip title', NULL, NULL, 'universal', NULL, NULL, 17, NULL, 1, NULL, NULL),
+(NULL, 250, 'Lucker', 'Lucker', 'Equipment', 'Equip title', NULL, NULL, 'universal', NULL, NULL, 6, NULL, 1000, NULL, NULL),
+(NULL, 251, 'Mugger', 'Mugger', 'Equipment', 'Equip title', NULL, NULL, 'universal', NULL, NULL, 20, NULL, 2500, NULL, NULL),
+(NULL, 252, 'Fisherman', 'Fisherman', 'Equipment', 'Equip title', NULL, NULL, 'universal', NULL, NULL, 21, NULL, 3, NULL, NULL),
+(NULL, 253, 'Miner', 'Miner', 'Equipment', 'Equip title', NULL, NULL, 'universal', NULL, NULL, 11, NULL, 3, NULL, NULL),
+(NULL, 254, 'Farmer', 'Farmer', 'Equipment', 'Equip title', NULL, NULL, 'universal', NULL, NULL, 12, NULL, 3, NULL, NULL),
+(NULL, 255, 'Murderer', 'Murderer', 'Equipment', 'Equip title', NULL, NULL, 'universal', NULL, NULL, 4, NULL, 3500, NULL, NULL),
+(NULL, 256, 'Pack of cigarettes', 'Reduces jail time', 'Other', 'Default', NULL, NULL, 'universal', NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 257, 'Booster box', 'Booster box', 'Usable', 'Multiple use x99', NULL, NULL, 'universal', 1500, NULL, NULL, NULL, NULL, NULL, '{\n  \"random_box\": [\n    {\n      \"item_id\": 193,\n      \"value\": 1,\n      \"chance\": 60\n    },\n    {\n      \"item_id\": 194,\n      \"value\": 1,\n      \"chance\": 60\n    },\n    {\n      \"item_id\": 195,\n      \"value\": 1,\n      \"chance\": 60\n    },\n    {\n      \"item_id\": 196,\n      \"value\": 1,\n      \"chance\": 60\n    },\n    {\n      \"item_id\": 197,\n      \"value\": 1,\n      \"chance\": 30\n    },\n    {\n      \"item_id\": 198,\n      \"value\": 1,\n      \"chance\": 30\n    },\n    {\n      \"item_id\": 199,\n      \"value\": 1,\n      \"chance\": 30\n    },\n    {\n      \"item_id\": 200,\n      \"value\": 1,\n      \"chance\": 10\n    },\n    {\n      \"item_id\": 201,\n      \"value\": 1,\n      \"chance\": 10\n    },\n    {\n      \"item_id\": 202,\n      \"value\": 1,\n      \"chance\": 10\n    },\n    {\n      \"item_id\": 203,\n      \"value\": 1,\n      \"chance\": 10\n    },\n    {\n      \"item_id\": 204,\n      \"value\": 1,\n      \"chance\": 5\n    },\n    {\n      \"item_id\": 205,\n      \"value\": 1,\n      \"chance\": 5\n    },\n    {\n      \"item_id\": 206,\n      \"value\": 1,\n      \"chance\": 5\n    },\n    {\n      \"item_id\": 207,\n      \"value\": 1,\n      \"chance\": 5\n    },\n    {\n      \"item_id\": 1,\n      \"value\": 1000,\n      \"chance\": 20\n    },\n    {\n      \"item_id\": 1,\n      \"value\": 500,\n      \"chance\": 40\n    },\n    {\n      \"item_id\": 1,\n      \"value\": 250,\n      \"chance\": 70\n    },\n    {\n      \"item_id\": 7,\n      \"value\": 1000,\n      \"chance\": 5\n    },\n    {\n      \"item_id\": 7,\n      \"value\": 500,\n      \"chance\": 20\n    },\n    {\n      \"item_id\": 7,\n      \"value\": 100,\n      \"chance\": 40\n    },\n    {\n      \"item_id\": 7,\n      \"value\": 50,\n      \"chance\": 70\n    }\n  ]\n}'),
+(NULL, 258, 'Title box', 'Title box', 'Usable', 'Multiple use x99', NULL, NULL, 'universal', 10000, NULL, NULL, NULL, NULL, NULL, '{\n  \"random_box\": [\n    {\n      \"item_id\": 245,\n      \"value\": 1,\n      \"chance\": 5\n    },\n    {\n      \"item_id\": 246,\n      \"value\": 1,\n      \"chance\": 5\n    },\n    {\n      \"item_id\": 247,\n      \"value\": 1,\n      \"chance\": 5\n    },\n    {\n      \"item_id\": 248,\n      \"value\": 1,\n      \"chance\": 5\n    },\n    {\n      \"item_id\": 249,\n      \"value\": 1,\n      \"chance\": 5\n    },\n    {\n      \"item_id\": 250,\n      \"value\": 1,\n      \"chance\": 1\n    },\n    {\n      \"item_id\": 251,\n      \"value\": 1,\n      \"chance\": 1\n    },\n    {\n      \"item_id\": 252,\n      \"value\": 1,\n      \"chance\": 1\n    },\n    {\n      \"item_id\": 253,\n      \"value\": 1,\n      \"chance\": 1\n    },\n    {\n      \"item_id\": 254,\n      \"value\": 1,\n      \"chance\": 1\n    },\n    {\n      \"item_id\": 255,\n      \"value\": 1,\n      \"chance\": 1\n    },\n    {\n      \"item_id\": 1,\n      \"value\": 1000,\n      \"chance\": 20\n    },\n    {\n      \"item_id\": 1,\n      \"value\": 500,\n      \"chance\": 40\n    },\n    {\n      \"item_id\": 1,\n      \"value\": 250,\n      \"chance\": 70\n    },\n    {\n      \"item_id\": 7,\n      \"value\": 1000,\n      \"chance\": 5\n    },\n    {\n      \"item_id\": 7,\n      \"value\": 500,\n      \"chance\": 20\n    },\n    {\n      \"item_id\": 7,\n      \"value\": 100,\n      \"chance\": 40\n    },\n    {\n      \"item_id\": 7,\n      \"value\": 50,\n      \"chance\": 70\n    }\n  ]\n}'),
+(NULL, 259, 'Scaly armbands', 'Armbands of hardened dragonscale', 'Equipment', 'Default', NULL, NULL, 'universal', 15300, NULL, 2, NULL, 25, NULL, NULL),
+(NULL, 260, 'Slime lining', 'Oozing, acid-proof inner layer', 'Equipment', 'Default', NULL, NULL, 'universal', 22100, NULL, 5, NULL, 25, NULL, NULL),
+(NULL, 261, 'Fiber', 'Title for Healer', 'Equipment', 'Equip title', NULL, NULL, 'universal', 7000, NULL, 5, 7, 7, 1, NULL),
+(NULL, 262, 'Rust', 'Title for Tank', 'Equipment', 'Equip title', NULL, NULL, 'universal', 7000, NULL, 5, NULL, 8, NULL, NULL),
+(NULL, 263, 'Leather shoulderpads', 'Tough, reinforced shoulder guards', 'Equipment', 'Default', NULL, NULL, 'universal', 5750, NULL, 5, NULL, 10, NULL, NULL),
+(NULL, 264, 'HP Potion I', 'Restores health', 'Potion', 'Equip potion HP', NULL, NULL, 'universal', 1000, NULL, NULL, NULL, NULL, NULL, '{\r\n  \"potion\": {\r\n    \"effect\": \"Tiny heal\",\r\n    \"value\": 1,\r\n    \"lifetime\": 10,\r\n    \"recast\": 50\r\n    }\r\n}'),
+(NULL, 265, 'HP Potion II', 'Restores health', 'Potion', 'Equip potion HP', NULL, NULL, 'universal', 5000, NULL, NULL, NULL, NULL, NULL, '{\r\n  \"potion\": {\r\n    \"effect\": \"Tiny heal\",\r\n    \"value\": 3,\r\n    \"lifetime\": 10,\r\n    \"recast\": 50\r\n    }\r\n}'),
+(NULL, 266, 'HP Potion III', 'Restores health', 'Potion', 'Equip potion HP', NULL, NULL, 'universal', 10000, NULL, NULL, NULL, NULL, NULL, '{\r\n  \"potion\": {\r\n    \"effect\": \"Tiny heal\",\r\n    \"value\": 5,\r\n    \"lifetime\": 10,\r\n    \"recast\": 50\r\n    }\r\n}'),
+(NULL, 267, 'HP Potion IV', 'Restores health', 'Potion', 'Equip potion HP', NULL, NULL, 'universal', 50000, NULL, NULL, NULL, NULL, NULL, '{\r\n  \"potion\": {\r\n    \"effect\": \"Tiny heal\",\r\n    \"value\": 10,\r\n    \"lifetime\": 10,\r\n    \"recast\": 50\r\n    }\r\n}'),
+(NULL, 268, 'HP Potion V', 'Restores health', 'Potion', 'Equip potion HP', NULL, NULL, 'universal', 100000, NULL, NULL, NULL, NULL, NULL, '{\r\n  \"potion\": {\r\n    \"effect\": \"Tiny heal\",\r\n    \"value\": 20,\r\n    \"lifetime\": 10,\r\n    \"recast\": 50\r\n    }\r\n}'),
+(NULL, 269, 'Mana Potion I', 'Restores mana', 'Potion', 'Equip potion MP', NULL, NULL, 'universal', 1000, NULL, NULL, NULL, NULL, NULL, '{\r\n  \"potion\": {\r\n    \"effect\": \"Tiny MP\",\r\n    \"value\": 1,\r\n    \"lifetime\": 10,\r\n    \"recast\": 50\r\n    }\r\n}'),
+(NULL, 270, 'Mana Potion II', 'Restores mana', 'Potion', 'Equip potion MP', NULL, NULL, 'universal', 5000, NULL, NULL, NULL, NULL, NULL, '{\r\n  \"potion\": {\r\n    \"effect\": \"Tiny MP\",\r\n    \"value\": 3,\r\n    \"lifetime\": 10,\r\n    \"recast\": 50\r\n    }\r\n}'),
+(NULL, 271, 'Mana Potion III', 'Restores mana', 'Potion', 'Equip potion MP', NULL, NULL, 'universal', 10000, NULL, NULL, NULL, NULL, NULL, '{\r\n  \"potion\": {\r\n    \"effect\": \"Tiny MP\",\r\n    \"value\": 5,\r\n    \"lifetime\": 10,\r\n    \"recast\": 50\r\n    }\r\n}'),
+(NULL, 272, 'Mana Potion IV', 'Restores mana', 'Potion', 'Equip potion MP', NULL, NULL, 'universal', 50000, NULL, NULL, NULL, NULL, NULL, '{\r\n  \"potion\": {\r\n    \"effect\": \"Tiny MP\",\r\n    \"value\": 10,\r\n    \"lifetime\": 10,\r\n    \"recast\": 50\r\n    }\r\n}'),
+(NULL, 273, 'Mana Potion V', 'Restores mana', 'Potion', 'Equip potion MP', NULL, NULL, 'universal', 100000, NULL, NULL, NULL, NULL, NULL, '{\r\n  \"potion\": {\r\n    \"effect\": \"Tiny MP\",\r\n    \"value\": 20,\r\n    \"lifetime\": 10,\r\n    \"recast\": 50\r\n    }\r\n}'),
+(NULL, 274, 'Copper rod', 'The usual Copper rod', 'Equipment', 'Equip fishrod', NULL, NULL, 'universal', 9690, NULL, 21, NULL, 3, NULL, NULL),
+(NULL, 275, 'Titanium rod', 'The usual Titanium rod', 'Equipment', 'Equip fishrod', NULL, NULL, 'universal', 43190, NULL, 21, NULL, 7, NULL, NULL),
+(NULL, 276, 'Adamantite rod', 'The usual Adamantite rod', 'Equipment', 'Equip fishrod', NULL, NULL, 'universal', 64690, NULL, 21, NULL, 10, NULL, NULL),
+(NULL, 277, 'Moonsteel ore', 'Moonsteel ore', 'Resource', 'Resource mineable', NULL, NULL, 'universal', 5, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 278, 'Sunbronze ore', 'Sunbronze ore', 'Resource', 'Resource mineable', NULL, NULL, 'universal', 6, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 279, 'Aquaforged ore', 'Aquaforged ore', 'Resource', 'Resource mineable', NULL, NULL, 'universal', 7, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 280, 'Elementium ore', 'Elementium ore', 'Resource', 'Resource mineable', NULL, NULL, 'universal', 8, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 281, 'Moonsteel ingot', 'Moonsteel ingot', 'Resource', 'Default', NULL, NULL, 'universal', 700, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 282, 'Sunbronze ingot', 'Sunbronze ingot', 'Resource', 'Default', NULL, NULL, 'universal', 900, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 283, 'Aquaforged ingot', 'Aquaforged ingot', 'Resource', 'Default', NULL, NULL, 'universal', 1100, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 284, 'Elementium ingot', 'Elementium ingot', 'Resource', 'Default', NULL, NULL, 'universal', 1300, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 285, 'Crescent Edge', 'A blade shaped like the new moon', 'Equipment', 'Default', NULL, NULL, 'universal', 99999999, NULL, 2, 4, 100, 500, NULL),
+(NULL, 286, 'Moonward Plates', 'Armor that wards off moonlight', 'Equipment', 'Default', NULL, NULL, 'universal', 9999999, NULL, 5, 7, 80, 45, NULL),
+(NULL, 287, 'Moonsteal armor', 'Moonsteal armor', 'Equipment', 'Equip armor (tank)', NULL, NULL, 'universal', 999999, NULL, 5, 7, 150, 30, NULL),
+('', 288, 'Adamager armor', 'Adamager armor', 'Equipment', 'Equip armor (dps)', NULL, NULL, 'universal', 81925, 0, 5, 7, 230, 90, NULL),
+('', 289, 'Adamler Mantle', 'Adamler Mantle', 'Equipment', 'Equip armor (healer)', NULL, NULL, 'universal', 70000, 0, 5, 7, 200, 130, NULL),
+(NULL, 290, 'Lunar armor', 'Lunar armor', 'Equipment', 'Equip armor (dps)', NULL, NULL, 'universal', 999999, NULL, 5, 7, 108, 72, NULL),
+(NULL, 291, 'Darkmoon armor', 'Darkmoon armor', 'Equipment', 'Equip armor (healer)', NULL, NULL, 'universal', 999999, NULL, 5, 7, 90, 90, NULL),
+(NULL, 292, 'Ring of the Sun', 'A ring that burns with solar fire', 'Equipment', 'Default', NULL, NULL, 'universal', 9999999, NULL, 1, 18, 1, 1500, NULL),
+(NULL, 293, 'Codex of Sunlight', 'A tome filled with holy light', 'Equipment', 'Default', NULL, NULL, 'universal', 9999999, NULL, 7, NULL, 150, NULL, NULL),
+(NULL, 294, 'Sunbronze armor', 'Sunbronze armor', 'Equipment', 'Equip armor (tank)', NULL, NULL, 'universal', 999999, NULL, 5, 7, 175, 35, NULL),
+(NULL, 295, 'Lightcrit armor', 'Lightcrit armor', 'Equipment', 'Equip armor (dps)', NULL, NULL, 'universal', 999999, NULL, 5, 7, 126, 84, NULL),
+(NULL, 296, 'Bright armor', 'Bright armor', 'Equipment', 'Equip armor (healer)', NULL, NULL, 'universal', 999999, NULL, 5, 7, 105, 105, NULL),
+(NULL, 297, 'Hydro-generator', 'Generates ammo from air', 'Equipment', 'Default', NULL, NULL, 'universal', 9999999, NULL, 9, NULL, 300, NULL, NULL),
+(NULL, 298, 'Amphora of Life', 'A jar that holds healing nectar', 'Equipment', 'Default', NULL, NULL, 'universal', 9999999, NULL, 5, NULL, 160, NULL, NULL),
+(NULL, 299, 'Aquaforged armor', 'Aquaforged armor', 'Equipment', 'Equip armor (tank)', NULL, NULL, 'universal', 999999, NULL, 6, 7, 200, 40, NULL),
+(NULL, 300, 'StormWave armor', 'StormWave armor', 'Equipment', 'Equip armor (dps)', NULL, NULL, 'universal', 999999, NULL, 5, 7, 144, 96, NULL),
+(NULL, 301, 'Armor of Life', 'Armor of Life', 'Equipment', 'Equip armor (healer)', NULL, NULL, 'universal', 999999, NULL, 5, 7, 120, 120, NULL),
+(NULL, 302, 'Elementium Accumulative', 'Stores raw elemental power', 'Equipment', 'Default', NULL, NULL, 'universal', 9999999, NULL, 3, 4, 1, 4000, NULL),
+(NULL, 303, 'Elementium ammo', 'Ammo charged with raw elements', 'Equipment', 'Default', NULL, NULL, 'universal', 9999999, NULL, 10, NULL, 100, NULL, NULL),
+(NULL, 304, 'Elementium armor', 'Elementium armor', 'Equipment', 'Equip armor (tank)', NULL, NULL, 'universal', 999999, NULL, 5, 7, 225, 45, NULL),
+(NULL, 305, 'Absorbing armor', 'Absorbing armor', 'Equipment', 'Equip armor (dps)', NULL, NULL, 'universal', 999999, NULL, 5, 7, 162, 108, NULL),
+(NULL, 306, 'Adaptive armor', 'Adaptive armor', 'Equipment', 'Equip armor (healer)', NULL, NULL, 'universal', 999999, NULL, 5, 7, 135, 135, NULL),
+(NULL, 307, 'Pearls', 'Pearls', 'Resource', 'Default', NULL, NULL, 'universal', 36, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 308, 'Weapons box', 'Weapons box', 'Usable', 'Multiple use x99', NULL, NULL, 'universal', 5000, 500, NULL, NULL, NULL, NULL, '{\n  \"random_box\": [\n    {\n      \"item_id\": 2,\n      \"value\": 1,\n      \"chance\": 80\n    },\n    {\n      \"item_id\": 3,\n      \"value\": 1,\n      \"chance\": 75\n    },\n    {\n      \"item_id\": 4,\n      \"value\": 1,\n      \"chance\": 70\n    },\n    {\n      \"item_id\": 5,\n      \"value\": 1,\n      \"chance\": 65\n    },\n    {\n      \"item_id\": 6,\n      \"value\": 1,\n      \"chance\": 60\n    },\n    {\n      \"item_id\": 2,\n      \"value\": 1,\n      \"chance\": 80\n    },\n    {\n      \"item_id\": 1,\n      \"value\": 1000,\n      \"chance\": 20\n    },\n    {\n      \"item_id\": 1,\n      \"value\": 500,\n      \"chance\": 40\n    },\n    {\n      \"item_id\": 1,\n      \"value\": 250,\n      \"chance\": 70\n    },\n    {\n      \"item_id\": 7,\n      \"value\": 250,\n      \"chance\": 5\n    },\n    {\n      \"item_id\": 7,\n      \"value\": 120,\n      \"chance\": 20\n    },\n    {\n      \"item_id\": 7,\n      \"value\": 50,\n      \"chance\": 40\n    },\n    {\n      \"item_id\": 7,\n      \"value\": 12,\n      \"chance\": 70\n    }\n  ]\n}'),
+(NULL, 309, 'Module box', 'Module box', 'Usable', 'Multiple use x99', NULL, NULL, 'universal', 7000, 750, NULL, NULL, NULL, NULL, '{\r\n  \"random_box\": [\r\n    {\r\n      \"item_id\": 90,\r\n      \"value\": 1,\r\n      \"chance\": 6\r\n    },\r\n    {\r\n      \"item_id\": 91,\r\n      \"value\": 1,\r\n      \"chance\": 6\r\n    },\r\n    {\r\n      \"item_id\": 87,\r\n      \"value\": 1,\r\n      \"chance\": 0.5\r\n    },\r\n    {\r\n      \"item_id\": 60,\r\n      \"value\": 1,\r\n      \"chance\": 5\r\n    },\r\n    {\r\n      \"item_id\": 242,\r\n      \"value\": 1,\r\n      \"chance\": 4\r\n    },\r\n    {\r\n      \"item_id\": 259,\r\n      \"value\": 1,\r\n      \"chance\": 3\r\n    },\r\n    {\r\n      \"item_id\": 69,\r\n      \"value\": 1,\r\n      \"chance\": 2\r\n    },\r\n    {\r\n      \"item_id\": 260,\r\n      \"value\": 1,\r\n      \"chance\": 1\r\n    },\r\n    {\r\n      \"item_id\": 126,\r\n      \"value\": 1,\r\n      \"chance\": 0.5\r\n    },\r\n    {\r\n      \"item_id\": 1,\r\n      \"value\": 1000,\r\n      \"chance\": 20\r\n    },\r\n    {\r\n      \"item_id\": 1,\r\n      \"value\": 500,\r\n      \"chance\": 40\r\n    },\r\n    {\r\n      \"item_id\": 1,\r\n      \"value\": 250,\r\n      \"chance\": 70\r\n    },\r\n    {\r\n      \"item_id\": 7,\r\n      \"value\": 250,\r\n      \"chance\": 5\r\n    },\r\n    {\r\n      \"item_id\": 7,\r\n      \"value\": 125,\r\n      \"chance\": 20\r\n    },\r\n    {\r\n      \"item_id\": 7,\r\n      \"value\": 25,\r\n      \"chance\": 40\r\n    },\r\n    {\r\n      \"item_id\": 7,\r\n      \"value\": 12,\r\n      \"chance\": 70\r\n    }\r\n  ]\r\n}'),
+(NULL, 310, 'Material Box', 'Material Box', 'Usable', 'Multiple use x99', NULL, NULL, 'universal', 1000, 250, NULL, NULL, NULL, NULL, '{\r\n  \"random_box\": [\r\n    {\r\n      \"item_id\": 124,\r\n      \"value\": 1,\r\n      \"chance\": 100\r\n    },\r\n    {\r\n      \"item_id\": 124,\r\n      \"value\": 5,\r\n      \"chance\": 80\r\n    },\r\n    {\r\n      \"item_id\": 124,\r\n      \"value\": 10,\r\n      \"chance\": 70\r\n    },\r\n    {\r\n      \"item_id\": 124,\r\n      \"value\": 25,\r\n      \"chance\": 100\r\n    },\r\n    {\r\n      \"item_id\": 124,\r\n      \"value\": 50,\r\n      \"chance\": 60\r\n    },\r\n    {\r\n      \"item_id\": 124,\r\n      \"value\": 100,\r\n      \"chance\": 50\r\n    },\r\n    {\r\n      \"item_id\": 124,\r\n      \"value\": 200,\r\n      \"chance\": 25\r\n    },\r\n    {\r\n      \"item_id\": 124,\r\n      \"value\": 500,\r\n      \"chance\": 10\r\n    },\r\n    {\r\n      \"item_id\": 7,\r\n      \"value\": 1,\r\n      \"chance\": 80\r\n    },\r\n    {\r\n      \"item_id\": 7,\r\n      \"value\": 5,\r\n      \"chance\": 60\r\n    },\r\n    {\r\n      \"item_id\": 7,\r\n      \"value\": 10,\r\n      \"chance\": 50\r\n    },\r\n    {\r\n      \"item_id\": 7,\r\n      \"value\": 25,\r\n      \"chance\": 50\r\n    },\r\n    {\r\n      \"item_id\": 7,\r\n      \"value\": 50,\r\n      \"chance\": 40\r\n    },\r\n    {\r\n      \"item_id\": 7,\r\n      \"value\": 100,\r\n      \"chance\": 20\r\n    },\r\n    {\r\n      \"item_id\": 7,\r\n      \"value\": 200,\r\n      \"chance\": 10\r\n    },\r\n    {\r\n      \"item_id\": 7,\r\n      \"value\": 500,\r\n      \"chance\": 5\r\n    }\r\n  ]\r\n}'),
+(NULL, 311, 'Gun parts', 'Gun parts', 'Resource', 'Default', NULL, NULL, 'universal', 200, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 312, 'Shotgun parts', 'Shotgun parts', 'Resource', 'Default', NULL, NULL, 'universal', 390, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 313, 'Grenade parts', 'Grenade parts', 'Resource', 'Default', NULL, NULL, 'universal', 400, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 314, 'Laser parts', 'Laser parts', 'Resource', 'Default', NULL, NULL, 'universal', 500, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 315, 'Hammer parts', 'Hammer parts', 'Resource', 'Default', NULL, NULL, 'universal', 100, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 316, 'Basic Hammer+', 'Increases the radius of the hit', 'Equipment', 'Default', NULL, NULL, 'universal', NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 317, 'Draft Hammer+', 'Draft Hammer+', 'Other', 'Default', NULL, NULL, 'universal', 598, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 318, 'Breathing Reed', 'Double the time underwater', 'Equipment', 'Default', NULL, NULL, 'universal', 45000, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 319, 'Life Preserver', 'Keeps player afloat', 'Equipment', 'Default', NULL, NULL, 'universal', 25000, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 320, 'Diver\'s kit', 'Can\'t drown, keeps player afloat.', 'Equipment', 'Default', NULL, NULL, 'universal', NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+('', 321, 'Sunken Fishing Crate', 'Sunken Fishing Crate', 'Usable', 'Multiple use x99', NULL, NULL, 'universal', 0, 0, NULL, NULL, NULL, NULL, '{\n    \"random_box\": [\n        {\n            \"item_id\": 319,\n            \"value\": 1,\n            \"chance\": 0.6\n        },\n        {\n            \"item_id\": 323,\n            \"value\": 1,\n            \"chance\": 0.4\n        },\n        {\n            \"item_id\": 124,\n            \"value\": 1,\n            \"chance\": 30\n        },\n        {\n            \"item_id\": 124,\n            \"value\": 2,\n            \"chance\": 15\n        },\n        {\n            \"item_id\": 175,\n            \"value\": 3,\n            \"chance\": 25\n        },\n        {\n            \"item_id\": 176,\n            \"value\": 2,\n            \"chance\": 20\n        },\n        {\n            \"item_id\": 177,\n            \"value\": 1,\n            \"chance\": 15\n        },\n        {\n            \"item_id\": 1,\n            \"value\": 25,\n            \"chance\": 40\n        },\n        {\n            \"item_id\": 1,\n            \"value\": 75,\n            \"chance\": 30\n        },\n        {\n            \"item_id\": 7,\n            \"value\": 10,\n            \"chance\": 40\n        },\n        {\n            \"item_id\": 7,\n            \"value\": 25,\n            \"chance\": 30\n        },\n        {\n            \"item_id\": 233,\n            \"value\": 1,\n            \"chance\": 10\n        }\n    ]\n}'),
+('', 322, 'Old Captain\'s Chest', 'Old Captain\'s Chest', 'Usable', 'Multiple use x99', NULL, NULL, 'universal', 0, 0, NULL, NULL, NULL, NULL, '{\n    \"random_box\": [\n        {\n            \"item_id\": 318,\n            \"value\": 1,\n            \"chance\": 0.4\n        },\n        {\n            \"item_id\": 323,\n            \"value\": 1,\n            \"chance\": 0.8\n        },\n        {\n            \"item_id\": 168,\n            \"value\": 1,\n            \"chance\": 8\n        },\n        {\n            \"item_id\": 169,\n            \"value\": 1,\n            \"chance\": 5\n        },\n        {\n            \"item_id\": 307,\n            \"value\": 3,\n            \"chance\": 15\n        },\n        {\n            \"item_id\": 1,\n            \"value\": 50,\n            \"chance\": 30\n        },\n        {\n            \"item_id\": 1,\n            \"value\": 100,\n            \"chance\": 10\n        },\n        {\n            \"item_id\": 7,\n            \"value\": 30,\n            \"chance\": 25\n        },\n        {\n            \"item_id\": 7,\n            \"value\": 50,\n            \"chance\": 10\n        },\n        {\n            \"item_id\": 113,\n            \"value\": 2,\n            \"chance\": 20\n        }\n    ]\n}'),
+('не реализ', 323, 'Fish bait', 'Increases chance of hooking by 30%', 'Equipment', 'Default', NULL, NULL, 'universal', NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+('Не реализ', 324, 'Tesla serpent', 'Creates lightning', 'Equipment', 'Equip rifle', NULL, NULL, 'universal', NULL, NULL, 17, NULL, 4, NULL, NULL),
+(NULL, 325, 'Draft Poison Hook', 'Draft Poison Hook', 'Other', 'Default', NULL, NULL, 'universal', 2931, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 326, 'Draft Explosion Hook', 'Draft Explosion Hook', 'Other', 'Default', NULL, NULL, 'universal', 10000, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 327, 'Draft Spider Hook', 'Draft Spider Hook', 'Other', 'Default', NULL, NULL, 'universal', 10000, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 328, 'Draft Explosion Mod', 'Draft Explosion Mod', 'Other', 'Default', NULL, NULL, 'universal', 10000, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 329, '(S) Money Bag', 'Small money bag', 'Equipment', 'Default', NULL, NULL, 'universal', 1070, NULL, 20, NULL, 500, NULL, NULL),
+('', 330, '(M) Money Bag', 'Medium money bag', 'Equipment', 'Default', NULL, '{\n  \"scenario_mode\": \"universal\",\n  \"editor_data\": {\n    \"groups\": [],\n    \"ungrouped_steps\": []\n  },\n  \"steps\": [],\n  \"on_got\": {\n    \"scenario_mode\": \"universal\",\n    \"editor_data\": {\n      \"groups\": [\n        {\n          \"id\": \"group_37f5c8ba-b7d6-4953-bda8-25f7cbbe7aec\",\n          \"name\": \"Новая группа 1\",\n          \"steps\": [\n            \"step\"\n          ],\n          \"collapsed\": false\n        }\n      ],\n      \"ungrouped_steps\": [\n        \"step\"\n      ]\n    },\n    \"steps\": [\n      {\n        \"id\": \"step\",\n        \"components\": [\n          {\n            \"type\": \"message\",\n            \"text\": \"ЛОХ ЕБАНЫЙ\",\n            \"mode\": \"full\"\n          }\n        ]\n      }\n    ]\n  }\n}', 'universal', 2875, 0, 20, NULL, 1000, 0, NULL),
+(NULL, 331, '(B) Money Bag', 'Big money bag', 'Equipment', 'Default', NULL, NULL, 'universal', 13950, NULL, 20, NULL, 5000, NULL, NULL),
+(NULL, 332, '(S) Backpack gold', 'Small backpack gold', 'Equipment', 'Default', NULL, NULL, 'universal', NULL, NULL, 20, NULL, 10000, NULL, NULL),
+(NULL, 333, '(M) Backpack gold', 'Medium backpack gold', 'Equipment', 'Default', NULL, NULL, 'universal', 55000, NULL, 20, NULL, 50000, NULL, NULL),
+(NULL, 334, '(B) Backpack gold', 'Big backpack gold', 'Equipment', 'Default', NULL, NULL, 'universal', NULL, NULL, 20, NULL, 100000, NULL, NULL),
+(NULL, 335, 'Mod Gun 1', 'Increased damage for gun', 'Equipment', 'Default', NULL, NULL, 'universal', 50000, NULL, 14, NULL, 1, NULL, NULL),
+(NULL, 336, 'Mod Shotgun 1', 'Increased damage for shotgun', 'Equipment', 'Default', NULL, NULL, 'universal', 70000, NULL, 15, NULL, 1, NULL, NULL),
+(NULL, 337, 'Mod Grenade 1', 'Increased damage for grenade', 'Equipment', 'Default', NULL, NULL, 'universal', 100000, NULL, 16, NULL, 1, NULL, NULL),
+(NULL, 338, 'Mod Laser 1', 'Increased damage for laser', 'Equipment', 'Default', NULL, NULL, 'universal', 150000, NULL, 17, NULL, 1, NULL, NULL),
+(NULL, 339, 'Pickaxe template', 'Used to craft a pickaxe', 'Resource', 'Default', NULL, NULL, 'universal', 1000, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 340, 'Rake template', 'Used to craft a Rake', 'Resource', 'Default', NULL, NULL, 'universal', 1000, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 341, 'Armor template', 'Used to craft a Armor', 'Resource', 'Default', NULL, NULL, 'universal', 5000, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 342, 'Gloves template', 'Used to craft a Gloves', 'Resource', 'Default', NULL, NULL, 'universal', 2000, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 343, 'Rod template', 'Used to craft a Rod', 'Resource', 'Default', NULL, NULL, 'universal', 3000, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 344, 'Heart of health', 'A gem that pulses with vitality', 'Equipment', 'Default', NULL, NULL, 'universal', 25000, NULL, 5, NULL, 5, NULL, NULL),
+(NULL, 345, 'Mana Shield', 'A barrier of pure arcane force', 'Equipment', 'Default', NULL, NULL, 'universal', 25000, NULL, 7, NULL, 5, NULL, NULL),
+(NULL, 346, 'Chigoe paw', 'A lucky charm from a sand flea', 'Equipment', 'Default', NULL, NULL, 'universal', 80000, NULL, 18, NULL, 10, NULL, NULL),
+(NULL, 347, 'Belt with pockets', 'A belt with many hidden pouches', 'Equipment', 'Default', NULL, NULL, 'universal', 70000, NULL, 22, NULL, 20, NULL, NULL),
+(NULL, 348, 'Mini accelerator', 'Device that grants a burst of regen', 'Equipment', 'Default', NULL, NULL, 'universal', 100000, NULL, 2, NULL, 15, NULL, NULL),
+('Power 20', 349, 'Leather hat', 'Leather hat', 'Equipment', 'Equip helmet (tank)', NULL, NULL, 'universal', 1000, NULL, 6, NULL, 53, NULL, NULL),
+('Power 50', 350, 'Copper Helmet', 'Copper helmet', 'Equipment', 'Equip helmet (tank)', NULL, NULL, 'universal', 3500, NULL, 6, NULL, 133, NULL, NULL),
+('Power 100', 351, 'Iron Helmet', 'Iron helmet', 'Equipment', 'Equip helmet (tank)', NULL, NULL, 'universal', 10000, NULL, 6, NULL, 266, NULL, NULL),
+('Power 150', 352, 'Titanium Helmet', 'Titanium helmet', 'Equipment', 'Equip helmet (tank)', NULL, NULL, 'universal', 20000, NULL, 6, NULL, 400, NULL, NULL),
+('Power 200', 353, 'Adamantium Helmet', 'Adamantium helmet', 'Equipment', 'Equip helmet (tank)', NULL, NULL, 'universal', 40000, NULL, 6, NULL, 533, NULL, NULL),
+('Power 20', 354, 'Meat Hood', 'Meat hood', 'Equipment', 'Equip helmet (dps)', NULL, NULL, 'universal', 1000, NULL, 2, 4, 4, 30, NULL),
+('Power 50', 355, 'Warrior Mask', 'Warrior Mask', 'Equipment', 'Equip helmet (dps)', NULL, NULL, 'universal', 3500, NULL, 2, 4, 10, 80, NULL),
+('Power 100', 356, 'Hunter Helmet', 'Hunter helmet', 'Equipment', 'Equip helmet (dps)', NULL, NULL, 'universal', 10000, NULL, 2, 4, 20, 150, NULL),
+('Power 150', 357, 'Bersek Helmet', 'Bersek helmet', 'Equipment', 'Equip helmet (dps)', NULL, NULL, 'universal', 20000, NULL, 2, 4, 30, 220, NULL),
+('Power 20', 358, 'Plant Mask', 'Plant mask', 'Equipment', 'Equip helmet (healer)', NULL, NULL, 'universal', 1000, NULL, 8, NULL, 40, NULL, NULL),
+('Power 50', 359, 'Priest Hood', 'Priest hood', 'Equipment', 'Equip helmet (healer)', NULL, NULL, 'universal', 3500, NULL, 8, NULL, 100, NULL, NULL),
+('Power 100', 360, 'Wreath of Life', 'Wreath of life', 'Equipment', 'Equip helmet (healer)', NULL, NULL, 'universal', 10000, NULL, 8, NULL, 200, NULL, NULL),
+('Power 150', 361, 'Healer Hood', 'Healer hood', 'Equipment', 'Equip helmet (healer)', NULL, NULL, 'universal', 20000, NULL, 8, NULL, 300, NULL, NULL),
+('', 362, 'Gingerbread of exp', 'Boost +2% EXP (15 min)', 'Usable', 'Single use x1', NULL, NULL, 'universal', 1000, 0, NULL, NULL, NULL, NULL, '{\n    \"bonus\": {\n        \"amount\": 2,\n        \"duration_minutes\": 15,\n        \"duration_hours\": 0,\n        \"duration_days\": 0,\n        \"type\": 1\n    }\n}'),
+('', 363, 'Meat kebabs', 'Boost +2% HP (15 min)', 'Usable', 'Single use x1', NULL, NULL, 'universal', 1000, 0, NULL, NULL, NULL, NULL, '{\n    \"bonus\": {\n        \"amount\": 2,\n        \"duration_minutes\": 15,\n        \"duration_hours\": 0,\n        \"duration_days\": 0,\n        \"type\": 3\n    }\n}'),
+('', 364, 'Golden apple salad', 'Boost +2% GOLD (15 min)', 'Usable', 'Single use x1', NULL, NULL, 'universal', 1000, 0, NULL, NULL, NULL, NULL, '{\n    \"bonus\": {\n        \"amount\": 2,\n        \"duration_minutes\": 15,\n        \"duration_hours\": 0,\n        \"duration_days\": 0,\n        \"type\": 2\n    }\n}'),
+(NULL, 365, 'Helmet template', 'Used to craft a Helmet', 'Resource', 'Default', NULL, NULL, 'universal', 2500, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 366, 'Ammo belt', 'Belt of bullets', 'Equipment', 'Default', NULL, NULL, 'universal', 2500, NULL, 10, NULL, 10, NULL, NULL),
+(NULL, 367, 'Small box of ammo', 'Box of bullets', 'Equipment', 'Default', NULL, NULL, 'universal', 1250, NULL, 10, NULL, 5, NULL, NULL),
+(NULL, 368, 'Ammo backpack', 'Backpack of bullets', 'Equipment', 'Default', NULL, NULL, 'universal', 10000, NULL, 10, NULL, 50, NULL, NULL),
+(NULL, 369, 'Reactive enzyme', 'Reactive enzyme', 'Resource', 'Default', NULL, NULL, 'universal', 62, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 370, 'Heart of acid', 'Heart of acid', 'Resource', 'Default', NULL, NULL, 'universal', 5000, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 371, 'Catnip', 'Cats really like it', 'Resource', 'Default', NULL, NULL, 'universal', 33, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 372, 'Cats eye', 'Cats eye', 'Resource', 'Default', NULL, NULL, 'universal', 61, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 373, 'Purr Bag', 'A bag that calms anxious minds', 'Equipment', 'Default', NULL, NULL, 'universal', 1024, NULL, 5, 19, 25, 12, NULL),
+(NULL, 374, 'Meme Fragment', 'Part of something bigger. The spirit of memes is felt.', 'Resource', 'Default', NULL, NULL, 'universal', 84, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 375, 'Wisdom Stone', 'It is said to contain a bit of Cheems wisdom', 'Equipment', 'Default', NULL, NULL, 'universal', 1200, NULL, 7, NULL, NULL, 35, NULL),
+(NULL, 376, 'Eucalyptus Leaf', 'Eucalyptus Leaf', 'Resource', 'Default', NULL, NULL, 'universal', 69, NULL, NULL, NULL, NULL, NULL, NULL),
+('', 377, 'Boosted Tea', 'Boost +4% MP (10 min)', 'Usable', 'Single use x1', NULL, NULL, 'universal', 135, 0, NULL, NULL, NULL, NULL, '{\n    \"bonus\": {\n        \"amount\": 4,\n        \"duration_minutes\": 10,\n        \"duration_hours\": 0,\n        \"duration_days\": 0,\n        \"type\": 4\n    }\n}'),
+(NULL, 378, 'Protective Totem', 'A small idol that wards off evil', 'Equipment', 'Default', NULL, NULL, 'universal', 1600, NULL, 5, 19, 30, 50, NULL),
+(NULL, 379, 'Cyan Droplet', 'Cyan Droplet', 'Resource', 'Default', NULL, NULL, 'universal', 77, NULL, NULL, NULL, NULL, NULL, NULL),
+('', 380, 'Energy Booster', 'Boost +4% EXP (15 min)', 'Usable', 'Single use x1', NULL, NULL, 'universal', 170, 0, NULL, NULL, NULL, NULL, '{\n    \"bonus\": {\n        \"amount\": 4,\n        \"duration_minutes\": 15,\n        \"duration_hours\": 0,\n        \"duration_days\": 0,\n        \"type\": 1\n    }\n}'),
+(NULL, 381, 'Coconut shell', 'Coconut shell', 'Resource', 'Default', NULL, NULL, 'universal', 60, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 382, 'Shell Hammer', 'A hammer made of a giant shell', 'Equipment', 'Default', NULL, NULL, 'universal', 1250, NULL, 13, NULL, 1, NULL, NULL),
+(NULL, 383, 'Improved bullet tips', 'Rounds that can pierce any armor', 'Equipment', 'Default', NULL, NULL, 'universal', 1250, NULL, 4, NULL, 200, NULL, NULL),
+(NULL, 384, 'Dragon scales', 'Dragon scales', 'Resource', 'Default', NULL, NULL, 'universal', 30, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 385, 'Golden Dragon Scale', 'A scale that resists fire and magic', 'Equipment', 'Default', NULL, NULL, 'universal', 30, NULL, 6, NULL, 334, NULL, NULL),
+(NULL, 386, 'Amulet Fox Luck', 'A charm that grants foxy cunning', 'Equipment', 'Default', NULL, NULL, 'universal', 2500, NULL, 4, NULL, 400, NULL, NULL),
+(NULL, 387, 'Fluff', 'Fluff', 'Resource', 'Default', NULL, NULL, 'universal', 38, NULL, NULL, NULL, NULL, NULL, NULL),
+('Не реализ', 388, 'Ring of Return Lightning', 'Chance to reflect harm as lightning', 'Equipment', 'Default', NULL, NULL, 'universal', 50000, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 389, 'Witch Dust', 'A shimmering powder with mystical powers', 'Resource', 'Default', NULL, NULL, 'universal', 91, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 390, 'Summoning Orb', 'Element for summoning', 'Resource', 'Default', NULL, NULL, 'universal', 1250, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 391, 'Tea Leaf', 'Tea Leaf', 'Resource', 'Default', NULL, NULL, 'universal', 53, NULL, NULL, NULL, NULL, NULL, NULL),
+('', 392, 'Tea', 'Boost +4% EXP (10 min)', 'Usable', 'Single use x1', NULL, NULL, 'universal', 100, 0, NULL, NULL, NULL, NULL, '{\n    \"bonus\": {\n        \"amount\": 4,\n        \"duration_minutes\": 10,\n        \"duration_hours\": 0,\n        \"duration_days\": 0,\n        \"type\": 1\n    }\n}'),
+(NULL, 393, 'Chitin', 'Chitin', 'Resource', 'Default', NULL, NULL, 'universal', 80, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 394, 'Chitinous shield', 'A shield of insectoid plates', 'Equipment', 'Default', NULL, NULL, 'universal', 1800, NULL, 5, NULL, 80, NULL, NULL),
+(NULL, 395, 'Anglers Ring', 'A ring that lures fish to bite', 'Equipment', 'Default', NULL, NULL, 'universal', 9170, NULL, 21, NULL, 1, NULL, NULL),
+('', 396, 'Pumpkin Pie', 'Boost +5% MP (5 min)', 'Usable', 'Single use x1', NULL, NULL, 'universal', 250, 0, NULL, NULL, NULL, NULL, '{\n    \"bonus\": {\n        \"amount\": 5,\n        \"duration_minutes\": 5,\n        \"duration_hours\": 0,\n        \"duration_days\": 0,\n        \"type\": 4\n    }\n}'),
+(NULL, 397, 'Fish net', 'A net to catch both fish and foe', 'Equipment', 'Default', NULL, NULL, 'universal', 8300, NULL, 21, NULL, 1, NULL, NULL),
+(NULL, 398, 'Harvest basket', 'A basket that never overflows', 'Equipment', 'Default', NULL, NULL, 'universal', 2500, NULL, 12, NULL, 1, NULL, NULL),
+(NULL, 399, '(T) Tome of \"Upgr-Reset\"', 'Skill reset for tank', 'Usable', 'Single use x1', NULL, NULL, 'universal', NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 400, '(D) Tome of \"Upgr-Reset\"', 'Skill reset for DPS', 'Usable', 'Single use x1', NULL, NULL, 'universal', NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 401, '(H) Tome of \"Upgr-Reset\"', 'Skill reset for Healer', 'Usable', 'Single use x1', NULL, NULL, 'universal', NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 402, 'Show only function (modules)', 'Setting game', 'Settings', 'Default', NULL, NULL, 'universal', NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+('Не реализ', 403, 'Ring of Giving Lightning', 'Chance to imbue attacks with lightning', 'Equipment', 'Default', NULL, NULL, 'universal', 45000, NULL, NULL, NULL, NULL, NULL, NULL),
+('Не реализ', 404, 'Ring of Perfect Lightning', 'Chance to retaliate and attack with lightning', 'Equipment', 'Default', NULL, NULL, 'universal', NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+('Не реализ', 405, 'Tesla Inductive Coil', 'Increases electro damage by 25%', 'Equipment', 'Default', NULL, NULL, 'universal', NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+(NULL, 406, 'GOLD 50% 3d', 'Boost GOLD 50% 3d', 'Usable', 'Single use x1', 'Can\'t droppable,Can\'t tradeable', NULL, 'universal', NULL, NULL, NULL, NULL, NULL, NULL, '{\r\n  \"bonus\": {\r\n    \"amount\": 50,\r\n    \"duration_days\": 3,\r\n    \"type\": 2\r\n  }\r\n}'),
+(NULL, 407, 'EXP 50% 3d', 'Boost EXP 50% 3d', 'Usable', 'Single use x1', 'Can\'t droppable,Can\'t tradeable', NULL, 'universal', NULL, NULL, NULL, NULL, NULL, NULL, '{\n  \"bonus\": {\n    \"amount\": 50,\n    \"duration_days\": 3,\n    \"type\": 1\n  }\n}'),
+(NULL, 408, 'Test Hammer', 'A normal hammer', 'Equipment', 'Equip hammer', NULL, NULL, 'universal', 200, NULL, 13, 3, 3, 5, NULL),
+('', 409, 'Show item source hint', 'Settings game.', 'Settings', 'Default', NULL, NULL, 'universal', NULL, NULL, NULL, NULL, NULL, NULL, NULL),
+('', 410, 'Resonance Box', 'Contains unique and rare dungeon loot', 'Usable', 'Multiple use x99', 'Can\'t tradeable', NULL, 'universal', 0, 0, NULL, NULL, NULL, NULL, '{\n    \"random_box\": [\n        {\n            \"item_id\": 216,\n            \"value\": 1,\n            \"chance\": 10\n        },\n        {\n            \"item_id\": 317,\n            \"value\": 1,\n            \"chance\": 10\n        },\n        {\n            \"item_id\": 219,\n            \"value\": 1,\n            \"chance\": 10\n        },\n        {\n            \"item_id\": 328,\n            \"value\": 1,\n            \"chance\": 10\n        },\n        {\n            \"item_id\": 19,\n            \"value\": 1,\n            \"chance\": 0.1\n        },\n        {\n            \"item_id\": 20,\n            \"value\": 1,\n            \"chance\": 0.1\n        },\n        {\n            \"item_id\": 102,\n            \"value\": 1,\n            \"chance\": 0.1\n        },\n        {\n            \"item_id\": 316,\n            \"value\": 1,\n            \"chance\": 0.1\n        },\n        {\n            \"item_id\": 100,\n            \"value\": 1,\n            \"chance\": 0.1\n        },\n        {\n            \"item_id\": 88,\n            \"value\": 1,\n            \"chance\": 0.04\n        },\n        {\n            \"item_id\": 1,\n            \"value\": 80,\n            \"chance\": 50\n        },\n        {\n            \"item_id\": 7,\n            \"value\": 25,\n            \"chance\": 50\n        },\n        {\n            \"item_id\": 1,\n            \"value\": 150,\n            \"chance\": 25\n        },\n        {\n            \"item_id\": 7,\n            \"value\": 70,\n            \"chance\": 25\n        }\n    ]\n}'),
+('', 411, 'Voodoo-Puppe (Summon)', 'Summoning a global event', 'Usable', 'Single use x1', NULL, '{\r\n  \"scenario_mode\": \"world\",\r\n  \"editor_data\": {\r\n    \"groups\": [],\r\n    \"ungrouped_steps\": []\r\n  },\r\n  \"steps\": [],\r\n  \"on_use\": {\r\n    \"scenario_mode\": \"world\",\r\n    \"editor_data\": {\r\n      \"groups\": [\r\n        {\r\n          \"id\": \"group_3be3e440-f30f-4a8c-9af3-118de72a53a0\",\r\n          \"name\": \"Новая группа 1\",\r\n          \"steps\": [\r\n            \"initialize\",\r\n            \"start\",\r\n            \"process\"\r\n          ],\r\n          \"collapsed\": false\r\n        }\r\n      ],\r\n      \"ungrouped_steps\": [\r\n        \"initialize\",\r\n        \"start\",\r\n        \"process\"\r\n      ]\r\n    },\r\n    \"steps\": [\r\n      {\r\n        \"id\": \"initialize\",\r\n        \"components\": [\r\n          {\r\n            \"type\": \"set_group_flags\",\r\n            \"disable_group_damage\": false,\r\n            \"disable_group_collision\": false,\r\n            \"disable_group_hooking\": false,\r\n            \"disable_group_pvp\": true\r\n          },\r\n          {\r\n            \"type\": \"set_group_lives\",\r\n            \"action\": \"set\",\r\n            \"value\": 5\r\n          },\r\n          {\r\n            \"type\": \"set_group_spawn\",\r\n            \"enable_spawn\": true,\r\n            \"position\": {\r\n              \"x\": 879,\r\n              \"y\": 497\r\n            }\r\n          }\r\n        ]\r\n      },\r\n      {\r\n        \"id\": \"start\",\r\n        \"components\": [\r\n          {\r\n            \"type\": \"message\",\r\n            \"text\": \"The great Voodoo has arrived on shore.\",\r\n            \"mode\": \"full\",\r\n            \"execution_time\": 200\r\n          },\r\n          {\r\n            \"type\": \"follow_camera\",\r\n            \"position\": {\r\n              \"x\": 879,\r\n              \"y\": 497\r\n            },\r\n            \"execution_time\": 500,\r\n            \"smooth\": true\r\n          }\r\n        ]\r\n      },\r\n      {\r\n        \"id\": \"process\",\r\n        \"components\": [\r\n          {\r\n            \"type\": \"teleport\",\r\n            \"position\": {\r\n              \"x\": 879,\r\n              \"y\": 497\r\n            }\r\n          },\r\n          {\r\n            \"type\": \"defeat_mobs\",\r\n            \"mode\": \"annihilation\",\r\n            \"radius\": 600,\r\n            \"position\": {\r\n              \"x\": 879,\r\n              \"y\": 497\r\n            },\r\n            \"kill_target\": 10,\r\n            \"duration\": 320,\r\n            \"mobs\": [\r\n              {\r\n                \"bot_id\": 1059,\r\n                \"level\": 15,\r\n                \"power\": 1000,\r\n                \"count\": 1,\r\n                \"boss\": true,\r\n                \"Behavior\": [\r\n                  \"slower\",\r\n                  \"neutral\",\r\n                  \"skills_base\",\r\n                  \"skills_healer\"\r\n                ],\r\n                \"Debuffs\": [\r\n                  \"Slowdown\"\r\n                ],\r\n                \"drops\": []\r\n              }\r\n            ],\r\n            \"activeradius\": 0\r\n          },\r\n          {\r\n            \"type\": \"world_complete\",\r\n            \"successful\": true\r\n          }\r\n        ],\r\n        \"completion_logic\": \"sequential\"\r\n      }\r\n    ]\r\n  }\r\n}', 'world', 0, 0, NULL, NULL, NULL, NULL, '{\n    \"use_scenario\": {\n        \"name\": \"The Arrival of the Great Voodoo\",\n        \"world_id\": 1,\n        \"rewards\": [\n            {\n                \"item_id\": 1,\n                \"value\": 10000,\n                \"chance\": 100\n            },\n            {\n                \"item_id\": 244,\n                \"value\": 1,\n                \"chance\": 100\n            }\n        ]\n    }\n}'),
+('', 412, 'Big Pig Tail (Summon)', 'Summoning a global event', 'Usable', 'Single use x1', NULL, '{\n  \"scenario_mode\": \"world\",\n  \"editor_data\": {\n    \"groups\": [],\n    \"ungrouped_steps\": []\n  },\n  \"steps\": [],\n  \"on_use\": {\n    \"scenario_mode\": \"world\",\n    \"editor_data\": {\n      \"groups\": [\n        {\n          \"id\": \"group_46e8674a-0f30-44f1-9749-162c413a2187\",\n          \"name\": \"Новая группа 1\",\n          \"steps\": [\n            \"start\",\n            \"end\"\n          ],\n          \"collapsed\": false\n        }\n      ],\n      \"ungrouped_steps\": [\n        \"start\",\n        \"end\"\n      ]\n    },\n    \"steps\": [\n      {\n        \"id\": \"start\",\n        \"components\": [\n          {\n            \"type\": \"set_group_flags\",\n            \"disable_group_damage\": false,\n            \"disable_group_collision\": false,\n            \"disable_group_hooking\": false,\n            \"disable_group_pvp\": true\n          },\n          {\n            \"type\": \"set_group_spawn\",\n            \"enable_spawn\": true,\n            \"position\": {\n              \"x\": 17461,\n              \"y\": 4332\n            }\n          },\n          {\n            \"type\": \"set_group_lives\",\n            \"action\": \"set\",\n            \"value\": 3\n          },\n          {\n            \"type\": \"teleport\",\n            \"position\": {\n              \"x\": 17461,\n              \"y\": 4332\n            }\n          },\n          {\n            \"type\": \"defeat_mobs\",\n            \"mode\": \"annihilation\",\n            \"radius\": 800,\n            \"activeradius\": 0,\n            \"position\": {\n              \"x\": 17532,\n              \"y\": 4380\n            },\n            \"kill_target\": 10,\n            \"duration\": 60,\n            \"mobs\": [\n              {\n                \"bot_id\": 1060,\n                \"level\": 10,\n                \"power\": 1000,\n                \"count\": 1,\n                \"boss\": true,\n                \"Behavior\": [],\n                \"Debuffs\": [],\n                \"drops\": []\n              }\n            ]\n          }\n        ]\n      },\n      {\n        \"id\": \"end\",\n        \"components\": [\n          {\n            \"type\": \"world_complete\",\n            \"successful\": true\n          }\n        ],\n        \"completion_logic\": \"sequential\"\n      }\n    ]\n  }\n}', 'world', 0, 0, NULL, NULL, NULL, NULL, '{\n    \"use_scenario\": {\n        \"name\": \"The pig herder has arrived\",\n        \"world_id\": 1,\n        \"rewards\": [\n            {\n                \"item_id\": 186,\n                \"value\": 50,\n                \"chance\": 100\n            },\n            {\n                \"item_id\": 244,\n                \"value\": 1,\n                \"chance\": 100\n            }\n        ]\n    }\n}'),
+('', 413, 'Donor', 'Use chat-command /donor command', 'Equipment', 'Equip title', 'Can\'t droppable,Can\'t tradeable', NULL, 'universal', 0, 0, NULL, NULL, NULL, NULL, NULL),
+('', 414, 'Donor Pro', 'Use chat-command /donor_pro', 'Equipment', 'Equip title', 'Can\'t droppable,Can\'t tradeable', NULL, 'universal', 0, 0, NULL, NULL, NULL, NULL, NULL),
+('Summoning Scenario', 415, 'Sweet mint (Summon)', 'Summoning a global event', 'Usable', 'Single use x1', NULL, '{\n  \"scenario_mode\": \"world\",\n  \"editor_data\": {\n    \"groups\": [],\n    \"ungrouped_steps\": []\n  },\n  \"steps\": [],\n  \"on_use\": {\n    \"scenario_mode\": \"world\",\n    \"editor_data\": {\n      \"groups\": [\n        {\n          \"id\": \"group_8a29d00d-d146-4c6b-aa37-d3260702d77c\",\n          \"name\": \"Scenario\",\n          \"steps\": [\n            \"initialize\",\n            \"information\",\n            \"wave1\",\n            \"wave2\",\n            \"wave3\",\n            \"boss\",\n            \"final_msg\",\n            \"end\"\n          ],\n          \"collapsed\": false\n        }\n      ],\n      \"ungrouped_steps\": [\n        \"initialize\",\n        \"information\",\n        \"wave1\",\n        \"wave2\",\n        \"wave3\",\n        \"boss\",\n        \"final_msg\",\n        \"end\"\n      ]\n    },\n    \"steps\": [\n      {\n        \"id\": \"initialize\",\n        \"components\": [\n          {\n            \"type\": \"set_group_flags\",\n            \"disable_group_damage\": false,\n            \"disable_group_collision\": false,\n            \"disable_group_hooking\": false,\n            \"disable_group_pvp\": true\n          },\n          {\n            \"type\": \"set_group_spawn\",\n            \"enable_spawn\": true,\n            \"position\": {\n              \"x\": 27999,\n              \"y\": 884\n            }\n          },\n          {\n            \"type\": \"teleport\",\n            \"position\": {\n              \"x\": 27999,\n              \"y\": 884\n            }\n          },\n          {\n            \"type\": \"set_group_lives\",\n            \"action\": \"set\",\n            \"value\": 3\n          }\n        ]\n      },\n      {\n        \"id\": \"information\",\n        \"components\": [\n          {\n            \"type\": \"follow_camera\",\n            \"position\": {\n              \"x\": 27999,\n              \"y\": 884\n            },\n            \"execution_time\": 400,\n            \"smooth\": false\n          },\n          {\n            \"type\": \"message\",\n            \"execution_time\": 200,\n            \"text\": \"Farmers have asked for help in protecting themselves from attacks by wild bears.\",\n            \"mode\": \"chat\"\n          },\n          {\n            \"type\": \"message\",\n            \"execution_time\": 100,\n            \"text\": \"Farmer: This has to stop sometime!\",\n            \"mode\": \"chat\"\n          }\n        ]\n      },\n      {\n        \"id\": \"wave1\",\n        \"components\": [\n          {\n            \"type\": \"message\",\n            \"execution_time\": 300,\n            \"text\": \"COMING WAVE 1.\",\n            \"mode\": \"full\"\n          },\n          {\n            \"type\": \"defeat_mobs\",\n            \"mode\": \"wave\",\n            \"radius\": 800,\n            \"activeradius\": 800,\n            \"position\": {\n              \"x\": 27821,\n              \"y\": 861\n            },\n            \"kill_target\": 30,\n            \"duration\": 60,\n            \"mobs\": [\n              {\n                \"bot_id\": 1061,\n                \"level\": 3,\n                \"power\": 10,\n                \"count\": 5,\n                \"boss\": false,\n                \"Behavior\": [],\n                \"Debuffs\": [\n                  \"Poison\"\n                ],\n                \"drops\": []\n              }\n            ]\n          }\n        ],\n        \"completion_logic\": \"sequential\"\n      },\n      {\n        \"id\": \"wave2\",\n        \"components\": [\n          {\n            \"type\": \"message\",\n            \"execution_time\": 500,\n            \"text\": \"COMING WAVE 2.\",\n            \"mode\": \"full\"\n          },\n          {\n            \"type\": \"defeat_mobs\",\n            \"mode\": \"wave\",\n            \"radius\": 800,\n            \"activeradius\": 800,\n            \"position\": {\n              \"x\": 27821,\n              \"y\": 861\n            },\n            \"kill_target\": 50,\n            \"duration\": 60,\n            \"mobs\": [\n              {\n                \"bot_id\": 1062,\n                \"level\": 4,\n                \"power\": 12,\n                \"count\": 6,\n                \"boss\": false,\n                \"Behavior\": [],\n                \"Debuffs\": [\n                  \"Poison\"\n                ],\n                \"drops\": []\n              }\n            ]\n          }\n        ],\n        \"completion_logic\": \"sequential\"\n      },\n      {\n        \"id\": \"wave3\",\n        \"components\": [\n          {\n            \"type\": \"message\",\n            \"execution_time\": 500,\n            \"text\": \"COMING WAVE 3.\",\n            \"mode\": \"full\"\n          },\n          {\n            \"type\": \"defeat_mobs\",\n            \"mode\": \"wave\",\n            \"radius\": 800,\n            \"activeradius\": 800,\n            \"position\": {\n              \"x\": 27821,\n              \"y\": 861\n            },\n            \"kill_target\": 120,\n            \"duration\": 60,\n            \"mobs\": [\n              {\n                \"bot_id\": 1062,\n                \"level\": 4,\n                \"power\": 12,\n                \"count\": 5,\n                \"boss\": false,\n                \"Behavior\": [],\n                \"Debuffs\": [\n                  \"Poison\"\n                ],\n                \"drops\": []\n              },\n              {\n                \"bot_id\": 1061,\n                \"level\": 3,\n                \"power\": 10,\n                \"count\": 5,\n                \"boss\": false,\n                \"Behavior\": [],\n                \"Debuffs\": [],\n                \"drops\": []\n              }\n            ]\n          }\n        ],\n        \"completion_logic\": \"sequential\"\n      },\n      {\n        \"id\": \"boss\",\n        \"components\": [\n          {\n            \"type\": \"message\",\n            \"execution_time\": 500,\n            \"text\": \"COMING BOSS.\",\n            \"mode\": \"full\"\n          },\n          {\n            \"type\": \"defeat_mobs\",\n            \"mode\": \"annihilation\",\n            \"radius\": 800,\n            \"activeradius\": 2400,\n            \"position\": {\n              \"x\": 27821,\n              \"y\": 861\n            },\n            \"kill_target\": 120,\n            \"duration\": 60,\n            \"mobs\": [\n              {\n                \"bot_id\": 1063,\n                \"level\": 10,\n                \"power\": 320,\n                \"count\": 1,\n                \"boss\": true,\n                \"Behavior\": [],\n                \"Debuffs\": [\n                  \"Poison\"\n                ],\n                \"drops\": []\n              }\n            ]\n          }\n        ],\n        \"completion_logic\": \"sequential\"\n      },\n      {\n        \"id\": \"final_msg\",\n        \"components\": [\n          {\n            \"type\": \"follow_camera\",\n            \"position\": {\n              \"x\": 27999,\n              \"y\": 884\n            },\n            \"execution_time\": 250,\n            \"smooth\": false\n          },\n          {\n            \"type\": \"message\",\n            \"execution_time\": 100,\n            \"text\": \"Farmers thank you for your help\",\n            \"mode\": \"chat\"\n          },\n          {\n            \"type\": \"emote\",\n            \"execution_time\": 100,\n            \"emote_type\": 3,\n            \"emoticon_type\": 1\n          }\n        ]\n      },\n      {\n        \"id\": \"end\",\n        \"components\": [\n          {\n            \"type\": \"world_complete\",\n            \"successful\": true\n          }\n        ],\n        \"completion_logic\": \"sequential\"\n      }\n    ]\n  }\n}', 'world', 0, 0, NULL, NULL, NULL, NULL, '{\n    \"use_scenario\": {\n        \"name\": \"Protection of farmland.\",\n        \"world_id\": 1,\n        \"single\": false,\n        \"duration\": 0,\n        \"rewards\": [\n            {\n                \"item_id\": 7,\n                \"value\": 5000,\n                \"chance\": 100\n            },\n            {\n                \"item_id\": 244,\n                \"value\": 1,\n                \"chance\": 100\n            }\n        ]\n    }\n}');
 
 -- --------------------------------------------------------
 
@@ -1830,9 +1808,6 @@ CREATE TABLE `tw_quests_board_list` (
 --
 
 INSERT INTO `tw_quests_board_list` (`ID`, `QuestID`, `DailyBoardID`) VALUES
-(1, 25, 1),
-(6, 30, 1),
-(11, 35, 1),
 (16, 40, 1),
 (17, 42, 3),
 (18, 43, 3),
@@ -1861,9 +1836,7 @@ INSERT INTO `tw_quests_board_list` (`ID`, `QuestID`, `DailyBoardID`) VALUES
 (42, 67, 1),
 (43, 68, 1),
 (44, 69, 1),
-(45, 70, 1),
-(46, 71, 1),
-(47, 72, 1);
+(45, 70, 1);
 
 -- --------------------------------------------------------
 
@@ -1885,7 +1858,7 @@ CREATE TABLE `tw_quests_list` (
 --
 
 INSERT INTO `tw_quests_list` (`ID`, `NextQuestID`, `Name`, `Money`, `Exp`, `Flags`) VALUES
-(1, 2, 'First quest', 0, 0, 'Type main,Can\'t refuse,Tutorial'),
+(1, 2, 'Meeting', 0, 0, 'Type main,Can\'t refuse'),
 (2, 3, 'Coming to Gridania', 5, 10, 'Type main,Can\'t refuse'),
 (3, 4, 'Close to Home', 10, 50, 'Type main,Can\'t refuse'),
 (4, 5, 'To the Bannock', 10, 10, 'Type main,Can\'t refuse'),
@@ -1909,21 +1882,6 @@ INSERT INTO `tw_quests_list` (`ID`, `NextQuestID`, `Name`, `Money`, `Exp`, `Flag
 (22, 23, 'Festive Endeavors', 50, 50, 'Type main,Can\'t refuse'),
 (23, 24, 'Renewing the Covenant', 20, 50, 'Type main,Can\'t refuse'),
 (24, NULL, 'The Gridanian Envoy', 0, 0, 'Type main,Can\'t refuse'),
-(25, 26, 'Archer | Need eggs!', 50, 50, 'Type weekly'),
-(26, 27, 'Archer | The feathers?', 50, 50, 'Type weekly'),
-(27, 28, 'Archer | Beast mortality', 50, 50, 'Type weekly'),
-(28, 29, 'Archer | Protect us', 50, 50, 'Type weekly'),
-(29, NULL, 'Archer | Iron tip', 50, 50, 'Type weekly'),
-(30, 31, 'Lancer | Wild hunt', 50, 50, 'Type weekly'),
-(31, 32, 'Lancer | Ghost vs', 50, 50, 'Type weekly'),
-(32, 33, 'Lancer | Dynamite hunt', 50, 50, 'Type weekly'),
-(33, 34, 'Lancer | Hate mushrooms', 50, 50, 'Type weekly'),
-(34, NULL, 'Lancer | Armor boy', 50, 50, 'Type weekly'),
-(35, 36, 'Wizard | Dark shards', 50, 50, 'Type weekly'),
-(36, 37, 'Wizard | Teleport power', 50, 50, 'Type weekly'),
-(37, 38, 'Wizard | Illusion tee?', 50, 50, 'Type weekly'),
-(38, 39, 'Wizard | Puppeteer?', 50, 50, 'Type weekly'),
-(39, NULL, 'Wizard | Zombie killer', 50, 50, 'Type weekly'),
 (40, NULL, 'D | Population Control', 50, 50, 'Type daily'),
 (42, NULL, 'Farmer | Need more wheat', 200, 20, 'Type weekly'),
 (43, NULL, 'Farmer | And the stone?', 500, 150, 'Type weekly'),
@@ -1954,8 +1912,8 @@ INSERT INTO `tw_quests_list` (`ID`, `NextQuestID`, `Name`, `Money`, `Exp`, `Flag
 (68, NULL, 'S | Auction, huh?', 50, 10, 'Type side'),
 (69, NULL, 'D | Trees of life', 20, 10, 'Type daily'),
 (70, NULL, 'W | Miners parcel', 250, 30, 'Type weekly'),
-(71, NULL, 'Wizard | Magic day', 500, 30, 'Type daily'),
-(72, NULL, 'Lancer | Dangerous sea', 1500, 30, 'Type weekly');
+(73, NULL, 'Test', 0, 0, 'Type main'),
+(100, 1, 'Need help?', 100, 100, 'No activity point,Tutorial');
 
 -- --------------------------------------------------------
 
@@ -1979,6 +1937,20 @@ INSERT INTO `tw_quest_boards` (`ID`, `Name`, `PosX`, `PosY`, `WorldID`) VALUES
 (1, 'Guild Tasks', 19665, 3185, 1),
 (2, 'Miner Tasks', 22432, 5856, 1),
 (3, 'Farmer Tasks', 15200, 1056, 1);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `tw_rhythm_records`
+--
+
+CREATE TABLE `tw_rhythm_records` (
+  `ID` int(11) NOT NULL,
+  `UserID` int(11) NOT NULL,
+  `WorldID` int(11) NOT NULL,
+  `Difficulty` varchar(64) NOT NULL DEFAULT 'Default',
+  `Score` int(11) NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
 
 -- --------------------------------------------------------
 
@@ -2150,15 +2122,15 @@ CREATE TABLE `tw_warehouses` (
 --
 
 INSERT INTO `tw_warehouses` (`ID`, `Name`, `Type`, `Trades`, `PosX`, `PosY`, `StorageData`, `Currency`, `WorldID`) VALUES
-(1, 'Weapons Shop', 'buying,storage', '*Weapons:Basic\r\n[2/1(200)]\r\n[3/1(400)]\r\n[4/1(780)]\r\n[5/1(800)]\r\n[6/1(1000)]\r\n\r\n*Modules:Active\r\n[97/1(80000)]\r\n\r\n*Modules:Ammo\r\n[367/1(50000)]\r\n[366/1(100000)]\r\n[90/1(250000)]\r\n[368/1(500000)]\r\n\r\n*Modules:Weapons Mods\r\n[335/1(50000)]\r\n[336/1(70000)]\r\n[337/1(100000)]\r\n[338/1(250000)]\r\n\r\n*Resources\r\n[153/1(500)]\r\n[117/1(1500)]\r\n[152/1(5000)]\r\n[123/1(2500)]', 21003, 3883, '{\"position\":{\"x\":21067.0,\"y\":3606.0},\"value\":\"26\"}', 1, 1),
-(2, 'Tavern', 'buying,storage', '*Food / Boosters\r\n[132/1(1000)]\r\n[362/1(5000)]\r\n[363/1(1500)]\r\n[364/1(2500)]\r\n\r\n*Potions:HP-related\r\n[COLLECTION(Potion:Equip potion HP)]\r\n\r\n*Potions:MP-related\r\n[COLLECTION(Potion:Equip potion MP)]', 22528, 2880, '{\"position\":{\"x\":23053.0,\"y\":2970.0},\"value\":\"589\"}', 1, 1),
-(3, 'Mining Store', 'selling,storage', '*Resources:Mine\r\n[173/1(1/1)]\r\n[50/1(2/1)]\r\n[35/1(3/1)]\r\n[54/1(4/1)]\r\n[55/1(5/1)]\r\n[56/1(5/1)]\r\n[277/1(6/1)]\r\n[278/1(7/1)]\r\n[279/1(8/1)]\r\n[280/1(9/1)]\r\n\r\n*Resources:Rare\r\n[167/1(500/20)]\r\n[168/1(2500/20)]\r\n[169/1(3500/20)]\r\n[170/1(5000/20)]\r\n[171/1(7500/20)]\r\n[172/1(25000/20)]\r\n\r\n*Pickaxe\r\n[COLLECTION(Equipment:Equip pickaxe)]', 21728, 5984, '{\"position\":{\"x\":21895.0,\"y\":5616.0},\"value\":\"2585\"}', 1, 1),
-(4, 'Farm Store', 'selling,storage', '*Farming\r\n[70/1(1/1)]\r\n[58/1(2/1)]\r\n[61/1(3/1)]\r\n[67/1(4/1)]\r\n[68/1(5/1)]\r\n[71/1(6/1)]\r\n[223/1(6/1)]\r\n[224/1(6/1)]\r\n[225/1(7/1)]\r\n[121/1(7/1)]\r\n[122/1(7/1)]\r\n\r\n*Mobs\r\n[186/5(1/1)]\r\n[22/5(10/1)]\r\n[33/5(15/1)]\r\n[137/5(80/1)]\r\n[128/5(80/1)]\r\n\r\n*Rake\r\n[COLLECTION(Equipment:Equip rake)]', 15040, 1280, '{\"position\":{\"x\":15696.0,\"y\":1137.0},\"value\":\"3853755\"}', 1, 1),
-(9, 'Fish Seller', 'selling,storage', '*Resources\r\n[COLLECTION(Resource:Resource fishes)]\r\n\r\n*Fishrod\r\n[COLLECTION(Equipment:Equip fishrod)]', 28476, 2161, '{\"position\":{\"x\":28476.0,\"y\":1991.0},\"value\":\"8983\"}', 1, 1),
-(10, 'Activity Shop', 'buying', '*Usable:Items\n[16/1(10)]\n[17/1(10)]\n\n*Usable:Boxes\n[77/1(50)]\n[213/1(100)]\n[257/1(180)]\n[258/1(250)]\n\n*Weapons:Improved Basic\n[208/1(11700)]\n[209/1(18000)]\n[210/1(25000)]\n[211/1(40000)]\n\n*Modules:Active\n[96/1(10000)]\n\n*Other\n[95/1(5000)]\n[399/1(1000)]\n[400/1(1000)]\n[401/1(1000)]', 16960, 3697, NULL, 29, 1),
+(1, 'Weapons Shop', 'buying,storage', '*Weapons\n[2/1(200)]\n[3/1(400)]\n[4/1(780)]\n[5/1(800)]\n[6/1(1000)]\n\n*Modules:★★★★★\n[97/1(80000)]\n\n*Modules:Weapon-related\n[367/1(12500)]\n[366/1(25000)]\n[90/1(62500)]\n[368/1(125000)]\n[335/1(12500)]\n[336/1(62500)]\n[337/1(17500)]\n[338/1(62500)]\n\n*Resources\n[153/1(500)]\n[117/1(1500)]\n[152/1(4000)]\n[123/1(2500)]', 21003, 3883, '{\"position\":{\"x\":21067.0,\"y\":3606.0},\"value\":\"6488\"}', 1, 1),
+(2, 'Tavern', 'buying,storage', '*Food / Boosters\n[132/1(250)]\n[362/1(1250)]\n[363/1(375)]\n[364/1(625)]\n\n*Potions:HP-related\n[COLLECTION(Potion:Equip potion HP)]\n\n*Potions:MP-related\n[COLLECTION(Potion:Equip potion MP)]', 22528, 2880, '{\"position\":{\"x\":23053.0,\"y\":2970.0},\"value\":\"100051\"}', 1, 1),
+(3, 'Mining Store', 'selling,storage', '*Resources:Mine\r\n[173/1(1/1)]\r\n[50/1(2/1)]\r\n[35/1(3/1)]\r\n[54/1(4/1)]\r\n[55/1(5/1)]\r\n[56/1(5/1)]\r\n[277/1(6/1)]\r\n[278/1(7/1)]\r\n[279/1(8/1)]\r\n[280/1(9/1)]\r\n\r\n*Resources:Rare\r\n[167/1(500/20)]\r\n[168/1(2500/20)]\r\n[169/1(3500/20)]\r\n[170/1(5000/20)]\r\n[171/1(7500/20)]\r\n[172/1(25000/20)]\r\n\r\n*Pickaxe\r\n[COLLECTION(Equipment:Equip pickaxe)]', 21728, 5984, '{\"position\":{\"x\":21895.0,\"y\":5616.0},\"value\":\"111732\"}', 1, 1),
+(4, 'Farm Store', 'selling,storage', '*Farming\r\n[70/1(1/1)]\r\n[58/1(2/1)]\r\n[61/1(3/1)]\r\n[67/1(4/1)]\r\n[68/1(5/1)]\r\n[71/1(6/1)]\r\n[223/1(6/1)]\r\n[224/1(6/1)]\r\n[225/1(7/1)]\r\n[121/1(7/1)]\r\n[122/1(7/1)]\r\n\r\n*Mobs\r\n[186/5(1/1)]\r\n[22/5(10/1)]\r\n[33/5(15/1)]\r\n[137/5(80/1)]\r\n[128/5(80/1)]\r\n\r\n*Rake\r\n[COLLECTION(Equipment:Equip rake)]', 15040, 1280, '{\"position\":{\"x\":15696.0,\"y\":1137.0},\"value\":\"4042729\"}', 1, 1),
+(9, 'Fish Seller', 'selling,storage', '*Resources\r\n[COLLECTION(Resource:Resource fishes)]\r\n\r\n*Fishrod\r\n[COLLECTION(Equipment:Equip fishrod)]', 28476, 2161, '{\"position\":{\"x\":28476.0,\"y\":1991.0},\"value\":\"78675\"}', 1, 1),
+(10, 'Activity Shop', 'buying', '*Usable:Items\n[16/1(10)]\n[17/1(10)]\n\n*Usable:Boxes\n[77/1(50)]\n[213/1(100)]\n[257/1(180)]\n[258/1(240)]\n\n*Modules:Active\n[96/1(10000)]\n\n*Other\n[95/1(4000)]\n[399/1(500)]\n[400/1(500)]\n[401/1(500)]', 16960, 3697, '', 29, 1),
 (11, 'Achievement Shop', 'buying', '*Miscellaneous\n[79/1(99915)]', 27034, 1585, NULL, 10, 1),
 (12, 'Donate Shop', 'buying', '*Food / Boosters\n[193/1(5)]\n[194/1(5)]\n[195/1(5)]\n[196/1(5)]\n[197/1(5)]\n[198/1(5)]\n[199/1(5)]\n[200/1(5)]\n[201/1(5)]\n[202/1(6)]\n[203/1(6)]\n[204/1(6)]\n[205/1(6)]\n[206/1(7)]\n[207/1(7)]\n\n*Modules:Active\n[19/1(50)]\n[20/1(55)]\n[185/1(80)]\n[96/1(80)]\n\n*Modules:Universal\n[49/1(1)]\n[51/1(10)]\n[52/1(50)]\n[85/1(10)]\n[86/1(10)]\n[87/1(10)]\n\n*Weapons:Improved Basic\n[53/1(60)]\n\n*Weapons:Special\n[99/1(50)]\n[100/1(70)]\n[101/1(60)]\n[102/1(50)]\n[103/1(55)]\n[150/1(60)]\n[151/1(60)]\n[324/1(65)]\n\n*Usable\n[95/1(5)]', 20706, 2225, NULL, 244, 1),
-(13, 'Shop', 'buying,storage', '*Usable\r\n[77/1(1000)]\r\n[310/1(1000)]\r\n[308/1(5000)]\r\n[309/1(7000)]\r\n[257/1(50000)]\r\n\r\n*Modules:Gold\r\n[329/1(1500)]\r\n[330/1(15000)]\r\n[333/1(1000000)]\r\n[332/1(500000)]\r\n\r\n*Modules:HP\r\n[344/1(50000)]\r\n\r\n*Modules:MP\r\n[345/1(50000)]\r\n\r\n*Modules:Lucky Drop\r\n[346/1(160000)]\r\n\r\n*Modules:Product Capacity\r\n[347/1(140000)]\r\n\r\n*Modules:Attack SPD\r\n[348/1(200000)]\r\n\r\n*Resources:Templates\r\n[339/1(1000)]\r\n[340/1(1000)]\r\n[341/1(5000)]\r\n[342/1(2000)]\r\n[343/1(3000)]\r\n[365/1(2500)]\r\n\r\n*Resources:Other\r\n[108/1(900)]\r\n[124/1(50)]', 11168, 3840, '{\"position\":{\"x\":11300.0,\"y\":3600.0},\"value\":\"37\"}', 1, 1);
+(13, 'Shop', 'buying,storage', '*Usable\n[77/1(1000)]\n[310/1(1000)]\n[308/1(3000)]\n[309/1(5000)]\n[257/1(12000)]\n\n*Modules:Gold\n[329/1(1500)]\n[330/1(5000)]\n[333/1(100000)]\n[332/1(50000)]\n\n*Modules:HP & MP-related\n[344/1(25000)]\n\n*Modules:HP & MP-related\n[345/1(25000)]\n\n*Modules:Player-related\n[346/1(53000)]\n\n*Modules:Work-related\n[347/1(48000)]\n\n*Modules:Class-related\n[348/1(40000)]\n\n*Resources:Other\n[108/1(900)]\n[124/1(50)]', 11168, 3840, '{\"position\":{\"x\":11300.0,\"y\":3600.0},\"value\":\"229\"}', 1, 1);
 
 -- --------------------------------------------------------
 
@@ -2171,7 +2143,7 @@ CREATE TABLE `tw_worlds` (
   `Name` varchar(256) NOT NULL,
   `Path` varchar(256) NOT NULL,
   `Type` enum('default','dungeon','tutorial','deep_dungeon','treasure_dungeon','pvp','mini_games','rhythm') NOT NULL,
-  `Flags` set('rating_system','crime_score','lost_gold_death','spawn_full_mana','allowed_pvp') DEFAULT NULL,
+  `Flags` set('rating_system','crime_score','lost_gold_death','spawn_full_mana','allowed_pvp','no_prepare_map','no_multiplier','no_daytime','no_moneybag') DEFAULT NULL,
   `RespawnWorldID` int(11) NOT NULL,
   `JailWorldID` int(11) NOT NULL,
   `RequiredLevel` int(11) NOT NULL DEFAULT 1
@@ -2182,13 +2154,21 @@ CREATE TABLE `tw_worlds` (
 --
 
 INSERT INTO `tw_worlds` (`ID`, `Name`, `Path`, `Type`, `Flags`, `RespawnWorldID`, `JailWorldID`, `RequiredLevel`) VALUES
-(0, 'Tutorilishe', 'tutorial.map', 'tutorial', NULL, 0, 0, 1),
+(0, 'Tutorilishe', 'tutorial.map', 'tutorial', 'no_multiplier,no_daytime,no_moneybag', 0, 0, 1),
 (1, 'Gridania', 'main.map', 'default', 'rating_system,crime_score,lost_gold_death,allowed_pvp', 1, 1, 1),
-(2, 'Resonance (TEST)', 'dungeons/resonance.map', 'dungeon', 'spawn_full_mana', 2, 1, 1),
-(3, 'Default - dm1 (TEST)', 'pvp/dm1-mmorpg.map', 'pvp', 'rating_system,lost_gold_death,spawn_full_mana,allowed_pvp', 3, 1, 20),
-(4, 'Default - dm9 (TEST)', 'pvp/dm9-mmorpg.map', 'pvp', 'rating_system,lost_gold_death,spawn_full_mana,allowed_pvp', 4, 1, 20),
+(2, 'Resonance', 'dungeons/resonance.map', 'dungeon', 'spawn_full_mana,no_multiplier,no_daytime,no_moneybag', 2, 1, 5),
+(3, 'Default - dm1 (TEST)', 'pvp/dm1-mmorpg.map', 'pvp', 'rating_system,lost_gold_death,spawn_full_mana,allowed_pvp,no_multiplier,no_daytime,no_moneybag', 3, 1, 1),
+(4, 'Default - dm9 (TEST)', 'pvp/dm9-mmorpg.map', 'pvp', 'rating_system,lost_gold_death,spawn_full_mana,allowed_pvp,no_multiplier,no_daytime,no_moneybag', 4, 1, 1),
 (5, 'Sea', 'worlds/sea.map', 'default', 'rating_system,crime_score,lost_gold_death,allowed_pvp', 1, 1, 5),
-(6, 'Forest', 'worlds/Forest.map', 'default', 'rating_system,lost_gold_death,allowed_pvp', 1, 1, 15);
+(6, 'Forest', 'worlds/Forest.map', 'default', 'rating_system,crime_score,lost_gold_death,allowed_pvp', 1, 1, 15),
+(7, 'Nightcore - Skillet Hero', 'rhythm/Nightcore - Skillet Hero.map', 'rhythm', 'no_prepare_map,no_multiplier,no_daytime,no_moneybag', 1, 1, 1),
+(8, 'AlanWalker, K-391, Emelie Hollow - Lily', 'rhythm/AlanWalker, K-391, Emelie Hollow - Lily.map', 'rhythm', 'no_prepare_map,no_multiplier,no_daytime,no_moneybag', 1, 1, 10),
+(9, 'Nightcore - Mad Hatter', 'rhythm/Nightcore - Mad Hatter.map', 'rhythm', 'no_prepare_map,no_multiplier,no_daytime,no_moneybag', 1, 1, 5),
+(10, 'Nightcore - In The End', 'rhythm/Nightcore - In The End.map', 'rhythm', 'no_prepare_map,no_multiplier,no_daytime,no_moneybag', 1, 1, 5),
+(11, 'Trial - Echoing Lotus', 'dungeons/Trial-Echoing-Lotus.map', 'dungeon', 'spawn_full_mana,no_daytime,no_moneybag', 11, 1, 15),
+(12, 'Komiya Mao - understand me', 'rhythm/Komiya Mao - understand me.map', 'rhythm', 'no_prepare_map,no_multiplier,no_daytime,no_moneybag', 1, 1, 10),
+(13, 'GHOSTEMANE - Mercury', 'rhythm/GHOSTEMANE - Mercury.map', 'rhythm', 'no_prepare_map,no_multiplier,no_daytime,no_moneybag', 1, 1, 10),
+(14, 'Nightcore - Katy Perry - E T', 'rhythm/Nightcore - Katy Perry - E T.map', 'rhythm', 'no_prepare_map,no_multiplier,no_daytime,no_moneybag', 1, 1, 10);
 
 -- --------------------------------------------------------
 
@@ -2499,6 +2479,13 @@ ALTER TABLE `tw_guilds_ranks`
   ADD KEY `MemberID` (`GuildID`);
 
 --
+-- Indexes for table `tw_guilds_wars`
+--
+ALTER TABLE `tw_guilds_wars`
+  ADD PRIMARY KEY (`GuildID1`,`GuildID2`),
+  ADD KEY `GuildID2` (`GuildID2`);
+
+--
 -- Indexes for table `tw_houses`
 --
 ALTER TABLE `tw_houses`
@@ -2528,16 +2515,6 @@ ALTER TABLE `tw_items_list`
   ADD KEY `tw_items_list_ibfk_5` (`AT2`);
 
 --
--- Indexes for table `tw_logics_worlds`
---
-ALTER TABLE `tw_logics_worlds`
-  ADD PRIMARY KEY (`ID`),
-  ADD UNIQUE KEY `ID` (`ID`),
-  ADD KEY `MobID` (`MobID`),
-  ADD KEY `WorldID` (`WorldID`),
-  ADD KEY `ParseInt` (`ParseInt`);
-
---
 -- Indexes for table `tw_quests_board_list`
 --
 ALTER TABLE `tw_quests_board_list`
@@ -2558,6 +2535,13 @@ ALTER TABLE `tw_quests_list`
 --
 ALTER TABLE `tw_quest_boards`
   ADD PRIMARY KEY (`ID`),
+  ADD KEY `WorldID` (`WorldID`);
+
+--
+-- Indexes for table `tw_rhythm_records`
+--
+ALTER TABLE `tw_rhythm_records`
+  ADD UNIQUE KEY `ID` (`ID`),
   ADD KEY `WorldID` (`WorldID`);
 
 --
@@ -2631,13 +2615,13 @@ ALTER TABLE `enum_effects_list`
 -- AUTO_INCREMENT for table `tw_accounts`
 --
 ALTER TABLE `tw_accounts`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `tw_accounts_aethers`
 --
 ALTER TABLE `tw_accounts_aethers`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `tw_accounts_bans`
@@ -2649,37 +2633,37 @@ ALTER TABLE `tw_accounts_bans`
 -- AUTO_INCREMENT for table `tw_accounts_data`
 --
 ALTER TABLE `tw_accounts_data`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `tw_accounts_items`
 --
 ALTER TABLE `tw_accounts_items`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `tw_accounts_mailbox`
 --
 ALTER TABLE `tw_accounts_mailbox`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `tw_accounts_professions`
 --
 ALTER TABLE `tw_accounts_professions`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `tw_accounts_quests`
 --
 ALTER TABLE `tw_accounts_quests`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `tw_accounts_skills`
 --
 ALTER TABLE `tw_accounts_skills`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `tw_achievements`
@@ -2691,49 +2675,49 @@ ALTER TABLE `tw_achievements`
 -- AUTO_INCREMENT for table `tw_aethers`
 --
 ALTER TABLE `tw_aethers`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT for table `tw_auction_slots`
 --
 ALTER TABLE `tw_auction_slots`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `tw_bots_info`
 --
 ALTER TABLE `tw_bots_info`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1054;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1064;
 
 --
 -- AUTO_INCREMENT for table `tw_bots_mobs`
 --
 ALTER TABLE `tw_bots_mobs`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=121;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=123;
 
 --
 -- AUTO_INCREMENT for table `tw_bots_npc`
 --
 ALTER TABLE `tw_bots_npc`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=26;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=28;
 
 --
 -- AUTO_INCREMENT for table `tw_bots_quest`
 --
 ALTER TABLE `tw_bots_quest`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=129;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=281;
 
 --
 -- AUTO_INCREMENT for table `tw_crafts_list`
 --
 ALTER TABLE `tw_crafts_list`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=198;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=202;
 
 --
 -- AUTO_INCREMENT for table `tw_dungeons`
 --
 ALTER TABLE `tw_dungeons`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT for table `tw_dungeons_door`
@@ -2745,31 +2729,31 @@ ALTER TABLE `tw_dungeons_door`
 -- AUTO_INCREMENT for table `tw_dungeons_records`
 --
 ALTER TABLE `tw_dungeons_records`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `tw_groups`
 --
 ALTER TABLE `tw_groups`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `tw_guilds`
 --
 ALTER TABLE `tw_guilds`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `tw_guilds_decorations`
 --
 ALTER TABLE `tw_guilds_decorations`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `tw_guilds_history`
 --
 ALTER TABLE `tw_guilds_history`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `tw_guilds_houses`
@@ -2781,13 +2765,13 @@ ALTER TABLE `tw_guilds_houses`
 -- AUTO_INCREMENT for table `tw_guilds_invites`
 --
 ALTER TABLE `tw_guilds_invites`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `tw_guilds_ranks`
 --
 ALTER TABLE `tw_guilds_ranks`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `tw_houses`
@@ -2799,19 +2783,13 @@ ALTER TABLE `tw_houses`
 -- AUTO_INCREMENT for table `tw_houses_decorations`
 --
 ALTER TABLE `tw_houses_decorations`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `tw_items_list`
 --
 ALTER TABLE `tw_items_list`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=408;
-
---
--- AUTO_INCREMENT for table `tw_logics_worlds`
---
-ALTER TABLE `tw_logics_worlds`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=27;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=416;
 
 --
 -- AUTO_INCREMENT for table `tw_quests_board_list`
@@ -2823,13 +2801,19 @@ ALTER TABLE `tw_quests_board_list`
 -- AUTO_INCREMENT for table `tw_quests_list`
 --
 ALTER TABLE `tw_quests_list`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=73;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=101;
 
 --
 -- AUTO_INCREMENT for table `tw_quest_boards`
 --
 ALTER TABLE `tw_quest_boards`
   MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+
+--
+-- AUTO_INCREMENT for table `tw_rhythm_records`
+--
+ALTER TABLE `tw_rhythm_records`
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `tw_skills_list`
@@ -2847,13 +2831,13 @@ ALTER TABLE `tw_skills_tree`
 -- AUTO_INCREMENT for table `tw_voucher`
 --
 ALTER TABLE `tw_voucher`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `tw_voucher_redeemed`
 --
 ALTER TABLE `tw_voucher_redeemed`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=1;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT for table `tw_warehouses`
@@ -2865,7 +2849,7 @@ ALTER TABLE `tw_warehouses`
 -- AUTO_INCREMENT for table `tw_worlds`
 --
 ALTER TABLE `tw_worlds`
-  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `ID` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
 
 --
 -- AUTO_INCREMENT for table `tw_world_swap`
@@ -3011,12 +2995,6 @@ ALTER TABLE `tw_groups`
   ADD CONSTRAINT `tw_groups_ibfk_1` FOREIGN KEY (`OwnerUID`) REFERENCES `tw_accounts_data` (`ID`) ON DELETE NO ACTION ON UPDATE NO ACTION;
 
 --
--- Constraints for table `tw_guilds`
---
-ALTER TABLE `tw_guilds`
-  ADD CONSTRAINT `tw_guilds_ibfk_1` FOREIGN KEY (`LeaderUID`) REFERENCES `tw_accounts_data` (`ID`) ON DELETE SET NULL ON UPDATE CASCADE;
-
---
 -- Constraints for table `tw_guilds_decorations`
 --
 ALTER TABLE `tw_guilds_decorations`
@@ -3036,6 +3014,13 @@ ALTER TABLE `tw_guilds_houses`
 ALTER TABLE `tw_guilds_invites`
   ADD CONSTRAINT `tw_guilds_invites_ibfk_1` FOREIGN KEY (`GuildID`) REFERENCES `tw_guilds` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE,
   ADD CONSTRAINT `tw_guilds_invites_ibfk_2` FOREIGN KEY (`UserID`) REFERENCES `tw_accounts_data` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `tw_guilds_wars`
+--
+ALTER TABLE `tw_guilds_wars`
+  ADD CONSTRAINT `tw_guilds_wars_ibfk_1` FOREIGN KEY (`GuildID1`) REFERENCES `tw_guilds` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE,
+  ADD CONSTRAINT `tw_guilds_wars_ibfk_2` FOREIGN KEY (`GuildID2`) REFERENCES `tw_guilds` (`ID`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Constraints for table `tw_houses`
