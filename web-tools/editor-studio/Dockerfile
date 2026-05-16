@@ -16,6 +16,11 @@ WORKDIR /var/www/html
 
 COPY . /var/www/html/
 
+COPY apache-config.conf /etc/apache2/sites-available/editor-studio.conf
+
+RUN a2dissite 000-default.conf && \
+    a2ensite editor-studio.conf
+
 RUN mkdir -p \
     /var/www/html/scenarios \
     /var/www/html/data/db-dumps \
