@@ -1,0 +1,34 @@
+services:
+  web:
+    build:
+      context: ../
+      dockerfile: Dockerfile
+    container_name: editor-studio-web
+    ports:
+      - "${WEB_PORT:-8080}:80"
+    volumes:
+      - ./scenarios:/var/www/html/scenarios
+      - ./data:/var/www/html/data
+    environment:
+      - PHP_MEMORY_LIMIT=${PHP_MEMORY_LIMIT:-512M}
+      - PHP_UPLOAD_MAX_FILESIZE=${PHP_UPLOAD_MAX_FILESIZE:-100M}
+      - PHP_POST_MAX_SIZE=${PHP_POST_MAX_SIZE:-100M}
+      - PHP_MAX_EXECUTION_TIME=${PHP_MAX_EXECUTION_TIME:-600}
+    networks:
+      - editor-network
+    restart: always
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+networks:
+  editor-network:
+    driver: bridge
