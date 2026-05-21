@@ -172,49 +172,6 @@ void CPlayer::Tick()
 
 	if(m_PlayerFlags & PLAYERFLAG_IN_MENU)
 		m_VotesData.ApplyVoteUpdaterData();
-
-	// periodic activity coin reward
-	const int RewardIntervalTicks = g_Config.m_SvActivityCoinPeriodicRewardInterval * 60 * TickSpeed;
-	if(RewardIntervalTicks > 0)
-	{
-		auto& SharedData = GetSharedData();
-		if(SharedData.m_ActivityCoinRewardInterval <= 0)
-			SharedData.m_ActivityCoinRewardInterval = CurrentTick + RewardIntervalTicks;
-		else if(CurrentTick >= SharedData.m_ActivityCoinRewardInterval)
-		{
-			auto* pActCoin = GetItem(itActivityCoin);
-			const int RewardCoins = g_Config.m_SvActivityCoinPeriodicRewardAmount;
-			SharedData.m_ActivityRewardStreak = minimum(SharedData.m_ActivityRewardStreak + 1, 15);
-			const int StreakMultiplier = 1 + (SharedData.m_ActivityRewardStreak / 3);
-			const int FinalRewardCoins = maximum(RewardCoins, RewardCoins * StreakMultiplier);
-
-			// active session streak reward
-			pActCoin->Add(FinalRewardCoins, 0, 0, 0, false);
-			GS()->Chat(m_ClientID, "You received '{} {}({$})'. Activity streak: {}x.",
-				pActCoin->Info()->GetName(), FinalRewardCoins, pActCoin->GetValue(), StreakMultiplier);
-
-			// roulette charge
-			SharedData.m_ActivityRouletteCharge++;
-			if(SharedData.m_ActivityRouletteCharge >= 3)
-			{
-				SharedData.m_ActivityRouletteCharge = 0;
-				const int Roll = rand() % 100;
-				if(Roll < 50)
-				{
-					const int BonusGold = maximum(50, 100 + (Account()->GetLevel() * 100));
-					Account()->AddGold(BonusGold);
-					GS()->Chat(m_ClientID, "Activity roulette: jackpot! +{} gold.", BonusGold);
-				}
-				else
-				{
-					const int BonusExp = maximum(100, 200 + (Account()->GetLevel() * 40));
-					Account()->AddExperience(BonusExp);
-					GS()->Chat(m_ClientID, "Activity roulette: knowledge surge! +{} experience.", BonusExp);
-				}
-			}
-			SharedData.m_ActivityCoinRewardInterval = CurrentTick + RewardIntervalTicks;
-		}
-	}
 }
 
 void CPlayer::PostTick()
@@ -255,6 +212,7 @@ void CPlayer::PostTick()
 
 	// handlers
 	HandleScoreboardColors();
+	HandlePeriodicActivityReward();
 }
 
 void CPlayer::PrepareRespawnTick()
@@ -332,6 +290,46 @@ void CPlayer::HandleScoreboardColors()
 		m_ActivatedGroupColour = ScoreboardActive;
 		m_TickActivatedGroupColour = Server()->Tick() + (Server()->TickSpeed() / 4);
 	}
+}
+
+void CPlayer::HandlePeriodicActivityReward()
+{
+	// disabled interval activity coin periodic reward
+	if(g_Config.m_SvActivityCoinPeriodicRewardInterval <= 0)
+		return;
+
+	// initialize variables
+	const int RewardIntervalTicks = g_Config.m_SvActivityCoinPeriodicRewardInterval * 60 * Server()->TickSpeed();
+	const int CurrentTick = Server()->Tick();
+	auto& SharedData = GetSharedData();
+
+	// set first next interval tick
+	if(SharedData.m_ActivityCoinRewardInterval <= 0)
+	{
+		SharedData.m_ActivityCoinRewardInterval = CurrentTick + RewardIntervalTicks;
+		return;
+	}
+
+	// check for interval has begun
+	if(CurrentTick < SharedData.m_ActivityCoinRewardInterval)
+		return;
+
+	// initialize variables & add activity coins
+	const bool LongAfk = GetAfkTime() >= 60 * 60;
+	auto* pActivityCoin = GetItem(itActivityCoin);
+	SharedData.m_ActivityRewardStreak = LongAfk ? 0 : minimum(SharedData.m_ActivityRewardStreak + 1, 15);
+	const int Multi = 1 + (SharedData.m_ActivityRewardStreak / 3);
+	const int Coins = g_Config.m_SvActivityCoinPeriodicRewardAmount * Multi;
+	pActivityCoin->Add(Coins, 0, 0, 0, false);
+
+	// notify
+	if(LongAfk)
+		GS()->Chat(m_ClientID, "You received '{} {}({$})' (Long AFK).", pActivityCoin->Info()->GetName(), Coins, pActivityCoin->GetValue());
+	else
+		GS()->Chat(m_ClientID, "You received '{} {}({$})'. Activity streak: {}x.", pActivityCoin->Info()->GetName(), Coins, pActivityCoin->GetValue(), Multi);
+
+	// update next interval check
+	SharedData.m_ActivityCoinRewardInterval = CurrentTick + RewardIntervalTicks;
 }
 
 void CPlayer::HandleTuningParams()
@@ -612,20 +610,29 @@ void CPlayer::OnDirectInput(CNetObj_PlayerInput* pNewInput)
 
 	if(m_pCharacter)
 	{
-		// Update AFK status
+		// update AFK status
 		if(g_Config.m_SvMaxAfkTime != 0)
+		{
+			const bool WasAfk = m_Afk;
 			m_Afk = m_LastPlaytime < time_get() - time_freq() * g_Config.m_SvMaxAfkTime;
+			if(!WasAfk && m_Afk)
+				GS()->Chat(m_ClientID, "You are now AFK (Away From Keyboard).");
+			else if(WasAfk && !m_Afk)
+				GS()->Chat(m_ClientID, "Welcome back! Your AFK status has been removed.");
+		}
 
+		// update direct input
 		m_pCharacter->OnDirectInput(pNewInput);
 	}
 
-	// Check for activity
-	if(mem_comp(pNewInput, m_pLastInput, sizeof(CNetObj_PlayerInput)))
+	// Check for activity (ignore aim-only cursor movement)
+	bool BeforeInput = mem_comp(pNewInput, m_pLastInput, offsetof(CNetObj_PlayerInput, m_TargetX)) != 0;
+	bool AfterInput = mem_comp(&pNewInput->m_TargetY + 1, &m_pLastInput->m_TargetY + 1,
+		sizeof(CNetObj_PlayerInput) - offsetof(CNetObj_PlayerInput, m_TargetY) - sizeof(int)) != 0;
+	if(BeforeInput || AfterInput)
 	{
-		mem_copy(m_pLastInput, pNewInput, sizeof(CNetObj_PlayerInput));
-		if(m_LastInputInit)
-			m_LastPlaytime = time_get();
-
+		if(m_LastInputInit) m_LastPlaytime = time_get();
+		*m_pLastInput = *pNewInput;
 		m_LastInputInit = true;
 	}
 }

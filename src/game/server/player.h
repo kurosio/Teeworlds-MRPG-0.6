@@ -164,6 +164,7 @@ private:
 	virtual void GetFormatedName(char* aBuffer, int BufferSize);
 	virtual void TryRespawn();
 	void HandleScoreboardColors();
+	void HandlePeriodicActivityReward();
 
 public:
 	int GetCID() const { return m_ClientID; }
