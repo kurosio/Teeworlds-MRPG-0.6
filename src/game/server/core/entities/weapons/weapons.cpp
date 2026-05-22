@@ -287,106 +287,69 @@ CWeaponVariantRegistry& CWeaponVariantRegistry::Instance()
 
 CWeaponVariantRegistry::CWeaponVariantRegistry()
 {
-	// hammer-type
+	// default weapons
 	m_HammerDefault = std::make_unique<CHammerDefault>();
-	m_HammerLamp = std::make_unique<CHammerLamp>();
-	m_HammerBlast = std::make_unique<CHammerBlast>();
-
-	// gun-type
 	m_GunDefault = std::make_unique<CGunDefault>();
-	m_GunPulse = std::make_unique<CGunPulse>();
-	m_GunKill = std::make_unique<CGunKill>();
-
-	// shotgun-type
 	m_ShotgunDefault = std::make_unique<CShotgunDefault>();
-	m_ShotgunBurst = std::make_unique<CShotgunBurst>();
-
-	// grenade-type
 	m_GrenadeDefault = std::make_unique<CGrenadeDefault>();
-	m_GrenadePizdamet = std::make_unique<CGrenadePizdamet>();
-	m_GrenadeInjury = std::make_unique<CGrenadeInjury>();
-
-	// rifle-type
 	m_RifleDefault = std::make_unique<CRifleDefault>();
-	m_RifleWallPusher = std::make_unique<CRifleWallPusher>();
-	m_RifleMagneticPulse = std::make_unique<CRifleMagneticPulse>();
-	m_RifleTrackedPlazma = std::make_unique<CRifleTrackedPlazma>();
-	m_RifleTeslaSerpent = std::make_unique<CRifleTeslaSerpent>();
-	m_RifleDamager = std::make_unique<CRifleDamager>();
+
+	// hammer
+	m_HammerVariants.emplace(itHammerLamp, std::make_unique<CHammerLamp>());
+	m_HammerVariants.emplace(itHammerBlast, std::make_unique<CHammerBlast>());
+
+	// gun
+	m_GunVariants.emplace(itGunPulse, std::make_unique<CGunPulse>());
+	m_GunVariants.emplace(itKillGun, std::make_unique<CGunKill>());
+
+	// shotgun
+	m_ShotgunVariants.emplace(itBurstShotgun, std::make_unique<CShotgunBurst>());
+
+	// grenade
+	m_GrenadeVariants.emplace(itPizdamet, std::make_unique<CGrenadePizdamet>());
+	m_GrenadeVariants.emplace(itInjuryGrenade, std::make_unique<CGrenadeInjury>());
+
+	// rifle
+	m_RifleVariants.emplace(itRifleWallPusher, std::make_unique<CRifleWallPusher>());
+	m_RifleVariants.emplace(itRifleMagneticPulse, std::make_unique<CRifleMagneticPulse>());
+	m_RifleVariants.emplace(itRifleTrackedPlazma, std::make_unique<CRifleTrackedPlazma>());
+	m_RifleVariants.emplace(itRifleTeslaSerpent, std::make_unique<CRifleTeslaSerpent>());
+	m_RifleVariants.emplace(itLaserDamager, std::make_unique<CRifleDamager>());
+}
+
+const IWeaponVariant* CWeaponVariantRegistry::FindVariantById(const VariantMap& Variants, const VariantPtr& pDefault, const std::optional<int>& EquippedId)
+{
+	if(!EquippedId.has_value())
+		return nullptr;
+
+	const auto It = Variants.find(*EquippedId);
+	if(It != Variants.end())
+		return It->second.get();
+
+	return pDefault.get();
 }
 
 const IWeaponVariant* CWeaponVariantRegistry::FindHammer(const std::optional<int>& Id) const
 {
-	if(!Id.has_value())
-		return nullptr;
-
-	if(Id == itHammerLamp)
-		return m_HammerLamp.get();
-
-	if(Id == itHammerBlast)
-		return m_HammerBlast.get();
-
-	return m_HammerDefault.get();
+	return FindVariantById(m_HammerVariants, m_HammerDefault, Id);
 }
 
 const IWeaponVariant* CWeaponVariantRegistry::FindGun(const std::optional<int>& Id) const
 {
-	if(!Id.has_value())
-		return nullptr;
-
-	if(Id == itGunPulse)
-		return m_GunPulse.get();
-
-	if(Id == itKillGun)
-		return m_GunKill.get();
-
-	return m_GunDefault.get();
+	return FindVariantById(m_GunVariants, m_GunDefault, Id);
 }
 
 const IWeaponVariant* CWeaponVariantRegistry::FindShotgun(const std::optional<int>& Id) const
 {
-	if(!Id.has_value())
-		return nullptr;
-
-	if(Id == itBurstShotgun)
-		return m_ShotgunBurst.get();
-
-	return m_ShotgunDefault.get();
+	return FindVariantById(m_ShotgunVariants, m_ShotgunDefault, Id);
 }
 
 const IWeaponVariant* CWeaponVariantRegistry::FindGrenade(const std::optional<int>& Id) const
 {
-	if(!Id.has_value())
-		return nullptr;
-
-	if(Id == itPizdamet)
-		return m_GrenadePizdamet.get();
-
-	if(Id == itInjuryGrenade)
-		return m_GrenadeInjury.get();
-
-	return m_GrenadeDefault.get();
+	return FindVariantById(m_GrenadeVariants, m_GrenadeDefault, Id);
 }
 
 const IWeaponVariant* CWeaponVariantRegistry::FindRifle(const std::optional<int>& Id) const
 {
-	if(!Id.has_value())
-		return nullptr;
-
-	if(Id == itRifleWallPusher)
-		return m_RifleWallPusher.get();
-
-	if(Id == itRifleMagneticPulse)
-		return m_RifleMagneticPulse.get();
-
-	if(Id == itRifleTrackedPlazma)
-		return m_RifleTrackedPlazma.get();
-
-	if(Id == itRifleTeslaSerpent)
-		return m_RifleTeslaSerpent.get();
-
-	if(Id == itLaserDamager)
-		return m_RifleDamager.get();
-
-	return m_RifleDefault.get();
+	return FindVariantById(m_RifleVariants, m_RifleDefault, Id);
 }
