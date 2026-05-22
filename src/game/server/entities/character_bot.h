@@ -20,7 +20,7 @@ class CCharacterBotAI : public CCharacter
 	int m_PrevDirection{};
 	vec2 m_DieForce {};
 	std::optional<int> m_ForcedActiveWeapon {};
-	ska::unordered_set< int > m_aListDmgPlayers{};
+	ska::unordered_map< int, int > m_aDamageByPlayer {};
 
 public:
 	CCharacterBotAI(CGameWorld* pWorld);
@@ -50,7 +50,7 @@ public:
 	void UpdateTarget(float Radius) const;
 	void SetAim(vec2 Dir);
 
-	ska::unordered_set<int>& GetListDmgPlayers() { return m_aListDmgPlayers; }
+	ska::unordered_map<int, int>& GetListDmgPlayers() { return m_aDamageByPlayer; }
 
 	void Move();
 	void Fire();

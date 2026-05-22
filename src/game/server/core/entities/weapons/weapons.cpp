@@ -126,7 +126,7 @@ void CHammerBlast::Fire(CCharacter* pChar, vec2 Direction, vec2, int Dmg) const
 	pChar->AddVelocity(Direction * 2.5f);
 	pGS->CreateExplosion(pChar->GetPos(), pChar->GetClientID(), WEAPON_HAMMER, Dmg);
 	pGS->CreateSound(pChar->GetPos(), SOUND_SFX_WEAPON_DEAF_BLOW);
-	pChar->SetAttackSpeedReloadTimer(WEAPON_HAMMER, 0.9f);
+	pChar->SetAttackSpeedReloadTimer(WEAPON_HAMMER, 1.0f);
 }
 
 void CGunPulse::Fire(CCharacter* pChar, vec2 Direction, vec2, int Dmg) const

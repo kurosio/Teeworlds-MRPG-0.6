@@ -20,7 +20,7 @@ MACRO_ALLOC_POOL_ID_IMPL(CCharacterBotAI, MAX_CLIENTS* ENGINE_MAX_WORLDS + MAX_C
 
 CCharacterBotAI::CCharacterBotAI(CGameWorld* pWorld) : CCharacter(pWorld)
 {
-	m_aListDmgPlayers.reserve(MAX_CLIENTS);
+	m_aDamageByPlayer.reserve(MAX_CLIENTS);
 }
 
 bool CCharacterBotAI::Spawn(CPlayer* pPlayer, vec2 Pos)
@@ -95,11 +95,7 @@ bool CCharacterBotAI::TakeDamage(vec2 Force, int Dmg, int From, int Weapon, int 
 	}
 
 	// Add player to the list of damaged players
-	if(m_aListDmgPlayers.find(From) == m_aListDmgPlayers.end())
-	{
-		m_aListDmgPlayers.insert(From);
-	}
-
+	m_aDamageByPlayer[From] += maximum(0, Dmg);
 	m_pAI->OnTakeDamage(Dmg, From, Weapon);
 
 	// Verify death
@@ -115,12 +111,37 @@ bool CCharacterBotAI::TakeDamage(vec2 Force, int Dmg, int From, int Weapon, int 
 
 void CCharacterBotAI::Die(int Killer, int Weapon)
 {
-	// Reward players
+	// Reward players & Notify about bosses
 	if(Weapon != WEAPON_SELF && Weapon != WEAPON_WORLD)
 	{
-		for(const auto& ClientID : m_aListDmgPlayers)
+		auto* pMobInfo = m_pBotPlayer->GetBotType() == TYPE_BOT_MOB ? &m_pBotPlayer->GetMobInfo() : nullptr;
+		if(pMobInfo && pMobInfo->m_Boss && !m_aDamageByPlayer.empty())
 		{
-			CPlayer* pPlayer = GS()->GetPlayer(ClientID, true, true);
+			std::vector<std::pair<int, int>> vDamageStats(m_aDamageByPlayer.begin(), m_aDamageByPlayer.end());
+			std::sort(vDamageStats.begin(), vDamageStats.end(), [](const auto& Left, const auto& Right)
+			{ return Left.second > Right.second; });
+
+			const int TotalDamage = std::accumulate(vDamageStats.begin(), vDamageStats.end(), 0, [](int Sum, const auto& pStat) { return Sum + pStat.second; });
+
+			for(const auto& DamageEntry : m_aDamageByPlayer)
+			{
+				const int ForCID = DamageEntry.first;
+				GS()->Chat(ForCID, "Defeat '{}' by {} player's.", pMobInfo->GetName(), (int)m_aDamageByPlayer.size());
+				for(const auto& [AboutCID, AboutDamage] : vDamageStats)
+				{
+					const auto* pPlayer = GS()->GetPlayer(AboutCID, true, true);
+					if(!pPlayer)
+						continue;
+
+					const int DamagePercent = TotalDamage > 0 ? translate_to_percent(TotalDamage, AboutDamage) : 0;
+					GS()->Chat(ForCID, "- {} dealt {} damage ({}%).", Server()->ClientName(AboutCID), AboutDamage, DamagePercent);
+				}
+			}
+		}
+
+		for(const auto& [ClientID, Damage] : m_aDamageByPlayer)
+		{
+			auto* pPlayer = GS()->GetPlayer(ClientID, true, true);
 			if(!pPlayer)
 				continue;
 
@@ -136,7 +157,7 @@ void CCharacterBotAI::Die(int Killer, int Weapon)
 
 	// Die
 	m_pAI->OnDie(Killer, Weapon);
-	m_aListDmgPlayers.clear();
+	m_aDamageByPlayer.clear();
 	m_pAI->GetTarget()->Reset();
 	m_pBotPlayer->m_TargetPos = std::nullopt;
 	CCharacter::Die(Killer, Weapon);

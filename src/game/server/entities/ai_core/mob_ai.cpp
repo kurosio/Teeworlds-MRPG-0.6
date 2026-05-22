@@ -475,7 +475,7 @@ void CMobAI::ShowHealth() const
 	const float Percent = translate_to_percent((float)StartHealth, (float)Health);
 	std::string ProgressBar = mystd::string::progressBar(100, (int)Percent, 10, "\u25B0", "\u25B1");
 
-	for(const auto& ClientID : m_pCharacter->GetListDmgPlayers())
+	for(const auto& [ClientID, Damage] : m_pCharacter->GetListDmgPlayers())
 	{
 		if(GS()->GetPlayer(ClientID, true))
 		{
