@@ -140,6 +140,7 @@ public:
 	void AddVelocity(vec2 Addition);
 	void ApplyMoveRestrictions();
 	void MovingDisable(bool State);
+	void SetAttackSpeedReloadTimer(int Weapon, float WeaponDelayFactor = 1.0f);
 
 	void OnPredictedInput(CNetObj_PlayerInput *pNewInput);
 	void OnDirectInput(CNetObj_PlayerInput *pNewInput);

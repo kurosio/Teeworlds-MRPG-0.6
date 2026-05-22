@@ -10,7 +10,7 @@ class IWeaponVariant
 {
 public:
 	virtual ~IWeaponVariant() = default;
-	virtual void Fire(CCharacter* pChar, vec2 Direction, vec2 ProjStartPos, int TotalWeaponDamage, int& ReloadTimer) const = 0;
+	virtual void Fire(CCharacter* pChar, vec2 Direction, vec2 ProjStartPos, int TotalWeaponDamage) const = 0;
 };
 
 class CWeaponVariantRegistry

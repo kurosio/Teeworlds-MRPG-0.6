@@ -213,6 +213,15 @@ void CCharacter::HandleReload()
 	}
 }
 
+void CCharacter::SetAttackSpeedReloadTimer(int Weapon, float WeaponDelayFactor)
+{
+	constexpr int DefaultSpeed = 1000;
+	const auto SpeedMultiplier = m_pPlayer->GetTotalAttributeChance(AttributeIdentifier::AttackSPD).value_or(100.0f) / 100.0f;
+	const int Speed = maximum(1, round_to_int((float)DefaultSpeed * SpeedMultiplier));
+	const int BaseReload = g_pData->m_Weapons.m_aId[Weapon].m_Firedelay * Server()->TickSpeed() / Speed;
+	m_ReloadTimer = maximum(1, round_to_int((float)BaseReload * WeaponDelayFactor));
+}
+
 void CCharacter::FireWeapon()
 {
 	if(m_ReloadTimer != 0)
@@ -275,10 +284,7 @@ void CCharacter::FireWeapon()
 
 	if(!m_ReloadTimer)
 	{
-		constexpr int DefaultSpeed = 1000;
-		const auto SpeedMultiplier = m_pPlayer->GetTotalAttributeChance(AttributeIdentifier::AttackSPD).value_or(100.f) / 100.f;
-		const auto Speed = (float)DefaultSpeed * SpeedMultiplier;
-		m_ReloadTimer = g_pData->m_Weapons.m_aId[m_Core.m_ActiveWeapon].m_Firedelay * Server()->TickSpeed() / round_to_int(Speed);
+		SetAttackSpeedReloadTimer(m_Core.m_ActiveWeapon);
 	}
 }
 
@@ -301,7 +307,7 @@ bool CCharacter::FireHammer(vec2 Direction, vec2 ProjStartPos, int TotalWeaponDa
 	if(!pVariant)
 		return false;
 
-	pVariant->Fire(this, Direction, ProjStartPos, TotalWeaponDamage, m_ReloadTimer);
+	pVariant->Fire(this, Direction, ProjStartPos, TotalWeaponDamage);
 	return true;
 }
 
@@ -318,7 +324,7 @@ bool CCharacter::FireGun(vec2 Direction, vec2 ProjStartPos, int TotalWeaponDamag
 	if(!pVariant)
 		return false;
 
-	pVariant->Fire(this, Direction, ProjStartPos, TotalWeaponDamage, m_ReloadTimer);
+	pVariant->Fire(this, Direction, ProjStartPos, TotalWeaponDamage);
 	return true;
 }
 
@@ -336,7 +342,7 @@ bool CCharacter::FireShotgun(vec2 Direction, vec2 ProjStartPos, int TotalWeaponD
 	if(!pVariant)
 		return false;
 
-	pVariant->Fire(this, Direction, ProjStartPos, TotalWeaponDamage, m_ReloadTimer);
+	pVariant->Fire(this, Direction, ProjStartPos, TotalWeaponDamage);
 	return true;
 }
 
@@ -354,7 +360,7 @@ bool CCharacter::FireGrenade(vec2 Direction, vec2 ProjStartPos, int TotalWeaponD
 	if(!pVariant)
 		return false;
 
-	pVariant->Fire(this, Direction, ProjStartPos, TotalWeaponDamage, m_ReloadTimer);
+	pVariant->Fire(this, Direction, ProjStartPos, TotalWeaponDamage);
 	return true;
 }
 
@@ -372,7 +378,7 @@ bool CCharacter::FireRifle(vec2 Direction, vec2 ProjStartPos, int TotalWeaponDam
 	if(!pVariant)
 		return false;
 
-	pVariant->Fire(this, Direction, ProjStartPos, TotalWeaponDamage, m_ReloadTimer);
+	pVariant->Fire(this, Direction, ProjStartPos, TotalWeaponDamage);
 	return true;
 }
 

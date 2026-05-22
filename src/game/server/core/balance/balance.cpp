@@ -110,8 +110,8 @@ void Balance::Initialize()
 	m_AttributeBase[ToIndex(AttributeIdentifier::MP)] = 10;
 
 	m_BotGroupScaling = {
-		4.0f,  // DamagePercent
-		15.0f, // DpsPercent
+		2.5f,  // DamagePercent
+		10.0f, // DpsPercent
 		20.0f, // HealerPercent
 		30.0f, // BossDownscaleDivider
 	};

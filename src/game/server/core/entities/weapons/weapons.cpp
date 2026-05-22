@@ -17,7 +17,7 @@
 constexpr int MAX_LENGTH_CHARACTERS = 16;
 
 #define DECL_WEAPON_VARIANT(ClassName) \
-	class ClassName : public IWeaponVariant { public: void Fire(CCharacter* pChar, vec2 Direction, vec2 ProjStartPos, int Dmg, int& ReloadTimer) const override; };
+	class ClassName : public IWeaponVariant { public: void Fire(CCharacter* pChar, vec2 Direction, vec2 ProjStartPos, int Dmg) const override; };
 
 DECL_WEAPON_VARIANT(CHammerDefault)
 DECL_WEAPON_VARIANT(CHammerLamp)
@@ -37,13 +37,14 @@ DECL_WEAPON_VARIANT(CRifleTrackedPlazma)
 DECL_WEAPON_VARIANT(CRifleTeslaSerpent)
 DECL_WEAPON_VARIANT(CRifleDamager)
 
-void CHammerDefault::Fire(CCharacter* pChar, vec2, vec2 ProjStartPos, int Dmg, int& ReloadTimer) const
+void CHammerDefault::Fire(CCharacter* pChar, vec2, vec2 ProjStartPos, int Dmg) const
 {
 	auto* pGS = pChar->GS();
 	const bool IsBot = pChar->GetPlayer()->IsBot();
 	const bool IsEquippedModuleRadius = pChar->GetPlayer()->GetItem(itBasicHammerPlus)->IsEquipped();
 	const float RadiusMultiplier = IsEquippedModuleRadius ? 6.4f : 2.4f;
 
+	bool Hit = false;
 	for(auto* pEntity : pGS->m_World.FindEntities(ProjStartPos, pChar->GetRadius() * RadiusMultiplier, MAX_LENGTH_CHARACTERS, CGameWorld::ENTTYPE_CHARACTER))
 	{
 		auto* pTarget = dynamic_cast<CCharacter*>(pEntity);
@@ -62,13 +63,14 @@ void CHammerDefault::Fire(CCharacter* pChar, vec2, vec2 ProjStartPos, int Dmg, i
 
 		pGS->CreateHammerHit(pTarget->GetPos());
 		pTarget->TakeDamage(Force, Dmg, pChar->GetClientID(), WEAPON_HAMMER);
+		Hit = true;
 	}
 
 	pGS->CreateSound(pChar->GetPos(), SOUND_HAMMER_FIRE);
-	ReloadTimer = pGS->Server()->TickSpeed() / 3;
+	pChar->SetAttackSpeedReloadTimer(WEAPON_HAMMER, Hit ? 2.5f : 1.0f);
 }
 
-void CHammerLamp::Fire(CCharacter* pChar, vec2, vec2 ProjStartPos, int Dmg, int& ReloadTimer) const
+void CHammerLamp::Fire(CCharacter* pChar, vec2, vec2 ProjStartPos, int Dmg) const
 {
 	auto* pGS = pChar->GS();
 	const bool IsEquippedModuleRadius = pChar->GetPlayer()->GetItem(itBasicHammerPlus)->IsEquipped();
@@ -100,10 +102,10 @@ void CHammerLamp::Fire(CCharacter* pChar, vec2, vec2 ProjStartPos, int Dmg, int&
 	}
 
 	pGS->CreateSound(pChar->GetPos(), SOUND_HAMMER_FIRE);
-	ReloadTimer = pGS->Server()->TickSpeed() / 3;
+	pChar->SetAttackSpeedReloadTimer(WEAPON_HAMMER, 1.4f);
 }
 
-void CHammerBlast::Fire(CCharacter* pChar, vec2 Direction, vec2, int Dmg, int& ReloadTimer) const
+void CHammerBlast::Fire(CCharacter* pChar, vec2 Direction, vec2, int Dmg) const
 {
 	auto* pGS = pChar->GS();
 	const bool IsEquippedModuleRadius = pChar->GetPlayer()->GetItem(itBasicHammerPlus)->IsEquipped();
@@ -124,15 +126,17 @@ void CHammerBlast::Fire(CCharacter* pChar, vec2 Direction, vec2, int Dmg, int& R
 	pChar->AddVelocity(Direction * 2.5f);
 	pGS->CreateExplosion(pChar->GetPos(), pChar->GetClientID(), WEAPON_HAMMER, Dmg);
 	pGS->CreateSound(pChar->GetPos(), SOUND_SFX_WEAPON_DEAF_BLOW);
+	pChar->SetAttackSpeedReloadTimer(WEAPON_HAMMER, 0.9f);
 }
 
-void CGunPulse::Fire(CCharacter* pChar, vec2 Direction, vec2, int Dmg, int& ReloadTimer) const
+void CGunPulse::Fire(CCharacter* pChar, vec2 Direction, vec2, int Dmg) const
 {
 	new CLaser(pChar->GameWorld(), pChar->GetClientID(), Dmg, pChar->GetPos(), Direction, 400.0f, true);
 	pChar->GS()->CreateSound(pChar->GetPos(), SOUND_SFX_WEAPON_PULSE);
+	pChar->SetAttackSpeedReloadTimer(WEAPON_GUN, 1.2f);
 }
 
-void CGunKill::Fire(CCharacter* pChar, vec2 Direction, vec2 ProjStartPos, int, int& ReloadTimer) const
+void CGunKill::Fire(CCharacter* pChar, vec2 Direction, vec2 ProjStartPos, int) const
 {
 	const vec2 MouseTarget(pChar->m_LatestInput.m_TargetX, pChar->m_LatestInput.m_TargetY);
 	const int Lifetime = pChar->Server()->TickSpeed() * pChar->GS()->Tuning()->m_GunLifetime;
@@ -149,10 +153,10 @@ void CGunKill::Fire(CCharacter* pChar, vec2 Direction, vec2 ProjStartPos, int, i
 	}
 
 	pChar->GS()->CreateSound(pChar->GetPos(), SOUND_GUN_FIRE);
-	ReloadTimer = pChar->Server()->TickSpeed() / 8;
+	pChar->SetAttackSpeedReloadTimer(WEAPON_GUN, 0.9f);
 }
 
-void CGunDefault::Fire(CCharacter* pChar, vec2 Direction, vec2 ProjStartPos, int, int& ReloadTimer) const
+void CGunDefault::Fire(CCharacter* pChar, vec2 Direction, vec2 ProjStartPos, int) const
 {
 	const vec2 MouseTarget(pChar->m_LatestInput.m_TargetX, pChar->m_LatestInput.m_TargetY);
 	const int Lifetime = pChar->Server()->TickSpeed() * pChar->GS()->Tuning()->m_GunLifetime;
@@ -162,6 +166,7 @@ void CGunDefault::Fire(CCharacter* pChar, vec2 Direction, vec2 ProjStartPos, int
 		ProjStartPos, Direction, Lifetime,
 		Explosive, 0, -1, MouseTarget, WEAPON_GUN);
 	pChar->GS()->CreateSound(pChar->GetPos(), SOUND_GUN_FIRE);
+	pChar->SetAttackSpeedReloadTimer(WEAPON_GUN, 1.0f);
 }
 
 static void FireShot(CCharacter* pChar, vec2 Direction, vec2 ProjStartPos, int Spread)
@@ -186,25 +191,26 @@ static void FireShot(CCharacter* pChar, vec2 Direction, vec2 ProjStartPos, int S
 	pChar->GS()->CreateSound(pChar->GetPos(), SOUND_SHOTGUN_FIRE);
 }
 
-void CShotgunDefault::Fire(CCharacter* pChar, vec2 Direction, vec2 ProjStartPos, int, int& ReloadTimer) const
+void CShotgunDefault::Fire(CCharacter* pChar, vec2 Direction, vec2 ProjStartPos, int) const
 {
 	FireShot(pChar, Direction, ProjStartPos, 5);
+	pChar->SetAttackSpeedReloadTimer(WEAPON_SHOTGUN, 1.0f);
 }
 
-void CShotgunBurst::Fire(CCharacter* pChar, vec2 Direction, vec2 ProjStartPos, int, int& ReloadTimer) const
+void CShotgunBurst::Fire(CCharacter* pChar, vec2 Direction, vec2 ProjStartPos, int) const
 {
 	FireShot(pChar, Direction, ProjStartPos, 9);
-	ReloadTimer = pChar->Server()->TickSpeed() / 5;
+	pChar->SetAttackSpeedReloadTimer(WEAPON_SHOTGUN, 0.5f);
 }
 
-void CGrenadePizdamet::Fire(CCharacter* pChar, vec2 Direction, vec2 ProjStartPos, int, int& ReloadTimer) const
+void CGrenadePizdamet::Fire(CCharacter* pChar, vec2 Direction, vec2 ProjStartPos, int) const
 {
 	new CEntityGrenadePizdamet(&pChar->GS()->m_World, pChar->GetClientID(), ProjStartPos, Direction);
 	pChar->GS()->CreateSound(pChar->GetPos(), SOUND_SFX_WEAPON_PIZDAMET);
-	ReloadTimer = pChar->Server()->TickSpeed() / 10;
+	pChar->SetAttackSpeedReloadTimer(WEAPON_GRENADE, 0.25f);
 }
 
-void CGrenadeInjury::Fire(CCharacter* pChar, vec2 Direction, vec2 ProjStartPos, int, int& ReloadTimer) const
+void CGrenadeInjury::Fire(CCharacter* pChar, vec2 Direction, vec2 ProjStartPos, int) const
 {
 	const vec2 MouseTarget(pChar->m_LatestInput.m_TargetX, pChar->m_LatestInput.m_TargetY);
 	const int Lifetime = pChar->Server()->TickSpeed() * pChar->GS()->Tuning()->m_GrenadeLifetime * 0.8f;
@@ -221,10 +227,10 @@ void CGrenadeInjury::Fire(CCharacter* pChar, vec2 Direction, vec2 ProjStartPos, 
 	}
 
 	pChar->GS()->CreateSound(pChar->GetPos(), SOUND_GRENADE_FIRE);
-	ReloadTimer = pChar->Server()->TickSpeed() / 3;
+	pChar->SetAttackSpeedReloadTimer(WEAPON_GRENADE, 0.9f);
 }
 
-void CGrenadeDefault::Fire(CCharacter* pChar, vec2 Direction, vec2 ProjStartPos, int, int& ReloadTimer) const
+void CGrenadeDefault::Fire(CCharacter* pChar, vec2 Direction, vec2 ProjStartPos, int) const
 {
 	const vec2 MouseTarget(pChar->m_LatestInput.m_TargetX, pChar->m_LatestInput.m_TargetY);
 	const int Lifetime = pChar->Server()->TickSpeed() * pChar->GS()->Tuning()->m_GrenadeLifetime;
@@ -233,32 +239,37 @@ void CGrenadeDefault::Fire(CCharacter* pChar, vec2 Direction, vec2 ProjStartPos,
 		ProjStartPos, Direction, Lifetime, true, 0,
 		SOUND_GRENADE_EXPLODE, MouseTarget, WEAPON_GRENADE);
 	pChar->GS()->CreateSound(pChar->GetPos(), SOUND_GRENADE_FIRE);
+	pChar->SetAttackSpeedReloadTimer(WEAPON_GRENADE, 1.0f);
 }
 
-void CRifleWallPusher::Fire(CCharacter* pChar, vec2 Direction, vec2 ProjStartPos, int, int& ReloadTimer) const
+void CRifleWallPusher::Fire(CCharacter* pChar, vec2 Direction, vec2 ProjStartPos, int) const
 {
 	new CEntityRifleWallPusher(&pChar->GS()->m_World, pChar->GetClientID(), ProjStartPos, Direction, 5 * pChar->Server()->TickSpeed());
+	pChar->SetAttackSpeedReloadTimer(WEAPON_LASER, 0.8f);
 }
 
-void CRifleMagneticPulse::Fire(CCharacter* pChar, vec2 Direction, vec2 ProjStartPos, int, int& ReloadTimer) const
+void CRifleMagneticPulse::Fire(CCharacter* pChar, vec2 Direction, vec2 ProjStartPos, int) const
 {
 	new CEntityRifleMagneticPulse(&pChar->GS()->m_World, pChar->GetClientID(), 128.0f, ProjStartPos, Direction);
+	pChar->SetAttackSpeedReloadTimer(WEAPON_LASER, 2.0f);
 }
 
-void CRifleTrackedPlazma::Fire(CCharacter* pChar, vec2 Direction, vec2 ProjStartPos, int, int& ReloadTimer) const
+void CRifleTrackedPlazma::Fire(CCharacter* pChar, vec2 Direction, vec2 ProjStartPos, int) const
 {
 	new CEntityRifleTrackedPlazma(&pChar->GS()->m_World, pChar->GetClientID(), ProjStartPos, Direction);
 	pChar->GS()->CreateSound(pChar->GetPos(), SOUND_SFX_WEAPON_PLAZMA);
+	pChar->SetAttackSpeedReloadTimer(WEAPON_LASER, 1.5f);
 }
 
-void CRifleTeslaSerpent::Fire(CCharacter* pChar, vec2 Direction, vec2 ProjStartPos, int Dmg, int& ReloadTimer) const
+void CRifleTeslaSerpent::Fire(CCharacter* pChar, vec2 Direction, vec2 ProjStartPos, int Dmg) const
 {
 	new CEntityTeslaSerpent(&pChar->GS()->m_World,pChar->GetClientID(), ProjStartPos,
 		Direction, Dmg, 400.0f, 3,0.5f);
 	pChar->GS()->CreateSound(pChar->GetPos(), SOUND_LASER_FIRE);
+	pChar->SetAttackSpeedReloadTimer(WEAPON_LASER, 0.25f);
 }
 
-void CRifleDamager::Fire(CCharacter* pChar, vec2 Direction, vec2 ProjStartPos, int Dmg, int& ReloadTimer) const
+void CRifleDamager::Fire(CCharacter* pChar, vec2 Direction, vec2 ProjStartPos, int Dmg) const
 {
 	for(int i = -1; i <= 1; ++i)
 	{
@@ -269,14 +280,15 @@ void CRifleDamager::Fire(CCharacter* pChar, vec2 Direction, vec2 ProjStartPos, i
 	}
 
 	pChar->GS()->CreateSound(pChar->GetPos(), SOUND_LASER_FIRE);
-	ReloadTimer = pChar->Server()->TickSpeed() / 4;
+	pChar->SetAttackSpeedReloadTimer(WEAPON_LASER, 0.8f);
 }
 
-void CRifleDefault::Fire(CCharacter* pChar, vec2 Direction, vec2 ProjStartPos, int Dmg, int& ReloadTimer) const
+void CRifleDefault::Fire(CCharacter* pChar, vec2 Direction, vec2 ProjStartPos, int Dmg) const
 {
 	new CLaser(&pChar->GS()->m_World, pChar->GetClientID(), Dmg, ProjStartPos,
 		Direction, pChar->GS()->Tuning()->m_LaserReach, false);
 	pChar->GS()->CreateSound(pChar->GetPos(), SOUND_LASER_FIRE);
+	pChar->SetAttackSpeedReloadTimer(WEAPON_LASER, 1.0f);
 }
 
 CWeaponVariantRegistry& CWeaponVariantRegistry::Instance()
