@@ -308,10 +308,14 @@ bool CCharacter::FireHammer(vec2 Direction, vec2 ProjStartPos, int TotalWeaponDa
 		return true;
 	}
 
+	// basic hammer radius module
+	const bool IsEquippedModuleRadius = m_pPlayer->GetItem(itBasicHammerPlus)->IsEquipped();
+
 	// lamp hammer
 	if(EquippedItemIdOpt == itHammerLamp)
 	{
-		const auto vEntities = GS()->m_World.FindEntities(ProjStartPos, 400.f , MAX_LENGTH_CHARACTERS, CGameWorld::ENTTYPE_CHARACTER);
+		const auto Radius = IsEquippedModuleRadius ? 500.f : 380.f;
+		const auto vEntities = GS()->m_World.FindEntities(ProjStartPos, Radius, MAX_LENGTH_CHARACTERS, CGameWorld::ENTTYPE_CHARACTER);
 		for(auto* pEnt : vEntities)
 		{
 			// skip self damage
@@ -349,9 +353,8 @@ bool CCharacter::FireHammer(vec2 Direction, vec2 ProjStartPos, int TotalWeaponDa
 	// blast hammer
 	if(EquippedItemIdOpt == itHammerBlast)
 	{
-		constexpr float Radius = 128.0f;
-
 		// apply damage and force to all nearby characters
+		const auto Radius = IsEquippedModuleRadius ? 180.f : 128.0f;
 		for(auto* pTarget = (CCharacter*)GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); pTarget; pTarget = (CCharacter*)pTarget->TypeNext())
 		{
 			// skip self damage
@@ -376,7 +379,7 @@ bool CCharacter::FireHammer(vec2 Direction, vec2 ProjStartPos, int TotalWeaponDa
 	}
 
 	// default hammer
-	const float Radius = m_pPlayer->GetItem(itBasicHammerPlus)->IsEquipped() ? 6.4f : 2.4f;
+	const auto Radius = IsEquippedModuleRadius ? 6.4f : 2.4f;
 	const auto vEntities = GS()->m_World.FindEntities(ProjStartPos, GetRadius() * Radius, MAX_LENGTH_CHARACTERS, CGameWorld::ENTTYPE_CHARACTER);
 	for(auto* pEnt : vEntities)
 	{
