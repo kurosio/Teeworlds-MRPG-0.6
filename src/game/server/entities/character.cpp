@@ -6,6 +6,7 @@
 #include <game/mapitems.h>
 #include <game/server/entity_manager.h>
 #include <game/server/gamecontext.h>
+#include <game/server/core/entities/weapons/weapons.h>
 
 #include "laser.h"
 #include "projectile.h"
@@ -24,15 +25,8 @@
 #include <game/server/core/entities/items/gathering_node.h>
 #include <game/server/core/entities/items/fishing_rod.h>
 #include <game/server/core/entities/tools/multiple_orbit.h>
-#include <game/server/core/entities/tools/flying_point.h>
-#include "character_bot.h"
-
-// weapons
-#include <game/server/core/entities/weapons/grenade_pizdamet.h>
-#include <game/server/core/entities/weapons/rifle_magneticpulse.h>
-#include <game/server/core/entities/weapons/rifle_wallpusher.h>
 #include <game/server/core/entities/weapons/rifle_tesla_serpent.h>
-#include <game/server/core/entities/weapons/rifle_trackedplazma.h>
+#include "character_bot.h"
 
 MACRO_ALLOC_POOL_ID_IMPL(CCharacter, MAX_CLIENTS* ENGINE_MAX_WORLDS + MAX_CLIENTS)
 
@@ -290,10 +284,6 @@ void CCharacter::FireWeapon()
 
 bool CCharacter::FireHammer(vec2 Direction, vec2 ProjStartPos, int TotalWeaponDamage)
 {
-	constexpr int MAX_LENGTH_CHARACTERS = 16;
-	const bool IsBot = m_pPlayer->IsBot();
-
-	// check equip state
 	const auto EquippedItemIdOpt = m_pPlayer->GetEquippedSlotItemID(ItemType::EquipHammer);
 	if(!EquippedItemIdOpt.has_value())
 	{
@@ -301,115 +291,22 @@ bool CCharacter::FireHammer(vec2 Direction, vec2 ProjStartPos, int TotalWeaponDa
 		return false;
 	}
 
-	// handle hammer actions
 	if(HandleHammerActions(Direction, ProjStartPos))
 	{
 		m_ReloadTimer = Server()->TickSpeed() / 3;
 		return true;
 	}
 
-	// basic hammer radius module
-	const bool IsEquippedModuleRadius = m_pPlayer->GetItem(itBasicHammerPlus)->IsEquipped();
+	const auto* pVariant = CWeaponVariantRegistry::Instance().FindHammer(EquippedItemIdOpt);
+	if(!pVariant)
+		return false;
 
-	// lamp hammer
-	if(EquippedItemIdOpt == itHammerLamp)
-	{
-		const auto Radius = IsEquippedModuleRadius ? 500.f : 380.f;
-		const auto vEntities = GS()->m_World.FindEntities(ProjStartPos, Radius, MAX_LENGTH_CHARACTERS, CGameWorld::ENTTYPE_CHARACTER);
-		for(auto* pEnt : vEntities)
-		{
-			// skip self damage
-			auto* pTarget = dynamic_cast<CCharacter*>(pEnt);
-			if(!pTarget || m_ClientID == pTarget->GetClientID())
-				continue;
-
-			// check intersect line
-			if(GS()->Collision()->IntersectLineWithInvisible(ProjStartPos, pTarget->m_Pos, nullptr, nullptr))
-				continue;
-
-			if(!pTarget->IsAllowedPVP(m_ClientID))
-				continue;
-
-			const auto Dir = length(pTarget->m_Pos - m_Pos) > 0.0f ? normalize(pTarget->m_Pos - m_Pos) : vec2(0.f, -1.f);
-			const auto Force = vec2(0.f, -1.f) + normalize(Dir + vec2(0.f, -1.1f)) * 10.0f;
-
-			// create flying point
-			auto* pPoint = new CEntityFlyingPoint(&GS()->m_World, ProjStartPos, Force, pTarget->GetClientID(), m_ClientID);
-			pPoint->Register([this, Force, TotalWeaponDamage](CPlayer* pFrom, CPlayer* pPlayer)
-			{
-				auto* pChar = pPlayer->GetCharacter();
-				GS()->CreateDeath(pChar->GetPos(), pPlayer->GetCID());
-				pChar->TakeDamage(Force, TotalWeaponDamage, pFrom->GetCID(), WEAPON_HAMMER);
-			});
-
-			// reload
-			m_ReloadTimer = Server()->TickSpeed() / 3;
-		}
-
-		GS()->CreateSound(m_Pos, SOUND_HAMMER_FIRE);
-		return true;
-	}
-
-	// blast hammer
-	if(EquippedItemIdOpt == itHammerBlast)
-	{
-		// apply damage and force to all nearby characters
-		const auto Radius = IsEquippedModuleRadius ? 180.f : 128.0f;
-		for(auto* pTarget = (CCharacter*)GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); pTarget; pTarget = (CCharacter*)pTarget->TypeNext())
-		{
-			// skip self damage
-			if(m_ClientID == pTarget->GetClientID())
-				continue;
-
-			if(!pTarget->IsAllowedPVP(m_ClientID))
-				continue;
-
-			const auto Dist = distance(pTarget->m_Pos, m_Pos);
-			if(Dist < Radius)
-			{
-				GS()->CreateExplosion(pTarget->GetPos(), m_ClientID, WEAPON_HAMMER, TotalWeaponDamage);
-			}
-		}
-
-		// move and visual effect
-		AddVelocity(Direction * 2.5f);
-		GS()->CreateExplosion(m_Pos, m_ClientID, WEAPON_HAMMER, TotalWeaponDamage);
-		GS()->CreateSound(m_Pos, SOUND_SFX_WEAPON_DEAF_BLOW);
-		return true;
-	}
-
-	// default hammer
-	const auto Radius = IsEquippedModuleRadius ? 6.4f : 2.4f;
-	const auto vEntities = GS()->m_World.FindEntities(ProjStartPos, GetRadius() * Radius, MAX_LENGTH_CHARACTERS, CGameWorld::ENTTYPE_CHARACTER);
-	for(auto* pEnt : vEntities)
-	{
-		// skip self damage
-		auto* pTarget = dynamic_cast<CCharacter*>(pEnt);
-		if(!pTarget || m_ClientID == pTarget->GetClientID())
-			continue;
-
-		if(GS()->Collision()->IntersectLineWithInvisible(ProjStartPos, pTarget->m_Pos, nullptr, nullptr))
-			continue;
-
-		if(!pTarget->IsAllowedPVP(m_ClientID))
-			continue;
-
-		const auto Dir = length(pTarget->m_Pos - m_Pos) > 0.0f
-			? normalize(pTarget->m_Pos - m_Pos) : vec2(0.f, -1.f);
-		const auto Force = vec2(0.f, -1.f) + normalize(Dir + vec2(0.f, -1.1f)) * (IsBot ? 5.0f : 10.0f);
-
-		GS()->CreateHammerHit(pTarget->m_Pos);
-		pTarget->TakeDamage(Force, TotalWeaponDamage, m_ClientID, WEAPON_HAMMER);
-		m_ReloadTimer = Server()->TickSpeed() / 3;
-	}
-
-	GS()->CreateSound(m_Pos, SOUND_HAMMER_FIRE);
+	pVariant->Fire(this, Direction, ProjStartPos, TotalWeaponDamage, m_ReloadTimer);
 	return true;
 }
 
 bool CCharacter::FireGun(vec2 Direction, vec2 ProjStartPos, int TotalWeaponDamage)
 {
-	// check equip state
 	const auto EquippedItemIdOpt = m_pPlayer->GetEquippedSlotItemID(ItemType::EquipGun);
 	if(!EquippedItemIdOpt.has_value())
 	{
@@ -417,44 +314,17 @@ bool CCharacter::FireGun(vec2 Direction, vec2 ProjStartPos, int TotalWeaponDamag
 		return false;
 	}
 
-	// gun pulse
-	if(EquippedItemIdOpt == itGunPulse)
-	{
-		new CLaser(GameWorld(), m_ClientID, TotalWeaponDamage, m_Pos, Direction, 400.f, true);
-		GS()->CreateSound(m_Pos, SOUND_SFX_WEAPON_PULSE);
-		return true;
-	}
+	const auto* pVariant = CWeaponVariantRegistry::Instance().FindGun(EquippedItemIdOpt);
+	if(!pVariant)
+		return false;
 
-	// kill gun
-	const auto ExplodeModule = m_pPlayer->GetItem(itExplosiveGun)->IsEquipped();
-	const auto MouseTarget = vec2(m_LatestInput.m_TargetX, m_LatestInput.m_TargetY);
-	const auto Lifetime = (int)(Server()->TickSpeed() * GS()->Tuning()->m_GunLifetime);
-	if(EquippedItemIdOpt == itKillGun)
-	{
-		for(int i = -1; i <= 1; i++)
-		{
-			const float Spreading = 0.1f * i;
-			const float a = angle(Direction) + Spreading;
-			const vec2 Dir = vec2(cosf(a), sinf(a));
-			new CProjectile(GameWorld(), WEAPON_GUN, m_pPlayer->GetCID(), ProjStartPos,
-				Dir, Lifetime, ExplodeModule, 0, -1, MouseTarget, WEAPON_GUN);
-		}
-
-		m_ReloadTimer = Server()->TickSpeed() / 8;
-		GS()->CreateSound(m_Pos, SOUND_GUN_FIRE);
-		return true;
-	}
-
-	// default gun
-	new CProjectile(GameWorld(), WEAPON_GUN, m_pPlayer->GetCID(), ProjStartPos,
-		Direction, Lifetime, ExplodeModule, 0, -1, MouseTarget, WEAPON_GUN);
-	GS()->CreateSound(m_Pos, SOUND_GUN_FIRE);
+	pVariant->Fire(this, Direction, ProjStartPos, TotalWeaponDamage, m_ReloadTimer);
 	return true;
 }
 
-bool CCharacter::FireShotgun(vec2 Direction, vec2 ProjStartPos, int Damage)
+
+bool CCharacter::FireShotgun(vec2 Direction, vec2 ProjStartPos, int TotalWeaponDamage)
 {
-	// check equip state
 	const auto EquippedItemIdOpt = m_pPlayer->GetEquippedSlotItemID(ItemType::EquipShotgun);
 	if(!EquippedItemIdOpt.has_value())
 	{
@@ -462,40 +332,17 @@ bool CCharacter::FireShotgun(vec2 Direction, vec2 ProjStartPos, int Damage)
 		return false;
 	}
 
-	// default shotgun
-	int ShotSpread = EquippedItemIdOpt == itBurstShotgun ? 9 : 5;
-	const int Lifetime = (int)(Server()->TickSpeed() * GS()->Tuning()->m_ShotgunLifetime);
-	const bool IsExplosive = m_pPlayer->GetItem(itExplosiveShotgun)->IsEquipped();
-	for(int i = 0; i < ShotSpread; ++i)
-	{
-		const float Spreading = ((0.0058945f * (9.0f * ShotSpread) / 2)) - (0.0058945f * (9.0f * i));
-		const float a = angle(Direction) + Spreading;
-		const float Speed = (float)GS()->Tuning()->m_ShotgunSpeeddiff + random_float(0.2f);
-		vec2 TargetPos = Direction + vec2(cosf(a), sinf(a)) * (Speed * 500.0f);
+	const auto* pVariant = CWeaponVariantRegistry::Instance().FindShotgun(EquippedItemIdOpt);
+	if(!pVariant)
+		return false;
 
-		new CProjectile(GameWorld(),
-			WEAPON_SHOTGUN,
-			m_pPlayer->GetCID(),
-			ProjStartPos,
-			vec2(cosf(a), sinf(a)) * Speed,
-			Lifetime,
-			IsExplosive,
-			0,
-			15,
-			TargetPos,
-			WEAPON_SHOTGUN);
-	}
-
-	if(EquippedItemIdOpt == itBurstShotgun)
-		m_ReloadTimer = Server()->TickSpeed() / 5;
-
-	GS()->CreateSound(m_Pos, SOUND_SHOTGUN_FIRE);
+	pVariant->Fire(this, Direction, ProjStartPos, TotalWeaponDamage, m_ReloadTimer);
 	return true;
 }
 
-bool CCharacter::FireGrenade(vec2 Direction, vec2 ProjStartPos, int Damage)
+
+bool CCharacter::FireGrenade(vec2 Direction, vec2 ProjStartPos, int TotalWeaponDamage)
 {
-	// check equip state
 	const auto EquippedItemIdOpt = m_pPlayer->GetEquippedSlotItemID(ItemType::EquipGrenade);
 	if(!EquippedItemIdOpt.has_value())
 	{
@@ -503,46 +350,17 @@ bool CCharacter::FireGrenade(vec2 Direction, vec2 ProjStartPos, int Damage)
 		return false;
 	}
 
-	// pizdamet
-	if(EquippedItemIdOpt == itPizdamet)
-	{
-		new CEntityGrenadePizdamet(&GS()->m_World, m_ClientID, ProjStartPos, Direction);
-		m_ReloadTimer = Server()->TickSpeed() / 10;
-		GS()->CreateSound(m_Pos, SOUND_SFX_WEAPON_PIZDAMET);
-		return true;
-	}
+	const auto* pVariant = CWeaponVariantRegistry::Instance().FindGrenade(EquippedItemIdOpt);
+	if(!pVariant)
+		return false;
 
-	// injury grenade
-	if(EquippedItemIdOpt == itInjuryGrenade)
-	{
-		const auto MouseTarget = vec2(m_LatestInput.m_TargetX, m_LatestInput.m_TargetY);
-		const int Lifetime = (int)(Server()->TickSpeed() * GS()->Tuning()->m_GrenadeLifetime * 0.8f);
-		for(int i = -1; i <= 1; i++)
-		{
-			const float Spreading = 0.12f * i;
-			const float a = angle(Direction) + Spreading;
-			const vec2 Dir = vec2(cosf(a), sinf(a)) * (1.0f - absolute(i) * 0.1f);
-			new CProjectile(GameWorld(), WEAPON_GRENADE, m_pPlayer->GetCID(), ProjStartPos,
-				Dir, Lifetime, true, 0, SOUND_GRENADE_EXPLODE, MouseTarget, WEAPON_GRENADE);
-		}
-
-		m_ReloadTimer = Server()->TickSpeed() / 3;
-		GS()->CreateSound(m_Pos, SOUND_GRENADE_FIRE);
-		return true;
-	}
-
-	// default grenade
-	const auto MouseTarget = vec2(m_LatestInput.m_TargetX, m_LatestInput.m_TargetY);
-	new CProjectile(GameWorld(), WEAPON_GRENADE, m_pPlayer->GetCID(), ProjStartPos,
-		Direction, (int)(Server()->TickSpeed() * GS()->Tuning()->m_GrenadeLifetime),
-		true, 0, SOUND_GRENADE_EXPLODE, MouseTarget, WEAPON_GRENADE);
-	GS()->CreateSound(m_Pos, SOUND_GRENADE_FIRE);
+	pVariant->Fire(this, Direction, ProjStartPos, TotalWeaponDamage, m_ReloadTimer);
 	return true;
 }
 
+
 bool CCharacter::FireRifle(vec2 Direction, vec2 ProjStartPos, int TotalWeaponDamage)
 {
-	// check equip state
 	const auto EquippedItemIdOpt = m_pPlayer->GetEquippedSlotItemID(ItemType::EquipLaser);
 	if(!EquippedItemIdOpt.has_value())
 	{
@@ -550,58 +368,14 @@ bool CCharacter::FireRifle(vec2 Direction, vec2 ProjStartPos, int TotalWeaponDam
 		return false;
 	}
 
-	// plazma wall
-	if(EquippedItemIdOpt == itRifleWallPusher)
-	{
-		const auto LifeTime = 5 * Server()->TickSpeed();
-		new CEntityRifleWallPusher(&GS()->m_World, m_ClientID, ProjStartPos, Direction, LifeTime);
-		return true;
-	}
+	const auto* pVariant = CWeaponVariantRegistry::Instance().FindRifle(EquippedItemIdOpt);
+	if(!pVariant)
+		return false;
 
-	// Magnetic pulse rifle
-	if(EquippedItemIdOpt == itRifleMagneticPulse)
-	{
-		new CEntityRifleMagneticPulse(&GS()->m_World, m_ClientID, 128.f, ProjStartPos, Direction);
-		return true;
-	}
-
-	// Plazma
-	if(EquippedItemIdOpt == itRifleTrackedPlazma)
-	{
-		new CEntityRifleTrackedPlazma(&GS()->m_World, m_ClientID, ProjStartPos, Direction);
-		GS()->CreateSound(m_Pos, SOUND_SFX_WEAPON_PLAZMA);
-		return true;
-	}
-
-	// Tesla serpen
-	if(EquippedItemIdOpt == itRifleTeslaSerpent)
-	{
-		new CEntityTeslaSerpent(&GS()->m_World, m_ClientID, ProjStartPos, Direction, TotalWeaponDamage, 400.f, 3, 0.5f);
-		GS()->CreateSound(m_Pos, SOUND_LASER_FIRE);
-		return true;
-	}
-
-	// laser damager
-	if(EquippedItemIdOpt == itLaserDamager)
-	{
-		for(int i = -1; i <= 1; i++)
-		{
-			const float Spreading = 0.1f * i;
-			const float a = angle(Direction) + Spreading;
-			const vec2 Dir = vec2(cosf(a), sinf(a));
-			new CLaser(&GS()->m_World, m_ClientID, TotalWeaponDamage, ProjStartPos, Dir, GS()->Tuning()->m_LaserReach * 0.75f, false);
-		}
-
-		m_ReloadTimer = Server()->TickSpeed() / 4;
-		GS()->CreateSound(m_Pos, SOUND_LASER_FIRE);
-		return true;
-	}
-
-	// default laser
-	new CLaser(&GS()->m_World, m_ClientID, TotalWeaponDamage, ProjStartPos, Direction, GS()->Tuning()->m_LaserReach, false);
-	GS()->CreateSound(m_Pos, SOUND_LASER_FIRE);
+	pVariant->Fire(this, Direction, ProjStartPos, TotalWeaponDamage, m_ReloadTimer);
 	return true;
 }
+
 
 void CCharacter::HandleWeapons()
 {
