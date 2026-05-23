@@ -484,7 +484,10 @@
       const copy = { ...base, ...raw };
       copy.required_items = Array.isArray(copy.required_items) ? copy.required_items : [];
       copy.reward_items = Array.isArray(copy.reward_items) ? copy.reward_items : [];
-      copy.defeat_bots = Array.isArray(copy.defeat_bots) ? copy.defeat_bots : [];
+      copy.defeat_bots = Array.isArray(copy.defeat_bots) ? copy.defeat_bots.map((entry) => ({
+        id: Number(entry?.id ?? entry?.bot_id ?? 0),
+        value: Number(entry?.value ?? entry?.count ?? 0),
+      })) : [];
       copy.move_to = Array.isArray(copy.move_to) ? copy.move_to : [];
 
       copy.move_to = copy.move_to.map((entry) => {
@@ -492,7 +495,7 @@
         const req = entry?.required_item || {};
         const inter = entry?.interactive || {};
         const defeat = entry?.defeat_bot || {};
-        const defeatBotId = defeat?.id ?? defeat?.bot_id ?? 0;
+        const defeatBotId = Number(entry?.defeat_bot_id ?? defeat?.id ?? defeat?.bot_id ?? 0);
         return {
           step: entry?.step ?? 1,
           name: entry?.name ?? 'Demands a bit of action',
@@ -510,8 +513,8 @@
           interactive_x: inter?.x ?? 0,
           interactive_y: inter?.y ?? 0,
           defeat_bot_id: defeatBotId,
-          defeat_bot_attribute_power: defeat?.attribute_power ?? 10,
-          defeat_bot_world_id: defeat?.world_id ?? 0,
+          defeat_bot_attribute_power: Number(entry?.defeat_bot_attribute_power ?? defeat?.attribute_power ?? 10),
+          defeat_bot_world_id: Number(entry?.defeat_bot_world_id ?? defeat?.world_id ?? 0),
         };
       });
 
@@ -523,7 +526,14 @@
       if (!normalized || typeof normalized !== 'object') return raw;
       raw.required_items = Array.isArray(normalized.required_items) ? normalized.required_items : [];
       raw.reward_items = Array.isArray(normalized.reward_items) ? normalized.reward_items : [];
-      raw.defeat_bots = Array.isArray(normalized.defeat_bots) ? normalized.defeat_bots : [];
+      raw.defeat_bots = Array.isArray(normalized.defeat_bots)
+        ? normalized.defeat_bots
+          .map((entry) => ({
+            id: Number(entry?.id ?? entry?.bot_id ?? 0),
+            value: Number(entry?.value ?? entry?.count ?? 0),
+          }))
+          .filter((entry) => entry.id > 0 && entry.value > 0)
+        : [];
       raw.move_to = Array.isArray(normalized.move_to) ? normalized.move_to.map((entry) => {
         const out = {
           step: entry?.step ?? 1,
