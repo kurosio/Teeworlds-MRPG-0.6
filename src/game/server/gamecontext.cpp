@@ -450,20 +450,16 @@ void CGS::SendChatTarget(int ClientID, const char* pText) const
 /* #########################################################################
 	CHAT FUNCTIONS
 ######################################################################### */
-void CGS::SendChat(int ChatterClientID, int Mode, const char* pText, int64_t Mask)
+void CGS::SendChat(bool Logging, int ChatterClientID, int Mode, const char* pText, int64_t Mask)
 {
-	if(Mode != CHAT_ALL_WITHOUT_LOG && Mode != CHAT_TEAM_WITHOUT_LOG)
+	if(Logging)
 	{
 		if(ChatterClientID >= 0 && ChatterClientID < MAX_CLIENTS)
-		{
 			Console()->PrintFormat(IConsole::OUTPUT_LEVEL_STANDARD, Mode == CHAT_TEAM ? "teamchat" : "chat",
 				"%d:%d:%s: %s", ChatterClientID, Mode, Server()->ClientName(ChatterClientID), pText);
-		}
 		else
-		{
 			Console()->PrintFormat(IConsole::OUTPUT_LEVEL_STANDARD, Mode == CHAT_TEAM ? "teamchat" : "chat",
 				"*** %s", pText);
-		}
 	}
 
 	CNetMsg_Sv_Chat Msg;
@@ -471,11 +467,11 @@ void CGS::SendChat(int ChatterClientID, int Mode, const char* pText, int64_t Mas
 	Msg.m_ClientId = ChatterClientID;
 	Msg.m_pMessage = pText;
 
-	if(Mode == CHAT_ALL || Mode == CHAT_ALL_WITHOUT_LOG)
+	if(Mode == CHAT_ALL)
 	{
 		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL | MSGFLAG_NORECORD, -1, Mask);
 	}
-	else if(Mode == CHAT_TEAM || Mode == CHAT_TEAM_WITHOUT_LOG)
+	else if(Mode == CHAT_TEAM)
 	{
 		CPlayer* pChatterPlayer = GetPlayer(ChatterClientID, true);
 		if(!pChatterPlayer || !pChatterPlayer->Account()->HasGuild())
@@ -498,7 +494,7 @@ void CGS::SendChat(int ChatterClientID, int Mode, const char* pText, int64_t Mas
 	}
 }
 
-void CGS::SendChatRadius(int ChatterClientID, int Mode, float Radius, const char* pText)
+void CGS::SendChatRadius(bool Logging, int ChatterClientID, int Mode, float Radius, const char* pText)
 {
 	int64_t MaskRadius = 0;
 
@@ -511,7 +507,7 @@ void CGS::SendChatRadius(int ChatterClientID, int Mode, float Radius, const char
 		if(distance(pPlayer->m_ViewPos, m_apPlayers[ChatterClientID]->m_ViewPos) < Radius)
 			MaskRadius |= CmaskOne(i);
 	}
-	SendChat(ChatterClientID, Mode, pText, MaskRadius);
+	SendChat(Logging, ChatterClientID, Mode, pText, MaskRadius);
 }
 
 /* #########################################################################
@@ -942,7 +938,7 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 			else if(firstChar == '#')
 				ChatWorld(pPlayer->GetCurrentWorldID(), "Nearby:", "'{}' performed an act '{}'.", Server()->ClientName(ClientID), pMsg->m_pMessage);
 			else
-				SendChat(ClientID, pMsg->m_Team ? CHAT_TEAM : CHAT_ALL, pMsg->m_pMessage);
+				SendChat(true, ClientID, pMsg->m_Team ? CHAT_TEAM : CHAT_ALL, pMsg->m_pMessage);
 
 			// set last message
 			g_EventListenerManager.Notify<IEventListener::PlayerChat>(pPlayer, pMsg->m_pMessage);

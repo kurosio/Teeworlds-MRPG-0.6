@@ -315,7 +315,7 @@ void CMobAI::HandleAmbientChat()
 	else
 		ChatText = fmt_default("{} {}... {}", m_pMobInfo->GetName(), pAction, pEnding);
 
-	GS()->SendChatRadius(m_ClientID, CHAT_ALL_WITHOUT_LOG, ActiveDistance, ChatText.c_str());
+	GS()->SendChatRadius(false, m_ClientID, CHAT_ALL, ActiveDistance, ChatText.c_str());
 }
 
 void CMobAI::HandleBehaviors(bool* pbAsleep)

@@ -13,12 +13,6 @@
 
 #include "core/mmo_controller.h"
 
-enum
-{
-	CHAT_ALL_WITHOUT_LOG = 3,
-	CHAT_TEAM_WITHOUT_LOG,
-};
-
 class CGS : public IGameServer
 {
 	struct CBroadcastState
@@ -110,8 +104,8 @@ public:
 	void BroadcastTick(int ClientID);
 	void MarkUpdatedBroadcast(int ClientID);
 	void SendChatTarget(int ClientID, const char *pText) const;
-	void SendChat(int ChatterClientID, int Mode, const char *pText, int64_t Mask = -1);
-	void SendChatRadius(int ChatterClientID, int Mode, float Radius, const char *pText);
+	void SendChat(bool Logging, int ChatterClientID, int Mode, const char *pText, int64_t Mask = -1);
+	void SendChatRadius(bool Logging, int ChatterClientID, int Mode, float Radius, const char *pText);
 	void SendEmoticon(int ClientID, int Emoticon);
 	void SendWeaponPickup(int ClientID, int Weapon);
 	void SendTuningParams(int ClientID);

@@ -340,7 +340,7 @@ void RconProcessor::ConSay(IConsole::IResult* pResult, void* pUserData)
 	const auto pSelf = (CGS*)pServer->GameServer();
 
 	// send chat
-	pSelf->SendChat(-1, CHAT_ALL, pResult->GetString(0));
+	pSelf->SendChat(true, -1, CHAT_ALL, pResult->GetString(0));
 }
 
 
