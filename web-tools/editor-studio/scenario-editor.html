@@ -2126,6 +2126,7 @@
                         case 'branch_random': return `Случайная ветка: <b>${data.chance_percent ?? 50}%</b> (T → <b>${data.true_step_id || '?'}</b>, F → <b>${data.false_step_id || '?'}</b>)`;
                         case 'dungeon_door_control': return `Действие: <b>${data.action}</b>, Ключ: <b>${data.key || 'нет'}</b>`;
                         case 'use_chat_code': return `Код: "<b>${data.code}</b>", переход → <b>${data.next_step_id || '?'}</b>`;
+                        case 'restore_resources': return `Ресурсы: HP <b>${data.restore_hp ? 'ON' : 'OFF'}</b>, MP <b>${data.restore_mp ? 'ON' : 'OFF'}</b>, Ammo <b>${data.restore_ammo ? 'ON' : 'OFF'}</b>`;
                         case 'set_group_lives': return `Жизни группы: <b>${data.action || 'set'}</b> на <b>${data.value ?? 0}</b>`;
                         case 'set_group_spawn': return `Респавн группы (<b>${data.position?.x}, ${data.position?.y}</b>), ${data.enable_spawn ? 'включен' : 'отключен'}`;
                         case 'check_has_item': return `Предмет: <b>${data.item_id || '?'}</b>, нужно: <b>${data.required || 1}</b>`;

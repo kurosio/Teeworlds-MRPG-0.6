@@ -15,6 +15,7 @@ template struct ComponentRegistrar<ScenarioQuestConditionComponent>;
 template struct ComponentRegistrar<ScenarioEmoteComponent>;
 template struct ComponentRegistrar<ScenarioDefeatMobsComponent>;
 template struct ComponentRegistrar<ScenarioUseChatComponent>;
+template struct ComponentRegistrar<ScenarioRestoreResourcesComponent>;
 
 // default group components
 template struct ComponentRegistrar<ScenarioGroupFlagsComponent>;

@@ -949,4 +949,48 @@ private:
 	}
 };
 
+class ScenarioRestoreResourcesComponent final : public PlayerAwareComponent<ScenarioRestoreResourcesComponent>
+{
+	bool m_RestoreHealth {};
+	bool m_RestoreMana {};
+	bool m_RestoreAmmo {};
+
+public:
+	explicit ScenarioRestoreResourcesComponent(const nlohmann::json& j)
+	{
+		InitBaseJsonField(j);
+		m_RestoreHealth = j.value("restore_hp", true);
+		m_RestoreMana = j.value("restore_mp", true);
+		m_RestoreAmmo = j.value("restore_ammo", true);
+	}
+
+	DECLARE_COMPONENT_NAME("restore_resources")
+
+private:
+	void OnStartImpl() override
+	{
+		ForEachScenarioPlayer([this](CPlayer* pPlayer)
+		{
+			CCharacter* pChr = pPlayer ? pPlayer->GetCharacter() : nullptr;
+			if(pChr)
+			{
+				if(m_RestoreHealth)
+					pChr->IncreaseHealth(pPlayer->GetMaxHealth());
+
+				if(m_RestoreMana)
+					pChr->IncreaseMana(pPlayer->GetMaxMana());
+
+				if(m_RestoreAmmo)
+				{
+					const int MaxAmmo = 10 + pPlayer->GetTotalAttributeValue(AttributeIdentifier::Ammo);
+					for(int Weapon = WEAPON_GUN; Weapon < NUM_WEAPONS; Weapon++)
+						pChr->GiveWeapon(Weapon, MaxAmmo);
+				}
+			}
+		});
+
+		Finish();
+	}
+};
+
 #endif

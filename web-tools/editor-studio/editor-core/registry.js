@@ -232,6 +232,17 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
         hidden: createField('boolean', 'Скрыть', false)
       }
     },
+    restore_resources: {
+      name: 'Восстановить ресурсы',
+      class: 'logic',
+      icon: 'fa-solid fa-heart-circle-plus',
+      desc: 'Восстанавливает HP/MP/Ammo для игроков сценария',
+      fields: {
+        restore_hp: createField('boolean', 'Восстановить HP', true),
+        restore_mp: createField('boolean', 'Восстановить MP', true),
+        restore_ammo: createField('boolean', 'Восстановить Ammo', true)
+      }
+    },
     world_complete: {
       name: 'World: завершить сценарий',
       class: 'interactive',
@@ -571,7 +582,8 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
     'emote',
     'quest_action',
     'quest_condition',
-    'defeat_mobs'
+    'defeat_mobs',
+    'restore_resources'
   ];
 
   const scenarioModeSchemas = {
