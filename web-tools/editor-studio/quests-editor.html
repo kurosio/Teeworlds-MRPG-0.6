@@ -492,6 +492,7 @@
         const req = entry?.required_item || {};
         const inter = entry?.interactive || {};
         const defeat = entry?.defeat_bot || {};
+        const defeatBotId = defeat?.id ?? defeat?.bot_id ?? 0;
         return {
           step: entry?.step ?? 1,
           name: entry?.name ?? 'Demands a bit of action',
@@ -508,7 +509,7 @@
           required_item_value: req?.value ?? 0,
           interactive_x: inter?.x ?? 0,
           interactive_y: inter?.y ?? 0,
-          defeat_bot_id: defeat?.id ?? 0,
+          defeat_bot_id: defeatBotId,
           defeat_bot_attribute_power: defeat?.attribute_power ?? 10,
           defeat_bot_world_id: defeat?.world_id ?? 0,
         };
@@ -548,6 +549,7 @@
         if (entry?.defeat_bot_id) {
           out.defeat_bot = {
             id: Number(entry.defeat_bot_id),
+            bot_id: Number(entry.defeat_bot_id),
             attribute_power: Number(entry?.defeat_bot_attribute_power || 10),
             world_id: Number(entry?.defeat_bot_world_id || 0),
           };
