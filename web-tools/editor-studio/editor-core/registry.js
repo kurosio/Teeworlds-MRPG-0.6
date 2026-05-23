@@ -478,7 +478,7 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
             boss: createField('boolean', 'Босс', false),
             Behavior: {
               label: 'Behavior',
-              ui: { type: 'tags', options: ['sleepy', 'slower', 'poisonous', 'neutral', 'skills_base', 'skills_tank', 'skills_dps', 'skills_healer'], placeholder: 'Добавить behavior…' }
+              ui: { type: 'tags', options: ['sleepy', 'slower', 'poisonous', 'neutral', 'skills_base', 'skills_tank', 'skills_dps', 'skills_healer', 'ambient_chat'], placeholder: 'Добавить behavior…' }
             },
             Debuffs: {
               label: 'Debuffs',

@@ -26,6 +26,8 @@ void MobBotInfo::InitBehaviors(const DBSet& Behavior)
 		m_BehaviorsFlags |= MOBFLAG_BEHAVIOR_DPS_SKILLS;
 	if(Behavior.hasSet("skills_healer"))
 		m_BehaviorsFlags |= MOBFLAG_BEHAVIOR_HEALER_SKILLS;
+	if(Behavior.hasSet("ambient_chat"))
+		m_BehaviorsFlags |= MOBFLAG_BEHAVIOR_AMBIENT_CHAT;
 }
 
 /************************************************************************/

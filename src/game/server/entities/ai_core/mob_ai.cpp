@@ -205,6 +205,7 @@ void CMobAI::Process()
 	// handle behaviors
 	bool Asleep = false;
 	HandleBehaviors(&Asleep);
+	HandleAmbientChat();
 	if(Asleep)
 		return;
 
@@ -233,6 +234,88 @@ void CMobAI::Process()
 	{
 		ShowHealth();
 	}
+}
+
+void CMobAI::HandleAmbientChat()
+{
+	if(!m_pMobInfo->HasBehaviorFlag(MOBFLAG_BEHAVIOR_AMBIENT_CHAT))
+		return;
+
+	// evaluate once per second randomize
+	if(Server()->Tick() % Server()->TickSpeed() != 0)
+		return;
+
+	if(random_float(100.0f) > 1.5f)
+		return;
+
+	// search active player
+	const float ActiveDistance = maximum(m_pPlayer->GetActiveDistance(), 200.f);
+	const auto* pObserver = SearchPlayerCondition(ActiveDistance, [](const CPlayer* pCandidate)
+	{
+		return pCandidate && pCandidate->GetCharacter() && !pCandidate->GetCharacter()->m_Core.m_DamageDisabled;
+	});
+	if(!pObserver)
+		return;
+
+	// openers
+	static constexpr const char* s_apOpeners[] = {
+		"Rrr", "Grr", "Khh", "Hss", "Skrr", "Awooo", "Ugh", "Graw", "Sss-sss", "Hrrm"
+	};
+
+	// moods
+	static constexpr const char* s_apMoods[] = {
+		"angrily", "silently", "viciously", "calmly", "hungrily", "nervously", "steadily"
+	};
+
+	// action
+	static constexpr const char* s_apActions[] = {
+		"protects this land",
+		"hunts nearby strangers",
+		"sniffs the air for danger",
+		"watches every movement",
+		"waits for the next victim",
+		"guards its territory",
+		"sharpens its claws",
+		"scans the horizon",
+		"bares its teeth at the shadows",
+		"stalks through the tall grass",
+		"prepares for an ambush",
+		"listens to the wind"
+	};
+
+	// ending
+	static constexpr const char* s_apEndings[] = {
+		"carefully.",
+		"with rage.",
+		"without fear.",
+		"and does not sleep.",
+		"until the battle begins.",
+		"under the moonlight.",
+		"ignoring the pain.",
+		"ready to strike.",
+		"searching for blood.",
+		"with glowing eyes.",
+		"shaking the ground."
+	};
+
+	// random elements
+	const char* pOpener = s_apOpeners[rand() % (std::size(s_apOpeners))];
+	const char* pMood = s_apMoods[rand() % (std::size(s_apMoods))];
+	const char* pAction = s_apActions[rand() % (std::size(s_apActions))];
+	const char* pEnding = s_apEndings[rand() % (std::size(s_apEndings))];
+
+	// randomize structure
+	std::string ChatText;
+	int Layout = rand() % 3;
+
+	if(Layout == 0)
+		ChatText = fmt_default("{}... {} {} {}", pOpener, m_pMobInfo->GetName(), pAction, pEnding);
+	else if(Layout == 1)
+		ChatText = fmt_default("{}! {} {} {} {}", pOpener, m_pMobInfo->GetName(), pMood, pAction, pEnding);
+	else
+		ChatText = fmt_default("{} {}... {}", m_pMobInfo->GetName(), pAction, pEnding);
+
+	GS()->SendChatRadius(m_ClientID, CHAT_ALL_WITHOUT_LOG, ActiveDistance, ChatText.c_str());
 }
 
 void CMobAI::HandleBehaviors(bool* pbAsleep)

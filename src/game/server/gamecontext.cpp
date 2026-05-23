@@ -452,15 +452,18 @@ void CGS::SendChatTarget(int ClientID, const char* pText) const
 ######################################################################### */
 void CGS::SendChat(int ChatterClientID, int Mode, const char* pText, int64_t Mask)
 {
-	if(ChatterClientID >= 0 && ChatterClientID < MAX_CLIENTS)
+	if(Mode != CHAT_ALL_WITHOUT_LOG && Mode != CHAT_TEAM_WITHOUT_LOG)
 	{
-		Console()->PrintFormat(IConsole::OUTPUT_LEVEL_STANDARD, Mode == CHAT_TEAM ? "teamchat" : "chat",
-			"%d:%d:%s: %s", ChatterClientID, Mode, Server()->ClientName(ChatterClientID), pText);
-	}
-	else
-	{
-		Console()->PrintFormat(IConsole::OUTPUT_LEVEL_STANDARD, Mode == CHAT_TEAM ? "teamchat" : "chat",
-			"*** %s", pText);
+		if(ChatterClientID >= 0 && ChatterClientID < MAX_CLIENTS)
+		{
+			Console()->PrintFormat(IConsole::OUTPUT_LEVEL_STANDARD, Mode == CHAT_TEAM ? "teamchat" : "chat",
+				"%d:%d:%s: %s", ChatterClientID, Mode, Server()->ClientName(ChatterClientID), pText);
+		}
+		else
+		{
+			Console()->PrintFormat(IConsole::OUTPUT_LEVEL_STANDARD, Mode == CHAT_TEAM ? "teamchat" : "chat",
+				"*** %s", pText);
+		}
 	}
 
 	CNetMsg_Sv_Chat Msg;
@@ -468,11 +471,11 @@ void CGS::SendChat(int ChatterClientID, int Mode, const char* pText, int64_t Mas
 	Msg.m_ClientId = ChatterClientID;
 	Msg.m_pMessage = pText;
 
-	if(Mode == CHAT_ALL)
+	if(Mode == CHAT_ALL || Mode == CHAT_ALL_WITHOUT_LOG)
 	{
 		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL | MSGFLAG_NORECORD, -1, Mask);
 	}
-	else if(Mode == CHAT_TEAM)
+	else if(Mode == CHAT_TEAM || Mode == CHAT_TEAM_WITHOUT_LOG)
 	{
 		CPlayer* pChatterPlayer = GetPlayer(ChatterClientID, true);
 		if(!pChatterPlayer || !pChatterPlayer->Account()->HasGuild())
@@ -495,7 +498,7 @@ void CGS::SendChat(int ChatterClientID, int Mode, const char* pText, int64_t Mas
 	}
 }
 
-void CGS::SendChatRadius(int ChatterClientID, float Radius, const char* pText)
+void CGS::SendChatRadius(int ChatterClientID, int Mode, float Radius, const char* pText)
 {
 	int64_t MaskRadius = 0;
 
@@ -508,7 +511,7 @@ void CGS::SendChatRadius(int ChatterClientID, float Radius, const char* pText)
 		if(distance(pPlayer->m_ViewPos, m_apPlayers[ChatterClientID]->m_ViewPos) < Radius)
 			MaskRadius |= CmaskOne(i);
 	}
-	SendChat(ChatterClientID, CHAT_ALL, pText, MaskRadius);
+	SendChat(ChatterClientID, Mode, pText, MaskRadius);
 }
 
 /* #########################################################################

@@ -28,6 +28,7 @@ public:
 private:
 	void HandleBehaviors(bool* pbAsleep);
 	void HandleSkillBehaviors();
+	void HandleAmbientChat();
 	bool TryUseManaAndShowText(int ManaCost, const char* pText, int TextSize = 30);
 	bool TryUseBaseSkill();
 	bool TryUseHealerSkill();
