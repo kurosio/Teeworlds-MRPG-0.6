@@ -13,6 +13,12 @@
 
 #include "core/mmo_controller.h"
 
+enum
+{
+	CHAT_ALL_WITHOUT_LOG = 3,
+	CHAT_TEAM_WITHOUT_LOG,
+};
+
 class CGS : public IGameServer
 {
 	struct CBroadcastState
