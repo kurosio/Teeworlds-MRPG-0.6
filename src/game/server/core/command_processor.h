@@ -28,8 +28,6 @@ class CCommandProcessor
 	static void ConChatDonorProCmdList(IConsole::IResult* pResult, void* pUserData);
 	static void ConChatDonorProTeleport(IConsole::IResult* pResult, void* pUserData);
     static void ConChatRainbow(IConsole::IResult* pResult, void* pUserData);
-    static void ConRconRainbow(IConsole::IResult* pResult, void* pUserData);
-    static void ConRconUnrainbow(IConsole::IResult* pResult, void* pUserData);
 	static void ConChatTimeoutGuest(IConsole::IResult* pResult, void* pUserData);
 
 	static void ConChatPlaceholder(IConsole::IResult* pResult, void* pUserData);

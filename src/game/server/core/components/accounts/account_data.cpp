@@ -791,3 +791,25 @@ void CAccountData::UpdateAuthTimeoutCodeIfNeeded()
 		pPlayer->GetSharedData().m_TimeoutCode.clear();
 	}
 }
+
+bool CAccountSharedData::TryUpdateSkinColors(CNetObj_ClientInfo* pClientInfo)
+{
+	// rainbow mode
+	if(m_RainbowMode)
+	{
+		m_RainbowHue = fmodf(m_RainbowHue + 0.002f, 1.0f);
+		const ColorRGBA BodyColor = color_cast<ColorRGBA>(
+			ColorHSLA(m_RainbowHue, 1.0f, 0.5f, 1.0f)
+		);
+		const ColorRGBA FeetColor = color_cast<ColorRGBA>(
+			ColorHSLA(fmodf(m_RainbowHue + 0.5f, 1.0f), 1.0f, 0.5f, 1.0f)
+		);
+
+		pClientInfo->m_UseCustomColor = 1;
+		pClientInfo->m_ColorBody = BodyColor.Pack(false);
+		pClientInfo->m_ColorFeet = FeetColor.Pack(false);
+		return true;
+	}
+
+	return false;
+}
