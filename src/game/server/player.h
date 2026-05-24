@@ -106,6 +106,8 @@ public:
 	bool m_WantSpawn;
 	bool m_ActivatedGroupColour;
 	int m_TickActivatedGroupColour;
+        bool m_RainbowActive {};
+        float m_RainbowHue {};
 	std::optional<int> m_EidolonCID;
 
 	/* ==========================================================
