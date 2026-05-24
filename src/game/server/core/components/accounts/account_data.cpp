@@ -794,15 +794,44 @@ void CAccountData::UpdateAuthTimeoutCodeIfNeeded()
 
 bool CAccountSharedData::TryUpdateSkinColors(CNetObj_ClientInfo* pClientInfo)
 {
-	// rainbow mode
-	if(m_RainbowMode)
+	// enabled rainbow
+	if(m_RainbowMode != RAINBOW_MODE_DISABLED)
 	{
-		m_RainbowHue = fmodf(m_RainbowHue + 0.002f, 1.0f);
+		// rainbow mode
+		const int Tick = Instance::Server()->Tick();
+		const int TickSpeed = Instance::Server()->TickSpeed();
+		const float Speed = 0.002f;
+		m_RainbowHue = fmodf(m_RainbowHue + Speed, 1.0f);
+		float BodyHue = m_RainbowHue;
+		float FeetHue = m_RainbowHue;
+		float Saturation = 1.0f;
+		float Lightness = 0.5f;
+
+		if(m_RainbowMode == RAINBOW_MODE_OPPOSITE)
+		{
+			FeetHue = fmodf(BodyHue + 0.5f, 1.0f);
+		}
+		else if(m_RainbowMode == RAINBOW_MODE_RANDOM)
+		{
+			const int Time = Tick / 25;
+			BodyHue = fmodf(Time * 0.173f, 1.0f);
+			FeetHue = fmodf(Time * 0.317f, 1.0f);
+		}
+		else if(m_RainbowMode == RAINBOW_MODE_BOO)
+		{
+			const float Time = Tick / (float)TickSpeed;
+			BodyHue = 0.0f;
+			FeetHue = 0.0f;
+			Saturation = 0.0f;
+			Lightness = (std::sin((pi * Time) / 3) + 1.0f) / 2.0f;
+		}
+
 		const ColorRGBA BodyColor = color_cast<ColorRGBA>(
-			ColorHSLA(m_RainbowHue, 1.0f, 0.5f, 1.0f)
+			ColorHSLA(BodyHue, Saturation, Lightness, 1.0f)
 		);
+
 		const ColorRGBA FeetColor = color_cast<ColorRGBA>(
-			ColorHSLA(fmodf(m_RainbowHue + 0.5f, 1.0f), 1.0f, 0.5f, 1.0f)
+			ColorHSLA(FeetHue, Saturation, Lightness, 1.0f)
 		);
 
 		pClientInfo->m_UseCustomColor = 1;

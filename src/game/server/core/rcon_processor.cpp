@@ -28,8 +28,8 @@ void RconProcessor::Init(IConsole* pConsole, IServer* pServer)
 	pConsole->Register("jail", "i[cid]i[sec]", CFGFLAG_SERVER, ConJail, pServer, "Imprison a player for a set number of seconds");
 	pConsole->Register("unjail", "i[cid]", CFGFLAG_SERVER, ConUnjail, pServer, "Release the player from prison");
 
-	pConsole->Register("rainbow", "i[cid]", CFGFLAG_SERVER, ConRainbow, pServer, "Force enable rainbow on a player");
-	pConsole->Register("unrainbow", "i[cid]", CFGFLAG_SERVER, ConUnrainbow, pServer, "Force disable rainbow on a player");
+	pConsole->Register("rainbow", "i[cid] i[mode]", CFGFLAG_SERVER, ConRainbow, pServer, "Force enable rainbow mode on a player");
+	pConsole->Register("unrainbow", "i[cid] i[mode]", CFGFLAG_SERVER, ConUnrainbow, pServer, "Force disable rainbow mode on a player");
 
 	// tools
 	pConsole->Register("tele_to_cursor", "", CFGFLAG_SERVER, ConTeleportToMousePos, pServer, "Teleport to mouse pos");
@@ -102,10 +102,11 @@ void RconProcessor::ConRainbow(IConsole::IResult* pResult, void* pUser)
 		return;
 
 	auto* pServer = (IServer*)pUser;
-	pTarget->GetSharedData().m_RainbowMode = true;
+	const int RainbowMode = clamp(pResult->GetInteger(1), (int)RAINBOW_MODE_DISABLED, (int)NUM_RAINBOW_MODES);
+	pTarget->GetSharedData().m_RainbowMode = RainbowMode;
 	pGS->Chat(TargetCID, "An admin has enabled your rainbow skin.");
-	pGS->Console()->PrintFormat(IConsole::OUTPUT_LEVEL_STANDARD, "rainbow", "%d:%s enabled rainbow for %d:%s.",
-		FromCID, pServer->ClientName(FromCID), TargetCID, pServer->ClientName(TargetCID));
+	pGS->Console()->PrintFormat(IConsole::OUTPUT_LEVEL_STANDARD, "rainbow", "%d:%s enabled rainbow(mode %d) for %d:%s.",
+		FromCID, pServer->ClientName(FromCID), RainbowMode, TargetCID, pServer->ClientName(TargetCID));
 }
 
 void RconProcessor::ConUnrainbow(IConsole::IResult* pResult, void* pUser)
@@ -118,7 +119,7 @@ void RconProcessor::ConUnrainbow(IConsole::IResult* pResult, void* pUser)
 		return;
 
 	auto* pServer = (IServer*)pUser;
-	pTarget->GetSharedData().m_RainbowMode = false;
+	pTarget->GetSharedData().m_RainbowMode = RAINBOW_MODE_DISABLED;
 	pGS->Chat(TargetCID, "An admin has disabled your rainbow skin.");
 	pGS->Console()->PrintFormat(IConsole::OUTPUT_LEVEL_STANDARD, "rainbow", "%d:%s disabled rainbow for %d:%s.",
 		FromCID, pServer->ClientName(FromCID), TargetCID, pServer->ClientName(TargetCID));

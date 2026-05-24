@@ -56,7 +56,7 @@ CCommandProcessor::CCommandProcessor(CGS* pGS)
 	AddCommand("donor", "", ConChatDonorCmdList, pServer, "Donor command list");
 	AddCommand("donor_pro", "", ConChatDonorProCmdList, pServer, "Donor pro command list");
 	AddCommand("dpro_blink", "", ConChatDonorProTeleport, pServer, "Donor Pro teleport to view point");
-	AddCommand("rainbow", "", ConChatRainbow, pServer, "Toggle rainbow skin effect (Donor)");
+	AddCommand("rainbow", "i[mode]", ConChatRainbow, pServer, "Update rainbow mode skin effect (Donor)");
 
 	// other
 	AddCommand("timeout", "?s[code]", ConChatTimeoutGuest, pServer, "Timeout auth code");
@@ -556,7 +556,8 @@ void CCommandProcessor::ConChatRainbow(IConsole::IResult* pResult, void* pUser)
 	const auto* pDonorProItem = pPlayer->GetItem(itDonorPro);
 	if(pDonorItem->HasItem() || pDonorProItem->HasItem())
 	{
-		pPlayer->GetSharedData().m_RainbowMode = !pPlayer->GetSharedData().m_RainbowMode;
+		const int RainbowMode = clamp(pResult->GetInteger(0), (int)RAINBOW_MODE_DISABLED, (int)NUM_RAINBOW_MODES);
+		pPlayer->GetSharedData().m_RainbowMode = RainbowMode;
 		if(pPlayer->GetSharedData().m_RainbowMode)
 			pGS->Chat(ClientID, "Rainbow skin enabled!");
 		else

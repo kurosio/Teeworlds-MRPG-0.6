@@ -227,7 +227,7 @@ struct CAccountSharedData
 	int m_Ping {};
 
 	// some player data
-	bool m_RainbowMode {};
+	int m_RainbowMode { RAINBOW_MODE_DISABLED };
 	float m_RainbowHue {};
 
 	// other
