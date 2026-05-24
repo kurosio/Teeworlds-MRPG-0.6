@@ -56,6 +56,9 @@ CCommandProcessor::CCommandProcessor(CGS* pGS)
 	AddCommand("donor", "", ConChatDonorCmdList, pServer, "Donor command list");
 	AddCommand("donor_pro", "", ConChatDonorProCmdList, pServer, "Donor pro command list");
 	AddCommand("dpro_blink", "", ConChatDonorProTeleport, pServer, "Donor Pro teleport to view point");
+	AddCommand("rainbow", "", ConChatRainbow, pServer, "Toggle rainbow skin effect (Donor)");
+	GS()->Console()->Register("rainbow", "i[cid]", CFGFLAG_SERVER, ConRconRainbow, pServer, "Force enable rainbow on a player");
+	GS()->Console()->Register("unrainbow", "i[cid]", CFGFLAG_SERVER, ConRconUnrainbow, pServer, "Force disable rainbow on a player");
 
 	// other
 	AddCommand("timeout", "?s[code]", ConChatTimeoutGuest, pServer, "Timeout auth code");
@@ -516,6 +519,7 @@ void CCommandProcessor::ConChatDonorCmdList(IConsole::IResult* pResult, void* pU
 	pGS->Chat(ClientID, mystd::aesthetic::wrapLinePillar(10).c_str());
 	if(pDonorItem->GetExpiresAt() > 0)
 		pGS->Chat(ClientID, "Left time: {}", pDonorItem->GetExpiresRemainingString());
+	pGS->Chat(ClientID, "/rainbow - Rainbow skin effect.");
 }
 
 void CCommandProcessor::ConChatDonorProCmdList(IConsole::IResult* pResult, void* pUser)
@@ -538,6 +542,50 @@ void CCommandProcessor::ConChatDonorProCmdList(IConsole::IResult* pResult, void*
 	if(pDonorProItem->GetExpiresAt() > 0)
 		pGS->Chat(ClientID, "Left time: {}", pDonorProItem->GetExpiresRemainingString());
 	pGS->Chat(ClientID, "/dpro_blink - teleport to view point.");
+	pGS->Chat(ClientID, "/rainbow - Rainbow skin effect.");
+}
+
+void CCommandProcessor::ConChatRainbow(IConsole::IResult* pResult, void* pUser)
+{
+	const int ClientID = pResult->GetClientID();
+	auto* pGS = GetCommandResultGameServer(ClientID, pUser);
+	auto* pPlayer = pGS->GetPlayer(ClientID);
+	if(!is_valid_player(pGS, pPlayer, true))
+		return;
+	if(!pPlayer->GetItem(itDonor)->HasItem() && !pPlayer->GetItem(itDonorPro)->HasItem())
+	{
+		pGS->Chat(ClientID, "Rainbow skin is a Donor+ feature.");
+		return;
+	}
+	pPlayer->m_RainbowActive = !pPlayer->m_RainbowActive;
+	if(pPlayer->m_RainbowActive)
+		pGS->Chat(ClientID, "Rainbow skin enabled!");
+	else
+		pGS->Chat(ClientID, "Rainbow skin disabled.");
+}
+
+void CCommandProcessor::ConRconRainbow(IConsole::IResult* pResult, void* pUser)
+{
+	auto* pServer = static_cast<IServer*>(pUser);
+	const int TargetID = pResult->GetInteger(0);
+	auto* pGS = static_cast<CGS*>(pServer->GameServerPlayer(TargetID));
+	auto* pPlayer = pGS ? pGS->GetPlayer(TargetID) : nullptr;
+	if(!pPlayer)
+		return;
+	pPlayer->m_RainbowActive = true;
+	pGS->Chat(TargetID, "An admin has enabled your rainbow skin.");
+}
+
+void CCommandProcessor::ConRconUnrainbow(IConsole::IResult* pResult, void* pUser)
+{
+	auto* pServer = static_cast<IServer*>(pUser);
+	const int TargetID = pResult->GetInteger(0);
+	auto* pGS = static_cast<CGS*>(pServer->GameServerPlayer(TargetID));
+	auto* pPlayer = pGS ? pGS->GetPlayer(TargetID) : nullptr;
+	if(!pPlayer)
+		return;
+	pPlayer->m_RainbowActive = false;
+	pGS->Chat(TargetID, "An admin has disabled your rainbow skin.");
 }
 
 void CCommandProcessor::ConChatDonorProTeleport(IConsole::IResult* pResult, void* pUser)
