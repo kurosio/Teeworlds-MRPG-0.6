@@ -56,7 +56,7 @@ CCommandProcessor::CCommandProcessor(CGS* pGS)
 	AddCommand("donor", "", ConChatDonorCmdList, pServer, "Donor command list");
 	AddCommand("donor_pro", "", ConChatDonorProCmdList, pServer, "Donor pro command list");
 	AddCommand("dpro_blink", "", ConChatDonorProTeleport, pServer, "Donor Pro teleport to view point");
-	AddCommand("rainbow", "", ConChatRainbow, pServer, "Toggle rainbow skin effect (Donor Pro)");
+	AddCommand("rainbow", "", ConChatRainbow, pServer, "Toggle rainbow skin effect (Donor)");
 
 	// other
 	AddCommand("timeout", "?s[code]", ConChatTimeoutGuest, pServer, "Timeout auth code");
