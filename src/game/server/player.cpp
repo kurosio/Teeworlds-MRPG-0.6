@@ -1,6 +1,7 @@
 ﻿/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "player.h"
+#include <base/color.h>
 
 #include <game/server/core/balance/balance.h>
 
@@ -372,10 +373,23 @@ void CPlayer::Snap(int SnappingClient)
 		StrToInts(&pClientInfo->m_Name0, 4, aNameBuf);
 		StrToInts(&pClientInfo->m_Clan0, 3, m_aRotateClanBuffer);
 		pClientInfo->m_Country = Server()->ClientCountry(m_ClientID);
-		StrToInts(&pClientInfo->m_Skin0, 6, Account()->GetTeeInfo().m_aSkinName);
-		pClientInfo->m_UseCustomColor = Account()->GetTeeInfo().m_UseCustomColor;
-		pClientInfo->m_ColorBody = Account()->GetTeeInfo().m_ColorBody;
-		pClientInfo->m_ColorFeet = Account()->GetTeeInfo().m_ColorFeet;
+		if(m_RainbowActive)
+                {
+                        m_RainbowHue = fmod(m_RainbowHue + 0.002f, 1.0f);
+                        ColorRGBA RGB = color_cast<ColorRGBA>(ColorHSLA(m_RainbowHue, 1.0f, 0.5f, 1.0f));
+                        ColorRGBA RGBFeet = color_cast<ColorRGBA>(ColorHSLA(fmod(m_RainbowHue + 0.5f, 1.0f), 1.0f, 0.5f, 1.0f));
+                        StrToInts(&pClientInfo->m_Skin0, 6, Account()->GetTeeInfo().m_aSkinName);
+                        pClientInfo->m_UseCustomColor = 1;
+                        pClientInfo->m_ColorBody = RGB.Pack(false);
+                        pClientInfo->m_ColorFeet = RGBFeet.Pack(false);
+                }
+                else
+                {
+                        StrToInts(&pClientInfo->m_Skin0, 6, Account()->GetTeeInfo().m_aSkinName);
+                        pClientInfo->m_UseCustomColor = Account()->GetTeeInfo().m_UseCustomColor;
+                        pClientInfo->m_ColorBody = Account()->GetTeeInfo().m_ColorBody;
+                        pClientInfo->m_ColorFeet = Account()->GetTeeInfo().m_ColorFeet;
+                }
 	}
 
 	// player info
