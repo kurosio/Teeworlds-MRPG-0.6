@@ -29,6 +29,9 @@ class RconProcessor
 	static void ConJail(IConsole::IResult* pResult, void* pUserData);
 	static void ConUnjail(IConsole::IResult* pResult, void* pUserData);
 
+	static void ConRainbow(IConsole::IResult* pResult, void* pUserData);
+	static void ConUnrainbow(IConsole::IResult* pResult, void* pUserData);
+
 	static void ConQuest(IConsole::IResult* pResult, void* pUserData);
 
 	// chain's

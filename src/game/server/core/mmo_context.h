@@ -13,6 +13,15 @@ enum class EEntityTextType
 	Laser,
 };
 
+enum
+{
+	RAINBOW_MODE_DISABLED = 0,
+	RAINBOW_MODE_OPPOSITE,
+	RAINBOW_MODE_RANDOM,
+	RAINBOW_MODE_BOO,
+	NUM_RAINBOW_MODES
+};
+
 // scenario blocks
 using ScenarioBlock = std::string_view;
 namespace ScenarioBlocks

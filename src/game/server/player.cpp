@@ -1,6 +1,7 @@
 ﻿/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "player.h"
+#include <base/color.h>
 
 #include <game/server/core/balance/balance.h>
 
@@ -372,10 +373,17 @@ void CPlayer::Snap(int SnappingClient)
 		StrToInts(&pClientInfo->m_Name0, 4, aNameBuf);
 		StrToInts(&pClientInfo->m_Clan0, 3, m_aRotateClanBuffer);
 		pClientInfo->m_Country = Server()->ClientCountry(m_ClientID);
-		StrToInts(&pClientInfo->m_Skin0, 6, Account()->GetTeeInfo().m_aSkinName);
-		pClientInfo->m_UseCustomColor = Account()->GetTeeInfo().m_UseCustomColor;
-		pClientInfo->m_ColorBody = Account()->GetTeeInfo().m_ColorBody;
-		pClientInfo->m_ColorFeet = Account()->GetTeeInfo().m_ColorFeet;
+
+		const auto& TeeInfo = Account()->GetTeeInfo();
+		StrToInts(&pClientInfo->m_Skin0, 6, TeeInfo.m_aSkinName);
+
+		bool ColorsUpdated = GetSharedData().TryUpdateSkinColors(pClientInfo);
+		if(!ColorsUpdated)
+		{
+			pClientInfo->m_UseCustomColor = TeeInfo.m_UseCustomColor;
+			pClientInfo->m_ColorBody = TeeInfo.m_ColorBody;
+			pClientInfo->m_ColorFeet = TeeInfo.m_ColorFeet;
+		}
 	}
 
 	// player info

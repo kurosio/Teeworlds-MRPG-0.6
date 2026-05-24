@@ -56,6 +56,7 @@ CCommandProcessor::CCommandProcessor(CGS* pGS)
 	AddCommand("donor", "", ConChatDonorCmdList, pServer, "Donor command list");
 	AddCommand("donor_pro", "", ConChatDonorProCmdList, pServer, "Donor pro command list");
 	AddCommand("dpro_blink", "", ConChatDonorProTeleport, pServer, "Donor Pro teleport to view point");
+	AddCommand("rainbow", "i[mode]", ConChatRainbow, pServer, "Update rainbow mode skin effect (Donor)");
 
 	// other
 	AddCommand("timeout", "?s[code]", ConChatTimeoutGuest, pServer, "Timeout auth code");
@@ -516,6 +517,7 @@ void CCommandProcessor::ConChatDonorCmdList(IConsole::IResult* pResult, void* pU
 	pGS->Chat(ClientID, mystd::aesthetic::wrapLinePillar(10).c_str());
 	if(pDonorItem->GetExpiresAt() > 0)
 		pGS->Chat(ClientID, "Left time: {}", pDonorItem->GetExpiresRemainingString());
+	pGS->Chat(ClientID, "/rainbow - Rainbow skin effect.");
 }
 
 void CCommandProcessor::ConChatDonorProCmdList(IConsole::IResult* pResult, void* pUser)
@@ -538,6 +540,33 @@ void CCommandProcessor::ConChatDonorProCmdList(IConsole::IResult* pResult, void*
 	if(pDonorProItem->GetExpiresAt() > 0)
 		pGS->Chat(ClientID, "Left time: {}", pDonorProItem->GetExpiresRemainingString());
 	pGS->Chat(ClientID, "/dpro_blink - teleport to view point.");
+	pGS->Chat(ClientID, "/rainbow - Rainbow skin effect.");
+}
+
+void CCommandProcessor::ConChatRainbow(IConsole::IResult* pResult, void* pUser)
+{
+	const int ClientID = pResult->GetClientID();
+	auto* pGS = GetCommandResultGameServer(ClientID, pUser);
+	auto* pPlayer = pGS->GetPlayer(ClientID);
+	if(!is_valid_player(pGS, pPlayer, true))
+		return;
+
+	// check privileges valid and toggle rainbow state
+	const auto* pDonorItem = pPlayer->GetItem(itDonor);
+	const auto* pDonorProItem = pPlayer->GetItem(itDonorPro);
+	if(pDonorItem->HasItem() || pDonorProItem->HasItem())
+	{
+		const int RainbowMode = clamp(pResult->GetInteger(0), (int)RAINBOW_MODE_DISABLED, (int)NUM_RAINBOW_MODES);
+		pPlayer->GetSharedData().m_RainbowMode = RainbowMode;
+		if(pPlayer->GetSharedData().m_RainbowMode)
+			pGS->Chat(ClientID, "Rainbow skin enabled!");
+		else
+			pGS->Chat(ClientID, "Rainbow skin disabled!");
+		return;
+	}
+
+	// no privileges
+	pGS->Chat(ClientID, "Rainbow skin is a {}, {} feature.", pDonorItem->Info()->GetName(), pDonorProItem->Info()->GetName());
 }
 
 void CCommandProcessor::ConChatDonorProTeleport(IConsole::IResult* pResult, void* pUser)

@@ -28,6 +28,9 @@ void RconProcessor::Init(IConsole* pConsole, IServer* pServer)
 	pConsole->Register("jail", "i[cid]i[sec]", CFGFLAG_SERVER, ConJail, pServer, "Imprison a player for a set number of seconds");
 	pConsole->Register("unjail", "i[cid]", CFGFLAG_SERVER, ConUnjail, pServer, "Release the player from prison");
 
+	pConsole->Register("rainbow", "i[cid] i[mode]", CFGFLAG_SERVER, ConRainbow, pServer, "Force enable rainbow mode on a player");
+	pConsole->Register("unrainbow", "i[cid] i[mode]", CFGFLAG_SERVER, ConUnrainbow, pServer, "Force disable rainbow mode on a player");
+
 	// tools
 	pConsole->Register("tele_to_cursor", "", CFGFLAG_SERVER, ConTeleportToMousePos, pServer, "Teleport to mouse pos");
 	pConsole->Register("tele_to_pos", "i[x]i[y]?i[world_id]", CFGFLAG_SERVER, ConTeleportToPos, pServer, "Teleport to world pos");
@@ -89,6 +92,38 @@ void RconProcessor::ConUnjail(IConsole::IResult* pResult, void* pUser)
 		pServer->ClientName(FromCID), pServer->ClientName(UnprisonedCID));
 }
 
+void RconProcessor::ConRainbow(IConsole::IResult* pResult, void* pUser)
+{
+	const int TargetCID = pResult->GetInteger(0);
+	const int FromCID = pResult->GetClientID();
+	auto* pGS = GetCommandResultGameServer(TargetCID, pUser);
+	auto* pTarget = pGS->GetPlayer(TargetCID);
+	if(!pTarget || !pTarget->IsAuthed())
+		return;
+
+	auto* pServer = (IServer*)pUser;
+	const int RainbowMode = clamp(pResult->GetInteger(1), (int)RAINBOW_MODE_DISABLED, (int)NUM_RAINBOW_MODES);
+	pTarget->GetSharedData().m_RainbowMode = RainbowMode;
+	pGS->Chat(TargetCID, "An admin has enabled your rainbow skin.");
+	pGS->Console()->PrintFormat(IConsole::OUTPUT_LEVEL_STANDARD, "rainbow", "%d:%s enabled rainbow(mode %d) for %d:%s.",
+		FromCID, pServer->ClientName(FromCID), RainbowMode, TargetCID, pServer->ClientName(TargetCID));
+}
+
+void RconProcessor::ConUnrainbow(IConsole::IResult* pResult, void* pUser)
+{
+	const int TargetCID = pResult->GetInteger(0);
+	const int FromCID = pResult->GetClientID();
+	auto* pGS = GetCommandResultGameServer(TargetCID, pUser);
+	auto* pTarget = pGS->GetPlayer(TargetCID);
+	if(!pTarget || !pTarget->IsAuthed())
+		return;
+
+	auto* pServer = (IServer*)pUser;
+	pTarget->GetSharedData().m_RainbowMode = RAINBOW_MODE_DISABLED;
+	pGS->Chat(TargetCID, "An admin has disabled your rainbow skin.");
+	pGS->Console()->PrintFormat(IConsole::OUTPUT_LEVEL_STANDARD, "rainbow", "%d:%s disabled rainbow for %d:%s.",
+		FromCID, pServer->ClientName(FromCID), TargetCID, pServer->ClientName(TargetCID));
+}
 
 void RconProcessor::ConTeleportToMousePos(IConsole::IResult* pResult, void* pUser)
 {

@@ -226,6 +226,10 @@ struct CAccountSharedData
 	int m_Mana {};
 	int m_Ping {};
 
+	// some player data
+	int m_RainbowMode { RAINBOW_MODE_DISABLED };
+	float m_RainbowHue {};
+
 	// other
 	int m_ActivityCoinRewardInterval {};
 	int m_ActivityRewardStreak {};
@@ -249,6 +253,7 @@ struct CAccountSharedData
 		m_TempSpawnPos = std::nullopt;
 	}
 
+	bool TryUpdateSkinColors(CNetObj_ClientInfo* pClientInfo);
 	static std::map < int, CAccountSharedData > ms_aPlayerSharedData;
 
 private:
