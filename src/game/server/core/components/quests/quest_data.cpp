@@ -121,7 +121,7 @@ bool CPlayerQuest::HasUnfinishedObjectives() const
 	});
 }
 
-bool CPlayerQuest::Accept()
+bool CPlayerQuest::Accept(int StartStep)
 {
 	// check valid player and quest state
 	CPlayer* pPlayer = GetPlayer();
@@ -134,7 +134,7 @@ bool CPlayerQuest::Accept()
 
 	// initialize
 	SetNewState(QuestState::Accepted);
-	m_Step = 1;
+	m_Step = maximum(1, StartStep);
 	m_Datafile.Create();
 	Database->Execute<DB::INSERT>("tw_accounts_quests", "(QuestID, UserID, Type) VALUES ('{}', '{}', '{}')", m_ID, pPlayer->Account()->GetID(), (int)m_State);
 
@@ -156,6 +156,18 @@ bool CPlayerQuest::Accept()
 	GS()->Broadcast(m_ClientID, BroadcastPriority::TitleInformation, 100, "Quest Accepted");
 	GS()->CreatePlayerSound(m_ClientID, SOUND_GAME_ACCEPT);
 	return true;
+}
+
+bool CPlayerQuest::Restart(int StartStep)
+{
+	CPlayer* pPlayer = GetPlayer();
+	if(!pPlayer)
+		return false;
+
+	if(m_State != QuestState::NoAccepted)
+		Reset();
+
+	return Accept(StartStep);
 }
 
 void CPlayerQuest::Refuse()

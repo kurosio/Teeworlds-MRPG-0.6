@@ -371,23 +371,25 @@
               </div>
             </div>
 
-            <div id="questEditor" class="editor-card p-6 hidden">
-              <div class="flex items-center justify-between gap-3">
-                <div>
-                  <div class="font-semibold">Quest Settings</div>
-                  <div class="editor-muted-text text-sm">Quest name is limited to 24 characters (C++/DB limit).</div>
-                </div>
-              </div>
+			<div id="questEditor" class="editor-card p-6 hidden">
+			  <div class="flex items-center justify-between gap-3">
+				<div>
+				  <div class="font-semibold">Quest Settings</div>
+				  <div class="editor-muted-text text-sm">Quest name is limited to 24 characters (C++/DB limit).</div>
+				  <div class="editor-muted-text text-xs mt-2" id="questRconHint"></div>
+				</div>
+			  </div>
               <div id="questForm" class="mt-4"></div>
             </div>
 
-            <div id="stepEditor" class="editor-card p-6 hidden">
-              <div class="flex items-center justify-between gap-3">
-                <div>
-                  <div class="font-semibold">Mob Step</div>
-                  <div class="editor-muted-text text-sm">tw_bots_quest settings + tasks and dialogs.</div>
-                </div>
-              </div>
+			<div id="stepEditor" class="editor-card p-6 hidden">
+			  <div class="flex items-center justify-between gap-3">
+				<div>
+				  <div class="font-semibold">Mob Step</div>
+				  <div class="editor-muted-text text-sm">tw_bots_quest settings + tasks and dialogs.</div>
+				  <div class="editor-muted-text text-xs mt-2" id="stepRconHint"></div>
+				</div>
+			  </div>
               <div class="mt-4">
                 <div class="step-tabs">
                   <div id="stepTabs"></div>
@@ -439,7 +441,8 @@
     empty: $('editorEmpty'), questEditor: $('questEditor'), stepEditor: $('stepEditor'),
     questForm: $('questForm'), stepTabs: $('stepTabs'),
     stepBaseForm: $('stepBaseForm'), stepTasksEditor: $('stepTasksEditor'),
-    dialogForm: $('dialogForm'), dirtyPill: $('dirty-pill'), typeFilter: $('typeFilter'),
+	dialogForm: $('dialogForm'), dirtyPill: $('dirty-pill'), typeFilter: $('typeFilter'),
+	stepRconHint: $('stepRconHint'), questRconHint: $('questRconHint'),
   });
 
   const QuestFlags = Object.freeze({
@@ -694,6 +697,7 @@
     q.Exp = toNum(d?.Exp);
     q.Flags = buildFlags(d?.Flags);
     markQuestDirty(q.ID);
+	renderRconHints();
     scheduleTreeRender();
   };
 
@@ -708,6 +712,7 @@
     s.AutoFinish = d?.AutoFinish ? 'Partial' : null;
     s.ScenarioData = String(d?.ScenarioData || '');
     markStepDirty(s.ID);
+    renderRconHints();
     scheduleTreeRender();
   };
 
@@ -1124,6 +1129,30 @@
     }
   };
 
+	const renderRconHints = () => {
+	  if (DOM.stepRconHint) {
+		const s = selectedStep();
+		if (s && s.QuestID) {
+		  const step = toNum(s.Step, 1);
+		  DOM.stepRconHint.innerHTML =
+			`<b>Rcon for testing:</b> <code>quest accept ${s.QuestID} ${step}</code><br>` +
+			`<b>Rcon for deny:</b> <code>quest deny ${s.QuestID}</code>`;
+		} else {
+		  DOM.stepRconHint.innerHTML = '';
+		}
+	  }
+	  if (DOM.questRconHint) {
+		const q = selectedQuest();
+		if (q) {
+		  DOM.questRconHint.innerHTML =
+			`<b>Rcon for testing:</b> <code>quest accept ${q.ID}</code><br>` +
+			`<b>Rcon for deny:</b> <code>quest deny ${q.ID}</code>`;
+		} else {
+		  DOM.questRconHint.innerHTML = '';
+		}
+	  }
+	};
+
   const resetHeader = () => {
     DOM.title.textContent    = 'Select a tree element';
     DOM.subtitle.textContent = 'quest or mob step';
@@ -1163,6 +1192,7 @@
 
     ensureStepTabs();
     showEditor('step');
+	renderRconHints();
     scheduleTreeRender();
   };
 
@@ -1509,6 +1539,7 @@
     DOM.questForm.querySelector('input[name="Name"]')?.setAttribute('maxlength', '24');
 
     showEditor('quest');
+	renderRconHints();
     renderTree({ preserveScroll: !reset });
     if (reset && DOM.tree) DOM.tree.scrollTop = 0;
   };

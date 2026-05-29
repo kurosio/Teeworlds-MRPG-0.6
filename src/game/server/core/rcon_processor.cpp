@@ -1,4 +1,4 @@
-﻿#include "rcon_processor.h"
+#include "rcon_processor.h"
 
 #include <engine/server.h>
 #include <game/server/gamecontext.h>
@@ -37,7 +37,8 @@ void RconProcessor::Init(IConsole* pConsole, IServer* pServer)
 	pConsole->Register("tele_to_client", "i[cid]", CFGFLAG_SERVER, ConTeleportToClient, pServer, "Teleport to client");
 	pConsole->Register("tele_client", "i[actor]i[target]", CFGFLAG_SERVER, ConTeleportClient, pServer, "Teleport client to another client");
 	pConsole->Register("position", "?i[cid]", CFGFLAG_SERVER, ConPosition, pServer, "Get position by client (default self position)");
-	pConsole->Register("quest", "?s[state]?i[quest_id]", CFGFLAG_SERVER, ConQuest, pServer, "Accept or reset the quest with the specified ID");
+	pConsole->Register("quest", "s[action] i[quest_id] ?i[step]", CFGFLAG_SERVER, ConQuest, pServer,
+		"Force accept or deny a quest for tests: quest <accept|deny> <cid> <quest_id> [step]");
 
 	// chain's
 	pConsole->Chain("sv_motd", ConchainSpecialMotdupdate, pServer);
@@ -522,65 +523,73 @@ void RconProcessor::ConBansAcc(IConsole::IResult* pResult, void* pUserData)
 
 void RconProcessor::ConQuest(IConsole::IResult* pResult, void* pUser)
 {
-	const auto ClientID = pResult->GetClientID();
-	const char* pStatus = pResult->GetString(0);
-	auto* pGS = GetCommandResultGameServer(ClientID, pUser);
-	auto* pPlayer = pGS->GetPlayer(ClientID);
-	if(!pPlayer || !pPlayer->IsAuthed())
+	const char* pAction = pResult->GetString(0);
+	const int TargetCID = pResult->GetClientID();
+	const int QuestID = pResult->GetInteger(1);
+	const int StartStep = pResult->GetIntegerOr(2, 1);
+
+	// check valid client and player
+	auto* pServer = (IServer*)pUser;
+	auto* pDefaultGS = (CGS*)pServer->GameServer(INITIALIZER_WORLD_ID);
+	if(TargetCID < 0 || TargetCID >= MAX_CLIENTS || !pServer->ClientIngame(TargetCID))
 	{
-		pGS->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "quest", "Log in to account after which use.");
+		pDefaultGS->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "quest", "I can't find the player.");
 		return;
 	}
-	auto TryGetValidPlayerQuest = [pGS, pPlayer, pResult]() -> CPlayerQuest*
-	{
-		const auto QuestID = pResult->GetInteger(1);
-		if(!CQuestDescription::Data().contains(QuestID))
-		{
-			pGS->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "quest", "The quest with this ID does not exist.");
-			return nullptr;
-		}
-		return pPlayer->GetQuest(QuestID);
-	};
 
-	if(str_comp(pStatus, "list") == 0)
+	auto* pGS = GetCommandResultGameServer(TargetCID, pUser);
+	auto* pPlayer = pGS->GetPlayer(TargetCID);
+	if(!pPlayer || !pPlayer->IsAuthed())
 	{
-		for(auto& [ID, pQuestInfo] : CQuestDescription::Data())
+		pGS->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "quest", "I can't find the player, or he's not authed.");
+		return;
+	}
+
+	// check valid quest
+	if(!CQuestDescription::Data().contains(QuestID))
+	{
+		pGS->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "quest", "The quest with this ID does not exist.");
+		return;
+	}
+
+	// accept
+	auto* pPlayerQuest = pPlayer->GetQuest(QuestID);
+	if(str_comp(pAction, "accept") == 0)
+	{
+		if(StartStep < 1 || (pResult->NumArguments() > 2 && !pPlayerQuest->Info()->HasObjectives(StartStep)))
 		{
-			auto* pPlayerQuest = pPlayer->GetQuest(ID);
-			pGS->Console()->PrintFormat(IConsole::OUTPUT_LEVEL_STANDARD, "quest_list",
-				"ID: %d | Name: %s | State: %s", ID, pQuestInfo->GetName(), GetQustStateName(pPlayerQuest->GetState()));
+			pGS->Console()->PrintFormat(IConsole::OUTPUT_LEVEL_STANDARD, "quest", "Quest '%s:%d' doesn't have step %d.",
+				pPlayerQuest->Info()->GetName(), pPlayerQuest->GetID(), StartStep);
+			return;
+		}
+
+		if(pPlayerQuest->Restart(StartStep))
+		{
+			pGS->Console()->PrintFormat(IConsole::OUTPUT_LEVEL_STANDARD, "quest", "Quest '%s:%d' force accepted for client %d from step %d.",
+				pPlayerQuest->Info()->GetName(), pPlayerQuest->GetID(), TargetCID, StartStep);
 		}
 	}
-	else if(str_comp(pStatus, "accept") == 0)
+	// deny
+	else if(str_comp(pAction, "deny") == 0)
 	{
-		auto* pPlayerQuest = TryGetValidPlayerQuest();
-		if(pPlayerQuest)
+		if(pPlayerQuest->IsAccepted() || pPlayerQuest->IsCompleted())
 		{
-			if(pPlayerQuest->IsAccepted() || pPlayerQuest->IsCompleted())
-				pGS->Console()->PrintFormat(IConsole::OUTPUT_LEVEL_STANDARD, "quest", "The quest is either completed or already accepted.");
-			if(pPlayerQuest->Accept())
-				pGS->Console()->PrintFormat(IConsole::OUTPUT_LEVEL_STANDARD, "quest", "Quest '%s:%d' successful accepted!",
-					pPlayerQuest->Info()->GetName(), pPlayerQuest->GetID());
+			pPlayerQuest->Reset();
+			pGS->Console()->PrintFormat(IConsole::OUTPUT_LEVEL_STANDARD, "quest", "Quest '%s:%d' force denied for client %d.",
+				pPlayerQuest->Info()->GetName(), pPlayerQuest->GetID(), TargetCID);
 		}
-	}
-	else if(str_comp(pStatus, "reset") == 0)
-	{
-		auto* pPlayerQuest = TryGetValidPlayerQuest();
-		if(pPlayerQuest)
+		else
 		{
-			if(pPlayerQuest->IsAccepted() || pPlayerQuest->IsCompleted())
-			{
-				pPlayerQuest->Reset();
-				pGS->Console()->PrintFormat(IConsole::OUTPUT_LEVEL_STANDARD, "quest", "Quest '%s:%d' successful refused!",
-					pPlayerQuest->Info()->GetName(), pPlayerQuest->GetID());
-			}
+			pGS->Console()->PrintFormat(IConsole::OUTPUT_LEVEL_STANDARD, "quest", "Quest '%s:%d' is not accepted by client %d.",
+				pPlayerQuest->Info()->GetName(), pPlayerQuest->GetID(), TargetCID);
 		}
 	}
 	else
 	{
-		pGS->Console()->PrintFormat(IConsole::OUTPUT_LEVEL_STANDARD, "quest", "Use 'quest <list, accept, reset> <quest_id>.");
+		pGS->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "quest", "Use 'quest <accept|deny> <client_id> <quest_id> [step]'.");
 	}
 }
+
 
 
 void RconProcessor::ConchainSpecialMotdupdate(IConsole::IResult* pResult, void* pUserData, IConsole::FCommandCallback pfnCallback, void* pCallbackUserData)

@@ -183,7 +183,8 @@ public:
 	void SkipObjectivesAndFinish();
 
 	void Update();
-	bool Accept();
+	bool Accept(int StartStep = 1);
+	bool Restart(int StartStep = 1);
 	void Refuse();
 	void Reset();
 
