@@ -1,272 +1,285 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Квесты • tw_quests_list + tw_bots_quest</title>
+  <title>Quests • tw_quests_list + tw_bots_quest</title>
   <script src="editor-core/page-loader.js" data-mode="event"></script>
 
   <style>
+    /* ════════ Tree ════════ */
+    .quest-tree { display:flex; flex-direction:column; gap:10px; font-size:13px; }
 
-    .quest-tree{
-      display:flex;
-      flex-direction:column;
-      gap:10px;
-      font-size: 13px;
-    }
-
-    .quest-node{
+    .quest-node {
       border:1px solid var(--editor-soft-border);
-      border-radius:12px;
-      padding:10px;
-      background: var(--editor-soft-bg);
+      border-radius:12px; padding:10px;
+      background:var(--editor-soft-bg);
+      transition: box-shadow .15s ease;
+      min-width: 0;
     }
-
-    .quest-node-header{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:8px;
-      padding-bottom:8px;
+    .quest-node-header {
+      display:flex; align-items:center; justify-content:space-between;
+      gap:8px; padding-bottom:8px;
       border-bottom:1px dashed var(--editor-soft-border);
+      min-width: 0;
     }
-
-    .quest-node-title{
-      display:flex;
-      align-items:center;
-      gap:8px;
-      font-weight:600;
-      cursor:pointer;
+    .quest-node-title {
+      display:flex; align-items:center; gap:8px;
+      font-weight:600; cursor:pointer; min-width:0; flex: 1 1 auto;
     }
-
-    .quest-node-toggle{
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      width:28px;
-      height:28px;
-      border-radius:8px;
-      border:1px solid var(--editor-soft-border);
-      background: var(--editor-soft-bg);
-      color:var(--editor-text-muted);
-      cursor:pointer;
-      flex-shrink:0;
+    .quest-node-title > span {
+      overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0;
+    }
+    .quest-node-title .badge {
+      font-size:11px; padding:2px 6px; border-radius:999px;
+      background:var(--editor-light-bg); border:1px solid var(--editor-soft-border);
+      color:var(--editor-accent); flex-shrink:0;
+    }
+    .quest-node-meta { font-size:11px; color:var(--editor-text-muted); white-space:nowrap; flex-shrink:0; }
+    .quest-node-toggle {
+      display:flex; align-items:center; justify-content:center;
+      width:28px; height:28px; border-radius:8px;
+      border:1px solid var(--editor-soft-border); background:var(--editor-soft-bg);
+      color:var(--editor-text-muted); cursor:pointer; flex-shrink:0;
       transition: transform .15s ease, color .15s ease, border-color .15s ease;
     }
+    .quest-node-toggle i { transition: transform .15s ease; }
+    .quest-node.is-expanded .quest-node-toggle { border-color:var(--editor-accent); color:var(--editor-accent); }
+    .quest-node.is-expanded .quest-node-toggle i { transform: rotate(90deg); }
+    .quest-node.is-collapsed .step-list { display:none; }
 
-    .quest-node-toggle i{
-      transition: transform .15s ease;
+    .quest-node.is-dirty > .quest-node-header .quest-node-title::after,
+    .step-node.is-dirty .step-node-name-text::after {
+      content:'●'; color:var(--editor-warning, #f59e0b);
+      font-size:10px; margin-left:4px;
     }
 
-    .quest-node.is-expanded .quest-node-toggle{
-      border-color: var(--editor-accent);
-      color: var(--editor-accent);
-    }
+    /* ════════ Step nodes ════════ */
+    .step-list { display:flex; flex-direction:column; gap:6px; margin-top:10px; position:relative; }
 
-    .quest-node.is-expanded .quest-node-toggle i{
-      transform: rotate(90deg);
-    }
-
-    .quest-node.is-collapsed .step-list{
-      display:none;
-    }
-
-    .quest-node-title .badge{
-      font-size:11px;
-      padding:2px 6px;
-      border-radius:999px;
-      background: var(--editor-light-bg);
+    .step-node {
+      display:flex; flex-direction:column; gap:6px;
+      padding:8px 10px; border-radius:10px;
       border:1px solid var(--editor-soft-border);
-      color: var(--editor-accent);
+      background:var(--editor-field-bg);
+      transition: box-shadow .15s ease, border-color .15s ease;
+      min-width:0;
+      will-change: transform;
+    }
+    .step-node[draggable="true"] { cursor: grab; }
+    .step-node[draggable="true"]:active { cursor: grabbing; }
+    .step-node[draggable="true"] .step-quick-btn,
+    .step-node[draggable="true"] .step-node-level { cursor: pointer; }
+    .step-node[draggable="true"] .step-quick-btn.is-grab { cursor: grab; }
+
+    .step-node.is-dragging {
+      opacity: 0.4;
+      transform: scale(0.97);
+      transition: opacity .15s ease, transform .15s ease;
     }
 
-    .quest-node-meta{
-      font-size:11px;
-      color:var(--editor-text-muted);
+    .step-node-header {
+      display:flex; align-items:center; justify-content:space-between;
+      gap:8px; cursor:pointer; min-width:0;
     }
-
-    .step-list{
-      display:flex;
-      flex-direction:column;
-      gap:6px;
-      margin-top:10px;
+    .step-node-title {
+      display:flex; align-items:center; gap:8px;
+      min-width:0; flex:1 1 auto; overflow:hidden;
     }
-
-    .step-node{
-      display:flex;
-      flex-direction:column;
-      gap:6px;
-      padding:8px 10px;
-      border-radius:10px;
-      border:1px solid var(--editor-soft-border);
-      background: var(--editor-field-bg);
-    }
-
-    .step-node-header{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:8px;
-      cursor:pointer;
-    }
-
-    .step-node-actions{
-      display:flex;
-      align-items:center;
-      gap:6px;
-    }
-
-    .step-node-level{
-      width:64px;
-      text-align:center;
-    }
-
-    .step-node-title{
-      display:flex;
-      align-items:center;
-      gap:6px;
-      font-weight:600;
-    }
-
-    .step-node-preview{
-      width:32px;
-      height:32px;
-      border-radius:999px;
+    .step-node-preview {
+      width:32px; height:32px; border-radius:999px;
       border:1px solid var(--editor-soft-border-strong);
-      background: var(--editor-soft-bg-strong);
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      overflow:hidden;
-      flex-shrink:0;
+      background:var(--editor-soft-bg-strong);
+      display:flex; align-items:center; justify-content:center;
+      overflow:hidden; flex-shrink:0;
+    }
+    .step-node-preview img { width:100%; height:100%; object-fit:cover; display:block; }
+    .step-node-info { display:flex; flex-direction:column; min-width:0; flex:1 1 auto; overflow:hidden; }
+    .step-node-name { display:flex; align-items:center; gap:6px; min-width:0; }
+    .step-node-name-text {
+      font-size:12px; font-weight:600; min-width:0; flex:1 1 auto;
+      overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    }
+    .step-node-id {
+      font-size:10px; padding:1px 6px; border-radius:999px;
+      background:var(--editor-light-bg); border:1px solid var(--editor-soft-border);
+      color:var(--editor-accent); flex-shrink:0; font-weight:500;
+    }
+    .step-node-sub {
+      font-size:10px; color:var(--editor-text-muted); line-height:1.3;
+      overflow:hidden; text-overflow:ellipsis; white-space:nowrap;
+    }
+    .step-node-actions { display:flex; align-items:center; gap:4px; flex-shrink:0; }
+    .step-node-level {
+      width:44px !important; text-align:center;
+      padding:4px 2px !important; font-size:12px;
     }
 
-    .step-node-preview img{
-      width:100%;
-      height:100%;
-      object-fit:cover;
-      display:block;
+    .step-node-quick { display:flex; align-items:center; gap:2px; flex-shrink:0; }
+    .step-quick-btn {
+      width:22px; height:22px; padding:0;
+      display:inline-flex; align-items:center; justify-content:center;
+      border-radius:6px; border:1px solid transparent;
+      background:transparent; color:var(--editor-text-muted);
+      cursor:pointer; font-size:11px;
+      transition: background .12s ease, color .12s ease, border-color .12s ease, transform .08s ease;
+    }
+    .step-quick-btn:hover {
+      background:var(--editor-light-bg); color:var(--editor-accent);
+      border-color:var(--editor-soft-border);
+    }
+    .step-quick-btn:active { transform: scale(0.92); }
+    .step-quick-btn.is-danger:hover {
+      color:var(--editor-danger, #ef4444);
+      border-color:var(--editor-danger, #ef4444);
+    }
+    .step-quick-btn.is-grab { cursor: grab; }
+    .step-quick-btn.is-grab:active { cursor: grabbing; }
+
+    /* ════════ DnD tree: indicator + drop-zone ════════ */
+    .step-drop-indicator {
+      height: 3px;
+      background: linear-gradient(90deg,
+        transparent 0%,
+        var(--editor-primary, #6366f1) 20%,
+        var(--editor-primary, #6366f1) 80%,
+        transparent 100%);
+      border-radius: 999px;
+      margin: -3px 0;
+      opacity: 0;
+      transform: scaleY(0);
+      transform-origin: center;
+      transition: opacity .15s ease, transform .15s ease;
+      pointer-events: none;
+      box-shadow: 0 0 8px rgba(99, 102, 241, .6);
+    }
+    .step-drop-indicator.is-active {
+      opacity: 1;
+      transform: scaleY(1);
     }
 
-    .step-node-sub{
-      font-size:11px;
-      color:var(--editor-text-muted);
+    .step-drop-zone {
+      min-height: 8px;
+      border-radius: 8px;
+      transition: background .15s ease, min-height .15s ease;
+    }
+    .step-drop-zone.is-active {
+      min-height: 32px;
+      background: var(--editor-light-bg);
+      border: 2px dashed var(--editor-primary, #6366f1);
     }
 
-    .step-node-tabs{
-      display:grid;
-      grid-template-columns:repeat(3, minmax(0,1fr));
-      gap:6px;
-      margin-left:12px;
+    .tree-selected { box-shadow: 0 0 0 2px rgba(99,102,241,.35); }
+    .quest-node.tree-drag-over {
+      border-color: var(--editor-primary, #6366f1) !important;
+      background: var(--editor-light-bg) !important;
+      box-shadow: 0 0 0 2px rgba(99, 102, 241, .25);
+    }
+    .quest-node.tree-drag-over .step-list { padding: 4px 0; }
+
+    /* ════════ Editor panels ════════ */
+    .step-section {
+      padding:12px; border:1px solid var(--editor-soft-border);
+      border-radius:12px; background:var(--editor-soft-bg);
+    }
+    .step-section + .step-section { margin-top:12px; }
+    .step-section-title {
+      display:flex; align-items:center; justify-content:space-between;
+      gap:8px; font-weight:600; margin-bottom:8px;
+    }
+    .step-section-sub { font-size:12px; color:var(--editor-text-muted); margin-bottom:8px; }
+    .step-tabs { display:flex; flex-direction:column; gap:12px; }
+    .step-tab-panel.is-hidden { display:none; }
+    .is-hidden { display:none !important; }
+
+    .step-base-grid {
+      display:grid; grid-template-columns: minmax(0, 1fr); gap:16px;
+    }
+    @media (min-width: 640px) {
+      .step-base-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    .step-base-grid .editor-field { grid-column: 1 / -1; }
+    .step-base-grid .editor-field[data-field-path="BotID"],
+    .step-base-grid .editor-field[data-field-path="QuestID"] { grid-column: span 1; }
+
+    .kbd-hint { font-size:10px; color:var(--editor-text-muted); opacity:.7; margin-left:6px; }
+
+    /* ════════ Task items ════════ */
+    .editor-items {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
     }
 
-    .step-node-tab{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:6px;
-      padding:6px 8px;
-      border-radius:8px;
-      border:1px solid var(--editor-soft-border);
-      background: var(--editor-soft-bg);
-      cursor:pointer;
-      font-size:11px;
-      color:var(--editor-text);
+    .editor-item {
+      position: relative;
+      display: block;
+      background: var(--editor-field-bg);
+      border: 1px solid var(--editor-soft-border);
+      border-radius: 10px;
+      padding: 10px;
+      transition: box-shadow .15s ease, transform .15s ease, opacity .15s ease;
     }
 
-    .step-node-tab.is-active{
-      border-color: var(--editor-accent);
+    .editor-item-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .editor-item-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .editor-item.is-collapsed .editor-item-body { display: none; }
+    .editor-item.is-collapsed .editor-item-actions [data-task-toggle] i {
+      transform: rotate(-90deg);
+    }
+    .editor-item-actions [data-task-toggle] i { transition: transform .15s ease; }
+
+    /* Sortable */
+    .editor-item.sortable-ghost {
+      opacity: 0.35;
+      background: var(--editor-light-bg);
+      border-style: dashed;
+    }
+    .editor-item.sortable-chosen {
+      box-shadow: 0 0 0 2px var(--editor-primary, #6366f1);
+    }
+    .editor-item.sortable-drag {
+      opacity: 0.95;
+      cursor: grabbing !important;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+    }
+    body > .editor-item.sortable-drag {
+      position: fixed !important;
+      pointer-events: none !important;
+      z-index: 100000 !important;
+      transform: rotate(-1deg);
+    }
+
+    .editor-item-handle {
+      cursor: grab;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 26px; height: 26px;
+      border-radius: 6px;
+      color: var(--editor-text-muted);
+      transition: background .12s ease, color .12s ease;
+      touch-action: none;
+    }
+    .editor-item-handle:hover {
       background: var(--editor-light-bg);
       color: var(--editor-accent);
     }
+    .editor-item-handle:active { cursor: grabbing; }
 
-    .step-node-tab small{
-      color:var(--editor-text-muted);
-    }
-
-    .tree-selected{
-      box-shadow: 0 0 0 2px rgba(99,102,241,.35);
-    }
-
-    .tree-drag-over{
-      border-color: var(--editor-primary);
-      background: var(--editor-light-bg);
-    }
-
-    .editor-mini-panel{
-      border:1px solid var(--editor-soft-border);
-      border-radius:12px;
-      padding:12px;
-      background: var(--editor-soft-bg);
-    }
-
-    .editor-mini-panel h3{
-      font-size:13px;
-      font-weight:600;
-      margin-bottom:8px;
-    }
-
-    .step-section{
-      padding:12px;
-      border:1px solid var(--editor-soft-border);
-      border-radius:12px;
-      background: var(--editor-soft-bg);
-    }
-
-    .step-section + .step-section{
-      margin-top:12px;
-    }
-
-    .step-section-title{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:8px;
-      font-weight:600;
-      margin-bottom:8px;
-    }
-
-    .step-section-sub{
-      font-size:12px;
-      color:var(--editor-text-muted);
-      margin-bottom:8px;
-    }
-
-    .step-tabs{
-      display:flex;
-      flex-direction:column;
-      gap:12px;
-    }
-
-    .step-tab-panel.is-hidden{
-      display:none;
-    }
-
-    .is-hidden{
-      display:none !important;
-    }
-
-    .step-base-grid{
-      display:grid;
-      grid-template-columns: minmax(0,1fr);
-      gap:16px;
-    }
-
-    @media (min-width: 640px){
-      .step-base-grid{
-        grid-template-columns: repeat(2, minmax(0,1fr));
-      }
-    }
-
-    .step-base-grid .editor-field{
-      grid-column: 1 / -1;
-    }
-
-    .step-base-grid .editor-field[data-field-path="BotID"],
-    .step-base-grid .editor-field[data-field-path="QuestID"]{
-      grid-column: span 1;
-    }
-
+    .editor-items .editor-item { -webkit-user-drag: none; }
   </style>
 </head>
 
@@ -276,16 +289,16 @@
       <div class="editor-page-title">
         <i class="fa-solid fa-scroll text-accent text-xl"></i>
         <div>
-          <h1>Квесты</h1>
-          <div class="editor-page-sub">Дерево квестов, шаги мобов и задачи: всё в одном редакторе.</div>
+          <h1>Quests</h1>
+          <div class="editor-page-sub">Quest tree, mob steps and tasks: all in one editor.</div>
         </div>
       </div>
       <div class="editor-page-actions">
-        <button id="refreshBtn" class="editor-btn editor-btn-secondary">
-          <i class="fa-solid fa-rotate"></i><span>Обновить</span>
+        <button id="refreshBtn" class="editor-btn editor-btn-secondary" title="Refresh">
+          <i class="fa-solid fa-rotate"></i><span>Refresh</span>
         </button>
-        <button id="saveBtn" class="editor-btn editor-btn-primary">
-          <i class="fa-solid fa-floppy-disk"></i><span>Сохранить</span>
+        <button id="saveBtn" class="editor-btn editor-btn-primary" title="Ctrl+S">
+          <i class="fa-solid fa-floppy-disk"></i><span>Save</span>
         </button>
       </div>
     </div>
@@ -295,10 +308,12 @@
         <div class="editor-dock-pad">
           <div class="editor-sidebar-head">
             <div>
-              <div class="text-sm font-semibold">Дерево квестов</div>
-              <div class="editor-sidebar-meta">Квесты: <span id="questCount">—</span> · Шаги: <span id="stepCount">—</span></div>
+              <div class="text-sm font-semibold">Quest Tree</div>
+              <div class="editor-sidebar-meta">
+                Quests: <span id="questCount">—</span> · Steps: <span id="stepCount">—</span>
+              </div>
             </div>
-            <button id="newQuestBtn" class="editor-btn editor-btn-secondary" title="Новый квест">
+            <button id="newQuestBtn" class="editor-btn editor-btn-secondary" title="New quest">
               <i class="fa-solid fa-plus"></i>
             </button>
           </div>
@@ -306,16 +321,17 @@
           <div class="mt-3">
             <div class="editor-search">
               <i class="fa-solid fa-magnifying-glass"></i>
-              <input id="searchInput" class="w-full editor-input form-input" placeholder="Поиск по квесту / шагу / мобу / миру" />
+              <input id="searchInput" class="w-full editor-input form-input"
+                     placeholder="Search by quest / step / mob / world" />
             </div>
             <div class="mt-2">
               <select id="typeFilter" class="w-full editor-input form-input">
-                <option value="all">Все типы квестов</option>
-                <option value="Type main">Основные</option>
-                <option value="Type side">Побочные</option>
-                <option value="Type daily">Ежедневные</option>
-                <option value="Type weekly">Еженедельные</option>
-                <option value="Type repeatable">Повторяемые</option>
+                <option value="all">All quest types</option>
+                <option value="Type main">Main</option>
+                <option value="Type side">Side</option>
+                <option value="Type daily">Daily</option>
+                <option value="Type weekly">Weekly</option>
+                <option value="Type repeatable">Repeatable</option>
                 <option value="Tutorial">Tutorial</option>
               </select>
             </div>
@@ -329,33 +345,37 @@
         <div class="editor-dock-pad">
           <div class="editor-sticky-toolbar flex items-start justify-between gap-4">
             <div class="min-w-0">
-              <div class="text-2xl font-bold" id="editorTitle">Выберите элемент дерева</div>
-              <div class="editor-muted-text" id="editorSubtitle">квест или шаг моба</div>
+              <div class="text-2xl font-bold" id="editorTitle">Select a tree element</div>
+              <div class="editor-muted-text" id="editorSubtitle">quest or mob step</div>
             </div>
             <div class="flex flex-wrap gap-2">
-              <span id="dirty-pill" class="editor-dirty-pill hidden">Данные не сохранены</span>
+              <span id="dirty-pill" class="editor-dirty-pill hidden">Unsaved changes</span>
               <button id="newStepBtn" class="editor-btn editor-btn-secondary hidden" disabled>
-                <i class="fa-solid fa-person-walking"></i><span>Новый шаг</span>
+                <i class="fa-solid fa-person-walking"></i><span>New Step</span>
+              </button>
+              <button id="duplicateBtn" class="editor-btn editor-btn-secondary hidden" disabled title="Duplicate (Ctrl+D)">
+                <i class="fa-solid fa-copy"></i><span>Duplicate</span>
               </button>
               <button id="deleteBtn" class="editor-btn editor-btn-danger hidden" disabled>
-                <i class="fa-solid fa-trash"></i><span>Удалить</span>
+                <i class="fa-solid fa-trash"></i><span>Delete</span>
               </button>
             </div>
           </div>
 
           <div class="mt-6 space-y-6">
             <div id="editorEmpty" class="editor-card p-6">
-              <div class="font-semibold">Редактор квестов</div>
+              <div class="font-semibold">Quest Editor</div>
               <div class="editor-muted-text text-sm mt-2">
-                Выберите элемент слева, чтобы увидеть его настройки. Шаги можно перетаскивать между квестами.
+                Select an element on the left to see its settings. Steps can be dragged between quests.
+                <br><span class="kbd-hint">Ctrl+S — save · Del — delete · Ctrl+D — duplicate step</span>
               </div>
             </div>
 
             <div id="questEditor" class="editor-card p-6 hidden">
               <div class="flex items-center justify-between gap-3">
                 <div>
-                  <div class="font-semibold">Настройки квеста</div>
-                  <div class="editor-muted-text text-sm">Имя квеста ограничено 24 символами (лимит C++/DB).</div>
+                  <div class="font-semibold">Quest Settings</div>
+                  <div class="editor-muted-text text-sm">Quest name is limited to 24 characters (C++/DB limit).</div>
                 </div>
               </div>
               <div id="questForm" class="mt-4"></div>
@@ -364,8 +384,8 @@
             <div id="stepEditor" class="editor-card p-6 hidden">
               <div class="flex items-center justify-between gap-3">
                 <div>
-                  <div class="font-semibold">Шаг моба</div>
-                  <div class="editor-muted-text text-sm">Настройки tw_bots_quest + задачи и диалоги.</div>
+                  <div class="font-semibold">Mob Step</div>
+                  <div class="editor-muted-text text-sm">tw_bots_quest settings + tasks and dialogs.</div>
                 </div>
               </div>
               <div class="mt-4">
@@ -373,24 +393,24 @@
                   <div id="stepTabs"></div>
                   <div class="step-tab-panel" data-step-tab-panel="mob">
                     <div class="step-section">
-                      <div class="step-section-title">Редактор шага</div>
-                      <div class="step-section-sub">AutoFinish: авто-завершение шага при выполнении условий.</div>
+                      <div class="step-section-title">Step Editor</div>
+                      <div class="step-section-sub">AutoFinish: auto-complete step when conditions are met.</div>
                       <div id="stepBaseForm" class="step-base-grid"></div>
                     </div>
                   </div>
                   <div class="step-tab-panel is-hidden" data-step-tab-panel="dialog">
                     <div class="step-section">
                       <div class="step-section-title">
-                        <span>Редактор диалога</span>
+                        <span>Dialog Editor</span>
                         <span class="editor-muted-text text-xs">Side/Left/Right/Action</span>
                       </div>
-                      <div class="step-section-sub">Реплики отображаются в порядке списка. Для автора используйте side = author.</div>
+                      <div class="step-section-sub">Lines are displayed in list order.</div>
                       <div id="dialogForm"></div>
                     </div>
                   </div>
                   <div class="step-tab-panel is-hidden" data-step-tab-panel="tasks">
                     <div class="step-section">
-                      <div class="step-section-title">Редактор задач</div>
+                      <div class="step-section-title">Task Editor</div>
                       <div id="stepTasksEditor"></div>
                     </div>
                   </div>
@@ -405,1491 +425,1503 @@
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
   <script>
-    const { fieldRenderOptions } = window.EditorCoreBootstrap || EditorCore.bootstrapEditor({ mode: 'event' });
+  'use strict';
 
-    const DOM = {
-      tree: document.getElementById('tree'),
-      questCount: document.getElementById('questCount'),
-      stepCount: document.getElementById('stepCount'),
-      search: document.getElementById('searchInput'),
-      refresh: document.getElementById('refreshBtn'),
-      save: document.getElementById('saveBtn'),
-      newQuest: document.getElementById('newQuestBtn'),
-      newStep: document.getElementById('newStepBtn'),
-      deleteBtn: document.getElementById('deleteBtn'),
-      title: document.getElementById('editorTitle'),
-      subtitle: document.getElementById('editorSubtitle'),
-      empty: document.getElementById('editorEmpty'),
-      questEditor: document.getElementById('questEditor'),
-      stepEditor: document.getElementById('stepEditor'),
-      questForm: document.getElementById('questForm'),
-      stepTabs: document.getElementById('stepTabs'),
-      stepBaseForm: document.getElementById('stepBaseForm'),
-      stepTasksEditor: document.getElementById('stepTasksEditor'),
-      dialogForm: document.getElementById('dialogForm'),
-      dirtyPill: document.getElementById('dirty-pill'),
-      typeFilter: document.getElementById('typeFilter'),
-    };
+  const { fieldRenderOptions } = window.EditorCoreBootstrap || EditorCore.bootstrapEditor({ mode: 'event' });
 
-    const STATE = {
-      quests: [],
-      steps: [],
-      selected: null,
-      dirtyQuests: new Set(),
-      dirtySteps: new Set(),
-      newSteps: new Set(),
-      lastQuestScrollId: null,
-      expandedQuests: new Set(),
-      lookups: {
-        bots: new Map(),
-        worlds: new Map(),
-        botSkins: new Map(),
-      },
-      skinsApi: '',
-      stepTab: 'mob',
-      nextTempStepId: -1,
-    };
+  const $ = (id) => document.getElementById(id);
+  const DOM = Object.freeze({
+    tree: $('tree'), questCount: $('questCount'), stepCount: $('stepCount'),
+    search: $('searchInput'), refresh: $('refreshBtn'), save: $('saveBtn'),
+    newQuest: $('newQuestBtn'), newStep: $('newStepBtn'),
+    duplicateBtn: $('duplicateBtn'), deleteBtn: $('deleteBtn'),
+    title: $('editorTitle'), subtitle: $('editorSubtitle'),
+    empty: $('editorEmpty'), questEditor: $('questEditor'), stepEditor: $('stepEditor'),
+    questForm: $('questForm'), stepTabs: $('stepTabs'),
+    stepBaseForm: $('stepBaseForm'), stepTasksEditor: $('stepTasksEditor'),
+    dialogForm: $('dialogForm'), dirtyPill: $('dirty-pill'), typeFilter: $('typeFilter'),
+  });
 
-    const QuestFlags = {
-      typeMain: 'Type main',
-      typeSide: 'Type side',
-      typeDaily: 'Type daily',
-      typeWeekly: 'Type weekly',
-      typeRepeatable: 'Type repeatable',
-      cantRefuse: "Can't refuse",
-      noActivity: 'No activity point',
-      tutorial: 'Tutorial',
-    };
-    const QUEST_FLAG_OPTIONS = [
-      QuestFlags.typeMain,
-      QuestFlags.typeSide,
-      QuestFlags.typeDaily,
-      QuestFlags.typeWeekly,
-      QuestFlags.typeRepeatable,
-      QuestFlags.cantRefuse,
-      QuestFlags.noActivity,
-      QuestFlags.tutorial,
-    ];
+  const QuestFlags = Object.freeze({
+    typeMain: 'Type main', typeSide: 'Type side', typeDaily: 'Type daily',
+    typeWeekly: 'Type weekly', typeRepeatable: 'Type repeatable',
+    cantRefuse: "Can't refuse", noActivity: 'No activity point', tutorial: 'Tutorial',
+  });
+  const QUEST_FLAG_OPTIONS = Object.freeze(Object.values(QuestFlags));
 
-    const taskDefault = () => ({
-      required_items: [],
-      reward_items: [],
-      defeat_bots: [],
-      move_to: [],
+  const STEP_TABS = Object.freeze([
+    { id:'mob',    title:'General',  icon:'fa-person-walking' },
+    { id:'dialog', title:'Dialog',   icon:'fa-comments' },
+    { id:'tasks',  title:'Tasks',    icon:'fa-list-check' },
+  ]);
+
+  const TASK_SECTIONS = Object.freeze([
+    { id:'reward_items',   title:'Items rewarded on completion' },
+    { id:'required_items', title:'Items required for completion' },
+    { id:'defeat_bots',    title:'Bots that must be defeated for completion' },
+    { id:'move_to',        title:'Objectives that must be completed' },
+  ]);
+
+  const DIALOG_SIDE_OPTIONS = Object.freeze([
+    { value:'default',  label:'speaks to' },
+    { value:'author',   label:'author' },
+    { value:'thoughts', label:'thoughts' },
+  ]);
+  const DIALOG_EXTRA_SPEAKERS = Object.freeze([
+    { value:-1, label:'Player' },
+    { value: 0, label:'Current bot' },
+  ]);
+
+  const questFields = Object.freeze({
+    Name:        { type:'text',      label:'Quest Name',       validate:{ required:true }, ui:{ placeholder:'Quest name' } },
+    NextQuestID: { type:'db_select', label:'Next Quest',       ui:{ dbKey:'quest', placeholder:'— not set —' } },
+    Money:       { type:'number',    label:'Reward (money)',   ui:{ min:0, step:1, placeholder:'0' } },
+    Exp:         { type:'number',    label:'Reward (exp)',     ui:{ min:0, step:1, placeholder:'0' } },
+    Flags: {
+      type:'text', label:'Flags',
+      ui:{ type:'tags', options:QUEST_FLAG_OPTIONS, allowCreate:false, placeholder:'Add flag…' },
+    },
+  });
+
+  const stepBaseFields = Object.freeze({
+    BotID:        { type:'db_select', label:'Mob (BotID)',    ui:{ dbKey:'mob',   placeholder:'— mob —',   searchPlaceholder:'Search mob…' } },
+    QuestID:      { type:'db_select', label:'Quest',          ui:{ dbKey:'quest', placeholder:'— quest —', searchPlaceholder:'Search quest…' } },
+    Step:         { type:'number',    label:'Step Position',  ui:{ min:1, step:1 } },
+    WorldID:      { type:'db_select', label:'World',          ui:{ dbKey:'world', placeholder:'— world —', searchPlaceholder:'Search world…' } },
+    Position:     { type:'vec2',      label:'Position',       ui:{ step:1 } },
+    AutoFinish:   { type:'toggle',    label:'AutoFinish' },
+    ScenarioData: { type:'scenario',  label:'Scenario JSON',  ui:{ scenarioMode:'universal' } },
+  });
+
+  const STATE = {
+    quests: [], steps: [],
+    selected: null,
+    dirtyQuests: new Set(), dirtySteps: new Set(), newSteps: new Set(),
+    expandedQuests: new Set(),
+    lastQuestScrollId: null,
+    stepTab: 'mob',
+    nextTempStepId: -1,
+    lookups: { bots: new Map(), worlds: new Map(), botSkins: new Map() },
+    skinsApi: '',
+  };
+
+  const Drag = {
+    activeStepId: null,
+    activeIndicator: null,
+    activeDropZone: null,
+
+    reset() {
+      DOM.tree.querySelectorAll('.is-dragging').forEach(el => el.classList.remove('is-dragging'));
+      DOM.tree.querySelectorAll('.tree-drag-over').forEach(el => el.classList.remove('tree-drag-over'));
+      this.clearIndicator();
+      this.clearDropZone();
+      this.activeStepId = null;
+    },
+    setIndicator(el) {
+      if (this.activeIndicator === el) return;
+      this.clearIndicator();
+      this.clearDropZone();
+      if (el) { el.classList.add('is-active'); this.activeIndicator = el; }
+    },
+    clearIndicator() {
+      if (this.activeIndicator) { this.activeIndicator.classList.remove('is-active'); this.activeIndicator = null; }
+    },
+    setDropZone(el) {
+      if (this.activeDropZone === el) return;
+      this.clearDropZone();
+      this.clearIndicator();
+      if (el) { el.classList.add('is-active'); this.activeDropZone = el; }
+    },
+    clearDropZone() {
+      if (this.activeDropZone) { this.activeDropZone.classList.remove('is-active'); this.activeDropZone = null; }
+    },
+  };
+
+  const Runtime = { questForm:null, stepBase:null, dialog:null, stepTabsUi:null, taskSortables:{} };
+
+  /* ════════ UTILS ════════ */
+  const safeParse = (raw) => { try { return JSON.parse(raw); } catch { return null; } };
+  const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+  const toNum = (v, fb = 0) => { const n = Number(v); return Number.isFinite(n) ? n : fb; };
+  const norm = (v) => String(v ?? '').toLowerCase();
+  const _esc = document.createElement('div');
+  const esc = (s) => { _esc.textContent = String(s ?? ''); return _esc.innerHTML; };
+  const isObj = (v) => v && typeof v === 'object' && !Array.isArray(v);
+
+  const lookupLabel = (map, id) => {
+    const n = toNum(id);
+    if (!n) return '—';
+    return map?.get(String(n)) || `#${n}`;
+  };
+
+  const getLabelMap = async (source) => {
+    try {
+      const res = await EditorCore.DB.list(source, { limit:5000, offset:0 });
+      const map = new Map();
+      if (res?.ok && Array.isArray(res.items)) {
+        for (const it of res.items) map.set(String(it.value), String(it.label || ''));
+      }
+      return map;
+    } catch { return new Map(); }
+  };
+
+  /* ════════ FLAGS ════════ */
+  const parseFlags = (raw) => {
+    const src = Array.isArray(raw) ? raw : String(raw || '').split(',');
+    const seen = new Set();
+    const out = [];
+    for (const e of src) {
+      const f = String(e || '').trim();
+      if (!f || !QUEST_FLAG_OPTIONS.includes(f) || seen.has(f)) continue;
+      seen.add(f); out.push(f);
+    }
+    if (!out.some(f => f.startsWith('Type')) && !out.includes(QuestFlags.tutorial)) {
+      out.unshift(QuestFlags.typeMain);
+    }
+    return out;
+  };
+  const buildFlags = (f) => parseFlags(f).join(',');
+
+  /* ════════ TASKS ════════ */
+  const taskDefault = () => ({ required_items:[], reward_items:[], defeat_bots:[], move_to:[] });
+
+  const moveToDefaults = (i = {}) => ({
+    step: toNum(i.step, 1),
+    navigator: i.navigator ?? 'true',
+    name: i.name ?? '',
+    x: toNum(i.x), y: toNum(i.y),
+    world_id: toNum(i.world_id),
+    mode: i.mode ?? 'move',
+    cooldown: toNum(i.cooldown),
+    completion_text: i.completion_text ?? '',
+    interactive_x: toNum(i.interactive_x),
+    interactive_y: toNum(i.interactive_y),
+    defeat_bot_id: toNum(i.defeat_bot_id),
+    defeat_bot_attribute_power: toNum(i.defeat_bot_attribute_power, 10),
+    defeat_bot_world_id: toNum(i.defeat_bot_world_id),
+    required_item_id: toNum(i.required_item_id),
+    required_item_value: toNum(i.required_item_value),
+    pick_up_item_id: toNum(i.pick_up_item_id),
+    pick_up_item_value: toNum(i.pick_up_item_value),
+  });
+
+  const normalizeTasks = (raw) => {
+    const base = taskDefault();
+    if (!isObj(raw)) return base;
+    const c = { ...base, ...raw };
+
+    c.required_items = Array.isArray(c.required_items) ? c.required_items.filter(isObj) : [];
+    c.reward_items   = Array.isArray(c.reward_items)   ? c.reward_items.filter(isObj)   : [];
+
+    c.defeat_bots = Array.isArray(c.defeat_bots)
+      ? c.defeat_bots.filter(isObj).map(e => ({
+          id: toNum(e?.id ?? e?.bot_id),
+          value: toNum(e?.value ?? e?.count),
+        }))
+      : [];
+
+    c.move_to = Array.isArray(c.move_to)
+      ? c.move_to.filter(isObj).map(e => {
+          const p = e?.pick_up_item || {}, r = e?.required_item || {};
+          const it = e?.interactive || {}, df = e?.defeat_bot || {};
+          return moveToDefaults({
+            step:e?.step, name:e?.name, completion_text:e?.completion_text,
+            x:e?.x, y:e?.y, world_id:e?.world_id, mode:e?.mode,
+            navigator:e?.navigator, cooldown:e?.cooldown,
+            pick_up_item_id:p?.id, pick_up_item_value:p?.value,
+            required_item_id:r?.id, required_item_value:r?.value,
+            interactive_x:it?.x, interactive_y:it?.y,
+            defeat_bot_id: e?.defeat_bot_id ?? df?.id ?? df?.bot_id,
+            defeat_bot_attribute_power: e?.defeat_bot_attribute_power ?? df?.attribute_power,
+            defeat_bot_world_id: e?.defeat_bot_world_id ?? df?.world_id,
+          });
+        })
+      : [];
+    return c;
+  };
+
+  const denormalizeTasks = (n) => {
+    const raw = taskDefault();
+    if (!isObj(n)) return raw;
+
+    raw.required_items = Array.isArray(n.required_items) ? n.required_items.filter(isObj) : [];
+    raw.reward_items   = Array.isArray(n.reward_items)   ? n.reward_items.filter(isObj)   : [];
+
+    raw.defeat_bots = Array.isArray(n.defeat_bots)
+      ? n.defeat_bots.filter(isObj)
+          .map(e => ({ id:toNum(e?.id ?? e?.bot_id), value:toNum(e?.value ?? e?.count) }))
+          .filter(e => e.id > 0 && e.value > 0)
+      : [];
+
+    raw.move_to = Array.isArray(n.move_to) ? n.move_to.filter(isObj).map(e => {
+      const o = {
+        step:e?.step ?? 1, name:e?.name ?? '', completion_text:e?.completion_text ?? '',
+        x:e?.x ?? 0, y:e?.y ?? 0, world_id:e?.world_id ?? 0,
+        mode:e?.mode ?? 'move', navigator:e?.navigator ?? 'true', cooldown:e?.cooldown ?? 0,
+      };
+      if (e?.pick_up_item_id) o.pick_up_item = { id:toNum(e.pick_up_item_id), value:toNum(e.pick_up_item_value) };
+      if (e?.required_item_id) o.required_item = { id:toNum(e.required_item_id), value:toNum(e.required_item_value) };
+      if (e?.interactive_x || e?.interactive_y) o.interactive = { x:toNum(e.interactive_x), y:toNum(e.interactive_y) };
+      if (e?.defeat_bot_id) o.defeat_bot = {
+        id:toNum(e.defeat_bot_id), bot_id:toNum(e.defeat_bot_id),
+        attribute_power:toNum(e.defeat_bot_attribute_power, 10),
+        world_id:toNum(e.defeat_bot_world_id),
+      };
+      return o;
+    }) : [];
+    return raw;
+  };
+
+  /* ════════ DIRTY / COUNTS ════════ */
+  const isDirty = () => STATE.dirtyQuests.size || STATE.dirtySteps.size;
+  const setDirty = () => DOM.dirtyPill.classList.toggle('hidden', !isDirty());
+  const updateCounts = () => {
+    DOM.questCount.textContent = STATE.quests.length;
+    DOM.stepCount.textContent  = STATE.steps.length;
+  };
+  const markQuestDirty = (id) => { if (id) { STATE.dirtyQuests.add(id); setDirty(); } };
+  const markStepDirty  = (id) => { if (id) { STATE.dirtySteps.add(id);  setDirty(); } };
+
+  /* ════════ MODEL SYNC ════════ */
+  const selectedQuest = () => STATE.quests.find(q => q.ID === STATE.selected?.id);
+  const selectedStep  = () => STATE.steps.find(s => s.ID === STATE.selected?.id);
+
+  const syncQuest = (d) => {
+    const q = selectedQuest(); if (!q) return;
+    q.Name = String(d?.Name || '');
+    q.NextQuestID = toNum(d?.NextQuestID);
+    q.Money = toNum(d?.Money);
+    q.Exp = toNum(d?.Exp);
+    q.Flags = buildFlags(d?.Flags);
+    markQuestDirty(q.ID);
+    scheduleTreeRender();
+  };
+
+  const syncStepBase = (d) => {
+    const s = selectedStep(); if (!s) return;
+    s.BotID = toNum(d?.BotID);
+    s.QuestID = toNum(d?.QuestID);
+    s.Step = toNum(d?.Step, 1);
+    s.WorldID = toNum(d?.WorldID) || null;
+    s.PosX = toNum(d?.Position?.x);
+    s.PosY = toNum(d?.Position?.y);
+    s.AutoFinish = d?.AutoFinish ? 'Partial' : null;
+    s.ScenarioData = String(d?.ScenarioData || '');
+    markStepDirty(s.ID);
+    scheduleTreeRender();
+  };
+
+  const syncStepTasks = (next) => {
+    const s = selectedStep(); if (!s) return;
+    s.TasksData = normalizeTasks(next);
+    markStepDirty(s.ID);
+  };
+
+  const syncDialog = (d, meta = {}) => {
+    const s = selectedStep(); if (!s) return;
+    applyDialogConstraints(d, meta);
+    s.DialogData = Array.isArray(d?.DialogData) ? d.DialogData : [];
+    markStepDirty(s.ID);
+  };
+
+  const applyDialogConstraints = (data, meta = {}) => {
+    if (!window.EditorCore?.DialogEditor) return;
+    const candidates = EditorCore.DialogEditor.buildSpeakerCandidates(STATE.lookups.bots, DIALOG_EXTRA_SPEAKERS);
+    EditorCore.DialogEditor.applyConstraints({
+      root: DOM.dialogForm, data, meta,
+      sideOptions: DIALOG_SIDE_OPTIONS, speakerCandidates: candidates,
     });
+  };
 
-    const normalizeTasks = (raw) => {
-      const base = taskDefault();
-      if (!raw || typeof raw !== 'object') return base;
-      const copy = { ...base, ...raw };
-      copy.required_items = Array.isArray(copy.required_items) ? copy.required_items : [];
-      copy.reward_items = Array.isArray(copy.reward_items) ? copy.reward_items : [];
-      copy.defeat_bots = Array.isArray(copy.defeat_bots) ? copy.defeat_bots.map((entry) => ({
-        id: Number(entry?.id ?? entry?.bot_id ?? 0),
-        value: Number(entry?.value ?? entry?.count ?? 0),
-      })) : [];
-      copy.move_to = Array.isArray(copy.move_to) ? copy.move_to : [];
+  /* ════════ STEP TABS ════════ */
+  const setActiveStepTab = (tabId) => {
+    const next = STEP_TABS.some(t => t.id === tabId) ? tabId : STEP_TABS[0].id;
+    STATE.stepTab = next;
+    DOM.stepEditor?.querySelectorAll('[data-step-tab-panel]').forEach(p => {
+      p.classList.toggle('is-hidden', p.getAttribute('data-step-tab-panel') !== next);
+    });
+    Runtime.stepTabsUi?.setActive(next);
+  };
 
-      copy.move_to = copy.move_to.map((entry) => {
-        const pick = entry?.pick_up_item || {};
-        const req = entry?.required_item || {};
-        const inter = entry?.interactive || {};
-        const defeat = entry?.defeat_bot || {};
-        const defeatBotId = Number(entry?.defeat_bot_id ?? defeat?.id ?? defeat?.bot_id ?? 0);
-        return {
-          step: entry?.step ?? 1,
-          name: entry?.name ?? 'Demands a bit of action',
-          completion_text: entry?.completion_text ?? '',
-          x: entry?.x ?? 0,
-          y: entry?.y ?? 0,
-          world_id: entry?.world_id ?? 0,
-          mode: entry?.mode ?? 'move',
-          navigator: entry?.navigator ?? 'true',
-          cooldown: entry?.cooldown ?? 0,
-          pick_up_item_id: pick?.id ?? 0,
-          pick_up_item_value: pick?.value ?? 0,
-          required_item_id: req?.id ?? 0,
-          required_item_value: req?.value ?? 0,
-          interactive_x: inter?.x ?? 0,
-          interactive_y: inter?.y ?? 0,
-          defeat_bot_id: defeatBotId,
-          defeat_bot_attribute_power: Number(entry?.defeat_bot_attribute_power ?? defeat?.attribute_power ?? 10),
-          defeat_bot_world_id: Number(entry?.defeat_bot_world_id ?? defeat?.world_id ?? 0),
-        };
+  const ensureStepTabs = () => {
+    if (!DOM.stepTabs) return;
+    if (!Runtime.stepTabsUi) {
+      Runtime.stepTabsUi = EditorCore.UI.mountTabs(DOM.stepTabs, {
+        tabs: STEP_TABS.map(t => ({ id:t.id, title:t.title, icon:t.icon })),
+        active: STATE.stepTab,
+        onChange: (id) => { setActiveStepTab(id); scheduleTreeRender(); },
       });
+    } else Runtime.stepTabsUi.setActive(STATE.stepTab);
+    setActiveStepTab(STATE.stepTab);
+  };
 
-      return copy;
-    };
+  /* ════════ TASK EDITOR ════════ */
+  const getList = (t, id) => (Array.isArray(t[id]) ? t[id] : (t[id] = []));
+  const setVal = (t, sec, idx, key, v) => {
+    const l = getList(t, sec);
+    if (!l[idx]) l[idx] = {};
+    l[idx][key] = v;
+  };
 
-    const denormalizeTasks = (normalized) => {
-      const raw = taskDefault();
-      if (!normalized || typeof normalized !== 'object') return raw;
-      raw.required_items = Array.isArray(normalized.required_items) ? normalized.required_items : [];
-      raw.reward_items = Array.isArray(normalized.reward_items) ? normalized.reward_items : [];
-      raw.defeat_bots = Array.isArray(normalized.defeat_bots)
-        ? normalized.defeat_bots
-          .map((entry) => ({
-            id: Number(entry?.id ?? entry?.bot_id ?? 0),
-            value: Number(entry?.value ?? entry?.count ?? 0),
-          }))
-          .filter((entry) => entry.id > 0 && entry.value > 0)
-        : [];
-      raw.move_to = Array.isArray(normalized.move_to) ? normalized.move_to.map((entry) => {
-        const out = {
-          step: entry?.step ?? 1,
-          name: entry?.name ?? 'Demands a bit of action',
-          completion_text: entry?.completion_text ?? '',
-          x: entry?.x ?? 0,
-          y: entry?.y ?? 0,
-          world_id: entry?.world_id ?? 0,
-          mode: entry?.mode ?? 'move',
-          navigator: entry?.navigator ?? 'true',
-          cooldown: entry?.cooldown ?? 0,
-        };
+  const taskSummary = (sec, it) => {
+    if (!it) return '—';
+    switch (sec) {
+      case 'reward_items':   return `#${it.id || 0} ×${it.value || 0}`;
+      case 'required_items': return `#${it.id || 0} ×${it.value || 0} (${it.type || 'default'})`;
+      case 'defeat_bots':    return `#${it.id || 0} ×${it.value || 0}`;
+      case 'move_to':        return it.name || `Objective (${it.mode || 'move'})`;
+      default:               return '—';
+    }
+  };
 
-        if (entry?.pick_up_item_id) {
-          out.pick_up_item = { id: Number(entry.pick_up_item_id), value: Number(entry?.pick_up_item_value || 0) };
-        }
-        if (entry?.required_item_id) {
-          out.required_item = { id: Number(entry.required_item_id), value: Number(entry?.required_item_value || 0) };
-        }
-        if (entry?.interactive_x || entry?.interactive_y) {
-          out.interactive = { x: Number(entry?.interactive_x || 0), y: Number(entry?.interactive_y || 0) };
-        }
-        if (entry?.defeat_bot_id) {
-          out.defeat_bot = {
-            id: Number(entry.defeat_bot_id),
-            bot_id: Number(entry.defeat_bot_id),
-            attribute_power: Number(entry?.defeat_bot_attribute_power || 10),
-            world_id: Number(entry?.defeat_bot_world_id || 0),
-          };
-        }
-
-        return out;
-      }) : [];
-      return raw;
-    };
-
-    const parseFlags = (raw) => {
-      const source = Array.isArray(raw) ? raw : String(raw || '').split(',');
-      const values = [];
-      for (const entry of source) {
-        const flag = String(entry || '').trim();
-        if (!flag || !QUEST_FLAG_OPTIONS.includes(flag) || values.includes(flag)) continue;
-        values.push(flag);
-      }
-      const hasTypeFlag = values.some((flag) => flag.startsWith('Type'));
-      const hasTutorialFlag = values.includes(QuestFlags.tutorial);
-      if (!hasTypeFlag && !hasTutorialFlag) {
-        values.unshift(QuestFlags.typeMain);
-      }
-      return values;
-    };
-
-    const buildFlags = (flags) => parseFlags(flags).join(',');
-
-    const questFields = {
-      Name: { type: 'text', label: 'Имя квеста', validate: { required: true }, ui: { placeholder: 'Название квеста' } },
-      NextQuestID: { type: 'db_select', label: 'Следующий квест', ui: { dbKey: 'quest', placeholder: '— не задано —' } },
-      Money: { type: 'number', label: 'Награда (деньги)', ui: { min: 0, step: 1, placeholder: '0' } },
-      Exp: { type: 'number', label: 'Награда (опыт)', ui: { min: 0, step: 1, placeholder: '0' } },
-      Flags: {
-        type: 'text',
-        label: 'Флаги',
-        ui: {
-          type: 'tags',
-          options: QUEST_FLAG_OPTIONS,
-          allowCreate: false,
-          placeholder: 'Добавить флаг…',
-        },
-      },
-    };
-
-    const stepBaseFields = {
-      BotID: { type: 'db_select', label: 'Моб (BotID)', ui: { dbKey: 'mob', placeholder: '— моб —', searchPlaceholder: 'Поиск моба…' } },
-      QuestID: { type: 'db_select', label: 'Квест', ui: { dbKey: 'quest', placeholder: '— квест —', searchPlaceholder: 'Поиск квеста…' } },
-      Step: { type: 'number', label: 'Позиция шага', ui: { min: 1, step: 1 } },
-      WorldID: { type: 'db_select', label: 'Мир', ui: { dbKey: 'world', placeholder: '— мир —', searchPlaceholder: 'Поиск мира…' } },
-      Position: { type: 'vec2', label: 'Позиция', ui: { step: 1 } },
-      AutoFinish: { type: 'toggle', label: 'AutoFinish' },
-      ScenarioData: { type: 'scenario', label: 'Scenario JSON', ui: { scenarioMode: 'universal' } },
-    };
-
-    const dialogSideOptions = [
-      { value: 'default', label: 'говорит для' },
-      { value: 'author', label: 'автор' },
-      { value: 'thoughts', label: 'мысли' },
-    ];
-
-    const dialogExtraSpeakers = [
-      { value: -1, label: 'Игрок' },
-      { value: 0, label: 'Текущий бот' },
-    ];
-
-    let questFormRuntime = null;
-    let stepBaseFormRuntime = null;
-    let stepTasksSortable = {};
-    let dialogFormRuntime = null;
-    let stepTabsUi = null;
-
-    const setActiveStepTab = (tabId) => {
-      const next = STEP_TABS.some((tab) => tab.id === tabId) ? tabId : STEP_TABS[0]?.id;
-      if (!next) return;
-      STATE.stepTab = next;
-      DOM.stepEditor?.querySelectorAll('[data-step-tab-panel]').forEach((panel) => {
-        panel.classList.toggle('is-hidden', panel.getAttribute('data-step-tab-panel') !== next);
+  const refreshMoveVisibility = (listEl, tasks) => {
+    listEl?.querySelectorAll('[data-task-item="move_to"]').forEach(itm => {
+      const idx = toNum(itm.getAttribute('data-task-index'));
+      const mode = tasks.move_to?.[idx]?.mode || 'move';
+      itm.querySelectorAll('[data-move-modes]').forEach(g => {
+        const modes = (g.getAttribute('data-move-modes') || '').split(',');
+        g.classList.toggle('is-hidden', !modes.includes(mode));
       });
-      if (stepTabsUi) stepTabsUi.setActive(next);
-    };
+    });
+  };
 
-    const ensureStepTabs = () => {
-      if (!DOM.stepTabs) return;
-      if (!stepTabsUi) {
-        stepTabsUi = EditorCore.UI.mountTabs(DOM.stepTabs, {
-          tabs: STEP_TABS.map((tab) => ({ id: tab.id, title: tab.title, icon: tab.icon })),
-          active: STATE.stepTab,
-          onChange: (id) => {
-            setActiveStepTab(id);
-            renderTree({ preserveScroll: true });
+  const dbCombo = ({ source, value, label, sectionId, index, key, placeholder, searchPlaceholder, searchable=false, limit=300 }) => {
+    const path = `tasks.${sectionId}.${index}.${key}`;
+    const sph = searchPlaceholder || placeholder || 'Search…';
+    return `<div>
+      <label>${esc(label)}</label>
+      <div class="editor-dbcombo"
+        data-datasource="${source}" data-db-state="connected"
+        data-db-searchable="${searchable ? '1' : '0'}" data-db-limit="${limit}"
+        data-placeholder="${esc(placeholder)}" data-label-mode="id_name"
+        data-bind-input-path="${path}" data-current-value="${value || ''}">
+        <div class="editor-dbcombo-control">
+          <input type="search" class="editor-input form-input editor-dbcombo-input"
+                 placeholder="${esc(sph)}" autocomplete="off">
+        </div>
+        <div class="editor-dbcombo-dropdown" role="listbox" aria-label="${esc(label)}"></div>
+        <input class="editor-input form-input editor-dbselect-input editor-dbcombo-bound"
+          type="number" data-path="${path}"
+          data-task-field="${sectionId}" data-task-index="${index}" data-task-key="${key}"
+          data-value-type="number" value="${value || 0}">
+      </div>
+    </div>`;
+  };
+
+  const renderItemBody = (sec, item, i) => {
+    const inp = (label, key, value, type='number', extra='') => `
+      <div><label>${esc(label)}</label>
+        <input class="editor-input form-input" type="${type}" value="${esc(value)}"
+          ${extra} data-task-field="${sec}" data-task-index="${i}" data-task-key="${key}">
+      </div>`;
+
+    if (sec === 'reward_items') return `<div class="editor-item-grid">
+      ${dbCombo({ source:'items', value:item.id, label:'Item', sectionId:sec, index:i, key:'id', placeholder:'— item —', searchable:true, limit:1000 })}
+      ${inp('Quantity', 'value', item.value || '', 'number', 'min="1"')}
+    </div>`;
+
+    if (sec === 'required_items') return `<div class="editor-item-grid">
+      ${dbCombo({ source:'items', value:item.id, label:'Item', sectionId:sec, index:i, key:'id', placeholder:'— item —', searchable:true, limit:1000 })}
+      ${inp('Quantity', 'value', item.value || '', 'number', 'min="1"')}
+      <div><label>Type</label>
+        <select class="editor-input form-input" data-task-field="${sec}" data-task-index="${i}" data-task-key="type">
+          <option value="default" ${item.type==='default'?'selected':''}>Hand over</option>
+          <option value="show"    ${item.type==='show'   ?'selected':''}>Show</option>
+          <option value="pickup"  ${item.type==='pickup' ?'selected':''}>Pick up</option>
+        </select>
+      </div>
+    </div>`;
+
+    if (sec === 'defeat_bots') return `<div class="editor-item-grid">
+      ${dbCombo({ source:'bots', value:item.id, label:'Mob', sectionId:sec, index:i, key:'id', placeholder:'— mob —', limit:500 })}
+      ${inp('Quantity', 'value', item.value || '', 'number', 'min="1"')}
+    </div>`;
+
+    if (sec === 'move_to') {
+      const m = moveToDefaults(item);
+      return `<div>
+        <div class="editor-item-grid">
+          ${inp('Step', 'step', m.step, 'number', 'min="1"')}
+          <div><label>Navigator</label>
+            <select class="editor-input form-input" data-task-field="${sec}" data-task-index="${i}" data-task-key="navigator">
+              <option value="true"  ${m.navigator==='true' ?'selected':''}>Yes</option>
+              <option value="false" ${m.navigator==='false'?'selected':''}>No</option>
+            </select>
+          </div>
+          ${inp('Objective Name', 'name', m.name, 'text')}
+        </div>
+        <div class="editor-item-grid">
+          ${inp('X', 'x', m.x)}
+          ${inp('Y', 'y', m.y)}
+          ${dbCombo({ source:'worlds', value:m.world_id, label:'World', sectionId:sec, index:i, key:'world_id', placeholder:'— world —', limit:500 })}
+        </div>
+        <div class="editor-item-grid">
+          <div><label>Mode</label>
+            <select class="editor-input form-input" data-task-field="${sec}" data-task-index="${i}" data-task-key="mode">
+              <option value="move"              ${m.mode==='move'             ?'selected':''}>Just stand</option>
+              <option value="move_press"        ${m.mode==='move_press'       ?'selected':''}>Requires press</option>
+              <option value="move_follow_press" ${m.mode==='move_follow_press'?'selected':''}>Hover and press</option>
+              <option value="defeat_bot"        ${m.mode==='defeat_bot'       ?'selected':''}>Defeat mob</option>
+            </select>
+          </div>
+          <div data-move-modes="move,move_press,move_follow_press"><label>Cooldown</label>
+            <input class="editor-input form-input" type="number" min="0" value="${esc(m.cooldown || '')}"
+              data-task-field="${sec}" data-task-index="${i}" data-task-key="cooldown">
+          </div>
+          ${inp('Completion Text', 'completion_text', m.completion_text, 'text')}
+        </div>
+        <div class="editor-item-subgroup" data-move-modes="move_follow_press">
+          <div class="editor-item-grid">
+            ${inp('Interactive X', 'interactive_x', m.interactive_x || '')}
+            ${inp('Interactive Y', 'interactive_y', m.interactive_y || '')}
+          </div>
+        </div>
+        <div class="editor-item-subgroup" data-move-modes="defeat_bot">
+          <div class="editor-item-grid">
+            ${dbCombo({ source:'bots', value:m.defeat_bot_id, label:'Mob to defeat', sectionId:sec, index:i, key:'defeat_bot_id', placeholder:'— mob —', limit:500 })}
+            ${inp('Attribute Power', 'defeat_bot_attribute_power', m.defeat_bot_attribute_power || 10)}
+            ${dbCombo({ source:'worlds', value:m.defeat_bot_world_id, label:'World', sectionId:sec, index:i, key:'defeat_bot_world_id', placeholder:'— world —', limit:500 })}
+          </div>
+        </div>
+        <div class="editor-item-subgroup" data-move-modes="move_press,move_follow_press">
+          <div class="editor-item-grid">
+            ${dbCombo({ source:'items', value:m.required_item_id, label:'Required Item', sectionId:sec, index:i, key:'required_item_id', placeholder:'— item —', searchable:true, limit:1000 })}
+            ${inp('Qty', 'required_item_value', m.required_item_value || '')}
+          </div>
+        </div>
+        <div class="editor-item-subgroup" data-move-modes="move_press,move_follow_press,defeat_bot">
+          <div class="editor-item-grid">
+            ${dbCombo({ source:'items', value:m.pick_up_item_id, label:'Item to pick up', sectionId:sec, index:i, key:'pick_up_item_id', placeholder:'— item —', searchable:true, limit:1000 })}
+            ${inp('Qty', 'pick_up_item_value', m.pick_up_item_value || '')}
+          </div>
+        </div>
+      </div>`;
+    }
+    return '';
+  };
+
+  const renderTasksEditor = (step) => {
+    if (!DOM.stepTasksEditor) return;
+    const tasks = step?.TasksData || taskDefault();
+
+    // Destroy old Sortable instances before replacing DOM
+    Object.values(Runtime.taskSortables).forEach(s => s?.destroy());
+    Runtime.taskSortables = {};
+
+    DOM.stepTasksEditor.innerHTML = TASK_SECTIONS.map(sec => `
+      <section class="editor-task-section" data-task-section="${sec.id}">
+        <div class="editor-task-header"><h4>${esc(sec.title)}</h4><i class="fa-solid fa-chevron-down"></i></div>
+        <div class="editor-task-content">
+          <div class="editor-items" data-task-items="${sec.id}"></div>
+          <button type="button" class="editor-btn editor-btn-secondary mt-3" data-task-add="${sec.id}">
+            <i class="fa-solid fa-plus"></i><span>Add</span>
+          </button>
+        </div>
+      </section>`).join('');
+
+    TASK_SECTIONS.forEach(section => {
+      const secEl = DOM.stepTasksEditor.querySelector(`[data-task-section="${section.id}"]`);
+      if (!secEl) return;
+      const content = secEl.querySelector('.editor-task-content');
+      const header  = secEl.querySelector('.editor-task-header');
+      const listEl  = secEl.querySelector(`[data-task-items="${section.id}"]`);
+      const addBtn  = secEl.querySelector(`[data-task-add="${section.id}"]`);
+      const list    = getList(tasks, section.id);
+
+      if (header && content) {
+        content.classList.toggle('is-open', list.length > 0);
+        header.addEventListener('click', () => content.classList.toggle('is-open'));
+      }
+
+      // 1) Write card HTML first
+      listEl.innerHTML = list.length
+        ? list.map((it, i) => `
+            <div class="editor-item is-collapsed" data-task-item="${section.id}" data-task-index="${i}">
+              <div class="editor-item-header">
+                <div>
+                  <span class="editor-badge">#${i + 1}</span>
+                  <span class="editor-item-summary">${esc(taskSummary(section.id, it))}</span>
+                </div>
+                <div class="editor-item-actions">
+                  <span class="editor-item-handle" title="Drag"><i class="fa-solid fa-arrows-up-down-left-right"></i></span>
+                  <button type="button" class="editor-btn editor-btn-secondary" data-task-toggle="${section.id}" data-task-index="${i}" title="Collapse/expand"><i class="fa-solid fa-chevron-down"></i></button>
+                  <button type="button" class="editor-btn editor-btn-secondary" data-task-duplicate="${section.id}" data-task-index="${i}" title="Duplicate"><i class="fa-solid fa-copy"></i></button>
+                  <button type="button" class="editor-btn editor-btn-secondary" data-task-remove="${section.id}" data-task-index="${i}" title="Delete"><i class="fa-solid fa-trash"></i></button>
+                </div>
+              </div>
+              <div class="editor-item-body">${renderItemBody(section.id, it, i)}</div>
+            </div>`).join('')
+        : '<div class="editor-muted-text text-sm">No items</div>';
+
+      // 2) THEN initialize DB combos (once per listEl)
+      if (list.length && EditorCore.DB?.init) {
+        EditorCore.DB.init(listEl);
+      }
+
+      if (section.id === 'move_to') refreshMoveVisibility(listEl, tasks);
+
+      // 3) Create Sortable after DB initialization
+      if (window.Sortable && list.length > 1) {
+        let _collapsedState = [];
+        Runtime.taskSortables[section.id] = new Sortable(listEl, {
+          handle: '.editor-item-handle',
+          draggable: '.editor-item',
+          animation: 180,
+          ghostClass: 'sortable-ghost',
+          chosenClass: 'sortable-chosen',
+          dragClass: 'sortable-drag',
+          forceFallback: true,
+          fallbackOnBody: true,
+          fallbackTolerance: 4,
+          swapThreshold: 0.5,
+          emptyInsertThreshold: 8,
+          onStart: () => {
+            // Remember collapsed state of each card by index
+            _collapsedState = Array.from(listEl.querySelectorAll('.editor-item'))
+              .map(el => el.classList.contains('is-collapsed'));
+            // Collapse all during drag
+            listEl.querySelectorAll('.editor-item').forEach(el => el.classList.add('is-collapsed'));
+          },
+          onEnd: (evt) => {
+            if (evt.item.parentNode !== listEl) listEl.appendChild(evt.item);
+
+            // Position unchanged — just restore state
+            if (evt.oldIndex === evt.newIndex || evt.oldIndex == null || evt.newIndex == null) {
+              const cards = listEl.querySelectorAll('.editor-item');
+              cards.forEach((el, i) => {
+                el.classList.toggle('is-collapsed', _collapsedState[i] !== false);
+              });
+              _collapsedState = [];
+              return;
+            }
+
+            // Position changed — recalculate state accounting for the move
+            const movedState = _collapsedState.splice(evt.oldIndex, 1)[0];
+            _collapsedState.splice(evt.newIndex, 0, movedState);
+
+            const items = getList(tasks, section.id);
+            const [m] = items.splice(evt.oldIndex, 1);
+            items.splice(evt.newIndex, 0, m);
+            syncStepTasks(tasks);
+            renderTasksEditor(step);
+
+            // After re-render restore collapsed state
+            requestAnimationFrame(() => {
+              const cards = DOM.stepTasksEditor.querySelectorAll(
+                `[data-task-item="${section.id}"]`
+              );
+              cards.forEach((el, i) => {
+                el.classList.toggle('is-collapsed', _collapsedState[i] !== false);
+              });
+              _collapsedState = [];
+            });
           },
         });
-      } else {
-        stepTabsUi.setActive(STATE.stepTab);
       }
-      setActiveStepTab(STATE.stepTab);
-    };
 
-    const setDirty = () => {
-      const dirty = STATE.dirtyQuests.size > 0 || STATE.dirtySteps.size > 0;
-      DOM.dirtyPill.classList.toggle('hidden', !dirty);
-    };
-
-    const updateCounts = () => {
-      DOM.questCount.textContent = STATE.quests.length;
-      DOM.stepCount.textContent = STATE.steps.length;
-    };
-
-    const markQuestDirty = (id) => {
-      if (!id) return;
-      STATE.dirtyQuests.add(id);
-      setDirty();
-    };
-
-    const markStepDirty = (id) => {
-      if (!id) return;
-      STATE.dirtySteps.add(id);
-      setDirty();
-    };
-
-    const syncQuestModel = (data) => {
-      const quest = STATE.quests.find((q) => q.ID === STATE.selected?.id);
-      if (!quest) return;
-      quest.Name = String(data?.Name || '');
-      quest.NextQuestID = Number(data?.NextQuestID || 0);
-      quest.Money = Number(data?.Money || 0);
-      quest.Exp = Number(data?.Exp || 0);
-      quest.Flags = buildFlags(data?.Flags);
-      markQuestDirty(quest.ID);
-      renderTree({ preserveScroll: true });
-    };
-
-    const syncStepBaseModel = (data) => {
-      const step = STATE.steps.find((s) => s.ID === STATE.selected?.id);
-      if (!step) return;
-      step.BotID = Number(data?.BotID || 0);
-      step.QuestID = Number(data?.QuestID || 0);
-      step.Step = Number(data?.Step || 1);
-      step.WorldID = Number(data?.WorldID || 0) || null;
-      step.PosX = Number(data?.Position?.x || 0);
-      step.PosY = Number(data?.Position?.y || 0);
-      step.AutoFinish = data?.AutoFinish ? 'Partial' : null;
-      step.ScenarioData = String(data?.ScenarioData || '');
-      markStepDirty(step.ID);
-      renderTree({ preserveScroll: true });
-    };
-
-    const syncStepTasksModel = (nextTasks) => {
-      const step = STATE.steps.find((s) => s.ID === STATE.selected?.id);
-      if (!step) return;
-      step.TasksData = normalizeTasks(nextTasks);
-      markStepDirty(step.ID);
-    };
-
-    const getLabelMap = async (source) => {
-      try {
-        const res = await EditorCore.DB.list(source, { limit: 5000, offset: 0 });
-        const map = new Map();
-        if (res?.ok && Array.isArray(res.items)) {
-          for (const it of res.items) map.set(String(it.value), String(it.label || ''));
-        }
-        return map;
-      } catch {
-        return new Map();
-      }
-    };
-
-    const formatLookupLabel = (map, id) => {
-      const numeric = Number(id || 0);
-      if (!numeric) return '—';
-      const label = map?.get(String(numeric)) || '';
-      return label ? label : `#${numeric}`;
-    };
-
-    const TASK_SECTIONS = [
-      { id: 'reward_items', title: 'Предметы будут получены по завершению' },
-      { id: 'required_items', title: 'Предметы необходимые для завершения' },
-      { id: 'defeat_bots', title: 'Боты которых необходимо победить для завершения' },
-      { id: 'move_to', title: 'Цели которые необходимо выполнить для завершения' },
-    ];
-
-    const STEP_TABS = [
-      { id: 'mob', title: 'Основное', short: 'Основное', hint: '', icon: 'fa-person-walking' },
-      { id: 'dialog', title: 'Диалог', short: 'Диалог', hint: '', icon: 'fa-comments' },
-      { id: 'tasks', title: 'Задачи', short: 'Задачи', hint: '', icon: 'fa-list-check' },
-    ];
-
-    const buildTaskSummary = (sectionId, item) => {
-      if (!item) return '—';
-      if (sectionId === 'reward_items') return `#${item.id || 0} ×${item.value || 0}`;
-      if (sectionId === 'required_items') return `#${item.id || 0} ×${item.value || 0} (${item.type || 'default'})`;
-      if (sectionId === 'defeat_bots') return `#${item.id || 0} ×${item.value || 0}`;
-      if (sectionId === 'move_to') return item.name || `Цель (${item.mode || 'move'})`;
-      return '—';
-    };
-
-    const getTaskList = (tasks, sectionId) => {
-      if (!tasks[sectionId] || !Array.isArray(tasks[sectionId])) tasks[sectionId] = [];
-      return tasks[sectionId];
-    };
-
-    const setTaskValue = (tasks, sectionId, index, key, value) => {
-      const list = getTaskList(tasks, sectionId);
-      if (!list[index]) list[index] = {};
-      list[index][key] = value;
-    };
-
-    const ensureMoveToDefaults = (item) => ({
-      step: item.step ?? 1,
-      navigator: item.navigator ?? 'true',
-      name: item.name ?? '',
-      x: item.x ?? 0,
-      y: item.y ?? 0,
-      world_id: item.world_id ?? 0,
-      mode: item.mode ?? 'move',
-      cooldown: item.cooldown ?? 0,
-      completion_text: item.completion_text ?? '',
-      interactive_x: item.interactive_x ?? 0,
-      interactive_y: item.interactive_y ?? 0,
-      defeat_bot_id: item.defeat_bot_id ?? 0,
-      defeat_bot_attribute_power: item.defeat_bot_attribute_power ?? 10,
-      defeat_bot_world_id: item.defeat_bot_world_id ?? 0,
-      required_item_id: item.required_item_id ?? 0,
-      required_item_value: item.required_item_value ?? 0,
-      pick_up_item_id: item.pick_up_item_id ?? 0,
-      pick_up_item_value: item.pick_up_item_value ?? 0,
-    });
-
-    const updateMoveToVisibility = (listEl, tasks) => {
-      if (!listEl) return;
-      listEl.querySelectorAll('[data-task-item="move_to"]').forEach((itemEl) => {
-        const idx = Number(itemEl.getAttribute('data-task-index'));
-        const move = tasks.move_to?.[idx] || {};
-        const mode = move.mode || 'move';
-        itemEl.querySelectorAll('[data-move-modes]').forEach((group) => {
-          const modes = group.getAttribute('data-move-modes')?.split(',') || [];
-          group.classList.toggle('is-hidden', !modes.includes(mode));
-        });
-      });
-    };
-
-    const renderTasksEditor = (step) => {
-      if (!DOM.stepTasksEditor) return;
-      const tasks = step?.TasksData || taskDefault();
-      const sectionsHtml = TASK_SECTIONS.map((section) => `
-        <section class="editor-task-section" data-task-section="${section.id}">
-          <div class="editor-task-header">
-            <h4>${section.title}</h4>
-            <i class="fa-solid fa-chevron-down"></i>
-          </div>
-          <div class="editor-task-content">
-            <div class="editor-items" data-task-items="${section.id}"></div>
-            <button type="button" class="editor-btn editor-btn-secondary mt-3" data-task-add="${section.id}">
-              <i class="fa-solid fa-plus"></i><span>Добавить</span>
-            </button>
-          </div>
-        </section>
-      `).join('');
-      DOM.stepTasksEditor.innerHTML = sectionsHtml;
-
-      TASK_SECTIONS.forEach((section) => {
-        const content = DOM.stepTasksEditor.querySelector(`[data-task-section="${section.id}"] .editor-task-content`);
-        const header = DOM.stepTasksEditor.querySelector(`[data-task-section="${section.id}"] .editor-task-header`);
-        const listEl = DOM.stepTasksEditor.querySelector(`[data-task-items="${section.id}"]`);
-        const addBtn = DOM.stepTasksEditor.querySelector(`[data-task-add="${section.id}"]`);
-        const list = getTaskList(tasks, section.id);
-        const hasSelectedTask = STATE.selected?.type === 'task'
-          && STATE.selected?.id === step?.ID
-          && STATE.selected?.task?.kind === section.id;
-
-        if (header && content) {
-          content.classList.toggle('is-open', list.length > 0 || hasSelectedTask);
-          header.addEventListener('click', () => {
-            content.classList.toggle('is-open');
-          });
-        }
-
-        const renderDbCombo = ({
-          source,
-          value,
-          label,
-          sectionId,
-          index,
-          key,
-          placeholder,
-          searchPlaceholder,
-          searchable = false,
-          limit = 300,
-        }) => {
-          const path = `tasks.${sectionId}.${index}.${key}`;
-          const searchPh = searchPlaceholder || placeholder || 'Поиск…';
-          return `
-          <div>
-            <label>${label}</label>
-            <div class="editor-dbcombo"
-              data-datasource="${source}"
-              data-db-state="connected"
-              data-db-searchable="${searchable ? '1' : '0'}"
-              data-db-limit="${limit}"
-              data-placeholder="${placeholder}"
-              data-label-mode="id_name"
-              data-bind-input-path="${path}"
-              data-current-value="${value || ''}">
-              <div class="editor-dbcombo-control">
-                <input type="search" class="editor-input form-input editor-dbcombo-input" placeholder="${searchPh}" autocomplete="off">
-              </div>
-              <div class="editor-dbcombo-dropdown" role="listbox" aria-label="${label}"></div>
-              <input
-                class="editor-input form-input editor-dbselect-input editor-dbcombo-bound"
-                type="number"
-                data-path="${path}"
-                data-task-field="${sectionId}"
-                data-task-index="${index}"
-                data-task-key="${key}"
-                data-value-type="number"
-                value="${value || 0}">
-            </div>
-          </div>
-        `;
-        };
-
-        const renderItemBody = (item, index) => {
-          if (section.id === 'reward_items') {
-            return `
-              <div class="editor-item-grid">
-                ${renderDbCombo({
-                  source: 'items',
-                  value: item.id,
-                  label: 'Предмет',
-                  sectionId: section.id,
-                  index,
-                  key: 'id',
-                  placeholder: '— предмет —',
-                  searchable: true,
-                  limit: 1000,
-                })}
-                <div>
-                  <label>Количество</label>
-                  <input class="editor-input form-input" type="number" min="1" value="${item.value || ''}" data-task-field="${section.id}" data-task-index="${index}" data-task-key="value">
-                </div>
-              </div>
-            `;
-          }
-          if (section.id === 'required_items') {
-            return `
-              <div class="editor-item-grid">
-                ${renderDbCombo({
-                  source: 'items',
-                  value: item.id,
-                  label: 'Предмет',
-                  sectionId: section.id,
-                  index,
-                  key: 'id',
-                  placeholder: '— предмет —',
-                  searchable: true,
-                  limit: 1000,
-                })}
-                <div>
-                  <label>Количество</label>
-                  <input class="editor-input form-input" type="number" min="1" value="${item.value || ''}" data-task-field="${section.id}" data-task-index="${index}" data-task-key="value">
-                </div>
-                <div>
-                  <label>Тип</label>
-                  <select class="editor-input form-input" data-task-field="${section.id}" data-task-index="${index}" data-task-key="type">
-                    <option value="default" ${item.type === 'default' ? 'selected' : ''}>Отдать</option>
-                    <option value="show" ${item.type === 'show' ? 'selected' : ''}>Показать</option>
-                    <option value="pickup" ${item.type === 'pickup' ? 'selected' : ''}>Подобрать</option>
-                  </select>
-                </div>
-              </div>
-            `;
-          }
-          if (section.id === 'defeat_bots') {
-            return `
-              <div class="editor-item-grid">
-                ${renderDbCombo({
-                  source: 'bots',
-                  value: item.id,
-                  label: 'Моб',
-                  sectionId: section.id,
-                  index,
-                  key: 'id',
-                  placeholder: '— моб —',
-                  searchable: false,
-                  limit: 500,
-                })}
-                <div>
-                  <label>Количество</label>
-                  <input class="editor-input form-input" type="number" min="1" value="${item.value || ''}" data-task-field="${section.id}" data-task-index="${index}" data-task-key="value">
-                </div>
-              </div>
-            `;
-          }
-          if (section.id === 'move_to') {
-            const move = ensureMoveToDefaults(item);
-            return `
-              <div class="editor-item-body">
-                <div class="editor-item-grid">
-                  <div>
-                    <label>Шаг</label>
-                    <input class="editor-input form-input" type="number" min="1" value="${move.step}" data-task-field="${section.id}" data-task-index="${index}" data-task-key="step">
-                  </div>
-                  <div>
-                    <label>Навигатор</label>
-                    <select class="editor-input form-input" data-task-field="${section.id}" data-task-index="${index}" data-task-key="navigator">
-                      <option value="true" ${move.navigator === 'true' ? 'selected' : ''}>Да</option>
-                      <option value="false" ${move.navigator === 'false' ? 'selected' : ''}>Нет</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label>Название цели</label>
-                    <input class="editor-input form-input" type="text" value="${move.name || ''}" data-task-field="${section.id}" data-task-index="${index}" data-task-key="name">
-                  </div>
-                </div>
-                <div class="editor-item-grid">
-                  <div>
-                    <label>Координата X</label>
-                    <input class="editor-input form-input" type="number" value="${move.x}" data-task-field="${section.id}" data-task-index="${index}" data-task-key="x">
-                  </div>
-                  <div>
-                    <label>Координата Y</label>
-                    <input class="editor-input form-input" type="number" value="${move.y}" data-task-field="${section.id}" data-task-index="${index}" data-task-key="y">
-                  </div>
-                  ${renderDbCombo({
-                    source: 'worlds',
-                    value: move.world_id,
-                    label: 'ID мира',
-                    sectionId: section.id,
-                    index,
-                    key: 'world_id',
-                    placeholder: '— мир —',
-                    searchable: false,
-                    limit: 500,
-                  })}
-                </div>
-                <div class="editor-item-grid">
-                  <div>
-                    <label>Режим</label>
-                    <select class="editor-input form-input" data-task-field="${section.id}" data-task-index="${index}" data-task-key="mode">
-                      <option value="move" ${move.mode === 'move' ? 'selected' : ''}>Просто встать</option>
-                      <option value="move_press" ${move.mode === 'move_press' ? 'selected' : ''}>Требуется нажать</option>
-                      <option value="move_follow_press" ${move.mode === 'move_follow_press' ? 'selected' : ''}>Навестись и нажать</option>
-                      <option value="defeat_bot" ${move.mode === 'defeat_bot' ? 'selected' : ''}>Победить моба</option>
-                    </select>
-                  </div>
-                  <div data-move-modes="move,move_press,move_follow_press">
-                    <label>Кулдаун</label>
-                    <input class="editor-input form-input" type="number" min="0" value="${move.cooldown || ''}" data-task-field="${section.id}" data-task-index="${index}" data-task-key="cooldown">
-                  </div>
-                  <div>
-                    <label>Текст завершения</label>
-                    <input class="editor-input form-input" type="text" value="${move.completion_text || ''}" data-task-field="${section.id}" data-task-index="${index}" data-task-key="completion_text">
-                  </div>
-                </div>
-                <div class="editor-item-subgroup" data-move-modes="move_follow_press">
-                  <div class="editor-item-grid">
-                    <div>
-                      <label>Interactive X</label>
-                      <input class="editor-input form-input" type="number" value="${move.interactive_x || ''}" data-task-field="${section.id}" data-task-index="${index}" data-task-key="interactive_x">
-                    </div>
-                    <div>
-                      <label>Interactive Y</label>
-                      <input class="editor-input form-input" type="number" value="${move.interactive_y || ''}" data-task-field="${section.id}" data-task-index="${index}" data-task-key="interactive_y">
-                    </div>
-                  </div>
-                </div>
-                <div class="editor-item-subgroup" data-move-modes="defeat_bot">
-                  <div class="editor-item-grid">
-                    ${renderDbCombo({
-                      source: 'bots',
-                      value: move.defeat_bot_id,
-                      label: 'Моб для победы',
-                      sectionId: section.id,
-                      index,
-                      key: 'defeat_bot_id',
-                      placeholder: '— моб —',
-                      searchable: false,
-                      limit: 500,
-                    })}
-                    <div>
-                      <label>Сила атрибута</label>
-                      <input class="editor-input form-input" type="number" value="${move.defeat_bot_attribute_power || 10}" data-task-field="${section.id}" data-task-index="${index}" data-task-key="defeat_bot_attribute_power">
-                    </div>
-                    ${renderDbCombo({
-                      source: 'worlds',
-                      value: move.defeat_bot_world_id,
-                      label: 'ID мира',
-                      sectionId: section.id,
-                      index,
-                      key: 'defeat_bot_world_id',
-                      placeholder: '— мир —',
-                      searchable: false,
-                      limit: 500,
-                    })}
-                  </div>
-                </div>
-                <div class="editor-item-subgroup" data-move-modes="move_press,move_follow_press">
-                  <div class="editor-item-grid">
-                    ${renderDbCombo({
-                      source: 'items',
-                      value: move.required_item_id,
-                      label: 'Требуемый предмет',
-                      sectionId: section.id,
-                      index,
-                      key: 'required_item_id',
-                      placeholder: '— предмет —',
-                      searchable: true,
-                      limit: 1000,
-                    })}
-                    <div>
-                      <label>Требуемый предмет кол-во</label>
-                      <input class="editor-input form-input" type="number" value="${move.required_item_value || ''}" data-task-field="${section.id}" data-task-index="${index}" data-task-key="required_item_value">
-                    </div>
-                  </div>
-                </div>
-                <div class="editor-item-subgroup" data-move-modes="move_press,move_follow_press,defeat_bot">
-                  <div class="editor-item-grid">
-                    ${renderDbCombo({
-                      source: 'items',
-                      value: move.pick_up_item_id,
-                      label: 'Предмет для подбора',
-                      sectionId: section.id,
-                      index,
-                      key: 'pick_up_item_id',
-                      placeholder: '— предмет —',
-                      searchable: true,
-                      limit: 1000,
-                    })}
-                    <div>
-                      <label>Предмет для подбора кол-во</label>
-                      <input class="editor-input form-input" type="number" value="${move.pick_up_item_value || ''}" data-task-field="${section.id}" data-task-index="${index}" data-task-key="pick_up_item_value">
-                    </div>
-                  </div>
-                </div>
-              </div>
-            `;
-          }
-          return '';
-        };
-
-        listEl.innerHTML = list.map((item, index) => {
-          const isSelected = STATE.selected?.type === 'task'
-            && STATE.selected?.id === step?.ID
-            && STATE.selected?.task?.kind === section.id
-            && STATE.selected?.task?.index === index;
-          return `
-          <div class="editor-item ${isSelected ? 'is-selected' : ''}" data-task-item="${section.id}" data-task-index="${index}">
-            <div class="editor-item-header">
-              <div>
-                <span class="editor-badge">#${index + 1}</span>
-                <span class="editor-item-summary">${buildTaskSummary(section.id, item)}</span>
-              </div>
-              <div class="editor-item-actions">
-                <span class="editor-item-handle"><i class="fa-solid fa-arrows-up-down-left-right"></i></span>
-                <button type="button" class="editor-btn editor-btn-secondary" data-task-toggle="${section.id}" data-task-index="${index}">
-                  <i class="fa-solid fa-chevron-down"></i>
-                </button>
-                <button type="button" class="editor-btn editor-btn-secondary" data-task-remove="${section.id}" data-task-index="${index}">
-                  <i class="fa-solid fa-trash"></i>
-                </button>
-              </div>
-            </div>
-            <div class="editor-item-body">${renderItemBody(item, index)}</div>
-          </div>
-        `;
-        }).join('') || '<div class="editor-muted-text text-sm">Нет элементов</div>';
-
-        if (section.id === 'move_to') {
-          updateMoveToVisibility(listEl, tasks);
-        }
-
-        if (listEl) {
-          EditorCore.DB.init(listEl);
-        }
-
-        if (window.Sortable && listEl) {
-          if (stepTasksSortable[section.id]) stepTasksSortable[section.id].destroy();
-          stepTasksSortable[section.id] = new Sortable(listEl, {
-            handle: '.editor-item-handle',
-            animation: 150,
-            onEnd: (evt) => {
-              const items = getTaskList(tasks, section.id);
-              const [moved] = items.splice(evt.oldIndex, 1);
-              items.splice(evt.newIndex, 0, moved);
-              syncStepTasksModel(tasks);
-              renderTasksEditor(step);
-            }
-          });
-        }
-
-        listEl.querySelectorAll('[data-task-remove]').forEach((btn) => {
-          btn.addEventListener('click', () => {
-            const idx = Number(btn.getAttribute('data-task-index'));
-            const items = getTaskList(tasks, section.id);
-            items.splice(idx, 1);
-            syncStepTasksModel(tasks);
-            renderTasksEditor(step);
-          });
-        });
-
-        listEl.querySelectorAll('[data-task-toggle]').forEach((btn) => {
-          btn.addEventListener('click', () => {
-            const idx = Number(btn.getAttribute('data-task-index'));
-            const item = listEl.querySelector(`[data-task-item="${section.id}"][data-task-index="${idx}"]`);
-            if (item) item.classList.toggle('is-collapsed');
-          });
-        });
-
-        listEl.querySelectorAll('[data-task-field]').forEach((input) => {
-          const handler = () => {
-            const sectionId = input.getAttribute('data-task-field');
-            const idx = Number(input.getAttribute('data-task-index'));
-            const key = input.getAttribute('data-task-key');
-            let value = input.value;
-            const valueType = input.dataset.valueType;
-            if (valueType === 'number') value = input.value === '' ? 0 : Number(input.value);
-            else if (input.type === 'number') value = input.value === '' ? 0 : Number(input.value);
-            setTaskValue(tasks, sectionId, idx, key, value);
-            syncStepTasksModel(tasks);
-            const summary = listEl.querySelector(`[data-task-item="${sectionId}"][data-task-index="${idx}"] .editor-item-summary`);
-            if (summary) summary.textContent = buildTaskSummary(sectionId, getTaskList(tasks, sectionId)[idx]);
-            if (sectionId === 'move_to') updateMoveToVisibility(listEl, tasks);
-          };
-          input.addEventListener('input', handler);
-          input.addEventListener('change', handler);
-        });
-
-        addBtn?.addEventListener('click', () => {
-          const items = getTaskList(tasks, section.id);
-          if (section.id === 'move_to') {
-            items.push(ensureMoveToDefaults({}));
-          } else if (section.id === 'required_items') {
-            items.push({ id: 0, value: 1, type: 'default' });
-          } else {
-            items.push({ id: 0, value: 1 });
-          }
-          syncStepTasksModel(tasks);
+      // Events — delegated on section (does NOT affect DB combos)
+      secEl.addEventListener('click', (e) => {
+        // Duplicate task
+        const dup = e.target.closest('[data-task-duplicate]');
+        if (dup) {
+          e.preventDefault(); e.stopPropagation();
+          const idx = toNum(dup.getAttribute('data-task-index'));
+          const items = getList(tasks, section.id);
+          const src = items[idx];
+          if (!src) return;
+          // Deep clone — task may contain nested objects (move_to)
+          const copy = structuredClone(src);
+          // Insert right after the original
+          items.splice(idx + 1, 0, copy);
+          syncStepTasks(tasks);
           renderTasksEditor(step);
-        });
+          // Expand the copy for convenience
+          requestAnimationFrame(() => {
+            const newCard = DOM.stepTasksEditor.querySelector(
+              `[data-task-item="${section.id}"][data-task-index="${idx + 1}"]`
+            );
+            newCard?.classList.remove('is-collapsed');
+            newCard?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+          });
+          EditorCore.UI.toast('Task duplicated', 'success');
+          return;
+        }
+
+        // Delete
+        const rm = e.target.closest('[data-task-remove]');
+        if (rm) {
+          getList(tasks, section.id).splice(toNum(rm.getAttribute('data-task-index')), 1);
+          syncStepTasks(tasks); renderTasksEditor(step); return;
+        }
+
+        // Toggle collapse/expand
+        const tg = e.target.closest('[data-task-toggle]');
+        if (tg) {
+          e.preventDefault(); e.stopPropagation();
+          const idx = toNum(tg.getAttribute('data-task-index'));
+          listEl.querySelector(`[data-task-item="${section.id}"][data-task-index="${idx}"]`)?.classList.toggle('is-collapsed');
+        }
       });
-    };
 
-    const applyDialogConstraints = (data, meta = {}) => {
-      if (!window.EditorCore?.DialogEditor) return;
-      const speakerCandidates = window.EditorCore.DialogEditor.buildSpeakerCandidates(
-        STATE.lookups?.bots,
-        dialogExtraSpeakers,
-      );
-      window.EditorCore.DialogEditor.applyConstraints({
-        root: DOM.dialogForm,
-        data,
-        meta,
-        sideOptions: dialogSideOptions,
-        speakerCandidates,
+      const onField = (e) => {
+        const input = e.target.closest('[data-task-field]');
+        if (!input) return;
+        const sid = input.getAttribute('data-task-field');
+        const idx = toNum(input.getAttribute('data-task-index'));
+        const key = input.getAttribute('data-task-key');
+        let v = input.value;
+        if (input.dataset.valueType === 'number' || input.type === 'number') {
+          v = v === '' ? 0 : Number(v);
+        }
+        setVal(tasks, sid, idx, key, v);
+        syncStepTasks(tasks);
+        const sum = listEl.querySelector(`[data-task-item="${sid}"][data-task-index="${idx}"] .editor-item-summary`);
+        if (sum) sum.textContent = taskSummary(sid, getList(tasks, sid)[idx]);
+        if (sid === 'move_to') refreshMoveVisibility(listEl, tasks);
+      };
+      secEl.addEventListener('input',  onField);
+      secEl.addEventListener('change', onField);
+
+      addBtn?.addEventListener('click', () => {
+        const items = getList(tasks, section.id);
+        if (section.id === 'move_to') items.push(moveToDefaults({}));
+        else if (section.id === 'required_items') items.push({ id:0, value:1, type:'default' });
+        else items.push({ id:0, value:1 });
+        syncStepTasks(tasks);
+        renderTasksEditor(step);
       });
-    };
+    });
+  };
 
-    const syncDialogModel = (data, meta = {}) => {
-      const step = STATE.steps.find((s) => s.ID === STATE.selected?.id);
-      if (!step) return;
-      applyDialogConstraints(data, meta);
-      if (typeof requestAnimationFrame === 'function') {
-        requestAnimationFrame(() => applyDialogConstraints(data, meta));
-      }
-      step.DialogData = Array.isArray(data?.DialogData) ? data.DialogData : [];
-      markStepDirty(step.ID);
-    };
+  /* ════════ EDITOR VISIBILITY ════════ */
+  const setBtn = (btn, { enabled = false, hidden = false, label } = {}) => {
+    if (!btn) return;
+    btn.disabled = !enabled;
+    btn.classList.toggle('hidden', hidden);
+    if (label) {
+      const t = btn.querySelector('span');
+      if (t) t.textContent = label;
+    }
+  };
 
-    const mountStepEditor = (step, overrides = {}) => {
-      const title = overrides.title || `Шаг моба #${step.ID}`;
-      const subtitle = overrides.subtitle || `Квест ${step.QuestID || '—'} · Шаг ${step.Step || 1}`;
-      DOM.title.textContent = title;
-      DOM.subtitle.textContent = subtitle;
-      DOM.newStep.disabled = false;
+  const showEditor = (type) => {
+    DOM.empty.classList.toggle('hidden', !!type);
+    DOM.questEditor.classList.toggle('hidden', type !== 'quest');
+    DOM.stepEditor.classList.toggle('hidden',  type !== 'step');
 
-      const model = {
-        BotID: Number(step.BotID || 0),
-        QuestID: Number(step.QuestID || 0),
-        Step: Number(step.Step || 1),
-        WorldID: Number(step.WorldID || 0),
-        Position: { x: Number(step.PosX || 0), y: Number(step.PosY || 0) },
+    if (type === 'quest') {
+      setBtn(DOM.deleteBtn, { enabled:true, hidden:false, label:'Delete Quest' });
+      setBtn(DOM.newStep,   { enabled:true, hidden:false });
+      setBtn(DOM.duplicateBtn, { enabled:false, hidden:true });
+    } else if (type === 'step') {
+      setBtn(DOM.deleteBtn, { enabled:true, hidden:false, label:'Delete Step' });
+      setBtn(DOM.newStep,   { enabled:true, hidden:false });
+      setBtn(DOM.duplicateBtn, { enabled:true, hidden:false });
+    } else {
+      setBtn(DOM.deleteBtn, { enabled:false, hidden:true, label:'Delete' });
+      setBtn(DOM.newStep,   { enabled:false, hidden:true });
+      setBtn(DOM.duplicateBtn, { enabled:false, hidden:true });
+    }
+  };
+
+  const resetHeader = () => {
+    DOM.title.textContent    = 'Select a tree element';
+    DOM.subtitle.textContent = 'quest or mob step';
+  };
+
+  /* ════════ MOUNT STEP EDITOR ════════ */
+  const mountStepEditor = (step) => {
+    const botLabel   = lookupLabel(STATE.lookups.bots, step.BotID);
+    const worldLabel = lookupLabel(STATE.lookups.worlds, step.WorldID);
+    DOM.title.textContent    = `Step #${step.ID} — ${botLabel}`;
+    DOM.subtitle.textContent = `Quest ${step.QuestID || '—'} · Step ${step.Step || 1} · ${worldLabel}`;
+
+    Runtime.stepBase = EditorCore.FormRuntime.mount(DOM.stepBaseForm, {
+      fields: stepBaseFields,
+      data: {
+        BotID: toNum(step.BotID), QuestID: toNum(step.QuestID),
+        Step: toNum(step.Step, 1), WorldID: toNum(step.WorldID),
+        Position: { x: toNum(step.PosX), y: toNum(step.PosY) },
         AutoFinish: step.AutoFinish === 'Partial',
         ScenarioData: step.ScenarioData || '',
-        required_items: step.TasksData?.required_items || [],
-        reward_items: step.TasksData?.reward_items || [],
-        defeat_bots: step.TasksData?.defeat_bots || [],
-        move_to: step.TasksData?.move_to || [],
-      };
+      },
+      fieldOptions: fieldRenderOptions,
+      onChange: syncStepBase,
+    });
 
-      stepBaseFormRuntime = EditorCore.FormRuntime.mount(DOM.stepBaseForm, {
-        fields: stepBaseFields,
-        data: model,
-        fieldOptions: fieldRenderOptions,
-        onChange: syncStepBaseModel,
-      });
+    renderTasksEditor(step);
 
-      renderTasksEditor(step);
+    Runtime.dialog = EditorCore.DialogEditor.mount(DOM.dialogForm, {
+      data: { DialogData: step.DialogData || [] },
+      fieldOptions: fieldRenderOptions,
+      sideOptions: DIALOG_SIDE_OPTIONS,
+      extraSpeakers: DIALOG_EXTRA_SPEAKERS,
+      speakerOptions: EditorCore.DialogEditor.buildSpeakerOptions(STATE.lookups.bots, DIALOG_EXTRA_SPEAKERS),
+      onChange: syncDialog,
+    });
+    applyDialogConstraints(Runtime.dialog.getData());
 
-      const speakerOptions = EditorCore.DialogEditor.buildSpeakerOptions(
-        STATE.lookups?.bots,
-        dialogExtraSpeakers,
-      );
-      dialogFormRuntime = EditorCore.DialogEditor.mount(DOM.dialogForm, {
-        data: { DialogData: step.DialogData || [] },
-        fieldOptions: fieldRenderOptions,
-        sideOptions: dialogSideOptions,
-        extraSpeakers: dialogExtraSpeakers,
-        speakerOptions,
-        onChange: syncDialogModel,
-      });
-      applyDialogConstraints(dialogFormRuntime.getData());
+    ensureStepTabs();
+    showEditor('step');
+    scheduleTreeRender();
+  };
 
-      ensureStepTabs();
-      showEditor('step');
-      renderTree({ preserveScroll: true });
-    };
+  /* ════════ TREE RENDER ════════ */
+  const renderStepCard = (step, isSelected, isDirty) => {
+    const mobLabel   = lookupLabel(STATE.lookups.bots, step.BotID);
+    const worldLabel = lookupLabel(STATE.lookups.worlds, step.WorldID);
+    const skinInfo   = STATE.lookups.botSkins?.get(String(step.BotID));
+    const skinUrl    = (skinInfo && STATE.skinsApi)
+      ? EditorCore.utils.renderSkinApiUrl(STATE.skinsApi, skinInfo) : '';
+    const preview = skinUrl
+      ? `<img src="${skinUrl}" alt="" loading="lazy" />`
+      : '<i class="fa-solid fa-person-walking text-accent" style="font-size:14px"></i>';
 
-    const normalizeSearch = (value) => String(value || '').toLowerCase();
-
-    const buildTreeHtml = () => {
-      const search = normalizeSearch(DOM.search.value || '');
-      const searchTokens = search.split(/\s+/).filter(Boolean);
-      const questTypeFilter = DOM.typeFilter?.value || 'all';
-      const activeTypeFilter = questTypeFilter !== 'all' ? questTypeFilter : null;
-      const hasSearch = searchTokens.length > 0;
-      const questMap = new Map(STATE.quests.map((q) => [q.ID, q]));
-      const stepsByQuest = new Map();
-      const matchesSearch = (value) => {
-        if (!hasSearch) return true;
-        const text = normalizeSearch(value);
-        return searchTokens.every((token) => text.includes(token));
-      };
-
-      STATE.steps.forEach((step) => {
-        if (!stepsByQuest.has(step.QuestID)) stepsByQuest.set(step.QuestID, []);
-        stepsByQuest.get(step.QuestID).push(step);
-      });
-
-      const questList = STATE.quests
-        .filter((quest) => {
-          if (activeTypeFilter && !parseFlags(quest.Flags).includes(activeTypeFilter)) return false;
-          if (!hasSearch) return true;
-          return matchesSearch(`${quest.Name || ''} ${quest.ID}`);
-        })
-        .sort((a, b) => a.ID - b.ID);
-
-      if (STATE.lastQuestScrollId) {
-        const selectedIndex = questList.findIndex((quest) => quest.ID === STATE.lastQuestScrollId);
-        if (selectedIndex > 0) {
-          const [selectedQuest] = questList.splice(selectedIndex, 1);
-          questList.unshift(selectedQuest);
-        }
-      }
-
-      const questItems = questList.map((quest) => {
-          const isExpanded = hasSearch || STATE.expandedQuests.has(quest.ID);
-          const questClasses = [
-            'quest-node',
-            isExpanded ? 'is-expanded' : 'is-collapsed',
-          ];
-          const steps = (stepsByQuest.get(quest.ID) || []).sort((a, b) => (a.Step - b.Step) || (a.ID - b.ID));
-          const stepHtml = steps
-            .filter((step) => {
-              if (!hasSearch) return true;
-              const botLabel = formatLookupLabel(STATE.lookups?.bots, step.BotID);
-              const worldLabel = formatLookupLabel(STATE.lookups?.worlds, step.WorldID);
-              return matchesSearch([
-                step.BotID,
-                step.ID,
-                step.Step,
-                botLabel,
-                worldLabel,
-              ].join(' '));
-            })
-            .map((step) => {
-              const stepSelected = STATE.selected?.type === 'step' && STATE.selected?.id === step.ID;
-              const activeTab = stepSelected ? STATE.stepTab : null;
-              const mobLabel = formatLookupLabel(STATE.lookups?.bots, step.BotID);
-              const worldLabel = formatLookupLabel(STATE.lookups?.worlds, step.WorldID);
-              const skinInfo = STATE.lookups?.botSkins?.get(String(step.BotID));
-              const skinUrl = (skinInfo && STATE.skinsApi)
-                ? window.EditorCore.utils.renderSkinApiUrl(STATE.skinsApi, skinInfo)
-                : '';
-              const skinPreview = skinUrl
-                ? `<img src="${skinUrl}" alt="skin" loading="lazy" />`
-                : '';
-              return `
-                <div class="step-node ${stepSelected ? 'tree-selected' : ''}" draggable="true" data-node-type="step" data-id="${step.ID}">
-                  <div class="step-node-header">
-                    <div class="step-node-title">
-                      <div class="step-node-preview">${skinPreview}</div>
-					  <div class="step-node-sub">${mobLabel}\n${worldLabel}</div>
-                      <span class="editor-badge">#${step.ID}</span>
-                      <i class="fa-solid fa-person-walking text-accent"></i>
-                    </div>
-                    <div class="step-node-actions">
-                      <input
-                        class="editor-input form-input step-node-level"
-                        type="number"
-                        min="1"
-                        step="1"
-                        value="${Number(step.Step || 1)}"
-                        title="Позиция шага"
-                        data-step-level-id="${step.ID}"
-                      />
-                    </div>
-                  </div>
-                </div>`;
-            }).join('');
-
-          const questSelected = STATE.selected?.type === 'quest' && STATE.selected?.id === quest.ID;
-          return `
-            <div class="${questClasses.join(' ')} ${questSelected ? 'tree-selected' : ''}" data-node-type="quest" data-id="${quest.ID}">
-              <div class="quest-node-header">
-                <div class="quest-node-title">
-                  <i class="fa-solid fa-flag text-accent"></i>
-                  <span>${quest.Name || 'Без имени'}</span>
-                  <span class="badge">#${quest.ID}</span>
-                </div>
-                <div class="quest-node-meta">Шагов: ${steps.length}</div>
-                <button
-                  type="button"
-                  class="quest-node-toggle"
-                  data-quest-toggle="${quest.ID}"
-                  title="${isExpanded ? 'Свернуть шаги' : 'Развернуть шаги'}"
-                  aria-expanded="${isExpanded}">
-                  <i class="fa-solid fa-chevron-right"></i>
-                </button>
+    return `
+      <div class="step-node ${isSelected?'tree-selected':''} ${isDirty?'is-dirty':''}"
+           draggable="true" data-node-type="step" data-id="${step.ID}">
+        <div class="step-node-header">
+          <div class="step-node-title">
+            <div class="step-node-preview">${preview}</div>
+            <div class="step-node-info">
+              <div class="step-node-name">
+                <span class="step-node-name-text" title="${esc(mobLabel)}">${esc(mobLabel)}</span>
+                <span class="step-node-id">#${step.ID}</span>
               </div>
-              <div class="step-list">${stepHtml || '<div class="editor-muted-text text-xs mt-2">Нет шагов</div>'}</div>
-            </div>`;
-        });
+              <div class="step-node-sub" title="${esc(worldLabel)}">${esc(worldLabel)}</div>
+            </div>
+          </div>
+          <div class="step-node-actions">
+            <input class="editor-input form-input step-node-level" type="number"
+              min="1" step="1" value="${toNum(step.Step, 1)}"
+              title="Step position" data-step-level-id="${step.ID}" />
+            <div class="step-node-quick">
+              <button type="button" class="step-quick-btn is-grab"
+                      data-step-action="move" data-step-id="${step.ID}"
+                      title="Drag to another quest">
+                <i class="fa-solid fa-up-down-left-right"></i>
+              </button>
+              <button type="button" class="step-quick-btn"
+                      data-step-action="duplicate" data-step-id="${step.ID}"
+                      title="Duplicate step">
+                <i class="fa-solid fa-copy"></i>
+              </button>
+              <button type="button" class="step-quick-btn is-danger"
+                      data-step-action="delete" data-step-id="${step.ID}"
+                      title="Delete step">
+                <i class="fa-solid fa-trash"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>`;
+  };
 
-      return questItems.join('') || '<div class="editor-muted-text text-sm">Квесты не найдены</div>';
-    };
+  const buildTreeHtml = () => {
+    const tokens = norm(DOM.search.value).split(/\s+/).filter(Boolean);
+    const hasSearch = tokens.length > 0;
+    const typeFilter = DOM.typeFilter?.value || 'all';
+    const activeType = typeFilter !== 'all' ? typeFilter : null;
+    const match = (v) => !hasSearch || tokens.every(t => norm(v).includes(t));
 
-    const renderTree = ({ preserveScroll = false } = {}) => {
-      const scrollTop = DOM.tree?.scrollTop ?? 0;
-      DOM.tree.innerHTML = buildTreeHtml();
-      bindTreeEvents();
-      updateCounts();
-      if (preserveScroll && DOM.tree) DOM.tree.scrollTop = scrollTop;
-    };
+    const stepsByQuest = new Map();
+    for (const s of STATE.steps) {
+      const arr = stepsByQuest.get(s.QuestID);
+      if (arr) arr.push(s); else stepsByQuest.set(s.QuestID, [s]);
+    }
 
-    const debouncedRenderTree = EditorCore.utils.debounce(() => renderTree(), 200);
+    const list = STATE.quests
+      .filter(q => {
+        if (activeType && !parseFlags(q.Flags).includes(activeType)) return false;
+        return !hasSearch || match(`${q.Name || ''} ${q.ID}`);
+      })
+      .sort((a, b) => a.ID - b.ID);
 
-    const setDeleteButtonState = (options = {}) => {
-      if (!DOM.deleteBtn) return;
-      const { enabled = false, label = 'Удалить' } = options;
-      DOM.deleteBtn.disabled = !enabled;
-      DOM.deleteBtn.classList.toggle('hidden', !enabled);
-      const text = DOM.deleteBtn.querySelector('span');
-      if (text) text.textContent = label;
-    };
-
-    const setNewStepButtonState = (enabled) => {
-      if (!DOM.newStep) return;
-      DOM.newStep.disabled = !enabled;
-      DOM.newStep.classList.toggle('hidden', !enabled);
-    };
-
-    const showEditor = (type) => {
-      DOM.empty.classList.toggle('hidden', !!type);
-      DOM.questEditor.classList.toggle('hidden', type !== 'quest');
-      DOM.stepEditor.classList.toggle('hidden', type !== 'step');
-      if (type === 'quest') {
-        setDeleteButtonState({ enabled: true, label: 'Удалить квест' });
-        setNewStepButtonState(true);
-      } else if (type === 'step') {
-        setDeleteButtonState({ enabled: true, label: 'Удалить шаг' });
-        setNewStepButtonState(true);
-      } else {
-        setDeleteButtonState({ enabled: false, label: 'Удалить' });
-        setNewStepButtonState(false);
+    if (STATE.lastQuestScrollId && !hasSearch) {
+      const idx = list.findIndex(q => q.ID === STATE.lastQuestScrollId);
+      if (idx > 0) {
+        const [p] = list.splice(idx, 1);
+        list.unshift(p);
       }
-    };
+    }
 
-    const selectQuest = (quest) => {
-      const previousQuestId = STATE.lastQuestScrollId;
-      const shouldResetScroll = previousQuestId !== quest.ID;
-      STATE.selected = { type: 'quest', id: quest.ID };
-      STATE.lastQuestScrollId = quest.ID;
-      DOM.title.textContent = quest.Name ? `Квест: ${quest.Name}` : `Квест #${quest.ID}`;
-      DOM.subtitle.textContent = `ID ${quest.ID} · Следующий: ${quest.NextQuestID || '—'}`;
-      setNewStepButtonState(true);
-      setDeleteButtonState({ enabled: true, label: 'Удалить квест' });
+    if (!list.length) return '<div class="editor-muted-text text-sm">No quests found</div>';
 
-      const model = {
-        Name: quest.Name || '',
-        NextQuestID: Number(quest.NextQuestID || 0),
-        Money: Number(quest.Money || 0),
-        Exp: Number(quest.Exp || 0),
-        Flags: parseFlags(quest.Flags),
-      };
+    return list.map(quest => {
+      const expanded = hasSearch || STATE.expandedQuests.has(quest.ID);
+      const qSelected = STATE.selected?.type === 'quest' && STATE.selected?.id === quest.ID;
+      const qDirty    = STATE.dirtyQuests.has(quest.ID);
+      const steps = (stepsByQuest.get(quest.ID) || []).sort((a, b) => (a.Step - b.Step) || (a.ID - b.ID));
 
-      questFormRuntime = EditorCore.FormRuntime.mount(DOM.questForm, {
-        fields: questFields,
-        data: model,
-        fieldOptions: fieldRenderOptions,
-        onChange: syncQuestModel,
+      const filteredSteps = steps.filter(s => !hasSearch || match([s.BotID, s.ID, s.Step,
+        lookupLabel(STATE.lookups.bots, s.BotID),
+        lookupLabel(STATE.lookups.worlds, s.WorldID)].join(' ')));
+
+      const stepsHtml = filteredSteps.length
+        ? filteredSteps.map((s, i) => `
+            <div class="step-drop-indicator" data-drop-quest="${quest.ID}" data-drop-index="${i}"></div>
+            ${renderStepCard(
+              s,
+              STATE.selected?.type === 'step' && STATE.selected?.id === s.ID,
+              STATE.dirtySteps.has(s.ID)
+            )}
+          `).join('') +
+          `<div class="step-drop-indicator" data-drop-quest="${quest.ID}" data-drop-index="${filteredSteps.length}"></div>
+           <div class="step-drop-zone" data-drop-quest="${quest.ID}" data-drop-index="${filteredSteps.length}"></div>`
+        : `<div class="step-drop-zone" data-drop-quest="${quest.ID}" data-drop-index="0"></div>
+           <div class="editor-muted-text text-xs mt-2">No steps</div>`;
+
+      const cls = [
+        'quest-node',
+        expanded ? 'is-expanded' : 'is-collapsed',
+        qSelected ? 'tree-selected' : '',
+        qDirty ? 'is-dirty' : '',
+      ].filter(Boolean).join(' ');
+
+      return `
+        <div class="${cls}" data-node-type="quest" data-id="${quest.ID}">
+          <div class="quest-node-header">
+            <div class="quest-node-title">
+              <i class="fa-solid fa-flag text-accent"></i>
+              <span>${esc(quest.Name || 'Unnamed')}</span>
+              <span class="badge">#${quest.ID}</span>
+            </div>
+            <div class="quest-node-meta">Steps: ${steps.length}</div>
+            <button type="button" class="quest-node-toggle"
+                    data-quest-toggle="${quest.ID}"
+                    title="${expanded ? 'Collapse' : 'Expand'}"
+                    aria-expanded="${expanded}">
+              <i class="fa-solid fa-chevron-right"></i>
+            </button>
+          </div>
+          <div class="step-list">${stepsHtml}</div>
+        </div>`;
+    }).join('');
+  };
+
+  let _rafTree = 0;
+  const scheduleTreeRender = () => {
+    if (Drag.activeStepId != null) return;
+    cancelAnimationFrame(_rafTree);
+    _rafTree = requestAnimationFrame(() => renderTree({ preserveScroll: true }));
+  };
+
+  const renderTree = ({ preserveScroll = false } = {}) => {
+    const sc = DOM.tree?.scrollTop ?? 0;
+    DOM.tree.innerHTML = buildTreeHtml();
+    bindTreeEvents();
+    updateCounts();
+    if (preserveScroll && DOM.tree) DOM.tree.scrollTop = sc;
+  };
+
+  const debouncedRenderTree = EditorCore.utils.debounce(() => renderTree(), 200);
+
+  /* ════════ TREE EVENTS ════════ */
+  const bindTreeEvents = () => {
+    DOM.tree.querySelectorAll('[data-node-type="quest"]').forEach(el => {
+      el.addEventListener('click', (e) => {
+        if (e.target.closest('[data-node-type="step"]')) return;
+        if (e.target.closest('[data-quest-toggle]')) return;
+        if (e.target.closest('.step-drop-indicator, .step-drop-zone')) return;
+        const q = STATE.quests.find(x => x.ID === toNum(el.dataset.id));
+        if (q) selectQuest(q);
       });
-      const nameInput = DOM.questForm.querySelector('input[name="Name"]');
-      if (nameInput) nameInput.setAttribute('maxlength', '24');
+    });
 
-      showEditor('quest');
-      renderTree({ preserveScroll: !shouldResetScroll });
-      if (shouldResetScroll && DOM.tree) DOM.tree.scrollTop = 0;
-    };
-
-    const selectStep = (step) => {
-      STATE.selected = { type: 'step', id: step.ID };
-      if (step.QuestID) STATE.expandedQuests.add(step.QuestID);
-      setNewStepButtonState(true);
-      setDeleteButtonState({ enabled: true, label: 'Удалить шаг' });
-      mountStepEditor(step);
-    };
-
-    const removeQuest = async () => {
-      if (STATE.selected?.type !== 'quest') return;
-      const questId = STATE.selected.id;
-      if (!questId) return;
-      const quest = STATE.quests.find((q) => q.ID === questId);
-      const questName = quest?.Name ? `«${quest.Name}»` : `#${questId}`;
-      if (!confirm(`Удалить квест ${questName} и все его шаги?`)) return;
-
-      setDeleteButtonState({ enabled: false, label: 'Удаление…' });
-      try {
-        const stepsToRemove = STATE.steps.filter((step) => step.QuestID === questId);
-        const remoteSteps = stepsToRemove.filter((step) => step.ID > 0);
-        for (const step of remoteSteps) {
-          await EditorCore.DBCrud.remove('quest_bots', step.ID);
-        }
-
-        await EditorCore.DBCrud.remove('quests', questId);
-
-        STATE.steps = STATE.steps.filter((step) => step.QuestID !== questId);
-        STATE.quests = STATE.quests.filter((q) => q.ID !== questId);
-        stepsToRemove.forEach((step) => {
-          STATE.dirtySteps.delete(step.ID);
-          STATE.newSteps.delete(step.ID);
-        });
-        STATE.dirtyQuests.delete(questId);
-        STATE.expandedQuests.delete(questId);
-        setDirty();
-
-        STATE.selected = null;
-        showEditor(null);
-        setNewStepButtonState(false);
-        DOM.title.textContent = 'Выберите элемент дерева';
-        DOM.subtitle.textContent = 'квест или шаг моба';
-        renderTree();
-        EditorCore.UI.toast('Квест удалён', 'success');
-      } catch (error) {
-        setDeleteButtonState({ enabled: true, label: 'Удалить квест' });
-        EditorCore.UI.toast(error.message || 'Ошибка удаления', 'error');
-      }
-    };
-
-    const removeStep = async () => {
-      if (STATE.selected?.type !== 'step') return;
-      const stepId = STATE.selected.id;
-      const step = STATE.steps.find((item) => item.ID === stepId);
-      if (!step) return;
-      if (!confirm(`Удалить шаг #${stepId}?`)) return;
-
-      setDeleteButtonState({ enabled: false, label: 'Удаление…' });
-      try {
-        if (step.ID > 0) {
-          await EditorCore.DBCrud.remove('quest_bots', step.ID);
-        }
-        STATE.steps = STATE.steps.filter((item) => item.ID !== stepId);
-        STATE.dirtySteps.delete(stepId);
-        STATE.newSteps.delete(stepId);
-        setDirty();
-
-        const quest = STATE.quests.find((q) => q.ID === step.QuestID);
-        if (quest) {
-          selectQuest(quest);
-        } else {
-          STATE.selected = null;
-          showEditor(null);
-          setNewStepButtonState(false);
-          DOM.title.textContent = 'Выберите элемент дерева';
-          DOM.subtitle.textContent = 'квест или шаг моба';
-          renderTree();
-        }
-        EditorCore.UI.toast('Шаг удалён', 'success');
-      } catch (error) {
-        setDeleteButtonState({ enabled: true, label: 'Удалить шаг' });
-        EditorCore.UI.toast(error.message || 'Ошибка удаления', 'error');
-      }
-    };
-
-    const removeSelected = async () => {
-      if (STATE.selected?.type === 'quest') await removeQuest();
-      else if (STATE.selected?.type === 'step') await removeStep();
-    };
-
-    const bindTreeEvents = () => {
-      DOM.tree.querySelectorAll('[data-node-type="quest"]').forEach((el) => {
-        el.addEventListener('click', (event) => {
-          const id = Number(event.currentTarget.getAttribute('data-id'));
-          const quest = STATE.quests.find((q) => q.ID === id);
-          if (quest) selectQuest(quest);
-        });
-
-        el.addEventListener('dragover', (event) => {
-          const payload = event.dataTransfer?.getData('text/plain') || '';
-          if (!payload) return;
-          const data = safeParse(payload);
-          if (data?.type !== 'step') return;
-          event.preventDefault();
-          el.classList.add('tree-drag-over');
-        });
-
-        el.addEventListener('dragleave', () => {
-          el.classList.remove('tree-drag-over');
-        });
-
-        el.addEventListener('drop', (event) => {
-          el.classList.remove('tree-drag-over');
-          const payload = event.dataTransfer?.getData('text/plain') || '';
-          const data = safeParse(payload);
-          if (!data || data.type !== 'step') return;
-          event.preventDefault();
-          const questId = Number(el.getAttribute('data-id'));
-          moveStepToQuest(data.id, questId);
-        });
-      });
-
-      DOM.tree.querySelectorAll('[data-quest-toggle]').forEach((btn) => {
-        btn.addEventListener('click', (event) => {
-          event.stopPropagation();
-          const questId = Number(btn.getAttribute('data-quest-toggle'));
-          if (!questId) return;
-          if (STATE.expandedQuests.has(questId)) {
-            STATE.expandedQuests.delete(questId);
-          } else {
-            STATE.expandedQuests.add(questId);
-          }
-          renderTree({ preserveScroll: true });
-        });
-      });
-
-      DOM.tree.querySelectorAll('[data-node-type="step"]').forEach((el) => {
-        el.addEventListener('click', (event) => {
-          event.stopPropagation();
-          const id = Number(event.currentTarget.getAttribute('data-id'));
-          const step = STATE.steps.find((s) => s.ID === id);
-          if (step) selectStep(step);
-        });
-
-        el.addEventListener('dragstart', (event) => {
-          const id = Number(event.currentTarget.getAttribute('data-id'));
-          event.dataTransfer.setData('text/plain', JSON.stringify({ type: 'step', id }));
-          event.dataTransfer.effectAllowed = 'move';
-        });
-      });
-
-      DOM.tree.querySelectorAll('[data-step-tab]').forEach((btn) => {
-        btn.addEventListener('click', (event) => {
-          event.stopPropagation();
-          const stepId = Number(btn.getAttribute('data-step-id'));
-          const tabId = btn.getAttribute('data-step-tab');
-          const step = STATE.steps.find((s) => s.ID === stepId);
-          if (!step) return;
-          STATE.stepTab = tabId;
-          selectStep(step);
-        });
-      });
-
-      const updateStepLevel = (input, options = {}) => {
-        const id = Number(input.getAttribute('data-step-level-id'));
-        const step = STATE.steps.find((s) => s.ID === id);
-        if (!step) return;
-        const nextValue = Number(input.value || step.Step || 1);
-        const value = Number.isFinite(nextValue) ? Math.max(1, nextValue) : Math.max(1, step.Step || 1);
-        if (step.Step === value && !options.forceSync) return;
-        step.Step = value;
-        input.value = value;
-        markStepDirty(step.ID);
+    DOM.tree.querySelectorAll('[data-quest-toggle]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const id = toNum(btn.dataset.questToggle);
+        if (!id) return;
+        STATE.expandedQuests.has(id) ? STATE.expandedQuests.delete(id) : STATE.expandedQuests.add(id);
         renderTree({ preserveScroll: true });
-        if (STATE.selected?.type === 'step' && STATE.selected?.id === step.ID) {
-          selectStep(step);
-        }
-      };
-
-      DOM.tree.querySelectorAll('[data-step-level-id]').forEach((input) => {
-        input.addEventListener('click', (event) => {
-          event.stopPropagation();
-        });
-        input.addEventListener('input', (event) => {
-          event.stopPropagation();
-        });
-        input.addEventListener('change', (event) => {
-          event.stopPropagation();
-          updateStepLevel(event.currentTarget, { forceSync: true });
-        });
-        input.addEventListener('blur', (event) => {
-          event.stopPropagation();
-          updateStepLevel(event.currentTarget);
-        });
       });
-    };
+    });
 
-    const safeParse = (raw) => {
-      try {
-        return JSON.parse(raw);
-      } catch {
-        return null;
-      }
-    };
+    DOM.tree.querySelectorAll('[data-node-type="step"]').forEach(el => {
+      el.addEventListener('click', (e) => {
+        e.stopPropagation();
+        if (e.target.closest('[data-step-level-id]')) return;
+        if (e.target.closest('[data-step-action]')) return;
+        const s = STATE.steps.find(x => x.ID === toNum(el.dataset.id));
+        if (s) selectStep(s);
+      });
 
-    const moveStepToQuest = (stepId, questId) => {
-      const step = STATE.steps.find((s) => s.ID === stepId);
-      if (!step || step.QuestID === questId) return;
-      step.QuestID = questId;
-      markStepDirty(step.ID);
-      renderTree({ preserveScroll: true });
-      if (STATE.selected?.type === 'step' && STATE.selected?.id === stepId) {
-        selectStep(step);
-      }
-      EditorCore.UI.toast(`Шаг #${stepId} перенесён в квест #${questId}`, 'success');
-    };
+      el.addEventListener('dragstart', (e) => {
+        e.stopPropagation();
+        const id = toNum(el.dataset.id);
+        Drag.activeStepId = id;
+        e.dataTransfer.setData('text/plain', JSON.stringify({ type: 'step', id }));
+        e.dataTransfer.effectAllowed = 'move';
+        requestAnimationFrame(() => el.classList.add('is-dragging'));
 
-    const loadData = async () => {
-      DOM.tree.innerHTML = '<div class="editor-muted-text text-sm">Загрузка...</div>';
-      try {
-        const [questsRes, stepsRes, botLabels, worldLabels, botSkins, skinsApi] = await Promise.all([
-          EditorCore.DBCrud.list('quests', { limit: 5000 }),
-          EditorCore.DBCrud.list('quest_bots', { limit: 5000 }),
-          getLabelMap('bots'),
-          getLabelMap('worlds'),
-          EditorCore.utils.getBotSkinsMap(),
-          EditorCore.utils.getSkinsApi(),
-        ]);
+        if (e.dataTransfer.setDragImage) {
+          const ghost = el.cloneNode(true);
+          Object.assign(ghost.style, {
+            position: 'absolute', top: '-9999px', left: '-9999px',
+            width: `${el.offsetWidth}px`, opacity: '0.85', transform: 'rotate(-1deg)',
+          });
+          document.body.appendChild(ghost);
+          e.dataTransfer.setDragImage(ghost, 20, 20);
+          setTimeout(() => ghost.remove(), 0);
+        }
+      });
 
-        STATE.quests = (questsRes?.rows || []).map((row) => ({
-          ID: Number(row.ID),
-          Name: String(row.Name || ''),
-          NextQuestID: Number(row.NextQuestID || 0),
-          Money: Number(row.Money || 0),
-          Exp: Number(row.Exp || 0),
-          Flags: row.Flags || QuestFlags.typeMain,
-        }));
+      el.addEventListener('dragend', () => Drag.reset());
+    });
 
-        STATE.steps = (stepsRes?.rows || []).map((row) => ({
-          ID: Number(row.ID),
-          BotID: Number(row.BotID || 0),
-          QuestID: Number(row.QuestID || 0),
-          Step: Number(row.Step || 1),
-          WorldID: row.WorldID == null ? null : Number(row.WorldID),
-          PosX: Number(row.PosX || 0),
-          PosY: Number(row.PosY || 0),
-          AutoFinish: row.AutoFinish || null,
-          DialogData: Array.isArray(row.DialogData) ? row.DialogData : [],
-          ScenarioData: row.ScenarioData || '',
-          TasksData: normalizeTasks(row.TasksData),
-        }));
-        STATE.lookups.bots = botLabels;
-        STATE.lookups.worlds = worldLabels;
-        STATE.lookups.botSkins = botSkins;
-        STATE.skinsApi = skinsApi;
-        STATE.expandedQuests.clear();
+    DOM.tree.querySelectorAll('[data-step-action]').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation(); e.preventDefault();
+        const action = btn.dataset.stepAction;
+        const step = STATE.steps.find(s => s.ID === toNum(btn.dataset.stepId));
+        if (!step) return;
+        if (action === 'move') {
+          selectStep(step);
+          EditorCore.UI.toast('Drag the card to the desired location', 'info');
+        } else if (action === 'duplicate') {
+          duplicateStepFromTree(step);
+        } else if (action === 'delete') {
+          removeStepFromTree(step);
+        }
+      });
+    });
 
-        STATE.dirtyQuests.clear();
-        STATE.dirtySteps.clear();
-        STATE.newSteps.clear();
-        STATE.nextTempStepId = -1;
-        STATE.lastQuestScrollId = null;
-        setDirty();
-        renderTree();
-      } catch (error) {
-        DOM.tree.innerHTML = '<div class="editor-muted-text text-sm">Не удалось загрузить данные</div>';
-        EditorCore.UI.toast(error.message || 'Ошибка загрузки', 'error');
-      }
-    };
+    DOM.tree.querySelectorAll('[data-step-level-id]').forEach(input => {
+      const commit = () => {
+        const s = STATE.steps.find(x => x.ID === toNum(input.dataset.stepLevelId));
+        if (!s) return;
+        const v = clamp(toNum(input.value, s.Step), 1, 9999);
+        if (s.Step === v) return;
+        s.Step = v;
+        input.value = v;
+        markStepDirty(s.ID);
+        scheduleTreeRender();
+        if (STATE.selected?.type === 'step' && STATE.selected?.id === s.ID) selectStep(s);
+      };
+      input.addEventListener('click', (e) => e.stopPropagation());
+      input.addEventListener('change', (e) => { e.stopPropagation(); commit(); });
+      input.addEventListener('blur', (e) => { e.stopPropagation(); commit(); });
+    });
 
-    const saveAll = async () => {
-      const quests = Array.from(STATE.dirtyQuests);
-      const newSteps = Array.from(STATE.newSteps);
-      const steps = Array.from(STATE.dirtySteps).filter((id) => !STATE.newSteps.has(id));
-      if (!quests.length && !steps.length && !newSteps.length) {
-        EditorCore.UI.toast('Нет изменений для сохранения', 'info');
+    bindTreeDndListeners();
+  };
+
+  let _dndBound = false;
+  const bindTreeDndListeners = () => {
+    if (_dndBound) return;
+    _dndBound = true;
+
+    DOM.tree.addEventListener('dragover', (e) => {
+      if (Drag.activeStepId == null) return;
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+
+      const stepNode = e.target.closest('.step-node[data-node-type="step"]');
+      const dropZone = e.target.closest('.step-drop-zone');
+      const questNode = e.target.closest('.quest-node[data-node-type="quest"]');
+
+      if (stepNode && toNum(stepNode.dataset.id) === Drag.activeStepId) {
+        Drag.clearIndicator(); Drag.clearDropZone();
         return;
       }
 
-      DOM.save.disabled = true;
-      try {
-        for (const id of quests) {
-          const quest = STATE.quests.find((q) => q.ID === id);
-          if (!quest) continue;
-          await EditorCore.DBCrud.update('quests', id, {
-            Name: quest.Name,
-            NextQuestID: quest.NextQuestID || null,
-            Money: quest.Money,
-            Exp: quest.Exp,
-            Flags: quest.Flags || QuestFlags.typeMain,
-          });
+      DOM.tree.querySelectorAll('.quest-node.tree-drag-over').forEach(q => {
+        if (q !== questNode) q.classList.remove('tree-drag-over');
+      });
+      if (questNode) questNode.classList.add('tree-drag-over');
+
+      if (dropZone) { Drag.setDropZone(dropZone); return; }
+
+      if (stepNode && questNode) {
+        const rect = stepNode.getBoundingClientRect();
+        const isUpperHalf = (e.clientY - rect.top) < rect.height / 2;
+        const stepsInQuest = Array.from(questNode.querySelectorAll('[data-node-type="step"]'));
+        const stepIdx = stepsInQuest.indexOf(stepNode);
+        const draggedIdx = stepsInQuest.findIndex(s => toNum(s.dataset.id) === Drag.activeStepId);
+        const all = Array.from(questNode.querySelectorAll('.step-drop-indicator'));
+        const indicatorIdx = isUpperHalf ? stepIdx : stepIdx + 1;
+
+        if (draggedIdx !== -1 && (indicatorIdx === draggedIdx || indicatorIdx === draggedIdx + 1)) {
+          Drag.clearIndicator(); Drag.clearDropZone();
+          return;
         }
 
-        for (const id of newSteps) {
-          const step = STATE.steps.find((s) => s.ID === id);
-          if (!step) continue;
-          const rawTasks = denormalizeTasks(step.TasksData);
-          const res = await EditorCore.DBCrud.create('quest_bots', {
-            BotID: step.BotID,
-            QuestID: step.QuestID,
-            Step: step.Step,
-            WorldID: step.WorldID == null ? null : step.WorldID,
-            PosX: step.PosX,
-            PosY: step.PosY,
-            AutoFinish: step.AutoFinish || null,
-            DialogData: step.DialogData?.length ? step.DialogData : null,
-            ScenarioData: step.ScenarioData || null,
-            TasksData: rawTasks,
-          });
-          const newId = Number(res?.id || 0);
-          if (newId) {
-            if (STATE.selected?.type === 'step' && STATE.selected?.id === step.ID) {
-              STATE.selected.id = newId;
-            }
-            STATE.dirtySteps.delete(step.ID);
-            STATE.newSteps.delete(step.ID);
-            step.ID = newId;
-          }
-        }
-
-        for (const id of steps) {
-          const step = STATE.steps.find((s) => s.ID === id);
-          if (!step) continue;
-          const rawTasks = denormalizeTasks(step.TasksData);
-          await EditorCore.DBCrud.update('quest_bots', id, {
-            BotID: step.BotID,
-            QuestID: step.QuestID,
-            Step: step.Step,
-            WorldID: step.WorldID == null ? null : step.WorldID,
-            PosX: step.PosX,
-            PosY: step.PosY,
-            AutoFinish: step.AutoFinish || null,
-            DialogData: step.DialogData?.length ? step.DialogData : null,
-            ScenarioData: step.ScenarioData || null,
-            TasksData: rawTasks,
-          });
-        }
-
-        STATE.dirtyQuests.clear();
-        STATE.dirtySteps.clear();
-        STATE.newSteps.clear();
-        setDirty();
-        if (STATE.selected?.type === 'step') {
-          const step = STATE.steps.find((s) => s.ID === STATE.selected?.id);
-          if (step) {
-            selectStep(step);
-          } else {
-            renderTree({ preserveScroll: true });
-          }
-        } else {
-          renderTree({ preserveScroll: true });
-        }
-        EditorCore.UI.toast('Изменения сохранены', 'success');
-      } catch (error) {
-        EditorCore.UI.toast(error.message || 'Ошибка сохранения', 'error');
-      } finally {
-        DOM.save.disabled = false;
+        const indicator = all[indicatorIdx];
+        if (indicator) Drag.setIndicator(indicator);
+        return;
       }
-    };
 
-    const createQuest = async () => {
-      DOM.newQuest.disabled = true;
-      try {
-        const payload = {
-          Name: 'Новый квест',
-          NextQuestID: null,
-          Money: 0,
-          Exp: 0,
-          Flags: QuestFlags.typeMain,
-        };
-        const res = await EditorCore.DBCrud.create('quests', payload);
-        await loadData();
-        const quest = STATE.quests.find((q) => q.ID === res.id);
-        if (quest) selectQuest(quest);
-      } catch (error) {
-        EditorCore.UI.toast(error.message || 'Ошибка создания квеста', 'error');
-      } finally {
-        DOM.newQuest.disabled = false;
+      if (questNode) {
+        const lastIndicator = questNode.querySelector('.step-drop-indicator:last-of-type');
+        if (lastIndicator) Drag.setIndicator(lastIndicator);
+        return;
       }
-    };
 
-    const createStep = async () => {
-      const stepQuestId = STATE.selected?.type === 'quest'
-        ? STATE.selected.id
-        : STATE.selected?.type === 'step'
-          ? STATE.steps.find((s) => s.ID === STATE.selected.id)?.QuestID
-          : null;
-      if (!stepQuestId) return;
+      Drag.clearIndicator(); Drag.clearDropZone();
+    });
 
-      const questSteps = STATE.steps.filter((step) => step.QuestID === stepQuestId);
-      const maxStep = questSteps.reduce((max, step) => Math.max(max, Number(step.Step || 0)), 0);
-      const tempId = STATE.nextTempStepId--;
-      const step = {
-        ID: tempId,
-        BotID: 0,
-        QuestID: stepQuestId,
-        Step: Math.max(1, maxStep + 1),
-        WorldID: null,
-        PosX: 0,
-        PosY: 0,
-        AutoFinish: null,
-        DialogData: [],
-        ScenarioData: '',
-        TasksData: taskDefault(),
-      };
-      STATE.steps.push(step);
-      STATE.newSteps.add(step.ID);
-      STATE.expandedQuests.add(stepQuestId);
+    DOM.tree.addEventListener('dragleave', (e) => {
+      if (!DOM.tree.contains(e.relatedTarget)) Drag.reset();
+    });
+
+    DOM.tree.addEventListener('drop', (e) => {
+      e.preventDefault();
+      const data = safeParse(e.dataTransfer?.getData('text/plain'));
+      if (data?.type !== 'step') { Drag.reset(); return; }
+      if (!Drag.activeIndicator && !Drag.activeDropZone) { Drag.reset(); return; }
+
+      let questId = null, insertIndex = 0;
+      if (Drag.activeIndicator) {
+        questId = toNum(Drag.activeIndicator.dataset.dropQuest);
+        insertIndex = toNum(Drag.activeIndicator.dataset.dropIndex);
+      } else if (Drag.activeDropZone) {
+        questId = toNum(Drag.activeDropZone.dataset.dropQuest);
+        insertIndex = toNum(Drag.activeDropZone.dataset.dropIndex);
+      }
+
+      Drag.reset();
+      if (questId != null) moveStepTo(data.id, questId, insertIndex);
+    });
+  };
+
+  /* ════════ SELECTION ════════ */
+  const selectQuest = (quest) => {
+    const reset = STATE.lastQuestScrollId !== quest.ID;
+    STATE.selected = { type:'quest', id: quest.ID };
+    STATE.lastQuestScrollId = quest.ID;
+
+    DOM.title.textContent = quest.Name ? `Quest: ${quest.Name}` : `Quest #${quest.ID}`;
+    DOM.subtitle.textContent = `ID ${quest.ID} · Next: ${quest.NextQuestID || '—'}`;
+
+    Runtime.questForm = EditorCore.FormRuntime.mount(DOM.questForm, {
+      fields: questFields,
+      data: {
+        Name: quest.Name || '',
+        NextQuestID: toNum(quest.NextQuestID),
+        Money: toNum(quest.Money),
+        Exp: toNum(quest.Exp),
+        Flags: parseFlags(quest.Flags),
+      },
+      fieldOptions: fieldRenderOptions,
+      onChange: syncQuest,
+    });
+    DOM.questForm.querySelector('input[name="Name"]')?.setAttribute('maxlength', '24');
+
+    showEditor('quest');
+    renderTree({ preserveScroll: !reset });
+    if (reset && DOM.tree) DOM.tree.scrollTop = 0;
+  };
+
+  const selectStep = (step) => {
+    STATE.selected = { type:'step', id: step.ID };
+    if (step.QuestID) STATE.expandedQuests.add(step.QuestID);
+    mountStepEditor(step);
+  };
+
+  /* ════════ DnD: move + renumber ════════ */
+  const moveStepTo = (stepId, targetQuestId, insertIndex) => {
+    const step = STATE.steps.find(s => s.ID === stepId);
+    if (!step) return;
+
+    const sourceQuestId = step.QuestID;
+    const sameQuest = sourceQuestId === targetQuestId;
+
+    // Full sorted list of target quest (including the moved step)
+    const fullTarget = STATE.steps
+      .filter(s => s.QuestID === targetQuestId)
+      .sort((a, b) => (a.Step - b.Step) || (a.ID - b.ID));
+
+    const currentIndexInTarget = sameQuest ? fullTarget.findIndex(s => s.ID === stepId) : -1;
+    let targetIndex = clamp(toNum(insertIndex), 0, fullTarget.length);
+
+    // Correction: if moving within the same quest and inserting AFTER current position,
+    // shift index by -1 because after removing the step all elements to the right shift
+    if (sameQuest && currentIndexInTarget !== -1 && targetIndex > currentIndexInTarget) {
+      targetIndex -= 1;
+    }
+
+    // Check "position unchanged"
+    if (sameQuest && targetIndex === currentIndexInTarget) return;
+
+    // Target list WITHOUT the moved step
+    const sortedTarget = fullTarget.filter(s => s.ID !== stepId);
+    const clampedIndex = clamp(targetIndex, 0, sortedTarget.length);
+
+    // Insert step
+    sortedTarget.splice(clampedIndex, 0, step);
+    renumberSteps(sortedTarget, stepId);
+
+    // Update QuestID if it's a transfer
+    if (step.QuestID !== targetQuestId) {
+      step.QuestID = targetQuestId;
       markStepDirty(step.ID);
-      selectStep(step);
+    }
+
+    // Renumber source quest if it's a transfer
+    if (!sameQuest) {
+      const sortedSource = STATE.steps
+        .filter(s => s.QuestID === sourceQuestId)
+        .sort((a, b) => (a.Step - b.Step) || (a.ID - b.ID));
+      renumberSteps(sortedSource, null);
+    }
+
+    STATE.selected = { type: 'step', id: stepId };
+    STATE.expandedQuests.add(targetQuestId);
+    renderTree({ preserveScroll: true });
+
+    requestAnimationFrame(() => {
+      DOM.tree.querySelector(`.step-node[data-id="${stepId}"]`)?.scrollIntoView({ block:'nearest', behavior:'smooth' });
+    });
+
+    mountStepEditor(step);
+    const msg = sameQuest
+      ? `Step #${stepId} → position ${step.Step}`
+      : `Step #${stepId} → quest #${targetQuestId} (position ${step.Step})`;
+    EditorCore.UI.toast(msg, 'success');
+  };
+
+  const renumberSteps = (sorted, movedId) => {
+    if (!sorted.length) return;
+
+    const origSteps = new Map();
+    sorted.forEach(s => { if (s.ID !== movedId) origSteps.set(s.ID, s.Step); });
+
+    const groups = [];
+    let cur = null;
+    for (const s of sorted) {
+      if (s.ID === movedId) {
+        if (cur) groups.push(cur);
+        groups.push({ ids: [s.ID], isMoved: true });
+        cur = null;
+      } else {
+        const orig = origSteps.get(s.ID);
+        if (cur && !cur.isMoved && origSteps.get(cur.ids[0]) === orig) {
+          cur.ids.push(s.ID);
+        } else {
+          if (cur) groups.push(cur);
+          cur = { ids: [s.ID], isMoved: false };
+        }
+      }
+    }
+    if (cur) groups.push(cur);
+
+    const stepMap = new Map();
+    let n = 1;
+    for (const g of groups) {
+      for (const id of g.ids) stepMap.set(id, n);
+      n++;
+    }
+
+    for (const s of sorted) {
+      const newStep = stepMap.get(s.ID) ?? s.Step;
+      if (s.Step !== newStep) {
+        s.Step = newStep;
+        markStepDirty(s.ID);
+      }
+    }
+  };
+
+  /* ════════ CRUD ════════ */
+  const removeQuest = async () => {
+    if (STATE.selected?.type !== 'quest') return;
+    const id = STATE.selected.id;
+    const q = STATE.quests.find(x => x.ID === id);
+    const name = q?.Name ? `"${q.Name}"` : `#${id}`;
+    if (!confirm(`Delete quest ${name} and all its steps?`)) return;
+
+    setBtn(DOM.deleteBtn, { enabled:false, hidden:false, label:'Deleting…' });
+    try {
+      const toRemove = STATE.steps.filter(s => s.QuestID === id);
+      for (const s of toRemove.filter(s => s.ID > 0)) {
+        await EditorCore.DBCrud.remove('quest_bots', s.ID);
+      }
+      await EditorCore.DBCrud.remove('quests', id);
+
+      STATE.steps  = STATE.steps.filter(s => s.QuestID !== id);
+      STATE.quests = STATE.quests.filter(x => x.ID !== id);
+      toRemove.forEach(s => { STATE.dirtySteps.delete(s.ID); STATE.newSteps.delete(s.ID); });
+      STATE.dirtyQuests.delete(id);
+      STATE.expandedQuests.delete(id);
+      setDirty();
+
+      STATE.selected = null;
+      showEditor(null);
+      resetHeader();
+      renderTree();
+      EditorCore.UI.toast('Quest deleted', 'success');
+    } catch (err) {
+      setBtn(DOM.deleteBtn, { enabled:true, hidden:false, label:'Delete Quest' });
+      EditorCore.UI.toast(err.message || 'Deletion error', 'error');
+    }
+  };
+
+  const removeStepCommon = async (step) => {
+    if (!step) return false;
+    try {
+      if (step.ID > 0) await EditorCore.DBCrud.remove('quest_bots', step.ID);
+      STATE.steps = STATE.steps.filter(s => s.ID !== step.ID);
+      STATE.dirtySteps.delete(step.ID);
+      STATE.newSteps.delete(step.ID);
+      setDirty();
+
+      const wasSelected = STATE.selected?.type === 'step' && STATE.selected?.id === step.ID;
+      if (wasSelected) {
+        const q = STATE.quests.find(x => x.ID === step.QuestID);
+        if (q) selectQuest(q);
+        else {
+          STATE.selected = null;
+          showEditor(null);
+          resetHeader();
+          renderTree();
+        }
+      } else {
+        renderTree({ preserveScroll: true });
+      }
+      EditorCore.UI.toast('Step deleted', 'success');
+      return true;
+    } catch (err) {
+      EditorCore.UI.toast(err.message || 'Deletion error', 'error');
+      return false;
+    }
+  };
+
+  const removeStepFromTree = async (step) => {
+    if (!step || !confirm(`Delete step #${step.ID}?`)) return;
+    await removeStepCommon(step);
+  };
+
+  const removeStep = async () => {
+    if (STATE.selected?.type !== 'step') return;
+    const s = STATE.steps.find(x => x.ID === STATE.selected.id);
+    if (!s || !confirm(`Delete step #${s.ID}?`)) return;
+    setBtn(DOM.deleteBtn, { enabled:false, hidden:false, label:'Deleting…' });
+    const ok = await removeStepCommon(s);
+    if (!ok) setBtn(DOM.deleteBtn, { enabled:true, hidden:false, label:'Delete Step' });
+  };
+
+  const removeSelected = async () => {
+    if (STATE.selected?.type === 'quest') await removeQuest();
+    else if (STATE.selected?.type === 'step') await removeStep();
+  };
+
+  const createQuest = async () => {
+    DOM.newQuest.disabled = true;
+    try {
+      const res = await EditorCore.DBCrud.create('quests', {
+        Name:'New Quest', NextQuestID:null, Money:0, Exp:0, Flags: QuestFlags.typeMain,
+      });
+      await loadData();
+      const q = STATE.quests.find(x => x.ID === res.id);
+      if (q) selectQuest(q);
+    } catch (err) {
+      EditorCore.UI.toast(err.message || 'Quest creation error', 'error');
+    } finally {
+      DOM.newQuest.disabled = false;
+    }
+  };
+
+  const createStep = () => {
+    const questId = STATE.selected?.type === 'quest'
+      ? STATE.selected.id
+      : STATE.selected?.type === 'step'
+        ? STATE.steps.find(s => s.ID === STATE.selected.id)?.QuestID
+        : null;
+    if (!questId) return;
+
+    const maxStep = STATE.steps
+      .filter(s => s.QuestID === questId)
+      .reduce((m, s) => Math.max(m, toNum(s.Step)), 0);
+
+    const step = {
+      ID: STATE.nextTempStepId--, BotID:0, QuestID:questId,
+      Step: Math.max(1, maxStep + 1),
+      WorldID:null, PosX:0, PosY:0,
+      AutoFinish:null, DialogData:[], ScenarioData:'',
+      TasksData: taskDefault(),
     };
+    STATE.steps.push(step);
+    STATE.newSteps.add(step.ID);
+    STATE.expandedQuests.add(questId);
+    markStepDirty(step.ID);
+    selectStep(step);
+  };
 
-    DOM.refresh.addEventListener('click', loadData);
-    DOM.save.addEventListener('click', saveAll);
-    DOM.newQuest.addEventListener('click', createQuest);
-    DOM.newStep.addEventListener('click', createStep);
-    DOM.deleteBtn.addEventListener('click', removeSelected);
-    DOM.search.addEventListener('input', debouncedRenderTree);
-    DOM.typeFilter.addEventListener('change', renderTree);
+  const duplicateStepFromTree = (src) => {
+    if (!src) return;
+    const tempId = STATE.nextTempStepId--;
+    const copy = {
+      ...structuredClone(src),
+      ID: tempId,
+      Step: toNum(src.Step, 1) + 1,
+    };
+    copy.DialogData = structuredClone(src.DialogData || []);
+    copy.TasksData  = normalizeTasks(structuredClone(src.TasksData));
+    STATE.steps.push(copy);
+    STATE.newSteps.add(copy.ID);
+    STATE.expandedQuests.add(copy.QuestID);
+    markStepDirty(copy.ID);
+    selectStep(copy);
+    EditorCore.UI.toast(`Step duplicated → #${tempId}`, 'success');
+  };
 
-    loadData();
+  const duplicateStep = () => {
+    if (STATE.selected?.type !== 'step') return;
+    duplicateStepFromTree(STATE.steps.find(s => s.ID === STATE.selected.id));
+  };
+
+  /* ════════ LOAD ════════ */
+  const loadData = async () => {
+    DOM.tree.innerHTML = '<div class="editor-muted-text text-sm">Loading...</div>';
+    try {
+      const [qRes, sRes, botLabels, worldLabels, botSkins, skinsApi] = await Promise.all([
+        EditorCore.DBCrud.list('quests', { limit:5000 }),
+        EditorCore.DBCrud.list('quest_bots', { limit:5000 }),
+        getLabelMap('bots'),
+        getLabelMap('worlds'),
+        EditorCore.utils.getBotSkinsMap(),
+        EditorCore.utils.getSkinsApi(),
+      ]);
+
+      STATE.quests = (qRes?.rows || []).map(r => ({
+        ID: toNum(r.ID), Name: String(r.Name || ''),
+        NextQuestID: toNum(r.NextQuestID),
+        Money: toNum(r.Money), Exp: toNum(r.Exp),
+        Flags: r.Flags || QuestFlags.typeMain,
+      }));
+
+      STATE.steps = (sRes?.rows || []).map(r => ({
+        ID: toNum(r.ID),
+        BotID: toNum(r.BotID), QuestID: toNum(r.QuestID),
+        Step: toNum(r.Step, 1),
+        WorldID: r.WorldID == null ? null : toNum(r.WorldID),
+        PosX: toNum(r.PosX), PosY: toNum(r.PosY),
+        AutoFinish: r.AutoFinish || null,
+        DialogData: Array.isArray(r.DialogData) ? r.DialogData : [],
+        ScenarioData: r.ScenarioData || '',
+        TasksData: normalizeTasks(r.TasksData),
+      }));
+
+      STATE.lookups.bots = botLabels;
+      STATE.lookups.worlds = worldLabels;
+      STATE.lookups.botSkins = botSkins;
+      STATE.skinsApi = skinsApi;
+
+      STATE.dirtyQuests.clear();
+      STATE.dirtySteps.clear();
+      STATE.newSteps.clear();
+      STATE.expandedQuests.clear();
+      STATE.nextTempStepId = -1;
+      STATE.lastQuestScrollId = null;
+      setDirty();
+      renderTree();
+    } catch (err) {
+      DOM.tree.innerHTML = '<div class="editor-muted-text text-sm">Failed to load data</div>';
+      EditorCore.UI.toast(err.message || 'Loading error', 'error');
+    }
+  };
+
+  /* ════════ SAVE ════════ */
+  const buildStepPayload = (s) => ({
+    BotID: s.BotID, QuestID: s.QuestID, Step: s.Step,
+    WorldID: s.WorldID == null ? null : s.WorldID,
+    PosX: s.PosX, PosY: s.PosY,
+    AutoFinish: s.AutoFinish || null,
+    DialogData: s.DialogData?.length ? s.DialogData : null,
+    ScenarioData: s.ScenarioData || null,
+    TasksData: denormalizeTasks(s.TasksData),
+  });
+
+  const saveAll = async () => {
+    const qIds = [...STATE.dirtyQuests];
+    const newIds = [...STATE.newSteps];
+    const updIds = [...STATE.dirtySteps].filter(id => !STATE.newSteps.has(id));
+
+    if (!qIds.length && !newIds.length && !updIds.length) {
+      EditorCore.UI.toast('No changes to save', 'info');
+      return;
+    }
+
+    DOM.save.disabled = true;
+    try {
+      for (const id of qIds) {
+        const q = STATE.quests.find(x => x.ID === id);
+        if (!q) continue;
+        await EditorCore.DBCrud.update('quests', id, {
+          Name: q.Name, NextQuestID: q.NextQuestID || null,
+          Money: q.Money, Exp: q.Exp,
+          Flags: q.Flags || QuestFlags.typeMain,
+        });
+      }
+
+      for (const id of newIds) {
+        const s = STATE.steps.find(x => x.ID === id);
+        if (!s) continue;
+        const res = await EditorCore.DBCrud.create('quest_bots', buildStepPayload(s));
+        const newId = toNum(res?.id);
+        if (newId) {
+          if (STATE.selected?.type === 'step' && STATE.selected?.id === s.ID) STATE.selected.id = newId;
+          STATE.dirtySteps.delete(s.ID);
+          STATE.newSteps.delete(s.ID);
+          s.ID = newId;
+        }
+      }
+
+      for (const id of updIds) {
+        const s = STATE.steps.find(x => x.ID === id);
+        if (!s) continue;
+        await EditorCore.DBCrud.update('quest_bots', id, buildStepPayload(s));
+      }
+
+      STATE.dirtyQuests.clear();
+      STATE.dirtySteps.clear();
+      STATE.newSteps.clear();
+      setDirty();
+
+      if (STATE.selected?.type === 'step') {
+        const s = STATE.steps.find(x => x.ID === STATE.selected.id);
+        if (s) selectStep(s); else renderTree({ preserveScroll: true });
+      } else {
+        renderTree({ preserveScroll: true });
+      }
+      EditorCore.UI.toast('Changes saved', 'success');
+    } catch (err) {
+      EditorCore.UI.toast(err.message || 'Save error', 'error');
+    } finally {
+      DOM.save.disabled = false;
+    }
+  };
+
+  /* ════════ SHORTCUTS ════════ */
+  document.addEventListener('keydown', (e) => {
+    const ctrl = e.ctrlKey || e.metaKey;
+    const inField = e.target.closest('input, textarea, select, [contenteditable]');
+
+    if (ctrl && e.key === 's') { e.preventDefault(); saveAll(); return; }
+    if (e.key === 'Delete' && STATE.selected && !inField) { e.preventDefault(); removeSelected(); return; }
+    if (ctrl && e.key === 'd' && STATE.selected?.type === 'step') { e.preventDefault(); duplicateStep(); return; }
+    if (e.key === 'Escape' && STATE.selected && !inField) {
+      STATE.selected = null;
+      showEditor(null);
+      resetHeader();
+      renderTree({ preserveScroll: true });
+    }
+  });
+
+  window.addEventListener('beforeunload', (e) => {
+    if (isDirty()) { e.preventDefault(); e.returnValue = ''; }
+  });
+
+  DOM.refresh.addEventListener('click', loadData);
+  DOM.save.addEventListener('click', saveAll);
+  DOM.newQuest.addEventListener('click', createQuest);
+  DOM.newStep.addEventListener('click', createStep);
+  DOM.duplicateBtn.addEventListener('click', duplicateStep);
+  DOM.deleteBtn.addEventListener('click', removeSelected);
+  DOM.search.addEventListener('input', debouncedRenderTree);
+  DOM.typeFilter.addEventListener('change', () => renderTree());
+
+  loadData();
   </script>
 </body>
 </html>
