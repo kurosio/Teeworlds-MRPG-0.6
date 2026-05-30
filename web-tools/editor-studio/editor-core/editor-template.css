@@ -1,34 +1,16 @@
-/*
-  Editor Template (adaptive, reusable)
-  -------------------------------------------------------------
-  A thin layout layer shared by ALL editors.
-  Keep the core visuals in editor-theme.css; this file adds:
-  - Page shell + header
-  - Sidebar/Main responsive grid
-  - Section blocks + field grids
-  - Reusable "table-like" list mode for list fields
-
-  Minimal setup per editor:
-    <link rel="stylesheet" href="editor-core/editor-theme.css" />
-    <link rel="stylesheet" href="editor-core/editor-template.css" />
-    <body class="editor-theme" data-editor="crafts"> ...
-
-  Optional per-editor overrides:
-    body[data-editor="crafts"]{ --editor-accent: ...; }
-*/
-
 :root{
   /* Page layout */
-  --editor-page-max: 1360px;
-  --editor-page-pad: 16px;
+  --editor-page-max: 1440px;
+  --editor-page-pad: clamp(14px, 1.8vw, 22px);
   --editor-sidebar-w: 320px;
+  --editor-sticky-top: 16px;
 
   /* Card / section tuning */
-  --editor-card-radius: var(--editor-radius, 14px);
-  --editor-card-pad: 14px;
+  --editor-card-radius: calc(var(--editor-radius, 16px) + 2px);
+  --editor-card-pad: 16px;
 
   /* Field grids */
-  --editor-fields-gap: 10px;
+  --editor-fields-gap: 12px;
 
   /* Table list mode */
   --editor-table-idx: 44px;
@@ -37,8 +19,8 @@
 }
 
 /* -------------------------------------------------------------
-   Per-editor presets (thin + optional)
-   ------------------------------------------------------------- */
+   Per-editor accents
+------------------------------------------------------------- */
 body[data-editor="crafts"]{ --editor-accent:#22c55e; }
 body[data-editor="mobs"]{ --editor-accent:#f43f5e; }
 body[data-editor="events"]{ --editor-accent:#60a5fa; }
@@ -54,201 +36,253 @@ body[data-editor="warehouse"]{ --editor-accent:#14b8a6; }
 
 /* -------------------------------------------------------------
    Page shell
-   ------------------------------------------------------------- */
+------------------------------------------------------------- */
 .editor-page{
-  max-width: var(--editor-page-max);
-  margin: 0 auto;
-  padding: var(--editor-page-pad);
+  position:relative;
+  isolation:isolate;
+  max-width:var(--editor-page-max);
+  margin:0 auto;
+  padding:var(--editor-page-pad);
+}
+
+.editor-page::before{
+  content:"";
+  position:absolute;
+  inset:0 0 auto;
+  height:120px;
+  z-index:-1;
+  pointer-events:none;
+  background:linear-gradient(180deg, color-mix(in srgb, var(--editor-primary) 10%, transparent), transparent 75%);
+  opacity:.55;
 }
 
 .editor-page-header{
+  position:relative;
   display:flex;
   align-items:flex-start;
   justify-content:space-between;
-  gap: 12px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid var(--editor-soft-border);
+  gap:14px;
+  padding:0 0 14px;
+  margin-bottom:2px;
+  border-bottom:1px solid var(--editor-soft-border);
 }
 
 .editor-page-title{
   display:flex;
-  align-items:center;
-  gap: 10px;
-  min-width: 0;
+  align-items:flex-start;
+  gap:12px;
+  min-width:0;
 }
+
 .editor-page-title::before{
   content:"✦";
-  width:28px;
-  height:28px;
+  width:34px;
+  height:34px;
+  margin-top:1px;
   border-radius:999px;
   display:inline-flex;
   align-items:center;
   justify-content:center;
   font-size:14px;
-  background:var(--editor-icon-bg);
+  background:
+    radial-gradient(circle at 30% 30%, rgba(255,255,255,.22), transparent 48%),
+    var(--editor-icon-bg);
   color:var(--editor-icon-color);
-  box-shadow:inset 0 0 0 1px var(--editor-soft-border);
-  flex:0 0 28px;
+  border:1px solid var(--editor-soft-border);
+  box-shadow:0 8px 20px var(--editor-focus-ring);
+  box-shadow:0 8px 20px color-mix(in srgb, var(--editor-primary) 16%, transparent);
+  flex:0 0 34px;
 }
 
 .editor-page-title h1{
   margin:0;
-  font-size: 22px;
-  font-weight: 700;
-  letter-spacing: .1px;
-  line-height: 1.1;
+  font-size:clamp(22px, 2vw, 30px);
+  font-weight:800;
+  letter-spacing:-.02em;
+  line-height:1.08;
 }
 
 .editor-page-sub{
-  margin-top: 4px;
-  color: var(--editor-text-muted);
-  font-size: 13px;
+  margin-top:6px;
+  color:var(--editor-text-muted);
+  font-size:13px;
+  max-width:72ch;
 }
 
 .editor-page-actions{
   display:flex;
   flex-wrap:wrap;
-  gap: 10px;
+  gap:10px;
   align-items:center;
+  justify-content:flex-end;
 }
 
-/* Sidebar header + filters (shared across editors) */
+.editor-page-actions .editor-btn,
+.editor-page-actions .editor-icon-btn{
+  flex:0 0 auto;
+}
+
+.editor-page-actions > *{
+  flex-shrink:0;
+}
+
+@media (max-width:900px){
+  .editor-page-header{
+    flex-direction:column;
+    align-items:stretch;
+  }
+
+  .editor-page-actions{
+    justify-content:flex-start;
+  }
+}
+
+@media (max-width:640px){
+  .editor-page-actions{
+    display:grid;
+    grid-template-columns:repeat(auto-fit, minmax(140px, 1fr));
+    align-items:stretch;
+  }
+
+  .editor-page-actions .editor-btn,
+  .editor-page-actions .editor-icon-btn{
+    width:100%;
+    justify-content:center;
+  }
+}
+
+/* Sidebar header + filters */
 .editor-sidebar-head{
   display:flex;
   align-items:center;
   justify-content:space-between;
-  gap: 8px;
+  gap:8px;
 }
 
 .editor-sidebar-meta{
-  font-size: 12px;
-  color: var(--editor-text-muted);
+  font-size:12px;
+  color:var(--editor-text-muted);
 }
 
 .editor-sidebar-filters{
   display:grid;
-  gap: 8px;
+  gap:8px;
 }
 
 .editor-sidebar-filters.two-col{
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns:repeat(2, minmax(0, 1fr));
 }
 
-@media (max-width: 520px){
-  .editor-sidebar-filters.two-col{grid-template-columns: 1fr;}
+@media (max-width:520px){
+  .editor-sidebar-filters.two-col{grid-template-columns:1fr;}
 }
 
-/* Badge (used already in some editors; keep compatible) */
 .editor-badge{
   display:inline-flex;
   align-items:center;
-  gap: 6px;
-  padding: 6px 10px;
-  border-radius: 999px;
-  font-size: 12px;
-  border: 1px solid var(--editor-badge-border);
-  background: var(--editor-badge-bg);
-  color: var(--editor-text);
+  gap:6px;
+  padding:6px 10px;
+  border-radius:999px;
+  font-size:12px;
+  border:1px solid var(--editor-badge-border);
+  background:var(--editor-badge-bg);
+  color:var(--editor-text);
 }
 
 /* -------------------------------------------------------------
-   Sidebar + main grid (works for crafts, vouchers, etc.)
-   ------------------------------------------------------------- */
+   Sidebar + main grid
+------------------------------------------------------------- */
 .editor-shell{
   display:grid;
-  grid-template-columns: minmax(260px, var(--editor-sidebar-w)) minmax(0, 1fr);
-  gap: 14px;
+  grid-template-columns:minmax(280px, var(--editor-sidebar-w)) minmax(0, 1fr);
+  gap:16px;
   align-items:start;
-  margin-top: 14px;
+  margin-top:16px;
 }
 
-/* -------------------------------------------------------------
-   Docked layout (single surface): Sidebar + Main share one frame
-   -------------------------------------------------------------
-   Use when you want the sidebar to feel "attached" (not a separate card).
-   Important: do NOT set overflow:hidden (would break sticky sidebars).
+.editor-shell > *{
+  min-width:0;
+}
 
-   Example:
-     <div class="editor-shell editor-shell--docked">
-       <aside class="editor-sidebar editor-dock-sidebar">...
-       <section class="editor-main editor-dock-main">...
-     </div>
-*/
+/* Docked layout (single surface): Sidebar + Main share one frame.
+   Important: do NOT set overflow:hidden (would break sticky sidebars). */
 .editor-shell--docked{
-  gap: 0;
-  border: 1px solid var(--editor-soft-border);
-  border-radius: calc(var(--editor-card-radius) + 2px);
-  background: var(--editor-shell-bg);
-  box-shadow: 0 10px 28px rgba(9,12,18,.2);
+  gap:0;
+  border:1px solid var(--editor-soft-border);
+  border-radius:calc(var(--editor-card-radius) + 2px);
+  background:var(--editor-shell-bg);
+  box-shadow:var(--editor-panel-glow), var(--editor-shadow-md, 0 18px 42px rgba(0,0,0,.22));
+  backdrop-filter:blur(16px);
 }
 
 .editor-shell--docked > .editor-dock-sidebar{
-  border-right: 1px solid var(--editor-soft-border);
-  background: var(--editor-shell-sidebar-bg);
+  border-right:1px solid var(--editor-soft-border);
+  background:var(--editor-shell-sidebar-bg);
 }
 
 .editor-shell--docked > .editor-dock-main{
-  background: var(--editor-shell-main-bg);
+  background:var(--editor-shell-main-bg);
 }
 
 .editor-dock-pad{
-  padding: var(--editor-card-pad);
+  padding:var(--editor-card-pad);
 }
 
-@media (max-width: 1100px){
+@media (max-width:1100px){
   .editor-shell--docked > .editor-dock-sidebar{
-    border-right: none;
-    border-bottom: 1px solid var(--editor-soft-border);
+    border-right:none;
+    border-bottom:1px solid var(--editor-soft-border);
   }
 }
 
 .editor-sidebar{
-  position: sticky;
-  top: 16px;
-  align-self: start;
-  min-width: 0;
+  position:sticky;
+  top:var(--editor-sticky-top);
+  align-self:start;
+  min-width:0;
 }
 
-.editor-main{
-  min-width: 0;
+.editor-main{min-width:0;}
+
+@media (max-width:1100px){
+  .editor-shell{grid-template-columns:1fr;}
+  .editor-sidebar{position:relative;top:0;}
 }
 
-@media (max-width: 1100px){
-  .editor-shell{ grid-template-columns: 1fr; }
-  .editor-sidebar{ position: relative; top: 0; }
-}
-
-/* Standard card wrapper used in template layout */
+/* Standard card wrapper */
 .editor-panel-card{
-  background: var(--editor-soft-bg);
-  border: 1px solid var(--editor-soft-border);
-  border-radius: calc(var(--editor-card-radius) + 2px);
-  padding: var(--editor-card-pad);
-  box-shadow: 0 8px 24px rgba(9,12,18,.16);
+  background:linear-gradient(180deg, rgba(255,255,255,.03), transparent), var(--editor-soft-bg);
+  border:1px solid var(--editor-soft-border);
+  border-radius:var(--editor-card-radius);
+  padding:var(--editor-card-pad);
+  box-shadow:var(--editor-panel-glow), var(--editor-shadow-sm, 0 10px 24px rgba(0,0,0,.16));
+  backdrop-filter:blur(14px);
 }
 
 .editor-card-head{
   display:flex;
   align-items:flex-start;
   justify-content:space-between;
-  gap: 14px;
-  padding-bottom: 14px;
-  border-bottom: 1px solid var(--editor-soft-border);
-  margin-bottom: 14px;
+  gap:14px;
+  padding-bottom:14px;
+  border-bottom:1px solid var(--editor-soft-border);
+  margin-bottom:14px;
 }
 
 .editor-card-head h2{
   margin:0;
-  font-size: 16px;
-  font-weight: 700;
+  font-size:16px;
+  font-weight:800;
   display:flex;
   align-items:center;
   gap:8px;
+  letter-spacing:-.01em;
 }
+
 .editor-card-head h2::before{
   content:"•";
-  width:20px;
-  height:20px;
+  width:22px;
+  height:22px;
   border-radius:999px;
   display:inline-flex;
   align-items:center;
@@ -257,38 +291,46 @@ body[data-editor="warehouse"]{ --editor-accent:#14b8a6; }
   line-height:1;
   background:var(--editor-icon-bg);
   color:var(--editor-icon-color);
+  box-shadow:inset 0 0 0 1px var(--editor-soft-border);
 }
 
 .editor-card-head .editor-card-sub{
-  margin-top: 4px;
-  font-size: 12px;
-  color: var(--editor-text-muted);
+  margin-top:5px;
+  font-size:12px;
+  color:var(--editor-text-muted);
+}
+
+@media (max-width:640px){
+  .editor-card-head{
+    flex-direction:column;
+    align-items:stretch;
+  }
 }
 
 /* -------------------------------------------------------------
    Sections + field grids
-   ------------------------------------------------------------- */
+------------------------------------------------------------- */
 .editor-section{
-  /* keep existing class from editor-theme.css but allow nicer padding */
-  padding: var(--editor-space, 14px);
+  padding:var(--editor-space, 14px);
 }
 
 .editor-section-head{
   display:flex;
   align-items:baseline;
   justify-content:space-between;
-  gap: 12px;
-  margin-bottom: 12px;
+  gap:12px;
+  margin-bottom:12px;
 }
 
 .editor-section-title{
-  font-size: 13px;
-  font-weight: 700;
-  letter-spacing: .1px;
+  font-size:13px;
+  font-weight:800;
+  letter-spacing:.01em;
   display:flex;
   align-items:center;
   gap:8px;
 }
+
 .editor-section-title::before{
   content:"▸";
   color:var(--editor-icon-color);
@@ -296,178 +338,216 @@ body[data-editor="warehouse"]{ --editor-accent:#14b8a6; }
 }
 
 .editor-section-hint{
-  font-size: 12px;
-  color: var(--editor-text-muted);
+  font-size:12px;
+  color:var(--editor-text-muted);
 }
 
-/* Generic field grid: 12-column. */
 .editor-fields{
   display:grid;
-  grid-template-columns: repeat(12, minmax(0, 1fr));
-  gap: var(--editor-fields-gap);
+  grid-template-columns:repeat(12, minmax(0, 1fr));
+  gap:var(--editor-fields-gap);
   align-items:stretch;
-  min-width: 0;
+  min-width:0;
 }
 
-/* span helpers */
-.editor-span-12{grid-column: span 12;}
-.editor-span-8{grid-column: span 8;}
-.editor-span-6{grid-column: span 6;}
-.editor-span-4{grid-column: span 4;}
-.editor-span-3{grid-column: span 3;}
-.editor-span-2{grid-column: span 2;}
+.editor-span-12{grid-column:span 12;}
+.editor-span-8{grid-column:span 8;}
+.editor-span-6{grid-column:span 6;}
+.editor-span-4{grid-column:span 4;}
+.editor-span-3{grid-column:span 3;}
+.editor-span-2{grid-column:span 2;}
 
-@media (max-width: 900px){
-  .editor-span-8,.editor-span-6,.editor-span-4,.editor-span-3,.editor-span-2{grid-column: span 12;}
+@media (max-width:900px){
+  .editor-span-8,
+  .editor-span-6,
+  .editor-span-4,
+  .editor-span-3,
+  .editor-span-2{grid-column:span 12;}
 }
 
-/* Optional helpers for mounting forms that output .editor-field blocks */
 .editor-form-grid-2{
   display:grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--editor-fields-gap);
+  grid-template-columns:repeat(2, minmax(0, 1fr));
+  gap:var(--editor-fields-gap);
   align-items:stretch;
 }
-@media (max-width: 640px){
-  .editor-form-grid-2{ grid-template-columns: 1fr; }
+
+@media (max-width:640px){
+  .editor-form-grid-2{grid-template-columns:1fr;}
 }
 
 /* -------------------------------------------------------------
-   List "table mode" (reusable for drops, required items, etc.)
-   ------------------------------------------------------------- */
+   List "table mode"
+------------------------------------------------------------- */
+.editor-list{
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+  min-width:0;
+}
 
-/* Make default list wrapper stable (we replace Tailwind space-y in defaults.js) */
-.editor-list{display:flex;flex-direction:column;gap: 12px;min-width:0;}
-
-/* When listMode=table, FieldRenderer emits .editor-list-table */
 .editor-list-table{
-  gap: 0;
-  border: 1px solid rgba(255,255,255,.08);
-  border-radius: 16px;
-  overflow: clip;
-  background: rgba(0,0,0,.12);
+  gap:0;
+  border:1px solid var(--editor-soft-border);
+  border-radius:18px;
+  overflow:clip;
+  background:linear-gradient(180deg, rgba(255,255,255,.025), transparent), var(--editor-soft-bg);
+  box-shadow:var(--editor-panel-glow), inset 0 1px 0 rgba(255,255,255,.02);
 }
 
 .editor-list-table-header,
 .editor-list-table-row{
   display:grid;
-  grid-template-columns: var(--editor-list-table-cols, var(--editor-table-idx) minmax(0,1fr) var(--editor-table-col2) var(--editor-table-del));
-  gap: 8px;
+  grid-template-columns:var(--editor-list-table-cols, var(--editor-table-idx) minmax(0,1fr) var(--editor-table-col2) var(--editor-table-del));
+  gap:10px;
   align-items:center;
-  padding: 8px 12px;
-  min-width: 0;
+  padding:10px 12px;
+  min-width:0;
 }
 
-@media (min-width: 768px){
+@media (min-width:768px){
   .editor-list-table-header,
   .editor-list-table-row{
-    grid-template-columns: var(--editor-list-table-cols-md, var(--editor-list-table-cols, var(--editor-table-idx) minmax(0,1fr) var(--editor-table-col2) var(--editor-table-del)));
+    grid-template-columns:var(--editor-list-table-cols-md, var(--editor-list-table-cols, var(--editor-table-idx) minmax(0,1fr) var(--editor-table-col2) var(--editor-table-del)));
   }
 }
 
 .editor-list-table-header{
-  font-size: 12px;
-  color: rgba(229,231,235,.62);
-  background: rgba(255,255,255,.03);
-  border-bottom: 1px solid rgba(255,255,255,.08);
+  position:sticky;
+  top:0;
+  z-index:1;
+  font-size:12px;
+  font-weight:700;
+  color:var(--editor-text-muted);
+  background:var(--editor-light-bg);
+  border-bottom:1px solid var(--editor-soft-border);
 }
 
 .editor-list-table-row{
-  border-top: 1px solid rgba(255,255,255,.06);
+  border-top:1px solid var(--editor-soft-border);
+  transition:background-color .14s ease;
 }
-.editor-list-table-row:first-of-type{border-top: 0;}
+
+.editor-list-table-row:first-of-type{border-top:0;}
+
+.editor-list-table-row:hover{
+  background:var(--editor-light-bg);
+}
 
 .editor-list-table-idx{
-  font-size: 12px;
-  color: rgba(229,231,235,.55);
+  font-size:12px;
+  color:var(--editor-text-muted);
 }
 
-/* Place the internal FieldRenderer blocks nicely */
 .editor-list-table-cell{min-width:0;}
-.editor-list-table-cell .editor-field{padding:0;border:0;background:transparent;}
+.editor-list-table-cell .editor-field{
+  padding:0;
+  border:0;
+  background:transparent;
+  box-shadow:none;
+  backdrop-filter:none;
+}
 .editor-list-table-cell .editor-field .editor-input,
 .editor-list-table-cell .editor-field .form-input,
-.editor-list-table-cell .editor-field .form-select{min-height:36px;}
-
-/* Hide nested labels (header already explains the columns) */
-.editor-list-table .editor-nested-label{display:none;}
-
-/* Remove button tighter */
-.editor-list-table-del{
-  justify-self: end;
+.editor-list-table-cell .editor-field .form-select{
+  min-height:38px;
 }
 
-/* On small screens, stack rows and hide header */
-@media (max-width: 700px){
+.editor-list-table .editor-nested-label{display:none;}
+.editor-list-table-del{justify-self:end;}
+
+@media (max-width:700px){
   .editor-list-table-header{display:none;}
   .editor-list-table-row{
-    grid-template-columns: 1fr;
-    gap: 10px;
-    align-items: stretch;
+    grid-template-columns:1fr;
+    gap:10px;
+    align-items:stretch;
   }
   .editor-list-table-idx{display:none;}
-  .editor-list-table-del{justify-self: end;}
+  .editor-list-table-del{justify-self:end;}
 }
 
 /* -------------------------------------------------------------
-   Sidebar list polish (optional)
-   ------------------------------------------------------------- */
+   Sidebar list polish
+------------------------------------------------------------- */
 .editor-sidebar-list{
-  border: 1px solid rgba(255,255,255,.08);
-  background: rgba(0,0,0,.12);
-  border-radius: 16px;
+  border:1px solid var(--editor-soft-border);
+  background:linear-gradient(180deg, rgba(255,255,255,.025), transparent), var(--editor-soft-bg);
+  border-radius:18px;
   overflow:auto;
+  max-height:min(72vh, 980px);
+  box-shadow:var(--editor-panel-glow), inset 0 1px 0 rgba(255,255,255,.03);
 }
 
-/* Search input with icon (works with your existing .editor-search markup) */
+.editor-sidebar-list > * + *{
+  border-top:1px solid transparent;
+}
+
 .editor-search{position:relative;}
-.editor-search i{position:absolute;left:12px;top:50%;transform:translateY(-50%);opacity:.55;pointer-events:none;}
+.editor-search i{
+  position:absolute;
+  left:12px;
+  top:50%;
+  transform:translateY(-50%);
+  opacity:.55;
+  pointer-events:none;
+}
 .editor-search input{padding-left:36px;}
 
 /* -------------------------------------------------------------
-   Unsaved changes pill (shared across DB editors)
-   ------------------------------------------------------------- */
-
+   Unsaved changes pill
+------------------------------------------------------------- */
 .editor-dirty-pill{
   display:inline-flex;
   align-items:center;
-  gap: 8px;
-  padding: 6px 10px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: .15px;
-  color: rgba(253,230,138,.95); /* amber-ish */
-  background: rgba(245,158,11,.12);
-  border: 1px solid rgba(245,158,11,.30);
-  box-shadow: 0 0 0 1px rgba(0,0,0,.10) inset;
+  gap:8px;
+  padding:6px 10px;
+  border-radius:999px;
+  font-size:12px;
+  font-weight:800;
+  letter-spacing:.02em;
+  color:rgba(253,230,138,.98);
+  background:rgba(245,158,11,.12);
+  border:1px solid rgba(245,158,11,.28);
+  box-shadow:inset 0 0 0 1px rgba(0,0,0,.08);
 }
 
 .editor-dirty-pill::before{
   content:"\f071";
   font-family:"Font Awesome 6 Free";
   font-weight:900;
-  font-size: 12px;
-  line-height: 1;
-  color: rgba(245,158,11,.95);
+  font-size:12px;
+  line-height:1;
+  color:rgba(245,158,11,.98);
 }
 
 .editor-dirty-pill.hidden{display:none;}
 
 /* -------------------------------------------------------------
-   Task/dialog items (shared dialog/task editors)
-   ------------------------------------------------------------- */
+   Task / dialog items
+------------------------------------------------------------- */
 .editor-item{
-  border:1px solid rgba(255,255,255,.08);
-  border-radius:10px;
+  border:1px solid var(--editor-soft-border);
+  border-radius:14px;
   padding:10px;
-  background: rgba(255,255,255,.02);
+  background:linear-gradient(180deg, rgba(255,255,255,.025), transparent), var(--editor-soft-bg);
   margin-bottom:8px;
+  box-shadow:var(--editor-panel-glow), var(--editor-shadow-xs, 0 1px 2px rgba(0,0,0,.12));
+  transition:border-color .16s ease, box-shadow .16s ease, transform .12s ease, background-color .16s ease;
+}
+
+.editor-item:hover{
+  border-color:var(--editor-soft-border-strong);
+  box-shadow:var(--editor-shadow-sm, 0 10px 24px rgba(0,0,0,.14));
 }
 
 .editor-item.is-selected{
-  border-color: rgba(139,92,246,.65);
-  box-shadow: 0 0 0 1px rgba(139,92,246,.4);
+  border-color:var(--editor-secondary);
+  border-color:color-mix(in srgb, var(--editor-secondary) 65%, var(--editor-soft-border));
+  box-shadow:0 0 0 3px var(--editor-focus-ring);
+  box-shadow:0 0 0 3px color-mix(in srgb, var(--editor-secondary) 16%, transparent);
+  background:var(--editor-light-bg);
+  background:color-mix(in srgb, var(--editor-soft-bg) 75%, var(--editor-secondary) 8%);
 }
 
 .editor-item-header{
@@ -494,9 +574,7 @@ body[data-editor="warehouse"]{ --editor-accent:#14b8a6; }
   gap:8px;
 }
 
-.editor-item.is-collapsed .editor-item-body{
-  display:none;
-}
+.editor-item.is-collapsed .editor-item-body{display:none;}
 
 .editor-item-body label{
   font-size:12px;
@@ -505,30 +583,34 @@ body[data-editor="warehouse"]{ --editor-accent:#14b8a6; }
 
 .editor-item-grid{
   display:grid;
-  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  grid-template-columns:repeat(auto-fit, minmax(180px, 1fr));
   gap:8px;
 }
 
 .editor-item-handle{
   cursor:grab;
   color:var(--editor-text-muted);
+  user-select:none;
+  touch-action:none;
 }
 
 .editor-item-subgroup{
-  border:1px dashed rgba(255,255,255,.08);
-  border-radius:10px;
+  border:1px dashed var(--editor-soft-border-strong);
+  border-radius:12px;
   padding:8px;
+  background:var(--editor-light-bg);
 }
 
 /* -------------------------------------------------------------
    Task editor sections
-   ------------------------------------------------------------- */
+------------------------------------------------------------- */
 .editor-task-section{
-  border:1px solid rgba(255,255,255,.06);
-  border-radius:12px;
-  background: rgba(0,0,0,.2);
+  border:1px solid var(--editor-soft-border);
+  border-radius:14px;
+  background:linear-gradient(180deg, rgba(255,255,255,.02), transparent), var(--editor-soft-bg);
   margin-bottom:10px;
   overflow:hidden;
+  box-shadow:var(--editor-panel-glow), var(--editor-shadow-xs, 0 1px 2px rgba(0,0,0,.12));
 }
 
 .editor-task-header{
@@ -538,13 +620,13 @@ body[data-editor="warehouse"]{ --editor-accent:#14b8a6; }
   gap:8px;
   padding:10px 12px;
   cursor:pointer;
-  background: rgba(255,255,255,.03);
+  background:var(--editor-light-bg);
 }
 
 .editor-task-header h4{
   margin:0;
   font-size:13px;
-  font-weight:600;
+  font-weight:700;
 }
 
 .editor-task-content{
@@ -552,42 +634,59 @@ body[data-editor="warehouse"]{ --editor-accent:#14b8a6; }
   display:none;
 }
 
-.editor-task-content.is-open{
-  display:block;
-}
+.editor-task-content.is-open{display:block;}
 
 /* -------------------------------------------------------------
-   Productivity modes (global)
-   ------------------------------------------------------------- */
+   Productivity modes
+------------------------------------------------------------- */
 body.editor-compact{
   --editor-page-pad: 12px;
-  --editor-card-pad: 10px;
-  --editor-fields-gap: 8px;
+  --editor-card-pad: 12px;
+  --editor-fields-gap: 10px;
+  --editor-control-h: 38px;
 }
 
-body.editor-compact .editor-sticky-toolbar{
-  padding: 10px;
-}
-
-body.editor-compact .editor-row{
-  padding: 8px;
-}
+body.editor-compact .editor-sticky-toolbar{padding:10px;}
+body.editor-compact .editor-row{padding:8px;}
 
 body.editor-focus .editor-shell{
-  grid-template-columns: minmax(220px, 260px) minmax(0, 1fr);
+  grid-template-columns:minmax(220px, 260px) minmax(0, 1fr);
 }
 
 body.editor-focus .editor-page-sub,
 body.editor-focus .editor-sidebar-meta{
-  opacity: .72;
+  opacity:.78;
 }
 
 body.editor-focus .editor-sidebar-list{
-  max-height: 72vh !important;
+  max-height:72vh !important;
 }
 
-@media (max-width: 1100px){
-  body.editor-focus .editor-shell{
-    grid-template-columns: 1fr;
+@media (max-width:1100px){
+  body.editor-focus .editor-shell{grid-template-columns:1fr;}
+}
+
+/* -------------------------------------------------------------
+   Extra responsive tuning
+------------------------------------------------------------- */
+@media (max-width:640px){
+  .editor-page{
+    padding:12px;
+  }
+
+  .editor-page-title::before{
+    width:30px;
+    height:30px;
+    flex-basis:30px;
+  }
+
+  .editor-panel-card,
+  .editor-dock-pad{
+    padding:12px;
+  }
+
+  .editor-section-head{
+    flex-direction:column;
+    align-items:flex-start;
   }
 }
