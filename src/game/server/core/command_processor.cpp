@@ -591,14 +591,19 @@ void CCommandProcessor::ConChatDonorProTeleport(IConsole::IResult* pResult, void
 		return;
 	}
 
-	// teleport
+	// teleport with limited distance
 	auto* pChar = pPlayer->GetCharacter();
 	if(pChar)
 	{
-		const vec2 MousePos = pChar->GetMousePos();
-		pChar->ChangePosition(MousePos);
-		pGS->CreateDeath(MousePos, ClientID);
-		pGS->CreatePlayerSpawn(MousePos);
+		const auto MaxDist = 400.0f;
+		const auto Pos = pChar->GetPos();
+		const auto Target = pChar->GetMousePos();
+		const auto Diff = Target - Pos;
+		const auto TeleportPos = length(Diff) > MaxDist ? Pos + normalize(Diff) * MaxDist : Target;
+
+		pChar->ChangePosition(TeleportPos);
+		pGS->CreateDeath(TeleportPos, ClientID);
+		pGS->CreatePlayerSpawn(TeleportPos);
 	}
 }
 
