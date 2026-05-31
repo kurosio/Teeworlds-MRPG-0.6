@@ -679,10 +679,20 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		VLanguageInfo.Add("Here you can choose the language.");
 		VLanguageInfo.Add("Note: translation is not complete.");
 		VLanguageInfo.Add("Active language: [{~}]", pPlayerLanguage);
+		VLanguageInfo.AddLine();
+		VLanguageInfo.Add("Playing with the selected language");
+		VLanguageInfo.Add("will automatically collect strings");
+		VLanguageInfo.Add("that are missing translation.");
+		VLanguageInfo.AddLine();
+		VLanguageInfo.Add("These strings will later");
+		VLanguageInfo.Add("be available on the website.");
+		VLanguageInfo.AddLine();
+		VLanguageInfo.Add("Any user will be able");
+		VLanguageInfo.Add("to translate them there.");
 		VoteWrapper::AddEmptyline(ClientID);
 
 		// languages
-		VoteWrapper VLanguages(ClientID, VWF_OPEN, "Available languages");
+		VoteWrapper VLanguages(ClientID, VWF_OPEN|VWF_STYLE_STRICT, "Available languages");
 		for(int i = 0; i < Server()->Localization()->m_pLanguages.size(); i++)
 		{
 			// do not show the language that is already selected by the player in the selection lists
@@ -690,8 +700,11 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 				continue;
 
 			// add language selection
-			const char* pLanguageName = Server()->Localization()->m_pLanguages[i]->GetName();
+			auto* pLanguage = Server()->Localization()->m_pLanguages[i];
+			const char* pLanguageName = pLanguage->GetName();
 			VLanguages.AddOption("SELECT_LANGUAGE", i, "Select language \"{~}\"", pLanguageName);
+			VLanguages.Add("- Number of lines collected: {} / Completed: {}%", pLanguage->GetCollectedLines(), pLanguage->GetCompletionPercent());
+			VLanguages.AddLine();
 		}
 
 		VoteWrapper::AddEmptyline(ClientID);

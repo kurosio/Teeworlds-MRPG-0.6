@@ -44,6 +44,8 @@ public:
 		std::string m_Filename;
 		std::string m_ParentFilename;
 		bool m_Loaded;
+		int m_CollectedLines {};
+		int m_TranslatedLines {};
 		hashtable< CEntry, 128 > m_Translations;
 		CUpdater m_Updater;
 
@@ -54,6 +56,9 @@ public:
 		const char* GetParentFilename() const { return m_ParentFilename.c_str(); }
 		const char* GetFilename() const { return m_Filename.c_str(); }
 		const char* GetName() const { return m_Name.c_str(); }
+		int GetCollectedLines() const { return m_CollectedLines; }
+		int GetTranslatedLines() const { return m_TranslatedLines; }
+		int GetCompletionPercent() const;
 		bool IsLoaded() const { return m_Loaded; }
 		void Load();
 		const char* Localize(const char* pKey) const;

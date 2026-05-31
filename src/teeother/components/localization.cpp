@@ -174,6 +174,12 @@ void CLocalization::CLanguage::Load()
 		return;
 	}
 
+	m_CollectedLines = static_cast<int>(vElements.size());
+	m_TranslatedLines = static_cast<int>(std::ranges::count_if(vElements, [](const CUpdater::Element& Element)
+	{
+		return Element.m_Result != Element.m_Text;
+	}));
+
 	// initialize localization hashtable
 	dbg_msg("localization", "successful loaded language '%s'", m_Filename.c_str());
 	for(auto& p : vElements)
@@ -195,6 +201,14 @@ void CLocalization::CLanguage::Load()
 	}
 
 	m_Loaded = true;
+}
+
+int CLocalization::CLanguage::GetCompletionPercent() const
+{
+	if(m_CollectedLines <= 0)
+		return 100;
+
+	return std::clamp((m_TranslatedLines * 100) / m_CollectedLines, 0, 100);
 }
 
 const char* CLocalization::CLanguage::Localize(const char* pKey) const
@@ -230,6 +244,8 @@ void CLocalization::CLanguage::CollectUntranslated(const char* pKey)
 	const std::string Data = "\n" + EscapedKey + "\n== " + EscapedKey + "\n\n";
 	io_write(File, Data.data(), static_cast<unsigned>(Data.size()));
 	io_close(File);
+
+	m_CollectedLines++;
 
 	if(CEntry* pEntry = m_Translations.set(pKey))
 	{
@@ -350,6 +366,12 @@ void CLocalization::CLanguage::CUpdater::Finish()
 	{
 		return p1.m_Result == p1.m_Text && p2.m_Result != p2.m_Text;
 	});
+
+	m_pLanguage->m_CollectedLines = static_cast<int>(m_vElements.size());
+	m_pLanguage->m_TranslatedLines = static_cast<int>(std::ranges::count_if(m_vElements, [](const Element& Element)
+	{
+		return Element.m_Result != Element.m_Text;
+	}));
 
 	// save file
 	std::string Data;

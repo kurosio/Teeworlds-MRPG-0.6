@@ -1,18 +1,88 @@
-{"language indices": [
-	
-	{
-		"file": "en",
-		"name": "English"
-	},
-	{
-		"file": "ru",
-		"name": "Русский",
-		"parent": "en"
-	},
-	{
-		"file": "cn",
-		"name": "中文",
-		"parent": "en"
-	}
-]
+{
+  "language indices": [
+    {
+      "file": "en",
+      "name": "English"
+    },
+    {
+      "file": "ru",
+      "name": "Русский",
+      "parent": "en"
+    },
+    {
+      "file": "cn",
+      "name": "中文",
+      "parent": "en"
+    },
+    {
+      "file": "es",
+      "name": "Español",
+      "parent": "en"
+    },
+    {
+      "file": "fr",
+      "name": "Français",
+      "parent": "en"
+    },
+    {
+      "file": "de",
+      "name": "Deutsch",
+      "parent": "en"
+    },
+    {
+      "file": "pt",
+      "name": "Português",
+      "parent": "en"
+    },
+    {
+      "file": "it",
+      "name": "Italiano",
+      "parent": "en"
+    },
+    {
+      "file": "ja",
+      "name": "日本語",
+      "parent": "en"
+    },
+    {
+      "file": "ko",
+      "name": "한국어",
+      "parent": "en"
+    },
+    {
+      "file": "ar",
+      "name": "العربية",
+      "parent": "en"
+    },
+    {
+      "file": "tr",
+      "name": "Türkçe",
+      "parent": "en"
+    },
+    {
+      "file": "pl",
+      "name": "Polski",
+      "parent": "en"
+    },
+    {
+      "file": "uk",
+      "name": "Українська",
+      "parent": "en"
+    },
+    {
+      "file": "nl",
+      "name": "Nederlands",
+      "parent": "en"
+    },
+    {
+      "file": "vi",
+      "name": "Tiếng Việt",
+      "parent": "en"
+    },
+    {
+      "file": "id",
+      "name": "Bahasa Indonesia",
+      "parent": "en"
+    }
+  ]
 }

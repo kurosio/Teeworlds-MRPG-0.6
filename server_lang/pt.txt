@@ -1,0 +1,5612 @@
+$dialog_quest10
+Oh, it's good to see you <player>!
+== Oh, it's good to see you <player>!
+
+$dialog_quest11
+I have a little favor to ask of you. Do you see this <item_31>?
+== I have a little favor to ask of you. Do you see this <item_31>?
+
+$dialog_quest12
+It contains important supplies for <bot_2> that he needs urgently.
+== It contains important supplies for <bot_2> that he needs urgently.
+
+$dialog_quest13
+Can I ask you to deliver it?
+== Can I ask you to deliver it?
+
+$dialog_quest20
+Oh, hey! You look like you brought something.
+== Oh, hey! You look like you brought something.
+
+$dialog_quest21
+Is it from <bot_1>
+== Is it from <bot_1>
+
+$dialog_quest22
+Thank you so much! It's exactly what I've been waiting for. You've helped me more than you can imagine.
+== Thank you so much! It's exactly what I've been waiting for. You've helped me more than you can imagine.
+
+$dialog_quest30
+Another green adventurer, I presume?
+== Another green adventurer, I presume?
+
+$dialog_quest31
+I thought as much. We cannot allow strangers to wander Gridania unchecked and untested.
+== I thought as much. We cannot allow strangers to wander Gridania unchecked and untested.
+
+$dialog_quest32
+Before you rush off and begin pestering every second citizen for work, I suggest you make yourself known at the Carline Canopy. That's the headquarters of the local Adventurers' Guild, in case you were wondering.
+== Before you rush off and begin pestering every second citizen for work, I suggest you make yourself known at the Carline Canopy. That's the headquarters of the local Adventurers' Guild, in case you were wondering.
+
+$dialog_quest33
+The Carline Canopy is the building you see behind me. Speak to Mother Miounne within, and she will take you in hand.
+== The Carline Canopy is the building you see behind me. Speak to Mother Miounne within, and she will take you in hand.
+
+$dialog_quest40
+Well, well, what have we here?
+== Well, well, what have we here?
+
+$dialog_quest41
+A wide-eyed and wondering young adventurer, come to put your name down at the guild, I assume?
+== A wide-eyed and wondering young adventurer, come to put your name down at the guild, I assume?
+
+$dialog_quest42
+Actually...haven't you registered with us already? There's something strikingly familiar about you, but I can't for the life of me remember when or where we might have met.
+== Actually...haven't you registered with us already? There's something strikingly familiar about you, but I can't for the life of me remember when or where we might have met.
+
+$dialog_quest43
+Oh, I probably just have you confused with another adventurer─dozens of you come through here every day, after all. Now, where was I? Ah, yes.
+== Oh, I probably just have you confused with another adventurer─dozens of you come through here every day, after all. Now, where was I? Ah, yes.
+
+$dialog_quest44
+Welcome. Miounne's my name, or Mother Miounne as most call me, and the Carline Canopy is my place.
+== Welcome. Miounne's my name, or Mother Miounne as most call me, and the Carline Canopy is my place.
+
+$dialog_quest45
+As the head of the Adventurers' Guild in Gridania, I have the honor of providing guidance to the fledgling heroes who pass through our gates.
+== As the head of the Adventurers' Guild in Gridania, I have the honor of providing guidance to the fledgling heroes who pass through our gates.
+
+$dialog_quest46
+No matter your ambitions, the guild is here to help you attain them.
+== No matter your ambitions, the guild is here to help you attain them.
+
+$dialog_quest47
+In return, we expect you to fulfill your duties as an adventurer by assisting the people of Gridania. A fine deal, wouldn't you agree?
+== In return, we expect you to fulfill your duties as an adventurer by assisting the people of Gridania. A fine deal, wouldn't you agree?
+
+$dialog_quest48
+To an outsider's eyes, all may seem well with our nation, but naught could be further from the truth. The people live in a state of constant apprehension.
+== To an outsider's eyes, all may seem well with our nation, but naught could be further from the truth. The people live in a state of constant apprehension.
+
+$dialog_quest49
+The Ixal and various gangs of common bandits provide an unending supply of trouble─trouble compounded by the ever-present threat of the Garlean Empire to the north. And that is to say nothing of the Calamity...
+== The Ixal and various gangs of common bandits provide an unending supply of trouble─trouble compounded by the ever-present threat of the Garlean Empire to the north. And that is to say nothing of the Calamity...
+
+$dialog_quest410
+You're here on Keitha's behalf? Hm? I see. Broke one of her eggs, you say? And there were four of the creatures?
+== You're here on Keitha's behalf? Hm? I see. Broke one of her eggs, you say? And there were four of the creatures?
+
+$dialog_quest411
+The Qiqirn are a nuisance at the best of times, but we must now add trespass and chocobo murder to their list of transgressions... They have forced our hand. Our retribution must needs be swift and decisive.
+== The Qiqirn are a nuisance at the best of times, but we must now add trespass and chocobo murder to their list of transgressions... They have forced our hand. Our retribution must needs be swift and decisive.
+
+$dialog_quest412
+And who better than you to deliver it, adventurer? Find the lair to the west of here and make an example of exactly four Qiqirn scramblers. We can send no clearer message.
+== And who better than you to deliver it, adventurer? Find the lair to the west of here and make an example of exactly four Qiqirn scramblers. We can send no clearer message.
+
+$dialog_quest413
+Yet amidst the hazy recollections and conflicting accounts, all agree on one thing: that Eorzea was saved from certain doom by a band of valiant adventurers.
+== Yet amidst the hazy recollections and conflicting accounts, all agree on one thing: that Eorzea was saved from certain doom by a band of valiant adventurers.
+
+$dialog_quest414
+Whatever else we've misremembered, none of us have forgotten the heroes who risked life and limb for the sake of the realm. And yet...whenever we try to say their names, the words die upon our lips.
+== Whatever else we've misremembered, none of us have forgotten the heroes who risked life and limb for the sake of the realm. And yet...whenever we try to say their names, the words die upon our lips.
+
+$dialog_quest415
+And whenever we try to call their faces to mind, we see naught but silhouettes amidst a blinding glare.
+== And whenever we try to call their faces to mind, we see naught but silhouettes amidst a blinding glare.
+
+$dialog_quest416
+Thus have these adventurers come to be known as “the Warriors of Light.”
+== Thus have these adventurers come to be known as “the Warriors of Light.”
+
+$dialog_quest417
+...Ahem. Pray do not feel daunted by the deeds of legends. We do not ask that you become another Warrior of Light, only that you do what you can to assist the people of Gridania.
+== ...Ahem. Pray do not feel daunted by the deeds of legends. We do not ask that you become another Warrior of Light, only that you do what you can to assist the people of Gridania.
+
+$dialog_quest418
+Great or small, every contribution counts. I trust you will play your part.
+== Great or small, every contribution counts. I trust you will play your part.
+
+$dialog_quest419
+You have my gratitude!
+== You have my gratitude!
+
+$dialog_quest420
+The deed is done? Good. A grim task, but a necessary one.
+== The deed is done? Good. A grim task, but a necessary one.
+
+$dialog_quest421
+You have shown them the folly of inciting the wrath of those who consort with adventurers. Perhaps now the Qiqirn will think twice before giving in to their larcenous proclivities.
+== You have shown them the folly of inciting the wrath of those who consort with adventurers. Perhaps now the Qiqirn will think twice before giving in to their larcenous proclivities.
+
+$dialog_quest422
+...Forename Surname, hm? And you're quite sure that isn't an amusing alias?
+== ...Forename Surname, hm? And you're quite sure that isn't an amusing alias?
+
+$dialog_quest423
+Very well. From this moment forward, you are a registered adventurer of Gridania, nation blessed of the elementals and the bounty of the Twelveswood. The guild expects great things from you.
+== Very well. From this moment forward, you are a registered adventurer of Gridania, nation blessed of the elementals and the bounty of the Twelveswood. The guild expects great things from you.
+
+$dialog_quest50
+Look at what just arrived─another godsdamned adventurer...
+== Look at what just arrived─another godsdamned adventurer...
+
+$dialog_quest60
+Don't you start with that. Adventurers are the very salve that Gridania needs.
+== Don't you start with that. Adventurers are the very salve that Gridania needs.
+
+$dialog_quest61
+The Elder Seedseer herself bade us welcome them with open arms. Do you mean to disregard her will?
+== The Elder Seedseer herself bade us welcome them with open arms. Do you mean to disregard her will?
+
+$dialog_quest70
+Ordinarily, the forest funguars that inhabit the Central Shroud are naught more than a nuisance.
+== Ordinarily, the forest funguars that inhabit the Central Shroud are naught more than a nuisance.
+
+$dialog_quest71
+However, we have received reports that vast clouds of the creatures' spores have rendered parts of the Twelveswood impassable, and ruined crops besides.
+== However, we have received reports that vast clouds of the creatures' spores have rendered parts of the Twelveswood impassable, and ruined crops besides.
+
+$dialog_quest72
+We periodically cull the funguar population in order to prevent such occurrences, but the creatures have taken to spawning out of season, making it ever more difficult to keep their numbers in check.
+== We periodically cull the funguar population in order to prevent such occurrences, but the creatures have taken to spawning out of season, making it ever more difficult to keep their numbers in check.
+
+$dialog_quest73
+Though this is indeed a troubling development, the Gods' Quiver has more pressing concerns and can ill afford to waste time fighting funguars.
+== Though this is indeed a troubling development, the Gods' Quiver has more pressing concerns and can ill afford to waste time fighting funguars.
+
+$dialog_quest74
+If you wish to prove yourself, go to the Central Shroud and exterminate six of the pests. Use caution and approach them one at a time, lest your adventuring career be cut disappointingly short.
+== If you wish to prove yourself, go to the Central Shroud and exterminate six of the pests. Use caution and approach them one at a time, lest your adventuring career be cut disappointingly short.
+
+$dialog_quest75
+Don't you start with that. Adventurers are the very salve that Gridania needs.
+== Don't you start with that. Adventurers are the very salve that Gridania needs.
+
+$dialog_quest76
+The Elder Seedseer herself bade us welcome them with open arms. Do you mean to disregard her will?
+== The Elder Seedseer herself bade us welcome them with open arms. Do you mean to disregard her will?
+
+$dialog_quest77
+Don't you start with that. Adventurers are the very salve that Gridania needs.
+== Don't you start with that. Adventurers are the very salve that Gridania needs.
+
+$dialog_quest78
+The Elder Seedseer herself bade us welcome them with open arms. Do you mean to disregard her will?
+== The Elder Seedseer herself bade us welcome them with open arms. Do you mean to disregard her will?
+
+$dialog_quest79
+Of course not! Lest you forget, it is my sworn duty to uphold the peace! Am I to blame if outsiders bring mistrust upon themselves?
+== Of course not! Lest you forget, it is my sworn duty to uphold the peace! Am I to blame if outsiders bring mistrust upon themselves?
+
+$dialog_quest710
+You─adventurer! Mind that you do not cause any trouble here, or I shall personally cast you out of this realm and into the seventh hell.
+== You─adventurer! Mind that you do not cause any trouble here, or I shall personally cast you out of this realm and into the seventh hell.
+
+$dialog_quest711
+Of course not! Lest you forget, it is my sworn duty to uphold the peace! Am I to blame if outsiders bring mistrust upon themselves?
+== Of course not! Lest you forget, it is my sworn duty to uphold the peace! Am I to blame if outsiders bring mistrust upon themselves?
+
+$dialog_quest712
+You─adventurer! Mind that you do not cause any trouble here, or I shall personally cast you out of this realm and into the seventh hell.
+== You─adventurer! Mind that you do not cause any trouble here, or I shall personally cast you out of this realm and into the seventh hell.
+
+$dialog_quest80
+Ahem. Pay that outburst no mind. He meant only to...counsel you. Suspicious characters have been prowling the Twelveswood of late, you see, and the Wood Wailers feel they cannot afford to take any chances.
+== Ahem. Pay that outburst no mind. He meant only to...counsel you. Suspicious characters have been prowling the Twelveswood of late, you see, and the Wood Wailers feel they cannot afford to take any chances.
+
+$dialog_quest81
+As is often the way with folk who live in isolation, Gridanians are wont to mistrust things they do not well know, your good self included. Fear not, however─given a catalog of exemplary deeds, and no more than a handful of years, the locals will surely warm to you.
+== As is often the way with folk who live in isolation, Gridanians are wont to mistrust things they do not well know, your good self included. Fear not, however─given a catalog of exemplary deeds, and no more than a handful of years, the locals will surely warm to you.
+
+$dialog_quest82
+On behalf of my fellow citizens, I welcome you to Gridania. May you come to consider our nation as your own in time.
+== On behalf of my fellow citizens, I welcome you to Gridania. May you come to consider our nation as your own in time.
+
+$dialog_quest83
+Now then, you may depend on old Mother Miounne to teach you a few things that every adventurer should know.
+== Now then, you may depend on old Mother Miounne to teach you a few things that every adventurer should know.
+
+$dialog_quest90
+Let us begin at the beginning, shall we? Now that you are a formal member of the Adventurers' Guild, we must be sure you have a firm grasp of the fundamentals of adventuring. To that end, I have three tasks I wish you to perform.
+== Let us begin at the beginning, shall we? Now that you are a formal member of the Adventurers' Guild, we must be sure you have a firm grasp of the fundamentals of adventuring. To that end, I have three tasks I wish you to perform.
+
+$dialog_quest91
+Your first task is to visit the aetheryte. This massive crystal stands in the middle of the aetheryte plaza, not far from the Carline Canopy.
+== Your first task is to visit the aetheryte. This massive crystal stands in the middle of the aetheryte plaza, not far from the Carline Canopy.
+
+$dialog_quest92
+As a device that enables instantaneous transportation, the aetheryte plays a key role in the life of the ever-wandering adventurer.
+== As a device that enables instantaneous transportation, the aetheryte plays a key role in the life of the ever-wandering adventurer.
+
+$dialog_quest93
+Once you have located the crystal, all you need do is touch its surface. A member of the Wood Wailers will be present to offer further instruction.
+== Once you have located the crystal, all you need do is touch its surface. A member of the Wood Wailers will be present to offer further instruction.
+
+$dialog_quest100
+For your second task, you are to visit the Conjurers' Guild.
+== For your second task, you are to visit the Conjurers' Guild.
+
+$dialog_quest101
+There is no better place to learn the arts of conjury. Speak with Madelle, and she will explain the benefits of joining the guild.
+== There is no better place to learn the arts of conjury. Speak with Madelle, and she will explain the benefits of joining the guild.
+
+$dialog_quest140
+You seek the secrets of conjury, adventurer? Then search no longer, for you have found your way to the Conjurers' Guild.
+== You seek the secrets of conjury, adventurer? Then search no longer, for you have found your way to the Conjurers' Guild.
+
+$dialog_quest141
+It is at Miounne's request that you have come? Then allow me to provide you with an overview of what it is to be a conjurer.
+== It is at Miounne's request that you have come? Then allow me to provide you with an overview of what it is to be a conjurer.
+
+$dialog_quest142
+Conjury is the art of healing and purification. Its practitioners harness the power of nature, that they might bring about change in the form of spells.
+== Conjury is the art of healing and purification. Its practitioners harness the power of nature, that they might bring about change in the form of spells.
+
+$dialog_quest143
+Primitive magic such as that once wrought by individuals known as mages─meaning those with the ability to manipulate aether─has existed since the dawn of time.
+== Primitive magic such as that once wrought by individuals known as mages─meaning those with the ability to manipulate aether─has existed since the dawn of time.
+
+$dialog_quest144
+It was not until some five centuries ago that conjury emerged from this shapeless agglomeration of spells and charms─an event which led to the founding of Gridania.
+== It was not until some five centuries ago that conjury emerged from this shapeless agglomeration of spells and charms─an event which led to the founding of Gridania.
+
+$dialog_quest145
+In those dark days, the elementals would not suffer man's presence in the Twelveswood, forcing our forebears to make their homes beneath the earth, in the great subterranean city of Gelmorra.
+== In those dark days, the elementals would not suffer man's presence in the Twelveswood, forcing our forebears to make their homes beneath the earth, in the great subterranean city of Gelmorra.
+
+$dialog_quest146
+But their desire to settle in the Twelveswood continued to burn fiercely; time and again they sought to curry the elementals' favor.
+== But their desire to settle in the Twelveswood continued to burn fiercely; time and again they sought to curry the elementals' favor.
+
+$dialog_quest147
+Unlike men and other creatures bound in temples of flesh, the elementals are beings of pure aether. Recognizing this, the mages of eld reasoned that their talent for aetheric manipulation might allow them to commune with these theretofore enigmatic entities.
+== Unlike men and other creatures bound in temples of flesh, the elementals are beings of pure aether. Recognizing this, the mages of eld reasoned that their talent for aetheric manipulation might allow them to commune with these theretofore enigmatic entities.
+
+$dialog_quest148
+It took five long decades, but our forebears finally succeeded. Their reward: the elementals' permission to dwell in the Twelveswood. So it was that the nation of Gridania was born.
+== It took five long decades, but our forebears finally succeeded. Their reward: the elementals' permission to dwell in the Twelveswood. So it was that the nation of Gridania was born.
+
+$dialog_quest149
+Since that time, the elementals have taught us to live as one with nature, speaking to all Gridanians through the Hearers─those mages who are able to commune with them.
+== Since that time, the elementals have taught us to live as one with nature, speaking to all Gridanians through the Hearers─those mages who are able to commune with them.
+
+$dialog_quest1410
+And for their intimacy with the elementals, the Hearers would go on to attain greater mastery over the forces of nature. Thus did they conceive the art of conjury.
+== And for their intimacy with the elementals, the Hearers would go on to attain greater mastery over the forces of nature. Thus did they conceive the art of conjury.
+
+$dialog_quest1411
+I hope this has helped you gain a greater understanding of the Conjurers' Guild.
+== I hope this has helped you gain a greater understanding of the Conjurers' Guild.
+
+$dialog_quest1412
+Should you wish to delve further into the mysteries of conjury, then I urge you to consider joining our ranks.
+== Should you wish to delve further into the mysteries of conjury, then I urge you to consider joining our ranks.
+
+$dialog_quest1413
+I can begin your initiation whenever you desire. Call upon me when you are ready to take the first step.
+== I can begin your initiation whenever you desire. Call upon me when you are ready to take the first step.
+
+$dialog_quest150
+For your second task, you are to visit the Archers' Guild.
+== For your second task, you are to visit the Archers' Guild.
+
+$dialog_quest151
+There is no better place to learn the arts of the bow. Speak with Athelyna, and she will explain the benefits of joining the guild.
+== There is no better place to learn the arts of the bow. Speak with Athelyna, and she will explain the benefits of joining the guild.
+
+$dialog_quest160
+Greetings, friend. You have found your way to the Archers' Guild. Do you seek to uncover the secrets of our art?
+== Greetings, friend. You have found your way to the Archers' Guild. Do you seek to uncover the secrets of our art?
+
+$dialog_quest161
+Ah, now that I think on it, you have the look of one who has received Mother Miounne's “gentle” instruction. Very well, I shall give you a brief introduction to archery and the Archers' Guild.
+== Ah, now that I think on it, you have the look of one who has received Mother Miounne's “gentle” instruction. Very well, I shall give you a brief introduction to archery and the Archers' Guild.
+
+$dialog_quest162
+The skills practiced by our archers allow them to gauge an enemy's weaknesses from afar, and turn the tide of a battle with a single, well-placed arrow. Should you join us, you will be taught to do the same.
+== The skills practiced by our archers allow them to gauge an enemy's weaknesses from afar, and turn the tide of a battle with a single, well-placed arrow. Should you join us, you will be taught to do the same.
+
+$dialog_quest163
+Archery as practiced in Gridania was born of two distinct styles of bowmanship.
+== Archery as practiced in Gridania was born of two distinct styles of bowmanship.
+
+$dialog_quest164
+The first was devised by the longbow sentries of the Elezen who once ruled the lowlands, while the second belonged to the shortbow hunters of the formerly nomadic Miqo'te. As you will doubtless be aware, both races ultimately came to call the Twelveswood home.
+== The first was devised by the longbow sentries of the Elezen who once ruled the lowlands, while the second belonged to the shortbow hunters of the formerly nomadic Miqo'te. As you will doubtless be aware, both races ultimately came to call the Twelveswood home.
+
+$dialog_quest165
+Though the two peoples began as rivals, they gradually learned to live together in harmony. During this time, they learned from one another, their two schools of archery intermingling to give birth to the art as it is known today.
+== Though the two peoples began as rivals, they gradually learned to live together in harmony. During this time, they learned from one another, their two schools of archery intermingling to give birth to the art as it is known today.
+
+$dialog_quest166
+For a time, the bow was used primarily for hunting. But as the hunters vied with one another to prove who was the better shot, there emerged a group of archers whose ultimate goal lay not in the practical pursuit of prey, but in perfection.
+== For a time, the bow was used primarily for hunting. But as the hunters vied with one another to prove who was the better shot, there emerged a group of archers whose ultimate goal lay not in the practical pursuit of prey, but in perfection.
+
+$dialog_quest167
+Thus was the Archers' Guild born from the ranks of the Trappers' League.
+== Thus was the Archers' Guild born from the ranks of the Trappers' League.
+
+$dialog_quest168
+It is the way of the guild to promote greatness in archery through friendly competition. And the results of our methods can be seen in the vaunted archers of the Gods' Quiver, many of whom spent their formative years loosing arrows at the guild's practice butts.
+== It is the way of the guild to promote greatness in archery through friendly competition. And the results of our methods can be seen in the vaunted archers of the Gods' Quiver, many of whom spent their formative years loosing arrows at the guild's practice butts.
+
+$dialog_quest169
+I hope this gives you a better idea of who we are, and what we do here. Oho, did I see the spark of ambition flare within your eyes?
+== I hope this gives you a better idea of who we are, and what we do here. Oho, did I see the spark of ambition flare within your eyes?
+
+$dialog_quest1610
+If you wish to draw a string with the finest archers in Eorzea, look no further than the Archers' Guild.
+== If you wish to draw a string with the finest archers in Eorzea, look no further than the Archers' Guild.
+
+$dialog_quest1611
+Before you can enlist, however, you must gain the approval of the guildmaster. Once you are ready to proceed, speak with me again and we can begin seeing about your enrollment.
+== Before you can enlist, however, you must gain the approval of the guildmaster. Once you are ready to proceed, speak with me again and we can begin seeing about your enrollment.
+
+$dialog_quest170
+For your second task, you are to visit the Lancers' Guild.
+== For your second task, you are to visit the Lancers' Guild.
+
+$dialog_quest171
+There is no better place to learn the arts of the polearm. Speak with Jillian, and she will explain the benefits of joining the guild.
+== There is no better place to learn the arts of the polearm. Speak with Jillian, and she will explain the benefits of joining the guild.
+
+$dialog_quest180
+Welcome to the Lancers' Guild. I see you brought your own spear.
+== Welcome to the Lancers' Guild. I see you brought your own spear.
+
+$dialog_quest181
+If you seek to refine your skills with the polearm, then you have come to the right place.
+== If you seek to refine your skills with the polearm, then you have come to the right place.
+
+$dialog_quest182
+Here at the Lancers' Guild, spear wielders gather to train with one another, and further hone their abilities under the tutelage of our fine instructors.
+== Here at the Lancers' Guild, spear wielders gather to train with one another, and further hone their abilities under the tutelage of our fine instructors.
+
+$dialog_quest183
+More than just an instrument of war, the spear is also a tool for hunting, and with game ever plentiful in the Twelveswood, the weapon has been the mainstay of the locals here since before the founding of Gridania.
+== More than just an instrument of war, the spear is also a tool for hunting, and with game ever plentiful in the Twelveswood, the weapon has been the mainstay of the locals here since before the founding of Gridania.
+
+$dialog_quest184
+With the passing of time, our nation became a gathering place for spearmasters from across the realm─many eager to test their mettle against the famed might of our Wood Wailers.
+== With the passing of time, our nation became a gathering place for spearmasters from across the realm─many eager to test their mettle against the famed might of our Wood Wailers.
+
+$dialog_quest185
+And it was here in Gridania that their myriad fighting styles came into contact, eventually giving rise to the art taught here today.
+== And it was here in Gridania that their myriad fighting styles came into contact, eventually giving rise to the art taught here today.
+
+$dialog_quest186
+That spear technique could be formalized at all owed much to the founding of the Lancers' Guild by Wood Wailer captain Mistalle nigh on a century past.
+== That spear technique could be formalized at all owed much to the founding of the Lancers' Guild by Wood Wailer captain Mistalle nigh on a century past.
+
+$dialog_quest187
+The tradition of accepting students from without as well as within Gridania's borders persists to this day, ensuring that the art of the polearm may not only survive, but also continue to evolve.
+== The tradition of accepting students from without as well as within Gridania's borders persists to this day, ensuring that the art of the polearm may not only survive, but also continue to evolve.
+
+$dialog_quest188
+Well, there you have it. I hope this brief history of the guild has helped settle any doubts in your mind.
+== Well, there you have it. I hope this brief history of the guild has helped settle any doubts in your mind.
+
+$dialog_quest189
+The Lancers' Guild is always eager to welcome new initiates.
+== The Lancers' Guild is always eager to welcome new initiates.
+
+$dialog_quest1810
+If you've a will to enlist, speak with me again and we can begin the enrollment procedures.
+== If you've a will to enlist, speak with me again and we can begin the enrollment procedures.
+
+$dialog_quest190
+For your third and final task, I would have you visit the markets at the heart of Old Gridania's commercial district. There you shall find weapons and armor, and all the various items that an adventurer might need on his/her travels.
+== For your third and final task, I would have you visit the markets at the heart of Old Gridania's commercial district. There you shall find weapons and armor, and all the various items that an adventurer might need on his/her travels.
+
+$dialog_quest191
+There is, however, more to the markets than buying and selling goods. Speak with Parsemontret, and listen well to his counsel.
+== There is, however, more to the markets than buying and selling goods. Speak with Parsemontret, and listen well to his counsel.
+
+$dialog_quest192
+The master merchant can be...uncooperative at times, so be sure to offer him one of my famous eel pies. Like so many men, he is much more charitable when his stomach is full. Here, I made a batch not long ago.
+== The master merchant can be...uncooperative at times, so be sure to offer him one of my famous eel pies. Like so many men, he is much more charitable when his stomach is full. Here, I made a batch not long ago.
+
+$dialog_quest193
+You have your tasks. May Nophica guide your path.
+== You have your tasks. May Nophica guide your path.
+
+$dialog_quest194
+Ah, and one more thing: should you happen to come across any citizens in need, don't be afraid to proffer a helping hand. I am certain they will be pleased to meet an adventurer in whom they can confide their woes.
+== Ah, and one more thing: should you happen to come across any citizens in need, don't be afraid to proffer a helping hand. I am certain they will be pleased to meet an adventurer in whom they can confide their woes.
+
+$dialog_quest195
+Granted, the work they offer is unlikely to be of realm-shattering importance─but prove your worth and build a reputation, and in time folk will be more inclined to entrust you with matters of moment.
+== Granted, the work they offer is unlikely to be of realm-shattering importance─but prove your worth and build a reputation, and in time folk will be more inclined to entrust you with matters of moment.
+
+$dialog_quest196
+I also suggest that you lend an ear to the Smith here in the Canopy. The Smiths are trusted representatives of the Adventurers' Guild, and are an invaluable source of advice for neophyte heroes seeking to attain greatness.
+== I also suggest that you lend an ear to the Smith here in the Canopy. The Smiths are trusted representatives of the Adventurers' Guild, and are an invaluable source of advice for neophyte heroes seeking to attain greatness.
+
+$dialog_quest200
+Greetings, adventurer. I see you are faithfully following Mother Miounne's instructions.
+== Greetings, adventurer. I see you are faithfully following Mother Miounne's instructions.
+
+$dialog_quest201
+Allow me to offer you a bit of instruction myself. I am Nicia of the Wood Wailers, and I know a thing or two about the aetheryte─yes, that big crystal right there.
+== Allow me to offer you a bit of instruction myself. I am Nicia of the Wood Wailers, and I know a thing or two about the aetheryte─yes, that big crystal right there.
+
+$dialog_quest202
+Aetherytes are devices that tap into aetherial energies, and are primarily used as a means to travel swiftly from one place to another.
+== Aetherytes are devices that tap into aetherial energies, and are primarily used as a means to travel swiftly from one place to another.
+
+$dialog_quest203
+Return and Teleport─the most common transportation spells─make direct use of the aetherytes and their connection to the flow of aether.
+== Return and Teleport─the most common transportation spells─make direct use of the aetherytes and their connection to the flow of aether.
+
+$dialog_quest204
+And as these devices are found in almost every corner of Eorzea, any adventurer worthy of the name will wish to seek out and attune himself/herself to each one.
+== And as these devices are found in almost every corner of Eorzea, any adventurer worthy of the name will wish to seek out and attune himself/herself to each one.
+
+$dialog_quest205
+Truly, few things in this world are so useful to an intrepid explorer.
+== Truly, few things in this world are so useful to an intrepid explorer.
+
+$dialog_quest206
+But you need not locate them all at once. Before rushing out into the wilds, I suggest you start with the aetherytes found here in Gridania.
+== But you need not locate them all at once. Before rushing out into the wilds, I suggest you start with the aetherytes found here in Gridania.
+
+$dialog_quest207
+Should you wish to learn more about the aetheryte or transportation magic, I am here to answer your questions.
+== Should you wish to learn more about the aetheryte or transportation magic, I am here to answer your questions.
+
+$dialog_quest210
+The conquering hero returns. You have completed my little tasks, I trust?
+== The conquering hero returns. You have completed my little tasks, I trust?
+
+$dialog_quest211
+The three locations you visited will feature prominently in your life as an adventurer─it is best you grow familiar with them as soon as possible.
+== The three locations you visited will feature prominently in your life as an adventurer─it is best you grow familiar with them as soon as possible.
+
+$dialog_quest212
+And you took the time to listen to the woes of the citizenry? I cannot emphasize enough how important it is to lend your talents to one and all, no matter how trivial the matter may seem.
+== And you took the time to listen to the woes of the citizenry? I cannot emphasize enough how important it is to lend your talents to one and all, no matter how trivial the matter may seem.
+
+$dialog_quest213
+I am thankful that you are an obliging sort,. It is adventurers like you who will win the hearts of the locals and pave the way for those who follow. I pray Gridania can rely on your aid in its struggles to come.
+== I am thankful that you are an obliging sort,. It is adventurers like you who will win the hearts of the locals and pave the way for those who follow. I pray Gridania can rely on your aid in its struggles to come.
+
+$dialog_quest220
+<player>, have you visited the Bannock on your wanderings?
+== <player>, have you visited the Bannock on your wanderings?
+
+$dialog_quest221
+It is a training ground found just outside the city where the soldiers of the Order of the Twin Adder are drilled in swordplay and other martial matters.
+== It is a training ground found just outside the city where the soldiers of the Order of the Twin Adder are drilled in swordplay and other martial matters.
+
+$dialog_quest222
+I mention this because an acquaintance of mine -- a gentleman by the name of Galfrid -- is an instructor there, and I think you may be of use to him. Go and introduce yourself, and find out if there is anything you can do to help.
+== I mention this because an acquaintance of mine -- a gentleman by the name of Galfrid -- is an instructor there, and I think you may be of use to him. Go and introduce yourself, and find out if there is anything you can do to help.
+
+$dialog_quest223
+Mind you do not stray far from the path -- the Twelveswood is no place for merry strolls through the underbrush.
+== Mind you do not stray far from the path -- the Twelveswood is no place for merry strolls through the underbrush.
+
+$dialog_quest230
+Greetings, <player>. Miounne sent word to expect you.
+== Greetings, <player>. Miounne sent word to expect you.
+
+$dialog_quest231
+My name is Galfrid, and I am responsible for training our Twin Adder recruits.
+== My name is Galfrid, and I am responsible for training our Twin Adder recruits.
+
+$dialog_quest232
+I thank you for volunteering your assistance. The Twelveswood is much changed since the calamitous arrival of the Seventh Umbral Era five years ago.
+== I thank you for volunteering your assistance. The Twelveswood is much changed since the calamitous arrival of the Seventh Umbral Era five years ago.
+
+$dialog_quest233
+The power of the elementals wanes, and the harmony of the forest gives way to chaos. A great abundance of life has been lost as the strong run rampant, stifling the weak and new-sprung.
+== The power of the elementals wanes, and the harmony of the forest gives way to chaos. A great abundance of life has been lost as the strong run rampant, stifling the weak and new-sprung.
+
+$dialog_quest234
+Though it may not appear so to the eyes of an outsider, the Twelveswood is ailing -- its once rich variety a fading memory.
+== Though it may not appear so to the eyes of an outsider, the Twelveswood is ailing -- its once rich variety a fading memory.
+
+$dialog_quest235
+For the citizens of Gridania, the restoration of the forest is a sacred duty. And it is my hope that adventurers such as you will offer to aid them in their struggle.
+== For the citizens of Gridania, the restoration of the forest is a sacred duty. And it is my hope that adventurers such as you will offer to aid them in their struggle.
+
+$dialog_quest236
+Listen to their requests, and do all that you can. May the elementals bless your endeavors, <player>.
+== Listen to their requests, and do all that you can. May the elementals bless your endeavors, <player>.
+
+$dialog_quest240
+I see you are eager to lend a hand, <player>. That is well. But I cannot in good conscience send you into the forest until I have established that your equipment is equal to the task.
+== I see you are eager to lend a hand, <player>. That is well. But I cannot in good conscience send you into the forest until I have established that your equipment is equal to the task.
+
+$dialog_quest241
+It bears repeating that, in the five years since the dawn of the Seventh Umbral Era, many of the Twelveswood's creatures have transformed into vicious, bloodthirsty monsters. Venturing into the forest without the proper gear is tantamount to suicide.
+== It bears repeating that, in the five years since the dawn of the Seventh Umbral Era, many of the Twelveswood's creatures have transformed into vicious, bloodthirsty monsters. Venturing into the forest without the proper gear is tantamount to suicide.
+
+$dialog_quest242
+I suggest you take some time to evaluate your equipment. Once you deem your armor to be of sufficient quality, present yourself to me for inspection.
+== I suggest you take some time to evaluate your equipment. Once you deem your armor to be of sufficient quality, present yourself to me for inspection.
+
+$dialog_quest243
+System: Equip your head, body, hands, legs, and feet with gear of item level 5 or above before returning to speak with Galfrid.
+== System: Equip your head, body, hands, legs, and feet with gear of item level 5 or above before returning to speak with Galfrid.
+
+$dialog_quest250
+Ready for inspection are we? Right, then! Eyes forward! Back straight!
+== Ready for inspection are we? Right, then! Eyes forward! Back straight!
+
+$dialog_quest251
+Hmmm... Yes, I think you pass muster.
+== Hmmm... Yes, I think you pass muster.
+
+$dialog_quest252
+You would be surprised at how many young, promising soldiers get themselves killed by rushing off into the woods without first donning a decent set of armor.
+== You would be surprised at how many young, promising soldiers get themselves killed by rushing off into the woods without first donning a decent set of armor.
+
+$dialog_quest253
+Your equipment, however, should provide the required degree of protection. Consider yourself ready for duty, <player>.
+== Your equipment, however, should provide the required degree of protection. Consider yourself ready for duty, <player>.
+
+$dialog_quest260
+Ah, <player>. By your tireless efforts, you have proven yourself a friend to Gridania. I believe you can be trusted with sensitive intelligence.
+== Ah, <player>. By your tireless efforts, you have proven yourself a friend to Gridania. I believe you can be trusted with sensitive intelligence.
+
+$dialog_quest261
+I would assign you a mission of considerable import, yet the need for secrecy prevents me from disclosing its details until you have pledged your participation. I am authorized to tell you only that it concerns suspicious activity in the Twelveswood. Say that you will lend us your aid, and I shall proceed with the briefing.
+== I would assign you a mission of considerable import, yet the need for secrecy prevents me from disclosing its details until you have pledged your participation. I am authorized to tell you only that it concerns suspicious activity in the Twelveswood. Say that you will lend us your aid, and I shall proceed with the briefing.
+
+$dialog_quest262
+Good. Time is of the essence, so listen well.
+== Good. Time is of the essence, so listen well.
+
+$dialog_quest263
+You will by now have heard that a suspicious individual has been seen prowling the Twelveswood.
+== You will by now have heard that a suspicious individual has been seen prowling the Twelveswood.
+
+$dialog_quest264
+And you may also be aware that Ixali activity has risen sharply in the region of late. What you may not know is that this increase coincided almost exactly with the first recorded sighting of the aforementioned individual.
+== And you may also be aware that Ixali activity has risen sharply in the region of late. What you may not know is that this increase coincided almost exactly with the first recorded sighting of the aforementioned individual.
+
+$dialog_quest265
+Suspecting a connection, we tightened our surveillance in hopes of tracking down our unknown visitor. Alas, our quarry is proving to be exceedingly elusive -- almost as if he knows our movements ahead of time.
+== Suspecting a connection, we tightened our surveillance in hopes of tracking down our unknown visitor. Alas, our quarry is proving to be exceedingly elusive -- almost as if he knows our movements ahead of time.
+
+$dialog_quest266
+But where whole units have failed, a lone adventurer may yet succeed. Acting independently and covertly, you may be able to close in on our quarry unnoticed.
+== But where whole units have failed, a lone adventurer may yet succeed. Acting independently and covertly, you may be able to close in on our quarry unnoticed.
+
+$dialog_quest267
+Fear and anxiety are beginning to take their toll upon the citizenry, <player>. For their sake, I ask that you aid us in this investigation.
+== Fear and anxiety are beginning to take their toll upon the citizenry, <player>. For their sake, I ask that you aid us in this investigation.
+
+$dialog_quest268
+You have my gratitude. With your help, I am hopeful we will shed light upon this mystery.
+== You have my gratitude. With your help, I am hopeful we will shed light upon this mystery.
+
+$dialog_quest269
+Begin your search at Lifemend Stump. It is there that the majority of the sightings took place.
+== Begin your search at Lifemend Stump. It is there that the majority of the sightings took place.
+
+$dialog_quest2610
+Be forewarned: my people cannot offer you support, lest our quarry catch scent of our presence and evade us yet again. Proceed with caution.
+== Be forewarned: my people cannot offer you support, lest our quarry catch scent of our presence and evade us yet again. Proceed with caution.
+
+$dialog_quest270
+<player>! It is good to see you back!
+== <player>! It is good to see you back!
+
+$dialog_quest271
+One of our patrols sent word that you had been spotted doing battle with enraged treants. I am relieved to find you none the worse for the experience.
+== One of our patrols sent word that you had been spotted doing battle with enraged treants. I am relieved to find you none the worse for the experience.
+
+$dialog_quest272
+But tell me, what were you able to discover at Lifemend Stump?
+== But tell me, what were you able to discover at Lifemend Stump?
+
+$dialog_quest273
+A sword in the stump, and a dead Ixal? Hmmm...
+== A sword in the stump, and a dead Ixal? Hmmm...
+
+$dialog_quest274
+I can say with absolute certainty that this blade is of Ixali origin. It is of a kind used exclusively in the beastmen's rituals.
+== I can say with absolute certainty that this blade is of Ixali origin. It is of a kind used exclusively in the beastmen's rituals.
+
+$dialog_quest275
+The Ixal rarely set foot in the Central Shroud, so tight is our guard over the area. What purpose could have driven them to take such a risk? I fear something is afoot...
+== The Ixal rarely set foot in the Central Shroud, so tight is our guard over the area. What purpose could have driven them to take such a risk? I fear something is afoot...
+
+$dialog_quest276
+What's that? A dubious couple sporting peculiar spectacles? Hah hah hah!
+== What's that? A dubious couple sporting peculiar spectacles? Hah hah hah!
+
+$dialog_quest277
+So you have finally been acquainted with Yda and Papalymo! Lay your suspicions to rest -- Gridania counts them among her staunchest allies. Both are scholars hailing from a distant land, and have been with us since before the Calamity.
+== So you have finally been acquainted with Yda and Papalymo! Lay your suspicions to rest -- Gridania counts them among her staunchest allies. Both are scholars hailing from a distant land, and have been with us since before the Calamity.
+
+$dialog_quest278
+Their garb may appear outlandish, and their exchanges baffling, but never once have they given us cause to doubt them.
+== Their garb may appear outlandish, and their exchanges baffling, but never once have they given us cause to doubt them.
+
+$dialog_quest279
+Indeed, they often assist the Gods' Quiver and the Wood Wailers in their work -- much as I hope you will in the days to come, <player>.
+== Indeed, they often assist the Gods' Quiver and the Wood Wailers in their work -- much as I hope you will in the days to come, <player>.
+
+$dialog_quest2710
+Although our unknown visitor eludes us still, owing to your efforts, we have acquired important intelligence on the Ixali threat. You have my gratitude.
+== Although our unknown visitor eludes us still, owing to your efforts, we have acquired important intelligence on the Ixali threat. You have my gratitude.
+
+$dialog_quest2711
+We are fortunate indeed to have a capable adventurer such as you aiding us. I pray you will continue to serve the people of Gridania in whatever capacity you are able.
+== We are fortunate indeed to have a capable adventurer such as you aiding us. I pray you will continue to serve the people of Gridania in whatever capacity you are able.
+
+$dialog_quest280
+<player>, injuries to several of my men have left me shorthanded, and I require a capable sort to complete their unfinished duty.
+== <player>, injuries to several of my men have left me shorthanded, and I require a capable sort to complete their unfinished duty.
+
+$dialog_quest281
+The task is simple: put down as many of the local chigoe population as necessary to acquire eight of their egg sacs.
+== The task is simple: put down as many of the local chigoe population as necessary to acquire eight of their egg sacs.
+
+$dialog_quest282
+Having done so, you are to deliver them to Monranguin at Gilbert's Spire. He will answer any queries you might have. Now, I have other business to attend to.
+== Having done so, you are to deliver them to Monranguin at Gilbert's Spire. He will answer any queries you might have. Now, I have other business to attend to.
+
+$dialog_quest283
+The Order of the Twin Adder makes no distinction between newcome adventurers and forestborn Gridanians. Your worth as a soldier is measured by your dedication to the cause.
+== The Order of the Twin Adder makes no distinction between newcome adventurers and forestborn Gridanians. Your worth as a soldier is measured by your dedication to the cause.
+
+$dialog_quest290
+Ah, you must be the adventurer standing in for our injured companions. Terribly unfortunate business, that.
+== Ah, you must be the adventurer standing in for our injured companions. Terribly unfortunate business, that.
+
+$dialog_quest291
+It seems, however, that you had little trouble gathering the egg sacs in their stead. Excellent work. I shall have them sent over to the Trappers' League immediately.
+== It seems, however, that you had little trouble gathering the egg sacs in their stead. Excellent work. I shall have them sent over to the Trappers' League immediately.
+
+$dialog_quest292
+Lest you wonder, these egg sacs are not destined for the dinner table! Members of the Twin Adder and the Wood Wailers are assisting the league by collecting the samples they need to check for signs of sickness.
+== Lest you wonder, these egg sacs are not destined for the dinner table! Members of the Twin Adder and the Wood Wailers are assisting the league by collecting the samples they need to check for signs of sickness.
+
+$dialog_quest293
+The chigoe, you see, is one of the few creatures capable of transmitting the disease known as the Creeping Death. Until relatively recently, any Hyur who contracted this ghastly illness would almost invariably perish.
+== The chigoe, you see, is one of the few creatures capable of transmitting the disease known as the Creeping Death. Until relatively recently, any Hyur who contracted this ghastly illness would almost invariably perish.
+
+$dialog_quest294
+Indeed, a single outbreak once claimed the lives of a third of the Hyuran population here in Gridania. That was a long time ago, of course. With the medicines available to us now, the Creeping Death is not the killer it once was.
+== Indeed, a single outbreak once claimed the lives of a third of the Hyuran population here in Gridania. That was a long time ago, of course. With the medicines available to us now, the Creeping Death is not the killer it once was.
+
+$dialog_quest295
+Even so, it is best to halt any new outbreaks before they occur. Thus we gather chigoe eggs on a regular basis in order to assist the Trappers' League with their ongoing research. Your timely assistance is most appreciated.
+== Even so, it is best to halt any new outbreaks before they occur. Thus we gather chigoe eggs on a regular basis in order to assist the Trappers' League with their ongoing research. Your timely assistance is most appreciated.
+
+$dialog_quest300
+Such an embarrassing turn of events... I sent a recruit from the Bannock on a surveying expedition only for the craven to turn tail and flee at the first sign of trouble.
+== Such an embarrassing turn of events... I sent a recruit from the Bannock on a surveying expedition only for the craven to turn tail and flee at the first sign of trouble.
+
+$dialog_quest301
+This is not how we treat requests from the conjurers! And as if such a poor showing weren't bad enough, the lily-livered half-wit left behind the surveying equipment provided by Hearer Pauline herself!
+== This is not how we treat requests from the conjurers! And as if such a poor showing weren't bad enough, the lily-livered half-wit left behind the surveying equipment provided by Hearer Pauline herself!
+
+$dialog_quest302
+While I attempt to instill some backbone into this so-called “soldier,” would you mind recovering the survey gear and returning it to Hearer Pauline at Gabineaux's Bower?
+== While I attempt to instill some backbone into this so-called “soldier,” would you mind recovering the survey gear and returning it to Hearer Pauline at Gabineaux's Bower?
+
+$dialog_quest303
+According to my recruit's tale of woe, there should be a set of survey records, a surveyor's rope, and two boxes of surveyor's instruments strewn about the interior of a cave to the south of here. <sigh> It's a wonder the damn fool didn't lose his boots... Ahem. Matron watch over you.
+== According to my recruit's tale of woe, there should be a set of survey records, a surveyor's rope, and two boxes of surveyor's instruments strewn about the interior of a cave to the south of here. <sigh> It's a wonder the damn fool didn't lose his boots... Ahem. Matron watch over you.
+
+$dialog_quest310
+Yes, may I assist you with some matter?
+== Yes, may I assist you with some matter?
+
+$dialog_quest311
+Oh? But this is the equipment I left with the soldiers of the Bannock...
+== Oh? But this is the equipment I left with the soldiers of the Bannock...
+
+$dialog_quest312
+Fled at the first sign of danger, you say? I see... Well, all is not lost: it appears the recruit managed to complete the surveying assignment. The records are actually quite detailed.
+== Fled at the first sign of danger, you say? I see... Well, all is not lost: it appears the recruit managed to complete the surveying assignment. The records are actually quite detailed.
+
+$dialog_quest313
+With the changes wrought by the Calamity, I thought it wise to send the Order of the Twin Adder on a number of expeditions to map the region's topography. As fortune would have it, the officers saw these tasks as an excellent opportunity to train inexperienced soldiers.
+== With the changes wrought by the Calamity, I thought it wise to send the Order of the Twin Adder on a number of expeditions to map the region's topography. As fortune would have it, the officers saw these tasks as an excellent opportunity to train inexperienced soldiers.
+
+$dialog_quest314
+We can no longer rely on our past knowledge of the Twelveswood. If we are to survive these troubled times, we must reacquaint ourselves with our surroundings, that we may better discern the threats we face. Stay vigilant, adventurer
+== We can no longer rely on our past knowledge of the Twelveswood. If we are to survive these troubled times, we must reacquaint ourselves with our surroundings, that we may better discern the threats we face. Stay vigilant, adventurer
+
+$dialog_quest320
+I hesitate to make such a dangerous, request, but might you assist us in thinning the number of anoles on Naked Rock?
+== I hesitate to make such a dangerous, request, but might you assist us in thinning the number of anoles on Naked Rock?
+
+$dialog_quest321
+In our efforts to commune with the elementals, we conjurers often find ourselves in the area. Of late, however, our meditations have all too frequently been interrupted by unprovoked anole attacks. Truly, the beasts grow more aggressive by the day.
+== In our efforts to commune with the elementals, we conjurers often find ourselves in the area. Of late, however, our meditations have all too frequently been interrupted by unprovoked anole attacks. Truly, the beasts grow more aggressive by the day.
+
+$dialog_quest322
+Their numbers have continued to grow since the advent of the Seventh Umbral Era, you see, forcing packs of the scalekin to come down from the mountains in search of food. If you could slay a handful of the beasts, that should lessen their need to hunt and also serve as a warning to the anoles to remain within their territory.
+== Their numbers have continued to grow since the advent of the Seventh Umbral Era, you see, forcing packs of the scalekin to come down from the mountains in search of food. If you could slay a handful of the beasts, that should lessen their need to hunt and also serve as a warning to the anoles to remain within their territory.
+
+$dialog_quest323
+But I am afraid you must do more than thin the existing population. If we are to truly break this spiraling growth, then we must also target their future offspring. Bring me one of their eggs, and you will have played your part in returning balance to this area of the forest.
+== But I am afraid you must do more than thin the existing population. If we are to truly break this spiraling growth, then we must also target their future offspring. Bring me one of their eggs, and you will have played your part in returning balance to this area of the forest.
+
+$dialog_quest330
+Ah, you have returned. Now might my brothers and sisters continue their meditations undisturbed. You have my thanks.
+== Ah, you have returned. Now might my brothers and sisters continue their meditations undisturbed. You have my thanks.
+
+$dialog_quest331
+As for the egg, may I ask you to deliver it to Tsubh Khamazom at the Bannock?
+== As for the egg, may I ask you to deliver it to Tsubh Khamazom at the Bannock?
+
+$dialog_quest332
+Anole eggs are both large and filled with nutrients - the perfect meal for a soldier. She will be more than a little pleased to see you, I should imagine.
+== Anole eggs are both large and filled with nutrients - the perfect meal for a soldier. She will be more than a little pleased to see you, I should imagine.
+
+$dialog_quest340
+Who goes there! Oh, Adventurer, it's you. Hm? Another delivery?
+== Who goes there! Oh, Adventurer, it's you. Hm? Another delivery?
+
+$dialog_quest341
+I'm not certain I should be the one to - By Nophica, that's an anole egg! The troops will be glad indeed to see one of these at table! And you say Hearer Pauline sent you on this errand?
+== I'm not certain I should be the one to - By Nophica, that's an anole egg! The troops will be glad indeed to see one of these at table! And you say Hearer Pauline sent you on this errand?
+
+$dialog_quest342
+I hear the anoles are more numerous than ever, yet you appear to have managed the task with your skin intact. Your skill and bravery continue to amaze me, Adventurer,
+== I hear the anoles are more numerous than ever, yet you appear to have managed the task with your skin intact. Your skill and bravery continue to amaze me, Adventurer,
+
+$dialog_quest350
+Adventurer! Thank the gods you've come!
+== Adventurer! Thank the gods you've come!
+
+$dialog_quest351
+We have a potential crisis on our hands, and I would appreciate your assistance. Will you hear me out?
+== We have a potential crisis on our hands, and I would appreciate your assistance. Will you hear me out?
+
+$dialog_quest352
+Listen well, for we haven't much time.
+== Listen well, for we haven't much time.
+
+$dialog_quest353
+To the southeast of here lies a dungeon known as Spirithold. It was all but destroyed during the Calamity.
+== To the southeast of here lies a dungeon known as Spirithold. It was all but destroyed during the Calamity.
+
+$dialog_quest354
+Desiring to offer the ruins back to the forest, a Hearer ventured inside to carry out the Rite of Returning.
+== Desiring to offer the ruins back to the forest, a Hearer ventured inside to carry out the Rite of Returning.
+
+$dialog_quest355
+Alas, it would seem something has gone awry. Word arrived just moments ago that the Hearer and his guards have been attacked by a towering shadow. Aye, you heard me true - a shadow.
+== Alas, it would seem something has gone awry. Word arrived just moments ago that the Hearer and his guards have been attacked by a towering shadow. Aye, you heard me true - a shadow.
+
+$dialog_quest356
+On any other day, I would dispatch my best Quivermen to provide support, but I sent them to repel an Ixali incursion in the West Shroud nary a bell ago.
+== On any other day, I would dispatch my best Quivermen to provide support, but I sent them to repel an Ixali incursion in the West Shroud nary a bell ago.
+
+$dialog_quest357
+The timing of these events cannot be mere coincidence. I fear the Ixal somehow caught wind of our plans, and are attempting to disrupt the rite in an effort to weaken the bond between man and elemental.
+== The timing of these events cannot be mere coincidence. I fear the Ixal somehow caught wind of our plans, and are attempting to disrupt the rite in an effort to weaken the bond between man and elemental.
+
+$dialog_quest358
+They must not be allowed to succeed. And so I bid you go to Spirithold and do whatever is necessary to resolve the situation. Please, say you will help us.
+== They must not be allowed to succeed. And so I bid you go to Spirithold and do whatever is necessary to resolve the situation. Please, say you will help us.
+
+$dialog_quest359
+I knew you would not let me down. You will have all the support I can muster.
+== I knew you would not let me down. You will have all the support I can muster.
+
+$dialog_quest3510
+Now, we are racing against time, so you had best make haste.
+== Now, we are racing against time, so you had best make haste.
+
+$dialog_quest360
+Who goes there? An adventurer, is it?
+== Who goes there? An adventurer, is it?
+
+$dialog_quest361
+Here at Instructor Galfrid's request, you say? Thank the Matron!
+== Here at Instructor Galfrid's request, you say? Thank the Matron!
+
+$dialog_quest362
+Doubtless you already know this, but a towering shadow manifested without warning and attacked the Hearer in the midst of the rite.
+== Doubtless you already know this, but a towering shadow manifested without warning and attacked the Hearer in the midst of the rite.
+
+$dialog_quest363
+Most of his party has been successfully evacuated, but five remain unaccounted for.
+== Most of his party has been successfully evacuated, but five remain unaccounted for.
+
+$dialog_quest364
+Please find them, and see them out of harm's way.
+== Please find them, and see them out of harm's way.
+
+$dialog_quest370
+All this happened inside Spirithold? Twelve preserve us...
+== All this happened inside Spirithold? Twelve preserve us...
+
+$dialog_quest371
+Who was that masked mage, and by what dark ambition is he driven? SO many things shrouded in mystery...
+== Who was that masked mage, and by what dark ambition is he driven? SO many things shrouded in mystery...
+
+$dialog_quest372
+Well, I shan't find any answers on my own. I must needs discuss this with Galfrid. The matter warrants a full investigation, if I am any judge, and that shall certainly be my recommendation.
+== Well, I shan't find any answers on my own. I must needs discuss this with Galfrid. The matter warrants a full investigation, if I am any judge, and that shall certainly be my recommendation.
+
+$dialog_quest373
+Your courage has saved many lives this day, adventurer. For this you have my deepest gratitude.
+== Your courage has saved many lives this day, adventurer. For this you have my deepest gratitude.
+
+$dialog_quest374
+Pray return to Gridania and seek out Miounne.
+== Pray return to Gridania and seek out Miounne.
+
+$dialog_quest375
+I understand she wishes to thank you for your efforts on our behalf.
+== I understand she wishes to thank you for your efforts on our behalf.
+
+$dialog_quest380
+How is my favorite fresh-faced adventurer? Oh, do not scowl so—I speak out of habit. You've come a long way since you first walked through my door, and I'll not deny it.
+== How is my favorite fresh-faced adventurer? Oh, do not scowl so—I speak out of habit. You've come a long way since you first walked through my door, and I'll not deny it.
+
+$dialog_quest381
+As a matter of fact, I think it's about time you made yourself useful at Bentbranch Meadows in the Central Shroud.
+== As a matter of fact, I think it's about time you made yourself useful at Bentbranch Meadows in the Central Shroud.
+
+$dialog_quest382
+Unlike the recruits you see at the Bannock, the men and women out at Bentbranch are fully occupied with their own work. As such, I imagine there are more than a few who would welcome the assistance of a rapidly maturing adventurer like yourself.
+== Unlike the recruits you see at the Bannock, the men and women out at Bentbranch are fully occupied with their own work. As such, I imagine there are more than a few who would welcome the assistance of a rapidly maturing adventurer like yourself.
+
+$dialog_quest383
+Bentbranch is also home to a very usefully situated aetheryte. It is, in other words, the perfect place for you to begin the next stage of your journey as an adventurer.
+== Bentbranch is also home to a very usefully situated aetheryte. It is, in other words, the perfect place for you to begin the next stage of your journey as an adventurer.
+
+$dialog_quest384
+And what better time than the present!? Leave the city via the Blue Badger Gate, and continue to the southwest until you come to a bridge.
+== And what better time than the present!? Leave the city via the Blue Badger Gate, and continue to the southwest until you come to a bridge.
+
+$dialog_quest385
+Cross it, and when you spy an aetheryte in the distance, you may congratulate yourself on having successfully found Bentbranch Meadows.
+== Cross it, and when you spy an aetheryte in the distance, you may congratulate yourself on having successfully found Bentbranch Meadows.
+
+$dialog_quest386
+If you so fancy, you may also make use of the chocobo porter service, doubtless the safest way to get to your destination. Chocobokeep Cingur should not hesitate to lend his birds to a capable adventurer like you.
+== If you so fancy, you may also make use of the chocobo porter service, doubtless the safest way to get to your destination. Chocobokeep Cingur should not hesitate to lend his birds to a capable adventurer like you.
+
+$dialog_quest387
+Oh, and be sure to introduce yourself to Keitha, the head chocobo wrangler, when you arrive.
+== Oh, and be sure to introduce yourself to Keitha, the head chocobo wrangler, when you arrive.
+
+$dialog_quest390
+You must be the 'venturer Miounne sent word about. I'm Keitha, head wrangler 'round these parts.
+== You must be the 'venturer Miounne sent word about. I'm Keitha, head wrangler 'round these parts.
+
+$dialog_quest391
+I've heard many and more things about you—good things, lest you worry.
+== I've heard many and more things about you—good things, lest you worry.
+
+$dialog_quest392
+When the Elder Seedseer bade us welcome 'venturers, 'tis fair to say we had our doubts—till hardworkin' folks like yourself set about provin' us wrong, that is. Consider me a convert!
+== When the Elder Seedseer bade us welcome 'venturers, 'tis fair to say we had our doubts—till hardworkin' folks like yourself set about provin' us wrong, that is. Consider me a convert!
+
+$dialog_quest393
+Anyroad, you've a mind to help out at the ranch, have you? Good. We could always do with a hand or two to keep the place runnin' smoothly.
+== Anyroad, you've a mind to help out at the ranch, have you? Good. We could always do with a hand or two to keep the place runnin' smoothly.
+
+$dialog_quest394
+As a matter of fact, I've a task right here that wants doin'.
+== As a matter of fact, I've a task right here that wants doin'.
+
+$dialog_quest395
+Let me know when you're ready to get busy. Oh, and you come highly recommended, so don't go lettin' no one down, eh?
+== Let me know when you're ready to get busy. Oh, and you come highly recommended, so don't go lettin' no one down, eh?
+
+$dialog_quest400
+Seven hells! Some bastard Qiqirn has gone and broken one of me chocobo eggs!
+== Seven hells! Some bastard Qiqirn has gone and broken one of me chocobo eggs!
+
+$dialog_quest401
+The filthy little thief was busy lootin' the barn when a guard startled it, promptin' the damn thing to drop the egg it was clutchin' and run. Some of the lads gave chase, bless 'em, but when three more of the vermin appeared, me lot had no choice but to turn back.
+== The filthy little thief was busy lootin' the barn when a guard startled it, promptin' the damn thing to drop the egg it was clutchin' and run. Some of the lads gave chase, bless 'em, but when three more of the vermin appeared, me lot had no choice but to turn back.
+
+$dialog_quest402
+Somethin' has to be done about those Qiqirn...
+== Somethin' has to be done about those Qiqirn...
+
+$dialog_quest403
+Would you mind headin' over to the Matron's Lethe and havin' a word with a soldier named Roseline for me? The ratmen nest in her neck of the woods, see... She'll know what to do.
+== Would you mind headin' over to the Matron's Lethe and havin' a word with a soldier named Roseline for me? The ratmen nest in her neck of the woods, see... She'll know what to do.
+
+$dialog_quest430
+Ho there, adventurer. You seem light on your feet. Fancy a quick skip along the root of the heavenspillar here? I need someone to pick off a blue trumpet or two.
+== Ho there, adventurer. You seem light on your feet. Fancy a quick skip along the root of the heavenspillar here? I need someone to pick off a blue trumpet or two.
+
+$dialog_quest431
+I know what you're thinking: it's naught more than a mushroom, so why the commotion? I'll tell you why. You allow that fungal menace to multiply, and within a moon they'll be covering the whole damn root and rotting the wood clear through.
+== I know what you're thinking: it's naught more than a mushroom, so why the commotion? I'll tell you why. You allow that fungal menace to multiply, and within a moon they'll be covering the whole damn root and rotting the wood clear through.
+
+$dialog_quest432
+Just watch your step while you're up there, though—the diremites on the ground won't waste any time adding insult to falling injuries.
+== Just watch your step while you're up there, though—the diremites on the ground won't waste any time adding insult to falling injuries.
+
+$dialog_quest433
+Once you're done, head up to the top end of the root and report to Theodore. He'll be glad to hear someone's taken care of one of his more dreaded chores.
+== Once you're done, head up to the top end of the root and report to Theodore. He'll be glad to hear someone's taken care of one of his more dreaded chores.
+
+$dialog_quest440
+Oh, you've cleared the root of blue trumpets? Wonderful! To be quite honest, I have this teeny-tiny problem with heights. <sigh> No, this is not my ideal posting, but we all do what we must.
+== Oh, you've cleared the root of blue trumpets? Wonderful! To be quite honest, I have this teeny-tiny problem with heights. <sigh> No, this is not my ideal posting, but we all do what we must.
+
+$dialog_quest441
+Keeping the root passable is an important job, you see. It's one of the few ways folk can traverse the Central Shroud since the Calamity all but split the area in twain.
+== Keeping the root passable is an important job, you see. It's one of the few ways folk can traverse the Central Shroud since the Calamity all but split the area in twain.
+
+$dialog_quest442
+It is not, perhaps, the easiest pathway to walk, but there are those who believe the will of the Matron Herself caused this tendril of a heavenspillar to remain thus suspended, that it might serve the forest's people. I'm rather fond of the notion, myself.
+== It is not, perhaps, the easiest pathway to walk, but there are those who believe the will of the Matron Herself caused this tendril of a heavenspillar to remain thus suspended, that it might serve the forest's people. I'm rather fond of the notion, myself.
+
+$dialog_quest450
+It is—regrettably—my duty to stand watch over the road from here to Bentbranch Meadows.
+== It is—regrettably—my duty to stand watch over the road from here to Bentbranch Meadows.
+
+$dialog_quest451
+The ranch has become a veritable institution of Gridania, so any threats to its continued operation are taken quite seriously by the Wood Wailers.
+== The ranch has become a veritable institution of Gridania, so any threats to its continued operation are taken quite seriously by the Wood Wailers.
+
+$dialog_quest452
+Which reminds me—mayhap it was my imagination, but I believe I caught a glimpse of some shadowy fellow not too long ago. Would you mind passing word to Roseline down below? I would go myself but, well...it's hard enough marshaling the courage to walk the root for my shift...
+== Which reminds me—mayhap it was my imagination, but I believe I caught a glimpse of some shadowy fellow not too long ago. Would you mind passing word to Roseline down below? I would go myself but, well...it's hard enough marshaling the courage to walk the root for my shift...
+
+$dialog_quest460
+A shadowy fellow? Hmmm...now that you mention it, I may have seen something.
+== A shadowy fellow? Hmmm...now that you mention it, I may have seen something.
+
+$dialog_quest461
+I dismissed it as a trick of the light before, but I thought I saw a shadow in the forest to the north. Still, I suspect it is nothing more than a Qiqirn thief on the run.
+== I dismissed it as a trick of the light before, but I thought I saw a shadow in the forest to the north. Still, I suspect it is nothing more than a Qiqirn thief on the run.
+
+$dialog_quest462
+If you must sate your curiosity, by all means investigate. Should you actually find something of note, I would like very much to see it.
+== If you must sate your curiosity, by all means investigate. Should you actually find something of note, I would like very much to see it.
+
+$dialog_quest470
+Hmmm? Have you found something?
+== Hmmm? Have you found something?
+
+$dialog_quest471
+Remnants of a campfire and a forgotten bag...this could belong to any adventurer or traveler. And inside we have...a chocobo grooming brush and roseling oil?
+== Remnants of a campfire and a forgotten bag...this could belong to any adventurer or traveler. And inside we have...a chocobo grooming brush and roseling oil?
+
+$dialog_quest472
+But wait—why would a traveler make camp here, when it would be far safer to beg the hospitality of Bentbranch Meadows?
+== But wait—why would a traveler make camp here, when it would be far safer to beg the hospitality of Bentbranch Meadows?
+
+$dialog_quest473
+Bugger me, I think this belongs to that stranger said to be meddling with the chocobos! Thank you, adventurer. We have been lax in our duties, but no longer—I swear we will find this shadow.
+== Bugger me, I think this belongs to that stranger said to be meddling with the chocobos! Thank you, adventurer. We have been lax in our duties, but no longer—I swear we will find this shadow.
+
+$dialog_quest480
+We cannot allow other sentries to dismiss similar sightings—they must know what we have learned. To that end, I've prepared this letter containing everything we know about our mysterious stranger.
+== We cannot allow other sentries to dismiss similar sightings—they must know what we have learned. To that end, I've prepared this letter containing everything we know about our mysterious stranger.
+
+$dialog_quest481
+I need you to show it to my comrades throughout the Shroud. Once each sentry has committed the details to memory, have them write their name at the bottom for confirmation.
+== I need you to show it to my comrades throughout the Shroud. Once each sentry has committed the details to memory, have them write their name at the bottom for confirmation.
+
+$dialog_quest482
+Start with Elmar at the Bannock, then find Bernard at the eastern gates of Bentbranch Meadows. They ought to relay the information to the others.
+== Start with Elmar at the Bannock, then find Bernard at the eastern gates of Bentbranch Meadows. They ought to relay the information to the others.
+
+$dialog_quest483
+Finally, make sure Eylgar sees the letter. He stands watch within the stables, so if this stranger's aim is to harm the chocobos, Eylgar may have to personally put an end to it.
+== Finally, make sure Eylgar sees the letter. He stands watch within the stables, so if this stranger's aim is to harm the chocobos, Eylgar may have to personally put an end to it.
+
+$dialog_quest490
+You don't look like you're here for training...
+== You don't look like you're here for training...
+
+$dialog_quest491
+A shadowy figure... Understood. I'll pass word to the recruits as well as the sentries.
+== A shadowy figure... Understood. I'll pass word to the recruits as well as the sentries.
+
+$dialog_quest492
+Let me just make my mark...there, that should do.
+== Let me just make my mark...there, that should do.
+
+$dialog_quest493
+If you follow the road south, you'll find Bernard by the bridge to Bentbranch. Godsspeed, adventurer.
+== If you follow the road south, you'll find Bernard by the bridge to Bentbranch. Godsspeed, adventurer.
+
+$dialog_quest500
+You have business with me, adventurer?
+== You have business with me, adventurer?
+
+$dialog_quest501
+Roseline is right to be cautious. For this stranger to venture so close, yet to go to such great lengths to remain undetected, is highly suspicious. They clearly have designs on Bentbranch.
+== Roseline is right to be cautious. For this stranger to venture so close, yet to go to such great lengths to remain undetected, is highly suspicious. They clearly have designs on Bentbranch.
+
+$dialog_quest502
+We appreciate the help. I should write my name here, yes?
+== We appreciate the help. I should write my name here, yes?
+
+$dialog_quest503
+And...here, take it. You'll find Eylgar in the stables, past the aetheryte.
+== And...here, take it. You'll find Eylgar in the stables, past the aetheryte.
+
+$dialog_quest510
+Mind the birds, adventurer. They get nervous around strangers.
+== Mind the birds, adventurer. They get nervous around strangers.
+
+$dialog_quest511
+What's this? A shadowy stranger near the Matron's Lethe... You've already shown this to Bernard and Elmar, I see. Good, good.
+== What's this? A shadowy stranger near the Matron's Lethe... You've already shown this to Bernard and Elmar, I see. Good, good.
+
+$dialog_quest512
+Then all that's left is to inform the staff here. Not everyone here is a Wood Wailer, true, but even our stableboys wouldn't hesitate to take up arms to defend these chocobos.
+== Then all that's left is to inform the staff here. Not everyone here is a Wood Wailer, true, but even our stableboys wouldn't hesitate to take up arms to defend these chocobos.
+
+$dialog_quest520
+You're quite the compassionate adventurer, by the sound of it. Well far be it from me to look a gift chocobo in the mouth─I have need of a capable [GENDER]/woman like yourself.
+== You're quite the compassionate adventurer, by the sound of it. Well far be it from me to look a gift chocobo in the mouth─I have need of a capable [GENDER]/woman like yourself.
+
+$dialog_quest521
+We received a peddler at the gates the other day─an excitable Lalafell that was sweating and swearing that he had been attacked by large winged beasts. Yet other than hornets, I know of no flying creatures in this region.
+== We received a peddler at the gates the other day─an excitable Lalafell that was sweating and swearing that he had been attacked by large winged beasts. Yet other than hornets, I know of no flying creatures in this region.
+
+$dialog_quest522
+If there's any truth to what he said, it might prove problematic for other travelers. Follow the road south and see if you can find any evidence to support his claim.
+== If there's any truth to what he said, it might prove problematic for other travelers. Follow the road south and see if you can find any evidence to support his claim.
+
+$dialog_quest523
+And, should you find something, kindly tell Lothaire to patrol his area sometime instead of just standing beneath the spire and staring at the godsdamned road. In those words.
+== And, should you find something, kindly tell Lothaire to patrol his area sometime instead of just standing beneath the spire and staring at the godsdamned road. In those words.
+
+$dialog_quest530
+I have another task for you, adventurer. I need you to head to the Hedgetree to the southwest of here and speak with Hearer Leonnie.
+== I have another task for you, adventurer. I need you to head to the Hedgetree to the southwest of here and speak with Hearer Leonnie.
+
+$dialog_quest531
+After tending to the Hedgetree, the Hearer was scheduled to board a boat from the Mirror Planks... Well, the vessel's departure time has come and gone, but there is still no sign of her.
+== After tending to the Hedgetree, the Hearer was scheduled to board a boat from the Mirror Planks... Well, the vessel's departure time has come and gone, but there is still no sign of her.
+
+$dialog_quest532
+Knowing how absorbed the Hearer becomes in her work, I am not unduly concerned. Armelle, however, was responsible for organizing Leonnie's transportation and is likely wondering if her wayward passenger is ever going to arrive. Perhaps a gentle reminder is in order?
+== Knowing how absorbed the Hearer becomes in her work, I am not unduly concerned. Armelle, however, was responsible for organizing Leonnie's transportation and is likely wondering if her wayward passenger is ever going to arrive. Perhaps a gentle reminder is in order?
+
+$dialog_quest540
+Yes, what troubles you, my de─? Ah. Yes. The boat. I had quite forgotten.
+== Yes, what troubles you, my de─? Ah. Yes. The boat. I had quite forgotten.
+
+$dialog_quest541
+Hm? Oh, my task with the Hedgetree is well and finished, but the elementals murmur of a malevolent presence in the vicinity of the Tam-Tara Deepcroft.
+== Hm? Oh, my task with the Hedgetree is well and finished, but the elementals murmur of a malevolent presence in the vicinity of the Tam-Tara Deepcroft.
+
+$dialog_quest542
+I must abide a while longer, that I might better divine the source of the elementals' distress. Please inform Armelle that I shall be late in arriving.
+== I must abide a while longer, that I might better divine the source of the elementals' distress. Please inform Armelle that I shall be late in arriving.
+
+$dialog_quest550
+You bear a message from Hearer Leonnie? An evil presence in the Deepcroft? That does sound grave, indeed.
+== You bear a message from Hearer Leonnie? An evil presence in the Deepcroft? That does sound grave, indeed.
+
+$dialog_quest551
+I shall organize a vessel for a later time, then. Perhaps a bell from now? Two? Better make it three, just to be safe. Thank you for your trouble.
+== I shall organize a vessel for a later time, then. Perhaps a bell from now? Two? Better make it three, just to be safe. Thank you for your trouble.
+
+$dialog_quest560
+Might you assist me with another matter, <player>? A wagon that departed from Quarrymill was overturned on the road when some large, ill-tempered forest beast chose that moment to defend its territory.
+== Might you assist me with another matter, <player>? A wagon that departed from Quarrymill was overturned on the road when some large, ill-tempered forest beast chose that moment to defend its territory.
+
+$dialog_quest561
+By Nophica's grace, the driver escaped without serious injury, but the wagon's cargo was not so fortunate. With none willing to risk another encounter with the creature, I can only assume the goods remain strewn across the ground where the incident occurred.
+== By Nophica's grace, the driver escaped without serious injury, but the wagon's cargo was not so fortunate. With none willing to risk another encounter with the creature, I can only assume the goods remain strewn across the ground where the incident occurred.
+
+$dialog_quest562
+Simply follow the road here to the south and you should come across the wreckage. Salvage what cargo you can, and deliver it to Keitha at Bentbranch Meadows if you would be so kind.
+== Simply follow the road here to the south and you should come across the wreckage. Salvage what cargo you can, and deliver it to Keitha at Bentbranch Meadows if you would be so kind.
+
+$dialog_quest570
+You have a delivery for me?
+== You have a delivery for me?
+
+$dialog_quest571
+Ah, this's the shipment I was waitin' on from Quarrymill. I heard the wagon ran afoul o' some great monstrosity just up the path from the Mirror Planks, but I see you've managed to scrape together a few bits and pieces.
+== Ah, this's the shipment I was waitin' on from Quarrymill. I heard the wagon ran afoul o' some great monstrosity just up the path from the Mirror Planks, but I see you've managed to scrape together a few bits and pieces.
+
+$dialog_quest572
+Seems I can't get through two bells these days without hearin' some new tale o' horrors in the Deepcroft or bandit cutthroats prowlin' the woods hereabouts. Makes me wonder if me chocobos are safe at night, it does. If we're ever in need of a 'venturer's skills, I hope you'll be around to lend a hand.
+== Seems I can't get through two bells these days without hearin' some new tale o' horrors in the Deepcroft or bandit cutthroats prowlin' the woods hereabouts. Makes me wonder if me chocobos are safe at night, it does. If we're ever in need of a 'venturer's skills, I hope you'll be around to lend a hand.
+
+$dialog_quest580
+No! Oh, please gods, no! Leia's egg!
+== No! Oh, please gods, no! Leia's egg!
+
+$dialog_quest581
+<player>, you must help me! I stepped out of the stables for but a moment, and when I returned it was gone!
+== <player>, you must help me! I stepped out of the stables for but a moment, and when I returned it was gone!
+
+$dialog_quest582
+I— What was gone? An egg! Sorry? You are sure the chocobos will lay another!? Gah! You do not understand—the egg is extremely valuable! I must find it!
+== I— What was gone? An egg! Sorry? You are sure the chocobos will lay another!? Gah! You do not understand—the egg is extremely valuable! I must find it!
+
+$dialog_quest583
+You will help me, won't you, <player>? Oh, thank you, thank you!
+== You will help me, won't you, <player>? Oh, thank you, thank you!
+
+$dialog_quest584
+Someone must have made off with it. There can be no other explanation. I shall scour every ilm of the stable once more just to be sure. While I do so, I should be very grateful if you would ask the others if they noticed anything unusual.
+== Someone must have made off with it. There can be no other explanation. I shall scour every ilm of the stable once more just to be sure. While I do so, I should be very grateful if you would ask the others if they noticed anything unusual.
+
+$dialog_quest590
+Leia's egg is irreplaceable. I cannot well express to you the depth of my gratitude.
+== Leia's egg is irreplaceable. I cannot well express to you the depth of my gratitude.
+
+$dialog_quest591
+And yet, I find that I am still troubled... While this whole regrettable episode unfolded, I bore witness to a sight that greatly concerned me..
+== And yet, I find that I am still troubled... While this whole regrettable episode unfolded, I bore witness to a sight that greatly concerned me..
+
+$dialog_quest600
+My thanks for your kindness earlier. I hate to impose again, but I have need of your assistance in another matter─one of grave import, I fear.
+== My thanks for your kindness earlier. I hate to impose again, but I have need of your assistance in another matter─one of grave import, I fear.
+
+$dialog_quest601
+Of late, I have noticed that Ixali dirigibles have been appearing over the Twelveswood with increasing regularity. The frequency, however, does not bother me near so much as where they choose to fly─the patch of sky directly above the Guardian Tree.
+== Of late, I have noticed that Ixali dirigibles have been appearing over the Twelveswood with increasing regularity. The frequency, however, does not bother me near so much as where they choose to fly─the patch of sky directly above the Guardian Tree.
+
+$dialog_quest602
+The tree is a sacred site, or so I was given to believe when first I came to Gridania, and thus I naturally assumed that the elementals would not suffer the Ixal to profane it. Yet the birdmen have been coming and going as they please, with nary a sign of protest from the guardians of the Twelveswood.
+== The tree is a sacred site, or so I was given to believe when first I came to Gridania, and thus I naturally assumed that the elementals would not suffer the Ixal to profane it. Yet the birdmen have been coming and going as they please, with nary a sign of protest from the guardians of the Twelveswood.
+
+$dialog_quest603
+And it was that which set me to thinking... Ever since the appearance of the much-talked-about “suspicious individual,” many and more strange things have been occurring in the forest. Could it be that he did something to the elementals?
+== And it was that which set me to thinking... Ever since the appearance of the much-talked-about “suspicious individual,” many and more strange things have been occurring in the forest. Could it be that he did something to the elementals?
+
+$dialog_quest604
+In case it proved useful, I have committed the details of my sightings to parchment, and would ask that you deliver the document to Mother Miounne.
+== In case it proved useful, I have committed the details of my sightings to parchment, and would ask that you deliver the document to Mother Miounne.
+
+$dialog_quest605
+Please make all haste─I have an irrepressible feeling that something terrible is about to happen.
+== Please make all haste─I have an irrepressible feeling that something terrible is about to happen.
+
+$dialog_quest610
+I haven't the slightest inkling what this could be about...
+== I haven't the slightest inkling what this could be about...
+
+$dialog_quest611
+Mother Miounne scans the letter, and her eyes widen.
+== Mother Miounne scans the letter, and her eyes widen.
+
+$dialog_quest612
+Gods be good...
+== Gods be good...
+
+$dialog_quest613
+I have a mission for you. Suffice it to say, it is urgent.
+== I have a mission for you. Suffice it to say, it is urgent.
+
+$dialog_quest614
+I fear it may also prove dangerous, however, so you must be prepared.
+== I fear it may also prove dangerous, however, so you must be prepared.
+
+$dialog_quest615
+Make what arrangements you can, and report back to me the moment you are ready.
+== Make what arrangements you can, and report back to me the moment you are ready.
+
+$dialog_quest620
+Time is of the essence, so I shall speak plain.
+== Time is of the essence, so I shall speak plain.
+
+$dialog_quest621
+Based on Luquelot's observations, the Ixal have designs on the Guardian Tree, and they mean to act soon.
+== Based on Luquelot's observations, the Ixal have designs on the Guardian Tree, and they mean to act soon.
+
+$dialog_quest622
+The tree is the oldest living thing in this ancient forest, and it is held sacred by every forestborn Gridanian.
+== The tree is the oldest living thing in this ancient forest, and it is held sacred by every forestborn Gridanian.
+
+$dialog_quest623
+Should it come to any harm, the elementals would fly into a rage beyond pacifying. I dread to think of the chaos that would ensue.
+== Should it come to any harm, the elementals would fly into a rage beyond pacifying. I dread to think of the chaos that would ensue.
+
+$dialog_quest624
+There isn't much time. We must act quickly.
+== There isn't much time. We must act quickly.
+
+$dialog_quest625
+<player>, please see this letter to the hands of Bowlord Lewin, at the Seat of the First Bow in Quiver's Hold. Should the need arise, pray put yourself wholly at the man's disposal. I strongly suspect he will need all the able-bodied souls he can muster.
+== <player>, please see this letter to the hands of Bowlord Lewin, at the Seat of the First Bow in Quiver's Hold. Should the need arise, pray put yourself wholly at the man's disposal. I strongly suspect he will need all the able-bodied souls he can muster.
+
+$dialog_quest626
+The fate of Gridania hangs in the balance. Go swiftly, <player>.
+== The fate of Gridania hangs in the balance. Go swiftly, <player>.
+
+$dialog_quest630
+So you are <player>, the adventurer of whom I have heard so much. I understand you wish words with me.
+== So you are <player>, the adventurer of whom I have heard so much. I understand you wish words with me.
+
+$dialog_quest631
+Miounne has information on the Ixal, you say? Speak freely─you have both my ears.
+== Miounne has information on the Ixal, you say? Speak freely─you have both my ears.
+
+$dialog_quest632
+...Matron forfend! They mean to defile the Guardian Tree?
+== ...Matron forfend! They mean to defile the Guardian Tree?
+
+$dialog_quest633
+Before Nophica, I swear those filthy birdmen will not touch it─nay, not so much as a single leaf!
+== Before Nophica, I swear those filthy birdmen will not touch it─nay, not so much as a single leaf!
+
+$dialog_quest634
+Twelve help me! How can it be that neither the Wood Wailers nor the Gods' Quiver caught wind of this?
+== Twelve help me! How can it be that neither the Wood Wailers nor the Gods' Quiver caught wind of this?
+
+$dialog_quest635
+I cannot help but think this plot bears the mark of the masked devil who has eluded us for so long. We must be wary─this incursion may be more than it seems.
+== I cannot help but think this plot bears the mark of the masked devil who has eluded us for so long. We must be wary─this incursion may be more than it seems.
+
+$dialog_quest636
+Ah, would that the Warriors of Light were still with us...
+== Ah, would that the Warriors of Light were still with us...
+
+$dialog_quest637
+But this is no time for such idle thoughts. I thank you for delivering this message. You may assure Miounne that I will dispatch a unit of my best men to investi─
+== But this is no time for such idle thoughts. I thank you for delivering this message. You may assure Miounne that I will dispatch a unit of my best men to investi─
+
+$dialog_quest640
+None in Gridania can doubt your worth, <player>...
+== None in Gridania can doubt your worth, <player>...
+
+$dialog_quest641
+But to receive such praise from the Elder Seedseer herself!
+== But to receive such praise from the Elder Seedseer herself!
+
+$dialog_quest642
+And nor is that the half of it! She chose you to play the role of Emissary, for gods' sakes! You! An outsider! Do you have any idea what this means!?
+== And nor is that the half of it! She chose you to play the role of Emissary, for gods' sakes! You! An outsider! Do you have any idea what this means!?
+
+$dialog_quest643
+<sigh> But of course you don't. You are not forestborn...which is rather the point. Mistake me not, I think you worthy, but your selection is all but unprecedented. And I'll wager you have not the faintest inkling what is required of you...
+== <sigh> But of course you don't. You are not forestborn...which is rather the point. Mistake me not, I think you worthy, but your selection is all but unprecedented. And I'll wager you have not the faintest inkling what is required of you...
+
+$dialog_quest644
+There are preparations that the Emissary must needs complete ahead of time. I suggest you consult Miounne regarding the matter—she is overseeing the arrangements for the event.
+== There are preparations that the Emissary must needs complete ahead of time. I suggest you consult Miounne regarding the matter—she is overseeing the arrangements for the event.
+
+$dialog_quest645
+Now, you had best get going—the ceremony cannot commence without the Emissary.
+== Now, you had best get going—the ceremony cannot commence without the Emissary.
+
+$dialog_quest646
+Oh, and, <player>...don't make a hash of this!
+== Oh, and, <player>...don't make a hash of this!
+
+$dialog_quest650
+Well, well, if it isn't the Emissary himself/herself! Had I known you were coming, I would have baked a pie!
+== Well, well, if it isn't the Emissary himself/herself! Had I known you were coming, I would have baked a pie!
+
+$dialog_quest651
+You truly are full of surprises, <player>. Next you'll be telling me you're one of the Warriors of Light, back from a half-decade long holiday!
+== You truly are full of surprises, <player>. Next you'll be telling me you're one of the Warriors of Light, back from a half-decade long holiday!
+
+$dialog_quest652
+But let's speak of preparations. As you doubtless already know, Greenbliss is an age-old ceremony for strengthening the bond between man and elemental. These days, though, the name also refers to the festival at large.
+== But let's speak of preparations. As you doubtless already know, Greenbliss is an age-old ceremony for strengthening the bond between man and elemental. These days, though, the name also refers to the festival at large.
+
+$dialog_quest653
+In the ceremony, the Emissary serves as a conduit—a bridge between the people and the guardians of the Twelveswood. Suffice it to say, it is no small responsibility—nor does the Elder Seedseer choose mankind's representative on a whim.
+== In the ceremony, the Emissary serves as a conduit—a bridge between the people and the guardians of the Twelveswood. Suffice it to say, it is no small responsibility—nor does the Elder Seedseer choose mankind's representative on a whim.
+
+$dialog_quest654
+Seldom in history have non-forestborn been chosen for the role—which should give you an idea of the magnitude of the honor being accorded you.
+== Seldom in history have non-forestborn been chosen for the role—which should give you an idea of the magnitude of the honor being accorded you.
+
+$dialog_quest655
+For your part, you are required to wear a ceremonial artifact, which is presently in the keeping of Timbermaster Beatin.
+== For your part, you are required to wear a ceremonial artifact, which is presently in the keeping of Timbermaster Beatin.
+
+$dialog_quest656
+Go to the Carpenters' Guild and collect it from the man, then return to me for further instructions.
+== Go to the Carpenters' Guild and collect it from the man, then return to me for further instructions.
+
+$dialog_quest660
+So you are the Emissary-to-be. Miounne sent word that you would be coming to collect the ceremonial artifact.
+== So you are the Emissary-to-be. Miounne sent word that you would be coming to collect the ceremonial artifact.
+
+$dialog_quest661
+The good news is that it's ready—painstakingly crafted by these very hands, and from the rarest of materials.
+== The good news is that it's ready—painstakingly crafted by these very hands, and from the rarest of materials.
+
+$dialog_quest662
+Take it, along with this warning: get so much as a scratch on the thing, and I shall make an unceremonial artifact out of you.
+== Take it, along with this warning: get so much as a scratch on the thing, and I shall make an unceremonial artifact out of you.
+
+$dialog_quest670
+Back from your trip to the Carpenters' Guild? Let's see what you have in that box.
+== Back from your trip to the Carpenters' Guild? Let's see what you have in that box.
+
+$dialog_quest671
+Ahhh...this is by far the finest Monoa mask I have ever laid eyes upon. The timbermaster has truly outdone himself this time.
+== Ahhh...this is by far the finest Monoa mask I have ever laid eyes upon. The timbermaster has truly outdone himself this time.
+
+$dialog_quest672
+In case he didn't mention, the mask is crafted from consecrated lumber rendered up by the Guardian Tree, solely for use in the ceremony. In other words, it is priceless—Mother bids you to handle it with care.
+== In case he didn't mention, the mask is crafted from consecrated lumber rendered up by the Guardian Tree, solely for use in the ceremony. In other words, it is priceless—Mother bids you to handle it with care.
+
+$dialog_quest673
+And with that, your preparations are complete. The venue should just about be in order as well. If you have any questions, now's the time to ask them.
+== And with that, your preparations are complete. The venue should just about be in order as well. If you have any questions, now's the time to ask them.
+
+$dialog_quest680
+Now that you have the Monoa mask, all that's left is to participate in the ceremony.
+== Now that you have the Monoa mask, all that's left is to participate in the ceremony.
+
+$dialog_quest681
+Perchance you are feeling nervous, but never fear—despite all the pomp surrounding the role, there really is nothing to being Emissary.
+== Perchance you are feeling nervous, but never fear—despite all the pomp surrounding the role, there really is nothing to being Emissary.
+
+$dialog_quest682
+All you are required to do is wear the mask, stand up straight, and look dignified. The more involved aspects of the proceedings will be handled by others. Simple, no?
+== All you are required to do is wear the mask, stand up straight, and look dignified. The more involved aspects of the proceedings will be handled by others. Simple, no?
+
+$dialog_quest683
+The ceremony will be held at Mih Khetto's Amphitheatre. When you are ready, make yourself known to the caretaker there—a woman named Estaine.
+== The ceremony will be held at Mih Khetto's Amphitheatre. When you are ready, make yourself known to the caretaker there—a woman named Estaine.
+
+$dialog_quest684
+Oh, and be sure to wear your mask or she may not recognize you. Now, off you go, <player>, and good luck!
+== Oh, and be sure to wear your mask or she may not recognize you. Now, off you go, <player>, and good luck!
+
+$dialog_quest690
+I have looked forward to your coming. But tell me, are you recovered?
+== I have looked forward to your coming. But tell me, are you recovered?
+
+$dialog_quest691
+I am most glad of that. Now, I hope you will not doubt the earnestness of my concern...but I would ask a favor of you. Nor can I deny that I summoned you here in part with this in mind. Know, however, that I proceed only upon the understanding that you are rested and well.
+== I am most glad of that. Now, I hope you will not doubt the earnestness of my concern...but I would ask a favor of you. Nor can I deny that I summoned you here in part with this in mind. Know, however, that I proceed only upon the understanding that you are rested and well.
+
+$dialog_quest850
+We periodically exterminate populations of forest dwellers and borderlands to prevent such accidents, but these creatures have begun spawning out of season, and so it is becoming increasingly difficult to control their numbers.If you want to prove yourself, go to the forest and border zones and eliminate 20 pests each in all zones.
+== We periodically exterminate populations of forest dwellers and borderlands to prevent such accidents, but these creatures have begun spawning out of season, and so it is becoming increasingly difficult to control their numbers.If you want to prove yourself, go to the forest and border zones and eliminate 20 pests each in all zones.
+
+$dialog_quest851
+Be careful and approach them one at a time so your adventurer career doesn't get cut short.
+== Be careful and approach them one at a time so your adventurer career doesn't get cut short.
+
+$dialog_quest860
+Wait, you left so quickly, I'd listen now if I were you. Just listen. This world is unlike any other, it's very exciting and full of possibilities. So, step one! You need to open the menu where you normally vote. It's called the Voting Panel. 
+== Wait, you left so quickly, I'd listen now if I were you. Just listen. This world is unlike any other, it's very exciting and full of possibilities. So, step one! You need to open the menu where you normally vote. It's called the Voting Panel. 
+
+$dialog_quest861
+This is a very important panel, because you will interact with it most often. Your first task is to select the player's class. How to do this: 1. Go to the voting menu2. Click on upgrades and professions3. There will be a section at the top. Select a class. Choose the one you like.
+== This is a very important panel, because you will interact with it most often. Your first task is to select the player's class. How to do this: 1. Go to the voting menu2. Click on upgrades and professions3. There will be a section at the top. Select a class. Choose the one you like.
+
+$dialog_quest862
+4. Don't miss the most important part! Familiarize yourself with the other buttons. Give it a try, you won't lose anything.5.  The most important thing!!!! when you familiarize yourself. The heart or  shield next to you is the navigator. It will help you always find your way
+== 4. Don't miss the most important part! Familiarize yourself with the other buttons. Give it a try, you won't lose anything.5.  The most important thing!!!! when you familiarize yourself. The heart or  shield next to you is the navigator. It will help you always find your way
+
+$dialog_quest870
+Where to start, actually. Remember we talked about the voting panel, we always interact through it, like if it's different stores, houses, craft places, etc. There are so many different interactions.And so click on the panel. At the top will be information about it, also pay attention to it.
+== Where to start, actually. Remember we talked about the voting panel, we always interact through it, like if it's different stores, houses, craft places, etc. There are so many different interactions.And so click on the panel. At the top will be information about it, also pay attention to it.
+
+$dialog_quest871
+At the bottom are all the crafting items. They are divided into groups. To craft something, you need to click on the item and it will say:Required items: item - quantity.And then the graph of crafting (gold). Click on it. And we create an item. To avoid wasting time, you can specify the number of items in the field where you specify the reason.
+== At the bottom are all the crafting items. They are divided into groups. To craft something, you need to click on the item and it will say:Required items: item - quantity.And then the graph of crafting (gold). Click on it. And we create an item. To avoid wasting time, you can specify the number of items in the field where you specify the reason.
+
+$dialog_quest880
+So we're the ones with the ore. I think you already know how to process it. This is for your practice.  We have 5 stones to mine. It's not that hard, but it'll be a lot of fun afterwards. Oh yes when you mine or farm you can get different items than just 1.
+== So we're the ones with the ore. I think you already know how to process it. This is for your practice.  We have 5 stones to mine. It's not that hard, but it'll be a lot of fun afterwards. Oh yes when you mine or farm you can get different items than just 1.
+
+$dialog_quest890
+Okay. This is one of the stores where you can sell certain things. Give him the stones. Remember how we talked through our voting menu. Oh, I almost forgot. We have a little bit of an economy here. That is, each player contributes to the economy, he mines ore and the store in turn makes products from it. And these products you can transfer to other stores where you can buy something and get gold for it! Work as a courier and for money. 
+== Okay. This is one of the stores where you can sell certain things. Give him the stones. Remember how we talked through our voting menu. Oh, I almost forgot. We have a little bit of an economy here. That is, each player contributes to the economy, he mines ore and the store in turn makes products from it. And these products you can transfer to other stores where you can buy something and get gold for it! Work as a courier and for money. 
+
+$dialog_quest891
+Unfortunately, without products you can't buy anything, alas. And so your task is to sell 5 stones. Try it. I'll go somewhere else and you catch up with me. Follow your heart navigator . But sell first!
+== Unfortunately, without products you can't buy anything, alas. And so your task is to sell 5 stones. Try it. I'll go somewhere else and you catch up with me. Follow your heart navigator . But sell first!
+
+$dialog_quest910
+It's a quiet neighborhood. You can buy a house here. Or buy a guild house if you are a guild leader. You can decorate your house, add friends, open doors, grow crops in your house. There are certain places where you can buy a house. Look for them, and you will find them. Let's move on
+== It's a quiet neighborhood. You can buy a house here. Or buy a guild house if you are a guild leader. You can decorate your house, add friends, open doors, grow crops in your house. There are certain places where you can buy a house. Look for them, and you will find them. Let's move on
+
+$dialog_quest920
+It's a bank. This is where you can deposit your money. It's important. First of all, you can lose some of it during battles. You need to enter the territory of the bank and press the respawn button. After you do this, a window will open where you will need to point the cursor at the tabs: Deposit / Withdraw. Try if you have sold stones put the money in the bank. And I'll move on.
+== It's a bank. This is where you can deposit your money. It's important. First of all, you can lose some of it during battles. You need to enter the territory of the bank and press the respawn button. After you do this, a window will open where you will need to point the cursor at the tabs: Deposit / Withdraw. Try if you have sold stones put the money in the bank. And I'll move on.
+
+$dialog_quest930
+And this is our farm. This is where the plants are grown. This is where you can harvest your crops and sell them. Let me show you
+== And this is our farm. This is where the plants are grown. This is where you can harvest your crops and sell them. Let me show you
+
+$dialog_quest940
+Well, that's the last part. This is where you can sell your harvest. These crops are also processed into products like in the miner's store. Don't forget to carry food if you want to buy something. And don't forget to upgrade your skills, if you remember where. There you can pump the efficiency of the miner and farmer. And that's not all I told you! Find Bertennant. He will tell you. If anything, you can always find me
+== Well, that's the last part. This is where you can sell your harvest. These crops are also processed into products like in the miner's store. Don't forget to carry food if you want to buy something. And don't forget to upgrade your skills, if you remember where. There you can pump the efficiency of the miner and farmer. And that's not all I told you! Find Bertennant. He will tell you. If anything, you can always find me
+
+$dialog_quest950
+Hi. This is a difficult time in our community. I was wondering if I could ask you to harvest some of the stock. Bring me 500 wheat. I will reward you
+== Hi. This is a difficult time in our community. I was wondering if I could ask you to harvest some of the stock. Bring me 500 wheat. I will reward you
+
+$dialog_quest960
+Hi. My ranch needs building materials. Can you bring me 500 stones?  That'd be great. Thanks.
+== Hi. My ranch needs building materials. Can you bring me 500 stones?  That'd be great. Thanks.
+
+$dialog_quest970
+Hi. As you know, raw food doesn't taste very good. Get me some 200 coal so I can cook over a fire. Uh-huh. Berries on a coal fire.
+== Hi. As you know, raw food doesn't taste very good. Get me some 200 coal so I can cook over a fire. Uh-huh. Berries on a coal fire.
+
+$dialog_quest980
+Hi. You already know we have a lot of breakdowns. Iron ingots can help us fix or replace our tools. Can you please bring me 100 iron ignot?
+== Hi. You already know we have a lot of breakdowns. Iron ingots can help us fix or replace our tools. Can you please bring me 100 iron ignot?
+
+$dialog_quest990
+Hello, my friend. I want berries. Yeah. Bring me 250 berries. I'd love it if you'd do that for me.
+== Hello, my friend. I want berries. Yeah. Bring me 250 berries. I'd love it if you'd do that for me.
+
+$dialog_quest1000
+Uh-huh. I need help cleaning up. You come to my ranch a lot.  Help me, please.
+== Uh-huh. I need help cleaning up. You come to my ranch a lot.  Help me, please.
+
+$dialog_quest1010
+Hey, stranger. I have an assignment for you to investigate the entire area. There might be some wild plants somewhere. We'll need that information in the future.
+== Hey, stranger. I have an assignment for you to investigate the entire area. There might be some wild plants somewhere. We'll need that information in the future.
+
+$dialog_quest1020
+Hey, I need your help. Plant crops on all the farms
+== Hey, I need your help. Plant crops on all the farms
+
+$dialog_quest1030
+Hi, I want to check out our fields and beds and see if you can harvest some crops.
+== Hi, I want to check out our fields and beds and see if you can harvest some crops.
+
+$dialog_quest1040
+Hello, damn pests. Can you get rid of them or we'll be out of crops.
+== Hello, damn pests. Can you get rid of them or we'll be out of crops.
+
+$dialog_quest1050
+Hello, damn pests. Can you get rid of them or we'll be out of crops.
+== Hello, damn pests. Can you get rid of them or we'll be out of crops.
+
+$dialog_quest1060
+Hi, I'm short a stone. Bring me 50 stones.
+== Hi, I'm short a stone. Bring me 50 stones.
+
+$dialog_quest1070
+Hey my miners need some food. Bring 25 corn.
+== Hey my miners need some food. Bring 25 corn.
+
+$dialog_quest1080
+Hello. We have a contract with a partner, but we are running out of time. We need to find 300 ores of iron ore. Can you bring it over?
+== Hello. We have a contract with a partner, but we are running out of time. We need to find 300 ores of iron ore. Can you bring it over?
+
+$dialog_quest1090
+Hello. There are mushrooms growing at one of our mines outside of town. We need to reduce their population.  
+== Hello. There are mushrooms growing at one of our mines outside of town. We need to reduce their population.  
+
+$dialog_quest1100
+There's no easier task. Bring me 100 pig meat
+== There's no easier task. Bring me 100 pig meat
+
+$dialog_quest1110
+To do that, do some work for me.
+== To do that, do some work for me.
+
+$dialog_quest1111
+You ready for your feat? Good! Because the state of our toilets and showers requires heroic intervention. Go in there and restore them to their former glory. or at least clean.
+== You ready for your feat? Good! Because the state of our toilets and showers requires heroic intervention. Go in there and restore them to their former glory. or at least clean.
+
+$dialog_quest1120
+Hi. There are places that need to be explored for new ores can you help?
+== Hi. There are places that need to be explored for new ores can you help?
+
+$dialog_quest1130
+Hi need to find some items. They have value to someone. Bring them in, please.
+== Hi need to find some items. They have value to someone. Bring them in, please.
+
+$dialog_quest1140
+Hi. Some of the mines are blocked. I need help clearing them out.
+== Hi. Some of the mines are blocked. I need help clearing them out.
+
+$dialog_quest1150
+Hi. There's a spider's nest nearby. You should see it.
+== Hi. There's a spider's nest nearby. You should see it.
+
+$dialog_quest1160
+Hi I am in need of rare ore. Bring me 100 titanium ore.
+== Hi I am in need of rare ore. Bring me 100 titanium ore.
+
+$dialog_quest1170
+Hey, I've got a great assignment for you. Bring me some coal! Lots of coal.
+== Hey, I've got a great assignment for you. Bring me some coal! Lots of coal.
+
+$dialog_quest1180
+Hi. Few people need fish, but I know what they're for. Bring it to me. Here's the usual list
+== Hi. Few people need fish, but I know what they're for. Bring it to me. Here's the usual list
+
+$dialog_quest1190
+Hi I think you're going to have to buy a house soon. Take a walk around the neighborhood and see if you can find something useful.
+== Hi I think you're going to have to buy a house soon. Take a walk around the neighborhood and see if you can find something useful.
+
+$dialog_quest1200
+Hi. I've always wanted to see the flying islands. Would you be able to see for me what's out there
+== Hi. I've always wanted to see the flying islands. Would you be able to see for me what's out there
+
+$dialog_quest1210
+You were there, weren't you? I can tell from you that you liked it. Must be a lot of rare plants, huh?
+== You were there, weren't you? I can tell from you that you liked it. Must be a lot of rare plants, huh?
+
+$dialog_quest1220
+Hi. Listen, here's the deal. Check out the auction. No one's selling my beer?
+== Hi. Listen, here's the deal. Check out the auction. No one's selling my beer?
+
+$dialog_quest1230
+You're taking a long time. I see you're trying to say you didn't find anything. That's fine.
+== You're taking a long time. I see you're trying to say you didn't find anything. That's fine.
+
+$dialog_quest1240
+Hi. No one's taking care of my trees. Will you help me? I need to water them. Please, please, please.
+== Hi. No one's taking care of my trees. Will you help me? I need to water them. Please, please, please.
+
+$dialog_quest1250
+Hello, adventurer! I would need you to deliver a package to Jackson, the miner. He needs these healing potions because, you know, mining is hard, haha! Would you mind helping me out? Of course, I can pay you!
+== Hello, adventurer! I would need you to deliver a package to Jackson, the miner. He needs these healing potions because, you know, mining is hard, haha! Would you mind helping me out? Of course, I can pay you!
+
+$dialog_quest1260
+Hi. I think you are from Mother Miounne. Thank you very much.
+== Hi. I think you are from Mother Miounne. Thank you very much.
+
+$dialog_quest2810
+Now, I've an idea for ambushing those beady-eyed furballs, but I can't go off in case Master Dyrstweitz needs me. And I can't stand here and do nothing about it, either, as I'm the one getting blamed for the missing eats!
+== Now, I've an idea for ambushing those beady-eyed furballs, but I can't go off in case Master Dyrstweitz needs me. And I can't stand here and do nothing about it, either, as I'm the one getting blamed for the missing eats!
+
+$dialog_quest2811
+Might you be willing to solve this problem for me, adventurer? You look to have some spare time! I've placed the meats the kobolds like best in these five sacks. Line them up along the pier to the north, and they should come scurrying.
+== Might you be willing to solve this problem for me, adventurer? You look to have some spare time! I've placed the meats the kobolds like best in these five sacks. Line them up along the pier to the north, and they should come scurrying.
+
+$dialog_quest2820
+Those filthy ground dwellers fell for it? Hah, I knew it! I owe you a debt. Master Dyrstweitz will be pleased, too. And, more importantly, he shan't be hitting me with the pickle ladle so much!
+== Those filthy ground dwellers fell for it? Hah, I knew it! I owe you a debt. Master Dyrstweitz will be pleased, too. And, more importantly, he shan't be hitting me with the pickle ladle so much!
+
+$dialog_quest2821
+...Though between the two of us, it was I who ate the tomato pies... <cough> If Master Dyrstweitz actually knew anything about the kobolds, he would never have believed the creatures would eat such a thing!
+== ...Though between the two of us, it was I who ate the tomato pies... <cough> If Master Dyrstweitz actually knew anything about the kobolds, he would never have believed the creatures would eat such a thing!
+
+$dialog_quest2822
+I do hope this is the end of their mischief...but I think not. From what I've observed, they seem to be readying for battle. And considering we've already got the Sahagin to deal with, I don't know that we need that kind of trouble.
+== I do hope this is the end of their mischief...but I think not. From what I've observed, they seem to be readying for battle. And considering we've already got the Sahagin to deal with, I don't know that we need that kind of trouble.
+
+$dialog_npc10
+If you found me, you must have forgotten something. Okay, I'll say it again.
+== If you found me, you must have forgotten something. Okay, I'll say it again.
+
+$dialog_npc11
+The voting menu has all the important settings for you. There you can change the class. Pump up your skills that you have. Manage your inventory, such as throwing away items and disassemble them into materials and also enchant. Manage guilds, create groups to play together, In the settings you can disable settings and change the language or anything else.
+== The voting menu has all the important settings for you. There you can change the class. Pump up your skills that you have. Manage your inventory, such as throwing away items and disassemble them into materials and also enchant. Manage guilds, create groups to play together, In the settings you can disable settings and change the language or anything else.
+
+$dialog_npc12
+In the crafting area: Required items quantity. Craft button. Immediately I tell you that crafting can be paid. In the window where the reason you can select the number of items to craft instead of clicking constantly
+== In the crafting area: Required items quantity. Craft button. Immediately I tell you that crafting can be paid. In the window where the reason you can select the number of items to craft instead of clicking constantly
+
+$dialog_npc13
+In farming and mining zones. you gather resources. Which you can also use in crafting. These resources provide a stable economy. You mine, you can buy things. You can buy things with products. You can also carry products and get gold for it.
+== In farming and mining zones. you gather resources. Which you can also use in crafting. These resources provide a stable economy. You mine, you can buy things. You can buy things with products. You can also carry products and get gold for it.
+
+$dialog_npc14
+There are homes you can buy them from. All functions in the voting menu. These are your houses and you can use them as you like. Bring your friends or be alone there, for example.
+== There are homes you can buy them from. All functions in the voting menu. These are your houses and you can use them as you like. Bring your friends or be alone there, for example.
+
+$dialog_npc15
+If you forgot what how to use skils or where to buy. Buy them here next to need skills to raise or pump them. The usual command to use skills /use_skill number
+== If you forgot what how to use skils or where to buy. Buy them here next to need skills to raise or pump them. The usual command to use skills /use_skill number
+
+$dialog_npc16
+Pump yourself up first, then go into battle!
+== Pump yourself up first, then go into battle!
+
+$dialog_npc30
+Hey, stranger. Have you come to sell your harvest?
+== Hey, stranger. Have you come to sell your harvest?
+
+$dialog_npc40
+Hi. Got the rock again, huh? All right, spill it while I'm being nice.
+== Hi. Got the rock again, huh? All right, spill it while I'm being nice.
+
+$dialog_npc50
+Hey, stranger. Help yourself to any beverage you want. Even the illegal stuff. Heehee.
+== Hey, stranger. Help yourself to any beverage you want. Even the illegal stuff. Heehee.
+
+$dialog_npc60
+Look, don't distract me. I'm keeping order here.
+== Look, don't distract me. I'm keeping order here.
+
+$dialog_npc70
+Look, don't distract me. I'm keeping order here.
+== Look, don't distract me. I'm keeping order here.
+
+$dialog_npc80
+Look, don't distract me. I'm keeping order here.
+== Look, don't distract me. I'm keeping order here.
+
+$dialog_npc90
+Look, don't distract me. I'm keeping order here.
+== Look, don't distract me. I'm keeping order here.
+
+$dialog_npc100
+Look, don't distract me. I'm keeping order here.
+== Look, don't distract me. I'm keeping order here.
+
+$dialog_npc110
+Look, don't distract me. I'm keeping order here.
+== Look, don't distract me. I'm keeping order here.
+
+$dialog_npc120
+Look, don't distract me. I'm keeping order here.
+== Look, don't distract me. I'm keeping order here.
+
+$dialog_npc130
+Look, don't distract me. I'm keeping order here.
+== Look, don't distract me. I'm keeping order here.
+
+$dialog_npc140
+Look, don't distract me. I'm keeping order here.
+== Look, don't distract me. I'm keeping order here.
+
+$dialog_npc150
+Look, don't distract me. I'm keeping order here.
+== Look, don't distract me. I'm keeping order here.
+
+$dialog_npc160
+Look, don't distract me. I'm keeping order here.
+== Look, don't distract me. I'm keeping order here.
+
+$dialog_npc170
+Look, don't distract me. I'm keeping order here.
+== Look, don't distract me. I'm keeping order here.
+
+$dialog_npc180
+If you're a good citizen, your stay here will be shortened.
+== If you're a good citizen, your stay here will be shortened.
+
+$dialog_npc190
+Look, don't distract me. I'm keeping order here.
+== Look, don't distract me. I'm keeping order here.
+
+$dialog_npc200
+Look, don't distract me. I'm keeping order here.
+== Look, don't distract me. I'm keeping order here.
+
+$dialog_npc210
+Look, don't distract me. I'm keeping order here.
+== Look, don't distract me. I'm keeping order here.
+
+$dialog_npc220
+Look, don't distract me. I'm keeping order here.
+== Look, don't distract me. I'm keeping order here.
+
+$dialog_npc230
+Look, don't distract me. I'm keeping order here.
+== Look, don't distract me. I'm keeping order here.
+
+$dialog_npc240
+Look, don't distract me. I'm keeping order here.
+== Look, don't distract me. I'm keeping order here.
+
+$dialog_npc250
+Look, don't distract me. I'm keeping order here.
+== Look, don't distract me. I'm keeping order here.
+
+$dialog_npc270
+<player>, do you have any questions? I'm sorry, can't help you.
+== <player>, do you have any questions? I'm sorry, can't help you.
+
+$dialog_npc280
+I'm sorry, sir/ma'am, we've no headcheese today. Why ever not? Because the kobolds are stealing food everywhere in Costa del Sol, that's why! The tomato pies, the mashed popotoes, and now the headcheese to boot!
+== I'm sorry, sir/ma'am, we've no headcheese today. Why ever not? Because the kobolds are stealing food everywhere in Costa del Sol, that's why! The tomato pies, the mashed popotoes, and now the headcheese to boot!
+
+$aether1
+Gridania (Center)
+== Gridania (Center)
+
+$aether2
+Apartaments 1 (Left)
+== Apartaments 1 (Left)
+
+$aether3
+Apartaments 2  (Right)
+== Apartaments 2  (Right)
+
+$aether4
+Swamp (Left)
+== Swamp (Left)
+
+$aether5
+Dungeon (Right)
+== Dungeon (Right)
+
+$aether6
+Center of the forest
+== Center of the forest
+
+$attribute1
+DMG
+== DMG
+
+$attribute2
+Attack SPD
+== Attack SPD
+
+$attribute3
+Crit DMG
+== Crit DMG
+
+$attribute4
+Crit
+== Crit
+
+$attribute5
+HP
+== HP
+
+$attribute6
+Lucky
+== Lucky
+
+$attribute7
+MP
+== MP
+
+$attribute8
+Vampirism
+== Vampirism
+
+$attribute9
+Ammo Regen
+== Ammo Regen
+
+$attribute10
+Ammo
+== Ammo
+
+$attribute11
+Efficiency
+== Efficiency
+
+$attribute12
+Extraction
+== Extraction
+
+$attribute13
+Hammer DMG
+== Hammer DMG
+
+$attribute14
+Gun DMG
+== Gun DMG
+
+$attribute15
+Shotgun DMG
+== Shotgun DMG
+
+$attribute16
+Grenade DMG
+== Grenade DMG
+
+$attribute17
+Rifle DMG
+== Rifle DMG
+
+$attribute18
+Lucky Drop
+== Lucky Drop
+
+$attribute19
+Eidolon PWR
+== Eidolon PWR
+
+$attribute20
+Gold Capacity
+== Gold Capacity
+
+$attribute21
+Patience
+== Patience
+
+$attribute22
+Product Capacity
+== Product Capacity
+
+$item_name1
+Gold
+== Gold
+
+$item_description1
+Major currency
+== Major currency
+
+$item_name2
+W: Hammer
+== W: Hammer
+
+$item_description2
+A normal hammer
+== A normal hammer
+
+$item_name3
+W: Gun
+== W: Gun
+
+$item_description3
+Conventional weapon
+== Conventional weapon
+
+$item_name4
+W: Shotgun
+== W: Shotgun
+
+$item_description4
+Conventional weapon
+== Conventional weapon
+
+$item_name5
+W: Grenade
+== W: Grenade
+
+$item_description5
+Conventional weapon
+== Conventional weapon
+
+$item_name6
+W: Rifle
+== W: Rifle
+
+$item_description6
+Conventional weapon
+== Conventional weapon
+
+$item_name7
+Material
+== Material
+
+$item_description7
+Required to improve weapons
+== Required to improve weapons
+
+$item_name8
+Product
+== Product
+
+$item_description8
+Required to shop
+== Required to shop
+
+$item_name9
+Skill point
+== Skill point
+
+$item_description9
+Skill point
+== Skill point
+
+$item_name10
+Achievement point
+== Achievement point
+
+$item_description10
+Achievement Point
+== Achievement Point
+
+$item_name11
+Pickup Shotgun
+== Pickup Shotgun
+
+$item_description11
+Decoration for house!
+== Decoration for house!
+
+$item_name12
+Pickup Grenade
+== Pickup Grenade
+
+$item_description12
+Decoration for house!
+== Decoration for house!
+
+$item_name13
+Pickup Mana
+== Pickup Mana
+
+$item_description13
+Decoration for house!
+== Decoration for house!
+
+$item_name14
+CHANGE SHIT
+== CHANGE SHIT
+
+$item_description14
+CHANGE SHIT
+== CHANGE SHIT
+
+$item_name15
+CHANGE SHIT
+== CHANGE SHIT
+
+$item_description15
+CHANGE SHIT
+== CHANGE SHIT
+
+$item_name16
+Capsule survival experience
+== Capsule survival experience
+
+$item_description16
+You got 10-50 class experience
+== You got 10-50 class experience
+
+$item_name17
+Little bag of gold
+== Little bag of gold
+
+$item_description17
+You got 10-50 gold
+== You got 10-50 gold
+
+$item_name18
+Pickup Health
+== Pickup Health
+
+$item_description18
+Decoration for house!
+== Decoration for house!
+
+$item_name19
+M: Explosive for gun
+== M: Explosive for gun
+
+$item_description19
+Explosive bullets (gun)
+== Explosive bullets (gun)
+
+$item_name20
+M: Explosive for shotgun
+== M: Explosive for shotgun
+
+$item_description20
+Explosive bullets (shotgun)
+== Explosive bullets (shotgun)
+
+$item_name21
+Sword
+== Sword
+
+$item_description21
+A regular sword
+== A regular sword
+
+$item_name22
+Chigoe egg
+== Chigoe egg
+
+$item_description22
+The egg that Chigoe lays
+== The egg that Chigoe lays
+
+$item_name23
+Survey records
+== Survey records
+
+$item_description23
+Strange incomprehensible records
+== Strange incomprehensible records
+
+$item_name24
+Toolbox
+== Toolbox
+
+$item_description24
+A drawer full of tools
+== A drawer full of tools
+
+$item_name25
+Show equipment description
+== Show equipment description
+
+$item_description25
+Settings game.
+== Settings game.
+
+$item_name26
+J: Iron rake
+== J: Iron rake
+
+$item_description26
+The usual iron rake
+== The usual iron rake
+
+$item_name27
+J: Iron pickaxe
+== J: Iron pickaxe
+
+$item_description27
+The usual iron pickaxe
+== The usual iron pickaxe
+
+$item_name28
+T: Leather armor
+== T: Leather armor
+
+$item_description28
+Lightweight armor
+== Lightweight armor
+
+$item_name29
+Activity coin
+== Activity coin
+
+$item_description29
+Coins that are given out for activity
+== Coins that are given out for activity
+
+$item_name30
+Rookie
+== Rookie
+
+$item_description30
+Rookie title
+== Rookie title
+
+$item_name31
+Crate
+== Crate
+
+$item_description31
+Crate
+== Crate
+
+$item_name32
+Surveyor's rope
+== Surveyor's rope
+
+$item_description32
+Ordinary surveyor's rope.
+== Ordinary surveyor's rope.
+
+$item_name33
+Anole egg
+== Anole egg
+
+$item_description33
+It's a strange-looking and disgusting egg.
+== It's a strange-looking and disgusting egg.
+
+$item_name34
+Show critical damage
+== Show critical damage
+
+$item_description34
+Settings game.
+== Settings game.
+
+$item_name35
+Copper ore
+== Copper ore
+
+$item_description35
+Copper ore
+== Copper ore
+
+$item_name36
+Copper ingot
+== Copper ingot
+
+$item_description36
+Processed copper
+== Processed copper
+
+$item_name37
+T: Copper armor
+== T: Copper armor
+
+$item_description37
+Armor made of copper
+== Armor made of copper
+
+$item_name38
+J: Copper rake
+== J: Copper rake
+
+$item_description38
+The usual copper rake
+== The usual copper rake
+
+$item_name39
+J: Copper pickaxe
+== J: Copper pickaxe
+
+$item_description39
+The usual copper pickaxe
+== The usual copper pickaxe
+
+$item_name40
+Green grass
+== Green grass
+
+$item_description40
+It looks like ordinary green grass.
+== It looks like ordinary green grass.
+
+$item_name41
+Treated green grass
+== Treated green grass
+
+$item_description41
+Compressed processed grass
+== Compressed processed grass
+
+$item_name42
+J: Titanium rake
+== J: Titanium rake
+
+$item_description42
+The usual titanium rake.
+== The usual titanium rake.
+
+$item_name43
+J: Titanium pickaxe
+== J: Titanium pickaxe
+
+$item_description43
+The usual titanium pickaxe.
+== The usual titanium pickaxe.
+
+$item_name44
+Leather bag
+== Leather bag
+
+$item_description44
+Just leather bag.
+== Just leather bag.
+
+$item_name45
+Cargo
+== Cargo
+
+$item_description45
+Very valuable cargo.
+== Very valuable cargo.
+
+$item_name46
+Leia's egg
+== Leia's egg
+
+$item_description46
+The egg that Leia needs
+== The egg that Leia needs
+
+$item_name47
+Letter 
+== Letter 
+
+$item_description47
+Stamped letter
+== Stamped letter
+
+$item_name48
+Artifact
+== Artifact
+
+$item_description48
+A magical thing
+== A magical thing
+
+$item_name49
+M: Monoa mask
+== M: Monoa mask
+
+$item_description49
+Its a beautiful mask
+== Its a beautiful mask
+
+$item_name50
+Coal
+== Coal
+
+$item_description50
+Black fuel
+== Black fuel
+
+$item_name51
+M: Vampire ring
+== M: Vampire ring
+
+$item_description51
+The ring that draws out life
+== The ring that draws out life
+
+$item_name52
+M: Vampire armor
+== M: Vampire armor
+
+$item_description52
+Armor that sucks the life
+== Armor that sucks the life
+
+$item_name53
+M: AmmoModule
+== M: AmmoModule
+
+$item_description53
+AmmoModuleNPC
+== AmmoModuleNPC
+
+$item_name54
+Iron ore
+== Iron ore
+
+$item_description54
+Ordinary iron ore
+== Ordinary iron ore
+
+$item_name55
+Titanium ore
+== Titanium ore
+
+$item_description55
+Solid titanium ore
+== Solid titanium ore
+
+$item_name56
+Adamantite ore
+== Adamantite ore
+
+$item_description56
+The strongest adamantite ore
+== The strongest adamantite ore
+
+$item_name57
+EIDOL #1
+== EIDOL #1
+
+$item_name58
+Corn
+== Corn
+
+$item_description58
+Farm-grown Corn
+== Farm-grown Corn
+
+$item_name59
+EIDOL #2
+== EIDOL #2
+
+$item_name60
+M: Bullet belt
+== M: Bullet belt
+
+$item_description60
+Belt of the sharpshooter
+== Belt of the sharpshooter
+
+$item_name61
+Tomato
+== Tomato
+
+$item_description61
+Farm-grown Tomato
+== Farm-grown Tomato
+
+$item_name62
+J: Adamantium rake
+== J: Adamantium rake
+
+$item_description62
+The usual adamantium rake.
+== The usual adamantium rake.
+
+$item_name63
+J: Adamantium pickaxe
+== J: Adamantium pickaxe
+
+$item_description63
+The usual adamantium pickaxe.
+== The usual adamantium pickaxe.
+
+$item_name64
+M: Poison hook
+== M: Poison hook
+
+$item_description64
+Inflicts gradual damage.
+== Inflicts gradual damage.
+
+$item_name65
+M: Explosive impulse hook
+== M: Explosive impulse hook
+
+$item_description65
+Inflicts gradual explode damage.
+== Inflicts gradual explode damage.
+
+$item_name66
+M: Magic spider hook
+== M: Magic spider hook
+
+$item_description66
+It's sticky to the air.
+== It's sticky to the air.
+
+$item_name67
+Strawberries
+== Strawberries
+
+$item_description67
+Farm-grown Strawberries
+== Farm-grown Strawberries
+
+$item_name68
+Cabbage
+== Cabbage
+
+$item_description68
+Farm-grown Cabbage
+== Farm-grown Cabbage
+
+$item_name69
+M: Bullet generator
+== M: Bullet generator
+
+$item_description69
+Spits out lead on command
+== Spits out lead on command
+
+$item_name70
+Wheat
+== Wheat
+
+$item_description70
+Farm-grown Wheat
+== Farm-grown Wheat
+
+$item_name71
+Pumpkin
+== Pumpkin
+
+$item_description71
+Farm-grown Pumpkin
+== Farm-grown Pumpkin
+
+$item_name72
+Iron ingot
+== Iron ingot
+
+$item_description72
+Iron ingot
+== Iron ingot
+
+$item_name73
+Titanium ingot
+== Titanium ingot
+
+$item_description73
+Titanium ingot
+== Titanium ingot
+
+$item_name74
+Adamantite ingot
+== Adamantite ingot
+
+$item_description74
+Adamantite ingot
+== Adamantite ingot
+
+$item_name75
+J: Stone rake
+== J: Stone rake
+
+$item_description75
+The usual stone rake.
+== The usual stone rake.
+
+$item_name76
+J: Stone pickaxe
+== J: Stone pickaxe
+
+$item_description76
+The usual stone pickaxe.
+== The usual stone pickaxe.
+
+$item_name77
+Kit start
+== Kit start
+
+$item_description77
+Novice kit
+== Novice kit
+
+$item_name78
+M: VampireModule
+== M: VampireModule
+
+$item_description78
+VampireModuleNPC
+== VampireModuleNPC
+
+$item_name79
+EIDOL Box
+== EIDOL Box
+
+$item_description79
+EIDOL Box
+== EIDOL Box
+
+$item_name80
+EIDOL #3
+== EIDOL #3
+
+$item_name81
+M: Pigs tail
+== M: Pigs tail
+
+$item_description81
+A strangely lucky pig's tail
+== A strangely lucky pig's tail
+
+$item_name82
+T: Iron armor
+== T: Iron armor
+
+$item_description82
+Iron armor
+== Iron armor
+
+$item_name83
+T: Titanium armor
+== T: Titanium armor
+
+$item_description83
+Titanium armor
+== Titanium armor
+
+$item_name84
+T: Adamantium armor
+== T: Adamantium armor
+
+$item_description84
+Adamantium armor
+== Adamantium armor
+
+$item_name85
+M: Thorny Ring
+== M: Thorny Ring
+
+$item_description85
+A ring of sharp, cursed briars
+== A ring of sharp, cursed briars
+
+$item_name86
+M: Thorny Necklace
+== M: Thorny Necklace
+
+$item_description86
+Choker of blood-seeking thorns
+== Choker of blood-seeking thorns
+
+$item_name87
+M: Bone Armillae
+== M: Bone Armillae
+
+$item_description87
+Armbands carved from monster bone
+== Armbands carved from monster bone
+
+$item_name88
+EIDOL #4
+== EIDOL #4
+
+$item_name89
+Eidolon Crystal
+== Eidolon Crystal
+
+$item_description89
+Required to improve eidolons
+== Required to improve eidolons
+
+$item_name90
+M: Ammo Box
+== M: Ammo Box
+
+$item_description90
+A box that magically refills
+== A box that magically refills
+
+$item_name91
+M: Ammo Generator
+== M: Ammo Generator
+
+$item_description91
+Generates ammunition
+== Generates ammunition
+
+$item_name92
+Web
+== Web
+
+$item_description92
+A spider's web
+== A spider's web
+
+$item_name93
+Show quest star navigation
+== Show quest star navigation
+
+$item_description93
+Settings game.
+== Settings game.
+
+$item_name94
+Pickup Laser
+== Pickup Laser
+
+$item_description94
+Decoration for house!
+== Decoration for house!
+
+$item_name95
+Ticket guild
+== Ticket guild
+
+$item_description95
+Command: /gcreate <name>
+== Command: /gcreate <name>
+
+$item_name96
+M: Customizer
+== M: Customizer
+
+$item_description96
+Customizer for personal skins
+== Customizer for personal skins
+
+$item_name97
+M: Damage Equalizer
+== M: Damage Equalizer
+
+$item_description97
+Disabled self dmg.
+== Disabled self dmg.
+
+$item_name98
+Show detail gain messages
+== Show detail gain messages
+
+$item_description98
+Settings game.
+== Settings game.
+
+$item_name99
+W: Hammer Lamp
+== W: Hammer Lamp
+
+$item_description99
+Hammer Lamp
+== Hammer Lamp
+
+$item_name100
+W: Pizdamet
+== W: Pizdamet
+
+$item_description100
+Pizdamet
+== Pizdamet
+
+$item_name101
+W: Wall Pusher
+== W: Wall Pusher
+
+$item_description101
+Plazma wall
+== Plazma wall
+
+$item_name102
+W: Hammer Blast
+== W: Hammer Blast
+
+$item_description102
+Hammer Blast
+== Hammer Blast
+
+$item_name103
+W: Magnetic Pulse
+== W: Magnetic Pulse
+
+$item_description103
+Conventional weapon
+== Conventional weapon
+
+$item_name104
+Thread
+== Thread
+
+$item_description104
+Thread
+== Thread
+
+$item_name105
+Weak poison
+== Weak poison
+
+$item_description105
+A little weak poison
+== A little weak poison
+
+$item_name106
+Poison
+== Poison
+
+$item_description106
+Concentrated poison
+== Concentrated poison
+
+$item_name107
+Untreated Leather
+== Untreated Leather
+
+$item_description107
+Untreated Leather
+== Untreated Leather
+
+$item_name108
+Leather
+== Leather
+
+$item_description108
+Treated leather
+== Treated leather
+
+$item_name109
+Teeth
+== Teeth
+
+$item_description109
+The teeth
+== The teeth
+
+$item_name110
+Claws 
+== Claws 
+
+$item_description110
+The claws of the beast
+== The claws of the beast
+
+$item_name111
+Fragments of Darkness
+== Fragments of Darkness
+
+$item_description111
+Very dark fragments
+== Very dark fragments
+
+$item_name112
+Mushroom extract
+== Mushroom extract
+
+$item_description112
+Mushroom substance
+== Mushroom substance
+
+$item_name113
+Bone
+== Bone
+
+$item_description113
+Someone's bone
+== Someone's bone
+
+$item_name114
+Rotten meat
+== Rotten meat
+
+$item_description114
+Meat that's gone bad
+== Meat that's gone bad
+
+$item_name115
+Magic Matter
+== Magic Matter
+
+$item_description115
+The matter that radiates magic
+== The matter that radiates magic
+
+$item_name116
+Feather
+== Feather
+
+$item_description116
+The feather of the beast
+== The feather of the beast
+
+$item_name117
+Hook parts
+== Hook parts
+
+$item_description117
+Hook parts
+== Hook parts
+
+$item_name118
+M: A ring of greed
+== M: A ring of greed
+
+$item_description118
+A cursed ring that desires gold
+== A cursed ring that desires gold
+
+$item_name119
+M: Miner tools
+== M: Miner tools
+
+$item_description119
+Sturdy tools to unearth gems
+== Sturdy tools to unearth gems
+
+$item_name120
+Banner
+== Banner
+
+$item_description120
+One of the items to create a guild
+== One of the items to create a guild
+
+$item_name121
+Mana Flower
+== Mana Flower
+
+$item_description121
+Magic pours out of this flower
+== Magic pours out of this flower
+
+$item_name122
+Life Flower
+== Life Flower
+
+$item_description122
+Life pours out of this flower
+== Life pours out of this flower
+
+$item_name123
+Explosives
+== Explosives
+
+$item_description123
+A lot of explosive substances
+== A lot of explosive substances
+
+$item_name124
+Trash
+== Trash
+
+$item_description124
+Trash
+== Trash
+
+$item_name125
+Skull
+== Skull
+
+$item_description125
+Someone's skull
+== Someone's skull
+
+$item_name126
+M: Rage amulet
+== M: Rage amulet
+
+$item_description126
+The amulet of rage
+== The amulet of rage
+
+$item_name127
+Explosive Powder
+== Explosive Powder
+
+$item_description127
+Very explosive
+== Very explosive
+
+$item_name128
+Spider Egg
+== Spider Egg
+
+$item_description128
+Spider Egg
+== Spider Egg
+
+$item_name129
+Wooden Crate
+== Wooden Crate
+
+$item_description129
+Wooden Crate
+== Wooden Crate
+
+$item_name130
+Iron crate
+== Iron crate
+
+$item_description130
+Iron crate
+== Iron crate
+
+$item_name131
+Golden Crate
+== Golden Crate
+
+$item_description131
+Golden Crate
+== Golden Crate
+
+$item_name132
+Beer
+== Beer
+
+$item_description132
+Boost +2% MP (15 min)
+== Boost +2% MP (15 min)
+
+$item_name133
+M: SpeedModule
+== M: SpeedModule
+
+$item_description133
+SpeedModuleNPC
+== SpeedModuleNPC
+
+$item_name134
+Life crystal
+== Life crystal
+
+$item_description134
+The life-giving crystal
+== The life-giving crystal
+
+$item_name135
+M: Hoarder bag
+== M: Hoarder bag
+
+$item_description135
+A bag that is bigger inside
+== A bag that is bigger inside
+
+$item_name136
+Aether crystal
+== Aether crystal
+
+$item_description136
+Aether crystal
+== Aether crystal
+
+$item_name137
+Slime
+== Slime
+
+$item_description137
+A piece of slime
+== A piece of slime
+
+$item_name138
+Bone meal
+== Bone meal
+
+$item_description138
+Bone meal
+== Bone meal
+
+$item_name139
+WarLord
+== WarLord
+
+$item_description139
+You already have combat experience
+== You already have combat experience
+
+$item_name140
+Legend of the DM
+== Legend of the DM
+
+$item_description140
+You've been through the whole ordeal of murder.
+== You've been through the whole ordeal of murder.
+
+$item_name141
+The Legendary Traveler
+== The Legendary Traveler
+
+$item_description141
+You already know and feel this place
+== You already know and feel this place
+
+$item_name142
+Dungeon King
+== Dungeon King
+
+$item_description142
+You're a pain to the dark world
+== You're a pain to the dark world
+
+$item_name143
+Tank Lord
+== Tank Lord
+
+$item_description143
+The armor is a part of you.
+== The armor is a part of you.
+
+$item_name144
+DMG Lord
+== DMG Lord
+
+$item_description144
+One touch, destruction
+== One touch, destruction
+
+$item_name145
+The Lord Healer
+== The Lord Healer
+
+$item_description145
+The earth before you blooms
+== The earth before you blooms
+
+$item_name146
+Lord of the Ore
+== Lord of the Ore
+
+$item_description146
+You make everything out of nothing
+== You make everything out of nothing
+
+$item_name147
+Harvest King
+== Harvest King
+
+$item_description147
+You know nature better than anyone
+== You know nature better than anyone
+
+$item_name148
+The Overlord of Damage
+== The Overlord of Damage
+
+$item_description148
+Nothing but nothing
+== Nothing but nothing
+
+$item_name149
+King of Gold
+== King of Gold
+
+$item_description149
+You're respected. And they give you a discount
+== You're respected. And they give you a discount
+
+$item_name150
+W: Tracked Plazma
+== W: Tracked Plazma
+
+$item_description150
+Tracked Plazma
+== Tracked Plazma
+
+$item_name151
+W: Gun Pulse
+== W: Gun Pulse
+
+$item_description151
+Gun Pulse
+== Gun Pulse
+
+$item_name152
+Module parts
+== Module parts
+
+$item_description152
+Assembly components
+== Assembly components
+
+$item_name153
+Weapons parts
+== Weapons parts
+
+$item_description153
+Need it for a gun?
+== Need it for a gun?
+
+$item_name167
+Ancient remains
+== Ancient remains
+
+$item_description167
+The ancient remains of someone
+== The ancient remains of someone
+
+$item_name168
+Ancient coin
+== Ancient coin
+
+$item_description168
+The ancient coin
+== The ancient coin
+
+$item_name169
+Ancient adornment
+== Ancient adornment
+
+$item_description169
+The ancient adornment
+== The ancient adornment
+
+$item_name170
+Ancient relic
+== Ancient relic
+
+$item_description170
+The ancient relic
+== The ancient relic
+
+$item_name171
+Ancient component
+== Ancient component
+
+$item_description171
+The ancient component
+== The ancient component
+
+$item_name172
+Ancient artifact
+== Ancient artifact
+
+$item_description172
+The ancient artifact
+== The ancient artifact
+
+$item_name173
+Stone
+== Stone
+
+$item_description173
+Just stone
+== Just stone
+
+$item_name174
+J: Iron fish rod
+== J: Iron fish rod
+
+$item_description174
+The usual fishing rod.
+== The usual fishing rod.
+
+$item_name175
+Crucian Carp
+== Crucian Carp
+
+$item_description175
+Common river fish
+== Common river fish
+
+$item_name176
+Northern Pike
+== Northern Pike
+
+$item_description176
+Aggressive freshwater
+== Aggressive freshwater
+
+$item_name177
+Perch
+== Perch
+
+$item_description177
+Sleek and swift swimmer
+== Sleek and swift swimmer
+
+$item_name178
+Zander
+== Zander
+
+$item_description178
+Popular sport catch
+== Popular sport catch
+
+$item_name179
+Bream
+== Bream
+
+$item_description179
+Smooth, tasty fish
+== Smooth, tasty fish
+
+$item_name180
+Catfish
+== Catfish
+
+$item_description180
+Large, hard-to-catch fish
+== Large, hard-to-catch fish
+
+$item_name181
+Trout
+== Trout
+
+$item_description181
+Vibrant, agile swimmer
+== Vibrant, agile swimmer
+
+$item_name182
+Salmon
+== Salmon
+
+$item_description182
+Premium, rich in flavor
+== Premium, rich in flavor
+
+$item_name183
+Sturgeon
+== Sturgeon
+
+$item_description183
+Ancient, prized catch
+== Ancient, prized catch
+
+$item_name184
+Swordfish
+== Swordfish
+
+$item_description184
+Dramatic giant hunter
+== Dramatic giant hunter
+
+$item_name185
+M: Magnet for items
+== M: Magnet for items
+
+$item_description185
+Magnetizes items meant for you
+== Magnetizes items meant for you
+
+$item_name186
+Pig meat
+== Pig meat
+
+$item_description186
+The meat of a pig? Old version
+== The meat of a pig? Old version
+
+$item_name187
+Scavenger
+== Scavenger
+
+$item_description187
+Title for DPS
+== Title for DPS
+
+$item_name188
+J: Copper gloves
+== J: Copper gloves
+
+$item_description188
+The usual copper loader gloves
+== The usual copper loader gloves
+
+$item_name189
+J: Iron gloves
+== J: Iron gloves
+
+$item_description189
+The usual iron loader gloves
+== The usual iron loader gloves
+
+$item_name190
+J: Titanium gloves
+== J: Titanium gloves
+
+$item_description190
+The usual titanium loader gloves
+== The usual titanium loader gloves
+
+$item_name191
+J: Adamantium gloves
+== J: Adamantium gloves
+
+$item_description191
+The usual adamantium loader gloves
+== The usual adamantium loader gloves
+
+$item_name192
+J: Leather gloves
+== J: Leather gloves
+
+$item_description192
+The usual leather loader gloves
+== The usual leather loader gloves
+
+$item_name193
+HP 2% 30m
+== HP 2% 30m
+
+$item_description193
+Boost HP 2% 30m
+== Boost HP 2% 30m
+
+$item_name194
+MP 2% 30m
+== MP 2% 30m
+
+$item_description194
+Boost MP 2% 30m
+== Boost MP 2% 30m
+
+$item_name195
+EXP 2% 30m
+== EXP 2% 30m
+
+$item_description195
+Boost EXP 2% 30m
+== Boost EXP 2% 30m
+
+$item_name196
+GOLD 2% 30m
+== GOLD 2% 30m
+
+$item_description196
+Boost GOLD 2% 30m
+== Boost GOLD 2% 30m
+
+$item_name197
+HP 5% 10m
+== HP 5% 10m
+
+$item_description197
+Boost HP 5% 10m
+== Boost HP 5% 10m
+
+$item_name198
+EXP 5% 10m
+== EXP 5% 10m
+
+$item_description198
+Boost EXP 5% 10m
+== Boost EXP 5% 10m
+
+$item_name199
+GOLD 5% 10m
+== GOLD 5% 10m
+
+$item_description199
+Boost GOLD 5% 10m
+== Boost GOLD 5% 10m
+
+$item_name200
+HP 5% 2d
+== HP 5% 2d
+
+$item_description200
+Boost HP 5% 2d
+== Boost HP 5% 2d
+
+$item_name201
+MP 5% 2d
+== MP 5% 2d
+
+$item_description201
+Boost MP 5% 2d
+== Boost MP 5% 2d
+
+$item_name202
+EXP 5% 2d
+== EXP 5% 2d
+
+$item_description202
+Boost EXP 5% 2d
+== Boost EXP 5% 2d
+
+$item_name203
+GOLD 5% 2d
+== GOLD 5% 2d
+
+$item_description203
+Boost GOLD 5% 2d
+== Boost GOLD 5% 2d
+
+$item_name204
+HP 50% 2m
+== HP 50% 2m
+
+$item_description204
+Boost HP 50% 2m
+== Boost HP 50% 2m
+
+$item_name205
+MP 50% 2m
+== MP 50% 2m
+
+$item_description205
+Boost MP 50% 2m
+== Boost MP 50% 2m
+
+$item_name206
+EXP 50% 2m
+== EXP 50% 2m
+
+$item_description206
+Boost EXP 50% 2m
+== Boost EXP 50% 2m
+
+$item_name207
+GOLD 50% 2m
+== GOLD 50% 2m
+
+$item_description207
+Boost GOLD 50% 2m
+== Boost GOLD 50% 2m
+
+$item_name208
+W: Kill Gun
+== W: Kill Gun
+
+$item_description208
+Improved regular gun
+== Improved regular gun
+
+$item_name209
+W: Burst shotgun
+== W: Burst shotgun
+
+$item_description209
+Improved burst shotgun
+== Improved burst shotgun
+
+$item_name210
+W: Injury grenade
+== W: Injury grenade
+
+$item_description210
+Improved burst grenade
+== Improved burst grenade
+
+$item_name211
+W: Laser damager
+== W: Laser damager
+
+$item_description211
+Improved burst laser
+== Improved burst laser
+
+$item_name212
+Decoration box
+== Decoration box
+
+$item_description212
+Decor house (HP/MP)
+== Decor house (HP/MP)
+
+$item_name213
+Decoration chest
+== Decoration chest
+
+$item_description213
+Decor house (weapons)
+== Decor house (weapons)
+
+$item_name214
+Draft Hammer Lamp
+== Draft Hammer Lamp
+
+$item_description214
+Draft Hammer Lamp
+== Draft Hammer Lamp
+
+$item_name215
+Draft Wall Pusher
+== Draft Wall Pusher
+
+$item_description215
+Draft Wall Pusher
+== Draft Wall Pusher
+
+$item_name216
+Draft Hammer Blast
+== Draft Hammer Blast
+
+$item_description216
+Draft Hammer Blast
+== Draft Hammer Blast
+
+$item_name217
+Draft Magnetic Pulse
+== Draft Magnetic Pulse
+
+$item_description217
+Draft Magnetic Pulse
+== Draft Magnetic Pulse
+
+$item_name218
+Draft Gun Pulse
+== Draft Gun Pulse
+
+$item_description218
+Draft Gun Pulse
+== Draft Gun Pulse
+
+$item_name219
+Draft Pizdamet
+== Draft Pizdamet
+
+$item_description219
+Draft Pizdamet
+== Draft Pizdamet
+
+$item_name220
+Draft Tracked Plazma
+== Draft Tracked Plazma
+
+$item_description220
+Draft Tracked Plazma
+== Draft Tracked Plazma
+
+$item_name221
+Draft box
+== Draft box
+
+$item_description221
+Draft box
+== Draft box
+
+$item_name222
+J: Homemade rod
+== J: Homemade rod
+
+$item_description222
+The usual homemade rod
+== The usual homemade rod
+
+$item_name223
+Сotton
+== Сotton
+
+$item_description223
+Farm-grown cotton
+== Farm-grown cotton
+
+$item_name224
+Sunflower
+== Sunflower
+
+$item_description224
+Farm-grown sunflower
+== Farm-grown sunflower
+
+$item_name225
+Black truffle
+== Black truffle
+
+$item_description225
+Farm-grown black truffle
+== Farm-grown black truffle
+
+$item_name226
+Сloth
+== Сloth
+
+$item_description226
+Cloth
+== Cloth
+
+$item_name227
+Oil
+== Oil
+
+$item_description227
+Vegetable oil
+== Vegetable oil
+
+$item_name228
+M: Small bag
+== M: Small bag
+
+$item_description228
+A small pouch for holding coins
+== A small pouch for holding coins
+
+$item_name229
+M: Hand-to-hand ring
+== M: Hand-to-hand ring
+
+$item_description229
+A ring that empowers your fists
+== A ring that empowers your fists
+
+$item_name230
+M: Quick amulet
+== M: Quick amulet
+
+$item_description230
+An amulet that hastens your step
+== An amulet that hastens your step
+
+$item_name231
+M: Laser sight
+== M: Laser sight
+
+$item_description231
+A sight for unerring accuracy
+== A sight for unerring accuracy
+
+$item_name232
+M: Fishing box
+== M: Fishing box
+
+$item_description232
+A box with every lure you need
+== A box with every lure you need
+
+$item_name233
+Fish scales
+== Fish scales
+
+$item_description233
+Fish scales
+== Fish scales
+
+$item_name234
+D: Meat armor
+== D: Meat armor
+
+$item_description234
+Meat armor
+== Meat armor
+
+$item_name235
+D: Warrior armor
+== D: Warrior armor
+
+$item_description235
+Warrior armor
+== Warrior armor
+
+$item_name236
+D: Hunter armor
+== D: Hunter armor
+
+$item_description236
+Hunter armor
+== Hunter armor
+
+$item_name237
+D: Bersek armor
+== D: Bersek armor
+
+$item_description237
+Bersek armor
+== Bersek armor
+
+$item_name238
+H: Plant armor
+== H: Plant armor
+
+$item_description238
+Plant armor
+== Plant armor
+
+$item_name239
+H: Priests robes
+== H: Priests robes
+
+$item_description239
+Priests robes
+== Priests robes
+
+$item_name240
+H: Cloak of life
+== H: Cloak of life
+
+$item_description240
+Cloak of life
+== Cloak of life
+
+$item_name241
+H: Healer cloak
+== H: Healer cloak
+
+$item_description241
+Healer cloak
+== Healer cloak
+
+$item_name242
+M: Magic bandage
+== M: Magic bandage
+
+$item_description242
+A bandage that seals any wound
+== A bandage that seals any wound
+
+$item_name243
+M: Rage belt
+== M: Rage belt
+
+$item_description243
+A belt that fuels your battle fury
+== A belt that fuels your battle fury
+
+$item_name244
+Gridans
+== Gridans
+
+$item_description244
+Gridans coins
+== Gridans coins
+
+$item_name245
+Warrior
+== Warrior
+
+$item_description245
+Warrior
+== Warrior
+
+$item_name246
+Guner
+== Guner
+
+$item_description246
+Guner
+== Guner
+
+$item_name247
+ShotGuner
+== ShotGuner
+
+$item_description247
+ShotGuner
+== ShotGuner
+
+$item_name248
+Grenader
+== Grenader
+
+$item_description248
+Grenader
+== Grenader
+
+$item_name249
+Lasertee
+== Lasertee
+
+$item_description249
+Lasertee
+== Lasertee
+
+$item_name250
+Lucker
+== Lucker
+
+$item_description250
+Lucker
+== Lucker
+
+$item_name251
+Mugger
+== Mugger
+
+$item_description251
+Mugger
+== Mugger
+
+$item_name252
+Fisherman
+== Fisherman
+
+$item_description252
+Fisherman
+== Fisherman
+
+$item_name253
+Miner
+== Miner
+
+$item_description253
+Miner
+== Miner
+
+$item_name254
+Farmer
+== Farmer
+
+$item_description254
+Farmer
+== Farmer
+
+$item_name255
+Murderer
+== Murderer
+
+$item_description255
+Murderer
+== Murderer
+
+$item_name256
+Pack of cigarettes
+== Pack of cigarettes
+
+$item_description256
+Reduces jail time
+== Reduces jail time
+
+$item_name257
+Booster box
+== Booster box
+
+$item_description257
+Booster box
+== Booster box
+
+$item_name258
+Title box
+== Title box
+
+$item_description258
+Title box
+== Title box
+
+$item_name259
+M: Scaly armbands
+== M: Scaly armbands
+
+$item_description259
+Armbands of hardened dragonscale
+== Armbands of hardened dragonscale
+
+$item_name260
+M: Slime lining
+== M: Slime lining
+
+$item_description260
+Oozing, acid-proof inner layer
+== Oozing, acid-proof inner layer
+
+$item_name261
+Fiber
+== Fiber
+
+$item_description261
+Title for Healer
+== Title for Healer
+
+$item_name262
+Rust
+== Rust
+
+$item_description262
+Title for Tank
+== Title for Tank
+
+$item_name263
+M: Leather shoulderpads
+== M: Leather shoulderpads
+
+$item_description263
+Tough, reinforced shoulder guards
+== Tough, reinforced shoulder guards
+
+$item_name264
+HP Potion I
+== HP Potion I
+
+$item_description264
+Restores health
+== Restores health
+
+$item_name265
+HP Potion II
+== HP Potion II
+
+$item_description265
+Restores health
+== Restores health
+
+$item_name266
+HP Potion III
+== HP Potion III
+
+$item_description266
+Restores health
+== Restores health
+
+$item_name267
+HP Potion IV
+== HP Potion IV
+
+$item_description267
+Restores health
+== Restores health
+
+$item_name268
+HP Potion V
+== HP Potion V
+
+$item_description268
+Restores health
+== Restores health
+
+$item_name269
+Mana Potion I
+== Mana Potion I
+
+$item_description269
+Restores mana
+== Restores mana
+
+$item_name270
+Mana Potion II
+== Mana Potion II
+
+$item_description270
+Restores mana
+== Restores mana
+
+$item_name271
+Mana Potion III
+== Mana Potion III
+
+$item_description271
+Restores mana
+== Restores mana
+
+$item_name272
+Mana Potion IV
+== Mana Potion IV
+
+$item_description272
+Restores mana
+== Restores mana
+
+$item_name273
+Mana Potion V
+== Mana Potion V
+
+$item_description273
+Restores mana
+== Restores mana
+
+$item_name274
+J: Copper rod
+== J: Copper rod
+
+$item_description274
+The usual Copper rod
+== The usual Copper rod
+
+$item_name275
+J: Titanium rod
+== J: Titanium rod
+
+$item_description275
+The usual Titanium rod
+== The usual Titanium rod
+
+$item_name276
+J: Adamantite rod
+== J: Adamantite rod
+
+$item_description276
+The usual Adamantite rod
+== The usual Adamantite rod
+
+$item_name277
+Moonsteel ore
+== Moonsteel ore
+
+$item_description277
+Moonsteel ore
+== Moonsteel ore
+
+$item_name278
+Sunbronze ore
+== Sunbronze ore
+
+$item_description278
+Sunbronze ore
+== Sunbronze ore
+
+$item_name279
+Aquaforged ore
+== Aquaforged ore
+
+$item_description279
+Aquaforged ore
+== Aquaforged ore
+
+$item_name280
+Elementium ore
+== Elementium ore
+
+$item_description280
+Elementium ore
+== Elementium ore
+
+$item_name281
+Moonsteel ingot
+== Moonsteel ingot
+
+$item_description281
+Moonsteel ingot
+== Moonsteel ingot
+
+$item_name282
+Sunbronze ingot
+== Sunbronze ingot
+
+$item_description282
+Sunbronze ingot
+== Sunbronze ingot
+
+$item_name283
+Aquaforged ingot
+== Aquaforged ingot
+
+$item_description283
+Aquaforged ingot
+== Aquaforged ingot
+
+$item_name284
+Elementium ingot
+== Elementium ingot
+
+$item_description284
+Elementium ingot
+== Elementium ingot
+
+$item_name285
+M: Crescent Edge
+== M: Crescent Edge
+
+$item_description285
+A blade shaped like the new moon
+== A blade shaped like the new moon
+
+$item_name286
+M: Moonward Plates
+== M: Moonward Plates
+
+$item_description286
+Armor that wards off moonlight
+== Armor that wards off moonlight
+
+$item_name287
+T: Moonsteal armor
+== T: Moonsteal armor
+
+$item_description287
+Moonsteal armor
+== Moonsteal armor
+
+$item_name288
+D: Adamager armor
+== D: Adamager armor
+
+$item_description288
+Adamager armor
+== Adamager armor
+
+$item_name289
+H: Adamler Mantle
+== H: Adamler Mantle
+
+$item_description289
+Adamler Mantle
+== Adamler Mantle
+
+$item_name290
+D: Lunar armor
+== D: Lunar armor
+
+$item_description290
+Lunar armor
+== Lunar armor
+
+$item_name291
+H: Darkmoon armor
+== H: Darkmoon armor
+
+$item_description291
+Darkmoon armor
+== Darkmoon armor
+
+$item_name292
+M: Ring of the Sun
+== M: Ring of the Sun
+
+$item_description292
+A ring that burns with solar fire
+== A ring that burns with solar fire
+
+$item_name293
+M: Codex of Sunlight
+== M: Codex of Sunlight
+
+$item_description293
+A tome filled with holy light
+== A tome filled with holy light
+
+$item_name294
+T: Sunbronze armor
+== T: Sunbronze armor
+
+$item_description294
+Sunbronze armor
+== Sunbronze armor
+
+$item_name295
+D: Lightcrit armor
+== D: Lightcrit armor
+
+$item_description295
+Lightcrit armor
+== Lightcrit armor
+
+$item_name296
+H: Bright armor
+== H: Bright armor
+
+$item_description296
+Bright armor
+== Bright armor
+
+$item_name297
+M: Hydro-generator
+== M: Hydro-generator
+
+$item_description297
+Generates ammo from air
+== Generates ammo from air
+
+$item_name298
+M: Amphora of Life
+== M: Amphora of Life
+
+$item_description298
+A jar that holds healing nectar
+== A jar that holds healing nectar
+
+$item_name299
+T: Aquaforged armor
+== T: Aquaforged armor
+
+$item_description299
+Aquaforged armor
+== Aquaforged armor
+
+$item_name300
+D: StormWave armor
+== D: StormWave armor
+
+$item_description300
+StormWave armor
+== StormWave armor
+
+$item_name301
+H: Armor of Life
+== H: Armor of Life
+
+$item_description301
+Armor of Life
+== Armor of Life
+
+$item_name302
+M: Elementium Accumulative
+== M: Elementium Accumulative
+
+$item_description302
+Stores raw elemental power
+== Stores raw elemental power
+
+$item_name303
+M: Elementium ammo
+== M: Elementium ammo
+
+$item_description303
+Ammo charged with raw elements
+== Ammo charged with raw elements
+
+$item_name304
+T: Elementium armor
+== T: Elementium armor
+
+$item_description304
+Elementium armor
+== Elementium armor
+
+$item_name305
+D: Absorbing armor
+== D: Absorbing armor
+
+$item_description305
+Absorbing armor
+== Absorbing armor
+
+$item_name306
+H: Adaptive armor
+== H: Adaptive armor
+
+$item_description306
+Adaptive armor
+== Adaptive armor
+
+$item_name307
+Pearls
+== Pearls
+
+$item_description307
+Pearls
+== Pearls
+
+$item_name308
+Weapons box
+== Weapons box
+
+$item_description308
+Weapons box
+== Weapons box
+
+$item_name309
+Module box
+== Module box
+
+$item_description309
+Module box
+== Module box
+
+$item_name310
+Material Box
+== Material Box
+
+$item_description310
+Material Box
+== Material Box
+
+$item_name311
+Gun parts
+== Gun parts
+
+$item_description311
+Gun parts
+== Gun parts
+
+$item_name312
+Shotgun parts
+== Shotgun parts
+
+$item_description312
+Shotgun parts
+== Shotgun parts
+
+$item_name313
+Grenade parts
+== Grenade parts
+
+$item_description313
+Grenade parts
+== Grenade parts
+
+$item_name314
+Laser parts
+== Laser parts
+
+$item_description314
+Laser parts
+== Laser parts
+
+$item_name315
+Hammer parts
+== Hammer parts
+
+$item_description315
+Hammer parts
+== Hammer parts
+
+$item_name316
+M: Basic Hammer+
+== M: Basic Hammer+
+
+$item_description316
+Increases the radius of the hit
+== Increases the radius of the hit
+
+$item_name317
+Draft Hammer+
+== Draft Hammer+
+
+$item_description317
+Draft Hammer+
+== Draft Hammer+
+
+$item_name318
+M: Breathing Reed
+== M: Breathing Reed
+
+$item_description318
+Double the time underwater
+== Double the time underwater
+
+$item_name319
+M: Life Preserver
+== M: Life Preserver
+
+$item_description319
+Keeps player afloat
+== Keeps player afloat
+
+$item_name320
+M: Diver's kit
+== M: Diver's kit
+
+$item_description320
+Can't drown, keeps player afloat.
+== Can't drown, keeps player afloat.
+
+$item_name321
+Sunken Fishing Crate
+== Sunken Fishing Crate
+
+$item_description321
+Sunken Fishing Crate
+== Sunken Fishing Crate
+
+$item_name322
+Old Captain's Chest
+== Old Captain's Chest
+
+$item_description322
+Old Captain's Chest
+== Old Captain's Chest
+
+$item_name323
+M: Fish bait
+== M: Fish bait
+
+$item_description323
+Increases chance of hooking by 30%
+== Increases chance of hooking by 30%
+
+$item_name324
+W: Tesla serpent
+== W: Tesla serpent
+
+$item_description324
+Creates lightning
+== Creates lightning
+
+$item_name325
+Draft Poison Hook
+== Draft Poison Hook
+
+$item_description325
+Draft Poison Hook
+== Draft Poison Hook
+
+$item_name326
+Draft Explosion Hook
+== Draft Explosion Hook
+
+$item_description326
+Draft Explosion Hook
+== Draft Explosion Hook
+
+$item_name327
+Draft Spider Hook
+== Draft Spider Hook
+
+$item_description327
+Draft Spider Hook
+== Draft Spider Hook
+
+$item_name328
+Draft Explosion Mod
+== Draft Explosion Mod
+
+$item_description328
+Draft Explosion Mod
+== Draft Explosion Mod
+
+$item_name329
+M: (S) Money Bag
+== M: (S) Money Bag
+
+$item_description329
+Small money bag
+== Small money bag
+
+$item_name330
+M: (M) Money Bag
+== M: (M) Money Bag
+
+$item_description330
+Medium money bag
+== Medium money bag
+
+$item_name331
+M: (B) Money Bag
+== M: (B) Money Bag
+
+$item_description331
+Big money bag
+== Big money bag
+
+$item_name332
+M: (S) Backpack gold
+== M: (S) Backpack gold
+
+$item_description332
+Small backpack gold
+== Small backpack gold
+
+$item_name333
+M: (M) Backpack gold
+== M: (M) Backpack gold
+
+$item_description333
+Medium backpack gold
+== Medium backpack gold
+
+$item_name334
+M: (B) Backpack gold
+== M: (B) Backpack gold
+
+$item_description334
+Big backpack gold
+== Big backpack gold
+
+$item_name335
+M: Mod Gun 1
+== M: Mod Gun 1
+
+$item_description335
+Increased damage for gun
+== Increased damage for gun
+
+$item_name336
+M: Mod Shotgun 1
+== M: Mod Shotgun 1
+
+$item_description336
+Increased damage for shotgun
+== Increased damage for shotgun
+
+$item_name337
+M: Mod Grenade 1
+== M: Mod Grenade 1
+
+$item_description337
+Increased damage for grenade
+== Increased damage for grenade
+
+$item_name338
+M: Mod Laser 1
+== M: Mod Laser 1
+
+$item_description338
+Increased damage for laser
+== Increased damage for laser
+
+$item_name339
+Pickaxe template
+== Pickaxe template
+
+$item_description339
+Used to craft a pickaxe
+== Used to craft a pickaxe
+
+$item_name340
+Rake template
+== Rake template
+
+$item_description340
+Used to craft a Rake
+== Used to craft a Rake
+
+$item_name341
+Armor template
+== Armor template
+
+$item_description341
+Used to craft a Armor
+== Used to craft a Armor
+
+$item_name342
+Gloves template
+== Gloves template
+
+$item_description342
+Used to craft a Gloves
+== Used to craft a Gloves
+
+$item_name343
+Rod template
+== Rod template
+
+$item_description343
+Used to craft a Rod
+== Used to craft a Rod
+
+$item_name344
+M: Heart of health
+== M: Heart of health
+
+$item_description344
+A gem that pulses with vitality
+== A gem that pulses with vitality
+
+$item_name345
+M: Mana Shield
+== M: Mana Shield
+
+$item_description345
+A barrier of pure arcane force
+== A barrier of pure arcane force
+
+$item_name346
+M: Chigoe paw
+== M: Chigoe paw
+
+$item_description346
+A lucky charm from a sand flea
+== A lucky charm from a sand flea
+
+$item_name347
+M: Belt with pockets
+== M: Belt with pockets
+
+$item_description347
+A belt with many hidden pouches
+== A belt with many hidden pouches
+
+$item_name348
+M: Mini accelerator
+== M: Mini accelerator
+
+$item_description348
+Device that grants a burst of regen
+== Device that grants a burst of regen
+
+$item_name349
+T: Leather hat
+== T: Leather hat
+
+$item_description349
+Leather hat
+== Leather hat
+
+$item_name350
+T: Copper Helmet
+== T: Copper Helmet
+
+$item_description350
+Copper helmet
+== Copper helmet
+
+$item_name351
+T: Iron Helmet
+== T: Iron Helmet
+
+$item_description351
+Iron helmet
+== Iron helmet
+
+$item_name352
+T: Titanium Helmet
+== T: Titanium Helmet
+
+$item_description352
+Titanium helmet
+== Titanium helmet
+
+$item_name353
+T: Adamantium Helmet
+== T: Adamantium Helmet
+
+$item_description353
+Adamantium helmet
+== Adamantium helmet
+
+$item_name354
+D: Meat Hood
+== D: Meat Hood
+
+$item_description354
+Meat hood
+== Meat hood
+
+$item_name355
+D: Warrior Mask
+== D: Warrior Mask
+
+$item_description355
+Warrior Mask
+== Warrior Mask
+
+$item_name356
+D: Hunter Helmet
+== D: Hunter Helmet
+
+$item_description356
+Hunter helmet
+== Hunter helmet
+
+$item_name357
+D: Bersek Helmet
+== D: Bersek Helmet
+
+$item_description357
+Bersek helmet
+== Bersek helmet
+
+$item_name358
+H: Plant Mask
+== H: Plant Mask
+
+$item_description358
+Plant mask
+== Plant mask
+
+$item_name359
+H: Priest Hood
+== H: Priest Hood
+
+$item_description359
+Priest hood
+== Priest hood
+
+$item_name360
+H: Wreath of Life
+== H: Wreath of Life
+
+$item_description360
+Wreath of life
+== Wreath of life
+
+$item_name361
+H: Healer Hood
+== H: Healer Hood
+
+$item_description361
+Healer hood
+== Healer hood
+
+$item_name362
+Gingerbread of exp
+== Gingerbread of exp
+
+$item_description362
+Boost +2% EXP (15 min)
+== Boost +2% EXP (15 min)
+
+$item_name363
+Meat kebabs
+== Meat kebabs
+
+$item_description363
+Boost +2% HP (15 min)
+== Boost +2% HP (15 min)
+
+$item_name364
+Golden apple salad
+== Golden apple salad
+
+$item_description364
+Boost +2% GOLD (15 min)
+== Boost +2% GOLD (15 min)
+
+$item_name365
+Helmet template
+== Helmet template
+
+$item_description365
+Used to craft a Helmet
+== Used to craft a Helmet
+
+$item_name366
+M: Ammo belt
+== M: Ammo belt
+
+$item_description366
+Belt of bullets
+== Belt of bullets
+
+$item_name367
+M: Small box of ammo
+== M: Small box of ammo
+
+$item_description367
+Box of bullets
+== Box of bullets
+
+$item_name368
+M: Ammo backpack
+== M: Ammo backpack
+
+$item_description368
+Backpack of bullets
+== Backpack of bullets
+
+$item_name369
+Reactive enzyme
+== Reactive enzyme
+
+$item_description369
+Reactive enzyme
+== Reactive enzyme
+
+$item_name370
+Heart of acid
+== Heart of acid
+
+$item_description370
+Heart of acid
+== Heart of acid
+
+$item_name371
+Catnip
+== Catnip
+
+$item_description371
+Cats really like it
+== Cats really like it
+
+$item_name372
+Cats eye
+== Cats eye
+
+$item_description372
+Cats eye
+== Cats eye
+
+$item_name373
+M: Purr Bag
+== M: Purr Bag
+
+$item_description373
+A bag that calms anxious minds
+== A bag that calms anxious minds
+
+$item_name374
+Meme Fragment
+== Meme Fragment
+
+$item_description374
+Part of something bigger. The spirit of memes is felt.
+== Part of something bigger. The spirit of memes is felt.
+
+$item_name375
+M: Wisdom Stone
+== M: Wisdom Stone
+
+$item_description375
+It is said to contain a bit of Cheems wisdom
+== It is said to contain a bit of Cheems wisdom
+
+$item_name376
+Eucalyptus Leaf
+== Eucalyptus Leaf
+
+$item_description376
+Eucalyptus Leaf
+== Eucalyptus Leaf
+
+$item_name377
+Boosted Tea
+== Boosted Tea
+
+$item_description377
+Boost +4% MP (10 min)
+== Boost +4% MP (10 min)
+
+$item_name378
+M: Protective Totem
+== M: Protective Totem
+
+$item_description378
+A small idol that wards off evil
+== A small idol that wards off evil
+
+$item_name379
+Cyan Droplet
+== Cyan Droplet
+
+$item_description379
+Cyan Droplet
+== Cyan Droplet
+
+$item_name380
+Energy Booster
+== Energy Booster
+
+$item_description380
+Boost +4% EXP (15 min)
+== Boost +4% EXP (15 min)
+
+$item_name381
+Coconut shell
+== Coconut shell
+
+$item_description381
+Coconut shell
+== Coconut shell
+
+$item_name382
+M: Shell Hammer
+== M: Shell Hammer
+
+$item_description382
+A hammer made of a giant shell
+== A hammer made of a giant shell
+
+$item_name383
+M: Improved bullet tips
+== M: Improved bullet tips
+
+$item_description383
+Rounds that can pierce any armor
+== Rounds that can pierce any armor
+
+$item_name384
+Dragon scales
+== Dragon scales
+
+$item_description384
+Dragon scales
+== Dragon scales
+
+$item_name385
+M: Golden Dragon Scale
+== M: Golden Dragon Scale
+
+$item_description385
+A scale that resists fire and magic
+== A scale that resists fire and magic
+
+$item_name386
+M: Amulet Fox Luck
+== M: Amulet Fox Luck
+
+$item_description386
+A charm that grants foxy cunning
+== A charm that grants foxy cunning
+
+$item_name387
+Fluff
+== Fluff
+
+$item_description387
+Fluff
+== Fluff
+
+$item_name388
+M: Ring of Return Lightning
+== M: Ring of Return Lightning
+
+$item_description388
+Chance to reflect harm as lightning
+== Chance to reflect harm as lightning
+
+$item_name389
+Witch Dust
+== Witch Dust
+
+$item_description389
+A shimmering powder with mystical powers
+== A shimmering powder with mystical powers
+
+$item_name390
+Summoning Orb
+== Summoning Orb
+
+$item_description390
+Element for summoning
+== Element for summoning
+
+$item_name391
+Tea Leaf
+== Tea Leaf
+
+$item_description391
+Tea Leaf
+== Tea Leaf
+
+$item_name392
+Tea
+== Tea
+
+$item_description392
+Boost +4% EXP (10 min)
+== Boost +4% EXP (10 min)
+
+$item_name393
+Chitin
+== Chitin
+
+$item_description393
+Chitin
+== Chitin
+
+$item_name394
+M: Chitinous shield
+== M: Chitinous shield
+
+$item_description394
+A shield of insectoid plates
+== A shield of insectoid plates
+
+$item_name395
+M: Anglers Ring
+== M: Anglers Ring
+
+$item_description395
+A ring that lures fish to bite
+== A ring that lures fish to bite
+
+$item_name396
+Pumpkin Pie
+== Pumpkin Pie
+
+$item_description396
+Boost +5% MP (5 min)
+== Boost +5% MP (5 min)
+
+$item_name397
+M: Fish net
+== M: Fish net
+
+$item_description397
+A net to catch both fish and foe
+== A net to catch both fish and foe
+
+$item_name398
+M: Harvest basket
+== M: Harvest basket
+
+$item_description398
+A basket that never overflows
+== A basket that never overflows
+
+$item_name399
+(T) Tome of \"Upgr-Reset\"
+== (T) Tome of \"Upgr-Reset\"
+
+$item_description399
+Skill reset for tank
+== Skill reset for tank
+
+$item_name400
+(D) Tome of \"Upgr-Reset\"
+== (D) Tome of \"Upgr-Reset\"
+
+$item_description400
+Skill reset for DPS
+== Skill reset for DPS
+
+$item_name401
+(H) Tome of \"Upgr-Reset\"
+== (H) Tome of \"Upgr-Reset\"
+
+$item_description401
+Skill reset for Healer
+== Skill reset for Healer
+
+$item_name402
+Show only function (modules)
+== Show only function (modules)
+
+$item_description402
+Setting game
+== Setting game
+
+$item_name403
+M: Ring of Giving Lightning
+== M: Ring of Giving Lightning
+
+$item_description403
+Chance to imbue attacks with lightning
+== Chance to imbue attacks with lightning
+
+$item_name404
+M: Ring of Perfect Lightning
+== M: Ring of Perfect Lightning
+
+$item_description404
+Chance to retaliate and attack with lightning
+== Chance to retaliate and attack with lightning
+
+$item_name405
+M: Tesla Inductive Coil
+== M: Tesla Inductive Coil
+
+$item_description405
+Increases electro damage by 25%
+== Increases electro damage by 25%
+
+$item_name406
+GOLD 50% 3d
+== GOLD 50% 3d
+
+$item_description406
+Boost GOLD 50% 3d
+== Boost GOLD 50% 3d
+
+$item_name407
+EXP 50% 3d
+== EXP 50% 3d
+
+$item_description407
+Boost EXP 50% 3d
+== Boost EXP 50% 3d
+
+$item_name408
+W: Test Hammer
+== W: Test Hammer
+
+$item_description408
+A normal hammer
+== A normal hammer
+
+$item_name409
+Show item source hint
+== Show item source hint
+
+$item_description409
+Settings game.
+== Settings game.
+
+$item_name410
+Resonance Box
+== Resonance Box
+
+$item_description410
+Contains unique and rare dungeon loot
+== Contains unique and rare dungeon loot
+
+$item_name411
+Voodoo-Puppe (Summon)
+== Voodoo-Puppe (Summon)
+
+$item_description411
+Summoning a global event
+== Summoning a global event
+
+$item_name412
+Big Pig Tail (Summon)
+== Big Pig Tail (Summon)
+
+$item_description412
+Summoning a global event
+== Summoning a global event
+
+$item_name413
+Donor
+== Donor
+
+$item_description413
+Use chat-command /donor command
+== Use chat-command /donor command
+
+$item_name414
+Donor Pro
+== Donor Pro
+
+$item_description414
+Use chat-command /donor_pro
+== Use chat-command /donor_pro
+
+$item_name415
+Sweet mint (Summon)
+== Sweet mint (Summon)
+
+$item_description415
+Summoning a global event
+== Summoning a global event
+
+$item_name416
+Blood-staned sacks
+== Blood-staned sacks
+
+$item_description416
+Attract the attention of various creatures
+== Attract the attention of various creatures
+
+$item_name417
+Pirate-King (Summon)
+== Pirate-King (Summon)
+
+$item_description417
+Summoning a global event
+== Summoning a global event
+
+$item_name418
+Astral ore
+== Astral ore
+
+$item_description418
+Ore used for post-Elementium crafting
+== Ore used for post-Elementium crafting
+
+$item_name419
+Astral alloy
+== Astral alloy
+
+$item_description419
+Refined alloy for new high-tier equipment
+== Refined alloy for new high-tier equipment
+
+$item_name420
+Prismatic dust
+== Prismatic dust
+
+$item_description420
+Catalyst for empowering late equipment
+== Catalyst for empowering late equipment
+
+$item_name421
+Void core
+== Void core
+
+$item_description421
+Rare core required for the strongest equipment
+== Rare core required for the strongest equipment
+
+$item_name422
+Ancient gear
+== Ancient gear
+
+$item_description422
+Precision mechanism for advanced armor
+== Precision mechanism for advanced armor
+
+$item_name423
+Runic thread
+== Runic thread
+
+$item_description423
+Thread used to stabilize magic armor
+== Thread used to stabilize magic armor
+
+$item_name424
+T: Voidguard armor
+== T: Voidguard armor
+
+$item_description424
+Post-Elementium tank armor
+== Post-Elementium tank armor
+
+$item_name425
+D: Starbreaker armor
+== D: Starbreaker armor
+
+$item_description425
+Post-Elementium dps armor
+== Post-Elementium dps armor
+
+$item_name426
+H: Lifebinder armor
+== H: Lifebinder armor
+
+$item_description426
+Post-Elementium healer armor
+== Post-Elementium healer armor
+
+$item_name427
+T: Voidguard helm
+== T: Voidguard helm
+
+$item_description427
+Post-Elementium tank helmet
+== Post-Elementium tank helmet
+
+$item_name428
+D: Starbreaker helm
+== D: Starbreaker helm
+
+$item_description428
+Post-Elementium dps helmet
+== Post-Elementium dps helmet
+
+$item_name429
+H: Lifebinder hood
+== H: Lifebinder hood
+
+$item_description429
+Post-Elementium healer helmet
+== Post-Elementium healer helmet
+
+$item_name430
+M: Astral Ward
+== M: Astral Ward
+
+$item_description430
+Defensive stabilizer for late armor
+== Defensive stabilizer for late armor
+
+$item_name431
+M: Starforged Core
+== M: Starforged Core
+
+$item_description431
+Weapon stabilizer for high-tier builds
+== Weapon stabilizer for high-tier builds
+
+$item_name432
+M: Voidheart Amulet
+== M: Voidheart Amulet
+
+$item_description432
+Universal amulet for endgame builds
+== Universal amulet for endgame builds
+
+$skill_name1
+Health turret
+== Health turret
+
+$skill_description1
+Creates turret a recovery health 
+== Creates turret a recovery health 
+
+$skill_name2
+Sleepy Gravity
+== Sleepy Gravity
+
+$skill_description2
+Magnet mobs to itself
+== Magnet mobs to itself
+
+$skill_name3
+Master craftsman
+== Master craftsman
+
+$skill_description3
+Improvements that enable you to become a master
+== Improvements that enable you to become a master
+
+$skill_name4
+Master of weapons
+== Master of weapons
+
+$skill_description4
+Improving weapon proficiency
+== Improving weapon proficiency
+
+$skill_name5
+Blessing of God of war
+== Blessing of God of war
+
+$skill_description5
+The blessing restores ammo
+== The blessing restores ammo
+
+$skill_name6
+Attack Teleport
+== Attack Teleport
+
+$skill_description6
+An attacking teleport that deals damage to all mobs radius
+== An attacking teleport that deals damage to all mobs radius
+
+$skill_name7
+Cure
+== Cure
+
+$skill_description7
+Restores HP all nearby target's.
+== Restores HP all nearby target's.
+
+$skill_name8
+Provoke
+== Provoke
+
+$skill_description8
+Aggresses mobs in case of weak aggression
+== Aggresses mobs in case of weak aggression
+
+$skill_name9
+Last Stand
+== Last Stand
+
+$skill_description9
+Enters mana damage dampening mode
+== Enters mana damage dampening mode
+
+$skill_name10
+Magic Bow
+== Magic Bow
+
+$skill_description10
+Entering magic bow mode
+== Entering magic bow mode
+
+$skill_name11
+Healing aura
+== Healing aura
+
+$skill_description11
+Creates an aura that restores health.
+== Creates an aura that restores health.
+
+$skill_name12
+Flame Wall
+== Flame Wall
+
+$skill_description12
+Slows down and deals damage.
+== Slows down and deals damage.
+
+$skill_name13
+Healing Rift
+== Healing Rift
+
+$skill_description13
+Attacks and heals.
+== Attacks and heals.
+
+$quest_name1
+Meeting
+== Meeting
+
+$quest_name2
+Coming to Gridania
+== Coming to Gridania
+
+$quest_name3
+Close to Home
+== Close to Home
+
+$quest_name4
+To the Bannock
+== To the Bannock
+
+$quest_name5
+Passing Muster
+== Passing Muster
+
+$quest_name6
+Chasing Shadows
+== Chasing Shadows
+
+$quest_name7
+Eggs over Queasy
+== Eggs over Queasy
+
+$quest_name8
+Surveying the Damage
+== Surveying the Damage
+
+$quest_name9
+A Soldier's Breakfast
+== A Soldier's Breakfast
+
+$quest_name10
+Spirithold Broken
+== Spirithold Broken
+
+$quest_name11
+On to Bentbranch
+== On to Bentbranch
+
+$quest_name12
+You Shall Not Trespass
+== You Shall Not Trespass
+
+$quest_name13
+Don't Look Down
+== Don't Look Down
+
+$quest_name14
+Darkness of the Forest
+== Darkness of the Forest
+
+$quest_name15
+Threat Level Elevated
+== Threat Level Elevated
+
+$quest_name16
+Migrant Marauders
+== Migrant Marauders
+
+$quest_name17
+A Hearer Is Often Late
+== A Hearer Is Often Late
+
+$quest_name18
+Salvaging the Scene
+== Salvaging the Scene
+
+$quest_name19
+Leia's Legacy
+== Leia's Legacy
+
+$quest_name20
+Dread Is in the Air
+== Dread Is in the Air
+
+$quest_name21
+To Guard a Guardian
+== To Guard a Guardian
+
+$quest_name22
+Festive Endeavors
+== Festive Endeavors
+
+$quest_name23
+Renewing the Covenant
+== Renewing the Covenant
+
+$quest_name24
+The Gridanian Envoy
+== The Gridanian Envoy
+
+$quest_name40
+D | Population Control
+== D | Population Control
+
+$quest_name42
+Farmer | Need more wheat
+== Farmer | Need more wheat
+
+$quest_name43
+Farmer | And the stone?
+== Farmer | And the stone?
+
+$quest_name44
+Farmer | Bring coal
+== Farmer | Bring coal
+
+$quest_name45
+Farmer | Need for iron
+== Farmer | Need for iron
+
+$quest_name46
+Farmer | I want berries
+== Farmer | I want berries
+
+$quest_name47
+Farmer | Put it in order
+== Farmer | Put it in order
+
+$quest_name48
+Farmer | Reconnaissance
+== Farmer | Reconnaissance
+
+$quest_name49
+Farmer | Plant a crop
+== Farmer | Plant a crop
+
+$quest_name50
+Farmer | Harvest
+== Farmer | Harvest
+
+$quest_name51
+Farmer | Pests
+== Farmer | Pests
+
+$quest_name52
+Miner | Reconnaissance
+== Miner | Reconnaissance
+
+$quest_name53
+Miner | Rock stone
+== Miner | Rock stone
+
+$quest_name54
+Miner | Need food
+== Miner | Need food
+
+$quest_name55
+Miner | Iron contract
+== Miner | Iron contract
+
+$quest_name56
+Miner | Annihilation
+== Miner | Annihilation
+
+$quest_name57
+R | Meat fever
+== R | Meat fever
+
+$quest_name58
+Jail | Correctional
+== Jail | Correctional
+
+$quest_name59
+Miner | Excavations
+== Miner | Excavations
+
+$quest_name60
+Miner | Find items
+== Miner | Find items
+
+$quest_name61
+Miner | Wreckage
+== Miner | Wreckage
+
+$quest_name62
+Miner | Spider hive
+== Miner | Spider hive
+
+$quest_name63
+Miner | My ore
+== Miner | My ore
+
+$quest_name64
+Miner | Black guy
+== Miner | Black guy
+
+$quest_name65
+R | Fish is in fashion
+== R | Fish is in fashion
+
+$quest_name66
+S | Visit homes
+== S | Visit homes
+
+$quest_name67
+S | Sky islands
+== S | Sky islands
+
+$quest_name68
+S | Auction, huh?
+== S | Auction, huh?
+
+$quest_name69
+D | Trees of life
+== D | Trees of life
+
+$quest_name70
+W | Miners parcel
+== W | Miners parcel
+
+$quest_name73
+Test
+== Test
+
+$quest_name100
+Need help?
+== Need help?
+
+$quest_name101
+Who Moved My Headcheese
+== Who Moved My Headcheese
+
+$warehouse_name1
+Weapons Shop
+== Weapons Shop
+
+$warehouse_name2
+Tavern
+== Tavern
+
+$warehouse_name3
+Mining Store
+== Mining Store
+
+$warehouse_name4
+Farm Store
+== Farm Store
+
+$warehouse_name9
+Fish Seller
+== Fish Seller
+
+$warehouse_name10
+Activity Shop
+== Activity Shop
+
+$warehouse_name11
+Achievement Shop
+== Achievement Shop
+
+$warehouse_name12
+Donate Shop
+== Donate Shop
+
+$warehouse_name13
+Shop
+== Shop
+
+$house_class_name1
+House 1
+== House 1
+
+$house_class_name2
+House 2
+== House 2
+
+$house_class_name3
+House 3
+== House 3
+
+$house_class_name4
+House 4
+== House 4
+
+$house_class_name5
+House 5
+== House 5
+
+$house_class_name6
+House 6
+== House 6
+
+$house_class_name7
+House 7
+== House 7
+
+$house_class_name8
+House 8
+== House 8
+
+$house_class_name9
+Left apartments 1
+== Left apartments 1
+
+$house_class_name10
+Left apartments 2
+== Left apartments 2
+
+$house_class_name11
+Left apartments 3
+== Left apartments 3
+
+$house_class_name12
+Left apartments 4
+== Left apartments 4
+
+$house_class_name13
+Left apartments 5
+== Left apartments 5
+
+$house_class_name19
+(R/L) Apartments 1
+== (R/L) Apartments 1
+
+$house_class_name20
+(R/L) Apartments 2
+== (R/L) Apartments 2
+
+$house_class_name21
+(R/L) Apartments 3
+== (R/L) Apartments 3
+
+$house_class_name22
+(R/L) Apartments 4
+== (R/L) Apartments 4
+
+$house_class_name23
+(R/R) Apartments 1
+== (R/R) Apartments 1
+
+$house_class_name24
+(R/R) Apartments 2
+== (R/R) Apartments 2
+
+$house_class_name25
+(R/R) Apartments 3
+== (R/R) Apartments 3
+
+$house_class_name26
+(R/R) Apartments 4
+== (R/R) Apartments 4
+

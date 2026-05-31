@@ -1,46 +1,46 @@
-﻿$item_name433
-Astral Horn (Summon)
-== Астрал. горн (Призыв)
+$quest_name101
+Who Moved My Headcheese
+== Who Moved My Headcheese
 
-$item_description402
-Setting game
-== Настройка игры
+$dialog_npc290
+Can't you see I'm reading? Come back when you have something worth my time.
+== Can't you see I'm reading? Come back when you have something worth my time.
 
 $item_description133
 SpeedModuleNPC
 == SpeedModuleNPC
 
-$item_description244
-Gridans coins
-== Gridans coins
+$dialog_quest410
+You're here on Keitha's behalf? Hm? I see. Broke one of her eggs, you say? And there were four of the creatures?
+== You're here on Keitha's behalf? Hm? I see. Broke one of her eggs, you say? And there were four of the creatures?
 
-$item_name428
-D: Starbreaker helm
-== D: Шлем Разруш. Звезд
+$item_description424
+Post-Elementium tank armor
+== Post-Elementium tank armor
 
-$item_name418
-Astral ore
-== Астрал. руда
+$dialog_quest420
+The deed is done? Good. A grim task, but a necessary one.
+== The deed is done? Good. A grim task, but a necessary one.
 
-$item_name429
-H: Lifebinder hood
-== H: Спасательный капюшон
+$item_description410
+Contains unique and rare dungeon loot
+== Contains unique and rare dungeon loot
 
-$item_description415
-Summoning a global event
-== Вызывает глоб. инвент
+$item_name14
+CHANGE SHIT
+== CHANGE SHIT
 
-$item_description432
-Universal amulet for endgame builds
-== Универ. амулет для сборки эндшпиля
+$item_name407
+EXP 50% 3d
+== EXP 50% 3d
 
-$quest_name1
-Meeting
-== Встреча
+$item_name427
+T: Voidguard helm
+== T: Voidguard helm
 
-$item_description380
-Boost +4% EXP (15 min)
-== Буст +4% EXP (15 min)
+$item_description423
+Thread used to stabilize magic armor
+== Thread used to stabilize magic armor
 
 $item_description427
 Post-Elementium tank helmet
@@ -50,73 +50,73 @@ $item_name421
 Void core
 == Void core
 
-$item_name411
-Voodoo-Puppe (Summon)
-== Voodoo-Puppe (Призыв)
+$item_name408
+W: Test Hammer
+== W: Test Hammer
 
-$item_name414
-Donor Pro
-== Donor Pro
+$item_name53
+M: AmmoModule
+== M: AmmoModule
 
-$item_name423
-Runic thread
-== Руническая нить
+$item_description409
+Settings game.
+== Settings game.
 
-$item_description406
-Boost GOLD 50% 3d
-== Буст ЗОЛ. 50% 3d
+$dialog_quest411
+The Qiqirn are a nuisance at the best of times, but we must now add trespass and chocobo murder to their list of transgressions... They have forced our hand. Our retribution must needs be swift and decisive.
+== The Qiqirn are a nuisance at the best of times, but we must now add trespass and chocobo murder to their list of transgressions... They have forced our hand. Our retribution must needs be swift and decisive.
 
-$item_name420
-Prismatic dust
-== Призматическая пыль
+$item_description422
+Precision mechanism for advanced armor
+== Precision mechanism for advanced armor
 
-$item_description419
-Refined alloy for new high-tier equipment
-== Усоверш. сплав оборудования высокого уровня
+$item_name15
+CHANGE SHIT
+== CHANGE SHIT
 
-$item_name416
-Blood-staned sacks
-== Пропитанные кровью мешки
+$item_description418
+Ore used for post-Elementium crafting
+== Ore used for post-Elementium crafting
 
-$item_description416
-Attract the attention of various creatures
-== Привлекает внимание различных существ
+$item_description14
+CHANGE SHIT
+== CHANGE SHIT
 
 $quest_name73
 Test
 == Test
 
-$item_description392
-Boost +4% EXP (10 min)
-== Буст +4% EXP (10 min)
+$item_name78
+M: VampireModule
+== M: VampireModule
 
 $dialog_quest412
 And who better than you to deliver it, adventurer? Find the lair to the west of here and make an example of exactly four Qiqirn scramblers. We can send no clearer message.
-== И кто, как не ты, сможет доставить это, искатель приключений? Найди логово к западу отсюда и сделай пример ровно из четырех шифровальщиков Кикирна. Мы не можем послать более четкого сообщения.
+== And who better than you to deliver it, adventurer? Find the lair to the west of here and make an example of exactly four Qiqirn scramblers. We can send no clearer message.
 
-$item_name409
-Show item source hint
-== Показать подсказку об источнике предмета
+$item_name417
+Pirate-King (Summon)
+== Pirate-King (Summon)
 
-$item_description420
-Catalyst for empowering late equipment
-== Катализатор для расш. возможностей оборуд.
+$item_description78
+VampireModuleNPC
+== VampireModuleNPC
 
-$item_name424
-T: Voidguard armor
-== T: Защитная броня пустоты
+$item_description414
+Use chat-command /donor_pro
+== Use chat-command /donor_pro
 
-$item_description421
-Rare core required for the strongest equipment
-== Редкое ядро, необх. для самого прочного оборуд.
+$item_name425
+D: Starbreaker armor
+== D: Starbreaker armor
 
-$item_name410
-Resonance Box
-== Резонансная коробка
+$item_name432
+M: Voidheart Amulet
+== M: Voidheart Amulet
 
-$item_description377
-Boost +4% MP (10 min)
-== Буст +4% MP (10 min)
+$item_name412
+Big Pig Tail (Summon)
+== Big Pig Tail (Summon)
 
 $quest_name100
 Need help?
@@ -126,29 +126,29 @@ $item_description431
 Weapon stabilizer for high-tier builds
 == Weapon stabilizer for high-tier builds
 
-$item_name431
-M: Starforged Core
-== M: Выкованное из звезд ядро
+$item_description428
+Post-Elementium dps helmet
+== Post-Elementium dps helmet
 
-$item_description132
-Boost +2% MP (15 min)
-== Буст +2% MP (15 min)
+$item_description15
+CHANGE SHIT
+== CHANGE SHIT
 
 $item_description425
 Post-Elementium dps armor
 == Post-Elementium dps armor
 
-$item_name415
-Sweet mint (Summon)
-== Сладкая мята (Призыв)
+$item_description433
+Summoning a global event
+== Summoning a global event
 
-$item_name430
-M: Astral Ward
-== M: Астральный отражатель
+$item_description364
+Boost +2% GOLD (15 min)
+== Boost +2% GOLD (15 min)
 
-$item_description362
-Boost +2% EXP (15 min)
-== Буст +2% EXP (15 min)
+$item_name426
+H: Lifebinder armor
+== H: Lifebinder armor
 
 $item_description429
 Post-Elementium healer helmet
@@ -238,117 +238,125 @@ $item_description413
 Use chat-command /donor command
 == Use chat-command /donor command
 
-$quest_name101
-Who Moved My Headcheese
-== Who Moved My Headcheese
+$item_name433
+Astral Horn (Summon)
+== Астрал. горн (Призыв)
 
-$dialog_npc290
-Can't you see I'm reading? Come back when you have something worth my time.
-== Can't you see I'm reading? Come back when you have something worth my time.
+$item_description402
+Setting game
+== Настройка игры
 
-$dialog_quest410
-You're here on Keitha's behalf? Hm? I see. Broke one of her eggs, you say? And there were four of the creatures?
-== You're here on Keitha's behalf? Hm? I see. Broke one of her eggs, you say? And there were four of the creatures?
+$item_description244
+Gridans coins
+== Gridans монеты
 
-$item_description424
-Post-Elementium tank armor
-== Post-Elementium tank armor
+$item_name428
+D: Starbreaker helm
+== D: Шлем Разруш. Звезд
 
-$dialog_quest420
-The deed is done? Good. A grim task, but a necessary one.
-== The deed is done? Good. A grim task, but a necessary one.
+$item_name418
+Astral ore
+== Астрал. руда
 
-$item_description410
-Contains unique and rare dungeon loot
-== Contains unique and rare dungeon loot
+$item_name429
+H: Lifebinder hood
+== H: Спасательный капюшон
 
-$item_name14
-CHANGE SHIT
-== CHANGE SHIT
-
-$item_name407
-EXP 50% 3d
-== EXP 50% 3d
-
-$item_name427
-T: Voidguard helm
-== T: Voidguard helm
-
-$item_description423
-Thread used to stabilize magic armor
-== Thread used to stabilize magic armor
-
-$item_name408
-W: Test Hammer
-== W: Test Hammer
-
-$item_name53
-M: AmmoModule
-== M: AmmoModule
-
-$item_description409
-Settings game.
-== Settings game.
-
-$dialog_quest411
-The Qiqirn are a nuisance at the best of times, but we must now add trespass and chocobo murder to their list of transgressions... They have forced our hand. Our retribution must needs be swift and decisive.
-== The Qiqirn are a nuisance at the best of times, but we must now add trespass and chocobo murder to their list of transgressions... They have forced our hand. Our retribution must needs be swift and decisive.
-
-$item_description422
-Precision mechanism for advanced armor
-== Precision mechanism for advanced armor
-
-$item_name15
-CHANGE SHIT
-== CHANGE SHIT
-
-$item_description418
-Ore used for post-Elementium crafting
-== Ore used for post-Elementium crafting
-
-$item_description14
-CHANGE SHIT
-== CHANGE SHIT
-
-$item_name78
-M: VampireModule
-== M: VampireModule
-
-$item_name417
-Pirate-King (Summon)
-== Pirate-King (Summon)
-
-$item_description78
-VampireModuleNPC
-== VampireModuleNPC
-
-$item_description414
-Use chat-command /donor_pro
-== Use chat-command /donor_pro
-
-$item_name425
-D: Starbreaker armor
-== D: Starbreaker armor
-
-$item_name432
-M: Voidheart Amulet
-== M: Voidheart Amulet
-
-$item_name412
-Big Pig Tail (Summon)
-== Big Pig Tail (Summon)
-
-$item_description428
-Post-Elementium dps helmet
-== Post-Elementium dps helmet
-
-$item_description15
-CHANGE SHIT
-== CHANGE SHIT
-
-$item_description433
+$item_description415
 Summoning a global event
-== Summoning a global event
+== Вызывает глоб. инвент
+
+$item_description432
+Universal amulet for endgame builds
+== Универ. амулет для сборки эндшпиля
+
+$quest_name1
+Meeting
+== Встреча
+
+$item_description380
+Boost +4% EXP (15 min)
+== Буст +4% EXP (15 min)
+
+$item_name411
+Voodoo-Puppe (Summon)
+== Voodoo-Puppe (Призыв)
+
+$item_name414
+Donor Pro
+== Донор Про
+
+$item_name423
+Runic thread
+== Руническая нить
+
+$item_description406
+Boost GOLD 50% 3d
+== Буст ЗОЛ. 50% 3d
+
+$item_name420
+Prismatic dust
+== Призматическая пыль
+
+$item_description419
+Refined alloy for new high-tier equipment
+== Усоверш. сплав оборудования высокого уровня
+
+$item_name416
+Blood-staned sacks
+== Пропитанные кровью мешки
+
+$item_description416
+Attract the attention of various creatures
+== Привлекает внимание различных существ
+
+$item_description392
+Boost +4% EXP (10 min)
+== Буст +4% EXP (10 min)
+
+$item_name409
+Show item source hint
+== Показать подсказку об источнике предмета
+
+$item_description420
+Catalyst for empowering late equipment
+== Катализатор для расш. возможностей оборуд.
+
+$item_name424
+T: Voidguard armor
+== T: Защитная броня пустоты
+
+$item_description421
+Rare core required for the strongest equipment
+== Редкое ядро, необх. для самого прочного оборуд.
+
+$item_name410
+Resonance Box
+== Резонансная коробка
+
+$item_description377
+Boost +4% MP (10 min)
+== Буст +4% MP (10 min)
+
+$item_name431
+M: Starforged Core
+== M: Выкованное из звезд ядро
+
+$item_description132
+Boost +2% MP (15 min)
+== Буст +2% MP (15 min)
+
+$item_name415
+Sweet mint (Summon)
+== Сладкая мята (Призыв)
+
+$item_name430
+M: Astral Ward
+== M: Астральный отражатель
+
+$item_description362
+Boost +2% EXP (15 min)
+== Буст +2% EXP (15 min)
 
 $dialog_quest2822
 I do hope this is the end of their mischief...but I think not. From what I've observed, they seem to be readying for battle. And considering we've already got the Sahagin to deal with, I don't know that we need that kind of trouble.
@@ -374,17 +382,9 @@ $dialog_npc280
 I'm sorry, sir/ma'am, we've no headcheese today. Why ever not? Because the kobolds are stealing food everywhere in Costa del Sol, that's why! The tomato pies, the mashed popotoes, and now the headcheese to boot!
 == Извините, сэр/мэм, но сегодня у нас нет хедчиза. А почему бы и нет? Потому что кобольды воруют еду повсюду на Коста-дель-Соль, вот почему! Пироги с помидорами, пюре-попото, а теперь еще и хедчиз в придачу!
 
-$item_description364
-Boost +2% GOLD (15 min)
-== Boost +2% GOLD (15 min)
-
 $item_name413
 Donor
-== Donor
-
-$item_name426
-H: Lifebinder armor
-== H: Lifebinder armor
+== Донор
 
 emote
 == эмоция
