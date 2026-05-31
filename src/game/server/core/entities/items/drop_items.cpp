@@ -43,7 +43,7 @@ bool CEntityDropItem::TakeItem(int ClientID)
 		if(!pPlayerItem->IsEquipped() && LastEquipped)
 			pPlayerItem->Equip();
 
-		GS()->Chat(ClientID, "You now own '{}{}'.", pPlayerItem->Info()->GetName(), pPlayerItem->GetStringEnchantLevel().c_str());
+		GS()->Chat(ClientID, "You now own '{}{~}'.", pPlayerItem->Info()->GetName(), pPlayerItem->GetStringEnchantLevel().c_str());
 		pPlayer->m_VotesData.UpdateVotesIf(MENU_INVENTORY);
 		pPlayer->m_VotesData.UpdateVotesIf(MENU_EQUIPMENT);
 		pPlayerItem->Save();
@@ -112,18 +112,18 @@ void CEntityDropItem::Tick()
 		{
 			if(pPlayerItem->HasItem())
 			{
-				GS()->Broadcast(ClientID, BroadcastPriority::GameInformation, 100, "You have: {}{}\nReplace with: {}{} {}",
+				GS()->Broadcast(ClientID, BroadcastPriority::GameInformation, 100, "You have: {}{}\nReplace with: {}{} {~}",
 					pPlayerItem->Info()->GetName(), pPlayerItem->GetStringEnchantLevel().c_str(), m_DropItem.Info()->GetName(), m_DropItem.GetStringEnchantLevel().c_str(), pOwnerNick);
 			}
 			else
 			{
-				GS()->Broadcast(ClientID, BroadcastPriority::GameInformation, 100, "{}(+{}) {}",
+				GS()->Broadcast(ClientID, BroadcastPriority::GameInformation, 100, "{}(+{}) {~}",
 					m_DropItem.Info()->GetName(), m_DropItem.GetEnchant(), pOwnerNick);
 			}
 		}
 		else
 		{
-			GS()->Broadcast(ClientID, BroadcastPriority::GameInformation, 100, "{} x{} {}",
+			GS()->Broadcast(ClientID, BroadcastPriority::GameInformation, 100, "{} x{} {~}",
 				m_DropItem.Info()->GetName(), m_DropItem.GetValue(), pOwnerNick);
 		}
 	}

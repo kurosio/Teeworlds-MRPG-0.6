@@ -9,7 +9,7 @@ import SettingsPage from './components/SettingsPage';
 import TopContributors from './components/TopContributors';
 
 function AutoLoader() {
-  const { settings, loadFiles, loadTopContributors } = useStore();
+  const { settings, loadFiles, loadTopContributors, loadChangeRequests } = useStore();
   const attempted = useRef(false);
 
   useEffect(() => {
@@ -25,11 +25,12 @@ function AutoLoader() {
     });
 
     loadTopContributors();
+    loadChangeRequests();
 
     // Files are loaded only on page start/refresh. Do not poll while the user is
     // editing, changing settings, or just keeping the web editor open: external
     // file changes are picked up on the next browser refresh/open.
-  }, [settings.translationPath, loadFiles, loadTopContributors]);
+  }, [settings.translationPath, loadFiles, loadTopContributors, loadChangeRequests]);
 
   return null;
 }

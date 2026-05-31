@@ -1,4 +1,4 @@
-import type { LanguageIndex, TopContributor } from '../types';
+import type { LanguageIndex, TopContributor, ChangeRequest } from '../types';
 
 export interface LoadResult {
   languages: LanguageIndex[];
@@ -154,4 +154,53 @@ export async function saveTopContributorsToServer(topContributors: TopContributo
     const payload = await response.json().catch(() => null);
     throw new Error(payload?.error || `Failed to save top contributors (${response.status})`);
   }
+}
+
+
+export async function loadChangeRequestsFromServer(): Promise<ChangeRequest[]> {
+  const apiBase = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
+  const response = await fetch(`${apiBase}/api/change-requests`);
+  if (!response.ok) return [];
+  const payload = await response.json().catch(() => null);
+  return Array.isArray(payload?.changeRequests) ? payload.changeRequests : [];
+}
+
+export async function createChangeRequestOnServer(request: ChangeRequest): Promise<ChangeRequest[]> {
+  const apiBase = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
+  const response = await fetch(`${apiBase}/api/change-requests`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(request),
+  });
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) {
+    throw new Error(payload?.error || `Failed to create change request (${response.status})`);
+  }
+  return Array.isArray(payload?.changeRequests) ? payload.changeRequests : [];
+}
+
+export async function updateChangeRequestOnServer(requestId: string, patch: Partial<ChangeRequest>): Promise<ChangeRequest[]> {
+  const apiBase = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
+  const response = await fetch(`${apiBase}/api/change-requests/${encodeURIComponent(requestId)}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(patch),
+  });
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) {
+    throw new Error(payload?.error || `Failed to update change request (${response.status})`);
+  }
+  return Array.isArray(payload?.changeRequests) ? payload.changeRequests : [];
+}
+
+export async function deleteChangeRequestOnServer(requestId: string): Promise<ChangeRequest[]> {
+  const apiBase = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
+  const response = await fetch(`${apiBase}/api/change-requests/${encodeURIComponent(requestId)}`, {
+    method: 'DELETE',
+  });
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) {
+    throw new Error(payload?.error || `Failed to delete change request (${response.status})`);
+  }
+  return Array.isArray(payload?.changeRequests) ? payload.changeRequests : [];
 }

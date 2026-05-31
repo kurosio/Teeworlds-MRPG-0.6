@@ -231,7 +231,7 @@ bool CDutiesManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, con
 		const std::string LockedDifficulty = CGameControllerRhythm::GetSelectedDifficultyForWorld(WorldIdOpt.value());
 		if(ClientsNum > 0 && Difficulty != LockedDifficulty)
 		{
-			GS()->Chat(ClientID, "This rhythm room is locked to '{}' difficulty now.", LockedDifficulty);
+			GS()->Chat(ClientID, "This rhythm room is locked to '{~}' difficulty now.", LockedDifficulty);
 			pPlayer->m_VotesData.UpdateVotesIf(MENU_DUTIES_LIST);
 			return true;
 		}
@@ -251,7 +251,7 @@ bool CDutiesManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, con
 			if(auto* pRhythmController = dynamic_cast<CGameControllerRhythm*>(pWorldGS->m_pController))
 				pRhythmController->ApplyDifficulty(Difficulty);
 		}
-		GS()->Chat(-1, "'{~}' joined to '{}' [{}]!", Server()->ClientName(ClientID), Server()->GetWorldName(WorldIdOpt.value()), Difficulty);
+		GS()->Chat(-1, "'{~}' joined to '{}' [{~}]!", Server()->ClientName(ClientID), Server()->GetWorldName(WorldIdOpt.value()), Difficulty);
 		pPlayer->ChangeWorld(WorldIdOpt.value());
 		return true;
 	}
@@ -383,7 +383,7 @@ void CDutiesManager::ShowRhythmInfo(CPlayer* pPlayer, int WorldID) const
 	for(const auto& Difficulty : vDifficulties)
 	{
 		// add record list
-		VoteWrapper VOptions(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "Rhythm [{}]", Difficulty);
+		VoteWrapper VOptions(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "Rhythm [{~}]", Difficulty);
 		auto vTopRecords = Core()->GetRhythmTopList(WorldID, Difficulty, 3);
 		if(vTopRecords.empty())
 			VOptions.Add("No records yet.");

@@ -860,7 +860,7 @@ void CCharacter::HandleEventsDeath(int Killer, vec2 Force) const
 			if(KillerIsPlayer)
 				GS()->Chat(m_ClientID, "You lost '{}% ({$}) gold', killer '{~}'!", g_Config.m_SvGoldLossOnDeath, LossGold, Server()->ClientName(Killer));
 			else
-				GS()->Chat(m_ClientID, "You lost '{}% ({$})' gold due to death!", g_Config.m_SvGoldLossOnDeath, LossGold, Server()->ClientName(Killer));
+				GS()->Chat(m_ClientID, "You lost '{}% ({$})' gold due to death!", g_Config.m_SvGoldLossOnDeath, LossGold);
 		}
 	}
 

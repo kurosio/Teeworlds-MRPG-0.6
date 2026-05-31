@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useStore } from '../store';
 import { t } from '../i18n';
 import {
@@ -7,10 +7,14 @@ import {
 } from 'lucide-react';
 
 export default function ChangeRequests() {
-  const { changeRequests, isAdmin, approveRequest, rejectRequest, deleteRequest, languages, requestFilterTag, setRequestFilterTag } = useStore();
+  const { changeRequests, isAdmin, approveRequest, rejectRequest, deleteRequest, languages, requestFilterTag, setRequestFilterTag, loadChangeRequests } = useStore();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
   const [editedEntries, setEditedEntries] = useState<Record<string, string[]>>({});
+
+  useEffect(() => {
+    loadChangeRequests();
+  }, [loadChangeRequests]);
 
   const filteredRequests = changeRequests
     .filter(r => statusFilter === 'all' || r.status === statusFilter)

@@ -24,6 +24,10 @@ const TOP_CONTRIBUTORS_FILE = path.resolve(
   process.env.TOP_CONTRIBUTORS_FILE || path.join(TRANSLATION_ROOT, 'top_contributors.json')
 );
 
+const CHANGE_REQUESTS_FILE = path.resolve(
+  process.env.CHANGE_REQUESTS_FILE || path.join(TRANSLATION_ROOT, 'change_requests.json')
+);
+
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
@@ -58,7 +62,7 @@ function sendJson(res, statusCode, payload) {
     'Content-Type': 'application/json; charset=utf-8',
     'Content-Length': Buffer.byteLength(body),
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET,POST,OPTIONS',
+    'Access-Control-Allow-Methods': 'GET,POST,PATCH,DELETE,OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
   });
   res.end(body);
@@ -184,6 +188,112 @@ async function handleGetTranslations(_req, res) {
   }
 
   sendJson(res, 200, { languages, files, versions, errors });
+}
+
+
+async function readChangeRequests() {
+  try {
+    const raw = await readFile(CHANGE_REQUESTS_FILE, 'utf-8');
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return normalizeChangeRequests(parsed);
+    if (Array.isArray(parsed?.changeRequests)) return normalizeChangeRequests(parsed.changeRequests);
+  } catch (_error) {
+    // Missing file is allowed on first launch.
+  }
+  return [];
+}
+
+function normalizeChangeRequests(value) {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter(item => item && typeof item.id === 'string')
+    .map(item => ({
+      id: String(item.id),
+      name: String(item.name || ''),
+      author: String(item.author || ''),
+      languageFile: String(item.languageFile || ''),
+      languageName: String(item.languageName || item.languageFile || ''),
+      entries: Array.isArray(item.entries)
+        ? item.entries.map(entry => ({
+          entryId: String(entry?.entryId || ''),
+          original: String(entry?.original || ''),
+          oldTranslation: String(entry?.oldTranslation || ''),
+          newTranslation: String(entry?.newTranslation || ''),
+        })).filter(entry => entry.original)
+        : [],
+      status: ['pending', 'approved', 'rejected'].includes(item.status) ? item.status : 'pending',
+      createdAt: item.createdAt ? String(item.createdAt) : new Date().toISOString(),
+      resolvedAt: item.resolvedAt ? String(item.resolvedAt) : undefined,
+    }))
+    .filter(item => item.name && item.author && item.languageFile && item.entries.length > 0)
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+}
+
+async function writeChangeRequests(changeRequests) {
+  const normalized = normalizeChangeRequests(changeRequests);
+  await mkdir(path.dirname(CHANGE_REQUESTS_FILE), { recursive: true });
+  await writeFile(CHANGE_REQUESTS_FILE, JSON.stringify({ changeRequests: normalized }, null, 2), 'utf-8');
+  return normalized;
+}
+
+async function handleGetChangeRequests(_req, res) {
+  const changeRequests = await readChangeRequests();
+  sendJson(res, 200, { changeRequests });
+}
+
+async function handleCreateChangeRequest(req, res) {
+  const body = await readJsonBody(req);
+  const incoming = normalizeChangeRequests([{ ...body, status: body.status || 'pending', createdAt: body.createdAt || new Date().toISOString() }]);
+  if (incoming.length !== 1) {
+    sendJson(res, 400, { error: 'Invalid change request' });
+    return;
+  }
+
+  const current = await readChangeRequests();
+  if (current.some(request => request.id === incoming[0].id)) {
+    sendJson(res, 409, { error: 'Change request already exists' });
+    return;
+  }
+
+  const changeRequests = await writeChangeRequests([incoming[0], ...current]);
+  sendJson(res, 200, { ok: true, request: incoming[0], changeRequests });
+}
+
+async function handleUpdateChangeRequest(req, res, requestId) {
+  const body = await readJsonBody(req);
+  const current = await readChangeRequests();
+  const index = current.findIndex(request => request.id === requestId);
+  if (index === -1) {
+    sendJson(res, 404, { error: 'Change request not found' });
+    return;
+  }
+
+  const merged = {
+    ...current[index],
+    ...body,
+    id: current[index].id,
+    createdAt: current[index].createdAt,
+  };
+  const normalized = normalizeChangeRequests([merged]);
+  if (normalized.length !== 1) {
+    sendJson(res, 400, { error: 'Invalid change request update' });
+    return;
+  }
+
+  current[index] = normalized[0];
+  const changeRequests = await writeChangeRequests(current);
+  sendJson(res, 200, { ok: true, request: normalized[0], changeRequests });
+}
+
+async function handleDeleteChangeRequest(_req, res, requestId) {
+  const current = await readChangeRequests();
+  const next = current.filter(request => request.id !== requestId);
+  if (next.length === current.length) {
+    sendJson(res, 404, { error: 'Change request not found' });
+    return;
+  }
+  const changeRequests = await writeChangeRequests(next);
+  sendJson(res, 200, { ok: true, changeRequests });
 }
 
 async function readTopContributors() {
@@ -393,6 +503,28 @@ const server = http.createServer(async (req, res) => {
 
     if (req.method === 'GET' && url.pathname === '/api/translations') {
       await handleGetTranslations(req, res);
+      return;
+    }
+
+
+    if (req.method === 'GET' && url.pathname === '/api/change-requests') {
+      await handleGetChangeRequests(req, res);
+      return;
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/change-requests') {
+      await handleCreateChangeRequest(req, res);
+      return;
+    }
+
+    const requestMatch = url.pathname.match(/^\/api\/change-requests\/([^/]+)$/);
+    if (requestMatch && req.method === 'PATCH') {
+      await handleUpdateChangeRequest(req, res, decodeURIComponent(requestMatch[1]));
+      return;
+    }
+
+    if (requestMatch && req.method === 'DELETE') {
+      await handleDeleteChangeRequest(req, res, decodeURIComponent(requestMatch[1]));
       return;
     }
 

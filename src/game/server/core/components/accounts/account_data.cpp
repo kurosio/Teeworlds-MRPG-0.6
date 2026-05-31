@@ -645,7 +645,7 @@ void CAccountData::AutoEquipSlots(bool OnlyEmptySlots)
 			if(pBestItem && pBestItem->Equip())
 			{
 				if(pBestItem->Info()->HasAttributes())
-					GS()->Chat(pPlayer->GetCID(), "Auto equip '{} - {}'.", pBestItem->Info()->GetName(), pBestItem->GetStringAttributesInfo(pPlayer));
+					GS()->Chat(pPlayer->GetCID(), "Auto equip '{} - {~}'.", pBestItem->Info()->GetName(), pBestItem->GetStringAttributesInfo(pPlayer));
 				else
 					GS()->Chat(pPlayer->GetCID(), "Auto equip '{}'.", pBestItem->Info()->GetName());
 			}

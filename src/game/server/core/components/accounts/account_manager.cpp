@@ -205,7 +205,7 @@ class DbRegistration
 			{
 				pGS->Chat(ClientID, "This nickname is already linked to another account.");
 				pGS->Chat(ClientID, "Change nickname or contact support for recovery.");
-				pGS->Chat(ClientID, "Discord: \"{}\".", g_Config.m_SvDiscordInviteLink);
+				pGS->Chat(ClientID, "Discord: \"{~}\".", g_Config.m_SvDiscordInviteLink);
 				return;
 			}
 
@@ -239,11 +239,11 @@ class DbRegistration
 	static void OnCheckNickname(const CRegistrationContextPtr& pContext, ResultPtr pRes)
 	{
 		auto* pGS = pContext->GS();
-		if(pRes->next())
+		if(pRes->next())VRating.Add("Progress to {}: {}/{}", pAccount
 		{
 			pGS->Chat(pContext->GetClientID(), "This nickname is already linked to another account.");
 			pGS->Chat(pContext->GetClientID(), "Change nickname or contact support for recovery.");
-			pGS->Chat(pContext->GetClientID(), "Discord: \"{}\".", g_Config.m_SvDiscordInviteLink);
+			pGS->Chat(pContext->GetClientID(), "Discord: \"{~}\".", g_Config.m_SvDiscordInviteLink);
 			return;
 		}
 
@@ -402,8 +402,8 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 
 		// Ranking information
 		VoteWrapper VRating(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "Rating information");
-		VRating.Add("Rating: {}({})", pAccount->GetRatingSystem().GetRating(), pAccount->GetRatingSystem().GetRankName());
-		VRating.Add("Progress to {}: {}/{}", pAccount->GetRatingSystem().GetNextRankName(),
+		VRating.Add("Rating: {}({~})", pAccount->GetRatingSystem().GetRating(), pAccount->GetRatingSystem().GetRankName());
+		VRating.Add("Progress to {~}: {}/{}", pAccount->GetRatingSystem().GetNextRankName(),
 			pAccount->GetRatingSystem().GetRankPointsProgress(), pAccount->GetRatingSystem().GetRankPointsRequired());
 		VRating.Add("Played: {}", pAccount->GetRatingSystem().GetPlayed());
 		VRating.Add("Win: {} / Losses: {}", pAccount->GetRatingSystem().GetWins(), pAccount->GetRatingSystem().GetLosses());
@@ -1201,7 +1201,7 @@ void CAccountManager::LoadAccount(CPlayer* pPlayer, bool FirstInitilize)
 
 	// notify about rank
 	const int Rank = Server()->GetAccountRank(pAccount->GetID());
-	GS()->Chat(-1, "'{~}' logged to account. Rank '#{}[{}]' ({})", Server()->ClientName(ClientID), Rank,
+	GS()->Chat(-1, "'{~}' logged to account. Rank '#{}[{~}]' ({~})", Server()->ClientName(ClientID), Rank,
 		Server()->ClientCountryIsoCode(ClientID), pPlayer->Account()->GetRatingSystem().GetRankName());
 
 	// Change player's world ID to the latest correct world ID

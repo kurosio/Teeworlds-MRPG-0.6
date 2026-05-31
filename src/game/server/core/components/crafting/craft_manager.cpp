@@ -96,7 +96,7 @@ void CCraftManager::CraftItem(CPlayer* pPlayer, CCraftItem* pCraft, int Value) c
 
 	if(!missingItems.empty())
 	{
-		GS()->Chat(ClientID, "Item(s) left to gather: '{}'", missingItems.c_str());
+		GS()->Chat(ClientID, "Item(s) left to gather: '{~}'", missingItems.c_str());
 		return;
 	}
 

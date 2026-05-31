@@ -191,7 +191,7 @@ bool CInventoryManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 
 			// handle other equipment
 			const auto strAttributes = pPlayerItem->GetStringAttributesInfo(pPlayer);
-			Wrapper.AddMenu(MENU_EQUIPMENT, (int)EquipID, "{} / {}{SELECTOR}", pPlayerItem->Info()->GetName(), strAttributes, pSelector);
+			Wrapper.AddMenu(MENU_EQUIPMENT, (int)EquipID, "{} / {~}{SELECTOR}", pPlayerItem->Info()->GetName(), strAttributes, pSelector);
 			return true;
 		};
 
@@ -337,7 +337,7 @@ bool CInventoryManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
 
 		// information
 		const auto strNewAttributes = pPlayerItem->Info()->HasAttributes() ? pPlayerItem->GetStringAttributesInfo(pPlayer) : "unattributed";
-		GS()->Chat(-1, "'{~}' enchant '{} {} {}'.", Server()->ClientName(ClientID), pPlayerItem->Info()->GetName(),
+		GS()->Chat(-1, "'{~}' enchant '{} {~} {~}'.", Server()->ClientName(ClientID), pPlayerItem->Info()->GetName(),
 			pPlayerItem->GetStringEnchantLevel(), strNewAttributes);
 		pPlayer->m_VotesData.UpdateCurrentVotes();
 		return true;
@@ -705,7 +705,7 @@ void CInventoryManager::ShowPlayerModules(CPlayer* pPlayer)
 		if(Item.IsEquipped())
 		{
 			SortPriority = !HasAttrs ? 1 : 0;
-			VCollected.Add("\u2022 {}", pDescription).SetSortPriority(SortPriority);
+			VCollected.Add(HasAttrs ? "\u2022 {}" : "\u2022 {~}", pDescription).SetSortPriority(SortPriority);
 			HasAttrs ? equippedStats++ : equippedFunc++;
 		}
 	}

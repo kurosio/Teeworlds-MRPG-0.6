@@ -936,7 +936,7 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 			if(firstChar == '/')
 				CommandProcessor()->ProcessClientChatCommand(ClientID, pMsg->m_pMessage);
 			else if(firstChar == '#')
-				ChatWorld(pPlayer->GetCurrentWorldID(), "Nearby:", "'{~}' performed an act '{}'.", Server()->ClientName(ClientID), pMsg->m_pMessage);
+				ChatWorld(pPlayer->GetCurrentWorldID(), "Nearby:", "'{~}' performed an act '{~}'.", Server()->ClientName(ClientID), pMsg->m_pMessage);
 			else
 				SendChat(true, ClientID, pMsg->m_Team ? CHAT_TEAM : CHAT_ALL, pMsg->m_pMessage);
 
@@ -1295,7 +1295,7 @@ void CGS::OnClientEnter(int ClientID, bool FirstEnter)
 
 	if(FirstEnter)
 	{
-		Chat(-1, "'{~}' entered and joined the {}", Server()->ClientName(ClientID), g_Config.m_SvGamemodeName);
+		Chat(-1, "'{~}' entered and joined the {~}", Server()->ClientName(ClientID), g_Config.m_SvGamemodeName);
 		CMmoController::AsyncClientEnterMsgInfo(Server()->ClientName(ClientID), ClientID);
 		return;
 	}
@@ -1325,12 +1325,12 @@ void CGS::OnClientDrop(int ClientID, const char* pReason)
 			{
 				if(HasWorldFlag(WORLD_FLAG_RATING_SYSTEM))
 				{
-					Chat(-1, "'{~}' rage left {} and lost {} rating points!", Server()->ClientName(ClientID),
+					Chat(-1, "'{~}' rage left {~} and lost {} rating points!", Server()->ClientName(ClientID),
 						g_Config.m_SvGamemodeName, g_Config.m_SvRageQuitDecreaseRating);
 					pPlayer->Account()->GetRatingSystem().DecreaseRating(g_Config.m_SvRageQuitDecreaseRating);
 				}
 				else
-					Chat(-1, "'{~}' rage left the {}", Server()->ClientName(ClientID), g_Config.m_SvGamemodeName);
+					Chat(-1, "'{~}' rage left the {~}", Server()->ClientName(ClientID), g_Config.m_SvGamemodeName);
 			}
 			else
 			{

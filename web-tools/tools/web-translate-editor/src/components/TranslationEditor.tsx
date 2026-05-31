@@ -325,23 +325,23 @@ export default function TranslationEditor() {
     });
   }, [entryMap]);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!requestName.trim() || (!isAdmin && !requestAuthor.trim()) || changedEntries.length === 0 || !selectedLanguage) return;
     const authorName = isAdmin ? 'Administrator' : requestAuthor.trim();
-    if (isAdmin) {
-      submitChangeRequest(requestName, authorName, selectedLanguage, changedEntries);
-      const state = useStore.getState();
-      const lastReq = state.changeRequests[state.changeRequests.length - 1];
-      if (lastReq) approveRequest(lastReq.id);
-    } else {
-      submitChangeRequest(requestName, authorName, selectedLanguage, changedEntries);
+    try {
+      const request = await submitChangeRequest(requestName, authorName, selectedLanguage, changedEntries);
+      if (isAdmin && request) {
+        await approveRequest(request.id);
+      }
+      setEditedTranslations({});
+      setRequestName('');
+      setRequestAuthor('');
+      setShowSubmitModal(false);
+      setSubmitSuccess(true);
+      setTimeout(() => setSubmitSuccess(false), 3000);
+    } catch (error) {
+      console.error(error);
     }
-    setEditedTranslations({});
-    setRequestName('');
-    setRequestAuthor('');
-    setShowSubmitModal(false);
-    setSubmitSuccess(true);
-    setTimeout(() => setSubmitSuccess(false), 3000);
   };
 
   const handleForceSync = useCallback(async () => {

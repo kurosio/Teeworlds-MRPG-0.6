@@ -94,10 +94,10 @@ void RatingSystem::UpdateRating(CGS* pGS, bool Won, int OpponentRating, int Oppo
 	if(RatingDiff != 0 && pGS)
 	{
 		const char* Message = RatingDiff > 0 ?
-			"Rating +{} -> {} ({})":
-			"Rating -{} -> {} ({})";
+			"Rating +{} -> {} ({~})":
+			"Rating -{} -> {} ({~})";
 		pGS->Chat(m_pAccount->GetClientID(), Message, std::abs(RatingDiff), m_Rating, GetRankName());
-		pGS->Chat(m_pAccount->GetClientID(), "Progress to {}: {}/{} pts.", GetNextRankName(), GetRankPointsProgress(), GetRankPointsRequired());
+		pGS->Chat(m_pAccount->GetClientID(), "Progress to {}: {~}/{} pts.", GetNextRankName(), GetRankPointsProgress(), GetRankPointsRequired());
 		Save();
 	}
 

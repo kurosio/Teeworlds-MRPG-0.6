@@ -331,7 +331,7 @@ void CQuestManager::ShowQuestsBoardList(CPlayer* pPlayer, CQuestsBoard* pBoard) 
 		VWanted.Add("{~} (Reward: {} gold)", Server()->ClientName(i), Reward);
 		{
 			VWanted.BeginDepth();
-			VWanted.Add("Last seen in: {}", Server()->GetWorldName(pPl->GetCurrentWorldID()));
+			VWanted.Add("Last seen in: {~}", Server()->GetWorldName(pPl->GetCurrentWorldID()));
 			VWanted.EndDepth();
 		}
 	}

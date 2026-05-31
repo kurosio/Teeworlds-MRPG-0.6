@@ -4,7 +4,7 @@ import type { AppState, Settings, LanguageIndex, TranslationFile, TranslationEnt
 import { setUILanguage as setI18nLanguage } from './i18n';
 import { sha256 } from './utils/crypto';
 import type { LoadResult } from './utils/fileLoader';
-import { applyTranslationChangesToServer, loadTopContributorsFromServer, saveTopContributorsToServer } from './utils/fileLoader';
+import { applyTranslationChangesToServer, loadTopContributorsFromServer, saveTopContributorsToServer, loadChangeRequestsFromServer, createChangeRequestOnServer, updateChangeRequestOnServer, deleteChangeRequestOnServer } from './utils/fileLoader';
 
 const DEFAULT_SETTINGS: Settings = {
   translationPath: '/translations',
@@ -276,8 +276,8 @@ function loadInitialState(): Partial<AppState> {
         settings: parsed.settings || DEFAULT_SETTINGS,
         languages: langs,
         translations,
-        changeRequests: parsed.changeRequests || [],
-        topContributors: buildTopContributorsFromRequests(parsed.changeRequests || []) || parsed.topContributors || [],
+        changeRequests: [],
+        topContributors: [],
         fileVersions: parsed.fileVersions || {},
         isAdmin: false,
       };
@@ -311,8 +311,6 @@ function saveState(state: AppState) {
   localStorage.setItem('translationEditor', JSON.stringify({
     settings: state.settings,
     languages: state.languages,
-    changeRequests: state.changeRequests,
-    topContributors: state.topContributors,
     fileVersions: state.fileVersions,
   }));
 }
@@ -327,15 +325,16 @@ interface StoreActions {
   updateSettings: (settings: Settings) => void;
   login: (username: string, password: string) => Promise<boolean>;
   logout: () => void;
-  submitChangeRequest: (name: string, author: string, languageFile: string, changes: ChangeRequestEntry[]) => void;
+  submitChangeRequest: (name: string, author: string, languageFile: string, changes: ChangeRequestEntry[]) => Promise<ChangeRequest | null>;
   approveRequest: (requestId: string, editedEntries?: ChangeRequestEntry[]) => Promise<void>;
-  rejectRequest: (requestId: string) => void;
-  deleteRequest: (requestId: string) => void;
+  rejectRequest: (requestId: string) => Promise<void>;
+  deleteRequest: (requestId: string) => Promise<void>;
   resetData: () => void;
   loadFiles: (result: LoadResult) => void;
   refreshFiles: (result: LoadResult) => void;
   forceSyncFiles: (result: LoadResult) => void;
   loadTopContributors: () => Promise<void>;
+  loadChangeRequests: () => Promise<void>;
   hasServerChanges: (result: LoadResult) => boolean;
 }
 
@@ -383,7 +382,7 @@ export const useStore = create<AppState & StoreActions>((set, get) => ({
 
   logout: () => set({ isAdmin: false }),
 
-  submitChangeRequest: (name, author, languageFile, changes) => {
+  submitChangeRequest: async (name, author, languageFile, changes) => {
     const state = get();
     const lang = state.languages.find(l => l.file === languageFile);
     const request: ChangeRequest = {
@@ -396,9 +395,16 @@ export const useStore = create<AppState & StoreActions>((set, get) => ({
       status: 'pending',
       createdAt: new Date().toISOString(),
     };
-    const newRequests = [...state.changeRequests, request];
-    set({ changeRequests: newRequests });
-    saveState({ ...state, changeRequests: newRequests } as AppState);
+
+    try {
+      const changeRequests = await createChangeRequestOnServer(request);
+      set({ changeRequests: changeRequests.length > 0 ? changeRequests : [request, ...state.changeRequests] });
+      return request;
+    } catch (error) {
+      console.error(error);
+      // Do not silently save requests to localStorage: requests must be global.
+      throw error;
+    }
   },
 
   approveRequest: async (requestId, editedEntries) => {
@@ -480,24 +486,42 @@ export const useStore = create<AppState & StoreActions>((set, get) => ({
     };
 
     set({ translations: newTranslations, changeRequests: newRequests, topContributors: newTopContributors, fileVersions: newFileVersions });
-    saveState({ ...state, translations: newTranslations, changeRequests: newRequests, topContributors: newTopContributors, fileVersions: newFileVersions } as AppState);
+    saveState({ ...state, translations: newTranslations, fileVersions: newFileVersions } as AppState);
+    updateChangeRequestOnServer(requestId, { entries: entriesToApply, status: 'approved', resolvedAt: new Date().toISOString() }).then(serverRequests => {
+      if (serverRequests.length > 0) set({ changeRequests: serverRequests });
+    }).catch(console.error);
     saveTopContributorsToServer(newTopContributors).catch(console.error);
   },
 
-  rejectRequest: (requestId) => {
+  rejectRequest: async (requestId) => {
     const state = get();
-    const newRequests = state.changeRequests.map(r =>
-      r.id === requestId ? { ...r, status: 'rejected' as const, resolvedAt: new Date().toISOString() } : r
+    const resolvedAt = new Date().toISOString();
+    const optimisticRequests = state.changeRequests.map(r =>
+      r.id === requestId ? { ...r, status: 'rejected' as const, resolvedAt } : r
     );
-    set({ changeRequests: newRequests });
-    saveState({ ...state, changeRequests: newRequests } as AppState);
+    set({ changeRequests: optimisticRequests });
+    try {
+      const changeRequests = await updateChangeRequestOnServer(requestId, { status: 'rejected', resolvedAt });
+      if (changeRequests.length > 0) set({ changeRequests });
+    } catch (error) {
+      console.error(error);
+      set({ changeRequests: state.changeRequests });
+      throw error;
+    }
   },
 
-  deleteRequest: (requestId) => {
+  deleteRequest: async (requestId) => {
     const state = get();
-    const newRequests = state.changeRequests.filter(r => r.id !== requestId);
-    set({ changeRequests: newRequests });
-    saveState({ ...state, changeRequests: newRequests } as AppState);
+    const optimisticRequests = state.changeRequests.filter(r => r.id !== requestId);
+    set({ changeRequests: optimisticRequests });
+    try {
+      const changeRequests = await deleteChangeRequestOnServer(requestId);
+      set({ changeRequests });
+    } catch (error) {
+      console.error(error);
+      set({ changeRequests: state.changeRequests });
+      throw error;
+    }
   },
 
   resetData: () => {
@@ -574,23 +598,25 @@ export const useStore = create<AppState & StoreActions>((set, get) => ({
   },
 
   loadTopContributors: async () => {
-    const state = get();
-    const rebuiltFromApprovedRequests = buildTopContributorsFromRequests(state.changeRequests);
-
-    if (rebuiltFromApprovedRequests.length > 0) {
-      set({ topContributors: rebuiltFromApprovedRequests });
-      saveState({ ...state, topContributors: rebuiltFromApprovedRequests } as AppState);
-      saveTopContributorsToServer(rebuiltFromApprovedRequests).catch(console.error);
-      return;
-    }
-
     try {
       const topContributors = await loadTopContributorsFromServer();
       if (topContributors.length === 0) return;
       set({ topContributors });
-      saveState({ ...state, topContributors } as AppState);
     } catch {
-      // Server-side top file is optional; localStorage remains the fallback.
+      // Server-side top file is optional.
+    }
+  },
+
+  loadChangeRequests: async () => {
+    try {
+      const changeRequests = await loadChangeRequestsFromServer();
+      const topContributors = buildTopContributorsFromRequests(changeRequests);
+      set({ changeRequests, topContributors: topContributors.length > 0 ? topContributors : get().topContributors });
+      if (topContributors.length > 0) {
+        saveTopContributorsToServer(topContributors).catch(console.error);
+      }
+    } catch (error) {
+      console.error(error);
     }
   },
 }));
