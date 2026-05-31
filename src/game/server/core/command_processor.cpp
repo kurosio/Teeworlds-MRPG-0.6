@@ -481,9 +481,9 @@ void CCommandProcessor::ConChatInfo(IConsole::IResult* pResult, void* pUser)
 		return;
 
 	pGS->Chat(ClientID, mystd::aesthetic::wrapLinePillar(10).c_str());
-	pGS->Chat(ClientID, "Mod by 'Kurosio'. Version: {}.", MRPG_VERSION_STRING);
-	pGS->Chat(ClientID, "Content manager: '{}'.", g_Config.m_SvContentManagerCredits);
-	pGS->Chat(ClientID, "Discord: '{}'.", g_Config.m_SvDiscordInviteLink);
+	pGS->Chat(ClientID, "Mod by 'Kurosio'. Version: {~}.", MRPG_VERSION_STRING);
+	pGS->Chat(ClientID, "Content manager: '{~}'.", g_Config.m_SvContentManagerCredits);
+	pGS->Chat(ClientID, "Discord: '{~}'.", g_Config.m_SvDiscordInviteLink);
 	pGS->Chat(ClientID, "More commands in '/cmdlist'.", g_Config.m_SvDiscordInviteLink);
 }
 
@@ -690,12 +690,12 @@ void CCommandProcessor::ProcessClientChatCommand(int ClientID, const char* pMess
 		{
 			char argsDesc[256];
 			GS()->Console()->ParseArgumentsDescription(pCommandInfo->m_pParams, argsDesc, sizeof(argsDesc));
-			GS()->Chat(ClientID, "Use: '/{} {}'", pCommandInfo->m_pName, argsDesc);
+			GS()->Chat(ClientID, "Use: '/{~} {~}'", pCommandInfo->m_pName, argsDesc);
 		}
 	}
 	else
 	{
-		GS()->Chat(ClientID, "Command '{}' not found!", pMessage);
+		GS()->Chat(ClientID, "Command '{~}' not found!", pMessage);
 	}
 }
 
