@@ -117,7 +117,7 @@ void CDialogStep::Show(int ClientID) const
 
 	// Show dialog
 	pPlayer->m_Dialog.PrepareDialog(this, pLeftNickname, pRightNickname);
-	pGS->Motd(ClientID, pPlayer->m_Dialog.GetCurrentText());
+	pGS->Motd(ClientID, "{~}", pPlayer->m_Dialog.GetCurrentText());
 }
 
 CDialogStep* CPlayerDialog::GetCurrent() const
