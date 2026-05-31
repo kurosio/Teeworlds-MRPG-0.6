@@ -691,7 +691,7 @@ void CGS::ProcessNicknameChange(CPlayer* pPlayer, const char* pNewNickname) cons
 			return str_comp(NewName.c_str(), pPlayer->GS()->Server()->ClientName(pPlayer->GetCID())) == 0;
 		};
 
-		const auto pOption = CVoteOptional::Create(ClientID, 10, "Nick {}?", NewName.c_str());
+		const auto pOption = CVoteOptional::Create(ClientID, 10, "Nick {~}?", NewName.c_str());
 		pOption->RegisterCallback(fnCallback);
 		pOption->RegisterCloseCondition(closeCondition);
 	}

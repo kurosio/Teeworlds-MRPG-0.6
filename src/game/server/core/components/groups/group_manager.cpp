@@ -136,7 +136,7 @@ void CGroupManager::ShowGroupMenu(CPlayer* pPlayer) const
 	{
 		std::string PlayerName = Server()->GetAccountNickname(AID);
 		bool HasInteraction = IsOwner && AID != pPlayer->Account()->GetID();
-		VoteWrapper VMember(ClientID, VWF_UNIQUE, "{}{~}", (AID == pGroup->GetOwnerUID() ? "*" : "\0"), PlayerName.c_str());
+		VoteWrapper VMember(ClientID, VWF_UNIQUE, "{~}{~}", (AID == pGroup->GetOwnerUID() ? "*" : "\0"), PlayerName.c_str());
 		if(HasInteraction)
 		{
 			VMember.AddOption("GROUP_KICK", AID, "Kick {~}", PlayerName.c_str());
