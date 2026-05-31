@@ -72,6 +72,8 @@ public:
 
 	static void AsyncClientEnterMsgInfo(std::string_view ClientName, int ClientID);
 	void SyncLocalizations() const;
+	int SyncLocalizationFiles() const;
+	bool ReloadLocalizations() const;
 	void SaveAccount(CPlayer *pPlayer, int Table) const;
 
 	struct TempTopData

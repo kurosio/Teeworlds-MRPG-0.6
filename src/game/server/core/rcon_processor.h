@@ -14,6 +14,7 @@ class RconProcessor
 	static void ConSay(IConsole::IResult* pResult, void* pUserData);
 	static void ConAddCharacter(IConsole::IResult* pResult, void* pUserData);
 	static void ConSyncLinesForTranslate(IConsole::IResult* pResult, void* pUserData);
+	static void ConReloadLocalization(IConsole::IResult* pResult, void* pUserData);
 	static void ConListAfk(IConsole::IResult* pResult, void* pUserData);
 	static void ConCheckAfk(IConsole::IResult* pResult, void* pUserData);
 	static void ConBanAcc(IConsole::IResult* pResult, void* pUserData);

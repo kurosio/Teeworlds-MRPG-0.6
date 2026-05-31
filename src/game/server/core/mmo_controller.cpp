@@ -28,6 +28,11 @@
 
 #include <teeother/components/localization.h>
 
+namespace
+{
+	std::mutex gs_LocalizationSyncMutex;
+}
+
 CMmoController::CMmoController(CGS* pGameServer) : m_pGameServer(pGameServer)
 {
 	// order
@@ -714,78 +719,113 @@ void CMmoController::AsyncClientEnterMsgInfo(std::string_view ClientName, int Cl
 void CMmoController::SyncLocalizations() const
 {
 	// check action states
-	static std::mutex ms_mtxDump;
-	if(!ms_mtxDump.try_lock())
+	std::unique_lock Lock(gs_LocalizationSyncMutex, std::try_to_lock);
+	if(!Lock.owns_lock())
 	{
 		GS()->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "sync_lines", "Wait the last operation is in progress..");
 		return;
 	}
 
-	// update language data TODO FIX
-	for (int i = 0; i < GS()->Server()->Localization()->m_pLanguages.size(); i++)
+	const int UpdatedLanguages = SyncLocalizationFiles();
+	GS()->Console()->PrintFormat(IConsole::OUTPUT_LEVEL_STANDARD, "sync_lines", "Localization sync finished for %d language files.", UpdatedLanguages);
+}
+
+
+int CMmoController::SyncLocalizationFiles() const
+{
+	int UpdatedLanguages = 0;
+
+	// update language data
+	for(int i = 0; i < GS()->Server()->Localization()->m_pLanguages.size(); i++)
 	{
 		// prepare
 		auto* pLanguage = GS()->Server()->Localization()->m_pLanguages[i];
-		pLanguage->Updater().Prepare();
+		if(!pLanguage->Updater().Prepare())
+		{
+			GS()->Console()->PrintFormat(IConsole::OUTPUT_LEVEL_STANDARD, "sync_lines", "Skip language '%s': file is not available.", pLanguage->GetFilename());
+			continue;
+		}
 
-		for (const auto& [ID, p] : QuestBotInfo::ms_aQuestBot)
+		for(const auto& [ID, p] : QuestBotInfo::ms_aQuestBot)
 		{
 			int DialogNum = 0;
-			for (const auto& pDialog : p.m_aDialogs)
+			for(const auto& pDialog : p.m_aDialogs)
 			{
 				pLanguage->Updater().Push(pDialog.GetText(), std::string("dialog_quest" + std::to_string(ID)).c_str(), DialogNum++);
 			}
 		}
 
-		for (const auto& [ID, p] : NpcBotInfo::ms_aNpcBot)
+		for(const auto& [ID, p] : NpcBotInfo::ms_aNpcBot)
 		{
 			int DialogNum = 0;
-			for (const auto& pDialog : p.m_aDialogs)
+			for(const auto& pDialog : p.m_aDialogs)
 			{
 				pLanguage->Updater().Push(pDialog.GetText(), std::string("dialog_npc" + std::to_string(ID)).c_str(), DialogNum++);
 			}
 		}
 
-		for (const auto& p : CAetherData::Data())
+		for(const auto& p : CAetherData::Data())
 		{
 			pLanguage->Updater().Push(p->GetName(), "aether", p->GetID());
 		}
 
-		for (const auto& [ID, pAttribute] : CAttributeDescription::Data())
+		for(const auto& [ID, pAttribute] : CAttributeDescription::Data())
 		{
 			pLanguage->Updater().Push(pAttribute->GetName(), "attribute", (int)ID);
 		}
 
-		for (const auto& [ID, p] : CItemDescription::Data())
+		for(const auto& [ID, p] : CItemDescription::Data())
 		{
 			pLanguage->Updater().Push(p.GetName(), "item_name", ID);
 			pLanguage->Updater().Push(p.GetDescription(), "item_description", ID);
 		}
 
-		for (const auto& [ID, p] : CSkillDescription::Data())
+		for(const auto& [ID, p] : CSkillDescription::Data())
 		{
 			pLanguage->Updater().Push(p->GetName(), "skill_name", ID);
 			pLanguage->Updater().Push(p->GetDescription(), "skill_description", ID);
 		}
 
-		for (const auto& [ID, p] : CQuestDescription::Data())
+		for(const auto& [ID, p] : CQuestDescription::Data())
 		{
 			pLanguage->Updater().Push(p->GetName(), "quest_name", ID);
 		}
 
-		for (const auto& p : CWarehouse::Data())
+		for(const auto& p : CWarehouse::Data())
 		{
 			pLanguage->Updater().Push(p->GetName(), "warehouse_name", p->GetID());
 		}
 
-		for (const auto& p : CHouse::Data())
+		for(const auto& p : CHouse::Data())
 		{
 			pLanguage->Updater().Push(p->GetClassName(), "house_class_name", p->GetID());
 		}
 
 		// finish
 		pLanguage->Updater().Finish();
+		UpdatedLanguages++;
 	}
 
-	ms_mtxDump.unlock();
+	return UpdatedLanguages;
+}
+
+
+bool CMmoController::ReloadLocalizations() const
+{
+	std::unique_lock Lock(gs_LocalizationSyncMutex, std::try_to_lock);
+	if(!Lock.owns_lock())
+	{
+		GS()->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "reload_localization", "Wait the last localization operation is in progress..");
+		return false;
+	}
+
+	const int UpdatedLanguages = SyncLocalizationFiles();
+	if(!GS()->Server()->Localization()->Reload())
+	{
+		GS()->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "reload_localization", "Failed to reload localization index.");
+		return false;
+	}
+
+	GS()->Console()->PrintFormat(IConsole::OUTPUT_LEVEL_STANDARD, "reload_localization", "Localization files have been synchronized and reloaded (%d language files).", UpdatedLanguages);
+	return true;
 }

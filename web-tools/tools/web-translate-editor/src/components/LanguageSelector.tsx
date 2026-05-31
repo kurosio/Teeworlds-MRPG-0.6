@@ -18,7 +18,7 @@ export default function LanguageSelector() {
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
+    <div className="h-full max-h-full min-h-0 bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden flex flex-col">
       <div className="px-4 py-3 bg-gradient-to-r from-slate-50 to-white border-b border-slate-100">
         <div className="flex items-center gap-2">
           <Languages className="w-4 h-4 text-slate-500" />
@@ -26,8 +26,8 @@ export default function LanguageSelector() {
         </div>
       </div>
 
-      <div className="px-3 py-2">
-        <div className="space-y-1">
+      <div className="px-3 py-2 min-h-0 flex-1 overflow-y-auto overscroll-contain language-list-scroll">
+        <div className="space-y-1 pr-1">
           {languages.map(lang => {
             const stats = getStats(lang.file);
             const isComplete = stats.percent === 100;

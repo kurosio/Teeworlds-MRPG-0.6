@@ -207,6 +207,7 @@ MACRO_CONFIG_INT(SvChatTopMessageInterval, sv_chat_top_message_interval, 900, 0,
 MACRO_CONFIG_INT(SvHouseLimitDecoration, sv_house_limit_decorations, 10, 5, 20, CFGFLAG_SERVER, "Maximum number of decoration objects allowed")
 MACRO_CONFIG_STR(SvContentManagerCredits, sv_content_manager_credits, 32, "nope", CFGFLAG_SERVER, "Information about content manager")
 MACRO_CONFIG_STR(SvDiscordInviteLink, sv_discord_invite_link, 32, "nope", CFGFLAG_SERVER, "Link to server invitation")
+MACRO_CONFIG_STR(SvWebTranslateLink, sv_web_translate_link, 32, "nope", CFGFLAG_SERVER, "Link to web translate")
 MACRO_CONFIG_INT(SvIntervalTileTextUpdate, sv_interval_tile_text_update, 1, 1, 60, CFGFLAG_SERVER, "Interval update tile text")
 MACRO_CONFIG_INT(SvCrimeIntervalDecrease, sv_crime_interval_decrease, 5, 1, 60, CFGFLAG_SERVER, "Interval decrease crime score")
 MACRO_CONFIG_INT(SvRelatedJailQuestId, sv_related_jail_quest_id, 0, 0, 1000000, CFGFLAG_SERVER, "Related jail quest id what will be reset after unjail")

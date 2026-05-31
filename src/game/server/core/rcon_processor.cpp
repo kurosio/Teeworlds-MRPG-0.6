@@ -19,6 +19,7 @@ void RconProcessor::Init(IConsole* pConsole, IServer* pServer)
 	pConsole->Register("say", "r[text]", CFGFLAG_SERVER, ConSay, pServer, "Say in chat");
 	pConsole->Register("add_character", "i[cid]r[botname]", CFGFLAG_SERVER, ConAddCharacter, pServer, "(Warning) Add new bot on database or update if finding <clientid> <bot name>");
 	pConsole->Register("sync_lines_for_translate", "", CFGFLAG_SERVER, ConSyncLinesForTranslate, pServer, "Perform sync lines in translated files. Order non updated translated to up");
+	pConsole->Register("reload_localization", "", CFGFLAG_SERVER, ConReloadLocalization, pServer, "Synchronize translation keys and safely reload all localization files");
 	pConsole->Register("afk_list", "", CFGFLAG_SERVER, ConListAfk, pServer, "List all afk players");
 	pConsole->Register("is_afk", "i[cid]", CFGFLAG_SERVER, ConCheckAfk, pServer, "Check if player is afk");
 	pConsole->Register("ban_acc", "i[cid]s[time]r[reason]", CFGFLAG_SERVER, ConBanAcc, pServer, "Ban account, time format: d - days, h - hours, m - minutes, s - seconds, example: 3d15m");
@@ -407,6 +408,17 @@ void RconProcessor::ConSyncLinesForTranslate(IConsole::IResult* pResult, void* p
 
 	// start thread for sync lines
 	std::thread(&CMmoController::SyncLocalizations, pSelf->Core()).detach();
+}
+
+
+void RconProcessor::ConReloadLocalization(IConsole::IResult* pResult, void* pUserData)
+{
+	// initialize variables
+	const auto pServer = (IServer*)pUserData;
+	const auto pSelf = (CGS*)pServer->GameServer();
+
+	// run synchronously to avoid using localization data while it is being rebuilt
+	pSelf->Core()->ReloadLocalizations();
 }
 
 

@@ -53,3 +53,42 @@ body {
   from { opacity: 0; transform: translateY(16px); }
   to { opacity: 1; transform: translateY(0); }
 }
+
+
+/* Sidebar localization list must scroll independently from the page. */
+.language-list-scroll {
+  scrollbar-gutter: stable;
+  padding-bottom: 0.75rem;
+}
+
+.language-list-scroll::-webkit-scrollbar {
+  width: 5px;
+}
+
+.language-list-scroll::-webkit-scrollbar-thumb {
+  background: #dbeafe;
+  border-radius: 999px;
+}
+
+.language-list-scroll:hover::-webkit-scrollbar-thumb {
+  background: #93c5fd;
+}
+
+
+/* Keep the sidebar blocks isolated: languages scroll above, top contributors below. */
+.sidebar-bottom-scroll {
+  scrollbar-gutter: stable;
+}
+
+.sidebar-bottom-scroll::-webkit-scrollbar {
+  width: 5px;
+}
+
+.sidebar-bottom-scroll::-webkit-scrollbar-thumb {
+  background: #fde68a;
+  border-radius: 999px;
+}
+
+.sidebar-bottom-scroll:hover::-webkit-scrollbar-thumb {
+  background: #f59e0b;
+}

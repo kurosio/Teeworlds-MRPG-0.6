@@ -677,7 +677,6 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		const char* pPlayerLanguage = pPlayer->GetLanguage();
 		VoteWrapper VLanguageInfo(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "Languages Information");
 		VLanguageInfo.Add("Here you can choose the language.");
-		VLanguageInfo.Add("Note: translation is not complete.");
 		VLanguageInfo.Add("Active language: [{~}]", pPlayerLanguage);
 		VLanguageInfo.AddLine();
 		VLanguageInfo.Add("Playing with the selected language");
@@ -686,6 +685,7 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		VLanguageInfo.AddLine();
 		VLanguageInfo.Add("These strings will later");
 		VLanguageInfo.Add("be available on the website.");
+		VLanguageInfo.Add("{}", g_Config.m_SvWebTranslateLink);
 		VLanguageInfo.AddLine();
 		VLanguageInfo.Add("Any user will be able");
 		VLanguageInfo.Add("to translate them there.");
@@ -702,8 +702,10 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 			// add language selection
 			auto* pLanguage = Server()->Localization()->m_pLanguages[i];
 			const char* pLanguageName = pLanguage->GetName();
+			const bool NonDefault = str_comp(pLanguage->GetFilename(), "en") != 0;
 			VLanguages.AddOption("SELECT_LANGUAGE", i, "Select language \"{~}\"", pLanguageName);
-			VLanguages.Add("- Number of lines collected: {} / Completed: {}%", pLanguage->GetCollectedLines(), pLanguage->GetCompletionPercent());
+			if(NonDefault)
+				VLanguages.Add("- Number of lines collected: {} / Completed: {}%", pLanguage->GetCollectedLines(), pLanguage->GetCompletionPercent());
 			VLanguages.AddLine();
 		}
 

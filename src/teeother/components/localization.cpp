@@ -274,13 +274,15 @@ bool CLocalization::CLanguage::CUpdater::LoadDefault(std::vector<Element>& vElem
 
 bool CLocalization::CLanguage::CUpdater::Prepare()
 {
+	m_Prepared = false;
+	m_vElements.clear();
+
 	std::string aDirLanguageFile = fmt_default("./server_lang/{}.txt", m_pLanguage->GetFilename());
 
 	CLineReader LineReader;
 	if(!LineReader.OpenFile(io_open(aDirLanguageFile.c_str(), IOFLAG_READ)))
 		return false;
 
-	m_vElements.clear();
 	m_vElements.reserve(512);
 
 	Element Temp;
@@ -331,7 +333,7 @@ bool CLocalization::CLanguage::CUpdater::Prepare()
 void CLocalization::CLanguage::CUpdater::Push(const char* pTextKey, const char* pUnique, int ID)
 {
 	// skip if empty key or not prepared
-	if (pTextKey[0] == '\0' || !m_Prepared)
+	if(!pTextKey || pTextKey[0] == '\0' || !m_Prepared)
 		return;
 
 	// update localize element

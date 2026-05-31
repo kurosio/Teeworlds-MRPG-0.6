@@ -9,7 +9,7 @@ export default function TopContributors() {
   const topList = useMemo(() => {
     return [...topContributors]
       .sort((a, b) => b.count - a.count)
-      .slice(0, 10);
+      .slice(0, 5);
   }, [topContributors]);
 
   if (topList.length === 0) return null;
@@ -43,7 +43,7 @@ export default function TopContributors() {
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden mt-4">
+    <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
       <div className="px-4 py-3 bg-gradient-to-r from-amber-50 to-yellow-50 border-b border-amber-100">
         <div className="flex items-center gap-2">
           <Trophy className="w-4 h-4 text-amber-500" />
@@ -51,7 +51,7 @@ export default function TopContributors() {
         </div>
         <p className="text-[10px] text-amber-600 mt-0.5">{t('top.subtitle')}</p>
       </div>
-      <div className="px-3 py-2">
+      <div className="px-3 py-2 max-h-[220px] overflow-y-auto overscroll-contain language-list-scroll">
         <div className="space-y-1">
           {topList.map((item, index) => (
             <div key={item.author} className={`flex items-center gap-2.5 px-2.5 py-2 rounded-lg border ${getBg(index)}`}>
