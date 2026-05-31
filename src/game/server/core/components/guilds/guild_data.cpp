@@ -54,7 +54,7 @@ void CGuild::AddExperience(uint64_t Experience)
 		m_Level++;
 
 		// send messages
-		GS()->Chat(-1, "Guild '{}' raised the level up to {}", GetName(), m_Level);
+		GS()->Chat(-1, "Guild '{~}' raised the level up to {}", GetName(), m_Level);
 		m_pLogger->Add(LOGFLAG_GUILD_MAIN_CHANGES, "Guild raised level to '%d'.", m_Level);
 
 		// recompute experience
@@ -86,7 +86,7 @@ GuildResult CGuild::SetLeader(int AccountID)
 	// send messages
 	const char* pNickNewLeader = Instance::Server()->GetAccountNickname(m_LeaderUID);
 	m_pLogger->Add(LOGFLAG_GUILD_MAIN_CHANGES, "New guild leader '%s'", pNickNewLeader);
-	GS()->ChatGuild(m_ID, "New guild leader '{}'", pNickNewLeader);
+	GS()->ChatGuild(m_ID, "New guild leader '{~}'", pNickNewLeader);
 	return GuildResult::SUCCESSFUL;
 }
 
@@ -196,8 +196,8 @@ bool CGuild::StartWar(CGuild* pTargetGuild)
 	const time_t TimeUntilCooldownEnd = TimeUntilSiegeEnd + (g_Config.m_SvGuildWarHouseCooldownMinutes * 60);
 	pWarHandler->Init({ this, pTargetGuild, 0 }, { pTargetGuild, this, 0 }, TimeUntilPreparationEnd, TimeUntilSiegeEnd, TimeUntilCooldownEnd);
 
-	GS()->ChatGuild(GetID(), "War declared against '{}'. Preparation started.", pTargetGuild->GetName());
-	GS()->ChatGuild(pTargetGuild->GetID(), "Guild '{}' declared war on you. Prepare your defense.", GetName());
+	GS()->ChatGuild(GetID(), "War declared against '{~}'. Preparation started.", pTargetGuild->GetName());
+	GS()->ChatGuild(pTargetGuild->GetID(), "Guild '{~}' declared war on you. Prepare your defense.", GetName());
 	return true;
 }
 
@@ -357,7 +357,7 @@ void CGuild::CRank::SetRights(GuildRankRights Rights)
 	Database->Execute<DB::UPDATE>(TW_GUILDS_RANKS_TABLE, "Rights = '{}' WHERE ID = '{}'", (int)m_Rights, m_ID);
 
 	// send messages
-	GS()->ChatGuild(m_pGuild->GetID(), "Rank '{}' new rights '{}'!", m_Rank.c_str(), GetRightsName());
+	GS()->ChatGuild(m_pGuild->GetID(), "Rank '{~}' new rights '{}'!", m_Rank.c_str(), GetRightsName());
 }
 
 const char* CGuild::CRank::GetRightsName(GuildRankRights Rights) const
@@ -474,7 +474,7 @@ GuildResult CGuild::CRanksManager::Add(const std::string& Rank)
 	m_aRanks.emplace_back(new CRank(InitID, cstrRank.cstr(), GUILD_RANK_RIGHT_DEFAULT, m_pGuild));
 
 	// send messages
-	GS()->ChatGuild(GuildID, "New rank is created [{}]!", cstrRank.cstr());
+	GS()->ChatGuild(GuildID, "New rank is created [{~}]!", cstrRank.cstr());
 	m_pGuild->GetLogger()->Add(LOGFLAG_RANKS_CHANGES, "added rank '%s'", cstrRank.cstr());
 	return GuildResult::RANK_SUCCESSFUL;
 }
@@ -509,7 +509,7 @@ GuildResult CGuild::CRanksManager::Remove(const std::string& Rank)
 	delete pRank;
 
 	// send messages
-	GS()->ChatGuild(m_pGuild->GetID(), "Rank '{}' successfully delete", cstrRank.cstr());
+	GS()->ChatGuild(m_pGuild->GetID(), "Rank '{~}' successfully delete", cstrRank.cstr());
 	m_pGuild->GetLogger()->Add(LOGFLAG_RANKS_CHANGES, "removed rank '%s'", cstrRank.cstr());
 	return GuildResult::RANK_SUCCESSFUL;
 }
@@ -579,7 +579,7 @@ bool CGuild::CMember::SetRank(CRank* pRank)
 	// send messages
 	const char* pNickname = Instance::Server()->GetAccountNickname(m_AccountID);
 	m_pGuild->GetLogger()->Add(LOGFLAG_MEMBERS_CHANGES, "%s rank changed to %s", pNickname, m_pRank->GetName());
-	GS()->ChatGuild(m_pGuild->GetID(), "'{}' rank changed to '{}'!", pNickname, m_pRank->GetName());
+	GS()->ChatGuild(m_pGuild->GetID(), "'{~}' rank changed to '{~}'!", pNickname, m_pRank->GetName());
 	return true;
 }
 
@@ -601,7 +601,7 @@ bool CGuild::CMember::DepositInBank(int Value)
 		// send messages
 		const char* pNickname = Instance::Server()->GetAccountNickname(m_AccountID);
 		m_pGuild->GetLogger()->Add(LOGFLAG_BANK_CHANGES, "'%s' deposit '%d' in the guild safe.", pNickname, Value);
-		GS()->ChatGuild(m_pGuild->GetID(), "'{}' deposit {} gold in the safe, now {}!", pNickname, Value, m_pGuild->GetBankManager()->Get());
+		GS()->ChatGuild(m_pGuild->GetID(), "'{~}' deposit {} gold in the safe, now {}!", pNickname, Value, m_pGuild->GetBankManager()->Get());
 		return true;
 	}
 
@@ -626,7 +626,7 @@ bool CGuild::CMember::WithdrawFromBank(int Value)
 		// send messages
 		const char* pNickname = Instance::Server()->GetAccountNickname(m_AccountID);
 		m_pGuild->GetLogger()->Add(LOGFLAG_BANK_CHANGES, "'%s' withdrawn '%d' from the guild safe.", pNickname, Value);
-		GS()->ChatGuild(m_pGuild->GetID(), "'{}' withdrawn {} gold from the safe, now {}!", pNickname, Value, m_pGuild->GetBankManager()->Get());
+		GS()->ChatGuild(m_pGuild->GetID(), "'{~}' withdrawn {} gold from the safe, now {}!", pNickname, Value, m_pGuild->GetBankManager()->Get());
 		return true;
 	}
 
@@ -685,7 +685,7 @@ GuildResult CGuild::CMembersManager::Join(int AccountID)
 	// Add a join message to the guild history and send chat message
 	const char* pNickname = Instance::Server()->GetAccountNickname(AccountID);
 	m_pGuild->GetLogger()->Add(LOGFLAG_MEMBERS_CHANGES, "'%s' has joined the guild.", pNickname);
-	GS()->ChatGuild(m_pGuild->GetID(), "'{}' has joined the guild!", pNickname);
+	GS()->ChatGuild(m_pGuild->GetID(), "'{~}' has joined the guild!", pNickname);
 
 	// Save the guild members data
 	Save();
@@ -715,7 +715,7 @@ GuildResult CGuild::CMembersManager::Kick(int AccountID)
 		// Add a left message to the guild history and send chat message
 		const char* pNickname = Instance::Server()->GetAccountNickname(AccountID);
 		m_pGuild->GetLogger()->Add(LOGFLAG_MEMBERS_CHANGES, "'%s' has left the guild.", pNickname);
-		GS()->ChatGuild(m_pGuild->GetID(), "'{}' has left the guild!", pNickname);
+		GS()->ChatGuild(m_pGuild->GetID(), "'{~}' has left the guild!", pNickname);
 
 		// Save the guild data
 		Save();
@@ -843,7 +843,7 @@ GuildResult CGuild::CRequestsManager::Request(int FromUID)
 	// Add the invite to the guild's history and send a chat message
 	const char* pFromNickname = Instance::Server()->GetAccountNickname(FromUID);
 	m_pGuild->GetLogger()->Add(LOGFLAG_MEMBERS_CHANGES, "invitation to join from '%s'.", pFromNickname);
-	GS()->ChatGuild(m_pGuild->GetID(), "invitation to join from '{}'.", pFromNickname);
+	GS()->ChatGuild(m_pGuild->GetID(), "invitation to join from '{~}'.", pFromNickname);
 
 	// Create a new invite data object and add it to the guild's invites container
 	m_aRequestsJoin.push_back(new RequestData(FromUID));
@@ -879,7 +879,7 @@ GuildResult CGuild::CRequestsManager::Accept(int UserID, const CMember* pFromMem
 
 			// Add a history entry and send a guild chat message
 			m_pGuild->GetLogger()->Add(LOGFLAG_MEMBERS_CHANGES, "'%s' accepted invitation from '%s'.", pByNickname, pFromNickname);
-			GS()->ChatGuild(m_pGuild->GetID(), "'{}' accepted invitation from '{}'.", pByNickname, pFromNickname);
+			GS()->ChatGuild(m_pGuild->GetID(), "'{~}' accepted invitation from '{~}'.", pByNickname, pFromNickname);
 		}
 
 		return Result;
@@ -910,9 +910,9 @@ void CGuild::CRequestsManager::Deny(int UserID, const CMember* pFromMember)
 			const char* pByNickname = Instance::Server()->GetAccountNickname(pFromMember->GetAccountID());
 
 			// Send a message to the user and the guild
-			GS()->ChatAccount(UserID, "'{}' denied your invitation to join a guild '{}'.", pByNickname, m_pGuild->GetName());
+			GS()->ChatAccount(UserID, "'{~}' denied your invitation to join a guild '{~}'.", pByNickname, m_pGuild->GetName());
 			m_pGuild->GetLogger()->Add(LOGFLAG_MEMBERS_CHANGES, "'%s' denied invitation from '%s'.", pByNickname, pFromNickname);
-			GS()->ChatGuild(m_pGuild->GetID(), "'{}' denied invitation from '{}'.", pByNickname, pFromNickname);
+			GS()->ChatGuild(m_pGuild->GetID(), "'{~}' denied invitation from '{~}'.", pByNickname, pFromNickname);
 		}
 
 		// Delete the request and remove it from m_aRequestsJoin

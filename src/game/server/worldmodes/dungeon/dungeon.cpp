@@ -110,7 +110,7 @@ void CGameControllerDungeon::ChangeState(int NewState)
 				continue;
 
 			SaveDungeonRecord(pPlayer);
-			GS()->Chat(-1, "'{}' finished '{}'.", Server()->ClientName(i), m_pDungeon->GetName());
+			GS()->Chat(-1, "'{~}' finished '{}'.", Server()->ClientName(i), m_pDungeon->GetName());
 		}
 	}
 }

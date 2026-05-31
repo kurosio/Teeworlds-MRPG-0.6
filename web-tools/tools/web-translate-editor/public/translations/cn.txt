@@ -1,0 +1,63 @@
+Open
+== 打开
+
+Close
+== 关闭
+
+Save
+== 保存
+
+File
+== 文件
+
+Edit
+== 编辑
+
+Settings
+== 设置
+
+Help
+== 帮助
+
+Search
+== 搜索
+
+Cancel
+== 取消
+
+Apply
+== 应用
+
+Delete
+== 删除
+
+Create
+== 创建
+
+$dialog_quest590
+Leia's egg is irreplaceable. I cannot well express to you the depth of my gratitude.
+== 莱娅的蛋是不可替代的。我无法向你表达我感激之深。
+
+- Required: {} ({} | {})\n
+== - 需要: {} ({} | {})\n
+
+- /group Get all sub commands
+== - /group 获取所有子命令
+
+Enchantable
+== 可附魔
+
+Welcome to our application
+== 欢迎使用我们的应用程序
+
+Loading resources...
+==
+
+Connection established
+== 连接已建立
+
+Authentication required
+== 需要认证
+
+Permission denied
+==

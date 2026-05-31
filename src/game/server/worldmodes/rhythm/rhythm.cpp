@@ -782,7 +782,7 @@ void CGameControllerRhythm::SaveRhythmResults() const
 			if(Points > BestScore)
 				Database->Execute<DB::UPDATE>("tw_rhythm_records", "Score = '{}' WHERE ID = '{}'", Points, RecordID);
 		}
-		GS()->Chat(-1, "'{}' finished '{}[{}]' with {} points!", Server()->ClientName(ClientID), Server()->GetWorldName(WorldID), m_Difficulty, Points);
+		GS()->Chat(-1, "'{~}' finished '{}[{}]' with {} points!", Server()->ClientName(ClientID), Server()->GetWorldName(WorldID), m_Difficulty, Points);
 	}
 }
 

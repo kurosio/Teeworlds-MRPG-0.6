@@ -132,10 +132,10 @@ void CGuildWarHandler::OnRequiredDoorDestroyed(const CGuild* pDefender)
 		}
 
 		pGS->ChatGuild(m_pWarData.first->GetGuild()->GetID(),
-			"All defending doors are destroyed. {} lost the war. {}% of treasury ({$} gold) transferred to '{}'.",
+			"All defending doors are destroyed. {~} lost the war. {}% of treasury ({$} gold) transferred to '{~}'.",
 			pDefender->GetName(), BankLossPercent, PenaltyRaw, pAttackerGuild->GetName());
 		pGS->ChatGuild(m_pWarData.second->GetGuild()->GetID(),
-			"All defending doors are destroyed. {} lost the war. {}% of treasury ({$} gold) transferred to '{}'.",
+			"All defending doors are destroyed. {~} lost the war. {}% of treasury ({$} gold) transferred to '{~}'.",
 			pDefender->GetName(), BankLossPercent, PenaltyRaw, pAttackerGuild->GetName());
 
 		MarkDefenseLost(pDefender, "all guild house doors destroyed");

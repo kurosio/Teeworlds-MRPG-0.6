@@ -368,7 +368,7 @@ void CCommandProcessor::ConGroup(IConsole::IResult* pResult, void* pUser)
 		{
 			const char* Prefix = (pGroup->GetOwnerUID() == AID) ? "O: " : "\0";
 			const std::string Nickname = Instance::Server()->GetAccountNickname(AID);
-			pGS->Chat(ClientID, "{}{}", Prefix, Nickname.c_str());
+			pGS->Chat(ClientID, "{}{~}", Prefix, Nickname.c_str());
 		}
 		return;
 	}

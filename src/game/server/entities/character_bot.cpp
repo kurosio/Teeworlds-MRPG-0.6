@@ -134,7 +134,7 @@ void CCharacterBotAI::Die(int Killer, int Weapon)
 						continue;
 
 					const int DamagePercent = TotalDamage > 0 ? translate_to_percent(TotalDamage, AboutDamage) : 0;
-					GS()->Chat(ForCID, "- {} dealt {} damage ({}%).", Server()->ClientName(AboutCID), AboutDamage, DamagePercent);
+					GS()->Chat(ForCID, "- {~} dealt {} damage ({}%).", Server()->ClientName(AboutCID), AboutDamage, DamagePercent);
 				}
 			}
 		}

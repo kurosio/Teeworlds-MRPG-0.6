@@ -168,7 +168,7 @@ bool CMmoController::OnSendMenuVotes(CPlayer* pPlayer, int Menulist) const
 
 		// Statistics menu
 		VoteWrapper VStatistics(ClientID, VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE | VWF_SEPARATE, "Class profession: {}", pProfName);
-		VStatistics.Add("Discord: ({-})", g_Config.m_SvDiscordInviteLink);
+		VStatistics.Add("Discord: ({~})", g_Config.m_SvDiscordInviteLink);
 		VStatistics.Add("Level {}, Exp {}/{}", pPlayer->Account()->GetLevel(), pPlayer->Account()->GetExperience(), expForLevel);
 		VStatistics.Add("Gold: {$}, Bank: {$}", pPlayer->Account()->GetGold(), pPlayer->Account()->GetBankManager());
 		VStatistics.AddMenu(MENU_ACCOUNT_DETAIL_INFO, "\u2698 Detail information");
@@ -474,7 +474,7 @@ void CMmoController::ShowTopList(VoteWrapper* pWrapper, int ClientID, ToplistTyp
 			const auto Guildname = Elem.second.Name;
 			const auto Level = Elem.second.Data["Level"].to_int();
 			const auto Experience = Elem.second.Data["Exp"];
-			pWrapper->Add("{}. {} :: Level {} : Exp {}", Rank, Guildname, Level, Experience);
+			pWrapper->Add("{}. {~} :: Level {} : Exp {}", Rank, Guildname, Level, Experience);
 		}
 	}
 	else if(Type == ToplistType::GuildWealthy)
@@ -485,7 +485,7 @@ void CMmoController::ShowTopList(VoteWrapper* pWrapper, int ClientID, ToplistTyp
 			const auto Rank = Elem.first;
 			const auto Guildname = Elem.second.Name;
 			const auto Bank = Elem.second.Data["Bank"];
-			pWrapper->Add("{}. {} :: Bank {$}", Rank, Guildname, Bank);
+			pWrapper->Add("{}. {~} :: Bank {$}", Rank, Guildname, Bank);
 		}
 	}
 	else if(Type == ToplistType::PlayerRating)
@@ -496,7 +496,7 @@ void CMmoController::ShowTopList(VoteWrapper* pWrapper, int ClientID, ToplistTyp
 			const auto Rank = Elem.first;
 			const auto Nickname = Elem.second.Name;
 			const auto Rating = Elem.second.Data["Rating"].to_int();
-			pWrapper->Add("{}. {} :: Rating {}", Rank, Nickname, Rating);
+			pWrapper->Add("{}. {~} :: Rating {}", Rank, Nickname, Rating);
 		}
 	}
 	else if(Type == ToplistType::PlayerWealthy)
@@ -507,7 +507,7 @@ void CMmoController::ShowTopList(VoteWrapper* pWrapper, int ClientID, ToplistTyp
 			const auto Rank = Elem.first;
 			const auto Nickname = Elem.second.Name;
 			const auto Bank = Elem.second.Data["Bank"];
-			pWrapper->Add("{}. {} :: Wealthy(bank) {$} golds", Rank, Nickname, Bank);
+			pWrapper->Add("{}. {~} :: Wealthy(bank) {$} golds", Rank, Nickname, Bank);
 		}
 	}
 	else if(Type == ToplistType::PlayerExpert)
@@ -517,7 +517,7 @@ void CMmoController::ShowTopList(VoteWrapper* pWrapper, int ClientID, ToplistTyp
 		{
 			const char* pNickname = Instance::Server()->GetAccountNickname(Top.Data["AccountID"].to_int());
 			const auto Level = Top.Data["Level"].to_int();
-			pWrapper->Add("{}: '{-} - {}LV'.", Top.Name, pNickname, Level);
+			pWrapper->Add("{}: '{~} - {}LV'.", Top.Name, pNickname, Level);
 		}
 	}
 	else if(Type == ToplistType::PlayerAttributes)
@@ -527,7 +527,7 @@ void CMmoController::ShowTopList(VoteWrapper* pWrapper, int ClientID, ToplistTyp
 		{
 			const char* pNickname = Instance::Server()->GetAccountNickname(Top.Data["AccountID"].to_int());
 			const auto Value = Top.Data["Value"].to_int();
-			pWrapper->Add("{}: '{-} - {}'.", Top.Name, pNickname, Value);
+			pWrapper->Add("{}: '{~} - {}'.", Top.Name, pNickname, Value);
 		}
 	}
 }
@@ -676,7 +676,7 @@ void CMmoController::AsyncClientEnterMsgInfo(std::string_view ClientName, int Cl
 		{
 			pPlayer->GetSharedData().m_AuthType = AUTH_TYPE_REGISTRATION;
 			pPlayer->GetSharedData().m_GuestLogin = GuestCredential;
-			pGS->Chat(-1, "Apparently, we have a new player, '{}'!", CapturedNickname);
+			pGS->Chat(-1, "Apparently, we have a new player, '{~}'!", CapturedNickname);
 			pGS->Chat(ClientID, "Register with /register <login> <pass>.");
 			pGS->Chat(ClientID, "Play as a guest via 'Esc → Play' and save progress later.");
 			return;

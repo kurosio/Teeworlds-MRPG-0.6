@@ -57,6 +57,8 @@ public:
 		bool IsLoaded() const { return m_Loaded; }
 		void Load();
 		const char* Localize(const char* pKey) const;
+		bool Contains(const char* pKey) const;
+		void CollectUntranslated(const char* pKey);
 		CUpdater& Updater() { return m_Updater; }
 	};
 
@@ -69,6 +71,7 @@ public:
 
 private:
 	CLanguage* m_pMainLanguage{};
+	CLanguage* FindLanguage(const char* pLanguageFile) const;
 	const char* LocalizeWithDepth(const char* pLanguageFile, const char* pText, int Depth);
 };
 

@@ -4,6 +4,20 @@
 
 constexpr auto g_pMotherLanguageFile = "en";
 
+namespace
+{
+	bool ContainsAsciiLetter(const char* pText)
+	{
+		for(const char* pCurrent = pText; pCurrent && *pCurrent; ++pCurrent)
+		{
+			if((*pCurrent >= 'A' && *pCurrent <= 'Z') || (*pCurrent >= 'a' && *pCurrent <= 'z'))
+				return true;
+		}
+
+		return false;
+	}
+}
+
 CLocalization::~CLocalization()
 {
 	for(int i = 0; i < m_pLanguages.size(); i++)
@@ -56,21 +70,26 @@ bool CLocalization::Reload()
 	return Init();
 }
 
+CLocalization::CLanguage* CLocalization::FindLanguage(const char* pLanguageFile) const
+{
+	if(!pLanguageFile)
+		return nullptr;
+
+	for(int i = 0; i < m_pLanguages.size(); i++)
+	{
+		if(str_comp(m_pLanguages[i]->GetFilename(), pLanguageFile) == 0)
+			return m_pLanguages[i];
+	}
+
+	return nullptr;
+}
+
 const char* CLocalization::LocalizeWithDepth(const char* pLanguageFile, const char* pText, int Depth)
 {
 	// found language
-	CLanguage* pLanguage = m_pMainLanguage;
-	if(pLanguageFile)
-	{
-		for(int i = 0; i < m_pLanguages.size(); i++)
-		{
-			if(str_comp(m_pLanguages[i]->GetFilename(), pLanguageFile) == 0)
-			{
-				pLanguage = m_pLanguages[i];
-				break;
-			}
-		}
-	}
+	CLanguage* pLanguage = pLanguageFile ? FindLanguage(pLanguageFile) : m_pMainLanguage;
+	if(!pLanguage)
+		pLanguage = m_pMainLanguage;
 
 	// if no language is found or is mother language
 	if(!pLanguage || str_comp(pLanguage->GetFilename(), g_pMotherLanguageFile) == 0)
@@ -102,7 +121,15 @@ const char* CLocalization::LocalizeWithDepth(const char* pLanguageFile, const ch
 
 const char* CLocalization::Localize(const char* pLanguageCode, const char* pText)
 {
-	return LocalizeWithDepth(pLanguageCode, pText, 0);
+	CLanguage* pLanguage = FindLanguage(pLanguageCode);
+	const char* pResult = LocalizeWithDepth(pLanguageCode, pText, 0);
+
+	if(g_Config.m_SvUntranslateCollect && pLanguage)
+	{
+		pLanguage->CollectUntranslated(pText);
+	}
+
+	return pResult;
 }
 
 CLocalization::CLanguage::CLanguage(std::string_view Name, std::string_view Filename, std::string_view ParentFilename)
@@ -177,6 +204,44 @@ const char* CLocalization::CLanguage::Localize(const char* pKey) const
 		return nullptr;
 
 	return pEntry->m_apVersions;
+}
+
+bool CLocalization::CLanguage::Contains(const char* pKey) const
+{
+	return m_Translations.get(pKey) != nullptr;
+}
+
+void CLocalization::CLanguage::CollectUntranslated(const char* pKey)
+{
+	if(!pKey || pKey[0] == '\0' || !ContainsAsciiLetter(pKey) || !m_Loaded || m_Filename == g_pMotherLanguageFile || Contains(pKey))
+		return;
+
+	std::string aDirLanguageFile = fmt_default("./server_lang/{}.txt", GetFilename());
+	IOHANDLE CheckFile = io_open(aDirLanguageFile.c_str(), IOFLAG_READ);
+	if(!CheckFile)
+		return;
+	io_close(CheckFile);
+
+	IOHANDLE File = io_open(aDirLanguageFile.c_str(), IOFLAG_APPEND);
+	if(!File)
+		return;
+
+	const std::string EscapedKey = mystd::string::escape(pKey);
+	const std::string Data = "\n" + EscapedKey + "\n== " + EscapedKey + "\n\n";
+	io_write(File, Data.data(), static_cast<unsigned>(Data.size()));
+	io_close(File);
+
+	if(CEntry* pEntry = m_Translations.set(pKey))
+	{
+		const int Length = str_length(pKey) + 1;
+		pEntry->m_apVersions = (char*)malloc(Length);
+		if(pEntry->m_apVersions)
+		{
+			str_copy(pEntry->m_apVersions, pKey, Length);
+		}
+	}
+
+	dbg_msg("localization", "collected untranslated line for language '%s': %s", GetFilename(), pKey);
 }
 
 bool CLocalization::CLanguage::CUpdater::LoadDefault(std::vector<Element>& vElements)

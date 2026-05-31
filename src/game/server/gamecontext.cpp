@@ -682,7 +682,7 @@ void CGS::ProcessNicknameChange(CPlayer* pPlayer, const char* pNewNickname) cons
 			}
 			else
 			{
-				pGS->Chat(ClientID, "You need to set a '{}' nickname. This window will keep appearing until you confirm the nickname change.", Instance::Server()->ClientName(ClientID));
+				pGS->Chat(ClientID, "You need to set a '{~}' nickname. This window will keep appearing until you confirm the nickname change.", Instance::Server()->ClientName(ClientID));
 			}
 		};
 
@@ -838,7 +838,7 @@ void CGS::OnTickGlobal()
 			{
 				const auto* pNickname = Server()->GetAccountNickname(Top.Data["AccountID"].to_int());
 				const auto Value = Top.Data["Level"].to_int();
-				Chat(-1, "{}: '{-} - {}LV'.", Top.Name, pNickname, Value);
+				Chat(-1, "{}: '{~} - {}LV'.", Top.Name, pNickname, Value);
 			}
 
 			return;
@@ -849,22 +849,22 @@ void CGS::OnTickGlobal()
 
 		if(RandomType == ToplistType::PlayerRating)
 		{
-			Chat(-1, "Rating leader: '{} ({})'! In second place is '{} ({})' — the competition is heating up!",
+			Chat(-1, "Rating leader: '{~} ({})'! In second place is '{~} ({})' — the competition is heating up!",
 				Leader.Name, Leader.Data["Rating"].to_int(), Second.Name, Second.Data["Rating"].to_int());
 		}
 		else if(RandomType == ToplistType::PlayerWealthy)
 		{
-			Chat(-1, "Wealthiest player: '{}({$})' is richest! '{}({$})' close behind!",
+			Chat(-1, "Wealthiest player: '{~}({$})' is richest! '{~}({$})' close behind!",
 				Leader.Name, Leader.Data["Bank"], Second.Name, Second.Data["Bank"]);
 		}
 		else if(RandomType == ToplistType::GuildLeveling)
 		{
-			Chat(-1, "The most experienced guild: '{} (Level {})'! Close behind: '{} (Level {})'.",
+			Chat(-1, "The most experienced guild: '{~} (Level {})'! Close behind: '{~} (Level {})'.",
 				Leader.Name, Leader.Data["Level"], Second.Name, Second.Data["Level"]);
 		}
 		else if(RandomType == ToplistType::GuildWealthy)
 		{
-			Chat(-1, "The richest guild: '{}({$})'! Second place: '{}({$})' is catching up!",
+			Chat(-1, "The richest guild: '{~}({$})'! Second place: '{~}({$})' is catching up!",
 				Leader.Name, Leader.Data["Bank"], Second.Name, Second.Data["Bank"]);
 		}
 	}
@@ -936,7 +936,7 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 			if(firstChar == '/')
 				CommandProcessor()->ProcessClientChatCommand(ClientID, pMsg->m_pMessage);
 			else if(firstChar == '#')
-				ChatWorld(pPlayer->GetCurrentWorldID(), "Nearby:", "'{}' performed an act '{}'.", Server()->ClientName(ClientID), pMsg->m_pMessage);
+				ChatWorld(pPlayer->GetCurrentWorldID(), "Nearby:", "'{~}' performed an act '{}'.", Server()->ClientName(ClientID), pMsg->m_pMessage);
 			else
 				SendChat(true, ClientID, pMsg->m_Team ? CHAT_TEAM : CHAT_ALL, pMsg->m_pMessage);
 
@@ -1295,7 +1295,7 @@ void CGS::OnClientEnter(int ClientID, bool FirstEnter)
 
 	if(FirstEnter)
 	{
-		Chat(-1, "'{}' entered and joined the {}", Server()->ClientName(ClientID), g_Config.m_SvGamemodeName);
+		Chat(-1, "'{~}' entered and joined the {}", Server()->ClientName(ClientID), g_Config.m_SvGamemodeName);
 		CMmoController::AsyncClientEnterMsgInfo(Server()->ClientName(ClientID), ClientID);
 		return;
 	}
@@ -1325,16 +1325,16 @@ void CGS::OnClientDrop(int ClientID, const char* pReason)
 			{
 				if(HasWorldFlag(WORLD_FLAG_RATING_SYSTEM))
 				{
-					Chat(-1, "'{}' rage left {} and lost {} rating points!", Server()->ClientName(ClientID),
+					Chat(-1, "'{~}' rage left {} and lost {} rating points!", Server()->ClientName(ClientID),
 						g_Config.m_SvGamemodeName, g_Config.m_SvRageQuitDecreaseRating);
 					pPlayer->Account()->GetRatingSystem().DecreaseRating(g_Config.m_SvRageQuitDecreaseRating);
 				}
 				else
-					Chat(-1, "'{}' rage left the {}", Server()->ClientName(ClientID), g_Config.m_SvGamemodeName);
+					Chat(-1, "'{~}' rage left the {}", Server()->ClientName(ClientID), g_Config.m_SvGamemodeName);
 			}
 			else
 			{
-				Chat(-1, "'{}' has left the {}", Server()->ClientName(ClientID), g_Config.m_SvGamemodeName);
+				Chat(-1, "'{~}' has left the {}", Server()->ClientName(ClientID), g_Config.m_SvGamemodeName);
 				Console()->PrintFormat(IConsole::OUTPUT_LEVEL_STANDARD, "game", "leave player='%d:%s'", ClientID, Server()->ClientName(ClientID));
 			}
 

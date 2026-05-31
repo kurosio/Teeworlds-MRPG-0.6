@@ -561,7 +561,7 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 
 				const auto* pSkill = pPlayer->GetSkill(ID);
 				const char* pIcon = GetSkillStateIcon(pSkillDesc, pSkill);
-				VSection.AddMenu(MENU_SKILL_SELECT, ID, "{} {} - {}SP | {}",
+				VSection.AddMenu(MENU_SKILL_SELECT, ID, "{} {} - {}SP | {~}",
 					pIcon, pSkillDesc->GetName(), pSkillDesc->GetPriceSP(), pSkill->GetStringLevelStatus());
 			}
 		};
@@ -678,7 +678,7 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		VoteWrapper VLanguageInfo(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_SIMPLE, "Languages Information");
 		VLanguageInfo.Add("Here you can choose the language.");
 		VLanguageInfo.Add("Note: translation is not complete.");
-		VLanguageInfo.Add("Active language: [{}]", pPlayerLanguage);
+		VLanguageInfo.Add("Active language: [{~}]", pPlayerLanguage);
 		VoteWrapper::AddEmptyline(ClientID);
 
 		// languages
@@ -691,7 +691,7 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 
 			// add language selection
 			const char* pLanguageName = Server()->Localization()->m_pLanguages[i]->GetName();
-			VLanguages.AddOption("SELECT_LANGUAGE", i, "Select language \"{}\"", pLanguageName);
+			VLanguages.AddOption("SELECT_LANGUAGE", i, "Select language \"{~}\"", pLanguageName);
 		}
 
 		VoteWrapper::AddEmptyline(ClientID);
@@ -1186,7 +1186,7 @@ void CAccountManager::LoadAccount(CPlayer* pPlayer, bool FirstInitilize)
 
 	// notify about rank
 	const int Rank = Server()->GetAccountRank(pAccount->GetID());
-	GS()->Chat(-1, "'{}' logged to account. Rank '#{}[{}]' ({})", Server()->ClientName(ClientID), Rank,
+	GS()->Chat(-1, "'{~}' logged to account. Rank '#{}[{}]' ({})", Server()->ClientName(ClientID), Rank,
 		Server()->ClientCountryIsoCode(ClientID), pPlayer->Account()->GetRatingSystem().GetRankName());
 
 	// Change player's world ID to the latest correct world ID

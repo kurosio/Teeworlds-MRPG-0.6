@@ -126,7 +126,7 @@ void CGroupManager::ShowGroupMenu(CPlayer* pPlayer) const
 	{
 		CPlayer* pSearchPlayer = GS()->GetPlayer(i, true);
 		if(pSearchPlayer && !pSearchPlayer->Account()->GetGroup())
-			VGroupInvites.AddOption("GROUP_INVITE", i, "Invite {}", Server()->ClientName(i));
+			VGroupInvites.AddOption("GROUP_INVITE", i, "Invite {~}", Server()->ClientName(i));
 	}
 	VoteWrapper::AddEmptyline(ClientID);
 
@@ -136,11 +136,11 @@ void CGroupManager::ShowGroupMenu(CPlayer* pPlayer) const
 	{
 		std::string PlayerName = Server()->GetAccountNickname(AID);
 		bool HasInteraction = IsOwner && AID != pPlayer->Account()->GetID();
-		VoteWrapper VMember(ClientID, VWF_UNIQUE, "{}{}", (AID == pGroup->GetOwnerUID() ? "*" : "\0"), PlayerName.c_str());
+		VoteWrapper VMember(ClientID, VWF_UNIQUE, "{}{~}", (AID == pGroup->GetOwnerUID() ? "*" : "\0"), PlayerName.c_str());
 		if(HasInteraction)
 		{
-			VMember.AddOption("GROUP_KICK", AID, "Kick {}", PlayerName.c_str());
-			VMember.AddOption("GROUP_CHANGE_OWNER", AID, "Transfer ownership {}", PlayerName.c_str());
+			VMember.AddOption("GROUP_KICK", AID, "Kick {~}", PlayerName.c_str());
+			VMember.AddOption("GROUP_CHANGE_OWNER", AID, "Transfer ownership {~}", PlayerName.c_str());
 		}
 	}
 	VoteWrapper::AddEmptyline(ClientID);
@@ -227,23 +227,23 @@ bool CGroupManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 					{
 						pGroup->Add(pPlayer->Account()->GetID());
 						pGS->Chat(ClientID, "You've accepted the invitation!");
-						pGS->Chat(InvitedCID, "'{}' accepted your invitation!", pGS->Server()->ClientName(ClientID));
+						pGS->Chat(InvitedCID, "'{~}' accepted your invitation!", pGS->Server()->ClientName(ClientID));
 						pGS->CreatePlayerSound(ClientID, SOUND_GAME_ACCEPT_LONG);
 						pGS->CreatePlayerSound(InvitedCID, SOUND_GAME_ACCEPT_LONG);
 					}
 					else
 					{
 						pGS->Chat(ClientID, "You declined the invitation!");
-						pGS->Chat(InvitedCID, "'{}' declined your invitation!", pGS->Server()->ClientName(ClientID));
+						pGS->Chat(InvitedCID, "'{~}' declined your invitation!", pGS->Server()->ClientName(ClientID));
 					}
 				}
 			};
-			const auto pOption = CVoteOptional::Create(InvitedCID, 15, "Join to {} group?", Server()->ClientName(ClientID));
+			const auto pOption = CVoteOptional::Create(InvitedCID, 15, "Join to {~} group?", Server()->ClientName(ClientID));
 			pOption->RegisterCallback(fncallbackJoindGuild);
 
 			// send messages
-			GS()->Chat(ClientID, "You've invited '{}' to join your group!", Server()->ClientName(InvitedCID));
-			GS()->Chat(InvitedCID, "You have been invited by the '{}' to join the group.", Server()->ClientName(ClientID));
+			GS()->Chat(ClientID, "You've invited '{~}' to join your group!", Server()->ClientName(InvitedCID));
+			GS()->Chat(InvitedCID, "You have been invited by the '{~}' to join the group.", Server()->ClientName(ClientID));
 		}
 
 		return true;

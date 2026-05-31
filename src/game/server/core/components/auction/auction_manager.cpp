@@ -117,7 +117,7 @@ void CAuctionManager::ShowAuction(CPlayer* pPlayer) const
 	for(const auto* pSlot : vOtherSlots)
 	{
 		const CItem* pItem = pSlot->GetItem();
-		VList.AddMenu(MENU_AUCTION_SLOT_SELECT, pSlot->GetID(), "{}. {} x{} | {$} | {-}",
+		VList.AddMenu(MENU_AUCTION_SLOT_SELECT, pSlot->GetID(), "{}. {} x{} | {$} | {~}",
 			VList.NextPos(), pItem->Info()->GetName(), pItem->GetValue(), pSlot->GetPrice(), Server()->GetAccountNickname(pSlot->GetOwnerID()));
 	}
 }
@@ -177,7 +177,7 @@ void CAuctionManager::ShowAuctionSlot(CPlayer* pPlayer, int ID) const
 	VoteWrapper VInfo(ClientID, VWF_ALIGN_TITLE|VWF_STYLE_STRICT_BOLD|VWF_SEPARATE, "Slot details");
 	VInfo.Add("Item: {} x{}", pSlot->GetItem()->Info()->GetName(), pSlot->GetItem()->GetValue());
 	VInfo.Add("Price: {$}", pSlot->GetPrice());
-	VInfo.Add("Seller: {-}", Server()->GetAccountNickname(pSlot->GetOwnerID()));
+	VInfo.Add("Seller: {~}", Server()->GetAccountNickname(pSlot->GetOwnerID()));
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// interaction
@@ -352,7 +352,7 @@ void CAuctionManager::CreateSlot(CPlayer* pPlayer, CAuctionSlot* pAuctionData) c
 
 			// send messages
 			const int AvailableSlots = g_Config.m_SvMaxPlayerAuctionSlots - GetSlotsCountByAccountID(AccountID);
-			GS()->Chat(-1, "'{-}' listed [{} x{}] on auction.", Server()->ClientName(ClientID), pPlayerItem->Info()->GetName(), pItem->GetValue());
+			GS()->Chat(-1, "'{~}' listed [{} x{}] on auction.", Server()->ClientName(ClientID), pPlayerItem->Info()->GetName(), pItem->GetValue());
 			GS()->Chat(ClientID, "Free personal slots: {}.", AvailableSlots);
 		}
 	}
@@ -390,14 +390,14 @@ bool CAuctionManager::BuySlot(CPlayer* pPlayer, int ID) const
 	{
 		// send mail for seller
 		MailWrapper MailSeller("Auctionist", pSlot->GetOwnerID(), "Auction alert.");
-		MailSeller.AddDescLine("Buyer: {-}", Server()->ClientName(ClientID));
+		MailSeller.AddDescLine("Buyer: {~}", Server()->ClientName(ClientID));
 		MailSeller.AddDescLine("Item: {} x{}", pItem->Info()->GetName(), pItem->GetValue());
 		MailSeller.AttachItem({ itGold, pSlot->GetPrice() });
 		MailSeller.Send();
 
 		// send mail for buyer
 		MailWrapper MailBuyer("Auctionist", AccountID, "Auction alert.");
-		MailBuyer.AddDescLine("Seller: {-}", Server()->GetAccountNickname(pSlot->GetOwnerID()));
+		MailBuyer.AddDescLine("Seller: {~}", Server()->GetAccountNickname(pSlot->GetOwnerID()));
 		MailBuyer.AddDescLine("Item: {} x{}", pItem->Info()->GetName(), pItem->GetValue());
 		MailBuyer.AttachItem(*pItem);
 		MailBuyer.Send();

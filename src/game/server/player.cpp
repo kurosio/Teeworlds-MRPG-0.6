@@ -668,10 +668,10 @@ void CPlayer::ProgressBar(const char* pType, int Level, uint64_t Exp, uint64_t E
 	const auto ExpProgress = translate_to_percent(ExpNeeded, Exp);
 	const auto GainedExpProgress = translate_to_percent(ExpNeeded, GainedExp);
 
-	// send and format
+	// send and format from a static localization key instead of collecting ready-made dynamic progress text
 	const auto ProgressBar = mystd::string::progressBar(100, static_cast<int>(ExpProgress), 10, ":", " ");
-	const auto Result = fmt_default("Lv{lv} {type}[{bar}] {~.2}%+{~.3}%({})XP", Level, pType, ProgressBar, ExpProgress, GainedExpProgress, GainedExp);
-	GS()->Broadcast(m_ClientID, BroadcastPriority::GamePriority, 100, Result.c_str());
+	GS()->Broadcast(m_ClientID, BroadcastPriority::GamePriority, 100, "Lv{lv} {type}[{bar}] {~.2}%+{~.3}%({})XP",
+		Level, pType, ProgressBar, ExpProgress, GainedExpProgress, GainedExp);
 }
 
 /* #########################################################################

@@ -172,7 +172,7 @@ void CMailboxManager::ShowMail(int MailID, CPlayer* pPlayer) const
 		VoteWrapper VInfo(ClientID, VWF_SEPARATE | VWF_STYLE_STRICT_BOLD, "{}", Name);
 		for(auto& pLine : vDescriptions)
 			VInfo.Add(pLine.c_str());
-		VInfo.Add("From: {}", Sender);
+		VInfo.Add("From: {~}", Sender);
 		VoteWrapper::AddEmptyline(ClientID);
 
 		// show attached item's information

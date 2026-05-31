@@ -1,0 +1,63 @@
+Open
+== Открыть
+
+Close
+== Закрыть
+
+Save
+== Сохранить
+
+File
+== Файл
+
+Edit
+== Редактировать
+
+Settings
+== Настройки
+
+Help
+== Помощь
+
+Search
+== Поиск
+
+Cancel
+== Отмена
+
+Apply
+== Применить
+
+Delete
+== Удалить
+
+Create
+== Создать
+
+$dialog_quest590
+Leia's egg is irreplaceable. I cannot well express to you the depth of my gratitude.
+== Яйцо Леи незаменимо. Я не могу выразить вам всю глубину моей благодарности.
+
+- Required: {} ({} | {})\n
+== - Требуется: {} ({} | {})\n
+
+- /group Get all sub commands
+== - /group Получить все подкоманды
+
+Enchantable
+== Зачаровываемый
+
+Welcome to our application
+==
+
+Loading resources...
+==
+
+Connection established
+==
+
+Authentication required
+==
+
+Permission denied
+==

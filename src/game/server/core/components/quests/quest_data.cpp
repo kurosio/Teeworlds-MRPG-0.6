@@ -235,7 +235,7 @@ void CPlayerQuest::UpdateStepProgress()
 		if(CanGotActivityPoints)
 			pPlayer->GetItem(itActivityCoin)->Add(g_Config.m_SvActivityCoinRepeatableQuestReward);
 
-		GS()->Chat(-1, "{} completed repeatable quest \"{}\".", GS()->Server()->ClientName(m_ClientID), Info()->GetName());
+		GS()->Chat(-1, "{~} completed repeatable quest \"{}\".", GS()->Server()->ClientName(m_ClientID), Info()->GetName());
 		Reset();
 		return;
 	}
@@ -245,31 +245,31 @@ void CPlayerQuest::UpdateStepProgress()
 	// tutorial quest
 	if(Info()->HasFlag(QUEST_FLAG_TUTORIAL))
 	{
-		GS()->Chat(-1, "{} completed tutorial quest \"{}\".", GS()->Server()->ClientName(m_ClientID), Info()->GetName());
+		GS()->Chat(-1, "{~} completed tutorial quest \"{}\".", GS()->Server()->ClientName(m_ClientID), Info()->GetName());
 	}
 	// daily quest
 	else if(Info()->HasFlag(QUEST_FLAG_TYPE_DAILY))
 	{
 		ActivityPoints = g_Config.m_SvActivityCoinDailyQuestReward;
-		GS()->Chat(-1, "{} completed daily quest \"{}\".", GS()->Server()->ClientName(m_ClientID), Info()->GetName());
+		GS()->Chat(-1, "{~} completed daily quest \"{}\".", GS()->Server()->ClientName(m_ClientID), Info()->GetName());
 	}
 	// weekly quest
 	else if(Info()->HasFlag(QUEST_FLAG_TYPE_WEEKLY))
 	{
 		ActivityPoints = g_Config.m_SvActivityCoinWeeklyQuestReward;
-		GS()->Chat(-1, "{} completed weekly quest \"{}\".", GS()->Server()->ClientName(m_ClientID), Info()->GetName());
+		GS()->Chat(-1, "{~} completed weekly quest \"{}\".", GS()->Server()->ClientName(m_ClientID), Info()->GetName());
 	}
 	// main quest
 	else if(Info()->HasFlag(QUEST_FLAG_TYPE_MAIN))
 	{
 		ActivityPoints = g_Config.m_SvActivityCoinMainQuestReward;
-		GS()->Chat(-1, "{} completed main quest \"{}\".", GS()->Server()->ClientName(m_ClientID), Info()->GetName());
+		GS()->Chat(-1, "{~} completed main quest \"{}\".", GS()->Server()->ClientName(m_ClientID), Info()->GetName());
 	}
 	// side quest
 	else
 	{
 		ActivityPoints = g_Config.m_SvActivityCoinSideQuestReward;
-		GS()->Chat(-1, "{} completed side quest \"{}\".", GS()->Server()->ClientName(m_ClientID), Info()->GetName());
+		GS()->Chat(-1, "{~} completed side quest \"{}\".", GS()->Server()->ClientName(m_ClientID), Info()->GetName());
 	}
 
 	// add activity points

@@ -333,7 +333,7 @@ void CAccountData::IncreaseCrime(int Score)
 		m_LastTickCrimeScoreChanges = GS()->Server()->Tick();
 
 		if(NewCrimeScore >= 100)
-			GS()->Chat(-1, "'{}' added to wanted list, reward for elimination.", GS()->Server()->ClientName(pPlayer->GetCID()));
+			GS()->Chat(-1, "'{~}' added to wanted list, reward for elimination.", GS()->Server()->ClientName(pPlayer->GetCID()));
 
 		GS()->Chat(m_ClientID, "Your crime level has been increased to '{} points'.", m_CrimeScore);
 		GS()->Core()->SaveAccount(pPlayer, SAVE_SOCIAL);
@@ -355,7 +355,7 @@ void CAccountData::DecreaseCrime(int Score)
 		m_LastTickCrimeScoreChanges = GS()->Server()->Tick();
 
 		if(OldCrimeScore >= 100)
-			GS()->Chat(-1, "'{}' removed from wanted list.", GS()->Server()->ClientName(pPlayer->GetCID()));
+			GS()->Chat(-1, "'{~}' removed from wanted list.", GS()->Server()->ClientName(pPlayer->GetCID()));
 
 		GS()->Chat(m_ClientID, "Your crime level has been decreased to '{} points'.", m_CrimeScore);
 		GS()->Core()->SaveAccount(pPlayer, SAVE_SOCIAL);

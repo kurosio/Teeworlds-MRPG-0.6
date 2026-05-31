@@ -96,7 +96,6 @@ void CFormatter::prepare_result(const std::string& Text, std::string* pResult, s
 			{
 				case '~': argumentType = arg_truncate; break;
 				case '#': argumentType = arg_plural; break;
-				case '-': argumentType = arg_skip_handle; break;
 				case '$': argumentType = arg_big_digit; break;
 				default: break;
 			}
@@ -110,6 +109,10 @@ void CFormatter::prepare_result(const std::string& Text, std::string* pResult, s
 			{
 				// initialize variables
 				auto& [argumentTypename, argumentResult] = vPack[argumentPosition++];
+
+				// raw type, used for dynamic values that must not be localized or formated
+				if(argumentType == arg_truncate && argument == "~")
+					argumentType = arg_skip_handle;
 
 				// truncate type
 				if(argumentType == arg_truncate)
@@ -162,7 +165,7 @@ void CFormatter::prepare_result(const std::string& Text, std::string* pResult, s
 						std::string variantPlural {};
 						BigInt numberPlural(argumentResult);
 
-						// parse plural description 
+						// parse plural description
 						for(auto& c : argument)
 						{
 							// plural argument position

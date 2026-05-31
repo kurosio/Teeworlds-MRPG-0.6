@@ -337,7 +337,7 @@ bool CInventoryManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
 
 		// information
 		const auto strNewAttributes = pPlayerItem->Info()->HasAttributes() ? pPlayerItem->GetStringAttributesInfo(pPlayer) : "unattributed";
-		GS()->Chat(-1, "'{}' enchant '{} {} {}'.", Server()->ClientName(ClientID), pPlayerItem->Info()->GetName(),
+		GS()->Chat(-1, "'{~}' enchant '{} {} {}'.", Server()->ClientName(ClientID), pPlayerItem->Info()->GetName(),
 			pPlayerItem->GetStringEnchantLevel(), strNewAttributes);
 		pPlayer->m_VotesData.UpdateCurrentVotes();
 		return true;

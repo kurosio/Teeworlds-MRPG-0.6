@@ -143,7 +143,7 @@ void CCraftManager::CraftItem(CPlayer* pPlayer, CCraftItem* pCraft, int Value) c
 	// report a crafted item, either to everyone or only to a player, depending on its characteristics
 	std::string ValueInfo = ExtraCraftedItemCount ? fmt_default("{}(+{})", CraftedItemCount, ExtraCraftedItemCount) : fmt_default("{}", CraftedItemCount);
 	if(!pPlayerCraftItem->Info()->IsStackable())
-		GS()->Chat(-1, "'{}' crafted '[{} x{}]'.", Server()->ClientName(ClientID), pPlayerCraftItem->Info()->GetName(), ValueInfo);
+		GS()->Chat(-1, "'{~}' crafted '[{} x{}]'.", Server()->ClientName(ClientID), pPlayerCraftItem->Info()->GetName(), ValueInfo);
 	else
 		GS()->Chat(ClientID, "You crafted '[{} x{}]'.", pPlayerCraftItem->Info()->GetName(), ValueInfo);
 
@@ -253,7 +253,7 @@ void CCraftManager::ShowCraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const
 			VCraftRequired.MarkList().Add("{} {} x{} ({})", hasEnoughItems ? "\u2714" : "\u2718",
 				pRequiredItem.Info()->GetName(), pRequiredItem.GetValue(), pPlayerItem->GetValue());
 			if(SourceView)
-				VCraftRequired.Add("  ↳ source: ({})", ItemHelper::BuildSourceHint(GS(), pRequiredItem.GetID()));
+				VCraftRequired.Add("  ↳ source: ({~})", ItemHelper::BuildSourceHint(GS(), pRequiredItem.GetID()));
 		}
 		VCraftRequired.EndDepth();
 	}

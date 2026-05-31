@@ -309,11 +309,11 @@ void CMobAI::HandleAmbientChat()
 	int Layout = rand() % 3;
 
 	if(Layout == 0)
-		ChatText = fmt_default("{}... {} {} {}", pOpener, m_pMobInfo->GetName(), pAction, pEnding);
+		ChatText = fmt_default("{~}... {~} {~} {~}", pOpener, m_pMobInfo->GetName(), pAction, pEnding);
 	else if(Layout == 1)
-		ChatText = fmt_default("{}! {} {} {} {}", pOpener, m_pMobInfo->GetName(), pMood, pAction, pEnding);
+		ChatText = fmt_default("{~}! {~} {~} {~} {~}", pOpener, m_pMobInfo->GetName(), pMood, pAction, pEnding);
 	else
-		ChatText = fmt_default("{} {}... {}", m_pMobInfo->GetName(), pAction, pEnding);
+		ChatText = fmt_default("{~} {~}... {~}", m_pMobInfo->GetName(), pAction, pEnding);
 
 	GS()->SendChatRadius(false, m_ClientID, CHAT_ALL, ActiveDistance, ChatText.c_str());
 }

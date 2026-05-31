@@ -36,7 +36,7 @@ bool CDutiesManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		// dungeons
 		VoteWrapper VDungeon(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "\u262C Dungeons ({})", GetWorldsCountByType(WorldType::Dungeon));
 		if(const auto BestPlayer = GetBestDungeonPlayer())
-			VDungeon.Add("Best player: {} with {} points.", BestPlayer->first, BestPlayer->second);
+			VDungeon.Add("Best player: {~} with {} points.", BestPlayer->first, BestPlayer->second);
 		else
 			VDungeon.Add("Best player: not found yet.");
 		for(const auto* pDungeon : CDungeonData::Data())
@@ -67,7 +67,7 @@ bool CDutiesManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		// Rhythm
 		VoteWrapper VRhythm(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "\u266C Rhythm ({})", GetWorldsCountByType(WorldType::Rhythm));
 		if(const auto BestPlayer = GetBestRhythmPlayer())
-			VRhythm.Add("Best player: {} with {} points.", BestPlayer->first, BestPlayer->second);
+			VRhythm.Add("Best player: {~} with {} points.", BestPlayer->first, BestPlayer->second);
 		else
 			VRhythm.Add("Best player: not found yet.");
 		for(int i = 0; i < Server()->GetWorldsSize(); i++)
@@ -171,7 +171,7 @@ bool CDutiesManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, con
 		}
 
 		// information and join
-		GS()->Chat(-1, "'{}' joined to Dungeon '{}'!", Server()->ClientName(ClientID), pDungeon->GetName());
+		GS()->Chat(-1, "'{~}' joined to Dungeon '{}'!", Server()->ClientName(ClientID), pDungeon->GetName());
 		pPlayer->ChangeWorld(pDungeon->GetWorldID());
 		return true;
 	}
@@ -251,7 +251,7 @@ bool CDutiesManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, con
 			if(auto* pRhythmController = dynamic_cast<CGameControllerRhythm*>(pWorldGS->m_pController))
 				pRhythmController->ApplyDifficulty(Difficulty);
 		}
-		GS()->Chat(-1, "'{}' joined to '{}' [{}]!", Server()->ClientName(ClientID), Server()->GetWorldName(WorldIdOpt.value()), Difficulty);
+		GS()->Chat(-1, "'{~}' joined to '{}' [{}]!", Server()->ClientName(ClientID), Server()->GetWorldName(WorldIdOpt.value()), Difficulty);
 		pPlayer->ChangeWorld(WorldIdOpt.value());
 		return true;
 	}
@@ -301,7 +301,7 @@ void CDutiesManager::ShowDungeonInfo(CPlayer* pPlayer, CDungeonData* pDungeon) c
 		char aBuf[128];
 		auto Time = RowData.Data["Time"].to_int();
 		str_time(Time, TIME_MINS, aBuf, sizeof(aBuf));
-		VRecords.Add("{}. {} - {}.", Pos, RowData.Name, aBuf);
+		VRecords.Add("{}. {~} - {}.", Pos, RowData.Name, aBuf);
 	}
 }
 
@@ -390,7 +390,7 @@ void CDutiesManager::ShowRhythmInfo(CPlayer* pPlayer, int WorldID) const
 		else
 		{
 			for(auto& [Pos, RowData] : vTopRecords)
-				VOptions.Add("{}. {} - {} score.", Pos, RowData.Name, RowData.Data["Score"].to_int());
+				VOptions.Add("{}. {~} - {} score.", Pos, RowData.Name, RowData.Data["Score"].to_int());
 		}
 
 		// lock difficulty if another is active

@@ -92,7 +92,7 @@ void CHouse::Buy(CPlayer* pPlayer)
 		Database->Execute<DB::UPDATE>(TW_HOUSES_TABLE, "UserID = '{}', Bank = '0', RentDays = '3' WHERE ID = '{}'", m_AccountID, m_ID);
 
 		// send information
-		GS()->Chat(-1, "'{}' becomes the owner of the house class '{}'.", Server()->ClientName(ClientID), GetClassName());
+		GS()->Chat(-1, "'{~}' becomes the owner of the house class '{}'.", Server()->ClientName(ClientID), GetClassName());
 		pPlayer->m_VotesData.UpdateCurrentVotes();
 	}
 }

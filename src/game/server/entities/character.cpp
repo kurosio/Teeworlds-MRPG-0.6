@@ -858,7 +858,7 @@ void CCharacter::HandleEventsDeath(int Killer, vec2 Force) const
 		{
 			GS()->EntityManager()->DropItem(m_Pos, Killer >= MAX_PLAYERS ? -1 : Killer, { itGold, LossGold }, Force);
 			if(KillerIsPlayer)
-				GS()->Chat(m_ClientID, "You lost '{}% ({$}) gold', killer '{}'!", g_Config.m_SvGoldLossOnDeath, LossGold, Server()->ClientName(Killer));
+				GS()->Chat(m_ClientID, "You lost '{}% ({$}) gold', killer '{~}'!", g_Config.m_SvGoldLossOnDeath, LossGold, Server()->ClientName(Killer));
 			else
 				GS()->Chat(m_ClientID, "You lost '{}% ({$})' gold due to death!", g_Config.m_SvGoldLossOnDeath, LossGold, Server()->ClientName(Killer));
 		}
@@ -875,7 +875,7 @@ void CCharacter::HandleEventsDeath(int Killer, vec2 Force) const
 				if(KillerIsPlayer)
 				{
 					pKiller->Account()->AddGold(Arrest);
-					GS()->Chat(-1, "'{}' killed '{}', who was wanted. The reward is '{$} gold'!",
+					GS()->Chat(-1, "'{~}' killed '{~}', who was wanted. The reward is '{$} gold'!",
 						Server()->ClientName(Killer), Server()->ClientName(m_pPlayer->GetCID()), Arrest);
 				}
 				GS()->Chat(m_ClientID, "Treasury confiscates '{}% ({$})' of your gold.", g_Config.m_SvArrestGoldOnDeath, Arrest);

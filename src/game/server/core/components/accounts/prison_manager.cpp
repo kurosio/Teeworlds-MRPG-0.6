@@ -28,7 +28,7 @@ void PrisonManager::Imprison(int Seconds)
 	vec2 PrisonPos;
 	if(GS()->m_pController->CanSpawn(SPAWN_HUMAN_PRISON, &PrisonPos))
 	{
-		GS()->Chat(-1, "'{}', has been imprisoned for '{} seconds'.", GS()->Server()->ClientName(m_ClientID), Seconds);
+		GS()->Chat(-1, "'{~}', has been imprisoned for '{} seconds'.", GS()->Server()->ClientName(m_ClientID), Seconds);
 
 		const auto* pPlayer = GetPlayer();
 		if(pPlayer && pPlayer->GetCharacter())
@@ -57,7 +57,7 @@ void PrisonManager::Release()
 		auto* pStorage = GS()->Storage();
 		const auto Filename = getFileName(pPlayer->Account()->GetID());
 		pStorage->RemoveFile(Filename.c_str(), IStorageEngine::TYPE_ABSOLUTE);
-		GS()->Chat(-1, "'{}' has been released from prison.", GS()->Server()->ClientName(m_ClientID));
+		GS()->Chat(-1, "'{~}' has been released from prison.", GS()->Server()->ClientName(m_ClientID));
 	}
 }
 

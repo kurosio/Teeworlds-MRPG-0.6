@@ -132,7 +132,7 @@ namespace
 			rewardText += rewardEntries[i];
 		}
 
-		Wrapper.Add("Rewards: {}", rewardText);
+		Wrapper.Add("Rewards: {~}", rewardText);
 	}
 }
 
@@ -268,7 +268,7 @@ void CAchievementManager::ShowTypeList(CPlayer* pPlayer, AchievementType Type) c
 				? " [Level " + std::to_string(level) + "/" + std::to_string(totalLevels) + "]"
 				: "";
 
-			VoteWrapper VAchievement(ClientID, VWF_UNIQUE | VWF_STYLE_SIMPLE, "{} {}{}",
+			VoteWrapper VAchievement(ClientID, VWF_UNIQUE | VWF_STYLE_SIMPLE, "{} {}{~}",
 				completed ? "✔" : "○", pInfo->GetName(), levelSuffix);
 			AddAchievementDetails(VAchievement, pInfo, progress, required, level, totalLevels);
 		}

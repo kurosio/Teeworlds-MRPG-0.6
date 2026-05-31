@@ -360,11 +360,11 @@ bool CPlayerItem::Add(int Value, int StartSettings, int StartEnchant, time_t Sta
 	{
 		const auto Type = Info()->GetType();
 		if(Type == ItemType::EquipTitle)
-			GS()->Chat(-1, "'{}' unlocked the title: '{}'!", GS()->Server()->ClientName(ClientID), Info()->GetName());
+			GS()->Chat(-1, "'{~}' unlocked the title: '{}'!", GS()->Server()->ClientName(ClientID), Info()->GetName());
 		else if(Type == ItemType::EquipEidolon)
-			GS()->Chat(-1, "'{}' obtained an Eidolon: '{}'!", GS()->Server()->ClientName(ClientID), Info()->GetName());
+			GS()->Chat(-1, "'{~}' obtained an Eidolon: '{}'!", GS()->Server()->ClientName(ClientID), Info()->GetName());
 		else
-			GS()->Chat(-1, "'{}' obtained the '{}'.", GS()->Server()->ClientName(ClientID), Info()->GetName());
+			GS()->Chat(-1, "'{~}' obtained the '{}'.", GS()->Server()->ClientName(ClientID), Info()->GetName());
 	}
 	else if(Group == ItemGroup::Currency)
 		GS()->Broadcast(m_ClientID, BroadcastPriority::GamePriority, 100, "You received '{} x{} ({})'.", Info()->GetName(), Value, m_Value);
@@ -515,7 +515,7 @@ bool CPlayerItem::Use(int Value)
 	if(m_ID == itCapsuleSurvivalExperience && Remove(Value))
 	{
 		int Getting = randomRangecount(10, 50, Value);
-		GS()->Chat(-1, "'{}' used '{} x{}' and got '{} survival experience'.", GS()->Server()->ClientName(m_ClientID), Info()->GetName(), Value, Getting);
+		GS()->Chat(-1, "'{~}' used '{} x{}' and got '{} survival experience'.", GS()->Server()->ClientName(m_ClientID), Info()->GetName(), Value, Getting);
 		pPlayer->Account()->AddExperience(Getting);
 		return true;
 	}
@@ -524,7 +524,7 @@ bool CPlayerItem::Use(int Value)
 	if(m_ID == itLittleBagGold && Remove(Value))
 	{
 		int Getting = randomRangecount(10, 50, Value);
-		GS()->Chat(-1, "'{}' used '{} x{}' and got '{} gold'.", GS()->Server()->ClientName(m_ClientID), Info()->GetName(), Value, Getting);
+		GS()->Chat(-1, "'{~}' used '{} x{}' and got '{} gold'.", GS()->Server()->ClientName(m_ClientID), Info()->GetName(), Value, Getting);
 		pPlayer->Account()->AddGold(Getting);
 		return true;
 	}
@@ -677,7 +677,7 @@ void CPlayerItem::StartEmbeddedScenario(ScenarioBlock Block)
 
 	// start scenario
 	GS()->ChatWorld(UseData->WorldID, "", "{}", UseData->Name);
-	GS()->ChatWorld(UseData->WorldID, "", "Triggered by {}", Server()->ClientName(m_ClientID));
+	GS()->ChatWorld(UseData->WorldID, "", "Triggered by {~}", Server()->ClientName(m_ClientID));
 	pPlayer->StartWorldScenario(ScenarioData, Block, UseData->WorldID, UseData->Single, UseData->DurationSeconds);
 
 	// apply rewards

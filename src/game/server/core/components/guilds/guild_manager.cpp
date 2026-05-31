@@ -378,7 +378,7 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 			case GuildResult::RANK_ADD_LIMIT_HAS_REACHED: GS()->Chat(ClientID, "Rank limit reached, '{} out of {}'.", (int)GUILD_RANKS_MAX_COUNT, (int)GUILD_RANKS_MAX_COUNT); break;
 			case GuildResult::RANK_WRONG_NUMBER_OF_CHAR_IN_NAME: GS()->Chat(ClientID, "Minimum number of 'characters 2, maximum 16'."); break;
 			case GuildResult::RANK_SUCCESSFUL:
-				GS()->Chat(ClientID, "The rank '{}' has been successfully added!", pReason);
+				GS()->Chat(ClientID, "The rank '{~}' has been successfully added!", pReason);
 				GS()->UpdateVotesIfForAll(MENU_GUILD_RANK_LIST);
 			break;
 		}
@@ -591,7 +591,7 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 			default: GS()->Chat(ClientID, "Unforeseen error."); break;
 			case GuildResult::MEMBER_REQUEST_ALREADY_SEND: GS()->Chat(ClientID, "You have already sent a request to this guild."); break;
 			case GuildResult::MEMBER_NO_AVAILABLE_SLOTS: GS()->Chat(ClientID, "No guild slots available."); break;
-			case GuildResult::MEMBER_SUCCESSFUL: GS()->Chat(ClientID, "You sent a request to join the '{}' guild.", pGuild->GetName()); break;
+			case GuildResult::MEMBER_SUCCESSFUL: GS()->Chat(ClientID, "You sent a request to join the '{~}' guild.", pGuild->GetName()); break;
 		}
 		return true;
 	}
@@ -1154,7 +1154,7 @@ void CGuildManager::Create(CPlayer* pPlayer, const char* pGuildName) const
 	pPlayer->Account()->ReinitializeGuild();
 	Database->Execute<DB::INSERT>(TW_GUILDS_TABLE, "(ID, Name, LeaderUID, Members) VALUES ('{}', '{}', '{}', '{}')",
 		InitID, GuildName.cstr(), pPlayer->Account()->GetID(), MembersData.c_str());
-	GS()->Chat(-1, "New guilds '{}' have been created!", GuildName.cstr());
+	GS()->Chat(-1, "New guilds '{~}' have been created!", GuildName.cstr());
 	pPlayer->m_VotesData.UpdateVotesIf(MENU_MAIN);
 }
 
@@ -1173,7 +1173,7 @@ void CGuildManager::Disband(GuildIdentifier ID) const
 	if(pGuild->HasHouse())
 	{
 		pGuild->SellHouse();
-		GS()->Chat(-1, "The guild '{}' has lost house.", pGuild->GetName());
+		GS()->Chat(-1, "The guild '{~}' has lost house.", pGuild->GetName());
 	}
 
 	// send mail
@@ -1185,7 +1185,7 @@ void CGuildManager::Disband(GuildIdentifier ID) const
 		Mail.AttachItem(CItem(itGold, chunk));
 	});
 	Mail.Send();
-	GS()->Chat(-1, "The '{}' guild has been disbanded.", pGuild->GetName());
+	GS()->Chat(-1, "The '{~}' guild has been disbanded.", pGuild->GetName());
 
 	// remove all related guild data
 	Database->Execute<DB::REMOVE>(TW_GUILDS_INVITES_TABLE, "WHERE GuildID = '{}'", pGuild->GetID());
@@ -1216,8 +1216,8 @@ void CGuildManager::ShowMenu(int ClientID) const
 	const int MemberMaxSlots = pGuild->GetUpgrades().getRef<int>((int)GuildUpgrade::AvailableSlots);
 
 	// Guild information
-	VoteWrapper VInfo(ClientID, VWF_ALIGN_TITLE|VWF_SEPARATE|VWF_STYLE_STRICT_BOLD, "{}", pGuild->GetName());
-	VInfo.Add("Leader: {}", Server()->GetAccountNickname(pGuild->GetLeaderUID()));
+	VoteWrapper VInfo(ClientID, VWF_ALIGN_TITLE|VWF_SEPARATE|VWF_STYLE_STRICT_BOLD, "{~}", pGuild->GetName());
+	VInfo.Add("Leader: {~}", Server()->GetAccountNickname(pGuild->GetLeaderUID()));
 	VInfo.Add("Level: {} Exp: {}/{}", pGuild->GetLevel(), pGuild->GetExperience(), ExpNeed);
 	VInfo.Add("Members: {} of {}", MemberUsedSlots, MemberMaxSlots);
 	VInfo.Add("Bank: {$} gold", pGuild->GetBankManager()->Get());
@@ -1366,8 +1366,8 @@ void CGuildManager::ShowMembershipList(CPlayer* pPlayer) const
 
 	// information
 	VoteWrapper VInfo(ClientID, VWF_SEPARATE | VWF_STYLE_STRICT_BOLD, "\u2324 Membership information", pGuild->GetName());
-	VInfo.Add("Guild name: {}", pGuild->GetName());
-	VInfo.Add("Leader: {}", Server()->GetAccountNickname(pGuild->GetLeaderUID()));
+	VInfo.Add("Guild name: {~}", pGuild->GetName());
+	VInfo.Add("Leader: {~}", Server()->GetAccountNickname(pGuild->GetLeaderUID()));
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// list
@@ -1377,7 +1377,7 @@ void CGuildManager::ShowMembershipList(CPlayer* pPlayer) const
 		auto pMember = pIterMember.second;
 		const int& UID = pMember->GetAccountID();
 		const char* pNickname = Server()->GetAccountNickname(UID);
-		VList.AddMenu(MENU_GUILD_MEMBER_SELECT, UID, "{}. {} {} Deposit: {}",
+		VList.AddMenu(MENU_GUILD_MEMBER_SELECT, UID, "{}. {~} {~} Deposit: {}",
 			VList.NextPos(), pMember->GetRank()->GetName(), pNickname, pMember->GetDeposit());
 	}
 	VoteWrapper::AddEmptyline(ClientID);
@@ -1401,9 +1401,9 @@ void CGuildManager::ShowMembershipEdit(CPlayer* pPlayer, int AccountID) const
 
 	// top-middle
 	int ClientID = pPlayer->GetCID();
-	VoteWrapper VTop(ClientID, VWF_ALIGN_TITLE | VWF_SEPARATE | VWF_STYLE_SIMPLE, "Editing member '{}'", Server()->GetAccountNickname(pMember->GetAccountID()));
+	VoteWrapper VTop(ClientID, VWF_ALIGN_TITLE | VWF_SEPARATE | VWF_STYLE_SIMPLE, "Editing member '{~}'", Server()->GetAccountNickname(pMember->GetAccountID()));
 	VTop.Add("Deposit: {}", pMember->GetDeposit());
-	VTop.Add("Rank: {}", pMember->GetRank()->GetName());
+	VTop.Add("Rank: {~}", pMember->GetRank()->GetName());
 	VTop.AddLine();
 	if(!SelfSlot)
 	{
@@ -1417,13 +1417,13 @@ void CGuildManager::ShowMembershipEdit(CPlayer* pPlayer, int AccountID) const
 	// selector rights
 	if(RightsLeader)
 	{
-		VoteWrapper VSelector(ClientID, VWF_OPEN | VWF_STYLE_SIMPLE, "Set new rank", Server()->GetAccountNickname(pMember->GetAccountID()));
+		VoteWrapper VSelector(ClientID, VWF_OPEN | VWF_STYLE_SIMPLE, "Set new rank for {~}", Server()->GetAccountNickname(pMember->GetAccountID()));
 		VSelector.ReinitNumeralDepthStyles({ {DEPTH_LVL1, DEPTH_LIST_STYLE_BOLD} });
 		for(auto& pRank : pGuild->GetRanks()->GetContainer())
 		{
 			if(pMember->GetRank()->GetID() != pRank->GetID())
 			{
-				VSelector.MarkList().AddOption("GUILD_CHANGE_MEMBER_RANK", MakeAnyList(AccountID, pRank->GetID()), "Change rank to: {}",
+				VSelector.MarkList().AddOption("GUILD_CHANGE_MEMBER_RANK", MakeAnyList(AccountID, pRank->GetID()), "Change rank to: {~}",
 					pRank->GetName(), pRank->GetRights() > GUILD_RANK_RIGHT_DEFAULT ? "*" : "");
 			}
 		}
@@ -1461,7 +1461,7 @@ void CGuildManager::ShowRanksList(CPlayer* pPlayer) const
 		GuildRankIdentifier ID = pRank->GetID();
 		bool IsDefaultRank = (pRank == pPlayer->Account()->GetGuild()->GetRanks()->GetDefaultRank());
 		std::string StrAppendRankInfo = IsDefaultRank ? "- Beginning" : "- " + std::string(pRank->GetRightsName());
-		VList.MarkList().AddMenu(MENU_GUILD_RANK_SELECT, ID, "{} {}", pRank->GetName(), StrAppendRankInfo.c_str());
+		VList.MarkList().AddMenu(MENU_GUILD_RANK_SELECT, ID, "{~} {}", pRank->GetName(), StrAppendRankInfo.c_str());
 	}
 	VoteWrapper::AddEmptyline(ClientID);
 }
@@ -1478,7 +1478,7 @@ void CGuildManager::ShowRankEdit(CPlayer* pPlayer, GuildRankIdentifier ID) const
 
 	// top-middle
 	const int ClientID = pPlayer->GetCID();
-	VoteWrapper VTop(ClientID, VWF_ALIGN_TITLE|VWF_SEPARATE|VWF_STYLE_SIMPLE, "Editing rank '{}'", pRank->GetName());
+	VoteWrapper VTop(ClientID, VWF_ALIGN_TITLE|VWF_SEPARATE|VWF_STYLE_SIMPLE, "Editing rank '{~}'", pRank->GetName());
 	VTop.Add("Rigths: {}", pRank->GetRightsName());
 	VTop.AddLine();
 	VTop.AddOption("GUILD_RANK_RENAME", pRank->GetID(), "Rename (by reason field)");
@@ -1521,7 +1521,7 @@ void CGuildManager::ShowRequests(CPlayer* pPlayer) const
 	// request list
 	for(const auto& pRequest : vRequests)
 	{
-		VoteWrapper VRequest(ClientID, VWF_UNIQUE, "Request from {}", Server()->GetAccountNickname(pRequest->GetFromUID()));
+		VoteWrapper VRequest(ClientID, VWF_UNIQUE, "Request from {~}", Server()->GetAccountNickname(pRequest->GetFromUID()));
 		VRequest.AddOption("GUILD_REQUESTS_ACCEPT", pRequest->GetFromUID(), "Accept");
 		VRequest.AddOption("GUILD_REQUESTS_DENY", pRequest->GetFromUID(), "Deny");
 	}
@@ -1652,12 +1652,12 @@ void CGuildManager::ShowFinder(CPlayer* pPlayer) const
 	VoteWrapper VInfo(ClientID, VWF_STYLE_STRICT_BOLD | VWF_SEPARATE, "\u2324 Guild finder information");
 	VInfo.Add("You can find a guild by name or select from the list");
 	if(pPlayer->Account()->HasGuild())
-		VInfo.Add("You already in guild '{}'!", pPlayer->Account()->GetGuild()->GetName());
+		VInfo.Add("You already in guild '{~}'!", pPlayer->Account()->GetGuild()->GetName());
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// search field
 	VoteWrapper VSearch(ClientID, VWF_OPEN | VWF_STYLE_SIMPLE, "\u2732 Search by name");
-	VSearch.AddOption("GUILD_FINDER_SEARCH_FIELD", "Search: [{}]", pPlayer->GetSharedData().m_aGuildSearchBuf[0] == '\0' ? "by reason field" : pPlayer->GetSharedData().m_aGuildSearchBuf);
+	VSearch.AddOption("GUILD_FINDER_SEARCH_FIELD", "Search: [{~}]", pPlayer->GetSharedData().m_aGuildSearchBuf[0] == '\0' ? "by reason field" : pPlayer->GetSharedData().m_aGuildSearchBuf);
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// search list
@@ -1667,7 +1667,7 @@ void CGuildManager::ShowFinder(CPlayer* pPlayer) const
 		if(pPlayer->GetSharedData().m_aGuildSearchBuf[0] == '\0' || str_utf8_find_nocase(pGuild->GetName(), pPlayer->GetSharedData().m_aGuildSearchBuf) != nullptr)
 		{
 			int OwnerUID = pGuild->GetLeaderUID();
-			VList.AddMenu(MENU_GUILD_FINDER_SELECT, pGuild->GetID(), "{} (leader {})", pGuild->GetName(), Server()->GetAccountNickname(OwnerUID));
+			VList.AddMenu(MENU_GUILD_FINDER_SELECT, pGuild->GetID(), "{~} (leader {~})", pGuild->GetName(), Server()->GetAccountNickname(OwnerUID));
 		}
 	}
 	VoteWrapper::AddEmptyline(ClientID);
@@ -1684,8 +1684,8 @@ void CGuildManager::ShowFinderDetail(CPlayer* pPlayer, GuildIdentifier ID) const
 	auto CurrentSlots = pGuild->GetMembers()->GetCurrentSlots();
 
 	// information
-	VoteWrapper VInfo(ClientID, VWF_STYLE_STRICT_BOLD | VWF_SEPARATE, "\u2324 Information about {}", pGuild->GetName());
-	VInfo.Add("Leader: {}", Server()->GetAccountNickname(pGuild->GetLeaderUID()));
+	VoteWrapper VInfo(ClientID, VWF_STYLE_STRICT_BOLD | VWF_SEPARATE, "\u2324 Information about {~}", pGuild->GetName());
+	VInfo.Add("Leader: {~}", Server()->GetAccountNickname(pGuild->GetLeaderUID()));
 	VInfo.Add("Members: {} of {}", CurrentSlots.first, CurrentSlots.second);
 	VInfo.Add("Has house: {}", pGuild->HasHouse() ? "Yes" : "No");
 	VInfo.Add("Bank: {$} gold", pGuild->GetBankManager()->Get());
@@ -1696,7 +1696,7 @@ void CGuildManager::ShowFinderDetail(CPlayer* pPlayer, GuildIdentifier ID) const
 	for(auto& pIterMember : pGuild->GetMembers()->GetContainer())
 	{
 		auto pMember = pIterMember.second;
-		VList.Add("{}. {} {} Deposit: {}", VList.NextPos(), pMember->GetRank()->GetName(), Server()->GetAccountNickname(pMember->GetAccountID()), pMember->GetDeposit());
+		VList.Add("{}. {~} {~} Deposit: {}", VList.NextPos(), pMember->GetRank()->GetName(), Server()->GetAccountNickname(pMember->GetAccountID()), pMember->GetDeposit());
 	}
 
 	// buttom send
@@ -1734,7 +1734,7 @@ void CGuildManager::ShowDetail(CPlayer* pPlayer, CGuildHouse* pHouse) const
 	}
 	else
 	{
-		MHouseDetail.AddText("Owner: {}", pHouse->GetOwnerName());
+		MHouseDetail.AddText("Owner: {~}", pHouse->GetOwnerName());
 		MHouseDetail.AddText("Days left: {}", pHouse->GetRentDays());
 	}
 	MHouseDetail.AddSeparateLine();
@@ -1772,7 +1772,7 @@ void CGuildManager::ShowDeclareWarMenu(int ClientID) const
 		char aBufTimeLeft[64];
 		pWar->GetHandler()->FormatTimeLeft(aBufTimeLeft, sizeof(aBufTimeLeft));
 
-		VWar.Add("War with the guild: {}", pTargetGuild->GetName());
+		VWar.Add("War with the guild: {~}", pTargetGuild->GetName());
 		VWar.Add("Time until the end of the war: {}", aBufTimeLeft);
 		VWar.Add("Score: {}(your) / {}(enemy)", pWar->GetScore(), pTargetGuild->GetWar()->GetScore());
 	}
@@ -1786,7 +1786,7 @@ void CGuildManager::ShowDeclareWarMenu(int ClientID) const
 		for(auto& p : CGuild::Data())
 		{
 			if(p->GetID() != pGuild->GetID())
-				VWarList.AddOption("GUILD_DECLARE_WAR", p->GetID(), "{} (online {# (player|players)})", p->GetName(), p->GetMembers()->GetOnlineCount());
+				VWarList.AddOption("GUILD_DECLARE_WAR", p->GetID(), "{~} (online {# (player|players)})", p->GetName(), p->GetMembers()->GetOnlineCount());
 		}
 	}
 
@@ -1827,7 +1827,7 @@ void CGuildManager::ShowLogsMenu(CPlayer* pPlayer) const
 	{
 		// Format the log entry and display it
 		str_format(aBuf, sizeof(aBuf), "[%s] %s", pLog.m_Time.c_str(), pLog.m_Text.c_str());
-		VLogs.Add("{}", aBuf);
+		VLogs.Add("{~}", aBuf);
 	}
 	VoteWrapper::AddEmptyline(ClientID);
 }
