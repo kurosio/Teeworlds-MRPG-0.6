@@ -315,11 +315,11 @@ void CEntityQuestAction::HandleBroadcastInformation(const QuestBotInfo::TaskActi
 	if(Type & QuestBotInfo::TaskAction::Types::TFMOVING_PRESS)
 	{
 		GS()->Broadcast(m_ClientID, BroadcastPriority::MainInformation, 10,
-			"Click with the hammer to interact.\n{}", strBuffer.c_str());
+			"Click with the hammer to interact.\n{~}", strBuffer.c_str());
 	}
 	else if(Type & QuestBotInfo::TaskAction::Types::TFMOVING_FOLLOW_PRESS)
 	{
 		GS()->Broadcast(m_ClientID, BroadcastPriority::MainInformation, 10,
-			"Click the highlighted area with the hammer to interact.\n{}", strBuffer.c_str());
+			"Click the highlighted area with the hammer to interact.\n{~}", strBuffer.c_str());
 	}
 }
