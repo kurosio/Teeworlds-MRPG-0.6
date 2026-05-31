@@ -296,7 +296,7 @@ void CPlayer::HandleScoreboardColors()
 void CPlayer::HandlePeriodicActivityReward()
 {
 	// disabled interval activity coin periodic reward
-	if(g_Config.m_SvActivityCoinPeriodicRewardInterval <= 0)
+	if(g_Config.m_SvActivityCoinPeriodicRewardInterval <= 0 || !IsAuthed())
 		return;
 
 	// initialize variables
