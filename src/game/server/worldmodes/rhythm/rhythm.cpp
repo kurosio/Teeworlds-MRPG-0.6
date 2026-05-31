@@ -578,7 +578,7 @@ void CGameControllerRhythm::UpdateScoreBroadcasts()
 		if(!IsActivePlayer(ClientID))
 			continue;
 
-		GS()->Broadcast(ClientID, BroadcastPriority::VeryImportant, 25, "{}", Text.c_str());
+		GS()->Broadcast(ClientID, BroadcastPriority::VeryImportant, 25, "{~}", Text.c_str());
 	}
 }
 

@@ -419,7 +419,7 @@ void CWarehouseManager::ShowGroupedSelector(CPlayer* pPlayer, CWarehouse* pWareh
 				VGroup.AddMenu(MENU_WAREHOUSE_ITEM_SELECT, pTrade->GetID(), "[{}] {} x{} - {$} {}",
 					pPlayerItem->GetValue(), pItemInfo->GetName(), pItem->GetValue(), Price, pCurrency->GetName());
 			}
-			VGroup.Add("- {}", pDescription);
+			VGroup.Add(HasAttrs ? "- {~}" : "- {}", pDescription);
 			VGroup.AddLine();
 		}
 
@@ -464,7 +464,7 @@ void CWarehouseManager::ShowTrade(CPlayer* pPlayer, CWarehouse* pWarehouse, int 
 	VItem.Add(pItem->Info()->GetDescription());
 	if(pItem->Info()->HasAttributes())
 	{
-		VItem.Add("* {}", pItem->Info()->GetStringAttributesInfo(pPlayer, pItem->GetEnchant()));
+		VItem.Add("* {~}", pItem->Info()->GetStringAttributesInfo(pPlayer, pItem->GetEnchant()));
 	}
 	VoteWrapper::AddEmptyline(ClientID);
 

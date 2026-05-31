@@ -84,7 +84,7 @@ bool CEidolonManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 
 		if(pPlayerItem->Info()->HasAttributes())
 		{
-			VDesc.Add(pPlayerItem->GetStringAttributesInfo(pPlayer).c_str());
+			VDesc.Add("{~}", pPlayerItem->GetStringAttributesInfo(pPlayer).c_str());
 		}
 
 		VDesc.AddLine();

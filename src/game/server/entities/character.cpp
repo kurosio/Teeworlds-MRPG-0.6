@@ -1508,8 +1508,7 @@ void CCharacter::HandleTilesImpl(int Index)
 			if(pZone && ((Server()->Tick() % Server()->TickSpeed() == 0) || m_Zonename != pZone->Name))
 			{
 				m_Zonename = pZone->Name;
-				const auto infoZone = fmt_default("{} zone. ({})", pZone->Name, pZone->PVP ? "PVP" : "Safe");
-				GS()->Broadcast(m_ClientID, BroadcastPriority::GameBasicStats, 50, infoZone.c_str());
+				GS()->Broadcast(m_ClientID, BroadcastPriority::GameBasicStats, 50, "{} zone. ({})", pZone->Name, pZone->PVP ? "PVP" : "Safe");
 			}
 		}
 		else if(m_pTilesHandler->IsExit(TILE_SW_ZONE))

@@ -227,7 +227,7 @@ void CCraftManager::ShowCraftItem(CPlayer* pPlayer, CCraftItem* pCraft) const
 	VCraftItem.Add("{}", pCraftItemInfo->GetDescription());
 	if(pCraftItemInfo->HasAttributes())
 	{
-		VCraftItem.Add(pCraftItemInfo->GetStringAttributesInfo(pPlayer, 0).c_str());
+		VCraftItem.Add("{~}", pCraftItemInfo->GetStringAttributesInfo(pPlayer, 0).c_str());
 	}
 	VoteWrapper::AddEmptyline(ClientID);
 
@@ -303,7 +303,7 @@ void CCraftManager::ShowCraftGroup(CPlayer* pPlayer, const std::string& GroupNam
             else
 			    VCraftList.AddMenu(MENU_CRAFTING_SELECT, ID, "{}{} - {$} gold",
 				    (pPlayer->GetItem(ItemID)->GetValue() ? "✔ " : "\0"), pCraftItemInfo->GetName(), Price);
-			VCraftList.Add("- {}", pDescription);
+			VCraftList.Add(HasAttrs ? "- {~}" : "- {}", pDescription);
 			VCraftList.AddLine();
 		}
 		else
@@ -314,7 +314,7 @@ void CCraftManager::ShowCraftGroup(CPlayer* pPlayer, const std::string& GroupNam
             else
 			    VCraftList.AddMenu(MENU_CRAFTING_SELECT, ID, "[{}]{} x{} - {$} gold",
 				    pPlayer->GetItem(ItemID)->GetValue(), pCraftItemInfo->GetName(), pCraft->GetItem()->GetValue(), Price);
-			VCraftList.Add("- {}", pDescription);
+			VCraftList.Add(HasAttrs ? "- {~}" : "- {}", pDescription);
 			VCraftList.AddLine();
 		}
 	}

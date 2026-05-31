@@ -501,7 +501,7 @@ void CInventoryManager::ItemSelected(CPlayer* pPlayer, const CPlayerItem* pItem)
 
 	// add attributes
 	if(pInfo->HasAttributes())
-		VItem.Add("{}", pItem->GetStringAttributesInfo(pPlayer));
+		VItem.Add("{~}", pItem->GetStringAttributesInfo(pPlayer));
 
 	// show description
 	if(pPlayer->GetItem(itShowEquipmentDescription)->IsEquipped())
@@ -698,7 +698,7 @@ void CInventoryManager::ShowPlayerModules(CPlayer* pPlayer)
 		const auto pDescription = HasAttrs ? Item.GetStringAttributesInfo(pPlayer) : pInfo->GetDescription();
 		const char* EquippedFlag = Item.IsEquipped() ? "✔ " : "";
 		if(SimpleView)
-			TargetList.AddOption("TOGGLE_EQUIP", ItemID, "{}{}", EquippedFlag, pDescription).SetSortPriority(SortPriority);
+			TargetList.AddOption("TOGGLE_EQUIP", ItemID, HasAttrs ? "{}{~}" : "{}{}", EquippedFlag, pDescription).SetSortPriority(SortPriority);
 		else
 			TargetList.AddOption("TOGGLE_EQUIP", ItemID, "{}{}", EquippedFlag, pInfo->GetName()).SetSortPriority(SortPriority);
 
