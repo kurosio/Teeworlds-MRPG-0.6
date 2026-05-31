@@ -112,5 +112,5 @@ void CCooldown::BroadcastCooldownProgress(IServer* pServer) const
 	char aTimeFormat[32];
 	str_format(aTimeFormat, sizeof(aTimeFormat), "%d.%.2ds", Seconds, Microseconds);
 	std::string progressBar = mystd::string::progressBar(100, static_cast<int>(currentProgress), 10, "\u25B0", "\u25B1");
-	pGS->Broadcast(m_ClientID, BroadcastPriority::VeryImportant, 10, "{}\n< {} > {} - Action", m_Name, aTimeFormat, progressBar);
+	pGS->Broadcast(m_ClientID, BroadcastPriority::VeryImportant, 10, "{}\n< {~} > {~} - Action", m_Name, aTimeFormat, progressBar);
 }
