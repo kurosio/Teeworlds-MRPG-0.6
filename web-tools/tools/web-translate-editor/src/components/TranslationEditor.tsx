@@ -5,7 +5,7 @@ import type { ChangeRequestEntry, TranslationEntry } from '../types';
 import { loadFromServerApi } from '../utils/fileLoader';
 import { Search, Filter, Send, CheckCircle2, AlertCircle, X, FileText, ArrowRight, ChevronLeft, ChevronRight, RefreshCw, Copy, RotateCcw, Eraser } from 'lucide-react';
 
-const PAGE_SIZE_OPTIONS = [100, 250, 500, 1000];
+const PAGE_SIZE_OPTIONS = [50, 100, 250, 500];
 
 function normalizeTranslationText(value: string) {
   return String(value ?? '')
@@ -51,7 +51,7 @@ const TranslationRow = memo(function TranslationRow({ entry, langCode, editedVal
   const revertValue = () => updateValue(entry.translation);
 
   return (
-    <article className={`group mx-2 my-1.5 rounded-lg border px-3 py-2 transition-colors ${
+    <article className={`translation-row group mx-2 my-1.5 rounded-lg border px-3 py-2 ${
       isChanged
         ? 'border-blue-300 bg-blue-50/60'
         : isUntranslated
@@ -124,7 +124,7 @@ const TranslationRow = memo(function TranslationRow({ entry, langCode, editedVal
               onChange={(e) => updateValue(e.currentTarget.value)}
               placeholder={t('editor.enterTranslation')}
               spellCheck={false}
-              className={`block w-full resize-y rounded-md border px-2.5 py-1.5 font-mono text-[13px] leading-5 text-slate-900 outline-none transition-colors placeholder:text-slate-300 focus:border-blue-400 focus:ring-2 focus:ring-blue-500/10 ${
+              className={`block w-full resize-none overflow-hidden rounded-md border px-2.5 py-1.5 font-mono text-[13px] leading-5 text-slate-900 outline-none placeholder:text-slate-300 focus:border-blue-400 focus:ring-2 focus:ring-blue-500/10 ${
                 isUntranslated
                   ? 'border-amber-200 bg-amber-50/20'
                   : isChanged
@@ -214,7 +214,7 @@ export default function TranslationEditor() {
   const [requestAuthor, setRequestAuthor] = useState('');
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [syncStatus, setSyncStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const [pageSize, setPageSize] = useState(100);
+  const [pageSize, setPageSize] = useState(50);
   const [page, setPage] = useState(1);
 
   const file = selectedLanguage ? translations[selectedLanguage] : null;
@@ -363,6 +363,7 @@ export default function TranslationEditor() {
 
   const openSubmitModal = useCallback(() => setShowSubmitModal(true), []);
 
+
   const stats = useMemo(() => {
     if (!file) return { total: 0, translated: 0, untranslated: 0 };
     const total = file.entries.length;
@@ -507,7 +508,7 @@ export default function TranslationEditor() {
       </div>
 
       {/* Entries */}
-      <div className="flex-1 min-h-0 bg-white border-x border-slate-200/80 overflow-y-auto overscroll-contain">
+      <div className="editor-entries-scroll flex-1 min-h-0 bg-white border-x border-slate-200/80 overflow-y-auto overscroll-contain">
         <div className="divide-y divide-slate-100">
           {pagedEntries.map((entry) => (
             <TranslationRow

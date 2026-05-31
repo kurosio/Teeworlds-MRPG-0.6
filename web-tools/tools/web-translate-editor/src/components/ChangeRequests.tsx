@@ -10,6 +10,7 @@ export default function ChangeRequests() {
   const { changeRequests, isAdmin, approveRequest, rejectRequest, deleteRequest, languages, requestFilterTag, setRequestFilterTag } = useStore();
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState<'all' | 'pending' | 'approved' | 'rejected'>('all');
+  const [editedEntries, setEditedEntries] = useState<Record<string, string[]>>({});
 
   const filteredRequests = changeRequests
     .filter(r => statusFilter === 'all' || r.status === statusFilter)
@@ -44,6 +45,51 @@ export default function ChangeRequests() {
   const formatDate = (dateStr: string) => {
     const d = new Date(dateStr);
     return d.toLocaleString('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+  };
+
+  const ensureRequestEdits = (request: typeof changeRequests[number]) => {
+    setEditedEntries(prev => prev[request.id]
+      ? prev
+      : { ...prev, [request.id]: request.entries.map(entry => entry.newTranslation) });
+  };
+
+  const toggleRequest = (request: typeof changeRequests[number]) => {
+    if (expandedId === request.id) {
+      setExpandedId(null);
+      return;
+    }
+    ensureRequestEdits(request);
+    setExpandedId(request.id);
+  };
+
+  const getRequestEntriesForApprove = (request: typeof changeRequests[number]) => {
+    const edited = editedEntries[request.id];
+    if (!edited) return request.entries;
+    return request.entries.map((entry, index) => ({
+      ...entry,
+      newTranslation: edited[index] ?? entry.newTranslation,
+    }));
+  };
+
+  const setRequestEntryTranslation = (requestId: string, index: number, value: string) => {
+    setEditedEntries(prev => {
+      const current = prev[requestId] ? [...prev[requestId]] : [];
+      current[index] = value;
+      return { ...prev, [requestId]: current };
+    });
+  };
+
+  const resetRequestEntryTranslation = (request: typeof changeRequests[number], index: number) => {
+    setRequestEntryTranslation(request.id, index, request.entries[index]?.newTranslation || '');
+  };
+
+  const handleApproveRequest = async (request: typeof changeRequests[number]) => {
+    await approveRequest(request.id, getRequestEntriesForApprove(request));
+    setEditedEntries(prev => {
+      const next = { ...prev };
+      delete next[request.id];
+      return next;
+    });
   };
 
   return (
@@ -112,7 +158,7 @@ export default function ChangeRequests() {
           const isExpanded = expandedId === request.id;
           return (
             <div key={request.id} className="bg-white rounded-xl shadow-sm border border-slate-200/80 overflow-hidden transition-all">
-              <div className="px-5 py-3.5 flex items-center gap-4 cursor-pointer hover:bg-slate-50/50 transition-colors" onClick={() => setExpandedId(isExpanded ? null : request.id)}>
+              <div className="px-5 py-3.5 flex items-center gap-4 cursor-pointer hover:bg-slate-50/50 transition-colors" onClick={() => toggleRequest(request)}>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
                     <h3 className="text-sm font-semibold text-slate-800">{request.name}</h3>
@@ -132,7 +178,7 @@ export default function ChangeRequests() {
                 <div className="flex items-center gap-2">
                   {isAdmin && request.status === 'pending' && (
                     <>
-                      <button onClick={(e) => { e.stopPropagation(); approveRequest(request.id); }} className="flex items-center gap-1 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-xs font-medium transition-colors shadow-sm">
+                      <button onClick={(e) => { e.stopPropagation(); handleApproveRequest(request); }} className="flex items-center gap-1 px-3 py-1.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-xs font-medium transition-colors shadow-sm">
                         <Check className="w-3 h-3" />{t('requests.approve')}
                       </button>
                       <button onClick={(e) => { e.stopPropagation(); rejectRequest(request.id); }} className="flex items-center gap-1 px-3 py-1.5 bg-red-500 hover:bg-red-600 text-white rounded-lg text-xs font-medium transition-colors shadow-sm">
@@ -151,26 +197,62 @@ export default function ChangeRequests() {
               {isExpanded && (
                 <div className="border-t border-slate-100 bg-slate-50/50">
                   <div className="px-5 py-3 space-y-2">
-                    {request.entries.map((entry, i) => (
-                      <div key={i} className="bg-white rounded-lg p-3 border border-slate-100">
-                        <p className="text-xs text-slate-500 font-mono mb-2 break-all">{entry.original}</p>
-                        <div className="flex items-center gap-2">
-                          <div className="flex-1 min-w-0">
-                            <span className="text-[10px] text-slate-400 font-medium">{t('requests.was')}</span>
-                            <p className={`text-sm font-mono break-all ${entry.oldTranslation ? 'text-slate-600' : 'text-slate-300 italic'}`}>
-                              {entry.oldTranslation || t('modal.empty')}
-                            </p>
-                          </div>
-                          <ArrowRight className="w-4 h-4 text-slate-300 flex-shrink-0" />
-                          <div className="flex-1 min-w-0">
-                            <span className="text-[10px] text-emerald-500 font-medium">{t('requests.became')}</span>
-                            <p className={`text-sm font-mono break-all font-medium ${entry.newTranslation ? 'text-emerald-600' : 'text-slate-300 italic'}`}>
-                              {entry.newTranslation || t('modal.empty')}
-                            </p>
+                    {isAdmin && request.status === 'pending' && (
+                      <div className="rounded-lg border border-blue-100 bg-blue-50 px-3 py-2 text-xs text-blue-700">
+                        {t('requests.adminEditHint')}
+                      </div>
+                    )}
+                    {request.entries.map((entry, i) => {
+                      const editedValue = editedEntries[request.id]?.[i] ?? entry.newTranslation;
+                      const wasCorrected = editedValue !== entry.newTranslation;
+                      return (
+                        <div key={`${entry.original}-${i}`} className={`bg-white rounded-lg p-3 border ${wasCorrected ? 'border-blue-200 ring-1 ring-blue-100' : 'border-slate-100'}`}>
+                          <p className="text-xs text-slate-500 font-mono mb-2 break-all">{entry.original}</p>
+                          <div className="grid grid-cols-[1fr_auto_1.2fr] gap-3 items-start">
+                            <div className="min-w-0">
+                              <span className="text-[10px] text-slate-400 font-medium">{t('requests.was')}</span>
+                              <p className={`text-sm font-mono break-all ${entry.oldTranslation ? 'text-slate-600' : 'text-slate-300 italic'}`}>
+                                {entry.oldTranslation || t('modal.empty')}
+                              </p>
+                            </div>
+                            <ArrowRight className="w-4 h-4 text-slate-300 flex-shrink-0 mt-5" />
+                            <div className="min-w-0">
+                              <div className="mb-1 flex items-center justify-between gap-2">
+                                <span className="text-[10px] text-emerald-500 font-medium">{isAdmin && request.status === 'pending' ? t('requests.adminCorrection') : t('requests.became')}</span>
+                                {isAdmin && request.status === 'pending' && wasCorrected && (
+                                  <button
+                                    type="button"
+                                    onClick={() => resetRequestEntryTranslation(request, i)}
+                                    className="text-[10px] font-medium text-slate-400 hover:text-blue-600"
+                                  >
+                                    {t('requests.resetCorrection')}
+                                  </button>
+                                )}
+                              </div>
+                              {isAdmin && request.status === 'pending' ? (
+                                <textarea
+                                  value={editedValue}
+                                  onChange={(event) => setRequestEntryTranslation(request.id, i, event.target.value)}
+                                  rows={2}
+                                  className="w-full resize-y rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-mono text-slate-800 outline-none transition-colors focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+                                />
+                              ) : (
+                                <p className={`text-sm font-mono break-all font-medium ${entry.newTranslation ? 'text-emerald-600' : 'text-slate-300 italic'}`}>
+                                  {entry.newTranslation || t('modal.empty')}
+                                </p>
+                              )}
+                            </div>
                           </div>
                         </div>
+                      );
+                    })}
+                    {isAdmin && request.status === 'pending' && (
+                      <div className="sticky bottom-0 flex justify-end border-t border-slate-100 bg-slate-50/95 px-1 py-2 backdrop-blur">
+                        <button onClick={() => handleApproveRequest(request)} className="flex items-center gap-1 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-lg text-xs font-semibold transition-colors shadow-sm">
+                          <Check className="w-3.5 h-3.5" />{t('requests.approveWithCorrections')}
+                        </button>
                       </div>
-                    ))}
+                    )}
                   </div>
                 </div>
               )}

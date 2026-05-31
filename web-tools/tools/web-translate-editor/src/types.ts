@@ -1,3 +1,6 @@
+import type { UILanguage } from './i18n';
+export type { UILanguage };
+
 export interface LanguageIndex {
   file: string;
   name: string;
@@ -53,8 +56,6 @@ export interface AdminConfig {
   username: string;
   passwordHash: string;
 }
-
-export type UILanguage = 'en' | 'ru';
 
 export interface AppState {
   settings: Settings;

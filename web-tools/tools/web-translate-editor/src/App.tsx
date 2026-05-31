@@ -44,7 +44,7 @@ export default function App() {
 
       <main className="max-w-[1400px] mx-auto px-4 sm:px-6 py-6">
         {activeTab === 'editor' && (
-          <div className="flex gap-4 items-start" style={{ minHeight: 'calc(100vh - 120px)' }}>
+          <div className="flex gap-4 items-start h-[calc(100vh-120px)] min-h-0">
             <aside className="w-64 flex-shrink-0 sticky top-6 h-[calc(100vh-3rem)] max-h-[calc(100vh-3rem)] overflow-hidden grid grid-rows-[auto_minmax(0,1fr)] gap-3">
               <div className="min-h-0 overflow-hidden">
                 <TopContributors />
@@ -53,7 +53,7 @@ export default function App() {
                 <LanguageSelector />
               </div>
             </aside>
-            <div className="flex-1 flex flex-col min-h-0" style={{ minHeight: 'calc(100vh - 120px)' }}>
+            <div className="flex-1 flex flex-col min-h-0 h-full">
               <TranslationEditor />
             </div>
           </div>

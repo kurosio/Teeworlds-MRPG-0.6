@@ -19,9 +19,9 @@
   background: #94a3b8;
 }
 
-/* Smooth scroll */
+/* Keep wheel and trackpad scrolling responsive in editor-sized panels. */
 html {
-  scroll-behavior: smooth;
+  scroll-behavior: auto;
 }
 
 /* Better font rendering */
@@ -91,4 +91,25 @@ body {
 
 .sidebar-bottom-scroll:hover::-webkit-scrollbar-thumb {
   background: #f59e0b;
+}
+
+
+/* The translation list owns vertical scrolling. This keeps the page stable and
+   allows wheel scrolling over cards and focused textareas. */
+.editor-entries-scroll {
+  scrollbar-gutter: stable;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: auto;
+  contain: layout paint;
+  will-change: scroll-position;
+}
+
+.translation-row {
+  content-visibility: auto;
+  contain-intrinsic-size: 92px;
+}
+
+.editor-entries-scroll textarea {
+  overflow: hidden;
+  overscroll-behavior: auto;
 }

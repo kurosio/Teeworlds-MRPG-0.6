@@ -1,11 +1,11 @@
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { useStore } from '../store';
 import { t } from '../i18n';
-import { loadFromDirectory, loadFromUrlPath, loadFromFileList, loadFromServerApi } from '../utils/fileLoader';
+import { loadFromServerApi } from '../utils/fileLoader';
 import {
   Settings, FolderOpen, ShieldCheck, Save, CheckCircle2,
-  AlertTriangle, RotateCcw, Info, Lock, Upload, FolderSync,
-  Globe, FileWarning, FileCheck, Server,
+  AlertTriangle, RotateCcw, Info, Lock, Upload,
+  FileWarning, FileCheck, Server,
 } from 'lucide-react';
 
 export default function SettingsPage() {
@@ -15,7 +15,6 @@ export default function SettingsPage() {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [loadResult, setLoadResult] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSave = () => {
     updateSettings({ translationPath: path });
@@ -27,40 +26,6 @@ export default function SettingsPage() {
     resetData();
     setPath('/translations');
     setShowResetConfirm(false);
-  };
-
-  const handleLoadFromDirectory = async () => {
-    setLoading(true);
-    setLoadResult(null);
-    try {
-      const result = await loadFromDirectory();
-      if (result.errors.length > 0 && result.languages.length === 0) {
-        setLoadResult({ message: result.errors.join('\n'), type: 'error' });
-      } else {
-        loadFiles(result);
-        const msg = `Loaded ${result.languages.length} language(s)${result.errors.length ? `. Warnings: ${result.errors.join('; ')}` : ''}`;
-        setLoadResult({ message: msg, type: result.errors.length ? 'info' : 'success' });
-      }
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleLoadFromUrl = async () => {
-    setLoading(true);
-    setLoadResult(null);
-    try {
-      const result = await loadFromUrlPath(path);
-      if (result.errors.length > 0 && result.languages.length === 0) {
-        setLoadResult({ message: result.errors.join('\n'), type: 'error' });
-      } else {
-        loadFiles(result);
-        const msg = `Loaded ${result.languages.length} language(s)${result.errors.length ? `. Warnings: ${result.errors.join('; ')}` : ''}`;
-        setLoadResult({ message: msg, type: result.errors.length ? 'info' : 'success' });
-      }
-    } finally {
-      setLoading(false);
-    }
   };
 
   const handleLoadFromServer = async () => {
@@ -78,27 +43,6 @@ export default function SettingsPage() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
-    setLoading(true);
-    setLoadResult(null);
-    try {
-      const result = await loadFromFileList(files);
-      if (result.errors.length > 0 && result.languages.length === 0) {
-        setLoadResult({ message: result.errors.join('\n'), type: 'error' });
-      } else {
-        loadFiles(result);
-        const msg = `Loaded ${result.languages.length} language(s)${result.errors.length ? `. Warnings: ${result.errors.join('; ')}` : ''}`;
-        setLoadResult({ message: msg, type: result.errors.length ? 'info' : 'success' });
-      }
-    } finally {
-      setLoading(false);
-    }
-    // Reset input to allow re-upload
-    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   return (
@@ -191,58 +135,18 @@ export default function SettingsPage() {
             </div>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-            {/* Load from server API */}
+          <div className="grid grid-cols-1 gap-3">
             <button
               onClick={handleLoadFromServer}
               disabled={loading || !isAdmin}
-              className="flex flex-col items-center gap-2 p-4 bg-gradient-to-br from-slate-50 to-zinc-50 border border-slate-200 rounded-xl hover:border-slate-300 hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-3 p-4 bg-gradient-to-br from-slate-50 to-zinc-50 border border-slate-200 rounded-xl hover:border-slate-300 hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <Server className="w-6 h-6 text-slate-600" />
-              <span className="text-xs font-semibold text-slate-700">Load from Server</span>
-              <span className="text-[10px] text-slate-500 leading-tight text-center">Read TRANSLATION_ROOT via backend API</span>
+              <Server className="w-6 h-6 text-slate-600 flex-shrink-0" />
+              <div className="text-left">
+                <span className="block text-xs font-semibold text-slate-700">Load from Server</span>
+                <span className="block text-[10px] text-slate-500 leading-tight">Read TRANSLATION_ROOT via backend API</span>
+              </div>
             </button>
-
-            {/* Load from directory (File System Access API) */}
-            <button
-              onClick={handleLoadFromDirectory}
-              disabled={loading || !isAdmin}
-              className="flex flex-col items-center gap-2 p-4 bg-gradient-to-br from-purple-50 to-fuchsia-50 border border-purple-200 rounded-xl hover:border-purple-300 hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <FolderSync className="w-6 h-6 text-purple-500" />
-              <span className="text-xs font-semibold text-purple-700">Pick Directory</span>
-              <span className="text-[10px] text-purple-500 leading-tight text-center">Select a folder with index.json + .txt files</span>
-            </button>
-
-            {/* Load from URL */}
-            <button
-              onClick={handleLoadFromUrl}
-              disabled={loading || !isAdmin}
-              className="flex flex-col items-center gap-2 p-4 bg-gradient-to-br from-blue-50 to-cyan-50 border border-blue-200 rounded-xl hover:border-blue-300 hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Globe className="w-6 h-6 text-blue-500" />
-              <span className="text-xs font-semibold text-blue-700">Load via URL</span>
-              <span className="text-[10px] text-blue-500 leading-tight text-center">Fetch from public/{path}/</span>
-            </button>
-
-            {/* Manual upload */}
-            <button
-              onClick={() => fileInputRef.current?.click()}
-              disabled={loading || !isAdmin}
-              className="flex flex-col items-center gap-2 p-4 bg-gradient-to-br from-emerald-50 to-green-50 border border-emerald-200 rounded-xl hover:border-emerald-300 hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Upload className="w-6 h-6 text-emerald-500" />
-              <span className="text-xs font-semibold text-emerald-700">Upload Files</span>
-              <span className="text-[10px] text-emerald-500 leading-tight text-center">Select index.json + .txt files</span>
-            </button>
-            <input
-              ref={fileInputRef}
-              type="file"
-              multiple
-              accept=".json,.txt"
-              onChange={handleFileUpload}
-              className="hidden"
-            />
           </div>
 
           <p className="text-[10px] text-slate-400 flex items-center gap-1">

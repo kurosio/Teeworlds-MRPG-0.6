@@ -3,6 +3,10 @@ import { useStore } from '../store';
 import { t } from '../i18n';
 import { Trophy, Medal, Award, User } from 'lucide-react';
 
+function formatCount(value: number): string {
+  return new Intl.NumberFormat().format(value);
+}
+
 export default function TopContributors() {
   const { topContributors } = useStore();
 
@@ -59,8 +63,8 @@ export default function TopContributors() {
               <div className="flex-1 min-w-0">
                 <p className={`text-sm font-medium truncate ${getTextColor(index)}`}>{item.author}</p>
               </div>
-              <div className={`text-xs font-bold tabular-nums px-2 py-0.5 rounded-full ${getBadge(index)}`}>
-                {item.count}
+              <div className={`text-[11px] font-bold tabular-nums px-2 py-0.5 rounded-full ${getBadge(index)}`} title={`${formatCount(item.count)} ${t('top.unit')}`}>
+                {formatCount(item.count)} <span className="font-semibold opacity-75">{t('top.unit')}</span>
               </div>
             </div>
           ))}

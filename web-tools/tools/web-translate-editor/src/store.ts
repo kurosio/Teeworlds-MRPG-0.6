@@ -237,11 +237,20 @@ const SAMPLE_FILES: Record<string, string> = {
   cn: SAMPLE_CN,
 };
 
+function getTranslatedTextAmount(entries: ChangeRequestEntry[]): number {
+  return entries.reduce((total, entry) => {
+    const text = String(entry.newTranslation ?? '').trim();
+    return total + text.length;
+  }, 0);
+}
+
 function buildTopContributorsFromRequests(changeRequests: ChangeRequest[]): TopContributor[] {
   const authorStats = new Map<string, number>();
   for (const request of changeRequests) {
     if (request.status !== 'approved') continue;
-    authorStats.set(request.author, (authorStats.get(request.author) || 0) + request.entries.length);
+    const translatedTextAmount = getTranslatedTextAmount(request.entries);
+    if (translatedTextAmount <= 0) continue;
+    authorStats.set(request.author, (authorStats.get(request.author) || 0) + translatedTextAmount);
   }
   return Array.from(authorStats.entries())
     .map(([author, count]) => ({ author, count }))
@@ -268,7 +277,7 @@ function loadInitialState(): Partial<AppState> {
         languages: langs,
         translations,
         changeRequests: parsed.changeRequests || [],
-        topContributors: parsed.topContributors || buildTopContributorsFromRequests(parsed.changeRequests || []),
+        topContributors: buildTopContributorsFromRequests(parsed.changeRequests || []) || parsed.topContributors || [],
         fileVersions: parsed.fileVersions || {},
         isAdmin: false,
       };
@@ -319,7 +328,7 @@ interface StoreActions {
   login: (username: string, password: string) => Promise<boolean>;
   logout: () => void;
   submitChangeRequest: (name: string, author: string, languageFile: string, changes: ChangeRequestEntry[]) => void;
-  approveRequest: (requestId: string) => Promise<void>;
+  approveRequest: (requestId: string, editedEntries?: ChangeRequestEntry[]) => Promise<void>;
   rejectRequest: (requestId: string) => void;
   deleteRequest: (requestId: string) => void;
   resetData: () => void;
@@ -392,7 +401,7 @@ export const useStore = create<AppState & StoreActions>((set, get) => ({
     saveState({ ...state, changeRequests: newRequests } as AppState);
   },
 
-  approveRequest: async (requestId) => {
+  approveRequest: async (requestId, editedEntries) => {
     const state = get();
     const request = state.changeRequests.find(r => r.id === requestId);
     if (!request) return;
@@ -400,12 +409,19 @@ export const useStore = create<AppState & StoreActions>((set, get) => ({
     const lang = state.languages.find(l => l.file === request.languageFile);
     if (!lang) return;
 
+    const entriesToApply = Array.isArray(editedEntries) && editedEntries.length > 0
+      ? editedEntries.map(entry => ({
+        ...entry,
+        newTranslation: String(entry.newTranslation ?? ''),
+      }))
+      : request.entries;
+
     // Apply by original source-string keys against the latest file on disk.
     // Missing keys are skipped by the backend, so external additions/removals
     // cannot overwrite the wrong rows.
     const applyResult = await applyTranslationChangesToServer(
       request.languageFile,
-      request.entries.map(entry => ({
+      entriesToApply.map(entry => ({
         original: entry.original,
         newTranslation: entry.newTranslation,
       }))
@@ -436,16 +452,25 @@ export const useStore = create<AppState & StoreActions>((set, get) => ({
     };
 
     const newRequests = state.changeRequests.map(r =>
-      r.id === requestId ? { ...r, status: 'approved' as const, resolvedAt: new Date().toISOString() } : r
+      r.id === requestId ? { ...r, entries: entriesToApply, status: 'approved' as const, resolvedAt: new Date().toISOString() } : r
     );
+
+    const appliedKeys = new Set(applyResult.appliedKeys || []);
+    const acceptedEntries = appliedKeys.size > 0
+      ? entriesToApply.filter(entry => appliedKeys.has(entry.original))
+      : entriesToApply.slice(0, applyResult.applied);
+    const translatedTextAmount = getTranslatedTextAmount(acceptedEntries);
 
     const topMap = new Map<string, number>();
     for (const contributor of state.topContributors) {
       topMap.set(contributor.author, contributor.count);
     }
-    topMap.set(request.author, (topMap.get(request.author) || 0) + applyResult.applied);
+    if (translatedTextAmount > 0) {
+      topMap.set(request.author, (topMap.get(request.author) || 0) + translatedTextAmount);
+    }
     const newTopContributors: TopContributor[] = Array.from(topMap.entries())
       .map(([author, count]) => ({ author, count }))
+      .filter(item => item.count > 0)
       .sort((a, b) => b.count - a.count)
       .slice(0, 100);
 
@@ -549,10 +574,19 @@ export const useStore = create<AppState & StoreActions>((set, get) => ({
   },
 
   loadTopContributors: async () => {
+    const state = get();
+    const rebuiltFromApprovedRequests = buildTopContributorsFromRequests(state.changeRequests);
+
+    if (rebuiltFromApprovedRequests.length > 0) {
+      set({ topContributors: rebuiltFromApprovedRequests });
+      saveState({ ...state, topContributors: rebuiltFromApprovedRequests } as AppState);
+      saveTopContributorsToServer(rebuiltFromApprovedRequests).catch(console.error);
+      return;
+    }
+
     try {
       const topContributors = await loadTopContributorsFromServer();
       if (topContributors.length === 0) return;
-      const state = get();
       set({ topContributors });
       saveState({ ...state, topContributors } as AppState);
     } catch {

@@ -1,8 +1,7 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useStore } from '../store';
-import { t } from '../i18n';
+import { UI_LANGUAGE_OPTIONS, t } from '../i18n';
 import { Globe, FileText, Settings, LogIn, LogOut, ShieldCheck, ClipboardList, Languages } from 'lucide-react';
-import type { UILanguage } from '../types';
 
 export default function Header() {
   const { activeTab, setActiveTab, isAdmin, login, logout, changeRequests, uiLanguage, setUiLanguage } = useStore();
@@ -10,6 +9,8 @@ export default function Header() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [showLanguageMenu, setShowLanguageMenu] = useState(false);
+  const languageMenuRef = useRef<HTMLDivElement | null>(null);
 
   const pendingCount = changeRequests.filter(r => r.status === 'pending').length;
 
@@ -25,10 +26,20 @@ export default function Header() {
     }
   };
 
-  const toggleLang = () => {
-    const next: UILanguage = uiLanguage === 'en' ? 'ru' : 'en';
-    setUiLanguage(next);
-  };
+  const currentUiLanguage = UI_LANGUAGE_OPTIONS.find(option => option.code === uiLanguage) || UI_LANGUAGE_OPTIONS[0];
+
+  useEffect(() => {
+    if (!showLanguageMenu) return;
+
+    const handlePointerDown = (event: PointerEvent) => {
+      if (!languageMenuRef.current?.contains(event.target as Node)) {
+        setShowLanguageMenu(false);
+      }
+    };
+
+    document.addEventListener('pointerdown', handlePointerDown);
+    return () => document.removeEventListener('pointerdown', handlePointerDown);
+  }, [showLanguageMenu]);
 
   return (
     <header className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white shadow-2xl border-b border-slate-700/50">
@@ -91,15 +102,52 @@ export default function Header() {
 
           {/* Right side: lang switch + auth */}
           <div className="flex items-center gap-3">
-            {/* UI Language switcher */}
-            <button
-              onClick={toggleLang}
-              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-slate-600/50 text-slate-300 hover:text-white hover:bg-slate-700/50 transition-all"
-              title="Switch UI language"
-            >
-              <Languages className="w-3.5 h-3.5" />
-              <span className="uppercase font-bold">{uiLanguage}</span>
-            </button>
+            {/* UI Language dropdown */}
+            <div className="relative" ref={languageMenuRef}>
+              <button
+                type="button"
+                onClick={() => setShowLanguageMenu(value => !value)}
+                className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-slate-600/50 text-slate-300 hover:text-white hover:bg-slate-700/50 transition-all min-w-[132px] justify-between"
+                title={t('header.uiLanguage')}
+                aria-haspopup="listbox"
+                aria-expanded={showLanguageMenu}
+              >
+                <span className="flex items-center gap-1.5 min-w-0">
+                  <Languages className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span className="truncate">{currentUiLanguage.nativeName}</span>
+                </span>
+                <span className="uppercase font-bold text-[10px] text-slate-400">{currentUiLanguage.code}</span>
+              </button>
+
+              {showLanguageMenu && (
+                <div
+                  className="absolute right-0 top-full mt-2 w-56 max-h-80 overflow-y-auto rounded-xl border border-slate-600/60 bg-slate-800 shadow-2xl z-50 p-1.5"
+                  role="listbox"
+                  aria-label={t('header.uiLanguage')}
+                >
+                  {UI_LANGUAGE_OPTIONS.map(option => (
+                    <button
+                      key={option.code}
+                      type="button"
+                      onClick={() => {
+                        setUiLanguage(option.code);
+                        setShowLanguageMenu(false);
+                      }}
+                      className={`w-full flex items-center justify-between gap-3 px-3 py-2 rounded-lg text-sm text-left transition-colors ${
+                        uiLanguage === option.code
+                          ? 'bg-blue-600/90 text-white'
+                          : 'text-slate-300 hover:text-white hover:bg-slate-700/60'
+                      }`}
+                      role="option"
+                      aria-selected={uiLanguage === option.code}
+                    >
+                      <span className="font-medium">{option.nativeName}</span>
+                      <span className="text-xs opacity-70 uppercase">{option.code}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
 
             {/* Auth */}
             {isAdmin ? (

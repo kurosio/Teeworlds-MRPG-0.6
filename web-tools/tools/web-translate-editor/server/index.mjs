@@ -317,6 +317,7 @@ async function handleApplyTranslationChanges(req, res, file) {
       skipped: changeMap.size,
       content: currentContent,
       version: fileStat?.mtimeMs || 0,
+      appliedKeys: [],
     });
     return;
   }
@@ -331,6 +332,7 @@ async function handleApplyTranslationChanges(req, res, file) {
     skipped: changeMap.size - foundKeys.size,
     content: newContent,
     version: fileStat.mtimeMs,
+    appliedKeys: Array.from(foundKeys),
   });
 }
 
