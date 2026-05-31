@@ -259,6 +259,151 @@ async function handleCreateChangeRequest(req, res) {
   sendJson(res, 200, { ok: true, request: incoming[0], changeRequests });
 }
 
+
+function getTranslatedTextAmount(entries) {
+  return entries.reduce((total, entry) => {
+    const text = String(entry?.newTranslation ?? '').trim();
+    return total + text.length;
+  }, 0);
+}
+
+function buildTopContributorsFromRequests(changeRequests) {
+  const authorStats = new Map();
+  for (const request of normalizeChangeRequests(changeRequests)) {
+    if (request.status !== 'approved') continue;
+    const translatedTextAmount = getTranslatedTextAmount(request.entries);
+    if (translatedTextAmount <= 0) continue;
+    authorStats.set(request.author, (authorStats.get(request.author) || 0) + translatedTextAmount);
+  }
+  return Array.from(authorStats.entries())
+    .map(([author, count]) => ({ author, count }))
+    .filter(item => item.author && item.count > 0)
+    .sort((a, b) => b.count - a.count || a.author.localeCompare(b.author))
+    .slice(0, 100);
+}
+
+async function recomputeAndSaveTopContributors(changeRequests) {
+  const topContributors = normalizeTopContributors(buildTopContributorsFromRequests(changeRequests));
+  await mkdir(path.dirname(TOP_CONTRIBUTORS_FILE), { recursive: true });
+  await writeFile(TOP_CONTRIBUTORS_FILE, JSON.stringify({ topContributors }, null, 2), 'utf-8');
+  return topContributors;
+}
+
+async function applyChangesToTranslationFile(file, changes) {
+  if (isEnglishLanguage({ file, name: file })) {
+    throw Object.assign(new Error('English is the source language and cannot be changed as a localization file'), { statusCode: 400 });
+  }
+
+  if (!isSafeLanguageFileName(file)) {
+    throw Object.assign(new Error('Invalid file name'), { statusCode: 400 });
+  }
+
+  const rawChanges = Array.isArray(changes) ? changes : [];
+  const changeMap = new Map();
+  const entryMap = new Map();
+
+  for (const change of rawChanges) {
+    const original = String(change?.original ?? '').trim();
+    if (!original) continue;
+    const normalizedEntry = {
+      entryId: String(change?.entryId || ''),
+      original,
+      oldTranslation: String(change?.oldTranslation ?? ''),
+      newTranslation: String(change?.newTranslation ?? ''),
+    };
+    changeMap.set(original, normalizedEntry.newTranslation);
+    entryMap.set(original, normalizedEntry);
+  }
+
+  if (changeMap.size === 0) {
+    throw Object.assign(new Error('No valid changed keys were provided'), { statusCode: 400 });
+  }
+
+  const filePath = safeTranslationPath(`${file}.txt`);
+  const currentContent = await readFile(filePath, 'utf-8');
+  const lines = currentContent.split('\n');
+  const resultLines = [];
+  const foundKeys = new Set();
+  const appliedEntries = [];
+  let applied = 0;
+  let i = 0;
+
+  while (i < lines.length) {
+    const line = lines[i].trim();
+
+    if (line === '' || line.startsWith('$')) {
+      resultLines.push(lines[i]);
+      i++;
+      continue;
+    }
+
+    let j = i + 1;
+    while (j < lines.length && lines[j].trim() === '') {
+      j++;
+    }
+
+    if (j < lines.length && lines[j].trim().startsWith('==')) {
+      const original = line;
+      resultLines.push(lines[i]);
+
+      if (changeMap.has(original)) {
+        foundKeys.add(original);
+        resultLines.push(`== ${changeMap.get(original)}`);
+        appliedEntries.push(entryMap.get(original));
+        applied++;
+      } else {
+        resultLines.push(lines[j]);
+      }
+
+      i = j + 1;
+      continue;
+    }
+
+    resultLines.push(lines[i]);
+    i++;
+  }
+
+  if (applied === 0) {
+    const fileStat = await stat(filePath).catch(() => null);
+    return {
+      ok: true,
+      applied: 0,
+      skipped: changeMap.size,
+      content: currentContent,
+      version: fileStat?.mtimeMs || 0,
+      appliedKeys: [],
+      appliedEntries: [],
+    };
+  }
+
+  const newContent = resultLines.join('\n');
+  await writeFile(filePath, newContent, 'utf-8');
+  const fileStat = await stat(filePath);
+
+  return {
+    ok: true,
+    applied,
+    skipped: changeMap.size - foundKeys.size,
+    content: newContent,
+    version: fileStat.mtimeMs,
+    appliedKeys: Array.from(foundKeys),
+    appliedEntries,
+  };
+}
+
+let changeRequestWriteQueue = Promise.resolve();
+async function withChangeRequestLock(work) {
+  const previous = changeRequestWriteQueue;
+  let release;
+  changeRequestWriteQueue = new Promise(resolve => { release = resolve; });
+  await previous;
+  try {
+    return await work();
+  } finally {
+    release();
+  }
+}
+
 async function handleUpdateChangeRequest(req, res, requestId) {
   const body = await readJsonBody(req);
   const current = await readChangeRequests();
@@ -282,7 +427,8 @@ async function handleUpdateChangeRequest(req, res, requestId) {
 
   current[index] = normalized[0];
   const changeRequests = await writeChangeRequests(current);
-  sendJson(res, 200, { ok: true, request: normalized[0], changeRequests });
+  const topContributors = await recomputeAndSaveTopContributors(changeRequests);
+  sendJson(res, 200, { ok: true, request: normalized[0], changeRequests, topContributors });
 }
 
 async function handleDeleteChangeRequest(_req, res, requestId) {
@@ -293,7 +439,81 @@ async function handleDeleteChangeRequest(_req, res, requestId) {
     return;
   }
   const changeRequests = await writeChangeRequests(next);
-  sendJson(res, 200, { ok: true, changeRequests });
+  const topContributors = await recomputeAndSaveTopContributors(changeRequests);
+  sendJson(res, 200, { ok: true, changeRequests, topContributors });
+}
+
+
+async function handleApproveChangeRequest(req, res, requestId) {
+  const body = await readJsonBody(req);
+
+  const result = await withChangeRequestLock(async () => {
+    const current = await readChangeRequests();
+    const index = current.findIndex(request => request.id === requestId);
+    if (index === -1) {
+      return { statusCode: 404, payload: { error: 'Change request not found' } };
+    }
+
+    const request = current[index];
+    if (request.status !== 'pending') {
+      return { statusCode: 409, payload: { error: 'Only pending requests can be approved' } };
+    }
+
+    const incomingEntries = Array.isArray(body.entries) && body.entries.length > 0
+      ? normalizeChangeRequests([{ ...request, entries: body.entries }])[0]?.entries || []
+      : request.entries;
+
+    if (incomingEntries.length === 0) {
+      return { statusCode: 400, payload: { error: 'No valid entries to approve' } };
+    }
+
+    let applyResult;
+    try {
+      applyResult = await applyChangesToTranslationFile(request.languageFile, incomingEntries);
+    } catch (error) {
+      return { statusCode: error.statusCode || 500, payload: { error: error.message || 'Failed to apply request' } };
+    }
+
+    if (applyResult.applied === 0) {
+      return {
+        statusCode: 200,
+        payload: {
+          ok: true,
+          approved: false,
+          reason: 'No request keys were found in the current translation file',
+          applyResult,
+          changeRequests: current,
+          topContributors: normalizeTopContributors(await readTopContributors()),
+        },
+      };
+    }
+
+    const resolvedAt = new Date().toISOString();
+    const approvedRequest = {
+      ...request,
+      entries: applyResult.appliedEntries,
+      status: 'approved',
+      resolvedAt,
+    };
+
+    current[index] = approvedRequest;
+    const changeRequests = await writeChangeRequests(current);
+    const topContributors = await recomputeAndSaveTopContributors(changeRequests);
+
+    return {
+      statusCode: 200,
+      payload: {
+        ok: true,
+        approved: true,
+        request: approvedRequest,
+        changeRequests,
+        topContributors,
+        applyResult,
+      },
+    };
+  });
+
+  sendJson(res, result.statusCode, result.payload);
 }
 
 async function readTopContributors() {
@@ -319,7 +539,11 @@ function normalizeTopContributors(value) {
 }
 
 async function handleGetTopContributors(_req, res) {
-  const topContributors = normalizeTopContributors(await readTopContributors());
+  // The global request history is the source of truth for the leaderboard.
+  // Recompute on read so old installations that already have approved requests
+  // but no top_contributors.json still show the correct global top.
+  const changeRequests = await readChangeRequests();
+  const topContributors = await recomputeAndSaveTopContributors(changeRequests);
   sendJson(res, 200, { topContributors });
 }
 
@@ -352,98 +576,13 @@ async function handleSaveTranslation(req, res, file) {
 }
 
 async function handleApplyTranslationChanges(req, res, file) {
-  if (isEnglishLanguage({ file, name: file })) {
-    sendJson(res, 400, { error: 'English is the source language and cannot be changed as a localization file' });
-    return;
-  }
-
-  if (!isSafeLanguageFileName(file)) {
-    sendJson(res, 400, { error: 'Invalid file name' });
-    return;
-  }
-
   const body = await readJsonBody(req);
-  const rawChanges = Array.isArray(body.changes) ? body.changes : [];
-  const changeMap = new Map();
-
-  for (const change of rawChanges) {
-    const original = String(change?.original ?? '').trim();
-    if (!original) continue;
-    changeMap.set(original, String(change?.newTranslation ?? ''));
+  try {
+    const applyResult = await applyChangesToTranslationFile(file, body.changes);
+    sendJson(res, 200, applyResult);
+  } catch (error) {
+    sendJson(res, error.statusCode || 500, { error: error.message || 'Failed to apply changes' });
   }
-
-  if (changeMap.size === 0) {
-    sendJson(res, 400, { error: 'No valid changed keys were provided' });
-    return;
-  }
-
-  const filePath = safeTranslationPath(`${file}.txt`);
-  const currentContent = await readFile(filePath, 'utf-8');
-  const lines = currentContent.split('\n');
-  const resultLines = [];
-  const foundKeys = new Set();
-  let applied = 0;
-  let i = 0;
-
-  while (i < lines.length) {
-    const line = lines[i].trim();
-
-    if (line === '' || line.startsWith('$')) {
-      resultLines.push(lines[i]);
-      i++;
-      continue;
-    }
-
-    let j = i + 1;
-    while (j < lines.length && lines[j].trim() === '') {
-      j++;
-    }
-
-    if (j < lines.length && lines[j].trim().startsWith('==')) {
-      const original = line;
-      resultLines.push(lines[i]);
-
-      if (changeMap.has(original)) {
-        foundKeys.add(original);
-        resultLines.push(`== ${changeMap.get(original)}`);
-        applied++;
-      } else {
-        resultLines.push(lines[j]);
-      }
-
-      i = j + 1;
-      continue;
-    }
-
-    resultLines.push(lines[i]);
-    i++;
-  }
-
-  if (applied === 0) {
-    const fileStat = await stat(filePath).catch(() => null);
-    sendJson(res, 200, {
-      ok: true,
-      applied: 0,
-      skipped: changeMap.size,
-      content: currentContent,
-      version: fileStat?.mtimeMs || 0,
-      appliedKeys: [],
-    });
-    return;
-  }
-
-  const newContent = resultLines.join('\n');
-  await writeFile(filePath, newContent, 'utf-8');
-  const fileStat = await stat(filePath);
-
-  sendJson(res, 200, {
-    ok: true,
-    applied,
-    skipped: changeMap.size - foundKeys.size,
-    content: newContent,
-    version: fileStat.mtimeMs,
-    appliedKeys: Array.from(foundKeys),
-  });
 }
 
 async function handleStatic(req, res, urlPath) {
@@ -514,6 +653,12 @@ const server = http.createServer(async (req, res) => {
 
     if (req.method === 'POST' && url.pathname === '/api/change-requests') {
       await handleCreateChangeRequest(req, res);
+      return;
+    }
+
+    const approveRequestMatch = url.pathname.match(/^\/api\/change-requests\/([^/]+)\/approve$/);
+    if (approveRequestMatch && req.method === 'POST') {
+      await handleApproveChangeRequest(req, res, decodeURIComponent(approveRequestMatch[1]));
       return;
     }
 

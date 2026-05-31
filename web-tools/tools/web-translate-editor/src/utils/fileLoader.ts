@@ -7,6 +7,20 @@ export interface LoadResult {
   versions?: Record<string, number>;
 }
 
+export interface ApproveChangeRequestResult {
+  approved: boolean;
+  reason?: string;
+  changeRequests: ChangeRequest[];
+  topContributors: TopContributor[];
+  applyResult: {
+    content: string;
+    applied: number;
+    skipped: number;
+    version?: number;
+    appliedKeys?: string[];
+  };
+}
+
 /**
  * Parse index.json content
  */
@@ -192,6 +206,37 @@ export async function updateChangeRequestOnServer(requestId: string, patch: Part
   }
   return Array.isArray(payload?.changeRequests) ? payload.changeRequests : [];
 }
+
+export async function approveChangeRequestOnServer(
+  requestId: string,
+  entries: ChangeRequest['entries']
+): Promise<ApproveChangeRequestResult> {
+  const apiBase = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
+  const response = await fetch(`${apiBase}/api/change-requests/${encodeURIComponent(requestId)}/approve`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ entries }),
+  });
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) {
+    throw new Error(payload?.error || `Failed to approve change request (${response.status})`);
+  }
+
+  return {
+    approved: Boolean(payload?.approved),
+    reason: payload?.reason ? String(payload.reason) : undefined,
+    changeRequests: Array.isArray(payload?.changeRequests) ? payload.changeRequests : [],
+    topContributors: Array.isArray(payload?.topContributors) ? payload.topContributors : [],
+    applyResult: {
+      content: String(payload?.applyResult?.content ?? ''),
+      applied: Number(payload?.applyResult?.applied) || 0,
+      skipped: Number(payload?.applyResult?.skipped) || 0,
+      version: typeof payload?.applyResult?.version === 'number' ? payload.applyResult.version : undefined,
+      appliedKeys: Array.isArray(payload?.applyResult?.appliedKeys) ? payload.applyResult.appliedKeys.map(String) : [],
+    },
+  };
+}
+
 
 export async function deleteChangeRequestOnServer(requestId: string): Promise<ChangeRequest[]> {
   const apiBase = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');

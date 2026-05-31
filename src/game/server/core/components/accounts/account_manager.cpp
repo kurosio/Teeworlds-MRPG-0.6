@@ -239,7 +239,7 @@ class DbRegistration
 	static void OnCheckNickname(const CRegistrationContextPtr& pContext, ResultPtr pRes)
 	{
 		auto* pGS = pContext->GS();
-		if(pRes->next())VRating.Add("Progress to {}: {}/{}", pAccount
+		if(pRes->next())
 		{
 			pGS->Chat(pContext->GetClientID(), "This nickname is already linked to another account.");
 			pGS->Chat(pContext->GetClientID(), "Change nickname or contact support for recovery.");

@@ -4,7 +4,7 @@ import type { AppState, Settings, LanguageIndex, TranslationFile, TranslationEnt
 import { setUILanguage as setI18nLanguage } from './i18n';
 import { sha256 } from './utils/crypto';
 import type { LoadResult } from './utils/fileLoader';
-import { applyTranslationChangesToServer, loadTopContributorsFromServer, saveTopContributorsToServer, loadChangeRequestsFromServer, createChangeRequestOnServer, updateChangeRequestOnServer, deleteChangeRequestOnServer } from './utils/fileLoader';
+import { loadTopContributorsFromServer, loadChangeRequestsFromServer, createChangeRequestOnServer, updateChangeRequestOnServer, deleteChangeRequestOnServer, approveChangeRequestOnServer } from './utils/fileLoader';
 
 const DEFAULT_SETTINGS: Settings = {
   translationPath: '/translations',
@@ -422,75 +422,34 @@ export const useStore = create<AppState & StoreActions>((set, get) => ({
       }))
       : request.entries;
 
-    // Apply by original source-string keys against the latest file on disk.
-    // Missing keys are skipped by the backend, so external additions/removals
-    // cannot overwrite the wrong rows.
-    const applyResult = await applyTranslationChangesToServer(
-      request.languageFile,
-      entriesToApply.map(entry => ({
-        original: entry.original,
-        newTranslation: entry.newTranslation,
-      }))
-    );
+    // Approval is performed by the backend as a single global operation:
+    // 1) reread the current translation file from disk,
+    // 2) apply only keys that still exist,
+    // 3) update the global request history,
+    // 4) recompute and save the global top list.
+    const serverResult = await approveChangeRequestOnServer(requestId, entriesToApply);
+    const applyResult = serverResult.applyResult;
 
-    // If none of the changed keys exists in the latest file, do not mark the
-    // request as approved and keep it pending for review.
-    if (applyResult.applied === 0) {
-      const syncedFile = parseTranslationFile(applyResult.content, lang);
-      const syncedTranslations = {
+    if (applyResult.content) {
+      const newFile = parseTranslationFile(applyResult.content, lang);
+      const newTranslations = {
         ...state.translations,
-        [request.languageFile]: syncedFile,
+        [request.languageFile]: newFile,
       };
-      const syncedVersions = {
+      const newFileVersions = {
         ...state.fileVersions,
         [request.languageFile]: applyResult.version || Date.now(),
       };
-      set({ translations: syncedTranslations, fileVersions: syncedVersions });
-      saveState({ ...state, translations: syncedTranslations, fileVersions: syncedVersions } as AppState);
-      return;
+      set({ translations: newTranslations, fileVersions: newFileVersions });
+      saveState({ ...state, translations: newTranslations, fileVersions: newFileVersions } as AppState);
     }
 
-    const newFile = parseTranslationFile(applyResult.content, lang);
-
-    const newTranslations = {
-      ...state.translations,
-      [request.languageFile]: newFile,
-    };
-
-    const newRequests = state.changeRequests.map(r =>
-      r.id === requestId ? { ...r, entries: entriesToApply, status: 'approved' as const, resolvedAt: new Date().toISOString() } : r
-    );
-
-    const appliedKeys = new Set(applyResult.appliedKeys || []);
-    const acceptedEntries = appliedKeys.size > 0
-      ? entriesToApply.filter(entry => appliedKeys.has(entry.original))
-      : entriesToApply.slice(0, applyResult.applied);
-    const translatedTextAmount = getTranslatedTextAmount(acceptedEntries);
-
-    const topMap = new Map<string, number>();
-    for (const contributor of state.topContributors) {
-      topMap.set(contributor.author, contributor.count);
+    if (serverResult.changeRequests.length > 0) {
+      set({ changeRequests: serverResult.changeRequests });
     }
-    if (translatedTextAmount > 0) {
-      topMap.set(request.author, (topMap.get(request.author) || 0) + translatedTextAmount);
+    if (serverResult.topContributors.length > 0 || serverResult.approved) {
+      set({ topContributors: serverResult.topContributors });
     }
-    const newTopContributors: TopContributor[] = Array.from(topMap.entries())
-      .map(([author, count]) => ({ author, count }))
-      .filter(item => item.count > 0)
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 100);
-
-    const newFileVersions = {
-      ...state.fileVersions,
-      [request.languageFile]: applyResult.version || Date.now(),
-    };
-
-    set({ translations: newTranslations, changeRequests: newRequests, topContributors: newTopContributors, fileVersions: newFileVersions });
-    saveState({ ...state, translations: newTranslations, fileVersions: newFileVersions } as AppState);
-    updateChangeRequestOnServer(requestId, { entries: entriesToApply, status: 'approved', resolvedAt: new Date().toISOString() }).then(serverRequests => {
-      if (serverRequests.length > 0) set({ changeRequests: serverRequests });
-    }).catch(console.error);
-    saveTopContributorsToServer(newTopContributors).catch(console.error);
   },
 
   rejectRequest: async (requestId) => {
@@ -610,11 +569,12 @@ export const useStore = create<AppState & StoreActions>((set, get) => ({
   loadChangeRequests: async () => {
     try {
       const changeRequests = await loadChangeRequestsFromServer();
-      const topContributors = buildTopContributorsFromRequests(changeRequests);
-      set({ changeRequests, topContributors: topContributors.length > 0 ? topContributors : get().topContributors });
-      if (topContributors.length > 0) {
-        saveTopContributorsToServer(topContributors).catch(console.error);
-      }
+      const serverTop = await loadTopContributorsFromServer();
+      const fallbackTop = buildTopContributorsFromRequests(changeRequests);
+      set({
+        changeRequests,
+        topContributors: serverTop.length > 0 ? serverTop : fallbackTop,
+      });
     } catch (error) {
       console.error(error);
     }
