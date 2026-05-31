@@ -685,7 +685,7 @@ bool CAccountManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		VLanguageInfo.AddLine();
 		VLanguageInfo.Add("These strings will later");
 		VLanguageInfo.Add("be available on the website.");
-		VLanguageInfo.Add("{}", g_Config.m_SvWebTranslateLink);
+		VLanguageInfo.Add("{~}", g_Config.m_SvWebTranslateLink);
 		VLanguageInfo.AddLine();
 		VLanguageInfo.Add("Any user will be able");
 		VLanguageInfo.Add("to translate them there.");
