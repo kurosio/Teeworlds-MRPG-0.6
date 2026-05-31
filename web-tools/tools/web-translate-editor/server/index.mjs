@@ -20,6 +20,10 @@ const TRANSLATION_ROOT = path.resolve(
   process.env.TRANSLATION_ROOT || '/root/mmorpg/server_lang'
 );
 
+const TOP_CONTRIBUTORS_FILE = path.resolve(
+  process.env.TOP_CONTRIBUTORS_FILE || path.join(TRANSLATION_ROOT, 'top_contributors.json')
+);
+
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
@@ -96,6 +100,16 @@ function isSafeLanguageFileName(file) {
   return /^[a-zA-Z0-9_-]+$/.test(file);
 }
 
+function isEnglishLanguage(lang) {
+  const file = String(lang?.file || '').trim().toLowerCase();
+  const name = String(lang?.name || '').trim().toLowerCase();
+  return file === 'en' || file === 'eng' || name === 'english';
+}
+
+function normalizeLocalizationLanguages(languages) {
+  return languages.filter(lang => lang?.file && !isEnglishLanguage(lang));
+}
+
 async function readJsonBody(req) {
   const chunks = [];
   for await (const chunk of req) {
@@ -114,14 +128,17 @@ async function handleHealth(_req, res) {
   });
 }
 
-async function handleGetTranslations(_req, res) {
-  const indexRaw = await readFile(safeTranslationPath('index.json'), 'utf-8');
-  const indexJson = JSON.parse(indexRaw);
-  const languages = Array.isArray(indexJson['language indices'])
-    ? indexJson['language indices']
-    : [];
 
-  const files = {};
+async function readTranslationManifest() {
+  const indexPath = safeTranslationPath('index.json');
+  const indexRaw = await readFile(indexPath, 'utf-8');
+  const indexJson = JSON.parse(indexRaw);
+  const languages = normalizeLocalizationLanguages(Array.isArray(indexJson['language indices'])
+    ? indexJson['language indices']
+    : []);
+
+  const indexStat = await stat(indexPath);
+  const versions = { __index: indexStat.mtimeMs };
   const errors = [];
 
   for (const lang of languages) {
@@ -132,17 +149,84 @@ async function handleGetTranslations(_req, res) {
 
     const fileName = `${lang.file}.txt`;
     try {
-      files[lang.file] = await readFile(safeTranslationPath(fileName), 'utf-8');
+      const fullPath = safeTranslationPath(fileName);
+      const fileStat = await stat(fullPath);
+      versions[lang.file] = fileStat.mtimeMs;
     } catch (_error) {
-      files[lang.file] = '';
+      versions[lang.file] = 0;
       errors.push(`File not found or unreadable: ${fileName}`);
     }
   }
 
-  sendJson(res, 200, { languages, files, errors });
+  return { languages, versions, errors };
+}
+
+async function handleGetTranslationManifest(_req, res) {
+  const manifest = await readTranslationManifest();
+  sendJson(res, 200, manifest);
+}
+
+async function handleGetTranslations(_req, res) {
+  const { languages, versions, errors } = await readTranslationManifest();
+  const files = {};
+
+  for (const lang of languages) {
+    if (!lang?.file || !isSafeLanguageFileName(lang.file)) {
+      continue;
+    }
+
+    const fileName = `${lang.file}.txt`;
+    try {
+      files[lang.file] = await readFile(safeTranslationPath(fileName), 'utf-8');
+    } catch (_error) {
+      files[lang.file] = '';
+    }
+  }
+
+  sendJson(res, 200, { languages, files, versions, errors });
+}
+
+async function readTopContributors() {
+  try {
+    const raw = await readFile(TOP_CONTRIBUTORS_FILE, 'utf-8');
+    const parsed = JSON.parse(raw);
+    if (Array.isArray(parsed)) return parsed;
+    if (Array.isArray(parsed?.topContributors)) return parsed.topContributors;
+  } catch (_error) {
+    // Missing file is allowed on first launch.
+  }
+  return [];
+}
+
+function normalizeTopContributors(value) {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter(item => item && typeof item.author === 'string')
+    .map(item => ({ author: item.author.trim(), count: Number(item.count) || 0 }))
+    .filter(item => item.author && item.count > 0)
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 100);
+}
+
+async function handleGetTopContributors(_req, res) {
+  const topContributors = normalizeTopContributors(await readTopContributors());
+  sendJson(res, 200, { topContributors });
+}
+
+async function handleSaveTopContributors(req, res) {
+  const body = await readJsonBody(req);
+  const topContributors = normalizeTopContributors(body.topContributors);
+  await mkdir(path.dirname(TOP_CONTRIBUTORS_FILE), { recursive: true });
+  await writeFile(TOP_CONTRIBUTORS_FILE, JSON.stringify({ topContributors }, null, 2), 'utf-8');
+  sendJson(res, 200, { ok: true, topContributors });
 }
 
 async function handleSaveTranslation(req, res, file) {
+  if (isEnglishLanguage({ file, name: file })) {
+    sendJson(res, 400, { error: 'English is the source language and cannot be added to Localization files' });
+    return;
+  }
+
   if (!isSafeLanguageFileName(file)) {
     sendJson(res, 400, { error: 'Invalid file name' });
     return;
@@ -155,6 +239,99 @@ async function handleSaveTranslation(req, res, file) {
   await writeFile(safeTranslationPath(`${file}.txt`), content, 'utf-8');
 
   sendJson(res, 200, { ok: true, file });
+}
+
+async function handleApplyTranslationChanges(req, res, file) {
+  if (isEnglishLanguage({ file, name: file })) {
+    sendJson(res, 400, { error: 'English is the source language and cannot be changed as a localization file' });
+    return;
+  }
+
+  if (!isSafeLanguageFileName(file)) {
+    sendJson(res, 400, { error: 'Invalid file name' });
+    return;
+  }
+
+  const body = await readJsonBody(req);
+  const rawChanges = Array.isArray(body.changes) ? body.changes : [];
+  const changeMap = new Map();
+
+  for (const change of rawChanges) {
+    const original = String(change?.original ?? '').trim();
+    if (!original) continue;
+    changeMap.set(original, String(change?.newTranslation ?? ''));
+  }
+
+  if (changeMap.size === 0) {
+    sendJson(res, 400, { error: 'No valid changed keys were provided' });
+    return;
+  }
+
+  const filePath = safeTranslationPath(`${file}.txt`);
+  const currentContent = await readFile(filePath, 'utf-8');
+  const lines = currentContent.split('\n');
+  const resultLines = [];
+  const foundKeys = new Set();
+  let applied = 0;
+  let i = 0;
+
+  while (i < lines.length) {
+    const line = lines[i].trim();
+
+    if (line === '' || line.startsWith('$')) {
+      resultLines.push(lines[i]);
+      i++;
+      continue;
+    }
+
+    let j = i + 1;
+    while (j < lines.length && lines[j].trim() === '') {
+      j++;
+    }
+
+    if (j < lines.length && lines[j].trim().startsWith('==')) {
+      const original = line;
+      resultLines.push(lines[i]);
+
+      if (changeMap.has(original)) {
+        foundKeys.add(original);
+        resultLines.push(`== ${changeMap.get(original)}`);
+        applied++;
+      } else {
+        resultLines.push(lines[j]);
+      }
+
+      i = j + 1;
+      continue;
+    }
+
+    resultLines.push(lines[i]);
+    i++;
+  }
+
+  if (applied === 0) {
+    const fileStat = await stat(filePath).catch(() => null);
+    sendJson(res, 200, {
+      ok: true,
+      applied: 0,
+      skipped: changeMap.size,
+      content: currentContent,
+      version: fileStat?.mtimeMs || 0,
+    });
+    return;
+  }
+
+  const newContent = resultLines.join('\n');
+  await writeFile(filePath, newContent, 'utf-8');
+  const fileStat = await stat(filePath);
+
+  sendJson(res, 200, {
+    ok: true,
+    applied,
+    skipped: changeMap.size - foundKeys.size,
+    content: newContent,
+    version: fileStat.mtimeMs,
+  });
 }
 
 async function handleStatic(req, res, urlPath) {
@@ -207,8 +384,30 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
+    if (req.method === 'GET' && url.pathname === '/api/translations/manifest') {
+      await handleGetTranslationManifest(req, res);
+      return;
+    }
+
     if (req.method === 'GET' && url.pathname === '/api/translations') {
       await handleGetTranslations(req, res);
+      return;
+    }
+
+    if (req.method === 'GET' && url.pathname === '/api/top-contributors') {
+      await handleGetTopContributors(req, res);
+      return;
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/top-contributors') {
+      await handleSaveTopContributors(req, res);
+      return;
+    }
+
+
+    const applyMatch = url.pathname.match(/^\/api\/translations\/([a-zA-Z0-9_-]+)\/apply$/);
+    if (req.method === 'POST' && applyMatch) {
+      await handleApplyTranslationChanges(req, res, applyMatch[1]);
       return;
     }
 

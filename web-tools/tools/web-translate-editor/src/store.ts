@@ -1,10 +1,10 @@
 import { create } from 'zustand';
 import { v4 as uuidv4 } from 'uuid';
-import type { AppState, Settings, LanguageIndex, TranslationFile, TranslationEntry, ChangeRequest, ChangeRequestEntry, UILanguage, AdminConfig } from './types';
+import type { AppState, Settings, LanguageIndex, TranslationFile, TranslationEntry, ChangeRequest, ChangeRequestEntry, UILanguage, AdminConfig, TopContributor } from './types';
 import { setUILanguage as setI18nLanguage } from './i18n';
 import { sha256 } from './utils/crypto';
 import type { LoadResult } from './utils/fileLoader';
-import { saveTranslationToServer } from './utils/fileLoader';
+import { applyTranslationChangesToServer, loadTopContributorsFromServer, saveTopContributorsToServer } from './utils/fileLoader';
 
 const DEFAULT_SETTINGS: Settings = {
   translationPath: '/translations',
@@ -153,6 +153,31 @@ Authentication required
 Permission denied
 ==`;
 
+
+function isEnglishLanguage(lang: LanguageIndex): boolean {
+  const file = String(lang?.file || '').trim().toLowerCase();
+  const name = String(lang?.name || '').trim().toLowerCase();
+  return file === 'en' || file === 'eng' || name === 'english';
+}
+
+function normalizeLocalizationLanguages(languages: LanguageIndex[]): LanguageIndex[] {
+  return languages.filter(lang => lang?.file && !isEnglishLanguage(lang));
+}
+
+function makeEntryId(langFile: string, entryIndex: number, original: string): string {
+  // Keep ids stable enough for local editing within one loaded file.
+  // Index is retained to disambiguate duplicate source lines.
+  return `${langFile}:${entryIndex}:${original}`;
+}
+
+function getLanguageSignature(languages: LanguageIndex[]): string {
+  return languages.map(lang => `${lang.file}:${lang.name}`).join('|');
+}
+
+function getVersionSignature(languages: LanguageIndex[], versions: Record<string, number>): string {
+  return `${versions.__index || 0}|${getLanguageSignature(languages)}|${languages.map(lang => `${lang.file}:${versions[lang.file] || 0}`).join('|')}`;
+}
+
 function parseTranslationFile(content: string, lang: LanguageIndex): TranslationFile {
   const lines = content.split('\n');
   const entries: TranslationEntry[] = [];
@@ -186,7 +211,7 @@ function parseTranslationFile(content: string, lang: LanguageIndex): Translation
       const translation = translationLine.substring(2).trim();
 
       entries.push({
-        id: uuidv4(),
+        id: makeEntryId(lang.file, entryIndex, original),
         original,
         translation,
         lineIndex: entryIndex,
@@ -212,6 +237,18 @@ const SAMPLE_FILES: Record<string, string> = {
   cn: SAMPLE_CN,
 };
 
+function buildTopContributorsFromRequests(changeRequests: ChangeRequest[]): TopContributor[] {
+  const authorStats = new Map<string, number>();
+  for (const request of changeRequests) {
+    if (request.status !== 'approved') continue;
+    authorStats.set(request.author, (authorStats.get(request.author) || 0) + request.entries.length);
+  }
+  return Array.from(authorStats.entries())
+    .map(([author, count]) => ({ author, count }))
+    .sort((a, b) => b.count - a.count)
+    .slice(0, 100);
+}
+
 function loadInitialState(): Partial<AppState> {
   const stored = localStorage.getItem('translationEditor');
   if (stored) {
@@ -219,7 +256,7 @@ function loadInitialState(): Partial<AppState> {
       const parsed = JSON.parse(stored);
       // Re-parse translation files
       const translations: Record<string, TranslationFile> = {};
-      const langs = parsed.languages || SAMPLE_INDEX["language indices"];
+      const langs = normalizeLocalizationLanguages(parsed.languages || SAMPLE_INDEX["language indices"]);
       const rawFiles = parsed.rawFiles || SAMPLE_FILES;
       for (const lang of langs) {
         if (rawFiles[lang.file]) {
@@ -231,6 +268,8 @@ function loadInitialState(): Partial<AppState> {
         languages: langs,
         translations,
         changeRequests: parsed.changeRequests || [],
+        topContributors: parsed.topContributors || buildTopContributorsFromRequests(parsed.changeRequests || []),
+        fileVersions: parsed.fileVersions || {},
         isAdmin: false,
       };
     } catch {
@@ -248,23 +287,24 @@ function loadInitialState(): Partial<AppState> {
 
   return {
     settings: DEFAULT_SETTINGS,
-    languages: SAMPLE_INDEX["language indices"],
+    languages: normalizeLocalizationLanguages(SAMPLE_INDEX["language indices"]),
     translations,
     changeRequests: [],
+    topContributors: [],
+    fileVersions: {},
     isAdmin: false,
   };
 }
 
 function saveState(state: AppState) {
-  const rawFiles: Record<string, string> = {};
-  for (const [key, tf] of Object.entries(state.translations)) {
-    rawFiles[key] = tf.rawContent;
-  }
+  // Do not persist raw localization files in localStorage. Large projects can contain
+  // thousands of rows and serializing them on every sync/edit causes UI freezes.
   localStorage.setItem('translationEditor', JSON.stringify({
     settings: state.settings,
     languages: state.languages,
     changeRequests: state.changeRequests,
-    rawFiles,
+    topContributors: state.topContributors,
+    fileVersions: state.fileVersions,
   }));
 }
 
@@ -284,6 +324,10 @@ interface StoreActions {
   deleteRequest: (requestId: string) => void;
   resetData: () => void;
   loadFiles: (result: LoadResult) => void;
+  refreshFiles: (result: LoadResult) => void;
+  forceSyncFiles: (result: LoadResult) => void;
+  loadTopContributors: () => Promise<void>;
+  hasServerChanges: (result: LoadResult) => boolean;
 }
 
 const initial = loadInitialState();
@@ -292,7 +336,9 @@ export const useStore = create<AppState & StoreActions>((set, get) => ({
   settings: initial.settings || DEFAULT_SETTINGS,
   languages: initial.languages || [],
   translations: initial.translations || {},
+  fileVersions: initial.fileVersions || {},
   changeRequests: initial.changeRequests || [],
+  topContributors: initial.topContributors || [],
   isAdmin: false,
   activeTab: 'editor',
   selectedLanguage: null,
@@ -351,51 +397,38 @@ export const useStore = create<AppState & StoreActions>((set, get) => ({
     const request = state.changeRequests.find(r => r.id === requestId);
     if (!request) return;
 
-    // Apply changes to the translation file
-    const file = state.translations[request.languageFile];
-    if (!file) return;
+    const lang = state.languages.find(l => l.file === request.languageFile);
+    if (!lang) return;
 
-    // Rebuild raw content
-    const lines = file.rawContent.split('\n');
-    const resultLines: string[] = [];
-    let i = 0;
+    // Apply by original source-string keys against the latest file on disk.
+    // Missing keys are skipped by the backend, so external additions/removals
+    // cannot overwrite the wrong rows.
+    const applyResult = await applyTranslationChangesToServer(
+      request.languageFile,
+      request.entries.map(entry => ({
+        original: entry.original,
+        newTranslation: entry.newTranslation,
+      }))
+    );
 
-    while (i < lines.length) {
-      const line = lines[i].trim();
-
-      if (line === '' || line.startsWith('$')) {
-        resultLines.push(lines[i]);
-        i++;
-        continue;
-      }
-
-      let j = i + 1;
-      while (j < lines.length && lines[j].trim() === '') {
-        j++;
-      }
-
-      if (j < lines.length && lines[j].trim().startsWith('==')) {
-        const original = line;
-        const change = request.entries.find(c => c.original === original);
-        resultLines.push(lines[i]);
-        if (change) {
-          resultLines.push(`== ${change.newTranslation}`);
-        } else {
-          resultLines.push(lines[j]);
-        }
-        i = j + 1;
-      } else {
-        resultLines.push(lines[i]);
-        i++;
-      }
+    // If none of the changed keys exists in the latest file, do not mark the
+    // request as approved and keep it pending for review.
+    if (applyResult.applied === 0) {
+      const syncedFile = parseTranslationFile(applyResult.content, lang);
+      const syncedTranslations = {
+        ...state.translations,
+        [request.languageFile]: syncedFile,
+      };
+      const syncedVersions = {
+        ...state.fileVersions,
+        [request.languageFile]: applyResult.version || Date.now(),
+      };
+      set({ translations: syncedTranslations, fileVersions: syncedVersions });
+      saveState({ ...state, translations: syncedTranslations, fileVersions: syncedVersions } as AppState);
+      return;
     }
 
-    const newRawContent = resultLines.join('\n');
-
-    await saveTranslationToServer(request.languageFile, newRawContent);
-
-    const lang = state.languages.find(l => l.file === request.languageFile)!;
-    const newFile = parseTranslationFile(newRawContent, lang);
+    const newFile = parseTranslationFile(applyResult.content, lang);
 
     const newTranslations = {
       ...state.translations,
@@ -406,8 +439,24 @@ export const useStore = create<AppState & StoreActions>((set, get) => ({
       r.id === requestId ? { ...r, status: 'approved' as const, resolvedAt: new Date().toISOString() } : r
     );
 
-    set({ translations: newTranslations, changeRequests: newRequests });
-    saveState({ ...state, translations: newTranslations, changeRequests: newRequests } as AppState);
+    const topMap = new Map<string, number>();
+    for (const contributor of state.topContributors) {
+      topMap.set(contributor.author, contributor.count);
+    }
+    topMap.set(request.author, (topMap.get(request.author) || 0) + applyResult.applied);
+    const newTopContributors: TopContributor[] = Array.from(topMap.entries())
+      .map(([author, count]) => ({ author, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 100);
+
+    const newFileVersions = {
+      ...state.fileVersions,
+      [request.languageFile]: applyResult.version || Date.now(),
+    };
+
+    set({ translations: newTranslations, changeRequests: newRequests, topContributors: newTopContributors, fileVersions: newFileVersions });
+    saveState({ ...state, translations: newTranslations, changeRequests: newRequests, topContributors: newTopContributors, fileVersions: newFileVersions } as AppState);
+    saveTopContributorsToServer(newTopContributors).catch(console.error);
   },
 
   rejectRequest: (requestId) => {
@@ -439,12 +488,75 @@ export const useStore = create<AppState & StoreActions>((set, get) => ({
 
   loadFiles: (result: LoadResult) => {
     const translations: Record<string, TranslationFile> = {};
-    for (const lang of result.languages) {
+    const languages = normalizeLocalizationLanguages(result.languages);
+    for (const lang of languages) {
       const content = result.files[lang.file] || '';
       translations[lang.file] = parseTranslationFile(content, lang);
     }
     const state = get();
-    set({ languages: result.languages, translations, selectedLanguage: null });
-    saveState({ ...state, languages: result.languages, translations } as AppState);
+    const fileVersions = result.versions || state.fileVersions || {};
+    set({ languages, translations, fileVersions, selectedLanguage: null });
+    saveState({ ...state, languages, translations, fileVersions } as AppState);
+  },
+
+  hasServerChanges: (result: LoadResult) => {
+    const languages = normalizeLocalizationLanguages(result.languages);
+    if (languages.length === 0) return false;
+    const state = get();
+    const incomingVersions = result.versions || {};
+    return getVersionSignature(languages, incomingVersions) !== getVersionSignature(state.languages, state.fileVersions || {});
+  },
+
+  refreshFiles: (result: LoadResult) => {
+    const languages = normalizeLocalizationLanguages(result.languages);
+    if (languages.length === 0) return;
+    const state = get();
+    const incomingVersions = result.versions || {};
+    if (getVersionSignature(languages, incomingVersions) === getVersionSignature(state.languages, state.fileVersions || {})) return;
+
+    const translations: Record<string, TranslationFile> = {};
+    for (const lang of languages) {
+      const content = result.files[lang.file] || '';
+      translations[lang.file] = parseTranslationFile(content, lang);
+    }
+
+    const selectedLanguage = state.selectedLanguage && languages.some(lang => lang.file === state.selectedLanguage)
+      ? state.selectedLanguage
+      : null;
+
+    set({ languages, translations, fileVersions: incomingVersions, selectedLanguage });
+    saveState({ ...state, languages, translations, fileVersions: incomingVersions, selectedLanguage } as AppState);
+  },
+
+
+  forceSyncFiles: (result: LoadResult) => {
+    const languages = normalizeLocalizationLanguages(result.languages);
+    if (languages.length === 0) return;
+    const state = get();
+    const translations: Record<string, TranslationFile> = {};
+    for (const lang of languages) {
+      const content = result.files[lang.file] || '';
+      translations[lang.file] = parseTranslationFile(content, lang);
+    }
+
+    const selectedLanguage = state.selectedLanguage && languages.some(lang => lang.file === state.selectedLanguage)
+      ? state.selectedLanguage
+      : null;
+    const fileVersions = result.versions || state.fileVersions || {};
+
+    set({ languages, translations, fileVersions, selectedLanguage });
+    saveState({ ...state, languages, translations, fileVersions, selectedLanguage } as AppState);
+  },
+
+  loadTopContributors: async () => {
+    try {
+      const topContributors = await loadTopContributorsFromServer();
+      if (topContributors.length === 0) return;
+      const state = get();
+      set({ topContributors });
+      saveState({ ...state, topContributors } as AppState);
+    } catch {
+      // Server-side top file is optional; localStorage remains the fallback.
+    }
   },
 }));

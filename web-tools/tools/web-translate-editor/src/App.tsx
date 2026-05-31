@@ -1,6 +1,6 @@
-import { useEffect, useRef } from 'react';
+import { startTransition, useEffect, useRef } from 'react';
 import { useStore } from './store';
-import { loadFromUrlPath } from './utils/fileLoader';
+import { loadFromServerApi } from './utils/fileLoader';
 import Header from './components/Header';
 import LanguageSelector from './components/LanguageSelector';
 import TranslationEditor from './components/TranslationEditor';
@@ -9,25 +9,27 @@ import SettingsPage from './components/SettingsPage';
 import TopContributors from './components/TopContributors';
 
 function AutoLoader() {
-  const { settings, loadFiles } = useStore();
+  const { settings, loadFiles, loadTopContributors } = useStore();
   const attempted = useRef(false);
 
   useEffect(() => {
     if (attempted.current) return;
     attempted.current = true;
 
-    // Try to load from the configured path
-    const path = settings.translationPath;
-    if (!path) return;
-
-    loadFromUrlPath(path).then(result => {
+    loadFromServerApi().then(result => {
       if (result.languages.length > 0) {
-        loadFiles(result);
+        startTransition(() => loadFiles(result));
       }
     }).catch(() => {
-      // Fall back to demo data silently
+      // Fall back to local/demo data silently.
     });
-  }, []); // Run once on mount
+
+    loadTopContributors();
+
+    // Files are loaded only on page start/refresh. Do not poll while the user is
+    // editing, changing settings, or just keeping the web editor open: external
+    // file changes are picked up on the next browser refresh/open.
+  }, [settings.translationPath, loadFiles, loadTopContributors]);
 
   return null;
 }

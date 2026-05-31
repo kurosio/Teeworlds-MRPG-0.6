@@ -4,19 +4,13 @@ import { t } from '../i18n';
 import { Trophy, Medal, Award, User } from 'lucide-react';
 
 export default function TopContributors() {
-  const { changeRequests } = useStore();
+  const { topContributors } = useStore();
 
   const topList = useMemo(() => {
-    const approvedRequests = changeRequests.filter(r => r.status === 'approved');
-    const authorStats: Record<string, number> = {};
-    for (const request of approvedRequests) {
-      authorStats[request.author] = (authorStats[request.author] || 0) + request.entries.length;
-    }
-    return Object.entries(authorStats)
-      .map(([author, count]) => ({ author, count }))
+    return [...topContributors]
       .sort((a, b) => b.count - a.count)
       .slice(0, 10);
-  }, [changeRequests]);
+  }, [topContributors]);
 
   if (topList.length === 0) return null;
 

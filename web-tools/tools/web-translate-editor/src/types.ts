@@ -20,6 +20,11 @@ export interface TranslationFile {
   rawContent: string;
 }
 
+export interface TopContributor {
+  author: string;
+  count: number;
+}
+
 export interface ChangeRequestEntry {
   entryId: string;
   original: string;
@@ -55,12 +60,14 @@ export interface AppState {
   settings: Settings;
   languages: LanguageIndex[];
   translations: Record<string, TranslationFile>;
+  fileVersions: Record<string, number>;
   changeRequests: ChangeRequest[];
+  topContributors: TopContributor[];
   isAdmin: boolean;
   activeTab: 'editor' | 'requests' | 'settings';
   selectedLanguage: string | null;
   searchQuery: string;
-  filterMode: 'all' | 'translated' | 'untranslated';
+  filterMode: 'all' | 'translated' | 'untranslated' | 'changed';
   requestFilterTag: string | null;
   uiLanguage: UILanguage;
 }
