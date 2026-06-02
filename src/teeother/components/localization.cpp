@@ -6,11 +6,25 @@ constexpr auto g_pMotherLanguageFile = "en";
 
 namespace
 {
-	bool ContainsAsciiLetter(const char* pText)
+	bool HasCollectableTextOutsideBraces(const char* pText)
 	{
+		int BraceDepth = 0;
 		for(const char* pCurrent = pText; pCurrent && *pCurrent; ++pCurrent)
 		{
-			if((*pCurrent >= 'A' && *pCurrent <= 'Z') || (*pCurrent >= 'a' && *pCurrent <= 'z'))
+			if(*pCurrent == '{')
+			{
+				BraceDepth++;
+				continue;
+			}
+
+			if(*pCurrent == '}')
+			{
+				if(BraceDepth > 0)
+					BraceDepth--;
+				continue;
+			}
+
+			if(BraceDepth == 0 && ((*pCurrent >= 'A' && *pCurrent <= 'Z') || (*pCurrent >= 'a' && *pCurrent <= 'z')))
 				return true;
 		}
 
@@ -227,7 +241,7 @@ bool CLocalization::CLanguage::Contains(const char* pKey) const
 
 void CLocalization::CLanguage::CollectUntranslated(const char* pKey)
 {
-	if(!pKey || pKey[0] == '\0' || !ContainsAsciiLetter(pKey) || !m_Loaded || m_Filename == g_pMotherLanguageFile || Contains(pKey))
+	if(!pKey || pKey[0] == '\0' || !HasCollectableTextOutsideBraces(pKey) || !m_Loaded || m_Filename == g_pMotherLanguageFile || Contains(pKey))
 		return;
 
 	std::string aDirLanguageFile = fmt_default("./server_lang/{}.txt", GetFilename());

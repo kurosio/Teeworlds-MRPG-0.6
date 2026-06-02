@@ -362,7 +362,7 @@ void CAccountManager::AddMenuProfessionUpgrades(CPlayer* pPlayer, CProfession* p
 			{
 				str_format(aBuf, sizeof(aBuf), "(%0.2f%%)", *PercentOpt);
 			}
-			VUpgrades.Add("Total {} - {}{}", pAttribute->GetName(), AttributeSize, aBuf);
+			VUpgrades.Add("Total {} - {}{~}", pAttribute->GetName(), AttributeSize, aBuf);
 		}
 	}
 	VUpgrades.AddLine();
