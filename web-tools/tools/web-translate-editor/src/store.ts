@@ -16,6 +16,39 @@ const ADMIN_CONFIG: AdminConfig = {
   passwordHash: import.meta.env.VITE_ADMIN_PASSWORD_HASH || '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918', // default: "admin"
 };
 
+
+const ADMIN_SESSION_STORAGE_KEY = 'translationEditorAdminSession';
+
+type StoredAdminSession = {
+  username?: string;
+  passwordHash?: string;
+  createdAt?: string;
+};
+
+function isValidStoredAdminSession(): boolean {
+  try {
+    const raw = localStorage.getItem(ADMIN_SESSION_STORAGE_KEY);
+    if (!raw) return false;
+    const session = JSON.parse(raw) as StoredAdminSession;
+    return session.username === ADMIN_CONFIG.username && session.passwordHash === ADMIN_CONFIG.passwordHash;
+  } catch {
+    localStorage.removeItem(ADMIN_SESSION_STORAGE_KEY);
+    return false;
+  }
+}
+
+function saveAdminSession(username: string, passwordHash: string) {
+  localStorage.setItem(ADMIN_SESSION_STORAGE_KEY, JSON.stringify({
+    username,
+    passwordHash,
+    createdAt: new Date().toISOString(),
+  }));
+}
+
+function clearAdminSession() {
+  localStorage.removeItem(ADMIN_SESSION_STORAGE_KEY);
+}
+
 // Sample index.json
 const SAMPLE_INDEX = {
   "language indices": [
@@ -279,7 +312,7 @@ function loadInitialState(): Partial<AppState> {
         changeRequests: [],
         topContributors: [],
         fileVersions: parsed.fileVersions || {},
-        isAdmin: false,
+        isAdmin: isValidStoredAdminSession(),
       };
     } catch {
       // fallback
@@ -301,7 +334,7 @@ function loadInitialState(): Partial<AppState> {
     changeRequests: [],
     topContributors: [],
     fileVersions: {},
-    isAdmin: false,
+    isAdmin: isValidStoredAdminSession(),
   };
 }
 
@@ -347,7 +380,7 @@ export const useStore = create<AppState & StoreActions>((set, get) => ({
   fileVersions: initial.fileVersions || {},
   changeRequests: initial.changeRequests || [],
   topContributors: initial.topContributors || [],
-  isAdmin: false,
+  isAdmin: initial.isAdmin || false,
   activeTab: 'editor',
   selectedLanguage: null,
   searchQuery: '',
@@ -374,13 +407,17 @@ export const useStore = create<AppState & StoreActions>((set, get) => ({
   login: async (username, password) => {
     const passwordHash = await sha256(password);
     if (username === ADMIN_CONFIG.username && passwordHash === ADMIN_CONFIG.passwordHash) {
+      saveAdminSession(username, passwordHash);
       set({ isAdmin: true });
       return true;
     }
     return false;
   },
 
-  logout: () => set({ isAdmin: false }),
+  logout: () => {
+    clearAdminSession();
+    set({ isAdmin: false });
+  },
 
   submitChangeRequest: async (name, author, languageFile, changes) => {
     const state = get();
