@@ -1125,8 +1125,8 @@ bool CCharacter::TakeDamage(vec2 Force, int Damage, int FromCID, int Weapon, int
 		TryActivateChainLightning(itRingReturnLightning, Damage);
 		pFrom->GetCharacter()->TryActivateChainLightning(itRingGivingLightning, Damage);
 
-		// vampirism replenish your health
-		const auto ChanceVampirism = m_pPlayer->GetTotalAttributeChance(AttributeIdentifier::Vampirism).value_or(0.f);
+		// high-vampirism players heal incoming attackers
+		const auto ChanceVampirism = pFrom->GetTotalAttributeChance(AttributeIdentifier::Vampirism).value_or(0.f);
 		if(ChanceVampirism > random_float(100.0f))
 		{
 			const auto Recovery = maximum(1, Damage / 2);
@@ -1143,8 +1143,8 @@ bool CCharacter::TakeDamage(vec2 Force, int Damage, int FromCID, int Weapon, int
 			return false;
 		}
 
-		// critical damage
-		const auto ChanceCrit = m_pPlayer->GetTotalAttributeChance(AttributeIdentifier::Crit).value_or(0.f);
+		// high-crit players receive constant critical hits from mobs
+		const auto ChanceCrit = pFrom->GetTotalAttributeChance(AttributeIdentifier::Crit).value_or(0.f);
 		if(ChanceCrit > random_float(100.0f))
 		{
 			const int CritAttributeDMG = maximum(pFrom->GetTotalAttributeValue(AttributeIdentifier::CritDMG), 1);
