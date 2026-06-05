@@ -34,6 +34,7 @@ private:
 		int MaxPower {};
 		float SoloStatBaseWeight {};
 		float GroupStatBaseWeight {};
+		float DiminishingKnee {};
 	};
 
 	std::array<float, kAttributeCount> m_AttributeCaps {};
@@ -41,6 +42,7 @@ private:
 	BotGroupScaling m_BotGroupScaling;
 	ScenarioMobPowerScaling m_ScenarioMobPowerScaling;
 
+	bool IsAttributeRelevantForMobPower(AttributeIdentifier ID) const;
 	static size_t ToIndex(AttributeIdentifier ID);
 	void Initialize();
 };
