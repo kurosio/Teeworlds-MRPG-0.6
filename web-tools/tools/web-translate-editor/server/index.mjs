@@ -1,5 +1,6 @@
 import http from 'node:http';
-import { readFile, writeFile, mkdir, stat } from 'node:fs/promises';
+import { readFile, writeFile, mkdir, stat, rename } from 'node:fs/promises';
+import { gzipSync } from 'node:zlib';
 import path from 'node:path';
 import os from 'node:os';
 import { fileURLToPath } from 'node:url';
@@ -24,9 +25,27 @@ const TOP_CONTRIBUTORS_FILE = path.resolve(
   process.env.TOP_CONTRIBUTORS_FILE || path.join(TRANSLATION_ROOT, 'top_contributors.json')
 );
 
+function isLeaderboardSystemAuthor(author) {
+  return String(author || '').trim().toLowerCase() === 'administrator';
+}
+
 const CHANGE_REQUESTS_FILE = path.resolve(
   process.env.CHANGE_REQUESTS_FILE || path.join(TRANSLATION_ROOT, 'change_requests.json')
 );
+
+const EVENT_SETTINGS_FILE = path.resolve(
+  process.env.EVENT_SETTINGS_FILE || path.join(TRANSLATION_ROOT, 'event_settings.json')
+);
+
+const DEFAULT_EVENT_SETTINGS = {
+  topResetAt: '',
+  translationRewards: {
+    enabled: false,
+    endDate: '',
+    rewards: '',
+    updatedAt: '',
+  },
+};
 
 const MIME_TYPES = {
   '.html': 'text/html; charset=utf-8',
@@ -58,12 +77,30 @@ function getRemoteUrls(port) {
 
 function sendJson(res, statusCode, payload) {
   const body = statusCode === 204 ? '' : JSON.stringify(payload);
-  res.writeHead(statusCode, {
+  const headers = {
     'Content-Type': 'application/json; charset=utf-8',
-    'Content-Length': Buffer.byteLength(body),
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'GET,POST,PATCH,DELETE,OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
+    'Cache-Control': 'no-store',
+  };
+
+  const acceptsGzip = String(res._acceptEncoding || '').includes('gzip');
+  if (body && acceptsGzip && Buffer.byteLength(body) > 4096) {
+    const compressed = gzipSync(Buffer.from(body, 'utf-8'), { level: 5 });
+    res.writeHead(statusCode, {
+      ...headers,
+      'Content-Encoding': 'gzip',
+      'Vary': 'Accept-Encoding',
+      'Content-Length': compressed.length,
+    });
+    res.end(compressed);
+    return;
+  }
+
+  res.writeHead(statusCode, {
+    ...headers,
+    'Content-Length': Buffer.byteLength(body),
   });
   res.end(body);
 }
@@ -112,6 +149,23 @@ function isEnglishLanguage(lang) {
 
 function normalizeLocalizationLanguages(languages) {
   return languages.filter(lang => lang?.file && !isEnglishLanguage(lang));
+}
+
+
+async function atomicWriteJson(filePath, payload) {
+  await mkdir(path.dirname(filePath), { recursive: true });
+  const tempPath = `${filePath}.${process.pid}.${Date.now()}.tmp`;
+  await writeFile(tempPath, JSON.stringify(payload, null, 2), 'utf-8');
+  await rename(tempPath, filePath);
+}
+
+async function backupCorruptedJson(filePath, raw) {
+  try {
+    const backupPath = `${filePath}.corrupt.${Date.now()}`;
+    await writeFile(backupPath, raw, 'utf-8');
+  } catch (_error) {
+    // Best-effort backup only.
+  }
 }
 
 async function readJsonBody(req) {
@@ -170,26 +224,147 @@ async function handleGetTranslationManifest(_req, res) {
   sendJson(res, 200, manifest);
 }
 
-async function handleGetTranslations(_req, res) {
+async function readTranslationsPayload() {
   const { languages, versions, errors } = await readTranslationManifest();
   const files = {};
 
-  for (const lang of languages) {
-    if (!lang?.file || !isSafeLanguageFileName(lang.file)) {
-      continue;
-    }
+  // Read all localization files concurrently. The client still receives one
+  // full payload with every file, but large projects no longer wait for slow
+  // sequential disk reads language-by-language.
+  const readJobs = languages
+    .filter(lang => lang?.file && isSafeLanguageFileName(lang.file))
+    .map(async (lang) => {
+      const fileName = `${lang.file}.txt`;
+      try {
+        const content = await readFile(safeTranslationPath(fileName), 'utf-8');
+        return { file: lang.file, content, error: null };
+      } catch (_error) {
+        return { file: lang.file, content: '', error: `File not found or unreadable: ${fileName}` };
+      }
+    });
 
-    const fileName = `${lang.file}.txt`;
-    try {
-      files[lang.file] = await readFile(safeTranslationPath(fileName), 'utf-8');
-    } catch (_error) {
-      files[lang.file] = '';
-    }
+  const results = await Promise.all(readJobs);
+  for (const result of results) {
+    files[result.file] = result.content;
+    if (result.error && !errors.includes(result.error)) errors.push(result.error);
   }
 
-  sendJson(res, 200, { languages, files, versions, errors });
+  return { languages, files, versions, errors, loadedAt: new Date().toISOString() };
 }
 
+async function handleGetTranslations(_req, res) {
+  sendJson(res, 200, await readTranslationsPayload());
+}
+
+async function getTopContributorsForRead(changeRequests, eventSettings) {
+  const cachedTop = await readTopContributors().catch(() => []);
+  if (cachedTop.length > 0) return cachedTop;
+  return await recomputeAndSaveTopContributors(changeRequests, eventSettings);
+}
+
+async function handleGetBootstrap(_req, res) {
+  const [translationsResult, requestsResult, eventResult] = await Promise.allSettled([
+    readTranslationsPayload(),
+    readChangeRequests(),
+    readEventSettings(),
+  ]);
+
+  const translationsPayload = translationsResult.status === 'fulfilled'
+    ? translationsResult.value
+    : { languages: [], files: {}, versions: {}, errors: [translationsResult.reason?.message || 'Failed to load translation files'], loadedAt: new Date().toISOString() };
+
+  const eventSettings = eventResult.status === 'fulfilled' ? eventResult.value : DEFAULT_EVENT_SETTINGS;
+  let changeRequests = [];
+  let topContributors = [];
+
+  if (requestsResult.status === 'fulfilled') {
+    changeRequests = requestsResult.value;
+    try {
+      // Bootstrap is called by every page refresh. Use the cached global top for
+      // fast reads and recompute only if the cache is missing/corrupted.
+      topContributors = await getTopContributorsForRead(changeRequests, eventSettings);
+    } catch (error) {
+      translationsPayload.errors.push(error?.message || 'Failed to load global top list');
+    }
+  } else {
+    translationsPayload.errors.push(requestsResult.reason?.message || 'Failed to load global requests list');
+  }
+
+  sendJson(res, 200, { ...translationsPayload, changeRequests, topContributors, eventSettings });
+}
+
+
+
+function normalizeEventSettings(value) {
+  const root = value && typeof value === 'object' ? value : {};
+  const input = root.eventSettings && typeof root.eventSettings === 'object' ? root.eventSettings : root;
+  const rewards = input.translationRewards && typeof input.translationRewards === 'object' ? input.translationRewards : {};
+  return {
+    topResetAt: input.topResetAt ? String(input.topResetAt) : '',
+    translationRewards: {
+      enabled: Boolean(rewards.enabled),
+      endDate: rewards.endDate ? String(rewards.endDate) : '',
+      rewards: rewards.rewards ? String(rewards.rewards) : '',
+      updatedAt: rewards.updatedAt ? String(rewards.updatedAt) : '',
+    },
+  };
+}
+
+async function readEventSettings() {
+  try {
+    const raw = await readFile(EVENT_SETTINGS_FILE, 'utf-8');
+    return normalizeEventSettings(JSON.parse(raw));
+  } catch (error) {
+    if (error?.code === 'ENOENT') return DEFAULT_EVENT_SETTINGS;
+    if (error instanceof SyntaxError) {
+      const raw = await readFile(EVENT_SETTINGS_FILE, 'utf-8').catch(() => '');
+      await backupCorruptedJson(EVENT_SETTINGS_FILE, raw);
+      return DEFAULT_EVENT_SETTINGS;
+    }
+    throw error;
+  }
+}
+
+async function writeEventSettings(eventSettings) {
+  const normalized = normalizeEventSettings(eventSettings);
+  await atomicWriteJson(EVENT_SETTINGS_FILE, { eventSettings: normalized });
+  return normalized;
+}
+
+async function handleGetEventSettings(_req, res) {
+  sendJson(res, 200, { eventSettings: await readEventSettings() });
+}
+
+async function handleUpdateEventSettings(req, res) {
+  const body = await readJsonBody(req);
+  const result = await withChangeRequestLock(async () => {
+    const current = await readEventSettings();
+    const incoming = body.eventSettings && typeof body.eventSettings === 'object' ? body.eventSettings : body;
+    const eventSettings = await writeEventSettings({
+      ...current,
+      ...incoming,
+      translationRewards: {
+        ...current.translationRewards,
+        ...(incoming.translationRewards || {}),
+      },
+    });
+    const changeRequests = await readChangeRequests();
+    const topContributors = await recomputeAndSaveTopContributors(changeRequests, eventSettings);
+    return { eventSettings, topContributors };
+  });
+  sendJson(res, 200, result);
+}
+
+async function handleResetTopContributors(_req, res) {
+  const result = await withChangeRequestLock(async () => {
+    const current = await readEventSettings();
+    const eventSettings = await writeEventSettings({ ...current, topResetAt: new Date().toISOString() });
+    const changeRequests = await readChangeRequests();
+    const topContributors = await recomputeAndSaveTopContributors(changeRequests, eventSettings);
+    return { ok: true, eventSettings, topContributors };
+  });
+  sendJson(res, 200, result);
+}
 
 async function readChangeRequests() {
   try {
@@ -197,10 +372,18 @@ async function readChangeRequests() {
     const parsed = JSON.parse(raw);
     if (Array.isArray(parsed)) return normalizeChangeRequests(parsed);
     if (Array.isArray(parsed?.changeRequests)) return normalizeChangeRequests(parsed.changeRequests);
-  } catch (_error) {
-    // Missing file is allowed on first launch.
+    return [];
+  } catch (error) {
+    if (error?.code === 'ENOENT') {
+      return [];
+    }
+    if (error instanceof SyntaxError) {
+      const raw = await readFile(CHANGE_REQUESTS_FILE, 'utf-8').catch(() => '');
+      await backupCorruptedJson(CHANGE_REQUESTS_FILE, raw);
+      throw Object.assign(new Error('Global change_requests.json is corrupted. A backup was created and the file was not overwritten.'), { statusCode: 500 });
+    }
+    throw error;
   }
-  return [];
 }
 
 function normalizeChangeRequests(value) {
@@ -231,14 +414,17 @@ function normalizeChangeRequests(value) {
 
 async function writeChangeRequests(changeRequests) {
   const normalized = normalizeChangeRequests(changeRequests);
-  await mkdir(path.dirname(CHANGE_REQUESTS_FILE), { recursive: true });
-  await writeFile(CHANGE_REQUESTS_FILE, JSON.stringify({ changeRequests: normalized }, null, 2), 'utf-8');
+  await atomicWriteJson(CHANGE_REQUESTS_FILE, { changeRequests: normalized });
   return normalized;
 }
 
 async function handleGetChangeRequests(_req, res) {
-  const changeRequests = await readChangeRequests();
-  sendJson(res, 200, { changeRequests });
+  const [changeRequests, eventSettings] = await Promise.all([
+    readChangeRequests(),
+    readEventSettings(),
+  ]);
+  const topContributors = await getTopContributorsForRead(changeRequests, eventSettings);
+  sendJson(res, 200, { changeRequests, topContributors, eventSettings });
 }
 
 async function handleCreateChangeRequest(req, res) {
@@ -249,14 +435,19 @@ async function handleCreateChangeRequest(req, res) {
     return;
   }
 
-  const current = await readChangeRequests();
-  if (current.some(request => request.id === incoming[0].id)) {
-    sendJson(res, 409, { error: 'Change request already exists' });
-    return;
-  }
+  const result = await withChangeRequestLock(async () => {
+    const current = await readChangeRequests();
+    if (current.some(request => request.id === incoming[0].id)) {
+      return { statusCode: 409, payload: { error: 'Change request already exists' } };
+    }
 
-  const changeRequests = await writeChangeRequests([incoming[0], ...current]);
-  sendJson(res, 200, { ok: true, request: incoming[0], changeRequests });
+    const changeRequests = await writeChangeRequests([incoming[0], ...current]);
+    const eventSettings = await readEventSettings();
+    const topContributors = await recomputeAndSaveTopContributors(changeRequests, eventSettings);
+    return { statusCode: 200, payload: { ok: true, request: incoming[0], changeRequests, topContributors, eventSettings } };
+  });
+
+  sendJson(res, result.statusCode, result.payload);
 }
 
 
@@ -267,10 +458,14 @@ function getTranslatedTextAmount(entries) {
   }, 0);
 }
 
-function buildTopContributorsFromRequests(changeRequests) {
+function buildTopContributorsFromRequests(changeRequests, eventSettings = DEFAULT_EVENT_SETTINGS) {
   const authorStats = new Map();
+  const resetTime = eventSettings?.topResetAt ? new Date(eventSettings.topResetAt).getTime() : 0;
   for (const request of normalizeChangeRequests(changeRequests)) {
     if (request.status !== 'approved') continue;
+    if (isLeaderboardSystemAuthor(request.author)) continue;
+    const acceptedTime = new Date(request.resolvedAt || request.createdAt).getTime();
+    if (resetTime && (!acceptedTime || acceptedTime < resetTime)) continue;
     const translatedTextAmount = getTranslatedTextAmount(request.entries);
     if (translatedTextAmount <= 0) continue;
     authorStats.set(request.author, (authorStats.get(request.author) || 0) + translatedTextAmount);
@@ -282,10 +477,10 @@ function buildTopContributorsFromRequests(changeRequests) {
     .slice(0, 100);
 }
 
-async function recomputeAndSaveTopContributors(changeRequests) {
-  const topContributors = normalizeTopContributors(buildTopContributorsFromRequests(changeRequests));
-  await mkdir(path.dirname(TOP_CONTRIBUTORS_FILE), { recursive: true });
-  await writeFile(TOP_CONTRIBUTORS_FILE, JSON.stringify({ topContributors }, null, 2), 'utf-8');
+async function recomputeAndSaveTopContributors(changeRequests, eventSettings = null) {
+  const settings = eventSettings || await readEventSettings().catch(() => DEFAULT_EVENT_SETTINGS);
+  const topContributors = normalizeTopContributors(buildTopContributorsFromRequests(changeRequests, settings));
+  await atomicWriteJson(TOP_CONTRIBUTORS_FILE, { topContributors });
   return topContributors;
 }
 
@@ -406,41 +601,49 @@ async function withChangeRequestLock(work) {
 
 async function handleUpdateChangeRequest(req, res, requestId) {
   const body = await readJsonBody(req);
-  const current = await readChangeRequests();
-  const index = current.findIndex(request => request.id === requestId);
-  if (index === -1) {
-    sendJson(res, 404, { error: 'Change request not found' });
-    return;
-  }
 
-  const merged = {
-    ...current[index],
-    ...body,
-    id: current[index].id,
-    createdAt: current[index].createdAt,
-  };
-  const normalized = normalizeChangeRequests([merged]);
-  if (normalized.length !== 1) {
-    sendJson(res, 400, { error: 'Invalid change request update' });
-    return;
-  }
+  const result = await withChangeRequestLock(async () => {
+    const current = await readChangeRequests();
+    const index = current.findIndex(request => request.id === requestId);
+    if (index === -1) {
+      return { statusCode: 404, payload: { error: 'Change request not found' } };
+    }
 
-  current[index] = normalized[0];
-  const changeRequests = await writeChangeRequests(current);
-  const topContributors = await recomputeAndSaveTopContributors(changeRequests);
-  sendJson(res, 200, { ok: true, request: normalized[0], changeRequests, topContributors });
+    const merged = {
+      ...current[index],
+      ...body,
+      id: current[index].id,
+      createdAt: current[index].createdAt,
+    };
+    const normalized = normalizeChangeRequests([merged]);
+    if (normalized.length !== 1) {
+      return { statusCode: 400, payload: { error: 'Invalid change request update' } };
+    }
+
+    current[index] = normalized[0];
+    const changeRequests = await writeChangeRequests(current);
+    const eventSettings = await readEventSettings();
+    const topContributors = await recomputeAndSaveTopContributors(changeRequests, eventSettings);
+    return { statusCode: 200, payload: { ok: true, request: normalized[0], changeRequests, topContributors, eventSettings } };
+  });
+
+  sendJson(res, result.statusCode, result.payload);
 }
 
 async function handleDeleteChangeRequest(_req, res, requestId) {
-  const current = await readChangeRequests();
-  const next = current.filter(request => request.id !== requestId);
-  if (next.length === current.length) {
-    sendJson(res, 404, { error: 'Change request not found' });
-    return;
-  }
-  const changeRequests = await writeChangeRequests(next);
-  const topContributors = await recomputeAndSaveTopContributors(changeRequests);
-  sendJson(res, 200, { ok: true, changeRequests, topContributors });
+  const result = await withChangeRequestLock(async () => {
+    const current = await readChangeRequests();
+    const next = current.filter(request => request.id !== requestId);
+    if (next.length === current.length) {
+      return { statusCode: 404, payload: { error: 'Change request not found' } };
+    }
+    const changeRequests = await writeChangeRequests(next);
+    const eventSettings = await readEventSettings();
+    const topContributors = await recomputeAndSaveTopContributors(changeRequests, eventSettings);
+    return { statusCode: 200, payload: { ok: true, changeRequests, topContributors, eventSettings } };
+  });
+
+  sendJson(res, result.statusCode, result.payload);
 }
 
 
@@ -483,6 +686,7 @@ async function handleApproveChangeRequest(req, res, requestId) {
           reason: 'No request keys were found in the current translation file',
           applyResult,
           changeRequests: current,
+          eventSettings: await readEventSettings(),
           topContributors: normalizeTopContributors(await readTopContributors()),
         },
       };
@@ -498,7 +702,8 @@ async function handleApproveChangeRequest(req, res, requestId) {
 
     current[index] = approvedRequest;
     const changeRequests = await writeChangeRequests(current);
-    const topContributors = await recomputeAndSaveTopContributors(changeRequests);
+    const eventSettings = await readEventSettings();
+    const topContributors = await recomputeAndSaveTopContributors(changeRequests, eventSettings);
 
     return {
       statusCode: 200,
@@ -508,6 +713,7 @@ async function handleApproveChangeRequest(req, res, requestId) {
         request: approvedRequest,
         changeRequests,
         topContributors,
+        eventSettings,
         applyResult,
       },
     };
@@ -520,12 +726,20 @@ async function readTopContributors() {
   try {
     const raw = await readFile(TOP_CONTRIBUTORS_FILE, 'utf-8');
     const parsed = JSON.parse(raw);
-    if (Array.isArray(parsed)) return parsed;
-    if (Array.isArray(parsed?.topContributors)) return parsed.topContributors;
-  } catch (_error) {
-    // Missing file is allowed on first launch.
+    if (Array.isArray(parsed)) return normalizeTopContributors(parsed);
+    if (Array.isArray(parsed?.topContributors)) return normalizeTopContributors(parsed.topContributors);
+    return [];
+  } catch (error) {
+    if (error?.code === 'ENOENT') return [];
+    if (error instanceof SyntaxError) {
+      const raw = await readFile(TOP_CONTRIBUTORS_FILE, 'utf-8').catch(() => '');
+      await backupCorruptedJson(TOP_CONTRIBUTORS_FILE, raw);
+      // The request history is the source of truth. Corrupted cached top file
+      // must not reset the leaderboard; it will be regenerated from requests.
+      return [];
+    }
+    throw error;
   }
-  return [];
 }
 
 function normalizeTopContributors(value) {
@@ -533,27 +747,26 @@ function normalizeTopContributors(value) {
   return value
     .filter(item => item && typeof item.author === 'string')
     .map(item => ({ author: item.author.trim(), count: Number(item.count) || 0 }))
-    .filter(item => item.author && item.count > 0)
+    .filter(item => item.author && item.count > 0 && !isLeaderboardSystemAuthor(item.author))
     .sort((a, b) => b.count - a.count)
     .slice(0, 100);
 }
 
 async function handleGetTopContributors(_req, res) {
-  // The global request history is the source of truth for the leaderboard.
-  // Recompute on read so old installations that already have approved requests
-  // but no top_contributors.json still show the correct global top.
-  const changeRequests = await readChangeRequests();
-  const topContributors = await recomputeAndSaveTopContributors(changeRequests);
-  sendJson(res, 200, { topContributors });
+  const [changeRequests, eventSettings] = await Promise.all([
+    readChangeRequests(),
+    readEventSettings(),
+  ]);
+  const topContributors = await getTopContributorsForRead(changeRequests, eventSettings);
+  sendJson(res, 200, { topContributors, eventSettings });
 }
 
-async function handleSaveTopContributors(req, res) {
-  const body = await readJsonBody(req);
-  const topContributors = normalizeTopContributors(body.topContributors);
-  await mkdir(path.dirname(TOP_CONTRIBUTORS_FILE), { recursive: true });
-  await writeFile(TOP_CONTRIBUTORS_FILE, JSON.stringify({ topContributors }, null, 2), 'utf-8');
-  sendJson(res, 200, { ok: true, topContributors });
+async function handleSaveTopContributors(_req, res) {
+  // The leaderboard is derived exclusively from the global approved request
+  // history. Clients must not overwrite it with local browser state.
+  sendJson(res, 405, { error: 'Top contributors are global and read-only; approve/reject requests to update them.' });
 }
+
 
 async function handleSaveTranslation(req, res, file) {
   if (isEnglishLanguage({ file, name: file })) {
@@ -622,6 +835,7 @@ async function handleStatic(req, res, urlPath) {
 }
 
 const server = http.createServer(async (req, res) => {
+  res._acceptEncoding = req.headers['accept-encoding'] || '';
   try {
     if (req.method === 'OPTIONS') {
       sendJson(res, 204, {});
@@ -632,6 +846,11 @@ const server = http.createServer(async (req, res) => {
 
     if (req.method === 'GET' && url.pathname === '/api/health') {
       await handleHealth(req, res);
+      return;
+    }
+
+    if (req.method === 'GET' && url.pathname === '/api/bootstrap') {
+      await handleGetBootstrap(req, res);
       return;
     }
 
@@ -673,6 +892,21 @@ const server = http.createServer(async (req, res) => {
       return;
     }
 
+    if (req.method === 'GET' && url.pathname === '/api/event-settings') {
+      await handleGetEventSettings(req, res);
+      return;
+    }
+
+    if (req.method === 'PATCH' && url.pathname === '/api/event-settings') {
+      await handleUpdateEventSettings(req, res);
+      return;
+    }
+
+    if (req.method === 'POST' && url.pathname === '/api/top-contributors/reset') {
+      await handleResetTopContributors(req, res);
+      return;
+    }
+
     if (req.method === 'GET' && url.pathname === '/api/top-contributors') {
       await handleGetTopContributors(req, res);
       return;
@@ -704,7 +938,7 @@ const server = http.createServer(async (req, res) => {
     await handleStatic(req, res, url.pathname);
   } catch (error) {
     console.error(error);
-    sendJson(res, 500, {
+    sendJson(res, error?.statusCode || 500, {
       error: error instanceof Error ? error.message : 'Server error',
     });
   }

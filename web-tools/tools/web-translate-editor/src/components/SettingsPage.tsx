@@ -1,30 +1,41 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useStore } from '../store';
 import { t } from '../i18n';
 import { loadFromServerApi } from '../utils/fileLoader';
 import {
-  Settings, FolderOpen, ShieldCheck, Save, CheckCircle2,
-  AlertTriangle, RotateCcw, Info, Lock, Upload,
-  FileWarning, FileCheck, Server,
+  Settings, ShieldCheck, CheckCircle2, AlertTriangle, RotateCcw, Info,
+  Lock, Upload, FileWarning, FileCheck, Server, Trophy, Gift, Save,
 } from 'lucide-react';
 
 export default function SettingsPage() {
-  const { settings, updateSettings, isAdmin, resetData, loadFiles, languages } = useStore();
-  const [path, setPath] = useState(settings.translationPath);
+  const {
+    isAdmin,
+    resetData,
+    loadFiles,
+    languages,
+    eventSettings,
+    saveEventSettings,
+    resetTopContributors,
+  } = useStore();
   const [saved, setSaved] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
+  const [showTopResetConfirm, setShowTopResetConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [savingRewards, setSavingRewards] = useState(false);
+  const [resettingTop, setResettingTop] = useState(false);
   const [loadResult, setLoadResult] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+  const [rewardEnabled, setRewardEnabled] = useState(eventSettings.translationRewards.enabled);
+  const [rewardEndDate, setRewardEndDate] = useState(eventSettings.translationRewards.endDate || '');
+  const [rewardText, setRewardText] = useState(eventSettings.translationRewards.rewards || '');
 
-  const handleSave = () => {
-    updateSettings({ translationPath: path });
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
-  };
+  useEffect(() => {
+    setRewardEnabled(eventSettings.translationRewards.enabled);
+    setRewardEndDate(eventSettings.translationRewards.endDate || '');
+    setRewardText(eventSettings.translationRewards.rewards || '');
+  }, [eventSettings]);
 
   const handleReset = () => {
     resetData();
-    setPath('/translations');
     setShowResetConfirm(false);
   };
 
@@ -36,7 +47,7 @@ export default function SettingsPage() {
       if (result.errors.length > 0 && result.languages.length === 0) {
         setLoadResult({ message: result.errors.join('\n'), type: 'error' });
       } else {
-        loadFiles(result);
+        await loadFiles(result);
         const msg = `Loaded ${result.languages.length} language(s) from server${result.errors.length ? `. Warnings: ${result.errors.join('; ')}` : ''}`;
         setLoadResult({ message: msg, type: result.errors.length ? 'info' : 'success' });
       }
@@ -45,12 +56,44 @@ export default function SettingsPage() {
     }
   };
 
+  const handleSaveRewards = async () => {
+    setSavingRewards(true);
+    try {
+      await saveEventSettings({
+        ...eventSettings,
+        translationRewards: {
+          enabled: rewardEnabled,
+          endDate: rewardEndDate,
+          rewards: rewardText,
+          updatedAt: new Date().toISOString(),
+        },
+      });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } finally {
+      setSavingRewards(false);
+    }
+  };
+
+  const handleResetTop = async () => {
+    setResettingTop(true);
+    try {
+      await resetTopContributors();
+      setShowTopResetConfirm(false);
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } finally {
+      setResettingTop(false);
+    }
+  };
+
+  if (!isAdmin) return null;
+
   return (
     <div className="max-w-3xl mx-auto space-y-6">
-      {/* Header */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
+      <div className="theme-panel rounded-2xl shadow-sm border p-5">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-slate-600 to-slate-700 rounded-xl flex items-center justify-center">
+          <div className="w-10 h-10 theme-accent-box rounded-xl flex items-center justify-center">
             <Settings className="w-5 h-5 text-white" />
           </div>
           <div>
@@ -60,65 +103,16 @@ export default function SettingsPage() {
         </div>
       </div>
 
-      {!isAdmin && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 flex items-start gap-3">
-          <AlertTriangle className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
-          <div>
-            <p className="text-sm font-medium text-amber-700">{t('settings.limitedAccess')}</p>
-            <p className="text-xs text-amber-600 mt-0.5">{t('settings.limitedAccessDesc')}</p>
-          </div>
-        </div>
-      )}
-
-      {/* Path setting */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
-        <div className="flex items-center gap-2 mb-4">
-          <FolderOpen className="w-5 h-5 text-blue-500" />
-          <h3 className="text-sm font-semibold text-slate-700">{t('settings.pathTitle')}</h3>
-        </div>
-        <div className="space-y-3">
-          <div>
-            <label className="block text-xs font-medium text-slate-500 mb-1.5">{t('settings.pathLabel')}</label>
-            <input
-              type="text"
-              value={path}
-              onChange={(e) => setPath(e.target.value)}
-              disabled={!isAdmin}
-              placeholder="/path/to/translations"
-              className={`w-full px-3.5 py-2.5 border rounded-xl text-sm font-mono transition-all focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 ${
-                isAdmin ? 'border-slate-200 bg-white hover:border-slate-300 text-slate-800' : 'border-slate-100 bg-slate-50 text-slate-500 cursor-not-allowed'
-              }`}
-            />
-          </div>
-          <div className="bg-blue-50 border border-blue-100 rounded-xl p-3">
-            <div className="flex items-start gap-2">
-              <Info className="w-4 h-4 text-blue-400 flex-shrink-0 mt-0.5" />
-              <div className="text-xs text-blue-600 space-y-1">
-                <p className="font-medium">{t('settings.pathHint')}</p>
-                <pre className="bg-blue-100/50 rounded-lg p-2 font-mono text-[11px] overflow-x-auto">
-{`${path}/
-├── index.json      (${t('settings.pathIndex')})
-├── ru.txt          (${t('settings.pathRu')})
-└── cn.txt          (${t('settings.pathCn')})`}
-                </pre>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* File loading */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
+      <div className="theme-panel rounded-2xl shadow-sm border p-5">
         <div className="flex items-center gap-2 mb-4">
           <Upload className="w-5 h-5 text-purple-500" />
-          <h3 className="text-sm font-semibold text-slate-700">Load translation files</h3>
+          <h3 className="text-sm font-semibold text-slate-700">{t('settings.loadTitle')}</h3>
           {languages.length > 0 && (
             <span className="text-xs text-slate-400 ml-auto">{languages.length} language(s) loaded</span>
           )}
         </div>
 
         <div className="space-y-3">
-          {/* Load feedback */}
           {loadResult && (
             <div className={`rounded-xl p-3 flex items-start gap-2 ${
               loadResult.type === 'success' ? 'bg-emerald-50 border border-emerald-200' :
@@ -135,29 +129,79 @@ export default function SettingsPage() {
             </div>
           )}
 
-          <div className="grid grid-cols-1 gap-3">
-            <button
-              onClick={handleLoadFromServer}
-              disabled={loading || !isAdmin}
-              className="flex items-center gap-3 p-4 bg-gradient-to-br from-slate-50 to-zinc-50 border border-slate-200 rounded-xl hover:border-slate-300 hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Server className="w-6 h-6 text-slate-600 flex-shrink-0" />
-              <div className="text-left">
-                <span className="block text-xs font-semibold text-slate-700">Load from Server</span>
-                <span className="block text-[10px] text-slate-500 leading-tight">Read TRANSLATION_ROOT via backend API</span>
-              </div>
-            </button>
-          </div>
-
-          <p className="text-[10px] text-slate-400 flex items-center gap-1">
-            <Info className="w-3 h-3" />
-            {loading ? 'Loading...' : 'Use Load from Server for /root/mmorpg/server_lang. Start backend with TRANSLATION_ROOT=/root/mmorpg/server_lang npm run server'}
-          </p>
+          <button
+            onClick={handleLoadFromServer}
+            disabled={loading}
+            className="w-full flex items-center gap-3 p-4 bg-gradient-to-br from-slate-50 to-zinc-50 border border-slate-200 rounded-xl hover:border-slate-300 hover:shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Server className="w-6 h-6 text-slate-600 flex-shrink-0" />
+            <div className="text-left">
+              <span className="block text-xs font-semibold text-slate-700">{t('settings.loadServer')}</span>
+              <span className="block text-[10px] text-slate-500 leading-tight">{t('settings.loadServerDesc')}</span>
+            </div>
+          </button>
         </div>
       </div>
 
-      {/* Admin credentials - read only */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
+      <div className="theme-panel rounded-2xl shadow-sm border p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <Gift className="w-5 h-5 text-emerald-500" />
+          <h3 className="text-sm font-semibold text-slate-700">{t('settings.rewardsTitle')}</h3>
+        </div>
+        <div className="space-y-4">
+          <label className="flex items-center justify-between gap-3 rounded-xl border border-slate-200 bg-slate-50/70 px-4 py-3 cursor-pointer">
+            <div>
+              <p className="text-sm font-semibold text-slate-700">{t('settings.rewardsEnable')}</p>
+              <p className="text-xs text-slate-500">{t('settings.rewardsEnableDesc')}</p>
+            </div>
+            <input
+              type="checkbox"
+              checked={rewardEnabled}
+              onChange={(e) => setRewardEnabled(e.target.checked)}
+              className="h-5 w-5 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+            />
+          </label>
+          <div>
+            <label className="block text-xs font-semibold text-slate-500 mb-1.5">{t('settings.rewardsEndDate')}</label>
+            <input
+              type="date"
+              value={rewardEndDate}
+              onChange={(e) => setRewardEndDate(e.target.value)}
+              className="w-full px-3.5 py-2.5 border border-slate-200 bg-white rounded-xl text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-slate-500 mb-1.5">{t('settings.rewardsText')}</label>
+            <textarea
+              value={rewardText}
+              onChange={(e) => setRewardText(e.target.value)}
+              rows={5}
+              placeholder={t('settings.rewardsPlaceholder')}
+              className="w-full px-3.5 py-2.5 border border-slate-200 bg-white rounded-xl text-sm text-slate-800 resize-y focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400"
+            />
+          </div>
+          <div className="flex justify-end">
+            <button onClick={handleSaveRewards} disabled={savingRewards} className="flex items-center gap-1.5 px-5 py-2.5 theme-primary-button text-white rounded-xl text-sm font-medium shadow-lg transition-all disabled:opacity-60">
+              <Save className="w-4 h-4" />{savingRewards ? t('settings.saving') : t('settings.saveRewards')}
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="theme-panel rounded-2xl shadow-sm border p-5">
+        <div className="flex items-center gap-2 mb-4">
+          <Trophy className="w-5 h-5 text-amber-500" />
+          <h3 className="text-sm font-semibold text-slate-700">{t('settings.topTitle')}</h3>
+        </div>
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-4 mb-4">
+          <p className="text-sm text-amber-800 font-medium">{t('settings.resetTopHint')}</p>
+        </div>
+        <button onClick={() => setShowTopResetConfirm(true)} className="flex items-center gap-1.5 px-4 py-2 text-sm text-red-500 hover:bg-red-50 border border-red-200 rounded-xl transition-all">
+          <RotateCcw className="w-4 h-4" />{t('settings.resetTop')}
+        </button>
+      </div>
+
+      <div className="theme-panel rounded-2xl shadow-sm border p-5">
         <div className="flex items-center gap-2 mb-4">
           <ShieldCheck className="w-5 h-5 text-emerald-500" />
           <h3 className="text-sm font-semibold text-slate-700">{t('settings.adminTitle')}</h3>
@@ -166,33 +210,19 @@ export default function SettingsPage() {
           <div className="flex items-start gap-3">
             <Lock className="w-5 h-5 text-slate-400 flex-shrink-0 mt-0.5" />
             <div className="text-sm text-slate-600">
-              <p className="font-medium text-slate-700 mb-1">
-                {t('settings.adminLogin')}: <code className="bg-slate-200 px-1.5 py-0.5 rounded text-xs">***</code>
-              </p>
-              <p className="font-medium text-slate-700 mb-2">
-                {t('settings.adminPassword')}: <code className="bg-slate-200 px-1.5 py-0.5 rounded text-xs">********</code>
-              </p>
+              <p className="font-medium text-slate-700 mb-1">{t('settings.adminLogin')}: <code className="bg-slate-200 px-1.5 py-0.5 rounded text-xs">***</code></p>
+              <p className="font-medium text-slate-700 mb-2">{t('settings.adminPassword')}: <code className="bg-slate-200 px-1.5 py-0.5 rounded text-xs">********</code></p>
               <p className="text-xs text-slate-500">{t('settings.adminHint')}</p>
-              <p className="text-xs text-amber-600 mt-2 flex items-center gap-1">
-                <AlertTriangle className="w-3 h-3" />
-                Credentials are configured via .env file at build time
-              </p>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Actions */}
-      {isAdmin && (
-        <div className="flex items-center justify-between">
-          <button onClick={() => setShowResetConfirm(true)} className="flex items-center gap-1.5 px-4 py-2 text-sm text-red-500 hover:bg-red-50 border border-red-200 rounded-xl transition-all">
-            <RotateCcw className="w-4 h-4" />{t('settings.resetData')}
-          </button>
-          <button onClick={handleSave} className="flex items-center gap-1.5 px-6 py-2.5 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-xl text-sm font-medium shadow-lg shadow-blue-500/25 transition-all">
-            <Save className="w-4 h-4" />{t('settings.save')}
-          </button>
-        </div>
-      )}
+      <div className="flex items-center justify-between">
+        <button onClick={() => setShowResetConfirm(true)} className="flex items-center gap-1.5 px-4 py-2 text-sm text-red-500 hover:bg-red-50 border border-red-200 rounded-xl transition-all">
+          <RotateCcw className="w-4 h-4" />{t('settings.resetData')}
+        </button>
+      </div>
 
       {saved && (
         <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-3 flex items-center gap-2">
@@ -201,27 +231,33 @@ export default function SettingsPage() {
         </div>
       )}
 
-      {/* Reset modal */}
+      {showTopResetConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setShowTopResetConfirm(false)}>
+          <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md mx-4 p-6" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center"><AlertTriangle className="w-5 h-5 text-red-500" /></div>
+              <div><h3 className="text-lg font-semibold text-slate-800">{t('settings.resetTop')}</h3><p className="text-sm text-slate-400">{t('settings.resetCannotUndo')}</p></div>
+            </div>
+            <p className="text-sm text-slate-600 mb-5">{t('settings.resetTopDesc')}</p>
+            <div className="flex justify-end gap-2">
+              <button onClick={() => setShowTopResetConfirm(false)} className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">{t('settings.cancel')}</button>
+              <button onClick={handleResetTop} disabled={resettingTop} className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-xl text-sm font-medium transition-colors disabled:opacity-60">{t('settings.resetConfirm')}</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {showResetConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={() => setShowResetConfirm(false)}>
           <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md mx-4 p-6" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center gap-3 mb-4">
-              <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center">
-                <AlertTriangle className="w-5 h-5 text-red-500" />
-              </div>
-              <div>
-                <h3 className="text-lg font-semibold text-slate-800">{t('settings.resetTitle')}</h3>
-                <p className="text-sm text-slate-400">{t('settings.resetCannotUndo')}</p>
-              </div>
+              <div className="w-10 h-10 bg-red-100 rounded-xl flex items-center justify-center"><AlertTriangle className="w-5 h-5 text-red-500" /></div>
+              <div><h3 className="text-lg font-semibold text-slate-800">{t('settings.resetTitle')}</h3><p className="text-sm text-slate-400">{t('settings.resetCannotUndo')}</p></div>
             </div>
             <p className="text-sm text-slate-600 mb-5">{t('settings.resetDesc')}</p>
             <div className="flex justify-end gap-2">
-              <button onClick={() => setShowResetConfirm(false)} className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">
-                {t('settings.cancel')}
-              </button>
-              <button onClick={handleReset} className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-xl text-sm font-medium transition-colors">
-                {t('settings.resetConfirm')}
-              </button>
+              <button onClick={() => setShowResetConfirm(false)} className="px-4 py-2 text-sm text-slate-600 hover:bg-slate-100 rounded-xl transition-colors">{t('settings.cancel')}</button>
+              <button onClick={handleReset} className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-xl text-sm font-medium transition-colors">{t('settings.resetConfirm')}</button>
             </div>
           </div>
         </div>

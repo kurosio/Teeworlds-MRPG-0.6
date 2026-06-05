@@ -51,12 +51,12 @@ const TranslationRow = memo(function TranslationRow({ entry, langCode, editedVal
   const revertValue = () => updateValue(entry.translation);
 
   return (
-    <article className={`translation-row group mx-2 my-1.5 rounded-lg border px-3 py-2 ${
+    <article className={`translation-row theme-translation-row group mx-2 my-1.5 rounded-lg border px-3 py-2 ${
       isChanged
-        ? 'border-blue-300 bg-blue-50/60'
+        ? 'theme-row-changed'
         : isUntranslated
-          ? 'border-amber-200 bg-amber-50/35'
-          : 'border-slate-200 bg-white hover:border-blue-200'
+          ? 'theme-row-untranslated'
+          : 'theme-row-translated'
     }`}>
       <div className="grid grid-cols-[20px_minmax(0,1fr)] gap-2">
         <div className="pt-1.5">
@@ -72,16 +72,16 @@ const TranslationRow = memo(function TranslationRow({ entry, langCode, editedVal
         <div className="min-w-0">
           <div className="mb-1.5 flex items-center justify-between gap-2">
             <div className="min-w-0 flex items-center gap-2">
-              <span className="shrink-0 rounded-md bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-slate-500">EN</span>
-              <p className="truncate font-mono text-[12px] leading-5 text-slate-700" title={entry.original}>{entry.original}</p>
+              <span className="shrink-0 theme-mini-badge rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide">EN</span>
+              <p className="theme-original-text truncate font-mono text-[12px] leading-5" title={entry.original}>{entry.original}</p>
             </div>
             <div className="flex shrink-0 items-center gap-1">
-              {isChanged && <span className="rounded-full bg-blue-100 px-2 py-0.5 text-[10px] font-semibold text-blue-700">{t('editor.changed')}</span>}
-              {isSameAsOriginal && <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-700">{t('editor.matchesOriginal')}</span>}
+              {isChanged && <span className="theme-badge-changed rounded-full px-2 py-0.5 text-[10px] font-semibold">{t('editor.changed')}</span>}
+              {isSameAsOriginal && <span className="theme-badge-warning rounded-full px-2 py-0.5 text-[10px] font-semibold">{t('editor.matchesOriginal')}</span>}
               <button
                 type="button"
                 onClick={setFromOriginal}
-                className="inline-flex items-center gap-1 rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] font-medium text-blue-600 hover:bg-blue-50"
+                className="theme-small-action inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[11px] font-medium"
                 title={t('editor.copyOriginal')}
               >
                 <Copy className="h-3 w-3" />
@@ -90,15 +90,15 @@ const TranslationRow = memo(function TranslationRow({ entry, langCode, editedVal
             </div>
           </div>
 
-          <div className="rounded-lg border border-slate-200 bg-white p-2">
+          <div className="theme-translation-box rounded-lg border p-2">
             <div className="mb-1.5 flex items-center justify-between gap-2">
-              <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-blue-500">{langCode} • {t('editor.translation')}</span>
+              <span className="theme-accent-text text-[10px] font-bold uppercase tracking-[0.16em]">{langCode} • {t('editor.translation')}</span>
               <div className="flex items-center gap-1.5">
-                <span className="text-[10px] text-slate-400">{draftValue.length} {t('editor.characters')}</span>
+                <span className="theme-muted text-[10px]">{draftValue.length} {t('editor.characters')}</span>
                 <button
                   type="button"
                   onClick={clearValue}
-                  className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+                  className="theme-tiny-action inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium"
                   title={t('editor.clear')}
                 >
                   <Eraser className="h-3 w-3" />
@@ -108,7 +108,7 @@ const TranslationRow = memo(function TranslationRow({ entry, langCode, editedVal
                   <button
                     type="button"
                     onClick={revertValue}
-                    className="inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium text-slate-500 hover:bg-slate-100 hover:text-slate-700"
+                    className="theme-tiny-action inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[10px] font-medium"
                     title={t('editor.revert')}
                   >
                     <RotateCcw className="h-3 w-3" />
@@ -124,12 +124,12 @@ const TranslationRow = memo(function TranslationRow({ entry, langCode, editedVal
               onChange={(e) => updateValue(e.currentTarget.value)}
               placeholder={t('editor.enterTranslation')}
               spellCheck={false}
-              className={`block w-full resize-none overflow-hidden rounded-md border px-2.5 py-1.5 font-mono text-[13px] leading-5 text-slate-900 outline-none placeholder:text-slate-300 focus:border-blue-400 focus:ring-2 focus:ring-blue-500/10 ${
+              className={`theme-translation-textarea block w-full resize-none overflow-hidden rounded-md border px-2.5 py-1.5 font-mono text-[13px] leading-5 outline-none ${
                 isUntranslated
-                  ? 'border-amber-200 bg-amber-50/20'
+                  ? 'theme-textarea-untranslated'
                   : isChanged
-                    ? 'border-blue-300 bg-blue-50/20'
-                    : 'border-slate-200 bg-white hover:border-slate-300'
+                    ? 'theme-textarea-changed'
+                    : 'theme-textarea-default'
               }`}
             />
           </div>
@@ -154,7 +154,7 @@ interface PaginationProps {
 function PaginationBar({ page, totalPages, pageSize, filteredCount, totalCount, changedCount, onPageChange, onPageSizeChange, compact = false }: PaginationProps) {
   return (
     <div className="flex items-center justify-between gap-3 flex-wrap">
-      <div className="text-xs text-slate-400">
+      <div className="theme-muted text-xs">
         {filteredCount} {t('editor.entriesOf')} {totalCount} {t('editor.entries')}
         {changedCount > 0 && (
           <span className="ml-2 text-blue-500 font-medium">• {changedCount} {t('editor.changed')}</span>
@@ -164,7 +164,7 @@ function PaginationBar({ page, totalPages, pageSize, filteredCount, totalCount, 
         <select
           value={pageSize}
           onChange={(e) => onPageSizeChange(Number(e.target.value))}
-          className="px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+          className="theme-page-control px-2 py-1.5 border rounded-lg text-xs focus:outline-none"
           title="Rows per page"
         >
           {PAGE_SIZE_OPTIONS.map(size => (
@@ -175,18 +175,18 @@ function PaginationBar({ page, totalPages, pageSize, filteredCount, totalCount, 
           type="button"
           onClick={() => onPageChange(page - 1)}
           disabled={page <= 1}
-          className="p-1.5 rounded-lg border border-slate-200 text-slate-500 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50"
+          className="theme-page-control p-1.5 rounded-lg border disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <ChevronLeft className="w-4 h-4" />
         </button>
-        <span className="text-xs text-slate-500 tabular-nums min-w-[88px] text-center">
+        <span className="theme-muted text-xs tabular-nums min-w-[88px] text-center">
           {page} / {totalPages}
         </span>
         <button
           type="button"
           onClick={() => onPageChange(page + 1)}
           disabled={page >= totalPages}
-          className="p-1.5 rounded-lg border border-slate-200 text-slate-500 disabled:opacity-40 disabled:cursor-not-allowed hover:bg-slate-50"
+          className="theme-page-control p-1.5 rounded-lg border disabled:opacity-40 disabled:cursor-not-allowed"
         >
           <ChevronRight className="w-4 h-4" />
         </button>
@@ -197,11 +197,66 @@ function PaginationBar({ page, totalPages, pageSize, filteredCount, totalCount, 
             max={totalPages}
             value={page}
             onChange={(e) => onPageChange(Number(e.target.value) || 1)}
-            className="w-16 px-2 py-1.5 bg-slate-50 border border-slate-200 rounded-lg text-xs text-slate-600 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+            className="theme-page-control w-16 px-2 py-1.5 border rounded-lg text-xs focus:outline-none"
             title="Go to page"
           />
         )}
       </div>
+    </div>
+  );
+}
+
+
+function LanguageQuickSwitcher() {
+  const { languages, selectedLanguage, setSelectedLanguage, translations, fileLoadStatus, filesLoading } = useStore();
+  const selectedIndex = useMemo(() => languages.findIndex(lang => lang.file === selectedLanguage), [languages, selectedLanguage]);
+  const selectedLang = selectedLanguage ? languages.find(lang => lang.file === selectedLanguage) : null;
+
+  const selectByOffset = useCallback((offset: number) => {
+    if (languages.length === 0) return;
+    const currentIndex = selectedIndex >= 0 ? selectedIndex : 0;
+    const nextIndex = (currentIndex + offset + languages.length) % languages.length;
+    setSelectedLanguage(languages[nextIndex].file);
+  }, [languages, selectedIndex, setSelectedLanguage]);
+
+  if (languages.length <= 1) return null;
+
+  return (
+    <div className="theme-soft-panel flex items-center gap-1 rounded-xl border px-1.5 py-1">
+      <button
+        type="button"
+        onClick={() => selectByOffset(-1)}
+        className="theme-page-control rounded-lg border p-1.5"
+        title={t('editor.previousLanguage')}
+      >
+        <ChevronLeft className="h-4 w-4" />
+      </button>
+      <select
+        value={selectedLanguage || ''}
+        onChange={(event) => setSelectedLanguage(event.currentTarget.value || null)}
+        className="theme-page-control min-w-[160px] rounded-lg border px-2 py-1.5 text-xs font-medium outline-none"
+        title={t('editor.jumpLanguage')}
+      >
+        {languages.map(lang => {
+          const file = translations[lang.file];
+          const loading = filesLoading && fileLoadStatus[lang.file] === 'loading';
+          const total = file?.entries.length || 0;
+          return (
+            <option key={lang.file} value={lang.file}>
+              {lang.name} · {lang.file.toUpperCase()}{loading ? ' · loading' : total ? ` · ${total}` : ''}
+            </option>
+          );
+        })}
+      </select>
+      <button
+        type="button"
+        onClick={() => selectByOffset(1)}
+        className="theme-page-control rounded-lg border p-1.5"
+        title={t('editor.nextLanguage')}
+      >
+        <ChevronRight className="h-4 w-4" />
+      </button>
+      {selectedLang && <span className="hidden xl:inline px-2 text-[11px] font-semibold theme-text-accent uppercase">{selectedIndex + 1}/{languages.length}</span>}
     </div>
   );
 }
@@ -244,7 +299,9 @@ export default function TranslationEditor() {
       editedTranslations[entry.original] !== undefined && editedTranslations[entry.original] !== entry.translation;
 
     const getSavedStatusPriority = (entry: TranslationEntry) => {
-      if (hasUserChange(entry)) return 0;
+      // Keep pagination stable while the user types. Unsaved edits are shown
+      // through the separate Changed by you filter and badges, but they must
+      // not promote a row to the first page or reshuffle the active page.
       if (!isTranslatedValue(entry.original, entry.translation)) return 1;
       return 2;
     };
@@ -386,9 +443,9 @@ export default function TranslationEditor() {
 
   if (!selectedLanguage || !file) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-slate-50 to-blue-50/30 rounded-2xl border border-slate-200/60 border-dashed">
+      <div className="flex-1 flex items-center justify-center theme-empty-state rounded-2xl border border-dashed">
         <div className="text-center px-8">
-          <div className="w-20 h-20 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <div className="theme-empty-icon w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <FileText className="w-10 h-10 text-blue-400" />
           </div>
           <h3 className="text-lg font-semibold text-slate-600 mb-1">{t('editor.selectFile')}</h3>
@@ -405,8 +462,8 @@ export default function TranslationEditor() {
       disabled={syncStatus === 'loading'}
       className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
         syncStatus === 'loading'
-          ? 'bg-slate-100 text-slate-400 cursor-wait'
-          : 'bg-white text-blue-600 border border-blue-200 hover:bg-blue-50 hover:border-blue-300 shadow-sm'
+          ? 'theme-disabled-button cursor-wait'
+          : 'theme-secondary-button border shadow-sm'
       }`}
       title={t('editor.sync')}
     >
@@ -422,9 +479,9 @@ export default function TranslationEditor() {
       className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
         changedEntries.length > 0
           ? isAdmin
-            ? 'bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white shadow-lg shadow-emerald-500/25'
-            : 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg shadow-blue-500/25'
-          : 'bg-slate-100 text-slate-400 cursor-not-allowed'
+            ? 'theme-success-button text-white shadow-lg'
+            : 'theme-primary-button text-white shadow-lg'
+          : 'theme-disabled-button cursor-not-allowed'
       }`}
     >
       <Send className="w-3.5 h-3.5" />
@@ -436,34 +493,35 @@ export default function TranslationEditor() {
   return (
     <div className="flex-1 flex flex-col min-h-0 relative">
       {/* Toolbar */}
-      <div className="bg-white rounded-t-2xl border border-slate-200/80 border-b-0 px-4 py-3 sticky top-0 z-20 shadow-sm">
+      <div className="theme-panel theme-editor-toolbar rounded-t-2xl border border-b-0 px-4 py-3 sticky top-0 z-20 shadow-sm">
         <div className="flex items-center justify-between gap-4 flex-wrap">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-lg flex items-center justify-center text-white text-xs font-bold uppercase">
+            <div className="theme-accent-box w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold uppercase">
               {selectedLanguage}
             </div>
             <div>
-              <h2 className="text-base font-semibold text-slate-800">{lang?.name}</h2>
-              <p className="text-xs text-slate-400">{lang?.file}.txt</p>
+              <h2 className="theme-title text-base font-semibold">{lang?.name}</h2>
+              <p className="theme-muted text-xs">{lang?.file}.txt</p>
             </div>
           </div>
           <div className="flex items-center gap-2 text-xs flex-wrap justify-end">
-            <span className="px-2.5 py-1 bg-slate-100 rounded-full text-slate-500 font-medium">{stats.total} {t('editor.total')}</span>
-            <span className="px-2.5 py-1 bg-emerald-50 text-emerald-600 rounded-full font-medium">{stats.translated} {t('editor.translated')}</span>
-            <span className="px-2.5 py-1 bg-amber-50 text-amber-600 rounded-full font-medium">{stats.untranslated} {t('editor.untranslated')}</span>
+            <LanguageQuickSwitcher />
+            <span className="theme-chip px-2.5 py-1 rounded-full font-medium">{stats.total} {t('editor.total')}</span>
+            <span className="theme-chip-success px-2.5 py-1 rounded-full font-medium">{stats.translated} {t('editor.translated')}</span>
+            <span className="theme-chip-warning px-2.5 py-1 rounded-full font-medium">{stats.untranslated} {t('editor.untranslated')}</span>
             {syncButton}
             {submitButton}
           </div>
         </div>
         <div className="flex items-center gap-3 mt-3">
           <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+            <Search className="theme-muted absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={t('editor.searchPlaceholder')}
-              className="w-full pl-9 pr-8 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all placeholder-slate-400"
+              className="theme-input w-full pl-9 pr-8 py-2 border rounded-xl text-sm focus:outline-none transition-all"
             />
             {searchQuery && (
               <button onClick={() => setSearchQuery('')} className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
@@ -471,15 +529,15 @@ export default function TranslationEditor() {
               </button>
             )}
           </div>
-          <div className="flex items-center gap-1 bg-slate-50 rounded-xl border border-slate-200 p-0.5">
-            <Filter className="w-4 h-4 text-slate-400 ml-2" />
+          <div className="theme-filter-shell flex items-center gap-1 rounded-xl border p-0.5">
+            <Filter className="theme-muted w-4 h-4 ml-2" />
             {(['all', 'translated', 'untranslated', 'changed'] as const).map(mode => (
               <button
                 key={mode}
                 type="button"
                 onClick={() => setFilterMode(mode)}
                 className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
-                  filterMode === mode ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                  filterMode === mode ? 'theme-filter-active shadow-sm' : 'theme-filter-button'
                 }`}
               >
                 {mode === 'all'
@@ -493,7 +551,7 @@ export default function TranslationEditor() {
             ))}
           </div>
         </div>
-        <div className="mt-3 rounded-xl border border-slate-100 bg-slate-50/70 px-3 py-2">
+        <div className="theme-soft-panel mt-3 rounded-xl border px-3 py-2">
           <PaginationBar
             page={page}
             totalPages={totalPages}
@@ -508,8 +566,8 @@ export default function TranslationEditor() {
       </div>
 
       {/* Entries */}
-      <div className="editor-entries-scroll flex-1 min-h-0 bg-white border-x border-slate-200/80 overflow-y-auto overscroll-contain">
-        <div className="divide-y divide-slate-100">
+      <div className="theme-editor-list editor-entries-scroll flex-1 min-h-0 border-x overflow-y-auto overscroll-contain">
+        <div className="theme-row-list divide-y">
           {pagedEntries.map((entry) => (
             <TranslationRow
               key={entry.id}
@@ -529,7 +587,7 @@ export default function TranslationEditor() {
       </div>
 
       {/* Bottom bar */}
-      <div className="bg-white rounded-b-2xl border border-slate-200/80 border-t-0 px-4 py-3">
+      <div className="theme-panel rounded-b-2xl border border-t-0 px-4 py-3">
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <PaginationBar
             page={page}
@@ -544,7 +602,7 @@ export default function TranslationEditor() {
           />
           <div className="flex items-center gap-2 ml-auto">
             {changedEntries.length > 0 && (
-              <button onClick={() => setEditedTranslations({})} className="px-3 py-1.5 text-xs text-slate-500 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-all">
+              <button onClick={() => setEditedTranslations({})} className="theme-tiny-action px-3 py-1.5 text-xs rounded-lg transition-all">
                 {t('editor.reset')}
               </button>
             )}

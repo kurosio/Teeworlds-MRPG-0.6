@@ -1,10 +1,43 @@
-import type { LanguageIndex, TopContributor, ChangeRequest } from '../types';
+import type { LanguageIndex, TopContributor, ChangeRequest, GlobalEventSettings } from '../types';
 
 export interface LoadResult {
   languages: LanguageIndex[];
   files: Record<string, string>;
   errors: string[];
   versions?: Record<string, number>;
+  changeRequests?: ChangeRequest[];
+  topContributors?: TopContributor[];
+  eventSettings?: GlobalEventSettings;
+  loadedAt?: string;
+}
+
+export interface GlobalRequestsResult {
+  changeRequests: ChangeRequest[];
+  topContributors: TopContributor[];
+  eventSettings?: GlobalEventSettings;
+}
+
+
+function apiBaseUrl(): string {
+  return (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
+}
+
+async function fetchJsonWithTimeout(url: string, init: RequestInit = {}, timeoutMs = 45000): Promise<Response> {
+  const controller = new AbortController();
+  const timeout = window.setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, {
+      cache: 'no-store',
+      ...init,
+      signal: init.signal || controller.signal,
+      headers: {
+        'Accept': 'application/json',
+        ...(init.headers || {}),
+      },
+    });
+  } finally {
+    window.clearTimeout(timeout);
+  }
 }
 
 export interface ApproveChangeRequestResult {
@@ -12,6 +45,7 @@ export interface ApproveChangeRequestResult {
   reason?: string;
   changeRequests: ChangeRequest[];
   topContributors: TopContributor[];
+  eventSettings?: GlobalEventSettings;
   applyResult: {
     content: string;
     applied: number;
@@ -51,8 +85,8 @@ export async function loadFromServerApi(): Promise<LoadResult> {
   const result: LoadResult = { languages: [], files: {}, errors: [] };
 
   try {
-    const apiBase = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
-    const response = await fetch(`${apiBase}/api/translations`);
+    const apiBase = apiBaseUrl();
+    const response = await fetchJsonWithTimeout(`${apiBase}/api/bootstrap`);
     const payload = await response.json().catch(() => null);
 
     if (!response.ok) {
@@ -64,6 +98,10 @@ export async function loadFromServerApi(): Promise<LoadResult> {
     result.files = payload.files || {};
     result.errors = Array.isArray(payload.errors) ? payload.errors : [];
     result.versions = payload.versions || {};
+    result.changeRequests = Array.isArray(payload.changeRequests) ? payload.changeRequests : undefined;
+    result.topContributors = Array.isArray(payload.topContributors) ? payload.topContributors : undefined;
+    result.eventSettings = payload.eventSettings || undefined;
+    result.loadedAt = payload.loadedAt ? String(payload.loadedAt) : undefined;
     return result;
   } catch (e) {
     result.errors.push(`API connection error: ${(e as Error).message}. Start the backend with npm run server.`);
@@ -80,8 +118,8 @@ export async function loadServerManifest(): Promise<LoadResult> {
   const result: LoadResult = { languages: [], files: {}, errors: [] };
 
   try {
-    const apiBase = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
-    const response = await fetch(`${apiBase}/api/translations/manifest`);
+    const apiBase = apiBaseUrl();
+    const response = await fetchJsonWithTimeout(`${apiBase}/api/translations/manifest`, {}, 20000);
     const payload = await response.json().catch(() => null);
 
     if (!response.ok) {
@@ -102,8 +140,8 @@ export async function loadServerManifest(): Promise<LoadResult> {
  * Save one translation file through the Node.js backend.
  */
 export async function saveTranslationToServer(file: string, content: string): Promise<void> {
-  const apiBase = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
-  const response = await fetch(`${apiBase}/api/translations/${encodeURIComponent(file)}`, {
+  const apiBase = apiBaseUrl();
+  const response = await fetchJsonWithTimeout(`${apiBase}/api/translations/${encodeURIComponent(file)}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -127,8 +165,8 @@ export async function applyTranslationChangesToServer(
   file: string,
   changes: Array<{ original: string; newTranslation: string }>
 ): Promise<{ content: string; applied: number; skipped: number; version?: number; appliedKeys?: string[] }> {
-  const apiBase = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
-  const response = await fetch(`${apiBase}/api/translations/${encodeURIComponent(file)}/apply`, {
+  const apiBase = apiBaseUrl();
+  const response = await fetchJsonWithTimeout(`${apiBase}/api/translations/${encodeURIComponent(file)}/apply`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ changes }),
@@ -150,38 +188,43 @@ export async function applyTranslationChangesToServer(
 
 
 export async function loadTopContributorsFromServer(): Promise<TopContributor[]> {
-  const apiBase = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
-  const response = await fetch(`${apiBase}/api/top-contributors`);
-  if (!response.ok) return [];
+  const apiBase = apiBaseUrl();
+  const response = await fetchJsonWithTimeout(`${apiBase}/api/top-contributors`);
   const payload = await response.json().catch(() => null);
-  return Array.isArray(payload?.topContributors) ? payload.topContributors : [];
-}
-
-export async function saveTopContributorsToServer(topContributors: TopContributor[]): Promise<void> {
-  const apiBase = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
-  const response = await fetch(`${apiBase}/api/top-contributors`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ topContributors }),
-  });
   if (!response.ok) {
-    const payload = await response.json().catch(() => null);
-    throw new Error(payload?.error || `Failed to save top contributors (${response.status})`);
+    throw new Error(payload?.error || `Failed to load global top contributors (${response.status})`);
   }
+  if (!Array.isArray(payload?.topContributors)) {
+    throw new Error('Invalid global top contributors response');
+  }
+  return payload.topContributors;
+}
+
+export async function saveTopContributorsToServer(_topContributors: TopContributor[]): Promise<void> {
+  throw new Error('Top contributors are global and are recalculated from approved requests on the server.');
 }
 
 
-export async function loadChangeRequestsFromServer(): Promise<ChangeRequest[]> {
-  const apiBase = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
-  const response = await fetch(`${apiBase}/api/change-requests`);
-  if (!response.ok) return [];
+export async function loadChangeRequestsFromServer(): Promise<GlobalRequestsResult> {
+  const apiBase = apiBaseUrl();
+  const response = await fetchJsonWithTimeout(`${apiBase}/api/change-requests`, {}, 30000);
   const payload = await response.json().catch(() => null);
-  return Array.isArray(payload?.changeRequests) ? payload.changeRequests : [];
+  if (!response.ok) {
+    throw new Error(payload?.error || `Failed to load global change requests (${response.status})`);
+  }
+  if (!Array.isArray(payload?.changeRequests)) {
+    throw new Error('Invalid global change requests response');
+  }
+  return {
+    changeRequests: payload.changeRequests,
+    topContributors: Array.isArray(payload?.topContributors) ? payload.topContributors : [],
+    eventSettings: payload?.eventSettings || undefined,
+  };
 }
 
-export async function createChangeRequestOnServer(request: ChangeRequest): Promise<ChangeRequest[]> {
-  const apiBase = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
-  const response = await fetch(`${apiBase}/api/change-requests`, {
+export async function createChangeRequestOnServer(request: ChangeRequest): Promise<GlobalRequestsResult> {
+  const apiBase = apiBaseUrl();
+  const response = await fetchJsonWithTimeout(`${apiBase}/api/change-requests`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(request),
@@ -190,12 +233,19 @@ export async function createChangeRequestOnServer(request: ChangeRequest): Promi
   if (!response.ok) {
     throw new Error(payload?.error || `Failed to create change request (${response.status})`);
   }
-  return Array.isArray(payload?.changeRequests) ? payload.changeRequests : [];
+  if (!Array.isArray(payload?.changeRequests)) {
+    throw new Error('Invalid create change request response');
+  }
+  return {
+    changeRequests: payload.changeRequests,
+    topContributors: Array.isArray(payload?.topContributors) ? payload.topContributors : [],
+    eventSettings: payload?.eventSettings || undefined,
+  };
 }
 
-export async function updateChangeRequestOnServer(requestId: string, patch: Partial<ChangeRequest>): Promise<ChangeRequest[]> {
-  const apiBase = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
-  const response = await fetch(`${apiBase}/api/change-requests/${encodeURIComponent(requestId)}`, {
+export async function updateChangeRequestOnServer(requestId: string, patch: Partial<ChangeRequest>): Promise<GlobalRequestsResult> {
+  const apiBase = apiBaseUrl();
+  const response = await fetchJsonWithTimeout(`${apiBase}/api/change-requests/${encodeURIComponent(requestId)}`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(patch),
@@ -204,15 +254,22 @@ export async function updateChangeRequestOnServer(requestId: string, patch: Part
   if (!response.ok) {
     throw new Error(payload?.error || `Failed to update change request (${response.status})`);
   }
-  return Array.isArray(payload?.changeRequests) ? payload.changeRequests : [];
+  if (!Array.isArray(payload?.changeRequests)) {
+    throw new Error('Invalid update change request response');
+  }
+  return {
+    changeRequests: payload.changeRequests,
+    topContributors: Array.isArray(payload?.topContributors) ? payload.topContributors : [],
+    eventSettings: payload?.eventSettings || undefined,
+  };
 }
 
 export async function approveChangeRequestOnServer(
   requestId: string,
   entries: ChangeRequest['entries']
 ): Promise<ApproveChangeRequestResult> {
-  const apiBase = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
-  const response = await fetch(`${apiBase}/api/change-requests/${encodeURIComponent(requestId)}/approve`, {
+  const apiBase = apiBaseUrl();
+  const response = await fetchJsonWithTimeout(`${apiBase}/api/change-requests/${encodeURIComponent(requestId)}/approve`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ entries }),
@@ -222,11 +279,19 @@ export async function approveChangeRequestOnServer(
     throw new Error(payload?.error || `Failed to approve change request (${response.status})`);
   }
 
+  if (!Array.isArray(payload?.changeRequests)) {
+    throw new Error('Invalid approve request response');
+  }
+  if (!Array.isArray(payload?.topContributors)) {
+    throw new Error('Invalid approve top contributors response');
+  }
+
   return {
     approved: Boolean(payload?.approved),
     reason: payload?.reason ? String(payload.reason) : undefined,
-    changeRequests: Array.isArray(payload?.changeRequests) ? payload.changeRequests : [],
-    topContributors: Array.isArray(payload?.topContributors) ? payload.topContributors : [],
+    changeRequests: payload.changeRequests,
+    topContributors: payload.topContributors,
+    eventSettings: payload?.eventSettings || undefined,
     applyResult: {
       content: String(payload?.applyResult?.content ?? ''),
       applied: Number(payload?.applyResult?.applied) || 0,
@@ -238,14 +303,50 @@ export async function approveChangeRequestOnServer(
 }
 
 
-export async function deleteChangeRequestOnServer(requestId: string): Promise<ChangeRequest[]> {
-  const apiBase = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
-  const response = await fetch(`${apiBase}/api/change-requests/${encodeURIComponent(requestId)}`, {
+export async function deleteChangeRequestOnServer(requestId: string): Promise<GlobalRequestsResult> {
+  const apiBase = apiBaseUrl();
+  const response = await fetchJsonWithTimeout(`${apiBase}/api/change-requests/${encodeURIComponent(requestId)}`, {
     method: 'DELETE',
   });
   const payload = await response.json().catch(() => null);
   if (!response.ok) {
     throw new Error(payload?.error || `Failed to delete change request (${response.status})`);
   }
-  return Array.isArray(payload?.changeRequests) ? payload.changeRequests : [];
+  if (!Array.isArray(payload?.changeRequests)) {
+    throw new Error('Invalid delete change request response');
+  }
+  return {
+    changeRequests: payload.changeRequests,
+    topContributors: Array.isArray(payload?.topContributors) ? payload.topContributors : [],
+    eventSettings: payload?.eventSettings || undefined,
+  };
+}
+
+
+export async function loadEventSettingsFromServer(): Promise<GlobalEventSettings> {
+  const apiBase = apiBaseUrl();
+  const response = await fetchJsonWithTimeout(`${apiBase}/api/event-settings`, {}, 20000);
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(payload?.error || `Failed to load event settings (${response.status})`);
+  return payload.eventSettings;
+}
+
+export async function saveEventSettingsToServer(eventSettings: GlobalEventSettings): Promise<{ eventSettings: GlobalEventSettings; topContributors: TopContributor[] }> {
+  const apiBase = apiBaseUrl();
+  const response = await fetchJsonWithTimeout(`${apiBase}/api/event-settings`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ eventSettings }),
+  });
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(payload?.error || `Failed to save event settings (${response.status})`);
+  return { eventSettings: payload.eventSettings, topContributors: Array.isArray(payload.topContributors) ? payload.topContributors : [] };
+}
+
+export async function resetTopContributorsOnServer(): Promise<{ eventSettings: GlobalEventSettings; topContributors: TopContributor[] }> {
+  const apiBase = apiBaseUrl();
+  const response = await fetchJsonWithTimeout(`${apiBase}/api/top-contributors/reset`, { method: 'POST' }, 20000);
+  const payload = await response.json().catch(() => null);
+  if (!response.ok) throw new Error(payload?.error || `Failed to reset top contributors (${response.status})`);
+  return { eventSettings: payload.eventSettings, topContributors: Array.isArray(payload.topContributors) ? payload.topContributors : [] };
 }

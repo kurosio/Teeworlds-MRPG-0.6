@@ -1,5 +1,6 @@
 import type { UILanguage } from './i18n';
-export type { UILanguage };
+import type { UIThemeId } from './themes';
+export type { UILanguage, UIThemeId };
 
 export interface LanguageIndex {
   file: string;
@@ -26,6 +27,18 @@ export interface TranslationFile {
 export interface TopContributor {
   author: string;
   count: number;
+}
+
+export interface TranslationRewardsSettings {
+  enabled: boolean;
+  endDate: string;
+  rewards: string;
+  updatedAt?: string;
+}
+
+export interface GlobalEventSettings {
+  topResetAt?: string;
+  translationRewards: TranslationRewardsSettings;
 }
 
 export interface ChangeRequestEntry {
@@ -64,6 +77,7 @@ export interface AppState {
   fileVersions: Record<string, number>;
   changeRequests: ChangeRequest[];
   topContributors: TopContributor[];
+  eventSettings: GlobalEventSettings;
   isAdmin: boolean;
   activeTab: 'editor' | 'requests' | 'settings';
   selectedLanguage: string | null;
@@ -71,4 +85,8 @@ export interface AppState {
   filterMode: 'all' | 'translated' | 'untranslated' | 'changed';
   requestFilterTag: string | null;
   uiLanguage: UILanguage;
+  uiTheme: UIThemeId;
+  filesLoading: boolean;
+  fileLoadStatus: Record<string, 'loading' | 'loaded' | 'error'>;
 }
+

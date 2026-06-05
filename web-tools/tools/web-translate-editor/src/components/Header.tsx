@@ -1,15 +1,18 @@
 import { useEffect, useRef, useState } from 'react';
 import { useStore } from '../store';
 import { UI_LANGUAGE_OPTIONS, t } from '../i18n';
-import { Globe, FileText, Settings, LogIn, LogOut, ShieldCheck, ClipboardList, Languages } from 'lucide-react';
+import { Globe, FileText, Settings, LogIn, LogOut, ShieldCheck, ClipboardList, Languages, Palette } from 'lucide-react';
+import { UI_THEME_OPTIONS } from '../themes';
 
 export default function Header() {
-  const { activeTab, setActiveTab, isAdmin, login, logout, changeRequests, uiLanguage, setUiLanguage } = useStore();
+  const { activeTab, setActiveTab, isAdmin, login, logout, changeRequests, uiLanguage, setUiLanguage, uiTheme, setUiTheme } = useStore();
   const [showLogin, setShowLogin] = useState(false);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [showLanguageMenu, setShowLanguageMenu] = useState(false);
+  const [showThemeMenu, setShowThemeMenu] = useState(false);
+  const themeMenuRef = useRef<HTMLDivElement | null>(null);
   const languageMenuRef = useRef<HTMLDivElement | null>(null);
 
   const pendingCount = changeRequests.filter(r => r.status === 'pending').length;
@@ -27,27 +30,32 @@ export default function Header() {
   };
 
   const currentUiLanguage = UI_LANGUAGE_OPTIONS.find(option => option.code === uiLanguage) || UI_LANGUAGE_OPTIONS[0];
+  const currentTheme = UI_THEME_OPTIONS.find(option => option.id === uiTheme) || UI_THEME_OPTIONS[0];
 
   useEffect(() => {
-    if (!showLanguageMenu) return;
+    if (!showLanguageMenu && !showThemeMenu) return;
 
     const handlePointerDown = (event: PointerEvent) => {
-      if (!languageMenuRef.current?.contains(event.target as Node)) {
+      const target = event.target as Node;
+      if (!languageMenuRef.current?.contains(target)) {
         setShowLanguageMenu(false);
+      }
+      if (!themeMenuRef.current?.contains(target)) {
+        setShowThemeMenu(false);
       }
     };
 
     document.addEventListener('pointerdown', handlePointerDown);
     return () => document.removeEventListener('pointerdown', handlePointerDown);
-  }, [showLanguageMenu]);
+  }, [showLanguageMenu, showThemeMenu]);
 
   return (
-    <header className="bg-gradient-to-r from-slate-900 via-slate-800 to-slate-900 text-white shadow-2xl border-b border-slate-700/50">
+    <header className="app-header text-white shadow-2xl border-b border-white/10">
       <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/25">
+            <div className="theme-logo w-10 h-10 rounded-xl flex items-center justify-center shadow-lg">
               <Globe className="w-5 h-5" />
             </div>
             <div>
@@ -62,7 +70,7 @@ export default function Header() {
               onClick={() => setActiveTab('editor')}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                 activeTab === 'editor'
-                  ? 'bg-blue-600/90 text-white shadow-lg shadow-blue-500/25'
+                  ? 'theme-nav-active text-white shadow-lg'
                   : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
               }`}
             >
@@ -74,7 +82,7 @@ export default function Header() {
               onClick={() => setActiveTab('requests')}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 relative ${
                 activeTab === 'requests'
-                  ? 'bg-blue-600/90 text-white shadow-lg shadow-blue-500/25'
+                  ? 'theme-nav-active text-white shadow-lg'
                   : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
               }`}
             >
@@ -87,17 +95,19 @@ export default function Header() {
               )}
             </button>
 
-            <button
-              onClick={() => setActiveTab('settings')}
-              className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
-                activeTab === 'settings'
-                  ? 'bg-blue-600/90 text-white shadow-lg shadow-blue-500/25'
-                  : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
-              }`}
-            >
-              <Settings className="w-4 h-4" />
-              <span className="hidden sm:inline">{t('header.tab.settings')}</span>
-            </button>
+            {isAdmin && (
+              <button
+                onClick={() => setActiveTab('settings')}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
+                  activeTab === 'settings'
+                    ? 'theme-nav-active text-white shadow-lg'
+                    : 'text-slate-300 hover:text-white hover:bg-slate-700/50'
+                }`}
+              >
+                <Settings className="w-4 h-4" />
+                <span className="hidden sm:inline">{t('header.tab.settings')}</span>
+              </button>
+            )}
           </nav>
 
           {/* Right side: lang switch + auth */}
@@ -121,7 +131,7 @@ export default function Header() {
 
               {showLanguageMenu && (
                 <div
-                  className="absolute right-0 top-full mt-2 w-56 max-h-80 overflow-y-auto rounded-xl border border-slate-600/60 bg-slate-800 shadow-2xl z-50 p-1.5"
+                  className="app-header-dropdown absolute right-0 top-full mt-2 w-56 max-h-80 overflow-y-auto rounded-xl border border-slate-600/60 shadow-2xl p-1.5"
                   role="listbox"
                   aria-label={t('header.uiLanguage')}
                 >
@@ -135,7 +145,7 @@ export default function Header() {
                       }}
                       className={`w-full flex items-center justify-between gap-3 px-3 py-2 rounded-lg text-sm text-left transition-colors ${
                         uiLanguage === option.code
-                          ? 'bg-blue-600/90 text-white'
+                          ? 'theme-nav-active text-white'
                           : 'text-slate-300 hover:text-white hover:bg-slate-700/60'
                       }`}
                       role="option"
@@ -143,6 +153,55 @@ export default function Header() {
                     >
                       <span className="font-medium">{option.nativeName}</span>
                       <span className="text-xs opacity-70 uppercase">{option.code}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Theme dropdown */}
+            <div className="relative" ref={themeMenuRef}>
+              <button
+                type="button"
+                onClick={() => setShowThemeMenu(value => !value)}
+                className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs font-medium border border-slate-600/50 text-slate-300 hover:text-white hover:bg-slate-700/50 transition-all min-w-[118px] justify-between"
+                title={t('header.theme')}
+                aria-haspopup="listbox"
+                aria-expanded={showThemeMenu}
+              >
+                <span className="flex items-center gap-1.5 min-w-0">
+                  <Palette className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span className="truncate">{currentTheme.name}</span>
+                </span>
+                <span className="w-4 h-4 rounded-full border border-white/30 flex-shrink-0" style={{ background: currentTheme.swatch }} />
+              </button>
+
+              {showThemeMenu && (
+                <div
+                  className="app-header-dropdown absolute right-0 top-full mt-2 w-64 max-h-80 overflow-y-auto rounded-xl border border-slate-600/60 shadow-2xl p-1.5"
+                  role="listbox"
+                  aria-label={t('header.theme')}
+                >
+                  {UI_THEME_OPTIONS.map(option => (
+                    <button
+                      key={option.id}
+                      type="button"
+                      onClick={() => {
+                        setUiTheme(option.id);
+                        setShowThemeMenu(false);
+                      }}
+                      className={`w-full flex items-center justify-between gap-3 px-3 py-2 rounded-lg text-sm text-left transition-colors ${
+                        uiTheme === option.id
+                          ? 'theme-nav-active text-white'
+                          : 'text-slate-300 hover:text-white hover:bg-slate-700/60'
+                      }`}
+                      role="option"
+                      aria-selected={uiTheme === option.id}
+                    >
+                      <span className="flex items-center gap-2 min-w-0">
+                        <span className="w-5 h-5 rounded-full border border-white/30 flex-shrink-0" style={{ background: option.swatch }} />
+                        <span className="font-medium truncate">{option.name}</span>
+                      </span>
                     </button>
                   ))}
                 </div>
@@ -175,7 +234,7 @@ export default function Header() {
                 </button>
 
                 {showLogin && (
-                  <div className="absolute right-0 top-full mt-2 w-72 bg-slate-800 rounded-xl shadow-2xl border border-slate-600/50 p-4 z-50">
+                  <div className="app-header-dropdown absolute right-0 top-full mt-2 w-72 rounded-xl shadow-2xl border border-slate-600/50 p-4">
                     <h3 className="text-sm font-semibold mb-3 text-slate-200">{t('header.loginTitle')}</h3>
                     {error && (
                       <div className="mb-3 p-2 bg-red-500/15 border border-red-500/30 rounded-lg text-xs text-red-300">

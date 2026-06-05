@@ -56,10 +56,13 @@ const translations = {
   'header.password': all({ en: 'Password', ru: 'Пароль', zh: '密码', es: 'Contraseña', fr: 'Mot de passe', de: 'Passwort', pt: 'Senha', it: 'Password', ja: 'パスワード', ko: '비밀번호', ar: 'كلمة المرور', tr: 'Parola', pl: 'Hasło', uk: 'Пароль', nl: 'Wachtwoord', vi: 'Mật khẩu' }),
   'header.cancel': all({ en: 'Cancel', ru: 'Отмена', zh: '取消', es: 'Cancelar', fr: 'Annuler', de: 'Abbrechen', pt: 'Cancelar', it: 'Annulla', ja: 'キャンセル', ko: '취소', ar: 'إلغاء', tr: 'İptal', pl: 'Anuluj', uk: 'Скасувати', nl: 'Annuleren', vi: 'Hủy' }),
   'header.uiLanguage': all({ en: 'Interface language', ru: 'Язык интерфейса', zh: '界面语言', es: 'Idioma de la interfaz', fr: 'Langue de l’interface', de: 'Sprache der Oberfläche', pt: 'Idioma da interface', it: 'Lingua interfaccia', ja: '表示言語', ko: '인터페이스 언어', ar: 'لغة الواجهة', tr: 'Arayüz dili', pl: 'Język interfejsu', uk: 'Мова інтерфейсу', nl: 'Interfacetaal', vi: 'Ngôn ngữ giao diện' }),
+  'header.theme': all({ en: 'Theme tone', ru: 'Тон оформления', zh: '主题色调', es: 'Tono del tema', fr: 'Ton du thème', de: 'Design-Ton', pt: 'Tom do tema', it: 'Tono tema', ja: 'テーマトーン', ko: '테마 톤', ar: 'نمط السمة', tr: 'Tema tonu', pl: 'Ton motywu', uk: 'Тон оформлення', nl: 'Themakleur', vi: 'Tông giao diện' }),
 
   // Language selector
   'sidebar.files': all({ en: 'Localization files', ru: 'Файлы локализации', zh: '本地化文件', es: 'Archivos de localización', fr: 'Fichiers de localisation', de: 'Lokalisierungsdateien', pt: 'Arquivos de localização', it: 'File di localizzazione', ja: 'ローカライズファイル', ko: '현지화 파일', ar: 'ملفات التوطين', tr: 'Yerelleştirme dosyaları', pl: 'Pliki lokalizacji', uk: 'Файли локалізації', nl: 'Lokalisatiebestanden', vi: 'Tệp bản địa hóa' }),
   'sidebar.lines': all({ en: 'lines', ru: 'строк', zh: '行', es: 'líneas', fr: 'lignes', de: 'Zeilen', pt: 'linhas', it: 'righe', ja: '行', ko: '줄', ar: 'أسطر', tr: 'satır', pl: 'wierszy', uk: 'рядків', nl: 'regels', vi: 'dòng' }),
+  'sidebar.loading': all({ en: 'Loading', ru: 'Загрузка', zh: '加载中', es: 'Cargando', fr: 'Chargement', de: 'Lädt', pt: 'Carregando', it: 'Caricamento', ja: '読み込み中', ko: '로딩 중', ar: 'جارٍ التحميل', tr: 'Yükleniyor', pl: 'Ładowanie', uk: 'Завантаження', nl: 'Laden', vi: 'Đang tải' }),
+  'sidebar.loadingFile': all({ en: 'Loading file...', ru: 'Файл загружается...', zh: '正在加载文件...', es: 'Cargando archivo...', fr: 'Chargement du fichier...', de: 'Datei wird geladen...', pt: 'Carregando arquivo...', it: 'File in caricamento...', ja: 'ファイルを読み込み中...', ko: '파일 로딩 중...', ar: 'جارٍ تحميل الملف...', tr: 'Dosya yükleniyor...', pl: 'Ładowanie pliku...', uk: 'Файл завантажується...', nl: 'Bestand laden...', vi: 'Đang tải tệp...' }),
 
   // Top contributors
   'top.title': all({ en: 'Top contributors', ru: 'Топ контрибьюторов', zh: '贡献者排行', es: 'Colaboradores principales', fr: 'Meilleurs contributeurs', de: 'Top-Mitwirkende', pt: 'Principais colaboradores', it: 'Migliori contributori', ja: '上位貢献者', ko: '상위 기여자', ar: 'أفضل المساهمين', tr: 'En iyi katkıda bulunanlar', pl: 'Najlepsi współtwórcy', uk: 'Топ контриб’юторів', nl: 'Topbijdragers', vi: 'Người đóng góp hàng đầu' }),
@@ -164,6 +167,36 @@ const translations = {
   'settings.resetDesc': all({ en: 'All translations, change requests, and settings will be reset to default values.', ru: 'Все переводы, запросы на изменение и настройки будут сброшены до значений по умолчанию.', zh: '所有翻译、更改请求和设置都将重置为默认值。', es: 'Todas las traducciones, solicitudes de cambio y ajustes se restablecerán.', fr: 'Toutes les traductions, demandes et paramètres seront réinitialisés.', de: 'Alle Übersetzungen, Änderungsanfragen und Einstellungen werden zurückgesetzt.', pt: 'Todas as traduções, solicitações e configurações serão redefinidas.', it: 'Tutte le traduzioni, richieste e impostazioni saranno ripristinate.', ja: 'すべての翻訳、変更リクエスト、設定が既定値に戻ります。', ko: '모든 번역, 변경 요청, 설정이 기본값으로 초기화됩니다.', ar: 'سيتم إعادة تعيين كل الترجمات والطلبات والإعدادات إلى القيم الافتراضية.', tr: 'Tüm çeviriler, istekler ve ayarlar varsayılan değerlere sıfırlanacak.', pl: 'Wszystkie tłumaczenia, zgłoszenia i ustawienia zostaną przywrócone.', uk: 'Усі переклади, запити та налаштування буде скинуто.', nl: 'Alle vertalingen, verzoeken en instellingen worden gereset.', vi: 'Tất cả bản dịch, yêu cầu và cài đặt sẽ được đặt lại.' }),
   'settings.resetConfirm': all({ en: 'Reset', ru: 'Сбросить', zh: '重置', es: 'Restablecer', fr: 'Réinitialiser', de: 'Zurücksetzen', pt: 'Redefinir', it: 'Reimposta', ja: 'リセット', ko: '초기화', ar: 'إعادة تعيين', tr: 'Sıfırla', pl: 'Resetuj', uk: 'Скинути', nl: 'Resetten', vi: 'Đặt lại' }),
   'settings.cancel': all({ en: 'Cancel', ru: 'Отмена', zh: '取消', es: 'Cancelar', fr: 'Annuler', de: 'Abbrechen', pt: 'Cancelar', it: 'Annulla', ja: 'キャンセル', ko: '취소', ar: 'إلغاء', tr: 'İptal', pl: 'Anuluj', uk: 'Скасувати', nl: 'Annuleren', vi: 'Hủy' }),
+
+
+  'settings.loadTitle': all({ en: 'Load translation files', ru: 'Загрузка файлов перевода' }),
+  'settings.loadServer': all({ en: 'Load from Server', ru: 'Загрузить с сервера' }),
+  'settings.loadServerDesc': all({ en: 'Read all localization files through the backend API', ru: 'Прочитать все файлы локализации через backend API' }),
+  'settings.rewardsTitle': all({ en: 'Translation rewards', ru: 'Награды перевода' }),
+  'settings.rewardsEnable': all({ en: 'Enable event', ru: 'Включить ивент' }),
+  'settings.rewardsEnableDesc': all({ en: 'Show the event progress and rewards to all users above the leaderboard.', ru: 'Показывать всем пользователям прогресс и награды над топом.' }),
+  'settings.rewardsEndDate': all({ en: 'End date', ru: 'Дата завершения' }),
+  'settings.rewardsText': all({ en: 'Rewards', ru: 'Награды' }),
+  'settings.rewardsPlaceholder': all({ en: 'Describe rewards, rules, places, or conditions...', ru: 'Опишите награды, правила, места или условия...' }),
+  'settings.saveRewards': all({ en: 'Save rewards', ru: 'Сохранить награды' }),
+  'settings.saving': all({ en: 'Saving...', ru: 'Сохранение...' }),
+  'settings.topTitle': all({ en: 'Leaderboard', ru: 'Топ пользователей' }),
+  'settings.resetTop': all({ en: 'Reset current top', ru: 'Сбросить текущий топ' }),
+  'settings.resetTopHint': all({ en: 'Resets the visible leaderboard from this moment. Approved requests before the reset are kept in history, but no longer count in the current top.', ru: 'Сбрасывает видимый топ с текущего момента. Одобренные запросы до сброса остаются в истории, но больше не учитываются в текущем топе.' }),
+  'settings.resetTopDesc': all({ en: 'The current leaderboard will be cleared and future accepted translations will start counting from now.', ru: 'Текущий топ будет очищен, а будущие принятые переводы начнут учитываться с этого момента.' }),
+  'event.title': all({ en: 'Translation event', ru: 'Ивент переводов' }),
+  'event.subtitle': all({ en: 'Progress and rewards', ru: 'Прогресс и награды' }),
+  'event.rewards': all({ en: 'Rewards', ru: 'Награды' }),
+  'event.daysLeft': all({ en: 'days left', ru: 'дн. осталось' }),
+  'event.finished': all({ en: 'Finished', ru: 'Завершено' }),
+  'event.noEndDate': all({ en: 'No end date', ru: 'Дата не задана' }),
+  'sidebar.current': all({ en: 'Selected file', ru: 'Выбранный файл' }),
+  'sidebar.searchLanguages': all({ en: 'Search language...', ru: 'Поиск языка...' }),
+  'sidebar.noLanguages': all({ en: 'No languages found', ru: 'Языки не найдены' }),
+  'sidebar.languageHotkeys': all({ en: 'Alt + ↑ / ↓ switches languages', ru: 'Alt + ↑ / ↓ переключает языки' }),
+  'editor.previousLanguage': all({ en: 'Previous language', ru: 'Предыдущий язык' }),
+  'editor.nextLanguage': all({ en: 'Next language', ru: 'Следующий язык' }),
+  'editor.jumpLanguage': all({ en: 'Select language file', ru: 'Выбрать файл языка' }),
 } as const;
 
 export type TranslationKey = keyof typeof translations;

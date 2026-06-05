@@ -3,6 +3,10 @@ import { useStore } from '../store';
 import { t } from '../i18n';
 import { Trophy, Medal, Award, User } from 'lucide-react';
 
+function isLeaderboardSystemAuthor(author: string): boolean {
+  return String(author || '').trim().toLowerCase() === 'administrator';
+}
+
 function formatCount(value: number): string {
   return new Intl.NumberFormat().format(value);
 }
@@ -12,6 +16,7 @@ export default function TopContributors() {
 
   const topList = useMemo(() => {
     return [...topContributors]
+      .filter(item => !isLeaderboardSystemAuthor(item.author))
       .sort((a, b) => b.count - a.count)
       .slice(0, 5);
   }, [topContributors]);
@@ -47,8 +52,8 @@ export default function TopContributors() {
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 overflow-hidden">
-      <div className="px-4 py-3 bg-gradient-to-r from-amber-50 to-yellow-50 border-b border-amber-100">
+    <div className="theme-panel rounded-2xl shadow-sm border overflow-hidden">
+      <div className="px-4 py-3 theme-section-header border-b">
         <div className="flex items-center gap-2">
           <Trophy className="w-4 h-4 text-amber-500" />
           <h2 className="text-sm font-semibold text-amber-800">{t('top.title')}</h2>

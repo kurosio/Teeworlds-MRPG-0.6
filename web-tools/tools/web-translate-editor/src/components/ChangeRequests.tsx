@@ -99,10 +99,10 @@ export default function ChangeRequests() {
   return (
     <div className="max-w-5xl mx-auto space-y-4">
       {/* Header */}
-      <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 p-5">
+      <div className="theme-panel rounded-2xl shadow-sm border p-5">
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-indigo-600 rounded-xl flex items-center justify-center">
+            <div className="w-10 h-10 theme-accent-box rounded-xl flex items-center justify-center">
               <ClipboardList className="w-5 h-5 text-white" />
             </div>
             <div>
@@ -117,7 +117,7 @@ export default function ChangeRequests() {
                 <button
                   onClick={() => setRequestFilterTag(null)}
                   className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
-                    !requestFilterTag ? 'bg-blue-100 text-blue-600 border border-blue-200' : 'bg-slate-50 text-slate-500 hover:bg-slate-100 border border-slate-200'
+                    !requestFilterTag ? 'theme-filter-active border' : 'theme-filter-button border'
                   }`}
                 >
                   {t('requests.all')}
@@ -129,7 +129,7 @@ export default function ChangeRequests() {
                       key={tag}
                       onClick={() => setRequestFilterTag(requestFilterTag === tag ? null : tag)}
                       className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
-                        requestFilterTag === tag ? 'bg-blue-100 text-blue-600 border border-blue-200' : 'bg-slate-50 text-slate-500 hover:bg-slate-100 border border-slate-200'
+                        requestFilterTag === tag ? 'theme-filter-active border' : 'theme-filter-button border'
                       }`}
                     >
                       {lang?.name || tag} ({tag})
@@ -138,14 +138,14 @@ export default function ChangeRequests() {
                 })}
               </div>
             )}
-            <div className="flex items-center gap-1 bg-slate-50 rounded-xl border border-slate-200 p-0.5">
+            <div className="flex items-center gap-1 theme-filter-shell rounded-xl border p-0.5">
               <Filter className="w-3.5 h-3.5 text-slate-400 ml-2" />
               {(['all', 'pending', 'approved', 'rejected'] as const).map(s => (
                 <button
                   key={s}
                   onClick={() => setStatusFilter(s)}
                   className={`px-2.5 py-1 rounded-lg text-xs font-medium transition-all ${
-                    statusFilter === s ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
+                    statusFilter === s ? 'theme-filter-active shadow-sm' : 'theme-filter-button'
                   }`}
                 >
                   {s === 'all' ? t('requests.all') : s === 'pending' ? t('requests.statusPending') : s === 'approved' ? t('requests.statusApproved') : t('requests.statusRejected')}
@@ -161,7 +161,7 @@ export default function ChangeRequests() {
         {filteredRequests.map(request => {
           const isExpanded = expandedId === request.id;
           return (
-            <div key={request.id} className="bg-white rounded-xl shadow-sm border border-slate-200/80 overflow-hidden transition-all">
+            <div key={request.id} className="theme-panel rounded-xl shadow-sm border overflow-hidden transition-all">
               <div className="px-5 py-3.5 flex items-center gap-4 cursor-pointer hover:bg-slate-50/50 transition-colors" onClick={() => toggleRequest(request)}>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 flex-wrap">
@@ -210,7 +210,7 @@ export default function ChangeRequests() {
                       const editedValue = editedEntries[request.id]?.[i] ?? entry.newTranslation;
                       const wasCorrected = editedValue !== entry.newTranslation;
                       return (
-                        <div key={`${entry.original}-${i}`} className={`bg-white rounded-lg p-3 border ${wasCorrected ? 'border-blue-200 ring-1 ring-blue-100' : 'border-slate-100'}`}>
+                        <div key={`${entry.original}-${i}`} className={`theme-translation-box rounded-lg p-3 border ${wasCorrected ? 'border-blue-200 ring-1 ring-blue-100' : 'border-slate-100'}`}>
                           <p className="text-xs text-slate-500 font-mono mb-2 break-all">{entry.original}</p>
                           <div className="grid grid-cols-[1fr_auto_1.2fr] gap-3 items-start">
                             <div className="min-w-0">
@@ -264,7 +264,7 @@ export default function ChangeRequests() {
           );
         })}
         {filteredRequests.length === 0 && (
-          <div className="bg-white rounded-2xl shadow-sm border border-slate-200/80 py-16 text-center">
+          <div className="theme-panel rounded-2xl shadow-sm border py-16 text-center">
             <ClipboardList className="w-12 h-12 text-slate-200 mx-auto mb-3" />
             <h3 className="text-sm font-medium text-slate-400">{t('requests.noRequests')}</h3>
             <p className="text-xs text-slate-300 mt-1">

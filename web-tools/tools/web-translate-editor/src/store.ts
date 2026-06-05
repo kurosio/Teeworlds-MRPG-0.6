@@ -1,13 +1,22 @@
 import { create } from 'zustand';
 import { v4 as uuidv4 } from 'uuid';
-import type { AppState, Settings, LanguageIndex, TranslationFile, TranslationEntry, ChangeRequest, ChangeRequestEntry, UILanguage, AdminConfig, TopContributor } from './types';
+import type { AppState, Settings, LanguageIndex, TranslationFile, TranslationEntry, ChangeRequest, ChangeRequestEntry, UILanguage, UIThemeId, AdminConfig, TopContributor, GlobalEventSettings } from './types';
 import { setUILanguage as setI18nLanguage } from './i18n';
 import { sha256 } from './utils/crypto';
 import type { LoadResult } from './utils/fileLoader';
-import { loadTopContributorsFromServer, loadChangeRequestsFromServer, createChangeRequestOnServer, updateChangeRequestOnServer, deleteChangeRequestOnServer, approveChangeRequestOnServer } from './utils/fileLoader';
+import { applyUITheme, normalizeThemeId } from './themes';
+import { loadTopContributorsFromServer, loadChangeRequestsFromServer, createChangeRequestOnServer, updateChangeRequestOnServer, deleteChangeRequestOnServer, approveChangeRequestOnServer, loadEventSettingsFromServer, saveEventSettingsToServer, resetTopContributorsOnServer } from './utils/fileLoader';
 
 const DEFAULT_SETTINGS: Settings = {
   translationPath: '/translations',
+};
+
+const DEFAULT_EVENT_SETTINGS: GlobalEventSettings = {
+  translationRewards: {
+    enabled: false,
+    endDate: '',
+    rewards: '',
+  },
 };
 
 // Admin credentials from .env (read at build time)
@@ -211,6 +220,20 @@ function getVersionSignature(languages: LanguageIndex[], versions: Record<string
   return `${versions.__index || 0}|${getLanguageSignature(languages)}|${languages.map(lang => `${lang.file}:${versions[lang.file] || 0}`).join('|')}`;
 }
 
+function waitForUiFrame(): Promise<void> {
+  return new Promise(resolve => {
+    if (typeof window !== 'undefined' && 'requestAnimationFrame' in window) {
+      window.requestAnimationFrame(() => resolve());
+      return;
+    }
+    setTimeout(resolve, 0);
+  });
+}
+
+function makeLoadingStatus(languages: LanguageIndex[], status: 'loading' | 'loaded' | 'error' = 'loading'): Record<string, 'loading' | 'loaded' | 'error'> {
+  return Object.fromEntries(normalizeLocalizationLanguages(languages).map(lang => [lang.file, status]));
+}
+
 function parseTranslationFile(content: string, lang: LanguageIndex): TranslationFile {
   const lines = content.split('\n');
   const entries: TranslationEntry[] = [];
@@ -270,6 +293,10 @@ const SAMPLE_FILES: Record<string, string> = {
   cn: SAMPLE_CN,
 };
 
+function isLeaderboardSystemAuthor(author: string): boolean {
+  return String(author || '').trim().toLowerCase() === 'administrator';
+}
+
 function getTranslatedTextAmount(entries: ChangeRequestEntry[]): number {
   return entries.reduce((total, entry) => {
     const text = String(entry.newTranslation ?? '').trim();
@@ -281,6 +308,7 @@ function buildTopContributorsFromRequests(changeRequests: ChangeRequest[]): TopC
   const authorStats = new Map<string, number>();
   for (const request of changeRequests) {
     if (request.status !== 'approved') continue;
+    if (isLeaderboardSystemAuthor(request.author)) continue;
     const translatedTextAmount = getTranslatedTextAmount(request.entries);
     if (translatedTextAmount <= 0) continue;
     authorStats.set(request.author, (authorStats.get(request.author) || 0) + translatedTextAmount);
@@ -311,8 +339,13 @@ function loadInitialState(): Partial<AppState> {
         translations,
         changeRequests: [],
         topContributors: [],
+        eventSettings: parsed.eventSettings || DEFAULT_EVENT_SETTINGS,
         fileVersions: parsed.fileVersions || {},
         isAdmin: isValidStoredAdminSession(),
+        uiLanguage: parsed.uiLanguage || 'en',
+        uiTheme: normalizeThemeId(parsed.uiTheme),
+      filesLoading: false,
+      fileLoadStatus: {},
       };
     } catch {
       // fallback
@@ -333,10 +366,16 @@ function loadInitialState(): Partial<AppState> {
     translations,
     changeRequests: [],
     topContributors: [],
+    eventSettings: DEFAULT_EVENT_SETTINGS,
     fileVersions: {},
     isAdmin: isValidStoredAdminSession(),
+    uiLanguage: 'en',
+    uiTheme: 'ocean',
+    filesLoading: false,
+    fileLoadStatus: {},
   };
 }
+
 
 function saveState(state: AppState) {
   // Do not persist raw localization files in localStorage. Large projects can contain
@@ -345,6 +384,9 @@ function saveState(state: AppState) {
     settings: state.settings,
     languages: state.languages,
     fileVersions: state.fileVersions,
+    uiLanguage: state.uiLanguage,
+    uiTheme: state.uiTheme,
+    eventSettings: state.eventSettings,
   }));
 }
 
@@ -355,6 +397,7 @@ interface StoreActions {
   setFilterMode: (mode: AppState['filterMode']) => void;
   setRequestFilterTag: (tag: string | null) => void;
   setUiLanguage: (lang: UILanguage) => void;
+  setUiTheme: (theme: UIThemeId) => void;
   updateSettings: (settings: Settings) => void;
   login: (username: string, password: string) => Promise<boolean>;
   logout: () => void;
@@ -363,15 +406,21 @@ interface StoreActions {
   rejectRequest: (requestId: string) => Promise<void>;
   deleteRequest: (requestId: string) => Promise<void>;
   resetData: () => void;
-  loadFiles: (result: LoadResult) => void;
+  beginFileLoading: (result: LoadResult) => void;
+  loadFiles: (result: LoadResult) => Promise<void>;
   refreshFiles: (result: LoadResult) => void;
   forceSyncFiles: (result: LoadResult) => void;
   loadTopContributors: () => Promise<void>;
   loadChangeRequests: () => Promise<void>;
+  loadEventSettings: () => Promise<void>;
+  saveEventSettings: (settings: GlobalEventSettings) => Promise<void>;
+  resetTopContributors: () => Promise<void>;
   hasServerChanges: (result: LoadResult) => boolean;
 }
 
 const initial = loadInitialState();
+setI18nLanguage((initial.uiLanguage || 'en') as UILanguage);
+applyUITheme(normalizeThemeId(initial.uiTheme));
 
 export const useStore = create<AppState & StoreActions>((set, get) => ({
   settings: initial.settings || DEFAULT_SETTINGS,
@@ -380,11 +429,15 @@ export const useStore = create<AppState & StoreActions>((set, get) => ({
   fileVersions: initial.fileVersions || {},
   changeRequests: initial.changeRequests || [],
   topContributors: initial.topContributors || [],
+  eventSettings: initial.eventSettings || DEFAULT_EVENT_SETTINGS,
   isAdmin: initial.isAdmin || false,
   activeTab: 'editor',
   selectedLanguage: null,
   searchQuery: '',
-  uiLanguage: 'en' as UILanguage,
+  uiLanguage: (initial.uiLanguage || 'en') as UILanguage,
+  uiTheme: normalizeThemeId(initial.uiTheme),
+  filesLoading: false,
+  fileLoadStatus: {},
   filterMode: 'all',
   requestFilterTag: null,
 
@@ -396,6 +449,14 @@ export const useStore = create<AppState & StoreActions>((set, get) => ({
   setUiLanguage: (lang) => {
     setI18nLanguage(lang);
     set({ uiLanguage: lang });
+    saveState({ ...get(), uiLanguage: lang } as AppState);
+  },
+
+  setUiTheme: (theme) => {
+    const nextTheme = normalizeThemeId(theme);
+    applyUITheme(nextTheme);
+    set({ uiTheme: nextTheme });
+    saveState({ ...get(), uiTheme: nextTheme } as AppState);
   },
 
   updateSettings: (settings) => {
@@ -434,8 +495,12 @@ export const useStore = create<AppState & StoreActions>((set, get) => ({
     };
 
     try {
-      const changeRequests = await createChangeRequestOnServer(request);
-      set({ changeRequests: changeRequests.length > 0 ? changeRequests : [request, ...state.changeRequests] });
+      const result = await createChangeRequestOnServer(request);
+      set({
+        changeRequests: result.changeRequests.length > 0 ? result.changeRequests : [request, ...state.changeRequests],
+        ...(result.topContributors.length > 0 ? { topContributors: result.topContributors } : {}),
+        ...(result.eventSettings ? { eventSettings: result.eventSettings } : {}),
+      });
       return request;
     } catch (error) {
       console.error(error);
@@ -485,7 +550,7 @@ export const useStore = create<AppState & StoreActions>((set, get) => ({
       set({ changeRequests: serverResult.changeRequests });
     }
     if (serverResult.topContributors.length > 0 || serverResult.approved) {
-      set({ topContributors: serverResult.topContributors });
+      set({ topContributors: serverResult.topContributors, ...(serverResult.eventSettings ? { eventSettings: serverResult.eventSettings } : {}) });
     }
   },
 
@@ -497,8 +562,12 @@ export const useStore = create<AppState & StoreActions>((set, get) => ({
     );
     set({ changeRequests: optimisticRequests });
     try {
-      const changeRequests = await updateChangeRequestOnServer(requestId, { status: 'rejected', resolvedAt });
-      if (changeRequests.length > 0) set({ changeRequests });
+      const result = await updateChangeRequestOnServer(requestId, { status: 'rejected', resolvedAt });
+      set({
+        changeRequests: result.changeRequests,
+        topContributors: result.topContributors.length > 0 ? result.topContributors : buildTopContributorsFromRequests(result.changeRequests),
+        ...(result.eventSettings ? { eventSettings: result.eventSettings } : {}),
+      });
     } catch (error) {
       console.error(error);
       set({ changeRequests: state.changeRequests });
@@ -511,8 +580,12 @@ export const useStore = create<AppState & StoreActions>((set, get) => ({
     const optimisticRequests = state.changeRequests.filter(r => r.id !== requestId);
     set({ changeRequests: optimisticRequests });
     try {
-      const changeRequests = await deleteChangeRequestOnServer(requestId);
-      set({ changeRequests });
+      const result = await deleteChangeRequestOnServer(requestId);
+      set({
+        changeRequests: result.changeRequests,
+        topContributors: result.topContributors.length > 0 ? result.topContributors : buildTopContributorsFromRequests(result.changeRequests),
+        ...(result.eventSettings ? { eventSettings: result.eventSettings } : {}),
+      });
     } catch (error) {
       console.error(error);
       set({ changeRequests: state.changeRequests });
@@ -521,6 +594,7 @@ export const useStore = create<AppState & StoreActions>((set, get) => ({
   },
 
   resetData: () => {
+    const current = get();
     localStorage.removeItem('translationEditor');
     const fresh = loadInitialState();
     set({
@@ -528,20 +602,85 @@ export const useStore = create<AppState & StoreActions>((set, get) => ({
       languages: fresh.languages,
       translations: fresh.translations,
       changeRequests: [],
+      uiLanguage: current.uiLanguage,
+      uiTheme: current.uiTheme,
+      filesLoading: false,
+      fileLoadStatus: {},
+    });
+    saveState({ ...current, settings: fresh.settings || DEFAULT_SETTINGS, languages: fresh.languages || [], translations: fresh.translations || {}, changeRequests: [] } as AppState);
+  },
+
+  beginFileLoading: (result: LoadResult) => {
+    const languages = normalizeLocalizationLanguages(result.languages);
+    if (languages.length === 0) return;
+    set({
+      languages,
+      filesLoading: true,
+      fileLoadStatus: makeLoadingStatus(languages, 'loading'),
+      selectedLanguage: get().selectedLanguage && languages.some(lang => lang.file === get().selectedLanguage) ? get().selectedLanguage : languages[0]?.file || null,
     });
   },
 
-  loadFiles: (result: LoadResult) => {
+  loadFiles: async (result: LoadResult) => {
     const translations: Record<string, TranslationFile> = {};
     const languages = normalizeLocalizationLanguages(result.languages);
-    for (const lang of languages) {
-      const content = result.files[lang.file] || '';
-      translations[lang.file] = parseTranslationFile(content, lang);
-    }
     const state = get();
     const fileVersions = result.versions || state.fileVersions || {};
-    set({ languages, translations, fileVersions, selectedLanguage: null });
-    saveState({ ...state, languages, translations, fileVersions } as AppState);
+
+    if (languages.length === 0) {
+      set({ filesLoading: false, fileLoadStatus: {} });
+      return;
+    }
+
+    set({
+      languages,
+      filesLoading: true,
+      fileLoadStatus: makeLoadingStatus(languages, 'loading'),
+      ...(Array.isArray(result.changeRequests) ? { changeRequests: result.changeRequests } : {}),
+      ...(Array.isArray(result.topContributors) ? { topContributors: result.topContributors } : {}),
+      ...(result.eventSettings ? { eventSettings: result.eventSettings } : {}),
+    });
+
+    const batchSize = languages.length > 16 ? 6 : 4;
+    for (let start = 0; start < languages.length; start += batchSize) {
+      await waitForUiFrame();
+      const batch = languages.slice(start, start + batchSize);
+      const batchTranslations: Record<string, TranslationFile> = {};
+      const batchStatus: Record<string, 'loaded'> = {};
+
+      for (const lang of batch) {
+        const content = result.files[lang.file] || '';
+        const parsed = parseTranslationFile(content, lang);
+        translations[lang.file] = parsed;
+        batchTranslations[lang.file] = parsed;
+        batchStatus[lang.file] = 'loaded';
+      }
+
+      set(current => ({
+        translations: { ...current.translations, ...batchTranslations },
+        fileLoadStatus: { ...current.fileLoadStatus, ...batchStatus },
+      }));
+    }
+
+    const selectedLanguage = state.selectedLanguage && languages.some(lang => lang.file === state.selectedLanguage)
+      ? state.selectedLanguage
+      : languages[0]?.file || null;
+
+    const finalStatus = makeLoadingStatus(languages, 'loaded');
+    const finalStatePatch = {
+      languages,
+      translations,
+      fileVersions,
+      selectedLanguage,
+      filesLoading: false,
+      fileLoadStatus: finalStatus,
+      ...(Array.isArray(result.changeRequests) ? { changeRequests: result.changeRequests } : {}),
+      ...(Array.isArray(result.topContributors) ? { topContributors: result.topContributors } : {}),
+      ...(result.eventSettings ? { eventSettings: result.eventSettings } : {}),
+    };
+
+    set(finalStatePatch);
+    saveState({ ...state, ...finalStatePatch } as AppState);
   },
 
   hasServerChanges: (result: LoadResult) => {
@@ -552,7 +691,7 @@ export const useStore = create<AppState & StoreActions>((set, get) => ({
     return getVersionSignature(languages, incomingVersions) !== getVersionSignature(state.languages, state.fileVersions || {});
   },
 
-  refreshFiles: (result: LoadResult) => {
+  refreshFiles: async (result: LoadResult) => {
     const languages = normalizeLocalizationLanguages(result.languages);
     if (languages.length === 0) return;
     const state = get();
@@ -567,14 +706,14 @@ export const useStore = create<AppState & StoreActions>((set, get) => ({
 
     const selectedLanguage = state.selectedLanguage && languages.some(lang => lang.file === state.selectedLanguage)
       ? state.selectedLanguage
-      : null;
+      : languages[0]?.file || null;
 
-    set({ languages, translations, fileVersions: incomingVersions, selectedLanguage });
-    saveState({ ...state, languages, translations, fileVersions: incomingVersions, selectedLanguage } as AppState);
+    set({ languages, translations, fileVersions: incomingVersions, selectedLanguage, filesLoading: false, fileLoadStatus: makeLoadingStatus(languages, 'loaded') });
+    saveState({ ...state, languages, translations, fileVersions: incomingVersions, selectedLanguage, filesLoading: false, fileLoadStatus: makeLoadingStatus(languages, 'loaded') } as AppState);
   },
 
 
-  forceSyncFiles: (result: LoadResult) => {
+  forceSyncFiles: async (result: LoadResult) => {
     const languages = normalizeLocalizationLanguages(result.languages);
     if (languages.length === 0) return;
     const state = get();
@@ -586,34 +725,57 @@ export const useStore = create<AppState & StoreActions>((set, get) => ({
 
     const selectedLanguage = state.selectedLanguage && languages.some(lang => lang.file === state.selectedLanguage)
       ? state.selectedLanguage
-      : null;
+      : languages[0]?.file || null;
     const fileVersions = result.versions || state.fileVersions || {};
 
-    set({ languages, translations, fileVersions, selectedLanguage });
-    saveState({ ...state, languages, translations, fileVersions, selectedLanguage } as AppState);
+    set({ languages, translations, fileVersions, selectedLanguage, filesLoading: false, fileLoadStatus: makeLoadingStatus(languages, 'loaded') });
+    saveState({ ...state, languages, translations, fileVersions, selectedLanguage, filesLoading: false, fileLoadStatus: makeLoadingStatus(languages, 'loaded') } as AppState);
   },
 
   loadTopContributors: async () => {
     try {
       const topContributors = await loadTopContributorsFromServer();
-      if (topContributors.length === 0) return;
       set({ topContributors });
-    } catch {
-      // Server-side top file is optional.
+    } catch (error) {
+      console.error(error);
+      // Keep the current global top in memory during temporary connection loss.
     }
   },
 
   loadChangeRequests: async () => {
     try {
-      const changeRequests = await loadChangeRequestsFromServer();
-      const serverTop = await loadTopContributorsFromServer();
-      const fallbackTop = buildTopContributorsFromRequests(changeRequests);
+      const { changeRequests, topContributors, eventSettings } = await loadChangeRequestsFromServer();
       set({
         changeRequests,
-        topContributors: serverTop.length > 0 ? serverTop : fallbackTop,
+        topContributors: topContributors.length > 0 ? topContributors : buildTopContributorsFromRequests(changeRequests),
+        ...(eventSettings ? { eventSettings } : {}),
       });
     } catch (error) {
       console.error(error);
+      // Do not clear the currently displayed global requests/top during a
+      // temporary connection loss or a failed server response.
     }
+  },
+
+  loadEventSettings: async () => {
+    try {
+      const eventSettings = await loadEventSettingsFromServer();
+      set({ eventSettings: eventSettings || DEFAULT_EVENT_SETTINGS });
+      saveState({ ...get(), eventSettings: eventSettings || DEFAULT_EVENT_SETTINGS } as AppState);
+    } catch (error) {
+      console.error(error);
+    }
+  },
+
+  saveEventSettings: async (eventSettings) => {
+    const result = await saveEventSettingsToServer(eventSettings);
+    set({ eventSettings: result.eventSettings || eventSettings, topContributors: result.topContributors });
+    saveState({ ...get(), eventSettings: result.eventSettings || eventSettings, topContributors: result.topContributors } as AppState);
+  },
+
+  resetTopContributors: async () => {
+    const result = await resetTopContributorsOnServer();
+    set({ topContributors: result.topContributors, eventSettings: result.eventSettings });
+    saveState({ ...get(), topContributors: result.topContributors, eventSettings: result.eventSettings } as AppState);
   },
 }));
