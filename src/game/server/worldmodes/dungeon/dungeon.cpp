@@ -46,10 +46,10 @@ void CGameControllerDungeon::ChangeState(int NewState)
 	if(NewState == CDungeonData::STATE_INACTIVE)
 	{
 		// update
+		StopActiveScenario();
 		m_EndTick = 0;
 		m_WarmupTick = 0;
 		m_LastWarmupTick = 0;
-		m_ScenarioID = 0;
 		m_StartedPlayersNum = 0;
 		m_SafeSpawnTick = 0;
 		m_pEntWaitingDoor->Close();
@@ -101,6 +101,7 @@ void CGameControllerDungeon::ChangeState(int NewState)
 	{
 		// update
 		m_EndTick = Server()->TickSpeed() * 20;
+		StopActiveScenario();
 
 		// update finish time and save best records
 		for(int i = 0; i < MAX_PLAYERS; i++)
@@ -248,6 +249,15 @@ bool CGameControllerDungeon::OnCharacterSpawn(CCharacter* pChr)
 	return true;
 }
 
+
+void CGameControllerDungeon::StopActiveScenario()
+{
+	if(m_ScenarioID <= 0)
+		return;
+
+	GS()->ScenarioGroupManager()->StopScenario(m_ScenarioID);
+	m_ScenarioID = 0;
+}
 
 void CGameControllerDungeon::KillAllPlayers() const
 {

@@ -24,6 +24,15 @@ void CScenarioGroupManager::RemoveClient(int ClientID)
 	}
 }
 
+void CScenarioGroupManager::StopScenario(int ScenarioID)
+{
+	auto it = m_vScenarios.find(ScenarioID);
+	if(it == m_vScenarios.end() || !it->second)
+		return;
+
+	it->second->Stop();
+}
+
 bool CScenarioGroupManager::IsActive(int ScenarioID) const
 {
 	auto it = m_vScenarios.find(ScenarioID);

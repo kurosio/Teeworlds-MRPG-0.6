@@ -41,6 +41,7 @@ private:
 
 	void ChangeState(int State);
 	void Process();
+	void StopActiveScenario();
 	void KillAllPlayers() const;
 	void SaveDungeonRecord(const class CPlayer* pPlayer) const;
 };

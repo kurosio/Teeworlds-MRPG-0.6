@@ -51,6 +51,7 @@ public:
 
 	void UpdateScenarios();
 	void RemoveClient(int ClientID);
+	void StopScenario(int ScenarioID);
 
 	template<typename T = GroupScenarioBase>
 	std::shared_ptr<T> GetScenario(int ScenarioID) requires std::derived_from<T, GroupScenarioBase>
