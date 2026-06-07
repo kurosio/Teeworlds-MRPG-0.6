@@ -2,7 +2,6 @@
 #define GAME_SERVER_ENTITIES_RIFLE_TESLA_SERPENT_H
 
 #include <game/server/entity.h>
-#include <vector>
 
 class CEntityTeslaSerpent : public CEntity
 {

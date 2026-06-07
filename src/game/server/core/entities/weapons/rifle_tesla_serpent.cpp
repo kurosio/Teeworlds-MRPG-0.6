@@ -9,31 +9,32 @@ enum
 	NUM_SUB_SEGMENTS_PER_BOLT = 3,
 };
 
-constexpr float JITTER_MAGNITUDE = 64.0f;
+static constexpr float JITTER_MAGNITUDE = 64.0f;
 
 CEntityTeslaSerpent::CEntityTeslaSerpent(CGameWorld* pGameWorld, int OwnerCID, vec2 Pos, vec2 Direction, float Damage, float ChainRange, int MaxTargets, float DamageFalloff)
-	: CEntity(pGameWorld, CGameWorld::ENTTYPE_LASER, Pos, 0, OwnerCID), m_Damage(Damage), m_ChainRange(ChainRange)
-	, m_MaxTargetsInChain(clamp(MaxTargets, 1, MAX_CHAIN_SEGMENTS + 1)), m_DamageFalloff(DamageFalloff)
+	: CEntity(pGameWorld, CGameWorld::ENTTYPE_LASER, Pos, 0, OwnerCID), m_InitialDir(normalize(Direction)),
+	m_LifeSpanTicks(Server()->TickSpeed() / 4), m_Damage(Damage), m_ChainRange(ChainRange),
+	m_MaxTargetsInChain(clamp(MaxTargets, 1, MAX_CHAIN_SEGMENTS + 1)), m_DamageFalloff(DamageFalloff), m_ChainCalculationDone(false)
 {
-	m_InitialDir = normalize(Direction);
-	m_LifeSpanTicks = Server()->TickSpeed() / 4;
-	m_ChainCalculationDone = false;
+	m_vTargetsHitThisShot.reserve(m_MaxTargetsInChain);
+	m_vChainSegmentEndPoints.reserve(m_MaxTargetsInChain + 1);
+	m_vChainSegmentEndPoints.push_back(m_Pos);
 
 	for(int i = 0; i < MAX_CHAIN_SEGMENTS; i++)
 		AddSnappingGroupIds(i, NUM_SUB_SEGMENTS_PER_BOLT);
+
 	GameWorld()->InsertEntity(this);
-	m_vChainSegmentEndPoints.push_back(m_Pos);
 
 	// append damage by 25% from item
-	auto* pOwner = GetOwner();
-	if(pOwner && pOwner->GetItem(itTeslaInductiveCoil)->IsEquipped())
-		m_Damage += maximum(1.0f, translate_to_percent_rest(m_Damage, 25.f));
+	if(auto* pOwner = GetOwner(); pOwner && pOwner->GetItem(itTeslaInductiveCoil)->IsEquipped())
+	{
+		m_Damage += maximum(1.0f, translate_to_percent_rest(m_Damage, 25.0f));
+	}
 }
 
 void CEntityTeslaSerpent::Tick()
 {
-	auto* pOwnerChar = GetOwnerChar();
-	if(!pOwnerChar)
+	if(!GetOwnerChar())
 	{
 		GameWorld()->DestroyEntity(this);
 		return;
@@ -45,8 +46,7 @@ void CEntityTeslaSerpent::Tick()
 		m_ChainCalculationDone = true;
 	}
 
-	m_LifeSpanTicks--;
-	if(m_LifeSpanTicks < 0)
+	if(--m_LifeSpanTicks < 0)
 	{
 		GameWorld()->DestroyEntity(this);
 	}
@@ -54,124 +54,99 @@ void CEntityTeslaSerpent::Tick()
 
 void CEntityTeslaSerpent::CalculateChainLightning()
 {
-	vec2 CurrentChainSourcePos = m_Pos;
-	vec2 CurrentDirection = m_InitialDir;
-	float CurrentSegmentDamage = m_Damage;
+	vec2 CurrentSource = m_Pos;
+	vec2 CurrentDir = m_InitialDir;
+	float CurrentDamage = m_Damage;
 
-	for(int TargetsHitCount = 0; TargetsHitCount < m_MaxTargetsInChain; ++TargetsHitCount)
+	for(int i = 0; i < m_MaxTargetsInChain; ++i)
 	{
-		CCharacter* pClosestHitCharacter = nullptr;
-		vec2 HitPosition = CurrentChainSourcePos + CurrentDirection * m_ChainRange;
-		float MinHitDistance = m_ChainRange;
+		CCharacter* pClosestTarget = nullptr;
+		vec2 TargetPos = CurrentSource + CurrentDir * m_ChainRange;
+		float MinDist = m_ChainRange;
 
-		vec2 WallCollisionPoint;
-		if(GS()->Collision()->IntersectLineWithInvisible(CurrentChainSourcePos, HitPosition, &WallCollisionPoint, nullptr))
+		vec2 WallPos;
+		if(GS()->Collision()->IntersectLineWithInvisible(CurrentSource, TargetPos, &WallPos, nullptr))
 		{
-			HitPosition = WallCollisionPoint;
-			MinHitDistance = distance(CurrentChainSourcePos, HitPosition);
+			TargetPos = WallPos;
+			MinDist = distance(CurrentSource, WallPos);
 		}
 
-		for(auto* pTargetChar = (CCharacter*)GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); pTargetChar; pTargetChar = (CCharacter*)pTargetChar->TypeNext())
+		for(auto* pChar = (CCharacter*)GameWorld()->FindFirst(CGameWorld::ENTTYPE_CHARACTER); pChar; pChar = (CCharacter*)pChar->TypeNext())
 		{
-			if(pTargetChar->GetPlayer()->GetCID() == m_ClientID || !pTargetChar->IsAllowedPVP(m_ClientID))
+			const int TargetCID = pChar->GetPlayer()->GetCID();
+			if(TargetCID == m_ClientID || !pChar->IsAllowedPVP(m_ClientID))
 				continue;
 
-			bool bAlreadyHit = false;
-			for(size_t i = 0; i < m_vTargetsHitThisShot.size(); ++i)
-			{
-				if(m_vTargetsHitThisShot[i] == pTargetChar->GetPlayer()->GetCID())
-				{
-					bAlreadyHit = true;
-					break;
-				}
-			}
-
-			if(bAlreadyHit)
+			if(std::find(m_vTargetsHitThisShot.begin(), m_vTargetsHitThisShot.end(), TargetCID) != m_vTargetsHitThisShot.end())
 				continue;
 
-			vec2 TargetCharPos = pTargetChar->m_Core.m_Pos;
-			float DistToTarget = distance(CurrentChainSourcePos, TargetCharPos);
-
-			if(DistToTarget < MinHitDistance)
+			const float Dist = distance(CurrentSource, pChar->m_Core.m_Pos);
+			if(Dist < MinDist && !GS()->Collision()->IntersectLineWithInvisible(CurrentSource, pChar->m_Core.m_Pos, nullptr, nullptr))
 			{
-				if(!GS()->Collision()->IntersectLineWithInvisible(CurrentChainSourcePos, TargetCharPos, nullptr, nullptr))
-				{
-					MinHitDistance = DistToTarget;
-					HitPosition = TargetCharPos;
-					pClosestHitCharacter = pTargetChar;
-				}
+				MinDist = Dist;
+				TargetPos = pChar->m_Core.m_Pos;
+				pClosestTarget = pChar;
 			}
 		}
 
-		m_vChainSegmentEndPoints.push_back(HitPosition);
+		m_vChainSegmentEndPoints.push_back(TargetPos);
 
-		if(pClosestHitCharacter)
-		{
-			GS()->CreateExplosion(HitPosition, m_ClientID, WEAPON_LASER, (int)CurrentSegmentDamage, FORCE_FLAG_CANT_SELF);
-			m_vTargetsHitThisShot.push_back(pClosestHitCharacter->GetPlayer()->GetCID());
-			GS()->CreateSound(HitPosition, SOUND_GRENADE_EXPLODE);
-			GS()->CreateSound(HitPosition, SOUND_HOOK_LOOP);
+		GS()->CreateExplosion(TargetPos, m_ClientID, WEAPON_LASER, round_to_int(CurrentDamage), FORCE_FLAG_CANT_SELF);
+		GS()->CreateSound(TargetPos, SOUND_GRENADE_EXPLODE);
+		GS()->CreateSound(TargetPos, SOUND_HOOK_LOOP);
 
-			CurrentChainSourcePos = HitPosition;
-			CurrentSegmentDamage *= m_DamageFalloff;
-			CurrentDirection = vec2(0, 0);
-		}
-		else
-		{
-			GS()->CreateExplosion(HitPosition, m_ClientID, WEAPON_LASER, (int)CurrentSegmentDamage, FORCE_FLAG_CANT_SELF);
-			GS()->CreateSound(HitPosition, SOUND_GRENADE_EXPLODE);
-			GS()->CreateSound(HitPosition, SOUND_HOOK_LOOP);
+		if(!pClosestTarget)
 			break;
-		}
 
-		if(m_vChainSegmentEndPoints.size() >= MAX_CHAIN_SEGMENTS + 1)
+		m_vTargetsHitThisShot.push_back(pClosestTarget->GetPlayer()->GetCID());
+		CurrentSource = TargetPos;
+		CurrentDamage *= m_DamageFalloff;
+		CurrentDir = vec2(0, 0);
+
+		if(m_vChainSegmentEndPoints.size() > MAX_CHAIN_SEGMENTS)
 			break;
 	}
 }
 
 void CEntityTeslaSerpent::Snap(int SnappingClient)
 {
-	if(NetworkClipped(SnappingClient))
+	if(NetworkClipped(SnappingClient) || m_vChainSegmentEndPoints.size() < 2)
 		return;
 
-	if(m_vChainSegmentEndPoints.size() < 2)
-		return;
+	const int NumSegments = std::min<int>(m_vChainSegmentEndPoints.size() - 1, MAX_CHAIN_SEGMENTS);
 
-	int SegmentsToDraw = std::min((int)m_vChainSegmentEndPoints.size() - 1, (int)MAX_CHAIN_SEGMENTS);
-
-	for(int i = 0; i < SegmentsToDraw; ++i)
+	for(int i = 0; i < NumSegments; ++i)
 	{
-		vec2 MainSegmentStart = m_vChainSegmentEndPoints[i];
-		vec2 MainSegmentEnd = m_vChainSegmentEndPoints[i + 1];
-		vec2 CurrentSubSegmentStart = MainSegmentStart;
-		vec2 SegmentVector = MainSegmentEnd - MainSegmentStart;
-		vec2 PerpendicularVector = normalize(vec2(-SegmentVector.y, SegmentVector.x));
+		const vec2 Start = m_vChainSegmentEndPoints[i];
+		const vec2 End = m_vChainSegmentEndPoints[i + 1];
+		const vec2 Delta = End - Start;
+		const float SegLen = length(Delta);
 
-		if(length(SegmentVector) < 0.001f)
+		if(SegLen < 0.001f)
 			continue;
 
-		if(const auto* pvGroupIds = FindSnappingGroupIds(i))
+		const vec2 Perpendicular = normalize(vec2(-Delta.y, Delta.x));
+		const auto* pGroupIds = FindSnappingGroupIds(i);
+		if(!pGroupIds)
+			continue;
+
+		vec2 SubStart = Start;
+		for(int j = 0; j < NUM_SUB_SEGMENTS_PER_BOLT; ++j)
 		{
-			for(int j = 0; j < NUM_SUB_SEGMENTS_PER_BOLT; ++j)
+			vec2 SubEnd;
+			if(j == NUM_SUB_SEGMENTS_PER_BOLT - 1)
 			{
-				vec2 SubSegmentEnd;
-				if(j == NUM_SUB_SEGMENTS_PER_BOLT - 1)
-				{
-					SubSegmentEnd = MainSegmentEnd;
-				}
-				else
-				{
-					float LerpFactor = (j + 1.0f) / (float)NUM_SUB_SEGMENTS_PER_BOLT;
-					vec2 PointOnMainLine = MainSegmentStart + SegmentVector * LerpFactor;
-					float RandomOffset = (random_float() * 2.0f - 1.0f) * JITTER_MAGNITUDE;
-					SubSegmentEnd = PointOnMainLine + PerpendicularVector * RandomOffset;
-				}
-
-				GS()->SnapLaser(SnappingClient, (*pvGroupIds)[j], CurrentSubSegmentStart, SubSegmentEnd,
-					Server()->Tick() - 2);
-
-				CurrentSubSegmentStart = SubSegmentEnd;
+				SubEnd = End;
 			}
+			else
+			{
+				const float Lerp = static_cast<float>(j + 1) / NUM_SUB_SEGMENTS_PER_BOLT;
+				const float Jitter = (random_float() * 2.0f - 1.0f) * JITTER_MAGNITUDE;
+				SubEnd = Start + Delta * Lerp + Perpendicular * Jitter;
+			}
+
+			GS()->SnapLaser(SnappingClient, (*pGroupIds)[j], SubStart, SubEnd, Server()->Tick() - 2);
+			SubStart = SubEnd;
 		}
 	}
 }
