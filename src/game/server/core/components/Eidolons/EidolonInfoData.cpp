@@ -39,7 +39,15 @@ CEidolonInfoData::EidolonDescriptionList CEidolonInfoData::m_EidolonsInfoData =
 			"It has a delicate pink color, likes to eat everything green.",
 			"Has a strong attack, but cannot use anything."
 		}
-	}
+	},
+	{
+    itEidolonNatsuki, 1086,
+    {
+        "Sharp-tongued and quick to anger, but don't be fooled.",
+        "Behind the attitude is someone who bakes, reads, and cares",
+        "more than she would ever admit out loud."
+    }
+}
 };
 
 DataBotInfo* CEidolonInfoData::GetDataBot() const

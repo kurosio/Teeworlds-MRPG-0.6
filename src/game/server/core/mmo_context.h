@@ -685,6 +685,7 @@ enum
 	itEidolonMerrilee              = 59,    // Eidolon
 	itEidolonDryad                 = 80,    // Eidolon
 	itEidolonPigQueen              = 88,    // Eidolon
+	itEidolonNatsuki               = 436,   // Eidolon
 
 	// currency
 	itGold                         = 1,     // Money ordinary currency
