@@ -33,7 +33,7 @@ public:
 	explicit GroupScenarioBase(int Flags = FLAG_NONE) : ScenarioBase(Flags) { }
 
 	bool HasPlayer(CPlayer* pPlayer) const;
-	std::vector<CPlayer*> GetPlayers() const;
+	virtual std::vector<CPlayer*> GetPlayers() const;
 
 	virtual bool AddParticipant(int ClientID);
 	virtual bool RemoveParticipant(int ClientID);

@@ -108,7 +108,7 @@ public:
 	std::string GetStringAttributesInfo(CPlayer* pPlayer) const { return Info()->GetStringAttributesInfo(pPlayer, m_Enchant); }
 
 	// main functions
-	void StartEmbeddedScenario(ScenarioBlock Block);
+	bool StartEmbeddedScenario(ScenarioBlock Block);
 	bool Add(int Value, int StartSettings = 0, int StartEnchant = 0, time_t StartExpiresAt = 0, bool Message = true);
 	bool Remove(int Value);
 	bool Equip();

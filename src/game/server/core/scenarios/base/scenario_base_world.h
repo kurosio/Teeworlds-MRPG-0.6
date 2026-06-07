@@ -14,6 +14,7 @@ public:
 	explicit WorldScenarioBase(int Flags = FLAG_NONE) : GroupScenarioBase(Flags) { }
 
 	int GetWorldID() const { return m_WorldID; }
+	std::vector<CPlayer*> GetPlayers() const override;
 	bool AddParticipant(int ClientID) override;
 };
 

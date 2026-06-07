@@ -23,20 +23,26 @@ class CScenarioWorldManager
 	PendingScenarioStart m_PendingStart {};
 	int64_t m_ScenarioDeadlineTick { 0 };
 
+	bool IsClientInScenarioWorld(int ClientID) const;
+	void PrunePlayersOutsideScenarioWorld();
+
 public:
 	explicit CScenarioWorldManager(CGS* pGS) : m_pGS(pGS) { };
 	~CScenarioWorldManager() = default;
 
 	template<typename T, typename... Args>
-	int RegisterScenario(int StarterCID, bool Single, int DurationSeconds, Args&&... args) requires std::derived_from<T, WorldScenarioBase>
+	int RegisterScenario(int StarterCID, int WorldID, bool Single, int DurationSeconds, Args&&... args) requires std::derived_from<T, WorldScenarioBase>
 	{
 		if(m_pScenario)
+			return -1;
+
+		if(WorldID < 0 || WorldID != m_pGS->GetWorldID() || !m_pGS->IsPlayerInWorld(StarterCID, WorldID))
 			return -1;
 
 		// initialize
 		m_pScenario = std::make_shared<T>(std::forward<Args>(args)...);
 		m_pScenario->m_pGS = m_pGS;
-		m_pScenario->m_WorldID = m_pGS->GetWorldID();
+		m_pScenario->m_WorldID = WorldID;
 		m_PendingStart = {};
 		if(DurationSeconds > 0)
 			m_ScenarioDeadlineTick = time_get() + time_freq() * DurationSeconds;
@@ -46,13 +52,15 @@ public:
 		// singe world event
 		if(Single)
 		{
-			m_pScenario->AddParticipant(StarterCID);
-			m_pScenario->Start();
-
-			if(m_pScenario->IsRunning())
-				return 1;
+			if(m_pScenario->AddParticipant(StarterCID))
+			{
+				m_pScenario->Start();
+				if(m_pScenario->IsRunning())
+					return 1;
+			}
 
 			m_pScenario.reset();
+			m_ScenarioDeadlineTick = 0;
 			return -1;
 		}
 

@@ -505,7 +505,9 @@ bool CPlayerItem::Use(int Value)
 	// try use item by use context and remove item
 	if(const auto& pUseData = Info()->GetUseScenarioContext(); pUseData.has_value())
 	{
-		StartEmbeddedScenario(ScenarioBlocks::ItemUse);
+		if(!StartEmbeddedScenario(ScenarioBlocks::ItemUse))
+			return false;
+
 		Remove(Value);
 		return true;
 	}
@@ -642,22 +644,22 @@ bool CPlayerItem::Save()
 	return true;
 }
 
-void CPlayerItem::StartEmbeddedScenario(ScenarioBlock Block)
+bool CPlayerItem::StartEmbeddedScenario(ScenarioBlock Block)
 {
 	auto* pPlayer = GetPlayer();
 	if(!pPlayer || !pPlayer->IsAuthed())
-		return;
+		return false;
 
 	const auto& ScenarioData = Info()->GetScenarioData();
 	if(ScenarioData.empty())
-		return;
+		return false;
 
 	// try start scenario
 	const auto& UseData = Info()->GetUseScenarioContext();
 	if(!UseData.has_value())
 	{
 		pPlayer->StartUniversalScenario(ScenarioData, Block);
-		return;
+		return true;
 	}
 
 	// check valid world id
@@ -665,20 +667,23 @@ void CPlayerItem::StartEmbeddedScenario(ScenarioBlock Block)
 	if(UseData->WorldID >= 0 && UseData->WorldID != CurrentWorldID)
 	{
 		GS()->Chat(m_ClientID, "Use '{}' in world '{}'.", Info()->GetName(), Server()->GetWorldName(UseData->WorldID));
-		return;
+		return false;
 	}
 
 	// check active scenario
 	if(GS()->ScenarioWorldManager()->GetActiveScenario())
 	{
 		GS()->Chat(m_ClientID, "World scenario is already active in this world.");
-		return;
+		return false;
 	}
 
 	// start scenario
-	GS()->ChatWorld(CurrentWorldID, "", "{}", UseData->Name);
-	GS()->ChatWorld(CurrentWorldID, "", "Triggered by {~}", Server()->ClientName(m_ClientID));
-	pPlayer->StartWorldScenario(ScenarioData, Block, UseData->Single, UseData->DurationSeconds);
+	const int ScenarioWorldID = UseData->WorldID >= 0 ? UseData->WorldID : CurrentWorldID;
+	if(!pPlayer->StartWorldScenario(ScenarioData, Block, ScenarioWorldID, UseData->Single, UseData->DurationSeconds))
+		return false;
+
+	GS()->ChatWorld(ScenarioWorldID, "", "{}", UseData->Name);
+	GS()->ChatWorld(ScenarioWorldID, "", "Triggered by {~}", Server()->ClientName(m_ClientID));
 
 	// apply rewards
 	if(const auto pScenario = std::dynamic_pointer_cast<CWorldScenario>(GS()->ScenarioWorldManager()->GetActiveScenario()))
@@ -689,4 +694,6 @@ void CPlayerItem::StartEmbeddedScenario(ScenarioBlock Block)
 			vRewards.push_back({ Reward.ItemID, Reward.Value, Reward.Chance });
 		pScenario->SetContextRewards(vRewards);
 	}
+
+	return true;
 }

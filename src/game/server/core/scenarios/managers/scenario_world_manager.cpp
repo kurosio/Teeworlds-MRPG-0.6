@@ -1,8 +1,35 @@
 #include "scenario_world_manager.h"
 #include <game/server/player.h>
 
+bool CScenarioWorldManager::IsClientInScenarioWorld(int ClientID) const
+{
+	if(!m_pGS || !m_pScenario)
+		return false;
+
+	auto* pPlayer = m_pGS->GetPlayer(ClientID);
+	return pPlayer && pPlayer->GetCurrentWorldID() == m_pScenario->GetWorldID();
+}
+
+void CScenarioWorldManager::PrunePlayersOutsideScenarioWorld()
+{
+	if(!m_pScenario)
+		return;
+
+	std::erase_if(m_PendingStart.m_JoinedPlayers, [this](int ClientID) { return !IsClientInScenarioWorld(ClientID); });
+	std::erase_if(m_PendingStart.m_DeclinedPlayers, [this](int ClientID) { return !IsClientInScenarioWorld(ClientID); });
+
+	const auto Participants = m_pScenario->GetParticipants();
+	for(const int ClientID : Participants)
+	{
+		if(!IsClientInScenarioWorld(ClientID))
+			m_pScenario->RemoveParticipant(ClientID);
+	}
+}
+
 void CScenarioWorldManager::UpdateScenarios()
 {
+	PrunePlayersOutsideScenarioWorld();
+
 	// is timeout pending
 	if(m_PendingStart.m_Active && time_get() >= m_PendingStart.m_StartAt)
 		TryFinalizePendingStart();
@@ -49,7 +76,7 @@ void CScenarioWorldManager::RemoveClient(int ClientID)
 
 std::shared_ptr<WorldScenarioBase> CScenarioWorldManager::GetActiveScenarioByPlayer(int ClientID) const
 {
-	return m_pScenario && m_pScenario->IsRunning() && m_pScenario->GetParticipants().contains(ClientID) ? m_pScenario : nullptr;
+	return m_pScenario && m_pScenario->IsRunning() && m_pScenario->GetParticipants().contains(ClientID) && IsClientInScenarioWorld(ClientID) ? m_pScenario : nullptr;
 }
 
 void CScenarioWorldManager::TryFinalizePendingStart()
@@ -64,9 +91,15 @@ void CScenarioWorldManager::TryFinalizePendingStart()
 	if(!m_pScenario)
 		return;
 
+	PrunePlayersOutsideScenarioWorld();
+
 	// add joined players to scenario participant
+	int ParticipantsAdded = 0;
 	for(const int joinedClientID : m_PendingStart.m_JoinedPlayers)
-		m_pScenario->AddParticipant(joinedClientID);
+	{
+		if(m_pScenario->AddParticipant(joinedClientID))
+			++ParticipantsAdded;
+	}
 
 	// cancel is empty
 	if(m_pScenario->GetParticipants().empty())
@@ -86,7 +119,7 @@ void CScenarioWorldManager::TryFinalizePendingStart()
 		return;
 	}
 
-	m_pGS->ChatWorld(m_pScenario->GetWorldID(), "World scenario", "Started: {} participant(s).", (int)m_PendingStart.m_JoinedPlayers.size());
+	m_pGS->ChatWorld(m_pScenario->GetWorldID(), "World scenario", "Started: {} participant(s).", ParticipantsAdded);
 }
 
 void CScenarioWorldManager::AttachVoteForPlayer(int ClientID)
@@ -115,6 +148,9 @@ void CScenarioWorldManager::AttachVoteForPlayer(int ClientID)
 		const int playerCID = pVotePlayer->GetCID();
 		m_PendingStart.m_JoinedPlayers.erase(playerCID);
 		m_PendingStart.m_DeclinedPlayers.erase(playerCID);
+
+		if(!m_pScenario || pVotePlayer->GetCurrentWorldID() != m_pScenario->GetWorldID())
+			return;
 
 		if(isJoined)
 			m_PendingStart.m_JoinedPlayers.insert(playerCID);
