@@ -21,6 +21,7 @@ public:
 	void ShowDungeonInfo(CPlayer* pPlayer, CDungeonData* pDungeon) const;
 	void ShowPvpInfo(CPlayer* pPlayer, int WorldID) const;
 	void ShowRhythmInfo(CPlayer* pPlayer, int WorldID) const;
+	void ShowSocialInfo(CPlayer* pPlayer, int WorldID) const;
 	std::vector<std::string> GetRhythmDifficulties(int WorldID) const;
 
 	CDungeonData* GetDungeonByID(int DungeonID) const;

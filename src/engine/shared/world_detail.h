@@ -31,6 +31,8 @@ public:
 			m_Type = WorldType::TreasureDungeon;
 		else if(Type == "pvp")
 			m_Type = WorldType::PvP;
+		else if(Type == "social")
+			m_Type = WorldType::Social;
 		else if(Type == "tutorial")
 			m_Type = WorldType::Tutorial;
 

@@ -1656,6 +1656,12 @@ void CGS::InitWorld()
 			worldTypeStr = "Rhythm";
 			break;
 		}
+		case WorldType::Social:
+		{
+			m_pController = new CGameControllerDefault(this);
+			worldTypeStr = "Social";
+			break;
+		}
 		default:
 		{
 			m_pController = new CGameControllerDefault(this);

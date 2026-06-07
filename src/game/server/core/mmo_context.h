@@ -180,6 +180,7 @@ enum class WorldType : int
 	DeepDungeon,
 	TreasureDungeon,
 	PvP,
+	Social,
 };
 
 enum WorldFlags
@@ -617,6 +618,7 @@ enum EMenuList
 	MENU_DUNGEON_SELECT,
 	MENU_PVP_SELECT,
 	MENU_RHYTHM_SELECT,
+	MENU_SOCIAL_SELECT,
 
 	// Other menus
 	MENU_LEADERBOARD,

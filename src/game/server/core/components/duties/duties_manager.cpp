@@ -64,6 +64,20 @@ bool CDutiesManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		VoteWrapper VMiniGames(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "\u266C Mini-games ({})", GetWorldsCountByType(WorldType::MiniGames));
 		VoteWrapper::AddEmptyline(ClientID);
 
+		// Social worlds
+		VoteWrapper VSocial(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "\u260E Social ({})", GetWorldsCountByType(WorldType::Social));
+		VSocial.Add("Churches, casinos and other social locations.");
+		for(int i = 0; i < Server()->GetWorldsSize(); i++)
+		{
+			const auto* pDetail = Server()->GetWorldDetail(i);
+			if(pDetail->GetType() == WorldType::Social)
+			{
+				const auto ClientsNum = Server()->GetClientsCountByWorld(i);
+				VSocial.AddMenu(MENU_SOCIAL_SELECT, i, "Lv{}. {} : {} online", pDetail->GetRequiredLevel(), Server()->GetWorldName(i), ClientsNum);
+			}
+		}
+		VoteWrapper::AddEmptyline(ClientID);
+
 		// Rhythm
 		VoteWrapper VRhythm(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "\u266C Rhythm ({})", GetWorldsCountByType(WorldType::Rhythm));
 		if(const auto BestPlayer = GetBestRhythmPlayer())
@@ -120,6 +134,19 @@ bool CDutiesManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 
 		if(const auto WorldID = pPlayer->m_VotesData.GetExtraID())
 			ShowRhythmInfo(pPlayer, WorldID.value());
+
+		// add backpage
+		VoteWrapper::AddBackpage(ClientID);
+		return true;
+	}
+
+	// social select
+	if(Menulist == MENU_SOCIAL_SELECT)
+	{
+		pPlayer->m_VotesData.SetLastMenuID(MENU_DUTIES_LIST);
+
+		if(const auto WorldID = pPlayer->m_VotesData.GetExtraID())
+			ShowSocialInfo(pPlayer, WorldID.value());
 
 		// add backpage
 		VoteWrapper::AddBackpage(ClientID);
@@ -256,6 +283,34 @@ bool CDutiesManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, con
 		return true;
 	}
 
+	// social enter
+	if(PPSTR(pCmd, "SOCIAL_JOIN") == 0)
+	{
+		auto WorldIdOpt = GetIfExists<int>(Extras, 0);
+		if(!WorldIdOpt.has_value() || !Server()->IsWorldType(WorldIdOpt.value(), WorldType::Social))
+			return true;
+
+		// check equal player world
+		if(GS()->IsPlayerInWorld(ClientID, WorldIdOpt))
+		{
+			GS()->Chat(ClientID, "You are already in this social world.");
+			pPlayer->m_VotesData.UpdateVotesIf(MENU_DUTIES_LIST);
+			return true;
+		}
+
+		// check valid level
+		if(pPlayer->Account()->GetLevel() < Server()->GetWorldDetail(WorldIdOpt.value())->GetRequiredLevel())
+		{
+			GS()->Chat(ClientID, "Your level is low to visit this social world.");
+			pPlayer->m_VotesData.UpdateVotesIf(MENU_DUTIES_LIST);
+			return true;
+		}
+
+		GS()->Chat(-1, "'{~}' joined to social world '{}'!", Server()->ClientName(ClientID), Server()->GetWorldName(WorldIdOpt.value()));
+		pPlayer->ChangeWorld(WorldIdOpt.value());
+		return true;
+	}
+
 	//dungeon exit
 	if(PPSTR(pCmd, "DUTIES_EXIT") == 0)
 	{
@@ -326,6 +381,11 @@ void CDutiesManager::ShowInsideMenu(CPlayer* pPlayer) const
 	else if(GS()->IsWorldType(WorldType::Rhythm))
 	{
 		VoteWrapper(ClientID).AddOption("DUTIES_EXIT", "Exit from Rhythm");
+		VoteWrapper::AddEmptyline(ClientID);
+	}
+	else if(GS()->IsWorldType(WorldType::Social))
+	{
+		VoteWrapper(ClientID).AddOption("DUTIES_EXIT", "Exit from Social");
 		VoteWrapper::AddEmptyline(ClientID);
 	}
 }
@@ -400,6 +460,28 @@ void CDutiesManager::ShowRhythmInfo(CPlayer* pPlayer, int WorldID) const
 			VOptions.AddOption("RHYTHM_JOIN", MakeAnyList(WorldID, Difficulty), "Join [{}]", Difficulty);
 		VoteWrapper::AddEmptyline(ClientID);
 	}
+}
+
+void CDutiesManager::ShowSocialInfo(CPlayer* pPlayer, int WorldID) const
+{
+	const auto ClientID = pPlayer->GetCID();
+	const auto ClientsNum = Server()->GetClientsCountByWorld(WorldID);
+	const auto* pDetail = Server()->GetWorldDetail(WorldID);
+	const char* pName = Server()->GetWorldName(WorldID);
+
+	// info
+	VoteWrapper VInfo(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_DOUBLE | VWF_ALIGN_TITLE, "\u2692 Detail information");
+	VInfo.Add("Name: {}", pName);
+	VInfo.Add("Recommended level: {} LVL", pDetail->GetRequiredLevel());
+	VInfo.Add("Players in-game: {}", ClientsNum);
+	VInfo.Add("Purpose: social location for meetings and roleplay.");
+	VInfo.Add("Examples: church, casino and similar places.");
+	VoteWrapper::AddEmptyline(ClientID);
+
+	// options
+	VoteWrapper VOptions(ClientID);
+	VOptions.AddOption("SOCIAL_JOIN", WorldID, "Visit social world");
+	VoteWrapper::AddEmptyline(ClientID);
 }
 
 std::vector<std::string> CDutiesManager::GetRhythmDifficulties(int WorldID) const
