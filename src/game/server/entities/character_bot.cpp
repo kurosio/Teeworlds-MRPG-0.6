@@ -80,10 +80,6 @@ bool CCharacterBotAI::TakeDamage(vec2 Force, int Dmg, int From, int Weapon, int 
 	if(!pFrom || !IsAllowedPVP(From))
 		return false;
 
-	// Between player damage disabled
-	if(GS()->Collision()->IntersectLineColFlag(m_Core.m_Pos, pFrom->GetCharacter()->m_Core.m_Pos, nullptr, nullptr, CCollision::COLFLAG_DISALLOW_MOVE))
-		return false;
-
 	// Take damage
 	CCharacter::TakeDamage(Force, Dmg, From, Weapon);
 

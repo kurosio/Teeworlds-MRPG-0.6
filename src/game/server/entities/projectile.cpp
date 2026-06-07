@@ -5,6 +5,36 @@
 #include <game/server/gamecontext.h>
 #include "character.h"
 
+static CCharacter* IntersectAllowedCharacter(CGameWorld* pGameWorld, vec2 Pos0, vec2 Pos1, float Radius, vec2& NewPos, CEntity* pNotThis, int OwnerCID)
+{
+	float ClosestLen = distance(Pos0, Pos1) * 100.0f;
+	CCharacter* pClosest = nullptr;
+
+	for(CCharacter* p = (CCharacter*)pGameWorld->FindFirst(CGameWorld::ENTTYPE_CHARACTER); p; p = (CCharacter*)p->TypeNext())
+	{
+		if(p == pNotThis || !p->IsAllowedPVP(OwnerCID))
+			continue;
+
+		vec2 IntersectPos;
+		if(closest_point_on_line(Pos0, Pos1, p->GetPos(), IntersectPos))
+		{
+			float Len = distance(p->GetPos(), IntersectPos);
+			if(Len < p->GetRadius() + Radius)
+			{
+				Len = distance(Pos0, IntersectPos);
+				if(Len < ClosestLen)
+				{
+					NewPos = IntersectPos;
+					ClosestLen = Len;
+					pClosest = p;
+				}
+			}
+		}
+	}
+
+	return pClosest;
+}
+
 CProjectile::CProjectile(CGameWorld *pGameWorld, int Type, int Owner, vec2 Pos, vec2 Dir, int Span,
 	bool Explosive, float Force, int SoundImpact, vec2 InitDir, int Weapon)
 : CEntity(pGameWorld, CGameWorld::ENTTYPE_PROJECTILE, Pos)
@@ -81,11 +111,11 @@ void CProjectile::Tick()
 	// initialize variables
 	bool Collide = GS()->Collision()->IntersectLineWithInvisible(PrevPos, CurPos, &CurPos, 0);
 	CCharacter* pOwnerChar = GS()->GetPlayerChar(m_Owner);
-	CCharacter* pTargetChar = GS()->m_World.IntersectCharacter(PrevPos, CurPos, 6.0f, CurPos, pOwnerChar);
+	CCharacter* pTargetChar = IntersectAllowedCharacter(GameWorld(), PrevPos, CurPos, 6.0f, CurPos, pOwnerChar, m_Owner);
 	m_LifeSpan--;
 
 	// check collide span and target
-	if (m_LifeSpan < 0 || GameLayerClipped(CurPos) || Collide || (pTargetChar && pTargetChar->IsAllowedPVP(pOwnerChar->GetPlayer()->GetCID())))
+	if (m_LifeSpan < 0 || GameLayerClipped(CurPos) || Collide || pTargetChar)
 	{
 		if(m_LifeSpan >= 0 || m_Weapon == WEAPON_GRENADE)
 		{

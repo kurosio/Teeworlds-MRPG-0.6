@@ -65,7 +65,7 @@ void CEntityTeslaSerpent::CalculateChainLightning()
 		float MinHitDistance = m_ChainRange;
 
 		vec2 WallCollisionPoint;
-		if(GS()->Collision()->IntersectLine(CurrentChainSourcePos, HitPosition, &WallCollisionPoint, nullptr))
+		if(GS()->Collision()->IntersectLineWithInvisible(CurrentChainSourcePos, HitPosition, &WallCollisionPoint, nullptr))
 		{
 			HitPosition = WallCollisionPoint;
 			MinHitDistance = distance(CurrentChainSourcePos, HitPosition);
@@ -94,7 +94,7 @@ void CEntityTeslaSerpent::CalculateChainLightning()
 
 			if(DistToTarget < MinHitDistance)
 			{
-				if(!GS()->Collision()->IntersectLine(CurrentChainSourcePos, TargetCharPos, nullptr, nullptr))
+				if(!GS()->Collision()->IntersectLineWithInvisible(CurrentChainSourcePos, TargetCharPos, nullptr, nullptr))
 				{
 					MinHitDistance = DistToTarget;
 					HitPosition = TargetCharPos;
