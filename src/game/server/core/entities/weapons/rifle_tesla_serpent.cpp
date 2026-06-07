@@ -140,7 +140,7 @@ void CEntityTeslaSerpent::Snap(int SnappingClient)
 			}
 			else
 			{
-				const float Lerp = (float)((j + 1) / (int)NUM_SUB_SEGMENTS_PER_BOLT);
+				const float Lerp = (j + 1.0f) / (float)NUM_SUB_SEGMENTS_PER_BOLT;
 				const float Jitter = (random_float() * 2.0f - 1.0f) * JITTER_MAGNITUDE;
 				SubEnd = Start + Delta * Lerp + Perpendicular * Jitter;
 			}
