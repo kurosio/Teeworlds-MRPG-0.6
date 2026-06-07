@@ -648,16 +648,16 @@ void CEntityManager::Bow(int ClientID, int Damage, int FireCount, float Explosio
 				if(length(Velocity) > 0.0f)
 					pArrowBase->SetConfig("direction", normalize(Velocity));
 
-				auto* pTargetChar = pArrowBase->GameWorld()->IntersectCharacter(PrevPos, NewPos, 24.0f, NewPos, pArrowBase->GetCharacter());
+				auto* pTargetChar = pArrowBase->GameWorld()->IntersectAllowedCharacter(PrevPos, NewPos, 24.0f, NewPos, pArrowBase->GetCharacter(), pArrowBase->GetClientID());
 				bool Collide = pArrowBase->GS()->Collision()->IntersectLineWithInvisible(PrevPos, NewPos, &NewPos, nullptr);
-				if(LifeSpan <= 0 || pArrowBase->GameLayerClipped(NewPos) || Collide || (pTargetChar && pTargetChar->IsAllowedPVP(pArrowBase->GetClientID())))
+				if(LifeSpan <= 0 || pArrowBase->GameLayerClipped(NewPos) || Collide || pTargetChar)
 				{
 					const auto Damage = pArrowBase->GetConfig("damage", 0);
 					const auto ExplosionRadius = pArrowBase->GetGroup()->GetConfig("explosionRadius", 0.f);
 					const auto ExplosionCount = pArrowBase->GetGroup()->GetConfig("explosionCount", 0);
 					pArrowBase->GS()->CreateSound(NewPos, SOUND_NINJA_HIT);
 
-					if(pTargetChar && pArrowBase->GetCharacter() && pTargetChar->IsAllowedPVP(pArrowBase->GetClientID()))
+					if(pTargetChar && pArrowBase->GetCharacter())
 						pTargetChar->TakeDamage(normalize(Velocity) * 5.0f, Damage, pArrowBase->GetClientID(), WEAPON_GAME);
 
 					pArrowBase->GS()->CreateRandomRadiusExplosion(ExplosionCount, ExplosionRadius, NewPos, pArrowBase->GetClientID(), WEAPON_GAME, Damage);

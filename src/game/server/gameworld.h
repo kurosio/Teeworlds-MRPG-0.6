@@ -80,6 +80,7 @@ public:
 	std::vector<CEntity*> FindEntities(vec2 Pos, float Radius, int Max, int Type) const;
 	CEntity *ClosestEntity(vec2 Pos, float Radius, int Type, CEntity *pNotThis) const;
 	CCharacter *IntersectCharacter(vec2 Pos0, vec2 Pos1, float Radius, vec2 &NewPos, CEntity *pNotThis = nullptr);
+	CCharacter *IntersectAllowedCharacter(vec2 Pos0, vec2 Pos1, float Radius, vec2 &NewPos, CEntity *pNotThis, int OwnerCID);
 	bool IntersectClosestEntity(vec2 Pos, float Radius, int EnttypeID);
 	bool IntersectClosestDoorEntity(vec2 Pos, float Radius);
 

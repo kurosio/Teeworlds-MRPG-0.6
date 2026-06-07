@@ -240,6 +240,38 @@ CCharacter* CGameWorld::IntersectCharacter(vec2 Pos0, vec2 Pos1, float Radius, v
 	return pClosest;
 }
 
+CCharacter* CGameWorld::IntersectAllowedCharacter(vec2 Pos0, vec2 Pos1, float Radius, vec2& NewPos, CEntity* pNotThis, int OwnerCID)
+{
+	// Find the closest character that can actually receive damage from the owner.
+	float ClosestLen = distance(Pos0, Pos1) * 100.0f;
+	CCharacter* pClosest = nullptr;
+
+	CCharacter* p = (CCharacter*)FindFirst(ENTTYPE_CHARACTER);
+	for(; p; p = (CCharacter*)p->TypeNext())
+	{
+		if(p == pNotThis || !p->IsAllowedPVP(OwnerCID))
+			continue;
+
+		vec2 IntersectPos;
+		if(closest_point_on_line(Pos0, Pos1, p->m_Pos, IntersectPos))
+		{
+			float Len = distance(p->m_Pos, IntersectPos);
+			if(Len < p->m_Radius + Radius)
+			{
+				Len = distance(Pos0, IntersectPos);
+				if(Len < ClosestLen)
+				{
+					NewPos = IntersectPos;
+					ClosestLen = Len;
+					pClosest = p;
+				}
+			}
+		}
+	}
+
+	return pClosest;
+}
+
 bool CGameWorld::IntersectClosestEntity(vec2 Pos, float Radius, int EnttypeID)
 {
 	for(CEntity* pDoor = FindFirst(EnttypeID); pDoor; pDoor = pDoor->TypeNext())

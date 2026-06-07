@@ -24,7 +24,7 @@ bool CLaser::HitCharacter(vec2 From, vec2 To)
 {
 	vec2 At;
 	auto *pOwnerChar = GS()->GetPlayerChar(m_ClientID);
-	auto*pHit = GS()->m_World.IntersectCharacter(m_Pos, To, 0.f, At, pOwnerChar);
+	auto*pHit = GameWorld()->IntersectAllowedCharacter(m_Pos, To, 0.f, At, pOwnerChar, m_ClientID);
 	if(!pHit || pHit->m_Core.m_CollisionDisabled)
 		return false;
 
