@@ -417,7 +417,7 @@
                     closeBtn: document.getElementById('json-import-close')
                 };
                 this.arrowModeToggle = document.getElementById('arrow-mode-toggle');
-                this.modal = { backdrop: document.getElementById('modal-backdrop'), title: document.getElementById('modal-title'), formContainer: document.getElementById('modal-form-container'), saveButton: document.getElementById('modal-save'), cancelButton: document.getElementById('modal-cancel'), context: null };
+                this.modal = { backdrop: document.getElementById('modal-backdrop'), title: document.getElementById('modal-title'), formContainer: document.getElementById('modal-form-container'), saveButton: document.getElementById('modal-save'), cancelButton: document.getElementById('modal-cancel'), context: null, dynamicRefreshAbort: null };
                 this.deleteGroupModal = {
                     backdrop: document.getElementById('delete-group-modal-backdrop'),
                     cancelBtn: document.getElementById('delete-group-cancel-btn'),
@@ -1348,16 +1348,44 @@
                 this.modal.title.textContent = `Редактирование: ${componentInfo.name}`;
                 const modalContent = this.modal.backdrop?.querySelector('#modal-content');
                 modalContent?.classList.add('scenario-modal-wide');
-                this.modal.formContainer.innerHTML = this.buildModalForm(this.modal.context.data, step);
-                // IMPORTANT: modal content is dynamic. Re-run Core init so db_select, validation, toggles, etc. work.
-                Promise.resolve().then(() => window.EditorCore?.UIManager?.init?.(this.modal.formContainer));
+                this.setupModalDynamicFieldRefresh(step);
+                this.renderModalForm(this.modal.context.data, step);
                 this.modal.backdrop.classList.remove('hidden');
                 this.modal.formContainer.querySelector('input, textarea, select')?.focus();
+            }
+
+            renderModalForm(data, step) {
+                this.modal.formContainer.innerHTML = this.buildModalForm(data, step);
+                // IMPORTANT: modal content is dynamic. Re-run Core init so db_select, validation, toggles, etc. work.
+                Promise.resolve().then(() => window.EditorCore?.UIManager?.init?.(this.modal.formContainer));
+            }
+
+            setupModalDynamicFieldRefresh(step) {
+                this.modal.dynamicRefreshAbort?.abort?.();
+                this.modal.dynamicRefreshAbort = new AbortController();
+                const signal = this.modal.dynamicRefreshAbort.signal;
+                const dynamicFieldNames = new Set(['condition_type', 'quest_state']);
+                const refresh = (event) => {
+                    if (!this.modal.context || this.modal.context.data?.type !== 'dynamic_condition') return;
+                    const target = event.target;
+                    if (!target?.name || !dynamicFieldNames.has(target.name)) return;
+
+                    const currentData = this.collectModalFormData();
+                    this.modal.context.data = currentData;
+                    this.renderModalForm(currentData, step);
+                };
+
+                // Use delegated listeners on the stable modal container. The form body is rebuilt
+                // after every condition change, so direct listeners on the old <select> become stale.
+                this.modal.formContainer.addEventListener('input', refresh, { signal });
+                this.modal.formContainer.addEventListener('change', refresh, { signal });
             }
 
             closeModal() {
                 const modalContent = this.modal.backdrop?.querySelector('#modal-content');
                 modalContent?.classList.remove('scenario-modal-wide');
+                this.modal.dynamicRefreshAbort?.abort?.();
+                this.modal.dynamicRefreshAbort = null;
                 this.modal.backdrop.classList.add('hidden');
                 this.modal.context = null;
             }
@@ -1381,8 +1409,48 @@
                     }
                 }
 
+                if (editedData.type === 'dynamic_condition') {
+                    const type = editedData.condition_type || 'players_count';
+                    if (!['players_count', 'alive_players_count', 'item_count'].includes(type)) {
+                        delete editedData.compare;
+                        delete editedData.value;
+                    }
+                    if (type !== 'item_count') {
+                        delete editedData.item_id;
+                        delete editedData.item_scope;
+                    }
+                    if (type !== 'quest_state') {
+                        delete editedData.quest_id;
+                        delete editedData.quest_state;
+                        delete editedData.step;
+                        delete editedData.entire_group;
+                    } else if (editedData.quest_state !== 'step_finished') {
+                        delete editedData.step;
+                    }
+                }
+
                 const originalComponent = this.findComponent(this.modal.context.stepId, this.modal.context.componentId);
                 Object.assign(originalComponent, editedData);
+
+                if (originalComponent.type === 'dynamic_condition') {
+                    const type = originalComponent.condition_type || 'players_count';
+                    if (!['players_count', 'alive_players_count', 'item_count'].includes(type)) {
+                        delete originalComponent.compare;
+                        delete originalComponent.value;
+                    }
+                    if (type !== 'item_count') {
+                        delete originalComponent.item_id;
+                        delete originalComponent.item_scope;
+                    }
+                    if (type !== 'quest_state') {
+                        delete originalComponent.quest_id;
+                        delete originalComponent.quest_state;
+                        delete originalComponent.step;
+                        delete originalComponent.entire_group;
+                    } else if (originalComponent.quest_state !== 'step_finished') {
+                        delete originalComponent.step;
+                    }
+                }
 
                 if (originalComponent.type === 'dungeon_door_control' && originalComponent.action === 'remove') {
                     delete originalComponent.position;
@@ -1428,9 +1496,7 @@
                 }
                 window.EditorCore.FieldRenderer.setValueAtPath(currentData, listPath, listValue);
                 this.modal.context.data = currentData;
-                this.modal.formContainer.innerHTML = this.buildModalForm(currentData, step);
-                // Re-init Core enhancements for newly rendered list rows.
-                Promise.resolve().then(() => window.EditorCore?.UIManager?.init?.(this.modal.formContainer));
+                this.renderModalForm(currentData, step);
                 this.dirty.markDirty();
             }
 
@@ -2138,6 +2204,17 @@
                         case 'check_quest_finished': return `Проверка завершения квеста: <b>${data.quest_id || '?'}</b>`;
                         case 'check_quest_step_finished': return `Квест: <b>${data.quest_id || '?'}</b>, шаг > <b>${data.step ?? 0}</b>`;
                         case 'quest_condition': return `Квест: <b>${data.quest_id || '?'}</b>, условие: <b>${data.condition || '?'}</b>${data.entire_group ? ', вся группа' : ''}`;
+                        case 'dynamic_condition': {
+                            const labels = {
+                                players_count: 'участники',
+                                alive_players_count: 'живые участники',
+                                item_count: 'предметы',
+                                quest_state: 'квест'
+                            };
+                            if (data.condition_type === 'item_count') return `Условие: <b>${labels[data.condition_type]}</b>, предмет <b>${data.item_id || '?'}</b>, <b>${data.item_scope || 'any_player'}</b> ${data.compare || '>='} <b>${data.value ?? 1}</b>`;
+                            if (data.condition_type === 'quest_state') return `Условие: <b>квест ${data.quest_id || '?'}</b>, состояние <b>${data.quest_state || 'accepted'}</b>${data.entire_group ? ', вся группа' : ''}`;
+                            return `Условие: <b>${labels[data.condition_type] || data.condition_type || 'players_count'}</b> ${data.compare || '>='} <b>${data.value ?? 1}</b>${data.invert ? ', инверсия' : ''}`;
+                        }
                         case 'pick_item_task': return `Подбор предмета: <b>${data.item?.id || '?'}</b> x <b>${data.item?.value || 0}</b>`;
                         case 'universal_pick_item_task': return `Подбор предмета: <b>${data.item?.id || '?'}</b> x <b>${data.item?.value || 0}</b>`;
                         case 'shootmarkers': return `Маркеры: <b>${data.markers?.length || 0}</b>`;

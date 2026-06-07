@@ -508,6 +508,85 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
         smooth: createField('boolean', 'Плавно', true)
       }
     },
+
+    dynamic_condition: {
+      name: 'Универсальное условие',
+      class: 'condition',
+      icon: 'fa-solid fa-sliders',
+      desc: 'Динамическое условие: игроки, предметы, квесты, мир. Работает в single/group/world сценариях',
+      fields: {
+        condition_type: createField('text', 'Какое условие', 'players_count', {
+          ui: {
+            type: 'select',
+            options: [
+              { value: 'players_count', label: 'Кол-во участников сценария' },
+              { value: 'alive_players_count', label: 'Кол-во живых участников' },
+              { value: 'item_count', label: 'Кол-во предметов' },
+              { value: 'quest_state', label: 'Состояние квеста' }
+            ],
+            help: 'После выбора условия форма перестроится и покажет только нужные поля.'
+          }
+        }),
+        compare: createField('text', 'Сравнение', '>=', {
+          ui: {
+            type: 'select',
+            options: ['>=', '==', '!=', '>', '<', '<='],
+            showWhen: { path: 'condition_type', in: ['players_count', 'alive_players_count', 'item_count'] }
+          }
+        }),
+        value: createField('number', 'Значение', 1, {
+          ui: {
+            min: -999999,
+            max: 999999,
+            showWhen: { path: 'condition_type', in: ['players_count', 'alive_players_count', 'item_count'] }
+          }
+        }),
+        item_id: createDbSelect('Предмет', 0, 'item', {
+          ui: {
+            placeholder: '— выберите предмет —',
+            searchServer: true,
+            dbLimit: 1000,
+            showWhen: { path: 'condition_type', equals: 'item_count' }
+          }
+        }),
+        item_scope: createField('text', 'Как считать предметы', 'any_player', {
+          ui: {
+            type: 'select',
+            options: [
+              { value: 'any_player', label: 'Достаточно у любого игрока' },
+              { value: 'all_players', label: 'Нужно у каждого игрока' },
+              { value: 'total', label: 'Сумма по всем участникам' }
+            ],
+            showWhen: { path: 'condition_type', equals: 'item_count' }
+          }
+        }),
+        quest_id: createDbSelect('Квест', 0, 'quest', {
+          ui: {
+            placeholder: '— выберите квест —',
+            showWhen: { path: 'condition_type', equals: 'quest_state' }
+          }
+        }),
+        quest_state: createField('text', 'Состояние квеста', 'accepted', {
+          ui: {
+            type: 'select',
+            options: [
+              { value: 'accepted', label: 'Квест принят' },
+              { value: 'finished', label: 'Квест завершён' },
+              { value: 'step_finished', label: 'Шаг квеста завершён' }
+            ],
+            showWhen: { path: 'condition_type', equals: 'quest_state' }
+          }
+        }),
+        step: createField('number', 'Номер шага квеста', 0, {
+          ui: { min: 0, max: 9999, showWhen: (data) => data.condition_type === 'quest_state' && data.quest_state === 'step_finished' }
+        }),
+        entire_group: createField('boolean', 'Требовать для всей группы', false, {
+          ui: { showWhen: { path: 'condition_type', equals: 'quest_state' } }
+        }),
+        invert: createField('boolean', 'Инвертировать результат', false),
+        show_progress: createField('boolean', 'Показывать напоминание игрокам', true)
+      }
+    },
     condition_movement: {
       name: 'Условие: Движение',
       class: 'interactive',
@@ -576,6 +655,7 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
     'message',
     'wait',
     'follow_camera',
+    'dynamic_condition',
     'condition_movement',
     'teleport',
     'moving_disable',

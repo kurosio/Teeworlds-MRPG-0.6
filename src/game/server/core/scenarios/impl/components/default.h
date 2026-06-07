@@ -267,6 +267,252 @@ private:
 	}
 };
 
+
+
+/**
+ * @class ScenarioDynamicConditionComponent
+ *
+ * JSON fields:
+ * @param condition_type (string): players_count, alive_players_count, item_count, quest_state, world_id.
+ * @param compare (string): ==, !=, >=, <=, >, <.
+ * @param value (int): right-hand value for numeric conditions.
+ * @param item_id (int): item id for item_count.
+ * @param item_scope (string): any_player, all_players, total for item_count.
+ * @param quest_id (int), quest_state (string), step (int), entire_group (bool): quest condition fields.
+ * @param invert (bool): invert final result.
+ */
+class ScenarioDynamicConditionComponent final : public PlayerAwareComponent<ScenarioDynamicConditionComponent>
+{
+	enum class EConditionType
+	{
+		PlayersCount,
+		AlivePlayersCount,
+		ItemCount,
+		QuestState,
+	};
+
+	enum class ECompare
+	{
+		Equal,
+		NotEqual,
+		Greater,
+		GreaterOrEqual,
+		Less,
+		LessOrEqual,
+	};
+
+	enum class EItemScope
+	{
+		AnyPlayer,
+		AllPlayers,
+		Total,
+	};
+
+	enum class EQuestState
+	{
+		Accepted,
+		Finished,
+		StepFinished,
+	};
+
+	EConditionType m_ConditionType { EConditionType::PlayersCount };
+	ECompare m_Compare { ECompare::GreaterOrEqual };
+	EItemScope m_ItemScope { EItemScope::AnyPlayer };
+	EQuestState m_QuestState { EQuestState::Accepted };
+	int m_Value { 1 };
+	int m_ItemID { 0 };
+	int m_QuestID { -1 };
+	int m_Step { 0 };
+	bool m_EntireGroup { false };
+	bool m_Invert { false };
+	bool m_ShowProgress { true };
+
+	static EConditionType ParseConditionType(const std::string& Type)
+	{
+		if(Type == "alive_players_count")
+			return EConditionType::AlivePlayersCount;
+		if(Type == "item_count")
+			return EConditionType::ItemCount;
+		if(Type == "quest_state")
+			return EConditionType::QuestState;
+		return EConditionType::PlayersCount;
+	}
+
+	static ECompare ParseCompare(const std::string& Compare)
+	{
+		if(Compare == "!=")
+			return ECompare::NotEqual;
+		if(Compare == ">")
+			return ECompare::Greater;
+		if(Compare == "<")
+			return ECompare::Less;
+		if(Compare == "<=")
+			return ECompare::LessOrEqual;
+		if(Compare == "==" || Compare == "=")
+			return ECompare::Equal;
+		return ECompare::GreaterOrEqual;
+	}
+
+	static EItemScope ParseItemScope(const std::string& Scope)
+	{
+		if(Scope == "all_players")
+			return EItemScope::AllPlayers;
+		if(Scope == "total")
+			return EItemScope::Total;
+		return EItemScope::AnyPlayer;
+	}
+
+	static EQuestState ParseQuestState(const std::string& State)
+	{
+		if(State == "finished")
+			return EQuestState::Finished;
+		if(State == "step_finished")
+			return EQuestState::StepFinished;
+		return EQuestState::Accepted;
+	}
+
+	bool CompareInt(int Left, int Right) const
+	{
+		switch(m_Compare)
+		{
+			case ECompare::Equal: return Left == Right;
+			case ECompare::NotEqual: return Left != Right;
+			case ECompare::Greater: return Left > Right;
+			case ECompare::GreaterOrEqual: return Left >= Right;
+			case ECompare::Less: return Left < Right;
+			case ECompare::LessOrEqual: return Left <= Right;
+		}
+		return false;
+	}
+
+	int GetPlayerItemCount(CPlayer* pPlayer) const
+	{
+		if(!pPlayer || m_ItemID <= 0)
+			return 0;
+
+		const auto* pItem = pPlayer->GetItem(m_ItemID);
+		return pItem ? pItem->GetValue() : 0;
+	}
+
+	bool CheckQuest(CPlayer* pPlayer) const
+	{
+		if(!pPlayer || m_QuestID <= 0)
+			return false;
+
+		const auto* pQuest = pPlayer->GetQuest(m_QuestID);
+		if(!pQuest)
+			return false;
+
+		switch(m_QuestState)
+		{
+			case EQuestState::Accepted: return pQuest->IsAccepted();
+			case EQuestState::Finished: return pQuest->IsCompleted();
+			case EQuestState::StepFinished: return pQuest->GetStepPos() > m_Step;
+		}
+		return false;
+	}
+
+	bool EvaluatePlayersCount(const std::vector<CPlayer*>& vpPlayers) const
+	{
+		return CompareInt(static_cast<int>(vpPlayers.size()), m_Value);
+	}
+
+	bool EvaluateAlivePlayersCount(const std::vector<CPlayer*>& vpPlayers) const
+	{
+		const int AliveCount = static_cast<int>(std::count_if(vpPlayers.begin(), vpPlayers.end(), [](const CPlayer* pPlayer)
+		{
+			return pPlayer && pPlayer->GetCharacter() && pPlayer->GetCharacter()->IsAlive();
+		}));
+		return CompareInt(AliveCount, m_Value);
+	}
+
+	bool EvaluateItemCount(const std::vector<CPlayer*>& vpPlayers) const
+	{
+		if(vpPlayers.empty() || m_ItemID <= 0)
+			return false;
+
+		if(m_ItemScope == EItemScope::Total)
+		{
+			int Total = 0;
+			for(auto* pPlayer : vpPlayers)
+				Total += GetPlayerItemCount(pPlayer);
+			return CompareInt(Total, m_Value);
+		}
+
+		auto HasRequiredItems = [this](CPlayer* pPlayer)
+		{
+			return CompareInt(GetPlayerItemCount(pPlayer), m_Value);
+		};
+
+		if(m_ItemScope == EItemScope::AllPlayers)
+			return std::all_of(vpPlayers.begin(), vpPlayers.end(), HasRequiredItems);
+
+		return std::any_of(vpPlayers.begin(), vpPlayers.end(), HasRequiredItems);
+	}
+
+	bool EvaluateQuestState(const std::vector<CPlayer*>& vpPlayers) const
+	{
+		if(vpPlayers.empty() || m_QuestID <= 0)
+			return false;
+
+		if(m_EntireGroup)
+			return std::all_of(vpPlayers.begin(), vpPlayers.end(), [this](CPlayer* pPlayer) { return CheckQuest(pPlayer); });
+
+		return std::any_of(vpPlayers.begin(), vpPlayers.end(), [this](CPlayer* pPlayer) { return CheckQuest(pPlayer); });
+	}
+
+	bool Evaluate() const
+	{
+		const auto vpPlayers = GetPlayers();
+		bool Result = false;
+		switch(m_ConditionType)
+		{
+			case EConditionType::PlayersCount: Result = EvaluatePlayersCount(vpPlayers); break;
+			case EConditionType::AlivePlayersCount: Result = EvaluateAlivePlayersCount(vpPlayers); break;
+			case EConditionType::ItemCount: Result = EvaluateItemCount(vpPlayers); break;
+			case EConditionType::QuestState: Result = EvaluateQuestState(vpPlayers); break;
+		}
+		return m_Invert ? !Result : Result;
+	}
+
+public:
+	explicit ScenarioDynamicConditionComponent(const nlohmann::json& j)
+	{
+		InitBaseJsonField(j);
+		m_ConditionType = ParseConditionType(j.value("condition_type", "players_count"));
+		m_Compare = ParseCompare(j.value("compare", ">="));
+		m_ItemScope = ParseItemScope(j.value("item_scope", "any_player"));
+		m_QuestState = ParseQuestState(j.value("quest_state", j.value("condition", "accepted")));
+		m_Value = j.value("value", j.value("required", 1));
+		m_ItemID = j.value("item_id", 0);
+		m_QuestID = j.value("quest_id", -1);
+		m_Step = j.value("step", 0);
+		m_EntireGroup = j.value("entire_group", false);
+		m_Invert = j.value("invert", false);
+		m_ShowProgress = j.value("show_progress", true);
+	}
+
+	DECLARE_COMPONENT_NAME("dynamic_condition")
+
+private:
+	void OnActiveImpl() override
+	{
+		if(Evaluate())
+		{
+			Finish();
+			return;
+		}
+
+		if(m_ShowProgress && Server() && Server()->Tick() % Server()->TickSpeed() == 0)
+		{
+			ForEachScenarioPlayer([this](CPlayer* pPlayer)
+			{
+				GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::GameWarning, Server()->TickSpeed(), "Objective: condition is not met yet.");
+			});
+		}
+	}
+};
+
 /**
  * @class ScenarioMovementConditionComponent
  * @brief A conditional component that finishes only when participants have moved to a designated area.
