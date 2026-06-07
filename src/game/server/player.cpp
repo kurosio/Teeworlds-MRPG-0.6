@@ -1047,7 +1047,7 @@ void CPlayer::StartUniversalScenario(const std::string& ScenarioData, ScenarioBl
 		GS()->ScenarioPlayerManager()->RegisterScenario<CUniversalScenario>(m_ClientID, JsonData);
 }
 
-void CPlayer::StartWorldScenario(const std::string& ScenarioData, ScenarioBlock Block, int WorldID, int Single, int DurationSeconds) const
+void CPlayer::StartWorldScenario(const std::string& ScenarioData, ScenarioBlock Block, int Single, int DurationSeconds) const
 {
 	nlohmann::json JsonData;
 	mystd::json::parse(ScenarioData, [&](const nlohmann::json& Json)
@@ -1059,5 +1059,5 @@ void CPlayer::StartWorldScenario(const std::string& ScenarioData, ScenarioBlock 
 	});
 
 	if(!JsonData.is_null() && !JsonData.empty())
-		GS()->ScenarioWorldManager()->RegisterScenario<CWorldScenario>(WorldID, m_ClientID, Single, DurationSeconds, JsonData);
+		GS()->ScenarioWorldManager()->RegisterScenario<CWorldScenario>(m_ClientID, Single, DurationSeconds, JsonData);
 }

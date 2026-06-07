@@ -28,7 +28,7 @@ public:
 	~CScenarioWorldManager() = default;
 
 	template<typename T, typename... Args>
-	int RegisterScenario(int WorldID, int StarterCID, bool Single, int DurationSeconds, Args&&... args) requires std::derived_from<T, WorldScenarioBase>
+	int RegisterScenario(int StarterCID, bool Single, int DurationSeconds, Args&&... args) requires std::derived_from<T, WorldScenarioBase>
 	{
 		if(m_pScenario)
 			return -1;
@@ -36,7 +36,7 @@ public:
 		// initialize
 		m_pScenario = std::make_shared<T>(std::forward<Args>(args)...);
 		m_pScenario->m_pGS = m_pGS;
-		m_pScenario->m_WorldID = WorldID;
+		m_pScenario->m_WorldID = m_pGS->GetWorldID();
 		m_PendingStart = {};
 		if(DurationSeconds > 0)
 			m_ScenarioDeadlineTick = time_get() + time_freq() * DurationSeconds;

@@ -660,7 +660,7 @@ void CPlayerItem::StartEmbeddedScenario(ScenarioBlock Block)
 		return;
 	}
 
-	// try start world scenario
+	// check valid world id
 	const int CurrentWorldID = pPlayer->GetCurrentWorldID();
 	if(UseData->WorldID >= 0 && UseData->WorldID != CurrentWorldID)
 	{
@@ -676,9 +676,9 @@ void CPlayerItem::StartEmbeddedScenario(ScenarioBlock Block)
 	}
 
 	// start scenario
-	GS()->ChatWorld(UseData->WorldID, "", "{}", UseData->Name);
-	GS()->ChatWorld(UseData->WorldID, "", "Triggered by {~}", Server()->ClientName(m_ClientID));
-	pPlayer->StartWorldScenario(ScenarioData, Block, UseData->WorldID, UseData->Single, UseData->DurationSeconds);
+	GS()->ChatWorld(CurrentWorldID, "", "{}", UseData->Name);
+	GS()->ChatWorld(CurrentWorldID, "", "Triggered by {~}", Server()->ClientName(m_ClientID));
+	pPlayer->StartWorldScenario(ScenarioData, Block, UseData->Single, UseData->DurationSeconds);
 
 	// apply rewards
 	if(const auto pScenario = std::dynamic_pointer_cast<CWorldScenario>(GS()->ScenarioWorldManager()->GetActiveScenario()))
