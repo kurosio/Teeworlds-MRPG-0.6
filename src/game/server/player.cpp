@@ -44,7 +44,7 @@ CPlayer::CPlayer(CGS* pGS, int ClientID) : m_pGS(pGS), m_ClientID(ClientID)
 	m_Afk = false;
 	m_pLastInput = new CNetObj_PlayerInput({ 0 });
 	m_LastInputInit = false;
-	m_LastPlaytime = 0;
+	m_LastPlaytime = time_get();
 	m_MoodState = Mood::Normal;
 	m_PrevTuningParams = *pGS->Tuning();
 	m_NextTuningParams = m_PrevTuningParams;
