@@ -556,6 +556,7 @@ class ScenarioDefeatMobsComponent final : public PlayerAwareComponent<ScenarioDe
 	int m_TargetKills {};
 	int m_Duration {};
 	std::unordered_set<int> m_SpawnedBotIds {};
+	std::unordered_set<int> m_AllSpawnedBotIds {};
 	EMode m_Mode {};
 	vec2 m_Position {};
 	float m_Radius {};
@@ -587,6 +588,8 @@ private:
 	{
 		m_KillsMade = 0;
 		m_TargetTick = Server()->Tick() + m_Duration * Server()->TickSpeed();
+		m_SpawnedBotIds.clear();
+		m_AllSpawnedBotIds.clear();
 	}
 
 	void OnStartImpl() override
@@ -680,12 +683,25 @@ private:
 				{
 					pPlayerBot->InitBotMobInfo(mobInfo);
 					m_SpawnedBotIds.insert(pPlayerBot->GetCID());
+					m_AllSpawnedBotIds.insert(pPlayerBot->GetCID());
 				}
 			}
 		}
 
 		if(m_Mode == EMode::Wave && m_TargetKills <= 0)
 			m_TargetKills = static_cast<int>(m_SpawnedBotIds.size());
+	}
+
+	void DestroyScenarioMob(int ClientID, bool KillCharacter) const
+	{
+		if(auto* pPlayer = GS()->GetPlayer(ClientID))
+		{
+			pPlayer->m_WantSpawn = false;
+			if(KillCharacter && pPlayer->GetCharacter() && pPlayer->GetCharacter()->IsAlive())
+				pPlayer->KillCharacter(WEAPON_WORLD);
+			pPlayer->m_WantSpawn = false;
+			pPlayer->MarkForDestroy();
+		}
 	}
 
 	void OnCharacterDeath(CPlayer* pVictim, CPlayer* pKiller, int Weapon) override
@@ -696,8 +712,7 @@ private:
 		if(m_Mode == EMode::Annihilation)
 		{
 			m_SpawnedBotIds.erase(pVictim->GetCID());
-			if(auto* pPlayerBot = dynamic_cast<CPlayerBot*>(pVictim))
-				pPlayerBot->MarkForDestroy();
+			DestroyScenarioMob(pVictim->GetCID(), false);
 		}
 		else if(m_Mode == EMode::Wave)
 		{
@@ -763,18 +778,13 @@ private:
 	void OnEndImpl() override
 	{
 		m_ListenerScope.Unregister();
-		for(int CID : m_SpawnedBotIds)
-		{
-			if(auto* pPlayer = GS()->GetPlayer(CID))
-			{
-				pPlayer->KillCharacter(WEAPON_WORLD);
-				pPlayer->MarkForDestroy();
-			}
-		}
+		for(int CID : m_AllSpawnedBotIds)
+			DestroyScenarioMob(CID, true);
+
 		m_SpawnedBotIds.clear();
+		m_AllSpawnedBotIds.clear();
 	}
 };
-
 /**
  * @class ScenarioUseChatComponent
  * @brief A component that requires players to write a specific message in chat to complete the scenario.
