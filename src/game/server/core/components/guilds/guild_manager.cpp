@@ -43,7 +43,7 @@ void CGuildManager::OnInitWorld(const std::string& SqlQueryWhereWorld)
 		GuildHouseIdentifier ID = pRes->getInt("ID");
 		GuildIdentifier GuildID = pRes->getInt("GuildID");
 		int InitialFee = pRes->getInt("InitialFee");
-		int RentDays = pRes->getInt("RentDays");
+		time_t RentDays = pRes->getInt64("RentDays");
 		std::string JsonDoors = pRes->getString("Doors");
 		std::string JsonFarmzones = pRes->getString("Farmzones");
 		std::string JsonPropersties = pRes->getString("Properties");
@@ -64,6 +64,21 @@ void CGuildManager::OnTick()
 		{
 			for(auto& pWarHandler : CGuildWarHandler::Data())
 				pWarHandler->Handle();
+		}
+
+		// update guild houses rent expiration each 15 minutes
+		if(Server()->Tick() % Server()->TickSpeed() * 900 == 0)
+		{
+			for(auto& pGuild : CGuild::Data())
+			{
+				if(pGuild->HasHouse() && pGuild->GetHouse()->IsRentExpired())
+				{
+					pGuild->SellHouse();
+					GS()->ChatGuild(pGuild->GetID(), "Your guild house rent has expired, has been sold.");
+					pGuild->GetLogger()->Add(LOGFLAG_HOUSE_MAIN_CHANGES, "House rent has expired, has been sold.");
+					GS()->UpdateVotesIfForAll(MENU_GUILD);
+				}
+			}
 		}
 
 		// update guild houses text

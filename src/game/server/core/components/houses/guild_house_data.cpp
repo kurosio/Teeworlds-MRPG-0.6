@@ -9,6 +9,22 @@
 #include <game/server/core/entities/tools/draw_board.h>
 #include <game/server/core/components/guilds/guild_data.h>
 
+constexpr int s_SecondsPerRentDay = 60 * 60 * 24;
+
+static int GetRentDaysLeft(time_t RentEndTimestamp)
+{
+	const int SecondsLeft = maximum((time_t)0, RentEndTimestamp - time(nullptr));
+	return (SecondsLeft + s_SecondsPerRentDay - 1) / s_SecondsPerRentDay;
+}
+
+static time_t AddRentDaysToTimestamp(time_t RentEndTimestamp, int Days)
+{
+	const time_t CurrentTimestamp = time(nullptr);
+	const time_t BaseTimestamp = maximum(CurrentTimestamp, RentEndTimestamp);
+	return BaseTimestamp + (time_t)(Days * s_SecondsPerRentDay);
+}
+
+
 CGS* CGuildHouse::GS() const { return (CGS*)Instance::GameServer(m_WorldID); }
 CGuildHouse::~CGuildHouse()
 {
@@ -74,8 +90,8 @@ bool CGuildHouse::ExtendRentDays(int Days)
 	// try spend for rent days
 	if(m_pGuild->GetBankManager()->Spend(GetRentPrice() * Days))
 	{
-		m_RentDays += Days;
-		Database->Execute<DB::UPDATE>(TW_GUILDS_HOUSES, "RentDays = '{}' WHERE ID = '{}'", m_RentDays, m_ID);
+		m_RentEndTimestamp = AddRentDaysToTimestamp(m_RentEndTimestamp, Days);
+		Database->Execute<DB::UPDATE>(TW_GUILDS_HOUSES, "RentDays = '{}' WHERE ID = '{}'", m_RentEndTimestamp, m_ID);
 		return true;
 	}
 
@@ -85,13 +101,24 @@ bool CGuildHouse::ExtendRentDays(int Days)
 bool CGuildHouse::ReduceRentDays(int Days)
 {
 	// check validity
-	if(!m_pGuild || !m_pGuild->GetBankManager() || m_RentDays < Days)
+	const int DaysLeft = GetRentDays();
+	if(!m_pGuild || !m_pGuild->GetBankManager() || DaysLeft < Days)
 		return false;
 
 	// reduce rent days
-	m_RentDays -= clamp(Days, 1, m_RentDays);
-	Database->Execute<DB::UPDATE>(TW_GUILDS_HOUSES, "RentDays = '{}' WHERE ID = '{}'", m_RentDays, m_ID);
+	m_RentEndTimestamp = maximum(time(nullptr), m_RentEndTimestamp - (time_t)(clamp(Days, 1, DaysLeft) * s_SecondsPerRentDay));
+	Database->Execute<DB::UPDATE>(TW_GUILDS_HOUSES, "RentDays = '{}' WHERE ID = '{}'", m_RentEndTimestamp, m_ID);
 	return true;
+}
+
+int CGuildHouse::GetRentDays() const
+{
+	return GetRentDaysLeft(m_RentEndTimestamp);
+}
+
+bool CGuildHouse::IsRentExpired() const
+{
+	return IsPurchased() && m_RentEndTimestamp > 0 && time(nullptr) >= m_RentEndTimestamp;
 }
 
 void CGuildHouse::UpdateText(int Lifetime) const

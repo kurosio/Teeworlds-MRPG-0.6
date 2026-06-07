@@ -30,7 +30,7 @@ private:
 	vec2 m_TextPosition{};
 	int m_InitialFee {};
 	int m_WorldID{};
-	int m_RentDays {};
+	time_t m_RentEndTimestamp {};
 
 	CDoorManager* m_pDoorManager {};
 	CDecorationManager* m_pDecorationManager {};
@@ -47,12 +47,12 @@ public:
 		return m_pData.emplace_back(std::move(pData));
 	}
 
-	void Init(CGuild* pGuild, int RentDays, int InitialFee, int WorldID, std::string&& DoorsData, std::string&& FarmzonesData, std::string&& PropertiesData)
+	void Init(CGuild* pGuild, time_t RentDays, int InitialFee, int WorldID, std::string&& DoorsData, std::string&& FarmzonesData, std::string&& PropertiesData)
 	{
 		UpdateGuild(pGuild);
 
 		m_InitialFee = InitialFee;
-		m_RentDays = RentDays;
+		m_RentEndTimestamp = RentDays;
 		m_WorldID = WorldID;
 
 		InitComponents(DoorsData, FarmzonesData, PropertiesData);
@@ -83,12 +83,14 @@ public:
 	int GetWorldID() const { return m_WorldID; }
 	int GetInitialFee() const { return m_InitialFee; }
 	int GetRentPrice() const;
-	int GetRentDays() const { return m_RentDays; }
+	int GetRentDays() const;
+	time_t GetRentEndTimestamp() const { return m_RentEndTimestamp; }
 	bool IsPurchased() const { return m_pGuild != nullptr; }
 	const char* GetOwnerName() const;
 
 	bool ExtendRentDays(int Days);
 	bool ReduceRentDays(int Days);
+	bool IsRentExpired() const;
 	void UpdateText(int Lifetime) const;
 	void UpdateGuild(CGuild* pGuild);
 };

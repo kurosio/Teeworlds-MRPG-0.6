@@ -8,6 +8,21 @@
 #include <game/server/core/entities/tools/draw_board.h>
 #include <game/server/core/components/mails/mail_wrapper.h>
 
+constexpr int s_SecondsPerRentDay = 60 * 60 * 24;
+
+static int GetRentDaysLeft(time_t RentEndTimestamp)
+{
+	const int SecondsLeft = maximum((time_t)0, RentEndTimestamp - time(nullptr));
+	return (SecondsLeft + s_SecondsPerRentDay - 1) / s_SecondsPerRentDay;
+}
+
+static time_t AddRentDaysToTimestamp(time_t RentEndTimestamp, int Days)
+{
+	const time_t CurrentTimestamp = (time_t)time(nullptr);
+	const time_t BaseTimestamp = maximum(CurrentTimestamp, RentEndTimestamp);
+	return BaseTimestamp + (time_t)(Days * s_SecondsPerRentDay);
+}
+
 
 CHouse::~CHouse()
 {
@@ -87,9 +102,9 @@ void CHouse::Buy(CPlayer* pPlayer)
 		m_AccountID = pPlayer->Account()->GetID();
 		m_pDoorManager->CloseAll();
 		m_pBankManager->Reset();
-		m_RentDays = 3;
+		m_RentEndTimestamp = AddRentDaysToTimestamp(0, 3);
 		pPlayer->Account()->ReinitializeHouse();
-		Database->Execute<DB::UPDATE>(TW_HOUSES_TABLE, "UserID = '{}', Bank = '0', RentDays = '3' WHERE ID = '{}'", m_AccountID, m_ID);
+		Database->Execute<DB::UPDATE>(TW_HOUSES_TABLE, "UserID = '{}', Bank = '0', RentDays = '{}' WHERE ID = '{}'", m_AccountID, m_RentEndTimestamp, m_ID);
 
 		// send information
 		GS()->Chat(-1, "'{~}' becomes the owner of the house class '{}'.", Server()->ClientName(ClientID), GetClassName());
@@ -155,8 +170,8 @@ bool CHouse::ExtendRentDays(int Days)
 	// try spend for rent days
 	if(m_pBankManager->Spend(GetRentPrice() * Days))
 	{
-		m_RentDays += Days;
-		Database->Execute<DB::UPDATE>(TW_HOUSES_TABLE, "RentDays = '{}' WHERE ID = '{}'", m_RentDays, m_ID);
+		m_RentEndTimestamp = AddRentDaysToTimestamp(m_RentEndTimestamp, Days);
+		Database->Execute<DB::UPDATE>(TW_HOUSES_TABLE, "RentDays = '{}' WHERE ID = '{}'", m_RentEndTimestamp, m_ID);
 		return true;
 	}
 
@@ -166,37 +181,36 @@ bool CHouse::ExtendRentDays(int Days)
 bool CHouse::ReduceRentDays(int Days)
 {
 	// check validity
-	if(!HasOwner() || !m_pBankManager || m_RentDays < Days)
+	const int DaysLeft = GetRentDays();
+	if(!HasOwner() || !m_pBankManager || DaysLeft < Days)
 		return false;
 
 	// reduce rent days
-	m_RentDays -= clamp(Days, 1, m_RentDays);
-	Database->Execute<DB::UPDATE>(TW_HOUSES_TABLE, "RentDays = '{}' WHERE ID = '{}'", m_RentDays, m_ID);
+	m_RentEndTimestamp = maximum(time(nullptr), m_RentEndTimestamp - (time_t)(clamp(Days, 1, DaysLeft) * s_SecondsPerRentDay));
+	Database->Execute<DB::UPDATE>(TW_HOUSES_TABLE, "RentDays = '{}' WHERE ID = '{}'", m_RentEndTimestamp, m_ID);
 	return true;
 }
 
-
-void CHouse::HandleTimePeriod(ETimePeriod Period)
+int CHouse::GetRentDays() const
 {
-	// day event rent paid
-	if(Period == DAILY_STAMP && HasOwner())
-	{
-		const auto Result = ReduceRentDays(1);
-
-		if(Result)
-		{
-			// payment
-			GS()->ChatAccount(m_AccountID, "Your house rent has been paid.");
-		}
-		else
-		{
-			// expired
-			Sell();
-			GS()->ChatAccount(m_AccountID, "Your house rent has expired, has been sold.");
-		}
-	}
+	return GetRentDaysLeft(m_RentEndTimestamp);
 }
 
+bool CHouse::IsRentExpired() const
+{
+	return HasOwner() && m_RentEndTimestamp > 0 && time(nullptr) >= m_RentEndTimestamp;
+}
+
+bool CHouse::CheckRentExpiration()
+{
+	if(!IsRentExpired())
+		return false;
+
+	const int AccountID = m_AccountID;
+	Sell();
+	GS()->ChatAccount(AccountID, "Your house rent has expired, has been sold.");
+	return true;
+}
 
 int CHouse::GetRentPrice() const
 {

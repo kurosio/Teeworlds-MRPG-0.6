@@ -39,7 +39,7 @@ private:
 	int m_AccountID {};
 	int m_WorldID {};
 	int m_InitialFee {};
-	int m_RentDays {};
+	time_t m_RentEndTimestamp {};
 
 public:
 	CHouse() = default;
@@ -52,13 +52,13 @@ public:
 		return m_pData.emplace_back(std::move(pData));
 	}
 
-	void Init(int AccountID, const std::string& ClassName, int RentDays, int InitialFee, const BigInt& Bank, int WorldID,
+	void Init(int AccountID, const std::string& ClassName, time_t RentDays, int InitialFee, const BigInt& Bank, int WorldID,
 		const std::string& DoorsData, const std::string& FarmzonesData, const std::string& PropertiesData)
 	{
 		m_AccountID = AccountID;
 		m_ClassName = ClassName;
 		m_InitialFee = InitialFee;
-		m_RentDays = RentDays;
+		m_RentEndTimestamp = RentDays;
 		m_WorldID = WorldID;
 
 		// init components
@@ -76,7 +76,8 @@ public:
 	int GetInitialFee() const { return m_InitialFee; }
 	int GetWorldID() const { return m_WorldID; }
 	int GetRentPrice() const;
-	int GetRentDays() const { return m_RentDays; }
+	int GetRentDays() const;
+	time_t GetRentEndTimestamp() const { return m_RentEndTimestamp; }
 	int GetMaxDecorationSlots() const override { return (int)MAX_DECORATIONS_PER_HOUSE; }
 
 	void InitComponents(const BigInt& Bank, const std::string& DoorsData, const std::string& FarmzonesData, const std::string& PropertiesData);
@@ -86,8 +87,8 @@ public:
 
 	bool ExtendRentDays(int Days);
 	bool ReduceRentDays(int Days);
-
-	void HandleTimePeriod(ETimePeriod Period);
+	bool IsRentExpired() const;
+	bool CheckRentExpiration();
 };
 
 #endif

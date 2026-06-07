@@ -19,7 +19,7 @@ void CHouseManager::OnInitWorld(const std::string& SqlQueryWhereWorld)
 		const auto AccountID = pRes->getInt("UserID");
 		const auto ClassName = pRes->getString("Class");
 		const auto InitialFee = pRes->getInt("InitialFee");
-		const auto RentDays = pRes->getInt("RentDays");
+		const time_t RentDays = pRes->getInt64("RentDays");
 		const auto Bank = pRes->getBigInt("Bank");
 		const auto WorldID = pRes->getInt("WorldID");
 		std::string DoorsData = pRes->getString("Doors");
@@ -35,18 +35,19 @@ void CHouseManager::OnTick()
 	// update houses text only from main world its will call creating text on house world
 	if(GS()->GetWorldID() == INITIALIZER_WORLD_ID)
 	{
+		// update houses rent expiration each 15 minutes
+		if(Server()->Tick() % Server()->TickSpeed() * 900 == 0)
+		{
+			for(auto& p : CHouse::Data())
+				p->CheckRentExpiration();
+		}
+
 		if(Server()->Tick() % g_Config.m_SvUpdateEntityTextNames == 0)
 		{
 			for(const auto& p : CHouse::Data())
 				p->UpdateText(g_Config.m_SvUpdateEntityTextNames);
 		}
 	}
-}
-
-void CHouseManager::OnGlobalTimePeriod(ETimePeriod Period)
-{
-	for(auto& p : CHouse::Data())
-		p->HandleTimePeriod(Period);
 }
 
 void CHouseManager::OnCharacterTile(CCharacter* pChr)

@@ -19,7 +19,6 @@ class CHouseManager : public MmoComponent
 
 	void OnInitWorld(const std::string& SqlQueryWhereWorld) override;
 	void OnTick() override;
-	void OnGlobalTimePeriod(ETimePeriod Period) override;
 	void OnCharacterTile(CCharacter* pChr) override;
 	bool OnSendMenuVotes(CPlayer* pPlayer, int Menulist) override;
 	bool OnSendMenuMotd(CPlayer* pPlayer, int Menulist) override;

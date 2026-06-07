@@ -114,8 +114,8 @@ GuildResult CGuild::BuyHouse(int HouseID)
 		// implement the house
 		m_pHouse = *IterHouse;
 		m_pHouse->UpdateGuild(this);
-		m_pHouse->m_RentDays = GUILD_RENT_DAYS_DEFAULT;
-		Database->Execute<DB::UPDATE>(TW_GUILDS_HOUSES, "GuildID = '{}', RentDays = '{}' WHERE ID = '{}'", m_ID, m_pHouse->m_RentDays, HouseID);
+		m_pHouse->m_RentEndTimestamp = (int)time(nullptr) + GUILD_RENT_DAYS_DEFAULT * 60 * 60 * 24;
+		Database->Execute<DB::UPDATE>(TW_GUILDS_HOUSES, "GuildID = '{}', RentDays = '{}' WHERE ID = '{}'", m_ID, m_pHouse->m_RentEndTimestamp, HouseID);
 
 		// send messages
 		m_pLogger->Add(LOGFLAG_GUILD_MAIN_CHANGES, "Your guild has purchased a house!");
@@ -154,27 +154,6 @@ void CGuild::SellHouse()
 
 void CGuild::HandleTimePeriod(ETimePeriod Period)
 {
-	// rent paid
-	if(Period == DAILY_STAMP && HasHouse())
-	{
-		const auto Result = m_pHouse->ReduceRentDays(1);
-
-		if(Result)
-		{
-			// payment
-			GS()->ChatGuild(m_ID, "Your guild house rent has been paid.");
-			m_pLogger->Add(LOGFLAG_HOUSE_MAIN_CHANGES, "House rent has been paid.");
-		}
-		else
-		{
-			// expired
-			SellHouse();
-			GS()->ChatGuild(m_ID, "Your guild house rent has expired, has been sold.");
-			m_pLogger->Add(LOGFLAG_HOUSE_MAIN_CHANGES, "House rent has expired, has been sold.");
-			GS()->UpdateVotesIfForAll(MENU_GUILD);
-		}
-	}
-
 	// reset members deposits
 	if(Period == MONTH_STAMP)
 	{

@@ -304,7 +304,7 @@ void CMmoController::OnHandleGlobalTimePeriod() const
 {
 	// initialize variables
 	ByteArray RawData {};
-	std::vector<int> aPeriodsUpdated {};
+	std::vector<ETimePeriod> aPeriodsUpdated {};
 	time_t CurrentTimeStamp = time(nullptr);
 
 	// try open file
@@ -317,13 +317,25 @@ void CMmoController::OnHandleGlobalTimePeriod() const
 	}
 
 	// load time stamps
-	time_t DailyStamp, WeekStamp, MonthStamp;
 	auto Data = std::string((char*)RawData.data(), RawData.size());
+	time_t DailyStamp = CurrentTimeStamp;
+	time_t WeekStamp = CurrentTimeStamp;
+	time_t MonthStamp = CurrentTimeStamp;
+
+	int Parsed = 0;
+
 #ifdef WIN32
-	std::sscanf(Data.c_str(), "%llu\n%llu\n%llu", &DailyStamp, &WeekStamp, &MonthStamp);
+	Parsed = std::sscanf(Data.c_str(), "%llu\n%llu\n%llu",
+		&DailyStamp, &WeekStamp, &MonthStamp);
 #else
-	std::sscanf(Data.c_str(), "%ld\n%ld\n%ld", &DailyStamp, &WeekStamp, &MonthStamp);
+	Parsed = std::sscanf(Data.c_str(), "%ld\n%ld\n%ld",
+		&DailyStamp, &WeekStamp, &MonthStamp);
 #endif
+
+	if(Parsed != 3)
+	{
+		DailyStamp = WeekStamp = MonthStamp = CurrentTimeStamp;
+	}
 
 	// check new days
 	if(time_is_new_day(DailyStamp, CurrentTimeStamp))
@@ -355,7 +367,7 @@ void CMmoController::OnHandleGlobalTimePeriod() const
 		{
 			for(const auto& periods : aPeriodsUpdated)
 			{
-				auto timePeriod = static_cast<ETimePeriod>(periods);
+				auto timePeriod = periods;
 				component->OnGlobalTimePeriod(timePeriod);
 			}
 		}
