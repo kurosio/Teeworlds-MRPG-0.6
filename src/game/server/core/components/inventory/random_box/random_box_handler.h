@@ -15,12 +15,12 @@ class CEntityRandomBoxRandomizer : public CEntity
 	int m_AccountID;
 	CPlayerItem* m_pPlayerUsesItem;
 
-	ChanceProcessor<CRandomItem> m_ChanceProcessor;
-	CRandomItem m_Current {};
+	ChanceProcessor<CElementBox> m_ChanceProcessor;
+	CElementBox m_Current {};
 
 public:
 	CEntityRandomBoxRandomizer(CGameWorld* pGameWorld, int AccountID, int LifeTime,
-		const ChanceProcessor<CRandomItem>& chanceProcessor, CPlayerItem* pPlayerUsesItem, int UseValue);
+		const ChanceProcessor<CElementBox>& chanceProcessor, CPlayerItem* pPlayerUsesItem, int UseValue);
 
 	void Tick() override;
 	void Snap(int SnappingClient) override;

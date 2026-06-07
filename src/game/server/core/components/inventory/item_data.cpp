@@ -602,6 +602,13 @@ bool CPlayerItem::Use(int Value)
 		return true;
 	}
 
+	// deterministic box
+	if(Info()->GetBox())
+	{
+		Info()->GetBox()->Give(pPlayer, this, Value);
+		return true;
+	}
+
 	return true;
 }
 

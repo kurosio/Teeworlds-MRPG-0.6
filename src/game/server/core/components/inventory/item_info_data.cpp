@@ -115,6 +115,17 @@ void CItemDescription::InitData(const DBSet& GroupSet, const DBSet& TypeSet)
 			m_RandomBox.NormalizeChances();
 		}
 
+		// try to initialize deterministic box
+		if(const auto& pBoxJson = pJson["box"]; !pBoxJson.is_null())
+		{
+			for(auto& p : pBoxJson)
+			{
+				const auto ItemID = p.value("item_id", -1);
+				const auto Value = p.value("value", 1);
+				m_Box.Add(ItemID, Value);
+			}
+		}
+
 		// use context for item-triggered scenarios
 		if(const auto& pUseDataJson = pJson["use_scenario"]; !pUseDataJson.is_null())
 		{

@@ -76,6 +76,7 @@ private:
 	std::string m_ScenarioData {};
 	std::string m_ScenarioMode { "universal" };
 	CRandomBox m_RandomBox {};
+	CBox m_Box {};
 	std::optional<PotionContext> m_PotionContext {};
 	std::optional<BonusesContext> m_BonusContext {};
 	std::optional<UseScenarioContext> m_UseScenarioContext {};
@@ -131,6 +132,7 @@ public:
 	}
 
 	class CRandomBox* GetRandomBox() { return m_RandomBox.IsEmpty() ? nullptr : &m_RandomBox; }
+	class CBox* GetBox() { return m_Box.IsEmpty() ? nullptr : &m_Box; }
 	ContainerAttributes& GetAttributes() { return m_aAttributes; }
 	std::optional<PotionContext>& GetPotionContext() { return m_PotionContext; }
 	std::optional<BonusesContext>& GetBonusContext() { return m_BonusContext; }

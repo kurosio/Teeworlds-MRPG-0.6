@@ -9,7 +9,7 @@
 #include "game/server/core/components/mails/mail_wrapper.h"
 
 CEntityRandomBoxRandomizer::CEntityRandomBoxRandomizer(CGameWorld* pGameWorld, int AccountID, int Lifetime,
-	const ChanceProcessor<CRandomItem>& ChanceProcessor, CPlayerItem* pPlayerUsesItem, int Value)
+	const ChanceProcessor<CElementBox>& ChanceProcessor, CPlayerItem* pPlayerUsesItem, int Value)
 	: CEntity(pGameWorld, CGameWorld::ENTTYPE_TOOLS, {})
 {
 	m_Used = Value;
@@ -62,7 +62,7 @@ void CEntityRandomBoxRandomizer::Finish()
 	// initialize variables
 	struct ReceivedItem
 	{
-		CRandomItem Element;
+		CElementBox Element;
 		int Coincidences;
 	};
 	std::unordered_map<int, ReceivedItem> vReceivedItems;

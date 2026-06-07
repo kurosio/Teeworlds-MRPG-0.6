@@ -5,6 +5,32 @@
 #include <game/server/gamecontext.h>
 #include "random_box_handler.h"
 
+bool CBox::Give(CPlayer* pPlayer, CPlayerItem* pPlayerUsesItem, int UseValue) const
+{
+	if(!pPlayer || !pPlayer->IsAuthed())
+		return false;
+
+	if(!pPlayerUsesItem || !pPlayerUsesItem->HasItem())
+		return false;
+
+	if(IsEmpty())
+		return false;
+
+	UseValue = clamp(UseValue, 1, 100);
+	if(!pPlayerUsesItem->Remove(UseValue))
+		return false;
+
+	pPlayer->GS()->Chat(pPlayer->GetCID(), "You opened '{} x{}'.", pPlayerUsesItem->Info()->GetName(), UseValue);
+	for(const auto& Item : m_vItems)
+	{
+		const int TotalValue = Item.Value * UseValue;
+		auto* pRewardItem = pPlayer->GetItem(Item.ItemID);
+		pRewardItem->Add(TotalValue, 0, 0, 0, false);
+	}
+
+	return true;
+}
+
 bool CRandomBox::Start(CPlayer* pPlayer, int Ticks, CPlayerItem* pPlayerUsesItem, int Value)
 {
 	if(!pPlayer || !pPlayer->IsAuthed())

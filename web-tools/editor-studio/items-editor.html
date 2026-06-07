@@ -10,6 +10,7 @@
     .items-form [data-field-path="Comment"],
     .items-form [data-field-path="DataEditorType"],
     .items-form [data-field-path="DataRandomBoxItems"],
+    .items-form [data-field-path="DataBoxItems"],
     .items-form [data-field-path="DataBonusAmount"],
     .items-form [data-field-path="DataBonusType"],
     .items-form [data-field-path="DataBonusDurationValue"],
@@ -258,6 +259,7 @@
 
     const DATA_EDITOR_NONE = 'none';
     const DATA_EDITOR_RANDOM_BOX = 'random_box';
+    const DATA_EDITOR_BOX = 'box';
     const DATA_EDITOR_BONUS = 'bonus';
     const DATA_EDITOR_POTION = 'potion';
     const DATA_EDITOR_USE_SCENARIO = 'use_scenario';
@@ -266,6 +268,7 @@
       Usable: [
         { value: DATA_EDITOR_NONE, label: 'Без данных' },
         { value: DATA_EDITOR_RANDOM_BOX, label: 'Рандом Бокс' },
+        { value: DATA_EDITOR_BOX, label: 'Бокс' },
         { value: DATA_EDITOR_BONUS, label: 'Бонус' },
         { value: DATA_EDITOR_USE_SCENARIO, label: 'Запуск сценария' },
       ],
@@ -308,6 +311,9 @@
       const safeGroup = String(group || '');
       if (safeGroup === 'Usable' && data && typeof data === 'object' && Array.isArray(data.random_box)) {
         return DATA_EDITOR_RANDOM_BOX;
+      }
+      if (safeGroup === 'Usable' && data && typeof data === 'object' && Array.isArray(data.box)) {
+        return DATA_EDITOR_BOX;
       }
       if (safeGroup === 'Usable' && data && typeof data === 'object' && data.bonus && typeof data.bonus === 'object') {
         return DATA_EDITOR_BONUS;
@@ -364,6 +370,17 @@
           }));
 
         return items.length ? { random_box: items } : null;
+      }
+
+      if (editorType === DATA_EDITOR_BOX) {
+        const items = normalizeRandomBoxItems(model?.DataBoxItems)
+          .filter((entry) => toNullableId(entry?.item_id) && (toNullableInt(entry?.value) ?? 0) > 0)
+          .map((entry) => ({
+            item_id: toNullableId(entry.item_id),
+            value: toNullableInt(entry.value),
+          }));
+
+        return items.length ? { box: items } : null;
       }
 
       if (editorType === DATA_EDITOR_BONUS) {
@@ -533,6 +550,23 @@
           item_id: { type: 'db_select', label: 'Предмет', ui: { dbKey: 'item', placeholder: '— предмет —', searchPlaceholder: 'Поиск предмета…' } },
           value: { type: 'number', label: 'Количество', ui: { min: 1, step: 1 } },
           chance: { type: 'number', label: 'Шанс (%)', ui: { min: 0, step: 0.1 } },
+        },
+      },
+      DataBoxItems: {
+        type: 'list',
+        label: 'Бокс предметы',
+        ui: {
+          addLabel: 'Добавить предмет',
+          listMode: 'table',
+          tableHeader: ['Предмет', 'Количество'],
+          tableCols: 'minmax(0,1fr) 140px',
+          tableColsMd: 'minmax(0,1fr) 160px',
+          showWhen: (data) => String(data?.DataEditorType || '') === DATA_EDITOR_BOX,
+        },
+        itemDefault: { item_id: 0, value: 1 },
+        itemFields: {
+          item_id: { type: 'db_select', label: 'Предмет', ui: { dbKey: 'item', placeholder: '— предмет —', searchPlaceholder: 'Поиск предмета…' } },
+          value: { type: 'number', label: 'Количество', ui: { min: 1, step: 1 } },
         },
       },
       DataPotionEffect: {
@@ -757,6 +791,7 @@
         ATValue2: 0,
         DataEditorType: DATA_EDITOR_NONE,
         DataRandomBoxItems: [],
+        DataBoxItems: [],
         DataBonusAmount: 0,
         DataBonusType: 1,
         DataBonusDurationValue: 0,
@@ -800,6 +835,7 @@
           ATValue2: Number(row?.ATValue2 ?? 0),
           DataEditorType: dataEditorType,
           DataRandomBoxItems: normalizeRandomBoxItems(dataPayload?.random_box),
+          DataBoxItems: normalizeRandomBoxItems(dataPayload?.box),
           DataBonusAmount: bonus.amount,
           DataBonusType: bonus.type,
           DataBonusDurationValue: bonusDurationUi.value,

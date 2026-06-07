@@ -155,6 +155,33 @@ bool CInventoryManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		return true;
 	}
 
+	if(Menulist == MENU_INVENTORY_BOX_OPEN)
+	{
+		pPlayer->m_VotesData.SetLastMenuID(MENU_INVENTORY);
+
+		if(auto ItemIdOpt = pPlayer->m_VotesData.GetExtraID())
+		{
+			const auto* pPlayerItem = pPlayer->GetItem(*ItemIdOpt);
+			VoteWrapper VBoxDetail(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_STRICT_BOLD, "Box contents");
+			if(pPlayerItem->Info()->GetBox())
+			{
+				for(const auto& ItemDetail : pPlayerItem->Info()->GetBox()->GetItems())
+				{
+					auto* pItemInfo = GS()->GetItemInfo(ItemDetail.ItemID);
+					VBoxDetail.Add("{} x{$}", pItemInfo->GetName(), ItemDetail.Value);
+				}
+
+				VBoxDetail.AddLine();
+				VBoxDetail.AddItemValue(pPlayerItem->GetID());
+				if(pPlayerItem->HasItem())
+					VBoxDetail.AddOption("USE_ITEM", pPlayerItem->GetID(), "Open (ID: {})", pPlayerItem->GetID());
+			}
+		}
+
+		VoteWrapper::AddBackpage(ClientID);
+		return true;
+	}
+
 	if(Menulist == MENU_EQUIPMENT)
 	{
 		pPlayer->m_VotesData.SetLastMenuID(MENU_MAIN);
@@ -513,6 +540,8 @@ void CInventoryManager::ItemSelected(CPlayer* pPlayer, const CPlayerItem* pItem)
 		// random box
 		if(pInfo->GetRandomBox())
 			VItem.AddMenu(MENU_INVENTORY_RANDOMBOX_OPEN, ItemID, "Open");
+		else if(pInfo->GetBox())
+			VItem.AddMenu(MENU_INVENTORY_BOX_OPEN, ItemID, "Open");
 		else
 			VItem.AddOption("USE_ITEM", ItemID, "Use (ID: {})", ItemID);
 	}
