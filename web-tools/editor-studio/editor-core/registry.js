@@ -217,7 +217,9 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
         action: createField('text', 'Действие', 'create', {
           ui: { type: 'select', options: ['create', 'remove'] }
         }),
-        position: createField('vec2', 'Позиция', { x: 100, y: 100 }, { ui: { min: -99999, max: 99999, step: 0.1 } }),
+        position: createField('vec2', 'Позиция', { x: 100, y: 100 }, { 
+          ui: { min: -99999, max: 99999, step: 0.1, showWhen: { path: 'action', equals: 'create' } } 
+        }),
         key: createField('text', 'Ключ', '', { ui: { placeholder: 'Введите ключ двери' } })
       }
     },
@@ -385,7 +387,9 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
         action: createField('text', 'Действие', 'create', {
           ui: { type: 'select', options: ['create', 'remove'] }
         }),
-        position: createField('vec2', 'Позиция', { x: 100, y: 100 }, { ui: { min: -99999, max: 99999, step: 0.1 } }),
+        position: createField('vec2', 'Позиция', { x: 100, y: 100 }, { 
+          ui: { min: -99999, max: 99999, step: 0.1, showWhen: { path: 'action', equals: 'create' } } 
+        }),
         key: createField('text', 'Ключ', '', { ui: { placeholder: 'Введите ключ двери' } })
       }
     },
@@ -423,7 +427,9 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
         condition: createField('text', 'Условие', 'accepted', {
           ui: { type: 'select', options: ['accepted', 'finished', 'step_finished'] }
         }),
-        step: createField('number', 'Номер шага', 0, { ui: { min: 0, max: 9999 } }),
+        step: createField('number', 'Номер шага', 0, { 
+          ui: { min: 0, max: 9999, showWhen: { path: 'condition', equals: 'step_finished' } } 
+        }),
         entire_group: createField('boolean', 'Требовать для всей группы', false)
       }
     },
@@ -466,8 +472,12 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
         radius: createField('number', 'Радиус', 800, { ui: { min: 0, max: 99999 } }),
         activeradius: createField('number', 'Радиус Активности (0 - по умолч.)', 0, { ui: { min: 0, max: 999999 } }),
         position: createField('vec2', 'Позиция', { x: 0, y: 0 }, { ui: { min: -99999, max: 99999, step: 0.1 } }),
-        kill_target: createField('number', 'Цель убийств', 10, { ui: { min: 1, max: 9999 } }),
-        duration: createField('number', 'Длительность', 60, { ui: { min: 1, max: 99999 } }),
+        kill_target: createField('number', 'Цель убийств', 10, { 
+          ui: { min: 1, max: 9999, showWhen: { path: 'mode', equals: 'wave' } } 
+        }),
+        duration: createField('number', 'Длительность', 60, { 
+          ui: { min: 1, max: 99999, showWhen: { path: 'mode', equals: 'survival' } } 
+        }),
         mobs: createField('list', 'Мобы', [{ bot_id: 0, level: 1, power: 1, count: 5, boss: false, Behavior: [], Debuffs: [], drops: [] }], {
           ui: { layout: 'stack', addLabel: 'Добавить моба' },
           itemFields: {

@@ -909,7 +909,7 @@
             }
 
             renderEmptyState() {
-                this.editorContainer.innerHTML = `<div class="text-center p-20 my-5 max-w-3xl mx-auto border-2 border-dashed border-slate-300 rounded-xl"><i class="fa-solid fa-wand-magic-sparkles text-slate-400 text-5xl mb-4"></i><h2 class="text-2xl font-bold text-slate-800">Сценарий пока пуст</h2><p class="text-slate-500 mt-2 mb-6">Начните творить, добавив первый шаг с помощью большой зеленой кнопки ниже.</p></div>`;
+                this.editorContainer.innerHTML = `<div class="text-center p-20 my-5 max-w-3xl mx-auto border-2 border-dashed border-slate-200/30 rounded-xl"><i class="fa-solid fa-wand-magic-sparkles text-accent text-5xl mb-4"></i><h2 class="text-2xl font-bold text-slate-100">Сценарий пока пуст</h2><p class="text-slate-300 mt-2 mb-6">Начните творить, добавив первый шаг с помощью кнопки ниже.</p></div>`;
             }
 
             renderScenarioOverview(groups, ungroupedSteps) {
@@ -976,7 +976,7 @@
                 stepCard.dataset.stepId = id;
                 stepCard.querySelector('.step-id-display').textContent = id;
                 const body = stepCard.querySelector('.step-body');
-                body.innerHTML = `<h4 class="font-bold text-red-700">Ошибка рендеринга шага</h4><p class="text-sm text-red-600 mt-2">Этот шаг не удалось отобразить. Возможно, данные в файле сценария повреждены. <br><b>Сообщение:</b> ${error.message}</p><p class="text-xs mt-2">Вы можете удалить этот шаг, чтобы исправить сценарий.</p>`;
+                body.innerHTML = `<h4 class="font-bold text-red-300">Ошибка рендеринга шага</h4><p class="text-sm text-red-200/90 mt-2">Этот шаг не удалось отобразить. Возможно, данные в файле сценария повреждены. <br><b>Сообщение:</b> ${error.message}</p><p class="text-xs mt-2 text-slate-300">Вы можете удалить этот шаг, чтобы исправить сценарий.</p>`;
                 stepCard.querySelector('.duplicate-btn')?.remove();
                 return stepCard;
             }
@@ -1364,11 +1364,16 @@
                 this.modal.dynamicRefreshAbort?.abort?.();
                 this.modal.dynamicRefreshAbort = new AbortController();
                 const signal = this.modal.dynamicRefreshAbort.signal;
-                const dynamicFieldNames = new Set(['condition_type', 'quest_state']);
+                
+                // Список полей, изменение которых должно приводить к полной перерисовке формы (для работы showWhen)
+                const triggerFieldNames = new Set(['condition_type', 'quest_state', 'condition', 'action', 'mode']);
+                
                 const refresh = (event) => {
-                    if (!this.modal.context || this.modal.context.data?.type !== 'dynamic_condition') return;
+                    if (!this.modal.context) return;
                     const target = event.target;
-                    if (!target?.name || !dynamicFieldNames.has(target.name)) return;
+                    
+                    // Если поле есть в списке триггеров, перерисовываем всю форму
+                    if (!target?.name || !triggerFieldNames.has(target.name)) return;
 
                     const currentData = this.collectModalFormData();
                     this.modal.context.data = currentData;
@@ -1429,6 +1434,16 @@
                     }
                 }
 
+                if (editedData.type === 'quest_condition') {
+                    if (editedData.condition !== 'step_finished') {
+                        delete editedData.step;
+                    }
+                }
+
+                if ((editedData.type === 'dungeon_door_control' || editedData.type === 'universal_door_control') && editedData.action === 'remove') {
+                    delete editedData.position;
+                }
+
                 const originalComponent = this.findComponent(this.modal.context.stepId, this.modal.context.componentId);
                 Object.assign(originalComponent, editedData);
 
@@ -1452,7 +1467,13 @@
                     }
                 }
 
-                if (originalComponent.type === 'dungeon_door_control' && originalComponent.action === 'remove') {
+                if (originalComponent.type === 'quest_condition') {
+                    if (originalComponent.condition !== 'step_finished') {
+                        delete originalComponent.step;
+                    }
+                }
+
+                if ((originalComponent.type === 'dungeon_door_control' || originalComponent.type === 'universal_door_control') && originalComponent.action === 'remove') {
                     delete originalComponent.position;
                 }
 
@@ -1541,28 +1562,6 @@
                 });
                 formHtml += `</form>`;
 
-                setTimeout(() => {
-                    if (data.type === 'dungeon_door_control') {
-                        const actionSelect = this.modal.formContainer.querySelector('select[name="action"]');
-                        const positionFields = this.modal.formContainer.querySelector('[data-field-path="position"]');
-                        if (actionSelect && positionFields) {
-                            actionSelect.addEventListener('change', (e) => {
-                                positionFields.classList.toggle('hidden', e.target.value === 'remove');
-                            });
-                        }
-                    }
-                    if (data.type === 'defeat_mobs') {
-                        const modeSelect = this.modal.formContainer.querySelector('select[name="mode"]');
-                        const killTargetField = this.modal.formContainer.querySelector('[data-field-path="kill_target"]');
-                        const durationField = this.modal.formContainer.querySelector('[data-field-path="duration"]');
-                        const toggleModeFields = () => {
-                            if (killTargetField) killTargetField.classList.toggle('hidden', modeSelect?.value !== 'wave');
-                            if (durationField) durationField.classList.toggle('hidden', modeSelect?.value !== 'survival');
-                        };
-                        modeSelect?.addEventListener('change', toggleModeFields);
-                        toggleModeFields();
-                    }
-                }, 0);
                 return formHtml;
             }
 
