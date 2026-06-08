@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Управление аккаунтами • Editor Studio</title>
+  <script src="editor-core/page-loader.js" data-mode="event"></script>
+</head>
+
+<body class="editor-theme" data-editor="accounts">
+  <div class="max-w-7xl mx-auto px-4 py-4">
+    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+      <div>
+        <div class="flex items-center gap-3">
+          <i class="fa-solid fa-users-gear text-accent text-lg"></i>
+          <h1 class="text-lg font-bold">Управление аккаунтами</h1>
+        </div>
+        <p class="editor-muted-text mt-0.5 text-sm">Компактное управление логинами, паролями и timeout-кодами аккаунтов.</p>
+      </div>
+      <button id="btn-refresh" class="editor-btn editor-btn-secondary">
+        <i class="fa-solid fa-rotate"></i>
+        <span>Обновить</span>
+      </button>
+    </div>
+
+    <section class="editor-card border rounded-xl p-3 mt-4">
+      <div class="flex flex-col md:flex-row gap-2 md:items-end">
+        <div class="flex-grow">
+          <div class="text-xs font-medium text-slate-300 mb-1">Поиск по ID, логину или нику</div>
+          <input id="search" type="search" class="w-full editor-input form-input" placeholder="ID, Login или Nick" autocomplete="off" />
+        </div>
+        <button id="btn-search" class="editor-btn editor-btn-primary">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <span>Найти</span>
+        </button>
+      </div>
+      <div id="status" class="mt-2 text-sm"></div>
+    </section>
+
+    <section class="editor-card border rounded-xl mt-3 overflow-hidden">
+      <div class="overflow-auto">
+        <table class="w-full text-xs">
+          <thead>
+            <tr class="bg-light border-b border-light">
+              <th class="text-left px-2 py-2 text-slate-200 text-xs uppercase tracking-wide">ID</th>
+              <th class="text-left px-2 py-2 text-slate-200 text-xs uppercase tracking-wide">Логин</th>
+              <th class="text-left px-2 py-2 text-slate-200 text-xs uppercase tracking-wide">Ник</th>
+              <th class="text-left px-2 py-2 text-slate-200 text-xs uppercase tracking-wide">Текущий пароль</th>
+              <th class="text-left px-2 py-2 text-slate-200 text-xs uppercase tracking-wide">Timeout-код</th>
+              <th class="text-right px-2 py-2 text-slate-200 text-xs uppercase tracking-wide">Действия</th>
+            </tr>
+          </thead>
+          <tbody id="accounts-list"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <div id="password-modal" class="hidden fixed inset-0 editor-modal-backdrop z-[520] items-center justify-center p-4">
+    <div class="editor-modal-content p-4 rounded-xl shadow-xl w-full max-w-lg border border-light">
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <h3 class="text-lg font-bold">Изменить аккаунт</h3>
+          <p id="password-modal-subtitle" class="editor-muted-text text-sm mt-1"></p>
+        </div>
+        <button id="password-modal-close" class="editor-btn editor-btn-secondary" title="Закрыть"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
+        <div>
+          <div class="text-xs font-medium text-slate-300 mb-1">Логин</div>
+          <div class="flex gap-2">
+            <input id="new-login" type="text" class="w-full editor-input form-input" minlength="4" maxlength="12" autocomplete="off" />
+            <button id="login-modal-save" class="editor-btn editor-btn-secondary" title="Сохранить логин"><i class="fa-solid fa-floppy-disk"></i></button>
+          </div>
+          <div class="editor-muted-text text-xs mt-1">4–12 символов.</div>
+        </div>
+        <div>
+          <div class="text-xs font-medium text-slate-300 mb-1">Новый пароль</div>
+          <div class="flex gap-2">
+            <input id="new-password" type="text" class="w-full editor-input form-input" minlength="4" maxlength="12" autocomplete="off" />
+            <button id="password-modal-save" class="editor-btn editor-btn-primary" title="Сменить пароль"><i class="fa-solid fa-key"></i></button>
+          </div>
+          <div class="editor-muted-text text-xs mt-1">4–12 символов.</div>
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 mt-4">
+        <button id="password-modal-cancel" class="editor-btn editor-btn-secondary">Закрыть</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API = 'api/accounts.php';
+    const state = { selected: null, accounts: new Map(), lastQuery: '' };
+
+    const $ = (id) => document.getElementById(id);
+    const listEl = $('accounts-list');
+    const statusEl = $('status');
+
+    const escapeHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, (ch) => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+    }[ch]));
+
+    const setStatus = (message, type = 'info') => {
+      const colors = {
+        info: 'editor-muted-text',
+        success: 'text-emerald-300',
+        error: 'text-red-300',
+        warning: 'text-amber-300'
+      };
+      statusEl.className = `mt-2 text-sm ${colors[type] || colors.info}`;
+      statusEl.textContent = message || '';
+    };
+
+    const fetchJson = async (url, options = {}) => {
+      const res = await fetch(url, {
+        credentials: 'same-origin',
+        headers: options.body ? { 'Content-Type': 'application/json' } : undefined,
+        ...options,
+        body: options.body ? JSON.stringify(options.body) : undefined
+      });
+      const json = await res.json().catch(() => ({ ok: false, error: `HTTP ${res.status}` }));
+      if (res.status === 401) {
+        window.top?.postMessage({ type: 'editor-shell:auth-required' }, '*');
+      }
+      if (!res.ok || !json.ok) throw new Error(json.error || `HTTP ${res.status}`);
+      return json;
+    };
+
+    const accountLabel = (account) => `#${account.ID} • ${account.Nick || 'без ника'} • ${account.Username || 'без логина'}`;
+
+    const shortPassword = (password) => {
+      const value = String(password || '');
+      if (!value) return '—';
+      return value.length > 14 ? `${value.slice(0, 14)}…` : value;
+    };
+
+    const renderRows = (rows) => {
+      state.accounts = new Map((rows || []).map((row) => [String(row.ID), row]));
+      if (!rows.length) {
+        listEl.innerHTML = '<tr><td colspan="6" class="px-3 py-6 text-center editor-muted-text">Аккаунты не найдены.</td></tr>';
+        return;
+      }
+
+      listEl.innerHTML = rows.map((row) => `
+        <tr class="border-b border-light hover:bg-light">
+          <td class="px-2 py-1.5 font-mono text-slate-300">${escapeHtml(row.ID)}</td>
+          <td class="px-2 py-1.5"><span class="font-semibold text-slate-100">${escapeHtml(row.Username || '—')}</span></td>
+          <td class="px-2 py-1.5 text-slate-300">${escapeHtml(row.Nick || '—')}</td>
+          <td class="px-2 py-1.5">
+            <div class="flex items-center gap-1.5 max-w-[11rem]">
+              <code class="font-mono text-xs text-slate-200 truncate" title="${escapeHtml(row.Password || '')}">${escapeHtml(shortPassword(row.Password))}</code>
+              ${row.Password ? `<button class="editor-btn editor-btn-secondary !px-2 !py-1" data-action="copy-password" data-id="${escapeHtml(row.ID)}" title="Скопировать текущий пароль"><i class="fa-solid fa-copy"></i></button>` : ''}
+            </div>
+          </td>
+          <td class="px-2 py-1.5">
+            ${row.HasTimeoutCode
+              ? '<span class="text-amber-300"><i class="fa-solid fa-lock"></i> установлен</span>'
+              : '<span class="editor-muted-text"><i class="fa-solid fa-unlock"></i> пусто</span>'}
+          </td>
+          <td class="px-2 py-1.5">
+            <div class="flex flex-wrap justify-end gap-1.5">
+              <button class="editor-btn editor-btn-secondary !px-2 !py-1" data-action="edit" data-id="${escapeHtml(row.ID)}" title="Редактировать логин и пароль">
+                <i class="fa-solid fa-pen-to-square"></i><span>Изменить</span>
+              </button>
+              <button class="editor-btn editor-btn-secondary !px-2 !py-1" data-action="reset-password" data-id="${escapeHtml(row.ID)}">
+                <i class="fa-solid fa-wand-magic-sparkles"></i><span>Сбросить пароль</span>
+              </button>
+              <button class="editor-btn editor-btn-danger !px-2 !py-1" data-action="reset-timeout" data-id="${escapeHtml(row.ID)}">
+                <i class="fa-solid fa-clock-rotate-left"></i><span>Сбросить timeout</span>
+              </button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    };
+
+    const loadAccounts = async () => {
+      setStatus('Загрузка...');
+      const q = $('search').value.trim();
+      state.lastQuery = q;
+      try {
+        const json = await fetchJson(`${API}?action=list&limit=50&search=${encodeURIComponent(q)}`);
+        renderRows(json.rows || []);
+        setStatus(json.has_more ? 'Показаны первые 50 записей. Уточните поиск.' : `Найдено: ${(json.rows || []).length}`, json.has_more ? 'warning' : 'success');
+      } catch (err) {
+        listEl.innerHTML = '<tr><td colspan="6" class="px-3 py-6 text-center text-red-300">Ошибка загрузки.</td></tr>';
+        setStatus(err.message, 'error');
+      }
+    };
+
+    const openPasswordModal = (account) => {
+      state.selected = account;
+      $('password-modal-subtitle').textContent = accountLabel(account);
+      $('new-login').value = account.Username || '';
+      $('new-password').value = '';
+      $('password-modal').classList.remove('hidden');
+      $('password-modal').classList.add('flex');
+      setTimeout(() => $('new-login').focus(), 0);
+    };
+
+    const closePasswordModal = () => {
+      $('password-modal').classList.add('hidden');
+      $('password-modal').classList.remove('flex');
+      state.selected = null;
+    };
+
+    const refreshAfterChange = async (accountId) => {
+      await loadAccounts();
+      state.selected = state.accounts.get(String(accountId)) || state.selected;
+      if (state.selected && !$('password-modal').classList.contains('hidden')) {
+        $('password-modal-subtitle').textContent = accountLabel(state.selected);
+        $('new-login').value = state.selected.Username || '';
+      }
+    };
+
+    const changePassword = async () => {
+      const account = state.selected;
+      if (!account) return;
+      const password = $('new-password').value;
+      if (password.length < 4 || password.length > 12) {
+        setStatus('Пароль должен содержать от 4 до 12 символов.', 'error');
+        return;
+      }
+      try {
+        await fetchJson(`${API}?action=change_password`, { method: 'POST', body: { account_id: account.ID, password } });
+        await refreshAfterChange(account.ID);
+        $('new-password').value = '';
+        setStatus(`Пароль для ${accountLabel(state.selected || account)} изменён.`, 'success');
+      } catch (err) {
+        setStatus(err.message, 'error');
+      }
+    };
+
+    const changeLogin = async () => {
+      const account = state.selected;
+      if (!account) return;
+      const login = $('new-login').value.trim();
+      if (login.length < 4 || login.length > 12) {
+        setStatus('Логин должен содержать от 4 до 12 символов.', 'error');
+        return;
+      }
+      try {
+        await fetchJson(`${API}?action=change_login`, { method: 'POST', body: { account_id: account.ID, login } });
+        await refreshAfterChange(account.ID);
+        setStatus(`Логин для ${accountLabel(state.selected || account)} изменён.`, 'success');
+      } catch (err) {
+        setStatus(err.message, 'error');
+      }
+    };
+
+    const resetPassword = async (account) => {
+      if (!confirm(`Сбросить пароль для ${accountLabel(account)}? Новый пароль будет сгенерирован автоматически.`)) return;
+      try {
+        const json = await fetchJson(`${API}?action=reset_password`, { method: 'POST', body: { account_id: account.ID } });
+        const password = json.password || '';
+        await navigator.clipboard?.writeText(password).catch(() => {});
+        alert(`Новый пароль для ${accountLabel(account)}:\n\n${password}\n\nСкопируйте и передайте пользователю.`);
+        await loadAccounts();
+        setStatus(`Пароль для ${accountLabel(account)} сброшен. Новый пароль показан в окне.`, 'success');
+      } catch (err) {
+        setStatus(err.message, 'error');
+      }
+    };
+
+    const resetTimeout = async (account) => {
+      if (!confirm(`Сбросить timeout-код для ${accountLabel(account)}?`)) return;
+      try {
+        await fetchJson(`${API}?action=reset_timeout_code`, { method: 'POST', body: { account_id: account.ID } });
+        await loadAccounts();
+        setStatus(`Timeout-код для ${accountLabel(account)} сброшен.`, 'success');
+      } catch (err) {
+        setStatus(err.message, 'error');
+      }
+    };
+
+    listEl.addEventListener('click', async (event) => {
+      const btn = event.target.closest('button[data-action]');
+      if (!btn) return;
+      const account = state.accounts.get(String(btn.dataset.id));
+      if (!account) return;
+      if (btn.dataset.action === 'edit') openPasswordModal(account);
+      if (btn.dataset.action === 'reset-password') resetPassword(account);
+      if (btn.dataset.action === 'reset-timeout') resetTimeout(account);
+      if (btn.dataset.action === 'copy-password') {
+        try {
+          await navigator.clipboard.writeText(account.Password || '');
+          setStatus(`Текущий пароль для ${accountLabel(account)} скопирован.`, 'success');
+        } catch {
+          setStatus('Не удалось скопировать пароль в буфер обмена.', 'error');
+        }
+      }
+    });
+
+    $('btn-search').addEventListener('click', loadAccounts);
+    $('btn-refresh').addEventListener('click', loadAccounts);
+    $('search').addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') loadAccounts();
+    });
+    $('password-modal-save').addEventListener('click', changePassword);
+    $('login-modal-save').addEventListener('click', changeLogin);
+    $('password-modal-close').addEventListener('click', closePasswordModal);
+    $('password-modal-cancel').addEventListener('click', closePasswordModal);
+    $('password-modal').addEventListener('click', (event) => {
+      if (event.target.id === 'password-modal') closePasswordModal();
+    });
+    $('new-password').addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') changePassword();
+    });
+    $('new-login').addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') changeLogin();
+    });
+
+    loadAccounts();
+  </script>
+</body>
+</html>

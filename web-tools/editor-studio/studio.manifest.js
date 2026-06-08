@@ -25,6 +25,7 @@ window.STUDIO_MANIFEST = [
       { key: 'dungeons', title: 'Подземелья', icon: 'fa-dungeon', src: 'dungeons-editor.html' },
       { key: 'worlds', title: 'Миры', icon: 'fa-globe', src: 'worlds-editor.html' },
       { key: 'aethers', title: 'Телепорты (Aether)', icon: 'fa-wand-magic-sparkles', src: 'aethers-editor.html' },
+      { key: 'accounts', title: 'Управление аккаунтами', icon: 'fa-users-gear', src: 'accounts-editor.html' },
     ]
   },
   {
