@@ -1,0 +1,795 @@
+/* ============================================================
+   Blueprint (Unreal Engine style) node-graph view for the
+   Scenario Editor. Purely additive: it renders the SAME
+   scenarioData (steps / components / links) on a pannable,
+   zoomable canvas. No data-structure changes.
+   ============================================================ */
+
+:root {
+  --bp-bg: #0a0d12;
+  --bp-grid-minor: rgba(255, 255, 255, 0.035);
+  --bp-grid-major: rgba(255, 255, 255, 0.07);
+  --bp-node-bg: rgba(18, 23, 32, 0.96);
+  --bp-node-border: rgba(255, 255, 255, 0.12);
+  --bp-node-border-strong: rgba(142, 168, 255, 0.85);
+  --bp-row-bg: rgba(255, 255, 255, 0.02);
+  --bp-row-hover: rgba(142, 168, 255, 0.12);
+  --bp-text: #e7eefb;
+  --bp-text-muted: #93a2b8;
+  --bp-wire-exec: #e9eefb;
+  --bp-wire-true: #58d39b;
+  --bp-wire-false: #ff7c87;
+  --bp-wire-data: #6fd3c4;
+}
+
+/* ---- View-mode switching (drives existing layout) -------------- */
+body.bp-mode .main-container { display: block; }
+body.bp-mode #navigator { display: none !important; }
+body.bp-mode #editor-wrapper { padding: 0 !important; }
+body.bp-mode #editor-container,
+body.bp-mode #add-step-button { display: none !important; }
+body.bp-mode #connections-svg-container { display: none !important; }
+
+/* The graph container only exists/visible in graph mode. */
+#bp-canvas { display: none; }
+body.bp-mode #bp-canvas { display: block; }
+
+/* ---- Canvas ---------------------------------------------------- */
+#bp-canvas {
+  position: relative;
+  width: 100%;
+  height: calc(100vh - var(--scenario-top-h, 126px));
+  overflow: hidden;
+  background-color: var(--bp-bg);
+  background-image:
+    linear-gradient(var(--bp-grid-minor) 1px, transparent 1px),
+    linear-gradient(90deg, var(--bp-grid-minor) 1px, transparent 1px),
+    linear-gradient(var(--bp-grid-major) 1px, transparent 1px),
+    linear-gradient(90deg, var(--bp-grid-major) 1px, transparent 1px);
+  background-size:
+    24px 24px,
+    24px 24px,
+    120px 120px,
+    120px 120px;
+  background-position: 0 0;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+}
+#bp-canvas.is-panning { cursor: grabbing; }
+
+/* The transformed "world" that holds nodes + wires. */
+#bp-world {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 1px;
+  transform-origin: 0 0;
+  /* NOTE: do NOT keep `will-change: transform` permanently — it pins the layer
+     to one rasterization size, which makes text blurry at non-100% zoom.
+     We toggle it on only while actively panning/zooming (.is-animating). */
+}
+#bp-world.is-animating { will-change: transform; }
+/* Keep node text crisp by rendering on the pixel grid. */
+.bp-node, .bp-group { backface-visibility: hidden; }
+
+/* SVG wire layer (shares the world transform, so it pans/zooms too). */
+#bp-wires {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 12000px;
+  height: 12000px;
+  overflow: visible;
+  pointer-events: none;
+  z-index: 2;            /* above comments(0) & groups(1), below nodes(3) */
+}
+.bp-wire { fill: none; stroke-width: 2.5; stroke-linecap: round; }
+.bp-wire.is-highlight { stroke-width: 3.5; filter: drop-shadow(0 0 6px currentColor); }
+.bp-wire-hit { fill: none; stroke: transparent; stroke-width: 14; pointer-events: stroke; cursor: pointer; }
+
+/* ---- Node ------------------------------------------------------ */
+.bp-node {
+  position: absolute;
+  width: 260px;
+  z-index: 3;                       /* nodes above wires, groups, comments */
+  background: var(--bp-node-bg);
+  border: 1px solid var(--bp-node-border);
+  border-radius: 9px;
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.5);
+  color: var(--bp-text);
+  font-size: 12px;
+  /* NOTE: must NOT be `hidden` — connection dots stick out past the
+     right edge and need to remain visible & clickable. */
+  overflow: visible;
+  transition: border-color .12s ease, box-shadow .12s ease;
+}
+/* Round the top corners via the header itself (was relying on node overflow). */
+.bp-node-header { border-radius: 8px 8px 0 0; }
+.bp-node-body { border-radius: 0 0 8px 8px; }
+.bp-node:hover { border-color: rgba(255, 255, 255, 0.22); }
+.bp-node.is-selected {
+  border-color: var(--bp-node-border-strong);
+  box-shadow: 0 0 0 1px var(--bp-node-border-strong), 0 16px 40px rgba(0, 0, 0, 0.6);
+}
+.bp-node.is-dragging { box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7); z-index: 50; }
+.bp-node.is-flash { animation: bpFlash 1.3s ease; }
+@keyframes bpFlash {
+  0%, 30% { box-shadow: 0 0 0 2px var(--editor-accent, #72d6c0), 0 16px 40px rgba(0,0,0,.6); }
+  100% { box-shadow: 0 12px 34px rgba(0, 0, 0, 0.5); }
+}
+
+.bp-node-header {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 12px 7px 18px;
+  font-weight: 700;
+  letter-spacing: .2px;
+  color: #fff;
+  cursor: grab;
+  background: linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,0)) ,
+              var(--bp-head, #2a3450);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.35);
+}
+.bp-node.is-dragging .bp-node-header { cursor: grabbing; }
+.bp-node-header .bp-node-icon { opacity: .9; }
+.bp-node-header .bp-node-title {
+  flex: 1 1 auto;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bp-node-header .bp-node-sub {
+  font-size: 10px;
+  font-weight: 600;
+  opacity: .75;
+  white-space: nowrap;
+}
+.bp-node-actions { display: flex; gap: 2px; opacity: 0; transition: opacity .12s ease; }
+.bp-node:hover .bp-node-actions { opacity: 1; }
+.bp-node-actions button {
+  width: 20px; height: 20px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 5px;
+  color: rgba(255,255,255,.85);
+  background: rgba(0,0,0,.18);
+  font-size: 11px;
+}
+.bp-node-actions button:hover { background: rgba(0,0,0,.4); color: #fff; }
+
+.bp-node-body { padding: 6px 0; }
+.bp-empty-comp { padding: 6px 14px; color: var(--bp-text-muted); font-style: italic; }
+
+/* component rows */
+.bp-comp {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 14px;
+  margin: 1px 0;
+  background: var(--bp-row-bg);
+  border-left: 3px solid var(--bp-comp-color, #64748b);
+  cursor: pointer;
+}
+.bp-comp:hover { background: var(--bp-row-hover); }
+.bp-comp .bp-comp-icon { width: 16px; text-align: center; color: var(--bp-comp-color, #94a3b8); }
+.bp-comp .bp-comp-text { min-width: 0; flex: 1 1 auto; }
+.bp-comp .bp-comp-name { font-weight: 600; color: var(--bp-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bp-comp .bp-comp-sum { color: var(--bp-text-muted); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bp-comp .bp-comp-sum b { color: #cdd8ec; font-weight: 600; }
+
+/* pins */
+.bp-pin {
+  position: absolute;
+  width: 13px; height: 13px;
+  display: flex; align-items: center; justify-content: center;
+  pointer-events: none;
+}
+.bp-pin::before {
+  content: "";
+  width: 0; height: 0;
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
+  border-left: 9px solid var(--bp-pin-color, var(--bp-wire-exec));
+  filter: drop-shadow(0 0 1px rgba(0,0,0,.6));
+}
+.bp-pin.bp-pin-in { left: -8px; top: 9px; }
+.bp-pin.bp-pin-out { right: -10px; }
+.bp-pin.bp-pin-data::before {
+  width: 11px; height: 11px;
+  border: 2px solid var(--bp-pin-color, var(--bp-wire-data));
+  border-radius: 50%;
+  background: transparent;
+}
+
+.bp-pin-label {
+  position: absolute;
+  right: 16px;
+  font-size: 10px;
+  color: var(--bp-text-muted);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* broken-link badge on a row */
+.bp-comp.is-broken { border-left-color: var(--bp-wire-false); }
+.bp-broken-tag { color: var(--bp-wire-false); font-size: 10px; margin-left: 4px; }
+
+/* ---- Toolbar -------------------------------------------------- */
+.bp-toolbar {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  z-index: 20;
+  display: flex;
+  gap: 6px;
+  padding: 6px;
+  border-radius: 12px;
+  background: var(--editor-toolbar-bg, rgba(13,18,26,.92));
+  border: 1px solid var(--editor-toolbar-border, rgba(255,255,255,.10));
+  box-shadow: var(--editor-toolbar-shadow, 0 20px 46px rgba(0,0,0,.34));
+  backdrop-filter: blur(8px);
+}
+.bp-toolbar .bp-sep { width: 1px; background: rgba(255,255,255,.12); margin: 2px 2px; }
+.bp-tool-btn {
+  width: 34px; height: 34px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 8px;
+  color: var(--bp-text);
+  background: rgba(255,255,255,.04);
+  border: 1px solid rgba(255,255,255,.08);
+  font-size: 14px;
+  cursor: pointer;
+  transition: background .12s ease, color .12s ease, transform .08s ease;
+}
+.bp-tool-btn:hover { background: rgba(142,168,255,.18); color: #fff; }
+.bp-tool-btn:active { transform: translateY(1px); }
+.bp-tool-btn.is-primary { background: rgba(142,168,255,.22); border-color: rgba(142,168,255,.4); }
+.bp-zoom-label {
+  min-width: 52px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 600;
+  color: var(--bp-text-muted);
+}
+
+/* Hint + empty state */
+.bp-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--bp-text-muted);
+  text-align: center;
+  pointer-events: none;
+}
+.bp-empty i { font-size: 46px; color: rgba(142,168,255,.5); }
+.bp-empty .bp-empty-title { font-size: 18px; font-weight: 700; color: var(--bp-text); }
+
+.bp-legend {
+  position: absolute;
+  bottom: 14px;
+  right: 14px;
+  z-index: 20;
+  display: flex;
+  gap: 14px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: 11px;
+  color: var(--bp-text-muted);
+  background: var(--editor-toolbar-bg, rgba(13,18,26,.9));
+  border: 1px solid rgba(255,255,255,.1);
+}
+.bp-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.bp-legend i { width: 16px; height: 3px; border-radius: 3px; }
+
+/* View-mode segmented control in header */
+.bp-viewmode {
+  display: inline-flex;
+  padding: 3px;
+  border-radius: 10px;
+  background: var(--editor-light-bg, rgba(255,255,255,.045));
+  border: 1px solid var(--editor-light-border, rgba(255,255,255,.10));
+  gap: 2px;
+}
+.bp-viewmode button {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 5px 12px;
+  border-radius: 8px;
+  font-size: 13px; font-weight: 600;
+  color: var(--editor-text-muted, #9aa8bc);
+  transition: background .12s ease, color .12s ease;
+  white-space: nowrap;
+}
+.bp-viewmode button:hover { color: var(--editor-text, #edf3fb); }
+.bp-viewmode button.is-active {
+  background: rgba(142,168,255,.9);
+  color: #0b0f14;
+  box-shadow: 0 2px 10px rgba(142,168,255,.25);
+}
+
+@media (max-width: 1100px) {
+  .bp-viewmode button span { display: none; }
+}
+
+/* ============================================================
+   v2 additions: group frames, connection dots, implicit wires
+   ============================================================ */
+
+/* ---- Group frames (grey bands behind the nodes) -------------- */
+.bp-group {
+  position: absolute;
+  z-index: 1;                      /* above comments, below nodes */
+  border: 1.5px solid rgba(255, 255, 255, 0.14);
+  border-radius: 14px;
+  background: rgba(120, 132, 150, 0.10);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+  pointer-events: none;            /* body lets panning through */
+  transition: border-color .12s ease, background .12s ease;
+}
+.bp-group.is-empty {
+  border-style: dashed;
+  background: rgba(120, 132, 150, 0.06);
+}
+.bp-group.is-drop-target {
+  border-color: var(--editor-accent, #72d6c0);
+  background: rgba(114, 214, 192, 0.12);
+}
+.bp-group.is-dragging { border-color: rgba(142,168,255,.7); }
+
+.bp-group-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 10px;
+  border-radius: 13px 13px 0 0;
+  background: linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,0));
+  color: var(--bp-text);
+  font-size: 12px;
+  pointer-events: auto;            /* header is interactive / draggable */
+  cursor: grab;
+}
+.bp-group.is-dragging .bp-group-header { cursor: grabbing; }
+.bp-group-flag { color: var(--editor-accent, #72d6c0); font-size: 12px; }
+.bp-group-title {
+  font-weight: 700;
+  letter-spacing: .2px;
+  outline: none;
+  padding: 1px 4px;
+  border-radius: 4px;
+  max-width: 260px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.bp-group-title:focus { background: rgba(0,0,0,.3); box-shadow: 0 0 0 1px var(--bp-node-border-strong); }
+.bp-group-event {
+  margin-left: auto;
+  height: 22px;
+  font-size: 11px;
+  color: var(--bp-text);
+  background: rgba(0,0,0,.28);
+  border: 1px solid rgba(255,255,255,.12);
+  border-radius: 6px;
+  padding: 0 6px;
+  max-width: 170px;
+}
+.bp-group-del {
+  width: 22px; height: 22px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 6px;
+  color: rgba(255,255,255,.7);
+  background: rgba(0,0,0,.2);
+  font-size: 11px;
+}
+.bp-group-del:hover { background: rgba(255,124,135,.25); color: #fff; }
+
+/* ---- Connection dots (drag a wire from a component) ---------- */
+.bp-pin.bp-pin-out.bp-pin-dot { right: -8px; pointer-events: auto; cursor: crosshair; }
+.bp-pin-dot::before {
+  content: "";
+  display: block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--bp-pin-color, var(--bp-wire-data));
+  background: var(--bp-bg);
+  box-shadow: 0 0 0 2px rgba(0,0,0,.35);
+  transition: transform .1s ease, background .1s ease;
+  /* reset the triangle from the base .bp-pin rule */
+  border-top: 2px solid var(--bp-pin-color, var(--bp-wire-data));
+  border-bottom: 2px solid var(--bp-pin-color, var(--bp-wire-data));
+  border-left: 2px solid var(--bp-pin-color, var(--bp-wire-data));
+}
+.bp-pin-dot.is-connected::before { background: var(--bp-pin-color, var(--bp-wire-data)); }
+.bp-pin-dot:hover::before { transform: scale(1.35); }
+.bp-pin-dot.is-connecting::before { transform: scale(1.4); background: var(--bp-pin-color); }
+.bp-pin-dot .bp-pin-label {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 9px;
+  font-weight: 700;
+  color: var(--bp-pin-color, var(--bp-text-muted));
+  background: rgba(0,0,0,.4);
+  padding: 0 3px;
+  border-radius: 3px;
+  pointer-events: none;
+}
+
+/* ---- Wires: implicit (list order) + live drag --------------- */
+.bp-wire-implicit {
+  stroke: var(--bp-wire-exec);
+  opacity: .35;
+  stroke-dasharray: 7 7;
+  stroke-width: 2;
+}
+.bp-wire-temp {
+  opacity: .9;
+  stroke-dasharray: 4 5;
+  stroke-width: 2.5;
+  pointer-events: none;
+}
+
+/* node highlighted as a drop target while wiring */
+.bp-node.is-drop-target {
+  border-color: var(--editor-accent, #72d6c0) !important;
+  box-shadow: 0 0 0 2px var(--editor-accent, #72d6c0), 0 16px 40px rgba(0,0,0,.6);
+}
+
+/* add-component menu must float above the graph canvas */
+#add-component-menu { z-index: 1200; }
+
+/* extend legend with the implicit-arrow hint */
+.bp-legend i.is-dash {
+  height: 0;
+  border-top: 2px dashed var(--bp-wire-exec);
+  opacity: .6;
+  background: none !important;
+  border-radius: 0;
+}
+
+/* ============================================================
+   v3 additions: group resize handle, draggable component icon,
+   component move-ghost
+   ============================================================ */
+
+/* Group resize handle (bottom-right corner) */
+.bp-group-resize {
+  position: absolute;
+  right: 2px;
+  bottom: 2px;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0 0 13px 0;
+  color: var(--bp-text-muted);
+  font-size: 10px;
+  cursor: nwse-resize;
+  pointer-events: auto;            /* must be grabbable over the no-hit body */
+  opacity: .55;
+  transition: opacity .12s ease, color .12s ease;
+}
+.bp-group-resize:hover { opacity: 1; color: var(--editor-accent, #72d6c0); }
+.bp-group.is-resizing { border-color: rgba(142,168,255,.7); }
+.bp-group.is-resizing .bp-group-resize { opacity: 1; }
+
+/* Component icon becomes a drag handle for moving the component */
+.bp-comp .bp-comp-icon {
+  cursor: grab;
+  pointer-events: auto;
+  border-radius: 5px;
+  padding: 2px;
+  transition: background .12s ease, transform .08s ease;
+}
+.bp-comp .bp-comp-icon:hover { background: rgba(255,255,255,.10); transform: scale(1.1); }
+.bp-comp.is-dragging-out { opacity: .45; }
+
+/* Floating ghost shown while moving a component between steps */
+.bp-comp-ghost {
+  position: fixed;
+  z-index: 4000;
+  pointer-events: none;
+  padding: 4px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #fff;
+  background: rgba(36, 48, 73, 0.96);
+  border: 1px solid var(--bp-node-border-strong, rgba(142,168,255,.85));
+  box-shadow: 0 10px 28px rgba(0,0,0,.55);
+  white-space: nowrap;
+}
+
+/* ============================================================
+   v4 additions: completion-logic visuals on graph nodes
+   ============================================================ */
+
+/* Logic badge in the node header (AND / OR / 1·2·3) */
+.bp-logic-badge {
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: .4px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+.bp-logic-badge[data-logic="all_of"]     { background: rgba(90,162,255,.18);  color: #cfe0ff; border-color: rgba(90,162,255,.4); }
+.bp-logic-badge[data-logic="any_of"]     { background: rgba(255,194,127,.18); color: #ffe0bd; border-color: rgba(255,194,127,.4); }
+.bp-logic-badge[data-logic="sequential"] { background: rgba(114,214,192,.18); color: #bdf0e6; border-color: rgba(114,214,192,.4); }
+
+/* AND / OR separators between component rows in a node */
+.bp-comp-sep {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 1px 14px;
+  height: 14px;
+  position: relative;
+}
+.bp-comp-sep::before {
+  content: "";
+  position: absolute;
+  left: 0; right: 0; top: 50%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.14), transparent);
+}
+.bp-comp-sep span {
+  position: relative;
+  z-index: 1;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: .5px;
+  padding: 0 7px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: var(--bp-node-bg);
+}
+.bp-comp-sep[data-logic="any_of"] span { color: #ffe0bd; border-color: rgba(255,194,127,.36); }
+.bp-comp-sep[data-logic="all_of"] span { color: #cfe0ff; border-color: rgba(90,162,255,.32); }
+
+/* Sequential order chip in a component row */
+.bp-comp-order {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: 5px;
+  font-size: 10px;
+  font-weight: 800;
+  background: rgba(114,214,192,.2);
+  color: #bdf0e6;
+  border: 1px solid rgba(114,214,192,.4);
+}
+
+/* ============================================================
+   v5: drag-zone, inline rename, fullscreen, minimap, comp-reorder
+   ============================================================ */
+
+/* The node header now drags ONLY via the grip zone, so title clicks work. */
+.bp-node-header { cursor: default; }
+.bp-drag-zone{
+  display:inline-flex; align-items:center; justify-content:center;
+  width:20px; height:22px; border-radius:6px; cursor:grab;
+  color:rgba(255,255,255,.75); flex:0 0 auto;
+  transition: background-color .12s ease, color .12s ease;
+}
+.bp-drag-zone:hover{ background:rgba(114,214,192,.22); color:#fff; }
+.bp-node.is-dragging .bp-drag-zone{ cursor:grabbing; }
+
+/* Title becomes a clearly-editable chip on hover */
+.bp-node-header .bp-node-title{
+  cursor:text; border-radius:5px; padding:1px 5px;
+  transition: background-color .12s ease, box-shadow .12s ease;
+}
+.bp-node-header .bp-node-title:hover{
+  background:rgba(96,165,250,.28); box-shadow:0 0 0 2px rgba(96,165,250,.32);
+}
+.bp-node-header .bp-node-title.is-editing{
+  background:rgba(0,0,0,.5); box-shadow:0 0 0 2px rgba(96,165,250,.7);
+  outline:none; cursor:text; color:#fff;
+}
+
+/* Logic badge is a clickable mini-toggle */
+.bp-logic-badge{ cursor:pointer; transition: filter .12s ease, box-shadow .12s ease; }
+.bp-logic-badge:hover{ filter:brightness(1.2); box-shadow:0 0 0 2px rgba(255,255,255,.14); }
+
+/* component reorder drop markers */
+.bp-comp.is-drop-before{ box-shadow: inset 0 2px 0 0 var(--editor-accent, #72d6c0); }
+.bp-comp.is-drop-after { box-shadow: inset 0 -2px 0 0 var(--editor-accent, #72d6c0); }
+
+/* ---- Fullscreen graph -------------------------------------- */
+body.bp-fullscreen #scenario-top-chrome,
+body.bp-fullscreen #navigator { display:none !important; }
+body.bp-fullscreen #editor-wrapper{ padding:0 !important; }
+body.bp-fullscreen #bp-canvas{
+  position:fixed; inset:0; width:100vw; height:100vh; z-index:200;
+}
+body.bp-fullscreen .main-container{ display:block; }
+
+/* ---- Mini-map --------------------------------------------- */
+#bp-minimap{
+  position:absolute; right:14px; bottom:54px; z-index:21;
+  width:220px; height:150px; display:none;
+  background: rgba(10,13,18,.86);
+  border:1px solid rgba(255,255,255,.14);
+  border-radius:10px; cursor:pointer;
+  box-shadow:0 14px 34px rgba(0,0,0,.45);
+}
+#bp-minimap.is-on{ display:block; }
+body.bp-fullscreen #bp-minimap{ bottom:60px; }
+
+/* ============================================================
+   v6: graph comments (sticky notes)
+   ============================================================ */
+.bp-comment{
+  position:absolute;
+  --bp-comment-color:#ffcf5a;
+  min-width:140px; min-height:80px;
+  /* Solid-ish dark base + colored tint so notes read clearly even over a
+     coloured group band; the left accent bar reinforces the note colour. */
+  background:
+    linear-gradient(180deg,
+      color-mix(in srgb, var(--bp-comment-color) 22%, #0d1118) 0%,
+      color-mix(in srgb, var(--bp-comment-color) 12%, #0d1118) 100%);
+  border:1px solid color-mix(in srgb, var(--bp-comment-color) 70%, transparent);
+  border-left:4px solid var(--bp-comment-color);
+  border-radius:10px;
+  box-shadow:0 12px 30px rgba(0,0,0,.5), inset 0 0 0 1px rgba(255,255,255,.04);
+  backdrop-filter: blur(3px);
+  display:flex; flex-direction:column; overflow:hidden;
+  z-index:0;                /* BACK layer: groups, steps & components sit on top */
+}
+.bp-comment.is-dragging{ box-shadow:0 18px 44px rgba(0,0,0,.6); }
+.bp-comment-head{
+  display:flex; align-items:center; gap:6px;
+  padding:5px 8px; cursor:grab;
+  font-size:11px; font-weight:700; color:#0b0f14;
+  background:linear-gradient(180deg,
+    color-mix(in srgb, var(--bp-comment-color) 92%, #fff 8%),
+    var(--bp-comment-color));
+}
+.bp-comment.is-dragging .bp-comment-head{ cursor:grabbing; }
+.bp-comment-head .bp-comment-label{ flex:1 1 auto; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.bp-comment-actions{ display:flex; gap:2px; opacity:.55; transition:opacity .12s ease; }
+.bp-comment:hover .bp-comment-actions{ opacity:1; }
+.bp-comment-actions button{
+  width:18px; height:18px; display:flex; align-items:center; justify-content:center;
+  border-radius:4px; color:#0b0f14; background:rgba(0,0,0,.12); font-size:10px;
+}
+.bp-comment-actions button:hover{ background:rgba(0,0,0,.28); }
+.bp-comment-body{
+  flex:1 1 auto; padding:8px 10px; outline:none;
+  font-size:12px; line-height:1.45; color:#eef3fb;
+  text-shadow:0 1px 2px rgba(0,0,0,.5);
+  overflow:auto; white-space:pre-wrap; word-break:break-word;
+}
+.bp-comment-body:empty::before{
+  content:attr(data-placeholder); color:var(--bp-text-muted); font-style:italic;
+}
+.bp-comment-resize{
+  position:absolute; right:2px; bottom:2px; width:14px; height:14px;
+  cursor:nwse-resize; opacity:.5;
+  background:
+    linear-gradient(135deg, transparent 50%, color-mix(in srgb, var(--bp-comment-color) 70%, transparent) 50%);
+  border-radius:0 0 8px 0;
+}
+.bp-comment-resize:hover{ opacity:1; }
+
+/* ============================================================
+   v7: comment back-layer marker + marquee selection
+   ============================================================ */
+
+/* Marquee selection rectangle (drawn in world space) */
+.bp-marquee{
+  position:absolute;
+  z-index:60;
+  border:1.5px solid var(--editor-accent, #72d6c0);
+  background:color-mix(in srgb, var(--editor-accent, #72d6c0) 16%, transparent);
+  border-radius:6px;
+  pointer-events:none;
+}
+/* node currently inside the marquee while dragging it */
+.bp-node.is-marquee-hit{
+  outline:2px solid color-mix(in srgb, var(--editor-accent, #72d6c0) 80%, transparent);
+  outline-offset:1px;
+}
+/* selected node */
+.bp-node.is-selected{
+  box-shadow:0 0 0 2px var(--editor-accent, #72d6c0), 0 16px 40px rgba(0,0,0,.55);
+  border-color:var(--editor-accent, #72d6c0);
+}
+
+/* groups & comments: marquee hit + selected */
+.bp-group.is-marquee-hit{ outline:2px dashed color-mix(in srgb, var(--editor-accent, #72d6c0) 80%, transparent); outline-offset:2px; }
+.bp-group.is-selected{ border-color:var(--editor-accent, #72d6c0); box-shadow:0 0 0 2px color-mix(in srgb, var(--editor-accent,#72d6c0) 60%, transparent); }
+.bp-comment.is-marquee-hit{ outline:2px solid color-mix(in srgb, var(--editor-accent, #72d6c0) 80%, transparent); outline-offset:1px; }
+.bp-comment.is-selected{ box-shadow:0 0 0 2px var(--editor-accent, #72d6c0), 0 12px 30px rgba(0,0,0,.5); }
+
+/* select-mode toolbar button active state */
+.bp-tool-btn.is-primary{ background:rgba(114,214,192,.22); border-color:rgba(114,214,192,.45); color:#bdf0e6; }
+#bp-canvas.is-select-mode{ cursor:crosshair; }
+
+/* ============================================================
+   v8: per-component action buttons inside graph nodes
+   ============================================================ */
+.bp-comp .bp-comp-actions{
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  flex: 0 0 auto;
+  margin-right: 6px;            /* keep clear of the right-edge connection pins */
+  opacity: 0;
+  transition: opacity .12s ease;
+}
+.bp-comp:hover .bp-comp-actions,
+.bp-comp:focus-within .bp-comp-actions{ opacity: 1; }
+.bp-comp .bp-comp-actions button{
+  width: 19px; height: 19px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 5px;
+  color: var(--bp-text-muted, #93a2b8);
+  background: rgba(0,0,0,.25);
+  font-size: 10px;
+  cursor: pointer;
+  transition: background .12s ease, color .12s ease;
+}
+.bp-comp .bp-comp-actions button:hover{ background: rgba(0,0,0,.45); }
+.bp-comp .bp-comp-actions button[data-bp-comp-action="delete"]:hover{ color: var(--bp-wire-false, #ff7c87); }
+.bp-comp .bp-comp-actions button[data-bp-comp-action="duplicate"]:hover{ color: var(--editor-warning, #ffc27f); }
+.bp-comp .bp-comp-actions button[data-bp-comp-action="edit"]:hover{ color: var(--bp-wire-data, #6fd3c4); }
+
+/* ============================================================
+   v9: "what to add" picker (double-click on empty canvas)
+   ============================================================ */
+.bp-create-menu{
+  position: fixed;
+  z-index: 5000;
+  min-width: 158px;
+  padding: 5px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-radius: 10px;
+  background: var(--editor-dropdown-bg, #141b25);
+  border: 1px solid var(--editor-dropdown-border, rgba(255,255,255,.14));
+  box-shadow: var(--editor-dropdown-shadow, 0 24px 60px rgba(0,0,0,.5));
+  animation: bpMenuIn .1s ease;
+}
+@keyframes bpMenuIn { from { opacity: 0; transform: translateY(-4px) scale(.98);} to { opacity: 1; transform: none; } }
+.bp-create-menu button{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--bp-text, #e7eefb);
+  text-align: left;
+  cursor: pointer;
+  transition: background .1s ease, color .1s ease;
+}
+.bp-create-menu button i{ width: 16px; text-align: center; color: var(--bp-text-muted, #93a2b8); }
+.bp-create-menu button:hover{ background: rgba(142,168,255,.18); color: #fff; }
+.bp-create-menu button:hover i{ color: #fff; }
+.bp-create-menu button[data-create="group"]:hover i{ color: var(--editor-accent, #72d6c0); }
+.bp-create-menu button[data-create="comment"]:hover i{ color: #ffcf5a; }

@@ -1,5 +1,4 @@
 #include "default.h"
-
 #include <game/server/core/scenarios/base/component_registry.h>
 
 // default components

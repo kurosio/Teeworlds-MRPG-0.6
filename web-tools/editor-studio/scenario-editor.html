@@ -8,6 +8,10 @@
     
     <!-- Библиотека для Drag-and-Drop -->
     <script src="https://cdn.jsdelivr.net/npm/sortablejs@latest/Sortable.min.js"></script>
+
+    <!-- Blueprint (Unreal-style) graph view -->
+    <link rel="stylesheet" href="editor-core/blueprint-view.css">
+    <script src="editor-core/blueprint-view.js"></script>
     
     <style>
         /* Небольшие кастомные стили */
@@ -184,6 +188,122 @@
             .scenario-overview-card { flex: 1 1 calc(50% - 0.65rem); min-width: 0; }
             .scenario-overview-card.is-wide { flex-basis: 100%; }
         }
+
+        /* ===== Completion-logic: convenient segmented control ===== */
+        .logic-segmented{
+            display:flex; gap:4px; padding:4px;
+            border-radius:12px;
+            background: var(--editor-light-bg, rgba(255,255,255,.045));
+            border:1px solid var(--editor-light-border, rgba(255,255,255,.10));
+        }
+        .logic-segmented .logic-seg{
+            flex:1 1 0; min-width:0;
+            display:flex; flex-direction:column; align-items:center; justify-content:center;
+            gap:2px; padding:6px 8px;
+            border-radius:9px; cursor:pointer;
+            color: var(--editor-text-muted, #9aa8bc);
+            font-size:12px; font-weight:600; line-height:1.1;
+            transition: background .14s ease, color .14s ease, box-shadow .14s ease;
+            text-align:center;
+        }
+        .logic-segmented .logic-seg .seg-top{ display:flex; align-items:center; gap:6px; font-size:13px; }
+        .logic-segmented .logic-seg .seg-hint{ font-size:10px; font-weight:500; opacity:.8; }
+        .logic-segmented .logic-seg:hover{ color: var(--editor-text, #edf3fb); background: var(--editor-light-hover, rgba(255,255,255,.075)); }
+        .logic-segmented .logic-seg.is-active{
+            color:#0b0f14;
+            box-shadow: 0 2px 10px rgba(0,0,0,.25);
+        }
+        .logic-segmented .logic-seg[data-logic="all_of"].is-active{ background:#5aa2ff; }
+        .logic-segmented .logic-seg[data-logic="any_of"].is-active{ background:#ffc27f; }
+        .logic-segmented .logic-seg[data-logic="sequential"].is-active{ background:#72d6c0; }
+
+        /* Logic badge shown in the step header */
+        .step-logic-badge{
+            display:inline-flex; align-items:center; gap:6px;
+            font-size:11px; font-weight:700; letter-spacing:.3px;
+            padding:3px 9px; border-radius:999px; white-space:nowrap;
+            border:1px solid transparent;
+        }
+        .step-logic-badge i{ font-size:11px; }
+        .step-logic-badge[data-logic="all_of"]{ background:rgba(90,162,255,.16); color:#bcd6ff; border-color:rgba(90,162,255,.34); }
+        .step-logic-badge[data-logic="any_of"]{ background:rgba(255,194,127,.16); color:#ffd9a8; border-color:rgba(255,194,127,.34); }
+        .step-logic-badge[data-logic="sequential"]{ background:rgba(114,214,192,.16); color:#a9ece0; border-color:rgba(114,214,192,.34); }
+
+        /* AND / OR separators between component rows */
+        .comp-separator{
+            display:flex; align-items:center; gap:10px;
+            margin:2px 0; padding:0 6px;
+            color: var(--editor-text-muted, #9aa8bc);
+            user-select:none;
+        }
+        .comp-separator::before, .comp-separator::after{
+            content:""; flex:1 1 auto; height:1px;
+            background: linear-gradient(90deg, transparent, var(--editor-light-border, rgba(255,255,255,.12)), transparent);
+        }
+        .comp-separator .sep-chip{
+            font-size:10.5px; font-weight:800; letter-spacing:.6px;
+            padding:1px 8px; border-radius:999px; border:1px solid transparent;
+        }
+        .comp-separator[data-logic="any_of"] .sep-chip{ background:rgba(255,194,127,.14); color:#ffd9a8; border-color:rgba(255,194,127,.32); }
+        .comp-separator[data-logic="all_of"] .sep-chip{ background:rgba(90,162,255,.12); color:#bcd6ff; border-color:rgba(90,162,255,.30); }
+
+        /* Sequential order chip next to a component icon */
+        .comp-order-chip{
+            display:inline-flex; align-items:center; justify-content:center;
+            min-width:20px; height:20px; padding:0 5px;
+            border-radius:6px; font-size:11px; font-weight:800;
+            background:rgba(114,214,192,.18); color:#a9ece0;
+            border:1px solid rgba(114,214,192,.36);
+        }
+
+        /* ===== Add-component menu: scrollable, never giant ===== */
+        #add-component-menu{ max-height:min(60vh,460px); }
+        #add-component-menu .acm-head{
+            background: var(--editor-dropdown-bg, #141b25);
+        }
+        #add-component-menu .acm-list{
+            max-height:min(48vh,380px);
+            overflow-y:auto;
+            padding-right:2px;
+        }
+        #add-component-menu .context-menu-item{ flex:0 0 auto; }
+
+        /* ===== Step header: hover affordances ===== */
+        .step-card .step-header .title .step-id-display{
+            transition: background-color .12s ease, box-shadow .12s ease;
+            cursor: text;
+        }
+        .step-card .step-header .title:hover .step-id-display{
+            background: rgba(96,165,250,.30);
+            box-shadow: 0 0 0 2px rgba(96,165,250,.35);
+        }
+        /* the draggable handle area highlights green so it is clear it MOVES the step */
+        .step-card .step-header .drag-zone{ border-radius:8px; transition: background-color .12s ease; }
+        .step-card .step-header .drag-zone:hover{ background: rgba(114,214,192,.12); }
+        /* inline-editing the step id */
+        .step-id-display.is-editing{
+            background: rgba(15,23,42,.6) !important;
+            box-shadow: 0 0 0 2px rgba(96,165,250,.6) !important;
+            outline: none; cursor: text; min-width: 40px;
+        }
+        /* clickable logic mini-toggle in header */
+        .step-logic-badge.is-clickable{ cursor:pointer; }
+        .step-logic-badge.is-clickable:hover{ filter:brightness(1.18); box-shadow:0 0 0 2px rgba(255,255,255,.12); }
+
+        /* ===== Quick step popover (dbl-click step header) ===== */
+        #step-quick-popover{
+            position: fixed; z-index: 1300; width: 340px; max-width: calc(100vw - 24px);
+            background: var(--editor-dropdown-bg, #141b25);
+            border: 1px solid var(--editor-dropdown-border, rgba(255,255,255,.12));
+            border-radius: 14px; box-shadow: var(--editor-dropdown-shadow, 0 24px 60px rgba(0,0,0,.46));
+            padding: 14px; display: none;
+        }
+        #step-quick-popover.is-open{ display:block; }
+        #step-quick-popover h4{ font-size:13px; font-weight:700; color:var(--editor-text); margin-bottom:10px; display:flex; align-items:center; gap:8px; }
+        #step-quick-popover label{ display:block; font-size:11px; font-weight:600; color:var(--editor-text-muted); margin:8px 0 3px; }
+        #step-quick-popover .qp-row{ display:flex; gap:8px; }
+        #step-quick-popover .qp-row > div{ flex:1 1 0; min-width:0; }
+        #step-quick-popover .qp-logic{ margin-top:10px; }
     </style>
 </head>
 <body class="editor-theme font-sans text-slate-100" data-editor="scenario">
@@ -198,6 +318,18 @@
             <span id="dirty-pill" class="editor-dirty-pill hidden" aria-hidden="true">Данные не сохранены</span>
         </div>
         <div class="controls editor-page-actions flex flex-nowrap items-center gap-3 min-w-0">
+            <div class="bp-viewmode" role="tablist" aria-label="Режим отображения">
+                <button type="button" id="view-mode-list" class="is-active" role="tab" aria-selected="true" title="Список шагов">
+                    <i class="fa-solid fa-list-ul"></i><span>Список</span>
+                </button>
+                <button type="button" id="view-mode-graph" role="tab" aria-selected="false" title="Граф (Blueprint)">
+                    <i class="fa-solid fa-diagram-project"></i><span>Граф</span>
+                </button>
+            </div>
+            <div class="flex items-center gap-1">
+                <button id="undo-button" class="editor-btn editor-btn-secondary" title="Отменить (Ctrl+Z)" disabled><i class="fa-solid fa-rotate-left"></i></button>
+                <button id="redo-button" class="editor-btn editor-btn-secondary" title="Повторить (Ctrl+U)" disabled><i class="fa-solid fa-rotate-right"></i></button>
+            </div>
             <div class="scenario-switch-wrap">
                 <span class="scenario-switch-label">Стрелки:</span>
                 <label class="scenario-switch" for="arrow-mode-toggle" aria-label="Стрелки">
@@ -248,12 +380,81 @@
              <button id="add-step-button" class="editor-btn editor-btn-primary w-full max-w-3xl mx-auto mt-8">
                 <i class="fa-solid fa-plus"></i> Добавить Новый Шаг
             </button>
+
+            <!-- Blueprint (Unreal-style) graph canvas (shown only in graph mode) -->
+            <div id="bp-canvas">
+                <div class="bp-toolbar">
+                    <button class="bp-tool-btn" id="bp-select-mode" title="Режим выделения рамкой (или удерживайте Shift)"><i class="fa-solid fa-object-group"></i></button>
+                    <div class="bp-sep"></div>
+                    <button class="bp-tool-btn" id="bp-add-step" title="Добавить шаг (двойной клик по пустому месту)"><i class="fa-solid fa-plus"></i></button>
+                    <button class="bp-tool-btn" id="bp-add-group" title="Добавить группу"><i class="fa-solid fa-layer-group"></i></button>
+                    <button class="bp-tool-btn" id="bp-add-comment" title="Добавить комментарий"><i class="fa-solid fa-note-sticky"></i></button>
+                    <div class="bp-sep"></div>
+                    <button class="bp-tool-btn" id="bp-zoom-out" title="Уменьшить"><i class="fa-solid fa-minus"></i></button>
+                    <div class="bp-zoom-label" id="bp-zoom-label">100%</div>
+                    <button class="bp-tool-btn" id="bp-zoom-in" title="Увеличить"><i class="fa-solid fa-plus"></i></button>
+                    <div class="bp-sep"></div>
+                    <button class="bp-tool-btn" id="bp-fit" title="Вписать в экран (F)"><i class="fa-solid fa-expand"></i></button>
+                    <button class="bp-tool-btn" id="bp-relayout" title="Авто-раскладка"><i class="fa-solid fa-wand-magic-sparkles"></i></button>
+                    <div class="bp-sep"></div>
+                    <button class="bp-tool-btn" id="bp-undo" title="Отменить (Ctrl+Z)"><i class="fa-solid fa-rotate-left"></i></button>
+                    <button class="bp-tool-btn" id="bp-redo" title="Повторить (Ctrl+U)"><i class="fa-solid fa-rotate-right"></i></button>
+                    <div class="bp-sep"></div>
+                    <button class="bp-tool-btn" id="bp-minimap-toggle" title="Мини-карта"><i class="fa-solid fa-map"></i></button>
+                    <button class="bp-tool-btn" id="bp-fullscreen" title="Развернуть на весь экран"><i class="fa-solid fa-expand"></i></button>
+                </div>
+                <canvas id="bp-minimap" width="220" height="150" title="Мини-карта (клик/перетаскивание — навигация)"></canvas>
+                <div id="bp-world">
+                    <svg id="bp-wires"></svg>
+                </div>
+                <div class="bp-legend">
+                    <span><i style="background: var(--bp-wire-exec)"></i> Поток</span>
+                    <span><i style="background: var(--bp-wire-true)"></i> TRUE</span>
+                    <span><i style="background: var(--bp-wire-false)"></i> FALSE</span>
+                    <span><i style="background: var(--bp-wire-data)"></i> Прочее</span>
+                    <span><i class="is-dash"></i> По порядку</span>
+                </div>
+            </div>
         </main>
     </div>
     
     <svg id="connections-svg-container" class="fixed top-0 left-0 w-full h-full pointer-events-none z-10"></svg>
     
-    <div id="add-component-menu" class="hidden absolute z-[1000] editor-card border border-slate-300/40 shadow-lg rounded-lg p-2 w-72 flex flex-col gap-1"></div>
+    <div id="add-component-menu" class="hidden absolute z-[1000] editor-card border border-slate-300/40 shadow-lg rounded-lg p-2 w-80 flex flex-col gap-1"></div>
+
+    <!-- Quick step settings popover (double-click on step header / node header) -->
+    <div id="step-quick-popover">
+        <h4><i class="fa-solid fa-sliders text-accent"></i> Быстрые настройки шага</h4>
+        <div class="qp-row">
+            <div>
+                <label>ID шага (латиницей)</label>
+                <input type="text" id="qp-id" class="form-input w-full text-sm" autocomplete="off">
+            </div>
+            <div>
+                <label>Задержка (мс)</label>
+                <input type="number" id="qp-delay" class="form-input w-full text-sm" placeholder="0">
+            </div>
+        </div>
+        <label>Информация для игрока (msg_info)</label>
+        <input type="text" id="qp-msg" class="form-input w-full text-sm" placeholder="Например, 'Найдите выход'">
+        <div class="qp-logic">
+            <label>Логика завершения компонентов</label>
+            <div class="logic-segmented" id="qp-logic" role="radiogroup">
+                <div class="logic-seg" data-logic="all_of" role="radio" tabindex="0" title="Все компоненты (AND)">
+                    <span class="seg-top"><i class="fa-solid fa-list-check"></i> Все</span>
+                    <span class="seg-hint">AND</span>
+                </div>
+                <div class="logic-seg" data-logic="any_of" role="radio" tabindex="0" title="Любой компонент (OR)">
+                    <span class="seg-top"><i class="fa-solid fa-code-branch"></i> Любой</span>
+                    <span class="seg-hint">OR</span>
+                </div>
+                <div class="logic-seg" data-logic="sequential" role="radio" tabindex="0" title="По порядку">
+                    <span class="seg-top"><i class="fa-solid fa-arrow-down-1-9"></i> Порядок</span>
+                    <span class="seg-hint">1·2·3</span>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div id="json-preview-modal" class="hidden fixed inset-0 editor-modal-backdrop z-[350] flex justify-center items-center p-4">
         <div class="editor-modal-content p-6 rounded-lg shadow-xl w-full max-w-4xl h-[80vh] flex flex-col">
@@ -293,13 +494,16 @@
     <template id="step-card-template">
         <div class="step-card editor-card rounded-lg border border-slate-200/30 shadow-md transition-all duration-200 relative z-10">
             <div class="step-header flex justify-between items-center border-b border-slate-200/30 p-4">
-                <div class="title text-lg font-bold text-slate-100 flex items-center gap-3 cursor-grab flex-grow">
-                    <i class="fa-solid fa-grip-vertical handle text-slate-400"></i>
-                    <i class="fa-solid fa-chevron-down toggle-icon transition-transform cursor-pointer"></i>
-                    <span>Шаг ID:</span>
-                    <span class="step-id-display font-mono bg-blue-500/20 text-blue-100 text-sm font-medium px-2 py-1 rounded-md"></span>
+                <div class="title text-lg font-bold text-slate-100 flex items-center gap-3 flex-grow">
+                    <span class="drag-zone handle flex items-center gap-3 cursor-grab px-1 py-1" title="Перетащите, чтобы переместить шаг">
+                        <i class="fa-solid fa-grip-vertical text-slate-400"></i>
+                    </span>
+                    <i class="fa-solid fa-chevron-down toggle-icon transition-transform cursor-pointer" title="Свернуть/развернуть"></i>
+                    <span class="text-slate-300">Шаг ID:</span>
+                    <span class="step-id-display font-mono bg-blue-500/20 text-blue-100 text-sm font-medium px-2 py-1 rounded-md" title="Нажмите, чтобы переименовать"></span>
                 </div>
-                <div class="step-delay-display hidden text-xs font-medium bg-slate-800/60 text-slate-200 px-2 py-1 rounded-md ml-auto mr-4 items-center gap-1.5"></div>
+                <div class="step-logic-badge ml-auto mr-2" data-logic="all_of" title="Логика завершения компонентов"></div>
+                <div class="step-delay-display hidden text-xs font-medium bg-slate-800/60 text-slate-200 px-2 py-1 rounded-md mr-4 items-center gap-1.5"></div>
                 <div class="controls-container flex items-center gap-1">
                     <button class="control-btn duplicate-btn w-8 h-8 rounded-full text-slate-300 hover:bg-slate-700/40 hover:text-orange-300 transition-colors" title="Дублировать шаг"><i class="fa-regular fa-copy"></i></button>
                     <button class="control-btn delete-btn w-8 h-8 rounded-full text-slate-300 hover:bg-slate-700/40 hover:text-red-300 transition-colors" title="Удалить шаг"><i class="fa-regular fa-trash-can"></i></button>
@@ -321,9 +525,23 @@
                         <label class="block text-sm font-medium text-slate-200 mb-1">Информация для игрока (msg_info)</label>
                         <input type="text" class="msg-info-input editor-input form-input" placeholder="Например, 'Найдите выход'">
                     </div>
-                    <div>
+                    <div class="logic-selector-wrap">
                         <label class="block text-sm font-medium text-slate-200 mb-1">Логика завершения компонентов</label>
-                        <select class="completion-logic-select editor-input form-input">
+                        <div class="logic-segmented" role="radiogroup" aria-label="Логика завершения компонентов">
+                            <div class="logic-seg" data-logic="all_of" role="radio" tabindex="0" title="Все компоненты должны завершиться (AND)">
+                                <span class="seg-top"><i class="fa-solid fa-list-check"></i> Все</span>
+                                <span class="seg-hint">AND · all_of</span>
+                            </div>
+                            <div class="logic-seg" data-logic="any_of" role="radio" tabindex="0" title="Достаточно любого компонента (OR)">
+                                <span class="seg-top"><i class="fa-solid fa-code-branch"></i> Любой</span>
+                                <span class="seg-hint">OR · any_of</span>
+                            </div>
+                            <div class="logic-seg" data-logic="sequential" role="radio" tabindex="0" title="Компоненты выполняются по порядку">
+                                <span class="seg-top"><i class="fa-solid fa-arrow-down-1-9"></i> По порядку</span>
+                                <span class="seg-hint">1·2·3 · sequential</span>
+                            </div>
+                        </div>
+                        <select class="completion-logic-select hidden" aria-hidden="true" tabindex="-1">
                             <option value="all_of">Все (all_of)</option>
                             <option value="any_of">Любой (any_of)</option>
                             <option value="sequential">Последовательно (sequential)</option>
@@ -417,6 +635,25 @@
                     closeBtn: document.getElementById('json-import-close')
                 };
                 this.arrowModeToggle = document.getElementById('arrow-mode-toggle');
+                this.viewModeButtons = {
+                    list: document.getElementById('view-mode-list'),
+                    graph: document.getElementById('view-mode-graph')
+                };
+                this.bpCanvas = document.getElementById('bp-canvas');
+                this.bpControls = {
+                    addStep: document.getElementById('bp-add-step'),
+                    addGroup: document.getElementById('bp-add-group'),
+                    addComment: document.getElementById('bp-add-comment'),
+                    selectMode: document.getElementById('bp-select-mode'),
+                    zoomIn: document.getElementById('bp-zoom-in'),
+                    zoomOut: document.getElementById('bp-zoom-out'),
+                    fit: document.getElementById('bp-fit'),
+                    relayout: document.getElementById('bp-relayout'),
+                    undo: document.getElementById('bp-undo'),
+                    redo: document.getElementById('bp-redo'),
+                    minimap: document.getElementById('bp-minimap-toggle')
+                };
+                this.bpMinimap = document.getElementById('bp-minimap');
                 this.modal = { backdrop: document.getElementById('modal-backdrop'), title: document.getElementById('modal-title'), formContainer: document.getElementById('modal-form-container'), saveButton: document.getElementById('modal-save'), cancelButton: document.getElementById('modal-cancel'), context: null, dynamicRefreshAbort: null };
                 this.deleteGroupModal = {
                     backdrop: document.getElementById('delete-group-modal-backdrop'),
@@ -426,11 +663,24 @@
                     contextGroupId: null
                 };
                 this.addComponentMenu = { element: document.getElementById('add-component-menu'), targetStepId: null };
+                this.quickPopover = {
+                    element: document.getElementById('step-quick-popover'),
+                    id: document.getElementById('qp-id'),
+                    delay: document.getElementById('qp-delay'),
+                    msg: document.getElementById('qp-msg'),
+                    logic: document.getElementById('qp-logic'),
+                    stepId: null
+                };
+                this.bpFullscreenBtn = document.getElementById('bp-fullscreen');
+                this.undoButton = document.getElementById('undo-button');
+                this.redoButton = document.getElementById('redo-button');
                 this.templates = { step: document.getElementById('step-card-template'), component: document.getElementById('component-item-template') };
             }
 
             initState() {
                 this.arrowMode = 'navigator'; // 'navigator' or 'editor'
+                this.viewMode = 'list'; // 'list' or 'graph'
+                this.blueprint = null;  // lazily created BlueprintView
                 this.scenarioData = { steps: [], editor_data: { groups: [] } };
                 this.uiState = { collapsedSteps: new Set() }; // Save UI state like collapsed cards
                 this.allComponentTypes = EditorCore.schemas.componentSchemas;
@@ -472,6 +722,302 @@
                         }
                       })
                     : { markDirty: () => {}, setClean: () => {} };
+
+                // ---- Undo/Redo history -------------------------------------
+                // Snapshots of scenarioData (deep clones). We wrap dirty.markDirty
+                // so any data mutation records a (debounced) history entry.
+                this.history = { stack: [], index: -1, max: 80, suspended: false };
+                this._rawMarkDirty = this.dirty.markDirty.bind(this.dirty);
+                this.dirty.markDirty = (...args) => {
+                    this._rawMarkDirty(...args);
+                    this.scheduleHistorySnapshot();
+                };
+                this._historyDebounce = EditorCore.utils.debounce(() => this.commitHistorySnapshot(), 350);
+            }
+
+            //==================================================
+            // UNDO / REDO HISTORY
+            //==================================================
+            snapshotScenario() {
+                return JSON.stringify(this.scenarioData);
+            }
+            resetHistory() {
+                this.history.stack = [this.snapshotScenario()];
+                this.history.index = 0;
+                this.updateUndoRedoButtons();
+            }
+            scheduleHistorySnapshot() {
+                if (this.history.suspended) return;
+                this._historyDebounce?.();
+            }
+            commitHistorySnapshot() {
+                if (this.history.suspended) return;
+                const snap = this.snapshotScenario();
+                const h = this.history;
+                if (h.stack[h.index] === snap) return; // no change
+                // drop any redo branch
+                h.stack = h.stack.slice(0, h.index + 1);
+                h.stack.push(snap);
+                if (h.stack.length > h.max) h.stack.shift();
+                h.index = h.stack.length - 1;
+                this.updateUndoRedoButtons();
+            }
+            applyHistorySnapshot(snap) {
+                if (typeof snap !== 'string') return;
+                let data;
+                try { data = JSON.parse(snap); } catch { return; }
+                this.history.suspended = true;
+                // Preserve UI selections that are not part of data
+                this.scenarioData = data;
+                // keep current view-mode; just re-render everything
+                this.applyMode(this.detectModeFromScenarioData(this.scenarioData));
+                this.renderAll();
+                this._rawMarkDirty();
+                this.history.suspended = false;
+            }
+            undo() {
+                // make sure the latest pending edit is captured before stepping back
+                this.commitHistorySnapshot();
+                const h = this.history;
+                if (h.index <= 0) { this.showToast('Нечего отменять', 'info'); return; }
+                h.index -= 1;
+                this.applyHistorySnapshot(h.stack[h.index]);
+                this.updateUndoRedoButtons();
+                this.showToast('Отменено', 'info');
+            }
+            redo() {
+                const h = this.history;
+                if (h.index >= h.stack.length - 1) { this.showToast('Нечего повторять', 'info'); return; }
+                h.index += 1;
+                this.applyHistorySnapshot(h.stack[h.index]);
+                this.updateUndoRedoButtons();
+                this.showToast('Повторено', 'info');
+            }
+            updateUndoRedoButtons() {
+                const h = this.history;
+                const canUndo = h.index > 0;
+                const canRedo = h.index < h.stack.length - 1;
+                if (this.undoButton) this.undoButton.disabled = !canUndo;
+                if (this.redoButton) this.redoButton.disabled = !canRedo;
+                if (this.bpControls?.undo) this.bpControls.undo.disabled = !canUndo;
+                if (this.bpControls?.redo) this.bpControls.redo.disabled = !canRedo;
+            }
+
+            //==================================================
+            // KEYBOARD SHORTCUTS
+            //==================================================
+            handleGlobalKeydown(e) {
+                const key = (e.key || '').toLowerCase();
+                const ctrl = e.ctrlKey || e.metaKey;
+
+                // Esc closes transient UI
+                if (key === 'escape') {
+                    if (this.quickPopover?.element?.classList.contains('is-open')) { this.closeStepQuickPopover(); return; }
+                    if (!this.addComponentMenu.element.classList.contains('hidden')) { this.hideAddComponentMenu(); return; }
+                    if (this.viewMode === 'graph' && this.blueprint?.hasSelection?.()) { this.blueprint.clearSelection(); return; }
+                }
+
+                if (!ctrl) {
+                    // graph-only single-key helpers when not typing
+                    if (!this.isTypingTarget(e.target) && this.viewMode === 'graph' && this.blueprint) {
+                        if (key === 'f') { e.preventDefault(); this.blueprint.fitToView(); return; }
+                        if (key === '=' || key === '+') { e.preventDefault(); this.blueprint.zoomIn(); return; }
+                        if (key === '-' || key === '_') { e.preventDefault(); this.blueprint.zoomOut(); return; }
+                    }
+                    return;
+                }
+
+                // Ctrl+A in graph selects all nodes
+                if (key === 'a' && this.viewMode === 'graph' && this.blueprint && !this.isTypingTarget(e.target)) {
+                    e.preventDefault();
+                    this.blueprint.selectAll();
+                    return;
+                }
+
+                // Ctrl/Cmd combos
+                if (key === 'z') {
+                    // Only multi-line text areas keep their native undo; for single
+                    // inputs and the canvas we run the scenario-level history so
+                    // Ctrl+Z always works (incl. right after adding a step).
+                    const tag = (e.target?.tagName || '').toLowerCase();
+                    if (tag === 'textarea') return;
+                    e.preventDefault();
+                    if (e.shiftKey) this.redo(); else this.undo();
+                } else if (key === 'y' || key === 'u') {
+                    // Ctrl+U / Ctrl+Y -> redo (Ctrl+U requested by spec)
+                    e.preventDefault();
+                    this.redo();
+                } else if (key === 's') {
+                    e.preventDefault();
+                    if (!this.embed.enabled) this.saveScenario();
+                }
+            }
+            isTypingTarget(el) {
+                if (!el) return false;
+                const tag = (el.tagName || '').toLowerCase();
+                return tag === 'input' || tag === 'textarea' || tag === 'select' || el.isContentEditable;
+            }
+
+            //==================================================
+            // FULLSCREEN (graph)
+            //==================================================
+            toggleGraphFullscreen() {
+                const on = document.body.classList.toggle('bp-fullscreen');
+                if (this.bpFullscreenBtn) {
+                    const icon = this.bpFullscreenBtn.querySelector('i');
+                    if (icon) icon.className = on ? 'fa-solid fa-compress' : 'fa-solid fa-expand';
+                    this.bpFullscreenBtn.title = on ? 'Выйти из полноэкранного режима' : 'Развернуть на весь экран';
+                }
+                // recompute sticky offsets + redraw after layout change
+                requestAnimationFrame(() => { this.blueprint?.applyTransform?.(); this.blueprint?.drawWires?.(); });
+            }
+
+            //==================================================
+            // QUICK STEP POPOVER (double-click on step header)
+            //==================================================
+            setupQuickPopover() {
+                const qp = this.quickPopover;
+                if (!qp?.element) return;
+                const commit = () => {
+                    const step = this.findStep(qp.stepId);
+                    if (!step) return;
+                    // msg_info
+                    const msg = qp.msg.value;
+                    if (msg) step.msg_info = msg; else delete step.msg_info;
+                    // delay
+                    const delay = Number(qp.delay.value) || 0;
+                    if (delay > 0) step.delay = delay; else delete step.delay;
+                    this.dirty.markDirty();
+                    this.renderAll();
+                };
+                qp.msg.addEventListener('input', () => {
+                    const step = this.findStep(qp.stepId); if (!step) return;
+                    if (qp.msg.value) step.msg_info = qp.msg.value; else delete step.msg_info;
+                    this.dirty.markDirty();
+                });
+                qp.delay.addEventListener('input', () => {
+                    const step = this.findStep(qp.stepId); if (!step) return;
+                    const d = Number(qp.delay.value) || 0;
+                    if (d > 0) step.delay = d; else delete step.delay;
+                    this.dirty.markDirty();
+                });
+                qp.id.addEventListener('change', () => {
+                    const step = this.findStep(qp.stepId); if (!step) return;
+                    const newId = (qp.id.value || '').trim();
+                    if (newId && newId !== step.id) {
+                        const ok = this.renameStep(step.id, newId);
+                        if (ok) qp.stepId = newId; else qp.id.value = step.id;
+                    }
+                });
+                qp.id.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); qp.id.blur(); } });
+                qp.logic.addEventListener('click', (e) => {
+                    const seg = e.target.closest('.logic-seg');
+                    if (!seg) return;
+                    this.setStepCompletionLogic(qp.stepId, seg.dataset.logic);
+                    this.syncQuickPopoverLogic();
+                });
+                // close on outside click
+                document.addEventListener('mousedown', (e) => {
+                    if (!qp.element.classList.contains('is-open')) return;
+                    if (qp.element.contains(e.target)) return;
+                    this.closeStepQuickPopover();
+                });
+            }
+            syncQuickPopoverLogic() {
+                const qp = this.quickPopover;
+                const step = this.findStep(qp.stepId);
+                if (!step) return;
+                const logic = this.getCompletionLogic(step);
+                qp.logic.querySelectorAll('.logic-seg').forEach(seg => {
+                    seg.classList.toggle('is-active', seg.dataset.logic === logic);
+                });
+                // Hide the logic block when the step has <= 1 component.
+                const showLogic = (step.components || []).filter(Boolean).length > 1;
+                const logicWrap = qp.logic.closest('.qp-logic');
+                if (logicWrap) logicWrap.classList.toggle('hidden', !showLogic);
+            }
+            openStepQuickPopover(stepId, anchorRect) {
+                const qp = this.quickPopover;
+                const step = this.findStep(stepId);
+                if (!qp?.element || !step) return;
+                qp.stepId = stepId;
+                qp.id.value = step.id;
+                qp.delay.value = step.delay || '';
+                qp.msg.value = step.msg_info || '';
+                this.syncQuickPopoverLogic();
+
+                qp.element.classList.add('is-open');
+                const margin = 8;
+                const w = qp.element.offsetWidth || 340;
+                const h = qp.element.offsetHeight || 260;
+                let left = anchorRect.left;
+                let top = anchorRect.bottom + 6;
+                if (left + w + margin > window.innerWidth) left = Math.max(margin, window.innerWidth - w - margin);
+                if (top + h + margin > window.innerHeight) {
+                    const above = anchorRect.top - 6 - h;
+                    top = above > margin ? above : Math.max(margin, window.innerHeight - h - margin);
+                }
+                qp.element.style.left = `${Math.max(margin, left)}px`;
+                qp.element.style.top = `${Math.max(margin, top)}px`;
+                setTimeout(() => qp.id.focus(), 0);
+            }
+            closeStepQuickPopover() {
+                this.quickPopover?.element?.classList.remove('is-open');
+                if (this.quickPopover) this.quickPopover.stepId = null;
+            }
+
+            // Inline-rename via the ID chip in the step header.
+            startInlineRename(stepCard, stepId) {
+                const chip = stepCard.querySelector('.step-header .step-id-display');
+                if (!chip || chip.isContentEditable) return;
+                const original = stepId;
+                chip.contentEditable = 'true';
+                chip.classList.add('is-editing');
+                chip.focus();
+                // select all text
+                const range = document.createRange();
+                range.selectNodeContents(chip);
+                const selit = window.getSelection();
+                selit.removeAllRanges(); selit.addRange(range);
+
+                let done = false;
+                const finish = (commit) => {
+                    if (done) return; done = true;
+                    chip.contentEditable = 'false';
+                    chip.classList.remove('is-editing');
+                    const val = chip.textContent.trim();
+                    chip.removeEventListener('blur', onBlur);
+                    chip.removeEventListener('keydown', onKey);
+                    if (commit && val && val !== original) {
+                        if (!this.renameStep(original, val)) chip.textContent = original;
+                    } else {
+                        chip.textContent = original;
+                    }
+                };
+                const onBlur = () => finish(true);
+                const onKey = (ev) => {
+                    if (ev.key === 'Enter') { ev.preventDefault(); finish(true); }
+                    else if (ev.key === 'Escape') { ev.preventDefault(); finish(false); }
+                };
+                chip.addEventListener('blur', onBlur);
+                chip.addEventListener('keydown', onKey);
+            }
+
+            // Rename a step by id (used by inline edit + quick popover).
+            renameStep(oldId, newId) {
+                const step = this.findStep(oldId);
+                if (!step) return false;
+                const clean = String(newId).trim();
+                if (!clean || !/^[a-zA-Z0-9_]+$/.test(clean)) {
+                    this.showToast('ID может содержать только латиницу, цифры и _', 'error');
+                    return false;
+                }
+                if (clean !== oldId && this.scenarioData.steps.some(s => s.id === clean)) {
+                    this.showToast(`ID "${clean}" уже используется!`, 'error');
+                    return false;
+                }
+                this.updateStepId(step, clean);
+                return true;
             }
 
             setupModeSelector() {
@@ -760,6 +1306,34 @@
                     this.drawConnections();
                 });
 
+                // View mode (list <-> graph/blueprint)
+                this.viewModeButtons.list?.addEventListener('click', () => this.switchViewMode('list'));
+                this.viewModeButtons.graph?.addEventListener('click', () => this.switchViewMode('graph'));
+
+                // Blueprint toolbar
+                this.bpControls.addStep?.addEventListener('click', () => this.addNewStepAt());
+                this.bpControls.addGroup?.addEventListener('click', () => this.addNewGroup());
+                this.bpControls.addComment?.addEventListener('click', () => this.addGraphComment());
+                this.bpControls.selectMode?.addEventListener('click', () => this.blueprint?.toggleSelectMode());
+                this.bpControls.zoomIn?.addEventListener('click', () => this.blueprint?.zoomIn());
+                this.bpControls.zoomOut?.addEventListener('click', () => this.blueprint?.zoomOut());
+                this.bpControls.fit?.addEventListener('click', () => this.blueprint?.fitToView());
+                this.bpControls.relayout?.addEventListener('click', () => this.blueprint?.autoLayoutAll());
+                this.bpControls.undo?.addEventListener('click', () => this.undo());
+                this.bpControls.redo?.addEventListener('click', () => this.redo());
+                this.bpControls.minimap?.addEventListener('click', () => this.blueprint?.toggleMinimap());
+                this.bpFullscreenBtn?.addEventListener('click', () => this.toggleGraphFullscreen());
+
+                // Undo / Redo
+                this.undoButton?.addEventListener('click', () => this.undo());
+                this.redoButton?.addEventListener('click', () => this.redo());
+
+                // Global keyboard shortcuts (history + graph helpers).
+                document.addEventListener('keydown', (e) => this.handleGlobalKeydown(e));
+
+                // Quick-settings popover wiring
+                this.setupQuickPopover();
+
                 const handleEditorEvent = (e) => {
                     const stepCard = e.target.closest('.step-card');
                     if (!stepCard) return;
@@ -768,6 +1342,16 @@
                     const componentId = componentItem?.dataset.componentId;
 
                     if (e.type === 'click') {
+                        const logicSeg = e.target.closest('.logic-seg');
+                        if (logicSeg) { this.setStepCompletionLogic(stepId, logicSeg.dataset.logic); return; }
+                        // header logic mini-badge cycles the logic
+                        if (e.target.closest('.step-logic-badge')) { this.cycleCompletionLogic(stepId); return; }
+                        // click the ID chip in the header to rename inline
+                        if (e.target.closest('.step-header .step-id-display')) {
+                            e.stopPropagation();
+                            this.startInlineRename(stepCard, stepId);
+                            return;
+                        }
                         if (e.target.closest('.delete-btn')) this.handleDelete(stepId, componentId);
                         else if (e.target.closest('.duplicate-btn')) this.handleDuplicate(stepId, componentId);
                         else if (e.target.closest('.edit-btn')) this.openEditModal(stepId, componentId);
@@ -782,8 +1366,22 @@
                             }
                             this.drawConnections();
                         }
-                    } else if (e.type === 'dblclick' && componentId) {
-                        this.openEditModal(stepId, componentId);
+                    } else if (e.type === 'keydown') {
+                        const seg = e.target.closest('.logic-seg');
+                        if (seg && (e.key === 'Enter' || e.key === ' ')) {
+                            e.preventDefault();
+                            this.setStepCompletionLogic(stepId, seg.dataset.logic);
+                        }
+                    } else if (e.type === 'dblclick') {
+                        if (componentId) { this.openEditModal(stepId, componentId); return; }
+                        // Double-click on the step header free area -> quick settings popover.
+                        const header = e.target.closest('.step-header');
+                        if (header && !e.target.closest('.controls-container') &&
+                            !e.target.closest('.step-id-display') && !e.target.closest('.toggle-icon') &&
+                            !e.target.closest('.drag-zone') && !e.target.closest('.step-logic-badge')) {
+                            const rect = header.getBoundingClientRect();
+                            this.openStepQuickPopover(stepId, rect);
+                        }
                     } else if (e.type === 'input') {
                         const step = this.findStep(stepId);
                         if (!step) return;
@@ -802,18 +1400,12 @@
                         const step = this.findStep(stepId);
                         if (!step) return;
                         if (e.target.matches('.completion-logic-select')) {
-                            const value = e.target.value;
-                            if (value === 'any_of' || value === 'sequential') {
-                                step.completion_logic = value;
-                            } else {
-                                delete step.completion_logic;
-                            }
-                            this.renderAll(); // Re-render to refresh sequential order visuals and fields
+                            this.setStepCompletionLogic(stepId, e.target.value);
                         }
                     }
                 };
 
-                ['click', 'dblclick', 'input', 'change'].forEach(eventType => {
+                ['click', 'dblclick', 'input', 'change', 'keydown'].forEach(eventType => {
                     this.editorContainer.addEventListener(eventType, handleEditorEvent);
                 });
 
@@ -839,6 +1431,7 @@
                 if (this.scenarioData.steps.length === 0) {
                     this.renderEmptyState();
                     this.renderNavigator();
+                    this.refreshBlueprint();
                     return;
                 }
                 
@@ -852,13 +1445,13 @@
                     
                     if (!group.isDefault && group.steps.length > 0) {
                         const titleEl = document.createElement('h3');
-                        titleEl.className = 'text-center text-lg font-semibold text-slate-500 tracking-wider uppercase pt-4 pb-2 mb-4 border-b border-slate-200';
+                        titleEl.className = 'text-center text-lg font-semibold text-slate-300 tracking-wider uppercase pt-4 pb-2 mb-4 border-b border-slate-200/30';
                         titleEl.textContent = group.name;
                         groupWrapper.appendChild(titleEl);
                     }
 
                     const stepListContainer = document.createElement('div');
-                    stepListContainer.className = 'step-group bg-slate-500/70 p-4 rounded-xl border border-slate-600/80 space-y-8 relative z-0';
+                    stepListContainer.className = 'step-group editor-step-group p-4 rounded-xl space-y-8 relative z-0';
                     stepListContainer.dataset.groupId = group.id;
 
                     group.steps.forEach(stepId => {
@@ -906,6 +1499,180 @@
                 this.initAllSortables();
                 requestAnimationFrame(() => this.drawConnections());
                 this.validateAllStepIds();
+                this.refreshBlueprint();
+            }
+
+            //==================================================
+            // BLUEPRINT (Unreal-style) GRAPH VIEW
+            //==================================================
+            ensureBlueprint() {
+                if (!this.blueprint && this.bpCanvas && window.EditorCore?.BlueprintView) {
+                    this.blueprint = new window.EditorCore.BlueprintView(this, this.bpCanvas);
+                }
+                return this.blueprint;
+            }
+
+            refreshBlueprint() {
+                if (this.viewMode === 'graph') {
+                    this.ensureBlueprint()?.render();
+                }
+            }
+
+            // Create a graph comment at the centre of the current viewport.
+            addGraphComment() {
+                if (this.viewMode !== 'graph') this.switchViewMode('graph');
+                const bp = this.ensureBlueprint();
+                if (!bp) return;
+                const rect = bp.canvas.getBoundingClientRect();
+                const wx = (rect.width / 2 - bp.view.x) / bp.view.scale - 120;
+                const wy = (rect.height / 2 - bp.view.y) / bp.view.scale - 60;
+                bp.addComment(wx, wy);
+            }
+
+            switchViewMode(mode) {
+                const next = mode === 'graph' ? 'graph' : 'list';
+                if (next === this.viewMode) {
+                    // Allow re-clicking graph tab to refresh; no-op for list.
+                    if (next === 'graph') this.refreshBlueprint();
+                    return;
+                }
+                this.viewMode = next;
+
+                this.viewModeButtons.list?.classList.toggle('is-active', next === 'list');
+                this.viewModeButtons.list?.setAttribute('aria-selected', String(next === 'list'));
+                this.viewModeButtons.graph?.classList.toggle('is-active', next === 'graph');
+                this.viewModeButtons.graph?.setAttribute('aria-selected', String(next === 'graph'));
+
+                if (next === 'graph') {
+                    const bp = this.ensureBlueprint();
+                    bp?.show();
+                } else {
+                    this.blueprint?.hide();
+                    requestAnimationFrame(() => this.drawConnections());
+                }
+            }
+
+            addNewStepAt(x, y, options = {}) {
+                const newId = this.generateUniqueId('step');
+                const newStep = { id: newId, components: [] };
+                this.scenarioData.steps.push(newStep);
+
+                // Place the new step into a specific group (graph) or the default flow.
+                const targetGroupId = options.group || null;
+                if (targetGroupId) {
+                    const group = (this.scenarioData.editor_data?.groups || []).find(g => g.id === targetGroupId);
+                    if (group) {
+                        group.steps = Array.isArray(group.steps) ? group.steps : [];
+                        group.steps.push(newId);
+                    } else if (options.ungrouped) {
+                        this.placeStepUngrouped(newId);
+                    } else {
+                        this.addStepToViewState(newId);
+                    }
+                } else if (options.ungrouped) {
+                    // Graph: explicitly keep the step OUT of any group.
+                    this.placeStepUngrouped(newId);
+                } else {
+                    this.addStepToViewState(newId);
+                }
+
+                // If coordinates were given (graph dblclick / toolbar / drop), seed a position.
+                if (Number.isFinite(x) && Number.isFinite(y)) {
+                    const ed = this.scenarioData.editor_data || (this.scenarioData.editor_data = {});
+                    if (!ed.blueprint) ed.blueprint = {};
+                    if (!ed.blueprint.positions) ed.blueprint.positions = {};
+                    ed.blueprint.positions[newId] = { x: Math.round(x), y: Math.round(y) };
+                }
+
+                this.renderAll();
+                this.dirty.markDirty();
+
+                if (this.viewMode === 'graph') {
+                    this.blueprint?.flashNode(newId);
+                } else {
+                    const newCard = document.getElementById(`step-card-${newId}`);
+                    newCard?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    newCard?.querySelector('.step-id-input')?.focus();
+                }
+                return newId;
+            }
+
+            // Rename a group without a full re-render (used by inline graph editing).
+            renameGroupSilent(groupId, newName) {
+                const groups = this.scenarioData.editor_data?.groups || [];
+                const group = groups.find(g => g.id === groupId);
+                if (group && group.name !== newName) {
+                    group.name = newName;
+                    this.dirty.markDirty();
+                    if (this.viewMode === 'list') this.renderAll();
+                }
+                return true;
+            }
+
+            // Move a step into a group (or out to "ungrouped") — view-state only,
+            // never touches the exported step/component data structure.
+            moveStepToGroup(stepId, targetGroupId) {
+                const ed = this.scenarioData.editor_data || (this.scenarioData.editor_data = {});
+                ed.groups = Array.isArray(ed.groups) ? ed.groups : [];
+                ed.ungrouped_steps = Array.isArray(ed.ungrouped_steps) ? ed.ungrouped_steps : [];
+
+                // remove from any current group / ungrouped order
+                ed.groups.forEach(g => {
+                    const i = (g.steps || []).indexOf(stepId);
+                    if (i > -1) g.steps.splice(i, 1);
+                });
+                const ui = ed.ungrouped_steps.indexOf(stepId);
+                if (ui > -1) ed.ungrouped_steps.splice(ui, 1);
+
+                if (targetGroupId) {
+                    const group = ed.groups.find(g => g.id === targetGroupId);
+                    if (group) {
+                        group.steps = Array.isArray(group.steps) ? group.steps : [];
+                        group.steps.push(stepId);
+                    } else {
+                        ed.ungrouped_steps.push(stepId);
+                    }
+                } else {
+                    ed.ungrouped_steps.push(stepId);
+                }
+                this.dirty.markDirty();
+            }
+
+            // Append a step id to the ungrouped order (graph "create on empty area").
+            placeStepUngrouped(stepId) {
+                const ed = this.scenarioData.editor_data || (this.scenarioData.editor_data = {});
+                ed.ungrouped_steps = Array.isArray(ed.ungrouped_steps) ? ed.ungrouped_steps : [];
+                if (!ed.ungrouped_steps.includes(stepId)) ed.ungrouped_steps.push(stepId);
+            }
+
+            // Move a component from one step to another (graph icon drag).
+            // Operates on the real components arrays — same structure the list
+            // editor uses; nothing extra is added to the exported component.
+            moveComponentToStep(fromStepId, componentId, toStepId) {
+                return this.moveComponent(fromStepId, componentId, toStepId, null);
+            }
+            // Move/reorder a component. If toStepId === fromStepId, this reorders
+            // within the step. `beforeId` is the component to insert BEFORE (null =
+            // append to the end). Works on the real arrays — JSON output unchanged.
+            moveComponent(fromStepId, componentId, toStepId, beforeId = null) {
+                const fromStep = this.findStep(fromStepId);
+                const toStep = this.findStep(toStepId);
+                if (!fromStep || !toStep) return false;
+                fromStep.components = Array.isArray(fromStep.components) ? fromStep.components : [];
+                toStep.components = Array.isArray(toStep.components) ? toStep.components : [];
+                const idx = fromStep.components.findIndex(c => c && c.component_id === componentId);
+                if (idx < 0) return false;
+                const [moved] = fromStep.components.splice(idx, 1);
+                if (!moved) return false;
+                let insertAt = toStep.components.length;
+                if (beforeId) {
+                    const bi = toStep.components.findIndex(c => c && c.component_id === beforeId);
+                    if (bi >= 0) insertAt = bi;
+                }
+                // dropping onto its own original position = no-op (but harmless)
+                toStep.components.splice(insertAt, 0, moved);
+                this.dirty.markDirty();
+                return true;
             }
 
             renderEmptyState() {
@@ -932,6 +1699,72 @@
                 }
             }
 
+            // Single source of truth for completion-logic presentation.
+            getCompletionLogic(step) {
+                const v = step && step.completion_logic;
+                return (v === 'any_of' || v === 'sequential') ? v : 'all_of';
+            }
+            completionLogicMeta(logic) {
+                const map = {
+                    all_of:     { label: 'Все',       short: 'AND', sep: 'AND', icon: 'fa-solid fa-list-check' },
+                    any_of:     { label: 'Любой',     short: 'OR',  sep: 'OR',  icon: 'fa-solid fa-code-branch' },
+                    sequential: { label: 'По порядку', short: '1·2·3', sep: '→', icon: 'fa-solid fa-arrow-down-1-9' }
+                };
+                return map[logic] || map.all_of;
+            }
+            applyStepLogicVisuals(stepCard, step) {
+                const logic = this.getCompletionLogic(step);
+                const meta = this.completionLogicMeta(logic);
+                // Completion logic is only meaningful with 2+ components.
+                const showLogic = (step.components || []).filter(Boolean).length > 1;
+
+                // Segmented control state
+                stepCard.querySelectorAll('.logic-seg').forEach(seg => {
+                    const active = seg.dataset.logic === logic;
+                    seg.classList.toggle('is-active', active);
+                    seg.setAttribute('aria-checked', active ? 'true' : 'false');
+                });
+                // Hidden select keeps value-binding compatibility
+                const sel = stepCard.querySelector('.completion-logic-select');
+                if (sel) sel.value = logic;
+
+                // Hide the whole logic selector block when there's <= 1 component.
+                const selectorWrap = stepCard.querySelector('.logic-selector-wrap');
+                if (selectorWrap) selectorWrap.classList.toggle('hidden', !showLogic);
+
+                // Header badge — clickable mini-toggle that cycles the logic.
+                const badge = stepCard.querySelector('.step-logic-badge');
+                if (badge) {
+                    badge.classList.toggle('hidden', !showLogic);
+                    badge.dataset.logic = logic;
+                    badge.classList.add('is-clickable');
+                    badge.innerHTML = `<i class="${meta.icon}"></i> ${meta.short}`;
+                    badge.title = `Логика завершения: ${meta.label}. Нажмите, чтобы переключить (AND → OR → 1·2·3)`;
+                }
+            }
+            cycleCompletionLogic(stepId) {
+                const step = this.findStep(stepId);
+                if (!step) return;
+                const order = ['all_of', 'any_of', 'sequential'];
+                const cur = this.getCompletionLogic(step);
+                const next = order[(order.indexOf(cur) + 1) % order.length];
+                this.setStepCompletionLogic(stepId, next);
+            }
+
+            setStepCompletionLogic(stepId, value) {
+                const step = this.findStep(stepId);
+                if (!step) return;
+                const next = (value === 'any_of' || value === 'sequential') ? value : 'all_of';
+                if (this.getCompletionLogic(step) === next) return;
+                if (next === 'all_of') {
+                    delete step.completion_logic; // default stays out of JSON
+                } else {
+                    step.completion_logic = next;
+                }
+                this.dirty.markDirty();
+                this.renderAll(); // refresh order chips / AND-OR separators / badge
+            }
+
             createStepElement(step) {
                 const stepCard = this.templates.step.content.cloneNode(true).firstElementChild;
                 stepCard.id = `step-card-${step.id}`;
@@ -941,10 +1774,23 @@
                 stepCard.querySelector('.step-delay-input').value = step.delay || '';
                 this.updateStepDelayDisplay(stepCard, step.delay);
                 stepCard.querySelector('.msg-info-input').value = step.msg_info || '';
-                stepCard.querySelector('.completion-logic-select').value = step.completion_logic || 'all_of';
+                this.applyStepLogicVisuals(stepCard, step);
+
+                const logic = this.getCompletionLogic(step);
+                const meta = this.completionLogicMeta(logic);
                 const componentsContainer = stepCard.querySelector('.components-container');
-                (Array.isArray(step.components) ? step.components : (step.components = [])).filter(Boolean).forEach((comp, index) => {
+                const comps = (Array.isArray(step.components) ? step.components : (step.components = [])).filter(Boolean);
+                const showLogic = comps.length > 1;
+                comps.forEach((comp, index) => {
                     if (!comp.component_id) comp.component_id = this.generateUUID();
+                    // AND / OR separator between components (not for sequential / single).
+                    if (showLogic && index > 0 && (logic === 'all_of' || logic === 'any_of')) {
+                        const sep = document.createElement('div');
+                        sep.className = 'comp-separator';
+                        sep.dataset.logic = logic;
+                        sep.innerHTML = `<span class="sep-chip">${meta.sep}</span>`;
+                        componentsContainer.appendChild(sep);
+                    }
                     componentsContainer.appendChild(this.createComponentElement(comp, step, index));
                 });
                 
@@ -970,7 +1816,7 @@
 
             createErrorStepElement(stepData, error) {
                 const stepCard = this.templates.step.content.cloneNode(true).firstElementChild;
-                stepCard.classList.add('border-red-500', 'bg-red-50');
+                stepCard.classList.add('border-red-500/60', 'bg-red-500/10');
                 const id = stepData?.id || 'ID_НЕ_УКАЗАН';
                 stepCard.id = `step-card-error-${id}`;
                 stepCard.dataset.stepId = id;
@@ -994,17 +1840,18 @@
                 const colorClass = { info: 'border-l-blue-500', interactive: 'border-l-orange-500', combat: 'border-l-red-500', camera: 'border-l-teal-500' }[info.class] || 'border-l-slate-500';
                 item.classList.add('border-l-4', colorClass);
 
-                if (step.completion_logic === 'sequential') {
+                if (this.getCompletionLogic(step) === 'sequential' && (step.components || []).filter(Boolean).length > 1) {
                     const orderSpan = document.createElement('span');
-                    orderSpan.className = 'mr-2 font-bold text-slate-500';
-                    orderSpan.textContent = `${index + 1}.`;
+                    orderSpan.className = 'comp-order-chip mr-1';
+                    orderSpan.textContent = `${index + 1}`;
+                    orderSpan.title = `Шаг последовательности №${index + 1}`;
                     item.querySelector('.component-info').prepend(orderSpan);
                 }
 
                 if (this.executionTimeComponentTypes.has(component.type)) {
                     const delayWrapper = document.createElement('div');
                     delayWrapper.className = 'mt-2 flex items-center gap-2';
-                    delayWrapper.innerHTML = `<label class="text-xs font-medium text-slate-600">Время выполнения (мс):</label>
+                    delayWrapper.innerHTML = `<label class="text-xs font-medium text-slate-300">Время выполнения (мс):</label>
                                             <input type="number" class="component-delay-input editor-input form-input w-24 text-sm" value="${component.execution_time || 0}">`;
                     item.querySelector('.component-text-wrapper').appendChild(delayWrapper);
                 }
@@ -1278,9 +2125,14 @@
 
             handleDelete(stepId, componentId) {
                 if (componentId) {
-                    if (!confirm("Вы уверены, что хотите удалить этот компонент?")) return;
                     const step = this.findStep(stepId);
-                    if (step) step.components = step.components.filter(c => c.component_id !== componentId);
+                    if (!step || !Array.isArray(step.components)) return;
+                    const comp = step.components.find(c => c && c.component_id === componentId);
+                    if (!comp) return;
+                    const info = this.componentTypes[comp.type] || this.allComponentTypes[comp.type];
+                    const label = info?.name || comp.type || 'компонент';
+                    if (!confirm(`Удалить компонент «${label}»?`)) return;
+                    step.components = step.components.filter(c => c && c.component_id !== componentId);
                 } else {
                     if (!confirm(`Вы уверены, что хотите удалить шаг "${stepId}"?`)) return;
                     this.scenarioData.steps = this.scenarioData.steps.filter(s => s.id !== stepId);
@@ -1295,10 +2147,11 @@
                     const step = this.findStep(stepId);
                     const component = this.findComponent(stepId, componentId);
                     if (step && component) {
-                        const componentIndex = step.components.findIndex(c => c.component_id === componentId);
+                        if (!Array.isArray(step.components)) step.components = [];
+                        const componentIndex = step.components.findIndex(c => c && c.component_id === componentId);
                         const newComponent = JSON.parse(JSON.stringify(component));
                         newComponent.component_id = this.generateUUID();
-                        step.components.splice(componentIndex + 1, 0, newComponent);
+                        step.components.splice(componentIndex < 0 ? step.components.length : componentIndex + 1, 0, newComponent);
                     }
                 } else {
                     const step = this.findStep(stepId);
@@ -1724,11 +2577,18 @@
                             if (!c.component_id) c.component_id = this.generateUUID();
                         });
                     });
+
+                    // Load the graph layout. Preferred source is the separate
+                    // top-level `blueprint` block; fall back to a legacy
+                    // editor_data.blueprint for older files. This never affects
+                    // the steps/components structure.
+                    this.applyBlueprintBlock(raw, payload);
                 }
                 this.applyMode(this.detectModeFromScenarioData(payload));
                 this.uiState.collapsedSteps.clear(); // Clear old state on new scenario load
                 this.renderAll();
                 this.dirty.setClean();
+                this.resetHistory();
             }
             buildScenarioContent() {
                 const stepMap = new Map(this.scenarioData.steps.map(s => [s.id, s]));
@@ -1748,6 +2608,11 @@
                                     delete c[field];
                                 }
                             });
+                            // Dynamic-condition branching: keep JSON minimal.
+                            if (!c.timeout || Number(c.timeout) <= 0) {
+                                delete c.timeout;
+                                delete c.fail_step_id; // fail target is meaningless without a timeout
+                            }
                             if (!this.executionTimeComponentTypes.has(c.type) || !c.execution_time) {
                                 delete c.execution_time;
                             }
@@ -1803,10 +2668,13 @@
                         });
                     }
 
+                    // editor_data must NOT carry the blueprint block — keep its
+                    // shape exactly (groups + ungrouped_steps + any legacy keys).
+                    const { blueprint: _bpIgnored, ...edRest } = ed;
                     return {
                         scenario_mode: this.currentMode,
                         editor_data: {
-                            ...ed,
+                            ...edRest,
                             groups: targetGroups.map((group) => {
                                 const cloned = { ...group };
                                 delete cloned.event_key;
@@ -1825,7 +2693,10 @@
                 const baseGroups = groups.filter((group) => !this.isKnownScenarioEvent(group.event_key));
                 const basePayload = collectPayloadForGroups(baseGroups, true);
 
+                const blueprintBlock = this.buildBlueprintBlock();
+
                 if (eventKeysFromGroups.length === 0) {
+                    if (blueprintBlock) basePayload.blueprint = blueprintBlock;
                     return basePayload;
                 }
 
@@ -1835,7 +2706,111 @@
                     content[eventKey] = collectPayloadForGroups(eventGroups, false);
                 });
 
+                if (blueprintBlock) content.blueprint = blueprintBlock;
                 return content;
+            }
+
+            // Build the standalone, top-level "blueprint" block (graph layout).
+            // It is intentionally kept OUT of editor_data / steps so the main
+            // structure is untouched. Only known steps/groups are persisted.
+            buildBlueprintBlock() {
+                const ed = this.scenarioData.editor_data || {};
+                const bp = ed.blueprint;
+                if (!bp || typeof bp !== 'object') return null;
+
+                const stepIds = new Set((this.scenarioData.steps || []).map(s => s.id));
+                const groupIds = new Set((Array.isArray(ed.groups) ? ed.groups : []).map(g => g.id));
+
+                const positions = {};
+                Object.entries(bp.positions || {}).forEach(([id, p]) => {
+                    if (stepIds.has(id) && p && Number.isFinite(p.x) && Number.isFinite(p.y)) {
+                        positions[id] = { x: Math.round(p.x), y: Math.round(p.y) };
+                    }
+                });
+
+                const groupRects = {};
+                Object.entries(bp.groupRects || {}).forEach(([id, r]) => {
+                    if (groupIds.has(id) && r && Number.isFinite(r.x) && Number.isFinite(r.y)) {
+                        groupRects[id] = {
+                            x: Math.round(r.x), y: Math.round(r.y),
+                            w: Math.round(r.w), h: Math.round(r.h)
+                        };
+                    }
+                });
+
+                // Free-floating graph comments (editor-only metadata).
+                const comments = (Array.isArray(bp.comments) ? bp.comments : [])
+                    .filter(c => c && typeof c === 'object' && Number.isFinite(c.x) && Number.isFinite(c.y))
+                    .map(c => ({
+                        id: String(c.id || `cmt_${this.generateUUID()}`),
+                        x: Math.round(c.x), y: Math.round(c.y),
+                        w: Math.round(c.w) || 220, h: Math.round(c.h) || 120,
+                        text: String(c.text || ''),
+                        color: typeof c.color === 'string' ? c.color : undefined
+                    }));
+
+                if (Object.keys(positions).length === 0 && Object.keys(groupRects).length === 0 && comments.length === 0) {
+                    return null;
+                }
+                const block = { version: 1, positions, groupRects };
+                if (comments.length) block.comments = comments;
+                return block;
+            }
+
+            // Read graph layout into editor_data.blueprint (in-memory only).
+            // Sources, in priority order:
+            //   1) top-level `blueprint` block (new separate format)
+            //   2) per-event `blueprint` blocks
+            //   3) legacy `editor_data.blueprint`
+            applyBlueprintBlock(raw, payload) {
+                const ed = this.scenarioData.editor_data || (this.scenarioData.editor_data = {});
+                const positions = {};
+                const groupRects = {};
+                let comments = [];
+
+                const merge = (block) => {
+                    if (!block || typeof block !== 'object') return;
+                    if (block.positions && typeof block.positions === 'object') {
+                        Object.entries(block.positions).forEach(([id, p]) => {
+                            if (p && Number.isFinite(p.x) && Number.isFinite(p.y)) {
+                                positions[id] = { x: p.x, y: p.y };
+                            }
+                        });
+                    }
+                    if (block.groupRects && typeof block.groupRects === 'object') {
+                        Object.entries(block.groupRects).forEach(([id, r]) => {
+                            if (r && Number.isFinite(r.x) && Number.isFinite(r.y)) {
+                                groupRects[id] = { x: r.x, y: r.y, w: r.w, h: r.h };
+                            }
+                        });
+                    }
+                    if (Array.isArray(block.comments)) {
+                        comments = block.comments
+                            .filter(c => c && typeof c === 'object' && Number.isFinite(c.x) && Number.isFinite(c.y))
+                            .map(c => ({
+                                id: String(c.id || `cmt_${this.generateUUID()}`),
+                                x: c.x, y: c.y,
+                                w: Number.isFinite(c.w) ? c.w : 220,
+                                h: Number.isFinite(c.h) ? c.h : 120,
+                                text: String(c.text || ''),
+                                color: typeof c.color === 'string' ? c.color : undefined
+                            }));
+                    }
+                };
+
+                const isObj = raw && typeof raw === 'object' && !Array.isArray(raw);
+                // legacy first (lowest priority), then event blocks, then top-level
+                merge(payload?.editor_data?.blueprint);
+                if (isObj) {
+                    Object.keys(this.scenarioEvents).forEach((key) => {
+                        if (key !== 'general' && raw[key] && typeof raw[key] === 'object') {
+                            merge(raw[key].blueprint);
+                        }
+                    });
+                    merge(raw.blueprint);
+                }
+
+                ed.blueprint = { positions, groupRects, comments };
             }
 
             async saveScenario() {
@@ -2131,7 +3106,9 @@
                     true_step_id: 'Шаг для TRUE',
                     false_step_id: 'Шаг для FALSE',
                     in_range_step_id: 'Шаг в диапазоне',
-                    out_of_range_step_id: 'Шаг вне диапазона'
+                    out_of_range_step_id: 'Шаг вне диапазона',
+                    pass_step_id: 'Переход при выполнении',
+                    fail_step_id: 'Переход при таймауте'
                 };
                 return map[field] || field.replaceAll('_', ' ');
             }
@@ -2184,6 +3161,16 @@
                 const defaults = schema?.fields ? EditorCore.schemas.buildDefaults(schema.fields) : {};
                 return { type, ...defaults };
             }
+            // Short suffix describing dynamic branching/timeout for condition components.
+            formatBranchSuffix(data) {
+                const parts = [];
+                if (data?.pass_step_id) parts.push(`✓→ <b>${data.pass_step_id}</b>`);
+                const to = Number(data?.timeout) || 0;
+                if (to > 0) {
+                    parts.push(`⏱ <b>${to}s</b>${data.fail_step_id ? ` ✗→ <b>${data.fail_step_id}</b>` : ''}`);
+                }
+                return parts.length ? ` · ${parts.join(', ')}` : '';
+            }
             getComponentSummary(data) {
                 try {
                     switch (data.type) {
@@ -2202,7 +3189,7 @@
                         case 'check_quest_accepted': return `Проверка принятия квеста: <b>${data.quest_id || '?'}</b>`;
                         case 'check_quest_finished': return `Проверка завершения квеста: <b>${data.quest_id || '?'}</b>`;
                         case 'check_quest_step_finished': return `Квест: <b>${data.quest_id || '?'}</b>, шаг > <b>${data.step ?? 0}</b>`;
-                        case 'quest_condition': return `Квест: <b>${data.quest_id || '?'}</b>, условие: <b>${data.condition || '?'}</b>${data.entire_group ? ', вся группа' : ''}`;
+                        case 'quest_condition': return `Квест: <b>${data.quest_id || '?'}</b>, условие: <b>${data.condition || '?'}</b>${data.entire_group ? ', вся группа' : ''}${this.formatBranchSuffix(data)}`;
                         case 'dynamic_condition': {
                             const labels = {
                                 players_count: 'участники',
@@ -2210,9 +3197,10 @@
                                 item_count: 'предметы',
                                 quest_state: 'квест'
                             };
-                            if (data.condition_type === 'item_count') return `Условие: <b>${labels[data.condition_type]}</b>, предмет <b>${data.item_id || '?'}</b>, <b>${data.item_scope || 'any_player'}</b> ${data.compare || '>='} <b>${data.value ?? 1}</b>`;
-                            if (data.condition_type === 'quest_state') return `Условие: <b>квест ${data.quest_id || '?'}</b>, состояние <b>${data.quest_state || 'accepted'}</b>${data.entire_group ? ', вся группа' : ''}`;
-                            return `Условие: <b>${labels[data.condition_type] || data.condition_type || 'players_count'}</b> ${data.compare || '>='} <b>${data.value ?? 1}</b>${data.invert ? ', инверсия' : ''}`;
+                            const suffix = this.formatBranchSuffix(data);
+                            if (data.condition_type === 'item_count') return `Условие: <b>${labels[data.condition_type]}</b>, предмет <b>${data.item_id || '?'}</b>, <b>${data.item_scope || 'any_player'}</b> ${data.compare || '>='} <b>${data.value ?? 1}</b>${suffix}`;
+                            if (data.condition_type === 'quest_state') return `Условие: <b>квест ${data.quest_id || '?'}</b>, состояние <b>${data.quest_state || 'accepted'}</b>${data.entire_group ? ', вся группа' : ''}${suffix}`;
+                            return `Условие: <b>${labels[data.condition_type] || data.condition_type || 'players_count'}</b> ${data.compare || '>='} <b>${data.value ?? 1}</b>${data.invert ? ', инверсия' : ''}${suffix}`;
                         }
                         case 'pick_item_task': return `Подбор предмета: <b>${data.item?.id || '?'}</b> x <b>${data.item?.value || 0}</b>`;
                         case 'universal_pick_item_task': return `Подбор предмета: <b>${data.item?.id || '?'}</b> x <b>${data.item?.value || 0}</b>`;
@@ -2221,7 +3209,7 @@
                         case 'defeat_mobs': return `Режим: <b>${data.mode || 'annihilation'}</b>, ${data.mobs?.length || 0} групп(ы)`;
                         case 'wait': return `Ожидание: <b>${data.duration}</b> сек.`;
                         case 'follow_camera': return `К точке (<b>${data.position?.x}, ${data.position?.y}</b>), ${data.smooth ? 'плавно' : 'резко'}`;
-                        case 'condition_movement': return `Прийти в точку (<b>${data.position?.x}, ${data.position?.y}</b>), ${data.entire_group ? 'вся группа' : 'один игрок'}`;
+                        case 'condition_movement': return `Прийти в точку (<b>${data.position?.x}, ${data.position?.y}</b>), ${data.entire_group ? 'вся группа' : 'один игрок'}${this.formatBranchSuffix(data)}`;
                         case 'teleport': return `В точку (<b>${data.position?.x}, ${data.position?.y}</b>)`;
                         case 'universal_door_control': return `Действие: <b>${data.action}</b>, Ключ: <b>${data.key || 'нет'}</b>`;
                         case 'dungeon_activate_point': return `Текст: "<b>${data.action_text || ''}</b>", Время: <b>${data.duration}</b> сек.`;
@@ -2274,7 +3262,7 @@
                 return { groups, ungroupedSteps };
             }
             
-            addNewGroup() {
+            addNewGroup(options = {}) {
                 const groups = this.scenarioData.editor_data.groups;
                 const newGroup = {
                     id: `group_${this.generateUUID()}`,
@@ -2283,8 +3271,22 @@
                     collapsed: false,
                 };
                 groups.push(newGroup);
+
+                // Optional graph placement: seed an empty group frame at (x, y).
+                if (Number.isFinite(options.x) && Number.isFinite(options.y)) {
+                    const ed = this.scenarioData.editor_data || (this.scenarioData.editor_data = {});
+                    if (!ed.blueprint) ed.blueprint = {};
+                    if (!ed.blueprint.groupRects) ed.blueprint.groupRects = {};
+                    ed.blueprint.groupRects[newGroup.id] = {
+                        x: Math.round(options.x), y: Math.round(options.y),
+                        w: Number.isFinite(options.w) ? options.w : 300,
+                        h: Number.isFinite(options.h) ? options.h : 200
+                    };
+                }
+
                 this.renderAll();
                 this.dirty.markDirty();
+                return newGroup.id;
             }
             
             openDeleteGroupModal(groupId) {
@@ -2545,7 +3547,7 @@
                     });
                     this.sortableInstances.push(new Sortable(containerEl, sortableConfig('components', onEnd, '.component-item', {
                         draggable: '.component-item',
-                        filter: 'h4',
+                        filter: 'h4, .comp-separator',
                         preventOnFilter: false
                     })));
                 });
@@ -2618,28 +3620,74 @@
                 const rect = button.getBoundingClientRect();
                 this.addComponentMenu.targetStepId = stepId;
                 const menu = this.addComponentMenu.element;
-                menu.innerHTML = Object.entries(this.componentTypes).map(([type, info]) =>
-                    `<div class="context-menu-item flex items-center gap-3 p-2 rounded-md hover:bg-slate-700/40 cursor-pointer" data-type="${type}"><i class="${info.icon} w-5 text-center text-slate-200"></i><div><div class="font-semibold text-slate-100">${info.name}</div><div class="text-xs text-slate-300">${info.desc}</div></div></div>`
-                ).join('');
-                menu.style.top = `${rect.bottom + window.scrollY + 5}px`;
-                menu.style.left = `${rect.left + window.scrollX}px`;
+
+                this._renderAddComponentList('');
+                // Make sure it's measurable, then clamp inside the viewport so the
+                // list never stretches past the screen edges (fixes giant menu).
                 menu.classList.remove('hidden');
+                menu.style.visibility = 'hidden';
+
+                const margin = 8;
+                const menuW = menu.offsetWidth || 320;
+                const menuH = menu.offsetHeight || 360;
+                let left = rect.left;
+                let top = rect.bottom + 6;
+                if (left + menuW + margin > window.innerWidth) left = Math.max(margin, window.innerWidth - menuW - margin);
+                if (top + menuH + margin > window.innerHeight) {
+                    // Prefer opening upward if there's more room above.
+                    const above = rect.top - 6 - menuH;
+                    top = above > margin ? above : Math.max(margin, window.innerHeight - menuH - margin);
+                }
+                menu.style.position = 'fixed';
+                menu.style.left = `${Math.max(margin, left)}px`;
+                menu.style.top = `${Math.max(margin, top)}px`;
+                menu.style.visibility = '';
+
+                const search = menu.querySelector('.acm-search');
+                if (search) { search.value = ''; setTimeout(() => search.focus(), 0); }
+            }
+            _renderAddComponentList(query) {
+                const menu = this.addComponentMenu.element;
+                const q = String(query || '').trim().toLowerCase();
+                const entries = Object.entries(this.componentTypes).filter(([type, info]) => {
+                    if (!q) return true;
+                    return `${type} ${info.name} ${info.desc || ''}`.toLowerCase().includes(q);
+                });
+                const items = entries.map(([type, info]) =>
+                    `<div class="context-menu-item flex items-center gap-3 p-2 rounded-md hover:bg-slate-700/40 cursor-pointer" data-type="${type}"><i class="${info.icon} w-5 text-center text-slate-200"></i><div class="min-w-0"><div class="font-semibold text-slate-100">${info.name}</div><div class="text-xs text-slate-300 truncate">${info.desc || ''}</div></div></div>`
+                ).join('') || `<div class="px-2 py-4 text-sm text-slate-400 text-center">Ничего не найдено</div>`;
+                menu.innerHTML =
+                    `<div class="acm-head sticky top-0 z-10 pb-2">
+                        <input type="text" class="acm-search form-input w-full text-sm" placeholder="Поиск компонента…" autocomplete="off">
+                     </div>
+                     <div class="acm-list flex flex-col gap-1 overflow-y-auto">${items}</div>`;
+                const search = menu.querySelector('.acm-search');
+                search?.addEventListener('input', (e) => this._renderAddComponentList(e.target.value));
+                search?.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape') { this.hideAddComponentMenu(); }
+                    else if (e.key === 'Enter') {
+                        const first = menu.querySelector('.context-menu-item');
+                        if (first) this._addComponentOfType(first.dataset.type);
+                    }
+                });
             }
             hideAddComponentMenu() { this.addComponentMenu.element.classList.add('hidden'); }
-            handleAddComponentAction(e) {
-                const item = e.target.closest('.context-menu-item');
-                if (!item) return;
-                const type = item.dataset.type;
+            _addComponentOfType(type) {
                 const step = this.findStep(this.addComponentMenu.targetStepId);
                 if (type && step) {
                     const newComponent = this.createComponentDefaults(type);
                     newComponent.component_id = this.generateUUID();
                     step.components = step.components || [];
                     step.components.push(newComponent);
-                    this.renderAll();
                     this.dirty.markDirty();
+                    this.renderAll();
                 }
                 this.hideAddComponentMenu();
+            }
+            handleAddComponentAction(e) {
+                const item = e.target.closest('.context-menu-item');
+                if (!item) return;
+                this._addComponentOfType(item.dataset.type);
             }
         }
         const ScenarioApp = EditorCore.createEditorApp({

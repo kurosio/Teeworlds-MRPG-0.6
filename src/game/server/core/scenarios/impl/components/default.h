@@ -24,7 +24,6 @@ protected:
 	{
 		std::vector<CPlayer*> vpPlayers;
 		ScenarioBase* pBaseScenario = this->Scenario();
-
 		if(const auto* pGroupScenario = dynamic_cast<const GroupScenarioBase*>(pBaseScenario))
 		{
 			vpPlayers = pGroupScenario->GetPlayers();
@@ -57,6 +56,95 @@ protected:
 };
 
 /**
+ * @class ConditionBranchComponent
+ * @brief Adds optional dynamic branching + timeout to "gate" style conditions.
+ *
+ * Editor counterpart: the `pass_step_id`, `timeout`, `fail_step_id` fields exposed
+ * on condition components in the scenario editor (dynamic_condition, quest_condition,
+ * condition_movement). All of them are OPTIONAL and fully backward compatible:
+ *
+ *  - pass_step_id (string): when the condition is satisfied, jump to this step
+ *    instead of simply continuing the current step. Empty -> normal continuation.
+ *  - timeout (int, seconds): if > 0, the condition gives up after this many seconds.
+ *  - fail_step_id (string): step to jump to when the timeout expires. Empty -> the
+ *    component simply finishes (the step continues as usual) once time runs out.
+ *
+ * Components derive from this mixin and implement EvaluateCondition(). They must call
+ * StartBranchTimer() from their OnStartImpl() and TickBranch() from OnActiveImpl().
+ */
+template<typename T>
+class ConditionBranchComponent : public PlayerAwareComponent<T>
+{
+protected:
+	StepId m_PassStepId {};
+	StepId m_FailStepId {};
+	int m_TimeoutSeconds { 0 };
+	int m_TimeoutTick { 0 };
+
+	void InitBranchFields(const nlohmann::json& j)
+	{
+		m_PassStepId = j.value("pass_step_id", StepId {});
+		m_FailStepId = j.value("fail_step_id", StepId {});
+		m_TimeoutSeconds = std::max(0, j.value("timeout", 0));
+	}
+
+	void StartBranchTimer()
+	{
+		m_TimeoutTick = (m_TimeoutSeconds > 0)
+			? this->Server()->Tick() + m_TimeoutSeconds * this->Server()->TickSpeed()
+			: 0;
+	}
+
+	// Seconds left before the timeout (negative/zero means "no timeout configured").
+	int GetTimeoutSecondsLeft() const
+	{
+		if(m_TimeoutSeconds <= 0)
+			return -1;
+		return std::max(0, (m_TimeoutTick - this->Server()->Tick()) / this->Server()->TickSpeed());
+	}
+
+	bool IsTimedOut() const
+	{
+		return m_TimeoutSeconds > 0 && this->Server()->Tick() >= m_TimeoutTick;
+	}
+
+	// Finish on success: optionally branch to pass_step_id.
+	void FinishPassed()
+	{
+		if(!m_PassStepId.empty())
+			this->m_NextStepId = m_PassStepId;
+		this->Finish();
+	}
+
+	// Finish on timeout: optionally branch to fail_step_id.
+	void FinishTimedOut()
+	{
+		if(!m_FailStepId.empty())
+			this->m_NextStepId = m_FailStepId;
+		this->Finish();
+	}
+
+	// Derived classes implement the actual condition test.
+	virtual bool EvaluateCondition() const = 0;
+
+	// Convenience: run one evaluation tick. Returns true if the component finished.
+	bool TickBranch()
+	{
+		if(EvaluateCondition())
+		{
+			FinishPassed();
+			return true;
+		}
+		if(IsTimedOut())
+		{
+			FinishTimedOut();
+			return true;
+		}
+		return false;
+	}
+};
+
+/**
  * @class ScenarioMessageComponent
  * @brief A component responsible for sending messages to scenario participants.
  *
@@ -76,15 +164,13 @@ public:
 	explicit ScenarioMessageComponent(const nlohmann::json& j)
 	{
 		InitBaseJsonField(j);
-
 		auto modeStr = j.value("mode", "");
 		if(modeStr == "broadcast" || modeStr == "full")
 			m_Broadcast = j.value("text", "");
 		if(modeStr == "chat" || modeStr == "full")
 			m_Chat = j.value("text", "");
 	}
-
-    DECLARE_COMPONENT_NAME("message")
+	DECLARE_COMPONENT_NAME("message")
 
 private:
 	void OnStartImpl() override
@@ -95,14 +181,12 @@ private:
 			{
 				GS()->Chat(pPlayer->GetCID(), m_Chat.c_str());
 			}
-
 			if(!m_Broadcast.empty())
 			{
 				int Time = std::max(GetExecutionTimeTick(), Server()->TickSpeed());
 				GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::TitleInformation, Time, m_Broadcast.c_str());
 			}
 		}
-
 		Finish();
 	}
 };
@@ -110,15 +194,6 @@ private:
 /**
  * @class ScenarioFollowCameraComponent
  * @brief A component that locks the camera of all participating players onto a specific world position.
- *
- * This is useful for creating cutscenes or directing player focus.
- * The component is configured via a JSON object with the following fields:
- * @param position (vec2): The world coordinate where the camera will be locked.
- * @param execution_time (int): The duration, in game ticks, for which the camera lock will be active.
- * @param smooth (bool): If true, the camera will move smoothly to the target position.
- *
- * During its active phase, it continuously applies the camera lock. Upon completion, it
- * automatically releases the lock, restoring normal camera control to the players.
  */
 class ScenarioFollowCameraComponent final : public PlayerAwareComponent<ScenarioFollowCameraComponent>
 {
@@ -132,8 +207,7 @@ public:
 		m_Pos = j.value("position", vec2());
 		m_Smooth = j.value("smooth", true);
 	}
-
-    DECLARE_COMPONENT_NAME("follow_camera")
+	DECLARE_COMPONENT_NAME("follow_camera")
 
 private:
 	void OnActiveImpl() override
@@ -143,7 +217,6 @@ private:
 			Finish();
 			return;
 		}
-
 		for(auto* pPlayer : GetPlayers())
 			pPlayer->LockedView().ViewLock(m_Pos, m_Smooth);
 	}
@@ -158,10 +231,6 @@ private:
 /**
  * @class ScenarioTeleportComponent
  * @brief A component that teleports all participating players to a new position.
- *
- * The component waits until all players have an active character before performing the teleport.
- * The component is configured via a JSON object with the following field:
- * @param position (vec2): The world coordinate to which players will be teleported.
  */
 class ScenarioTeleportComponent final : public PlayerAwareComponent<ScenarioTeleportComponent>
 {
@@ -173,8 +242,7 @@ public:
 		InitBaseJsonField(j);
 		m_NewPos = j.value("position", vec2());
 	}
-
-    DECLARE_COMPONENT_NAME("teleport")
+	DECLARE_COMPONENT_NAME("teleport")
 
 private:
 	void OnActiveImpl() override
@@ -189,7 +257,6 @@ private:
 		// all players are ready, perform teleport
 		for(auto* pPlayer : vpPlayers)
 			pPlayer->GetCharacter()->ChangePosition(m_NewPos);
-
 		Finish();
 	}
 };
@@ -197,11 +264,6 @@ private:
 /**
  * @class ScenarioWaitComponent
  * @brief A simple component that pauses a scenario's progression for a specified duration.
- *
- * Its sole purpose is to delay the completion of a step without performing any
- * actions on players or game objects.
- * The component is configured via a JSON object with the following field:
- * @param duration (int): The duration of the wait, in seconds.
  */
 class ScenarioWaitComponent final : public PlayerAwareComponent<ScenarioWaitComponent>
 {
@@ -214,8 +276,7 @@ public:
 		InitBaseJsonField(j);
 		m_Duration = j.value("duration", 0);
 	}
-
-    DECLARE_COMPONENT_NAME("wait")
+	DECLARE_COMPONENT_NAME("wait")
 
 	void OnStartImpl() override
 	{
@@ -254,7 +315,6 @@ public:
 		m_TrueStepId = j.value("true_step_id", StepId {});
 		m_FalseStepId = j.value("false_step_id", StepId {});
 	}
-
 	DECLARE_COMPONENT_NAME("branch_random")
 
 private:
@@ -267,21 +327,24 @@ private:
 	}
 };
 
-
-
 /**
  * @class ScenarioDynamicConditionComponent
  *
  * JSON fields:
- * @param condition_type (string): players_count, alive_players_count, item_count, quest_state, world_id.
+ * @param condition_type (string): players_count, alive_players_count, item_count, quest_state.
  * @param compare (string): ==, !=, >=, <=, >, <.
  * @param value (int): right-hand value for numeric conditions.
  * @param item_id (int): item id for item_count.
  * @param item_scope (string): any_player, all_players, total for item_count.
  * @param quest_id (int), quest_state (string), step (int), entire_group (bool): quest condition fields.
  * @param invert (bool): invert final result.
+ *
+ * Dynamic branching (optional, see ConditionBranchComponent):
+ * @param pass_step_id (string): jump here when the condition is satisfied.
+ * @param timeout (int seconds): give up after N seconds (0 = wait forever).
+ * @param fail_step_id (string): jump here on timeout.
  */
-class ScenarioDynamicConditionComponent final : public PlayerAwareComponent<ScenarioDynamicConditionComponent>
+class ScenarioDynamicConditionComponent final : public ConditionBranchComponent<ScenarioDynamicConditionComponent>
 {
 	enum class EConditionType
 	{
@@ -389,7 +452,6 @@ class ScenarioDynamicConditionComponent final : public PlayerAwareComponent<Scen
 	{
 		if(!pPlayer || m_ItemID <= 0)
 			return 0;
-
 		const auto* pItem = pPlayer->GetItem(m_ItemID);
 		return pItem ? pItem->GetValue() : 0;
 	}
@@ -398,11 +460,9 @@ class ScenarioDynamicConditionComponent final : public PlayerAwareComponent<Scen
 	{
 		if(!pPlayer || m_QuestID <= 0)
 			return false;
-
 		const auto* pQuest = pPlayer->GetQuest(m_QuestID);
 		if(!pQuest)
 			return false;
-
 		switch(m_QuestState)
 		{
 			case EQuestState::Accepted: return pQuest->IsAccepted();
@@ -446,7 +506,6 @@ class ScenarioDynamicConditionComponent final : public PlayerAwareComponent<Scen
 
 		if(m_ItemScope == EItemScope::AllPlayers)
 			return std::all_of(vpPlayers.begin(), vpPlayers.end(), HasRequiredItems);
-
 		return std::any_of(vpPlayers.begin(), vpPlayers.end(), HasRequiredItems);
 	}
 
@@ -454,14 +513,13 @@ class ScenarioDynamicConditionComponent final : public PlayerAwareComponent<Scen
 	{
 		if(vpPlayers.empty() || m_QuestID <= 0)
 			return false;
-
 		if(m_EntireGroup)
 			return std::all_of(vpPlayers.begin(), vpPlayers.end(), [this](CPlayer* pPlayer) { return CheckQuest(pPlayer); });
-
 		return std::any_of(vpPlayers.begin(), vpPlayers.end(), [this](CPlayer* pPlayer) { return CheckQuest(pPlayer); });
 	}
 
-	bool Evaluate() const
+protected:
+	bool EvaluateCondition() const override
 	{
 		const auto vpPlayers = GetPlayers();
 		bool Result = false;
@@ -479,6 +537,7 @@ public:
 	explicit ScenarioDynamicConditionComponent(const nlohmann::json& j)
 	{
 		InitBaseJsonField(j);
+		InitBranchFields(j);
 		m_ConditionType = ParseConditionType(j.value("condition_type", "players_count"));
 		m_Compare = ParseCompare(j.value("compare", ">="));
 		m_ItemScope = ParseItemScope(j.value("item_scope", "any_player"));
@@ -491,23 +550,35 @@ public:
 		m_Invert = j.value("invert", false);
 		m_ShowProgress = j.value("show_progress", true);
 	}
-
 	DECLARE_COMPONENT_NAME("dynamic_condition")
 
 private:
+	void OnStartImpl() override
+	{
+		StartBranchTimer();
+	}
+
 	void OnActiveImpl() override
 	{
-		if(Evaluate())
-		{
-			Finish();
+		// Evaluate; on success -> pass branch, on timeout -> fail branch.
+		if(TickBranch())
 			return;
-		}
 
 		if(m_ShowProgress && Server() && Server()->Tick() % Server()->TickSpeed() == 0)
 		{
-			ForEachScenarioPlayer([this](CPlayer* pPlayer)
+			const int SecondsLeft = GetTimeoutSecondsLeft();
+			ForEachScenarioPlayer([this, SecondsLeft](CPlayer* pPlayer)
 			{
-				GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::GameWarning, Server()->TickSpeed(), "Objective: condition is not met yet.");
+				if(SecondsLeft >= 0)
+				{
+					GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::GameWarning, Server()->TickSpeed(),
+						"Objective: condition is not met yet. Time left: {}s", SecondsLeft);
+				}
+				else
+				{
+					GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::GameWarning, Server()->TickSpeed(),
+						"Objective: condition is not met yet.");
+				}
 			});
 		}
 	}
@@ -517,13 +588,13 @@ private:
  * @class ScenarioMovementConditionComponent
  * @brief A conditional component that finishes only when participants have moved to a designated area.
  *
- * This is used to create objectives where players must reach a specific location.
- * The component is configured via a JSON object with the following fields:
+ * JSON fields:
  * @param position (vec2): The center of the target destination area.
- * @param entire_group (bool): If true, the component waits for *all* players to be in the area.
- * If false, it completes as soon as *any* single player enters the area.
+ * @param entire_group (bool): wait for ALL players (true) or ANY player (false).
+ *
+ * Dynamic branching (optional): pass_step_id, timeout, fail_step_id.
  */
-class ScenarioMovementConditionComponent final : public PlayerAwareComponent<ScenarioMovementConditionComponent>
+class ScenarioMovementConditionComponent final : public ConditionBranchComponent<ScenarioMovementConditionComponent>
 {
 	vec2 m_Position;
 	bool m_EntireGroup;
@@ -532,13 +603,37 @@ public:
 	explicit ScenarioMovementConditionComponent(const nlohmann::json& j)
 	{
 		InitBaseJsonField(j);
+		InitBranchFields(j);
 		m_Position = j.value("position", vec2());
 		m_EntireGroup = j.value("entire_group", false);
 	}
+	DECLARE_COMPONENT_NAME("condition_movement")
 
-    DECLARE_COMPONENT_NAME("condition_movement")
+protected:
+	bool EvaluateCondition() const override
+	{
+		const auto vpPlayers = GetPlayers();
+		if(vpPlayers.empty())
+			return false;
+
+		auto IsInsideFunc = [&](const CPlayer* pPlayer)
+		{
+			const auto Dist = m_EntireGroup ? 256.0f : 128.f;
+			const auto* pChr = pPlayer->GetCharacter();
+			return pChr && distance(pChr->GetPos(), m_Position) < Dist;
+		};
+
+		if(m_EntireGroup)
+			return std::all_of(vpPlayers.begin(), vpPlayers.end(), IsInsideFunc);
+		return std::any_of(vpPlayers.begin(), vpPlayers.end(), IsInsideFunc);
+	}
 
 private:
+	void OnStartImpl() override
+	{
+		StartBranchTimer();
+	}
+
 	void OnActiveImpl() override
 	{
 		const auto vpPlayers = GetPlayers();
@@ -550,46 +645,40 @@ private:
 			GS()->CreateHammerHit(m_Position, Scenario()->GetClientsMask());
 		}
 
-		auto IsInsideFunc = [&](const CPlayer* pPlayer)
+		// progress broadcast (entire-group variant shows N/M)
+		if(m_EntireGroup && Server()->Tick() % Server()->TickSpeed() == 0)
 		{
-			const auto Dist = m_EntireGroup ? 256.0f : 128.f;
-			const auto* pChr = pPlayer->GetCharacter();
-			return pChr && distance(pChr->GetPos(), m_Position) < Dist;
-		};
-
-		bool ConditionMet = false;
-		if(m_EntireGroup)
-		{
+			auto IsInsideFunc = [&](const CPlayer* pPlayer)
+			{
+				const auto* pChr = pPlayer->GetCharacter();
+				return pChr && distance(pChr->GetPos(), m_Position) < 256.0f;
+			};
 			const size_t NumPlayersInZone = std::count_if(vpPlayers.begin(), vpPlayers.end(), IsInsideFunc);
 			const size_t TotalPlayers = vpPlayers.size();
-			if(Server()->Tick() % Server()->TickSpeed() == 0)
+			const int SecondsLeft = GetTimeoutSecondsLeft();
+			for(const auto* pPlayer : vpPlayers)
 			{
-				for(const auto* pPlayer : vpPlayers)
+				if(SecondsLeft >= 0)
+				{
+					GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::GameWarning, Server()->TickSpeed(),
+						"Move to the designated area! ({}/{}) Time left: {}s", NumPlayersInZone, TotalPlayers, SecondsLeft);
+				}
+				else
 				{
 					GS()->Broadcast(pPlayer->GetCID(), BroadcastPriority::GameWarning, Server()->TickSpeed(),
 						"Move to the designated area! ({}/{})", NumPlayersInZone, TotalPlayers);
 				}
 			}
-
-			ConditionMet = (NumPlayersInZone == TotalPlayers);
-		}
-		else
-		{
-			ConditionMet = std::any_of(vpPlayers.begin(), vpPlayers.end(), IsInsideFunc);
 		}
 
-		if(ConditionMet)
-			Finish();
+		// evaluate condition / timeout
+		TickBranch();
 	}
 };
 
 /**
  * @class ScenarioMovingDisableComponent
  * @brief A component that enables or disables movement for all participants.
- *
- * The component waits until all players have an active character before applying the state.
- * The component is configured via a JSON object with the following field:
- * @param state (bool): True disables movement, false enables it.
  */
 class ScenarioMovingDisableComponent final : public PlayerAwareComponent<ScenarioMovingDisableComponent>
 {
@@ -601,7 +690,6 @@ public:
 		InitBaseJsonField(j);
 		m_State = j.value("state", true);
 	}
-
 	DECLARE_COMPONENT_NAME("moving_disable")
 
 private:
@@ -612,10 +700,8 @@ private:
 		{
 			if(!pPlayer || !pPlayer->GetCharacter())
 				continue;
-
 			pPlayer->GetCharacter()->MovingDisable(m_State);
 		}
-
 		Finish();
 	}
 };
@@ -633,7 +719,6 @@ public:
 		m_QuestID = j.value("quest_id", -1);
 		m_Action = j.value("action", "reset") == "accept" ? Action::Accept : Action::Reset;
 	}
-
 	DECLARE_COMPONENT_NAME("quest_action")
 
 private:
@@ -649,7 +734,6 @@ private:
 		{
 			if(!pPlayer)
 				continue;
-
 			auto* pQuest = pPlayer->GetQuest(m_QuestID);
 			if(!pQuest)
 				continue;
@@ -663,12 +747,20 @@ private:
 				pQuest->Accept();
 			}
 		}
-
 		Finish();
 	}
 };
 
-class ScenarioQuestConditionComponent final : public PlayerAwareComponent<ScenarioQuestConditionComponent>
+/**
+ * @class ScenarioQuestConditionComponent
+ * @brief Waits until a quest reaches a given state for scenario participants.
+ *
+ * JSON fields:
+ * @param quest_id (int), condition (string: accepted/finished/step_finished), step (int), entire_group (bool).
+ *
+ * Dynamic branching (optional): pass_step_id, timeout, fail_step_id.
+ */
+class ScenarioQuestConditionComponent final : public ConditionBranchComponent<ScenarioQuestConditionComponent>
 {
 	enum class Condition { Accepted, Finished, StepFinished };
 	int m_QuestID {};
@@ -680,9 +772,11 @@ public:
 	explicit ScenarioQuestConditionComponent(const nlohmann::json& j)
 	{
 		InitBaseJsonField(j);
+		InitBranchFields(j);
 		m_QuestID = j.value("quest_id", -1);
 		m_Step = j.value("step", -1);
 		m_EntireGroup = j.value("entire_group", false);
+
 		const auto type = j.value("condition", "accepted");
 		if(type == "finished")
 			m_Condition = Condition::Finished;
@@ -691,24 +785,22 @@ public:
 		else
 			m_Condition = Condition::Accepted;
 	}
-
 	DECLARE_COMPONENT_NAME("quest_condition")
 
-private:
-	void OnActiveImpl() override
+protected:
+	bool EvaluateCondition() const override
 	{
 		if(m_QuestID <= 0)
-			return;
+			return false;
 
 		const auto vpPlayers = GetPlayers();
 		if(vpPlayers.empty())
-			return;
+			return false;
 
 		auto IsConditionComplete = [&](CPlayer* pPlayer) -> bool
 		{
 			if(!pPlayer)
 				return false;
-
 			auto* pQuest = pPlayer->GetQuest(m_QuestID);
 			if(!pQuest)
 				return false;
@@ -719,27 +811,29 @@ private:
 				case Condition::Finished: return pQuest->IsCompleted();
 				case Condition::StepFinished: return pQuest->GetStepPos() > m_Step;
 			}
-
 			return false;
 		};
 
-		const bool complete = m_EntireGroup
+		return m_EntireGroup
 			? std::all_of(vpPlayers.begin(), vpPlayers.end(), IsConditionComplete)
 			: std::any_of(vpPlayers.begin(), vpPlayers.end(), IsConditionComplete);
+	}
 
-		if(complete)
-			Finish();
+private:
+	void OnStartImpl() override
+	{
+		StartBranchTimer();
+	}
+
+	void OnActiveImpl() override
+	{
+		TickBranch();
 	}
 };
 
 /**
  * @class ScenarioEmoteComponent
  * @brief A component that plays an emote and optional emoticon for all participants.
- *
- * The component waits until all players have an active character before performing the emote.
- * The component is configured via a JSON object with the following fields:
- * @param emote_type (int): Character emote type (defaults to EMOTE_NORMAL).
- * @param emoticon_type (int): Emoticon type to send (-1 disables).
  */
 class ScenarioEmoteComponent final : public PlayerAwareComponent<ScenarioEmoteComponent>
 {
@@ -753,7 +847,6 @@ public:
 		m_EmoteType = j.value("emote_type", (int)EMOTE_NORMAL);
 		m_EmoticonType = j.value("emoticon_type", -1);
 	}
-
 	DECLARE_COMPONENT_NAME("emote")
 
 private:
@@ -764,12 +857,10 @@ private:
 		{
 			if(!pPlayer || !pPlayer->GetCharacter())
 				continue;
-
 			pPlayer->GetCharacter()->SetEmote(m_EmoteType, 1, false);
 			if(m_EmoticonType >= 0)
 				GS()->SendEmoticon(pPlayer->GetCID(), m_EmoticonType);
 		}
-
 		Finish();
 	}
 };
@@ -777,14 +868,6 @@ private:
 /**
  * @class ScenarioDefeatMobsComponent
  * @brief A component that spawns mobs and completes once defeat conditions are met.
- *
- * The component is configured via a JSON object with the following fields:
- * @param mode (string): "annihilation", "wave", or "survival".
- * @param mobs (array): List of mob definitions with bot_id, count, level, power.
- * @param position (vec2): Center position for mob spawn.
- * @param radius (float): Spawn radius.
- * @param kill_target (int): Target kills for "wave" mode (defaults to number spawned).
- * @param duration (int): Duration in seconds for "survival" mode.
  */
 class ScenarioDefeatMobsComponent final : public PlayerAwareComponent<ScenarioDefeatMobsComponent>, public IEventListener
 {
@@ -826,7 +909,6 @@ public:
 		m_ActiveRadius = m_ActiveRadius > 1.f ? m_ActiveRadius : g_Config.m_SvMapDistanceActveBot;
 		m_ListenerScope.Init(this, IEventListener::CharacterDeath);
 	}
-
 	DECLARE_COMPONENT_NAME("defeat_mobs")
 
 private:
@@ -854,7 +936,6 @@ private:
 			const int spawnMobID = ms_NextReservedMobID.fetch_sub(1);
 			MobBotInfo mobInfo {};
 			mobInfo.m_BotID = botID;
-
 			mobInfo.m_Level = mobData.value("level", 1);
 			mobInfo.m_Power = Balance::Get().CalculateScenarioMobPower(vpPlayers, mobData.value("power", 1), IsGroupScenario);
 			mobInfo.m_Boss = mobData.value("boss", false);
@@ -910,11 +991,9 @@ private:
 				{
 					if(slot >= MAX_DROPPED_FROM_MOBS)
 						break;
-
 					const int itemID = dropData.value("item_id", 0);
 					if(itemID <= 0)
 						continue;
-
 					mobInfo.m_aDropItem[slot] = itemID;
 					mobInfo.m_aValueItem[slot] = maximum(1, dropData.value("count", 1));
 					mobInfo.m_aRandomItem[slot] = maximum(0.0f, dropData.value("chance", 0.0f));
@@ -983,7 +1062,6 @@ private:
 							"Objective: Defeat all the mobs. Remaining: {} mobs.", m_SpawnedBotIds.size());
 					}
 				}
-
 				shouldFinish = m_SpawnedBotIds.empty();
 				break;
 
@@ -996,7 +1074,6 @@ private:
 							"Objective: Defeat wave mobs '{} of {}'", m_KillsMade, m_TargetKills);
 					}
 				}
-
 				shouldFinish = (m_TargetKills <= 0) || (m_KillsMade >= m_TargetKills);
 				break;
 
@@ -1011,7 +1088,6 @@ private:
 							"Objective: Survive! Time left: {}s", timeLeft);
 					}
 				}
-
 				shouldFinish = Server()->Tick() >= m_TargetTick;
 				break;
 			}
@@ -1026,26 +1102,14 @@ private:
 		m_ListenerScope.Unregister();
 		for(int CID : m_AllSpawnedBotIds)
 			DestroyScenarioMob(CID, true);
-
 		m_SpawnedBotIds.clear();
 		m_AllSpawnedBotIds.clear();
 	}
 };
+
 /**
  * @class ScenarioUseChatComponent
  * @brief A component that requires players to write a specific message in chat to complete the scenario.
- *
- * The component is configured via a JSON object with the following fields:
- * @param code (string): The exact chat message that must be written by the player(s) to complete the objective.
- * @param hidden (bool): If true, the objective message will not be broadcast to players.
- *
- * Behavior:
- * - Periodically broadcasts the objective text to players (if not hidden).
- * - Listens for player chat events.
- * - Completes the scenario when a player writes the exact required message.
- *
- * Scope:
- * - Supports both group scenarios (all players in group) and single-player scenarios.
  */
 class ScenarioUseChatComponent final : public PlayerAwareComponent<ScenarioUseChatComponent>, public IEventListener
 {
@@ -1061,7 +1125,6 @@ public:
 		m_Hidden = j.value("hidden", true);
 		m_ListenerScope.Init(this, IEventListener::PlayerChat);
 	}
-
 	DECLARE_COMPONENT_NAME("use_chat_code")
 
 private:
@@ -1105,7 +1168,6 @@ private:
 	}
 };
 
-
 /*
 ***************************** DEFAULT GROUP
 */
@@ -1126,7 +1188,6 @@ public:
 		if(j.value("disable_group_pvp", false))
 			m_FlagsToApply |= GroupScenarioBase::SCENARIOFLAG_DISABLE_GROUP_PVP;
 	}
-
 	DECLARE_COMPONENT_NAME("set_group_flags")
 
 private:
@@ -1155,7 +1216,6 @@ public:
 		else if(action == "sub" || action == "subtract")
 			m_Action = EAction::Subtract;
 	}
-
 	DECLARE_COMPONENT_NAME("set_group_lives")
 
 private:
@@ -1170,7 +1230,6 @@ private:
 			else
 				pGroupScenario->AddGroupLives(-m_Value);
 		}
-
 		Finish();
 	}
 };
@@ -1187,7 +1246,6 @@ public:
 		m_GroupSpawnPos = j.value("position", vec2 {});
 		m_EnableSpawn = j.value("enable_spawn", true);
 	}
-
 	DECLARE_COMPONENT_NAME("set_group_spawn")
 
 private:
@@ -1200,7 +1258,6 @@ private:
 			else
 				pGroupScenario->ResetGroupSpawnPos();
 		}
-
 		Finish();
 	}
 };
@@ -1219,7 +1276,6 @@ public:
 		m_RestoreMana = j.value("restore_mp", true);
 		m_RestoreAmmo = j.value("restore_ammo", true);
 	}
-
 	DECLARE_COMPONENT_NAME("restore_resources")
 
 private:
@@ -1232,10 +1288,8 @@ private:
 			{
 				if(m_RestoreHealth)
 					pChr->IncreaseHealth(pPlayer->GetMaxHealth());
-
 				if(m_RestoreMana)
 					pChr->IncreaseMana(pPlayer->GetMaxMana());
-
 				if(m_RestoreAmmo)
 				{
 					const int MaxAmmo = 10 + pPlayer->GetTotalAttributeValue(AttributeIdentifier::Ammo);
@@ -1244,7 +1298,6 @@ private:
 				}
 			}
 		});
-
 		Finish();
 	}
 };
