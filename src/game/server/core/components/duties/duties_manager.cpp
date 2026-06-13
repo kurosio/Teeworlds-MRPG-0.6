@@ -18,7 +18,7 @@ void CDutiesManager::OnPreInit()
 		auto TimeLimit = pRes->getInt("TimeLimit");
 		
 		auto* pDungeon = CDungeonData::CreateElement(ID);
-		pDungeon->Init(WaitingDoorPos, WorldID, Scenario);
+		pDungeon->Init(WaitingDoorPos, WorldID, Scenario, TimeLimit);
 	}
 }
 
