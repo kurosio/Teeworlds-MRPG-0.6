@@ -15,7 +15,8 @@ void CDutiesManager::OnPreInit()
 		auto WaitingDoorPos = vec2(pRes->getInt("DoorX"), pRes->getInt("DoorY"));
 		auto WorldID = pRes->getInt("WorldID");
 		auto Scenario = pRes->getJson("Scenario");
-
+		auto TimeLimit = pRes->getInt("TimeLimit");
+		
 		auto* pDungeon = CDungeonData::CreateElement(ID);
 		pDungeon->Init(WaitingDoorPos, WorldID, Scenario);
 	}
