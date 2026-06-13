@@ -15,7 +15,8 @@ class CDungeonData : public MultiworldIdentifiableData< std::deque< CDungeonData
 	int m_Progress {};
 	int m_Players {};
 	int m_WorldID {};
-	nlohmann::json m_Scenario{};
+    int m_TimeLimit {600};
+    nlohmann::json m_Scenario{};
 
 public:
 	enum DungeonState
@@ -34,19 +35,21 @@ public:
 		return m_pData.emplace_back(std::move(pData));
 	}
 
-	void Init(const vec2& WaitingDoorPos, int WorldID, const nlohmann::json& Scenario)
-	{
-		m_WorldID = WorldID;
-		m_WaitingDoorPos = WaitingDoorPos;
-		m_State = STATE_UNINITIALIZED;
-		m_Scenario = Scenario;
-	}
+	void Init(const vec2& WaitingDoorPos, int WorldID, const nlohmann::json& Scenario, int TimeLimit)
+    {
+            m_WorldID = WorldID;
+            m_WaitingDoorPos = WaitingDoorPos;
+            m_State = STATE_UNINITIALIZED;
+            m_Scenario = Scenario;
+            m_TimeLimit = TimeLimit;
+    }
 
 	int GetID() const { return m_ID; }
 	int GetLevel() const;
 	const char* GetName() const;
 	vec2 GetWaitingDoorPos() const { return m_WaitingDoorPos; }
 	int GetWorldID() const { return m_WorldID; }
+    int GetTimeLimit() const { return m_TimeLimit; }
 
 	void SetState(int State) { m_State = State; }
 	int GetState() const { return m_State; }
