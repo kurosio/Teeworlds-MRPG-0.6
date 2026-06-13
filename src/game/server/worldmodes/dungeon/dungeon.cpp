@@ -68,7 +68,7 @@ void CGameControllerDungeon::ChangeState(int NewState)
 		// update & initialize by state start
 		m_ScenarioID = GS()->ScenarioGroupManager()->RegisterScenario<CDungeonScenario>(-1, m_pDungeon->GetScenario());
 		m_StartedPlayersNum = GetPlayersNum();
-		m_EndTick = Server()->TickSpeed() * 600;
+		m_EndTick = Server()->TickSpeed() * m_pDungeon->GetTimeLimit();
 		m_SafeSpawnTick = Server()->Tick() + (Server()->TickSpeed() * g_Config.m_SvDungeonSafeTime);
 		m_pEntWaitingDoor->Open();
 
@@ -91,7 +91,7 @@ void CGameControllerDungeon::ChangeState(int NewState)
 
 		// information
 		const auto WorldID = m_pDungeon->GetWorldID();
-		GS()->ChatWorld(WorldID, "Dungeon:", "You are given 10 minutes to complete of dungeon!");
+		GS()->ChatWorld(WorldID, "Dungeon:", "You are given {} minutes to complete of dungeon!", m_pDungeon->GetTimeLimit() / 60);
 		GS()->ChatWorld(WorldID, "Dungeon:", "Safe time is active for {} seconds.", (int)g_Config.m_SvDungeonSafeTime);
 		GS()->BroadcastWorld(WorldID, BroadcastPriority::VeryImportant, 500, "Dungeon started!");
 	}
