@@ -1114,7 +1114,8 @@ CREATE TABLE `tw_dungeons` (
   `DoorX` int(11) NOT NULL DEFAULT 0,
   `DoorY` int(11) NOT NULL DEFAULT 0,
   `Scenario` longtext DEFAULT NULL,
-  `WorldID` int(11) NOT NULL
+  `WorldID` int(11) NOT NULL,
+  `TimeLimit` int(11) NOT NULL DEFAULT 600
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
