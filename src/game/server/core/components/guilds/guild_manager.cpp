@@ -1050,6 +1050,15 @@ bool CGuildManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		return true;
 	}
 
+	// menu guild house members
+	if(Menulist == MENU_GUILD_HOUSE_MEMBERS)
+	{
+		pPlayer->m_VotesData.SetLastMenuID(MENU_GUILD);
+		ShowHouseMembers(pPlayer);
+		VoteWrapper::AddBackpage(ClientID);
+		return true;
+	}
+
 	// menu guild house door
 	if(Menulist == MENU_GUILD_HOUSE_DOOR_LIST)
 	{
