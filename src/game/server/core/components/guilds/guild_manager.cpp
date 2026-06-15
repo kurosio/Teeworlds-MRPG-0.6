@@ -146,6 +146,51 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 		return true;
 	}
 
+	// kick player from guild house
+	if(PPSTR(pCmd, "GUILD_HOUSE_KICK") == 0)
+	{
+		// check guild valid and access rights
+		auto* pGuild = pPlayer->Account()->GetGuild();
+		if(!pGuild || !pPlayer->Account()->GetGuildMember()->CheckAccess(GUILD_RANK_RIGHT_UPGRADES_HOUSE))
+		{
+			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
+			return true;
+		}
+
+		// check house valid
+		auto* pHouse = pGuild->GetHouse();
+		if(!pHouse)
+		{
+			GS()->Chat(ClientID, "Your guild does not have a house.");
+			return true;
+		}
+
+		// get target player
+		const int TargetClientID = GetIfExists<int>(Extras, 0, NOPE);
+		auto* pHouseGS = (CGS*)Instance::GameServer(pHouse->GetWorldID());
+		CPlayer* pTarget = pHouseGS->GetPlayer(TargetClientID, true, true);
+		if(!pTarget)
+		{
+			GS()->Chat(ClientID, "Player is not available.");
+			return true;
+		}
+
+		// teleport target to house info position
+		if(!pHouseGS->IsPlayerInWorld(TargetClientID, pHouse->GetWorldID()))
+		{
+			pTarget->ChangeWorld(pHouse->GetWorldID(), pHouse->GetPos());
+		}
+		else
+		{
+			pTarget->GetCharacter()->ChangePosition(pHouse->GetPos());
+		}
+
+		GS()->Chat(ClientID, "Player has been kicked from the house.");
+		GS()->Chat(TargetClientID, "You have been kicked from the guild house.");
+		pPlayer->m_VotesData.UpdateCurrentVotes();
+		return true;
+	}
+
 	// start house decoration edit
 	if(PPSTR(pCmd, "GUILD_HOUSE_DECORATION") == 0)
 	{
