@@ -1933,6 +1933,43 @@ CGuildHouse* CGuildManager::GetHouseByID(const GuildHouseIdentifier& ID) const
 	return pHouse != CGuildHouse::Data().end() ? *pHouse : nullptr;
 }
 
+void CGuildManager::ShowHouseMembers(CPlayer* pPlayer) const
+{
+	auto* pGuild = pPlayer->Account()->GetGuild();
+	if(!pGuild)
+		return;
+
+	auto* pHouse = pGuild->GetHouse();
+	if(!pHouse)
+		return;
+
+	int ClientID = pPlayer->GetCID();
+	auto* pHouseGS = (CGS*)Instance::GameServer(pHouse->GetWorldID());
+
+	VoteWrapper VMembers(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "\u2302 Players inside house");
+	bool bAnyPlayer = false;
+
+	for(int i = 0; i < MAX_PLAYERS; i++)
+	{
+		CPlayer* pSearchPlayer = pHouseGS->GetPlayer(i, true, true);
+		if(!pSearchPlayer)
+			continue;
+
+		const auto switchNumber = pHouseGS->Collision()->GetSwitchTileNumberAtTileIndex(
+			pSearchPlayer->GetCharacter()->GetPos(), TILE_SW_HOUSE_ZONE);
+
+		if(!switchNumber || *switchNumber != pHouse->GetID())
+			continue;
+
+		bAnyPlayer = true;
+		VoteWrapper VEntry(ClientID, VWF_UNIQUE | VWF_STYLE_SIMPLE, "{~}", Server()->ClientName(i));
+		VEntry.AddOption("GUILD_HOUSE_KICK", i, "Kick {~}", Server()->ClientName(i));
+	}
+
+	if(!bAnyPlayer)
+		VMembers.Add("No players inside the house.");
+}
+
 CGuildHouse* CGuildManager::GetHouseByPos(vec2 Pos) const
 {
 	const auto switchNumber = GS()->Collision()->GetSwitchTileNumberAtTileIndex(Pos, TILE_SW_HOUSE_ZONE);
