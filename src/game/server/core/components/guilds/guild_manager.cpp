@@ -1320,6 +1320,7 @@ void CGuildManager::ShowMenu(int ClientID) const
 		VHouse.AddOption("GUILD_HOUSE_DECORATION", "Decoration editor");
 		VHouse.AddMenu(MENU_GUILD_HOUSE_DOOR_LIST, "Doors");
 		VHouse.AddMenu(MENU_GUILD_HOUSE_FARMZONE_LIST, "Farms");
+		VHouse.AddMenu(MENU_GUILD_HOUSE_MEMBERS, "House members");
 		VHouse.AddMenu(MENU_GUILD_SELL_HOUSE, "Sell");
 	}
 }
