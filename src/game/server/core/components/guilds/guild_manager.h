@@ -49,6 +49,7 @@ private:
 	void ShowDetail(CPlayer* pPlayer, CGuildHouse* pHouse) const;
 	void ShowDeclareWarMenu(int ClientID) const;
 	void ShowDoorsControl(CPlayer* pPlayer) const;
+	void ShowHouseMembers(CPlayer* pPlayer) const;
 	void ShowFarmzonesControl(CPlayer* pPlayer) const;
 	void ShowFarmzoneEdit(CPlayer* pPlayer, int FarmzoneID) const;
 
