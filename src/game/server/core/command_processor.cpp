@@ -591,7 +591,7 @@ void CCommandProcessor::ConChatDonorProTeleport(IConsole::IResult* pResult, void
 		return;
 	}
 
-	// teleport with limited distance
+	// teleport with limited distance and collision
 	auto* pChar = pPlayer->GetCharacter();
 	if(pChar)
 	{
@@ -599,8 +599,24 @@ void CCommandProcessor::ConChatDonorProTeleport(IConsole::IResult* pResult, void
 		const auto Pos = pChar->GetPos();
 		const auto Target = pChar->GetMousePos();
 		const auto Diff = Target - Pos;
-		const auto TeleportPos = length(Diff) > MaxDist ? Pos + normalize(Diff) * MaxDist : Target;
-
+		const auto ClampedTarget = length(Diff) > MaxDist ? Pos + normalize(Diff) * MaxDist : Target;
+		auto* pCollision = pGS->Collision();
+		vec2 ColPos, SafePos;
+		vec2 TeleportPos = ClampedTarget;
+		if(pCollision->IntersectLine(Pos, ClampedTarget, &ColPos, &SafePos))
+			TeleportPos = SafePos;
+		if(pCollision->IntersectLineDoor(Pos, TeleportPos))
+		{
+			const auto Dir = normalize(Pos - TeleportPos);
+			vec2 Safe = TeleportPos;
+			for(float d = 32.0f; d <= MaxDist; d += 32.0f)
+			{
+				Safe = TeleportPos + Dir * d;
+				if(!pCollision->IntersectLineDoor(Pos, Safe))
+					break;
+			}
+			TeleportPos = Safe;
+		}
 		pChar->ChangePosition(TeleportPos);
 		pGS->CreateDeath(TeleportPos, ClientID);
 		pGS->CreatePlayerSpawn(TeleportPos);

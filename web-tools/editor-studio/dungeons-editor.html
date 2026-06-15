@@ -92,6 +92,7 @@
       DoorX: { type: 'number', label: 'DoorX', ui: { step: 1 } },
       DoorY: { type: 'number', label: 'DoorY', ui: { step: 1 } },
       Scenario: { type: 'scenario', label: 'Scenario', ui: { scenarioMode: 'dungeon' } },
+      TimeLimit: { type: 'number', label: 'Time Limit (seconds)', ui: { step: 1 } },
     };
 
     const dirty = EditorCore.Dirty?.create
@@ -112,18 +113,21 @@
         DoorX: 0,
         DoorY: 0,
         Scenario: '',
+        TimeLimit: 600,
       }),
       rowToModel: (row) => ({
         WorldID: Number(row?.WorldID ?? 0),
         DoorX: Number(row?.DoorX ?? 0),
         DoorY: Number(row?.DoorY ?? 0),
         Scenario: row?.Scenario == null ? '' : String(row?.Scenario),
+        TimeLimit: Number(row?.TimeLimit ?? 600),
       }),
       modelToPayload: (model) => ({
         WorldID: toNullableInt(model?.WorldID, 0),
         DoorX: toNullableInt(model?.DoorX, 0),
         DoorY: toNullableInt(model?.DoorY, 0),
         Scenario: model?.Scenario ? String(model.Scenario) : null,
+        TimeLimit: toNullableInt(model?.TimeLimit, 600),
       }),
       listItem: (row) => ({
         title: `Dungeon #${row?.ID || 0}`,

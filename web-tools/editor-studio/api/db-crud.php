@@ -137,7 +137,7 @@ $RESOURCES = [
   'dungeons' => [
     'table' => 'tw_dungeons',
     'pk' => 'ID',
-    'columns' => ['Level', 'DoorX', 'DoorY', 'Scenario', 'WorldID'],
+    'columns' => ['Level', 'DoorX', 'DoorY', 'Scenario', 'WorldID', 'TimeLimit'],
     'search' => ['ID', 'Level', 'WorldID'],
     'order' => 'ID ASC',
   ],
