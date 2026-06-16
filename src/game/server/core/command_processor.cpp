@@ -617,9 +617,23 @@ void CCommandProcessor::ConChatDonorProTeleport(IConsole::IResult* pResult, void
 			}
 			TeleportPos = Safe;
 		}
-		pChar->ChangePosition(TeleportPos);
-		pGS->CreateDeath(TeleportPos, ClientID);
-		pGS->CreatePlayerSpawn(TeleportPos);
+		// check destination is not inside a wall or door
+			if(pCollision->CheckPoint(TeleportPos))
+			{
+				pGS->Chat(ClientID, "Cannot teleport there.");
+				return;
+			}
+			CDoorTile DoorTile;
+			const int TileIndex = (round_to_int(TeleportPos.y) / 32) * pCollision->GetWidth() + (round_to_int(TeleportPos.x) / 32);
+			pCollision->GetDoorTile(TileIndex, &DoorTile);
+			if(DoorTile.m_Index > TILE_AIR)
+			{
+				pGS->Chat(ClientID, "Cannot teleport there.");
+				return;
+			}
+			pChar->ChangePosition(TeleportPos);
+			pGS->CreateDeath(TeleportPos, ClientID);
+			pGS->CreatePlayerSpawn(TeleportPos);
 	}
 }
 

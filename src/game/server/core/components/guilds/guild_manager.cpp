@@ -146,6 +146,53 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 		return true;
 	}
 
+	// kick player from guild house
+	if(PPSTR(pCmd, "GUILD_HOUSE_KICK") == 0)
+	{
+		// check guild valid and access rights
+		auto* pGuild = pPlayer->Account()->GetGuild();
+		if(!pGuild || !pPlayer->Account()->GetGuildMember()->CheckAccess(GUILD_RANK_RIGHT_UPGRADES_HOUSE))
+		{
+			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
+			return true;
+		}
+
+		// check house valid
+		auto* pHouse = pGuild->GetHouse();
+		if(!pHouse)
+		{
+			GS()->Chat(ClientID, "Your guild does not have a house.");
+			return true;
+		}
+
+		// get target player
+		const int TargetClientID = GetIfExists<int>(Extras, 0, NOPE);
+		auto* pHouseGS = (CGS*)Instance::GameServer(pHouse->GetWorldID());
+		CPlayer* pTarget = pHouseGS->GetPlayer(TargetClientID, true, true);
+		if(!pTarget)
+		{
+			GS()->Chat(ClientID, "Player is not available.");
+			return true;
+		}
+
+		// check target is actually inside the house zone
+		const auto switchNumber = pHouseGS->Collision()->GetSwitchTileNumberAtTileIndex(
+			pTarget->GetCharacter()->GetPos(), TILE_SW_HOUSE_ZONE);
+		if(!switchNumber || *switchNumber != pHouse->GetID())
+		{
+			GS()->Chat(ClientID, "This player is not inside the house.");
+			return true;
+		}
+
+		// teleport target to house info position
+		pTarget->GetCharacter()->ChangePosition(pHouse->GetPos());
+
+		GS()->Chat(ClientID, "Player has been kicked from the house.");
+		GS()->Chat(TargetClientID, "You have been kicked from the guild house.");
+		pPlayer->m_VotesData.UpdateCurrentVotes();
+		return true;
+	}
+
 	// start house decoration edit
 	if(PPSTR(pCmd, "GUILD_HOUSE_DECORATION") == 0)
 	{
@@ -1005,6 +1052,15 @@ bool CGuildManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 		return true;
 	}
 
+	// menu guild house members
+	if(Menulist == MENU_GUILD_HOUSE_MEMBERS)
+	{
+		pPlayer->m_VotesData.SetLastMenuID(MENU_GUILD);
+		ShowHouseMembers(pPlayer);
+		VoteWrapper::AddBackpage(ClientID);
+		return true;
+	}
+
 	// menu guild house door
 	if(Menulist == MENU_GUILD_HOUSE_DOOR_LIST)
 	{
@@ -1266,6 +1322,7 @@ void CGuildManager::ShowMenu(int ClientID) const
 		VHouse.AddOption("GUILD_HOUSE_DECORATION", "Decoration editor");
 		VHouse.AddMenu(MENU_GUILD_HOUSE_DOOR_LIST, "Doors");
 		VHouse.AddMenu(MENU_GUILD_HOUSE_FARMZONE_LIST, "Farms");
+		VHouse.AddMenu(MENU_GUILD_HOUSE_MEMBERS, "House members");
 		VHouse.AddMenu(MENU_GUILD_SELL_HOUSE, "Sell");
 	}
 }
@@ -1876,6 +1933,43 @@ CGuildHouse* CGuildManager::GetHouseByID(const GuildHouseIdentifier& ID) const
 	});
 
 	return pHouse != CGuildHouse::Data().end() ? *pHouse : nullptr;
+}
+
+void CGuildManager::ShowHouseMembers(CPlayer* pPlayer) const
+{
+	auto* pGuild = pPlayer->Account()->GetGuild();
+	if(!pGuild)
+		return;
+
+	auto* pHouse = pGuild->GetHouse();
+	if(!pHouse)
+		return;
+
+	int ClientID = pPlayer->GetCID();
+	auto* pHouseGS = (CGS*)Instance::GameServer(pHouse->GetWorldID());
+
+	VoteWrapper VMembers(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "\u2302 Players inside house");
+	bool bAnyPlayer = false;
+
+	for(int i = 0; i < MAX_PLAYERS; i++)
+	{
+		CPlayer* pSearchPlayer = pHouseGS->GetPlayer(i, true, true);
+		if(!pSearchPlayer)
+			continue;
+
+		const auto switchNumber = pHouseGS->Collision()->GetSwitchTileNumberAtTileIndex(
+			pSearchPlayer->GetCharacter()->GetPos(), TILE_SW_HOUSE_ZONE);
+
+		if(!switchNumber || *switchNumber != pHouse->GetID())
+			continue;
+
+		bAnyPlayer = true;
+		VoteWrapper VEntry(ClientID, VWF_UNIQUE | VWF_STYLE_SIMPLE, "{~}", Server()->ClientName(i));
+		VEntry.AddOption("GUILD_HOUSE_KICK", i, "Kick {~}", Server()->ClientName(i));
+	}
+
+	if(!bAnyPlayer)
+		VMembers.Add("No players inside the house.");
 }
 
 CGuildHouse* CGuildManager::GetHouseByPos(vec2 Pos) const
