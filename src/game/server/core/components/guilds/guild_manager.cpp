@@ -175,15 +175,17 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 			return true;
 		}
 
+		// check target is actually inside the house zone
+		const auto switchNumber = pHouseGS->Collision()->GetSwitchTileNumberAtTileIndex(
+			pTarget->GetCharacter()->GetPos(), TILE_SW_HOUSE_ZONE);
+		if(!switchNumber || *switchNumber != pHouse->GetID())
+		{
+			GS()->Chat(ClientID, "This player is not inside the house.");
+			return true;
+		}
+
 		// teleport target to house info position
-		if(!pHouseGS->IsPlayerInWorld(TargetClientID, pHouse->GetWorldID()))
-		{
-			pTarget->ChangeWorld(pHouse->GetWorldID(), pHouse->GetPos());
-		}
-		else
-		{
-			pTarget->GetCharacter()->ChangePosition(pHouse->GetPos());
-		}
+		pTarget->GetCharacter()->ChangePosition(pHouse->GetPos());
 
 		GS()->Chat(ClientID, "Player has been kicked from the house.");
 		GS()->Chat(TargetClientID, "You have been kicked from the guild house.");
