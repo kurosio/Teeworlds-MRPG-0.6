@@ -50,7 +50,13 @@ void CGuildManager::OnInitWorld(const std::string& SqlQueryWhereWorld)
 
 		// initialize guild houses
 		CGuild* pGuild = GetGuildByID(GuildID);
-		CGuildHouse::CreateElement(ID)->Init(pGuild, RentDays, InitialFee, GS()->GetWorldID(), std::move(JsonDoors), std::move(JsonFarmzones), std::move(JsonPropersties));
+		std::string KickPosStr = pRes->getString("KickPos");
+		vec2 KickPos = {};
+		mystd::json::parse(KickPosStr, [&KickPos](nlohmann::json& pJson)
+		{
+			KickPos = pJson.get<vec2>();
+		});
+		CGuildHouse::CreateElement(ID)->Init(pGuild, RentDays, InitialFee, GS()->GetWorldID(), std::move(JsonDoors), std::move(JsonFarmzones), std::move(JsonPropersties), KickPos);
 	}
 }
 
@@ -185,7 +191,8 @@ bool CGuildManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, cons
 		}
 
 		// teleport target to house info position
-		pTarget->GetCharacter()->ChangePosition(pHouse->GetPos());
+		const vec2 KickPos = pHouse->GetKickPos();
+		pTarget->GetCharacter()->ChangePosition(KickPos.x != 0 || KickPos.y != 0 ? KickPos : pHouse->GetPos());
 
 		GS()->Chat(ClientID, "Player has been kicked from the house.");
 		GS()->Chat(TargetClientID, "You have been kicked from the guild house.");
