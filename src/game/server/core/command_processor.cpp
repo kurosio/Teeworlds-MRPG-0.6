@@ -593,48 +593,50 @@ void CCommandProcessor::ConChatDonorProTeleport(IConsole::IResult* pResult, void
 
 	// teleport with limited distance and collision
 	auto* pChar = pPlayer->GetCharacter();
-	if(pChar)
-	{
-		const auto MaxDist = 400.0f;
-		const auto Pos = pChar->GetPos();
-		const auto Target = pChar->GetMousePos();
-		const auto Diff = Target - Pos;
-		const auto ClampedTarget = length(Diff) > MaxDist ? Pos + normalize(Diff) * MaxDist : Target;
-		auto* pCollision = pGS->Collision();
-		vec2 ColPos, SafePos;
-		vec2 TeleportPos = ClampedTarget;
-		if(pCollision->IntersectLine(Pos, ClampedTarget, &ColPos, &SafePos))
-			TeleportPos = SafePos;
-		if(pCollision->IntersectLineDoor(Pos, TeleportPos))
+		if(pChar)
 		{
-			const auto Dir = normalize(Pos - TeleportPos);
-			vec2 Safe = TeleportPos;
-			for(float d = 32.0f; d <= MaxDist; d += 32.0f)
+			auto* pCollision = pGS->Collision();
+			const vec2 Pos = pChar->GetPos();
+			const vec2 Target = pChar->GetMousePos();
+
+			// clamp to max distance
+			const float MaxDist = 400.0f;
+			const vec2 Diff = Target - Pos;
+			const vec2 ClampedTarget = length(Diff) > MaxDist ? Pos + normalize(Diff) * MaxDist : Target;
+
+			// snap to tile center
+			const int TileX = round_to_int(ClampedTarget.x) / 32;
+			const int TileY = round_to_int(ClampedTarget.y) / 32;
+			const vec2 TileCenter = vec2(TileX * 32 + 16, TileY * 32 + 16);
+
+			// block if destination tile is solid
+			if(pCollision->CheckPoint(TileCenter))
 			{
-				Safe = TeleportPos + Dir * d;
-				if(!pCollision->IntersectLineDoor(Pos, Safe))
-					break;
+				pGS->Chat(ClientID, "Cannot teleport there.");
+				return;
 			}
-			TeleportPos = Safe;
+
+			// block if destination tile is a door
+			const int DstIndex = pCollision->GetPureMapIndex(TileCenter);
+			CDoorTile DstDoor;
+			pCollision->GetDoorTile(DstIndex, &DstDoor);
+			if(DstDoor.m_Index > TILE_AIR)
+			{
+				pGS->Chat(ClientID, "Cannot teleport there.");
+				return;
+			}
+
+			// block if destination tile is a switch
+			const auto* pDstSwitch = pCollision->GetSwitchTile(TileCenter);
+			if(pDstSwitch && pDstSwitch->m_Type > TILE_AIR)
+			{
+				pGS->Chat(ClientID, "Cannot teleport there.");
+				return;
+			}
+
+			// teleport to tile center
+			pChar->ChangePosition(TileCenter);
 		}
-		// check destination is not inside a wall or door
-			if(pCollision->CheckPoint(TeleportPos))
-			{
-				pGS->Chat(ClientID, "Cannot teleport there.");
-				return;
-			}
-			CDoorTile DoorTile;
-			const int TileIndex = (round_to_int(TeleportPos.y) / 32) * pCollision->GetWidth() + (round_to_int(TeleportPos.x) / 32);
-			pCollision->GetDoorTile(TileIndex, &DoorTile);
-			if(DoorTile.m_Index > TILE_AIR)
-			{
-				pGS->Chat(ClientID, "Cannot teleport there.");
-				return;
-			}
-			pChar->ChangePosition(TeleportPos);
-			pGS->CreateDeath(TeleportPos, ClientID);
-			pGS->CreatePlayerSpawn(TeleportPos);
-	}
 }
 
 
