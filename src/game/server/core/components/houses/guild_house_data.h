@@ -28,6 +28,7 @@ private:
 	GuildHouseIdentifier m_ID{};
 	vec2 m_Position{};
 	vec2 m_TextPosition{};
+	vec2 m_KickPos{};
 	int m_InitialFee {};
 	int m_WorldID{};
 	time_t m_RentEndTimestamp {};
@@ -47,14 +48,13 @@ public:
 		return m_pData.emplace_back(std::move(pData));
 	}
 
-	void Init(CGuild* pGuild, time_t RentDays, int InitialFee, int WorldID, std::string&& DoorsData, std::string&& FarmzonesData, std::string&& PropertiesData)
+	void Init(CGuild* pGuild, time_t RentDays, int InitialFee, int WorldID, std::string&& DoorsData, std::string&& FarmzonesData, std::string&& PropertiesData, vec2 KickPos = {})
 	{
 		UpdateGuild(pGuild);
-
 		m_InitialFee = InitialFee;
 		m_RentEndTimestamp = RentDays;
 		m_WorldID = WorldID;
-
+		m_KickPos = KickPos;
 		InitComponents(DoorsData, FarmzonesData, PropertiesData);
 	}
 	void InitComponents(const std::string& DoorsData, const std::string& FarmzonesData, const std::string& PropertiesData);
@@ -76,6 +76,7 @@ public:
 
 	int GetID() const override { return m_ID; }
 	vec2 GetPos() const override { return m_Position; }
+	vec2 GetKickPos() const { return m_KickPos; }
 	const char* GetTableName() const override { return TW_GUILDS_HOUSES; }
 	IHouse::Type GetHouseType() const override { return IHouse::Type::Guild; }
 	int GetMaxDecorationSlots() const override;
