@@ -36,7 +36,7 @@ void CHouseManager::OnTick()
 	if(GS()->GetWorldID() == INITIALIZER_WORLD_ID)
 	{
 		// update houses rent expiration each 15 minutes
-		if(Server()->Tick() % Server()->TickSpeed() * 900 == 0)
+		if(Server()->Tick() % (Server()->TickSpeed() * 900) == 0)
 		{
 			for(auto& p : CHouse::Data())
 				p->CheckRentExpiration();
