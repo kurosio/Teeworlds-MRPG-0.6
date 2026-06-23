@@ -93,6 +93,9 @@ class DiscordBridgeBot(commands.Bot):
             except Exception as e:
                  logger.exception(f"Unexpected error loading extension {extension}: {e}")
 
+        await self.tree.sync()
+        logger.info("Slash commands synced globally.")
+
         logger.info("setup_hook finished.")
 
 

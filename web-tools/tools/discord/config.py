@@ -19,6 +19,9 @@ ECON_READ_TIMEOUT = 60.0
 ECON_AUTH_TIMEOUT = 5.0
 SERVER_TAG_TEEWORLDS = "[DS]"
 
+# --- Discord config ---
+ADMIN_ROLE_ID = 1480685556013862983 # Set to your Discord admin role ID to require Administrator permission
+
 # --- Discord Bot ---
 DISCORD_BOT_TOKEN = "...."
 DISCORD_CHANNEL_ID = 552211416841584656
@@ -43,3 +46,4 @@ MASTER_SERVER_API_URL = "https://master1.ddnet.org/ddnet/15/servers.json"
 SKIN_API_URL = "http://127.0.0.1:8000/render"
 GAME_SERVER_ADDRESS = "103.27.156.253:8310"
 SHOW_JOIN_BUTTON = True
+
