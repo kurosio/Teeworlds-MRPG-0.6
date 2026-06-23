@@ -20,7 +20,7 @@ ECON_AUTH_TIMEOUT = 5.0
 SERVER_TAG_TEEWORLDS = "[DS]"
 
 # --- Discord config ---
-ADMIN_ROLE_ID = 1480685556013862983
+ADMIN_ROLE_ID = 1480685556013862983 # Set to your Discord admin role ID to require Administrator permission
 
 # --- Discord Bot ---
 DISCORD_BOT_TOKEN = "...."
