@@ -73,7 +73,7 @@ void CGuildManager::OnTick()
 		}
 
 		// update guild houses rent expiration each 15 minutes
-		if(Server()->Tick() % Server()->TickSpeed() * 900 == 0)
+		if(Server()->Tick() % (Server()->TickSpeed() * 900) == 0)
 		{
 			for(auto& pGuild : CGuild::Data())
 			{
