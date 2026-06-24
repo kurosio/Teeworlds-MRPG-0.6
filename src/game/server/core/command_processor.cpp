@@ -1,4 +1,4 @@
-﻿#include "command_processor.h"
+#include "command_processor.h"
 
 #include <engine/server.h>
 #include <game/server/core/components/accounts/account_manager.h>
@@ -57,6 +57,8 @@ CCommandProcessor::CCommandProcessor(CGS* pGS)
 	AddCommand("donor_pro", "", ConChatDonorProCmdList, pServer, "Donor pro command list");
 	AddCommand("dpro_blink", "", ConChatDonorProTeleport, pServer, "Donor Pro teleport to view point");
 	AddCommand("rainbow", "i[mode]", ConChatRainbow, pServer, "Update rainbow mode skin effect (Donor)");
+	AddCommand("bridge_disable", "", ConChatBridgeDisable, pServer, "Hide your messages from Discord bridge (Donor)");
+	AddCommand("bridge_enable", "", ConChatBridgeEnable, pServer, "Show your messages on Discord bridge (Donor)");
 
 	// other
 	AddCommand("timeout", "?s[code]", ConChatTimeoutGuest, pServer, "Timeout auth code");
@@ -518,6 +520,8 @@ void CCommandProcessor::ConChatDonorCmdList(IConsole::IResult* pResult, void* pU
 	if(pDonorItem->GetExpiresAt() > 0)
 		pGS->Chat(ClientID, "Left time: {}", pDonorItem->GetExpiresRemainingString());
 	pGS->Chat(ClientID, "/rainbow - Rainbow skin effect.");
+	pGS->Chat(ClientID, "/bridge_disable - Hide your messages from Discord.");
+	pGS->Chat(ClientID, "/bridge_enable - Show your messages on Discord again.");
 }
 
 void CCommandProcessor::ConChatDonorProCmdList(IConsole::IResult* pResult, void* pUser)
@@ -541,6 +545,8 @@ void CCommandProcessor::ConChatDonorProCmdList(IConsole::IResult* pResult, void*
 		pGS->Chat(ClientID, "Left time: {}", pDonorProItem->GetExpiresRemainingString());
 	pGS->Chat(ClientID, "/dpro_blink - teleport to view point.");
 	pGS->Chat(ClientID, "/rainbow - Rainbow skin effect.");
+	pGS->Chat(ClientID, "/bridge_disable - Hide your messages from Discord.");
+	pGS->Chat(ClientID, "/bridge_enable - Show your messages on Discord again.");
 }
 
 void CCommandProcessor::ConChatRainbow(IConsole::IResult* pResult, void* pUser)
@@ -639,6 +645,50 @@ void CCommandProcessor::ConChatDonorProTeleport(IConsole::IResult* pResult, void
 		}
 }
 
+
+void CCommandProcessor::ConChatBridgeDisable(IConsole::IResult* pResult, void* pUser)
+{
+	const int ClientID = pResult->GetClientID();
+	auto* pGS = GetCommandResultGameServer(ClientID, pUser);
+	auto* pPlayer = pGS->GetPlayer(ClientID);
+	if(!is_valid_player(pGS, pPlayer, true))
+		return;
+
+	// check privileges valid
+	const auto* pDonorItem = pPlayer->GetItem(itDonor);
+	const auto* pDonorProItem = pPlayer->GetItem(itDonorPro);
+	if(!pDonorItem->HasItem() && !pDonorProItem->HasItem())
+	{
+		pGS->Chat(ClientID, "Bridge visibility is a {}, {} feature.", pDonorItem->Info()->GetName(), pDonorProItem->Info()->GetName());
+		return;
+	}
+
+	// signal bridge to suppress this player's messages
+	pGS->Console()->PrintFormat(IConsole::OUTPUT_LEVEL_STANDARD, "bridge", "[BRIDGE_DISABLE] %s", pGS->Server()->ClientName(ClientID));
+	pGS->Chat(ClientID, "Your messages will no longer appear on Discord.");
+}
+
+void CCommandProcessor::ConChatBridgeEnable(IConsole::IResult* pResult, void* pUser)
+{
+	const int ClientID = pResult->GetClientID();
+	auto* pGS = GetCommandResultGameServer(ClientID, pUser);
+	auto* pPlayer = pGS->GetPlayer(ClientID);
+	if(!is_valid_player(pGS, pPlayer, true))
+		return;
+
+	// check privileges valid
+	const auto* pDonorItem = pPlayer->GetItem(itDonor);
+	const auto* pDonorProItem = pPlayer->GetItem(itDonorPro);
+	if(!pDonorItem->HasItem() && !pDonorProItem->HasItem())
+	{
+		pGS->Chat(ClientID, "Bridge visibility is a {}, {} feature.", pDonorItem->Info()->GetName(), pDonorProItem->Info()->GetName());
+		return;
+	}
+
+	// signal bridge to restore this player's messages
+	pGS->Console()->PrintFormat(IConsole::OUTPUT_LEVEL_STANDARD, "bridge", "[BRIDGE_ENABLE] %s", pGS->Server()->ClientName(ClientID));
+	pGS->Chat(ClientID, "Your messages will now appear on Discord again.");
+}
 
 void CCommandProcessor::ConChatTimeoutGuest(IConsole::IResult* pResult, void* pUser)
 {
