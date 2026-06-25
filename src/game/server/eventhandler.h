@@ -26,6 +26,20 @@ public:
 
 	template<typename T>
 	T* Create(int64_t Mask = -1) { return static_cast<T*>(Create(T::ms_MsgId, sizeof(T), Mask)); }
+
+	template<typename T>
+	T* CreatePositionEvent(vec2 Pos, int64_t Mask = -1)
+	{
+		if(auto* pEvent = Create<T>(Mask))
+		{
+			pEvent->m_X = round_to_int(Pos.x);
+			pEvent->m_Y = round_to_int(Pos.y);
+			return pEvent;
+		}
+
+		return nullptr;
+	}
+
 	void* Create(int Type, int Size, int64_t Mask = -1);
 	void Clear();
 	void Snap(int SnappingClient);

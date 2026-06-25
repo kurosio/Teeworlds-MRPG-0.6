@@ -971,19 +971,19 @@ std::optional<float> CPlayer::GetTotalAttributeChance(AttributeIdentifier ID) co
 		return std::nullopt;
 
 	// prepare result
-	float max = 0.0f;
-	float base = 0.0f;
-	switch(ID)
+	static const std::unordered_map<AttributeIdentifier, float> s_AttributeBaseValues =
 	{
-		case AttributeIdentifier::AttackSPD: base = 100.f; max = Balance::Get().GetAttributeCap(ID); break;
-		case AttributeIdentifier::AmmoRegen: base = 100.f; max = Balance::Get().GetAttributeCap(ID); break;
-		case AttributeIdentifier::Vampirism: base = 5.0f; max = Balance::Get().GetAttributeCap(ID); break;
-		case AttributeIdentifier::Crit: base = 5.0f; max = Balance::Get().GetAttributeCap(ID); break;
-		case AttributeIdentifier::Lucky: base = 5.0f; max = Balance::Get().GetAttributeCap(ID); break;
-		case AttributeIdentifier::LuckyDropItem: base = 0.0f; max = Balance::Get().GetAttributeCap(ID); break;
-		default: base = 0.f;
-	}
+		{ AttributeIdentifier::AttackSPD, 100.f },
+		{ AttributeIdentifier::AmmoRegen, 100.f },
+		{ AttributeIdentifier::Vampirism, 5.0f },
+		{ AttributeIdentifier::Crit, 5.0f },
+		{ AttributeIdentifier::Lucky, 5.0f },
+		{ AttributeIdentifier::LuckyDropItem, 0.0f },
+	};
 
+	auto it = s_AttributeBaseValues.find(ID);
+	float base = (it != s_AttributeBaseValues.end()) ? it->second : 0.f;
+	float max = Balance::Get().GetAttributeCap(ID);
 	return std::min(base + (*Result), max);
 }
 

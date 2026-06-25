@@ -146,22 +146,12 @@ CEidolonInfoData* CGS::GetEidolonByItemID(ItemIdentifier ItemID) const
 
 void CGS::CreateBirthdayEffect(vec2 Pos, int64_t Mask)
 {
-	CNetEvent_Birthday* pEvent = m_Events.Create<CNetEvent_Birthday>(Mask);
-	if(pEvent)
-	{
-		pEvent->m_X = (int)Pos.x;
-		pEvent->m_Y = (int)Pos.y;
-	}
+	m_Events.CreatePositionEvent<CNetEvent_Birthday>(Pos, Mask);
 }
 
 void CGS::CreateFinishEffect(vec2 Pos, int64_t Mask)
 {
-	CNetEvent_Finish* pEvent = m_Events.Create<CNetEvent_Finish>(Mask);
-	if(pEvent)
-	{
-		pEvent->m_X = (int)Pos.x;
-		pEvent->m_Y = (int)Pos.y;
-	}
+	m_Events.CreatePositionEvent<CNetEvent_Finish>(Pos, Mask);
 }
 
 void CGS::CreateDamage(vec2 Pos, int FromCID, int Amount, float Angle, int64_t Mask)
@@ -172,22 +162,14 @@ void CGS::CreateDamage(vec2 Pos, int FromCID, int Amount, float Angle, int64_t M
 	for(int i = 0; i < Amount; i++)
 	{
 		float f = mix(s, e, (i + 1) / (float)(Amount + 2));
-		if(auto* pEvent = m_Events.Create<CNetEvent_DamageInd>(Mask))
-		{
-			pEvent->m_X = (int)Pos.x;
-			pEvent->m_Y = (int)Pos.y;
+		if(auto* pEvent = m_Events.CreatePositionEvent<CNetEvent_DamageInd>(Pos, Mask))
 			pEvent->m_Angle = (int)(f * 256.0f);
-		}
 	}
 }
 
 void CGS::CreateHammerHit(vec2 Pos, int64_t Mask)
 {
-	if(auto* pEvent = m_Events.Create<CNetEvent_HammerHit>(Mask))
-	{
-		pEvent->m_X = (int)Pos.x;
-		pEvent->m_Y = (int)Pos.y;
-	}
+	m_Events.CreatePositionEvent<CNetEvent_HammerHit>(Pos, Mask);
 }
 
 void CGS::CreateRandomRadiusExplosion(int ExplosionCount, float Radius, vec2 Pos, int Owner, int Weapon, int MaxDamage, int ForceFlag)
@@ -216,11 +198,7 @@ void CGS::CreateCircleExplosion(int ExplosionCount, float Radius, vec2 Pos, int 
 void CGS::CreateExplosion(vec2 Pos, int Owner, int Weapon, int MaxDamage, int ForceFlag)
 {
 	// create the explosion event
-	if(auto* pEvent = m_Events.Create<CNetEvent_Explosion>())
-	{
-		pEvent->m_X = (int)Pos.x;
-		pEvent->m_Y = (int)Pos.y;
-	}
+	m_Events.CreatePositionEvent<CNetEvent_Explosion>(Pos);
 
 	// define constants
 	constexpr float Radius = 135.0f;
@@ -256,21 +234,13 @@ void CGS::CreateExplosion(vec2 Pos, int Owner, int Weapon, int MaxDamage, int Fo
 
 void CGS::CreatePlayerSpawn(vec2 Pos, int64_t Mask)
 {
-	if(auto* pEvent = m_Events.Create<CNetEvent_Spawn>(Mask))
-	{
-		pEvent->m_X = (int)Pos.x;
-		pEvent->m_Y = (int)Pos.y;
-	}
+	m_Events.CreatePositionEvent<CNetEvent_Spawn>(Pos, Mask);
 }
 
 void CGS::CreateDeath(vec2 Pos, int ClientID, int64_t Mask)
 {
-	if(auto* pEvent = m_Events.Create<CNetEvent_Death>(Mask))
-	{
-		pEvent->m_X = (int)Pos.x;
-		pEvent->m_Y = (int)Pos.y;
+	if(auto* pEvent = m_Events.CreatePositionEvent<CNetEvent_Death>(Pos, Mask))
 		pEvent->m_ClientId = ClientID;
-	}
 }
 
 void CGS::CreateSound(vec2 Pos, int Sound, int64_t Mask)
@@ -280,21 +250,13 @@ void CGS::CreateSound(vec2 Pos, int Sound, int64_t Mask)
 		if(HasWorldFlag(WORLD_FLAG_NO_PREPARE_MAP))
 			return;
 
-		if(auto* pEvent = m_Events.Create<CNetEvent_MapSoundWorld>(Mask))
-		{
-			pEvent->m_X = (int)Pos.x;
-			pEvent->m_Y = (int)Pos.y;
+		if(auto* pEvent = m_Events.CreatePositionEvent<CNetEvent_MapSoundWorld>(Pos, Mask))
 			pEvent->m_SoundId = SpecialSoundToPreparedIndex(Sound);
-		}
 	}
 	else if(Sound >= 0)
 	{
-		if(auto* pEvent = m_Events.Create<CNetEvent_SoundWorld>(Mask))
-		{
-			pEvent->m_X = (int)Pos.x;
-			pEvent->m_Y = (int)Pos.y;
+		if(auto* pEvent = m_Events.CreatePositionEvent<CNetEvent_SoundWorld>(Pos, Mask))
 			pEvent->m_SoundId = maximum(0, Sound);
-		}
 	}
 }
 
@@ -309,14 +271,10 @@ void CGS::CreatePlayerSound(int ClientID, int Sound)
 		Msg.m_SoundId = SpecialSoundToPreparedIndex(Sound);
 		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientID, -1, m_WorldID);
 	}
-	else if(Sound >= 0)
+	else if(Sound >= 0 && GetPlayer(ClientID))
 	{
-		if(auto* pEvent = m_Events.Create<CNetEvent_SoundWorld>(CmaskOne(ClientID)); pEvent && GetPlayer(ClientID))
-		{
-			pEvent->m_X = (int)m_apPlayers[ClientID]->m_ViewPos.x;
-			pEvent->m_Y = (int)m_apPlayers[ClientID]->m_ViewPos.y;
+		if(auto* pEvent = m_Events.CreatePositionEvent<CNetEvent_SoundWorld>(m_apPlayers[ClientID]->m_ViewPos, CmaskOne(ClientID)))
 			pEvent->m_SoundId = maximum(0, Sound);
-		}
 	}
 }
 
