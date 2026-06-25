@@ -901,50 +901,63 @@ bool CPlayer::IsEquippedSlot(ItemType EquipID) const
 }
 
 
-int CPlayer::GetTotalRawAttributeValue(AttributeIdentifier ID) const
+void CPlayer::RecalculateRawAttributeCache() const
 {
-	int totalValue = 0;
+	m_CachedRawAttributes.clear();
+
+	const auto AddAttributeValue = [this](AttributeIdentifier ID, int Value)
+	{
+		if(Value != 0)
+			m_CachedRawAttributes[ID] += Value;
+	};
+
+	const auto AddItemEnchantStats = [this, &AddAttributeValue](const CPlayerItem& PlayerItem)
+	{
+		if(!PlayerItem.HasItem() || !PlayerItem.Info()->HasAttributes() || PlayerItem.GetDurability() <= 0)
+			return;
+
+		for(const auto& AttributeInfo : PlayerItem.Info()->GetAttributes())
+			AddAttributeValue(AttributeInfo.GetID(), PlayerItem.GetEnchantAttributeValue(AttributeInfo.GetID()));
+	};
 
 	// counting by modules
 	const auto& vPlayerItems = CPlayerItem::Data()[m_ClientID];
 	for(const auto& [ItemID, PlayerItem] : vPlayerItems)
 	{
-		if(PlayerItem.HasItem() && PlayerItem.Info()->HasAttributes() && PlayerItem.GetDurability() > 0 &&
-			 PlayerItem.Info()->IsEquipmentModules() && PlayerItem.IsEquipped())
-		{
-			totalValue += PlayerItem.GetEnchantAttributeValue(ID);
-		}
+		if(PlayerItem.HasItem() && PlayerItem.Info()->IsEquipmentModules() && PlayerItem.IsEquipped())
+			AddItemEnchantStats(PlayerItem);
 	}
 
-	// lamba for counting by equipment slots
-	auto addItemEnchantStats = [&](const std::optional<int>& ItemIdOpt) mutable
+	// lambda for counting by equipment slots
+	auto AddSlotItemEnchantStats = [&](const std::optional<int>& ItemIdOpt)
 	{
-		if(ItemIdOpt && vPlayerItems.contains(*ItemIdOpt))
-		{
-			auto& PlayerItem = vPlayerItems.at(*ItemIdOpt);
-			if(PlayerItem.HasItem() && PlayerItem.Info()->HasAttributes() && PlayerItem.GetDurability() > 0 &&
-				PlayerItem.Info()->IsEquipmentSlot())
-			{
-				totalValue += PlayerItem.GetEnchantAttributeValue(ID);
-			}
-		}
+		if(!ItemIdOpt || !vPlayerItems.contains(*ItemIdOpt))
+			return;
+
+		const auto& PlayerItem = vPlayerItems.at(*ItemIdOpt);
+		if(PlayerItem.HasItem() && PlayerItem.Info()->IsEquipmentSlot())
+			AddItemEnchantStats(PlayerItem);
 	};
 
 	// counting by shared equipment slots
 	for(const auto& [Type, ItemIdOpt] : Account()->GetEquippedSlots().getSlots())
-		addItemEnchantStats(ItemIdOpt);
+		AddSlotItemEnchantStats(ItemIdOpt);
 
 	// counting by active profession
 	auto* pActiveProfession = Account()->GetActiveProfession();
 	if(pActiveProfession)
 	{
 		for(const auto& [Type, ItemIdOpt] : pActiveProfession->GetEquippedSlots().getSlots())
-			addItemEnchantStats(ItemIdOpt);
+			AddSlotItemEnchantStats(ItemIdOpt);
 
-		totalValue += pActiveProfession->GetAttributeValue(ID);
-		const float amplifier = pActiveProfession->GetAmplifier(ID);
-		if(amplifier > 0.0f)
-			totalValue += translate_to_percent_rest(totalValue, amplifier);
+		for(const auto& [ID, Value] : pActiveProfession->GetAttributes())
+			AddAttributeValue(ID, Value);
+
+		for(const auto& [ID, Amplifier] : pActiveProfession->GetAmplifiers())
+		{
+			if(Amplifier > 0.0f)
+				AddAttributeValue(ID, translate_to_percent_rest(m_CachedRawAttributes[ID], Amplifier));
+		}
 	}
 
 	// counting by other professions
@@ -953,13 +966,24 @@ int CPlayer::GetTotalRawAttributeValue(AttributeIdentifier ID) const
 		if(Prof.IsProfessionType(PROFESSION_TYPE_OTHER))
 		{
 			for(const auto& [Type, ItemIdOpt] : Prof.GetEquippedSlots().getSlots())
-				addItemEnchantStats(ItemIdOpt);
+				AddSlotItemEnchantStats(ItemIdOpt);
 
-			totalValue += Prof.GetAttributeValue(ID);
+			for(const auto& [ID, Value] : Prof.GetAttributes())
+				AddAttributeValue(ID, Value);
 		}
 	}
+}
 
-	return totalValue;
+int CPlayer::GetTotalRawAttributeValue(AttributeIdentifier ID) const
+{
+	if(m_AttributesDirty)
+	{
+		RecalculateRawAttributeCache();
+		m_AttributesDirty = false;
+	}
+
+	const auto It = m_CachedRawAttributes.find(ID);
+	return It != m_CachedRawAttributes.end() ? It->second : 0;
 }
 
 std::optional<float> CPlayer::GetTotalAttributeChance(AttributeIdentifier ID) const

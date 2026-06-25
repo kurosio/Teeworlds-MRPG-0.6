@@ -34,11 +34,16 @@ void CInventoryListener::OnPlayerLogin(CPlayer* pPlayer, CAccountData* pAccount)
 		return;
 
 	pAccount->AutoEquipSlots(true);
+	pPlayer->InvalidateAttributeCache();
 }
 
 
 void CInventoryListener::OnPlayerProfessionUpgrade(CPlayer* pPlayer, int AttributeID)
 {
+	if(!pPlayer)
+		return;
+
+	pPlayer->InvalidateAttributeCache();
 	auto attID = static_cast<AttributeIdentifier>(AttributeID);
 	auto totalAttribute = pPlayer->GetTotalRawAttributeValue(attID);
 	pPlayer->UpdateTotalAttributeValue(attID, totalAttribute);
@@ -48,9 +53,13 @@ void CInventoryListener::OnPlayerProfessionUpgrade(CPlayer* pPlayer, int Attribu
 
 void CInventoryListener::OnPlayerProfessionChange(CPlayer* pPlayer, CProfession* pOldProf, CProfession* pNewProf)
 {
+	if(!pPlayer)
+		return;
+
 	if(pOldProf != pNewProf)
 	{
 		pPlayer->Account()->AutoEquipSlots(true);
+		pPlayer->InvalidateAttributeCache();
 		UpdateAttributesFull(pPlayer);
 	}
 }
@@ -86,6 +95,8 @@ void CInventoryListener::UpdateAttributesForItem(CPlayer* pPlayer, CPlayerItem* 
 	if(!pPlayer || !pItem || !pItem->Info())
 		return;
 
+	pPlayer->InvalidateAttributeCache();
+
 	// update tracking attributes based on item attributes
 	for(const auto& AttributeInfo : pItem->Info()->GetAttributes())
 	{
@@ -107,6 +118,8 @@ void CInventoryListener::UpdateAttributesFull(CPlayer* pPlayer)
 {
 	if(!pPlayer)
 		return;
+
+	pPlayer->InvalidateAttributeCache();
 
 	// update total player stats
 	for(auto& [Id, Info] : CAttributeDescription::Data())

@@ -51,6 +51,8 @@ protected:
 	int64_t m_LastPlaytime {};
 	FixedViewCam m_FixedView {};
 	std::map<AttributeIdentifier, int> m_aStats {};
+	mutable bool m_AttributesDirty { true };
+	mutable std::unordered_map<AttributeIdentifier, int> m_CachedRawAttributes {};
 
 public:
 	CGS* GS() const { return m_pGS; }
@@ -137,6 +139,8 @@ public:
 	virtual std::optional<int> GetEquippedSlotItemID(ItemType EquipID) const;
 	virtual bool IsEquippedSlot(ItemType EquipID) const;
 	virtual int GetTotalRawAttributeValue(AttributeIdentifier ID) const;
+	void InvalidateAttributeCache() const { m_AttributesDirty = true; }
+	void RecalculateRawAttributeCache() const;
 	std::optional<float> GetTotalAttributeChance(AttributeIdentifier ID) const;
 	virtual void UpdateSharedCharacterData(int Health, int Mana);
 
