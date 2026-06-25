@@ -80,11 +80,11 @@ void CGameControllerDungeon::ChangeState(int NewState)
 		for(int i = 0; i < MAX_PLAYERS; i++)
 		{
 			auto* pPlayer = GS()->GetPlayer(i);
-			if(pPlayer && GS()->IsPlayerInWorld(i, m_pDungeon->GetWorldID()))
-			{
-				pScenario->AddParticipant(i);
-				pPlayer->GetSharedData().m_TempStartDungeonTick = Server()->Tick();
-			}
+			if(!pPlayer || pPlayer->GetTeam() == TEAM_SPECTATORS || !GS()->IsPlayerInWorld(i, m_pDungeon->GetWorldID()))
+				continue;
+
+			pScenario->AddParticipant(i);
+			pPlayer->GetSharedData().m_TempStartDungeonTick = Server()->Tick();
 		}
 
 		KillAllPlayers();
