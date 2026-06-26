@@ -21,8 +21,8 @@ class CWarehouseManager : public MmoComponent
 	void ShowGroupedSelector(CPlayer* pPlayer, CWarehouse* pWarehouse, bool IsBuyingAction) const;
 	void ShowTrade(CPlayer* pPlayer, CWarehouse* pWarehouse, int TradeID) const;
 
-	bool BuyItem(CPlayer* pPlayer, CWarehouse* pWarehouse, int TradeID) const;
-	bool SellItem(CPlayer* pPlayer, CWarehouse* pWarehouse, int TradeID, int Value) const;
+	bool BuyItem(CPlayer* pPlayer, CWarehouse* pWarehouse, int TradeID, int Amount) const;
+	bool SellItem(CPlayer* pPlayer, CWarehouse* pWarehouse, int TradeID, int Amount) const;
 
 public:
 	CWarehouse* GetWarehouse(vec2 Pos) const;

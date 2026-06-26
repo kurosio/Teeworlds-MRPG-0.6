@@ -92,11 +92,12 @@ bool CWarehouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
 	{
 		const auto WarehouseID = GetIfExists<int>(Extras, 0, NOPE);
 		const auto TradeID = GetIfExists<int>(Extras, 1, NOPE);
+		const int Amount = ReasonNumber;
 		auto* pWarehouse = GetWarehouse(WarehouseID);
 		if(!pWarehouse)
 			return true;
 
-		if(BuyItem(pPlayer, pWarehouse, TradeID))
+		if(BuyItem(pPlayer, pWarehouse, TradeID, Amount))
 		{
 			GS()->CreateSound(pPlayer->m_ViewPos, SOUND_SFX_TRADE);
 			pPlayer->m_VotesData.UpdateCurrentVotes();
@@ -110,12 +111,12 @@ bool CWarehouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
 	{
         const auto WarehouseID = GetIfExists<int>(Extras, 0, NOPE);
         const auto TradeID = GetIfExists<int>(Extras, 1, NOPE);
-		const int ValueToSell = ReasonNumber;
+		const int Amount = ReasonNumber;
 		auto* pWarehouse = GetWarehouse(WarehouseID);
 		if(!pWarehouse)
 			return true;
 
-		if(SellItem(pPlayer, pWarehouse, TradeID, ValueToSell))
+		if(SellItem(pPlayer, pWarehouse, TradeID, Amount))
 		{
 			GS()->CreateSound(pPlayer->m_ViewPos, SOUND_SFX_TRADE);
 			pPlayer->m_VotesData.UpdateCurrentVotes();
@@ -508,51 +509,65 @@ void CWarehouseManager::ShowTrade(CPlayer* pPlayer, CWarehouse* pWarehouse, int 
 }
 
 
-bool CWarehouseManager::BuyItem(CPlayer* pPlayer, CWarehouse* pWarehouse, int TradeID) const
+bool CWarehouseManager::BuyItem(CPlayer* pPlayer, CWarehouse* pWarehouse, int TradeID, int Amount) const
 {
-	if(!pWarehouse || !pWarehouse->GetTrade(TradeID))
+	if(!pPlayer || !pWarehouse || Amount <= 0)
+		return false;
+
+	const auto* pTrade = pWarehouse->GetTrade(TradeID);
+	if(!pTrade)
 		return false;
 
 	const int ClientID = pPlayer->GetCID();
-	const auto* pTrade = pWarehouse->GetTrade(TradeID);
-	const auto* pItemToBuy = pTrade->GetItem();
 	const auto* pCurrency = pWarehouse->GetCurrency();
-	auto* pPlayerItemBuy = pPlayer->GetItem(*pItemToBuy);
-
+	const auto* pBoughtItem = pTrade->GetItem();
+	if(!pCurrency || !pBoughtItem)
+		return false;
 
 	// check if the player has the enchanted item in the backpack
-	if(pPlayerItemBuy->HasItem() && !pPlayerItemBuy->Info()->IsStackable())
+	auto* pBoughtPlayerItem = pPlayer->GetItem(*pBoughtItem);
+	if(!pBoughtPlayerItem->Info()->IsStackable())
 	{
-		GS()->Chat(ClientID, "Enchant item maximal count x1 in a backpack!");
+		if(pBoughtPlayerItem->HasItem())
+		{
+			GS()->Chat(ClientID, "Enchant item maximal count x1 in a backpack!");
+			return false;
+		}
+
+		Amount = 1;
+	}
+
+
+	// check amount large
+	const int maxMultiplier = std::max({ pTrade->GetPrice(), pTrade->GetProductsCost(), pBoughtItem->GetValue() });
+	if(maxMultiplier > 0 && Amount > std::numeric_limits<int>::max() / maxMultiplier)
+	{
+		GS()->Chat(ClientID, "Requested amount is too large!");
 		return false;
 	}
 
 
 	// check products
-	if(pWarehouse->IsHasFlag(WF_STORAGE))
+	const int TotalPrice = pTrade->GetPrice() * Amount;
+	const int TotalProductsCost = pTrade->GetProductsCost() * Amount;
+	const int TotalItemsGained = pBoughtItem->GetValue() * Amount;
+	if(pWarehouse->IsHasFlag(WF_STORAGE) && pWarehouse->Storage().GetValue() < TotalProductsCost)
 	{
-		const auto ProductsCost = pTrade->GetProductsCost();
-		if(pWarehouse->Storage().GetValue() < ProductsCost)
-		{
-			GS()->Chat(ClientID, "Not enought products in storage! Required '{} products'.", ProductsCost);
-			return false;
-		}
+		GS()->Chat(ClientID, "Not enough products in storage! Required '{}' products.", TotalProductsCost);
+		return false;
 	}
 
-
 	// purchase an item
-	if(pPlayer->Account()->SpendCurrency(pTrade->GetPrice(), pCurrency->GetID()))
+	if(pPlayer->Account()->SpendCurrency(TotalPrice, pCurrency->GetID()))
 	{
 		// storage remove products
 		if(pWarehouse->IsHasFlag(WF_STORAGE))
-		{
-			pWarehouse->Storage().Remove(pTrade->GetProductsCost());
-		}
+			pWarehouse->Storage().Remove(TotalProductsCost);
 
 		// add items
-		pPlayerItemBuy->Add(pItemToBuy->GetValue(), 0, pItemToBuy->GetEnchant());
+		pBoughtPlayerItem->Add(TotalItemsGained, 0, pBoughtItem->GetEnchant());
 		GS()->Chat(ClientID, "You exchanged '{} x{$}' for '{} x{}'.",
-			pCurrency->GetName(), pTrade->GetPrice(), pItemToBuy->Info()->GetName(), pItemToBuy->GetValue());
+			pCurrency->GetName(), TotalPrice, pBoughtItem->Info()->GetName(), TotalItemsGained);
 		return true;
 	}
 
@@ -560,7 +575,7 @@ bool CWarehouseManager::BuyItem(CPlayer* pPlayer, CWarehouse* pWarehouse, int Tr
 }
 
 
-bool CWarehouseManager::SellItem(CPlayer* pPlayer, CWarehouse* pWarehouse, int TradeID, int ValueToSell) const
+bool CWarehouseManager::SellItem(CPlayer* pPlayer, CWarehouse* pWarehouse, int TradeID, int Amount) const
 {
 	if(!pWarehouse || !pWarehouse->GetTrade(TradeID))
 		return false;
@@ -572,12 +587,12 @@ bool CWarehouseManager::SellItem(CPlayer* pPlayer, CWarehouse* pWarehouse, int T
 	auto* pPlayerCurrencyItem = pPlayer->GetItem(pCurrency->GetID());
 	const auto Price = pTrade->GetPrice();
 
-	const auto TotalValue = ValueToSell * pItem->GetValue();
-	const auto TotalProducts = ValueToSell * pTrade->GetProductsCost();
-	const auto TotalPrice = ValueToSell * Price;
+	const auto TotalValue = Amount * pItem->GetValue();
+	const auto TotalProducts = Amount * pTrade->GetProductsCost();
+	const auto TotalPrice = Amount * Price;
 
 	// try spend by item
-	if(ValueToSell > 0 && pPlayer->Account()->SpendCurrency(TotalValue, pItem->GetID()))
+	if(Amount > 0 && pPlayer->Account()->SpendCurrency(TotalValue, pItem->GetID()))
 	{
 		// storage add products
 		if(pWarehouse->IsHasFlag(WF_STORAGE))
