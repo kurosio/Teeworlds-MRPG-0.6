@@ -3,6 +3,8 @@ import asyncio
 import discord
 from discord.ext import commands
 import logging
+import json
+import os
 from typing import cast, Optional, Dict
 
 # Project imports
@@ -34,7 +36,85 @@ class BridgeCog(commands.Cog):
         self._monitor_task: Optional[asyncio.Task] = None
         self._first_connect_attempt = True
         self._ready_event = asyncio.Event()
+        self._muted_file = os.path.join(os.path.dirname(__file__), "..", "..", "muted_players.json")
+        self.muted_players: set = self._load_json_set(self._muted_file)
+        self._bridge_disabled_file = os.path.join(os.path.dirname(__file__), "..", "..", "bridge_disabled.json")
+        self.bridge_disabled_players: set = self._load_json_set(self._bridge_disabled_file)
 
+
+    def _load_json_set(self, filepath: str) -> set:
+        try:
+            with open(filepath, "r") as f:
+                return set(json.load(f))
+        except Exception:
+            return set()
+
+    def _save_json_set(self, filepath: str, data: set):
+        try:
+            with open(filepath, "w") as f:
+                json.dump(list(data), f, indent=2)
+        except Exception as e:
+            logger.error(f"Failed to save {os.path.basename(filepath)}: {e}")
+
+    def _has_admin_role(self, interaction: discord.Interaction) -> bool:
+        if not interaction.guild or not isinstance(interaction.user, discord.Member):
+            return False
+        admin_role_id = getattr(__import__('config'), 'ADMIN_ROLE_ID', None)
+        if admin_role_id is None:
+            return interaction.user.guild_permissions.administrator
+        return any(r.id == admin_role_id for r in interaction.user.roles)
+
+    @discord.app_commands.command(name="bridge_mute", description="[Admin] Mute a player — their in-game messages won't appear on Discord.")
+    @discord.app_commands.describe(name="Exact in-game nickname to mute")
+    async def bridge_mute(self, interaction: discord.Interaction, name: str):
+        if not self._has_admin_role(interaction):
+            await interaction.response.send_message("❌ You don't have permission to use this command.", ephemeral=True)
+            return
+        if name in self.muted_players:
+            await interaction.response.send_message(f"⚠️ `{name}` is already muted.", ephemeral=True)
+            return
+        self.muted_players.add(name)
+        self._save_json_set(self._muted_file, self.muted_players)
+        logger.info(f"Admin {interaction.user} muted player '{name}' from bridge.")
+        await interaction.response.send_message(f"🔇 `{name}` has been muted from the bridge.", ephemeral=True)
+
+    @discord.app_commands.command(name="bridge_unmute", description="[Admin] Unmute a player — their in-game messages will appear on Discord again.")
+    @discord.app_commands.describe(name="Exact in-game nickname to unmute")
+    async def bridge_unmute(self, interaction: discord.Interaction, name: str):
+        if not self._has_admin_role(interaction):
+            await interaction.response.send_message("❌ You don't have permission to use this command.", ephemeral=True)
+            return
+        if name not in self.muted_players:
+            await interaction.response.send_message(f"⚠️ `{name}` is not in the mute list.", ephemeral=True)
+            return
+        self.muted_players.discard(name)
+        self._save_json_set(self._muted_file, self.muted_players)
+        logger.info(f"Admin {interaction.user} unmuted player '{name}' from bridge.")
+        await interaction.response.send_message(f"🔊 `{name}` has been unmuted from the bridge.", ephemeral=True)
+
+    @discord.app_commands.command(name="bridge_mutelist", description="[Admin] List all players currently muted from the bridge.")
+    async def bridge_mutelist(self, interaction: discord.Interaction):
+        if not self._has_admin_role(interaction):
+            await interaction.response.send_message("❌ You don't have permission to use this command.", ephemeral=True)
+            return
+        if not self.muted_players:
+            await interaction.response.send_message("✅ No players are currently muted.", ephemeral=True)
+            return
+        sorted_list = sorted(self.muted_players)
+        chunks = []
+        current = ""
+        for p in sorted_list:
+            entry = f"`{p}`  "
+            if len(current) + len(entry) > 1800:
+                chunks.append(current)
+                current = entry
+            else:
+                current += entry
+        if current:
+            chunks.append(current)
+        await interaction.response.send_message(f"🔇 **Muted players ({len(self.muted_players)}):**\n{chunks[0]}", ephemeral=True)
+        for chunk in chunks[1:]:
+            await interaction.followup.send(chunk, ephemeral=True)
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -256,6 +336,27 @@ class BridgeCog(commands.Cog):
 
         nickname = msg["nickname"]
         message_text = msg["message"]
+
+        if nickname == '__bridge_cmd__':
+            if message_text.startswith('[BRIDGE_DISABLE] '):
+                name = message_text[len('[BRIDGE_DISABLE] '):]
+                self.bridge_disabled_players.add(name)
+                self._save_json_set(self._bridge_disabled_file, self.bridge_disabled_players)
+                logger.info(f"Bridge self-disabled by player '{name}'")
+            elif message_text.startswith('[BRIDGE_ENABLE] '):
+                name = message_text[len('[BRIDGE_ENABLE] '):]
+                self.bridge_disabled_players.discard(name)
+                self._save_json_set(self._bridge_disabled_file, self.bridge_disabled_players)
+                logger.info(f"Bridge self-enabled by player '{name}'")
+            return
+
+        if nickname in self.muted_players:
+            logger.debug(f"Bridge suppressed message from muted player '{nickname}'")
+            return
+
+        if nickname in self.bridge_disabled_players:
+            logger.debug(f"Bridge suppressed message from self-disabled player '{nickname}'")
+            return
 
         if message_text.startswith(SERVER_TAG_TEEWORLDS):
             logger.debug(f"Ignoring own bridge message from Teeworlds: {nickname}")

@@ -26,6 +26,7 @@ class TeeworldsEconClient:
         escaped_discord_tag = re.escape(SERVER_TAG_TEEWORLDS)
         self.chat_pattern = re.compile(r"chat:\s*\d+:\d+:([^:]+):\s*(.*)$")
         self.system_chat_pattern = re.compile(rf"chat:\s+(\*\*\*)\s+(?!{escaped_discord_tag})(.*)")
+        self.bridge_cmd_pattern = re.compile(r"bridge:\s+(\[BRIDGE_(?:DISABLE|ENABLE)\] .+)$")
 
     @property
     def is_connected(self) -> bool:
@@ -65,6 +66,10 @@ class TeeworldsEconClient:
 
     def _parse_chat_message(self, cleaned_line: str) -> Optional[EconMessage]:
         """Parses chat-related econ output into an EconMessage."""
+        bridge_cmd_match = self.bridge_cmd_pattern.search(cleaned_line)
+        if bridge_cmd_match:
+            return EconChatMessage(type="chat", nickname="__bridge_cmd__", message=bridge_cmd_match.group(1).strip())
+
         system_chat_match = self.system_chat_pattern.search(cleaned_line)
         if system_chat_match:
             nickname = system_chat_match.group(1).strip()
