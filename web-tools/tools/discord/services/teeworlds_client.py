@@ -24,7 +24,7 @@ class TeeworldsEconClient:
 
         # regex pattern for reading econ messages
         escaped_discord_tag = re.escape(SERVER_TAG_TEEWORLDS)
-        self.chat_pattern = re.compile(r"chat:\s*\d+:\d+:([^:]+):\s*(.*)$")
+        self.chat_pattern = re.compile(r"(?<![a-z])chat:\s*\d+:\d+:([^:]+):\s*(.*)$")
         self.system_chat_pattern = re.compile(rf"chat:\s+(\*\*\*)\s+(?!{escaped_discord_tag})(.*)")
         self.bridge_cmd_pattern = re.compile(r"bridge:\s+(\[BRIDGE_(?:DISABLE|ENABLE)\] .+)$")
 
