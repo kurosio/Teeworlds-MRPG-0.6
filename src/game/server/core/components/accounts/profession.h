@@ -175,9 +175,9 @@ public:
 	{
 		// availables for upgrades
 		m_Attributes[AttributeIdentifier::Efficiency] = 1;
-
 		// equip slots
 		m_EquippedSlots.initSlot(ItemType::EquipPickaxe);
+		m_EquippedSlots.initSlot(ItemType::EquipPotionMiner);
 	}
 };
 
