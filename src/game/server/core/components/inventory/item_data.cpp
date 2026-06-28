@@ -557,7 +557,9 @@ bool CPlayerItem::Use(int Value)
 	{
 		// check potion recast time
 		const auto Type = Info()->GetType();
-		auto& recastTick = (Type == ItemType::EquipPotionHeal) ? pPlayer->m_aPlayerTick[HealPotionRecast] : pPlayer->m_aPlayerTick[ManaPotionRecast];
+		auto& recastTick = (Type == ItemType::EquipPotionHeal) ? pPlayer->m_aPlayerTick[HealPotionRecast]
+			: (Type == ItemType::EquipPotionMiner) ? pPlayer->m_aPlayerTick[MinerPotionRecast]
+			: pPlayer->m_aPlayerTick[ManaPotionRecast];
 		if(recastTick >= Server()->Tick())
 			return true;
 
