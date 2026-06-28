@@ -63,6 +63,16 @@ bool CDutiesManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 
 		// Mini-games
 		VoteWrapper VMiniGames(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "\u266C Mini-games ({})", GetWorldsCountByType(WorldType::MiniGames));
+		for(int i = 0; i < Server()->GetWorldsSize(); i++)
+		{
+			const auto* pDetail = Server()->GetWorldDetail(i);
+			if(pDetail->GetType() == WorldType::MiniGames)
+			{
+				const auto ClientsNum = Server()->GetClientsCountByWorld(i);
+				const char* pStatus = (ClientsNum > 0 ? "Active" : "Waiting");
+				VMiniGames.AddMenu(MENU_MINIGAMES_SELECT, i, "Lv{}. {} : {}", pDetail->GetRequiredLevel(), Server()->GetWorldName(i), pStatus);
+			}
+		}
 		VoteWrapper::AddEmptyline(ClientID);
 
 		// Social worlds
@@ -135,6 +145,19 @@ bool CDutiesManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 
 		if(const auto WorldID = pPlayer->m_VotesData.GetExtraID())
 			ShowRhythmInfo(pPlayer, WorldID.value());
+
+		// add backpage
+		VoteWrapper::AddBackpage(ClientID);
+		return true;
+	}
+
+	// minigames select
+	if(Menulist == MENU_MINIGAMES_SELECT)
+	{
+		pPlayer->m_VotesData.SetLastMenuID(MENU_DUTIES_LIST);
+
+		if(const auto WorldID = pPlayer->m_VotesData.GetExtraID())
+			ShowMiniGamesInfo(pPlayer, WorldID.value());
 
 		// add backpage
 		VoteWrapper::AddBackpage(ClientID);
@@ -284,6 +307,34 @@ bool CDutiesManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, con
 		return true;
 	}
 
+	// minigames enter
+	if(PPSTR(pCmd, "MINIGAMES_JOIN") == 0)
+	{
+		auto WorldIdOpt = GetIfExists<int>(Extras, 0);
+		if(!WorldIdOpt.has_value() || !Server()->IsWorldType(WorldIdOpt.value(), WorldType::MiniGames))
+			return true;
+
+		// check equal player world
+		if(GS()->IsPlayerInWorld(ClientID, WorldIdOpt))
+		{
+			GS()->Chat(ClientID, "You are already in this mini-game.");
+			pPlayer->m_VotesData.UpdateVotesIf(MENU_DUTIES_LIST);
+			return true;
+		}
+
+		// check valid level
+		if(pPlayer->Account()->GetLevel() < Server()->GetWorldDetail(WorldIdOpt.value())->GetRequiredLevel())
+		{
+			GS()->Chat(ClientID, "Your level is too low to join this mini-game.");
+			pPlayer->m_VotesData.UpdateVotesIf(MENU_DUTIES_LIST);
+			return true;
+		}
+
+		GS()->Chat(-1, "'{~}' joined mini-game '{}'!", Server()->ClientName(ClientID), Server()->GetWorldName(WorldIdOpt.value()));
+		pPlayer->ChangeWorld(WorldIdOpt.value());
+		return true;
+	}
+
 	// social enter
 	if(PPSTR(pCmd, "SOCIAL_JOIN") == 0)
 	{
@@ -389,6 +440,11 @@ void CDutiesManager::ShowInsideMenu(CPlayer* pPlayer) const
 		VoteWrapper(ClientID).AddOption("DUTIES_EXIT", "Exit from Social");
 		VoteWrapper::AddEmptyline(ClientID);
 	}
+	else if(GS()->IsWorldType(WorldType::MiniGames))
+	{
+		VoteWrapper(ClientID).AddOption("DUTIES_EXIT", "Exit from Mini-game");
+		VoteWrapper::AddEmptyline(ClientID);
+	}
 }
 
 void CDutiesManager::ShowPvpInfo(CPlayer* pPlayer, int WorldID) const
@@ -482,6 +538,26 @@ void CDutiesManager::ShowSocialInfo(CPlayer* pPlayer, int WorldID) const
 	// options
 	VoteWrapper VOptions(ClientID);
 	VOptions.AddOption("SOCIAL_JOIN", WorldID, "Visit social world");
+	VoteWrapper::AddEmptyline(ClientID);
+}
+
+void CDutiesManager::ShowMiniGamesInfo(CPlayer* pPlayer, int WorldID) const
+{
+	const auto ClientID = pPlayer->GetCID();
+	const auto ClientsNum = Server()->GetClientsCountByWorld(WorldID);
+	const auto* pDetail = Server()->GetWorldDetail(WorldID);
+	const char* pName = Server()->GetWorldName(WorldID);
+
+	// info
+	VoteWrapper VInfo(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_DOUBLE | VWF_ALIGN_TITLE, "\u2692 Detail information");
+	VInfo.Add("Name: {}", pName);
+	VInfo.Add("Recommended level: {} LVL", pDetail->GetRequiredLevel());
+	VInfo.Add("Players in-game: {}", ClientsNum);
+	VoteWrapper::AddEmptyline(ClientID);
+
+	// options
+	VoteWrapper VOptions(ClientID);
+	VOptions.AddOption("MINIGAMES_JOIN", WorldID, "Join mini-game");
 	VoteWrapper::AddEmptyline(ClientID);
 }
 
