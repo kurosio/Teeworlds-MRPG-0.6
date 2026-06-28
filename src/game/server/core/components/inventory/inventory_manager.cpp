@@ -201,7 +201,7 @@ bool CInventoryManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 
 			// handle potion information
 			const auto pPlayerItem = pPlayer->GetItem(EquippedItemIdOpt.value());
-			if(EquipID == ItemType::EquipPotionHeal || EquipID == ItemType::EquipPotionMana)
+			if(EquipID == ItemType::EquipPotionHeal || EquipID == ItemType::EquipPotionMana || EquipID == ItemType::EquipPotionMiner)
 			{
 				if(const auto PotionContextOpt = pPlayerItem->Info()->GetPotionContext())
 				{
