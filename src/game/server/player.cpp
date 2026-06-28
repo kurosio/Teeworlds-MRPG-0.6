@@ -757,6 +757,14 @@ void CPlayer::FormatBroadcastBasicStats(char* pBuffer, int Size, const char* pAp
 		Result += "\n" + fmt_localize(m_ClientID, "Potion MP recast: {}", Seconds);
 	}
 
+	// recast miner info
+	PotionRecastTime = m_aPlayerTick[MinerPotionRecast] - Server()->Tick();
+	if(PotionRecastTime > 0)
+	{
+		const auto Seconds = std::max(0, PotionRecastTime / Server()->TickSpeed());
+		Result += "\n" + fmt_localize(m_ClientID, "Potion Miner recast: {}", Seconds);
+	}
+
 	// bonus activities info
 	if(!BonusActivitiesStr.empty())
 	{
