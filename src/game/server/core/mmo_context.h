@@ -1,4 +1,4 @@
-﻿/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
+/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #ifndef GAME_SERVER_CORE_MMO_CONTEXT_H
 #define GAME_SERVER_CORE_MMO_CONTEXT_H
@@ -154,6 +154,7 @@ enum ETickState
 	LastRandomBox,
 	HealPotionRecast,
 	ManaPotionRecast,
+	MinerPotionRecast,
 	RefreshClanTitle,
 	RefreshNickLeveling,
 	LastSetSpectatorMode,
@@ -353,6 +354,7 @@ enum class ItemType : short
 	EquipEidolon,
 	EquipPotionHeal,
 	EquipPotionMana,
+	EquipPotionMiner,
 	EquipTitle,
 	NUM_EQUIPPED,
 
@@ -388,6 +390,7 @@ inline static ItemType GetItemTypeFromDBSet(const DBSet& dbset) noexcept
 	else if(dbset.hasSet("Equip title")) return ItemType::EquipTitle;
 	else if(dbset.hasSet("Equip potion HP")) return ItemType::EquipPotionHeal;
 	else if(dbset.hasSet("Equip potion MP")) return ItemType::EquipPotionMana;
+	else if(dbset.hasSet("Equip potion Miner")) return ItemType::EquipPotionMiner;
 	else if(dbset.hasSet("Single use x1")) return ItemType::UseSingle;
 	else if(dbset.hasSet("Multiple use x99")) return ItemType::UseMultiple;
 	else if(dbset.hasSet("Resource harvestable")) return ItemType::ResourceHarvestable;
@@ -424,6 +427,7 @@ constexpr const char* GetItemTypeName(ItemType type) noexcept
 		case ItemType::EquipTitle:          return "Cosmetic: Title";
 		case ItemType::EquipPotionHeal:     return "Potion: Health";
 		case ItemType::EquipPotionMana:     return "Potion: Mana";
+		case ItemType::EquipPotionMiner:    return "Potion: Miner";
 		case ItemType::UseSingle:           return "Single-Use Item";
 		case ItemType::UseMultiple:         return "Multi-Use Item";
 		case ItemType::ResourceHarvestable: return "Resource (Harvestable)";
