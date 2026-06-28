@@ -145,7 +145,24 @@ void CEntityGatheringNode::Die(CPlayer* pPlayer, CProfession* pProfession)
 	auto* pPlayerItem = pPlayer->GetItem(ItemID);
 
 	if(m_Type == GATHERING_NODE_ORE)
+	{
 		GS()->Core()->MiniEventsManager()->ApplyBonus(MiniEventType::MiningDrop, &Value);
+
+		// miner potion luck bonus
+		const auto MinerPotionOpt = pPlayer->GetEquippedSlotItemID(ItemType::EquipPotionMiner);
+		if(MinerPotionOpt.has_value())
+		{
+			auto* pPotionItem = pPlayer->GetItem(MinerPotionOpt.value());
+			if(pPotionItem->IsEquipped())
+			{
+				if(const auto optCtx = pPotionItem->Info()->GetPotionContext())
+				{
+					if(pPlayer->m_Effects.IsActive(optCtx->Effect) && random_float(100.f) < (float)optCtx->Value)
+						Value += 1;
+				}
+			}
+		}
+	}
 	else if(m_Type == GATHERING_NODE_PLANT)
 		GS()->Core()->MiniEventsManager()->ApplyBonus(MiniEventType::FarmerDrop, &Value);
 
