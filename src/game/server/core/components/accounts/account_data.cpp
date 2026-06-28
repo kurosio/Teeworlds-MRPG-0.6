@@ -620,10 +620,11 @@ void CAccountData::AutoEquipSlots(bool OnlyEmptySlots)
 		ItemType::EquipLaser
 	};
 
-	static constexpr std::array<ItemType, 3> DisabledAutoEquipTypes =
+	static constexpr std::array<ItemType, 4> DisabledAutoEquipTypes =
 	{
 		ItemType::EquipPotionHeal,
 		ItemType::EquipPotionMana,
+		ItemType::EquipPotionMiner,
 		ItemType::EquipEidolon,
 	};
 
