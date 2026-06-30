@@ -1,4 +1,4 @@
-﻿/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
+/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "gamecontext.h"
 
@@ -11,6 +11,7 @@
 #include "worldmodes/rhythm/rhythm.h"
 #include "worldmodes/tutorial.h"
 #include "worldmodes/dungeon/dungeon.h"
+#include "worldmodes/trueorfalse/trueorfalse.h"
 
 #include "entity_manager.h"
 #include "core/command_processor.h"
@@ -1612,6 +1613,12 @@ void CGS::InitWorld()
 		{
 			m_pController = new CGameControllerRhythm(this);
 			worldTypeStr = "Rhythm";
+			break;
+		}
+	case WorldType::MiniGames:
+		{
+			m_pController = new CGameControllerTrueOrFalse(this);
+			worldTypeStr = "MiniGames";
 			break;
 		}
 		case WorldType::Social:
