@@ -174,21 +174,24 @@ void CCharacter::HandleWeaponSwitch()
 
 	if(Next < 128) // make sure we only try sane stuff
 	{
-		while(Next) // Next Weapon selection
+		int Tries = 0;
+		while(Next && Tries < NUM_WEAPONS)
 		{
 			WantedWeapon = (WantedWeapon + 1) % NUM_WEAPONS;
 			if(m_Core.m_aWeapons[WantedWeapon].m_Got)
 				Next--;
+			Tries++;
 		}
 	}
-
 	if(Prev < 128) // make sure we only try sane stuff
 	{
-		while(Prev) // Prev Weapon selection
+		int Tries = 0;
+		while(Prev && Tries < NUM_WEAPONS)
 		{
 			WantedWeapon = (WantedWeapon - 1) < 0 ? NUM_WEAPONS - 1 : WantedWeapon - 1;
 			if(m_Core.m_aWeapons[WantedWeapon].m_Got)
 				Prev--;
+			Tries++;
 		}
 	}
 
