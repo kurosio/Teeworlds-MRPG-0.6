@@ -12,6 +12,7 @@ class RconProcessor
 	static void ConRemItem(IConsole::IResult* pResult, void* pUserData);
 	static void ConDisbandGuild(IConsole::IResult* pResult, void* pUserData);
 	static void ConSay(IConsole::IResult* pResult, void* pUserData);
+	static void ConAddBlockedString(IConsole::IResult* pResult, void* pUserData);
 	static void ConAddCharacter(IConsole::IResult* pResult, void* pUserData);
 	static void ConSyncLinesForTranslate(IConsole::IResult* pResult, void* pUserData);
 	static void ConReloadLocalization(IConsole::IResult* pResult, void* pUserData);
