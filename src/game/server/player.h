@@ -91,6 +91,7 @@ public:
 	std::optional<int> m_SubgroupFilter {};
 
 	char m_aLastMsg[256]{};
+	int m_NumBlockedLinkAttempts{};
 	StructLatency m_Latency;
 	StructLastAction m_LatestActivity;
 
@@ -201,3 +202,4 @@ public:
 };
 
 #endif
+
