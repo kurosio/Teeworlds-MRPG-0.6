@@ -150,6 +150,7 @@ enum ETickState
 	LastChangeTeam,
 	LastChat,
 	LastVote,
+	JoinProtection,
 	LastDialog,
 	LastRandomBox,
 	HealPotionRecast,

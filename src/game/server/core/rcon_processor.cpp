@@ -7,6 +7,7 @@
 #include "components/guilds/guild_manager.h"
 #include "components/Bots/BotManager.h"
 #include "components/mails/mail_wrapper.h"
+#include "tools/safe_chat.h"
 
 void RconProcessor::Init(IConsole* pConsole, IServer* pServer)
 {
@@ -17,6 +18,7 @@ void RconProcessor::Init(IConsole* pConsole, IServer* pServer)
 	pConsole->Register("remove_item", "i[cid]i[itemid]i[count]", CFGFLAG_SERVER, ConRemItem, pServer, "Remove item <clientid> <itemid> <count>");
 	pConsole->Register("disband_guild", "r[guildname]", CFGFLAG_SERVER, ConDisbandGuild, pServer, "Disband the guild with the name");
 	pConsole->Register("say", "r[text]", CFGFLAG_SERVER, ConSay, pServer, "Say in chat");
+	pConsole->Register("add_blocked_string", "r[string]", CFGFLAG_SERVER, ConAddBlockedString, pServer, "Append a substring to sv_chat_blocked_strings and save to disk");
 	pConsole->Register("add_character", "i[cid]r[botname]", CFGFLAG_SERVER, ConAddCharacter, pServer, "(Warning) Add new bot on database or update if finding <clientid> <bot name>");
 	pConsole->Register("sync_lines_for_translate", "", CFGFLAG_SERVER, ConSyncLinesForTranslate, pServer, "Perform sync lines in translated files. Order non updated translated to up");
 	pConsole->Register("reload_localization", "", CFGFLAG_SERVER, ConReloadLocalization, pServer, "Synchronize translation keys and safely reload all localization files");
@@ -378,6 +380,27 @@ void RconProcessor::ConSay(IConsole::IResult* pResult, void* pUserData)
 
 	// send chat
 	pSelf->SendChat(true, -1, CHAT_ALL, pResult->GetString(0));
+}
+
+void RconProcessor::ConAddBlockedString(IConsole::IResult* pResult, void* pUserData)
+{
+	// initialize variables
+	const auto pServer = (IServer*)pUserData;
+	const auto pSelf = (CGS*)pServer->GameServer();
+	const char* pNewString = pResult->GetString(0);
+
+	// avoid duplicate append if already present
+	if(str_find_nocase(g_Config.m_SvChatBlockedStrings, pNewString) != nullptr)
+		return;
+
+	// append with comma separator if list is not empty
+	if(g_Config.m_SvChatBlockedStrings[0] != '\0')
+		str_append(g_Config.m_SvChatBlockedStrings, ",");
+
+	str_append(g_Config.m_SvChatBlockedStrings, pNewString);
+
+	// persist to disk so it survives a server restart
+	CSafeChat::Save(pSelf->Storage());
 }
 
 

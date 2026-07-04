@@ -31,6 +31,7 @@
 #include "core/components/worlds/world_data.h"
 #include "core/tools/vote_optional.h"
 #include "core/tools/vote_wrapper.h"
+#include "core/tools/safe_chat.h"
 
 #include "core/scenarios/managers/scenario_group_manager.h"
 #include "core/scenarios/managers/scenario_player_manager.h"
@@ -698,6 +699,8 @@ void CGS::OnInit(int WorldID)
 	m_pScenarioPlayerManager = new CScenarioPlayerManager(this);
 	m_pScenarioGroupManager = new CScenarioGroupManager(this);
 	m_pScenarioWorldManager = new CScenarioWorldManager(this);
+
+	CSafeChat::Load(m_pStorage);
 }
 
 void CGS::OnConsoleInit()
@@ -882,6 +885,26 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 
 			// initialize variables
 			const auto pMsg = (CNetMsg_Cl_Say*)pRawMsg;
+
+			if(CSafeChat::IsJoinCooldownActive(pPlayer->m_aPlayerTick, Server()->Tick()))
+			{
+				Chat(ClientID, "Please wait a few seconds before chatting.");
+				return;
+			}
+
+			if(CSafeChat::ContainsBlockedLink(pMsg->m_pMessage))
+			{
+				pPlayer->m_NumBlockedLinkAttempts++;
+				if(pPlayer->m_NumBlockedLinkAttempts > g_Config.m_SvChatLinkMaxWarnings)
+				{
+					Server()->Kick(ClientID, "Advertising blocked. Mistake? discord.gg/ZwdPXkDXx9");
+					return;
+				}
+				Chat(ClientID, "Links are not allowed in chat. Warning {}/{} — you will be kicked after {} attempts.",
+					pPlayer->m_NumBlockedLinkAttempts, g_Config.m_SvChatLinkMaxWarnings, g_Config.m_SvChatLinkMaxWarnings);
+				return;
+			}
+
 			pPlayer->m_aPlayerTick[LastChat] = Server()->Tick() + Server()->TickSpeed();
 			if(!str_utf8_check(pMsg->m_pMessage))
 				return;
@@ -1254,6 +1277,7 @@ void CGS::OnClientEnter(int ClientID, bool FirstEnter)
 
 	if(FirstEnter)
 	{
+		pPlayer->m_aPlayerTick[JoinProtection] = Server()->Tick() + Server()->TickSpeed() * g_Config.m_SvChatJoinCooldown;
 		Chat(-1, "'{~}' entered and joined the {~}", Server()->ClientName(ClientID), g_Config.m_SvGamemodeName);
 		CMmoController::AsyncClientEnterMsgInfo(Server()->ClientName(ClientID), ClientID);
 		return;

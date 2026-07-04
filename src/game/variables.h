@@ -194,6 +194,14 @@ MACRO_CONFIG_INT(SvMiniEventsChainMax, sv_mini_events_chain_max, 3, 0, 10, CFGFL
 MACRO_CONFIG_INT(SvMiniEventsChainBonusStepPercent, sv_mini_events_chain_bonus_step, 50, 0, 500, CFGFLAG_SERVER, "Additional bonus percent added for each chain level")
 
 // -----------------------
+// Anti-spam chat filter
+// -----------------------
+MACRO_CONFIG_INT(SvChatJoinCooldown, sv_chat_join_cooldown, 5, 0, 999999999, CFGFLAG_SERVER, "Seconds a player must wait after joining before they can chat")
+MACRO_CONFIG_INT(SvChatLinkMaxWarnings, sv_chat_link_max_warnings, 2, 0, 999999999, CFGFLAG_SERVER, "Number of warnings for posting blocked links before the player is kicked")
+MACRO_CONFIG_STR(SvChatBlockedStrings, sv_chat_blocked_strings, 512, "t.me/,telegram.me/,telegram.dog/,tg://,tg.me/,discord.gg/,discord.com/invite/,discordapp.com/invite/,discord.me/,discord.io/,disboard.org/", CFGFLAG_SERVER, "Comma-separated list of substrings blocked in chat")
+
+
+// -----------------------
 // Miscellaneous Configuration
 // -----------------------
 MACRO_CONFIG_INT(SvPlayerRespawnTime, sv_player_respawn_time, 3, 0, 999, CFGFLAG_SERVER, "Player respawn time in seconds")
@@ -262,3 +270,4 @@ MACRO_CONFIG_INT(DbgDummies, dbg_dummies, 0, 0, MAX_CLIENTS - 1, CFGFLAG_SERVER,
 MACRO_CONFIG_INT(DbgFocus, dbg_focus, 0, 0, 1, CFGFLAG_CLIENT, "")
 MACRO_CONFIG_INT(DbgTuning, dbg_tuning, 0, 0, 1, CFGFLAG_CLIENT, "")
 #endif
+
