@@ -26,7 +26,7 @@ public:
 	void DropPickup(vec2 Pos, int Type, int Subtype, int Value, int NumDrop = 1, vec2 Force = vec2(0.0f, 0.0f)) const;
 	void DropItem(vec2 Pos, int ClientID, const CItem& Item, vec2 Force = vec2(0.0f, 0.0f)) const;
 	void RandomDropItem(vec2 Pos, int ClientID, float Chance, const CItem& Item, vec2 Force = vec2(0.0f, 0.0f)) const;
-	void FlyingPoint(vec2 Pos, int ClientID, vec2 Force = vec2(0.0f, 0.0f)) const;
+	void FlyingPoint(vec2 Pos, int ClientID, vec2 Force = vec2(0.0f, 0.0f), int Type = WEAPON_HAMMER) const;
 	void ExpFlyingPoint(vec2 Pos, int ClientID, int Exp, vec2 Force = vec2(0.0f, 0.0f)) const;
 
 	// text

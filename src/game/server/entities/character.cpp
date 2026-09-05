@@ -70,6 +70,7 @@ bool CCharacter::Spawn(CPlayer* pPlayer, vec2 Pos)
 
 	m_Pos = Pos;
 	m_PrevPos = Pos;
+	m_RespawnedPos = Pos;
 	m_Core.Reset();
 	m_Core.Init(&GS()->m_World.m_Core, GS()->Collision());
 	m_Core.m_ActiveWeapon = WEAPON_HAMMER;

@@ -18,7 +18,7 @@ class CEntityFlyingPoint : public CEntity
 	FlyingPointCallback m_pFunctionCollided{};
 
 public:
-	CEntityFlyingPoint(CGameWorld* pGameWorld, vec2 Pos, vec2 InitialVel, int ClientID, int FromID);
+	CEntityFlyingPoint(CGameWorld* pGameWorld, vec2 Pos, vec2 InitialVel, int ClientID, int FromID, int Type = WEAPON_HAMMER);
 	void Register(FlyingPointCallback pFunc) { m_pFunctionCollided = std::move(pFunc); };
 	void SetType(int Type) { m_Type = Type; }
 

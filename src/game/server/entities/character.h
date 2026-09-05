@@ -116,6 +116,7 @@ public:
 
 	int m_TuneZoneOverride {};
 	int m_MoveRestrictions {};
+	vec2 m_RespawnedPos{};
 	vec2 m_PrevPos {};
 
 	// constructors

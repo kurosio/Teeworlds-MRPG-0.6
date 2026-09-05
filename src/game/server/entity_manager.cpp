@@ -61,14 +61,14 @@ void CEntityManager::RandomDropItem(vec2 Pos, int ClientID, float Chance, const 
 		DropItem(Pos, ClientID, Item, Force);
 }
 
-void CEntityManager::FlyingPoint(vec2 Pos, int ClientID, vec2 Force) const
+void CEntityManager::FlyingPoint(vec2 Pos, int ClientID, vec2 Force, int Type) const
 {
-	new CEntityFlyingPoint(&GS()->m_World, Pos, Force, ClientID, -1);
+	new CEntityFlyingPoint(&GS()->m_World, Pos, Force, ClientID, -1, Type);
 }
 
 void CEntityManager::ExpFlyingPoint(vec2 Pos, int ClientID, int Exp, vec2 Force) const
 {
-	auto* pPoint = new CEntityFlyingPoint(&GS()->m_World, Pos, Force, ClientID, -1);
+	auto* pPoint = new CEntityFlyingPoint(&GS()->m_World, Pos, Force, ClientID, -1, WEAPON_HAMMER);
 	pPoint->Register([Exp](CPlayer*, CPlayer* pPlayer)
 	{
 		pPlayer->Account()->AddExperience(Exp);

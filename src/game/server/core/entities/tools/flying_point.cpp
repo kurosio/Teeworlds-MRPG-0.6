@@ -4,7 +4,7 @@
 
 #include <game/server/gamecontext.h>
 
-CEntityFlyingPoint::CEntityFlyingPoint(CGameWorld* pGameWorld, vec2 Pos, vec2 InitialVel, int ClientID, int FromID)
+CEntityFlyingPoint::CEntityFlyingPoint(CGameWorld* pGameWorld, vec2 Pos, vec2 InitialVel, int ClientID, int FromID, int Type)
 	: CEntity(pGameWorld, CGameWorld::ENTTYPE_TOOLS, Pos)
 {
 	m_Pos = Pos;
@@ -12,7 +12,7 @@ CEntityFlyingPoint::CEntityFlyingPoint(CGameWorld* pGameWorld, vec2 Pos, vec2 In
 	m_InitialAmount = 1.0f;
 	m_ClientID = ClientID;
 	m_FromID = FromID;
-	m_Type = WEAPON_HAMMER;
+	m_Type = Type;
 	m_Vel = m_InitialVel;
 
 	GameWorld()->InsertEntity(this);
