@@ -84,7 +84,7 @@ private:
 		char aTimeFormat[32] {};
 		str_format(aTimeFormat, sizeof(aTimeFormat), "%d.%.2ds", SecLeft, CentiSecLeft);
 		std::string progressBar = mystd::string::progressBar(100, static_cast<int>(currentProgress), 10, "\u25B0", "\u25B1");
-		Broadcast("{}\n< {} > {} - Action", m_Action, aTimeFormat, progressBar);
+		Broadcast("{}\n< {~} > {~} - Action", m_Action, aTimeFormat, progressBar);
 	}
 
 	void ResetProgress()
