@@ -182,9 +182,26 @@ public:
 	template <typename ... Ts>
 	vec2 VerifyPoint(int64_t CollisionFlags, vec2 Pos, std::string_view Message, const Ts&... FormatArgs) const
 	{
-		dbg_assert(CheckPoint(Pos, CollisionFlags) == false, fmt_default(Message.data(), FormatArgs...).c_str());
-		return Pos;
+		std::optional<vec2> FreePos = FindClosestFreeTile(Pos);
+		if (!FreePos.has_value())
+		{
+			dbg_assert(false, fmt_default(Message.data(), FormatArgs...).c_str());
+			return Pos;
+		}
+
+		const int OrigTile = GetPureMapIndex(Pos);
+		const int FreeTile = GetPureMapIndex(*FreePos);
+		if (OrigTile != FreeTile)
+		{
+			std::string FormattedMsg = fmt_default(Message.data(), FormatArgs...);
+			dbg_msg("collision", "Position (%d, %d) is blocked, relocated to (%d, %d). Info: %s",
+				(int)Pos.x, (int)Pos.y, (int)FreePos->x, (int)FreePos->y, FormattedMsg.c_str());
+		}
+
+		return *FreePos;
 	}
+
+	std::optional<vec2> FindClosestFreeTile(vec2 SearchCenter, std::optional<vec2> ReachableFrom = std::nullopt) const;
 };
 
 #endif

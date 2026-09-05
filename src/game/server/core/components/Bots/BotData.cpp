@@ -110,9 +110,9 @@ void QuestBotInfo::InitTasksFromJSON(CCollision* pCollision, const std::string& 
 
 			for(const auto& p : pJson["move_to"])
 			{
-				const auto Pos = vec2(p.value("x", -1.f), p.value("y", -1.f));
-				const auto VerifyPos = pCollision->VerifyPoint(CCollision::COLFLAG_DEATH | CCollision::COLFLAG_SOLID,
-					Pos, "QuestTask: Mob(ID:{}), Pos(X:{}({}), Y:{}({})) - invalid (death, solid) position.", m_ID, Pos.x, Pos.x / 32.f, Pos.y, Pos.y / 32.f);
+				const vec2 RawPos(p.value("x", -1.f), p.value("y", -1.f));
+				const vec2 VerifiedPos = pCollision->VerifyPoint(CCollision::COLFLAG_DEATH | CCollision::COLFLAG_SOLID | CCollision::COLFLAG_NOHOOK, 
+					RawPos, "Move Task: Quest NPC(ID: {}), Step {}", m_ID, LatestBiggerStep);
 				const int WorldID = p.value("world_id", m_WorldID);
 				const int Step = p.value("step", 1);
 				const float Cooldown = p.value("cooldown", 0.f);
@@ -194,7 +194,7 @@ void QuestBotInfo::InitTasksFromJSON(CCollision* pCollision, const std::string& 
 				Move.m_Cooldown = (int)(Cooldown * (float)SERVER_TICK_SPEED);
 				Move.m_PickupItem = PickUpItem;
 				Move.m_RequiredItem = RequiredItem;
-				Move.m_Position = VerifyPos;
+				Move.m_Position = VerifiedPos;
 				Move.m_CompletionText = CompletionText;
 				Move.m_TaskName = TaskName;
 				Move.m_TypeFlags = maximum(Type, (unsigned int)TaskAction::Types::TFMOVING);

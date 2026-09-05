@@ -9,11 +9,16 @@
 // forward declarations
 class CGS;
 class CPlayer;
-class CVoteGroupHidden;
-typedef void (*VoteOptionCallbackImpl)(CPlayer*, int, std::string, void*);
-typedef struct { VoteOptionCallbackImpl m_Impl; void* m_pData; } VoteOptionCallback;
 
-enum VoteDepthListStyles
+using VoteOptionCallbackImpl = void(*)(CPlayer*, int, std::string, void*);
+
+struct VoteOptionCallback
+{
+	VoteOptionCallbackImpl m_Impl{ nullptr };
+	void* m_pData{ nullptr };
+};
+
+enum VoteDepthListStyles : int
 {
 	DEPTH_LIST_STYLE_DEFAULT = 0,
 	DEPTH_LIST_STYLE_ROMAN,
@@ -22,7 +27,7 @@ enum VoteDepthListStyles
 	NUM_DEPTH_LIST_STYLES,
 };
 
-enum VoteDepthListStylesLevels
+enum VoteDepthListStylesLevels : int
 {
 	DEPTH_LVL1 = 0,
 	DEPTH_LVL2,
@@ -31,34 +36,37 @@ enum VoteDepthListStylesLevels
 	DEPTH_LVL5,
 };
 
-enum VoteWrapperFlags
+enum VoteWrapperFlags : int
 {
-	VWF_DISABLED = 0, // regular title group
-	VWF_SEPARATE = 1 << 1, // ends the group with a line
-	VWF_ALIGN_TITLE = 1 << 2, // example: ---  title  ---
-	VWF_STYLE_SIMPLE = 1 << 3, // example: ╭ │ ╰
-	VWF_STYLE_DOUBLE = 1 << 4, // example: ╔ ═ ╚
-	VWF_STYLE_STRICT = 1 << 5, // example: ┌ │ └
-	VWF_STYLE_STRICT_BOLD = 1 << 6, // example: ┏ ┃ ┗
-	VWF_OPEN = 1 << 7, // default open group
-	VWF_CLOSED = 1 << 8, // default close group
-	VWF_UNIQUE = 1 << 9, // default close group toggle unique groups
-	VWF_SEPARATE_OPEN = VWF_OPEN | VWF_SEPARATE, // default open group with end line
-	VWF_SEPARATE_CLOSED = VWF_CLOSED | VWF_SEPARATE, // default close group with end line
-	VWF_SEPARATE_UNIQUE = VWF_UNIQUE | VWF_SEPARATE, // default close group with end line
+	VWF_DISABLED = 0,
+	VWF_SEPARATE = 1 << 1,
+	VWF_ALIGN_TITLE = 1 << 2,
+	VWF_STYLE_SIMPLE = 1 << 3,
+	VWF_STYLE_DOUBLE = 1 << 4,
+	VWF_STYLE_STRICT = 1 << 5,
+	VWF_STYLE_STRICT_BOLD = 1 << 6,
+	VWF_OPEN = 1 << 7,
+	VWF_CLOSED = 1 << 8,
+	VWF_UNIQUE = 1 << 9,
+	VWF_SEPARATE_OPEN = VWF_OPEN | VWF_SEPARATE,
+	VWF_SEPARATE_CLOSED = VWF_CLOSED | VWF_SEPARATE,
+	VWF_SEPARATE_UNIQUE = VWF_UNIQUE | VWF_SEPARATE,
+
+	VWF_STYLE_MASK = VWF_STYLE_SIMPLE | VWF_STYLE_DOUBLE | VWF_STYLE_STRICT | VWF_STYLE_STRICT_BOLD,
+	VWF_HIDABLE_MASK = VWF_CLOSED | VWF_OPEN | VWF_UNIQUE,
 };
 
 class CVoteOption
 {
 public:
-	char m_aDescription[VOTE_DESC_LENGTH] {};
-	char m_aCommand[VOTE_CMD_LENGTH] {};
-	int m_Depth {};
-    std::vector<std::any> m_Extras; // pretty bad, ideally replace with std::variant?
-	int m_SortPriority { NOPE };
-	bool m_Line { false };
-	bool m_Title { false };
-	VoteOptionCallback m_Callback {};
+	char m_aDescription[VOTE_DESC_LENGTH]{};
+	char m_aCommand[VOTE_CMD_LENGTH]{};
+	int m_Depth{};
+	std::vector<std::any> m_Extras;
+	int m_SortPriority{ NOPE };
+	bool m_Line{};
+	bool m_Title{};
+	VoteOptionCallback m_Callback{};
 };
 
 class CVoteGroup
@@ -67,36 +75,43 @@ class CVoteGroup
 
 	struct NumeralDepth
 	{
-		int m_Value {};
-		int m_Style {};
+		int m_Value{};
+		int m_Style{};
 	};
-	std::map<int, NumeralDepth> m_vDepthNumeral {};
-	std::deque<CVoteOption> m_vpVotelist {};
-	bool m_NextMarkedListItem {};
-	int m_CurrentDepth {};
 
-	CGS* m_pGS {};
-	CPlayer* m_pPlayer {};
-	CGS* GS() const { return m_pGS; }
+	std::map<int, NumeralDepth> m_vDepthNumeral;
+	std::deque<CVoteOption> m_vpVotelist;
+	CGS* m_pGS{ nullptr };
+	CPlayer* m_pPlayer{ nullptr };
 
-	bool m_HasTitle {};
-	int m_GroupSize {};
-	int m_HiddenID {};
-	int m_Flags {};
-	int m_ClientID {};
+	int m_ClientID{ -1 };
+	int m_CurrentDepth{};
+	int m_GroupSize{};
+	int m_HiddenID{};
+	int m_Flags{};
+	bool m_HasTitle{};
+	bool m_NextMarkedListItem{};
+
+	CGS* GS() const noexcept { return m_pGS; }
 
 	CVoteGroup(int ClientID, int Flags);
 
 	void SetNumeralDepthStyles(std::initializer_list<std::pair<int, int>> vNumeralFlags);
 
-	int NextPos() const { return m_GroupSize + 1; }
-	bool IsEmpty() const { return m_GroupSize <= 0; }
-	bool HasTitle() const { return m_HasTitle; }
-	bool IsHidden() const;
+	[[nodiscard]] int NextPos() const noexcept { return m_GroupSize + 1; }
+	[[nodiscard]] bool IsEmpty() const noexcept { return m_GroupSize <= 0; }
+	[[nodiscard]] bool HasTitle() const noexcept { return m_HasTitle; }
+	[[nodiscard]] bool IsHidden() const noexcept;
 
 	void SetVoteTitleImpl(const char* pCmd, std::vector<std::any> Extras, const char* pText);
 	void AddVoteImpl(const char* pCmd, std::vector<std::any> Extras, const char* pText);
-	void SetLastVoteCallback(const VoteOptionCallbackImpl& CallbackImpl, void* pUser) { m_vpVotelist.back().m_Callback = { CallbackImpl, pUser }; }
+
+	void SetLastVoteCallback(const VoteOptionCallbackImpl& CallbackImpl, void* pUser) noexcept
+	{
+		if (!m_vpVotelist.empty())
+			m_vpVotelist.back().m_Callback = { CallbackImpl, pUser };
+	}
+
 	void Reformat(std::string& Buffer);
 
 	void AddLineImpl();
@@ -107,70 +122,70 @@ class CVoteGroup
 	template<typename F> requires std::predicate<F, const CVoteOption&, const CVoteOption&>
 	void Sort(F&& Comparator)
 	{
-		if(!m_vpVotelist.empty())
-			std::sort(m_vpVotelist.begin() + (m_HasTitle ? 1 : 0), m_vpVotelist.end(), std::forward<F>(Comparator));
+		if (m_vpVotelist.empty())
+			return;
+		const auto Begin = m_vpVotelist.begin() + (m_HasTitle ? 1 : 0);
+		std::sort(Begin, m_vpVotelist.end(), std::forward<F>(Comparator));
 	}
 
-	void SetLastVoteSortPriority(int Priority)
+	void SetLastVoteSortPriority(int Priority) noexcept
 	{
-		if(!m_vpVotelist.empty())
+		if (!m_vpVotelist.empty())
 			m_vpVotelist.back().m_SortPriority = Priority;
 	}
 };
 
+using CVoteGroupPtr = std::unique_ptr<CVoteGroup>;
 #define FMT_LOCALIZE_STR(clientid, text, args) fmt_localize(clientid, text, args).c_str()
-
-class VoteWrapper : public MultiworldIdentifiableData<std::map<int, std::deque<CVoteGroup*>>>
+class VoteWrapper : public MultiworldIdentifiableData<std::map<int, std::deque<CVoteGroupPtr>>>
 {
-	CVoteGroup* m_pGroup {};
+	CVoteGroup* m_pGroup{ nullptr };
 
-public:
-	VoteWrapper(int ClientID)
+	static CVoteGroup* CreateGroup(int ClientID, int Flags)
 	{
 		dbg_assert(ClientID >= 0 && ClientID < MAX_CLIENTS, "Invalid ClientID");
-		m_pGroup = new CVoteGroup(ClientID, VWF_DISABLED);
-		m_pData[ClientID].push_back(m_pGroup);
+		auto pGroup = std::unique_ptr<CVoteGroup>(new CVoteGroup(ClientID, Flags));
+		auto* pRaw = pGroup.get();
+		m_pData[ClientID].push_back(std::move(pGroup));
+		return pRaw;
 	}
 
-	template <typename T = int>
-	VoteWrapper(int ClientID, T Flags)
-	{
-		dbg_assert(ClientID >= 0 && ClientID < MAX_CLIENTS, "Invalid ClientID");
-		m_pGroup = new CVoteGroup(ClientID, Flags);
-		m_pData[ClientID].push_back(m_pGroup);
+public:
+	explicit VoteWrapper(int ClientID)
+		: m_pGroup(CreateGroup(ClientID, VWF_DISABLED)) {
+	}
+
+	VoteWrapper(int ClientID, int Flags)
+		: m_pGroup(CreateGroup(ClientID, Flags)) {
 	}
 
 	template<typename ... Ts>
 	VoteWrapper(int ClientID, const char* pTitle, const Ts&... args)
+		: m_pGroup(CreateGroup(ClientID, VWF_DISABLED))
 	{
-		dbg_assert(ClientID >= 0 && ClientID < MAX_CLIENTS, "Invalid ClientID");
-		m_pGroup = new CVoteGroup(ClientID, VWF_DISABLED);
 		m_pGroup->SetVoteTitleImpl("null", {}, FMT_LOCALIZE_STR(ClientID, pTitle, args...));
-		m_pData[ClientID].push_back(m_pGroup);
 	}
 
 	template<typename ... Ts>
 	VoteWrapper(int ClientID, int Flags, const char* pTitle, const Ts&... args)
+		: m_pGroup(CreateGroup(ClientID, Flags))
 	{
-		dbg_assert(ClientID >= 0 && ClientID < MAX_CLIENTS, "Invalid ClientID");
-		m_pGroup = new CVoteGroup(ClientID, Flags);
 		m_pGroup->SetVoteTitleImpl("null", {}, FMT_LOCALIZE_STR(ClientID, pTitle, args...));
-		m_pData[ClientID].push_back(m_pGroup);
 	}
 
-	int NextPos() const { return m_pGroup->NextPos(); }
-	bool IsEmpty() const { return m_pGroup->IsEmpty(); }
-	bool IsTittleSet() const { return m_pGroup->HasTitle(); }
+	[[nodiscard]] int NextPos() const noexcept { return m_pGroup->NextPos(); }
+	[[nodiscard]] bool IsEmpty() const noexcept { return m_pGroup->IsEmpty(); }
+	[[nodiscard]] bool IsTitleSet() const noexcept { return m_pGroup->HasTitle(); }
 
 	template<typename ... Ts>
-	VoteWrapper& SetTitle(const char* pTitle, const Ts&... args) noexcept
+	VoteWrapper& SetTitle(const char* pTitle, const Ts&... args)
 	{
 		m_pGroup->SetVoteTitleImpl("null", {}, FMT_LOCALIZE_STR(m_pGroup->m_ClientID, pTitle, args...));
 		return *this;
 	}
 
 	template<typename ... Ts>
-	VoteWrapper& SetTitle(int Flags, const char* pTitle, const Ts&... args) noexcept
+	VoteWrapper& SetTitle(int Flags, const char* pTitle, const Ts&... args)
 	{
 		m_pGroup->m_Flags = Flags;
 		m_pGroup->SetVoteTitleImpl("null", {}, FMT_LOCALIZE_STR(m_pGroup->m_ClientID, pTitle, args...));
@@ -183,41 +198,12 @@ public:
 		m_pGroup->SetNumeralDepthStyles(vNumeralFlags);
 	}
 
-	VoteWrapper& MarkList() noexcept
-	{
-		m_pGroup->m_NextMarkedListItem = true;
-		return *this;
-	}
-
-	VoteWrapper& BeginDepth() noexcept
-	{
-		m_pGroup->m_CurrentDepth++;
-		return *this;
-	}
-
-	VoteWrapper& EndDepth() noexcept
-	{
-		m_pGroup->m_CurrentDepth--;
-		return *this;
-	}
-
-	VoteWrapper& AddLine() noexcept
-	{
-		m_pGroup->AddLineImpl();
-		return *this;
-	}
-
-	VoteWrapper& AddEmptyline() noexcept
-	{
-		m_pGroup->AddEmptylineImpl();
-		return *this;
-	}
-
-	VoteWrapper& AddItemValue(int ItemID) noexcept
-	{
-		m_pGroup->AddItemValueImpl(ItemID);
-		return *this;
-	}
+	VoteWrapper& MarkList() noexcept { m_pGroup->m_NextMarkedListItem = true; return *this; }
+	VoteWrapper& BeginDepth() noexcept { ++m_pGroup->m_CurrentDepth; return *this; }
+	VoteWrapper& EndDepth() noexcept { --m_pGroup->m_CurrentDepth; return *this; }
+	VoteWrapper& AddLine() noexcept { m_pGroup->AddLineImpl(); return *this; }
+	VoteWrapper& AddEmptyline() noexcept { m_pGroup->AddEmptylineImpl(); return *this; }
+	VoteWrapper& AddItemValue(int ItemID) { m_pGroup->AddItemValueImpl(ItemID); return *this; }
 
 	template<typename ... Ts>
 	VoteWrapper& Add(const char* pText, const Ts&... args)
@@ -257,12 +243,13 @@ public:
 	template<typename ... Ts>
 	VoteWrapper& AddOption(const char* pCmd, std::vector<std::any> Extras, const char* pText, const Ts&... args)
 	{
-		m_pGroup->AddVoteImpl(pCmd, Extras, FMT_LOCALIZE_STR(m_pGroup->m_ClientID, pText, args...));
+		m_pGroup->AddVoteImpl(pCmd, std::move(Extras), FMT_LOCALIZE_STR(m_pGroup->m_ClientID, pText, args...));
 		return *this;
 	}
 
 	template<typename ... Ts>
-	VoteWrapper& AddOptionCallback(void* pUser, const VoteOptionCallbackImpl& CallbackImpl, const char* pText, const Ts&... args)
+	VoteWrapper& AddOptionCallback(void* pUser, const VoteOptionCallbackImpl& CallbackImpl,
+		const char* pText, const Ts&... args)
 	{
 		m_pGroup->AddVoteImpl("CALLBACK_IMPL", {}, FMT_LOCALIZE_STR(m_pGroup->m_ClientID, pText, args...));
 		m_pGroup->SetLastVoteCallback(CallbackImpl, pUser);
@@ -270,52 +257,34 @@ public:
 	}
 
 	template<typename ... Ts>
-	VoteWrapper& AddOptionCallback(void* pUser, const VoteOptionCallbackImpl& CallbackImpl, std::vector<std::any> Extras, const char* pText, const Ts&... args)
+	VoteWrapper& AddOptionCallback(void* pUser, const VoteOptionCallbackImpl& CallbackImpl,
+		std::vector<std::any> Extras, const char* pText, const Ts&... args)
 	{
-		m_pGroup->AddVoteImpl("CALLBACK_IMPL", Extras, FMT_LOCALIZE_STR(m_pGroup->m_ClientID, pText, args...));
+		m_pGroup->AddVoteImpl("CALLBACK_IMPL", std::move(Extras),
+			FMT_LOCALIZE_STR(m_pGroup->m_ClientID, pText, args...));
 		m_pGroup->SetLastVoteCallback(CallbackImpl, pUser);
 		return *this;
 	}
 
-	static void AddLine(int ClientID) noexcept
+	static void AddLine(int ClientID) { CreateGroup(ClientID, VWF_DISABLED)->AddLineImpl(); }
+	static void AddBackpage(int ClientID) { CreateGroup(ClientID, VWF_DISABLED)->AddBackpageImpl(); }
+	static void AddEmptyline(int ClientID) { CreateGroup(ClientID, VWF_DISABLED)->AddEmptylineImpl(); }
+	static void AddItemValue(int ClientID, int ItemID)
 	{
-		const auto pVoteGroup = new CVoteGroup(ClientID, VWF_DISABLED);
-		pVoteGroup->AddLineImpl();
-		m_pData[ClientID].push_back(pVoteGroup);
-	}
-
-	static void AddBackpage(int ClientID) noexcept
-	{
-		const auto pVoteGroup = new CVoteGroup(ClientID, VWF_DISABLED);
-		pVoteGroup->AddBackpageImpl();
-		m_pData[ClientID].push_back(pVoteGroup);
-	}
-
-	static void AddEmptyline(int ClientID) noexcept
-	{
-		const auto pVoteGroup = new CVoteGroup(ClientID, VWF_DISABLED);
-		pVoteGroup->AddEmptylineImpl();
-		m_pData[ClientID].push_back(pVoteGroup);
-	}
-
-	static void AddItemValue(int ClientID, int ItemID) noexcept
-	{
-		const auto pVoteGroup = new CVoteGroup(ClientID, VWF_DISABLED);
-		pVoteGroup->AddItemValueImpl(ItemID);
-		m_pData[ClientID].push_back(pVoteGroup);
+		CreateGroup(ClientID, VWF_DISABLED)->AddItemValueImpl(ItemID);
 	}
 
 	template<typename F> requires std::predicate<F, const CVoteOption&, const CVoteOption&>
 	VoteWrapper& Sort(F&& Comparator)
 	{
-		if(m_pGroup)
+		if (m_pGroup)
 			m_pGroup->Sort(std::forward<F>(Comparator));
 		return *this;
 	}
 
 	VoteWrapper& SetSortPriority(int Priority) noexcept
 	{
-		if(m_pGroup)
+		if (m_pGroup)
 			m_pGroup->SetLastVoteSortPriority(Priority);
 		return *this;
 	}
@@ -332,21 +301,25 @@ class CVotePlayerData
 
 	struct VoteGroupHidden
 	{
-		bool m_State {};
-		int m_Flag {};
+		bool m_State{};
+		int m_Flag{};
 	};
 
-	CGS* m_pGS {};
-	CPlayer* m_pPlayer {};
-	int m_LastMenuID{};
-	int m_CurrentMenuID{};
-	std::optional<int> m_ExtraID {};
-	std::thread m_VoteUpdater {};
-	mystd::string_mapper<int> m_StringMapper {};
-	enum class STATE_UPDATER { WAITING, RUNNING, DONE };
+	enum class STATE_UPDATER : int { WAITING, RUNNING, DONE };
+
+	CGS* m_pGS{};
+	CPlayer* m_pPlayer{};
+	int m_LastMenuID{ MENU_MAIN };
+	int m_CurrentMenuID{ MENU_MAIN };
+	std::optional<int> m_ExtraID{};
+
+	std::thread m_VoteUpdater{};
+	std::atomic<bool> m_ShuttingDown{ false };
 	std::atomic<STATE_UPDATER> m_VoteUpdaterStatus{ STATE_UPDATER::WAITING };
-	ska::unordered_map<int, ska::unordered_map<int, VoteGroupHidden>> m_aHiddenGroup{};
-	std::unordered_map<int, std::stack<std::optional<int>>> m_aExtraIDHistory;
+
+	mystd::string_mapper<int> m_StringMapper{};
+	std::unordered_map<int, std::unordered_map<int, VoteGroupHidden>> m_aHiddenGroup{};
+	std::unordered_map<int, std::stack<std::optional<int>>> m_aExtraIDHistory{};
 
 	VoteGroupHidden* EmplaceHidden(int ID, int Type);
 	VoteGroupHidden* GetHidden(int ID);
@@ -354,15 +327,12 @@ class CVotePlayerData
 	static void ThreadVoteUpdater(CVotePlayerData* pData);
 
 public:
-	CVotePlayerData()
-	{
-		m_CurrentMenuID = MENU_MAIN;
-		m_LastMenuID = MENU_MAIN;
-	}
+	CVotePlayerData() = default;
 
 	~CVotePlayerData()
 	{
-		if(m_VoteUpdater.joinable())
+		m_ShuttingDown.store(true, std::memory_order_release);
+		if (m_VoteUpdater.joinable())
 			m_VoteUpdater.join();
 
 		ClearVotes();
@@ -372,7 +342,10 @@ public:
 		m_StringMapper.clear();
 	}
 
-	void Init(CGS* pGS, CPlayer* pPlayer)
+	CVotePlayerData(const CVotePlayerData&) = delete;
+	CVotePlayerData& operator=(const CVotePlayerData&) = delete;
+
+	void Init(CGS* pGS, CPlayer* pPlayer) noexcept
 	{
 		m_pGS = pGS;
 		m_pPlayer = pPlayer;
@@ -384,20 +357,21 @@ public:
 	void UpdateCurrentVotes() { UpdateVotes(m_CurrentMenuID); }
 	void ClearVotes() const;
 	void ResetHidden() { ResetHidden(m_CurrentMenuID); }
-	void ResetExtraID() { m_ExtraID.reset(); }
-	mystd::string_mapper<int>& GetStringMapper() { return m_StringMapper; }
+	void ResetExtraID() noexcept { m_ExtraID.reset(); }
 
-	void SetCurrentMenuID(int MenuID) { m_CurrentMenuID = MenuID; }
-	int GetCurrentMenuID() const { return m_CurrentMenuID; }
-	std::optional<int> GetExtraID() const { return m_ExtraID; }
+	[[nodiscard]] mystd::string_mapper<int>& GetStringMapper() noexcept { return m_StringMapper; }
 
-	void SetLastMenuID(int MenuID) { m_LastMenuID = MenuID; }
-	int GetLastMenuID() const { return m_LastMenuID; }
+	void SetCurrentMenuID(int MenuID) noexcept { m_CurrentMenuID = MenuID; }
+	[[nodiscard]] int GetCurrentMenuID() const noexcept { return m_CurrentMenuID; }
+	[[nodiscard]] std::optional<int> GetExtraID() const noexcept { return m_ExtraID; }
+
+	void SetLastMenuID(int MenuID) noexcept { m_LastMenuID = MenuID; }
+	[[nodiscard]] int GetLastMenuID() const noexcept { return m_LastMenuID; }
 
 	void PushExtraID(int MenuID, std::optional<int> ExtraID);
 	std::optional<int> PopExtraID(int MenuID);
-	std::optional<int> PeekExtraID(int MenuID) const;
-	bool HasExtraIDHistory(int MenuID) const;
+	[[nodiscard]] std::optional<int> PeekExtraID(int MenuID) const;
+	[[nodiscard]] bool HasExtraIDHistory(int MenuID) const;
 	void ClearExtraIDHistory(int MenuID);
 
 	bool DefaultVoteCommands(const char* pCmd, std::vector<std::any> Extras, int ReasonNumber, const char* pReason);

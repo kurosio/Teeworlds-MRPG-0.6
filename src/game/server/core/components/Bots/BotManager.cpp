@@ -3,262 +3,277 @@
 #include "BotManager.h"
 
 #include <game/server/gamecontext.h>
-
 #include <game/server/core/components/quests/quest_manager.h>
 
-// structure
-/* "side": (author, left, right)
- * "text": (some text)
- * "action": (true, false)
- * "left_speaker_id: (13 - bot id, player, empty)
- * "right_speaker_id: (14 - bot id, player, empty)
- */
-// dialogue initilizer
-typedef std::pair < bool, std::vector<CDialogStep> > DialogsInitilizerType;
-static DialogsInitilizerType DialogsInitilizer(int DataBotID, const std::string& JsonDialogData)
+namespace
 {
-	DialogsInitilizerType Value{false, {}};
-	mystd::json::parse(JsonDialogData, [&](nlohmann::json& pJson)
+	// common collision mask used for validating spawn positions of bots.
+	constexpr int BOT_SPAWN_INVALID_MASK = CCollision::COLFLAG_DEATH | CCollision::COLFLAG_SOLID | CCollision::COLFLAG_NOHOOK | CCollision::COLFLAG_WATER;
+	constexpr const char* BOT_INVALID_POS_FMT = "{} bot: ID:{} invalid spawn position (death/solid/unhook).";
+
+	/**
+	 * Dialogue payload description (JSON schema):
+	 *   "side":              "author" | "left" | "right"
+	 *   "text":              string
+	 *   "action":            bool
+	 *   "left_speaker_id":   bot id | player | empty
+	 *   "right_speaker_id":  bot id | player | empty
+	 */
+	struct DialogsBundle
 	{
-		for(auto& pItem : pJson)
-		{
-			CDialogStep Dialogue;
-			Dialogue.Init(DataBotID, pItem);
-			if(Dialogue.IsRequestAction())
-				Value.first = true;
-			Value.second.push_back(Dialogue);
-		}
-	});
-	// useless dialogue
-	if(Value.second.empty())
+		bool HasAction{ false };
+		std::vector<CDialogStep> Steps;
+	};
+
+	// creates a default fallback dialogue when the bot has no configured dialogues.
+	CDialogStep MakeFallbackDialogue(int DataBotID)
 	{
+		nlohmann::json Json;
+		Json["text"] = "<player>, do you have any questions? I'm sorry, can't help you.";
+		Json["action"] = false;
+		Json["side"] = "right";
+		Json["left_speaker_id"] = DataBotID;
+		Json["right_speaker_id"] = 0;
+
 		CDialogStep Dialogue;
-
-		// json sturcture
-		nlohmann::json JsonDialog;
-		JsonDialog["text"] = "<player>, do you have any questions? I'm sorry, can't help you.";
-		JsonDialog["action"] = false;
-		JsonDialog["side"] = "right";
-		JsonDialog["left_speaker_id"] = DataBotID;
-		JsonDialog["right_speaker_id"] = 0;
-
-		// initialize dialog
-		Dialogue.Init(DataBotID, JsonDialog);
-		Value.second.push_back(Dialogue);
+		Dialogue.Init(DataBotID, Json);
+		return Dialogue;
 	}
-	return Value;
+
+	DialogsBundle ParseDialogues(int DataBotID, const std::string& JsonData)
+	{
+		DialogsBundle Bundle;
+
+		mystd::json::parse(JsonData, [&](nlohmann::json& Json)
+			{
+				Bundle.Steps.reserve(Json.size());
+				for (auto& Item : Json)
+				{
+					CDialogStep Step;
+					Step.Init(DataBotID, Item);
+
+					if (Step.IsRequestAction())
+						Bundle.HasAction = true;
+
+					Bundle.Steps.emplace_back(std::move(Step));
+				}
+			});
+
+		if (Bundle.Steps.empty())
+			Bundle.Steps.emplace_back(MakeFallbackDialogue(DataBotID));
+
+		return Bundle;
+	}
+
+	// parses "|v1|v2|v3|v4|v5|" style strings into a fixed-size array.
+	template <typename T, size_t N>
+	void ParsePipedValues(const std::string& Raw, const char* pFormat, T(&aOut)[N])
+	{
+		static_assert(N == 5, "Current drop schema expects exactly 5 slots");
+		sscanf(Raw.c_str(), pFormat,
+			&aOut[0], &aOut[1], &aOut[2], &aOut[3], &aOut[4]);
+	}
 }
 
+// -----------------------------------------------------------------------------
+// Bot data preloading (skins, equipment, modules)
+// -----------------------------------------------------------------------------
 void CBotManager::OnPreInit()
 {
-	// init bot datas
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_bots_info");
-	while(pRes->next())
+	while (pRes->next())
 	{
 		const int BotID = pRes->getInt("ID");
 
-		DataBotInfo BotInfo;
+		DataBotInfo BotInfo{};
 		str_copy(BotInfo.m_aNameBot, pRes->getString("Name").c_str(), sizeof(BotInfo.m_aNameBot));
-		BotInfo.m_vEquippedSlot[ItemType::EquipHammer] = pRes->getInt("SlotHammer");
-		BotInfo.m_vEquippedSlot[ItemType::EquipGun] = pRes->getInt("SlotGun");
-		BotInfo.m_vEquippedSlot[ItemType::EquipShotgun] = pRes->getInt("SlotShotgun");
-		BotInfo.m_vEquippedSlot[ItemType::EquipGrenade] = pRes->getInt("SlotGrenade");
-		BotInfo.m_vEquippedSlot[ItemType::EquipLaser] = pRes->getInt("SlotRifle");
-		BotInfo.m_vEquippedSlot[ItemType::EquipArmorTank] = pRes->getInt("SlotArmor");
-		BotInfo.m_vEquippedSlot[ItemType::EquipPickaxe] = 0;
-		BotInfo.m_vEquippedSlot[ItemType::EquipRake] = 0;
-		BotInfo.m_vEquippedSlot[ItemType::EquipEidolon] = 0;
 
-		std::string EquippedModules = pRes->getString("EquippedModules").c_str();
-		if(!EquippedModules.empty())
-			BotInfo.m_EquippedModules = EquippedModules;
+		// equipment slots
+		auto& Slots = BotInfo.m_vEquippedSlot;
+		Slots[ItemType::EquipHammer] = pRes->getInt("SlotHammer");
+		Slots[ItemType::EquipGun] = pRes->getInt("SlotGun");
+		Slots[ItemType::EquipShotgun] = pRes->getInt("SlotShotgun");
+		Slots[ItemType::EquipGrenade] = pRes->getInt("SlotGrenade");
+		Slots[ItemType::EquipLaser] = pRes->getInt("SlotRifle");
+		Slots[ItemType::EquipArmorTank] = pRes->getInt("SlotArmor");
+		Slots[ItemType::EquipPickaxe] = 0;
+		Slots[ItemType::EquipRake] = 0;
+		Slots[ItemType::EquipEidolon] = 0;
 
-		// load teeinfo
-		std::string JsonString = pRes->getString("JsonTeeInfo").c_str();
-		mystd::json::parse(JsonString, [&](nlohmann::json& pJson)
-		{
-			str_copy(BotInfo.m_TeeInfos.m_aSkinName, pJson.value("skin", "default").c_str(), sizeof(BotInfo.m_TeeInfos.m_aSkinName));
-			BotInfo.m_TeeInfos.m_UseCustomColor = pJson.value("custom_color", 0);
-			BotInfo.m_TeeInfos.m_ColorBody = pJson.value("color_body", -1);
-			BotInfo.m_TeeInfos.m_ColorFeet = pJson.value("color_feet", -1);
-		});
+		// modules
+		std::string EquippedModules = pRes->getString("EquippedModules");
+		if (!EquippedModules.empty())
+			BotInfo.m_EquippedModules = std::move(EquippedModules);
 
-		memset(BotInfo.m_aActiveByQuest, false, MAX_PLAYERS);
-		DataBotInfo::ms_aDataBot[BotID] = BotInfo;
+		// tee appearance
+		mystd::json::parse(pRes->getString("JsonTeeInfo"), [&](nlohmann::json& Json)
+			{
+				auto& Tee = BotInfo.m_TeeInfos;
+				str_copy(Tee.m_aSkinName, Json.value("skin", "default").c_str(), sizeof(Tee.m_aSkinName));
+				Tee.m_UseCustomColor = Json.value("custom_color", 0);
+				Tee.m_ColorBody = Json.value("color_body", -1);
+				Tee.m_ColorFeet = Json.value("color_feet", -1);
+			});
+
+		std::memset(BotInfo.m_aActiveByQuest, false, MAX_PLAYERS);
+		DataBotInfo::ms_aDataBot[BotID] = std::move(BotInfo);
 	}
 }
 
 void CBotManager::OnInitWorld(const std::string& SqlQueryWhereWorld)
 {
-	InitQuestBots(SqlQueryWhereWorld.c_str());
-	InitNPCBots(SqlQueryWhereWorld.c_str());
-	InitMobsBots(SqlQueryWhereWorld.c_str());
+	const char* pWhere = SqlQueryWhereWorld.c_str();
+	InitQuestBots(pWhere);
+	InitNPCBots(pWhere);
+	InitMobsBots(pWhere);
 }
 
-bool CBotManager::OnClientMessage(int MsgID, void* pRawMsg, int ClientID)
-{
-	return false;
-}
-
-// Initialization of Quest bots
+// -----------------------------------------------------------------------------
+// Quest bots
+// -----------------------------------------------------------------------------
 void CBotManager::InitQuestBots(const char* pWhereLocalWorld)
 {
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_bots_quest", pWhereLocalWorld);
-	while(pRes->next())
+	while (pRes->next())
 	{
 		const int MobID = pRes->getInt("ID");
-		const auto BotID = pRes->getInt("BotID");
+		const int BotID = pRes->getInt("BotID");
 		const int QuestID = pRes->getInt("QuestID");
-		const auto AutoFinsihMode = pRes->getString("AutoFinish") == "Partial";
-		const auto Step = pRes->getInt("Step");
-		const auto Pos = vec2(pRes->getInt("PosX"), pRes->getInt("PosY") + 1);
-		const auto VerifyPos = GS()->Collision()->VerifyPoint(CCollision::COLFLAG_DEATH | CCollision::COLFLAG_SOLID,
-			Pos, "QuestNPC: Mob(ID:{}) - invalid (death, solid) position.", MobID);
-		const auto ScenarioData = pRes->getString("ScenarioData");
-		const auto TaskData = pRes->getString("TasksData");
-		const auto DialogData = pRes->getString("DialogData");
-		const auto WorldID = pRes->getInt("WorldID");
-		dbg_assert(QuestID > 0, "Some quest bot's does not have quest structure");
+		dbg_assert(QuestID > 0, "Quest bot has no valid quest structure");
 
-		// load from database
+		const vec2 RawPos(pRes->getInt("PosX"), pRes->getInt("PosY") + 1);
+		const vec2 VerifiedPos = GS()->Collision()->VerifyPoint(
+			BOT_SPAWN_INVALID_MASK, RawPos, "Quest NPC (ID: {})", MobID);
+
 		QuestBotInfo QuestBot;
 		QuestBot.m_ID = MobID;
 		QuestBot.m_QuestID = QuestID;
 		QuestBot.m_BotID = BotID;
-		QuestBot.m_StepPos = Step;
-		QuestBot.m_Position = VerifyPos;
-		QuestBot.m_ScenarioJson = ScenarioData;
-		QuestBot.m_AutoFinish = AutoFinsihMode;
-		QuestBot.m_WorldID = WorldID;
+		QuestBot.m_StepPos = pRes->getInt("Step");
+		QuestBot.m_Position = VerifiedPos;
+		QuestBot.m_ScenarioJson = pRes->getString("ScenarioData");
+		QuestBot.m_AutoFinish = (pRes->getString("AutoFinish") == "Partial");
+		QuestBot.m_WorldID = pRes->getInt("WorldID");
 
-		// tasks initilized
-		QuestBot.InitTasksFromJSON(GS()->Collision(), TaskData);
+		// tasks
+		QuestBot.InitTasksFromJSON(GS()->Collision(), pRes->getString("TasksData"));
 
-		// dialog initilizer
-		auto [hasAction, vDialogs] = DialogsInitilizer(QuestBot.m_BotID, DialogData);
-		QuestBot.m_HasAction = hasAction;
-		QuestBot.m_aDialogs = vDialogs;
+		// dialogues
+		auto [HasAction, Steps] = ParseDialogues(BotID, pRes->getString("DialogData"));
+		QuestBot.m_HasAction = HasAction;
+		QuestBot.m_aDialogs = std::move(Steps);
 
-		// initialize quest steps
+		// register the objective in the quest
+		auto* pQuestInfo = GS()->GetQuestInfo(QuestID);
+		dbg_assert(pQuestInfo != nullptr, "QuestID is not valid");
+
 		CQuestStepBase Base;
 		Base.m_Bot = QuestBot;
-		dbg_assert(GS()->GetQuestInfo(QuestID) != nullptr, "QuestID is not valid");
-		auto* pQuestInfo = GS()->GetQuestInfo(QuestID);
-		pQuestInfo->m_vObjectives[QuestBot.m_StepPos].push_back(Base);
+		pQuestInfo->m_vObjectives[QuestBot.m_StepPos].push_back(std::move(Base));
 
-		// initilize
 		QuestBotInfo::ms_aQuestBot[MobID] = std::move(QuestBot);
 	}
 }
 
+// -----------------------------------------------------------------------------
+// NPC bots
+// -----------------------------------------------------------------------------
 void CBotManager::InitNPCBots(const char* pWhereLocalWorld)
 {
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_bots_npc", pWhereLocalWorld);
-	while(pRes->next())
+	while (pRes->next())
 	{
-		const int MobID = pRes->getInt("ID");
-		const auto BotID = pRes->getInt("BotID");
-		const auto Static = pRes->getBoolean("Static");
-		const auto Pos = vec2(pRes->getInt("PosX"), pRes->getInt("PosY"));
-		const auto VerifyPos = GS()->Collision()->VerifyPoint(CCollision::COLFLAG_DEATH | CCollision::COLFLAG_SOLID,
-			Pos, "NPC: Mob(ID:{}) - invalid (death, solid) position.", MobID);
-		const auto WorldID = pRes->getInt("WorldID");
-		const auto Emote = pRes->getInt("Emote");
-		const auto Function = pRes->getInt("Function");
-		const auto Quest = pRes->getInt("GiveQuestID");
+		const int  MobID = pRes->getInt("ID");
+		const int  BotID = pRes->getInt("BotID");
+		const bool Static = pRes->getBoolean("Static");
+		const int  QuestID = pRes->getInt("GiveQuestID");
 
-		// load from database
+		const vec2 RawPos(pRes->getInt("PosX"), pRes->getInt("PosY"));
+		const vec2 VerifiedPos = GS()->Collision()->VerifyPoint(
+			BOT_SPAWN_INVALID_MASK, RawPos, "Default NPC (ID: {})", MobID);
+
 		NpcBotInfo NpcBot;
-		NpcBot.m_WorldID = WorldID;
+		NpcBot.m_WorldID = pRes->getInt("WorldID");
 		NpcBot.m_Static = Static;
-		NpcBot.m_Position = VerifyPos + vec2(0.f, Static ? 1.f : 0.f);
-		NpcBot.m_Emote = Emote;
+		NpcBot.m_Position = VerifiedPos + vec2(0.f, Static ? 1.f : 0.f);
+		NpcBot.m_Emote = pRes->getInt("Emote");
 		NpcBot.m_BotID = BotID;
-		NpcBot.m_Function = Function;
-		NpcBot.m_GiveQuestID = Quest;
+		NpcBot.m_Function = pRes->getInt("Function");
+		NpcBot.m_GiveQuestID = QuestID;
 
-		if(Quest > 0)
+		// auto-mark as quest giver
+		if (QuestID > 0)
 		{
-			dbg_assert(GS()->GetQuestInfo(NpcBot.m_GiveQuestID) != nullptr, "QuestID is not valid");
-			auto* pQuestInfo = GS()->GetQuestInfo(NpcBot.m_GiveQuestID);
+			auto* pQuestInfo = GS()->GetQuestInfo(QuestID);
+			dbg_assert(pQuestInfo != nullptr, "QuestID is not valid");
 			pQuestInfo->AddFlag(QUEST_FLAG_GRANTED_FROM_NPC);
 			NpcBot.m_Function = FUNCTION_NPC_GIVE_QUEST;
 		}
 
-		// dialog initilizer
-		const auto DialogData = pRes->getString("DialogData");
-		NpcBot.m_aDialogs = DialogsInitilizer(NpcBot.m_BotID, DialogData).second;
+		// dialogues (NPCs do not use the HasAction flag)
+		NpcBot.m_aDialogs = ParseDialogues(BotID, pRes->getString("DialogData")).Steps;
 
-		// initilize
-		NpcBotInfo::ms_aNpcBot[MobID] = NpcBot;
-		GS()->CreateBot(TYPE_BOT_NPC, NpcBot.m_BotID, MobID);
+		NpcBotInfo::ms_aNpcBot[MobID] = std::move(NpcBot);
+		GS()->CreateBot(TYPE_BOT_NPC, BotID, MobID);
 	}
 }
 
+// -----------------------------------------------------------------------------
+// Mob bots
+// -----------------------------------------------------------------------------
 void CBotManager::InitMobsBots(const char* pWhereLocalWorld)
 {
 	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_bots_mobs", pWhereLocalWorld);
-	while(pRes->next())
+	while (pRes->next())
 	{
-		// initialize variables
-		const auto MobID = pRes->getInt("ID");
-		const auto BotID = pRes->getInt("BotID");
-		const auto NumberOfMobs = pRes->getInt("Number");
-		const auto Position = vec2(pRes->getInt("PositionX"), pRes->getInt("PositionY"));
-		const auto Power = pRes->getInt("Power");
-		const auto IsBoss = pRes->getBoolean("Boss");
-		const auto Level = pRes->getInt("Level");
-		const auto RespawnTick = pRes->getInt("Respawn");
-		const auto Radius = (float)pRes->getInt("Radius");
-		auto ActiveRadius = (float)pRes->getInt("ActiveRadius");
-		const auto Behavior = pRes->getString("Behavior");
-		const auto WorldID = pRes->getInt("WorldID");
-		ActiveRadius = ActiveRadius > 1.f ? ActiveRadius : g_Config.m_SvMapDistanceActveBot;
+		const int  MobID = pRes->getInt("ID");
+		const int  BotID = pRes->getInt("BotID");
+		const int  NumberOfMobs = pRes->getInt("Number");
 
-		// create new structure
 		MobBotInfo MobBot;
 		MobBot.m_BotID = BotID;
-		MobBot.m_Position = Position;
-		MobBot.m_Power = Power;
-		MobBot.m_Boss = IsBoss;
-		MobBot.m_Level = Level;
-		MobBot.m_RespawnTick = RespawnTick;
-		MobBot.m_Radius = Radius;
-		MobBot.m_ActiveRadius = ActiveRadius;
-		MobBot.m_WorldID = WorldID;
+		MobBot.m_Position = vec2(pRes->getInt("PositionX"), pRes->getInt("PositionY"));
+		MobBot.m_Power = pRes->getInt("Power");
+		MobBot.m_Boss = pRes->getBoolean("Boss");
+		MobBot.m_Level = pRes->getInt("Level");
+		MobBot.m_RespawnTick = pRes->getInt("Respawn");
+		MobBot.m_Radius = static_cast<float>(pRes->getInt("Radius"));
+		MobBot.m_WorldID = pRes->getInt("WorldID");
 
-		// initialize behaviors
-		auto BehaviorSet = DBSet(Behavior);
-		MobBot.InitBehaviors(BehaviorSet);
+		// use configured active radius, or fall back to the map default when unset.
+		const float RawActiveRadius = static_cast<float>(pRes->getInt("ActiveRadius"));
+		MobBot.m_ActiveRadius = RawActiveRadius > 1.f
+			? RawActiveRadius
+			: static_cast<float>(g_Config.m_SvMapDistanceActveBot);
 
-		// initialize debuffs
-		auto DebuffSet = DBSet(pRes->getString("Debuffs"));
-		MobBot.InitDebuffs(5, 5, 5.0f, DebuffSet);
+		// behavior sets
+		MobBot.InitBehaviors(DBSet(pRes->getString("Behavior")));
+		MobBot.InitDebuffs(5, 5, 5.0f, DBSet(pRes->getString("Debuffs")));
 
-		// initialize drop items
-		for(int i = 0; i < MAX_DROPPED_FROM_MOBS; i++)
+		// drop items
+		for (int i = 0; i < MAX_DROPPED_FROM_MOBS; ++i)
 		{
-			char aBuf[32];
-			str_format(aBuf, sizeof(aBuf), "it_drop_%d", i);
-			MobBot.m_aDropItem[i] = pRes->getInt(aBuf);
+			char aColumn[32];
+			str_format(aColumn, sizeof(aColumn), "it_drop_%d", i);
+			MobBot.m_aDropItem[i] = pRes->getInt(aColumn);
 		}
-		sscanf(pRes->getString("it_drop_count").c_str(), "|%d|%d|%d|%d|%d|",
-			&MobBot.m_aValueItem[0], &MobBot.m_aValueItem[1], &MobBot.m_aValueItem[2], &MobBot.m_aValueItem[3], &MobBot.m_aValueItem[4]);
-		sscanf(pRes->getString("it_drop_chance").c_str(), "|%f|%f|%f|%f|%f|",
-			&MobBot.m_aRandomItem[0], &MobBot.m_aRandomItem[1], &MobBot.m_aRandomItem[2], &MobBot.m_aRandomItem[3], &MobBot.m_aRandomItem[4]);
+		ParsePipedValues(pRes->getString("it_drop_count"), "|%d|%d|%d|%d|%d|", MobBot.m_aValueItem);
+		ParsePipedValues(pRes->getString("it_drop_chance"), "|%f|%f|%f|%f|%f|", MobBot.m_aRandomItem);
 
-		// initilize
 		MobBotInfo::ms_aMobBot[MobID] = MobBot;
 
-		// create bots
-		for(int c = 0; c < NumberOfMobs; c++)
+		// spawn actual bot instances
+		for (int i = 0; i < NumberOfMobs; ++i)
 		{
-			if(auto* pPlayerBot = GS()->CreateBot(TYPE_BOT_MOB, BotID, MobID))
+			if (auto* pPlayerBot = GS()->CreateBot(TYPE_BOT_MOB, BotID, MobID))
 				pPlayerBot->InitBotMobInfo(MobBot);
 		}
 	}
 }
 
+// -----------------------------------------------------------------------------
+// Public helpers
+// -----------------------------------------------------------------------------
 int CBotManager::GetQuestNPC(int MobID)
 {
 	if (!NpcBotInfo::IsValid(MobID))
@@ -267,32 +282,39 @@ int CBotManager::GetQuestNPC(int MobID)
 	return NpcBotInfo::ms_aNpcBot[MobID].m_GiveQuestID;
 }
 
-// add a new bot
+// -----------------------------------------------------------------------------
+// Console: add / update a character bot from the given player's appearance
+// -----------------------------------------------------------------------------
 void CBotManager::ConAddCharacterBot(int ClientID, const char* pCharacter)
 {
 	CPlayer* pPlayer = GS()->GetPlayer(ClientID);
-	if(!pPlayer)
+	if (!pPlayer)
 		return;
 
-	nlohmann::json JsonTeeInfo;
-	JsonTeeInfo["skin"] = pPlayer->Account()->m_TeeInfos.m_aSkinName;
-	JsonTeeInfo["custom_color"] = pPlayer->Account()->m_TeeInfos.m_UseCustomColor;
-	JsonTeeInfo["color_body"] = pPlayer->Account()->m_TeeInfos.m_ColorBody;
-	JsonTeeInfo["color_feet"] = pPlayer->Account()->m_TeeInfos.m_ColorFeet;
+	const auto& Tee = pPlayer->Account()->m_TeeInfos;
 
-	// check the nick
-	CSqlString<16> cNick = CSqlString<16>(pCharacter);
-	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_bots_info", "WHERE Name = '{}'", cNick.cstr());
-	if(pRes->next())
+	nlohmann::json JsonTeeInfo;
+	JsonTeeInfo["skin"] = Tee.m_aSkinName;
+	JsonTeeInfo["custom_color"] = Tee.m_UseCustomColor;
+	JsonTeeInfo["color_body"] = Tee.m_ColorBody;
+	JsonTeeInfo["color_feet"] = Tee.m_ColorFeet;
+
+	const std::string JsonDump = JsonTeeInfo.dump();
+	const CSqlString<16> Nick(pCharacter);
+
+	// if a bot with this name already exists, refresh its appearance.
+	ResultPtr pRes = Database->Execute<DB::SELECT>("*", "tw_bots_info", "WHERE Name = '{}'", Nick.cstr());
+	if (pRes->next())
 	{
-		// if the nickname is not in the database
 		const int ID = pRes->getInt("ID");
-		Database->Execute<DB::UPDATE>("tw_bots_info", "JsonTeeInfo = '{}' WHERE ID = '{}'", JsonTeeInfo.dump().c_str(), ID);
+		Database->Execute<DB::UPDATE>("tw_bots_info",
+			"JsonTeeInfo = '{}' WHERE ID = '{}'", JsonDump.c_str(), ID);
 		GS()->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "parseskin", "Updated character bot!");
 		return;
 	}
 
-	// add a new bot
-	Database->Execute<DB::INSERT>("tw_bots_info", "(Name, JsonTeeInfo) VALUES ('{}', '{}')", cNick.cstr(), JsonTeeInfo.dump().c_str());
+	// otherwise create a new record.
+	Database->Execute<DB::INSERT>("tw_bots_info",
+		"(Name, JsonTeeInfo) VALUES ('{}', '{}')", Nick.cstr(), JsonDump.c_str());
 	GS()->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "parseskin", "Added new character bot!");
 }

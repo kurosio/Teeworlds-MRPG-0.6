@@ -16,7 +16,6 @@ class CBotManager : public MmoComponent
 
 	void OnPreInit() override;
 	void OnInitWorld(const std::string& SqlQueryWhereWorld) override;
-	bool OnClientMessage(int MsgID, void* pRawMsg, int ClientID) override;
 
 	void InitQuestBots(const char* pWhereLocalWorld);
 	void InitNPCBots(const char* pWhereLocalWorld);

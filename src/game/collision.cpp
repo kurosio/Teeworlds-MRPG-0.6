@@ -1187,3 +1187,114 @@ int CCollision::GetMoveRestrictions(CALLBACK_SWITCHACTIVE pfnSwitchActive, void*
 
 	return Restrictions;
 }
+
+std::optional<vec2> CCollision::FindClosestFreeTile(vec2 SearchCenter, std::optional<vec2> ReachableFrom) const
+{
+	const int TotalTiles = m_Width * m_Height;
+	if (TotalTiles <= 0)
+		return std::nullopt;
+
+	constexpr int BLOCK_MASK = COLFLAG_SOLID | COLFLAG_DEATH | COLFLAG_DISALLOW_MOVE | COLFLAG_NOHOOK | COLFLAG_WATER;
+	auto IsTileFree = [this](int TileX, int TileY) -> bool
+		{
+			const int PixelX = TileX * 32 + 16;
+			const int PixelY = TileY * 32 + 16;
+			const int MainFlags = m_pTiles[TileY * m_Width + TileX].m_Index > 128 ? 0 : m_pTiles[TileY * m_Width + TileX].m_ColFlags;
+			int FrontFlags = 0;
+			if (m_pFront)
+				FrontFlags = m_pFront[TileY * m_Width + TileX].m_Index > 128 ? 0 : m_pFront[TileY * m_Width + TileX].m_ColFlags;
+			(void)PixelX; (void)PixelY;
+			return ((MainFlags | FrontFlags) & BLOCK_MASK) == 0;
+		};
+
+	const bool Restricted = ReachableFrom.has_value();
+	const vec2 OriginPos = Restricted ? *ReachableFrom : SearchCenter;
+	int StartX = clamp(round_to_int(OriginPos.x) / 32, 0, m_Width - 1);
+	int StartY = clamp(round_to_int(OriginPos.y) / 32, 0, m_Height - 1);
+	int StartIdx = StartY * m_Width + StartX;
+
+	if (Restricted && !IsTileFree(StartX, StartY))
+	{
+		auto Adjusted = FindClosestFreeTile(*ReachableFrom, std::nullopt);
+		if (!Adjusted)
+			return std::nullopt;
+
+		StartX = clamp(round_to_int(Adjusted->x) / 32, 0, m_Width - 1);
+		StartY = clamp(round_to_int(Adjusted->y) / 32, 0, m_Height - 1);
+		StartIdx = StartY * m_Width + StartX;
+	}
+
+	std::vector<int> Queue;
+	Queue.reserve(std::min(TotalTiles, 1024));
+	std::vector<uint8_t> Visited(TotalTiles, 0);
+
+	Queue.push_back(StartIdx);
+	Visited[StartIdx] = 1;
+	size_t Head = 0;
+
+	const int TargetTileX = clamp(round_to_int(SearchCenter.x) / 32, 0, m_Width - 1);
+	const int TargetTileY = clamp(round_to_int(SearchCenter.y) / 32, 0, m_Height - 1);
+
+	int BestIdx = -1;
+	int BestDistSq = std::numeric_limits<int>::max();
+
+	static constexpr int dx[4] = { 0, 0, -1, 1 };
+	static constexpr int dy[4] = { -1, 1, 0, 0 };
+
+	while (Head < Queue.size())
+	{
+		const int Curr = Queue[Head++];
+		const int cx = Curr % m_Width;
+		const int cy = Curr / m_Width;
+
+		if (!Restricted)
+		{
+			if (IsTileFree(cx, cy))
+				return vec2(cx * 32.0f + 16.0f, cy * 32.0f + 16.0f);
+		}
+		else
+		{
+			const int ddx = cx - TargetTileX;
+			const int ddy = cy - TargetTileY;
+			const int DistSq = ddx * ddx + ddy * ddy;
+
+			if (DistSq < BestDistSq)
+			{
+				BestDistSq = DistSq;
+				BestIdx = Curr;
+				if (DistSq == 0)
+					break;
+			}
+		}
+
+		for (int i = 0; i < 4; ++i)
+		{
+			const int nx = cx + dx[i];
+			const int ny = cy + dy[i];
+			if (nx < 0 || nx >= m_Width || ny < 0 || ny >= m_Height)
+				continue;
+
+			const int NextIdx = ny * m_Width + nx;
+			if (Visited[NextIdx])
+				continue;
+
+			if (Restricted && !IsTileFree(nx, ny))
+			{
+				Visited[NextIdx] = 1;
+				continue;
+			}
+
+			Visited[NextIdx] = 1;
+			Queue.push_back(NextIdx);
+		}
+	}
+
+	if (BestIdx != -1)
+	{
+		const int bx = BestIdx % m_Width;
+		const int by = BestIdx / m_Width;
+		return vec2(bx * 32.0f + 16.0f, by * 32.0f + 16.0f);
+	}
+
+	return std::nullopt;
+}
