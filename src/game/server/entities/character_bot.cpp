@@ -13,10 +13,23 @@
 #include <game/server/core/components/Bots/BotData.h>
 #include <game/server/gamecontext.h>
 #include <game/server/playerbot.h>
-
 #include "pickup.h"
 
-MACRO_ALLOC_POOL_ID_IMPL(CCharacterBotAI, MAX_CLIENTS* ENGINE_MAX_WORLDS + MAX_CLIENTS)
+MACRO_ALLOC_POOL_ID_IMPL(CCharacterBotAI, MAX_CLIENTS * ENGINE_MAX_WORLDS + MAX_CLIENTS)
+
+namespace AITuning
+{
+	constexpr float MAX_SIGHT_DISTANCE = 1000.0f;
+	constexpr float RETREAT_HP_THRESHOLD = 0.25f;    // 25% HP => start retreating
+	constexpr int   MEMORY_DURATION_TICKS = 200;     // 5 sec memory of target position
+	constexpr int   SEARCH_DURATION_TICKS = 250;     // 6 sec search
+	constexpr int   STUCK_THRESHOLD_TICKS = 50;      // 1 sec for stuck detection
+	constexpr int   REACTION_MIN_TICKS = 4;          // minimum reaction time
+	constexpr int   REACTION_MAX_TICKS = 25;         // maximum reaction time
+	constexpr float STUCK_MIN_DISTANCE = 1.0f;       // minimum movement to not be considered stuck
+	constexpr float AIM_SMOOTH_FACTOR = 0.20f;       // 0..1, the smaller — the smoother
+	constexpr float HOOK_LEAD_MULTIPLIER = 800.0f;
+}
 
 CCharacterBotAI::CCharacterBotAI(CGameWorld* pWorld) : CCharacter(pWorld)
 {
@@ -25,84 +38,87 @@ CCharacterBotAI::CCharacterBotAI(CGameWorld* pWorld) : CCharacter(pWorld)
 
 bool CCharacterBotAI::Spawn(CPlayer* pPlayer, vec2 Pos)
 {
-	if(CCharacter::Spawn(pPlayer, Pos))
+	if (!CCharacter::Spawn(pPlayer, Pos))
+		return false;
+
+	m_pBotPlayer = static_cast<CPlayerBot*>(pPlayer);
+	const int BotType = m_pBotPlayer->GetBotType();
+	const int MobID = m_pBotPlayer->GetBotMobID();
+
+	switch (BotType)
 	{
-		m_pBotPlayer = static_cast<CPlayerBot*>(pPlayer);
-
-		const int Bottype = m_pBotPlayer->GetBotType();
-		if(Bottype == TYPE_BOT_NPC)
-		{
-			const int MobID = m_pBotPlayer->GetBotMobID();
-			m_pAI = std::make_unique<CNpcAI>(&NpcBotInfo::ms_aNpcBot[MobID], m_pBotPlayer, this);
-		}
-		else if(Bottype == TYPE_BOT_QUEST)
-		{
-			const int MobID = m_pBotPlayer->GetBotMobID();
-			m_pAI = std::make_unique<CQuestNpcAI>(&QuestBotInfo::ms_aQuestBot[MobID], m_pBotPlayer, this);
-		}
-		else if(Bottype == TYPE_BOT_QUEST_MOB)
-		{
-			m_pAI = std::make_unique<CQuestMobAI>(&m_pBotPlayer->GetQuestBotMobInfo(), m_pBotPlayer, this);
-		}
-		else if(Bottype == TYPE_BOT_MOB)
-		{
-			// const int MobID = m_pBotPlayer->GetBotMobID();
-			m_pAI = std::make_unique<CMobAI>(&m_pBotPlayer->GetMobInfo(), m_pBotPlayer, this);
-		}
-		else if(Bottype == TYPE_BOT_EIDOLON)
-		{
-			m_pAI = std::make_unique<CEidolonAI>(m_pBotPlayer, this);
-		}
-
-		m_pAI->OnSpawn();
-
-		const bool Spawned = GS()->m_pController->OnCharacterBotSpawn(this);
-		return Spawned;
+	case TYPE_BOT_NPC:
+		m_pAI = std::make_unique<CNpcAI>(&NpcBotInfo::ms_aNpcBot[MobID], m_pBotPlayer, this);
+		break;
+	case TYPE_BOT_QUEST:
+		m_pAI = std::make_unique<CQuestNpcAI>(&QuestBotInfo::ms_aQuestBot[MobID], m_pBotPlayer, this);
+		break;
+	case TYPE_BOT_QUEST_MOB:
+		m_pAI = std::make_unique<CQuestMobAI>(&m_pBotPlayer->GetQuestBotMobInfo(), m_pBotPlayer, this);
+		break;
+	case TYPE_BOT_MOB:
+		m_pAI = std::make_unique<CMobAI>(&m_pBotPlayer->GetMobInfo(), m_pBotPlayer, this);
+		break;
+	case TYPE_BOT_EIDOLON:
+		m_pAI = std::make_unique<CEidolonAI>(m_pBotPlayer, this);
+		break;
+	default:
+		dbg_assert(false, "Unknown bot type spawned");
+		return false;
 	}
 
-	return false;
+	m_AIState = AIState::Idle;
+	m_StateTimer = Server()->Tick();
+	m_CurrentAimDir = vec2(0.0f, 1.0f);
+	m_LastPos = m_Pos;
+	m_PrevTargetPos = m_Pos;
+	m_ReactionTicks = AITuning::REACTION_MIN_TICKS + (rand() % (AITuning::REACTION_MAX_TICKS - AITuning::REACTION_MIN_TICKS));
+
+	m_pAI->OnSpawn();
+	return GS()->m_pController->OnCharacterBotSpawn(this);
 }
 
 void CCharacterBotAI::GiveRandomEffects(int ClientID)
 {
-	if(ClientID != m_ClientID)
-	{
+	if (ClientID != m_ClientID)
 		m_pAI->OnGiveRandomEffect(ClientID);
-	}
 }
 
 bool CCharacterBotAI::TakeDamage(vec2 Force, int Dmg, int From, int Weapon, int ForceFlag)
 {
-	if(!m_pBotPlayer->IsActive())
+	if (!m_pBotPlayer->IsActive())
 		return false;
 
 	auto* pFrom = GS()->GetPlayer(From, false, true);
-	if(!pFrom || !IsAllowedPVP(From))
+	if (!pFrom || !IsAllowedPVP(From))
 		return false;
 
-	// Capture health before applying damage so we can record actual applied damage (accounts for crits, modifiers, overkill)
 	const int HealthBefore = m_Health;
-
-	// Take damage
 	CCharacter::TakeDamage(Force, Dmg, From, Weapon);
 
-	// Convert from (eidolon to eidolon owner)
-	const auto* pFromBot = dynamic_cast<CPlayerBot*>(pFrom);
-	if(pFromBot && pFromBot->GetBotType() == TYPE_BOT_EIDOLON)
+	if (const auto* pFromBot = dynamic_cast<CPlayerBot*>(pFrom); pFromBot && pFromBot->GetBotType() == TYPE_BOT_EIDOLON)
 	{
 		From = pFromBot->GetEidolonOwner()->GetCID();
 	}
 
-	// Calculate actual applied damage and record it
 	const int AppliedDamage = maximum(0, HealthBefore - m_Health);
-	if(AppliedDamage > 0)
+	if (AppliedDamage > 0)
 	{
 		m_aDamageByPlayer[From] += AppliedDamage;
 		m_pAI->OnTakeDamage(AppliedDamage, From, Weapon);
+		m_LastDamageTick = Server()->Tick();
+
+		// react to damage with a pain emote and bubble emoticon if the damage ratio is significant
+		const float DmgRatio = static_cast<float>(AppliedDamage) / static_cast<float>(maximum(1, m_pBotPlayer->GetMaxHealth()));
+		if (DmgRatio > 0.3f && (rand() % 2 == 0))
+		{
+			SetEmote(EMOTE_PAIN, Server()->TickSpeed(), true);
+			SendBubbleEmoticon(EMOTICON_DROP);
+			m_HesitationTicks = 10;
+		}
 	}
 
-	// Verify death
-	if(m_Health <= 0)
+	if (m_Health <= 0)
 	{
 		m_DieForce = Force;
 		Die(From, Weapon);
@@ -114,73 +130,43 @@ bool CCharacterBotAI::TakeDamage(vec2 Force, int Dmg, int From, int Weapon, int 
 
 void CCharacterBotAI::Die(int Killer, int Weapon)
 {
-	if(Weapon != WEAPON_SELF && Weapon != WEAPON_WORLD)
+	if (Weapon != WEAPON_SELF && Weapon != WEAPON_WORLD)
 	{
-		// Notify about bosses
 		auto* pMobInfo = m_pBotPlayer->GetBotType() == TYPE_BOT_MOB ? &m_pBotPlayer->GetMobInfo() : nullptr;
-		if(pMobInfo && pMobInfo->m_Boss && !m_aDamageByPlayer.empty())
+		if (pMobInfo && pMobInfo->m_Boss && !m_aDamageByPlayer.empty())
 		{
+			int TotalDamage = 0;
+			for (const auto& [_, Dmg] : m_aDamageByPlayer)
+				TotalDamage += Dmg;
+
 			std::vector<std::pair<int, int>> vStats(m_aDamageByPlayer.begin(), m_aDamageByPlayer.end());
-			std::sort(vStats.begin(), vStats.end(), [](const auto& Left, const auto& Right)
-			{ return Left.second > Right.second; });
+			std::sort(vStats.begin(), vStats.end(), [](const auto& L, const auto& R) { return L.second > R.second; });
 
-			const int StartHealth = m_pBotPlayer->GetMaxHealth();
-			const int NumPlayers = (int)vStats.size();
-
-			// precompute percents so their sum won't exceed 100%
-			struct ClientStat { int ID; int Damage; int Percent; };
-			std::vector<ClientStat> FinalStats;
-			FinalStats.reserve(NumPlayers);
-
-			int sumPercents = 0;
-			for (const auto& [cid, damage] : vStats)
-			{
-				int p = StartHealth > 0 ? clamp(round_to_int(translate_to_percent(StartHealth, minimum(damage, StartHealth))), 0, 100) : 0;
-				sumPercents += p;
-				FinalStats.push_back({ cid, damage, p });
-			}
-
-			// if summed percents exceed 100, reduce from largest contributors
-			if (sumPercents > 100)
-			{
-				int diff = sumPercents - 100;
-				for (auto& s : FinalStats) 
-				{
-					int dec = minimum(s.Percent, diff);
-					s.Percent -= dec;
-					diff -= dec;
-					if (diff <= 0) 
-						break;
-				}
-			}
-
-			// Send information about stats to all players who contributed damage
 			for (const auto& [ForCID, _] : m_aDamageByPlayer)
 			{
-				GS()->Chat(ForCID, "Defeat '{}' by {} player's.", pMobInfo->GetName(), NumPlayers);
-				for (const auto& s : FinalStats)
+				GS()->Chat(ForCID, "Defeated '{}' by {} players.", pMobInfo->GetName(), (int)vStats.size());
+				for (const auto& [CID, Dmg] : vStats)
 				{
-					if (Server()->ClientIngame(s.ID))
-						GS()->Chat(ForCID, "- {~} dealt {} damage ({}%).", Server()->ClientName(s.ID), s.Damage, s.Percent);
+					if (Server()->ClientIngame(CID))
+					{
+						const float Percent = TotalDamage > 0 ? (static_cast<float>(Dmg) / TotalDamage) * 100.0f : 0.0f;
+						GS()->Chat(ForCID, "- {~} dealt {} damage ({.1f}%).", Server()->ClientName(CID), Dmg, Percent);
+					}
 				}
 			}
 		}
 
-		// Reward
 		const int BotWorldID = m_pBotPlayer->GetCurrentWorldID();
-		const vec2 BotPos = m_Core.m_Pos;
-		for (const auto& [ClientID, Damage] : m_aDamageByPlayer)
+		for (const auto& [ClientID, _] : m_aDamageByPlayer)
 		{
 			auto* pPlayer = GS()->GetPlayer(ClientID, true, true);
-			if (!pPlayer || !GS()->IsPlayerInWorld(ClientID, BotWorldID))
-				continue;
-
-			if (distance(pPlayer->m_ViewPos, BotPos) < 1000.0f)
+			if (pPlayer && GS()->IsPlayerInWorld(ClientID, BotWorldID) && distance(pPlayer->m_ViewPos, m_Pos) < 1000.0f)
+			{
 				m_pAI->OnRewardPlayer(pPlayer, m_DieForce);
+			}
 		}
 	}
 
-	// Die
 	m_pAI->OnDie(Killer, Weapon);
 	m_aDamageByPlayer.clear();
 	m_pAI->GetTarget()->Reset();
@@ -190,13 +176,10 @@ void CCharacterBotAI::Die(int Killer, int Weapon)
 
 void CCharacterBotAI::SetForcedWeapon(int WeaponID)
 {
-	if(WeaponID >= WEAPON_HAMMER && WeaponID <= WEAPON_NINJA)
-	{
+	if (WeaponID >= WEAPON_HAMMER && WeaponID <= WEAPON_NINJA)
 		m_ForcedActiveWeapon = WeaponID;
-		return;
-	}
-
-	dbg_msg("bot", "Invalid forced weapon id %d", WeaponID);
+	else
+		dbg_msg("bot", "Invalid forced weapon id %d", WeaponID);
 }
 
 void CCharacterBotAI::ClearForcedWeapon()
@@ -206,71 +189,91 @@ void CCharacterBotAI::ClearForcedWeapon()
 
 void CCharacterBotAI::SelectWeaponAtRandomInterval()
 {
-	// If an active weapon is forced, set it.
-	if(m_ForcedActiveWeapon.has_value())
+	if (m_ForcedActiveWeapon.has_value())
 	{
-		const int weaponID = m_ForcedActiveWeapon.value();
-		m_Core.m_ActiveWeapon = clamp(weaponID, (int)WEAPON_HAMMER, (int)WEAPON_LASER);
+		m_Core.m_ActiveWeapon = clamp(m_ForcedActiveWeapon.value(), (int)WEAPON_HAMMER, (int)WEAPON_LASER);
 		return;
 	}
 
-	// interval change the weapon
-	if(--m_IntervalChangeWeapon <= 0)
+	auto* pTarget = m_pAI->GetTarget();
+	if (pTarget && !pTarget->IsEmpty() && pTarget->GetType() == TargetType::Active)
 	{
-		m_IntervalChangeWeapon = 25 + rand() % 100;
-
-		int AvailableWeapons[WEAPON_LASER + 1] {};
-		int WeaponCount = 0;
-		for(int i = 0; i <= WEAPON_LASER; i++)
+		if (auto* pTargetChar = GS()->GetPlayerChar(pTarget->GetCID()))
 		{
-			if(i != m_Core.m_ActiveWeapon && m_pBotPlayer->IsEquippedSlot(GetEquipByWeapon(i)))
+			const float Dist = distance(m_Pos, pTargetChar->GetPos());
+			int PreferredWeapon = m_Core.m_ActiveWeapon;
+
+			if (Dist < 80.0f && m_pBotPlayer->IsEquippedSlot(GetEquipByWeapon(WEAPON_HAMMER)))
+				PreferredWeapon = WEAPON_HAMMER;
+			else if (Dist > 400.0f && m_pBotPlayer->IsEquippedSlot(GetEquipByWeapon(WEAPON_LASER)))
+				PreferredWeapon = WEAPON_LASER;
+			else if (Dist > 300.0f && m_pBotPlayer->IsEquippedSlot(GetEquipByWeapon(WEAPON_GRENADE)))
+				PreferredWeapon = WEAPON_GRENADE;
+
+			if (PreferredWeapon != m_Core.m_ActiveWeapon && (rand() % 3 == 0))
+			{
+				m_Core.m_ActiveWeapon = PreferredWeapon;
+				return;
+			}
+		}
+	}
+
+	if (--m_IntervalChangeWeapon <= 0)
+	{
+		m_IntervalChangeWeapon = Server()->TickSpeed() + rand() % (Server()->TickSpeed() * 2);
+
+		int AvailableWeapons[WEAPON_LASER + 1]{};
+		int WeaponCount = 0;
+		for (int i = 0; i <= WEAPON_LASER; i++)
+		{
+			if (i != m_Core.m_ActiveWeapon && m_pBotPlayer->IsEquippedSlot(GetEquipByWeapon(i)))
 				AvailableWeapons[WeaponCount++] = i;
 		}
 
-		if(WeaponCount > 0)
-		{
+		if (WeaponCount > 0)
 			m_Core.m_ActiveWeapon = AvailableWeapons[rand() % WeaponCount];
-		}
 	}
 }
 
 void CCharacterBotAI::SelectEmoteAtRandomInterval()
 {
 	const int EmotionStyle = m_pAI->GetEmotionStyle();
-
-	if(EmotionStyle < EMOTE_PAIN || EmotionStyle > EMOTE_BLINK)
+	if (EmotionStyle < EMOTE_PAIN || EmotionStyle > EMOTE_BLINK)
 		return;
 
-	const int emoteInterval = Server()->TickSpeed() * 3 + rand() % 10;
-	if(Server()->Tick() % emoteInterval == 0)
+	if (Server()->Tick() % (Server()->TickSpeed() * 3 + rand() % 10) == 0)
 	{
-		const int duration = 1 + rand() % 2;
-		SetEmote(EMOTE_BLINK, duration, true);
+		int Emote = EMOTE_BLINK;
+		switch (m_AIState)
+		{
+			case AIState::Chase:   Emote = EMOTE_ANGRY; break;
+			case AIState::Combat:  Emote = EMOTE_ANGRY; break;
+			case AIState::Retreat: Emote = EMOTE_PAIN; break;
+			case AIState::Search:  Emote = EMOTE_SURPRISE; break;
+			default: Emote = EMOTE_BLINK; break;
+		}
+		SetEmote(Emote, 1 + rand() % 2, true);
 	}
 }
 
 bool CCharacterBotAI::IsAllowedPVP(int FromID) const
 {
 	CPlayer* pFrom = GS()->GetPlayer(FromID);
-	if(!pFrom || FromID == m_pBotPlayer->GetCID())
+	if (!pFrom || FromID == m_pBotPlayer->GetCID())
 		return false;
 
-	// Skip invalid character
 	const auto* pFromChar = pFrom->GetCharacter();
-	if(!pFromChar)
+	if (!pFromChar)
 		return false;
 
-	// Check if damage is disabled for the current object or the object it is interacting with
-	if(m_Core.m_DamageDisabled || pFromChar->m_Core.m_DamageDisabled)
+	if (m_Core.m_DamageDisabled || pFromChar->m_Core.m_DamageDisabled)
 		return false;
 
-	// disable damage on safe area
-	if(GS()->Collision()->GetCollisionFlagsAt(GetPos()) & CCollision::COLFLAG_SAFE
-		|| GS()->Collision()->GetCollisionFlagsAt(pFromChar->GetPos()) & CCollision::COLFLAG_SAFE)
+	if (GS()->Collision()->GetCollisionFlagsAt(GetPos()) & CCollision::COLFLAG_SAFE ||
+		GS()->Collision()->GetCollisionFlagsAt(pFromChar->GetPos()) & CCollision::COLFLAG_SAFE)
 		return false;
 
-	// skip damage intersect door
-	if(GS()->Collision()->IntersectLineDoor(pFromChar->m_Core.m_Pos, m_Core.m_Pos))
+	if (GS()->Collision()->IntersectLineDoor(pFromChar->m_Core.m_Pos, m_Core.m_Pos))
 		return false;
 
 	return AI()->CanDamage(pFrom);
@@ -278,11 +281,11 @@ bool CCharacterBotAI::IsAllowedPVP(int FromID) const
 
 bool CCharacterBotAI::GiveWeapon(int Weapon, int GiveAmmo)
 {
-	if(Weapon < WEAPON_HAMMER || Weapon > WEAPON_NINJA)
+	if (Weapon < WEAPON_HAMMER || Weapon > WEAPON_NINJA)
 		return false;
 
 	auto EquipID = GetEquipByWeapon(Weapon);
-	if(!m_pBotPlayer->IsEquippedSlot(EquipID))
+	if (!m_pBotPlayer->IsEquippedSlot(EquipID))
 	{
 		RemoveWeapon(Weapon);
 		return false;
@@ -295,13 +298,11 @@ bool CCharacterBotAI::GiveWeapon(int Weapon, int GiveAmmo)
 
 void CCharacterBotAI::Tick()
 {
-	if(!IsAlive())
+	if (!IsAlive())
 		return;
 
-	// Check if the bot player is active
-	if(!m_pBotPlayer->IsActive())
+	if (!m_pBotPlayer->IsActive())
 	{
-		// Disable collision, hook hit, and damage
 		m_Core.m_CollisionDisabled = true;
 		m_Core.m_HookHitDisabled = true;
 		m_Core.m_DamageDisabled = true;
@@ -310,20 +311,18 @@ void CCharacterBotAI::Tick()
 
 	HandleTuning();
 
-	// core
 	m_Core.m_Input = m_Input;
 	m_Core.Tick(true, &m_pBotPlayer->m_NextTuningParams);
 	m_pBotPlayer->UpdateSharedCharacterData(m_Health, m_Mana);
 	ResetInput();
 
-	// handles
 	HandleSafeFlags();
 	ProcessBot();
-	if(!HandleTiles())
+
+	if (!HandleTiles())
 		return;
 
-	// game clipped
-	if(GameLayerClipped(m_Pos) || GetTiles()->IsEnter(TILE_DEATH))
+	if (GameLayerClipped(m_Pos) || GetTiles()->IsEnter(TILE_DEATH))
 	{
 		Die(m_pBotPlayer->GetCID(), WEAPON_SELF);
 		return;
@@ -334,8 +333,7 @@ void CCharacterBotAI::Tick()
 
 void CCharacterBotAI::TickDeferred()
 {
-	// check active this bot
-	if(!m_pBotPlayer->IsActive() || !IsAlive())
+	if (!m_pBotPlayer->IsActive() || !IsAlive())
 		return;
 
 	CCharacterCore::CParams PlayerTune(&m_pBotPlayer->m_NextTuningParams);
@@ -349,40 +347,31 @@ void CCharacterBotAI::Snap(int SnappingClient)
 {
 	int ID = m_pBotPlayer->GetCID();
 
-	// check active this bot
-	if(!m_pBotPlayer->IsVisibleForClient(SnappingClient))
+	if (!m_pBotPlayer->IsVisibleForClient(SnappingClient))
 		return;
 
-	// check network clipped and translate state
-	if(NetworkClippedByPriority(SnappingClient, ESnappingPriority::Lower) || !Server()->Translate(ID, SnappingClient))
+	if (NetworkClippedByPriority(SnappingClient, ESnappingPriority::Lower) || !Server()->Translate(ID, SnappingClient))
 		return;
 
 	CNetObj_Character* pCharacter = static_cast<CNetObj_Character*>(Server()->SnapNewItem(NETOBJTYPE_CHARACTER, ID, sizeof(CNetObj_Character)));
-	if(!pCharacter)
+	if (!pCharacter)
 		return;
 
-	// write down the m_Core
-	if(!m_ReckoningTick)
+	if (!m_ReckoningTick)
 	{
-		// no dead reckoning when paused because the client doesn't know
-		// how far to perform the reckoning
 		pCharacter->m_Tick = 0;
 		m_Core.Write(pCharacter);
 	}
 
-	// set emote
-	if(m_EmoteStop < Server()->Tick())
+	if (m_EmoteStop < Server()->Tick())
 	{
 		m_EmoteType = EMOTE_NORMAL;
 		m_EmoteStop = -1;
 	}
 	pCharacter->m_Emote = m_EmoteType;
 
-	// some time blink eyes
-	if(250 - ((Server()->Tick() - m_LastAction) % (250)) < 5)
-	{
+	if (250 - ((Server()->Tick() - m_LastAction) % 250) < 5)
 		pCharacter->m_Emote = EMOTE_BLINK;
-	}
 
 	pCharacter->m_AttackTick = m_AttackTick;
 	pCharacter->m_Direction = m_Input.m_Direction;
@@ -392,9 +381,8 @@ void CCharacterBotAI::Snap(int SnappingClient)
 	pCharacter->m_Armor = 0;
 	pCharacter->m_PlayerFlags = m_pBotPlayer->m_PlayerFlags;
 
-	// DDNetCharacter
 	CNetObj_DDNetCharacter* pDDNetCharacter = static_cast<CNetObj_DDNetCharacter*>(Server()->SnapNewItem(NETOBJTYPE_DDNETCHARACTER, ID, sizeof(CNetObj_DDNetCharacter)));
-	if(!pDDNetCharacter)
+	if (!pDDNetCharacter)
 		return;
 
 	pDDNetCharacter->m_Flags = 0;
@@ -409,15 +397,13 @@ void CCharacterBotAI::Snap(int SnappingClient)
 
 void CCharacterBotAI::ProcessBot()
 {
-	if(!m_pAI->GetTarget()->IsEmpty())
+	if (!m_pAI->GetTarget()->IsEmpty())
 		m_pAI->GetTarget()->Tick();
 
 	m_pAI->Process();
 
-	if(m_Input.m_Direction)
-	{
+	if (m_Input.m_Direction)
 		m_PrevDirection = m_Input.m_Direction;
-	}
 
 	SelectEmoteAtRandomInterval();
 	HandleWeapons();
@@ -431,15 +417,158 @@ void CCharacterBotAI::HandleTuning()
 	HandleIndependentTuning();
 }
 
+// =============================================================================
+// AI MAIN LOOP - FINITE STATE MACHINE
+// =============================================================================
+
+bool CCharacterBotAI::HasLineOfSight(const vec2& From, const vec2& To) const
+{
+	return !GS()->Collision()->IntersectLine(From, To, nullptr, nullptr) &&
+		!GS()->Collision()->IntersectLineDoor(From, To);
+}
+
+float CCharacterBotAI::GetOptimalDistance() const
+{
+	switch (m_Core.m_ActiveWeapon)
+	{
+	case WEAPON_HAMMER:  return 48.0f;
+	case WEAPON_GUN:     return 300.0f;
+	case WEAPON_SHOTGUN: return 350.0f;
+	case WEAPON_GRENADE: return 450.0f;
+	case WEAPON_LASER:   return 550.0f;
+	default:             return 200.0f;
+	}
+}
+
+vec2 CCharacterBotAI::CalculateLeadShotAim(const vec2& TargetPos) const
+{
+	float ProjectileSpeed = 0.0f;
+	switch (m_Core.m_ActiveWeapon)
+	{
+	case WEAPON_GUN:     ProjectileSpeed = 2200.0f; break;
+	case WEAPON_SHOTGUN: ProjectileSpeed = 2750.0f; break;
+	case WEAPON_GRENADE: ProjectileSpeed = 1000.0f; break;
+	default: return TargetPos - m_Pos;
+	}
+
+	vec2 PredictedPos = TargetPos;
+	for (int i = 0; i < 2; ++i)
+	{
+		float Dist = distance(m_Pos, PredictedPos);
+		float TimeToHit = Dist / ProjectileSpeed;
+		PredictedPos = TargetPos + m_TargetVelocity * TimeToHit * Server()->TickSpeed();
+	}
+
+	return PredictedPos - m_Pos;
+}
+
+void CCharacterBotAI::ChangeState(AIState NewState)
+{
+	if (m_AIState == NewState) return;
+
+	AIState OldState = m_AIState;
+	m_AIState = NewState;
+	m_StateTimer = Server()->Tick();
+	m_ReactionTicks = AITuning::REACTION_MIN_TICKS + (rand() % (AITuning::REACTION_MAX_TICKS - AITuning::REACTION_MIN_TICKS));
+
+	OnStateChanged(OldState, NewState);
+}
+
+void CCharacterBotAI::OnStateChanged(AIState OldState, AIState NewState)
+{
+	// 1. surprise: enemy suddenly appears in sight
+	if ((OldState == AIState::Idle || OldState == AIState::Search) &&
+		(NewState == AIState::Chase || NewState == AIState::Combat))
+	{
+		// shoot emote and bubble emoticon to indicate surprise
+		m_HesitationTicks = 15 + (rand() % 10);
+		SetEmote(EMOTE_SURPRISE, m_HesitationTicks, true);
+		SendBubbleEmoticon(EMOTICON_EXCLAMATION); // "!"
+	}
+
+	// 1. enemy lost: bot was chasing or fighting, but now has to search for the target
+	if ((OldState == AIState::Chase || OldState == AIState::Combat) && NewState == AIState::Search)
+	{
+		SetEmote(EMOTE_NORMAL, Server()->TickSpeed(), true);
+		SendBubbleEmoticon(EMOTICON_QUESTION); // "?"
+		m_LookAroundTimer = 0;
+	}
+
+	// 3. retreat: bot is retreating from the enemy
+	if (NewState == AIState::Retreat)
+	{
+		SetEmote(EMOTE_PAIN, Server()->TickSpeed() * 2, true);
+		if (rand() % 2 == 0)
+			SendBubbleEmoticon(EMOTICON_GHOST); // ghost
+	}
+
+	// 4. enemy lost: bot has lost sight of the target
+	if (OldState == AIState::Search && NewState == AIState::Idle)
+	{
+		SetEmote(EMOTE_ANGRY, Server()->TickSpeed(), true);
+		SendBubbleEmoticon(EMOTICON_WTF); // "WTF?!"
+	}
+}
+
+
+void CCharacterBotAI::UpdateAIState(bool HasTarget, bool LineOfSight, float DistToTarget)
+{
+	const int CurrentTick = Server()->Tick();
+
+	auto* pMobInfo = m_pBotPlayer->GetBotType() == TYPE_BOT_MOB ? &m_pBotPlayer->GetMobInfo() : nullptr;
+	const bool CanRetreat = pMobInfo && !pMobInfo->m_Boss;
+	const float HpRatio = static_cast<float>(m_Health) / static_cast<float>(maximum(1, m_pBotPlayer->GetMaxHealth()));
+
+	if (CanRetreat && HasTarget && HpRatio < AITuning::RETREAT_HP_THRESHOLD)
+	{
+		ChangeState(AIState::Retreat);
+		return;
+	}
+
+	if (HasTarget && LineOfSight)
+	{
+		m_LastSeenTargetTick = CurrentTick;
+
+		if (DistToTarget < GetOptimalDistance() * 1.5f)
+			ChangeState(AIState::Combat);
+		else
+			ChangeState(AIState::Chase);
+		return;
+	}
+
+	if (m_LastKnownTargetPos.has_value())
+	{
+		const int TicksSinceSeen = CurrentTick - m_LastSeenTargetTick;
+		if (TicksSinceSeen < AITuning::MEMORY_DURATION_TICKS)
+		{
+			ChangeState(AIState::Chase);
+			return;
+		}
+		if (TicksSinceSeen < AITuning::MEMORY_DURATION_TICKS + AITuning::SEARCH_DURATION_TICKS)
+		{
+			ChangeState(AIState::Search);
+			return;
+		}
+
+		m_LastKnownTargetPos.reset();
+	}
+
+	if (m_StuckCount > AITuning::STUCK_THRESHOLD_TICKS)
+	{
+		ChangeState(AIState::Stuck);
+		return;
+	}
+
+	ChangeState(AIState::Idle);
+}
+
 void CCharacterBotAI::Move()
 {
-	// attempt to retrieve the path to the target
 	m_pBotPlayer->m_PathHandle.TryGetPath();
-	if(m_pBotPlayer->m_PathHandle.vPath.empty())
-		return;
+	const auto& Path = m_pBotPlayer->m_PathHandle.vPath;
+	if (Path.empty()) return;
 
-	// auto enter to teleport confirm tile (door)
-	if(m_pTilesHandler->IsActive(TILE_TELE_FROM_CONFIRM))
+	if (m_pTilesHandler->IsActive(TILE_TELE_FROM_CONFIRM))
 	{
 		ResetHook();
 		m_Core.m_ActiveWeapon = WEAPON_HAMMER;
@@ -447,250 +576,402 @@ void CCharacterBotAI::Move()
 		m_LatestInput.m_Fire++;
 	}
 
-	// target pos
-	vec2 TargetPos = m_pBotPlayer->m_TargetPos.value_or(m_pBotPlayer->m_PathHandle.vPath.back());
+	auto* pTarget = m_pAI->GetTarget();
+	const bool HasActiveTarget = (pTarget && !pTarget->IsEmpty() &&
+		pTarget->GetType() == TargetType::Active);
 
-	// find the next available path point
-	int Index = -1;
+	vec2 TargetPos = m_pBotPlayer->m_TargetPos.value_or(Path.back());
+	CCharacter* pTargetChar = nullptr;
+
+	if (HasActiveTarget)
+	{
+		pTargetChar = GS()->GetPlayerChar(pTarget->GetCID());
+		if (pTargetChar)
+		{
+			m_TargetVelocity = (pTargetChar->GetPos() - m_PrevTargetPos) / Server()->TickSpeed();
+			m_PrevTargetPos = pTargetChar->GetPos();
+			TargetPos = pTargetChar->GetPos();
+			m_LastKnownTargetPos = TargetPos;
+		}
+	}
+
+	const bool LineOfSight = pTargetChar ? HasLineOfSight(m_Pos, pTargetChar->GetPos()) : false;
+	const float DistToTarget = pTargetChar ? distance(m_Pos, pTargetChar->GetPos()) : std::numeric_limits<float>::max();
+
+	UpdateAIState(pTargetChar != nullptr, LineOfSight, DistToTarget);
+
 	int ActiveWayPoints = 0;
 	vec2 WayPos = TargetPos;
-	for(int i = 0; i < (int)m_pBotPlayer->m_PathHandle.vPath.size() && i < 30; i++)
+
+	for (size_t i = 0; i < Path.size() && i < 30; ++i)
 	{
-		if(GS()->Collision()->IntersectLineWithInvisible(m_pBotPlayer->m_PathHandle.vPath[i], m_Pos, nullptr, nullptr))
+		if (GS()->Collision()->IntersectLineWithInvisible(Path[i], m_Pos, nullptr, nullptr) ||
+			GS()->Collision()->IntersectLineDoor(Path[i], m_Pos))
 			break;
-		Index = i;
-		ActiveWayPoints = i;
-	}
-	if(Index > -1)
-	{
-		WayPos = m_pBotPlayer->m_PathHandle.vPath[Index];
+
+		ActiveWayPoints = static_cast<int>(i);
+		WayPos = Path[i];
 	}
 
-	// set aim target
-	SetAim(TargetPos - m_Pos);
-
-	// direction to waypoint
-	float DistToWaypoint = distance(WayPos, m_Core.m_Pos);
-	vec2 DirectionToWaypoint = DistToWaypoint > 0.1f ? normalize(WayPos - m_Core.m_Pos) : vec2(0.0f, 0.0f);
-
-	// determine the movement direction
-	int PathDirection = (ActiveWayPoints > 3) ?
-		(DirectionToWaypoint.x < -0.1f ? -1 : (DirectionToWaypoint.x > 0.1f ? 1 : 0)) :
-		m_PrevDirection;
-
-	// determine the optimal distance to the target based on the active weapon
-	bool HasActiveTarget = (!m_pAI->GetTarget()->IsEmpty() &&
-							m_pAI->GetTarget()->GetType() == TargetType::Active &&
-							!m_pAI->GetTarget()->IsCollided());
-	int DistanceDirection = 0;
-
-	if(HasActiveTarget)
+	if (pTargetChar && LineOfSight)
 	{
-		// get optional distance
-		float OptimalDistance = 64.0f;
-		switch(m_Core.m_ActiveWeapon)
-		{
-			case WEAPON_GUN:      OptimalDistance = 300.0f; break;
-			case WEAPON_SHOTGUN:  OptimalDistance = 400.0f; break;
-			case WEAPON_GRENADE:  OptimalDistance = 500.0f; break;
-			case WEAPON_LASER:    OptimalDistance = 600.0f; break;
-		}
+		const vec2 AimDir = CalculateLeadShotAim(pTargetChar->GetPos());
+		SetAim(AimDir, false);
+	}
+	else
+	{
+		SetAim(TargetPos - m_Pos, false);
+	}
 
-		float DistanceToTarget = distance(GetPos(), TargetPos);
-		float DistanceDifference = DistanceToTarget - OptimalDistance;
-		bool LineOfSightClear = !GS()->Collision()->IntersectLine(m_Core.m_Pos, TargetPos, nullptr, nullptr);
+	ExecuteMovement(WayPos, ActiveWayPoints, TargetPos);
 
-		// strafing
-		int CurrentTick = Server()->Tick();
-		if(CurrentTick - m_LastStrafeChangeTick > Server()->TickSpeed() * (1 + (rand() % 2)))
+	const vec2 DirToWaypoint = distance(WayPos, m_Pos) > 0.1f ? normalize(WayPos - m_Pos) : vec2(0.f, 0.f);
+	UpdateJumping(DirToWaypoint, ActiveWayPoints);
+	UpdateHooking(DirToWaypoint, ActiveWayPoints, pTargetChar != nullptr, TargetPos);
+	HandleAntiStuck();
+}
+
+void CCharacterBotAI::ExecuteMovement(const vec2& WayPos, int ActiveWayPoints, const vec2& TargetPos)
+{
+	const int CurrentTick = Server()->Tick();
+	int WantedDir = m_PrevDirection;
+
+	const float DistToWaypoint = distance(WayPos, m_Pos);
+	if (ActiveWayPoints > 3 && DistToWaypoint > 10.0f)
+	{
+		const vec2 DirToWaypoint = normalize(WayPos - m_Pos);
+		WantedDir = (DirToWaypoint.x < -0.1f) ? -1 : (DirToWaypoint.x > 0.1f ? 1 : 0);
+	}
+
+	switch (m_AIState)
+	{
+	case AIState::Combat:
+	{
+		const float OptimalDist = GetOptimalDistance();
+		const float DistToTarget = distance(m_Pos, TargetPos);
+		const float DistDiff = DistToTarget - OptimalDist;
+
+		if (CurrentTick - m_LastStrafeChangeTick > Server()->TickSpeed() * (1 + (rand() % 3)))
 		{
 			m_StrafeDirection = (rand() % 2) ? 1 : -1;
 			m_LastStrafeChangeTick = CurrentTick;
 		}
 
-		// move to optional distance or strafe
-		if(LineOfSightClear && fabs(DistanceDifference) < 80.0f)
+		const vec2 DirToTarget = normalize(TargetPos - m_Pos);
+		if (m_Core.m_ActiveWeapon != WEAPON_HAMMER && DistToTarget < OptimalDist * 0.4f)
 		{
-			DistanceDirection = m_StrafeDirection;
+			WantedDir = (DirToTarget.x > 0) ? -1 : 1;
 		}
-		else if(LineOfSightClear && fabs(DistanceDifference) >= 80.0f)
+		else if (std::abs(DistDiff) < 80.0f)
 		{
-			vec2 DirToTarget = normalize(TargetPos - m_Core.m_Pos);
-			DistanceDirection = (DistanceDifference > 0) ?
-				(DirToTarget.x > 0 ? 1 : -1) :
-				(DirToTarget.x > 0 ? -1 : 1);
+			WantedDir = m_StrafeDirection;
 		}
 		else
 		{
-			// if there is a wall, move towards the target to navigate around it
-			vec2 DirToTarget = normalize(TargetPos - m_Core.m_Pos);
-			DistanceDirection = (DirToTarget.x > 0) ? 1 : -1;
+			WantedDir = (DistDiff > 0) ? (DirToTarget.x > 0 ? 1 : -1) : (DirToTarget.x > 0 ? -1 : 1);
 		}
+		break;
 	}
 
-	// set direction result
-	m_Input.m_Direction = (DistanceDirection != 0) ? DistanceDirection : PathDirection;
-
-	// reverse input direction
-	if(IsCollisionFlag(CCollision::COLFLAG_DISALLOW_MOVE) && HasActiveTarget)
+	case AIState::Retreat:
 	{
-		AI()->GetTarget()->SetType(TargetType::Lost);
-		m_Input.m_Direction = -m_Input.m_Direction;
+		const vec2 DirToTarget = normalize(TargetPos - m_Pos);
+		WantedDir = (DirToTarget.x > 0) ? -1 : 1;
+		break;
 	}
 
-	// jump ground
-	const bool IsOnGround = IsGrounded();
-	if((IsOnGround && DirectionToWaypoint.y < -0.5f) ||
-		(!IsOnGround && DirectionToWaypoint.y < -0.5f && m_Core.m_Vel.y > 0))
+	case AIState::Chase:
+		break;
+
+	case AIState::Search:
 	{
-		m_Input.m_Jump = 1;
-	}
-
-	vec2 WallPosition;
-	if(GS()->Collision()->IntersectLineWithInvisible(m_Pos, m_Pos + vec2(m_Input.m_Direction * 32.0f, 0), &WallPosition, nullptr))
-	{
-		float CheckHeight = IsOnGround ? -210.0f : -125.0f;
-		if(GS()->Collision()->IntersectLine(WallPosition, WallPosition + vec2(0, CheckHeight), nullptr, nullptr))
-			m_Input.m_Jump = 1;
-	}
-
-	// disable jump is down
-	if(m_Input.m_Jump == 1 && (DirectionToWaypoint.y >= 0 || ActiveWayPoints < 3))
-		m_Input.m_Jump = 0;
-
-	// check for characters ahead to potentially jump over them
-	vec2 IntersectPos;
-	CCharacter* pChar = GameWorld()->IntersectCharacter(m_Core.m_Pos,
-		m_Core.m_Pos + vec2(m_Input.m_Direction * 64.0f, 0), 16.0f, IntersectPos, this);
-	if(pChar && !pChar->GetPlayer()->IsBot())
-		m_Input.m_Jump = 1;
-
-	// hooking
-	if(ActiveWayPoints > 2 && !m_Input.m_Hook && (DirectionToWaypoint.x != 0 || DirectionToWaypoint.y != 0) && !pChar)
-	{
-		if(m_Core.m_HookState == HOOK_GRABBED && m_Core.m_HookedPlayer == -1)
+		// move towards the last known target position, but look around when close to it
+		if (DistToWaypoint < 32.0f)
 		{
-			vec2 HookVel = normalize(m_Core.m_HookPos - GetPos()) * GS()->Tuning()->m_HookDragAccel;
-			if(HookVel.y > 0)
-				HookVel.y *= 0.3f;
-			if((HookVel.x < 0 && m_Input.m_Direction < 0) || (HookVel.x > 0 && m_Input.m_Direction > 0))
-				HookVel.x *= 0.95f;
-			else
-				HookVel.x *= 0.75f;
+			WantedDir = 0;
+			m_LookAroundTimer++;
 
-			vec2 Target = vec2(m_Input.m_TargetX, m_Input.m_TargetY);
-			float ps = dot(Target, HookVel);
-			if(ps > 0 || (Target.y < 0 && m_Core.m_Vel.y > 0.f && m_Core.m_HookTick < SERVER_TICK_SPEED + SERVER_TICK_SPEED / 2))
-				m_Input.m_Hook = 1;
-			if(m_Core.m_HookTick > 4 * SERVER_TICK_SPEED || length(m_Core.m_HookPos - GetPos()) < 20.0f)
-				m_Input.m_Hook = 0;
-		}
-		else if(m_Core.m_HookState == HOOK_FLYING)
-			m_Input.m_Hook = 1;
-		else if(m_LatestInput.m_Hook == 0 && m_Core.m_HookState == HOOK_IDLE && rand() % 3 == 0)
-		{
-			int NumDir = 32;
-			vec2 HookDir(0.0f, 0.0f);
-			float MaxForce = 0;
-			for(int i = 0; i < NumDir; i++)
+			// every half second, sharply change the view left/right
+			if (m_LookAroundTimer % 25 == 0)
 			{
-				float a = 2 * i * pi / NumDir;
-				vec2 dir = direction(a);
-				vec2 Pos = GetPos() + dir * GS()->Tuning()->m_HookLength;
+				vec2 RandomLook = vec2((rand() % 2 == 0) ? 1.0f : -1.0f, (rand() % 100 - 50) / 100.0f);
+				SetAim(RandomLook, true);
+			}
+		}
+		else
+		{
+			if (CurrentTick - m_StateTimer > Server()->TickSpeed() * 2 && (CurrentTick % 30 == 0))
+				WantedDir = -WantedDir;
+		}
+		break;
+	}
 
-				if((GS()->Collision()->IntersectLine(GetPos(), Pos, &Pos, 0) & (CCollision::COLFLAG_SOLID | CCollision::COLFLAG_NOHOOK)) == CCollision::COLFLAG_SOLID)
+	case AIState::Stuck:
+	{
+		WantedDir = -m_PrevDirection;
+		if (WantedDir == 0)
+			WantedDir = (rand() % 2) ? 1 : -1;
+		m_Input.m_Jump = 1;
+		break;
+	}
+
+	case AIState::Idle:
+	default:
+	{
+		if (WantedDir == 0)
+		{
+			m_BoredomTimer++;
+			if (m_BoredomTimer > Server()->TickSpeed() * 5)
+			{
+				if (rand() % 100 < 5)
 				{
-					vec2 HookVel = dir * GS()->Tuning()->m_HookDragAccel;
-					if(HookVel.y > 0)
-						HookVel.y *= 0.3f;
-					if((HookVel.x < 0 && m_Input.m_Direction < 0) || (HookVel.x > 0 && m_Input.m_Direction > 0))
-						HookVel.x *= 0.95f;
-					else
-						HookVel.x *= 0.75f;
+					int Action = rand() % 3;
+					if (Action == 0) 
+						m_Input.m_Jump = 1;
+					else if (Action == 1) 
+						SendBubbleEmoticon(EMOTICON_MUSIC);
+					else if (Action == 2) 
+						SetAim(vec2(0.f, -1.f), false);
 
-					HookVel += vec2(0, 1) * GS()->Tuning()->m_Gravity;
-
-					float ps = dot(DirectionToWaypoint, HookVel);
-					if(ps > MaxForce)
-					{
-						if(GameWorld()->IntersectCharacter(GetPos(), Pos, 16.0f, IntersectPos, this))
-							continue;
-
-						MaxForce = ps;
-						HookDir = Pos - GetPos();
-					}
+					m_BoredomTimer = 0;
 				}
 			}
+		}
+		else
+		{
+			m_BoredomTimer = 0;
+		}
+		break;
+	}
+	}
 
-			if(length(HookDir) > 32.f)
+	m_Input.m_Direction = WantedDir;
+
+	if (IsCollisionFlag(CCollision::COLFLAG_DISALLOW_MOVE) && m_AIState == AIState::Combat)
+	{
+		auto* pTarget = m_pAI->GetTarget();
+		if (pTarget) 
+			pTarget->SetType(TargetType::Lost);
+		m_Input.m_Direction = -m_Input.m_Direction;
+	}
+}
+
+void CCharacterBotAI::UpdateJumping(const vec2& DirToWaypoint, int ActiveWayPoints)
+{
+	const bool IsOnGround = IsGrounded();
+	m_Input.m_Jump = 0;
+
+	if (DirToWaypoint.y < -0.5f && (IsOnGround || m_Core.m_Vel.y > 0))
+		m_Input.m_Jump = 1;
+
+	if (m_Input.m_Direction != 0)
+	{
+		const vec2 ForwardPos = m_Pos + vec2(m_Input.m_Direction * 48.0f, 0.0f);
+		vec2 WallHit;
+
+		if (GS()->Collision()->IntersectLineWithInvisible(m_Pos, ForwardPos, &WallHit, nullptr) ||
+			GS()->Collision()->IntersectLineDoor(m_Pos, ForwardPos))
+		{
+			const float CheckHeight = IsOnGround ? -210.0f : -125.0f;
+			if (GS()->Collision()->IntersectLine(WallHit, WallHit + vec2(0.f, CheckHeight), nullptr, nullptr))
+				m_Input.m_Jump = 1;
+		}
+
+		if (IsOnGround && !m_Input.m_Jump && m_AIState != AIState::Retreat)
+		{
+			const vec2 GroundCheck = ForwardPos + vec2(0.f, 64.f);
+			if (!GS()->Collision()->IntersectLine(ForwardPos, GroundCheck, nullptr, nullptr))
+				m_Input.m_Jump = 1;
+		}
+	}
+
+	if (m_Input.m_Jump && (DirToWaypoint.y >= 0 || ActiveWayPoints < 3) && m_AIState != AIState::Combat)
+		m_Input.m_Jump = 0;
+
+	vec2 IntersectPos;
+	if (CCharacter* pChar = GameWorld()->IntersectCharacter(m_Pos, m_Pos + vec2(m_Input.m_Direction * 64.0f, 0.0f), 16.0f, IntersectPos, this))
+	{
+		if (!pChar->GetPlayer()->IsBot())
+			m_Input.m_Jump = 1;
+	}
+}
+
+void CCharacterBotAI::UpdateHooking(const vec2& DirToWaypoint, int ActiveWayPoints, bool HasTarget, const vec2& TargetPos)
+{
+	if (m_Input.m_Hook || m_Input.m_Jump)
+		return;
+
+	if (m_Core.m_HookState == HOOK_GRABBED && m_Core.m_HookedPlayer == -1)
+	{
+		vec2 HookVel = normalize(m_Core.m_HookPos - m_Pos) * GS()->Tuning()->m_HookDragAccel;
+		HookVel.y = (HookVel.y > 0) ? HookVel.y * 0.3f : HookVel.y;
+		HookVel.x *= ((HookVel.x < 0 && m_Input.m_Direction < 0) || (HookVel.x > 0 && m_Input.m_Direction > 0)) ? 0.95f : 0.75f;
+
+		vec2 Target(m_Input.m_TargetX, m_Input.m_TargetY);
+		if (dot(Target, HookVel) > 0 || (Target.y < 0 && m_Core.m_Vel.y > 0.f && m_Core.m_HookTick < SERVER_TICK_SPEED * 1.5f))
+			m_Input.m_Hook = 1;
+
+		if (m_Core.m_HookTick > 3 * SERVER_TICK_SPEED || distance(m_Core.m_HookPos, m_Pos) < 20.0f)
+			m_Input.m_Hook = 0;
+		return;
+	}
+
+	if (m_Core.m_HookState == HOOK_FLYING)
+	{
+		m_Input.m_Hook = 1;
+		return;
+	}
+
+	if (ActiveWayPoints <= 2 || (DirToWaypoint.x == 0 && DirToWaypoint.y == 0))
+		return;
+
+	if (m_LatestInput.m_Hook != 0 || m_Core.m_HookState != HOOK_IDLE)
+		return;
+
+	if (m_AIState == AIState::Chase && HasTarget && distance(m_Pos, TargetPos) < GS()->Tuning()->m_HookLength * 0.8f)
+	{
+		const vec2 DirToTarget = normalize(TargetPos - m_Pos);
+		const vec2 HookEnd = m_Pos + DirToTarget * GS()->Tuning()->m_HookLength;
+		vec2 HitPos;
+		int HitFlags = GS()->Collision()->IntersectLine(m_Pos, HookEnd, &HitPos, nullptr);
+		if ((HitFlags & CCollision::COLFLAG_SOLID) && !(HitFlags & CCollision::COLFLAG_NOHOOK))
+		{
+			SetAim(HitPos - m_Pos, true);
+			m_Input.m_Hook = 1;
+			return;
+		}
+	}
+
+	if (rand() % 4 != 0)
+		return;
+
+	vec2 BestHookDir(0.f, 0.f);
+	float MaxForce = 0;
+	constexpr int NumDirections = 16;
+
+	for (int i = 0; i < NumDirections; i++)
+	{
+		vec2 Dir = direction(2.0f * i * pi / NumDirections);
+		vec2 Pos = m_Pos + Dir * GS()->Tuning()->m_HookLength;
+
+		if ((GS()->Collision()->IntersectLine(m_Pos, Pos, &Pos, nullptr) & (CCollision::COLFLAG_SOLID | CCollision::COLFLAG_NOHOOK)) == CCollision::COLFLAG_SOLID)
+		{
+			vec2 IntersectPos;
+			if (GameWorld()->IntersectCharacter(m_Pos, Pos, 16.0f, IntersectPos, this))
+				continue;
+
+			vec2 HookVel = Dir * GS()->Tuning()->m_HookDragAccel;
+			HookVel.y = (HookVel.y > 0) ? HookVel.y * 0.3f : HookVel.y;
+			HookVel.x *= ((HookVel.x < 0 && m_Input.m_Direction < 0) || (HookVel.x > 0 && m_Input.m_Direction > 0)) ? 0.95f : 0.75f;
+			HookVel += vec2(0, 1) * GS()->Tuning()->m_Gravity;
+
+			float ps = dot(DirToWaypoint, HookVel);
+			if (ps > MaxForce)
 			{
-				SetAim(HookDir);
-				m_Input.m_Hook = 1;
+				MaxForce = ps;
+				BestHookDir = Pos - m_Pos;
 			}
 		}
 	}
 
-	// handle cases where the bot might be stuck
-	if(m_Pos.x != m_PrevPos.x)
+	if (length(BestHookDir) > 32.f)
+	{
+		SetAim(BestHookDir, true);
+		m_Input.m_Hook = 1;
+	}
+}
+
+void CCharacterBotAI::HandleAntiStuck()
+{
+	const float MoveDelta = distance(m_Pos, m_LastPos);
+	if (MoveDelta > AITuning::STUCK_MIN_DISTANCE)
 	{
 		m_MoveTick = Server()->Tick();
+		m_StuckCount = 0;
+		m_LastPos = m_Pos;
 	}
-	else if(Server()->Tick() - m_MoveTick > Server()->TickSpeed() / 2)
+	else
 	{
-		m_Input.m_Direction = -m_Input.m_Direction;
-		m_Input.m_Jump = 1;
-		m_MoveTick = Server()->Tick();
+		m_StuckCount++;
+		if (Server()->Tick() - m_MoveTick > Server()->TickSpeed() / 2)
+		{
+			m_Input.m_Direction = (m_Input.m_Direction != 0) ? -m_Input.m_Direction : (rand() % 2 ? 1 : -1);
+			m_Input.m_Jump = 1;
+			m_MoveTick = Server()->Tick();
+			m_LastPos = m_Pos;
+		}
 	}
+}
+
+void CCharacterBotAI::SetAim(vec2 Dir, bool Instant)
+{
+	if (length(Dir) < 1.0f)
+		Dir = vec2(0.f, 1.f);
+
+	const vec2 NormalizedTarget = normalize(Dir);
+	m_CurrentAimDir = Instant ? NormalizedTarget : normalize(mix(m_CurrentAimDir, NormalizedTarget, AITuning::AIM_SMOOTH_FACTOR));
+
+	m_Input.m_TargetX = static_cast<int>(m_CurrentAimDir.x * 200.0f);
+	m_Input.m_TargetY = static_cast<int>(m_CurrentAimDir.y * 200.0f);
+	m_LatestInput.m_TargetX = m_Input.m_TargetX;
+	m_LatestInput.m_TargetY = m_Input.m_TargetY;
 }
 
 void CCharacterBotAI::Fire()
 {
-	auto* pChar = GS()->GetPlayerChar(AI()->GetTarget()->GetCID());
-	if(!pChar || AI()->GetTarget()->IsEmpty() || AI()->GetTarget()->IsCollided())
+	// don't fire if the bot is hesitating, has no target, or the target is invalid
+	if (--m_HesitationTicks > 0)
 		return;
 
-	// if hooking or reloading
-	if((m_Input.m_Hook && m_Core.m_HookState == HOOK_IDLE) || m_ReloadTimer != 0)
+	auto* pTarget = AI()->GetTarget();
+	if (pTarget->IsEmpty() || pTarget->IsCollided())
 		return;
 
-	// toggle the fire button state
+	if (!GS()->GetPlayerChar(pTarget->GetCID()))
+		return;
+
+	if ((m_Input.m_Hook && m_Core.m_HookState == HOOK_IDLE) || m_ReloadTimer != 0)
+		return;
+
+	if (m_AIState == AIState::Retreat && m_Core.m_ActiveWeapon != WEAPON_HAMMER)
+	{
+		if (rand() % 3 != 0)
+			return;
+	}
+
 	m_Input.m_Fire++;
 	m_LatestInput.m_Fire++;
 }
 
-void CCharacterBotAI::SetAim(vec2 Dir)
-{
-	m_Input.m_TargetX = (int)Dir.x;
-	m_Input.m_TargetY = (int)Dir.y;
-	m_LatestInput.m_TargetX = (int)Dir.x;
-	m_LatestInput.m_TargetY = (int)Dir.y;
-}
-
 void CCharacterBotAI::UpdateTarget(float Radius) const
 {
-	if(!m_pAI->GetTarget()->IsEmpty())
+	auto* pTarget = m_pAI->GetTarget();
+	if (!pTarget->IsEmpty())
 	{
-		const auto* pTargetChar = GS()->GetPlayerChar(m_pAI->GetTarget()->GetCID());
-		if(!pTargetChar || distance(pTargetChar->GetPos(), m_Pos) > 800.0f)
+		const auto* pTargetChar = GS()->GetPlayerChar(pTarget->GetCID());
+		if (!pTargetChar || distance(pTargetChar->GetPos(), m_Pos) > AITuning::MAX_SIGHT_DISTANCE)
 		{
 			m_pBotPlayer->m_TargetPos.reset();
-			m_pAI->GetTarget()->Reset();
+			pTarget->Reset();
 			return;
 		}
 
-		// update collided
-		const bool IntersectedWithInvisibleLine = GS()->Collision()->IntersectLineWithInvisible(m_Core.m_Pos, pTargetChar->m_Core.m_Pos, nullptr, nullptr);
-		m_pAI->GetTarget()->UpdateCollided(IntersectedWithInvisibleLine);
+		const bool Blocked = GS()->Collision()->IntersectLineWithInvisible(m_Core.m_Pos, pTargetChar->m_Core.m_Pos, nullptr, nullptr) ||
+			GS()->Collision()->IntersectLineDoor(m_Core.m_Pos, pTargetChar->m_Core.m_Pos);
 
-		// lost target
-		if(pTargetChar->m_Core.m_DamageDisabled || IntersectedWithInvisibleLine)
+		pTarget->UpdateCollided(Blocked);
+
+		if (pTargetChar->m_Core.m_DamageDisabled || Blocked)
 		{
-			if(AI()->GetTarget()->SetType(TargetType::Lost))
-			{
+			if (pTarget->SetType(TargetType::Lost))
 				GS()->SendEmoticon(m_pBotPlayer->GetCID(), EMOTICON_QUESTION);
-			}
 		}
 	}
 
 	m_pAI->OnTargetRules(Radius);
+}
+
+void CCharacterBotAI::SendBubbleEmoticon(int EmoticonID)
+{
+	GS()->SendEmoticon(m_pBotPlayer->GetCID(), EmoticonID);
 }
