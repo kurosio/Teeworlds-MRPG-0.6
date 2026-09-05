@@ -808,10 +808,10 @@ void CCharacterBotAI::UpdateHooking(const vec2& DirToWaypoint, int ActiveWayPoin
 		HookVel.x *= ((HookVel.x < 0 && m_Input.m_Direction < 0) || (HookVel.x > 0 && m_Input.m_Direction > 0)) ? 0.95f : 0.75f;
 
 		vec2 Target(m_Input.m_TargetX, m_Input.m_TargetY);
-		if (dot(Target, HookVel) > 0 || (Target.y < 0 && m_Core.m_Vel.y > 0.f && m_Core.m_HookTick < SERVER_TICK_SPEED * 1.5f))
+		if (dot(Target, HookVel) > 0 || (Target.y < 0 && m_Core.m_Vel.y > 0.f && m_Core.m_HookTick < Server()->TickSpeed() * 1.5f))
 			m_Input.m_Hook = 1;
 
-		if (m_Core.m_HookTick > 3 * SERVER_TICK_SPEED || distance(m_Core.m_HookPos, m_Pos) < 20.0f)
+		if (m_Core.m_HookTick > 3 * Server()->TickSpeed() || distance(m_Core.m_HookPos, m_Pos) < 20.0f)
 			m_Input.m_Hook = 0;
 		return;
 	}

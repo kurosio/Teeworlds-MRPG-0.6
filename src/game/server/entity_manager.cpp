@@ -778,7 +778,7 @@ void CEntityManager::StartUniversalCast(int ClientID, vec2 TargetPosition, int N
 		*pCastingProcessTracker = pCastingGroup;
 
 	GS()->CreatePlayerSpawn(TargetPosition);
-	GS()->Broadcast(ClientID, BroadcastPriority::GameWarning, SERVER_TICK_SPEED,
+	GS()->Broadcast(ClientID, BroadcastPriority::GameWarning, Server()->TickSpeed(),
 		"Skill Cast. Requires fire pressing '{}' times.", std::max(1, NumRequiredClicks));
 	GS()->CreateSound(TargetPosition, SOUND_SFX_SKILL);
 
@@ -823,7 +823,7 @@ void CEntityManager::StartUniversalCast(int ClientID, vec2 TargetPosition, int N
 				pBase->SetConfig("currentSymbolID", NewSymbolID);
 				GS()->CreatePlayerSpawn(pBase->GetPos());
 				GS()->CreateSound(pBase->GetPos(), SOUND_PICKUP_NINJA);
-				GS()->Broadcast(pBase->GetClientID(), BroadcastPriority::GameWarning, SERVER_TICK_SPEED,
+				GS()->Broadcast(pBase->GetClientID(), BroadcastPriority::GameWarning, Server()->TickSpeed(),
 					"Clicks remaining: '{}'.", std::max(0, totalClicks - currentClicks));
 
 				// create damage star effect
@@ -1072,7 +1072,7 @@ void CEntityManager::HealingRift(int ClientID, vec2 Position, float RiftRadius, 
 		// outer ring
 		float OuterAngleStep = 2.0f * pi / std::max(1, numOuterSegments);
 		float OuterRotationPhase = std::fmod(ServerTick * 0.02f, 2.0f * pi);
-		float TimeParamOuter = (float)ServerTick / (float)SERVER_TICK_SPEED;
+		float TimeParamOuter = (float)ServerTick / (float)Server()->TickSpeed();
 		float OuterRadiusModulation = currentVisualRadius * (isPulsing ? 0.15f : 0.05f);
 		float ModulatedOuterRadius = currentVisualRadius + std::sin(TimeParamOuter * pi * 2.0f * (isPulsing ? 1.0f : 0.3f)) * OuterRadiusModulation;
 		ModulatedOuterRadius = std::max(0.0f, ModulatedOuterRadius);

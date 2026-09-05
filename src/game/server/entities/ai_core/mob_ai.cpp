@@ -213,7 +213,7 @@ void CMobAI::Process()
 
 	// limit moving
 	if (m_pMobInfo->m_LimitMoving 
-		&& (distance(m_pCharacter->m_RespawnedPos, m_pCharacter->m_Core.m_Pos) > (m_pMobInfo->m_ActiveRadius + m_pMobInfo->m_ActiveRadius / 2.f)))
+		&& (distance(m_pCharacter->m_RespawnedPos, m_pCharacter->m_Core.m_Pos) > (m_pMobInfo->m_ActiveRadius /* + m_pMobInfo->m_ActiveRadius / 2.f*/)))
 	{
 		GS()->CreateBirthdayEffect(m_pCharacter->m_Core.m_Pos);
 		GS()->EntityManager()->FlyingPoint(m_pCharacter->m_Core.m_Pos, m_ClientID, vec2(0.5f, 0.5f), WEAPON_LASER);

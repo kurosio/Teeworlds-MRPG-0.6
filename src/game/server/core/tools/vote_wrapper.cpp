@@ -67,8 +67,8 @@ namespace
 
 CVoteGroup::CVoteGroup(int ClientID, int Flags)
 	: m_pGS(static_cast<CGS*>(Instance::GameServerPlayer(ClientID)))
-	, m_Flags(Flags)
 	, m_ClientID(ClientID)
+	, m_Flags(Flags)
 {
 	dbg_assert(m_pGS != nullptr, "GameServer is null");
 	m_pPlayer = m_pGS->GetPlayer(ClientID);

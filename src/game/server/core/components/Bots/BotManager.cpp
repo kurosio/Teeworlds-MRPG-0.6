@@ -67,11 +67,22 @@ namespace
 
 	// parses "|v1|v2|v3|v4|v5|" style strings into a fixed-size array.
 	template <typename T, size_t N>
-	void ParsePipedValues(const std::string& Raw, const char* pFormat, T(&aOut)[N])
+	void ParsePipedValues(const std::string& Raw, T(&aOut)[N])
 	{
 		static_assert(N == 5, "Current drop schema expects exactly 5 slots");
-		sscanf(Raw.c_str(), pFormat,
-			&aOut[0], &aOut[1], &aOut[2], &aOut[3], &aOut[4]);
+		if (Raw.empty())
+			return;
+
+		if constexpr (std::is_same_v<T, int>)
+		{
+			[[maybe_unused]] const int Read = std::sscanf(Raw.c_str(), "|%d|%d|%d|%d|%d|",
+				&aOut[0], &aOut[1], &aOut[2], &aOut[3], &aOut[4]);
+		}
+		else if constexpr (std::is_same_v<T, float>)
+		{
+			[[maybe_unused]] const int Read = std::sscanf(Raw.c_str(), "|%f|%f|%f|%f|%f|",
+				&aOut[0], &aOut[1], &aOut[2], &aOut[3], &aOut[4]);
+		}
 	}
 }
 
@@ -257,8 +268,9 @@ void CBotManager::InitMobsBots(const char* pWhereLocalWorld)
 			str_format(aColumn, sizeof(aColumn), "it_drop_%d", i);
 			MobBot.m_aDropItem[i] = pRes->getInt(aColumn);
 		}
-		ParsePipedValues(pRes->getString("it_drop_count"), "|%d|%d|%d|%d|%d|", MobBot.m_aValueItem);
-		ParsePipedValues(pRes->getString("it_drop_chance"), "|%f|%f|%f|%f|%f|", MobBot.m_aRandomItem);
+		
+		ParsePipedValues(pRes->getString("it_drop_count"), MobBot.m_aValueItem);
+		ParsePipedValues(pRes->getString("it_drop_chance"), MobBot.m_aRandomItem);
 
 		MobBotInfo::ms_aMobBot[MobID] = MobBot;
 
