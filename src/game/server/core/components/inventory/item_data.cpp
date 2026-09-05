@@ -169,8 +169,8 @@ bool CPlayerItem::ShouldAutoEquip() const
 	// is equipment modules
 	if(Info()->IsEquipmentModules())
 	{
-		if((Info()->HasAttributes() && !pPlayer->Account()->GetFreeSlotsAttributedModules()) ||
-			(!Info()->HasAttributes() && !pPlayer->Account()->GetFreeSlotsFunctionalModules()))
+		if((Info()->HasAttributes() && !pPlayer->Account()->GetFreeSlotsPassiveModules()) ||
+			(!Info()->HasAttributes() && !pPlayer->Account()->GetFreeSlotsActiveModules()))
 			return false;
 
 		return true;
@@ -438,8 +438,8 @@ bool CPlayerItem::Equip()
 
 		if(Info()->IsEquipmentModules())
 		{
-			if((Info()->HasAttributes() && !pPlayer->Account()->GetFreeSlotsAttributedModules()) ||
-				(!Info()->HasAttributes() && !pPlayer->Account()->GetFreeSlotsFunctionalModules()))
+			if((Info()->HasAttributes() && !pPlayer->Account()->GetFreeSlotsPassiveModules()) ||
+				(!Info()->HasAttributes() && !pPlayer->Account()->GetFreeSlotsActiveModules()))
 			{
 				GS()->Chat(m_ClientID, "You have no available equipment slots for modules.");
 				return false;

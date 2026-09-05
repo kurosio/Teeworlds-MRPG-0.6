@@ -773,8 +773,8 @@ void CInventoryManager::ShowPlayerModules(CPlayer* pPlayer)
 
 	// initialize variables
 	const auto ClientID = pPlayer->GetCID();
-	const int MaxAttrSlots = g_Config.m_SvAttributedModulesSlots;
-	const int MaxFuncSlots = g_Config.m_SvNonAttributedModulesSlots;
+	const int MaxAttrSlots = pPlayer->Account()->GetMaxSlotsPassiveModules();
+	const int MaxFuncSlots = pPlayer->Account()->GetMaxSlotsActiveModules();
 	const bool SimpleView = pPlayer->GetItem(itShowOnlyFunctionModules)->GetSettings() > 0;
 
 	// settings
@@ -789,10 +789,10 @@ void CInventoryManager::ShowPlayerModules(CPlayer* pPlayer)
 	int equippedStats = 0;
 	VoteWrapper VCollected(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_STRICT_BOLD, "\u2604 Active Effects Summary");
 	VoteWrapper::AddEmptyline(ClientID);
-	VoteWrapper VFunctional(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE, "\u2699 Modules: Functional ({} of {})",
-		pPlayer->Account()->GetUsedSlotsFunctionalModules(), MaxFuncSlots);
+	VoteWrapper VFunctional(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE, "\u2699 Modules: Active ({} of {})",
+		pPlayer->Account()->GetUsedSlotsActiveModules(), MaxFuncSlots);
 	VoteWrapper::AddEmptyline(ClientID);
-	VoteWrapper VStats(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE, "\u2696 Modules: Stats ({} of {})", pPlayer->Account()->GetUsedSlotsAttributedModules(), MaxAttrSlots);
+	VoteWrapper VStats(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE, "\u2696 Modules: Passive ({} of {})", pPlayer->Account()->GetUsedSlotsPassiveModules(), MaxAttrSlots);
 	for(const auto& [ItemID, Item] : CPlayerItem::Data()[ClientID])
 	{
 		const auto* pInfo = Item.Info();

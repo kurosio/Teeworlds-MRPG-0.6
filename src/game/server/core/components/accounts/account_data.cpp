@@ -774,14 +774,24 @@ std::optional<int> CAccountData::GetEquippedSlotItemID(ItemType Type) const
 	return std::nullopt;
 }
 
-int CAccountData::GetFreeSlotsAttributedModules() const
+int CAccountData::GetMaxSlotsPassiveModules() const
 {
-	return GetFreeModuleSlotsByType(m_ClientID, g_Config.m_SvAttributedModulesSlots, true);
+	return g_Config.m_SvAttributedModulesSlots + GetPlayer()->GetSkill(SKILL_MASTER_ADVENTURER)->GetMod(SkillMod::MasterAdventurerExtraSlotPassiveModule);
 }
 
-int CAccountData::GetFreeSlotsFunctionalModules() const
+int CAccountData::GetMaxSlotsActiveModules() const
 {
-	return GetFreeModuleSlotsByType(m_ClientID, g_Config.m_SvNonAttributedModulesSlots, false);
+	return g_Config.m_SvNonAttributedModulesSlots + GetPlayer()->GetSkill(SKILL_MASTER_ADVENTURER)->GetMod(SkillMod::MasterAdventurerExtraSlotActiveModule);
+}
+
+int CAccountData::GetFreeSlotsPassiveModules() const
+{
+	return GetFreeModuleSlotsByType(m_ClientID, GetMaxSlotsPassiveModules(), true);
+}
+
+int CAccountData::GetFreeSlotsActiveModules() const
+{
+	return GetFreeModuleSlotsByType(m_ClientID, GetMaxSlotsActiveModules(), false);
 }
 
 void CAccountData::UpdateAuthTimeoutCodeIfNeeded()

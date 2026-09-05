@@ -27,6 +27,8 @@ std::string format_skill_modifier(SkillMod Mod, int Value)
 			return fmt_default(" +{}sec", Value);
 
 		case SkillMod::None:
+		case SkillMod::MasterAdventurerExtraSlotActiveModule:
+		case SkillMod::MasterAdventurerExtraSlotPassiveModule:
 		case SkillMod::AttackTeleportCombo:
 		case SkillMod::AttackTeleportStun:
 		case SkillMod::AttackTeleportFire:

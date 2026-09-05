@@ -206,10 +206,12 @@ public:
 	std::optional<int> GetEquippedSlotItemID(ItemType Type) const;
 
 	//
-	int GetFreeSlotsAttributedModules() const;
-	int GetFreeSlotsFunctionalModules() const;
-	int GetUsedSlotsAttributedModules() const { return g_Config.m_SvAttributedModulesSlots - GetFreeSlotsAttributedModules(); }
-	int GetUsedSlotsFunctionalModules() const { return g_Config.m_SvNonAttributedModulesSlots - GetFreeSlotsFunctionalModules(); }
+	int GetMaxSlotsPassiveModules() const;
+	int GetMaxSlotsActiveModules() const;
+	int GetFreeSlotsPassiveModules() const;
+	int GetFreeSlotsActiveModules() const;
+	int GetUsedSlotsPassiveModules() const { return GetMaxSlotsPassiveModules() - GetFreeSlotsPassiveModules(); }
+	int GetUsedSlotsActiveModules() const { return GetMaxSlotsActiveModules() - GetFreeSlotsActiveModules(); }
 
 	//
 	void UpdateAuthTimeoutCodeIfNeeded();

@@ -29,6 +29,10 @@ enum class SkillMod : int
 
 	// Master weapon
 	MasterWeaponAutoFire = 16,     // Auto fire from weapons
+
+	// Master adventurer
+	MasterAdventurerExtraSlotActiveModule = 17, // Extra slot for active module
+	MasterAdventurerExtraSlotPassiveModule = 18, // Extra slot for passive module
 };
 
 [[nodiscard]] std::string format_skill_modifier(SkillMod Mod, int Value);
