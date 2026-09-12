@@ -5,70 +5,219 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Настройки • Editor Studio</title>
   <script src="editor-core/page-loader.js" data-mode="event"></script>
+  <style>
+    .profiles-bar {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .profile-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 12px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      border: 1px solid rgba(255, 255, 255, .08);
+      background: rgba(255, 255, 255, .03);
+      color: #94a3b8;
+      transition: background .15s, border-color .15s, color .15s;
+      user-select: none;
+    }
+
+    .profile-chip:hover {
+      background: rgba(255, 255, 255, .07);
+      color: #cbd5e1;
+    }
+
+    .profile-chip.active {
+      background: rgba(99, 102, 241, .15);
+      border-color: rgba(99, 102, 241, .4);
+      color: #a5b4fc;
+    }
+
+    .profile-chip .dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .dot-idle {
+      background: #475569;
+    }
+
+    .dot-ok {
+      background: #34d399;
+      box-shadow: 0 0 5px rgba(52, 211, 153, .5);
+    }
+
+    .dot-err {
+      background: #f87171;
+      box-shadow: 0 0 5px rgba(248, 113, 113, .5);
+    }
+
+    .dot-wait {
+      background: #facc15;
+      box-shadow: 0 0 5px rgba(250, 204, 21, .5);
+      animation: dot-pulse .7s infinite alternate;
+    }
+
+    @keyframes dot-pulse {
+      from { opacity: .4 }
+      to { opacity: 1 }
+    }
+
+    .profile-chip .x-btn {
+      display: none;
+      font-size: 10px;
+      color: #ef4444;
+      margin-left: 2px;
+      padding: 0 2px;
+      cursor: pointer;
+      opacity: .7;
+    }
+
+    .profile-chip .x-btn:hover {
+      opacity: 1;
+    }
+
+    .profile-chip:hover .x-btn,
+    .profile-chip.active .x-btn {
+      display: inline;
+    }
+
+    .profile-add {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 5px 10px;
+      border-radius: 8px;
+      font-size: 13px;
+      cursor: pointer;
+      border: 1px dashed rgba(255, 255, 255, .1);
+      background: transparent;
+      color: #64748b;
+      transition: all .15s;
+    }
+
+    .profile-add:hover {
+      border-color: rgba(99, 102, 241, .35);
+      color: #a5b4fc;
+      background: rgba(99, 102, 241, .05);
+    }
+
+    .modal-bg {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, .55);
+      backdrop-filter: blur(3px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+
+    .modal-box {
+      background: #1e293b;
+      border: 1px solid rgba(255, 255, 255, .1);
+      border-radius: 14px;
+      padding: 22px;
+      width: 340px;
+      box-shadow: 0 16px 48px rgba(0, 0, 0, .4);
+    }
+
+    .modal-box h3 {
+      margin: 0 0 14px;
+      font-size: 15px;
+      font-weight: 600;
+      color: #e2e8f0;
+    }
+
+    .modal-box .btns {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+      margin-top: 14px;
+    }
+  </style>
 </head>
 
 <body class="editor-theme" data-editor="settings">
   <div class="max-w-5xl mx-auto px-5 py-6">
+
     <div class="flex items-start justify-between gap-4">
       <div>
         <div class="flex items-center gap-3">
           <i class="fa-solid fa-gear text-accent text-xl"></i>
           <h1 class="text-2xl font-bold">Настройки</h1>
         </div>
-        <p class="editor-muted-text mt-1">Подключение к базе данных и источники данных для редакторов (ID → списки).</p>
+        <p class="editor-muted-text mt-1">Подключение к базе данных и источники данных для редакторов.</p>
       </div>
       <button id="btn-test" class="editor-btn editor-btn-secondary">
         <i class="fa-solid fa-plug-circle-check"></i>
-        <span>Проверить соединение</span>
+        <span>Проверить</span>
       </button>
     </div>
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mt-6">
+
+      <!-- ─── Database ─── -->
       <section class="editor-card border rounded-2xl p-5">
-        <h2 class="text-lg font-semibold">База данных</h2>
-        <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+        <h2 class="text-lg font-semibold mb-4">База данных</h2>
+
+        <div class="text-sm font-medium text-slate-200 mb-2">Профиль подключения</div>
+        <div id="profiles-bar" class="profiles-bar mb-5"></div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <div class="text-sm font-medium text-slate-200 mb-1">Host</div>
-            <input id="db-host" type="text" class="w-full editor-input form-input" placeholder="127.0.0.1" />
+            <input id="f-host" type="text" class="w-full editor-input form-input" placeholder="127.0.0.1" />
           </div>
           <div>
             <div class="text-sm font-medium text-slate-200 mb-1">Port</div>
-            <input id="db-port" type="number" class="w-full editor-input form-input" placeholder="3306" />
+            <input id="f-port" type="number" class="w-full editor-input form-input" placeholder="3306" />
           </div>
           <div>
             <div class="text-sm font-medium text-slate-200 mb-1">Database</div>
-            <input id="db-name" type="text" class="w-full editor-input form-input" placeholder="mmorpg" />
+            <input id="f-db" type="text" class="w-full editor-input form-input" placeholder="mmorpg" />
           </div>
           <div>
             <div class="text-sm font-medium text-slate-200 mb-1">User</div>
-            <input id="db-user" type="text" class="w-full editor-input form-input" placeholder="root" />
+            <input id="f-user" type="text" class="w-full editor-input form-input" placeholder="root" />
           </div>
           <div class="md:col-span-2">
             <div class="text-sm font-medium text-slate-200 mb-1">Password</div>
-            <input id="db-pass" type="password" class="w-full editor-input form-input" placeholder="(не показывается после сохранения)" />
-            <div class="editor-muted-text text-xs mt-1">Пароль хранится на сервере в <code>data/db-config.json</code>. Не используйте боевую БД в публичном окружении.</div>
+            <input id="f-pass" type="password" class="w-full editor-input form-input" placeholder="••••••" />
+            <label class="flex items-center gap-2 mt-1.5 cursor-pointer select-none">
+              <input id="f-nopass" type="checkbox" class="rounded border-slate-600 bg-slate-800 text-indigo-500 h-4 w-4" />
+              <span class="text-xs text-slate-400">Без пароля</span>
+            </label>
           </div>
           <div class="md:col-span-2">
             <div class="text-sm font-medium text-slate-200 mb-1">Skins API</div>
-            <input id="skins-api" type="url" class="w-full editor-input form-input" placeholder="https://skins.example.com/api" />
-            <div class="editor-muted-text text-xs mt-1">URL до сервиса, который отдаёт скины. Сохраните перед использованием в редакторах.</div>
+            <input id="f-skins" type="url" class="w-full editor-input form-input" placeholder="https://skins.example.com/api" />
             <div class="flex flex-wrap gap-2 mt-3">
               <button id="btn-test-skins" class="editor-btn editor-btn-secondary">
                 <i class="fa-solid fa-plug-circle-check"></i>
                 <span>Проверить Skins API</span>
               </button>
             </div>
-            <div id="skins-status" class="mt-3 text-xs"></div>
+            <div id="skins-status" class="mt-2 text-xs"></div>
           </div>
           <div class="md:col-span-2 editor-section">
             <div class="text-sm font-medium text-slate-200 mb-1">Network Access</div>
-            <label id="remote-access-toggle" class="editor-toggle mb-2" data-checked="0">
-              <input id="allow-remote-editor" type="checkbox" />
+            <label id="remote-toggle" class="editor-toggle mb-2" data-checked="0">
+              <input id="f-remote" type="checkbox" />
               <span class="editor-toggle-track"><span class="editor-toggle-knob"></span></span>
               <span class="text-sm">Allow remote API access</span>
             </label>
-            <div class="editor-muted-text text-xs mb-2">By default editor API is localhost-only. If enabled, only allowlist IP/CIDR can access.</div>
-            <textarea id="allowed-editor-ips" class="w-full editor-input form-textarea" placeholder="192.168.1.25&#10;192.168.1.0/24&#10;10.10.0.5"></textarea>
+            <div class="editor-muted-text text-xs mb-2">Only allowlisted IP/CIDR will have access.</div>
+            <textarea id="f-ips" class="w-full editor-input form-textarea" placeholder="192.168.1.0/24&#10;10.10.0.5"></textarea>
           </div>
         </div>
 
@@ -77,18 +226,15 @@
             <i class="fa-solid fa-floppy-disk"></i>
             <span>Сохранить</span>
           </button>
-          <button id="btn-reload" class="editor-btn editor-btn-secondary">
-            <i class="fa-solid fa-rotate"></i>
-            <span>Перезагрузить</span>
-          </button>
         </div>
 
         <div id="status" class="mt-4 text-sm"></div>
       </section>
 
+      <!-- ─── Sources ─── -->
       <section class="editor-card border rounded-2xl p-5">
         <h2 class="text-lg font-semibold">Источники списков</h2>
-        <p class="editor-muted-text text-sm mt-1">Эти списки используются компонентом <b>DB Select</b> (например, квесты, предметы, миры и т.д.).</p>
+        <p class="editor-muted-text text-sm mt-1">Списки для компонента <b>DB Select</b>.</p>
 
         <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
           <button class="editor-btn editor-btn-secondary" data-source="quests"><i class="fa-solid fa-scroll"></i><span>Квесты</span></button>
@@ -98,20 +244,18 @@
           <button class="editor-btn editor-btn-secondary" data-source="bots"><i class="fa-solid fa-robot"></i><span>Боты / Мобы</span></button>
         </div>
 
-        <div class="mt-4">
-          <div class="flex items-center gap-2">
-            <i class="fa-solid fa-magnifying-glass text-slate-300"></i>
-            <input id="search" type="search" class="w-full editor-input form-input" placeholder="Поиск по названию…" />
-          </div>
+        <div class="mt-4 flex items-center gap-2">
+          <i class="fa-solid fa-magnifying-glass text-slate-300"></i>
+          <input id="search" type="search" class="w-full editor-input form-input" placeholder="Поиск…" />
         </div>
 
-        <div id="list" class="mt-4 overflow-auto border border-light rounded-xl" style="max-height: 360px"></div>
+        <div id="list" class="mt-4 overflow-auto border border-light rounded-xl" style="max-height:360px"></div>
       </section>
 
+      <!-- ─── Theme ─── -->
       <section class="editor-card border rounded-2xl p-5">
         <h2 class="text-lg font-semibold">Внешний вид</h2>
-        <p class="editor-muted-text text-sm mt-1">Выберите тему оформления для всех редакторов.</p>
-
+        <p class="editor-muted-text text-sm mt-1">Тема оформления для всех редакторов.</p>
         <div class="mt-4">
           <label class="text-sm font-medium editor-muted-text mb-1 block" for="theme-select">Тема</label>
           <select id="theme-select" class="w-full editor-input form-input">
@@ -120,228 +264,525 @@
           </select>
         </div>
       </section>
+
     </div>
   </div>
 
   <script>
-    // Settings page uses the same core bootstrap (notifications etc.)
     window.EditorCoreBootstrap = window.EditorCoreBootstrap || EditorCore.bootstrapEditor({ mode: 'event' });
 
-    const els = {
-      host: document.getElementById('db-host'),
-      port: document.getElementById('db-port'),
-      name: document.getElementById('db-name'),
-      user: document.getElementById('db-user'),
-      pass: document.getElementById('db-pass'),
-      status: document.getElementById('status'),
-      save: document.getElementById('btn-save'),
-      reload: document.getElementById('btn-reload'),
-      test: document.getElementById('btn-test'),
-      skinsApi: document.getElementById('skins-api'),
-      allowRemoteEditor: document.getElementById('allow-remote-editor'),
-      allowedEditorIps: document.getElementById('allowed-editor-ips'),
-      remoteAccessToggle: document.getElementById('remote-access-toggle'),
-      skinsTest: document.getElementById('btn-test-skins'),
-      skinsStatus: document.getElementById('skins-status'),
-      list: document.getElementById('list'),
-      search: document.getElementById('search'),
-      themeSelect: document.getElementById('theme-select')
+    /* ═══════════════════════════════════════════
+       DOM refs
+       ═══════════════════════════════════════════ */
+    const $ = id => document.getElementById(id);
+
+    const F = {
+      host: $('f-host'), port: $('f-port'), db: $('f-db'),
+      user: $('f-user'), pass: $('f-pass'), nopass: $('f-nopass'),
+      skins: $('f-skins'), remote: $('f-remote'), ips: $('f-ips')
     };
 
-    let activeSource = 'quests';
-    let loadedItems = [];
-    let loadedOffset = 0;
-    let loadedTotal = null;
-    let loadedHasMore = false;
-
-    const syncThemeSelect = () => {
-      if (window.EditorCore?.theme?.get && els.themeSelect) {
-        els.themeSelect.value = EditorCore.theme.get();
-      }
+    const UI = {
+      profilesBar: $('profiles-bar'),
+      status: $('status'),
+      skinsStatus: $('skins-status'),
+      search: $('search'),
+      list: $('list'),
+      themeSelect: $('theme-select'),
+      remoteToggle: $('remote-toggle')
     };
 
-    const setStatus = (html, tone = 'muted') => {
-      const color = tone === 'ok' ? 'text-emerald-300' : tone === 'err' ? 'text-red-300' : 'editor-muted-text';
-      els.status.className = `mt-4 text-sm ${color}`;
-      els.status.innerHTML = html;
-    };
+    /* ═══════════════════════════════════════════
+       Profiles — pure data layer
+       ═══════════════════════════════════════════ */
+    const STORAGE_KEY = 'es_db_profiles';
+    const ACTIVE_KEY = 'es_db_active';
 
-    const setSkinsStatus = (html, tone = 'muted') => {
-      const color = tone === 'ok' ? 'text-emerald-300' : tone === 'err' ? 'text-red-300' : 'editor-muted-text';
-      els.skinsStatus.className = `mt-3 text-xs ${color}`;
-      els.skinsStatus.innerHTML = html;
-    };
+    const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 
-    const loadConfig = async () => {
-      const res = await EditorCore.DB.getConfig();
-      if (!res.ok) {
-        setStatus(res.error || 'Не удалось загрузить конфиг', 'err');
-        return;
-      }
-      const c = res.config || {};
-      els.host.value = c.host || '';
-      els.port.value = c.port || '';
-      els.name.value = c.database || '';
-      els.user.value = c.user || '';
-      els.pass.value = '';
-      els.skinsApi.value = c.skins_api || '';
-      els.allowRemoteEditor.checked = !!c.allow_remote_editor;
-      els.remoteAccessToggle.dataset.checked = els.allowRemoteEditor.checked ? '1' : '0';
-      els.allowedEditorIps.value = Array.isArray(c.allowed_editor_ips) ? c.allowed_editor_ips.join('\n') : '';
-      setStatus('Конфигурация загружена.', 'ok');
-      setSkinsStatus('Используйте кнопку ниже, чтобы проверить соединение.', 'muted');
-      syncThemeSelect();
-    };
-
-    const saveConfig = async () => {
-      const payload = {
-        host: els.host.value.trim(),
-        port: Number(els.port.value || 3306),
-        database: els.name.value.trim(),
-        user: els.user.value.trim(),
-        password: els.pass.value,
-        skins_api: els.skinsApi.value.trim(),
-        allow_remote_editor: !!els.allowRemoteEditor.checked,
-        allowed_editor_ips: els.allowedEditorIps.value
-          .split(/\r?\n/)
-          .map(v => v.trim())
-          .filter(Boolean)
-      };
-      const res = await EditorCore.DB.saveConfig(payload);
-      if (!res.ok) {
-        EditorCore.UI.toast(res.error || 'Ошибка сохранения', 'error');
-        setStatus(res.error || 'Ошибка сохранения', 'err');
-        return;
-      }
-      EditorCore.UI.toast('Сохранено', 'success');
-      setStatus('Сохранено. Пароль не отображается повторно.', 'ok');
-      els.pass.value = '';
-    };
-
-    const testConnection = async () => {
-      const res = await EditorCore.DB.testConnection();
-      if (!res.ok) {
-        EditorCore.UI.toast(res.error || 'Ошибка подключения', 'error');
-        setStatus(res.error || 'Ошибка подключения', 'err');
-        return;
-      }
-      EditorCore.UI.toast('Соединение OK', 'success');
-      setStatus(`Соединение OK. Server: <b>${res.server || 'unknown'}</b>`, 'ok');
-    };
-
-    const testSkinsConnection = async () => {
-      const url = els.skinsApi.value.trim();
-      const res = await EditorCore.DB.testSkins({ url });
-      if (!res.ok) {
-        EditorCore.UI.toast(res.error || 'Ошибка подключения к Skins API', 'error');
-        setSkinsStatus(res.error || 'Ошибка подключения к Skins API', 'err');
-        return;
-      }
-      EditorCore.UI.toast('Skins API отвечает', 'success');
-      setSkinsStatus(`Skins API доступен. Статус: <b>${res.status || 'OK'}</b>`, 'ok');
-    };
-
-    
-const renderList = (items) => {
-  const meta = `<div class="px-3 py-2 text-xs editor-muted-text border-b border-light flex items-center justify-between gap-3">
-      <div>Показано: <b>${items.length}</b>${(loadedTotal != null) ? ` из <b>${loadedTotal}</b>` : ''}</div>
-      ${loadedHasMore ? `<button id="btn-load-more" class="editor-btn editor-btn-secondary" style="padding:6px 10px">Загрузить ещё</button>` : ''}
-    </div>`;
-
-  if (!items || !items.length) {
-    els.list.innerHTML = meta + `<div class="p-3 editor-muted-text">Нет данных</div>`;
-    return;
-  }
-
-  const rows = items.map(i => {
-    const v = String(i.value);
-    const l = String(i.label);
-    return `<tr class="border-b border-light"><td class="px-3 py-2 font-mono text-slate-200">${v}</td><td class="px-3 py-2 text-slate-100">${l}</td></tr>`;
-  }).join('');
-
-  els.list.innerHTML = meta + `
-    <table class="w-full text-sm">
-      <thead>
-        <tr class="bg-light border-b border-light">
-          <th class="text-left px-3 py-2 text-slate-200">ID</th>
-          <th class="text-left px-3 py-2 text-slate-200">Название</th>
-        </tr>
-      </thead>
-      <tbody>${rows}</tbody>
-    </table>`;
-
-  const btn = document.getElementById('btn-load-more');
-  if (btn) btn.addEventListener('click', () => loadSource({ reset: false }));
-};
-
-
-    
-const loadSource = async ({ reset = true } = {}) => {
-  const q = els.search.value.trim();
-  if (reset) {
-    loadedItems = [];
-    loadedOffset = 0;
-    loadedTotal = null;
-    loadedHasMore = false;
-  }
-
-  const res = await EditorCore.DB.list(activeSource, {
-    search: q,
-    limit: 200,
-    offset: loadedOffset,
-    withTotal: reset
-  });
-
-  if (!res.ok) {
-    loadedItems = [];
-    loadedHasMore = false;
-    renderList([]);
-    EditorCore.UI.toast(res.error || 'Ошибка загрузки списка', 'error');
-    return;
-  }
-
-  const page = res.items || [];
-  loadedItems = loadedItems.concat(page);
-  loadedOffset += page.length;
-  if (reset) loadedTotal = (res.total != null ? res.total : null);
-  loadedHasMore = !!res.has_more;
-
-  renderList(loadedItems);
-};
-
-
-    // Wire UI
-    els.save.addEventListener('click', saveConfig);
-    els.reload.addEventListener('click', loadConfig);
-    els.test.addEventListener('click', testConnection);
-    els.skinsTest.addEventListener('click', testSkinsConnection);
-    els.allowRemoteEditor.addEventListener('change', () => {
-      els.remoteAccessToggle.dataset.checked = els.allowRemoteEditor.checked ? '1' : '0';
+    const blankProfile = name => ({
+      id: uid(), name: name || 'Default',
+      host: '', port: 3306, db: '', user: '', pass: '', nopass: false,
+      skins: '', remote: false, ips: [],
+      status: 'idle'   // idle | wait | ok | err
     });
-    els.search.addEventListener('input', () => {
-      clearTimeout(window.__dbSearchT);
-      window.__dbSearchT = setTimeout(loadSource, 250);
+
+    let profiles = [];
+    let activeId = null;
+
+    const save = () => {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(profiles));
+      localStorage.setItem(ACTIVE_KEY, activeId);
+    };
+
+    const load = () => {
+      try {
+        const raw = localStorage.getItem(STORAGE_KEY);
+        profiles = raw ? JSON.parse(raw) : [];
+        if (!Array.isArray(profiles) || !profiles.length) throw 0;
+      } catch {
+        profiles = [blankProfile('Default')];
+      }
+      const stored = localStorage.getItem(ACTIVE_KEY);
+      activeId = profiles.find(p => p.id === stored) ? stored : profiles[0].id;
+      save();
+    };
+
+    const active = () => profiles.find(p => p.id === activeId) || profiles[0];
+
+    /* ═══════════════════════════════════════════
+       Form ↔ Profile  (never touches server)
+       ═══════════════════════════════════════════ */
+    const formRead = () => ({
+      host: F.host.value.trim(),
+      port: Number(F.port.value) || 3306,
+      db: F.db.value.trim(),
+      user: F.user.value.trim(),
+      pass: F.nopass.checked ? '' : F.pass.value,
+      nopass: F.nopass.checked,
+      skins: F.skins.value.trim(),
+      remote: F.remote.checked,
+      ips: F.ips.value.split(/\r?\n/).map(s => s.trim()).filter(Boolean)
     });
-    if (els.themeSelect) {
-      els.themeSelect.addEventListener('change', (event) => {
-        const value = event.target.value;
-        if (window.EditorCore?.theme?.set) {
-          EditorCore.theme.set(value);
-        }
+
+    const formWrite = p => {
+      F.host.value = p.host || '';
+      F.port.value = p.port || '';
+      F.db.value = p.db || '';
+      F.user.value = p.user || '';
+      F.pass.value = '';
+      F.nopass.checked = !!p.nopass;
+      F.pass.disabled = !!p.nopass;
+      F.skins.value = p.skins || '';
+      F.remote.checked = !!p.remote;
+      UI.remoteToggle.dataset.checked = F.remote.checked ? '1' : '0';
+      F.ips.value = (p.ips || []).join('\n');
+    };
+
+    /** Capture current form into profile object. Password only if typed or nopass. */
+    const formCapture = p => {
+      const f = formRead();
+      p.host = f.host;
+      p.port = f.port;
+      p.db = f.db;
+      p.user = f.user;
+      p.nopass = f.nopass;
+      if (f.nopass) { p.pass = ''; }
+      else if (f.pass) { p.pass = f.pass; }
+      p.skins = f.skins;
+      p.remote = f.remote;
+      p.ips = f.ips;
+    };
+
+    /* ═══════════════════════════════════════════
+       Server communication
+       ═══════════════════════════════════════════ */
+    const pushToServer = async p => {
+      return EditorCore.DB.saveConfig({
+        host: p.host, port: p.port,
+        database: p.db, user: p.user,
+        password: p.pass || '',
+        skins_api: p.skins,
+        allow_remote_editor: p.remote,
+        allowed_editor_ips: p.ips
       });
-    }
+    };
+
+    const testConn = async p => {
+      p.status = 'wait';
+      save(); render();
+
+      try {
+        const r = await EditorCore.DB.testConnection();
+        p.status = r.ok ? 'ok' : 'err';
+        save(); render();
+        return r;
+      } catch (e) {
+        p.status = 'err';
+        save(); render();
+        return { ok: false, error: String(e) };
+      }
+    };
+
+    /* ═══════════════════════════════════════════
+       Profile actions
+       ═══════════════════════════════════════════ */
+    let busy = false;
+
+    const switchProfile = async id => {
+      if (busy || id === activeId) return;
+      busy = true;
+
+      try {
+        // 1. save current form → old profile
+        formCapture(active());
+
+        // 2. switch
+        activeId = id;
+        save();
+
+        // 3. fill form from new profile
+        const p = active();
+        formWrite(p);
+        render();
+        setStatus(`Переключение на «${esc(p.name)}»…`);
+
+        // 4. push to server + test
+        const sr = await pushToServer(p);
+        if (!sr.ok) {
+          p.status = 'err';
+          save(); render();
+          toast(sr.error || 'Ошибка отправки конфига', 'error');
+          setStatus(sr.error || 'Ошибка', 'err');
+          return;
+        }
+
+        const tr = await testConn(p);
+        if (tr.ok) {
+          toast(`Подключено: ${p.name}`, 'success');
+          setStatus(`OK — «${esc(p.name)}» · ${tr.server || ''}`, 'ok');
+        } else {
+          toast(`Нет подключения: ${p.name}`, 'error');
+          setStatus(tr.error || 'Ошибка подключения', 'err');
+        }
+      } finally {
+        busy = false;
+      }
+    };
+
+    const createProfile = () => {
+      formCapture(active());
+      const p = blankProfile(`Подключение ${profiles.length + 1}`);
+      profiles.push(p);
+      activeId = p.id;
+      save();
+      formWrite(p);
+      render();
+      toast('Профиль создан', 'success');
+      setStatus(`Новый профиль «${esc(p.name)}»`, 'ok');
+    };
+
+    const removeProfile = id => {
+      if (profiles.length <= 1) {
+        toast('Нельзя удалить единственный профиль', 'error');
+        return;
+      }
+      const p = profiles.find(pp => pp.id === id);
+      if (!p || !confirm(`Удалить «${p.name}»?`)) return;
+
+      profiles = profiles.filter(pp => pp.id !== id);
+
+      if (activeId === id) {
+        activeId = profiles[0].id;
+        formWrite(active());
+      }
+      save(); render();
+      toast('Удалён', 'success');
+    };
+
+    const renameProfile = id => {
+      const p = profiles.find(pp => pp.id === id);
+      if (!p) return;
+
+      const bg = document.createElement('div');
+      bg.className = 'modal-bg';
+      bg.innerHTML = `
+        <div class="modal-box">
+          <h3><i class="fa-solid fa-pen" style="color:#6366f1;margin-right:6px"></i>Переименовать</h3>
+          <input id="m-name" type="text" class="w-full editor-input form-input" maxlength="40" />
+          <div class="btns">
+            <button id="m-no" class="editor-btn editor-btn-secondary"><span>Отмена</span></button>
+            <button id="m-ok" class="editor-btn editor-btn-primary"><span>OK</span></button>
+          </div>
+        </div>`;
+      document.body.appendChild(bg);
+
+      const inp = $('m-name');
+      inp.value = p.name;
+      inp.focus();
+      inp.select();
+
+      const close = () => bg.remove();
+      const apply = () => {
+        const v = inp.value.trim();
+        if (v && v !== p.name) {
+          p.name = v;
+          save(); render();
+        }
+        close();
+      };
+
+      $('m-no').onclick = close;
+      $('m-ok').onclick = apply;
+      inp.onkeydown = e => { if (e.key === 'Enter') apply(); if (e.key === 'Escape') close(); };
+      bg.onclick = e => { if (e.target === bg) close(); };
+    };
+
+    /* ═══════════════════════════════════════════
+       Render profiles bar
+       ═══════════════════════════════════════════ */
+    const dotCls = s => s === 'ok' ? 'dot-ok' : s === 'err' ? 'dot-err' : s === 'wait' ? 'dot-wait' : 'dot-idle';
+
+    const render = () => {
+      let h = '';
+      for (const p of profiles) {
+        const act = p.id === activeId ? ' active' : '';
+        h += `<div class="profile-chip${act}" data-id="${p.id}">
+          <span class="dot ${dotCls(p.status)}"></span>
+          <span>${esc(p.name)}</span>
+          <span class="x-btn" data-del="${p.id}"><i class="fa-solid fa-xmark"></i></span>
+        </div>`;
+      }
+      h += `<button class="profile-add" id="p-add"><i class="fa-solid fa-plus"></i></button>`;
+      UI.profilesBar.innerHTML = h;
+
+      // bind
+      UI.profilesBar.querySelectorAll('.profile-chip').forEach(el => {
+        const id = el.dataset.id;
+        el.addEventListener('click', e => {
+          if (e.target.closest('[data-del]')) return;
+          switchProfile(id);
+        });
+        el.addEventListener('dblclick', e => {
+          if (e.target.closest('[data-del]')) return;
+          renameProfile(id);
+        });
+      });
+
+      UI.profilesBar.querySelectorAll('[data-del]').forEach(el => {
+        el.addEventListener('click', e => {
+          e.stopPropagation();
+          removeProfile(el.dataset.del);
+        });
+      });
+
+      $('p-add')?.addEventListener('click', createProfile);
+    };
+
+    /* ═══════════════════════════════════════════
+       Helpers
+       ═══════════════════════════════════════════ */
+    const esc = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
+    const toast = (msg, type) => EditorCore.UI.toast(msg, type);
+
+    const setStatus = (html, tone) => {
+      const c = tone === 'ok' ? 'text-emerald-300' : tone === 'err' ? 'text-red-300' : 'editor-muted-text';
+      UI.status.className = `mt-4 text-sm ${c}`;
+      UI.status.innerHTML = html;
+    };
+
+    const setSkinsStatus = (html, tone) => {
+      const c = tone === 'ok' ? 'text-emerald-300' : tone === 'err' ? 'text-red-300' : 'editor-muted-text';
+      UI.skinsStatus.className = `mt-2 text-xs ${c}`;
+      UI.skinsStatus.innerHTML = html;
+    };
+
+    /* ═══════════════════════════════════════════
+       Save & Test buttons
+       ═══════════════════════════════════════════ */
+    const doSave = async () => {
+      if (busy) return;
+      busy = true;
+
+      try {
+        const p = active();
+        formCapture(p);
+        save();
+
+        const sr = await pushToServer(p);
+        if (!sr.ok) {
+          toast(sr.error || 'Ошибка сохранения', 'error');
+          setStatus(sr.error || 'Ошибка', 'err');
+          return;
+        }
+
+        toast(`Сохранено — «${p.name}»`, 'success');
+        F.pass.value = '';
+
+        const tr = await testConn(p);
+        if (tr.ok) {
+          setStatus(`Сохранено и подключено. Server: <b>${tr.server || ''}</b>`, 'ok');
+        } else {
+          setStatus(`Сохранено, но подключение не удалось: ${tr.error || ''}`, 'err');
+        }
+      } finally {
+        busy = false;
+      }
+    };
+
+    const doTest = async () => {
+      if (busy) return;
+      busy = true;
+
+      try {
+        const p = active();
+        formCapture(p);
+        save();
+
+        const sr = await pushToServer(p);
+        if (!sr.ok) {
+          toast('Ошибка отправки конфига', 'error');
+          return;
+        }
+
+        const tr = await testConn(p);
+        if (tr.ok) {
+          toast('Соединение OK', 'success');
+          setStatus(`OK. Server: <b>${tr.server || ''}</b>`, 'ok');
+        } else {
+          toast('Ошибка подключения', 'error');
+          setStatus(tr.error || 'Ошибка', 'err');
+        }
+      } finally {
+        busy = false;
+      }
+    };
+
+    const doTestSkins = async () => {
+      const url = F.skins.value.trim();
+      const r = await EditorCore.DB.testSkins({ url });
+      if (r.ok) {
+        toast('Skins API OK', 'success');
+        setSkinsStatus(`Доступен. Статус: <b>${r.status || 'OK'}</b>`, 'ok');
+      } else {
+        toast(r.error || 'Skins API недоступен', 'error');
+        setSkinsStatus(r.error || 'Ошибка', 'err');
+      }
+    };
+
+    /* ═══════════════════════════════════════════
+       Sources list
+       ═══════════════════════════════════════════ */
+    let activeSource = 'quests';
+    let listItems = [], listOffset = 0, listTotal = null, listMore = false;
+
+    const renderList = items => {
+      const info = `<div class="px-3 py-2 text-xs editor-muted-text border-b border-light flex items-center justify-between">
+        <span>Показано: <b>${items.length}</b>${listTotal != null ? ` из <b>${listTotal}</b>` : ''}</span>
+        ${listMore ? '<button id="load-more" class="editor-btn editor-btn-secondary" style="padding:5px 10px">Ещё</button>' : ''}
+      </div>`;
+
+      if (!items.length) {
+        UI.list.innerHTML = info + '<div class="p-3 editor-muted-text">Нет данных</div>';
+        return;
+      }
+
+      const rows = items.map(i =>
+        `<tr class="border-b border-light">
+          <td class="px-3 py-2 font-mono text-slate-200">${i.value}</td>
+          <td class="px-3 py-2 text-slate-100">${i.label}</td>
+        </tr>`
+      ).join('');
+
+      UI.list.innerHTML = info + `
+        <table class="w-full text-sm">
+          <thead><tr class="bg-light border-b border-light">
+            <th class="text-left px-3 py-2 text-slate-200">ID</th>
+            <th class="text-left px-3 py-2 text-slate-200">Название</th>
+          </tr></thead>
+          <tbody>${rows}</tbody>
+        </table>`;
+
+      $('load-more')?.addEventListener('click', () => loadSource(false));
+    };
+
+    const loadSource = async (reset = true) => {
+      if (reset) { listItems = []; listOffset = 0; listTotal = null; listMore = false; }
+      const r = await EditorCore.DB.list(activeSource, {
+        search: UI.search.value.trim(),
+        limit: 200, offset: listOffset, withTotal: reset
+      });
+      if (!r.ok) { listItems = []; listMore = false; renderList([]); return; }
+      const page = r.items || [];
+      listItems = listItems.concat(page);
+      listOffset += page.length;
+      if (reset && r.total != null) listTotal = r.total;
+      listMore = !!r.has_more;
+      renderList(listItems);
+    };
+
+    /* ═══════════════════════════════════════════
+       Init & wiring
+       ═══════════════════════════════════════════ */
+    const init = async () => {
+      load();
+
+      // First run: try importing server config into default profile
+      const p = active();
+      const isEmpty = !p.host && !p.db && !p.user;
+      if (isEmpty) {
+        const r = await EditorCore.DB.getConfig();
+        if (r.ok && r.config) {
+          const c = r.config;
+          p.host = c.host || '';
+          p.port = c.port || 3306;
+          p.db = c.database || '';
+          p.user = c.user || '';
+          p.skins = c.skins_api || '';
+          p.remote = !!c.allow_remote_editor;
+          p.ips = Array.isArray(c.allowed_editor_ips) ? c.allowed_editor_ips : [];
+          save();
+        }
+      }
+
+      formWrite(p);
+      render();
+
+      if (window.EditorCore?.theme?.get) UI.themeSelect.value = EditorCore.theme.get();
+
+      // If profile has data, push & test silently
+      if (p.host && p.db) {
+        await pushToServer(p);
+        const tr = await testConn(p);
+        if (tr.ok) setStatus(`Подключено: «${esc(p.name)}»`, 'ok');
+        else setStatus(`Ошибка: ${tr.error || ''}`, 'err');
+      } else {
+        setStatus('Заполните параметры подключения.', 'muted');
+      }
+
+      loadSource();
+    };
+
+    // Buttons
+    $('btn-save').addEventListener('click', doSave);
+    $('btn-test').addEventListener('click', doTest);
+    $('btn-test-skins').addEventListener('click', doTestSkins);
+
+    // No-password toggle
+    F.nopass.addEventListener('change', () => {
+      F.pass.disabled = F.nopass.checked;
+      if (F.nopass.checked) F.pass.value = '';
+    });
+
+    // Remote toggle
+    F.remote.addEventListener('change', () => {
+      UI.remoteToggle.dataset.checked = F.remote.checked ? '1' : '0';
+    });
+
+    // Search
+    let searchTimer;
+    UI.search.addEventListener('input', () => {
+      clearTimeout(searchTimer);
+      searchTimer = setTimeout(() => loadSource(true), 250);
+    });
+
+    // Theme
+    UI.themeSelect.addEventListener('change', e => {
+      if (window.EditorCore?.theme?.set) EditorCore.theme.set(e.target.value);
+    });
+
+    // Source buttons
     document.querySelectorAll('[data-source]').forEach(btn => {
       btn.addEventListener('click', () => {
         activeSource = btn.dataset.source;
         document.querySelectorAll('[data-source]').forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
-        loadSource();
+        loadSource(true);
       });
     });
 
-    // Initial
-    syncThemeSelect();
-    loadConfig().then(loadSource);
+    // Boot
+    init();
   </script>
 </body>
 </html>
