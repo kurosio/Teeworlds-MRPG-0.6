@@ -182,25 +182,10 @@
       drops: [],
     });
 
-    const splitSet = (v, allowed = null) => {
-      if (!v) return [];
-      const arr = Array.isArray(v)
-        ? v
-        : String(v).split(',').map(s => s.trim()).filter(Boolean);
+    const splitSet = (value, allowed = null) =>
+      EditorCore.utils.parseStringList(value, { allowed });
 
-      // Normalize values to the canonical option list (case-insensitive)
-      if (!allowed || !Array.isArray(allowed) || !allowed.length) return arr;
-      const map = new Map(allowed.map(x => [String(x).toLowerCase(), String(x)]));
-      return arr
-        .map(x => map.get(String(x).toLowerCase()) || String(x))
-        .map(x => String(x).trim())
-        .filter(Boolean);
-    };
-
-    const joinSet = (arr) => {
-      const a = Array.isArray(arr) ? arr.map(x => String(x).trim()).filter(Boolean) : [];
-      return a.length ? a.join(',') : null;
-    };
+    const joinSet = (value) => EditorCore.utils.stringifyStringList(value);
 
     const parsePipeNums = (s, asFloat = false) => {
       const raw = String(s || '');
@@ -294,18 +279,7 @@
       };
     };
 
-    const getLabelMap = async (source) => {
-      try {
-        const res = await window.EditorCore.DB.list(source, { limit: 5000, offset: 0 });
-        const map = new Map();
-        if (res?.ok && Array.isArray(res.items)) {
-          for (const it of res.items) map.set(String(it.value), String(it.label || ''));
-        }
-        return map;
-      } catch {
-        return new Map();
-      }
-    };
+    const getLabelMap = EditorCore.utils.loadLookupMap;
 
     const formatMobTitle = (row) => {
       const bot = STATE.lookups.bots.get(String(row.BotID)) || '';
@@ -317,15 +291,7 @@
       return w ? w : (id ? `#${id}` : '—');
     };
 
-    const cloneData = (value) => {
-      if (value === null || value === undefined) return value;
-      if (typeof structuredClone === 'function') return structuredClone(value);
-      try {
-        return JSON.parse(JSON.stringify(value));
-      } catch (err) {
-        return value;
-      }
-    };
+    const cloneData = EditorCore.utils.cloneData;
 
     const setActionButtons = (enabled) => {
       const canCancel = enabled && !!DIRTY?.isDirty?.();

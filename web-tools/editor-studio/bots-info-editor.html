@@ -168,15 +168,7 @@
       }
     };
 
-    const cloneData = (value) => {
-      if (value === null || value === undefined) return value;
-      if (typeof structuredClone === 'function') return structuredClone(value);
-      try {
-        return JSON.parse(JSON.stringify(value));
-      } catch (err) {
-        return value;
-      }
-    };
+    const cloneData = EditorCore.utils.cloneData;
 
     const BASIC_FIELDS = {
       Name: {
@@ -367,16 +359,8 @@
       };
     };
 
-    const setStatus = (html = '', tone = 'muted') => {
-      if (!DOM.status) return;
-      const cls = tone === 'ok'
-        ? 'text-emerald-300'
-        : tone === 'err'
-          ? 'text-red-300'
-          : 'editor-muted-text';
-      DOM.status.className = `text-sm ${cls}`;
-      DOM.status.innerHTML = html;
-    };
+    const setStatus = (message = '', tone = 'muted') =>
+      EditorCore.utils.setStatus(DOM.status, message, tone, { className: '' });
 
     const setButtons = (enabled) => {
       const canCancel = enabled && !!dirty.isDirty?.();

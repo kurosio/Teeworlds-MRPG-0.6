@@ -203,31 +203,11 @@
 
     const FLAGS = ["Can't droppable", "Can't tradeable"];
 
-    const parseSet = (value, allowed = []) => {
-      if (!value) return [];
-      const list = Array.isArray(value)
-        ? value.map(v => String(v).trim()).filter(Boolean)
-        : String(value)
-          .split(',')
-          .map(v => v.trim())
-          .filter(Boolean);
+    const parseSet = (value, allowed = []) =>
+      EditorCore.utils.parseStringList(value, { allowed });
 
-      if (!allowed.length) return list;
-      const map = new Map(allowed.map(v => [String(v).toLowerCase(), String(v)]));
-      return list.map(v => map.get(String(v).toLowerCase()) || v);
-    };
-
-    const joinSet = (value) => {
-      const list = Array.isArray(value) ? value.map(v => String(v).trim()).filter(Boolean) : [];
-      return list.length ? list.join(',') : null;
-    };
-
-    const toNullableInt = (value) => {
-      if (value === null || value === undefined || value === '') return null;
-      const num = Number(value);
-      if (!Number.isFinite(num)) return null;
-      return Math.trunc(num);
-    };
+    const joinSet = (value) => EditorCore.utils.stringifyStringList(value);
+    const toNullableInt = (value) => EditorCore.utils.toNullableInt(value);
 
     const toNullableId = (value) => {
       const num = toNullableInt(value);

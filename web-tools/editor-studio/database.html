@@ -154,11 +154,8 @@
 
     let cachedDumps = [];
 
-    const setStatus = (el, html, tone = 'muted') => {
-      const color = tone === 'ok' ? 'text-emerald-300' : tone === 'err' ? 'text-red-300' : 'editor-muted-text';
-      el.className = `mt-4 text-sm ${color}`;
-      el.innerHTML = html;
-    };
+    const setStatus = (element, message, tone = 'muted') =>
+      EditorCore.utils.setStatus(element, message, tone, { className: 'mt-4' });
 
     const formatBytes = (bytes) => {
       if (!Number.isFinite(bytes) || bytes <= 0) return '0 B';
@@ -242,7 +239,7 @@
         return;
       }
       EditorCore.UI.toast('Соединение OK', 'success');
-      setStatus(els.status, `Соединение OK. Server: <b>${res.server || 'unknown'}</b>`, 'ok');
+      setStatus(els.status, `Соединение OK. Server: ${res.server || 'unknown'}`, 'ok');
     };
 
     const loadDumps = async () => {
@@ -255,7 +252,7 @@
       }
       cachedDumps = res.items || [];
       renderDumpList();
-      setStatus(els.dumpStatus, `Найдено дампов: <b>${cachedDumps.length}</b>.`, 'ok');
+      setStatus(els.dumpStatus, `Найдено дампов: ${cachedDumps.length}.`, 'ok');
     };
 
     const createDump = async () => {
@@ -275,7 +272,7 @@
         return;
       }
       EditorCore.UI.toast('Дамп создан', 'success');
-      setStatus(els.dumpStatus, `Дамп создан: <b>${res.file || 'готово'}</b>.`, 'ok');
+      setStatus(els.dumpStatus, `Дамп создан: ${res.file || 'готово'}.`, 'ok');
       await loadDumps();
     };
 

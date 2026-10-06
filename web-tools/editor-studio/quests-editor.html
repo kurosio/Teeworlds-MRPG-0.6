@@ -1194,18 +1194,7 @@
       return map?.get(String(n)) || `#${n}`;
     };
 
-    const getLabelMap = async (source) => {
-      try {
-        const res = await EditorCore.DB.list(source, { limit: 5000, offset: 0 });
-        const map = new Map();
-        if (res?.ok && Array.isArray(res.items)) {
-          for (const it of res.items) map.set(String(it.value), String(it.label || ''));
-        }
-        return map;
-      } catch {
-        return new Map();
-      }
-    };
+    const getLabelMap = EditorCore.utils.loadLookupMap;
 
     const parseFlags = (raw) => {
       const src = Array.isArray(raw) ? raw : String(raw || '').split(',');

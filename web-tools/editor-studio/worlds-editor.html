@@ -102,19 +102,8 @@
 	  'no_moneybag',
     ];
 
-    const parseFlags = (value) => {
-      if (!value) return [];
-      if (Array.isArray(value)) return value.map(v => String(v).trim()).filter(Boolean);
-      return String(value)
-        .split(',')
-        .map(v => v.trim())
-        .filter(Boolean);
-    };
-
-    const serializeFlags = (value) => {
-      const list = Array.isArray(value) ? value.map(v => String(v).trim()).filter(Boolean) : [];
-      return list.length ? list.join(',') : null;
-    };
+    const parseFlags = (value) => EditorCore.utils.parseStringList(value, { unique: true });
+    const serializeFlags = (value) => EditorCore.utils.stringifyStringList(value);
 
     const TYPES = [
       'default',

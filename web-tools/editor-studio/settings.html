@@ -425,7 +425,7 @@
         const p = active();
         formWrite(p);
         render();
-        setStatus(`Переключение на «${esc(p.name)}»…`);
+        setStatus(`Переключение на «${p.name}»…`);
 
         // 4. push to server + test
         const sr = await pushToServer(p);
@@ -440,7 +440,7 @@
         const tr = await testConn(p);
         if (tr.ok) {
           toast(`Подключено: ${p.name}`, 'success');
-          setStatus(`OK — «${esc(p.name)}» · ${tr.server || ''}`, 'ok');
+          setStatus(`OK — «${p.name}» · ${tr.server || ''}`, 'ok');
         } else {
           toast(`Нет подключения: ${p.name}`, 'error');
           setStatus(tr.error || 'Ошибка подключения', 'err');
@@ -459,7 +459,7 @@
       formWrite(p);
       render();
       toast('Профиль создан', 'success');
-      setStatus(`Новый профиль «${esc(p.name)}»`, 'ok');
+      setStatus(`Новый профиль «${p.name}»`, 'ok');
     };
 
     const removeProfile = id => {
@@ -565,17 +565,11 @@
     const esc = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
     const toast = (msg, type) => EditorCore.UI.toast(msg, type);
 
-    const setStatus = (html, tone) => {
-      const c = tone === 'ok' ? 'text-emerald-300' : tone === 'err' ? 'text-red-300' : 'editor-muted-text';
-      UI.status.className = `mt-4 text-sm ${c}`;
-      UI.status.innerHTML = html;
-    };
+    const setStatus = (message, tone = 'muted') =>
+      EditorCore.utils.setStatus(UI.status, message, tone, { className: 'mt-4' });
 
-    const setSkinsStatus = (html, tone) => {
-      const c = tone === 'ok' ? 'text-emerald-300' : tone === 'err' ? 'text-red-300' : 'editor-muted-text';
-      UI.skinsStatus.className = `mt-2 text-xs ${c}`;
-      UI.skinsStatus.innerHTML = html;
-    };
+    const setSkinsStatus = (message, tone = 'muted') =>
+      EditorCore.utils.setStatus(UI.skinsStatus, message, tone, { className: 'mt-2 editor-status--small' });
 
     /* ═══════════════════════════════════════════
        Save & Test buttons
@@ -601,7 +595,7 @@
 
         const tr = await testConn(p);
         if (tr.ok) {
-          setStatus(`Сохранено и подключено. Server: <b>${tr.server || ''}</b>`, 'ok');
+          setStatus(`Сохранено и подключено. Server: ${tr.server || ''}`, 'ok');
         } else {
           setStatus(`Сохранено, но подключение не удалось: ${tr.error || ''}`, 'err');
         }
@@ -628,7 +622,7 @@
         const tr = await testConn(p);
         if (tr.ok) {
           toast('Соединение OK', 'success');
-          setStatus(`OK. Server: <b>${tr.server || ''}</b>`, 'ok');
+          setStatus(`OK. Server: ${tr.server || ''}`, 'ok');
         } else {
           toast('Ошибка подключения', 'error');
           setStatus(tr.error || 'Ошибка', 'err');
@@ -643,7 +637,7 @@
       const r = await EditorCore.DB.testSkins({ url });
       if (r.ok) {
         toast('Skins API OK', 'success');
-        setSkinsStatus(`Доступен. Статус: <b>${r.status || 'OK'}</b>`, 'ok');
+        setSkinsStatus(`Доступен. Статус: ${r.status || 'OK'}`, 'ok');
       } else {
         toast(r.error || 'Skins API недоступен', 'error');
         setSkinsStatus(r.error || 'Ошибка', 'err');
@@ -734,7 +728,7 @@
       if (p.host && p.db) {
         await pushToServer(p);
         const tr = await testConn(p);
-        if (tr.ok) setStatus(`Подключено: «${esc(p.name)}»`, 'ok');
+        if (tr.ok) setStatus(`Подключено: «${p.name}»`, 'ok');
         else setStatus(`Ошибка: ${tr.error || ''}`, 'err');
       } else {
         setStatus('Заполните параметры подключения.', 'muted');

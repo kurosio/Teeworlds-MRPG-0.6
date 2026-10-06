@@ -228,11 +228,7 @@
       window.EditorCoreBootstrap || EditorCore.bootstrapEditor({ mode: 'event' });
 
     /** Safe deep cloning */
-    const clone = (v) => {
-      if (v == null) return v;
-      try { return structuredClone(v); }
-      catch { return JSON.parse(JSON.stringify(v)); }
-    };
+    const clone = EditorCore.utils.cloneData;
 
     /** Get element by data-bind */
     const $  = (key) => document.querySelector(`[data-bind="${key}"]`);

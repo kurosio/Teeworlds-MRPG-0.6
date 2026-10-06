@@ -238,30 +238,11 @@
       groups: new Map(), // group -> Set(sub)
     };
 
-    const setStatus = (msg, tone = 'muted') => {
-      const cls = tone === 'ok' ? 'text-emerald-300' : tone === 'err' ? 'text-red-300' : 'editor-muted-text';
-      els.status.className = `mt-5 text-sm ${cls}`;
-      els.status.textContent = msg || '';
-    };
+    const setStatus = (message = '', tone = 'muted') =>
+      EditorCore.utils.setStatus(els.status, message, tone, { className: 'mt-5' });
 
-    const splitGroupName = (groupName) => {
-      const raw = String(groupName || '').trim();
-      if (!raw) return { group: '', sub: '' };
-      const idx = raw.indexOf(':');
-      if (idx === -1) return { group: raw, sub: '' };
-      return {
-        group: raw.slice(0, idx).trim(),
-        sub: raw.slice(idx + 1).trim(),
-      };
-    };
-
-    const buildGroupName = (group, sub) => {
-      const g = String(group || '').trim();
-      const s = String(sub || '').trim();
-      if (!g && !s) return '';
-      if (g && s) return `${g}:${s}`;
-      return g || s;
-    };
+    const splitGroupName = (value) => EditorCore.utils.splitComposite(value);
+    const buildGroupName = (group, sub) => EditorCore.utils.joinComposite(group, sub);
 
     const getItemLabel = (id) => {
       const key = String(id ?? '').trim();
@@ -277,7 +258,7 @@
 
     const parseRequired = (s) => (window.EditorCore?.PairList?.parse ? window.EditorCore.PairList.parse(s) : []);
     const stringifyRequired = (arr) => (window.EditorCore?.PairList?.stringify ? window.EditorCore.PairList.stringify(arr) : '');
-    const cssEscape = (...args) => window.EditorCore?.utils?.cssEscape?.(...args) ?? String(args[0] ?? '');
+    const cssEscape = EditorCore.utils.cssEscape;
 
     const rebuildGroups = () => {
       const map = new Map();

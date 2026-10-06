@@ -82,10 +82,7 @@
   <script>
     const { fieldRenderOptions } = window.EditorCoreBootstrap || EditorCore.bootstrapEditor({ mode: 'event' });
 
-    const toNullableInt = (value, fallback = 0) => {
-      const num = Number(value);
-      return Number.isFinite(num) ? Math.trunc(num) : fallback;
-    };
+    const toNullableInt = (value, fallback = 0) => EditorCore.utils.toNullableInt(value, fallback);
 
     const fields = {
       WorldID: { type: 'db_select', label: 'Мир', ui: { dbKey: 'world', placeholder: '— мир —' } },
