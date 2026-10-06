@@ -11,18 +11,15 @@
     .items-form [data-field-path="DataEditorType"],
     .items-form [data-field-path="DataRandomBoxItems"],
     .items-form [data-field-path="DataBoxItems"],
-    .items-form [data-field-path="DataBonusAmount"],
-    .items-form [data-field-path="DataBonusType"],
-    .items-form [data-field-path="DataBonusDurationValue"],
-    .items-form [data-field-path="DataBonusDurationUnit"],
     .items-form [data-field-path="DataPotionEffect"],
-    .items-form [data-field-path="DataPotionValue"],
-    .items-form [data-field-path="DataPotionLifetime"],
-    .items-form [data-field-path="DataPotionRecast"],
-    .items-form [data-field-path="DataPotionMultiplierType"],
-    .items-form [data-field-path="DataPotionMultiplierPercent"],
-    .items-form [data-field-path="DataScenarioRewards"]{
+    .items-form [data-field-path="DataScenarioName"],
+    .items-form [data-field-path="DataScenarioRewards"] {
       grid-column: 1 / -1;
+    }
+
+    .items-form [data-field-path="DataEditorType"] {
+      border-color: var(--editor-primary);
+      box-shadow: 0 0 0 2px var(--editor-focus-ring), var(--editor-panel-glow), var(--editor-shadow-xs);
     }
   </style>
 </head>
@@ -102,11 +99,6 @@
 
           <div class="editor-section mt-4">
             <div class="editor-form-grid-2 items-form" data-editor-role="form"></div>
-          </div>
-
-          <div class="editor-muted-text text-xs mt-2">
-            Поле <code>Data</code> формируется автоматически на основе выбранного типа Data-редактора
-            (если тип не выбран, будет сохранено <code>null</code>).
           </div>
 
           <div class="mt-4" data-editor-role="status"></div>
@@ -196,6 +188,9 @@
       },
     });
 
+    const isEquipmentGroup = (data) => String(data?.Group || '') === 'Equipment';
+    const supportsItemOptions = (data) => !['Settings', 'Quest', 'Currency'].includes(data?.Group ?? '');
+
     // sidebar + default selector options
     const TYPES_ALL = Array.from(new Set([
       ...TYPE_RULES.resource,
@@ -271,6 +266,10 @@
     const DATA_EDITOR_BONUS = 'bonus';
     const DATA_EDITOR_POTION = 'potion';
     const DATA_EDITOR_USE_SCENARIO = 'use_scenario';
+    // Defaults match the server's recast value and the first HP/MP potion tier.
+    const POTION_DEFAULT_VALUE = 1;
+    const POTION_DEFAULT_LIFETIME_SECONDS = 10;
+    const POTION_RECAST_DEFAULT_SECONDS = 15;
 
     const DATA_EDITOR_RULES = {
       Usable: [
@@ -281,8 +280,8 @@
         { value: DATA_EDITOR_USE_SCENARIO, label: 'Запуск сценария' },
       ],
       Potion: [
-        { value: DATA_EDITOR_NONE, label: 'Без данных' },
         { value: DATA_EDITOR_POTION, label: 'Зелье' },
+        { value: DATA_EDITOR_NONE, label: 'Без данных' },
       ],
     };
 
@@ -333,13 +332,8 @@
       { value: 'days', label: 'Дни' },
     ];
 
-    const getAvailableDataEditors = (group) => {
-      const key = String(group || '');
-      return (DATA_EDITOR_RULES[key] || [{ value: DATA_EDITOR_NONE, label: 'Без данных' }]).map((entry) => ({
-        value: String(entry.value),
-        label: String(entry.label),
-      }));
-    };
+    const getAvailableDataEditors = (group) =>
+      DATA_EDITOR_RULES[String(group || '')] || [{ value: DATA_EDITOR_NONE, label: 'Без данных' }];
 
     const getDefaultDataEditor = (group) => getAvailableDataEditors(group)[0]?.value || DATA_EDITOR_NONE;
 
@@ -348,6 +342,9 @@
       const available = getAvailableDataEditors(group).map((entry) => entry.value);
       return available.includes(current) ? current : getDefaultDataEditor(group);
     };
+
+    const whenDataEditorIs = (editorType) => (data) =>
+      String(data?.DataEditorType || '') === editorType;
 
     const inferDataEditorType = (group, data) => {
       const safeGroup = String(group || '');
@@ -371,34 +368,48 @@
 
     const normalizeRandomBoxItems = (items) => {
       if (!Array.isArray(items)) return [];
-      return items.map((entry) => ({
-        item_id: toNullableId(entry?.item_id) || 0,
-        value: toNullableInt(entry?.value) ?? 1,
-        chance: Number.isFinite(Number(entry?.chance)) ? Number(entry.chance) : 0,
-      }));
+      return items.map((entry) => {
+        const rawChance = entry?.chance;
+        const chance = rawChance == null || rawChance === '' ? 100 : Number(rawChance);
+        return {
+          item_id: toNullableId(entry?.item_id) || 0,
+          value: toNullableInt(entry?.value) ?? 1,
+          chance: Number.isFinite(chance) ? chance : 0,
+        };
+      });
     };
 
-    const normalizePotionData = (potion) => ({
-      effect: String(potion?.effect || ''),
-      value: toNullableInt(potion?.value) ?? 0,
-      lifetime: toNullableInt(potion?.lifetime) ?? 0,
-      recast: toNullableInt(potion?.recast) ?? 0,
-      multiplier_type: normalizeMultiplierType(potion?.multiplier?.type),
-      multiplier_percent: toNonNegativeNumber(potion?.multiplier?.percent),
-    });
+    const normalizePotionData = (potion) => {
+      const hasPotionData = potion != null && typeof potion === 'object' && !Array.isArray(potion);
+      return {
+        effect: String(potion?.effect || ''),
+        // Keep existing gameplay values, but provide safe defaults when creating potion data.
+        value: toNullableInt(potion?.value) ?? (hasPotionData ? 0 : POTION_DEFAULT_VALUE),
+        lifetime: toNullableInt(potion?.lifetime) ?? (hasPotionData ? 0 : POTION_DEFAULT_LIFETIME_SECONDS),
+        recast: toNullableInt(potion?.recast) ?? POTION_RECAST_DEFAULT_SECONDS,
+      };
+    };
 
     const normalizeBonusData = (bonus) => ({
       amount: toNonNegativeNumber(bonus?.amount),
-      duration_minutes: toNullableInt(bonus?.duration_minutes) ?? 0,
-      duration_hours: toNullableInt(bonus?.duration_hours) ?? 0,
-      duration_days: toNullableInt(bonus?.duration_days) ?? 0,
+      duration_minutes: Math.max(0, toNullableInt(bonus?.duration_minutes) ?? 0),
+      duration_hours: Math.max(0, toNullableInt(bonus?.duration_hours) ?? 0),
+      duration_days: Math.max(0, toNullableInt(bonus?.duration_days) ?? 0),
       type: normalizeMultiplierType(bonus?.type),
     });
 
     const getBonusDurationUi = (bonus) => {
-      if ((bonus?.duration_days ?? 0) > 0) return { unit: 'days', value: bonus.duration_days };
-      if ((bonus?.duration_hours ?? 0) > 0) return { unit: 'hours', value: bonus.duration_hours };
-      return { unit: 'minutes', value: Math.max(0, toNullableInt(bonus?.duration_minutes) ?? 0) };
+      // Keep legacy records with combined day/hour/minute values intact in the single-unit UI.
+      const totalMinutes = (bonus?.duration_days ?? 0) * 1440
+        + (bonus?.duration_hours ?? 0) * 60
+        + (bonus?.duration_minutes ?? 0);
+      if (totalMinutes > 0 && totalMinutes % 1440 === 0) {
+        return { unit: 'days', value: totalMinutes / 1440 };
+      }
+      if (totalMinutes > 0 && totalMinutes % 60 === 0) {
+        return { unit: 'hours', value: totalMinutes / 60 };
+      }
+      return { unit: 'minutes', value: totalMinutes };
     };
 
     const buildDataPayload = (model) => {
@@ -445,24 +456,19 @@
       }
 
       if (editorType === DATA_EDITOR_POTION) {
-        const potion = {
-          effect: String(model?.DataPotionEffect || '').trim(),
-          value: toNullableInt(model?.DataPotionValue) ?? 0,
-          lifetime: toNullableInt(model?.DataPotionLifetime) ?? 0,
-          recast: toNullableInt(model?.DataPotionRecast) ?? 0,
+        return {
+          potion: {
+            effect: String(model?.DataPotionEffect || '').trim(),
+            // Preserved for existing heal/mana/miner mechanics, but not exposed in the form.
+            value: toNullableInt(model?.DataPotionValue) ?? 0,
+            lifetime: toNullableInt(model?.DataPotionLifetime) ?? 0,
+            recast: toNullableInt(model?.DataPotionRecast) ?? POTION_RECAST_DEFAULT_SECONDS,
+          },
         };
-        const multiplierPercent = toNonNegativeNumber(model?.DataPotionMultiplierPercent);
-        if (multiplierPercent > 0) {
-          potion.multiplier = {
-            type: normalizeMultiplierType(model?.DataPotionMultiplierType),
-            percent: multiplierPercent,
-          };
-        }
-        return { potion };
       }
 
       if (editorType === DATA_EDITOR_USE_SCENARIO) {
-        const worldId = toNullableInt(model?.DataScenarioWorldID);
+        const worldId = toNullableId(model?.DataScenarioWorldID);
         const name = String(model?.DataScenarioName || '').trim();
         const duration = Math.max(0, toNullableInt(model?.DataScenarioDuration) ?? 0);
         const rewards = normalizeRandomBoxItems(model?.DataScenarioRewards)
@@ -494,7 +500,7 @@
         label: 'Группа',
         ui: {
           type: 'select',
-          options: GROUPS.map(value => ({ value, label: value })),
+          options: GROUPS,
         }
       },
       Type: {
@@ -510,7 +516,7 @@
         ui: {
           dbKey: 'attribute',
           placeholder: '— атрибут —',
-          showWhen: (data) => String(data?.Group || '') === 'Equipment',
+          showWhen: isEquipmentGroup,
         }
       },
       ATValue1: {
@@ -518,7 +524,7 @@
         label: 'Значение атрибута 1',
         ui: {
           step: 1,
-          showWhen: (data) => String(data?.Group || '') === 'Equipment',
+          showWhen: isEquipmentGroup,
         }
       },
       AT2: {
@@ -527,7 +533,7 @@
         ui: {
           dbKey: 'attribute',
           placeholder: '— атрибут —',
-          showWhen: (data) => String(data?.Group || '') === 'Equipment',
+          showWhen: isEquipmentGroup,
         }
       },
       ATValue2: {
@@ -535,7 +541,7 @@
         label: 'Значение атрибута 2',
         ui: {
           step: 1,
-          showWhen: (data) => String(data?.Group || '') === 'Equipment',
+          showWhen: isEquipmentGroup,
         }
       },
       Flags: {
@@ -544,7 +550,7 @@
           type: 'tags',
           options: FLAGS,
           placeholder: 'Добавить флаг…',
-		  showWhen: (data) => !['Settings', 'Quest', 'Currency'].includes(data?.Group ?? ''),
+          showWhen: supportsItemOptions,
         }
       },
       ScenarioMode: {
@@ -558,45 +564,44 @@
         }
       },
       ScenarioData: { type: 'scenario', label: 'ScenarioData', ui: { scenarioModePath: 'ScenarioMode' } },
-      InitialPrice: 
-	  { 
-        type: 'number', 
-        label: 'Начальная цена', 
-        ui: { 
-		  min: 0, 
-		  step: 1,
-		  showWhen: (data) => !['Settings', 'Quest', 'Currency'].includes(data?.Group ?? ''),
-        } 
-	  },
-      RequiresProducts: 
-	  { 
-	    type: 'number', 
-		label: 'Требует продуктов', 
-		ui: { 
-		  min: 0,
-		  step: 1,
-		  showWhen: (data) => !['Settings', 'Quest', 'Currency'].includes(data?.Group ?? ''),
-		} 
-	  },
-	  DataEditorType: {
-        label: 'Тип Data',
+      InitialPrice: {
+        type: 'number',
+        label: 'Начальная цена',
+        ui: {
+          min: 0,
+          step: 1,
+          showWhen: supportsItemOptions,
+        }
+      },
+      RequiresProducts: {
+        type: 'number',
+        label: 'Требует продуктов',
+        ui: {
+          min: 0,
+          step: 1,
+          showWhen: supportsItemOptions,
+        }
+      },
+      DataEditorType: {
+        label: 'Редактор данных',
         ui: {
           type: 'select',
           options: (data) => getAvailableDataEditors(data?.Group),
+          help: 'Поля ниже зависят от типа. При выборе группы Potion включается «Зелье»; «Без данных» сохраняет null.',
         },
       },
       DataRandomBoxItems: {
         type: 'list',
-        label: 'Random Box предметы',
+        label: 'Предметы случайного бокса',
         ui: {
           addLabel: 'Добавить предмет',
           listMode: 'table',
           tableHeader: ['Предмет', 'Количество', 'Шанс (%)'],
           tableCols: 'minmax(0,1fr) 140px 140px',
           tableColsMd: 'minmax(0,1fr) 160px 160px',
-          showWhen: (data) => String(data?.DataEditorType || '') === DATA_EDITOR_RANDOM_BOX,
+          showWhen: whenDataEditorIs(DATA_EDITOR_RANDOM_BOX),
         },
-        itemDefault: { item_id: 0, value: 1, chance: 0 },
+        itemDefault: { item_id: 0, value: 1, chance: 100 },
         itemFields: {
           item_id: { type: 'db_select', label: 'Предмет', ui: { dbKey: 'item', placeholder: '— предмет —', searchPlaceholder: 'Поиск предмета…' } },
           value: { type: 'number', label: 'Количество', ui: { min: 1, step: 1 } },
@@ -605,14 +610,14 @@
       },
       DataBoxItems: {
         type: 'list',
-        label: 'Бокс предметы',
+        label: 'Предметы в боксе',
         ui: {
           addLabel: 'Добавить предмет',
           listMode: 'table',
           tableHeader: ['Предмет', 'Количество'],
           tableCols: 'minmax(0,1fr) 140px',
           tableColsMd: 'minmax(0,1fr) 160px',
-          showWhen: (data) => String(data?.DataEditorType || '') === DATA_EDITOR_BOX,
+          showWhen: whenDataEditorIs(DATA_EDITOR_BOX),
         },
         itemDefault: { item_id: 0, value: 1 },
         itemFields: {
@@ -622,56 +627,32 @@
       },
       DataPotionEffect: {
         type: 'text',
-        label: 'Эффект',
+        label: 'Имя эффекта',
+        validate: { required: true },
         ui: {
           placeholder: 'Tiny heal',
-          showWhen: (data) => String(data?.DataEditorType || '') === DATA_EDITOR_POTION,
-        },
-      },
-      DataPotionValue: {
-        type: 'number',
-        label: 'Число',
-        ui: {
-          min: 0,
-          step: 1,
-          showWhen: (data) => String(data?.DataEditorType || '') === DATA_EDITOR_POTION,
+          showWhen: whenDataEditorIs(DATA_EDITOR_POTION),
         },
       },
       DataPotionLifetime: {
         type: 'number',
-        label: 'Время (сек.)',
+        label: 'Время действия (сек.)',
         ui: {
-          min: 0,
+          min: 1,
           step: 1,
-          showWhen: (data) => String(data?.DataEditorType || '') === DATA_EDITOR_POTION,
+          showWhen: whenDataEditorIs(DATA_EDITOR_POTION),
         },
+        validate: { min: 1, minMessage: 'Время действия — не менее 1 секунды.' },
       },
       DataPotionRecast: {
         type: 'number',
-        label: 'Время перезарядки (сек.)',
+        label: 'Перезарядка (сек.)',
         ui: {
           min: 0,
           step: 1,
-          showWhen: (data) => String(data?.DataEditorType || '') === DATA_EDITOR_POTION,
-        },
-      },
-      DataPotionMultiplierType: {
-        label: 'Зелье: тип множителя',
-        ui: {
-          type: 'select',
-          options: MULTIPLIER_TYPE_OPTIONS.map((entry) => ({ value: entry.value, label: entry.label })),
-          valueType: 'string',
-          showWhen: (data) => String(data?.DataEditorType || '') === DATA_EDITOR_POTION,
-        },
-      },
-      DataPotionMultiplierPercent: {
-        type: 'number',
-        label: 'Зелье: множитель (%)',
-        ui: {
-          min: 0,
-          step: 0.1,
-          placeholder: '0 — без множителя',
-          showWhen: (data) => String(data?.DataEditorType || '') === DATA_EDITOR_POTION,
+          placeholder: String(POTION_RECAST_DEFAULT_SECONDS),
+          help: `По умолчанию ${POTION_RECAST_DEFAULT_SECONDS} сек.; 0 — без задержки.`,
+          showWhen: whenDataEditorIs(DATA_EDITOR_POTION),
         },
       },
       DataBonusAmount: {
@@ -680,16 +661,16 @@
         ui: {
           min: 0,
           step: 0.1,
-          showWhen: (data) => String(data?.DataEditorType || '') === DATA_EDITOR_BONUS,
+          showWhen: whenDataEditorIs(DATA_EDITOR_BONUS),
         },
       },
       DataBonusType: {
         label: 'Бонус: тип',
         ui: {
           type: 'select',
-          options: MULTIPLIER_TYPE_OPTIONS.map((entry) => ({ value: entry.value, label: entry.label })),
+          options: MULTIPLIER_TYPE_OPTIONS,
           valueType: 'string',
-          showWhen: (data) => String(data?.DataEditorType || '') === DATA_EDITOR_BONUS,
+          showWhen: whenDataEditorIs(DATA_EDITOR_BONUS),
         },
       },
       DataBonusDurationValue: {
@@ -699,7 +680,7 @@
           min: 0,
           step: 1,
           placeholder: 'Значение длительности',
-          showWhen: (data) => String(data?.DataEditorType || '') === DATA_EDITOR_BONUS,
+          showWhen: whenDataEditorIs(DATA_EDITOR_BONUS),
         },
       },
       DataBonusDurationUnit: {
@@ -707,7 +688,7 @@
         ui: {
           type: 'select',
           options: BONUS_DURATION_UNITS,
-          showWhen: (data) => String(data?.DataEditorType || '') === DATA_EDITOR_BONUS,
+          showWhen: whenDataEditorIs(DATA_EDITOR_BONUS),
         },
       },
       DataScenarioName: {
@@ -715,23 +696,24 @@
         label: 'Имя сценария',
         ui: {
           placeholder: 'Название сценария/активатора',
-          showWhen: (data) => String(data?.DataEditorType || '') === DATA_EDITOR_USE_SCENARIO,
+          showWhen: whenDataEditorIs(DATA_EDITOR_USE_SCENARIO),
         },
       },
       DataScenarioWorldID: {
         type: 'db_select',
-        label: 'Мир (WorldID)',
+        label: 'Мир сценария',
         ui: {
           dbKey: 'world',
-          placeholder: '— выберите мир —',
-          showWhen: (data) => String(data?.DataEditorType || '') === DATA_EDITOR_USE_SCENARIO,
+          placeholder: '— текущий мир —',
+          help: 'Если мир не выбран, сценарий запускается в текущем мире.',
+          showWhen: whenDataEditorIs(DATA_EDITOR_USE_SCENARIO),
         },
       },
       DataScenarioSingle: {
         type: 'boolean',
         label: 'Одиночный',
         ui: {
-          showWhen: (data) => String(data?.DataEditorType || '') === DATA_EDITOR_USE_SCENARIO,
+          showWhen: whenDataEditorIs(DATA_EDITOR_USE_SCENARIO),
         },
       },
       DataScenarioDuration: {
@@ -741,19 +723,20 @@
           min: 0,
           step: 1,
           placeholder: '0 — без ограничения',
-          showWhen: (data) => String(data?.DataEditorType || '') === DATA_EDITOR_USE_SCENARIO,
+          showWhen: whenDataEditorIs(DATA_EDITOR_USE_SCENARIO),
         },
       },
       DataScenarioRewards: {
         type: 'list',
         label: 'Награды сценария',
+        itemDefault: { item_id: 0, value: 1, chance: 100 },
         itemFields: {
           item_id: { type: 'db_select', label: 'Предмет', ui: { dbKey: 'item', placeholder: '— выберите предмет —' } },
           value: { type: 'number', label: 'Количество', ui: { min: 1, max: 999999, step: 1 } },
           chance: { type: 'number', label: 'Шанс (%)', ui: { min: 0, max: 100, step: 0.01 } },
         },
         ui: {
-          showWhen: (data) => String(data?.DataEditorType || '') === DATA_EDITOR_USE_SCENARIO,
+          showWhen: whenDataEditorIs(DATA_EDITOR_USE_SCENARIO),
         },
       },
     };
@@ -826,6 +809,17 @@
       fields: itemFields,
       fieldOptions: fieldRenderOptions,
       dirty,
+      validateModel: (model) => {
+        if (normalizeDataEditor(model?.Group, model?.DataEditorType) !== DATA_EDITOR_POTION) return '';
+        if (!String(model?.DataPotionEffect || '').trim()) return 'Укажите имя эффекта зелья.';
+        if ((toNullableInt(model?.DataPotionLifetime) ?? 0) < 1) {
+          return 'Время действия — не менее 1 секунды.';
+        }
+        if ((toNullableInt(model?.DataPotionRecast) ?? POTION_RECAST_DEFAULT_SECONDS) < 0) {
+          return 'Перезарядка не может быть отрицательной.';
+        }
+        return '';
+      },
       transformList: (rows) => {
         const group = filterGroup?.value || '';
         const type = filterType?.value || '';
@@ -867,11 +861,10 @@
         DataBonusDurationValue: 0,
         DataBonusDurationUnit: 'minutes',
         DataPotionEffect: '',
-        DataPotionValue: 0,
-        DataPotionLifetime: 0,
-        DataPotionRecast: 0,
-        DataPotionMultiplierType: 'experience',
-        DataPotionMultiplierPercent: 0,
+        // Internal-only baseline strength; the potion form exposes only effect, lifetime and recast.
+        DataPotionValue: POTION_DEFAULT_VALUE,
+        DataPotionLifetime: POTION_DEFAULT_LIFETIME_SECONDS,
+        DataPotionRecast: POTION_RECAST_DEFAULT_SECONDS,
         DataScenarioName: '',
         DataScenarioWorldID: 0,
         DataScenarioSingle: false,
@@ -917,10 +910,8 @@
           DataPotionValue: potion.value,
           DataPotionLifetime: potion.lifetime,
           DataPotionRecast: potion.recast,
-          DataPotionMultiplierType: potion.multiplier_type,
-          DataPotionMultiplierPercent: potion.multiplier_percent,
           DataScenarioName: String(dataPayload?.use_scenario?.name || ''),
-          DataScenarioWorldID: Number(dataPayload?.use_scenario?.world_id ?? 0),
+          DataScenarioWorldID: toNullableId(dataPayload?.use_scenario?.world_id) ?? 0,
           DataScenarioSingle: Boolean(dataPayload?.use_scenario?.single),
           DataScenarioDuration: Number(dataPayload?.use_scenario?.duration ?? 0),
           DataScenarioRewards: normalizeRandomBoxItems(dataPayload?.use_scenario?.rewards),
@@ -966,7 +957,10 @@
       // group switching toggles fields (attributes + type rules), so we normalize and rerender
       rerenderOnChange: (model, meta) => {
         if (meta?.path === 'Group') {
-          model.DataEditorType = normalizeDataEditor(model?.Group, model?.DataEditorType);
+          const dataEditorType = String(model?.DataEditorType || DATA_EDITOR_NONE);
+          model.DataEditorType = model?.Group === 'Potion'
+            ? DATA_EDITOR_POTION
+            : normalizeDataEditor(model?.Group, dataEditorType);
           if (TypeRule?.normalizeModel) TypeRule.normalizeModel(model);
           return true;
         }

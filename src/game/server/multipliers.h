@@ -30,10 +30,9 @@ enum class MultiplierType : int
 enum class MultiplierSource : int
 {
 	World = 0,
-	RandomEvent,
-	BonusItem,
-	Potion,
-	Other,
+	RandomEvent = 1,
+	BonusItem = 2,
+	Other = 3,
 	Num,
 };
 
@@ -62,7 +61,8 @@ public:
 
 	static constexpr bool IsValidSource(MultiplierSource Source)
 	{
-		return Source >= MultiplierSource::World && Source < MultiplierSource::Num;
+		return Source == MultiplierSource::World || Source == MultiplierSource::RandomEvent
+			|| Source == MultiplierSource::BonusItem || Source == MultiplierSource::Other;
 	}
 
 	static float ClampPercent(long double Percent)
@@ -81,10 +81,10 @@ public:
 	{
 		switch (Type)
 		{
-		case MultiplierType::Experience: return "Experience";
+		case MultiplierType::Experience: return "EXP";
 		case MultiplierType::Gold: return "Gold";
-		case MultiplierType::Health: return "Health";
-		case MultiplierType::Mana: return "Mana";
+		case MultiplierType::Health: return "HP";
+		case MultiplierType::Mana: return "MP";
 		case MultiplierType::MobDrop: return "Mob drop";
 		case MultiplierType::MiningDrop: return "Mining drop";
 		case MultiplierType::FarmingDrop: return "Farming drop";
@@ -101,7 +101,6 @@ public:
 		case MultiplierSource::World: return "World rate";
 		case MultiplierSource::RandomEvent: return "Random event";
 		case MultiplierSource::BonusItem: return "Bonus item";
-		case MultiplierSource::Potion: return "Potion";
 		default: return "Other";
 		}
 	}

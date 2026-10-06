@@ -37,8 +37,6 @@ public:
 		int Value {};
 		int Lifetime {};
 		int Recasttime {};
-		std::optional<MultiplierType> Multiplier {};
-		float MultiplierPercent {};
 	};
 	struct BonusesContext
 	{

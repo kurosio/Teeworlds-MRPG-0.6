@@ -588,16 +588,6 @@ bool CPlayerItem::Use(int Value)
 			const auto Effect = optPotionContext->Effect;
 
 			pPlayer->m_Effects.Add(Effect, PotionTime * Server()->TickSpeed());
-			if(optPotionContext->Multiplier.has_value() && optPotionContext->MultiplierPercent > 0.0f && PotionTime > 0)
-			{
-				TemporaryBonus PotionBonus;
-				PotionBonus.Type = *optPotionContext->Multiplier;
-				PotionBonus.Amount = optPotionContext->MultiplierPercent;
-				PotionBonus.StartTime = time(nullptr);
-				PotionBonus.Duration = PotionTime;
-				PotionBonus.Source = MultiplierSource::Potion;
-				pPlayer->Account()->GetBonusManager().AddBonus(PotionBonus);
-			}
 			GS()->Chat(m_ClientID, "You used '{} x{}'.", Info()->GetName(), Value);
 			GS()->CreatePlayerSound(m_ClientID, SOUND_SFX_POTION);
 

@@ -115,15 +115,6 @@ void CItemDescription::InitData(const DBSet& GroupSet, const DBSet& TypeSet)
 			Potion.Value = pPotionJson.value("value", 0);
 			Potion.Lifetime = pPotionJson.value("lifetime", 0);
 			Potion.Recasttime = pPotionJson.value("recast", POTION_RECAST_DEFAULT_TIME);
-			if(const auto& pMultiplierJson = pPotionJson["multiplier"]; pMultiplierJson.is_object())
-			{
-				Potion.Multiplier = ParseMultiplierType(pMultiplierJson["type"]);
-				Potion.MultiplierPercent = pMultiplierJson.value("percent", 0.0f);
-				if(!std::isfinite(Potion.MultiplierPercent) || Potion.MultiplierPercent <= 0.0f)
-					Potion.Multiplier.reset();
-			}
-			if(Potion.Effect.empty() && Potion.Multiplier.has_value())
-				Potion.Effect = fmt_default("MultiplierPotion_{}", m_ID);
 			s_vTotalPotionByItemIDList[m_ID] = Potion;
 			m_PotionContext = Potion;
 		}

@@ -349,6 +349,15 @@
 
       const save = async () => {
         if (!state.model) return;
+        const validationError = typeof cfg.validateModel === 'function'
+          ? cfg.validateModel(state.model)
+          : '';
+        if (validationError) {
+          const message = String(validationError);
+          setStatus(message, 'err');
+          toast(message, 'error');
+          return;
+        }
         const payload = toPayload(state.model);
         setStatus('Сохранение…');
         try {
