@@ -181,8 +181,8 @@ public:
 	BigInt GetTotalGold() const;
 	int GetGoldCapacity() const;
 
-	void AddExperience(uint64_t Value, bool ApplyBonuses = true) const;
-	void AddGold(int Value, bool ApplyBonuses = false);
+	void AddExperience(uint64_t Value, bool ApplyMultipliers = true) const;
+	void AddGold(int Value, bool ApplyMultipliers = false);
 	void AddGoldToBank(int Amount);
 	bool RemoveGoldFromBank(int Amount);
 	bool SpendCurrency(int Price, int CurrencyItemID = 1); // Returns a boolean value indicating whether the currency was successfully spent or not.

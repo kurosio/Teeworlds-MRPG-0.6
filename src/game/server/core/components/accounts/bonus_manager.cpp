@@ -1,127 +1,132 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
-/* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "bonus_manager.h"
 
 #include <engine/shared/linereader.h>
 #include <game/server/gamecontext.h>
 
-inline static std::string getFileName(int AccountID)
+static std::string GetFileName(int AccountID)
 {
 	return fmt_default("server_data/account_bonuses/{}.txt", AccountID);
 }
 
-const char* BonusManager::GetStringBonusType(int bonusType) const
-{
-	switch(bonusType)
-	{
-		case BONUS_TYPE_EXPERIENCE: return "Experience Boost";
-		case BONUS_TYPE_GOLD: return "Gold Boost";
-		case BONUS_TYPE_HP: return "HP Boost";
-		case BONUS_TYPE_MP: return "MP Boost";
-		default: return "Unknown Bonus";
-	}
-}
-
 void BonusManager::SendInfoAboutActiveBonuses() const
 {
-	const auto pGS = (CGS*)Instance::GameServerPlayer(m_ClientID);
-	if(const auto activeBonusesCount = static_cast<int>(m_vTemporaryBonuses.size()); activeBonusesCount == 0)
+	auto* pGS = static_cast<CGS*>(Instance::GameServerPlayer(m_ClientID));
+	if (!pGS) return;
+
+	const auto Count = std::ranges::count_if(m_vTemporaryBonuses, [](const TemporaryBonus& B) {
+		return B.IsActive();
+		});
+	if (Count == 0)
 		pGS->Chat(m_ClientID, "You have no active bonuses.");
 	else
-		pGS->Chat(m_ClientID, "You have '{} active bonus{}'.", activeBonusesCount, activeBonusesCount > 1 ? "es" : "");
+		pGS->Chat(m_ClientID, "You have '{} active bonus{}'.", Count, Count > 1 ? "es" : "");
 }
 
-void BonusManager::AddBonus(const TemporaryBonus& bonus)
+void BonusManager::AddBonus(const TemporaryBonus& Bonus)
 {
-	const auto pGS = (CGS*)Instance::GameServerPlayer(m_ClientID);
+	if (!CMultiplierManager::IsValidType(Bonus.Type) || !CMultiplierManager::IsValidSource(Bonus.Source)
+		|| Bonus.Source == MultiplierSource::World || Bonus.Source == MultiplierSource::RandomEvent
+		|| !std::isfinite(Bonus.Amount) || Bonus.Amount <= 0.0f || Bonus.Duration <= 0)
+		return;
 
-	// check bonus
-	bool bonusStacked = false;
-	for(auto& existingBonus : m_vTemporaryBonuses)
+	auto* pGS = static_cast<CGS*>(Instance::GameServerPlayer(m_ClientID));
+	if (!pGS) return;
+
+	const time_t Now = time(nullptr);
+	for (auto& Existing : m_vTemporaryBonuses)
 	{
-		if(existingBonus.Type == bonus.Type && existingBonus.Amount == bonus.Amount)
-		{
-			existingBonus.Duration += bonus.Duration;
-			bonusStacked = true;
+		if (Existing.Type != Bonus.Type || Existing.Amount != Bonus.Amount
+			|| Existing.Source != Bonus.Source || !Existing.IsActive())
+			continue;
 
-			// information
-			const char* bonusType = GetStringBonusType(bonus.Type);
-			const int addedDurationMinutes = bonus.Duration / 60;
-			const int newTotalDurationMinutes = existingBonus.Duration / 60;
-			pGS->Chat(m_ClientID, "'{} +{~.2}%' has been extended by '{} minutes'.", bonusType, bonus.Amount, addedDurationMinutes);
-			pGS->Chat(m_ClientID, "New total duration: '{} minutes'.", newTotalDurationMinutes);
-			break;
-		}
+		const int Remaining = Existing.RemainingTime();
+		Existing.Duration = (Bonus.Duration > std::numeric_limits<int>::max() - Remaining)
+			? std::numeric_limits<int>::max()
+			: Remaining + Bonus.Duration;
+		Existing.StartTime = Now;
+		pGS->Chat(m_ClientID, "'{}' extended by '{} minutes'. Total: '{} minutes'.",
+			CMultiplierManager::GetTypeName(Bonus.Type), Bonus.Duration / 60, Existing.Duration / 60);
+		RebuildTimedMultipliers();
+		Save();
+		return;
 	}
 
-	// new bonus
-	if(!bonusStacked)
-	{
-		m_vTemporaryBonuses.push_back(bonus);
-
-		// information
-		const char* bonusType = GetStringBonusType(bonus.Type);
-		pGS->Chat(m_ClientID, "You have received: '{} +{~.2}%'", bonusType, bonus.Amount);
-	}
-
+	TemporaryBonus NewBonus = Bonus;
+	NewBonus.StartTime = Now;
+	m_vTemporaryBonuses.push_back(NewBonus);
+	pGS->Chat(m_ClientID, "You received '{} +{~.2}% from {}.'",
+		CMultiplierManager::GetTypeName(Bonus.Type), Bonus.Amount, CMultiplierManager::GetSourceName(Bonus.Source));
+	RebuildTimedMultipliers();
 	Save();
 }
 
 void BonusManager::Load()
 {
-	const auto* pGS = (CGS*)Instance::GameServerPlayer(m_ClientID);
-	const auto* pPlayer = pGS->GetPlayer(m_ClientID);
+	m_vTemporaryBonuses.clear();
+	m_TimedMultipliers.Clear();
 
-	if(!pPlayer)
-		return;
+	auto* pGS = static_cast<CGS*>(Instance::GameServerPlayer(m_ClientID));
+	const auto* pPlayer = pGS ? pGS->GetPlayer(m_ClientID) : nullptr;
+	if (!pPlayer) return;
 
-	auto* pStorage = pGS->Storage();
-	const auto Filename = getFileName(pPlayer->Account()->GetID());
 	CLineReader Reader;
-	if(!Reader.OpenFile(pStorage->OpenFile(Filename.c_str(), IOFLAG_READ, IStorageEngine::TYPE_ABSOLUTE)))
+	if (!Reader.OpenFile(pGS->Storage()->OpenFile(GetFileName(pPlayer->Account()->GetID()).c_str(), IOFLAG_READ, IStorageEngine::TYPE_ABSOLUTE)))
 		return;
 
-	const time_t currentTime = time(nullptr);
-	while(const char* pReadLine = Reader.Get())
+	const time_t Now = time(nullptr);
+	while (const char* pLine = Reader.Get())
 	{
-		TemporaryBonus bonus;
+		TemporaryBonus Bonus;
+		int SavedType{}, SavedSource{};
 #if defined(__GNUC__) && __WORDSIZE == 64
-		if(sscanf(pReadLine, "%d %f %ld %d", &bonus.Type, &bonus.Amount, &bonus.StartTime, &bonus.Duration) == 4)
+		const int Fields = sscanf(pLine, "%d %f %ld %d %d", &SavedType, &Bonus.Amount, &Bonus.StartTime, &Bonus.Duration, &SavedSource);
 #else
-		if(sscanf(pReadLine, "%d %f %lld %d", &bonus.Type, &bonus.Amount, &bonus.StartTime, &bonus.Duration) == 4)
+		const int Fields = sscanf(pLine, "%d %f %lld %d %d", &SavedType, &Bonus.Amount, &Bonus.StartTime, &Bonus.Duration, &SavedSource);
 #endif
+		const auto Type = CMultiplierManager::FromId(SavedType);
+		if (Fields < 4 || !Type || !std::isfinite(Bonus.Amount) || Bonus.Amount <= 0.0f || Bonus.Duration <= 0)
+			continue;
+		Bonus.Type = *Type;
+
+		if (Fields >= 5)
 		{
-			int elapsedTime = static_cast<int>(difftime(currentTime, bonus.StartTime));
-			if(elapsedTime < bonus.Duration)
-			{
-				bonus.StartTime = currentTime - elapsedTime;
-				m_vTemporaryBonuses.push_back(bonus);
-			}
+			const auto Source = CMultiplierManager::SourceFromId(SavedSource);
+			if (!Source || *Source == MultiplierSource::World || *Source == MultiplierSource::RandomEvent)
+				continue;
+			Bonus.Source = *Source;
 		}
+
+		const double Elapsed = difftime(Now, Bonus.StartTime);
+		if (!std::isfinite(Elapsed) || Elapsed >= Bonus.Duration)
+			continue;
+
+		Bonus.StartTime = Now - std::max(0, static_cast<int>(Elapsed));
+		m_vTemporaryBonuses.push_back(Bonus);
 	}
+	RebuildTimedMultipliers();
 }
 
 void BonusManager::Save() const
 {
-	const auto* pGS = (CGS*)Instance::GameServerPlayer(m_ClientID);
-	const auto* pPlayer = pGS->GetPlayer(m_ClientID);
-
-	if(!pPlayer)
-		return;
+	auto* pGS = static_cast<CGS*>(Instance::GameServerPlayer(m_ClientID));
+	const auto* pPlayer = pGS ? pGS->GetPlayer(m_ClientID) : nullptr;
+	if (!pPlayer) return;
 
 	auto* pStorage = pGS->Storage();
-	const auto Filename = getFileName(pPlayer->Account()->GetID());
-	if(const auto File = pStorage->OpenFile(Filename.c_str(), IOFLAG_WRITE, IStorageEngine::TYPE_ABSOLUTE))
+	if (!pStorage->FolderExists("server_data/account_bonuses", IStorageEngine::TYPE_ABSOLUTE))
+		pStorage->CreateFolder("server_data/account_bonuses", IStorageEngine::TYPE_ABSOLUTE);
+
+	if (const auto File = pStorage->OpenFile(GetFileName(pPlayer->Account()->GetID()).c_str(), IOFLAG_WRITE, IStorageEngine::TYPE_ABSOLUTE))
 	{
-		for(const auto& bonus : m_vTemporaryBonuses)
+		for (const auto& B : m_vTemporaryBonuses)
 		{
-			char buffer[128];
+			char Buf[128];
 #if defined(__GNUC__) && __WORDSIZE == 64
-			str_format(buffer, sizeof(buffer), "%d %.2f %ld %d\n", bonus.Type, bonus.Amount, bonus.StartTime, bonus.Duration);
+			str_format(Buf, sizeof(Buf), "%d %.9g %ld %d %d\n", static_cast<int>(B.Type), B.Amount, B.StartTime, B.Duration, static_cast<int>(B.Source));
 #else
-			str_format(buffer, sizeof(buffer), "%d %.2f %lld %d\n", bonus.Type, bonus.Amount, bonus.StartTime, bonus.Duration);
+			str_format(Buf, sizeof(Buf), "%d %.9g %lld %d %d\n", static_cast<int>(B.Type), B.Amount, B.StartTime, B.Duration, static_cast<int>(B.Source));
 #endif
-			io_write(File, buffer, str_length(buffer));
+			io_write(File, Buf, str_length(Buf));
 		}
 		io_close(File);
 	}
@@ -129,75 +134,75 @@ void BonusManager::Save() const
 
 void BonusManager::PostTick()
 {
-	bool hasChanges = false;
-	for(auto it = m_vTemporaryBonuses.begin(); it != m_vTemporaryBonuses.end();)
+	bool Changed = false;
+	for (auto It = m_vTemporaryBonuses.begin(); It != m_vTemporaryBonuses.end();)
 	{
-		if(!it->IsActive())
+		if (!It->IsActive())
 		{
-			CGS* pGS = (CGS*)Instance::GameServerPlayer(m_ClientID);
-			pGS->Chat(m_ClientID, "Your '{}' of '{~.2}%' has expired.", GetStringBonusType(it->Type), it->Amount);
-			it = m_vTemporaryBonuses.erase(it);
-			hasChanges = true;
+			if (auto* pGS = static_cast<CGS*>(Instance::GameServerPlayer(m_ClientID)))
+				pGS->Chat(m_ClientID, "Your '{}' of '{~.2}%' has expired.", CMultiplierManager::GetTypeName(It->Type), It->Amount);
+			It = m_vTemporaryBonuses.erase(It);
+			Changed = true;
 		}
 		else
-		{
-			++it;
-		}
+			++It;
 	}
-
-	if(hasChanges)
+	if (Changed)
 	{
+		RebuildTimedMultipliers();
 		Save();
 	}
 }
 
-float BonusManager::GetTotalBonusPercentage(int bonusType) const
+void BonusManager::RebuildTimedMultipliers()
 {
-	float totalPercentage = 0.0f;
-	for(const auto& bonus : m_vTemporaryBonuses)
+	m_TimedMultipliers.Clear();
+	for (const auto& B : m_vTemporaryBonuses)
 	{
-		if(bonus.Type == bonusType)
-		{
-			totalPercentage += bonus.Amount;
-		}
+		if (!CMultiplierManager::IsValidType(B.Type) || !B.IsActive())
+			continue;
+		m_TimedMultipliers.AddMultiplier(B.Type, B.Source, B.Amount,
+			fmt_default("{}: {}", CMultiplierManager::GetSourceName(B.Source), CMultiplierManager::GetTypeName(B.Type)));
 	}
+}
 
-	return totalPercentage;
+float BonusManager::GetTotalBonusPercentage(MultiplierType Type) const
+{
+	if (!CMultiplierManager::IsValidType(Type))
+		return 0.0f;
+	long double Total = m_TimedMultipliers.GetTotalPercent(Type);
+	if (const auto* pGS = static_cast<CGS*>(Instance::GameServerPlayer(m_ClientID)))
+		Total += pGS->m_Multipliers.GetTotalPercent(Type);
+	return CMultiplierManager::ClampPercent(Total);
+}
+
+std::vector<MultiplierType> BonusManager::GetActiveMultiplierTypes() const
+{
+	std::vector<MultiplierType> Types;
+	const auto Add = [&Types](const auto& Contributions) {
+		for (const auto& C : Contributions)
+			if (CMultiplierManager::IsValidType(C.m_Type) && std::ranges::find(Types, C.m_Type) == Types.end())
+				Types.push_back(C.m_Type);
+		};
+	Add(m_TimedMultipliers.GetContributions());
+	if (const auto* pGS = static_cast<CGS*>(Instance::GameServerPlayer(m_ClientID)))
+		Add(pGS->m_Multipliers.GetContributions());
+	std::ranges::sort(Types);
+	return Types;
 }
 
 std::string BonusManager::GetBonusActivitiesString() const
 {
-	std::string resultStr{};
-	int bonusesInLine = 0;
-
-	for(int bonusType = BONUS_TYPE_EXPERIENCE; bonusType <= END_BONUS_TYPE; ++bonusType)
+	std::string Result;
+	int InLine = 0;
+	for (const auto Type : GetActiveMultiplierTypes())
 	{
-		if(const int bonusPercentage = (int)GetTotalBonusPercentage(bonusType); bonusPercentage > 0)
-		{
-			if(!resultStr.empty() && bonusesInLine >= 2)
-			{
-				resultStr += "\n";
-				bonusesInLine = 0;
-			}
-			else if(!resultStr.empty())
-			{
-				resultStr += ", ";
-			}
-
-			std::string bonusName;
-			switch(bonusType)
-			{
-				case BONUS_TYPE_EXPERIENCE: bonusName = "EXP"; break;
-				case BONUS_TYPE_GOLD: bonusName = "Gold"; break;
-				case BONUS_TYPE_HP: bonusName = "HP"; break;
-				case BONUS_TYPE_MP: bonusName = "MP"; break;
-				default: bonusName = "Unknown"; break;
-			}
-
-			resultStr += bonusName + " +" + std::to_string(bonusPercentage) + "%";
-			++bonusesInLine;
-		}
+		const int Pct = round_to_int(GetTotalBonusPercentage(Type));
+		if (Pct <= 0) continue;
+		if (!Result.empty())
+			Result += (InLine >= 2) ? "\n" : ", ";
+		Result += fmt_default("{} +{}%", CMultiplierManager::GetTypeName(Type), Pct);
+		InLine = (InLine >= 2) ? 1 : InLine + 1;
 	}
-
-	return resultStr;
+	return Result;
 }

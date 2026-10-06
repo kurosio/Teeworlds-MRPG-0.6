@@ -722,7 +722,11 @@ void CGS::OnDaytypeChange(int NewDaytype)
 			ResetWorldMultipliers();
 			ChatWorld(m_WorldID, "", "The sun rises over '{}'!", pWorldname);
 			break;
-		default: break;
+		default:
+			// Also clear night rates if an administrator jumps the world clock
+			// directly from night to day/evening.
+			ResetWorldMultipliers();
+			break;
 	}
 }
 
@@ -1450,21 +1454,23 @@ void CGS::UpdateWorldMultipliers()
 {
 	if(HasWorldFlag(WORLD_FLAG_NO_MULTIPLIER))
 	{
-		m_Multipliers.Experience = 100;
-		m_Multipliers.Gold = 100;
+		m_Multipliers.SetMultiplier(MultiplierType::Experience, MultiplierSource::World, 0.0f);
+		m_Multipliers.SetMultiplier(MultiplierType::Gold, MultiplierSource::World, 0.0f);
 		return;
 	}
 
 	if(IsWorldType(WorldType::Dungeon))
 	{
-		m_Multipliers.Experience = g_Config.m_SvDungeonExpMultiplier;
-		m_Multipliers.Gold = g_Config.m_SvDungeonGoldMultiplier;
+		m_Multipliers.SetMultiplier(MultiplierType::Experience, MultiplierSource::World, (float)(g_Config.m_SvDungeonExpMultiplier - 100));
+		m_Multipliers.SetMultiplier(MultiplierType::Gold, MultiplierSource::World, (float)(g_Config.m_SvDungeonGoldMultiplier - 100));
 		return;
 	}
 
-	m_Multipliers.Experience = (100 + maximum(20, rand() % 200));
-	m_Multipliers.Gold = (100 + maximum(20, rand() % 100));
-	BroadcastWorld(m_WorldID, BroadcastPriority::VeryImportant, 200, "Rates: Exp {}% | Gold {}%", m_Multipliers.Experience, m_Multipliers.Gold);
+	const int ExperienceRate = 100 + maximum(20, rand() % 200);
+	const int GoldRate = 100 + maximum(20, rand() % 100);
+	m_Multipliers.SetMultiplier(MultiplierType::Experience, MultiplierSource::World, (float)(ExperienceRate - 100));
+	m_Multipliers.SetMultiplier(MultiplierType::Gold, MultiplierSource::World, (float)(GoldRate - 100));
+	BroadcastWorld(m_WorldID, BroadcastPriority::VeryImportant, 200, "Rates: Exp {}% | Gold {}%", ExperienceRate, GoldRate);
 }
 
 void CGS::ResetWorldMultipliers()
@@ -1472,9 +1478,12 @@ void CGS::ResetWorldMultipliers()
 	if(IsWorldType(WorldType::Dungeon) || HasWorldFlag(WORLD_FLAG_NO_MULTIPLIER))
 		return;
 
-	m_Multipliers.Experience = 100;
-	m_Multipliers.Gold = 100;
-	BroadcastWorld(m_WorldID, BroadcastPriority::VeryImportant, 200, "Rates: Exp {}% | Gold {}%", m_Multipliers.Experience, m_Multipliers.Gold);
+	const bool HadWorldRates = m_Multipliers.GetSourcePercent(MultiplierType::Experience, MultiplierSource::World) != 0.0f
+		|| m_Multipliers.GetSourcePercent(MultiplierType::Gold, MultiplierSource::World) != 0.0f;
+	m_Multipliers.SetMultiplier(MultiplierType::Experience, MultiplierSource::World, 0.0f);
+	m_Multipliers.SetMultiplier(MultiplierType::Gold, MultiplierSource::World, 0.0f);
+	if(HadWorldRates)
+		BroadcastWorld(m_WorldID, BroadcastPriority::VeryImportant, 200, "Rates: Exp {}% | Gold {}%", 100, 100);
 }
 
 void CGS::UpdateVotesIfForAll(int MenuList) const
@@ -1635,8 +1644,15 @@ void CGS::InitWorld()
 		}
 	}
 
+	// Normal world rates are active at night; special worlds keep their own
+	// multiplier rules, while daytime worlds start with the base rate.
+	if(HasWorldFlag(WORLD_FLAG_NO_DAYTIME) || HasWorldFlag(WORLD_FLAG_NO_MULTIPLIER)
+		|| IsWorldType(WorldType::Dungeon) || Server()->GetCurrentTypeday() == NIGHT_TYPE)
+		UpdateWorldMultipliers();
+	else
+		ResetWorldMultipliers();
+
 	// initialize controller and update game state
-	UpdateWorldMultipliers();
 	m_pController->OnInit();
 	m_AllowedPVP = pWorldDetail->HasFlag(WORLD_FLAG_ALLOWED_PVP);
 

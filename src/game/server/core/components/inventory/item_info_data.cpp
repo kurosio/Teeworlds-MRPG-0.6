@@ -3,6 +3,35 @@
 #include "item_info_data.h"
 #include <game/server/gamecontext.h>
 
+namespace
+{
+	std::optional<MultiplierType> ParseMultiplierType(const nlohmann::json& Value)
+	{
+		if (Value.is_string())
+			return CMultiplierManager::ParseType(Value.get<std::string>());
+
+		if (Value.is_number_integer())
+		{
+			const auto ID = Value.get<int64_t>();
+			if (ID < 0 || ID > std::numeric_limits<int>::max())
+				return std::nullopt;
+
+			return CMultiplierManager::FromId(static_cast<int>(ID));
+		}
+
+		if (Value.is_number_unsigned())
+		{
+			const auto ID = Value.get<uint64_t>();
+			if (ID == 0 || ID > static_cast<uint64_t>(std::numeric_limits<int>::max()))
+				return std::nullopt;
+
+			return CMultiplierManager::FromId(static_cast<int>(ID));
+		}
+
+		return std::nullopt;
+	}
+}
+
 int CItemDescription::GetEnchantAttributeValue(AttributeIdentifier ID) const
 {
 	for (const auto& Att : m_aAttributes)
@@ -86,6 +115,15 @@ void CItemDescription::InitData(const DBSet& GroupSet, const DBSet& TypeSet)
 			Potion.Value = pPotionJson.value("value", 0);
 			Potion.Lifetime = pPotionJson.value("lifetime", 0);
 			Potion.Recasttime = pPotionJson.value("recast", POTION_RECAST_DEFAULT_TIME);
+			if(const auto& pMultiplierJson = pPotionJson["multiplier"]; pMultiplierJson.is_object())
+			{
+				Potion.Multiplier = ParseMultiplierType(pMultiplierJson["type"]);
+				Potion.MultiplierPercent = pMultiplierJson.value("percent", 0.0f);
+				if(!std::isfinite(Potion.MultiplierPercent) || Potion.MultiplierPercent <= 0.0f)
+					Potion.Multiplier.reset();
+			}
+			if(Potion.Effect.empty() && Potion.Multiplier.has_value())
+				Potion.Effect = fmt_default("MultiplierPotion_{}", m_ID);
 			s_vTotalPotionByItemIDList[m_ID] = Potion;
 			m_PotionContext = Potion;
 		}
@@ -98,8 +136,13 @@ void CItemDescription::InitData(const DBSet& GroupSet, const DBSet& TypeSet)
 			Bonus.DurationDays = pBonusJson.value("duration_days", 0);
 			Bonus.DurationHours = pBonusJson.value("duration_hours", 0);
 			Bonus.DurationMinutes = pBonusJson.value("duration_minutes", 0);
-			Bonus.Type = pBonusJson.value("type", 1);
-			m_BonusContext = Bonus;
+			const auto& TypeJson = pBonusJson["type"];
+			if(TypeJson.is_null())
+				Bonus.Type = MultiplierType::Experience;
+			else if(const auto Type = ParseMultiplierType(TypeJson))
+				Bonus.Type = *Type;
+			if(CMultiplierManager::IsValidType(Bonus.Type))
+				m_BonusContext = Bonus;
 		}
 
 		// try to initialize random box

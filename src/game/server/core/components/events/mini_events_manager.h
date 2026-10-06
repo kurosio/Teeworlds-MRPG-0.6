@@ -50,22 +50,6 @@ public:
 
 	bool IsActive() const;
 
-	template <typename T> requires std::is_integral_v<T>
-	void ApplyBonus(MiniEventType Type, T* pValue, T* pBonusValue = nullptr) const
-	{
-		if(!pValue || *pValue <= 0)
-			return;
-
-		const int BonusPercent = GetBonusPercent(Type);
-		if(BonusPercent <= 0)
-			return;
-
-		const auto BonusValue = maximum((T)1, (T)translate_to_percent_rest(*pValue, (float)BonusPercent));
-		*pValue += BonusValue;
-
-		if(pBonusValue)
-			*pBonusValue += BonusValue;
-	}
 	int GetBonusPercent(MiniEventType Type) const;
 	int GetBonusPercent() const { return GetBonusPercent(m_Data.m_Type); }
 	void FormatBroadcastLine(std::string& Result) const;
@@ -75,6 +59,7 @@ private:
 	void ScheduleQuickRoll(int MinSeconds, int MaxSeconds);
 	void StartRandomMiniEvent();
 	void StopMiniEvent();
+	void SyncMultiplier();
 
 	static const char* GetMiniEventName(MiniEventType Type);
 };

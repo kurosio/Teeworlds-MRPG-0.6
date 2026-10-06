@@ -1,64 +1,44 @@
 #ifndef GAME_SERVER_CORE_COMPONENTS_ACCOUNTS_BONUS_MANAGER_H
 #define GAME_SERVER_CORE_COMPONENTS_ACCOUNTS_BONUS_MANAGER_H
 
-class CPlayer;
+#include <algorithm>
+#include <ctime>
+#include <string>
+#include <vector>
 
-enum
-{
-	BONUS_TYPE_EXPERIENCE = 1,
-	BONUS_TYPE_GOLD,
-	BONUS_TYPE_HP,
-	BONUS_TYPE_MP,
-	END_BONUS_TYPE,
-};
+#include <game/server/multipliers.h>
 
 struct TemporaryBonus
 {
-	int Type{};
+	MultiplierType Type{ MultiplierType::Invalid };
 	float Amount{};
 	time_t StartTime{};
 	int Duration{};
+	MultiplierSource Source{ MultiplierSource::BonusItem };
 
-	void SetDuration(int days, int hours, int minutes, int seconds)
+	void SetDuration(int Days, int Hours, int Minutes, int Seconds)
 	{
-		Duration = (days * 24 * 3600) + (hours * 3600) + (minutes * 60) + seconds;
+		Duration = Days * 86400 + Hours * 3600 + Minutes * 60 + Seconds;
 	}
 
-	void GetRemainingTimeFormatted(int* days, int* hours, int* minutes, int* seconds) const
+	void GetRemainingTimeFormatted(int* pDays, int* pHours, int* pMinutes, int* pSeconds) const
 	{
-		int remaining = RemainingTime();
-		if(days)
-		{
-			*days = remaining / (24 * 3600);
-			remaining %= (24 * 3600);
-		}
-
-		if(hours)
-		{
-			*hours = remaining / 3600;
-			remaining %= 3600;
-		}
-
-		if(minutes)
-		{
-			*minutes = remaining / 60;
-			remaining %= 60;
-		}
-
-		if(seconds)
-		{
-			*seconds = remaining % 60;
-		}
+		int Rem = RemainingTime();
+		if (pDays) { *pDays = Rem / 86400; Rem %= 86400; }
+		if (pHours) { *pHours = Rem / 3600; Rem %= 3600; }
+		if (pMinutes) { *pMinutes = Rem / 60; Rem %= 60; }
+		if (pSeconds) *pSeconds = Rem;
 	}
 
 	bool IsActive() const { return difftime(time(nullptr), StartTime) < Duration; }
-	int RemainingTime() const { return maximum(0, Duration - static_cast<int>(difftime(time(nullptr), StartTime))); }
+	int RemainingTime() const { return std::max(0, Duration - static_cast<int>(difftime(time(nullptr), StartTime))); }
 };
 
 class BonusManager
 {
 	int m_ClientID{};
 	std::vector<TemporaryBonus> m_vTemporaryBonuses{};
+	CMultiplierManager m_TimedMultipliers{};
 
 public:
 	void Init(int ClientID)
@@ -67,34 +47,26 @@ public:
 		Load();
 	}
 
-	const char* GetStringBonusType(int bonusType) const;
 	void SendInfoAboutActiveBonuses() const;
-	void AddBonus(const TemporaryBonus& bonus);
+	void AddBonus(const TemporaryBonus& Bonus);
 	void PostTick();
 
-	template <typename T> requires std::is_integral_v<T>
-	void ApplyBonuses(int bonusType, T* pValue, T* pBonusValue = nullptr) const
+	template<typename T> requires std::is_integral_v<T>
+	void ApplyBonuses(MultiplierType Type, T* pValue, T* pBonusValue = nullptr) const
 	{
-		if(!pValue || *pValue <= 0)
-			return;
-
-		const float TotalPercent = GetTotalBonusPercentage(bonusType);
-		if(TotalPercent <= 0.0f)
-			return;
-
-		const auto Result = maximum((T)1, (T)translate_to_percent_rest(*pValue, TotalPercent));
-		*pValue += Result;
-
-		if(pBonusValue)
-			*pBonusValue += Result;
+		CMultiplierManager::ApplyPercent(GetTotalBonusPercentage(Type), pValue, pBonusValue);
 	}
-	float GetTotalBonusPercentage(int bonusType) const;
+
+	float GetTotalBonusPercentage(MultiplierType Type) const;
+	std::vector<MultiplierType> GetActiveMultiplierTypes() const;
 	std::string GetBonusActivitiesString() const;
-	std::vector<TemporaryBonus>& GetTemporaryBonuses() { return m_vTemporaryBonuses; }
+	const std::vector<TemporaryBonus>& GetTemporaryBonuses() const { return m_vTemporaryBonuses; }
+	const CMultiplierManager& GetTimedMultipliers() const { return m_TimedMultipliers; }
 
 private:
 	void Load();
 	void Save() const;
+	void RebuildTimedMultipliers();
 };
 
 #endif

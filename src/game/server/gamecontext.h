@@ -67,7 +67,7 @@ public:
 	CEventHandler m_Events;
 	IGameController* m_pController;
 	CGameWorld m_World;
-	Multipliers m_Multipliers;
+	CMultiplierManager m_Multipliers;
 
 	CGS();
 	~CGS() override;

@@ -11,7 +11,6 @@
 #include <components/guilds/guild_manager.h>
 #include <components/worlds/world_manager.h>
 #include <tools/db_async_context.h>
-#include <components/events/mini_events_manager.h>
 
 std::map < int, CAccountData > CAccountData::ms_aData;
 std::map < int, CAccountSharedData > CAccountSharedData::ms_aPlayerSharedData;
@@ -402,7 +401,7 @@ BigInt CAccountData::GetTotalGold() const
 	return pPlayer ? m_Bank + pPlayer->GetItem(itGold)->GetValue() : 0;
 }
 
-void CAccountData::AddExperience(uint64_t Value, bool ApplyBonuses) const
+void CAccountData::AddExperience(uint64_t Value, bool ApplyMultipliers) const
 {
 	auto* pPlayer = GetPlayer();
 	if(!pPlayer)
@@ -418,10 +417,9 @@ void CAccountData::AddExperience(uint64_t Value, bool ApplyBonuses) const
 
 	// increase exp value
 	const auto OldLevel = pClassProfession->GetLevel();
-	if(ApplyBonuses)
+	if(ApplyMultipliers)
 	{
-		m_BonusManager.ApplyBonuses(BONUS_TYPE_EXPERIENCE, &Value);
-		GS()->Core()->MiniEventsManager()->ApplyBonus(MiniEventType::ExpGain, &Value);
+		m_BonusManager.ApplyBonuses(MultiplierType::Experience, &Value);
 	}
 
 	pClassProfession->AddExperience(Value);
@@ -446,17 +444,16 @@ void CAccountData::AddExperience(uint64_t Value, bool ApplyBonuses) const
 	}
 }
 
-void CAccountData::AddGold(int Value, bool ApplyBonuses)
+void CAccountData::AddGold(int Value, bool ApplyMultipliers)
 {
 	auto* pPlayer = GetPlayer();
 	if(!pPlayer)
 		return;
 
 	// apply bonuses
-	if(ApplyBonuses)
+	if(ApplyMultipliers)
 	{
-		m_BonusManager.ApplyBonuses(BONUS_TYPE_GOLD, &Value);
-		GS()->Core()->MiniEventsManager()->ApplyBonus(MiniEventType::GoldGain, &Value);
+		m_BonusManager.ApplyBonuses(MultiplierType::Gold, &Value);
 	}
 
 	// add gold
@@ -554,12 +551,11 @@ void CAccountData::HandleChair(int ChairLevel)
 		return;
 
 	// initialize variables
-	auto* pMiniEvents = GS()->Core()->MiniEventsManager();
 	const int ProfessionLevel = pClassProfession->GetLevel();
 	const int MaxGoldCapacity = GetGoldCapacity();
 	const bool IsGoldBagFull = (GetGold() >= MaxGoldCapacity);
-	const int TotalPercentBonusGold = round_to_int(m_BonusManager.GetTotalBonusPercentage(BONUS_TYPE_GOLD)) + pMiniEvents->GetBonusPercent(MiniEventType::GoldGain);
-	const int TotalPercentBonusExp = round_to_int(m_BonusManager.GetTotalBonusPercentage(BONUS_TYPE_EXPERIENCE)) + pMiniEvents->GetBonusPercent(MiniEventType::ExpGain);
+	const int TotalPercentBonusGold = round_to_int(m_BonusManager.GetTotalBonusPercentage(MultiplierType::Gold));
+	const int TotalPercentBonusExp = round_to_int(m_BonusManager.GetTotalBonusPercentage(MultiplierType::Experience));
 
 	// format
 	auto gainExp = std::max<uint64_t>(1, calculate_exp_gain(ProfessionLevel, ChairLevel));
@@ -571,16 +567,14 @@ void CAccountData::HandleChair(int ChairLevel)
 	if(TotalPercentBonusExp > 0 && gainExp > 0)
 	{
 		uint64_t bonusExp = 0;
-		m_BonusManager.ApplyBonuses(BONUS_TYPE_EXPERIENCE, &gainExp, &bonusExp);
-		pMiniEvents->ApplyBonus(MiniEventType::ExpGain, &gainExp, &bonusExp);
+		m_BonusManager.ApplyBonuses(MultiplierType::Experience, &gainExp, &bonusExp);
 		expStr += fmt_default(" (+{} bonus, +{}%)", bonusExp, TotalPercentBonusExp);
 	}
 
 	if(TotalPercentBonusGold > 0 && gainGold > 0)
 	{
 		int bonusGold = 0;
-		m_BonusManager.ApplyBonuses(BONUS_TYPE_GOLD, &gainGold, &bonusGold);
-		pMiniEvents->ApplyBonus(MiniEventType::GoldGain, &gainGold, &bonusGold);
+		m_BonusManager.ApplyBonuses(MultiplierType::Gold, &gainGold, &bonusGold);
 		goldStr += fmt_default(" (+{} bonus, +{}%)", bonusGold, TotalPercentBonusGold);
 	}
 
