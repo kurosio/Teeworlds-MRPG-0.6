@@ -1348,8 +1348,8 @@ void CAccountManager::LoadAccount(CPlayer* pPlayer, bool FirstInitilize)
 	// Broadcast a message to the player with their current location
 	auto* pAccount = pPlayer->Account();
 	const int ClientID = pPlayer->GetCID();
-	const auto RateExp = 100 + GS()->m_Multipliers.GetSourcePercent(MultiplierType::Experience, MultiplierSource::World);
-	const auto RateGold = 100 + GS()->m_Multipliers.GetSourcePercent(MultiplierType::Gold, MultiplierSource::World);
+	const auto RateExp = 100 + round_to_int(GS()->m_Multipliers.GetSourcePercent(MultiplierType::Experience, MultiplierSource::World));
+	const auto RateGold = 100 + round_to_int(GS()->m_Multipliers.GetSourcePercent(MultiplierType::Gold, MultiplierSource::World));
 	GS()->Broadcast(ClientID, BroadcastPriority::VeryImportant, 300, "You are currently positioned at {}({})!\n- World rates: Exp {}% | Gold {}%",
 		Server()->GetWorldName(GS()->GetWorldID()), (GS()->IsAllowedPVP() ? "PVE/PVP" : "PVE"), RateExp, RateGold);
 
