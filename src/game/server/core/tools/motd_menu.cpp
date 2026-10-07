@@ -372,11 +372,16 @@ bool MotdMenu::ApplyFieldEdit(const std::string& Message)
 	std::string fieldMessage(messageView);
 	// check flag ony numeric values
 	auto& filedData = vFields[textFieldEdit.TextID];
-	if(filedData.Flags & MTTEXTINPUTFLAG_ONLY_NUMERIC && !std::all_of(fieldMessage.begin(), fieldMessage.end(), isdigit))
+	if (filedData.Flags & MTTEXTINPUTFLAG_ONLY_NUMERIC && !std::all_of(fieldMessage.begin(), fieldMessage.end(), [](char c) { return isdigit((unsigned char)c) != 0; }))
 	{
 		GS()->Chat(m_ClientID, "[&] Only numeric values will be allowed to be entered.");
 		return true;
 	}
+
+	// maximum value check for numeric fields
+	const int fieldNumber = str_toint(fieldMessage.c_str());
+	if (fieldNumber > 1000000000)
+		fieldMessage = "1000000000";
 
 	textFieldEdit.Active = false;
 	pPlayer->m_MotdData.m_HoveredItemIndex = NOPE;

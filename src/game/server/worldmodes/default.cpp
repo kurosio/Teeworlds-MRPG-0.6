@@ -403,23 +403,21 @@ void CGameControllerDefault::TryGenerateMoneyBag()
 
 CCasinoGame* CGameControllerDefault::GetCasinoGameInRange(vec2 Pos) const
 {
+	// pick the nearest table in range: with several tables close to each other
+	CCasinoGame* pNearest = nullptr;
+	float NearestDist = 800.f;
+
 	for (auto* pGame : m_vCasinoGames)
 	{
 		if (!pGame)
 			continue;
-		// try to query position if derived class provides GetPos()
 
-		// prefer dynamic cast for known types with GetPos()
-		if (auto* pDice = dynamic_cast<CDiceDuelGame*>(pGame))
+		const float Dist = distance(pGame->GetPos(), Pos);
+		if (Dist < NearestDist)
 		{
-			if (distance(pDice->GetPos(), Pos) < 800.f)
-				return pGame;
-		}
-		else if (auto* pRoulette = dynamic_cast<CRouletteGame*>(pGame))
-		{
-			if (distance(pRoulette->GetPos(), Pos) < 800.f)
-				return pGame;
+			NearestDist = Dist;
+			pNearest = pGame;
 		}
 	}
-	return nullptr;
+	return pNearest;
 }

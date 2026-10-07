@@ -1171,7 +1171,7 @@ bool CAccountManager::OnPlayerMotdCommand(CPlayer* pPlayer, CMotdPlayerData* pMo
 			return true;
 		}
 
-		const auto BetAmount = std::stoi(Bet.value());
+		const auto BetAmount = clamp(str_toint(Bet.value().c_str()), 0, 1000000000);
 		auto* pController = dynamic_cast<CGameControllerDefault*>(GS()->m_pController);
 		if (pController)
 		{
@@ -1194,7 +1194,7 @@ bool CAccountManager::OnPlayerMotdCommand(CPlayer* pPlayer, CMotdPlayerData* pMo
 		}
 
 		const auto& [BetType, Threshold] = pMotdData->GetCurrent()->Unpack<EDiceBetType, int>();
-		const auto BetAmount = std::stoi(Bet.value());
+		const auto BetAmount = clamp(str_toint(Bet.value().c_str()), 0, 1000000000);
 		auto* pController = dynamic_cast<CGameControllerDefault*>(GS()->m_pController);
 		if (pController)
 		{

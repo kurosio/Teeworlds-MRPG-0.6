@@ -217,7 +217,12 @@ float CRouletteGame::GetMultiplier(ERouletteBetKind Kind, int Value)
 int CRouletteGame::CalcPayout(int Bet, ERouletteBetKind Kind, int Value)
 {
 	const float m = GetMultiplier(Kind, Value);
-	return m <= 0.0f ? 0 : (int)std::ceil(Bet * m);
+	if (m <= 0.0f)
+		return 0;
+
+	// calculate in 64-bit and clamp: a big bet times the multiplier can overflow int
+	const auto Payout = (int64_t)std::ceil((double)Bet * (double)m);
+	return (int)std::clamp<int64_t>(Payout, 0, std::numeric_limits<int>::max());
 }
 
 const char* CRouletteGame::BetKindName(ERouletteBetKind Kind)

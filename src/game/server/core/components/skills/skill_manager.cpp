@@ -81,17 +81,19 @@ void CSkillManager::ShowSkill(CPlayer * pPlayer, int SkillID)
 	// Manage
 	VoteWrapper VManage(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_STRICT, "Manage");
 	VManage.AddItemValue(itSkillPoint);
-	VManage.AddLine();
 	if(Learned)
 	{
 		if(!Passive)
 		{
+			VManage.AddLine();
 			VManage.Add("F1 Bind: (bind 'key' say \"/use_skill {}\")", SkillID);
 			VManage.AddOption("SKILL_CHANGE_USAGE_EMOTICON", SkillID, "Used on {}", pSkill->GetSelectedEmoticonName());
 		}
 		if(Progress > 0)
 		{
 			const int resetCost = pSkill->GetResetCostSP();
+			VManage.AddLine();
+			VManage.Add("Warning: Does not return SP to the player.", resetCost);
 			VManage.AddOption("SKILL_TREE_RESET", SkillID, "Reset tree (cost: {} SP)", resetCost);
 		}
 	}
