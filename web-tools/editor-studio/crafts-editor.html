@@ -113,7 +113,12 @@
         </div>
 
         <div class="mt-4">
-          <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 editor-section">
+          <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 editor-section">
+            <div>
+              <div class="text-sm font-medium text-slate-200 mb-1">Основная группа <span class="editor-muted-text">(необязательно)</span></div>
+              <input id="edit-main-group" type="text" class="w-full editor-input form-input" placeholder="Напр. Armor" list="main-group-list" />
+              <datalist id="main-group-list"></datalist>
+            </div>
             <div>
               <div class="text-sm font-medium text-slate-200 mb-1">Группа</div>
               <input id="edit-group" type="text" class="w-full editor-input form-input" placeholder="Напр. Armor" list="group-list" />
@@ -127,7 +132,7 @@
             <div>
               <div class="text-sm font-medium text-slate-200 mb-1">Итоговое GroupName</div>
               <div class="editor-readonly" id="groupname-preview">—</div>
-              <div class="editor-muted-text text-xs mt-1">Хранится как <code>GroupName</code> в БД.</div>
+              <div class="editor-muted-text text-xs mt-1">Формат: <code>|Основная|Группа:Подгруппа</code>. Без основной группы сохраняется старый формат.</div>
             </div>
           </div>
 
@@ -188,9 +193,11 @@
       title: document.getElementById('title'),
       subtitle: document.getElementById('subtitle'),
       badgeId: document.getElementById('badge-id'),
+      editMainGroup: document.getElementById('edit-main-group'),
       editGroup: document.getElementById('edit-group'),
       editSub: document.getElementById('edit-sub'),
       groupPreview: document.getElementById('groupname-preview'),
+      mainGroupList: document.getElementById('main-group-list'),
       groupList: document.getElementById('group-list'),
       subList: document.getElementById('sub-list'),
       formMain: document.getElementById('form-main'),
@@ -241,8 +248,8 @@
     const setStatus = (message = '', tone = 'muted') =>
       EditorCore.utils.setStatus(els.status, message, tone, { className: 'mt-5' });
 
-    const splitGroupName = (value) => EditorCore.utils.splitComposite(value);
-    const buildGroupName = (group, sub) => EditorCore.utils.joinComposite(group, sub);
+    const splitGroupName = (value) => EditorCore.utils.splitGroupHierarchy(value);
+    const buildGroupName = (main, group, sub) => EditorCore.utils.joinGroupHierarchy(main, group, sub);
 
     const getItemLabel = (id) => {
       const key = String(id ?? '').trim();
@@ -313,6 +320,8 @@
       const groups = Array.from(STATE.groups.keys())
         .filter(g => g !== '(без группы)')
         .sort((a,b)=>a.localeCompare(b));
+      const mainGroups = Array.from(new Set(STATE.rows.map(r => splitGroupName(r.GroupName).main).filter(Boolean))).sort((a,b)=>a.localeCompare(b));
+      els.mainGroupList.innerHTML = mainGroups.map(g => `<option value="${g}"></option>`).join('');
       els.groupList.innerHTML = groups.map(g => `<option value="${g}"></option>`).join('');
       updateSubDatalist();
     };
@@ -381,15 +390,18 @@
         return;
       }
 
-      // Group rows by GroupName group
-      const byGroup = new Map();
+      // Group rows by main group, then by group. This makes the optional
+      // hierarchy visible instead of mixing all recipes in one flat list.
+      const byMain = new Map();
       for (const r of filtered) {
-        const { group } = splitGroupName(r.GroupName);
-        const g = group || '(без группы)';
-        if (!byGroup.has(g)) byGroup.set(g, []);
-        byGroup.get(g).push(r);
+        const { main, group } = splitGroupName(r.GroupName);
+        const mainName = main || '(без основной группы)';
+        const groupName = group || '(без группы)';
+        if (!byMain.has(mainName)) byMain.set(mainName, new Map());
+        const byGroup = byMain.get(mainName);
+        if (!byGroup.has(groupName)) byGroup.set(groupName, []);
+        byGroup.get(groupName).push(r);
       }
-      const groupNames = Array.from(byGroup.keys()).sort((a, b) => a.localeCompare(b));
 
       const reqCountQuick = (s) => {
         const str = String(s || '');
@@ -398,12 +410,11 @@
         return m ? m.length : 0;
       };
 
-      const html = groupNames.map(g => {
-        const rows = byGroup.get(g) || [];
+      const renderGroup = (mainName, g, rows) => {
         rows.sort((a, b) => Number(a.ID) - Number(b.ID));
-        const isCollapsed = STATE.ui.collapsedGroups.has(g);
+        const groupKey = `${mainName}::${g}`;
+        const isCollapsed = STATE.ui.collapsedGroups.has(groupKey);
         const icon = isCollapsed ? 'fa-chevron-right' : 'fa-chevron-down';
-
         const items = rows.map(r => {
           const isActive = String(r.ID) === String(STATE.selectedId);
           const itemLabel = getItemLabel(r.ItemID) || (r.ItemID ? `Item #${r.ItemID}` : '—');
@@ -412,44 +423,29 @@
           const ing = reqCountQuick(r.RequiredItems);
           const worldLabel = getWorldLabel(r.WorldID) || (r.WorldID ? `World #${r.WorldID}` : 'All');
           const price = Number(r.Price || 0);
-          return `
-            <button type="button"
-              class="crafts-item w-full text-left px-3 py-2.5 hover:bg-white/5 transition ${isActive ? 'bg-white/5' : ''}"
-              data-id="${r.ID}">
-              <div class="flex items-start justify-between gap-2">
-                <div class="min-w-0">
-                  <div class="flex items-center gap-2 min-w-0">
-                    <div class="font-semibold text-sm truncate">${itemLabel}</div>
-                    <div class="text-xs editor-muted-text shrink-0">×${r.ItemValue || 1}</div>
-                  </div>
-                  <div class="text-xs mt-0.5 truncate">
-                    <span class="text-slate-200">${g}</span> ${subStr}
-                  </div>
-                  <div class="mt-1 flex flex-wrap gap-1.5">
-                    <span class="px-2 py-0.5 rounded-full text-[11px] border border-white/10 bg-white/5 editor-muted-text">ингр: ${ing}</span>
-                    <span class="px-2 py-0.5 rounded-full text-[11px] border border-white/10 bg-white/5 editor-muted-text">${worldLabel}</span>
-                    ${price ? `<span class=\"px-2 py-0.5 rounded-full text-[11px] border border-white/10 bg-white/5 editor-muted-text\">цена: ${price}</span>` : ''}
-                  </div>
-                </div>
-                <div class="text-xs editor-muted-text shrink-0">#${r.ID}</div>
-              </div>
-              ${isActive ? `<div class="mt-2 h-[2px] rounded-full bg-indigo-400/40"></div>` : ''}
-            </button>`;
+          return `<button type="button" class="crafts-item w-full text-left px-3 py-2.5 hover:bg-white/5 transition ${isActive ? 'bg-white/5' : ''}" data-id="${r.ID}">
+            <div class="flex items-start justify-between gap-2"><div class="min-w-0">
+              <div class="flex items-center gap-2 min-w-0"><div class="font-semibold text-sm truncate">${itemLabel}</div><div class="text-xs editor-muted-text shrink-0">×${r.ItemValue || 1}</div></div>
+              <div class="text-xs mt-0.5 truncate"><span class="text-slate-200">${g}</span> ${subStr}</div>
+              <div class="mt-1 flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded-full text-[11px] border border-white/10 bg-white/5 editor-muted-text">ингр: ${ing}</span><span class="px-2 py-0.5 rounded-full text-[11px] border border-white/10 bg-white/5 editor-muted-text">${worldLabel}</span>${price ? `<span class="px-2 py-0.5 rounded-full text-[11px] border border-white/10 bg-white/5 editor-muted-text">цена: ${price}</span>` : ''}</div>
+            </div><div class="text-xs editor-muted-text shrink-0">#${r.ID}</div></div>${isActive ? '<div class="mt-2 h-[2px] rounded-full bg-indigo-400/40"></div>' : ''}</button>`;
         }).join('');
+        return `<div><button type="button" class="crafts-group-btn w-full px-3 py-2 flex items-center justify-between gap-2 hover:bg-white/5" data-group="${encodeURIComponent(groupKey)}"><div class="flex items-center gap-2"><i class="fa-solid ${icon} text-xs editor-muted-text"></i><div class="font-semibold text-sm truncate">${g}</div></div><div class="text-xs editor-muted-text">${rows.length}</div></button><div class="${isCollapsed ? 'hidden' : ''}">${items}</div></div>`;
+      };
 
-        return `
-          <div>
-            <button type="button" class="crafts-group-btn w-full px-3 py-2 flex items-center justify-between gap-2 hover:bg-white/5" data-group="${encodeURIComponent(g)}">
-              <div class="flex items-center gap-2">
-                <i class="fa-solid ${icon} text-xs editor-muted-text"></i>
-                <div class="font-semibold text-sm truncate">${g}</div>
-              </div>
-              <div class="text-xs editor-muted-text">${rows.length}</div>
-            </button>
-            <div class="${isCollapsed ? 'hidden' : ''}">
-              ${items}
-            </div>
-          </div>`;
+      const mainNames = Array.from(byMain.keys()).sort((a, b) => {
+        const aUngrouped = a === '(без основной группы)';
+        const bUngrouped = b === '(без основной группы)';
+        if (aUngrouped !== bUngrouped) return aUngrouped ? -1 : 1;
+        return a.localeCompare(b);
+      });
+      const html = mainNames.map(mainName => {
+        const groups = byMain.get(mainName);
+        const total = Array.from(groups.values()).reduce((n, rows) => n + rows.length, 0);
+        const groupHtml = Array.from(groups.keys()).sort((a, b) => a.localeCompare(b)).map(g => renderGroup(mainName, g, groups.get(g))).join('');
+        const mainIsReal = mainName !== '(без основной группы)';
+        return `<section class="crafts-main-group ${mainIsReal ? 'border border-indigo-400/20 bg-indigo-400/5' : 'border border-white/10 bg-black/5'} rounded-lg mb-2 overflow-hidden">
+          <div class="px-3 py-2 flex items-center justify-between gap-2 ${mainIsReal ? 'text-indigo-100' : 'text-slate-300'}"><div class="flex items-center gap-2"><i class="fa-solid fa-layer-group text-xs"></i><span class="font-bold text-sm">${mainName}</span></div><span class="text-xs editor-muted-text">${total} предметов</span></div>${groupHtml}</section>`;
       }).join('');
 
       els.list.innerHTML = html;
@@ -537,7 +533,7 @@
       }
       const itemLabel = getItemLabel(STATE.selected.ItemID) || (STATE.selected.ItemID ? `Item #${STATE.selected.ItemID}` : '—');
       els.title.textContent = itemLabel;
-      const groupName = buildGroupName(STATE.selected.Group, STATE.selected.SubGroup);
+      const groupName = buildGroupName(STATE.selected.MainGroup, STATE.selected.Group, STATE.selected.SubGroup);
       const worldLabel = getWorldLabel(STATE.selected.WorldID) || (STATE.selected.WorldID ? `World #${STATE.selected.WorldID}` : 'All');
       els.subtitle.textContent = `${groupName || '(без группы)'} • ${worldLabel}`;
       els.badgeId.textContent = `#${STATE.selectedId || 'new'}`;
@@ -546,16 +542,18 @@
 
     const applyEditorInputs = () => {
       if (!STATE.selected) {
+        els.editMainGroup.value = '';
         els.editGroup.value = '';
         els.editSub.value = '';
         els.groupPreview.textContent = '—';
         els.rawRequired.value = '';
         return;
       }
+      els.editMainGroup.value = STATE.selected.MainGroup || '';
       els.editGroup.value = STATE.selected.Group || '';
       els.editSub.value = STATE.selected.SubGroup || '';
       updateSubDatalist();
-      const groupName = buildGroupName(STATE.selected.Group, STATE.selected.SubGroup);
+      const groupName = buildGroupName(STATE.selected.MainGroup, STATE.selected.Group, STATE.selected.SubGroup);
       els.groupPreview.textContent = groupName || '—';
       els.rawRequired.value = stringifyRequired(STATE.selected.RequiredItemsArr || []);
     };
@@ -570,6 +568,7 @@
         const split = splitGroupName(row?.GroupName);
         STATE.selected = {
           ID: row?.ID ?? 0,
+          MainGroup: split.main || '',
           Group: split.group || (STATE.filter.group && STATE.filter.group !== '(без группы)' ? STATE.filter.group : ''),
           SubGroup: split.sub || (STATE.filter.sub || ''),
           ItemID: row?.ItemID == null ? 0 : Number(row.ItemID),
@@ -649,7 +648,7 @@
 
     const save = async () => {
       if (!STATE.selected) return;
-      const groupName = buildGroupName(STATE.selected.Group, STATE.selected.SubGroup);
+      const groupName = buildGroupName(STATE.selected.MainGroup, STATE.selected.Group, STATE.selected.SubGroup);
       const payload = {
         GroupName: groupName,
         ItemID: (Number(STATE.selected.ItemID) || 0) ? Number(STATE.selected.ItemID) : null,
@@ -734,7 +733,9 @@
     });
 
     els.collapseAll?.addEventListener('click', () => {
-      const all = Array.from(STATE.groups.keys());
+      const all = Array.from(els.list.querySelectorAll('button[data-group]'))
+        .map(btn => decodeURIComponent(btn.getAttribute('data-group') || ''))
+        .filter(Boolean);
       if (!all.length) return;
       const allCollapsed = all.every(g => STATE.ui.collapsedGroups.has(g));
       STATE.ui.collapsedGroups = allCollapsed ? new Set() : new Set(all);
@@ -743,7 +744,7 @@
     els.newBtn.addEventListener('click', () => {
       const row = {
         ID: 0,
-        GroupName: buildGroupName(STATE.filter.group && STATE.filter.group !== '(без группы)' ? STATE.filter.group : '', STATE.filter.sub || ''),
+        GroupName: buildGroupName('', STATE.filter.group && STATE.filter.group !== '(без группы)' ? STATE.filter.group : '', STATE.filter.sub || ''),
         ItemID: null,
         ItemValue: 1,
         RequiredItems: '',
@@ -772,14 +773,16 @@
 
     const onGroupChanged = () => {
       if (!STATE.selected) return;
+      STATE.selected.MainGroup = String(els.editMainGroup.value || '').trim();
       STATE.selected.Group = String(els.editGroup.value || '').trim();
       STATE.selected.SubGroup = String(els.editSub.value || '').trim();
       updateSubDatalist();
-      const groupName = buildGroupName(STATE.selected.Group, STATE.selected.SubGroup);
+      const groupName = buildGroupName(STATE.selected.MainGroup, STATE.selected.Group, STATE.selected.SubGroup);
       els.groupPreview.textContent = groupName || '—';
       markDirty(true);
       updateHeader();
     };
+    els.editMainGroup.addEventListener('input', onGroupChanged);
     els.editGroup.addEventListener('input', onGroupChanged);
     els.editSub.addEventListener('input', onGroupChanged);
 

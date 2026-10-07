@@ -151,7 +151,7 @@ void CWarehouse::InitData(const DBSet& Type, const std::string& ItemsString, con
 		if(trimmedLine[0] == '*')
 		{
 			const auto groupLineContent = mystd::string::trim(trimmedLine.substr(1));
-			auto [parsedGroup, parsedSubgroup] = mystd::string::split_by_delimiter(groupLineContent, ':');
+			auto [parsedGroup, parsedSubgroup] = mystd::parse_group_name(groupLineContent, m_GroupedTrades.get_default_subgroup_key());
 			if(!parsedGroup.empty())
 				currentParsingGroup = parsedGroup;
 

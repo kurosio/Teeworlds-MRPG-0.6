@@ -308,12 +308,36 @@ void CWarehouseManager::ShowGroupedSelector(CPlayer* pPlayer, CWarehouse* pWareh
 
 	// show selector by group
 	VoteWrapper VSG(ClientID, VWF_ALIGN_TITLE | VWF_SEPARATE_OPEN | VWF_STYLE_SIMPLE, "\u2636 Select a group");
-	for(const auto& [groupName, subGroupMap] : allGroupData)
+	std::vector<std::string> SortedGroups;
+	SortedGroups.reserve(allGroupData.size());
+	for(const auto& [groupName, _] : allGroupData)
+		SortedGroups.emplace_back(groupName);
+	std::ranges::sort(SortedGroups, [](const std::string& left, const std::string& right)
 	{
+		const auto [leftMain, leftGroup] = mystd::split_main_group(left);
+		const auto [rightMain, rightGroup] = mystd::split_main_group(right);
+		if(leftMain.empty() != rightMain.empty())
+			return leftMain.empty();
+		
+		if(leftMain != rightMain)
+			return leftMain < rightMain;
+		
+		return leftGroup < rightGroup;
+	});
+
+	std::string LastMainGroup;
+	for(const auto& groupName : SortedGroups)
+	{
+		const auto [mainGroup, visibleGroup] = mystd::split_main_group(groupName);
+		if(!mainGroup.empty() && mainGroup != LastMainGroup)
+		{
+			VSG.Add("# {}", Instance::Localize(ClientID, std::string(mainGroup).c_str()));
+			LastMainGroup = mainGroup;
+		}
 		const auto GroupID = pPlayer->m_VotesData.GetStringMapper().string_to_id(groupName);
 		const char* pSelectStr = GetSelectorStringByCondition(groupIdOpt && (*groupIdOpt) == GroupID);
 		const auto countItemByGroup = groupedTradesContainer.get_item_group_count(groupName);
-		VSG.AddOption("WAREHOUSE_SELECTOR_GROUP", GroupID, "{}({}){SELECTOR}", Instance::Localize(ClientID, groupName.c_str()), countItemByGroup, pSelectStr);
+		VSG.AddOption("WAREHOUSE_SELECTOR_GROUP", GroupID, "{}({}){SELECTOR}", Instance::Localize(ClientID, std::string(visibleGroup).c_str()), countItemByGroup, pSelectStr);
 	}
 
 	// show selector by subgroup
@@ -369,8 +393,9 @@ void CWarehouseManager::ShowGroupedSelector(CPlayer* pPlayer, CWarehouse* pWareh
 
 		// show all item's by selector filter
 		VoteWrapper::AddEmptyline(ClientID);
+		const auto [mainGroup, visibleGroup] = mystd::split_main_group(*groupNameOptStr);
 		const auto groupName = (*subGroupNameOptStr) != groupedTradesContainer.get_default_subgroup_key()
-			? (*subGroupNameOptStr) : (*groupNameOptStr);
+			? (*subGroupNameOptStr) : std::string(visibleGroup);
 		VoteWrapper VGroup(ClientID, VWF_SEPARATE_OPEN | VWF_STYLE_STRICT_BOLD, "\u25BC {}", Instance::Localize(ClientID, groupName.c_str()));
 
         // sell everything

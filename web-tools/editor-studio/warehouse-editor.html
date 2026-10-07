@@ -112,7 +112,10 @@
 
             <div class="editor-section">
               <div class="flex items-center justify-between gap-3">
-                <h3 class="text-sm font-semibold">Trades (массив с группировкой)</h3>
+                <div>
+                  <h3 class="text-sm font-semibold">Trades (массив с группировкой)</h3>
+                  <div class="text-xs editor-muted-text mt-1">Основная группа необязательна. Пример: <code>|Armor|Armor Healer:1 level</code></div>
+                </div>
                 <div class="flex items-center gap-2">
                   <button id="btn-add-trade-group" type="button" class="editor-btn editor-btn-secondary text-sm">
                     <i class="fa-solid fa-layer-group"></i><span>Группа</span>
@@ -188,8 +191,8 @@
     const setStatus = (message = '', tone = 'muted') =>
       EditorCore.utils.setStatus(els.status, message, tone, { className: 'mt-5' });
 
-    const splitGroupLabel = (value) => EditorCore.utils.splitComposite(value);
-    const buildGroupLabel = (group, sub) => EditorCore.utils.joinComposite(group, sub, { fallback: 'Misc' });
+    const splitGroupLabel = (value) => EditorCore.utils.splitGroupHierarchy(value);
+    const buildGroupLabel = (main, group, sub) => EditorCore.utils.joinGroupHierarchy(main, group, sub, { fallback: 'Misc' });
 
     const TYPE_FLAGS = ['buying', 'selling', 'storage'];
 
@@ -204,12 +207,12 @@
       const text = String(raw || '').replace(/\r/g, '');
       const lines = text.split('\n');
       const groups = [];
-      let current = { group: 'Misc', sub: '', entries: [] };
+      let current = { main: '', group: 'Misc', sub: '', entries: [] };
       groups.push(current);
 
       const ensureCurrent = () => {
         if (!current) {
-          current = { group: 'Misc', sub: '', entries: [] };
+          current = { main: '', group: 'Misc', sub: '', entries: [] };
           groups.push(current);
         }
       };
@@ -218,8 +221,8 @@
         const line = String(lineRaw || '').trim();
         if (!line) continue;
         if (line.startsWith('*')) {
-          const { group, sub } = splitGroupLabel(line.slice(1));
-          current = { group: group || 'Misc', sub, entries: [] };
+          const { main, group, sub } = splitGroupLabel(line.slice(1));
+          current = { main: main || '', group: group || 'Misc', sub, entries: [] };
           groups.push(current);
           continue;
         }
@@ -262,7 +265,7 @@
       const lines = [];
       const src = Array.isArray(groups) ? groups : [];
       src.forEach((g, gIndex) => {
-        const label = buildGroupLabel(g.group, g.sub);
+        const label = buildGroupLabel(g.main, g.group, g.sub);
         if (gIndex > 0 || label !== 'Misc') lines.push(`*${label}`);
         const entries = Array.isArray(g.entries) ? g.entries : [];
         entries.forEach((e) => {
@@ -507,8 +510,17 @@
         return;
       }
 
-      els.tradesGroups.innerHTML = groups.map((g, gi) => {
-        const label = buildGroupLabel(g.group, g.sub);
+      // Keep legacy groups at the top, then show each main group with all
+      // of its child groups together. Original indexes are preserved for editing.
+      const orderedGroups = groups.map((g, gi) => ({ g, gi })).sort((a, b) => {
+        const aMain = String(a.g.main || '').trim();
+        const bMain = String(b.g.main || '').trim();
+        if (!!aMain !== !!bMain) return aMain ? 1 : -1;
+        if (aMain !== bMain) return aMain.localeCompare(bMain);
+        return String(a.g.group || '').localeCompare(String(b.g.group || ''));
+      });
+      els.tradesGroups.innerHTML = orderedGroups.map(({ g, gi }) => {
+        const label = buildGroupLabel(g.main, g.group, g.sub);
         const rows = (Array.isArray(g.entries) ? g.entries : []).map((e, ei) => {
           if (e.kind === 'collection') {
             return `<div class="trade-row" data-gi="${gi}" data-ei="${ei}">
@@ -537,11 +549,17 @@
           </div>`;
         }).join('');
 
-        return `<div class="border border-light rounded-xl p-3">
+        const mainLabel = String(g.main || '').trim() || 'Без основной группы';
+        return `<div class="border ${g.main ? 'border-indigo-400/30 bg-indigo-400/5' : 'border-light'} rounded-xl p-3" data-main-group="${mainLabel.replace(/"/g, '&quot;')}">
+          <div class="mb-3 px-2 py-1.5 rounded-md ${g.main ? 'bg-indigo-400/10 text-indigo-100' : 'bg-white/5 text-slate-300'} flex items-center justify-between gap-2">
+            <span class="text-xs font-semibold"><i class="fa-solid fa-layer-group mr-1"></i>${mainLabel}</span>
+            <span class="text-[11px] editor-muted-text">Основная группа</span>
+          </div>
           <div class="flex items-center justify-between gap-2 mb-2">
             <div class="flex items-center gap-2 w-full">
-              <input data-gfield="group" data-gi="${gi}" class="editor-input form-input" value="${String(g.group || '').replace(/"/g, '&quot;')}" placeholder="Group" />
-              <input data-gfield="sub" data-gi="${gi}" class="editor-input form-input" value="${String(g.sub || '').replace(/"/g, '&quot;')}" placeholder="Subgroup" />
+              <input data-gfield="main" data-gi="${gi}" class="editor-input form-input" value="${String(g.main || '').replace(/"/g, '&quot;')}" placeholder="Основная группа (необязательно)" title="Например: Armor" />
+              <input data-gfield="group" data-gi="${gi}" class="editor-input form-input" value="${String(g.group || '').replace(/"/g, '&quot;')}" placeholder="Группа" />
+              <input data-gfield="sub" data-gi="${gi}" class="editor-input form-input" value="${String(g.sub || '').replace(/"/g, '&quot;')}" placeholder="Подгруппа" />
             </div>
             <button class="editor-btn editor-btn-secondary" data-action="del-group" data-gi="${gi}" title="Удалить группу"><i class="fa-solid fa-trash"></i></button>
           </div>
@@ -798,7 +816,7 @@
     els.addTradeGroup.addEventListener('click', () => {
       if (!STATE.selected) return;
       if (!Array.isArray(STATE.selected.TradesArr)) STATE.selected.TradesArr = [];
-      STATE.selected.TradesArr.push({ group: '', sub: '', entries: [] });
+      STATE.selected.TradesArr.push({ main: '', group: '', sub: '', entries: [] });
       markDirty(true);
       renderTradesEditor();
     });
@@ -806,7 +824,7 @@
     els.addTrade.addEventListener('click', () => {
       if (!STATE.selected) return;
       if (!Array.isArray(STATE.selected.TradesArr) || !STATE.selected.TradesArr.length) {
-        STATE.selected.TradesArr = [{ group: '', sub: '', entries: [] }];
+        STATE.selected.TradesArr = [{ main: '', group: '', sub: '', entries: [] }];
       }
       STATE.selected.TradesArr[0].entries.push({ kind: 'item', item_id: 0, amount: 1, price: 0, price_alt: 0 });
       markDirty(true);

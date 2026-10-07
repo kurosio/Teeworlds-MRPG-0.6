@@ -77,6 +77,26 @@
     return left && right ? `${left}${separator}${right}` : (left || right);
   };
 
+  // GroupName hierarchy: |Main group|Group:Subgroup.
+  // Old Group:Subgroup values intentionally remain unchanged.
+  const splitGroupHierarchy = (value) => {
+    const raw = String(value ?? '').trim();
+    if (!raw.startsWith('|')) return { main: '', ...splitComposite(raw) };
+    const end = raw.indexOf('|', 1);
+    if (end < 0) return { main: '', ...splitComposite(raw) };
+    const main = raw.slice(1, end).trim();
+    const nested = splitComposite(raw.slice(end + 1));
+    return { main, group: nested.group, sub: nested.sub };
+  };
+
+  const joinGroupHierarchy = (main, group, sub, { fallback = '' } = {}) => {
+    const mainName = String(main ?? '').trim();
+    const nested = joinComposite(group, sub);
+    if (!mainName) return nested || fallback;
+    if (!nested) return `|${mainName}|`;
+    return `|${mainName}|${nested}`;
+  };
+
   const STATUS_TONES = {
     muted: 'editor-status--muted', info: 'editor-status--muted',
     ok: 'editor-status--success', success: 'editor-status--success',
@@ -468,6 +488,8 @@
     stringifyStringList,
     splitComposite,
     joinComposite,
+    splitGroupHierarchy,
+    joinGroupHierarchy,
     setStatus,
     escapeAttr,
     escapeHtml,

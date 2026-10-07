@@ -45,9 +45,7 @@ void CCraftManager::OnInitWorld(const std::string& Where)
 		{
 			if(!NameFromSet.empty())
 			{
-				auto [currentParsingGroup, currentParsingSubgroup] = mystd::string::split_by_delimiter(NameFromSet, ':');
-				if(currentParsingSubgroup.empty())
-					currentParsingSubgroup = m_vGroupedCrafts.get_default_subgroup_key();
+				auto [currentParsingGroup, currentParsingSubgroup] = mystd::parse_group_name(NameFromSet, m_vGroupedCrafts.get_default_subgroup_key());
 				if(!currentParsingGroup.empty())
 					m_vGroupedCrafts.add_item(currentParsingGroup, currentParsingSubgroup, pCraftItem);
 			}
@@ -348,15 +346,38 @@ void CCraftManager::ShowGroupedSelector(CPlayer* pPlayer) const
 
 	// show selector by group
 	VoteWrapper VSG(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_STRICT, "\u2692 Crafting List");
-	for(const auto& [groupName, subGroupMap] : allGroupData)
+	std::vector<std::string> SortedGroups;
+	SortedGroups.reserve(allGroupData.size());
+	for(const auto& [groupName, _] : allGroupData)
+		SortedGroups.emplace_back(groupName);
+	std::ranges::sort(SortedGroups, [](const std::string& left, const std::string& right)
 	{
+		const auto [leftMain, leftGroup] = mystd::split_main_group(left);
+		const auto [rightMain, rightGroup] = mystd::split_main_group(right);
+		if(leftMain.empty() != rightMain.empty())
+			return leftMain.empty();
+
+		if(leftMain != rightMain)
+			return leftMain < rightMain;
+		
+		return leftGroup < rightGroup;
+	});
+
+	std::string LastMainGroup;
+	for(const auto& groupName : SortedGroups)
+	{
+		const auto [mainGroup, visibleGroup] = mystd::split_main_group(groupName);
+		if(!mainGroup.empty() && mainGroup != LastMainGroup)
+		{
+			VSG.AddLine();
+			VSG.Add("# {}", Instance::Localize(ClientID, std::string(mainGroup).c_str()));
+			LastMainGroup = mainGroup;
+		}
 		const auto GroupID = pPlayer->m_VotesData.GetStringMapper().string_to_id(groupName);
 		const char* pSelectStr = GetSelectorStringByCondition(groupIdOpt && (*groupIdOpt) == GroupID);
 		const auto countItemByGroup = groupedTradesContainer.get_item_group_count(groupName);
-		VSG.AddOption("WAREHOUSE_SELECTOR_GROUP", GroupID, "{}({}){SELECTOR}", Instance::Localize(ClientID, groupName.c_str()), countItemByGroup, pSelectStr);
+		VSG.AddOption("WAREHOUSE_SELECTOR_GROUP", GroupID, "{}({}){SELECTOR}", Instance::Localize(ClientID, std::string(visibleGroup).c_str()), countItemByGroup, pSelectStr);
 	}
-	VSG.Sort([](const CVoteOption& o1, const CVoteOption& o2)
-		{ return std::string_view(o1.m_aDescription) < std::string_view(o2.m_aDescription); });
 	VoteWrapper::AddEmptyline(ClientID);
 
 	// show selector by subgroup
@@ -376,7 +397,8 @@ void CCraftManager::ShowGroupedSelector(CPlayer* pPlayer) const
 
 		if(!HasOnlyDefaultGroup)
 		{
-			VoteWrapper VSGSub(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_STRICT, "\u2692 {}", groupNameOpt.value());
+			const auto [mainGroup, visibleGroup] = mystd::split_main_group(*groupNameOpt);
+			VoteWrapper VSGSub(ClientID, VWF_SEPARATE | VWF_ALIGN_TITLE | VWF_STYLE_STRICT, "\u2692 {}", std::string(visibleGroup).c_str());
 			for(const auto& [subGroupName, itemList] : *pSubGroupMap)
 			{
 				const auto SubgroupID = pPlayer->m_VotesData.GetStringMapper().string_to_id(subGroupName);
@@ -412,8 +434,9 @@ void CCraftManager::ShowGroupedSelector(CPlayer* pPlayer) const
 
 		// show all item's by selector filter
 		VoteWrapper::AddEmptyline(ClientID);
+		const auto [mainGroup, visibleGroup] = mystd::split_main_group(*groupNameOptStr);
 		const auto groupName = (*subGroupNameOptStr) != groupedTradesContainer.get_default_subgroup_key()
-			? (*subGroupNameOptStr) : (*groupNameOptStr);
+			? (*subGroupNameOptStr) : std::string(visibleGroup);
 		ShowCraftGroup(pPlayer, Instance::Localize(ClientID, groupName.c_str()), *pItemList);
 	}
 }
