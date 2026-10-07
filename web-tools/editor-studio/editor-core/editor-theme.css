@@ -389,7 +389,6 @@
   justify-content:flex-start;
   gap:.48rem;
   min-width:0;
-  min-height:100%;
   padding:12px;
   border-radius:14px;
   background:var(--editor-field-bg);
@@ -399,6 +398,8 @@
   backdrop-filter:blur(12px);
   transition:border-color .16s ease, box-shadow .16s ease, transform .14s ease, background-color .16s ease;
 }
+.editor-field{min-height:100%;}
+.editor-list-item{min-height:0;height:auto;}
 
 .editor-field:hover,
 .editor-list-item:hover{
