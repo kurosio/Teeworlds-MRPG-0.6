@@ -214,9 +214,8 @@ bool CInventoryManager::OnSendMenuVotes(CPlayer* pPlayer, int Menulist)
 			{
 				if(const auto PotionContextOpt = pPlayerItem->Info()->GetPotionContext())
 				{
-					const auto RecastTotal = PotionContextOpt->Lifetime + POTION_RECAST_DEFAULT_TIME;
 					Wrapper.AddMenu(MENU_EQUIPMENT, (int)EquipID, "{} (recast {} / +{}) x{}{SELECTOR}",
-						pPlayerItem->Info()->GetName(), RecastTotal, PotionContextOpt->Value, pPlayerItem->GetValue(), pSelector);
+						pPlayerItem->Info()->GetName(), PotionContextOpt->Recasttime, PotionContextOpt->Value, pPlayerItem->GetValue(), pSelector);
 				}
 				else
 				{

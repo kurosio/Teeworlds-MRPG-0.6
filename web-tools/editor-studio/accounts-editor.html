@@ -97,35 +97,10 @@
     const listEl = $('accounts-list');
     const statusEl = $('status');
 
-    const escapeHtml = (value) => String(value ?? '').replace(/[&<>'"]/g, (ch) => ({
-      '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
-    }[ch]));
-
-    const setStatus = (message, type = 'info') => {
-      const colors = {
-        info: 'editor-muted-text',
-        success: 'text-emerald-300',
-        error: 'text-red-300',
-        warning: 'text-amber-300'
-      };
-      statusEl.className = `mt-2 text-sm ${colors[type] || colors.info}`;
-      statusEl.textContent = message || '';
-    };
-
-    const fetchJson = async (url, options = {}) => {
-      const res = await fetch(url, {
-        credentials: 'same-origin',
-        headers: options.body ? { 'Content-Type': 'application/json' } : undefined,
-        ...options,
-        body: options.body ? JSON.stringify(options.body) : undefined
-      });
-      const json = await res.json().catch(() => ({ ok: false, error: `HTTP ${res.status}` }));
-      if (res.status === 401) {
-        window.top?.postMessage({ type: 'editor-shell:auth-required' }, '*');
-      }
-      if (!res.ok || !json.ok) throw new Error(json.error || `HTTP ${res.status}`);
-      return json;
-    };
+    const escapeHtml = EditorCore.utils.escapeHtml;
+    const setStatus = (message, tone = 'info') =>
+      EditorCore.utils.setStatus(statusEl, message, tone, { className: 'mt-2' });
+    const fetchJson = EditorCore.utils.requestJson;
 
     const accountLabel = (account) => `#${account.ID} • ${account.Nick || 'без ника'} • ${account.Username || 'без логина'}`;
 

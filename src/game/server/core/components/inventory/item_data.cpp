@@ -541,9 +541,10 @@ bool CPlayerItem::Use(int Value)
 	// little bag gold
 	if(m_ID == itLittleBagGold && Remove(Value))
 	{
-		int Getting = randomRangecount(10, 50, Value);
-		GS()->Chat(-1, "'{~}' used '{} x{}' and got '{} gold'.", GS()->Server()->ClientName(m_ClientID), Info()->GetName(), Value, Getting);
-		pPlayer->Account()->AddGold(Getting);
+		int GoldGain = randomRangecount(10, 50, Value);
+		pPlayer->Account()->GetBonusManager().ApplyBonuses(MultiplierType::Gold, &GoldGain);
+		GS()->Chat(-1, "'{~}' used '{} x{}' and got '{} gold'.", GS()->Server()->ClientName(m_ClientID), Info()->GetName(), Value, GoldGain);
+		pPlayer->Account()->AddGold(GoldGain);
 		return true;
 	}
 

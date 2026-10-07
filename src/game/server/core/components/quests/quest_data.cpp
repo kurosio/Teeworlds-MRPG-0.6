@@ -9,7 +9,7 @@
 void CQuestDescription::CReward::ApplyReward(CPlayer* pPlayer) const
 {
 	pPlayer->Account()->AddExperience(m_Experience);
-	pPlayer->Account()->AddGold(m_Gold);
+	pPlayer->Account()->AddGold(m_Gold, true);
 }
 
 int CQuestDescription::GetChainLength() const

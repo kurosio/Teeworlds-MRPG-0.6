@@ -16,6 +16,87 @@
     };
   };
 
+  // Safe clone for editable snapshots. Keeps editor-specific code independent
+  // from structuredClone support in older embedded webviews.
+  const cloneData = (value) => {
+    if (value === null || value === undefined) return value;
+    if (typeof structuredClone === 'function') return structuredClone(value);
+    try { return JSON.parse(JSON.stringify(value)); }
+    catch { return value; }
+  };
+
+  const toFiniteNumber = (value, fallback = 0) => {
+    const number = Number(value);
+    return Number.isFinite(number) ? number : fallback;
+  };
+
+  const toNullableInt = (value, fallback = null) => {
+    if (value === null || value === undefined || value === '') return fallback;
+    const number = Number(value);
+    return Number.isFinite(number) ? Math.trunc(number) : fallback;
+  };
+
+  const parseStringList = (value, { separator = ',', allowed = null, unique = false } = {}) => {
+    const source = Array.isArray(value) ? value : String(value ?? '').split(separator);
+    const canonical = Array.isArray(allowed) && allowed.length
+      ? new Map(allowed.map(item => [String(item).toLowerCase(), String(item)]))
+      : null;
+    const seen = new Set();
+    return source.reduce((result, item) => {
+      let normalized = String(item ?? '').trim();
+      if (!normalized) return result;
+      if (canonical) normalized = canonical.get(normalized.toLowerCase()) || normalized;
+      const key = normalized.toLowerCase();
+      if (unique && seen.has(key)) return result;
+      seen.add(key);
+      result.push(normalized);
+      return result;
+    }, []);
+  };
+
+  const stringifyStringList = (value, { separator = ',', empty = null } = {}) => {
+    const list = parseStringList(Array.isArray(value) ? value : [], { unique: false });
+    return list.length ? list.join(separator) : empty;
+  };
+
+  const splitComposite = (value, separator = ':') => {
+    const raw = String(value ?? '').trim();
+    if (!raw) return { group: '', sub: '' };
+    const index = raw.indexOf(separator);
+    if (index < 0) return { group: raw, sub: '' };
+    return {
+      group: raw.slice(0, index).trim(),
+      sub: raw.slice(index + separator.length).trim(),
+    };
+  };
+
+  const joinComposite = (group, sub, { separator = ':', fallback = '' } = {}) => {
+    const left = String(group ?? '').trim();
+    const right = String(sub ?? '').trim();
+    if (!left && !right) return fallback;
+    return left && right ? `${left}${separator}${right}` : (left || right);
+  };
+
+  const STATUS_TONES = {
+    muted: 'editor-status--muted', info: 'editor-status--muted',
+    ok: 'editor-status--success', success: 'editor-status--success',
+    err: 'editor-status--error', error: 'editor-status--error',
+    warn: 'editor-status--warning', warning: 'editor-status--warning',
+  };
+
+  // One status renderer for every editor. HTML is opt-in because most status
+  // messages contain API data and should be inserted as plain text.
+  const setStatus = (element, message = '', tone = 'muted', options = {}) => {
+    if (!element) return;
+    const { html = false, className = '' } = options;
+    element.className = ['editor-status', STATUS_TONES[tone] || STATUS_TONES.muted, className]
+      .filter(Boolean).join(' ');
+    element.setAttribute('role', tone === 'err' || tone === 'error' ? 'alert' : 'status');
+    element.setAttribute('aria-live', tone === 'err' || tone === 'error' ? 'assertive' : 'polite');
+    if (html) element.innerHTML = String(message || '');
+    else element.textContent = String(message || '');
+  };
+
   const escapeAttr = (value) => String(value).replace(/"/g, '&quot;');
 
   const escapeHtml = (s) => String(s)
@@ -88,13 +169,34 @@
   });
 
   const fetchJson = async (url, options = {}) => {
+    const { headers = {}, body, ...requestOptions } = options;
+    const shouldEncodeBody = body != null
+      && typeof body !== 'string'
+      && !(body instanceof FormData)
+      && !(body instanceof URLSearchParams)
+      && !(body instanceof Blob);
     const res = await fetch(url, {
-      headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
-      ...options
+      credentials: 'same-origin',
+      ...requestOptions,
+      headers: shouldEncodeBody ? { 'Content-Type': 'application/json', ...headers } : headers,
+      body: shouldEncodeBody ? JSON.stringify(body) : body,
     });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const text = await res.text();
-    return text ? JSON.parse(text) : null;
+    let json = null;
+    try { json = text ? JSON.parse(text) : null; }
+    catch { throw new Error(`Некорректный ответ сервера (HTTP ${res.status})`); }
+    if (res.status === 401) {
+      window.top?.postMessage({ type: 'editor-shell:auth-required' }, '*');
+    }
+    if (!res.ok) throw new Error(json?.error || `HTTP ${res.status}`);
+    return json;
+  };
+
+  const requestJson = async (url, options = {}) => {
+    const { requireOk = true, ...fetchOptions } = options;
+    const json = await fetchJson(url, fetchOptions);
+    if (requireOk && !json?.ok) throw new Error(json?.error || 'Операция не выполнена');
+    return json;
   };
 
   const renderSkinApiUrl = (baseUrl, { name, body, foot } = {}) => {
@@ -121,6 +223,18 @@
       return { name, body, foot };
     } catch {
       return null;
+    }
+  };
+
+  const loadLookupMap = async (source, { limit = 5000, offset = 0, silent = true } = {}) => {
+    if (!window.EditorCore?.DB?.list) return new Map();
+    try {
+      const response = await window.EditorCore.DB.list(source, { limit, offset });
+      const items = response?.ok && Array.isArray(response.items) ? response.items : [];
+      return new Map(items.map(item => [String(item.value), String(item.label || '')]));
+    } catch (error) {
+      if (!silent) throw error;
+      return new Map();
     }
   };
 
@@ -347,6 +461,14 @@
   window.EditorCore.utils = {
     uuid,
     debounce,
+    cloneData,
+    toFiniteNumber,
+    toNullableInt,
+    parseStringList,
+    stringifyStringList,
+    splitComposite,
+    joinComposite,
+    setStatus,
     escapeAttr,
     escapeHtml,
     cssEscape,
@@ -356,8 +478,10 @@
     downloadJson,
     readJsonFile,
     fetchJson,
+    requestJson,
     renderSkinApiUrl,
     parseSkinInfo,
+    loadLookupMap,
     getBotSkinsMap,
     getSkinsApi,
     showToast,

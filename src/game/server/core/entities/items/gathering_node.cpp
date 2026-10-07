@@ -5,7 +5,6 @@
 #include <generated/server_data.h>
 
 #include <game/server/core/components/houses/house_manager.h>
-#include <game/server/core/components/events/mini_events_manager.h>
 
 CEntityGatheringNode::CEntityGatheringNode(CGameWorld* pGameWorld, GatheringNode* pNode, vec2 Pos, int Type)
 : CEntity(pGameWorld, CGameWorld::ENTTYPE_GATHERING_NODE, Pos, PickupPhysSize)
@@ -146,7 +145,7 @@ void CEntityGatheringNode::Die(CPlayer* pPlayer, CProfession* pProfession)
 
 	if(m_Type == GATHERING_NODE_ORE)
 	{
-		GS()->Core()->MiniEventsManager()->ApplyBonus(MiniEventType::MiningDrop, &Value);
+		pPlayer->Account()->GetBonusManager().ApplyBonuses(MultiplierType::MiningDrop, &Value);
 
 		// miner potion luck bonus
 		const auto MinerPotionOpt = pPlayer->GetEquippedSlotItemID(ItemType::EquipPotionMiner);
@@ -164,7 +163,7 @@ void CEntityGatheringNode::Die(CPlayer* pPlayer, CProfession* pProfession)
 		}
 	}
 	else if(m_Type == GATHERING_NODE_PLANT)
-		GS()->Core()->MiniEventsManager()->ApplyBonus(MiniEventType::FarmerDrop, &Value);
+		pPlayer->Account()->GetBonusManager().ApplyBonuses(MultiplierType::FarmingDrop, &Value);
 
 	pProfession->AddExperience(m_pNode->Level);
 	pPlayerItem->Add(Value);

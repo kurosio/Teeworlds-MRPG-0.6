@@ -1,4 +1,4 @@
-﻿#include "warehouse_manager.h"
+#include "warehouse_manager.h"
 
 #include <game/server/gamecontext.h>
 #include <generated/server_data.h>
@@ -174,8 +174,10 @@ bool CWarehouseManager::OnPlayerVoteCommand(CPlayer* pPlayer, const char* pCmd, 
 
 			// load to warehouse
 			pWarehouse->Storage().Add(Value);
-			pPlayer->Account()->AddGold(Value);
-			GS()->Chat(ClientID, "You loaded '{} products'. Got '{$} gold'.", Value, Value);
+			int GoldGain = Value;
+			pPlayer->Account()->GetBonusManager().ApplyBonuses(MultiplierType::Gold, &GoldGain);
+			pPlayer->Account()->AddGold(GoldGain);
+			GS()->Chat(ClientID, "You loaded '{} products'. Got '{$} gold'.", Value, GoldGain);
 			GS()->CreateSound(pPlayer->m_ViewPos, SOUND_SFX_PRODUCT);
 			pPlayer->m_VotesData.UpdateCurrentVotes();
 		}

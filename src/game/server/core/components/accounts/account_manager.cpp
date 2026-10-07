@@ -888,26 +888,51 @@ bool CAccountManager::OnSendMenuMotd(CPlayer* pPlayer, int Menulist)
 	// motd menu about bonuses
 	if(Menulist == MOTD_MENU_BONUSES_INFO)
 	{
-		int position = 1;
-		MotdMenu MBonuses(ClientID, "All bonuses overlap, the minimum increase cannot be lower than 1 point.");
+		int Position = 1;
+		const auto& rBonusManager = pPlayer->Account()->GetBonusManager();
+		MotdMenu MBonuses(ClientID, "World rates, random events, bonus items, and potions add together; a positive bonus adds at least 1 point.");
 		MBonuses.AddText("Active bonuses \u2696");
 		MBonuses.AddSeparateLine();
-		for(auto& bonus : pPlayer->Account()->GetBonusManager().GetTemporaryBonuses())
+		for(const auto& Bonus : rBonusManager.GetTemporaryBonuses())
 		{
-			int days, hours, minutes, seconds;
-			const char* pBonusType = pPlayer->Account()->GetBonusManager().GetStringBonusType(bonus.Type);
-			bonus.GetRemainingTimeFormatted(&days, &hours, &minutes, &seconds);
+			int Days, Hours, Minutes, Seconds;
+			Bonus.GetRemainingTimeFormatted(&Days, &Hours, &Minutes, &Seconds);
 
-			MBonuses.AddText("{}. {} - {~.2}%", position, pBonusType, bonus.Amount);
-			MBonuses.AddText("Time left: {}d {}h {}m {}s.", days, hours, minutes, seconds);
+			MBonuses.AddText("{}. {} ({}) - {~.2}%", Position,
+				CMultiplierManager::GetTypeName(Bonus.Type), CMultiplierManager::GetSourceName(Bonus.Source), Bonus.Amount);
+			MBonuses.AddText("Time left: {}d {}h {}m {}s.", Days, Hours, Minutes, Seconds);
 			MBonuses.AddSeparateLine();
-			position++;
+			++Position;
 		}
 
-		if(position == 1)
+		if(Position == 1)
+			MBonuses.AddText("No active personal bonuses.");
+
+		const auto& vWorldMultipliers = GS()->m_Multipliers.GetContributions();
+		if(!vWorldMultipliers.empty())
 		{
-			MBonuses.AddText("No active bonuses!");
 			MBonuses.AddSeparateLine();
+			MBonuses.AddText("World and random-event sources:");
+			for(const auto& Multiplier : vWorldMultipliers)
+				MBonuses.AddText("- {}: {} +{~.2}%", Multiplier.m_Name,
+					CMultiplierManager::GetTypeName(Multiplier.m_Type), Multiplier.m_Percent);
+		}
+
+		bool HasCombinedRates = false;
+		for(const auto Type : rBonusManager.GetActiveMultiplierTypes())
+		{
+			const float BonusPercent = rBonusManager.GetTotalBonusPercentage(Type);
+			if(BonusPercent <= 0.0f)
+				continue;
+
+			if(!HasCombinedRates)
+			{
+				MBonuses.AddSeparateLine();
+				MBonuses.AddText("Effective combined rates:");
+				HasCombinedRates = true;
+			}
+			const auto Rate = 100.f + BonusPercent;
+			MBonuses.AddText("- {}: {~.2}%", CMultiplierManager::GetTypeName(Type), Rate);
 		}
 
 		MBonuses.AddBackpage();
@@ -1320,12 +1345,13 @@ void CAccountManager::LoadAccount(CPlayer* pPlayer, bool FirstInitilize)
 		return;
 	}
 
-	auto* pAccount = pPlayer->Account();
-
 	// Broadcast a message to the player with their current location
+	auto* pAccount = pPlayer->Account();
 	const int ClientID = pPlayer->GetCID();
-	GS()->Broadcast(ClientID, BroadcastPriority::VeryImportant, 300, "You are currently positioned at {}({})!\n- Rates: Exp {}% | Gold {}%",
-		Server()->GetWorldName(GS()->GetWorldID()), (GS()->IsAllowedPVP() ? "PVE/PVP" : "PVE"), GS()->m_Multipliers.Experience, GS()->m_Multipliers.Gold);
+	const auto RateExp = 100 + round_to_int(GS()->m_Multipliers.GetSourcePercent(MultiplierType::Experience, MultiplierSource::World));
+	const auto RateGold = 100 + round_to_int(GS()->m_Multipliers.GetSourcePercent(MultiplierType::Gold, MultiplierSource::World));
+	GS()->Broadcast(ClientID, BroadcastPriority::VeryImportant, 300, "You are currently positioned at {}({})!\n- World rates: Exp {}% | Gold {}%",
+		Server()->GetWorldName(GS()->GetWorldID()), (GS()->IsAllowedPVP() ? "PVE/PVP" : "PVE"), RateExp, RateGold);
 
 	// Check if it is not the first initialization
 	if(!FirstInitilize)

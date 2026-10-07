@@ -5,15 +5,7 @@
   const escapeHtml = (...args) => window.EditorCore.utils.escapeHtml(...args);
 
   const queryRole = (root, role) => root.querySelector(`[data-editor-role="${role}"]`);
-  const cloneData = (value) => {
-    if (value === null || value === undefined) return value;
-    if (typeof structuredClone === 'function') return structuredClone(value);
-    try {
-      return JSON.parse(JSON.stringify(value));
-    } catch (err) {
-      return value;
-    }
-  };
+  const cloneData = (...args) => window.EditorCore.utils.cloneData(...args);
 
   const DbEditor = {
     mount(root, cfg = {}) {
@@ -77,16 +69,8 @@
         return { ...(model || {}) };
       };
 
-      const setStatus = (message = '', tone = 'muted') => {
-        if (!els.status) return;
-        const cls = tone === 'ok'
-          ? 'text-emerald-300'
-          : tone === 'err'
-            ? 'text-red-300'
-            : 'editor-muted-text';
-        els.status.className = `text-sm ${cls}`;
-        els.status.textContent = message;
-      };
+      const setStatus = (message = '', tone = 'muted') =>
+        window.EditorCore.utils.setStatus(els.status, message, tone);
 
       const setHeader = () => {
         if (!els.title && !els.subtitle) return;
@@ -169,7 +153,7 @@
             : { title: row?.Name || `#${row?.ID}`, subtitle: row?.Path || '' };
           const active = Number(row?.ID) === Number(state.selectedId);
           return `
-            <button type="button" class="w-full text-left editor-row ${active ? 'ring-2 ring-indigo-500/40' : ''}" data-id="${escapeHtml(row?.ID)}">
+            <button type="button" class="w-full text-left editor-row ${active ? 'editor-row-active' : ''}" data-id="${escapeHtml(row?.ID)}">
               <div class="font-semibold truncate">${escapeHtml(label.title || '')}</div>
               ${label.subtitle ? `<div class="text-xs editor-muted-text truncate">${escapeHtml(label.subtitle)}</div>` : ''}
             </button>
@@ -272,6 +256,7 @@
         state.searchRequest.controller = controller;
 
         if (!silent) setStatus(search ? 'Идёт поиск…' : 'Загрузка списка…');
+        els.list?.setAttribute('aria-busy', 'true');
         try {
           const res = await window.EditorCore.DBCrud.list(resource, {
             search,
@@ -292,6 +277,8 @@
           const msg = err?.message || 'Ошибка загрузки';
           setStatus(msg, 'err');
           toast(msg, 'error');
+        } finally {
+          if (requestId === listRequestSeq) els.list?.setAttribute('aria-busy', 'false');
         }
       };
 
@@ -349,6 +336,15 @@
 
       const save = async () => {
         if (!state.model) return;
+        const validationError = typeof cfg.validateModel === 'function'
+          ? cfg.validateModel(state.model)
+          : '';
+        if (validationError) {
+          const message = String(validationError);
+          setStatus(message, 'err');
+          toast(message, 'error');
+          return;
+        }
         const payload = toPayload(state.model);
         setStatus('Сохранение…');
         try {

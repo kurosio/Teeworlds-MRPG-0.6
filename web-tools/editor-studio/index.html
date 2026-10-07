@@ -25,10 +25,30 @@
     html, body { height: 100%; }
     body { overflow: hidden; }
     .studio-iframe { width: 100%; height: 100%; border: 0; background: var(--editor-bg); }
+    .studio-brand-mark {
+      width: 38px; height: 38px; flex: 0 0 38px; border-radius: 12px;
+      display: grid; place-items: center; color: #fff;
+      background: linear-gradient(135deg, var(--editor-primary), var(--editor-accent));
+      box-shadow: 0 10px 28px color-mix(in srgb, var(--editor-primary) 28%, transparent);
+    }
+    .studio-search-wrap { position: relative; }
+    .studio-search-wrap > i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--editor-text-muted); pointer-events: none; }
+    .studio-search-wrap input { padding-left: 36px; padding-right: 52px; }
+    .studio-search-key { position: absolute; right: 9px; top: 50%; transform: translateY(-50%); padding: 2px 6px; border: 1px solid var(--editor-soft-border); border-radius: 6px; color: var(--editor-text-muted); background: var(--editor-soft-bg); font-size: 10px; }
+    .studio-group-title { display: flex; align-items: center; justify-content: space-between; }
+    .studio-group-count { padding: 1px 6px; border-radius: 999px; background: var(--editor-soft-bg-strong); font-size: 10px; }
     .studio-item {
+      position: relative;
       transition: background-color .14s ease, border-color .14s ease, transform .1s ease, box-shadow .14s ease;
     }
-    .studio-item:hover { transform: translateY(-1px); }
+    .studio-item:hover { transform: translateX(2px); }
+    .studio-item::before { content: ''; position: absolute; left: -1px; top: 25%; bottom: 25%; width: 3px; border-radius: 0 5px 5px 0; background: transparent; }
+    .studio-item.active::before { background: var(--editor-accent); }
+    .studio-workbar { min-height: 56px; background: color-mix(in srgb, var(--editor-surface) 90%, transparent); backdrop-filter: blur(16px); }
+    .studio-loading { position: absolute; z-index: 5; left: 0; right: 0; top: 0; height: 2px; overflow: hidden; opacity: 0; transition: opacity .15s ease; }
+    .studio-loading::after { content: ''; display: block; width: 35%; height: 100%; background: linear-gradient(90deg, transparent, var(--editor-accent), transparent); animation: studioLoad 1s ease-in-out infinite; }
+    .studio-loading.active { opacity: 1; }
+    @keyframes studioLoad { from { transform: translateX(-110%); } to { transform: translateX(320%); } }
     .studio-item:focus-visible {
       outline: none;
       border-color: var(--editor-primary);
@@ -51,18 +71,22 @@
   <div id="studioApp" class="h-screen flex overflow-hidden hidden">
     <!-- Sidebar (adaptive) -->
     <aside id="studioSidebar" class="editor-surface border-r w-80 flex-shrink-0 hidden md:flex flex-col">
-      <div class="h-16 border-b border-light flex items-center justify-between px-4">
+      <div class="h-20 border-b border-light flex items-center justify-between px-4">
         <div class="flex items-center gap-3 min-w-0">
-          <i class="fa-solid fa-layer-group text-accent"></i>
+          <span class="studio-brand-mark"><i class="fa-solid fa-layer-group"></i></span>
           <div class="min-w-0">
             <div class="font-bold text-lg truncate">Editor Studio</div>
-            <div class="text-sm editor-muted-text truncate">Общее ядро • модульные редакторы</div>
+            <div class="text-xs editor-muted-text truncate">MRPG workspace</div>
           </div>
         </div>
       </div>
 
       <div class="p-3 border-b border-light">
-        <input id="studioSearch" type="search" class="w-full form-input" placeholder="Поиск редактора..." />
+        <label class="studio-search-wrap block" aria-label="Поиск редактора">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input id="studioSearch" type="search" class="w-full form-input" placeholder="Найти редактор…" autocomplete="off" />
+          <kbd class="studio-search-key">Ctrl K</kbd>
+        </label>
       </div>
 
       <div id="studioNav" class="flex-grow overflow-y-auto p-2"></div>
@@ -87,8 +111,22 @@
         </button>
       </header>
 
-      <main class="flex-grow overflow-hidden">
-        <iframe id="editor-frame" class="studio-iframe" src=""></iframe>
+      <header class="studio-workbar border-b border-light px-4 hidden md:flex items-center justify-between gap-4">
+        <div class="min-w-0 flex items-center gap-3">
+          <span id="desktopEditorIcon" class="studio-brand-mark" style="width:34px;height:34px;flex-basis:34px"><i class="fa-solid fa-pen-ruler"></i></span>
+          <div class="min-w-0">
+            <div id="desktopEditorTitle" class="font-semibold truncate">Рабочая область</div>
+            <div id="desktopEditorMeta" class="text-xs editor-muted-text truncate">Выберите редактор в меню</div>
+          </div>
+        </div>
+        <button id="reloadEditorBtn" class="editor-icon-btn" type="button" title="Перезагрузить редактор" aria-label="Перезагрузить редактор">
+          <i class="fa-solid fa-rotate"></i>
+        </button>
+      </header>
+
+      <main class="flex-grow overflow-hidden relative">
+        <div id="studioLoading" class="studio-loading" aria-hidden="true"></div>
+        <iframe id="editor-frame" class="studio-iframe" src="" title="Активный редактор"></iframe>
       </main>
     </div>
 
@@ -152,6 +190,11 @@
     const mobileNewTabBtn = document.getElementById('mobileNewTabBtn');
     const studioSearch = document.getElementById('studioSearch');
     const mobileSearch = document.getElementById('mobileSearch');
+    const desktopEditorTitle = document.getElementById('desktopEditorTitle');
+    const desktopEditorMeta = document.getElementById('desktopEditorMeta');
+    const desktopEditorIcon = document.getElementById('desktopEditorIcon');
+    const reloadEditorBtn = document.getElementById('reloadEditorBtn');
+    const studioLoading = document.getElementById('studioLoading');
 
     const GROUPS = Array.isArray(window.STUDIO_MANIFEST) ? window.STUDIO_MANIFEST : [];
     const EDITORS = GROUPS.flatMap(g => g.items || []);
@@ -238,13 +281,21 @@
         if (!items.length) continue;
         hasItems = true;
         const header = document.createElement('div');
-        header.className = 'px-3 pt-3 pb-2 text-xs tracking-wider uppercase editor-muted-text';
-        header.textContent = g.title || 'Группа';
+        header.className = 'studio-group-title px-3 pt-4 pb-2 text-xs tracking-wider uppercase editor-muted-text';
+        const groupLabel = document.createElement('span');
+        groupLabel.textContent = g.title || 'Группа';
+        const groupCount = document.createElement('span');
+        groupCount.className = 'studio-group-count';
+        groupCount.textContent = String(items.length);
+        header.append(groupLabel, groupCount);
         fragment.appendChild(header);
 
         for (const e of items) {
           const btn = document.createElement('button');
-          btn.className = `studio-item w-full text-left p-3 rounded-xl border ${e.key === active ? 'active' : 'border-light hover:bg-light'} flex items-center gap-3`;
+          const isActive = e.key === active;
+          btn.className = `studio-item w-full text-left p-3 rounded-xl border ${isActive ? 'active' : 'border-light hover:bg-light'} flex items-center gap-3`;
+          btn.setAttribute('aria-current', isActive ? 'page' : 'false');
+          btn.title = e.title || e.key;
           btn.innerHTML = `<i class="fa-solid ${e.icon} w-5 text-center"></i><div class="min-w-0"><div class="font-semibold truncate">${e.title}</div><div class="text-xs editor-muted-text truncate">${e.key}</div></div>`;
           btn.addEventListener('click', () => openEditor(e.key, { closeMobile: true }));
           fragment.appendChild(btn);
@@ -316,7 +367,12 @@
       activeKey = e.key;
       const term = getSearchTerm();
       renderAllNavs(e.key, term);
+      studioLoading?.classList.add('active');
+      frame.title = e.title || 'Активный редактор';
       frame.src = e.src;
+      if (desktopEditorTitle) desktopEditorTitle.textContent = e.title || 'Редактор';
+      if (desktopEditorMeta) desktopEditorMeta.textContent = `${e.key} • ${e.src}`;
+      if (desktopEditorIcon) desktopEditorIcon.innerHTML = `<i class="fa-solid ${e.icon || 'fa-pen-ruler'}"></i>`;
       storageSet('studio.activeEditor', e.key);
       if (syncHash && location.hash !== '#' + e.key) location.hash = e.key;
 
@@ -384,6 +440,12 @@
       window.open(e.src, '_blank', 'noopener');
     });
 
+    frame?.addEventListener('load', () => studioLoading?.classList.remove('active'));
+    reloadEditorBtn?.addEventListener('click', () => {
+      if (!isAuthorized || !frame?.src) return;
+      studioLoading?.classList.add('active');
+      frame.contentWindow?.location.reload();
+    });
     mobileNewTabBtn?.addEventListener('click', () => openNewTab.click());
     mobileMenuBtn?.addEventListener('click', () => {
       mobileOverlay.classList.remove('hidden');

@@ -10,6 +10,7 @@
 #include "attribute_data.h"
 #include "random_box/random_box_data.h"
 #include "tools/effect_manager.h"
+#include <game/server/multipliers.h>
 
 enum
 {
@@ -39,7 +40,7 @@ public:
 	};
 	struct BonusesContext
 	{
-		int Type{};
+		MultiplierType Type{MultiplierType::Invalid};
 		int DurationDays {};
 		int DurationHours {};
 		int DurationMinutes {};

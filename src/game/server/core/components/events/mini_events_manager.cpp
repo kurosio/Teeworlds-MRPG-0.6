@@ -39,13 +39,17 @@ void CMiniEventsManager::ScheduleQuickRoll(int MinSeconds, int MaxSeconds)
 
 void CMiniEventsManager::OnInitWorld(const std::string&)
 {
+	GS()->m_Multipliers.RemoveSource(MultiplierSource::RandomEvent);
 	ScheduleNextRoll();
 }
 
 void CMiniEventsManager::OnTick()
 {
 	if(!g_Config.m_SvMiniEventsEnabled || GS()->HasWorldFlag(WORLD_FLAG_NO_MULTIPLIER) || GS()->IsWorldType(WorldType::Dungeon))
+	{
+		GS()->m_Multipliers.RemoveSource(MultiplierSource::RandomEvent);
 		return;
+	}
 
 	const auto Tick = Server()->Tick();
 	if(m_Data.m_Type != MiniEventType::None && Tick >= m_Data.m_EndTick)
@@ -55,9 +59,9 @@ void CMiniEventsManager::OnTick()
 	}
 
 	if(m_Data.m_NextRollTick > 0 && Tick >= m_Data.m_NextRollTick)
-	{
 		StartRandomMiniEvent();
-	}
+	else if(m_Data.m_Type != MiniEventType::None)
+		SyncMultiplier();
 }
 
 bool CMiniEventsManager::IsActive() const
@@ -81,6 +85,7 @@ void CMiniEventsManager::StartRandomMiniEvent()
 	m_Data.m_EndTick = Tick + (TickSpeed * 60 * DurationMinutes);
 	m_Data.m_NextRollTick = 0;
 	m_Data.m_ChainLevel = maximum(0, m_Data.m_ChainLevel);
+	SyncMultiplier();
 
 	GS()->ChatWorld(GS()->GetWorldID(), "", mystd::aesthetic::wrapLinePillar(8).c_str());
 	GS()->ChatWorld(GS()->GetWorldID(), "", "- Event Started! {}", m_Data.m_ChainLevel > 0 ? "(Chain Rush)" : "");
@@ -97,6 +102,7 @@ void CMiniEventsManager::StartRandomMiniEvent()
 
 void CMiniEventsManager::StopMiniEvent()
 {
+	GS()->m_Multipliers.RemoveSource(MultiplierSource::RandomEvent);
 	GS()->ChatWorld(GS()->GetWorldID(), "", "Event ended: {}.", GetMiniEventName(m_Data.m_Type));
 
 	const auto MaxChainLevel = maximum(0, g_Config.m_SvMiniEventsChainMax);
@@ -152,4 +158,32 @@ int CMiniEventsManager::GetBonusPercent(MiniEventType Type) const
 	auto BonusPercent = m_Data.m_BonusPercent;
 	BonusPercent += m_Data.m_ChainLevel * g_Config.m_SvMiniEventsChainBonusStepPercent;
 	return BonusPercent;
+}
+
+void CMiniEventsManager::SyncMultiplier()
+{
+	if(!IsActive())
+	{
+		GS()->m_Multipliers.RemoveSource(MultiplierSource::RandomEvent);
+		return;
+	}
+
+	MultiplierType Type = MultiplierType::Invalid;
+	switch(m_Data.m_Type)
+	{
+		case MiniEventType::MiningDrop: Type = MultiplierType::MiningDrop; break;
+		case MiniEventType::FarmerDrop: Type = MultiplierType::FarmingDrop; break;
+		case MiniEventType::FishingDrop: Type = MultiplierType::FishingDrop; break;
+		case MiniEventType::MobDrop: Type = MultiplierType::MobDrop; break;
+		case MiniEventType::GoldGain: Type = MultiplierType::Gold; break;
+		case MiniEventType::ExpGain: Type = MultiplierType::Experience; break;
+		case MiniEventType::SkillPointDrop: Type = MultiplierType::SkillPointDrop; break;
+		default: break;
+	}
+
+	if(Type != MultiplierType::Invalid)
+	{
+		GS()->m_Multipliers.SetMultiplier(Type, MultiplierSource::RandomEvent,
+			(float)GetBonusPercent(m_Data.m_Type), GetMiniEventName(m_Data.m_Type));
+	}
 }

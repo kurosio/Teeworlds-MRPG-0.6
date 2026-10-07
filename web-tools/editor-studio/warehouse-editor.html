@@ -183,45 +183,22 @@
       },
     };
 
-    const cssEscape = (...args) => window.EditorCore?.utils?.cssEscape?.(...args) ?? String(args[0] ?? '');
+    const cssEscape = EditorCore.utils.cssEscape;
 
-    const setStatus = (msg, tone = 'muted') => {
-      const cls = tone === 'ok' ? 'text-emerald-300' : tone === 'err' ? 'text-red-300' : 'editor-muted-text';
-      els.status.className = `mt-5 text-sm ${cls}`;
-      els.status.textContent = msg || '';
-    };
+    const setStatus = (message = '', tone = 'muted') =>
+      EditorCore.utils.setStatus(els.status, message, tone, { className: 'mt-5' });
 
-    const splitGroupLabel = (raw) => {
-      const s = String(raw || '').trim();
-      if (!s) return { group: '', sub: '' };
-      const idx = s.indexOf(':');
-      if (idx === -1) return { group: s, sub: '' };
-      return { group: s.slice(0, idx).trim(), sub: s.slice(idx + 1).trim() };
-    };
-
-    const buildGroupLabel = (group, sub) => {
-      const g = String(group || '').trim();
-      const s = String(sub || '').trim();
-      if (!g && !s) return 'Misc';
-      if (g && s) return `${g}:${s}`;
-      return g || s;
-    };
+    const splitGroupLabel = (value) => EditorCore.utils.splitComposite(value);
+    const buildGroupLabel = (group, sub) => EditorCore.utils.joinComposite(group, sub, { fallback: 'Misc' });
 
     const TYPE_FLAGS = ['buying', 'selling', 'storage'];
 
-    const parseTypeSet = (v) => {
-      if (!v) return [];
-      const source = Array.isArray(v) ? v : String(v).split(',');
-      const normalized = source
-        .map((x) => String(x).trim().toLowerCase())
-        .filter((x) => TYPE_FLAGS.includes(x));
-      return Array.from(new Set(normalized));
-    };
+    const parseTypeSet = (value) => EditorCore.utils.parseStringList(value, {
+      allowed: TYPE_FLAGS,
+      unique: true,
+    }).filter(flag => TYPE_FLAGS.includes(flag));
 
-    const stringifyTypeSet = (arr) => {
-      const uniq = parseTypeSet(arr);
-      return uniq.join(',');
-    };
+    const stringifyTypeSet = (value) => EditorCore.utils.stringifyStringList(parseTypeSet(value), { empty: '' });
 
     const parseTrades = (raw) => {
       const text = String(raw || '').replace(/\r/g, '');
