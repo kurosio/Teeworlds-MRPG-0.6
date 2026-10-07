@@ -96,12 +96,16 @@ function handle_save_config(): never
         $allowedIps = array_values($prev['allowed_editor_ips']);
     }
 
+    // Handle password: special marker to clear it
+    $passwordValue = (string)($body['password'] ?? '');
+    $clearPassword = ($body['clear_password'] === true || $passwordValue === '__CLEAR_PASSWORD__');
+
     $cfg = [
         'host'                => (string)($body['host']     ?? ($prev['host']     ?? '127.0.0.1')),
         'port'                => (int)($body['port']        ?? ($prev['port']     ?? 3306)),
         'database'            => (string)($body['database'] ?? ($prev['database'] ?? '')),
         'user'                => (string)($body['user']     ?? ($prev['user']     ?? 'root')),
-        'password'            => (string)($body['password'] ?? ''),
+        'password'            => $clearPassword ? '' : $passwordValue,
         'skins_api'           => trim((string)($body['skins_api']    ?? ($prev['skins_api']    ?? ''))),
         'editor_user'         => trim((string)($body['editor_user']  ?? ($prev['editor_user']  ?? 'admin'))),
         'editor_password'     => (string)($body['editor_password'] ?? ''),
@@ -109,8 +113,8 @@ function handle_save_config(): never
         'allowed_editor_ips'  => $allowedIps,
     ];
 
-    // Keep existing password if new one is empty
-    if ($cfg['password'] === '' && isset($prev['password'])) {
+    // Keep existing password if new one is empty AND not explicitly clearing
+    if (!$clearPassword && $cfg['password'] === '' && isset($prev['password'])) {
         $cfg['password'] = (string)$prev['password'];
     }
 

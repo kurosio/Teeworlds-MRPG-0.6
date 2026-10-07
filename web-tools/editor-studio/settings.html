@@ -265,6 +265,91 @@
         </div>
       </section>
 
+      <!-- ─── Sync ─── -->
+      <section class="editor-card border rounded-2xl p-5 lg:col-span-2">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <h2 class="text-lg font-semibold flex items-center gap-2">
+              <i class="fa-solid fa-arrows-rotate text-accent"></i>
+              Синхронизация между БД
+            </h2>
+            <p class="editor-muted-text text-sm mt-1">
+              Настройка целевого подключения для применения изменений из редакторов в другую базу данных.
+            </p>
+          </div>
+          <button id="btn-sync-add" class="editor-btn editor-btn-secondary">
+            <i class="fa-solid fa-plus"></i>
+            <span>Добавить профиль</span>
+          </button>
+        </div>
+
+        <div id="sync-profiles" class="editor-sync-profile-list">
+          <div class="editor-muted-text text-sm">Загрузка…</div>
+        </div>
+
+        <div class="mt-4 p-4 rounded-xl" style="background: rgba(99, 102, 241, .05); border: 1px solid rgba(99, 102, 241, .15);">
+          <div class="flex items-start gap-2 text-sm">
+            <i class="fa-solid fa-circle-info text-indigo-400 mt-0.5"></i>
+            <div class="text-slate-300">
+              <strong>Как это работает:</strong> Все изменения в редакторах (создание, обновление, удаление) автоматически записываются в историю.
+              Кнопка <span class="text-accent font-medium">«Синхро»</span> в каждом редакторе позволяет проверить совместимость структур БД
+              и применить накопленные изменения в целевую базу данных. Перед применением выполняется полная валидация схемы и данных.
+            </div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+  </div>
+
+  <!-- Sync Profile Modal -->
+  <div id="sync-profile-modal" class="hidden fixed inset-0 z-[700] items-center justify-center editor-modal-backdrop">
+    <div class="editor-modal-content p-6 w-full max-w-md">
+      <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
+        <i class="fa-solid fa-database text-accent"></i>
+        <span id="sync-modal-title">Новый профиль синхронизации</span>
+      </h3>
+      <div class="space-y-4">
+        <div>
+          <label class="editor-label">Название</label>
+          <input id="sync-f-name" type="text" class="w-full editor-input form-input" placeholder="Production DB" />
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="editor-label">Host</label>
+            <input id="sync-f-host" type="text" class="w-full editor-input form-input" placeholder="127.0.0.1" />
+          </div>
+          <div>
+            <label class="editor-label">Port</label>
+            <input id="sync-f-port" type="number" class="w-full editor-input form-input" placeholder="3306" />
+          </div>
+        </div>
+        <div>
+          <label class="editor-label">Database</label>
+          <input id="sync-f-db" type="text" class="w-full editor-input form-input" placeholder="mmorpg_prod" />
+        </div>
+        <div>
+          <label class="editor-label">User</label>
+          <input id="sync-f-user" type="text" class="w-full editor-input form-input" placeholder="root" />
+        </div>
+        <div>
+          <label class="editor-label">Password</label>
+          <input id="sync-f-pass" type="password" class="w-full editor-input form-input" placeholder="••••••" />
+          <div class="text-xs editor-muted-text mt-1">Оставьте пустым, чтобы не изменять сохранённый пароль.</div>
+        </div>
+        <label class="flex items-center gap-2 cursor-pointer select-none">
+          <input id="sync-f-set-target" type="checkbox" class="rounded border-slate-600 bg-slate-800 text-indigo-500 h-4 w-4" checked />
+          <span class="text-sm text-slate-300">Сделать целевым подключением</span>
+        </label>
+      </div>
+      <div id="sync-modal-status" class="mt-3 text-sm"></div>
+      <div class="flex justify-end gap-2 mt-6">
+        <button id="sync-modal-cancel" class="editor-btn editor-btn-secondary">Отмена</button>
+        <button id="sync-modal-save" class="editor-btn editor-btn-primary">
+          <i class="fa-solid fa-floppy-disk"></i>
+          <span>Сохранить и проверить</span>
+        </button>
+      </div>
     </div>
   </div>
 
@@ -303,6 +388,7 @@
     const blankProfile = name => ({
       id: uid(), name: name || 'Default',
       host: '', port: 3306, db: '', user: '', pass: '', nopass: false,
+      hasServerPassword: false,  // tracks if server has a password stored
       skins: '', remote: false, ips: [],
       status: 'idle'   // idle | wait | ok | err
     });
@@ -323,6 +409,14 @@
       } catch {
         profiles = [blankProfile('Default')];
       }
+      
+      // Migration: add hasServerPassword field if missing
+      for (const p of profiles) {
+        if (typeof p.hasServerPassword === 'undefined') {
+          p.hasServerPassword = false;
+        }
+      }
+      
       const stored = localStorage.getItem(ACTIVE_KEY);
       activeId = profiles.find(p => p.id === stored) ? stored : profiles[0].id;
       save();
@@ -351,6 +445,14 @@
       F.db.value = p.db || '';
       F.user.value = p.user || '';
       F.pass.value = '';
+      
+      // Show placeholder if server has password
+      if (p.hasServerPassword && !p.nopass) {
+        F.pass.placeholder = '•••••• (сохранён на сервере)';
+      } else {
+        F.pass.placeholder = '••••••';
+      }
+      
       F.nopass.checked = !!p.nopass;
       F.pass.disabled = !!p.nopass;
       F.skins.value = p.skins || '';
@@ -367,8 +469,14 @@
       p.db = f.db;
       p.user = f.user;
       p.nopass = f.nopass;
-      if (f.nopass) { p.pass = ''; }
-      else if (f.pass) { p.pass = f.pass; }
+      if (f.nopass) { 
+        p.pass = '';
+        p.hasServerPassword = false;
+      } else if (f.pass) { 
+        p.pass = f.pass;
+        p.hasServerPassword = true;  // new password entered
+      }
+      // else: keep existing p.pass and p.hasServerPassword
       p.skins = f.skins;
       p.remote = f.remote;
       p.ips = f.ips;
@@ -378,14 +486,32 @@
        Server communication
        ═══════════════════════════════════════════ */
     const pushToServer = async p => {
-      return EditorCore.DB.saveConfig({
+      const payload = {
         host: p.host, port: p.port,
         database: p.db, user: p.user,
-        password: p.pass || '',
         skins_api: p.skins,
         allow_remote_editor: p.remote,
         allowed_editor_ips: p.ips
-      });
+      };
+      
+      // Handle password carefully
+      if (p.nopass) {
+        // User explicitly wants no password — clear it on server
+        payload.clear_password = true;
+        payload.password = '';
+      } else if (p.pass) {
+        // User provided a new password
+        payload.password = p.pass;
+      } else if (!p.hasServerPassword) {
+        // Profile has no password and server password was never set — clear it
+        payload.clear_password = true;
+        payload.password = '';
+      } else {
+        // Profile has hasServerPassword=true but no pass in memory — keep server password
+        payload.password = '';
+      }
+      
+      return EditorCore.DB.saveConfig(payload);
     };
 
     const testConn = async p => {
@@ -439,6 +565,15 @@
 
         const tr = await testConn(p);
         if (tr.ok) {
+          // Connection successful — update hasServerPassword flag
+          if (p.nopass) {
+            p.hasServerPassword = false;
+          } else if (p.pass) {
+            p.hasServerPassword = true;  // new password was sent
+          }
+          // else: keep existing hasServerPassword value (server used stored password)
+          save();
+          formWrite(p);  // Update placeholder
           toast(`Подключено: ${p.name}`, 'success');
           setStatus(`OK — «${p.name}» · ${tr.server || ''}`, 'ok');
         } else {
@@ -595,6 +730,16 @@
 
         const tr = await testConn(p);
         if (tr.ok) {
+          // Connection successful — update hasServerPassword flag
+          // hasServerPassword = true only if we actually sent a password to server
+          if (p.nopass) {
+            p.hasServerPassword = false;
+          } else if (p.pass) {
+            p.hasServerPassword = true;  // new password was sent
+          }
+          // else: keep existing hasServerPassword value
+          save();
+          formWrite(p);  // Update placeholder
           setStatus(`Сохранено и подключено. Server: ${tr.server || ''}`, 'ok');
         } else {
           setStatus(`Сохранено, но подключение не удалось: ${tr.error || ''}`, 'err');
@@ -621,6 +766,15 @@
 
         const tr = await testConn(p);
         if (tr.ok) {
+          // Connection successful — update hasServerPassword flag
+          if (p.nopass) {
+            p.hasServerPassword = false;
+          } else if (p.pass) {
+            p.hasServerPassword = true;  // new password was sent
+          }
+          // else: keep existing hasServerPassword value
+          save();
+          formWrite(p);  // Update placeholder
           toast('Соединение OK', 'success');
           setStatus(`OK. Server: ${tr.server || ''}`, 'ok');
         } else {
@@ -715,6 +869,7 @@
           p.skins = c.skins_api || '';
           p.remote = !!c.allow_remote_editor;
           p.ips = Array.isArray(c.allowed_editor_ips) ? c.allowed_editor_ips : [];
+          // Don't set hasServerPassword yet — we'll detect it via testConnection
           save();
         }
       }
@@ -728,8 +883,20 @@
       if (p.host && p.db) {
         await pushToServer(p);
         const tr = await testConn(p);
-        if (tr.ok) setStatus(`Подключено: «${p.name}»`, 'ok');
-        else setStatus(`Ошибка: ${tr.error || ''}`, 'err');
+        if (tr.ok) {
+          // Connection successful — update hasServerPassword flag
+          if (p.nopass) {
+            p.hasServerPassword = false;
+          } else if (p.pass) {
+            p.hasServerPassword = true;
+          }
+          // else: keep existing hasServerPassword value
+          save();
+          formWrite(p);  // Update placeholder
+          setStatus(`Подключено: «${p.name}»`, 'ok');
+        } else {
+          setStatus(`Ошибка: ${tr.error || ''}`, 'err');
+        }
       } else {
         setStatus('Заполните параметры подключения.', 'muted');
       }
@@ -745,7 +912,14 @@
     // No-password toggle
     F.nopass.addEventListener('change', () => {
       F.pass.disabled = F.nopass.checked;
-      if (F.nopass.checked) F.pass.value = '';
+      if (F.nopass.checked) {
+        F.pass.value = '';
+        F.pass.placeholder = '(без пароля)';
+      } else {
+        // Restore placeholder based on server state
+        const p = active();
+        F.pass.placeholder = p.hasServerPassword ? '•••••• (сохранён на сервере)' : '••••••';
+      }
     });
 
     // Remote toggle
@@ -775,8 +949,191 @@
       });
     });
 
+    // ═══════════════════════════════════════════
+    // Sync Profiles Management
+    // ═══════════════════════════════════════════
+    const syncProfilesEl = $('sync-profiles');
+    const syncModal = $('sync-profile-modal');
+    const syncModalTitle = $('sync-modal-title');
+    const syncModalStatus = $('sync-modal-status');
+    let syncEditingId = null;
+
+    const setSyncModalStatus = (msg, tone = 'muted') => {
+      if (!syncModalStatus) return;
+      syncModalStatus.textContent = msg;
+      syncModalStatus.className = 'mt-3 text-sm';
+      if (tone === 'ok') syncModalStatus.classList.add('text-emerald-400');
+      else if (tone === 'err') syncModalStatus.classList.add('text-red-400');
+      else syncModalStatus.classList.add('editor-muted-text');
+    };
+
+    const renderSyncProfiles = async () => {
+      if (!syncProfilesEl) return;
+      try {
+        const res = await EditorCore.Sync.listProfiles();
+        if (!res.ok) {
+          syncProfilesEl.innerHTML = `<div class="text-red-400 text-sm">Ошибка загрузки: ${esc(res.error || '')}</div>`;
+          return;
+        }
+
+        const profiles = res.profiles || [];
+        const targetId = res.target_profile_id || '';
+
+        if (!profiles.length) {
+          syncProfilesEl.innerHTML = `
+            <div class="editor-muted-text text-sm p-4 text-center" style="border: 1px dashed var(--editor-border); border-radius: 10px;">
+              Нет настроенных профилей синхронизации. Нажмите «Добавить профиль» для создания.
+            </div>
+          `;
+          return;
+        }
+
+        syncProfilesEl.innerHTML = profiles.map(p => {
+          const isTarget = p.id === targetId;
+          return `
+            <div class="editor-sync-profile-card ${isTarget ? 'is-target' : ''}" data-profile-id="${esc(p.id)}">
+              <div class="editor-sync-profile-info">
+                <div class="editor-sync-profile-name">
+                  ${esc(p.name || 'Unnamed')}
+                  ${isTarget ? '<span class="text-xs ml-2 px-2 py-0.5 rounded-full" style="background: rgba(114,214,192,.12); border: 1px solid rgba(114,214,192,.3); color: #72d6c0;">Целевая</span>' : ''}
+                </div>
+                <div class="editor-sync-profile-details">
+                  ${esc(p.database || '')} @ ${esc(p.host || '')}:${p.port || 3306} • user: ${esc(p.user || '')}
+                </div>
+              </div>
+              <div class="editor-sync-profile-actions">
+                ${!isTarget ? `<button class="editor-btn editor-btn-secondary text-xs" data-sync-set="${esc(p.id)}" style="padding:4px 10px"><i class="fa-solid fa-bullseye"></i><span>Целевая</span></button>` : ''}
+                <button class="editor-btn editor-btn-secondary text-xs" data-sync-edit="${esc(p.id)}" style="padding:4px 10px"><i class="fa-solid fa-pen"></i><span>Изменить</span></button>
+                <button class="editor-btn editor-btn-danger text-xs" data-sync-del="${esc(p.id)}" style="padding:4px 10px"><i class="fa-solid fa-trash"></i><span>Удалить</span></button>
+              </div>
+            </div>
+          `;
+        }).join('');
+
+        // Bind actions
+        syncProfilesEl.querySelectorAll('[data-sync-set]').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const id = btn.getAttribute('data-sync-set');
+            const profile = profiles.find(p => p.id === id);
+            if (!profile) return;
+            try {
+              await EditorCore.Sync.setAsTarget(profile.id);
+              toast('Целевое подключение обновлено', 'success');
+              renderSyncProfiles();
+            } catch (err) {
+              toast(err.message || 'Ошибка', 'error');
+            }
+          });
+        });
+
+        syncProfilesEl.querySelectorAll('[data-sync-edit]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const id = btn.getAttribute('data-sync-edit');
+            const profile = profiles.find(p => p.id === id);
+            if (!profile) return;
+            openSyncProfileModal(profile);
+          });
+        });
+
+        syncProfilesEl.querySelectorAll('[data-sync-del]').forEach(btn => {
+          btn.addEventListener('click', async () => {
+            const id = btn.getAttribute('data-sync-del');
+            const profile = profiles.find(p => p.id === id);
+            if (!profile || !confirm(`Удалить профиль «${profile.name}»?`)) return;
+            try {
+              await EditorCore.Sync.saveTarget({ profile_id: id, remove: true });
+              toast('Профиль удалён', 'success');
+              renderSyncProfiles();
+            } catch (err) {
+              toast(err.message || 'Ошибка', 'error');
+            }
+          });
+        });
+
+      } catch (err) {
+        syncProfilesEl.innerHTML = `<div class="text-red-400 text-sm">Ошибка: ${esc(err.message)}</div>`;
+      }
+    };
+
+    const openSyncProfileModal = (profile = null) => {
+      syncEditingId = profile?.id || null;
+      syncModalTitle.textContent = profile ? 'Редактировать профиль' : 'Новый профиль синхронизации';
+      $('sync-f-name').value = profile?.name || '';
+      $('sync-f-host').value = profile?.host || '';
+      $('sync-f-port').value = profile?.port || 3306;
+      $('sync-f-db').value = profile?.database || '';
+      $('sync-f-user').value = profile?.user || '';
+      $('sync-f-pass').value = '';
+      $('sync-f-set-target').checked = !profile;
+      setSyncModalStatus('');
+      syncModal.classList.remove('hidden');
+      syncModal.classList.add('flex');
+      $('sync-f-name').focus();
+    };
+
+    const closeSyncProfileModal = () => {
+      syncModal.classList.add('hidden');
+      syncModal.classList.remove('flex');
+    };
+
+    $('btn-sync-add')?.addEventListener('click', () => openSyncProfileModal());
+    $('sync-modal-cancel')?.addEventListener('click', closeSyncProfileModal);
+    syncModal?.addEventListener('click', (e) => { if (e.target === syncModal) closeSyncProfileModal(); });
+
+    $('sync-modal-save')?.addEventListener('click', async () => {
+      const name = $('sync-f-name').value.trim();
+      const host = $('sync-f-host').value.trim();
+      const port = Number($('sync-f-port').value) || 3306;
+      const db = $('sync-f-db').value.trim();
+      const user = $('sync-f-user').value.trim();
+      const pass = $('sync-f-pass').value;
+      const setAsTarget = $('sync-f-set-target').checked;
+
+      if (!host || !db || !user) {
+        setSyncModalStatus('Заполните Host, Database и User', 'err');
+        return;
+      }
+
+      const profileId = syncEditingId || uid();
+      const btn = $('sync-modal-save');
+      btn.disabled = true;
+      setSyncModalStatus('Проверка подключения…');
+
+      try {
+        const res = await EditorCore.Sync.saveTarget({
+          profile_id: profileId,
+          profile_name: name || `${host}:${port}/${db}`,
+          host,
+          port,
+          database: db,
+          user,
+          password: pass,
+          set_as_target: setAsTarget,
+        });
+
+        if (!res.ok) {
+          setSyncModalStatus(res.error || 'Ошибка сохранения', 'err');
+          return;
+        }
+
+        setSyncModalStatus(`Подключено! Server: ${res.server || 'OK'}`, 'ok');
+        toast('Профиль сохранён', 'success');
+        setTimeout(() => {
+          closeSyncProfileModal();
+          renderSyncProfiles();
+        }, 800);
+
+      } catch (err) {
+        setSyncModalStatus(err.message || 'Ошибка', 'err');
+      } finally {
+        btn.disabled = false;
+      }
+    });
+
     // Boot
     init();
+    // Load sync profiles after init
+    setTimeout(() => renderSyncProfiles(), 100);
   </script>
 </body>
 </html>

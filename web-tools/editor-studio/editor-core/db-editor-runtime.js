@@ -349,6 +349,7 @@
         setStatus('Сохранение…');
         try {
           if (state.selectedId) {
+            // DBCrud auto-records for sync
             await window.EditorCore.DBCrud.update(resource, state.selectedId, payload);
             setStatus('Изменения сохранены.', 'ok');
             toast('Сохранено', 'success');
@@ -373,6 +374,7 @@
         if (!confirm('Удалить запись?')) return;
         setStatus('Удаление…');
         try {
+          // DBCrud auto-records for sync
           await window.EditorCore.DBCrud.remove(resource, state.selectedId);
           toast('Удалено', 'success');
           setStatus('Удалено.', 'ok');
@@ -427,6 +429,13 @@
       }
 
       window.addEventListener('message', onDirtyStatusRequest);
+
+      // Mount sync button in the toolbar if actions area exists
+      const actionsArea = root.querySelector('.editor-page-actions') || root.querySelector('.flex.flex-wrap.gap-2');
+      if (actionsArea && window.EditorCore?.Sync?.mountSyncButton) {
+        const editorName = cfg.editorName || cfg.title || resource;
+        window.EditorCore.Sync.mountSyncButton(actionsArea, { editorName });
+      }
 
       loadList();
       setHeader();

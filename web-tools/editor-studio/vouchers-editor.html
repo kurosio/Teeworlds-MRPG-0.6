@@ -432,13 +432,14 @@
         return;
       }
       if (STATE.selectedId) {
+        // DBCrud auto-records for sync
         await window.EditorCore.DBCrud.update(RESOURCE, STATE.selectedId, payload);
         window.EditorCore.UI.toast('Сохранено', 'success');
       } else {
         const created = await window.EditorCore.DBCrud.create(RESOURCE, payload);
-        window.EditorCore.UI.toast('Создано', 'success');
         STATE.selectedId = Number(created.id || 0);
         STATE.lastSelectedIdBeforeCreate = 0;
+        window.EditorCore.UI.toast('Создано', 'success');
       }
       await loadList();
       if (STATE.selectedId) await selectVoucher(STATE.selectedId);
@@ -474,6 +475,7 @@
     const deleteVoucher = async () => {
       if (!STATE.selectedId) return;
       const id = STATE.selectedId;
+      // DBCrud auto-records for sync
       await window.EditorCore.DBCrud.remove(RESOURCE, id);
       window.EditorCore.UI.toast('Удалено', 'success');
       STATE.selectedId = 0;

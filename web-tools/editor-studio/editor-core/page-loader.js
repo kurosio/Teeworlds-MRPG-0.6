@@ -30,6 +30,7 @@
     '<script src="editor-core/utils.js"></script>',
     '<script src="editor-core/bootstrap.js"></script>',
     '<script src="editor-core/db-editor-runtime.js"></script>',
+    '<script src="editor-core/db-sync.js"></script>',
     `<script>
       if (window.EditorCore?.bootstrapEditor) {
         window.EditorCoreBootstrap = window.EditorCore.bootstrapEditor();

@@ -67,6 +67,9 @@
     .join('&');
 
   const DBCrud = {
+    // Flag to prevent double-recording when runtime already records
+    _syncRecordEnabled: true,
+
     async list(resource, { search = '', limit = 100, offset = 0, signal } = {}) {
       const key = `list:${resource}:${search}:${limit}:${offset}`;
       const now = Date.now();
@@ -89,17 +92,79 @@
     async get(resource, id) {
       return jsonFetch(`${API}?${qs({ action: 'get', resource, id })}`);
     },
-    async create(resource, data) {
+    async create(resource, data, { _skipSyncRecord = false } = {}) {
       listCache.clear();
-      return jsonFetch(`${API}?${qs({ action: 'create', resource })}`, { method: 'POST', body: JSON.stringify({ data }) });
+      
+      // Validate inputs
+      if (!resource || !data) {
+        throw new Error('Resource and data are required for create');
+      }
+      
+      const res = await jsonFetch(`${API}?${qs({ action: 'create', resource })}`, { method: 'POST', body: JSON.stringify({ data }) });
+      
+      // Auto-record for sync (if not explicitly skipped by the runtime which records itself)
+      if (!_skipSyncRecord && DBCrud._syncRecordEnabled && window.EditorCore?.Sync && res?.id) {
+        try {
+          window.EditorCore.Sync.record(resource, 'create', {
+            id: res.id,
+            data: data,
+            label: `Создание ${resource} #${res.id}`
+          });
+          window.EditorCore.Sync.updateAllBadges();
+        } catch (err) {
+          console.warn('[DBCrud] Failed to record create operation:', err.message);
+        }
+      }
+      return res;
     },
-    async update(resource, id, data) {
+    async update(resource, id, data, { _skipSyncRecord = false } = {}) {
       listCache.clear();
-      return jsonFetch(`${API}?${qs({ action: 'update', resource, id })}`, { method: 'POST', body: JSON.stringify({ data }) });
+      
+      // Validate inputs
+      if (!resource || !id || !data) {
+        throw new Error('Resource, id, and data are required for update');
+      }
+      
+      const res = await jsonFetch(`${API}?${qs({ action: 'update', resource, id })}`, { method: 'POST', body: JSON.stringify({ data }) });
+      
+      // Auto-record for sync
+      if (!_skipSyncRecord && DBCrud._syncRecordEnabled && window.EditorCore?.Sync) {
+        try {
+          window.EditorCore.Sync.record(resource, 'update', {
+            id: id,
+            data: data,
+            label: `Обновление ${resource} #${id}`
+          });
+          window.EditorCore.Sync.updateAllBadges();
+        } catch (err) {
+          console.warn('[DBCrud] Failed to record update operation:', err.message);
+        }
+      }
+      return res;
     },
-    async remove(resource, id) {
+    async remove(resource, id, { _skipSyncRecord = false } = {}) {
       listCache.clear();
-      return jsonFetch(`${API}?${qs({ action: 'delete', resource, id })}`, { method: 'POST', body: JSON.stringify({}) });
+      
+      // Validate inputs
+      if (!resource || !id) {
+        throw new Error('Resource and id are required for remove');
+      }
+      
+      const res = await jsonFetch(`${API}?${qs({ action: 'delete', resource, id })}`, { method: 'POST', body: JSON.stringify({}) });
+      
+      // Auto-record for sync
+      if (!_skipSyncRecord && DBCrud._syncRecordEnabled && window.EditorCore?.Sync) {
+        try {
+          window.EditorCore.Sync.record(resource, 'delete', {
+            id: id,
+            label: `Удаление ${resource} #${id}`
+          });
+          window.EditorCore.Sync.updateAllBadges();
+        } catch (err) {
+          console.warn('[DBCrud] Failed to record delete operation:', err.message);
+        }
+      }
+      return res;
     }
   };
 
