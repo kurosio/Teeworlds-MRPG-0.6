@@ -7,6 +7,9 @@
 //  - get_target       (GET)  : get configured target profile (safe — no passwords)
 //  - save_target      (POST) : persist target profile
 //  - list_profiles    (GET)  : list available DB profiles (safe — no passwords)
+//  - sync_map        (GET)  : table map (push/pull directions per table)
+//  - pull_preview    (POST) : reverse sync dry-run (target → current DB)
+//  - pull_from_target(POST) : reverse sync — overwrite current DB from target (no accounts)
 
 declare(strict_types=1);
 
@@ -290,18 +293,18 @@ function compare_schemas(array $sourceSchema, array $targetSchema, array $whitel
 function get_resource_whitelist(): array
 {
     return [
-        'vouchers'   => ['table' => 'tw_voucher',    'pk' => 'ID', 'columns' => ['Code', 'Data', 'Multiple', 'ValidUntil'], 'json' => ['Data']],
-        'bots_mobs'  => ['table' => 'tw_bots_mobs',  'pk' => 'ID', 'columns' => ['BotID','WorldID','PositionX','PositionY','Debuffs','Behavior','Level','Power','Number','Respawn','Radius','ActiveRadius','Boss','it_drop_0','it_drop_1','it_drop_2','it_drop_3','it_drop_4','it_drop_count','it_drop_chance']],
-        'bots_info'  => ['table' => 'tw_bots_info',  'pk' => 'ID', 'columns' => ['Name','JsonTeeInfo','EquippedModules','SlotHammer','SlotGun','SlotShotgun','SlotGrenade','SlotRifle','SlotArmor']],
-        'bots_npc'   => ['table' => 'tw_bots_npc',   'pk' => 'ID', 'columns' => ['BotID','PosX','PosY','GiveQuestID','DialogData','Function','Static','Emote','WorldID'], 'json' => ['DialogData']],
-        'crafts'     => ['table' => 'tw_crafts_list','pk' => 'ID', 'columns' => ['GroupName','ItemID','ItemValue','RequiredItems','Price','WorldID']],
-        'warehouses' => ['table' => 'tw_warehouses', 'pk' => 'ID', 'columns' => ['Name','Type','Trades','PosX','PosY','StorageData','Currency','WorldID']],
-        'worlds'     => ['table' => 'tw_worlds',     'pk' => 'ID', 'columns' => ['Name','Path','Type','Flags','RespawnWorldID','JailWorldID','RequiredLevel']],
-        'aethers'    => ['table' => 'tw_aethers',    'pk' => 'ID', 'columns' => ['Name','WorldID','TeleX','TeleY']],
-        'items'      => ['table' => 'tw_items_list', 'pk' => 'ID', 'columns' => ['Comment','Name','Description','Group','Type','Flags','ScenarioMode','ScenarioData','InitialPrice','RequiresProducts','AT1','AT2','ATValue1','ATValue2','Data'], 'json' => ['Data']],
-        'dungeons'   => ['table' => 'tw_dungeons',   'pk' => 'ID', 'columns' => ['Level','DoorX','DoorY','Scenario','WorldID','TimeLimit']],
-        'quests'     => ['table' => 'tw_quests_list','pk' => 'ID', 'columns' => ['NextQuestID','Name','Money','Exp','Flags']],
-        'quest_bots' => ['table' => 'tw_bots_quest', 'pk' => 'ID', 'columns' => ['BotID','QuestID','Step','WorldID','PosX','PosY','AutoFinish','DialogData','ScenarioData','TasksData'], 'json' => ['DialogData','TasksData']],
+        'vouchers'   => ['table' => 'tw_voucher',    'pk' => 'ID', 'columns' => ['Code', 'Data', 'Multiple', 'ValidUntil'], 'json' => ['Data'], 'editor' => 'vouchers-editor.html'],
+        'bots_mobs'  => ['table' => 'tw_bots_mobs',  'pk' => 'ID', 'columns' => ['BotID','WorldID','PositionX','PositionY','Debuffs','Behavior','Level','Power','Number','Respawn','Radius','ActiveRadius','Boss','it_drop_0','it_drop_1','it_drop_2','it_drop_3','it_drop_4','it_drop_count','it_drop_chance'], 'editor' => 'mobs-editor.html'],
+        'bots_info'  => ['table' => 'tw_bots_info',  'pk' => 'ID', 'columns' => ['Name','JsonTeeInfo','EquippedModules','SlotHammer','SlotGun','SlotShotgun','SlotGrenade','SlotRifle','SlotArmor'], 'editor' => 'bots-info-editor.html'],
+        'bots_npc'   => ['table' => 'tw_bots_npc',   'pk' => 'ID', 'columns' => ['BotID','PosX','PosY','GiveQuestID','DialogData','Function','Static','Emote','WorldID'], 'json' => ['DialogData'], 'editor' => 'bots-npc-editor.html'],
+        'crafts'     => ['table' => 'tw_crafts_list','pk' => 'ID', 'columns' => ['GroupName','ItemID','ItemValue','RequiredItems','Price','WorldID'], 'editor' => 'crafts-editor.html'],
+        'warehouses' => ['table' => 'tw_warehouses', 'pk' => 'ID', 'columns' => ['Name','Type','Trades','PosX','PosY','StorageData','Currency','WorldID'], 'editor' => 'warehouse-editor.html'],
+        'worlds'     => ['table' => 'tw_worlds',     'pk' => 'ID', 'columns' => ['Name','Path','Type','Flags','RespawnWorldID','JailWorldID','RequiredLevel'], 'editor' => 'worlds-editor.html'],
+        'aethers'    => ['table' => 'tw_aethers',    'pk' => 'ID', 'columns' => ['Name','WorldID','TeleX','TeleY'], 'editor' => 'aethers-editor.html'],
+        'items'      => ['table' => 'tw_items_list', 'pk' => 'ID', 'columns' => ['Comment','Name','Description','Group','Type','Flags','ScenarioMode','ScenarioData','InitialPrice','RequiresProducts','AT1','AT2','ATValue1','ATValue2','Data'], 'json' => ['Data'], 'editor' => 'items-editor.html'],
+        'dungeons'   => ['table' => 'tw_dungeons',   'pk' => 'ID', 'columns' => ['Level','DoorX','DoorY','Scenario','WorldID','TimeLimit'], 'editor' => 'dungeons-editor.html'],
+        'quests'     => ['table' => 'tw_quests_list','pk' => 'ID', 'columns' => ['NextQuestID','Name','Money','Exp','Flags'], 'editor' => 'quests-editor.html'],
+        'quest_bots' => ['table' => 'tw_bots_quest', 'pk' => 'ID', 'columns' => ['BotID','QuestID','Step','WorldID','PosX','PosY','AutoFinish','DialogData','ScenarioData','TasksData'], 'json' => ['DialogData','TasksData'], 'editor' => 'quests-editor.html'],
     ];
 }
 
@@ -915,6 +918,471 @@ function handle_apply_operations(): never
     }
 }
 
+// ── Reverse sync: target → current DB ───────────────────────────────────────
+//
+// Overwrites the data of the CURRENT (editor) database with the data of the
+// TARGET profile. Everything is copied except account data:
+//  - tw_accounts and tw_accounts_* are never touched;
+//  - tables that reference account tables via FK (e.g. tw_groups, tw_guilds_invites)
+//    are skipped too, otherwise they would point at accounts that stay local.
+// Copy runs in one transaction. FK checks are disabled for the session, so
+// DELETE does not cascade into the untouched account tables.
+// The client creates a full DB dump (db-maintenance.php) right before the call.
+
+const PULL_CONFIRM_PHRASES = ['ПЕРЕЗАПИСАТЬ', 'OVERWRITE'];
+const PULL_BATCH_ROWS      = 500;
+const PULL_BATCH_BYTES     = 4194304;
+
+function sync_is_account_table(string $table): bool
+{
+    return $table === 'tw_accounts' || str_starts_with($table, 'tw_accounts_');
+}
+
+/**
+ * Foreign keys of the connected DB: [table => [referenced tables...]].
+ */
+function fetch_fk_parents(mysqli $mysqli): array
+{
+    $parents = [];
+    $res = $mysqli->query(
+        'SELECT DISTINCT TABLE_NAME, REFERENCED_TABLE_NAME FROM information_schema.KEY_COLUMN_USAGE '
+        . 'WHERE TABLE_SCHEMA = DATABASE() AND REFERENCED_TABLE_NAME IS NOT NULL'
+    );
+    if (!$res) {
+        throw new RuntimeException('Не удалось прочитать внешние ключи: ' . $mysqli->error);
+    }
+    while ($row = $res->fetch_assoc()) {
+        $parents[(string)$row['TABLE_NAME']][] = (string)$row['REFERENCED_TABLE_NAME'];
+    }
+    $res->free();
+    return $parents;
+}
+
+/**
+ * Decide which tables are overwritten by the reverse sync.
+ * Returns [table => ['pull' => bool, 'reason' => string]] for every given table.
+ */
+function build_pull_policy(array $tables, array $fkParents): array
+{
+    $policy   = [];
+    $excluded = [];
+
+    foreach ($tables as $t) {
+        if (sync_is_account_table($t)) {
+            $policy[$t]   = ['pull' => false, 'reason' => 'аккаунты'];
+            $excluded[$t] = true;
+        }
+    }
+
+    // A table referencing an excluded table is excluded too (fixpoint).
+    do {
+        $changed = false;
+        foreach ($tables as $t) {
+            if (isset($excluded[$t])) {
+                continue;
+            }
+            foreach (($fkParents[$t] ?? []) as $parent) {
+                if (isset($excluded[$parent])) {
+                    $excluded[$t] = true;
+                    $policy[$t]   = ['pull' => false, 'reason' => "ссылается на аккаунты: '{$parent}'"];
+                    $changed      = true;
+                    break;
+                }
+            }
+        }
+    } while ($changed);
+
+    foreach ($tables as $t) {
+        if (!isset($policy[$t])) {
+            $policy[$t] = ['pull' => true, 'reason' => ''];
+        }
+    }
+    return $policy;
+}
+
+function fetch_auto_increments(mysqli $mysqli): array
+{
+    $values = [];
+    $res = $mysqli->query(
+        'SELECT TABLE_NAME, AUTO_INCREMENT FROM information_schema.TABLES '
+        . 'WHERE TABLE_SCHEMA = DATABASE() AND AUTO_INCREMENT IS NOT NULL'
+    );
+    if ($res) {
+        while ($row = $res->fetch_assoc()) {
+            $values[(string)$row['TABLE_NAME']] = (int)$row['AUTO_INCREMENT'];
+        }
+        $res->free();
+    }
+    return $values;
+}
+
+function count_table_rows(mysqli $mysqli, string $table): int
+{
+    $res = $mysqli->query('SELECT COUNT(*) AS c FROM `' . str_replace('`', '``', $table) . '`');
+    if (!$res) {
+        throw new RuntimeException("Не удалось посчитать строки '{$table}': " . $mysqli->error);
+    }
+    $row = $res->fetch_assoc();
+    $res->free();
+    return (int)($row['c'] ?? 0);
+}
+
+function quote_ident(string $name): string
+{
+    return '`' . str_replace('`', '``', $name) . '`';
+}
+
+/**
+ * Reverse-sync plan: tables to overwrite, skipped tables, schema comparison.
+ * $remote is the source (target profile), $local is the destination (current DB).
+ */
+function build_pull_plan(mysqli $local, mysqli $remote): array
+{
+    $localSchema  = fetch_schema($local);
+    $remoteSchema = fetch_schema($remote);
+
+    $fkParents = fetch_fk_parents($local);
+    foreach (fetch_fk_parents($remote) as $t => $refs) {
+        $fkParents[$t] = array_values(array_unique(array_merge($fkParents[$t] ?? [], $refs)));
+    }
+
+    $allTables = array_values(array_unique(array_merge(array_keys($localSchema), array_keys($remoteSchema))));
+    sort($allTables);
+    $policy = build_pull_policy($allTables, $fkParents);
+
+    $pullTables = [];
+    $skipped    = [];
+    foreach (array_keys($remoteSchema) as $t) {
+        if ($policy[$t]['pull']) {
+            $pullTables[] = $t;
+        } else {
+            $skipped[] = ['table' => $t, 'reason' => $policy[$t]['reason']];
+        }
+    }
+
+    return [
+        'tables'     => $pullTables,
+        'skipped'    => $skipped,
+        'local_only' => array_values(array_diff(array_keys($localSchema), array_keys($remoteSchema))),
+        'comparison' => compare_schemas($remoteSchema, $localSchema, $pullTables),
+        'remote_schema' => $remoteSchema,
+    ];
+}
+
+/**
+ * Columns to copy for a table: all remote columns except generated ones.
+ */
+function pull_copy_columns(array $remoteSchema, string $table): array
+{
+    $cols = [];
+    foreach (($remoteSchema[$table]['columns'] ?? []) as $name => $def) {
+        if (stripos((string)($def['extra'] ?? ''), 'generated') !== false) {
+            continue;
+        }
+        $cols[] = (string)$name;
+    }
+    return $cols;
+}
+
+function sync_insert_rows(mysqli $mysqli, string $table, array $cols, array $rows): void
+{
+    $colSql = implode(',', array_map('quote_ident', $cols));
+    $values = [];
+    foreach ($rows as $row) {
+        $parts = [];
+        foreach ($cols as $c) {
+            $v = $row[$c] ?? null;
+            $parts[] = $v === null ? 'NULL' : "'" . $mysqli->real_escape_string((string)$v) . "'";
+        }
+        $values[] = '(' . implode(',', $parts) . ')';
+    }
+    $sql = 'INSERT INTO ' . quote_ident($table) . " ({$colSql}) VALUES " . implode(',', $values);
+    if (!$mysqli->query($sql)) {
+        throw new RuntimeException("Вставка в '{$table}' не удалась: " . $mysqli->error);
+    }
+}
+
+/**
+ * Stream all rows of $table from $remote into $local (table must be emptied before).
+ * Returns number of copied rows.
+ */
+function sync_copy_table(mysqli $remote, mysqli $local, string $table, array $cols): int
+{
+    $colSql = implode(',', array_map('quote_ident', $cols));
+    $res = $remote->query("SELECT {$colSql} FROM " . quote_ident($table), MYSQLI_USE_RESULT);
+    if (!$res) {
+        throw new RuntimeException("Чтение '{$table}' из целевой БД не удалось: " . $remote->error);
+    }
+
+    $copied = 0;
+    $batch  = [];
+    $bytes  = 0;
+    try {
+        while ($row = $res->fetch_assoc()) {
+            $batch[] = $row;
+            $copied++;
+            foreach ($row as $v) {
+                $bytes += $v === null ? 0 : strlen((string)$v);
+            }
+            if (count($batch) >= PULL_BATCH_ROWS || $bytes >= PULL_BATCH_BYTES) {
+                sync_insert_rows($local, $table, $cols, $batch);
+                $batch = [];
+                $bytes = 0;
+            }
+        }
+        if ($batch !== []) {
+            sync_insert_rows($local, $table, $cols, $batch);
+        }
+    } finally {
+        $res->free();
+    }
+    return $copied;
+}
+
+/**
+ * Resolve the target profile from the request (or the configured target).
+ */
+function require_target_profile(array $body): array
+{
+    $syncCfg  = load_sync_cfg();
+    $targetId = trim((string)($body['target_profile_id'] ?? ''));
+    if ($targetId === '') {
+        $targetId = (string)($syncCfg['target_profile_id'] ?? '');
+    }
+    if ($targetId === '') {
+        respond(['ok' => false, 'error' => 'Целевое подключение не настроено.'], 400);
+    }
+    foreach (($syncCfg['profiles'] ?? []) as $p) {
+        if (($p['id'] ?? '') === $targetId) {
+            return $p;
+        }
+    }
+    respond(['ok' => false, 'error' => 'Целевой профиль не найден.'], 404);
+}
+
+/**
+ * Refuse reverse sync when the target is the very same database (it would be wiped).
+ */
+function assert_target_is_not_current_db(array $targetProfile): void
+{
+    $cfg = load_cfg();
+    $normHost = static function (string $h): string {
+        $h = strtolower(trim($h));
+        return $h === 'localhost' ? '127.0.0.1' : $h;
+    };
+
+    $sameHost = $normHost((string)($cfg['host'] ?? '127.0.0.1')) === $normHost((string)($targetProfile['host'] ?? ''));
+    $samePort = (int)($cfg['port'] ?? 3306) === (int)($targetProfile['port'] ?? 3306);
+    $sameDb   = (string)($cfg['database'] ?? '') === (string)($targetProfile['database'] ?? '');
+
+    if ($sameHost && $samePort && $sameDb) {
+        respond([
+            'ok'    => false,
+            'error' => 'Целевая БД совпадает с текущей. Обратная синхронизация заблокирована, иначе данные будут стёрты.',
+        ], 400);
+    }
+}
+
+function connect_pull_pair(array $targetProfile): array
+{
+    try {
+        $local = db_connect();
+    } catch (Throwable $e) {
+        respond(['ok' => false, 'error' => 'Ошибка подключения к текущей БД: ' . $e->getMessage()], 500);
+    }
+    try {
+        $remote = db_connect_profile($targetProfile);
+    } catch (Throwable $e) {
+        $local->close();
+        respond(['ok' => false, 'error' => 'Ошибка подключения к целевой БД: ' . $e->getMessage()], 500);
+    }
+    return [$local, $remote];
+}
+
+// ── Action handlers: sync map & reverse sync ────────────────────────────────
+
+function handle_sync_map(): never
+{
+    try {
+        $local = db_connect();
+        try {
+            $schema = fetch_schema($local);
+            $fk     = fetch_fk_parents($local);
+        } finally {
+            $local->close();
+        }
+    } catch (Throwable $e) {
+        respond(['ok' => false, 'error' => 'Ошибка подключения к текущей БД: ' . $e->getMessage()], 500);
+    }
+
+    $byTable = [];
+    foreach (get_resource_whitelist() as $resource => $R) {
+        $byTable[$R['table']] = ['resource' => $resource, 'editor' => (string)($R['editor'] ?? '')];
+    }
+
+    $tables = array_values(array_unique(array_merge(array_keys($schema), array_keys($byTable))));
+    sort($tables);
+    $policy = build_pull_policy($tables, $fk);
+
+    $rows = [];
+    foreach ($tables as $t) {
+        $inWhitelist = isset($byTable[$t]);
+        $exists      = isset($schema[$t]);
+        $rows[] = [
+            'table'       => $t,
+            'exists'      => $exists,
+            'resource'    => $inWhitelist ? $byTable[$t]['resource'] : null,
+            'editor'      => $inWhitelist ? $byTable[$t]['editor'] : '',
+            'push'        => $inWhitelist && $exists,
+            'pull'        => $exists && $policy[$t]['pull'],
+            'pull_reason' => $policy[$t]['reason'],
+        ];
+    }
+
+    respond([
+        'ok'       => true,
+        'database' => (string)(load_cfg()['database'] ?? ''),
+        'tables'   => $rows,
+    ]);
+}
+
+function handle_pull_preview(): never
+{
+    $body   = read_json_body();
+    $target = require_target_profile($body);
+    assert_target_is_not_current_db($target);
+
+    [$local, $remote] = connect_pull_pair($target);
+    try {
+        $plan = build_pull_plan($local, $remote);
+
+        $tables = [];
+        foreach ($plan['tables'] as $t) {
+            $tables[] = [
+                'table'       => $t,
+                'rows_local'  => count_table_rows($local, $t),
+                'rows_target' => count_table_rows($remote, $t),
+            ];
+        }
+        $payload = [
+            'ok'         => true,
+            'comparison' => $plan['comparison'],
+            'local_database' => (string)(load_cfg()['database'] ?? ''),
+            'target'     => [
+                'name'     => $target['name'] ?? '',
+                'database' => $target['database'] ?? '',
+            ],
+            'tables'     => $tables,
+            'skipped'    => $plan['skipped'],
+            'local_only' => $plan['local_only'],
+        ];
+    } catch (Throwable $e) {
+        $payload = ['ok' => false, 'error' => $e->getMessage()];
+    } finally {
+        $local->close();
+        $remote->close();
+    }
+
+    respond($payload, $payload['ok'] ? 200 : 500);
+}
+
+function handle_pull_from_target(): never
+{
+    $body    = read_json_body();
+    $confirm = mb_strtoupper(trim((string)($body['confirm_phrase'] ?? '')), 'UTF-8');
+    if (!in_array($confirm, PULL_CONFIRM_PHRASES, true)) {
+        respond(['ok' => false, 'error' => 'Требуется подтверждение: введите «Перезаписать».'], 400);
+    }
+
+    $target = require_target_profile($body);
+    assert_target_is_not_current_db($target);
+
+    [$local, $remote] = connect_pull_pair($target);
+
+    $result = null;
+    try {
+        $plan = build_pull_plan($local, $remote);
+        if (!$plan['comparison']['compatible']) {
+            respond([
+                'ok'         => false,
+                'error'      => 'Структуры БД несовместимы. Загрузка невозможна.',
+                'comparison' => $plan['comparison'],
+            ], 400);
+        }
+        if ($plan['tables'] === []) {
+            respond(['ok' => false, 'error' => 'Нет таблиц для загрузки.'], 400);
+        }
+
+        @set_time_limit(900);
+
+        // Session settings: strict types on the copy, no FK cascades into account tables.
+        $local->query("SET SESSION FOREIGN_KEY_CHECKS = 0");
+        $local->query("SET SESSION sql_mode = CONCAT_WS(',', @@SESSION.sql_mode, 'STRICT_TRANS_TABLES')");
+
+        $tablesResult = [];
+        $totalRows    = 0;
+        $local->begin_transaction();
+        try {
+            foreach ($plan['tables'] as $t) {
+                $cols = pull_copy_columns($plan['remote_schema'], $t);
+                if ($cols === []) {
+                    continue;
+                }
+                if (!$local->query('DELETE FROM ' . quote_ident($t))) {
+                    throw new RuntimeException("Очистка '{$t}' не удалась: " . $local->error);
+                }
+                $rows = sync_copy_table($remote, $local, $t, $cols);
+                $tablesResult[] = ['table' => $t, 'rows' => $rows];
+                $totalRows += $rows;
+            }
+            $local->commit();
+        } catch (Throwable $e) {
+            $local->rollback();
+            respond([
+                'ok'        => false,
+                'error'     => 'Загрузка прервана, все изменения откачены: ' . $e->getMessage(),
+                'committed' => false,
+            ], 500);
+        }
+
+        // Keep AUTO_INCREMENT in line with the target so new records do not collide later.
+        $warnings = [];
+        $remoteAi = fetch_auto_increments($remote);
+        $localAi  = fetch_auto_increments($local);
+        foreach ($tablesResult as $item) {
+            $t = $item['table'];
+            $want = $remoteAi[$t] ?? 0;
+            if ($want > ($localAi[$t] ?? 0)) {
+                if (!$local->query('ALTER TABLE ' . quote_ident($t) . ' AUTO_INCREMENT = ' . (int)$want)) {
+                    $warnings[] = "AUTO_INCREMENT для '{$t}' не обновлён: " . $local->error;
+                }
+            }
+        }
+
+        $result = [
+            'ok'             => true,
+            'committed'      => true,
+            'tables'         => $tablesResult,
+            'total_rows'     => $totalRows,
+            'skipped'        => $plan['skipped'],
+            'local_database' => (string)(load_cfg()['database'] ?? ''),
+            'target'         => [
+                'name'     => $target['name'] ?? '',
+                'database' => $target['database'] ?? '',
+            ],
+            'warnings'       => $warnings,
+        ];
+    } catch (Throwable $e) {
+        $result = ['ok' => false, 'error' => $e->getMessage()];
+    } finally {
+        $local->query('SET SESSION FOREIGN_KEY_CHECKS = 1');
+        $local->close();
+        $remote->close();
+    }
+
+    respond($result, $result['ok'] ? 200 : 500);
+}
+
 // ── Router ──────────────────────────────────────────────────────────────────
 
 $action = (string)($_GET['action'] ?? '');
@@ -926,6 +1394,9 @@ $handlers = [
     'set_as_target'    => 'handle_set_as_target',
     'compare_schema'   => 'handle_compare_schema',
     'apply_operations' => 'handle_apply_operations',
+    'sync_map'         => 'handle_sync_map',
+    'pull_preview'     => 'handle_pull_preview',
+    'pull_from_target' => 'handle_pull_from_target',
 ];
 
 try {
