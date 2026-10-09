@@ -7,6 +7,7 @@
 //  - create (POST) : resource, {data:{...}}
 //  - update (POST) : resource, id, {data:{...}}
 //  - delete (POST) : resource, id
+//  - rename_group (POST, crafts only): atomic hierarchy rename
 
 declare(strict_types=1);
 
@@ -213,6 +214,83 @@ function normalize_bind_value(mixed $value, string $type): mixed {
   return (string)$value;
 }
 
+function parse_craft_group_name(string $value): array {
+  $raw = trim($value);
+  $main = '';
+  $nested = $raw;
+
+  if (str_starts_with($raw, '|')) {
+    $end = strpos($raw, '|', 1);
+    if ($end !== false) {
+      $main = trim(substr($raw, 1, $end - 1));
+      $nested = substr($raw, $end + 1);
+    } else {
+      $nested = substr($raw, 1);
+    }
+  }
+
+  $separator = strpos($nested, ':');
+  if ($separator === false) {
+    return ['main' => $main, 'group' => trim($nested), 'sub' => ''];
+  }
+
+  return [
+    'main' => $main,
+    'group' => trim(substr($nested, 0, $separator)),
+    'sub' => trim(substr($nested, $separator + 1)),
+  ];
+}
+
+function join_craft_group_name(string $main, string $group, string $sub): string {
+  $main = trim($main);
+  $group = trim($group);
+  $sub = trim($sub);
+  $nested = $group !== '' && $sub !== '' ? "$group:$sub" : ($group !== '' ? $group : $sub);
+
+  if ($main === '') return $nested;
+  return $nested === '' ? "|$main|" : "|$main|$nested";
+}
+
+function craft_text_length(string $value): int {
+  if (function_exists('mb_strlen')) return mb_strlen($value, 'UTF-8');
+  $matches = [];
+  $count = preg_match_all('/./us', $value, $matches);
+  return $count === false ? strlen($value) : $count;
+}
+
+function fetch_craft_group_rows(mysqli $mysqli, bool $forUpdate = false): array {
+  $lockSql = $forUpdate ? ' FOR UPDATE' : '';
+  $stmt = $mysqli->prepare("SELECT `ID`, `GroupName` FROM `tw_crafts_list` ORDER BY `ID` ASC$lockSql");
+  if ($stmt === false) throw new RuntimeException('Prepare failed');
+  $stmt->execute();
+  $res = $stmt->get_result();
+  $rows = [];
+  while ($row = $res->fetch_assoc()) $rows[] = $row;
+  $stmt->close();
+  return $rows;
+}
+
+function craft_rename_parent_matches(array $parts, string $level, string $main, string $group): bool {
+  if ($level === 'main') return true;
+  return $parts['main'] === $main && ($level === 'group' || $parts['group'] === $group);
+}
+
+function craft_rename_matches(array $parts, string $level, string $main, string $group, string $sub): bool {
+  if ($level === 'main') return $parts['main'] === $main;
+  if ($parts['main'] !== $main || $parts['group'] !== $group) return false;
+  return $level === 'group' || $parts['sub'] === $sub;
+}
+
+function craft_rename_name(array $parts, string $level): string {
+  return $level === 'main' ? $parts['main'] : ($level === 'group' ? $parts['group'] : $parts['sub']);
+}
+
+function craft_renamed_group_name(array $parts, string $level, string $newName): string {
+  if ($level === 'main') return join_craft_group_name($newName, $parts['group'], $parts['sub']);
+  if ($level === 'group') return join_craft_group_name($parts['main'], $newName, $parts['sub']);
+  return join_craft_group_name($parts['main'], $parts['group'], $newName);
+}
+
 $action = (string)($_GET['action'] ?? '');
 $resource = (string)($_GET['resource'] ?? '');
 
@@ -228,6 +306,92 @@ try {
   $searchCols = $R['search'] ?? [$pk];
 
   $mysqli = db_connect();
+
+  if ($action === 'rename_group') {
+    if ($resource !== 'crafts') {
+      $mysqli->close();
+      respond(['ok' => false, 'error' => 'This action is only available for crafts'], 400);
+    }
+
+    $body = read_json_body();
+    $level = (string)($body['level'] ?? '');
+    $mainValue = $body['mainGroup'] ?? '';
+    $groupValue = $body['group'] ?? '';
+    $subValue = $body['subGroup'] ?? '';
+    $mainGroup = trim(is_scalar($mainValue) ? (string)$mainValue : '');
+    $group = trim(is_scalar($groupValue) ? (string)$groupValue : '');
+    $subGroup = trim(is_scalar($subValue) ? (string)$subValue : '');
+    $currentName = $level === 'main' ? $mainGroup : ($level === 'group' ? $group : $subGroup);
+
+    if (!in_array($level, ['main', 'group', 'sub'], true) || $currentName === ''
+      || ($level === 'sub' && $group === '')) {
+      $mysqli->close();
+      respond(['ok' => false, 'error' => 'Invalid craft group target'], 400);
+    }
+
+
+    $newValue = $body['newGroup'] ?? '';
+    $newName = trim(is_scalar($newValue) ? (string)$newValue : '');
+    if ($newName === '' || str_contains($newName, ':') || str_contains($newName, '|')
+      || preg_match('//u', $newName) !== 1 || craft_text_length($newName) > 256) {
+      $mysqli->close();
+      respond(['ok' => false, 'error' => 'Некорректное новое имя группы. Не используйте : или |; максимум 256 символов.'], 400);
+    }
+    if ($newName === $currentName) {
+      $mysqli->close();
+      respond(['ok' => true, 'changed' => []]);
+    }
+
+    try {
+      $mysqli->begin_transaction();
+      $updates = [];
+      $merged = false;
+      foreach (fetch_craft_group_rows($mysqli, true) as $row) {
+        $parts = parse_craft_group_name((string)$row['GroupName']);
+        if (!craft_rename_parent_matches($parts, $level, $mainGroup, $group)) continue;
+        if (craft_rename_name($parts, $level) === $newName) $merged = true;
+        if (!craft_rename_matches($parts, $level, $mainGroup, $group, $subGroup)) continue;
+        $renamed = craft_renamed_group_name($parts, $level, $newName);
+        if (craft_text_length($renamed) > 256) {
+          throw new DomainException('Итоговое имя группы для крафта #' . (int)$row['ID'] . ' превышает 256 символов.');
+        }
+        $updates[] = ['ID' => (int)$row['ID'], 'old' => (string)$row['GroupName'], 'new' => $renamed];
+      }
+
+      if ($updates && $merged && ($body['mergeExisting'] ?? false) !== true) {
+        $mysqli->rollback();
+        $mysqli->close();
+        respond(['ok' => false, 'error' => 'Такое имя уже занято на этом уровне. Проверьте предупреждение и повторите.'], 409);
+      }
+
+      $changed = [];
+      if ($updates) {
+        $stmt = $mysqli->prepare('UPDATE `tw_crafts_list` SET `GroupName` = ? WHERE `ID` = ? AND `GroupName` = ? LIMIT 1');
+        if ($stmt === false) throw new RuntimeException('Prepare failed');
+        foreach ($updates as $update) {
+          $newGroupName = $update['new'];
+          $id = $update['ID'];
+          $oldGroupName = $update['old'];
+          $stmt->bind_param('sis', $newGroupName, $id, $oldGroupName);
+          $stmt->execute();
+          if ($stmt->affected_rows !== 1) throw new RuntimeException('Craft #' . $id . ' changed during rename');
+          $changed[] = ['ID' => $id, 'newGroupName' => $newGroupName];
+        }
+        $stmt->close();
+      }
+      $mysqli->commit();
+    } catch (DomainException $e) {
+      $mysqli->rollback();
+      $mysqli->close();
+      respond(['ok' => false, 'error' => $e->getMessage()], 400);
+    } catch (Throwable $e) {
+      $mysqli->rollback();
+      throw $e;
+    }
+
+    $mysqli->close();
+    respond(['ok' => true, 'changed' => $changed]);
+  }
 
   if ($action === 'list') {
     $search = trim((string)($_GET['search'] ?? ''));

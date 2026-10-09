@@ -9,14 +9,17 @@
 
   <style>
     /* Craft list separators (small local cosmetics; layout comes from editor-template.css) */
-    .crafts-group-btn{border-bottom:1px solid var(--editor-soft-border)}
+    .crafts-group-header,.crafts-subgroup-header{display:flex;align-items:center;justify-content:space-between;gap:8px;border-bottom:1px solid var(--editor-soft-border)}
+    .crafts-group-btn{flex:1;min-width:0;border-bottom:0;text-align:left}
+    .crafts-group-rename{align-self:center;min-width:34px;min-height:34px;margin:2px 5px 2px 0;padding:6px}
+    .crafts-subgroup-header{padding:4px 10px 4px 24px;font-size:12px;font-weight:600}
     .crafts-item{border-bottom:1px solid var(--editor-soft-border)}
     .crafts-item:last-child{border-bottom:0}
 
     /* Main craft fields: 2-col grid with full-width selects */
     #form-main{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;align-items:start;}
-    #form-main [data-field-path="ItemID"]{grid-column:1 / -1;},
-    #form-main [data-field-path="WorldID"]
+    #form-main [data-field-path="ItemID"],
+    #form-main [data-field-path="WorldID"]{grid-column:1 / -1;}
     @media (max-width: 640px){#form-main{grid-template-columns:1fr;}}
 
     /* Required items: use new listMode=table; button should be full width */
@@ -168,6 +171,43 @@
         </div>
       </section>
     </div>
+
+    <div id="rename-group-modal" class="hidden fixed inset-0 editor-modal-backdrop z-[700] p-4" role="dialog" aria-modal="true" aria-labelledby="rename-group-heading" aria-hidden="true">
+      <div class="editor-modal-content w-full max-w-lg p-5 sm:p-6" role="document">
+        <div class="flex items-start gap-3">
+          <div class="editor-label-icon"><i class="fa-solid fa-pen-to-square"></i></div>
+          <div class="min-w-0 flex-1">
+            <h2 id="rename-group-heading" class="text-lg font-bold">Переименовать группу</h2>
+            <p id="rename-scope" class="editor-muted-text text-sm mt-1">Название изменится во всех связанных рецептах.</p>
+          </div>
+          <button id="btn-rename-close" type="button" class="editor-icon-btn" title="Закрыть" aria-label="Закрыть"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+
+        <div class="editor-section mt-4">
+          <div class="text-xs editor-muted-text">Изменяемый уровень</div>
+          <div id="rename-level" class="font-medium mt-1">Группа</div>
+          <div class="text-xs editor-muted-text mt-3">Путь в навигации</div>
+          <div id="rename-path" class="font-medium mt-1 break-words">—</div>
+          <div class="text-xs editor-muted-text mt-3">Текущее название</div>
+          <div id="rename-current-group" class="font-semibold mt-1 break-words">—</div>
+        </div>
+
+        <label id="rename-input-label" for="rename-group-input" class="block text-sm font-medium mt-4 mb-1">Новое название</label>
+        <input id="rename-group-input" type="text" maxlength="512" class="w-full editor-input form-input" autocomplete="off" placeholder="Введите название группы" />
+        <div id="rename-impact" class="editor-muted-text text-sm mt-2" aria-live="polite">Проверка рецептов…</div>
+        <div id="rename-existing-warning" class="hidden mt-3 p-3 rounded-lg border border-amber-400/30 bg-amber-400/10 text-sm text-amber-100" role="status">
+          На этом уровне уже есть элемент с таким названием. После переименования ветви объединятся.
+        </div>
+        <div id="rename-validation" class="hidden text-sm text-red-300 mt-2" role="alert"></div>
+        <div id="rename-error" class="hidden text-sm text-red-300 mt-2" role="alert"></div>
+        <div class="flex justify-end gap-2 mt-5 pt-4 border-t border-slate-200/30">
+          <button id="btn-rename-cancel" type="button" class="editor-btn editor-btn-secondary">Отмена</button>
+          <button id="btn-rename-confirm" type="button" class="editor-btn editor-btn-primary" disabled>
+            <i class="fa-solid fa-pen-to-square"></i><span>Переименовать</span>
+          </button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -206,6 +246,21 @@
       addReq: document.getElementById('btn-add-req'),
       toggleRaw: document.getElementById('btn-toggle-raw'),
       rawWrap: document.getElementById('raw-wrap'),
+      renameModal: document.getElementById('rename-group-modal'),
+      renameClose: document.getElementById('btn-rename-close'),
+      renameCancel: document.getElementById('btn-rename-cancel'),
+      renameConfirm: document.getElementById('btn-rename-confirm'),
+      renamePath: document.getElementById('rename-path'),
+      renameHeading: document.getElementById('rename-group-heading'),
+      renameInputLabel: document.getElementById('rename-input-label'),
+      renameLevel: document.getElementById('rename-level'),
+      renameScope: document.getElementById('rename-scope'),
+      renameCurrentGroup: document.getElementById('rename-current-group'),
+      renameInput: document.getElementById('rename-group-input'),
+      renameImpact: document.getElementById('rename-impact'),
+      renameExistingWarning: document.getElementById('rename-existing-warning'),
+      renameValidation: document.getElementById('rename-validation'),
+      renameError: document.getElementById('rename-error'),
     };
 
 
@@ -243,6 +298,20 @@
         worlds: new Map(),
       },
       groups: new Map(), // group -> Set(sub)
+      rowsHaveMore: false,
+      rename: {
+        level: 'group',
+        mainGroup: '',
+        group: '',
+        subGroup: '',
+        currentName: '',
+        count: 0,
+        forceMerge: false,
+        siblingNames: new Set(),
+        busy: false,
+        error: '',
+        returnFocus: null,
+      },
     };
 
     const setStatus = (message = '', tone = 'muted') =>
@@ -266,31 +335,140 @@
     const parseRequired = (s) => (window.EditorCore?.PairList?.parse ? window.EditorCore.PairList.parse(s) : []);
     const stringifyRequired = (arr) => (window.EditorCore?.PairList?.stringify ? window.EditorCore.PairList.stringify(arr) : '');
     const cssEscape = EditorCore.utils.cssEscape;
+    const escapeHtml = EditorCore.utils.escapeHtml;
+
+    const makeGroupKey = (mainGroup, group) => JSON.stringify([mainGroup, group]);
 
     const rebuildGroups = () => {
       const map = new Map();
+      const groupKeys = new Set();
       for (const r of STATE.rows) {
-        const { group, sub } = splitGroupName(r.GroupName);
+        const { main, group, sub } = splitGroupName(r.GroupName);
         const g = group || '(без группы)';
         if (!map.has(g)) map.set(g, new Set());
         if (sub) map.get(g).add(sub);
+        groupKeys.add(makeGroupKey(main, group));
       }
       STATE.groups = map;
 
       // By default all groups are collapsed (requested)
       if (!STATE.ui.initCollapsedDone) {
-        STATE.ui.collapsedGroups = new Set(map.keys());
+        STATE.ui.collapsedGroups = new Set(groupKeys);
         STATE.ui.initCollapsedDone = true;
       }
 
       // Cleanup collapsed state for removed groups
       if (STATE.ui?.collapsedGroups?.size) {
         const next = new Set();
-        for (const g of STATE.ui.collapsedGroups) {
-          if (map.has(g)) next.add(g);
+        for (const key of STATE.ui.collapsedGroups) {
+          if (groupKeys.has(key)) next.add(key);
         }
         STATE.ui.collapsedGroups = next;
       }
+    };
+
+    const pluralRu = (n, forms) => {
+      const value = Math.abs(Number(n) || 0) % 100;
+      const last = value % 10;
+      return value > 10 && value < 20 ? forms[2] : last > 1 && last < 5 ? forms[1] : last === 1 ? forms[0] : forms[2];
+    };
+    const countLabel = (n) => `${new Intl.NumberFormat('ru-RU').format(n)} ${pluralRu(n, ['рецепт', 'рецепта', 'рецептов'])}`;
+    const renameLabels = { main: 'Основная группа', group: 'Группа', sub: 'Подгруппа' };
+    const renameCases = { main: ['основную группу', 'основной группы'], group: ['группу', 'группы'], sub: ['подгруппу', 'подгруппы'] };
+    const renameScopeText = {
+      main: 'Переименуются все вложенные группы, подгруппы и их рецепты.',
+      group: 'Переименуются все рецепты этой группы и её подгрупп.',
+      sub: 'Переименуются все рецепты этой подгруппы.',
+    };
+    const getRenameName = (target = STATE.rename) => target.level === 'main'
+      ? target.mainGroup : target.level === 'group' ? target.group : target.subGroup;
+    const renameParentMatches = (parts, target) => target.level === 'main'
+      || (parts.main === target.mainGroup && (target.level === 'group' || parts.group === target.group));
+    const renameMatches = (parts, target) => renameParentMatches(parts, target) && (
+      target.level === 'main' ? parts.main === target.mainGroup
+        : target.level === 'group' ? parts.group === target.group
+          : parts.sub === target.subGroup
+    );
+    const renameSiblingName = (parts, level) => level === 'main' ? parts.main : level === 'group' ? parts.group : parts.sub;
+    const getRenameTarget = () => ({
+      level: STATE.rename.level,
+      mainGroup: STATE.rename.mainGroup,
+      group: STATE.rename.group,
+      subGroup: STATE.rename.subGroup,
+    });
+
+    const getRenameValidation = () => {
+      const next = String(els.renameInput.value || '').trim();
+      if (!next) return 'Введите новое название.';
+      if (next.includes(':') || next.includes('|')) return 'Символы «:» и «|» зарезервированы для структуры групп.';
+      if (Array.from(next).length > 256) return 'Максимальная длина — 256 символов.';
+      if (next === STATE.rename.currentName) return 'Новое название совпадает с текущим.';
+      return '';
+    };
+
+    const updateRenameDialog = () => {
+      const next = String(els.renameInput.value || '').trim();
+      const validation = getRenameValidation();
+      const duplicate = !!next && next !== STATE.rename.currentName && (
+        STATE.rename.siblingNames.has(next) || (STATE.rename.forceMerge && STATE.rename.forceMergeName === next)
+      );
+      const impact = STATE.rowsHaveMore ? `В загруженном списке: минимум ${countLabel(STATE.rename.count)}. Сервер обновит все записи этой ветви.`
+        : `Будет обновлено ${countLabel(STATE.rename.count)}.`;
+      els.renameImpact.textContent = impact;
+      els.renameExistingWarning.classList.toggle('hidden', !duplicate);
+      els.renameInput.disabled = STATE.rename.busy;
+      els.renameClose.disabled = STATE.rename.busy;
+      els.renameCancel.disabled = STATE.rename.busy;
+      els.renameModal.setAttribute('aria-busy', String(STATE.rename.busy));
+      const shownValidation = next === STATE.rename.currentName ? '' : validation;
+      els.renameValidation.textContent = shownValidation;
+      els.renameValidation.classList.toggle('hidden', !shownValidation);
+      els.renameError.textContent = STATE.rename.error;
+      els.renameError.classList.toggle('hidden', !STATE.rename.error);
+      els.renameConfirm.disabled = !STATE.rename.count || !!validation || STATE.rename.busy;
+      const label = STATE.rename.busy ? 'Переименование…' : duplicate ? 'Объединить' : 'Переименовать';
+      els.renameConfirm.querySelector('span').textContent = label;
+      els.renameConfirm.querySelector('i').className = STATE.rename.busy
+        ? 'fa-solid fa-spinner fa-spin' : 'fa-solid fa-pen-to-square';
+    };
+
+    const openRenameGroup = (target, trigger) => {
+      if (STATE.isDirty || (STATE.selected && !STATE.selectedId)) {
+        EditorCore.UI.toast('Сначала сохраните или отмените текущие изменения.', 'warning');
+        return;
+      }
+      const currentName = String(getRenameName(target) || '').trim();
+      if (!currentName) return;
+      let count = 0;
+      const siblingNames = new Set();
+      for (const row of STATE.rows) {
+        const parts = splitGroupName(row.GroupName);
+        if (renameMatches(parts, target)) count++;
+        if (renameParentMatches(parts, target)) siblingNames.add(renameSiblingName(parts, target.level));
+      }
+      STATE.rename = { ...target, currentName, count, siblingNames, forceMerge: false, forceMergeName: '', busy: false, error: '', returnFocus: trigger || document.activeElement };
+      els.renameLevel.textContent = renameLabels[target.level];
+      els.renameHeading.textContent = `Переименовать ${renameCases[target.level][0]}`;
+      els.renameInputLabel.textContent = `Новое название ${renameCases[target.level][1]}`;
+      els.renameScope.textContent = renameScopeText[target.level];
+      els.renameCurrentGroup.textContent = currentName;
+      els.renamePath.textContent = target.level === 'main' ? currentName
+        : target.level === 'group' ? `${target.mainGroup || '(без основной группы)'} › ${currentName}`
+          : `${target.mainGroup || '(без основной группы)'} › ${target.group} › ${currentName}`;
+      els.renameInput.value = currentName;
+      els.renameModal.classList.remove('hidden');
+      els.renameModal.classList.add('flex');
+      els.renameModal.setAttribute('aria-hidden', 'false');
+      updateRenameDialog();
+      requestAnimationFrame(() => { els.renameInput.focus(); els.renameInput.select(); });
+    };
+
+    const closeRenameDialog = ({ restoreFocus = true } = {}) => {
+      if (STATE.rename.busy) return;
+      els.renameModal.classList.add('hidden');
+      els.renameModal.classList.remove('flex');
+      els.renameModal.setAttribute('aria-hidden', 'true');
+      if (restoreFocus && STATE.rename.returnFocus?.isConnected) STATE.rename.returnFocus.focus();
     };
 
     const fillFilterCombos = () => {
@@ -321,15 +499,15 @@
         .filter(g => g !== '(без группы)')
         .sort((a,b)=>a.localeCompare(b));
       const mainGroups = Array.from(new Set(STATE.rows.map(r => splitGroupName(r.GroupName).main).filter(Boolean))).sort((a,b)=>a.localeCompare(b));
-      els.mainGroupList.innerHTML = mainGroups.map(g => `<option value="${g}"></option>`).join('');
-      els.groupList.innerHTML = groups.map(g => `<option value="${g}"></option>`).join('');
+      els.mainGroupList.innerHTML = mainGroups.map(g => `<option value="${escapeHtml(g)}"></option>`).join('');
+      els.groupList.innerHTML = groups.map(g => `<option value="${escapeHtml(g)}"></option>`).join('');
       updateSubDatalist();
     };
 
     const updateSubDatalist = () => {
       const g = String(els.editGroup.value || '').trim();
       const subs = (g && STATE.groups.has(g)) ? Array.from(STATE.groups.get(g)).sort((a,b)=>a.localeCompare(b)) : [];
-      els.subList.innerHTML = subs.map(s => `<option value="${s}"></option>`).join('');
+      els.subList.innerHTML = subs.map(s => `<option value="${escapeHtml(s)}"></option>`).join('');
     };
 
     const markDirty = (dirty = true) => {
@@ -395,72 +573,79 @@
       const byMain = new Map();
       for (const r of filtered) {
         const { main, group } = splitGroupName(r.GroupName);
-        const mainName = main || '(без основной группы)';
-        const groupName = group || '(без группы)';
-        if (!byMain.has(mainName)) byMain.set(mainName, new Map());
-        const byGroup = byMain.get(mainName);
-        if (!byGroup.has(groupName)) byGroup.set(groupName, []);
-        byGroup.get(groupName).push(r);
+        if (!byMain.has(main)) byMain.set(main, new Map());
+        const byGroup = byMain.get(main);
+        if (!byGroup.has(group)) byGroup.set(group, []);
+        byGroup.get(group).push(r);
       }
 
-      const reqCountQuick = (s) => {
-        const str = String(s || '');
-        if (!str) return 0;
-        const m = str.match(/\[/g);
-        return m ? m.length : 0;
+      const reqCountQuick = (value) => (String(value || '').match(/\[/g) || []).length;
+      const renameControl = (level, mainGroup, group = '', subGroup = '') => {
+        const name = level === 'main' ? mainGroup : level === 'group' ? group : subGroup;
+        if (!name || (level === 'sub' && !group)) return '';
+        const label = renameCases[level][0];
+        return `<button type="button" class="editor-icon-btn crafts-group-rename" data-rename-level="${level}" data-rename-main="${encodeURIComponent(mainGroup)}" data-rename-group="${encodeURIComponent(group)}" data-rename-sub="${encodeURIComponent(subGroup)}" title="Переименовать ${label}" aria-label="Переименовать ${label}"><i class="fa-solid fa-pen-to-square"></i></button>`;
       };
 
-      const renderGroup = (mainName, g, rows) => {
-        rows.sort((a, b) => Number(a.ID) - Number(b.ID));
-        const groupKey = `${mainName}::${g}`;
-        const isCollapsed = STATE.ui.collapsedGroups.has(groupKey);
-        const icon = isCollapsed ? 'fa-chevron-right' : 'fa-chevron-down';
-        const items = rows.map(r => {
-          const isActive = String(r.ID) === String(STATE.selectedId);
-          const itemLabel = getItemLabel(r.ItemID) || (r.ItemID ? `Item #${r.ItemID}` : '—');
-          const { sub } = splitGroupName(r.GroupName);
-          const subStr = sub ? `<span class="editor-muted-text">•</span> <span class="text-slate-200">${sub}</span>` : '';
-          const ing = reqCountQuick(r.RequiredItems);
-          const worldLabel = getWorldLabel(r.WorldID) || (r.WorldID ? `World #${r.WorldID}` : 'All');
-          const price = Number(r.Price || 0);
-          return `<button type="button" class="crafts-item w-full text-left px-3 py-2.5 hover:bg-white/5 transition ${isActive ? 'bg-white/5' : ''}" data-id="${r.ID}">
+      const renderGroup = (mainGroup, group, rows) => {
+        const groupKey = makeGroupKey(mainGroup, group);
+        const groupLabel = group || '(без группы)';
+        const collapsed = STATE.ui.collapsedGroups.has(groupKey);
+        const itemsBySub = new Map();
+        for (const row of rows) {
+          const { sub } = splitGroupName(row.GroupName);
+          if (!itemsBySub.has(sub)) itemsBySub.set(sub, []);
+          itemsBySub.get(sub).push(row);
+        }
+
+        const renderItems = (items) => items.sort((a, b) => Number(a.ID) - Number(b.ID)).map((row) => {
+          const active = String(row.ID) === String(STATE.selectedId);
+          const item = getItemLabel(row.ItemID) || (row.ItemID ? `Item #${row.ItemID}` : '—');
+          const world = getWorldLabel(row.WorldID) || (row.WorldID ? `World #${row.WorldID}` : 'All');
+          const price = Number(row.Price || 0);
+          return `<button type="button" class="crafts-item w-full text-left px-3 py-2.5 hover:bg-white/5 transition ${active ? 'bg-white/5' : ''}" data-id="${row.ID}">
             <div class="flex items-start justify-between gap-2"><div class="min-w-0">
-              <div class="flex items-center gap-2 min-w-0"><div class="font-semibold text-sm truncate">${itemLabel}</div><div class="text-xs editor-muted-text shrink-0">×${r.ItemValue || 1}</div></div>
-              <div class="text-xs mt-0.5 truncate"><span class="text-slate-200">${g}</span> ${subStr}</div>
-              <div class="mt-1 flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded-full text-[11px] border border-white/10 bg-white/5 editor-muted-text">ингр: ${ing}</span><span class="px-2 py-0.5 rounded-full text-[11px] border border-white/10 bg-white/5 editor-muted-text">${worldLabel}</span>${price ? `<span class="px-2 py-0.5 rounded-full text-[11px] border border-white/10 bg-white/5 editor-muted-text">цена: ${price}</span>` : ''}</div>
-            </div><div class="text-xs editor-muted-text shrink-0">#${r.ID}</div></div>${isActive ? '<div class="mt-2 h-[2px] rounded-full bg-indigo-400/40"></div>' : ''}</button>`;
+              <div class="flex items-center gap-2 min-w-0"><div class="font-semibold text-sm truncate">${escapeHtml(item)}</div><div class="text-xs editor-muted-text shrink-0">×${row.ItemValue || 1}</div></div>
+              <div class="mt-1 flex flex-wrap gap-1.5"><span class="px-2 py-0.5 rounded-full text-[11px] border border-white/10 bg-white/5 editor-muted-text">ингр: ${reqCountQuick(row.RequiredItems)}</span><span class="px-2 py-0.5 rounded-full text-[11px] border border-white/10 bg-white/5 editor-muted-text">${escapeHtml(world)}</span>${price ? `<span class="px-2 py-0.5 rounded-full text-[11px] border border-white/10 bg-white/5 editor-muted-text">цена: ${price}</span>` : ''}</div>
+            </div><div class="text-xs editor-muted-text shrink-0">#${row.ID}</div></div>${active ? '<div class="mt-2 h-[2px] rounded-full bg-indigo-400/40"></div>' : ''}</button>`;
         }).join('');
-        return `<div><button type="button" class="crafts-group-btn w-full px-3 py-2 flex items-center justify-between gap-2 hover:bg-white/5" data-group="${encodeURIComponent(groupKey)}"><div class="flex items-center gap-2"><i class="fa-solid ${icon} text-xs editor-muted-text"></i><div class="font-semibold text-sm truncate">${g}</div></div><div class="text-xs editor-muted-text">${rows.length}</div></button><div class="${isCollapsed ? 'hidden' : ''}">${items}</div></div>`;
+
+        const subs = Array.from(itemsBySub.keys()).sort((a, b) => a === b ? 0 : !a ? -1 : !b ? 1 : a.localeCompare(b));
+        const subHtml = subs.map((sub) => `<div>${sub ? `<div class="crafts-subgroup-header"><span class="truncate">${escapeHtml(sub)}</span>${renameControl('sub', mainGroup, group, sub)}</div>` : ''}${renderItems(itemsBySub.get(sub))}</div>`).join('');
+        const icon = collapsed ? 'fa-chevron-right' : 'fa-chevron-down';
+        return `<div><div class="crafts-group-header"><button type="button" class="crafts-group-btn px-3 py-2 flex items-center justify-between gap-2 hover:bg-white/5" data-group="${encodeURIComponent(groupKey)}" aria-expanded="${!collapsed}"><div class="flex items-center gap-2 min-w-0"><i class="fa-solid ${icon} text-xs editor-muted-text"></i><div class="font-semibold text-sm truncate">${escapeHtml(groupLabel)}</div></div><div class="text-xs editor-muted-text shrink-0">${rows.length}</div></button>${group ? renameControl('group', mainGroup, group) : ''}</div><div class="${collapsed ? 'hidden' : ''}">${subHtml}</div></div>`;
       };
 
-      const mainNames = Array.from(byMain.keys()).sort((a, b) => {
-        const aUngrouped = a === '(без основной группы)';
-        const bUngrouped = b === '(без основной группы)';
-        if (aUngrouped !== bUngrouped) return aUngrouped ? -1 : 1;
-        return a.localeCompare(b);
-      });
-      const html = mainNames.map(mainName => {
-        const groups = byMain.get(mainName);
+      const mainNames = Array.from(byMain.keys()).sort((a, b) => a === b ? 0 : !a ? -1 : !b ? 1 : a.localeCompare(b));
+      const html = mainNames.map((mainGroup) => {
+        const groups = byMain.get(mainGroup);
         const total = Array.from(groups.values()).reduce((n, rows) => n + rows.length, 0);
-        const groupHtml = Array.from(groups.keys()).sort((a, b) => a.localeCompare(b)).map(g => renderGroup(mainName, g, groups.get(g))).join('');
-        const mainIsReal = mainName !== '(без основной группы)';
-        return `<section class="crafts-main-group ${mainIsReal ? 'border border-indigo-400/20 bg-indigo-400/5' : 'border border-white/10 bg-black/5'} rounded-lg mb-2 overflow-hidden">
-          <div class="px-3 py-2 flex items-center justify-between gap-2 ${mainIsReal ? 'text-indigo-100' : 'text-slate-300'}"><div class="flex items-center gap-2"><i class="fa-solid fa-layer-group text-xs"></i><span class="font-bold text-sm">${mainName}</span></div><span class="text-xs editor-muted-text">${total} предметов</span></div>${groupHtml}</section>`;
+        const groupHtml = Array.from(groups.keys()).sort((a, b) => a.localeCompare(b))
+          .map(group => renderGroup(mainGroup, group, groups.get(group))).join('');
+        const isGrouped = !!mainGroup;
+        const mainLabel = mainGroup || '(без основной группы)';
+        return `<section class="crafts-main-group ${isGrouped ? 'border border-indigo-400/20 bg-indigo-400/5' : 'border border-white/10 bg-black/5'} rounded-lg mb-2 overflow-hidden">
+          <div class="crafts-group-header px-3 py-2 ${isGrouped ? 'text-indigo-100' : 'text-slate-300'}"><div class="flex items-center gap-1 min-w-0"><i class="fa-solid fa-layer-group text-xs"></i><span class="font-bold text-sm truncate">${escapeHtml(mainLabel)}</span>${renameControl('main', mainGroup)}</div><span class="text-xs editor-muted-text shrink-0">${total} предметов</span></div>${groupHtml}</section>`;
       }).join('');
 
       els.list.innerHTML = html;
-      els.list.querySelectorAll('button[data-id]').forEach(btn => {
-        btn.addEventListener('click', () => selectRow(btn.getAttribute('data-id')));
-      });
-      els.list.querySelectorAll('button[data-group]').forEach(btn => {
-        btn.addEventListener('click', () => {
-          const g = decodeURIComponent(btn.getAttribute('data-group') || '');
-          if (!g) return;
-          if (STATE.ui.collapsedGroups.has(g)) STATE.ui.collapsedGroups.delete(g);
-          else STATE.ui.collapsedGroups.add(g);
-          renderList();
-        });
-      });
+      els.list.querySelectorAll('button[data-id]').forEach(btn => btn.addEventListener('click', () => selectRow(btn.getAttribute('data-id'))));
+      els.list.querySelectorAll('button[data-group]').forEach(btn => btn.addEventListener('click', () => {
+        const key = decodeURIComponent(btn.getAttribute('data-group') || '');
+        if (!key) return;
+        if (STATE.ui.collapsedGroups.has(key)) STATE.ui.collapsedGroups.delete(key);
+        else STATE.ui.collapsedGroups.add(key);
+        renderList();
+      }));
+      els.list.querySelectorAll('button[data-rename-level]').forEach(btn => btn.addEventListener('click', (event) => {
+        event.stopPropagation();
+        openRenameGroup({
+          level: btn.dataset.renameLevel,
+          mainGroup: decodeURIComponent(btn.dataset.renameMain || ''),
+          group: decodeURIComponent(btn.dataset.renameGroup || ''),
+          subGroup: decodeURIComponent(btn.dataset.renameSub || ''),
+        }, btn);
+      }));
 
       // Keep the active item visible
       if (STATE.selectedId) {
@@ -630,6 +815,7 @@
         setStatus('Загрузка списка…');
         const res = await EditorCore.DBCrud.list(RESOURCE, { search: '', limit: 5000, offset: 0 });
         STATE.rows = Array.isArray(res?.rows) ? res.rows : [];
+        STATE.rowsHaveMore = !!res?.has_more;
         rebuildGroups();
         fillFilterCombos();
         fillEditorDatalists();
@@ -639,6 +825,7 @@
         setStatus(String(e?.message || e), 'err');
         EditorCore.UI.toast(String(e?.message || e), 'error');
         STATE.rows = [];
+        STATE.rowsHaveMore = false;
         rebuildGroups();
         fillFilterCombos();
         fillEditorDatalists();
@@ -680,6 +867,52 @@
         setStatus(String(e?.message || e), 'err');
         EditorCore.UI.toast(String(e?.message || e), 'error');
         els.save.disabled = false;
+      }
+    };
+
+    const renameGroupRecords = async () => {
+      const validation = getRenameValidation();
+      if (validation || !STATE.rename.count || STATE.rename.busy) return;
+      const target = getRenameTarget();
+      const oldName = STATE.rename.currentName;
+      const newName = String(els.renameInput.value || '').trim();
+      const selectedId = STATE.selectedId;
+      const targetExists = STATE.rename.siblingNames.has(newName)
+        || (STATE.rename.forceMerge && STATE.rename.forceMergeName === newName);
+
+      STATE.rename.busy = true;
+      STATE.rename.error = '';
+      updateRenameDialog();
+      try {
+        const result = await EditorCore.DBCrud.renameCraftGroup(target, newName, targetExists);
+        const changed = Array.isArray(result?.changed) ? result.changed : [];
+        if (!changed.length) {
+          STATE.rename.error = 'На сервере больше нет рецептов в этой ветви. Обновите список.';
+          await loadRows();
+          return;
+        }
+        if (target.level === 'group' && STATE.filter.group === oldName) STATE.filter.group = newName;
+        if (target.level === 'sub' && STATE.filter.sub === oldName) STATE.filter.sub = newName;
+        if (String(STATE.search || '').trim().toLowerCase() === oldName.toLowerCase()) {
+          STATE.search = newName;
+          els.search.value = newName;
+        }
+        const changedIds = new Set(changed.map(row => String(row.ID)));
+        STATE.rename.busy = false;
+        closeRenameDialog({ restoreFocus: false });
+        await loadRows();
+        if (selectedId && changedIds.has(String(selectedId))) await selectRow(selectedId);
+        EditorCore.UI.toast(`Переименовано: ${countLabel(changed.length)}.`, 'success');
+      } catch (e) {
+        STATE.rename.error = String(e?.message || e || 'Не удалось переименовать.');
+        if (STATE.rename.error.includes('уже занято на этом уровне')) {
+          STATE.rename.forceMerge = true;
+          STATE.rename.forceMergeName = newName;
+        }
+        EditorCore.UI.toast(STATE.rename.error, 'error');
+      } finally {
+        STATE.rename.busy = false;
+        if (!els.renameModal.classList.contains('hidden')) updateRenameDialog();
       }
     };
 
@@ -770,6 +1003,32 @@
       STATE.search = els.search.value || '';
       renderList();
     }, 150));
+
+    els.renameInput.addEventListener('input', () => {
+      STATE.rename.error = '';
+      if (String(els.renameInput.value || '').trim() !== STATE.rename.forceMergeName) {
+        STATE.rename.forceMerge = false;
+        STATE.rename.forceMergeName = '';
+      }
+      updateRenameDialog();
+    });
+    els.renameConfirm.addEventListener('click', renameGroupRecords);
+    els.renameCancel.addEventListener('click', () => closeRenameDialog());
+    els.renameClose.addEventListener('click', () => closeRenameDialog());
+    els.renameModal.addEventListener('click', (event) => {
+      if (event.target === els.renameModal) closeRenameDialog();
+    });
+    els.renameInput.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter' && !els.renameConfirm.disabled) {
+        event.preventDefault();
+        renameGroupRecords();
+      }
+    });
+    window.addEventListener('keydown', (event) => {
+      if (event.key === 'Escape' && !els.renameModal.classList.contains('hidden')) {
+        closeRenameDialog();
+      }
+    });
 
     const onGroupChanged = () => {
       if (!STATE.selected) return;

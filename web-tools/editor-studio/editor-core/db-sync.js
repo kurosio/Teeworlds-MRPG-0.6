@@ -131,34 +131,42 @@
 
   // ── Recording operations ──────────────────────────────────────────────────
 
-  const recordOperation = (resource, action, { id = null, data = null, label = '', recordName = '' } = {}) => {
-    // Validate inputs
-    if (!resource || typeof resource !== 'string') {
-      console.warn('[Sync] Invalid resource for operation:', resource);
+  const createOperationEntry = (resource, action, { id = null, data = null, label = '', recordName = '' } = {}) => {
+    if (!resource || typeof resource !== 'string' || !['create', 'update', 'delete'].includes(action)) {
+      console.warn('[Sync] Invalid operation:', resource, action);
       return null;
     }
-    
-    if (!['create', 'update', 'delete'].includes(action)) {
-      console.warn('[Sync] Invalid action:', action);
-      return null;
-    }
-    
-    const history = getHistory();
-    const entry = {
-      id: generateId(),
-      resource,
-      action, // 'create' | 'update' | 'delete'
+    return {
+      id: generateId(), resource, action,
       data: data ? JSON.parse(JSON.stringify(data)) : null,
       record_id: id !== null ? Number(id) : null,
       record_name: recordName || extractRecordName(data, resource),
       label: label || `${action} ${resource}${id ? ' #' + id : ''}`,
-      timestamp: Date.now(),
-      applied: false,
-      applied_at: null,
+      timestamp: Date.now(), applied: false, applied_at: null,
     };
+  };
+
+  const recordOperation = (resource, action, details = {}) => {
+    const entry = createOperationEntry(resource, action, details);
+    if (!entry) return null;
+    const history = getHistory();
     history.push(entry);
+    if (history.length > MAX_HISTORY) history.splice(0, history.length - MAX_HISTORY);
     saveHistory(history);
     return entry;
+  };
+
+  const recordOperations = (resource, action, operations = []) => {
+    const entries = (Array.isArray(operations) ? operations : [])
+      .map(details => createOperationEntry(resource, action, details || {}))
+      .filter(Boolean);
+    if (entries.length) {
+      const history = getHistory();
+      history.push(...entries);
+      if (history.length > MAX_HISTORY) history.splice(0, history.length - MAX_HISTORY);
+      saveHistory(history);
+    }
+    return entries.length;
   };
 
   const getUnappliedOperations = () => {
@@ -785,6 +793,7 @@
 
   const Sync = {
     record: recordOperation,
+    recordMany: recordOperations,
     getHistory,
     getUnappliedOperations,
     getUnappliedCount,

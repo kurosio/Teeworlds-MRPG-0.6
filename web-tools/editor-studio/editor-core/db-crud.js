@@ -89,6 +89,26 @@
       if (!signal) inflight.set(key, req);
       return req;
     },
+    async renameCraftGroup(target, newGroup, mergeExisting = false) {
+      listCache.clear();
+      const res = await jsonFetch(`${API}?${qs({ action: 'rename_group', resource: 'crafts' })}`, {
+        method: 'POST',
+        body: JSON.stringify({ ...target, newGroup, mergeExisting }),
+      });
+      const changed = Array.isArray(res?.changed) ? res.changed : [];
+      const sync = window.EditorCore?.Sync;
+      if (DBCrud._syncRecordEnabled && sync && changed.length) {
+        const operations = changed.map(row => ({
+          id: row.ID,
+          data: { GroupName: row.newGroupName },
+          label: `Переименование группы #${row.ID}`,
+        }));
+        if (sync.recordMany) sync.recordMany('crafts', 'update', operations);
+        else operations.forEach(operation => sync.record('crafts', 'update', operation));
+        sync.updateAllBadges();
+      }
+      return res;
+    },
     async get(resource, id) {
       return jsonFetch(`${API}?${qs({ action: 'get', resource, id })}`);
     },
