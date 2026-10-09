@@ -68,3 +68,7 @@ rules.ninja
 MinSizeRel/mastersrv.exe
 MinSizeRel/versionsrv.exe
 *.code-workspace
+
+# Editor Studio: runtime DB dumps (contain data) and sync profiles (contain passwords)
+web-tools/editor-studio/data/db-dumps/
+web-tools/editor-studio/data/db-sync-config.json

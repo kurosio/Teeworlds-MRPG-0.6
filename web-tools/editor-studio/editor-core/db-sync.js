@@ -4,7 +4,11 @@
   // Requires: EditorCore.UI, EditorCore.DBCrud, EditorCore.utils
 
   const API = 'api/db-sync.php';
+  const MAINT_API = 'api/db-maintenance.php';
   const FETCH_TIMEOUT_MS = 30000;
+  const PULL_PREVIEW_TIMEOUT_MS = 120000;
+  const PULL_APPLY_TIMEOUT_MS = 900000;
+  const BACKUP_TIMEOUT_MS = 300000;
   const STORAGE_KEY = 'es_sync_history';
   const MAX_HISTORY = 500;
 
@@ -15,13 +19,14 @@
   };
 
   const jsonFetch = async (url, options = {}) => {
+    const { timeoutMs = FETCH_TIMEOUT_MS, ...fetchOptions } = options;
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
     try {
       const res = await fetch(url, {
         credentials: 'same-origin',
-        headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
-        ...options,
+        headers: { 'Content-Type': 'application/json', ...(fetchOptions.headers || {}) },
+        ...fetchOptions,
         signal: controller.signal,
       });
       const text = await res.text();
@@ -258,6 +263,37 @@
     });
   };
 
+  // Table map: which tables are synced in which direction (for the settings table).
+  const syncMap = async () => {
+    return jsonFetch(`${API}?${qs({ action: 'sync_map' })}`);
+  };
+
+  // Reverse sync (target → current DB): dry-run and apply.
+  const pullPreview = async ({ targetProfileId = '' } = {}) => {
+    return jsonFetch(`${API}?${qs({ action: 'pull_preview' })}`, {
+      method: 'POST',
+      timeoutMs: PULL_PREVIEW_TIMEOUT_MS,
+      body: JSON.stringify({ target_profile_id: targetProfileId }),
+    });
+  };
+
+  // Full dump of the current DB (db-maintenance.php), with a longer timeout than db.js uses.
+  const createBackup = async ({ confirmDb, label = '' }) => {
+    return jsonFetch(`${MAINT_API}?${qs({ action: 'create_dump' })}`, {
+      method: 'POST',
+      timeoutMs: BACKUP_TIMEOUT_MS,
+      body: JSON.stringify({ confirm_db: confirmDb, label }),
+    });
+  };
+
+  const pullFromTarget = async ({ targetProfileId = '', confirmPhrase = '' } = {}) => {
+    return jsonFetch(`${API}?${qs({ action: 'pull_from_target' })}`, {
+      method: 'POST',
+      timeoutMs: PULL_APPLY_TIMEOUT_MS,
+      body: JSON.stringify({ target_profile_id: targetProfileId, confirm_phrase: confirmPhrase }),
+    });
+  };
+
   // ── Build operations from history ─────────────────────────────────────────
 
   const buildOperationsFromHistory = (entries) => {
@@ -418,6 +454,36 @@
               <input type="text" class="w-full editor-input form-input" data-sync-role="confirm-input" placeholder="Применить" />
             </div>
           </div>
+
+          <!-- Reverse sync: target → current DB -->
+          <div class="editor-sync-reverse" data-sync-role="reverse">
+            <div class="editor-sync-reverse-head">
+              <i class="fa-solid fa-cloud-arrow-down"></i>
+              <div>
+                <div class="font-semibold">Обратная синхронизация: целевая → текущая БД</div>
+                <div class="text-xs editor-muted-text">
+                  Заменяет данные текущей БД данными целевой. Аккаунты и связанные с ними таблицы не затрагиваются.
+                  Перед загрузкой автоматически создаётся дамп текущей БД.
+                </div>
+              </div>
+            </div>
+            <div data-sync-role="pull-pending"></div>
+            <div class="editor-sync-reverse-actions">
+              <button type="button" class="editor-btn editor-btn-secondary" data-sync-action="pull-check" disabled>
+                <i class="fa-solid fa-shield-halved"></i><span>Проверить загрузку</span>
+              </button>
+            </div>
+            <div data-sync-role="pull-result"></div>
+            <div class="editor-sync-pull-apply" data-sync-role="pull-apply-form" style="display:none">
+              <div class="editor-sync-confirm">
+                <label class="editor-label">Для подтверждения введите <strong>Перезаписать</strong></label>
+                <input type="text" class="w-full editor-input form-input" data-sync-role="pull-confirm" placeholder="Перезаписать" />
+              </div>
+              <button type="button" class="editor-btn editor-btn-danger" data-sync-action="pull-apply" disabled>
+                <i class="fa-solid fa-cloud-arrow-down"></i><span>Загрузить из целевой БД</span>
+              </button>
+            </div>
+          </div>
         </div>
 
         <div class="editor-sync-footer">
@@ -495,6 +561,7 @@
     const renderOperations = () => {
       const ops = getUnappliedOperations();
       const opsContainer = $('operations');
+      refreshReverseGate();
 
       if (!ops.length) {
         opsContainer.innerHTML = `
@@ -767,6 +834,249 @@
       }
     });
 
+    // ── Reverse sync: target → current DB ──────────────────────────────────
+    const btnPullCheck = modal.querySelector('[data-sync-action="pull-check"]');
+    const btnPullApply = modal.querySelector('[data-sync-action="pull-apply"]');
+    const pullConfirmInput = $('pull-confirm');
+    const PULL_CONFIRM_WORDS = ['ПЕРЕЗАПИСАТЬ', 'OVERWRITE'];
+    let pullData = null;   // last successful preview
+    let pullBusy = false;
+
+    const setPullResult = (html) => { $('pull-result').innerHTML = html; };
+
+    const setPullLoading = (text) => {
+      setPullResult(`
+        <div class="editor-sync-schema-loading">
+          <i class="fa-solid fa-spinner fa-spin"></i>
+          <span>${escapeHtml(text)}</span>
+        </div>
+      `);
+    };
+
+    // Enables/disables the reverse-sync controls. Called on every state change.
+    const refreshReverseGate = () => {
+      const pendingEl = $('pull-pending');
+      if (!pendingEl) return;
+
+      const pending = getUnappliedCount();
+      const hasTarget = !!targetInfo;
+
+      pendingEl.innerHTML = pending > 0 ? `
+        <div class="editor-sync-warn">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          <div>
+            Есть неприменённые изменения (${pending}). Загрузка перезапишет текущую БД, поэтому сначала
+            примените их в целевую БД или очистите историю.
+          </div>
+        </div>
+      `: '';
+
+      if (pending > 0 || !hasTarget) pullData = null;
+
+      const canApply = !!pullData?.comparison?.compatible && pending === 0 && hasTarget;
+      $('pull-apply-form').style.display = canApply ? '' : 'none';
+
+      const confirmOk = PULL_CONFIRM_WORDS.includes((pullConfirmInput?.value || '').trim().toUpperCase());
+
+      btnPullCheck.disabled = pullBusy || pending > 0 || !hasTarget;
+      btnPullApply.disabled = pullBusy || !canApply || !confirmOk;
+
+      const applyLabel = btnPullApply.querySelector('span');
+      if (applyLabel) applyLabel.textContent = `Загрузить из ${targetInfo?.name || 'целевой БД'}`;
+    };
+
+    const renderPullPreview = (res) => {
+      const c = res.comparison || { issues: [], compatible: false };
+      const tables = res.tables || [];
+      const skipped = res.skipped || [];
+      const localOnly = res.local_only || [];
+      const warnings = (c.issues || []).filter(i => i.level === 'warning');
+
+      let html = `
+        <div class="editor-sync-pull-summary">
+          <div class="text-sm">
+            Текущая БД <b>${escapeHtml(res.local_database || '')}</b> будет заменена данными из
+            <b>${escapeHtml(res.target?.name || 'Target')}</b> (${escapeHtml(res.target?.database || '')}).
+          </div>
+        </div>
+      `;
+
+      if (!c.compatible) {
+        html += `
+          <div class="editor-sync-schema-err">
+            <i class="fa-solid fa-circle-xmark text-red-400"></i>
+            <div>
+              <div class="font-semibold text-red-300">Структуры несовместимы</div>
+              <div class="text-xs editor-muted-text">Загрузка невозможна, пока структуры не совпадут.</div>
+            </div>
+          </div>
+          <div class="editor-sync-schema-issues">
+            ${(c.issues || []).filter(i => i.level === 'critical').map(i =>
+              `<div class="editor-sync-schema-issue"><i class="fa-solid fa-circle-xmark text-red-400"></i> ${escapeHtml(i.message)}</div>`
+            ).join('')}
+          </div>
+        `;
+      } else {
+        const totalTarget = tables.reduce((sum, t) => sum + (t.rows_target || 0), 0);
+        html += `
+          <div class="editor-sync-schema-ok">
+            <i class="fa-solid fa-circle-check text-emerald-400"></i>
+            <div>
+              <div class="font-semibold text-emerald-300">Загрузка возможна</div>
+              <div class="text-xs editor-muted-text">Таблиц к перезаписи: ${tables.length}, строк в целевой БД: ${totalTarget}</div>
+            </div>
+          </div>
+        `;
+      }
+
+      if (warnings.length) {
+        html += `<div class="editor-sync-schema-warnings">${warnings.map(w =>
+          `<div class="editor-sync-schema-warning"><i class="fa-solid fa-triangle-exclamation text-amber-400"></i> ${escapeHtml(w.message)}</div>`
+        ).join('')}</div>`;
+      }
+
+      if (tables.length) {
+        html += `
+          <details class="editor-sync-pull-details">
+            <summary>Таблицы к перезаписи (${tables.length})</summary>
+            <div class="editor-sync-pull-table-wrap">
+              <table class="editor-sync-pull-table">
+                <thead><tr><th>Таблица</th><th>Сейчас</th><th>Станет</th></tr></thead>
+                <tbody>
+                  ${tables.map(t => `
+                    <tr>
+                      <td class="font-mono">${escapeHtml(t.table)}</td>
+                      <td>${t.rows_local}</td>
+                      <td>${t.rows_target}</td>
+                    </tr>`).join('')}
+                </tbody>
+              </table>
+            </div>
+          </details>
+        `;
+      }
+
+      if (skipped.length) {
+        html += `
+          <details class="editor-sync-pull-details">
+            <summary>Не затрагиваются (${skipped.length})</summary>
+            <div class="editor-sync-pull-table-wrap">
+              <table class="editor-sync-pull-table">
+                <thead><tr><th>Таблица</th><th>Причина</th></tr></thead>
+                <tbody>
+                  ${skipped.map(s => `
+                    <tr>
+                      <td class="font-mono">${escapeHtml(s.table)}</td>
+                      <td>${escapeHtml(s.reason || '')}</td>
+                    </tr>`).join('')}
+                </tbody>
+              </table>
+            </div>
+          </details>
+        `;
+      }
+
+      if (localOnly.length) {
+        html += `<div class="text-xs editor-muted-text">Есть только в текущей БД (не изменяются): ${localOnly.map(escapeHtml).join(', ')}</div>`;
+      }
+
+      setPullResult(html);
+    };
+
+    btnPullCheck.addEventListener('click', async () => {
+      pullBusy = true;
+      refreshReverseGate();
+      setPullLoading('Сравнение текущей и целевой БД…');
+      try {
+        const res = await pullPreview({ targetProfileId: '' });
+        pullData = res;
+        renderPullPreview(res);
+      } catch (err) {
+        pullData = null;
+        setPullResult(`
+          <div class="editor-sync-schema-err">
+            <i class="fa-solid fa-circle-xmark text-red-400"></i>
+            <div>
+              <div class="font-semibold text-red-300">Ошибка проверки</div>
+              <div class="text-xs">${escapeHtml(err.message)}</div>
+            </div>
+          </div>
+        `);
+      } finally {
+        pullBusy = false;
+        refreshReverseGate();
+      }
+    });
+
+    btnPullApply.addEventListener('click', async () => {
+      if (!pullData?.comparison?.compatible) {
+        toast('Сначала выполните проверку загрузки.', 'error');
+        return;
+      }
+      const phrase = (pullConfirmInput?.value || '').trim().toUpperCase();
+      if (!PULL_CONFIRM_WORDS.includes(phrase)) {
+        toast('Введите «Перезаписать» для подтверждения.', 'error');
+        pullConfirmInput?.focus();
+        return;
+      }
+      if (getUnappliedCount() > 0) {
+        toast('Есть неприменённые изменения. Сначала примените или очистите их.', 'error');
+        return;
+      }
+
+      pullBusy = true;
+      refreshReverseGate();
+      let backupFile = '';
+      try {
+        // 1) Full dump of the current DB — the only way back if the copy goes wrong.
+        setPullLoading('Создание резервной копии текущей БД…');
+        const dump = await createBackup({
+          confirmDb: pullData.local_database,
+          label: 'before_reverse_sync',
+        });
+        backupFile = dump?.file || '';
+
+        // 2) Overwrite the current DB from the target.
+        setPullLoading('Загрузка данных из целевой БД…');
+        const res = await pullFromTarget({ targetProfileId: '', confirmPhrase: pullConfirmInput.value.trim() });
+
+        const warnings = (res.warnings || []).map(w => `<div class="editor-sync-schema-warning"><i class="fa-solid fa-triangle-exclamation text-amber-400"></i> ${escapeHtml(w)}</div>`).join('');
+        setPullResult(`
+          <div class="editor-sync-schema-ok">
+            <i class="fa-solid fa-circle-check text-emerald-400"></i>
+            <div>
+              <div class="font-semibold text-emerald-300">Текущая БД обновлена из целевой</div>
+              <div class="text-xs editor-muted-text">
+                Таблиц: ${(res.tables || []).length}, строк: ${res.total_rows ?? 0}.
+                Резервная копия: ${escapeHtml(backupFile || '—')}. Страница будет обновлена.
+              </div>
+            </div>
+          </div>
+          ${warnings}
+        `);
+        toast(`Загрузка завершена: ${res.total_rows ?? 0} строк`, 'success');
+        pullData = null;
+        setTimeout(() => window.location.reload(), 1500);
+      } catch (err) {
+        toast(err.message || 'Ошибка загрузки', 'error');
+        setPullResult(`
+          <div class="editor-sync-schema-err">
+            <i class="fa-solid fa-circle-xmark text-red-400"></i>
+            <div>
+              <div class="font-semibold text-red-300">Загрузка не выполнена</div>
+              <div class="text-xs">${escapeHtml(err.message)}</div>
+              ${backupFile ? `<div class="text-xs editor-muted-text mt-1">Резервная копия сохранена: ${escapeHtml(backupFile)}</div>` : ''}
+            </div>
+          </div>
+        `);
+      } finally {
+        pullBusy = false;
+        refreshReverseGate();
+      }
+    });
+
+    pullConfirmInput?.addEventListener('input', () => refreshReverseGate());
+
     // Init
     await loadTarget();
     renderOperations();
@@ -812,6 +1122,10 @@
     setAsTarget,
     compareSchema,
     applyOperations,
+    syncMap,
+    pullPreview,
+    pullFromTarget,
+    createBackup,
   };
 
   window.EditorCore = window.EditorCore || {};
