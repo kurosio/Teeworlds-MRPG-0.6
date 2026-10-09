@@ -332,7 +332,7 @@ GuildResult CGuild::CRank::Rename(std::string NewRank)
 void CGuild::CRank::SetRights(GuildRankRights Rights)
 {
 	// implement setting new rights
-	m_Rights = (GuildRankRights)clamp((int)Rights, (int)GUILD_RANK_RIGHT_DEFAULT, (int)GUILD_RANK_RIGHT_FULL);
+	m_Rights = (GuildRankRights)clamp((int)Rights, (int)GUILD_RANK_RIGHT_DEFAULT, (int)(GUILD_RANK_RIGHT_END - 1));
 	Database->Execute<DB::UPDATE>(TW_GUILDS_RANKS_TABLE, "Rights = '{}' WHERE ID = '{}'", (int)m_Rights, m_ID);
 
 	// send messages
@@ -346,6 +346,7 @@ const char* CGuild::CRank::GetRightsName(GuildRankRights Rights) const
 		case GUILD_RANK_RIGHT_INVITE_KICK: return "Invite & kick";
 		case GUILD_RANK_RIGHT_UPGRADES_HOUSE: return "Upgrade & house door's";
 		case GUILD_RANK_RIGHT_FULL: return "Full";
+		case GUILD_RANK_RIGHT_BUY_HOUSE: return "Buy guild house";
 		default: return "Default";
 	}
 }

@@ -63,6 +63,7 @@ void CMmoController::OnInit(IServer* pServer, IConsole* pConsole, IStorageEngine
 {
 	// initialize components
 	const auto isLastInitializedWorld = m_pGameServer->GetWorldID() == (Instance::Server()->GetWorldsSize() - 1);
+	int ComponentIndex = 0;
 	for(auto& pComponent : m_System.m_vComponents)
 	{
 		pComponent->m_Core = this;
@@ -71,14 +72,27 @@ void CMmoController::OnInit(IServer* pServer, IConsole* pConsole, IStorageEngine
 		pComponent->m_pConsole = pConsole;
 		pComponent->m_pStorage = pStorage;
 
-		if(m_pGameServer->GetWorldID() == INITIALIZER_WORLD_ID)
-			pComponent->OnPreInit();
+		try
+		{
+			if(m_pGameServer->GetWorldID() == INITIALIZER_WORLD_ID)
+				pComponent->OnPreInit();
 
-		const auto selectStr = fmt_default("WHERE WorldID = '{}'", m_pGameServer->GetWorldID());
-		pComponent->OnInitWorld(selectStr);
+			const auto selectStr = fmt_default("WHERE WorldID = '{}'", m_pGameServer->GetWorldID());
+			pComponent->OnInitWorld(selectStr);
 
-		if(isLastInitializedWorld)
-			pComponent->OnPostInit();
+			if(isLastInitializedWorld)
+				pComponent->OnPostInit();
+		}
+		catch(const std::exception& e)
+		{
+			dbg_msg("mmocontroller", "world %d component #%d failed to initialize: %s", m_pGameServer->GetWorldID(), ComponentIndex, e.what());
+		}
+		catch(...)
+		{
+			dbg_msg("mmocontroller", "world %d component #%d failed to initialize: unknown exception", m_pGameServer->GetWorldID(), ComponentIndex);
+		}
+
+		ComponentIndex++;
 	}
 
 	// log about listeners

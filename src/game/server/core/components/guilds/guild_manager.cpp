@@ -936,7 +936,7 @@ bool CGuildManager::OnPlayerMotdCommand(CPlayer* pPlayer, CMotdPlayerData* pMotd
 	{
 		// check guild valid and access rights
 		auto* pGuild = pPlayer->Account()->GetGuild();
-		if(!pGuild || !pPlayer->Account()->GetGuildMember()->CheckAccess(GUILD_RANK_RIGHT_LEADER))
+		if(!pGuild || !pPlayer->Account()->GetGuildMember()->CheckAccess(GUILD_RANK_RIGHT_BUY_HOUSE))
 		{
 			GS()->Chat(ClientID, "You have no access, or you are not a member of the guild.");
 			return true;
@@ -1805,7 +1805,7 @@ void CGuildManager::ShowDetail(CPlayer* pPlayer, CGuildHouse* pHouse) const
 		auto* pGuild = pPlayer->Account()->GetGuild();
 		MHouseDetail.AddText("Buying price: {$}", pHouse->GetInitialFee());
 
-		if(pGuild && pPlayer->Account()->GetGuildMember()->CheckAccess(GUILD_RANK_RIGHT_LEADER))
+		if(pGuild && pPlayer->Account()->GetGuildMember()->CheckAccess(GUILD_RANK_RIGHT_BUY_HOUSE))
 		{
 			MHouseDetail.AddText("Bank: {$}", pGuild->GetBankManager()->Get());
 			MHouseDetail.AddOption("GUILD_HOUSE_BUY", "Purchase").Pack(pHouse);

@@ -5,6 +5,7 @@
 #include <scenarios/base/scenario_base_group.h>
 
 #include <unordered_map>
+#include <vector>
 
 class CGS;
 
@@ -16,6 +17,23 @@ private:
 	CGS* m_pGS {};
 	int m_NextScenarioID = 1;
 	ScenarioMap m_vScenarios {};
+
+	int StartAndStoreScenario(const std::shared_ptr<GroupScenarioBase>& pScenario)
+	{
+		pScenario->Start();
+
+		if(!pScenario->IsRunning())
+			return -1;
+
+		const int ScenarioID = m_NextScenarioID;
+		auto [it, inserted] = m_vScenarios.emplace(ScenarioID, pScenario);
+		if(!inserted)
+			return -1;
+
+		pScenario->m_ScenarioID = ScenarioID;
+		++m_NextScenarioID;
+		return ScenarioID;
+	}
 
 public:
 	explicit CScenarioGroupManager(CGS* pGS) : m_pGS(pGS) { };
@@ -34,19 +52,27 @@ public:
 				return -1;
 		}
 
-		pScenario->Start();
+		return StartAndStoreScenario(pScenario);
+	}
 
-		if(!pScenario->IsRunning())
-			return -1;
+	// Registers a group scenario with every participant already in place. A scenario runs the
+	// start actions of its first step while it registers, so participants added only afterwards
+	// stay invisible to those components - their intro messages, titles, camera locks and mob
+	// scaling would all be resolved against an empty player list.
+	template<typename T, typename... Args>
+	int RegisterScenario(const std::vector<int>& vClientIDs, Args&&... args) requires std::derived_from<T, GroupScenarioBase>
+	{
+		auto pScenario = std::make_shared<T>(std::forward<Args>(args)...);
 
-		const int ScenarioID = m_NextScenarioID;
-		auto [it, inserted] = m_vScenarios.emplace(ScenarioID, pScenario);
-		if(!inserted)
-			return -1;
+		pScenario->m_pGS = m_pGS;
 
-		pScenario->m_ScenarioID = ScenarioID;
-		++m_NextScenarioID;
-		return ScenarioID;
+		for(const int ClientID : vClientIDs)
+		{
+			if(ClientID > -1 && ClientID < MAX_PLAYERS)
+				pScenario->AddParticipant(ClientID);
+		}
+
+		return StartAndStoreScenario(pScenario);
 	}
 
 	void UpdateScenarios();

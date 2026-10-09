@@ -15,6 +15,7 @@
 
 #include "entity_manager.h"
 #include "core/command_processor.h"
+#include "core/tools/anti_spam.h"
 #include "core/tools/path_finder.h"
 #include "core/entities/items/drop_items.h"
 
@@ -496,6 +497,21 @@ void CGS::AddBroadcast(int ClientID, const char* pText, BroadcastPriority Priori
 	}
 }
 
+// frees the broadcast slot of a client, dropping whatever is displayed in it right now
+void CGS::ResetBroadcast(int ClientID)
+{
+	if(ClientID < 0 || ClientID >= MAX_PLAYERS)
+		return;
+
+	CBroadcastState& Broadcast = m_aBroadcastStates[ClientID];
+	Broadcast.m_LifeSpanTick = 0;
+	Broadcast.m_TimedPriority = BroadcastPriority::Lower;
+	Broadcast.m_TimedMessage[0] = '\0';
+	Broadcast.m_NextPriority = BroadcastPriority::Lower;
+	Broadcast.m_NextMessage[0] = '\0';
+	Broadcast.m_Updated = true;
+}
+
 // the tick of the broadcast and his life
 void CGS::BroadcastTick(int ClientID)
 {
@@ -698,6 +714,9 @@ void CGS::OnInit(int WorldID)
 	m_pScenarioPlayerManager = new CScenarioPlayerManager(this);
 	m_pScenarioGroupManager = new CScenarioGroupManager(this);
 	m_pScenarioWorldManager = new CScenarioWorldManager(this);
+
+	if(WorldID == INITIALIZER_WORLD_ID)
+		CAntiSpam::InitDatabase();
 }
 
 void CGS::OnConsoleInit()
@@ -762,6 +781,7 @@ void CGS::OnTick()
 			BroadcastTick(ClientID);
 	}
 
+	CAntiSpam::OnTick(this);
 	Core()->OnTick();
 	UpdateCollisionZones();
 	ScenarioGroupManager()->UpdateScenarios();
@@ -881,17 +901,16 @@ void CGS::OnMessage(int MsgID, CUnpacker* pUnpacker, int ClientID)
 	{
 		if(MsgID == NETMSGTYPE_CL_SAY)
 		{
-			if(pPlayer->m_aPlayerTick[LastChat] > Server()->Tick())
-				return;
-
 			// initialize variables
 			const auto pMsg = (CNetMsg_Cl_Say*)pRawMsg;
-			pPlayer->m_aPlayerTick[LastChat] = Server()->Tick() + Server()->TickSpeed();
 			if(!str_utf8_check(pMsg->m_pMessage))
 				return;
 
 			// is apply field edit
 			if(pPlayer->m_pMotdMenu && pPlayer->m_pMotdMenu->ApplyFieldEdit(pMsg->m_pMessage))
+				return;
+
+			if(CAntiSpam::OnClientChat(this, pPlayer, pMsg->m_pMessage))
 				return;
 
 			// check message
@@ -1243,6 +1262,7 @@ void CGS::OnClientConnected(int ClientID)
 		m_apPlayers[ClientID] = new(AllocMemoryCell) CPlayer(this, ClientID);
 	}
 
+	CAntiSpam::OnClientConnected(ClientID);
 	Server()->SendMotd(ClientID, g_Config.m_SvMotd);
 	m_aBroadcastStates[ClientID] = {};
 }
@@ -1256,9 +1276,10 @@ void CGS::OnClientEnter(int ClientID, bool FirstEnter)
 	m_pController->OnPlayerConnect(pPlayer);
 	m_pCommandProcessor->SendClientCommandsInfo(this, ClientID);
 
+	CAntiSpam::OnClientEnter(this, ClientID, FirstEnter);
+
 	if(FirstEnter)
 	{
-		Chat(-1, "'{~}' entered and joined the {~}", Server()->ClientName(ClientID), g_Config.m_SvGamemodeName);
 		CMmoController::AsyncClientEnterMsgInfo(Server()->ClientName(ClientID), ClientID);
 		return;
 	}
@@ -1270,6 +1291,8 @@ void CGS::OnClientEnter(int ClientID, bool FirstEnter)
 
 void CGS::OnClientDrop(int ClientID, const char* pReason)
 {
+	const bool bSilentJoinLeave = CAntiSpam::OnClientDrop(ClientID);
+
 	// remove client from scenarios
 	ScenarioPlayerManager()->RemoveClient(ClientID);
 	ScenarioGroupManager()->RemoveClient(ClientID);
@@ -1288,14 +1311,17 @@ void CGS::OnClientDrop(int ClientID, const char* pReason)
 			{
 				if(HasWorldFlag(WORLD_FLAG_RATING_SYSTEM))
 				{
-					Chat(-1, "'{~}' rage left {~} and lost {} rating points!", Server()->ClientName(ClientID),
-						g_Config.m_SvGamemodeName, g_Config.m_SvRageQuitDecreaseRating);
+					if(!bSilentJoinLeave)
+					{
+						Chat(-1, "'{~}' rage left {~} and lost {} rating points!", Server()->ClientName(ClientID),
+							g_Config.m_SvGamemodeName, g_Config.m_SvRageQuitDecreaseRating);
+					}
 					pPlayer->Account()->GetRatingSystem().DecreaseRating(g_Config.m_SvRageQuitDecreaseRating);
 				}
-				else
+				else if(!bSilentJoinLeave)
 					Chat(-1, "'{~}' rage left the {~}", Server()->ClientName(ClientID), g_Config.m_SvGamemodeName);
 			}
-			else
+			else if(!bSilentJoinLeave)
 			{
 				Chat(-1, "'{~}' has left the {}", Server()->ClientName(ClientID), g_Config.m_SvGamemodeName);
 				Console()->PrintFormat(IConsole::OUTPUT_LEVEL_STANDARD, "game", "leave player='%d:%s'", ClientID, Server()->ClientName(ClientID));

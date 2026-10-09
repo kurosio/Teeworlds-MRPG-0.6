@@ -101,6 +101,7 @@ public:
 		int Type = WEAPON_HAMMER, int Owner = -1, int Flags = 0) const;
 
 	void AddBroadcast(int ClientID, const char* pText, BroadcastPriority Priority, int LifeSpan);
+	void ResetBroadcast(int ClientID);
 	void BroadcastTick(int ClientID);
 	void MarkUpdatedBroadcast(int ClientID);
 	void SendChatTarget(int ClientID, const char *pText) const;

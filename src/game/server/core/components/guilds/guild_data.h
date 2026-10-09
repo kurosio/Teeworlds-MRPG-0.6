@@ -37,6 +37,7 @@ enum GuildRankRights
 	GUILD_RANK_RIGHT_INVITE_KICK,        // Right to invite and kick members
 	GUILD_RANK_RIGHT_UPGRADES_HOUSE,     // Right to upgrade guild house
 	GUILD_RANK_RIGHT_FULL,               // Full access to all guild functions
+	GUILD_RANK_RIGHT_BUY_HOUSE,          // Right to buy a guild house for the guild
 	GUILD_RANK_RIGHT_END                 // End of rank rights range
 };
 

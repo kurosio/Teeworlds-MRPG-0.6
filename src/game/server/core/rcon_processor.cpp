@@ -8,6 +8,8 @@
 #include "components/Bots/BotManager.h"
 #include "components/mails/mail_wrapper.h"
 
+#include "tools/anti_spam.h"
+
 void RconProcessor::Init(IConsole* pConsole, IServer* pServer)
 {
 	// rcon commands
@@ -40,6 +42,8 @@ void RconProcessor::Init(IConsole* pConsole, IServer* pServer)
 	pConsole->Register("position", "?i[cid]", CFGFLAG_SERVER, ConPosition, pServer, "Get position by client (default self position)");
 	pConsole->Register("quest", "s[action] i[quest_id] ?i[step]", CFGFLAG_SERVER, ConQuest, pServer,
 		"Force accept or deny a quest for tests: quest <accept|deny> <cid> <quest_id> [step]");
+
+	CAntiSpam::Init(pConsole, pServer);
 
 	// chain's
 	pConsole->Chain("sv_motd", ConchainSpecialMotdupdate, pServer);

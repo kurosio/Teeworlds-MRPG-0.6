@@ -874,6 +874,20 @@ constexpr const char* GetEmoteNameById(int emoteId) noexcept
 	}
 }
 
+inline int GetEmoteIdByName(const char* pName) noexcept
+{
+	if(pName == nullptr || pName[0] == '\0')
+		return EMOTE_NORMAL;
+
+	if(!str_comp_nocase(pName, "Pain"))         return EMOTE_PAIN;
+	if(!str_comp_nocase(pName, "Happy"))        return EMOTE_HAPPY;
+	if(!str_comp_nocase(pName, "Surprise"))     return EMOTE_SURPRISE;
+	if(!str_comp_nocase(pName, "Angry"))        return EMOTE_ANGRY;
+	if(!str_comp_nocase(pName, "Blink"))        return EMOTE_BLINK;
+
+	return EMOTE_NORMAL;
+}
+
 constexpr const char* GetEmoticonNameById(int emoticonId) noexcept
 {
 	switch(emoticonId)

@@ -1,6 +1,7 @@
 #include "command_processor.h"
 
 #include <engine/server.h>
+#include <engine/shared/protocol.h>
 #include <game/server/core/components/accounts/account_manager.h>
 #include <game/server/core/components/guilds/guild_manager.h>
 #include <game/server/core/components/houses/house_manager.h>
@@ -48,6 +49,7 @@ CCommandProcessor::CCommandProcessor(CGS* pGS)
 	AddCommand("use_item", "i[item]", ConChatUseItem, pServer, "Use an item");
 	AddCommand("use_skill", "i[skill]", ConChatUseSkill, pServer, "Use a skill");
 	AddCommand("voucher", "r[voucher]", ConChatVoucher, pServer, "Activate a voucher");
+	AddCommand("tutorial", "", ConChatTutorial, pServer, "Return to the tutorial");
 
 	// information commands
 	AddCommand("cmdlist", "?i[page]", ConChatCmdList, pServer, "Display the list of available commands");
@@ -557,6 +559,27 @@ void CCommandProcessor::ConChatCmdList(IConsole::IResult* pResult, void* pUser)
 		pGS->Chat(ClientID, "/tutorial - training challenge.");
 		pGS->Chat(ClientID, "#<text> - perform an action.");
 	}
+}
+
+void CCommandProcessor::ConChatTutorial(IConsole::IResult* pResult, void* pUser)
+{
+	const int ClientID = pResult->GetClientID();
+	auto* pGS = GetCommandResultGameServer(ClientID, pUser);
+	auto* pPlayer = pGS->GetPlayer(ClientID);
+	if(!is_valid_player(pGS, pPlayer, true))
+		return;
+
+	// check already in the tutorial
+	if(pGS->IsPlayerInWorld(ClientID, TUTORIAL_WORLD_ID))
+	{
+		pGS->Chat(ClientID, "You are already in the tutorial.");
+		return;
+	}
+
+	// the tutorial scenario starts on spawn, so a stored spawn point has to be dropped
+	pPlayer->GetSharedData().ClearSpawnPosition();
+	pGS->Chat(ClientID, "Returning to the tutorial.");
+	pPlayer->ChangeWorld(TUTORIAL_WORLD_ID);
 }
 
 void CCommandProcessor::ConChatRules(IConsole::IResult* pResult, void* pUser)

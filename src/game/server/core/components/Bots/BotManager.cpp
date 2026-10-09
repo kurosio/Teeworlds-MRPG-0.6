@@ -207,7 +207,7 @@ void CBotManager::InitNPCBots(const char* pWhereLocalWorld)
 		NpcBot.m_WorldID = pRes->getInt("WorldID");
 		NpcBot.m_Static = Static;
 		NpcBot.m_Position = VerifiedPos + vec2(0.f, Static ? 1.f : 0.f);
-		NpcBot.m_Emote = pRes->getInt("Emote");
+		NpcBot.m_Emote = GetEmoteIdByName(pRes->getString("Emote").c_str());
 		NpcBot.m_BotID = BotID;
 		NpcBot.m_Function = pRes->getInt("Function");
 		NpcBot.m_GiveQuestID = QuestID;

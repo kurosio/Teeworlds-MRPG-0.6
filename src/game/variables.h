@@ -78,6 +78,14 @@ MACRO_CONFIG_INT(SvInfoChangeDelay, sv_info_change_delay, 5, 0, 9999, CFGFLAG_SE
 MACRO_CONFIG_STR(SvMotd, sv_motd, 900, "", CFGFLAG_SERVER, "Message of the day to display for the clients")
 
 // -----------------------
+// Anti-Spam Configuration
+// -----------------------
+MACRO_CONFIG_INT(SvJoinMuteTime, sv_join_mute_time, 10, 0, 3600, CFGFLAG_SERVER, "Seconds after joining during which a player cannot talk (0 = off)")
+MACRO_CONFIG_INT(SvChatRateLimit, sv_chat_rate_limit, 0, 0, 60, CFGFLAG_SERVER, "Minimum seconds between chat messages from the same player (0 = off)")
+MACRO_CONFIG_INT(SvBlockedWordsMaxWarnings, sv_blocked_words_max_warnings, 2, 0, 100, CFGFLAG_SERVER, "Blocked-word violations before a kick (0 = never kick)")
+MACRO_CONFIG_INT(SvBlockedWordsAdminBypass, sv_blocked_words_admin_bypass, 1, 0, 1, CFGFLAG_SERVER, "Authenticated players can write anything, they are only warned and never kicked (0 = treat them like everyone else)")
+
+// -----------------------
 // Inactivity and Kick Configuration
 // -----------------------
 MACRO_CONFIG_INT(SvInactiveKickTime, sv_inactivekick_time, 3, 0, 1000, CFGFLAG_SERVER, "Time in minutes to wait before handling inactive clients")

@@ -65,8 +65,28 @@ void CGameControllerDungeon::ChangeState(int NewState)
 	// started state
 	else if(NewState == CDungeonData::STATE_ACTIVE)
 	{
+		// the scenario runs the start actions of its first step while it registers, so collate
+		// the participants before starting it: components that announce the dungeon or scale
+		// their mobs by the group would otherwise be resolved against an empty player list
+		std::vector<int> vParticipants;
+		for(int i = 0; i < MAX_PLAYERS; i++)
+		{
+			auto* pPlayer = GS()->GetPlayer(i);
+			if(!pPlayer || pPlayer->GetTeam() == TEAM_SPECTATORS || !GS()->IsPlayerInWorld(i, m_pDungeon->GetWorldID()))
+				continue;
+
+			vParticipants.push_back(i);
+			pPlayer->GetSharedData().m_TempStartDungeonTick = Server()->Tick();
+		}
+
+		// the warmup line holds the broadcast slot on VeryImportant for the rest of its
+		// lifespan, so it has to go before the dungeon announces itself - otherwise the
+		// intro messages and titles are rejected and playback starts on a blank broadcast
+		for(const int ClientID : vParticipants)
+			GS()->ResetBroadcast(ClientID);
+
 		// update & initialize by state start
-		m_ScenarioID = GS()->ScenarioGroupManager()->RegisterScenario<CDungeonScenario>(-1, m_pDungeon->GetScenario());
+		m_ScenarioID = GS()->ScenarioGroupManager()->RegisterScenario<CDungeonScenario>(vParticipants, m_pDungeon->GetScenario());
 		m_StartedPlayersNum = GetPlayersNum();
 		m_EndTick = Server()->TickSpeed() * m_pDungeon->GetTimeLimit();
 		m_SafeSpawnTick = Server()->Tick() + (Server()->TickSpeed() * g_Config.m_SvDungeonSafeTime);
@@ -75,25 +95,17 @@ void CGameControllerDungeon::ChangeState(int NewState)
 		// assert
 		dbg_assert(m_ScenarioID != -1, "failed to register dungeon scenario");
 
-		// add players to dungeon scenario
-		auto pScenario = GS()->ScenarioGroupManager()->GetScenario(m_ScenarioID);
-		for(int i = 0; i < MAX_PLAYERS; i++)
-		{
-			auto* pPlayer = GS()->GetPlayer(i);
-			if(!pPlayer || pPlayer->GetTeam() == TEAM_SPECTATORS || !GS()->IsPlayerInWorld(i, m_pDungeon->GetWorldID()))
-				continue;
-
-			pScenario->AddParticipant(i);
-			pPlayer->GetSharedData().m_TempStartDungeonTick = Server()->Tick();
-		}
-
 		KillAllPlayers();
 
 		// information
 		const auto WorldID = m_pDungeon->GetWorldID();
 		GS()->ChatWorld(WorldID, "Dungeon:", "You are given {} minutes to complete of dungeon!", m_pDungeon->GetTimeLimit() / 60);
 		GS()->ChatWorld(WorldID, "Dungeon:", "Safe time is active for {} seconds.", (int)g_Config.m_SvDungeonSafeTime);
-		GS()->BroadcastWorld(WorldID, BroadcastPriority::VeryImportant, 500, "Dungeon started!");
+
+		// the dungeon introduces itself through its own messages and titles, which the scenario
+		// carries at TitleInformation: this generic line has to stay below that priority, or it
+		// claims the broadcast slot and swallows the dungeon's intro for its whole lifespan
+		GS()->BroadcastWorld(WorldID, BroadcastPriority::MainInformation, 500, "Dungeon started!");
 	}
 
 	// finish state
