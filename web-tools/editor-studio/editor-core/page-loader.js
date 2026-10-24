@@ -15,6 +15,8 @@
   const scriptTags = [
     '<script src="editor-core/tailwind-theme.js"></script>',
     '<script src="https://cdn.tailwindcss.com?plugins=forms"></script>',
+    '<script src="studio.manifest.js"></script>',
+    '<script src="editor-core/guest-mode.js"></script>',
     '<script src="editor-core/registry.js"></script>',
     '<script src="editor-core/core.js"></script>',
     '<script src="editor-core/field-renderer.js"></script>',

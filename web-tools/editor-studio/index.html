@@ -20,6 +20,7 @@
   <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
 
   <script src="studio.manifest.js"></script>
+  <script src="editor-core/guest-mode.js"></script>
 
   <style>
     html, body { height: 100%; }
@@ -60,6 +61,15 @@
       box-shadow: 0 0 0 1px rgba(99, 102, 241, .3);
     }
     .studio-item.active i { color: var(--editor-primary); }
+    .studio-nav-badge { margin-left: auto; min-width: 22px; padding: 1px 7px; border-radius: 999px; font-size: 11px; font-weight: 700; text-align: center; background: var(--editor-warning); color: #1b1206; }
+    .studio-role-chip { display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; border: 1px solid var(--editor-soft-border-strong); }
+    .studio-role-chip.is-guest { color: var(--editor-warning); border-color: color-mix(in srgb, var(--editor-warning) 45%, transparent); background: color-mix(in srgb, var(--editor-warning) 10%, transparent); }
+    .studio-role-chip.is-admin { color: var(--editor-accent); border-color: color-mix(in srgb, var(--editor-accent) 40%, transparent); background: color-mix(in srgb, var(--editor-accent) 8%, transparent); }
+    .auth-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 4px; border-radius: 12px; background: var(--editor-soft-bg); border: 1px solid var(--editor-soft-border); }
+    .auth-tab { height: 36px; border-radius: 9px; font-size: 13px; font-weight: 600; color: var(--editor-text-muted); display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+    .auth-tab.active { background: var(--editor-soft-bg-strong); color: var(--editor-text); box-shadow: inset 0 0 0 1px var(--editor-soft-border-strong); }
+    .auth-tab:disabled { opacity: .45; cursor: not-allowed; }
+    .auth-guest-note { border: 1px dashed color-mix(in srgb, var(--editor-warning) 45%, transparent); background: color-mix(in srgb, var(--editor-warning) 7%, transparent); border-radius: 12px; padding: 10px 12px; font-size: 13px; line-height: 1.45; }
     @media (prefers-reduced-motion: reduce) {
       .studio-item,
       .studio-item:hover { transition: none; transform: none; }
@@ -76,7 +86,7 @@
           <span class="studio-brand-mark"><i class="fa-solid fa-layer-group"></i></span>
           <div class="min-w-0">
             <div class="font-bold text-lg truncate">Editor Studio</div>
-            <div class="text-xs editor-muted-text truncate">MRPG workspace</div>
+            <div class="text-xs editor-muted-text truncate flex items-center gap-2"><span>MRPG workspace</span><span id="studioRoleChip" class="studio-role-chip hidden"></span></div>
           </div>
         </div>
       </div>
@@ -92,9 +102,12 @@
       <div id="studioNav" class="flex-grow overflow-y-auto p-2"></div>
 
       <div class="p-3 border-t border-light flex gap-2">
-        <button id="open-new-tab" class="editor-btn editor-btn-secondary w-full" title="Открыть текущий редактор в новой вкладке">
+        <button id="open-new-tab" class="editor-btn editor-btn-secondary flex-1 min-w-0" title="Открыть текущий редактор в новой вкладке">
           <i class="fa-solid fa-arrow-up-right-from-square"></i>
-          <span>Открыть во вкладке</span>
+          <span class="truncate">Во вкладке</span>
+        </button>
+        <button id="logoutBtn" class="editor-btn editor-btn-secondary" title="Выйти" aria-label="Выйти">
+          <i class="fa-solid fa-right-from-bracket"></i>
         </button>
       </div>
     </aside>
@@ -142,6 +155,9 @@
           <input id="mobileSearch" type="search" class="w-full form-input" placeholder="Поиск редактора..." />
         </div>
         <div id="mobileNav" class="flex-grow overflow-y-auto p-2"></div>
+        <div class="p-3 border-t border-light">
+          <button id="mobileLogoutBtn" class="editor-btn editor-btn-secondary w-full"><i class="fa-solid fa-right-from-bracket"></i><span>Выйти</span></button>
+        </div>
       </div>
     </div>
   </div>
@@ -154,23 +170,46 @@
           <i class="fa-solid fa-shield-halved text-accent"></i>
           <h2 class="text-xl font-bold">Авторизация Editor Studio</h2>
         </div>
-        <p class="editor-muted-text text-sm mb-4">Для работы с редактором требуется вход администратора.</p>
+        <p class="editor-muted-text text-sm mb-4" id="auth-subtitle">Для работы с редактором требуется вход администратора.</p>
 
-        <div class="space-y-3">
-          <div>
-            <div class="text-sm font-medium text-slate-200 mb-1">Логин</div>
-            <input id="auth-user" type="text" class="w-full form-input" value="admin" autocomplete="username" />
-          </div>
-          <div>
-            <div class="text-sm font-medium text-slate-200 mb-1">Пароль</div>
-            <input id="auth-pass" type="password" class="w-full form-input" placeholder="Введите пароль администратора" autocomplete="current-password" />
-          </div>
+        <div id="auth-tabs" class="auth-tabs mb-4 hidden" role="tablist">
+          <button type="button" class="auth-tab active" data-auth-tab="admin" role="tab"><i class="fa-solid fa-user-shield"></i>Администратор</button>
+          <button type="button" class="auth-tab" data-auth-tab="guest" role="tab"><i class="fa-solid fa-user-secret"></i>Гость</button>
         </div>
 
-        <button id="auth-login-btn" class="editor-btn editor-btn-primary w-full mt-4">
-          <i class="fa-solid fa-right-to-bracket"></i>
-          <span>Войти как администратор</span>
-        </button>
+        <div id="auth-panel-admin">
+          <div class="space-y-3">
+            <div>
+              <div class="text-sm font-medium text-slate-200 mb-1">Логин</div>
+              <input id="auth-user" type="text" class="w-full form-input" value="admin" autocomplete="username" />
+            </div>
+            <div>
+              <div class="text-sm font-medium text-slate-200 mb-1">Пароль</div>
+              <input id="auth-pass" type="password" class="w-full form-input" placeholder="Введите пароль администратора" autocomplete="current-password" />
+            </div>
+          </div>
+
+          <button id="auth-login-btn" class="editor-btn editor-btn-primary w-full mt-4">
+            <i class="fa-solid fa-right-to-bracket"></i>
+            <span>Войти как администратор</span>
+          </button>
+        </div>
+
+        <div id="auth-panel-guest" class="hidden">
+          <div class="auth-guest-note">
+            <div class="font-semibold mb-1"><i class="fa-solid fa-user-secret mr-1"></i> Гостевой режим</div>
+            Вы сможете просматривать редакторы контента и предлагать изменения. Изменения <b>не применяются</b> к базе данных —
+            из них формируется запрос, который проверяет и подтверждает администратор.
+          </div>
+          <div id="auth-guest-pass-wrap" class="mt-3 hidden">
+            <div class="text-sm font-medium text-slate-200 mb-1">Гостевой пароль</div>
+            <input id="auth-guest-pass" type="password" class="w-full form-input" placeholder="Пароль, выданный администратором" autocomplete="off" />
+          </div>
+          <button id="auth-guest-btn" class="editor-btn editor-btn-primary w-full mt-4">
+            <i class="fa-solid fa-user-secret"></i>
+            <span>Войти как гость</span>
+          </button>
+        </div>
         <div id="auth-status" class="text-sm mt-3 editor-muted-text"></div>
       </div>
     </div>
@@ -196,8 +235,21 @@
     const reloadEditorBtn = document.getElementById('reloadEditorBtn');
     const studioLoading = document.getElementById('studioLoading');
 
-    const GROUPS = Array.isArray(window.STUDIO_MANIFEST) ? window.STUDIO_MANIFEST : [];
-    const EDITORS = GROUPS.flatMap(g => g.items || []);
+    const ALL_GROUPS = Array.isArray(window.STUDIO_MANIFEST) ? window.STUDIO_MANIFEST : [];
+    const Guest = window.EditorCore?.Guest || null;
+
+    // ── Role-based navigation ─────────────────────────────────────────────
+    // admin: everything; guest: only items marked `guest: true` in the manifest.
+    // (UX only — the server rejects guests on every non-guest endpoint.)
+    let currentRole = null;
+    const getGroups = () => {
+      if (currentRole !== 'guest') return ALL_GROUPS;
+      return ALL_GROUPS
+        .map(g => ({ ...g, items: (g.items || []).filter(it => it.guest).map(it => ({ ...it, title: it.guestTitle || it.title })) }))
+        .filter(g => g.items.length);
+    };
+    const getEditors = () => getGroups().flatMap(g => g.items || []);
+    const navBadges = { requests: 0 };
 
     const authOverlay = document.getElementById('authOverlay');
     const authUser = document.getElementById('auth-user');
@@ -205,7 +257,7 @@
     const authLoginBtn = document.getElementById('auth-login-btn');
     const authStatus = document.getElementById('auth-status');
 
-    const byKey = (key) => EDITORS.find(e => e.key === key) || EDITORS[0] || null;
+    const byKey = (key) => { const list = getEditors(); return list.find(e => e.key === key) || list[0] || null; };
     const normalizeEditorKey = (value) => String(value || '').replace(/^#/, '').trim();
     const DIRTY_STATUS_TIMEOUT = 350;
 
@@ -226,7 +278,7 @@
       authOverlay?.classList.toggle('hidden', !visible);
       studioApp?.classList.toggle('hidden', visible);
       if (visible) {
-        authUser?.focus();
+        (activeAuthTab === 'guest' ? (authGuestPass && !authGuestPassWrap?.classList.contains('hidden') ? authGuestPass : authGuestBtn) : authUser)?.focus();
         document.body.style.overflow = 'hidden';
       } else {
         document.body.style.overflow = '';
@@ -248,19 +300,104 @@
       return json;
     };
 
+    // ── Auth UI (admin / guest) ───────────────────────────────────────────
+    const authTabs = document.getElementById('auth-tabs');
+    const authPanelAdmin = document.getElementById('auth-panel-admin');
+    const authPanelGuest = document.getElementById('auth-panel-guest');
+    const authSubtitle = document.getElementById('auth-subtitle');
+    const authGuestPassWrap = document.getElementById('auth-guest-pass-wrap');
+    const authGuestPass = document.getElementById('auth-guest-pass');
+    const authGuestBtn = document.getElementById('auth-guest-btn');
+    const roleChip = document.getElementById('studioRoleChip');
+    let authInfo = { guest: { enabled: false, password_required: false }, guest_only_network: false };
+    let activeAuthTab = 'admin';
+
+    const setAuthTab = (tab) => {
+      const guestEnabled = !!authInfo.guest?.enabled;
+      const adminBlocked = !!authInfo.guest_only_network;
+      if (tab === 'guest' && !guestEnabled) tab = 'admin';
+      if (tab === 'admin' && adminBlocked && guestEnabled) tab = 'guest';
+      activeAuthTab = tab;
+      authTabs?.querySelectorAll('[data-auth-tab]').forEach((b) => {
+        b.classList.toggle('active', b.dataset.authTab === tab);
+        b.setAttribute('aria-selected', b.dataset.authTab === tab ? 'true' : 'false');
+        if (b.dataset.authTab === 'admin') b.disabled = adminBlocked;
+      });
+      authPanelAdmin?.classList.toggle('hidden', tab !== 'admin');
+      authPanelGuest?.classList.toggle('hidden', tab !== 'guest');
+      authGuestPassWrap?.classList.toggle('hidden', !authInfo.guest?.password_required);
+      if (authSubtitle) {
+        authSubtitle.textContent = tab === 'guest'
+          ? 'Гость может предлагать изменения — их подтверждает администратор.'
+          : adminBlocked ? 'Вход администратора с этого адреса недоступен.' : 'Для работы с редактором требуется вход администратора.';
+      }
+    };
+
+    const applyAuthInfo = (status) => {
+      authInfo = {
+        guest: status?.guest || { enabled: false, password_required: false },
+        guest_only_network: !!status?.guest_only_network,
+      };
+      authTabs?.classList.toggle('hidden', !authInfo.guest.enabled);
+      setAuthTab(activeAuthTab);
+    };
+
+    authTabs?.addEventListener('click', (event) => {
+      const btn = event.target.closest('[data-auth-tab]');
+      if (!btn || btn.disabled) return;
+      setAuthStatus('');
+      setAuthTab(btn.dataset.authTab);
+      (btn.dataset.authTab === 'guest' ? (authInfo.guest?.password_required ? authGuestPass : authGuestBtn) : authPass)?.focus();
+    });
+
+    const setRole = (role) => {
+      currentRole = role || null;
+      if (roleChip) {
+        roleChip.classList.toggle('hidden', !currentRole);
+        roleChip.classList.toggle('is-guest', currentRole === 'guest');
+        roleChip.classList.toggle('is-admin', currentRole === 'admin');
+        roleChip.innerHTML = currentRole === 'guest'
+          ? '<i class="fa-solid fa-user-secret"></i>Гость'
+          : currentRole === 'admin' ? '<i class="fa-solid fa-user-shield"></i>Админ' : '';
+      }
+      Guest?.refreshStatus?.();
+      refreshBadges();
+    };
+
+    let badgeTimer = null;
+    const refreshBadges = async () => {
+      clearTimeout(badgeTimer);
+      if (currentRole === 'guest') {
+        navBadges.requests = Guest?.Draft?.count?.() || 0;
+      } else if (currentRole === 'admin') {
+        try {
+          const res = await fetch('api/change-requests.php?action=stats', { credentials: 'same-origin', cache: 'no-store' });
+          const json = await res.json().catch(() => null);
+          navBadges.requests = json?.ok ? Number(json.counts?.pending || 0) : 0;
+        } catch { navBadges.requests = 0; }
+        badgeTimer = setTimeout(refreshBadges, 60000);
+      } else {
+        navBadges.requests = 0;
+      }
+      renderAllNavs(activeKey, getSearchTerm());
+    };
+
     const ensureAuthorized = async () => {
       if (isAuthRequestInFlight) return false;
       isAuthRequestInFlight = true;
       const status = await authRequest('status');
       isAuthRequestInFlight = false;
+      applyAuthInfo(status);
       if (status.ok && status.authorized) {
         isAuthorized = true;
+        setRole(status.role || 'admin');
         setAuthOverlay(false);
         return true;
       }
       isAuthorized = false;
+      setRole(null);
       frame.src = 'about:blank';
-      setAuthStatus('Введите данные администратора для входа.');
+      setAuthStatus(activeAuthTab === 'guest' ? 'Войдите как гость, чтобы предлагать изменения.' : 'Введите данные администратора для входа.');
       setAuthOverlay(true);
       return false;
     };
@@ -272,7 +409,7 @@
       const q = term.toLowerCase();
       let hasItems = false;
       const fragment = document.createDocumentFragment();
-      for (const g of GROUPS) {
+      for (const g of getGroups()) {
         const items = (g.items || []).filter((e) => {
           if (!q) return true;
           const hay = `${e.title || ''} ${e.key || ''}`.toLowerCase();
@@ -296,7 +433,8 @@
           btn.className = `studio-item w-full text-left p-3 rounded-xl border ${isActive ? 'active' : 'border-light hover:bg-light'} flex items-center gap-3`;
           btn.setAttribute('aria-current', isActive ? 'page' : 'false');
           btn.title = e.title || e.key;
-          btn.innerHTML = `<i class="fa-solid ${e.icon} w-5 text-center"></i><div class="min-w-0"><div class="font-semibold truncate">${e.title}</div><div class="text-xs editor-muted-text truncate">${e.key}</div></div>`;
+          const badge = navBadges[e.key] ? `<span class="studio-nav-badge" title="${currentRole === 'guest' ? 'Изменений в черновике' : 'Запросов на рассмотрении'}">${navBadges[e.key]}</span>` : '';
+          btn.innerHTML = `<i class="fa-solid ${e.icon} w-5 text-center"></i><div class="min-w-0"><div class="font-semibold truncate">${e.title}</div><div class="text-xs editor-muted-text truncate">${e.key}</div></div>${badge}`;
           btn.addEventListener('click', () => openEditor(e.key, { closeMobile: true }));
           fragment.appendChild(btn);
         }
@@ -349,6 +487,7 @@
         if (!isAuthorized) return;
       }
       const requestSeq = ++openEditorRequestSeq;
+      // Never open an editor that is not allowed for the current role.
       const e = byKey(key);
       if (!e) {
         frame.src = '';
@@ -433,7 +572,7 @@
 
     openNewTab.addEventListener('click', () => {
       if (!isAuthorized) return;
-      const fallbackKey = EDITORS[0]?.key || '';
+      const fallbackKey = getEditors()[0]?.key || '';
       const key = normalizeEditorKey(location.hash) || storageGet('studio.activeEditor') || fallbackKey;
       const e = byKey(key);
       if (!e) return;
@@ -470,7 +609,7 @@
       if (isHashSync) return;
 
       const hashKey = normalizeEditorKey(location.hash);
-      const editor = EDITORS.find((entry) => entry.key === hashKey);
+      const editor = getEditors().find((entry) => entry.key === hashKey);
 
       if (editor) {
         if (editor.key !== activeKey) openEditor(editor.key, { syncHash: false });
@@ -485,7 +624,16 @@
     });
 
     window.addEventListener('message', (event) => {
+      if (event.origin !== location.origin) return;
       const data = event.data || {};
+      if (data?.type === 'editor-shell:open-editor' && typeof data.key === 'string') {
+        if (isAuthorized) openEditor(data.key);
+        return;
+      }
+      if (data?.type === 'editor-shell:guest-draft-changed' || data?.type === 'editor-shell:requests-changed') {
+        refreshBadges();
+        return;
+      }
       if (data?.type !== 'editor-shell:auth-required') return;
       isAuthorized = false;
       setAuthStatus('Сессия истекла. Повторите вход администратора.', 'err');
@@ -512,9 +660,10 @@
         return;
       }
       isAuthorized = true;
+      setRole('admin');
       setAuthStatus('Вход выполнен.', 'ok');
       setAuthOverlay(false);
-      const fallbackKey = normalizeEditorKey(location.hash) || storageGet('studio.activeEditor') || EDITORS[0]?.key || '';
+      const fallbackKey = normalizeEditorKey(location.hash) || storageGet('studio.activeEditor') || getEditors()[0]?.key || '';
       openEditor(fallbackKey);
     });
 
@@ -525,10 +674,62 @@
       }
     });
 
+    authGuestBtn?.addEventListener('click', async () => {
+      if (isAuthRequestInFlight) return;
+      const password = String(authGuestPass?.value || '');
+      if (authInfo.guest?.password_required && !password) {
+        setAuthStatus('Введите гостевой пароль.', 'err');
+        return;
+      }
+      authGuestBtn.disabled = true;
+      isAuthRequestInFlight = true;
+      setAuthStatus('Входим в гостевой режим...');
+      const login = await authRequest('guest_login', { password, guest_key: Guest?.GuestKey?.get?.() || '' });
+      authGuestBtn.disabled = false;
+      isAuthRequestInFlight = false;
+      if (!login.ok) {
+        setAuthStatus(login.error || 'Ошибка входа.', 'err');
+        return;
+      }
+      if (login.guest_key) Guest?.GuestKey?.set?.(login.guest_key);
+      if (authGuestPass) authGuestPass.value = '';
+      isAuthorized = true;
+      setRole('guest');
+      setAuthStatus('Гостевой режим активирован.', 'ok');
+      setAuthOverlay(false);
+      openEditor(initial());
+    });
+
+    authGuestPass?.addEventListener('keydown', (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        authGuestBtn?.click();
+      }
+    });
+
+    const logout = async () => {
+      if (currentRole === 'guest' && (Guest?.Draft?.count?.() || 0) > 0) {
+        if (!confirm('В черновике есть неотправленные изменения. Они сохранятся в этом браузере. Выйти?')) return;
+      }
+      await authRequest('logout', {});
+      isAuthorized = false;
+      activeKey = '';
+      setRole(null);
+      frame.src = 'about:blank';
+      mobileOverlay?.classList.add('hidden');
+      await ensureAuthorized();
+      setAuthStatus('Вы вышли из Editor Studio.');
+    };
+    document.getElementById('logoutBtn')?.addEventListener('click', logout);
+    document.getElementById('mobileLogoutBtn')?.addEventListener('click', logout);
+    window.addEventListener('storage', (event) => {
+      if (event.key === 'editorStudio.guestDraft.v1' && currentRole === 'guest') refreshBadges();
+    });
+
     // Initial editor selection: hash > localStorage > default
-    const initial = normalizeEditorKey(location.hash) || storageGet('studio.activeEditor') || EDITORS[0]?.key || '';
+    const initial = () => normalizeEditorKey(location.hash) || storageGet('studio.activeEditor') || getEditors()[0]?.key || '';
     ensureAuthorized().then((ok) => {
-      if (ok) openEditor(initial);
+      if (ok) openEditor(initial());
     });
   </script>
 </body>

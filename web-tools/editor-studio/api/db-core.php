@@ -89,15 +89,175 @@ function start_editor_session(): void
     session_start();
 }
 
+// ── Roles ────────────────────────────────────────────────────────────────────
+//
+// Editor Studio knows two roles:
+//   admin — full access (the original behaviour);
+//   guest — read-only access to whitelisted editors. A guest can NEVER write
+//           to the game database; it can only create change requests that an
+//           administrator reviews and applies (see api/change-requests.php).
+//
+// Every endpoint is admin-only by default (bootstrap_editor_api(true)), so a
+// guest session is rejected everywhere unless an endpoint explicitly opts in
+// via bootstrap_editor_api_roles([...'guest']) AND checks the action.
+
+const EDITOR_ROLE_ADMIN = 'admin';
+const EDITOR_ROLE_GUEST = 'guest';
+
+/** True when the current request came from a network that is allowed only for guests. */
+$GLOBALS['EDITOR_NETWORK_GUEST_ONLY'] = false;
+
+function clamp_int(mixed $value, int $min, int $max, int $default): int
+{
+    if (!is_numeric($value)) {
+        return $default;
+    }
+    return max($min, min($max, (int)$value));
+}
+
+/** Normalised guest access settings (stored in data/db-config.json). */
+function guest_cfg(?array $cfg = null): array
+{
+    $cfg ??= load_cfg();
+    return [
+        'enabled'        => (bool)($cfg['guest_enabled'] ?? false),
+        'password'       => (string)($cfg['guest_password'] ?? ''),
+        'allow_remote'   => (bool)($cfg['guest_allow_remote'] ?? false),
+        'max_pending'    => clamp_int($cfg['guest_max_pending'] ?? null, 1, 50, 5),
+        'cooldown'       => clamp_int($cfg['guest_submit_cooldown'] ?? null, 0, 3600, 60),
+        'max_operations' => clamp_int($cfg['guest_max_operations'] ?? null, 1, 500, 100),
+    ];
+}
+
+/** Fingerprint of the guest password: a password change invalidates guest sessions. */
+function guest_password_epoch(array $guest): string
+{
+    return substr(hash('sha256', 'guest-epoch|' . $guest['password']), 0, 16);
+}
+
+function clear_guest_session(): void
+{
+    unset(
+        $_SESSION['editor_studio_guest'],
+        $_SESSION['editor_studio_guest_key'],
+        $_SESSION['editor_studio_guest_epoch'],
+        $_SESSION['editor_studio_guest_last_submit']
+    );
+}
+
+/** Returns 'admin', 'guest' or null for the current session. */
+function editor_session_role(?array $cfg = null): ?string
+{
+    if (session_status() !== PHP_SESSION_ACTIVE) {
+        return null;
+    }
+    if (isset($_SESSION['editor_studio_auth']) && $_SESSION['editor_studio_auth'] === true) {
+        return EDITOR_ROLE_ADMIN;
+    }
+    if (isset($_SESSION['editor_studio_guest']) && $_SESSION['editor_studio_guest'] === true) {
+        $guest = guest_cfg($cfg);
+        $epoch = (string)($_SESSION['editor_studio_guest_epoch'] ?? '');
+        // Guest access disabled or password rotated → session is no longer valid.
+        if (!$guest['enabled'] || !hash_equals(guest_password_epoch($guest), $epoch)) {
+            clear_guest_session();
+            return null;
+        }
+        return EDITOR_ROLE_GUEST;
+    }
+    return null;
+}
+
+/** Stable random identifier of the guest (used to show "my requests"). */
+function editor_guest_key(): string
+{
+    $key = (string)($_SESSION['editor_studio_guest_key'] ?? '');
+    return preg_match('/^[a-f0-9]{48}$/', $key) === 1 ? $key : '';
+}
+
+function editor_network_guest_only(): bool
+{
+    return (bool)($GLOBALS['EDITOR_NETWORK_GUEST_ONLY'] ?? false);
+}
+
 function ensure_editor_auth(): void
 {
     start_editor_session();
+    ensure_editor_role([EDITOR_ROLE_ADMIN]);
+}
 
-    $authorized = isset($_SESSION['editor_studio_auth'])
-        && $_SESSION['editor_studio_auth'] === true;
-
-    if (!$authorized) {
+/**
+ * Make sure the current session has one of the allowed roles.
+ * 401 → not logged in (the shell shows the login dialog),
+ * 403 → logged in, but the role is not allowed here (guest in admin area).
+ */
+function ensure_editor_role(array $roles): string
+{
+    $role = editor_session_role();
+    if ($role === EDITOR_ROLE_ADMIN && editor_network_guest_only()) {
+        // Admin session cookie used from a network allowed only for guests.
+        $role = null;
+    }
+    if ($role === null) {
         respond(['ok' => false, 'error' => 'Unauthorized'], 401);
+    }
+    if (!in_array($role, $roles, true)) {
+        respond([
+            'ok' => false,
+            'error' => 'Доступ запрещён: этот раздел недоступен для гостевого аккаунта.',
+            'code' => 'guest_forbidden',
+        ], 403);
+    }
+    return $role;
+}
+
+/** Guests may only use explicitly whitelisted actions of an endpoint. */
+function guest_action_guard(string $role, string $action, array $allowedActions): void
+{
+    if ($role === EDITOR_ROLE_GUEST && !in_array($action, $allowedActions, true)) {
+        respond([
+            'ok' => false,
+            'error' => 'Гостевой аккаунт не может выполнять это действие. Создайте запрос на изменение.',
+            'code' => 'guest_forbidden',
+        ], 403);
+    }
+}
+
+/**
+ * CSRF protection for state-changing requests: body must be JSON (cannot be
+ * sent cross-site without a CORS preflight) and Origin, when present, must
+ * match the host.
+ */
+function require_same_origin_json_post(): void
+{
+    $method = strtoupper((string)($_SERVER['REQUEST_METHOD'] ?? 'GET'));
+    if ($method !== 'POST') {
+        respond(['ok' => false, 'error' => 'Method not allowed'], 405);
+    }
+    $ctype = strtolower((string)($_SERVER['CONTENT_TYPE'] ?? $_SERVER['HTTP_CONTENT_TYPE'] ?? ''));
+    if (!str_starts_with($ctype, 'application/json')) {
+        respond(['ok' => false, 'error' => 'Content-Type must be application/json'], 415);
+    }
+    $origin = (string)($_SERVER['HTTP_ORIGIN'] ?? '');
+    if ($origin !== '' && $origin !== 'null') {
+        $originHost = strtolower((string)parse_url($origin, PHP_URL_HOST));
+        $originPort = parse_url($origin, PHP_URL_PORT);
+        if ($originPort !== null && $originPort !== false) {
+            $originHost .= ':' . $originPort;
+        }
+        $hosts = array_filter([
+            strtolower((string)($_SERVER['HTTP_HOST'] ?? '')),
+            strtolower(trim(explode(',', (string)($_SERVER['HTTP_X_FORWARDED_HOST'] ?? ''))[0])),
+        ]);
+        $matches = false;
+        foreach ($hosts as $host) {
+            if ($host === $originHost || preg_replace('/:\d+$/', '', $host) === preg_replace('/:\d+$/', '', $originHost)) {
+                $matches = true;
+                break;
+            }
+        }
+        if (!$matches) {
+            respond(['ok' => false, 'error' => 'Cross-origin request rejected'], 403);
+        }
     }
 }
 
@@ -197,7 +357,8 @@ function ip_in_cidrs(string $ip, array $cidrs): bool
     return false;
 }
 
-function enforce_network_policy(array $cfg): void
+/** Returns null when the request IP passes the admin network policy, otherwise an error message. */
+function network_policy_error(array $cfg): ?string
 {
     $allowRemote = (bool)($cfg['allow_remote_editor'] ?? false);
 
@@ -205,36 +366,71 @@ function enforce_network_policy(array $cfg): void
         $allowed = $cfg['allowed_editor_ips'] ?? [];
         if (!is_array($allowed) || $allowed === []) {
             // Remote allowed but no IP whitelist → open access
-            return;
+            return null;
         }
         $ip = get_request_ip();
-        if (!ip_in_cidrs($ip, $allowed)) {
-            respond(['ok' => false, 'error' => 'Access denied for this IP'], 403);
-        }
-        return;
+        return ip_in_cidrs($ip, $allowed) ? null : 'Access denied for this IP';
     }
 
     // Local-only mode
-    $ip = get_request_ip();
-    if (!ip_is_loopback($ip)) {
-        respond(['ok' => false, 'error' => 'Editor API is available only from localhost'], 403);
+    return ip_is_loopback(get_request_ip()) ? null : 'Editor API is available only from localhost';
+}
+
+function enforce_network_policy(array $cfg): void
+{
+    $error = network_policy_error($cfg);
+    if ($error !== null) {
+        respond(['ok' => false, 'error' => $error], 403);
     }
 }
 
 // ── Bootstrap ────────────────────────────────────────────────────────────────
 
+/**
+ * Admin-only bootstrap (unchanged semantics for every existing endpoint).
+ * With $requireAuth=false only the session is started (used by auth.php).
+ */
 function bootstrap_editor_api(bool $requireAuth = true): void
+{
+    bootstrap_editor_api_roles($requireAuth ? [EDITOR_ROLE_ADMIN] : null);
+}
+
+/**
+ * Role-aware bootstrap.
+ *  - $roles === null : no auth required, returns current role (or null)
+ *  - otherwise       : session must have one of $roles
+ *
+ * Network: requests that fail the admin IP policy are accepted only when guest
+ * remote access is enabled, and then ONLY for guest sessions.
+ */
+function bootstrap_editor_api_roles(?array $roles): ?string
 {
     apply_security_headers();
 
     $cfg = load_cfg();
-    enforce_network_policy($cfg);
+    $networkError = network_policy_error($cfg);
+    $guest = guest_cfg($cfg);
 
-    if ($requireAuth) {
-        ensure_editor_auth();
-    } else {
-        start_editor_session();
+    if ($networkError !== null) {
+        $guestNetworkAllowed = $guest['enabled'] && $guest['allow_remote']
+            && ($roles === null || in_array(EDITOR_ROLE_GUEST, $roles, true));
+        if (!$guestNetworkAllowed) {
+            respond(['ok' => false, 'error' => $networkError], 403);
+        }
+        $GLOBALS['EDITOR_NETWORK_GUEST_ONLY'] = true;
     }
+
+    start_editor_session();
+
+    if ($roles === null) {
+        $role = editor_session_role($cfg);
+        if ($role === EDITOR_ROLE_ADMIN && editor_network_guest_only()) {
+            return null;
+        }
+        return $role;
+    }
+
+    return ensure_editor_role($roles);
 }
 
 // ── HTTP endpoint testing ────────────────────────────────────────────────────

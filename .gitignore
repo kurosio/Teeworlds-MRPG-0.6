@@ -72,3 +72,4 @@ MinSizeRel/versionsrv.exe
 # Editor Studio: runtime DB dumps (contain data) and sync profiles (contain passwords)
 web-tools/editor-studio/data/db-dumps/
 web-tools/editor-studio/data/db-sync-config.json
+web-tools/editor-studio/data/change-requests/

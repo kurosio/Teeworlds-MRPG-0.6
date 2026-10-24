@@ -8,12 +8,16 @@
 //  - test_skins (POST)
 //  - list (GET) : source, search, limit, offset, with_total
 //  - get_one (GET) : source, id
+//
+// Guest role: list, get_one, get_config (skins_api only).
 
 declare(strict_types=1);
 
 require_once __DIR__ . '/db-core.php';
 
-bootstrap_editor_api(true);
+// Admin: everything. Guest: only read-only lookups (list/get_one) and the public
+// part of the config (skins_api). Connection settings are never shown to guests.
+$ROLE = bootstrap_editor_api_roles([EDITOR_ROLE_ADMIN, EDITOR_ROLE_GUEST]);
 
 // ── Source registry ──────────────────────────────────────────────────────────
 // Whitelisted sources for DBSelect.
@@ -65,7 +69,12 @@ function validate_table_name(string $name): string
 
 function handle_get_config(): never
 {
+    global $ROLE;
     $c = load_cfg();
+
+    if ($ROLE !== EDITOR_ROLE_ADMIN) {
+        respond(['ok' => true, 'config' => ['skins_api' => (string)($c['skins_api'] ?? '')]]);
+    }
 
     $safe = [
         'host'                => (string)($c['host'] ?? ''),
@@ -130,6 +139,9 @@ function handle_save_config(): never
     if ($cfg['editor_password'] === '' && isset($prev['editor_password'])) {
         $cfg['editor_password'] = (string)$prev['editor_password'];
     }
+
+    // Preserve settings managed elsewhere (guest access, etc.).
+    $cfg = array_merge($prev, $cfg);
 
     if (!save_cfg($cfg)) {
         respond(['ok' => false, 'error' => 'Failed to save config'], 500);
@@ -383,6 +395,7 @@ $handlers = [
 ];
 
 try {
+    guest_action_guard($ROLE, $action, ['list', 'get_one', 'get_config']);
     if (isset($handlers[$action])) {
         $handlers[$action]();
     } else {

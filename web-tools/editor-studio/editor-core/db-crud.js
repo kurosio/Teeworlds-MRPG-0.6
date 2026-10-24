@@ -66,6 +66,28 @@
     .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`)
     .join('&');
 
+  // ── Guest mode ──────────────────────────────────────────────────────────
+  // In guest mode writes never reach api/db-crud.php (the server would reject
+  // them anyway): they go into the local change-request draft, and reads are
+  // overlaid with that draft. See editor-core/guest-mode.js.
+  const guestApi = () => window.EditorCore?.Guest || null;
+  const guestRole = async () => {
+    const g = guestApi();
+    if (!g) return null;
+    return g.ready();
+  };
+  const isGuestMode = async () => (await guestRole()) === 'guest';
+
+  const rawGet = (resource, id) => jsonFetch(`${API}?${qs({ action: 'get', resource, id })}`);
+  const rawGetRow = async (resource, id) => {
+    try {
+      const res = await rawGet(resource, id);
+      return res?.row || null;
+    } catch {
+      return null;
+    }
+  };
+
   const DBCrud = {
     // Flag to prevent double-recording when runtime already records
     _syncRecordEnabled: true,
@@ -75,9 +97,12 @@
       const now = Date.now();
       const cached = listCache.get(key);
       if (cached && (now - cached.ts) < LIST_CACHE_TTL_MS) {
+        if (await isGuestMode()) {
+          return { ...cached.value, rows: guestApi().Draft.overlayRows(resource, cached.value?.rows || [], { search, offset }) };
+        }
         return cached.value;
       }
-      if (!signal && inflight.has(key)) {
+      if (!signal && inflight.has(key) && !(await isGuestMode())) {
         return inflight.get(key);
       }
       const req = jsonFetch(`${API}?${qs({ action: 'list', resource, search, limit, offset })}`, { signal })
@@ -87,10 +112,18 @@
         })
         .finally(() => inflight.delete(key));
       if (!signal) inflight.set(key, req);
+      if (await isGuestMode()) {
+        const res = await req;
+        return { ...res, rows: guestApi().Draft.overlayRows(resource, res?.rows || [], { search, offset }) };
+      }
       return req;
     },
     async renameCraftGroup(target, newGroup, mergeExisting = false) {
       listCache.clear();
+      if (await isGuestMode()) {
+        const list = await DBCrud.list('crafts', { search: '', limit: 5000, offset: 0 });
+        return guestApi().renameCraftGroup(list?.rows || [], target, newGroup, mergeExisting);
+      }
       const res = await jsonFetch(`${API}?${qs({ action: 'rename_group', resource: 'crafts' })}`, {
         method: 'POST',
         body: JSON.stringify({ ...target, newGroup, mergeExisting }),
@@ -110,7 +143,13 @@
       return res;
     },
     async get(resource, id) {
-      return jsonFetch(`${API}?${qs({ action: 'get', resource, id })}`);
+      if (await isGuestMode()) {
+        const g = guestApi();
+        if (g.isTempId(id)) return { ok: true, row: g.Draft.overlayRow(resource, id, null) };
+        const res = await rawGet(resource, id);
+        return { ...res, row: g.Draft.overlayRow(resource, id, res?.row || null) };
+      }
+      return rawGet(resource, id);
     },
     async create(resource, data, { _skipSyncRecord = false } = {}) {
       listCache.clear();
@@ -119,6 +158,7 @@
       if (!resource || !data) {
         throw new Error('Resource and data are required for create');
       }
+      if (await isGuestMode()) return guestApi().Draft.create(resource, data);
       
       const res = await jsonFetch(`${API}?${qs({ action: 'create', resource })}`, { method: 'POST', body: JSON.stringify({ data }) });
       
@@ -144,6 +184,11 @@
       if (!resource || !id || !data) {
         throw new Error('Resource, id, and data are required for update');
       }
+      if (await isGuestMode()) {
+        const g = guestApi();
+        const base = g.isTempId(id) ? null : await rawGetRow(resource, id);
+        return g.Draft.update(resource, id, data, base);
+      }
       
       const res = await jsonFetch(`${API}?${qs({ action: 'update', resource, id })}`, { method: 'POST', body: JSON.stringify({ data }) });
       
@@ -168,6 +213,11 @@
       // Validate inputs
       if (!resource || !id) {
         throw new Error('Resource and id are required for remove');
+      }
+      if (await isGuestMode()) {
+        const g = guestApi();
+        const base = g.isTempId(id) ? null : await rawGetRow(resource, id);
+        return g.Draft.remove(resource, id, base);
       }
       
       const res = await jsonFetch(`${API}?${qs({ action: 'delete', resource, id })}`, { method: 'POST', body: JSON.stringify({}) });

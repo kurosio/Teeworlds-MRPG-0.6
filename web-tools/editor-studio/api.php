@@ -1,92 +1,92 @@
 <?php
-// Устанавливаем заголовки для корректной работы с JSON и CORS
-header('Content-Type: application/json');
-header('Access-Control-Allow-Origin: *'); // В продакшене лучше указать конкретный домен
-header('Access-Control-Allow-Methods: GET, POST, OPTIONS');
-header('Access-Control-Allow-Headers: Content-Type');
+// File API for scenarios (list / load / save JSON in scenarios/).
+// Admin only: guests and anonymous users have no access to scenario files.
+
+declare(strict_types=1);
+
+require_once __DIR__ . '/api/db-core.php';
+
+bootstrap_editor_api(true);
 
 // Директория для хранения файлов сценариев
-$scenariosDir = 'scenarios/';
-$method = $_SERVER['REQUEST_METHOD'];
+$scenariosDir = __DIR__ . '/scenarios/';
+$method = strtoupper((string)($_SERVER['REQUEST_METHOD'] ?? 'GET'));
 
-// Обработка preflight-запроса от браузера
-if ($method === 'OPTIONS') {
-    exit(0);
-}
-
-// Если директория не существует, создаем ее
 if (!is_dir($scenariosDir)) {
     mkdir($scenariosDir, 0755, true);
 }
 
 /**
- * Очищает имя файла от опасных символов, чтобы предотвратить выход из директории.
- * @param string $filename Исходное имя файла.
- * @return string Безопасное имя файла.
+ * Безопасное имя файла: только basename из букв/цифр/[_ .-], всегда с расширением .json.
+ * Возвращает '' если имя некорректно.
  */
-function sanitize_filename($filename) {
-    // Удаляет ".." , "/" и "\"
-    return preg_replace('/(\.\.)|(\/)|(\\\)/', '', $filename);
+function sanitize_filename(string $filename): string
+{
+    $name = basename(str_replace('\\', '/', trim($filename)));
+    if (str_ends_with(strtolower($name), '.json')) {
+        $name = substr($name, 0, -5);
+    }
+    $name = preg_replace('/[^\p{L}\p{N}_\-. ]/u', '_', $name) ?? '';
+    $name = trim($name, '.');
+    if ($name === '' || strlen($name) > 200) {
+        return '';
+    }
+    return $name . '.json';
 }
 
 // ОБРАБОТКА GET-ЗАПРОСОВ (получение данных)
 if ($method === 'GET') {
-    // Если запрошен список файлов
     if (isset($_GET['action']) && $_GET['action'] === 'list') {
-        $files = glob($scenariosDir . '*.json');
-        // Возвращаем только имена файлов, а не полные пути
+        $files = glob($scenariosDir . '*.json') ?: [];
         $filenames = array_map('basename', $files);
-        echo json_encode(['success' => true, 'files' => $filenames]);
+        echo json_encode(['success' => true, 'files' => $filenames], JSON_UNESCAPED_UNICODE);
         exit;
     }
 
-    // Если запрошен конкретный файл
     if (isset($_GET['file'])) {
-        $file = $scenariosDir . sanitize_filename($_GET['file']);
-        if (file_exists($file)) {
-            // Отдаем содержимое файла
+        $safe = sanitize_filename((string)$_GET['file']);
+        $file = $scenariosDir . $safe;
+        if ($safe !== '' && is_file($file)) {
             echo file_get_contents($file);
         } else {
-            // Если файл не найден, возвращаем ошибку 404
             http_response_code(404);
-            echo json_encode(['success' => false, 'error' => 'Файл не найден']);
+            echo json_encode(['success' => false, 'error' => 'Файл не найден'], JSON_UNESCAPED_UNICODE);
         }
     } else {
-        // Если имя файла не передано, возвращаем ошибку 400
         http_response_code(400);
-        echo json_encode(['success' => false, 'error' => 'Файл не указан']);
+        echo json_encode(['success' => false, 'error' => 'Файл не указан'], JSON_UNESCAPED_UNICODE);
     }
+    exit;
 }
 
 // ОБРАБОТКА POST-ЗАПРОСОВ (сохранение данных)
 if ($method === 'POST') {
-    // Получаем JSON из тела запроса
-    $data = json_decode(file_get_contents('php://input'), true);
+    $data = json_decode((string)file_get_contents('php://input'), true);
 
-    // Проверяем корректность полученных данных
-    if (json_last_error() !== JSON_ERROR_NONE || !isset($data['filename']) || !isset($data['content'])) {
+    if (json_last_error() !== JSON_ERROR_NONE || !isset($data['filename']) || !array_key_exists('content', $data)) {
         http_response_code(400);
-        echo json_encode(['success' => false, 'error' => 'Некорректные данные']);
+        echo json_encode(['success' => false, 'error' => 'Некорректные данные'], JSON_UNESCAPED_UNICODE);
         exit;
     }
 
-    $filename = sanitize_filename($data['filename']);
-    // Если расширение не указано, добавляем .json
-    if (empty(pathinfo($filename, PATHINFO_EXTENSION))) {
-        $filename .= '.json';
+    $filename = sanitize_filename((string)$data['filename']);
+    if ($filename === '') {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'error' => 'Некорректное имя файла'], JSON_UNESCAPED_UNICODE);
+        exit;
     }
 
     $filePath = $scenariosDir . $filename;
-    // Кодируем контент в красивый JSON с поддержкой кириллицы
     $content = json_encode($data['content'], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
 
-    // Пытаемся записать данные в файл
-    if (file_put_contents($filePath, $content) !== false) {
-        echo json_encode(['success' => true, 'message' => 'Файл ' . $filename . ' успешно сохранен.']);
+    if ($content !== false && file_put_contents($filePath, $content, LOCK_EX) !== false) {
+        echo json_encode(['success' => true, 'message' => 'Файл ' . $filename . ' успешно сохранен.'], JSON_UNESCAPED_UNICODE);
     } else {
-        // Если не удалось, возвращаем ошибку 500
         http_response_code(500);
-        echo json_encode(['success' => false, 'error' => 'Не удалось сохранить файл на сервере.']);
+        echo json_encode(['success' => false, 'error' => 'Не удалось сохранить файл на сервере.'], JSON_UNESCAPED_UNICODE);
     }
+    exit;
 }
-?>
+
+http_response_code(405);
+echo json_encode(['success' => false, 'error' => 'Method not allowed']);

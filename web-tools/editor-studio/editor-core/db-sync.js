@@ -376,6 +376,9 @@
    */
   const mountSyncButton = (container, cfg = {}) => {
     if (!container) return null;
+    // Guests never sync databases (server side is admin-only as well).
+    const guestApi = window.EditorCore?.Guest;
+    if (guestApi?.cachedRole?.() === 'guest') return null;
 
     const btn = document.createElement('button');
     btn.type = 'button';
@@ -398,6 +401,7 @@
 
     btn.addEventListener('click', () => openSyncModal(cfg));
     container.appendChild(btn);
+    guestApi?.ready?.().then((role) => { if (role === 'guest') btn.remove(); });
 
     updateBadge();
 
