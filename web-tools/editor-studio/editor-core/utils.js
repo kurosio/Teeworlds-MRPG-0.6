@@ -138,6 +138,62 @@
     return Number.isFinite(number) ? Math.trunc(number) : fallback;
   };
 
+  /**
+   * «Отсутствующее» значение в редакторах.
+   *
+   * Формы не различают NULL и пустое поле: `rowToModel` каждого редактора
+   * приводит NULL к '' (текст) или 0 (число), а `modelToPayload` отправляет эти
+   * значения обратно. Поэтому сравнение «было → станет» не может опираться на
+   * точное равенство: иначе обычное открытие записи и нажатие «Сохранить»
+   * записывает в запрос изменения вида `NULL → пусто` и `NULL → 0`, а возврат
+   * поля к исходному значению не убирает операцию из черновика.
+   *
+   * Пустыми считаются только значения, которые действительно означают «нет
+   * значения»: NULL/undefined, false, 0, пустая строка и пустые JSON-структуры.
+   */
+  const isEmptyValue = (value) => {
+    if (value === null || value === undefined) return true;
+    if (typeof value === 'boolean') return value === false;
+    if (typeof value === 'number') return value === 0;
+    if (typeof value === 'string') {
+      const text = value.trim();
+      if (text === '') return true;
+      // Числовая строка ('0', '0.00', '-0') в числовом поле — тот же ноль.
+      if (/^-?\d+(\.\d+)?$/.test(text)) return Number(text) === 0;
+      // Пустая JSON-структура, пришедшая строкой из БД.
+      if (text === '{}' || text === '[]') return true;
+      return false;
+    }
+    if (Array.isArray(value)) return value.length === 0;
+    if (typeof value === 'object') return Object.keys(value).length === 0;
+    return false;
+  };
+
+  /**
+   * Каноническое представление значения для сравнения: числа и числовые строки,
+   * JSON и текст с одинаковым смыслом дают одинаковую строку.
+   */
+  const canonicalValue = (value) => {
+    if (value === undefined || value === null) return null;
+    if (typeof value === 'boolean') return value ? '1' : '0';
+    if (typeof value === 'object') {
+      try { return JSON.stringify(value); } catch { return String(value); }
+    }
+    const text = String(value);
+    if (/^-?\d+(\.\d+)?$/.test(text)) return String(Number(text));
+    const trimmed = text.trim();
+    if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+      try { return JSON.stringify(JSON.parse(trimmed)); } catch { /* keep the raw value */ }
+    }
+    return text;
+  };
+
+  /** Равенство значений «было → станет»: NULL, '' и 0 означают одно и то же. */
+  const valuesEqual = (a, b) => {
+    if (isEmptyValue(a) && isEmptyValue(b)) return true;
+    return canonicalValue(a) === canonicalValue(b);
+  };
+
   const parseStringList = (value, { separator = ',', allowed = null, unique = false } = {}) => {
     const source = Array.isArray(value) ? value : String(value ?? '').split(separator);
     const canonical = Array.isArray(allowed) && allowed.length
@@ -586,6 +642,9 @@
     createRequestCache,
     toFiniteNumber,
     toNullableInt,
+    isEmptyValue,
+    canonicalValue,
+    valuesEqual,
     parseStringList,
     stringifyStringList,
     splitComposite,

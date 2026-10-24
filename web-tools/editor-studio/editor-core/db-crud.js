@@ -66,7 +66,9 @@
     recordSync(resource, action, {
       id: action === 'create' ? response?.id : id,
       data,
-      skip: skipSync,
+      // Nothing was written: the payload matched the stored row (the server
+      // compares NULL / '' / 0 as the same absence). Keep the history clean.
+      skip: skipSync || (action === 'update' && response?.unchanged === true),
     });
     return response;
   };

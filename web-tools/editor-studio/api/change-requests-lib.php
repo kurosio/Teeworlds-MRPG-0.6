@@ -587,34 +587,24 @@ function cr_order_ops(array $ops): array
 
 // ── Analysis ─────────────────────────────────────────────────────────────────
 
+/**
+ * Сравнение значений вынесено в db-resources.php (нужно и прямому сохранению
+ * через db-crud.php): NULL, '' и 0 означают одно и то же «нет значения».
+ * Здесь только тонкие обёртки, чтобы не расходились правила анализа запросов.
+ */
 function cr_decode_json_value(mixed $v): mixed
 {
-    if (!is_string($v)) return $v;
-    $t = trim($v);
-    if ($t === '' || ($t[0] !== '{' && $t[0] !== '[')) return $v;
-    $d = json_decode($t, true);
-    return json_last_error() === JSON_ERROR_NONE ? $d : $v;
+    return editor_decode_json_value($v);
 }
 
 function cr_canonical(mixed $v, bool $isJson): ?string
 {
-    if ($v === null) return null;
-    if ($isJson) {
-        $d = cr_decode_json_value($v);
-        if (is_array($d)) return json_encode($d, JSON_UNESCAPED_UNICODE);
-    }
-    if (is_bool($v)) return $v ? '1' : '0';
-    if (is_float($v) || is_int($v)) return rtrim(rtrim(number_format((float)$v, 10, '.', ''), '0'), '.') ?: '0';
-    $s = (string)$v;
-    if (is_numeric($s) && preg_match('/^-?\d+(\.\d+)?$/', $s) === 1) {
-        return rtrim(rtrim(number_format((float)$s, 10, '.', ''), '0'), '.') ?: '0';
-    }
-    return $s;
+    return editor_value_canonical($v, $isJson);
 }
 
 function cr_values_equal(mixed $a, mixed $b, bool $isJson): bool
 {
-    return cr_canonical($a, $isJson) === cr_canonical($b, $isJson);
+    return editor_values_equal($a, $b, $isJson);
 }
 
 /** Value prepared for display (JSON columns pretty printed). */
@@ -912,6 +902,13 @@ function cr_prepare_for_submit(mysqli $db, array $ops): array
         if ($entry['noop']) continue;
         $op = $ops[$entry['index']];
         $op['before'] = $analysis['snapshots'][$entry['index']] ?? null;
+        // Черновик мог быть создан до правила «NULL = '' = 0» и содержать
+        // пустые поля там, где в БД NULL. В запрос попадают только реальные
+        // изменения — иначе карточка запроса показывала бы «NULL → пусто».
+        if (($op['type'] ?? '') === 'update' && is_array($entry['changes'] ?? null)) {
+            $columns = array_column($entry['changes'], 'column');
+            $op['data'] = array_intersect_key($op['data'], array_flip($columns));
+        }
         $kept[] = $op;
     }
     if (!$kept) {
@@ -1019,6 +1016,19 @@ function cr_apply(mysqli $db, array $req, bool $force): array
             } elseif ($op['type'] === 'update') {
                 // Only columns that actually differ from the snapshot are written.
                 $write = is_array($op['before']) && $op['before'] ? array_intersect_key($data, $op['before']) : $data;
+                // Запрос мог быть создан до правила «NULL = '' = 0» и содержать
+                // пустые значения там, где в БД NULL. Такие поля не пишем —
+                // иначе одобрение заменило бы NULL на пустую строку/ноль.
+                $currentRow = crud_fetch_row($db, $R, (int)$op['id'], true);
+                if ($currentRow) {
+                    $currentValues = decode_json_cols($currentRow, $R['json'] ?? []);
+                    $rowJsonCols = $R['json'] ?? [];
+                    $write = array_filter(
+                        $write,
+                        fn($val, $col) => !editor_values_equal($currentValues[$col] ?? null, $val, in_array($col, $rowJsonCols, true)),
+                        ARRAY_FILTER_USE_BOTH
+                    );
+                }
                 if (!$write) continue;
                 crud_update($db, $R, (int)$op['id'], $write);
                 $applied[] = ['type' => 'update', 'resource' => $op['resource'], 'id' => (int)$op['id'], 'data' => decode_json_cols($write, $R['json'] ?? [])];

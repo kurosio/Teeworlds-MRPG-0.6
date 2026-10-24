@@ -219,9 +219,27 @@ try {
     $data = encode_json_cols($data, $jsonCols);
     if (!$data) respond(['ok' => false, 'error' => 'Пустые данные: нечего сохранять'], 400);
 
+    // Форма присылает все поля записи, а читает их уже нормализованными (NULL →
+    // '' / 0). Пишем только реально изменённые поля: иначе обычное сохранение
+    // заменяло бы NULL в игровой БД на пустую строку или ноль.
+    $current = crud_fetch_row($mysqli, $R, $iid);
+    if ($current) {
+      $currentValues = decode_json_cols($current, $jsonCols);
+      $changed = [];
+      foreach ($data as $col => $value) {
+        if (editor_values_equal($currentValues[$col] ?? null, $value, in_array($col, $jsonCols, true))) continue;
+        $changed[$col] = $value;
+      }
+      if (!$changed) {
+        $mysqli->close();
+        respond(['ok' => true, 'changed' => 0, 'unchanged' => true]);
+      }
+      $data = $changed;
+    }
+
     crud_update($mysqli, $R, $iid, $data);
     $mysqli->close();
-    respond(['ok' => true]);
+    respond(['ok' => true, 'changed' => count($data)]);
   }
 
   if ($action === 'delete') {

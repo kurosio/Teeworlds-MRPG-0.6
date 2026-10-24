@@ -14,6 +14,8 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/db-core.php';
+// Сравнение значений «было → станет» (NULL = '' = 0) — то же, что в db-crud.php.
+require_once __DIR__ . '/db-resources.php';
 
 bootstrap_editor_api(true);
 
@@ -355,6 +357,20 @@ function encode_json_cols_sync(array $data, array $jsonCols): array
     return $data;
 }
 
+/** Текущая строка цели сравнения (только чтение, prepared statement). */
+function sync_fetch_row(mysqli $mysqli, array $R, int $id): ?array
+{
+    $colSql = '`' . $R['pk'] . '`, ' . implode(', ', array_map(fn($c) => '`' . $c . '`', $R['columns']));
+    $stmt = $mysqli->prepare("SELECT {$colSql} FROM `{$R['table']}` WHERE `{$R['pk']}` = ? LIMIT 1");
+    if ($stmt === false) return null;
+    $stmt->bind_param('i', $id);
+    $stmt->execute();
+    $res = $stmt->get_result();
+    $row = $res ? $res->fetch_assoc() : null;
+    $stmt->close();
+    return $row ?: null;
+}
+
 function bind_type_for_value_sync(mixed $value): string
 {
     if ($value === null) return 's';
@@ -443,6 +459,24 @@ function apply_operations(mysqli $mysqli, array $operations, array $whitelist): 
 
                     if (empty($data)) {
                         throw new RuntimeException("Пустые данные для обновления");
+                    }
+
+                    // Форма записывает в историю весь набор полей, где NULL уже
+                    // заменён на '' или 0. Пишем только реально отличающиеся
+                    // колонки, иначе NULL в целевой базе станет пустой строкой.
+                    $current = sync_fetch_row($mysqli, $R, $id);
+                    if ($current) {
+                        $currentValues = decode_json_cols($current, $jsonCols);
+                        $data = array_filter(
+                            $data,
+                            fn($val, $col) => !editor_values_equal($currentValues[$col] ?? null, $val, in_array($col, $jsonCols, true)),
+                            ARRAY_FILTER_USE_BOTH
+                        );
+                        if (empty($data)) {
+                            $results[] = ['index' => $idx, 'action' => $action, 'resource' => $resource, 'ok' => true, 'unchanged' => true];
+                            $successCount++;
+                            continue;
+                        }
                     }
 
                     $keys = array_keys($data);

@@ -284,19 +284,10 @@
   // the in-memory snapshot and masquerade as a saved draft.
   const draftForWrite = () => clone(readDraft());
 
-  const canonical = (v) => {
-    if (v === undefined || v === null) return null;
-    if (typeof v === 'boolean') return v ? '1' : '0';
-    if (typeof v === 'object') return JSON.stringify(v);
-    const s = String(v);
-    if (/^-?\d+(\.\d+)?$/.test(s)) return String(Number(s));
-    const t = s.trim();
-    if (t.startsWith('{') || t.startsWith('[')) {
-      try { return JSON.stringify(JSON.parse(t)); } catch {}
-    }
-    return s;
-  };
-  const sameValue = (a, b) => canonical(a) === canonical(b);
+  // NULL, '' и 0 в редакторах — одно и то же «нет значения»: форма не умеет их
+  // различать, поэтому сравнение с базовой строкой не должно записывать такие
+  // пары как изменение (см. EditorCore.utils.valuesEqual).
+  const sameValue = (a, b) => window.EditorCore.utils.valuesEqual(a, b);
 
   /** Keep only whitelisted columns (from server config) — never send unknown fields. */
   const filterColumns = (resource, data) => {

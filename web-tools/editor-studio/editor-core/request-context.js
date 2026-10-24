@@ -38,21 +38,9 @@
   const findOperation = (resource, id) => operationsFor(resource)
     .find((op) => operationId(op) === Number(id)) || null;
 
-  const canonical = (value) => {
-    if (value === undefined || value === null) return null;
-    if (typeof value === 'boolean') return value ? '1' : '0';
-    if (typeof value === 'object') {
-      try { return JSON.stringify(value); } catch { return String(value); }
-    }
-    const text = String(value);
-    if (/^-?\d+(\.\d+)?$/.test(text)) return String(Number(text));
-    const trimmed = text.trim();
-    if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
-      try { return JSON.stringify(JSON.parse(trimmed)); } catch { /* Keep the original value. */ }
-    }
-    return text;
-  };
-  const sameValue = (a, b) => canonical(a) === canonical(b);
+  // NULL, '' и 0 в редакторах означают одно и то же «нет значения»: сравнение
+  // «было → станет» не должно считать такую пару изменением (см. utils.valuesEqual).
+  const sameValue = (a, b) => namespace.utils.valuesEqual(a, b);
   const cleanData = (data) => Object.fromEntries(Object.entries(data || {})
     .filter(([column, value]) => column !== 'ID' && !column.startsWith('__') && value !== undefined)
     .map(([column, value]) => [column, clone(value)]));
