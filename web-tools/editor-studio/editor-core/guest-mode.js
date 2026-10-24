@@ -439,6 +439,43 @@
       return { ok: true, draft: true };
     },
 
+    /**
+     * Убрать одно поле из черновика: значение вернётся к тому, что в базе.
+     * baseRow — текущая строка из БД, нужна только чтобы пересчитать подпись
+     * операции (например, если отменено изменение `Name`).
+     * Возвращает { ok, removed, dropped }: dropped — операция исчезла целиком,
+     * потому что в ней не осталось изменённых полей.
+     */
+    async revertField(resource, id, column, baseRow = null) {
+      await assertGuestResource(resource);
+      const col = String(column || '').trim();
+      if (!col) throw new Error('Не указано поле, которое нужно вернуть к исходному значению.');
+      const d = draftForWrite();
+      const nid = Number(id);
+      const i = d.ops.findIndex(o => o.type === 'update' && o.resource === resource && Number(o.id) === nid);
+      // Записи нет в черновике — отменять нечего: это не ошибка.
+      if (i < 0) return { ok: true, removed: false, dropped: false };
+      const op = d.ops[i];
+      if (op.reqId) {
+        throw new Error('Изменение уже отправлено в запросе и ждёт проверки администратора — отменить поле нельзя. Отзовите запрос.');
+      }
+      if (!op.data || !(col in op.data)) return { ok: true, removed: false, dropped: false };
+      delete op.data[col];
+      let dropped = false;
+      if (!Object.keys(op.data).length) {
+        d.ops.splice(i, 1);
+        dropped = true;
+      } else {
+        op.label = (baseRow ? rowLabel(resource, { ...baseRow, ...op.data }) : '') || op.label || '';
+        op.ts = Date.now();
+      }
+      writeDraft(d);
+      toastInfo(dropped
+        ? 'Изменение убрано из черновика — запись совпадает с базой'
+        : `Поле ${col} возвращено к значению из базы`);
+      return { ok: true, removed: true, dropped };
+    },
+
     async remove(resource, id, baseRow = null) {
       await assertGuestResource(resource);
       const d = draftForWrite();

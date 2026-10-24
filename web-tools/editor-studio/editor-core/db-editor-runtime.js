@@ -55,6 +55,9 @@
       };
       let listRequestSeq = 0;
       let onSearch = null;
+      // Ссылка «открыть запись» (?record=&field=) из вкладки «Запросы».
+      const deepLink = window.EditorCore?.DeepLink || null;
+      let deepLinkPending = !!deepLink?.active;
 
       /** Спрашивает подтверждение, если в форме есть несохранённые правки. */
       const canDiscardDirty = async () => {
@@ -121,14 +124,43 @@
       };
 
       /**
+       * Кнопка «вернуть как в базе» у изменённого поля. Одна и та же кнопка
+       * переиспользуется при перерисовках, поэтому обработчик — делегированный.
+       */
+      const syncRevertButton = (node, column) => {
+        const existing = node.querySelector(':scope > .guest-field-revert');
+        node.classList.toggle('guest-field-revertable', !!column);
+        if (!column) {
+          existing?.remove();
+          return;
+        }
+        if (existing) {
+          if (existing.dataset.guestRevert !== column) existing.dataset.guestRevert = column;
+          return;
+        }
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'guest-field-revert';
+        button.dataset.guestRevert = column;
+        button.title = 'Вернуть исходное значение из базы';
+        button.setAttribute('aria-label', `Вернуть исходное значение поля ${column}`);
+        button.innerHTML = '<i class="fa-solid fa-rotate-left" aria-hidden="true"></i>';
+        node.appendChild(button);
+      };
+
+      /**
        * Mark the form fields the guest really changed: the values in the form are
        * the guest's own, so each edited field must be visibly flagged instead of
        * looking like ordinary data from the database.
+       *
+       * Рядом с меткой «изм.» появляется маленькая кнопка отмены: она убирает
+       * поле из черновика и возвращает значение из базы (см. revertGuestField).
        */
       const decorateGuestFields = (meta) => {
         if (!els.form) return;
         const fields = new Set(meta?.fields || []);
         const submitted = meta?.status === 'submitted';
+        const revertable = !!meta && !submitted && meta.state === 'update';
         const note = submitted
           ? `Поле изменено в запросе ${meta?.reqId || ''} — ждёт проверки администратора`
           : 'Поле изменено в вашем черновике — в базу не записано';
@@ -147,7 +179,61 @@
             if (prev) node.setAttribute('title', prev); else node.removeAttribute('title');
             delete node.dataset.guestPrevTitle;
           }
+          syncRevertButton(node, changed && revertable ? top : '');
         });
+      };
+
+      /**
+       * Вернуть одно поле к значению из базы: убираем поле из черновика гостя
+       * и подставляем в форму то, что реально хранится в строке БД.
+       */
+      const revertGuestField = async (column) => {
+        const id = Number(state.selectedId || 0);
+        const meta = id ? guestMeta(id) : null;
+        if (!column || !id || state.operation) return false;
+        if (!meta || meta.status !== 'draft' || meta.state !== 'update') return false;
+        return runOperation(async () => {
+          try {
+            // Сначала читаем строку из базы: если значение недоступно, черновик
+            // не трогаем — иначе форма и черновик разошлись бы.
+            const baseRow = await window.EditorCore.DBCrud.rawRow(resource, id);
+            const original = baseRow ? toModel(baseRow) : null;
+            if (!original || !(column in original)) {
+              throw new Error('Не удалось прочитать значение из базы — обновите список и повторите.');
+            }
+            const result = await Guest.Draft.revertField(resource, id, column, baseRow);
+            if (result?.removed) applyBaseValue(original[column], column);
+            else updateGuestHint();
+            renderList();
+            setStatus(result?.dropped
+              ? 'Поле возвращено: изменений в черновике больше нет.'
+              : `Поле ${column} возвращено к значению из базы.`, 'ok');
+            return true;
+          } catch (error) {
+            const msg = error?.message || 'Не удалось вернуть поле к исходному значению';
+            setStatus(msg, 'err');
+            toast(msg, 'error');
+            return false;
+          }
+        });
+      };
+
+      /**
+       * Подставить в форму исходное значение поля (в том же виде, что даёт
+       * rowToModel). Остальные несохранённые правки формы не теряются.
+       */
+      const applyBaseValue = (baseValue, column) => {
+        if (!state.form) return;
+        const value = cloneData(baseValue);
+        state.model = { ...state.model, [column]: value };
+        state.persistedModel = { ...(state.persistedModel || {}), [column]: cloneData(value) };
+        state.form.setData?.(state.model);
+        const utils = window.EditorCore.utils;
+        if (state.persistedModel && utils.valuesEqual(state.model, state.persistedModel)) state.dirty?.setClean?.();
+        else state.dirty?.markDirty?.();
+        setButtons(!!state.model);
+        setHeader();
+        updateGuestHint();
       };
 
       const updateGuestHint = () => {
@@ -302,6 +388,34 @@
         });
       };
 
+      /**
+       * Открыть запись по ссылке из «Запросов». Обычно строку достаточно
+       * нажать (это делает deep-link.js), но в длинном каталоге она может
+       * не попасть в загруженную часть списка — тогда читаем её по ID.
+       */
+      const openDeepLinkRecord = async () => {
+        deepLinkPending = false;
+        const id = Number(deepLink?.record) || 0;
+        if (!id) return false;
+        const inList = state.rows.find((row) => Number(row?.ID) === id) || null;
+        let row = inList;
+        if (!row) {
+          const response = await window.EditorCore.DBCrud.get(resource, id).catch(() => null);
+          row = response?.row || null;
+        }
+        if (!row) return false;
+        deepLink?.markHandled?.();
+        if (!inList) {
+          // Записи не было в списке — показываем её в списке, чтобы форма и
+          // подсветка строки не расходились.
+          state.rows = [row, ...state.rows];
+          renderList();
+        }
+        await selectRow(row, { confirmDirty: false });
+        window.setTimeout(() => deepLink?.revealField?.(), 250);
+        return true;
+      };
+
       const applyRows = async (rows, { search, isRaw = false } = {}) => {
         const safeRows = Array.isArray(rows) ? rows : [];
         if (isRaw) state.rowsRaw = safeRows;
@@ -319,6 +433,8 @@
           ? state.rows.find((row) => Number(row.ID) === Number(requestTarget.id)) : null;
         if (requestedRow) {
           await selectRow(requestedRow, { confirmDirty: false });
+        } else if (deepLinkPending && !state.model) {
+          await openDeepLinkRecord();
         } else if (state.selectedId) {
           const found = state.rows.find(r => Number(r.ID) === Number(state.selectedId));
           if (found && !state.dirty?.isDirty?.()) await selectRow(found, { confirmDirty: false, refresh: true });
@@ -550,6 +666,16 @@
           }
         });
       };
+
+      // Кнопка «вернуть как в базе» живёт внутри поля формы, поэтому обработчик
+      // делегирован: он переживает перерисовку полей.
+      els.form?.addEventListener('click', (event) => {
+        const button = event.target?.closest?.('[data-guest-revert]');
+        if (!button) return;
+        event.preventDefault();
+        event.stopPropagation();
+        revertGuestField(button.dataset.guestRevert || '');
+      });
 
       if (els.list) {
         els.list.addEventListener('click', async (event) => {

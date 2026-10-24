@@ -163,6 +163,17 @@
       return rawGet(resource, id);
     },
 
+    /**
+     * Строка ровно в том виде, в каком она лежит в базе: без черновика гостя и
+     * без снимка запроса. Нужна действиям вида «вернуть значение из базы».
+     * null, если строка недоступна (нет записи или нет прав на чтение).
+     */
+    rawRow(resource, id) {
+      const numericId = Number(id) || 0;
+      if (!resource || numericId <= 0) return Promise.resolve(null);
+      return rawGetRow(resource, numericId);
+    },
+
     async create(resource, data, { _skipSyncRecord = false } = {}) {
       if (!resource || !data) throw new Error('Resource and data are required for create');
       return mutate(resource, 'create', {

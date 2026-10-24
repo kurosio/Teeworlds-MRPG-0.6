@@ -427,5 +427,7 @@ test('PHP revision and approval contracts are versioned and apply stored request
   assert.ok(page.includes('data-open-record'));
   assert.ok(page.includes('openRequestInEditor(A.detail)'));
   assert.ok(!page.includes('RequestWorkbench.open(A.detail)'));
-  assert.ok(page.includes('data-request-edit'));
+  // Адрес записи и флаг правки запроса собирает общий модуль ссылок.
+  assert.ok(workbench.includes('data-request-edit'));
+  assert.ok(page.includes('recordLinkAttrs'));
 });

@@ -22,6 +22,8 @@
     '<script src="editor-core/guest-mode.js"></script>',
     '<script src="editor-core/change-markers.js"></script>',
     '<script src="editor-core/request-context.js"></script>',
+    // Ссылки «открыть запись» из вкладки «Запросы» (?record=&field=).
+    '<script src="editor-core/deep-link.js"></script>',
     '<script src="editor-core/registry.js"></script>',
     '<script src="editor-core/core.js"></script>',
     '<script src="editor-core/field-renderer.js"></script>',
