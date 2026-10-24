@@ -35,16 +35,22 @@
 
   /** Свой таймаут + внешний сигнал отмены (поиск с вводом, закрытие формы). */
   const combineSignals = (own, external) => {
-    if (!external) return own;
+    if (!external) return { signal: own, cleanup: () => {} };
     if (typeof AbortSignal !== 'undefined' && typeof AbortSignal.any === 'function') {
-      return AbortSignal.any([own, external]);
+      return { signal: AbortSignal.any([own, external]), cleanup: () => {} };
     }
     const fallback = new AbortController();
     const abort = () => fallback.abort();
     if (external.aborted || own.aborted) abort();
     external.addEventListener('abort', abort, { once: true });
     own.addEventListener('abort', abort, { once: true });
-    return fallback.signal;
+    return {
+      signal: fallback.signal,
+      cleanup: () => {
+        external.removeEventListener('abort', abort);
+        own.removeEventListener('abort', abort);
+      },
+    };
   };
 
   const buildUrl = (url, query) => {
@@ -93,13 +99,13 @@
       cache = 'no-store',
     } = options;
 
-    const payload = body == null || typeof body === 'string' ? body : JSON.stringify(body);
     const controller = new AbortController();
-    const signal = combineSignals(controller.signal, externalSignal);
+    const { signal, cleanup } = combineSignals(controller.signal, externalSignal);
     let timedOut = false;
     const timer = timeout > 0 ? setTimeout(() => { timedOut = true; controller.abort(); }, timeout) : null;
 
     try {
+      const payload = body == null || typeof body === 'string' ? body : JSON.stringify(body);
       const res = await fetch(buildUrl(url, query), {
         method,
         credentials,
@@ -112,7 +118,7 @@
       if (res.status === 401) notifyAuthRequired();
 
       const { data, invalid } = parseBody(await res.text());
-      const failedByPayload = data !== null && typeof data === 'object' && data.ok === false;
+      const failedByPayload = data !== null && typeof data === 'object' && (data.ok === false || data.success === false);
       // Непустое тело, которое не разобрать как JSON, — не успех, даже при HTTP 200:
       // иначе вызывающий код получит data = null и упадёт на res.rows / res.ok.
       const ok = res.ok && !failedByPayload && !invalid;
@@ -143,6 +149,7 @@
       };
     } finally {
       if (timer) clearTimeout(timer);
+      cleanup();
     }
   };
 
@@ -170,12 +177,12 @@
       credentials = 'same-origin',
       cache = 'no-store',
     } = options;
-    const payload = body == null || typeof body === 'string' ? body : JSON.stringify(body);
     const controller = new AbortController();
-    const signal = combineSignals(controller.signal, externalSignal);
+    const { signal, cleanup } = combineSignals(controller.signal, externalSignal);
     let timedOut = false;
     const timer = timeout > 0 ? setTimeout(() => { timedOut = true; controller.abort(); }, timeout) : null;
     try {
+      const payload = body == null || typeof body === 'string' ? body : JSON.stringify(body);
       const res = await fetch(buildUrl(url, query), {
         method,
         credentials,
@@ -204,6 +211,7 @@
       };
     } finally {
       if (timer) clearTimeout(timer);
+      cleanup();
     }
   };
 

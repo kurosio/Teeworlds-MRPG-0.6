@@ -77,7 +77,8 @@
       try { return await namespace.utils.copyText(text); } catch { return false; }
     }
     try {
-      await navigator.clipboard?.writeText(String(text));
+      if (typeof navigator.clipboard?.writeText !== 'function') return false;
+      await navigator.clipboard.writeText(String(text));
       return true;
     } catch {
       return false;
@@ -171,7 +172,10 @@
     backdrop.appendChild(box);
 
     const previouslyFocused = document.activeElement;
+    let finished = false;
     const finish = (result) => {
+      if (finished) return;
+      finished = true;
       document.removeEventListener('keydown', onKey, true);
       backdrop.remove();
       if (previouslyFocused?.focus) {
@@ -187,7 +191,7 @@
       if (event.key === 'Escape') { event.preventDefault(); finish(hideCancel); return; }
       if (event.key === 'Enter' && !event.shiftKey) {
         event.preventDefault();
-        finish(true);
+        finish(hideCancel || document.activeElement === ok);
         return;
       }
       if (event.key !== 'Tab') return;

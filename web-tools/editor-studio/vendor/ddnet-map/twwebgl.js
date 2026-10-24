@@ -766,6 +766,16 @@ tw.parseLayerQuads = function (layerData, num) {
   return quads;
 }
 
+// Editor-only compact gameplay data: one byte per cell, no per-tile objects.
+tw.parseGameplayIndices = function (tileData, num) {
+  if (!Number.isSafeInteger(num) || num < 0 || num > tileData.byteLength / 4)
+    throw new RangeError("Truncated or invalid gameplay tile data");
+  var bytes = new Uint8Array(tileData);
+  var indices = new Uint8Array(num);
+  for (var i = 0; i < num; i++) indices[i] = bytes[i * 4];
+  return indices;
+}
+
 tw.parseLayerTiles = function (tileData, num) {
 
   var tiles = []
@@ -950,15 +960,18 @@ tw.Map = function (mapData) {
         if (tileLayerInfo.image == -1) {
           if (tileLayerInfo.flags & tw.TILESLAYERFLAG_GAME) {
             grp.gameLayer = true;
-            if (!this.spawnPoint) {
-              var tileDataSpawn = dFile.getData(tileLayerInfo.data);
-              var spawnTiles = tw.parseLayerTiles(tileDataSpawn, tileLayerInfo.width * tileLayerInfo.height);
-              for (var sy = 0; sy < tileLayerInfo.height && !this.spawnPoint; sy++) {
-                for (var sx = 0; sx < tileLayerInfo.width; sx++) {
-                  if (spawnTiles[sy * tileLayerInfo.width + sx].index === tw.TILE_SPAWN) {
-                    this.spawnPoint = { x: sx * 32, y: sy * 32 };
-                    break;
-                  }
+            var gameTiles = tw.parseGameplayIndices(dFile.getData(tileLayerInfo.data), tileLayerInfo.width * tileLayerInfo.height);
+            // Keep compact read-only indices for the editor's collision overlay.
+            // No texture or GPU buffers are needed for this layer.
+            if (!this.gameplay) {
+              this.gameplay = { width: tileLayerInfo.width, height: tileLayerInfo.height,
+                indices: gameTiles };
+            }
+            for (var sy = 0; sy < tileLayerInfo.height && !this.spawnPoint; sy++) {
+              for (var sx = 0; sx < tileLayerInfo.width; sx++) {
+                if (gameTiles[sy * tileLayerInfo.width + sx] >= tw.TILE_SPAWN && gameTiles[sy * tileLayerInfo.width + sx] <= tw.TILE_SPAWN + 2) {
+                  this.spawnPoint = { x: sx * 32 + 16, y: sy * 32 + 16 };
+                  break;
                 }
               }
             }
@@ -1230,7 +1243,7 @@ tw.Map.Group.prototype.addTileLayer = function (width, height, tiles, color, tex
 
 tw.Map.Group.prototype.tick = function () {
   for (var i = 0; i < this.layers.length; i++)
-    this.layers[i].tick();
+    if (this.layers[i].editorHidden !== true) this.layers[i].tick();
 }
 
 /**
@@ -1408,6 +1421,7 @@ tw.Map.Group.prototype.render = function () {
   try {
     for (var i = 0; i < this.layers.length; i++) {
       var layer = this.layers[i];
+      if (layer.editorHidden === true) continue;
       if (layer.bounds && !tw.rectsOverlap(layer.bounds, rect, margin))
         continue;
       layer.render();

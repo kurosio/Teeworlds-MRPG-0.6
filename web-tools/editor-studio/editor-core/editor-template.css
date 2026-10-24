@@ -619,7 +619,10 @@ body[data-editor="warehouse"]{ --editor-accent:#14b8a6; }
   font-size:12px;
   pointer-events:none;
 }
-.editor-search input{padding-left:34px;}
+/* Match the theme's two-class specificity so its padding shorthand cannot
+   cover the icon, regardless of stylesheet load order. */
+.editor-search input,
+.editor-theme .editor-search input{padding-left:34px;min-width:0;}
 
 /* -------------------------------------------------------------
    Unsaved changes pill

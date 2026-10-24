@@ -287,3 +287,44 @@ canvas#ovl {
   .pk-foot-actions { width: 100%; }
   .pk-foot-actions .pk-btn { flex: 1 1 auto; height: 36px; }
 }
+
+/* Independent toolbar stays clear of the variable-height title bar. */
+.pk-options {
+  position: fixed;
+  top: var(--pk-toolbar-top, 100px);
+  left: 12px;
+  right: 12px;
+  z-index: 9;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--pk-line);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--pk-surface) 94%, transparent);
+  backdrop-filter: blur(8px);
+}
+.pk-options label { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; }
+.pk-options input { accent-color: var(--pk-primary); }
+.pk-tile { margin-left: auto; font-size: 11px; color: var(--pk-muted); font-variant-numeric: tabular-nums; }
+.pk-btn:disabled { opacity: .4; cursor: default; }
+.pk-btn:focus-visible, .pk-options input:focus-visible { outline: 2px solid var(--pk-primary); outline-offset: 2px; }
+.pk-hint { top: var(--pk-hint-top, 160px); bottom: auto; }
+@media (max-width: 640px) {
+  .pk-options { left: 8px; right: 8px; gap: 6px; padding: 6px 8px; }
+  .pk-options .pk-btn { min-height: 32px; }
+  .pk-tile { width: 100%; margin-left: 0; }
+}
+@media (prefers-reduced-motion: reduce) { .pk-state-icon { animation: none; } }
+
+.pk-workbench { flex: 1 0 100%; min-width: 0; }
+.pk-workbench summary { cursor: pointer; color: var(--pk-primary); padding: 4px 0; }
+.pk-workbench-body { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; max-height: 32vh; overflow-y: auto; padding: 8px 2px; }
+.pk-workbench .pk-field > span { text-transform: none; }
+.pk-tool-status { flex: 1 0 100%; font-size: 12px; color: var(--pk-muted); overflow-wrap: anywhere; }
+.pk-layer-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 6px; flex: 1 0 100%; }
+.pk-layer-list label { font-size: 12px; min-width: 0; overflow-wrap: anywhere; }
+.pk-btn[aria-pressed="true"] { background: var(--pk-primary); color: #fff; }
+.pk-tool-status.is-warning { color: var(--pk-warning); }
+canvas#cnvs.is-measuring { cursor: cell; }

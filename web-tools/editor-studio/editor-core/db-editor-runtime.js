@@ -300,7 +300,7 @@
         // подтверждение на каждый фоновый перезапрос.
         if (state.selectedId) {
           const found = state.rows.find(r => Number(r.ID) === Number(state.selectedId));
-          if (found && !state.dirty?.isDirty?.()) await selectRow(found, { confirmDirty: false });
+          if (found && !state.dirty?.isDirty?.()) await selectRow(found, { confirmDirty: false, refresh: true });
         } else if (!state.model && state.rows.length) {
           await selectRow(state.rows[0], { confirmDirty: false });
         }
@@ -311,7 +311,7 @@
         const nextId = Number(row?.ID || 0);
         const currentId = Number(state.selectedId || 0);
 
-        if (nextId && nextId === currentId) return true;
+        if (nextId && nextId === currentId && !options.refresh) return true;
         if (confirmDirty && !await canDiscardDirty()) return false;
 
         if (!row) {
@@ -344,6 +344,10 @@
           && Array.isArray(state.rowsRaw)
           && state.rowsRaw.length
           && search.length < localMinLength;
+
+        // Even local filtering supersedes the pending server search.
+        state.searchRequest.controller?.abort?.();
+        els.list?.setAttribute('aria-busy', 'false');
 
         if (canUseLocal) {
           const filtered = filterRowsLocally(state.rowsRaw, search);

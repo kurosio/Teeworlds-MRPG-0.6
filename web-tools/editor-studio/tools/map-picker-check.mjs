@@ -113,4 +113,22 @@ Object.assign(clippedGroup, group({ clipX: 5000 }), {
 });
 clippedGroup.render();
 assert.deepEqual(rendered, []);
-console.log('Map picker clipping/culling: ALL PASSED');
+// Editor visibility suppresses both buffer updates and draw submissions.
+rendered.length = 0;
+visible.editorHidden = true;
+renderGroup.render();
+assert.deepEqual(rendered, []);
+let ticks = 0;
+visible.tick = () => ticks++;
+distant.tick = () => ticks++;
+renderGroup.tick();
+assert.equal(ticks, 1);
+visible.editorHidden = false;
+renderGroup.tick();
+assert.equal(ticks, 3);
+
+const gameplay = Uint8Array.from([1, 0, 0, 0, 2, 0, 0, 0, 192, 0, 0, 0]);
+assert.deepEqual(Array.from(tw.parseGameplayIndices(gameplay.buffer, 3)), [1, 2, 192]);
+assert.throws(() => tw.parseGameplayIndices(gameplay.buffer, 4), error => error.name === 'RangeError');
+assert.throws(() => tw.parseGameplayIndices(gameplay.buffer, -1), error => error.name === 'RangeError');
+console.log('Map picker clipping/culling, visibility and gameplay parsing: ALL PASSED');

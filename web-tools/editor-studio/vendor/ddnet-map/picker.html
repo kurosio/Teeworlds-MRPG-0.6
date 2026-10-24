@@ -8,7 +8,7 @@
 </head>
 <body>
 
-<canvas id="cnvs"></canvas>
+<canvas id="cnvs" tabindex="0" aria-label="Карта мира"></canvas>
 <canvas id="ovl" aria-hidden="true"></canvas>
 
 <header class="pk-bar">
@@ -30,6 +30,33 @@
     <button type="button" class="pk-btn" id="pk-center" title="К точке (C)">К точке</button>
   </div>
 </header>
+
+<section class="pk-options" aria-label="Map tools">
+  <label><input type="checkbox" id="pk-grid" /> <span id="pk-grid-label">Сетка 32×32</span></label>
+  <label><input type="checkbox" id="pk-snap" /> <span id="pk-snap-label">Центры тайлов</span></label>
+  <button type="button" class="pk-btn" id="pk-align">В центр тайла</button>
+  <button type="button" class="pk-btn" id="pk-undo">↶</button>
+  <button type="button" class="pk-btn" id="pk-redo">↷</button>
+  <button type="button" class="pk-btn" id="pk-reset">Исходная точка</button>
+  <button type="button" class="pk-btn" id="pk-copy">Копировать X, Y</button>
+  <output id="pk-tile" class="pk-tile"></output>
+  <details class="pk-workbench" id="pk-workbench">
+    <summary id="pk-workbench-title">Инструменты размещения</summary>
+    <div class="pk-workbench-body">
+      <label><input type="checkbox" id="pk-collision" /> <span id="pk-collision-label">Игровой слой</span></label>
+      <button type="button" class="pk-btn" id="pk-spawn">К спавну</button>
+      <button type="button" class="pk-btn" id="pk-measure" aria-pressed="false">Измерить</button>
+      <button type="button" class="pk-btn" id="pk-measure-from-point">От выбранной точки</button>
+      <button type="button" class="pk-btn" id="pk-measure-use">B → позиция</button>
+      <button type="button" class="pk-btn" id="pk-measure-clear">Очистить замер</button>
+      <label class="pk-field"><span id="pk-radius-label">Радиус, px</span><input id="pk-radius" type="number" min="0" max="100000" step="32" value="0" /></label>
+      <output id="pk-measure-result" class="pk-tool-status" aria-live="polite"></output>
+      <output id="pk-collision-status" class="pk-tool-status"></output>
+      <div id="pk-layer-list" class="pk-layer-list"></div>
+      <button type="button" class="pk-btn" id="pk-layers-reset">Показать все слои</button>
+    </div>
+  </details>
+</section>
 
 <div class="pk-hint" id="pk-hint">
   Клик по карте — поставить точку · перетаскивание — сдвиг · колесо — масштаб
@@ -94,6 +121,9 @@
   })();
 </script>
 <script src="twwebgl.js"></script>
+<script src="picker-model.js"></script>
+<script src="picker-overlays.js"></script>
+<script src="picker-workbench.js"></script>
 <script src="picker.js"></script>
 </body>
 </html>

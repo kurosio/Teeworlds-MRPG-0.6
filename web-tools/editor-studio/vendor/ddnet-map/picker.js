@@ -20,6 +20,7 @@
 (() => {
   'use strict';
 
+  const Model = window.MapPickerModel;
   const qs = new URLSearchParams(window.location.search);
   const toNum = (value, fallback = 0) => {
     const n = Number(value);
@@ -29,10 +30,14 @@
   const LANG = qs.get('lang') === 'en' ? 'en' : 'ru';
   const STR = {
     ru: {
+      grid: 'Сетка 32×32', snap: 'Центры тайлов', align: 'В центр тайла',
+      undo: 'Отменить (Ctrl+Z)', redo: 'Повторить (Ctrl+Shift+Z)', reset: 'Исходная точка',
+      copy: 'Копировать X, Y', copied: 'Скопировано', copyFailed: 'Не удалось скопировать', tile: 'Тайл',
+      tools: 'Инструменты карты',
       loading: 'Загрузка карты…',
       loadingTitle: 'Загружаем карту',
       ready: 'Точка ставится кликом по карте',
-      hint: 'Клик по карте — поставить точку · перетаскивание — сдвиг · колесо — масштаб',
+      hint: 'Клик — точка · перетаскивание — карта/маркер · Alt — без привязки · Shift+стрелки — точка на 1 тайл · Alt+стрелки — на 1 px · G — сетка · S — привязка',
       noWorld: 'Мир не выбран',
       noWorldText: 'Сначала выберите мир в поле «Мир» — по нему редактор находит карту.',
       failTitle: 'Карта не загрузилась',
@@ -56,10 +61,14 @@
       missingTextures: 'нет текстур',
     },
     en: {
+      grid: '32×32 grid', snap: 'Tile centers', align: 'Center in tile',
+      undo: 'Undo (Ctrl+Z)', redo: 'Redo (Ctrl+Shift+Z)', reset: 'Original point',
+      copy: 'Copy X, Y', copied: 'Copied', copyFailed: 'Copy failed', tile: 'Tile',
+      tools: 'Map tools',
       loading: 'Loading map…',
       loadingTitle: 'Loading the map',
       ready: 'Click the map to place the point',
-      hint: 'Click the map to place a point · drag to pan · wheel to zoom',
+      hint: 'Click — point · drag — pan/marker · Alt — bypass snap · Shift+arrows — move point 1 tile · Alt+arrows — 1 px · G — grid · S — snap',
       noWorld: 'No world selected',
       noWorldText: 'Choose a world in the “World” field first — the editor uses it to find the map.',
       failTitle: 'The map could not be loaded',
@@ -85,6 +94,14 @@
   }[LANG];
 
   const el = {
+    grid: document.getElementById('pk-grid'),
+    snap: document.getElementById('pk-snap'),
+    align: document.getElementById('pk-align'),
+    undo: document.getElementById('pk-undo'),
+    redo: document.getElementById('pk-redo'),
+    reset: document.getElementById('pk-reset'),
+    copy: document.getElementById('pk-copy'),
+    tile: document.getElementById('pk-tile'),
     cnvs: document.getElementById('cnvs'),
     ovl: document.getElementById('ovl'),
     title: document.getElementById('pk-title'),
@@ -118,6 +135,19 @@
     dragging: false,
   };
 
+  const snapshot = () => ({ ...state.point, hasPoint: state.hasPoint });
+  const original = snapshot();
+  const history = Model.createHistory(original);
+  let workbench = null;
+  let cursor = null;
+  let gesture = false;
+  const preferenceKey = 'editor-map-picker-options-v1';
+  try {
+    const saved = JSON.parse(localStorage.getItem(preferenceKey) || '{}');
+    el.grid.checked = saved.grid === true;
+    el.snap.checked = saved.snap === true;
+  } catch { /* Storage is optional. */ }
+
   const mapUrl = qs.get('map') || '';
   let worldName = qs.get('world') || '';
 
@@ -139,6 +169,31 @@
   el.zoomOut.title = `${STR.zoomOut} (−)`;
   el.fit.textContent = STR.fit;
   el.center.textContent = STR.center;
+  el.cnvs.setAttribute('aria-label', STR.mapOf);
+  document.querySelector('.pk-options').setAttribute('aria-label', STR.tools);
+  for (const key of ['grid', 'snap']) document.getElementById(`pk-${key}-label`).textContent = STR[key];
+  for (const key of ['align', 'reset', 'copy']) el[key].textContent = STR[key];
+  for (const key of ['undo', 'redo']) {
+    el[key].title = STR[key];
+    el[key].setAttribute('aria-label', STR[key]);
+  }
+  el.snap.title = LANG === 'ru' ? '16 + 32 × N; Alt — временно без привязки' : '16 + 32 × N; Alt bypasses snapping';
+  el.grid.title = LANG === 'ru' ? 'При отдалении остаются только крупные линии' : 'Only major lines remain when zoomed out';
+
+  // Toolbars wrap on narrow screens and when the world name is long.
+  const layoutTools = () => {
+    const bar = document.querySelector('.pk-bar').getBoundingClientRect();
+    const options = document.querySelector('.pk-options');
+    document.documentElement.style.setProperty('--pk-toolbar-top', `${bar.bottom + 8}px`);
+    document.documentElement.style.setProperty('--pk-hint-top', `${options.getBoundingClientRect().bottom + 8}px`);
+  };
+  if (typeof ResizeObserver === 'function') {
+    const observer = new ResizeObserver(layoutTools);
+    observer.observe(document.querySelector('.pk-bar'));
+    observer.observe(document.querySelector('.pk-options'));
+  }
+  window.addEventListener('resize', layoutTools);
+  layoutTools();
 
   const showState = (kind, title, text, withRetry) => {
     el.state.hidden = false;
@@ -167,19 +222,43 @@
 
   // ── готовая точка ─────────────────────────────────────────────────────────
   const paintInputs = () => {
+    el.apply.disabled = !state.hasPoint || [el.inX, el.inY].some(input =>
+      document.activeElement === input && (!input.value.trim() || !Number.isFinite(Number(input.value))));
+    el.center.disabled = el.align.disabled = el.copy.disabled = !state.hasPoint;
+    el.undo.disabled = !history.canUndo;
+    el.redo.disabled = !history.canRedo;
+    const tile = state.hasPoint ? `${Model.tileIndex(state.point.x)}, ${Model.tileIndex(state.point.y)}` : '—';
+    el.tile.textContent = `${STR.tile}: ${tile}`;
     el.outX.textContent = state.hasPoint ? String(Math.round(state.point.x)) : '—';
     el.outY.textContent = state.hasPoint ? String(Math.round(state.point.y)) : '—';
     if (document.activeElement !== el.inX) el.inX.value = state.hasPoint ? String(Math.round(state.point.x)) : '';
     if (document.activeElement !== el.inY) el.inY.value = state.hasPoint ? String(Math.round(state.point.y)) : '';
   };
 
-  const setPoint = (x, y, { silent = false } = {}) => {
-    state.point.x = Math.round(toNum(x, state.point.x));
-    state.point.y = Math.round(toNum(y, state.point.y));
+  const setPoint = (x, y, { silent = false, snap = false, record = true } = {}) => {
+    const next = Model.point(Number(x), Number(y), snap);
+    if (!next) return;
+    if (!Number.isSafeInteger(next.x) || !Number.isSafeInteger(next.y)) return;
+    state.point = next;
     state.hasPoint = true;
+    if (record && !gesture) history.push(snapshot());
     paintInputs();
     drawOverlay();
-    if (!silent) post('editor-map:change', { x: state.point.x, y: state.point.y });
+    if (!silent) post('editor-map:change', { ...state.point });
+  };
+  const restore = (value) => {
+    state.point = { x: value.x, y: value.y };
+    state.hasPoint = value.hasPoint;
+    paintInputs();
+    drawOverlay();
+    post('editor-map:change', state.hasPoint ? { ...state.point } : { x: null, y: null });
+  };
+  const placePoint = (x, y, event) => setPoint(x, y, { snap: el.snap.checked && !event?.altKey });
+  const commitGesture = () => {
+    if (!gesture) return;
+    gesture = false;
+    history.push(snapshot());
+    paintInputs();
   };
 
   // ── геометрия камеры ──────────────────────────────────────────────────────
@@ -279,8 +358,9 @@
 
   // ── рамка карты и точка ───────────────────────────────────────────────────
   const computeExtent = () => {
-    let w = 0;
-    let h = 0;
+    let w = tw.map?.gameplay?.width * 32 || 0;
+    let h = tw.map?.gameplay?.height * 32 || 0;
+    if (w && h) { state.extent = { w, h }; return; }
     const groups = (tw.map && tw.map.groups) || [];
     for (const group of groups) {
       for (const layer of group.layers || []) {
@@ -331,6 +411,35 @@
     const screen = screenSize();
     overlay.clearRect(0, 0, screen.w, screen.h);
 
+    if (state.ready && el.grid.checked) {
+      const start = screenToWorld(0, 0);
+      const end = screenToWorld(screen.w, screen.h);
+      const scale = screen.w / viewSize().w;
+      overlay.save();
+      overlay.beginPath();
+      for (const x of Model.grid(start.x, end.x, scale)) {
+        const p = worldToScreen(x, 0);
+        overlay.moveTo(Math.round(p.x) + .5, 0); overlay.lineTo(Math.round(p.x) + .5, screen.h);
+      }
+      for (const y of Model.grid(start.y, end.y, scale)) {
+        const p = worldToScreen(0, y);
+        overlay.moveTo(0, Math.round(p.y) + .5); overlay.lineTo(screen.w, Math.round(p.y) + .5);
+      }
+      overlay.strokeStyle = THEME === 'light' ? 'rgba(0,0,0,.3)' : 'rgba(255,255,255,.3)';
+      overlay.lineWidth = 1;
+      overlay.stroke();
+      overlay.restore();
+    }
+    if (state.ready && cursor && el.grid.checked) {
+      const world = screenToWorld(cursor.x, cursor.y);
+      const p = worldToScreen(Model.tileIndex(world.x) * 32, Model.tileIndex(world.y) * 32);
+      const size = worldToScreen(Model.tileIndex(world.x) * 32 + 32, Model.tileIndex(world.y) * 32 + 32);
+      overlay.fillStyle = 'rgba(111,140,255,.22)';
+      overlay.fillRect(p.x, p.y, size.x - p.x, size.y - p.y);
+    }
+
+    if (state.ready) workbench?.draw(overlay);
+
     if (state.ready && state.hasPoint) {
       const p = worldToScreen(state.point.x, state.point.y);
       const inView = p.x > -80 && p.y > -80 && p.x < screen.w + 80 && p.y < screen.h + 80;
@@ -369,6 +478,13 @@
     }
   };
 
+  workbench = window.MapPickerWorkbench.create({
+    tw, state, lang: LANG, screenToWorld, worldToScreen, screenSize,
+    getCursor: () => cursor,
+    setCamera, fitZoom, setPoint,
+    redraw: () => tw.requestRender?.(2),
+  });
+
   // ── ввод: клик по карте, перетаскивание точки ──────────────────────────────
   const pointer = { down: false, moved: 0, startX: 0, startY: 0, lastX: 0, lastY: 0, dragMarker: false, at: 0 };
 
@@ -379,6 +495,7 @@
   window.addEventListener('mousedown', (evt) => {
     if (!state.ready || evt.button !== 0) return;
     if (evt.target !== el.cnvs) return;
+    el.cnvs.focus({ preventScroll: true });
     const marker = markerScreen();
     const near = marker && Math.hypot(evt.clientX - marker.x, evt.clientY - marker.y) <= 16;
     pointer.down = true;
@@ -388,19 +505,29 @@
     pointer.at = Date.now();
     pointer.dragMarker = !!near;
     if (near) {
+      gesture = true;
       evt.stopPropagation();
       evt.preventDefault();
     }
   }, true);
 
   window.addEventListener('mousemove', (evt) => {
+    if (state.ready && evt.target === el.cnvs) {
+      cursor = { x: evt.clientX, y: evt.clientY };
+      const world = screenToWorld(cursor.x, cursor.y);
+      el.tile.textContent = `${STR.tile}: ${Model.tileIndex(world.x)}, ${Model.tileIndex(world.y)} · X ${Math.round(world.x)} / Y ${Math.round(world.y)}`;
+      tw.requestRender?.(1);
+    } else if (cursor) {
+      cursor = null;
+      tw.requestRender?.(1);
+    }
     if (!pointer.down) return;
     pointer.moved += Math.abs(evt.clientX - pointer.lastX) + Math.abs(evt.clientY - pointer.lastY);
     pointer.lastX = evt.clientX;
     pointer.lastY = evt.clientY;
     if (pointer.dragMarker) {
       const world = screenToWorld(evt.clientX, evt.clientY);
-      setPoint(world.x, world.y);
+      placePoint(world.x, world.y, evt);
       evt.preventDefault();
     }
   }, true);
@@ -412,17 +539,18 @@
     const slow = Date.now() - pointer.at < 700;
     pointer.down = false;
     pointer.dragMarker = false;
-    if (wasMarker) return;
+    if (wasMarker) { commitGesture(); return; }
     if (moved <= 6 && slow && evt.target === el.cnvs) {
       const world = screenToWorld(evt.clientX, evt.clientY);
-      setPoint(world.x, world.y);
+      placePoint(world.x, world.y, evt);
     }
   }, true);
 
   // Тач: короткий тап ставит точку, движение — панорама (её делает библиотека).
   let touchStart = null;
   window.addEventListener('touchstart', (evt) => {
-    if (!state.ready || evt.touches.length !== 1) return;
+    if (!state.ready || evt.target !== el.cnvs || evt.touches.length !== 1) { touchStart = null; return; }
+    el.cnvs.focus({ preventScroll: true });
     const t = evt.touches[0];
     touchStart = { x: t.clientX, y: t.clientY, at: Date.now(), moved: 0 };
   }, { capture: true, passive: true });
@@ -443,23 +571,61 @@
     if (!t || info.moved > 12 || Date.now() - info.at > 700) return;
     if (evt.target !== el.cnvs) return;
     const world = screenToWorld(t.clientX, t.clientY);
-    setPoint(world.x, world.y);
+    placePoint(world.x, world.y, evt);
   }, { capture: true, passive: true });
 
   // ── поля координат ────────────────────────────────────────────────────────
   const readField = (input) => {
+    if (!input.value.trim()) return null;
     const n = Number(input.value);
     return Number.isFinite(n) ? n : null;
   };
   el.inX.addEventListener('input', () => {
     const v = readField(el.inX);
-    if (v === null) return;
+    if (v === null) { paintInputs(); return; }
     setPoint(v, state.point.y);
   });
   el.inY.addEventListener('input', () => {
     const v = readField(el.inY);
-    if (v === null) return;
+    if (v === null) { paintInputs(); return; }
     setPoint(state.point.x, v);
+  });
+
+  // Coalesce edits in one coordinate field into one undo step.
+  for (const input of [el.inX, el.inY]) {
+    input.addEventListener('focus', () => { gesture = true; });
+    input.addEventListener('blur', commitGesture);
+  }
+  const cancelPointer = () => {
+    pointer.down = pointer.dragMarker = false;
+    if (typeof tw !== 'undefined') {
+      tw.mousePressed = false;
+      tw.keyState = {};
+    }
+    touchStart = null;
+    cursor = null;
+    commitGesture();
+    if (typeof tw !== 'undefined') tw.requestRender?.(1);
+  };
+  window.addEventListener('blur', cancelPointer);
+  window.addEventListener('touchcancel', cancelPointer);
+
+  for (const key of ['grid', 'snap']) el[key].addEventListener('change', () => {
+    try { localStorage.setItem(preferenceKey, JSON.stringify({ grid: el.grid.checked, snap: el.snap.checked })); } catch { /* optional */ }
+    drawOverlay();
+  });
+  el.align.addEventListener('click', () => {
+    if (state.hasPoint) setPoint(state.point.x, state.point.y, { snap: true });
+  });
+  el.undo.addEventListener('click', () => restore(history.undo()));
+  el.redo.addEventListener('click', () => restore(history.redo()));
+  el.reset.addEventListener('click', () => { history.push(original); restore(original); });
+  el.copy.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(`${state.point.x}, ${state.point.y}`);
+      el.copy.textContent = STR.copied;
+    } catch { el.copy.textContent = STR.copyFailed; }
+    window.setTimeout(() => { el.copy.textContent = STR.copy; }, 1800);
   });
 
   // ── кнопки ────────────────────────────────────────────────────────────────
@@ -472,7 +638,8 @@
   el.fit.addEventListener('click', fitMap);
   el.center.addEventListener('click', centerOnPoint);
   el.apply.addEventListener('click', () => {
-    if (!state.hasPoint) return;
+    if (!state.hasPoint || el.apply.disabled) return;
+    commitGesture();
     post('editor-map:apply', { x: Math.round(state.point.x), y: Math.round(state.point.y) });
   });
   el.cancel.addEventListener('click', () => post('editor-map:close'));
@@ -483,12 +650,38 @@
   window.addEventListener('keydown', (evt) => {
     const tag = (evt.target && evt.target.tagName) || '';
     if (tag === 'INPUT' || tag === 'TEXTAREA') {
-      if (evt.key === 'Enter') { evt.preventDefault(); el.apply.click(); }
+      if (evt.key === 'Enter' && (evt.target === el.inX || evt.target === el.inY)) { evt.preventDefault(); el.apply.click(); }
       if (evt.key === 'Escape') { evt.preventDefault(); el.cancel.click(); }
-      evt.stopPropagation();
+      evt.stopImmediatePropagation();
       return;
     }
+    if (tag === 'SELECT' || evt.target?.isContentEditable) return;
+    if (tag === 'BUTTON' && (evt.key === 'Enter' || evt.key === ' ')) return;
     const key = String(evt.key || '').toLowerCase();
+    const command = evt.ctrlKey || evt.metaKey;
+    if (command && (key === 'z' || key === 'y')) {
+      evt.preventDefault(); evt.stopImmediatePropagation();
+      commitGesture();
+      restore(key === 'y' || evt.shiftKey ? history.redo() : history.undo());
+      return;
+    }
+    const direction = { arrowleft: [-1, 0], arrowright: [1, 0], arrowup: [0, -1], arrowdown: [0, 1] }[key];
+    if (direction && (evt.shiftKey || evt.altKey) && !command) {
+      evt.preventDefault(); evt.stopImmediatePropagation();
+      if (tw.keyState) tw.keyState[key] = false;
+      if (!state.ready || !state.hasPoint) return;
+      const step = evt.altKey ? 1 : Model.TILE;
+      const base = el.snap.checked && !evt.altKey
+        ? Model.point(state.point.x, state.point.y, true) : state.point;
+      setPoint(base.x + direction[0] * step, base.y + direction[1] * step);
+      return;
+    }
+    if (command) return;
+    if (key === 'g' || key === 's') {
+      evt.preventDefault(); evt.stopImmediatePropagation();
+      el[key === 'g' ? 'grid' : 'snap'].click();
+      return;
+    }
     if (key === 'escape') { evt.preventDefault(); el.cancel.click(); }
     else if (key === 'enter') { evt.preventDefault(); el.apply.click(); }
     else if (key === 'f') { fitMap(); }
@@ -504,13 +697,14 @@
     tw.onMapError = null;
     tw.requestRender?.(4);
     computeExtent();
-    reportMissingTextures();
+    workbench?.ready();
     if (state.hasPoint) centerOnPoint();
     else {
       const c = centerOfMap();
       setCamera(c.x, c.y, fitZoom());
     }
     el.sub.textContent = state.hasPoint ? STR.ready : STR.noPoint;
+    reportMissingTextures();
     hideState();
     paintInputs();
     updateHintTimer();
