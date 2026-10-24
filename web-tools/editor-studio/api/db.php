@@ -115,10 +115,8 @@ function handle_get_config(): never
         'maps_dir'            => (string)($c['maps_dir'] ?? ''),
         'mapres_dir'          => (string)($c['mapres_dir'] ?? ''),
         'editor_user'         => (string)($c['editor_user'] ?? 'admin'),
-        'allow_remote_editor' => (bool)($c['allow_remote_editor'] ?? false),
-        'allowed_editor_ips'  => is_array($c['allowed_editor_ips'] ?? null)
-            ? array_values($c['allowed_editor_ips'])
-            : [],
+        // Сетевые правила (allow_remote_editor, allowed_editor_ips) наружу не
+        // отдаются: управляются только в БД редактора.
     ];
 
     respond(['ok' => true, 'config' => $safe]);
@@ -131,18 +129,12 @@ function handle_save_config(): never
     // Atomic read-modify-write under a lock: guest accounts / guest settings are
     // managed by other endpoints and must never be lost by a config save here.
     $saved = mutate_cfg(function (array $prev) use ($body) {
-        // Resolve allowed_editor_ips: prefer body, fallback to previous
-        $allowedIps = [];
-        if (is_array($body['allowed_editor_ips'] ?? null)) {
-            $allowedIps = array_values($body['allowed_editor_ips']);
-        } elseif (is_array($prev['allowed_editor_ips'] ?? null)) {
-            $allowedIps = array_values($prev['allowed_editor_ips']);
-        }
-
         // Handle password: special marker to clear it
         $passwordValue = (string)($body['password'] ?? '');
         $clearPassword = ($body['clear_password'] === true || $passwordValue === '__CLEAR_PASSWORD__');
 
+        // Сетевые правила (allow_remote_editor / allowed_editor_ips) из тела
+        // запроса не читаются: их источник — только БД, сохранение конфига их не меняет.
         $cfg = [
             'host'                => (string)($body['host']     ?? ($prev['host']     ?? '127.0.0.1')),
             'port'                => (int)($body['port']        ?? ($prev['port']     ?? 3306)),
@@ -155,8 +147,6 @@ function handle_save_config(): never
             'mapres_dir'          => trim((string)($body['mapres_dir']   ?? ($prev['mapres_dir']   ?? ''))),
             'editor_user'         => trim((string)($body['editor_user']  ?? ($prev['editor_user']  ?? 'admin'))),
             'editor_password'     => (string)($body['editor_password'] ?? ''),
-            'allow_remote_editor' => (bool)($body['allow_remote_editor'] ?? ($prev['allow_remote_editor'] ?? false)),
-            'allowed_editor_ips'  => $allowedIps,
         ];
 
         // Keep existing password if new one is empty AND not explicitly clearing

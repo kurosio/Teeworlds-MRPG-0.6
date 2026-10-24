@@ -23,10 +23,21 @@ var tw = {
   MAPITEMTYPE_GROUP: 4,
   MAPITEMTYPE_LAYER: 5,
   MAPITEMTYPE_ENVPOINTS: 6,
+  MAPITEMTYPE_UUID_INDEX: 0xffff,
 
-  // CURVETYPE_* из mapitems.h: неизвестный тип ведёт себя как линейный.
+  // UUIDv3("mapitemtype-group@ddnet.tw") stored as 4 big-endian int32s (CItemEx).
+  GROUP_EX_UUID_INTS: [1244056095, 1690120419, -1871024002, -1395527552],
+
+  IMAGE_FORMAT_RGB: 0,
+  IMAGE_FORMAT_RGBA: 1,
+
+  // CURVETYPE_* из mapitems.h.
   CURVETYPE_STEP: 0,
   CURVETYPE_LINEAR: 1,
+  CURVETYPE_SLOW: 2,
+  CURVETYPE_FAST: 3,
+  CURVETYPE_SMOOTH: 4,
+  CURVETYPE_BEZIER: 5,
 }
 
 tw.config = window.twConfig || {};
@@ -36,9 +47,6 @@ tw.config = window.twConfig || {};
 tw.envelopeTime = typeof tw.config.envelopeTime === "number" ? tw.config.envelopeTime : 0;
 // Рисовать сразу после изменения камеры. false — только по tw.requestRender().
 tw.autoRender = tw.config.autoRender !== false;
-// Превью-режим: фон (слои с параллаксом < 100) дотягивается до размеров окна,
-// иначе при сильном отдалении вокруг карты остаются пустые полосы.
-tw.coverBackground = tw.config.coverBackground !== false;
 tw.mat4 = window.glMatrix && window.glMatrix.mat4 ? window.glMatrix.mat4 : window.mat4;
 tw.vec4 = window.glMatrix && window.glMatrix.vec4 ? window.glMatrix.vec4 : window.vec4;
 tw.ZOOM_MIN = typeof tw.config.zoomMin === "number" ? tw.config.zoomMin : 0.2;
@@ -161,7 +169,7 @@ tw.init = function (attrs) {
 
   try {
     var glAttrs = { antialias: false, alpha: false, depth: false, stencil: false, powerPreference: "high-performance" };
-    tw.gl = tw.canvas.getContext("webgl", glAttrs) || tw.canvas.getContext("experimental-webgl", glAttrs);
+    tw.gl = tw.canvas.getContext("webgl2", glAttrs) || tw.canvas.getContext("webgl", glAttrs) || tw.canvas.getContext("experimental-webgl", glAttrs);
   } catch (e) {
     fail("no_webgl");
     return; // Failed to initialize webgl :/
@@ -171,6 +179,9 @@ tw.init = function (attrs) {
     fail("no_webgl");
     return;
   }
+
+  tw.isWebGL2 = (typeof WebGL2RenderingContext !== "undefined" && tw.gl instanceof WebGL2RenderingContext) ||
+    typeof tw.gl.texStorage2D === "function";
 
   tw.dirty = true;
   tw.renderFrames = 2;
@@ -226,7 +237,7 @@ tw.init = function (attrs) {
   tw.stdShader.uVertexColor = tw.gl.getUniformLocation(tw.stdShader, "uVertexColor");
   tw.gl.uniform1i(tw.stdShader.uVertexColor, 0); // Reset
 
-  tw.gl.clearColor(0.5, 0.5, 0.5, 1.0);
+  tw.gl.clearColor(0.05, 0.05, 0.07, 1.0);
 
   tw.aspect = 1;
 
@@ -637,22 +648,67 @@ tw.parseMapLayerTiles = function (layerData) {
   return obj;
 }
 
+tw.findExItemType = function (dFile, uuidInts) {
+  if (!dFile || typeof dFile.getType !== "function" || !uuidInts || uuidInts.length < 4)
+    return undefined;
+  var idxInfo = dFile.getType(tw.MAPITEMTYPE_UUID_INDEX);
+  if (!idxInfo)
+    return undefined;
+  for (var i = 0; i < idxInfo.num; i++) {
+    var item = dFile.getItem(idxInfo.start + i);
+    if (!item || !item.data || item.data.byteLength < 16)
+      continue;
+    var d = new DataView(item.data);
+    if (
+      d.getInt32(0, true) === uuidInts[0] &&
+      d.getInt32(4, true) === uuidInts[1] &&
+      d.getInt32(8, true) === uuidInts[2] &&
+      d.getInt32(12, true) === uuidInts[3]
+    ) {
+      return item.id;
+    }
+  }
+  return undefined;
+}
+
+tw.parseMapGroupEx = function (groupExData) {
+  if (!groupExData || groupExData.byteLength < 8)
+    return undefined;
+  var d = new DataView(groupExData);
+  d.resetReader();
+  var version = d.int32();
+  if (version < 1)
+    return undefined;
+  var parallaxZoom = d.int32();
+  if (parallaxZoom < 0) parallaxZoom = 0;
+  if (parallaxZoom > 100) parallaxZoom = 100;
+  return { version: version, parallaxZoom: parallaxZoom };
+}
+
 /**
  * Значение конверта — как в DDNet (CRenderMap::RenderEvalEnvelope).
- * Время зациклено по последней точке, интерполяция линейная (карты DDNet
- * пишут version 2; версии с безье считаем линейными — для превью достаточно).
- * result — массив из 4 чисел, значения 0..1.
+ * Поддерживает все стандартные типы кривых (STEP, LINEAR, SLOW, FAST, SMOOTH,
+ * BEZIER) и записывает только каналы конверта, сохраняя умолчания вызывающего
+ * кода ([0,0,0,0] для позиции, [1,1,1,1] для цвета).
  */
 tw.evalEnvelope = function (map, index, offsetMs, result) {
-  result[0] = 1; result[1] = 1; result[2] = 1; result[3] = 1;
+  for (var initIdx = 0; initIdx < 4; initIdx++) {
+    if (result[initIdx] === undefined)
+      result[initIdx] = 1;
+  }
   if (!map || !map.envelopes || index < 0 || index >= map.envelopes.length)
     return result;
 
   var env = map.envelopes[index];
   var points = map.envelopePoints;
-  if (!points || env.num <= 0 || env.start < 0 || env.start >= points.length)
+  if (!env || env.num <= 0) {
+    result[0] = 0; result[1] = 0; result[2] = 0; result[3] = 0;
+    return result;
+  }
+  if (!points || env.start < 0 || env.start >= points.length)
     return result;
 
+  var channels = env.channels == null ? 4 : Math.max(0, Math.min(4, env.channels));
   var first = points[env.start];
   var last = points[env.start + env.num - 1];
   if (!last) {
@@ -660,7 +716,7 @@ tw.evalEnvelope = function (map, index, offsetMs, result) {
   }
 
   if (env.num === 1) {
-    for (var c0 = 0; c0 < 4; c0++)
+    for (var c0 = 0; c0 < channels; c0++)
       result[c0] = first.values[c0] / 1024;
     return result;
   }
@@ -675,19 +731,21 @@ tw.evalEnvelope = function (map, index, offsetMs, result) {
   }
 
   var prev = first;
-  var next = last;
-  for (var i = 0; i < env.num - 1; i++) {
-    var a = points[env.start + i];
-    var b = points[env.start + i + 1];
-    if (a && b && t >= a.time && t < b.time) {
-      prev = a;
-      next = b;
-      break;
-    }
-  }
+  var next = first;
   if (t >= last.time) {
     prev = last;
     next = last;
+  } else if (t > first.time) {
+    next = last;
+    for (var i = 0; i < env.num - 1; i++) {
+      var a = points[env.start + i];
+      var b = points[env.start + i + 1];
+      if (a && b && t >= a.time && t < b.time) {
+        prev = a;
+        next = b;
+        break;
+      }
+    }
   }
 
   var delta = next.time - prev.time;
@@ -697,30 +755,51 @@ tw.evalEnvelope = function (map, index, offsetMs, result) {
     if (k < 0) k = 0;
     if (k > 1) k = 1;
   }
-  if (prev.curve === tw.CURVETYPE_STEP)
-    k = 0;
 
-  for (var c = 0; c < 4; c++) {
+  if (prev.curve === tw.CURVETYPE_STEP) {
+    k = 0;
+  } else if (prev.curve === tw.CURVETYPE_SLOW) {
+    k = k * k * k;
+  } else if (prev.curve === tw.CURVETYPE_FAST) {
+    var invK = 1 - k;
+    k = 1 - invK * invK * invK;
+  } else if (prev.curve === tw.CURVETYPE_SMOOTH) {
+    k = 3 * k * k - 2 * k * k * k;
+  }
+
+  for (var c = 0; c < channels; c++) {
     var v0 = prev.values[c] / 1024;
     var v1 = next.values[c] / 1024;
-    result[c] = v0 + (v1 - v0) * k;
+    if (prev.curve === tw.CURVETYPE_BEZIER && delta > 0 && prev.outTangentdy && next.inTangentdy) {
+      var u = 1 - k;
+      var p1 = v0 + prev.outTangentdy[c] / 1024;
+      var p2 = v1 + next.inTangentdy[c] / 1024;
+      result[c] = u * u * u * v0 + 3 * u * u * k * p1 + 3 * u * k * k * p2 + k * k * k * v1;
+    } else {
+      result[c] = v0 + (v1 - v0) * k;
+    }
   }
   return result;
 }
 
 /**
  * Разбирает блок квадов по формату CQuad: 152 байта на квад.
- * Отвергает несогласованные размеры, чтобы не читать повреждённую карту
- * с неверным смещением полей и не создавать фиктивные вершины.
+ * В части карт DDNet пустой квад-слой (num === 0) хранит фиктивный буфер
+ * на один квад (152 байта) — для num === 0 сразу возвращаем [].
  */
 tw.parseLayerQuads = function (layerData, num) {
   var quads = [];
+  var hasBuffer = layerData && (layerData.byteLength !== undefined || layerData.length !== undefined);
   var total = layerData && layerData.byteLength !== undefined
     ? layerData.byteLength
     : (layerData && layerData.length) || 0;
   var stride = 152; // CQuad: 5 points + 4 colors + 4 texcoords + 4 envelope ints.
 
-  if (!Number.isSafeInteger(num) || num < 0 || total !== num * stride)
+  if (!hasBuffer || !Number.isSafeInteger(num) || num < 0)
+    throw new RangeError("Invalid quad data size");
+  if (num === 0)
+    return quads;
+  if (total !== num * stride)
     throw new RangeError("Invalid quad data size");
 
   var d = new DataView(layerData);
@@ -767,21 +846,61 @@ tw.parseLayerQuads = function (layerData, num) {
 }
 
 // Editor-only compact gameplay data: one byte per cell, no per-tile objects.
-tw.parseGameplayIndices = function (tileData, num) {
-  if (!Number.isSafeInteger(num) || num < 0 || num > tileData.byteLength / 4)
+// Supports both uncompressed tiles (version < 4) and DDNet m_Skip RLE (version >= 4).
+tw.parseGameplayIndices = function (tileData, num, version) {
+  if (!tileData || !Number.isSafeInteger(num) || num < 0)
     throw new RangeError("Truncated or invalid gameplay tile data");
   var bytes = new Uint8Array(tileData);
+  var srcCount = Math.floor(bytes.byteLength / 4);
+  if (version >= 4) {
+    var rleIndices = new Uint8Array(num);
+    var dstIdx = 0;
+    var srcIdx = 0;
+    while (dstIdx < num && srcIdx < srcCount) {
+      var idxVal = bytes[srcIdx * 4];
+      var skip = bytes[srcIdx * 4 + 2];
+      for (var rep = 0; rep <= skip && dstIdx < num; rep++) {
+        rleIndices[dstIdx++] = idxVal;
+      }
+      srcIdx++;
+    }
+    if (dstIdx < num)
+      throw new RangeError("Truncated or invalid gameplay tile data");
+    return rleIndices;
+  }
+  if (num > srcCount)
+    throw new RangeError("Truncated or invalid gameplay tile data");
   var indices = new Uint8Array(num);
   for (var i = 0; i < num; i++) indices[i] = bytes[i * 4];
   return indices;
 }
 
-tw.parseLayerTiles = function (tileData, num) {
+tw.parseLayerTiles = function (tileData, num, version) {
+  var tiles = [];
+  if (!tileData || num <= 0)
+    return tiles;
+  var bytes = new Uint8Array(tileData);
+  var srcCount = Math.floor(bytes.byteLength / 4);
 
-  var tiles = []
+  if (version >= 4) {
+    var srcIdx = 0;
+    while (tiles.length < num && srcIdx < srcCount) {
+      var base = srcIdx * 4;
+      var index = bytes[base];
+      var flags = bytes[base + 1];
+      var skip = bytes[base + 2];
+      for (var rep = 0; rep <= skip && tiles.length < num; rep++) {
+        tiles.push({ index: index, flags: flags });
+      }
+      srcIdx++;
+    }
+    while (tiles.length < num)
+      tiles.push({ index: 0, flags: 0 });
+    return tiles;
+  }
+
   var d = new DataView(tileData);
   d.resetReader();
-
 
   for (var i = 0; i < num; i++) {
     tiles.push({
@@ -800,6 +919,8 @@ tw.parseLayerTiles = function (tileData, num) {
 
 // CEnvPoint: время (int, мс), тип кривой, 4 значения (22.10 fixed point).
 tw.ENVPOINT_SIZE = 24;
+// CEnvPoint_bezier (envelope version >= 3): CEnvPoint + 4*4 касательных int32.
+tw.ENVPOINT_BEZIER_SIZE = 88;
 
 tw.parseMapEnvelope = function (layerData) {
   var d = new DataView(layerData);
@@ -813,19 +934,37 @@ tw.parseMapEnvelope = function (layerData) {
   };
 }
 
-tw.parseEnvelopePoints = function (pointsData) {
+tw.parseEnvelopePoints = function (pointsData, envelopes) {
   var raw = new Uint8Array(pointsData);
   var d = new DataView(pointsData);
   d.resetReader();
 
+  var useBezier = false;
+  if (envelopes && envelopes.length) {
+    for (var e = 0; e < envelopes.length; e++) {
+      if (envelopes[e] && envelopes[e].version >= 3) {
+        useBezier = true;
+        break;
+      }
+    }
+  }
+
+  var stride = useBezier ? tw.ENVPOINT_BEZIER_SIZE : tw.ENVPOINT_SIZE;
   var points = [];
-  var num = Math.floor(raw.byteLength / tw.ENVPOINT_SIZE);
+  var num = Math.floor(raw.byteLength / stride);
   for (var i = 0; i < num; i++) {
-    points.push({
+    var pt = {
       time: d.int32(),
       curve: d.int32(),
       values: [d.int32(), d.int32(), d.int32(), d.int32()]
-    });
+    };
+    if (useBezier) {
+      pt.inTangentdx = [d.int32(), d.int32(), d.int32(), d.int32()];
+      pt.inTangentdy = [d.int32(), d.int32(), d.int32(), d.int32()];
+      pt.outTangentdx = [d.int32(), d.int32(), d.int32(), d.int32()];
+      pt.outTangentdy = [d.int32(), d.int32(), d.int32(), d.int32()];
+    }
+    points.push(pt);
   }
   return points;
 }
@@ -842,6 +981,9 @@ tw.parseMapImage = function (layerData) {
   obj.external = d.uint32();
   obj.imageName = d.int32();
   obj.imageData = d.int32();
+  obj.format = (obj.version >= 2 && layerData.byteLength >= 28)
+    ? d.int32()
+    : tw.IMAGE_FORMAT_RGBA;
 
   return obj;
 }
@@ -882,7 +1024,7 @@ tw.Map = function (mapData) {
   var envPointsInfo = dFile.getType(tw.MAPITEMTYPE_ENVPOINTS);
   if (envPointsInfo != undefined && envPointsInfo.num > 0) {
     // Все точки лежат одним элементом; конверты ссылаются на них по индексу.
-    this.envelopePoints = tw.parseEnvelopePoints(dFile.getItem(envPointsInfo.start).data);
+    this.envelopePoints = tw.parseEnvelopePoints(dFile.getItem(envPointsInfo.start).data, this.envelopes);
   }
 
   // map images
@@ -900,31 +1042,33 @@ tw.Map = function (mapData) {
         var normalizedUrl = url.replace(/^\/+/, "");
         url = baseUrl + normalizedUrl;
       }
-      var tex = tw.loadTexture({
+      var extTex = tw.loadTexture({
         extern: true,
         imgUrl: url,
         name: imgName,
         imgId: i,
         width: imgInfo.width,
-        height: imgInfo.height
+        height: imgInfo.height,
+        format: imgInfo.format
       })
 
-      if (tex != undefined)
-        this.textures.push(tex);
+      if (extTex != undefined)
+        this.textures.push(extTex);
     } else {
 
       var imgData = new Uint8Array(dFile.getData(imgInfo.imageData));
-      var tex = tw.loadTexture({
+      var embTex = tw.loadTexture({
         extern: false,
         name: imgName,
         imgId: i,
         width: imgInfo.width,
         height: imgInfo.height,
+        format: imgInfo.format,
         pixelBuf: imgData
       })
 
-      if (tex != undefined)
-        this.textures.push(tex);
+      if (embTex != undefined)
+        this.textures.push(embTex);
     }
   }
 
@@ -933,9 +1077,19 @@ tw.Map = function (mapData) {
   if (groupsInfo == undefined)
     return;
 
+  var groupExType = tw.findExItemType(dFile, tw.GROUP_EX_UUID_INTS);
+
   for (var g = 0; g < groupsInfo.num; g++) {
     var groupItem = dFile.getItem(groupsInfo.start + g);
     var groupInfo = tw.parseMapGroup(groupItem.data);
+    if (groupExType != undefined) {
+      var groupExItem = dFile.findItem(groupExType, groupItem.id);
+      if (groupExItem && groupExItem.data) {
+        var groupEx = tw.parseMapGroupEx(groupExItem.data);
+        if (groupEx)
+          groupInfo.parallaxZoom = groupEx.parallaxZoom;
+      }
+    }
 
     var grp = new tw.Map.Group(this, groupInfo);
     this.groups.push(grp);
@@ -960,7 +1114,7 @@ tw.Map = function (mapData) {
         if (tileLayerInfo.image == -1) {
           if (tileLayerInfo.flags & tw.TILESLAYERFLAG_GAME) {
             grp.gameLayer = true;
-            var gameTiles = tw.parseGameplayIndices(dFile.getData(tileLayerInfo.data), tileLayerInfo.width * tileLayerInfo.height);
+            var gameTiles = tw.parseGameplayIndices(dFile.getData(tileLayerInfo.data), tileLayerInfo.width * tileLayerInfo.height, tileLayerInfo.version);
             // Keep compact read-only indices for the editor's collision overlay.
             // No texture or GPU buffers are needed for this layer.
             if (!this.gameplay) {
@@ -979,24 +1133,26 @@ tw.Map = function (mapData) {
           continue;
         }
 
-        var tex = this.getTex(tileLayerInfo.image);
+        var tileTex = this.getTex(tileLayerInfo.image);
 
         // PATCH (Editor Studio): раньше здесь была ссылка на несуществующую
         // quadLayerInfo — при пропавшей текстуре конструктор карты падал
         // целиком. Теперь просто пропускаем слой.
-        if (tex == undefined) {
+        if (tileTex == undefined) {
           console.warn("[map] нет текстуры для слоя тайлов:", tileLayerInfo.image);
         } else {
           // load tiles
           var tileData = dFile.getData(tileLayerInfo.data);
-          var tiles = tw.parseLayerTiles(tileData, tileLayerInfo.width * tileLayerInfo.height);
+          var tiles = tw.parseLayerTiles(tileData, tileLayerInfo.width * tileLayerInfo.height, tileLayerInfo.version);
           // add layer
-          grp.addTileLayer(tileLayerInfo.width, tileLayerInfo.height, tiles, tileLayerInfo.color, tex,
+          grp.addTileLayer(tileLayerInfo.width, tileLayerInfo.height, tiles, tileLayerInfo.color, tileTex,
             tileLayerInfo.colorEnv, tileLayerInfo.colorEnvOffset);
         }
 
       } else if (layerInfo.type == tw.LAYERTYPE_QUADS) {
         var quadLayerInfo = tw.parseMapLayerQuads(layerItem.data);
+        if (!quadLayerInfo.numQuads)
+          continue;
 
         var quadData = dFile.getData(quadLayerInfo.data);
         if (quadData == undefined)
@@ -1007,16 +1163,17 @@ tw.Map = function (mapData) {
           continue;
 
         // image == -1 — «без текстуры» (цветной прямоугольник, так задумано).
-        // Если текстура есть в карте, но не загрузилась (нет mapres/*.png),
-        // слой раньше рисовался белым — пропускаем его совсем.
-        var tex;
+        // Явно сбрасываем quadTex на каждой итерации: var в ES5 всплывает
+        // на уровень функции, и без сброса слои с image == -1 наследовали
+        // текстуру предыдущего слоя (небо получало water, конусы фонарей — палитру).
+        var quadTex = undefined;
         if (quadLayerInfo.image != -1) {
-          tex = this.getTex(quadLayerInfo.image);
-          if (tex == undefined || tex.failed)
+          quadTex = this.getTex(quadLayerInfo.image);
+          if (quadTex == undefined || quadTex.failed)
             continue;
         }
 
-        grp.addQuadLayer(tex, quads, layerInfo.flags);
+        grp.addQuadLayer(quadTex, quads, layerInfo.flags);
       }
     }
 
@@ -1075,6 +1232,7 @@ tw.QuadLayer.prototype.tick = function () {
     var offY = 0;
     var rot = 0;
     if (hasEnvelopes && q.posEnv >= 0) {
+      pos[0] = 0; pos[1] = 0; pos[2] = 0; pos[3] = 0;
       tw.evalEnvelope(map, q.posEnv, q.posEnvOffset, pos);
       offX = pos[0];
       offY = pos[1];
@@ -1104,11 +1262,9 @@ tw.QuadLayer.prototype.tick = function () {
     this.vBuf.set(vertices, i * 8);
 
     // Цвет вершины = цвет квада * цвет конверта (в игре это делает GPU).
+    color[0] = 1; color[1] = 1; color[2] = 1; color[3] = 1;
     if (hasEnvelopes && q.colorEnv >= 0)
       tw.evalEnvelope(map, q.colorEnv, q.colorEnvOffset, color);
-    else {
-      color[0] = 1; color[1] = 1; color[2] = 1; color[3] = 1;
-    }
 
     var colors = [];
     for (var c = 0; c < 4; c++) {
@@ -1210,6 +1366,7 @@ tw.QuadLayer.prototype.render = function () {
 tw.Map.Group = function (map, info) {
   this.paraX = info.parallaxX;
   this.paraY = info.parallaxY;
+  this.paraZoom = typeof info.parallaxZoom === "number" ? info.parallaxZoom : undefined;
   this.offsX = info.offsX;
   this.offsY = info.offsY;
   // Отсечение появилось во второй версии группы (см. CMapItemGroup).
@@ -1247,40 +1404,64 @@ tw.Map.Group.prototype.tick = function () {
 }
 
 /**
- * Экранный прямоугольник группы — формула DDNet (IGraphics::MapScreenToWorld):
- *   width = base * (parallaxZoom * (1/zoom - 1) + 100) / 100
- * Слои с параллаксом 0 «приклеены» к экрану, с параллаксом 100 — обычные.
- * Прежний костыль «paraX===0 && paraY===0 → zoom=4» убран: из-за него фон
- * раздувался в гигантские белые прямоугольники при отдалении.
- *
- * Превью-поправка: при сильном отдалении (весь мир на экране) фон меньше
- * окна — растягиваем его до окна, иначе сверху и снизу остаются пустые полосы.
+ * Базовый размер экрана DDNet (CRenderTools::CalcScreenParams, Zoom = 1.0):
+ * Amount = 1150 * 1000, WMax = 1500, HMax = 1050. Полноэкранные фоновые квады
+ * на картах DDNet рисуются под эти пределы (около ±750 × ±525).
+ */
+tw.calcScreenParams = function (aspect) {
+  var a = (typeof aspect === "number" && isFinite(aspect) && aspect > 0) ? aspect : 1;
+  var amount = 1150 * 1000;
+  var wMax = 1500;
+  var hMax = 1050;
+  var f = Math.sqrt(amount) / Math.sqrt(a);
+  var w = f * a;
+  var h = f;
+  if (w > wMax) {
+    w = wMax;
+    h = w / a;
+  }
+  if (h > hMax) {
+    h = hMax;
+    w = h * a;
+  }
+  return { w: w, h: h };
+}
+
+/**
+ * Экранный прямоугольник группы — формула DDNet (CRenderTools::MapScreenToGroup):
+ *   scale = (parallaxZoom * (invDdnetZoom - 1) + 100) / 100
+ * Для parallaxZoom === 100 прямоугольник в точности равен игровому виду
+ * (tw.worldView * aspect / zoom × tw.worldView / zoom), а для фоновых слоёв
+ * (parallaxZoom < 100) опирается на базовое окно CalcScreenParams без
+ * ложного «раздувания» фрустума при zoom < 1.
  */
 tw.Map.Group.prototype.initMapScreen = function () {
-  var zoom = tw.cameraZoom || 1;
-  if (zoom <= 0)
-    zoom = 1;
+  var zoom = (typeof tw.cameraZoom === "number" && isFinite(tw.cameraZoom) && tw.cameraZoom > 0) ? tw.cameraZoom : 1;
+  var aspect = (typeof tw.aspect === "number" && isFinite(tw.aspect) && tw.aspect > 0) ? tw.aspect : 1;
 
-  var baseWidth = tw.worldView[0] * tw.aspect;
-  var baseHeight = tw.worldView[1];
+  var worldWidth = (tw.worldView[0] * aspect) / zoom;
+  var worldHeight = tw.worldView[1] / zoom;
 
-  var parallaxZoom = Math.max(this.paraX, this.paraY);
+  var parallaxZoom = typeof this.paraZoom === "number"
+    ? this.paraZoom
+    : Math.max(this.paraX, this.paraY);
   if (parallaxZoom < 0) parallaxZoom = 0;
   if (parallaxZoom > 100) parallaxZoom = 100;
 
-  var scale = (parallaxZoom * (1 / zoom - 1) + 100) / 100;
-  if (!isFinite(scale) || scale <= 0)
-    scale = 1 / zoom;
-
-  var width = baseWidth * scale;
-  var height = baseHeight * scale;
-
-  if (tw.coverBackground && parallaxZoom < 100) {
-    var cover = Math.max(1, (baseWidth / zoom) / width, (baseHeight / zoom) / height);
-    if (isFinite(cover) && cover > 1) {
-      width *= cover;
-      height *= cover;
-    }
+  var width, height;
+  if (parallaxZoom >= 100) {
+    width = worldWidth;
+    height = worldHeight;
+  } else {
+    var ddBase = tw.calcScreenParams(aspect);
+    var scaleX = (parallaxZoom * (worldWidth / ddBase.w - 1) + 100) / 100;
+    var scaleY = (parallaxZoom * (worldHeight / ddBase.h - 1) + 100) / 100;
+    if (!isFinite(scaleX) || scaleX <= 0)
+      scaleX = worldWidth / ddBase.w;
+    if (!isFinite(scaleY) || scaleY <= 0)
+      scaleY = worldHeight / ddBase.h;
+    width = ddBase.w * scaleX;
+    height = ddBase.h * scaleY;
   }
 
   var cx = tw.cameraPos[0] * (this.paraX / 100);
@@ -1475,9 +1656,82 @@ tw.Map.prototype.render = function () {
 }
 
 tw.isPowerOfTwo = function (x) {
-  while (((x & 1) == 0) && x > 1)
-    x >>= 1;
-  return (x == 1);
+  return Number.isInteger(x) && x > 0 && (x & (x - 1)) === 0;
+}
+
+tw.nextPowerOfTwo = function (x) {
+  var v = Math.max(1, Math.floor(x || 1));
+  var p = 1;
+  while (p < v && p < 0x40000000)
+    p <<= 1;
+  return p;
+}
+
+/**
+ * Билинейное масштабирование RGBA-буфера к размерам 2^n для WebGL 1, где
+ * текстуры не кратные степени двойки иначе запрещают gl.REPEAT и мипмапы
+ * (из-за CLAMP_TO_EDGE повторяющиеся фоновые квады превращались в полосы).
+ * Интерполяция взвешена по альфе, чтобы прозрачные пиксели не давали кайму.
+ */
+tw.resampleRgba = function (src, srcW, srcH, dstW, dstH) {
+  if (srcW === dstW && srcH === dstH)
+    return src;
+  var out = new Uint8Array(dstW * dstH * 4);
+  var scaleX = srcW / dstW;
+  var scaleY = srcH / dstH;
+  for (var y = 0; y < dstH; y++) {
+    var sy = (y + 0.5) * scaleY - 0.5;
+    var y0 = Math.floor(sy);
+    var fy = sy - y0;
+    var y1 = y0 + 1;
+    // Повторяем края по модулю размера (текстуры квадов зациклены).
+    var wy0 = ((y0 % srcH) + srcH) % srcH;
+    var wy1 = ((y1 % srcH) + srcH) % srcH;
+    for (var x = 0; x < dstW; x++) {
+      var sx = (x + 0.5) * scaleX - 0.5;
+      var x0 = Math.floor(sx);
+      var fx = sx - x0;
+      var x1 = x0 + 1;
+      var wx0 = ((x0 % srcW) + srcW) % srcW;
+      var wx1 = ((x1 % srcW) + srcW) % srcW;
+
+      var i00 = (wy0 * srcW + wx0) * 4;
+      var i10 = (wy0 * srcW + wx1) * 4;
+      var i01 = (wy1 * srcW + wx0) * 4;
+      var i11 = (wy1 * srcW + wx1) * 4;
+
+      var w00 = (1 - fx) * (1 - fy);
+      var w10 = fx * (1 - fy);
+      var w01 = (1 - fx) * fy;
+      var w11 = fx * fy;
+
+      var a00 = src[i00 + 3], a10 = src[i10 + 3], a01 = src[i01 + 3], a11 = src[i11 + 3];
+      var a = w00 * a00 + w10 * a10 + w01 * a01 + w11 * a11;
+      var dstOff = (y * dstW + x) * 4;
+      if (a > 0.001) {
+        var r = (w00 * src[i00] * a00 + w10 * src[i10] * a10 + w01 * src[i01] * a01 + w11 * src[i11] * a11) / a;
+        var g = (w00 * src[i00 + 1] * a00 + w10 * src[i10 + 1] * a10 + w01 * src[i01 + 1] * a01 + w11 * src[i11 + 1] * a11) / a;
+        var b = (w00 * src[i00 + 2] * a00 + w10 * src[i10 + 2] * a10 + w01 * src[i01 + 2] * a01 + w11 * src[i11 + 2] * a11) / a;
+        out[dstOff] = Math.round(r);
+        out[dstOff + 1] = Math.round(g);
+        out[dstOff + 2] = Math.round(b);
+        out[dstOff + 3] = Math.round(a);
+      }
+    }
+  }
+  return out;
+}
+
+tw.rgbToRgba = function (rgb, width, height) {
+  var total = width * height;
+  var out = new Uint8Array(total * 4);
+  for (var i = 0; i < total; i++) {
+    out[i * 4] = rgb[i * 3];
+    out[i * 4 + 1] = rgb[i * 3 + 1];
+    out[i * 4 + 2] = rgb[i * 3 + 2];
+    out[i * 4 + 3] = 255;
+  }
+  return out;
 }
 
 tw.textureFailures = [];
@@ -1494,12 +1748,20 @@ tw.loadTexture = function (attrs) {
     failed: false
   }
 
-  var powerOfTwo = true;
+  var isWebGL2 = !!tw.isWebGL2 ||
+    (typeof WebGL2RenderingContext !== "undefined" && gl instanceof WebGL2RenderingContext) ||
+    (gl && typeof gl.texStorage2D === "function");
+  var maxTexSize = (gl && typeof gl.getParameter === "function" && gl.MAX_TEXTURE_SIZE)
+    ? (gl.getParameter(gl.MAX_TEXTURE_SIZE) || 4096)
+    : 4096;
 
-  if (!tw.isPowerOfTwo(attrs.width) || !tw.isPowerOfTwo(attrs.height)) {
-    console.log("tex", attrs.name, "not power of 2")
-    powerOfTwo = false;
-  }
+  var applyRepeatAndMipmaps = function () {
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
+    gl.generateMipmap(gl.TEXTURE_2D);
+  };
 
   tex.glTex = tw.gl.createTexture();
 
@@ -1517,14 +1779,30 @@ tw.loadTexture = function (attrs) {
     tex.image.src = attrs.imgUrl;
 
     tex.image.onload = function (e) {
+      var imgW = tex.image.naturalWidth || tex.image.width || attrs.width;
+      var imgH = tex.image.naturalHeight || tex.image.height || attrs.height;
+      var pot = tw.isPowerOfTwo(imgW) && tw.isPowerOfTwo(imgH);
+      var source = tex.image;
+
+      if (!pot && !isWebGL2 && typeof document !== "undefined" && typeof document.createElement === "function") {
+        var potW = Math.min(maxTexSize, tw.nextPowerOfTwo(imgW));
+        var potH = Math.min(maxTexSize, tw.nextPowerOfTwo(imgH));
+        var offscreen = document.createElement("canvas");
+        offscreen.width = potW;
+        offscreen.height = potH;
+        var ctx2d = offscreen.getContext && offscreen.getContext("2d");
+        if (ctx2d) {
+          ctx2d.drawImage(tex.image, 0, 0, potW, potH);
+          source = offscreen;
+          pot = true;
+        }
+      }
+
       gl.bindTexture(gl.TEXTURE_2D, tex.glTex);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, tex.image);
-      if (powerOfTwo) {
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
-        gl.generateMipmap(gl.TEXTURE_2D);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, source);
+      if (pot || isWebGL2) {
+        applyRepeatAndMipmaps();
       } else {
-        // temporary fix for not power 2 images
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
@@ -1532,7 +1810,6 @@ tw.loadTexture = function (attrs) {
       }
 
       gl.bindTexture(gl.TEXTURE_2D, null);
-
 
       tex.loaded = true;
       tw.requestRender(3);
@@ -1550,18 +1827,35 @@ tw.loadTexture = function (attrs) {
     }
   } else {
     // load texture from pixelbuffer
-    if (attrs.pixelBuf.length != attrs.width * attrs.height * 4)
-      console.log("invalid tex size", imgName, "size", imgData.length);
-    else {
-      gl.bindTexture(gl.TEXTURE_2D, tex.glTex);
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, attrs.width, attrs.height, 0, gl.RGBA, gl.UNSIGNED_BYTE, attrs.pixelBuf);
+    var srcBuf = attrs.pixelBuf;
+    var expectedRgba = attrs.width * attrs.height * 4;
+    var expectedRgb = attrs.width * attrs.height * 3;
+    if (srcBuf && srcBuf.length === expectedRgb && expectedRgb !== expectedRgba) {
+      srcBuf = tw.rgbToRgba(srcBuf, attrs.width, attrs.height);
+    }
+    if (!srcBuf || srcBuf.length !== expectedRgba) {
+      tex.failed = true;
+      console.warn("[map] неверный размер встроенной текстуры:", attrs.name, srcBuf ? srcBuf.length : 0);
+    } else {
+      var uploadW = attrs.width;
+      var uploadH = attrs.height;
+      var uploadBuf = srcBuf;
+      var potBuf = tw.isPowerOfTwo(uploadW) && tw.isPowerOfTwo(uploadH);
 
-      if (powerOfTwo) {
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-        gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_NEAREST);
-        gl.generateMipmap(gl.TEXTURE_2D);
+      if (!potBuf && !isWebGL2) {
+        var dstW = Math.min(maxTexSize, tw.nextPowerOfTwo(uploadW));
+        var dstH = Math.min(maxTexSize, tw.nextPowerOfTwo(uploadH));
+        uploadBuf = tw.resampleRgba(srcBuf, uploadW, uploadH, dstW, dstH);
+        uploadW = dstW;
+        uploadH = dstH;
+        potBuf = true;
+      }
+
+      gl.bindTexture(gl.TEXTURE_2D, tex.glTex);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, uploadW, uploadH, 0, gl.RGBA, gl.UNSIGNED_BYTE, uploadBuf);
+      if (potBuf || isWebGL2) {
+        applyRepeatAndMipmaps();
       } else {
-        // temporary fix for not power 2 images
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
         gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
@@ -2056,45 +2350,50 @@ tw.TileLayer.prototype.render = function () {
   tw.sTexCoords(0);
 }
 
-tw.vertexShader = " \
-attribute vec2 aPosition; \
-attribute vec4 aVertexColor; \
-attribute vec2 aTexCoord; \
-uniform mat4 uPMatrix; \
-uniform mat4 uMVMatrix; \
-uniform bool uTexCoord;\
-uniform bool uVertexColor; \
-\
-varying vec2 vTexCoord; \
-varying vec4 vColor; \
-\
-void main(void) \
-{ \
-gl_Position = uPMatrix * uMVMatrix * vec4(aPosition.x, aPosition.y, 0.0, 1.0); \
-if (uTexCoord) \
-vTexCoord = aTexCoord; \
-if (uVertexColor) \
-vColor = aVertexColor; \
-} \
-";
+tw.vertexShader = [
+  "#ifdef GL_FRAGMENT_PRECISION_HIGH",
+  "precision highp float;",
+  "#else",
+  "precision mediump float;",
+  "#endif",
+  "attribute vec2 aPosition;",
+  "attribute vec4 aVertexColor;",
+  "attribute vec2 aTexCoord;",
+  "uniform mat4 uPMatrix;",
+  "uniform mat4 uMVMatrix;",
+  "uniform bool uTexCoord;",
+  "uniform bool uVertexColor;",
+  "varying vec2 vTexCoord;",
+  "varying vec4 vColor;",
+  "void main(void)",
+  "{",
+  "  gl_Position = uPMatrix * uMVMatrix * vec4(aPosition.x, aPosition.y, 0.0, 1.0);",
+  "  if (uTexCoord)",
+  "    vTexCoord = aTexCoord;",
+  "  if (uVertexColor)",
+  "    vColor = aVertexColor;",
+  "}"
+].join("\n");
 
-tw.fragmentShader = " \
-precision mediump float; \
-\
-varying vec2 vTexCoord; \
-varying vec4 vColor; \
-uniform sampler2D uSampler; \
-uniform vec4 uColorMask; \
-uniform bool uTexCoord; \
-uniform bool uVertexColor; \
-\
-void main(void) \
-{ \
-gl_FragColor = uColorMask; \
-if (uTexCoord) \
-gl_FragColor *= texture2D(uSampler, vec2(vTexCoord.s, vTexCoord.t)); \
-if (uVertexColor) \
-gl_FragColor *= vColor; \
-} \
-";
+tw.fragmentShader = [
+  "#ifdef GL_FRAGMENT_PRECISION_HIGH",
+  "precision highp float;",
+  "#else",
+  "precision mediump float;",
+  "#endif",
+  "varying vec2 vTexCoord;",
+  "varying vec4 vColor;",
+  "uniform sampler2D uSampler;",
+  "uniform vec4 uColorMask;",
+  "uniform bool uTexCoord;",
+  "uniform bool uVertexColor;",
+  "void main(void)",
+  "{",
+  "  gl_FragColor = uColorMask;",
+  "  if (uTexCoord)",
+  "    gl_FragColor *= texture2D(uSampler, vec2(vTexCoord.s, vTexCoord.t));",
+  "  if (uVertexColor)",
+  "    gl_FragColor *= vColor;",
+  "}"
+].join("\n");
 

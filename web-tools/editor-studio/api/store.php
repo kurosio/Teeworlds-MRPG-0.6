@@ -81,12 +81,29 @@ function store_db(): PDO
     }
 
     store_schema($pdo);
+    store_init_network_rules($pdo);
     if ($fresh) {
         @chmod($path, 0640);
     }
     store_import_legacy($pdo);
 
     return $pdo;
+}
+
+/**
+ * Одноразовая инициализация сетевых правил при запуске редактора.
+ *
+ * Ключи создаются только если их ещё нет (INSERT OR IGNORE): если значения
+ * уже заданы в БД, они остаются неприкосновенными. Дальше этими правилами
+ * управляет только база — API конфига и страницы редактора их не читают
+ * на запись и не изменяют.
+ */
+function store_init_network_rules(PDO $pdo): void
+{
+    $now = store_now();
+    $stmt = $pdo->prepare('INSERT OR IGNORE INTO settings(key, value, updated_at) VALUES(?, ?, ?)');
+    $stmt->execute(['allow_remote_editor', 'false', $now]);
+    $stmt->execute(['allowed_editor_ips', '[]', $now]);
 }
 
 /** Схема создаётся идемпотентно; версия хранится в PRAGMA user_version. */

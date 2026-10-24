@@ -484,11 +484,16 @@ try {
         // managed in «Гостевые пользователи» (api/guests.php).
         $body = cr_read_body();
         $saved = mutate_cfg(function (array $cfg) use ($body) {
-            $cfg['guest_enabled'] = (bool)($body['guest_enabled'] ?? false);
-            $cfg['guest_allow_remote'] = (bool)($body['guest_allow_remote'] ?? false);
-            $cfg['guest_max_pending'] = clamp_int($body['guest_max_pending'] ?? null, 1, 50, 5);
-            $cfg['guest_submit_cooldown'] = clamp_int($body['guest_submit_cooldown'] ?? null, 0, 3600, 60);
-            $cfg['guest_max_operations'] = clamp_int($body['guest_max_operations'] ?? null, 1, 500, 100);
+            // Отсутствующее поле тела запроса не сбрасывает настройку,
+            // а сохраняет текущее значение из БД.
+            $cfg['guest_enabled'] = (bool)($body['guest_enabled'] ?? ($cfg['guest_enabled'] ?? false));
+            $cfg['guest_allow_remote'] = (bool)($body['guest_allow_remote'] ?? ($cfg['guest_allow_remote'] ?? false));
+            $cfg['guest_max_pending'] = clamp_int($body['guest_max_pending'] ?? null, 1, 50,
+                clamp_int($cfg['guest_max_pending'] ?? null, 1, 50, 5));
+            $cfg['guest_submit_cooldown'] = clamp_int($body['guest_submit_cooldown'] ?? null, 0, 3600,
+                clamp_int($cfg['guest_submit_cooldown'] ?? null, 0, 3600, 60));
+            $cfg['guest_max_operations'] = clamp_int($body['guest_max_operations'] ?? null, 1, 500,
+                clamp_int($cfg['guest_max_operations'] ?? null, 1, 500, 100));
             // Legacy single-guest password is no longer used.
             unset($cfg['guest_password']);
             return $cfg;

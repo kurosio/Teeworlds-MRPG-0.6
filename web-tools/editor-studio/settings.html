@@ -228,16 +228,6 @@
             </div>
             <div id="map-api-status" class="mt-2 text-xs"></div>
           </div>
-          <div class="md:col-span-2 editor-section">
-            <div class="editor-label mb-1">Сетевой доступ</div>
-            <label id="remote-toggle" class="editor-toggle mb-2" data-checked="0">
-              <input id="f-remote" type="checkbox" />
-              <span class="editor-toggle-track"><span class="editor-toggle-knob"></span></span>
-              <span class="text-sm">Разрешить доступ к API извне</span>
-            </label>
-            <div class="editor-muted-text text-xs mb-2">Доступ получат только адреса и подсети из списка (по одному в строке).</div>
-            <textarea id="f-ips" class="w-full editor-input form-textarea" placeholder="192.168.1.0/24&#10;10.10.0.5"></textarea>
-          </div>
         </div>
 
         <div class="flex flex-wrap gap-2 mt-5">
@@ -406,7 +396,7 @@
     const F = {
       host: $('f-host'), port: $('f-port'), db: $('f-db'),
       user: $('f-user'), pass: $('f-pass'), nopass: $('f-nopass'),
-      skins: $('f-skins'), remote: $('f-remote'), ips: $('f-ips'),
+      skins: $('f-skins'),
       mapApi: $('f-map-api'), mapToken: $('f-map-token'), mapTokenClear: $('f-map-token-clear'),
       mapsDir: $('f-maps-dir'), mapresDir: $('f-mapres-dir')
     };
@@ -418,8 +408,7 @@
       mapApiStatus: $('map-api-status'),
       search: $('search'),
       list: $('list'),
-      themeSelect: $('theme-select'),
-      remoteToggle: $('remote-toggle')
+      themeSelect: $('theme-select')
     };
 
     /* ═══════════════════════════════════════════
@@ -434,7 +423,7 @@
       id: uid(), name: name || 'Default',
       host: '', port: 3306, db: '', user: '', pass: '', nopass: false,
       hasServerPassword: false,  // tracks if server has a password stored
-      skins: '', remote: false, ips: [],
+      skins: '',
       mapApi: '', mapsDir: '', mapresDir: '', mapTokenSet: false,
       status: 'idle'   // idle | wait | ok | err
     });
@@ -485,9 +474,7 @@
       mapToken: F.mapToken.value,
       mapTokenClear: F.mapTokenClear.checked,
       mapsDir: F.mapsDir.value.trim(),
-      mapresDir: F.mapresDir.value.trim(),
-      remote: F.remote.checked,
-      ips: F.ips.value.split(/\r?\n/).map(s => s.trim()).filter(Boolean)
+      mapresDir: F.mapresDir.value.trim()
     });
 
     // Введённый токен map-api живёт только до сохранения — в localStorage его не пишем.
@@ -521,9 +508,6 @@
       F.mapToken.value = '';
       F.mapTokenClear.checked = false;
       F.mapToken.placeholder = p.mapTokenSet ? '•••••• (сохранён на сервере)' : '••••••';
-      F.remote.checked = !!p.remote;
-      UI.remoteToggle.dataset.checked = F.remote.checked ? '1' : '0';
-      F.ips.value = (p.ips || []).join('\n');
       // Форма показывает сохранённое состояние — значит, правок нет.
       formBaseline = formSnapshot();
     };
@@ -550,8 +534,6 @@
       p.mapresDir = f.mapresDir;
       // Введённый токен запоминаем отдельно: уйдёт на сервер, в localStorage не попадёт.
       if (f.mapToken) mapTokenDraft = f.mapToken;
-      p.remote = f.remote;
-      p.ips = f.ips;
     };
 
     /* ═══════════════════════════════════════════
@@ -568,15 +550,15 @@
     };
 
     const pushToServer = async p => {
+      // Сетевые правила (allow_remote_editor / allowed_editor_ips) сюда не входят:
+      // они живут только в БД редактора и через API неизменяемы.
       const payload = {
         host: p.host, port: p.port,
         database: p.db, user: p.user,
         skins_api: p.skins,
         map_api: p.mapApi,
         maps_dir: p.mapsDir,
-        mapres_dir: p.mapresDir,
-        allow_remote_editor: p.remote,
-        allowed_editor_ips: p.ips
+        mapres_dir: p.mapresDir
       };
       
       // Токен map-api: пустое поле означает «оставить сохранённый».
@@ -862,7 +844,8 @@
 
         const sr = await pushToServer(p);
         if (!sr.ok) {
-          toast('Ошибка отправки конфига', 'error');
+          toast(sr.error || 'Ошибка отправки конфига', 'error');
+          setStatus(sr.error || 'Ошибка отправки конфига', 'err');
           return;
         }
 
@@ -1022,8 +1005,7 @@
           p.db = c.database || '';
           p.user = c.user || '';
           p.skins = c.skins_api || '';
-          p.remote = !!c.allow_remote_editor;
-          p.ips = Array.isArray(c.allowed_editor_ips) ? c.allowed_editor_ips : [];
+          // Правила сетевого доступа не копируем: только БД — единственный источник.
           // Don't set hasServerPassword yet — we'll detect it via testConnection
           save();
         }
@@ -1079,11 +1061,6 @@
         const p = active();
         F.pass.placeholder = p.hasServerPassword ? '•••••• (сохранён на сервере)' : '••••••';
       }
-    });
-
-    // Remote toggle
-    F.remote.addEventListener('change', () => {
-      UI.remoteToggle.dataset.checked = F.remote.checked ? '1' : '0';
     });
 
     // Search

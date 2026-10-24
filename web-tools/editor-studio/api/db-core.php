@@ -134,12 +134,19 @@ function save_cfg(array $cfg): bool
 /**
  * Read-modify-write конфигурации в одной транзакции SQLite.
  * $fn получает текущий конфиг и возвращает новый (или null, чтобы не писать).
+ *
+ * Чтение здесь намеренно НЕ прощает ошибки (в отличие от load_cfg): если базу
+ * не удалось прочитать, сохранение отменяется целиком. Иначе $fn получил бы
+ * пустой конфиг и store_settings_save стёр бы из таблицы settings все ключи,
+ * которых нет в частичной записи — настройки «сбрасывались» бы сами собой.
  */
 function mutate_cfg(callable $fn): bool
 {
     try {
         return (bool)store_tx(function () use ($fn): bool {
-            $cfg = load_cfg();
+            $cfg = store_settings_load();
+            // Гостевые аккаунты — отдельная таблица, но код выше ожидает их в конфиге.
+            $cfg['guest_users'] = store_guest_users_all();
             $next = $fn($cfg);
             if (!is_array($next)) {
                 return false;

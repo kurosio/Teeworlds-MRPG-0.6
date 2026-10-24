@@ -95,7 +95,7 @@ TwDataFile.prototype.parse = function () {
     // let's see what zlib.js can do :>
     var inflate = new Zlib.Inflate(cData);
     var plain = inflate.decompress();
-    var arrayBuf = plain.buffer.slice(0, plain.length);
+    var arrayBuf = plain.buffer.slice(plain.byteOffset, plain.byteOffset + plain.byteLength);
     this.decData.push(arrayBuf);
   }
 
@@ -107,9 +107,13 @@ TwDataFile.prototype.getData = function (index) {
 }
 
 TwDataFile.prototype.getItemSize = function (index) {
+  var rawSpan;
   if (index == this.numItems - 1)
-    return this.itemSize - this.itemOffsets[index];
-  return this.itemOffsets[index + 1] - this.itemOffsets[index];
+    rawSpan = this.itemSize - this.itemOffsets[index];
+  else
+    rawSpan = this.itemOffsets[index + 1] - this.itemOffsets[index];
+  // Subtract sizeof(CDatafileItem) (type_and_id + size = 8 bytes).
+  return rawSpan > 8 ? rawSpan - 8 : 0;
 }
 
 TwDataFile.prototype.getItem = function (index) {
@@ -136,9 +140,11 @@ TwDataFile.prototype.getType = function (type) {
 
 TwDataFile.prototype.findItem = function (type, id) {
   var t = this.getType(type);
+  if (!t)
+    return undefined;
 
   for (var i = 0; i < t.num; i++) {
-    var item = this.getItem(t.start);
+    var item = this.getItem(t.start + i);
     if (item.id == id)
       return item;
   }
