@@ -104,7 +104,7 @@ node web-tools/editor-studio/tools/check.mjs
 
 ### Тема
 - **editor-theme.css** — единые CSS variables + строгий UI.
-- **tailwind-theme.js** — общий tailwind config (используется CDN Tailwind на страницах).
+- **tailwind-theme.js** — переключение светлой/тёмной темы.
 
 ## 2.1) Первый запуск
 
@@ -650,3 +650,11 @@ curl -sI http://ВАШ-СЕРВЕР/data/db-config.json | head -1
   файл обязан остаться внутри каталога-источника, ответ кешируется по ETag;
 - карта доступна администратору и гостю, у которого открыта хотя бы одна вкладка
   с координатами; данные читаются только из БД и файлов, записи нет.
+
+### Сборка CSS
+
+Tailwind поставляется локально в `editor-core/tailwind.css` (файл хранится в Git).
+Node.js на сервере не требуется. После изменения классов в HTML/JS выполните
+из каталога `web-tools/editor-studio`: `npm ci && npm run build:css`.
+Конфигурация темы и forms-плагина: `tailwind.config.cjs`.
+Проверки: `npm test`.

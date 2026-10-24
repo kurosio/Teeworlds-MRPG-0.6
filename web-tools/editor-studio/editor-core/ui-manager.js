@@ -291,6 +291,11 @@
 
   const UIManager = {
     async init(root = document) {
+      // Scripts in <head> can initialize us before the page has a body.
+      // Wait for the whole DOM so toolbar actions and fields are present too.
+      if (document.readyState === 'loading') {
+        await new Promise(resolve => document.addEventListener('DOMContentLoaded', resolve, { once: true }));
+      }
       // 0) TagSelect widgets (chips + search)
       // Reusable across editors:
       // - static options via ui.options

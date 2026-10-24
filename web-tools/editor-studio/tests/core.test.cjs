@@ -80,3 +80,49 @@ test('Enter on Cancel never confirms a destructive dialog; Enter on OK does', as
     assert.equal(listeners.keydown, undefined);
   }
 });
+
+test('UIManager waits for DOMContentLoaded before accessing body and fields', async () => {
+  const listeners = {};
+  let queries = 0;
+  const document = {
+    readyState: 'loading', body: null,
+    addEventListener(name, fn) { listeners[name] = fn; },
+    querySelectorAll() { queries++; return []; },
+    querySelector() { return null; },
+  };
+  const context = vm.createContext({ window: { EditorCore: {} }, document,
+    localStorage: { getItem: () => null, setItem() {} } });
+  vm.runInContext(source('ui-manager.js'), context);
+  const initialized = context.window.EditorCore.UIManager.init(document);
+  assert.equal(queries, 0);
+  assert.equal(typeof listeners.DOMContentLoaded, 'function');
+  const modes = [];
+  document.body = { dataset: {}, classList: { toggle: (...args) => modes.push(args) } };
+  document.readyState = 'interactive';
+  listeners.DOMContentLoaded();
+  await initialized;
+  assert.ok(queries > 0);
+  assert.deepEqual(modes, [['editor-compact', false], ['editor-focus', false]]);
+  await context.window.EditorCore.UIManager.init(document);
+  assert.equal(modes.length, 2, 'productivity controls remain idempotent');
+});
+
+test('read-only sync_map is not guarded as a JSON POST write', () => {
+  const php = fs.readFileSync(path.join(__dirname, '../api/db-sync.php'), 'utf8');
+  const guarded = php.match(/guard_write_actions\(\$action, \[([^\]]+)\]\)/)[1];
+  assert.ok(!guarded.includes("'sync_map'"));
+  for (const action of ['save_target', 'set_as_target', 'apply_operations', 'pull_from_target']) {
+    assert.ok(guarded.includes(`'${action}'`));
+  }
+});
+
+test('compiled utilities follow component styles in both page entry points', () => {
+  for (const text of [source('page-loader.js'), fs.readFileSync(path.join(__dirname, '../index.html'), 'utf8')]) {
+    const utilities = text.indexOf('href="editor-core/tailwind.css"');
+    assert.ok(utilities > text.indexOf('href="editor-core/editor-theme.css"'));
+    assert.ok(utilities > text.indexOf('href="editor-core/editor-template.css"'));
+  }
+  const css = source('editor-theme.css');
+  assert.match(css, /\.editor-modal-backdrop\.hidden,\s*#editor-sync-modal\.hidden\s*\{\s*display:\s*none\s*!important;/);
+  assert.match(source('tailwind.css'), /\.hidden\{display:none\}/);
+});

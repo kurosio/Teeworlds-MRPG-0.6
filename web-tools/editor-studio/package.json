@@ -1,0 +1,12 @@
+{
+  "name": "editor-studio",
+  "private": true,
+  "scripts": {
+    "build:css": "tailwindcss -c tailwind.config.cjs -i editor-core/tailwind.input.css -o editor-core/tailwind.css --minify",
+    "test": "node --test tests/*.test.cjs"
+  },
+  "devDependencies": {
+    "@tailwindcss/forms": "0.5.10",
+    "tailwindcss": "3.4.17"
+  }
+}

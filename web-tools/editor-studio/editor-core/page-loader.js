@@ -9,12 +9,12 @@
     '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">',
     '<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">',
     '<link rel="stylesheet" href="editor-core/editor-theme.css">',
-    '<link rel="stylesheet" href="editor-core/editor-template.css">'
+    '<link rel="stylesheet" href="editor-core/editor-template.css">',
+    '<link rel="stylesheet" href="editor-core/tailwind.css">'
   ];
 
   const scriptTags = [
     '<script src="editor-core/tailwind-theme.js"></script>',
-    '<script src="https://cdn.tailwindcss.com?plugins=forms"></script>',
     // Сетевой слой подключается первым: им пользуются все остальные модули.
     '<script src="editor-core/http.js"></script>',
     '<script src="studio.manifest.js"></script>',
@@ -48,15 +48,8 @@
     </script>`
   ];
 
-  /**
-   * The styling comes from the Tailwind CDN. On an isolated network it may be
-   * blocked: the editors then still work, but the layout is degraded. Say so once
-   * instead of leaving the user with an unexplained broken page.
-   */
-  // Tailwind подключается с CDN: без сети классы не применятся и вёрстка
-  // развалится. Проверяем это по пробному элементу, а не по факту загрузки.
+  // Check the compiled stylesheet rather than a CDN runtime global.
   const isTailwindApplied = () => {
-    if (window.tailwind) return true;
     const probe = document.createElement('div');
     probe.className = 'flex items-center';
     probe.style.cssText = 'position:absolute;left:-9999px;top:0';
@@ -75,7 +68,7 @@
     box.style.cssText = 'position:fixed;left:12px;bottom:12px;z-index:2147483001;max-width:420px;padding:10px 12px;'
       + 'border-radius:12px;font:13px/1.45 system-ui,sans-serif;color:#ffd7a3;background:#2a1f10;border:1px solid #7c5a25;'
       + 'display:flex;gap:8px;align-items:flex-start';
-    box.innerHTML = '<span aria-hidden="true">⚠</span><span>Не удалось загрузить оформление (CDN). '
+    box.innerHTML = '<span aria-hidden="true">⚠</span><span>Не удалось загрузить локальное оформление. '
       + 'Редактор работает, но интерфейс может выглядеть упрощённо.</span>';
     box.addEventListener('click', () => box.remove());
     document.body?.appendChild(box);

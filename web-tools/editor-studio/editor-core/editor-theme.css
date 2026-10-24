@@ -2166,3 +2166,10 @@ html.editor-map-open{overflow:hidden;}
   .editor-map-dialog{padding:0;}
   .editor-map-dialog-frame{border:0;border-radius:0;}
 }
+
+/* Modal layout must never override the visibility state, even when a modal
+   has an ID selector (e.g. #editor-sync-modal) or styles load in a different order. */
+.editor-modal-backdrop.hidden,
+#editor-sync-modal.hidden {
+  display: none !important;
+}

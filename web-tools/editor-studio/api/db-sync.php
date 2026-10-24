@@ -1384,7 +1384,7 @@ function handle_pull_from_target(): never
 $action = (string)($_GET['action'] ?? '');
 
 // Синхронизация пишет в целевую базу — только JSON-POST своего узла.
-guard_write_actions($action, ['save_target', 'set_as_target', 'apply_operations', 'sync_map', 'pull_from_target']);
+guard_write_actions($action, ['save_target', 'set_as_target', 'apply_operations', 'pull_from_target']);
 
 $handlers = [
     'list_profiles'    => 'handle_list_profiles',

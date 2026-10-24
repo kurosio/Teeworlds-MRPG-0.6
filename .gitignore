@@ -81,3 +81,6 @@ web-tools/editor-studio/data/change-requests/
 !/web-tools/editor-studio/data/db-config.example.json
 /web-tools/editor-studio/data/*.db
 /web-tools/data/db-dumps/
+
+# Editor Studio CSS build dependencies
+/web-tools/editor-studio/node_modules/

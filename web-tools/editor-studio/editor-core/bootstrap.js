@@ -17,7 +17,7 @@
    * DOM страницы, откладываем до DOMContentLoaded: иначе appendChild на null.
    */
   const whenBodyReady = (fn) => {
-    if (document.body) {
+    if (document.readyState !== 'loading') {
       fn();
       return;
     }
@@ -46,10 +46,10 @@
       window.EditorCore.UI.mountScenarioEditorUI();
 
       // fire-and-forget; the calls below are idempotent
-      Promise.resolve().then(() => {
+      Promise.resolve().then(async () => {
         // Core UI init (DB-backed selects, validation hints, etc.)
         if (window.EditorCore.UIManager?.init) {
-          window.EditorCore.UIManager.init(document);
+          await window.EditorCore.UIManager.init(document);
         }
 
         // Auto-mount sync button in editor toolbar (if not already mounted)
