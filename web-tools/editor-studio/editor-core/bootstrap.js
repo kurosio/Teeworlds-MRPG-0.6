@@ -11,34 +11,53 @@
    * - provides shared defaults (FieldRenderer options)
    * - auto-mounts sync button in editor toolbar
    */
+  /**
+   * page-loader.js подключает модули из <head> (через document.write), поэтому
+   * bootstrapEditor() часто вызывается раньше появления <body>. Всё, что строит
+   * DOM страницы, откладываем до DOMContentLoaded: иначе appendChild на null.
+   */
+  const whenBodyReady = (fn) => {
+    if (document.body) {
+      fn();
+      return;
+    }
+    document.addEventListener('DOMContentLoaded', () => fn(), { once: true });
+  };
+
+  const mountSyncButtonWhenReady = () => {
+    // Skip settings page and database page
+    const editorName = document.body?.dataset?.editor || '';
+    if (editorName === 'settings' || editorName === 'database') return;
+
+    // Find toolbar actions area
+    const actionsArea = document.querySelector('.editor-page-actions');
+    if (actionsArea && !actionsArea.querySelector('[data-sync-btn]')) {
+      // Extract editor name from page title or data attribute
+      const titleEl = document.querySelector('.editor-page-title h1');
+      const displayName = titleEl?.textContent?.trim() || editorName || 'Редактор';
+      window.EditorCore.Sync.mountSyncButton(actionsArea, { editorName: displayName });
+    }
+  };
+
   const bootstrapEditor = () => {
     assertReady();
 
-    window.EditorCore.UI.mountScenarioEditorUI();
+    whenBodyReady(() => {
+      window.EditorCore.UI.mountScenarioEditorUI();
 
-    // Core UI init (DB-backed selects, validation hints, etc.)
-    if (window.EditorCore.UIManager?.init) {
-      // fire-and-forget; init is idempotent
-      Promise.resolve().then(() => window.EditorCore.UIManager.init(document));
-    }
-
-    // Auto-mount sync button in editor toolbar (if not already mounted)
-    if (window.EditorCore.Sync?.mountSyncButton) {
+      // fire-and-forget; the calls below are idempotent
       Promise.resolve().then(() => {
-        // Skip settings page and database page
-        const editorName = document.body?.dataset?.editor || '';
-        if (editorName === 'settings' || editorName === 'database') return;
+        // Core UI init (DB-backed selects, validation hints, etc.)
+        if (window.EditorCore.UIManager?.init) {
+          window.EditorCore.UIManager.init(document);
+        }
 
-        // Find toolbar actions area
-        const actionsArea = document.querySelector('.editor-page-actions');
-        if (actionsArea && !actionsArea.querySelector('[data-sync-btn]')) {
-          // Extract editor name from page title or data attribute
-          const titleEl = document.querySelector('.editor-page-title h1');
-          const displayName = titleEl?.textContent?.trim() || editorName || 'Редактор';
-          window.EditorCore.Sync.mountSyncButton(actionsArea, { editorName: displayName });
+        // Auto-mount sync button in editor toolbar (if not already mounted)
+        if (window.EditorCore.Sync?.mountSyncButton) {
+          mountSyncButtonWhenReady();
         }
       });
-    }
+    });
 
     return {
       fieldRenderOptions: window.EditorCore.defaults.getFieldRenderOptions('scenario'),

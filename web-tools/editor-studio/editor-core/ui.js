@@ -53,6 +53,12 @@
 
 
   const mountScenarioEditorUI = () => {
+    // Вызов из <head> (до появления <body>) — откладываем монтирование до готовности DOM.
+    if (!document.body) {
+      document.addEventListener('DOMContentLoaded', mountScenarioEditorUI, { once: true });
+      return;
+    }
+
     mountToastContainer({ id: 'toast-container' });
 
     mountModal({

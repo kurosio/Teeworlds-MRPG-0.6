@@ -542,7 +542,7 @@
 
               if (listPath === 'drops') {
                 if (arr.length >= 5) {
-                  window.EditorCore.UI.toast({ message: 'Максимум 5 слотов дропа', type: 'warning' });
+                  window.EditorCore.UI.toast('Максимум 5 слотов дропа', 'warning');
                   return;
                 }
 
@@ -645,7 +645,7 @@
         STATE.offset += rows.length;
         STATE.hasMore = rows.length === limit;
       } catch (e) {
-        window.EditorCore.UI.toast({ message: e.message || 'Ошибка загрузки списка', type: 'error' });
+        window.EditorCore.UI.toast(e.message || 'Ошибка загрузки списка', 'error');
         STATE.hasMore = false;
       }
 
@@ -666,7 +666,7 @@
         setHeader();
         STATE._closeDrawer?.();
       } catch (e) {
-        window.EditorCore.UI.toast({ message: e.message || 'Ошибка загрузки записи', type: 'error' });
+        window.EditorCore.UI.toast(e.message || 'Ошибка загрузки записи', 'error');
       }
     };
 
@@ -687,7 +687,7 @@
     const saveMob = async () => {
       if (!STATE.mob) return;
       if (!Number(STATE.mob.BotID || 0)) {
-        window.EditorCore.UI.toast({ message: 'BotID обязателен', type: 'warning' });
+        window.EditorCore.UI.toast('BotID обязателен', 'warning');
         return;
       }
       const payload = toPayload(STATE.mob);
@@ -695,10 +695,10 @@
       try {
         if (STATE.selectedId) {
           await window.EditorCore.DBCrud.update(RESOURCE, STATE.selectedId, payload);
-          window.EditorCore.UI.toast({ message: 'Сохранено', type: 'success' });
+          window.EditorCore.UI.toast('Сохранено', 'success');
         } else {
           const created = await window.EditorCore.DBCrud.create(RESOURCE, payload);
-          window.EditorCore.UI.toast({ message: 'Создано', type: 'success' });
+          window.EditorCore.UI.toast('Создано', 'success');
           const newId = Number(created?.id || 0);
           STATE.lastSelectedIdBeforeCreate = 0;
           await loadList({ reset: true });
@@ -716,7 +716,7 @@
         setHeader();
         DIRTY?.setClean();
       } catch (e) {
-        window.EditorCore.UI.toast({ message: e.message || 'Ошибка сохранения', type: 'error' });
+        window.EditorCore.UI.toast(e.message || 'Ошибка сохранения', 'error');
       }
     };
 
@@ -726,7 +726,7 @@
       if (!ok) return;
       try {
         await window.EditorCore.DBCrud.remove(RESOURCE, STATE.selectedId);
-        window.EditorCore.UI.toast({ message: 'Удалено', type: 'success' });
+        window.EditorCore.UI.toast('Удалено', 'success');
         STATE.selectedId = 0;
         STATE.mob = null;
         DIRTY?.setClean();
@@ -734,7 +734,7 @@
         setHeader();
         await loadList({ reset: true });
       } catch (e) {
-        window.EditorCore.UI.toast({ message: e.message || 'Ошибка удаления', type: 'error' });
+        window.EditorCore.UI.toast(e.message || 'Ошибка удаления', 'error');
       }
     };
 

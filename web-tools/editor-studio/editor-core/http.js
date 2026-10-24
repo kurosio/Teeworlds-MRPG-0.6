@@ -113,7 +113,9 @@
 
       const { data, invalid } = parseBody(await res.text());
       const failedByPayload = data !== null && typeof data === 'object' && data.ok === false;
-      const ok = res.ok && !failedByPayload;
+      // Непустое тело, которое не разобрать как JSON, — не успех, даже при HTTP 200:
+      // иначе вызывающий код получит data = null и упадёт на res.rows / res.ok.
+      const ok = res.ok && !failedByPayload && !invalid;
       let error = '';
       if (!ok) {
         error = (data && typeof data === 'object' && data.error) ? String(data.error)

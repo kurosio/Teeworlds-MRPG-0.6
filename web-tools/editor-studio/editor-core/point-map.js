@@ -49,7 +49,7 @@
 
   const toast = (message, type = 'error') => {
     const ui = window.EditorCore?.UI;
-    if (ui?.toast) ui.toast({ message, type });
+    if (ui?.toast) ui.toast(message, type);
     else console.warn('[editor-studio][point-map]', message);
   };
 

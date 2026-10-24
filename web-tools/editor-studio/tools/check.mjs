@@ -89,6 +89,10 @@ for (const file of sources) {
   if (name !== PAGE_KIT && /(?<![\w.$])alert\s*\(/.test(text)) {
     warnings.push(`${name}: нативный alert — лучше EditorCore.Page.alert`);
   }
+  // toast принимает (message, type); объект {message, type} покажется как «[object Object]».
+  if (/\.toast\(\s*\{/.test(text)) {
+    problems.push(`${name}: toast({...}) — сигнатура toast(message, type)`);
+  }
 }
 
 // Модули ядра должны быть подключены прежде, чем их используют: именно на этом
