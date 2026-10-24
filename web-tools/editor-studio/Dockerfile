@@ -5,13 +5,14 @@ RUN apt-get update && apt-get install -y \
     zip \
     unzip \
     pkg-config \
+    libsqlite3-dev \
     git \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
 # pdo_sqlite обязателен: настройки, гостевые аккаунты и запросы живут в
 # data/editor-studio.sqlite (api/store.php). pdo_mysql — для игровой базы.
-RUN docker-php-ext-install mysqli pdo pdo_mysql pdo_sqlite
+RUN docker-php-ext-install -j"$(nproc)" mysqli pdo_mysql pdo_sqlite
 
 RUN a2enmod rewrite headers
 
