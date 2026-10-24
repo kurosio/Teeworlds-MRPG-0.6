@@ -2,8 +2,9 @@
 // Change requests (guest → admin) — storage, validation, analysis, apply.
 //
 // Security model:
-//  * Requests are stored as JSON files in data/change-requests/ — NOT in the
-//    game database. A guest has no code path that writes to the game DB.
+//  * Requests and their message threads are stored in the SQLite store
+//    (data/editor-studio.sqlite), NOT in the game database. A guest has no code
+//    path that writes to the game DB.
 //  * The game DB is only READ while a request is analysed (prepared statements,
 //    whitelisted tables/columns from db-resources.php).
 //  * Writing happens exclusively in cr_apply(), which is reachable only by an
@@ -72,7 +73,7 @@ function cr_validate_nickname(mixed $raw): string
     $nick = cr_clean_text($raw, false);
     $len = cr_strlen($nick);
     if ($len < CR_NICK_MIN || $len > CR_NICK_MAX) {
-        throw new CrInputError('Укажите Nickname (от ' . CR_NICK_MIN . ' до ' . CR_NICK_MAX . ' символов).');
+        throw new CrInputError(sprintf('Укажите Nickname (от %d до %d символов).', CR_NICK_MIN, CR_NICK_MAX));
     }
     return $nick;
 }
@@ -82,7 +83,7 @@ function cr_validate_message(mixed $raw): string
     $msg = cr_clean_text($raw, true);
     $len = cr_strlen($msg);
     if ($len < CR_MESSAGE_MIN || $len > CR_MESSAGE_MAX) {
-        throw new CrInputError('Опишите, зачем нужны изменения (от ' . CR_MESSAGE_MIN . ' до ' . CR_MESSAGE_MAX . ' символов).');
+        throw new CrInputError(sprintf('Опишите, зачем нужны изменения (от %d до %d символов).', CR_MESSAGE_MIN, CR_MESSAGE_MAX));
     }
     return $msg;
 }
@@ -97,25 +98,36 @@ function cr_guest_hash(string $guestKey): string
     return hash('sha256', 'guest|' . $guestKey);
 }
 
-// ── Storage (outside of the game database) ───────────────────────────────────
-
-function cr_dir(): string
+/**
+ * Does the current guest own the request?
+ * Requests store the account id, so the identity survives logout/login, a
+ * password change and a new session. `guestHash` (a random per-session key) is
+ * only the fallback for requests created before personal guest accounts existed.
+ */
+function cr_guest_owns(array $req, ?array $account = null): bool
 {
-    $dir = dirname(__DIR__) . '/data/change-requests';
-    if (!is_dir($dir) && !@mkdir($dir, 0775, true) && !is_dir($dir)) {
-        throw new RuntimeException('Не удалось создать каталог для запросов: data/change-requests');
+    $author = is_array($req['author'] ?? null) ? $req['author'] : [];
+    $account ??= editor_guest_user();
+    $guestId = (string)($account['id'] ?? '');
+    if ($guestId !== '') {
+        if (!isset($author['guestId']) || (string)$author['guestId'] === '') {
+            // Legacy request: fall through to the session key check below.
+        } elseif ((string)$author['guestId'] === $guestId) {
+            return true;
+        } else {
+            return false; // Another account — the hash must not matter.
+        }
     }
-    // Defence in depth: deny direct web access even without the provided Apache config.
-    $ht = $dir . '/.htaccess';
-    if (!is_file($ht)) {
-        @file_put_contents($ht, "Require all denied\nDeny from all\n");
-    }
-    $idx = $dir . '/index.html';
-    if (!is_file($idx)) {
-        @file_put_contents($idx, '');
-    }
-    return $dir;
+    $key = editor_guest_key();
+    $stored = (string)($author['guestHash'] ?? '');
+    return $key !== '' && $stored !== '' && hash_equals($stored, cr_guest_hash($key));
 }
+
+// ── Storage (SQLite, отдельно от игровой БД) ────────────────────────────────
+//
+// Запросы, переписка по ним и счётчики частоты живут в data/editor-studio.sqlite.
+// Документ запроса (operations/analysis/review) хранится как JSON в payload,
+// а статус, автор и время вынесены в колонки — по ним идут выборки.
 
 function cr_valid_id(string $id): bool
 {
@@ -127,87 +139,240 @@ function cr_new_id(): string
     return 'CR-' . gmdate('Ymd-His') . '-' . bin2hex(random_bytes(3));
 }
 
-function cr_path(string $id): string
+function cr_assert_id(string $id): string
 {
     if (!cr_valid_id($id)) {
         throw new CrInputError('Некорректный ID запроса.');
     }
-    return cr_dir() . '/' . $id . '.json';
+    return $id;
 }
 
-/** Run $fn under an exclusive lock (all state transitions are serialized). */
+/** Все изменения запросов сериализуются транзакцией SQLite. */
 function cr_with_lock(callable $fn): mixed
 {
-    $fh = fopen(cr_dir() . '/.lock', 'c');
-    if ($fh === false) throw new RuntimeException('Не удалось открыть lock-файл запросов');
-    try {
-        if (!flock($fh, LOCK_EX)) throw new RuntimeException('Не удалось получить блокировку');
-        return $fn();
-    } finally {
-        flock($fh, LOCK_UN);
-        fclose($fh);
-    }
+    return store_tx($fn);
 }
 
 function cr_load(string $id): ?array
 {
-    $path = cr_path($id);
-    if (!is_file($path)) return null;
-    $raw = file_get_contents($path);
-    $data = $raw === false ? null : json_decode($raw, true);
+    cr_assert_id($id);
+    $stmt = store_db()->prepare('SELECT payload FROM change_requests WHERE id = ?');
+    $stmt->execute([$id]);
+    $raw = $stmt->fetchColumn();
+    if ($raw === false) {
+        return null;
+    }
+    $data = json_decode((string)$raw, true);
     return is_array($data) ? $data : null;
 }
 
 function cr_save(array $req): void
 {
-    $path = cr_path((string)$req['id']);
-    $json = json_encode($req, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR);
-    $tmp = $path . '.tmp' . bin2hex(random_bytes(4));
-    if (file_put_contents($tmp, $json, LOCK_EX) === false || !rename($tmp, $path)) {
-        @unlink($tmp);
-        throw new RuntimeException('Не удалось сохранить запрос');
-    }
+    $id = cr_assert_id((string)($req['id'] ?? ''));
+    $author = is_array($req['author'] ?? null) ? $req['author'] : [];
+    $stmt = store_db()->prepare(
+        'INSERT INTO change_requests(id, status, guest_id, guest_login, nickname, message, created_at, updated_at, payload)
+         VALUES(:id, :status, :guest_id, :guest_login, :nickname, :message, :created_at, :updated_at, :payload)
+         ON CONFLICT(id) DO UPDATE SET
+            status = excluded.status,
+            guest_id = excluded.guest_id,
+            guest_login = excluded.guest_login,
+            nickname = excluded.nickname,
+            message = excluded.message,
+            updated_at = excluded.updated_at,
+            payload = excluded.payload'
+    );
+    $stmt->execute([
+        ':id' => $id,
+        ':status' => (string)($req['status'] ?? 'pending'),
+        ':guest_id' => (string)($author['guestId'] ?? ''),
+        ':guest_login' => (string)($author['guestLogin'] ?? ''),
+        ':nickname' => (string)($author['nickname'] ?? ''),
+        ':message' => (string)($req['message'] ?? ''),
+        ':created_at' => (string)($req['createdAt'] ?? cr_now()),
+        ':updated_at' => (string)($req['updatedAt'] ?? cr_now()),
+        ':payload' => json_encode($req, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR),
+    ]);
 }
 
-function cr_delete_file(string $id): void
+function cr_delete(string $id): void
 {
-    $path = cr_path($id);
-    if (is_file($path) && !unlink($path)) throw new RuntimeException('Не удалось удалить запрос');
+    cr_assert_id($id);
+    $stmt = store_db()->prepare('DELETE FROM change_requests WHERE id = ?');
+    $stmt->execute([$id]);
 }
 
 /** @return list<array> newest first */
 function cr_all(): array
 {
     $out = [];
-    foreach (glob(cr_dir() . '/CR-*.json') ?: [] as $file) {
-        $id = basename($file, '.json');
-        if (!cr_valid_id($id)) continue;
-        $raw = file_get_contents($file);
-        $data = $raw === false ? null : json_decode($raw, true);
-        if (is_array($data)) $out[] = $data;
+    foreach (store_db()->query('SELECT payload FROM change_requests ORDER BY created_at DESC, id DESC') as $row) {
+        $data = json_decode((string)$row['payload'], true);
+        if (is_array($data)) {
+            $out[] = $data;
+        }
     }
-    usort($out, fn($a, $b) => strcmp((string)($b['createdAt'] ?? ''), (string)($a['createdAt'] ?? '')) ?: strcmp((string)$b['id'], (string)$a['id']));
     return $out;
 }
 
-/** Simple per-IP throttle stored next to requests. Returns seconds left (0 = allowed). */
+/** Simple per-IP cooldown stored in SQLite. Returns seconds left (0 = allowed). */
 function cr_ip_cooldown_left(string $ip, int $cooldown, bool $touch): int
 {
     if ($cooldown <= 0 || $ip === '') return 0;
-    $file = cr_dir() . '/.ratelimit.json';
-    $map = is_file($file) ? json_decode((string)file_get_contents($file), true) : [];
-    if (!is_array($map)) $map = [];
     $now = time();
-    foreach ($map as $k => $ts) {
-        if (!is_int($ts) || $ts < $now - 86400) unset($map[$k]);
-    }
-    $key = hash('sha256', 'ip|' . $ip);
-    $left = isset($map[$key]) ? max(0, $map[$key] + $cooldown - $now) : 0;
+    $key = 'cr-ip|' . hash('sha256', $ip);
+    store_rate_prune($now - 86400);
+    $last = store_rate_get($key);
+    $left = $last > 0 ? max(0, $last + $cooldown - $now) : 0;
     if ($touch && $left === 0) {
-        $map[$key] = $now;
-        @file_put_contents($file, json_encode($map), LOCK_EX);
+        store_rate_touch($key, $now);
     }
     return $left;
+}
+
+// ── Переписка по запросу (гость ↔ администратор) ─────────────────────────────
+//
+// Каждое сообщение знает, кто его прочитал: администратор и гость ставят
+// отметки независимо, поэтому в интерфейсе видно «есть ответ, который вы
+// ещё не открывали».
+
+const CR_MSG_MIN = 1;
+const CR_MSG_MAX = 2000;
+
+function cr_msg_validate(mixed $raw): string
+{
+    $text = cr_clean_text($raw, true);
+    $len = cr_strlen($text);
+    if ($len < CR_MSG_MIN) {
+        throw new CrInputError('Сообщение пустое.');
+    }
+    if ($len > CR_MSG_MAX) {
+        throw new CrInputError(sprintf('Сообщение слишком длинное (максимум %d символов).', CR_MSG_MAX));
+    }
+    return $text;
+}
+
+function cr_msg_row(array $row, string $viewerRole): array
+{
+    $isAdminMessage = (string)$row['author_role'] === 'admin';
+    $readAt = $isAdminMessage ? (string)$row['read_by_guest_at'] : (string)$row['read_by_admin_at'];
+    return [
+        'id' => (int)$row['id'],
+        'requestId' => (string)$row['request_id'],
+        'role' => (string)$row['author_role'],
+        'author' => (string)$row['author_name'],
+        'body' => (string)$row['body'],
+        'createdAt' => (string)$row['created_at'],
+        // Сообщения «своей» стороны прочитаны по определению.
+        'mine' => $viewerRole === (string)$row['author_role'],
+        'read' => $viewerRole === (string)$row['author_role'] ? true : $readAt !== '',
+    ];
+}
+
+/** @return list<array> */
+function cr_msg_list(string $requestId, string $viewerRole): array
+{
+    cr_assert_id($requestId);
+    $stmt = store_db()->prepare('SELECT * FROM request_messages WHERE request_id = ? ORDER BY id ASC');
+    $stmt->execute([$requestId]);
+    $out = [];
+    foreach ($stmt->fetchAll() as $row) {
+        $out[] = cr_msg_row($row, $viewerRole);
+    }
+    return $out;
+}
+
+function cr_msg_add(string $requestId, string $role, string $authorId, string $authorName, string $body): array
+{
+    cr_assert_id($requestId);
+    $role = $role === 'admin' ? 'admin' : 'guest';
+    $now = cr_now();
+    $stmt = store_db()->prepare(
+        'INSERT INTO request_messages(request_id, author_role, author_id, author_name, body, created_at, read_by_admin_at, read_by_guest_at)
+         VALUES(?, ?, ?, ?, ?, ?, ?, ?)'
+    );
+    // Своё сообщение сразу считается прочитанным своей стороной.
+    $stmt->execute([
+        $requestId,
+        $role,
+        $authorId,
+        $authorName,
+        $body,
+        $now,
+        $role === 'admin' ? $now : '',
+        $role === 'guest' ? $now : '',
+    ]);
+    return [
+        'id' => (int)store_db()->lastInsertId(),
+        'requestId' => $requestId,
+        'role' => $role,
+        'author' => $authorName,
+        'body' => $body,
+        'createdAt' => $now,
+        'mine' => true,
+        'read' => true,
+    ];
+}
+
+/** Отметить чужие сообщения запроса прочитанными (свои не трогаем). */
+function cr_msg_mark_read(string $requestId, string $role): void
+{
+    cr_assert_id($requestId);
+    $column = $role === 'admin' ? 'read_by_admin_at' : 'read_by_guest_at';
+    $authorRole = $role === 'admin' ? 'guest' : 'admin';
+    $stmt = store_db()->prepare(
+        "UPDATE request_messages SET $column = ? WHERE request_id = ? AND author_role = ? AND $column = ''"
+    );
+    $stmt->execute([cr_now(), $requestId, $authorRole]);
+}
+
+/** Сколько сообщений запроса ещё не прочитано указанной стороной. */
+function cr_msg_unread_for(string $requestId, string $role): int
+{
+    $column = $role === 'admin' ? 'read_by_admin_at' : 'read_by_guest_at';
+    $authorRole = $role === 'admin' ? 'guest' : 'admin';
+    $stmt = store_db()->prepare(
+        "SELECT COUNT(*) FROM request_messages WHERE request_id = ? AND author_role = ? AND $column = ''"
+    );
+    $stmt->execute([$requestId, $authorRole]);
+    return (int)$stmt->fetchColumn();
+}
+
+/**
+ * Непрочитанное по всем запросам.
+ * @param list<string>|null $guestIds null — все запросы (администратор)
+ * @return array{total:int, by_request:array<string,int>, by_guest:array<string,int>}
+ */
+function cr_msg_unread_map(string $role, ?array $guestIds = null): array
+{
+    $column = $role === 'admin' ? 'read_by_admin_at' : 'read_by_guest_at';
+    $authorRole = $role === 'admin' ? 'guest' : 'admin';
+    $sql = "SELECT m.request_id AS rid, r.guest_id AS gid, COUNT(*) AS c
+              FROM request_messages m
+              JOIN change_requests r ON r.id = m.request_id
+             WHERE m.author_role = ? AND m.$column = ''";
+    $params = [$authorRole];
+    if ($guestIds !== null) {
+        if (!$guestIds) {
+            return ['total' => 0, 'by_request' => [], 'by_guest' => []];
+        }
+        $sql .= ' AND r.guest_id IN (' . implode(',', array_fill(0, count($guestIds), '?')) . ')';
+        array_push($params, ...$guestIds);
+    }
+    $sql .= ' GROUP BY m.request_id, r.guest_id';
+    $stmt = store_db()->prepare($sql);
+    $stmt->execute($params);
+    $out = ['total' => 0, 'by_request' => [], 'by_guest' => []];
+    foreach ($stmt->fetchAll() as $row) {
+        $count = (int)$row['c'];
+        $out['total'] += $count;
+        $out['by_request'][(string)$row['rid']] = $count;
+        $gid = (string)$row['gid'];
+        if ($gid !== '') {
+            $out['by_guest'][$gid] = ($out['by_guest'][$gid] ?? 0) + $count;
+        }
+    }
+    return $out;
 }
 
 // ── Operation validation ─────────────────────────────────────────────────────
@@ -222,6 +387,23 @@ function cr_resource(string $key, bool $guestOnly = true): array
         throw new CrInputError('Раздел «' . ($resources[$key]['title'] ?? $key) . '» недоступен для запросов на изменение.');
     }
     return $resources[$key] + ['key' => $key];
+}
+
+/**
+ * A guest may only propose changes for the editor tabs granted to its account.
+ * Enforced for both preview and submit (the operation list is untrusted input).
+ */
+function cr_assert_guest_resources(array $ops): void
+{
+    $allowed = editor_guest_write_resources_current();
+    $resources = editor_resources();
+    foreach ($ops as $op) {
+        $key = (string)($op['resource'] ?? '');
+        if (!in_array($key, $allowed, true)) {
+            $title = $resources[$key]['title'] ?? $key;
+            throw new CrInputError('Раздел «' . $title . '» не включён для вашего гостевого аккаунта.', 403);
+        }
+    }
 }
 
 function cr_parse_id(mixed $raw, string $what): int
@@ -815,7 +997,9 @@ function cr_apply(mysqli $db, array $req, bool $force): array
         $applied = [];
         $skipped = [];
         foreach ($ops as $i => $op) {
-            $R = cr_resource($op['resource'], false);
+            // Defence in depth: a request may only touch resources that are
+            // guest-editable at all, even if the stored file was tampered with.
+            $R = cr_resource($op['resource'], true);
             $data = $op['data'];
             foreach (($R['refs'] ?? []) as $col => $_t) {
                 if (array_key_exists($col, $data) && is_guest_temp_id($data[$col])) {
@@ -849,7 +1033,7 @@ function cr_apply(mysqli $db, array $req, bool $force): array
         throw $e;
     } catch (Throwable $e) {
         try { $db->rollback(); } catch (Throwable) {}
-        throw new CrInputError('Применение отменено (транзакция откатена): ' . $e->getMessage(), 500);
+        throw new CrInputError('Применение отменено (транзакция откатена): ' . editor_safe_message($e), 500);
     }
 }
 
@@ -861,7 +1045,7 @@ function cr_decode_ops_data(array $o): array
 
 // ── Views ────────────────────────────────────────────────────────────────────
 
-function cr_list_item(array $req, bool $admin): array
+function cr_list_item(array $req, bool $admin, int $unread = 0): array
 {
     $item = [
         'id' => $req['id'],
@@ -869,6 +1053,8 @@ function cr_list_item(array $req, bool $admin): array
         'createdAt' => $req['createdAt'] ?? null,
         'updatedAt' => $req['updatedAt'] ?? null,
         'nickname' => $req['author']['nickname'] ?? '',
+        'guestName' => $req['author']['guestName'] ?? '',
+        'guestLogin' => $req['author']['guestLogin'] ?? '',
         'message' => cr_substr((string)($req['message'] ?? ''), 220),
         'summary' => $req['analysis']['summary'] ?? null,
         'operationsCount' => count($req['operations'] ?? []),
@@ -876,6 +1062,8 @@ function cr_list_item(array $req, bool $admin): array
             'at' => $req['review']['at'] ?? null,
             'comment' => $req['review']['comment'] ?? '',
         ] : null,
+        // Непрочитанные сообщения переписки — по ним рисуется бейдж.
+        'unread' => $unread,
     ];
     if ($admin) {
         $item['ip'] = $req['author']['ip'] ?? '';

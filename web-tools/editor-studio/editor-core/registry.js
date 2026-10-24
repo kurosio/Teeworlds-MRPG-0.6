@@ -35,7 +35,7 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
       fields: {
         delay: createField('number', 'Задержка', 0, { ui: { min: 0, max: 600000 } }),
         chat: createField('text', 'Чат', '', { ui: { placeholder: 'Введите текст для чата', format: 'textarea' } }),
-        broadcast: createField('text', 'Броадкаст', '', { ui: { placeholder: 'Введите текст для броадкаста', format: 'textarea' } }),
+        broadcast: createField('text', 'Объявление всем', '', { ui: { placeholder: 'Введите текст объявления', format: 'textarea' } }),
         full: createField('text', 'Полное сообщение', '', { ui: { placeholder: 'Введите полное сообщение', format: 'textarea' } })
       }
     },
@@ -48,7 +48,7 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
         target_lock_text: createField('text', 'Текст фиксации цели', '', { ui: { placeholder: 'Например: Следуйте за маркером' } }),
         target_look: createField('boolean', 'Смотреть на цель', false),
         chat: createField('text', 'Чат', '', { ui: { placeholder: 'Введите текст для чата', format: 'textarea' } }),
-        broadcast: createField('text', 'Броадкаст', '', { ui: { placeholder: 'Введите текст для броадкаста', format: 'textarea' } }),
+        broadcast: createField('text', 'Объявление всем', '', { ui: { placeholder: 'Введите текст объявления', format: 'textarea' } }),
         full: createField('text', 'Полное сообщение', '', { ui: { placeholder: 'Введите полное сообщение', format: 'textarea' } })
       }
     },
@@ -100,7 +100,7 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
         position: createField('vec2', 'Позиция', { x: 0, y: 0 }, { ui: { min: -99999, max: 99999, step: 0.1 } }),
         item: createField('item', 'Предмет', { id: 0, value: 0 }, { ui: { datasource: 'items', placeholder: '— выберите предмет —', min: 0, max: 999999 } }),
         chat: createField('text', 'Чат', '', { ui: { placeholder: 'Введите текст для чата', format: 'textarea' } }),
-        broadcast: createField('text', 'Броадкаст', '', { ui: { placeholder: 'Введите текст для броадкаста', format: 'textarea' } }),
+        broadcast: createField('text', 'Объявление всем', '', { ui: { placeholder: 'Введите текст объявления', format: 'textarea' } }),
         full: createField('text', 'Полное сообщение', '', { ui: { placeholder: 'Введите полное сообщение', format: 'textarea' } })
       }
     },
@@ -167,7 +167,7 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
             position: createField('vec2', 'Позиция', { x: 0, y: 0 }, { ui: { min: -99999, max: 99999, step: 0.1 } }),
             health: createField('number', 'Здоровье', 1, { ui: { min: 1, max: 9999 } })
           },
-          ui: { placeholder: 'Добавьте маркер' }
+          ui: { layout: 'row', placeholder: 'Добавьте маркер' }
         })
       }
     }
@@ -260,10 +260,10 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
       icon: 'fa-solid fa-flag',
       desc: 'Установить базовые флаги только для group-сценариев',
       fields: {
-        disable_group_damage: createField('boolean', 'disable_group_damage', false),
-        disable_group_collision: createField('boolean', 'disable_group_collision', false),
-        disable_group_hooking: createField('boolean', 'disable_group_hooking', false),
-        disable_group_pvp: createField('boolean', 'disable_group_pvp', false)
+        disable_group_damage: createField('boolean', 'Без урона по своим', false),
+        disable_group_collision: createField('boolean', 'Без столкновений между своими', false),
+        disable_group_hooking: createField('boolean', 'Без крюка по своим', false),
+        disable_group_pvp: createField('boolean', 'Без PvP между своими', false)
       }
     },
 	set_group_lives: {
@@ -287,7 +287,7 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
       icon: 'fa-solid fa-flag',
       desc: 'Настройка точки возраждения группы',
       fields: {
-        enable_spawn: createField('boolean', 'Включить респавн в указаной позиции', false),
+        enable_spawn: createField('boolean', 'Включить респавн в указанной позиции', false),
         position: createField('vec2', 'Позиция', { x: 100, y: 100 }, { ui: { min: -99999, max: 99999, step: 0.1 } })
       }
     },
@@ -359,7 +359,7 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
         position: createField('vec2', 'Позиция', { x: 0, y: 0 }, { ui: { min: -99999, max: 99999, step: 0.1 } }),
         item: createField('item', 'Предмет', { id: 0, value: 0 }, { ui: { datasource: 'items', placeholder: '— выберите предмет —', min: 0, max: 999999 } }),
         chat: createField('text', 'Чат', '', { ui: { placeholder: 'Введите текст для чата', format: 'textarea' } }),
-        broadcast: createField('text', 'Броадкаст', '', { ui: { placeholder: 'Введите текст для броадкаста', format: 'textarea' } })
+        broadcast: createField('text', 'Объявление всем', '', { ui: { placeholder: 'Введите текст объявления', format: 'textarea' } })
       }
     },
     shootmarkers: {
@@ -373,7 +373,7 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
             position: createField('vec2', 'Позиция', { x: 0, y: 0 }, { ui: { min: -99999, max: 99999, step: 0.1 } }),
             health: createField('number', 'Здоровье', 1, { ui: { min: 1, max: 9999 } })
           },
-          ui: { placeholder: 'Добавьте маркер' }
+          ui: { layout: 'row', placeholder: 'Добавьте маркер' }
         })
       }
     },
@@ -442,7 +442,7 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
         position: createField('vec2', 'Позиция', { x: 0, y: 0 }, { ui: { min: -99999, max: 99999, step: 0.1 } }),
         item: createField('item', 'Предмет', { id: 0, value: 0 }, { ui: { datasource: 'items', placeholder: '— выберите предмет —', min: 0, max: 999999 } }),
         chat: createField('text', 'Чат', '', { ui: { placeholder: 'Введите текст для чата', format: 'textarea' } }),
-        broadcast: createField('text', 'Броадкаст', '', { ui: { placeholder: 'Введите текст для броадкаста', format: 'textarea' } })
+        broadcast: createField('text', 'Объявление всем', '', { ui: { placeholder: 'Введите текст объявления', format: 'textarea' } })
       }
     },
     universal_shootmarkers: {
@@ -456,7 +456,7 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
             position: createField('vec2', 'Позиция', { x: 0, y: 0 }, { ui: { min: -99999, max: 99999, step: 0.1 } }),
             health: createField('number', 'Здоровье', 1, { ui: { min: 1, max: 9999 } })
           },
-          ui: { placeholder: 'Добавьте маркер' }
+          ui: { layout: 'row', placeholder: 'Добавьте маркер' }
         })
       }
     },
@@ -470,7 +470,7 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
           ui: { type: 'select', options: ['annihilation', 'wave', 'survival'] }
         }),
         radius: createField('number', 'Радиус', 800, { ui: { min: 0, max: 99999 } }),
-        activeradius: createField('number', 'Радиус Активности (0 - по умолч.)', 0, { ui: { min: 0, max: 999999 } }),
+        activeradius: createField('number', 'Радиус активации (0 — по умолчанию)', 0, { ui: { min: 0, max: 999999 } }),
         position: createField('vec2', 'Позиция', { x: 0, y: 0 }, { ui: { min: -99999, max: 99999, step: 0.1 } }),
         kill_target: createField('number', 'Цель убийств', 10, { 
           ui: { min: 1, max: 9999, showWhen: { path: 'mode', equals: 'wave' } } 
@@ -479,27 +479,31 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
           ui: { min: 1, max: 99999, showWhen: { path: 'mode', equals: 'survival' } } 
         }),
         mobs: createField('list', 'Мобы', [{ bot_id: 0, level: 1, power: 1, count: 5, boss: false, Behavior: [], Debuffs: [], drops: [] }], {
-          ui: { layout: 'stack', addLabel: 'Добавить моба' },
+          // Поля сами укладываются в строки: число узкое, выбор моба шире,
+          // теги и дропы — на всю строку. Форма моба вдвое короче.
+          ui: { layout: 'compact', addLabel: 'Добавить моба' },
           itemFields: {
-            bot_id: createDbSelect('BotID', 0, 'mob', { ui: { placeholder: '— выберите моба —' } }),
+            bot_id: createDbSelect('Моб', 0, 'mob', { ui: { placeholder: '— выберите моба —' } }),
             level: createField('number', 'Уровень', 1, { ui: { min: 1, max: 999 } }),
             power: createField('number', 'Сила', 1, { ui: { min: 1, max: 99999 } }),
             count: createField('number', 'Количество', 5, { ui: { min: 1, max: 999 } }),
             boss: createField('boolean', 'Босс', false),
             Behavior: {
-              label: 'Behavior',
+              label: 'Поведение',
               ui: { type: 'tags', options: ['sleepy', 'slower', 'poisonous', 'neutral', 'skills_base', 'skills_tank', 'skills_dps', 'skills_healer', 'ambient_chat'], placeholder: 'Добавить behavior…' }
             },
             Debuffs: {
-              label: 'Debuffs',
-              ui: { type: 'tags', options: ['Slowdown', 'Poison', 'Fire'], placeholder: 'Добавить debuff…' }
+              label: 'Дебаффы',
+              // Дебаффов мало — помещаются в половину строки.
+              ui: { type: 'tags', options: ['Slowdown', 'Poison', 'Fire'], placeholder: 'Добавить debuff…', cellSize: 'mid' }
             },
             drops: createField('list', 'Слоты дропа (макс 5)', [], {
-              ui: { addLabel: 'Добавить слот' },
+              // Слот дропа — одна строка: предмет, количество, шанс.
+              ui: { layout: 'row', addLabel: 'Добавить слот' },
               itemDefault: { item_id: 0, count: 1, chance: 0 },
               itemFields: {
                 item_id: createDbSelect('Предмет', 0, 'item', { ui: { placeholder: '— предмет —', searchServer: true, dbLimit: 1000 } }),
-                count: createField('number', 'Кол-во', 1, { ui: { min: 1, max: 9999 } }),
+                count: createField('number', 'Количество', 1, { ui: { min: 1, max: 9999 } }),
                 chance: createField('number', 'Шанс (%)', 0, { ui: { min: 0, max: 100, step: 0.1 } }),
               }
             })
@@ -622,7 +626,7 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
       icon: 'fa-solid fa-person-walking-dashed-line-arrow-right',
       desc: 'Включить или выключить движение',
       fields: {
-        state: createField('boolean', 'Отключить', true)
+        state: createField('boolean', 'Движение отключено', true)
       }
     },
     emote: {

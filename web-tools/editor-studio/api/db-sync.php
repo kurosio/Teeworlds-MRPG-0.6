@@ -19,33 +19,24 @@ bootstrap_editor_api(true);
 
 // ── Target profiles storage ─────────────────────────────────────────────────
 
-function sync_cfg_path(): string
-{
-    return dirname(__DIR__) . '/data/db-sync-config.json';
-}
+// Профили синхронизации хранятся в SQLite вместе с остальными настройками
+// (ключ sync_config). Пароли в ответах API не возвращаются.
 
 function load_sync_cfg(): array
 {
-    $path = sync_cfg_path();
-    if (!is_file($path)) {
-        return ['target_profile_id' => '', 'profiles' => []];
+    try {
+        $cfg = store_settings_load()['sync_config'] ?? null;
+        if (is_array($cfg)) {
+            return $cfg + ['target_profile_id' => '', 'profiles' => []];
+        }
+    } catch (Throwable $e) {
+        editor_log_error($e);
     }
-    $raw = file_get_contents($path);
-    if ($raw === false) {
-        return ['target_profile_id' => '', 'profiles' => []];
-    }
-    $cfg = json_decode($raw, true);
-    return is_array($cfg) ? $cfg : ['target_profile_id' => '', 'profiles' => []];
+    return ['target_profile_id' => '', 'profiles' => []];
 }
 
 function save_sync_cfg(array $cfg): bool
 {
-    $path = sync_cfg_path();
-    $dir  = dirname($path);
-    if (!is_dir($dir) && !@mkdir($dir, 0775, true) && !is_dir($dir)) {
-        return false;
-    }
-    
     // Validate config structure
     if (!isset($cfg['profiles']) || !is_array($cfg['profiles'])) {
         $cfg['profiles'] = [];
@@ -53,7 +44,7 @@ function save_sync_cfg(array $cfg): bool
     if (!isset($cfg['target_profile_id'])) {
         $cfg['target_profile_id'] = '';
     }
-    
+
     // Sanitize profile data
     foreach ($cfg['profiles'] as &$profile) {
         if (!is_array($profile)) continue;
@@ -66,9 +57,14 @@ function save_sync_cfg(array $cfg): bool
         // password is kept as-is (already validated on save)
     }
     unset($profile);
-    
-    $json = json_encode($cfg, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_THROW_ON_ERROR);
-    return file_put_contents($path, $json, LOCK_EX) !== false;
+
+    try {
+        store_settings_set('sync_config', $cfg);
+        return true;
+    } catch (Throwable $e) {
+        editor_log_error($e);
+        return false;
+    }
 }
 
 // ── Connect to an arbitrary profile ─────────────────────────────────────────
@@ -90,7 +86,7 @@ function db_connect_profile(array $profile): mysqli
     if ($db !== '' && !$mysqli->select_db($db)) {
         $err = $mysqli->error;
         $mysqli->close();
-        throw new RuntimeException('Target DB select failed: ' . $err);
+        throw new RuntimeException('Ошибка выборки из целевой базы: ' . $err);
     }
     return $mysqli;
 }
@@ -413,7 +409,7 @@ function apply_operations(mysqli $mysqli, array $operations, array $whitelist): 
                     $colSql = implode(',', array_map(fn($c) => '`' . $c . '`', $keys));
                     $sql = "INSERT INTO `{$table}` ({$colSql}) VALUES ({$placeholders})";
                     $stmt = $mysqli->prepare($sql);
-                    if (!$stmt) throw new RuntimeException("Prepare failed: " . $mysqli->error);
+                    if (!$stmt) throw new RuntimeException("Ошибка подготовки запроса к базе: " . $mysqli->error);
 
                     $types = '';
                     $vals = [];
@@ -425,7 +421,7 @@ function apply_operations(mysqli $mysqli, array $operations, array $whitelist): 
                     }
                     $stmt->bind_param($types, ...$vals);
                     if (!$stmt->execute()) {
-                        throw new RuntimeException("Insert failed: " . $stmt->error);
+                        throw new RuntimeException("Не удалось добавить запись: " . $stmt->error);
                     }
                     $newId = (int)$mysqli->insert_id;
                     $stmt->close();
@@ -453,7 +449,7 @@ function apply_operations(mysqli $mysqli, array $operations, array $whitelist): 
                     $setSql = implode(', ', array_map(fn($c) => '`' . $c . '` = ?', $keys));
                     $sql = "UPDATE `{$table}` SET {$setSql} WHERE `{$pk}` = ? LIMIT 1";
                     $stmt = $mysqli->prepare($sql);
-                    if (!$stmt) throw new RuntimeException("Prepare failed: " . $mysqli->error);
+                    if (!$stmt) throw new RuntimeException("Ошибка подготовки запроса к базе: " . $mysqli->error);
 
                     $types = '';
                     $vals = [];
@@ -468,7 +464,7 @@ function apply_operations(mysqli $mysqli, array $operations, array $whitelist): 
 
                     $stmt->bind_param($types, ...$vals);
                     if (!$stmt->execute()) {
-                        throw new RuntimeException("Update failed: " . $stmt->error);
+                        throw new RuntimeException("Не удалось сохранить изменения: " . $stmt->error);
                     }
                     $affected = $stmt->affected_rows;
                     $stmt->close();
@@ -487,10 +483,10 @@ function apply_operations(mysqli $mysqli, array $operations, array $whitelist): 
                     $id = (int)$op['id'];
                     $sql = "DELETE FROM `{$table}` WHERE `{$pk}` = ? LIMIT 1";
                     $stmt = $mysqli->prepare($sql);
-                    if (!$stmt) throw new RuntimeException("Prepare failed: " . $mysqli->error);
+                    if (!$stmt) throw new RuntimeException("Ошибка подготовки запроса к базе: " . $mysqli->error);
                     $stmt->bind_param('i', $id);
                     if (!$stmt->execute()) {
-                        throw new RuntimeException("Delete failed: " . $stmt->error);
+                        throw new RuntimeException("Не удалось удалить запись: " . $stmt->error);
                     }
                     $affected = $stmt->affected_rows;
                     $stmt->close();
@@ -513,7 +509,7 @@ function apply_operations(mysqli $mysqli, array $operations, array $whitelist): 
                     'resource' => $resource,
                     'id'       => $op['id'] ?? null,
                     'ok'       => false,
-                    'error'    => $e->getMessage(),
+                    'error'    => editor_safe_message($e),
                 ];
                 $failCount++;
             }
@@ -545,7 +541,7 @@ function apply_operations(mysqli $mysqli, array $operations, array $whitelist): 
         $mysqli->rollback();
         return [
             'ok'        => false,
-            'error'     => 'Критическая ошибка: ' . $e->getMessage(),
+            'error'     => 'Критическая ошибка: ' . editor_safe_message($e),
             'results'   => $results,
             'success'   => $successCount,
             'failed'    => $failCount,
@@ -643,7 +639,7 @@ function handle_save_target(): never
         $serverInfo = $testConn->server_info;
         $testConn->close();
     } catch (Throwable $e) {
-        respond(['ok' => false, 'error' => 'Не удалось подключиться: ' . $e->getMessage()], 400);
+        respond(['ok' => false, 'error' => 'Не удалось подключиться: ' . editor_safe_message($e)], 400);
     }
 
     // Update or create profile
@@ -785,7 +781,7 @@ function handle_compare_schema(): never
         $sourceSchema = fetch_schema($sourceConn);
         $sourceConn->close();
     } catch (Throwable $e) {
-        respond(['ok' => false, 'error' => 'Ошибка подключения к исходной БД: ' . $e->getMessage()], 500);
+        respond(['ok' => false, 'error' => 'Ошибка подключения к исходной БД: ' . editor_safe_message($e)], 500);
     }
 
     // Fetch target schema
@@ -794,7 +790,7 @@ function handle_compare_schema(): never
         $targetSchema = fetch_schema($targetConn);
         $targetConn->close();
     } catch (Throwable $e) {
-        respond(['ok' => false, 'error' => 'Ошибка подключения к целевой БД: ' . $e->getMessage()], 500);
+        respond(['ok' => false, 'error' => 'Ошибка подключения к целевой БД: ' . editor_safe_message($e)], 500);
     }
 
     $comparison = compare_schemas($sourceSchema, $targetSchema, $tableNames);
@@ -914,7 +910,7 @@ function handle_apply_operations(): never
         respond($result);
 
     } catch (Throwable $e) {
-        respond(['ok' => false, 'error' => $e->getMessage()], 500);
+        editor_internal_error($e);
     }
 }
 
@@ -1188,13 +1184,13 @@ function connect_pull_pair(array $targetProfile): array
     try {
         $local = db_connect();
     } catch (Throwable $e) {
-        respond(['ok' => false, 'error' => 'Ошибка подключения к текущей БД: ' . $e->getMessage()], 500);
+        respond(['ok' => false, 'error' => 'Ошибка подключения к текущей БД: ' . editor_safe_message($e)], 500);
     }
     try {
         $remote = db_connect_profile($targetProfile);
     } catch (Throwable $e) {
         $local->close();
-        respond(['ok' => false, 'error' => 'Ошибка подключения к целевой БД: ' . $e->getMessage()], 500);
+        respond(['ok' => false, 'error' => 'Ошибка подключения к целевой БД: ' . editor_safe_message($e)], 500);
     }
     return [$local, $remote];
 }
@@ -1212,7 +1208,7 @@ function handle_sync_map(): never
             $local->close();
         }
     } catch (Throwable $e) {
-        respond(['ok' => false, 'error' => 'Ошибка подключения к текущей БД: ' . $e->getMessage()], 500);
+        respond(['ok' => false, 'error' => 'Ошибка подключения к текущей БД: ' . editor_safe_message($e)], 500);
     }
 
     $byTable = [];
@@ -1277,7 +1273,7 @@ function handle_pull_preview(): never
             'local_only' => $plan['local_only'],
         ];
     } catch (Throwable $e) {
-        $payload = ['ok' => false, 'error' => $e->getMessage()];
+        $payload = ['ok' => false, 'error' => editor_safe_message($e)];
     } finally {
         $local->close();
         $remote->close();
@@ -1340,7 +1336,7 @@ function handle_pull_from_target(): never
             $local->rollback();
             respond([
                 'ok'        => false,
-                'error'     => 'Загрузка прервана, все изменения откачены: ' . $e->getMessage(),
+                'error'     => 'Загрузка прервана, все изменения откачены: ' . editor_safe_message($e),
                 'committed' => false,
             ], 500);
         }
@@ -1373,7 +1369,7 @@ function handle_pull_from_target(): never
             'warnings'       => $warnings,
         ];
     } catch (Throwable $e) {
-        $result = ['ok' => false, 'error' => $e->getMessage()];
+        $result = ['ok' => false, 'error' => editor_safe_message($e)];
     } finally {
         $local->query('SET SESSION FOREIGN_KEY_CHECKS = 1');
         $local->close();
@@ -1386,6 +1382,9 @@ function handle_pull_from_target(): never
 // ── Router ──────────────────────────────────────────────────────────────────
 
 $action = (string)($_GET['action'] ?? '');
+
+// Синхронизация пишет в целевую базу — только JSON-POST своего узла.
+guard_write_actions($action, ['save_target', 'set_as_target', 'apply_operations', 'sync_map', 'pull_from_target']);
 
 $handlers = [
     'list_profiles'    => 'handle_list_profiles',
@@ -1403,8 +1402,8 @@ try {
     if (isset($handlers[$action])) {
         $handlers[$action]();
     } else {
-        respond(['ok' => false, 'error' => 'Unknown action'], 400);
+        respond(['ok' => false, 'error' => 'Неизвестное действие'], 400);
     }
 } catch (Throwable $e) {
-    respond(['ok' => false, 'error' => $e->getMessage()], 500);
+    editor_internal_error($e);
 }

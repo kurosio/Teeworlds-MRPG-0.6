@@ -1,16 +1,17 @@
 :root{
-  /* Page layout */
-  --editor-page-max: 1440px;
-  --editor-page-pad: clamp(14px, 1.8vw, 22px);
-  --editor-sidebar-w: 320px;
+  /* Page layout: 1280px — комфортная ширина для формы, глаз не бегает
+     от края до края на широком мониторе. */
+  --editor-page-max: 1280px;
+  --editor-page-pad: clamp(14px, 1.8vw, 24px);
+  --editor-sidebar-w: 300px;
   --editor-sticky-top: 16px;
 
   /* Card / section tuning */
-  --editor-card-radius: calc(var(--editor-radius, 16px) + 2px);
-  --editor-card-pad: 16px;
+  --editor-card-radius: var(--editor-radius-lg, 14px);
+  --editor-card-pad: 18px;
 
   /* Field grids */
-  --editor-fields-gap: 12px;
+  --editor-fields-gap: 14px;
 
   /* Table list mode */
   --editor-table-idx: 44px;
@@ -45,74 +46,92 @@ body[data-editor="warehouse"]{ --editor-accent:#14b8a6; }
   padding:var(--editor-page-pad);
 }
 
+/* Мягкая подсветка сверху осталась, но еле заметная: она задаёт «воздух»
+   над заголовком и не спорит с содержимым. */
 .editor-page::before{
   content:"";
   position:absolute;
   inset:0 0 auto;
-  height:120px;
+  height:96px;
   z-index:-1;
   pointer-events:none;
-  background:linear-gradient(180deg, color-mix(in srgb, var(--editor-primary) 10%, transparent), transparent 75%);
-  opacity:.55;
+  background:linear-gradient(180deg, color-mix(in srgb, var(--editor-primary) 6%, transparent), transparent 80%);
 }
+
+/* Полноэкранные вкладки (сценарии): общий токен каркаса, но без страничной
+   «бумаги» — отступов, максимальной ширины и декоративной подсветки.
+   Так у всех вкладок один и тот же предок .editor-page, а вёрстка остаётся
+   приложением: липкая шапка + своя колонка навигатора. */
+.editor-page--app{
+  max-width:none;
+  margin:0;
+  padding:0;
+  min-height:0;
+}
+
+.editor-page--app::before{display:none;}
 
 .editor-page-header{
   position:relative;
   display:flex;
   align-items:flex-start;
   justify-content:space-between;
-  gap:14px;
-  padding:0 0 14px;
-  margin-bottom:2px;
-  border-bottom:1px solid var(--editor-soft-border);
+  gap:16px;
+  padding:0 0 16px;
+  margin-bottom:0;
+  border-bottom:1px solid var(--editor-line);
 }
 
 .editor-page-title{
   display:flex;
-  align-items:flex-start;
-  gap:12px;
+  align-items:center;
+  gap:14px;
   min-width:0;
 }
 
+/* Иконка вкладки — квадратная плитка с мягкой заливкой вместо декоративной
+   звёздочки. Она же служит якорем для глаза у заголовка. */
 .editor-page-title::before{
-  content:"✦";
-  width:34px;
-  height:34px;
-  margin-top:1px;
-  border-radius:999px;
+  display:none;
+}
+
+.editor-page-title > i{
+  flex:0 0 40px;
+  width:40px;
+  height:40px;
   display:inline-flex;
   align-items:center;
   justify-content:center;
-  font-size:14px;
-  background:
-    radial-gradient(circle at 30% 30%, rgba(255,255,255,.22), transparent 48%),
-    var(--editor-icon-bg);
-  color:var(--editor-icon-color);
-  border:1px solid var(--editor-soft-border);
-  box-shadow:0 8px 20px var(--editor-focus-ring);
-  box-shadow:0 8px 20px color-mix(in srgb, var(--editor-primary) 16%, transparent);
-  flex:0 0 34px;
+  font-size:17px;
+  border-radius:var(--editor-radius-md);
+  background:color-mix(in srgb, var(--editor-accent) 14%, transparent);
+  border:1px solid color-mix(in srgb, var(--editor-accent) 26%, transparent);
+  color:var(--editor-accent);
+  /* Tailwind-классы text-accent/text-xl на иконке больше не нужны: размер
+     задаёт плитка, а не утилита. */
+  line-height:1;
 }
 
 .editor-page-title h1{
   margin:0;
-  font-size:clamp(22px, 2vw, 30px);
-  font-weight:800;
-  letter-spacing:-.02em;
-  line-height:1.08;
+  font-size:var(--editor-text-xl);
+  font-weight:700;
+  letter-spacing:-.015em;
+  line-height:1.2;
 }
 
 .editor-page-sub{
-  margin-top:6px;
+  margin-top:3px;
   color:var(--editor-text-muted);
-  font-size:13px;
-  max-width:72ch;
+  font-size:var(--editor-text-md);
+  line-height:1.45;
+  max-width:78ch;
 }
 
 .editor-page-actions{
   display:flex;
   flex-wrap:wrap;
-  gap:10px;
+  gap:8px;
   align-items:center;
   justify-content:flex-end;
 }
@@ -160,8 +179,33 @@ body[data-editor="warehouse"]{ --editor-accent:#14b8a6; }
 }
 
 .editor-sidebar-meta{
-  font-size:12px;
+  font-size:var(--editor-text-xs);
   color:var(--editor-text-muted);
+}
+
+/* Сайдбар плотнее основной области: там список из десятков строк, и каждый
+   лишний пиксель отступа — минус видимая запись. */
+.editor-shell--docked > .editor-dock-sidebar .editor-dock-pad{
+  padding:14px;
+}
+
+.editor-dock-sidebar .editor-search input,
+.editor-dock-sidebar select.editor-input{
+  min-height:34px;
+  height:34px;
+  font-size:var(--editor-text-sm);
+}
+
+/* Заголовок «Список предметов» + счётчик в сайдбаре. */
+.editor-dock-sidebar .text-sm.font-semibold{
+  font-size:var(--editor-text-md);
+  font-weight:600;
+  color:var(--editor-text);
+}
+
+.editor-dock-sidebar .text-xs{
+  font-size:var(--editor-text-xs);
+  line-height:1.4;
 }
 
 .editor-sidebar-filters{
@@ -206,18 +250,26 @@ body[data-editor="warehouse"]{ --editor-accent:#14b8a6; }
 
 /* Docked layout (single surface): Sidebar + Main share one frame.
    Important: do NOT set overflow:hidden (would break sticky sidebars). */
+/* Сайдбар и форма живут в одной «рамке»: общая поверхность, один контур,
+   разделитель между колонками. */
 .editor-shell--docked{
   gap:0;
-  border:1px solid var(--editor-soft-border);
-  border-radius:calc(var(--editor-card-radius) + 2px);
-  background:var(--editor-shell-bg);
-  box-shadow:var(--editor-panel-glow), var(--editor-shadow-md, 0 18px 42px rgba(0,0,0,.22));
-  backdrop-filter:blur(16px);
+  border:1px solid var(--editor-line);
+  border-radius:var(--editor-card-radius);
+  background:var(--editor-surface);
+  box-shadow:none;
 }
 
+/* Скругляем углы у самих колонок, а не у контейнера: overflow:hidden/clip
+   обрезал бы выпадающие списки внутри формы. */
 .editor-shell--docked > .editor-dock-sidebar{
-  border-right:1px solid var(--editor-soft-border);
+  border-right:1px solid var(--editor-line);
+  border-radius:var(--editor-card-radius) 0 0 var(--editor-card-radius);
   background:var(--editor-shell-sidebar-bg);
+}
+
+.editor-shell--docked > .editor-dock-main{
+  border-radius:0 var(--editor-card-radius) var(--editor-card-radius) 0;
 }
 
 .editor-shell--docked > .editor-dock-main{
@@ -231,7 +283,11 @@ body[data-editor="warehouse"]{ --editor-accent:#14b8a6; }
 @media (max-width:1100px){
   .editor-shell--docked > .editor-dock-sidebar{
     border-right:none;
-    border-bottom:1px solid var(--editor-soft-border);
+    border-bottom:1px solid var(--editor-line);
+    border-radius:var(--editor-card-radius) var(--editor-card-radius) 0 0;
+  }
+  .editor-shell--docked > .editor-dock-main{
+    border-radius:0 0 var(--editor-card-radius) var(--editor-card-radius);
   }
 }
 
@@ -250,13 +306,14 @@ body[data-editor="warehouse"]{ --editor-accent:#14b8a6; }
 }
 
 /* Standard card wrapper */
+/* Карточка-секция: одна поверхность и волосяная рамка. Ни градиента, ни
+   размытия — на длинной форме их накапливалось столько, что форма «плыла». */
 .editor-panel-card{
-  background:linear-gradient(180deg, rgba(255,255,255,.03), transparent), var(--editor-soft-bg);
-  border:1px solid var(--editor-soft-border);
+  background:var(--editor-surface);
+  border:1px solid var(--editor-line);
   border-radius:var(--editor-card-radius);
   padding:var(--editor-card-pad);
-  box-shadow:var(--editor-panel-glow), var(--editor-shadow-sm, 0 10px 24px rgba(0,0,0,.16));
-  backdrop-filter:blur(14px);
+  box-shadow:none;
 }
 
 .editor-card-head{
@@ -264,39 +321,32 @@ body[data-editor="warehouse"]{ --editor-accent:#14b8a6; }
   align-items:flex-start;
   justify-content:space-between;
   gap:14px;
-  padding-bottom:14px;
-  border-bottom:1px solid var(--editor-soft-border);
-  margin-bottom:14px;
+  padding-bottom:12px;
+  border-bottom:1px solid var(--editor-line);
+  margin-bottom:16px;
 }
 
 .editor-card-head h2{
   margin:0;
-  font-size:16px;
-  font-weight:800;
+  font-size:var(--editor-text-lg);
+  font-weight:650;
   display:flex;
   align-items:center;
   gap:8px;
-  letter-spacing:-.01em;
+  letter-spacing:-.005em;
+  line-height:1.3;
 }
 
-.editor-card-head h2::before{
-  content:"•";
-  width:22px;
-  height:22px;
-  border-radius:999px;
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  font-size:16px;
-  line-height:1;
-  background:var(--editor-icon-bg);
-  color:var(--editor-icon-color);
-  box-shadow:inset 0 0 0 1px var(--editor-soft-border);
-}
+/* Декоративную точку перед заголовком убрали: заголовок и так отличается
+   размером и весом. */
+.editor-card-head h2::before{content:none;}
+
+.editor-card-head h2 > i{color:var(--editor-accent);font-size:14px;}
 
 .editor-card-head .editor-card-sub{
-  margin-top:5px;
-  font-size:12px;
+  margin-top:4px;
+  font-size:var(--editor-text-sm);
+  line-height:1.45;
   color:var(--editor-text-muted);
 }
 
@@ -322,23 +372,30 @@ body[data-editor="warehouse"]{ --editor-accent:#14b8a6; }
   margin-bottom:12px;
 }
 
+/* Заголовок группы полей внутри формы: мелкий, с разрядкой и линией —
+   он делит форму на смысловые куски, не добавляя рамок. */
 .editor-section-title{
-  font-size:13px;
-  font-weight:800;
-  letter-spacing:.01em;
+  font-size:var(--editor-text-xs);
+  font-weight:700;
+  letter-spacing:.08em;
+  text-transform:uppercase;
+  color:var(--editor-text-muted);
   display:flex;
   align-items:center;
   gap:8px;
 }
 
-.editor-section-title::before{
-  content:"▸";
-  color:var(--editor-icon-color);
-  font-size:12px;
+.editor-section-title::before{content:none;}
+
+.editor-section-title::after{
+  content:"";
+  flex:1 1 auto;
+  height:1px;
+  background:var(--editor-line);
 }
 
 .editor-section-hint{
-  font-size:12px;
+  font-size:var(--editor-text-sm);
   color:var(--editor-text-muted);
 }
 
@@ -365,15 +422,19 @@ body[data-editor="warehouse"]{ --editor-accent:#14b8a6; }
   .editor-span-2{grid-column:span 12;}
 }
 
+/* Сетка полей формы: колонок столько, сколько помещается. На 1280px это три
+   колонки, на планшете две, на телефоне одна — без медиазапросов и без
+   «полей на пол-экрана». */
 .editor-form-grid-2{
   display:grid;
-  grid-template-columns:repeat(2, minmax(0, 1fr));
-  gap:var(--editor-fields-gap);
-  align-items:stretch;
+  grid-template-columns:repeat(auto-fill, minmax(min(100%, 300px), 1fr));
+  gap:var(--editor-fields-gap) 18px;
+  align-items:start;
 }
 
-@media (max-width:640px){
-  .editor-form-grid-2{grid-template-columns:1fr;}
+/* Поле на всю строку: длинный текст, списки, большие блоки. */
+.editor-form-grid-2 > [data-field-path]{
+  min-width:0;
 }
 
 /* -------------------------------------------------------------
@@ -386,13 +447,79 @@ body[data-editor="warehouse"]{ --editor-accent:#14b8a6; }
   min-width:0;
 }
 
+/* «Добавить элемент» — по ширине текста, а не на всю карточку. */
+.editor-list-add{align-self:flex-start;}
+
+/* Элемент списка в одну строку: #N, поля, корзина.
+   Поля внутри переносятся сами, корзина остаётся справа. */
+.editor-list-item--row{
+  flex-direction:row;
+  align-items:flex-end;
+  gap:10px;
+  padding:10px 12px;
+}
+
+.editor-list-item--row > .editor-list-item-idx{margin-bottom:11px;}
+.editor-list-item--row > .editor-list-item-del{margin-bottom:1px;}
+
+/* Компактный элемент: тонкая строка «#N … корзина» и поля под ней. */
+.editor-list-item--compact{
+  padding:10px 12px;
+  gap:8px;
+}
+
+.editor-list-item-bar{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+  min-width:0;
+}
+
+.editor-list-item-idx{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  flex:0 0 auto;
+  min-width:26px;
+  height:22px;
+  padding:0 7px;
+  border-radius:999px;
+  border:1px solid var(--editor-soft-border);
+  background:var(--editor-light-bg, rgba(255,255,255,.045));
+  color:var(--editor-text-muted);
+  font-size:11px;
+  font-weight:700;
+  letter-spacing:.02em;
+}
+
+/* Поля элемента: сами укладываются в строки по своей «ширине» — так один
+   слот дропа помещается в строку, а не занимает три этажа. */
+.editor-item-fields{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:flex-end;
+  gap:10px;
+  flex:1 1 auto;
+  min-width:0;
+}
+
+.editor-item-cell{min-width:0;}
+.editor-item-cell.is-narrow{flex:1 1 104px;max-width:190px;}
+.editor-item-cell.is-mid{flex:2 1 190px;}
+.editor-item-cell.is-wide{flex:1 1 100%;}
+
+@media (max-width:640px){
+  .editor-item-cell.is-narrow{max-width:none;}
+  .editor-list-item--row > .editor-list-item-idx{align-self:center;margin-bottom:0;}
+}
+
 .editor-list-table{
   gap:0;
-  border:1px solid var(--editor-soft-border);
-  border-radius:18px;
+  border:1px solid var(--editor-line);
+  border-radius:var(--editor-radius-md);
   overflow:clip;
-  background:linear-gradient(180deg, rgba(255,255,255,.025), transparent), var(--editor-soft-bg);
-  box-shadow:var(--editor-panel-glow), inset 0 1px 0 rgba(255,255,255,.02);
+  background:var(--editor-surface);
 }
 
 .editor-list-table-header,
@@ -471,12 +598,11 @@ body[data-editor="warehouse"]{ --editor-accent:#14b8a6; }
    Sidebar list polish
 ------------------------------------------------------------- */
 .editor-sidebar-list{
-  border:1px solid var(--editor-soft-border);
-  background:linear-gradient(180deg, rgba(255,255,255,.025), transparent), var(--editor-soft-bg);
-  border-radius:18px;
+  border:1px solid var(--editor-line);
+  background:var(--editor-soft-bg);
+  border-radius:var(--editor-radius-md);
   overflow:auto;
   max-height:min(72vh, 980px);
-  box-shadow:var(--editor-panel-glow), inset 0 1px 0 rgba(255,255,255,.03);
 }
 
 .editor-sidebar-list > * + *{
@@ -489,10 +615,11 @@ body[data-editor="warehouse"]{ --editor-accent:#14b8a6; }
   left:12px;
   top:50%;
   transform:translateY(-50%);
-  opacity:.55;
+  color:var(--editor-text-muted);
+  font-size:12px;
   pointer-events:none;
 }
-.editor-search input{padding-left:36px;}
+.editor-search input{padding-left:34px;}
 
 /* -------------------------------------------------------------
    Unsaved changes pill
@@ -500,25 +627,25 @@ body[data-editor="warehouse"]{ --editor-accent:#14b8a6; }
 .editor-dirty-pill{
   display:inline-flex;
   align-items:center;
-  gap:8px;
-  padding:6px 10px;
+  gap:6px;
+  padding:4px 10px;
   border-radius:999px;
-  font-size:12px;
-  font-weight:800;
-  letter-spacing:.02em;
-  color:rgba(253,230,138,.98);
-  background:rgba(245,158,11,.12);
-  border:1px solid rgba(245,158,11,.28);
-  box-shadow:inset 0 0 0 1px rgba(0,0,0,.08);
+  font-size:var(--editor-text-xs);
+  font-weight:600;
+  letter-spacing:0;
+  color:var(--editor-warning);
+  background:color-mix(in srgb, var(--editor-warning) 12%, transparent);
+  border:1px solid color-mix(in srgb, var(--editor-warning) 30%, transparent);
+  box-shadow:none;
 }
 
 .editor-dirty-pill::before{
   content:"\f071";
   font-family:"Font Awesome 6 Free";
   font-weight:900;
-  font-size:12px;
+  font-size:10px;
   line-height:1;
-  color:rgba(245,158,11,.98);
+  color:currentColor;
 }
 
 .editor-dirty-pill.hidden{display:none;}
@@ -527,18 +654,16 @@ body[data-editor="warehouse"]{ --editor-accent:#14b8a6; }
    Task / dialog items
 ------------------------------------------------------------- */
 .editor-item{
-  border:1px solid var(--editor-soft-border);
-  border-radius:14px;
+  border:1px solid var(--editor-line);
+  border-radius:var(--editor-radius-md);
   padding:10px;
-  background:linear-gradient(180deg, rgba(255,255,255,.025), transparent), var(--editor-soft-bg);
+  background:var(--editor-surface-2);
   margin-bottom:8px;
-  box-shadow:var(--editor-panel-glow), var(--editor-shadow-xs, 0 1px 2px rgba(0,0,0,.12));
-  transition:border-color .16s ease, box-shadow .16s ease, transform .12s ease, background-color .16s ease;
+  transition:border-color .16s ease, background-color .16s ease;
 }
 
 .editor-item:hover{
-  border-color:var(--editor-soft-border-strong);
-  box-shadow:var(--editor-shadow-sm, 0 10px 24px rgba(0,0,0,.14));
+  border-color:var(--editor-line-strong);
 }
 
 .editor-item.is-selected{
@@ -605,12 +730,11 @@ body[data-editor="warehouse"]{ --editor-accent:#14b8a6; }
    Task editor sections
 ------------------------------------------------------------- */
 .editor-task-section{
-  border:1px solid var(--editor-soft-border);
-  border-radius:14px;
-  background:linear-gradient(180deg, rgba(255,255,255,.02), transparent), var(--editor-soft-bg);
+  border:1px solid var(--editor-line);
+  border-radius:var(--editor-radius-md);
+  background:var(--editor-soft-bg);
   margin-bottom:10px;
   overflow:hidden;
-  box-shadow:var(--editor-panel-glow), var(--editor-shadow-xs, 0 1px 2px rgba(0,0,0,.12));
 }
 
 .editor-task-header{
@@ -690,3 +814,304 @@ body.editor-focus .editor-sidebar-list{
     align-items:flex-start;
   }
 }
+
+/* -------------------------------------------------------------
+   Guest accounts: local (not yet applied) changes
+   A guest never writes to the DB, so every record it touched must
+   be visibly marked as "draft" or "in a change request".
+------------------------------------------------------------- */
+.guest-row-badge{
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+  flex:0 0 auto;
+  padding:1px 7px;
+  border-radius:999px;
+  font-size:10.5px;
+  font-weight:600;
+  line-height:1.6;
+  white-space:nowrap;
+  border:1px solid var(--editor-soft-border-strong);
+}
+.guest-row-badge i{font-size:9.5px;}
+.guest-row-badge.is-draft{
+  color:var(--editor-warning,#ffc27f);
+  border-color:color-mix(in srgb,var(--editor-warning,#ffc27f) 45%,transparent);
+  background:color-mix(in srgb,var(--editor-warning,#ffc27f) 12%,transparent);
+}
+.guest-row-badge.is-submitted{
+  color:var(--editor-primary,#6366f1);
+  border-color:color-mix(in srgb,var(--editor-primary,#6366f1) 45%,transparent);
+  background:color-mix(in srgb,var(--editor-primary,#6366f1) 12%,transparent);
+}
+
+.guest-row-hint{
+  display:flex;
+  align-items:flex-start;
+  gap:10px;
+  margin-bottom:12px;
+  padding:10px 12px;
+  border-radius:12px;
+  font-size:13px;
+  line-height:1.45;
+  border:1px solid color-mix(in srgb,var(--editor-warning,#ffc27f) 45%,transparent);
+  background:color-mix(in srgb,var(--editor-warning,#ffc27f) 8%,transparent);
+  color:var(--editor-text);
+}
+.guest-row-hint i{margin-top:3px;color:var(--editor-warning,#ffc27f);}
+.guest-row-hint.is-submitted{
+  border-color:color-mix(in srgb,var(--editor-primary,#6366f1) 45%,transparent);
+  background:color-mix(in srgb,var(--editor-primary,#6366f1) 8%,transparent);
+}
+.guest-row-hint.is-submitted i{color:var(--editor-primary,#6366f1);}
+.guest-row-hint-fields{margin-top:4px;font-size:11.5px;color:var(--editor-text-muted);}
+.guest-row-hint-fields code{
+  padding:0 5px;
+  border-radius:5px;
+  background:var(--editor-soft-bg-strong);
+  font-size:11px;
+}
+
+/* Field-level markers of the guest's own values (form view) */
+[data-field-path].guest-field-changed{
+  position:relative;
+  border-radius:10px;
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--editor-warning,#ffc27f) 45%,transparent);
+  background:color-mix(in srgb,var(--editor-warning,#ffc27f) 5%,transparent);
+}
+[data-field-path].guest-field-changed.is-submitted{
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--editor-primary,#6366f1) 45%,transparent);
+  background:color-mix(in srgb,var(--editor-primary,#6366f1) 5%,transparent);
+}
+[data-field-path].guest-field-changed::after{
+  content:'изм.';
+  position:absolute;
+  top:-7px;
+  right:8px;
+  padding:0 5px;
+  border-radius:999px;
+  font-size:9.5px;
+  font-weight:700;
+  line-height:1.6;
+  letter-spacing:.02em;
+  color:var(--editor-warning,#ffc27f);
+  background:var(--editor-surface,#121821);
+  border:1px solid color-mix(in srgb,var(--editor-warning,#ffc27f) 45%,transparent);
+}
+[data-field-path].guest-field-changed.is-submitted::after{
+  content:'в запросе';
+  color:var(--editor-primary,#6366f1);
+  border-color:color-mix(in srgb,var(--editor-primary,#6366f1) 45%,transparent);
+}
+
+/* -------------------------------------------------------------
+   Layout primitives (shared by every editor page)
+
+   Всё, что раньше задавалось инлайновыми style="max-height:590px" /
+   style="grid-template-columns:..." на страницах, живёт здесь: одна
+   точка правки и одинаковое поведение на всех вкладках.
+------------------------------------------------------------- */
+
+/* Тело страницы: вертикальный ритм и одинаковая реакция на узкий экран. */
+.editor-page-body{
+  margin-top:16px;
+  display:grid;
+  gap:16px;
+  align-content:start;
+  min-width:0;
+}
+
+.editor-page-body > *{min-width:0;}
+
+/* Две равные колонки; до 1100px — одна (планшет/телефон). */
+.editor-two-col{
+  display:grid;
+  grid-template-columns:repeat(2, minmax(0, 1fr));
+  gap:16px;
+  align-items:start;
+  min-width:0;
+}
+
+.editor-two-col > *{min-width:0;}
+
+@media (max-width:1100px){
+  .editor-two-col{grid-template-columns:minmax(0, 1fr);}
+}
+
+/* Прокручиваемый список: заменяет инлайновый max-height. */
+.editor-list-scroll{
+  overflow:auto;
+  max-height:min(590px, 62vh);
+  max-height:min(590px, 62dvh);
+  border:1px solid var(--editor-line);
+  border-radius:var(--editor-radius-md);
+  background:var(--editor-surface);
+  -webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+}
+
+.editor-list-scroll--bare{
+  border:0;
+  border-radius:0;
+  background:none;
+}
+
+.editor-list-scroll--tall{max-height:min(900px, 72vh);max-height:min(900px, 72dvh);}
+.editor-list-scroll--short{max-height:min(320px, 42vh);max-height:min(320px, 42dvh);}
+
+/* Панель инструментов: кнопки переносятся, ничего не вылезает за край. */
+.editor-toolbar{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:8px;
+  min-width:0;
+}
+
+.editor-toolbar--end{justify-content:flex-end;}
+
+.editor-toolbar-spacer{flex:1 1 auto;}
+
+/* Компактные кнопки одного вида (было height:32px / 28px в style). */
+.editor-btn--sm{height:32px;padding:0 12px;font-size:12.5px;}
+.editor-btn--xs{height:28px;padding:0 9px;font-size:12px;}
+
+/* Таблицы: на узком экране прокручиваются, а не разъезжаются. */
+.editor-table-wrap{
+  overflow-x:auto;
+  -webkit-overflow-scrolling:touch;
+  border:1px solid var(--editor-line);
+  border-radius:var(--editor-radius-md);
+  background:var(--editor-surface);
+}
+
+.editor-table-wrap > table,
+.editor-list-scroll > table{
+  width:100%;
+  border-collapse:collapse;
+  min-width:var(--editor-table-min, 480px);
+}
+
+.editor-table-wrap :is(th, td),
+.editor-list-scroll :is(th, td){
+  padding:9px 12px;
+  text-align:left;
+  font-size:var(--editor-text-md);
+  border-bottom:1px solid var(--editor-line);
+  vertical-align:top;
+}
+
+.editor-table-wrap tbody tr:hover,
+.editor-list-scroll tbody tr:hover{
+  background:var(--editor-row-hover-bg);
+}
+
+.editor-table-wrap thead th,
+.editor-list-scroll thead th{
+  position:sticky;
+  top:0;
+  z-index:1;
+  font-size:var(--editor-text-xs);
+  font-weight:700;
+  letter-spacing:.06em;
+  text-transform:uppercase;
+  color:var(--editor-text-muted);
+  background:var(--editor-surface);
+  white-space:nowrap;
+}
+
+.editor-table-wrap tbody tr:last-child :is(th, td),
+.editor-list-scroll tbody tr:last-child :is(th, td){border-bottom:0;}
+
+/* Внутри карточки таблица не рисует вторую рамку. */
+.editor-panel-card > .editor-table-wrap,
+.editor-panel-card > .editor-list-scroll{border-color:var(--editor-soft-border);}
+
+/* Секция на всю ширину внутри .editor-two-col. */
+.editor-span-all{grid-column:1 / -1;}
+
+/* Сайдбар на планшете/телефоне встаёт над редактором: ограничиваем высоту
+   списка, иначе до формы нужно листать несколько экранов. */
+@media (max-width:1100px){
+  .editor-sidebar-list{max-height:min(46vh, 420px);max-height:min(46dvh, 420px);}
+}
+
+/* На телефоне списки не растягивают страницу на несколько экранов. */
+@media (max-width:640px){
+  .editor-list-scroll{max-height:min(460px, 52vh);max-height:min(460px, 52dvh);}
+  .editor-list-scroll--tall{max-height:min(560px, 60vh);max-height:min(560px, 60dvh);}
+  .editor-list-scroll--short{max-height:min(280px, 38vh);max-height:min(280px, 38dvh);}
+  .editor-page-body{gap:12px;margin-top:12px;}
+  .editor-two-col{gap:12px;}
+  .editor-btn--sm{height:34px;}
+}
+
+@media (max-width:520px){
+  .editor-page{padding:12px;}
+  .editor-page-title{gap:10px;}
+  .editor-page-title h1{font-size:20px;}
+  .editor-page-sub{font-size:12.5px;}
+  .editor-page-title::before{
+    width:30px;height:30px;flex-basis:30px;font-size:13px;
+  }
+  .editor-table-wrap > table,
+  .editor-list-scroll > table{min-width:var(--editor-table-min, 420px);}
+}
+
+/* Очень узкие экраны: шапка переносится, кнопки делят строку поровну. */
+@media (max-width:400px){
+  .editor-page-header{flex-wrap:wrap;}
+  .editor-page-actions{width:100%;justify-content:flex-start;}
+  .editor-page-actions .editor-btn{flex:1 1 auto;min-width:0;}
+  .editor-page-title{min-width:0;}
+}
+
+/* Метки «поле изменено» из гостевого режима — на языке интерфейса. */
+:root[lang="en"] [data-field-path].guest-field-changed::after{content:'edited';}
+:root[lang="en"] [data-field-path].guest-field-changed.is-submitted::after{content:'in request';}
+
+/* Утилиты ограничения ширины вместо style="max-width:260px" на страницах. */
+[data-width="sm"]{max-width:260px;}
+[data-width="md"]{max-width:420px;}
+
+@media (max-width:520px){
+  [data-width]{max-width:100%;}
+}
+
+/* Тона текста: заменяют инлайн-стили цвета в разметке и в строках шаблонов. */
+.editor-tone-danger{color:var(--editor-danger);}
+.editor-tone-warning{color:var(--editor-warning);}
+.editor-tone-success{color:var(--editor-success);}
+.editor-tone-accent{color:var(--editor-accent);}
+
+/* -------------------------------------------------------------
+   Touch-устройства и длинный текст
+------------------------------------------------------------- */
+
+/* Пальцем нужно попадать: на сенсорных экранах цели не меньше 44px. */
+@media (pointer:coarse){
+  .editor-btn{min-height:44px;}
+  .editor-icon-btn{min-width:44px;min-height:44px;}
+  .editor-nav-item{padding-top:12px;padding-bottom:12px;}
+}
+
+/* Длинные слова (имена таблиц, логины, значения из базы) не рвут вёрстку. */
+.editor-page-sub,
+.editor-card-sub,
+.editor-help-text,
+.editor-section-hint{overflow-wrap:anywhere;}
+
+.editor-page :is(td, th, dd, dt) code,
+.editor-page :is(td, th, dd, dt) a{overflow-wrap:anywhere;}
+
+/* Медиа внутри контента не вылезает за карточку (размеры из классов сохраняем). */
+.editor-page img,
+.editor-page video,
+.editor-page canvas{max-width:100%;}
+
+/* Горизонтальная прокрутка вместо «уехавшей» вёрстки: любой блок кода. */
+.editor-page pre{overflow-x:auto;max-width:100%;}
+
+/* Строка во всю ширину сетки задачи: позиция X/Y с кнопкой карты не должна
+   сжиматься до одной колонки — иначе оси снова «разъезжаются». */
+.editor-item-span{grid-column:1/-1;min-width:0;}

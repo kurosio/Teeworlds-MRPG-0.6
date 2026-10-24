@@ -59,11 +59,21 @@ if ($method === 'GET') {
     exit;
 }
 
-// ОБРАБОТКА POST-ЗАПРОСОВ (сохранение данных)
+// ОБРАБОТКА POST-ЗАПРОСОВ (сохранение и удаление данных)
 if ($method === 'POST') {
-    $data = json_decode((string)file_get_contents('php://input'), true);
+    // Только JSON-POST с этого же узла: иначе запрос можно подделать с чужого сайта.
+    require_same_origin_json_post();
 
-    if (json_last_error() !== JSON_ERROR_NONE || !isset($data['filename']) || !array_key_exists('content', $data)) {
+    $raw = editor_request_raw_body(8 * 1024 * 1024 + 1);
+    if (strlen($raw) > 8 * 1024 * 1024) {
+        http_response_code(413);
+        echo json_encode(['success' => false, 'error' => 'Сценарий слишком большой (больше 8 МБ)'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    $data = json_decode($raw, true);
+
+    if (json_last_error() !== JSON_ERROR_NONE || !is_array($data) || !isset($data['filename'])) {
         http_response_code(400);
         echo json_encode(['success' => false, 'error' => 'Некорректные данные'], JSON_UNESCAPED_UNICODE);
         exit;
@@ -73,6 +83,28 @@ if ($method === 'POST') {
     if ($filename === '') {
         http_response_code(400);
         echo json_encode(['success' => false, 'error' => 'Некорректное имя файла'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    if (($data['action'] ?? '') === 'delete') {
+        $path = $scenariosDir . $filename;
+        if (!is_file($path)) {
+            http_response_code(404);
+            echo json_encode(['success' => false, 'error' => 'Файл не найден'], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+        if (!@unlink($path)) {
+            http_response_code(500);
+            echo json_encode(['success' => false, 'error' => 'Не удалось удалить файл на сервере.'], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
+        echo json_encode(['success' => true, 'message' => 'Сценарий ' . $filename . ' удалён.'], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
+    if (!array_key_exists('content', $data)) {
+        http_response_code(400);
+        echo json_encode(['success' => false, 'error' => 'Не передано содержимое сценария'], JSON_UNESCAPED_UNICODE);
         exit;
     }
 

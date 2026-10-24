@@ -35,7 +35,7 @@ function validate_account_id(mixed $value): int
 {
     $id = (string)($value ?? '');
     if ($id === '' || !ctype_digit($id) || (int)$id <= 0) {
-        respond(['ok' => false, 'error' => 'Invalid account id'], 400);
+        respond(['ok' => false, 'error' => 'Некорректный идентификатор аккаунта'], 400);
     }
     return (int)$id;
 }
@@ -46,7 +46,7 @@ function validate_password(string $password): void
     if ($length < ACCOUNT_PASSWORD_MIN || $length > ACCOUNT_PASSWORD_MAX) {
         respond([
             'ok' => false,
-            'error' => 'Пароль должен содержать от ' . ACCOUNT_PASSWORD_MIN . ' до ' . ACCOUNT_PASSWORD_MAX . ' символов.',
+            'error' => sprintf('Пароль должен содержать от %d до %d символов.', ACCOUNT_PASSWORD_MIN, ACCOUNT_PASSWORD_MAX),
         ], 400);
     }
 }
@@ -57,7 +57,7 @@ function validate_login(string $login): void
     if ($length < ACCOUNT_LOGIN_MIN || $length > ACCOUNT_LOGIN_MAX) {
         respond([
             'ok' => false,
-            'error' => 'Логин должен содержать от ' . ACCOUNT_LOGIN_MIN . ' до ' . ACCOUNT_LOGIN_MAX . ' символов.',
+            'error' => sprintf('Логин должен содержать от %d до %d символов.', ACCOUNT_LOGIN_MIN, ACCOUNT_LOGIN_MAX),
         ], 400);
     }
 }
@@ -66,7 +66,7 @@ function ensure_login_available(mysqli $mysqli, string $login, int $accountId): 
 {
     $stmt = $mysqli->prepare('SELECT ID FROM tw_accounts WHERE Username = ? AND ID != ? LIMIT 1');
     if ($stmt === false) {
-        throw new RuntimeException('Prepare failed');
+        throw new RuntimeException('Ошибка подготовки запроса к базе');
     }
     $stmt->bind_param('si', $login, $accountId);
     $stmt->execute();
@@ -87,7 +87,7 @@ function ensure_account_exists(mysqli $mysqli, int $accountId): array
         . 'WHERE a.ID = ? LIMIT 1'
     );
     if ($stmt === false) {
-        throw new RuntimeException('Prepare failed');
+        throw new RuntimeException('Ошибка подготовки запроса к базе');
     }
     $stmt->bind_param('i', $accountId);
     $stmt->execute();
@@ -109,7 +109,7 @@ function update_account_password(mysqli $mysqli, int $accountId, string $passwor
 
     $stmt = $mysqli->prepare('UPDATE tw_accounts SET Password = ?, PasswordSalt = ? WHERE ID = ? LIMIT 1');
     if ($stmt === false) {
-        throw new RuntimeException('Prepare failed');
+        throw new RuntimeException('Ошибка подготовки запроса к базе');
     }
     $stmt->bind_param('ssi', $hash, $salt, $accountId);
     $stmt->execute();
@@ -118,9 +118,12 @@ function update_account_password(mysqli $mysqli, int $accountId, string $passwor
 
 $action = (string)($_GET['action'] ?? '');
 
+// Смена пароля и логина — только JSON-POST своего узла.
+guard_write_actions($action, ['change_password', 'change_login', 'reset_password', 'reset_timeout_code']);
+
 try {
     if ($action === '') {
-        respond(['ok' => false, 'error' => 'Missing action'], 400);
+        respond(['ok' => false, 'error' => 'Не указано действие'], 400);
     }
 
     $mysqli = db_connect();
@@ -137,7 +140,7 @@ try {
                 . 'ORDER BY a.ID DESC LIMIT ?'
             );
             if ($stmt === false) {
-                throw new RuntimeException('Prepare failed');
+                throw new RuntimeException('Ошибка подготовки запроса к базе');
             }
             $stmt->bind_param('i', $fetchLimit);
         } else {
@@ -151,7 +154,7 @@ try {
                     . 'ORDER BY a.ID DESC LIMIT ?'
                 );
                 if ($stmt === false) {
-                    throw new RuntimeException('Prepare failed');
+                    throw new RuntimeException('Ошибка подготовки запроса к базе');
                 }
                 $stmt->bind_param('issi', $id, $like, $like, $fetchLimit);
             } else {
@@ -162,7 +165,7 @@ try {
                     . 'ORDER BY a.ID DESC LIMIT ?'
                 );
                 if ($stmt === false) {
-                    throw new RuntimeException('Prepare failed');
+                    throw new RuntimeException('Ошибка подготовки запроса к базе');
                 }
                 $stmt->bind_param('ssi', $like, $like, $fetchLimit);
             }
@@ -209,7 +212,7 @@ try {
 
         $stmt = $mysqli->prepare('UPDATE tw_accounts SET Username = ? WHERE ID = ? LIMIT 1');
         if ($stmt === false) {
-            throw new RuntimeException('Prepare failed');
+            throw new RuntimeException('Ошибка подготовки запроса к базе');
         }
         $stmt->bind_param('si', $login, $accountId);
         $stmt->execute();
@@ -235,7 +238,7 @@ try {
         $account = ensure_account_exists($mysqli, $accountId);
         $stmt = $mysqli->prepare("UPDATE tw_accounts SET TimeoutCode = '' WHERE ID = ? LIMIT 1");
         if ($stmt === false) {
-            throw new RuntimeException('Prepare failed');
+            throw new RuntimeException('Ошибка подготовки запроса к базе');
         }
         $stmt->bind_param('i', $accountId);
         $stmt->execute();
@@ -245,7 +248,7 @@ try {
     }
 
     $mysqli->close();
-    respond(['ok' => false, 'error' => 'Unknown action'], 400);
+    respond(['ok' => false, 'error' => 'Неизвестное действие'], 400);
 } catch (Throwable $e) {
-    respond(['ok' => false, 'error' => $e->getMessage()], 500);
+    editor_internal_error($e);
 }

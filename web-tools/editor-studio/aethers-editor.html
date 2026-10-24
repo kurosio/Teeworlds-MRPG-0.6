@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Аэтры • tw_aethers</title>
+  <title>Аэтры (телепорты) • Editor Studio</title>
   <script src="editor-core/page-loader.js" data-mode="event"></script>
 </head>
 
@@ -51,7 +51,7 @@
             </select>
           </div>
 
-          <div class="mt-4 editor-sidebar-list editor-scroll" style="max-height: 590px" data-editor-role="list"></div>
+          <div class="mt-4 editor-sidebar-list editor-scroll" data-editor-role="list"></div>
         </div>
       </aside>
 
@@ -93,8 +93,10 @@
     const aetherFields = {
       Name: { type: 'text', label: 'Название', validate: { required: true }, ui: { placeholder: 'Например: Gridania (Center)' } },
       WorldID: { type: 'db_select', label: 'Мир', validate: { required: true }, ui: { datasource: 'worlds', labelMode: 'id_name', placeholder: '— мир —', searchPlaceholder: 'Поиск мира…' } },
-      TeleX: { type: 'number', label: 'Координата X', ui: { step: 1, placeholder: 'Напр. 19552' } },
-      TeleY: { type: 'number', label: 'Координата Y', ui: { step: 1, placeholder: 'Напр. 4718' } },
+      Position: {
+        type: 'vec2', label: 'Позиция',
+        ui: { step: 1, axes: { x: 'TeleX', y: 'TeleY' }, mapWorldPath: 'WorldID' }
+      },
     };
 
     const dirty = EditorCore.Dirty?.create

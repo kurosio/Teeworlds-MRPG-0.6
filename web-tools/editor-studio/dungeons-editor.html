@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Подземелья • tw_dungeons</title>
+  <title>Подземелья • Editor Studio</title>
   <script src="editor-core/page-loader.js" data-mode="event"></script>
 </head>
 
@@ -14,7 +14,7 @@
         <i class="fa-solid fa-dungeon text-accent text-xl"></i>
         <div>
           <h1>Подземелья</h1>
-          <div class="editor-page-sub">Редактор таблицы <code>tw_dungeons</code>.</div>
+          <div class="editor-page-sub">Точка входа в мир, сценарий и лимит времени.</div>
         </div>
       </div>
       <div class="editor-page-actions">
@@ -44,7 +44,7 @@
             </div>
           </div>
 
-          <div class="mt-4 editor-sidebar-list editor-scroll" style="max-height: 590px" data-editor-role="list"></div>
+          <div class="mt-4 editor-sidebar-list editor-scroll" data-editor-role="list"></div>
         </div>
       </aside>
 
@@ -86,9 +86,14 @@
 
     const fields = {
       WorldID: { type: 'db_select', label: 'Мир', ui: { dbKey: 'world', placeholder: '— мир —' } },
-      DoorX: { type: 'number', label: 'DoorX', ui: { step: 1 } },
-      DoorY: { type: 'number', label: 'DoorY', ui: { step: 1 } },
-      Scenario: { type: 'scenario', label: 'Scenario', ui: { scenarioMode: 'dungeon' } },
+      // Точка входа — та же пара X/Y с картой мира подземелья.
+      Door: {
+        type: 'vec2',
+        label: 'Дверь (X, Y)',
+        ui: { step: 1, axes: { x: 'DoorX', y: 'DoorY' }, mapWorldPath: 'WorldID' },
+      },
+      // Компоненты сценария подземелья открывают карту в мире подземелья.
+      Scenario: { type: 'scenario', label: 'Scenario', ui: { scenarioMode: 'dungeon', mapWorldPath: 'WorldID' } },
       TimeLimit: { type: 'number', label: 'Time Limit (seconds)', ui: { step: 1 } },
     };
 

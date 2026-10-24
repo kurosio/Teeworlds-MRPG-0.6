@@ -18,11 +18,11 @@
     @media (max-width: 1100px) { .cr-layout, .cr-admin-layout { grid-template-columns: minmax(0, 1fr); } }
     .cr-sticky { position: sticky; top: 12px; }
 
-    .cr-card { border: 1px solid var(--editor-border); background: var(--editor-surface); border-radius: 16px; }
+    .cr-card { border: 1px solid var(--editor-line); background: var(--editor-surface); border-radius: var(--editor-radius-md); }
     .cr-card-pad { padding: 16px; }
     .cr-muted { color: var(--editor-text-muted); }
 
-    .cr-op { border: 1px solid var(--editor-border); border-radius: 14px; background: var(--editor-panel-bg); overflow: hidden; }
+    .cr-op { border: 1px solid var(--editor-line); border-radius: var(--editor-radius-md); background: var(--editor-surface); overflow: hidden; }
     .cr-op + .cr-op { margin-top: 12px; }
     .cr-op-head { display: flex; align-items: flex-start; gap: 12px; padding: 12px 14px; border-bottom: 1px solid var(--editor-soft-border); }
     .cr-op-icon { width: 32px; height: 32px; flex: 0 0 32px; border-radius: 10px; display: grid; place-items: center; font-size: 14px; }
@@ -45,7 +45,10 @@
     .cr-chip--danger { color: var(--editor-danger); border-color: color-mix(in srgb, var(--editor-danger) 45%, transparent); }
     .cr-chip--warning { color: var(--editor-warning); border-color: color-mix(in srgb, var(--editor-warning) 45%, transparent); }
 
+    .cr-table-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
     .cr-changes { width: 100%; border-collapse: separate; border-spacing: 0; font-size: 13px; }
+    .cr-col-field { width: 22%; }
+    @media (max-width: 640px) { .cr-changes { min-width: 420px; } .cr-col-field { width: 34%; } }
     .cr-changes th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--editor-text-muted); font-weight: 600; padding: 6px 8px; border-bottom: 1px solid var(--editor-soft-border); }
     .cr-changes td { vertical-align: top; padding: 7px 8px; border-bottom: 1px solid var(--editor-soft-border); word-break: break-word; }
     .cr-changes tr:last-child td { border-bottom: 0; }
@@ -93,6 +96,22 @@
     details.cr-details > summary::-webkit-details-marker { display: none; }
     .cr-settings-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
     @media (max-width: 760px) { .cr-settings-grid { grid-template-columns: minmax(0, 1fr); } }
+
+    /* Переписка по запросу */
+    .cr-thread { display: flex; flex-direction: column; gap: 8px; max-height: 340px; overflow-y: auto; padding-right: 4px; }
+    .cr-msg { border-radius: 12px; padding: 8px 11px; max-width: 92%;
+      background: var(--editor-soft-bg); border: 1px solid var(--editor-soft-border); }
+    .cr-msg--mine { align-self: flex-end; border-color: color-mix(in srgb, var(--editor-primary) 45%, transparent);
+      background: color-mix(in srgb, var(--editor-primary) 12%, transparent); }
+    .cr-msg--unread { box-shadow: inset 3px 0 0 var(--editor-warning); }
+    .cr-msg-head { display: flex; align-items: center; justify-content: space-between; gap: 8px;
+      font-size: 11px; color: var(--editor-text-muted); margin-bottom: 3px; }
+    .cr-msg-body { font-size: 13.5px; line-height: 1.45; white-space: pre-wrap; word-break: break-word; }
+    .cr-msg-new { color: var(--editor-warning); font-weight: 700; }
+    .cr-composer { display: flex; gap: 8px; align-items: flex-end; margin-top: 10px; }
+    .cr-composer textarea { min-height: 42px; max-height: 140px; resize: vertical; }
+    .cr-unread-pill { min-width: 20px; padding: 0 6px; border-radius: 999px; font-size: 11px; font-weight: 700;
+      background: var(--editor-warning); color: #1b1206; display: inline-flex; justify-content: center; }
   </style>
 </head>
 
@@ -107,8 +126,11 @@
         </div>
       </div>
       <div class="editor-page-actions" id="page-actions">
+        <button class="editor-btn editor-btn-secondary cr-hidden" id="btn-guests" type="button">
+          <i class="fa-solid fa-user-shield"></i><span>Гостевые пользователи</span>
+        </button>
         <button class="editor-btn editor-btn-secondary cr-hidden" id="btn-guest-settings" type="button">
-          <i class="fa-solid fa-user-gear"></i><span>Гостевой доступ</span>
+          <i class="fa-solid fa-user-gear"></i><span>Правила доступа</span>
         </button>
         <button class="editor-btn editor-btn-secondary" id="btn-refresh" type="button">
           <i class="fa-solid fa-rotate"></i><span>Обновить</span>
@@ -157,7 +179,7 @@
             <p class="text-sm cr-muted mt-1 mb-4">Изменения не применяются сразу — администратор проверит их и примет решение.</p>
 
             <label class="block mb-3">
-              <div class="cr-field-label">Ваш Nickname <span class="cr-required">*</span></div>
+              <div class="cr-field-label">Ваш ник <span class="cr-required">*</span></div>
               <input id="g-nickname" type="text" class="w-full editor-input form-input" autocomplete="nickname" placeholder="Ник в игре" />
               <div class="cr-counter" id="g-nickname-counter"></div>
             </label>
@@ -175,7 +197,7 @@
           </div>
 
           <div class="cr-card cr-card-pad mt-3 text-sm cr-muted">
-            <div class="font-semibold mb-1" style="color:var(--editor-text)"><i class="fa-solid fa-circle-info mr-1"></i>Как это работает</div>
+            <div class="font-semibold mb-1"><i class="fa-solid fa-circle-info mr-1"></i>Как это работает</div>
             Откройте любой доступный редактор и вносите правки как обычно — кнопки «Сохранить», «Создать», «Удалить» добавляют изменения в этот черновик.
             База данных при этом не меняется. Черновик хранится в вашем браузере.
           </div>
@@ -198,7 +220,7 @@
     <div id="view-admin" class="cr-hidden mt-5">
       <div id="a-guest-disabled" class="cr-note cr-note--warning mb-4 cr-hidden">
         <i class="fa-solid fa-triangle-exclamation"></i>
-        <div>Гостевой доступ сейчас <b>выключен</b> — гости не могут войти и отправлять запросы. Включите его в «Гостевой доступ».</div>
+        <div>Гостевой вход сейчас <b>выключен</b> или не создано ни одного активного гостевого аккаунта — гости не могут войти и отправлять запросы. Включите доступ в «Правилах доступа», а аккаунты создайте в «Гостевые пользователи».</div>
       </div>
 
       <div class="cr-admin-layout">
@@ -214,7 +236,7 @@
             <i class="fa-solid fa-magnifying-glass"></i>
             <input id="a-search" type="search" class="w-full editor-input form-input" placeholder="Ник, текст, раздел, ID…" />
           </div>
-          <div id="a-list" class="mt-3 editor-scroll" style="max-height: calc(100vh - 260px); overflow:auto"></div>
+          <div id="a-list" class="mt-3 editor-list-scroll editor-list-scroll--tall"></div>
         </aside>
 
         <section id="a-detail" class="cr-card cr-card-pad">
@@ -229,8 +251,8 @@
     <div class="editor-modal-content p-6 w-full max-w-2xl">
       <div class="flex items-start justify-between gap-3 mb-4">
         <div>
-          <h3 id="settings-title" class="text-xl font-bold flex items-center gap-2"><i class="fa-solid fa-user-gear text-accent"></i>Гостевой доступ</h3>
-          <p class="text-sm cr-muted mt-1">Гость видит редакторы контента только для чтения и может отправлять запросы. Ваучеры, аккаунты, сценарии, настройки, дампы и синхронизация ему недоступны.</p>
+          <h3 id="settings-title" class="text-xl font-bold flex items-center gap-2"><i class="fa-solid fa-user-gear text-accent"></i>Правила доступа</h3>
+          <p class="text-sm cr-muted mt-1">Гостевые аккаунты создаются на странице «Гостевые пользователи»: там же каждому включаются отдельные вкладки редакторов. Здесь — общие лимиты и сетевые правила.</p>
         </div>
         <button type="button" class="editor-icon-btn" data-close-settings title="Закрыть"><i class="fa-solid fa-xmark"></i></button>
       </div>
@@ -239,25 +261,21 @@
         <label class="editor-toggle" id="s-enabled-toggle" data-checked="0">
           <input id="s-enabled" type="checkbox" />
           <span class="editor-toggle-track"><span class="editor-toggle-knob"></span></span>
-          <span class="text-sm font-medium">Разрешить вход гостевым аккаунтом</span>
+          <span class="text-sm font-medium">Разрешить гостям входить в редактор</span>
         </label>
 
-        <div>
-          <div class="cr-field-label">Гостевой пароль</div>
-          <input id="s-password" type="password" class="w-full editor-input form-input" autocomplete="new-password" placeholder="Оставьте пустым, чтобы не менять" />
-          <div class="flex items-center justify-between gap-2 mt-1">
-            <div class="text-xs cr-muted" id="s-password-state"></div>
-            <label class="flex items-center gap-2 text-xs cr-muted cursor-pointer select-none">
-              <input id="s-password-clear" type="checkbox" class="rounded h-4 w-4" />Вход без пароля
-            </label>
+        <div class="cr-note cr-note--info">
+          <i class="fa-solid fa-users"></i>
+          <div>
+            <b>Гостевые аккаунты (<span id="s-accounts">0</span>)</b> — логины, пароли и вкладки настраиваются отдельно.
+            <div class="mt-2"><button type="button" class="editor-btn editor-btn-secondary editor-btn--sm" id="s-open-guests"><i class="fa-solid fa-user-shield"></i><span>Открыть «Гостевые пользователи»</span></button></div>
           </div>
-          <div class="text-xs cr-muted mt-1">Хранится как хеш. Смена пароля завершает все активные гостевые сессии.</div>
         </div>
 
         <label class="editor-toggle" id="s-remote-toggle" data-checked="0">
           <input id="s-remote" type="checkbox" />
           <span class="editor-toggle-track"><span class="editor-toggle-knob"></span></span>
-          <span class="text-sm">Разрешить гостям вход с любых IP <span class="cr-muted">(администратор остаётся ограничен «Network Access»)</span></span>
+          <span class="text-sm">Разрешить гостям вход с любых IP <span class="cr-muted">(администратор при этом остаётся под защитой «Сетевого доступа»)</span></span>
         </label>
 
         <div class="cr-settings-grid">
@@ -308,8 +326,11 @@
     if (!window.EditorCoreBootstrap) window.EditorCoreBootstrap = EditorCore.bootstrapEditor?.();
 
     const $ = (id) => document.getElementById(id);
-    const esc = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-    const toast = (m, t = 'success') => EditorCore.UI?.toast?.(m, t);
+    // Общие помощники страниц: экранирование, тосты, перевод (editor-core/page-kit.js).
+    const Page = EditorCore.Page;
+    const esc = Page.esc;
+    const toast = Page.toast;
+    const T = Page.t;
     const Guest = EditorCore.Guest;
     const API = 'api/change-requests.php';
     const NICK_KEY = 'editorStudio.guestNickname';
@@ -327,36 +348,74 @@
     };
     const SEV_ICON = { danger: 'fa-triangle-exclamation', warning: 'fa-circle-exclamation', info: 'fa-circle-info', ok: 'fa-circle-check' };
 
-    const api = async (action, { method = 'GET', body = null, query = {} } = {}) => {
-      const qs = new URLSearchParams({ action, ...query }).toString();
-      try {
-        const res = await fetch(`${API}?${qs}`, {
-          method,
-          credentials: 'same-origin',
-          cache: 'no-store',
-          headers: body ? { 'Content-Type': 'application/json' } : undefined,
-          body: body ? JSON.stringify(body) : undefined,
-        });
-        const json = await res.json().catch(() => ({ ok: false, error: `HTTP ${res.status}` }));
-        if (res.status === 401) window.top?.postMessage({ type: 'editor-shell:auth-required' }, '*');
-        return { status: res.status, ...json, ok: res.ok && json?.ok !== false };
-      } catch (e) {
-        return { status: 0, ok: false, error: 'Сетевая ошибка' };
-      }
+    /** Запрос к API запросов: `{ ok, status, error, ...поля ответа }`. */
+    const api = (action, { method = 'GET', body = null, query = {} } = {}) => (
+      EditorCore.Http.json(`${API}?action=${encodeURIComponent(action)}`, { method, body, query })
+    );
+
+    const fmtDate = (iso) => Page.fmtDate(iso);
+    const plural = Page.plural;
+    const statusChip = (s) => `<span class="cr-chip cr-chip--${esc(s)}"><i class="fa-solid ${STATUS[s]?.icon || 'fa-circle'}"></i>${esc(STATUS[s]?.label || s)}</span>`;
+
+    // ── Переписка по запросу ────────────────────────────────────────────────
+    // Гость и администратор пишут в один диалог. Непрочитанные сообщения
+    // помечены, а сами отметки ставит сервер (api/change-requests.php).
+    const threadRowHtml = (m, admin) => `
+      <div class="cr-msg ${m.mine ? 'cr-msg--mine' : ''} ${m.read ? '' : 'cr-msg--unread'}">
+        <div class="cr-msg-head">
+          <span><i class="fa-solid ${m.role === 'admin' ? 'fa-user-shield' : 'fa-user'}"></i>
+            ${esc(m.mine ? 'Вы' : (m.role === 'admin' ? 'Администратор' : 'Гость'))}</span>
+          <span>${esc(fmtDate(m.createdAt))}${m.read ? '' : ' · <span class="cr-msg-new">новое</span>'}</span>
+        </div>
+        <div class="cr-msg-body">${esc(m.body)}</div>
+      </div>`;
+
+    const threadListHtml = (messages, admin) => (messages && messages.length
+      ? `<div class="cr-thread">${messages.map((m) => threadRowHtml(m, admin)).join('')}</div>`
+      : `<div class="cr-muted text-sm">Сообщений пока нет. Напишите${admin ? ' гостю' : ' администратору'} — ответ появится здесь.</div>`);
+
+    const threadBlockHtml = (messages, admin, placeholder) => `
+      <div class="mt-5">
+        <div class="cr-field-label"><i class="fa-solid fa-comments text-accent"></i> ${admin ? 'Переписка с гостем' : 'Переписка с администратором'}</div>
+        <div data-thread-list>${threadListHtml(messages, admin)}</div>
+        <div class="cr-composer">
+          <textarea class="w-full editor-input form-textarea" rows="2" maxlength="2000"
+            data-thread-input placeholder="${esc(placeholder)}"></textarea>
+          <button type="button" class="editor-btn editor-btn-primary" data-thread-send>
+            <i class="fa-solid fa-paper-plane"></i><span>Отправить</span>
+          </button>
+        </div>
+        <div class="text-xs cr-muted mt-1" data-thread-status></div>
+      </div>`;
+
+    const bindThread = (root, requestId, admin, onSent) => {
+      if (!root) return;
+      const input = root.querySelector('[data-thread-input]');
+      const button = root.querySelector('[data-thread-send]');
+      const status = root.querySelector('[data-thread-status]');
+      const send = async () => {
+        const body = String(input?.value || '').trim();
+        if (!body) { if (status) status.textContent = 'Введите сообщение.'; return; }
+        if (button) button.disabled = true;
+        if (status) status.textContent = 'Отправка…';
+        const res = await api('message', { method: 'POST', body: { id: requestId, body } });
+        if (button) button.disabled = false;
+        if (!res.ok) {
+          if (status) status.textContent = res.error || 'Не удалось отправить сообщение.';
+          return;
+        }
+        if (input) input.value = '';
+        if (status) status.textContent = '';
+        await onSent?.();
+      };
+      button?.addEventListener('click', send);
+      input?.addEventListener('keydown', (e) => {
+        if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); send(); }
+      });
     };
 
-    const fmtDate = (iso) => {
-      if (!iso) return '—';
-      const d = new Date(iso);
-      return Number.isNaN(d.getTime()) ? esc(iso) : d.toLocaleString('ru-RU', { dateStyle: 'medium', timeStyle: 'short' });
-    };
-    const plural = (n, one, few, many) => {
-      const m10 = n % 10, m100 = n % 100;
-      if (m10 === 1 && m100 !== 11) return one;
-      if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return few;
-      return many;
-    };
-    const statusChip = (s) => `<span class="cr-chip cr-chip--${esc(s)}"><i class="fa-solid ${STATUS[s]?.icon || 'fa-circle'}"></i>${esc(STATUS[s]?.label || s)}</span>`;
+    /** Счётчик непрочитанного в списке запросов. */
+    const unreadPill = (n) => (n > 0 ? `<span class="cr-unread-pill" title="Непрочитанные сообщения">${n}</span>` : '');
 
     // ── Line diff (LCS) for JSON / multiline values ──────────────────────
     const lineDiff = (a, b) => {
@@ -415,24 +474,24 @@
       if (op.type === 'delete') {
         const rows = changes.map(c => `<tr><td class="cr-col">${esc(c.column)}</td><td class="cr-before">${isLong(c.before) ? `<details class="cr-details"><summary>показать (${String(c.before).length} симв.)</summary><div class="cr-diff mt-1"><div class="cr-diff-line"><span></span><span>${esc(c.before)}</span></div></div></details>` : valueHtml(c.before)}${c.refBefore ? `<span class="cr-ref"><i class="fa-solid fa-link"></i> ${esc(c.refBefore)}</span>` : ''}</td></tr>`).join('');
         return `<details class="cr-details"><summary><i class="fa-solid fa-chevron-right"></i> Удаляемые данные (${changes.length} ${plural(changes.length, 'поле', 'поля', 'полей')})</summary>
-          <table class="cr-changes mt-2"><thead><tr><th>Поле</th><th>Текущее значение</th></tr></thead><tbody>${rows}</tbody></table></details>`;
+          <div class="cr-table-scroll"><table class="cr-changes mt-2"><thead><tr><th>Поле</th><th>Текущее значение</th></tr></thead><tbody>${rows}</tbody></table></div></details>`;
       }
 
       const simple = changes.filter(c => !(c.json || isLong(c.before) || isLong(c.after)));
       const complex = changes.filter(c => c.json || isLong(c.before) || isLong(c.after));
       let html = '';
       if (simple.length) {
-        html += `<table class="cr-changes"><thead><tr><th style="width:22%">Поле</th>${op.type === 'update' ? '<th>Было</th>' : ''}<th>${op.type === 'update' ? 'Станет' : 'Значение'}</th></tr></thead><tbody>`;
+        html += `<div class="cr-table-scroll"><table class="cr-changes"><thead><tr><th class="cr-col-field">Поле</th>${op.type === 'update' ? '<th>Было</th>' : ''}<th>${op.type === 'update' ? 'Станет' : 'Значение'}</th></tr></thead><tbody>`;
         html += simple.map(c => `<tr>
           <td class="cr-col">${esc(c.column)}</td>
           ${op.type === 'update' ? `<td class="cr-before">${valueHtml(c.before)}${c.refBefore ? `<span class="cr-ref"><i class="fa-solid fa-link"></i> ${esc(c.refBefore)}</span>` : ''}</td>` : ''}
           <td class="cr-after">${valueHtml(c.after)}${c.refAfter ? `<span class="cr-ref"><i class="fa-solid fa-link"></i> ${esc(c.refAfter)}</span>` : ''}</td>
         </tr>`).join('');
-        html += '</tbody></table>';
+        html += '</tbody></table></div>';
       }
       for (const c of complex) {
         html += `<div class="mt-3"><div class="text-xs mb-1"><span class="cr-col">${esc(c.column)}</span> <span class="cr-muted">${c.json ? 'JSON' : 'текст'} · ${op.type === 'update' ? 'изменения построчно' : 'значение'}</span></div>
-          ${op.type === 'update' ? renderDiff(c.before ?? '', c.after ?? '') : renderDiff('', c.after ?? '').replace(/cr-diff-line--add/g, 'cr-diff-line--add')}</div>`;
+          ${op.type === 'update' ? renderDiff(c.before ?? '', c.after ?? '') : renderDiff('', c.after ?? '')}</div>`;
       }
       return html;
     };
@@ -482,12 +541,13 @@
       <button type="button" class="cr-list-item ${active ? 'active' : ''}" data-id="${esc(r.id)}">
         <div class="flex items-center justify-between gap-2">
           <div class="font-semibold truncate">${admin ? `<i class="fa-solid fa-user mr-1 cr-muted"></i>${esc(r.nickname)}` : esc(fmtDate(r.createdAt))}</div>
-          ${statusChip(r.status)}
+          <div class="flex items-center gap-2">${unreadPill(r.unread)}${statusChip(r.status)}</div>
         </div>
+        ${admin && (r.guestName || r.guestLogin) ? `<div class="text-xs cr-muted mt-1"><i class="fa-solid fa-user-shield"></i> ${esc(r.guestName || r.guestLogin)}${r.guestLogin ? ` · @${esc(r.guestLogin)}` : ''}</div>` : ''}
         <div class="text-xs cr-muted mt-1" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${esc(r.message)}</div>
         <div class="flex items-center justify-between gap-2 mt-2 text-xs cr-muted">
           <span>${admin ? esc(fmtDate(r.createdAt)) : esc(r.id)}</span>
-          <span>${r.operationsCount} ${plural(r.operationsCount, 'операция', 'операции', 'операций')}${r.summary?.danger ? ` · <span style="color:var(--editor-danger)"><i class="fa-solid fa-triangle-exclamation"></i> ${r.summary.danger}</span>` : ''}</span>
+          <span>${r.operationsCount} ${plural(r.operationsCount, 'операция', 'операции', 'операций')}${r.summary?.danger ? ` · <span class="editor-tone-danger"><i class="fa-solid fa-triangle-exclamation"></i> ${r.summary.danger}</span>` : ''}</span>
         </div>
       </button>`;
 
@@ -508,39 +568,64 @@
       $('g-nickname-counter').classList.toggle('bad', !!nick.length && !nickOk);
       $('g-message-counter').textContent = `${msg.length} / ${lim.message.max}${msg.length < lim.message.min ? ` · минимум ${lim.message.min}` : ''}`;
       $('g-message-counter').classList.toggle('bad', !!msg.length && !msgOk);
-      const count = Guest.Draft.count();
+      const count = Guest.Draft.pendingCount();
+      const submitted = Guest.Draft.submittedCount();
       const hasErrors = (G.analysis?.errors || []).length > 0;
       $('g-btn-submit').disabled = !(nickOk && msgOk && count > 0 && !hasErrors);
-      $('g-btn-submit').title = !count ? 'Черновик пуст' : hasErrors ? 'Исправьте ошибки в черновике' : (!nickOk || !msgOk) ? 'Заполните Nickname и описание' : '';
+      $('g-btn-submit').title = !count
+        ? (submitted ? 'Нет новых изменений: всё уже отправлено и ждёт проверки' : 'Черновик пуст')
+        : hasErrors ? 'Исправьте ошибки в черновике' : (!nickOk || !msgOk) ? 'Заполните Nickname и описание' : '';
+      const label = $('g-btn-submit').querySelector('span');
+      if (label) label.textContent = count ? `Отправить запрос (${count})` : 'Отправить запрос';
       return nickOk && msgOk;
     };
 
     const renderGuestDraft = () => {
       const draft = Guest.Draft.get();
-      $('g-draft-count').textContent = String(draft.ops.length);
+      $('g-draft-count').textContent = String(draft.ops.filter(o => !o.reqId).length);
       const box = $('g-ops');
       if (!draft.ops.length) {
         $('g-summary').innerHTML = '';
-        box.innerHTML = `<div class="cr-card"><div class="cr-empty"><i class="fa-regular fa-pen-to-square"></i>Черновик пуст.<br/>Откройте редактор (например, «Предметы»), внесите правки и нажмите «Сохранить» — изменение появится здесь.</div></div>`;
+        const available = (Guest.accountPages?.() || []).map(k => Guest.resourceTitle(k)).filter(Boolean);
+        const hint = available.length
+          ? T('Откройте редактор ({0}), внесите правки и нажмите «Сохранить» — изменение появится здесь и сразу будет видно вам в редакторе.', [available.slice(0, 4).join(', ')])
+          : T('Откройте редактор, внесите правки и нажмите «Сохранить» — изменение появится здесь и сразу будет видно вам в редакторе.');
+        box.innerHTML = `<div class="cr-card"><div class="cr-empty"><i class="fa-regular fa-pen-to-square"></i>${esc(T('Черновик пуст.'))}<br/>${esc(hint)}</div></div>`;
         validateGuestForm();
         return;
       }
       const byKey = new Map(draft.ops.map(o => [draftKeyOf(o), o]));
       const removeBtn = (uid) => uid ? `<button type="button" class="editor-icon-btn" data-remove-op="${esc(uid)}" title="Убрать из черновика"><i class="fa-solid fa-xmark"></i></button>` : '';
+      const submittedChip = (o) => `<span class="cr-chip cr-chip--pending" title="Отправлено администратору, ждёт проверки"><i class="fa-solid fa-hourglass-half"></i>В запросе ${esc(o.reqId || '')}</span>`;
+
+      const drafts = draft.ops.filter(o => !o.reqId);
+      const submitted = draft.ops.filter(o => o.reqId);
+      const submittedHtml = submitted.length
+        ? `<div class="cr-card cr-card-pad mb-3">
+             <div class="flex items-center justify-between gap-3 flex-wrap mb-1">
+               <div class="font-semibold"><i class="fa-solid fa-hourglass-half editor-tone-warning"></i> На проверке у администратора</div>
+               <span class="cr-chip">${submitted.length} ${plural(submitted.length, 'операция', 'операции', 'операций')}</span>
+             </div>
+             <div class="text-sm cr-muted">Эти изменения уже отправлены. Локально вы видите свои значения, но в базу они попадут только после подтверждения.</div>
+           </div>
+           ${submitted.map((o) => renderSubmittedOp(o, submittedChip(o))).join('')}`
+        : '';
 
       if (G.analysis && G.analysis.operations) {
         $('g-summary').innerHTML = renderSummary(G.analysis.summary)
-          + (G.analysis.errors?.length ? `<span class="cr-chip cr-chip--danger"><i class="fa-solid fa-ban"></i>Ошибок: ${G.analysis.errors.length}</span>` : '');
+          + (G.analysis.errors?.length ? `<span class="cr-chip cr-chip--danger"><i class="fa-solid fa-ban"></i>Ошибок: ${G.analysis.errors.length}</span>` : '')
+          + (submitted.length ? `<span class="cr-chip cr-chip--pending"><i class="fa-solid fa-hourglass-half"></i>На проверке: ${submitted.length}</span>` : '');
         box.innerHTML = G.analysis.operations.map((op) => {
           const d = byKey.get(`${op.type}:${op.resource}:${op.type === 'create' ? op.tempId : op.id}`);
           const notes = op.noop ? [{ severity: 'info', text: 'Значения совпадают с текущими в БД — эта операция не попадёт в запрос.' }] : [];
           return renderOp(op, { actionsHtml: removeBtn(d?.uid), extraNotes: notes });
-        }).join('');
+        }).join('') + submittedHtml;
       } else {
-        $('g-summary').innerHTML = G.analysisError
+        $('g-summary').innerHTML = (G.analysisError
           ? `<span class="cr-chip cr-chip--danger"><i class="fa-solid fa-ban"></i>${esc(G.analysisError)}</span>`
-          : '<span class="cr-chip"><i class="fa-solid fa-spinner fa-spin"></i>Анализ…</span>';
-        box.innerHTML = draft.ops.map((o) => {
+          : (drafts.length ? '<span class="cr-chip"><i class="fa-solid fa-spinner fa-spin"></i>Анализ…</span>' : ''))
+          + (submitted.length ? `<span class="cr-chip cr-chip--pending"><i class="fa-solid fa-hourglass-half"></i>На проверке: ${submitted.length}</span>` : '');
+        box.innerHTML = drafts.map((o) => {
           const t = TYPE[o.type];
           const fields = Object.keys(o.data || {});
           return `<article class="cr-op cr-op--${esc(o.type)}"><div class="cr-op-head">
@@ -548,9 +633,25 @@
             <div class="min-w-0 flex-1"><div class="cr-op-title">${esc(t.label)}: ${esc(Guest.resourceTitle(o.resource))} ${o.type === 'create' ? '(новая запись)' : `#${esc(o.id)}`}${o.label ? ` «${esc(o.label)}»` : ''}</div>
             <div class="cr-op-meta">${fields.length ? `Поля: ${esc(fields.join(', '))}` : ''}</div></div>
             ${removeBtn(o.uid)}</div></article>`;
-        }).join('');
+        }).join('') + submittedHtml;
       }
       validateGuestForm();
+    };
+
+    /** Compact representation of an operation that is already inside a sent request. */
+    const renderSubmittedOp = (o, chipHtml = '') => {
+      const t = TYPE[o.type] || TYPE.update;
+      const fields = Object.keys(o.data || {});
+      return `<article class="cr-op cr-op--${esc(o.type)}">
+        <div class="cr-op-head">
+          <div class="cr-op-icon"><i class="fa-solid ${t.icon}"></i></div>
+          <div class="min-w-0 flex-1">
+            <div class="cr-op-title">${esc(t.label)}: ${esc(Guest.resourceTitle(o.resource))} ${o.type === 'create' ? '(новая запись)' : `#${esc(o.id)}`}${o.label ? ` «${esc(o.label)}»` : ''}</div>
+            <div class="cr-op-meta">${fields.length ? `Поля: ${esc(fields.join(', '))}` : ''}${o.submittedAt ? ` · отправлено ${esc(fmtDate(o.submittedAt))}` : ''}</div>
+          </div>
+          ${chipHtml}
+        </div>
+      </article>`;
     };
 
     let previewTimer = null;
@@ -596,7 +697,21 @@
         <div class="mt-4 cr-field-label">Ваше описание</div>
         <div class="cr-message">${esc(r.message)}</div>
         <div class="cr-summary mt-4">${renderSummary(r.analysis?.summary)}</div>
-        <div class="mt-4">${(r.analysis?.operations || []).map(op => renderOp(op)).join('')}</div>`;
+        <div class="mt-4">${(r.analysis?.operations || []).map(op => renderOp(op)).join('')}</div>
+        ${threadBlockHtml(r.messages || [], false, 'Написать администратору…')}`;
+      bindThread(box, r.id, false, () => showMineDetail(r.id));
+    };
+
+    /**
+     * Обновляет переписку открытого запроса гостя, не трогая остальную форму.
+     */
+    const refreshGuestThread = async (id) => {
+      if (!id || G.selected !== id) return;
+      const res = await api('messages', { query: { id } });
+      if (!res.ok) return;
+      const list = document.querySelector('#g-mine-detail [data-thread-list]');
+      if (list) list.innerHTML = threadListHtml(res.messages || [], false);
+      loadMine();
     };
 
     const setGuestTab = (tab) => {
@@ -608,8 +723,11 @@
     };
 
     const initGuest = async () => {
+      const account = Guest.account?.() || {};
+      const granted = Array.isArray(account.pages) ? account.pages : [];
       $('page-title').textContent = 'Мои запросы на изменение';
-      $('page-sub').textContent = 'Гостевой режим: изменения из редакторов собираются в черновик и отправляются администратору на проверку.';
+      $('page-sub').textContent = `Аккаунт: ${account.name || account.login || 'гость'} · доступно вкладок: ${granted.length}. `
+        + 'Изменения сохраняются в этом браузере и применяются к базе только после подтверждения администратором.';
       $('view-guest').classList.remove('cr-hidden');
       G.config = await Guest.loadConfig();
       const lim = G.config?.limits;
@@ -622,8 +740,10 @@
       $('g-nickname').addEventListener('input', () => { validateGuestForm(); try { localStorage.setItem(NICK_KEY, $('g-nickname').value.trim()); } catch {} });
       $('g-message').addEventListener('input', validateGuestForm);
       $('g-btn-analyze').addEventListener('click', runPreview);
-      $('g-btn-clear').addEventListener('click', () => {
-        if (!Guest.Draft.count() || !confirm('Удалить все изменения из черновика?')) return;
+      $('g-btn-clear').addEventListener('click', async () => {
+        const n = Guest.Draft.pendingCount();
+        if (!n) return toast('Неотправленных изменений нет', 'info');
+        if (!await EditorCore.Page.confirm(`Убрать ${n} неотправленных изменени(й) из черновика? Отправленные запросы останутся на проверке.`)) return;
         Guest.Draft.clear();
       });
       $('g-ops').addEventListener('click', (e) => {
@@ -633,7 +753,7 @@
       $('g-mine-list').addEventListener('click', (e) => { const b = e.target.closest('[data-id]'); if (b) showMineDetail(b.dataset.id); });
       $('g-mine-detail').addEventListener('click', async (e) => {
         const b = e.target.closest('[data-withdraw]');
-        if (!b || !confirm('Отозвать запрос? Администратор больше не увидит его в очереди.')) return;
+        if (!b || !await EditorCore.Page.confirm('Отозвать запрос? Администратор больше не увидит его в очереди.')) return;
         const res = await api('withdraw', { method: 'POST', body: { id: b.dataset.withdraw } });
         if (!res.ok) return toast(res.error || 'Ошибка', 'error');
         toast('Запрос отозван', 'success');
@@ -653,9 +773,16 @@
           validateGuestForm();
           return;
         }
-        Guest.Draft.clear();
+        // The changes stay visible locally (and marked as "in request") until the
+        // administrator decides: approve → DB matches, reject → original is shown again.
+        Guest.Draft.markSubmitted(res.request.id);
+        // The sent operations moved to the "in request" block: drop the old preview
+        // so the same operations are not rendered twice.
+        G.analysis = null;
+        G.analysisError = '';
+        renderGuestDraft();
         $('g-message').value = '';
-        $('g-submit-status').innerHTML = `<div class="cr-note cr-note--ok"><i class="fa-solid fa-circle-check"></i><div>Запрос <b>${esc(res.request.id)}</b> отправлен администратору.</div></div>`;
+        $('g-submit-status').innerHTML = `<div class="cr-note cr-note--ok"><i class="fa-solid fa-circle-check"></i><div>Запрос <b>${esc(res.request.id)}</b> отправлен администратору. Изменения остаются видимыми вам и отмечены как «на проверке».</div></div>`;
         toast('Запрос отправлен администратору', 'success');
         G.selected = res.request.id;
         setGuestTab('mine');
@@ -663,7 +790,31 @@
       });
 
       Guest.Draft.onChange(() => { renderGuestDraft(); schedulePreview(); });
-      $('btn-refresh').addEventListener('click', () => { runPreview(); loadMine(); });
+      $('btn-refresh').addEventListener('click', async () => {
+        await Guest.syncSubmitted({ silent: false });
+        renderGuestDraft();
+        runPreview();
+        loadMine();
+      });
+
+      // Keep local "in request" markers in sync with the administrator's decisions.
+      const reconcile = async () => {
+        const res = await Guest.syncSubmitted({ silent: false });
+        if (res?.resolved?.length) {
+          renderGuestDraft();
+          loadMine();
+          toast(`Статус запросов обновлён: ${res.resolved.length}`, 'info');
+        }
+      };
+      await reconcile();
+      setInterval(() => { if (document.visibilityState === 'visible') reconcile(); }, 60000);
+      // Новые ответы администратора по открытому запросу.
+      setInterval(() => {
+        if (document.visibilityState !== 'visible' || !G.selected || G.tab !== 'mine') return;
+        refreshGuestThread(G.selected);
+      }, 30000);
+      document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') reconcile(); });
+
       renderGuestDraft();
       runPreview();
       loadMine();
@@ -711,15 +862,18 @@
           </div>
         </div>
 
-        <div class="grid gap-4 mt-4" style="grid-template-columns:minmax(0,1fr) minmax(0,1fr)">
+        <div class="editor-two-col mt-4">
           <dl class="cr-kv">
             <dt>Nickname</dt><dd><b>${esc(author.nickname)}</b></dd>
+            <dt>Гостевой аккаунт</dt><dd>${author.guestName || author.guestLogin
+              ? `<b>${esc(author.guestName || author.guestLogin)}</b>${author.guestLogin ? ` <span class="cr-col">@${esc(author.guestLogin)}</span>` : ''}`
+              : '<span class="cr-muted">—</span>'}</dd>
             <dt>IP</dt><dd><span class="cr-col">${esc(author.ip || '—')}</span></dd>
             <dt>Браузер</dt><dd class="text-xs cr-muted">${esc(author.userAgent || '—')}</dd>
           </dl>
           <dl class="cr-kv">
             <dt>Операций</dt><dd>${(r.operations || []).length}</dd>
-            ${r.review ? `<dt>Решение</dt><dd>${esc(r.review.by || '')} · ${esc(fmtDate(r.review.at))}${r.review.force ? ' · <span style="color:var(--editor-warning)">принудительно</span>' : ''}</dd>` : ''}
+            ${r.review ? `<dt>Решение</dt><dd>${esc(r.review.by || '')} · ${esc(fmtDate(r.review.at))}${r.review.force ? ' · <span class="editor-tone-warning">принудительно</span>' : ''}</dd>` : ''}
             ${r.review?.idMap && Object.keys(r.review.idMap).length ? `<dt>Новые ID</dt><dd class="text-xs">${Object.entries(r.review.idMap).map(([t, id]) => `${esc(t)} → <b>#${esc(id)}</b>`).join('<br/>')}</dd>` : ''}
           </dl>
         </div>
@@ -744,7 +898,24 @@
           const extra = c && A.view === 'live' ? [{ severity: 'warning', text: 'Конфликт: ' + c.text }] : [];
           if (op.noop && pending && A.view === 'live') extra.push({ severity: 'info', text: 'Эти значения уже совпадают с текущими в БД.' });
           return renderOp(op, { extraNotes: extra });
-        }).join('') || '<div class="cr-muted">Нет данных анализа.</div>'}</div>`;
+        }).join('') || '<div class="cr-muted">Нет данных анализа.</div>'}</div>
+        ${threadBlockHtml(r.messages || [], true, 'Написать гостю…')}`;
+      bindThread(box, r.id, true, async () => {
+        await refreshAdminThread(r.id);
+        loadAdminList();
+      });
+    };
+
+    /**
+     * Обновляет только список сообщений (ввод администратора не сбрасывается).
+     */
+    const refreshAdminThread = async (id) => {
+      if (!id || A.selected !== id) return;
+      const res = await api('messages', { query: { id } });
+      if (!res.ok) return;
+      const list = document.querySelector('#a-detail [data-thread-list]');
+      if (list) list.innerHTML = threadListHtml(res.messages || [], true);
+      if ((res.messages || []).some((m) => !m.read)) loadAdminList();
     };
 
     const showAdminDetail = async (id) => {
@@ -766,8 +937,8 @@
       const r = A.detail;
       $('review-title').textContent = mode === 'approve' ? (reviewForce ? 'Применить принудительно?' : 'Принять и применить запрос?') : 'Отклонить запрос?';
       $('review-text').textContent = mode === 'approve'
-        ? `Изменения от «${r.author?.nickname || ''}» будут применены к базе данных одной транзакцией (всё или ничего). Операций: ${(r.operations || []).length}.`
-        : `Запрос от «${r.author?.nickname || ''}» будет отклонён. Гость увидит статус и ваш комментарий.`;
+        ? T('Изменения от «{0}» будут применены к базе данных одной транзакцией (всё или ничего). Операций: {1}.', [r.author?.nickname || '', (r.operations || []).length])
+        : T('Запрос от «{0}» будет отклонён. Гость увидит статус и ваш комментарий.', [r.author?.nickname || '']);
       $('review-conflicts').innerHTML = conflicts.map(c => `<div class="cr-note cr-note--warning"><i class="fa-solid fa-code-merge"></i><div>${esc(c.text)}</div></div>`).join('')
         + (reviewForce ? '<div class="cr-note cr-note--danger"><i class="fa-solid fa-triangle-exclamation"></i><div>Значения в БД изменились после отправки запроса. При принудительном применении изменения гостя перезапишут их; удалённые записи будут пропущены.</div></div>' : '');
       const btn = $('review-confirm');
@@ -787,7 +958,7 @@
         applied.forEach((a) => Sync.record(a.resource, a.type, {
           id: a.id,
           data: a.type === 'delete' ? undefined : a.data,
-          label: `Запрос ${A.detail?.id || ''}: ${a.type} ${a.resource} #${a.id}`,
+          label: T('Запрос {0}: {1} {2} #{3}', [A.detail?.id || '', TYPE[a.type]?.label || a.type, a.resource, a.id]),
         }));
         Sync.updateAllBadges?.();
       } catch (e) { console.warn('[requests] sync record failed', e); }
@@ -806,10 +977,10 @@
       if (!res.ok) {
         if (res.status === 409 && Array.isArray(res.conflicts) && reviewMode === 'approve') {
           openReview('approve', res.conflicts);
-          $('review-status').innerHTML = `<span style="color:var(--editor-warning)">${esc(res.error)}</span>`;
+          $('review-status').innerHTML = `<span class="editor-tone-warning">${esc(res.error)}</span>`;
           return;
         }
-        $('review-status').innerHTML = `<span style="color:var(--editor-danger)">${esc(res.error || 'Ошибка')}</span>`;
+        $('review-status').innerHTML = `<span class="editor-tone-danger">${esc(res.error || 'Ошибка')}</span>`;
         return;
       }
       closeReview();
@@ -817,6 +988,8 @@
       if (reviewMode === 'approve') {
         recordSync(res.applied);
         toast(`Запрос применён: ${res.applied?.length || 0} ${plural(res.applied?.length || 0, 'операция', 'операции', 'операций')}${res.skipped?.length ? `, пропущено ${res.skipped.length}` : ''}`, 'success');
+        // The database changed: the editor in the shell must not keep stale rows.
+        window.parent?.postMessage({ type: 'editor-shell:reload-editor' }, '*');
       } else {
         toast('Запрос отклонён', 'success');
       }
@@ -834,10 +1007,7 @@
       $('s-remote').checked = !!s.guest_allow_remote;
       $('s-enabled-toggle').dataset.checked = s.guest_enabled ? '1' : '0';
       $('s-remote-toggle').dataset.checked = s.guest_allow_remote ? '1' : '0';
-      $('s-password').value = '';
-      $('s-password-clear').checked = false;
-      $('s-password').disabled = false;
-      $('s-password-state').textContent = s.guest_password_set ? 'Пароль установлен.' : 'Пароль не установлен — вход без пароля.';
+      $('s-accounts').textContent = String(s.guest_accounts ?? 0);
       $('s-max-pending').value = s.guest_max_pending;
       $('s-cooldown').value = s.guest_submit_cooldown;
       $('s-max-ops').value = s.guest_max_operations;
@@ -851,6 +1021,11 @@
       $('page-sub').textContent = 'Изменения, предложенные гостевыми аккаунтами. Проверьте детали и последствия, затем примите или отклоните.';
       $('view-admin').classList.remove('cr-hidden');
       $('btn-guest-settings').classList.remove('cr-hidden');
+      $('btn-guests').classList.remove('cr-hidden');
+      $('btn-guests').addEventListener('click', () => {
+        if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'editor-shell:open-editor', key: 'guests' }, '*');
+        else location.href = 'guests-editor.html';
+      });
 
       const stats = await api('stats');
       $('a-guest-disabled').classList.toggle('cr-hidden', !stats.ok || stats.guest_enabled);
@@ -873,7 +1048,7 @@
         if (b.dataset.act === 'approve') openReview('approve', A.detail.conflicts || []);
         if (b.dataset.act === 'reject') openReview('reject');
         if (b.dataset.act === 'delete') {
-          if (!confirm(`Удалить запрос ${A.detail.id} из истории? Это не отменяет уже применённые изменения.`)) return;
+          if (!await EditorCore.Page.confirm(`Удалить запрос ${A.detail.id} из истории? Это не отменяет уже применённые изменения.`)) return;
           const res = await api('delete', { method: 'POST', body: { id: A.detail.id } });
           if (!res.ok) return toast(res.error || 'Ошибка', 'error');
           A.detail = null; A.selected = null;
@@ -885,7 +1060,11 @@
       document.querySelectorAll('[data-close-settings]').forEach(b => b.addEventListener('click', closeSettings));
       $('btn-guest-settings').addEventListener('click', openSettings);
       ['s-enabled', 's-remote'].forEach(id => $(id).addEventListener('change', () => { $(`${id}-toggle`).dataset.checked = $(id).checked ? '1' : '0'; }));
-      $('s-password-clear').addEventListener('change', () => { $('s-password').disabled = $('s-password-clear').checked; if ($('s-password-clear').checked) $('s-password').value = ''; });
+      $('s-open-guests')?.addEventListener('click', () => {
+        closeSettings();
+        if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'editor-shell:open-editor', key: 'guests' }, '*');
+        else location.href = 'guests-editor.html';
+      });
       $('s-save').addEventListener('click', async () => {
         const body = {
           guest_enabled: $('s-enabled').checked,
@@ -893,11 +1072,9 @@
           guest_max_pending: Number($('s-max-pending').value),
           guest_submit_cooldown: Number($('s-cooldown').value),
           guest_max_operations: Number($('s-max-ops').value),
-          guest_password: $('s-password').value,
-          guest_password_clear: $('s-password-clear').checked,
         };
         const res = await api('save_settings', { method: 'POST', body });
-        if (!res.ok) { $('s-status').innerHTML = `<span style="color:var(--editor-danger)">${esc(res.error)}</span>`; return; }
+        if (!res.ok) { $('s-status').innerHTML = `<span class="editor-tone-danger">${esc(res.error)}</span>`; return; }
         toast('Настройки гостевого доступа сохранены', 'success');
         closeSettings();
         $('a-guest-disabled').classList.toggle('cr-hidden', body.guest_enabled);
@@ -907,6 +1084,15 @@
 
       await loadAdminList();
       if (A.rows[0]) showAdminDetail(A.rows[0].id);
+
+      // Пока страница открыта, подтягиваем новые сообщения (гость может ответить).
+      setInterval(() => {
+        if (document.visibilityState !== 'visible' || !A.selected) return;
+        refreshAdminThread(A.selected);
+      }, 30000);
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible' && A.selected) refreshAdminThread(A.selected);
+      });
     };
 
     // ── Entry ─────────────────────────────────────────────────────────

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Боты — tw_bots_info</title>
+  <title>Боты • Editor Studio</title>
   <script src="editor-core/page-loader.js" data-mode="event"></script>
 
   <style>
@@ -54,7 +54,7 @@
             </div>
           </div>
 
-          <div class="mt-4 editor-sidebar-list editor-scroll" style="max-height: 590px" data-editor-role="list"></div>
+          <div class="mt-4 editor-sidebar-list editor-scroll" data-editor-role="list"></div>
         </div>
       </aside>
 
@@ -80,7 +80,7 @@
           </div>
 
           <div class="editor-section mt-4">
-            <div class="editor-card p-4">
+            <div class="editor-panel-card">
               <div class="flex items-center justify-between gap-3">
                 <div>
                   <div class="font-semibold">Профиль бота</div>
@@ -96,7 +96,7 @@
 
                 <div id="tab_skin" class="space-y-6 hidden">
                   <div class="grid gap-4 md:grid-cols-[220px,1fr] items-start">
-                    <div class="editor-card p-4 flex flex-col items-center gap-3">
+                    <div class="editor-panel-card flex flex-col items-center gap-3">
                       <div class="text-xs uppercase tracking-wider editor-muted-text">Preview</div>
                       <div class="skin-preview-frame w-36 h-36 rounded-2xl flex items-center justify-center">
                         <img id="skinPreviewImg" class="w-28 h-28" alt="Skin preview" />
@@ -502,10 +502,10 @@
             })
           : '';
         const skinPreview = skinUrl
-          ? `<img class="w-9 h-9 rounded-full border border-light object-cover" src="${skinUrl}" alt="skin" loading="lazy" />`
-          : `<div class="w-9 h-9 rounded-full border border-light bg-light flex items-center justify-center text-[10px] text-slate-300">—</div>`;
+          ? `<img class="w-9 h-9 rounded-full border editor-hairline object-cover" src="${skinUrl}" alt="skin" loading="lazy" />`
+          : `<div class="w-9 h-9 rounded-full border editor-hairline editor-soft flex items-center justify-center text-[10px] editor-muted-text">—</div>`;
         return `
-          <button type="button" class="w-full text-left editor-row ${active ? 'ring-2 ring-indigo-500/40' : ''}" data-id="${row?.ID}">
+          <button type="button" class="w-full text-left editor-row ${active ? 'ring-2 editor-ring' : ''}" data-id="${row?.ID}">
             <div class="flex items-center gap-3">
               ${skinPreview}
               <div class="min-w-0">
@@ -622,7 +622,7 @@
 
     const remove = async () => {
       if (!STATE.selectedId) return;
-      if (!confirm('Удалить запись?')) return;
+      if (!await EditorCore.Page.confirm('Удалить запись?')) return;
       setStatus('Удаление…');
       try {
         await EditorCore.DBCrud.remove('bots_info', STATE.selectedId);

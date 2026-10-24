@@ -6,6 +6,7 @@
   <title>Настройки • Editor Studio</title>
   <script src="editor-core/page-loader.js" data-mode="event"></script>
   <style>
+    /* Профили подключения: чипы со статусной точкой. */
     .profiles-bar {
       display: flex;
       flex-wrap: wrap;
@@ -16,28 +17,28 @@
     .profile-chip {
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      padding: 5px 12px;
-      border-radius: 8px;
-      font-size: 13px;
+      gap: 7px;
+      padding: 5px 11px;
+      border-radius: var(--editor-radius-sm);
+      font-size: var(--editor-text-sm);
       font-weight: 500;
       cursor: pointer;
-      border: 1px solid rgba(255, 255, 255, .08);
-      background: rgba(255, 255, 255, .03);
-      color: #94a3b8;
-      transition: background .15s, border-color .15s, color .15s;
+      border: 1px solid var(--editor-soft-border);
+      background: var(--editor-soft-bg);
+      color: var(--editor-text-muted);
+      transition: background .14s, border-color .14s, color .14s;
       user-select: none;
     }
 
     .profile-chip:hover {
-      background: rgba(255, 255, 255, .07);
-      color: #cbd5e1;
+      background: var(--editor-soft-bg-strong);
+      color: var(--editor-text);
     }
 
     .profile-chip.active {
-      background: rgba(99, 102, 241, .15);
-      border-color: rgba(99, 102, 241, .4);
-      color: #a5b4fc;
+      background: color-mix(in srgb, var(--editor-primary) 12%, transparent);
+      border-color: color-mix(in srgb, var(--editor-primary) 42%, transparent);
+      color: color-mix(in srgb, var(--editor-primary) 80%, var(--editor-text));
     }
 
     .profile-chip .dot {
@@ -47,176 +48,194 @@
       flex-shrink: 0;
     }
 
-    .dot-idle {
-      background: #475569;
-    }
+    .dot-idle { background: var(--editor-text-muted); opacity: .55; }
+    .dot-ok { background: var(--editor-success); }
+    .dot-err { background: var(--editor-danger); }
+    .dot-wait { background: var(--editor-warning); animation: dot-pulse .7s infinite alternate; }
 
-    .dot-ok {
-      background: #34d399;
-      box-shadow: 0 0 5px rgba(52, 211, 153, .5);
-    }
-
-    .dot-err {
-      background: #f87171;
-      box-shadow: 0 0 5px rgba(248, 113, 113, .5);
-    }
-
-    .dot-wait {
-      background: #facc15;
-      box-shadow: 0 0 5px rgba(250, 204, 21, .5);
-      animation: dot-pulse .7s infinite alternate;
-    }
-
-    @keyframes dot-pulse {
-      from { opacity: .4 }
-      to { opacity: 1 }
-    }
+    @keyframes dot-pulse { from { opacity: .35 } to { opacity: 1 } }
 
     .profile-chip .x-btn {
       display: none;
       font-size: 10px;
-      color: #ef4444;
+      color: var(--editor-danger);
       margin-left: 2px;
       padding: 0 2px;
       cursor: pointer;
-      opacity: .7;
+      opacity: .75;
     }
 
-    .profile-chip .x-btn:hover {
-      opacity: 1;
-    }
-
+    .profile-chip .x-btn:hover { opacity: 1; }
     .profile-chip:hover .x-btn,
-    .profile-chip.active .x-btn {
-      display: inline;
-    }
+    .profile-chip.active .x-btn { display: inline; }
 
     .profile-add {
       display: inline-flex;
       align-items: center;
-      gap: 4px;
+      gap: 5px;
       padding: 5px 10px;
-      border-radius: 8px;
-      font-size: 13px;
+      border-radius: var(--editor-radius-sm);
+      font-size: var(--editor-text-sm);
       cursor: pointer;
-      border: 1px dashed rgba(255, 255, 255, .1);
+      border: 1px dashed var(--editor-soft-border-strong);
       background: transparent;
-      color: #64748b;
-      transition: all .15s;
+      color: var(--editor-text-muted);
+      transition: background .14s, border-color .14s, color .14s;
     }
 
     .profile-add:hover {
-      border-color: rgba(99, 102, 241, .35);
-      color: #a5b4fc;
-      background: rgba(99, 102, 241, .05);
+      border-color: color-mix(in srgb, var(--editor-primary) 45%, transparent);
+      color: var(--editor-primary);
+      background: color-mix(in srgb, var(--editor-primary) 6%, transparent);
     }
 
     .modal-bg {
       position: fixed;
       inset: 0;
-      background: rgba(0, 0, 0, .55);
+      background: color-mix(in srgb, #05080f 70%, transparent);
       backdrop-filter: blur(3px);
       display: flex;
       align-items: center;
       justify-content: center;
       z-index: 9999;
+      padding: 16px;
     }
 
     .modal-box {
-      background: #1e293b;
-      border: 1px solid rgba(255, 255, 255, .1);
-      border-radius: 14px;
-      padding: 22px;
-      width: 340px;
-      box-shadow: 0 16px 48px rgba(0, 0, 0, .4);
+      background: var(--editor-elevated-bg);
+      border: 1px solid var(--editor-line-strong);
+      border-radius: var(--editor-radius-lg);
+      padding: 20px;
+      width: min(360px, 100%);
+      box-shadow: var(--editor-shadow-lg);
     }
 
     .modal-box h3 {
-      margin: 0 0 14px;
-      font-size: 15px;
-      font-weight: 600;
-      color: #e2e8f0;
+      margin: 0 0 12px;
+      font-size: var(--editor-text-lg);
+      font-weight: 650;
+      color: var(--editor-text);
     }
 
     .modal-box .btns {
       display: flex;
       justify-content: flex-end;
       gap: 8px;
-      margin-top: 14px;
+      margin-top: 16px;
     }
   </style>
 </head>
 
 <body class="editor-theme" data-editor="settings">
-  <div class="max-w-5xl mx-auto px-5 py-6">
+  <div class="editor-page">
 
-    <div class="flex items-start justify-between gap-4">
-      <div>
-        <div class="flex items-center gap-3">
-          <i class="fa-solid fa-gear text-accent text-xl"></i>
-          <h1 class="text-2xl font-bold">Настройки</h1>
+    <div class="editor-page-header">
+      <div class="editor-page-title">
+        <i class="fa-solid fa-gear"></i>
+        <div>
+          <h1>Настройки</h1>
+          <div class="editor-page-sub">Подключение к базе данных и источники данных для редакторов.</div>
         </div>
-        <p class="editor-muted-text mt-1">Подключение к базе данных и источники данных для редакторов.</p>
       </div>
-      <button id="btn-test" class="editor-btn editor-btn-secondary">
-        <i class="fa-solid fa-plug-circle-check"></i>
-        <span>Проверить</span>
-      </button>
+      <div class="editor-page-actions">
+        <div data-i18n-switcher-host></div>
+        <button id="btn-test" class="editor-btn editor-btn-secondary">
+          <i class="fa-solid fa-plug-circle-check"></i>
+          <span>Проверить</span>
+        </button>
+      </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mt-6">
+    <div class="editor-page-body editor-two-col">
 
       <!-- ─── Database ─── -->
-      <section class="editor-card border rounded-2xl p-5">
+      <section class="editor-panel-card">
         <h2 class="text-lg font-semibold mb-4">База данных</h2>
 
-        <div class="text-sm font-medium text-slate-200 mb-2">Профиль подключения</div>
+        <div class="editor-label mb-2">Профиль подключения</div>
         <div id="profiles-bar" class="profiles-bar mb-5"></div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <div class="text-sm font-medium text-slate-200 mb-1">Host</div>
+            <div class="editor-label mb-1">Хост</div>
             <input id="f-host" type="text" class="w-full editor-input form-input" placeholder="127.0.0.1" />
           </div>
           <div>
-            <div class="text-sm font-medium text-slate-200 mb-1">Port</div>
+            <div class="editor-label mb-1">Порт</div>
             <input id="f-port" type="number" class="w-full editor-input form-input" placeholder="3306" />
           </div>
           <div>
-            <div class="text-sm font-medium text-slate-200 mb-1">Database</div>
+            <div class="editor-label mb-1">База данных</div>
             <input id="f-db" type="text" class="w-full editor-input form-input" placeholder="mmorpg" />
           </div>
           <div>
-            <div class="text-sm font-medium text-slate-200 mb-1">User</div>
+            <div class="editor-label mb-1">Пользователь</div>
             <input id="f-user" type="text" class="w-full editor-input form-input" placeholder="root" />
           </div>
           <div class="md:col-span-2">
-            <div class="text-sm font-medium text-slate-200 mb-1">Password</div>
+            <div class="editor-label mb-1">Пароль</div>
             <input id="f-pass" type="password" class="w-full editor-input form-input" placeholder="••••••" />
             <label class="flex items-center gap-2 mt-1.5 cursor-pointer select-none">
-              <input id="f-nopass" type="checkbox" class="rounded border-slate-600 bg-slate-800 text-indigo-500 h-4 w-4" />
-              <span class="text-xs text-slate-400">Без пароля</span>
+              <input id="f-nopass" type="checkbox" class="rounded editor-hairline-strong editor-soft-strong editor-primary-text h-4 w-4" />
+              <span class="text-xs editor-muted-text">Без пароля</span>
             </label>
           </div>
           <div class="md:col-span-2">
-            <div class="text-sm font-medium text-slate-200 mb-1">Skins API</div>
+            <div class="editor-label mb-1">API скинов</div>
             <input id="f-skins" type="url" class="w-full editor-input form-input" placeholder="https://skins.example.com/api" />
             <div class="flex flex-wrap gap-2 mt-3">
               <button id="btn-test-skins" class="editor-btn editor-btn-secondary">
                 <i class="fa-solid fa-plug-circle-check"></i>
-                <span>Проверить Skins API</span>
+                <span>Проверить API скинов</span>
               </button>
             </div>
             <div id="skins-status" class="mt-2 text-xs"></div>
           </div>
           <div class="md:col-span-2 editor-section">
-            <div class="text-sm font-medium text-slate-200 mb-1">Network Access</div>
+            <div class="editor-label mb-1">Карты игрового сервера</div>
+            <div class="editor-muted-text text-xs mb-3">
+              Карты (.map) и их текстуры редактор берёт с игрового сервера: через мост map-api или из каталогов на этом компьютере.
+              Каталог веб-редактора для карт больше не используется.
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div class="md:col-span-2">
+                <div class="editor-label mb-1">Адрес map-api</div>
+                <input id="f-map-api" type="url" class="w-full editor-input form-input" placeholder="https://game.example.com/map-api/" />
+                <div class="editor-muted-text text-xs mt-1">Пусто — карты ищутся в каталогах ниже.</div>
+              </div>
+              <div class="md:col-span-2">
+                <div class="editor-label mb-1">Токен map-api</div>
+                <input id="f-map-token" type="password" class="w-full editor-input form-input" placeholder="••••••" autocomplete="off" />
+                <label class="flex items-center gap-2 mt-1.5 cursor-pointer select-none">
+                  <input id="f-map-token-clear" type="checkbox" class="rounded editor-hairline-strong editor-soft-strong editor-primary-text h-4 w-4" />
+                  <span class="text-xs editor-muted-text">Забыть сохранённый токен</span>
+                </label>
+              </div>
+              <div>
+                <div class="editor-label mb-1">Каталог карт</div>
+                <input id="f-maps-dir" type="text" class="w-full editor-input form-input" placeholder="/srv/teeworlds/maps" />
+              </div>
+              <div>
+                <div class="editor-label mb-1">Каталог текстур карт</div>
+                <input id="f-mapres-dir" type="text" class="w-full editor-input form-input" placeholder="/srv/teeworlds/data/mapres" />
+              </div>
+            </div>
+            <div class="flex flex-wrap gap-2 mt-3">
+              <button id="btn-test-map-api" class="editor-btn editor-btn-secondary">
+                <i class="fa-solid fa-plug-circle-check"></i>
+                <span>Проверить map-api</span>
+              </button>
+            </div>
+            <div id="map-api-status" class="mt-2 text-xs"></div>
+          </div>
+          <div class="md:col-span-2 editor-section">
+            <div class="editor-label mb-1">Сетевой доступ</div>
             <label id="remote-toggle" class="editor-toggle mb-2" data-checked="0">
               <input id="f-remote" type="checkbox" />
               <span class="editor-toggle-track"><span class="editor-toggle-knob"></span></span>
-              <span class="text-sm">Allow remote API access</span>
+              <span class="text-sm">Разрешить доступ к API извне</span>
             </label>
-            <div class="editor-muted-text text-xs mb-2">Only allowlisted IP/CIDR will have access.</div>
+            <div class="editor-muted-text text-xs mb-2">Доступ получат только адреса и подсети из списка (по одному в строке).</div>
             <textarea id="f-ips" class="w-full editor-input form-textarea" placeholder="192.168.1.0/24&#10;10.10.0.5"></textarea>
           </div>
         </div>
@@ -232,9 +251,9 @@
       </section>
 
       <!-- ─── Sources ─── -->
-      <section class="editor-card border rounded-2xl p-5">
+      <section class="editor-panel-card">
         <h2 class="text-lg font-semibold">Источники списков</h2>
-        <p class="editor-muted-text text-sm mt-1">Списки для компонента <b>DB Select</b>.</p>
+        <p class="editor-muted-text text-sm mt-1">Справочники, из которых редакторы берут выпадающие списки. Нажмите, чтобы посмотреть содержимое.</p>
 
         <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
           <button class="editor-btn editor-btn-secondary" data-source="quests"><i class="fa-solid fa-scroll"></i><span>Квесты</span></button>
@@ -245,15 +264,15 @@
         </div>
 
         <div class="mt-4 flex items-center gap-2">
-          <i class="fa-solid fa-magnifying-glass text-slate-300"></i>
+          <i class="fa-solid fa-magnifying-glass editor-muted-text"></i>
           <input id="search" type="search" class="w-full editor-input form-input" placeholder="Поиск…" />
         </div>
 
-        <div id="list" class="mt-4 overflow-auto border border-light rounded-xl" style="max-height:360px"></div>
+        <div id="list" class="mt-4 editor-list-scroll editor-list-scroll--short"></div>
       </section>
 
       <!-- ─── Theme ─── -->
-      <section class="editor-card border rounded-2xl p-5">
+      <section class="editor-panel-card">
         <h2 class="text-lg font-semibold">Внешний вид</h2>
         <p class="editor-muted-text text-sm mt-1">Тема оформления для всех редакторов.</p>
         <div class="mt-4">
@@ -266,7 +285,7 @@
       </section>
 
       <!-- ─── Sync ─── -->
-      <section class="editor-card border rounded-2xl p-5 lg:col-span-2">
+      <section class="editor-panel-card editor-span-all">
         <div class="flex items-start justify-between gap-4">
           <div>
             <h2 class="text-lg font-semibold flex items-center gap-2">
@@ -300,7 +319,7 @@
                 «Синхро → цель» — записи редакторов (CRUD), «цель → текущая» — обратная загрузка.
               </p>
             </div>
-            <input id="sync-map-search" type="search" class="editor-input form-input" placeholder="Поиск таблицы или редактора…" style="max-width:260px" />
+            <input id="sync-map-search" type="search" class="editor-input form-input" placeholder="Поиск таблицы или редактора…" data-width="sm" />
           </div>
           <div id="sync-map-summary" class="mt-3 text-xs editor-muted-text"></div>
           <div id="sync-map" class="editor-sync-map mt-2">
@@ -308,10 +327,10 @@
           </div>
         </div>
 
-        <div class="mt-4 p-4 rounded-xl" style="background: rgba(99, 102, 241, .05); border: 1px solid rgba(99, 102, 241, .15);">
+        <div class="mt-4 p-4 rounded-xl" style="background: color-mix(in srgb, var(--editor-primary) 5%, transparent); border: 1px solid color-mix(in srgb, var(--editor-primary) 16%, transparent);">
           <div class="flex items-start gap-2 text-sm">
-            <i class="fa-solid fa-circle-info text-indigo-400 mt-0.5"></i>
-            <div class="text-slate-300">
+            <i class="fa-solid fa-circle-info editor-primary-text mt-0.5"></i>
+            <div class="editor-muted-text">
               <strong>Как это работает:</strong> Все изменения в редакторах (создание, обновление, удаление) автоматически записываются в историю.
               Кнопка <span class="text-accent font-medium">«Синхро»</span> в каждом редакторе позволяет проверить совместимость структур БД
               и применить накопленные изменения в целевую базу данных. Перед применением выполняется полная валидация схемы и данных.
@@ -339,30 +358,30 @@
         </div>
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="editor-label">Host</label>
+            <label class="editor-label">Хост</label>
             <input id="sync-f-host" type="text" class="w-full editor-input form-input" placeholder="127.0.0.1" />
           </div>
           <div>
-            <label class="editor-label">Port</label>
+            <label class="editor-label">Порт</label>
             <input id="sync-f-port" type="number" class="w-full editor-input form-input" placeholder="3306" />
           </div>
         </div>
         <div>
-          <label class="editor-label">Database</label>
+          <label class="editor-label">База данных</label>
           <input id="sync-f-db" type="text" class="w-full editor-input form-input" placeholder="mmorpg_prod" />
         </div>
         <div>
-          <label class="editor-label">User</label>
+          <label class="editor-label">Пользователь</label>
           <input id="sync-f-user" type="text" class="w-full editor-input form-input" placeholder="root" />
         </div>
         <div>
-          <label class="editor-label">Password</label>
+          <label class="editor-label">Пароль</label>
           <input id="sync-f-pass" type="password" class="w-full editor-input form-input" placeholder="••••••" />
           <div class="text-xs editor-muted-text mt-1">Оставьте пустым, чтобы не изменять сохранённый пароль.</div>
         </div>
         <label class="flex items-center gap-2 cursor-pointer select-none">
-          <input id="sync-f-set-target" type="checkbox" class="rounded border-slate-600 bg-slate-800 text-indigo-500 h-4 w-4" checked />
-          <span class="text-sm text-slate-300">Сделать целевым подключением</span>
+          <input id="sync-f-set-target" type="checkbox" class="rounded editor-hairline-strong editor-soft-strong editor-primary-text h-4 w-4" checked />
+          <span class="text-sm editor-muted-text">Сделать целевым подключением</span>
         </label>
       </div>
       <div id="sync-modal-status" class="mt-3 text-sm"></div>
@@ -387,13 +406,16 @@
     const F = {
       host: $('f-host'), port: $('f-port'), db: $('f-db'),
       user: $('f-user'), pass: $('f-pass'), nopass: $('f-nopass'),
-      skins: $('f-skins'), remote: $('f-remote'), ips: $('f-ips')
+      skins: $('f-skins'), remote: $('f-remote'), ips: $('f-ips'),
+      mapApi: $('f-map-api'), mapToken: $('f-map-token'), mapTokenClear: $('f-map-token-clear'),
+      mapsDir: $('f-maps-dir'), mapresDir: $('f-mapres-dir')
     };
 
     const UI = {
       profilesBar: $('profiles-bar'),
       status: $('status'),
       skinsStatus: $('skins-status'),
+      mapApiStatus: $('map-api-status'),
       search: $('search'),
       list: $('list'),
       themeSelect: $('theme-select'),
@@ -413,6 +435,7 @@
       host: '', port: 3306, db: '', user: '', pass: '', nopass: false,
       hasServerPassword: false,  // tracks if server has a password stored
       skins: '', remote: false, ips: [],
+      mapApi: '', mapsDir: '', mapresDir: '', mapTokenSet: false,
       status: 'idle'   // idle | wait | ok | err
     });
 
@@ -458,9 +481,21 @@
       pass: F.nopass.checked ? '' : F.pass.value,
       nopass: F.nopass.checked,
       skins: F.skins.value.trim(),
+      mapApi: F.mapApi.value.trim(),
+      mapToken: F.mapToken.value,
+      mapTokenClear: F.mapTokenClear.checked,
+      mapsDir: F.mapsDir.value.trim(),
+      mapresDir: F.mapresDir.value.trim(),
       remote: F.remote.checked,
       ips: F.ips.value.split(/\r?\n/).map(s => s.trim()).filter(Boolean)
     });
+
+    // Введённый токен map-api живёт только до сохранения — в localStorage его не пишем.
+    let mapTokenDraft = '';
+
+    // Снимок формы: по нему видно, есть ли несохранённые правки при уходе.
+    let formBaseline = '';
+    const formSnapshot = () => JSON.stringify(formRead());
 
     const formWrite = p => {
       F.host.value = p.host || '';
@@ -479,9 +514,18 @@
       F.nopass.checked = !!p.nopass;
       F.pass.disabled = !!p.nopass;
       F.skins.value = p.skins || '';
+      F.mapApi.value = p.mapApi || '';
+      F.mapsDir.value = p.mapsDir || '';
+      F.mapresDir.value = p.mapresDir || '';
+      // Токен map-api не хранится в браузере: показываем только признак «сохранён».
+      F.mapToken.value = '';
+      F.mapTokenClear.checked = false;
+      F.mapToken.placeholder = p.mapTokenSet ? '•••••• (сохранён на сервере)' : '••••••';
       F.remote.checked = !!p.remote;
       UI.remoteToggle.dataset.checked = F.remote.checked ? '1' : '0';
       F.ips.value = (p.ips || []).join('\n');
+      // Форма показывает сохранённое состояние — значит, правок нет.
+      formBaseline = formSnapshot();
     };
 
     /** Capture current form into profile object. Password only if typed or nopass. */
@@ -501,6 +545,11 @@
       }
       // else: keep existing p.pass and p.hasServerPassword
       p.skins = f.skins;
+      p.mapApi = f.mapApi;
+      p.mapsDir = f.mapsDir;
+      p.mapresDir = f.mapresDir;
+      // Введённый токен запоминаем отдельно: уйдёт на сервер, в localStorage не попадёт.
+      if (f.mapToken) mapTokenDraft = f.mapToken;
       p.remote = f.remote;
       p.ips = f.ips;
     };
@@ -508,15 +557,35 @@
     /* ═══════════════════════════════════════════
        Server communication
        ═══════════════════════════════════════════ */
+    /**
+     * Признак «токен сохранён на сервере» меняем только после успешного ответа.
+     * Введённое значение после этого забываем — в браузере оно не хранится.
+     */
+    const applyMapTokenState = p => {
+      if (F.mapTokenClear.checked) p.mapTokenSet = false;
+      else if (mapTokenDraft) p.mapTokenSet = true;
+      mapTokenDraft = '';
+    };
+
     const pushToServer = async p => {
       const payload = {
         host: p.host, port: p.port,
         database: p.db, user: p.user,
         skins_api: p.skins,
+        map_api: p.mapApi,
+        maps_dir: p.mapsDir,
+        mapres_dir: p.mapresDir,
         allow_remote_editor: p.remote,
         allowed_editor_ips: p.ips
       };
       
+      // Токен map-api: пустое поле означает «оставить сохранённый».
+      if (F.mapTokenClear.checked) {
+        payload.clear_map_api_token = true;
+      } else if (mapTokenDraft) {
+        payload.map_api_token = mapTokenDraft;
+      }
+
       // Handle password carefully
       if (p.nopass) {
         // User explicitly wants no password — clear it on server
@@ -608,25 +677,27 @@
       }
     };
 
-    const createProfile = () => {
+    const createProfile = async () => {
       formCapture(active());
       const p = blankProfile(`Подключение ${profiles.length + 1}`);
       profiles.push(p);
       activeId = p.id;
       save();
+      await syncMapSettings(p);
+
       formWrite(p);
       render();
       toast('Профиль создан', 'success');
       setStatus(`Новый профиль «${p.name}»`, 'ok');
     };
 
-    const removeProfile = id => {
+    const removeProfile = async (id) => {
       if (profiles.length <= 1) {
         toast('Нельзя удалить единственный профиль', 'error');
         return;
       }
       const p = profiles.find(pp => pp.id === id);
-      if (!p || !confirm(`Удалить «${p.name}»?`)) return;
+      if (!p || !await EditorCore.Page.confirm(`Удалить «${p.name}»?`)) return;
 
       profiles = profiles.filter(pp => pp.id !== id);
 
@@ -650,7 +721,7 @@
           <input id="m-name" type="text" class="w-full editor-input form-input" maxlength="40" />
           <div class="btns">
             <button id="m-no" class="editor-btn editor-btn-secondary"><span>Отмена</span></button>
-            <button id="m-ok" class="editor-btn editor-btn-primary"><span>OK</span></button>
+            <button id="m-ok" class="editor-btn editor-btn-primary"><span>Готово</span></button>
           </div>
         </div>`;
       document.body.appendChild(bg);
@@ -691,7 +762,7 @@
           <span class="x-btn" data-del="${p.id}"><i class="fa-solid fa-xmark"></i></span>
         </div>`;
       }
-      h += `<button class="profile-add" id="p-add"><i class="fa-solid fa-plus"></i></button>`;
+      h += `<button class="profile-add" id="p-add" title="Добавить профиль подключения" aria-label="Добавить профиль подключения"><i class="fa-solid fa-plus"></i></button>`;
       UI.profilesBar.innerHTML = h;
 
       // bind
@@ -720,14 +791,20 @@
     /* ═══════════════════════════════════════════
        Helpers
        ═══════════════════════════════════════════ */
-    const esc = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
-    const toast = (msg, type) => EditorCore.UI.toast(msg, type);
+    // Общие помощники страниц (editor-core/page-kit.js).
+    const esc = EditorCore.Page.esc;
+    const toast = (msg, type) => EditorCore.Page.toast(msg, type);
+
+    EditorCore.Page.guardUnsaved(() => formBaseline && formSnapshot() !== formBaseline);
 
     const setStatus = (message, tone = 'muted') =>
       EditorCore.utils.setStatus(UI.status, message, tone, { className: 'mt-4' });
 
     const setSkinsStatus = (message, tone = 'muted') =>
       EditorCore.utils.setStatus(UI.skinsStatus, message, tone, { className: 'mt-2 editor-status--small' });
+
+    const setMapApiStatus = (message, tone = 'muted') =>
+      EditorCore.utils.setStatus(UI.mapApiStatus, message, tone, { className: 'mt-2 editor-status--small' });
 
     /* ═══════════════════════════════════════════
        Save & Test buttons
@@ -750,6 +827,8 @@
 
         toast(`Сохранено — «${p.name}»`, 'success');
         F.pass.value = '';
+        applyMapTokenState(p);
+        save();
 
         const tr = await testConn(p);
         if (tr.ok) {
@@ -787,6 +866,8 @@
           return;
         }
 
+        applyMapTokenState(p);
+
         const tr = await testConn(p);
         if (tr.ok) {
           // Connection successful — update hasServerPassword flag
@@ -813,11 +894,44 @@
       const url = F.skins.value.trim();
       const r = await EditorCore.DB.testSkins({ url });
       if (r.ok) {
-        toast('Skins API OK', 'success');
+        toast('API скинов отвечает', 'success');
         setSkinsStatus(`Доступен. Статус: ${r.status || 'OK'}`, 'ok');
       } else {
         toast(r.error || 'Skins API недоступен', 'error');
         setSkinsStatus(r.error || 'Ошибка', 'err');
+      }
+    };
+
+    /**
+     * Проверка источника карт.
+     * Есть адрес map-api — проверяем мост; адреса нет — проверяем каталоги на сервере.
+     */
+    const doTestMapApi = async () => {
+      const url = F.mapApi.value.trim();
+      const token = F.mapToken.value || mapTokenDraft;
+
+      if (!url) {
+        const r = await EditorCore.Http.json('api/map.php?action=status', { timeout: 20000 });
+        const cfg = r.ok ? (r.data || {}) : {};
+        if (!r.ok || cfg.ok === false) {
+          toast('Источник карт недоступен', 'error');
+          setMapApiStatus(r.error || cfg.error || 'Ошибка', 'err');
+          return;
+        }
+        const where = [cfg.maps_dir ? `карты: ${cfg.maps_dir}` : '', cfg.mapres_dir ? `текстуры: ${cfg.mapres_dir}` : '']
+          .filter(Boolean).join(', ');
+        toast('Каталоги карт доступны', 'success');
+        setMapApiStatus(where ? `Локальный источник. ${where}` : 'Локальный источник.', 'ok');
+        return;
+      }
+
+      const r = await EditorCore.DB.testMapApi({ url, token });
+      if (r.ok) {
+        toast('map-api отвечает', 'success');
+        setMapApiStatus(`Мост доступен. Источник: ${r.source || 'не указан'}`, 'ok');
+      } else {
+        toast(r.error || 'map-api недоступен', 'error');
+        setMapApiStatus(r.error || 'Ошибка', 'err');
       }
     };
 
@@ -828,7 +942,7 @@
     let listItems = [], listOffset = 0, listTotal = null, listMore = false;
 
     const renderList = items => {
-      const info = `<div class="px-3 py-2 text-xs editor-muted-text border-b border-light flex items-center justify-between">
+      const info = `<div class="px-3 py-2 text-xs editor-muted-text border-b editor-hairline flex items-center justify-between">
         <span>Показано: <b>${items.length}</b>${listTotal != null ? ` из <b>${listTotal}</b>` : ''}</span>
         ${listMore ? '<button id="load-more" class="editor-btn editor-btn-secondary" style="padding:5px 10px">Ещё</button>' : ''}
       </div>`;
@@ -839,20 +953,22 @@
       }
 
       const rows = items.map(i =>
-        `<tr class="border-b border-light">
-          <td class="px-3 py-2 font-mono text-slate-200">${i.value}</td>
-          <td class="px-3 py-2 text-slate-100">${i.label}</td>
+        `<tr class="border-b editor-hairline">
+          <td class="px-3 py-2 font-mono editor-text">${esc(i.value)}</td>
+          <td class="px-3 py-2 editor-text">${esc(i.label)}</td>
         </tr>`
       ).join('');
 
       UI.list.innerHTML = info + `
-        <table class="w-full text-sm">
-          <thead><tr class="bg-light border-b border-light">
-            <th class="text-left px-3 py-2 text-slate-200">ID</th>
-            <th class="text-left px-3 py-2 text-slate-200">Название</th>
-          </tr></thead>
-          <tbody>${rows}</tbody>
-        </table>`;
+        <div class="editor-table-wrap">
+          <table class="editor-table">
+            <thead><tr>
+              <th>ID</th>
+              <th>Название</th>
+            </tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>`;
 
       $('load-more')?.addEventListener('click', () => loadSource(false));
     };
@@ -870,6 +986,22 @@
       if (reset && r.total != null) listTotal = r.total;
       listMore = !!r.has_more;
       renderList(listItems);
+    };
+
+    /**
+     * Настройки карт хранятся на сервере, а не в профиле браузера.
+     * Подтягиваем их при открытии страницы, чтобы «Сохранить» не затёрло
+     * рабочий мост пустыми полями.
+     */
+    const syncMapSettings = async p => {
+      const r = await EditorCore.DB.getConfig();
+      if (!r.ok || !r.config) return;
+      const c = r.config;
+      p.mapApi = p.mapApi || c.map_api || '';
+      p.mapsDir = p.mapsDir || c.maps_dir || '';
+      p.mapresDir = p.mapresDir || c.mapres_dir || '';
+      if (typeof c.map_api_token_set === 'boolean') p.mapTokenSet = c.map_api_token_set;
+      save();
     };
 
     /* ═══════════════════════════════════════════
@@ -896,6 +1028,9 @@
           save();
         }
       }
+
+      // Профиль мог быть сохранён до появления настроек карт — подтягиваем их.
+      await syncMapSettings(p);
 
       formWrite(p);
       render();
@@ -931,6 +1066,7 @@
     $('btn-save').addEventListener('click', doSave);
     $('btn-test').addEventListener('click', doTest);
     $('btn-test-skins').addEventListener('click', doTestSkins);
+    $('btn-test-map-api').addEventListener('click', doTestMapApi);
 
     // No-password toggle
     F.nopass.addEventListener('change', () => {
@@ -1062,7 +1198,7 @@
           btn.addEventListener('click', async () => {
             const id = btn.getAttribute('data-sync-del');
             const profile = profiles.find(p => p.id === id);
-            if (!profile || !confirm(`Удалить профиль «${profile.name}»?`)) return;
+            if (!profile || !await EditorCore.Page.confirm(`Удалить профиль «${profile.name}»?`)) return;
             try {
               await EditorCore.Sync.saveTarget({ profile_id: id, remove: true });
               toast('Профиль удалён', 'success');
@@ -1113,7 +1249,7 @@
       const setAsTarget = $('sync-f-set-target').checked;
 
       if (!host || !db || !user) {
-        setSyncModalStatus('Заполните Host, Database и User', 'err');
+        setSyncModalStatus('Заполните хост, базу данных и пользователя', 'err');
         return;
       }
 

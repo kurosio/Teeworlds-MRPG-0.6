@@ -1,26 +1,40 @@
 (() => {
   // ─────────────────────────────────────────────────────────────────────────
-  // Guest mode for Editor Studio.
+  // Guest accounts for Editor Studio (client side).
   //
-  // A guest works in the same editors as an administrator, but every
-  // create/update/delete is captured into a local DRAFT (localStorage) instead
-  // of being sent to the database. Reads are overlaid with the draft so the
-  // guest sees its own changes. The draft is then sent as a change request
-  // (nickname + description) that an administrator reviews and applies.
+  // Guests are personal accounts created by the administrator (see
+  // api/guests.php). Each account has its own password and its own set of
+  // allowed editor tabs. A guest works in the same editors as an administrator,
+  // but every create/update/delete is captured into a LOCAL draft instead of
+  // being sent to the database.
   //
-  // NOTE: this file is only UX. Security is enforced on the server:
-  //   api/db-crud.php       — guest: read-only list/get
-  //   api/change-requests.php — guest: preview/submit/mine/get/withdraw
-  //   every other endpoint  — admin only
+  // Two kinds of draft operations are kept locally:
+  //   * draft       (no reqId) — prepared, not sent yet;
+  //   * submitted   (reqId)    — sent as a change request and waiting for review.
+  // Both are overlaid on top of the DB data, so a record edited by the guest is
+  // never shown in its original form: the guest sees its own values, marked as
+  // "draft" or "in request CR-…". When the administrator approves or rejects the
+  // request, the submitted operations are reconciled away (the DB already has
+  // them / they never happened).
+  //
+  // NOTE: this file is UX only. Security is enforced on the server:
+  //   api/db-crud.php          — guest: read-only, only resources of allowed tabs
+  //   api/change-requests.php  — guest: preview/submit/mine/get/withdraw only
+  //   api/guests.php           — guest accounts management (admin only)
+  //   every other endpoint     — admin only
   // ─────────────────────────────────────────────────────────────────────────
   if (window.EditorCore?.Guest) return;
 
-  const DRAFT_KEY = 'editorStudio.guestDraft.v1';
+  const DRAFT_KEY_PREFIX = 'editorStudio.guestDraft.v2';
+  const LEGACY_DRAFT_KEY = 'editorStudio.guestDraft.v1';
   const ROLE_CACHE_KEY = 'editorStudio.role';
+  const ACCOUNT_CACHE_KEY = 'editorStudio.guestAccount';
   const GUEST_KEY = 'editorStudio.guestKey';
+  const DRAFT_SCHEMA = 2;
   const TEMP_ID_BASE = 2000000000;
   const TEMP_ID_MAX = 2000999999;
   const REQUESTS_PAGE = 'change-requests.html';
+  const SYNC_MIN_INTERVAL = 15000;
 
   const safeLocal = (() => {
     try { const k = '__es_guest__'; localStorage.setItem(k, '1'); localStorage.removeItem(k); return localStorage; } catch { return null; }
@@ -34,14 +48,16 @@
   let status = null;
   let configPromise = null;
   let config = null;
+  let syncPromise = null;
+  let lastSyncAt = 0;
+  let reconcileTimer = null;
 
-  // ── Role ────────────────────────────────────────────────────────────────
+  // ── Role / account ──────────────────────────────────────────────────────
   const fetchStatus = async () => {
     try {
-      const res = await fetch('api/auth.php?action=status', { credentials: 'same-origin', cache: 'no-store' });
-      const json = await res.json().catch(() => null);
-      if (!json?.ok) return { authorized: false, role: null };
-      return json;
+      const res = await window.EditorCore.Http.json('api/auth.php?action=status');
+      if (!res.ok) return { authorized: false, role: null };
+      return res.data || { authorized: false, role: null };
     } catch {
       return { authorized: false, role: null };
     }
@@ -51,7 +67,23 @@
     if (!statusPromise) {
       statusPromise = fetchStatus().then((s) => {
         status = s;
-        try { safeSession?.setItem(ROLE_CACHE_KEY, s?.role || ''); } catch {}
+        try {
+          safeSession?.setItem(ROLE_CACHE_KEY, s?.role || '');
+          if (s?.role === 'guest' && s.guest?.id) {
+            safeSession?.setItem(ACCOUNT_CACHE_KEY, JSON.stringify({
+              id: s.guest.id,
+              login: s.guest.login || '',
+              name: s.guest.name || s.guest.login || '',
+              pages: Array.isArray(s.guest.pages) ? s.guest.pages : [],
+            }));
+          } else {
+            safeSession?.removeItem(ACCOUNT_CACHE_KEY);
+          }
+        } catch {}
+        if (s?.role === 'guest' && s.guest?.id) {
+          startAutoReconcile();
+          scheduleSubmittedSync(0);
+        }
         return s?.role || null;
       });
     }
@@ -61,47 +93,132 @@
   const refreshStatus = () => { statusPromise = null; return ready(); };
   const cachedRole = () => status?.role ?? (safeSession?.getItem(ROLE_CACHE_KEY) || null);
   const isGuest = () => cachedRole() === 'guest';
+  const isAdmin = () => cachedRole() === 'admin';
+  /** Current guest account. Falls back to the session cache while a refresh is in flight. */
+  const account = () => {
+    if (status?.role === 'guest') return status.guest || null;
+    if (cachedRole() !== 'guest') return null;
+    try {
+      const cached = JSON.parse(safeSession?.getItem(ACCOUNT_CACHE_KEY) || 'null');
+      return cached && cached.id ? cached : null;
+    } catch {
+      return null;
+    }
+  };
+  const accountId = () => String(account()?.id || '');
+  const accountPages = () => (Array.isArray(account()?.pages) ? account().pages.map(String) : []);
+  const accountLabel = () => account()?.name || account()?.login || 'Гость';
 
-  const loadConfig = async () => {
+  const loadConfig = async (force = false) => {
+    if (force) { configPromise = null; config = null; }
     if (!configPromise) {
-      configPromise = fetch('api/change-requests.php?action=config', { credentials: 'same-origin', cache: 'no-store' })
-        .then(r => r.json())
-        .then((j) => { if (j?.ok) config = j; return config; })
-        .catch(() => null);
+      configPromise = window.EditorCore.Http.json('api/change-requests.php?action=config')
+        .then((res) => { if (res.ok) config = res.data; return config; });
     }
     return configPromise;
   };
 
-  // ── Draft storage ───────────────────────────────────────────────────────
-  const emptyDraft = () => ({ v: 1, nextTemp: TEMP_ID_BASE + 1, ops: [] });
+  // ── Draft storage (per guest account) ───────────────────────────────────
+  const emptyDraft = () => ({ v: DRAFT_SCHEMA, accountId: accountId(), nextTemp: TEMP_ID_BASE + 1, ops: [] });
+  const draftKey = () => {
+    const id = accountId();
+    if (!id || !isGuest()) return '';
+    return `${DRAFT_KEY_PREFIX}:${id}`;
+  };
+
+  const normalizeOp = (o) => {
+    if (!o || typeof o !== 'object') return null;
+    if (!['create', 'update', 'delete'].includes(o.type)) return null;
+    if (typeof o.resource !== 'string' || !o.resource) return null;
+    const op = {
+      uid: typeof o.uid === 'string' && o.uid ? o.uid : uid(),
+      type: o.type,
+      resource: o.resource,
+      id: o.type === 'create' ? undefined : Number(o.id),
+      tempId: o.type === 'create' ? Number(o.tempId) : undefined,
+      data: o.data && typeof o.data === 'object' ? clone(o.data) : {},
+      label: typeof o.label === 'string' ? o.label : '',
+      ts: Number(o.ts) || Date.now(),
+      reqId: typeof o.reqId === 'string' && o.reqId ? o.reqId : null,
+      submittedAt: o.submittedAt ? String(o.submittedAt) : null,
+    };
+    if (op.type !== 'create' && (!Number.isInteger(op.id) || op.id <= 0)) return null;
+    if (op.type === 'create' && !isTempId(op.tempId)) return null;
+    return op;
+  };
 
   const readDraft = () => {
+    const key = draftKey();
+    if (!key) return emptyDraft();
     try {
-      const raw = safeLocal?.getItem(DRAFT_KEY);
-      if (!raw) return emptyDraft();
-      const d = JSON.parse(raw);
-      if (!d || !Array.isArray(d.ops)) return emptyDraft();
-      d.nextTemp = Number(d.nextTemp) || TEMP_ID_BASE + 1;
-      return d;
+      const raw = safeLocal?.getItem(key);
+      if (raw) {
+        const d = JSON.parse(raw);
+        if (!d || !Array.isArray(d.ops)) return emptyDraft();
+        return {
+          v: DRAFT_SCHEMA,
+          accountId: accountId(),
+          nextTemp: Number(d.nextTemp) || TEMP_ID_BASE + 1,
+          ops: d.ops.map(normalizeOp).filter(Boolean),
+        };
+      }
+      return migrateLegacyDraft(key);
     } catch {
       return emptyDraft();
     }
+  };
+
+  /** One-time move of the pre-account draft (v1) to the current guest account. */
+  const migrateLegacyDraft = (key) => {
+    try {
+      const raw = safeLocal?.getItem(LEGACY_DRAFT_KEY);
+      if (!raw) return emptyDraft();
+      const legacy = JSON.parse(raw);
+      if (!legacy || !Array.isArray(legacy.ops)) return emptyDraft();
+      const ops = legacy.ops.map(normalizeOp).filter(Boolean);
+      const draft = {
+        v: DRAFT_SCHEMA,
+        accountId: accountId(),
+        nextTemp: Number(legacy.nextTemp) || TEMP_ID_BASE + 1,
+        ops,
+      };
+      safeLocal?.setItem(key, JSON.stringify(draft));
+      safeLocal?.removeItem(LEGACY_DRAFT_KEY);
+      return draft;
+    } catch {
+      return emptyDraft();
+    }
+  };
+
+  const emitUpdated = () => {
+    try { window.dispatchEvent(new CustomEvent('editor-core:guest-updated', { detail: summary() })); } catch {}
+    try { window.parent?.postMessage({ type: 'editor-shell:guest-draft-changed', count: count(), pending: submittedCount() }, '*'); } catch {}
   };
 
   const notify = () => {
     const d = readDraft();
     listeners.forEach((fn) => { try { fn(d); } catch {} });
     updateBanner();
-    try { window.parent?.postMessage({ type: 'editor-shell:guest-draft-changed', count: d.ops.length }, '*'); } catch {}
+    emitUpdated();
   };
 
   const writeDraft = (d) => {
-    try { safeLocal?.setItem(DRAFT_KEY, JSON.stringify(d)); }
+    const key = draftKey();
+    if (!key) throw new Error('Гостевой аккаунт не определён — обновите страницу и войдите заново.');
+    // Silent data loss is the worst option: if the browser blocks localStorage the
+    // guest must be told instead of believing the change was stored.
+    if (!safeLocal) {
+      throw new Error('Браузер блокирует локальное хранилище (localStorage) — изменения не могут сохраниться. Разрешите хранение данных для этого сайта и обновите страницу.');
+    }
+    try { safeLocal.setItem(key, JSON.stringify(d)); }
     catch { throw new Error('Не удалось сохранить черновик (переполнено хранилище браузера).'); }
     notify();
   };
 
-  window.addEventListener('storage', (e) => { if (e.key === DRAFT_KEY) notify(); });
+  window.addEventListener('storage', (e) => {
+    const key = draftKey();
+    if (key && e.key === key) notify();
+  });
 
   const isTempId = (id) => {
     const n = Number(id);
@@ -145,27 +262,45 @@
 
   const uid = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
 
-  const findIndex = (d, pred) => d.ops.findIndex(pred);
-
   const assertGuestResource = async (resource) => {
     await loadConfig();
     if (config?.resources && !config.resources[resource]) {
-      throw new Error('Этот раздел недоступен для запросов на изменение.');
+      throw new Error('Этот раздел не включён для вашего гостевого аккаунта.');
     }
   };
 
-  const toastDraft = (text) => {
-    try { window.EditorCore?.UI?.toast?.(text, 'info'); } catch {}
+  const toastInfo = (text, tone = 'info') => {
+    try { window.EditorCore?.UI?.toast?.(text, tone); } catch {}
   };
+
+  const opRowKey = (resource, id) => `${resource}:${Number(id)}`;
+  const hasSubmitted = (d, resource, id) => d.ops.some(o => o.reqId && o.resource === resource && Number(o.id) === Number(id));
+  const submittedReqIds = (ops) => [...new Set(ops.filter(o => o.reqId).map(o => o.reqId))];
 
   const Draft = {
     get: readDraft,
     count: () => readDraft().ops.length,
-    clear() { writeDraft(emptyDraft()); },
+    pendingCount: () => readDraft().ops.filter(o => !o.reqId).length,
+    submittedCount: () => readDraft().ops.filter(o => o.reqId).length,
+    submittedRequests: () => submittedReqIds(readDraft().ops),
+
+    /** Remove not-yet-sent operations (sent ones can only be withdrawn by the admin/guest request page). */
+    clear() {
+      const d = readDraft();
+      const before = d.ops.length;
+      d.ops = d.ops.filter(o => o.reqId);
+      writeDraft(d);
+      if (before !== d.ops.length) toastInfo('Неотправленные изменения убраны из черновика');
+      return d.ops.length;
+    },
+
     removeOp(opUid) {
       const d = readDraft();
+      const op = d.ops.find(o => o.uid === opUid);
+      if (op?.reqId) throw new Error('Эта операция уже отправлена в запросе и ждёт проверки администратора.');
       d.ops = d.ops.filter(o => o.uid !== opUid);
       writeDraft(d);
+      return true;
     },
 
     async create(resource, data) {
@@ -174,9 +309,9 @@
       const tempId = d.nextTemp++;
       if (tempId > TEMP_ID_MAX) throw new Error('Слишком много новых записей в черновике.');
       const clean = filterColumns(resource, clone(data));
-      d.ops.push({ uid: uid(), type: 'create', resource, tempId, data: clean, label: rowLabel(resource, clean), ts: Date.now() });
+      d.ops.push({ uid: uid(), type: 'create', resource, tempId, data: clean, label: rowLabel(resource, clean), ts: Date.now(), reqId: null });
       writeDraft(d);
-      toastDraft(`Новая запись (${resourceTitle(resource)}) добавлена в черновик запроса`);
+      toastInfo(`Новая запись (${resourceTitle(resource)}) добавлена в черновик запроса`);
       return { ok: true, id: tempId, draft: true };
     },
 
@@ -187,21 +322,25 @@
       const clean = filterColumns(resource, clone(data));
 
       if (isTempId(id)) {
-        const i = findIndex(d, o => o.type === 'create' && o.resource === resource && Number(o.tempId) === Number(id));
-        if (i < 0) throw new Error('Новая запись не найдена в черновике (возможно, черновик был очищен).');
-        d.ops[i].data = { ...d.ops[i].data, ...clean };
-        d.ops[i].label = rowLabel(resource, d.ops[i].data);
-        d.ops[i].ts = Date.now();
+        const op = d.ops.find(o => o.type === 'create' && o.resource === resource && Number(o.tempId) === Number(id));
+        if (!op) throw new Error('Новая запись не найдена в черновике (возможно, черновик был очищен).');
+        if (op.reqId) throw new Error('Новая запись уже отправлена в запросе и ждёт проверки администратора.');
+        op.data = { ...op.data, ...clean };
+        op.label = rowLabel(resource, op.data);
+        op.ts = Date.now();
         writeDraft(d);
-        toastDraft('Новая запись в черновике обновлена');
+        toastInfo('Новая запись в черновике обновлена');
         return { ok: true, draft: true };
       }
 
       const nid = Number(id);
+      if (hasSubmitted(d, resource, nid)) {
+        throw new Error('Эта запись уже отправлена в запросе и ждёт проверки администратора — изменить её сейчас нельзя.');
+      }
       if (d.ops.some(o => o.type === 'delete' && o.resource === resource && Number(o.id) === nid)) {
         throw new Error('Эта запись уже помечена на удаление в черновике. Уберите удаление в «Запросах», чтобы изменить её.');
       }
-      const i = findIndex(d, o => o.type === 'update' && o.resource === resource && Number(o.id) === nid);
+      const i = d.ops.findIndex(o => o.type === 'update' && o.resource === resource && Number(o.id) === nid);
       const merged = i >= 0 ? { ...d.ops[i].data, ...clean } : clean;
 
       // Drop fields equal to the server value: the request lists only real changes.
@@ -214,7 +353,7 @@
       if (!Object.keys(merged).length) {
         if (i >= 0) d.ops.splice(i, 1);
         writeDraft(d);
-        toastDraft('Значения совпадают с текущими — изменение убрано из черновика');
+        toastInfo('Значения совпадают с текущими — изменение убрано из черновика');
         return { ok: true, draft: true, noop: true };
       }
 
@@ -224,10 +363,10 @@
         d.ops[i].label = label;
         d.ops[i].ts = Date.now();
       } else {
-        d.ops.push({ uid: uid(), type: 'update', resource, id: nid, data: merged, label, ts: Date.now() });
+        d.ops.push({ uid: uid(), type: 'update', resource, id: nid, data: merged, label, ts: Date.now(), reqId: null });
       }
       writeDraft(d);
-      toastDraft(`Изменение (${resourceTitle(resource)} #${nid}) добавлено в черновик запроса`);
+      toastInfo(`Изменение (${resourceTitle(resource)} #${nid}) добавлено в черновик запроса`);
       return { ok: true, draft: true };
     },
 
@@ -235,16 +374,21 @@
       await assertGuestResource(resource);
       const d = readDraft();
       if (isTempId(id)) {
+        const op = d.ops.find(o => o.type === 'create' && o.resource === resource && Number(o.tempId) === Number(id));
+        if (op?.reqId) throw new Error('Новая запись уже отправлена в запросе и ждёт проверки администратора.');
         d.ops = d.ops.filter(o => !(o.type === 'create' && o.resource === resource && Number(o.tempId) === Number(id)));
         writeDraft(d);
-        toastDraft('Новая запись убрана из черновика');
+        toastInfo('Новая запись убрана из черновика');
         return { ok: true, draft: true };
       }
       const nid = Number(id);
+      if (hasSubmitted(d, resource, nid)) {
+        throw new Error('Эта запись уже отправлена в запросе и ждёт проверки администратора — удалить её сейчас нельзя.');
+      }
       d.ops = d.ops.filter(o => !(o.resource === resource && Number(o.id) === nid));
-      d.ops.push({ uid: uid(), type: 'delete', resource, id: nid, data: {}, label: rowLabel(resource, baseRow), ts: Date.now() });
+      d.ops.push({ uid: uid(), type: 'delete', resource, id: nid, data: {}, label: rowLabel(resource, baseRow), ts: Date.now(), reqId: null });
       writeDraft(d);
-      toastDraft(`Удаление (${resourceTitle(resource)} #${nid}) добавлено в черновик запроса`);
+      toastInfo(`Удаление (${resourceTitle(resource)} #${nid}) добавлено в черновик запроса`);
       return { ok: true, draft: true };
     },
 
@@ -254,10 +398,13 @@
       const ops = d.ops.filter(o => o.resource === resource);
       if (!ops.length) return rows;
       const deleted = new Set(ops.filter(o => o.type === 'delete').map(o => Number(o.id)));
-      const updates = new Map(ops.filter(o => o.type === 'update').map(o => [Number(o.id), o.data]));
+      const updates = new Map(ops.filter(o => o.type === 'update').map(o => [Number(o.id), o]));
       let out = (rows || [])
         .filter(r => !deleted.has(Number(r?.ID)))
-        .map(r => (updates.has(Number(r?.ID)) ? { ...r, ...clone(updates.get(Number(r.ID))) } : r));
+        .map((r) => {
+          const up = updates.get(Number(r?.ID));
+          return up ? { ...r, ...clone(up.data) } : r;
+        });
       if (!offset) {
         const q = String(search || '').trim().toLowerCase();
         const created = ops
@@ -290,16 +437,152 @@
       return op ? op.type : null;
     },
 
-    /** Payload for api/change-requests.php */
+    /**
+     * Local state of a row for badges:
+     * { state, status: 'draft'|'submitted', reqId, fields: [columns] } or null.
+     */
+    rowMeta(resource, id) {
+      const d = readDraft();
+      const op = isTempId(id)
+        ? d.ops.find(o => o.type === 'create' && o.resource === resource && Number(o.tempId) === Number(id))
+        : d.ops.find(o => o.resource === resource && Number(o.id) === Number(id));
+      if (!op) return null;
+      return {
+        state: op.type,
+        status: op.reqId ? 'submitted' : 'draft',
+        reqId: op.reqId || null,
+        fields: op.type === 'delete' ? [] : Object.keys(op.data || {}),
+      };
+    },
+
+    /** Column-level markers for the currently selected record. */
+    pendingFields(resource, id) {
+      const meta = Draft.rowMeta(resource, id);
+      if (!meta) return {};
+      const d = readDraft();
+      const op = isTempId(id)
+        ? d.ops.find(o => o.type === 'create' && o.resource === resource && Number(o.tempId) === Number(id))
+        : d.ops.find(o => o.resource === resource && Number(o.id) === Number(id));
+      const out = {};
+      for (const col of meta.fields) {
+        out[col] = { value: op?.data?.[col], status: meta.status, reqId: meta.reqId };
+      }
+      return out;
+    },
+
+    /** Payload for api/change-requests.php — only operations that were not sent yet. */
     toOperations() {
-      return readDraft().ops.map(o => (o.type === 'create'
+      return readDraft().ops.filter(o => !o.reqId).map(o => (o.type === 'create'
         ? { type: 'create', resource: o.resource, tempId: o.tempId, data: o.data }
         : o.type === 'update'
           ? { type: 'update', resource: o.resource, id: o.id, data: o.data }
           : { type: 'delete', resource: o.resource, id: o.id }));
     },
 
+    /** Freeze the current draft as a sent request: the changes stay visible locally. */
+    markSubmitted(requestId) {
+      const id = String(requestId || '');
+      if (!id) return 0;
+      const d = readDraft();
+      const now = new Date().toISOString();
+      let n = 0;
+      for (const op of d.ops) {
+        if (!op.reqId) { op.reqId = id; op.submittedAt = now; n++; }
+      }
+      writeDraft(d);
+      return n;
+    },
+
+    /**
+     * Reconcile locally tracked requests with their server status.
+     * Approved/rejected/withdrawn/deleted requests drop their local operations:
+     * after approval the DB already contains the values, after rejection the
+     * original values must be shown again.
+     */
+    async syncSubmitted({ silent = true } = {}) {
+      if (syncPromise) return syncPromise;
+      if (!isGuest()) return { ok: false, resolved: [] };
+      const ids = submittedReqIds(readDraft().ops);
+      if (!ids.length) return { ok: true, resolved: [] };
+
+      syncPromise = (async () => {
+        const mine = await window.EditorCore.Http.json('api/change-requests.php?action=mine');
+        if (!mine.ok) return { ok: false, resolved: [] };
+        const rows = Array.isArray(mine.rows) ? mine.rows : [];
+        const byId = new Map(rows.map(r => [String(r.id), r]));
+        const resolved = [];
+        const d = readDraft();
+        const keep = [];
+        for (const op of d.ops) {
+          if (!op.reqId) { keep.push(op); continue; }
+          const req = byId.get(op.reqId);
+          if (req && req.status === 'pending') { keep.push(op); continue; }
+          resolved.push({ reqId: op.reqId, status: req?.status || 'deleted', op });
+        }
+        if (!resolved.length) return { ok: true, resolved: [] };
+
+        d.ops = keep;
+        writeDraft(d);
+        // Server data changed (approved) or must be shown again (rejected) → drop list caches.
+        try { window.EditorCore?.DBCrud?.invalidateCache?.(); } catch {}
+        try { configPromise = null; } catch {}
+
+        if (resolved.length) {
+          const approved = resolved.filter(r => r.status === 'approved').length;
+          const rejected = resolved.filter(r => r.status !== 'approved' && r.status !== 'pending').length;
+          if (!silent) {
+            if (approved) toastInfo(`Запрос принят: изменения применены к базе (${approved})`, 'success');
+            if (rejected) toastInfo(`Запрос отклонён: показаны исходные данные (${rejected})`, 'warning');
+          }
+          for (const r of resolved) {
+            try { window.dispatchEvent(new CustomEvent('editor-core:guest-request-resolved', { detail: r })); } catch {}
+          }
+        }
+        return { ok: true, resolved };
+      })().finally(() => { syncPromise = null; lastSyncAt = Date.now(); });
+
+      return syncPromise;
+    },
+
     onChange(fn) { listeners.add(fn); return () => listeners.delete(fn); },
+  };
+
+  const count = () => Draft.count();
+  const submittedCount = () => Draft.submittedCount();
+  const summary = () => ({
+    account: accountLabel(),
+    total: Draft.count(),
+    pending: Draft.pendingCount(),
+    submitted: Draft.submittedCount(),
+  });
+
+  const scheduleSubmittedSync = (delay = 0) => {
+    clearTimeout(reconcileTimer);
+    reconcileTimer = setTimeout(() => {
+      if (Date.now() - lastSyncAt < SYNC_MIN_INTERVAL) return;
+      Draft.syncSubmitted({ silent: true }).catch(() => {});
+    }, Math.max(0, delay));
+  };
+
+  const startAutoReconcile = () => {
+    if (startAutoReconcile.started) return;
+    startAutoReconcile.started = true;
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState !== 'visible' || !isGuest()) return;
+      scheduleSubmittedSync(0);
+      if (Date.now() - lastSyncAt < SYNC_MIN_INTERVAL) return;
+      refreshStatus().then((role) => {
+        if (role !== 'guest' && role !== 'admin') {
+          // Account disabled/revoked → ask the shell to re-authenticate.
+          try { window.parent?.postMessage({ type: 'editor-shell:auth-required' }, '*'); } catch {}
+          return;
+        }
+        if (role === 'guest' && !isPageAllowedForGuest()) {
+          // The administrator removed this tab while the page was open.
+          showAccessDenied();
+        }
+      }).catch(() => {});
+    }, { passive: true });
   };
 
   // ── Crafts group rename (port of the server logic, produces updates) ────
@@ -361,16 +644,24 @@
     return { ok: true, changed: updates.map(u => ({ ID: u.ID, newGroupName: u.newGroupName })) };
   };
 
-  // ── Page access guard + banner ──────────────────────────────────────────
+  // ── Page access guard (server-driven per-account tabs) ──────────────────
   const currentPage = () => {
     const file = (location.pathname.split('/').pop() || 'index.html').toLowerCase();
     return file || 'index.html';
   };
 
-  const guestAllowedPages = () => {
+  const manifestItems = () => {
     const groups = Array.isArray(window.STUDIO_MANIFEST) ? window.STUDIO_MANIFEST : [];
+    return groups.flatMap(g => (g.items || []));
+  };
+
+  /** Allowed page files: the tabs granted by the administrator + the requests page. */
+  const guestAllowedPages = () => {
     const pages = new Set(['index.html', REQUESTS_PAGE]);
-    groups.forEach(g => (g.items || []).forEach((it) => { if (it.guest) pages.add(String(it.src).toLowerCase()); }));
+    const granted = accountPages();
+    manifestItems().forEach((it) => {
+      if (granted.includes(String(it.key))) pages.add(String(it.src).toLowerCase());
+    });
     return pages;
   };
 
@@ -396,10 +687,10 @@
     box.innerHTML = `
       <div style="max-width:460px;text-align:center;border:1px solid var(--editor-border,#273142);border-radius:18px;padding:28px;background:var(--editor-surface,#121821)">
         <div style="font-size:40px;color:var(--editor-danger,#ff7c87);margin-bottom:10px"><i class="fa-solid fa-lock"></i></div>
-        <h2 style="font-size:20px;font-weight:700;margin-bottom:8px">Доступ запрещён</h2>
+        <h2 style="font-size:20px;font-weight:700;margin-bottom:8px">Вкладка выключена</h2>
         <p style="color:var(--editor-text-muted,#9aa8bc);font-size:14px;line-height:1.5">
-          Этот раздел недоступен для гостевого аккаунта. Гость может просматривать редакторы контента
-          и предлагать изменения через запросы — их проверяет администратор.
+          Администратор не включил этот редактор для гостевого аккаунта <b>${escapeHtml(accountLabel())}</b>.
+          Доступные вкладки можно посмотреть в «Моих запросах».
         </p>
         <a href="${REQUESTS_PAGE}" class="editor-btn editor-btn-primary" style="margin-top:16px;display:inline-flex">
           <i class="fa-solid fa-code-pull-request"></i><span>Мои запросы</span>
@@ -413,13 +704,37 @@
     if (document.body) mount(); else document.addEventListener('DOMContentLoaded', mount, { once: true });
   };
 
+  const escapeHtml = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
   let bannerEl = null;
   const updateBanner = () => {
     if (!bannerEl) return;
-    const n = Draft.count();
+    const pending = Draft.pendingCount();
+    const submitted = Draft.submittedCount();
+    const total = pending + submitted;
     const countEl = bannerEl.querySelector('[data-guest-count]');
-    if (countEl) countEl.textContent = String(n);
-    bannerEl.dataset.empty = n ? '0' : '1';
+    if (countEl) countEl.textContent = String(total);
+    const pendingEl = bannerEl.querySelector('[data-guest-pending]');
+    if (pendingEl) pendingEl.textContent = String(pending);
+    const submittedEl = bannerEl.querySelector('[data-guest-submitted]');
+    if (submittedEl) submittedEl.textContent = String(submitted);
+    bannerEl.dataset.empty = total ? '0' : '1';
+
+    // Одна понятная фраза вместо трёх чисел: новичок должен сразу понимать,
+    // ждут ли его правки проверки и что нажать.
+    const stateEl = bannerEl.querySelector('[data-guest-state]');
+    if (stateEl) {
+      if (!total) stateEl.textContent = 'Изменений нет';
+      else if (pending && submitted) stateEl.textContent = `${pending} не отправлено, ${submitted} на проверке`;
+      else if (pending) stateEl.textContent = `${pending} ждёт отправки`;
+      else stateEl.textContent = `${submitted} на проверке у администратора`;
+    }
+    const pendingPill = bannerEl.querySelector('[data-guest-pending-pill]');
+    if (pendingPill) pendingPill.hidden = !pending;
+    const submittedPill = bannerEl.querySelector('[data-guest-submitted-pill]');
+    if (submittedPill) submittedPill.hidden = !submitted;
+    const sendBtn = bannerEl.querySelector('[data-guest-open] span');
+    if (sendBtn) sendBtn.textContent = submitted && !pending ? 'На проверке' : 'Мои изменения';
   };
 
   const openRequestsPage = () => {
@@ -436,19 +751,28 @@
         background:var(--editor-toolbar-bg,rgba(13,18,26,.92));border:1px solid color-mix(in srgb,var(--editor-warning,#ffc27f) 45%,transparent);
         box-shadow:var(--editor-toolbar-shadow,0 20px 46px rgba(0,0,0,.34));backdrop-filter:blur(14px);font-size:13px;color:var(--editor-text,#edf3fb)}
       .guest-banner b{color:var(--editor-warning,#ffc27f)}
+      .guest-banner .guest-state{display:block;font-size:11.5px;color:var(--editor-text-muted,#9aa8bc)}
+      .guest-banner .guest-pill[hidden]{display:none}
       .guest-banner .guest-count{min-width:22px;padding:1px 7px;border-radius:999px;background:var(--editor-warning,#ffc27f);color:#1b1206;font-weight:700;text-align:center}
+      .guest-banner .guest-pill{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;color:var(--editor-text-muted,#9aa8bc)}
+      .guest-banner .guest-pill b{color:var(--editor-text,#edf3fb)}
       .guest-banner[data-empty="1"] .guest-count{background:var(--editor-soft-bg-strong,rgba(255,255,255,.08));color:var(--editor-text-muted,#9aa8bc)}
       .guest-banner .editor-btn{height:32px;padding:0 10px}
-      @media (max-width:640px){.guest-banner .guest-text{display:none}}`;
+      @media (max-width:720px){.guest-banner .guest-text{display:none}}`;
     document.head.appendChild(style);
     bannerEl = document.createElement('div');
     bannerEl.className = 'guest-banner';
     bannerEl.innerHTML = `
       <i class="fa-solid fa-user-secret" style="color:var(--editor-warning,#ffc27f)"></i>
-      <span class="guest-text"><b>Гостевой режим</b> — изменения попадают в черновик запроса</span>
-      <span class="guest-count" data-guest-count title="Изменений в черновике">0</span>
-      <button type="button" class="editor-btn editor-btn-primary" data-guest-open><i class="fa-solid fa-paper-plane"></i><span>Запрос</span></button>`;
-    bannerEl.querySelector('[data-guest-open]').addEventListener('click', openRequestsPage);
+      <span class="guest-text"><b>Гость: ${escapeHtml(accountLabel())}</b>
+        <span class="guest-state" data-guest-state>Изменений нет</span>
+      </span>
+      <span class="guest-pill" title="Изменено, но ещё не отправлено администратору" data-guest-pending-pill><i class="fa-solid fa-pen"></i><b data-guest-pending>0</b></span>
+      <span class="guest-pill" title="Отправлено администратору и ждёт проверки" data-guest-submitted-pill><i class="fa-solid fa-hourglass-half"></i><b data-guest-submitted>0</b></span>
+      <span class="guest-count" data-guest-count title="Всего изменений">0</span>
+      <button type="button" class="editor-btn editor-btn-primary" data-guest-open><i class="fa-solid fa-paper-plane"></i><span>Мои изменения</span></button>`;
+    const openBtn = bannerEl.querySelector('[data-guest-open]');
+    if (openBtn) openBtn.addEventListener('click', openRequestsPage);
     document.body.appendChild(bannerEl);
     updateBanner();
   };
@@ -463,8 +787,11 @@
       return;
     }
     if (isEmbeddedHelper(currentPage())) return;
+    Draft.syncSubmitted({ silent: true }).catch(() => {});
     const run = () => mountBanner();
     if (document.body) run(); else document.addEventListener('DOMContentLoaded', run, { once: true });
+    // Editors may have rendered before the role was known → let them refresh badges.
+    try { window.dispatchEvent(new CustomEvent('editor-core:guest-ready', { detail: summary() })); } catch {}
   };
 
   // Guest identity key (lets the guest see its previous requests on this browser).
@@ -482,11 +809,18 @@
     refreshStatus,
     status: () => status,
     isGuest,
+    isAdmin,
     cachedRole,
+    account,
+    accountId,
+    accountPages,
+    accountLabel,
     loadConfig,
     config: () => config,
     isTempId,
     Draft,
+    summary,
+    syncSubmitted: (opts) => Draft.syncSubmitted(opts),
     renameCraftGroup,
     isPageAllowedForGuest,
     guestAllowedPages,

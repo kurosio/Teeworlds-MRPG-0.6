@@ -3,75 +3,14 @@
   const DEFAULT_ENDPOINT = 'api/db.php';
   const MAINT_ENDPOINT = 'api/db-maintenance.php';
 
-  const safeJson = async (res) => {
-    const text = await res.text();
-    if (!text) return null;
-    try {
-      return JSON.parse(text);
-    } catch {
-      const startObj = text.indexOf('{');
-      const startArr = text.indexOf('[');
-      let start = -1;
-      if (startObj >= 0 && startArr >= 0) start = Math.min(startObj, startArr);
-      else start = Math.max(startObj, startArr);
-      if (start >= 0) {
-        const endObj = text.lastIndexOf('}');
-        const endArr = text.lastIndexOf(']');
-        const end = Math.max(endObj, endArr);
-        if (end > start) {
-          const slice = text.slice(start, end + 1);
-          try {
-            return JSON.parse(slice);
-          } catch {}
-        }
-      }
-      return { ok: false, error: 'Invalid JSON response', raw: text };
-    }
-  };
-
-  const FETCH_TIMEOUT_MS = 10000;
-  const LOG_ERRORS = false;
-
-  const errorMessage = (err) => {
-    if (err?.name === 'AbortError') return 'Request timed out';
-    if (err instanceof TypeError) return 'Network error';
-    return err?.message || 'Network error';
-  };
-
-  const notifyAuthRequired = () => {
-    try {
-      window.top?.postMessage({ type: 'editor-shell:auth-required' }, '*');
-    } catch {}
-  };
-
-  const fetchJson = async (url, { method = 'GET', body = null } = {}) => {
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
-    try {
-      const res = await fetch(url, {
-        method,
-        headers: body ? { 'Content-Type': 'application/json' } : undefined,
-        body: body ? JSON.stringify(body) : undefined,
-        credentials: 'same-origin',
-        signal: controller.signal
-      });
-      const json = await safeJson(res);
-      if (res.status === 401) {
-        notifyAuthRequired();
-      }
-      if (!json && res.ok) {
-        return { ok: true };
-      }
-      if (!res.ok) {
-        return { ok: false, error: json?.error || `HTTP ${res.status}`, details: json };
-      }
-      return json;
-    } catch (err) {
-      if (LOG_ERRORS) console.warn('[db] fetch failed', err);
-      return { ok: false, error: errorMessage(err) };
-    } finally {
-      clearTimeout(timeoutId);
-    }
+  /**
+   * Ответ сервера в форме, привычной этому модулю: `{ ok, error, ...поля }`.
+   * Сеть, таймаут и 401 обрабатывает editor-core/http.js.
+   */
+  const fetchJson = async (url, options = {}) => {
+    const res = await window.EditorCore.Http.json(url, options);
+    if (!res.ok) return { ok: false, error: res.error, details: res.data };
+    return res.data ?? { ok: true };
   };
 
   const cache = new Map();
@@ -438,9 +377,10 @@
       ? root.querySelector(`[data-path="${cssEscape(bindInputPath)}"]`)
       : combo.querySelector('input[data-path]');
 
+    const allowZero = combo.dataset.allowZero === '1' || source.toLowerCase() === 'worlds';
     const coerceSelected = (v) => {
       const s = String(v ?? '').trim();
-      if (!s || s === '0') return '';
+      if (!s || (!allowZero && s === '0')) return '';
       return s;
     };
 
@@ -812,24 +752,31 @@
       return fetchJson(`${this.endpoint}?action=save_config`, { method: 'POST', body: payload });
     },
 
+    // Проверка соединения ждёт ответа сервера игровой БД — 20 секунд.
     async testConnection() {
-      return fetchJson(`${this.endpoint}?action=test`, { method: 'POST', body: {} });
+      return fetchJson(`${this.endpoint}?action=test`, { method: 'POST', body: {}, timeout: 20000 });
     },
 
     async testSkins({ url = '' } = {}) {
-      return fetchJson(`${this.endpoint}?action=test_skins`, { method: 'POST', body: { url } });
+      return fetchJson(`${this.endpoint}?action=test_skins`, { method: 'POST', body: { url }, timeout: 20000 });
+    },
+
+    // Мост к картам игрового сервера: адрес можно проверить до сохранения.
+    async testMapApi({ url = '', token = '' } = {}) {
+      return fetchJson(`${this.endpoint}?action=test_map_api`, { method: 'POST', body: { url, token }, timeout: 20000 });
     },
 
     async listDumps() {
       return fetchJson(`${MAINT_ENDPOINT}?action=list_dumps`);
     },
 
+    // Дамп большой базы пишется и восстанавливается минутами — таймаут на вызов.
     async createDump(payload) {
-      return fetchJson(`${MAINT_ENDPOINT}?action=create_dump`, { method: 'POST', body: payload });
+      return fetchJson(`${MAINT_ENDPOINT}?action=create_dump`, { method: 'POST', body: payload, timeout: 300000 });
     },
 
     async restoreDump(payload) {
-      return fetchJson(`${MAINT_ENDPOINT}?action=restore_dump`, { method: 'POST', body: payload });
+      return fetchJson(`${MAINT_ENDPOINT}?action=restore_dump`, { method: 'POST', body: payload, timeout: 900000 });
     },
 
     async deleteDump(payload) {

@@ -1,12 +1,12 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Quests • tw_quests_list + tw_bots_quest</title>
+  <title>Квесты • Editor Studio</title>
   <script src="editor-core/page-loader.js" data-mode="event"></script>
-  <link rel="stylesheet" href="editor-theme.css" />
-  <link rel="stylesheet" href="editor-template.css" />
+  <link rel="stylesheet" href="editor-core/editor-theme.css" />
+  <link rel="stylesheet" href="editor-core/editor-template.css" />
   <style>
     body[data-editor="quests"] {
       --editor-page-max: 1560px;
@@ -57,32 +57,27 @@
 
     .quest-node {
       position: relative;
-      border: 1px solid var(--editor-soft-border);
-      border-radius: 18px;
+      border: 1px solid var(--editor-line);
+      border-radius: var(--editor-radius-md);
       padding: 12px;
-      background:
-        linear-gradient(180deg, rgba(255,255,255,.03), transparent 55%),
-        var(--editor-soft-bg);
-      box-shadow: var(--editor-panel-glow), var(--editor-shadow-xs);
-      transition: border-color .16s ease, box-shadow .18s ease, transform .16s ease, background-color .16s ease;
+      background: var(--editor-surface-2);
+      transition: border-color .16s ease, background-color .16s ease;
       min-width: 0;
     }
 
     .quest-node:hover {
-      transform: translateY(-1px);
-      border-color: var(--editor-soft-border-strong);
-      box-shadow: var(--editor-panel-glow), var(--editor-shadow-sm);
+      border-color: var(--editor-line-strong);
     }
 
     .quest-node.tree-selected {
       border-color: var(--editor-primary);
-      box-shadow: 0 0 0 4px var(--editor-focus-ring), var(--editor-panel-glow), var(--editor-shadow-sm);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--editor-primary) 38%, transparent);
     }
 
     .quest-node.tree-drag-over {
       border-color: var(--editor-primary) !important;
-      background: var(--editor-light-bg) !important;
-      box-shadow: 0 0 0 3px var(--editor-focus-ring), var(--editor-shadow-sm) !important;
+      background: var(--editor-soft-bg-strong) !important;
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--editor-primary) 30%, transparent) !important;
     }
 
     .quest-node-header {
@@ -146,9 +141,9 @@
       justify-content: center;
       width: 32px;
       height: 32px;
-      border-radius: 10px;
-      border: 1px solid var(--editor-soft-border);
-      background: linear-gradient(180deg, rgba(255,255,255,.045), transparent), var(--editor-soft-bg);
+      border-radius: var(--editor-radius-sm);
+      border: 1px solid var(--editor-line);
+      background: var(--editor-soft-bg);
       color: var(--editor-text-muted);
       cursor: pointer;
       flex-shrink: 0;
@@ -207,13 +202,10 @@
       flex-direction: column;
       gap: 8px;
       padding: 8px 6px;
-      border-radius: 14px;
-      border: 1px solid var(--editor-soft-border);
-      background:
-        linear-gradient(180deg, rgba(255,255,255,.03), transparent 50%),
-        var(--editor-field-bg);
-      box-shadow: var(--editor-panel-glow), var(--editor-shadow-xs);
-      transition: box-shadow .15s ease, border-color .15s ease, transform .15s ease, opacity .15s ease;
+      border-radius: var(--editor-radius-sm);
+      border: 1px solid var(--editor-line);
+      background: var(--editor-surface);
+      transition: border-color .15s ease, opacity .15s ease;
       min-width: 0;
       will-change: transform;
     }
@@ -230,14 +222,12 @@
     }
 
     .step-node:hover {
-      border-color: var(--editor-soft-border-strong);
-      box-shadow: var(--editor-panel-glow), var(--editor-shadow-sm);
-      transform: translateY(-1px);
+      border-color: var(--editor-line-strong);
     }
 
     .step-node.tree-selected {
       border-color: var(--editor-primary);
-      box-shadow: 0 0 0 4px var(--editor-focus-ring), var(--editor-panel-glow), var(--editor-shadow-sm);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--editor-primary) 38%, transparent);
     }
 
     .step-node[draggable="true"] {
@@ -275,17 +265,14 @@
     .step-node-preview {
       width: 40px;
       height: 40px;
-      border-radius: 14px;
-      border: 1px solid var(--editor-soft-border-strong);
-      background:
-        radial-gradient(circle at 30% 25%, rgba(255,255,255,.16), transparent 48%),
-        var(--editor-soft-bg-strong);
+      border-radius: var(--editor-radius-sm);
+      border: 1px solid var(--editor-line);
+      background: var(--editor-soft-bg-strong);
       display: flex;
       align-items: center;
       justify-content: center;
       overflow: hidden;
       flex-shrink: 0;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,.08);
     }
 
     .step-node-preview img {
@@ -369,13 +356,13 @@
     }
 
     .step-quick-btn {
-      width: 18px;
-      height: 20px;
+      width: 24px;
+      height: 24px;
       padding: 0;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      border-radius: 8px;
+      border-radius: var(--editor-radius-xs);
       border: 1px solid transparent;
       background: transparent;
       color: var(--editor-text-muted);
@@ -422,7 +409,7 @@
       transform-origin: center;
       transition: opacity .15s ease, transform .15s ease;
       pointer-events: none;
-      box-shadow: 0 0 10px rgba(99,102,241,.45);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--editor-primary) 45%, transparent);
     }
 
     .step-drop-indicator.is-active {
@@ -438,18 +425,15 @@
 
     .step-drop-zone.is-active {
       min-height: 34px;
-      background: var(--editor-light-bg);
-      border: 2px dashed var(--editor-primary, #6366f1);
+      background: color-mix(in srgb, var(--editor-primary) 8%, transparent);
+      border: 2px dashed color-mix(in srgb, var(--editor-primary) 60%, transparent);
     }
 
     .step-section {
       padding: 16px;
-      border: 1px solid var(--editor-soft-border);
-      border-radius: 18px;
-      background:
-        linear-gradient(180deg, rgba(255,255,255,.025), transparent 45%),
-        var(--editor-soft-bg);
-      box-shadow: var(--editor-panel-glow), var(--editor-shadow-xs);
+      border: 1px solid var(--editor-line);
+      border-radius: var(--editor-radius-md);
+      background: var(--editor-soft-bg);
     }
 
     .step-section + .step-section {
@@ -593,10 +577,9 @@
 
     .quest-empty-card {
       padding: 14px;
-      border-radius: 16px;
-      border: 1px solid var(--editor-soft-border);
-      background: linear-gradient(180deg, rgba(255,255,255,.03), transparent), var(--editor-soft-bg);
-      box-shadow: var(--editor-panel-glow), var(--editor-shadow-xs);
+      border-radius: var(--editor-radius-sm);
+      border: 1px solid var(--editor-line);
+      background: var(--editor-soft-bg);
     }
 
     .quest-empty-card strong {
@@ -867,22 +850,22 @@
     }
   </style>
 </head>
-<body class="editor-theme" data-editor="quests">
+<body class="editor-theme" data-own-save-shortcut="1" data-editor="quests">
   <div class="editor-page quest-editor-page">
     <div class="editor-page-header">
       <div class="editor-page-title">
         <div>
-          <div class="editor-badge quest-page-badge">Quest Workspace</div>
-          <h1>Quests</h1>
-          <div class="editor-page-sub">Quest tree, mob steps, dialogs and tasks inside one polished editor.</div>
+          <div class="editor-badge quest-page-badge">Редактор квестов</div>
+          <h1>Квесты</h1>
+          <div class="editor-page-sub">Квесты, шаги мобов, диалоги и задания — в одном окне.</div>
         </div>
       </div>
       <div class="editor-page-actions">
-        <button id="refreshBtn" class="editor-btn editor-btn-secondary" title="Refresh">
-          <i class="fa-solid fa-rotate"></i><span>Refresh</span>
+        <button id="refreshBtn" class="editor-btn editor-btn-secondary" title="Обновить">
+          <i class="fa-solid fa-rotate"></i><span>Обновить</span>
         </button>
-        <button id="saveBtn" class="editor-btn editor-btn-primary" title="Ctrl+S">
-          <i class="fa-solid fa-floppy-disk"></i><span>Save</span>
+        <button id="saveBtn" class="editor-btn editor-btn-primary" title="Сохранить (Ctrl+S)">
+          <i class="fa-solid fa-floppy-disk"></i><span>Сохранить</span>
         </button>
       </div>
     </div>
@@ -892,35 +875,35 @@
         <div class="editor-dock-pad">
           <div class="editor-sidebar-head">
             <div>
-              <div class="text-sm font-semibold">Quest Tree</div>
+              <div class="text-sm font-semibold">Дерево квестов</div>
               <div class="quest-sidebar-stats">
-                <span class="editor-badge">Quests <strong id="questCount">—</strong></span>
-                <span class="editor-badge">Steps <strong id="stepCount">—</strong></span>
+                <span class="editor-badge" title="Квестов">Квестов <strong id="questCount">—</strong></span>
+                <span class="editor-badge" title="Шагов">Шагов <strong id="stepCount">—</strong></span>
               </div>
             </div>
-            <button id="newQuestBtn" class="editor-btn editor-btn-secondary" title="New quest">
-              <i class="fa-solid fa-plus"></i><span>New</span>
+            <button id="newQuestBtn" class="editor-btn editor-btn-secondary" title="Создать квест">
+              <i class="fa-solid fa-plus"></i><span>Новый</span>
             </button>
           </div>
 
           <div class="editor-section quest-sidebar-tools">
             <div class="editor-section-head">
-              <div class="editor-section-title">Filter & Search</div>
-              <div class="editor-section-hint">Quest, step, mob or world</div>
+              <div class="editor-section-title">Поиск</div>
+              <div class="editor-section-hint">по квесту, шагу, мобу или миру</div>
             </div>
             <div class="editor-sidebar-filters">
               <div class="editor-search">
                 <i class="fa-solid fa-magnifying-glass"></i>
-                <input id="searchInput" class="editor-input form-input" placeholder="Search by quest / step / mob / world" />
+                <input id="searchInput" class="editor-input form-input" placeholder="Поиск" />
               </div>
               <select id="typeFilter" class="editor-input form-input">
-                <option value="all">All quest types</option>
-                <option value="Type main">Main</option>
-                <option value="Type side">Side</option>
-                <option value="Type daily">Daily</option>
-                <option value="Type weekly">Weekly</option>
-                <option value="Type repeatable">Repeatable</option>
-                <option value="Tutorial">Tutorial</option>
+                <option value="all">Все типы</option>
+                <option value="Type main">Основной</option>
+                <option value="Type side">Побочный</option>
+                <option value="Type daily">Ежедневный</option>
+                <option value="Type weekly">Недельный</option>
+                <option value="Type repeatable">Повторяемый</option>
+                <option value="Tutorial">Обучающий</option>
               </select>
             </div>
           </div>
@@ -933,49 +916,49 @@
         <div class="editor-dock-pad quest-main-wrap">
           <div class="editor-sticky-toolbar quest-toolbar">
             <div class="quest-toolbar-copy">
-              <div class="quest-toolbar-eyebrow">Editor Focus</div>
-              <div class="quest-toolbar-title" id="editorTitle">Select a tree element</div>
-              <div class="quest-toolbar-subtitle" id="editorSubtitle">quest or mob step</div>
+              <div class="quest-toolbar-eyebrow">Выбрано</div>
+              <div class="quest-toolbar-title" id="editorTitle">Выберите элемент слева</div>
+              <div class="quest-toolbar-subtitle" id="editorSubtitle">квест или шаг моба</div>
             </div>
             <div class="quest-toolbar-actions">
-              <span id="dirty-pill" class="editor-dirty-pill hidden">Unsaved changes</span>
+              <span id="dirty-pill" class="editor-dirty-pill hidden">Есть несохранённые изменения</span>
               <button id="newStepBtn" class="editor-btn editor-btn-secondary hidden" disabled>
-                <i class="fa-solid fa-person-walking"></i><span>New Step</span>
+                <i class="fa-solid fa-person-walking"></i><span>Новый шаг</span>
               </button>
-              <button id="duplicateBtn" class="editor-btn editor-btn-secondary hidden" disabled title="Duplicate (Ctrl+D)">
-                <i class="fa-solid fa-copy"></i><span>Duplicate</span>
+              <button id="duplicateBtn" class="editor-btn editor-btn-secondary hidden" disabled title="Дублировать (Ctrl+D)">
+                <i class="fa-solid fa-copy"></i><span>Дублировать</span>
               </button>
               <button id="deleteBtn" class="editor-btn editor-btn-danger hidden" disabled>
-                <i class="fa-solid fa-trash"></i><span>Delete</span>
+                <i class="fa-solid fa-trash"></i><span>Удалить</span>
               </button>
             </div>
           </div>
 
           <div class="quest-content-stack">
             <section id="editorEmpty" class="editor-panel-card quest-empty-state">
-              <div class="quest-empty-title">Quest Editor</div>
+              <div class="quest-empty-title">Редактор квестов</div>
               <div class="quest-empty-sub">
-                Select an element on the left to edit quest data, adjust step progression, manage dialogs and build task chains.
-                <br /><span class="kbd-hint">Ctrl+S — save · Del — delete · Ctrl+D — duplicate step</span>
+                Выберите квест или шаг моба в дереве слева: справа появятся его параметры, диалоги и задания.
+                <br /><span class="kbd-hint">Ctrl+S — сохранить · Del — удалить · Ctrl+D — дублировать шаг</span>
               </div>
               <div class="quest-empty-pills">
-                <span class="editor-badge"><i class="fa-solid fa-sitemap"></i> Tree-first workflow</span>
-                <span class="editor-badge"><i class="fa-solid fa-arrows-up-down-left-right"></i> Drag & drop steps</span>
-                <span class="editor-badge"><i class="fa-solid fa-comments"></i> Dialog aware</span>
-                <span class="editor-badge"><i class="fa-solid fa-list-check"></i> Structured tasks</span>
+                <span class="editor-badge"><i class="fa-solid fa-sitemap"></i> Дерево слева</span>
+                <span class="editor-badge"><i class="fa-solid fa-arrows-up-down-left-right"></i> Перетаскивание шагов</span>
+                <span class="editor-badge"><i class="fa-solid fa-comments"></i> Диалоги</span>
+                <span class="editor-badge"><i class="fa-solid fa-list-check"></i> Задания</span>
               </div>
               <div class="quest-empty-grid">
                 <div class="quest-empty-card">
-                  <strong>Quest nodes</strong>
-                  <span>Use the left tree to navigate quests quickly, collapse branches and keep focus on active work.</span>
+                  <strong>Квесты</strong>
+                  <span>Раскройте квест в дереве — под ним покажутся его шаги.</span>
                 </div>
                 <div class="quest-empty-card">
-                  <strong>Mob steps</strong>
-                  <span>Edit world, position, scenario and automation in one space without leaving the context.</span>
+                  <strong>Шаги мобов</strong>
+                  <span>Мир, координаты, сценарий и автозавершение — на вкладке «Основное».</span>
                 </div>
                 <div class="quest-empty-card">
-                  <strong>Task flows</strong>
-                  <span>Build required items, rewards, defeat targets and movement objectives with sortable blocks.</span>
+                  <strong>Задания</strong>
+                  <span>Награды, нужные предметы, мобы и цели — на вкладке «Задания».</span>
                 </div>
               </div>
             </section>
@@ -983,9 +966,9 @@
             <section id="questEditor" class="editor-panel-card quest-editor-pane hidden">
               <div class="quest-pane-head">
                 <div class="quest-pane-copy">
-                  <div class="quest-pane-eyebrow">Quest Settings</div>
-                  <div class="quest-pane-title">General Parameters</div>
-                  <div class="quest-pane-sub">Quest name is limited to 24 characters (C++/DB limit).</div>
+                  <div class="quest-pane-eyebrow">Квест</div>
+                  <div class="quest-pane-title">Основные параметры</div>
+                  <div class="quest-pane-sub">Название квеста — не длиннее 24 символов (ограничение игры).</div>
                   <div class="quest-rcon-hint" id="questRconHint"></div>
                 </div>
               </div>
@@ -995,9 +978,9 @@
             <section id="stepEditor" class="editor-panel-card quest-editor-pane hidden">
               <div class="quest-pane-head">
                 <div class="quest-pane-copy">
-                  <div class="quest-pane-eyebrow">Mob Step</div>
-                  <div class="quest-pane-title">Step Configuration</div>
-                  <div class="quest-pane-sub">tw_bots_quest settings with dialogs, scenario data and task groups.</div>
+                  <div class="quest-pane-eyebrow">Шаг моба</div>
+                  <div class="quest-pane-title">Настройки шага</div>
+                  <div class="quest-pane-sub">Шаги мобов: диалоги, данные сценария и задания.</div>
                   <div class="quest-rcon-hint" id="stepRconHint"></div>
                 </div>
               </div>
@@ -1007,8 +990,8 @@
 
                 <div class="step-tab-panel" data-step-tab-panel="mob">
                   <div class="step-section">
-                    <div class="step-section-title">Step Editor</div>
-                    <div class="step-section-sub">AutoFinish completes the step automatically when all conditions are satisfied.</div>
+                    <div class="step-section-title">Параметры шага</div>
+                    <div class="step-section-sub">Автозавершение закрывает шаг само, как только выполнены все его условия.</div>
                     <div id="stepBaseForm" class="step-base-grid"></div>
                   </div>
                 </div>
@@ -1016,17 +999,17 @@
                 <div class="step-tab-panel is-hidden" data-step-tab-panel="dialog">
                   <div class="step-section">
                     <div class="step-section-title">
-                      <span>Dialog Editor</span>
-                      <span class="editor-muted-text text-xs">Side / Left / Right / Action</span>
+                      <span>Реплики диалога</span>
+                      <span class="editor-muted-text text-xs">Сторона · слева · справа · действие</span>
                     </div>
-                    <div class="step-section-sub">Lines are displayed in list order.</div>
+                    <div class="step-section-sub">Реплики показываются в порядке списка — перетаскивайте, чтобы изменить порядок.</div>
                     <div id="dialogForm"></div>
                   </div>
                 </div>
 
                 <div class="step-tab-panel is-hidden" data-step-tab-panel="tasks">
                   <div class="step-section">
-                    <div class="step-section-title">Task Editor</div>
+                    <div class="step-section-title">Задания шага</div>
                     <div id="stepTasksEditor"></div>
                   </div>
                 </div>
@@ -1061,55 +1044,56 @@
     const QuestFlags = Object.freeze({
       typeMain: 'Type main', typeSide: 'Type side', typeDaily: 'Type daily',
       typeWeekly: 'Type weekly', typeRepeatable: 'Type repeatable',
-      cantRefuse: "Can't refuse", noActivity: 'No activity point', tutorial: 'Tutorial'
+      cantRefuse: "Can't refuse", noActivity: 'Без точки активности', tutorial: 'Tutorial'
     });
 
     const QUEST_FLAG_OPTIONS = Object.freeze(Object.values(QuestFlags));
 
     const STEP_TABS = Object.freeze([
-      { id: 'mob', title: 'General', icon: 'fa-person-walking' },
-      { id: 'dialog', title: 'Dialog', icon: 'fa-comments' },
-      { id: 'tasks', title: 'Tasks', icon: 'fa-list-check' }
+      { id: 'mob', title: 'Основное', icon: 'fa-person-walking' },
+      { id: 'dialog', title: 'Диалог', icon: 'fa-comments' },
+      { id: 'tasks', title: 'Задания', icon: 'fa-list-check' }
     ]);
 
     const TASK_SECTIONS = Object.freeze([
-      { id: 'reward_items', title: 'Items rewarded on completion' },
-      { id: 'required_items', title: 'Items required for completion' },
-      { id: 'defeat_bots', title: 'Bots that must be defeated for completion' },
-      { id: 'move_to', title: 'Objectives that must be completed' }
+      { id: 'reward_items', title: 'Выдаваемые предметы' },
+      { id: 'required_items', title: 'Требуемые предметы' },
+      { id: 'defeat_bots', title: 'Мобы, которых нужно победить' },
+      { id: 'move_to', title: 'Цели, которые нужно выполнить' }
     ]);
 
     const DIALOG_SIDE_OPTIONS = Object.freeze([
-      { value: 'default', label: 'speaks to' },
-      { value: 'author', label: 'author' },
-      { value: 'thoughts', label: 'thoughts' }
+      { value: 'default', label: 'обращается к игроку' },
+      { value: 'author', label: 'говорит от себя' },
+      { value: 'thoughts', label: 'мысли' }
     ]);
 
     const DIALOG_EXTRA_SPEAKERS = Object.freeze([
-      { value: -1, label: 'Player' },
-      { value: 0, label: 'Current bot' }
+      { value: -1, label: 'Игрок' },
+      { value: 0, label: 'Этот моб' }
     ]);
 
     const questFields = Object.freeze({
-      Name: { type: 'text', label: 'Quest Name', validate: { required: true }, ui: { placeholder: 'Quest name' } },
-      NextQuestID: { type: 'db_select', label: 'Next Quest', ui: { dbKey: 'quest', placeholder: '— not set —' } },
-      Money: { type: 'number', label: 'Reward (money)', ui: { min: 0, step: 1, placeholder: '0' } },
-      Exp: { type: 'number', label: 'Reward (exp)', ui: { min: 0, step: 1, placeholder: '0' } },
+      Name: { type: 'text', label: 'Название квеста', validate: { required: true }, ui: { placeholder: 'Например: Первый шаг' } },
+      NextQuestID: { type: 'db_select', label: 'Следующий квест', ui: { dbKey: 'quest', placeholder: '— не задан —' } },
+      Money: { type: 'number', label: 'Награда (деньги)', ui: { min: 0, step: 1, placeholder: '0' } },
+      Exp: { type: 'number', label: 'Награда (опыт)', ui: { min: 0, step: 1, placeholder: '0' } },
       Flags: {
         type: 'text',
-        label: 'Flags',
-        ui: { type: 'tags', options: QUEST_FLAG_OPTIONS, allowCreate: false, placeholder: 'Add flag…' }
+        label: 'Тип и флаги',
+        ui: { type: 'tags', options: QUEST_FLAG_OPTIONS, allowCreate: false, placeholder: 'Добавить флаг…' }
       }
     });
 
     const stepBaseFields = Object.freeze({
-      BotID: { type: 'db_select', label: 'Mob (BotID)', ui: { dbKey: 'mob', placeholder: '— mob —', searchPlaceholder: 'Search mob…' } },
-      QuestID: { type: 'db_select', label: 'Quest', ui: { dbKey: 'quest', placeholder: '— quest —', searchPlaceholder: 'Search quest…' } },
-      Step: { type: 'number', label: 'Step Position', ui: { min: 1, step: 1 } },
-      WorldID: { type: 'db_select', label: 'World', ui: { dbKey: 'world', placeholder: '— world —', searchPlaceholder: 'Search world…' } },
-      Position: { type: 'vec2', label: 'Position', ui: { step: 1 } },
-      AutoFinish: { type: 'toggle', label: 'AutoFinish' },
-      ScenarioData: { type: 'scenario', label: 'Scenario JSON', ui: { scenarioMode: 'universal' } }
+      BotID: { type: 'db_select', label: 'Моб', ui: { dbKey: 'mob', placeholder: '— моб —', searchPlaceholder: 'Поиск моба…' } },
+      QuestID: { type: 'db_select', label: 'Квест', ui: { dbKey: 'quest', placeholder: '— квест —', searchPlaceholder: 'Поиск квеста…' } },
+      Step: { type: 'number', label: 'Позиция шага', ui: { min: 1, step: 1 } },
+      WorldID: { type: 'db_select', label: 'Мир', ui: { dbKey: 'world', placeholder: '— мир —', searchPlaceholder: 'Поиск мира…' } },
+      Position: { type: 'vec2', label: 'Координаты (X, Y)', ui: { step: 1, mapWorldPath: 'WorldID' } },
+      AutoFinish: { type: 'toggle', label: 'Автозавершение' },
+      // Мир шага — тот же WorldID: компоненты сценария открывают карту в нём.
+      ScenarioData: { type: 'scenario', label: 'Данные сценария', ui: { scenarioMode: 'universal', mapWorldPath: 'WorldID' } }
     });
 
     const STATE = {
@@ -1181,11 +1165,9 @@
       return Number.isFinite(n) ? n : fb;
     };
     const norm = (v) => String(v ?? '').toLowerCase();
-    const escEl = document.createElement('div');
-    const esc = (s) => {
-      escEl.textContent = String(s ?? '');
-      return escEl.innerHTML;
-    };
+    // Экранирование — общее для всех страниц (editor-core/page-kit.js):
+    // старый вариант через innerHTML медленнее и не экранирует кавычки.
+    const esc = EditorCore.Page.esc;
     const isObj = (v) => v && typeof v === 'object' && !Array.isArray(v);
 
     const lookupLabel = (map, id) => {
@@ -1322,6 +1304,7 @@
     };
 
     const isDirty = () => STATE.dirtyQuests.size || STATE.dirtySteps.size;
+    EditorCore.Page.guardUnsaved(isDirty);
     const setDirty = () => DOM.dirtyPill.classList.toggle('hidden', !isDirty());
     const updateCounts = () => {
       DOM.questCount.textContent = STATE.quests.length;
@@ -1349,8 +1332,8 @@
         if (step && step.QuestID) {
           const stepPos = toNum(step.Step, 1);
           DOM.stepRconHint.innerHTML =
-            `<b>Rcon for testing:</b> <code>quest accept ${step.QuestID} ${stepPos}</code>` +
-            `<b>Rcon for deny:</b> <code>quest deny ${step.QuestID}</code>`;
+            `<b>Проверка:</b> <code>quest accept ${step.QuestID} ${stepPos}</code>` +
+            `<b>Отказ:</b> <code>quest deny ${step.QuestID}</code>`;
         } else {
           DOM.stepRconHint.innerHTML = '';
         }
@@ -1359,8 +1342,8 @@
         const quest = selectedQuest();
         if (quest) {
           DOM.questRconHint.innerHTML =
-            `<b>Rcon for testing:</b> <code>quest accept ${quest.ID}</code>` +
-            `<b>Rcon for deny:</b> <code>quest deny ${quest.ID}</code>`;
+            `<b>Проверка:</b> <code>quest accept ${quest.ID}</code>` +
+            `<b>Отказ:</b> <code>quest deny ${quest.ID}</code>`;
         } else {
           DOM.questRconHint.innerHTML = '';
         }
@@ -1386,7 +1369,10 @@
       step.BotID = toNum(data?.BotID);
       step.QuestID = toNum(data?.QuestID);
       step.Step = toNum(data?.Step, 1);
-      step.WorldID = toNum(data?.WorldID) || null;
+      const worldValue = data?.WorldID;
+      step.WorldID = worldValue === null || worldValue === undefined || String(worldValue).trim() === ''
+        ? null
+        : toNum(worldValue);
       step.PosX = toNum(data?.Position?.x);
       step.PosY = toNum(data?.Position?.y);
       step.AutoFinish = data?.AutoFinish ? 'Partial' : null;
@@ -1463,7 +1449,7 @@
         case 'reward_items': return `#${item.id || 0} ×${item.value || 0}`;
         case 'required_items': return `#${item.id || 0} ×${item.value || 0} (${item.type || 'default'})`;
         case 'defeat_bots': return `#${item.id || 0} ×${item.value || 0}`;
-        case 'move_to': return item.name || `Objective (${item.mode || 'move'})`;
+        case 'move_to': return item.name || `Цель (${item.mode || 'move'})`;
         default: return '—';
       }
     };
@@ -1488,7 +1474,8 @@
           data-datasource="${source}" data-db-state="connected"
           data-db-searchable="${searchable ? '1' : '0'}" data-db-limit="${limit}"
           data-placeholder="${esc(placeholder)}" data-label-mode="id_name"
-          data-bind-input-path="${path}" data-current-value="${value || ''}">
+          data-bind-input-path="${path}" data-current-value="${value ?? ''}"
+          data-allow-zero="${source === 'worlds' ? '1' : '0'}">
           <div class="editor-dbcombo-control">
             <input type="search" class="editor-input form-input editor-dbcombo-input"
                    placeholder="${esc(searchPh)}" autocomplete="off">
@@ -1502,6 +1489,31 @@
       </div>`;
     };
 
+    // Позиция задачи — та же строка, что и в остальных редакторах: X и Y рядом
+    // и кнопка «Местоположение». Значения задачи живут в data-task-field, поэтому
+    // оси помечены data-map-axis (см. editor-core/point-map.js).
+    const vec2Task = (section, index, xKey, yKey, xVal, yVal, worldPath, caption = 'Координаты (X, Y)') => {
+      const axis = (name, key, value) => `
+        <label class="editor-vec2-axis">
+          <span class="editor-vec2-axis-name">${name}</span>
+          <input class="editor-input form-input editor-vec2-input" type="number" step="1" value="${esc(value)}"
+            data-map-axis="${name.toLowerCase()}"
+            data-task-field="${section}" data-task-index="${index}" data-task-key="${key}">
+        </label>`;
+      return `<div class="editor-item-span">
+        <label>${esc(caption)}</label>
+        <div class="editor-vec2" data-map-x-path="${section}.${index}.${xKey}" data-map-y-path="${section}.${index}.${yKey}"
+             data-map-world-path="${esc(worldPath)}">
+          ${axis('X', xKey, xVal)}${axis('Y', yKey, yVal)}
+          <button type="button" class="editor-vec2-map" data-map-pick="1"
+                  title="Местоположение — выбрать точку на карте мира">
+            <i class="fa-solid fa-map-location-dot" aria-hidden="true"></i>
+            <span class="editor-vec2-map-label">Местоположение</span>
+          </button>
+        </div>
+      </div>`;
+    };
+
     const renderItemBody = (section, item, index) => {
       const inp = (label, key, value, type = 'number', extra = '') => `
         <div><label>${esc(label)}</label>
@@ -1510,83 +1522,81 @@
         </div>`;
 
       if (section === 'reward_items') return `<div class="editor-item-grid">
-        ${dbCombo({ source: 'items', value: item.id, label: 'Item', sectionId: section, index, key: 'id', placeholder: '— item —', searchable: true, limit: 1000 })}
-        ${inp('Quantity', 'value', item.value || '', 'number', 'min="1"')}
+        ${dbCombo({ source: 'items', value: item.id, label: 'Предмет', sectionId: section, index, key: 'id', placeholder: '— предмет —', searchable: true, limit: 1000 })}
+        ${inp('Количество', 'value', item.value || '', 'number', 'min="1"')}
       </div>`;
 
       if (section === 'required_items') return `<div class="editor-item-grid">
-        ${dbCombo({ source: 'items', value: item.id, label: 'Item', sectionId: section, index, key: 'id', placeholder: '— item —', searchable: true, limit: 1000 })}
-        ${inp('Quantity', 'value', item.value || '', 'number', 'min="1"')}
-        <div><label>Type</label>
+        ${dbCombo({ source: 'items', value: item.id, label: 'Предмет', sectionId: section, index, key: 'id', placeholder: '— предмет —', searchable: true, limit: 1000 })}
+        ${inp('Количество', 'value', item.value || '', 'number', 'min="1"')}
+        <div><label>Тип</label>
           <select class="editor-input form-input" data-task-field="${section}" data-task-index="${index}" data-task-key="type">
-            <option value="default" ${item.type === 'default' ? 'selected' : ''}>Hand over</option>
-            <option value="show" ${item.type === 'show' ? 'selected' : ''}>Show</option>
-            <option value="pickup" ${item.type === 'pickup' ? 'selected' : ''}>Pick up</option>
+            <option value="default" ${item.type === 'default' ? 'selected' : ''}>Отдать</option>
+            <option value="show" ${item.type === 'show' ? 'selected' : ''}>Показать</option>
+            <option value="pickup" ${item.type === 'pickup' ? 'selected' : ''}>Подобрать</option>
           </select>
         </div>
       </div>`;
 
       if (section === 'defeat_bots') return `<div class="editor-item-grid">
-        ${dbCombo({ source: 'bots', value: item.id, label: 'Mob', sectionId: section, index, key: 'id', placeholder: '— mob —', limit: 500 })}
-        ${inp('Quantity', 'value', item.value || '', 'number', 'min="1"')}
+        ${dbCombo({ source: 'bots', value: item.id, label: 'Моб', sectionId: section, index, key: 'id', placeholder: '— моб —', limit: 500 })}
+        ${inp('Количество', 'value', item.value || '', 'number', 'min="1"')}
       </div>`;
 
       if (section === 'move_to') {
         const move = moveToDefaults(item);
         return `<div>
           <div class="editor-item-grid">
-            ${inp('Step', 'step', move.step, 'number', 'min="1"')}
-            <div><label>Navigator</label>
+            ${inp('Шаг', 'step', move.step, 'number', 'min="1"')}
+            <div><label>Навигатор</label>
               <select class="editor-input form-input" data-task-field="${section}" data-task-index="${index}" data-task-key="navigator">
-                <option value="true" ${move.navigator === 'true' ? 'selected' : ''}>Yes</option>
-                <option value="false" ${move.navigator === 'false' ? 'selected' : ''}>No</option>
+                <option value="true" ${move.navigator === 'true' ? 'selected' : ''}>Да</option>
+                <option value="false" ${move.navigator === 'false' ? 'selected' : ''}>Нет</option>
               </select>
             </div>
-            ${inp('Objective Name', 'name', move.name, 'text')}
+            ${inp('Название цели', 'name', move.name, 'text')}
           </div>
           <div class="editor-item-grid">
-            ${inp('X', 'x', move.x)}
-            ${inp('Y', 'y', move.y)}
-            ${dbCombo({ source: 'worlds', value: move.world_id, label: 'World', sectionId: section, index, key: 'world_id', placeholder: '— world —', limit: 500 })}
+            ${vec2Task(section, index, 'x', 'y', move.x, move.y, `tasks.move_to.${index}.world_id`, 'Точка цели (X, Y)')}
+            ${dbCombo({ source: 'worlds', value: move.world_id, label: 'Мир', sectionId: section, index, key: 'world_id', placeholder: '— мир —', limit: 500 })}
           </div>
           <div class="editor-item-grid">
-            <div><label>Mode</label>
+            <div><label>Режим</label>
               <select class="editor-input form-input" data-task-field="${section}" data-task-index="${index}" data-task-key="mode">
-                <option value="move" ${move.mode === 'move' ? 'selected' : ''}>Just stand</option>
-                <option value="move_press" ${move.mode === 'move_press' ? 'selected' : ''}>Requires press</option>
-                <option value="move_follow_press" ${move.mode === 'move_follow_press' ? 'selected' : ''}>Hover and press</option>
-                <option value="defeat_bot" ${move.mode === 'defeat_bot' ? 'selected' : ''}>Defeat mob</option>
+                <option value="move" ${move.mode === 'move' ? 'selected' : ''}>Просто стоять</option>
+                <option value="move_press" ${move.mode === 'move_press' ? 'selected' : ''}>Нажать</option>
+                <option value="move_follow_press" ${move.mode === 'move_follow_press' ? 'selected' : ''}>Навести и нажать</option>
+                <option value="defeat_bot" ${move.mode === 'defeat_bot' ? 'selected' : ''}>Победить моба</option>
               </select>
             </div>
-            <div data-move-modes="move,move_press,move_follow_press"><label>Cooldown</label>
+            <div data-move-modes="move,move_press,move_follow_press"><label>Задержка (сек)</label>
               <input class="editor-input form-input" type="number" min="0" value="${esc(move.cooldown || '')}"
                 data-task-field="${section}" data-task-index="${index}" data-task-key="cooldown">
             </div>
-            ${inp('Completion Text', 'completion_text', move.completion_text, 'text')}
+            ${inp('Текст завершения', 'completion_text', move.completion_text, 'text')}
           </div>
           <div class="editor-item-subgroup" data-move-modes="move_follow_press">
             <div class="editor-item-grid">
-              ${inp('Interactive X', 'interactive_x', move.interactive_x || '')}
-              ${inp('Interactive Y', 'interactive_y', move.interactive_y || '')}
+              ${vec2Task(section, index, 'interactive_x', 'interactive_y', move.interactive_x || '', move.interactive_y || '', `tasks.move_to.${index}.world_id`, 'Интерактив (X, Y)')}
             </div>
           </div>
           <div class="editor-item-subgroup" data-move-modes="defeat_bot">
             <div class="editor-item-grid">
-              ${dbCombo({ source: 'bots', value: move.defeat_bot_id, label: 'Mob to defeat', sectionId: section, index, key: 'defeat_bot_id', placeholder: '— mob —', limit: 500 })}
-              ${inp('Attribute Power', 'defeat_bot_attribute_power', move.defeat_bot_attribute_power || 10)}
+              ${dbCombo({ source: 'bots', value: move.defeat_bot_id, label: 'Моб для победы', sectionId: section, index, key: 'defeat_bot_id', placeholder: '— моб —', limit: 500 })}
+              ${inp('Сила атрибута', 'defeat_bot_attribute_power', move.defeat_bot_attribute_power || 10)}
               ${dbCombo({ source: 'worlds', value: move.defeat_bot_world_id, label: 'World', sectionId: section, index, key: 'defeat_bot_world_id', placeholder: '— world —', limit: 500 })}
             </div>
           </div>
           <div class="editor-item-subgroup" data-move-modes="move_press,move_follow_press">
             <div class="editor-item-grid">
-              ${dbCombo({ source: 'items', value: move.required_item_id, label: 'Required Item', sectionId: section, index, key: 'required_item_id', placeholder: '— item —', searchable: true, limit: 1000 })}
-              ${inp('Qty', 'required_item_value', move.required_item_value || '')}
+              ${dbCombo({ source: 'items', value: move.required_item_id, label: 'Нужный предмет', sectionId: section, index, key: 'required_item_id', placeholder: '— предмет —', searchable: true, limit: 1000 })}
+              ${inp('Кол-во', 'required_item_value', move.required_item_value || '')}
             </div>
           </div>
           <div class="editor-item-subgroup" data-move-modes="move_press,move_follow_press,defeat_bot">
             <div class="editor-item-grid">
-              ${dbCombo({ source: 'items', value: move.pick_up_item_id, label: 'Item to pick up', sectionId: section, index, key: 'pick_up_item_id', placeholder: '— item —', searchable: true, limit: 1000 })}
-              ${inp('Qty', 'pick_up_item_value', move.pick_up_item_value || '')}
+              ${dbCombo({ source: 'items', value: move.pick_up_item_id, label: 'Предмет для подбора', sectionId: section, index, key: 'pick_up_item_id', placeholder: '— предмет —', searchable: true, limit: 1000 })}
+              ${inp('Кол-во', 'pick_up_item_value', move.pick_up_item_value || '')}
             </div>
           </div>
         </div>`;
@@ -1607,7 +1617,7 @@
           <div class="editor-task-content">
             <div class="editor-items" data-task-items="${section.id}"></div>
             <button type="button" class="editor-btn editor-btn-secondary" data-task-add="${section.id}">
-              <i class="fa-solid fa-plus"></i><span>Add</span>
+              <i class="fa-solid fa-plus"></i><span>Добавить</span>
             </button>
           </div>
         </section>
@@ -1636,16 +1646,16 @@
                     <span class="editor-item-summary">${esc(taskSummary(section.id, item))}</span>
                   </div>
                   <div class="editor-item-actions">
-                    <span class="editor-item-handle" title="Drag"><i class="fa-solid fa-arrows-up-down-left-right"></i></span>
-                    <button type="button" class="editor-btn editor-btn-secondary" data-task-toggle="${section.id}" data-task-index="${index}" title="Collapse/expand"><i class="fa-solid fa-chevron-down"></i></button>
-                    <button type="button" class="editor-btn editor-btn-secondary" data-task-duplicate="${section.id}" data-task-index="${index}" title="Duplicate"><i class="fa-solid fa-copy"></i></button>
-                    <button type="button" class="editor-btn editor-btn-secondary" data-task-remove="${section.id}" data-task-index="${index}" title="Delete"><i class="fa-solid fa-trash"></i></button>
+                    <span class="editor-item-handle" title="Перетащить"><i class="fa-solid fa-arrows-up-down-left-right"></i></span>
+                    <button type="button" class="editor-btn editor-btn-secondary" data-task-toggle="${section.id}" data-task-index="${index}" title="Свернуть/развернуть"><i class="fa-solid fa-chevron-down"></i></button>
+                    <button type="button" class="editor-btn editor-btn-secondary" data-task-duplicate="${section.id}" data-task-index="${index}" title="Дублировать"><i class="fa-solid fa-copy"></i></button>
+                    <button type="button" class="editor-btn editor-btn-secondary" data-task-remove="${section.id}" data-task-index="${index}" title="Удалить"><i class="fa-solid fa-trash"></i></button>
                   </div>
                 </div>
                 <div class="editor-item-body">${renderItemBody(section.id, item, index)}</div>
               </div>
             `).join('')
-          : '<div class="editor-muted-text text-sm">No items</div>';
+          : '<div class="editor-muted-text text-sm">Пока пусто — нажмите «Добавить»</div>';
 
         if (list.length && EditorCore.DB?.init) {
           EditorCore.DB.init(listEl);
@@ -1713,7 +1723,7 @@
               newCard?.classList.remove('is-collapsed');
               newCard?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
             });
-            EditorCore.UI.toast('Task duplicated', 'success');
+            EditorCore.UI.toast('Задание продублировано', 'success');
             return;
           }
 
@@ -1781,11 +1791,11 @@
       DOM.questEditor.classList.toggle('hidden', type !== 'quest');
       DOM.stepEditor.classList.toggle('hidden', type !== 'step');
       if (type === 'quest') {
-        setBtn(DOM.deleteBtn, { enabled: true, hidden: false, label: 'Delete Quest' });
+        setBtn(DOM.deleteBtn, { enabled: true, hidden: false, label: 'Удалить квест' });
         setBtn(DOM.newStep, { enabled: true, hidden: false });
         setBtn(DOM.duplicateBtn, { enabled: false, hidden: true });
       } else if (type === 'step') {
-        setBtn(DOM.deleteBtn, { enabled: true, hidden: false, label: 'Delete Step' });
+        setBtn(DOM.deleteBtn, { enabled: true, hidden: false, label: 'Удалить шаг' });
         setBtn(DOM.newStep, { enabled: true, hidden: false });
         setBtn(DOM.duplicateBtn, { enabled: true, hidden: false });
       } else {
@@ -1796,8 +1806,8 @@
     };
 
     const resetHeader = () => {
-      DOM.title.textContent = 'Select a tree element';
-      DOM.subtitle.textContent = 'quest or mob step';
+      DOM.title.textContent = 'Выберите элемент слева';
+      DOM.subtitle.textContent = 'квест или шаг моба';
     };
 
     const mountStepEditor = (step) => {
@@ -1812,7 +1822,7 @@
           BotID: toNum(step.BotID),
           QuestID: toNum(step.QuestID),
           Step: toNum(step.Step, 1),
-          WorldID: toNum(step.WorldID),
+          WorldID: step.WorldID === null || step.WorldID === undefined ? '' : toNum(step.WorldID),
           Position: { x: toNum(step.PosX), y: toNum(step.PosY) },
           AutoFinish: step.AutoFinish === 'Partial',
           ScenarioData: step.ScenarioData || ''
@@ -1867,21 +1877,21 @@
             <div class="step-node-actions">
               <input class="editor-input form-input step-node-level" type="number"
                 min="1" step="1" value="${toNum(step.Step, 1)}"
-                title="Step position" data-step-level-id="${step.ID}" />
+                title="Позиция шага" data-step-level-id="${step.ID}" />
               <div class="step-node-quick">
                 <button type="button" class="step-quick-btn is-grab"
                         data-step-action="move" data-step-id="${step.ID}"
-                        title="Drag to another quest">
+                        title="Перетащите в другой квест">
                   <i class="fa-solid fa-up-down-left-right"></i>
                 </button>
                 <button type="button" class="step-quick-btn"
                         data-step-action="duplicate" data-step-id="${step.ID}"
-                        title="Duplicate step">
+                        title="Дублировать шаг">
                   <i class="fa-solid fa-copy"></i>
                 </button>
                 <button type="button" class="step-quick-btn is-danger"
                         data-step-action="delete" data-step-id="${step.ID}"
-                        title="Delete step">
+                        title="Удалить шаг">
                   <i class="fa-solid fa-trash"></i>
                 </button>
               </div>
@@ -1918,7 +1928,7 @@
         }
       }
 
-      if (!list.length) return '<div class="editor-muted-text text-sm">No quests found</div>';
+      if (!list.length) return '<div class="editor-muted-text text-sm">Квестов не найдено</div>';
 
       return list.map((quest) => {
         const expanded = hasSearch || STATE.expandedQuests.has(quest.ID);
@@ -1945,7 +1955,7 @@
             `<div class="step-drop-indicator" data-drop-quest="${quest.ID}" data-drop-index="${filteredSteps.length}"></div>
              <div class="step-drop-zone" data-drop-quest="${quest.ID}" data-drop-index="${filteredSteps.length}"></div>`
           : `<div class="step-drop-zone" data-drop-quest="${quest.ID}" data-drop-index="0"></div>
-             <div class="editor-muted-text text-xs" style="padding-left:4px">No steps</div>`;
+             <div class="editor-muted-text text-xs" style="padding-left:4px">Шагов нет</div>`;
 
         const classes = [
           'quest-node',
@@ -2059,7 +2069,7 @@
           if (!step) return;
           if (action === 'move') {
             selectStep(step);
-            EditorCore.UI.toast('Drag the card to the desired location', 'info');
+            EditorCore.UI.toast('Перетащите карточку в нужное место', 'info');
           } else if (action === 'duplicate') {
             duplicateStepFromTree(step);
           } else if (action === 'delete') {
@@ -2402,16 +2412,16 @@
         } else {
           renderTree({ preserveScroll: true });
         }
-        EditorCore.UI.toast('Step deleted', 'success');
+        EditorCore.UI.toast('Шаг удалён', 'success');
         return true;
       } catch (err) {
-        EditorCore.UI.toast(err.message || 'Deletion error', 'error');
+        EditorCore.UI.toast(err.message || 'Ошибка удаления', 'error');
         return false;
       }
     };
 
     const removeStepFromTree = async (step) => {
-      if (!step || !confirm(`Delete step #${step.ID}?`)) return;
+      if (!step || !await EditorCore.Page.confirm(`Удалить шаг #${step.ID}?`)) return;
       await removeStepCommon(step);
     };
 
@@ -2420,8 +2430,8 @@
       const id = STATE.selected.id;
       const quest = STATE.quests.find((item) => item.ID === id);
       const name = quest?.Name ? `"${quest.Name}"` : `#${id}`;
-      if (!confirm(`Delete quest ${name} and all its steps?`)) return;
-      setBtn(DOM.deleteBtn, { enabled: false, hidden: false, label: 'Deleting…' });
+      if (!await EditorCore.Page.confirm(`Удалить квест ${name} и все его шаги?`)) return;
+      setBtn(DOM.deleteBtn, { enabled: false, hidden: false, label: 'Удаление…' });
       try {
         const toRemove = STATE.steps.filter((step) => step.QuestID === id);
         for (const step of toRemove.filter((entry) => entry.ID > 0)) {
@@ -2441,20 +2451,20 @@
         showEditor(null);
         resetHeader();
         renderTree();
-        EditorCore.UI.toast('Quest deleted', 'success');
+        EditorCore.UI.toast('Квест удалён', 'success');
       } catch (err) {
-        setBtn(DOM.deleteBtn, { enabled: true, hidden: false, label: 'Delete Quest' });
-        EditorCore.UI.toast(err.message || 'Deletion error', 'error');
+        setBtn(DOM.deleteBtn, { enabled: true, hidden: false, label: 'Удалить квест' });
+        EditorCore.UI.toast(err.message || 'Ошибка удаления', 'error');
       }
     };
 
     const removeStep = async () => {
       if (STATE.selected?.type !== 'step') return;
       const step = STATE.steps.find((item) => item.ID === STATE.selected.id);
-      if (!step || !confirm(`Delete step #${step.ID}?`)) return;
-      setBtn(DOM.deleteBtn, { enabled: false, hidden: false, label: 'Deleting…' });
+      if (!step || !await EditorCore.Page.confirm(`Удалить шаг #${step.ID}?`)) return;
+      setBtn(DOM.deleteBtn, { enabled: false, hidden: false, label: 'Удаление…' });
       const ok = await removeStepCommon(step);
-      if (!ok) setBtn(DOM.deleteBtn, { enabled: true, hidden: false, label: 'Delete Step' });
+      if (!ok) setBtn(DOM.deleteBtn, { enabled: true, hidden: false, label: 'Удалить шаг' });
     };
 
     const removeSelected = async () => {
@@ -2466,7 +2476,7 @@
       DOM.newQuest.disabled = true;
       try {
         const res = await EditorCore.DBCrud.create('quests', {
-          Name: 'New Quest',
+          Name: 'Новый квест',
           NextQuestID: null,
           Money: 0,
           Exp: 0,
@@ -2476,7 +2486,7 @@
         const quest = STATE.quests.find((item) => item.ID === res.id);
         if (quest) selectQuest(quest);
       } catch (err) {
-        EditorCore.UI.toast(err.message || 'Quest creation error', 'error');
+        EditorCore.UI.toast(err.message || 'Ошибка создания квеста', 'error');
       } finally {
         DOM.newQuest.disabled = false;
       }
@@ -2549,7 +2559,7 @@
     });
 
     const loadData = async () => {
-      DOM.tree.innerHTML = '<div class="editor-muted-text text-sm">Loading...</div>';
+      DOM.tree.innerHTML = '<div class="editor-muted-text text-sm">Загрузка…</div>';
       try {
         const [questsRes, stepsRes, botLabels, worldLabels, botSkins, skinsApi] = await Promise.all([
           EditorCore.DBCrud.list('quests', { limit: 5000 }),
@@ -2596,8 +2606,8 @@
         setDirty();
         renderTree();
       } catch (err) {
-        DOM.tree.innerHTML = '<div class="editor-muted-text text-sm">Failed to load data</div>';
-        EditorCore.UI.toast(err.message || 'Loading error', 'error');
+        DOM.tree.innerHTML = '<div class="editor-muted-text text-sm">Не удалось загрузить данные</div>';
+        EditorCore.UI.toast(err.message || 'Ошибка загрузки', 'error');
       }
     };
 
@@ -2606,7 +2616,7 @@
       const newIds = [...STATE.newSteps];
       const updateIds = [...STATE.dirtySteps].filter((id) => !STATE.newSteps.has(id));
       if (!questIds.length && !newIds.length && !updateIds.length) {
-        EditorCore.UI.toast('No changes to save', 'info');
+        EditorCore.UI.toast('Нет изменений для сохранения', 'info');
         return;
       }
       DOM.save.disabled = true;
@@ -2655,9 +2665,9 @@
           renderTree({ preserveScroll: true });
         }
 
-        EditorCore.UI.toast('Changes saved', 'success');
+        EditorCore.UI.toast('Изменения сохранены', 'success');
       } catch (err) {
-        EditorCore.UI.toast(err.message || 'Save error', 'error');
+        EditorCore.UI.toast(err.message || 'Ошибка сохранения', 'error');
       } finally {
         DOM.save.disabled = false;
       }
@@ -2707,5 +2717,5 @@
 
     loadData();
   </script>
-<script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a03f1a0068c81db0',t:'MTc4MDE1ODM5Nw=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</body>
 </html>

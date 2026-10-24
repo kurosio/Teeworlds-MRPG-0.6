@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Ваучеры</title>
+  <title>Ваучеры • Editor Studio</title>
   <script src="editor-core/page-loader.js" data-mode="scenario"></script>
 </head>
 
@@ -58,7 +58,7 @@
             </select>
           </div>
 
-          <div id="list" class="mt-4 editor-sidebar-list editor-scroll" style="max-height: 590px"></div>
+          <div id="list" class="mt-4 editor-sidebar-list editor-scroll"></div>
         </div>
       </aside>
 
@@ -96,11 +96,11 @@
 
             <div id="formRoot"></div>
 
-            <div class="editor-card p-4">
+            <div class="editor-panel-card">
               <div class="flex items-center justify-between gap-3">
                 <div>
                   <div class="font-semibold">Предметы</div>
-                  <div class="editor-muted-text text-sm">Сохраняются в поле Data как JSON</div>
+                  <div class="editor-muted-text text-sm">Список наград ваучера</div>
                 </div>
               </div>
               <div class="mt-4" id="itemsRoot"></div>
@@ -258,10 +258,10 @@
         const active = r.ID === STATE.selectedId;
         const badge = r.Multiple ? `<span class="text-xs px-2 py-1 rounded-full" style="background: rgba(16,185,129,.16); border: 1px solid rgba(16,185,129,.3)">multi</span>` : '';
         return `
-          <button class="w-full text-left editor-row ${active ? 'ring-2 ring-indigo-500/40' : ''}" data-id="${r.ID}">
+          <button class="w-full text-left editor-row ${active ? 'ring-2 editor-ring' : ''}" data-id="${r.ID}">
             <div class="flex items-center justify-between gap-3">
               <div class="min-w-0">
-                <div class="font-semibold truncate">${r.Code}</div>
+                <div class="font-semibold truncate">${EditorCore.utils.escapeHtml(r.Code || '')}</div>
                 <div class="text-sm editor-muted-text truncate">ID: ${r.ID} • ${formatUntil(r.ValidUntil)}</div>
               </div>
               ${badge}
@@ -525,8 +525,17 @@
       window.EditorCoreBootstrap = window.EditorCoreBootstrap || window.EditorCore.bootstrapEditor({ mode: 'scenario' });
       // Ensure toast container exists
       window.EditorCore.UI.mountToastContainer({ id: 'toast-container' });
-      await showDbStatus();
-      await loadList();
+      // Сбой загрузки не должен оставлять страницу «мёртвой» и необработанным
+      // исключением: показываем одну понятную ошибку в списке.
+      try {
+        await showDbStatus();
+        await loadList();
+      } catch (err) {
+        window.EditorCore.UI?.toast?.(err?.message || 'Не удалось загрузить список.', 'error');
+        if (DOM.list) {
+          DOM.list.innerHTML = '<div class="editor-muted-text text-sm p-3">Не удалось загрузить список. Проверьте подключение к базе и обновите страницу.</div>';
+        }
+      }
     })();
   </script>
 </body>

@@ -32,12 +32,38 @@ const SOURCES = [
     'attributes' => ['table' => 'tw_attributes',  'id' => 'ID', 'label' => 'Name'],
 ];
 
+// Which editor tabs need each lookup source. A guest may only read lookups of the
+// tabs the administrator granted (otherwise the dropdowns would leak data from
+// editors the account cannot open).
+const SOURCE_TABS = [
+    'quests'     => ['quests'],
+    'items'      => ['items', 'crafts', 'warehouses', 'quests'],
+    'worlds'     => ['worlds', 'crafts', 'quests', 'dungeons', 'aethers'],
+    'skills'     => ['items', 'bots_mobs', 'quests'],
+    'bots'       => ['bots_info', 'bots_mobs', 'bots_npc', 'quests'],
+    'attributes' => ['items', 'bots_mobs'],
+];
+
+/** Guest gate for lookup sources. Admins always pass. */
+function assert_source_access(string $source): void
+{
+    global $ROLE;
+    if ($ROLE === EDITOR_ROLE_ADMIN) {
+        return;
+    }
+    $tabs = SOURCE_TABS[$source] ?? [];
+    $pages = editor_guest_pages();
+    if (!array_intersect($tabs, $pages)) {
+        respond(['ok' => false, 'error' => 'Доступ запрещён: справочник не входит в ваши вкладки.', 'code' => 'guest_forbidden'], 403);
+    }
+}
+
 // ── Validation helpers ───────────────────────────────────────────────────────
 
 function resolve_source(string $source): array
 {
     if (!isset(SOURCES[$source])) {
-        respond(['ok' => false, 'error' => 'Unknown source'], 400);
+        respond(['ok' => false, 'error' => 'Неизвестный справочник'], 400);
     }
     return SOURCES[$source];
 }
@@ -82,6 +108,12 @@ function handle_get_config(): never
         'database'            => (string)($c['database'] ?? ''),
         'user'                => (string)($c['user'] ?? ''),
         'skins_api'           => (string)($c['skins_api'] ?? ''),
+        // Мост к картам игрового сервера (см. api/map.php).
+        // Токен наружу не отдаём: только признак, что он сохранён.
+        'map_api'             => (string)($c['map_api'] ?? ''),
+        'map_api_token_set'   => ((string)($c['map_api_token'] ?? '')) !== '',
+        'maps_dir'            => (string)($c['maps_dir'] ?? ''),
+        'mapres_dir'          => (string)($c['mapres_dir'] ?? ''),
         'editor_user'         => (string)($c['editor_user'] ?? 'admin'),
         'allow_remote_editor' => (bool)($c['allow_remote_editor'] ?? false),
         'allowed_editor_ips'  => is_array($c['allowed_editor_ips'] ?? null)
@@ -95,56 +127,77 @@ function handle_get_config(): never
 function handle_save_config(): never
 {
     $body = read_json_body();
-    $prev = load_cfg();
 
-    // Resolve allowed_editor_ips: prefer body, fallback to previous
-    $allowedIps = [];
-    if (is_array($body['allowed_editor_ips'] ?? null)) {
-        $allowedIps = array_values($body['allowed_editor_ips']);
-    } elseif (is_array($prev['allowed_editor_ips'] ?? null)) {
-        $allowedIps = array_values($prev['allowed_editor_ips']);
-    }
-
-    // Handle password: special marker to clear it
-    $passwordValue = (string)($body['password'] ?? '');
-    $clearPassword = ($body['clear_password'] === true || $passwordValue === '__CLEAR_PASSWORD__');
-
-    $cfg = [
-        'host'                => (string)($body['host']     ?? ($prev['host']     ?? '127.0.0.1')),
-        'port'                => (int)($body['port']        ?? ($prev['port']     ?? 3306)),
-        'database'            => (string)($body['database'] ?? ($prev['database'] ?? '')),
-        'user'                => (string)($body['user']     ?? ($prev['user']     ?? 'root')),
-        'password'            => $clearPassword ? '' : $passwordValue,
-        'skins_api'           => trim((string)($body['skins_api']    ?? ($prev['skins_api']    ?? ''))),
-        'editor_user'         => trim((string)($body['editor_user']  ?? ($prev['editor_user']  ?? 'admin'))),
-        'editor_password'     => (string)($body['editor_password'] ?? ''),
-        'allow_remote_editor' => (bool)($body['allow_remote_editor'] ?? ($prev['allow_remote_editor'] ?? false)),
-        'allowed_editor_ips'  => $allowedIps,
-    ];
-
-    // Keep existing password if new one is empty AND not explicitly clearing
-    if (!$clearPassword && $cfg['password'] === '' && isset($prev['password'])) {
-        $cfg['password'] = (string)$prev['password'];
-    }
-
-    // Ensure editor_user is never empty
-    if ($cfg['editor_user'] === '') {
-        $cfg['editor_user'] = (string)($prev['editor_user'] ?? 'admin');
-        if ($cfg['editor_user'] === '') {
-            $cfg['editor_user'] = 'admin';
+    // Atomic read-modify-write under a lock: guest accounts / guest settings are
+    // managed by other endpoints and must never be lost by a config save here.
+    $saved = mutate_cfg(function (array $prev) use ($body) {
+        // Resolve allowed_editor_ips: prefer body, fallback to previous
+        $allowedIps = [];
+        if (is_array($body['allowed_editor_ips'] ?? null)) {
+            $allowedIps = array_values($body['allowed_editor_ips']);
+        } elseif (is_array($prev['allowed_editor_ips'] ?? null)) {
+            $allowedIps = array_values($prev['allowed_editor_ips']);
         }
-    }
 
-    // Keep existing editor password if new one is empty
-    if ($cfg['editor_password'] === '' && isset($prev['editor_password'])) {
-        $cfg['editor_password'] = (string)$prev['editor_password'];
-    }
+        // Handle password: special marker to clear it
+        $passwordValue = (string)($body['password'] ?? '');
+        $clearPassword = ($body['clear_password'] === true || $passwordValue === '__CLEAR_PASSWORD__');
 
-    // Preserve settings managed elsewhere (guest access, etc.).
-    $cfg = array_merge($prev, $cfg);
+        $cfg = [
+            'host'                => (string)($body['host']     ?? ($prev['host']     ?? '127.0.0.1')),
+            'port'                => (int)($body['port']        ?? ($prev['port']     ?? 3306)),
+            'database'            => (string)($body['database'] ?? ($prev['database'] ?? '')),
+            'user'                => (string)($body['user']     ?? ($prev['user']     ?? 'root')),
+            'password'            => $clearPassword ? '' : $passwordValue,
+            'skins_api'           => trim((string)($body['skins_api']    ?? ($prev['skins_api']    ?? ''))),
+            'map_api'             => trim((string)($body['map_api']      ?? ($prev['map_api']      ?? ''))),
+            'maps_dir'            => trim((string)($body['maps_dir']     ?? ($prev['maps_dir']     ?? ''))),
+            'mapres_dir'          => trim((string)($body['mapres_dir']   ?? ($prev['mapres_dir']   ?? ''))),
+            'editor_user'         => trim((string)($body['editor_user']  ?? ($prev['editor_user']  ?? 'admin'))),
+            'editor_password'     => (string)($body['editor_password'] ?? ''),
+            'allow_remote_editor' => (bool)($body['allow_remote_editor'] ?? ($prev['allow_remote_editor'] ?? false)),
+            'allowed_editor_ips'  => $allowedIps,
+        ];
 
-    if (!save_cfg($cfg)) {
-        respond(['ok' => false, 'error' => 'Failed to save config'], 500);
+        // Keep existing password if new one is empty AND not explicitly clearing
+        if (!$clearPassword && $cfg['password'] === '' && isset($prev['password'])) {
+            $cfg['password'] = (string)$prev['password'];
+        }
+
+        // Ensure editor_user is never empty
+        if ($cfg['editor_user'] === '') {
+            $cfg['editor_user'] = (string)($prev['editor_user'] ?? 'admin');
+            if ($cfg['editor_user'] === '') {
+                $cfg['editor_user'] = 'admin';
+            }
+        }
+
+        // Keep existing editor password if new one is empty
+        if ($cfg['editor_password'] === '' && isset($prev['editor_password'])) {
+            $cfg['editor_password'] = (string)$prev['editor_password'];
+        }
+
+        // Токен map-api: пустое поле = «не менять», явная очистка — флагом.
+        $mapToken = (string)($body['map_api_token'] ?? '');
+        if ($body['clear_map_api_token'] === true || $mapToken === '__CLEAR_TOKEN__') {
+            $cfg['map_api_token'] = '';
+        } elseif ($mapToken !== '') {
+            $cfg['map_api_token'] = $mapToken;
+        } else {
+            $cfg['map_api_token'] = (string)($prev['map_api_token'] ?? '');
+        }
+
+        // Адрес моста — только http(s) или пусто.
+        if ($cfg['map_api'] !== '' && !preg_match('#^https?://#i', $cfg['map_api'])) {
+            throw new EditorUserError('Адрес map-api должен начинаться с http:// или https://');
+        }
+
+        // Preserve settings managed elsewhere (guest access, guest accounts, etc.).
+        return array_merge($prev, $cfg);
+    });
+
+    if (!$saved) {
+        respond(['ok' => false, 'error' => 'Не удалось сохранить настройки'], 500);
     }
 
     respond(['ok' => true]);
@@ -180,10 +233,47 @@ function handle_test_skins(): never
     respond(['ok' => true, 'status' => $res['status'] ?? 200]);
 }
 
+/**
+ * Проверка моста к картам игрового сервера.
+ * Запрос: { url?: string, token?: string } — можно проверить адрес до сохранения.
+ * Ответ: { ok, status } или { ok: false, error }.
+ */
+function handle_test_map_api(): never
+{
+    $body = read_json_body();
+    $cfg  = load_cfg();
+
+    $url = trim((string)($body['url'] ?? ($cfg['map_api'] ?? '')));
+    $token = (string)($body['token'] ?? ($cfg['map_api_token'] ?? ''));
+
+    if ($url === '') {
+        respond(['ok' => false, 'error' => 'Адрес map-api не задан'], 400);
+    }
+
+    $target = $url . (str_contains($url, '?') ? '&' : '?') . 'action=status';
+    $res = map_api_request($target, $token);
+
+    if (!$res['ok']) {
+        respond([
+            'ok'     => false,
+            'error'  => $res['error'] ?? 'map-api недоступен',
+            'status' => $res['status'] ?? null,
+        ], 502);
+    }
+
+    $data = json_decode((string)$res['body'], true);
+    respond([
+        'ok'     => true,
+        'status' => $res['status'] ?? 200,
+        'source' => is_array($data) ? (string)($data['source'] ?? '') : '',
+    ]);
+}
+
 function handle_list(): never
 {
     $source = (string)($_GET['source'] ?? '');
     $meta   = resolve_source($source);
+    assert_source_access($source);
 
     $search         = trim((string)($_GET['search'] ?? ''));
     $filterKey      = trim((string)($_GET['filter_key'] ?? ''));
@@ -250,7 +340,7 @@ function handle_list(): never
         $sql  = "SELECT `{$idCol}` AS id, `{$labelCol}` AS label FROM `{$table}` {$whereClause} ORDER BY `{$idCol}` ASC LIMIT ? OFFSET ?";
         $stmt = $mysqli->prepare($sql);
         if ($stmt === false) {
-            throw new RuntimeException('Prepare failed: ' . $mysqli->error);
+            throw new RuntimeException('Ошибка подготовки запроса к базе: ' . $mysqli->error);
         }
 
         $bindTypes  = $types . 'ii';
@@ -289,9 +379,10 @@ function handle_get_one(): never
     $source = (string)($_GET['source'] ?? '');
     $id     = (string)($_GET['id'] ?? '');
     $meta   = resolve_source($source);
+    assert_source_access($source);
 
     if ($id === '' || !ctype_digit($id)) {
-        respond(['ok' => false, 'error' => 'Invalid id'], 400);
+        respond(['ok' => false, 'error' => 'Некорректный идентификатор записи'], 400);
     }
 
     $table    = validate_table_name($meta['table']);
@@ -304,7 +395,7 @@ function handle_get_one(): never
         $sql  = "SELECT `{$idCol}` AS id, `{$labelCol}` AS label FROM `{$table}` WHERE `{$idCol}` = ? LIMIT 1";
         $stmt = $mysqli->prepare($sql);
         if ($stmt === false) {
-            throw new RuntimeException('Prepare failed: ' . $mysqli->error);
+            throw new RuntimeException('Ошибка подготовки запроса к базе: ' . $mysqli->error);
         }
 
         $iid = (int)$id;
@@ -366,7 +457,7 @@ function query_total_count(mysqli $mysqli, string $table, string $whereClause, s
     $sql  = "SELECT COUNT(*) AS c FROM `{$table}` {$whereClause}";
     $stmt = $mysqli->prepare($sql);
     if ($stmt === false) {
-        throw new RuntimeException('Prepare failed: ' . $mysqli->error);
+        throw new RuntimeException('Ошибка подготовки запроса к базе: ' . $mysqli->error);
     }
 
     if ($types !== '') {
@@ -388,19 +479,22 @@ $action = (string)($_GET['action'] ?? '');
 $handlers = [
     'get_config'  => 'handle_get_config',
     'save_config' => 'handle_save_config',
-    'test'        => 'handle_test',
-    'test_skins'  => 'handle_test_skins',
+    'test'         => 'handle_test',
+    'test_skins'   => 'handle_test_skins',
+    'test_map_api' => 'handle_test_map_api',
     'list'        => 'handle_list',
     'get_one'     => 'handle_get_one',
 ];
 
 try {
     guest_action_guard($ROLE, $action, ['list', 'get_one', 'get_config']);
+    // Запись конфигурации — только JSON-POST с этого же узла (см. db-core.php).
+    guard_write_actions($action, ['save_config', 'test_map_api']);
     if (isset($handlers[$action])) {
         $handlers[$action]();
     } else {
-        respond(['ok' => false, 'error' => 'Unknown action'], 400);
+        respond(['ok' => false, 'error' => 'Неизвестное действие'], 400);
     }
 } catch (Throwable $e) {
-    respond(['ok' => false, 'error' => $e->getMessage()], 500);
+    editor_internal_error($e);
 }

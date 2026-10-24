@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Предметы • tw_items_list</title>
+  <title>Предметы • Editor Studio</title>
   <script src="editor-core/page-loader.js" data-mode="event"></script>
 
   <style>
@@ -71,7 +71,7 @@
             </select>
           </div>
 
-          <div class="mt-4 editor-sidebar-list editor-scroll" style="max-height: 590px" data-editor-role="list"></div>
+          <div class="mt-4 editor-sidebar-list editor-scroll" data-editor-role="list"></div>
         </div>
       </aside>
 
@@ -543,7 +543,9 @@
           ],
         }
       },
-      ScenarioData: { type: 'scenario', label: 'ScenarioData', ui: { scenarioModePath: 'ScenarioMode' } },
+      // Мир сценария — то же поле, что «Мир сценария» в форме: карта компонента
+      // открывается в нём (см. editor-core/point-map.js).
+      ScenarioData: { type: 'scenario', label: 'ScenarioData', ui: { scenarioModePath: 'ScenarioMode', mapWorldPath: 'DataScenarioWorldID' } },
       InitialPrice: {
         type: 'number',
         label: 'Начальная цена',

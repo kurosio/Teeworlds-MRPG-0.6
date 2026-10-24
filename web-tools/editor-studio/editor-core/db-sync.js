@@ -9,46 +9,22 @@
   const PULL_PREVIEW_TIMEOUT_MS = 120000;
   const PULL_APPLY_TIMEOUT_MS = 900000;
   const BACKUP_TIMEOUT_MS = 300000;
+  const qs = (...args) => window.EditorCore.utils.qs(...args);
   const STORAGE_KEY = 'es_sync_history';
   const MAX_HISTORY = 500;
 
   // ── Network layer ─────────────────────────────────────────────────────────
 
-  const notifyAuthRequired = () => {
-    try { window.top?.postMessage({ type: 'editor-shell:auth-required' }, '*'); } catch {}
-  };
-
+  /**
+   * Запрос к API синхронизации. Ошибки бросаются исключением (их ловят
+   * обработчики кнопок), таймаут задаётся на вызов: выгрузка базы идёт минуты.
+   */
   const jsonFetch = async (url, options = {}) => {
-    const { timeoutMs = FETCH_TIMEOUT_MS, ...fetchOptions } = options;
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
-    try {
-      const res = await fetch(url, {
-        credentials: 'same-origin',
-        headers: { 'Content-Type': 'application/json', ...(fetchOptions.headers || {}) },
-        ...fetchOptions,
-        signal: controller.signal,
-      });
-      const text = await res.text();
-      let payload = null;
-      try { payload = text ? JSON.parse(text) : null; } catch { payload = { ok: false, error: 'Invalid JSON response', raw: text }; }
-      if (res.status === 401) notifyAuthRequired();
-      if (!res.ok) throw new Error(payload?.error || `HTTP ${res.status}`);
-      if (payload && payload.ok === false) throw new Error(payload.error || 'Request failed');
-      return payload;
-    } catch (err) {
-      if (err?.name === 'AbortError') throw new Error('Превышено время ожидания запроса');
-      if (err instanceof TypeError) throw new Error('Ошибка сети');
-      throw err;
-    } finally {
-      clearTimeout(timeoutId);
-    }
+    const { timeoutMs = FETCH_TIMEOUT_MS, ...rest } = options;
+    const res = await window.EditorCore.Http.json(url, { ...rest, timeout: timeoutMs });
+    if (!res.ok) throw new Error(res.error || 'Запрос не выполнен');
+    return res.data;
   };
-
-  const qs = (obj) => Object.entries(obj)
-    .filter(([, v]) => v !== undefined && v !== null)
-    .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`)
-    .join('&');
 
   // ── Change history storage ────────────────────────────────────────────────
 
@@ -544,7 +520,7 @@
           $('target-info').innerHTML = `
             <div class="editor-sync-target-card editor-sync-target-empty">
               <div class="flex items-center gap-2">
-                <i class="fa-solid fa-database text-slate-500"></i>
+                <i class="fa-solid fa-database editor-muted-text"></i>
                 <div>
                   <div class="font-semibold">Целевая БД не настроена</div>
                   <div class="text-xs editor-muted-text">Перейдите в Настройки → раздел «Синхронизация» для настройки.</div>
@@ -651,8 +627,8 @@
       });
 
       // Clear history button
-      opsContainer.querySelector('[data-sync-action="clear-history"]')?.addEventListener('click', () => {
-        if (!confirm('Очистить всю историю изменений? Это действие нельзя отменить.')) return;
+      opsContainer.querySelector('[data-sync-action="clear-history"]')?.addEventListener('click', async () => {
+        if (!await EditorCore.Page.confirm('Очистить всю историю изменений? Это действие нельзя отменить.')) return;
         clearHistory();
         renderOperations();
         updateAllBadges();

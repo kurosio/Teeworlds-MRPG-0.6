@@ -25,7 +25,7 @@ function ensure_dumps_dir(): string
 {
     $dir = dumps_dir();
     if (!is_dir($dir) && !@mkdir($dir, 0775, true) && !is_dir($dir)) {
-        respond(['ok' => false, 'error' => 'Cannot create dumps directory'], 500);
+        respond(['ok' => false, 'error' => 'Не удалось создать каталог для дампов'], 500);
     }
     return $dir;
 }
@@ -44,7 +44,7 @@ function validate_dump_name(string $file): string
 {
     $file = basename($file);
     if ($file === '' || !str_ends_with($file, '.sql') || str_contains($file, '..')) {
-        respond(['ok' => false, 'error' => 'Invalid dump name'], 400);
+        respond(['ok' => false, 'error' => 'Некорректное имя дампа'], 400);
     }
     return $file;
 }
@@ -59,10 +59,10 @@ function dump_path(string $file, bool $mustExist = false): string
 
     if ($mustExist) {
         if ($realPath === false || !is_file($realPath)) {
-            respond(['ok' => false, 'error' => 'Dump not found'], 404);
+            respond(['ok' => false, 'error' => 'Дамп не найден'], 404);
         }
         if ($realDir === false || !str_starts_with($realPath, $realDir . DIRECTORY_SEPARATOR)) {
-            respond(['ok' => false, 'error' => 'Invalid dump path'], 400);
+            respond(['ok' => false, 'error' => 'Некорректный путь к дампу'], 400);
         }
         return $realPath;
     }
@@ -85,10 +85,10 @@ function require_confirm_db(array $cfg, string $provided): void
 {
     $dbName = (string)($cfg['database'] ?? '');
     if ($dbName === '') {
-        respond(['ok' => false, 'error' => 'Database name is not configured'], 400);
+        respond(['ok' => false, 'error' => 'Имя базы не задано в настройках'], 400);
     }
     if (trim($provided) !== $dbName) {
-        respond(['ok' => false, 'error' => 'Confirmation database name mismatch'], 400);
+        respond(['ok' => false, 'error' => 'Имя базы в подтверждении не совпадает'], 400);
     }
 }
 
@@ -133,7 +133,7 @@ function run_process(string $cmd, array $env = []): array
     ];
     $process = proc_open($cmd, $descriptors, $pipes, null, $env ?: null);
     if (!is_resource($process)) {
-        return ['ok' => false, 'error' => 'Failed to start process'];
+        return ['ok' => false, 'error' => 'Не удалось запустить процесс'];
     }
 
     fclose($pipes[0]);
@@ -162,7 +162,7 @@ function run_restore(string $cmd, string $file, array $env = []): array
     ];
     $process = proc_open($cmd, $descriptors, $pipes, null, $env ?: null);
     if (!is_resource($process)) {
-        return ['ok' => false, 'error' => 'Failed to start process'];
+        return ['ok' => false, 'error' => 'Не удалось запустить процесс'];
     }
 
     $stdout = stream_get_contents($pipes[1]);
@@ -187,7 +187,7 @@ function dump_database_php(mysqli $mysqli, string $dbName, string $path): array
 {
     $fh = @fopen($path, 'wb');
     if (!$fh) {
-        return ['ok' => false, 'error' => 'Failed to open dump file for writing'];
+        return ['ok' => false, 'error' => 'Не удалось открыть файл дампа для записи'];
     }
 
     try {
@@ -329,7 +329,7 @@ function exec_sql_stream(mysqli $mysqli, string $path): array
                     continue;
                 }
                 if (!$mysqli->query($statement)) {
-                    return ['ok' => false, 'error' => $mysqli->error ?: 'Restore failed'];
+                    return ['ok' => false, 'error' => $mysqli->error ?: 'Не удалось восстановить базу'];
                 }
             }
         }
@@ -338,7 +338,7 @@ function exec_sql_stream(mysqli $mysqli, string $path): array
     $tail = trim($buffer);
     if ($tail !== '') {
         if (!$mysqli->query($tail)) {
-            return ['ok' => false, 'error' => $mysqli->error ?: 'Restore failed'];
+            return ['ok' => false, 'error' => $mysqli->error ?: 'Не удалось восстановить базу'];
         }
     }
     return ['ok' => true];
@@ -358,17 +358,17 @@ function reset_database(array $cfg): void
 {
     $dbName = (string)($cfg['database'] ?? '');
     if ($dbName === '') {
-        respond(['ok' => false, 'error' => 'Database name is not configured'], 400);
+        respond(['ok' => false, 'error' => 'Имя базы не задано в настройках'], 400);
     }
 
     $mysqli = db_connect_server();
     try {
         $safe = $mysqli->real_escape_string($dbName);
         if (!$mysqli->query("DROP DATABASE IF EXISTS `{$safe}`")) {
-            respond(['ok' => false, 'error' => $mysqli->error ?: 'Failed to drop database'], 500);
+            respond(['ok' => false, 'error' => $mysqli->error ?: 'Не удалось удалить базу'], 500);
         }
         if (!$mysqli->query("CREATE DATABASE `{$safe}` CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci")) {
-            respond(['ok' => false, 'error' => $mysqli->error ?: 'Failed to create database'], 500);
+            respond(['ok' => false, 'error' => $mysqli->error ?: 'Не удалось создать базу'], 500);
         }
     } finally {
         $mysqli->close();
@@ -473,7 +473,7 @@ function handle_create_dump(): never
         if (!$res['ok']) {
             // Удаляем частично записанный файл
             @unlink($path);
-            respond(['ok' => false, 'error' => $res['error'] ?? 'Dump failed'], 500);
+            respond(['ok' => false, 'error' => $res['error'] ?? 'Не удалось создать дамп'], 500);
         }
     } else {
         $mysqli = db_connect();
@@ -484,7 +484,7 @@ function handle_create_dump(): never
         }
         if (!$res['ok']) {
             @unlink($path);
-            respond(['ok' => false, 'error' => $res['error'] ?? 'Dump failed'], 500);
+            respond(['ok' => false, 'error' => $res['error'] ?? 'Не удалось создать дамп'], 500);
         }
     }
 
@@ -514,7 +514,7 @@ function handle_restore_dump(): never
         $cmd = build_mysql_cmd($bin, $conn);
         $res = run_restore($cmd, $path, env_with_password($conn['pass']));
         if (!$res['ok']) {
-            respond(['ok' => false, 'error' => $res['error'] ?? 'Restore failed'], 500);
+            respond(['ok' => false, 'error' => $res['error'] ?? 'Не удалось восстановить базу'], 500);
         }
     } else {
         $mysqli = db_connect();
@@ -524,7 +524,7 @@ function handle_restore_dump(): never
             $mysqli->close();
         }
         if (!$res['ok']) {
-            respond(['ok' => false, 'error' => $res['error'] ?? 'Restore failed'], 500);
+            respond(['ok' => false, 'error' => $res['error'] ?? 'Не удалось восстановить базу'], 500);
         }
     }
 
@@ -550,6 +550,9 @@ function handle_delete_dump(): never
 
 $action = (string)($_GET['action'] ?? '');
 
+// Восстановление и удаление дампов меняют данные — только JSON-POST своего узла.
+guard_write_actions($action, ['create_dump', 'restore_dump', 'delete_dump']);
+
 $handlers = [
     'download'     => 'handle_download',
     'list_dumps'   => 'handle_list_dumps',
@@ -562,8 +565,8 @@ try {
     if (isset($handlers[$action])) {
         $handlers[$action]();
     } else {
-        respond(['ok' => false, 'error' => 'Unknown action'], 400);
+        respond(['ok' => false, 'error' => 'Неизвестное действие'], 400);
     }
 } catch (Throwable $e) {
-    respond(['ok' => false, 'error' => $e->getMessage()], 500);
+    editor_internal_error($e);
 }

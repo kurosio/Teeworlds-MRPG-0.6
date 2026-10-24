@@ -19,122 +19,271 @@
   <script src="editor-core/tailwind-theme.js"></script>
   <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
 
+  <script src="editor-core/http.js"></script>
   <script src="studio.manifest.js"></script>
   <script src="editor-core/guest-mode.js"></script>
+  <script src="editor-core/i18n-en.js"></script>
+  <script src="editor-core/i18n.js"></script>
+  <script src="editor-core/page-kit.js"></script>
 
   <style>
+    /* Оболочка студии: боковое меню + рабочая область.
+       Всё оформление — на токенах editor-theme.css, чтобы оболочка и сами
+       редакторы выглядели как одно приложение. */
     html, body { height: 100%; }
     body { overflow: hidden; }
     .studio-iframe { width: 100%; height: 100%; border: 0; background: var(--editor-bg); }
-    .studio-brand-mark {
-      width: 38px; height: 38px; flex: 0 0 38px; border-radius: 12px;
-      display: grid; place-items: center; color: #fff;
-      background: linear-gradient(135deg, var(--editor-primary), var(--editor-accent));
-      box-shadow: 0 10px 28px color-mix(in srgb, var(--editor-primary) 28%, transparent);
+    .studio-app { height: 100vh; height: 100dvh; }
+
+    /* ── боковая панель ───────────────────────────────────────────── */
+    .studio-sidebar {
+      width: 292px;
+      background: var(--editor-surface);
+      border-right: 1px solid var(--editor-line);
     }
-    .studio-search-wrap { position: relative; }
-    .studio-search-wrap > i { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--editor-text-muted); pointer-events: none; }
-    .studio-search-wrap input { padding-left: 36px; padding-right: 52px; }
-    .studio-search-key { position: absolute; right: 9px; top: 50%; transform: translateY(-50%); padding: 2px 6px; border: 1px solid var(--editor-soft-border); border-radius: 6px; color: var(--editor-text-muted); background: var(--editor-soft-bg); font-size: 10px; }
-    .studio-group-title { display: flex; align-items: center; justify-content: space-between; }
-    .studio-group-count { padding: 1px 6px; border-radius: 999px; background: var(--editor-soft-bg-strong); font-size: 10px; }
+
+    .studio-brand { padding: 18px 16px 14px; display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .studio-brand-mark {
+      width: 38px; height: 38px; flex: 0 0 38px; border-radius: 11px;
+      display: grid; place-items: center; color: #fff; font-size: 15px;
+      background: linear-gradient(140deg, var(--editor-primary), var(--editor-accent));
+    }
+    .studio-brand-mark--sm { width: 32px; height: 32px; flex-basis: 32px; border-radius: 9px; font-size: 13px; }
+    .studio-brand-title { font-size: 15px; font-weight: 700; letter-spacing: -.01em; line-height: 1.2; }
+    .studio-brand-sub { margin-top: 2px; font-size: 11.5px; color: var(--editor-text-muted); line-height: 1.3; }
+
+    .studio-search-block { padding: 0 12px 12px; }
+    .studio-search-wrap { position: relative; display: block; }
+    .studio-search-wrap > i {
+      position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
+      color: var(--editor-text-muted); font-size: 12px; pointer-events: none;
+    }
+    .studio-search-wrap input { height: 36px; min-height: 36px; padding-left: 32px; padding-right: 52px; font-size: 13px; }
+    .studio-search-key {
+      position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+      padding: 1px 6px; border: 1px solid var(--editor-line); border-radius: 5px;
+      color: var(--editor-text-muted); background: var(--editor-soft-bg);
+      font-size: 10px; font-weight: 600; letter-spacing: .02em;
+    }
+
+    .studio-nav { padding: 0 8px 12px; }
+
+    /* Группа: заголовок с разрядкой и счётчиком. */
+    .studio-group-title {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 16px 10px 6px; gap: 8px;
+      font-size: 10.5px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase;
+      color: var(--editor-text-muted);
+    }
+    .studio-group-count {
+      padding: 0 6px; border-radius: 999px; font-size: 10px; font-weight: 600;
+      background: var(--editor-soft-bg-strong); color: var(--editor-text-muted);
+      letter-spacing: 0;
+    }
+
+    /* Пункт меню: плитка иконки, название, подсказка, счётчик запросов. */
     .studio-item {
       position: relative;
-      transition: background-color .14s ease, border-color .14s ease, transform .1s ease, box-shadow .14s ease;
+      display: flex; align-items: center; gap: 10px; width: 100%;
+      padding: 8px 10px;
+      border: 1px solid transparent; border-radius: var(--editor-radius-sm);
+      background: transparent; color: var(--editor-text); text-align: left;
+      transition: background-color .12s ease, color .12s ease;
     }
-    .studio-item:hover { transform: translateX(2px); }
-    .studio-item::before { content: ''; position: absolute; left: -1px; top: 25%; bottom: 25%; width: 3px; border-radius: 0 5px 5px 0; background: transparent; }
-    .studio-item.active::before { background: var(--editor-accent); }
-    .studio-workbar { min-height: 56px; background: color-mix(in srgb, var(--editor-surface) 90%, transparent); backdrop-filter: blur(16px); }
-    .studio-loading { position: absolute; z-index: 5; left: 0; right: 0; top: 0; height: 2px; overflow: hidden; opacity: 0; transition: opacity .15s ease; }
-    .studio-loading::after { content: ''; display: block; width: 35%; height: 100%; background: linear-gradient(90deg, transparent, var(--editor-accent), transparent); animation: studioLoad 1s ease-in-out infinite; }
+    .studio-item + .studio-item { margin-top: 1px; }
+    .studio-item:hover { background: var(--editor-row-hover-bg); }
+    .studio-item-icon {
+      flex: 0 0 30px; width: 30px; height: 30px; border-radius: 8px;
+      display: grid; place-items: center; font-size: 12.5px;
+      background: var(--editor-soft-bg); color: var(--editor-text-muted);
+      transition: background-color .12s ease, color .12s ease;
+    }
+    .studio-item-text { min-width: 0; flex: 1 1 auto; }
+    .studio-item-title { font-size: 13.5px; font-weight: 600; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .studio-item-hint { margin-top: 1px; font-size: 11.5px; line-height: 1.3; color: var(--editor-text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .studio-item:hover .studio-item-icon { color: var(--editor-text); }
+
+    .studio-item.active { background: var(--editor-row-active-bg); }
+    .studio-item.active::before {
+      content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 2px;
+      border-radius: 999px; background: var(--editor-primary);
+    }
+    .studio-item.active .studio-item-icon { background: var(--editor-primary); color: #fff; }
+    .studio-item.active .studio-item-title { color: var(--editor-text-strong); }
+    .studio-item:focus-visible { outline: 2px solid var(--editor-primary); outline-offset: 1px; }
+
+    .studio-nav-badge {
+      flex: 0 0 auto; min-width: 20px; padding: 1px 6px; border-radius: 999px;
+      font-size: 10.5px; font-weight: 700; text-align: center;
+      background: var(--editor-warning); color: #1b1206;
+    }
+
+    .studio-sidebar-foot {
+      display: flex; align-items: center; gap: 8px;
+      padding: 12px; border-top: 1px solid var(--editor-line);
+    }
+
+    .studio-role-chip {
+      display: inline-flex; align-items: center; gap: 5px; padding: 1px 7px;
+      border-radius: 999px; font-size: 10.5px; font-weight: 600;
+      border: 1px solid var(--editor-soft-border-strong);
+    }
+    .studio-role-chip.is-guest { color: var(--editor-warning); border-color: color-mix(in srgb, var(--editor-warning) 40%, transparent); background: color-mix(in srgb, var(--editor-warning) 10%, transparent); }
+    .studio-role-chip.is-admin { color: var(--editor-accent); border-color: color-mix(in srgb, var(--editor-accent) 36%, transparent); background: color-mix(in srgb, var(--editor-accent) 8%, transparent); }
+
+    /* ── рабочая область ──────────────────────────────────────────── */
+    .studio-workbar {
+      min-height: 60px; padding: 0 18px;
+      background: var(--editor-surface);
+      border-bottom: 1px solid var(--editor-line);
+      display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    }
+    .studio-workbar-title { font-size: 14.5px; font-weight: 650; letter-spacing: -.005em; line-height: 1.25; }
+    .studio-workbar-meta { margin-top: 1px; font-size: 11.5px; color: var(--editor-text-muted); line-height: 1.3; }
+
+    .studio-mobile-bar {
+      min-height: 56px; padding: 0 12px;
+      background: var(--editor-surface); border-bottom: 1px solid var(--editor-line);
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    }
+    .studio-mobile-title { font-size: 14px; font-weight: 650; }
+
+    .studio-loading {
+      position: absolute; z-index: 5; left: 0; right: 0; top: 0; height: 2px;
+      overflow: hidden; opacity: 0; transition: opacity .15s ease;
+    }
+    .studio-loading::after {
+      content: ''; display: block; width: 32%; height: 100%;
+      background: var(--editor-primary);
+      animation: studioLoad 1.1s ease-in-out infinite;
+    }
     .studio-loading.active { opacity: 1; }
-    @keyframes studioLoad { from { transform: translateX(-110%); } to { transform: translateX(320%); } }
-    .studio-item:focus-visible {
-      outline: none;
-      border-color: var(--editor-primary);
-      box-shadow: 0 0 0 3px rgba(99, 102, 241, .28);
+    @keyframes studioLoad { from { transform: translateX(-110%); } to { transform: translateX(360%); } }
+
+    /* ── вход ─────────────────────────────────────────────────────── */
+    .studio-auth-card {
+      position: relative;
+      width: 100%; max-width: 420px;
+      background: var(--editor-surface);
+      border: 1px solid var(--editor-line-strong);
+      border-radius: var(--editor-radius-lg);
+      box-shadow: var(--editor-shadow-lg);
+      padding: 24px;
     }
-    .studio-item.active {
-      background: rgba(99, 102, 241, 0.16);
-      border-color: var(--editor-primary);
-      box-shadow: 0 0 0 1px rgba(99, 102, 241, .3);
+    .studio-auth-head { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
+    .studio-auth-icon {
+      width: 36px; height: 36px; flex: 0 0 36px; border-radius: 10px;
+      display: grid; place-items: center; font-size: 14px;
+      background: color-mix(in srgb, var(--editor-accent) 14%, transparent);
+      border: 1px solid color-mix(in srgb, var(--editor-accent) 28%, transparent);
+      color: var(--editor-accent);
     }
-    .studio-item.active i { color: var(--editor-primary); }
-    .studio-nav-badge { margin-left: auto; min-width: 22px; padding: 1px 7px; border-radius: 999px; font-size: 11px; font-weight: 700; text-align: center; background: var(--editor-warning); color: #1b1206; }
-    .studio-role-chip { display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 600; border: 1px solid var(--editor-soft-border-strong); }
-    .studio-role-chip.is-guest { color: var(--editor-warning); border-color: color-mix(in srgb, var(--editor-warning) 45%, transparent); background: color-mix(in srgb, var(--editor-warning) 10%, transparent); }
-    .studio-role-chip.is-admin { color: var(--editor-accent); border-color: color-mix(in srgb, var(--editor-accent) 40%, transparent); background: color-mix(in srgb, var(--editor-accent) 8%, transparent); }
-    .auth-tabs { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 4px; border-radius: 12px; background: var(--editor-soft-bg); border: 1px solid var(--editor-soft-border); }
-    .auth-tab { height: 36px; border-radius: 9px; font-size: 13px; font-weight: 600; color: var(--editor-text-muted); display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
-    .auth-tab.active { background: var(--editor-soft-bg-strong); color: var(--editor-text); box-shadow: inset 0 0 0 1px var(--editor-soft-border-strong); }
+    .studio-auth-card h2 { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -.01em; }
+    .studio-auth-field { display: block; }
+    .studio-auth-field + .studio-auth-field { margin-top: 12px; }
+    .studio-auth-field > span { display: block; margin-bottom: 5px; font-size: 12.5px; font-weight: 600; color: var(--editor-text-muted); }
+    .studio-auth-tabs {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px;
+      border-radius: var(--editor-radius-md);
+      background: var(--editor-soft-bg); border: 1px solid var(--editor-line);
+    }
+    .auth-tabs {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px;
+      border-radius: var(--editor-radius-md);
+      background: var(--editor-soft-bg); border: 1px solid var(--editor-line);
+    }
+    .auth-tab {
+      height: 32px; border-radius: 7px; font-size: 12.5px; font-weight: 600;
+      color: var(--editor-text-muted); display: inline-flex; align-items: center;
+      justify-content: center; gap: 6px; border: 0; background: transparent;
+    }
+    .auth-tab:hover { color: var(--editor-text); }
+    .auth-tab.active { background: var(--editor-surface-2); color: var(--editor-text); box-shadow: 0 0 0 1px var(--editor-line-strong); }
     .auth-tab:disabled { opacity: .45; cursor: not-allowed; }
-    .auth-guest-note { border: 1px dashed color-mix(in srgb, var(--editor-warning) 45%, transparent); background: color-mix(in srgb, var(--editor-warning) 7%, transparent); border-radius: 12px; padding: 10px 12px; font-size: 13px; line-height: 1.45; }
+    .auth-guest-note {
+      border: 1px solid color-mix(in srgb, var(--editor-warning) 30%, transparent);
+      background: color-mix(in srgb, var(--editor-warning) 8%, transparent);
+      border-radius: var(--editor-radius-md); padding: 10px 12px;
+      font-size: 12.5px; line-height: 1.5; color: var(--editor-text);
+    }
+    .auth-guest-note b { font-weight: 600; }
+
+    .studio-scrim { background: color-mix(in srgb, #05080f 72%, transparent); backdrop-filter: blur(2px); }
+
+    .auth-status { margin-top: 12px; font-size: var(--editor-text-sm); line-height: 1.45; }
+    .auth-status.is-ok { color: var(--editor-success); }
+    .auth-status.is-err { color: var(--editor-danger); }
+
     @media (prefers-reduced-motion: reduce) {
-      .studio-item,
-      .studio-item:hover { transition: none; transform: none; }
+      .studio-item, .studio-item:hover, .studio-loading::after { transition: none; animation: none; }
+    }
+    @media (max-width: 767px) {
+      .studio-sidebar { width: min(320px, 86vw); }
     }
   </style>
 </head>
 
 <body class="editor-theme" data-editor="home">
-  <div id="studioApp" class="h-screen flex overflow-hidden hidden">
+  <div id="studioApp" class="studio-app flex overflow-hidden hidden">
     <!-- Sidebar (adaptive) -->
-    <aside id="studioSidebar" class="editor-surface border-r w-80 flex-shrink-0 hidden md:flex flex-col">
-      <div class="h-20 border-b border-light flex items-center justify-between px-4">
-        <div class="flex items-center gap-3 min-w-0">
-          <span class="studio-brand-mark"><i class="fa-solid fa-layer-group"></i></span>
-          <div class="min-w-0">
-            <div class="font-bold text-lg truncate">Editor Studio</div>
-            <div class="text-xs editor-muted-text truncate flex items-center gap-2"><span>MRPG workspace</span><span id="studioRoleChip" class="studio-role-chip hidden"></span></div>
+    <aside id="studioSidebar" class="studio-sidebar flex-shrink-0 hidden md:flex flex-col">
+      <div class="studio-brand">
+        <span class="studio-brand-mark"><i class="fa-solid fa-layer-group"></i></span>
+        <div class="min-w-0">
+          <div class="studio-brand-title truncate">Editor Studio</div>
+          <div class="studio-brand-sub truncate flex items-center gap-2">
+            <span>Рабочее место MRPG</span>
+            <span id="studioRoleChip" class="studio-role-chip hidden"></span>
           </div>
         </div>
       </div>
 
-      <div class="p-3 border-b border-light">
-        <label class="studio-search-wrap block" aria-label="Поиск редактора">
+      <div class="studio-search-block">
+        <label class="studio-search-wrap" aria-label="Поиск редактора">
           <i class="fa-solid fa-magnifying-glass"></i>
-          <input id="studioSearch" type="search" class="w-full form-input" placeholder="Найти редактор…" autocomplete="off" />
+          <input id="studioSearch" type="search" class="w-full editor-input" placeholder="Найти редактор…" autocomplete="off" />
           <kbd class="studio-search-key">Ctrl K</kbd>
         </label>
       </div>
 
-      <div id="studioNav" class="flex-grow overflow-y-auto p-2"></div>
+      <nav id="studioNav" class="studio-nav flex-grow overflow-y-auto" aria-label="Редакторы"></nav>
 
-      <div class="p-3 border-t border-light flex gap-2">
+      <div class="studio-sidebar-foot">
         <button id="open-new-tab" class="editor-btn editor-btn-secondary flex-1 min-w-0" title="Открыть текущий редактор в новой вкладке">
           <i class="fa-solid fa-arrow-up-right-from-square"></i>
           <span class="truncate">Во вкладке</span>
         </button>
-        <button id="logoutBtn" class="editor-btn editor-btn-secondary" title="Выйти" aria-label="Выйти">
+        <button id="logoutBtn" class="editor-icon-btn" title="Выйти" aria-label="Выйти">
           <i class="fa-solid fa-right-from-bracket"></i>
         </button>
       </div>
     </aside>
 
-    <!-- Mobile top bar -->
-    <div class="flex flex-col flex-grow overflow-hidden">
-      <header class="h-16 editor-surface border-b flex items-center justify-between px-4 md:hidden">
-        <button id="mobileMenuBtn" class="editor-btn editor-btn-secondary">
+    <!-- Workspace -->
+    <div class="flex flex-col flex-grow overflow-hidden min-w-0">
+      <header class="studio-mobile-bar md:hidden">
+        <button id="mobileMenuBtn" class="editor-icon-btn" title="Открыть меню" aria-label="Открыть меню">
           <i class="fa-solid fa-bars"></i>
         </button>
-        <div class="font-semibold" id="mobileTitle">Editor Studio</div>
-        <button id="mobileNewTabBtn" class="editor-btn editor-btn-secondary" title="Вкладка">
+        <div id="mobileTitle" class="studio-mobile-title truncate">Editor Studio</div>
+        <button id="mobileNewTabBtn" class="editor-icon-btn" title="Открыть в новой вкладке" aria-label="Открыть в новой вкладке">
           <i class="fa-solid fa-arrow-up-right-from-square"></i>
         </button>
       </header>
 
-      <header class="studio-workbar border-b border-light px-4 hidden md:flex items-center justify-between gap-4">
+      <header class="studio-workbar hidden md:flex">
         <div class="min-w-0 flex items-center gap-3">
-          <span id="desktopEditorIcon" class="studio-brand-mark" style="width:34px;height:34px;flex-basis:34px"><i class="fa-solid fa-pen-ruler"></i></span>
+          <span id="desktopEditorIcon" class="studio-brand-mark studio-brand-mark--sm"><i class="fa-solid fa-pen-ruler"></i></span>
           <div class="min-w-0">
-            <div id="desktopEditorTitle" class="font-semibold truncate">Рабочая область</div>
-            <div id="desktopEditorMeta" class="text-xs editor-muted-text truncate">Выберите редактор в меню</div>
+            <div id="desktopEditorTitle" class="studio-workbar-title truncate">Рабочая область</div>
+            <div id="desktopEditorMeta" class="studio-workbar-meta truncate">Выберите редактор в меню</div>
           </div>
         </div>
-        <button id="reloadEditorBtn" class="editor-icon-btn" type="button" title="Перезагрузить редактор" aria-label="Перезагрузить редактор">
-          <i class="fa-solid fa-rotate"></i>
-        </button>
+        <div class="studio-workbar-actions flex items-center gap-2">
+          <button id="reloadEditorBtn" class="editor-icon-btn" type="button" title="Перезагрузить редактор" aria-label="Перезагрузить редактор">
+            <i class="fa-solid fa-rotate"></i>
+          </button>
+        </div>
       </header>
 
       <main class="flex-grow overflow-hidden relative">
@@ -145,49 +294,56 @@
 
     <!-- Mobile sidebar overlay -->
     <div id="mobileOverlay" class="hidden fixed inset-0 z-[400]">
-      <div class="absolute inset-0" style="background: rgba(0,0,0,.55)"></div>
-      <div class="absolute top-0 left-0 h-full w-80 editor-surface border-r flex flex-col">
-        <div class="h-16 border-b border-light flex items-center justify-between px-4">
-          <div class="font-bold">Меню</div>
-          <button id="mobileCloseBtn" class="editor-btn editor-btn-secondary"><i class="fa-solid fa-xmark"></i></button>
+      <div class="absolute inset-0 studio-scrim"></div>
+      <div class="absolute top-0 left-0 h-full studio-sidebar flex flex-col">
+        <div class="studio-brand">
+          <span class="studio-brand-mark"><i class="fa-solid fa-layer-group"></i></span>
+          <div class="studio-brand-title flex-grow">Меню</div>
+          <button id="mobileCloseBtn" title="Закрыть меню" aria-label="Закрыть меню" class="editor-icon-btn"><i class="fa-solid fa-xmark"></i></button>
         </div>
-        <div class="p-3 border-b border-light">
-          <input id="mobileSearch" type="search" class="w-full form-input" placeholder="Поиск редактора..." />
+        <div class="studio-search-block">
+          <label class="studio-search-wrap" aria-label="Поиск редактора">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input id="mobileSearch" type="search" class="w-full editor-input" placeholder="Найти редактор…" autocomplete="off" />
+          </label>
         </div>
-        <div id="mobileNav" class="flex-grow overflow-y-auto p-2"></div>
-        <div class="p-3 border-t border-light">
-          <button id="mobileLogoutBtn" class="editor-btn editor-btn-secondary w-full"><i class="fa-solid fa-right-from-bracket"></i><span>Выйти</span></button>
+        <nav id="mobileNav" class="studio-nav flex-grow overflow-y-auto" aria-label="Редакторы"></nav>
+        <div class="studio-sidebar-foot">
+          <div data-i18n-switcher-host></div>
+          <button id="mobileLogoutBtn" class="editor-btn editor-btn-secondary flex-1"><i class="fa-solid fa-right-from-bracket"></i><span>Выйти</span></button>
         </div>
       </div>
     </div>
   </div>
 
   <div id="authOverlay" class="fixed inset-0 z-[500]">
-    <div class="absolute inset-0" style="background: rgba(2,6,23,.82)"></div>
-    <div class="absolute inset-0 flex items-center justify-center p-4">
-      <div class="editor-surface border border-light rounded-2xl p-6 w-full max-w-md shadow-2xl">
-        <div class="flex items-center gap-3 mb-2">
-          <i class="fa-solid fa-shield-halved text-accent"></i>
-          <h2 class="text-xl font-bold">Авторизация Editor Studio</h2>
-        </div>
-        <p class="editor-muted-text text-sm mb-4" id="auth-subtitle">Для работы с редактором требуется вход администратора.</p>
+    <div class="absolute inset-0 studio-scrim"></div>
+    <div class="absolute inset-0 flex items-center justify-center p-4 overflow-y-auto">
+      <div class="studio-auth-card my-auto">
+        <div class="flex justify-end mb-3" data-i18n-switcher-host></div>
 
-        <div id="auth-tabs" class="auth-tabs mb-4 hidden" role="tablist">
+        <div class="studio-auth-head">
+          <span class="studio-auth-icon"><i class="fa-solid fa-shield-halved"></i></span>
+          <div class="min-w-0">
+            <h2>Вход в Editor Studio</h2>
+            <p class="editor-help-text" id="auth-subtitle">Нужен вход администратора.</p>
+          </div>
+        </div>
+
+        <div id="auth-tabs" class="auth-tabs mt-4 hidden" role="tablist">
           <button type="button" class="auth-tab active" data-auth-tab="admin" role="tab"><i class="fa-solid fa-user-shield"></i>Администратор</button>
           <button type="button" class="auth-tab" data-auth-tab="guest" role="tab"><i class="fa-solid fa-user-secret"></i>Гость</button>
         </div>
 
-        <div id="auth-panel-admin">
-          <div class="space-y-3">
-            <div>
-              <div class="text-sm font-medium text-slate-200 mb-1">Логин</div>
-              <input id="auth-user" type="text" class="w-full form-input" value="admin" autocomplete="username" />
-            </div>
-            <div>
-              <div class="text-sm font-medium text-slate-200 mb-1">Пароль</div>
-              <input id="auth-pass" type="password" class="w-full form-input" placeholder="Введите пароль администратора" autocomplete="current-password" />
-            </div>
-          </div>
+        <div id="auth-panel-admin" class="mt-4">
+          <label class="studio-auth-field">
+            <span>Логин</span>
+            <input id="auth-user" type="text" class="w-full editor-input" value="admin" autocomplete="username" />
+          </label>
+          <label class="studio-auth-field">
+            <span>Пароль</span>
+            <input id="auth-pass" type="password" class="w-full editor-input" placeholder="Введите пароль администратора" autocomplete="current-password" />
+          </label>
 
           <button id="auth-login-btn" class="editor-btn editor-btn-primary w-full mt-4">
             <i class="fa-solid fa-right-to-bracket"></i>
@@ -195,22 +351,31 @@
           </button>
         </div>
 
-        <div id="auth-panel-guest" class="hidden">
+        <div id="auth-panel-guest" class="hidden mt-4">
           <div class="auth-guest-note">
-            <div class="font-semibold mb-1"><i class="fa-solid fa-user-secret mr-1"></i> Гостевой режим</div>
-            Вы сможете просматривать редакторы контента и предлагать изменения. Изменения <b>не применяются</b> к базе данных —
-            из них формируется запрос, который проверяет и подтверждает администратор.
+            <div class="font-semibold mb-1"><i class="fa-solid fa-user-secret mr-1"></i>Гостевой аккаунт</div>
+            Гостевые аккаунты создаёт администратор — он же выбирает, какие вкладки редакторов доступны каждому гостю.
+            Ваши изменения <b>не попадают в базу напрямую</b>: они хранятся локально и уходят администратору как запрос на проверку.
           </div>
-          <div id="auth-guest-pass-wrap" class="mt-3 hidden">
-            <div class="text-sm font-medium text-slate-200 mb-1">Гостевой пароль</div>
-            <input id="auth-guest-pass" type="password" class="w-full form-input" placeholder="Пароль, выданный администратором" autocomplete="off" />
+          <div id="auth-guest-creds">
+            <label class="studio-auth-field mt-3">
+              <span>Логин гостя</span>
+              <input id="auth-guest-login" type="text" class="w-full editor-input" placeholder="Например: artist" autocomplete="username" autocapitalize="off" spellcheck="false" />
+            </label>
+            <label class="studio-auth-field">
+              <span>Пароль</span>
+              <input id="auth-guest-pass" type="password" class="w-full editor-input" placeholder="Пароль, выданный администратором" autocomplete="current-password" />
+            </label>
+          </div>
+          <div id="auth-guest-unavailable" class="editor-help-text mt-3 hidden">
+            Гостевые аккаунты не созданы или доступ выключен администратором.
           </div>
           <button id="auth-guest-btn" class="editor-btn editor-btn-primary w-full mt-4">
             <i class="fa-solid fa-user-secret"></i>
             <span>Войти как гость</span>
           </button>
         </div>
-        <div id="auth-status" class="text-sm mt-3 editor-muted-text"></div>
+        <div id="auth-status" class="editor-help-text mt-3" role="status"></div>
       </div>
     </div>
   </div>
@@ -239,17 +404,29 @@
     const Guest = window.EditorCore?.Guest || null;
 
     // ── Role-based navigation ─────────────────────────────────────────────
-    // admin: everything; guest: only items marked `guest: true` in the manifest.
-    // (UX only — the server rejects guests on every non-guest endpoint.)
+    // admin: everything; guest: only the tabs the administrator enabled for
+    // this account (status.guest.pages). UX only — the server enforces the same
+    // tab list on every endpoint (api/db-crud.php, api/change-requests.php).
     let currentRole = null;
+    let currentUserLabel = '';
+    const guestPages = () => (Array.isArray(authInfo?.guest?.pages) ? authInfo.guest.pages.map(String) : []);
     const getGroups = () => {
       if (currentRole !== 'guest') return ALL_GROUPS;
+      const granted = new Set(guestPages());
       return ALL_GROUPS
-        .map(g => ({ ...g, items: (g.items || []).filter(it => it.guest).map(it => ({ ...it, title: it.guestTitle || it.title })) }))
+        .map(g => ({
+          ...g,
+          items: (g.items || [])
+            .filter(it => !it.adminOnly && (granted.has(String(it.key)) || it.key === 'requests'))
+            .map(it => ({ ...it, title: it.guestTitle || it.title })),
+        }))
         .filter(g => g.items.length);
     };
     const getEditors = () => getGroups().flatMap(g => g.items || []);
     const navBadges = { requests: 0 };
+    // The last opened tab is remembered per role: a guest must not inherit the
+    // administrator's tab (and vice versa) on a shared browser profile.
+    const activeEditorStorageKey = () => (currentRole === 'guest' ? 'studio.activeEditor.guest' : 'studio.activeEditor');
 
     const authOverlay = document.getElementById('authOverlay');
     const authUser = document.getElementById('auth-user');
@@ -269,8 +446,8 @@
 
     const setAuthStatus = (text = '', tone = 'muted') => {
       if (!authStatus) return;
-      const color = tone === 'ok' ? 'text-emerald-300' : tone === 'err' ? 'text-red-300' : 'editor-muted-text';
-      authStatus.className = `text-sm mt-3 ${color}`;
+      const toneClass = tone === 'ok' ? ' is-ok' : tone === 'err' ? ' is-err' : '';
+      authStatus.className = `auth-status${toneClass}`;
       authStatus.textContent = text;
     };
 
@@ -278,38 +455,30 @@
       authOverlay?.classList.toggle('hidden', !visible);
       studioApp?.classList.toggle('hidden', visible);
       if (visible) {
-        (activeAuthTab === 'guest' ? (authGuestPass && !authGuestPassWrap?.classList.contains('hidden') ? authGuestPass : authGuestBtn) : authUser)?.focus();
-        document.body.style.overflow = 'hidden';
-      } else {
-        document.body.style.overflow = '';
+        (activeAuthTab === 'guest'
+          ? (authGuestCreds && !authGuestCreds.classList.contains('hidden') ? (authGuestLogin?.value ? authGuestPass : authGuestLogin) : authGuestBtn)
+          : authUser)?.focus();
       }
     };
 
-    const authRequest = async (action, payload = null) => {
-      const options = {
-        method: payload ? 'POST' : 'GET',
-        credentials: 'same-origin',
-        headers: payload ? { 'Content-Type': 'application/json' } : undefined,
-        body: payload ? JSON.stringify(payload) : undefined,
-      };
-      const res = await fetch(`api/auth.php?action=${encodeURIComponent(action)}`, options);
-      const json = await res.json().catch(() => ({}));
-      if (!res.ok || !json?.ok) {
-        return { ok: false, error: json?.error || `HTTP ${res.status}` };
-      }
-      return json;
-    };
+    // Сеть, таймаут и разбор ответа — в editor-core/http.js.
+    const authRequest = (action, payload = null) => EditorCore.Http.json(
+      `api/auth.php?action=${encodeURIComponent(action)}`,
+      { method: payload ? 'POST' : 'GET', body: payload }
+    );
 
     // ── Auth UI (admin / guest) ───────────────────────────────────────────
     const authTabs = document.getElementById('auth-tabs');
     const authPanelAdmin = document.getElementById('auth-panel-admin');
     const authPanelGuest = document.getElementById('auth-panel-guest');
     const authSubtitle = document.getElementById('auth-subtitle');
-    const authGuestPassWrap = document.getElementById('auth-guest-pass-wrap');
+    const authGuestCreds = document.getElementById('auth-guest-creds');
+    const authGuestLogin = document.getElementById('auth-guest-login');
     const authGuestPass = document.getElementById('auth-guest-pass');
     const authGuestBtn = document.getElementById('auth-guest-btn');
+    const authGuestUnavailable = document.getElementById('auth-guest-unavailable');
     const roleChip = document.getElementById('studioRoleChip');
-    let authInfo = { guest: { enabled: false, password_required: false }, guest_only_network: false };
+    let authInfo = { guest: { enabled: false, accounts: 0, pages: [] }, guest_only_network: false, admin_setup_needed: false };
     let activeAuthTab = 'admin';
 
     const setAuthTab = (tab) => {
@@ -325,18 +494,24 @@
       });
       authPanelAdmin?.classList.toggle('hidden', tab !== 'admin');
       authPanelGuest?.classList.toggle('hidden', tab !== 'guest');
-      authGuestPassWrap?.classList.toggle('hidden', !authInfo.guest?.password_required);
+      authGuestCreds?.classList.toggle('hidden', !guestEnabled);
+      authGuestUnavailable?.classList.toggle('hidden', guestEnabled);
+      if (authGuestBtn) authGuestBtn.disabled = !guestEnabled;
       if (authSubtitle) {
         authSubtitle.textContent = tab === 'guest'
-          ? 'Гость может предлагать изменения — их подтверждает администратор.'
-          : adminBlocked ? 'Вход администратора с этого адреса недоступен.' : 'Для работы с редактором требуется вход администратора.';
+          ? 'Войдите в личный гостевой аккаунт. Изменения сохраняются локально и отправляются администратору на проверку.'
+          : adminBlocked ? 'Вход администратора с этого адреса недоступен.'
+            : authInfo.admin_setup_needed
+              ? 'Пароль администратора не задан. Создайте его командой php tools/init-db.php --password=… или в старых установках укажите его в data/db-config.json (поле editor_password): без пароля вход закрыт.'
+              : 'Для работы с редактором требуется вход администратора.';
       }
     };
 
     const applyAuthInfo = (status) => {
       authInfo = {
-        guest: status?.guest || { enabled: false, password_required: false },
+        guest: status?.guest || { enabled: false, accounts: 0, pages: [] },
         guest_only_network: !!status?.guest_only_network,
+        admin_setup_needed: !!status?.admin_setup_needed,
       };
       authTabs?.classList.toggle('hidden', !authInfo.guest.enabled);
       setAuthTab(activeAuthTab);
@@ -347,34 +522,45 @@
       if (!btn || btn.disabled) return;
       setAuthStatus('');
       setAuthTab(btn.dataset.authTab);
-      (btn.dataset.authTab === 'guest' ? (authInfo.guest?.password_required ? authGuestPass : authGuestBtn) : authPass)?.focus();
+      (btn.dataset.authTab === 'guest' ? (authGuestLogin?.value ? authGuestPass : authGuestLogin) : authPass)?.focus();
     });
 
-    const setRole = (role) => {
+
+    const setRole = (role, label = '') => {
       currentRole = role || null;
+      currentUserLabel = label || '';
       if (roleChip) {
         roleChip.classList.toggle('hidden', !currentRole);
         roleChip.classList.toggle('is-guest', currentRole === 'guest');
         roleChip.classList.toggle('is-admin', currentRole === 'admin');
+        const name = currentUserLabel ? `: ${currentUserLabel}` : '';
         roleChip.innerHTML = currentRole === 'guest'
-          ? '<i class="fa-solid fa-user-secret"></i>Гость'
-          : currentRole === 'admin' ? '<i class="fa-solid fa-user-shield"></i>Админ' : '';
+          ? `<i class="fa-solid fa-user-secret"></i>Гость${escapeChip(name)}`
+          : currentRole === 'admin' ? `<i class="fa-solid fa-user-shield"></i>Админ${escapeChip(name)}` : '';
       }
       Guest?.refreshStatus?.();
       refreshBadges();
     };
 
+    // Оболочка не грузит utils.js: берём экранирование из page-kit (у него есть
+    // собственный запасной вариант), иначе падал весь скрипт — вместе с входом.
+    const escapeChip = EditorCore.Page.esc;
+
     let badgeTimer = null;
+    // Бейдж «Запросы» = то, что ждёт именно вас: у администратора — очередь и
+    // непрочитанные сообщения, у гостя — неотправленный черновик и ответы.
     const refreshBadges = async () => {
       clearTimeout(badgeTimer);
       if (currentRole === 'guest') {
-        navBadges.requests = Guest?.Draft?.count?.() || 0;
+        const draft = Guest?.Draft?.count?.() || 0;
+        const mine = await EditorCore.Http.json('api/change-requests.php?action=mine');
+        const unread = (mine.rows || []).reduce((sum, row) => sum + Number(row.unread || 0), 0);
+        navBadges.requests = draft + unread;
       } else if (currentRole === 'admin') {
-        try {
-          const res = await fetch('api/change-requests.php?action=stats', { credentials: 'same-origin', cache: 'no-store' });
-          const json = await res.json().catch(() => null);
-          navBadges.requests = json?.ok ? Number(json.counts?.pending || 0) : 0;
-        } catch { navBadges.requests = 0; }
+        const stats = await EditorCore.Http.json('api/change-requests.php?action=stats');
+        navBadges.requests = stats.ok
+          ? Number(stats.counts?.pending || 0) + Number(stats.unread || 0)
+          : 0;
         badgeTimer = setTimeout(refreshBadges, 60000);
       } else {
         navBadges.requests = 0;
@@ -390,14 +576,16 @@
       applyAuthInfo(status);
       if (status.ok && status.authorized) {
         isAuthorized = true;
-        setRole(status.role || 'admin');
+        setRole(status.role || 'admin', status.role === 'guest' ? (status.guest?.name || status.guest?.login || '') : (status.user || ''));
         setAuthOverlay(false);
         return true;
       }
       isAuthorized = false;
       setRole(null);
       frame.src = 'about:blank';
-      setAuthStatus(activeAuthTab === 'guest' ? 'Войдите как гость, чтобы предлагать изменения.' : 'Введите данные администратора для входа.');
+      setAuthStatus(activeAuthTab === 'guest'
+        ? (authInfo.guest?.enabled ? 'Введите логин и пароль гостевого аккаунта.' : 'Гостевые аккаунты не созданы — обратитесь к администратору.')
+        : 'Введите данные администратора для входа.');
       setAuthOverlay(true);
       return false;
     };
@@ -418,7 +606,7 @@
         if (!items.length) continue;
         hasItems = true;
         const header = document.createElement('div');
-        header.className = 'studio-group-title px-3 pt-4 pb-2 text-xs tracking-wider uppercase editor-muted-text';
+        header.className = 'studio-group-title';
         const groupLabel = document.createElement('span');
         groupLabel.textContent = g.title || 'Группа';
         const groupCount = document.createElement('span');
@@ -430,17 +618,25 @@
         for (const e of items) {
           const btn = document.createElement('button');
           const isActive = e.key === active;
-          btn.className = `studio-item w-full text-left p-3 rounded-xl border ${isActive ? 'active' : 'border-light hover:bg-light'} flex items-center gap-3`;
+          btn.className = `studio-item${isActive ? ' active' : ''}`;
           btn.setAttribute('aria-current', isActive ? 'page' : 'false');
           btn.title = e.title || e.key;
-          const badge = navBadges[e.key] ? `<span class="studio-nav-badge" title="${currentRole === 'guest' ? 'Изменений в черновике' : 'Запросов на рассмотрении'}">${navBadges[e.key]}</span>` : '';
-          btn.innerHTML = `<i class="fa-solid ${e.icon} w-5 text-center"></i><div class="min-w-0"><div class="font-semibold truncate">${e.title}</div><div class="text-xs editor-muted-text truncate">${e.key}</div></div>${badge}`;
+          const badge = navBadges[e.key] ? `<span class="studio-nav-badge" title="${currentRole === 'guest' ? 'Черновик и ответы администратора' : 'Запросы на рассмотрении и непрочитанные сообщения'}">${navBadges[e.key]}</span>` : '';
+          const sub = e.hint || '';
+          btn.innerHTML = `<span class="studio-item-icon"><i class="fa-solid ${e.icon}"></i></span><span class="studio-item-text"><span class="studio-item-title block">${e.title}</span>${sub ? `<span class="studio-item-hint block">${sub}</span>` : ''}</span>${badge}`;
           btn.addEventListener('click', () => openEditor(e.key, { closeMobile: true }));
           fragment.appendChild(btn);
         }
       }
       if (!hasItems) {
-        root.innerHTML = `<div class="editor-empty-state">Ничего не найдено</div>`;
+        // Пустой список — это не только «ничего не найдено»: у гостя он может
+        // быть пустым, пока администратор не выдал ни одной вкладки.
+        const message = q
+          ? `Ничего не найдено по запросу «${q}».`
+          : currentRole === 'guest'
+            ? 'Администратор пока не открыл вам ни одной вкладки. Напишите ему, чтобы получить доступ.'
+            : 'Список редакторов пуст.';
+        root.innerHTML = `<div class="editor-empty-state">${message}</div>`;
         return;
       }
       root.appendChild(fragment);
@@ -498,7 +694,7 @@
         const dirtyState = await requestFrameDirtyStatus();
         if (requestSeq !== openEditorRequestSeq) return;
         if (dirtyState.supported && dirtyState.dirty) {
-          const approved = confirm('Есть несохранённые изменения. Продолжить без сохранения?');
+          const approved = await EditorCore.Page.confirm('Есть несохранённые изменения. Продолжить без сохранения?');
           if (!approved) return;
         }
       }
@@ -510,9 +706,9 @@
       frame.title = e.title || 'Активный редактор';
       frame.src = e.src;
       if (desktopEditorTitle) desktopEditorTitle.textContent = e.title || 'Редактор';
-      if (desktopEditorMeta) desktopEditorMeta.textContent = `${e.key} • ${e.src}`;
+      if (desktopEditorMeta) desktopEditorMeta.textContent = e.hint || '';
       if (desktopEditorIcon) desktopEditorIcon.innerHTML = `<i class="fa-solid ${e.icon || 'fa-pen-ruler'}"></i>`;
-      storageSet('studio.activeEditor', e.key);
+      storageSet(activeEditorStorageKey(), e.key);
       if (syncHash && location.hash !== '#' + e.key) location.hash = e.key;
 
       if (mobileTitle) mobileTitle.textContent = e.title || 'Editor Studio';
@@ -573,7 +769,7 @@
     openNewTab.addEventListener('click', () => {
       if (!isAuthorized) return;
       const fallbackKey = getEditors()[0]?.key || '';
-      const key = normalizeEditorKey(location.hash) || storageGet('studio.activeEditor') || fallbackKey;
+      const key = normalizeEditorKey(location.hash) || storageGet(activeEditorStorageKey()) || fallbackKey;
       const e = byKey(key);
       if (!e) return;
       window.open(e.src, '_blank', 'noopener');
@@ -616,7 +812,7 @@
         return;
       }
 
-      const fallbackEditor = byKey(normalizeEditorKey(storageGet('studio.activeEditor')));
+      const fallbackEditor = byKey(normalizeEditorKey(storageGet(activeEditorStorageKey())));
       if (!fallbackEditor) return;
 
       if (fallbackEditor.key !== activeKey) openEditor(fallbackEditor.key, { syncHash: false });
@@ -634,9 +830,30 @@
         refreshBadges();
         return;
       }
+      if (data?.type === 'editor-shell:guest-account-changed') {
+        // Admin changed this account's tabs/state → re-read the role from the server.
+        ensureAuthorized().then((ok) => {
+          if (!ok) return;
+          renderAllNavs(activeKey, getSearchTerm());
+          // The open tab may have just been revoked: switch to a granted one.
+          if (!getEditors().some((entry) => entry.key === activeKey)) {
+            openEditor(getEditors()[0]?.key || initial());
+          }
+        });
+        return;
+      }
+      if (data?.type === 'editor-shell:reload-editor') {
+        // Server data changed (e.g. an approved change request) → reload the open editor.
+        if (!isAuthorized || !frame?.src) return;
+        studioLoading?.classList.add('active');
+        try { frame.contentWindow?.location.reload(); } catch {}
+        return;
+      }
       if (data?.type !== 'editor-shell:auth-required') return;
       isAuthorized = false;
-      setAuthStatus('Сессия истекла. Повторите вход администратора.', 'err');
+      setAuthStatus(currentRole === 'guest'
+        ? 'Сессия истекла. Войдите в гостевой аккаунт заново.'
+        : 'Сессия истекла. Повторите вход администратора.', 'err');
       setAuthOverlay(true);
       frame.src = 'about:blank';
     });
@@ -660,10 +877,10 @@
         return;
       }
       isAuthorized = true;
-      setRole('admin');
+      setRole('admin', login.user || user);
       setAuthStatus('Вход выполнен.', 'ok');
       setAuthOverlay(false);
-      const fallbackKey = normalizeEditorKey(location.hash) || storageGet('studio.activeEditor') || getEditors()[0]?.key || '';
+      const fallbackKey = normalizeEditorKey(location.hash) || storageGet(activeEditorStorageKey()) || getEditors()[0]?.key || '';
       openEditor(fallbackKey);
     });
 
@@ -676,40 +893,51 @@
 
     authGuestBtn?.addEventListener('click', async () => {
       if (isAuthRequestInFlight) return;
+      const loginName = String(authGuestLogin?.value || '').trim().toLowerCase();
       const password = String(authGuestPass?.value || '');
-      if (authInfo.guest?.password_required && !password) {
-        setAuthStatus('Введите гостевой пароль.', 'err');
+      if (!loginName || !password) {
+        setAuthStatus('Введите логин и пароль гостевого аккаунта.', 'err');
+        (loginName ? authGuestPass : authGuestLogin)?.focus();
         return;
       }
       authGuestBtn.disabled = true;
       isAuthRequestInFlight = true;
-      setAuthStatus('Входим в гостевой режим...');
-      const login = await authRequest('guest_login', { password, guest_key: Guest?.GuestKey?.get?.() || '' });
+      setAuthStatus('Проверяем гостевой аккаунт...');
+      const result = await authRequest('guest_login', { login: loginName, password, guest_key: Guest?.GuestKey?.get?.() || '' });
       authGuestBtn.disabled = false;
       isAuthRequestInFlight = false;
-      if (!login.ok) {
-        setAuthStatus(login.error || 'Ошибка входа.', 'err');
+      if (!result.ok) {
+        setAuthStatus(result.error || 'Ошибка входа.', 'err');
         return;
       }
-      if (login.guest_key) Guest?.GuestKey?.set?.(login.guest_key);
+      if (result.guest_key) Guest?.GuestKey?.set?.(result.guest_key);
       if (authGuestPass) authGuestPass.value = '';
       isAuthorized = true;
-      setRole('guest');
-      setAuthStatus('Гостевой режим активирован.', 'ok');
+      applyAuthInfo(result);
+      setRole('guest', result.guest?.name || result.guest?.login || loginName);
+      const granted = Array.isArray(result.guest?.pages) ? result.guest.pages.length : 0;
+      setAuthStatus(granted
+        ? `Гостевой аккаунт активирован. Доступно вкладок: ${granted}.`
+        : 'Аккаунт активирован, но администратор не включил ни одной вкладки.', granted ? 'ok' : 'err');
       setAuthOverlay(false);
       openEditor(initial());
     });
 
-    authGuestPass?.addEventListener('keydown', (event) => {
-      if (event.key === 'Enter') {
-        event.preventDefault();
-        authGuestBtn?.click();
-      }
+    [authGuestLogin, authGuestPass].forEach((input) => {
+      input?.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+          event.preventDefault();
+          authGuestBtn?.click();
+        }
+      });
     });
 
     const logout = async () => {
-      if (currentRole === 'guest' && (Guest?.Draft?.count?.() || 0) > 0) {
-        if (!confirm('В черновике есть неотправленные изменения. Они сохранятся в этом браузере. Выйти?')) return;
+      if (currentRole === 'guest') {
+        const pending = Guest?.Draft?.pendingCount?.() || 0;
+        const submitted = Guest?.Draft?.submittedCount?.() || 0;
+        if (pending > 0 && !await EditorCore.Page.confirm(`В черновике ${pending} неотправленных изменени(й). Они сохранятся в этом браузере. Выйти?`)) return;
+        if (pending === 0 && submitted > 0 && !await EditorCore.Page.confirm(`Есть ${submitted} изменени(й) в отправленных запросах. Они останутся на проверке у администратора. Выйти?`)) return;
       }
       await authRequest('logout', {});
       isAuthorized = false;
@@ -723,11 +951,12 @@
     document.getElementById('logoutBtn')?.addEventListener('click', logout);
     document.getElementById('mobileLogoutBtn')?.addEventListener('click', logout);
     window.addEventListener('storage', (event) => {
-      if (event.key === 'editorStudio.guestDraft.v1' && currentRole === 'guest') refreshBadges();
+      if (!event.key || !event.key.startsWith('editorStudio.guestDraft') || currentRole !== 'guest') return;
+      refreshBadges();
     });
 
     // Initial editor selection: hash > localStorage > default
-    const initial = () => normalizeEditorKey(location.hash) || storageGet('studio.activeEditor') || getEditors()[0]?.key || '';
+    const initial = () => normalizeEditorKey(location.hash) || storageGet(activeEditorStorageKey()) || getEditors()[0]?.key || '';
     ensureAuthorized().then((ok) => {
       if (ok) openEditor(initial());
     });

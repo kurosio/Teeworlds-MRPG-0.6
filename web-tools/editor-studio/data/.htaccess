@@ -1,9 +1,18 @@
-# Defense in depth: data/ holds credentials (db-config.json), dumps and guest change requests.
-# Never serve it directly (the Docker apache-config.conf also denies it).
+# data/ хранит секреты: пароль администратора и доступ к игровой базе
+# (db-config.json, editor-studio.sqlite), дампы и переписку по запросам гостей.
+# Каталог не должен отдаваться веб-сервером — ни одним файлом.
+#
+# Apache: правила ниже работают при AllowOverride All (в Docker это делает
+#   apache-config.conf, где каталог закрыт ещё и на уровне vhost).
+# Nginx / FrankenPHP / Caddy: .htaccess они не читают — добавьте запрет вручную,
+#   пример есть в STRUCTURE.md, раздел «Безопасность данных».
 <IfModule mod_authz_core.c>
     Require all denied
 </IfModule>
 <IfModule !mod_authz_core.c>
     Order allow,deny
     Deny from all
+</IfModule>
+<IfModule mod_autoindex.c>
+    Options -Indexes
 </IfModule>

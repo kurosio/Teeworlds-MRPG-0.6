@@ -327,6 +327,9 @@
       const modeLabel = mode === 'world' ? 'World' : 'Universal';
       const valueText = value == null ? '' : String(value);
       const hasValue = valueText.trim().length > 0;
+      // Мир записи: по нему компонент сценария открывает карту в «Местоположении».
+      const worldPath = ui.mapWorldPath == null ? '' : String(ui.mapWorldPath);
+      const worldAttr = worldPath ? ` data-map-world-path="${escapeAttr(worldPath)}"` : '';
       const hiddenAttrs = buildInputAttributes({
         path,
         field,
@@ -337,7 +340,7 @@
         extraAttrs: 'type="hidden" data-scenario-value="1"'
       });
       return `
-        <div class="editor-scenario-field" data-scenario-field="1" data-scenario-mode="${escapeAttr(mode)}" data-scenario-path="${escapeAttr(path)}" data-scenario-label="${escapeAttr(label)}">
+        <div class="editor-scenario-field" data-scenario-field="1" data-scenario-mode="${escapeAttr(mode)}" data-scenario-path="${escapeAttr(path)}" data-scenario-label="${escapeAttr(label)}"${worldAttr}>
           <input ${hiddenAttrs} value="${escapeAttr(valueText)}">
           <div class="editor-scenario-toolbar">
             <button type="button" class="editor-btn editor-btn-secondary" data-action="open-scenario-editor">
@@ -489,11 +492,12 @@
         includeDataPath,
         extraAttrs: 'inputmode="numeric"'
       });
-      const cur = (value ?? 0);
+      const allowZero = ui.allowZero === true || String(dbKey || '').toLowerCase() === 'world' || String(ds).toLowerCase() === 'worlds';
+      const cur = value ?? (allowZero ? '' : 0);
 
       const searchPh = ui.searchPlaceholder || ui.placeholder || 'Поиск…';
       const state = ds ? 'connected' : '';
-      const hasVal = (v) => v !== undefined && v !== null && String(v) !== '' && String(v) !== '0';
+      const hasVal = (v) => v !== undefined && v !== null && String(v) !== '' && (allowZero || String(v) !== '0');
       const curVal = hasVal(value) ? String(value) : '';
 
       return `
@@ -504,7 +508,8 @@
              data-placeholder="${escapeAttr(placeholder)}"
              data-label-mode="${escapeAttr(String(labelMode))}"${extraOptionsAttr}${filterAttrs}
              data-bind-input-path="${escapeAttr(path)}"
-             data-current-value="${escapeAttr(curVal)}">
+             data-current-value="${escapeAttr(curVal)}"
+             data-allow-zero="${allowZero ? '1' : '0'}">
           <div class="editor-dbcombo-control">
             <input type="search" class="${inputClass} editor-dbcombo-input" placeholder="${escapeAttr(searchPh)}" autocomplete="off" />
           </div>
@@ -533,20 +538,55 @@
     };
 
     if (field.type === 'boolean') {
-      return `<div class="${fieldWrapperClass}">${renderCheckbox()}${footerHtml}</div>`;
+      // data-field-path нужен везде: по нему работают валидация, пометки
+      // «поле изменено» в гостевом режиме и адресация полей в форме.
+      return `<div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">${renderCheckbox()}${footerHtml}</div>`;
     }
 
     if (field.type === 'toggle' || ui.type === 'toggle') {
-      return `<div class="${fieldWrapperClass}">${renderToggle()}${footerHtml}</div>`;
+      return `<div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">${renderToggle()}${footerHtml}</div>`;
     }
 
     if (field.type === 'vec2') {
-      const vecFields = {
-        x: { type: 'number', label: 'X', ui: { min: ui.min, max: ui.max, step: ui.step, placeholder: ui.placeholder } },
-        y: { type: 'number', label: 'Y', ui: { min: ui.min, max: ui.max, step: ui.step, placeholder: ui.placeholder } }
+      // Позиция — один и тот же элемент во всех редакторах: X и Y в одной
+      // строке и кнопка «Местоположение» (карта мира, см. editor-core/point-map.js).
+      // Два способа хранения:
+      //  • вложенный объект (Position {x, y}) — ui.axes не задан;
+      //  • две отдельные колонки БД (PosX/PosY, PositionX/PositionY) — ui.axes.
+      const axesIn = ui.axes && typeof ui.axes === 'object' ? ui.axes : null;
+      const axisX = axesIn ? String(axesIn.x || '') : `${path}.x`;
+      const axisY = axesIn ? String(axesIn.y || '') : `${path}.y`;
+      const containerMode = !axesIn;
+      const worldPath = ui.mapWorldPath == null ? '' : String(ui.mapWorldPath);
+      const axisHtml = (axisPath, name) => {
+        const raw = getValueAtPath(data, axisPath);
+        const numeric = raw === '' || raw == null ? 0 : Number(raw);
+        const attrs = buildInputAttributes({
+          path: axisPath,
+          field: { ui: { min: ui.min, max: ui.max, step: ui.step === undefined ? 1 : ui.step } },
+          classes: `${inputClass} editor-vec2-input`,
+          includeName,
+          includeDataKey,
+          includeDataPath
+        });
+        // Парный режим: «поле изменено гостем» подсвечивает каждую ось отдельно.
+        const fieldPathAttr = containerMode ? '' : ` data-field-path="${escapeAttr(axisPath)}"`;
+        const shown = Number.isFinite(numeric) ? numeric : 0;
+        return `<label class="editor-vec2-axis"${fieldPathAttr}>`
+          + `<span class="editor-vec2-axis-name">${name}</span>`
+          + `<input type="number" ${attrs} data-map-axis="${name.toLowerCase()}" value="${escapeAttr(String(shown))}">`
+          + '</label>';
       };
-      // Responsive: stack on narrow screens
-      return `<div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">${labelHtml}<div class="grid grid-cols-1 sm:grid-cols-2 gap-2">${renderComposite(vecFields)}</div>${footerHtml}</div>`;
+      const mapBtn = ui.map === false ? '' : `<button type="button" class="editor-vec2-map" data-map-pick="1"
+          title="Местоположение — выбрать точку на карте мира">
+          <i class="fa-solid fa-map-location-dot" aria-hidden="true"></i>
+          <span class="editor-vec2-map-label">Местоположение</span>
+        </button>`;
+      const rowAttrs = ` data-map-x-path="${escapeAttr(axisX)}" data-map-y-path="${escapeAttr(axisY)}"`
+        + (worldPath ? ` data-map-world-path="${escapeAttr(worldPath)}"` : '');
+      const row = `<div class="editor-vec2"${rowAttrs}>${axisHtml(axisX, 'X')}${axisHtml(axisY, 'Y')}${mapBtn}</div>`;
+      const wrapperPath = containerMode ? ` data-field-path="${escapeAttr(path)}"` : '';
+      return `<div class="${fieldWrapperClass}"${wrapperPath}>${labelHtml}${row}${footerHtml}</div>`;
     }
 
     if (field.type === 'item') {
@@ -556,7 +596,7 @@
         value: { type: 'number', label: 'Value', ui: { min: ui.min, max: ui.max, step: ui.step, placeholder: ui.placeholder } }
       };
       // Responsive: stack on narrow screens
-      return `<div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">${labelHtml}<div class="grid grid-cols-1 sm:grid-cols-2 gap-2">${renderComposite(itemFields)}</div>${footerHtml}</div>`;
+      return `<div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">${labelHtml}<div class="grid grid-cols-2 gap-2">${renderComposite(itemFields)}</div>${footerHtml}</div>`;
     }
 
     if (field.type === 'list') {
@@ -619,14 +659,67 @@
           <div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">
             ${hideLabel ? '' : labelHtml}
             <div class="${listWrapperClass} editor-list-table" data-list-container="${escapeAttr(path)}" style="${escapeAttr(colsStyle)}">${headerHtml}${rowsHtml}</div>
-            <button type="button" class="${listAddClass}" data-list-action="add" data-list-path="${escapeAttr(path)}" data-list-default="${defaultPayload}">${field?.ui?.addLabel || options?.listAddLabel || 'Добавить'}</button>
+            <button type="button" class="${listAddClass} editor-list-add" data-list-action="add" data-list-path="${escapeAttr(path)}" data-list-default="${defaultPayload}">${field?.ui?.addLabel || options?.listAddLabel || 'Добавить'}</button>
             ${footerHtml}
           </div>`;
       }
 
-      // Default list rendering (cards)
+      // Default list rendering (cards).
+      //
+      // stack   — поля элемента друг под другом (по умолчанию);
+      // grid    — CSS-сетка с шаблоном и colSpan (крупные формы редакторов БД);
+      // compact — узкая шапка «#N … корзина» и поля, которые сами укладываются
+      //           в строки по типу (число узкое, выбор шире, теги на всю строку);
+      // row     — весь элемент в одну строку: #N, поля, корзина.
+      const isRowLayout = layout === 'row';
+      const isCompactLayout = layout === 'compact';
+      const isFlowLayout = isRowLayout || isCompactLayout;
+
+      // Ширина ячейки по типу поля: числа и галочки узкие, выбор средний,
+      // теги/списки/многострочный текст занимают всю строку.
+      const cellSize = (subField) => {
+        const explicit = String(subField?.ui?.cellSize || '').toLowerCase();
+        if (['narrow', 'mid', 'wide'].includes(explicit)) return explicit;
+        const type = String(subField?.type || '').toLowerCase();
+        const uiType = String(subField?.ui?.type || '').toLowerCase();
+        const format = String(subField?.ui?.format || '').toLowerCase();
+        if (['number', 'boolean', 'toggle', 'date', 'time'].includes(type)) return 'narrow';
+        if (['tags', 'multiselect', 'db_multiselect'].includes(uiType)) return 'wide';
+        if (['list', 'textarea', 'json'].includes(type) || format === 'textarea') return 'wide';
+        return 'mid';
+      };
+
+      const renderCell = (subField, subPath) => {
+        const inner = renderField({ path: subPath, field: subField, data, options, isNested: true });
+        if (!isFlowLayout) return inner;
+        return `<div class="editor-item-cell is-${cellSize(subField)}">${inner}</div>`;
+      };
+
       const listItems = items.map((item, index) => {
         const itemPath = `${path}.${index}`;
+        const removeBtn = `
+              <button type="button" class="${listRemoveClass} editor-list-item-del" title="Удалить" data-list-action="remove" data-list-path="${escapeAttr(path)}" data-list-index="${index}">
+                <i class="fa-solid fa-trash"></i>
+              </button>`;
+
+        if (isRowLayout || isCompactLayout) {
+          const cells = Object.entries(itemFields)
+            .map(([key, subField]) => renderCell(subField, `${itemPath}.${key}`))
+            .join('');
+          const head = `<span class="editor-list-item-idx">#${index + 1}</span>`;
+          return isRowLayout
+            ? `
+          <div class="${listItemClass} editor-list-item--row" data-list-item="${escapeAttr(itemPath)}">
+            ${head}
+            <div class="editor-item-fields">${cells}</div>${removeBtn}
+          </div>`
+            : `
+          <div class="${listItemClass} editor-list-item--compact" data-list-item="${escapeAttr(itemPath)}">
+            <div class="editor-list-item-bar">${head}${removeBtn}</div>
+            <div class="editor-item-fields">${cells}</div>
+          </div>`;
+        }
+
         const itemContent = Object.entries(itemFields).map(([key, subField]) => {
           return renderField({ path: `${itemPath}.${key}`, field: subField, data, options, isNested: true });
         }).join('');
@@ -664,7 +757,7 @@
         <div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">
           ${hideLabel ? '' : labelHtml}
           <div class="${listWrapperClass}" data-list-container="${escapeAttr(path)}">${listContent}</div>
-          <button type="button" class="${listAddClass}" data-list-action="add" data-list-path="${escapeAttr(path)}" data-list-default="${defaultPayload}">${field?.ui?.addLabel || options?.listAddLabel || 'Добавить'}</button>
+          <button type="button" class="${listAddClass} editor-list-add" data-list-action="add" data-list-path="${escapeAttr(path)}" data-list-default="${defaultPayload}">${field?.ui?.addLabel || options?.listAddLabel || 'Добавить'}</button>
           ${footerHtml}
         </div>`;
     }

@@ -26,11 +26,18 @@ $action = (string)($_GET['action'] ?? '');
 $resource = (string)($_GET['resource'] ?? '');
 
 try {
-  if (!$action) respond(['ok' => false, 'error' => 'Missing action'], 400);
-  if (!isset($RESOURCES[$resource])) respond(['ok' => false, 'error' => 'Unknown resource'], 400);
+  if (!$action) respond(['ok' => false, 'error' => 'Не указано действие'], 400);
+  if (!isset($RESOURCES[$resource])) respond(['ok' => false, 'error' => 'Неизвестный раздел'], 400);
+  // Сначала роль (гостю запись запрещена в принципе), затем защита от подделки
+  // запроса: любая запись в игровую базу — только JSON-POST своего узла.
   guest_action_guard($ROLE, $action, ['list', 'get']);
-  if ($ROLE === EDITOR_ROLE_GUEST && empty($RESOURCES[$resource]['guest'])) {
-    respond(['ok' => false, 'error' => 'Доступ запрещён: этот раздел недоступен для гостевого аккаунта.', 'code' => 'guest_forbidden'], 403);
+  guard_write_actions($action, ['create', 'update', 'delete', 'rename_group']);
+  if ($ROLE === EDITOR_ROLE_GUEST) {
+    // Two independent gates: the resource must be guest-visible at all AND the
+    // administrator must have granted the matching editor tab to this account.
+    if (empty($RESOURCES[$resource]['guest']) || !guest_can_read_resource($resource)) {
+      respond(['ok' => false, 'error' => 'Доступ запрещён: этот раздел не включён для вашего гостевого аккаунта.', 'code' => 'guest_forbidden'], 403);
+    }
   }
   $R = $RESOURCES[$resource];
   $table = $R['table'];
@@ -45,7 +52,7 @@ try {
   if ($action === 'rename_group') {
     if ($resource !== 'crafts') {
       $mysqli->close();
-      respond(['ok' => false, 'error' => 'This action is only available for crafts'], 400);
+      respond(['ok' => false, 'error' => 'Действие доступно только в редакторе крафтов'], 400);
     }
 
     $body = read_json_body();
@@ -61,7 +68,7 @@ try {
     if (!in_array($level, ['main', 'group', 'sub'], true) || $currentName === ''
       || ($level === 'sub' && $group === '')) {
       $mysqli->close();
-      respond(['ok' => false, 'error' => 'Invalid craft group target'], 400);
+      respond(['ok' => false, 'error' => 'Некорректная целевая группа крафтов'], 400);
     }
 
 
@@ -102,7 +109,7 @@ try {
       $changed = [];
       if ($updates) {
         $stmt = $mysqli->prepare('UPDATE `tw_crafts_list` SET `GroupName` = ? WHERE `ID` = ? AND `GroupName` = ? LIMIT 1');
-        if ($stmt === false) throw new RuntimeException('Prepare failed');
+        if ($stmt === false) throw new RuntimeException('Ошибка подготовки запроса к базе');
         foreach ($updates as $update) {
           $newGroupName = $update['new'];
           $id = $update['ID'];
@@ -157,7 +164,7 @@ try {
     $colSql = '`' . $pk . '`, ' . implode(', ', array_map(fn($c) => '`' . $c . '`', $cols));
     $sql = "SELECT $colSql FROM `$table` $where ORDER BY $order LIMIT ? OFFSET ?";
     $stmt = $mysqli->prepare($sql);
-    if ($stmt === false) throw new RuntimeException('Prepare failed');
+    if ($stmt === false) throw new RuntimeException('Ошибка подготовки запроса к базе');
     if ($types) {
       $types2 = $types . 'ii';
       $params2 = array_merge($params, [$fetchLimit, $offset]);
@@ -182,12 +189,12 @@ try {
 
   if ($action === 'get') {
     $id = (string)($_GET['id'] ?? '');
-    if ($id === '' || !ctype_digit($id)) respond(['ok' => false, 'error' => 'Invalid id'], 400);
+    if ($id === '' || !ctype_digit($id)) respond(['ok' => false, 'error' => 'Некорректный идентификатор записи'], 400);
     $iid = (int)$id;
     $colSql = '`' . $pk . '`, ' . implode(', ', array_map(fn($c) => '`' . $c . '`', $cols));
     $sql = "SELECT $colSql FROM `$table` WHERE `$pk` = ? LIMIT 1";
     $stmt = $mysqli->prepare($sql);
-    if ($stmt === false) throw new RuntimeException('Prepare failed');
+    if ($stmt === false) throw new RuntimeException('Ошибка подготовки запроса к базе');
     $stmt->bind_param('i', $iid);
     $stmt->execute();
     $res = $stmt->get_result();
@@ -203,14 +210,14 @@ try {
     $data = is_array($body['data'] ?? null) ? $body['data'] : [];
     $data = sanitize_columns($data, $cols);
     $data = encode_json_cols($data, $jsonCols);
-    if (!$data) respond(['ok' => false, 'error' => 'Empty data'], 400);
+    if (!$data) respond(['ok' => false, 'error' => 'Пустые данные: нечего сохранять'], 400);
 
     $keys = array_keys($data);
     $placeholders = implode(',', array_fill(0, count($keys), '?'));
     $colSql = implode(',', array_map(fn($c) => '`' . $c . '`', $keys));
     $sql = "INSERT INTO `$table` ($colSql) VALUES ($placeholders)";
     $stmt = $mysqli->prepare($sql);
-    if ($stmt === false) throw new RuntimeException('Prepare failed');
+    if ($stmt === false) throw new RuntimeException('Ошибка подготовки запроса к базе');
 
     $types = '';
     $vals = [];
@@ -230,19 +237,19 @@ try {
 
   if ($action === 'update') {
     $id = (string)($_GET['id'] ?? '');
-    if ($id === '' || !ctype_digit($id)) respond(['ok' => false, 'error' => 'Invalid id'], 400);
+    if ($id === '' || !ctype_digit($id)) respond(['ok' => false, 'error' => 'Некорректный идентификатор записи'], 400);
     $iid = (int)$id;
     $body = read_json_body();
     $data = is_array($body['data'] ?? null) ? $body['data'] : [];
     $data = sanitize_columns($data, $cols);
     $data = encode_json_cols($data, $jsonCols);
-    if (!$data) respond(['ok' => false, 'error' => 'Empty data'], 400);
+    if (!$data) respond(['ok' => false, 'error' => 'Пустые данные: нечего сохранять'], 400);
 
     $keys = array_keys($data);
     $setSql = implode(', ', array_map(fn($c) => '`' . $c . '` = ?', $keys));
     $sql = "UPDATE `$table` SET $setSql WHERE `$pk` = ? LIMIT 1";
     $stmt = $mysqli->prepare($sql);
-    if ($stmt === false) throw new RuntimeException('Prepare failed');
+    if ($stmt === false) throw new RuntimeException('Ошибка подготовки запроса к базе');
 
     $types = '';
     $vals = [];
@@ -264,11 +271,11 @@ try {
 
   if ($action === 'delete') {
     $id = (string)($_GET['id'] ?? '');
-    if ($id === '' || !ctype_digit($id)) respond(['ok' => false, 'error' => 'Invalid id'], 400);
+    if ($id === '' || !ctype_digit($id)) respond(['ok' => false, 'error' => 'Некорректный идентификатор записи'], 400);
     $iid = (int)$id;
     $sql = "DELETE FROM `$table` WHERE `$pk` = ? LIMIT 1";
     $stmt = $mysqli->prepare($sql);
-    if ($stmt === false) throw new RuntimeException('Prepare failed');
+    if ($stmt === false) throw new RuntimeException('Ошибка подготовки запроса к базе');
     $stmt->bind_param('i', $iid);
     $stmt->execute();
     $stmt->close();
@@ -277,8 +284,8 @@ try {
   }
 
   $mysqli->close();
-  respond(['ok' => false, 'error' => 'Unknown action'], 400);
+  respond(['ok' => false, 'error' => 'Неизвестное действие'], 400);
 
 } catch (Throwable $e) {
-  respond(['ok' => false, 'error' => $e->getMessage()], 500);
+  editor_internal_error($e);
 }

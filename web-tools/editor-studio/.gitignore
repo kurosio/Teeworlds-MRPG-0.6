@@ -1,0 +1,7 @@
+# Runtime state of Editor Studio (never commit):
+#   change requests of guests, login throttling, lock/temp files of the atomic config writes.
+data/change-requests/
+data/auth-throttle.json
+data/auth-throttle.json.lock
+data/*.lock
+data/*.tmp*

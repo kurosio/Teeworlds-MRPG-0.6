@@ -3,14 +3,13 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Warehouse • tw_warehouses</title>
+  <title>Склады и магазины • Editor Studio</title>
 
   <script src="editor-core/page-loader.js" data-mode="event"></script>
 
   <style>
     .warehouse-group-btn{border-bottom:1px solid var(--editor-soft-border)}
-    .warehouse-item{border-bottom:1px solid var(--editor-soft-border)}
-    .warehouse-item:last-child{border-bottom:0}
+
 
     #form-main{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:start;}
     #form-main [data-field-path="Name"]{grid-column:1 / -1;}
@@ -31,8 +30,8 @@
       <div class="editor-page-title">
         <i class="fa-solid fa-warehouse text-accent text-xl"></i>
         <div>
-          <h1>Warehouse / Shop</h1>
-          <div class="editor-page-sub">Управление <code>tw_warehouses</code> и Trades через массив с группировкой.</div>
+          <h1>Склады и магазины</h1>
+          <div class="editor-page-sub">Ассортимент складов и магазинов: мир, тип торговли и товары.</div>
         </div>
       </div>
       <div class="editor-page-actions">
@@ -41,7 +40,7 @@
           <i class="fa-solid fa-rotate"></i><span>Обновить</span>
         </button>
         <button id="btn-new" class="editor-btn editor-btn-primary">
-          <i class="fa-solid fa-plus"></i><span>Новый Warehouse</span>
+          <i class="fa-solid fa-plus"></i><span>Новый склад</span>
         </button>
       </div>
     </div>
@@ -58,16 +57,16 @@
 
           <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div>
-              <div class="text-xs editor-muted-text mb-1">World</div>
+              <div class="text-xs editor-muted-text mb-1">Мир</div>
               <select id="filter-world" class="w-full editor-input form-input"></select>
             </div>
             <div>
-              <div class="text-xs editor-muted-text mb-1">Type</div>
+              <div class="text-xs editor-muted-text mb-1">Тип торговли</div>
               <select id="filter-type" class="w-full editor-input form-input">
                 <option value="">Все</option>
-                <option value="buying">buying</option>
-                <option value="selling">selling</option>
-                <option value="storage">storage</option>
+                <option value="buying">покупка</option>
+                <option value="selling">продажа</option>
+                <option value="storage">хранение</option>
               </select>
             </div>
           </div>
@@ -77,7 +76,7 @@
             <input id="search" type="search" class="w-full editor-input form-input" placeholder="Поиск по ID / имени / валюте…" />
           </div>
 
-          <div id="list" class="mt-4 overflow-auto border border-light rounded-xl bg-black/10 editor-scroll" style="max-height: 590px"></div>
+          <div id="list" class="mt-4 editor-list-scroll editor-scroll"></div>
         </div>
       </aside>
 
@@ -86,7 +85,7 @@
           <div class="editor-sticky-toolbar flex items-start justify-between gap-4">
             <div>
               <div class="flex items-center gap-2">
-                <div class="text-lg font-semibold" id="title">Выберите Warehouse</div>
+                <div class="text-lg font-semibold" id="title">Выберите склад</div>
                 <span class="editor-badge" id="badge-id" style="display:none"></span>
               </div>
               <div class="editor-muted-text text-sm mt-1" id="subtitle">—</div>
@@ -128,7 +127,7 @@
               <div id="trades-groups" class="mt-3 space-y-3"></div>
               <div class="mt-3">
                 <details id="raw-wrap" class="editor-details">
-                  <summary>Raw Trades <span class="editor-muted-text">(как в БД)</span></summary>
+                  <summary>Строка товаров в исходном виде <span class="editor-muted-text">(как в БД)</span></summary>
                   <div class="editor-details-body">
                     <textarea id="raw-trades" class="w-full editor-textarea form-textarea" rows="7" readonly></textarea>
                   </div>
@@ -170,6 +169,9 @@
       rawTrades: document.getElementById('raw-trades'),
     };
 
+    // Уход со страницы с несохранёнными правками — с предупреждением браузера.
+    EditorCore.Page.guardUnsaved(() => STATE.isDirty);
+
     const STATE = {
       rows: [],
       selectedId: null,
@@ -195,6 +197,8 @@
     const buildGroupLabel = (main, group, sub) => EditorCore.utils.joinGroupHierarchy(main, group, sub, { fallback: 'Misc' });
 
     const TYPE_FLAGS = ['buying', 'selling', 'storage'];
+
+    const esc = EditorCore.Page.esc;
 
     const parseTypeSet = (value) => EditorCore.utils.parseStringList(value, {
       allowed: TYPE_FLAGS,
@@ -358,7 +362,7 @@
     const buildCollectionGroupOptionsHtml = (selectedGroup = '') => {
       const selected = String(selectedGroup || '').trim();
       const groups = Array.from(STATE.lookups.collectionMap.keys()).sort((a, b) => a.localeCompare(b));
-      const out = ['<option value="">— Group —</option>'];
+      const out = ['<option value="">— группа —</option>'];
       groups.forEach((g) => out.push(`<option value="${g.replace(/"/g, '&quot;')}" ${g === selected ? 'selected' : ''}>${g}</option>`));
       return out.join('');
     };
@@ -366,7 +370,7 @@
     const buildCollectionSubOptionsHtml = (group = '', selectedSub = '') => {
       const selected = String(selectedSub || '').trim();
       const subs = getCollectionSubs(group);
-      const out = ['<option value="">— Sub —</option>'];
+      const out = ['<option value="">— подгруппа —</option>'];
       subs.forEach((s) => out.push(`<option value="${s.replace(/"/g, '&quot;')}" ${s === selected ? 'selected' : ''}>${s}</option>`));
       return out.join('');
     };
@@ -426,14 +430,14 @@
           const isActive = String(r.ID) === String(STATE.selectedId);
           const type = parseTypeSet(r.Type).join(', ') || '—';
           const tradesCount = parseTrades(r.Trades || '').reduce((sum, g) => sum + ((g.entries || []).length), 0);
-          return `<button type="button" class="warehouse-item w-full text-left px-3 py-2.5 hover:bg-white/5 transition ${isActive ? 'bg-white/5' : ''}" data-id="${r.ID}">
+          return `<button type="button" class="editor-row${isActive ? ' editor-row-active' : ''}" data-id="${r.ID}">
             <div class="flex items-start justify-between gap-2">
               <div class="min-w-0">
-                <div class="font-semibold text-sm truncate">${r.Name || '(без имени)'}</div>
-                <div class="text-xs editor-muted-text mt-0.5">${type}</div>
+                <div class="font-semibold text-sm truncate">${esc(r.Name) || '(без имени)'}</div>
+                <div class="text-xs editor-muted-text mt-0.5">${esc(type)}</div>
                 <div class="mt-1 flex flex-wrap gap-1.5">
-                  <span class="px-2 py-0.5 rounded-full text-[11px] border border-white/10 bg-white/5 editor-muted-text">Trades: ${tradesCount}</span>
-                  <span class="px-2 py-0.5 rounded-full text-[11px] border border-white/10 bg-white/5 editor-muted-text">Cur: ${r.Currency || 0}</span>
+                  <span class="editor-badge">Trades: ${tradesCount}</span>
+                  <span class="editor-badge">Валюта: ${esc(r.Currency || 0)}</span>
                 </div>
               </div>
               <div class="text-xs editor-muted-text shrink-0">#${r.ID}</div>
@@ -443,7 +447,7 @@
 
         return `<div>
           <div class="warehouse-group-btn w-full px-3 py-2 flex items-center justify-between gap-2">
-            <div class="font-semibold text-sm truncate">${worldLabel}</div>
+            <div class="font-semibold text-sm truncate">${esc(worldLabel)}</div>
             <div class="text-xs editor-muted-text">${rows.length}</div>
           </div>
           <div>${rowsHtml}</div>
@@ -463,14 +467,18 @@
     const mainFields = {
       Name: { type: 'text', label: 'Название', ui: { placeholder: 'Weapons Shop' } },
       TypeArr: { type: 'text', label: 'Флаги', ui: { type: 'tags', allowCreate: false, placeholder: 'Добавить флаг...', options: [
-        { value: 'buying', label: 'buying' },
-        { value: 'selling', label: 'selling' },
-        { value: 'storage', label: 'storage' },
+        { value: 'buying', label: 'покупка' },
+        { value: 'selling', label: 'продажа' },
+        { value: 'storage', label: 'хранение' },
       ] } },
       Currency: { type: 'db_select', label: 'Currency', ui: { dbKey: 'item', placeholder: 'ID валюты', valueType: 'number', searchable: true } },
       WorldID: { type: 'db_select', label: 'World', ui: { dbKey: 'world', placeholder: 'ID мира', valueType: 'number', searchable: true } },
-      PosX: { type: 'number', label: 'PosX', ui: { step: 1 } },
-      PosY: { type: 'number', label: 'PosY', ui: { step: 1 } },
+      // Склад стоит в мире склада: одна строка X/Y и карта по WorldID.
+      Position: {
+        type: 'vec2',
+        label: 'Позиция (X, Y)',
+        ui: { step: 1, axes: { x: 'PosX', y: 'PosY' }, mapWorldPath: 'WorldID' },
+      },
       StorageData: { type: 'textarea', label: 'StorageData (JSON)', ui: { rows: 4, placeholder: '{"position":{"x":0,"y":0},"value":"1"}' } },
     };
 
@@ -533,7 +541,7 @@
           }
           if (e.kind === 'raw') {
             return `<div class="trade-row" data-gi="${gi}" data-ei="${ei}">
-              <input data-field="raw" class="editor-input form-input" value="${String(e.raw || '').replace(/"/g, '&quot;')}" placeholder="Raw line" />
+              <input data-field="raw" class="editor-input form-input" value="${String(e.raw || '').replace(/"/g, '&quot;')}" placeholder="Строка как в БД" />
               <input disabled class="editor-input form-input" value="—" />
               <input disabled class="editor-input form-input" value="—" />
               <input disabled class="editor-input form-input" value="—" />
@@ -550,8 +558,8 @@
         }).join('');
 
         const mainLabel = String(g.main || '').trim() || 'Без основной группы';
-        return `<div class="border ${g.main ? 'border-indigo-400/30 bg-indigo-400/5' : 'border-light'} rounded-xl p-3" data-main-group="${mainLabel.replace(/"/g, '&quot;')}">
-          <div class="mb-3 px-2 py-1.5 rounded-md ${g.main ? 'bg-indigo-400/10 text-indigo-100' : 'bg-white/5 text-slate-300'} flex items-center justify-between gap-2">
+        return `<div class="border ${g.main ? 'editor-primary-border editor-primary-tint' : 'editor-hairline'} rounded-xl p-3" data-main-group="${mainLabel.replace(/"/g, '&quot;')}">
+          <div class="mb-3 px-2 py-1.5 rounded-md ${g.main ? 'editor-primary-tint editor-primary-text' : 'bg-white/5 editor-muted-text'} flex items-center justify-between gap-2">
             <span class="text-xs font-semibold"><i class="fa-solid fa-layer-group mr-1"></i>${mainLabel}</span>
             <span class="text-[11px] editor-muted-text">Основная группа</span>
           </div>
@@ -566,9 +574,9 @@
           <div class="text-xs editor-muted-text mb-2">${label} • позиций: ${(g.entries || []).length}</div>
           <div class="space-y-2">${rows || '<div class="editor-muted-text text-sm">Нет позиций.</div>'}</div>
           <div class="mt-2 flex flex-wrap gap-2">
-            <button class="editor-btn editor-btn-secondary text-sm" data-action="add-item" data-gi="${gi}"><i class="fa-solid fa-plus"></i><span>Item</span></button>
-            <button class="editor-btn editor-btn-secondary text-sm" data-action="add-collection" data-gi="${gi}"><i class="fa-solid fa-boxes-stacked"></i><span>Collection</span></button>
-            <button class="editor-btn editor-btn-secondary text-sm" data-action="add-raw" data-gi="${gi}"><i class="fa-solid fa-code"></i><span>Raw</span></button>
+            <button class="editor-btn editor-btn-secondary text-sm" data-action="add-item" data-gi="${gi}"><i class="fa-solid fa-plus"></i><span>Предмет</span></button>
+            <button class="editor-btn editor-btn-secondary text-sm" data-action="add-collection" data-gi="${gi}"><i class="fa-solid fa-boxes-stacked"></i><span>Набор</span></button>
+            <button class="editor-btn editor-btn-secondary text-sm" data-action="add-raw" data-gi="${gi}"><i class="fa-solid fa-code"></i><span>JSON</span></button>
           </div>
         </div>`;
       }).join('');
@@ -772,7 +780,7 @@
 
     const remove = async () => {
       if (!STATE.selectedId) return;
-      if (!confirm('Удалить Warehouse #' + STATE.selectedId + '?')) return;
+      if (!await EditorCore.Page.confirm('Удалить Warehouse #' + STATE.selectedId + '?')) return;
       try {
         setStatus('Удаление…');
         await EditorCore.DBCrud.remove(RESOURCE, STATE.selectedId);

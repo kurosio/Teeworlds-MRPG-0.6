@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>Карта мира — выбор точки</title>
+<link rel="stylesheet" href="picker.css" />
+</head>
+<body>
+
+<canvas id="cnvs"></canvas>
+<canvas id="ovl" aria-hidden="true"></canvas>
+
+<header class="pk-bar">
+  <div class="pk-bar-main">
+    <span class="pk-map-icon"><i class="pk-i-map"></i></span>
+    <div class="pk-titles">
+      <div class="pk-title" id="pk-title">Карта мира</div>
+      <div class="pk-sub" id="pk-sub">Загрузка карты…</div>
+    </div>
+  </div>
+  <div class="pk-coords" title="Текущая точка в координатах мира">
+    <span class="pk-coord"><b>X</b><output id="pk-out-x">—</output></span>
+    <span class="pk-coord"><b>Y</b><output id="pk-out-y">—</output></span>
+  </div>
+  <div class="pk-tools">
+    <button type="button" class="pk-btn" id="pk-zoom-out" title="Отдалить (−)">−</button>
+    <button type="button" class="pk-btn" id="pk-zoom-in" title="Приблизить (+)">+</button>
+    <button type="button" class="pk-btn" id="pk-fit" title="Вся карта (F)">Вся карта</button>
+    <button type="button" class="pk-btn" id="pk-center" title="К точке (C)">К точке</button>
+  </div>
+</header>
+
+<div class="pk-hint" id="pk-hint">
+  Клик по карте — поставить точку · перетаскивание — сдвиг · колесо — масштаб
+</div>
+
+<div class="pk-state" id="pk-state" hidden>
+  <div class="pk-state-icon" id="pk-state-icon">!</div>
+  <div class="pk-state-title" id="pk-state-title">Карта не загрузилась</div>
+  <div class="pk-state-text" id="pk-state-text"></div>
+  <button type="button" class="pk-btn pk-btn-primary" id="pk-retry" hidden>Повторить</button>
+</div>
+
+<footer class="pk-foot">
+  <label class="pk-field">
+    <span>X</span>
+    <input type="number" id="pk-x" step="1" inputmode="numeric" autocomplete="off" />
+  </label>
+  <label class="pk-field">
+    <span>Y</span>
+    <input type="number" id="pk-y" step="1" inputmode="numeric" autocomplete="off" />
+  </label>
+  <div class="pk-foot-note" id="pk-note">Координаты — в пикселях карты, как в базе игры.</div>
+  <div class="pk-foot-actions">
+    <button type="button" class="pk-btn" id="pk-cancel">Отмена</button>
+    <button type="button" class="pk-btn pk-btn-primary" id="pk-apply">Применить</button>
+  </div>
+</footer>
+
+<script src="jquery-4.0.0-slim.min.js"></script>
+<script src="jquery.mousewheel.js"></script>
+<script src="gl-matrix.min.js"></script>
+<script src="zlib.min.js"></script>
+<script src="dataviewext.js"></script>
+<script src="twdatafile.js"></script>
+<script>
+  // Настройки рендера должны существовать раньше twwebgl.js — он читает их при
+  // подключении. Адреса приходят из редактора, поэтому карта и её текстуры
+  // грузятся с нашего же сервера (без интернета).
+  (function () {
+    var qs = new URLSearchParams(window.location.search);
+    window.twConfig = {
+      enableExternalMapLoading: false,
+      autoRender: false,
+      localImageUrl: qs.get('mapres') || 'mapres/',
+      defaultMapUrl: '',
+      zoomMin: 0.005,
+      zoomMax: 12.0,
+      zoomWheelFactor: 50,
+      zoomScrollGain: 0.2,
+      zoomWheelPixelQuantum: 120,
+      zoomWheelStep: 1.08,
+      zoomWheelMaxStepsPerEvent: 8,
+      zoomWheelLineHeight: 16,
+      zoomWheelLowDeltaGamma: 0.55,
+      moveSmoothing: 0.3,
+      moveAcceleration: 0.5,
+      moveDeceleration: 0.8,
+      keyboardMoveSpeedMin: 8,
+      keyboardMoveSpeedMax: 120,
+      keyboardMoveRampMs: 6000
+    };
+  })();
+</script>
+<script src="twwebgl.js"></script>
+<script src="picker.js"></script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+# Сценарии — данные игры, а не публичные файлы: их отдаёт только api.php
+# (доступ администратора). Прямой запрос к scenarios/*.json закрыт.
+#
+# Apache читает правила ниже при AllowOverride All; в Docker это же делает
+# apache-config.conf на уровне vhost, а для встроенного сервера PHP —
+# router.php в корне editor-studio. Для nginx см. STRUCTURE.md, «Безопасность данных».
+<IfModule mod_authz_core.c>
+    Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+</IfModule>
+<IfModule mod_autoindex.c>
+    Options -Indexes
+</IfModule>

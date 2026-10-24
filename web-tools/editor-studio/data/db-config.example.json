@@ -4,15 +4,15 @@
     "database": "test",
     "user": "root",
     "password": "",
-    "skins_api": "http:\/\/127.0.0.1:8000\/render?",
+    "skins_api": "http://127.0.0.1:8000/render?",
     "editor_user": "admin",
-    "editor_password": "admin1",
+    "editor_password": "",
     "allow_remote_editor": false,
     "allowed_editor_ips": [],
-    "guest_enabled": true,
+    "guest_enabled": false,
     "guest_allow_remote": true,
     "guest_max_pending": 5,
     "guest_submit_cooldown": 60,
     "guest_max_operations": 100,
-    "guest_password": ""
+    "guest_users": []
 }

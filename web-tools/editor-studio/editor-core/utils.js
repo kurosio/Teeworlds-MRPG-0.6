@@ -119,6 +119,12 @@
 
   const escapeAttr = (value) => String(value).replace(/"/g, '&quot;');
 
+  /** Строка запроса из объекта: пустые значения пропускаются. */
+  const qs = (obj) => Object.entries(obj || {})
+    .filter(([, value]) => value !== undefined && value !== null && value !== '')
+    .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`)
+    .join('&');
+
   const escapeHtml = (s) => String(s)
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
@@ -184,34 +190,22 @@
       try { resolve(JSON.parse(String(reader.result || 'null'))); }
       catch (e) { reject(e); }
     };
-    reader.onerror = () => reject(reader.error || new Error('Failed to read file'));
+    reader.onerror = () => reject(reader.error || new Error('Не удалось прочитать файл'));
     reader.readAsText(file);
   });
 
+  /**
+   * JSON-запрос с исключением при ошибке. Таймаут, 401 и разбор ответа —
+   * в editor-core/http.js; здесь только привычное для старых вызовов поведение.
+   */
   const fetchJson = async (url, options = {}) => {
-    const { headers = {}, body, ...requestOptions } = options;
-    const shouldEncodeBody = body != null
-      && typeof body !== 'string'
-      && !(body instanceof FormData)
-      && !(body instanceof URLSearchParams)
-      && !(body instanceof Blob);
-    const res = await fetch(url, {
-      credentials: 'same-origin',
-      ...requestOptions,
-      headers: shouldEncodeBody ? { 'Content-Type': 'application/json', ...headers } : headers,
-      body: shouldEncodeBody ? JSON.stringify(body) : body,
-    });
-    const text = await res.text();
-    let json = null;
-    try { json = text ? JSON.parse(text) : null; }
-    catch { throw new Error(`Некорректный ответ сервера (HTTP ${res.status})`); }
-    if (res.status === 401) {
-      window.top?.postMessage({ type: 'editor-shell:auth-required' }, '*');
-    }
-    if (!res.ok) throw new Error(json?.error || `HTTP ${res.status}`);
-    return json;
+    const { body, ...rest } = options;
+    const res = await window.EditorCore.Http.json(url, { ...rest, body });
+    if (!res.ok) throw new Error(res.error || 'Операция не выполнена');
+    return res.data;
   };
 
+  /** То же, но дополнительно проверяет `{ ok: false }` в теле ответа. */
   const requestJson = async (url, options = {}) => {
     const { requireOk = true, ...fetchOptions } = options;
     const json = await fetchJson(url, fetchOptions);
@@ -345,7 +339,9 @@
       ? (opts.errorClass || 'bg-red-500')
       : type === 'warning'
         ? (opts.warningClass || 'bg-yellow-500')
-        : (opts.successClass || 'bg-green-500');
+        : type === 'info'
+          ? (opts.infoClass || 'bg-sky-600')
+          : (opts.successClass || 'bg-green-500');
     toast.className = `${base} ${cls}`;
     toast.textContent = String(message);
     container.appendChild(toast);
@@ -493,6 +489,7 @@
     setStatus,
     escapeAttr,
     escapeHtml,
+    qs,
     cssEscape,
     rafThrottle,
     copyText,

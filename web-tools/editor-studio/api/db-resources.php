@@ -404,7 +404,7 @@ function craft_text_length(string $value): int {
 function fetch_craft_group_rows(mysqli $mysqli, bool $forUpdate = false): array {
   $lockSql = $forUpdate ? ' FOR UPDATE' : '';
   $stmt = $mysqli->prepare("SELECT `ID`, `GroupName` FROM `tw_crafts_list` ORDER BY `ID` ASC$lockSql");
-  if ($stmt === false) throw new RuntimeException('Prepare failed');
+  if ($stmt === false) throw new RuntimeException('Ошибка подготовки запроса к базе');
   $stmt->execute();
   $res = $stmt->get_result();
   $rows = [];
@@ -446,7 +446,7 @@ function crud_fetch_row(mysqli $mysqli, array $R, int $id, bool $forUpdate = fal
     $sql = 'SELECT ' . crud_column_sql($R) . ' FROM `' . $R['table'] . '` WHERE `' . $R['pk'] . '` = ? LIMIT 1'
         . ($forUpdate ? ' FOR UPDATE' : '');
     $stmt = $mysqli->prepare($sql);
-    if ($stmt === false) throw new RuntimeException('Prepare failed: ' . $mysqli->error);
+    if ($stmt === false) throw new RuntimeException('Ошибка подготовки запроса к базе: ' . $mysqli->error);
     $stmt->bind_param('i', $id);
     $stmt->execute();
     $res = $stmt->get_result();
@@ -470,18 +470,18 @@ function crud_bind_values(array $data): array
 /** $data must be sanitized + JSON-encoded already. Returns the new id. */
 function crud_insert(mysqli $mysqli, array $R, array $data): int
 {
-    if (!$data) throw new RuntimeException('Empty data');
+    if (!$data) throw new RuntimeException('Пустые данные: нечего сохранять');
     $keys = array_keys($data);
     $placeholders = implode(',', array_fill(0, count($keys), '?'));
     $colSql = implode(',', array_map(fn($c) => '`' . $c . '`', $keys));
     $stmt = $mysqli->prepare('INSERT INTO `' . $R['table'] . "` ($colSql) VALUES ($placeholders)");
-    if ($stmt === false) throw new RuntimeException('Prepare failed: ' . $mysqli->error);
+    if ($stmt === false) throw new RuntimeException('Ошибка подготовки запроса к базе: ' . $mysqli->error);
     [$types, $vals] = crud_bind_values($data);
     $stmt->bind_param($types, ...$vals);
     if (!$stmt->execute()) {
         $err = $stmt->error;
         $stmt->close();
-        throw new RuntimeException('Insert failed: ' . $err);
+        throw new RuntimeException('Не удалось добавить запись: ' . $err);
     }
     $newId = (int)$mysqli->insert_id;
     $stmt->close();
@@ -490,11 +490,11 @@ function crud_insert(mysqli $mysqli, array $R, array $data): int
 
 function crud_update(mysqli $mysqli, array $R, int $id, array $data): int
 {
-    if (!$data) throw new RuntimeException('Empty data');
+    if (!$data) throw new RuntimeException('Пустые данные: нечего сохранять');
     $keys = array_keys($data);
     $setSql = implode(', ', array_map(fn($c) => '`' . $c . '` = ?', $keys));
     $stmt = $mysqli->prepare('UPDATE `' . $R['table'] . "` SET $setSql WHERE `" . $R['pk'] . '` = ? LIMIT 1');
-    if ($stmt === false) throw new RuntimeException('Prepare failed: ' . $mysqli->error);
+    if ($stmt === false) throw new RuntimeException('Ошибка подготовки запроса к базе: ' . $mysqli->error);
     [$types, $vals] = crud_bind_values($data);
     $types .= 'i';
     $vals[] = $id;
@@ -502,7 +502,7 @@ function crud_update(mysqli $mysqli, array $R, int $id, array $data): int
     if (!$stmt->execute()) {
         $err = $stmt->error;
         $stmt->close();
-        throw new RuntimeException('Update failed: ' . $err);
+        throw new RuntimeException('Не удалось сохранить изменения: ' . $err);
     }
     $affected = $stmt->affected_rows;
     $stmt->close();
@@ -512,12 +512,12 @@ function crud_update(mysqli $mysqli, array $R, int $id, array $data): int
 function crud_delete(mysqli $mysqli, array $R, int $id): int
 {
     $stmt = $mysqli->prepare('DELETE FROM `' . $R['table'] . '` WHERE `' . $R['pk'] . '` = ? LIMIT 1');
-    if ($stmt === false) throw new RuntimeException('Prepare failed: ' . $mysqli->error);
+    if ($stmt === false) throw new RuntimeException('Ошибка подготовки запроса к базе: ' . $mysqli->error);
     $stmt->bind_param('i', $id);
     if (!$stmt->execute()) {
         $err = $stmt->error;
         $stmt->close();
-        throw new RuntimeException('Delete failed: ' . $err);
+        throw new RuntimeException('Не удалось удалить запись: ' . $err);
     }
     $affected = $stmt->affected_rows;
     $stmt->close();

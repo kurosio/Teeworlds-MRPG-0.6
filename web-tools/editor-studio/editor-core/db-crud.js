@@ -2,69 +2,17 @@
   // Generic CRUD client for DB-backed editors.
   // Requires api/db-crud.php on server.
   const API = 'api/db-crud.php';
-  const FETCH_TIMEOUT_MS = 10000;
-  const LOG_ERRORS = false;
   const LIST_CACHE_TTL_MS = 30 * 1000;
   const listCache = new Map();
   const inflight = new Map();
 
-  const normalizeError = (err) => {
-    if (err?.name === 'AbortError') return new Error('Request timed out');
-    if (err instanceof TypeError) return new Error('Network error');
-    if (err instanceof Error) return err;
-    return new Error('Network error');
-  };
+  /**
+   * Запрос с исключением на ошибке — так CRUD-редакторы ловят сбои через
+   * try/catch. Таймаут, внешний abort и текст ошибки берёт editor-core/http.js.
+   */
+  const jsonFetch = (url, options = {}) => window.EditorCore.Http.request(url, options);
 
-  const notifyAuthRequired = () => {
-    try {
-      window.top?.postMessage({ type: 'editor-shell:auth-required' }, '*');
-    } catch {}
-  };
-
-  const jsonFetch = async (url, options = {}) => {
-    const timeoutController = new AbortController();
-    const externalSignal = options.signal;
-    const signal = (!externalSignal)
-      ? timeoutController.signal
-      : (typeof AbortSignal !== 'undefined' && typeof AbortSignal.any === 'function')
-        ? AbortSignal.any([timeoutController.signal, externalSignal])
-        : (() => {
-            const fallback = new AbortController();
-            const onAbort = () => fallback.abort();
-            if (externalSignal.aborted) fallback.abort();
-            else externalSignal.addEventListener('abort', onAbort, { once: true });
-            timeoutController.signal.addEventListener('abort', onAbort, { once: true });
-            return fallback.signal;
-          })();
-    const timeoutId = setTimeout(() => timeoutController.abort(), FETCH_TIMEOUT_MS);
-    try {
-      const res = await fetch(url, {
-        credentials: 'same-origin',
-        headers: { 'Content-Type': 'application/json', ...(options.headers || {}) },
-        ...options,
-        signal,
-      });
-      const text = await res.text();
-      let payload = null;
-      try { payload = text ? JSON.parse(text) : null; } catch { payload = { ok: false, error: 'Invalid JSON response', raw: text }; }
-      if (res.status === 401) {
-        notifyAuthRequired();
-      }
-      if (!res.ok) throw new Error(payload?.error || `HTTP ${res.status}`);
-      if (payload && payload.ok === false) throw new Error(payload.error || 'Request failed');
-      return payload;
-    } catch (err) {
-      if (LOG_ERRORS) console.warn('[db-crud] fetch failed', err);
-      throw normalizeError(err);
-    } finally {
-      clearTimeout(timeoutId);
-    }
-  };
-
-  const qs = (obj) => Object.entries(obj)
-    .filter(([, v]) => v !== undefined && v !== null)
-    .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(String(v))}`)
-    .join('&');
+  const qs = (...args) => window.EditorCore.utils.qs(...args);
 
   // ── Guest mode ──────────────────────────────────────────────────────────
   // In guest mode writes never reach api/db-crud.php (the server would reject
@@ -91,6 +39,12 @@
   const DBCrud = {
     // Flag to prevent double-recording when runtime already records
     _syncRecordEnabled: true,
+
+    /** Drop every cached list (used when the server data changed, e.g. an approved guest request). */
+    invalidateCache() {
+      listCache.clear();
+      inflight.clear();
+    },
 
     async list(resource, { search = '', limit = 100, offset = 0, signal } = {}) {
       const key = `list:${resource}:${search}:${limit}:${offset}`;
@@ -158,7 +112,11 @@
       if (!resource || !data) {
         throw new Error('Resource and data are required for create');
       }
-      if (await isGuestMode()) return guestApi().Draft.create(resource, data);
+      if (await isGuestMode()) {
+        const g = guestApi();
+        await g.loadConfig();
+        return g.Draft.create(resource, data);
+      }
       
       const res = await jsonFetch(`${API}?${qs({ action: 'create', resource })}`, { method: 'POST', body: JSON.stringify({ data }) });
       

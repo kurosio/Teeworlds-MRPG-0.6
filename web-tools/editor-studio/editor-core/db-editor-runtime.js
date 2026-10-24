@@ -30,6 +30,9 @@
       const fieldOptions = cfg.fieldOptions || window.EditorCore?.defaults?.getFieldRenderOptions?.('event');
       const debounce = window.EditorCore?.utils?.debounce || ((fn) => fn);
       const toast = window.EditorCore?.UI?.toast || (() => {});
+      const Guest = window.EditorCore?.Guest || null;
+      const isGuest = () => !!Guest?.isGuest?.();
+      const guestMeta = (id) => (isGuest() ? Guest?.Draft?.rowMeta?.(resource, id) : null);
 
       const state = {
         rows: [],
@@ -49,9 +52,10 @@
       };
       let listRequestSeq = 0;
 
-      const canDiscardDirty = () => {
+      /** Спрашивает подтверждение, если в форме есть несохранённые правки. */
+      const canDiscardDirty = async () => {
         if (!state.dirty?.isDirty?.()) return true;
-        return confirm('Есть несохранённые изменения. Продолжить без сохранения?');
+        return EditorCore.Page.confirm('Есть несохранённые изменения. Продолжить без сохранения?');
       };
 
       const makeDefault = () => {
@@ -89,6 +93,92 @@
         if (els.subtitle) els.subtitle.textContent = subtitle;
       };
 
+      const guestBadgeHtml = (meta) => {
+        if (!meta) return '';
+        const map = {
+          create: ['Новая', 'fa-plus'],
+          update: ['Изменено', 'fa-pen'],
+          delete: ['Удаление', 'fa-trash'],
+        };
+        const [text, icon] = map[meta.state] || map.update;
+        const submitted = meta.status === 'submitted';
+        return `<span class="guest-row-badge ${submitted ? 'is-submitted' : 'is-draft'}" title="${submitted ? 'Отправлено в запросе, ждёт проверки администратора' : 'Локальное изменение — в базу не записано'}"><i class="fa-solid ${submitted ? 'fa-hourglass-half' : icon}"></i>${escapeHtml(text)}</span>`;
+      };
+
+      let guestHintEl = null;
+      const ensureGuestHint = () => {
+        if (guestHintEl && guestHintEl.isConnected) return guestHintEl;
+        const host = els.form?.parentElement;
+        if (!host || !els.form) return null;
+        guestHintEl = document.createElement('div');
+        guestHintEl.className = 'guest-row-hint hidden';
+        host.insertBefore(guestHintEl, els.form);
+        return guestHintEl;
+      };
+
+      /**
+       * "This record was changed by you" banner. A guest must not see the original
+       * values thinking they are its own — the hint states whether the change is a
+       * local draft or already sent in a change request.
+       */
+      /**
+       * Mark the form fields the guest really changed: the values in the form are
+       * the guest's own, so each edited field must be visibly flagged instead of
+       * looking like ordinary data from the database.
+       */
+      const decorateGuestFields = (meta) => {
+        if (!els.form) return;
+        const fields = new Set(meta?.fields || []);
+        const submitted = meta?.status === 'submitted';
+        const note = submitted
+          ? `Поле изменено в запросе ${meta?.reqId || ''} — ждёт проверки администратора`
+          : 'Поле изменено в вашем черновике — в базу не записано';
+        els.form.querySelectorAll('[data-field-path]').forEach((node) => {
+          const top = String(node.getAttribute('data-field-path') || '').split('.')[0];
+          const changed = fields.has(top);
+          node.classList.toggle('guest-field-changed', changed);
+          node.classList.toggle('is-submitted', changed && submitted);
+          if (changed) {
+            if (node.dataset.guestPrevTitle === undefined) {
+              node.dataset.guestPrevTitle = node.getAttribute('title') || '';
+            }
+            node.setAttribute('title', note);
+          } else if (node.dataset.guestPrevTitle !== undefined) {
+            const prev = node.dataset.guestPrevTitle;
+            if (prev) node.setAttribute('title', prev); else node.removeAttribute('title');
+            delete node.dataset.guestPrevTitle;
+          }
+        });
+      };
+
+      const updateGuestHint = () => {
+        const el = guestHintEl;
+        if (!el) return;
+        if (!state.model || !state.selectedId || !isGuest()) {
+          el.classList.add('hidden');
+          decorateGuestFields(null);
+          return;
+        }
+        const meta = guestMeta(state.selectedId);
+        if (!meta) {
+          el.classList.add('hidden');
+          decorateGuestFields(null);
+          return;
+        }
+        decorateGuestFields(meta);
+        const submitted = meta.status === 'submitted';
+        const title = meta.state === 'create' ? 'Новая запись' : meta.state === 'delete' ? 'Помечена на удаление' : 'Локальное изменение';
+        const note = submitted
+          ? `отправлено в запросе <b>${escapeHtml(meta.reqId || '')}</b> и ждёт проверки администратора`
+          : 'черновик запроса — в базу данных пока ничего не записано';
+        const fields = meta.fields.length
+          ? `<div class="guest-row-hint-fields">Изменённые поля: ${meta.fields.slice(0, 8).map((f) => `<code>${escapeHtml(f)}</code>`).join(' ')}${meta.fields.length > 8 ? ' …' : ''}</div>`
+          : '';
+        el.className = `guest-row-hint ${submitted ? 'is-submitted' : 'is-draft'}`;
+        el.innerHTML = `<i class="fa-solid ${submitted ? 'fa-hourglass-half' : 'fa-pen-to-square'}"></i><div><b>${title}</b> — ${note}${fields}</div>`;
+        el.classList.remove('hidden');
+      };
+
       const setButtons = (enabled) => {
         const canCancel = enabled && !!state.dirty?.isDirty?.();
         if (els.save) els.save.disabled = !enabled;
@@ -101,8 +191,10 @@
 
       const renderForm = () => {
         if (!els.form) return;
+        ensureGuestHint();
         if (!state.model) {
           els.form.innerHTML = `<div class="editor-muted-text">Выберите запись слева</div>`;
+          if (guestHintEl) guestHintEl.classList.add('hidden');
           setButtons(false);
           return;
         }
@@ -135,6 +227,7 @@
           state.form.setData(state.model);
         }
         setButtons(true);
+        updateGuestHint();
       };
 
       const renderList = () => {
@@ -142,7 +235,11 @@
         const rows = state.rows || [];
         if (els.count) els.count.textContent = rows.length ? `${rows.length}` : '—';
         if (!rows.length) {
-          els.list.innerHTML = `<div class="editor-empty-state">Нет данных</div>`;
+          // Пустой список должен объяснять, что делать дальше.
+          const message = state.search
+            ? `Ничего не найдено по запросу «${escapeHtml(state.search)}». Измените запрос или очистите поиск.`
+            : `Записей пока нет — нажмите «${escapeHtml(cfg.newLabel || (els.newBtn?.textContent || '').trim() || 'Новый')}», чтобы создать первую.`;
+          els.list.innerHTML = `<div class="editor-empty-state">${message}</div>`;
           return;
         }
 
@@ -152,9 +249,14 @@
             ? cfg.listItem(row)
             : { title: row?.Name || `#${row?.ID}`, subtitle: row?.Path || '' };
           const active = Number(row?.ID) === Number(state.selectedId);
+          const meta = guestMeta(row?.ID);
+          const badge = meta ? guestBadgeHtml(meta) : '';
           return `
             <button type="button" class="w-full text-left editor-row ${active ? 'editor-row-active' : ''}" data-id="${escapeHtml(row?.ID)}">
-              <div class="font-semibold truncate">${escapeHtml(label.title || '')}</div>
+              <div class="flex items-center gap-2">
+                <div class="font-semibold truncate">${escapeHtml(label.title || '')}</div>
+                ${badge}
+              </div>
               ${label.subtitle ? `<div class="text-xs editor-muted-text truncate">${escapeHtml(label.subtitle)}</div>` : ''}
             </button>
           `;
@@ -184,7 +286,7 @@
         });
       };
 
-      const applyRows = (rows, { search, isRaw = false } = {}) => {
+      const applyRows = async (rows, { search, isRaw = false } = {}) => {
         const safeRows = Array.isArray(rows) ? rows : [];
         if (isRaw) state.rowsRaw = safeRows;
         state.search = normalizeSearchText(search ?? state.search);
@@ -193,21 +295,24 @@
         setStatus(state.rows.length ? '' : 'Список пуст.', 'muted');
         renderList();
 
+        // Обновление списка не должно затирать несохранённые правки в форме
+        // (раньше оно молча перевыбирало запись) и не должно спрашивать
+        // подтверждение на каждый фоновый перезапрос.
         if (state.selectedId) {
           const found = state.rows.find(r => Number(r.ID) === Number(state.selectedId));
-          if (found) selectRow(found);
+          if (found && !state.dirty?.isDirty?.()) await selectRow(found, { confirmDirty: false });
         } else if (!state.model && state.rows.length) {
-          selectRow(state.rows[0]);
+          await selectRow(state.rows[0], { confirmDirty: false });
         }
       };
 
-      const selectRow = (row, options = {}) => {
+      const selectRow = async (row, options = {}) => {
         const confirmDirty = options?.confirmDirty !== false;
         const nextId = Number(row?.ID || 0);
         const currentId = Number(state.selectedId || 0);
 
         if (nextId && nextId === currentId) return true;
-        if (confirmDirty && !canDiscardDirty()) return false;
+        if (confirmDirty && !await canDiscardDirty()) return false;
 
         if (!row) {
           state.selectedId = 0;
@@ -245,7 +350,7 @@
           const transformed = typeof cfg.transformList === 'function'
             ? cfg.transformList(filtered, { search }) || []
             : filtered;
-          applyRows(transformed, { search });
+          await applyRows(transformed, { search });
           return;
         }
 
@@ -271,7 +376,7 @@
           const transformed = typeof cfg.transformList === 'function'
             ? cfg.transformList(rows, { search }) || []
             : rows;
-          applyRows(transformed, { search, isRaw: true });
+          await applyRows(transformed, { search, isRaw: true });
         } catch (err) {
           if (requestId !== listRequestSeq || controller.signal.aborted || token !== state.searchRequest.token) return;
           const msg = err?.message || 'Ошибка загрузки';
@@ -282,8 +387,8 @@
         }
       };
 
-      const createNew = () => {
-        if (!canDiscardDirty()) return false;
+      const createNew = async () => {
+        if (!await canDiscardDirty()) return false;
         state.lastSelectedIdBeforeCreate = Number(state.selectedId || 0);
         state.selectedId = 0;
         state.model = cloneData(makeDefault());
@@ -296,7 +401,7 @@
         return true;
       };
 
-      const cancelLocalChanges = () => {
+      const cancelLocalChanges = async () => {
         if (!state.model) return false;
 
         // cancel creation of local draft
@@ -306,8 +411,9 @@
             ? state.rows.find((row) => Number(row?.ID || 0) === fallbackId)
               || state.rowsRaw.find((row) => Number(row?.ID || 0) === fallbackId)
             : null;
-          if (fallbackRow) selectRow(fallbackRow, { confirmDirty: false });
-          else selectRow(null, { confirmDirty: false });
+          await (fallbackRow
+            ? selectRow(fallbackRow, { confirmDirty: false })
+            : selectRow(null, { confirmDirty: false }));
           setStatus('Создание записи отменено.', 'ok');
           return true;
         }
@@ -351,17 +457,28 @@
           if (state.selectedId) {
             // DBCrud auto-records for sync
             await window.EditorCore.DBCrud.update(resource, state.selectedId, payload);
-            setStatus('Изменения сохранены.', 'ok');
-            toast('Сохранено', 'success');
+            if (isGuest()) {
+              setStatus('Изменения в черновике запроса — в базу они попадут только после одобрения администратора.', 'ok');
+              toast('Добавлено в черновик запроса', 'info');
+            } else {
+              setStatus('Изменения сохранены.', 'ok');
+              toast('Сохранено', 'success');
+            }
           } else {
             const res = await window.EditorCore.DBCrud.create(resource, payload);
             state.selectedId = Number(res.id || 0);
             state.lastSelectedIdBeforeCreate = 0;
-            setStatus('Запись создана.', 'ok');
-            toast('Создано', 'success');
+            if (isGuest()) {
+              setStatus('Новая запись в черновике запроса — отправьте её администратору.', 'ok');
+              toast('Новая запись в черновике', 'info');
+            } else {
+              setStatus('Запись создана.', 'ok');
+              toast('Создано', 'success');
+            }
           }
           state.dirty?.setClean?.();
           await loadList({ forceServer: true });
+          updateGuestHint();
         } catch (err) {
           const msg = err?.message || 'Ошибка сохранения';
           setStatus(msg, 'err');
@@ -371,14 +488,19 @@
 
       const remove = async () => {
         if (!state.selectedId) return;
-        if (!confirm('Удалить запись?')) return;
+        if (!await EditorCore.Page.confirm('Удалить запись?')) return;
         setStatus('Удаление…');
         try {
           // DBCrud auto-records for sync
           await window.EditorCore.DBCrud.remove(resource, state.selectedId);
-          toast('Удалено', 'success');
-          setStatus('Удалено.', 'ok');
-          selectRow(null, { confirmDirty: false });
+          if (isGuest()) {
+            toast('Удаление добавлено в черновик запроса', 'info');
+            setStatus('Удаление в черновике — запись удалится только после одобрения администратора.', 'ok');
+          } else {
+            toast('Удалено', 'success');
+            setStatus('Удалено.', 'ok');
+          }
+          await selectRow(null, { confirmDirty: false });
           await loadList({ forceServer: true });
         } catch (err) {
           const msg = err?.message || 'Ошибка удаления';
@@ -388,7 +510,7 @@
       };
 
       if (els.list) {
-        els.list.addEventListener('click', (event) => {
+        els.list.addEventListener('click', async (event) => {
           const moreBtn = event.target?.closest?.('[data-editor-role="list-more"]');
           if (moreBtn) {
             state.visibleCount += 250;
@@ -399,7 +521,7 @@
           if (!btn) return;
           const id = Number(btn.getAttribute('data-id') || 0);
           const row = state.rows.find(r => Number(r.ID) === id);
-          if (row) selectRow(row);
+          if (row) await selectRow(row);
         });
       }
 
@@ -430,6 +552,19 @@
 
       window.addEventListener('message', onDirtyStatusRequest);
 
+      // Guest mode: the role and the local draft are resolved asynchronously.
+      const onGuestUpdated = () => { renderList(); updateGuestHint(); };
+      const onGuestReady = () => { renderList(); updateGuestHint(); if (state.selectedId === 0) loadList({ forceServer: true }); };
+      const onGuestResolved = () => {
+        if (!isGuest()) return;
+        window.EditorCore?.DBCrud?.invalidateCache?.();
+        loadList({ forceServer: true });
+        updateGuestHint();
+      };
+      window.addEventListener('editor-core:guest-updated', onGuestUpdated);
+      window.addEventListener('editor-core:guest-ready', onGuestReady);
+      window.addEventListener('editor-core:guest-request-resolved', onGuestResolved);
+
       // Mount sync button in the toolbar if actions area exists
       const actionsArea = root.querySelector('.editor-page-actions') || root.querySelector('.flex.flex-wrap.gap-2');
       if (actionsArea && window.EditorCore?.Sync?.mountSyncButton) {
@@ -447,6 +582,9 @@
         destroy: () => {
           state.searchRequest.controller?.abort?.();
           window.removeEventListener('message', onDirtyStatusRequest);
+          window.removeEventListener('editor-core:guest-updated', onGuestUpdated);
+          window.removeEventListener('editor-core:guest-ready', onGuestReady);
+          window.removeEventListener('editor-core:guest-request-resolved', onGuestResolved);
         },
       };
     }

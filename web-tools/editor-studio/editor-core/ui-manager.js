@@ -608,7 +608,8 @@
       await hydrateTagsFromDB();
 
       // 0.1) Scenario field launcher (opens embedded scenario editor overlay)
-      if (root?.dataset?.scenarioOverlayBound !== '1') {
+      // `root` may be a document (bootstrap calls UIManager.init(document)).
+      if (root?.dataset && root.dataset.scenarioOverlayBound !== '1') {
         root.dataset.scenarioOverlayBound = '1';
         root.addEventListener('click', (event) => {
           const btn = event.target?.closest?.('[data-action="open-scenario-editor"]');
@@ -626,9 +627,48 @@
 
           const fieldLabel = field.dataset.scenarioLabel || 'Сценарий';
 
+          // Мир записи: компоненты сценария стоят в мире предмета/подземелья/
+          // квеста, и карта «Местоположения» должна открыться именно в нём.
+          const worldPath = String(field.dataset.mapWorldPath || '').trim();
+          const worldNames = worldPath
+            ? [worldPath]
+            : ['WorldID', 'DataScenarioWorldID', 'world_id', 'WorldId', 'worldId'];
+          const readWorldId = () => {
+            const ancestors = new Map();
+            let node = field;
+            let depth = 0;
+            while (node) {
+              ancestors.set(node, depth++);
+              node = node.parentElement;
+            }
+            const distance = (candidate) => {
+              node = candidate;
+              let candidateDepth = 0;
+              while (node) {
+                if (ancestors.has(node)) return ancestors.get(node) + candidateDepth;
+                candidateDepth++;
+                node = node.parentElement;
+              }
+              return Number.POSITIVE_INFINITY;
+            };
+            for (const name of worldNames) {
+              const candidates = Array.from(document.querySelectorAll(`[data-path="${name}"]`))
+                .filter((input) => input !== field && !field.contains(input))
+                .sort((a, b) => distance(a) - distance(b));
+              if (candidates.length) {
+                const raw = candidates[0].value;
+                if (raw === null || raw === undefined || String(raw).trim() === '') return null;
+                const value = Number(raw);
+                return Number.isSafeInteger(value) && value >= 0 ? value : null;
+              }
+            }
+            return 0;
+          };
+
           window.EditorCore?.UI?.openScenarioFieldOverlay?.({
             title: `Редактирование: ${fieldLabel}`,
             mode,
+            worldId: readWorldId(),
             scenarioText: String(hidden.value || ''),
             onApply: (scenarioText) => {
               hidden.value = String(scenarioText || '');

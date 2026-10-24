@@ -6,16 +6,19 @@
 //   config   (GET)  — limits & rules for the UI
 //   preview  (POST) — {operations} → detailed analysis, nothing is stored
 //   submit   (POST) — {nickname, message, operations} → stores a pending request
-//   mine     (GET)  — own requests
-//   get      (GET)  — id → own request details
+//   mine     (GET)  — own requests (+ unread replies)
+//   get      (GET)  — id → own request details (marks replies as read)
+//   messages (GET)  — id → thread of messages with the administrator
+//   message  (POST) — {id, body} → reply in the thread
 //   withdraw (POST) — {id} → withdraw own pending request
 //
 // Admin actions (role admin) — additionally:
 //   list, get, stats, approve {id, comment, force}, reject {id, comment},
-//   delete {id}, get_settings, save_settings
+//   delete {id}, get_settings, save_settings, messages, message
 //
-// A guest never writes to the game DB: requests are stored in data/change-requests/
-// and only cr_apply() (admin "approve") touches the database.
+// A guest never writes to the game DB: requests and their message threads live in
+// the SQLite store (data/editor-studio.sqlite), and only cr_apply() (admin
+// "approve") touches the game database.
 
 declare(strict_types=1);
 
@@ -25,9 +28,9 @@ $ROLE = bootstrap_editor_api_roles([EDITOR_ROLE_ADMIN, EDITOR_ROLE_GUEST]);
 $IS_ADMIN = $ROLE === EDITOR_ROLE_ADMIN;
 $action = (string)($_GET['action'] ?? '');
 
-guest_action_guard($ROLE, $action, ['config', 'preview', 'submit', 'mine', 'get', 'withdraw']);
+guest_action_guard($ROLE, $action, ['config', 'preview', 'submit', 'mine', 'get', 'messages', 'message', 'withdraw']);
 
-$POST_ACTIONS = ['preview', 'submit', 'withdraw', 'approve', 'reject', 'delete', 'save_settings'];
+$POST_ACTIONS = ['preview', 'submit', 'withdraw', 'approve', 'reject', 'delete', 'save_settings', 'message'];
 
 function cr_read_body(): array
 {
@@ -35,8 +38,8 @@ function cr_read_body(): array
     if ($len > CR_MAX_BODY_BYTES) {
         respond(['ok' => false, 'error' => 'Слишком большой запрос (максимум 2 МБ).'], 413);
     }
-    $raw = file_get_contents('php://input', false, null, 0, CR_MAX_BODY_BYTES + 1);
-    if ($raw === false || $raw === '') return [];
+    $raw = editor_request_raw_body(CR_MAX_BODY_BYTES + 1);
+    if ($raw === '') return [];
     if (strlen($raw) > CR_MAX_BODY_BYTES) {
         respond(['ok' => false, 'error' => 'Слишком большой запрос (максимум 2 МБ).'], 413);
     }
@@ -51,7 +54,7 @@ function cr_guest_hash_current(): string
 {
     $key = editor_guest_key();
     if ($key === '') {
-        respond(['ok' => false, 'error' => 'Unauthorized'], 401);
+        respond(['ok' => false, 'error' => 'Требуется вход в Editor Studio'], 401);
     }
     return cr_guest_hash($key);
 }
@@ -61,7 +64,7 @@ function cr_load_visible(string $id, bool $admin): array
 {
     $req = cr_load($id);
     if (!$req) respond(['ok' => false, 'error' => 'Запрос не найден'], 404);
-    if (!$admin && !hash_equals((string)($req['author']['guestHash'] ?? ''), cr_guest_hash_current())) {
+    if (!$admin && !cr_guest_owns($req)) {
         respond(['ok' => false, 'error' => 'Запрос не найден'], 404);
     }
     return $req;
@@ -81,29 +84,44 @@ function cr_preview_throttle(): void
 }
 
 try {
-    if ($action === '') respond(['ok' => false, 'error' => 'Missing action'], 400);
+    if ($action === '') respond(['ok' => false, 'error' => 'Не указано действие'], 400);
     if (in_array($action, $POST_ACTIONS, true)) {
         require_same_origin_json_post();
     } elseif (strtoupper((string)($_SERVER['REQUEST_METHOD'] ?? 'GET')) !== 'GET') {
-        respond(['ok' => false, 'error' => 'Method not allowed'], 405);
+        respond(['ok' => false, 'error' => 'Метод запроса не поддерживается'], 405);
     }
 
     $guest = guest_cfg();
 
     // ── Shared ──────────────────────────────────────────────────────────────
     if ($action === 'config') {
+        // A guest sees only its own tabs; an administrator sees everything.
+        $allowedResources = $IS_ADMIN
+            ? array_keys(editor_resources())
+            : editor_guest_write_resources_current();
         $resources = [];
         foreach (editor_resources() as $key => $R) {
-            if (empty($R['guest'])) continue;
+            if (empty($R['guest']) || !in_array($key, $allowedResources, true)) continue;
             $resources[$key] = [
                 'title' => $R['title'], 'pk' => $R['pk'], 'label' => $R['label'] ?? null,
                 'columns' => $R['columns'], 'json' => $R['json'] ?? [],
                 'refs' => $R['refs'] ?? new stdClass(),
             ];
         }
+        $account = $IS_ADMIN ? null : editor_guest_user();
+        $unread = $IS_ADMIN
+            ? cr_msg_unread_map('admin')
+            : cr_msg_unread_map('guest', $account ? [(string)$account['id']] : []);
         respond([
             'ok' => true,
             'role' => $ROLE,
+            'unread' => $unread['total'],
+            'account' => $account ? [
+                'id' => $account['id'],
+                'login' => $account['login'],
+                'name' => $account['name'],
+                'pages' => $account['pages'],
+            ] : null,
             'limits' => [
                 'nickname' => ['min' => CR_NICK_MIN, 'max' => CR_NICK_MAX],
                 'message' => ['min' => CR_MESSAGE_MIN, 'max' => CR_MESSAGE_MAX],
@@ -121,6 +139,9 @@ try {
         $body = cr_read_body();
         $maxOps = $IS_ADMIN ? 1000 : $guest['max_operations'];
         $ops = cr_normalize_ops($body['operations'] ?? null, $maxOps);
+        if (!$IS_ADMIN) {
+            cr_assert_guest_resources($ops);
+        }
         $db = db_connect();
         try {
             $analysis = cr_analyze($db, $ops);
@@ -133,6 +154,10 @@ try {
     if ($action === 'get') {
         $req = cr_load_visible((string)($_GET['id'] ?? ''), $IS_ADMIN);
         $view = cr_full_view($req, $IS_ADMIN);
+        // Открытие запроса = прочтение ответов другой стороны.
+        cr_msg_mark_read((string)$req['id'], $IS_ADMIN ? 'admin' : 'guest');
+        $view['messages'] = cr_msg_list((string)$req['id'], $IS_ADMIN ? 'admin' : 'guest');
+        $view['unread'] = 0;
         if ($IS_ADMIN && $req['status'] === 'pending') {
             // Live check against the current DB: did anything change since the guest created it?
             try {
@@ -146,10 +171,60 @@ try {
                     $db->close();
                 }
             } catch (Throwable $e) {
-                $view['liveError'] = $e->getMessage();
+                // Проверка «вживую» — вспомогательная: ошибку базы показываем
+                // по-человечески, без имён таблиц и SQL.
+                editor_log_error($e);
+                $view['liveError'] = 'Не удалось проверить данные по базе. Попробуйте обновить страницу.';
             }
         }
         respond(['ok' => true, 'request' => $view]);
+    }
+
+    if ($action === 'messages') {
+        $id = (string)($_GET['id'] ?? '');
+        $req = cr_load_visible($id, $IS_ADMIN);
+        $role = $IS_ADMIN ? 'admin' : 'guest';
+        // Пока диалог открыт на экране, чужие сообщения считаются прочитанными.
+        cr_msg_mark_read((string)$req['id'], $role);
+        respond(['ok' => true, 'messages' => cr_msg_list((string)$req['id'], $role)]);
+    }
+
+    if ($action === 'message') {
+        $body = cr_read_body();
+        $id = (string)($body['id'] ?? '');
+        $req = cr_load_visible($id, $IS_ADMIN);
+        $text = cr_msg_validate($body['body'] ?? '');
+        $role = $IS_ADMIN ? 'admin' : 'guest';
+
+        // Простая защита от флуда: не чаще одного сообщения в 3 секунды.
+        $account = $IS_ADMIN ? null : editor_guest_user();
+        $authorId = $IS_ADMIN
+            ? (string)($_SESSION['editor_studio_user'] ?? 'admin')
+            : (string)($account['id'] ?? '');
+        $authorName = $IS_ADMIN
+            ? ($authorId !== '' ? $authorId : 'admin')
+            : (string)($account['name'] ?? $req['author']['guestName'] ?? 'guest');
+        $rateKey = 'cr-msg|' . $role . '|' . ($authorId !== '' ? $authorId : get_request_ip());
+        $now = time();
+        $last = store_rate_get($rateKey);
+        if ($last > 0 && $last + 3 > $now) {
+            $left = $last + 3 - $now;
+            respond(['ok' => false, 'error' => "Слишком быстро — подождите {$left} сек."], 429);
+        }
+
+        $message = cr_with_lock(function () use ($req, $role, $authorId, $authorName, $text) {
+            $message = cr_msg_add((string)$req['id'], $role, $authorId, $authorName, $text);
+            // Автор сообщения уже видел диалог — его ответы помечаем прочитанными.
+            cr_msg_mark_read((string)$req['id'], $role);
+            // Запрос «оживает»: администратор видит, что появился новый ответ.
+            $fresh = cr_load((string)$req['id']) ?? $req;
+            $fresh['updatedAt'] = cr_now();
+            cr_save($fresh);
+            return $message;
+        });
+        store_rate_touch($rateKey, $now);
+
+        respond(['ok' => true, 'message' => $message]);
     }
 
     // ── Guest ───────────────────────────────────────────────────────────────
@@ -160,6 +235,11 @@ try {
         $nickname = cr_validate_nickname($body['nickname'] ?? '');
         $message = cr_validate_message($body['message'] ?? '');
         $ops = cr_normalize_ops($body['operations'] ?? null, $guest['max_operations']);
+        cr_assert_guest_resources($ops);
+        $account = editor_guest_user();
+        if ($account === null) {
+            respond(['ok' => false, 'error' => 'Гостевая сессия недействительна. Войдите заново.'], 401);
+        }
 
         // Session cooldown (checked early; IP cooldown is checked under lock).
         $last = (int)($_SESSION['editor_studio_guest_last_submit'] ?? 0);
@@ -176,14 +256,14 @@ try {
         }
 
         $ip = get_request_ip();
-        $req = cr_with_lock(function () use ($guest, $guestHash, $nickname, $message, $finalOps, $analysis, $ip) {
+        $req = cr_with_lock(function () use ($guest, $guestHash, $nickname, $message, $finalOps, $analysis, $ip, $account) {
             $all = cr_all();
             $pendingTotal = 0;
             $pendingMine = 0;
             foreach ($all as $r) {
                 if (($r['status'] ?? '') !== 'pending') continue;
                 $pendingTotal++;
-                if (hash_equals((string)($r['author']['guestHash'] ?? ''), $guestHash)) $pendingMine++;
+                if (cr_guest_owns($r, $account)) $pendingMine++;
             }
             if ($pendingMine >= $guest['max_pending']) {
                 throw new CrInputError("У вас уже {$pendingMine} запрос(ов) на рассмотрении (лимит {$guest['max_pending']}). Дождитесь решения администратора или отзовите запрос.", 429);
@@ -205,6 +285,9 @@ try {
                 'updatedAt' => $now,
                 'author' => [
                     'nickname' => $nickname,
+                    'guestId' => $account['id'],
+                    'guestLogin' => $account['login'],
+                    'guestName' => $account['name'],
                     'guestHash' => $guestHash,
                     'ip' => $ip,
                     'userAgent' => cr_substr(cr_clean_text($_SERVER['HTTP_USER_AGENT'] ?? '', false), 200),
@@ -224,14 +307,20 @@ try {
 
     if ($action === 'mine') {
         if ($IS_ADMIN) respond(['ok' => true, 'rows' => []]);
-        $guestHash = cr_guest_hash_current();
-        $rows = [];
+        $account = editor_guest_user();
+        if ($account === null) respond(['ok' => false, 'error' => 'Требуется вход в Editor Studio'], 401);
+        $pending = [];
+        $history = [];
+        $unread = cr_msg_unread_map('guest', [(string)$account['id']]);
         foreach (cr_all() as $req) {
-            if (!hash_equals((string)($req['author']['guestHash'] ?? ''), $guestHash)) continue;
-            $rows[] = cr_list_item($req, false);
-            if (count($rows) >= 100) break;
+            if (!cr_guest_owns($req, $account)) continue;
+            $item = cr_list_item($req, false, (int)($unread['by_request'][(string)$req['id']] ?? 0));
+            // Pending requests are always returned first: the local draft reconciles against them.
+            if (($req['status'] ?? '') === 'pending') $pending[] = $item;
+            elseif (count($history) < 200) $history[] = $item;
+            if (count($pending) >= 100 && count($history) >= 200) break;
         }
-        respond(['ok' => true, 'rows' => $rows]);
+        respond(['ok' => true, 'rows' => array_merge($pending, $history)]);
     }
 
     if ($action === 'withdraw') {
@@ -249,15 +338,29 @@ try {
     }
 
     // ── Admin only below (guest_action_guard already rejected guests) ───────
-    if (!$IS_ADMIN) respond(['ok' => false, 'error' => 'Forbidden'], 403);
+    if (!$IS_ADMIN) respond(['ok' => false, 'error' => 'Действие доступно только администратору'], 403);
 
     if ($action === 'stats') {
         $counts = array_fill_keys(CR_STATUSES, 0);
+        $byGuest = [];
         foreach (cr_all() as $req) {
             $s = (string)($req['status'] ?? '');
             if (isset($counts[$s])) $counts[$s]++;
+            if ($s === 'pending') {
+                $gid = (string)($req['author']['guestId'] ?? '');
+                if ($gid !== '') $byGuest[$gid] = ($byGuest[$gid] ?? 0) + 1;
+            }
         }
-        respond(['ok' => true, 'counts' => $counts, 'guest_enabled' => $guest['enabled']]);
+        $unread = cr_msg_unread_map('admin');
+        respond([
+            'ok' => true,
+            'counts' => $counts,
+            'unread' => $unread['total'],
+            'unread_by_guest' => $unread['by_guest'] ?: new stdClass(),
+            'by_guest' => $byGuest ?: new stdClass(),
+            'guest_enabled' => $guest['enabled'] && $guest['users_count'] > 0,
+            'guest_accounts' => $guest['users_count'],
+        ]);
     }
 
     if ($action === 'list') {
@@ -265,16 +368,24 @@ try {
         $q = function_exists('mb_strtolower') ? mb_strtolower(trim((string)($_GET['q'] ?? ''))) : strtolower(trim((string)($_GET['q'] ?? '')));
         $rows = [];
         $counts = array_fill_keys(CR_STATUSES, 0);
+        $unread = cr_msg_unread_map('admin');
         foreach (cr_all() as $req) {
             $s = (string)($req['status'] ?? '');
             if (isset($counts[$s])) $counts[$s]++;
             if ($status !== 'all' && $s !== $status) continue;
             if ($q !== '') {
-                $hay = implode(' ', [$req['id'], $req['author']['nickname'] ?? '', $req['message'] ?? '', implode(' ', array_keys($req['analysis']['summary']['resources'] ?? []))]);
+                $hay = implode(' ', [
+                    $req['id'],
+                    $req['author']['nickname'] ?? '',
+                    $req['author']['guestName'] ?? '',
+                    $req['author']['guestLogin'] ?? '',
+                    $req['message'] ?? '',
+                    implode(' ', array_keys($req['analysis']['summary']['resources'] ?? [])),
+                ]);
                 $hay = function_exists('mb_strtolower') ? mb_strtolower($hay) : strtolower($hay);
                 if (!str_contains($hay, $q)) continue;
             }
-            $rows[] = cr_list_item($req, true);
+            $rows[] = cr_list_item($req, true, (int)($unread['by_request'][(string)$req['id']] ?? 0));
             if (count($rows) >= 500) break;
         }
         respond(['ok' => true, 'rows' => $rows, 'counts' => $counts]);
@@ -307,7 +418,18 @@ try {
                 'skipped' => $res['skipped'],
                 'conflicts' => $res['conflicts'],
             ];
-            cr_save($req);
+            try {
+                cr_save($req);
+            } catch (Throwable $e) {
+                // The transaction is already committed: never let the admin retry
+                // blindly (a repeated create would duplicate rows).
+                throw new CrInputError(
+                    'Изменения в базе данных применены, но запрос не удалось пометить как принятый. '
+                    . 'Не применяйте его повторно — удалите запрос и проверьте данные вручную. (' . editor_safe_message($e) . ')',
+                    500,
+                    ['applied' => $res['applied']]
+                );
+            }
             return ['request' => $req, 'applied' => $res['applied'], 'skipped' => $res['skipped']];
         });
 
@@ -341,7 +463,7 @@ try {
         $id = (string)($body['id'] ?? '');
         cr_with_lock(function () use ($id) {
             cr_load_visible($id, true);
-            cr_delete_file($id);
+            cr_delete($id);
         });
         respond(['ok' => true]);
     }
@@ -349,38 +471,35 @@ try {
     if ($action === 'get_settings') {
         respond(['ok' => true, 'settings' => [
             'guest_enabled' => $guest['enabled'],
-            'guest_password_set' => $guest['password'] !== '',
             'guest_allow_remote' => $guest['allow_remote'],
             'guest_max_pending' => $guest['max_pending'],
             'guest_submit_cooldown' => $guest['cooldown'],
             'guest_max_operations' => $guest['max_operations'],
+            'guest_accounts' => $guest['users_count'],
         ]]);
     }
 
     if ($action === 'save_settings') {
+        // Global switchboard only. Guest accounts (logins, passwords, tabs) are
+        // managed in «Гостевые пользователи» (api/guests.php).
         $body = cr_read_body();
-        $cfg = load_cfg();
-        $cfg['guest_enabled'] = (bool)($body['guest_enabled'] ?? false);
-        $cfg['guest_allow_remote'] = (bool)($body['guest_allow_remote'] ?? false);
-        $cfg['guest_max_pending'] = clamp_int($body['guest_max_pending'] ?? null, 1, 50, 5);
-        $cfg['guest_submit_cooldown'] = clamp_int($body['guest_submit_cooldown'] ?? null, 0, 3600, 60);
-        $cfg['guest_max_operations'] = clamp_int($body['guest_max_operations'] ?? null, 1, 500, 100);
-        if (($body['guest_password_clear'] ?? false) === true) {
-            $cfg['guest_password'] = '';
-        } elseif (is_string($body['guest_password'] ?? null) && $body['guest_password'] !== '') {
-            $pw = (string)$body['guest_password'];
-            if (strlen($pw) < 4 || strlen($pw) > 128) {
-                respond(['ok' => false, 'error' => 'Гостевой пароль: от 4 до 128 символов.'], 400);
-            }
-            $cfg['guest_password'] = password_hash($pw, PASSWORD_DEFAULT);
-        }
-        if (!save_cfg($cfg)) respond(['ok' => false, 'error' => 'Не удалось сохранить настройки'], 500);
+        $saved = mutate_cfg(function (array $cfg) use ($body) {
+            $cfg['guest_enabled'] = (bool)($body['guest_enabled'] ?? false);
+            $cfg['guest_allow_remote'] = (bool)($body['guest_allow_remote'] ?? false);
+            $cfg['guest_max_pending'] = clamp_int($body['guest_max_pending'] ?? null, 1, 50, 5);
+            $cfg['guest_submit_cooldown'] = clamp_int($body['guest_submit_cooldown'] ?? null, 0, 3600, 60);
+            $cfg['guest_max_operations'] = clamp_int($body['guest_max_operations'] ?? null, 1, 500, 100);
+            // Legacy single-guest password is no longer used.
+            unset($cfg['guest_password']);
+            return $cfg;
+        });
+        if (!$saved) respond(['ok' => false, 'error' => 'Не удалось сохранить настройки'], 500);
         respond(['ok' => true]);
     }
 
-    respond(['ok' => false, 'error' => 'Unknown action'], 400);
+    respond(['ok' => false, 'error' => 'Неизвестное действие'], 400);
 } catch (CrInputError $e) {
     respond(['ok' => false, 'error' => $e->getMessage()] + $e->extra, $e->httpCode);
 } catch (Throwable $e) {
-    respond(['ok' => false, 'error' => $e->getMessage()], 500);
+    editor_internal_error($e);
 }

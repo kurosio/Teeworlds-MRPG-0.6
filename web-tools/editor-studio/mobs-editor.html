@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Мобы — tw_bots_mobs</title>
+  <title>Мобы • Editor Studio</title>
   <script src="editor-core/page-loader.js" data-mode="scenario"></script>
 </head>
 
@@ -58,7 +58,7 @@
             </select>
           </div>
 
-          <div id="list" class="mt-4 editor-sidebar-list editor-scroll" style="max-height: 590px"></div>
+          <div id="list" class="mt-4 editor-sidebar-list editor-scroll"></div>
 
           <div class="mt-3">
             <button id="moreBtn" class="w-full editor-btn editor-btn-secondary hidden">
@@ -96,11 +96,11 @@
           <div class="mt-6 space-y-6">
             <div id="dbStatus" class="editor-db-alert"></div>
 
-            <div class="editor-card p-4">
+            <div class="editor-panel-card">
               <div class="flex items-center justify-between gap-3">
                 <div>
                   <div class="font-semibold">Поля моба</div>
-                  <div class="editor-muted-text text-sm">DB Select показывает названия, но хранит ID</div>
+                  <div class="editor-muted-text text-sm">Справочник показывает названия, а в базу сохраняется ID</div>
                 </div>
                 <div id="tabRoot"></div>
               </div>
@@ -112,10 +112,10 @@
               </div>
             </div>
 
-            <div class="editor-card p-4">
+            <div class="editor-panel-card">
               <div class="font-semibold">Подсказки</div>
               <div class="editor-muted-text text-sm mt-1">
-                Debuffs/Behavior — это SET поля в БД. В редакторе они представлены как теги (удобный мультивыбор).
+                Эффекты и поведение хранятся в базе списком: в редакторе это теги — выбирайте нужные из списка, набор сохранится сам.
               </div>
             </div>
           </div>
@@ -126,6 +126,8 @@
   <!-- Core -->
 
   <script>
+    const esc = EditorCore.Page.esc;
+
     const DOM = {
       list: document.getElementById('list'),
       search: document.getElementById('searchInput'),
@@ -367,19 +369,19 @@
           ? window.EditorCore.utils.renderSkinApiUrl(STATE.skinsApi, skinInfo)
           : '';
         const skinPreview = skinUrl
-          ? `<img class="w-9 h-9 rounded-full border border-light object-cover" src="${skinUrl}" alt="skin" loading="lazy" />`
-          : `<div class="w-9 h-9 rounded-full border border-light bg-light"></div>`;
+          ? `<img class="w-9 h-9 rounded-full border editor-hairline object-cover" src="${skinUrl}" alt="skin" loading="lazy" />`
+          : `<div class="w-9 h-9 rounded-full border editor-hairline editor-soft"></div>`;
         const bossBadge = Number(r.Boss || 0)
           ? `<span class="text-xs px-2 py-1 rounded-full" style="background: rgba(244,63,94,.14); border: 1px solid rgba(244,63,94,.3)">BOSS</span>`
           : '';
         return `
-          <button class="w-full text-left editor-row ${active ? 'ring-2 ring-indigo-500/40' : ''}" data-id="${r.ID}">
+          <button class="w-full text-left editor-row ${active ? 'ring-2 editor-ring' : ''}" data-id="${r.ID}">
             <div class="flex items-center justify-between gap-3">
               <div class="min-w-0 flex items-center gap-3">
                 ${skinPreview}
                 <div class="min-w-0">
-                  <div class="font-semibold truncate">${title}</div>
-                  <div class="text-sm editor-muted-text truncate">ID: ${r.ID} • Мир: ${world} • Lvl: ${r.Level ?? ''} • X:${r.PositionX ?? ''} Y:${r.PositionY ?? ''}</div>
+                  <div class="font-semibold truncate">${esc(title)}</div>
+                  <div class="text-sm editor-muted-text truncate">ID: ${r.ID} • Мир: ${esc(world)} • Ур: ${r.Level ?? ''} • X:${r.PositionX ?? ''} Y:${r.PositionY ?? ''}</div>
                 </div>
               </div>
               ${bossBadge}
@@ -419,9 +421,18 @@
     const fieldsBasic = {
       BotID: { type: 'db_select', label: 'Моб (BotID)', validate: { required: true }, ui: { dbKey: 'mob', placeholder: '— выберите моба —', searchPlaceholder: 'Поиск моба…' } },
       WorldID: { type: 'db_select', label: 'Мир (WorldID)', ui: { dbKey: 'world', placeholder: '— выберите мир —', searchPlaceholder: 'Поиск мира…' } },
-      _pos: { type: 'vec2', label: 'Позиция', ui: { hideLabel: false }, itemDefault: undefined },
-      PositionX: { type: 'number', label: 'PositionX', ui: { min: 0, step: 1, placeholder: 'X' } },
-      PositionY: { type: 'number', label: 'PositionY', ui: { min: 0, step: 1, placeholder: 'Y' } },
+      // Позиция — единый элемент: X и Y в одной строке плюс кнопка
+      // «Местоположение» (карта мира из WorldID).
+      _pos: {
+        type: 'vec2',
+        label: 'Позиция (X, Y)',
+        ui: {
+          min: 0,
+          step: 1,
+          axes: { x: 'PositionX', y: 'PositionY' },
+          mapWorldPath: 'WorldID',
+        },
+      },
       Level: { type: 'number', label: 'Уровень', ui: { min: 1, step: 1 } },
       Power: { type: 'number', label: 'Сила (Power)', ui: { min: 0, step: 1 } },
       Number: { type: 'number', label: 'Количество (Number)', ui: { min: 1, step: 1 } },
@@ -431,7 +442,7 @@
       Boss: { type: 'toggle', label: 'Boss' },
     };
 
-    // We keep PositionX/PositionY separate, but make layout nicer in the renderer by wrapping into grid.
+    // Поля стихийных умений и дропа.
     const fieldsAi = {
       Debuffs: {
         label: 'Debuffs',
@@ -472,20 +483,14 @@
           return;
         }
 
-        // Custom nicer layout for Position fields (2 columns)
+        // Моб и мир — в одну строку, позиция — общим элементом X/Y с картой.
         if (fields === fieldsBasic) {
-          const basicClone = { ...fieldsBasic };
-          delete basicClone._pos;
-          // Render with a custom wrapper
           const header = `
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>${window.EditorCore.FieldRenderer.renderField({ path: 'BotID', field: fieldsBasic.BotID, data: STATE.mob, options: fieldOptions })}</div>
               <div>${window.EditorCore.FieldRenderer.renderField({ path: 'WorldID', field: fieldsBasic.WorldID, data: STATE.mob, options: fieldOptions })}</div>
             </div>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>${window.EditorCore.FieldRenderer.renderField({ path: 'PositionX', field: fieldsBasic.PositionX, data: STATE.mob, options: fieldOptions })}</div>
-              <div>${window.EditorCore.FieldRenderer.renderField({ path: 'PositionY', field: fieldsBasic.PositionY, data: STATE.mob, options: fieldOptions })}</div>
-            </div>
+            ${window.EditorCore.FieldRenderer.renderField({ path: '_pos', field: fieldsBasic._pos, data: STATE.mob, options: fieldOptions })}
           `;
           const restFields = {
             Level: fieldsBasic.Level,
@@ -591,9 +596,9 @@
     const showDbStatus = async () => {
       const test = await window.EditorCore.DB.testConnection();
       if (test.ok) {
-        DOM.dbStatus.textContent = 'БД: подключена. DB Select списки загружаются автоматически.';
+        DOM.dbStatus.textContent = 'БД: подключена. Справочники загружаются автоматически.';
       } else {
-        DOM.dbStatus.textContent = 'БД: нет подключения. DB Select будет работать как ручной ввод ID.';
+        DOM.dbStatus.textContent = 'БД: нет подключения. Вместо справочника — ручной ввод ID.';
       }
     };
 
@@ -717,7 +722,7 @@
 
     const deleteMob = async () => {
       if (!STATE.selectedId) return;
-      const ok = confirm(`Удалить запись ID=${STATE.selectedId}?`);
+      const ok = await EditorCore.Page.confirm(`Удалить запись ID=${STATE.selectedId}?`);
       if (!ok) return;
       try {
         await window.EditorCore.DBCrud.remove(RESOURCE, STATE.selectedId);
@@ -755,13 +760,7 @@
       setHeader();
     };
 
-    const debounce = (fn, ms = 200) => {
-      let t = null;
-      return (...args) => {
-        clearTimeout(t);
-        t = setTimeout(() => fn(...args), ms);
-      };
-    };
+    const debounce = EditorCore.Page.debounce;
 
     let STATE = {
       list: [],

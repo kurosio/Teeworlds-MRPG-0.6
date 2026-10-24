@@ -1,192 +1,242 @@
+/* =============================================================
+   Дизайн-токены Editor Studio
+
+   Один набор переменных на весь редактор: цвет, типографика, отступы,
+   радиусы, тени. Страницы и компоненты берут только токены — поэтому
+   правка здесь меняет вид всех вкладок сразу.
+   ============================================================= */
+
 :root,
 :root[data-editor-theme="dark"],
 .editor-theme[data-editor-theme="dark"]{
-  --editor-bg:#0b0f14;
-  --editor-surface:#121821;
-  --editor-surface-alt:#171f2a;
-  --editor-panel:#131a24;
-  --editor-border:#273142;
-  --editor-primary:#8ea8ff;
-  --editor-secondary:#b69cff;
-  --editor-accent:#72d6c0;
-  --editor-danger:#ff7c87;
-  --editor-warning:#ffc27f;
-  --editor-success:#52c68d;
-  --editor-text:#edf3fb;
-  --editor-text-muted:#9aa8bc;
+  /* Поверхности: фон → панель → поле. Разница в 2–3% яркости, чтобы
+     вложенные блоки читались без тяжёлых рамок и теней. */
+  --editor-bg:#0e1218;
+  --editor-surface:#151b24;
+  --editor-surface-alt:#171e28;
+  --editor-surface-2:#1a2230;
+  --editor-panel:#151b24;
+
+  --editor-border:#232c3a;
+  --editor-line:rgba(255,255,255,.07);
+  --editor-line-strong:rgba(255,255,255,.13);
+
+  /* Акцент один — синий. Бирюзовый остаётся «вторым» для графиков и метrik. */
+  --editor-primary:#6f8cff;
+  --editor-secondary:#a78bfa;
+  --editor-accent:#5cc6b0;
+  --editor-danger:#f2727f;
+  --editor-warning:#f0b464;
+  --editor-success:#4fbe8b;
+
+  --editor-text:#e8eef7;
+  --editor-text-muted:#97a3b6;
+  --editor-text-strong:#ffffff;
+
   --editor-font:'Inter','Manrope','Segoe UI Variable','Segoe UI',sans-serif;
-  --editor-radius:16px;
+  --editor-font-mono:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,'Liberation Mono','Courier New',monospace;
   --editor-color-scheme:dark;
 
-  --editor-bg-gradient-1:rgba(123,143,255,.18);
-  --editor-bg-gradient-2:rgba(114,214,192,.12);
-  --editor-bg-gradient-3:rgba(182,156,255,.08);
+  /* Типографическая шкала: 11 / 12.5 / 13.5 / 15 / 22 */
+  --editor-text-xs:11px;
+  --editor-text-sm:12.5px;
+  --editor-text-md:13.5px;
+  --editor-text-lg:15px;
+  --editor-text-xl:22px;
 
-  --editor-input-bg:#0f151e;
-  --editor-panel-bg:rgba(18,24,33,.88);
-  --editor-field-bg:rgba(17,23,32,.82);
-  --editor-field-border:rgba(255,255,255,.08);
-  --editor-soft-bg:rgba(255,255,255,.03);
-  --editor-soft-bg-strong:rgba(255,255,255,.06);
-  --editor-soft-border:rgba(255,255,255,.08);
+  /* Шаг отступов */
+  --editor-gap-1:4px;
+  --editor-gap-2:8px;
+  --editor-gap-3:12px;
+  --editor-gap-4:16px;
+  --editor-gap-5:24px;
+  --editor-gap-6:32px;
+
+  /* Радиусы */
+  --editor-radius-xs:6px;
+  --editor-radius-sm:8px;
+  --editor-radius-md:10px;
+  --editor-radius-lg:14px;
+  --editor-radius:12px;
+
+  --editor-bg-gradient-1:rgba(111,140,255,.10);
+  --editor-bg-gradient-2:rgba(92,198,176,.07);
+  --editor-bg-gradient-3:rgba(167,139,250,.05);
+
+  --editor-input-bg:#111823;
+  --editor-panel-bg:#151b24;
+  --editor-field-bg:transparent;
+  --editor-field-border:transparent;
+  --editor-soft-bg:rgba(255,255,255,.028);
+  --editor-soft-bg-strong:rgba(255,255,255,.055);
+  --editor-soft-border:rgba(255,255,255,.07);
   --editor-soft-border-strong:rgba(255,255,255,.16);
-  --editor-light-bg:rgba(255,255,255,.045);
-  --editor-light-border:rgba(255,255,255,.10);
-  --editor-light-hover:rgba(255,255,255,.075);
+  --editor-light-bg:rgba(255,255,255,.04);
+  --editor-light-border:rgba(255,255,255,.09);
+  --editor-light-hover:rgba(255,255,255,.07);
 
-  --editor-row-bg:rgba(18,24,33,.72);
-  --editor-row-hover-bg:rgba(24,31,43,.94);
-  --editor-row-hover-border:rgba(142,168,255,.38);
-  --editor-row-active-bg:rgba(142,168,255,.15);
-  --editor-row-active-border:rgba(142,168,255,.52);
+  --editor-row-bg:transparent;
+  --editor-row-hover-bg:rgba(255,255,255,.04);
+  --editor-row-hover-border:transparent;
+  --editor-row-active-bg:color-mix(in srgb, var(--editor-primary) 16%, transparent);
+  --editor-row-active-border:color-mix(in srgb, var(--editor-primary) 45%, transparent);
 
-  --editor-button-secondary-bg:rgba(255,255,255,.035);
+  --editor-button-secondary-bg:rgba(255,255,255,.05);
   --editor-button-secondary-border:rgba(255,255,255,.10);
-  --editor-button-secondary-hover-bg:rgba(255,255,255,.08);
-  --editor-icon-btn-bg:rgba(255,255,255,.035);
+  --editor-button-secondary-hover-bg:rgba(255,255,255,.09);
+  --editor-icon-btn-bg:rgba(255,255,255,.05);
   --editor-icon-btn-border:rgba(255,255,255,.10);
-  --editor-icon-btn-hover-bg:rgba(255,255,255,.08);
+  --editor-icon-btn-hover-bg:rgba(255,255,255,.09);
 
-  --editor-tag-bg:rgba(142,168,255,.16);
-  --editor-tag-border:rgba(142,168,255,.28);
-  --editor-tag-hover-bg:rgba(142,168,255,.22);
-  --editor-tag-hover-border:rgba(142,168,255,.42);
-  --editor-badge-bg:rgba(255,255,255,.04);
+  --editor-tag-bg:rgba(111,140,255,.14);
+  --editor-tag-border:rgba(111,140,255,.26);
+  --editor-tag-hover-bg:rgba(111,140,255,.20);
+  --editor-tag-hover-border:rgba(111,140,255,.40);
+  --editor-badge-bg:rgba(255,255,255,.05);
   --editor-badge-border:rgba(255,255,255,.12);
 
-  --editor-dropdown-bg:#141b25;
+  --editor-dropdown-bg:#1a2230;
   --editor-dropdown-border:rgba(255,255,255,.12);
-  --editor-dropdown-shadow:0 24px 60px rgba(0,0,0,.46);
+  --editor-dropdown-shadow:0 16px 40px rgba(0,0,0,.45);
 
-  --editor-toolbar-bg:rgba(13,18,26,.92);
-  --editor-toolbar-bg-2:rgba(13,18,26,.82);
-  --editor-toolbar-border:rgba(255,255,255,.10);
-  --editor-toolbar-shadow:0 20px 46px rgba(0,0,0,.34);
+  --editor-toolbar-bg:rgba(21,27,36,.94);
+  --editor-toolbar-bg-2:rgba(21,27,36,.86);
+  --editor-toolbar-border:rgba(255,255,255,.09);
+  --editor-toolbar-shadow:0 10px 30px rgba(0,0,0,.30);
 
-  --editor-scrollbar-track:rgba(255,255,255,.04);
-  --editor-scrollbar-thumb:rgba(255,255,255,.18);
-  --editor-scrollbar-thumb-hover:rgba(255,255,255,.28);
+  --editor-scrollbar-track:transparent;
+  --editor-scrollbar-thumb:rgba(255,255,255,.14);
+  --editor-scrollbar-thumb-hover:rgba(255,255,255,.24);
 
-  --editor-shell-bg:linear-gradient(180deg, rgba(255,255,255,.025), rgba(255,255,255,.01));
-  --editor-shell-sidebar-bg:rgba(255,255,255,.018);
-  --editor-shell-main-bg:rgba(255,255,255,.008);
+  --editor-shell-bg:var(--editor-surface);
+  --editor-shell-sidebar-bg:rgba(255,255,255,.014);
+  --editor-shell-main-bg:transparent;
 
   --editor-font-size:14px;
-  --editor-line-height:1.45;
-  --editor-control-h:42px;
+  --editor-line-height:1.5;
+  --editor-control-h:38px;
   --editor-space:14px;
   --editor-space-sm:10px;
   --editor-icon-size:18px;
-  --editor-icon-bg:rgba(142,168,255,.18);
-  --editor-icon-color:#d7e1ff;
-  --editor-focus-ring:rgba(142,168,255,.24);
+  --editor-icon-bg:color-mix(in srgb, var(--editor-primary) 18%, transparent);
+  --editor-icon-color:#c9d5ff;
+  --editor-focus-ring:color-mix(in srgb, var(--editor-primary) 32%, transparent);
 
-  --editor-shadow-xs:0 1px 2px rgba(0,0,0,.18);
-  --editor-shadow-sm:0 10px 24px rgba(0,0,0,.20);
-  --editor-shadow-md:0 18px 42px rgba(0,0,0,.26);
-  --editor-shadow-lg:0 28px 70px rgba(0,0,0,.36);
-  --editor-elevated-bg:linear-gradient(180deg, rgba(255,255,255,.055), rgba(255,255,255,.02));
-  --editor-elevated-border:rgba(255,255,255,.12);
-  --editor-panel-glow:0 1px 0 rgba(255,255,255,.04) inset, 0 0 0 1px rgba(255,255,255,.02) inset;
-  --editor-input-hover-bg:#121925;
-  --editor-disabled-opacity:.54;
+  /* Тени только там, где блок действительно «висит» над страницей:
+     модалки, выпадашки, тосты. Карточки и поля живут на волосяных рамках. */
+  --editor-shadow-xs:0 1px 2px rgba(0,0,0,.20);
+  --editor-shadow-sm:0 4px 12px rgba(0,0,0,.22);
+  --editor-shadow-md:0 10px 28px rgba(0,0,0,.30);
+  --editor-shadow-lg:0 24px 64px rgba(0,0,0,.45);
+  --editor-elevated-bg:var(--editor-surface-2);
+  --editor-elevated-border:var(--editor-line-strong);
+  --editor-panel-glow:0 0 0 1px transparent;
+  --editor-input-hover-bg:#131b26;
+  --editor-disabled-opacity:.5;
 }
 
 :root[data-editor-theme="light"],
 .editor-theme[data-editor-theme="light"]{
-  --editor-bg:#eef3f8;
+  --editor-bg:#f3f5f9;
   --editor-surface:#ffffff;
-  --editor-surface-alt:#f7faff;
+  --editor-surface-alt:#fbfcfe;
+  --editor-surface-2:#f5f8fc;
   --editor-panel:#ffffff;
-  --editor-border:#d8e1ee;
-  --editor-primary:#5d79da;
-  --editor-secondary:#8a73d6;
-  --editor-accent:#36a792;
-  --editor-danger:#d45c69;
-  --editor-warning:#d79447;
-  --editor-success:#299b66;
-  --editor-text:#18202d;
-  --editor-text-muted:#677487;
+
+  --editor-border:#dde3ec;
+  --editor-line:rgba(16,23,34,.08);
+  --editor-line-strong:rgba(16,23,34,.14);
+
+  --editor-primary:#4565d8;
+  --editor-secondary:#7c5cd6;
+  --editor-accent:#1f9e86;
+  --editor-danger:#cf4d5b;
+  --editor-warning:#b97a25;
+  --editor-success:#1f8f5f;
+
+  --editor-text:#101722;
+  --editor-text-muted:#5f6b7d;
+  --editor-text-strong:#000000;
   --editor-color-scheme:light;
 
-  --editor-bg-gradient-1:rgba(93,121,218,.12);
-  --editor-bg-gradient-2:rgba(54,167,146,.09);
-  --editor-bg-gradient-3:rgba(138,115,214,.06);
+  --editor-bg-gradient-1:rgba(69,101,216,.07);
+  --editor-bg-gradient-2:rgba(31,158,134,.05);
+  --editor-bg-gradient-3:rgba(124,92,214,.04);
 
   --editor-input-bg:#ffffff;
-  --editor-panel-bg:rgba(255,255,255,.9);
-  --editor-field-bg:rgba(255,255,255,.86);
-  --editor-field-border:rgba(24,32,45,.08);
-  --editor-soft-bg:rgba(24,32,45,.028);
-  --editor-soft-bg-strong:rgba(24,32,45,.05);
-  --editor-soft-border:rgba(24,32,45,.10);
-  --editor-soft-border-strong:rgba(24,32,45,.16);
-  --editor-light-bg:rgba(24,32,45,.04);
-  --editor-light-border:rgba(24,32,45,.10);
-  --editor-light-hover:rgba(24,32,45,.065);
+  --editor-panel-bg:#ffffff;
+  --editor-field-bg:transparent;
+  --editor-field-border:transparent;
+  --editor-soft-bg:rgba(16,23,34,.03);
+  --editor-soft-bg-strong:rgba(16,23,34,.055);
+  --editor-soft-border:rgba(16,23,34,.10);
+  --editor-soft-border-strong:rgba(16,23,34,.18);
+  --editor-light-bg:rgba(16,23,34,.04);
+  --editor-light-border:rgba(16,23,34,.10);
+  --editor-light-hover:rgba(16,23,34,.065);
 
-  --editor-row-bg:rgba(255,255,255,.82);
-  --editor-row-hover-bg:#f5f8ff;
-  --editor-row-hover-border:rgba(93,121,218,.28);
-  --editor-row-active-bg:rgba(93,121,218,.11);
-  --editor-row-active-border:rgba(93,121,218,.42);
+  --editor-row-bg:transparent;
+  --editor-row-hover-bg:rgba(16,23,34,.04);
+  --editor-row-hover-border:transparent;
+  --editor-row-active-bg:color-mix(in srgb, var(--editor-primary) 12%, transparent);
+  --editor-row-active-border:color-mix(in srgb, var(--editor-primary) 40%, transparent);
 
-  --editor-button-secondary-bg:#f5f7fb;
-  --editor-button-secondary-border:rgba(24,32,45,.12);
-  --editor-button-secondary-hover-bg:#edf2f9;
-  --editor-icon-btn-bg:#f5f7fb;
-  --editor-icon-btn-border:rgba(24,32,45,.12);
-  --editor-icon-btn-hover-bg:#edf2f9;
+  --editor-button-secondary-bg:#ffffff;
+  --editor-button-secondary-border:rgba(16,23,34,.14);
+  --editor-button-secondary-hover-bg:#f3f6fb;
+  --editor-icon-btn-bg:#ffffff;
+  --editor-icon-btn-border:rgba(16,23,34,.14);
+  --editor-icon-btn-hover-bg:#f3f6fb;
 
-  --editor-tag-bg:rgba(93,121,218,.11);
-  --editor-tag-border:rgba(93,121,218,.22);
-  --editor-tag-hover-bg:rgba(93,121,218,.16);
-  --editor-tag-hover-border:rgba(93,121,218,.32);
-  --editor-badge-bg:#f4f7fb;
-  --editor-badge-border:rgba(24,32,45,.12);
+  --editor-tag-bg:rgba(69,101,216,.10);
+  --editor-tag-border:rgba(69,101,216,.22);
+  --editor-tag-hover-bg:rgba(69,101,216,.15);
+  --editor-tag-hover-border:rgba(69,101,216,.32);
+  --editor-badge-bg:rgba(16,23,34,.04);
+  --editor-badge-border:rgba(16,23,34,.12);
 
   --editor-dropdown-bg:#ffffff;
-  --editor-dropdown-border:rgba(24,32,45,.12);
-  --editor-dropdown-shadow:0 20px 50px rgba(15,23,42,.14);
+  --editor-dropdown-border:rgba(16,23,34,.12);
+  --editor-dropdown-shadow:0 16px 40px rgba(15,23,42,.14);
 
-  --editor-toolbar-bg:rgba(255,255,255,.94);
-  --editor-toolbar-bg-2:rgba(255,255,255,.84);
-  --editor-toolbar-border:rgba(24,32,45,.10);
-  --editor-toolbar-shadow:0 18px 36px rgba(15,23,42,.12);
+  --editor-toolbar-bg:rgba(255,255,255,.96);
+  --editor-toolbar-bg-2:rgba(255,255,255,.88);
+  --editor-toolbar-border:rgba(16,23,34,.10);
+  --editor-toolbar-shadow:0 10px 26px rgba(15,23,42,.10);
 
-  --editor-scrollbar-track:rgba(24,32,45,.06);
-  --editor-scrollbar-thumb:rgba(24,32,45,.16);
-  --editor-scrollbar-thumb-hover:rgba(24,32,45,.26);
+  --editor-scrollbar-track:transparent;
+  --editor-scrollbar-thumb:rgba(16,23,34,.16);
+  --editor-scrollbar-thumb-hover:rgba(16,23,34,.28);
 
-  --editor-shell-bg:linear-gradient(180deg, rgba(255,255,255,.95), rgba(255,255,255,.88));
-  --editor-shell-sidebar-bg:rgba(24,32,45,.018);
-  --editor-shell-main-bg:rgba(24,32,45,.008);
+  --editor-shell-bg:var(--editor-surface);
+  --editor-shell-sidebar-bg:rgba(16,23,34,.015);
+  --editor-shell-main-bg:transparent;
 
-  --editor-icon-bg:rgba(93,121,218,.11);
-  --editor-icon-color:#5269ba;
-  --editor-focus-ring:rgba(93,121,218,.18);
+  --editor-icon-bg:rgba(69,101,216,.10);
+  --editor-icon-color:#3c56bd;
+  --editor-focus-ring:color-mix(in srgb, var(--editor-primary) 26%, transparent);
 
-  --editor-shadow-xs:0 1px 2px rgba(15,23,42,.05);
-  --editor-shadow-sm:0 10px 24px rgba(15,23,42,.08);
-  --editor-shadow-md:0 18px 40px rgba(15,23,42,.10);
-  --editor-shadow-lg:0 26px 62px rgba(15,23,42,.14);
-  --editor-elevated-bg:linear-gradient(180deg, rgba(255,255,255,.98), rgba(255,255,255,.86));
-  --editor-elevated-border:rgba(24,32,45,.10);
-  --editor-panel-glow:0 1px 0 rgba(255,255,255,.65) inset, 0 0 0 1px rgba(255,255,255,.32) inset;
-  --editor-input-hover-bg:#f8fbff;
-  --editor-disabled-opacity:.56;
+  --editor-shadow-xs:0 1px 2px rgba(15,23,42,.06);
+  --editor-shadow-sm:0 4px 12px rgba(15,23,42,.08);
+  --editor-shadow-md:0 10px 28px rgba(15,23,42,.12);
+  --editor-shadow-lg:0 24px 60px rgba(15,23,42,.18);
+  --editor-elevated-bg:#ffffff;
+  --editor-elevated-border:rgba(16,23,34,.12);
+  --editor-panel-glow:0 0 0 1px transparent;
+  --editor-input-hover-bg:#f8fafd;
+  --editor-disabled-opacity:.5;
 }
 
 .editor-theme{
   font-family:var(--editor-font);
+  /* Спокойный фон: один мягкий градиент сверху вместо трёх цветных пятен —
+     текст читается ровнее, а страница не «переливается» при прокрутке. */
   background:
-    radial-gradient(1200px circle at 12% -10%, var(--editor-bg-gradient-1), transparent 54%),
-    radial-gradient(920px circle at 88% -18%, var(--editor-bg-gradient-2), transparent 58%),
-    radial-gradient(760px circle at 50% 120%, var(--editor-bg-gradient-3), transparent 52%),
+    radial-gradient(1100px circle at 50% -20%, var(--editor-bg-gradient-1), transparent 62%),
     var(--editor-bg);
   background-repeat:no-repeat;
-  background-attachment:fixed;
   min-height:100vh;
+  min-height:100dvh;
   color:var(--editor-text);
   font-size:var(--editor-font-size);
   line-height:var(--editor-line-height);
@@ -195,7 +245,6 @@
   -moz-osx-font-smoothing:grayscale;
   text-rendering:optimizeLegibility;
   isolation:isolate;
-  animation:editorFadeIn .24s ease-out;
 }
 
 .editor-theme,
@@ -224,28 +273,25 @@
 }
 
 .editor-panel{
-  background:var(--editor-panel-bg);
-  background-image:var(--editor-elevated-bg);
-  border-color:var(--editor-border);
+  background:var(--editor-surface);
+  border-color:var(--editor-line);
   color:var(--editor-text);
-  backdrop-filter:blur(16px);
-  box-shadow:var(--editor-panel-glow);
 }
 
+/* Карточка — просто поверхность с волосяной рамкой. Ни подъёма при наведении,
+   ни размытия: карточка не «прыгает» под курсором, а глаз не тратит силы
+   на декоративные тени. */
 .editor-card{
-  background:var(--editor-surface-alt);
-  background:linear-gradient(180deg, color-mix(in srgb, var(--editor-surface-alt) 92%, transparent), var(--editor-surface-alt));
-  border:1px solid var(--editor-border);
-  border-radius:calc(var(--editor-radius) + 2px);
+  background:var(--editor-surface);
+  border:1px solid var(--editor-line);
+  border-radius:var(--editor-radius-lg);
   color:var(--editor-text);
-  box-shadow:var(--editor-panel-glow), var(--editor-shadow-sm);
-  transition:transform .18s ease, box-shadow .22s ease, border-color .18s ease, background-color .18s ease;
+  box-shadow:none;
+  transition:border-color .15s ease, background-color .15s ease;
 }
 
 .editor-card:hover{
-  transform:translateY(-2px);
-  border-color:var(--editor-soft-border-strong);
-  box-shadow:var(--editor-shadow-md);
+  border-color:var(--editor-line-strong);
 }
 
 .editor-modal-backdrop{
@@ -258,33 +304,177 @@
 
 .editor-modal-content{
   background:var(--editor-surface);
-  border:1px solid var(--editor-border);
-  border-radius:calc(var(--editor-radius) + 4px);
+  border:1px solid var(--editor-line-strong);
+  border-radius:var(--editor-radius-lg);
   box-shadow:var(--editor-shadow-lg);
   color:var(--editor-text);
+  /* Высокие формы не должны уходить за край экрана — прокручивается само окно. */
+  max-height:calc(100vh - 2rem);
+  max-height:calc(100dvh - 2rem);
+  overflow:auto;
+  overscroll-behavior:contain;
+}
+
+@media (max-width:640px){
+  .editor-modal-content{
+    border-radius:14px;
+    max-height:calc(100vh - 1rem);
+    max-height:calc(100dvh - 1rem);
+  }
+}
+
+/* Окно с постоянной шапкой и подвалом: прокручивается только тело.
+   Так заголовок и кнопки «Сохранить / Отмена» всегда на виду, а форма любой
+   длины не растягивает окно за экран. */
+.editor-modal-shell{
+  display:flex;
+  flex-direction:column;
+  padding:0;
+  overflow:hidden;
+}
+
+.editor-modal-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:12px;
+  flex:0 0 auto;
+  padding:14px 20px;
+  border-bottom:1px solid var(--editor-line);
+}
+
+.editor-modal-head-main{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  min-width:0;
+}
+
+.editor-modal-icon{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  flex:0 0 auto;
+  width:32px;
+  height:32px;
+  border-radius:var(--editor-radius-sm);
+  font-size:14px;
+  color:var(--editor-icon-color);
+  background:var(--editor-icon-bg);
+}
+
+.editor-modal-title{
+  margin:0;
+  font-size:16px;
+  font-weight:700;
+  line-height:1.3;
+  letter-spacing:-.01em;
+  min-width:0;
+  overflow-wrap:anywhere;
+}
+
+.editor-modal-body{
+  flex:1 1 auto;
+  min-height:0;
+  overflow:auto;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+  padding:16px 20px;
+}
+
+.editor-modal-foot{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:8px;
+  flex:0 0 auto;
+  padding:12px 20px;
+  border-top:1px solid var(--editor-line);
+  background:var(--editor-surface);
+}
+
+@media (max-width:640px){
+  .editor-modal-head{padding:12px 14px;}
+  .editor-modal-body{padding:12px 14px;}
+  .editor-modal-foot{padding:10px 14px;}
+  .editor-modal-foot .editor-btn{flex:1 1 auto;justify-content:center;}
 }
 
 .editor-toast-container{
   position:fixed;
-  top:1.25rem;
-  right:1.25rem;
+  top:16px;
+  right:16px;
   z-index:9999;
   display:flex;
   flex-direction:column;
-  gap:.5rem;
+  gap:8px;
+  max-width:min(420px, calc(100vw - 32px));
 }
 
+/* Тост: спокойная поверхность и цветная полоса слева. Раньше это был яркий
+   залитый прямоугольник — он перетягивал внимание с самой формы. */
+.editor-toast-container .toast{
+  --toast-accent:var(--editor-primary);
+  background:var(--editor-surface-2) !important;
+  color:var(--editor-text) !important;
+  border:1px solid var(--editor-line-strong);
+  border-left:3px solid var(--toast-accent);
+  border-radius:var(--editor-radius-md);
+  padding:10px 14px;
+  font-size:var(--editor-text-md);
+  font-weight:500;
+  line-height:1.45;
+  box-shadow:var(--editor-shadow-md);
+  transform:translateX(0);
+}
+
+.editor-toast-container .toast.bg-red-500{--toast-accent:var(--editor-danger);}
+.editor-toast-container .toast.bg-yellow-500{--toast-accent:var(--editor-warning);}
+.editor-toast-container .toast.bg-green-500{--toast-accent:var(--editor-success);}
+.editor-toast-container .toast.bg-sky-600{--toast-accent:var(--editor-primary);}
+
+@media (max-width:640px){
+  .editor-toast-container{left:12px;right:12px;top:12px;max-width:none;}
+}
+
+/* Пустое состояние: иконка, заголовок, подсказка. Даже если в разметке только
+   текст, он читается как спокойная плашка, а не как потерянная строка. */
 .editor-empty-state{
-  padding:1.1rem;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  padding:26px 18px;
   text-align:center;
   color:var(--editor-text-muted);
-  opacity:.94;
+  font-size:var(--editor-text-md);
+  line-height:1.5;
 }
 
-.editor-help-text{
-  font-size:.8rem;
+.editor-empty-state > i{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:38px;
+  height:38px;
+  margin-bottom:4px;
+  border-radius:var(--editor-radius-md);
+  background:var(--editor-soft-bg);
+  border:1px solid var(--editor-line);
+  font-size:15px;
   color:var(--editor-text-muted);
-  opacity:.92;
+}
+
+.editor-empty-state b,
+.editor-empty-state strong{color:var(--editor-text);}
+
+/* Подсказка под полем: мельче и тише подписи, но читаемая. */
+.editor-help-text{
+  margin-top:4px;
+  font-size:var(--editor-text-sm);
+  line-height:1.45;
+  color:var(--editor-text-muted);
 }
 
 .text-accent{color:var(--editor-accent);}
@@ -311,9 +501,9 @@
   background:var(--editor-input-bg);
   border:1px solid var(--editor-border);
   color:var(--editor-text);
-  border-radius:12px;
-  box-shadow:0 1px 0 rgba(255,255,255,.02) inset;
-  transition:border-color .16s ease, box-shadow .16s ease, background-color .16s ease, transform .12s ease;
+  border-radius:var(--editor-radius-md);
+  box-shadow:none;
+  transition:border-color .14s ease, box-shadow .14s ease, background-color .14s ease;
 }
 
 .editor-theme input::placeholder,
@@ -335,7 +525,13 @@
   outline:none;
   border-color:var(--editor-primary);
   background:var(--editor-input-bg);
-  box-shadow:0 0 0 4px var(--editor-focus-ring), 0 1px 0 rgba(255,255,255,.04) inset;
+  box-shadow:0 0 0 3px var(--editor-focus-ring);
+}
+
+/* Фокус с клавиатуры виден всегда — даже если у поля снят outline. */
+.editor-theme :is(input, textarea, select):focus-visible{
+  outline:2px solid var(--editor-primary);
+  outline-offset:1px;
 }
 
 .editor-theme select,
@@ -363,14 +559,37 @@
 .editor-theme .form-textarea{
   width:100%;
   min-height:var(--editor-control-h);
-  padding:.625rem .8rem;
-  font-size:.92rem;
-  line-height:1.25;
-  border-radius:12px;
+  padding:0 12px;
+  font-size:var(--editor-text-md);
+  line-height:1.3;
+  border-radius:var(--editor-radius-md);
   background:var(--editor-input-bg);
   border:1px solid var(--editor-border);
   color:var(--editor-text);
-  box-shadow:0 1px 0 rgba(255,255,255,.02) inset;
+  box-shadow:none;
+}
+
+.editor-theme textarea.editor-input,
+.editor-theme textarea.form-input,
+.editor-theme .form-textarea{
+  padding:9px 12px;
+}
+
+/* Стрелка у select: без неё поле выглядит как обычный input и его
+   не отличить от текстового. */
+.editor-theme select.editor-input,
+.editor-theme select.form-input,
+.editor-theme select.form-select{
+  padding-right:34px;
+  background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='none' stroke='%2397a3b6' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' d='M3 4.5 6 7.5 9 4.5'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-position:right 12px center;
+}
+
+:root[data-editor-theme="light"] .editor-theme select.editor-input,
+:root[data-editor-theme="light"] .editor-theme select.form-input,
+:root[data-editor-theme="light"] .editor-theme select.form-select{
+  background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='none' stroke='%235f6b7d' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round' d='M3 4.5 6 7.5 9 4.5'/%3E%3C/svg%3E");
 }
 
 .editor-theme .form-textarea,
@@ -385,35 +604,45 @@
   font-size:.88rem;
 }
 
+/* Поле формы — это подпись + контрол + подсказка, без собственной рамки.
+   Раньше каждое поле было отдельной «карточкой в карточке»: рамки, тени и
+   подсветка складывались и форма превращалась в решётку из рамок. */
 .editor-field,
 .editor-list-item{
   display:flex;
   flex-direction:column;
   justify-content:flex-start;
-  gap:.48rem;
+  gap:6px;
   min-width:0;
+  padding:0;
+  border-radius:0;
+  background:transparent;
+  border:0;
+  box-shadow:none;
+  transition:border-color .14s ease, background-color .14s ease;
+}
+
+.editor-field{min-height:0;}
+
+/* Элемент списка остаётся карточкой: он — отдельная сущность (моб, слот,
+   запись), и его нужно отличать от соседних. */
+.editor-list-item{
+  min-height:0;
+  height:auto;
+  gap:8px;
   padding:12px;
-  border-radius:14px;
-  background:var(--editor-field-bg);
-  background-image:linear-gradient(180deg, rgba(255,255,255,.035), transparent 48%);
-  border:1px solid var(--editor-field-border);
-  box-shadow:var(--editor-panel-glow), var(--editor-shadow-xs);
-  backdrop-filter:blur(12px);
-  transition:border-color .16s ease, box-shadow .16s ease, transform .14s ease, background-color .16s ease;
+  border-radius:var(--editor-radius-md);
+  background:var(--editor-surface-2);
+  border:1px solid var(--editor-line);
 }
-.editor-field{min-height:100%;}
-.editor-list-item{min-height:0;height:auto;}
 
-.editor-field:hover,
 .editor-list-item:hover{
-  border-color:var(--editor-soft-border-strong);
-  box-shadow:var(--editor-panel-glow), var(--editor-shadow-sm);
+  border-color:var(--editor-line-strong);
 }
 
-.editor-field:focus-within,
-.editor-list-item:focus-within{
-  border-color:var(--editor-primary);
-  box-shadow:0 0 0 4px var(--editor-focus-ring), var(--editor-panel-glow), var(--editor-shadow-sm);
+.editor-field:focus-within .editor-label,
+.editor-field:focus-within .editor-nested-label{
+  color:var(--editor-primary);
 }
 
 .editor-field-nested{
@@ -430,25 +659,27 @@
   display:inline-flex;
   align-items:center;
   justify-content:center;
-  gap:.5rem;
-  min-height:40px;
-  padding:.6rem .85rem;
-  border-radius:12px;
-  font-weight:700;
-  letter-spacing:.01em;
+  gap:7px;
+  min-height:var(--editor-control-h);
+  padding:0 14px;
+  border-radius:var(--editor-radius-md);
+  font-size:var(--editor-text-md);
+  font-weight:600;
+  letter-spacing:0;
+  line-height:1;
   white-space:nowrap;
-  border:1px solid var(--editor-soft-border);
-  background:transparent;
+  border:1px solid var(--editor-button-secondary-border);
+  background:var(--editor-button-secondary-bg);
   color:var(--editor-text);
-  box-shadow:var(--editor-shadow-xs);
-  transition:transform .12s ease, background-color .16s ease, border-color .16s ease, box-shadow .16s ease, color .16s ease, filter .16s ease;
+  box-shadow:none;
+  transition:background-color .14s ease, border-color .14s ease, color .14s ease;
   user-select:none;
   -webkit-tap-highlight-color:transparent;
 }
 
 .editor-btn:hover{
+  background:var(--editor-button-secondary-hover-bg);
   border-color:var(--editor-soft-border-strong);
-  box-shadow:var(--editor-shadow-sm);
 }
 
 .editor-btn:focus-visible,
@@ -464,7 +695,7 @@
 
 .editor-btn:active,
 .editor-icon-btn:active{
-  transform:translateY(1px) scale(.99);
+  filter:brightness(.96);
 }
 
 .editor-btn[disabled],
@@ -476,81 +707,97 @@
 }
 
 .editor-btn-secondary{
-  background:linear-gradient(180deg, rgba(255,255,255,.04), transparent), var(--editor-button-secondary-bg);
+  background:var(--editor-button-secondary-bg);
   color:var(--editor-text);
   border-color:var(--editor-button-secondary-border);
 }
 
 .editor-btn-secondary:hover{
   background:var(--editor-button-secondary-hover-bg);
+  border-color:var(--editor-soft-border-strong);
 }
 
 .editor-btn.active{
-  background:rgba(99,102,241,.16);
-  border-color:rgba(99,102,241,.48);
+  background:color-mix(in srgb, var(--editor-primary) 16%, transparent);
+  border-color:color-mix(in srgb, var(--editor-primary) 48%, transparent);
+  color:var(--editor-text-strong);
 }
 
+/* Главная кнопка: сплошной акцент, белый текст, без градиента и «свечения».
+   На экране одна-две такие кнопки — остальные вторичные. */
 .editor-btn-primary{
-  background:linear-gradient(135deg, var(--editor-primary), var(--editor-accent));
-  background:linear-gradient(135deg, var(--editor-primary), color-mix(in srgb, var(--editor-accent) 78%, var(--editor-primary)));
+  background:var(--editor-primary);
   color:#fff;
   border-color:transparent;
-  box-shadow:0 16px 34px rgba(47,111,202,.24);
+  box-shadow:none;
 }
 
 .editor-btn-primary:hover{
-  filter:brightness(1.04);
-  box-shadow:0 20px 38px rgba(47,111,202,.30);
+  background:color-mix(in srgb, var(--editor-primary) 88%, #ffffff);
+  border-color:transparent;
 }
 
 .editor-btn-danger{
-  background:rgba(239,68,68,.94);
+  background:var(--editor-danger);
   color:#fff;
-  border-color:rgba(239,68,68,.58);
+  border-color:transparent;
 }
 
 .editor-btn-danger:hover{
-  background:rgba(239,68,68,1);
+  background:color-mix(in srgb, var(--editor-danger) 88%, #ffffff);
 }
 
+/* Тихое действие (иконка-текст без рамки) — для «Обновить», «Копировать». */
+.editor-btn-ghost{
+  background:transparent;
+  border-color:transparent;
+  color:var(--editor-text-muted);
+}
+
+.editor-btn-ghost:hover{
+  background:var(--editor-light-bg);
+  border-color:transparent;
+  color:var(--editor-text);
+}
+
+/* Строка списка: плоская, плотная, с полосой-индикатором выбора.
+   В списке из сотни записей важнее плотность и ровный ритм, чем «карточность». */
 .editor-row{
   position:relative;
-  background:var(--editor-row-bg);
-  border:1px solid var(--editor-border);
-  border-radius:14px;
-  padding:11px;
-  transition:background .14s ease, border-color .14s ease, box-shadow .18s ease, transform .14s ease;
+  display:block;
+  padding:7px 10px 7px 12px;
+  border-radius:var(--editor-radius-sm);
+  border:1px solid transparent;
+  background:transparent;
   cursor:pointer;
+  transition:background .12s ease, border-color .12s ease;
   contain:layout style paint;
-}
-
-.editor-row::after{
-  content:"";
-  position:absolute;
-  inset:-1px;
-  border-radius:inherit;
-  background:linear-gradient(135deg, rgba(255,255,255,.06), transparent 42%, transparent 58%, rgba(255,255,255,.04));
-  opacity:0;
-  pointer-events:none;
-  transition:opacity .16s ease;
 }
 
 .editor-row:hover{
   background:var(--editor-row-hover-bg);
-  border-color:var(--editor-row-hover-border);
-  box-shadow:var(--editor-shadow-sm);
-  transform:translateY(-1px);
+  border-color:transparent;
 }
 
-.editor-row:hover::after{
-  opacity:1;
+.editor-row .font-semibold{
+  font-size:var(--editor-text-md);
+  font-weight:600;
+  line-height:1.35;
+}
+
+.editor-row .text-xs{
+  margin-top:1px;
+  font-size:var(--editor-text-xs);
+  line-height:1.35;
 }
 
 .editor-row.editor-row-active{
   background:var(--editor-row-active-bg);
-  border-color:var(--editor-row-active-border);
-  box-shadow:0 0 0 3px var(--editor-focus-ring);
-  box-shadow:0 0 0 3px color-mix(in srgb, var(--editor-primary) 16%, transparent);
+  border-color:transparent;
+}
+
+.editor-row.editor-row-active .font-semibold{
+  color:var(--editor-text-strong);
 }
 
 .editor-db-alert{
@@ -566,21 +813,21 @@
   align-items:center;
   justify-content:center;
   gap:8px;
-  min-width:38px;
-  min-height:38px;
-  padding:8px 10px;
-  border-radius:12px;
+  min-width:var(--editor-control-h);
+  min-height:var(--editor-control-h);
+  padding:0;
+  border-radius:var(--editor-radius-md);
   border:1px solid var(--editor-icon-btn-border);
-  background:linear-gradient(180deg, rgba(255,255,255,.045), transparent), var(--editor-icon-btn-bg);
-  color:var(--editor-text);
-  box-shadow:var(--editor-panel-glow), var(--editor-shadow-xs);
-  transition:transform .08s ease, background .15s ease, border-color .15s ease, box-shadow .15s ease;
+  background:var(--editor-icon-btn-bg);
+  color:var(--editor-text-muted);
+  box-shadow:none;
+  transition:background .14s ease, border-color .14s ease, color .14s ease;
 }
 
 .editor-icon-btn:hover{
   background:var(--editor-icon-btn-hover-bg);
   border-color:var(--editor-soft-border-strong);
-  box-shadow:var(--editor-shadow-sm);
+  color:var(--editor-text);
 }
 
 .editor-icon-danger{
@@ -595,7 +842,41 @@
 }
 
 .editor-muted-text{color:var(--editor-text-muted);}
-.editor-label{color:var(--editor-text);font-weight:700;letter-spacing:.01em;}
+
+/* Семантические утилиты вместо Tailwind-палитры (slate/indigo): страницы
+   не знают, тёмная тема сейчас или светлая, и не могут «провалиться» в
+   нечитаемый серый. */
+.editor-text{color:var(--editor-text);}
+.editor-text-strong{color:var(--editor-text-strong);}
+.editor-primary-text{color:var(--editor-primary);}
+.editor-hairline{border-color:var(--editor-line);}
+.editor-hairline-strong{border-color:var(--editor-line-strong);}
+.editor-soft{background:var(--editor-soft-bg);}
+.editor-soft-strong{background:var(--editor-soft-bg-strong);}
+.editor-primary-bg{background:var(--editor-primary);}
+.editor-primary-border{border-color:var(--editor-primary);}
+.editor-primary-tint{background:color-mix(in srgb, var(--editor-primary) 5%, transparent);}
+.editor-primary-dim{background:color-mix(in srgb, var(--editor-primary) 40%, transparent);}
+.editor-hover:hover{background:var(--editor-row-hover-bg);}
+.editor-hover-text:hover{color:var(--editor-text);}
+.editor-hover-danger:hover{color:var(--editor-danger);}
+.editor-hover-warning:hover{color:var(--editor-warning);}
+.editor-hover-accent:hover{color:var(--editor-primary);}
+.editor-hairline-l{border-left-color:var(--editor-line-strong);}
+/* Выделенная строка в списке: 2px кольцо вместо «светящейся» тени. */
+.editor-ring{box-shadow:0 0 0 2px color-mix(in srgb, var(--editor-primary) 40%, transparent);}
+
+/* Подпись поля: 12.5px, полужирная, приглушённая. Значение в контроле ярче
+   подписи — глаз сначала читает данные, потом название поля. */
+.editor-label{
+  display:block;
+  font-size:var(--editor-text-sm);
+  font-weight:600;
+  line-height:1.35;
+  color:var(--editor-text-muted);
+  letter-spacing:0;
+  transition:color .14s ease;
+}
 .editor-label-block{display:block;margin-bottom:0;}
 .editor-label-with-icon{display:flex;align-items:center;gap:.45rem;}
 .editor-label-icon{
@@ -613,10 +894,12 @@
 
 .editor-nested-label{
   display:block;
-  margin-bottom:.25rem;
-  font-size:.76rem;
+  margin-bottom:4px;
+  font-size:var(--editor-text-xs);
   color:var(--editor-text-muted);
-  font-weight:700;
+  font-weight:600;
+  letter-spacing:.01em;
+  transition:color .14s ease;
 }
 
 .editor-validation-hint{color:rgba(248,113,113,.95);}
@@ -659,34 +942,45 @@
 }
 
 .editor-toggle-track{
-  width:46px;
-  height:26px;
+  width:40px;
+  height:22px;
   border-radius:999px;
-  background:var(--editor-light-bg);
-  border:1px solid var(--editor-light-border);
+  background:var(--editor-soft-bg-strong);
+  border:1px solid var(--editor-line-strong);
   position:relative;
-  transition:background .15s ease,border-color .15s ease,box-shadow .15s ease;
+  transition:background .15s ease,border-color .15s ease;
+}
+
+/* Флажок: системный чекбокс в цвете акцента. Раньше он был тёмным квадратом
+   с синей заливкой и читался хуже, чем обычный. */
+.editor-theme input[type="checkbox"],
+.editor-theme input[type="radio"]{
+  accent-color:var(--editor-primary);
+  width:16px;
+  height:16px;
+  cursor:pointer;
+}
+
+.editor-toggle:has(input:checked) .editor-toggle-track,
+.editor-toggle[data-checked="1"] .editor-toggle-track{
+  background:var(--editor-primary);
+  border-color:var(--editor-primary);
 }
 
 .editor-toggle-knob{
-  width:20px;
-  height:20px;
+  width:16px;
+  height:16px;
   border-radius:999px;
-  background:linear-gradient(180deg, rgba(255,255,255,.98), rgba(255,255,255,.78));
-  box-shadow:0 4px 10px rgba(0,0,0,.18);
+  background:#fff;
+  box-shadow:0 1px 3px rgba(0,0,0,.25);
   position:absolute;
   top:2px;
   left:2px;
-  transition:transform .16s ease;
-}
-
-.editor-toggle[data-checked="1"] .editor-toggle-track{
-  background:linear-gradient(135deg, var(--editor-primary), var(--editor-accent));
-  border-color:transparent;
+  transition:transform .15s ease;
 }
 
 .editor-toggle[data-checked="1"] .editor-toggle-knob{
-  transform:translateX(20px);
+  transform:translateX(18px);
 }
 
 .editor-dbcombo{
@@ -765,8 +1059,8 @@
   justify-content:flex-start;
   text-align:left;
   width:100%;
-  padding:.6rem .7rem;
-  border-radius:12px;
+  padding:.5rem .6rem;
+  border-radius:var(--editor-radius-sm);
   background:transparent;
   border:1px solid transparent;
   color:var(--editor-text);
@@ -779,8 +1073,8 @@
 }
 
 .editor-dbcombo-option.active{
-  background:rgba(99,102,241,.18);
-  border-color:rgba(99,102,241,.34);
+  background:color-mix(in srgb, var(--editor-primary) 16%, transparent);
+  border-color:color-mix(in srgb, var(--editor-primary) 34%, transparent);
 }
 
 .editor-dbcombo-bound{display:none;}
@@ -871,8 +1165,8 @@
 }
 
 .editor-tag-option.active{
-  background:rgba(99,102,241,.18);
-  border-color:rgba(99,102,241,.34);
+  background:color-mix(in srgb, var(--editor-primary) 16%, transparent);
+  border-color:color-mix(in srgb, var(--editor-primary) 34%, transparent);
 }
 
 .editor-tag-option-strong{font-weight:700;}
@@ -904,17 +1198,16 @@
   }
 }
 
+/* Секция формы: подложка на полтона, без тени — она не «висит» над
+   страницей, а просто группирует поля. */
 .editor-section{
   background:var(--editor-soft-bg);
-  border:1px solid var(--editor-field-border);
-  border-radius:18px;
-  padding:var(--editor-space);
-  box-shadow:var(--editor-shadow-xs);
+  border:1px solid var(--editor-line);
+  border-radius:var(--editor-radius-md);
+  padding:var(--editor-gap-4);
 }
 
-.editor-section + .editor-section{
-  margin-top:var(--editor-space);
-}
+.editor-section + .editor-section{margin-top:var(--editor-gap-3);}
 
 .editor-theme{
   scrollbar-width:thin;
@@ -952,38 +1245,40 @@
 .editor-badge{
   display:inline-flex;
   align-items:center;
-  gap:.35rem;
-  padding:.3rem .58rem;
+  gap:5px;
+  padding:3px 9px;
   border-radius:999px;
-  font-size:.75rem;
-  font-weight:700;
+  font-size:var(--editor-text-xs);
+  font-weight:600;
+  line-height:1.5;
   border:1px solid var(--editor-badge-border);
   background:var(--editor-badge-bg);
-  color:var(--editor-text);
+  color:var(--editor-text-muted);
 }
 
+/* Только для чтения: та же высота, что у поля, но без намёка на ввод. */
 .editor-readonly{
   min-height:var(--editor-control-h);
-  padding:.65rem .8rem;
-  border-radius:12px;
-  border:1px solid var(--editor-soft-border);
-  background:linear-gradient(180deg, rgba(255,255,255,.03), transparent), var(--editor-field-bg);
+  padding:.5rem .75rem;
+  border-radius:var(--editor-radius-sm);
+  border:1px solid var(--editor-line);
+  background:var(--editor-soft-bg);
   display:flex;
   align-items:center;
   color:var(--editor-text);
-  box-shadow:var(--editor-panel-glow);
 }
 
+/* Панель над формой: имя записи слева, действия справа. Липнет к верху при
+   прокрутке длинной формы — кнопки «Сохранить» всегда под рукой. */
 .editor-sticky-toolbar{
   position:sticky;
-  top:12px;
+  top:8px;
   z-index:30;
-  background:linear-gradient(180deg, var(--editor-toolbar-bg) 0%, var(--editor-toolbar-bg-2) 100%);
-  border:1px solid var(--editor-toolbar-border);
-  border-radius:16px;
-  padding:12px;
-  backdrop-filter:blur(10px);
-  box-shadow:var(--editor-panel-glow), var(--editor-toolbar-shadow);
+  background:var(--editor-toolbar-bg);
+  border:1px solid var(--editor-line);
+  border-radius:var(--editor-radius-lg);
+  padding:12px 14px;
+  box-shadow:var(--editor-toolbar-shadow);
 }
 
 .editor-search{position:relative;}
@@ -1039,56 +1334,6 @@
   padding:0 12px 12px;
 }
 
-.editor-drawer{min-width:0;}
-.editor-drawer-backdrop{display:none;}
-
-@media (max-width:767px){
-  .editor-drawer{
-    position:fixed;
-    top:0;
-    left:0;
-    bottom:0;
-    z-index:600;
-    transform:translateX(-110%);
-    transition:transform .18s ease;
-    width:20rem;
-    max-width:90vw;
-  }
-
-  .editor-drawer.open{
-    transform:translateX(0);
-  }
-
-  .editor-drawer-backdrop{
-    display:block;
-    position:fixed;
-    inset:0;
-    z-index:590;
-    background:rgba(0,0,0,.55);
-    opacity:0;
-    pointer-events:none;
-    transition:opacity .18s ease;
-  }
-
-  .editor-drawer-backdrop.open{
-    opacity:1;
-    pointer-events:auto;
-  }
-}
-
-@media (min-width:768px){
-  .editor-drawer{
-    position:relative;
-    transform:none;
-    z-index:auto;
-    width:auto;
-    max-width:none;
-  }
-
-  .editor-drawer-backdrop{
-    display:none !important;
-  }
-}
 
 @media (max-width:640px){
   .editor-tags-selected{max-height:9.5rem;}
@@ -1109,7 +1354,9 @@
   width:100vw;
   max-width:100vw;
   height:100vh;
+  height:100dvh;
   max-height:100vh;
+  max-height:100dvh;
   display:flex;
   flex-direction:column;
   padding:0;
@@ -1155,13 +1402,7 @@
   background:var(--editor-bg);
 }
 
-@keyframes editorFadeIn{
-  from{opacity:0;transform:translateY(4px);}
-  to{opacity:1;transform:translateY(0);}
-}
-
 @media (prefers-reduced-motion:reduce){
-  .editor-theme{animation:none;}
   .editor-card,
   .editor-row,
   .editor-btn,
@@ -1210,42 +1451,31 @@
 .editor-status--warning:not(:empty)::before{content:"\f071";}
 .editor-status--small{font-size:.76rem;}
 
-/* Clearer hierarchy and selection in all CRUD editors --------------------- */
-.editor-page-title > i{
-  width:38px;
-  height:38px;
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  flex:0 0 38px;
-  border-radius:12px;
-  background:var(--editor-icon-bg);
-  border:1px solid var(--editor-soft-border);
-  box-shadow:var(--editor-panel-glow),var(--editor-shadow-sm);
-}
+/* Плитка иконки в заголовке вкладки описана в editor-template.css (.editor-page-title > i):
+   здесь только гасим декоративный ::before, если иконка задана разметкой. */
 .editor-page-title:has(> i)::before{display:none;}
-.editor-sidebar-list .editor-row{border-color:transparent;border-radius:11px;}
-.editor-sidebar-list .editor-row + .editor-row{margin-top:4px;}
+/* В сайдбаре список идёт почти без просветов — можно окинуть взглядом 10–12
+   записей, а не три. */
+.editor-sidebar-list .editor-list{gap:1px;}
+.editor-sidebar-list .editor-row{border-radius:var(--editor-radius-sm);}
 .editor-sidebar-list .editor-row-active::before{
   content:"";
   position:absolute;
-  left:0;
-  top:22%;
-  bottom:22%;
-  width:3px;
-  border-radius:0 999px 999px 0;
-  background:var(--editor-accent);
-  box-shadow:0 0 14px color-mix(in srgb,var(--editor-accent) 55%,transparent);
+  left:2px;
+  top:7px;
+  bottom:7px;
+  width:2px;
+  border-radius:999px;
+  background:var(--editor-primary);
 }
 .editor-sidebar-list[aria-busy="true"]{opacity:.68;cursor:progress;}
 .editor-sidebar-list[aria-busy="true"] *{pointer-events:none;}
 .editor-sticky-toolbar::after{
   content:"";
   position:absolute;
-  inset:auto 14px -1px;
+  inset:auto 0 -1px;
   height:1px;
-  background:linear-gradient(90deg,transparent,var(--editor-accent),transparent);
-  opacity:.32;
+  background:var(--editor-line);
 }
 
 @media (max-width:640px){
@@ -1259,18 +1489,18 @@
    Sync Button & Badge
    ═══════════════════════════════════════════════════════════════════════════ */
 
+/* Кнопка синхронизации — акцентная, но без «свечения». */
 .editor-btn-sync {
   position: relative;
-  background: rgba(114, 214, 192, .08) !important;
-  border-color: rgba(114, 214, 192, .28) !important;
+  background: color-mix(in srgb, var(--editor-accent) 8%, transparent) !important;
+  border-color: color-mix(in srgb, var(--editor-accent) 28%, transparent) !important;
   color: var(--editor-accent) !important;
-  transition: all .2s ease;
+  transition: background-color .14s ease, border-color .14s ease;
 }
 
 .editor-btn-sync:hover {
-  background: rgba(114, 214, 192, .16) !important;
-  border-color: rgba(114, 214, 192, .45) !important;
-  box-shadow: 0 0 12px rgba(114, 214, 192, .18);
+  background: color-mix(in srgb, var(--editor-accent) 16%, transparent) !important;
+  border-color: color-mix(in srgb, var(--editor-accent) 45%, transparent) !important;
 }
 
 .sync-badge {
@@ -1591,8 +1821,8 @@
 }
 
 .editor-sync-profile-card.is-target {
-  border-color: rgba(114, 214, 192, .35);
-  background: rgba(114, 214, 192, .05);
+  border-color: color-mix(in srgb, var(--editor-accent) 35%, transparent);
+  background: color-mix(in srgb, var(--editor-accent) 6%, transparent);
 }
 
 .editor-sync-profile-card:hover {
@@ -1760,9 +1990,9 @@
 }
 
 .sync-dir-both {
-  color: #72d6c0;
-  background: rgba(114, 214, 192, .12);
-  border-color: rgba(114, 214, 192, .35);
+  color: var(--editor-accent);
+  background: color-mix(in srgb, var(--editor-accent) 12%, transparent);
+  border-color: color-mix(in srgb, var(--editor-accent) 35%, transparent);
 }
 
 .sync-dir-pull {
@@ -1775,4 +2005,164 @@
   color: #c4b5fd;
   background: rgba(167, 139, 250, .12);
   border-color: rgba(167, 139, 250, .35);
+}
+
+/* ── Позиция (X/Y) и кнопка «Местоположение» ──────────────────────────────────
+   Один и тот же элемент во всех редакторах: X и Y в одной строке, рядом —
+   кнопка карты. Строка не переносится: на телефоне кнопка становится
+   иконкой, но оси остаются рядом друг с другом. */
+.editor-vec2{
+  display:flex;
+  align-items:center;
+  gap:var(--editor-gap-2);
+  flex-wrap:nowrap;
+  min-width:0;
+}
+
+.editor-vec2-axis{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  flex:1 1 0;
+  min-width:0;
+  margin:0;
+  cursor:text;
+}
+
+.editor-vec2-axis-name{
+  flex:0 0 auto;
+  font-size:var(--editor-text-xs);
+  font-weight:700;
+  line-height:1;
+  letter-spacing:.06em;
+  color:var(--editor-text-muted);
+  font-variant-numeric:tabular-nums;
+}
+
+.editor-vec2-input{
+  width:100%;
+  min-width:0;
+  text-align:right;
+  font-variant-numeric:tabular-nums;
+}
+
+.editor-vec2-map{
+  flex:0 0 auto;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  height:var(--editor-control-h);
+  padding:0 12px;
+  border:1px solid var(--editor-soft-border-strong);
+  border-radius:var(--editor-radius-md);
+  background:var(--editor-button-secondary-bg);
+  color:var(--editor-text);
+  font:inherit;
+  font-size:var(--editor-text-sm);
+  font-weight:600;
+  white-space:nowrap;
+  cursor:pointer;
+  transition:background-color .15s ease,border-color .15s ease,color .15s ease;
+}
+
+.editor-vec2-map i{font-size:13px;color:var(--editor-primary);}
+
+.editor-vec2-map:hover{
+  background:var(--editor-button-secondary-hover-bg);
+  border-color:color-mix(in srgb, var(--editor-primary) 45%, transparent);
+}
+
+.editor-vec2-map:focus-visible{
+  outline:2px solid var(--editor-primary);
+  outline-offset:2px;
+}
+
+/* Узкие экраны: остаётся иконка, подпись уходит в подсказку. */
+@media (max-width:720px){
+  .editor-vec2-map-label{display:none;}
+  .editor-vec2-map{padding:0;width:var(--editor-control-h);}
+}
+
+/* ── Окно карты ─────────────────────────────────────────────────────────────
+   Карта занимает почти весь экран: её двигают мышью, точку ставят кликом.
+   Затемнение не блокирует прокрутку страницы (это ломало окно входа). */
+.editor-map-dialog{
+  position:fixed;
+  inset:0;
+  z-index:620;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:var(--editor-gap-4);
+  background:rgba(3,7,15,.72);
+  backdrop-filter:blur(6px);
+}
+
+.editor-map-dialog.is-open{display:flex;}
+
+.editor-map-dialog-frame{
+  position:relative;
+  display:flex;
+  flex-direction:column;
+  width:100%;
+  height:100%;
+  max-width:1600px;
+  overflow:hidden;
+  border:1px solid var(--editor-line-strong);
+  border-radius:var(--editor-radius-lg);
+  box-shadow:var(--editor-shadow-lg);
+  background:var(--editor-surface);
+}
+
+/* Мир для карты: нужен там, где у записи нет поля мира (компоненты сценария). */
+.editor-map-dialog-world{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex:0 0 auto;
+  padding:8px 12px;
+  border-bottom:1px solid var(--editor-line);
+  background:var(--editor-surface);
+}
+
+.editor-map-dialog-world[hidden]{display:none;}
+
+.editor-map-dialog-world-label{
+  font-size:12px;
+  font-weight:600;
+  color:var(--editor-text-muted);
+  white-space:nowrap;
+}
+
+.editor-map-dialog-world-select{
+  flex:0 1 320px;
+  min-width:0;
+  height:34px;
+  padding:0 10px;
+  font-size:13px;
+  color:var(--editor-text);
+  background:var(--editor-surface-2);
+  border:1px solid var(--editor-line-strong);
+  border-radius:var(--editor-radius-sm);
+}
+
+.editor-map-dialog-world-select:focus-visible{
+  outline:2px solid var(--editor-primary);
+  outline-offset:1px;
+}
+
+.editor-map-dialog-frame-inner{
+  display:block;
+  flex:1 1 auto;
+  width:100%;
+  min-height:0;
+  border:0;
+}
+
+html.editor-map-open{overflow:hidden;}
+
+@media (max-width:640px){
+  .editor-map-dialog{padding:0;}
+  .editor-map-dialog-frame{border:0;border-radius:0;}
 }

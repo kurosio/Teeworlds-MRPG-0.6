@@ -59,12 +59,18 @@
       id: 'modal-backdrop',
       html: `
         <div id="modal-backdrop" class="hidden fixed inset-0 editor-modal-backdrop z-[200] flex justify-center items-center p-4">
-          <div id="modal-content" class="editor-modal-content p-6 rounded-lg shadow-xl w-full max-w-4xl flex flex-col max-h-[92vh]">
-            <h3 id="modal-title" class="text-xl font-bold mb-4">Редактирование</h3>
-            <div id="modal-form-container" class="overflow-y-auto pr-2 -mr-1 flex-1"></div>
-            <div class="modal-buttons text-right mt-6 pt-4 border-t border-slate-200/30">
+          <div id="modal-content" class="editor-modal-content editor-modal-shell w-full max-w-4xl">
+            <div class="editor-modal-head">
+              <div class="editor-modal-head-main">
+                <i id="modal-icon" class="editor-modal-icon fa-solid fa-puzzle-piece" aria-hidden="true"></i>
+                <h3 id="modal-title" class="editor-modal-title">Редактирование</h3>
+              </div>
+              <button type="button" class="editor-icon-btn" data-modal-close title="Закрыть"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div id="modal-form-container" class="editor-modal-body"></div>
+            <div class="editor-modal-foot">
               <button id="modal-cancel" class="editor-btn editor-btn-secondary">Отмена</button>
-              <button id="modal-save" class="editor-btn editor-btn-primary ml-2">Сохранить</button>
+              <button id="modal-save" class="editor-btn editor-btn-primary">Сохранить</button>
             </div>
           </div>
         </div>
@@ -141,14 +147,18 @@
     };
 
     const onMessage = (event) => {
-      if (event.source !== frame.contentWindow) return;
+      if (event.source !== frame.contentWindow || event.origin !== window.location.origin) return;
       const data = event.data || {};
       if (data?.type === 'scenario-editor:ready') {
         frame.contentWindow?.postMessage({
           type: 'scenario-editor:init',
           mode: initialMode,
+          worldId: cfg.worldId !== null && cfg.worldId !== undefined && String(cfg.worldId) !== '' &&
+            Number.isSafeInteger(Number(cfg.worldId)) && Number(cfg.worldId) >= 0
+            ? Number(cfg.worldId)
+            : null,
           scenarioText: String(cfg.scenarioText || ''),
-        }, '*');
+        }, window.location.origin);
       }
       if (data?.type === 'scenario-editor:apply') {
         if (typeof cfg.onApply === 'function') {
@@ -167,18 +177,36 @@
       if (e.target === modal) close();
     }, { once: true });
 
-    frame.src = `scenario-editor.html?embed=1&mode=${encodeURIComponent(initialMode)}`;
+    const rawWorldId = Number(cfg.worldId);
+    const worldParam = cfg.worldId !== null && cfg.worldId !== undefined && String(cfg.worldId) !== '' &&
+      Number.isSafeInteger(rawWorldId) && rawWorldId >= 0 ? `&world=${rawWorldId}` : '';
+    frame.src = `scenario-editor.html?embed=1&mode=${encodeURIComponent(initialMode)}${worldParam}`;
     modal.classList.remove('hidden');
     modal.classList.add('flex');
   };
 
   const toast = (message, type = 'success', opts = {}) => {
+    // In guest mode nothing is written to the database: a "saved" toast would be a lie.
+    // Editors keep their generic texts, the wording is adapted in one place.
+    if (type === 'success' && window.EditorCore?.Guest?.isGuest?.()) {
+      const draftText = {
+        'Сохранено': 'Добавлено в черновик запроса',
+        'Создано': 'Новая запись в черновике запроса',
+        'Удалено': 'Удаление добавлено в черновик запроса',
+        'Изменения сохранены': 'Изменения добавлены в черновик запроса',
+      }[String(message)];
+      if (draftText) {
+        message = draftText;
+        type = 'info';
+      }
+    }
     if (window.EditorCore?.utils?.showToast) {
       return window.EditorCore.utils.showToast(message, type, {
         // Theme-friendly defaults
-        baseClass: opts.baseClass || 'editor-modal-content border border-light px-4 py-3 rounded-xl shadow-lg transition-all duration-300 transform translate-x-full',
+        baseClass: opts.baseClass || 'editor-modal-content border editor-hairline px-4 py-3 rounded-xl shadow-lg transition-all duration-300 transform translate-x-full',
         successClass: opts.successClass || 'border-emerald-400/30',
         warningClass: opts.warningClass || 'border-amber-400/30',
+        infoClass: opts.infoClass || 'border-sky-400/30',
         errorClass: opts.errorClass || 'border-red-400/30',
         ttl: typeof opts.ttl === 'number' ? opts.ttl : 2800,
         containerId: opts.containerId || 'toast-container'
@@ -242,10 +270,10 @@
     table.className = 'w-full text-sm';
     const thead = document.createElement('thead');
     const headRow = document.createElement('tr');
-    headRow.className = 'bg-light border-b border-light';
+    headRow.className = 'editor-soft border-b editor-hairline';
     cols.forEach((col) => {
       const th = document.createElement('th');
-      th.className = 'text-left px-3 py-2 text-slate-200';
+      th.className = 'text-left px-3 py-2 editor-text';
       th.textContent = col.title;
       headRow.appendChild(th);
     });
@@ -253,10 +281,10 @@
     const tbody = document.createElement('tbody');
     rows.forEach((row) => {
       const tr = document.createElement('tr');
-      tr.className = 'border-b border-light';
+      tr.className = 'border-b editor-hairline';
       cols.forEach((col) => {
         const td = document.createElement('td');
-        td.className = `px-3 py-2 ${col.mono ? 'font-mono text-slate-200' : 'text-slate-100'}`;
+        td.className = `px-3 py-2 ${col.mono ? 'font-mono editor-text' : 'editor-text'}`;
         td.textContent = String(row?.[col.key] ?? '');
         tr.appendChild(td);
       });

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Редактор Сценариев v30.3 (Исправлено)</title>
+    <title>Сценарии • Editor Studio</title>
     <script src="editor-core/page-loader.js" data-mode="scenario"></script>
     
     <!-- Библиотека для Drag-and-Drop -->
@@ -23,8 +23,7 @@
             z-index: 55;
             backdrop-filter: blur(8px);
             background: color-mix(in srgb, var(--editor-surface) 92%, transparent);
-            border-bottom: 1px solid color-mix(in srgb, var(--editor-light-border) 55%, transparent);
-            box-shadow: 0 8px 30px rgba(6, 12, 28, 0.16);
+            border-bottom: 1px solid var(--editor-line);
         }
 
         /* Compact adaptive header: keep controls visible without horizontal scroll. */
@@ -41,7 +40,7 @@
 
         /* Keep the navigator aligned with the real top chrome height (fixes wrap/overlap issues). */
         @media (min-width: 768px){
-          #navigator{ top: var(--scenario-top-h); height: calc(100vh - var(--scenario-top-h)); }
+          #navigator{ top: var(--scenario-top-h); height: calc(100vh - var(--scenario-top-h)); height: calc(100dvh - var(--scenario-top-h)); }
         }
         .sortable-ghost {
             opacity: 0.4;
@@ -81,9 +80,9 @@
         .scenario-switch input{position:absolute;inset:0;opacity:0;cursor:pointer;}
         .scenario-switch .track{position:absolute;inset:0;border-radius:999px;background:var(--editor-light-bg);border:1px solid var(--editor-light-border);transition:background .2s,border-color .2s,box-shadow .2s;}
         .scenario-switch .thumb{position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:999px;background:#fff;transition:transform .2s;box-shadow:0 2px 10px rgba(0,0,0,.35);}
-        .scenario-switch input:checked ~ .track{background:rgba(99,102,241,.9);border-color:rgba(99,102,241,.9);}
+        .scenario-switch input:checked ~ .track{background:var(--editor-primary);border-color:var(--editor-primary);}
         .scenario-switch input:checked ~ .thumb{transform:translateX(22px);}
-        .scenario-switch input:focus-visible ~ .track{box-shadow:0 0 0 3px rgba(99,102,241,.25);}
+        .scenario-switch input:focus-visible ~ .track{box-shadow:0 0 0 3px color-mix(in srgb, var(--editor-primary) 25%, transparent);}
         /* Compact navigator styles */
         .nav-group-wrapper {
             margin-bottom: 0.5rem; /* 8px */
@@ -123,8 +122,7 @@
             padding: 0.55rem 0.75rem;
             border-radius: 10px;
             border: 1px solid color-mix(in srgb, var(--editor-light-border) 70%, transparent);
-            background: color-mix(in srgb, var(--editor-surface) 92%, transparent);
-            box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+            background: var(--editor-soft-bg);
         }
         .scenario-overview-card .label {
             color: var(--editor-text-muted);
@@ -144,46 +142,126 @@
             flex: 1 1 auto;
         }
 
+        /* Карточка шага: ровная поверхность и волосяная рамка. Тень и подъём
+           при наведении убраны — двадцать одинаковых теней читаются как шум. */
         .step-card {
-            transition: transform 0.16s ease, box-shadow 0.16s ease, border-color 0.16s ease;
-            background: linear-gradient(145deg, color-mix(in srgb, var(--editor-surface) 95%, #2d3558 5%), color-mix(in srgb, var(--editor-surface) 98%, transparent));
-            border-color: color-mix(in srgb, var(--editor-light-border) 80%, transparent);
-            box-shadow: 0 8px 22px rgba(12, 18, 38, 0.12);
+            transition: border-color 0.16s ease, background-color 0.16s ease;
+            background: var(--editor-surface);
+            border-color: var(--editor-line);
         }
         .step-card:hover {
-            transform: translateY(-1px);
-            border-color: color-mix(in srgb, var(--editor-primary) 40%, var(--editor-light-border));
-            box-shadow: 0 12px 28px rgba(6, 12, 26, 0.2);
+            border-color: var(--editor-line-strong);
         }
 
         .component-item {
-            border-color: color-mix(in srgb, var(--editor-light-border) 78%, transparent);
-            background: color-mix(in srgb, var(--editor-soft-bg) 92%, transparent);
-            transition: border-color 0.15s ease, transform 0.15s ease;
+            border-color: var(--editor-line);
+            background: var(--editor-surface-2);
+            transition: border-color 0.15s ease;
         }
         .component-item:hover {
-            transform: translateX(1px);
-            border-color: color-mix(in srgb, var(--editor-primary) 35%, var(--editor-light-border));
+            border-color: color-mix(in srgb, var(--editor-primary) 35%, var(--editor-line));
         }
 
         #add-step-button {
             position: sticky;
             bottom: 1rem;
             z-index: 12;
-            box-shadow: 0 16px 28px rgba(11, 18, 37, 0.3);
+            box-shadow: var(--editor-shadow-sm);
         }
 
-        /* Wider and more comfortable component modal for large component forms. */
+        /* Компонент: широкое окно под форму, высота — по содержимому. */
         #modal-content.scenario-modal-wide {
-            width: min(1400px, 96vw);
-            max-width: min(1400px, 96vw);
-            min-height: min(860px, 92vh);
+            width: min(1180px, 96vw);
+            max-width: min(1180px, 96vw);
         }
-        #modal-content.scenario-modal-wide #modal-form-container {
-            padding-right: 0.5rem;
+
+        /* Поля компонента укладываются в строки сами: число узкое, выбор
+           средний, списки и теги — на всю строку. Ни медиазапросов, ни пустых
+           мест в конце строки: последняя ячейка дотягивается до края. */
+        .sc-modal-fields {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: flex-start;
+        }
+        /* Верхняя граница ширины: одинокое число не растянется на весь экран. */
+        .sc-modal-field { flex: 1 1 300px; max-width: 560px; min-width: 0; }
+        .sc-modal-field--narrow { flex: 1 1 176px; max-width: 320px; }
+        .sc-modal-field--wide { flex: 1 1 100%; max-width: none; }
+
+        /* Переходы к шагам — всегда отдельной строкой сверху: подпись слева,
+           выбор справа. Так поле одинаково выглядит во всех компонентах. */
+        .sc-modal-nav {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 12px;
+            padding: 10px 12px;
+            border-radius: 14px;
+            border: 1px solid var(--editor-soft-border);
+            background: var(--editor-field-bg);
+        }
+        .sc-modal-nav-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+        }
+        .sc-modal-nav-label {
+            flex: 0 0 auto;
+            font-size: 12.5px;
+            font-weight: 700;
+            color: var(--editor-text-muted);
+            white-space: nowrap;
+        }
+        .sc-modal-nav-row .editor-input,
+        .sc-modal-nav-row select { flex: 1 1 auto; min-width: 0; width: auto; }
+
+        /* На узком экране подпись уходит над полем — сама строка остаётся одна. */
+        @media (max-width: 560px) {
+            .sc-modal-field { flex-basis: 100%; max-width: none; }
+            .sc-modal-nav-row { flex-wrap: wrap; gap: 6px; }
+            .sc-modal-nav-label { white-space: normal; }
+            .sc-modal-nav-row .editor-input,
+            .sc-modal-nav-row select { flex-basis: 100%; }
+        }
+
+        /* Поля компонента внутри окна: та же сетка, но спокойнее — без
+           «парящих» теней и с подписями одного размера (как у вложенных полей). */
+        .editor-modal-body .editor-field {
+            padding: 10px 12px;
+            border-radius: 12px;
+            background: color-mix(in srgb, var(--editor-surface) 45%, transparent);
+            box-shadow: none;
+        }
+        .editor-modal-body .editor-field:hover { box-shadow: none; }
+        .editor-modal-body .editor-field > .editor-label,
+        .editor-modal-body .editor-field > label.editor-label {
+            font-size: 12.5px;
+            font-weight: 700;
+            color: var(--editor-text-muted);
+            margin-bottom: 4px;
+        }
+        .editor-modal-body .editor-help-text { font-size: 11.5px; margin-top: 4px; }
+
+        /* Карточка элемента списка внутри окна: та же «бумага», но без второго
+           тяжёлого каркаса — только разделитель под номером элемента. */
+        .editor-modal-body .editor-list-item {
+            background: color-mix(in srgb, var(--editor-surface) 55%, transparent);
+            box-shadow: none;
+        }
+        .editor-modal-body .editor-list-item > .flex:first-child {
+            margin-bottom: 0;
+            padding-bottom: 8px;
+            border-bottom: 1px dashed var(--editor-soft-border);
+        }
+        .editor-modal-body .editor-list-item > .flex:first-child > button {
+            margin-left: auto;
         }
 
         @media (max-width: 767px) {
+            #navigator{ max-height: 46dvh; }
+            #modal-content.scenario-modal-wide{ width: 100%; max-width: 100%; }
             .scenario-overview { padding: 0.7rem 0.8rem; }
             .scenario-overview-card { flex: 1 1 calc(50% - 0.65rem); min-width: 0; }
             .scenario-overview-card.is-wide { flex-basis: 100%; }
@@ -306,7 +384,7 @@
         #step-quick-popover .qp-logic{ margin-top:10px; }
     </style>
 </head>
-<body class="editor-theme font-sans text-slate-100" data-editor="scenario">
+<body class="editor-theme font-sans editor-text editor-page editor-page--app" data-editor="scenario" data-own-save-shortcut="1">
     <div id="scenario-top-chrome">
     <header id="scenario-header" class="editor-page-header editor-surface px-4 md:px-6 py-3 flex flex-row flex-wrap justify-between items-start gap-3">
         <div class="editor-page-title">
@@ -322,7 +400,7 @@
                 <button type="button" id="view-mode-list" class="is-active" role="tab" aria-selected="true" title="Список шагов">
                     <i class="fa-solid fa-list-ul"></i><span>Список</span>
                 </button>
-                <button type="button" id="view-mode-graph" role="tab" aria-selected="false" title="Граф (Blueprint)">
+                <button type="button" id="view-mode-graph" role="tab" aria-selected="false" title="Граф">
                     <i class="fa-solid fa-diagram-project"></i><span>Граф</span>
                 </button>
             </div>
@@ -338,7 +416,7 @@
                     <span class="thumb"></span>
                 </label>
             </div>
-            <label for="scenario-select" class="scenario-control-label text-sm font-medium text-slate-200">Сценарий:</label>
+            <label for="scenario-select" class="scenario-control-label text-sm font-medium editor-text">Сценарий:</label>
             <select id="scenario-select" title="Сценарий" class="form-input w-full sm:w-56 min-w-[130px] max-w-[210px]"></select>
             <button id="delete-scenario-btn" title="Удалить текущий сценарий" class="editor-btn editor-btn-danger">
                 <i class="fa-solid fa-trash-can"></i>
@@ -347,7 +425,7 @@
             <button id="preview-json-button" title="Предпросмотр JSON" class="editor-btn editor-btn-secondary flex items-center gap-2">
                 <i class="fa-solid fa-code"></i> JSON
             </button>
-            <button id="import-json-button" title="Импорт шагов из JSON текста" class="editor-btn editor-btn-secondary flex items-center gap-2">
+            <button id="import-json-button" title="Импорт шагов из JSON" class="editor-btn editor-btn-secondary flex items-center gap-2">
                 <i class="fa-solid fa-file-import"></i> Импорт
             </button>
             <button id="save-button" title="Сохранить текущий сценарий" class="editor-btn editor-btn-primary flex items-center gap-2">
@@ -365,9 +443,9 @@
 </div>
 
     <div class="main-container flex flex-col md:flex-row items-start">
-        <aside id="navigator" class="w-full md:w-[350px] editor-surface border-r border-slate-200/30 md:sticky overflow-y-auto flex-shrink-0 z-20">
-            <div class="navigator-header p-4 font-semibold border-b border-slate-200/30 editor-surface sticky top-0 z-10 flex justify-between items-center">
-                <span class="text-slate-100">Структура сценария</span>
+        <aside id="navigator" class="w-full md:w-[350px] editor-surface border-r editor-hairline md:sticky overflow-y-auto flex-shrink-0 z-20">
+            <div class="navigator-header p-4 font-semibold border-b editor-hairline editor-surface sticky top-0 z-10 flex justify-between items-center">
+                <span class="editor-text">Структура сценария</span>
                 <button id="add-group-btn" class="editor-btn editor-btn-primary text-sm" title="Создать новую группу">
                     <i class="fa-solid fa-plus"></i> <span>Группа</span>
                 </button>
@@ -420,7 +498,7 @@
     
     <svg id="connections-svg-container" class="fixed top-0 left-0 w-full h-full pointer-events-none z-10"></svg>
     
-    <div id="add-component-menu" class="hidden absolute z-[1000] editor-card border border-slate-300/40 shadow-lg rounded-lg p-2 w-80 flex flex-col gap-1"></div>
+    <div id="add-component-menu" class="hidden absolute z-[1000] editor-panel-card border editor-hairline shadow-lg rounded-lg p-2 w-80 flex flex-col gap-1"></div>
 
     <!-- Quick step settings popover (double-click on step header / node header) -->
     <div id="step-quick-popover">
@@ -435,22 +513,22 @@
                 <input type="number" id="qp-delay" class="form-input w-full text-sm" placeholder="0">
             </div>
         </div>
-        <label>Информация для игрока (msg_info)</label>
+        <label>Сообщение игроку</label>
         <input type="text" id="qp-msg" class="form-input w-full text-sm" placeholder="Например, 'Найдите выход'">
         <div class="qp-logic">
             <label>Логика завершения компонентов</label>
             <div class="logic-segmented" id="qp-logic" role="radiogroup">
-                <div class="logic-seg" data-logic="all_of" role="radio" tabindex="0" title="Все компоненты (AND)">
+                <div class="logic-seg" data-logic="all_of" role="radio" tabindex="0" title="Все компоненты должны завершиться">
                     <span class="seg-top"><i class="fa-solid fa-list-check"></i> Все</span>
-                    <span class="seg-hint">AND</span>
+                    <span class="seg-hint">все сразу</span>
                 </div>
-                <div class="logic-seg" data-logic="any_of" role="radio" tabindex="0" title="Любой компонент (OR)">
+                <div class="logic-seg" data-logic="any_of" role="radio" tabindex="0" title="Достаточно завершить любой компонент">
                     <span class="seg-top"><i class="fa-solid fa-code-branch"></i> Любой</span>
-                    <span class="seg-hint">OR</span>
+                    <span class="seg-hint">любой</span>
                 </div>
                 <div class="logic-seg" data-logic="sequential" role="radio" tabindex="0" title="По порядку">
                     <span class="seg-top"><i class="fa-solid fa-arrow-down-1-9"></i> Порядок</span>
-                    <span class="seg-hint">1·2·3</span>
+                    <span class="seg-hint">по шагам</span>
                 </div>
             </div>
         </div>
@@ -460,7 +538,7 @@
         <div class="editor-modal-content p-6 rounded-lg shadow-xl w-full max-w-4xl h-[80vh] flex flex-col">
             <h3 class="text-xl font-bold mb-4">Предпросмотр JSON</h3>
             <textarea id="json-preview-output" readonly class="w-full flex-grow p-3 rounded-md form-input font-mono text-sm resize-none"></textarea>
-            <div class="text-right mt-4 pt-3 border-t border-slate-200/30">
+            <div class="text-right mt-4 pt-3 border-t editor-hairline">
                 <button id="json-preview-copy" class="editor-btn editor-btn-secondary">Копировать</button>
                 <button id="json-preview-close" class="editor-btn editor-btn-primary ml-2">Закрыть</button>
             </div>
@@ -471,10 +549,10 @@
         <div class="editor-modal-content p-6 rounded-lg shadow-xl w-full max-w-4xl h-[80vh] flex flex-col gap-4">
             <div>
                 <h3 class="text-xl font-bold">Импорт шагов из JSON</h3>
-                <p class="text-sm text-slate-300 mt-1">Можно вставить массив шагов, объект сценария (<code>{"steps": [...]}</code>) или JSON события (<code>{"on_end": {"steps": [...]}}</code>).</p>
+                <p class="text-sm editor-muted-text mt-1">Можно вставить массив шагов, объект сценария (<code>{"steps": [...]}</code>) или JSON события (<code>{"on_end": {"steps": [...]}}</code>).</p>
             </div>
             <textarea id="json-import-input" class="w-full flex-grow p-3 rounded-md form-input font-mono text-sm resize-none" placeholder='[{"id":"step_1","components":[]}]'></textarea>
-            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-3 border-t border-slate-200/30">
+            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-3 border-t editor-hairline">
                 <label class="text-sm flex items-center gap-2">
                     Режим импорта:
                     <select id="json-import-mode" class="form-input">
@@ -492,66 +570,66 @@
 
     <!-- TEMPLATES -->
     <template id="step-card-template">
-        <div class="step-card editor-card rounded-lg border border-slate-200/30 shadow-md transition-all duration-200 relative z-10">
-            <div class="step-header flex justify-between items-center border-b border-slate-200/30 p-4">
-                <div class="title text-lg font-bold text-slate-100 flex items-center gap-3 flex-grow">
+        <div class="step-card editor-card rounded-lg border editor-hairline shadow-md transition-all duration-200 relative z-10">
+            <div class="step-header flex justify-between items-center border-b editor-hairline p-4">
+                <div class="title text-lg font-bold editor-text flex items-center gap-3 flex-grow">
                     <span class="drag-zone handle flex items-center gap-3 cursor-grab px-1 py-1" title="Перетащите, чтобы переместить шаг">
-                        <i class="fa-solid fa-grip-vertical text-slate-400"></i>
+                        <i class="fa-solid fa-grip-vertical editor-muted-text"></i>
                     </span>
                     <i class="fa-solid fa-chevron-down toggle-icon transition-transform cursor-pointer" title="Свернуть/развернуть"></i>
-                    <span class="text-slate-300">Шаг ID:</span>
+                    <span class="editor-muted-text">Шаг ID:</span>
                     <span class="step-id-display font-mono bg-blue-500/20 text-blue-100 text-sm font-medium px-2 py-1 rounded-md" title="Нажмите, чтобы переименовать"></span>
                 </div>
                 <div class="step-logic-badge ml-auto mr-2" data-logic="all_of" title="Логика завершения компонентов"></div>
-                <div class="step-delay-display hidden text-xs font-medium bg-slate-800/60 text-slate-200 px-2 py-1 rounded-md mr-4 items-center gap-1.5"></div>
+                <div class="step-delay-display hidden text-xs font-medium editor-soft editor-text px-2 py-1 rounded-md mr-4 items-center gap-1.5"></div>
                 <div class="controls-container flex items-center gap-1">
-                    <button class="control-btn duplicate-btn w-8 h-8 rounded-full text-slate-300 hover:bg-slate-700/40 hover:text-orange-300 transition-colors" title="Дублировать шаг"><i class="fa-regular fa-copy"></i></button>
-                    <button class="control-btn delete-btn w-8 h-8 rounded-full text-slate-300 hover:bg-slate-700/40 hover:text-red-300 transition-colors" title="Удалить шаг"><i class="fa-regular fa-trash-can"></i></button>
+                    <button class="control-btn duplicate-btn w-8 h-8 rounded-full editor-muted-text editor-hover editor-hover-warning transition-colors" title="Дублировать шаг"><i class="fa-regular fa-copy"></i></button>
+                    <button class="control-btn delete-btn w-8 h-8 rounded-full editor-muted-text editor-hover editor-hover-danger transition-colors" title="Удалить шаг"><i class="fa-regular fa-trash-can"></i></button>
                 </div>
             </div>
             <div class="step-body p-5 transition-all duration-300">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-medium text-slate-200 mb-1">ID Шага (уникальное, латиницей)</label>
+                        <label class="block text-sm font-medium editor-text mb-1">ID Шага (уникальное, латиницей)</label>
                         <input type="text" class="step-id-input editor-input form-input">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-slate-200 mb-1">Задержка (мс)</label>
+                        <label class="block text-sm font-medium editor-text mb-1">Задержка (мс)</label>
                         <input type="number" class="step-delay-input editor-input form-input" placeholder="0">
                     </div>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                     <div>
-                        <label class="block text-sm font-medium text-slate-200 mb-1">Информация для игрока (msg_info)</label>
+                        <label class="block text-sm font-medium editor-text mb-1">Сообщение игроку</label>
                         <input type="text" class="msg-info-input editor-input form-input" placeholder="Например, 'Найдите выход'">
                     </div>
                     <div class="logic-selector-wrap">
-                        <label class="block text-sm font-medium text-slate-200 mb-1">Логика завершения компонентов</label>
+                        <label class="block text-sm font-medium editor-text mb-1">Логика завершения компонентов</label>
                         <div class="logic-segmented" role="radiogroup" aria-label="Логика завершения компонентов">
                             <div class="logic-seg" data-logic="all_of" role="radio" tabindex="0" title="Все компоненты должны завершиться (AND)">
                                 <span class="seg-top"><i class="fa-solid fa-list-check"></i> Все</span>
-                                <span class="seg-hint">AND · all_of</span>
+                                <span class="seg-hint">все сразу</span>
                             </div>
                             <div class="logic-seg" data-logic="any_of" role="radio" tabindex="0" title="Достаточно любого компонента (OR)">
                                 <span class="seg-top"><i class="fa-solid fa-code-branch"></i> Любой</span>
-                                <span class="seg-hint">OR · any_of</span>
+                                <span class="seg-hint">любой</span>
                             </div>
                             <div class="logic-seg" data-logic="sequential" role="radio" tabindex="0" title="Компоненты выполняются по порядку">
                                 <span class="seg-top"><i class="fa-solid fa-arrow-down-1-9"></i> По порядку</span>
-                                <span class="seg-hint">1·2·3 · sequential</span>
+                                <span class="seg-hint">по шагам</span>
                             </div>
                         </div>
                         <select class="completion-logic-select hidden" aria-hidden="true" tabindex="-1">
-                            <option value="all_of">Все (all_of)</option>
-                            <option value="any_of">Любой (any_of)</option>
-                            <option value="sequential">Последовательно (sequential)</option>
+                            <option value="all_of">Все сразу</option>
+                            <option value="any_of">Любой</option>
+                            <option value="sequential">По порядку</option>
                         </select>
                     </div>
                 </div>
-                <div class="components-container mt-5 pt-5 border-t border-dashed border-slate-200/30">
-                    <h4 class="font-bold text-slate-100 mb-2">Компоненты</h4>
+                <div class="components-container mt-5 pt-5 border-t border-dashed editor-hairline">
+                    <h4 class="font-bold editor-text mb-2">Компоненты</h4>
                 </div>
-                <button class="add-button add-component-btn w-full mt-4 py-2 bg-slate-800/70 text-slate-100 font-semibold rounded-lg hover:bg-slate-700 transition-colors flex items-center justify-center gap-2">
+                <button class="add-button add-component-btn w-full mt-4 py-2 editor-soft editor-text font-semibold rounded-lg editor-hover transition-colors flex items-center justify-center gap-2">
                     <i class="fa-solid fa-puzzle-piece"></i> Добавить компонент
                 </button>
             </div>
@@ -559,18 +637,18 @@
     </template>
 
     <template id="component-item-template">
-        <div class="component-item editor-card border border-slate-200/30 p-3 rounded-md mb-2 flex justify-between items-center cursor-grab">
+        <div class="component-item editor-card border editor-hairline p-3 rounded-md mb-2 flex justify-between items-center cursor-grab">
             <div class="component-info flex-grow flex items-center gap-3">
-                <i class="component-icon text-slate-300 text-lg"></i>
+                <i class="component-icon editor-muted-text text-lg"></i>
                 <div class="component-text-wrapper">
-                    <div class="component-type text-sm font-bold uppercase text-slate-200"></div>
-                    <div class="component-summary text-sm text-slate-300 mt-0.5"></div>
+                    <div class="component-type text-sm font-bold uppercase editor-text"></div>
+                    <div class="component-summary text-sm editor-muted-text mt-0.5"></div>
                 </div>
             </div>
             <div class="controls-container flex items-center gap-1">
-                <button class="control-btn edit-btn w-8 h-8 rounded-full text-slate-300 hover:bg-slate-700/40 hover:text-blue-300 transition-colors" title="Редактировать"><i class="fa-solid fa-pencil"></i></button>
-                <button class="control-btn duplicate-btn w-8 h-8 rounded-full text-slate-300 hover:bg-slate-700/40 hover:text-orange-300 transition-colors" title="Дублировать"><i class="fa-regular fa-copy"></i></button>
-                <button class="control-btn delete-btn w-8 h-8 rounded-full text-slate-300 hover:bg-slate-700/40 hover:text-red-300 transition-colors" title="Удалить"><i class="fa-regular fa-trash-can"></i></button>
+                <button class="control-btn edit-btn w-8 h-8 rounded-full editor-muted-text editor-hover editor-hover-accent transition-colors" title="Редактировать"><i class="fa-solid fa-pencil"></i></button>
+                <button class="control-btn duplicate-btn w-8 h-8 rounded-full editor-muted-text editor-hover editor-hover-warning transition-colors" title="Дублировать"><i class="fa-regular fa-copy"></i></button>
+                <button class="control-btn delete-btn w-8 h-8 rounded-full editor-muted-text editor-hover editor-hover-danger transition-colors" title="Удалить"><i class="fa-regular fa-trash-can"></i></button>
             </div>
         </div>
     </template>
@@ -709,6 +787,7 @@
                     enabled: false,
                     initialized: false,
                     mode: null,
+                    worldId: null,
                     scenarioText: ""
                 };
                 this.dirty = EditorCore.Dirty?.create
@@ -810,8 +889,9 @@
                 const key = (e.key || '').toLowerCase();
                 const ctrl = e.ctrlKey || e.metaKey;
 
-                // Esc closes transient UI
+                // Esc closes transient UI (верхнее окно — первым)
                 if (key === 'escape') {
+                    if (this.isModalOpen()) { this.closeModal(); return; }
                     if (this.quickPopover?.element?.classList.contains('is-open')) { this.closeStepQuickPopover(); return; }
                     if (!this.addComponentMenu.element.classList.contains('hidden')) { this.hideAddComponentMenu(); return; }
                     if (this.viewMode === 'graph' && this.blueprint?.hasSelection?.()) { this.blueprint.clearSelection(); return; }
@@ -849,8 +929,14 @@
                     this.redo();
                 } else if (key === 's') {
                     e.preventDefault();
+                    // Открыта карточка компонента — Ctrl+S применяет её правки,
+                    // а не сохраняет сценарий целиком (иначе правки терялись).
+                    if (this.isModalOpen()) { this.saveModalChanges(); return; }
                     if (!this.embed.enabled) this.saveScenario();
                 }
+            }
+            isModalOpen() {
+                return !!this.modal?.backdrop && !this.modal.backdrop.classList.contains('hidden');
             }
             isTypingTarget(el) {
                 if (!el) return false;
@@ -1139,7 +1225,7 @@
                 for (const base of candidates) {
                     try {
                         const url = `${base}api.php?action=list`;
-                        const res = await fetch(url, { cache: 'no-store' });
+                        const res = await EditorCore.Http.text(url);
                         if (!res) continue;
                         // Accept any non-404 response; best is 200 OK with JSON.
                         if (res.status !== 404) {
@@ -1163,6 +1249,11 @@
                 const params = new URLSearchParams(window.location.search || '');
                 this.embed.enabled = params.get('embed') === '1';
                 this.embed.mode = params.get('mode') || null;
+                // Мир записи, из которой открыт сценарий: по нему компоненты
+                // открывают карту в «Местоположении».
+                const rawWorldId = params.get('world');
+                const parsedWorldId = rawWorldId === null || rawWorldId.trim() === '' ? NaN : Number(rawWorldId);
+                this.embed.worldId = Number.isSafeInteger(parsedWorldId) && parsedWorldId >= 0 ? parsedWorldId : null;
                 if (!this.embed.enabled) {
                     return;
                 }
@@ -1217,11 +1308,16 @@
                 }
 
                 window.addEventListener('message', (event) => {
+                    if (event.source !== window.parent || event.origin !== window.location.origin) return;
                     const msg = event.data || {};
                     if (msg?.type === 'scenario-editor:init') {
                         const payload = this.normalizeExternalScenarioData(msg.scenarioText);
                         this.embed.scenarioText = String(msg.scenarioText || '');
                         this.embed.mode = String(msg.mode || this.embed.mode || '').trim() || this.embed.mode;
+                        if (msg.worldId !== null && msg.worldId !== undefined && String(msg.worldId) !== '') {
+                            const incomingWorldId = Number(msg.worldId);
+                            if (Number.isSafeInteger(incomingWorldId) && incomingWorldId >= 0) this.embed.worldId = incomingWorldId;
+                        }
                         this.loadScenarioData(payload, 'embedded_scenario.json');
                         const forcedMode = this.embed.mode || payload?.scenario_mode || this.currentMode;
                         if (forcedMode) {
@@ -1234,7 +1330,7 @@
                 });
 
                 if (window.parent && window.parent !== window) {
-                    window.parent.postMessage({ type: 'scenario-editor:ready' }, '*');
+                    window.parent.postMessage({ type: 'scenario-editor:ready' }, window.location.origin);
                 }
             }
 
@@ -1245,7 +1341,7 @@
                         type: 'scenario-editor:apply',
                         scenarioText,
                         mode: this.currentMode || 'universal'
-                    }, '*');
+                    }, window.location.origin);
                 }
             }
 
@@ -1277,6 +1373,7 @@
                 this.deleteScenarioBtn.addEventListener('click', () => this.deleteScenario());
                 this.modal.saveButton.addEventListener('click', () => this.saveModalChanges());
                 this.modal.cancelButton.addEventListener('click', () => this.closeModal());
+                this.modal.backdrop?.querySelector('[data-modal-close]')?.addEventListener('click', () => this.closeModal());
                 this.modal.backdrop.addEventListener('click', (e) => { if (e.target === this.modal.backdrop) this.closeModal(); });
                 this.jsonPreviewModal.closeBtn?.addEventListener('click', () => this.closeJsonPreview());
                 this.jsonPreviewModal.copyBtn?.addEventListener('click', () => this.copyJsonPreview());
@@ -1445,7 +1542,7 @@
                     
                     if (!group.isDefault && group.steps.length > 0) {
                         const titleEl = document.createElement('h3');
-                        titleEl.className = 'text-center text-lg font-semibold text-slate-300 tracking-wider uppercase pt-4 pb-2 mb-4 border-b border-slate-200/30';
+                        titleEl.className = 'text-center text-lg font-semibold editor-muted-text tracking-wider uppercase pt-4 pb-2 mb-4 border-b editor-hairline';
                         titleEl.textContent = group.name;
                         groupWrapper.appendChild(titleEl);
                     }
@@ -1475,7 +1572,7 @@
 
                 // Render ungrouped steps
                 const ungroupedContainer = document.createElement('div');
-                ungroupedContainer.className = 'step-group bg-slate-700/70 p-4 rounded-xl border border-slate-800/80 space-y-8 relative z-0';
+                ungroupedContainer.className = 'step-group editor-soft p-4 rounded-xl border editor-hairline space-y-8 relative z-0';
                 ungroupedContainer.dataset.groupId = 'ungrouped';
                 
                 ungroupedSteps.forEach(stepId => {
@@ -1676,7 +1773,7 @@
             }
 
             renderEmptyState() {
-                this.editorContainer.innerHTML = `<div class="text-center p-20 my-5 max-w-3xl mx-auto border-2 border-dashed border-slate-200/30 rounded-xl"><i class="fa-solid fa-wand-magic-sparkles text-accent text-5xl mb-4"></i><h2 class="text-2xl font-bold text-slate-100">Сценарий пока пуст</h2><p class="text-slate-300 mt-2 mb-6">Начните творить, добавив первый шаг с помощью кнопки ниже.</p></div>`;
+                this.editorContainer.innerHTML = `<div class="text-center p-20 my-5 max-w-3xl mx-auto border-2 border-dashed editor-hairline rounded-xl"><i class="fa-solid fa-wand-magic-sparkles text-accent text-5xl mb-4"></i><h2 class="text-2xl font-bold editor-text">Сценарий пока пуст</h2><p class="editor-muted-text mt-2 mb-6">Начните творить, добавив первый шаг с помощью кнопки ниже.</p></div>`;
             }
 
             renderScenarioOverview(groups, ungroupedSteps) {
@@ -1822,7 +1919,7 @@
                 stepCard.dataset.stepId = id;
                 stepCard.querySelector('.step-id-display').textContent = id;
                 const body = stepCard.querySelector('.step-body');
-                body.innerHTML = `<h4 class="font-bold text-red-300">Ошибка рендеринга шага</h4><p class="text-sm text-red-200/90 mt-2">Этот шаг не удалось отобразить. Возможно, данные в файле сценария повреждены. <br><b>Сообщение:</b> ${error.message}</p><p class="text-xs mt-2 text-slate-300">Вы можете удалить этот шаг, чтобы исправить сценарий.</p>`;
+                body.innerHTML = `<h4 class="font-bold text-red-300">Ошибка рендеринга шага</h4><p class="text-sm text-red-200/90 mt-2">Этот шаг не удалось отобразить. Возможно, данные в файле сценария повреждены. <br><b>Сообщение:</b> ${error.message}</p><p class="text-xs mt-2 editor-muted-text">Вы можете удалить этот шаг, чтобы исправить сценарий.</p>`;
                 stepCard.querySelector('.duplicate-btn')?.remove();
                 return stepCard;
             }
@@ -1837,7 +1934,7 @@
                 item.querySelector('.component-type').textContent = info.name;
                 item.querySelector('.component-summary').innerHTML = this.getComponentSummary(component);
                 
-                const colorClass = { info: 'border-l-blue-500', interactive: 'border-l-orange-500', combat: 'border-l-red-500', camera: 'border-l-teal-500' }[info.class] || 'border-l-slate-500';
+                const colorClass = { info: 'border-l-blue-500', interactive: 'border-l-orange-500', combat: 'border-l-red-500', camera: 'border-l-teal-500' }[info.class] || 'editor-hairline-l';
                 item.classList.add('border-l-4', colorClass);
 
                 if (this.getCompletionLogic(step) === 'sequential' && (step.components || []).filter(Boolean).length > 1) {
@@ -1851,7 +1948,7 @@
                 if (this.executionTimeComponentTypes.has(component.type)) {
                     const delayWrapper = document.createElement('div');
                     delayWrapper.className = 'mt-2 flex items-center gap-2';
-                    delayWrapper.innerHTML = `<label class="text-xs font-medium text-slate-300">Время выполнения (мс):</label>
+                    delayWrapper.innerHTML = `<label class="text-xs font-medium editor-muted-text">Время выполнения (мс):</label>
                                             <input type="number" class="component-delay-input editor-input form-input w-24 text-sm" value="${component.execution_time || 0}">`;
                     item.querySelector('.component-text-wrapper').appendChild(delayWrapper);
                 }
@@ -1894,7 +1991,7 @@
 
             createNavGroupElement(group) {
                 const groupWrapper = document.createElement('div');
-                groupWrapper.className = 'nav-group-wrapper mb-2 bg-slate-600/50 rounded-lg p-1';
+                groupWrapper.className = 'nav-group-wrapper mb-2 editor-soft rounded-lg p-1';
                 groupWrapper.dataset.groupId = group.id;
 
                 const header = document.createElement('div');
@@ -1904,10 +2001,10 @@
                 titleWrapper.className = 'flex items-center gap-2';
 
                 const toggleIcon = document.createElement('i');
-                toggleIcon.className = `fa-solid fa-chevron-down text-slate-500 transition-transform duration-200 ${group.collapsed ? 'rotate-[-90deg]' : ''}`;
+                toggleIcon.className = `fa-solid fa-chevron-down editor-muted-text transition-transform duration-200 ${group.collapsed ? 'rotate-[-90deg]' : ''}`;
 
                 const title = document.createElement('span');
-                title.className = 'font-bold text-slate-100';
+                title.className = 'font-bold editor-text';
                 title.textContent = group.name;
                 if (!group.isDefault) {
                     title.contentEditable = true;
@@ -1922,7 +2019,7 @@
 
                     if (this.isKnownScenarioEvent(group.event_key)) {
                         const eventBadge = document.createElement('span');
-                        eventBadge.className = 'text-[11px] font-semibold px-2 py-0.5 rounded-full bg-indigo-500/25 text-indigo-100 border border-indigo-300/30';
+                        eventBadge.className = 'text-[11px] font-semibold px-2 py-0.5 rounded-full editor-primary-tint editor-primary-text border editor-primary-border';
                         eventBadge.textContent = '(Событие)';
                         eventBadge.title = `${group.event_key} · ${this.getGroupEventLabel(group.event_key)}`;
                         titleWrapper.appendChild(eventBadge);
@@ -1953,7 +2050,7 @@
                     controls.appendChild(eventSelect);
 
                     const copyBtn = document.createElement('button');
-                    copyBtn.className = 'text-slate-400 hover:text-orange-500 w-6 h-6 rounded flex items-center justify-center';
+                    copyBtn.className = 'editor-muted-text hover:text-orange-500 w-6 h-6 rounded flex items-center justify-center';
                     copyBtn.innerHTML = '<i class="fa-regular fa-copy"></i>';
                     copyBtn.title = 'Копировать группу';
                     copyBtn.onclick = (e) => {
@@ -1963,7 +2060,7 @@
                     controls.appendChild(copyBtn);
 
                     const deleteBtn = document.createElement('button');
-                    deleteBtn.className = 'text-slate-400 hover:text-red-500 w-6 h-6 rounded flex items-center justify-center';
+                    deleteBtn.className = 'editor-muted-text hover:text-red-500 w-6 h-6 rounded flex items-center justify-center';
                     deleteBtn.innerHTML = '<i class="fa-solid fa-times"></i>';
                     deleteBtn.title = 'Удалить группу';
                     deleteBtn.onclick = (e) => {
@@ -1992,16 +2089,16 @@
 
                 const nextStepInfo = ''; // Removed from navigator view
                 const componentCount = step.components?.length || 0;
-                const componentInfo = `<span class="text-xs font-normal text-slate-300">(${componentCount} комп.)</span>`;
+                const componentInfo = `<span class="text-xs font-normal editor-muted-text">(${componentCount} комп.)</span>`;
                 
-                stepLi.innerHTML = `<a href="#step-card-${step.id}" data-nav-id="${step.id}" class="flex items-center p-1.5 rounded-md border-b border-transparent hover:bg-slate-700/40"><i class="fa-solid fa-grip-vertical nav-handle text-slate-400 hover:text-slate-200 mr-2 cursor-grab"></i><div class="flex-grow flex justify-between items-center font-semibold text-slate-100 text-sm">
+                stepLi.innerHTML = `<a href="#step-card-${step.id}" data-nav-id="${step.id}" class="flex items-center p-1.5 rounded-md border-b border-transparent editor-hover"><i class="fa-solid fa-grip-vertical nav-handle editor-muted-text editor-hover-text mr-2 cursor-grab"></i><div class="flex-grow flex justify-between items-center font-semibold editor-text text-sm">
                                             <span class="flex items-center gap-2">${step.id || '<i>Без ID</i>'} ${componentInfo}</span>
                                             ${nextStepInfo}
                                         </div>
                                     </a>`;
                 
                 const compUl = document.createElement('ul');
-                compUl.className = 'nav-component-list pl-4 ml-3 border-l border-slate-200/30';
+                compUl.className = 'nav-component-list pl-4 ml-3 border-l editor-hairline';
                 compUl.dataset.parentStepId = step.id;
                 EditorCore.UI.applyEmptyStateClass(compUl, (step.components || []).length > 0, 'empty-drop-zone');
                 
@@ -2014,7 +2111,7 @@
                         const tag = link.label ? `${link.label}: ` : '';
                         return `<span class="text-[11px] font-normal text-purple-300 break-all text-right">${isBroken ? '⚠️' : '→'} ${tag}${link.targetId}</span>`;
                     }).join('');
-                    compLi.innerHTML = `<a href="#step-card-${step.id}" data-nav-id="${comp.component_id}" class="flex items-center p-1.5 rounded-md border-b border-transparent hover:bg-slate-700/40 text-xs"><i class="fa-solid fa-grip-vertical nav-handle text-slate-400 hover:text-slate-200 mr-2 cursor-grab"></i><div class="flex-grow min-w-0 flex justify-between items-start gap-2 text-slate-300">
+                    compLi.innerHTML = `<a href="#step-card-${step.id}" data-nav-id="${comp.component_id}" class="flex items-center p-1.5 rounded-md border-b border-transparent editor-hover text-xs"><i class="fa-solid fa-grip-vertical nav-handle editor-muted-text editor-hover-text mr-2 cursor-grab"></i><div class="flex-grow min-w-0 flex justify-between items-start gap-2 editor-muted-text">
                                                 <span class="break-all">↳ ${comp.type}</span>
                                                 ${linksText}
                                             </div>
@@ -2123,7 +2220,7 @@
                 newCard?.querySelector('.step-id-input')?.focus();
             }
 
-            handleDelete(stepId, componentId) {
+            async handleDelete(stepId, componentId) {
                 if (componentId) {
                     const step = this.findStep(stepId);
                     if (!step || !Array.isArray(step.components)) return;
@@ -2131,10 +2228,10 @@
                     if (!comp) return;
                     const info = this.componentTypes[comp.type] || this.allComponentTypes[comp.type];
                     const label = info?.name || comp.type || 'компонент';
-                    if (!confirm(`Удалить компонент «${label}»?`)) return;
+                    if (!await EditorCore.Page.confirm(`Удалить компонент «${label}»?`)) return;
                     step.components = step.components.filter(c => c && c.component_id !== componentId);
                 } else {
-                    if (!confirm(`Вы уверены, что хотите удалить шаг "${stepId}"?`)) return;
+                    if (!await EditorCore.Page.confirm(`Вы уверены, что хотите удалить шаг "${stepId}"?`)) return;
                     this.scenarioData.steps = this.scenarioData.steps.filter(s => s.id !== stepId);
                     this.removeStepFromViewState(stepId);
                 }
@@ -2199,6 +2296,8 @@
                 this.modal.context = { stepId, componentId, data: JSON.parse(JSON.stringify(component)) };
                 const componentInfo = this.componentTypes[component.type] || { name: component.type };
                 this.modal.title.textContent = `Редактирование: ${componentInfo.name}`;
+                const modalIcon = this.modal.backdrop?.querySelector('#modal-icon');
+                if (modalIcon) modalIcon.className = `editor-modal-icon ${componentInfo.icon || 'fa-solid fa-puzzle-piece'}`;
                 const modalContent = this.modal.backdrop?.querySelector('#modal-content');
                 modalContent?.classList.add('scenario-modal-wide');
                 this.setupModalDynamicFieldRefresh(step);
@@ -2208,7 +2307,15 @@
             }
 
             renderModalForm(data, step) {
-                this.modal.formContainer.innerHTML = this.buildModalForm(data, step);
+                // Форма перерисовывается после каждого добавления/удаления элемента
+                // списка: держим позицию прокрутки, иначе окно прыгает наверх.
+                const body = this.modal.formContainer;
+                // Мир записи для кнопки «Местоположение» у компонентов без поля мира.
+                if (Number.isSafeInteger(this.embed.worldId) && this.embed.worldId >= 0) body.dataset.mapWorldId = String(this.embed.worldId);
+                else delete body.dataset.mapWorldId;
+                const scrollTop = body.scrollTop;
+                body.innerHTML = this.buildModalForm(data, step);
+                if (scrollTop) body.scrollTop = scrollTop;
                 // IMPORTANT: modal content is dynamic. Re-run Core init so db_select, validation, toggles, etc. work.
                 Promise.resolve().then(() => window.EditorCore?.UIManager?.init?.(this.modal.formContainer));
             }
@@ -2374,16 +2481,57 @@
                 this.dirty.markDirty();
             }
 
+            /* Широкое поле: раскрывается на всю строку формы. */
+            isWideModalField(field) {
+                const type = String(field?.type || '').toLowerCase();
+                const uiType = String(field?.ui?.type || '').toLowerCase();
+                const format = String(field?.ui?.format || '').toLowerCase();
+                // Списки, многострочный текст и теги занимают всю строку.
+                if (type === 'list' || type === 'textarea' || format === 'textarea') return true;
+                return ['tags', 'multiselect', 'db_multiselect'].includes(uiType);
+            }
+
+            /* Ширина ячейки поля: числа и галочки узкие, выбор и текст средние,
+               списки и теги — на всю строку. Раньше это решалось двумя
+               фиксированными колонками, и короткое число растягивалось
+               на пол-экрана. */
+            modalFieldSize(field) {
+                const type = String(field?.type || '').toLowerCase();
+                const uiType = String(field?.ui?.type || '').toLowerCase();
+                if (this.isWideModalField(field)) return 'wide';
+                if (['number', 'boolean', 'toggle', 'date', 'time'].includes(type)) return 'narrow';
+                if (['select', 'multiselect'].includes(uiType)) return 'mid';
+                return 'mid';
+            }
+
             buildModalForm(data, step) {
                 const renderOptions = window.EditorCore.defaults.getFieldRenderOptions('scenario');
                 renderOptions.listAddLabel = 'Добавить элемент';
 
-                let formHtml = `<form onsubmit="return false;"><label class="${renderOptions.classes.label}">Переход к шагу (если нужно):</label>`;
-                const select = document.createElement('select');
-                select.name = 'next_step_id';
-                select.className = renderOptions.classes.input;
-                this.populateStepDropdown(select, data.next_step_id);
-                formHtml += select.outerHTML;
+                // Поля — ячейки .sc-modal-field с шириной по типу поля.
+                const fields = [];
+                const pushField = (html, size = 'mid') => {
+                    if (!html) return;
+                    const mod = size === 'mid' ? '' : ` sc-modal-field--${size}`;
+                    fields.push(`<div class="sc-modal-field${mod}">${html}</div>`);
+                };
+
+                // Переходы к шагам — всегда одна строка на поле: подпись слева,
+                // список шагов справа. Сверху формы, до остальных настроек.
+                const navRows = [];
+                const pushNavRow = (name, label, value, excludeStepId) => {
+                    const stepSelect = document.createElement('select');
+                    stepSelect.name = name;
+                    stepSelect.className = renderOptions.classes.input;
+                    this.populateStepDropdown(stepSelect, value, excludeStepId);
+                    navRows.push(
+                        `<div class="sc-modal-nav-row" data-field-path="${name}">` +
+                        `<label class="sc-modal-nav-label" for="sc-nav-${name}">${label}:</label>` +
+                        `${stepSelect.outerHTML.replace('<select ', `<select id="sc-nav-${name}" `)}` +
+                        `</div>`
+                    );
+                };
+                pushNavRow('next_step_id', 'Переход к шагу (если нужно)', data.next_step_id);
 
                 // Show execution time only for components where it is used by gameplay logic.
                 const shouldShowExecutionTime = this.executionTimeComponentTypes.has(data.type);
@@ -2392,37 +2540,35 @@
                 const componentLinkFields = Array.isArray(componentSchema.linkTargets) ? componentSchema.linkTargets : [];
                 const filteredFields = Object.fromEntries(Object.entries(componentFields).filter(([key]) => key !== 'next_step_id' && key !== 'delay' && !componentLinkFields.includes(key)));
 
+                // Ветки (TRUE/FALSE и подобные) — такие же строки переходов.
+                componentLinkFields.forEach((field) => {
+                    pushNavRow(field, this.formatLinkFieldLabel(field), data[field], step?.id);
+                });
+
                 if (shouldShowExecutionTime && !filteredFields.execution_time) {
                     const executionTimeField = { type: 'number', label: 'Время выполнения (мс)', ui: { min: 0, max: 600000 } };
-                    formHtml += window.EditorCore.FieldRenderer.renderField({ path: 'execution_time', field: executionTimeField, data, options: renderOptions });
+                    pushField(window.EditorCore.FieldRenderer.renderField({ path: 'execution_time', field: executionTimeField, data, options: renderOptions }), 'narrow');
                 }
 
-                componentLinkFields.forEach((field) => {
-                    const label = this.formatLinkFieldLabel(field);
-                    const stepSelect = document.createElement('select');
-                    stepSelect.name = field;
-                    stepSelect.className = renderOptions.classes.input;
-                    this.populateStepDropdown(stepSelect, data[field], step?.id);
-                    formHtml += `<label class="${renderOptions.classes.label}">${label}:</label>`;
-                    formHtml += stepSelect.outerHTML;
+                Object.entries(filteredFields).forEach(([path, field]) => {
+                    const html = window.EditorCore.FieldRenderer.renderField({
+                        path,
+                        field,
+                        data,
+                        options: renderOptions
+                    });
+                    pushField(html, this.modalFieldSize(field));
                 });
 
-                formHtml += `<hr class="my-5 border-slate-700/40">`;
-                formHtml += window.EditorCore.FieldRenderer.renderFields({
-                    fields: filteredFields,
-                    data,
-                    options: renderOptions
-                });
-                formHtml += `</form>`;
-
-                return formHtml;
+                const navHtml = navRows.length ? `<div class="sc-modal-nav">${navRows.join('')}</div>` : '';
+                return `<form class="sc-modal-form" onsubmit="return false;">${navHtml}<div class="sc-modal-fields">${fields.join('')}</div></form>`;
             }
 
             async loadScenarioList() {
                 try {
-                    const response = await fetch(this.apiUrl('action=list'));
-                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                    const data = await response.json();
+                    const response = await EditorCore.Http.json(this.apiUrl('action=list'));
+                    if (!response.ok) throw new Error(response.error || `HTTP ${response.status}`);
+                    const data = response.data || {};
                     if (data.success && data.files.length > 0) {
                         this.scenarioSelect.innerHTML = data.files.map(file => `<option value="${file}">${file}</option>`).join('');
                         await this.loadScenario(data.files[0]);
@@ -2434,9 +2580,9 @@
             async loadScenario(filename) {
                 if (!filename) return;
                 try {
-                    const response = await fetch(this.apiUrl(`file=${filename}`));
-                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                    const data = await response.json();
+                    const response = await EditorCore.Http.json(this.apiUrl(`file=${filename}`));
+                    if (!response.ok) throw new Error(response.error || `HTTP ${response.status}`);
+                    const data = response.data || {};
                     if (data.error) throw new Error(data.error);
                     this.loadScenarioData(data, filename);
                     this.showToast(`Сценарий "${filename}" загружен.`, 'success');
@@ -2822,9 +2968,9 @@
                 const contentToSave = this.buildScenarioContent();
                 
                 try {
-                    const response = await fetch(this.apiUrl(), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ filename, content: contentToSave }) });
-                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                    const result = await response.json();
+                    const response = await EditorCore.Http.json(this.apiUrl(), { method: 'POST', body: { filename, content: contentToSave } });
+                    if (!response.ok) throw new Error(response.error || `HTTP ${response.status}`);
+                    const result = response.data || {};
                     if (result.success) {
                         this.showToast(result.message, 'success');
                         const isNewFile = !Array.from(this.scenarioSelect.options).some(opt => opt.value === filename);
@@ -2845,12 +2991,12 @@
 
             async deleteScenario() {
                 const filename = this.scenarioSelect.value;
-                if (!filename || !confirm(`Вы уверены, что хотите удалить сценарий "${filename}"? Это действие необратимо.`)) return;
+                if (!filename || !await EditorCore.Page.confirm(`Вы уверены, что хотите удалить сценарий "${filename}"? Это действие необратимо.`)) return;
 
                 try {
-                    const response = await fetch(this.apiUrl(), { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'delete', filename }) });
-                    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-                    const result = await response.json();
+                    const response = await EditorCore.Http.json(this.apiUrl(), { method: 'POST', body: { action: 'delete', filename } });
+                    if (!response.ok) throw new Error(response.error || `HTTP ${response.status}`);
+                    const result = response.data || {};
                     if (result.success) {
                         this.showToast(result.message, 'success');
                         await this.resolveApiBase();
@@ -3446,6 +3592,9 @@
             initAllSortables() {
                 this.sortableInstances.forEach(s => s.destroy());
                 this.sortableInstances = [];
+                // Drag & drop is progressive enhancement: without Sortable (offline
+                // network, blocked CDN) the editor must still open and save.
+                if (typeof window.Sortable !== 'function') return;
 
                 const sortableConfig = (groupName, onEndCallback, handleClass, extra = {}) => ({
                     group: groupName,
@@ -3654,8 +3803,8 @@
                     return `${type} ${info.name} ${info.desc || ''}`.toLowerCase().includes(q);
                 });
                 const items = entries.map(([type, info]) =>
-                    `<div class="context-menu-item flex items-center gap-3 p-2 rounded-md hover:bg-slate-700/40 cursor-pointer" data-type="${type}"><i class="${info.icon} w-5 text-center text-slate-200"></i><div class="min-w-0"><div class="font-semibold text-slate-100">${info.name}</div><div class="text-xs text-slate-300 truncate">${info.desc || ''}</div></div></div>`
-                ).join('') || `<div class="px-2 py-4 text-sm text-slate-400 text-center">Ничего не найдено</div>`;
+                    `<div class="context-menu-item flex items-center gap-3 p-2 rounded-md editor-hover cursor-pointer" data-type="${type}"><i class="${info.icon} w-5 text-center editor-text"></i><div class="min-w-0"><div class="font-semibold editor-text">${info.name}</div><div class="text-xs editor-muted-text truncate">${info.desc || ''}</div></div></div>`
+                ).join('') || `<div class="px-2 py-4 text-sm editor-muted-text text-center">Ничего не найдено</div>`;
                 menu.innerHTML =
                     `<div class="acm-head sticky top-0 z-10 pb-2">
                         <input type="text" class="acm-search form-input w-full text-sm" placeholder="Поиск компонента…" autocomplete="off">

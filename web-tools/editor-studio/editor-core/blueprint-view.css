@@ -39,6 +39,7 @@ body.bp-mode #bp-canvas { display: block; }
   position: relative;
   width: 100%;
   height: calc(100vh - var(--scenario-top-h, 126px));
+  height: calc(100dvh - var(--scenario-top-h, 126px));
   overflow: hidden;
   background-color: var(--bp-bg);
   background-image:
@@ -621,7 +622,7 @@ body.bp-fullscreen #scenario-top-chrome,
 body.bp-fullscreen #navigator { display:none !important; }
 body.bp-fullscreen #editor-wrapper{ padding:0 !important; }
 body.bp-fullscreen #bp-canvas{
-  position:fixed; inset:0; width:100vw; height:100vh; z-index:200;
+  position:fixed; inset:0; height:100vh; height:100dvh; z-index:200;
 }
 body.bp-fullscreen .main-container{ display:block; }
 
@@ -793,3 +794,11 @@ body.bp-fullscreen #bp-minimap{ bottom:60px; }
 .bp-create-menu button:hover i{ color: #fff; }
 .bp-create-menu button[data-create="group"]:hover i{ color: var(--editor-accent, #72d6c0); }
 .bp-create-menu button[data-create="comment"]:hover i{ color: #ffcf5a; }
+
+/* Граф на телефоне: панель инструментов переносится, мини-карта меньше. */
+@media (max-width: 640px) {
+  .bp-toolbar { top: 10px; left: 10px; flex-wrap: wrap; max-width: calc(100% - 20px); gap: 4px; }
+  .bp-tool-btn { width: 32px; height: 32px; }
+  #bp-minimap { width: 150px; height: 104px; right: 10px; bottom: 48px; }
+  body.bp-fullscreen #bp-minimap { bottom: 54px; }
+}
