@@ -14,14 +14,9 @@
 (() => {
   if (window.EditorCore?.Page) return;
   const namespace = (window.EditorCore = window.EditorCore || {});
-  const ENTITIES = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
 
   /** Экранирование HTML. Данные из БД и от гостя проходят только через него. */
-  const escapeHtml = (value) => {
-    const shared = namespace.utils?.escapeHtml;
-    if (typeof shared === 'function') return shared(value ?? '');
-    return String(value ?? '').replace(/[&<>"']/g, (ch) => ENTITIES[ch]);
-  };
+  const escapeHtml = (value) => namespace.utils.escapeHtml(value ?? '');
 
   const i18n = () => namespace.I18n || null;
 
@@ -61,28 +56,11 @@
     return undefined;
   };
 
-  /** Троттлинг ввода. Общая реализация — в editor-core/utils.js. */
-  const debounce = (fn, delay = 200) => namespace.utils?.debounce
-    ? namespace.utils.debounce(fn, delay)
-    : (() => {
-      let timer = null;
-      return (...args) => {
-        clearTimeout(timer);
-        timer = setTimeout(() => fn(...args), delay);
-      };
-    })();
+  const debounce = (fn, delay = 200) => namespace.utils.debounce(fn, delay);
 
   const copyText = async (text) => {
-    if (typeof namespace.utils?.copyText === 'function') {
-      try { return await namespace.utils.copyText(text); } catch { return false; }
-    }
-    try {
-      if (typeof navigator.clipboard?.writeText !== 'function') return false;
-      await navigator.clipboard.writeText(String(text));
-      return true;
-    } catch {
-      return false;
-    }
+    try { return await namespace.utils.copyText(text); }
+    catch { return false; }
   };
 
   // ── Диалоги ───────────────────────────────────────────────────────────────

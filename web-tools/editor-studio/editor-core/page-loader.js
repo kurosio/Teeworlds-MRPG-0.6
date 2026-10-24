@@ -17,8 +17,11 @@
     '<script src="editor-core/tailwind-theme.js"></script>',
     // Сетевой слой подключается первым: им пользуются все остальные модули.
     '<script src="editor-core/http.js"></script>',
+    '<script src="editor-core/utils.js"></script>',
     '<script src="studio.manifest.js"></script>',
     '<script src="editor-core/guest-mode.js"></script>',
+    '<script src="editor-core/change-markers.js"></script>',
+    '<script src="editor-core/request-context.js"></script>',
     '<script src="editor-core/registry.js"></script>',
     '<script src="editor-core/core.js"></script>',
     '<script src="editor-core/field-renderer.js"></script>',
@@ -31,7 +34,6 @@
     '<script src="editor-core/ui.js"></script>',
     '<script src="editor-core/ui-manager.js"></script>',
     '<script src="editor-core/defaults.js"></script>',
-    '<script src="editor-core/utils.js"></script>',
     '<script src="editor-core/i18n-en.js"></script>',
     '<script src="editor-core/i18n.js"></script>',
     '<script src="editor-core/page-kit.js"></script>',
@@ -41,6 +43,7 @@
     // Окно «Местоположение» (карта мира) для любых координат X/Y.
     '<script src="editor-core/point-map.js"></script>',
     '<script src="editor-core/db-sync.js"></script>',
+    '<script src="editor-core/request-workbench.js"></script>',
     `<script>
       if (window.EditorCore?.bootstrapEditor) {
         window.EditorCoreBootstrap = window.EditorCore.bootstrapEditor();
@@ -117,7 +120,31 @@
     parent.appendChild(template.content.firstChild);
   };
 
+  const appendScript = (tag) => new Promise((resolve, reject) => {
+    const template = document.createElement('template');
+    template.innerHTML = tag.trim();
+    const source = template.content.firstChild;
+    const script = document.createElement('script');
+    for (const attr of source.attributes) script.setAttribute(attr.name, attr.value);
+    script.textContent = source.textContent;
+    if (!script.src) {
+      body.appendChild(script);
+      resolve();
+      return;
+    }
+    script.async = false;
+    script.addEventListener('load', resolve, { once: true });
+    script.addEventListener('error', () => reject(new Error(`Не удалось загрузить ${script.src}`)), { once: true });
+    body.appendChild(script);
+  });
+
+  const loadScripts = async () => {
+    // Dynamic scripts are async by default; awaiting each one preserves the
+    // same dependency order as the document.write path above.
+    for (const tag of scriptTags) await appendScript(tag);
+  };
+
   linkTags.forEach(tag => appendHtml(tag, head));
-  scriptTags.forEach(tag => appendHtml(tag, body));
+  loadScripts().catch(reportUnexpectedError);
   window.setTimeout(warnIfStylingMissing, 4000);
 })();

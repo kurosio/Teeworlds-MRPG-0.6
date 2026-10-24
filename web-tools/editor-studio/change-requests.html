@@ -33,6 +33,36 @@
     .cr-op-body { padding: 12px 14px; }
     .cr-op-title { font-weight: 600; line-height: 1.3; word-break: break-word; }
     .cr-op-meta { font-size: 12px; color: var(--editor-text-muted); margin-top: 2px; }
+    .cr-open-record { display: inline-flex; align-items: center; gap: 5px; color: var(--editor-primary); cursor: pointer; }
+    .cr-open-record:hover { text-decoration: underline; }
+    button.cr-open-record { font: inherit; }
+    .cr-op-actions { display: flex; align-items: center; gap: 7px; flex-wrap: wrap; justify-content: flex-end; }
+
+    .cr-workbench-open { overflow: hidden; }
+    .cr-workbench-modal { padding: 16px; }
+    .cr-workbench { width: min(1180px, 100%); max-height: calc(100vh - 32px); padding: 0; overflow: hidden; display: flex; flex-direction: column; }
+    .cr-workbench-head, .cr-workbench-foot { padding: 16px 18px; display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+    .cr-workbench-head { border-bottom: 1px solid var(--editor-line); }
+    .cr-workbench-foot { border-top: 1px solid var(--editor-line); background: var(--editor-surface); }
+    .cr-workbench > .cr-note { margin: 12px 18px 0; }
+    .cr-workbench-add { display: grid; grid-template-columns: minmax(170px, 1.5fr) minmax(130px, 1fr) 110px auto; gap: 8px; padding: 12px 18px; }
+    .cr-workbench-ops { overflow-y: auto; min-height: 120px; padding: 0 18px 18px; }
+    .cr-workbench-op { border: 1px solid var(--editor-line); border-radius: 12px; padding: 13px; background: var(--editor-soft-bg); }
+    .cr-workbench-op + .cr-workbench-op { margin-top: 12px; }
+    .cr-workbench-op-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
+    .cr-workbench-fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 310px), 1fr)); gap: 10px; }
+    .cr-workbench-field { min-width: 0; padding: 10px; border: 1px solid var(--editor-soft-border); border-radius: 10px; background: var(--editor-surface); }
+    .cr-workbench-field-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 7px; }
+    .cr-workbench-before { color: var(--editor-text-muted); font-size: 11px; margin-top: 3px; overflow-wrap: anywhere; }
+    .cr-workbench-add-field { display: flex; gap: 8px; margin-top: 10px; max-width: 360px; }
+    @media (max-width: 720px) {
+      .cr-workbench-modal { padding: 0; }
+      .cr-workbench { max-height: 100vh; height: 100vh; border-radius: 0; }
+      .cr-workbench-add { grid-template-columns: 1fr 1fr; }
+      .cr-workbench-add > button { grid-column: 1 / -1; }
+      .cr-workbench-head, .cr-workbench-foot { padding: 12px; }
+      .cr-workbench-ops { padding: 0 12px 12px; }
+    }
 
     .cr-chip { display: inline-flex; align-items: center; gap: 6px; padding: 2px 9px; border-radius: 999px; font-size: 11.5px; font-weight: 600; border: 1px solid var(--editor-soft-border-strong); white-space: nowrap; }
     .cr-chip--pending { color: var(--editor-warning); border-color: color-mix(in srgb, var(--editor-warning) 45%, transparent); background: color-mix(in srgb, var(--editor-warning) 10%, transparent); }
@@ -356,6 +386,19 @@
     const fmtDate = (iso) => Page.fmtDate(iso);
     const plural = Page.plural;
     const statusChip = (s) => `<span class="cr-chip cr-chip--${esc(s)}"><i class="fa-solid ${STATUS[s]?.icon || 'fa-circle'}"></i>${esc(STATUS[s]?.label || s)}</span>`;
+    const revisionChip = (r) => Number(r?.version) > 1
+      ? `<span class="cr-chip" title="Последняя правка состава запроса"><i class="fa-solid fa-pen-to-square"></i>v${Number(r.version)}${r.lastRevision?.by ? ` · ${esc(r.lastRevision.by)}` : ''}</span>` : '';
+    const editRequestButton = (r, admin = false) => r?.status === 'pending'
+      ? `<button type="button" class="editor-btn editor-btn-secondary" data-edit-request="${esc(r.id)}"><i class="fa-solid fa-pen-to-square"></i><span>${admin ? 'Править в редакторе' : 'Править запрос'}</span></button>` : '';
+    const openRequestInEditor = (r) => {
+      const op = r?.operations?.[0] || r?.analysis?.operations?.[0];
+      if (!op) return toast('В запросе нет операций для редактирования.', 'warning');
+      const analysisOp = r?.analysis?.operations?.find((entry) => entry.index === 0) || r?.analysis?.operations?.[0];
+      const record = op.type === 'create' ? op.tempId : op.id;
+      return EditorCore.RequestWorkbench.openEditor(op.resource, {
+        request: r.id, record, field: analysisOp?.changes?.[0]?.column || '', edit: 1,
+      });
+    };
 
     // ── Переписка по запросу ────────────────────────────────────────────────
     // Гость и администратор пишут в один диалог. Непрочитанные сообщения
@@ -467,12 +510,26 @@
     const valueHtml = (v) => (v === null || v === undefined ? '<span class="cr-null">NULL</span>' : v === '' ? '<span class="cr-null">пусто</span>' : `<span class="cr-val">${esc(v)}</span>`);
     const isLong = (v) => typeof v === 'string' && (v.includes('\n') || v.length > 120);
 
-    const renderChanges = (op) => {
+    const openRecordAttrs = (op, requestId, field = '', edit = false) => {
+      if (!requestId || !op?.resource) return '';
+      const record = op.type === 'create' ? op.tempId : op.id;
+      const href = EditorCore.RequestWorkbench.editorUrl(op.resource, { request: requestId, record, field, edit: edit ? 1 : '' });
+      if (!href || !record) return '';
+      return `href="${esc(href)}" data-open-record data-request="${esc(requestId)}" data-resource="${esc(op.resource)}" data-record="${esc(record)}" data-field="${esc(field)}"${edit ? ' data-request-edit="1"' : ''}`;
+    };
+    const fieldNameHtml = (op, requestId, column, edit = false) => {
+      const attrs = openRecordAttrs(op, requestId, column, edit);
+      return attrs
+        ? `<a class="cr-open-record cr-col" ${attrs} title="Открыть поле ${esc(column)} в редакторе">${esc(column)} <i class="fa-solid fa-arrow-up-right-from-square"></i></a>`
+        : `<span class="cr-col">${esc(column)}</span>`;
+    };
+
+    const renderChanges = (op, requestId = '', edit = false) => {
       const changes = op.changes || [];
       if (!changes.length) return '<div class="text-sm cr-muted">Нет изменённых полей.</div>';
 
       if (op.type === 'delete') {
-        const rows = changes.map(c => `<tr><td class="cr-col">${esc(c.column)}</td><td class="cr-before">${isLong(c.before) ? `<details class="cr-details"><summary>показать (${String(c.before).length} симв.)</summary><div class="cr-diff mt-1"><div class="cr-diff-line"><span></span><span>${esc(c.before)}</span></div></div></details>` : valueHtml(c.before)}${c.refBefore ? `<span class="cr-ref"><i class="fa-solid fa-link"></i> ${esc(c.refBefore)}</span>` : ''}</td></tr>`).join('');
+        const rows = changes.map(c => `<tr><td>${fieldNameHtml(op, requestId, c.column, edit)}</td><td class="cr-before">${isLong(c.before) ? `<details class="cr-details"><summary>показать (${String(c.before).length} симв.)</summary><div class="cr-diff mt-1"><div class="cr-diff-line"><span></span><span>${esc(c.before)}</span></div></div></details>` : valueHtml(c.before)}${c.refBefore ? `<span class="cr-ref"><i class="fa-solid fa-link"></i> ${esc(c.refBefore)}</span>` : ''}</td></tr>`).join('');
         return `<details class="cr-details"><summary><i class="fa-solid fa-chevron-right"></i> Удаляемые данные (${changes.length} ${plural(changes.length, 'поле', 'поля', 'полей')})</summary>
           <div class="cr-table-scroll"><table class="cr-changes mt-2"><thead><tr><th>Поле</th><th>Текущее значение</th></tr></thead><tbody>${rows}</tbody></table></div></details>`;
       }
@@ -483,14 +540,14 @@
       if (simple.length) {
         html += `<div class="cr-table-scroll"><table class="cr-changes"><thead><tr><th class="cr-col-field">Поле</th>${op.type === 'update' ? '<th>Было</th>' : ''}<th>${op.type === 'update' ? 'Станет' : 'Значение'}</th></tr></thead><tbody>`;
         html += simple.map(c => `<tr>
-          <td class="cr-col">${esc(c.column)}</td>
+          <td>${fieldNameHtml(op, requestId, c.column, edit)}</td>
           ${op.type === 'update' ? `<td class="cr-before">${valueHtml(c.before)}${c.refBefore ? `<span class="cr-ref"><i class="fa-solid fa-link"></i> ${esc(c.refBefore)}</span>` : ''}</td>` : ''}
           <td class="cr-after">${valueHtml(c.after)}${c.refAfter ? `<span class="cr-ref"><i class="fa-solid fa-link"></i> ${esc(c.refAfter)}</span>` : ''}</td>
         </tr>`).join('');
         html += '</tbody></table></div>';
       }
       for (const c of complex) {
-        html += `<div class="mt-3"><div class="text-xs mb-1"><span class="cr-col">${esc(c.column)}</span> <span class="cr-muted">${c.json ? 'JSON' : 'текст'} · ${op.type === 'update' ? 'изменения построчно' : 'значение'}</span></div>
+        html += `<div class="mt-3"><div class="text-xs mb-1">${fieldNameHtml(op, requestId, c.column, edit)} <span class="cr-muted">${c.json ? 'JSON' : 'текст'} · ${op.type === 'update' ? 'изменения построчно' : 'значение'}</span></div>
           ${op.type === 'update' ? renderDiff(c.before ?? '', c.after ?? '') : renderDiff('', c.after ?? '')}</div>`;
       }
       return html;
@@ -508,8 +565,11 @@
 
     const opIdText = (op) => (op.type === 'create' ? 'новая запись' : `#${op.id}`);
 
-    const renderOp = (op, { actionsHtml = '', extraNotes = [] } = {}) => {
+    const renderOp = (op, { actionsHtml = '', extraNotes = [], requestId = '', edit = false } = {}) => {
       const t = TYPE[op.type] || TYPE.update;
+      const recordAttrs = openRecordAttrs(op, requestId, '', edit);
+      const recordLink = recordAttrs
+        ? `<a class="editor-btn editor-btn-secondary editor-btn--sm cr-open-record" ${recordAttrs}><i class="fa-solid fa-arrow-up-right-from-square"></i><span>${op.type === 'create' ? 'Новая запись' : 'Открыть запись'}</span></a>` : '';
       return `<article class="cr-op cr-op--${esc(op.type)} ${op.error ? 'cr-op--error' : ''}">
         <div class="cr-op-head">
           <div class="cr-op-icon"><i class="fa-solid ${t.icon}"></i></div>
@@ -517,10 +577,9 @@
             <div class="cr-op-title">${esc(op.title || `${t.label}: ${op.resourceTitle}`)}</div>
             <div class="cr-op-meta">${esc(op.resourceTitle)} · <span class="cr-col">${esc(op.table)}</span> · ${esc(opIdText(op))}${op.noop ? ' · <b>без фактических изменений</b>' : ''}</div>
           </div>
-          <span class="cr-chip cr-chip--${esc(op.type)}">${esc(t.label)}</span>
-          ${actionsHtml}
+          <div class="cr-op-actions"><span class="cr-chip cr-chip--${esc(op.type)}">${esc(t.label)}</span>${recordLink}${actionsHtml}</div>
         </div>
-        <div class="cr-op-body">${renderChanges(op)}${renderNotes(op, extraNotes)}</div>
+        <div class="cr-op-body">${renderChanges(op, requestId, edit)}${renderNotes(op, extraNotes)}</div>
       </article>`;
     };
 
@@ -541,7 +600,7 @@
       <button type="button" class="cr-list-item ${active ? 'active' : ''}" data-id="${esc(r.id)}">
         <div class="flex items-center justify-between gap-2">
           <div class="font-semibold truncate">${admin ? `<i class="fa-solid fa-user mr-1 cr-muted"></i>${esc(r.nickname)}` : esc(fmtDate(r.createdAt))}</div>
-          <div class="flex items-center gap-2">${unreadPill(r.unread)}${statusChip(r.status)}</div>
+          <div class="flex items-center gap-2">${unreadPill(r.unread)}${revisionChip(r)}${statusChip(r.status)}</div>
         </div>
         ${admin && (r.guestName || r.guestLogin) ? `<div class="text-xs cr-muted mt-1"><i class="fa-solid fa-user-shield"></i> ${esc(r.guestName || r.guestLogin)}${r.guestLogin ? ` · @${esc(r.guestLogin)}` : ''}</div>` : ''}
         <div class="text-xs cr-muted mt-1" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${esc(r.message)}</div>
@@ -554,7 +613,7 @@
     // ═══════════════════════════════════════════════════════════════════
     // GUEST
     // ═══════════════════════════════════════════════════════════════════
-    const G = { config: null, analysis: null, analysisError: '', previewSeq: 0, mine: [], selected: null, tab: 'draft' };
+    const G = { config: null, analysis: null, analysisError: '', previewSeq: 0, mine: [], selected: null, detail: null, tab: 'draft' };
 
     const draftKeyOf = (o) => `${o.type}:${o.resource}:${o.type === 'create' ? o.tempId : o.id}`;
 
@@ -687,17 +746,19 @@
       const res = await api('get', { query: { id } });
       if (!res.ok) { box.innerHTML = `<div class="cr-note cr-note--danger"><i class="fa-solid fa-ban"></i><div>${esc(res.error)}</div></div>`; return; }
       const r = res.request;
+      G.detail = r;
       box.innerHTML = `
         <div class="flex items-start justify-between gap-3 flex-wrap">
           <div><div class="text-lg font-semibold">Запрос ${esc(r.id)}</div><div class="text-sm cr-muted">Отправлен ${esc(fmtDate(r.createdAt))} от <b>${esc(r.nickname)}</b></div></div>
-          <div class="flex gap-2 items-center">${statusChip(r.status)}
+          <div class="flex gap-2 items-center flex-wrap">${revisionChip(r)}${statusChip(r.status)}
+            ${editRequestButton(r)}
             ${r.status === 'pending' ? `<button type="button" class="editor-btn editor-btn-secondary" data-withdraw="${esc(r.id)}"><i class="fa-solid fa-rotate-left"></i><span>Отозвать</span></button>` : ''}</div>
         </div>
         ${r.review ? `<div class="cr-note ${r.status === 'approved' ? 'cr-note--ok' : 'cr-note--danger'} mt-3"><i class="fa-solid ${r.status === 'approved' ? 'fa-circle-check' : 'fa-circle-xmark'}"></i><div><b>Решение администратора</b> · ${esc(fmtDate(r.review.at))}${r.review.comment ? `<div class="mt-1" style="white-space:pre-wrap">${esc(r.review.comment)}</div>` : ''}</div></div>` : ''}
         <div class="mt-4 cr-field-label">Ваше описание</div>
         <div class="cr-message">${esc(r.message)}</div>
         <div class="cr-summary mt-4">${renderSummary(r.analysis?.summary)}</div>
-        <div class="mt-4">${(r.analysis?.operations || []).map(op => renderOp(op)).join('')}</div>
+        <div class="mt-4">${(r.analysis?.operations || []).map(op => renderOp(op, { requestId: r.id })).join('')}</div>
         ${threadBlockHtml(r.messages || [], false, 'Написать администратору…')}`;
       bindThread(box, r.id, false, () => showMineDetail(r.id));
     };
@@ -752,6 +813,18 @@
       });
       $('g-mine-list').addEventListener('click', (e) => { const b = e.target.closest('[data-id]'); if (b) showMineDetail(b.dataset.id); });
       $('g-mine-detail').addEventListener('click', async (e) => {
+        const edit = e.target.closest('[data-edit-request]');
+        if (edit && G.detail) {
+          EditorCore.RequestWorkbench.open(G.detail, {
+            config: G.config,
+            onSaved: async (revised) => {
+              Guest.Draft.replaceRequest(revised);
+              await Promise.all([showMineDetail(revised.id), loadMine(), Guest.loadConfig(true)]);
+              G.config = Guest.config();
+            },
+          });
+          return;
+        }
         const b = e.target.closest('[data-withdraw]');
         if (!b || !await EditorCore.Page.confirm('Отозвать запрос? Администратор больше не увидит его в очереди.')) return;
         const res = await api('withdraw', { method: 'POST', body: { id: b.dataset.withdraw } });
@@ -800,10 +873,11 @@
       // Keep local "in request" markers in sync with the administrator's decisions.
       const reconcile = async () => {
         const res = await Guest.syncSubmitted({ silent: false });
-        if (res?.resolved?.length) {
+        if (res?.resolved?.length || res?.revised?.length) {
           renderGuestDraft();
           loadMine();
-          toast(`Статус запросов обновлён: ${res.resolved.length}`, 'info');
+          if (res?.revised?.length && G.selected && G.tab === 'mine') showMineDetail(G.selected);
+          if (res?.resolved?.length) toast(`Статус запросов обновлён: ${res.resolved.length}`, 'info');
         }
       };
       await reconcile();
@@ -817,7 +891,14 @@
 
       renderGuestDraft();
       runPreview();
-      loadMine();
+      const requested = new URLSearchParams(location.search).get('request');
+      if (requested) {
+        G.selected = requested;
+        setGuestTab('mine');
+        await showMineDetail(requested);
+      } else {
+        loadMine();
+      }
     };
 
     // ═══════════════════════════════════════════════════════════════════
@@ -833,7 +914,7 @@
       $('a-list').innerHTML = A.rows.length
         ? A.rows.map(r => listItemHtml(r, r.id === A.selected, true)).join('')
         : `<div class="cr-empty"><i class="fa-regular fa-folder-open"></i>${A.status === 'pending' ? 'Нет запросов, ожидающих решения.' : 'Ничего не найдено.'}</div>`;
-      window.parent?.postMessage({ type: 'editor-shell:requests-changed' }, '*');
+      EditorCore.Http.postMessage(window.parent, { type: 'editor-shell:requests-changed' });
     };
 
     const renderAdminDetail = () => {
@@ -854,7 +935,8 @@
             <div class="text-sm cr-muted">${esc(fmtDate(r.createdAt))}</div>
           </div>
           <div class="flex gap-2 items-center flex-wrap">
-            ${statusChip(r.status)}
+            ${revisionChip(r)}${statusChip(r.status)}
+            ${editRequestButton(r, true)}
             ${pending ? `
               <button type="button" class="editor-btn editor-btn-primary" data-act="approve"><i class="fa-solid fa-check"></i><span>Принять и применить</span></button>
               <button type="button" class="editor-btn editor-btn-secondary" data-act="reject"><i class="fa-solid fa-xmark"></i><span>Отклонить</span></button>` : ''}
@@ -897,7 +979,7 @@
           const c = conflictByIndex.get(idx);
           const extra = c && A.view === 'live' ? [{ severity: 'warning', text: 'Конфликт: ' + c.text }] : [];
           if (op.noop && pending && A.view === 'live') extra.push({ severity: 'info', text: 'Эти значения уже совпадают с текущими в БД.' });
-          return renderOp(op, { extraNotes: extra });
+          return renderOp(op, { extraNotes: extra, requestId: r.id, edit: pending });
         }).join('') || '<div class="cr-muted">Нет данных анализа.</div>'}</div>
         ${threadBlockHtml(r.messages || [], true, 'Написать гостю…')}`;
       bindThread(box, r.id, true, async () => {
@@ -970,11 +1052,17 @@
       const btn = $('review-confirm');
       btn.disabled = true;
       $('review-status').innerHTML = '<span class="cr-muted"><i class="fa-solid fa-spinner fa-spin"></i> Выполняется…</span>';
-      const body = { id: r.id, comment: $('review-comment').value };
+      const body = { id: r.id, version: r.version, comment: $('review-comment').value };
       if (reviewMode === 'approve') body.force = reviewForce;
       const res = await api(reviewMode, { method: 'POST', body });
       btn.disabled = false;
       if (!res.ok) {
+        if (res.code === 'version_conflict' && reviewMode === 'approve') {
+          closeReview();
+          await Promise.all([loadAdminList(), showAdminDetail(r.id)]);
+          toast('Запрос изменился. Загружена последняя версия — проверьте её перед принятием.', 'warning');
+          return;
+        }
         if (res.status === 409 && Array.isArray(res.conflicts) && reviewMode === 'approve') {
           openReview('approve', res.conflicts);
           $('review-status').innerHTML = `<span class="editor-tone-warning">${esc(res.error)}</span>`;
@@ -989,7 +1077,7 @@
         recordSync(res.applied);
         toast(`Запрос применён: ${res.applied?.length || 0} ${plural(res.applied?.length || 0, 'операция', 'операции', 'операций')}${res.skipped?.length ? `, пропущено ${res.skipped.length}` : ''}`, 'success');
         // The database changed: the editor in the shell must not keep stale rows.
-        window.parent?.postMessage({ type: 'editor-shell:reload-editor' }, '*');
+        EditorCore.Http.postMessage(window.parent, { type: 'editor-shell:reload-editor' });
       } else {
         toast('Запрос отклонён', 'success');
       }
@@ -1023,7 +1111,7 @@
       $('btn-guest-settings').classList.remove('cr-hidden');
       $('btn-guests').classList.remove('cr-hidden');
       $('btn-guests').addEventListener('click', () => {
-        if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'editor-shell:open-editor', key: 'guests' }, '*');
+        if (window.parent && window.parent !== window) EditorCore.Http.postMessage(window.parent, { type: 'editor-shell:open-editor', key: 'guests' });
         else location.href = 'guests-editor.html';
       });
 
@@ -1043,6 +1131,11 @@
       $('a-detail').addEventListener('click', async (e) => {
         const v = e.target.closest('[data-view]');
         if (v) { A.view = v.dataset.view; renderAdminDetail(); return; }
+        const edit = e.target.closest('[data-edit-request]');
+        if (edit && A.detail) {
+          openRequestInEditor(A.detail);
+          return;
+        }
         const b = e.target.closest('[data-act]');
         if (!b || !A.detail) return;
         if (b.dataset.act === 'approve') openReview('approve', A.detail.conflicts || []);
@@ -1062,7 +1155,7 @@
       ['s-enabled', 's-remote'].forEach(id => $(id).addEventListener('change', () => { $(`${id}-toggle`).dataset.checked = $(id).checked ? '1' : '0'; }));
       $('s-open-guests')?.addEventListener('click', () => {
         closeSettings();
-        if (window.parent && window.parent !== window) window.parent.postMessage({ type: 'editor-shell:open-editor', key: 'guests' }, '*');
+        if (window.parent && window.parent !== window) EditorCore.Http.postMessage(window.parent, { type: 'editor-shell:open-editor', key: 'guests' });
         else location.href = 'guests-editor.html';
       });
       $('s-save').addEventListener('click', async () => {
@@ -1083,7 +1176,9 @@
       $('btn-refresh').addEventListener('click', async () => { await loadAdminList(); if (A.selected) showAdminDetail(A.selected); });
 
       await loadAdminList();
-      if (A.rows[0]) showAdminDetail(A.rows[0].id);
+      const requested = new URLSearchParams(location.search).get('request');
+      if (requested) await showAdminDetail(requested);
+      else if (A.rows[0]) showAdminDetail(A.rows[0].id);
 
       // Пока страница открыта, подтягиваем новые сообщения (гость может ответить).
       setInterval(() => {
@@ -1095,6 +1190,20 @@
       });
     };
 
+    // Record/field links work as ordinary URLs in a standalone tab and as
+    // navigation commands inside the Studio shell.
+    document.addEventListener('click', (event) => {
+      const link = event.target.closest('[data-open-record]');
+      if (!link || !window.parent || window.parent === window) return;
+      event.preventDefault();
+      EditorCore.RequestWorkbench.openEditor(link.dataset.resource, {
+        request: link.dataset.request,
+        record: link.dataset.record,
+        field: link.dataset.field,
+        edit: link.dataset.requestEdit || '',
+      });
+    });
+
     // ── Entry ─────────────────────────────────────────────────────────
     Guest.ready().then((role) => {
       $('view-loading').classList.add('cr-hidden');
@@ -1102,7 +1211,7 @@
       if (role === 'admin') return initAdmin();
       $('view-denied').classList.remove('cr-hidden');
       $('page-sub').textContent = '';
-      window.top?.postMessage({ type: 'editor-shell:auth-required' }, '*');
+      EditorCore.Http.postMessage(window.top, { type: 'editor-shell:auth-required' });
     });
   })();
   </script>

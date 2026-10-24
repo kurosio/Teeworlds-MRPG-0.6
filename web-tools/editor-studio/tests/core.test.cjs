@@ -24,6 +24,26 @@ test('HTTP status cannot be overwritten by payload fields', async () => {
   assert.equal(result.ok, false);
   assert.equal(result.status, 403);
 });
+test('shell messaging is pinned to the expected origin and source', () => {
+  const window = { location: { origin: 'https://editor.test' } };
+  const api = http(async () => reply('{}'), { window });
+  const target = { messages: [], postMessage(data, origin) { this.messages.push({ data, origin }); } };
+  const message = { type: 'editor-shell:test' };
+  assert.equal(api.postMessage(target, message), true);
+  assert.deepEqual(target.messages, [{ data: message, origin: 'https://editor.test' }]);
+  assert.equal(api.isSameOriginMessage({ origin: 'https://editor.test', source: target }, target), true);
+  assert.equal(api.isSameOriginMessage({ origin: 'https://attacker.test', source: target }, target), false);
+  assert.equal(api.isSameOriginMessage({ origin: 'https://editor.test', source: {} }, target), false);
+  window.messages = [];
+  window.postMessage = (data, origin) => window.messages.push({ data, origin });
+  assert.equal(api.postMessage(window, { type: 'editor-shell:auth-required' }), true);
+  assert.equal(window.messages[0].origin, 'https://editor.test');
+
+  const opaque = http(async () => reply('{}'), { window: { location: { origin: 'null' } } });
+  assert.equal(opaque.postMessage(target, message), false);
+  assert.equal(opaque.isSameOriginMessage({ origin: 'null', source: target }, target), false);
+  assert.equal(target.messages.length, 1);
+});
 test('invalid response and request serialization errors do not escape json()', async () => {
   const api = http(async () => reply('<html>error</html>'));
   assert.equal((await api.json('/api')).ok, false);
@@ -133,6 +153,283 @@ test('read-only sync_map is not guarded as a JSON POST write', () => {
   for (const action of ['save_target', 'set_as_target', 'apply_operations', 'pull_from_target']) {
     assert.ok(guarded.includes(`'${action}'`));
   }
+});
+
+test('shared form paths repair containers and block prototype pollution', () => {
+  const context = vm.createContext({ window: {}, console });
+  vm.runInContext(source('utils.js'), context);
+  const utils = context.window.EditorCore.utils;
+  const model = { profile: 'old' };
+  utils.setAtPath(model, 'profile.name', 'Tee');
+  utils.setAtPath(model, 'items.0.id', 42);
+  assert.equal(model.profile.name, 'Tee');
+  assert.ok(Array.isArray(model.items));
+  assert.equal(utils.getAtPath(model, 'items.0.id'), 42);
+  utils.setAtPath(model, '__proto__.polluted', true);
+  utils.setAtPath(model, 'constructor.prototype.polluted', true);
+  assert.equal({}.polluted, undefined);
+});
+
+test('request cache de-duplicates work, bounds memory and rejects stale writes', async () => {
+  const context = vm.createContext({ window: {}, console });
+  vm.runInContext(source('utils.js'), context);
+  const utils = context.window.EditorCore.utils;
+  let calls = 0;
+  const cache = utils.createRequestCache({ ttl: 1000, max: 2 });
+  const loader = async () => ({ ok: true, value: ++calls });
+  const [first, second] = await Promise.all([cache.load('a', loader), cache.load('a', loader)]);
+  assert.equal(calls, 1);
+  assert.equal(first, second);
+  assert.equal((await cache.load('a', loader)).value, 1);
+  await cache.load('b', loader);
+  await cache.load('c', loader);
+  assert.equal(cache.size(), 2);
+
+  let finishOld;
+  const oldRequest = cache.load('key', () => new Promise(resolve => { finishOld = resolve; }));
+  await Promise.resolve();
+  cache.clear();
+  await cache.load('key', async () => 'fresh');
+  finishOld('stale');
+  assert.equal(await oldRequest, 'stale');
+  assert.equal(cache.get('key'), 'fresh');
+});
+
+test('guest draft snapshots stay isolated and failed storage writes do not mutate cache', () => {
+  const draftKey = 'editorStudio.guestDraft.v2:a1';
+  const seed = {
+    v: 2, accountId: 'a1', nextTemp: 2000000001,
+    ops: [{ uid: 'op-1', type: 'update', resource: 'mobs', id: 7,
+      data: { Name: 'Original', Meta: { Rank: 1 } }, label: 'Mob', ts: 1, reqId: null }],
+  };
+  let failWrites = true;
+  const local = new Map([[draftKey, JSON.stringify(seed)]]);
+  const localStorage = {
+    getItem: key => local.get(key) ?? null,
+    setItem(key, value) {
+      if (key === draftKey && failWrites) throw new Error('quota');
+      local.set(key, String(value));
+    },
+    removeItem: key => local.delete(key),
+  };
+  const session = new Map([
+    ['editorStudio.role', 'guest'],
+    ['editorStudio.guestAccount', JSON.stringify({ id: 'a1', login: 'guest', pages: [] })],
+  ]);
+  const sessionStorage = {
+    getItem: key => session.get(key) ?? null,
+    setItem: (key, value) => session.set(key, String(value)),
+    removeItem: key => session.delete(key),
+  };
+  const location = { pathname: '/index.html', search: '' };
+  const window = {
+    location, parent: null,
+    addEventListener() {}, dispatchEvent() {},
+    EditorCore: { Http: { postMessage: () => true } },
+  };
+  window.parent = window;
+  const context = vm.createContext({ window, location, document: {}, localStorage, sessionStorage, console });
+  vm.runInContext(source('utils.js'), context);
+  vm.runInContext(source('guest-mode.js'), context);
+  const draft = context.window.EditorCore.Guest.Draft;
+
+  const snapshot = draft.get();
+  snapshot.ops[0].data.Name = 'External';
+  assert.equal(draft.get().ops[0].data.Name, 'Original');
+  const operations = draft.toOperations();
+  operations[0].data.Meta.Rank = 99;
+  assert.equal(draft.get().ops[0].data.Meta.Rank, 1);
+  const fields = draft.pendingFields('mobs', 7);
+  fields.Meta.value.Rank = 77;
+  assert.equal(draft.get().ops[0].data.Meta.Rank, 1);
+
+  assert.throws(() => draft.removeOp('op-1'), /Не удалось сохранить черновик/);
+  assert.equal(draft.count(), 1);
+  assert.equal(JSON.parse(local.get(draftKey)).ops.length, 1);
+
+  failWrites = false;
+  draft.removeOp('op-1');
+  assert.equal(draft.count(), 0);
+  assert.equal(JSON.parse(local.get(draftKey)).ops.length, 0);
+});
+
+test('DB combo portals and global listeners exist only while open', async () => {
+  const element = (tag = 'div') => {
+    const node = {
+      tag, children: [], dataset: {}, style: {}, listeners: {}, className: '',
+      value: '', disabled: false, parentNode: null, isConnected: true,
+      classList: {
+        add(...names) {
+          const values = new Set(node.className.split(/\s+/).filter(Boolean));
+          names.forEach(name => values.add(name));
+          node.className = [...values].join(' ');
+        },
+        remove(...names) {
+          const removed = new Set(names);
+          node.className = node.className.split(/\s+/).filter(name => name && !removed.has(name)).join(' ');
+        },
+        contains(name) { return node.className.split(/\s+/).includes(name); },
+      },
+      setAttribute() {},
+      addEventListener(type, fn) { (node.listeners[type] ||= []).push(fn); },
+      removeEventListener(type, fn) {
+        node.listeners[type] = (node.listeners[type] || []).filter(handler => handler !== fn);
+      },
+      emit(type, event = {}) {
+        for (const handler of [...(node.listeners[type] || [])]) handler({ target: node, ...event });
+      },
+      appendChild(child) {
+        if (child.isFragment) {
+          for (const item of child.children) node.appendChild(item);
+          child.children = [];
+          return child;
+        }
+        child.parentNode = node;
+        node.children.push(child);
+        return child;
+      },
+      replaceChildren(...children) { node.children = []; children.forEach(child => node.appendChild(child)); },
+      querySelectorAll(selector) {
+        return selector === '.editor-dbcombo-option'
+          ? node.children.filter(child => child.classList.contains('editor-dbcombo-option')) : [];
+      },
+      querySelector() { return null; },
+      contains(other) { return other === node || node.children.includes(other); },
+      getBoundingClientRect() { return { left: 10, right: 110, top: 20, bottom: 40, width: 100 }; },
+      remove() {
+        if (!node.parentNode) return;
+        node.parentNode.children = node.parentNode.children.filter(child => child !== node);
+        node.parentNode = null;
+      },
+    };
+    return node;
+  };
+  const body = element('body');
+  const document = element('document');
+  Object.assign(document, {
+    body, documentElement: { clientWidth: 800, clientHeight: 600 }, activeElement: null,
+    createElement: tag => element(tag),
+    createDocumentFragment: () => Object.assign(element('fragment'), { isFragment: true }),
+  });
+  const window = element('window');
+  Object.assign(window, { innerWidth: 800, innerHeight: 600, EditorCore: {} });
+  const context = vm.createContext({ window, document, console, AbortController, setTimeout, clearTimeout });
+  vm.runInContext(source('utils.js'), context);
+  vm.runInContext(source('db.js'), context);
+
+  const input = element('input');
+  const bound = element('input');
+  bound.value = '0';
+  const local = element('div');
+  local.className = 'editor-dbcombo-dropdown';
+  const combo = element('div');
+  combo.dataset.datasource = 'mobs';
+  combo.appendChild(input);
+  combo.appendChild(local);
+  combo.querySelector = selector => selector === '.editor-dbcombo-input' ? input
+    : selector === '.editor-dbcombo-dropdown' ? local
+      : selector === 'input[data-path]' ? bound : null;
+  const root = {
+    querySelectorAll: selector => selector === '.editor-dbcombo[data-datasource]' ? [combo] : [],
+    querySelector: () => null,
+  };
+  const db = context.window.EditorCore.DB;
+  db.list = async () => ({ ok: true, items: [{ value: 1, label: 'One' }, { value: 2, label: 'Two' }] });
+  await db.init(root);
+  assert.equal(body.children.length, 0);
+
+  input.emit('focus');
+  assert.equal(body.children.length, 1);
+  const portal = body.children[0];
+  assert.equal(portal.classList.contains('open'), true);
+  await new Promise(resolve => setTimeout(resolve, 180));
+  assert.equal(portal.children.length, 2);
+  assert.equal((window.listeners.resize || []).length, 1);
+  assert.equal((document.listeners.mousedown || []).length, 1);
+
+  input.emit('keydown', { key: 'Escape' });
+  assert.equal(body.children.length, 0);
+  assert.equal((window.listeners.resize || []).length, 0);
+  assert.equal((window.listeners.scroll || []).length, 0);
+  assert.equal((document.listeners.mousedown || []).length, 0);
+
+  input.emit('focus');
+  assert.equal(body.children.length, 1);
+  input.emit('keydown', { key: 'Escape' });
+  assert.equal(body.children.length, 0);
+});
+
+test('dynamic page loader awaits every dependency and runs inline bootstrap last', async () => {
+  const loaderSource = source('page-loader.js');
+  const expected = [...loaderSource.matchAll(/'<script src="([^"]+)"><\/script>'/g)].map(match => match[1]);
+  const executions = [];
+  let bootstrapDone;
+  let timeout;
+  const done = new Promise((resolve, reject) => {
+    bootstrapDone = () => { clearTimeout(timeout); resolve(); };
+    timeout = setTimeout(() => reject(new Error('inline bootstrap was not executed')), 2000);
+  });
+  const parseAttributes = text => [...text.matchAll(/([\w-]+)(?:="([^"]*)")?/g)]
+    .map(match => ({ name: match[1], value: match[2] || '' }));
+  const head = { appendChild() {} };
+  let context;
+  const body = {
+    appendChild(script) {
+      if (!script.src) {
+        executions.push('inline');
+        vm.runInContext(script.textContent, context);
+        return;
+      }
+      executions.push(`start:${script.src}`);
+      setTimeout(() => {
+        executions.push(`load:${script.src}`);
+        script.listeners.load?.();
+      }, 0);
+    },
+  };
+  const document = {
+    readyState: 'interactive', head, body,
+    createElement(tag) {
+      if (tag === 'template') {
+        return {
+          content: { firstChild: null },
+          set innerHTML(html) {
+            const script = html.match(/^<script([^>]*)>([\s\S]*)<\/script>$/);
+            this.content.firstChild = script
+              ? { attributes: parseAttributes(script[1]), textContent: script[2] }
+              : { attributes: parseAttributes(html), textContent: '' };
+          },
+        };
+      }
+      if (tag === 'script') {
+        return {
+          src: '', textContent: '', listeners: {},
+          setAttribute(name, value) { if (name === 'src') this.src = value; },
+          addEventListener(name, fn) { this.listeners[name] = fn; },
+        };
+      }
+      throw new Error(`Unexpected element: ${tag}`);
+    },
+  };
+  const window = {
+    EditorCore: {
+      bootstrapEditor: () => {
+        executions.push('bootstrap');
+        bootstrapDone();
+        return { ready: true };
+      },
+    },
+    setTimeout: () => 0,
+    addEventListener() {},
+  };
+  context = vm.createContext({ window, document, console });
+  vm.runInContext(loaderSource, context);
+  await done;
+
+  const networkSequence = executions.filter(value => value !== 'inline' && value !== 'bootstrap');
+  assert.deepEqual(networkSequence, expected.flatMap(src => [`start:${src}`, `load:${src}`]));
+  assert.deepEqual(executions.slice(-2), ['inline', 'bootstrap']);
+  assert.equal(context.window.EditorCoreBootstrap.ready, true);
 });
 
 test('compiled utilities follow component styles in both page entry points', () => {

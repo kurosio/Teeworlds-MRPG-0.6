@@ -907,6 +907,143 @@ body.editor-focus .editor-sidebar-list{
   border-color:color-mix(in srgb,var(--editor-primary,#6366f1) 45%,transparent);
 }
 
+/* Shared record markers also cover custom editors and the quest tree. */
+[data-id].guest-shared-row-changed,
+[data-id].request-row-changed{
+  position:relative;
+  scroll-margin:80px;
+  box-shadow:inset 3px 0 0 var(--editor-warning,#ffc27f);
+}
+[data-id].guest-shared-row-changed.is-submitted,
+[data-id].request-row-changed{
+  box-shadow:inset 3px 0 0 var(--editor-primary,#6366f1);
+}
+[data-id].guest-shared-row-editing:not(.guest-shared-row-changed){
+  box-shadow:inset 3px 0 0 var(--editor-warning,#ffc27f);
+}
+[data-id].request-row-target{
+  outline:2px solid var(--editor-primary,#6366f1) !important;
+  outline-offset:-2px;
+  background:color-mix(in srgb,var(--editor-primary,#6366f1) 10%,transparent) !important;
+}
+.change-row-marker{
+  position:absolute;
+  right:5px;
+  bottom:5px;
+  z-index:3;
+  display:inline-flex;
+  align-items:center;
+  gap:4px;
+  max-width:calc(100% - 10px);
+  padding:1px 6px;
+  border:1px solid color-mix(in srgb,var(--editor-warning,#ffc27f) 45%,transparent);
+  border-radius:999px;
+  color:var(--editor-warning,#ffc27f);
+  background:var(--editor-surface,#121821);
+  font-size:9.5px;
+  font-weight:700;
+  line-height:1.55;
+  pointer-events:none;
+}
+.change-row-marker.is-submitted,
+.change-row-marker--request{
+  color:var(--editor-primary,#6366f1);
+  border-color:color-mix(in srgb,var(--editor-primary,#6366f1) 45%,transparent);
+}
+
+/* A guest sees a marker already while typing, before the draft is saved. */
+[data-field-path].guest-field-editing:not(.guest-field-changed){
+  position:relative;
+  border-radius:10px;
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--editor-warning,#ffc27f) 55%,transparent);
+  background:color-mix(in srgb,var(--editor-warning,#ffc27f) 7%,transparent);
+}
+[data-field-path].guest-field-editing:not(.guest-field-changed)::after{
+  content:'ввод';
+  position:absolute;
+  top:-7px;
+  right:8px;
+  padding:0 5px;
+  border:1px solid color-mix(in srgb,var(--editor-warning,#ffc27f) 55%,transparent);
+  border-radius:999px;
+  color:var(--editor-warning,#ffc27f);
+  background:var(--editor-surface,#121821);
+  font-size:9.5px;
+  font-weight:700;
+  line-height:1.6;
+}
+
+/* Request preview: exact field target plus all sibling changes in the form. */
+[data-field-path].request-field-changed{
+  position:relative;
+  border-radius:10px;
+  box-shadow:0 0 0 1px color-mix(in srgb,var(--editor-primary,#6366f1) 50%,transparent);
+  background:color-mix(in srgb,var(--editor-primary,#6366f1) 6%,transparent);
+  scroll-margin:100px;
+}
+[data-field-path].request-field-changed::after{
+  content:'запрос';
+  position:absolute;
+  z-index:4;
+  top:-7px;
+  right:8px;
+  padding:0 5px;
+  border:1px solid color-mix(in srgb,var(--editor-primary,#6366f1) 50%,transparent);
+  border-radius:999px;
+  color:var(--editor-primary,#6366f1);
+  background:var(--editor-surface,#121821);
+  font-size:9.5px;
+  font-weight:700;
+  line-height:1.6;
+}
+[data-field-path].request-field-target{
+  box-shadow:0 0 0 2px var(--editor-primary,#6366f1),0 0 0 6px color-mix(in srgb,var(--editor-primary,#6366f1) 12%,transparent);
+  animation:requestTargetPulse 1.8s ease-out 2;
+}
+@keyframes requestTargetPulse{
+  0%,100%{filter:none;}
+  45%{filter:brightness(1.18);}
+}
+.request-preview-banner{
+  position:fixed;
+  z-index:650;
+  left:50%;
+  bottom:14px;
+  transform:translateX(-50%);
+  display:flex;
+  align-items:center;
+  gap:11px;
+  width:max-content;
+  max-width:calc(100vw - 28px);
+  padding:10px 12px;
+  border:1px solid color-mix(in srgb,var(--editor-primary,#6366f1) 45%,transparent);
+  border-radius:13px;
+  color:var(--editor-text);
+  background:color-mix(in srgb,var(--editor-surface,#121821) 96%,transparent);
+  box-shadow:var(--editor-shadow-lg,0 12px 36px #0008);
+  backdrop-filter:blur(12px);
+}
+.request-preview-banner > i{color:var(--editor-primary,#6366f1);font-size:17px;}
+.request-preview-banner--editing{
+  border-color:color-mix(in srgb,var(--editor-warning,#ffc27f) 60%,transparent);
+}
+.request-preview-banner--editing > i{color:var(--editor-warning,#ffc27f);}
+.request-preview-banner-text{display:grid;min-width:0;font-size:12.5px;line-height:1.4;}
+.request-preview-banner-text span,.request-preview-banner-text small{color:var(--editor-text-muted);overflow-wrap:anywhere;}
+.request-preview-banner-text small{font-size:11px;}
+.request-preview-banner-text code{color:var(--editor-primary,#6366f1);}
+.request-preview-active input:disabled,
+.request-preview-active textarea:disabled,
+.request-preview-active select:disabled{opacity:.82;cursor:default;}
+@media (max-width:640px){
+  .request-preview-banner{align-items:flex-start;flex-wrap:wrap;bottom:8px;padding:9px 10px;}
+  .request-preview-banner-text{flex:1;}
+  .request-preview-banner > a{margin-left:auto;}
+}
+@media (prefers-reduced-motion:reduce){
+  [data-field-path].request-field-target{animation:none;}
+}
+
 /* -------------------------------------------------------------
    Layout primitives (shared by every editor page)
 
@@ -1072,6 +1209,8 @@ body.editor-focus .editor-sidebar-list{
 /* Метки «поле изменено» из гостевого режима — на языке интерфейса. */
 :root[lang="en"] [data-field-path].guest-field-changed::after{content:'edited';}
 :root[lang="en"] [data-field-path].guest-field-changed.is-submitted::after{content:'in request';}
+:root[lang="en"] [data-field-path].request-field-changed::after{content:'request';}
+:root[lang="en"] [data-field-path].guest-field-editing:not(.guest-field-changed)::after{content:'editing';}
 
 /* Утилиты ограничения ширины вместо style="max-width:260px" на страницах. */
 [data-width="sm"]{max-width:260px;}

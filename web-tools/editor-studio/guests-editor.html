@@ -173,7 +173,7 @@
           </button>
         </div>`;
       $('btn-policy')?.addEventListener('click', () => {
-        window.parent?.postMessage({ type: 'editor-shell:open-editor', key: 'requests' }, '*');
+        EditorCore.Http.postMessage(window.parent, { type: 'editor-shell:open-editor', key: 'requests' });
       });
     };
 
@@ -358,7 +358,7 @@
       closeModal();
       await load();
       // Let open guest sessions reload their tabs.
-      window.parent?.postMessage({ type: 'editor-shell:guest-account-changed', id }, '*');
+      EditorCore.Http.postMessage(window.parent, { type: 'editor-shell:guest-account-changed', id });
     };
 
     const onCardClick = async (event) => {
@@ -378,7 +378,7 @@
         btn.disabled = false;
         if (!res.ok) return toast(res.error || 'Ошибка', 'error');
         toast(user.enabled ? 'Аккаунт выключен' : 'Аккаунт включён', 'success');
-        window.parent?.postMessage({ type: 'editor-shell:guest-account-changed', id }, '*');
+        EditorCore.Http.postMessage(window.parent, { type: 'editor-shell:guest-account-changed', id });
         return load();
       }
 
@@ -415,7 +415,7 @@
       if (role === 'admin') return load();
       $('guest-loading').classList.add('hidden');
       $('guest-denied').classList.remove('hidden');
-      if (!role) window.top?.postMessage({ type: 'editor-shell:auth-required' }, '*');
+      if (!role) EditorCore.Http.postMessage(window.top, { type: 'editor-shell:auth-required' });
     });
   })();
   </script>

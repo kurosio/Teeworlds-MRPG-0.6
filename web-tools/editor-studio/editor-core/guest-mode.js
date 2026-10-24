@@ -51,6 +51,8 @@
   let syncPromise = null;
   let lastSyncAt = 0;
   let reconcileTimer = null;
+  let draftCache = null;
+  let draftCacheKey = '';
 
   // ── Role / account ──────────────────────────────────────────────────────
   const fetchStatus = async () => {
@@ -80,6 +82,11 @@
             safeSession?.removeItem(ACCOUNT_CACHE_KEY);
           }
         } catch {}
+        // Do not reuse another account's in-memory draft after login/logout.
+        if (draftCacheKey && draftCacheKey !== draftKey()) {
+          draftCache = null;
+          draftCacheKey = '';
+        }
         if (s?.role === 'guest' && s.guest?.id) {
           startAutoReconcile();
           scheduleSubmittedSync(0);
@@ -140,6 +147,8 @@
       label: typeof o.label === 'string' ? o.label : '',
       ts: Number(o.ts) || Date.now(),
       reqId: typeof o.reqId === 'string' && o.reqId ? o.reqId : null,
+      reqVersion: Math.max(1, Number(o.reqVersion) || 1),
+      reqDirty: !!o.reqDirty,
       submittedAt: o.submittedAt ? String(o.submittedAt) : null,
     };
     if (op.type !== 'create' && (!Number.isInteger(op.id) || op.id <= 0)) return null;
@@ -150,20 +159,26 @@
   const readDraft = () => {
     const key = draftKey();
     if (!key) return emptyDraft();
+    if (draftCache && draftCacheKey === key) return draftCache;
     try {
       const raw = safeLocal?.getItem(key);
+      let draft;
       if (raw) {
-        const d = JSON.parse(raw);
-        if (!d || !Array.isArray(d.ops)) return emptyDraft();
-        return {
+        const parsed = JSON.parse(raw);
+        draft = parsed && Array.isArray(parsed.ops) ? {
           v: DRAFT_SCHEMA,
           accountId: accountId(),
-          nextTemp: Number(d.nextTemp) || TEMP_ID_BASE + 1,
-          ops: d.ops.map(normalizeOp).filter(Boolean),
-        };
+          nextTemp: Number(parsed.nextTemp) || TEMP_ID_BASE + 1,
+          ops: parsed.ops.map(normalizeOp).filter(Boolean),
+        } : emptyDraft();
+      } else {
+        draft = migrateLegacyDraft(key);
       }
-      return migrateLegacyDraft(key);
+      draftCache = draft;
+      draftCacheKey = key;
+      return draft;
     } catch {
+      // A transient storage error must not cache an empty draft over good data.
       return emptyDraft();
     }
   };
@@ -192,11 +207,11 @@
 
   const emitUpdated = () => {
     try { window.dispatchEvent(new CustomEvent('editor-core:guest-updated', { detail: summary() })); } catch {}
-    try { window.parent?.postMessage({ type: 'editor-shell:guest-draft-changed', count: count(), pending: submittedCount() }, '*'); } catch {}
+    window.EditorCore.Http.postMessage(window.parent, { type: 'editor-shell:guest-draft-changed', count: count(), pending: submittedCount() });
   };
 
   const notify = () => {
-    const d = readDraft();
+    const d = clone(readDraft());
     listeners.forEach((fn) => { try { fn(d); } catch {} });
     updateBanner();
     emitUpdated();
@@ -212,12 +227,19 @@
     }
     try { safeLocal.setItem(key, JSON.stringify(d)); }
     catch { throw new Error('Не удалось сохранить черновик (переполнено хранилище браузера).'); }
+    // Keep the cached snapshot isolated from objects returned to callers.
+    draftCache = clone(d);
+    draftCacheKey = key;
     notify();
   };
 
   window.addEventListener('storage', (e) => {
     const key = draftKey();
-    if (key && e.key === key) notify();
+    if (key && e.key === key) {
+      draftCache = null;
+      draftCacheKey = '';
+      notify();
+    }
   });
 
   const isTempId = (id) => {
@@ -225,7 +247,10 @@
     return Number.isInteger(n) && n >= TEMP_ID_BASE && n <= TEMP_ID_MAX;
   };
 
-  const clone = (v) => (v == null ? v : JSON.parse(JSON.stringify(v)));
+  const clone = (value) => window.EditorCore.utils.cloneData(value);
+  // Mutations work on a copy: a failed localStorage write must not leak into
+  // the in-memory snapshot and masquerade as a saved draft.
+  const draftForWrite = () => clone(readDraft());
 
   const canonical = (v) => {
     if (v === undefined || v === null) return null;
@@ -260,7 +285,7 @@
     return v || '';
   };
 
-  const uid = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
+  const uid = () => window.EditorCore.utils.uuid();
 
   const assertGuestResource = async (resource) => {
     await loadConfig();
@@ -278,7 +303,9 @@
   const submittedReqIds = (ops) => [...new Set(ops.filter(o => o.reqId).map(o => o.reqId))];
 
   const Draft = {
-    get: readDraft,
+    // External consumers receive a snapshot and cannot mutate the cached draft
+    // without going through writeDraft().
+    get: () => clone(readDraft()),
     count: () => readDraft().ops.length,
     pendingCount: () => readDraft().ops.filter(o => !o.reqId).length,
     submittedCount: () => readDraft().ops.filter(o => o.reqId).length,
@@ -286,7 +313,7 @@
 
     /** Remove not-yet-sent operations (sent ones can only be withdrawn by the admin/guest request page). */
     clear() {
-      const d = readDraft();
+      const d = draftForWrite();
       const before = d.ops.length;
       d.ops = d.ops.filter(o => o.reqId);
       writeDraft(d);
@@ -295,7 +322,7 @@
     },
 
     removeOp(opUid) {
-      const d = readDraft();
+      const d = draftForWrite();
       const op = d.ops.find(o => o.uid === opUid);
       if (op?.reqId) throw new Error('Эта операция уже отправлена в запросе и ждёт проверки администратора.');
       d.ops = d.ops.filter(o => o.uid !== opUid);
@@ -305,7 +332,7 @@
 
     async create(resource, data) {
       await assertGuestResource(resource);
-      const d = readDraft();
+      const d = draftForWrite();
       const tempId = d.nextTemp++;
       if (tempId > TEMP_ID_MAX) throw new Error('Слишком много новых записей в черновике.');
       const clean = filterColumns(resource, clone(data));
@@ -318,7 +345,7 @@
     /** baseRow — current server row (to keep only really changed fields). */
     async update(resource, id, data, baseRow = null) {
       await assertGuestResource(resource);
-      const d = readDraft();
+      const d = draftForWrite();
       const clean = filterColumns(resource, clone(data));
 
       if (isTempId(id)) {
@@ -372,7 +399,7 @@
 
     async remove(resource, id, baseRow = null) {
       await assertGuestResource(resource);
-      const d = readDraft();
+      const d = draftForWrite();
       if (isTempId(id)) {
         const op = d.ops.find(o => o.type === 'create' && o.resource === resource && Number(o.tempId) === Number(id));
         if (op?.reqId) throw new Error('Новая запись уже отправлена в запросе и ждёт проверки администратора.');
@@ -465,29 +492,65 @@
         : d.ops.find(o => o.resource === resource && Number(o.id) === Number(id));
       const out = {};
       for (const col of meta.fields) {
-        out[col] = { value: op?.data?.[col], status: meta.status, reqId: meta.reqId };
+        out[col] = { value: clone(op?.data?.[col]), status: meta.status, reqId: meta.reqId };
       }
       return out;
     },
 
     /** Payload for api/change-requests.php — only operations that were not sent yet. */
     toOperations() {
-      return readDraft().ops.filter(o => !o.reqId).map(o => (o.type === 'create'
+      return clone(readDraft().ops.filter(o => !o.reqId).map(o => (o.type === 'create'
         ? { type: 'create', resource: o.resource, tempId: o.tempId, data: o.data }
         : o.type === 'update'
           ? { type: 'update', resource: o.resource, id: o.id, data: o.data }
-          : { type: 'delete', resource: o.resource, id: o.id }));
+          : { type: 'delete', resource: o.resource, id: o.id })));
+    },
+
+    /** Replace one pending request after a server-validated revision. */
+    replaceRequest(request) {
+      const requestId = String(request?.id || '');
+      if (!requestId || !Array.isArray(request?.operations)) return false;
+      const d = draftForWrite();
+      const previous = new Map(d.ops.filter(o => o.reqId === requestId)
+        .map(o => [`${o.type}:${o.resource}:${o.type === 'create' ? o.tempId : o.id}`, o]));
+      const now = new Date().toISOString();
+      d.ops = d.ops.filter(o => o.reqId !== requestId);
+      for (const op of request.operations) {
+        const key = `${op.type}:${op.resource}:${op.type === 'create' ? op.tempId : op.id}`;
+        const old = previous.get(key);
+        const data = clone(op.data || {});
+        d.ops.push({
+          uid: old?.uid || uid(), type: op.type, resource: op.resource,
+          id: op.type === 'create' ? undefined : Number(op.id),
+          tempId: op.type === 'create' ? Number(op.tempId) : undefined,
+          data,
+          label: rowLabel(op.resource, op.type === 'delete' ? (op.before || data) : data) || old?.label || '',
+          ts: old?.ts || Date.now(), reqId: requestId,
+          reqVersion: Math.max(1, Number(request.version) || 1), reqDirty: false,
+          submittedAt: old?.submittedAt || now,
+        });
+      }
+      d.nextTemp = Math.max(Number(d.nextTemp) || TEMP_ID_BASE + 1,
+        ...d.ops.filter(o => o.type === 'create').map(o => Number(o.tempId) + 1));
+      writeDraft(d);
+      return true;
     },
 
     /** Freeze the current draft as a sent request: the changes stay visible locally. */
     markSubmitted(requestId) {
       const id = String(requestId || '');
       if (!id) return 0;
-      const d = readDraft();
+      const d = draftForWrite();
       const now = new Date().toISOString();
       let n = 0;
       for (const op of d.ops) {
-        if (!op.reqId) { op.reqId = id; op.submittedAt = now; n++; }
+        if (!op.reqId) {
+          op.reqId = id;
+          op.reqVersion = 1;
+          op.reqDirty = false;
+          op.submittedAt = now;
+          n++;
+        }
       }
       writeDraft(d);
       return n;
@@ -511,7 +574,30 @@
         const rows = Array.isArray(mine.rows) ? mine.rows : [];
         const byId = new Map(rows.map(r => [String(r.id), r]));
         const resolved = [];
-        const d = readDraft();
+        const revised = [];
+
+        // An administrator (or the other open tab) may have revised a pending
+        // request. Refresh only when the server version is newer: ordinary
+        // polling must not re-download every request or overwrite a stale
+        // workbench implicitly.
+        const localVersions = new Map();
+        for (const op of readDraft().ops) {
+          if (op.reqId) localVersions.set(op.reqId, Math.max(localVersions.get(op.reqId) || 1, Number(op.reqVersion) || 1));
+        }
+        for (const row of rows) {
+          const requestId = String(row.id || '');
+          if (row.status !== 'pending' || Number(row.version) <= (localVersions.get(requestId) || 1)) continue;
+          const localOps = readDraft().ops.filter(op => op.reqId === requestId);
+          if (localOps.some(op => op.reqDirty)) continue;
+          try {
+            const detail = await window.EditorCore.Http.json(`api/change-requests.php?action=get&id=${encodeURIComponent(requestId)}&peek=1`);
+            if (!detail.ok || !detail.request || Number(detail.request.version) <= (localVersions.get(requestId) || 1)) continue;
+            Draft.replaceRequest(detail.request);
+            revised.push({ reqId: requestId, version: Number(detail.request.version) || 1 });
+          } catch { /* The next poll retries; the current local snapshot stays intact. */ }
+        }
+
+        const d = draftForWrite();
         const keep = [];
         for (const op of d.ops) {
           if (!op.reqId) { keep.push(op); continue; }
@@ -519,7 +605,14 @@
           if (req && req.status === 'pending') { keep.push(op); continue; }
           resolved.push({ reqId: op.reqId, status: req?.status || 'deleted', op });
         }
-        if (!resolved.length) return { ok: true, resolved: [] };
+        if (revised.length) {
+          try { window.EditorCore?.DBCrud?.invalidateCache?.(); } catch {}
+          if (!silent) toastInfo(`Состав запросов обновлён (${revised.length})`, 'info');
+          for (const item of revised) {
+            try { window.dispatchEvent(new CustomEvent('editor-core:guest-request-revised', { detail: item })); } catch {}
+          }
+        }
+        if (!resolved.length) return { ok: true, resolved: [], revised };
 
         d.ops = keep;
         writeDraft(d);
@@ -538,7 +631,7 @@
             try { window.dispatchEvent(new CustomEvent('editor-core:guest-request-resolved', { detail: r })); } catch {}
           }
         }
-        return { ok: true, resolved };
+        return { ok: true, resolved, revised };
       })().finally(() => { syncPromise = null; lastSyncAt = Date.now(); });
 
       return syncPromise;
@@ -574,7 +667,7 @@
       refreshStatus().then((role) => {
         if (role !== 'guest' && role !== 'admin') {
           // Account disabled/revoked → ask the shell to re-authenticate.
-          try { window.parent?.postMessage({ type: 'editor-shell:auth-required' }, '*'); } catch {}
+          window.EditorCore.Http.postMessage(window.parent, { type: 'editor-shell:auth-required' });
           return;
         }
         if (role === 'guest' && !isPageAllowedForGuest()) {
@@ -704,7 +797,7 @@
     if (document.body) mount(); else document.addEventListener('DOMContentLoaded', mount, { once: true });
   };
 
-  const escapeHtml = (v) => String(v ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const escapeHtml = (value) => window.EditorCore.utils.escapeHtml(value);
 
   let bannerEl = null;
   const updateBanner = () => {
@@ -739,7 +832,7 @@
 
   const openRequestsPage = () => {
     const inFrame = window.parent && window.parent !== window;
-    if (inFrame) window.parent.postMessage({ type: 'editor-shell:open-editor', key: 'requests' }, '*');
+    if (inFrame) window.EditorCore.Http.postMessage(window.parent, { type: 'editor-shell:open-editor', key: 'requests' });
     else location.href = REQUESTS_PAGE;
   };
 

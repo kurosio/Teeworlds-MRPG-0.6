@@ -13,19 +13,14 @@
     return res.data ?? { ok: true };
   };
 
-  const cache = new Map();
-  const CACHE_TTL_MS = 5 * 60 * 1000;
-
-  const cacheGet = (key) => {
-    const e = cache.get(key);
-    if (!e) return null;
-    if (Date.now() - e.ts > CACHE_TTL_MS) {
-      cache.delete(key);
-      return null;
-    }
-    return e.value;
-  };
-  const cacheSet = (key, value) => cache.set(key, { ts: Date.now(), value });
+  const cache = window.EditorCore.utils.createRequestCache({
+    ttl: 5 * 60 * 1000,
+    max: 200,
+  });
+  const cacheOptions = (signal) => ({
+    dedupe: !signal,
+    shouldCache: response => !!response?.ok,
+  });
 
   const readFilter = (el) => {
     if (!el) return null;
@@ -109,16 +104,19 @@
         if (!multiple) el.appendChild(new Option(placeholder, '', false, !selectedVal));
       }
 
+      const existing = new Set(Array.from(el.options, option => option.value));
+      const fragment = document.createDocumentFragment();
       for (const it of (items || [])) {
         const val = String(it.value);
+        if (existing.has(val)) continue;
         const baseLabel = String(it.label || '');
         const label = labelMode === 'name' ? baseLabel : `${val}: ${baseLabel}`;
-
-        if (Array.from(el.options).some(o => o.value === val)) continue;
         const opt = new Option(label, val);
         if (!multiple && selectedVal && val === String(selectedVal)) opt.selected = true;
-        el.appendChild(opt);
+        fragment.appendChild(opt);
+        existing.add(val);
       }
+      el.appendChild(fragment);
     };
 
     const syncSelectToInput = () => {
@@ -251,15 +249,18 @@
       el.innerHTML = '';
       if (!multiple) el.appendChild(new Option(placeholder, '', false, !prev));
 
+      const previous = Array.isArray(prev) ? new Set(prev) : null;
+      const fragment = document.createDocumentFragment();
       for (const it of (items || [])) {
         const val = String(it.value);
         const baseLabel = String(it.label || '');
         const label = labelMode === 'name' ? baseLabel : `${val}: ${baseLabel}`;
         const opt = new Option(label, val);
-        if (multiple) opt.selected = Array.isArray(prev) && prev.includes(val);
-        else opt.selected = prev && String(prev) === val;
-        el.appendChild(opt);
+        if (multiple) opt.selected = previous?.has(val) || false;
+        else opt.selected = !!prev && String(prev) === val;
+        fragment.appendChild(opt);
       }
+      el.appendChild(fragment);
 
       // fallback for unknown id
       if (!multiple && prev && !Array.from(el.options).some(o => o.value === String(prev))) {
@@ -333,26 +334,12 @@
     const input = combo.querySelector('.editor-dbcombo-input');
     const dropdownLocal = combo.querySelector('.editor-dbcombo-dropdown');
 
-    // Render dropdown in a portal (document.body) so it is never clipped by scroll/overflow containers.
-    // This fixes layout issues inside lists and panels across all editors.
+    // The portal is created only while open. This keeps document.body and the
+    // global listener set bounded when forms are repeatedly rerendered.
     let dropdown = dropdownLocal;
     let portal = null;
-    if (dropdownLocal) {
-      try {
-        portal = document.createElement('div');
-        portal.className = 'editor-dbcombo-dropdown editor-dbcombo-dropdown-portal';
-        portal.setAttribute('role', 'listbox');
-        portal.style.display = 'none';
-        document.body.appendChild(portal);
-        // Hide inline dropdown; we keep it only as a markup anchor for styling defaults.
-        dropdownLocal.style.display = 'none';
-        dropdown = portal;
-      } catch {
-        // If portal creation fails for any reason, gracefully fall back to inline dropdown.
-        dropdown = dropdownLocal;
-        portal = null;
-      }
-    }
+    let removalObserver = null;
+    if (dropdownLocal) dropdownLocal.style.display = 'none';
     const bindInputPath = combo.dataset.bindInputPath || '';
     const placeholder = combo.dataset.placeholder || '— выберите —';
     const labelMode = (combo.dataset.labelMode || 'id_name').toLowerCase();
@@ -386,10 +373,8 @@
 
     const setDbState = (state) => {
       combo.setAttribute('data-db-state', state);
-      if (state === 'disconnected') {
-        // Disable the visual combo input (fallback numeric input stays available)
-        if (input) input.disabled = true;
-      }
+      // The numeric fallback remains available while the visual combo is down.
+      if (input) input.disabled = state === 'disconnected';
     };
 
     const formatLabel = (val, baseLabel) => {
@@ -454,28 +439,68 @@
       }
     };
 
+    const onViewport = () => {
+      if (state.open) placeDropdown();
+    };
+    const onOutside = (event) => {
+      if (!combo.isConnected || (!combo.contains(event.target) && !(portal && portal.contains(event.target)))) close();
+    };
+
     const close = () => {
       state.open = false;
       state.activeIndex = -1;
-      if (dropdown) dropdown.classList.remove('open');
-      if (portal && dropdown) dropdown.style.display = 'none';
+      state.querySeq += 1;
+      state.queryController?.abort?.();
+      state.queryController = null;
+      debouncedQuery.cancel();
+      removalObserver?.disconnect();
+      removalObserver = null;
+      window.removeEventListener('resize', onViewport);
+      window.removeEventListener('scroll', onViewport, true);
+      document.removeEventListener('mousedown', onOutside);
+      dropdown?.classList.remove('open');
+      if (portal) {
+        portal.removeEventListener('click', onDropdownClick);
+        portal.remove();
+        portal = null;
+        dropdown = dropdownLocal;
+      }
     };
 
     const open = () => {
+      if (state.open) {
+        placeDropdown();
+        return;
+      }
+      if (dropdownLocal && !portal) {
+        try {
+          portal = document.createElement('div');
+          portal.className = 'editor-dbcombo-dropdown editor-dbcombo-dropdown-portal';
+          portal.setAttribute('role', 'listbox');
+          portal.addEventListener('click', onDropdownClick);
+          document.body.appendChild(portal);
+          dropdown = portal;
+        } catch {
+          portal = null;
+          dropdown = dropdownLocal;
+          dropdownLocal.style.display = '';
+        }
+      }
       state.open = true;
-      if (dropdown) dropdown.classList.add('open');
-      if (portal && dropdown) dropdown.style.display = 'block';
+      if (portal && state.lastResults.length) renderList(state.lastResults);
+      dropdown?.classList.add('open');
+      window.addEventListener('resize', onViewport);
+      window.addEventListener('scroll', onViewport, { capture: true, passive: true });
+      document.addEventListener('mousedown', onOutside);
+      if (typeof MutationObserver === 'function' && document.body) {
+        removalObserver?.disconnect();
+        removalObserver = new MutationObserver(() => {
+          if (!combo.isConnected) close();
+        });
+        removalObserver.observe(document.body, { childList: true, subtree: true });
+      }
       placeDropdown();
     };
-
-    if (portal) {
-      const onViewport = () => {
-        if (state.open) placeDropdown();
-      };
-      window.addEventListener('resize', onViewport);
-      // Capture scroll from ANY scrollable parent to keep dropdown aligned
-      window.addEventListener('scroll', onViewport, { capture: true, passive: true });
-    }
 
     const dispatchBound = () => {
       if (!bound) return;
@@ -513,44 +538,44 @@
         seen.add(value);
       });
       state.lastResults = combined;
+      state.activeIndex = -1;
 
+      dropdown.replaceChildren();
       if (!combined.length) {
-        dropdown.innerHTML = `<div class="editor-dbcombo-empty">${emptyText}</div>`;
+        const empty = document.createElement('div');
+        empty.className = 'editor-dbcombo-empty';
+        empty.textContent = emptyText;
+        dropdown.appendChild(empty);
         return;
       }
 
-      dropdown.innerHTML = combined.map((it, idx) => {
-        const val = String(it.value);
-        const label = formatLabel(val, it.label);
-        return `<button type="button" class="editor-dbcombo-option" role="option" data-value="${val}" data-index="${idx}">${label.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</button>`;
-      }).join('');
-
-      dropdown.querySelectorAll('.editor-dbcombo-option').forEach((btn) => {
-        btn.addEventListener('click', async () => {
-          const v = String(btn.getAttribute('data-value') || '');
-          if (!v) return;
-          writeBoundValue(v);
-          const picked = state.lastResults[Number(btn.getAttribute('data-index'))];
-          if (picked?.isExtra) {
-            input.value = formatLabel(picked.value, picked.label);
-            close();
-            return;
-          }
-          // Update display label
-          try {
-            const one = await db.getOne(source, v);
-            if (one?.ok && one.item) {
-              input.value = formatLabel(one.item.value, one.item.label);
-            } else {
-              input.value = v;
-            }
-          } catch {
-            input.value = v;
-          }
-          close();
-        });
+      const fragment = document.createDocumentFragment();
+      combined.forEach((item, index) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'editor-dbcombo-option';
+        button.setAttribute('role', 'option');
+        button.dataset.value = String(item.value);
+        button.dataset.index = String(index);
+        button.textContent = formatLabel(item.value, item.label);
+        fragment.appendChild(button);
       });
+      dropdown.appendChild(fragment);
     };
+
+    // One delegated handler replaces a listener per option. Values and labels
+    // are assigned through DOM properties, so DB content cannot inject HTML.
+    const onDropdownClick = (event) => {
+      const button = event.target?.closest?.('.editor-dbcombo-option');
+      if (!button || !dropdown?.contains(button)) return;
+      const value = String(button.dataset.value || '');
+      if (!value) return;
+      const picked = state.lastResults[Number(button.dataset.index)];
+      writeBoundValue(value);
+      if (input) input.value = picked ? formatLabel(picked.value, picked.label) : value;
+      close();
+    };
+    dropdownLocal?.addEventListener('click', onDropdownClick);
 
     const ensureDisplay = async () => {
       if (!input) return;
@@ -641,11 +666,7 @@
     };
 
     // Events
-    let t = null;
-    const debouncedQuery = (q) => {
-      if (t) clearTimeout(t);
-      t = setTimeout(() => query(q), 150);
-    };
+    const debouncedQuery = window.EditorCore.utils.debounce(query, 150);
 
     if (input) {
       input.addEventListener('focus', () => {
@@ -716,14 +737,6 @@
       });
     }
 
-    // Close on outside click
-    if (combo.dataset.dbComboOutside !== '1') {
-      combo.dataset.dbComboOutside = '1';
-      document.addEventListener('mousedown', (e) => {
-        if (!combo.contains(e.target) && !(portal && portal.contains(e.target))) close();
-      });
-    }
-
     // Keep display synced when underlying input changes
     if (bound && bound.dataset.dbComboSync !== '1') {
       bound.dataset.dbComboSync = '1';
@@ -785,12 +798,8 @@
 
     async getOne(source, id) {
       const key = `one:${source}:${id}`;
-      const cached = cacheGet(key);
-      if (cached) return cached;
       const qs = new URLSearchParams({ action: 'get_one', source, id: String(id) }).toString();
-      const res = await fetchJson(`${this.endpoint}?${qs}`);
-      if (res?.ok) cacheSet(key, res);
-      return res;
+      return cache.load(key, () => fetchJson(`${this.endpoint}?${qs}`), cacheOptions());
     },
 
     async list(source, { search = '', limit = 1000, offset = 0, withTotal = false, filterKey = '', filterValue = '', filterValues = [], signal = null } = {}) {
@@ -800,9 +809,6 @@
         : (filterValue ? [String(filterValue)] : []);
       const resolvedFilterValue = normalizedValues.join('|');
       const key = `list:${source}:${search}:${limit}:${offset}:${withTotal ? 1 : 0}:${resolvedFilterKey}:${resolvedFilterValue}`;
-      const cached = cacheGet(key);
-      if (cached) return cached;
-
       const params = { action: 'list', source, search, limit: String(limit), offset: String(offset) };
       if (withTotal) params.with_total = '1';
       if (resolvedFilterKey && normalizedValues.length) {
@@ -814,10 +820,7 @@
         }
       }
       const qs = new URLSearchParams(params).toString();
-
-      const res = await fetchJson(`${this.endpoint}?${qs}`, { signal });
-      if (res?.ok) cacheSet(key, res);
-      return res;
+      return cache.load(key, () => fetchJson(`${this.endpoint}?${qs}`, { signal }), cacheOptions(signal));
     },
 
     async init(root = document) {

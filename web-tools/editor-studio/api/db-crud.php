@@ -191,15 +191,7 @@ try {
     $id = (string)($_GET['id'] ?? '');
     if ($id === '' || !ctype_digit($id)) respond(['ok' => false, 'error' => 'Некорректный идентификатор записи'], 400);
     $iid = (int)$id;
-    $colSql = '`' . $pk . '`, ' . implode(', ', array_map(fn($c) => '`' . $c . '`', $cols));
-    $sql = "SELECT $colSql FROM `$table` WHERE `$pk` = ? LIMIT 1";
-    $stmt = $mysqli->prepare($sql);
-    if ($stmt === false) throw new RuntimeException('Ошибка подготовки запроса к базе');
-    $stmt->bind_param('i', $iid);
-    $stmt->execute();
-    $res = $stmt->get_result();
-    $row = $res ? $res->fetch_assoc() : null;
-    $stmt->close();
+    $row = crud_fetch_row($mysqli, $R, $iid);
     $mysqli->close();
     if (!$row) respond(['ok' => true, 'row' => null]);
     respond(['ok' => true, 'row' => decode_json_cols($row, $jsonCols)]);
@@ -212,25 +204,7 @@ try {
     $data = encode_json_cols($data, $jsonCols);
     if (!$data) respond(['ok' => false, 'error' => 'Пустые данные: нечего сохранять'], 400);
 
-    $keys = array_keys($data);
-    $placeholders = implode(',', array_fill(0, count($keys), '?'));
-    $colSql = implode(',', array_map(fn($c) => '`' . $c . '`', $keys));
-    $sql = "INSERT INTO `$table` ($colSql) VALUES ($placeholders)";
-    $stmt = $mysqli->prepare($sql);
-    if ($stmt === false) throw new RuntimeException('Ошибка подготовки запроса к базе');
-
-    $types = '';
-    $vals = [];
-    foreach ($keys as $k) {
-      $v = $data[$k];
-      $t = bind_type_for_value($v);
-      $types .= $t;
-      $vals[] = normalize_bind_value($v, $t);
-    }
-    $stmt->bind_param($types, ...$vals);
-    $stmt->execute();
-    $newId = (int)$mysqli->insert_id;
-    $stmt->close();
+    $newId = crud_insert($mysqli, $R, $data);
     $mysqli->close();
     respond(['ok' => true, 'id' => $newId]);
   }
@@ -245,26 +219,7 @@ try {
     $data = encode_json_cols($data, $jsonCols);
     if (!$data) respond(['ok' => false, 'error' => 'Пустые данные: нечего сохранять'], 400);
 
-    $keys = array_keys($data);
-    $setSql = implode(', ', array_map(fn($c) => '`' . $c . '` = ?', $keys));
-    $sql = "UPDATE `$table` SET $setSql WHERE `$pk` = ? LIMIT 1";
-    $stmt = $mysqli->prepare($sql);
-    if ($stmt === false) throw new RuntimeException('Ошибка подготовки запроса к базе');
-
-    $types = '';
-    $vals = [];
-    foreach ($keys as $k) {
-      $v = $data[$k];
-      $t = bind_type_for_value($v);
-      $types .= $t;
-      $vals[] = normalize_bind_value($v, $t);
-    }
-    $types .= 'i';
-    $vals[] = $iid;
-
-    $stmt->bind_param($types, ...$vals);
-    $stmt->execute();
-    $stmt->close();
+    crud_update($mysqli, $R, $iid, $data);
     $mysqli->close();
     respond(['ok' => true]);
   }
@@ -273,12 +228,7 @@ try {
     $id = (string)($_GET['id'] ?? '');
     if ($id === '' || !ctype_digit($id)) respond(['ok' => false, 'error' => 'Некорректный идентификатор записи'], 400);
     $iid = (int)$id;
-    $sql = "DELETE FROM `$table` WHERE `$pk` = ? LIMIT 1";
-    $stmt = $mysqli->prepare($sql);
-    if ($stmt === false) throw new RuntimeException('Ошибка подготовки запроса к базе');
-    $stmt->bind_param('i', $iid);
-    $stmt->execute();
-    $stmt->close();
+    crud_delete($mysqli, $R, $iid);
     $mysqli->close();
     respond(['ok' => true]);
   }

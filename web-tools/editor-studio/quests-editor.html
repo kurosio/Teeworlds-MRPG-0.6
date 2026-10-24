@@ -2391,6 +2391,10 @@
       EditorCore.UI.toast(msg, 'success');
     };
 
+    const withRequestBatch = (callback) => window.EditorCore?.RequestContext?.batch
+      ? window.EditorCore.RequestContext.batch(callback)
+      : callback();
+
     const removeStepCommon = async (step) => {
       if (!step) return false;
       try {
@@ -2434,10 +2438,12 @@
       setBtn(DOM.deleteBtn, { enabled: false, hidden: false, label: 'Удаление…' });
       try {
         const toRemove = STATE.steps.filter((step) => step.QuestID === id);
-        for (const step of toRemove.filter((entry) => entry.ID > 0)) {
-          await EditorCore.DBCrud.remove('quest_bots', step.ID);
-        }
-        await EditorCore.DBCrud.remove('quests', id);
+        await withRequestBatch(async () => {
+          for (const step of toRemove.filter((entry) => entry.ID > 0)) {
+            await EditorCore.DBCrud.remove('quest_bots', step.ID);
+          }
+          await EditorCore.DBCrud.remove('quests', id);
+        });
         STATE.steps = STATE.steps.filter((step) => step.QuestID !== id);
         STATE.quests = STATE.quests.filter((item) => item.ID !== id);
         toRemove.forEach((step) => {
@@ -2621,36 +2627,38 @@
       }
       DOM.save.disabled = true;
       try {
-        for (const id of questIds) {
-          const quest = STATE.quests.find((item) => item.ID === id);
-          if (!quest) continue;
-          await EditorCore.DBCrud.update('quests', id, {
-            Name: quest.Name,
-            NextQuestID: quest.NextQuestID || null,
-            Money: quest.Money,
-            Exp: quest.Exp,
-            Flags: quest.Flags || QuestFlags.typeMain
-          });
-        }
-
-        for (const id of newIds) {
-          const step = STATE.steps.find((item) => item.ID === id);
-          if (!step) continue;
-          const res = await EditorCore.DBCrud.create('quest_bots', buildStepPayload(step));
-          const newId = toNum(res?.id);
-          if (newId) {
-            if (STATE.selected?.type === 'step' && STATE.selected?.id === step.ID) STATE.selected.id = newId;
-            STATE.dirtySteps.delete(step.ID);
-            STATE.newSteps.delete(step.ID);
-            step.ID = newId;
+        await withRequestBatch(async () => {
+          for (const id of questIds) {
+            const quest = STATE.quests.find((item) => item.ID === id);
+            if (!quest) continue;
+            await EditorCore.DBCrud.update('quests', id, {
+              Name: quest.Name,
+              NextQuestID: quest.NextQuestID || null,
+              Money: quest.Money,
+              Exp: quest.Exp,
+              Flags: quest.Flags || QuestFlags.typeMain
+            });
           }
-        }
 
-        for (const id of updateIds) {
-          const step = STATE.steps.find((item) => item.ID === id);
-          if (!step) continue;
-          await EditorCore.DBCrud.update('quest_bots', id, buildStepPayload(step));
-        }
+          for (const id of newIds) {
+            const step = STATE.steps.find((item) => item.ID === id);
+            if (!step) continue;
+            const res = await EditorCore.DBCrud.create('quest_bots', buildStepPayload(step));
+            const newId = toNum(res?.id);
+            if (newId) {
+              if (STATE.selected?.type === 'step' && STATE.selected?.id === step.ID) STATE.selected.id = newId;
+              STATE.dirtySteps.delete(step.ID);
+              STATE.newSteps.delete(step.ID);
+              step.ID = newId;
+            }
+          }
+
+          for (const id of updateIds) {
+            const step = STATE.steps.find((item) => item.ID === id);
+            if (!step) continue;
+            await EditorCore.DBCrud.update('quest_bots', id, buildStepPayload(step));
+          }
+        });
 
         STATE.dirtyQuests.clear();
         STATE.dirtySteps.clear();
@@ -2667,6 +2675,7 @@
 
         EditorCore.UI.toast('Изменения сохранены', 'success');
       } catch (err) {
+        if (window.EditorCore?.RequestContext?.isEditing?.()) await loadData();
         EditorCore.UI.toast(err.message || 'Ошибка сохранения', 'error');
       } finally {
         DOM.save.disabled = false;

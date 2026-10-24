@@ -7,13 +7,14 @@
 //   preview  (POST) — {operations} → detailed analysis, nothing is stored
 //   submit   (POST) — {nickname, message, operations} → stores a pending request
 //   mine     (GET)  — own requests (+ unread replies)
-//   get      (GET)  — id → own request details (marks replies as read)
+//   get      (GET)  — id → own request details (marks replies as read; peek=1 is side-effect-free)
 //   messages (GET)  — id → thread of messages with the administrator
 //   message  (POST) — {id, body} → reply in the thread
+//   revise   (POST) — {id, version, operations} → edit pending request (owner guest or admin)
 //   withdraw (POST) — {id} → withdraw own pending request
 //
 // Admin actions (role admin) — additionally:
-//   list, get, stats, approve {id, comment, force}, reject {id, comment},
+//   list, get, stats, approve {id, version, comment, force}, reject {id, comment},
 //   delete {id}, get_settings, save_settings, messages, message
 //
 // A guest never writes to the game DB: requests and their message threads live in
@@ -28,9 +29,9 @@ $ROLE = bootstrap_editor_api_roles([EDITOR_ROLE_ADMIN, EDITOR_ROLE_GUEST]);
 $IS_ADMIN = $ROLE === EDITOR_ROLE_ADMIN;
 $action = (string)($_GET['action'] ?? '');
 
-guest_action_guard($ROLE, $action, ['config', 'preview', 'submit', 'mine', 'get', 'messages', 'message', 'withdraw']);
+guest_action_guard($ROLE, $action, ['config', 'preview', 'submit', 'mine', 'get', 'messages', 'message', 'revise', 'withdraw']);
 
-$POST_ACTIONS = ['preview', 'submit', 'withdraw', 'approve', 'reject', 'delete', 'save_settings', 'message'];
+$POST_ACTIONS = ['preview', 'submit', 'revise', 'withdraw', 'approve', 'reject', 'delete', 'save_settings', 'message'];
 
 function cr_read_body(): array
 {
@@ -154,10 +155,12 @@ try {
     if ($action === 'get') {
         $req = cr_load_visible((string)($_GET['id'] ?? ''), $IS_ADMIN);
         $view = cr_full_view($req, $IS_ADMIN);
-        // Открытие запроса = прочтение ответов другой стороны.
-        cr_msg_mark_read((string)$req['id'], $IS_ADMIN ? 'admin' : 'guest');
+        $peek = (string)($_GET['peek'] ?? '') === '1';
+        // Background revision sync and editor deep links must not read the
+        // thread on the user's behalf. Opening the actual request still does.
+        if (!$peek) cr_msg_mark_read((string)$req['id'], $IS_ADMIN ? 'admin' : 'guest');
         $view['messages'] = cr_msg_list((string)$req['id'], $IS_ADMIN ? 'admin' : 'guest');
-        $view['unread'] = 0;
+        $view['unread'] = $peek ? (int)($view['unread'] ?? 0) : 0;
         if ($IS_ADMIN && $req['status'] === 'pending') {
             // Live check against the current DB: did anything change since the guest created it?
             try {
@@ -337,6 +340,65 @@ try {
         respond(['ok' => true, 'request' => cr_list_item($req, $IS_ADMIN)]);
     }
 
+    if ($action === 'revise') {
+        $body = cr_read_body();
+        $id = (string)($body['id'] ?? '');
+        $version = (int)($body['version'] ?? 0);
+        $actor = $IS_ADMIN ? null : editor_guest_user();
+        if (!$IS_ADMIN && $actor === null) {
+            respond(['ok' => false, 'error' => 'Гостевая сессия недействительна. Войдите заново.'], 401);
+        }
+        $actorRole = $IS_ADMIN ? 'admin' : 'guest';
+        $actorId = $IS_ADMIN
+            ? (string)($_SESSION['editor_studio_user'] ?? 'admin')
+            : (string)$actor['id'];
+        $actorName = $IS_ADMIN ? $actorId : (string)$actor['name'];
+
+        $req = cr_with_lock(function () use ($id, $version, $body, $IS_ADMIN, $guest, $actorRole, $actorId, $actorName) {
+            $req = cr_load_visible($id, $IS_ADMIN);
+            if ($req['status'] !== 'pending') {
+                throw new CrInputError('Редактировать можно только запрос на рассмотрении.', 409, ['code' => 'request_not_pending']);
+            }
+            $currentVersion = max(1, (int)($req['version'] ?? 1));
+            if ($version !== $currentVersion) {
+                throw new CrInputError('Запрос уже изменён другой стороной. Обновите его перед редактированием.', 409, [
+                    'code' => 'version_conflict', 'version' => $currentVersion,
+                ]);
+            }
+
+            $rawOps = $body['operations'] ?? null;
+            $ops = cr_normalize_ops($rawOps, $IS_ADMIN ? 1000 : $guest['max_operations']);
+            if (!$IS_ADMIN) cr_assert_guest_resources($ops);
+            $db = db_connect();
+            try {
+                [$finalOps, $analysis] = cr_prepare_for_submit($db, $ops);
+            } finally {
+                $db->close();
+            }
+
+            $now = cr_now();
+            $nextVersion = $currentVersion + 1;
+            $req['operations'] = $finalOps;
+            $req['analysis'] = cr_public_analysis($analysis);
+            $req['version'] = $nextVersion;
+            $req['updatedAt'] = $now;
+            $req['lastRevision'] = [
+                'version' => $nextVersion, 'role' => $actorRole,
+                'by' => $actorName, 'at' => $now,
+            ];
+            $req['revisions'] = array_slice(array_merge($req['revisions'] ?? [], [[
+                'version' => $nextVersion, 'role' => $actorRole, 'by' => $actorName, 'at' => $now,
+                'operations' => count($finalOps), 'fields' => (int)($req['analysis']['summary']['fields'] ?? 0),
+            ]]), -20);
+            cr_save($req);
+            cr_msg_add($id, $actorRole, $actorId, $actorName,
+                "Обновлён состав запроса: версия {$nextVersion}, операций: " . count($finalOps)
+                . ', изменённых полей: ' . (int)($req['analysis']['summary']['fields'] ?? 0) . '.');
+            return $req;
+        });
+        respond(['ok' => true, 'request' => cr_full_view($req, $IS_ADMIN)]);
+    }
+
     // ── Admin only below (guest_action_guard already rejected guests) ───────
     if (!$IS_ADMIN) respond(['ok' => false, 'error' => 'Действие доступно только администратору'], 403);
 
@@ -395,12 +457,19 @@ try {
         $body = cr_read_body();
         $id = (string)($body['id'] ?? '');
         $force = ($body['force'] ?? false) === true;
+        $version = (int)($body['version'] ?? 0);
         $comment = cr_substr(cr_clean_text($body['comment'] ?? '', true), CR_COMMENT_MAX);
         $adminUser = (string)($_SESSION['editor_studio_user'] ?? 'admin');
 
-        $result = cr_with_lock(function () use ($id, $force, $comment, $adminUser) {
+        $result = cr_with_lock(function () use ($id, $force, $version, $comment, $adminUser) {
             $req = cr_load_visible($id, true);
             if ($req['status'] !== 'pending') throw new CrInputError('Запрос уже обработан (статус: ' . $req['status'] . ').', 409);
+            $currentVersion = max(1, (int)($req['version'] ?? 1));
+            if ($version !== $currentVersion) {
+                throw new CrInputError('Запрос изменился после открытия. Проверьте последнюю версию перед принятием.', 409, [
+                    'code' => 'version_conflict', 'version' => $currentVersion,
+                ]);
+            }
             $db = db_connect();
             try {
                 $res = cr_apply($db, $req, $force);
@@ -414,6 +483,7 @@ try {
                 'at' => cr_now(),
                 'comment' => $comment,
                 'force' => $force,
+                'version' => $currentVersion,
                 'idMap' => $res['idMap'],
                 'skipped' => $res['skipped'],
                 'conflicts' => $res['conflicts'],

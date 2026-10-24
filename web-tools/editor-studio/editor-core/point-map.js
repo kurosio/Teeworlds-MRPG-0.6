@@ -205,9 +205,7 @@
     worldSelect.value = selectedId === null || selectedId === undefined ? '' : String(selectedId);
   };
 
-  const escapeHtml = (value) => String(value)
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
+  const escapeHtml = (value) => window.EditorCore.utils.escapeHtml(value);
 
   const onMessage = (event) => {
     if (!session || !iframe || event.source !== iframe.contentWindow || event.origin !== window.location.origin) return;

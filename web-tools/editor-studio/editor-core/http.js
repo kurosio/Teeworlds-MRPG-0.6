@@ -1,20 +1,10 @@
 /**
- * editor-core/http.js — единственный сетевой слой клиента.
+ * editor-core/http.js — единый сетевой слой клиента.
  *
- * Раньше каждая часть редактора (utils, db, db-crud, страницы) делала свой
- * fetch со своими правилами: где-то не было таймаута, где-то ошибка терялась,
- * где-то 401 не доходил до оболочки. Здесь это одна функция с предсказуемым
- * результатом:
- *
- *   const res = await EditorCore.Http.json(url, { method: 'POST', body });
- *   res.ok      — сервер ответил и не сообщил об ошибке;
- *   res.status  — HTTP-код (0 — сеть/таймаут);
- *   res.error   — понятный текст ошибки (пусто при успехе);
- *   res.data    — разобранный JSON (или null);
- *   ...res      — поля ответа лежат и на верхнем уровне (res.rows и т. п.).
- *
- * `Http.request()` — тот же вызов, но бросает Error при ошибке: удобно там,
- * где исключение ловит внешний код (CRUD-редакторы).
+ * Http.json() возвращает нормализованный результат и не бросает исключения:
+ *   { ok, status, error, data, ...поля ответа }
+ * Http.request() — вариант с исключением для CRUD-кода.
+ * Http.text() использует тот же таймаут, внешний AbortSignal и обработку 401.
  */
 (() => {
   if (window.EditorCore?.Http) return;
@@ -23,14 +13,35 @@
   const DEFAULT_TIMEOUT = 15000;
   const NETWORK_ERROR = 'Нет связи с сервером';
   const TIMEOUT_ERROR = 'Превышено время ожидания ответа сервера';
-  // Ответ не JSON: чаще всего веб-сервер не выполняет PHP и отдаёт файл как текст
-  // либо страница ошибки. Подсказка экономит время новичку.
   const BAD_RESPONSE_ERROR = 'Сервер вернул неожиданный ответ — проверьте, что на сервере выполняется PHP (api/*.php)';
   const CANCELED_ERROR = 'Запрос отменён';
 
-  /** Оболочка студии должна узнать, что сессия кончилась. */
+  // Все окна Studio работают на одном origin. Явный targetOrigin не даёт
+  // отправить служебные данные стороннему окну после смены его навигации.
+  const messageOrigin = () => {
+    const origin = String(window.location?.origin || '');
+    return origin !== 'null' ? origin : '';
+  };
+
+  const postMessage = (target, data) => {
+    const origin = messageOrigin();
+    if (!target || !origin) return false;
+    try {
+      target.postMessage(data, origin);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const isSameOriginMessage = (event, source = null) => {
+    const origin = messageOrigin();
+    if (!event || !origin || event.origin !== origin) return false;
+    return !source || event.source === source;
+  };
+
   const notifyAuthRequired = () => {
-    try { window.top?.postMessage({ type: 'editor-shell:auth-required' }, '*'); } catch { /* не в iframe */ }
+    postMessage(window.top, { type: 'editor-shell:auth-required' });
   };
 
   /** Свой таймаут + внешний сигнал отмены (поиск с вводом, закрытие формы). */
@@ -69,7 +80,7 @@
     try {
       return { data: JSON.parse(text), invalid: false };
     } catch {
-      // Сервер мог добавить предупреждение PHP перед JSON — берём объект/массив.
+      // Старые PHP-установки могут добавить warning перед JSON.
       const startObj = text.indexOf('{');
       const startArr = text.indexOf('[');
       const start = startObj < 0 ? startArr : (startArr < 0 ? startObj : Math.min(startObj, startArr));
@@ -83,89 +94,7 @@
     }
   };
 
-  /**
-   * Один запрос. Никогда не бросает: сетевые сбои и таймауты возвращаются
-   * как `{ ok: false, status: 0, error }`.
-   */
-  const json = async (url, options = {}) => {
-    const {
-      method = 'GET',
-      body = null,
-      query = null,
-      headers = null,
-      timeout = DEFAULT_TIMEOUT,
-      signal: externalSignal = null,
-      credentials = 'same-origin',
-      cache = 'no-store',
-    } = options;
-
-    const controller = new AbortController();
-    const { signal, cleanup } = combineSignals(controller.signal, externalSignal);
-    let timedOut = false;
-    const timer = timeout > 0 ? setTimeout(() => { timedOut = true; controller.abort(); }, timeout) : null;
-
-    try {
-      const payload = body == null || typeof body === 'string' ? body : JSON.stringify(body);
-      const res = await fetch(buildUrl(url, query), {
-        method,
-        credentials,
-        cache,
-        headers: payload == null ? (headers || undefined) : { 'Content-Type': 'application/json', ...(headers || {}) },
-        body: payload ?? undefined,
-        signal,
-      });
-
-      if (res.status === 401) notifyAuthRequired();
-
-      const { data, invalid } = parseBody(await res.text());
-      const failedByPayload = data !== null && typeof data === 'object' && (data.ok === false || data.success === false);
-      // Непустое тело, которое не разобрать как JSON, — не успех, даже при HTTP 200:
-      // иначе вызывающий код получит data = null и упадёт на res.rows / res.ok.
-      const ok = res.ok && !failedByPayload && !invalid;
-      let error = '';
-      if (!ok) {
-        error = (data && typeof data === 'object' && data.error) ? String(data.error)
-          : invalid ? BAD_RESPONSE_ERROR
-            : `HTTP ${res.status}`;
-      }
-
-      return {
-        ...(data && typeof data === 'object' ? data : {}),
-        status: res.status,
-        ok,
-        error,
-        data,
-      };
-    } catch (err) {
-      const aborted = err?.name === 'AbortError';
-      // Отмена вызывающим кодом — не ошибка: так прерывают устаревший поиск.
-      return {
-        status: 0,
-        ok: false,
-        data: null,
-        aborted,
-        cancelled: aborted && !timedOut,
-        error: aborted ? (timedOut ? TIMEOUT_ERROR : CANCELED_ERROR) : NETWORK_ERROR,
-      };
-    } finally {
-      if (timer) clearTimeout(timer);
-      cleanup();
-    }
-  };
-
-  /** Как `json()`, но бросает Error — для кода, который ждёт исключения. */
-  const request = async (url, options = {}) => {
-    const res = await json(url, options);
-    if (!res.ok) {
-      const error = new Error(res.error || 'Операция не выполнена');
-      error.status = res.status;
-      error.payload = res.data;
-      throw error;
-    }
-    return res.data;
-  };
-
-  /** Текст ответа (сценарии, файлы). Та же нормализация, что и у `json()`. */
+  /** Общая реализация запроса; текстовый ответ затем разбирается в json(). */
   const text = async (url, options = {}) => {
     const {
       method = 'GET',
@@ -177,13 +106,15 @@
       credentials = 'same-origin',
       cache = 'no-store',
     } = options;
+
     const controller = new AbortController();
     const { signal, cleanup } = combineSignals(controller.signal, externalSignal);
     let timedOut = false;
     const timer = timeout > 0 ? setTimeout(() => { timedOut = true; controller.abort(); }, timeout) : null;
+
     try {
       const payload = body == null || typeof body === 'string' ? body : JSON.stringify(body);
-      const res = await fetch(buildUrl(url, query), {
+      const response = await fetch(buildUrl(url, query), {
         method,
         credentials,
         cache,
@@ -191,16 +122,16 @@
         body: payload ?? undefined,
         signal,
       });
-      if (res.status === 401) notifyAuthRequired();
-      const data = await res.text();
+      if (response.status === 401) notifyAuthRequired();
+      const data = await response.text();
       return {
-        status: res.status,
-        ok: res.ok,
-        error: res.ok ? '' : `HTTP ${res.status}`,
+        status: response.status,
+        ok: response.ok,
+        error: response.ok ? '' : `HTTP ${response.status}`,
         data,
       };
-    } catch (err) {
-      const aborted = err?.name === 'AbortError';
+    } catch (error) {
+      const aborted = error?.name === 'AbortError';
       return {
         status: 0,
         ok: false,
@@ -215,10 +146,48 @@
     }
   };
 
+  const json = async (url, options = {}) => {
+    const response = await text(url, options);
+    const { data, invalid } = parseBody(response.data);
+    const failedByPayload = data !== null && typeof data === 'object'
+      && (data.ok === false || data.success === false);
+    const ok = response.ok && !failedByPayload && !invalid;
+
+    let error = response.error;
+    if (!ok && response.status !== 0) {
+      error = (data && typeof data === 'object' && data.error) ? String(data.error)
+        : invalid ? BAD_RESPONSE_ERROR
+          : `HTTP ${response.status}`;
+    }
+
+    return {
+      ...response,
+      ...(data && typeof data === 'object' ? data : {}),
+      status: response.status,
+      ok,
+      error,
+      data,
+    };
+  };
+
+  /** Как json(), но бросает Error с HTTP-статусом и исходным payload. */
+  const request = async (url, options = {}) => {
+    const response = await json(url, options);
+    if (!response.ok) {
+      const error = new Error(response.error || 'Операция не выполнена');
+      error.status = response.status;
+      error.payload = response.data;
+      throw error;
+    }
+    return response.data;
+  };
+
   namespace.Http = {
     json,
     text,
     request,
+    postMessage,
+    isSameOriginMessage,
     DEFAULT_TIMEOUT,
     NETWORK_ERROR,
     TIMEOUT_ERROR,

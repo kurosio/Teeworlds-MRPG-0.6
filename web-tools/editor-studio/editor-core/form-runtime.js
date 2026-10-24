@@ -1,40 +1,23 @@
 (() => {
-  // Minimal schema-driven form runtime.
-  // Renders fields via FieldRenderer and provides 2-way binding + list add/remove.
-  // This is intended to simplify creation of new editors.
+  // Schema-driven form runtime. Events are delegated once per mounted form:
+  // rerendering lists no longer accumulates handlers on every generated input.
+  const { getAtPath, setAtPath } = window.EditorCore.utils;
 
-  const parsePath = (path) => String(path).split('.').map((part) => (/^\d+$/.test(part) ? Number(part) : part));
-
-  const getAt = (obj, path) => {
-    if (!path) return undefined;
-    return parsePath(path).reduce((cur, k) => (cur == null ? undefined : cur[k]), obj);
+  const readInputValue = (element) => {
+    if (!element) return undefined;
+    const renderer = window.EditorCore?.FieldRenderer;
+    if (renderer?.getInputValue) return renderer.getInputValue(element);
+    if (element.type === 'checkbox') return !!element.checked;
+    if (element.type === 'number') return element.value === '' ? 0 : Number(element.value);
+    return element.value;
   };
 
-  const setAt = (obj, path, value) => {
-    if (!path) return;
-    const keys = parsePath(path);
-    let cur = obj;
-    for (let i = 0; i < keys.length; i++) {
-      const k = keys[i];
-      if (i === keys.length - 1) {
-        cur[k] = value;
-        return;
-      }
-      const nextKey = keys[i + 1];
-      if (cur[k] == null) cur[k] = typeof nextKey === 'number' ? [] : {};
-      cur = cur[k];
+  const listDefault = (button) => {
+    try {
+      return JSON.parse(decodeURIComponent(button.getAttribute('data-list-default') || ''));
+    } catch {
+      return {};
     }
-  };
-
-  const readInputValue = (el) => {
-    if (!el) return undefined;
-    // Prefer the shared FieldRenderer logic (handles db_select, multiselect, numeric ids, unix_seconds, etc.)
-    const fr = window.EditorCore?.FieldRenderer;
-    if (fr?.getInputValue) return fr.getInputValue(el);
-    // Fallback (should rarely happen)
-    if (el.type === 'checkbox') return !!el.checked;
-    if (el.type === 'number') return el.value === '' ? 0 : Number(el.value);
-    return el.value;
   };
 
   const FormRuntime = {
@@ -42,66 +25,59 @@
       const state = { data: data || {} };
 
       const render = () => {
-        if (!window.EditorCore?.FieldRenderer) {
+        const renderer = window.EditorCore?.FieldRenderer;
+        if (!renderer) {
           root.innerHTML = '<div class="editor-muted-text">FieldRenderer не загружен</div>';
           return;
         }
-        const html = window.EditorCore.FieldRenderer.renderFields({
+        root.innerHTML = renderer.renderFields({
           fields,
           data: state.data,
-          options: fieldOptions || window.EditorCore?.defaults?.fieldOptions
+          options: fieldOptions || window.EditorCore?.defaults?.fieldOptions,
         });
-        root.innerHTML = html;
-
-        // Initialize shared UI behaviors (validation, adaptive db_select, etc.)
-        // UIManager also triggers DB.init internally.
+        // Validation, toggles and DB widgets are initialized only for new nodes.
         window.EditorCore?.UIManager?.init(root);
-
-        // Input bindings
-        root.querySelectorAll('[data-path]').forEach((el) => {
-          const handler = () => {
-            const path = el.getAttribute('data-path');
-            const val = readInputValue(el);
-            setAt(state.data, path, val);
-
-            // Sync adaptive db_select helper select -> input is handled by DB.init.
-            // But we also keep toggle label state in sync.
-            if (el.type === 'checkbox' && el.closest('.editor-toggle')) {
-              el.closest('.editor-toggle')?.setAttribute('data-checked', el.checked ? '1' : '0');
-            }
-            if (typeof onChange === 'function') onChange(state.data, { path, value: val });
-          };
-          el.addEventListener('input', handler);
-          el.addEventListener('change', handler);
-        });
-
-        // List actions
-        root.querySelectorAll('[data-list-action]').forEach((btn) => {
-          btn.addEventListener('click', () => {
-            const action = btn.getAttribute('data-list-action');
-            const listPath = btn.getAttribute('data-list-path');
-            const arr = Array.isArray(getAt(state.data, listPath)) ? getAt(state.data, listPath) : [];
-            if (action === 'add') {
-              const payload = btn.getAttribute('data-list-default') || '';
-              let def = {};
-              try { def = JSON.parse(decodeURIComponent(payload)); } catch { def = {}; }
-              arr.push(def);
-              setAt(state.data, listPath, arr);
-              if (typeof onChange === 'function') onChange(state.data, { path: listPath, value: arr });
-              render();
-            }
-            if (action === 'remove') {
-              const idx = Number(btn.getAttribute('data-list-index'));
-              if (Number.isFinite(idx) && idx >= 0 && idx < arr.length) {
-                arr.splice(idx, 1);
-                setAt(state.data, listPath, arr);
-                if (typeof onChange === 'function') onChange(state.data, { path: listPath, value: arr });
-                render();
-              }
-            }
-          });
-        });
       };
+
+      const onFieldEvent = (event) => {
+        const element = event.target;
+        if (!element?.matches?.('[data-path]') || !root.contains(element)) return;
+        const path = element.getAttribute('data-path');
+        const value = readInputValue(element);
+        setAtPath(state.data, path, value);
+
+        if (element.type === 'checkbox') {
+          element.closest('.editor-toggle')?.setAttribute('data-checked', element.checked ? '1' : '0');
+        }
+        if (typeof onChange === 'function') onChange(state.data, { path, value });
+      };
+
+      const onListClick = (event) => {
+        const button = event.target?.closest?.('[data-list-action]');
+        if (!button || !root.contains(button)) return;
+        const action = button.getAttribute('data-list-action');
+        const path = button.getAttribute('data-list-path');
+        const current = getAtPath(state.data, path);
+        const list = Array.isArray(current) ? current : [];
+
+        if (action === 'add') {
+          list.push(listDefault(button));
+        } else if (action === 'remove') {
+          const index = Number(button.getAttribute('data-list-index'));
+          if (!Number.isFinite(index) || index < 0 || index >= list.length) return;
+          list.splice(index, 1);
+        } else {
+          return;
+        }
+
+        setAtPath(state.data, path, list);
+        if (typeof onChange === 'function') onChange(state.data, { path, value: list });
+        render();
+      };
+
+      root.addEventListener('input', onFieldEvent);
+      root.addEventListener('change', onFieldEvent);
+      root.addEventListener('click', onListClick);
 
       const api = {
         render,
@@ -109,12 +85,17 @@
         setData: (next) => {
           state.data = next || {};
           render();
-        }
+        },
+        destroy: () => {
+          root.removeEventListener('input', onFieldEvent);
+          root.removeEventListener('change', onFieldEvent);
+          root.removeEventListener('click', onListClick);
+        },
       };
 
       render();
       return api;
-    }
+    },
   };
 
   window.EditorCore = window.EditorCore || {};

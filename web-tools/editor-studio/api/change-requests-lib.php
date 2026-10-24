@@ -1052,6 +1052,8 @@ function cr_list_item(array $req, bool $admin, int $unread = 0): array
         'status' => $req['status'],
         'createdAt' => $req['createdAt'] ?? null,
         'updatedAt' => $req['updatedAt'] ?? null,
+        'version' => max(1, (int)($req['version'] ?? 1)),
+        'lastRevision' => $req['lastRevision'] ?? null,
         'nickname' => $req['author']['nickname'] ?? '',
         'guestName' => $req['author']['guestName'] ?? '',
         'guestLogin' => $req['author']['guestLogin'] ?? '',
@@ -1077,13 +1079,28 @@ function cr_full_view(array $req, bool $admin): array
     $view = cr_list_item($req, $admin);
     $view['message'] = (string)($req['message'] ?? '');
     $view['analysis'] = $req['analysis'] ?? null;
+    $view['revisions'] = $req['revisions'] ?? [];
+    // The owner and the administrator may revise the pending request. Return
+    // decoded values for the workbench; approval still revalidates everything.
+    $view['operations'] = array_map(function (array $o): array {
+        $R = cr_resource((string)$o['resource']);
+        $jsonCols = $R['json'] ?? [];
+        $before = is_array($o['before'] ?? null) ? $o['before'] : null;
+        return [
+            'type' => $o['type'], 'resource' => $o['resource'],
+            'id' => $o['id'], 'tempId' => $o['tempId'],
+            'data' => decode_json_cols(is_array($o['data'] ?? null) ? $o['data'] : [], $jsonCols),
+            'before' => $before === null ? null : decode_json_cols($before, $jsonCols),
+        ];
+    }, $req['operations'] ?? []);
     if ($admin) {
         $view['author'] = $req['author'] ?? [];
         unset($view['author']['guestHash']);
         $view['review'] = $req['review'] ?? null;
-        $view['operations'] = array_map(fn($o) => [
-            'type' => $o['type'], 'resource' => $o['resource'], 'id' => $o['id'], 'tempId' => $o['tempId'],
-        ], $req['operations'] ?? []);
+    } elseif (isset($req['review']['idMap']) && is_array($req['review']['idMap'])) {
+        // The owner needs the same temporary → real ID mapping for links to
+        // approved create operations. It contains only this request's IDs.
+        $view['review']['idMap'] = $req['review']['idMap'];
     }
     return $view;
 }

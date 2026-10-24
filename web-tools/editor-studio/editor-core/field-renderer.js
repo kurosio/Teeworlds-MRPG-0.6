@@ -1,39 +1,8 @@
 (() => {
-  const parsePath = (path) => path.split('.').map((part) => (/^\d+$/.test(part) ? Number(part) : part));
-
-  const cloneValue = (value) => {
-    if (value && typeof value === 'object') {
-      return JSON.parse(JSON.stringify(value));
-    }
-    return value;
-  };
-
-  const getValueAtPath = (data, path) => {
-    if (!path) return undefined;
-    const keys = parsePath(path);
-    return keys.reduce((current, key) => (current == null ? undefined : current[key]), data);
-  };
-
-  const setValueAtPath = (data, path, value) => {
-    if (!path) return;
-    const keys = parsePath(path);
-    let current = data;
-    keys.forEach((key, index) => {
-      if (index === keys.length - 1) {
-        current[key] = value;
-        return;
-      }
-      const nextKey = keys[index + 1];
-      if (current[key] == null) {
-        current[key] = typeof nextKey === 'number' ? [] : {};
-      } else if (typeof nextKey === 'number' && !Array.isArray(current[key])) {
-        current[key] = [];
-      } else if (typeof nextKey !== 'number' && typeof current[key] !== 'object') {
-        current[key] = {};
-      }
-      current = current[key];
-    });
-  };
+  const { parsePath, getAtPath, setAtPath, cloneData } = window.EditorCore.utils;
+  const getValueAtPath = getAtPath;
+  const setValueAtPath = setAtPath;
+  const cloneValue = cloneData;
 
   const getInputValue = (input) => {
     if (!input) return undefined;

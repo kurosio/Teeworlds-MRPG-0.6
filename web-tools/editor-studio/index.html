@@ -20,6 +20,7 @@
   <script src="editor-core/tailwind-theme.js"></script>
 
   <script src="editor-core/http.js"></script>
+  <script src="editor-core/utils.js"></script>
   <script src="studio.manifest.js"></script>
   <script src="editor-core/guest-mode.js"></script>
   <script src="editor-core/i18n-en.js"></script>
@@ -542,8 +543,7 @@
       refreshBadges();
     };
 
-    // Оболочка не грузит utils.js: берём экранирование из page-kit (у него есть
-    // собственный запасной вариант), иначе падал весь скрипт — вместе с входом.
+    // Единый HTML-escaping из page-kit/utils используется и в оболочке.
     const escapeChip = EditorCore.Page.esc;
 
     let badgeTimer = null;
@@ -636,7 +636,10 @@
           : currentRole === 'guest'
             ? 'Администратор пока не открыл вам ни одной вкладки. Напишите ему, чтобы получить доступ.'
             : 'Список редакторов пуст.';
-        root.innerHTML = `<div class="editor-empty-state">${message}</div>`;
+        const empty = document.createElement('div');
+        empty.className = 'editor-empty-state';
+        empty.textContent = message;
+        root.appendChild(empty);
         return;
       }
       root.appendChild(fragment);
@@ -665,7 +668,7 @@
         };
 
         const onMessage = (event) => {
-          if (event.source !== frameWindow) return;
+          if (!EditorCore.Http.isSameOriginMessage(event, frameWindow)) return;
           const data = event.data || {};
           if (data?.type !== 'editor-shell:dirty-status' || data.requestId !== requestId) return;
           finish({ supported: true, dirty: !!data.dirty });
@@ -673,11 +676,21 @@
 
         window.addEventListener('message', onMessage);
         timer = setTimeout(() => finish({ supported: false, dirty: false }), DIRTY_STATUS_TIMEOUT);
-        frameWindow.postMessage({ type: 'editor-shell:request-dirty-status', requestId }, '*');
+        EditorCore.Http.postMessage(frameWindow, { type: 'editor-shell:request-dirty-status', requestId });
       });
     };
 
-    const openEditor = async (key, { closeMobile = false, syncHash = true } = {}) => {
+    const editorSource = (editor, params = {}) => {
+      const url = new URL(editor.src, location.href);
+      const allowed = { request: 80, resource: 80, record: 40, field: 160, edit: 4 };
+      for (const [key, max] of Object.entries(allowed)) {
+        const value = String(params?.[key] ?? '').trim();
+        if (value) url.searchParams.set(key, value.slice(0, max));
+      }
+      return url.href;
+    };
+
+    const openEditor = async (key, { closeMobile = false, syncHash = true, params = {} } = {}) => {
       if (!isAuthorized) {
         await ensureAuthorized();
         if (!isAuthorized) return;
@@ -704,7 +717,7 @@
       renderAllNavs(e.key, term);
       studioLoading?.classList.add('active');
       frame.title = e.title || 'Активный редактор';
-      frame.src = e.src;
+      frame.src = editorSource(e, params);
       if (desktopEditorTitle) desktopEditorTitle.textContent = e.title || 'Редактор';
       if (desktopEditorMeta) desktopEditorMeta.textContent = e.hint || '';
       if (desktopEditorIcon) desktopEditorIcon.innerHTML = `<i class="fa-solid ${e.icon || 'fa-pen-ruler'}"></i>`;
@@ -772,7 +785,7 @@
       const key = normalizeEditorKey(location.hash) || storageGet(activeEditorStorageKey()) || fallbackKey;
       const e = byKey(key);
       if (!e) return;
-      window.open(e.src, '_blank', 'noopener');
+      window.open(key === activeKey && frame?.src ? frame.src : e.src, '_blank', 'noopener');
     });
 
     frame?.addEventListener('load', () => studioLoading?.classList.remove('active'));
@@ -820,10 +833,16 @@
     });
 
     window.addEventListener('message', (event) => {
-      if (event.origin !== location.origin) return;
       const data = event.data || {};
+      const frameWindow = frame?.contentWindow;
+      const fromFrame = !!frameWindow && EditorCore.Http.isSameOriginMessage(event, frameWindow);
+      // Http can report an expired session from the shell itself. Other shell
+      // commands are accepted only from the active editor frame.
+      const ownAuthWarning = data?.type === 'editor-shell:auth-required'
+        && EditorCore.Http.isSameOriginMessage(event, window);
+      if (!fromFrame && !ownAuthWarning) return;
       if (data?.type === 'editor-shell:open-editor' && typeof data.key === 'string') {
-        if (isAuthorized) openEditor(data.key);
+        if (isAuthorized) openEditor(data.key, { params: data.params && typeof data.params === 'object' ? data.params : {} });
         return;
       }
       if (data?.type === 'editor-shell:guest-draft-changed' || data?.type === 'editor-shell:requests-changed') {

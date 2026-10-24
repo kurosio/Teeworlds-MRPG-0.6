@@ -28,7 +28,7 @@
 
   // ── Change history storage ────────────────────────────────────────────────
 
-  const generateId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+  const generateId = () => window.EditorCore.utils.uuid();
 
   /**
    * Extract a human-readable name from record data.
@@ -119,7 +119,7 @@
     }
     return {
       id: generateId(), resource, action,
-      data: data ? JSON.parse(JSON.stringify(data)) : null,
+      data: data ? window.EditorCore.utils.cloneData(data) : null,
       record_id: id !== null ? Number(id) : null,
       record_name: recordName || extractRecordName(data, resource),
       label: label || `${action} ${resource}${id ? ' #' + id : ''}`,
@@ -294,11 +294,7 @@
     if (window.EditorCore?.UI?.toast) window.EditorCore.UI.toast(msg, type);
   };
 
-  const escapeHtml = (s) => {
-    const d = document.createElement('div');
-    d.textContent = String(s ?? '');
-    return d.innerHTML;
-  };
+  const escapeHtml = (value) => window.EditorCore.utils.escapeHtml(value);
 
   const RESOURCE_LABELS = {
     vouchers: 'Ваучеры',

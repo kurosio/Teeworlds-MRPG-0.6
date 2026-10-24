@@ -41,11 +41,6 @@
     return container;
   };
 
-  const renderEmptyList = (container, message) => {
-    if (!container) return;
-    container.innerHTML = `<div class="editor-empty-state">${message}</div>`;
-  };
-
   const applyEmptyStateClass = (container, hasItems, emptyClass) => {
     if (!container || !emptyClass) return;
     container.classList.toggle(emptyClass, !hasItems);
@@ -255,53 +250,6 @@
   };
 
   /**
-   * Table (simple, editor-agnostic)
-   * @param {HTMLElement} root
-   * @param {{columns:Array<{key:string,title:string,mono?:boolean}>, rows:Array<Record<string, any>>}} cfg
-   */
-  const renderTable = (root, cfg) => {
-    if (!root) return;
-    const cols = Array.isArray(cfg?.columns) ? cfg.columns : [];
-    const rows = Array.isArray(cfg?.rows) ? cfg.rows : [];
-    if (!rows.length) {
-      root.textContent = '';
-      const empty = document.createElement('div');
-      empty.className = 'p-3 editor-muted-text';
-      empty.textContent = 'Нет данных';
-      root.appendChild(empty);
-      return;
-    }
-    root.textContent = '';
-    const table = document.createElement('table');
-    table.className = 'w-full text-sm';
-    const thead = document.createElement('thead');
-    const headRow = document.createElement('tr');
-    headRow.className = 'editor-soft border-b editor-hairline';
-    cols.forEach((col) => {
-      const th = document.createElement('th');
-      th.className = 'text-left px-3 py-2 editor-text';
-      th.textContent = col.title;
-      headRow.appendChild(th);
-    });
-    thead.appendChild(headRow);
-    const tbody = document.createElement('tbody');
-    rows.forEach((row) => {
-      const tr = document.createElement('tr');
-      tr.className = 'border-b editor-hairline';
-      cols.forEach((col) => {
-        const td = document.createElement('td');
-        td.className = `px-3 py-2 ${col.mono ? 'font-mono editor-text' : 'editor-text'}`;
-        td.textContent = String(row?.[col.key] ?? '');
-        tr.appendChild(td);
-      });
-      tbody.appendChild(tr);
-    });
-    table.appendChild(thead);
-    table.appendChild(tbody);
-    root.appendChild(table);
-  };
-
-  /**
    * Date/Time picker in a modal (reusable).
    * Uses the shared modal styling from editor-theme.css.
    * @param {{title?:string, valueSec?:number, onApply?:(sec:number)=>void, withTime?:boolean}} cfg
@@ -375,12 +323,10 @@
     mountToastContainer,
     mountModal,
     mountListContainer,
-    renderEmptyList,
     applyEmptyStateClass,
     mountScenarioEditorUI,
     toast,
     mountTabs,
-    renderTable,
     openDateTimeModal,
     mountScenarioFieldOverlay,
     openScenarioFieldOverlay

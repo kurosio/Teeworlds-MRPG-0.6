@@ -19,8 +19,8 @@ $currentRole = bootstrap_editor_api_roles(null);
 
 $action = (string)($_GET['action'] ?? 'status');
 
-function auth_credentials(): array {
-  $cfg = load_cfg();
+function auth_credentials(?array $cfg = null): array {
+  $cfg ??= load_cfg(false);
   return [
     'user' => trim((string)($cfg['editor_user'] ?? 'admin')),
     'password' => (string)($cfg['editor_password'] ?? ''),
@@ -94,7 +94,7 @@ function auth_clear_throttle(string $login): void {
 }
 
 function auth_status_payload(?string $role): array {
-  $cfg = load_cfg();
+  $cfg = load_cfg(false);
   $guest = guest_cfg($cfg);
   $guestEnabled = $guest['enabled'] && $guest['users_count'] > 0;
 
@@ -117,7 +117,7 @@ function auth_status_payload(?string $role): array {
     'guest_only_network' => editor_network_guest_only(),
     // Пароль администратора не задан: вход невозможен, пока он не настроен.
     // Публиковать пароль по умолчанию нельзя — это открытый доступ к базе.
-    'admin_setup_needed' => auth_credentials()['password'] === '',
+    'admin_setup_needed' => auth_credentials($cfg)['password'] === '',
   ];
 
   if ($role === EDITOR_ROLE_ADMIN) {
@@ -153,6 +153,9 @@ try {
   }
   if (in_array($action, ['login', 'guest_login', 'logout'], true) && $method !== 'POST') {
     respond(['ok' => false, 'error' => 'Метод запроса не поддерживается'], 405);
+  }
+  if (in_array($action, ['login', 'guest_login', 'logout'], true)) {
+    require_same_origin_json_post();
   }
 
   if ($action === 'status') {
@@ -195,9 +198,7 @@ try {
   }
 
   if ($action === 'guest_login') {
-    require_same_origin_json_post();
-
-    $cfg = load_cfg();
+    $cfg = load_cfg(false);
     $guest = guest_cfg($cfg);
     if (!$guest['enabled'] || $guest['users_count'] === 0) {
       respond(['ok' => false, 'error' => 'Гостевой доступ отключён администратором.'], 403);

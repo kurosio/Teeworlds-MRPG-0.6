@@ -108,12 +108,12 @@ function read_json_body(): array
 // read-modify-write под блокировкой.
 
 /** @return array<string, mixed> */
-function load_cfg(): array
+function load_cfg(bool $withGuests = true): array
 {
     try {
         $cfg = store_settings_load();
-        // Гостевые аккаунты — отдельная таблица, но код выше ожидает их в конфиге.
-        $cfg['guest_users'] = store_guest_users_all();
+        // DB connections do not need to scan guest accounts on every request.
+        if ($withGuests) $cfg['guest_users'] = store_guest_users_all();
         return $cfg;
     } catch (Throwable $e) {
         editor_log_error($e);
@@ -169,39 +169,6 @@ function mutate_cfg(callable $fn): bool
 //   * login-account — address + login (a stranger cannot lock out a guest account
 //                     by guessing its login from another IP).
 
-/**
- * Read-modify-write of the throttle table in one transaction.
- * $fn(array $map, int $now) may return ['map' => array, 'result' => mixed];
- * returning null keeps the store untouched.
- */
-function auth_throttle_mutate(callable $fn): mixed
-{
-    try {
-        return store_throttle_mutate(function (array $map, int $now) use ($fn) {
-            foreach ($map as $key => $row) {
-                // Drop only stale records: an unlocked counter (until = 0) stays alive
-                // until its own window has long passed, otherwise the counter resets.
-                $until = is_array($row) ? (int)($row['until'] ?? 0) : 0;
-                $first = is_array($row) ? (int)($row['first'] ?? 0) : 0;
-                if (!is_array($row) || ($until < $now - 3600 && $first < $now - 86400)) {
-                    unset($map[$key]);
-                }
-            }
-            // Never let the table grow forever on a hostile host.
-            if (count($map) > 800) {
-                uasort($map, fn($a, $b) => (int)($b['first'] ?? 0) <=> (int)($a['first'] ?? 0));
-                $map = array_slice($map, 0, 400, true);
-            }
-            $out = $fn($map, $now);
-            // Контракт store_throttle_mutate: ['map' => …, 'result' => …] или null.
-            return is_array($out) ? $out : null;
-        });
-    } catch (Throwable $e) {
-        editor_log_error($e);
-        return null;
-    }
-}
-
 function auth_throttle_key(string $scope, string $identity): string
 {
     return hash('sha256', $scope . '|' . strtolower(trim($identity)));
@@ -210,59 +177,59 @@ function auth_throttle_key(string $scope, string $identity): string
 /** Seconds left in the lock (0 = not locked). */
 function auth_throttle_left(string $scope, string $identity): int
 {
-    $key = auth_throttle_key($scope, $identity);
-    $result = auth_throttle_mutate(function (array $map) use ($key) {
-        $row = $map[$key] ?? null;
-        if (!is_array($row)) {
-            return null;
-        }
-        $left = max(0, (int)($row['until'] ?? 0) - time());
-        return ['map' => $map, 'result' => $left];
-    });
-    return (int)($result ?? 0);
+    try {
+        $row = store_throttle_get(auth_throttle_key($scope, $identity));
+        return max(0, (int)($row['until'] ?? 0) - time());
+    } catch (Throwable $e) {
+        editor_log_error($e);
+        return 0;
+    }
 }
 
 /**
- * Register a failed attempt; returns seconds the caller must wait (0 when the
- * limit is not reached yet and the attempt may simply be rejected as usual).
+ * Register a failed attempt under BEGIN IMMEDIATE. Parallel requests cannot
+ * lose increments, while only one indexed row is read and written.
  */
 function auth_throttle_fail(string $scope, string $identity, int $maxAttempts, int $window, int $lockSeconds): int
 {
     $key = auth_throttle_key($scope, $identity);
-    $result = auth_throttle_mutate(function (array $map) use ($key, $maxAttempts, $window, $lockSeconds) {
-        $now = time();
-        $row = $map[$key] ?? ['n' => 0, 'first' => $now, 'until' => 0];
-        if (!is_array($row)) {
-            $row = ['n' => 0, 'first' => $now, 'until' => 0];
-        }
-        if ((int)($row['until'] ?? 0) > $now) {
-            return ['map' => $map, 'result' => (int)$row['until'] - $now];
-        }
-        if ($now - (int)($row['first'] ?? 0) > $window) {
-            $row = ['n' => 0, 'first' => $now, 'until' => 0];
-        }
-        $row['n'] = (int)($row['n'] ?? 0) + 1;
-        $locked = 0;
-        if ($row['n'] >= $maxAttempts) {
-            $locked = $lockSeconds;
-            $row['until'] = $now + $lockSeconds;
-            $row['n'] = 0;
-            $row['first'] = $now;
-        }
-        $map[$key] = $row;
-        return ['map' => $map, 'result' => $locked];
-    });
-    return (int)($result ?? 0);
+    try {
+        return (int)store_tx(function () use ($key, $maxAttempts, $window, $lockSeconds): int {
+            $now = time();
+            store_throttle_prune($now);
+            $row = store_throttle_get($key) ?? ['n' => 0, 'first' => $now, 'until' => 0];
+            if ((int)$row['until'] > $now) {
+                return (int)$row['until'] - $now;
+            }
+            if ($now - (int)$row['first'] > $window) {
+                $row = ['n' => 0, 'first' => $now, 'until' => 0];
+            }
+
+            $row['n'] = (int)$row['n'] + 1;
+            $locked = 0;
+            if ($row['n'] >= $maxAttempts) {
+                $locked = $lockSeconds;
+                $row['until'] = $now + $lockSeconds;
+                $row['n'] = 0;
+                $row['first'] = $now;
+            }
+            store_throttle_set($key, $row);
+            return $locked;
+        });
+    } catch (Throwable $e) {
+        editor_log_error($e);
+        return 0;
+    }
 }
 
 /** A successful login clears both counters of the identity. */
 function auth_throttle_clear(string $scope, string $identity): void
 {
-    $key = auth_throttle_key($scope, $identity);
-    auth_throttle_mutate(function (array $map) use ($key) {
-        unset($map[$key]);
-        return ['map' => $map];
-    });
+    try {
+        store_throttle_clear(auth_throttle_key($scope, $identity));
+    } catch (Throwable $e) {
+        editor_log_error($e);
+    }
 }
 
 /** New unique id of a guest account. */
@@ -328,7 +295,10 @@ function clamp_int(mixed $value, int $min, int $max, int $default): int
 /** Normalised guest access settings (stored in data/db-config.json). */
 function guest_cfg(?array $cfg = null): array
 {
-    $cfg ??= load_cfg();
+    $cfg ??= load_cfg(false);
+    $usersCount = array_key_exists('guest_users', $cfg)
+        ? count(array_filter(guest_users($cfg), fn($u) => $u['enabled']))
+        : store_guest_users_count(true);
     return [
         'enabled'        => (bool)($cfg['guest_enabled'] ?? false),
         'allow_remote'   => (bool)($cfg['guest_allow_remote'] ?? false),
@@ -336,7 +306,7 @@ function guest_cfg(?array $cfg = null): array
         'cooldown'       => clamp_int($cfg['guest_submit_cooldown'] ?? null, 0, 3600, 60),
         'max_operations' => clamp_int($cfg['guest_max_operations'] ?? null, 1, 500, 100),
         // Guest logins exist only as personal accounts created by an administrator.
-        'users_count'    => count(array_filter(guest_users($cfg), fn($u) => $u['enabled'])),
+        'users_count'    => $usersCount,
     ];
 }
 
@@ -463,7 +433,15 @@ function guest_users(?array $cfg = null): array
 
 function guest_user_by_id(?array $cfg, string $id): ?array
 {
-    return guest_users($cfg)[strtolower(trim($id))] ?? null;
+    $id = strtolower(trim($id));
+    if ($id === '') {
+        return null;
+    }
+    if ($cfg === null || !array_key_exists('guest_users', $cfg)) {
+        $row = store_guest_user_get($id);
+        return $row === null ? null : guest_user_normalize($row);
+    }
+    return guest_users($cfg)[$id] ?? null;
 }
 
 function guest_user_by_login(?array $cfg, string $login): ?array
@@ -471,6 +449,10 @@ function guest_user_by_login(?array $cfg, string $login): ?array
     $login = strtolower(trim($login));
     if ($login === '') {
         return null;
+    }
+    if ($cfg === null || !array_key_exists('guest_users', $cfg)) {
+        $row = store_guest_user_by_login($login);
+        return $row === null ? null : guest_user_normalize($row);
     }
     foreach (guest_users($cfg) as $user) {
         if ($user['login'] === $login) {
@@ -836,7 +818,7 @@ function bootstrap_editor_api_roles(?array $roles): ?string
 {
     apply_security_headers();
 
-    $cfg = load_cfg();
+    $cfg = load_cfg(false);
     $networkError = network_policy_error($cfg);
     $guest = guest_cfg($cfg);
 
@@ -1070,9 +1052,9 @@ function map_api_request(string $url, string $token = '', int $maxBytes = 671088
 
 // ── Database connection ──────────────────────────────────────────────────────
 
-function db_connect_server(): mysqli
+function db_connect_server(?array $cfg = null): mysqli
 {
-    $cfg  = load_cfg();
+    $cfg ??= load_cfg(false);
     $host = (string)($cfg['host']     ?? '127.0.0.1');
     $port = (int)($cfg['port']        ?? 3306);
     $user = (string)($cfg['user']     ?? 'root');
@@ -1090,10 +1072,10 @@ function db_connect_server(): mysqli
 
 function db_connect(): mysqli
 {
-    $cfg = load_cfg();
+    $cfg = load_cfg(false);
     $db  = (string)($cfg['database'] ?? '');
 
-    $mysqli = db_connect_server();
+    $mysqli = db_connect_server($cfg);
     if ($db !== '' && !$mysqli->select_db($db)) {
         $error = $mysqli->error;
         $mysqli->close();

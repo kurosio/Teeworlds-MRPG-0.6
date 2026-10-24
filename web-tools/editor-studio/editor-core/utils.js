@@ -5,15 +5,29 @@
     }
   };
 
-  const uuid = () => ([1e7] + -1e3 + -4e3 + -8e3 + -1e11)
-    .replace(/[018]/g, c => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16));
+  const uuid = () => {
+    if (typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+    const bytes = crypto.getRandomValues(new Uint8Array(16));
+    bytes[6] = (bytes[6] & 0x0f) | 0x40;
+    bytes[8] = (bytes[8] & 0x3f) | 0x80;
+    const hex = Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('');
+    return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
+  };
 
   const debounce = (fn, delay = 200) => {
-    let t;
-    return (...args) => {
-      clearTimeout(t);
-      t = setTimeout(() => fn(...args), delay);
+    let timer = null;
+    function debounced(...args) {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        timer = null;
+        fn.apply(this, args);
+      }, delay);
+    }
+    debounced.cancel = () => {
+      clearTimeout(timer);
+      timer = null;
     };
+    return debounced;
   };
 
   // Safe clone for editable snapshots. Keeps editor-specific code independent
@@ -23,6 +37,94 @@
     if (typeof structuredClone === 'function') return structuredClone(value);
     try { return JSON.parse(JSON.stringify(value)); }
     catch { return value; }
+  };
+
+  // Shared path access for schema forms. Numeric segments create arrays and
+  // incompatible containers are repaired instead of throwing mid-edit.
+  const parsePath = (path) => String(path ?? '').split('.')
+    .map(part => (/^\d+$/.test(part) ? Number(part) : part));
+
+  const getAtPath = (data, path) => {
+    if (!path) return undefined;
+    return parsePath(path).reduce((current, key) => current == null ? undefined : current[key], data);
+  };
+
+  const setAtPath = (data, path, value) => {
+    if (!path || data == null) return;
+    const keys = parsePath(path);
+    if (keys.some(key => key === '__proto__' || key === 'prototype' || key === 'constructor')) return;
+    let current = data;
+    for (let index = 0; index < keys.length; index++) {
+      const key = keys[index];
+      if (index === keys.length - 1) {
+        current[key] = value;
+        return;
+      }
+      const needsArray = typeof keys[index + 1] === 'number';
+      if (current[key] == null || typeof current[key] !== 'object'
+        || (needsArray && !Array.isArray(current[key]))) {
+        current[key] = needsArray ? [] : {};
+      }
+      current = current[key];
+    }
+  };
+
+  /**
+   * Small bounded TTL cache with request de-duplication. clear() also advances
+   * a generation, so an older request cannot repopulate stale data after a
+   * mutation invalidated the cache.
+   */
+  const createRequestCache = ({ ttl = 30000, max = 100, now = () => Date.now() } = {}) => {
+    const values = new Map();
+    const pending = new Map();
+    let generation = 0;
+
+    const get = (key) => {
+      const entry = values.get(key);
+      if (!entry) return undefined;
+      if (now() - entry.ts >= ttl) {
+        values.delete(key);
+        return undefined;
+      }
+      // Map iteration order doubles as an inexpensive LRU order.
+      values.delete(key);
+      values.set(key, entry);
+      return entry.value;
+    };
+
+    const set = (key, value) => {
+      values.delete(key);
+      values.set(key, { ts: now(), value });
+      while (values.size > max) values.delete(values.keys().next().value);
+      return value;
+    };
+
+    const clear = () => {
+      generation += 1;
+      values.clear();
+      pending.clear();
+    };
+
+    const load = async (key, loader, { cache = true, dedupe = true, shouldCache = () => true } = {}) => {
+      if (cache) {
+        const cached = get(key);
+        if (cached !== undefined) return cached;
+      }
+      if (dedupe && pending.has(key)) return pending.get(key);
+
+      const requestGeneration = generation;
+      const promise = Promise.resolve().then(loader);
+      if (dedupe) pending.set(key, promise);
+      try {
+        const value = await promise;
+        if (cache && generation === requestGeneration && shouldCache(value)) set(key, value);
+        return value;
+      } finally {
+        if (pending.get(key) === promise) pending.delete(key);
+      }
+    };
+
+    return { get, set, clear, load, size: () => values.size };
   };
 
   const toFiniteNumber = (value, fallback = 0) => {
@@ -478,6 +580,10 @@
     uuid,
     debounce,
     cloneData,
+    parsePath,
+    getAtPath,
+    setAtPath,
+    createRequestCache,
     toFiniteNumber,
     toNullableInt,
     parseStringList,

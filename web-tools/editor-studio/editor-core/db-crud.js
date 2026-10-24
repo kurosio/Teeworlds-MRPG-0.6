@@ -1,88 +1,124 @@
 (() => {
   // Generic CRUD client for DB-backed editors.
-  // Requires api/db-crud.php on server.
   const API = 'api/db-crud.php';
-  const LIST_CACHE_TTL_MS = 30 * 1000;
-  const listCache = new Map();
-  const inflight = new Map();
-
-  /**
-   * Запрос с исключением на ошибке — так CRUD-редакторы ловят сбои через
-   * try/catch. Таймаут, внешний abort и текст ошибки берёт editor-core/http.js.
-   */
+  const listCache = window.EditorCore.utils.createRequestCache({ ttl: 30000, max: 100 });
   const jsonFetch = (url, options = {}) => window.EditorCore.Http.request(url, options);
-
   const qs = (...args) => window.EditorCore.utils.qs(...args);
 
-  // ── Guest mode ──────────────────────────────────────────────────────────
-  // In guest mode writes never reach api/db-crud.php (the server would reject
-  // them anyway): they go into the local change-request draft, and reads are
-  // overlaid with that draft. See editor-core/guest-mode.js.
+  // Guest writes go to the local change-request draft; reads are overlaid with it.
   const guestApi = () => window.EditorCore?.Guest || null;
-  const guestRole = async () => {
-    const g = guestApi();
-    if (!g) return null;
-    return g.ready();
+  const requestApi = () => window.EditorCore?.RequestContext || null;
+  const assertRequestWritable = () => {
+    if (requestApi()?.isReadOnly?.()) {
+      throw new Error('Открыт read-only снимок запроса. Вернитесь в запрос и сохраните исправленную версию там.');
+    }
   };
-  const isGuestMode = async () => (await guestRole()) === 'guest';
+  const isGuestMode = async () => {
+    const guest = guestApi();
+    return guest ? (await guest.ready()) === 'guest' : false;
+  };
 
   const rawGet = (resource, id) => jsonFetch(`${API}?${qs({ action: 'get', resource, id })}`);
   const rawGetRow = async (resource, id) => {
     try {
-      const res = await rawGet(resource, id);
-      return res?.row || null;
+      const response = await rawGet(resource, id);
+      return response?.row || null;
     } catch {
       return null;
     }
   };
 
+  const recordSync = (resource, action, { id, data = null, skip = false } = {}) => {
+    const sync = window.EditorCore?.Sync;
+    if (skip || !DBCrud._syncRecordEnabled || !sync || (action === 'create' && !id)) return;
+    const labels = { create: 'Создание', update: 'Обновление', remove: 'Удаление' };
+    try {
+      sync.record(resource, action === 'remove' ? 'delete' : action, {
+        id,
+        ...(data === null ? {} : { data }),
+        label: `${labels[action]} ${resource} #${id}`,
+      });
+      sync.updateAllBadges();
+    } catch (error) {
+      console.warn(`[DBCrud] Failed to record ${action} operation:`, error.message);
+    }
+  };
+
+  /** One mutation pipeline: invalidation, request revision, guest draft, HTTP and sync history. */
+  const mutate = async (resource, action, { id = null, data = null, skipSync = false, guest } = {}) => {
+    const preview = requestApi();
+    if (preview?.active?.()) await preview.ready();
+    listCache.clear();
+    if (preview?.isEditing?.()) {
+      const numericId = Number(id) || 0;
+      const baseRow = action !== 'create' && numericId > 0 && numericId < 2000000000
+        ? await rawGetRow(resource, numericId) : null;
+      return preview.mutate({ action, resource, id, data, baseRow });
+    }
+    assertRequestWritable();
+    if (await isGuestMode()) return guest(guestApi());
+
+    const serverAction = action === 'remove' ? 'delete' : action;
+    const response = await jsonFetch(`${API}?${qs({ action: serverAction, resource, id })}`, {
+      method: 'POST',
+      body: action === 'remove' ? {} : { data },
+    });
+    recordSync(resource, action, {
+      id: action === 'create' ? response?.id : id,
+      data,
+      skip: skipSync,
+    });
+    return response;
+  };
+
   const DBCrud = {
-    // Flag to prevent double-recording when runtime already records
     _syncRecordEnabled: true,
 
-    /** Drop every cached list (used when the server data changed, e.g. an approved guest request). */
     invalidateCache() {
       listCache.clear();
-      inflight.clear();
     },
 
     async list(resource, { search = '', limit = 100, offset = 0, signal } = {}) {
+      const preview = requestApi();
+      if (preview?.active?.()) await preview.ready();
       const key = `list:${resource}:${search}:${limit}:${offset}`;
-      const now = Date.now();
-      const cached = listCache.get(key);
-      if (cached && (now - cached.ts) < LIST_CACHE_TTL_MS) {
-        if (await isGuestMode()) {
-          return { ...cached.value, rows: guestApi().Draft.overlayRows(resource, cached.value?.rows || [], { search, offset }) };
-        }
-        return cached.value;
+      const request = listCache.load(
+        key,
+        () => jsonFetch(`${API}?${qs({ action: 'list', resource, search, limit, offset })}`, { signal }),
+        { dedupe: !signal, shouldCache: response => !!response?.ok },
+      );
+      if (preview?.hasResource?.(resource)) {
+        const response = await request;
+        return { ...response, rows: preview.overlayRows(resource, response?.rows || []) };
       }
-      if (!signal && inflight.has(key) && !(await isGuestMode())) {
-        return inflight.get(key);
-      }
-      const req = jsonFetch(`${API}?${qs({ action: 'list', resource, search, limit, offset })}`, { signal })
-        .then((res) => {
-          if (res?.ok) listCache.set(key, { ts: Date.now(), value: res });
-          return res;
-        })
-        .finally(() => inflight.delete(key));
-      if (!signal) inflight.set(key, req);
       if (await isGuestMode()) {
-        const res = await req;
-        return { ...res, rows: guestApi().Draft.overlayRows(resource, res?.rows || [], { search, offset }) };
+        const response = await request;
+        return {
+          ...response,
+          rows: guestApi().Draft.overlayRows(resource, response?.rows || [], { search, offset }),
+        };
       }
-      return req;
+      return request;
     },
+
     async renameCraftGroup(target, newGroup, mergeExisting = false) {
+      const preview = requestApi();
+      if (preview?.active?.()) await preview.ready();
       listCache.clear();
+      if (preview?.isEditing?.()) {
+        const list = await DBCrud.list('crafts', { search: '', limit: 5000, offset: 0 });
+        return preview.renameCraftGroup(list?.rows || [], target, newGroup, mergeExisting);
+      }
+      assertRequestWritable();
       if (await isGuestMode()) {
         const list = await DBCrud.list('crafts', { search: '', limit: 5000, offset: 0 });
         return guestApi().renameCraftGroup(list?.rows || [], target, newGroup, mergeExisting);
       }
-      const res = await jsonFetch(`${API}?${qs({ action: 'rename_group', resource: 'crafts' })}`, {
+      const response = await jsonFetch(`${API}?${qs({ action: 'rename_group', resource: 'crafts' })}`, {
         method: 'POST',
-        body: JSON.stringify({ ...target, newGroup, mergeExisting }),
+        body: { ...target, newGroup, mergeExisting },
       });
-      const changed = Array.isArray(res?.changed) ? res.changed : [];
+      const changed = Array.isArray(response?.changed) ? response.changed : [];
       const sync = window.EditorCore?.Sync;
       if (DBCrud._syncRecordEnabled && sync && changed.length) {
         const operations = changed.map(row => ({
@@ -94,106 +130,73 @@
         else operations.forEach(operation => sync.record('crafts', 'update', operation));
         sync.updateAllBadges();
       }
-      return res;
+      return response;
     },
+
     async get(resource, id) {
+      const preview = requestApi();
+      if (preview?.active?.()) await preview.ready();
+      if (preview?.hasResource?.(resource)) {
+        const op = preview.operation(resource, id);
+        if (op?.type === 'create' && Number(id) >= 2000000000) {
+          return { ok: true, row: preview.overlayRow(resource, id, null), preview: true };
+        }
+        let response;
+        try {
+          response = await rawGet(resource, id);
+        } catch (error) {
+          const fallback = preview.overlayRow(resource, id, null);
+          if (fallback) return { ok: true, row: fallback, preview: true };
+          throw error;
+        }
+        const row = preview.overlayRow(resource, id, response?.row || null);
+        return { ...response, ok: row ? true : response?.ok, row, preview: true };
+      }
       if (await isGuestMode()) {
-        const g = guestApi();
-        if (g.isTempId(id)) return { ok: true, row: g.Draft.overlayRow(resource, id, null) };
-        const res = await rawGet(resource, id);
-        return { ...res, row: g.Draft.overlayRow(resource, id, res?.row || null) };
+        const guest = guestApi();
+        if (guest.isTempId(id)) return { ok: true, row: guest.Draft.overlayRow(resource, id, null) };
+        const response = await rawGet(resource, id);
+        return { ...response, row: guest.Draft.overlayRow(resource, id, response?.row || null) };
       }
       return rawGet(resource, id);
     },
+
     async create(resource, data, { _skipSyncRecord = false } = {}) {
-      listCache.clear();
-      
-      // Validate inputs
-      if (!resource || !data) {
-        throw new Error('Resource and data are required for create');
-      }
-      if (await isGuestMode()) {
-        const g = guestApi();
-        await g.loadConfig();
-        return g.Draft.create(resource, data);
-      }
-      
-      const res = await jsonFetch(`${API}?${qs({ action: 'create', resource })}`, { method: 'POST', body: JSON.stringify({ data }) });
-      
-      // Auto-record for sync (if not explicitly skipped by the runtime which records itself)
-      if (!_skipSyncRecord && DBCrud._syncRecordEnabled && window.EditorCore?.Sync && res?.id) {
-        try {
-          window.EditorCore.Sync.record(resource, 'create', {
-            id: res.id,
-            data: data,
-            label: `Создание ${resource} #${res.id}`
-          });
-          window.EditorCore.Sync.updateAllBadges();
-        } catch (err) {
-          console.warn('[DBCrud] Failed to record create operation:', err.message);
-        }
-      }
-      return res;
+      if (!resource || !data) throw new Error('Resource and data are required for create');
+      return mutate(resource, 'create', {
+        data,
+        skipSync: _skipSyncRecord,
+        guest: async (guest) => {
+          await guest.loadConfig();
+          return guest.Draft.create(resource, data);
+        },
+      });
     },
+
     async update(resource, id, data, { _skipSyncRecord = false } = {}) {
-      listCache.clear();
-      
-      // Validate inputs
-      if (!resource || !id || !data) {
-        throw new Error('Resource, id, and data are required for update');
-      }
-      if (await isGuestMode()) {
-        const g = guestApi();
-        const base = g.isTempId(id) ? null : await rawGetRow(resource, id);
-        return g.Draft.update(resource, id, data, base);
-      }
-      
-      const res = await jsonFetch(`${API}?${qs({ action: 'update', resource, id })}`, { method: 'POST', body: JSON.stringify({ data }) });
-      
-      // Auto-record for sync
-      if (!_skipSyncRecord && DBCrud._syncRecordEnabled && window.EditorCore?.Sync) {
-        try {
-          window.EditorCore.Sync.record(resource, 'update', {
-            id: id,
-            data: data,
-            label: `Обновление ${resource} #${id}`
-          });
-          window.EditorCore.Sync.updateAllBadges();
-        } catch (err) {
-          console.warn('[DBCrud] Failed to record update operation:', err.message);
-        }
-      }
-      return res;
+      if (!resource || !id || !data) throw new Error('Resource, id, and data are required for update');
+      return mutate(resource, 'update', {
+        id,
+        data,
+        skipSync: _skipSyncRecord,
+        guest: async (guest) => {
+          const base = guest.isTempId(id) ? null : await rawGetRow(resource, id);
+          return guest.Draft.update(resource, id, data, base);
+        },
+      });
     },
+
     async remove(resource, id, { _skipSyncRecord = false } = {}) {
-      listCache.clear();
-      
-      // Validate inputs
-      if (!resource || !id) {
-        throw new Error('Resource and id are required for remove');
-      }
-      if (await isGuestMode()) {
-        const g = guestApi();
-        const base = g.isTempId(id) ? null : await rawGetRow(resource, id);
-        return g.Draft.remove(resource, id, base);
-      }
-      
-      const res = await jsonFetch(`${API}?${qs({ action: 'delete', resource, id })}`, { method: 'POST', body: JSON.stringify({}) });
-      
-      // Auto-record for sync
-      if (!_skipSyncRecord && DBCrud._syncRecordEnabled && window.EditorCore?.Sync) {
-        try {
-          window.EditorCore.Sync.record(resource, 'delete', {
-            id: id,
-            label: `Удаление ${resource} #${id}`
-          });
-          window.EditorCore.Sync.updateAllBadges();
-        } catch (err) {
-          console.warn('[DBCrud] Failed to record delete operation:', err.message);
-        }
-      }
-      return res;
-    }
+      if (!resource || !id) throw new Error('Resource and id are required for remove');
+      return mutate(resource, 'remove', {
+        id,
+        skipSync: _skipSyncRecord,
+        guest: async (guest) => {
+          const base = guest.isTempId(id) ? null : await rawGetRow(resource, id);
+          return guest.Draft.remove(resource, id, base);
+        },
+      });
+    },
   };
 
   window.EditorCore = window.EditorCore || {};

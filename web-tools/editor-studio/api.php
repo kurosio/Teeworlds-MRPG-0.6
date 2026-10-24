@@ -34,6 +34,26 @@ function sanitize_filename(string $filename): string
     return $name . '.json';
 }
 
+/** Atomic replacement: readers see either the old JSON or the complete new one. */
+function write_scenario_atomic(string $path, string $content): bool
+{
+    $temp = @tempnam(dirname($path), '.scenario-');
+    if ($temp === false) {
+        return false;
+    }
+    try {
+        if (@file_put_contents($temp, $content, LOCK_EX) === false) {
+            return false;
+        }
+        @chmod($temp, 0640);
+        return @rename($temp, $path);
+    } finally {
+        if (is_file($temp)) {
+            @unlink($temp);
+        }
+    }
+}
+
 // ОБРАБОТКА GET-ЗАПРОСОВ (получение данных)
 if ($method === 'GET') {
     if (isset($_GET['action']) && $_GET['action'] === 'list') {
@@ -111,7 +131,7 @@ if ($method === 'POST') {
     $filePath = $scenariosDir . $filename;
     $content = json_encode($data['content'], JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE);
 
-    if ($content !== false && file_put_contents($filePath, $content, LOCK_EX) !== false) {
+    if ($content !== false && write_scenario_atomic($filePath, $content)) {
         echo json_encode(['success' => true, 'message' => 'Файл ' . $filename . ' успешно сохранен.'], JSON_UNESCAPED_UNICODE);
     } else {
         http_response_code(500);

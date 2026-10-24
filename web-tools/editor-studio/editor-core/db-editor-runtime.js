@@ -28,11 +28,13 @@
       };
 
       const fieldOptions = cfg.fieldOptions || window.EditorCore?.defaults?.getFieldRenderOptions?.('event');
-      const debounce = window.EditorCore?.utils?.debounce || ((fn) => fn);
+      const debounce = window.EditorCore.utils.debounce;
       const toast = window.EditorCore?.UI?.toast || (() => {});
       const Guest = window.EditorCore?.Guest || null;
       const isGuest = () => !!Guest?.isGuest?.();
-      const guestMeta = (id) => (isGuest() ? Guest?.Draft?.rowMeta?.(resource, id) : null);
+      const isRequestEditing = () => !!window.EditorCore?.RequestContext?.isEditing?.();
+      const guestMeta = (id) => (isGuest() && !window.EditorCore?.RequestContext?.hasResource?.(resource)
+        ? Guest?.Draft?.rowMeta?.(resource, id) : null);
 
       const state = {
         rows: [],
@@ -49,8 +51,10 @@
           controller: null,
         },
         visibleCount: 250,
+        operation: false,
       };
       let listRequestSeq = 0;
+      let onSearch = null;
 
       /** Спрашивает подтверждение, если в форме есть несохранённые правки. */
       const canDiscardDirty = async () => {
@@ -117,11 +121,6 @@
       };
 
       /**
-       * "This record was changed by you" banner. A guest must not see the original
-       * values thinking they are its own — the hint states whether the change is a
-       * local draft or already sent in a change request.
-       */
-      /**
        * Mark the form fields the guest really changed: the values in the form are
        * the guest's own, so each edited field must be visibly flagged instead of
        * looking like ordinary data from the database.
@@ -180,13 +179,27 @@
       };
 
       const setButtons = (enabled) => {
-        const canCancel = enabled && !!state.dirty?.isDirty?.();
-        if (els.save) els.save.disabled = !enabled;
+        const canEdit = enabled && !state.operation;
+        const canCancel = canEdit && !!state.dirty?.isDirty?.();
+        if (els.save) els.save.disabled = !canEdit;
         if (els.cancel) {
           els.cancel.disabled = !canCancel;
           els.cancel.classList.toggle('hidden', !canCancel);
         }
-        if (els.del) els.del.disabled = !enabled || !state.selectedId;
+        if (els.del) els.del.disabled = !canEdit || !state.selectedId;
+      };
+
+      const runOperation = async (task) => {
+        if (state.operation) return false;
+        state.operation = true;
+        setButtons(false);
+        try {
+          await task();
+          return true;
+        } finally {
+          state.operation = false;
+          setButtons(!!state.model);
+        }
       };
 
       const renderForm = () => {
@@ -233,6 +246,11 @@
       const renderList = () => {
         if (!els.list) return;
         const rows = state.rows || [];
+        const requestTarget = window.EditorCore?.RequestContext?.target?.();
+        const targetId = requestTarget?.resource === resource ? Number(requestTarget.id) : 0;
+        const orderedRows = targetId && rows.some((row) => Number(row?.ID) === targetId)
+          ? [...rows.filter((row) => Number(row?.ID) === targetId), ...rows.filter((row) => Number(row?.ID) !== targetId)]
+          : rows;
         if (els.count) els.count.textContent = rows.length ? `${rows.length}` : '—';
         if (!rows.length) {
           // Пустой список должен объяснять, что делать дальше.
@@ -243,7 +261,7 @@
           return;
         }
 
-        const visibleRows = rows.slice(0, state.visibleCount);
+        const visibleRows = orderedRows.slice(0, state.visibleCount);
         const html = visibleRows.map((row) => {
           const label = typeof cfg.listItem === 'function'
             ? cfg.listItem(row)
@@ -261,13 +279,11 @@
             </button>
           `;
         }).join('');
-        const hasMore = rows.length > visibleRows.length;
+        const hasMore = orderedRows.length > visibleRows.length;
         const more = hasMore
-          ? `<div class="pt-2"><button type="button" class="editor-btn editor-btn-secondary w-full" data-editor-role="list-more">Показать ещё (${rows.length - visibleRows.length})</button></div>`
+          ? `<div class="pt-2"><button type="button" class="editor-btn editor-btn-secondary w-full" data-editor-role="list-more">Показать ещё (${orderedRows.length - visibleRows.length})</button></div>`
           : '';
-        window.requestAnimationFrame(() => {
-          els.list.innerHTML = `<div class="editor-list">${html}${more}</div>`;
-        });
+        els.list.innerHTML = `<div class="editor-list">${html}${more}</div>`;
       };
 
 
@@ -298,7 +314,12 @@
         // Обновление списка не должно затирать несохранённые правки в форме
         // (раньше оно молча перевыбирало запись) и не должно спрашивать
         // подтверждение на каждый фоновый перезапрос.
-        if (state.selectedId) {
+        const requestTarget = window.EditorCore?.RequestContext?.target?.();
+        const requestedRow = !state.model && requestTarget?.resource === resource
+          ? state.rows.find((row) => Number(row.ID) === Number(requestTarget.id)) : null;
+        if (requestedRow) {
+          await selectRow(requestedRow, { confirmDirty: false });
+        } else if (state.selectedId) {
           const found = state.rows.find(r => Number(r.ID) === Number(state.selectedId));
           if (found && !state.dirty?.isDirty?.()) await selectRow(found, { confirmDirty: false, refresh: true });
         } else if (!state.model && state.rows.length) {
@@ -312,7 +333,7 @@
         const currentId = Number(state.selectedId || 0);
 
         if (nextId && nextId === currentId && !options.refresh) return true;
-        if (confirmDirty && !await canDiscardDirty()) return false;
+        if (confirmDirty && (!await canDiscardDirty() || state.operation)) return false;
 
         if (!row) {
           state.selectedId = 0;
@@ -392,7 +413,7 @@
       };
 
       const createNew = async () => {
-        if (!await canDiscardDirty()) return false;
+        if (state.operation || !await canDiscardDirty() || state.operation) return false;
         state.lastSelectedIdBeforeCreate = Number(state.selectedId || 0);
         state.selectedId = 0;
         state.model = cloneData(makeDefault());
@@ -406,7 +427,7 @@
       };
 
       const cancelLocalChanges = async () => {
-        if (!state.model) return false;
+        if (state.operation || !state.model) return false;
 
         // cancel creation of local draft
         if (!state.selectedId) {
@@ -434,14 +455,14 @@
       };
 
       const onDirtyStatusRequest = (event) => {
-        if (event.source !== window.parent) return;
+        if (!window.EditorCore.Http.isSameOriginMessage(event, window.parent)) return;
         const data = event.data || {};
         if (data?.type !== 'editor-shell:request-dirty-status') return;
-        window.parent.postMessage({
+        window.EditorCore.Http.postMessage(window.parent, {
           type: 'editor-shell:dirty-status',
           requestId: data.requestId,
           dirty: !!state.dirty?.isDirty?.(),
-        }, '*');
+        });
       };
 
       const save = async () => {
@@ -456,65 +477,83 @@
           return;
         }
         const payload = toPayload(state.model);
-        setStatus('Сохранение…');
-        try {
-          if (state.selectedId) {
-            // DBCrud auto-records for sync
-            await window.EditorCore.DBCrud.update(resource, state.selectedId, payload);
-            if (isGuest()) {
-              setStatus('Изменения в черновике запроса — в базу они попадут только после одобрения администратора.', 'ok');
-              toast('Добавлено в черновик запроса', 'info');
+        return runOperation(async () => {
+          setStatus('Сохранение…');
+          try {
+            if (state.selectedId) {
+              // DBCrud auto-records for sync
+              await window.EditorCore.DBCrud.update(resource, state.selectedId, payload);
+              if (isRequestEditing()) {
+                setStatus('Новая версия запроса сохранена. Игровая база не изменялась.', 'ok');
+                toast('Версия запроса обновлена', 'success');
+              } else if (isGuest()) {
+                setStatus('Изменения в черновике запроса — в базу они попадут только после одобрения администратора.', 'ok');
+                toast('Добавлено в черновик запроса', 'info');
+              } else {
+                setStatus('Изменения сохранены.', 'ok');
+                toast('Сохранено', 'success');
+              }
             } else {
-              setStatus('Изменения сохранены.', 'ok');
-              toast('Сохранено', 'success');
+              const res = await window.EditorCore.DBCrud.create(resource, payload);
+              state.selectedId = Number(res.id || 0);
+              state.lastSelectedIdBeforeCreate = 0;
+              if (isRequestEditing()) {
+                setStatus('Создание добавлено в новую версию запроса. Игровая база не изменялась.', 'ok');
+                toast('Создание добавлено в запрос', 'success');
+              } else if (isGuest()) {
+                setStatus('Новая запись в черновике запроса — отправьте её администратору.', 'ok');
+                toast('Новая запись в черновике', 'info');
+              } else {
+                setStatus('Запись создана.', 'ok');
+                toast('Создано', 'success');
+              }
             }
-          } else {
-            const res = await window.EditorCore.DBCrud.create(resource, payload);
-            state.selectedId = Number(res.id || 0);
-            state.lastSelectedIdBeforeCreate = 0;
-            if (isGuest()) {
-              setStatus('Новая запись в черновике запроса — отправьте её администратору.', 'ok');
-              toast('Новая запись в черновике', 'info');
-            } else {
-              setStatus('Запись создана.', 'ok');
-              toast('Создано', 'success');
-            }
+            state.dirty?.setClean?.();
+            await loadList({ forceServer: true });
+            updateGuestHint();
+          } catch (err) {
+            const msg = err?.message || 'Ошибка сохранения';
+            setStatus(msg, 'err');
+            toast(msg, 'error');
           }
-          state.dirty?.setClean?.();
-          await loadList({ forceServer: true });
-          updateGuestHint();
-        } catch (err) {
-          const msg = err?.message || 'Ошибка сохранения';
-          setStatus(msg, 'err');
-          toast(msg, 'error');
-        }
+        });
       };
 
       const remove = async () => {
-        if (!state.selectedId) return;
-        if (!await EditorCore.Page.confirm('Удалить запись?')) return;
-        setStatus('Удаление…');
-        try {
-          // DBCrud auto-records for sync
-          await window.EditorCore.DBCrud.remove(resource, state.selectedId);
-          if (isGuest()) {
-            toast('Удаление добавлено в черновик запроса', 'info');
-            setStatus('Удаление в черновике — запись удалится только после одобрения администратора.', 'ok');
-          } else {
-            toast('Удалено', 'success');
-            setStatus('Удалено.', 'ok');
+        const id = Number(state.selectedId || 0);
+        if (state.operation || !id) return false;
+        if (!await EditorCore.Page.confirm('Удалить запись?')) return false;
+        // A second confirmation or a background refresh must not delete another
+        // record (or ID 0) after the selection changed while the dialog was open.
+        if (state.operation || Number(state.selectedId || 0) !== id) return false;
+        return runOperation(async () => {
+          setStatus('Удаление…');
+          try {
+            // DBCrud auto-records for sync
+            await window.EditorCore.DBCrud.remove(resource, id);
+            if (isRequestEditing()) {
+              toast('Удаление добавлено в новую версию запроса', 'success');
+              setStatus('Удаление сохранено в запросе. Игровая база не изменялась.', 'ok');
+            } else if (isGuest()) {
+              toast('Удаление добавлено в черновик запроса', 'info');
+              setStatus('Удаление в черновике — запись удалится только после одобрения администратора.', 'ok');
+            } else {
+              toast('Удалено', 'success');
+              setStatus('Удалено.', 'ok');
+            }
+            await selectRow(null, { confirmDirty: false });
+            await loadList({ forceServer: true });
+          } catch (err) {
+            const msg = err?.message || 'Ошибка удаления';
+            setStatus(msg, 'err');
+            toast(msg, 'error');
           }
-          await selectRow(null, { confirmDirty: false });
-          await loadList({ forceServer: true });
-        } catch (err) {
-          const msg = err?.message || 'Ошибка удаления';
-          setStatus(msg, 'err');
-          toast(msg, 'error');
-        }
+        });
       };
 
       if (els.list) {
         els.list.addEventListener('click', async (event) => {
+          if (state.operation) return;
           const moreBtn = event.target?.closest?.('[data-editor-role="list-more"]');
           if (moreBtn) {
             state.visibleCount += 250;
@@ -551,7 +590,8 @@
           clearSearch();
         });
 
-        els.search.addEventListener('input', debounce(() => loadList(), 250));
+        onSearch = debounce(() => loadList(), 250);
+        els.search.addEventListener('input', onSearch);
       }
 
       window.addEventListener('message', onDirtyStatusRequest);
@@ -568,6 +608,7 @@
       window.addEventListener('editor-core:guest-updated', onGuestUpdated);
       window.addEventListener('editor-core:guest-ready', onGuestReady);
       window.addEventListener('editor-core:guest-request-resolved', onGuestResolved);
+      window.addEventListener('editor-core:guest-request-revised', onGuestResolved);
 
       // Mount sync button in the toolbar if actions area exists
       const actionsArea = root.querySelector('.editor-page-actions') || root.querySelector('.flex.flex-wrap.gap-2');
@@ -584,11 +625,15 @@
         selectRow,
         setStatus,
         destroy: () => {
+          listRequestSeq += 1;
+          onSearch?.cancel?.();
           state.searchRequest.controller?.abort?.();
+          state.form?.destroy?.();
           window.removeEventListener('message', onDirtyStatusRequest);
           window.removeEventListener('editor-core:guest-updated', onGuestUpdated);
           window.removeEventListener('editor-core:guest-ready', onGuestReady);
           window.removeEventListener('editor-core:guest-request-resolved', onGuestResolved);
+          window.removeEventListener('editor-core:guest-request-revised', onGuestResolved);
         },
       };
     }

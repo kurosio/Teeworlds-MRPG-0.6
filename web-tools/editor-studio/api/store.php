@@ -297,35 +297,38 @@ function store_settings_set(string $key, mixed $value): void
 
 // ── Гостевые аккаунты ───────────────────────────────────────────────────────
 
+function store_guest_user_from_row(array $row): array
+{
+    return [
+        'id'             => (string)$row['id'],
+        'login'          => (string)$row['login'],
+        'name'           => (string)$row['name'],
+        'enabled'        => (bool)(int)$row['enabled'],
+        'pages'          => json_decode((string)$row['pages'], true) ?: [],
+        'passwordHash'   => (string)$row['password_hash'],
+        'sessionVersion' => (int)$row['session_version'],
+        'createdAt'      => (string)$row['created_at'],
+        'updatedAt'      => (string)$row['updated_at'],
+        'lastLoginAt'    => (string)$row['last_login_at'],
+    ];
+}
+
 /** @return list<array> строки таблицы в том же виде, что и раньше в конфиге */
 function store_guest_users_all(): array
 {
     $rows = [];
     foreach (store_db()->query('SELECT * FROM guest_users ORDER BY created_at, id') as $row) {
-        $rows[] = [
-            'id'             => (string)$row['id'],
-            'login'          => (string)$row['login'],
-            'name'           => (string)$row['name'],
-            'enabled'        => (bool)(int)$row['enabled'],
-            'pages'          => json_decode((string)$row['pages'], true) ?: [],
-            'passwordHash'   => (string)$row['password_hash'],
-            'sessionVersion' => (int)$row['session_version'],
-            'createdAt'      => (string)$row['created_at'],
-            'updatedAt'      => (string)$row['updated_at'],
-            'lastLoginAt'    => (string)$row['last_login_at'],
-        ];
+        $rows[] = store_guest_user_from_row($row);
     }
     return $rows;
 }
 
 function store_guest_user_get(string $id): ?array
 {
-    foreach (store_guest_users_all() as $user) {
-        if ($user['id'] === strtolower(trim($id))) {
-            return $user;
-        }
-    }
-    return null;
+    $stmt = store_db()->prepare('SELECT * FROM guest_users WHERE id = ? LIMIT 1');
+    $stmt->execute([strtolower(trim($id))]);
+    $row = $stmt->fetch();
+    return is_array($row) ? store_guest_user_from_row($row) : null;
 }
 
 function store_guest_user_by_login(string $login): ?array
@@ -334,12 +337,10 @@ function store_guest_user_by_login(string $login): ?array
     if ($login === '') {
         return null;
     }
-    foreach (store_guest_users_all() as $user) {
-        if ($user['login'] === $login) {
-            return $user;
-        }
-    }
-    return null;
+    $stmt = store_db()->prepare('SELECT * FROM guest_users WHERE login = ? COLLATE NOCASE LIMIT 1');
+    $stmt->execute([$login]);
+    $row = $stmt->fetch();
+    return is_array($row) ? store_guest_user_from_row($row) : null;
 }
 
 function store_guest_user_insert(array $user): bool
@@ -407,56 +408,55 @@ function store_guest_user_delete(string $id): bool
     return $stmt->rowCount() > 0;
 }
 
-function store_guest_users_count(): int
+function store_guest_users_count(bool $enabledOnly = false): int
 {
-    return (int)store_db()->query('SELECT COUNT(*) FROM guest_users')->fetchColumn();
+    $sql = 'SELECT COUNT(*) FROM guest_users' . ($enabledOnly ? ' WHERE enabled = 1' : '');
+    return (int)store_db()->query($sql)->fetchColumn();
 }
 
 // ── Счётчики входа ──────────────────────────────────────────────────────────
 
-/** @return array<string, array{count:int, first:int, until:int}> */
-function store_throttle_all(): array
+/** Point reads/writes keep login throttling O(1), even with many remote clients. */
+function store_throttle_get(string $key): ?array
 {
-    $map = [];
-    foreach (store_db()->query('SELECT key, count, first_at, until_at FROM auth_throttle') as $row) {
-        // Формат записи совпадает с прежним файловым хранилищем (n/first/until).
-        $map[(string)$row['key']] = [
-            'n' => (int)$row['count'],
-            'first' => (int)$row['first_at'],
-            'until' => (int)$row['until_at'],
-        ];
-    }
-    return $map;
+    $stmt = store_db()->prepare('SELECT count, first_at, until_at FROM auth_throttle WHERE key = ?');
+    $stmt->execute([$key]);
+    $row = $stmt->fetch();
+    return is_array($row) ? [
+        'n' => (int)$row['count'],
+        'first' => (int)$row['first_at'],
+        'until' => (int)$row['until_at'],
+    ] : null;
 }
 
-/**
- * Атомарное изменение счётчиков: SQLite блокирует базу на время транзакции,
- * поэтому подбор пароля нельзя разогнать параллельными запросами.
- *
- * @param callable(array<string, array>, int): (array<string, array>|null) $fn
- */
-function store_throttle_mutate(callable $fn): mixed
+function store_throttle_set(string $key, array $row): void
+{
+    $stmt = store_db()->prepare(
+        'INSERT INTO auth_throttle(key, count, first_at, until_at) VALUES(?, ?, ?, ?)
+         ON CONFLICT(key) DO UPDATE SET count = excluded.count, first_at = excluded.first_at, until_at = excluded.until_at'
+    );
+    $stmt->execute([$key, (int)$row['n'], (int)$row['first'], (int)$row['until']]);
+}
+
+function store_throttle_clear(string $key): void
+{
+    $stmt = store_db()->prepare('DELETE FROM auth_throttle WHERE key = ?');
+    $stmt->execute([$key]);
+}
+
+/** Bounded table maintenance; called inside the same write transaction. */
+function store_throttle_prune(int $now): void
 {
     $pdo = store_db();
-    return store_tx(function () use ($pdo, $fn): mixed {
-        $map = store_throttle_all();
-        $out = $fn($map, time());
-        // Контракт: ['map' => array, 'result' => mixed]; null — ничего не менять.
-        $next = is_array($out) ? ($out['map'] ?? null) : null;
-        if (is_array($next)) {
-            $pdo->exec('DELETE FROM auth_throttle');
-            $insert = $pdo->prepare('INSERT INTO auth_throttle(key, count, first_at, until_at) VALUES(?, ?, ?, ?)');
-            foreach ($next as $key => $row) {
-                $insert->execute([
-                    (string)$key,
-                    (int)($row['n'] ?? 0),
-                    (int)($row['first'] ?? 0),
-                    (int)($row['until'] ?? 0),
-                ]);
-            }
-        }
-        return is_array($out) ? ($out['result'] ?? null) : null;
-    });
+    $stmt = $pdo->prepare('DELETE FROM auth_throttle WHERE until_at < ? AND first_at < ?');
+    $stmt->execute([$now - 3600, $now - 86400]);
+    $count = (int)$pdo->query('SELECT COUNT(*) FROM auth_throttle')->fetchColumn();
+    if ($count > 800) {
+        // Keep the newest 400 identities, matching the previous map-based policy.
+        $pdo->exec('DELETE FROM auth_throttle WHERE key IN (
+            SELECT key FROM auth_throttle ORDER BY first_at DESC LIMIT -1 OFFSET 400
+        )');
+    }
 }
 
 // ── Ограничение частоты (cooldown отправки запросов) ─────────────────────────
