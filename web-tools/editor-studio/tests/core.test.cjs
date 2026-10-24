@@ -107,6 +107,25 @@ test('UIManager waits for DOMContentLoaded before accessing body and fields', as
   assert.equal(modes.length, 2, 'productivity controls remain idempotent');
 });
 
+test('UIManager tolerates a missing body while an editor document is being replaced', async () => {
+  const document = {
+    readyState: 'interactive', body: null,
+    addEventListener() {},
+    querySelectorAll() { return []; },
+    querySelector() { return null; },
+  };
+  const context = vm.createContext({ window: { EditorCore: {} }, document,
+    localStorage: { getItem: () => null, setItem() {} } });
+  vm.runInContext(source('ui-manager.js'), context);
+
+  await assert.doesNotReject(context.window.EditorCore.UIManager.init(document));
+
+  const modes = [];
+  document.body = { dataset: {}, classList: { toggle: (...args) => modes.push(args) } };
+  await context.window.EditorCore.UIManager.init(document);
+  assert.deepEqual(modes, [['editor-compact', false], ['editor-focus', false]]);
+});
+
 test('read-only sync_map is not guarded as a JSON POST write', () => {
   const php = fs.readFileSync(path.join(__dirname, '../api/db-sync.php'), 'utf8');
   const guarded = php.match(/guard_write_actions\(\$action, \[([^\]]+)\]\)/)[1];

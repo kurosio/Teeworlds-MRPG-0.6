@@ -121,12 +121,18 @@
     };
 
     const setMode = (mode, enabled, prefs) => {
+      // The loader can run while the document is being replaced (for example,
+      // when Studio changes the editor iframe). There is no body to update in
+      // that case; keep initialization and keyboard handlers non-fatal.
+      const body = document.body;
+      if (!body) return;
+
       if (mode === 'compact') {
-        document.body.classList.toggle('editor-compact', enabled);
+        body.classList.toggle('editor-compact', enabled);
         prefs.compact = enabled;
       }
       if (mode === 'focus') {
-        document.body.classList.toggle('editor-focus', enabled);
+        body.classList.toggle('editor-focus', enabled);
         prefs.focus = enabled;
       }
       savePrefs(prefs);
@@ -245,8 +251,10 @@
     };
 
     const init = (root = document) => {
-      if (document.body?.dataset?.editorProductivityKit === '1') return;
-      if (document.body) document.body.dataset.editorProductivityKit = '1';
+      const body = document.body;
+      // Do not bind global DOM helpers while the document has no body yet.
+      if (!body || body.dataset.editorProductivityKit === '1') return;
+      body.dataset.editorProductivityKit = '1';
       const prefs = getPrefs();
       setMode('compact', prefs.compact, prefs);
       setMode('focus', prefs.focus, prefs);
