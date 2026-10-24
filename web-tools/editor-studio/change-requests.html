@@ -613,7 +613,7 @@
     // ═══════════════════════════════════════════════════════════════════
     // GUEST
     // ═══════════════════════════════════════════════════════════════════
-    const G = { config: null, analysis: null, analysisError: '', previewSeq: 0, mine: [], selected: null, detail: null, tab: 'draft' };
+    const G = { config: null, analysis: null, analysisError: '', previewSeq: 0, previewKey: '', mine: [], selected: null, detail: null, tab: 'draft' };
 
     const draftKeyOf = (o) => `${o.type}:${o.resource}:${o.type === 'create' ? o.tempId : o.id}`;
 
@@ -714,8 +714,12 @@
     };
 
     let previewTimer = null;
+    /** Состав черновика, для которого уже запрошен анализ (см. runPreview). */
+    const draftSignature = () => JSON.stringify(Guest.Draft.toOperations());
+
     const runPreview = async () => {
       const ops = Guest.Draft.toOperations();
+      G.previewKey = JSON.stringify(ops);
       const seq = ++G.previewSeq;
       if (!ops.length) { G.analysis = null; G.analysisError = ''; renderGuestDraft(); return; }
       G.analysis = null; G.analysisError = '';
@@ -731,7 +735,14 @@
     const loadMine = async () => {
       const res = await api('mine');
       G.mine = res.ok ? (res.rows || []) : [];
-      $('g-mine-count').textContent = String(G.mine.filter(r => r.status === 'pending').length || G.mine.length);
+      // Счётчик вкладки — это запросы, которые ещё ждут решения; раньше при
+      // отсутствии ожидающих он показывал общее число запросов и «залипал».
+      const pending = G.mine.filter(r => r.status === 'pending').length;
+      const counter = $('g-mine-count');
+      counter.textContent = String(pending);
+      counter.title = pending
+        ? `На рассмотрении: ${pending}; всего запросов: ${G.mine.length}`
+        : `Нет запросов на рассмотрении; всего запросов: ${G.mine.length}`;
       const box = $('g-mine-list');
       box.innerHTML = G.mine.length
         ? G.mine.map(r => listItemHtml(r, r.id === G.selected, false)).join('')
@@ -887,7 +898,16 @@
         if (document.visibilityState !== 'visible' || !G.selected || G.tab !== 'mine') return;
         refreshGuestThread(G.selected);
       }, 30000);
-      document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') reconcile(); });
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState !== 'visible') return;
+        // Черновик мог измениться в соседней вкладке: перечитываем его и
+        // пересчитываем счётчики, не дожидаясь следующего опроса. Анализ
+        // запрашиваем только если состав правок действительно другой.
+        renderGuestDraft();
+        if (draftSignature() !== G.previewKey) schedulePreview();
+        loadMine();
+        reconcile();
+      });
 
       renderGuestDraft();
       runPreview();

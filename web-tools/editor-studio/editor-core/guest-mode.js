@@ -53,6 +53,10 @@
   let reconcileTimer = null;
   let draftCache = null;
   let draftCacheKey = '';
+  // Raw JSON the cached snapshot was parsed from. The same draft is written by
+  // several documents of one tab (the Studio shell and the editor it embeds),
+  // so a snapshot cannot be trusted just because the account key matches.
+  let draftCacheRaw = '';
 
   // ── Role / account ──────────────────────────────────────────────────────
   const fetchStatus = async () => {
@@ -86,6 +90,7 @@
         if (draftCacheKey && draftCacheKey !== draftKey()) {
           draftCache = null;
           draftCacheKey = '';
+          draftCacheRaw = '';
         }
         if (s?.role === 'guest' && s.guest?.id) {
           startAutoReconcile();
@@ -159,11 +164,24 @@
   const readDraft = () => {
     const key = draftKey();
     if (!key) return emptyDraft();
-    if (draftCache && draftCacheKey === key) return draftCache;
+    const cached = () => (draftCache && draftCacheKey === key ? draftCache : emptyDraft());
+
+    let raw;
     try {
-      const raw = safeLocal?.getItem(key);
-      let draft;
-      if (raw) {
+      raw = safeLocal ? safeLocal.getItem(key) : null;
+    } catch {
+      // A transient storage error must not cache an empty draft over good data.
+      return cached();
+    }
+    // The draft is written by every studio document of the tab (the shell, the
+    // embedded editor, another tab). Trust the snapshot only while the stored
+    // value is the very same string it was parsed from — otherwise a count or
+    // an overlay would keep showing values that were already deleted/edited.
+    if (draftCache && draftCacheKey === key && draftCacheRaw === (raw || '')) return draftCache;
+
+    let draft;
+    if (raw) {
+      try {
         const parsed = JSON.parse(raw);
         draft = parsed && Array.isArray(parsed.ops) ? {
           v: DRAFT_SCHEMA,
@@ -171,16 +189,19 @@
           nextTemp: Number(parsed.nextTemp) || TEMP_ID_BASE + 1,
           ops: parsed.ops.map(normalizeOp).filter(Boolean),
         } : emptyDraft();
-      } else {
-        draft = migrateLegacyDraft(key);
+      } catch {
+        return cached();
       }
-      draftCache = draft;
-      draftCacheKey = key;
-      return draft;
-    } catch {
-      // A transient storage error must not cache an empty draft over good data.
-      return emptyDraft();
+    } else {
+      draft = migrateLegacyDraft(key);
+      // The migration writes the draft; keep the stamp in sync with what is
+      // actually stored so the next read does not parse it again.
+      try { raw = safeLocal ? safeLocal.getItem(key) : null; } catch { raw = null; }
     }
+    draftCache = draft;
+    draftCacheKey = key;
+    draftCacheRaw = raw || '';
+    return draft;
   };
 
   /** One-time move of the pre-account draft (v1) to the current guest account. */
@@ -207,7 +228,13 @@
 
   const emitUpdated = () => {
     try { window.dispatchEvent(new CustomEvent('editor-core:guest-updated', { detail: summary() })); } catch {}
-    window.EditorCore.Http.postMessage(window.parent, { type: 'editor-shell:guest-draft-changed', count: count(), pending: submittedCount() });
+    window.EditorCore.Http.postMessage(window.parent, {
+      type: 'editor-shell:guest-draft-changed',
+      accountId: accountId(),
+      count: Draft.count(),
+      pending: Draft.pendingCount(),
+      submitted: Draft.submittedCount(),
+    });
   };
 
   const notify = () => {
@@ -225,19 +252,24 @@
     if (!safeLocal) {
       throw new Error('Браузер блокирует локальное хранилище (localStorage) — изменения не могут сохраниться. Разрешите хранение данных для этого сайта и обновите страницу.');
     }
-    try { safeLocal.setItem(key, JSON.stringify(d)); }
+    const raw = JSON.stringify(d);
+    try { safeLocal.setItem(key, raw); }
     catch { throw new Error('Не удалось сохранить черновик (переполнено хранилище браузера).'); }
-    // Keep the cached snapshot isolated from objects returned to callers.
+    // Keep the cached snapshot isolated from objects returned to callers, and
+    // remember the exact stored string so readDraft() can detect foreign writes.
     draftCache = clone(d);
     draftCacheKey = key;
+    draftCacheRaw = raw;
     notify();
   };
 
   window.addEventListener('storage', (e) => {
     const key = draftKey();
-    if (key && e.key === key) {
+    // e.key === null means the whole storage was cleared by another document.
+    if (key && (e.key === key || e.key === null)) {
       draftCache = null;
       draftCacheKey = '';
+      draftCacheRaw = '';
       notify();
     }
   });
@@ -306,6 +338,25 @@
     // External consumers receive a snapshot and cannot mutate the cached draft
     // without going through writeDraft().
     get: () => clone(readDraft()),
+
+    /**
+     * Forget the in-memory snapshot; the next call re-reads the stored draft.
+     * readDraft() already compares the stored value with the cached one, so this
+     * is only needed by callers that want to be explicit (e.g. the shell after
+     * an editor frame reported a change).
+     */
+    invalidate() {
+      draftCache = null;
+      draftCacheKey = '';
+      draftCacheRaw = '';
+    },
+
+    /** Refresh from storage and return a snapshot. */
+    reload() {
+      Draft.invalidate();
+      return clone(readDraft());
+    },
+
     count: () => readDraft().ops.length,
     pendingCount: () => readDraft().ops.filter(o => !o.reqId).length,
     submittedCount: () => readDraft().ops.filter(o => o.reqId).length,
@@ -640,8 +691,6 @@
     onChange(fn) { listeners.add(fn); return () => listeners.delete(fn); },
   };
 
-  const count = () => Draft.count();
-  const submittedCount = () => Draft.submittedCount();
   const summary = () => ({
     account: accountLabel(),
     total: Draft.count(),

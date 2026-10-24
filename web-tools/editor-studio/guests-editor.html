@@ -222,7 +222,7 @@
               <button type="button" class="editor-btn editor-btn-secondary" data-act="revoke" title="Завершить все активные сессии аккаунта">
                 <i class="fa-solid fa-right-from-bracket"></i><span>Сессии</span>
               </button>
-              <button type="button" class="editor-btn editor-btn-secondary" data-act="delete" title="Удалить аккаунт">
+              <button type="button" class="editor-btn editor-btn-secondary" data-act="delete" title="Удалить аккаунт" aria-label="Удалить гостевой аккаунт ${esc(u.name || u.login)}">
                 <i class="fa-solid fa-trash"></i>
               </button>
             </div>
@@ -230,11 +230,20 @@
       }).join('');
     };
 
+    /**
+     * Номер последней загрузки списка. Запросы идут параллельно (кнопка
+     * «Обновить», переключатель, удаление), и ответ, отправленный раньше, но
+     * пришедший позже, не должен вернуть на экран уже удалённый аккаунт.
+     */
+    let loadSeq = 0;
+
     const load = async () => {
+      const seq = ++loadSeq;
       const [list, stats] = await Promise.all([
         api('list'),
         EditorCore.Http.json(`${REQUESTS_API}?action=stats`),
       ]);
+      if (seq !== loadSeq) return;
       if (list.status === 403 || list.status === 401) {
         $('guest-loading').classList.add('hidden');
         $('guest-denied').classList.remove('hidden');
@@ -373,11 +382,16 @@
       if (act === 'edit') return openModal(user);
 
       if (act === 'toggle') {
+        if (btn.disabled) return;
         btn.disabled = true;
         const res = await api('update', { method: 'POST', body: { id, enabled: !user.enabled } });
         btn.disabled = false;
         if (!res.ok) return toast(res.error || 'Ошибка', 'error');
-        toast(user.enabled ? 'Аккаунт выключен' : 'Аккаунт включён', 'success');
+        // Показываем новое состояние сразу; сервер подтвердит его ниже.
+        user.enabled = !user.enabled;
+        renderGlobal();
+        renderUsers();
+        toast(user.enabled ? 'Аккаунт включён' : 'Аккаунт выключен', 'success');
         EditorCore.Http.postMessage(window.parent, { type: 'editor-shell:guest-account-changed', id });
         return load();
       }
@@ -391,10 +405,30 @@
       }
 
       if (act === 'delete') {
-        if (!await EditorCore.Page.confirm(`Удалить гостевой аккаунт «${user.name || user.login}»? Отправленные им запросы останутся в истории.`)) return;
+        if (btn.disabled) return;
+        if (!await EditorCore.Page.confirm(
+          `Удалить гостевой аккаунт «${user.name || user.login}»? Отправленные им запросы останутся в истории.`,
+          { danger: true, confirmText: 'Удалить' },
+        )) return;
+        btn.disabled = true;
         const res = await api('delete', { method: 'POST', body: { id } });
-        if (!res.ok) return toast(res.error || 'Ошибка', 'error');
-        toast('Аккаунт удалён', 'success');
+        btn.disabled = false;
+        // 404 — аккаунт уже удалён (например, в другой вкладке). Для интерфейса
+        // это тот же результат: запись должна исчезнуть, а не «зависнуть».
+        if (!res.ok && res.status !== 404) return toast(res.error || 'Ошибка', 'error');
+
+        // Список обновляется сразу, а не только после ответа сервера: удалённая
+        // карточка не должна оставаться на экране, даже если следующий запрос
+        // списка медленный или завершится ошибкой.
+        state.users = state.users.filter(u => u.id !== id);
+        renderGlobal();
+        renderUsers();
+        toast(res.ok ? 'Аккаунт удалён' : 'Аккаунт уже был удалён', res.ok ? 'success' : 'info');
+
+        // Открытая сессия удалённого гостя должна завершиться немедленно:
+        // оболочка перечитает роль и закроет доступ.
+        EditorCore.Http.postMessage(window.parent, { type: 'editor-shell:guest-account-changed', id, deleted: true });
+        // Сервер — источник истины: сверяем локальное состояние с БД.
         return load();
       }
     };

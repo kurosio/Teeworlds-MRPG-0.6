@@ -540,6 +540,7 @@
           : currentRole === 'admin' ? `<i class="fa-solid fa-user-shield"></i>Админ${escapeChip(name)}` : '';
       }
       Guest?.refreshStatus?.();
+      bindGuestBadgeUpdates();
       refreshBadges();
     };
 
@@ -547,25 +548,52 @@
     const escapeChip = EditorCore.Page.esc;
 
     let badgeTimer = null;
+    let badgeSeq = 0;
     // Бейдж «Запросы» = то, что ждёт именно вас: у администратора — очередь и
     // непрочитанные сообщения, у гостя — неотправленный черновик и ответы.
+    //
+    // Гостевой черновик живёт в localStorage и его пишет ещё и редактор внутри
+    // iframe, поэтому перед подсчётом роль/аккаунт должны быть известны, а
+    // снимок черновика — перечитан. Плюс номер запроса: два подсчёта могут
+    // выполняться одновременно (правка + опрос), и устаревший ответ не должен
+    // перезаписать свежий.
     const refreshBadges = async () => {
       clearTimeout(badgeTimer);
+      const seq = ++badgeSeq;
+      let next = 0;
       if (currentRole === 'guest') {
+        try { await Guest?.ready?.(); } catch { /* роль останется из кэша сессии */ }
+        try { Guest?.Draft?.invalidate?.(); } catch { /* старый клиент без метода */ }
         const draft = Guest?.Draft?.count?.() || 0;
         const mine = await EditorCore.Http.json('api/change-requests.php?action=mine');
-        const unread = (mine.rows || []).reduce((sum, row) => sum + Number(row.unread || 0), 0);
-        navBadges.requests = draft + unread;
+        const unread = (mine.rows || []).reduce((sum, row) => sum + Number(row?.unread || 0), 0);
+        next = draft + unread;
       } else if (currentRole === 'admin') {
         const stats = await EditorCore.Http.json('api/change-requests.php?action=stats');
-        navBadges.requests = stats.ok
+        next = stats.ok
           ? Number(stats.counts?.pending || 0) + Number(stats.unread || 0)
           : 0;
-        badgeTimer = setTimeout(refreshBadges, 60000);
-      } else {
-        navBadges.requests = 0;
       }
+      // A newer refresh started while this one was waiting for the server.
+      if (seq !== badgeSeq) return;
+      navBadges.requests = next;
       renderAllNavs(activeKey, getSearchTerm());
+      if (currentRole === 'guest' || currentRole === 'admin') {
+        badgeTimer = setTimeout(refreshBadges, 60000);
+      }
+    };
+
+    // Черновик гостя меняется и без сообщений из iframe: другая вкладка пишет
+    // напрямую в localStorage. guest-mode рассылает такое изменение подписчикам,
+    // так что бейдж обновляется всегда, а не только по postMessage.
+    let guestBadgeBound = false;
+    const bindGuestBadgeUpdates = () => {
+      if (guestBadgeBound || !Guest?.Draft?.onChange) return;
+      guestBadgeBound = true;
+      Guest.Draft.onChange(() => { refreshBadges(); });
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') refreshBadges();
+      });
     };
 
     const ensureAuthorized = async () => {
@@ -846,6 +874,9 @@
         return;
       }
       if (data?.type === 'editor-shell:guest-draft-changed' || data?.type === 'editor-shell:requests-changed') {
+        // The editor frame owns the write; the shell must drop its snapshot
+        // before counting, otherwise the badge repeats the previous number.
+        try { Guest?.Draft?.invalidate?.(); } catch { /* старый клиент без метода */ }
         refreshBadges();
         return;
       }
