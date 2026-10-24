@@ -66,7 +66,9 @@
     recordSync(resource, action, {
       id: action === 'create' ? response?.id : id,
       data,
-      skip: skipSync,
+      // Nothing was written: the payload matched the stored row (the server
+      // compares NULL / '' / 0 as the same absence). Keep the history clean.
+      skip: skipSync || (action === 'update' && response?.unchanged === true),
     });
     return response;
   };
@@ -159,6 +161,17 @@
         return { ...response, row: guest.Draft.overlayRow(resource, id, response?.row || null) };
       }
       return rawGet(resource, id);
+    },
+
+    /**
+     * Строка ровно в том виде, в каком она лежит в базе: без черновика гостя и
+     * без снимка запроса. Нужна действиям вида «вернуть значение из базы».
+     * null, если строка недоступна (нет записи или нет прав на чтение).
+     */
+    rawRow(resource, id) {
+      const numericId = Number(id) || 0;
+      if (!resource || numericId <= 0) return Promise.resolve(null);
+      return rawGetRow(resource, numericId);
     },
 
     async create(resource, data, { _skipSyncRecord = false } = {}) {

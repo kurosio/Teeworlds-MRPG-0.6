@@ -53,6 +53,10 @@
   let reconcileTimer = null;
   let draftCache = null;
   let draftCacheKey = '';
+  // Raw JSON the cached snapshot was parsed from. The same draft is written by
+  // several documents of one tab (the Studio shell and the editor it embeds),
+  // so a snapshot cannot be trusted just because the account key matches.
+  let draftCacheRaw = '';
 
   // ── Role / account ──────────────────────────────────────────────────────
   const fetchStatus = async () => {
@@ -86,6 +90,7 @@
         if (draftCacheKey && draftCacheKey !== draftKey()) {
           draftCache = null;
           draftCacheKey = '';
+          draftCacheRaw = '';
         }
         if (s?.role === 'guest' && s.guest?.id) {
           startAutoReconcile();
@@ -159,11 +164,24 @@
   const readDraft = () => {
     const key = draftKey();
     if (!key) return emptyDraft();
-    if (draftCache && draftCacheKey === key) return draftCache;
+    const cached = () => (draftCache && draftCacheKey === key ? draftCache : emptyDraft());
+
+    let raw;
     try {
-      const raw = safeLocal?.getItem(key);
-      let draft;
-      if (raw) {
+      raw = safeLocal ? safeLocal.getItem(key) : null;
+    } catch {
+      // A transient storage error must not cache an empty draft over good data.
+      return cached();
+    }
+    // The draft is written by every studio document of the tab (the shell, the
+    // embedded editor, another tab). Trust the snapshot only while the stored
+    // value is the very same string it was parsed from — otherwise a count or
+    // an overlay would keep showing values that were already deleted/edited.
+    if (draftCache && draftCacheKey === key && draftCacheRaw === (raw || '')) return draftCache;
+
+    let draft;
+    if (raw) {
+      try {
         const parsed = JSON.parse(raw);
         draft = parsed && Array.isArray(parsed.ops) ? {
           v: DRAFT_SCHEMA,
@@ -171,16 +189,19 @@
           nextTemp: Number(parsed.nextTemp) || TEMP_ID_BASE + 1,
           ops: parsed.ops.map(normalizeOp).filter(Boolean),
         } : emptyDraft();
-      } else {
-        draft = migrateLegacyDraft(key);
+      } catch {
+        return cached();
       }
-      draftCache = draft;
-      draftCacheKey = key;
-      return draft;
-    } catch {
-      // A transient storage error must not cache an empty draft over good data.
-      return emptyDraft();
+    } else {
+      draft = migrateLegacyDraft(key);
+      // The migration writes the draft; keep the stamp in sync with what is
+      // actually stored so the next read does not parse it again.
+      try { raw = safeLocal ? safeLocal.getItem(key) : null; } catch { raw = null; }
     }
+    draftCache = draft;
+    draftCacheKey = key;
+    draftCacheRaw = raw || '';
+    return draft;
   };
 
   /** One-time move of the pre-account draft (v1) to the current guest account. */
@@ -207,7 +228,13 @@
 
   const emitUpdated = () => {
     try { window.dispatchEvent(new CustomEvent('editor-core:guest-updated', { detail: summary() })); } catch {}
-    window.EditorCore.Http.postMessage(window.parent, { type: 'editor-shell:guest-draft-changed', count: count(), pending: submittedCount() });
+    window.EditorCore.Http.postMessage(window.parent, {
+      type: 'editor-shell:guest-draft-changed',
+      accountId: accountId(),
+      count: Draft.count(),
+      pending: Draft.pendingCount(),
+      submitted: Draft.submittedCount(),
+    });
   };
 
   const notify = () => {
@@ -225,19 +252,24 @@
     if (!safeLocal) {
       throw new Error('Браузер блокирует локальное хранилище (localStorage) — изменения не могут сохраниться. Разрешите хранение данных для этого сайта и обновите страницу.');
     }
-    try { safeLocal.setItem(key, JSON.stringify(d)); }
+    const raw = JSON.stringify(d);
+    try { safeLocal.setItem(key, raw); }
     catch { throw new Error('Не удалось сохранить черновик (переполнено хранилище браузера).'); }
-    // Keep the cached snapshot isolated from objects returned to callers.
+    // Keep the cached snapshot isolated from objects returned to callers, and
+    // remember the exact stored string so readDraft() can detect foreign writes.
     draftCache = clone(d);
     draftCacheKey = key;
+    draftCacheRaw = raw;
     notify();
   };
 
   window.addEventListener('storage', (e) => {
     const key = draftKey();
-    if (key && e.key === key) {
+    // e.key === null means the whole storage was cleared by another document.
+    if (key && (e.key === key || e.key === null)) {
       draftCache = null;
       draftCacheKey = '';
+      draftCacheRaw = '';
       notify();
     }
   });
@@ -252,19 +284,10 @@
   // the in-memory snapshot and masquerade as a saved draft.
   const draftForWrite = () => clone(readDraft());
 
-  const canonical = (v) => {
-    if (v === undefined || v === null) return null;
-    if (typeof v === 'boolean') return v ? '1' : '0';
-    if (typeof v === 'object') return JSON.stringify(v);
-    const s = String(v);
-    if (/^-?\d+(\.\d+)?$/.test(s)) return String(Number(s));
-    const t = s.trim();
-    if (t.startsWith('{') || t.startsWith('[')) {
-      try { return JSON.stringify(JSON.parse(t)); } catch {}
-    }
-    return s;
-  };
-  const sameValue = (a, b) => canonical(a) === canonical(b);
+  // NULL, '' и 0 в редакторах — одно и то же «нет значения»: форма не умеет их
+  // различать, поэтому сравнение с базовой строкой не должно записывать такие
+  // пары как изменение (см. EditorCore.utils.valuesEqual).
+  const sameValue = (a, b) => window.EditorCore.utils.valuesEqual(a, b);
 
   /** Keep only whitelisted columns (from server config) — never send unknown fields. */
   const filterColumns = (resource, data) => {
@@ -306,6 +329,25 @@
     // External consumers receive a snapshot and cannot mutate the cached draft
     // without going through writeDraft().
     get: () => clone(readDraft()),
+
+    /**
+     * Forget the in-memory snapshot; the next call re-reads the stored draft.
+     * readDraft() already compares the stored value with the cached one, so this
+     * is only needed by callers that want to be explicit (e.g. the shell after
+     * an editor frame reported a change).
+     */
+    invalidate() {
+      draftCache = null;
+      draftCacheKey = '';
+      draftCacheRaw = '';
+    },
+
+    /** Refresh from storage and return a snapshot. */
+    reload() {
+      Draft.invalidate();
+      return clone(readDraft());
+    },
+
     count: () => readDraft().ops.length,
     pendingCount: () => readDraft().ops.filter(o => !o.reqId).length,
     submittedCount: () => readDraft().ops.filter(o => o.reqId).length,
@@ -395,6 +437,43 @@
       writeDraft(d);
       toastInfo(`Изменение (${resourceTitle(resource)} #${nid}) добавлено в черновик запроса`);
       return { ok: true, draft: true };
+    },
+
+    /**
+     * Убрать одно поле из черновика: значение вернётся к тому, что в базе.
+     * baseRow — текущая строка из БД, нужна только чтобы пересчитать подпись
+     * операции (например, если отменено изменение `Name`).
+     * Возвращает { ok, removed, dropped }: dropped — операция исчезла целиком,
+     * потому что в ней не осталось изменённых полей.
+     */
+    async revertField(resource, id, column, baseRow = null) {
+      await assertGuestResource(resource);
+      const col = String(column || '').trim();
+      if (!col) throw new Error('Не указано поле, которое нужно вернуть к исходному значению.');
+      const d = draftForWrite();
+      const nid = Number(id);
+      const i = d.ops.findIndex(o => o.type === 'update' && o.resource === resource && Number(o.id) === nid);
+      // Записи нет в черновике — отменять нечего: это не ошибка.
+      if (i < 0) return { ok: true, removed: false, dropped: false };
+      const op = d.ops[i];
+      if (op.reqId) {
+        throw new Error('Изменение уже отправлено в запросе и ждёт проверки администратора — отменить поле нельзя. Отзовите запрос.');
+      }
+      if (!op.data || !(col in op.data)) return { ok: true, removed: false, dropped: false };
+      delete op.data[col];
+      let dropped = false;
+      if (!Object.keys(op.data).length) {
+        d.ops.splice(i, 1);
+        dropped = true;
+      } else {
+        op.label = (baseRow ? rowLabel(resource, { ...baseRow, ...op.data }) : '') || op.label || '';
+        op.ts = Date.now();
+      }
+      writeDraft(d);
+      toastInfo(dropped
+        ? 'Изменение убрано из черновика — запись совпадает с базой'
+        : `Поле ${col} возвращено к значению из базы`);
+      return { ok: true, removed: true, dropped };
     },
 
     async remove(resource, id, baseRow = null) {
@@ -640,8 +719,6 @@
     onChange(fn) { listeners.add(fn); return () => listeners.delete(fn); },
   };
 
-  const count = () => Draft.count();
-  const submittedCount = () => Draft.submittedCount();
   const summary = () => ({
     account: accountLabel(),
     total: Draft.count(),

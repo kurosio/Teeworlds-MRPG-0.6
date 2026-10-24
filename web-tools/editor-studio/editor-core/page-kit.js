@@ -48,11 +48,21 @@
     return many ?? few ?? one;
   };
 
-  /** Тост (уведомление). Если UI ещё не поднят — пишем в консоль. */
+  /**
+   * Тост (уведомление). Если UI ещё не поднят — пишем в консоль.
+   *
+   * Уведомление никогда не должно ломать сценарий: раньше исключение из
+   * `showToast` (например, `EditorCore.UI` ещё не загружен) обрывало обработчик
+   * на полпути — данные уже сохранены, а список на экране оставался прежним.
+   */
   const toast = (message, type = 'success') => {
-    const show = namespace.utils?.showToast || namespace.UI?.toast;
-    if (typeof show === 'function') return show(message, type);
-    (type === 'error' ? console.error : console.log)('[editor-studio]', message);
+    try {
+      const show = namespace.utils?.showToast || namespace.UI?.toast;
+      if (typeof show === 'function') return show(message, type);
+      (type === 'error' ? console.error : console.log)('[editor-studio]', message);
+    } catch (error) {
+      console.error('[editor-studio] toast', error);
+    }
     return undefined;
   };
 

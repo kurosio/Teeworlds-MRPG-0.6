@@ -335,5 +335,36 @@
   };
 
   const TYPE_LABEL = { create: 'Создание', update: 'Изменение', delete: 'Удаление' };
-  window.EditorCore.RequestWorkbench = { open, openEditor, editorUrl, RESOURCE_PAGES, _jsonFieldValue: jsonFieldValue };
+
+  /**
+   * Атрибуты ссылки на запись в редакторе. Два режима:
+   *   • 'request' — снимок запроса: администратор проверяет и правит запрос;
+   *   • 'guest'   — обычный редактор: гость открывает свою запись (черновик
+   *                 показывается поверх строки БД) и продолжает работу.
+   * Запись, помеченную на удаление, открывать некуда: в черновике её уже нет.
+   * Возвращает готовую строку атрибутов или '' — вызывающий код сам решает,
+   * рисовать ссылку или обычный текст.
+   */
+  const recordLinkAttrs = ({ op, requestId = '', field = '', edit = false, mode = 'request' } = {}) => {
+    if (!op?.resource) return '';
+    const record = op.type === 'create' ? op.tempId : op.id;
+    if (!record) return '';
+    if (mode === 'guest') {
+      if (op.type === 'delete') return '';
+      const guestHref = editorUrl(op.resource, { record, field });
+      if (!guestHref) return '';
+      return `href="${esc(guestHref)}" data-open-record data-guest-record="1"`
+        + ` data-resource="${esc(op.resource)}" data-record="${esc(record)}" data-field="${esc(field)}"`;
+    }
+    if (!requestId) return '';
+    const href = editorUrl(op.resource, { request: requestId, record, field, edit: edit ? 1 : '' });
+    if (!href) return '';
+    return `href="${esc(href)}" data-open-record data-request="${esc(requestId)}"`
+      + ` data-resource="${esc(op.resource)}" data-record="${esc(record)}" data-field="${esc(field)}"`
+      + (edit ? ' data-request-edit="1"' : '');
+  };
+
+  window.EditorCore.RequestWorkbench = {
+    open, openEditor, editorUrl, recordLinkAttrs, RESOURCE_PAGES, _jsonFieldValue: jsonFieldValue,
+  };
 })();

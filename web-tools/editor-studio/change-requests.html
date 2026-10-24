@@ -510,26 +510,23 @@
     const valueHtml = (v) => (v === null || v === undefined ? '<span class="cr-null">NULL</span>' : v === '' ? '<span class="cr-null">пусто</span>' : `<span class="cr-val">${esc(v)}</span>`);
     const isLong = (v) => typeof v === 'string' && (v.includes('\n') || v.length > 120);
 
-    const openRecordAttrs = (op, requestId, field = '', edit = false) => {
-      if (!requestId || !op?.resource) return '';
-      const record = op.type === 'create' ? op.tempId : op.id;
-      const href = EditorCore.RequestWorkbench.editorUrl(op.resource, { request: requestId, record, field, edit: edit ? 1 : '' });
-      if (!href || !record) return '';
-      return `href="${esc(href)}" data-open-record data-request="${esc(requestId)}" data-resource="${esc(op.resource)}" data-record="${esc(record)}" data-field="${esc(field)}"${edit ? ' data-request-edit="1"' : ''}`;
-    };
-    const fieldNameHtml = (op, requestId, column, edit = false) => {
-      const attrs = openRecordAttrs(op, requestId, column, edit);
+    // Ссылки на запись в редакторе (снимок запроса или обычный редактор для гостя)
+    // строит общий модуль: одна логика для страницы и для окна правки запроса.
+    const openRecordAttrs = (op, requestId, field = '', edit = false, mode = 'request') =>
+      EditorCore.RequestWorkbench.recordLinkAttrs({ op, requestId, field, edit, mode });
+    const fieldNameHtml = (op, requestId, column, edit = false, mode = 'request') => {
+      const attrs = openRecordAttrs(op, requestId, column, edit, mode);
       return attrs
         ? `<a class="cr-open-record cr-col" ${attrs} title="Открыть поле ${esc(column)} в редакторе">${esc(column)} <i class="fa-solid fa-arrow-up-right-from-square"></i></a>`
         : `<span class="cr-col">${esc(column)}</span>`;
     };
 
-    const renderChanges = (op, requestId = '', edit = false) => {
+    const renderChanges = (op, requestId = '', edit = false, mode = 'request') => {
       const changes = op.changes || [];
       if (!changes.length) return '<div class="text-sm cr-muted">Нет изменённых полей.</div>';
 
       if (op.type === 'delete') {
-        const rows = changes.map(c => `<tr><td>${fieldNameHtml(op, requestId, c.column, edit)}</td><td class="cr-before">${isLong(c.before) ? `<details class="cr-details"><summary>показать (${String(c.before).length} симв.)</summary><div class="cr-diff mt-1"><div class="cr-diff-line"><span></span><span>${esc(c.before)}</span></div></div></details>` : valueHtml(c.before)}${c.refBefore ? `<span class="cr-ref"><i class="fa-solid fa-link"></i> ${esc(c.refBefore)}</span>` : ''}</td></tr>`).join('');
+        const rows = changes.map(c => `<tr><td>${fieldNameHtml(op, requestId, c.column, edit, mode)}</td><td class="cr-before">${isLong(c.before) ? `<details class="cr-details"><summary>показать (${String(c.before).length} симв.)</summary><div class="cr-diff mt-1"><div class="cr-diff-line"><span></span><span>${esc(c.before)}</span></div></div></details>` : valueHtml(c.before)}${c.refBefore ? `<span class="cr-ref"><i class="fa-solid fa-link"></i> ${esc(c.refBefore)}</span>` : ''}</td></tr>`).join('');
         return `<details class="cr-details"><summary><i class="fa-solid fa-chevron-right"></i> Удаляемые данные (${changes.length} ${plural(changes.length, 'поле', 'поля', 'полей')})</summary>
           <div class="cr-table-scroll"><table class="cr-changes mt-2"><thead><tr><th>Поле</th><th>Текущее значение</th></tr></thead><tbody>${rows}</tbody></table></div></details>`;
       }
@@ -540,14 +537,14 @@
       if (simple.length) {
         html += `<div class="cr-table-scroll"><table class="cr-changes"><thead><tr><th class="cr-col-field">Поле</th>${op.type === 'update' ? '<th>Было</th>' : ''}<th>${op.type === 'update' ? 'Станет' : 'Значение'}</th></tr></thead><tbody>`;
         html += simple.map(c => `<tr>
-          <td>${fieldNameHtml(op, requestId, c.column, edit)}</td>
+          <td>${fieldNameHtml(op, requestId, c.column, edit, mode)}</td>
           ${op.type === 'update' ? `<td class="cr-before">${valueHtml(c.before)}${c.refBefore ? `<span class="cr-ref"><i class="fa-solid fa-link"></i> ${esc(c.refBefore)}</span>` : ''}</td>` : ''}
           <td class="cr-after">${valueHtml(c.after)}${c.refAfter ? `<span class="cr-ref"><i class="fa-solid fa-link"></i> ${esc(c.refAfter)}</span>` : ''}</td>
         </tr>`).join('');
         html += '</tbody></table></div>';
       }
       for (const c of complex) {
-        html += `<div class="mt-3"><div class="text-xs mb-1">${fieldNameHtml(op, requestId, c.column, edit)} <span class="cr-muted">${c.json ? 'JSON' : 'текст'} · ${op.type === 'update' ? 'изменения построчно' : 'значение'}</span></div>
+        html += `<div class="mt-3"><div class="text-xs mb-1">${fieldNameHtml(op, requestId, c.column, edit, mode)} <span class="cr-muted">${c.json ? 'JSON' : 'текст'} · ${op.type === 'update' ? 'изменения построчно' : 'значение'}</span></div>
           ${op.type === 'update' ? renderDiff(c.before ?? '', c.after ?? '') : renderDiff('', c.after ?? '')}</div>`;
       }
       return html;
@@ -565,9 +562,9 @@
 
     const opIdText = (op) => (op.type === 'create' ? 'новая запись' : `#${op.id}`);
 
-    const renderOp = (op, { actionsHtml = '', extraNotes = [], requestId = '', edit = false } = {}) => {
+    const renderOp = (op, { actionsHtml = '', extraNotes = [], requestId = '', edit = false, mode = 'request' } = {}) => {
       const t = TYPE[op.type] || TYPE.update;
-      const recordAttrs = openRecordAttrs(op, requestId, '', edit);
+      const recordAttrs = openRecordAttrs(op, requestId, '', edit, mode);
       const recordLink = recordAttrs
         ? `<a class="editor-btn editor-btn-secondary editor-btn--sm cr-open-record" ${recordAttrs}><i class="fa-solid fa-arrow-up-right-from-square"></i><span>${op.type === 'create' ? 'Новая запись' : 'Открыть запись'}</span></a>` : '';
       return `<article class="cr-op cr-op--${esc(op.type)} ${op.error ? 'cr-op--error' : ''}">
@@ -579,7 +576,7 @@
           </div>
           <div class="cr-op-actions"><span class="cr-chip cr-chip--${esc(op.type)}">${esc(t.label)}</span>${recordLink}${actionsHtml}</div>
         </div>
-        <div class="cr-op-body">${renderChanges(op, requestId, edit)}${renderNotes(op, extraNotes)}</div>
+        <div class="cr-op-body">${renderChanges(op, requestId, edit, mode)}${renderNotes(op, extraNotes)}</div>
       </article>`;
     };
 
@@ -613,7 +610,7 @@
     // ═══════════════════════════════════════════════════════════════════
     // GUEST
     // ═══════════════════════════════════════════════════════════════════
-    const G = { config: null, analysis: null, analysisError: '', previewSeq: 0, mine: [], selected: null, detail: null, tab: 'draft' };
+    const G = { config: null, analysis: null, analysisError: '', previewSeq: 0, previewKey: '', mine: [], selected: null, detail: null, tab: 'draft' };
 
     const draftKeyOf = (o) => `${o.type}:${o.resource}:${o.type === 'create' ? o.tempId : o.id}`;
 
@@ -655,6 +652,13 @@
       }
       const byKey = new Map(draft.ops.map(o => [draftKeyOf(o), o]));
       const removeBtn = (uid) => uid ? `<button type="button" class="editor-icon-btn" data-remove-op="${esc(uid)}" title="Убрать из черновика"><i class="fa-solid fa-xmark"></i></button>` : '';
+      // Быстрый переход из черновика в сам редактор записи (см. deep-link.js).
+      const recordLink = (op) => {
+        const attrs = openRecordAttrs(op, '', '', false, 'guest');
+        if (!attrs) return '';
+        const title = op.type === 'create' ? 'Открыть новую запись в редакторе' : 'Открыть запись в редакторе';
+        return `<a class="editor-btn editor-btn-secondary editor-btn--sm cr-open-record" ${attrs} title="${title}"><i class="fa-solid fa-arrow-up-right-from-square"></i><span>${op.type === 'create' ? 'Новая запись' : 'Открыть запись'}</span></a>`;
+      };
       const submittedChip = (o) => `<span class="cr-chip cr-chip--pending" title="Отправлено администратору, ждёт проверки"><i class="fa-solid fa-hourglass-half"></i>В запросе ${esc(o.reqId || '')}</span>`;
 
       const drafts = draft.ops.filter(o => !o.reqId);
@@ -677,7 +681,7 @@
         box.innerHTML = G.analysis.operations.map((op) => {
           const d = byKey.get(`${op.type}:${op.resource}:${op.type === 'create' ? op.tempId : op.id}`);
           const notes = op.noop ? [{ severity: 'info', text: 'Значения совпадают с текущими в БД — эта операция не попадёт в запрос.' }] : [];
-          return renderOp(op, { actionsHtml: removeBtn(d?.uid), extraNotes: notes });
+          return renderOp(op, { actionsHtml: removeBtn(d?.uid), extraNotes: notes, mode: 'guest' });
         }).join('') + submittedHtml;
       } else {
         $('g-summary').innerHTML = (G.analysisError
@@ -691,7 +695,7 @@
             <div class="cr-op-icon"><i class="fa-solid ${t.icon}"></i></div>
             <div class="min-w-0 flex-1"><div class="cr-op-title">${esc(t.label)}: ${esc(Guest.resourceTitle(o.resource))} ${o.type === 'create' ? '(новая запись)' : `#${esc(o.id)}`}${o.label ? ` «${esc(o.label)}»` : ''}</div>
             <div class="cr-op-meta">${fields.length ? `Поля: ${esc(fields.join(', '))}` : ''}</div></div>
-            ${removeBtn(o.uid)}</div></article>`;
+            <div class="cr-op-actions">${recordLink(o)}${removeBtn(o.uid)}</div></div></article>`;
         }).join('') + submittedHtml;
       }
       validateGuestForm();
@@ -708,14 +712,18 @@
             <div class="cr-op-title">${esc(t.label)}: ${esc(Guest.resourceTitle(o.resource))} ${o.type === 'create' ? '(новая запись)' : `#${esc(o.id)}`}${o.label ? ` «${esc(o.label)}»` : ''}</div>
             <div class="cr-op-meta">${fields.length ? `Поля: ${esc(fields.join(', '))}` : ''}${o.submittedAt ? ` · отправлено ${esc(fmtDate(o.submittedAt))}` : ''}</div>
           </div>
-          ${chipHtml}
+          <div class="cr-op-actions">${recordLink(o)}${chipHtml}</div>
         </div>
       </article>`;
     };
 
     let previewTimer = null;
+    /** Состав черновика, для которого уже запрошен анализ (см. runPreview). */
+    const draftSignature = () => JSON.stringify(Guest.Draft.toOperations());
+
     const runPreview = async () => {
       const ops = Guest.Draft.toOperations();
+      G.previewKey = JSON.stringify(ops);
       const seq = ++G.previewSeq;
       if (!ops.length) { G.analysis = null; G.analysisError = ''; renderGuestDraft(); return; }
       G.analysis = null; G.analysisError = '';
@@ -731,7 +739,14 @@
     const loadMine = async () => {
       const res = await api('mine');
       G.mine = res.ok ? (res.rows || []) : [];
-      $('g-mine-count').textContent = String(G.mine.filter(r => r.status === 'pending').length || G.mine.length);
+      // Счётчик вкладки — это запросы, которые ещё ждут решения; раньше при
+      // отсутствии ожидающих он показывал общее число запросов и «залипал».
+      const pending = G.mine.filter(r => r.status === 'pending').length;
+      const counter = $('g-mine-count');
+      counter.textContent = String(pending);
+      counter.title = pending
+        ? `На рассмотрении: ${pending}; всего запросов: ${G.mine.length}`
+        : `Нет запросов на рассмотрении; всего запросов: ${G.mine.length}`;
       const box = $('g-mine-list');
       box.innerHTML = G.mine.length
         ? G.mine.map(r => listItemHtml(r, r.id === G.selected, false)).join('')
@@ -758,7 +773,7 @@
         <div class="mt-4 cr-field-label">Ваше описание</div>
         <div class="cr-message">${esc(r.message)}</div>
         <div class="cr-summary mt-4">${renderSummary(r.analysis?.summary)}</div>
-        <div class="mt-4">${(r.analysis?.operations || []).map(op => renderOp(op, { requestId: r.id })).join('')}</div>
+        <div class="mt-4">${(r.analysis?.operations || []).map(op => renderOp(op, { requestId: r.id, mode: 'guest' })).join('')}</div>
         ${threadBlockHtml(r.messages || [], false, 'Написать администратору…')}`;
       bindThread(box, r.id, false, () => showMineDetail(r.id));
     };
@@ -887,7 +902,16 @@
         if (document.visibilityState !== 'visible' || !G.selected || G.tab !== 'mine') return;
         refreshGuestThread(G.selected);
       }, 30000);
-      document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') reconcile(); });
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState !== 'visible') return;
+        // Черновик мог измениться в соседней вкладке: перечитываем его и
+        // пересчитываем счётчики, не дожидаясь следующего опроса. Анализ
+        // запрашиваем только если состав правок действительно другой.
+        renderGuestDraft();
+        if (draftSignature() !== G.previewKey) schedulePreview();
+        loadMine();
+        reconcile();
+      });
 
       renderGuestDraft();
       runPreview();

@@ -340,6 +340,81 @@ function sanitize_columns(array $data, array $allowed): array {
   return $out;
 }
 
+// ── Сравнение значений «было → станет» ──────────────────────────────────────
+//
+// Формы редакторов не различают NULL и пустое поле: при чтении записи NULL
+// приводится к '' (текст) или 0 (число), при сохранении эти значения уходят
+// обратно в payload. Если сравнивать значения «в лоб», то:
+//   * открытие записи и нажатие «Сохранить» без правок создаёт запрос с
+//     изменениями `NULL → пусто` и `NULL → 0`;
+//   * одобрение такого запроса записывает '' / 0 на место NULL в игровой БД;
+//   * возврат поля к исходному значению не убирает операцию из черновика.
+//
+// Поэтому NULL, '', 0 и false считаются одним и тем же «нет значения».
+
+/** Значение не несёт данных: NULL, '', 0, false, пустые массивы/объекты. */
+function editor_value_is_empty(mixed $v): bool
+{
+    if ($v === null) return true;
+    if (is_bool($v)) return $v === false;
+    if (is_int($v) || is_float($v)) return (float)$v === 0.0;
+    if (is_string($v)) {
+        $t = trim($v);
+        if ($t === '') return true;
+        if (preg_match('/^-?\d+(\.\d+)?$/', $t) === 1) return (float)$t === 0.0;
+        if ($t === '[]' || $t === '{}') return true;
+        return false;
+    }
+    if (is_array($v)) return $v === [];
+    return false;
+}
+
+/** Значение JSON-колонки в виде структуры (или исходная строка). */
+function editor_decode_json_value(mixed $v): mixed
+{
+    if (!is_string($v)) return $v;
+    $t = trim($v);
+    if ($t === '' || ($t[0] !== '{' && $t[0] !== '[')) return $v;
+    $d = json_decode($t, true);
+    return json_last_error() === JSON_ERROR_NONE ? $d : $v;
+}
+
+/** Каноническая строка значения: 7, '7' и '7.00' совпадают, JSON — как структура. */
+function editor_value_canonical(mixed $v, bool $isJson = false): ?string
+{
+    if ($v === null) return null;
+    if ($isJson) {
+        $d = editor_decode_json_value($v);
+        if (is_array($d)) {
+            $j = json_encode($d, JSON_UNESCAPED_UNICODE);
+            return $j === false ? null : $j;
+        }
+    }
+    if (is_bool($v)) return $v ? '1' : '0';
+    if (is_float($v) || is_int($v)) {
+        return rtrim(rtrim(number_format((float)$v, 10, '.', ''), '0'), '.') ?: '0';
+    }
+    if (is_array($v)) {
+        $j = json_encode($v, JSON_UNESCAPED_UNICODE);
+        return $j === false ? null : $j;
+    }
+    $s = (string)$v;
+    if (is_numeric($s) && preg_match('/^-?\d+(\.\d+)?$/', $s) === 1) {
+        return rtrim(rtrim(number_format((float)$s, 10, '.', ''), '0'), '.') ?: '0';
+    }
+    return $s;
+}
+
+/**
+ * Одинаково ли значение в БД и в присланных данных.
+ * NULL и пустая строка/ноль равны: редактор не может их различить.
+ */
+function editor_values_equal(mixed $a, mixed $b, bool $isJson = false): bool
+{
+    if (editor_value_is_empty($a) && editor_value_is_empty($b)) return true;
+    return editor_value_canonical($a, $isJson) === editor_value_canonical($b, $isJson);
+}
+
 function bind_type_for_value(mixed $value): string {
   if ($value === null) return 's';
   if (is_int($value)) return 'i';
