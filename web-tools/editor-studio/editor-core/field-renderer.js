@@ -220,7 +220,10 @@
       : '';
     const labelHtml = showLabel ? `<div class="${labelClass}">${label}${requiredMark}</div>` : '';
     const baseFieldWrapperClass = (isNested ? (options?.classes?.nestedFieldWrapper || options?.classes?.fieldWrapper) : options?.classes?.fieldWrapper) || '';
-    const spanClass = !isNested && ui.spanAll ? ' editor-field--span-all' : '';
+    // Position cards need their own row, including in nested component/list grids.
+    // An explicit spanAll: false can opt back into the surrounding column layout.
+    const spanAll = field.type === 'vec2' ? ui.spanAll !== false : !isNested && ui.spanAll;
+    const spanClass = spanAll ? ' editor-field--span-all' : '';
     const fieldWrapperClass = `${baseFieldWrapperClass}${spanClass}`.trim();
     const checkboxWrapperClass = options?.classes?.checkboxWrapper || '';
     const listItemClass = options?.classes?.listItem || '';
@@ -587,7 +590,7 @@
         safeTiles: ui.safeTiles,
         blockTiles: ui.blockTiles,
         showTiles: ui.showTiles,
-        showSpawns: ui.showSpawns,
+        highlightTiles: ui.highlightTiles ?? [],
         radiusPath: ui.radiusPath,
         radius: ui.radius,
         snap: ui.snap,

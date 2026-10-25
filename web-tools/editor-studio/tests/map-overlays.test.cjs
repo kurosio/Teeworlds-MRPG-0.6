@@ -33,15 +33,15 @@ test('blockedTile only rejects explicitly forbidden gameplay tiles', () => {
   assert.equal(O.blockedTile(game,{x:16,y:16},[]),null); // флаг выключен
   assert.equal(O.blockedTile(game,{x:16,y:16},[2]),null); // кастомный список
 });
-test('spawn highlighting draws one marker per spawn tile in view', () => {
-  const spawns = {width:3,height:1,indices:Uint8Array.from([192,0,194])};
+test('mob spawn highlighting only marks ENTITY_OFFSET + ENTITY_SPAWN_MOBS', () => {
+  const highlightTiles = {width:8,height:1,indices:Uint8Array.from([209,192,209,193,194,208,211,18])};
   const arcs = [];
   const ctx = {save(){},restore(){},beginPath(){},stroke(){},arc(...args){arcs.push(args);}};
-  O.drawSpawns(ctx,spawns,{x0:0,y0:0,x1:3,y1:1},(x,y)=>({x,y}));
+  O.drawHighlightedTiles(ctx,highlightTiles,{x0:0,y0:0,x1:8,y1:1},(x,y)=>({x,y}), [209]);
   assert.equal(arcs.length,2);
   assert.deepEqual(arcs[0].slice(0,2),[16,16]);
   assert.deepEqual(arcs[1].slice(0,2),[80,16]);
-  assert.equal(O.drawSpawns(ctx,spawns,null,(x,y)=>({x,y})),undefined);
+  assert.equal(O.drawHighlightedTiles(ctx,highlightTiles,null,(x,y)=>({x,y})),undefined);
 });
 test('tile box highlights the hovered tile and blocked tiles get a danger fill', () => {
   const painted = [];
@@ -52,4 +52,34 @@ test('tile box highlights the hovered tile and blocked tiles get a danger fill',
   const ctx2 = {save(){},restore(){},fillRect(...a){fills.push(a);},fillText(){},strokeRect(){}};
   O.drawCollision(ctx2,game,{x0:0,y0:0,x1:1,y1:1},(x,y)=>({x,y}),[1,2,3]);
   assert.equal(fills.length,1);
+});
+
+test('scenario mob positions enable mob highlightTiles and bind the radius field', () => {
+  const fs = require('node:fs');
+  const path = require('node:path');
+  const vm = require('node:vm');
+  const context = {window: {EditorCore: {}}};
+  vm.runInNewContext(fs.readFileSync(path.join(__dirname, '../editor-core/registry.js'), 'utf8'), context);
+  const schemas = context.window.EditorCore.schemas.componentSchemas;
+  const ui = schemas.defeat_mobs.fields.position.ui;
+  assert.deepEqual(Array.from(ui.highlightTiles), [209]);
+  assert.equal(ui.radiusPath, 'radius');
+  assert.equal(ui.safeTiles, false);
+  for (const [name, schema] of Object.entries(schemas)) {
+    for (const field of Object.values(schema.fields || {})) {
+      if (field.type === 'vec2' && name !== 'defeat_mobs') assert.deepEqual(Array.from(field.ui.highlightTiles), []);
+    }
+  }
+});
+
+test('tile highlights accept arbitrary IDs and an empty list disables drawing', () => {
+  const game = { width: 4, height: 1, indices: Uint8Array.from([0, 18, 209, 42]) };
+  const arcs = [];
+  const ctx = { save(){}, restore(){}, beginPath(){}, stroke(){}, arc(x,y){ arcs.push([x,y]); } };
+  const bounds = { x0: 0, y0: 0, x1: 4, y1: 1 };
+  const project = (x,y) => ({x,y});
+  O.drawHighlightedTiles(ctx, game, bounds, project, []);
+  assert.deepEqual(arcs, []);
+  O.drawHighlightedTiles(ctx, game, bounds, project, [0, 42]);
+  assert.deepEqual(arcs, [[16,16], [112,16]]);
 });

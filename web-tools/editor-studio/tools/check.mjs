@@ -272,7 +272,7 @@ if (/class="editor-vec2"/.test(questsPage)) {
 // Запрет COLLIDE/DEATH/UNHOOK включается при объявлении элемента позиции.
 // Дополнительные флаги подсвечивают нужные динамические слои на карте.
 
-for (const token of ['data-map-options', 'safeTiles', 'showSpawns', 'radiusPath', 'showTiles', 'editor-map:validity']) {
+for (const token of ['data-map-options', 'safeTiles', 'highlightTiles', 'radiusPath', 'showTiles', 'editor-map:validity']) {
   if (!positionPickerCode.includes(token)) {
     problems.push(`editor-core/position-picker.js: потерян флаг/событие карты ${token}`);
   }
@@ -281,8 +281,8 @@ if (!fieldCode.includes('safeTiles: ui.safeTiles')) {
   problems.push('editor-core/field-renderer.js: флаги карты не проброшены из ui в PositionPicker.render');
 }
 for (const [page, token] of [
-  ['mobs-editor.html', 'safeTiles: true'],
-  ['mobs-editor.html', 'showSpawns: true'],
+  ['mobs-editor.html', 'safeTiles: false'],
+  ['mobs-editor.html', 'highlightTiles: [209]'],
   ['mobs-editor.html', "radiusPath: 'Radius'"],
   ['bots-npc-editor.html', 'safeTiles: true'],
   ['quests-editor.html', 'safeTiles: true'],
@@ -304,7 +304,7 @@ if (fs.existsSync(pickerDir)) {
   for (const token of ["qs.get('safe')", 'editor-map:validity', 'state.invalid', 'drawPointMarker']) {
     if (!pickerJsCode.includes(token)) problems.push(`vendor/ddnet-map/picker.js: нет проверки тайлов (${token})`);
   }
-  for (const token of ['blockedTile', 'drawSpawns', 'drawTileBox']) {
+  for (const token of ['blockedTile', 'drawHighlightedTiles', 'drawTileBox']) {
     if (!overlaysCode.includes(token)) problems.push(`vendor/ddnet-map/picker-overlays.js: нет подсветки слоёв (${token})`);
   }
   if (!pickerHtmlCode.includes('pk-validity')) {

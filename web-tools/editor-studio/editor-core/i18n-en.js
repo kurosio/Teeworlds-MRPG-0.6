@@ -1812,8 +1812,8 @@ window.EditorCoreDict.en = {
   // Флаги map-picker и подсветка невалидной точки.
   "Без коллизий": "No collision tiles",
   "Нельзя ставить точку на стене, смерти или тайле без крюка": "A point cannot be placed on a solid, death or no-hook tile",
-  "Спавны": "Spawns",
-  "Подсветить точки спавна на карте": "Highlight spawn points on the map",
+  "Подсветка тайлов": "Tile highlights",
+  "Подсветить выбранные ID тайлов на карте": "Highlight selected tile IDs on the map",
   "Игровой слой": "Gameplay layer",
   "Показать игровой слой карты": "Show the map gameplay layer",
   "Радиус": "Radius",

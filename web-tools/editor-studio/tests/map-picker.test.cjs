@@ -226,6 +226,26 @@ test('without safeTiles the same solid tile is still applicable', () => {
   p.node('apply').click();
   assert.equal(p.messages.at(-1).type,'editor-map:apply');
 });
+test('disabled safeTiles allows every gameplay tile, including air', () => {
+  for (const safe of ['', '&safe=', '&safe=%20', '&safe=,%20,']) {
+    for (const [x, y] of [[16,16], [48,16], [16,48], [48,48]]) {
+      const p = picker(`?map=/map&x=${x}&y=${y}${safe}`, safeMap());
+      assert.equal(p.node('apply').disabled,false);
+      assert.equal(p.node('validity').hidden,true);
+      p.node('apply').click();
+      assert.equal(p.messages.at(-1).type,'editor-map:apply');
+      assert.equal(p.messages.at(-1).x,x);
+      assert.equal(p.messages.at(-1).y,y);
+    }
+  }
+});
+test('safeTiles ignores empty list entries but still supports explicitly blocking air', () => {
+  const p = picker('?map=/map&x=48&y=48&safe=1,,%20,2,3,', safeMap());
+  assert.equal(p.node('apply').disabled,false);
+  const blockedAir = picker('?map=/map&x=48&y=48&safe=0', safeMap());
+  assert.equal(blockedAir.node('apply').disabled,true);
+  assert.match(blockedAir.node('validity').textContent,/ID 0/);
+});
 test('safeTiles can be a custom tile list and fails open without a gameplay layer', () => {
   const onlyDeath = picker('?map=/map&x=16&y=16&safe=2', safeMap());
   assert.equal(onlyDeath.node('apply').disabled,false); // тайл 1 не запрещён
@@ -239,8 +259,8 @@ test('picker opens with collapsed tools, gameplay and grid off by default', () =
   assert.equal(p.node('snap').checked,false);
   assert.equal(p.document.getElementById('pk-workbench').open,false);
 });
-test('safe, spawns and radius do not implicitly enable gameplay or expand tools', () => {
-  const p = picker('?map=/map&x=48&y=48&safe=1,2,3&spawns=1&radius=96', safeMap());
+test('safe, highlightTiles and radius do not implicitly enable gameplay or expand tools', () => {
+  const p = picker('?map=/map&x=48&y=48&safe=1,2,3&highlightTiles=209&radius=96', safeMap());
   assert.equal(p.node('collision').checked,false);
   assert.equal(p.node('grid').checked,false);
   assert.equal(p.node('radius').value,'96');
@@ -248,7 +268,7 @@ test('safe, spawns and radius do not implicitly enable gameplay or expand tools'
   p.tw.onAfterRender(); // спавны и радиус работают без полного игрового слоя
 });
 test('explicit map flags enable gameplay and grid without expanding tools', () => {
-  const p = picker('?map=/map&x=48&y=48&safe=1,2,3&tiles=1&spawns=1&radius=96&grid=1&snap=1', safeMap());
+  const p = picker('?map=/map&x=48&y=48&safe=1,2,3&tiles=1&highlightTiles=209&radius=96&grid=1&snap=1', safeMap());
   assert.equal(p.node('collision').checked,true);
   assert.equal(p.node('grid').checked,true);
   assert.equal(p.node('snap').checked,true);

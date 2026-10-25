@@ -110,8 +110,8 @@ test('PositionPicker is wired into the editor core and every quest position', ()
 
 test('all position editors declare the map flags they need', () => {
   for (const [page, token] of [
-    ['mobs-editor.html', 'safeTiles: true'],
-    ['mobs-editor.html', 'showSpawns: true'],
+    ['mobs-editor.html', 'safeTiles: false'],
+    ['mobs-editor.html', 'highlightTiles: [209]'],
     ['mobs-editor.html', "radiusPath: 'Radius'"],
     ['bots-npc-editor.html', 'safeTiles: true'],
     ['quests-editor.html', 'safeTiles: true'],
@@ -143,7 +143,7 @@ test('PositionPicker renders one card with map flags and manual entry', () => {
     pinned: true,
     step: 1,
     safeTiles: true,
-    showSpawns: true,
+    highlightTiles: [209],
     radiusPath: 'Radius',
     grid: true,
     snap: true,
@@ -162,9 +162,9 @@ test('PositionPicker renders one card with map flags and manual entry', () => {
   assert.match(html, /class="position-picker is-pinned"/);
   // Флаги карты сериализуются в объявление элемента.
   assert.match(html, /data-map-options="[^"]*&quot;safe&quot;:\[1,2,3\]/);
-  assert.match(html, /&quot;spawns&quot;:true/);
+  assert.match(html, /&quot;highlightTiles&quot;:\[209\]/);
   assert.match(html, /&quot;radiusPath&quot;:&quot;Radius&quot;/);
-  for (const flag of ['safe', 'spawns', 'radius', 'grid', 'snap']) {
+  for (const flag of ['safe', 'highlightTiles', 'radius', 'grid', 'snap']) {
     assert.match(html, new RegExp(`data-position-flag="${flag}"`));
   }
   // Эти оверлеи больше не включают полный игровой слой неявно.
@@ -181,10 +181,10 @@ test('vec2 gameplay and grid defaults are explicit and independent of other over
   assert.equal(plain.tiles, false);
   assert.equal(plain.grid, null); // picker трактует отсутствие настройки как выключено
 
-  const overlaysOnly = api.resolveMapOptions(rootWith({ safeTiles: true, showSpawns: true, radius: 96 }));
+  const overlaysOnly = api.resolveMapOptions(rootWith({ safeTiles: true, highlightTiles: [209], radius: 96 }));
   assert.equal(overlaysOnly.tiles, false);
   assert.equal(overlaysOnly.grid, null);
-  assert.equal(overlaysOnly.spawns, true);
+  assert.deepEqual(Array.from(overlaysOnly.highlightTiles), [209]);
   assert.equal(overlaysOnly.radius, 96);
 
   const explicit = api.resolveMapOptions(rootWith({ showTiles: true, grid: true }));
@@ -231,7 +231,7 @@ test('PositionPicker saves manual coordinates, world and map result', { skip: do
     pinned: true,
     step: 1,
     safeTiles: true,
-    showSpawns: true,
+    highlightTiles: [209],
     radiusPath: 'Radius',
     grid: true,
     snap: true,
@@ -269,7 +269,7 @@ test('PositionPicker saves manual coordinates, world and map result', { skip: do
   assert.equal(openedOptions.worldId, 3);
   assert.equal(openedOptions.allowWorldChange, false);
   assert.deepEqual(Array.from(openedOptions.mapOptions.safe), [1, 2, 3]);
-  assert.equal(openedOptions.mapOptions.spawns, true);
+  assert.deepEqual(Array.from(openedOptions.mapOptions.highlightTiles), [209]);
   assert.equal(openedOptions.mapOptions.tiles, false);
   assert.equal(openedOptions.mapOptions.radius, 256);
   assert.equal(openedOptions.mapOptions.grid, true);
@@ -372,4 +372,12 @@ test('invalid tile is highlighted but never resets the coordinates', { skip: dom
   assert.equal(picker.querySelector('[data-position-warning]').hidden, true);
   assert.equal(picker.querySelector('[data-position-axis="x"]').value, '128');
   dom.window.close();
+});
+
+test('highlightTiles normalizes a tile ID array without implicit spawn IDs', () => {
+  const api = loadModule();
+  const rootWith = options => ({ getAttribute: name => name === 'data-map-options' ? JSON.stringify(options) : null });
+  assert.deepEqual(Array.from(api.resolveMapOptions(rootWith({})).highlightTiles), []);
+  assert.deepEqual(Array.from(api.resolveMapOptions(rootWith({ highlightTiles: true })).highlightTiles), []);
+  assert.deepEqual(Array.from(api.resolveMapOptions(rootWith({ highlightTiles: [42, 0, 42, 255, -1, 256, 1.5, null, '18'] })).highlightTiles), [42, 0, 255]);
 });

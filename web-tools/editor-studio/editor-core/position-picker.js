@@ -10,7 +10,7 @@
  *     только для карты.
  *
  * Флаги карты задаются при объявлении элемента (схема `ui.*` или `render()`),
- * например `{ safeTiles: true, showSpawns: true, radiusPath: 'Radius' }`.
+ * например `{ safeTiles: true, highlightTiles: [209], radiusPath: 'Radius' }`.
  * Они едут в окно карты через `PointMap.open()` и подсвечивают нужные слои.
  *
  * Скрытые инпуты `data-position-axis` остаются обычными полями формы:
@@ -54,8 +54,8 @@
   /**
    * Нормализуем объявление флагов в один объект (он же едет в URL карты).
    * Функция идемпотентна: уже нормализованный объект из `data-map-options`
-   * (`safe`, `spawns`, …) читается так же, как объявление (`safeTiles`,
-   * `showSpawns`, …).
+   * (`safe`, `highlightTiles`, …) читается так же, как объявление (`safeTiles`,
+   * `highlightTiles`, …).
    */
   const normalizeMapOptions = (o = {}) => {
     const raw = o.safeTiles === undefined
@@ -66,15 +66,16 @@
       .map(Number)
       .filter((n) => Number.isInteger(n) && n >= 0);
     const showTiles = !!o.showTiles;
-    const spawns = !!(o.showSpawns ?? o.spawns);
+    const highlightTiles = [...new Set((Array.isArray(o.highlightTiles) ? o.highlightTiles : [])
+      .filter((id) => Number.isInteger(id) && id >= 0 && id <= 255))];
     return {
       safe,
       showTiles,
       // Начальная видимость игрового слоя — только явная настройка vec2.
-      // safeTiles/showSpawns добавляют свои оверлеи, но не раскрывают панель
+      // safeTiles/highlightTiles добавляют свои оверлеи, но не раскрывают панель
       // и не включают полный игровой слой за пользователя.
       tiles: showTiles,
-      spawns,
+      highlightTiles,
       radiusPath: o.radiusPath == null ? '' : String(o.radiusPath),
       radius: o.radius == null ? '' : o.radius,
       snap: typeof o.snap === 'boolean' ? o.snap : null,
@@ -84,7 +85,7 @@
 
   const FLAG_LABELS = {
     safe: () => t('Без коллизий'),
-    spawns: () => t('Спавны'),
+    highlightTiles: () => t('Подсветка тайлов'),
     tiles: () => t('Игровой слой'),
     radius: () => t('Радиус'),
     snap: () => t('Центры тайлов'),
@@ -92,7 +93,7 @@
   };
   const FLAG_TITLES = {
     safe: () => t('Нельзя ставить точку на стене, смерти или тайле без крюка'),
-    spawns: () => t('Подсветить точки спавна на карте'),
+    highlightTiles: () => t('Подсветить выбранные ID тайлов на карте'),
     tiles: () => t('Показать игровой слой карты'),
     radius: () => t('Показать радиус вокруг точки'),
     snap: () => t('Привязать точку к центрам тайлов'),
@@ -100,7 +101,7 @@
   };
   const flagOn = (o, key) => ({
     safe: o.safe.length > 0,
-    spawns: o.spawns,
+    highlightTiles: o.highlightTiles.length > 0,
     tiles: o.showTiles,
     radius: !!o.radiusPath || Number(o.radius) > 0,
     snap: o.snap === true,
@@ -164,7 +165,7 @@
     return {
       safe: o.safe,
       tiles: !!o.tiles,
-      spawns: o.spawns,
+      highlightTiles: o.highlightTiles,
       radius,
       snap: o.snap,
       grid: o.grid,

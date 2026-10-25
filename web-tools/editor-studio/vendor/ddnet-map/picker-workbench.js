@@ -9,7 +9,7 @@
       const text = en ? {
         title:'Placement tools', collision:'Gameplay layer', spawn:'To spawn', measure:'Measure (M)', clear:'Clear measurement',
         from:'From selected point', use:'B → position', radius:'Radius preview, px', layers:'Show all layers', noGame:'No gameplay layer in this map.', zoom:'Zoom in to see gameplay tiles.',
-        legend:'1 solid · 2 death · 3 no-hook · green: spawns · blue: other tile IDs',
+        legend:'1 solid · 2 death · 3 no-hook · green rings: selected tile IDs · blue: other tile IDs',
         blocked:'Red tiles are forbidden here',
         solid:'Solid', death:'Death', nohook:'No-hook', empty:'Empty', outside:'Outside gameplay layer', point:'Selected point',
         start:'Click two points on the map. The selected content position will not move.',
@@ -37,7 +37,7 @@
       el['measure-use'].disabled = true;
       el['measure-from-point'].disabled = !state.hasPoint;
       // Панель всегда открывается свёрнутой. Игровой слой включается только
-      // явным showTiles в объявлении vec2; safe/spawns/radius работают сами
+      // явным showTiles в объявлении vec2; safe/highlightTiles/radius работают сами
       // по себе и не меняют начальное состояние панели или этого переключателя.
       get('workbench').open = false;
       el.collision.checked = options.tiles === true;
@@ -170,7 +170,7 @@
             }
             draw.drawCollision(ctx, game, bounds, worldToScreen, options.safe);
           }
-          if (options.spawns) draw.drawSpawns(ctx, game, bounds, worldToScreen);
+          if (options.highlightTiles?.length) draw.drawHighlightedTiles(ctx, game, bounds, worldToScreen, options.highlightTiles);
           if (state.hasPoint && game) {
             const index = draw.tileAt(game, state.point);
             const kind = index === null ? text.outside : index === 0 ? text.empty : `${({1:text.solid,2:text.death,3:text.nohook})[index] || (en ? 'Tile' : 'Тайл')} (ID ${index})`;

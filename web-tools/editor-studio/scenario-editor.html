@@ -2564,6 +2564,10 @@
                 const type = String(field?.type || '').toLowerCase();
                 const uiType = String(field?.ui?.type || '').toLowerCase();
                 const format = String(field?.ui?.format || '').toLowerCase();
+                // Внешняя ячейка должна учитывать ширину поля: span-all внутри
+                // FieldRenderer не может растянуть родительскую .sc-modal-field.
+                if (field?.ui?.spanAll === true) return true;
+                if (type === 'vec2') return field?.ui?.spanAll !== false;
                 // Списки, многострочный текст и теги занимают всю строку.
                 if (type === 'list' || type === 'textarea' || format === 'textarea') return true;
                 return ['tags', 'multiselect', 'db_multiselect'].includes(uiType);

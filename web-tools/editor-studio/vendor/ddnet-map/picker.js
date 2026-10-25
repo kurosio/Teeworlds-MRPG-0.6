@@ -11,7 +11,7 @@
  *   point    — 0, если точки ещё нет (тогда камера ставится в центр карты)
  *   safe     — список ID игровых тайлов, на которые нельзя ставить точку
  *              (по умолчанию флаг редактора safeTiles даёт 1,2,3);
- *   tiles    — 1: включить игровой слой при открытии; spawns — 1: спавны;
+ *   tiles    — 1: включить игровой слой при открытии; highlightTiles — список ID подсвечиваемых тайлов;
  *   radius   — предпросмотр радиуса; grid/snap — 1|0: начальные инструменты
  *              (без tiles/grid соответствующие переключатели выключены)
  *
@@ -142,12 +142,16 @@
 
   // Флаги приходят из объявления UI-элемента позиции (PositionPicker).
   const safeIds = (qs.get('safe') || '').split(',')
-    .map((value) => Number(value.trim()))
+    .map((value) => value.trim())
+    .filter((value) => value !== '') // Number('') is 0, not an explicitly blocked tile.
+    .map(Number)
     .filter((value, index, all) => Number.isInteger(value) && value >= 0 && all.indexOf(value) === index);
   const OPTIONS = {
     safe: safeIds,
     tiles: qs.get('tiles') === '1',
-    spawns: qs.get('spawns') === '1',
+    highlightTiles: [...new Set((qs.get('highlightTiles') || '').split(',')
+      .map((value) => value.trim()).filter(Boolean).map(Number)
+      .filter((id) => Number.isInteger(id) && id >= 0 && id <= 255))],
     radius: Math.max(0, toNum(qs.get('radius'), 0)),
     snap: qs.has('snap') ? qs.get('snap') === '1' : null,
     grid: qs.has('grid') ? qs.get('grid') === '1' : null,

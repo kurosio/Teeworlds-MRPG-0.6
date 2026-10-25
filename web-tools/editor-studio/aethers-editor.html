@@ -106,7 +106,7 @@
       // тайлы — телепорт может вести в любое место карты.
       Position: {
         type: 'vec2', label: 'Координаты точки телепорта',
-        ui: { step: 1, axes: { x: 'TeleX', y: 'TeleY' }, mapWorldPath: 'WorldID', showTiles: true, showSpawns: true, spanAll: true }
+        ui: { step: 1, axes: { x: 'TeleX', y: 'TeleY' }, mapWorldPath: 'WorldID', showTiles: false, highlightTiles: [28], radius: 320, spanAll: true }
       },
     };
 
