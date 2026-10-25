@@ -1,22 +1,12 @@
-== status (before) ==
-{"ok":true,"authorized":false,"role":null,"user":null,"guest":{"enabled":true,"accounts":1,"allow_remote":true,"pages":[],"login":null,"name":null,"id":null},"guest_only_network":false,"admin_setup_needed":false}
 == guest_login ==
-{"ok":true,"authorized":true,"role":"guest","user":"Test","guest":{"enabled":true,"accounts":1,"allow_remote":true,"pages":["items","crafts","warehouses","worlds","nodes_collecting","aethers","dungeons","quests","bots_info","bots_mobs","bots_npc"],"login":"test","name":"Test","id":"g89021cf6268b2d84","limits":{"max_pending":5,"cooldown":60,"max_operations":100}},"guest_only_network":false,"admin_setup_needed":false,"guest_key":"6777bcd99fc5aee15daacacb1e3fc62578a4f1734139bacf"}
-== status (after) ==
-{"ok":true,"authorized":true,"role":"guest","user":"Test","guest":{"enabled":true,"accounts":1,"allow_remote":true,"pages":["items","crafts","warehouses","worlds","nodes_collecting","aethers","dungeons","quests","bots_info","bots_mobs","bots_npc"],"login":"test","name":"Test","id":"g89021cf6268b2d84","limits":{"max_pending":5,"cooldown":60,"max_operations":100}},"guest_only_network":false,"admin_setup_needed":false}
-== change-requests config ==
-3504 .ci/results/cr-config.json
-== list quests ==
-5853 .ci/results/quests.json
-== list quest_bots ==
-141511 .ci/results/quest_bots.json
-== list bots_info ==
-37118 .ci/results/bots_info.json
-== list bots_npc ==
-9913 .ci/results/bots_npc.json
-== list worlds ==
-4028 .ci/results/worlds.json
-== list items ==
-192699 .ci/results/items.json
-== list nodes_collecting ==
-10822 .ci/results/nodes_collecting.json
+{"ok":true,"authorized":true,"role":"guest","user":"Test","guest":{"enabled":true,"accounts":1,"allow_remote":true,"pages":["items","crafts","warehouses","worlds","nodes_collecting","aethers","dungeons","quests","bots_info","bots_mobs","bots_npc"],"login":"test","name":"Test","id":"g89021cf6268b2d84","limits":{"max_pending":5,"cooldown":60,"max_operations":100}},"guest_only_network":false,"admin_s
+== my requests ==
+{"ok":true,"rows":[]}
+
+== mobs ==
+25887 .ci/results/bots_mobs.json
+== npc 31 ==
+{"ok":true,"row":{"ID":31,"BotID":1087,"PosX":8336,"PosY":912,"GiveQuestID":null,"DialogData":null,"Function":-1,"Static":1,"Emote":null,"WorldID":16}}
+
+== crafts (count only) ==
+681 .ci/results/crafts.json
