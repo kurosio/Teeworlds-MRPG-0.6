@@ -1,20 +1,34 @@
 name: Editor Bridge (temporary)
 
 on:
-  workflow_dispatch:
-    inputs:
-      note:
-        description: Free-form note
-        required: false
-        default: probe
+  push:
+    branches: [ arena/79c9a834-teeworlds-mrpg-0-6 ]
+    paths:
+      - '.ci/**'
+      - '.github/workflows/editor-bridge.yml'
 
 jobs:
-  probe:
+  bridge:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
     steps:
+      - uses: actions/checkout@v4
       - name: Probe editor endpoint
         run: |
-          echo "note: ${{ inputs.note }}"
-          curl -sS -m 30 -o /tmp/status.json -w "http=%{http_code}\n" \
+          echo "== status =="
+          curl -sS -m 30 -w "\nhttp=%{http_code}\n" \
+            -c /tmp/cookies.txt \
             https://editor.mmotee.online/api/auth.php?action=status
-          cat /tmp/status.json
+          echo "== guest login =="
+          curl -sS -m 30 -w "\nhttp=%{http_code}\n" \
+            -b /tmp/cookies.txt -c /tmp/cookies.txt \
+            -H 'Content-Type: application/json' \
+            -H 'Origin: https://editor.mmotee.online' \
+            -H 'Referer: https://editor.mmotee.online/index.html' \
+            -X POST \
+            --data '{"login":"test","password":"123123"}' \
+            https://editor.mmotee.online/api/auth.php?action=guest_login
+          echo "== status after =="
+          curl -sS -m 30 -w "\nhttp=%{http_code}\n" \
+            -b /tmp/cookies.txt \
+            https://editor.mmotee.online/api/auth.php?action=status
