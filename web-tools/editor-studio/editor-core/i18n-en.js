@@ -143,6 +143,7 @@ window.EditorCoreDict.en = {
   "Поведение": "Behavior",
   "Проверить map-api": "Test the map-api",
   "Пусто — карты ищутся в каталогах ниже.": "Empty — maps are looked up in the folders below.",
+  "Пустое поле — оставить сохранённый на сервере пароль. Для подключения без пароля отметьте «Без пароля».": "Leave the field empty to keep the password stored on the server. To connect without a password, check “No password”.",
   "Радиус активации (0 — по умолчанию)": "Activation radius (0 — default)",
   "администратору": "the administrator",
   "Адреса во внутренней сети недоступны для проверки": "Internal network addresses cannot be tested",

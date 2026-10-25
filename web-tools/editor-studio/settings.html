@@ -183,11 +183,14 @@
           </div>
           <div class="md:col-span-2">
             <div class="editor-label mb-1">Пароль</div>
-            <input id="f-pass" type="password" class="w-full editor-input form-input" placeholder="••••••" />
+            <input id="f-pass" type="password" class="w-full editor-input form-input" placeholder="••••••" autocomplete="off" />
             <label class="flex items-center gap-2 mt-1.5 cursor-pointer select-none">
               <input id="f-nopass" type="checkbox" class="rounded editor-hairline-strong editor-soft-strong editor-primary-text h-4 w-4" />
               <span class="text-xs editor-muted-text">Без пароля</span>
             </label>
+            <div class="editor-muted-text text-xs mt-1">
+              Пустое поле — оставить сохранённый на сервере пароль. Для подключения без пароля отметьте «Без пароля».
+            </div>
           </div>
           <div class="md:col-span-2">
             <div class="editor-label mb-1">API скинов</div>
@@ -433,7 +436,12 @@
     const blankProfile = name => ({
       id: uid(), name: name || 'Default',
       host: '', port: 3306, db: '', user: '', pass: '', nopass: false,
-      hasServerPassword: false,  // tracks if server has a password stored
+      // Признак от сервера (get_config.password_set): пароль сохранён, но
+      // само значение в браузер не передаётся. Нужен для подсказки в поле.
+      hasServerPassword: false,
+      // Профиль явно сохранён без пароля: при переключении на него пароль
+      // предыдущего профиля в конфиге сервера нужно сбросить.
+      passwordless: false,
       skins: '',
       mapApi: '', mapsDir: '', mapresDir: '', mapTokenSet: false,
       status: 'idle'   // idle | wait | ok | err
@@ -456,11 +464,13 @@
         profiles = [blankProfile('Default')];
       }
       
-      // Migration: add hasServerPassword field if missing
+      // Миграция старых профилей. Раньше отсутствие пароля в браузере
+      // означало «сбросить пароль на сервере» — из-за этого открытие страницы
+      // настроек стирало рабочий пароль. Такие профили считаем НЕ
+      // беспарольными; истинное состояние подтянем из get_config.password_set.
       for (const p of profiles) {
-        if (typeof p.hasServerPassword === 'undefined') {
-          p.hasServerPassword = false;
-        }
+        if (typeof p.hasServerPassword === 'undefined') p.hasServerPassword = false;
+        if (typeof p.passwordless === 'undefined') p.passwordless = false;
       }
       
       const stored = localStorage.getItem(ACTIVE_KEY);
@@ -531,14 +541,16 @@
       p.db = f.db;
       p.user = f.user;
       p.nopass = f.nopass;
-      if (f.nopass) { 
+      if (f.nopass) {
         p.pass = '';
-        p.hasServerPassword = false;
-      } else if (f.pass) { 
+        p.passwordless = true;   // явный чекбокс «Без пароля»
+      } else if (f.pass) {
         p.pass = f.pass;
-        p.hasServerPassword = true;  // new password entered
+        p.passwordless = false;  // введён новый пароль
       }
-      // else: keep existing p.pass and p.hasServerPassword
+      // Пустое поле без чекбокса означает «оставить пароль на сервере».
+      // Здесь не трогаем ни p.pass, ни hasServerPassword: состояние пароля
+      // подтвердит сервер своим ответом password_set.
       p.skins = f.skins;
       p.mapApi = f.mapApi;
       p.mapsDir = f.mapsDir;
@@ -560,7 +572,30 @@
       mapTokenDraft = '';
     };
 
-    const pushToServer = async p => {
+    /**
+     * Ответ сервера — единственный источник правды о пароле. Само значение
+     * никогда не приходит в браузер, только признак «пароль сохранён».
+     */
+    const syncPasswordState = (p, passwordSet) => {
+      if (typeof passwordSet !== 'boolean') return;
+      p.hasServerPassword = passwordSet;
+      // Профиль без пароля: при переключении на него пароль предыдущего
+      // профиля в конфиге сервера нужно сбросить, иначе подключение упадёт.
+      p.passwordless = !passwordSet && !p.pass;
+      save();
+    };
+
+    /**
+     * Пароль БД живёт только на сервере. Пустое поле формы = «не менять»,
+     * поэтому в запросе по умолчанию нет ни password, ни clear_password.
+     * Стереть пароль можно только явно: чекбоксом «Без пароля» или профилем,
+     * который сохранили без пароля (тогда старый пароль мешает подключиться).
+     *
+     * sendPassword=false — при открытии страницы: сам факт открытия настроек
+     * не должен ничего менять в пароле БД (старый баг: пароль сбрасывался, и
+     * все редакторы после этого теряли подключение).
+     */
+    const pushToServer = async (p, { sendPassword = true } = {}) => {
       // Сетевые правила (allow_remote_editor / allowed_editor_ips) сюда не входят:
       // они живут только в БД редактора и через API неизменяемы.
       const payload = {
@@ -579,24 +614,17 @@
         payload.map_api_token = mapTokenDraft;
       }
 
-      // Handle password carefully
-      if (p.nopass) {
-        // User explicitly wants no password — clear it on server
-        payload.clear_password = true;
-        payload.password = '';
-      } else if (p.pass) {
-        // User provided a new password
-        payload.password = p.pass;
-      } else if (!p.hasServerPassword) {
-        // Profile has no password and server password was never set — clear it
-        payload.clear_password = true;
-        payload.password = '';
-      } else {
-        // Profile has hasServerPassword=true but no pass in memory — keep server password
-        payload.password = '';
+      if (sendPassword) {
+        if (p.nopass || p.passwordless) {
+          payload.clear_password = true;
+        } else if (p.pass) {
+          payload.password = p.pass;
+        }
       }
-      
-      return EditorCore.DB.saveConfig(payload);
+
+      const res = await EditorCore.DB.saveConfig(payload);
+      if (res.ok) syncPasswordState(p, res.password_set);
+      return res;
     };
 
     const testConn = async p => {
@@ -650,14 +678,7 @@
 
         const tr = await testConn(p);
         if (tr.ok) {
-          // Connection successful — update hasServerPassword flag
-          if (p.nopass) {
-            p.hasServerPassword = false;
-          } else if (p.pass) {
-            p.hasServerPassword = true;  // new password was sent
-          }
-          // else: keep existing hasServerPassword value (server used stored password)
-          save();
+          // Признак пароля уже обновлён ответом save_config (password_set).
           formWrite(p);  // Update placeholder
           toast(`Подключено: ${p.name}`, 'success');
           setStatus(`OK — «${p.name}» · ${tr.server || ''}`, 'ok');
@@ -825,15 +846,7 @@
 
         const tr = await testConn(p);
         if (tr.ok) {
-          // Connection successful — update hasServerPassword flag
-          // hasServerPassword = true only if we actually sent a password to server
-          if (p.nopass) {
-            p.hasServerPassword = false;
-          } else if (p.pass) {
-            p.hasServerPassword = true;  // new password was sent
-          }
-          // else: keep existing hasServerPassword value
-          save();
+          // Признак пароля уже обновлён ответом save_config (password_set).
           formWrite(p);  // Update placeholder
           setStatus(`Сохранено и подключено. Server: ${tr.server || ''}`, 'ok');
         } else {
@@ -864,14 +877,7 @@
 
         const tr = await testConn(p);
         if (tr.ok) {
-          // Connection successful — update hasServerPassword flag
-          if (p.nopass) {
-            p.hasServerPassword = false;
-          } else if (p.pass) {
-            p.hasServerPassword = true;  // new password was sent
-          }
-          // else: keep existing hasServerPassword value
-          save();
+          // Признак пароля уже обновлён ответом save_config (password_set).
           formWrite(p);  // Update placeholder
           toast('Соединение OK', 'success');
           setStatus(`OK. Server: ${tr.server || ''}`, 'ok');
@@ -987,10 +993,12 @@
      * Подтягиваем их при открытии страницы, чтобы «Сохранить» не затёрло
      * рабочий мост пустыми полями.
      */
-    const syncMapSettings = async p => {
-      const r = await EditorCore.DB.getConfig();
-      if (!r.ok || !r.config) return;
-      const c = r.config;
+    const syncMapSettings = async (p, c = null) => {
+      if (!c) {
+        const r = await EditorCore.DB.getConfig();
+        if (!r.ok || !r.config) return;
+        c = r.config;
+      }
       p.mapApi = p.mapApi || c.map_api || '';
       p.mapsDir = p.mapsDir || c.maps_dir || '';
       p.mapresDir = p.mapresDir || c.mapres_dir || '';
@@ -1004,46 +1012,49 @@
     const init = async () => {
       load();
 
-      // First run: try importing server config into default profile
       const p = active();
-      const isEmpty = !p.host && !p.db && !p.user;
-      if (isEmpty) {
-        const r = await EditorCore.DB.getConfig();
-        if (r.ok && r.config) {
-          const c = r.config;
-          p.host = c.host || '';
-          p.port = c.port || 3306;
-          p.db = c.database || '';
-          p.user = c.user || '';
-          p.skins = c.skins_api || '';
-          // Правила сетевого доступа не копируем: только БД — единственный источник.
-          // Don't set hasServerPassword yet — we'll detect it via testConnection
-          save();
+      // Один запрос конфига на открытие страницы: он нужен и для импорта
+      // соединения, и для настроек карт, и — главное — для признака пароля.
+      const r = await EditorCore.DB.getConfig();
+      const c = (r.ok && r.config) ? r.config : {};
+
+      // Пароль мог быть задан в db-config.json, в другом браузере или другой
+      // версией редактора. Браузер его не знает, но стирать его нельзя.
+      if (typeof c.password_set === 'boolean') {
+        p.hasServerPassword = c.password_set;
+        if (c.password_set && !p.pass) {
+          p.nopass = false;
+          p.passwordless = false;
         }
       }
 
+      // First run: try importing server config into default profile
+      const isEmpty = !p.host && !p.db && !p.user;
+      if (isEmpty) {
+        p.host = c.host || '';
+        p.port = c.port || 3306;
+        p.db = c.database || '';
+        p.user = c.user || '';
+        p.skins = c.skins_api || '';
+        // Правила сетевого доступа не копируем: только БД — единственный источник.
+      }
+
       // Профиль мог быть сохранён до появления настроек карт — подтягиваем их.
-      await syncMapSettings(p);
+      await syncMapSettings(p, c);
+      save();
 
       formWrite(p);
       render();
 
       if (window.EditorCore?.theme?.get) UI.themeSelect.value = EditorCore.theme.get();
 
-      // If profile has data, push & test silently
+      // Простое открытие настроек не должно трогать пароль БД: отправляем
+      // только остальные параметры профиля (sendPassword: false).
       if (p.host && p.db) {
-        await pushToServer(p);
+        await pushToServer(p, { sendPassword: false });
         const tr = await testConn(p);
         if (tr.ok) {
-          // Connection successful — update hasServerPassword flag
-          if (p.nopass) {
-            p.hasServerPassword = false;
-          } else if (p.pass) {
-            p.hasServerPassword = true;
-          }
-          // else: keep existing hasServerPassword value
-          save();
-          formWrite(p);  // Update placeholder
+          formWrite(p);  // Update placeholder из password_set
           setStatus(`Подключено: «${p.name}»`, 'ok');
         } else {
           setStatus(`Ошибка: ${tr.error || ''}`, 'err');
@@ -1063,13 +1074,18 @@
 
     // No-password toggle
     F.nopass.addEventListener('change', () => {
+      const p = active();
+      // Снимая галочку, пользователь отказывается от сброса пароля: даже без
+      // нового значения в поле старый пароль сервера должен остаться.
+      p.nopass = F.nopass.checked;
+      p.passwordless = F.nopass.checked;
+      save();
       F.pass.disabled = F.nopass.checked;
       if (F.nopass.checked) {
         F.pass.value = '';
         F.pass.placeholder = '(без пароля)';
       } else {
         // Restore placeholder based on server state
-        const p = active();
         F.pass.placeholder = p.hasServerPassword ? '•••••• (сохранён на сервере)' : '••••••';
       }
     });

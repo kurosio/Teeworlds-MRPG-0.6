@@ -107,6 +107,10 @@ function handle_get_config(): never
         'port'                => (int)($c['port'] ?? 3306),
         'database'            => (string)($c['database'] ?? ''),
         'user'                => (string)($c['user'] ?? ''),
+        // Сам пароль наружу не отдаём — только признак, что он сохранён.
+        // Без него страница настроек считала пустое поле формы «пароля нет»
+        // и стирала рабочий пароль при каждом открытии.
+        'password_set'        => ((string)($c['password'] ?? '')) !== '',
         'skins_api'           => (string)($c['skins_api'] ?? ''),
         // Мост к картам игрового сервера (см. api/map.php).
         // Токен наружу не отдаём: только признак, что он сохранён.
@@ -128,10 +132,13 @@ function handle_save_config(): never
 
     // Atomic read-modify-write under a lock: guest accounts / guest settings are
     // managed by other endpoints and must never be lost by a config save here.
-    $saved = mutate_cfg(function (array $prev) use ($body) {
+    // Пустое поле password без clear_password означает «оставить сохранённый»;
+    // клиент теперь вообще может не присылать эти ключи.
+    $passwordSet = false;
+    $saved = mutate_cfg(function (array $prev) use ($body, &$passwordSet) {
         // Handle password: special marker to clear it
         $passwordValue = (string)($body['password'] ?? '');
-        $clearPassword = ($body['clear_password'] === true || $passwordValue === '__CLEAR_PASSWORD__');
+        $clearPassword = (($body['clear_password'] ?? false) === true || $passwordValue === '__CLEAR_PASSWORD__');
 
         // Сетевые правила (allow_remote_editor / allowed_editor_ips) из тела
         // запроса не читаются: их источник — только БД, сохранение конфига их не меняет.
@@ -169,7 +176,7 @@ function handle_save_config(): never
 
         // Токен map-api: пустое поле = «не менять», явная очистка — флагом.
         $mapToken = (string)($body['map_api_token'] ?? '');
-        if ($body['clear_map_api_token'] === true || $mapToken === '__CLEAR_TOKEN__') {
+        if (($body['clear_map_api_token'] ?? false) === true || $mapToken === '__CLEAR_TOKEN__') {
             $cfg['map_api_token'] = '';
         } elseif ($mapToken !== '') {
             $cfg['map_api_token'] = $mapToken;
@@ -183,6 +190,7 @@ function handle_save_config(): never
         }
 
         // Preserve settings managed elsewhere (guest access, guest accounts, etc.).
+        $passwordSet = ((string)$cfg['password']) !== '';
         return array_merge($prev, $cfg);
     });
 
@@ -190,7 +198,9 @@ function handle_save_config(): never
         respond(['ok' => false, 'error' => 'Не удалось сохранить настройки'], 500);
     }
 
-    respond(['ok' => true]);
+    // Отвечаем фактическим состоянием, а не догадкой браузера: страница
+    // настроек показывает «сохранён на сервере» только когда пароль есть.
+    respond(['ok' => true, 'password_set' => $passwordSet]);
 }
 
 function handle_test(): never

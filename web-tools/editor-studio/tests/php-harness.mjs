@@ -3,8 +3,9 @@
 //   node tests/php-harness.mjs            # syntax check of every api/*.php + helper tests
 //
 // The browser studio is checked by node:test; the server keeps its value rules
-// (NULL / '' / 0 comparison) in plain PHP functions, so they are exercised here
-// instead of being reviewed by eye. Requires the optional `php-wasm` package:
+// (NULL / '' / 0 comparison) and the DB-password config rules in plain PHP
+// functions, so they are exercised here instead of being reviewed by eye.
+// Requires the optional `php-wasm` package:
 //   npm install --no-save php-wasm
 import fs from 'node:fs';
 import path from 'node:path';
@@ -113,6 +114,78 @@ echo in_array(false, $checks, true) ? "cr_values_equal: FAIL\\n" : "cr_values_eq
 `);
 if (!libOutput.includes('cr_values_equal: ok')) errors.push(libOutput.trim());
 process.stdout.write(libOutput);
+
+// ── Пароль БД: страница настроек не должна его стирать ──────────────────────
+// Берём настоящие обработчики из api/db.php и подменяем только хранилище:
+// при открытии настроек клиент шлёт конфиг без password и clear_password.
+const dbSource = fs.readFileSync(path.join(ROOT, 'api', 'db.php'), 'utf8');
+const configHandlers = dbSource.slice(
+  dbSource.indexOf('function handle_get_config'),
+  dbSource.indexOf('function handle_test('),
+);
+if (!configHandlers.includes('handle_save_config')) {
+  errors.push('api/db.php: не удалось выделить обработчики конфига');
+} else {
+  const testPhp = `<?php
+error_reporting(E_ALL);
+set_error_handler(function ($severity, $message) { throw new ErrorException($message); });
+define('EDITOR_ROLE_ADMIN', 'admin');
+define('EDITOR_ROLE_GUEST', 'guest');
+class EditorUserError extends Exception {}
+class ConfigResponded extends Exception {
+    public $data;
+    function __construct($d) { $this->data = $d; }
+}
+$cfg = ['host' => 'db', 'port' => 3306, 'database' => 'game', 'user' => 'root',
+        'password' => 'secret', 'editor_password' => 'x', 'skins_api' => ''];
+$body = [];
+$ROLE = EDITOR_ROLE_ADMIN;
+function load_cfg(bool $withGuests = true): array { return $GLOBALS['cfg']; }
+function read_json_body(): array { return $GLOBALS['body']; }
+function mutate_cfg(callable $fn): bool {
+    $next = $fn($GLOBALS['cfg']);
+    if (!is_array($next)) return false;
+    $GLOBALS['cfg'] = $next;
+    return true;
+}
+function respond($data, int $code = 200): never { throw new ConfigResponded($data); }
+${configHandlers}
+function call_config(string $fn, array $body) {
+    $GLOBALS['body'] = $body;
+    try { $fn(); } catch (ConfigResponded $e) { return $e->data; }
+    throw new Exception('no response');
+}
+$checks = [];
+// Пустой запрос (открытие настроек) — пароль остаётся, предупреждений PHP нет.
+$r = call_config('handle_save_config', ['host' => 'db', 'port' => 3306, 'database' => 'game', 'user' => 'root']);
+$checks[] = ($GLOBALS['cfg']['password'] === 'secret' && ($r['password_set'] ?? null) === true) ? 'keep' : 'FAIL keep';
+// Явная очистка чекбоксом «Без пароля».
+$r = call_config('handle_save_config', ['clear_password' => true]);
+$checks[] = ($GLOBALS['cfg']['password'] === '' && ($r['password_set'] ?? null) === false) ? 'clear' : 'FAIL clear';
+// Новый пароль из формы.
+$r = call_config('handle_save_config', ['password' => 'new-secret']);
+$checks[] = ($GLOBALS['cfg']['password'] === 'new-secret' && ($r['password_set'] ?? null) === true) ? 'set' : 'FAIL set';
+// Ответ API не содержит сам пароль.
+$r = call_config('handle_get_config', []);
+$checks[] = (!array_key_exists('password', $r['config']) && $r['config']['password_set'] === true) ? 'admin' : 'FAIL admin';
+$ROLE = EDITOR_ROLE_GUEST;
+$r = call_config('handle_get_config', []);
+$checks[] = (array_keys($r['config']) === ['skins_api']) ? 'guest' : 'FAIL guest';
+$failures = array_values(array_filter($checks, function ($c) { return substr($c, 0, 4) === 'FAIL'; }));
+echo $failures ? ('password: ' . implode(', ', $failures)) : 'password: ok';
+`;
+  // Отдельный рантайм: в общем уже подключены db-core.php со своими load_cfg(),
+  // read_json_body(), respond() — заглушки теста не должны с ними конфликтовать.
+  const configPhp = new PhpNode();
+  let pwdOutput = '';
+  const onOutput = (event) => { pwdOutput += event.detail.join(''); };
+  configPhp.addEventListener('output', onOutput);
+  await configPhp.writeFile('/config-password-test.php', testPhp, { encoding: 'utf8' });
+  await configPhp.run(`<?php require '/config-password-test.php';`);
+  configPhp.removeEventListener('output', onOutput);
+  if (!pwdOutput.includes('password: ok')) errors.push(pwdOutput.trim() || 'password: нет вывода');
+  process.stdout.write(`${pwdOutput}\n`);
+}
 
 if (errors.length) {
   console.log(`\n${errors.length} problem(s):`);
