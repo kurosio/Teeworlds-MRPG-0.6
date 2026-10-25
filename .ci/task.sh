@@ -22,22 +22,23 @@ post_json() {
   req "$path" -H 'Content-Type: application/json' -X POST --data "$body"
 }
 
-echo "== status (before) =="
-req 'api/auth.php?action=status'
-
 echo "== guest_login =="
 post_json 'api/auth.php?action=guest_login' \
-  "{\"login\":\"${GUEST_LOGIN:-test}\",\"password\":\"${GUEST_PASSWORD:-123123}\"}" | tee "$OUT/login.json"
+  "{\"login\":\"${GUEST_LOGIN:-test}\",\"password\":\"${GUEST_PASSWORD:-123123}\"}" > "$OUT/login.json"
+head -c 400 "$OUT/login.json"; echo
 
-echo "== status (after) =="
-req 'api/auth.php?action=status'
+echo "== my requests =="
+req 'api/change-requests.php?action=mine' > "$OUT/mine.json"
+cat "$OUT/mine.json" | head -c 2000; echo
 
-echo "== change-requests config =="
-req 'api/change-requests.php?action=config' > "$OUT/cr-config.json"
-wc -c "$OUT/cr-config.json"
+echo "== mobs =="
+req 'api/db-crud.php?action=list&resource=bots_mobs&limit=5000' > "$OUT/bots_mobs.json"
+wc -c "$OUT/bots_mobs.json"
 
-for res in quests quest_bots bots_info bots_npc worlds items nodes_collecting; do
-  echo "== list $res =="
-  req "api/db-crud.php?action=list&resource=$res&limit=5000" > "$OUT/$res.json"
-  wc -c "$OUT/$res.json"
-done
+echo "== npc 31 =="
+req 'api/db-crud.php?action=get&resource=bots_npc&id=31' > "$OUT/npc31.json"
+cat "$OUT/npc31.json"; echo
+
+echo "== crafts (count only) =="
+req 'api/db-crud.php?action=list&resource=crafts&limit=5' > "$OUT/crafts.json"
+wc -c "$OUT/crafts.json"
