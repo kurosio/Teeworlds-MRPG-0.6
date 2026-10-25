@@ -92,12 +92,21 @@ function editor_request_raw_body(int $maxBytes = 0): string
 
 function read_json_body(): array
 {
-    $raw = editor_request_raw_body(4 * 1024 * 1024);
+    // Read one byte past the limit so oversized bodies cannot be silently
+    // truncated into valid JSON (or accepted as an empty/partial request).
+    $maxBytes = 4 * 1024 * 1024;
+    $raw = editor_request_raw_body($maxBytes);
+    if (strlen($raw) > $maxBytes) {
+        respond(['ok' => false, 'error' => 'Тело запроса слишком большое'], 413);
+    }
     if ($raw === '') {
         return [];
     }
     $data = json_decode($raw, true);
-    return is_array($data) ? $data : [];
+    if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
+        respond(['ok' => false, 'error' => 'Некорректный JSON'], 400);
+    }
+    return $data;
 }
 
 // ── Configuration ────────────────────────────────────────────────────────────
@@ -634,27 +643,24 @@ function require_same_origin_json_post(): void
     if (!str_starts_with($ctype, 'application/json')) {
         respond(['ok' => false, 'error' => 'Ожидается JSON-запрос'], 415);
     }
-    $origin = (string)($_SERVER['HTTP_ORIGIN'] ?? '');
-    if ($origin !== '' && $origin !== 'null') {
-        $originHost = strtolower((string)parse_url($origin, PHP_URL_HOST));
-        $originPort = parse_url($origin, PHP_URL_PORT);
-        if ($originPort !== null && $originPort !== false) {
-            $originHost .= ':' . $originPort;
-        }
-        $hosts = array_filter([
-            strtolower((string)($_SERVER['HTTP_HOST'] ?? '')),
-            strtolower(trim(explode(',', (string)($_SERVER['HTTP_X_FORWARDED_HOST'] ?? ''))[0])),
-        ]);
-        $matches = false;
-        foreach ($hosts as $host) {
-            if ($host === $originHost || preg_replace('/:\d+$/', '', $host) === preg_replace('/:\d+$/', '', $originHost)) {
-                $matches = true;
-                break;
-            }
-        }
-        if (!$matches) {
-            respond(['ok' => false, 'error' => 'Запрос с постороннего сайта отклонён'], 403);
-        }
+    $origin = trim((string)($_SERVER['HTTP_ORIGIN'] ?? ''));
+    // Never trust X-Forwarded-Host here: an untrusted client can supply it.
+    // Origin on a different port or scheme is a different security origin.
+    if ($origin === '' || strtolower($origin) === 'null') {
+        respond(['ok' => false, 'error' => 'Заголовок Origin обязателен'], 403);
+    }
+    $parts = parse_url($origin);
+    $scheme = strtolower((string)($parts['scheme'] ?? ''));
+    $originHost = strtolower((string)($parts['host'] ?? ''));
+    $originPort = isset($parts['port']) ? (int)$parts['port'] : ($scheme === 'https' ? 443 : 80);
+    $requestHost = strtolower(trim((string)($_SERVER['HTTP_HOST'] ?? '')));
+    $requestParts = parse_url('//' . $requestHost);
+    $requestName = strtolower((string)($requestParts['host'] ?? ''));
+    $requestScheme = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' ? 'https' : 'http';
+    $requestPort = isset($requestParts['port']) ? (int)$requestParts['port'] : ($requestScheme === 'https' ? 443 : 80);
+    if (!in_array($scheme, ['http', 'https'], true) || $originHost === ''
+        || $originHost !== $requestName || $originPort !== $requestPort || $scheme !== $requestScheme) {
+        respond(['ok' => false, 'error' => 'Запрос с постороннего сайта отклонён'], 403);
     }
 }
 
