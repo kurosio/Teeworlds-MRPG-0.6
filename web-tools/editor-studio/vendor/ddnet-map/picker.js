@@ -11,8 +11,9 @@
  *   point    — 0, если точки ещё нет (тогда камера ставится в центр карты)
  *   safe     — список ID игровых тайлов, на которые нельзя ставить точку
  *              (по умолчанию флаг редактора safeTiles даёт 1,2,3);
- *   tiles    — 1: показать игровой слой; spawns — 1: подсветить спавны;
- *   radius   — предпросмотр радиуса; grid/snap — 1|0: инструменты по умолчанию
+ *   tiles    — 1: включить игровой слой при открытии; spawns — 1: спавны;
+ *   radius   — предпросмотр радиуса; grid/snap — 1|0: начальные инструменты
+ *              (без tiles/grid соответствующие переключатели выключены)
  *
  * Родительскому окну отправляются сообщения:
  *   editor-map:ready            — карта отрисована
@@ -172,13 +173,14 @@
   let cursor = null;
   let gesture = false;
   const preferenceKey = 'editor-map-picker-options-v1';
+  // Сетка не восстанавливается из прошлого окна: без ui.grid в объявлении
+  // vec2 она всегда выключена. Для привязки прежнее поведение сохраняем.
+  el.grid.checked = OPTIONS.grid === true;
   try {
     const saved = JSON.parse(localStorage.getItem(preferenceKey) || '{}');
-    el.grid.checked = saved.grid === true;
     el.snap.checked = saved.snap === true;
   } catch { /* Storage is optional. */ }
-  // Явные флаги редактора важнее сохранённых настроек браузера.
-  if (OPTIONS.grid !== null) el.grid.checked = OPTIONS.grid;
+  // Явный флаг редактора важнее сохранённой настройки привязки.
   if (OPTIONS.snap !== null) el.snap.checked = OPTIONS.snap;
 
   const mapUrl = qs.get('map') || '';
@@ -704,7 +706,9 @@
   window.addEventListener('touchcancel', cancelPointer);
 
   for (const key of ['grid', 'snap']) el[key].addEventListener('change', () => {
-    try { localStorage.setItem(preferenceKey, JSON.stringify({ grid: el.grid.checked, snap: el.snap.checked })); } catch { /* optional */ }
+    if (key === 'snap') {
+      try { localStorage.setItem(preferenceKey, JSON.stringify({ snap: el.snap.checked })); } catch { /* optional */ }
+    }
     drawOverlay();
   });
   el.align.addEventListener('click', () => {

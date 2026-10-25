@@ -36,12 +36,12 @@
       let layers = [];
       el['measure-use'].disabled = true;
       el['measure-from-point'].disabled = !state.hasPoint;
-      // Флаги элемента позиции включают нужные слои сразу при открытии карты.
-      if (options.tiles || options.spawns || (Array.isArray(options.safe) && options.safe.length)) {
-        el.collision.checked = true;
-      }
+      // Панель всегда открывается свёрнутой. Игровой слой включается только
+      // явным showTiles в объявлении vec2; safe/spawns/radius работают сами
+      // по себе и не меняют начальное состояние панели или этого переключателя.
+      get('workbench').open = false;
+      el.collision.checked = options.tiles === true;
       if (Number.isFinite(options.radius) && options.radius > 0) el.radius.value = String(options.radius);
-      if (options.tiles || options.spawns || options.radius) get('workbench').open = true;
       const show = (element, value) => { if (element.textContent !== value) element.textContent = value; };
       const updateResult = () => {
         el['measure-use'].disabled = !b;

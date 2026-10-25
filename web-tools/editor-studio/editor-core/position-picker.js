@@ -70,8 +70,10 @@
     return {
       safe,
       showTiles,
-      // Игровой слой нужен и для запрета тайлов, и для подсветки спавнов.
-      tiles: !!(showTiles || safe.length || spawns),
+      // Начальная видимость игрового слоя — только явная настройка vec2.
+      // safeTiles/showSpawns добавляют свои оверлеи, но не раскрывают панель
+      // и не включают полный игровой слой за пользователя.
+      tiles: showTiles,
       spawns,
       radiusPath: o.radiusPath == null ? '' : String(o.radiusPath),
       radius: o.radius == null ? '' : o.radius,
@@ -161,7 +163,7 @@
     if (Number.isFinite(num) && num > 0) radius = Math.min(Math.round(num), 100000);
     return {
       safe: o.safe,
-      tiles: !!(o.tiles || o.safe.length),
+      tiles: !!o.tiles,
       spawns: o.spawns,
       radius,
       snap: o.snap,

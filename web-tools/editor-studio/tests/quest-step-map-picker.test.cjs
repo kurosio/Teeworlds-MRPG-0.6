@@ -80,6 +80,8 @@ test('PositionPicker is wired into the editor core and every quest position', ()
   assert.match(loader, /editor-core\/map-worlds\.js/);
   assert.match(field, /PositionPicker\.render/);
   assert.match(field, /safeTiles: ui\.safeTiles/);
+  assert.match(field, /showTiles: ui\.showTiles/);
+  assert.match(field, /grid: ui\.grid/);
   assert.match(read('editor-core/form-runtime.js'), /PositionPicker\?\.scan/);
   assert.match(read('scenario-editor.html'), /PositionPicker\?\.scan/);
   assert.match(read('editor-core/registry.js'), /mapWorldPath: 'world_id'/);
@@ -165,6 +167,29 @@ test('PositionPicker renders one card with map flags and manual entry', () => {
   for (const flag of ['safe', 'spawns', 'radius', 'grid', 'snap']) {
     assert.match(html, new RegExp(`data-position-flag="${flag}"`));
   }
+  // Эти оверлеи больше не включают полный игровой слой неявно.
+  assert.match(html, /&quot;tiles&quot;:false/);
+});
+
+test('vec2 gameplay and grid defaults are explicit and independent of other overlays', () => {
+  const api = loadModule();
+  const rootWith = (options) => ({
+    getAttribute: (name) => name === 'data-map-options' ? JSON.stringify(options) : null,
+  });
+
+  const plain = api.resolveMapOptions(rootWith({}));
+  assert.equal(plain.tiles, false);
+  assert.equal(plain.grid, null); // picker трактует отсутствие настройки как выключено
+
+  const overlaysOnly = api.resolveMapOptions(rootWith({ safeTiles: true, showSpawns: true, radius: 96 }));
+  assert.equal(overlaysOnly.tiles, false);
+  assert.equal(overlaysOnly.grid, null);
+  assert.equal(overlaysOnly.spawns, true);
+  assert.equal(overlaysOnly.radius, 96);
+
+  const explicit = api.resolveMapOptions(rootWith({ showTiles: true, grid: true }));
+  assert.equal(explicit.tiles, true);
+  assert.equal(explicit.grid, true);
 });
 
 let JSDOM = null;
@@ -245,7 +270,7 @@ test('PositionPicker saves manual coordinates, world and map result', { skip: do
   assert.equal(openedOptions.allowWorldChange, false);
   assert.deepEqual(Array.from(openedOptions.mapOptions.safe), [1, 2, 3]);
   assert.equal(openedOptions.mapOptions.spawns, true);
-  assert.equal(openedOptions.mapOptions.tiles, true);
+  assert.equal(openedOptions.mapOptions.tiles, false);
   assert.equal(openedOptions.mapOptions.radius, 256);
   assert.equal(openedOptions.mapOptions.grid, true);
   assert.equal(openedOptions.mapOptions.snap, true);

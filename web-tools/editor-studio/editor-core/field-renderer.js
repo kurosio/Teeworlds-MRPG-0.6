@@ -582,7 +582,8 @@
         compact: !!ui.compact || isNested,
         tag: ui.mapPickerTag || 'position',
         id: ui.positionPickerId || '',
-        // Флаги карты: запрет игровых тайлов, слои, радиус, инструменты.
+        // Флаги карты: запрет игровых тайлов, оверлеи и радиус. showTiles/grid —
+        // opt-in начального состояния слоя и сетки; без них оба выключены.
         safeTiles: ui.safeTiles,
         blockTiles: ui.blockTiles,
         showTiles: ui.showTiles,

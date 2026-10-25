@@ -34,7 +34,7 @@ test('history restores no-point state, truncates redo, and bounds memory', () =>
   assert.equal(history.canUndo,false);
 });
 
-function picker(search = '?map=/map&x=0&y=0', map = {groups:[]}) {
+function picker(search = '?map=/map&x=0&y=0', map = {groups:[]}, savedOptions = {}) {
   const nodes = new Map();
   const listeners = {};
   const messages = [];
@@ -43,7 +43,7 @@ function picker(search = '?map=/map&x=0&y=0', map = {groups:[]}) {
     activeElement: null,
     getElementById(id) {
       if (!nodes.has(id)) nodes.set(id, {
-        value: '', checked: false, disabled: false, style: {setProperty() {}},
+        value: '', checked: false, disabled: false, open: false, style: {setProperty() {}},
         classList: {toggle() {}}, setAttribute() {}, focus() { document.activeElement = this; },
         clientWidth:800,clientHeight:600,width:800,height:600,
         getBoundingClientRect: () => ({bottom:80}),
@@ -73,7 +73,7 @@ function picker(search = '?map=/map&x=0&y=0', map = {groups:[]}) {
     addEventListener(type, fn) { (listeners[type] ||= []).push(fn); },
   };
   const context = vm.createContext({ window,document,tw,URLSearchParams, console,
-    localStorage:{ getItem:()=>null,setItem() {} },
+    localStorage:{ getItem:()=>JSON.stringify(savedOptions),setItem() {} },
     getComputedStyle:()=>({getPropertyValue:()=> '#6f8cff'}),
   });
   vm.runInContext(fs.readFileSync(path.join(__dirname,'../vendor/ddnet-map/picker-workbench.js'),'utf8'),context);
@@ -232,13 +232,28 @@ test('safeTiles can be a custom tile list and fails open without a gameplay laye
   const noGame = picker('?map=/map&x=16&y=16&safe=1,2,3', {groups:[]});
   assert.equal(noGame.node('apply').disabled,false); // проверять нечего — не блокируем
 });
-test('map flags pre-enable gameplay layer, spawns, grid, snap and radius', () => {
+test('picker opens with collapsed tools, gameplay and grid off by default', () => {
+  const p = picker('?map=/map&x=48&y=48', safeMap(), {grid:true});
+  assert.equal(p.node('collision').checked,false);
+  assert.equal(p.node('grid').checked,false); // localStorage не задаёт умолчание для сетки
+  assert.equal(p.node('snap').checked,false);
+  assert.equal(p.document.getElementById('pk-workbench').open,false);
+});
+test('safe, spawns and radius do not implicitly enable gameplay or expand tools', () => {
+  const p = picker('?map=/map&x=48&y=48&safe=1,2,3&spawns=1&radius=96', safeMap());
+  assert.equal(p.node('collision').checked,false);
+  assert.equal(p.node('grid').checked,false);
+  assert.equal(p.node('radius').value,'96');
+  assert.equal(p.document.getElementById('pk-workbench').open,false);
+  p.tw.onAfterRender(); // спавны и радиус работают без полного игрового слоя
+});
+test('explicit map flags enable gameplay and grid without expanding tools', () => {
   const p = picker('?map=/map&x=48&y=48&safe=1,2,3&tiles=1&spawns=1&radius=96&grid=1&snap=1', safeMap());
   assert.equal(p.node('collision').checked,true);
   assert.equal(p.node('grid').checked,true);
   assert.equal(p.node('snap').checked,true);
   assert.equal(p.node('radius').value,'96');
-  assert.equal(p.document.getElementById('pk-workbench').open,true);
+  assert.equal(p.document.getElementById('pk-workbench').open,false);
   p.tw.onAfterRender(); // спавны/запрещённые тайлы/маркер рисуются без ошибок
   assert.match(p.node('collision-status').textContent,/Красные тайлы здесь запрещены/);
 });
