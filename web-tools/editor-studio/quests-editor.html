@@ -400,6 +400,12 @@
       cursor: grabbing;
     }
 
+    .step-quick-btn.is-pin.is-active {
+      color: var(--editor-primary);
+      border-color: var(--editor-soft-border);
+      background: var(--editor-light-bg);
+    }
+
     .step-drop-indicator {
       height: 3px;
       background: linear-gradient(90deg,
@@ -1013,7 +1019,7 @@
                   <div class="step-section">
                     <div class="step-section-title">Параметры шага</div>
                     <div class="step-section-sub">Автозавершение закрывает шаг само, как только выполнены все его условия.</div>
-                    <div id="stepBaseForm" class="step-base-grid"></div>
+                    <div id="stepBaseForm" class="step-base-grid" data-map-picker="quest-step-position"></div>
                   </div>
                 </div>
 
@@ -1031,7 +1037,7 @@
                 <div class="step-tab-panel is-hidden" data-step-tab-panel="tasks">
                   <div class="step-section">
                     <div class="step-section-title">Задания шага</div>
-                    <div id="stepTasksEditor"></div>
+                    <div id="stepTasksEditor" data-position-picker-host="quest-tasks"></div>
                   </div>
                 </div>
               </div>
@@ -1111,7 +1117,8 @@
       QuestID: { type: 'db_select', label: 'Квест', ui: { dbKey: 'quest', placeholder: '— квест —', searchPlaceholder: 'Поиск квеста…' } },
       Step: { type: 'number', label: 'Позиция шага', ui: { min: 1, step: 1 } },
       WorldID: { type: 'db_select', label: 'Мир', ui: { dbKey: 'world', placeholder: '— мир —', searchPlaceholder: 'Поиск мира…' } },
-      Position: { type: 'vec2', label: 'Координаты (X, Y)', ui: { step: 1, mapWorldPath: 'WorldID' } },
+      // Точку шага нельзя ставить на COLLIDE / DEATH / UNHOOK тайлах.
+      Position: { type: 'vec2', label: 'Координаты (X, Y)', ui: { step: 1, mapWorldPath: 'WorldID', mapPickerTag: 'quest-step-position', safeTiles: true, grid: true, snap: true } },
       AutoFinish: { type: 'toggle', label: 'Автозавершение' },
       // Мир шага — тот же WorldID: компоненты сценария открывают карту в нём.
       ScenarioData: { type: 'scenario', label: 'Данные сценария', ui: { scenarioMode: 'universal', mapWorldPath: 'WorldID' } }
@@ -1189,7 +1196,53 @@
     // Экранирование — общее для всех страниц (editor-core/page-kit.js):
     // старый вариант через innerHTML медленнее и не экранирует кавычки.
     const esc = EditorCore.Page.esc;
+    const t = EditorCore.Page.t;
     const isObj = (v) => v && typeof v === 'object' && !Array.isArray(v);
+
+    // Пин в дереве — ярлык к общему PositionPicker шага. «Закреплённой»
+    // считается точка с координатами, отличными от (0, 0); PositionPinned
+    // помнит честно выбранные (0, 0) в текущей сессии редактора.
+    const hasStepPosition = (step) => {
+      if (!step) return false;
+      if (step.PositionPinned === true) return true;
+      const x = Number(step.PosX);
+      const y = Number(step.PosY);
+      return Number.isFinite(x) && Number.isFinite(y) && (x !== 0 || y !== 0);
+    };
+
+    // Мир шага — контекст для всех карт внутри формы (включая сценарий).
+    const syncStepMapWorldContext = (step) => {
+      if (!DOM.stepBaseForm) return;
+      const worldId = step?.WorldID;
+      if (worldId === null || worldId === undefined || String(worldId).trim() === '') {
+        delete DOM.stepBaseForm.dataset.mapWorldId;
+      } else {
+        DOM.stepBaseForm.dataset.mapWorldId = String(worldId);
+      }
+    };
+
+    const stepPositionPicker = () => DOM.stepBaseForm.querySelector('[data-position-picker]');
+
+    const openStepMapPicker = () => {
+      const step = selectedStep();
+      if (!step) return;
+      setActiveStepTab('mob');
+      syncStepMapWorldContext(step);
+      const picker = stepPositionPicker();
+      if (!picker || !EditorCore.PositionPicker?.openMap) {
+        EditorCore.UI.toast(t('Карта мира недоступна — обновите страницу'), 'error');
+        return;
+      }
+      EditorCore.PositionPicker.openMap(picker, {
+        worldId: step.WorldID,
+        onWorldChange: (worldId) => {
+          step.WorldID = worldId;
+          syncStepMapWorldContext(step);
+          markStepDirty(step.ID);
+          scheduleTreeRender();
+        },
+      });
+    };
 
     const lookupLabel = (map, id) => {
       const n = toNum(id);
@@ -1394,10 +1447,21 @@
       step.WorldID = worldValue === null || worldValue === undefined || String(worldValue).trim() === ''
         ? null
         : toNum(worldValue);
-      step.PosX = toNum(data?.Position?.x);
-      step.PosY = toNum(data?.Position?.y);
+      const rawX = data?.Position?.x;
+      const rawY = data?.Position?.y;
+      const prevX = toNum(step.PosX);
+      const prevY = toNum(step.PosY);
+      step.PosX = toNum(rawX);
+      step.PosY = toNum(rawY);
+      // После «Применить» в map-picker (или ручного ввода координат) точка
+      // закреплена даже если это честные (0, 0).
+      if (prevX !== step.PosX || prevY !== step.PosY) {
+        step.PositionPinned = [rawX, rawY].every((value) =>
+          value !== null && value !== undefined && String(value).trim() !== '');
+      }
       step.AutoFinish = data?.AutoFinish ? 'Partial' : null;
       step.ScenarioData = String(data?.ScenarioData || '');
+      syncStepMapWorldContext(step);
       markStepDirty(step.ID);
       renderRconHints();
       scheduleTreeRender();
@@ -1510,29 +1574,35 @@
       </div>`;
     };
 
-    // Позиция задачи — та же строка, что и в остальных редакторах: X и Y рядом
-    // и кнопка «Местоположение». Значения задачи живут в data-task-field, поэтому
-    // оси помечены data-map-axis (см. editor-core/point-map.js).
-    const vec2Task = (section, index, xKey, yKey, xVal, yVal, worldPath, caption = 'Координаты (X, Y)') => {
-      const axis = (name, key, value) => `
-        <label class="editor-vec2-axis">
-          <span class="editor-vec2-axis-name">${name}</span>
-          <input class="editor-input form-input editor-vec2-input" type="number" step="1" value="${esc(value)}"
-            data-map-axis="${name.toLowerCase()}"
-            data-task-field="${section}" data-task-index="${index}" data-task-key="${key}">
-        </label>`;
-      return `<div class="editor-item-span">
-        <label>${esc(caption)}</label>
-        <div class="editor-vec2" data-map-x-path="${section}.${index}.${xKey}" data-map-y-path="${section}.${index}.${yKey}"
-             data-map-world-path="${esc(worldPath)}">
-          ${axis('X', xKey, xVal)}${axis('Y', yKey, yVal)}
-          <button type="button" class="editor-vec2-map" data-map-pick="1"
-                  title="Местоположение — выбрать точку на карте мира">
-            <i class="fa-solid fa-map-location-dot" aria-hidden="true"></i>
-            <span class="editor-vec2-map-label">Местоположение</span>
-          </button>
-        </div>
-      </div>`;
+    // Позиция задачи — тот же общий PositionPicker, что и в остальных
+    // редакторах. Значения живут в скрытых инпутах с data-task-field, поэтому
+    // map-picker и ручной ввод обновляют задание через обычный onField.
+    const vec2Task = (section, index, xKey, yKey, xVal, yVal, worldPath, caption = 'Координаты (X, Y)', worldId = '') => {
+      const xPath = `${section}.${index}.${xKey}`;
+      const yPath = `${section}.${index}.${yKey}`;
+      const axis = (name, key, value) => `<input class="editor-input form-input position-picker__axis-input"
+        type="number" step="1" value="${esc(value)}" data-value-type="number"
+        data-map-axis="${name.toLowerCase()}" data-position-axis="${name.toLowerCase()}"
+        data-task-field="${section}" data-task-index="${index}" data-task-key="${key}" hidden>`;
+      const renderPicker = EditorCore.PositionPicker?.render;
+      const pickerHtml = renderPicker ? EditorCore.PositionPicker.render({
+        label: caption,
+        xPath,
+        yPath,
+        xInputHtml: axis('X', xKey, xVal),
+        yInputHtml: axis('Y', yKey, yVal),
+        worldPath,
+        worldId,
+        step: 1,
+        pinned: toNum(xVal) !== 0 || toNum(yVal) !== 0,
+        compact: true,
+        tag: 'position',
+        // Цели заданий — тоже «живые» точки: запрещаем игровые тайлы.
+        safeTiles: true,
+        grid: true,
+        snap: true,
+      }) : `<div class="editor-muted-text text-sm">${esc(t('Карта мира недоступна — обновите страницу'))}</div>`;
+      return `<div class="editor-item-span">${pickerHtml}</div>`;
     };
 
     const renderItemBody = (section, item, index) => {
@@ -1578,7 +1648,7 @@
             ${inp('Название цели', 'name', move.name, 'text')}
           </div>
           <div class="editor-item-grid">
-            ${vec2Task(section, index, 'x', 'y', move.x, move.y, `tasks.move_to.${index}.world_id`, 'Точка цели (X, Y)')}
+            ${vec2Task(section, index, 'x', 'y', move.x, move.y, `tasks.move_to.${index}.world_id`, 'Точка цели (X, Y)', move.world_id)}
             ${dbCombo({ source: 'worlds', value: move.world_id, label: 'Мир', sectionId: section, index, key: 'world_id', placeholder: '— мир —', limit: 500 })}
           </div>
           <div class="editor-item-grid">
@@ -1598,7 +1668,7 @@
           </div>
           <div class="editor-item-subgroup" data-move-modes="move_follow_press">
             <div class="editor-item-grid">
-              ${vec2Task(section, index, 'interactive_x', 'interactive_y', move.interactive_x || '', move.interactive_y || '', `tasks.move_to.${index}.world_id`, 'Интерактив (X, Y)')}
+              ${vec2Task(section, index, 'interactive_x', 'interactive_y', move.interactive_x || '', move.interactive_y || '', `tasks.move_to.${index}.world_id`, 'Интерактив (X, Y)', move.world_id)}
             </div>
           </div>
           <div class="editor-item-subgroup" data-move-modes="defeat_bot">
@@ -1795,6 +1865,8 @@
           renderTasksEditor(step);
         });
       });
+
+      EditorCore.PositionPicker?.scan?.(DOM.stepTasksEditor);
     };
 
     const setBtn = (btn, { enabled = false, hidden = false, label } = {}) => {
@@ -1836,6 +1908,9 @@
       const worldLabel = lookupLabel(STATE.lookups.worlds, step.WorldID);
       DOM.title.textContent = `Step #${step.ID} — ${botLabel}`;
       DOM.subtitle.textContent = `Quest ${step.QuestID || '—'} · Step ${step.Step || 1} · ${worldLabel}`;
+      // Карта шага всегда открывается в мире самой записи, а не в последнем
+      // мире, выбранном вручную в другом редакторе.
+      syncStepMapWorldContext(step);
 
       Runtime.stepBase = EditorCore.FormRuntime.mount(DOM.stepBaseForm, {
         fields: stepBaseFields,
@@ -1882,7 +1957,7 @@
         : '<i class="fa-solid fa-person-walking text-accent" style="font-size:14px"></i>';
 
       return `
-        <div class="step-node ${isSelected ? 'tree-selected' : ''} ${isDirty ? 'is-dirty' : ''}"
+        <div class="step-node ${isSelected ? 'tree-selected' : ''} ${isDirty ? 'is-dirty' : ''} ${hasStepPosition(step) ? 'is-pinned' : ''}"
              draggable="true" data-node-type="step" data-id="${step.ID}">
           <div class="step-node-header">
             <div class="step-node-title">
@@ -1900,6 +1975,11 @@
                 min="1" step="1" value="${toNum(step.Step, 1)}"
                 title="Позиция шага" data-step-level-id="${step.ID}" />
               <div class="step-node-quick">
+                <button type="button" class="step-quick-btn is-pin ${hasStepPosition(step) ? 'is-active' : ''}"
+                        data-step-action="pin" data-step-id="${step.ID}"
+                        title="Закрепить позицию на карте" aria-label="Закрепить позицию на карте">
+                  <i class="fa-solid fa-map-pin" aria-hidden="true"></i>
+                </button>
                 <button type="button" class="step-quick-btn is-grab"
                         data-step-action="move" data-step-id="${step.ID}"
                         title="Перетащите в другой квест">
@@ -2088,7 +2168,11 @@
           const action = btn.dataset.stepAction;
           const step = STATE.steps.find((item) => item.ID === toNum(btn.dataset.stepId));
           if (!step) return;
-          if (action === 'move') {
+          if (action === 'pin') {
+            // Открываем тот же world-aware map-picker, что и кнопка в форме.
+            selectStep(step);
+            window.requestAnimationFrame(openStepMapPicker);
+          } else if (action === 'move') {
             selectStep(step);
             EditorCore.UI.toast('Перетащите карточку в нужное место', 'info');
           } else if (action === 'duplicate') {
@@ -2537,6 +2621,7 @@
         WorldID: null,
         PosX: 0,
         PosY: 0,
+        PositionPinned: false,
         AutoFinish: null,
         DialogData: [],
         ScenarioData: '',
@@ -2614,6 +2699,9 @@
           WorldID: row.WorldID == null ? null : toNum(row.WorldID),
           PosX: toNum(row.PosX),
           PosY: toNum(row.PosY),
+          PositionPinned: row.PosX != null && row.PosY != null
+            && String(row.PosX).trim() !== '' && String(row.PosY).trim() !== ''
+            && (toNum(row.PosX) !== 0 || toNum(row.PosY) !== 0),
           AutoFinish: row.AutoFinish || null,
           DialogData: Array.isArray(row.DialogData) ? row.DialogData : [],
           ScenarioData: row.ScenarioData || '',

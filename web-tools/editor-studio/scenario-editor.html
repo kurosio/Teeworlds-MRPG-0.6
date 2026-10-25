@@ -2385,12 +2385,15 @@
                 // Форма перерисовывается после каждого добавления/удаления элемента
                 // списка: держим позицию прокрутки, иначе окно прыгает наверх.
                 const body = this.modal.formContainer;
-                // Мир записи для кнопки «Местоположение» у компонентов без поля мира.
+                // Мир записи для PositionPicker у компонентов без поля мира:
+                // внешний контекст подхватывается карточкой позиции и картой.
                 if (Number.isSafeInteger(this.embed.worldId) && this.embed.worldId >= 0) body.dataset.mapWorldId = String(this.embed.worldId);
                 else delete body.dataset.mapWorldId;
                 const scrollTop = body.scrollTop;
                 body.innerHTML = this.buildModalForm(data, step);
                 if (scrollTop) body.scrollTop = scrollTop;
+                // PositionPicker lives inside dynamic modal forms: refresh its world setting.
+                window.EditorCore?.PositionPicker?.scan?.(body);
                 // IMPORTANT: modal content is dynamic. Re-run Core init so db_select, validation, toggles, etc. work.
                 Promise.resolve().then(() => window.EditorCore?.UIManager?.init?.(this.modal.formContainer));
             }

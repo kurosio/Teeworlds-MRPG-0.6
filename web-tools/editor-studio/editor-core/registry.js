@@ -116,7 +116,9 @@ const createDbSelect = (label, defaultValue, dbKey, { ui = {}, validate = null, 
       name: 'Телепорт',
       icon: 'fa-plane-departure',
       fields: {
-        position: createField('vec2', 'Позиция', { x: 0, y: 0 }, { ui: { min: -99999, max: 99999, step: 0.1 } }),
+        // Телепорт сценария: карта открывается в мире записи и показывает
+        // игровой слой; запрет тайлов здесь не нужен (точка может быть любой).
+        position: createField('vec2', 'Позиция', { x: 0, y: 0 }, { ui: { min: -99999, max: 99999, step: 0.1, mapWorldPath: 'world_id', showTiles: true } }),
         world_id: createDbSelect('Мир', 0, 'world', { ui: { placeholder: '— выберите мир —' } })
       }
     },

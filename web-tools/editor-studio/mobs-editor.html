@@ -420,8 +420,8 @@
     const fieldsBasic = {
       BotID: { type: 'db_select', label: 'Моб (BotID)', validate: { required: true }, ui: { dbKey: 'mob', placeholder: '— выберите моба —', searchPlaceholder: 'Поиск моба…' } },
       WorldID: { type: 'db_select', label: 'Мир (WorldID)', ui: { dbKey: 'world', placeholder: '— выберите мир —', searchPlaceholder: 'Поиск мира…' } },
-      // Позиция — единый элемент: X и Y в одной строке плюс кнопка
-      // «Местоположение» (карта мира из WorldID).
+      // Позиция моба: нельзя ставить на стены/смерть/без крюка, видны спавны
+      // и радиус блуждания — всё это флаги общего PositionPicker.
       _pos: {
         type: 'vec2',
         label: 'Позиция (X, Y)',
@@ -430,6 +430,11 @@
           step: 1,
           axes: { x: 'PositionX', y: 'PositionY' },
           mapWorldPath: 'WorldID',
+          safeTiles: true,
+          showSpawns: true,
+          radiusPath: 'Radius',
+          grid: true,
+          snap: true,
         },
       },
       Level: { type: 'number', label: 'Уровень', ui: { min: 1, step: 1 } },

@@ -495,11 +495,12 @@
       ] } },
       Currency: { type: 'db_select', label: 'Валюта расчёта', ui: { dbKey: 'item', placeholder: '— выберите валюту —', valueType: 'number', searchable: true } },
       WorldID: { type: 'db_select', label: 'Мир размещения', ui: { dbKey: 'world', placeholder: '— выберите мир —', valueType: 'number', searchable: true } },
-      // Склад стоит в мире склада: одна строка X/Y и карта по WorldID.
+      // Склад стоит в мире склада: PositionPicker использует WorldID и
+      // сразу показывает игровой слой, чтобы точку не поставили в стену.
       Position: {
         type: 'vec2',
         label: 'Координаты точки (X, Y)',
-        ui: { step: 1, axes: { x: 'PosX', y: 'PosY' }, mapWorldPath: 'WorldID' },
+        ui: { step: 1, axes: { x: 'PosX', y: 'PosY' }, mapWorldPath: 'WorldID', showTiles: true },
       },
       StorageData: { type: 'textarea', label: 'Дополнительные данные (StorageData JSON)', ui: { rows: 3, placeholder: '{"position":{"x":0,"y":0},"value":"1"}' } },
     };

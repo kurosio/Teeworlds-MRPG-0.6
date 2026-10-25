@@ -102,11 +102,11 @@
     const fields = {
       WorldID: { type: 'db_select', label: 'Мир подземелья', validate: { required: true }, ui: { dbKey: 'world', placeholder: '— мир —', searchPlaceholder: 'Поиск мира…' } },
       TimeLimit: { type: 'number', label: 'Лимит времени (сек.)', ui: { min: 0, step: 1, help: 'Время прохождения в секундах (например, 600 = 10 минут).' } },
-      // Точка входа — та же пара X/Y с картой мира подземелья.
+      // Точка входа: дверь ставят по центрам тайлов, игровой слой виден сразу.
       Door: {
         type: 'vec2',
         label: 'Точка входа (Дверь X, Y)',
-        ui: { step: 1, axes: { x: 'DoorX', y: 'DoorY' }, mapWorldPath: 'WorldID', spanAll: true },
+        ui: { step: 1, axes: { x: 'DoorX', y: 'DoorY' }, mapWorldPath: 'WorldID', showTiles: true, grid: true, snap: true, spanAll: true },
       },
       // Компоненты сценария подземелья открывают карту в мире подземелья.
       Scenario: { type: 'scenario', label: 'Сценарий подземелья', ui: { scenarioMode: 'dungeon', mapWorldPath: 'WorldID', spanAll: true } },

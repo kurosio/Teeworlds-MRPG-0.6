@@ -102,9 +102,11 @@
     const aetherFields = {
       Name: { type: 'text', label: 'Название', validate: { required: true }, ui: { placeholder: 'Например: Gridania (Center)' } },
       WorldID: { type: 'db_select', label: 'Мир', validate: { required: true }, ui: { datasource: 'worlds', labelMode: 'id_name', placeholder: '— мир —', searchPlaceholder: 'Поиск мира…' } },
+      // Точка телепорта: показываем игровой слой и спавны, но не запрещаем
+      // тайлы — телепорт может вести в любое место карты.
       Position: {
         type: 'vec2', label: 'Координаты точки телепорта',
-        ui: { step: 1, axes: { x: 'TeleX', y: 'TeleY' }, mapWorldPath: 'WorldID', spanAll: true }
+        ui: { step: 1, axes: { x: 'TeleX', y: 'TeleY' }, mapWorldPath: 'WorldID', showTiles: true, showSpawns: true, spanAll: true }
       },
     };
 

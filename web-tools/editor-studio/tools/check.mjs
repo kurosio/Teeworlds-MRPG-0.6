@@ -153,22 +153,44 @@ for (const [type, render] of [['boolean', 'renderCheckbox'], ['toggle', 'renderT
 
 // ── 2.3. Позиция (X/Y) и карта мира ─────────────────────────────────────────
 //
-// Позиция — один элемент во всех редакторах: X и Y в одной строке и кнопка
-// «Местоположение». Карта рендерится локально (vendor/ddnet-map): ни один
-// адрес не должен уходить в интернет, иначе окно пустое на закрытом сервере.
+// Позиция — один общий UI-элемент PositionPicker: карточка точки, мир, кнопка
+// карты и кнопка ручного ввода. Карта рендерится локально
+// (vendor/ddnet-map): ни один адрес не должен уходить в интернет.
 
-for (const token of ['editor-vec2', 'data-map-pick', 'data-map-axis', 'data-map-world-path']) {
-  if (!fieldCode.includes(token)) {
-    problems.push(`editor-core/field-renderer.js: позиция потеряла ${token} — сломается строка X/Y или кнопка карты`);
+const positionPickerPath = path.join(CORE_DIR, 'position-picker.js');
+const positionPickerCode = fs.existsSync(positionPickerPath) ? read(positionPickerPath) : '';
+if (!positionPickerCode) {
+  problems.push('editor-core/position-picker.js: нет единого UI-элемента позиции');
+} else {
+  for (const token of [
+    'data-position-picker', 'data-position-axis', 'data-position-manual',
+    'data-position-world-select', 'data-map-pick', 'data-map-world-path',
+    'openMap', 'setWorldId',
+  ]) {
+    if (!positionPickerCode.includes(token)) {
+      problems.push(`editor-core/position-picker.js: элемент позиции потерял ${token}`);
+    }
   }
 }
+if (!fs.existsSync(path.join(CORE_DIR, 'position-picker.css'))) {
+  problems.push('editor-core/position-picker.css: нет оформления единого элемента позиции');
+}
+if (!fieldCode.includes('PositionPicker.render')) {
+  problems.push('editor-core/field-renderer.js: vec2 должен рендериться через PositionPicker.render');
+}
 if (/grid-cols-2[^`]*vecFields|vecFields[^`]*grid-cols-2/.test(fieldCode)) {
-  problems.push('editor-core/field-renderer.js: X и Y снова в двух колонках вместо одной строки');
+  problems.push('editor-core/field-renderer.js: X и Y снова в двух колонках вместо карточки позиции');
 }
 
 const loaderCode = read(path.join(CORE_DIR, 'page-loader.js'));
 if (!loaderCode.includes('editor-core/point-map.js')) {
   problems.push('editor-core/page-loader.js: не подключено окно карты (editor-core/point-map.js)');
+}
+if (!loaderCode.includes('editor-core/map-worlds.js')) {
+  problems.push('editor-core/page-loader.js: не подключён общий модуль миров (editor-core/map-worlds.js)');
+}
+if (!loaderCode.includes('editor-core/position-picker.js') || !loaderCode.includes('editor-core/position-picker.css')) {
+  problems.push('editor-core/page-loader.js: не подключён PositionPicker (JS + CSS)');
 }
 const pointMapPath = path.join(CORE_DIR, 'point-map.js');
 if (!fs.existsSync(pointMapPath)) {
@@ -227,11 +249,94 @@ if (/Tele[XY]: \{ type: 'number'/.test(aetherPage)) {
   problems.push('aethers-editor.html: отдельные TeleX/TeleY поля должны использовать единый элемент позиции');
 }
 
+// Кастомные позиции задач квестов тоже используют общий элемент, а не свою строку X/Y.
+const questsPage = read(path.join(ROOT, 'quests-editor.html'));
+for (const token of [
+  'PositionPicker.render',
+  'PositionPicker.openMap',
+  'data-step-action="pin"',
+  'data-map-picker="quest-step-position"',
+  'data-position-picker-host="quest-tasks"',
+  "mapWorldPath: 'WorldID'",
+  "mapPickerTag: 'quest-step-position'",
+]) {
+  if (!questsPage.includes(token)) {
+    problems.push(`quests-editor.html: позиции шагов потеряли ${token}`);
+  }
+}
+if (/class="editor-vec2"/.test(questsPage)) {
+  problems.push('quests-editor.html: осталась старая строка X/Y вместо PositionPicker');
+}
+
+// ── 2.4. Флаги map-picker ───────────────────────────────────────────────────
+// Запрет COLLIDE/DEATH/UNHOOK включается при объявлении элемента позиции.
+// Дополнительные флаги подсвечивают нужные динамические слои на карте.
+
+for (const token of ['data-map-options', 'safeTiles', 'showSpawns', 'radiusPath', 'showTiles', 'editor-map:validity']) {
+  if (!positionPickerCode.includes(token)) {
+    problems.push(`editor-core/position-picker.js: потерян флаг/событие карты ${token}`);
+  }
+}
+if (!fieldCode.includes('safeTiles: ui.safeTiles')) {
+  problems.push('editor-core/field-renderer.js: флаги карты не проброшены из ui в PositionPicker.render');
+}
+for (const [page, token] of [
+  ['mobs-editor.html', 'safeTiles: true'],
+  ['mobs-editor.html', 'showSpawns: true'],
+  ['mobs-editor.html', "radiusPath: 'Radius'"],
+  ['bots-npc-editor.html', 'safeTiles: true'],
+  ['quests-editor.html', 'safeTiles: true'],
+  ['aethers-editor.html', 'showTiles: true'],
+  ['dungeons-editor.html', 'showTiles: true'],
+  ['warehouse-editor.html', 'showTiles: true'],
+]) {
+  if (!read(path.join(ROOT, page)).includes(token)) {
+    problems.push(`${page}: не используется флаг карты ${token}`);
+  }
+}
+if (!read(path.join(CORE_DIR, 'point-map.js')).includes("params.set('safe'")) {
+  problems.push('editor-core/point-map.js: флаг safeTiles не передаётся в окно карты');
+}
+if (fs.existsSync(pickerDir)) {
+  const pickerJsCode = read(path.join(pickerDir, 'picker.js'));
+  const overlaysCode = read(path.join(pickerDir, 'picker-overlays.js'));
+  const pickerHtmlCode = read(pickerHtmlPath);
+  for (const token of ["qs.get('safe')", 'editor-map:validity', 'state.invalid', 'drawPointMarker']) {
+    if (!pickerJsCode.includes(token)) problems.push(`vendor/ddnet-map/picker.js: нет проверки тайлов (${token})`);
+  }
+  for (const token of ['blockedTile', 'drawSpawns', 'drawTileBox']) {
+    if (!overlaysCode.includes(token)) problems.push(`vendor/ddnet-map/picker-overlays.js: нет подсветки слоёв (${token})`);
+  }
+  if (!pickerHtmlCode.includes('pk-validity')) {
+    problems.push('vendor/ddnet-map/picker.html: нет индикатора невалидной точки');
+  }
+}
+
 // World 0 (Tutorilishe) is a real tw_worlds row. Never confuse it with the
 // absence of a selected world in the picker or map API.
 const pointMapCode = read(path.join(CORE_DIR, 'point-map.js'));
-if (!pointMapCode.includes('Number.isSafeInteger(n) && n >= 0') || !pointMapCode.includes('parseWorldId(worldId) !== null')) {
+const mapWorldsPath = path.join(CORE_DIR, 'map-worlds.js');
+const mapWorldsCode = fs.existsSync(mapWorldsPath) ? read(mapWorldsPath) : '';
+if (!mapWorldsCode) {
+  problems.push('editor-core/map-worlds.js: нет общего модуля миров (карточка и окно карты должны делить список)');
+} else if (!mapWorldsCode.includes('Number.isSafeInteger(n) && n >= 0')) {
+  problems.push('editor-core/map-worlds.js: world ID 0 должен оставаться валидным');
+}
+if (!pointMapCode.includes('parseWorldId(worldId) !== null')) {
   problems.push('editor-core/point-map.js: world ID 0 должен оставаться валидным при открытии карты');
+}
+for (const token of ['editor-map:applied', 'editor-map:world', 'editor-map:closed', 'editor-map:validity', 'data-map-x-path', 'mapOptions']) {
+  if (!pointMapCode.includes(token)) {
+    problems.push(`editor-core/point-map.js: нет связи с PositionPicker (${token})`);
+  }
+}
+// Две точки открытия карты (глобальный слушатель + PositionPicker) были
+// источником рассинхрона мира. Оставляем одну — у элемента позиции.
+if (/data-map-pick/.test(pointMapCode)) {
+  problems.push('editor-core/point-map.js: кнопку карты открывает PositionPicker, второй слушатель клика не нужен');
+}
+if (!positionPickerCode.includes("action === 'map'") || !positionPickerCode.includes('PointMap.open')) {
+  problems.push('editor-core/position-picker.js: кнопка карты должна вызывать PointMap.open');
 }
 const mapApiCode = read(path.join(ROOT, 'api', 'map.php'));
 if (!mapApiCode.includes('$hasWorldId') || mapApiCode.includes('$worldId <= 0')) {

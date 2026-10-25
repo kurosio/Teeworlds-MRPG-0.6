@@ -190,8 +190,7 @@
         label: 'Мир',
         ui: { dbKey: 'world', placeholder: '— мир —', searchPlaceholder: 'Поиск мира…' },
       },
-      // Позиция — единый элемент: X и Y в одной строке плюс кнопка
-      // «Местоположение» (карта мира из WorldID).
+      // Позиция NPC: те же запрещённые игровые тайлы, что и у мобов.
       Position: {
         type: 'vec2',
         label: 'Позиция (X, Y)',
@@ -200,6 +199,10 @@
           step: 1,
           axes: { x: 'PosX', y: 'PosY' },
           mapWorldPath: 'WorldID',
+          safeTiles: true,
+          showSpawns: true,
+          grid: true,
+          snap: true,
           spanAll: true,
         },
       },

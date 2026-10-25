@@ -188,3 +188,57 @@ test('layer toggles, spawn navigation, collision inspection and radius rendering
   // Camera commands never change the actual content coordinates.
   assert.equal(p.node('out-x').textContent,'16');
 });
+
+const safeMap = () => ({
+  groups:[{layers:[{type:2,width:2,height:2}]}],
+  gameplay:{width:2,height:2,indices:Uint8Array.from([1,2,3,0])},
+});
+test('safeTiles blocks Apply on solid/death/no-hook tiles without resetting the point', () => {
+  const p = picker('?map=/map&x=16&y=16&safe=1,2,3', safeMap());
+  assert.equal(p.node('apply').disabled,true);
+  assert.equal(p.node('validity').hidden,false);
+  assert.match(p.node('validity').textContent,/стена/);
+  assert.equal(p.node('out-x').textContent,'16');
+  assert.equal(p.node('out-y').textContent,'16');
+  assert.equal(p.node('x').value,'16');
+  const validity = p.messages.filter(m => m.type === 'editor-map:validity');
+  assert.deepEqual({...validity.at(-1)},{type:'editor-map:validity',valid:false,tile:1});
+  // Apply click while invalid must not send coordinates to the editor.
+  p.node('apply').click();
+  assert.equal(p.messages.filter(m => m.type === 'editor-map:apply').length,0);
+
+  // Перенос на свободный тайл снимает блокировку, координаты при этом живые.
+  p.node('x').value = '48'; p.node('x').emit('input');
+  p.node('y').value = '48'; p.node('y').emit('input');
+  assert.equal(p.node('out-x').textContent,'48');
+  assert.equal(p.node('apply').disabled,false);
+  assert.equal(p.node('validity').hidden,true);
+  assert.deepEqual({...p.messages.filter(m => m.type === 'editor-map:validity').at(-1)},
+    {type:'editor-map:validity',valid:true,tile:null});
+  p.node('apply').click();
+  const applied = p.messages.filter(m => m.type === 'editor-map:apply').at(-1);
+  assert.equal(applied.x,48); assert.equal(applied.y,48);
+});
+test('without safeTiles the same solid tile is still applicable', () => {
+  const p = picker('?map=/map&x=16&y=16', safeMap());
+  assert.equal(p.node('apply').disabled,false);
+  assert.equal(p.node('validity').hidden,true);
+  p.node('apply').click();
+  assert.equal(p.messages.at(-1).type,'editor-map:apply');
+});
+test('safeTiles can be a custom tile list and fails open without a gameplay layer', () => {
+  const onlyDeath = picker('?map=/map&x=16&y=16&safe=2', safeMap());
+  assert.equal(onlyDeath.node('apply').disabled,false); // тайл 1 не запрещён
+  const noGame = picker('?map=/map&x=16&y=16&safe=1,2,3', {groups:[]});
+  assert.equal(noGame.node('apply').disabled,false); // проверять нечего — не блокируем
+});
+test('map flags pre-enable gameplay layer, spawns, grid, snap and radius', () => {
+  const p = picker('?map=/map&x=48&y=48&safe=1,2,3&tiles=1&spawns=1&radius=96&grid=1&snap=1', safeMap());
+  assert.equal(p.node('collision').checked,true);
+  assert.equal(p.node('grid').checked,true);
+  assert.equal(p.node('snap').checked,true);
+  assert.equal(p.node('radius').value,'96');
+  assert.equal(p.document.getElementById('pk-workbench').open,true);
+  p.tw.onAfterRender(); // спавны/запрещённые тайлы/маркер рисуются без ошибок
+  assert.match(p.node('collision-status').textContent,/Красные тайлы здесь запрещены/);
+});

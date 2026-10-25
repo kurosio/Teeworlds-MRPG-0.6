@@ -67,6 +67,9 @@
 
   const escapeAttr = (...args) => window.EditorCore.utils.escapeAttr(...args);
   const escapeHtml = (...args) => window.EditorCore.utils.escapeHtml(...args);
+  const t = (text, vars) => (window.EditorCore?.Page?.t
+    ? window.EditorCore.Page.t(text, vars)
+    : String(text ?? ''));
 
   const normalizeCssSize = (v) => {
     if (v == null) return '';
@@ -525,8 +528,9 @@
     }
 
     if (field.type === 'vec2') {
-      // Позиция — один и тот же элемент во всех редакторах: X и Y в одной
-      // строке и кнопка «Местоположение» (карта мира, см. editor-core/point-map.js).
+      // Позиция — единый UI-элемент PositionPicker во всех редакторах. X/Y
+      // остаются скрытыми полями формы, а пользователь видит карточку точки,
+      // мир, кнопку карты и раскрывающийся ручной ввод.
       // Два способа хранения:
       //  • вложенный объект (Position {x, y}) — ui.axes не задан;
       //  • две отдельные колонки БД (PosX/PosY, PositionX/PositionY) — ui.axes.
@@ -535,35 +539,66 @@
       const axisY = axesIn ? String(axesIn.y || '') : `${path}.y`;
       const containerMode = !axesIn;
       const worldPath = ui.mapWorldPath == null ? '' : String(ui.mapWorldPath);
-      const axisHtml = (axisPath, name) => {
+      const worldValue = worldPath ? getValueAtPath(data, worldPath) : '';
+      const step = ui.step === undefined ? 1 : ui.step;
+      const rawAxis = (axisPath) => {
         const raw = getValueAtPath(data, axisPath);
         const numeric = raw === '' || raw == null ? 0 : Number(raw);
+        return Number.isFinite(numeric) ? numeric : 0;
+      };
+      const xValue = rawAxis(axisX);
+      const yValue = rawAxis(axisY);
+      const axisInputHtml = (axisPath, name) => {
         const attrs = buildInputAttributes({
           path: axisPath,
-          field: { ui: { min: ui.min, max: ui.max, step: ui.step === undefined ? 1 : ui.step } },
-          classes: `${inputClass} editor-vec2-input`,
+          field: { ui: { min: ui.min, max: ui.max, step } },
+          classes: `${inputClass} position-picker__axis-input`,
           includeName,
           includeDataKey,
           includeDataPath
         });
-        // Парный режим: «поле изменено гостем» подсвечивает каждую ось отдельно.
-        const fieldPathAttr = containerMode ? '' : ` data-field-path="${escapeAttr(axisPath)}"`;
-        const shown = Number.isFinite(numeric) ? numeric : 0;
-        return `<label class="editor-vec2-axis"${fieldPathAttr}>`
-          + `<span class="editor-vec2-axis-name">${name}</span>`
-          + `<input type="number" ${attrs} data-map-axis="${name.toLowerCase()}" value="${escapeAttr(String(shown))}">`
-          + '</label>';
+        return `<input type="number" ${attrs} data-value-type="number"
+          data-map-axis="${name.toLowerCase()}" data-position-axis="${name.toLowerCase()}"
+          value="${escapeAttr(String(rawAxis(axisPath)))}" hidden>`;
       };
-      const mapBtn = ui.map === false ? '' : `<button type="button" class="editor-vec2-map" data-map-pick="1"
-          title="Местоположение — выбрать точку на карте мира">
-          <i class="fa-solid fa-map-location-dot" aria-hidden="true"></i>
-          <span class="editor-vec2-map-label">Местоположение</span>
-        </button>`;
-      const rowAttrs = ` data-map-x-path="${escapeAttr(axisX)}" data-map-y-path="${escapeAttr(axisY)}"`
-        + (worldPath ? ` data-map-world-path="${escapeAttr(worldPath)}"` : '');
-      const row = `<div class="editor-vec2"${rowAttrs}>${axisHtml(axisX, 'X')}${axisHtml(axisY, 'Y')}${mapBtn}</div>`;
+      const picker = window.EditorCore?.PositionPicker;
+      const pickerHtml = picker?.render ? window.EditorCore.PositionPicker.render({
+        label,
+        xPath: axisX,
+        yPath: axisY,
+        xInputHtml: axisInputHtml(axisX, 'X'),
+        yInputHtml: axisInputHtml(axisY, 'Y'),
+        xFieldPath: axisX,
+        yFieldPath: axisY,
+        worldPath,
+        worldId: worldValue,
+        fieldPath: path,
+        min: ui.min,
+        max: ui.max,
+        step,
+        pinned: xValue !== 0 || yValue !== 0,
+        map: ui.map !== false,
+        world: ui.world !== false,
+        compact: !!ui.compact || isNested,
+        tag: ui.mapPickerTag || 'position',
+        id: ui.positionPickerId || '',
+        // Флаги карты: запрет игровых тайлов, слои, радиус, инструменты.
+        safeTiles: ui.safeTiles,
+        blockTiles: ui.blockTiles,
+        showTiles: ui.showTiles,
+        showSpawns: ui.showSpawns,
+        radiusPath: ui.radiusPath,
+        radius: ui.radius,
+        snap: ui.snap,
+        grid: ui.grid,
+      }) : `<div class="position-picker" data-position-picker="1"
+          data-map-x-path="${escapeAttr(axisX)}" data-map-y-path="${escapeAttr(axisY)}"
+          data-map-world-path="${escapeAttr(worldPath)}" data-position-pinned="${xValue !== 0 || yValue !== 0 ? '1' : '0'}">
+          ${axisInputHtml(axisX, 'X')}${axisInputHtml(axisY, 'Y')}
+          <div class="editor-muted-text text-sm">${escapeHtml(t('Карта мира недоступна — обновите страницу'))}</div>
+        </div>`;
       const wrapperPath = containerMode ? ` data-field-path="${escapeAttr(path)}"` : '';
-      return `<div class="${fieldWrapperClass}"${wrapperPath}>${labelHtml}${row}${footerHtml}</div>`;
+      return `<div class="${fieldWrapperClass}"${wrapperPath}>${pickerHtml}${footerHtml}</div>`;
     }
 
     if (field.type === 'item') {

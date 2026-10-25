@@ -9,6 +9,7 @@
     '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">',
     '<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">',
     '<link rel="stylesheet" href="editor-core/editor-theme.css">',
+    '<link rel="stylesheet" href="editor-core/position-picker.css">',
     '<link rel="stylesheet" href="editor-core/editor-template.css">',
     '<link rel="stylesheet" href="editor-core/tailwind.css">'
   ];
@@ -42,8 +43,10 @@
     '<script src="editor-core/help.js"></script>',
     '<script src="editor-core/bootstrap.js"></script>',
     '<script src="editor-core/db-editor-runtime.js"></script>',
-    // Окно «Местоположение» (карта мира) для любых координат X/Y.
+    // Выбор позиции: общие данные о мирах, окно карты и единый UI-элемент.
+    '<script src="editor-core/map-worlds.js"></script>',
     '<script src="editor-core/point-map.js"></script>',
+    '<script src="editor-core/position-picker.js"></script>',
     '<script src="editor-core/db-sync.js"></script>',
     '<script src="editor-core/request-workbench.js"></script>',
     `<script>

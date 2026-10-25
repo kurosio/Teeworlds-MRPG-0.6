@@ -3,13 +3,14 @@
   'use strict';
   window.MapPickerWorkbench = {
     create(api) {
-      const { tw, state, screenToWorld, worldToScreen, screenSize, redraw } = api;
+      const { tw, state, screenToWorld, worldToScreen, screenSize, redraw, options = {} } = api;
       const draw = window.MapPickerOverlays;
       const en = api.lang === 'en';
       const text = en ? {
         title:'Placement tools', collision:'Gameplay layer', spawn:'To spawn', measure:'Measure (M)', clear:'Clear measurement',
         from:'From selected point', use:'B → position', radius:'Radius preview, px', layers:'Show all layers', noGame:'No gameplay layer in this map.', zoom:'Zoom in to see gameplay tiles.',
         legend:'1 solid · 2 death · 3 no-hook · green: spawns · blue: other tile IDs',
+        blocked:'Red tiles are forbidden here',
         solid:'Solid', death:'Death', nohook:'No-hook', empty:'Empty', outside:'Outside gameplay layer', point:'Selected point',
         start:'Click two points on the map. The selected content position will not move.',
         tiles:'tiles', tileLayer:'Tiles', quadLayer:'Quads', group:'Group',
@@ -17,6 +18,7 @@
         title:'Инструменты размещения', collision:'Игровой слой', spawn:'К спавну', measure:'Измерить (M)', clear:'Очистить замер',
         from:'От выбранной точки', use:'B → позиция', radius:'Предпросмотр радиуса, px', layers:'Показать все слои', noGame:'В карте нет игрового слоя.', zoom:'Приблизьте карту для просмотра игровых тайлов.',
         legend:'1 стена · 2 смерть · 3 без крюка · зелёный: спавны · синий: прочие ID',
+        blocked:'Красные тайлы здесь запрещены',
         solid:'Стена', death:'Смерть', nohook:'Без крюка', empty:'Пусто', outside:'Вне игрового слоя', point:'Выбранная точка',
         start:'Кликните две точки на карте. Позиция редактируемого контента не изменится.',
         tiles:'тайлов', tileLayer:'Тайлы', quadLayer:'Квады', group:'Группа',
@@ -34,6 +36,12 @@
       let layers = [];
       el['measure-use'].disabled = true;
       el['measure-from-point'].disabled = !state.hasPoint;
+      // Флаги элемента позиции включают нужные слои сразу при открытии карты.
+      if (options.tiles || options.spawns || (Array.isArray(options.safe) && options.safe.length)) {
+        el.collision.checked = true;
+      }
+      if (Number.isFinite(options.radius) && options.radius > 0) el.radius.value = String(options.radius);
+      if (options.tiles || options.spawns || options.radius) get('workbench').open = true;
       const show = (element, value) => { if (element.textContent !== value) element.textContent = value; };
       const updateResult = () => {
         el['measure-use'].disabled = !b;
@@ -152,13 +160,17 @@
         draw(ctx) {
           el['measure-from-point'].disabled = !state.hasPoint;
           const game = tw.map?.gameplay;
+          const screen = screenSize();
+          const bounds = draw.visibleTiles(game, screenToWorld(0,0), screenToWorld(screen.w,screen.h));
           let status = '';
           if (el.collision.checked) {
-            const screen = screenSize();
-            const bounds = draw.visibleTiles(game, screenToWorld(0,0), screenToWorld(screen.w,screen.h));
             status = !game ? text.noGame : !bounds ? text.zoom : text.legend;
-            draw.drawCollision(ctx, game, bounds, worldToScreen);
+            if (Array.isArray(options.safe) && options.safe.length) {
+              status += `${status ? ' · ' : ''}${text.blocked}`;
+            }
+            draw.drawCollision(ctx, game, bounds, worldToScreen, options.safe);
           }
+          if (options.spawns) draw.drawSpawns(ctx, game, bounds, worldToScreen);
           if (state.hasPoint && game) {
             const index = draw.tileAt(game, state.point);
             const kind = index === null ? text.outside : index === 0 ? text.empty : `${({1:text.solid,2:text.death,3:text.nohook})[index] || (en ? 'Tile' : 'Тайл')} (ID ${index})`;
@@ -170,7 +182,8 @@
             status += ` · ${en ? 'Cursor' : 'Курсор'}: ${index === null ? text.outside : `ID ${index}`}`;
           }
           const selectedTile = state.hasPoint ? draw.tileAt(game, state.point) : null;
-          el['collision-status'].classList.toggle('is-warning', [1,2,3].includes(selectedTile));
+          const blocked = draw.blockedTile(game, state.hasPoint ? state.point : null, options.safe);
+          el['collision-status'].classList.toggle('is-warning', blocked !== null || [1,2,3].includes(selectedTile));
           show(el['collision-status'], status);
           const radius = Number(el.radius.value);
           if (state.hasPoint && Number.isFinite(radius) && radius > 0 && radius <= 100000) draw.drawRadius(ctx, state.point, radius, worldToScreen);

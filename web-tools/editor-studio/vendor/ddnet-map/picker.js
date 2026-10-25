@@ -9,13 +9,18 @@
  *   lang     — ru | en
  *   theme    — dark | light
  *   point    — 0, если точки ещё нет (тогда камера ставится в центр карты)
+ *   safe     — список ID игровых тайлов, на которые нельзя ставить точку
+ *              (по умолчанию флаг редактора safeTiles даёт 1,2,3);
+ *   tiles    — 1: показать игровой слой; spawns — 1: подсветить спавны;
+ *   radius   — предпросмотр радиуса; grid/snap — 1|0: инструменты по умолчанию
  *
  * Родительскому окну отправляются сообщения:
- *   editor-map:ready        — карта отрисована
- *   editor-map:change {x,y} — точка сдвинута (ещё не применена)
- *   editor-map:apply  {x,y} — пользователь нажал «Применить»
- *   editor-map:close        — пользователь отменил
- *   editor-map:error  {code} — карту не удалось загрузить
+ *   editor-map:ready            — карта отрисована
+ *   editor-map:change {x,y}     — точка сдвинута (ещё не применена)
+ *   editor-map:validity {valid} — точка на запрещённом тайле (не сбрасывается)
+ *   editor-map:apply  {x,y}     — пользователь нажал «Применить»
+ *   editor-map:close            — пользователь отменил
+ *   editor-map:error  {code}    — карту не удалось загрузить
  */
 (() => {
   'use strict';
@@ -59,6 +64,10 @@
       mapOf: 'Карта мира',
       noPoint: 'Точка не задана — кликните по карте',
       missingTextures: 'нет текстур',
+      blockedTile: 'Нельзя ставить точку на этом игровом тайле',
+      blockedHint: 'COLLIDE / DEATH / UNHOOK запрещены — выберите свободный тайл',
+      blockedKinds: { 1: 'стена', 2: 'смерть', 3: 'без крюка' },
+      tileShort: 'Тайл',
     },
     en: {
       grid: '32×32 grid', snap: 'Tile centers', align: 'Center in tile',
@@ -90,6 +99,10 @@
       mapOf: 'World map',
       noPoint: 'No point yet — click the map',
       missingTextures: 'missing textures',
+      blockedTile: 'A point cannot be placed on this gameplay tile',
+      blockedHint: 'COLLIDE / DEATH / UNHOOK are forbidden — pick a free tile',
+      blockedKinds: { 1: 'solid', 2: 'death', 3: 'no-hook' },
+      tileShort: 'Tile',
     },
   }[LANG];
 
@@ -111,6 +124,7 @@
     inX: document.getElementById('pk-x'),
     inY: document.getElementById('pk-y'),
     note: document.getElementById('pk-note'),
+    validity: document.getElementById('pk-validity'),
     hint: document.getElementById('pk-hint'),
     state: document.getElementById('pk-state'),
     stateIcon: document.getElementById('pk-state-icon'),
@@ -125,14 +139,30 @@
     center: document.getElementById('pk-center'),
   };
 
+  // Флаги приходят из объявления UI-элемента позиции (PositionPicker).
+  const safeIds = (qs.get('safe') || '').split(',')
+    .map((value) => Number(value.trim()))
+    .filter((value, index, all) => Number.isInteger(value) && value >= 0 && all.indexOf(value) === index);
+  const OPTIONS = {
+    safe: safeIds,
+    tiles: qs.get('tiles') === '1',
+    spawns: qs.get('spawns') === '1',
+    radius: Math.max(0, toNum(qs.get('radius'), 0)),
+    snap: qs.has('snap') ? qs.get('snap') === '1' : null,
+    grid: qs.has('grid') ? qs.get('grid') === '1' : null,
+  };
+  const safeMode = OPTIONS.safe.length > 0;
+  const Overlays = window.MapPickerOverlays;
+  const gameplay = () => (typeof tw === 'undefined' ? null : tw.map?.gameplay || null);
+
   const hasPointParam = qs.get('point') !== '0';
   const state = {
     point: { x: Math.round(toNum(qs.get('x'), 0)), y: Math.round(toNum(qs.get('y'), 0)) },
     hasPoint: hasPointParam,
     ready: false,
     extent: { w: 0, h: 0 },
-    failed: false,
-    dragging: false,
+    invalid: false,
+    invalidTile: null,
   };
 
   const snapshot = () => ({ ...state.point, hasPoint: state.hasPoint });
@@ -147,11 +177,18 @@
     el.grid.checked = saved.grid === true;
     el.snap.checked = saved.snap === true;
   } catch { /* Storage is optional. */ }
+  // Явные флаги редактора важнее сохранённых настроек браузера.
+  if (OPTIONS.grid !== null) el.grid.checked = OPTIONS.grid;
+  if (OPTIONS.snap !== null) el.snap.checked = OPTIONS.snap;
 
   const mapUrl = qs.get('map') || '';
   let worldName = qs.get('world') || '';
 
   const THEME = qs.get('theme') === 'light' ? 'light' : 'dark';
+  const cssColor = (name, fallback) => {
+    try { return getComputedStyle(document.documentElement).getPropertyValue(name).trim() || fallback; } catch { return fallback; }
+  };
+  const DANGER = cssColor('--pk-danger', '#f2727f');
   document.documentElement.lang = LANG;
   // Редактор держит тему в data-editor-theme; data-theme оставлен для совместимости.
   document.documentElement.setAttribute('data-editor-theme', THEME);
@@ -161,7 +198,7 @@
   el.title.textContent = worldName ? `${STR.mapOf}: ${worldName}` : STR.mapOf;
   el.sub.textContent = STR.loading;
   el.note.textContent = STR.coordsNote;
-  el.hint.textContent = STR.hint;
+  el.hint.textContent = safeMode ? `${STR.hint} · ${STR.blockedHint}` : STR.hint;
   el.apply.textContent = STR.apply;
   el.cancel.textContent = STR.cancel;
   el.retry.textContent = STR.retry;
@@ -215,14 +252,37 @@
   };
 
   if (!mapUrl) {
-    state.failed = true;
     showState('error', STR.noWorld, STR.noWorldText, false);
     post('editor-map:error', { code: 'no_world' });
   }
 
+  // ── валидность точки ──────────────────────────────────────────────────────
+  // Точка на запрещённом тайле остаётся на месте: координаты и X/Y не
+  // сбрасываются, но «Применить» заблокирован, а маркер подсвечен красным.
+  let lastValidity = { valid: true, tile: null };
+  const updateValidity = () => {
+    const tile = safeMode && state.hasPoint
+      ? Overlays.blockedTile(gameplay(), state.point, OPTIONS.safe)
+      : null;
+    const valid = tile === null;
+    state.invalid = !valid;
+    state.invalidTile = tile;
+    if (el.validity) {
+      el.validity.hidden = valid;
+      const kind = STR.blockedKinds[tile] || `${STR.tileShort} ID ${tile}`;
+      el.validity.textContent = valid ? '' : `${STR.blockedTile}: ${kind}`;
+    }
+    if (el.apply) el.apply.title = valid ? '' : STR.blockedTile;
+    if (lastValidity.valid !== valid || lastValidity.tile !== tile) {
+      lastValidity = { valid, tile };
+      post('editor-map:validity', { valid, tile });
+    }
+  };
+
   // ── готовая точка ─────────────────────────────────────────────────────────
   const paintInputs = () => {
-    el.apply.disabled = !state.hasPoint || [el.inX, el.inY].some(input =>
+    updateValidity();
+    el.apply.disabled = !state.hasPoint || state.invalid || [el.inX, el.inY].some(input =>
       document.activeElement === input && (!input.value.trim() || !Number.isFinite(Number(input.value))));
     el.center.disabled = el.align.disabled = el.copy.disabled = !state.hasPoint;
     el.undo.disabled = !history.canUndo;
@@ -430,12 +490,13 @@
       overlay.stroke();
       overlay.restore();
     }
-    if (state.ready && cursor && el.grid.checked) {
+    if (state.ready && cursor && (el.grid.checked || safeMode)) {
       const world = screenToWorld(cursor.x, cursor.y);
-      const p = worldToScreen(Model.tileIndex(world.x) * 32, Model.tileIndex(world.y) * 32);
-      const size = worldToScreen(Model.tileIndex(world.x) * 32 + 32, Model.tileIndex(world.y) * 32 + 32);
-      overlay.fillStyle = 'rgba(111,140,255,.22)';
-      overlay.fillRect(p.x, p.y, size.x - p.x, size.y - p.y);
+      const blocked = safeMode ? Overlays.blockedTile(gameplay(), world, OPTIONS.safe) : null;
+      // Курсор заранее показывает, куда точку ставить нельзя.
+      Overlays.drawTileBox(overlay, world.x, world.y, worldToScreen,
+        blocked !== null ? 'rgba(242,114,127,.34)' : 'rgba(111,140,255,.22)',
+        blocked !== null ? DANGER : null);
     }
 
     if (state.ready) workbench?.draw(overlay);
@@ -443,45 +504,77 @@
     if (state.ready && state.hasPoint) {
       const p = worldToScreen(state.point.x, state.point.y);
       const inView = p.x > -80 && p.y > -80 && p.x < screen.w + 80 && p.y < screen.h + 80;
-      if (inView) {
-        const accent = getComputedStyle(document.documentElement).getPropertyValue('--pk-primary').trim() || '#6f8cff';
-        overlay.save();
-        overlay.translate(p.x, p.y);
-
-        // Тёмный ореол — точка видна и на светлом песке, и на тёмных тайлах.
-        overlay.strokeStyle = 'rgba(0,0,0,.55)';
-        overlay.lineWidth = 5;
-        overlay.beginPath();
-        overlay.arc(0, 0, 12, 0, Math.PI * 2);
-        overlay.moveTo(-18, 0); overlay.lineTo(-5, 0);
-        overlay.moveTo(5, 0); overlay.lineTo(18, 0);
-        overlay.moveTo(0, -18); overlay.lineTo(0, -5);
-        overlay.moveTo(0, 5); overlay.lineTo(0, 18);
-        overlay.stroke();
-
-        overlay.strokeStyle = accent;
-        overlay.lineWidth = 2;
-        overlay.beginPath();
-        overlay.arc(0, 0, 12, 0, Math.PI * 2);
-        overlay.moveTo(-18, 0); overlay.lineTo(-5, 0);
-        overlay.moveTo(5, 0); overlay.lineTo(18, 0);
-        overlay.moveTo(0, -18); overlay.lineTo(0, -5);
-        overlay.moveTo(0, 5); overlay.lineTo(0, 18);
-        overlay.stroke();
-
-        overlay.fillStyle = accent;
-        overlay.beginPath();
-        overlay.arc(0, 0, 2.5, 0, Math.PI * 2);
-        overlay.fill();
-        overlay.restore();
-      }
+      if (inView) drawPointMarker(p, state.invalid);
     }
+  };
+
+  /** Крупный маркер: свечение, пунктирное кольцо, крест и подпись X/Y. */
+  const drawPointMarker = (p, invalid) => {
+    const accent = cssColor('--pk-primary', '#6f8cff');
+    const color = invalid ? DANGER : accent;
+    if (invalid && gameplay()) {
+      Overlays.drawTileBox(overlay, state.point.x, state.point.y, worldToScreen,
+        'rgba(242,114,127,.22)', DANGER);
+    }
+    overlay.save();
+    overlay.translate(p.x, p.y);
+
+    // Мягкое свечение — точку видно на любом фоне карты.
+    overlay.fillStyle = invalid ? 'rgba(242,114,127,.18)' : 'rgba(111,140,255,.15)';
+    overlay.beginPath(); overlay.arc(0, 0, 27, 0, Math.PI * 2); overlay.fill();
+
+    const traceMarker = () => {
+      overlay.beginPath();
+      overlay.arc(0, 0, 12, 0, Math.PI * 2);
+      overlay.moveTo(-24, 0); overlay.lineTo(-5, 0);
+      overlay.moveTo(5, 0); overlay.lineTo(24, 0);
+      overlay.moveTo(0, -24); overlay.lineTo(0, -5);
+      overlay.moveTo(0, 5); overlay.lineTo(0, 24);
+    };
+    overlay.strokeStyle = 'rgba(0,0,0,.6)';
+    overlay.lineWidth = 6;
+    traceMarker(); overlay.stroke();
+    overlay.strokeStyle = color;
+    overlay.lineWidth = 2.5;
+    traceMarker(); overlay.stroke();
+
+    overlay.setLineDash([5, 4]);
+    overlay.strokeStyle = color;
+    overlay.lineWidth = 1.5;
+    overlay.beginPath(); overlay.arc(0, 0, 20, 0, Math.PI * 2); overlay.stroke();
+    overlay.setLineDash([]);
+
+    overlay.fillStyle = color;
+    overlay.beginPath(); overlay.arc(0, 0, 3, 0, Math.PI * 2); overlay.fill();
+
+    if (invalid) {
+      // Крест поверх центра — «точка не валидна», но сама точка не сброшена.
+      const cross = () => {
+        overlay.beginPath();
+        overlay.moveTo(-7, -7); overlay.lineTo(7, 7);
+        overlay.moveTo(7, -7); overlay.lineTo(-7, 7);
+      };
+      overlay.strokeStyle = 'rgba(0,0,0,.65)'; overlay.lineWidth = 5; cross(); overlay.stroke();
+      overlay.strokeStyle = DANGER; overlay.lineWidth = 2.5; cross(); overlay.stroke();
+    }
+
+    // Подпись с координатами: без measureText (ширина оценивается по символам).
+    const label = `${invalid ? '⚠ ' : ''}X ${Math.round(state.point.x)} · Y ${Math.round(state.point.y)}`;
+    const width = label.length * 6.3 + 14;
+    overlay.fillStyle = 'rgba(0,0,0,.74)';
+    overlay.fillRect(-width / 2, -48, width, 19);
+    overlay.fillStyle = color;
+    overlay.font = '600 11px Inter, system-ui, sans-serif';
+    overlay.textAlign = 'center';
+    overlay.fillText(label, 0, -34);
+    overlay.restore();
   };
 
   workbench = window.MapPickerWorkbench.create({
     tw, state, lang: LANG, screenToWorld, worldToScreen, screenSize,
     getCursor: () => cursor,
     setCamera, fitZoom, setPoint,
+    options: OPTIONS,
     redraw: () => tw.requestRender?.(2),
   });
 
@@ -762,7 +855,6 @@
   };
 
   const fail = (code, text) => {
-    state.failed = true;
     showState('error', STR.failTitle, text || FAIL_TEXT[code] || STR.failText, true);
     el.sub.textContent = STR.failTitle;
     post('editor-map:error', { code });

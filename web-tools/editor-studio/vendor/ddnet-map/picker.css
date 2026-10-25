@@ -269,6 +269,29 @@ canvas#ovl {
   font-size: 11.5px;
 }
 
+/* Невалидная точка: заметное, но не мигающее навязчиво предупреждение.
+   Сами координаты при этом не сбрасываются и остаются в полях X/Y. */
+.pk-validity {
+  flex: 1 1 100%;
+  order: 3;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: 1px solid color-mix(in srgb, var(--pk-danger) 55%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--pk-danger) 14%, transparent);
+  color: var(--pk-danger);
+  font-size: 12px;
+  font-weight: 600;
+}
+.pk-validity::before { content: "⚠"; font-size: 13px; }
+.pk-validity[hidden] { display: none; }
+@media (prefers-reduced-motion: no-preference) {
+  .pk-validity { animation: pk-validity-in .18s ease-out; }
+}
+@keyframes pk-validity-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+
 .pk-foot-actions {
   display: flex;
   gap: 6px;

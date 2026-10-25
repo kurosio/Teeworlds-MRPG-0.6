@@ -37,6 +37,8 @@
         });
         // Validation, toggles and DB widgets are initialized only for new nodes.
         window.EditorCore?.UIManager?.init(root);
+        // PositionPicker is declarative: refresh its world list and labels too.
+        window.EditorCore?.PositionPicker?.scan?.(root);
       };
 
       const onFieldEvent = (event) => {

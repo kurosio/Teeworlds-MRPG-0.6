@@ -1,0 +1,278 @@
+/* editor-core/position-picker.css — единый UI-элемент позиции во всех редакторах.
+   Карточка показывает закреплённую точку, мир, кнопки карты и ручного ввода.
+   Сами X/Y живут в скрытых инпутах: форма и гостевой режим работают как прежде. */
+
+.position-picker {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--editor-soft-border-strong);
+  border-radius: var(--editor-radius-md);
+  background: var(--editor-soft-bg);
+  transition: border-color .15s ease, background-color .15s ease;
+}
+
+.position-picker.is-pinned {
+  border-color: color-mix(in srgb, var(--editor-primary) 42%, transparent);
+  background: color-mix(in srgb, var(--editor-primary) 7%, var(--editor-soft-bg));
+}
+
+.position-picker__axis-input[hidden],
+.position-picker__manual[hidden] {
+  display: none !important;
+}
+
+.position-picker__main {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.position-picker__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 auto;
+  border: 1px solid var(--editor-soft-border);
+  border-radius: var(--editor-radius-sm);
+  background: var(--editor-light-bg);
+  color: var(--editor-primary);
+}
+
+/* Закреплённая точка заметнее: иконка получает цветную подложку и ореол. */
+.position-picker.is-pinned .position-picker__icon {
+  border-color: color-mix(in srgb, var(--editor-primary) 55%, transparent);
+  background: color-mix(in srgb, var(--editor-primary) 16%, var(--editor-light-bg));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--editor-primary) 12%, transparent);
+}
+
+.position-picker__copy {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.position-picker__title {
+  font-size: 13px;
+  font-weight: 700;
+  line-height: 1.25;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.position-picker__state {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 10px;
+  min-width: 0;
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--editor-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.position-picker__axis {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  min-width: 0;
+}
+
+.position-picker__axis b {
+  color: var(--editor-text);
+  font-weight: 700;
+}
+
+/* Флаги карты: короткие метки показывают, с чем откроется map-picker. */
+.position-picker__flags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 3px;
+}
+
+.position-picker__flags:empty {
+  display: none;
+}
+
+.position-picker__flag {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 7px;
+  border: 1px solid var(--editor-soft-border-strong);
+  border-radius: 999px;
+  background: var(--editor-light-bg);
+  color: var(--editor-text-muted);
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+
+.position-picker__flag--safe {
+  border-color: color-mix(in srgb, var(--editor-danger, #f2727f) 55%, transparent);
+  color: var(--editor-danger, #f2727f);
+}
+
+.position-picker__flag--spawns {
+  border-color: color-mix(in srgb, var(--editor-success) 55%, transparent);
+  color: var(--editor-success);
+}
+
+.position-picker__warning {
+  margin-top: 3px;
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--editor-danger, #f2727f);
+}
+
+.position-picker__warning[hidden] {
+  display: none;
+}
+
+.position-picker.is-invalid {
+  border-color: var(--editor-danger, #f2727f);
+  background: color-mix(in srgb, var(--editor-danger, #f2727f) 8%, var(--editor-soft-bg));
+}
+
+.position-picker.is-invalid .position-picker__icon {
+  color: var(--editor-danger, #f2727f);
+  border-color: var(--editor-danger, #f2727f);
+}
+
+.position-picker__axis--empty {
+  display: none;
+}
+
+.position-picker.is-pinned .position-picker__axis--empty {
+  display: inline-flex;
+}
+
+.position-picker__world {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 4px 6px 4px 8px;
+  border: 1px solid var(--editor-soft-border);
+  border-radius: var(--editor-radius-sm);
+  background: var(--editor-surface);
+}
+
+.position-picker__world-label {
+  flex: 0 0 auto;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--editor-text-muted);
+}
+
+.position-picker__world-select {
+  min-width: 0;
+  max-width: 180px;
+  height: 28px;
+  padding: 0 6px;
+  border: 0;
+  background: transparent;
+  color: var(--editor-text);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.position-picker__world-select:focus-visible {
+  outline: 2px solid var(--editor-primary);
+  outline-offset: 1px;
+  border-radius: var(--editor-radius-sm);
+}
+
+.position-picker__actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+.position-picker__actions .editor-btn {
+  min-height: 32px;
+}
+
+.position-picker__manual {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed var(--editor-soft-border-strong);
+}
+
+.position-picker__manual-field {
+  display: grid;
+  gap: 3px;
+  flex: 1 1 120px;
+  min-width: 0;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--editor-text-muted);
+}
+
+.position-picker__manual-field input {
+  width: 100%;
+  min-width: 0;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.position-picker__manual-actions {
+  display: flex;
+  gap: 8px;
+  flex: 0 0 auto;
+}
+
+.position-picker--compact {
+  padding: 8px 10px;
+}
+
+.position-picker--compact .position-picker__icon {
+  width: 28px;
+  height: 28px;
+}
+
+.position-picker--compact .position-picker__world-select {
+  max-width: 130px;
+}
+
+@media (max-width: 720px) {
+  .position-picker__main {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .position-picker__world {
+    grid-column: 1 / -1;
+    justify-content: space-between;
+  }
+
+  .position-picker__world-select {
+    max-width: none;
+    flex: 1 1 auto;
+  }
+
+  .position-picker__actions {
+    justify-content: stretch;
+  }
+
+  .position-picker__actions .editor-btn {
+    flex: 1 1 auto;
+  }
+}

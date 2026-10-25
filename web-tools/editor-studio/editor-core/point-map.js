@@ -1,126 +1,64 @@
 /**
- * editor-core/point-map.js — окно «Местоположение»: карта мира с точкой.
+ * editor-core/point-map.js — окно карты мира с точкой для PositionPicker.
  *
- * Кнопка появляется рядом с любой позицией (см. FieldRenderer, тип `vec2`):
- *   [X] [Y] [📍 Местоположение]
+ * Модуль отвечает только за диалог: iframe с локальным рендером
+ * (vendor/ddnet-map), список миров (когда мир не задан записью), запись X/Y
+ * в скрытые инпуты и события `editor-map:*` для элемента позиции.
  *
- * Что делает окно:
- *   • открывает карту мира, выбранного в записи (по `world_id` → tw_worlds.Path);
- *   • показывает текущую точку, позволяет поставить новую кликом, перетащить
- *     маркер, двигать карту мышью и приближать колесом;
- *   • по кнопке «Применить» записывает X и Y в поля формы.
+ * Вся «политика» (мир записи, флаги тайлов, параметры слоёв) решается в
+ * PositionPicker.openMap() и приходит сюда как `options`. Список миров и его
+ * кэш — общий модуль editor-core/map-worlds.js, поэтому БД запрашивается один
+ * раз и карточка с окном всегда показывают одни и те же миры.
  *
- * Рендер карты — локальный (vendor/ddnet-map): .map и текстуры отдаёт наш же
- * сервер (api/map.php), интернет не нужен.
+ * Открытие карты — единая точка `PointMap.open(row, options)`. Кнопку карты
+ * обрабатывает сам PositionPicker; отдельного глобального слушателя кликов и
+ * capture-фазы для синхронизации мира здесь больше нет.
  */
 (() => {
-  const MIN_WORLD_FIELDS = ['WorldID', 'world_id', 'WorldId', 'worldId', 'Map', 'map'];
+  const MapWorlds = () => window.EditorCore?.MapWorlds;
+  // Резерв на случай подключения модуля без map-worlds.js (например, в тесте).
   const parseWorldId = (value) => {
+    if (MapWorlds()?.parseWorldId) return MapWorlds().parseWorldId(value);
     if (value === null || value === undefined || String(value).trim() === '') return null;
     const n = Number(value);
     return Number.isSafeInteger(n) && n >= 0 ? n : null;
   };
-
-  // Мир, выбранный вручную: в редакторе сценариев у компонента (например,
-  // «Убийство мобов») вообще нет поля мира — без этого карта не открывалась,
-  // вместо неё был только тост «Сначала выберите мир».
-  const WORLD_STORAGE_KEY = 'editor-map-world';
-
-  /**
-   * Мир записи, внутри которой открыт компонент: атрибут `data-map-world-id`
-   * на общем контейнере (сценарий предмета/подземелья/квеста знает свой мир).
-   * Это надёжнее «последнего выбранного вручную» мира из localStorage.
-   */
-  const contextWorldId = (row) => {
-    const host = row?.closest?.('[data-map-world-id]');
-    return parseWorldId(host?.getAttribute('data-map-world-id'));
+  const t = (text) => {
+    const i18n = window.EditorCore?.I18n;
+    return i18n?.t ? i18n.t(text) : text;
   };
+  const esc = (value) => (window.EditorCore?.utils?.escapeHtml
+    ? window.EditorCore.utils.escapeHtml(value ?? '')
+    : String(value ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]));
 
   let dialog = null;
   let iframe = null;
   let worldBar = null;
   let worldSelect = null;
+  let worldList = [];
   let session = null;
 
-  const t = (text, params) => {
-    const i18n = window.EditorCore?.I18n;
-    return i18n?.t ? i18n.t(text, params) : text;
-  };
-
-  const toast = (message, type = 'error') => {
-    const ui = window.EditorCore?.UI;
-    if (ui?.toast) ui.toast(message, type);
-    else console.warn('[editor-studio][point-map]', message);
-  };
-
-  const cssEscape = (value) => {
-    if (window.CSS?.escape) return window.CSS.escape(String(value));
-    return String(value).replace(/["\\\]]/g, '\\$&');
-  };
-
-  // ── Поиск полей в форме ────────────────────────────────────────────────────
-
-  // Для вложенных форм важно брать поле из той же записи: поиск первым
-  // совпадением в общем родителе мог выбрать мир соседнего шага/модалки.
-  const domDistance = (a, b) => {
-    const ancestors = new Map();
-    let node = a;
-    let distance = 0;
-    while (node) {
-      ancestors.set(node, distance++);
-      node = node.parentElement;
-    }
-    node = b;
-    distance = 0;
-    while (node) {
-      if (ancestors.has(node)) return ancestors.get(node) + distance;
-      distance++;
-      node = node.parentElement;
-    }
-    return Number.POSITIVE_INFINITY;
-  };
-
-  const nearestPathInput = (row, path) => {
-    if (!row || !path) return null;
-    const candidates = Array.from(document.querySelectorAll(`[data-path="${cssEscape(path)}"]`))
-      .filter((node) => node !== row && !row.contains(node));
-    candidates.sort((a, b) => domDistance(row, a) - domDistance(row, b));
-    return candidates[0] || null;
-  };
-
-  /** Ближайший ввод мира: сначала путь, заданный схемой, затем стандартные. */
-  const findWorldInput = (row) => {
-    const hint = row.getAttribute('data-map-world-path') || '';
-    const names = hint ? [hint, ...MIN_WORLD_FIELDS] : MIN_WORLD_FIELDS;
-    for (const name of names) {
-      const hit = nearestPathInput(row, name);
-      if (hit) return hit;
-    }
-    return null;
-  };
-
-  const findInput = (row, path) => nearestPathInput(row, path);
-
-  /**
-   * Поле оси прямо в строке позиции. Так работают и поля формы (`data-path`),
-   * и поля задач квеста (`data-task-field`): обе разновидности помечены
-   * data-map-axis, поэтому искать по путям не обязательно.
-   */
+  // ── Поля формы ────────────────────────────────────────────────────────────
+  // Оси лежат прямо в элементе позиции (data-map-axis). Поиск по data-path —
+  // только резерв для кастомных форм без скрытых инпутов.
   const axisInput = (row, axis, path) => {
-    const row2 = row.isConnected ? row : session?.row;
-    const direct = row2?.querySelector(`[data-map-axis="${axis}"]`);
+    const scope = row?.isConnected ? row : session?.row;
+    const direct = scope?.querySelector?.(`[data-map-axis="${axis}"]`);
     if (direct) return direct;
-    return findInput(row2 || row, path);
-  };
-
-  const worldLabel = (input) => {
-    if (!input) return '';
-    const combo = input.closest('.editor-dbcombo');
-    const shown = combo?.querySelector('.editor-dbcombo-input')?.value || '';
-    return String(shown || '').trim();
+    if (!path) return null;
+    return Array.from(document.querySelectorAll('[data-path]'))
+      .find((node) => node.getAttribute('data-path') === path && !scope?.contains?.(node)) || null;
   };
 
   // ── Окно ──────────────────────────────────────────────────────────────────
+  const postWorldName = (name) => {
+    if (!name || !iframe?.contentWindow) return;
+    iframe.contentWindow.postMessage({ type: 'editor-map:world-name', name }, window.location.origin);
+  };
+
+  const dispatch = (type, detail) => {
+    session?.row?.dispatchEvent(new CustomEvent(type, { detail, bubbles: true }));
+  };
 
   const ensureDialog = () => {
     if (dialog) return dialog;
@@ -132,131 +70,57 @@
     dialog.innerHTML = `
       <div class="editor-map-dialog-frame">
         <div class="editor-map-dialog-world" hidden>
-          <label class="editor-map-dialog-world-label" for="editor-map-world-select">${t('Мир')}</label>
+          <label class="editor-map-dialog-world-label" for="editor-map-world-select">${esc(t('Мир'))}</label>
           <select id="editor-map-world-select" class="editor-map-dialog-world-select"></select>
         </div>
-        <iframe class="editor-map-dialog-frame-inner" title="${t('Карта мира')}"
+        <iframe class="editor-map-dialog-frame-inner" title="${esc(t('Карта мира'))}"
           referrerpolicy="no-referrer" allow="fullscreen"></iframe>
       </div>`;
     iframe = dialog.querySelector('iframe');
-    iframe.addEventListener('load', () => {
-      if (!session || !session.worldName || !iframe.contentWindow) return;
-      iframe.contentWindow.postMessage({ type: 'editor-map:world-name', name: session.worldName }, window.location.origin);
-    });
+    iframe.addEventListener('load', () => postWorldName(session?.worldName));
     worldBar = dialog.querySelector('.editor-map-dialog-world');
     worldSelect = dialog.querySelector('.editor-map-dialog-world-select');
     worldSelect.addEventListener('change', () => {
       const value = parseWorldId(worldSelect.value);
-      if (value === null) return;
-      rememberWorld(value);
-      if (session) session.worldId = value;
+      if (value === null || !session) return;
+      session.worldId = value;
+      // Смена мира в окне — пока только предпросмотр. В запись (и в
+      // «последний выбранный мир») он попадёт по «Применить», а не при отмене.
+      dispatch('editor-map:world', { worldId: value, provisional: true });
       loadMap();
     });
     dialog.addEventListener('click', (event) => {
-      // Клик по затемнению вокруг окна закрывает его, как обычный попап.
       if (event.target === dialog) close('backdrop');
     });
     document.body.appendChild(dialog);
     return dialog;
   };
 
-  const rememberWorld = (id) => {
-    if (parseWorldId(id) === null) return;
-    try { window.localStorage.setItem(WORLD_STORAGE_KEY, String(id)); } catch { /* приватный режим */ }
-  };
-
-  const rememberedWorld = () => {
-    try { return parseWorldId(window.localStorage.getItem(WORLD_STORAGE_KEY)); } catch { return null; }
-  };
-
-  const worldLabelById = (id) => {
-    const option = worldSelect?.querySelector(`option[value="${cssEscape(id)}"]`);
-    return option ? String(option.textContent || '').trim() : '';
-  };
-
-  /**
-   * Список миров для ручного выбора. Гостю worlds может быть недоступен —
-   * тогда остаётся число: мир всё равно нужен, но окно не падает.
-   */
-  const fillWorldList = async (selectedId) => {
+  /** Список миров грузим один раз (кэш в MapWorlds) и используем для подписи. */
+  const fillWorldList = async () => {
     if (!worldSelect) return;
-    if (worldSelect.dataset.loaded === '1') {
-      worldSelect.value = selectedId === null || selectedId === undefined ? '' : String(selectedId);
-      return;
-    }
-    let rows = [];
-    try {
-      const res = await window.EditorCore?.DBCrud?.list?.('worlds', { limit: 1000, offset: 0 });
-      rows = Array.isArray(res?.rows) ? res.rows : [];
-    } catch { rows = []; }
-
-    const options = ['<option value="">' + t('— выберите мир —') + '</option>'];
-    rows.forEach((row) => {
-      const id = parseWorldId(row.ID ?? row.id);
-      if (id === null) return;
-      const name = String(row.Name ?? row.name ?? '');
-      options.push(`<option value="${id}">${id}: ${escapeHtml(name)}</option>`);
+    try { worldList = await (MapWorlds()?.list?.() || Promise.resolve([])); } catch { worldList = []; }
+    const options = [`<option value="">${esc(t('— выберите мир —'))}</option>`];
+    worldList.forEach((world) => {
+      options.push(`<option value="${world.id}">${world.id}: ${esc(world.name)}</option>`);
     });
-    if (rows.length === 0) {
-      options.push('<option value="" disabled>' + t('Список миров недоступен') + '</option>');
-    }
+    if (!worldList.length) options.push(`<option value="" disabled>${esc(t('Список миров недоступен'))}</option>`);
     worldSelect.innerHTML = options.join('');
-    worldSelect.dataset.loaded = '1';
-    worldSelect.value = selectedId === null || selectedId === undefined ? '' : String(selectedId);
   };
 
-  const escapeHtml = (value) => window.EditorCore.utils.escapeHtml(value);
-
-  const onMessage = (event) => {
-    if (!session || !iframe || event.source !== iframe.contentWindow || event.origin !== window.location.origin) return;
-    const data = event.data || {};
-    if (data.type === 'editor-map:apply') {
-      applyPoint(data.x, data.y);
-      close('apply');
-    } else if (data.type === 'editor-map:close') {
-      close('cancel');
-    }
+  const worldNameById = (id) => {
+    const worldId = parseWorldId(id);
+    if (worldId === null) return '';
+    return MapWorlds()?.name?.(worldList, worldId)
+      || String(worldList.find((w) => w.id === worldId)?.name || '');
   };
 
-  const onKeydown = (event) => {
-    if (!session) return;
-    if (event.key === 'Escape') {
-      event.preventDefault();
-      close('escape');
-    }
-  };
-
-  const lockScroll = (lock) => {
-    // Не трогаем document.body.style.overflow: этот приём уже ломал прокрутку
-    // страницы (окно входа). Достаточно position:fixed у самого затемнения.
-    document.documentElement.classList.toggle('editor-map-open', lock);
-  };
-
-  const close = (reason) => {
-    if (!session) return;
-    const { restoreFocus } = session;
-    session = null;
-    window.removeEventListener('message', onMessage);
-    window.removeEventListener('keydown', onKeydown, true);
-    lockScroll(false);
-    dialog?.classList.remove('is-open');
-    dialog?.setAttribute('aria-hidden', 'true');
-    if (iframe) iframe.src = 'about:blank';
-    try { restoreFocus?.focus?.({ preventScroll: true }); } catch { /* поле могли перерисовать */ }
-    if (reason === 'cancel' || reason === 'escape') {
-      // Пользователь передумал: значения формы не трогаем.
-    }
-  };
-
-  /**
-   * Адрес API карт. Считается от самой страницы редактора (document.baseURI),
-   * а не от пути до picker.html: редактор может жить в подкаталоге
-   * (/editor/quests-editor.html), и относительный путь из vendor/ddnet-map
-   * вёл в /editor/vendor/api/map.php — отсюда был 404.
-   */
+  // ── Адреса и параметры карты ──────────────────────────────────────────────
+  // Считаем от страницы редактора (document.baseURI), а не от picker.html:
+  // редактор может жить в подкаталоге, и относительный путь давал 404.
   const apiUrl = (query) => new URL(`api/map.php?${query}`, document.baseURI).href;
 
-  const pickerUrl = ({ worldId, worldName, x, y, hasPoint }) => {
+  const pickerUrl = ({ worldId, worldName, x, y, hasPoint, mapOptions = {} }) => {
     const params = new URLSearchParams();
     if (parseWorldId(worldId) !== null) params.set('map', apiUrl(`action=file&world=${worldId}`));
     params.set('mapres', apiUrl('action=asset&name='));
@@ -268,59 +132,98 @@
     const theme = window.EditorCore?.theme?.get?.() === 'light' ? 'light' : 'dark';
     params.set('lang', lang);
     params.set('theme', theme);
+    // Флаги элемента позиции: запрещённые тайлы, слои, радиус, инструменты.
+    if (Array.isArray(mapOptions.safe) && mapOptions.safe.length) params.set('safe', mapOptions.safe.join(','));
+    if (mapOptions.tiles) params.set('tiles', '1');
+    if (mapOptions.spawns) params.set('spawns', '1');
+    if (Number.isFinite(mapOptions.radius) && mapOptions.radius > 0) params.set('radius', String(Math.round(mapOptions.radius)));
+    if (mapOptions.snap === true || mapOptions.snap === false) params.set('snap', mapOptions.snap ? '1' : '0');
+    if (mapOptions.grid === true || mapOptions.grid === false) params.set('grid', mapOptions.grid ? '1' : '0');
     return new URL(`vendor/ddnet-map/picker.html?${params.toString()}`, document.baseURI).href;
   };
 
-  /** Загрузить карту в окно. Мир берём из сессии (поле формы или ручной выбор). */
   const loadMap = () => {
     if (!session || !iframe) return;
-    const worldInput = session.worldInput;
-    const fromField = parseWorldId(worldInput?.value);
-    if (fromField !== null) session.worldId = fromField;
-
-    const fixedWorldId = parseWorldId(session.fixedWorldId);
     const worldId = parseWorldId(session.worldId);
-    const worldName = fromField !== null ? (worldLabel(worldInput) || worldLabelById(fromField)) : worldLabelById(worldId);
-
-    // ID 0 — полноценный мир (Tutorilishe), а не признак отсутствующего мира.
-    if (worldBar) worldBar.hidden = fixedWorldId !== null;
-    if (worldSelect && fromField === null) worldSelect.value = worldId !== null ? String(worldId) : '';
-
-    // Подпись мира берётся из списка миров: если он ещё грузится, обновим
-    // заголовок карты один раз, когда список придёт.
-    session.needsWorldName = worldId !== null && !worldName;
-    session.worldName = worldName;
-
+    session.worldName = worldNameById(worldId);
+    if (worldBar) worldBar.hidden = !session.allowWorldChange;
+    if (worldSelect && session.allowWorldChange) worldSelect.value = worldId === null ? '' : String(worldId);
     iframe.src = pickerUrl({
       worldId,
-      worldName,
+      worldName: session.worldName,
       x: session.startX,
       y: session.startY,
       hasPoint: session.hasPoint,
+      mapOptions: session.mapOptions,
     });
     try { iframe.focus(); } catch { /* не критично */ }
   };
 
-  const open = (row) => {
-    const xPath = row.getAttribute('data-map-x-path') || '';
-    const yPath = row.getAttribute('data-map-y-path') || '';
+  const onMessage = (event) => {
+    if (!session || !iframe || event.source !== iframe.contentWindow || event.origin !== window.location.origin) return;
+    const data = event.data || {};
+    if (data.type === 'editor-map:apply') {
+      if (applyPoint(data.x, data.y)) {
+        dispatch('editor-map:applied', {
+          x: Number(data.x), y: Number(data.y), worldId: session.worldId,
+        });
+        close('apply');
+      }
+    } else if (data.type === 'editor-map:close') {
+      close('cancel');
+    } else if (data.type === 'editor-map:validity') {
+      // Точка не сбрасывается: элемент позиции лишь подсвечивает состояние.
+      dispatch('editor-map:validity', { valid: data.valid !== false, tile: data.tile ?? null });
+    }
+  };
+
+  const onKeydown = (event) => {
+    if (!session || event.key !== 'Escape') return;
+    event.preventDefault();
+    close('escape');
+  };
+
+  const lockScroll = (lock) => {
+    // Не трогаем document.body.style.overflow: этот приём ломал прокрутку.
+    document.documentElement.classList.toggle('editor-map-open', lock);
+  };
+
+  const close = (reason) => {
+    if (!session) return;
+    const { restoreFocus } = session;
+    // PositionPicker сбрасывает предварительный выбор мира и подсветку при отмене.
+    dispatch('editor-map:closed', { reason });
+    session = null;
+    closeListeners();
+    lockScroll(false);
+    dialog?.classList.remove('is-open');
+    dialog?.setAttribute('aria-hidden', 'true');
+    if (iframe) iframe.src = 'about:blank';
+    try { restoreFocus?.focus?.({ preventScroll: true }); } catch { /* поле могли перерисовать */ }
+  };
+
+  const open = (row, options = {}) => {
+    const xPath = row?.getAttribute?.('data-map-x-path') || '';
+    const yPath = row?.getAttribute?.('data-map-y-path') || '';
     const xInput = axisInput(row, 'x', xPath);
     const yInput = axisInput(row, 'y', yPath);
     if (!xInput || !yInput) {
-      toast(t('Не удалось найти поля координат — обновите страницу'));
+      if (window.EditorCore?.UI?.toast) window.EditorCore.UI.toast(t('Не удалось найти поля координат — обновите страницу'));
       return;
     }
+    if (session) close('replace'); // окно уже открыто — закрываем прежнюю сессию
 
-    // Мир ищем в форме; если поля нет (компонент сценария) — берём мир
-    // записи, в которой открыт компонент; и только затем последний выбранный
-    // вручную. Выбор в окне остаётся, когда мир неизвестен совсем.
-    const worldInput = findWorldInput(row);
-    const fieldWorldId = parseWorldId(worldInput?.value);
-    const contextId = contextWorldId(row);
-    const fixedWorldId = fieldWorldId !== null ? fieldWorldId : contextId;
-    const fallbackWorldId = fixedWorldId !== null ? fixedWorldId : rememberedWorld();
+    let worldId = options.worldId === undefined
+      ? parseWorldId(row.getAttribute('data-world-id'))
+      : parseWorldId(options.worldId);
+    const allowWorldChange = options.allowWorldChange ?? (worldId === null);
+    // ID 0 — полноценный мир (Tutorilishe), а не отсутствие мира.
+    if (worldId === null) worldId = MapWorlds()?.rememberedWorld?.() ?? null;
 
-    const hasPoint = String(xInput.value).trim() !== '' || String(yInput.value).trim() !== '';
+    // PositionPicker явно помечает «точки ещё нет», чтобы (0, 0) в скрытых
+    // инпутах не превращался в фантомный маркер на карте.
+    const hasPoint = row.getAttribute('data-position-pinned') !== '0'
+      && (String(xInput.value).trim() !== '' || String(yInput.value).trim() !== '');
     const startX = Number(xInput.value || 0) || 0;
     const startY = Number(yInput.value || 0) || 0;
 
@@ -330,37 +233,29 @@
     lockScroll(true);
 
     session = {
-      xPath,
-      yPath,
-      row,
-      worldInput,
-      worldId: fallbackWorldId,
-      fixedWorldId,
-      startX,
-      startY,
-      // (0, 0) — допустимая координата; её нельзя путать с отсутствием точки.
-      hasPoint,
+      xPath, yPath, row, worldId, allowWorldChange,
+      startX, startY, hasPoint,
+      mapOptions: options.mapOptions || {},
+      worldName: '',
       restoreFocus: document.activeElement,
     };
-
-    // Родитель ищет поля заново на каждое применение: форма могла перерисоваться.
-    window.removeEventListener('message', onMessage);
-    window.removeEventListener('keydown', onKeydown, true);
     window.addEventListener('message', onMessage);
     window.addEventListener('keydown', onKeydown, true);
 
-    // Список нужен и для подписи мира записи, и для ручного выбора.
     loadMap();
-    fillWorldList(fallbackWorldId).then(() => {
-      if (!session?.needsWorldName) return;
-      const name = worldLabelById(session.worldId);
+    fillWorldList().then(() => {
+      if (!session) return;
+      if (session.allowWorldChange) worldSelect.value = parseWorldId(session.worldId) === null ? '' : String(session.worldId);
+      const name = worldNameById(session.worldId);
       if (!name) return;
       session.worldName = name;
-      session.needsWorldName = false;
-      if (iframe?.contentWindow) {
-        iframe.contentWindow.postMessage({ type: 'editor-map:world-name', name }, window.location.origin);
-      }
+      postWorldName(name);
     }).catch(() => {});
+  };
+
+  const closeListeners = () => {
+    window.removeEventListener('message', onMessage);
+    window.removeEventListener('keydown', onKeydown, true);
   };
 
   const writeValue = (axis, path, value) => {
@@ -375,34 +270,24 @@
   };
 
   const applyPoint = (x, y) => {
-    if (!session) return;
+    if (!session) return false;
     const nx = Number(x);
     const ny = Number(y);
-    if (!Number.isFinite(nx) || !Number.isFinite(ny)) return;
+    if (!Number.isFinite(nx) || !Number.isFinite(ny)) return false;
     const { xPath, yPath } = session;
     writeValue('x', xPath, nx);
     writeValue('y', yPath, ny);
-
     // Некоторые формы перерисовываются на первом же событии: если значение
     // сбросилось — записываем ещё раз, уже в новое поле.
-    window.requestAnimationFrame(() => {
+    window.requestAnimationFrame?.(() => {
       if (!session) return;
-      [[ 'x', xPath, nx ], [ 'y', yPath, ny ]].forEach(([axis, path, value]) => {
+      [['x', xPath, nx], ['y', yPath, ny]].forEach(([axis, path, value]) => {
         const input = axisInput(session.row, axis, path);
         if (input && Number(input.value) !== Math.round(value)) writeValue(axis, path, value);
       });
     });
+    return true;
   };
-
-  // Одна точка входа: кнопка «Местоположение» у любой позиции.
-  document.addEventListener('click', (event) => {
-    const button = event.target instanceof Element ? event.target.closest('[data-map-pick]') : null;
-    if (!button) return;
-    const row = button.closest('.editor-vec2');
-    if (!row) return;
-    event.preventDefault();
-    open(row);
-  });
 
   window.EditorCore = window.EditorCore || {};
   window.EditorCore.PointMap = { open, close: () => close('api') };

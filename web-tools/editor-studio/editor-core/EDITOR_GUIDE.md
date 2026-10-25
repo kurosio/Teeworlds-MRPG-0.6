@@ -109,6 +109,94 @@ DropItems: {
 }
 ```
 
+## PositionPicker (позиция на карте)
+
+Один элемент для всех координат: карточка закреплённой точки, мир, кнопка карты
+и кнопка ручного ввода. X/Y хранятся в скрытых инпутах, поэтому `FormRuntime`,
+валидация и гостевые правки работают как обычно.
+
+**Через схему (рекомендуется):**
+
+```js
+Position: {
+  type: 'vec2',
+  label: 'Позиция на карте',
+  ui: { step: 1, mapWorldPath: 'WorldID' }
+}
+```
+
+- `mapWorldPath` связывает подложку «Мир» с существующим полем формы: выбор
+  мира в карточке или в окне карты сохранится в `WorldID`.
+- `ui.axes: { x: 'PosX', y: 'PosY' }` — для двух отдельных колонок БД.
+- `ui.map: false` / `ui.world: false` скрывают соответствующие действия.
+
+### Флаги карты
+
+Флаги задаются в `ui` (или в `PositionPicker.render()`) и попадают в окно карты
+через `PointMap.open()`. Активные флаги видны в карточке как короткие метки —
+сразу понятно, с каким набором слоёв откроется карта.
+
+| Флаг | Что делает | Где используется |
+| --- | --- | --- |
+| `safeTiles: true` | Запрещает COLLIDE(1)/DEATH(2)/UNHOOK(3): тайлы красные, точка на них не применяется, но **не сбрасывается** | мобы, NPC, позиция шага и цели заданий |
+| `safeTiles: [2, 3]` или `blockTiles: [2]` | Свой список запрещённых ID тайлов | точечные сценарии |
+| `showTiles: true` | Показать игровой слой без запрета | аэтры, подземелья, склады, телепорт сценария |
+| `showSpawns: true` | Подсветить тайлы спавна | мобы, NPC, аэтры |
+| `radiusPath: 'Radius'` | Окружность радиуса вокруг точки; значение читается из поля формы | мобы (радиус блуждания) |
+| `grid: true`, `snap: true` | Сетка и привязка к центрам тайлов по умолчанию | мобы, NPC, задания, двери подземелий |
+
+Пример для моба:
+
+```js
+Position: {
+  type: 'vec2', label: 'Позиция (X, Y)',
+  ui: {
+    axes: { x: 'PositionX', y: 'PositionY' }, mapWorldPath: 'WorldID',
+    safeTiles: true, showSpawns: true, radiusPath: 'Radius',
+    grid: true, snap: true
+  }
+}
+```
+
+Точка на запрещённом тайле остаётся в скрытых X/Y: `editor-map:validity`
+лишь подсвечивает карточку (`is-invalid`), а «Применить» в карте блокируется,
+пока точку не перенесут. Ручной ввод координат работает всегда — это путь
+исправить значение, если карта мира недоступна.
+
+**Программно (кастомные редакторы):**
+
+```js
+const picker = EditorCore.PositionPicker.create({
+  label: 'Точка цели',
+  xPath: 'move_to.0.x',
+  yPath: 'move_to.0.y',
+  worldPath: 'move_to.0.world_id',
+  worldId: 0,
+  step: 1,
+  compact: true,
+  safeTiles: true,
+  xInputHtml: '<input type="number" data-position-axis="x" data-map-axis="x" ... hidden>',
+  yInputHtml: '<input type="number" data-position-axis="y" data-map-axis="y" ... hidden>',
+});
+host.appendChild(picker);
+
+EditorCore.PositionPicker.onWorldChange(picker, (worldId) => saveWorld(worldId));
+EditorCore.PositionPicker.setWorldId(picker, 3);
+EditorCore.PositionPicker.openMap(picker, { worldId: 3, mapOptions: { safe: [1, 2, 3] } });
+EditorCore.PositionPicker.setValue(picker, { x: 100, y: 200 });
+EditorCore.PositionPicker.getMapOptions(picker); // флаги, с которыми создан элемент
+```
+
+Элемент сам подписывается на `editor-map:applied`, `editor-map:world`,
+`editor-map:validity` и `editor-map:closed`, поэтому выбранные в карте точка,
+мир и состояние валидности возвращаются в форму без дополнительного кода.
+
+Архитектура: `PositionPicker` — единственный UI-элемент и единственная точка
+открытия карты (`PointMap.open()`). `PointMap` — только диалог с iframe; он не
+ищет поля мира и не грузит БД. Общий кэш списка миров, парсинг ID (включая мир
+0) и «последний выбранный мир» живут в `editor-core/map-worlds.js`. Кнопку
+карты обрабатывает сам элемент — второго глобального слушателя кликов нет.
+
 ## Как добавить новый редактор в Studio
 1) Создайте файл `my-editor.html`.
 2) Добавьте его в `studio.manifest.js` в нужную группу.
