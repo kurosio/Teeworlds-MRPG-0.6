@@ -500,7 +500,7 @@
       Position: {
         type: 'vec2',
         label: 'Координаты точки (X, Y)',
-        ui: { step: 1, axes: { x: 'PosX', y: 'PosY' }, mapWorldPath: 'WorldID', showTiles: true },
+        ui: { step: 1, axes: { x: 'PosX', y: 'PosY' }, mapWorldPath: 'WorldID', showTiles: false, radius: 320, highlightTiles: [29] },
       },
       StorageData: { type: 'textarea', label: 'Дополнительные данные (StorageData JSON)', ui: { rows: 3, placeholder: '{"position":{"x":0,"y":0},"value":"1"}' } },
     };
