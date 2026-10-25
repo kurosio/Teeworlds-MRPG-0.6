@@ -637,6 +637,14 @@
       return nickOk && msgOk;
     };
 
+    // Быстрый переход из черновика в сам редактор записи (см. deep-link.js).
+    const guestRecordLink = (op) => {
+      const attrs = openRecordAttrs(op, '', '', false, 'guest');
+      if (!attrs) return '';
+      const title = op.type === 'create' ? 'Open the new record in the editor' : 'Open the record in the editor';
+      return `<a class="editor-btn editor-btn-secondary editor-btn--sm cr-open-record" ${attrs} title="${title}"><i class="fa-solid fa-arrow-up-right-from-square"></i><span>${op.type === 'create' ? 'New record' : 'Open record'}</span></a>`;
+    };
+
     const renderGuestDraft = () => {
       const draft = Guest.Draft.get();
       $('g-draft-count').textContent = String(draft.ops.filter(o => !o.reqId).length);
@@ -653,13 +661,6 @@
       }
       const byKey = new Map(draft.ops.map(o => [draftKeyOf(o), o]));
       const removeBtn = (uid) => uid ? `<button type="button" class="editor-icon-btn" data-remove-op="${esc(uid)}" title="Remove from the draft"><i class="fa-solid fa-xmark"></i></button>` : '';
-      // Быстрый переход из черновика в сам редактор записи (см. deep-link.js).
-      const recordLink = (op) => {
-        const attrs = openRecordAttrs(op, '', '', false, 'guest');
-        if (!attrs) return '';
-        const title = op.type === 'create' ? 'Open the new record in the editor' : 'Open the record in the editor';
-        return `<a class="editor-btn editor-btn-secondary editor-btn--sm cr-open-record" ${attrs} title="${title}"><i class="fa-solid fa-arrow-up-right-from-square"></i><span>${op.type === 'create' ? 'New record' : 'Open record'}</span></a>`;
-      };
       const submittedChip = (o) => `<span class="cr-chip cr-chip--pending" title="Sent to the administrator, awaiting review"><i class="fa-solid fa-hourglass-half"></i>In request  ${esc(o.reqId || '')}</span>`;
 
       const drafts = draft.ops.filter(o => !o.reqId);
@@ -696,7 +697,7 @@
             <div class="cr-op-icon"><i class="fa-solid ${t.icon}"></i></div>
             <div class="min-w-0 flex-1"><div class="cr-op-title">${esc(t.label)}: ${esc(Guest.resourceTitle(o.resource))} ${o.type === 'create' ? '(new record)' : `#${esc(o.id)}`}${o.label ? ` «${esc(o.label)}»` : ''}</div>
             <div class="cr-op-meta">${fields.length ? `Fields: ${esc(fields.join(', '))}` : ''}</div></div>
-            <div class="cr-op-actions">${recordLink(o)}${removeBtn(o.uid)}</div></div></article>`;
+            <div class="cr-op-actions">${guestRecordLink(o)}${removeBtn(o.uid)}</div></div></article>`;
         }).join('') + submittedHtml;
       }
       validateGuestForm();
@@ -713,7 +714,7 @@
             <div class="cr-op-title">${esc(t.label)}: ${esc(Guest.resourceTitle(o.resource))} ${o.type === 'create' ? '(new record)' : `#${esc(o.id)}`}${o.label ? ` «${esc(o.label)}»` : ''}</div>
             <div class="cr-op-meta">${fields.length ? `Fields: ${esc(fields.join(', '))}` : ''}${o.submittedAt ? ` · sent ${esc(fmtDate(o.submittedAt))}` : ''}</div>
           </div>
-          <div class="cr-op-actions">${recordLink(o)}${chipHtml}</div>
+          <div class="cr-op-actions">${guestRecordLink(o)}${chipHtml}</div>
         </div>
       </article>`;
     };

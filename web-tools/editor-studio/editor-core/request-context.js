@@ -26,10 +26,9 @@
   let maintenanceFrame = 0;
   let navigationFrame = 0;
   let navigationBusy = false;
+  let navigationPending = false;
   let mutationQueue = Promise.resolve();
   let batchState = null;
-  const clickedRows = new WeakSet();
-  const scrolledRows = new WeakSet();
   const expandedQuests = new WeakSet();
 
   const operationId = (op) => namespace.ChangeMarkers?.operationId(op)
@@ -100,7 +99,7 @@
     namespace.ChangeMarkers?.setRequest(request ? { ...request, operations } : null, target, { clearLive });
     renderBanner();
     scheduleMaintenance();
-    if (shouldNavigate) scheduleNavigation();
+    if (shouldNavigate) requestNavigation();
   };
 
   const prepareRequest = (payload, role = null, { preserveTarget = false, navigate = true } = {}) => {
@@ -280,22 +279,20 @@
 
   const navigate = async () => {
     navigationFrame = 0;
-    if (!target || navigationBusy) return;
+    if (!target || !navigationPending || navigationBusy) return;
     navigationBusy = true;
     try {
       await expandTargetQuest();
       const row = targetRow();
       if (!row) return;
-      if (!scrolledRows.has(row)) {
-        scrolledRows.add(row);
-        row.scrollIntoView?.({ block: 'center', behavior: 'smooth' });
-      }
+      // Selection rebuilds the quest tree. Complete the jump before clicking,
+      // otherwise the observer treats each new DOM node as an unvisited target
+      // and keeps undoing the user's subsequent quest/step selection.
+      navigationPending = false;
+      row.scrollIntoView?.({ block: 'center', behavior: 'smooth' });
       const selected = ['editor-row-active', 'ring-2', 'tree-selected', 'active', 'is-active', 'selected']
         .some((name) => row.classList.contains(name));
-      if (!selected && !clickedRows.has(row)) {
-        clickedRows.add(row);
-        row.click();
-      }
+      if (!selected) row.click();
       namespace.ChangeMarkers?.refresh();
     } finally {
       navigationBusy = false;
@@ -303,11 +300,18 @@
   };
 
   const scheduleNavigation = () => {
-    if (!active || !target || navigationFrame) return;
+    if (!active || !target || !navigationPending || navigationFrame) return;
     const raf = window.requestAnimationFrame || ((callback) => window.setTimeout(callback, 16));
     navigationFrame = raf(() => {
       navigate().catch((error) => console.warn('[requests] preview navigation failed', error));
     });
+  };
+
+  // Only an explicit navigation request may rearm the jump; DOM mutations
+  // merely retry it while the target row is still loading.
+  const requestNavigation = () => {
+    navigationPending = !!target;
+    scheduleNavigation();
   };
 
   const stateSnapshot = () => ({
@@ -582,7 +586,7 @@
     operation: findOperation,
     target: () => target ? { ...target } : null,
     request: () => request,
-    navigate: scheduleNavigation,
+    navigate: requestNavigation,
     mutate: mutateRequest,
     batch,
     renameCraftGroup,

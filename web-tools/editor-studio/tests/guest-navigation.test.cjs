@@ -299,3 +299,63 @@ test('admin record links keep the request snapshot and the edit flag', () => {
   assert.equal(workbench.recordLinkAttrs({ op: { type: 'update', resource: 'items', id: 42 } }), '');
   assert.equal(workbench.recordLinkAttrs({ op: { type: 'update', resource: 'unknown', id: 42 }, requestId: 'CR-7' }), '');
 });
+
+/** Execute the page's renderers in their original lexical scope, without starting API requests. */
+function draftPageHarness(ops, analysis = null) {
+  const elements = new Map();
+  const document = {
+    getElementById(id) {
+      if (!elements.has(id)) elements.set(id, {
+        innerHTML: '', textContent: '', value: '',
+        classList: { toggle() {} }, querySelector() { return null; },
+      });
+      return elements.get(id);
+    },
+  };
+  const EditorCore = {
+    RequestWorkbench: workbenchHarness(),
+    Guest: {
+      resourceTitle: (resource) => resource,
+      Draft: {
+        get: () => ({ ops }),
+        pendingCount: () => ops.filter(o => !o.reqId).length,
+        submittedCount: () => ops.filter(o => o.reqId).length,
+      },
+    },
+  };
+  const context = vm.createContext({ window: { EditorCore }, EditorCore, document, console, analysis });
+  vm.runInContext(source('utils.js'), context);
+  vm.runInContext(source('page-kit.js'), context);
+  const page = fs.readFileSync(path.join(root, 'change-requests.html'), 'utf8');
+  const script = page.match(/<script>([\s\S]*?)<\/script>/)[1];
+  const renderers = script.slice(0, script.indexOf('    let previewTimer = null;'));
+  vm.runInContext(`${renderers}\nG.analysis = analysis; renderGuestDraft();\n})();`, context);
+  return document.getElementById('g-ops').innerHTML;
+}
+
+for (const analysis of [null, { operations: [], summary: {} }]) {
+  test(`submitted operations render guest links without scope errors (${analysis ? 'analysed' : 'unanalyzed'})`, () => {
+    const html = draftPageHarness([
+      { type: 'update', resource: 'items', id: 42, data: { Name: 'Updated' }, reqId: 'CR-1' },
+      { type: 'create', resource: 'quests', tempId: 2000000003, data: { Name: 'New' }, reqId: 'CR-1' },
+      { type: 'delete', resource: 'items', id: 43, reqId: 'CR-1' },
+    ], analysis);
+    assert.match(html, /Awaiting admin review/);
+    assert.equal((html.match(/In request  CR-1/g) || []).length, 3);
+    assert.match(html, /href="items-editor\.html\?resource=items&amp;record=42"/);
+    assert.match(html, /href="quests-editor\.html\?resource=quests&amp;record=2000000003"/);
+    assert.equal((html.match(/data-guest-record="1"/g) || []).length, 2);
+    assert.doesNotMatch(html, /data-request=|data-remove-op=|record=43/);
+  });
+}
+
+test('mixed guest draft keeps editable draft links and submitted operation links', () => {
+  const html = draftPageHarness([
+    { uid: 'u1', type: 'update', resource: 'items', id: 7, data: { Name: 'Draft' } },
+    { type: 'update', resource: 'items', id: 42, reqId: 'CR-1' },
+  ]);
+  assert.match(html, /href="items-editor\.html\?resource=items&amp;record=7"/);
+  assert.match(html, /data-remove-op="u1"/);
+  assert.match(html, /href="items-editor\.html\?resource=items&amp;record=42"/);
+  assert.match(html, /In request  CR-1/);
+});
