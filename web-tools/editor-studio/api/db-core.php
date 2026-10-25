@@ -656,10 +656,13 @@ function require_same_origin_json_post(): void
     $requestHost = strtolower(trim((string)($_SERVER['HTTP_HOST'] ?? '')));
     $requestParts = parse_url('//' . $requestHost);
     $requestName = strtolower((string)($requestParts['host'] ?? ''));
-    $requestScheme = !empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' ? 'https' : 'http';
-    $requestPort = isset($requestParts['port']) ? (int)$requestParts['port'] : ($requestScheme === 'https' ? 443 : 80);
+    // HTTPS may terminate at a reverse proxy, so PHP can see HTTP while the
+    // browser correctly sends an HTTPS Origin. Host is the externally visible
+    // authority; only compare an explicit Host port. When Host has no port,
+    // use Origin's scheme default (80/443) rather than PHP's internal scheme.
+    $requestPort = isset($requestParts['port']) ? (int)$requestParts['port'] : $originPort;
     if (!in_array($scheme, ['http', 'https'], true) || $originHost === ''
-        || $originHost !== $requestName || $originPort !== $requestPort || $scheme !== $requestScheme) {
+        || $originHost !== $requestName || $originPort !== $requestPort) {
         respond(['ok' => false, 'error' => 'Запрос с постороннего сайта отклонён'], 403);
     }
 }
