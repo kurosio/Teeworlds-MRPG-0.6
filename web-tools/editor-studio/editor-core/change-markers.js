@@ -4,7 +4,7 @@
 
   const ROW_SELECTOR = '.editor-row[data-id], [data-node-type="quest"][data-id], [data-node-type="step"][data-id]';
   const ACTIVE_CLASSES = ['editor-row-active', 'ring-2', 'tree-selected', 'active', 'is-active', 'selected'];
-  const TYPE_LABEL = { create: 'Новая', update: 'Изменено', delete: 'Удаление' };
+  const TYPE_LABEL = { create: 'New', update: 'Changed', delete: 'Delete' };
 
   let guestOps = [];
   let request = null;
@@ -64,9 +64,9 @@
     badge.dataset.changeRowMarker = kind;
     badge.dataset.key = key;
     badge.title = kind === 'request'
-      ? `${TYPE_LABEL[op.type] || 'Изменено'} в запросе ${request?.id || ''}`
-      : op.reqId ? `Отправлено в запросе ${op.reqId}` : 'Локальный черновик запроса';
-    badge.innerHTML = `<i class="fa-solid ${kind === 'request' ? 'fa-code-pull-request' : op.reqId ? 'fa-hourglass-half' : 'fa-pen'}"></i>${kind === 'request' ? 'запрос' : op.reqId ? 'проверка' : 'черновик'}`;
+      ? `${TYPE_LABEL[op.type] || 'Changed'}  in request  ${request?.id || ''}`
+      : op.reqId ? `Sent in request  ${op.reqId}` : 'Local request draft';
+    badge.innerHTML = `<i class="fa-solid ${kind === 'request' ? 'fa-code-pull-request' : op.reqId ? 'fa-hourglass-half' : 'fa-pen'}"></i>${kind === 'request' ? 'request' : op.reqId ? 'review' : 'draft'}`;
     row.appendChild(badge);
   };
 
@@ -100,7 +100,7 @@
       if (node.dataset.changeRequestPrevTitle === undefined) {
         node.dataset.changeRequestPrevTitle = node.getAttribute('title') || '';
       }
-      node.title = `Поле изменено в запросе ${request?.id || ''} · версия ${request?.version || 1}`;
+      node.title = `Field changed in request  ${request?.id || ''}  · version  ${request?.version || 1}`;
     } else {
       node.classList.add('guest-field-changed');
       node.classList.toggle('is-submitted', !!op.reqId);

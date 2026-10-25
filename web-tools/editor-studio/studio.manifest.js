@@ -15,37 +15,37 @@
 window.STUDIO_MANIFEST = [
   {
     id: 'file_editors',
-    title: 'Редакторы файлов',
+    title: 'File editors',
     items: [
-      { key: 'scenario', title: 'Сценарии', icon: 'fa-scroll', src: 'scenario-editor.html', adminOnly: true, hint: 'Шаги и компоненты сценария' },
+      { key: 'scenario', title: 'Scenarios', icon: 'fa-scroll', src: 'scenario-editor.html', adminOnly: true, hint: 'Scenario steps and components' },
     ]
   },
   {
     id: 'db_editors',
-    title: 'Редакторы БД',
+    title: 'Database editors',
     items: [
-      { key: 'vouchers', title: 'Ваучеры', icon: 'fa-ticket', src: 'vouchers-editor.html', adminOnly: true, hint: 'Подарочные коды и награды' },
-      { key: 'crafts', title: 'Крафты', icon: 'fa-hammer', src: 'crafts-editor.html', hint: 'Рецепты и ингредиенты' },
-      { key: 'warehouses', title: 'Склады и магазины', icon: 'fa-warehouse', src: 'warehouse-editor.html', hint: 'Товары складов по мирам' },
-      { key: 'items', title: 'Предметы', icon: 'fa-cube', src: 'items-editor.html', hint: 'Каталог предметов' },
-      { key: 'bots_info', title: 'Боты', icon: 'fa-robot', src: 'bots-info-editor.html', hint: 'Профили мобов' },
-      { key: 'bots_mobs', title: 'Мобы', icon: 'fa-skull', src: 'mobs-editor.html', hint: 'Спавны, уровни и дроп' },
-      { key: 'bots_npc', title: 'NPC', icon: 'fa-user-ninja', src: 'bots-npc-editor.html', hint: 'NPC и их диалоги' },
-      { key: 'quests', title: 'Квесты', icon: 'fa-scroll', src: 'quests-editor.html', hint: 'Квесты, шаги и задания' },
-      { key: 'dungeons', title: 'Подземелья', icon: 'fa-dungeon', src: 'dungeons-editor.html', hint: 'Вход, сценарий и таймер' },
-      { key: 'worlds', title: 'Миры', icon: 'fa-globe', src: 'worlds-editor.html', hint: 'Миры и их флаги' },
-      { key: 'aethers', title: 'Аэтры (телепорты)', icon: 'fa-wand-magic-sparkles', src: 'aethers-editor.html', hint: 'Точки телепортации' },
-      { key: 'accounts', title: 'Аккаунты игроков', icon: 'fa-users-gear', src: 'accounts-editor.html', adminOnly: true, hint: 'Логины, пароли, таймауты' },
+      { key: 'vouchers', title: 'Vouchers', icon: 'fa-ticket', src: 'vouchers-editor.html', adminOnly: true, hint: 'Gift codes and rewards' },
+      { key: 'crafts', title: 'Crafts', icon: 'fa-hammer', src: 'crafts-editor.html', hint: 'Recipes and ingredients' },
+      { key: 'warehouses', title: 'Warehouses and shops', icon: 'fa-warehouse', src: 'warehouse-editor.html', hint: 'Warehouse stock by world' },
+      { key: 'items', title: 'Items', icon: 'fa-cube', src: 'items-editor.html', hint: 'Item catalogue' },
+      { key: 'bots_info', title: 'Bots', icon: 'fa-robot', src: 'bots-info-editor.html', hint: 'Mob profiles' },
+      { key: 'bots_mobs', title: 'Mobs', icon: 'fa-skull', src: 'mobs-editor.html', hint: 'Spawns, levels and drop' },
+      { key: 'bots_npc', title: 'NPC', icon: 'fa-user-ninja', src: 'bots-npc-editor.html', hint: 'NPCs and their dialogues' },
+      { key: 'quests', title: 'Quests', icon: 'fa-scroll', src: 'quests-editor.html', hint: 'Quests, steps and objectives' },
+      { key: 'dungeons', title: 'Dungeons', icon: 'fa-dungeon', src: 'dungeons-editor.html', hint: 'Entrance, scenario and timer' },
+      { key: 'worlds', title: 'Worlds', icon: 'fa-globe', src: 'worlds-editor.html', hint: 'Worlds and their flags' },
+      { key: 'aethers', title: 'Aethers (teleports)', icon: 'fa-wand-magic-sparkles', src: 'aethers-editor.html', hint: 'Teleport points' },
+      { key: 'accounts', title: 'Player accounts', icon: 'fa-users-gear', src: 'accounts-editor.html', adminOnly: true, hint: 'Logins, passwords, timeouts' },
     ]
   },
   {
     id: 'system',
-    title: 'Система',
+    title: 'System',
     items: [
-      { key: 'requests', title: 'Запросы гостей', guestTitle: 'Мои запросы', icon: 'fa-code-pull-request', src: 'change-requests.html', hint: 'Проверка правок гостей' },
-      { key: 'guests', title: 'Гостевые пользователи', icon: 'fa-user-shield', src: 'guests-editor.html', adminOnly: true, hint: 'Доступы гостей по вкладкам' },
-      { key: 'settings', title: 'Настройки', icon: 'fa-gear', src: 'settings.html', adminOnly: true, hint: 'Подключение к базе' },
-      { key: 'database', title: 'База данных', icon: 'fa-database', src: 'database.html', adminOnly: true, hint: 'Дамп и восстановление' },
+      { key: 'requests', title: 'Guest requests', guestTitle: 'My requests', icon: 'fa-code-pull-request', src: 'change-requests.html', hint: 'Reviewing guest edits' },
+      { key: 'guests', title: 'Guest users', icon: 'fa-user-shield', src: 'guests-editor.html', adminOnly: true, hint: 'Guest access by tab' },
+      { key: 'settings', title: 'Settings', icon: 'fa-gear', src: 'settings.html', adminOnly: true, hint: 'Database connection' },
+      { key: 'database', title: 'Database', icon: 'fa-database', src: 'database.html', adminOnly: true, hint: 'Dump and restore' },
     ]
   }
 ];

@@ -26,15 +26,15 @@
         <i class="fa-solid fa-user-ninja text-accent text-xl"></i>
         <div>
           <h1>NPC</h1>
-          <div class="editor-page-sub">NPC в мире: позиция, эмоции и привязанный диалог.</div>
+          <div class="editor-page-sub">World NPCs: position, emotions and attached dialogue.</div>
         </div>
       </div>
       <div class="editor-page-actions">
         <button class="editor-btn editor-btn-secondary" data-action="refresh">
-          <i class="fa-solid fa-rotate"></i><span>Обновить</span>
+          <i class="fa-solid fa-rotate"></i><span>Refresh</span>
         </button>
         <button class="editor-btn editor-btn-primary" data-action="new">
-          <i class="fa-solid fa-plus"></i><span>Новый NPC</span>
+          <i class="fa-solid fa-plus"></i><span>New NPC</span>
         </button>
       </div>
     </div>
@@ -47,9 +47,9 @@
         <div class="editor-dock-pad">
           <div class="flex items-center justify-between gap-3">
             <div>
-              <div class="text-sm font-semibold">Список NPC</div>
+              <div class="text-sm font-semibold">NPC list</div>
               <div class="text-xs editor-muted-text">
-                Всего: <span data-bind="count">—</span>
+                Total: <span data-bind="count">—</span>
               </div>
             </div>
           </div>
@@ -61,14 +61,14 @@
                 data-bind="search"
                 type="search"
                 class="w-full editor-input form-input"
-                placeholder="Поиск по ID, мобу или миру…"
+                placeholder="Search by ID, mob or world…"
               />
             </div>
           </div>
 
           <div class="mt-3 editor-sidebar-filters">
             <select data-bind="filter-world" class="w-full editor-input form-input">
-              <option value="">Все миры</option>
+              <option value="">All worlds</option>
             </select>
           </div>
 
@@ -86,23 +86,23 @@
           <!-- Toolbar -->
           <div class="editor-sticky-toolbar flex items-start justify-between gap-4">
             <div>
-              <div class="text-lg font-semibold" data-bind="title">Выберите NPC</div>
+              <div class="text-lg font-semibold" data-bind="title">Select an NPC</div>
               <div class="editor-muted-text text-sm mt-1" data-bind="subtitle">
-                или создайте нового
+                or create a new one
               </div>
             </div>
             <div class="editor-page-actions">
               <span data-bind="dirty-pill" class="editor-dirty-pill hidden">
-                Есть несохранённые изменения
+                You have unsaved changes
               </span>
               <button class="editor-btn editor-btn-primary" data-action="save" disabled>
-                <i class="fa-solid fa-floppy-disk"></i><span>Сохранить</span>
+                <i class="fa-solid fa-floppy-disk"></i><span>Save</span>
               </button>
               <button class="editor-btn editor-btn-secondary hidden" data-action="cancel" disabled>
-                <i class="fa-solid fa-rotate-left"></i><span>Отменить</span>
+                <i class="fa-solid fa-rotate-left"></i><span>Cancel</span>
               </button>
               <button class="editor-btn editor-btn-secondary" data-action="delete" disabled>
-                <i class="fa-solid fa-trash"></i><span>Удалить</span>
+                <i class="fa-solid fa-trash"></i><span>Delete</span>
               </button>
             </div>
           </div>
@@ -112,8 +112,8 @@
             <div class="editor-panel-card">
               <div class="flex items-center justify-between gap-3">
                 <div>
-                  <div class="font-semibold">Параметры NPC</div>
-                  <div class="editor-muted-text text-sm">Две вкладки: основные поля и диалог.</div>
+                  <div class="font-semibold">NPC settings</div>
+                  <div class="editor-muted-text text-sm">Two tabs: main fields and dialogue.</div>
                 </div>
                 <div data-bind="tab-root"></div>
               </div>
@@ -123,14 +123,14 @@
                 <div data-tab="basic" class="space-y-6">
                   <div class="grid gap-4 md:grid-cols-[220px,1fr] items-start">
                     <div class="editor-panel-card flex flex-col items-center gap-3">
-                      <div class="text-xs uppercase tracking-wider editor-muted-text">Скин</div>
+                      <div class="text-xs uppercase tracking-wider editor-muted-text">Skin</div>
                       <div
                         class="npc-skin-frame w-36 h-36 rounded-2xl flex items-center justify-center"
                       >
-                        <img data-bind="skin-img" class="w-28 h-28" alt="Превью скина" />
+                        <img data-bind="skin-img" class="w-28 h-28" alt="Skin preview" />
                       </div>
                       <div data-bind="skin-meta" class="text-xs editor-muted-text text-center">
-                        Скин не загружен
+                        Skin not loaded
                       </div>
                     </div>
                     <div class="editor-form-grid-2" data-bind="form-basic"></div>
@@ -159,41 +159,41 @@
     const TABLE = 'bots_npc';
 
     const EMOTE_OPTIONS = [
-      { value: '',         label: '— нет —'   },
-      { value: 'Pain',     label: 'Боль'       },
-      { value: 'Happy',    label: 'Радость'      },
-      { value: 'Surprise', label: 'Удивление'   },
-      { value: 'Angry',    label: 'Злость'      },
-      { value: 'Blink',    label: 'Моргание'      },
+      { value: '',         label: '— none —'   },
+      { value: 'Pain',     label: 'Pain'       },
+      { value: 'Happy',    label: 'Joy'      },
+      { value: 'Surprise', label: 'Surprise'   },
+      { value: 'Angry',    label: 'Anger'      },
+      { value: 'Blink',    label: 'Blink'      },
     ];
 
     const DIALOG_SIDE_OPTIONS = [
-      { value: 'default',  label: 'обращается к игроку' },
-      { value: 'author',   label: 'говорит от себя'       },
-      { value: 'thoughts', label: 'мысли'       },
+      { value: 'default',  label: 'addresses the player' },
+      { value: 'author',   label: 'speaks as itself'       },
+      { value: 'thoughts', label: 'thoughts'       },
     ];
 
     const DIALOG_EXTRA_SPEAKERS = [
-      { value: -1, label: 'Игрок'       },
-      { value:  0, label: 'Этот моб' },
+      { value: -1, label: 'Player'       },
+      { value:  0, label: 'This mob' },
     ];
 
     const BASIC_FIELDS = {
       BotID: {
         type: 'db_select',
-        label: 'Моб NPC',
+        label: 'NPC mob',
         validate: { required: true },
-        ui: { dbKey: 'mob', placeholder: '— моб —', searchPlaceholder: 'Поиск моба…' },
+        ui: { dbKey: 'mob', placeholder: '— mob —', searchPlaceholder: 'Search a mob…' },
       },
       WorldID: {
         type: 'db_select',
-        label: 'Мир',
-        ui: { dbKey: 'world', placeholder: '— мир —', searchPlaceholder: 'Поиск мира…' },
+        label: 'World',
+        ui: { dbKey: 'world', placeholder: '— world —', searchPlaceholder: 'Search a world…' },
       },
       // Позиция NPC: те же запрещённые игровые тайлы, что и у мобов.
       Position: {
         type: 'vec2',
-        label: 'Позиция (X, Y)',
+        label: 'Position (X, Y)',
         ui: {
           min: 0,
           step: 1,
@@ -208,27 +208,27 @@
       },
       GiveQuestID: {
         type: 'db_select',
-        label: 'Выдаёт квест',
-        ui: { dbKey: 'quest', placeholder: '— без квеста —', searchPlaceholder: 'Поиск квеста…' },
+        label: 'Gives quest',
+        ui: { dbKey: 'quest', placeholder: '— no quest —', searchPlaceholder: 'Search a quest…' },
       },
       Function: {
         type: 'number',
-        label: 'Функция',
+        label: 'Function',
         ui: { step: 1, placeholder: '-1' },
       },
       Static: {
         type: 'toggle',
-        label: 'Статичный',
+        label: 'Static',
       },
       Emote: {
-        label: 'Эмоция',
+        label: 'Emotion',
         ui: { type: 'select', options: EMOTE_OPTIONS },
       },
     };
 
     const TAB_DEFS = [
-      { id: 'basic',  title: 'Основное', icon: 'fa-bars-staggered' },
-      { id: 'dialog', title: 'Диалог',   icon: 'fa-comments'       },
+      { id: 'basic',  title: 'General', icon: 'fa-bars-staggered' },
+      { id: 'dialog', title: 'Dialogue',   icon: 'fa-comments'       },
     ];
 
     /* ═══════════════════════════════════════════════════
@@ -399,18 +399,18 @@
       /** Title and subtitle */
       syncHeader() {
         if (!state.model) {
-          if (DOM.title)    DOM.title.textContent    = 'Выберите NPC';
-          if (DOM.subtitle) DOM.subtitle.textContent = 'или создайте нового';
+          if (DOM.title)    DOM.title.textContent    = 'Select an NPC';
+          if (DOM.subtitle) DOM.subtitle.textContent = 'or create a new one';
           return;
         }
         const m = state.model;
-        const botName = lookupLabel(state.lookups.bots, m.BotID, m.BotID ? `Бот #${m.BotID}` : 'Новый NPC');
+        const botName = lookupLabel(state.lookups.bots, m.BotID, m.BotID ? `Bot #${m.BotID}` : 'New NPC');
         const world   = lookupLabel(state.lookups.worlds, m.WorldID, '—');
-        const idLabel = state.selectedId ? `ID ${state.selectedId}` : 'Новая запись';
+        const idLabel = state.selectedId ? `ID ${state.selectedId}` : 'New record';
 
         if (DOM.title)    DOM.title.textContent    = botName;
         if (DOM.subtitle) DOM.subtitle.textContent =
-          `${idLabel} · Мир: ${world} · X ${m.PosX}, Y ${m.PosY}`;
+          `${idLabel}  · World:  ${world} · X ${m.PosX}, Y ${m.PosY}`;
       },
 
       /** Skin preview */
@@ -419,14 +419,14 @@
         if (!state.model) {
           DOM.skinImg.src = '';
           DOM.skinImg.classList.add('hidden');
-          DOM.skinMeta.textContent = 'Скин не выбран.';
+          DOM.skinMeta.textContent = 'No skin selected.';
           return;
         }
         const info = state.lookups.botSkins.get(String(state.model.BotID));
         if (!info || !state.skinsApi) {
           DOM.skinImg.src = '';
           DOM.skinImg.classList.add('hidden');
-          DOM.skinMeta.textContent = 'Скин не загружен';
+          DOM.skinMeta.textContent = 'Skin not loaded';
           return;
         }
         const url = EditorCore.utils.renderSkinApiUrl(state.skinsApi, info);
@@ -442,7 +442,7 @@
 
         if (!rows.length) {
           if (DOM.count) DOM.count.textContent = '0';
-          DOM.list.innerHTML = '<div class="editor-empty-state">NPC пока нет — нажмите «Новый NPC», чтобы добавить первого.</div>';
+          DOM.list.innerHTML = '<div class="editor-empty-state">No NPCs yet — click “New NPC” to add the first one.</div>';
           return;
         }
 
@@ -456,12 +456,12 @@
 
         if (DOM.count) {
           DOM.count.textContent = filtered.length < rows.length
-            ? `${filtered.length} из ${rows.length}`
+            ? `${filtered.length}  of  ${rows.length}`
             : `${rows.length}`;
         }
 
         if (!filtered.length) {
-          DOM.list.innerHTML = '<div class="editor-empty-state">Ничего не найдено по фильтрам</div>';
+          DOM.list.innerHTML = '<div class="editor-empty-state">Nothing matches the filters</div>';
           return;
         }
 
@@ -491,12 +491,12 @@
 
       _rowHtml(row) {
         const active  = num(row.ID) === num(state.selectedId);
-        const bot     = lookupLabel(state.lookups.bots,   row.BotID,       `Бот #${row.BotID || '—'}`);
+        const bot     = lookupLabel(state.lookups.bots,   row.BotID,       `Bot #${row.BotID || '—'}`);
         const world   = lookupLabel(state.lookups.worlds, row.WorldID,     '—');
         const quest   = lookupLabel(state.lookups.quests, row.GiveQuestID, '');
         const skin    = this._skinThumb(row.BotID);
         const activeCls = active ? 'editor-row-active' : '';
-        const questSuffix = quest ? ` · Квест: ${quest}` : '';
+        const questSuffix = quest ? ` · Quest:  ${quest}` : '';
 
         return `
           <button type="button"
@@ -507,7 +507,7 @@
               <div class="min-w-0">
                 <div class="font-semibold truncate">${esc(bot)}</div>
                 <div class="text-xs editor-muted-text truncate">
-                  ID ${esc(row.ID)} · Мир: ${esc(world)}${esc(questSuffix)}
+                  ID ${esc(row.ID)}  · World:  ${esc(world)}${esc(questSuffix)}
                 </div>
               </div>
             </div>
@@ -532,7 +532,7 @@
 
     const Forms = {
       clear() {
-        const empty = '<div class="editor-empty-state editor-field--span-all">Выберите NPC в списке слева или нажмите «Новый NPC».</div>';
+        const empty = '<div class="editor-empty-state editor-field--span-all">Select an NPC on the left or click “New NPC”.</div>';
         DOM.formBasic.innerHTML  = empty;
         DOM.formDialog.innerHTML = empty;
         state.forms.basic  = null;
@@ -623,7 +623,7 @@
     const Actions = {
       async canDiscardDirty() {
         if (!dirty?.isDirty?.()) return true;
-        return EditorCore.Page.confirm('Есть несохранённые изменения. Продолжить без сохранения?');
+        return EditorCore.Page.confirm('You have unsaved changes. Continue without saving?');
       },
 
       async select(row, { confirmDirty = false } = {}) {
@@ -658,7 +658,7 @@
             ? state.rows.find((r) => num(r.ID) === state.prevSelectedId)
             : null;
           this.select(fallback || null);
-          UI.setStatus('Создание отменено.', 'ok');
+          UI.setStatus('Creation cancelled.', 'ok');
           return;
         }
 
@@ -667,56 +667,56 @@
         dirty.setClean();
         Forms.mount();
         UI.refresh();
-        UI.setStatus('Изменения отменены.', 'ok');
+        UI.setStatus('Changes discarded.', 'ok');
       },
 
       async save() {
         if (!state.model) return;
-        UI.setStatus('Сохранение…');
+        UI.setStatus('Saving…');
         try {
           const payload = Model.toPayload(state.model);
 
           if (state.selectedId) {
             await EditorCore.DBCrud.update(TABLE, state.selectedId, payload);
-            UI.setStatus('Сохранено.', 'ok');
-            EditorCore.UI.toast('Сохранено', 'success');
+            UI.setStatus('Saved.', 'ok');
+            EditorCore.UI.toast('Saved', 'success');
           } else {
             const res = await EditorCore.DBCrud.create(TABLE, payload);
             state.selectedId     = num(res.id);
             state.prevSelectedId = 0;
-            UI.setStatus('Запись создана.', 'ok');
-            EditorCore.UI.toast('Создано', 'success');
+            UI.setStatus('Record created.', 'ok');
+            EditorCore.UI.toast('Created', 'success');
           }
 
           dirty.setClean();
           await this.loadList();
         } catch (err) {
-          this._handleError(err, 'Не удалось сохранить');
+          this._handleError(err, 'Could not save');
         }
       },
 
       async remove() {
-        if (!state.selectedId || !await EditorCore.Page.confirm('Удалить запись?')) return;
-        UI.setStatus('Удаление…');
+        if (!state.selectedId || !await EditorCore.Page.confirm('Delete the record?')) return;
+        UI.setStatus('Deleting…');
         try {
           await EditorCore.DBCrud.remove(TABLE, state.selectedId);
-          EditorCore.UI.toast('Удалено', 'success');
-          UI.setStatus('Удалено.', 'ok');
+          EditorCore.UI.toast('Deleted', 'success');
+          UI.setStatus('Deleted.', 'ok');
           await this.select(null);
           await this.loadList();
         } catch (err) {
-          this._handleError(err, 'Не удалось удалить');
+          this._handleError(err, 'Could not delete');
         }
       },
 
       async loadList() {
-        UI.setStatus('Загрузка списка…');
+        UI.setStatus('Loading list…');
         try {
           const search = DOM.search?.value?.trim() || '';
           const res    = await EditorCore.DBCrud.list(TABLE, { search, limit: 5000, offset: 0 });
           state.rows   = Array.isArray(res.rows) ? res.rows : [];
 
-          UI.setStatus(state.rows.length ? '' : 'Список пуст.', 'muted');
+          UI.setStatus(state.rows.length ? '' : 'The list is empty.', 'muted');
           UI.renderList();
 
           // Restore selection
@@ -727,7 +727,7 @@
             await this.select(state.rows[0]);
           }
         } catch (err) {
-          this._handleError(err, 'Не удалось загрузить');
+          this._handleError(err, 'Could not load');
         }
       },
 
@@ -816,7 +816,7 @@
       state.skinsApi = skinsApi;
       if (DOM.filterWorld) {
         const prev = DOM.filterWorld.value;
-        DOM.filterWorld.innerHTML = '<option value="">Все миры</option>';
+        DOM.filterWorld.innerHTML = '<option value="">All worlds</option>';
         Array.from(worlds.entries())
           .sort((a, b) => Number(a[0]) - Number(b[0]))
           .forEach(([id, label]) => {

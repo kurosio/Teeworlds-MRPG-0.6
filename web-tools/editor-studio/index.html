@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -23,7 +23,13 @@
   <script src="editor-core/utils.js"></script>
   <script src="studio.manifest.js"></script>
   <script src="editor-core/guest-mode.js"></script>
-  <script src="editor-core/i18n-en.js"></script>
+  <!-- Языки интерфейса: манифест папки localization/ и сами языковые файлы -->
+  <script src="localization/index.js"></script>
+  <script>
+    document.write(window.EditorCoreLocalization.files
+      .map(function (file) { return '<script src="localization/' + file + '"><\/script>'; })
+      .join(''));
+  </script>
   <script src="editor-core/i18n.js"></script>
   <script src="editor-core/page-kit.js"></script>
 
@@ -36,20 +42,104 @@
     .studio-iframe { width: 100%; height: 100%; border: 0; background: var(--editor-bg); }
     .studio-app { height: 100vh; height: 100dvh; }
 
-    /* ── боковая панель ───────────────────────────────────────────── */
+    /* ── боковая панель: «рельс» из иконок ─────────────────────────────
+       По умолчанию меню занимает минимум места: виден только столбец иконок
+       (рельс). Наведение курсора или фокус с клавиатуры раскрывает панель
+       ПОВЕРХ рабочей области — редактор в iframe при этом не пересобирается
+       и не «прыгает». Когда область не активна, панель снова сворачивается
+       до рельса. Кнопка в шапке (Ctrl+B) закрепляет панель открытой: тогда
+       она занимает место в раскладке и ничего не перекрывает. */
+    .studio-app {
+      --studio-rail-w: 64px;
+      --studio-panel-w: 292px;
+    }
+    @media (max-width: 1280px) { .studio-app { --studio-panel-w: 276px; } }
+    @media (max-width: 1024px) { .studio-app { --studio-rail-w: 58px; --studio-panel-w: 260px; } }
+    @media (max-width: 860px)  { .studio-app { --studio-rail-w: 52px; --studio-panel-w: 244px; } }
+    @media (min-width: 1680px) { .studio-app { --studio-panel-w: 312px; } }
+
     .studio-sidebar {
-      width: 288px;
+      position: relative;
+      flex: 0 0 auto;
+      display: none;
+      width: var(--studio-rail-w);
+      z-index: 60;
+      transition: width .2s ease;
+    }
+    @media (min-width: 768px) { .studio-sidebar { display: block; } }
+    body.studio-sidebar-pinned .studio-sidebar { width: var(--studio-panel-w); }
+
+    /* Панель вынесена из потока: раскрытие не меняет ширину рабочей области. */
+    .studio-sidebar__panel {
+      position: absolute; top: 0; bottom: 0; left: 0;
+      display: flex; flex-direction: column;
+      width: var(--studio-rail-w);
+      overflow: hidden;
       background: var(--editor-surface);
       border-right: 1px solid var(--editor-line);
-      transition: margin-left .18s ease;
+      transition: width .2s ease, box-shadow .2s ease;
     }
-    @media (min-width: 768px) {
-      body.studio-sidebar-collapsed #studioSidebar {
-        display: none !important;
-      }
+    .studio-sidebar.is-open .studio-sidebar__panel,
+    body.studio-sidebar-pinned .studio-sidebar__panel {
+      width: var(--studio-panel-w);
+    }
+    .studio-sidebar.is-open .studio-sidebar__panel {
+      box-shadow: var(--editor-shadow-md);
+    }
+
+    /* ── рельс: видны только иконки ─────────────────────────────────── */
+    .studio-sidebar.is-rail .studio-label,
+    .studio-sidebar.is-rail .studio-item-text,
+    .studio-sidebar.is-rail .studio-brand-text,
+    .studio-sidebar.is-rail .studio-group-count { display: none; }
+
+    .studio-sidebar.is-rail .studio-brand { padding: 14px 0; justify-content: center; }
+    .studio-sidebar.is-rail .studio-nav { padding: 0 6px 10px; }
+    .studio-sidebar.is-rail .studio-item { justify-content: center; gap: 0; padding: 6px 0; }
+    .studio-sidebar.is-rail .studio-group-title {
+      justify-content: center; padding: 10px 0 2px; margin-top: 4px;
+    }
+    /* Заголовок группы остаётся для скринридеров, но не занимает места. */
+    .studio-sidebar.is-rail .studio-group-label {
+      position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+      overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%);
+      white-space: nowrap; border: 0;
+    }
+    .studio-sidebar.is-rail .studio-group-title::after {
+      content: ''; width: 22px; height: 1px; background: var(--editor-line-strong);
+    }
+    /* Счётчик запросов в рельсе — точка в углу иконки. */
+    .studio-sidebar.is-rail .studio-nav-badge {
+      position: absolute; top: 4px; right: 10px;
+      width: 8px; height: 8px; min-width: 0; padding: 0; border-radius: 999px;
+      font-size: 0; line-height: 0; overflow: hidden;
+      box-shadow: 0 0 0 2px var(--editor-surface);
+    }
+    .studio-sidebar.is-rail .studio-sidebar-foot {
+      flex-direction: column; align-items: center; gap: 6px; padding: 10px 0;
+    }
+    .studio-sidebar.is-rail .studio-foot-btn {
+      flex: 0 0 auto; width: 36px; min-width: 36px; height: 36px; padding: 0;
+      justify-content: center;
+    }
+
+    /* ── мобильное меню (наведения на телефоне нет) ─────────────────── */
+    .studio-drawer {
+      width: min(320px, 86vw);
+      background: var(--editor-surface);
+      border-right: 1px solid var(--editor-line);
+      display: flex; flex-direction: column;
+    }
+
+    /* Кнопка-переключатель в «нажатом» состоянии (меню закреплено). */
+    .studio-app .editor-icon-btn.active {
+      color: var(--editor-primary);
+      border-color: color-mix(in srgb, var(--editor-primary) 45%, transparent);
+      background: color-mix(in srgb, var(--editor-primary) 14%, transparent);
     }
 
     .studio-brand { padding: 16px 16px 12px; display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .studio-brand-text { min-width: 0; flex: 1 1 auto; }
     .studio-brand-mark {
       width: 38px; height: 38px; flex: 0 0 38px; border-radius: 11px;
       display: grid; place-items: center; color: #fff; font-size: 15px;
@@ -59,32 +149,6 @@
     .studio-brand-title { font-size: 15px; font-weight: 700; letter-spacing: -.01em; line-height: 1.2; }
     .studio-brand-sub { margin-top: 2px; font-size: 11.5px; color: var(--editor-text-muted); line-height: 1.3; }
 
-    .studio-search-block { padding: 0 12px 12px; }
-    .studio-search-wrap { position: relative; display: block; }
-    .studio-search-wrap > i {
-      position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
-      color: var(--editor-text-muted); font-size: 12px; pointer-events: none;
-    }
-    .studio-search-wrap input { height: 36px; min-height: 36px; padding-left: 32px; padding-right: 54px; font-size: 13px; }
-    .studio-search-wrap input::-webkit-search-cancel-button { display: none; -webkit-appearance: none; }
-    .studio-search-key {
-      position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
-      padding: 1px 6px; border: 1px solid var(--editor-line); border-radius: 5px;
-      color: var(--editor-text-muted); background: var(--editor-soft-bg);
-      font-size: 10px; font-weight: 600; letter-spacing: .02em; pointer-events: none;
-    }
-    .studio-search-clear {
-      position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
-      width: 24px; height: 24px; border-radius: 6px;
-      display: inline-flex; align-items: center; justify-content: center;
-      color: var(--editor-text-muted); background: transparent; border: 0; cursor: pointer;
-    }
-    .studio-search-clear:hover { background: var(--editor-soft-bg-strong); color: var(--editor-text); }
-    .studio-search-clear[hidden], .studio-search-key[hidden] { display: none; }
-    .studio-item.is-kbd-focus {
-      background: var(--editor-row-hover-bg);
-      border-color: var(--editor-soft-border-strong);
-    }
     .studio-pass-wrap { position: relative; display: block; }
     .studio-pass-wrap input { padding-right: 38px; }
     .studio-pass-toggle {
@@ -151,6 +215,8 @@
       display: flex; align-items: center; gap: 8px;
       padding: 12px; border-top: 1px solid var(--editor-line);
     }
+    .studio-foot-btn { flex: 1 1 auto; min-width: 0; }
+    .studio-foot-icon { flex: 0 0 auto; }
 
     .studio-role-chip {
       display: inline-flex; align-items: center; gap: 5px; padding: 1px 7px;
@@ -245,64 +311,56 @@
 
     @media (prefers-reduced-motion: reduce) {
       .studio-item, .studio-item:hover, .studio-loading::after { transition: none; animation: none; }
-    }
-    @media (max-width: 767px) {
-      .studio-sidebar { width: min(320px, 86vw); }
+      .studio-sidebar, .studio-sidebar__panel { transition: none; }
     }
   </style>
 </head>
 
 <body class="editor-theme" data-editor="home">
   <div id="studioApp" class="studio-app flex overflow-hidden hidden">
-    <!-- Sidebar (adaptive) -->
-    <aside id="studioSidebar" class="studio-sidebar flex-shrink-0 hidden md:flex flex-col">
-      <div class="studio-brand">
-        <span class="studio-brand-mark"><i class="fa-solid fa-layer-group"></i></span>
-        <div class="min-w-0">
-          <div class="studio-brand-title truncate">Editor Studio</div>
-          <div class="studio-brand-sub truncate flex items-center gap-2">
-            <span>Рабочее место MRPG</span>
-            <span id="studioRoleChip" class="studio-role-chip hidden"></span>
+    <!-- Sidebar: рельс с иконками, раскрывается при наведении/фокусе -->
+    <aside id="studioSidebar" class="studio-sidebar">
+      <div class="studio-sidebar__panel">
+        <div class="studio-brand">
+          <span class="studio-brand-mark"><i class="fa-solid fa-layer-group"></i></span>
+          <div class="studio-brand-text">
+            <div class="studio-brand-title truncate">Editor Studio</div>
+            <div class="studio-brand-sub truncate flex items-center gap-2">
+              <span class="studio-label">MRPG workspace</span>
+              <span id="studioRoleChip" class="studio-role-chip hidden"></span>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div class="studio-search-block">
-        <div class="studio-search-wrap">
-          <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
-          <input id="studioSearch" type="search" class="w-full editor-input" aria-label="Поиск редактора" placeholder="Найти редактор…" autocomplete="off" />
-          <kbd id="studioSearchKey" class="studio-search-key">Ctrl K</kbd>
-          <button id="studioSearchClear" type="button" class="studio-search-clear" title="Очистить поиск" aria-label="Очистить поиск" hidden>
-            <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+        <nav id="studioNav" class="studio-nav flex-grow overflow-y-auto" aria-label="Editors"></nav>
+
+        <div class="studio-sidebar-foot">
+          <button id="pinSidebarBtn" class="editor-icon-btn studio-foot-icon" type="button" title="Pin the menu (Ctrl+B)" aria-label="Pin the menu (Ctrl+B)" aria-pressed="false">
+            <i class="fa-solid fa-thumbtack"></i>
+          </button>
+          <button id="open-new-tab" class="editor-btn editor-btn-secondary studio-foot-btn" title="Open the current editor in a new tab">
+            <i class="fa-solid fa-arrow-up-right-from-square"></i>
+            <span class="truncate studio-label">New tab</span>
+          </button>
+          <button id="logoutBtn" class="editor-icon-btn studio-foot-icon" title="Sign out" aria-label="Sign out">
+            <i class="fa-solid fa-right-from-bracket"></i>
           </button>
         </div>
-      </div>
-
-      <nav id="studioNav" class="studio-nav flex-grow overflow-y-auto" aria-label="Редакторы"></nav>
-
-      <div class="studio-sidebar-foot">
-        <button id="open-new-tab" class="editor-btn editor-btn-secondary flex-1 min-w-0" title="Открыть текущий редактор в новой вкладке">
-          <i class="fa-solid fa-arrow-up-right-from-square"></i>
-          <span class="truncate">Во вкладке</span>
-        </button>
-        <button id="logoutBtn" class="editor-icon-btn" title="Выйти" aria-label="Выйти">
-          <i class="fa-solid fa-right-from-bracket"></i>
-        </button>
       </div>
     </aside>
 
     <!-- Workspace -->
     <div class="flex flex-col flex-grow overflow-hidden min-w-0">
       <header class="studio-mobile-bar md:hidden">
-        <button id="mobileMenuBtn" class="editor-icon-btn" title="Открыть меню" aria-label="Открыть меню">
+        <button id="mobileMenuBtn" class="editor-icon-btn" title="Open the menu" aria-label="Open the menu">
           <i class="fa-solid fa-bars"></i>
         </button>
         <div id="mobileTitle" class="studio-mobile-title truncate flex-1 text-center">Editor Studio</div>
         <div class="flex items-center gap-1.5">
-          <button type="button" class="editor-icon-btn" data-theme-toggle title="Переключить тему" aria-label="Переключить тему">
+          <button type="button" class="editor-icon-btn" data-theme-toggle title="Switch theme" aria-label="Switch theme">
             <i class="fa-solid fa-circle-half-stroke"></i>
           </button>
-          <button id="mobileNewTabBtn" class="editor-icon-btn" title="Открыть в новой вкладке" aria-label="Открыть в новой вкладке">
+          <button id="mobileNewTabBtn" class="editor-icon-btn" title="Open in a new tab" aria-label="Open in a new tab">
             <i class="fa-solid fa-arrow-up-right-from-square"></i>
           </button>
         </div>
@@ -310,20 +368,20 @@
 
       <header class="studio-workbar hidden md:flex">
         <div class="min-w-0 flex items-center gap-3">
-          <button id="toggleSidebarBtn" class="editor-icon-btn" type="button" title="Свернуть или показать боковое меню (Ctrl+B)" aria-label="Свернуть или показать боковое меню">
+          <button id="toggleSidebarBtn" class="editor-icon-btn" type="button" title="Pin the menu (Ctrl+B)" aria-label="Pin the menu (Ctrl+B)" aria-pressed="false">
             <i class="fa-solid fa-table-columns"></i>
           </button>
           <span id="desktopEditorIcon" class="studio-brand-mark studio-brand-mark--sm"><i class="fa-solid fa-pen-ruler"></i></span>
           <div class="min-w-0">
-            <div id="desktopEditorTitle" class="studio-workbar-title truncate">Рабочая область</div>
-            <div id="desktopEditorMeta" class="studio-workbar-meta truncate">Выберите редактор в меню</div>
+            <div id="desktopEditorTitle" class="studio-workbar-title truncate">Workspace</div>
+            <div id="desktopEditorMeta" class="studio-workbar-meta truncate">Pick an editor in the menu</div>
           </div>
         </div>
         <div class="studio-workbar-actions flex items-center gap-2">
-          <button type="button" class="editor-icon-btn" data-theme-toggle title="Переключить тему оформления" aria-label="Переключить тему оформления">
+          <button type="button" class="editor-icon-btn" data-theme-toggle title="Switch color theme" aria-label="Switch color theme">
             <i class="fa-solid fa-circle-half-stroke"></i>
           </button>
-          <button id="reloadEditorBtn" class="editor-icon-btn" type="button" title="Перезагрузить активный редактор" aria-label="Перезагрузить активный редактор">
+          <button id="reloadEditorBtn" class="editor-icon-btn" type="button" title="Reload active editor" aria-label="Reload active editor">
             <i class="fa-solid fa-rotate"></i>
           </button>
         </div>
@@ -331,29 +389,23 @@
 
       <main class="flex-grow overflow-hidden relative">
         <div id="studioLoading" class="studio-loading" aria-hidden="true"></div>
-        <iframe id="editor-frame" class="studio-iframe" src="" title="Активный редактор"></iframe>
+        <iframe id="editor-frame" class="studio-iframe" src="" title="Active editor"></iframe>
       </main>
     </div>
 
     <!-- Mobile sidebar overlay -->
     <div id="mobileOverlay" class="hidden fixed inset-0 z-[400]">
       <div class="absolute inset-0 studio-scrim"></div>
-      <div class="absolute top-0 left-0 h-full studio-sidebar flex flex-col">
+      <div class="studio-drawer absolute top-0 left-0 h-full">
         <div class="studio-brand">
           <span class="studio-brand-mark"><i class="fa-solid fa-layer-group"></i></span>
-          <div class="studio-brand-title flex-grow">Меню</div>
-          <button id="mobileCloseBtn" title="Закрыть меню" aria-label="Закрыть меню" class="editor-icon-btn"><i class="fa-solid fa-xmark"></i></button>
+          <div class="studio-brand-title flex-grow">Menu</div>
+          <button id="mobileCloseBtn" title="Close the menu" aria-label="Close the menu" class="editor-icon-btn"><i class="fa-solid fa-xmark"></i></button>
         </div>
-        <div class="studio-search-block">
-          <label class="studio-search-wrap" aria-label="Поиск редактора">
-            <i class="fa-solid fa-magnifying-glass"></i>
-            <input id="mobileSearch" type="search" class="w-full editor-input" placeholder="Найти редактор…" autocomplete="off" />
-          </label>
-        </div>
-        <nav id="mobileNav" class="studio-nav flex-grow overflow-y-auto" aria-label="Редакторы"></nav>
+        <nav id="mobileNav" class="studio-nav flex-grow overflow-y-auto" aria-label="Editors"></nav>
         <div class="studio-sidebar-foot">
           <div data-i18n-switcher-host></div>
-          <button id="mobileLogoutBtn" class="editor-btn editor-btn-secondary flex-1"><i class="fa-solid fa-right-from-bracket"></i><span>Выйти</span></button>
+          <button id="mobileLogoutBtn" class="editor-btn editor-btn-secondary flex-1"><i class="fa-solid fa-right-from-bracket"></i><span>Sign out</span></button>
         </div>
       </div>
     </div>
@@ -364,7 +416,7 @@
     <div class="absolute inset-0 flex items-center justify-center p-4 overflow-y-auto">
       <div class="studio-auth-card my-auto">
         <div class="flex items-center justify-end gap-2 mb-3">
-          <button type="button" class="editor-icon-btn" data-theme-toggle title="Переключить тему оформления" aria-label="Переключить тему оформления">
+          <button type="button" class="editor-icon-btn" data-theme-toggle title="Switch color theme" aria-label="Switch color theme">
             <i class="fa-solid fa-circle-half-stroke"></i>
           </button>
           <div data-i18n-switcher-host></div>
@@ -373,26 +425,26 @@
         <div class="studio-auth-head">
           <span class="studio-auth-icon"><i class="fa-solid fa-shield-halved"></i></span>
           <div class="min-w-0">
-            <h2>Вход в Editor Studio</h2>
-            <p class="editor-help-text" id="auth-subtitle">Нужен вход администратора.</p>
+            <h2>Sign in to Editor Studio</h2>
+            <p class="editor-help-text" id="auth-subtitle">Administrator sign-in required.</p>
           </div>
         </div>
 
         <div id="auth-tabs" class="auth-tabs mt-4 hidden" role="tablist">
-          <button type="button" class="auth-tab active" data-auth-tab="admin" role="tab"><i class="fa-solid fa-user-shield"></i>Администратор</button>
-          <button type="button" class="auth-tab" data-auth-tab="guest" role="tab"><i class="fa-solid fa-user-secret"></i>Гость</button>
+          <button type="button" class="auth-tab active" data-auth-tab="admin" role="tab"><i class="fa-solid fa-user-shield"></i>Administrator</button>
+          <button type="button" class="auth-tab" data-auth-tab="guest" role="tab"><i class="fa-solid fa-user-secret"></i>Guest</button>
         </div>
 
         <div id="auth-panel-admin" class="mt-4">
           <label class="studio-auth-field">
-            <span>Логин</span>
+            <span>Login</span>
             <input id="auth-user" type="text" class="w-full editor-input" value="admin" autocomplete="username" />
           </label>
           <label class="studio-auth-field">
-            <span>Пароль</span>
+            <span>Password</span>
             <span class="studio-pass-wrap">
-              <input id="auth-pass" type="password" class="w-full editor-input" placeholder="Введите пароль администратора" autocomplete="current-password" />
-              <button type="button" class="studio-pass-toggle" data-pass-toggle="auth-pass" title="Показать пароль" aria-label="Показать пароль">
+              <input id="auth-pass" type="password" class="w-full editor-input" placeholder="Enter the administrator password" autocomplete="current-password" />
+              <button type="button" class="studio-pass-toggle" data-pass-toggle="auth-pass" title="Show password" aria-label="Show password">
                 <i class="fa-solid fa-eye"></i>
               </button>
             </span>
@@ -400,37 +452,36 @@
 
           <button id="auth-login-btn" class="editor-btn editor-btn-primary w-full mt-4">
             <i class="fa-solid fa-right-to-bracket"></i>
-            <span>Войти как администратор</span>
+            <span>Sign in as administrator</span>
           </button>
         </div>
 
         <div id="auth-panel-guest" class="hidden mt-4">
           <div class="auth-guest-note">
-            <div class="font-semibold mb-1"><i class="fa-solid fa-user-secret mr-1"></i>Гостевой аккаунт</div>
-            Гостевые аккаунты создаёт администратор — он же выбирает, какие вкладки редакторов доступны каждому гостю.
-            Ваши изменения <b>не попадают в базу напрямую</b>: они хранятся локально и уходят администратору как запрос на проверку.
+            <div class="font-semibold mb-1"><i class="fa-solid fa-user-secret mr-1"></i>Guest account</div>
+            Guest accounts are created by the administrator, who also chooses which editor tabs each guest can use. Your changes <b>never go straight into the database</b>: they are stored locally and go to the administrator as a request for review.
           </div>
           <div id="auth-guest-creds">
             <label class="studio-auth-field mt-3">
-              <span>Логин гостя</span>
-              <input id="auth-guest-login" type="text" class="w-full editor-input" placeholder="Например: artist" autocomplete="username" autocapitalize="off" spellcheck="false" />
+              <span>Guest login</span>
+              <input id="auth-guest-login" type="text" class="w-full editor-input" placeholder="e.g. artist" autocomplete="username" autocapitalize="off" spellcheck="false" />
             </label>
             <label class="studio-auth-field">
-              <span>Пароль</span>
+              <span>Password</span>
               <span class="studio-pass-wrap">
-                <input id="auth-guest-pass" type="password" class="w-full editor-input" placeholder="Пароль, выданный администратором" autocomplete="current-password" />
-                <button type="button" class="studio-pass-toggle" data-pass-toggle="auth-guest-pass" title="Показать пароль" aria-label="Показать пароль">
+                <input id="auth-guest-pass" type="password" class="w-full editor-input" placeholder="Password issued by the administrator" autocomplete="current-password" />
+                <button type="button" class="studio-pass-toggle" data-pass-toggle="auth-guest-pass" title="Show password" aria-label="Show password">
                   <i class="fa-solid fa-eye"></i>
                 </button>
               </span>
             </label>
           </div>
           <div id="auth-guest-unavailable" class="editor-help-text mt-3 hidden">
-            Гостевые аккаунты не созданы или доступ выключен администратором.
+            No guest accounts exist or access is disabled by the administrator.
           </div>
           <button id="auth-guest-btn" class="editor-btn editor-btn-primary w-full mt-4">
             <i class="fa-solid fa-user-secret"></i>
-            <span>Войти как гость</span>
+            <span>Sign in as guest</span>
           </button>
         </div>
         <div id="auth-status" class="editor-help-text mt-3" role="status"></div>
@@ -450,11 +501,8 @@
     const mobileMenuBtn = document.getElementById('mobileMenuBtn');
     const mobileCloseBtn = document.getElementById('mobileCloseBtn');
     const mobileNewTabBtn = document.getElementById('mobileNewTabBtn');
-    const studioSearch = document.getElementById('studioSearch');
-    const studioSearchKey = document.getElementById('studioSearchKey');
-    const studioSearchClear = document.getElementById('studioSearchClear');
-    const mobileSearch = document.getElementById('mobileSearch');
     const toggleSidebarBtn = document.getElementById('toggleSidebarBtn');
+    const pinSidebarBtn = document.getElementById('pinSidebarBtn');
     const desktopEditorTitle = document.getElementById('desktopEditorTitle');
     const desktopEditorMeta = document.getElementById('desktopEditorMeta');
     const desktopEditorIcon = document.getElementById('desktopEditorIcon');
@@ -560,11 +608,11 @@
       if (authGuestBtn) authGuestBtn.disabled = !guestEnabled;
       if (authSubtitle) {
         authSubtitle.textContent = tab === 'guest'
-          ? 'Войдите в личный гостевой аккаунт. Изменения сохраняются локально и отправляются администратору на проверку.'
-          : adminBlocked ? 'Вход администратора с этого адреса недоступен.'
+          ? 'Sign in to your personal guest account. Changes are saved locally and sent to the administrator for review.'
+          : adminBlocked ? 'Administrator sign-in is not available from this address.'
             : authInfo.admin_setup_needed
-              ? 'Пароль администратора не задан. Создайте его командой php tools/init-db.php --password=… или в старых установках укажите его в data/db-config.json (поле editor_password): без пароля вход закрыт.'
-              : 'Для работы с редактором требуется вход администратора.';
+              ? 'The administrator password is not set. Create it with php tools/init-db.php --password=… (on older installs set the editor_password field in data/db-config.json): sign-in is closed without a password.'
+              : 'An administrator sign-in is required to use the editor.';
       }
     };
 
@@ -596,8 +644,8 @@
         roleChip.classList.toggle('is-admin', currentRole === 'admin');
         const name = currentUserLabel ? `: ${currentUserLabel}` : '';
         roleChip.innerHTML = currentRole === 'guest'
-          ? `<i class="fa-solid fa-user-secret"></i>Гость${escapeChip(name)}`
-          : currentRole === 'admin' ? `<i class="fa-solid fa-user-shield"></i>Админ${escapeChip(name)}` : '';
+          ? `<i class="fa-solid fa-user-secret"></i>Guest${escapeChip(name)}`
+          : currentRole === 'admin' ? `<i class="fa-solid fa-user-shield"></i>Admin${escapeChip(name)}` : '';
       }
       Guest?.refreshStatus?.();
       bindGuestBadgeUpdates();
@@ -637,7 +685,7 @@
       // A newer refresh started while this one was waiting for the server.
       if (seq !== badgeSeq) return;
       navBadges.requests = next;
-      renderAllNavs(activeKey, getSearchTerm());
+      renderAllNavs(activeKey);
       if (currentRole === 'guest' || currentRole === 'admin') {
         badgeTimer = setTimeout(refreshBadges, 60000);
       }
@@ -672,31 +720,26 @@
       setRole(null);
       frame.src = 'about:blank';
       setAuthStatus(activeAuthTab === 'guest'
-        ? (authInfo.guest?.enabled ? 'Введите логин и пароль гостевого аккаунта.' : 'Гостевые аккаунты не созданы — обратитесь к администратору.')
-        : 'Введите данные администратора для входа.');
+        ? (authInfo.guest?.enabled ? 'Enter the guest account login and password.' : 'No guest accounts exist — contact the administrator.')
+        : 'Enter the administrator credentials to sign in.');
       setAuthOverlay(true);
       return false;
     };
 
-    const getSearchTerm = () => String(studioSearch?.value || mobileSearch?.value || '').trim();
-
-    const renderNav = (root, active, term = '') => {
+    const renderNav = (root, active) => {
+      if (!root) return;
       root.innerHTML = '';
-      const q = term.toLowerCase();
       let hasItems = false;
       const fragment = document.createDocumentFragment();
       for (const g of getGroups()) {
-        const items = (g.items || []).filter((e) => {
-          if (!q) return true;
-          const hay = `${e.title || ''} ${e.hint || ''} ${e.key || ''}`.toLowerCase();
-          return hay.includes(q);
-        });
+        const items = g.items || [];
         if (!items.length) continue;
         hasItems = true;
         const header = document.createElement('div');
         header.className = 'studio-group-title';
         const groupLabel = document.createElement('span');
-        groupLabel.textContent = g.title || 'Группа';
+        groupLabel.className = 'studio-group-label';
+        groupLabel.textContent = g.title || 'Group';
         const groupCount = document.createElement('span');
         groupCount.className = 'studio-group-count';
         groupCount.textContent = String(items.length);
@@ -709,8 +752,11 @@
           btn.className = `studio-item${isActive ? ' active' : ''}`;
           btn.dataset.editorKey = e.key;
           btn.setAttribute('aria-current', isActive ? 'page' : 'false');
+          // В рельсе подпись скрыта — название читается из подсказки и
+          // остаётся доступным скринридерам через aria-label.
           btn.title = e.title || e.key;
-          const badge = navBadges[e.key] ? `<span class="studio-nav-badge" title="${currentRole === 'guest' ? 'Черновик и ответы администратора' : 'Запросы на рассмотрении и непрочитанные сообщения'}">${navBadges[e.key]}</span>` : '';
+          btn.setAttribute('aria-label', e.title || e.key);
+          const badge = navBadges[e.key] ? `<span class="studio-nav-badge" title="${currentRole === 'guest' ? 'Draft and replies from the administrator' : 'Requests under review and unread messages'}">${navBadges[e.key]}</span>` : '';
           const sub = e.hint || '';
           btn.innerHTML = `<span class="studio-item-icon"><i class="fa-solid ${e.icon}"></i></span><span class="studio-item-text"><span class="studio-item-title block">${e.title}</span>${sub ? `<span class="studio-item-hint block">${sub}</span>` : ''}</span>${badge}`;
           btn.addEventListener('click', () => openEditor(e.key, { closeMobile: true }));
@@ -718,25 +764,21 @@
         }
       }
       if (!hasItems) {
-        // Пустой список — это не только «ничего не найдено»: у гостя он может
-        // быть пустым, пока администратор не выдал ни одной вкладки.
-        const message = q
-          ? `Ничего не найдено по запросу «${q}».`
-          : currentRole === 'guest'
-            ? 'Администратор пока не открыл вам ни одной вкладки. Напишите ему, чтобы получить доступ.'
-            : 'Список редакторов пуст.';
+        // У гостя список пуст, пока администратор не выдал ни одной вкладки.
         const empty = document.createElement('div');
         empty.className = 'editor-empty-state';
-        empty.textContent = message;
+        empty.textContent = currentRole === 'guest'
+          ? 'The administrator has not enabled any tab for you yet. Message them to get access.'
+          : 'The editor list is empty.';
         root.appendChild(empty);
         return;
       }
       root.appendChild(fragment);
     };
 
-    const renderAllNavs = (active, term = '') => {
-      renderNav(sidebarNav, active, term);
-      renderNav(mobileNav, active, term);
+    const renderAllNavs = (active) => {
+      renderNav(sidebarNav, active);
+      renderNav(mobileNav, active);
     };
 
     const requestFrameDirtyStatus = () => {
@@ -789,25 +831,24 @@
       const e = byKey(key);
       if (!e) {
         frame.src = '';
-        renderAllNavs('', getSearchTerm());
+        renderAllNavs('');
         return;
       }
       if (activeKey && e.key !== activeKey) {
         const dirtyState = await requestFrameDirtyStatus();
         if (requestSeq !== openEditorRequestSeq) return;
         if (dirtyState.supported && dirtyState.dirty) {
-          const approved = await EditorCore.Page.confirm('Есть несохранённые изменения. Продолжить без сохранения?');
+          const approved = await EditorCore.Page.confirm('You have unsaved changes. Continue without saving?');
           if (!approved) return;
         }
       }
       if (requestSeq !== openEditorRequestSeq) return;
       activeKey = e.key;
-      const term = getSearchTerm();
-      renderAllNavs(e.key, term);
+      renderAllNavs(e.key);
       studioLoading?.classList.add('active');
-      frame.title = e.title || 'Активный редактор';
+      frame.title = e.title || 'Active editor';
       frame.src = editorSource(e, params);
-      if (desktopEditorTitle) desktopEditorTitle.textContent = e.title || 'Редактор';
+      if (desktopEditorTitle) desktopEditorTitle.textContent = e.title || 'Editor';
       if (desktopEditorMeta) desktopEditorMeta.textContent = e.hint || '';
       if (desktopEditorIcon) desktopEditorIcon.innerHTML = `<i class="fa-solid ${e.icon || 'fa-pen-ruler'}"></i>`;
       storageSet(activeEditorStorageKey(), e.key);
@@ -816,66 +857,6 @@
       if (mobileTitle) mobileTitle.textContent = e.title || 'Editor Studio';
       if (closeMobile && mobileOverlay) mobileOverlay.classList.add('hidden');
     };
-
-    let navKbdIndex = -1;
-
-    const updateSearchAffordances = (term) => {
-      const hasTerm = !!String(term || '').trim();
-      if (studioSearchKey) studioSearchKey.hidden = hasTerm;
-      if (studioSearchClear) studioSearchClear.hidden = !hasTerm;
-    };
-
-    const syncSearchValue = (value, source) => {
-      const term = String(value || '');
-      const trimmed = term.trim();
-      if (studioSearch && source !== studioSearch) studioSearch.value = term;
-      if (mobileSearch && source !== mobileSearch) mobileSearch.value = term;
-      navKbdIndex = -1;
-      updateSearchAffordances(trimmed);
-      renderAllNavs(activeKey, trimmed);
-    };
-
-    studioSearch?.addEventListener('input', (event) => {
-      syncSearchValue(event.target.value, event.target);
-    });
-    mobileSearch?.addEventListener('input', (event) => {
-      syncSearchValue(event.target.value, event.target);
-    });
-    studioSearchClear?.addEventListener('click', () => {
-      syncSearchValue('', null);
-      studioSearch?.focus();
-    });
-
-    const handleSearchKeydown = (event, navRoot, isMobile = false) => {
-      const items = Array.from(navRoot?.querySelectorAll('.studio-item') || []);
-      if (event.key === 'Escape') {
-        if (event.target.value) {
-          event.preventDefault();
-          syncSearchValue('', null);
-        } else {
-          event.target.blur();
-        }
-        return;
-      }
-      if (!items.length) return;
-      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-        event.preventDefault();
-        const delta = event.key === 'ArrowDown' ? 1 : -1;
-        navKbdIndex = navKbdIndex < 0
-          ? (delta > 0 ? 0 : items.length - 1)
-          : (navKbdIndex + delta + items.length) % items.length;
-        items.forEach((el, idx) => el.classList.toggle('is-kbd-focus', idx === navKbdIndex));
-        items[navKbdIndex]?.scrollIntoView?.({ block: 'nearest' });
-      } else if (event.key === 'Enter') {
-        event.preventDefault();
-        const target = items[navKbdIndex >= 0 && navKbdIndex < items.length ? navKbdIndex : 0];
-        const key = target?.dataset?.editorKey;
-        if (key) openEditor(key, { closeMobile: isMobile });
-      }
-    };
-
-    studioSearch?.addEventListener('keydown', (e) => handleSearchKeydown(e, sidebarNav, false));
-    mobileSearch?.addEventListener('keydown', (e) => handleSearchKeydown(e, mobileNav, true));
 
     const safeStorage = (() => {
       try {
@@ -891,20 +872,69 @@
     const storageGet = (key) => safeStorage?.getItem(key) || '';
     const storageSet = (key, value) => safeStorage?.setItem(key, value);
 
-    // ── Боковая панель: сворачивание на широком экране ────────────────────
-    const SIDEBAR_COLLAPSED_KEY = 'studio.sidebarCollapsed';
-    const applySidebarCollapsed = (collapsed, persist = false) => {
-      document.body.classList.toggle('studio-sidebar-collapsed', !!collapsed);
-      if (toggleSidebarBtn) {
-        toggleSidebarBtn.classList.toggle('active', !!collapsed);
-        toggleSidebarBtn.setAttribute('aria-pressed', collapsed ? 'true' : 'false');
-      }
-      if (persist) storageSet(SIDEBAR_COLLAPSED_KEY, collapsed ? '1' : '0');
+    // ── Боковая панель: рельс из иконок + раскрытие при наведении ─────────
+    //
+    // По умолчанию меню свёрнуто до рельса: видны только иконки, рабочая
+    // область получает максимум места. Рельс раскрывается, когда на него
+    // наводят курсор или когда в него приходит фокус с клавиатуры, и сам
+    // сворачивается, когда область неактивна. Кнопка в шапке или в подвале
+    // меню (Ctrl+B) закрепляет панель открытой: тогда она занимает место в
+    // раскладке и больше ничего не перекрывает.
+    const SIDEBAR_PINNED_KEY = 'studio.sidebarPinned';
+    const sidebar = document.getElementById('studioSidebar');
+    // На тач-устройствах наведения нет: там панель по умолчанию закреплена.
+    const hoverCapable = window.matchMedia?.('(hover: hover) and (pointer: fine)')?.matches ?? true;
+    const storedPinned = storageGet(SIDEBAR_PINNED_KEY);
+    let sidebarPinned = storedPinned === '1' ? true : storedPinned === '0' ? false : !hoverCapable;
+    let sidebarOpen = false;
+
+    const renderSidebar = () => {
+      const open = !sidebarPinned && sidebarOpen;
+      document.body.classList.toggle('studio-sidebar-pinned', sidebarPinned);
+      sidebar?.classList.toggle('is-open', open);
+      sidebar?.classList.toggle('is-rail', !sidebarPinned && !open);
+      const label = sidebarPinned ? 'Unpin the menu (Ctrl+B)' : 'Pin the menu (Ctrl+B)';
+      [toggleSidebarBtn, pinSidebarBtn].forEach((btn) => {
+        if (!btn) return;
+        btn.classList.toggle('active', sidebarPinned);
+        btn.setAttribute('aria-pressed', sidebarPinned ? 'true' : 'false');
+        btn.title = label;
+        btn.setAttribute('aria-label', label);
+      });
     };
-    applySidebarCollapsed(storageGet(SIDEBAR_COLLAPSED_KEY) === '1', false);
-    toggleSidebarBtn?.addEventListener('click', () => {
-      const next = !document.body.classList.contains('studio-sidebar-collapsed');
-      applySidebarCollapsed(next, true);
+
+    const setSidebarOpen = (open) => {
+      if (sidebarPinned) return;
+      const next = !!open;
+      if (sidebarOpen === next) return;
+      sidebarOpen = next;
+      renderSidebar();
+    };
+
+    const setSidebarPinned = (pinned, persist = true) => {
+      sidebarPinned = !!pinned;
+      if (sidebarPinned) sidebarOpen = false;
+      renderSidebar();
+      if (persist) storageSet(SIDEBAR_PINNED_KEY, sidebarPinned ? '1' : '0');
+    };
+
+    setSidebarPinned(sidebarPinned, false);
+    [toggleSidebarBtn, pinSidebarBtn].forEach((btn) => {
+      btn?.addEventListener('click', () => setSidebarPinned(!sidebarPinned));
+    });
+
+    if (hoverCapable) {
+      sidebar?.addEventListener('pointerenter', () => setSidebarOpen(true));
+      // Наведение ушло — панель снова сворачивается, даже если фокус остался
+      // на кнопке после клика мышью.
+      sidebar?.addEventListener('pointerleave', () => setSidebarOpen(false));
+    }
+    // Клавиатура: раскрываем на фокусе и сворачиваем, когда фокус ушёл за
+    // пределы панели (например, в редактор внутри iframe).
+    sidebar?.addEventListener('focusin', () => setSidebarOpen(true));
+    sidebar?.addEventListener('focusout', (event) => {
+      if (event.relatedTarget && sidebar.contains(event.relatedTarget)) return;
+      setSidebarOpen(false);
     });
 
     // ── Переключатель темы оформления ─────────────────────────────────────
@@ -914,7 +944,7 @@
       document.querySelectorAll('[data-theme-toggle]').forEach((btn) => {
         const icon = btn.querySelector('i');
         if (icon) icon.className = isLight ? 'fa-solid fa-moon' : 'fa-solid fa-sun';
-        const label = isLight ? 'Включить тёмную тему' : 'Включить светлую тему';
+        const label = isLight ? 'Switch to the dark theme' : 'Switch to the light theme';
         btn.title = label;
         btn.setAttribute('aria-label', label);
       });
@@ -937,41 +967,22 @@
         input.type = reveal ? 'text' : 'password';
         const icon = btn.querySelector('i');
         if (icon) icon.className = reveal ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye';
-        const label = reveal ? 'Скрыть пароль' : 'Показать пароль';
+        const label = reveal ? 'Hide password' : 'Show password';
         btn.title = label;
         btn.setAttribute('aria-label', label);
       });
     });
 
-    const focusSearch = () => {
-      const onMobile = window.matchMedia('(max-width: 767px)').matches;
-      if (onMobile) {
-        mobileOverlay?.classList.remove('hidden');
-        mobileSearch?.focus();
-      } else {
-        if (document.body.classList.contains('studio-sidebar-collapsed')) {
-          applySidebarCollapsed(false, true);
-        }
-        studioSearch?.focus();
-        studioSearch?.select?.();
-      }
-    };
-
+    // Ctrl+B — закрепить/открепить меню (рельс ↔ раскрытая панель),
+    // Esc — свернуть рельс и закрыть мобильное меню.
     document.addEventListener('keydown', (event) => {
-      const tag = event.target?.tagName;
-      const isTyping = tag === 'INPUT' || tag === 'TEXTAREA' || event.target?.isContentEditable;
-      if (isTyping && event.key === '/') return;
-      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'b') {
+        if (window.matchMedia('(max-width: 767px)').matches) return;
         event.preventDefault();
-        focusSearch();
-      } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'b') {
-        if (!window.matchMedia('(max-width: 767px)').matches) {
-          event.preventDefault();
-          applySidebarCollapsed(!document.body.classList.contains('studio-sidebar-collapsed'), true);
-        }
-      } else if (event.key === '/' && !event.ctrlKey && !event.metaKey && !event.altKey) {
-        event.preventDefault();
-        focusSearch();
+        setSidebarPinned(!sidebarPinned);
+      } else if (event.key === 'Escape') {
+        setSidebarOpen(false);
+        mobileOverlay?.classList.add('hidden');
       }
     });
 
@@ -989,7 +1000,7 @@
       if (!isAuthorized || !frame?.src) return;
       const dirtyState = await requestFrameDirtyStatus();
       if (dirtyState.supported && dirtyState.dirty) {
-        const approved = await EditorCore.Page.confirm('В открытом редакторе есть несохранённые изменения. Перезагрузить без сохранения?');
+        const approved = await EditorCore.Page.confirm('The open editor has unsaved changes. Reload without saving?');
         if (!approved) return;
       }
       studioLoading?.classList.add('active');
@@ -1057,7 +1068,7 @@
         // Admin changed this account's tabs/state → re-read the role from the server.
         ensureAuthorized().then((ok) => {
           if (!ok) return;
-          renderAllNavs(activeKey, getSearchTerm());
+          renderAllNavs(activeKey);
           // The open tab may have just been revoked: switch to a granted one.
           if (!getEditors().some((entry) => entry.key === activeKey)) {
             openEditor(getEditors()[0]?.key || initial());
@@ -1075,8 +1086,8 @@
       if (data?.type !== 'editor-shell:auth-required') return;
       isAuthorized = false;
       setAuthStatus(currentRole === 'guest'
-        ? 'Сессия истекла. Войдите в гостевой аккаунт заново.'
-        : 'Сессия истекла. Повторите вход администратора.', 'err');
+        ? 'The session has expired. Sign in to the guest account again.'
+        : 'The session has expired. Sign in as administrator again.', 'err');
       setAuthOverlay(true);
       frame.src = 'about:blank';
     });
@@ -1086,22 +1097,22 @@
       const user = String(authUser?.value || 'admin').trim() || 'admin';
       const password = String(authPass?.value || '');
       if (!password) {
-        setAuthStatus('Введите пароль администратора.', 'err');
+        setAuthStatus('Enter the administrator password.', 'err');
         return;
       }
       authLoginBtn.disabled = true;
       isAuthRequestInFlight = true;
-      setAuthStatus('Проверяем доступ...');
+      setAuthStatus('Checking access...');
       const login = await authRequest('login', { user, password });
       authLoginBtn.disabled = false;
       isAuthRequestInFlight = false;
       if (!login.ok) {
-        setAuthStatus(login.error || 'Ошибка авторизации.', 'err');
+        setAuthStatus(login.error || 'Sign-in failed.', 'err');
         return;
       }
       isAuthorized = true;
       setRole('admin', login.user || user);
-      setAuthStatus('Вход выполнен.', 'ok');
+      setAuthStatus('Signed in.', 'ok');
       setAuthOverlay(false);
       const fallbackKey = normalizeEditorKey(location.hash) || storageGet(activeEditorStorageKey()) || getEditors()[0]?.key || '';
       openEditor(fallbackKey);
@@ -1119,18 +1130,18 @@
       const loginName = String(authGuestLogin?.value || '').trim().toLowerCase();
       const password = String(authGuestPass?.value || '');
       if (!loginName || !password) {
-        setAuthStatus('Введите логин и пароль гостевого аккаунта.', 'err');
+        setAuthStatus('Enter the guest account login and password.', 'err');
         (loginName ? authGuestPass : authGuestLogin)?.focus();
         return;
       }
       authGuestBtn.disabled = true;
       isAuthRequestInFlight = true;
-      setAuthStatus('Проверяем гостевой аккаунт...');
+      setAuthStatus('Checking the guest account...');
       const result = await authRequest('guest_login', { login: loginName, password, guest_key: Guest?.GuestKey?.get?.() || '' });
       authGuestBtn.disabled = false;
       isAuthRequestInFlight = false;
       if (!result.ok) {
-        setAuthStatus(result.error || 'Ошибка входа.', 'err');
+        setAuthStatus(result.error || 'Sign-in failed.', 'err');
         return;
       }
       if (result.guest_key) Guest?.GuestKey?.set?.(result.guest_key);
@@ -1140,8 +1151,8 @@
       setRole('guest', result.guest?.name || result.guest?.login || loginName);
       const granted = Array.isArray(result.guest?.pages) ? result.guest.pages.length : 0;
       setAuthStatus(granted
-        ? `Гостевой аккаунт активирован. Доступно вкладок: ${granted}.`
-        : 'Аккаунт активирован, но администратор не включил ни одной вкладки.', granted ? 'ok' : 'err');
+        ? `Guest account activated. Tabs available:  ${granted}.`
+        : 'The account is activated, but the administrator has not enabled any tab.', granted ? 'ok' : 'err');
       setAuthOverlay(false);
       openEditor(initial());
     });
@@ -1159,8 +1170,8 @@
       if (currentRole === 'guest') {
         const pending = Guest?.Draft?.pendingCount?.() || 0;
         const submitted = Guest?.Draft?.submittedCount?.() || 0;
-        if (pending > 0 && !await EditorCore.Page.confirm(`В черновике ${pending} неотправленных изменени(й). Они сохранятся в этом браузере. Выйти?`)) return;
-        if (pending === 0 && submitted > 0 && !await EditorCore.Page.confirm(`Есть ${submitted} изменени(й) в отправленных запросах. Они останутся на проверке у администратора. Выйти?`)) return;
+        if (pending > 0 && !await EditorCore.Page.confirm(`The draft holds  ${pending}  unsent change(s). They will stay in this browser. Sign out?`)) return;
+        if (pending === 0 && submitted > 0 && !await EditorCore.Page.confirm(`There are  ${submitted}  change(s) in submitted requests. They will stay with the administrator for review. Sign out?`)) return;
       }
       await authRequest('logout', {});
       isAuthorized = false;
@@ -1169,7 +1180,7 @@
       frame.src = 'about:blank';
       mobileOverlay?.classList.add('hidden');
       await ensureAuthorized();
-      setAuthStatus('Вы вышли из Editor Studio.');
+      setAuthStatus('You have signed out of Editor Studio.');
     };
     document.getElementById('logoutBtn')?.addEventListener('click', logout);
     document.getElementById('mobileLogoutBtn')?.addEventListener('click', logout);

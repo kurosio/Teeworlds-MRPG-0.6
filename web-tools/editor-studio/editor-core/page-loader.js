@@ -14,6 +14,23 @@
     '<link rel="stylesheet" href="editor-core/tailwind.css">'
   ];
 
+  /**
+   * Теги языковых файлов строятся по манифесту `localization/index.js`, а не
+   * перечислены здесь: добавили `lang_de.js` в манифест — он загрузится сам.
+   */
+  const languageTags = (registry) => {
+    const files = Array.isArray(registry?.files) ? registry.files : [];
+    return files.map((file) => `<script src="localization/${file}"></script>`);
+  };
+
+  // В document.write-пути манифест уже прочитан (index.js объявлен выше по
+  // списку), поэтому языковые теги можно записать прямо в поток разбора.
+  const LANGUAGE_PLACEHOLDER = '<script>'
+    + 'window.EditorCoreLocalization && window.EditorCoreLocalization.files.forEach(function (file) {'
+    + '  document.write("<script src=\\"localization/" + file + "\\"><\\/script>");'
+    + '});'
+    + '</script>';
+
   const scriptTags = [
     '<script src="editor-core/tailwind-theme.js"></script>',
     // Сетевой слой подключается первым: им пользуются все остальные модули.
@@ -37,7 +54,11 @@
     '<script src="editor-core/ui.js"></script>',
     '<script src="editor-core/ui-manager.js"></script>',
     '<script src="editor-core/defaults.js"></script>',
-    '<script src="editor-core/i18n-en.js"></script>',
+    // Языки интерфейса: манифест папки `localization/` (какие файлы грузить,
+    // какой язык по умолчанию), затем сами языковые файлы из манифеста, затем
+    // движок перевода. Новый язык = файл `lang_xx.js` + строка в манифесте.
+    '<script src="localization/index.js"></script>',
+    LANGUAGE_PLACEHOLDER,
     '<script src="editor-core/i18n.js"></script>',
     '<script src="editor-core/page-kit.js"></script>',
     '<script src="editor-core/help.js"></script>',
@@ -76,8 +97,8 @@
     box.style.cssText = 'position:fixed;left:12px;bottom:12px;z-index:2147483001;max-width:420px;padding:10px 12px;'
       + 'border-radius:12px;font:13px/1.45 system-ui,sans-serif;color:#ffd7a3;background:#2a1f10;border:1px solid #7c5a25;'
       + 'display:flex;gap:8px;align-items:flex-start';
-    box.innerHTML = '<span aria-hidden="true">⚠</span><span>Не удалось загрузить локальное оформление. '
-      + 'Редактор работает, но интерфейс может выглядеть упрощённо.</span>';
+    box.innerHTML = '<span aria-hidden="true">⚠</span><span>Failed to load the local styles.  '
+      + 'The editor still works, but the interface may look simplified.</span>';
     box.addEventListener('click', () => box.remove());
     document.body?.appendChild(box);
     // Медленная сеть: если оформление всё же догрузилось — убираем предупреждение.
@@ -94,7 +115,7 @@
     reportedErrors += 1;
     console.error('[editor-studio]', detail);
     const toast = window.EditorCore?.UI?.toast;
-    const text = 'Что-то пошло не так. Обновите страницу; если ошибка повторится — сообщите администратору.';
+    const text = 'Something went wrong. Reload the page; if the error repeats, tell the administrator.';
     if (typeof toast === 'function') toast(text, 'error');
   };
 
@@ -139,14 +160,20 @@
     }
     script.async = false;
     script.addEventListener('load', resolve, { once: true });
-    script.addEventListener('error', () => reject(new Error(`Не удалось загрузить ${script.src}`)), { once: true });
+    script.addEventListener('error', () => reject(new Error(`Could not load ${script.src}`)), { once: true });
     body.appendChild(script);
   });
 
   const loadScripts = async () => {
     // Dynamic scripts are async by default; awaiting each one preserves the
     // same dependency order as the document.write path above.
-    for (const tag of scriptTags) await appendScript(tag);
+    for (const tag of scriptTags) {
+      if (tag !== LANGUAGE_PLACEHOLDER) { await appendScript(tag); continue; }
+      // Языковые файлы берём из манифеста уже загруженного реестра.
+      for (const languageTag of languageTags(window.EditorCoreLocalization)) {
+        await appendScript(languageTag);
+      }
+    }
   };
 
   linkTags.forEach(tag => appendHtml(tag, head));

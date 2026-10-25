@@ -348,7 +348,7 @@
       try { resolve(JSON.parse(String(reader.result || 'null'))); }
       catch (e) { reject(e); }
     };
-    reader.onerror = () => reject(reader.error || new Error('Не удалось прочитать файл'));
+    reader.onerror = () => reject(reader.error || new Error('Could not read the file'));
     reader.readAsText(file);
   });
 
@@ -359,7 +359,7 @@
   const fetchJson = async (url, options = {}) => {
     const { body, ...rest } = options;
     const res = await window.EditorCore.Http.json(url, { ...rest, body });
-    if (!res.ok) throw new Error(res.error || 'Операция не выполнена');
+    if (!res.ok) throw new Error(res.error || 'The operation failed');
     return res.data;
   };
 
@@ -367,7 +367,7 @@
   const requestJson = async (url, options = {}) => {
     const { requireOk = true, ...fetchOptions } = options;
     const json = await fetchJson(url, fetchOptions);
-    if (requireOk && !json?.ok) throw new Error(json?.error || 'Операция не выполнена');
+    if (requireOk && !json?.ok) throw new Error(json?.error || 'The operation failed');
     return json;
   };
 
@@ -518,7 +518,7 @@
   // and warns on page unload. Editors can call setClean() after load/save.
   const ensureDirtyPill = ({
     id = 'dirty-pill',
-    text = 'Данные не сохранены',
+    text = 'Data not saved',
     saveButton = null,
     container = null,
   } = {}) => {

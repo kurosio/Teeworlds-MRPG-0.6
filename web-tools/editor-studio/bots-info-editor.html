@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Боты • Editor Studio</title>
+  <title>Bots • Editor Studio</title>
   <script src="editor-core/page-loader.js" data-mode="event"></script>
 
   <style>
@@ -23,16 +23,16 @@
       <div class="editor-page-title">
         <i class="fa-solid fa-robot text-accent text-xl"></i>
         <div>
-          <h1>Боты</h1>
-          <div class="editor-page-sub">Профиль мобов: имя, скин и экипировка.</div>
+          <h1>Bots</h1>
+          <div class="editor-page-sub">Mob profile: name, skin and equipment.</div>
         </div>
       </div>
       <div class="editor-page-actions">
         <button class="editor-btn editor-btn-secondary" data-editor-role="refresh">
-          <i class="fa-solid fa-rotate"></i><span>Обновить</span>
+          <i class="fa-solid fa-rotate"></i><span>Refresh</span>
         </button>
         <button class="editor-btn editor-btn-primary" data-editor-role="new">
-          <i class="fa-solid fa-plus"></i><span>Новый бот</span>
+          <i class="fa-solid fa-plus"></i><span>New bot</span>
         </button>
       </div>
     </div>
@@ -42,15 +42,15 @@
         <div class="editor-dock-pad">
           <div class="flex items-center justify-between gap-3">
             <div>
-              <div class="text-sm font-semibold">Список ботов</div>
-              <div class="text-xs editor-muted-text">Всего: <span data-editor-role="count">—</span></div>
+              <div class="text-sm font-semibold">Bot list</div>
+              <div class="text-xs editor-muted-text">Total: <span data-editor-role="count">—</span></div>
             </div>
           </div>
 
           <div class="mt-3">
             <div class="editor-search">
               <i class="fa-solid fa-magnifying-glass"></i>
-              <input data-editor-role="search" type="search" class="w-full editor-input form-input" placeholder="Поиск по ID/имени…" />
+              <input data-editor-role="search" type="search" class="w-full editor-input form-input" placeholder="Search by ID/name…" />
             </div>
           </div>
 
@@ -62,19 +62,19 @@
         <div class="editor-dock-pad">
           <div class="editor-sticky-toolbar flex items-start justify-between gap-4">
             <div>
-              <div class="text-lg font-semibold" data-editor-role="title">Выберите бота</div>
-              <div class="editor-muted-text text-sm mt-1" data-editor-role="subtitle">или создайте нового</div>
+              <div class="text-lg font-semibold" data-editor-role="title">Select a bot</div>
+              <div class="editor-muted-text text-sm mt-1" data-editor-role="subtitle">or create a new one</div>
             </div>
             <div class="editor-page-actions">
-              <span id="dirty-pill" class="editor-dirty-pill hidden">Данные не сохранены</span>
+              <span id="dirty-pill" class="editor-dirty-pill hidden">Data not saved</span>
               <button class="editor-btn editor-btn-primary" data-editor-role="save" disabled>
-                <i class="fa-solid fa-floppy-disk"></i><span>Сохранить</span>
+                <i class="fa-solid fa-floppy-disk"></i><span>Save</span>
               </button>
               <button class="editor-btn editor-btn-secondary hidden" data-editor-role="cancel" disabled>
-                <i class="fa-solid fa-rotate-left"></i><span>Отменить</span>
+                <i class="fa-solid fa-rotate-left"></i><span>Cancel</span>
               </button>
               <button class="editor-btn editor-btn-secondary" data-editor-role="delete" disabled>
-                <i class="fa-solid fa-trash"></i><span>Удалить</span>
+                <i class="fa-solid fa-trash"></i><span>Delete</span>
               </button>
             </div>
           </div>
@@ -83,8 +83,8 @@
             <div class="editor-panel-card">
               <div class="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <div class="font-semibold">Профиль бота</div>
-                  <div class="editor-muted-text text-sm">Имя, внешний вид скина и экипируемое снаряжение.</div>
+                  <div class="font-semibold">Bot profile</div>
+                  <div class="editor-muted-text text-sm">Name, skin appearance and equipped gear.</div>
                 </div>
                 <div id="tabRoot"></div>
               </div>
@@ -93,11 +93,11 @@
                 <div id="tab_basic" class="space-y-6">
                   <div class="grid gap-4 md:grid-cols-[220px,1fr] items-start">
                     <div class="editor-panel-card flex flex-col items-center gap-3">
-                      <div class="text-xs uppercase tracking-wider editor-muted-text">Превью скина</div>
+                      <div class="text-xs uppercase tracking-wider editor-muted-text">Skin preview</div>
                       <div class="skin-preview-frame w-36 h-36 rounded-2xl flex items-center justify-center">
-                        <img id="skinPreviewImg" class="w-28 h-28" alt="Превью скина" />
+                        <img id="skinPreviewImg" class="w-28 h-28" alt="Skin preview" />
                       </div>
-                      <div id="skinPreviewMeta" class="text-xs editor-muted-text text-center">Скин не загружен</div>
+                      <div id="skinPreviewMeta" class="text-xs editor-muted-text text-center">Skin not loaded</div>
                     </div>
                     <div class="space-y-4">
                       <div id="formBasic"></div>
@@ -171,105 +171,105 @@
     const BASIC_FIELDS = {
       Name: {
         type: 'text',
-        label: 'Имя бота',
+        label: 'Bot name',
         validate: { required: true },
-        ui: { placeholder: 'Например: Guardian' }
+        ui: { placeholder: 'e.g. Guardian' }
       }
     };
 
     const SKIN_FIELDS = {
       'Skin.name': {
         type: 'text',
-        label: 'Название скина',
+        label: 'Skin name',
         ui: { placeholder: 'default' }
       },
       'Skin.custom_color': {
         type: 'toggle',
-        label: 'Свои цвета'
+        label: 'Custom colours'
       },
       'Skin.color_body': {
         type: 'number',
-        label: 'Цвет тела',
+        label: 'Body colour',
         ui: { min: 0, step: 1, placeholder: '0' },
-        help: 'Используется только при включённой галочке «Свои цвета». '
+        help: 'Used only when “Custom colours” is checked. '
       },
       'Skin.color_feet': {
         type: 'number',
-        label: 'Цвет ног',
+        label: 'Feet colour',
         ui: { min: 0, step: 1, placeholder: '0' },
-        help: 'Используется только при включённой галочке «Свои цвета». '
+        help: 'Used only when “Custom colours” is checked. '
       }
     };
 
     const GEAR_FIELDS = {
       EquippedModules: {
         type: 'text',
-        label: 'Модули',
+        label: 'Modules',
         ui: { placeholder: '90,91,35' },
-        help: 'ID модулей через запятую. Оставьте 0, если модулей нет.'
+        help: 'Module IDs separated by commas. Leave 0 if there are no modules.'
       },
       SlotHammer: {
         type: 'db_select',
-        label: 'Молот',
+        label: 'Hammer',
         ui: {
           dbKey: 'item',
-          placeholder: '— предмет —',
-          searchPlaceholder: 'Поиск предмета…',
+          placeholder: '— item —',
+          searchPlaceholder: 'Search an item…',
           valueType: 'number',
           dbFilter: { key: 'Type', value: 'Equip hammer' }
         }
       },
       SlotGun: {
         type: 'db_select',
-        label: 'Пистолет',
+        label: 'Pistol',
         ui: {
           dbKey: 'item',
-          placeholder: '— предмет —',
-          searchPlaceholder: 'Поиск предмета…',
+          placeholder: '— item —',
+          searchPlaceholder: 'Search an item…',
           valueType: 'number',
           dbFilter: { key: 'Type', value: 'Equip gun' }
         }
       },
       SlotShotgun: {
         type: 'db_select',
-        label: 'Дробовик',
+        label: 'Shotgun',
         ui: {
           dbKey: 'item',
-          placeholder: '— предмет —',
-          searchPlaceholder: 'Поиск предмета…',
+          placeholder: '— item —',
+          searchPlaceholder: 'Search an item…',
           valueType: 'number',
           dbFilter: { key: 'Type', value: 'Equip shotgun' }
         }
       },
       SlotGrenade: {
         type: 'db_select',
-        label: 'Гранатомёт',
+        label: 'Grenade launcher',
         ui: {
           dbKey: 'item',
-          placeholder: '— предмет —',
-          searchPlaceholder: 'Поиск предмета…',
+          placeholder: '— item —',
+          searchPlaceholder: 'Search an item…',
           valueType: 'number',
           dbFilter: { key: 'Type', value: 'Equip grenade' }
         }
       },
       SlotRifle: {
         type: 'db_select',
-        label: 'Лазер',
+        label: 'Laser',
         ui: {
           dbKey: 'item',
-          placeholder: '— предмет —',
-          searchPlaceholder: 'Поиск предмета…',
+          placeholder: '— item —',
+          searchPlaceholder: 'Search an item…',
           valueType: 'number',
           dbFilter: { key: 'Type', value: 'Equip rifle' }
         }
       },
       SlotArmor: {
         type: 'db_select',
-        label: 'Броня',
+        label: 'Armour',
         ui: {
           dbKey: 'item',
-          placeholder: '— предмет —',
-          searchPlaceholder: 'Поиск предмета…',
+          placeholder: '— item —',
+          searchPlaceholder: 'Search an item…',
           valueType: 'number',
           dbFilter: { key: 'Type', values: ['Equip armor (tank)', 'Equip armor (dps)', 'Equip armor (healer)'] }
         }
@@ -373,19 +373,19 @@
     const esc = EditorCore.Page.esc;
     const canDiscardDirty = async () => {
       if (!dirty?.isDirty?.()) return true;
-      return EditorCore.Page.confirm('Есть несохранённые изменения. Продолжить без сохранения?');
+      return EditorCore.Page.confirm('You have unsaved changes. Continue without saving?');
     };
 
     const setHeader = () => {
       if (!DOM.title && !DOM.subtitle) return;
       if (!STATE.model) {
-        if (DOM.title) DOM.title.textContent = 'Выберите бота';
-        if (DOM.subtitle) DOM.subtitle.textContent = 'или создайте нового';
+        if (DOM.title) DOM.title.textContent = 'Select a bot';
+        if (DOM.subtitle) DOM.subtitle.textContent = 'or create a new one';
         return;
       }
-      const name = STATE.model?.Name || (STATE.selectedId ? `Бот #${STATE.selectedId}` : 'Новый бот');
+      const name = STATE.model?.Name || (STATE.selectedId ? `Bot #${STATE.selectedId}` : 'New bot');
       if (DOM.title) DOM.title.textContent = name;
-      if (DOM.subtitle) DOM.subtitle.textContent = STATE.selectedId ? `ID ${STATE.selectedId}` : 'Новая запись';
+      if (DOM.subtitle) DOM.subtitle.textContent = STATE.selectedId ? `ID ${STATE.selectedId}` : 'New record';
     };
 
     const updateSkinControls = () => {
@@ -407,13 +407,13 @@
       if (!STATE.model) {
         DOM.skinPreviewImg.src = '';
         DOM.skinPreviewImg.classList.add('hidden');
-        DOM.skinPreviewMeta.textContent = 'Скин не выбран.';
+        DOM.skinPreviewMeta.textContent = 'No skin selected.';
         return;
       }
       if (!hasApi) {
         DOM.skinPreviewImg.src = '';
         DOM.skinPreviewImg.classList.add('hidden');
-        DOM.skinPreviewMeta.textContent = 'Сервис превью скинов не настроен.';
+        DOM.skinPreviewMeta.textContent = 'The skin preview service is not configured.';
         return;
       }
       const url = EditorCore.utils.renderSkinApiUrl(STATE.skinsApi, {
@@ -423,11 +423,11 @@
       });
       DOM.skinPreviewImg.src = url;
       DOM.skinPreviewImg.classList.toggle('hidden', !url);
-      DOM.skinPreviewMeta.textContent = `${skin.name || 'default'} · ${skin.custom_color ? 'свой цвет' : 'стандартный'}`;
+      DOM.skinPreviewMeta.textContent = `${skin.name || 'default'} · ${skin.custom_color ? 'custom color' : 'standard'}`;
     };
 
     const showEmptyForm = () => {
-      const emptyHtml = '<div class="editor-empty-state editor-field--span-all">Выберите бота в списке слева или нажмите «Новый бот».</div>';
+      const emptyHtml = '<div class="editor-empty-state editor-field--span-all">Select a bot in the list on the left or click “New bot”.</div>';
       DOM.formBasic.innerHTML = emptyHtml;
       DOM.formSkin.innerHTML = '';
       DOM.formGear.innerHTML = emptyHtml;
@@ -495,7 +495,7 @@
       if (DOM.count) DOM.count.textContent = rows.length ? `${rows.length}` : '0';
       if (!DOM.list) return;
       if (!rows.length) {
-        DOM.list.innerHTML = '<div class="editor-empty-state">Боты не найдены — измените поиск или нажмите «Новый бот».</div>';
+        DOM.list.innerHTML = '<div class="editor-empty-state">No bots found — change the search or click “New bot”.</div>';
         return;
       }
       const skinsApi = STATE.skinsApi || '';
@@ -553,11 +553,11 @@
 
     const loadList = async () => {
       const search = DOM.search?.value?.trim() || '';
-      setStatus('Загрузка списка…');
+      setStatus('Loading list…');
       try {
         const res = await EditorCore.DBCrud.list('bots_info', { search, limit: 5000, offset: 0 });
         STATE.rows = Array.isArray(res.rows) ? res.rows : [];
-        setStatus(STATE.rows.length ? '' : 'Список пуст.', 'muted');
+        setStatus(STATE.rows.length ? '' : 'The list is empty.', 'muted');
         renderList();
         if (STATE.selectedId) {
           const found = STATE.rows.find(r => Number(r.ID) === Number(STATE.selectedId));
@@ -566,7 +566,7 @@
           selectRow(STATE.rows[0]);
         }
       } catch (err) {
-        const msg = err?.message || 'Ошибка загрузки';
+        const msg = err?.message || 'Loading failed';
         setStatus(msg, 'err');
         EditorCore.UI.toast(msg, 'error');
       }
@@ -594,7 +594,7 @@
           : null;
         if (fallbackRow) selectRow(fallbackRow);
         else selectRow(null);
-        setStatus('Создание записи отменено.', 'ok');
+        setStatus('Record creation cancelled.', 'ok');
         return;
       }
       STATE.model = cloneData(STATE.persistedModel || STATE.model);
@@ -603,29 +603,29 @@
       renderList();
       setHeader();
       setButtons(true);
-      setStatus('Локальные изменения отменены.', 'ok');
+      setStatus('Local changes discarded.', 'ok');
     };
 
     const save = async () => {
       if (!STATE.model) return;
-      setStatus('Сохранение…');
+      setStatus('Saving…');
       try {
         const payload = toPayload(STATE.model);
         if (STATE.selectedId) {
           await EditorCore.DBCrud.update('bots_info', STATE.selectedId, payload);
-          setStatus('Изменения сохранены.', 'ok');
-          EditorCore.UI.toast('Сохранено', 'success');
+          setStatus('Changes saved.', 'ok');
+          EditorCore.UI.toast('Saved', 'success');
         } else {
           const res = await EditorCore.DBCrud.create('bots_info', payload);
           STATE.selectedId = Number(res.id || 0);
           STATE.lastSelectedIdBeforeCreate = 0;
-          setStatus('Запись создана.', 'ok');
-          EditorCore.UI.toast('Создано', 'success');
+          setStatus('Record created.', 'ok');
+          EditorCore.UI.toast('Created', 'success');
         }
         dirty.setClean();
         await loadList();
       } catch (err) {
-        const msg = err?.message || 'Ошибка сохранения';
+        const msg = err?.message || 'Save failed';
         setStatus(msg, 'err');
         EditorCore.UI.toast(msg, 'error');
       }
@@ -633,16 +633,16 @@
 
     const remove = async () => {
       if (!STATE.selectedId) return;
-      if (!await EditorCore.Page.confirm('Удалить запись?')) return;
-      setStatus('Удаление…');
+      if (!await EditorCore.Page.confirm('Delete the record?')) return;
+      setStatus('Deleting…');
       try {
         await EditorCore.DBCrud.remove('bots_info', STATE.selectedId);
-        EditorCore.UI.toast('Удалено', 'success');
-        setStatus('Удалено.', 'ok');
+        EditorCore.UI.toast('Deleted', 'success');
+        setStatus('Deleted.', 'ok');
         selectRow(null);
         await loadList();
       } catch (err) {
-        const msg = err?.message || 'Ошибка удаления';
+        const msg = err?.message || 'Delete failed';
         setStatus(msg, 'err');
         EditorCore.UI.toast(msg, 'error');
       }
@@ -650,8 +650,8 @@
 
     const tabs = EditorCore.UI.mountTabs(DOM.tabRoot, {
       tabs: [
-        { id: 'basic', title: 'Имя и скин', icon: 'fa-user-astronaut' },
-        { id: 'gear', title: 'Экипировка', icon: 'fa-shield-halved' },
+        { id: 'basic', title: 'Name & skin', icon: 'fa-user-astronaut' },
+        { id: 'gear', title: 'Equipment', icon: 'fa-shield-halved' },
       ],
       active: 'basic',
       onChange: (id) => {

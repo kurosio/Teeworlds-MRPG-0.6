@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Предметы • Editor Studio</title>
+  <title>Items • Editor Studio</title>
   <script src="editor-core/page-loader.js" data-mode="event"></script>
 
   <style>
@@ -35,16 +35,16 @@
       <div class="editor-page-title">
         <i class="fa-solid fa-cube text-accent text-xl"></i>
         <div>
-          <h1>Предметы</h1>
-          <div class="editor-page-sub">Каталог предметов: параметры, описания и группировка.</div>
+          <h1>Items</h1>
+          <div class="editor-page-sub">Item catalogue: parameters, descriptions and grouping.</div>
         </div>
       </div>
       <div class="editor-page-actions">
         <button class="editor-btn editor-btn-secondary" data-editor-role="refresh">
-          <i class="fa-solid fa-rotate"></i><span>Обновить</span>
+          <i class="fa-solid fa-rotate"></i><span>Refresh</span>
         </button>
         <button class="editor-btn editor-btn-primary" data-editor-role="new">
-          <i class="fa-solid fa-plus"></i><span>Новый предмет</span>
+          <i class="fa-solid fa-plus"></i><span>New item</span>
         </button>
       </div>
     </div>
@@ -55,24 +55,24 @@
         <div class="editor-dock-pad">
           <div class="flex items-center justify-between gap-3">
             <div>
-              <div class="text-sm font-semibold">Список предметов</div>
-              <div class="text-xs editor-muted-text">Всего: <span data-editor-role="count">—</span></div>
+              <div class="text-sm font-semibold">Item list</div>
+              <div class="text-xs editor-muted-text">Total: <span data-editor-role="count">—</span></div>
             </div>
           </div>
 
           <div class="mt-3">
             <div class="editor-search">
               <i class="fa-solid fa-magnifying-glass"></i>
-              <input data-editor-role="search" type="search" class="w-full editor-input form-input" placeholder="Поиск по ID/названию/группе…" />
+              <input data-editor-role="search" type="search" class="w-full editor-input form-input" placeholder="Search by ID/name/group…" />
             </div>
           </div>
 
           <div class="mt-3 editor-sidebar-filters two-col">
             <select id="filterGroup" class="w-full editor-input form-input">
-              <option value="">Все группы</option>
+              <option value="">All groups</option>
             </select>
             <select id="filterType" class="w-full editor-input form-input">
-              <option value="">Все типы</option>
+              <option value="">All types</option>
             </select>
           </div>
 
@@ -85,19 +85,19 @@
         <div class="editor-dock-pad">
           <div class="editor-sticky-toolbar flex items-start justify-between gap-4">
             <div>
-              <div class="text-lg font-semibold" data-editor-role="title">Выберите предмет</div>
-              <div class="editor-muted-text text-sm mt-1" data-editor-role="subtitle">или создайте новый</div>
+              <div class="text-lg font-semibold" data-editor-role="title">Select an item</div>
+              <div class="editor-muted-text text-sm mt-1" data-editor-role="subtitle">or create a new one</div>
             </div>
             <div class="editor-page-actions">
-              <span id="dirty-pill" class="editor-dirty-pill hidden">Данные не сохранены</span>
+              <span id="dirty-pill" class="editor-dirty-pill hidden">Data not saved</span>
               <button class="editor-btn editor-btn-primary" data-editor-role="save" disabled>
-                <i class="fa-solid fa-floppy-disk"></i><span>Сохранить</span>
+                <i class="fa-solid fa-floppy-disk"></i><span>Save</span>
               </button>
               <button class="editor-btn editor-btn-secondary hidden" data-editor-role="cancel" disabled>
-                <i class="fa-solid fa-rotate-left"></i><span>Отменить</span>
+                <i class="fa-solid fa-rotate-left"></i><span>Cancel</span>
               </button>
               <button class="editor-btn editor-btn-secondary" data-editor-role="delete" disabled>
-                <i class="fa-solid fa-trash"></i><span>Удалить</span>
+                <i class="fa-solid fa-trash"></i><span>Delete</span>
               </button>
             </div>
           </div>
@@ -233,7 +233,7 @@
       try {
         return JSON.parse(raw);
       } catch (err) {
-        throw new Error(`Поле ${label}: неверный JSON`);
+        throw new Error(`Field ${label}: invalid JSON`);
       }
     };
 
@@ -258,30 +258,30 @@
 
     const DATA_EDITOR_RULES = {
       Usable: [
-        { value: DATA_EDITOR_NONE, label: 'Без данных' },
-        { value: DATA_EDITOR_RANDOM_BOX, label: 'Рандом Бокс' },
-        { value: DATA_EDITOR_BOX, label: 'Бокс' },
-        { value: DATA_EDITOR_BONUS, label: 'Бонус' },
-        { value: DATA_EDITOR_USE_SCENARIO, label: 'Запуск сценария' },
+        { value: DATA_EDITOR_NONE, label: 'No data' },
+        { value: DATA_EDITOR_RANDOM_BOX, label: 'Random Box' },
+        { value: DATA_EDITOR_BOX, label: 'Box' },
+        { value: DATA_EDITOR_BONUS, label: 'Bonus' },
+        { value: DATA_EDITOR_USE_SCENARIO, label: 'Scenario start' },
       ],
       Potion: [
-        { value: DATA_EDITOR_POTION, label: 'Зелье' },
-        { value: DATA_EDITOR_NONE, label: 'Без данных' },
+        { value: DATA_EDITOR_POTION, label: 'Potion' },
+        { value: DATA_EDITOR_NONE, label: 'No data' },
       ],
     };
 
     // Canonical names are written to item JSON. Keep this order aligned with stable
     // numeric IDs 1..N only to display/convert legacy records loaded from the database.
     const MULTIPLIER_TYPE_OPTIONS = [
-      { value: 'experience', label: 'Опыт' },
-      { value: 'gold', label: 'Золото' },
-      { value: 'health', label: 'Здоровье (HP)' },
-      { value: 'mana', label: 'Мана (MP)' },
-      { value: 'mob_drop', label: 'Дроп с мобов' },
-      { value: 'mining_drop', label: 'Добыча руды' },
-      { value: 'farming_drop', label: 'Сбор растений' },
-      { value: 'fishing_drop', label: 'Рыбалка' },
-      { value: 'skill_point_drop', label: 'Очки навыка' },
+      { value: 'experience', label: 'Experience' },
+      { value: 'gold', label: 'Gold' },
+      { value: 'health', label: 'Health (HP)' },
+      { value: 'mana', label: 'Mana (MP)' },
+      { value: 'mob_drop', label: 'Mob drop' },
+      { value: 'mining_drop', label: 'Ore mining' },
+      { value: 'farming_drop', label: 'Plant gathering' },
+      { value: 'fishing_drop', label: 'Fishing' },
+      { value: 'skill_point_drop', label: 'Skill points' },
     ];
 
     const MULTIPLIER_TYPE_ALIASES = {
@@ -312,13 +312,13 @@
     };
 
     const BONUS_DURATION_UNITS = [
-      { value: 'minutes', label: 'Минуты' },
-      { value: 'hours', label: 'Часы' },
-      { value: 'days', label: 'Дни' },
+      { value: 'minutes', label: 'Minutes' },
+      { value: 'hours', label: 'Hours' },
+      { value: 'days', label: 'Days' },
     ];
 
     const getAvailableDataEditors = (group) =>
-      DATA_EDITOR_RULES[String(group || '')] || [{ value: DATA_EDITOR_NONE, label: 'Без данных' }];
+      DATA_EDITOR_RULES[String(group || '')] || [{ value: DATA_EDITOR_NONE, label: 'No data' }];
 
     const getDefaultDataEditor = (group) => getAvailableDataEditors(group)[0]?.value || DATA_EDITOR_NONE;
 
@@ -480,42 +480,42 @@
     const itemFields = {
       Name: {
         type: 'text',
-        label: 'Название',
+        label: 'Name',
         validate: { required: true },
         ui: {
-          placeholder: 'Введите название предмета',
-          section: { title: 'Основная информация', icon: 'fa-cube', subtitle: 'Название, классификация и описание' },
+          placeholder: 'Enter the item name',
+          section: { title: 'Basic information', icon: 'fa-cube', subtitle: 'Name, classification and description' },
         },
       },
       Group: {
-        label: 'Группа',
+        label: 'Group',
         ui: {
           type: 'select',
           options: GROUPS,
         }
       },
       Type: {
-        label: 'Тип',
+        label: 'Type',
         ui: {
           type: 'select',
           ...(TypeRule?.fieldUI ? TypeRule.fieldUI() : {}),
         }
       },
-      Comment: { type: 'text', label: 'Внутренний комментарий', ui: { placeholder: 'Заметка для разработчиков (опционально)' } },
-      Description: { type: 'textarea', label: 'Описание', ui: { rows: 2, placeholder: 'Описание предмета в инвентаре игрока' } },
+      Comment: { type: 'text', label: 'Internal comment', ui: { placeholder: 'Note for developers (optional)' } },
+      Description: { type: 'textarea', label: 'Description', ui: { rows: 2, placeholder: 'Item description in the player\'s inventory' } },
       AT1: {
         type: 'db_select',
-        label: 'Атрибут 1',
+        label: 'Attribute 1',
         ui: {
           dbKey: 'attribute',
-          placeholder: '— атрибут —',
+          placeholder: '— attribute —',
           showWhen: isEquipmentGroup,
-          section: { title: 'Характеристики экипировки', icon: 'fa-shield-halved' },
+          section: { title: 'Equipment stats', icon: 'fa-shield-halved' },
         }
       },
       ATValue1: {
         type: 'number',
-        label: 'Значение атрибута 1',
+        label: 'Attribute 1 value',
         ui: {
           step: 1,
           showWhen: isEquipmentGroup,
@@ -523,16 +523,16 @@
       },
       AT2: {
         type: 'db_select',
-        label: 'Атрибут 2',
+        label: 'Attribute 2',
         ui: {
           dbKey: 'attribute',
-          placeholder: '— атрибут —',
+          placeholder: '— attribute —',
           showWhen: isEquipmentGroup,
         }
       },
       ATValue2: {
         type: 'number',
-        label: 'Значение атрибута 2',
+        label: 'Attribute 2 value',
         ui: {
           step: 1,
           showWhen: isEquipmentGroup,
@@ -540,17 +540,17 @@
       },
       InitialPrice: {
         type: 'number',
-        label: 'Начальная цена',
+        label: 'Base price',
         ui: {
           min: 0,
           step: 1,
           showWhen: supportsItemOptions,
-          section: { title: 'Экономика и ограничения', icon: 'fa-coins' },
+          section: { title: 'Economy and limits', icon: 'fa-coins' },
         }
       },
       RequiresProducts: {
         type: 'number',
-        label: 'Требует продуктов',
+        label: 'Requires produce',
         ui: {
           min: 0,
           step: 1,
@@ -558,75 +558,75 @@
         }
       },
       Flags: {
-        label: 'Флаги',
+        label: 'Flags',
         ui: {
           type: 'tags',
           options: FLAGS,
-          placeholder: 'Добавить флаг…',
+          placeholder: 'Add a flag…',
           showWhen: supportsItemOptions,
         }
       },
       ScenarioMode: {
-        label: 'Режим сценария',
+        label: 'Scenario mode',
         ui: {
           type: 'select',
-          section: { title: 'Сценарий предмета', icon: 'fa-diagram-project' },
+          section: { title: 'Item scenario', icon: 'fa-diagram-project' },
           options: [
-            { value: 'universal', label: 'Одиночный (Universal)' },
-            { value: 'world', label: 'Мировой (World)' },
+            { value: 'universal', label: 'Single (Universal)' },
+            { value: 'world', label: 'World' },
           ],
         }
       },
       // Мир сценария — то же поле, что «Мир сценария» в форме: карта компонента
       // открывается в нём (см. editor-core/point-map.js).
-      ScenarioData: { type: 'scenario', label: 'Сценарий при срабатывании', ui: { scenarioModePath: 'ScenarioMode', mapWorldPath: 'DataScenarioWorldID' } },
+      ScenarioData: { type: 'scenario', label: 'Scenario on trigger', ui: { scenarioModePath: 'ScenarioMode', mapWorldPath: 'DataScenarioWorldID' } },
       DataEditorType: {
-        label: 'Редактор данных (Data)',
+        label: 'Data editor (Data)',
         ui: {
           type: 'select',
-          section: { title: 'Параметры действия (JSON Data)', icon: 'fa-sliders' },
+          section: { title: 'Action parameters (JSON Data)', icon: 'fa-sliders' },
           options: (data) => getAvailableDataEditors(data?.Group),
-          help: 'Поля ниже зависят от выбранного режима. Для группы Potion доступен режим «Зелье»; «Без данных» сохраняет пустое значение.',
+          help: 'The fields below depend on the selected mode. The “Potion” mode is available for the Potion group; “No data” keeps the value empty.',
         },
       },
       DataRandomBoxItems: {
         type: 'list',
-        label: 'Предметы случайного бокса',
+        label: 'Random box items',
         ui: {
-          addLabel: 'Добавить предмет',
+          addLabel: 'Add an item',
           listMode: 'table',
-          tableHeader: ['Предмет', 'Количество', 'Шанс (%)'],
+          tableHeader: ['Item', 'Quantity', 'Chance (%)'],
           tableCols: 'minmax(0,1fr) 140px 140px',
           tableColsMd: 'minmax(0,1fr) 160px 160px',
           showWhen: whenDataEditorIs(DATA_EDITOR_RANDOM_BOX),
         },
         itemDefault: { item_id: 0, value: 1, chance: 100 },
         itemFields: {
-          item_id: { type: 'db_select', label: 'Предмет', ui: { dbKey: 'item', placeholder: '— предмет —', searchPlaceholder: 'Поиск предмета…' } },
-          value: { type: 'number', label: 'Количество', ui: { min: 1, step: 1 } },
-          chance: { type: 'number', label: 'Шанс (%)', ui: { min: 0, step: 0.1 } },
+          item_id: { type: 'db_select', label: 'Item', ui: { dbKey: 'item', placeholder: '— item —', searchPlaceholder: 'Search an item…' } },
+          value: { type: 'number', label: 'Quantity', ui: { min: 1, step: 1 } },
+          chance: { type: 'number', label: 'Chance (%)', ui: { min: 0, step: 0.1 } },
         },
       },
       DataBoxItems: {
         type: 'list',
-        label: 'Предметы в боксе',
+        label: 'Box items',
         ui: {
-          addLabel: 'Добавить предмет',
+          addLabel: 'Add an item',
           listMode: 'table',
-          tableHeader: ['Предмет', 'Количество'],
+          tableHeader: ['Item', 'Quantity'],
           tableCols: 'minmax(0,1fr) 140px',
           tableColsMd: 'minmax(0,1fr) 160px',
           showWhen: whenDataEditorIs(DATA_EDITOR_BOX),
         },
         itemDefault: { item_id: 0, value: 1 },
         itemFields: {
-          item_id: { type: 'db_select', label: 'Предмет', ui: { dbKey: 'item', placeholder: '— предмет —', searchPlaceholder: 'Поиск предмета…' } },
-          value: { type: 'number', label: 'Количество', ui: { min: 1, step: 1 } },
+          item_id: { type: 'db_select', label: 'Item', ui: { dbKey: 'item', placeholder: '— item —', searchPlaceholder: 'Search an item…' } },
+          value: { type: 'number', label: 'Quantity', ui: { min: 1, step: 1 } },
         },
       },
       DataPotionEffect: {
         type: 'text',
-        label: 'Имя эффекта',
+        label: 'Effect name',
         validate: { required: true },
         ui: {
           placeholder: 'Tiny heal',
@@ -635,28 +635,28 @@
       },
       DataPotionLifetime: {
         type: 'number',
-        label: 'Время действия (сек.)',
+        label: 'Duration (sec.)',
         ui: {
           min: 1,
           step: 1,
           showWhen: whenDataEditorIs(DATA_EDITOR_POTION),
         },
-        validate: { min: 1, minMessage: 'Время действия — не менее 1 секунды.' },
+        validate: { min: 1, minMessage: 'The duration must be at least 1 second.' },
       },
       DataPotionRecast: {
         type: 'number',
-        label: 'Перезарядка (сек.)',
+        label: 'Cooldown (sec.)',
         ui: {
           min: 0,
           step: 1,
           placeholder: String(POTION_RECAST_DEFAULT_SECONDS),
-          help: `По умолчанию ${POTION_RECAST_DEFAULT_SECONDS} сек.; 0 — без задержки.`,
+          help: `Default  ${POTION_RECAST_DEFAULT_SECONDS}  sec.; 0 means no delay.`,
           showWhen: whenDataEditorIs(DATA_EDITOR_POTION),
         },
       },
       DataBonusAmount: {
         type: 'number',
-        label: 'Бонус (%)',
+        label: 'Bonus (%)',
         ui: {
           min: 0,
           step: 0.1,
@@ -664,7 +664,7 @@
         },
       },
       DataBonusType: {
-        label: 'Бонус: тип',
+        label: 'Bonus: type',
         ui: {
           type: 'select',
           options: MULTIPLIER_TYPE_OPTIONS,
@@ -674,16 +674,16 @@
       },
       DataBonusDurationValue: {
         type: 'number',
-        label: 'Бонус: время',
+        label: 'Bonus: time',
         ui: {
           min: 0,
           step: 1,
-          placeholder: 'Значение длительности',
+          placeholder: 'Duration value',
           showWhen: whenDataEditorIs(DATA_EDITOR_BONUS),
         },
       },
       DataBonusDurationUnit: {
-        label: 'Ед. измерения времени',
+        label: 'Time unit',
         ui: {
           type: 'select',
           options: BONUS_DURATION_UNITS,
@@ -692,56 +692,56 @@
       },
       DataScenarioName: {
         type: 'text',
-        label: 'Имя сценария',
+        label: 'Scenario name',
         ui: {
-          placeholder: 'Название сценария/активатора',
+          placeholder: 'Scenario/activator name',
           showWhen: whenDataEditorIs(DATA_EDITOR_USE_SCENARIO),
         },
       },
       DataScenarioWorldID: {
         type: 'db_select',
-        label: 'Мир сценария',
+        label: 'Scenario world',
         ui: {
           dbKey: 'world',
-          placeholder: '— текущий мир —',
-          help: 'Если мир не выбран, сценарий запускается в текущем мире.',
+          placeholder: '— current world —',
+          help: 'If no world is selected, the scenario runs in the current world.',
           showWhen: whenDataEditorIs(DATA_EDITOR_USE_SCENARIO),
         },
       },
       DataScenarioSingle: {
         type: 'boolean',
-        label: 'Одиночный',
+        label: 'Single',
         ui: {
           showWhen: whenDataEditorIs(DATA_EDITOR_USE_SCENARIO),
         },
       },
       DataScenarioDuration: {
         type: 'number',
-        label: 'Время выполнения (сек.)',
+        label: 'Run time (sec.)',
         ui: {
           min: 0,
           step: 1,
-          placeholder: '0 — без ограничения',
+          placeholder: '0 — no limit',
           showWhen: whenDataEditorIs(DATA_EDITOR_USE_SCENARIO),
         },
       },
       DataScenarioRewards: {
         type: 'list',
-        label: 'Награды сценария',
+        label: 'Scenario rewards',
         itemDefault: { item_id: 0, value: 1, chance: 100 },
         itemFields: {
-          item_id: { type: 'db_select', label: 'Предмет', ui: { dbKey: 'item', placeholder: '— выберите предмет —' } },
-          value: { type: 'number', label: 'Количество', ui: { min: 1, max: 999999, step: 1 } },
-          chance: { type: 'number', label: 'Шанс (%)', ui: { min: 0, max: 100, step: 0.01 } },
+          item_id: { type: 'db_select', label: 'Item', ui: { dbKey: 'item', placeholder: '— select an item —' } },
+          value: { type: 'number', label: 'Quantity', ui: { min: 1, max: 999999, step: 1 } },
+          chance: { type: 'number', label: 'Chance (%)', ui: { min: 0, max: 100, step: 0.01 } },
         },
         ui: {
           showWhen: whenDataEditorIs(DATA_EDITOR_USE_SCENARIO),
           listMode: 'table',
-          tableHeader: ['Предмет', 'Количество', 'Шанс (%)'],
+          tableHeader: ['Item', 'Quantity', 'Chance (%)'],
           tableCols: 'minmax(180px, 1fr) minmax(100px, 140px) minmax(90px, 120px)',
           tableColsMd: 'minmax(220px, 1fr) 130px 110px',
-          addLabel: 'Добавить награду',
-          emptyMessage: 'Награды не добавлены',
+          addLabel: 'Add a reward',
+          emptyMessage: 'No rewards added',
         },
       },
     };
@@ -758,7 +758,7 @@
     const filterType = document.getElementById('filterType');
     if (filterGroup) {
       filterGroup.innerHTML = [
-        '<option value=\"\">Все группы</option>',
+        '<option value="">All groups</option>',
         ...GROUPS.map(group => `<option value=\"${group}\">${group}</option>`),
       ].join('');
     }
@@ -772,7 +772,7 @@
           keyValue: group,
           allOptions: TYPES_ALL,
           anyValue: '',
-          anyLabel: 'Все типы',
+          anyLabel: 'All types',
           hideMode: 'display',
         });
         return;
@@ -783,7 +783,7 @@
       filterType.style.display = '';
       const prev = String(filterType.value || '');
       filterType.innerHTML = [
-        '<option value=\"\">Все типы</option>',
+        '<option value="">All types</option>',
         ...TYPES_ALL.map(type => `<option value=\"${type}\">${type}</option>`),
       ].join('');
       filterType.value = (prev && TYPES_ALL.includes(prev)) ? prev : '';
@@ -816,12 +816,12 @@
       dirty,
       validateModel: (model) => {
         if (normalizeDataEditor(model?.Group, model?.DataEditorType) !== DATA_EDITOR_POTION) return '';
-        if (!String(model?.DataPotionEffect || '').trim()) return 'Укажите имя эффекта зелья.';
+        if (!String(model?.DataPotionEffect || '').trim()) return 'Enter the potion effect name.';
         if ((toNullableInt(model?.DataPotionLifetime) ?? 0) < 1) {
-          return 'Время действия — не менее 1 секунды.';
+          return 'The duration must be at least 1 second.';
         }
         if ((toNullableInt(model?.DataPotionRecast) ?? POTION_RECAST_DEFAULT_SECONDS) < 0) {
-          return 'Перезарядка не может быть отрицательной.';
+          return 'The cooldown cannot be negative.';
         }
         return '';
       },
@@ -946,18 +946,18 @@
         });
       },
       listItem: (row) => ({
-        title: `${getTypeIcon(row?.Type)} ${row?.Name || `Предмет #${row?.ID || 0}`}`,
+        title: `${getTypeIcon(row?.Type)} ${row?.Name || `Item #${row?.ID || 0}`}`,
         subtitle: `${row?.Group || '—'} · ID ${row?.ID ?? '—'}`,
       }),
-      getTitle: (model, id) => (id ? `Предмет: ${model?.Name || `#${id}`}` : 'Новый предмет'),
+      getTitle: (model, id) => (id ? `Item: ${model?.Name || `#${id}`}` : 'New item'),
       getSubtitle: (model, id) => {
         if (!model) return '';
-        const group = model.Group ? `Группа: ${model.Group}` : 'Группа: —';
-        const type = model.Type ? `Тип: ${model.Type}` : 'Тип: —';
+        const group = model.Group ? `Group:  ${model.Group}` : 'Group: —';
+        const type = model.Type ? `Type:  ${model.Type}` : 'Type: —';
         return id ? `ID ${id} · ${group} · ${type}` : `${group} · ${type}`;
       },
-      emptyTitle: 'Выберите предмет',
-      emptySubtitle: 'или создайте новый',
+      emptyTitle: 'Select an item',
+      emptySubtitle: 'or create a new one',
 
       // group switching toggles fields (attributes + type rules), so we normalize and rerender
       rerenderOnChange: (model, meta) => {

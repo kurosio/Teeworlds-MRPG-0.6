@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Аэтры (телепорты) • Editor Studio</title>
+  <title>Aethers (teleports) • Editor Studio</title>
   <script src="editor-core/page-loader.js" data-mode="event"></script>
 </head>
 
@@ -13,16 +13,16 @@
       <div class="editor-page-title">
         <i class="fa-solid fa-wand-magic-sparkles text-accent text-xl"></i>
         <div>
-          <h1>Аэтры</h1>
-          <div class="editor-page-sub">Телепорты и координаты: быстрый доступ к точкам перемещения.</div>
+          <h1>Aethers</h1>
+          <div class="editor-page-sub">Teleports and coordinates: quick access to travel points.</div>
         </div>
       </div>
       <div class="editor-page-actions">
         <button class="editor-btn editor-btn-secondary" data-editor-role="refresh">
-          <i class="fa-solid fa-rotate"></i><span>Обновить</span>
+          <i class="fa-solid fa-rotate"></i><span>Refresh</span>
         </button>
         <button class="editor-btn editor-btn-primary" data-editor-role="new">
-          <i class="fa-solid fa-plus"></i><span>Новый телепорт</span>
+          <i class="fa-solid fa-plus"></i><span>New teleport</span>
         </button>
       </div>
     </div>
@@ -33,21 +33,21 @@
         <div class="editor-dock-pad">
           <div class="flex items-center justify-between gap-3">
             <div>
-              <div class="text-sm font-semibold">Список телепортов</div>
-              <div class="text-xs editor-muted-text">Всего: <span data-editor-role="count">—</span></div>
+              <div class="text-sm font-semibold">Teleport list</div>
+              <div class="text-xs editor-muted-text">Total: <span data-editor-role="count">—</span></div>
             </div>
           </div>
 
           <div class="mt-3">
             <div class="editor-search">
               <i class="fa-solid fa-magnifying-glass"></i>
-              <input data-editor-role="search" type="search" class="w-full editor-input form-input" placeholder="Поиск по ID/названию/миру…" />
+              <input data-editor-role="search" type="search" class="w-full editor-input form-input" placeholder="Search by ID/name/world…" />
             </div>
           </div>
 
           <div class="mt-3 editor-sidebar-filters">
             <select id="filterWorld" class="w-full editor-input form-input" data-datasource="worlds" data-label-mode="id_name" data-db-searchable="0" data-db-limit="300" data-value-type="number">
-              <option value="">Все миры</option>
+              <option value="">All worlds</option>
             </select>
           </div>
 
@@ -60,19 +60,19 @@
         <div class="editor-dock-pad">
           <div class="editor-sticky-toolbar flex items-start justify-between gap-4">
             <div>
-              <div class="text-lg font-semibold" data-editor-role="title">Выберите телепорт</div>
-              <div class="editor-muted-text text-sm mt-1" data-editor-role="subtitle">или создайте новый</div>
+              <div class="text-lg font-semibold" data-editor-role="title">Select a teleport</div>
+              <div class="editor-muted-text text-sm mt-1" data-editor-role="subtitle">or create a new one</div>
             </div>
             <div class="editor-page-actions">
-              <span id="dirty-pill" class="editor-dirty-pill hidden">Данные не сохранены</span>
+              <span id="dirty-pill" class="editor-dirty-pill hidden">Data not saved</span>
               <button class="editor-btn editor-btn-primary" data-editor-role="save" disabled>
-                <i class="fa-solid fa-floppy-disk"></i><span>Сохранить</span>
+                <i class="fa-solid fa-floppy-disk"></i><span>Save</span>
               </button>
               <button class="editor-btn editor-btn-secondary hidden" data-editor-role="cancel" disabled>
-                <i class="fa-solid fa-rotate-left"></i><span>Отменить</span>
+                <i class="fa-solid fa-rotate-left"></i><span>Cancel</span>
               </button>
               <button class="editor-btn editor-btn-secondary" data-editor-role="delete" disabled>
-                <i class="fa-solid fa-trash"></i><span>Удалить</span>
+                <i class="fa-solid fa-trash"></i><span>Delete</span>
               </button>
             </div>
           </div>
@@ -96,17 +96,17 @@
       if (!Number.isFinite(id) || id < 0) return '—';
       const name = worldsMap.get(String(id));
       if (name) return `${name} (#${id})`;
-      return id ? `Мир #${id}` : 'Мир #0';
+      return id ? `World #${id}` : 'World #0';
     };
 
     const aetherFields = {
-      Name: { type: 'text', label: 'Название', validate: { required: true }, ui: { placeholder: 'Например: Gridania (Center)' } },
-      WorldID: { type: 'db_select', label: 'Мир', validate: { required: true }, ui: { datasource: 'worlds', labelMode: 'id_name', placeholder: '— мир —', searchPlaceholder: 'Поиск мира…' } },
+      Name: { type: 'text', label: 'Name', validate: { required: true }, ui: { placeholder: 'e.g. Gridania (Center)' } },
+      WorldID: { type: 'db_select', label: 'World', validate: { required: true }, ui: { datasource: 'worlds', labelMode: 'id_name', placeholder: '— world —', searchPlaceholder: 'Search a world…' } },
       // Точка телепорта: показываем игровой слой и спавны, но не запрещаем
       // тайлы — телепорт может вести в любое место карты.
       Position: {
-        type: 'vec2', label: 'Координаты точки телепорта',
-        ui: { step: 1, axes: { x: 'TeleX', y: 'TeleY' }, mapWorldPath: 'WorldID', showTiles: false, highlightTiles: [28], radius: 320, spanAll: true }
+        type: 'vec2', label: 'Teleport point coordinates',
+        ui: { step: 1, axes: { x: 'TeleX', y: 'TeleY' }, mapWorldPath: 'WorldID', showTiles: true, highlightTiles: [28], radius: 320, spanAll: true }
       },
     };
 
@@ -149,18 +149,18 @@
         TeleY: Number(model?.TeleY || 0),
       }),
       listItem: (row) => ({
-        title: row?.Name || `Телепорт #${row?.ID || 0}`,
+        title: row?.Name || `Teleport #${row?.ID || 0}`,
         subtitle: `ID ${row?.ID ?? '—'} · ${formatWorldLabel(row?.WorldID)} · X ${row?.TeleX ?? '—'}, Y ${row?.TeleY ?? '—'}`
       }),
-      getTitle: (model, id) => (id ? `Телепорт: ${model?.Name || `#${id}`}` : 'Новый телепорт'),
+      getTitle: (model, id) => (id ? `Teleport:  ${model?.Name || `#${id}`}` : 'New teleport'),
       getSubtitle: (model, id) => {
         if (!model) return '';
         const world = formatWorldLabel(model.WorldID);
         const coords = `X ${model.TeleX ?? '—'}, Y ${model.TeleY ?? '—'}`;
         return id ? `ID ${id} · ${world} · ${coords}` : `${world} · ${coords}`;
       },
-      emptyTitle: 'Выберите телепорт',
-      emptySubtitle: 'или создайте новый',
+      emptyTitle: 'Select a teleport',
+      emptySubtitle: 'or create a new one',
     });
 
     EditorCore.DB?.list?.('worlds', { limit: 1000 })?.then((res) => {

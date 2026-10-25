@@ -34,7 +34,7 @@
     if (actionsArea && !actionsArea.querySelector('[data-sync-btn]')) {
       // Extract editor name from page title or data attribute
       const titleEl = document.querySelector('.editor-page-title h1');
-      const displayName = titleEl?.textContent?.trim() || editorName || 'Редактор';
+      const displayName = titleEl?.textContent?.trim() || editorName || 'Editor';
       window.EditorCore.Sync.mountSyncButton(actionsArea, { editorName: displayName });
     }
   };

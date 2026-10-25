@@ -31,7 +31,7 @@
   const openEditor = (resource, options = {}) => {
     const page = RESOURCE_PAGES[resource];
     if (!page) {
-      namespace.UI?.toast?.('Для этого раздела нет отдельного редактора', 'warning');
+      namespace.UI?.toast?.('This section has no dedicated editor', 'warning');
       return false;
     }
     const params = linkParams({ ...options, resource });
@@ -92,36 +92,35 @@
     modal.className = 'fixed inset-0 z-[800] flex items-center justify-center editor-modal-backdrop cr-workbench-modal';
     modal.setAttribute('role', 'dialog');
     modal.setAttribute('aria-modal', 'true');
-    modal.setAttribute('aria-label', `Редактирование запроса ${request.id}`);
+    modal.setAttribute('aria-label', `Editing request  ${request.id}`);
     modal.innerHTML = `
       <div class="editor-modal-content cr-workbench">
         <div class="cr-workbench-head">
           <div class="min-w-0">
-            <h3 class="text-xl font-bold">Правка запроса <span class="cr-col">${esc(request.id)}</span></h3>
-            <div class="text-sm cr-muted mt-1">Версия <b data-version>${version}</b> · изменения сохраняются в запросе, а не в игровой базе.</div>
+            <h3 class="text-xl font-bold">Editing the request <span class="cr-col">${esc(request.id)}</span></h3>
+            <div class="text-sm cr-muted mt-1">Version <b data-version>${version}</b> · changes are saved in the request, not in the game database.</div>
           </div>
-          <button type="button" class="editor-icon-btn" data-close title="Закрыть"><i class="fa-solid fa-xmark"></i></button>
+          <button type="button" class="editor-icon-btn" data-close title="Close"><i class="fa-solid fa-xmark"></i></button>
         </div>
         <div class="cr-note cr-note--info"><i class="fa-solid fa-circle-info"></i><div>
-          Можно исправить значения, добавить недостающие поля или операции. После сохранения diff и предупреждения будут рассчитаны заново.
-          Администратор увидит обновлённую версию перед принятием.
+          You can fix values and add missing fields or operations. After saving, the diff and warnings are recalculated. The administrator sees the updated version before accepting it.
         </div></div>
         <div class="cr-workbench-add">
-          <select class="editor-input form-select" data-new-resource aria-label="Раздел">
+          <select class="editor-input form-select" data-new-resource aria-label="Section">
             ${Object.entries(resources).map(([key, resource]) => `<option value="${esc(key)}">${esc(resource.title || key)}</option>`).join('')}
           </select>
-          <select class="editor-input form-select" data-new-type aria-label="Тип операции">
-            <option value="update">Изменение</option><option value="create">Создание</option><option value="delete">Удаление</option>
+          <select class="editor-input form-select" data-new-type aria-label="Operation type">
+            <option value="update">Update</option><option value="create">Create</option><option value="delete">Delete</option>
           </select>
-          <input class="editor-input form-input" data-new-id type="number" min="1" step="1" value="1" aria-label="ID записи" />
-          <button type="button" class="editor-btn editor-btn-secondary" data-add-operation><i class="fa-solid fa-plus"></i><span>Добавить</span></button>
+          <input class="editor-input form-input" data-new-id type="number" min="1" step="1" value="1" aria-label="Record ID" />
+          <button type="button" class="editor-btn editor-btn-secondary" data-add-operation><i class="fa-solid fa-plus"></i><span>Add</span></button>
         </div>
         <div class="cr-workbench-ops" data-operations></div>
         <div class="cr-workbench-foot">
-          <div class="text-sm" data-status aria-live="polite">Изменения применятся к запросу только после «Сохранить».</div>
+          <div class="text-sm" data-status aria-live="polite">Changes are applied to the request only after “Save”.</div>
           <div class="flex gap-2 flex-wrap">
-            <button type="button" class="editor-btn editor-btn-secondary" data-close>Отмена</button>
-            <button type="button" class="editor-btn editor-btn-primary" data-save><i class="fa-solid fa-floppy-disk"></i><span>Сохранить версию</span></button>
+            <button type="button" class="editor-btn editor-btn-secondary" data-close>Cancel</button>
+            <button type="button" class="editor-btn editor-btn-primary" data-save><i class="fa-solid fa-floppy-disk"></i><span>Save version</span></button>
           </div>
         </div>
       </div>`;
@@ -138,12 +137,12 @@
     };
     const markDirty = () => {
       dirty = true;
-      setStatus('Есть несохранённые правки запроса.');
+      setStatus('The request has unsaved changes.');
     };
 
     const render = () => {
       if (!operations.length) {
-        operationsEl.innerHTML = '<div class="cr-empty"><i class="fa-regular fa-folder-open"></i>Добавьте хотя бы одну операцию.</div>';
+        operationsEl.innerHTML = '<div class="cr-empty"><i class="fa-regular fa-folder-open"></i>Add at least one operation.</div>';
         return;
       }
       operationsEl.innerHTML = operations.map((op, index) => {
@@ -151,7 +150,7 @@
         const missing = resource.columns.filter((column) => !(column in op.fields));
         const fields = Object.entries(op.fields).map(([column, field]) => {
           const before = op.before && Object.prototype.hasOwnProperty.call(op.before, column)
-            ? `<div class="cr-workbench-before">Было: ${esc(displayValue(op.before[column]))}</div>` : '';
+            ? `<div class="cr-workbench-before">Was:  ${esc(displayValue(op.before[column]))}</div>` : '';
           const input = field.json || field.raw.includes('\n') || field.raw.length > 120
             ? `<textarea class="editor-input form-textarea font-mono" rows="${field.json ? 6 : 3}" data-field="${esc(column)}" ${field.isNull ? 'disabled' : ''}>${esc(field.raw)}</textarea>`
             : `<input class="editor-input form-input ${field.numeric || field.json ? 'font-mono' : ''}" data-field="${esc(column)}" value="${esc(field.raw)}" ${field.isNull ? 'disabled' : ''} />`;
@@ -160,23 +159,23 @@
               <div class="min-w-0"><div class="cr-col">${esc(column)}${field.json ? ' <span class="cr-chip">JSON</span>' : ''}</div>${before}</div>
               <div class="flex items-center gap-2">
                 <label class="text-xs cr-muted flex items-center gap-1"><input type="checkbox" data-null="${esc(column)}" ${field.isNull ? 'checked' : ''} /> NULL</label>
-                <button type="button" class="editor-icon-btn" data-remove-field="${esc(column)}" data-index="${index}" title="Убрать поле из операции"><i class="fa-solid fa-xmark"></i></button>
+                <button type="button" class="editor-icon-btn" data-remove-field="${esc(column)}" data-index="${index}" title="Remove  field  of  operations"><i class="fa-solid fa-xmark"></i></button>
               </div>
             </div>
             ${input}
           </div>`;
         }).join('');
-        const record = op.type === 'create' ? `новая · временный #${op.tempId}` : `#${op.id}`;
+        const record = op.type === 'create' ? `new · temporary #${op.tempId}` : `#${op.id}`;
         return `<article class="cr-workbench-op" data-op="${index}">
           <div class="cr-workbench-op-head">
             <div><b>${esc(TYPE_LABEL[op.type] || op.type)}: ${esc(resource.title)}</b><span class="cr-muted"> · ${esc(record)}</span></div>
-            <button type="button" class="editor-icon-btn" data-remove-operation="${index}" title="Убрать операцию из запроса"><i class="fa-solid fa-trash"></i></button>
+            <button type="button" class="editor-icon-btn" data-remove-operation="${index}" title="Remove the operation from the request"><i class="fa-solid fa-trash"></i></button>
           </div>
-          ${op.type === 'delete' ? '<div class="text-sm cr-muted">Запись будет удалена. Значения полей не требуются.</div>' : `
-            <div class="cr-workbench-fields">${fields || '<div class="text-sm cr-muted">Пока нет полей.</div>'}</div>
+          ${op.type === 'delete' ? '<div class="text-sm cr-muted">The record will be deleted. Field values are not required.</div>' : `
+            <div class="cr-workbench-fields">${fields || '<div class="text-sm cr-muted">No fields yet.</div>'}</div>
             <div class="cr-workbench-add-field">
               <select class="editor-input form-select" data-field-choice>${missing.map((column) => `<option value="${esc(column)}">${esc(column)}</option>`).join('')}</select>
-              <button type="button" class="editor-btn editor-btn-secondary editor-btn--sm" data-add-field="${index}" ${missing.length ? '' : 'disabled'}><i class="fa-solid fa-plus"></i><span>Поле</span></button>
+              <button type="button" class="editor-btn editor-btn-secondary editor-btn--sm" data-add-field="${index}" ${missing.length ? '' : 'disabled'}><i class="fa-solid fa-plus"></i><span>Field</span></button>
             </div>`}
         </article>`;
       }).join('');
@@ -184,7 +183,7 @@
 
     const close = async (force = false) => {
       if (saving) return;
-      if (!force && dirty && !await namespace.Page.confirm('Закрыть без сохранения правок запроса?')) return;
+      if (!force && dirty && !await namespace.Page.confirm('Close without saving the request changes?')) return;
       modal.remove();
       document.body.classList.remove('cr-workbench-open');
       document.removeEventListener('keydown', onKeydown);
@@ -225,16 +224,16 @@
         const resource = modal.querySelector('[data-new-resource]').value;
         const type = typeEl.value;
         const id = Number(idEl.value);
-        if (!resources[resource]) return setStatus('Выберите раздел.', true);
+        if (!resources[resource]) return setStatus('Select a section.', true);
         if (type !== 'create' && (!Number.isSafeInteger(id) || id <= 0 || id >= 2000000000)) {
-          return setStatus('Укажите корректный существующий ID записи.', true);
+          return setStatus('Enter a valid existing record ID.', true);
         }
         if (operations.some((op) => op.resource === resource && op.type !== 'create' && type !== 'create' && Number(op.id) === id)) {
-          return setStatus('Такая запись уже есть в запросе.', true);
+          return setStatus('This record is already in the request.', true);
         }
         const used = operations.map((op) => Number(op.tempId) || 0);
         const tempId = Math.max(2000000000, ...used) + 1;
-        if (type === 'create' && tempId > 2000999999) return setStatus('Исчерпаны временные ID.', true);
+        if (type === 'create' && tempId > 2000999999) return setStatus('Temporary IDs are exhausted.', true);
         operations.push({ type, resource, id: type === 'create' ? null : id, tempId: type === 'create' ? tempId : null, before: null, fields: {} });
         markDirty();
         render();
@@ -271,20 +270,20 @@
 
       const payload = [];
       try {
-        if (!operations.length) throw new Error('Добавьте хотя бы одну операцию.');
+        if (!operations.length) throw new Error('Add at least one operation.');
         for (const op of operations) {
           const data = {};
           if (op.type !== 'delete' && !Object.keys(op.fields).length) {
-            throw new Error(`В операции «${resources[op.resource]?.title || op.resource}» нет полей.`);
+            throw new Error(`The operation “${resources[op.resource]?.title || op.resource}” has no fields.`);
           }
           for (const [column, field] of Object.entries(op.fields)) {
             if (field.isNull) { data[column] = null; continue; }
             if (field.json) {
-              if (!field.raw.trim()) throw new Error(`Поле ${column}: введите JSON или выберите NULL.`);
+              if (!field.raw.trim()) throw new Error(`Field ${column}: enter JSON or choose NULL.`);
               try { data[column] = jsonFieldValue(field.raw); }
-              catch { throw new Error(`Поле ${column}: некорректный JSON.`); }
+              catch { throw new Error(`Field ${column}: invalid JSON.`); }
             } else if (field.numeric) {
-              if (!field.raw.trim() || !Number.isFinite(Number(field.raw))) throw new Error(`Поле ${column}: некорректное число.`);
+              if (!field.raw.trim() || !Number.isFinite(Number(field.raw))) throw new Error(`Field ${column}: not a valid number.`);
               data[column] = Number(field.raw);
             } else {
               data[column] = field.raw;
@@ -300,7 +299,7 @@
       saving = true;
       const saveButton = modal.querySelector('[data-save]');
       saveButton.disabled = true;
-      setStatus('Проверка и сохранение новой версии…');
+      setStatus('Checking and saving the new version…');
       const response = await namespace.Http.json('api/change-requests.php?action=revise', {
         method: 'POST', body: { id: request.id, version, operations: payload }, timeout: 30000,
       });
@@ -308,8 +307,8 @@
       saveButton.disabled = false;
       if (!response.ok) {
         const conflict = response.code === 'version_conflict';
-        setStatus((response.error || 'Не удалось сохранить запрос.')
-          + (conflict ? ' Локальные поля оставлены на экране; закройте окно, обновите запрос и перенесите правки в актуальную версию.' : ''), true);
+        setStatus((response.error || 'Failed to save the request.')
+          + (conflict ? ' Local fields were left on screen; close the window, reload the request and move the changes into the current version.' : ''), true);
         // Never rebase a stale snapshot automatically: the next click must not
         // overwrite another person's revision merely by using the new version.
         if (conflict) saveButton.disabled = true;
@@ -324,17 +323,17 @@
         // The server has already committed the new version. Do not re-submit it
         // as a second revision merely because a local cache/view refresh failed.
         console.warn('[requests] local revision refresh failed', error);
-        namespace.UI?.toast?.('Версия сохранена на сервере, но локальное представление не обновлено. Обновите страницу.', 'warning');
+        namespace.UI?.toast?.('The version was saved on the server, but the local view was not updated. Reload the page.', 'warning');
       }
       close(true);
-      if (!localRefreshFailed) namespace.UI?.toast?.(`Запрос обновлён: версия ${response.request?.version || version + 1}`, 'success');
+      if (!localRefreshFailed) namespace.UI?.toast?.(`Request updated: version ${response.request?.version || version + 1}`, 'success');
     });
 
     render();
     return { close, element: modal };
   };
 
-  const TYPE_LABEL = { create: 'Создание', update: 'Изменение', delete: 'Удаление' };
+  const TYPE_LABEL = { create: 'Create', update: 'Update', delete: 'Delete' };
 
   /**
    * Атрибуты ссылки на запись в редакторе. Два режима:

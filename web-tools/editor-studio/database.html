@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>База данных • Editor Studio</title>
+  <title>Database • Editor Studio</title>
   <script src="editor-core/page-loader.js" data-mode="event"></script>
 </head>
 
@@ -13,15 +13,15 @@
       <div class="editor-page-title">
         <i class="fa-solid fa-database text-accent text-xl"></i>
         <div>
-          <h1>База данных</h1>
-          <div class="editor-page-sub">Дампы и восстановление используют настройки подключения из вкладки «Настройки».</div>
+          <h1>Database</h1>
+          <div class="editor-page-sub">Dumps and restoring use the connection settings from the “Settings” tab.</div>
         </div>
       </div>
       <div class="editor-page-actions">
         <div data-i18n-switcher-host></div>
         <button id="btn-test" class="editor-btn editor-btn-secondary">
           <i class="fa-solid fa-plug-circle-check"></i>
-          <span>Проверить соединение</span>
+          <span>Test the connection</span>
         </button>
       </div>
     </div>
@@ -29,60 +29,60 @@
     <div class="editor-page-body editor-two-col">
       <section class="editor-panel-card">
         <div class="flex items-center justify-between gap-2">
-          <h2 class="text-lg font-semibold">Текущее подключение</h2>
+          <h2 class="text-lg font-semibold">Current connection</h2>
           <button id="btn-open-settings" type="button" class="editor-btn editor-btn-secondary editor-btn--xs">
             <i class="fa-solid fa-gear"></i>
-            <span>Настройки</span>
+            <span>Settings</span>
           </button>
         </div>
         <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
           <div class="editor-soft rounded-lg px-3 py-2 border editor-hairline">
-            <div class="text-xs editor-muted-text">Хост</div>
+            <div class="text-xs editor-muted-text">Host</div>
             <div id="info-host" class="editor-text font-medium mt-0.5">—</div>
           </div>
           <div class="editor-soft rounded-lg px-3 py-2 border editor-hairline">
-            <div class="text-xs editor-muted-text">Порт</div>
+            <div class="text-xs editor-muted-text">Port</div>
             <div id="info-port" class="editor-text font-medium mt-0.5">—</div>
           </div>
           <div class="editor-soft rounded-lg px-3 py-2 border editor-hairline">
-            <div class="text-xs editor-muted-text">База данных</div>
+            <div class="text-xs editor-muted-text">Database</div>
             <div id="info-db" class="editor-text font-medium mt-0.5">—</div>
           </div>
           <div class="editor-soft rounded-lg px-3 py-2 border editor-hairline">
-            <div class="text-xs editor-muted-text">Пользователь</div>
+            <div class="text-xs editor-muted-text">User</div>
             <div id="info-user" class="editor-text font-medium mt-0.5">—</div>
           </div>
         </div>
         <div class="editor-muted-text text-xs mt-4">
-          Изменение этих настроек доступно во вкладке <b>Настройки</b>. После изменений обновите эту страницу.
+          These settings can be changed in the <b>Settings</b>tab. Reload this page after changing them.
         </div>
         <div id="status" class="mt-4 text-sm"></div>
       </section>
 
       <section class="editor-panel-card">
-        <h2 class="text-lg font-semibold">Резервные копии</h2>
-        <p class="editor-muted-text text-sm mt-1">Дамп создаётся на сервере и хранится в папке <code>web-tools/data/db-dumps</code>.</p>
+        <h2 class="text-lg font-semibold">Backups</h2>
+        <p class="editor-muted-text text-sm mt-1">Dumps are created on the server and stored in the folder <code>web-tools/data/db-dumps</code>.</p>
 
         <div class="mt-4 grid grid-cols-1 gap-3">
           <div>
-            <div class="editor-label mb-1">Метка дампа (необязательно)</div>
-            <input id="dump-label" type="text" class="w-full editor-input form-input" placeholder="Перед-обновлением" />
+            <div class="editor-label mb-1">Dump label (optional)</div>
+            <input id="dump-label" type="text" class="w-full editor-input form-input" placeholder="before-update" />
           </div>
           <div>
-            <div class="editor-label mb-1">Подтверждение: имя базы</div>
-            <input id="confirm-db" type="text" class="w-full editor-input form-input" placeholder="Введите имя базы для подтверждения" />
-            <div class="editor-muted-text text-xs mt-1">Это защита от случайных операций над другой БД.</div>
+            <div class="editor-label mb-1">Confirmation: database name</div>
+            <input id="confirm-db" type="text" class="w-full editor-input form-input" placeholder="Type the database name to confirm" />
+            <div class="editor-muted-text text-xs mt-1">This guards against accidental operations on another database.</div>
           </div>
         </div>
 
         <div class="flex flex-wrap gap-2 mt-4">
           <button id="btn-dump" class="editor-btn editor-btn-primary">
             <i class="fa-solid fa-download"></i>
-            <span>Сделать дамп</span>
+            <span>Create a dump</span>
           </button>
           <button id="btn-refresh-dumps" class="editor-btn editor-btn-secondary">
             <i class="fa-solid fa-rotate"></i>
-            <span>Обновить список</span>
+            <span>Refresh the list</span>
           </button>
         </div>
 
@@ -92,10 +92,10 @@
           <table class="editor-table">
             <thead>
               <tr class="editor-soft border-b editor-hairline">
-                <th class="text-left px-3 py-2 editor-text">Файл</th>
-                <th class="text-left px-3 py-2 editor-text">Размер</th>
-                <th class="text-left px-3 py-2 editor-text">Дата</th>
-                <th class="text-right px-3 py-2 editor-text">Действия</th>
+                <th class="text-left px-3 py-2 editor-text">File</th>
+                <th class="text-left px-3 py-2 editor-text">Size</th>
+                <th class="text-left px-3 py-2 editor-text">Date</th>
+                <th class="text-right px-3 py-2 editor-text">Actions</th>
               </tr>
             </thead>
             <tbody id="dump-list"></tbody>
@@ -104,32 +104,32 @@
       </section>
 
       <section class="editor-panel-card editor-span-all">
-        <h2 class="text-lg font-semibold">Восстановление из дампа</h2>
-        <p class="editor-muted-text text-sm mt-1">Перед восстановлением убедитесь, что есть свежий дамп и выбран правильный файл.</p>
+        <h2 class="text-lg font-semibold">Restore from a dump</h2>
+        <p class="editor-muted-text text-sm mt-1">Before restoring, make sure you have a fresh dump and the right file.</p>
 
         <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4">
           <div class="md:col-span-2">
-            <div class="editor-label mb-1">Файл для восстановления</div>
+            <div class="editor-label mb-1">File to restore</div>
             <select id="restore-file" class="w-full editor-input form-input"></select>
           </div>
           <div>
-            <div class="editor-label mb-1">Подтверждение</div>
-            <input id="restore-phrase" type="text" class="w-full editor-input form-input" placeholder="ВОССТАНОВИТЬ" />
-            <div class="editor-muted-text text-xs mt-1">Введите слово <b>ВОССТАНОВИТЬ</b> для запуска.</div>
+            <div class="editor-label mb-1">Confirmation</div>
+            <input id="restore-phrase" type="text" class="w-full editor-input form-input" placeholder="RESTORE" />
+            <div class="editor-muted-text text-xs mt-1">Type the word <b>RESTORE</b> to proceed.</div>
           </div>
         </div>
 
         <div class="mt-4 flex flex-wrap items-center gap-3">
           <label class="flex items-center gap-2 text-sm editor-muted-text">
             <input id="restore-confirm" type="checkbox" class="form-checkbox" />
-            <span>Я понимаю, что данные будут перезаписаны</span>
+            <span>I understand the data will be overwritten</span>
           </label>
         </div>
 
         <div class="flex flex-wrap gap-2 mt-4">
           <button id="btn-restore" class="editor-btn editor-btn-danger">
             <i class="fa-solid fa-triangle-exclamation"></i>
-            <span>Восстановить</span>
+            <span>Restore</span>
           </button>
         </div>
 
@@ -181,10 +181,10 @@
     const syncRestoreSelect = () => {
       els.restoreFile.innerHTML = '';
       if (!cachedDumps.length) {
-        els.restoreFile.appendChild(new Option('Нет дампов', ''));
+        els.restoreFile.appendChild(new Option('No dumps', ''));
         return;
       }
-      els.restoreFile.appendChild(new Option('Выберите файл', ''));
+      els.restoreFile.appendChild(new Option('Select a file', ''));
       cachedDumps.forEach((dump) => {
         els.restoreFile.appendChild(new Option(dump.file, dump.file));
       });
@@ -192,7 +192,7 @@
 
     const renderDumpList = () => {
       if (!cachedDumps.length) {
-        els.dumpList.innerHTML = `<tr><td colspan="4" class="px-3 py-3 editor-muted-text">Нет дампов</td></tr>`;
+        els.dumpList.innerHTML = `<tr><td colspan="4" class="px-3 py-3 editor-muted-text">No dumps</td></tr>`;
         syncRestoreSelect();
         return;
       }
@@ -207,13 +207,13 @@
             <td class="px-3 py-2 text-right">
               <div class="flex justify-end gap-1.5">
                 <a class="editor-btn editor-btn-secondary editor-btn--xs" href="api/db-maintenance.php?action=download&file=${safeFile}">
-                  <i class="fa-solid fa-file-arrow-down"></i><span>Скачать</span>
+                  <i class="fa-solid fa-file-arrow-down"></i><span>Download</span>
                 </a>
                 <button class="editor-btn editor-btn-secondary editor-btn--xs" data-action="restore" data-file="${esc(dump.file)}">
-                  <i class="fa-solid fa-rotate-left"></i><span>Восстановить</span>
+                  <i class="fa-solid fa-rotate-left"></i><span>Restore</span>
                 </button>
                 <button class="editor-btn editor-btn-danger editor-btn--xs" data-action="delete" data-file="${esc(dump.file)}">
-                  <i class="fa-solid fa-trash"></i><span>Удалить</span>
+                  <i class="fa-solid fa-trash"></i><span>Delete</span>
                 </button>
               </div>
             </td>
@@ -225,7 +225,7 @@
     const loadConfig = async () => {
       const res = await EditorCore.DB.getConfig();
       if (!res.ok) {
-        setStatus(els.status, res.error || 'Не удалось загрузить конфиг', 'err');
+        setStatus(els.status, res.error || 'Could not load the configuration', 'err');
         return;
       }
       const c = res.config || {};
@@ -236,7 +236,7 @@
       if (!els.confirmDb.value) {
         els.confirmDb.value = c.database || '';
       }
-      setStatus(els.status, 'Конфигурация загружена.', 'ok');
+      setStatus(els.status, 'Configuration loaded.', 'ok');
     };
 
     document.getElementById('btn-open-settings')?.addEventListener('click', () => {
@@ -250,32 +250,32 @@
     const testConnection = async () => {
       const res = await EditorCore.DB.testConnection();
       if (!res.ok) {
-        EditorCore.UI.toast(res.error || 'Ошибка подключения', 'error');
-        setStatus(els.status, res.error || 'Ошибка подключения', 'err');
+        EditorCore.UI.toast(res.error || 'Connection failed', 'error');
+        setStatus(els.status, res.error || 'Connection failed', 'err');
         return;
       }
-      EditorCore.UI.toast('Соединение установлено', 'success');
-      setStatus(els.status, `Соединение установлено. Сервер: ${res.server || 'неизвестен'}`, 'ok');
+      EditorCore.UI.toast('Connection established', 'success');
+      setStatus(els.status, `Connection established. Server:  ${res.server || 'unknown'}`, 'ok');
     };
 
     const loadDumps = async () => {
       const res = await EditorCore.DB.listDumps();
       if (!res.ok) {
-        setStatus(els.dumpStatus, res.error || 'Не удалось загрузить дампы', 'err');
+        setStatus(els.dumpStatus, res.error || 'Could not load the dumps', 'err');
         cachedDumps = [];
         renderDumpList();
         return;
       }
       cachedDumps = res.items || [];
       renderDumpList();
-      setStatus(els.dumpStatus, `Найдено дампов: ${cachedDumps.length}.`, 'ok');
+      setStatus(els.dumpStatus, `Dumps found:  ${cachedDumps.length}.`, 'ok');
     };
 
     const createDump = async () => {
       const confirmDb = els.confirmDb.value.trim();
       if (!confirmDb) {
-        EditorCore.UI.toast('Введите имя базы для подтверждения', 'warning');
-        setStatus(els.dumpStatus, 'Введите имя базы в поле подтверждения.', 'err');
+        EditorCore.UI.toast('Type the database name to confirm', 'warning');
+        setStatus(els.dumpStatus, 'Type the database name in the confirmation field.', 'err');
         return;
       }
       const res = await EditorCore.DB.createDump({
@@ -283,34 +283,34 @@
         label: els.dumpLabel.value.trim()
       });
       if (!res.ok) {
-        EditorCore.UI.toast(res.error || 'Ошибка создания дампа', 'error');
-        setStatus(els.dumpStatus, res.error || 'Ошибка создания дампа', 'err');
+        EditorCore.UI.toast(res.error || 'Creating the dump failed', 'error');
+        setStatus(els.dumpStatus, res.error || 'Creating the dump failed', 'err');
         return;
       }
-      EditorCore.UI.toast('Дамп создан', 'success');
-      setStatus(els.dumpStatus, `Дамп создан: ${res.file || 'готово'}.`, 'ok');
+      EditorCore.UI.toast('Dump created', 'success');
+      setStatus(els.dumpStatus, `Dump created:  ${res.file || 'done'}.`, 'ok');
       await loadDumps();
     };
 
     const restoreDump = async (file) => {
       const confirmDb = els.confirmDb.value.trim();
       if (!confirmDb) {
-        EditorCore.UI.toast('Введите имя базы для подтверждения', 'warning');
-        setStatus(els.restoreStatus, 'Введите имя базы в поле подтверждения.', 'err');
+        EditorCore.UI.toast('Type the database name to confirm', 'warning');
+        setStatus(els.restoreStatus, 'Type the database name in the confirmation field.', 'err');
         return;
       }
       if (!els.restoreConfirm.checked) {
-        EditorCore.UI.toast('Подтвердите риск восстановление', 'warning');
-        setStatus(els.restoreStatus, 'Нужно подтвердить понимание риска.', 'err');
+        EditorCore.UI.toast('Confirm the restore risk', 'warning');
+        setStatus(els.restoreStatus, 'You must confirm that you understand the risk.', 'err');
         return;
       }
       const phrase = els.restorePhrase.value.trim();
       if (!phrase) {
-        EditorCore.UI.toast('Введите слово подтверждения', 'warning');
-        setStatus(els.restoreStatus, 'Введите слово подтверждения.', 'err');
+        EditorCore.UI.toast('Type the confirmation word', 'warning');
+        setStatus(els.restoreStatus, 'Type the confirmation word.', 'err');
         return;
       }
-      const confirmed = await EditorCore.Page.confirm(`Восстановить БД из дампа ${file}? Все текущие данные будут перезаписаны.`);
+      const confirmed = await EditorCore.Page.confirm(`Restore the database from dump  ${file}? All current data will be overwritten.`);
       if (!confirmed) return;
 
       const res = await EditorCore.DB.restoreDump({
@@ -319,33 +319,33 @@
         file
       });
       if (!res.ok) {
-        EditorCore.UI.toast(res.error || 'Ошибка восстановления', 'error');
-        setStatus(els.restoreStatus, res.error || 'Ошибка восстановления', 'err');
+        EditorCore.UI.toast(res.error || 'Restore failed', 'error');
+        setStatus(els.restoreStatus, res.error || 'Restore failed', 'err');
         return;
       }
-      EditorCore.UI.toast('Восстановление завершено', 'success');
-      setStatus(els.restoreStatus, 'Восстановление завершено.', 'ok');
+      EditorCore.UI.toast('Restore complete', 'success');
+      setStatus(els.restoreStatus, 'Restore complete.', 'ok');
     };
 
     const deleteDump = async (file) => {
       const confirmDb = els.confirmDb.value.trim();
       if (!confirmDb) {
-        EditorCore.UI.toast('Введите имя базы для подтверждения', 'warning');
-        setStatus(els.dumpStatus, 'Введите имя базы в поле подтверждения.', 'err');
+        EditorCore.UI.toast('Type the database name to confirm', 'warning');
+        setStatus(els.dumpStatus, 'Type the database name in the confirmation field.', 'err');
         return;
       }
-      const confirmed = await EditorCore.Page.confirm(`Удалить дамп ${file}?`);
+      const confirmed = await EditorCore.Page.confirm(`Delete dump  ${file}?`);
       if (!confirmed) return;
       const res = await EditorCore.DB.deleteDump({
         confirm_db: confirmDb,
         file
       });
       if (!res.ok) {
-        EditorCore.UI.toast(res.error || 'Ошибка удаления дампа', 'error');
-        setStatus(els.dumpStatus, res.error || 'Ошибка удаления дампа', 'err');
+        EditorCore.UI.toast(res.error || 'Deleting the dump failed', 'error');
+        setStatus(els.dumpStatus, res.error || 'Deleting the dump failed', 'err');
         return;
       }
-      EditorCore.UI.toast('Дамп удалён', 'success');
+      EditorCore.UI.toast('Dump deleted', 'success');
       await loadDumps();
     };
 
@@ -355,8 +355,8 @@
     els.restoreBtn.addEventListener('click', () => {
       const file = els.restoreFile.value;
       if (!file) {
-        EditorCore.UI.toast('Выберите файл для восстановления', 'warning');
-        setStatus(els.restoreStatus, 'Выберите файл для восстановления.', 'err');
+        EditorCore.UI.toast('Select a file to restore', 'warning');
+        setStatus(els.restoreStatus, 'Select a file to restore.', 'err');
         return;
       }
       restoreDump(file);

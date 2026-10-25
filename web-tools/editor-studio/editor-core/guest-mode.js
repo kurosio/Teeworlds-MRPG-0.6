@@ -119,7 +119,7 @@
   };
   const accountId = () => String(account()?.id || '');
   const accountPages = () => (Array.isArray(account()?.pages) ? account().pages.map(String) : []);
-  const accountLabel = () => account()?.name || account()?.login || 'Гость';
+  const accountLabel = () => account()?.name || account()?.login || 'Guest';
 
   const loadConfig = async (force = false) => {
     if (force) { configPromise = null; config = null; }
@@ -246,15 +246,15 @@
 
   const writeDraft = (d) => {
     const key = draftKey();
-    if (!key) throw new Error('Гостевой аккаунт не определён — обновите страницу и войдите заново.');
+    if (!key) throw new Error('Guest account is not defined — reload the page and sign in again.');
     // Silent data loss is the worst option: if the browser blocks localStorage the
     // guest must be told instead of believing the change was stored.
     if (!safeLocal) {
-      throw new Error('Браузер блокирует локальное хранилище (localStorage) — изменения не могут сохраниться. Разрешите хранение данных для этого сайта и обновите страницу.');
+      throw new Error('The browser blocks local storage (localStorage) — changes cannot be saved. Allow data storage for this site and reload the page.');
     }
     const raw = JSON.stringify(d);
     try { safeLocal.setItem(key, raw); }
-    catch { throw new Error('Не удалось сохранить черновик (переполнено хранилище браузера).'); }
+    catch { throw new Error('Could not save the draft (browser storage is full).'); }
     // Keep the cached snapshot isolated from objects returned to callers, and
     // remember the exact stored string so readDraft() can detect foreign writes.
     draftCache = clone(d);
@@ -313,7 +313,7 @@
   const assertGuestResource = async (resource) => {
     await loadConfig();
     if (config?.resources && !config.resources[resource]) {
-      throw new Error('Этот раздел не включён для вашего гостевого аккаунта.');
+      throw new Error('This section is not enabled for your guest account.');
     }
   };
 
@@ -359,14 +359,14 @@
       const before = d.ops.length;
       d.ops = d.ops.filter(o => o.reqId);
       writeDraft(d);
-      if (before !== d.ops.length) toastInfo('Неотправленные изменения убраны из черновика');
+      if (before !== d.ops.length) toastInfo('Unsent changes removed from the draft');
       return d.ops.length;
     },
 
     removeOp(opUid) {
       const d = draftForWrite();
       const op = d.ops.find(o => o.uid === opUid);
-      if (op?.reqId) throw new Error('Эта операция уже отправлена в запросе и ждёт проверки администратора.');
+      if (op?.reqId) throw new Error('This change is already submitted in a request and awaits admin review.');
       d.ops = d.ops.filter(o => o.uid !== opUid);
       writeDraft(d);
       return true;
@@ -376,11 +376,11 @@
       await assertGuestResource(resource);
       const d = draftForWrite();
       const tempId = d.nextTemp++;
-      if (tempId > TEMP_ID_MAX) throw new Error('Слишком много новых записей в черновике.');
+      if (tempId > TEMP_ID_MAX) throw new Error('Too many new records in the draft.');
       const clean = filterColumns(resource, clone(data));
       d.ops.push({ uid: uid(), type: 'create', resource, tempId, data: clean, label: rowLabel(resource, clean), ts: Date.now(), reqId: null });
       writeDraft(d);
-      toastInfo(`Новая запись (${resourceTitle(resource)}) добавлена в черновик запроса`);
+      toastInfo(`New record (${resourceTitle(resource)}) added to the request draft`);
       return { ok: true, id: tempId, draft: true };
     },
 
@@ -392,22 +392,22 @@
 
       if (isTempId(id)) {
         const op = d.ops.find(o => o.type === 'create' && o.resource === resource && Number(o.tempId) === Number(id));
-        if (!op) throw new Error('Новая запись не найдена в черновике (возможно, черновик был очищен).');
-        if (op.reqId) throw new Error('Новая запись уже отправлена в запросе и ждёт проверки администратора.');
+        if (!op) throw new Error('The new record was not found in the draft (the draft may have been cleared).');
+        if (op.reqId) throw new Error('The new record is already submitted in a request and awaits admin review.');
         op.data = { ...op.data, ...clean };
         op.label = rowLabel(resource, op.data);
         op.ts = Date.now();
         writeDraft(d);
-        toastInfo('Новая запись в черновике обновлена');
+        toastInfo('New record updated in the draft');
         return { ok: true, draft: true };
       }
 
       const nid = Number(id);
       if (hasSubmitted(d, resource, nid)) {
-        throw new Error('Эта запись уже отправлена в запросе и ждёт проверки администратора — изменить её сейчас нельзя.');
+        throw new Error('This record is already submitted in a request — it cannot be edited right now.');
       }
       if (d.ops.some(o => o.type === 'delete' && o.resource === resource && Number(o.id) === nid)) {
-        throw new Error('Эта запись уже помечена на удаление в черновике. Уберите удаление в «Запросах», чтобы изменить её.');
+        throw new Error('This record is already marked for deletion in the draft. Remove the deletion in “Requests” to edit it.');
       }
       const i = d.ops.findIndex(o => o.type === 'update' && o.resource === resource && Number(o.id) === nid);
       const merged = i >= 0 ? { ...d.ops[i].data, ...clean } : clean;
@@ -422,7 +422,7 @@
       if (!Object.keys(merged).length) {
         if (i >= 0) d.ops.splice(i, 1);
         writeDraft(d);
-        toastInfo('Значения совпадают с текущими — изменение убрано из черновика');
+        toastInfo('The values match the current ones — the change was removed from the draft');
         return { ok: true, draft: true, noop: true };
       }
 
@@ -435,7 +435,7 @@
         d.ops.push({ uid: uid(), type: 'update', resource, id: nid, data: merged, label, ts: Date.now(), reqId: null });
       }
       writeDraft(d);
-      toastInfo(`Изменение (${resourceTitle(resource)} #${nid}) добавлено в черновик запроса`);
+      toastInfo(`Update (${resourceTitle(resource)} #${nid}) added to the request draft`);
       return { ok: true, draft: true };
     },
 
@@ -449,7 +449,7 @@
     async revertField(resource, id, column, baseRow = null) {
       await assertGuestResource(resource);
       const col = String(column || '').trim();
-      if (!col) throw new Error('Не указано поле, которое нужно вернуть к исходному значению.');
+      if (!col) throw new Error('No field to restore was specified.');
       const d = draftForWrite();
       const nid = Number(id);
       const i = d.ops.findIndex(o => o.type === 'update' && o.resource === resource && Number(o.id) === nid);
@@ -457,7 +457,7 @@
       if (i < 0) return { ok: true, removed: false, dropped: false };
       const op = d.ops[i];
       if (op.reqId) {
-        throw new Error('Изменение уже отправлено в запросе и ждёт проверки администратора — отменить поле нельзя. Отзовите запрос.');
+        throw new Error('The change is already in a request awaiting review — this field cannot be reverted. Withdraw the request.');
       }
       if (!op.data || !(col in op.data)) return { ok: true, removed: false, dropped: false };
       delete op.data[col];
@@ -471,8 +471,8 @@
       }
       writeDraft(d);
       toastInfo(dropped
-        ? 'Изменение убрано из черновика — запись совпадает с базой'
-        : `Поле ${col} возвращено к значению из базы`);
+        ? 'Change removed from the draft — the record matches the database'
+        : `Field ${col}  restored to the database value`);
       return { ok: true, removed: true, dropped };
     },
 
@@ -481,20 +481,20 @@
       const d = draftForWrite();
       if (isTempId(id)) {
         const op = d.ops.find(o => o.type === 'create' && o.resource === resource && Number(o.tempId) === Number(id));
-        if (op?.reqId) throw new Error('Новая запись уже отправлена в запросе и ждёт проверки администратора.');
+        if (op?.reqId) throw new Error('The new record is already submitted in a request and awaits admin review.');
         d.ops = d.ops.filter(o => !(o.type === 'create' && o.resource === resource && Number(o.tempId) === Number(id)));
         writeDraft(d);
-        toastInfo('Новая запись убрана из черновика');
+        toastInfo('New record removed from the draft');
         return { ok: true, draft: true };
       }
       const nid = Number(id);
       if (hasSubmitted(d, resource, nid)) {
-        throw new Error('Эта запись уже отправлена в запросе и ждёт проверки администратора — удалить её сейчас нельзя.');
+        throw new Error('This record is already submitted in a request — it cannot be deleted right now.');
       }
       d.ops = d.ops.filter(o => !(o.resource === resource && Number(o.id) === nid));
       d.ops.push({ uid: uid(), type: 'delete', resource, id: nid, data: {}, label: rowLabel(resource, baseRow), ts: Date.now(), reqId: null });
       writeDraft(d);
-      toastInfo(`Удаление (${resourceTitle(resource)} #${nid}) добавлено в черновик запроса`);
+      toastInfo(`Delete (${resourceTitle(resource)} #${nid}) added to the request draft`);
       return { ok: true, draft: true };
     },
 
@@ -686,7 +686,7 @@
         }
         if (revised.length) {
           try { window.EditorCore?.DBCrud?.invalidateCache?.(); } catch {}
-          if (!silent) toastInfo(`Состав запросов обновлён (${revised.length})`, 'info');
+          if (!silent) toastInfo(`Request contents updated (${revised.length})`, 'info');
           for (const item of revised) {
             try { window.dispatchEvent(new CustomEvent('editor-core:guest-request-revised', { detail: item })); } catch {}
           }
@@ -703,8 +703,8 @@
           const approved = resolved.filter(r => r.status === 'approved').length;
           const rejected = resolved.filter(r => r.status !== 'approved' && r.status !== 'pending').length;
           if (!silent) {
-            if (approved) toastInfo(`Запрос принят: изменения применены к базе (${approved})`, 'success');
-            if (rejected) toastInfo(`Запрос отклонён: показаны исходные данные (${rejected})`, 'warning');
+            if (approved) toastInfo(`Request approved: changes applied to the database (${approved})`, 'success');
+            if (rejected) toastInfo(`Request rejected: original data restored (${rejected})`, 'warning');
           }
           for (const r of resolved) {
             try { window.dispatchEvent(new CustomEvent('editor-core:guest-request-resolved', { detail: r })); } catch {}
@@ -784,7 +784,7 @@
     const current = level === 'main' ? mainGroup : level === 'group' ? group : subGroup;
     if (!['main', 'group', 'sub'].includes(level) || !current) throw new Error('Invalid craft group target');
     if (!name || name.includes(':') || name.includes('|') || name.length > 256) {
-      throw new Error('Некорректное новое имя группы. Не используйте : или |; максимум 256 символов.');
+      throw new Error('Invalid new group name. Do not use : or |; 256 characters maximum.');
     }
     if (name === current) return { ok: true, changed: [] };
     const parentMatches = p => level === 'main' || (p.main === mainGroup && (level === 'group' || p.group === group));
@@ -806,7 +806,7 @@
       updates.push({ ID: row.ID, row, newGroupName: renamed });
     }
     if (updates.length && merged && mergeExisting !== true) {
-      throw new Error('Такое имя уже занято на этом уровне. Проверьте предупреждение и повторите.');
+      throw new Error('This name is already taken at this level. Check the warning and try again.');
     }
     for (const u of updates) {
       await Draft.update('crafts', u.ID, { GroupName: u.newGroupName }, isTempId(u.ID) ? null : u.row);
@@ -857,13 +857,12 @@
     box.innerHTML = `
       <div style="max-width:460px;text-align:center;border:1px solid var(--editor-border,#273142);border-radius:18px;padding:28px;background:var(--editor-surface,#121821)">
         <div style="font-size:40px;color:var(--editor-danger,#ff7c87);margin-bottom:10px"><i class="fa-solid fa-lock"></i></div>
-        <h2 style="font-size:20px;font-weight:700;margin-bottom:8px">Вкладка выключена</h2>
+        <h2 style="font-size:20px;font-weight:700;margin-bottom:8px">Tab disabled</h2>
         <p style="color:var(--editor-text-muted,#9aa8bc);font-size:14px;line-height:1.5">
-          Администратор не включил этот редактор для гостевого аккаунта <b>${escapeHtml(accountLabel())}</b>.
-          Доступные вкладки можно посмотреть в «Моих запросах».
+          The administrator has not enabled this editor for the guest account <b>${escapeHtml(accountLabel())}</b>. Available tabs are listed in “My requests”.
         </p>
         <a href="${REQUESTS_PAGE}" class="editor-btn editor-btn-primary" style="margin-top:16px;display:inline-flex">
-          <i class="fa-solid fa-code-pull-request"></i><span>Мои запросы</span>
+          <i class="fa-solid fa-code-pull-request"></i><span>My requests</span>
         </a>
       </div>`;
     const mount = () => {
@@ -894,17 +893,17 @@
     // ждут ли его правки проверки и что нажать.
     const stateEl = bannerEl.querySelector('[data-guest-state]');
     if (stateEl) {
-      if (!total) stateEl.textContent = 'Изменений нет';
-      else if (pending && submitted) stateEl.textContent = `${pending} не отправлено, ${submitted} на проверке`;
-      else if (pending) stateEl.textContent = `${pending} ждёт отправки`;
-      else stateEl.textContent = `${submitted} на проверке у администратора`;
+      if (!total) stateEl.textContent = 'No changes';
+      else if (pending && submitted) stateEl.textContent = `${pending}  unsent,  ${submitted}  under review`;
+      else if (pending) stateEl.textContent = `${pending}  awaiting submission`;
+      else stateEl.textContent = `${submitted}  awaiting admin review`;
     }
     const pendingPill = bannerEl.querySelector('[data-guest-pending-pill]');
     if (pendingPill) pendingPill.hidden = !pending;
     const submittedPill = bannerEl.querySelector('[data-guest-submitted-pill]');
     if (submittedPill) submittedPill.hidden = !submitted;
     const sendBtn = bannerEl.querySelector('[data-guest-open] span');
-    if (sendBtn) sendBtn.textContent = submitted && !pending ? 'На проверке' : 'Мои изменения';
+    if (sendBtn) sendBtn.textContent = submitted && !pending ? 'Under review' : 'My changes';
   };
 
   const openRequestsPage = () => {
@@ -934,13 +933,13 @@
     bannerEl.className = 'guest-banner';
     bannerEl.innerHTML = `
       <i class="fa-solid fa-user-secret" style="color:var(--editor-warning,#ffc27f)"></i>
-      <span class="guest-text"><b>Гость: ${escapeHtml(accountLabel())}</b>
-        <span class="guest-state" data-guest-state>Изменений нет</span>
+      <span class="guest-text"><b>Guest:  ${escapeHtml(accountLabel())}</b>
+        <span class="guest-state" data-guest-state>No changes</span>
       </span>
-      <span class="guest-pill" title="Изменено, но ещё не отправлено администратору" data-guest-pending-pill><i class="fa-solid fa-pen"></i><b data-guest-pending>0</b></span>
-      <span class="guest-pill" title="Отправлено администратору и ждёт проверки" data-guest-submitted-pill><i class="fa-solid fa-hourglass-half"></i><b data-guest-submitted>0</b></span>
-      <span class="guest-count" data-guest-count title="Всего изменений">0</span>
-      <button type="button" class="editor-btn editor-btn-primary" data-guest-open><i class="fa-solid fa-paper-plane"></i><span>Мои изменения</span></button>`;
+      <span class="guest-pill" title="Changed but not yet sent to the administrator" data-guest-pending-pill><i class="fa-solid fa-pen"></i><b data-guest-pending>0</b></span>
+      <span class="guest-pill" title="Sent to the administrator and awaiting review" data-guest-submitted-pill><i class="fa-solid fa-hourglass-half"></i><b data-guest-submitted>0</b></span>
+      <span class="guest-count" data-guest-count title="Total changes">0</span>
+      <button type="button" class="editor-btn editor-btn-primary" data-guest-open><i class="fa-solid fa-paper-plane"></i><span>My changes</span></button>`;
     const openBtn = bannerEl.querySelector('[data-guest-open]');
     if (openBtn) openBtn.addEventListener('click', openRequestsPage);
     document.body.appendChild(bannerEl);

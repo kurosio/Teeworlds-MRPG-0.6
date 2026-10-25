@@ -62,7 +62,7 @@
       labelMode: c.labelMode || undefined,
       valueType: c.valueType || 'string',
       allowCreate: !!c.allowCreate,
-      placeholder: c.placeholder || c.searchPlaceholder || 'Добавить…',
+      placeholder: c.placeholder || c.searchPlaceholder || 'Add…',
       searchPlaceholder: c.searchPlaceholder || undefined,
     };
   };

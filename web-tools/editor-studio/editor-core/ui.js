@@ -64,14 +64,14 @@
             <div class="editor-modal-head">
               <div class="editor-modal-head-main">
                 <i id="modal-icon" class="editor-modal-icon fa-solid fa-puzzle-piece" aria-hidden="true"></i>
-                <h3 id="modal-title" class="editor-modal-title">Редактирование</h3>
+                <h3 id="modal-title" class="editor-modal-title">Editing</h3>
               </div>
-              <button type="button" class="editor-icon-btn" data-modal-close title="Закрыть"><i class="fa-solid fa-xmark"></i></button>
+              <button type="button" class="editor-icon-btn" data-modal-close title="Close"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div id="modal-form-container" class="editor-modal-body"></div>
             <div class="editor-modal-foot">
-              <button id="modal-cancel" class="editor-btn editor-btn-secondary">Отмена</button>
-              <button id="modal-save" class="editor-btn editor-btn-primary">Сохранить</button>
+              <button id="modal-cancel" class="editor-btn editor-btn-secondary">Cancel</button>
+              <button id="modal-save" class="editor-btn editor-btn-primary">Save</button>
             </div>
           </div>
         </div>
@@ -86,16 +86,16 @@
             <div class="editor-modal-head">
               <div class="editor-modal-head-main">
                 <i class="editor-modal-icon fa-solid fa-layer-group" aria-hidden="true"></i>
-                <h3 class="editor-modal-title">Удалить группу</h3>
+                <h3 class="editor-modal-title">Delete the group</h3>
               </div>
             </div>
             <div class="editor-modal-body">
-              <p class="editor-muted-text text-sm">Выберите, нужно ли удалить только рамку группы или вместе с входящими в неё шагами сценария.</p>
+              <p class="editor-muted-text text-sm">Choose whether to delete only the group frame or the scenario steps inside it as well.</p>
             </div>
             <div class="editor-modal-foot">
-              <button id="delete-group-cancel-btn" class="editor-btn editor-btn-secondary">Отмена</button>
-              <button id="delete-group-only-btn" class="editor-btn editor-btn-secondary">Только группу</button>
-              <button id="delete-group-and-steps-btn" class="editor-btn editor-btn-danger">Группу и шаги</button>
+              <button id="delete-group-cancel-btn" class="editor-btn editor-btn-secondary">Cancel</button>
+              <button id="delete-group-only-btn" class="editor-btn editor-btn-secondary">Group only</button>
+              <button id="delete-group-and-steps-btn" class="editor-btn editor-btn-danger">Group and steps</button>
             </div>
           </div>
         </div>
@@ -117,11 +117,11 @@
         <div class="editor-modal-content editor-scenario-overlay-panel">
           <div class="editor-scenario-overlay-header">
             <div class="editor-scenario-overlay-title-wrap">
-              <div class="editor-scenario-overlay-title" data-role="title">Редактор сценария</div>
-              <div class="editor-muted-text text-xs" data-role="subtitle">Изменения применяются только после нажатия «Применить»</div>
+              <div class="editor-scenario-overlay-title" data-role="title">Scenario editor</div>
+              <div class="editor-muted-text text-xs" data-role="subtitle">Changes are applied only after pressing “Apply”</div>
             </div>
             <div class="editor-scenario-overlay-controls">
-              <button type="button" class="editor-icon-btn" title="Закрыть" data-role="close"><i class="fa-solid fa-xmark"></i></button>
+              <button type="button" class="editor-icon-btn" title="Close" data-role="close"><i class="fa-solid fa-xmark"></i></button>
             </div>
           </div>
           <div class="editor-scenario-overlay-body">
@@ -144,7 +144,7 @@
     const initialMode = requestedMode === 'dungeon' || requestedMode === 'world'
       ? requestedMode
       : 'universal';
-    if (titleEl) titleEl.textContent = cfg.title || 'Редактор сценария';
+    if (titleEl) titleEl.textContent = cfg.title || 'Scenario editor';
 
     const close = () => {
       modal.classList.add('hidden');
@@ -198,10 +198,10 @@
     // Editors keep their generic texts, the wording is adapted in one place.
     if (type === 'success' && window.EditorCore?.Guest?.isGuest?.()) {
       const draftText = {
-        'Сохранено': 'Добавлено в черновик запроса',
-        'Создано': 'Новая запись в черновике запроса',
-        'Удалено': 'Удаление добавлено в черновик запроса',
-        'Изменения сохранены': 'Изменения добавлены в черновик запроса',
+        'Saved': 'Added to the request draft',
+        'Created': 'New record in the request draft',
+        'Deleted': 'Deletion added to the request draft',
+        'Changes saved': 'Changes added to the request draft',
       }[String(message)];
       if (draftText) {
         message = draftText;
@@ -270,13 +270,13 @@
           <div class="editor-modal-content p-6 w-full max-w-md">
             <h3 class="text-xl font-bold mb-4" id="${id}-title"></h3>
             <div class="space-y-2">
-              <label class="editor-label">Дата и время</label>
+              <label class="editor-label">Date and time</label>
               <input id="${id}-input" type="datetime-local" class="w-full form-input" />
-              <div class="editor-muted-text text-sm">Сохранится как Unix-время (секунды).</div>
+              <div class="editor-muted-text text-sm">Stored as Unix time (seconds).</div>
             </div>
             <div class="flex justify-end gap-2 mt-6">
-              <button id="${id}-cancel" class="editor-btn editor-btn-secondary">Отмена</button>
-              <button id="${id}-apply" class="editor-btn editor-btn-primary">Применить</button>
+              <button id="${id}-cancel" class="editor-btn editor-btn-secondary">Cancel</button>
+              <button id="${id}-apply" class="editor-btn editor-btn-primary">Apply</button>
             </div>
           </div>
         </div>
@@ -301,7 +301,7 @@
       return `${yyyy}-${mm}-${dd}T${hh}:${mi}`;
     };
 
-    title.textContent = cfg.title || 'Выбор даты';
+    title.textContent = cfg.title || 'Pick a date';
     input.value = toLocalInput(Number(cfg.valueSec || 0));
 
     const close = () => {

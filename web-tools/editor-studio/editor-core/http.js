@@ -11,10 +11,10 @@
   const namespace = (window.EditorCore = window.EditorCore || {});
 
   const DEFAULT_TIMEOUT = 15000;
-  const NETWORK_ERROR = 'Нет связи с сервером';
-  const TIMEOUT_ERROR = 'Превышено время ожидания ответа сервера';
-  const BAD_RESPONSE_ERROR = 'Сервер вернул неожиданный ответ — проверьте, что на сервере выполняется PHP (api/*.php)';
-  const CANCELED_ERROR = 'Запрос отменён';
+  const NETWORK_ERROR = 'No connection to the server';
+  const TIMEOUT_ERROR = 'The server took too long to respond';
+  const BAD_RESPONSE_ERROR = 'The server returned an unexpected response — check that PHP is running (api/*.php)';
+  const CANCELED_ERROR = 'Request cancelled';
 
   // Все окна Studio работают на одном origin. Явный targetOrigin не даёт
   // отправить служебные данные стороннему окну после смены его навигации.
@@ -174,7 +174,7 @@
   const request = async (url, options = {}) => {
     const response = await json(url, options);
     if (!response.ok) {
-      const error = new Error(response.error || 'Операция не выполнена');
+      const error = new Error(response.error || 'The operation failed');
       error.status = response.status;
       error.payload = response.data;
       throw error;

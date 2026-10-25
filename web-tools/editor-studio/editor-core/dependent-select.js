@@ -187,7 +187,7 @@
       const prev = asString(selectEl.value);
 
       const anyValue = asString(params.anyValue ?? '');
-      const anyLabel = asString(params.anyLabel ?? 'Все');
+      const anyLabel = asString(params.anyLabel ?? 'All');
 
       const esc = core.utils?.escapeAttr
         ? (x) => core.utils.escapeAttr(x)

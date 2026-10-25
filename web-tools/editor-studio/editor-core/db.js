@@ -81,7 +81,7 @@
     const metaEl = wrapper ? wrapper.querySelector('.editor-dbselect-meta') : null;
 
     const bindInputPath = el.dataset.bindInputPath || '';
-    const placeholder = el.dataset.placeholder || '— выберите —';
+    const placeholder = el.dataset.placeholder || '— select —';
     const labelMode = (el.dataset.labelMode || 'id_name').toLowerCase();
     const pageSize = Number(el.dataset.dbLimit || 300);
     const multiple = !!el.multiple;
@@ -92,8 +92,8 @@
     const updateMeta = () => {
       if (!metaEl) return;
       if (!state.loaded) { metaEl.textContent = ''; return; }
-      if (state.total == null) metaEl.textContent = `Показано: ${state.loaded}`;
-      else metaEl.textContent = `Показано: ${state.loaded} из ${state.total}`;
+      if (state.total == null) metaEl.textContent = `Shown: ${state.loaded}`;
+      else metaEl.textContent = `Shown: ${state.loaded}  of  ${state.total}`;
     };
 
     const renderOptions = (items, { append = false } = {}) => {
@@ -173,7 +173,7 @@
         el.dataset.dbFailed = '1';
         el.dataset.dbLoaded = '0';
         el.innerHTML = '';
-        el.appendChild(new Option('Ошибка загрузки', '', true, true));
+        el.appendChild(new Option('Loading failed', '', true, true));
         el.disabled = true;
         if (moreBtn) moreBtn.classList.add('hidden');
         if (metaEl) metaEl.textContent = '';
@@ -224,7 +224,7 @@
       if (wrapper) wrapper.setAttribute('data-db-state', 'connected');
 
       const multiple = !!el.multiple;
-      const placeholder = el.dataset.placeholder || '— выберите —';
+      const placeholder = el.dataset.placeholder || '— select —';
       const labelMode = (el.dataset.labelMode || 'id_name').toLowerCase();
       const bindInputPath = el.dataset.bindInputPath || '';
 
@@ -264,7 +264,7 @@
 
       // fallback for unknown id
       if (!multiple && prev && !Array.from(el.options).some(o => o.value === String(prev))) {
-        el.appendChild(new Option(`${prev}: (не найдено)`, String(prev), true, true));
+        el.appendChild(new Option(`${prev}: (not found)`, String(prev), true, true));
       }
 
       el.disabled = false;
@@ -277,7 +277,7 @@
       if (moreBtn) moreBtn.classList.add('hidden');
       if (metaEl) {
         const cnt = multiple ? el.options.length : Math.max(0, el.options.length - 1);
-        metaEl.textContent = cnt ? `Показано: ${cnt}` : '';
+        metaEl.textContent = cnt ? `Shown: ${cnt}` : '';
       }
 
       if (searchInput && el.dataset.dbClientFilter !== '1') {
@@ -342,7 +342,7 @@
     let removalObserver = null;
     if (dropdownLocal) dropdownLocal.style.display = 'none';
     const bindInputPath = combo.dataset.bindInputPath || '';
-    const placeholder = combo.dataset.placeholder || '— выберите —';
+    const placeholder = combo.dataset.placeholder || '— select —';
     const labelMode = (combo.dataset.labelMode || 'id_name').toLowerCase();
     const pageSize = Number(combo.dataset.dbLimit || 300);
     const searchable = combo.dataset.dbSearchable === '1';
@@ -529,7 +529,7 @@
       return coerceSelected(bound.value);
     };
 
-    const renderList = (items, { emptyText = 'Нет вариантов' } = {}) => {
+    const renderList = (items, { emptyText = 'No options' } = {}) => {
       if (!dropdown) return;
       const arr = Array.isArray(items) ? items : [];
       const combined = [];
@@ -668,7 +668,7 @@
             return;
           }
           setDbState('connected');
-          renderList(res.items || [], { emptyText: q ? 'Ничего не найдено' : 'Нет вариантов' });
+          renderList(res.items || [], { emptyText: q ? 'Nothing found' : 'No options' });
           return;
         }
 
@@ -688,7 +688,7 @@
               const l = String(it.label || '').toLowerCase();
               return v.includes(needle) || l.includes(needle) || `${v}: ${l}`.includes(needle);
             }).slice(0, pageSize);
-        renderList(filtered, { emptyText: q ? 'Ничего не найдено' : 'Нет вариантов' });
+        renderList(filtered, { emptyText: q ? 'Nothing found' : 'No options' });
       } catch (err) {
         if (signal.aborted || querySeq !== state.querySeq) return;
         setDbState('disconnected');
@@ -884,7 +884,7 @@
             // Otherwise show a loading marker.
             if (!hasMeaningful && (!el.options || el.options.length <= 1)) {
               el.innerHTML = '';
-              el.appendChild(new Option('Загрузка…', '', true, true));
+              el.appendChild(new Option('Loading…', '', true, true));
             }
           }
           el.disabled = true;
@@ -907,7 +907,7 @@
               for (const el of bulkEls) {
                 el.disabled = true;
                 el.innerHTML = '';
-                el.appendChild(new Option('Нет соединения с БД', '', true, true));
+                el.appendChild(new Option('No database connection', '', true, true));
                 const wrapper = el.closest('.editor-dbselect');
                 if (wrapper) wrapper.setAttribute('data-db-state', 'disconnected');
               }
@@ -941,7 +941,7 @@
             el.dataset.dbFailed = '1';
             el.disabled = true;
             el.innerHTML = '';
-            el.appendChild(new Option('Нет соединения с БД', '', true, true));
+            el.appendChild(new Option('No database connection', '', true, true));
             const wrapper = el.closest('.editor-dbselect');
             if (wrapper) wrapper.setAttribute('data-db-state', 'disconnected');
           }

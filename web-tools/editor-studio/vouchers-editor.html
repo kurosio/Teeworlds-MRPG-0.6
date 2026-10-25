@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Ваучеры • Editor Studio</title>
+  <title>Vouchers • Editor Studio</title>
   <script src="editor-core/page-loader.js" data-mode="scenario"></script>
 </head>
 
@@ -13,16 +13,16 @@
       <div class="editor-page-title">
         <i class="fa-solid fa-ticket text-accent text-xl"></i>
         <div>
-          <h1>Ваучеры</h1>
-          <div class="editor-page-sub">Управление кодами ваучеров, сроками и наградами.</div>
+          <h1>Vouchers</h1>
+          <div class="editor-page-sub">Manage voucher codes, expiry dates and rewards.</div>
         </div>
       </div>
       <div class="editor-page-actions">
-        <button id="refreshBtn" class="editor-btn editor-btn-secondary" title="Обновить">
-          <i class="fa-solid fa-rotate"></i><span>Обновить</span>
+        <button id="refreshBtn" class="editor-btn editor-btn-secondary" title="Refresh">
+          <i class="fa-solid fa-rotate"></i><span>Refresh</span>
         </button>
         <button id="newBtn" class="editor-btn editor-btn-primary">
-          <i class="fa-solid fa-plus"></i><span>Новый ваучер</span>
+          <i class="fa-solid fa-plus"></i><span>New voucher</span>
         </button>
       </div>
     </div>
@@ -33,28 +33,28 @@
         <div class="editor-dock-pad">
           <div class="editor-sidebar-head">
             <div>
-              <div class="text-sm font-semibold">Список ваучеров</div>
-              <div class="editor-sidebar-meta">Всего: <span id="count">—</span></div>
+              <div class="text-sm font-semibold">Voucher list</div>
+              <div class="editor-sidebar-meta">Total: <span id="count">—</span></div>
             </div>
           </div>
 
           <div class="mt-3">
             <div class="editor-search">
               <i class="fa-solid fa-magnifying-glass"></i>
-              <input id="searchInput" class="w-full editor-input form-input" placeholder="Поиск по коду..." />
+              <input id="searchInput" class="w-full editor-input form-input" placeholder="Search by code..." />
             </div>
           </div>
 
           <div class="mt-3 editor-sidebar-filters two-col">
             <select id="filterMulti" class="w-full editor-input form-input">
-              <option value="">Все типы</option>
-              <option value="single">Одиночные</option>
-              <option value="multi">Множественные</option>
+              <option value="">All types</option>
+              <option value="single">Single-use</option>
+              <option value="multi">Multi-use</option>
             </select>
             <select id="filterStatus" class="w-full editor-input form-input">
-              <option value="">Все сроки</option>
-              <option value="active">Активные</option>
-              <option value="expired">Истёкшие</option>
+              <option value="">Any expiry</option>
+              <option value="active">Active</option>
+              <option value="expired">Expired</option>
             </select>
           </div>
 
@@ -67,22 +67,22 @@
         <div class="editor-dock-pad">
           <div class="editor-sticky-toolbar flex items-start justify-between gap-4">
             <div class="min-w-0">
-              <div class="text-lg font-semibold" id="title">Выберите ваучер</div>
-              <div class="editor-muted-text text-sm mt-1" id="subtitle">или создайте новый</div>
+              <div class="text-lg font-semibold" id="title">Select a voucher</div>
+              <div class="editor-muted-text text-sm mt-1" id="subtitle">or create a new one</div>
             </div>
             <div class="editor-page-actions">
-              <span id="dirty-pill" class="editor-dirty-pill hidden" aria-hidden="true">Данные не сохранены</span>
+              <span id="dirty-pill" class="editor-dirty-pill hidden" aria-hidden="true">Data not saved</span>
               <button id="saveBtn" class="editor-btn editor-btn-primary" disabled>
                 <i class="fa-solid fa-floppy-disk"></i>
-                <span>Сохранить</span>
+                <span>Save</span>
               </button>
               <button id="cancelBtn" class="editor-btn editor-btn-secondary hidden" disabled>
                 <i class="fa-solid fa-rotate-left"></i>
-                <span>Отменить</span>
+                <span>Cancel</span>
               </button>
               <button id="deleteBtn" class="editor-btn editor-btn-secondary" disabled>
                 <i class="fa-solid fa-trash"></i>
-                <span>Удалить</span>
+                <span>Delete</span>
               </button>
             </div>
           </div>
@@ -91,7 +91,7 @@
             <div id="dbStatus" class="editor-db-alert hidden"></div>
 
             <div id="emptyVoucherState" class="editor-empty-state">
-              Выберите ваучер в списке слева или нажмите «Новый ваучер», чтобы создать промокод.
+              Select a voucher on the left or click “New voucher” to create a promo code.
             </div>
 
             <div id="voucherEditorBody" class="space-y-4 hidden">
@@ -99,17 +99,17 @@
                 <div class="editor-form-grid-2" id="formRoot"></div>
                 <div class="mt-4 pt-4 border-t editor-hairline flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <div class="editor-label">Срок действия</div>
-                    <div id="validUntilText" class="text-sm font-medium mt-1">— бессрочно —</div>
+                    <div class="editor-label">Expiration</div>
+                    <div id="validUntilText" class="text-sm font-medium mt-1">— no expiry —</div>
                   </div>
                   <div class="flex flex-wrap items-center gap-2">
                     <button id="pickDateBtn" type="button" class="editor-btn editor-btn-secondary" disabled>
                       <i class="fa-solid fa-calendar"></i>
-                      <span>Выбрать дату</span>
+                      <span>Pick date</span>
                     </button>
                     <button id="clearDateBtn" type="button" class="editor-btn editor-btn-secondary hidden">
                       <i class="fa-solid fa-infinity"></i>
-                      <span>Бессрочно</span>
+                      <span>Never expires</span>
                     </button>
                   </div>
                 </div>
@@ -118,8 +118,8 @@
               <div class="editor-section">
                 <div class="flex items-center justify-between gap-3">
                   <div>
-                    <div class="font-semibold text-sm">Награды ваучера</div>
-                    <div class="editor-muted-text text-xs mt-0.5">Предметы и количество, которые получит игрок при активации кода</div>
+                    <div class="font-semibold text-sm">Voucher rewards</div>
+                    <div class="editor-muted-text text-xs mt-0.5">Items and amounts granted to the player when redeeming the code</div>
                   </div>
                 </div>
                 <div class="mt-4" id="itemsRoot"></div>
@@ -198,20 +198,20 @@
     });
 
     const formatUntil = (sec) => {
-      if (!sec) return '— бессрочно —';
+      if (!sec) return '— no expiry —';
       const d = new Date(sec * 1000);
       return d.toLocaleString();
     };
 
     const voucherFields = {
-      Code: { type: 'text', label: 'Код', validate: { required: true }, ui: { placeholder: 'Например: MMO_LIVE' } },
-      Multiple: { type: 'toggle', label: 'Множественный' },
+      Code: { type: 'text', label: 'Code', validate: { required: true }, ui: { placeholder: 'e.g. MMO_LIVE' } },
+      Multiple: { type: 'toggle', label: 'Multi-use' },
     };
 
     // Items are rendered as compact rows (table-like) for a cleaner UX.
     const ITEM_ROW_FIELDS = {
-      id: { type: 'db_select', label: '', ui: { dbKey: 'item', placeholder: 'Предмет (ID:Name)', manualPlaceholder: 'ID предмета', hideLabel: true } },
-      value: { type: 'number', label: '', ui: { min: 1, step: 1, placeholder: 'Кол-во', hideLabel: true } }
+      id: { type: 'db_select', label: '', ui: { dbKey: 'item', placeholder: 'Item (ID:Name)', manualPlaceholder: 'Item ID', hideLabel: true } },
+      value: { type: 'number', label: '', ui: { min: 1, step: 1, placeholder: 'Qty', hideLabel: true } }
     };
 
     // Use shared render defaults (same look across editors)
@@ -242,17 +242,17 @@
       DOM.emptyState?.classList.toggle('hidden', hasVoucher);
       DOM.editorBody?.classList.toggle('hidden', !hasVoucher);
       if (!hasVoucher) {
-        DOM.title.textContent = 'Выберите ваучер';
-        DOM.subtitle.textContent = 'или создайте новый';
+        DOM.title.textContent = 'Select a voucher';
+        DOM.subtitle.textContent = 'or create a new one';
         setDirtyUi(false);
         return;
       }
       DOM.title.textContent = STATE.voucher.Code
-        ? `Ваучер: ${STATE.voucher.Code}`
-        : (STATE.selectedId ? `Ваучер #${STATE.selectedId}` : 'Новый ваучер');
+        ? `Voucher:  ${STATE.voucher.Code}`
+        : (STATE.selectedId ? `Voucher #${STATE.selectedId}` : 'New voucher');
       const untilLabel = formatUntil(STATE.voucher.ValidUntil);
       const idPrefix = STATE.selectedId ? `ID ${STATE.selectedId} · ` : '';
-      DOM.subtitle.textContent = `${idPrefix}Срок: ${untilLabel}`;
+      DOM.subtitle.textContent = `${idPrefix}Expires:  ${untilLabel}`;
       if (DOM.validUntilText) DOM.validUntilText.textContent = untilLabel;
       if (DOM.clearDate) DOM.clearDate.classList.toggle('hidden', !Number(STATE.voucher.ValidUntil || 0));
       setDirtyUi(true);
@@ -260,7 +260,7 @@
 
     const canDiscardDirty = async () => {
       if (!DIRTY?.isDirty?.()) return true;
-      return EditorCore.Page.confirm('Есть несохранённые изменения. Продолжить без сохранения?');
+      return EditorCore.Page.confirm('You have unsaved changes. Continue without saving?');
     };
 
     const applyListFilters = (rows) => {
@@ -284,17 +284,17 @@
       const rows = STATE.list;
       if (!rows.length) {
         if (DOM.count) DOM.count.textContent = '0';
-        DOM.list.innerHTML = `<div class="editor-empty-state">Ваучеров пока нет — нажмите «Новый ваучер», чтобы создать первый.</div>`;
+        DOM.list.innerHTML = `<div class="editor-empty-state">No vouchers yet — click “New voucher” to create the first one.</div>`;
         return;
       }
       const filtered = applyListFilters(rows);
       if (DOM.count) {
         DOM.count.textContent = filtered.length < rows.length
-          ? `${filtered.length} из ${rows.length}`
+          ? `${filtered.length}  of  ${rows.length}`
           : `${rows.length}`;
       }
       if (!filtered.length) {
-        DOM.list.innerHTML = `<div class="editor-empty-state">Ничего не найдено по выбранным фильтрам</div>`;
+        DOM.list.innerHTML = `<div class="editor-empty-state">Nothing matches the selected filters</div>`;
         return;
       }
       const now = Math.floor(Date.now() / 1000);
@@ -302,8 +302,8 @@
         const active = r.ID === STATE.selectedId;
         const isExpired = Number(r.ValidUntil || 0) > 0 && Number(r.ValidUntil || 0) <= now;
         const badges = [];
-        if (r.Multiple) badges.push('<span class="editor-badge">множественный</span>');
-        if (isExpired) badges.push('<span class="editor-badge" style="color: var(--editor-danger);">истёк</span>');
+        if (r.Multiple) badges.push('<span class="editor-badge">multiple</span>');
+        if (isExpired) badges.push('<span class="editor-badge" style="color: var(--editor-danger);">expired</span>');
         return `
           <button type="button" class="w-full text-left editor-row ${active ? 'editor-row-active' : ''}" data-id="${r.ID}">
             <div class="flex items-center justify-between gap-2">
@@ -329,7 +329,7 @@
         DOM.dbStatus.textContent = '';
         DOM.dbStatus.classList.add('hidden');
       } else {
-        DOM.dbStatus.textContent = 'БД не настроена или недоступна. Поля ID доступны для ручного ввода.';
+        DOM.dbStatus.textContent = 'The database is not configured or unavailable. ID fields can be entered manually.';
         DOM.dbStatus.classList.remove('hidden');
       }
     };
@@ -349,16 +349,16 @@
       const items = Array.isArray(STATE.voucher.items) ? STATE.voucher.items : [];
       if (!items.length) {
         DOM.itemsRoot.innerHTML = `
-          <div class="editor-empty-state mb-3">Награды пока не добавлены. Нажмите «Добавить предмет», чтобы задать содержимое ваучера.</div>
-          <button type="button" class="editor-btn editor-btn-primary" data-items-action="add"><i class="fa-solid fa-plus"></i><span>Добавить предмет</span></button>
+          <div class="editor-empty-state mb-3">No rewards added yet. Click “Add item” to define the voucher contents.</div>
+          <button type="button" class="editor-btn editor-btn-primary" data-items-action="add"><i class="fa-solid fa-plus"></i><span>Add an item</span></button>
         `;
         return;
       }
 
       const header = `
         <div class="hidden md:grid grid-cols-[1fr_160px_40px] gap-3 px-2 mb-2 text-xs font-semibold uppercase tracking-wider editor-muted-text">
-          <div>Предмет</div>
-          <div>Количество</div>
+          <div>Item</div>
+          <div>Quantity</div>
           <div></div>
         </div>
       `;
@@ -382,7 +382,7 @@
           <div class="editor-list-item grid grid-cols-1 md:grid-cols-[1fr_160px_40px] gap-3 items-center" data-item-row="${idx}">
             ${idHtml}
             ${qtyHtml}
-            <button type="button" class="editor-icon-btn editor-icon-danger justify-self-end" title="Удалить предмет" data-items-action="remove" data-items-index="${idx}">
+            <button type="button" class="editor-icon-btn editor-icon-danger justify-self-end" title="Delete the item" data-items-action="remove" data-items-index="${idx}">
               <i class="fa-solid fa-trash"></i>
             </button>
           </div>
@@ -393,7 +393,7 @@
         ${header}
         <div class="space-y-2">${rows}</div>
         <div class="mt-3">
-          <button type="button" class="editor-btn editor-btn-primary" data-items-action="add"><i class="fa-solid fa-plus"></i><span>Добавить предмет</span></button>
+          <button type="button" class="editor-btn editor-btn-primary" data-items-action="add"><i class="fa-solid fa-plus"></i><span>Add an item</span></button>
         </div>
       `;
 
@@ -489,18 +489,18 @@
       const v = STATE.form.getData();
       const payload = toPayload(v);
       if (!payload.Code || !payload.Code.trim()) {
-        window.EditorCore.UI.toast('Введите код ваучера', 'error');
+        window.EditorCore.UI.toast('Enter the voucher code', 'error');
         return;
       }
       if (STATE.selectedId) {
         // DBCrud auto-records for sync
         await window.EditorCore.DBCrud.update(RESOURCE, STATE.selectedId, payload);
-        window.EditorCore.UI.toast('Сохранено', 'success');
+        window.EditorCore.UI.toast('Saved', 'success');
       } else {
         const created = await window.EditorCore.DBCrud.create(RESOURCE, payload);
         STATE.selectedId = Number(created.id || 0);
         STATE.lastSelectedIdBeforeCreate = 0;
-        window.EditorCore.UI.toast('Создано', 'success');
+        window.EditorCore.UI.toast('Created', 'success');
       }
       await loadList();
       if (STATE.selectedId) await selectVoucher(STATE.selectedId);
@@ -537,11 +537,11 @@
       if (!STATE.selectedId) return;
       const id = STATE.selectedId;
       const label = STATE.voucher?.Code ? `«${STATE.voucher.Code}» (#${id})` : `#${id}`;
-      if (!await EditorCore.Page.confirm(`Удалить ваучер ${label}?`)) return;
+      if (!await EditorCore.Page.confirm(`Delete voucher  ${label}?`)) return;
       if (STATE.selectedId !== id) return;
       // DBCrud auto-records for sync
       await window.EditorCore.DBCrud.remove(RESOURCE, id);
-      window.EditorCore.UI.toast('Удалено', 'success');
+      window.EditorCore.UI.toast('Deleted', 'success');
       STATE.selectedId = 0;
       STATE.voucher = null;
       DOM.formRoot.innerHTML = '';
@@ -554,7 +554,7 @@
     const pickDate = () => {
       if (!STATE.voucher) return;
       window.EditorCore.UI.openDateTimeModal({
-        title: 'Срок действия ваучера',
+        title: 'Voucher expiry',
         valueSec: Number(STATE.voucher.ValidUntil || 0),
         onApply: (sec) => {
           STATE.voucher.ValidUntil = Number(sec || 0);
@@ -617,9 +617,9 @@
           setHeader();
         }
       } catch (err) {
-        window.EditorCore.UI?.toast?.(err?.message || 'Не удалось загрузить список.', 'error');
+        window.EditorCore.UI?.toast?.(err?.message || 'Could not load the list.', 'error');
         if (DOM.list) {
-          DOM.list.innerHTML = '<div class="editor-muted-text text-sm p-3">Не удалось загрузить список. Проверьте подключение к базе и обновите страницу.</div>';
+          DOM.list.innerHTML = '<div class="editor-muted-text text-sm p-3">Could not load the list. Check the database connection and reload the page.</div>';
         }
       }
     })();

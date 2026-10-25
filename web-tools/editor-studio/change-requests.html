@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Запросы на изменение • Editor Studio</title>
+  <title>Change requests • Editor Studio</title>
   <script src="editor-core/page-loader.js" data-mode="event"></script>
   <style>
     .cr-hidden { display: none !important; }
@@ -151,36 +151,36 @@
       <div class="editor-page-title">
         <i class="fa-solid fa-code-pull-request text-accent text-xl"></i>
         <div>
-          <h1 id="page-title">Запросы на изменение</h1>
-          <div class="editor-page-sub" id="page-sub">Загрузка…</div>
+          <h1 id="page-title">Change requests</h1>
+          <div class="editor-page-sub" id="page-sub">Loading…</div>
         </div>
       </div>
       <div class="editor-page-actions" id="page-actions">
         <button class="editor-btn editor-btn-secondary cr-hidden" id="btn-guests" type="button">
-          <i class="fa-solid fa-user-shield"></i><span>Гостевые пользователи</span>
+          <i class="fa-solid fa-user-shield"></i><span>Guest users</span>
         </button>
         <button class="editor-btn editor-btn-secondary cr-hidden" id="btn-guest-settings" type="button">
-          <i class="fa-solid fa-user-gear"></i><span>Правила доступа</span>
+          <i class="fa-solid fa-user-gear"></i><span>Access rules</span>
         </button>
         <button class="editor-btn editor-btn-secondary" id="btn-refresh" type="button">
-          <i class="fa-solid fa-rotate"></i><span>Обновить</span>
+          <i class="fa-solid fa-rotate"></i><span>Refresh</span>
         </button>
       </div>
     </div>
 
     <div class="editor-page-body">
-    <div id="view-loading" class="cr-card cr-card-pad cr-muted">Загрузка…</div>
+    <div id="view-loading" class="cr-card cr-card-pad cr-muted">Loading…</div>
 
     <div id="view-denied" class="cr-card cr-card-pad cr-hidden">
-      <div class="cr-empty"><i class="fa-solid fa-lock"></i>Требуется вход в Editor Studio.</div>
+      <div class="cr-empty"><i class="fa-solid fa-lock"></i>Sign-in to Editor Studio is required.</div>
     </div>
 
     <!-- ═══════════════════ GUEST VIEW ═══════════════════ -->
     <div id="view-guest" class="cr-hidden">
       <div class="flex items-center justify-between gap-3 flex-wrap mb-4">
         <div class="cr-tabs" role="tablist">
-          <button type="button" class="cr-tab active" data-guest-tab="draft"><i class="fa-solid fa-pen-to-square"></i>Черновик <span class="cr-count" id="g-draft-count">0</span></button>
-          <button type="button" class="cr-tab" data-guest-tab="mine"><i class="fa-solid fa-inbox"></i>Мои запросы <span class="cr-count" id="g-mine-count">0</span></button>
+          <button type="button" class="cr-tab active" data-guest-tab="draft"><i class="fa-solid fa-pen-to-square"></i>Draft <span class="cr-count" id="g-draft-count">0</span></button>
+          <button type="button" class="cr-tab" data-guest-tab="mine"><i class="fa-solid fa-inbox"></i>My requests <span class="cr-count" id="g-mine-count">0</span></button>
         </div>
         <div class="text-xs cr-muted" id="g-limits"></div>
       </div>
@@ -191,12 +191,12 @@
           <div class="cr-card cr-card-pad mb-3">
             <div class="flex items-start justify-between gap-3 flex-wrap">
               <div>
-                <div class="font-semibold">Что будет запрошено</div>
-                <div class="text-sm cr-muted mt-1">Подробный анализ относительно текущей базы данных: изменённые поля (было → станет), связанные записи и последствия.</div>
+                <div class="font-semibold">What will be requested</div>
+                <div class="text-sm cr-muted mt-1">Detailed analysis against the current database: changed fields (before → after), related records and consequences.</div>
               </div>
               <div class="flex gap-2">
-                <button class="editor-btn editor-btn-secondary" id="g-btn-analyze" type="button"><i class="fa-solid fa-magnifying-glass-chart"></i><span>Проверить</span></button>
-                <button class="editor-btn editor-btn-secondary" id="g-btn-clear" type="button"><i class="fa-solid fa-trash-can"></i><span>Очистить</span></button>
+                <button class="editor-btn editor-btn-secondary" id="g-btn-analyze" type="button"><i class="fa-solid fa-magnifying-glass-chart"></i><span>Check</span></button>
+                <button class="editor-btn editor-btn-secondary" id="g-btn-clear" type="button"><i class="fa-solid fa-trash-can"></i><span>Clear</span></button>
               </div>
             </div>
             <div id="g-summary" class="cr-summary mt-3"></div>
@@ -206,31 +206,30 @@
 
         <aside class="cr-sticky">
           <div class="cr-card cr-card-pad">
-            <div class="font-semibold text-base flex items-center gap-2"><i class="fa-solid fa-paper-plane text-accent"></i>Отправить запрос администратору</div>
-            <p class="text-sm cr-muted mt-1 mb-4">Изменения не применяются сразу — администратор проверит их и примет решение.</p>
+            <div class="font-semibold text-base flex items-center gap-2"><i class="fa-solid fa-paper-plane text-accent"></i>Send the request to the administrator</div>
+            <p class="text-sm cr-muted mt-1 mb-4">Changes are not applied immediately — the administrator reviews them and decides.</p>
 
             <label class="block mb-3">
-              <div class="cr-field-label">Ваш ник <span class="cr-required">*</span></div>
-              <input id="g-nickname" type="text" class="w-full editor-input form-input" autocomplete="nickname" placeholder="Ник в игре" />
+              <div class="cr-field-label">Your nickname <span class="cr-required">*</span></div>
+              <input id="g-nickname" type="text" class="w-full editor-input form-input" autocomplete="nickname" placeholder="In-game nickname" />
               <div class="cr-counter" id="g-nickname-counter"></div>
             </label>
 
             <label class="block">
-              <div class="cr-field-label">Описание: зачем нужны изменения <span class="cr-required">*</span></div>
-              <textarea id="g-message" class="w-full editor-input form-textarea" rows="7" placeholder="Например: у предмета «Iron Sword» неверная цена — в описании квеста указано 150, а в БД 15. Исправил цену и описание."></textarea>
+              <div class="cr-field-label">Description: why the changes are needed <span class="cr-required">*</span></div>
+              <textarea id="g-message" class="w-full editor-input form-textarea" rows="7" placeholder="e.g. the “Iron Sword” item has a wrong price — the quest description says 150 but the database has 15. Fixed the price and the description."></textarea>
               <div class="cr-counter" id="g-message-counter"></div>
             </label>
 
             <button id="g-btn-submit" type="button" class="editor-btn editor-btn-primary w-full mt-3" disabled>
-              <i class="fa-solid fa-paper-plane"></i><span>Отправить запрос</span>
+              <i class="fa-solid fa-paper-plane"></i><span>Send the request</span>
             </button>
             <div id="g-submit-status" class="text-sm mt-3"></div>
           </div>
 
           <div class="cr-card cr-card-pad mt-3 text-sm cr-muted">
-            <div class="font-semibold mb-1"><i class="fa-solid fa-circle-info mr-1"></i>Как это работает</div>
-            Откройте любой доступный редактор и вносите правки как обычно — кнопки «Сохранить», «Создать», «Удалить» добавляют изменения в этот черновик.
-            База данных при этом не меняется. Черновик хранится в вашем браузере.
+            <div class="font-semibold mb-1"><i class="fa-solid fa-circle-info mr-1"></i>How it works</div>
+            Open any available editor and edit as usual — the “Save”, “Create” and “Delete” buttons add changes to this draft. The database stays untouched. The draft is stored in your browser.
           </div>
         </aside>
       </div>
@@ -238,11 +237,11 @@
       <!-- Mine -->
       <div id="g-tab-mine" class="cr-admin-layout cr-hidden">
         <div class="cr-card cr-card-pad">
-          <div class="font-semibold mb-3">Отправленные запросы</div>
+          <div class="font-semibold mb-3">Submitted requests</div>
           <div id="g-mine-list"></div>
         </div>
         <div id="g-mine-detail" class="cr-card cr-card-pad">
-          <div class="cr-empty"><i class="fa-regular fa-hand-pointer"></i>Выберите запрос слева</div>
+          <div class="cr-empty"><i class="fa-regular fa-hand-pointer"></i>Select a request on the left</div>
         </div>
       </div>
     </div>
@@ -251,27 +250,27 @@
     <div id="view-admin" class="cr-hidden">
       <div id="a-guest-disabled" class="cr-note cr-note--warning mb-4 cr-hidden">
         <i class="fa-solid fa-triangle-exclamation"></i>
-        <div>Гостевой вход сейчас <b>выключен</b> или не создано ни одного активного гостевого аккаунта — гости не могут войти и отправлять запросы. Включите доступ в «Правилах доступа», а аккаунты создайте в «Гостевые пользователи».</div>
+        <div>Guest sign-in is currently <b>disabled</b> or no active guest account exists — guests cannot sign in or send requests. Enable access in “Access rules” and create accounts in “Guest users”.</div>
       </div>
 
       <div class="cr-admin-layout">
         <aside class="cr-card cr-card-pad">
           <div class="cr-tabs w-full mb-3" id="a-filters">
-            <button type="button" class="cr-tab active" data-status="pending">Ожидают <span class="cr-count" data-count="pending">0</span></button>
-            <button type="button" class="cr-tab" data-status="approved">Приняты <span class="cr-count" data-count="approved">0</span></button>
-            <button type="button" class="cr-tab" data-status="rejected">Отклонены <span class="cr-count" data-count="rejected">0</span></button>
-            <button type="button" class="cr-tab" data-status="withdrawn">Отозваны <span class="cr-count" data-count="withdrawn">0</span></button>
-            <button type="button" class="cr-tab" data-status="all">Все</button>
+            <button type="button" class="cr-tab active" data-status="pending">Pending <span class="cr-count" data-count="pending">0</span></button>
+            <button type="button" class="cr-tab" data-status="approved">Approved <span class="cr-count" data-count="approved">0</span></button>
+            <button type="button" class="cr-tab" data-status="rejected">Rejected <span class="cr-count" data-count="rejected">0</span></button>
+            <button type="button" class="cr-tab" data-status="withdrawn">Withdrawn <span class="cr-count" data-count="withdrawn">0</span></button>
+            <button type="button" class="cr-tab" data-status="all">All</button>
           </div>
           <div class="editor-search">
             <i class="fa-solid fa-magnifying-glass"></i>
-            <input id="a-search" type="search" class="w-full editor-input form-input" placeholder="Ник, текст, раздел, ID…" />
+            <input id="a-search" type="search" class="w-full editor-input form-input" placeholder="Nickname, text, section, ID…" />
           </div>
           <div id="a-list" class="mt-3 editor-list-scroll editor-list-scroll--tall"></div>
         </aside>
 
         <section id="a-detail" class="cr-card cr-card-pad">
-          <div class="cr-empty"><i class="fa-regular fa-hand-pointer"></i>Выберите запрос слева</div>
+          <div class="cr-empty"><i class="fa-regular fa-hand-pointer"></i>Select a request on the left</div>
         </section>
       </div>
     </div>
@@ -283,55 +282,55 @@
     <div class="editor-modal-content p-6 w-full max-w-2xl">
       <div class="flex items-start justify-between gap-3 mb-4">
         <div>
-          <h3 id="settings-title" class="text-xl font-bold flex items-center gap-2"><i class="fa-solid fa-user-gear text-accent"></i>Правила доступа</h3>
-          <p class="text-sm cr-muted mt-1">Гостевые аккаунты создаются на странице «Гостевые пользователи»: там же каждому включаются отдельные вкладки редакторов. Здесь — общие лимиты и сетевые правила.</p>
+          <h3 id="settings-title" class="text-xl font-bold flex items-center gap-2"><i class="fa-solid fa-user-gear text-accent"></i>Access rules</h3>
+          <p class="text-sm cr-muted mt-1">Guest accounts are created on the “Guest users” page, where each one also gets its own editor tabs. Here you set general limits and network rules.</p>
         </div>
-        <button type="button" class="editor-icon-btn" data-close-settings title="Закрыть"><i class="fa-solid fa-xmark"></i></button>
+        <button type="button" class="editor-icon-btn" data-close-settings title="Close"><i class="fa-solid fa-xmark"></i></button>
       </div>
 
       <div class="space-y-4">
         <label class="editor-toggle" id="s-enabled-toggle" data-checked="0">
           <input id="s-enabled" type="checkbox" />
           <span class="editor-toggle-track"><span class="editor-toggle-knob"></span></span>
-          <span class="text-sm font-medium">Разрешить гостям входить в редактор</span>
+          <span class="text-sm font-medium">Allow guests to sign in to the editor</span>
         </label>
 
         <div class="cr-note cr-note--info">
           <i class="fa-solid fa-users"></i>
           <div>
-            <b>Гостевые аккаунты (<span id="s-accounts">0</span>)</b> — логины, пароли и вкладки настраиваются отдельно.
-            <div class="mt-2"><button type="button" class="editor-btn editor-btn-secondary editor-btn--sm" id="s-open-guests"><i class="fa-solid fa-user-shield"></i><span>Открыть «Гостевые пользователи»</span></button></div>
+            <b>Guest accounts (<span id="s-accounts">0</span>)</b> — logins, passwords and tabs are configured separately.
+            <div class="mt-2"><button type="button" class="editor-btn editor-btn-secondary editor-btn--sm" id="s-open-guests"><i class="fa-solid fa-user-shield"></i><span>Open “Guest users”</span></button></div>
           </div>
         </div>
 
         <label class="editor-toggle" id="s-remote-toggle" data-checked="0">
           <input id="s-remote" type="checkbox" />
           <span class="editor-toggle-track"><span class="editor-toggle-knob"></span></span>
-          <span class="text-sm">Разрешить гостям вход с любых IP <span class="cr-muted">(администратор при этом остаётся под защитой сетевых правил из БД)</span></span>
+          <span class="text-sm">Allow guests to sign in from any IP <span class="cr-muted">(the administrator stays protected by the network rules stored in the database)</span></span>
         </label>
 
         <div class="cr-settings-grid">
           <label>
-            <div class="cr-field-label">Запросов на рассмотрении</div>
+            <div class="cr-field-label">Requests under review</div>
             <input id="s-max-pending" type="number" min="1" max="50" class="w-full editor-input form-input" />
-            <div class="text-xs cr-muted mt-1">на одного гостя (1–50)</div>
+            <div class="text-xs cr-muted mt-1">per guest (1–50)</div>
           </label>
           <label>
-            <div class="cr-field-label">Пауза между отправками</div>
+            <div class="cr-field-label">Cooldown between submissions</div>
             <input id="s-cooldown" type="number" min="0" max="3600" class="w-full editor-input form-input" />
-            <div class="text-xs cr-muted mt-1">секунд (0–3600)</div>
+            <div class="text-xs cr-muted mt-1">seconds (0–3600)</div>
           </label>
           <label>
-            <div class="cr-field-label">Операций в запросе</div>
+            <div class="cr-field-label">Operations per request</div>
             <input id="s-max-ops" type="number" min="1" max="500" class="w-full editor-input form-input" />
-            <div class="text-xs cr-muted mt-1">максимум (1–500)</div>
+            <div class="text-xs cr-muted mt-1">maximum (1–500)</div>
           </label>
         </div>
       </div>
 
       <div class="flex justify-end gap-2 mt-6">
-        <button type="button" class="editor-btn editor-btn-secondary" data-close-settings>Отмена</button>
-        <button type="button" class="editor-btn editor-btn-primary" id="s-save"><i class="fa-solid fa-floppy-disk"></i><span>Сохранить</span></button>
+        <button type="button" class="editor-btn editor-btn-secondary" data-close-settings>Cancel</button>
+        <button type="button" class="editor-btn editor-btn-primary" id="s-save"><i class="fa-solid fa-floppy-disk"></i><span>Save</span></button>
       </div>
       <div id="s-status" class="text-sm mt-3"></div>
     </div>
@@ -343,10 +342,10 @@
       <h3 id="review-title" class="text-xl font-bold mb-2"></h3>
       <p id="review-text" class="text-sm cr-muted mb-4"></p>
       <div id="review-conflicts" class="cr-notes mb-3"></div>
-      <div class="cr-field-label">Комментарий для гостя <span class="cr-muted font-normal">(необязательно)</span></div>
+      <div class="cr-field-label">Comment for the guest <span class="cr-muted font-normal">(optional)</span></div>
       <textarea id="review-comment" rows="4" class="w-full editor-input form-textarea" maxlength="2000"></textarea>
       <div class="flex justify-end gap-2 mt-5">
-        <button type="button" class="editor-btn editor-btn-secondary" data-close-review>Отмена</button>
+        <button type="button" class="editor-btn editor-btn-secondary" data-close-review>Cancel</button>
         <button type="button" class="editor-btn editor-btn-primary" id="review-confirm"></button>
       </div>
       <div id="review-status" class="text-sm mt-3"></div>
@@ -368,15 +367,15 @@
     const NICK_KEY = 'editorStudio.guestNickname';
 
     const STATUS = {
-      pending: { label: 'На рассмотрении', icon: 'fa-hourglass-half' },
-      approved: { label: 'Принят и применён', icon: 'fa-circle-check' },
-      rejected: { label: 'Отклонён', icon: 'fa-circle-xmark' },
-      withdrawn: { label: 'Отозван', icon: 'fa-rotate-left' },
+      pending: { label: 'Under review', icon: 'fa-hourglass-half' },
+      approved: { label: 'Approved and applied', icon: 'fa-circle-check' },
+      rejected: { label: 'Rejected', icon: 'fa-circle-xmark' },
+      withdrawn: { label: 'Withdrawn', icon: 'fa-rotate-left' },
     };
     const TYPE = {
-      create: { label: 'Создание', icon: 'fa-plus' },
-      update: { label: 'Изменение', icon: 'fa-pen' },
-      delete: { label: 'Удаление', icon: 'fa-trash' },
+      create: { label: 'Create', icon: 'fa-plus' },
+      update: { label: 'Update', icon: 'fa-pen' },
+      delete: { label: 'Delete', icon: 'fa-trash' },
     };
     const SEV_ICON = { danger: 'fa-triangle-exclamation', warning: 'fa-circle-exclamation', info: 'fa-circle-info', ok: 'fa-circle-check' };
 
@@ -389,12 +388,12 @@
     const plural = Page.plural;
     const statusChip = (s) => `<span class="cr-chip cr-chip--${esc(s)}"><i class="fa-solid ${STATUS[s]?.icon || 'fa-circle'}"></i>${esc(STATUS[s]?.label || s)}</span>`;
     const revisionChip = (r) => Number(r?.version) > 1
-      ? `<span class="cr-chip" title="Последняя правка состава запроса"><i class="fa-solid fa-pen-to-square"></i>v${Number(r.version)}${r.lastRevision?.by ? ` · ${esc(r.lastRevision.by)}` : ''}</span>` : '';
+      ? `<span class="cr-chip" title="Last change to the request contents"><i class="fa-solid fa-pen-to-square"></i>v${Number(r.version)}${r.lastRevision?.by ? ` · ${esc(r.lastRevision.by)}` : ''}</span>` : '';
     const editRequestButton = (r, admin = false) => r?.status === 'pending'
-      ? `<button type="button" class="editor-btn editor-btn-secondary" data-edit-request="${esc(r.id)}"><i class="fa-solid fa-pen-to-square"></i><span>${admin ? 'Править в редакторе' : 'Править запрос'}</span></button>` : '';
+      ? `<button type="button" class="editor-btn editor-btn-secondary" data-edit-request="${esc(r.id)}"><i class="fa-solid fa-pen-to-square"></i><span>${admin ? 'Edit in the editor' : 'Edit the request'}</span></button>` : '';
     const openRequestInEditor = (r) => {
       const op = r?.operations?.[0] || r?.analysis?.operations?.[0];
-      if (!op) return toast('В запросе нет операций для редактирования.', 'warning');
+      if (!op) return toast('The request has no operations to edit.', 'warning');
       const analysisOp = r?.analysis?.operations?.find((entry) => entry.index === 0) || r?.analysis?.operations?.[0];
       const record = op.type === 'create' ? op.tempId : op.id;
       return EditorCore.RequestWorkbench.openEditor(op.resource, {
@@ -409,25 +408,25 @@
       <div class="cr-msg ${m.mine ? 'cr-msg--mine' : ''} ${m.read ? '' : 'cr-msg--unread'}">
         <div class="cr-msg-head">
           <span><i class="fa-solid ${m.role === 'admin' ? 'fa-user-shield' : 'fa-user'}"></i>
-            ${esc(m.mine ? 'Вы' : (m.role === 'admin' ? 'Администратор' : 'Гость'))}</span>
-          <span>${esc(fmtDate(m.createdAt))}${m.read ? '' : ' · <span class="cr-msg-new">новое</span>'}</span>
+            ${esc(m.mine ? 'You' : (m.role === 'admin' ? 'Administrator' : 'Guest'))}</span>
+          <span>${esc(fmtDate(m.createdAt))}${m.read ? '' : ' · <span class="cr-msg-new">new</span>'}</span>
         </div>
         <div class="cr-msg-body">${esc(m.body)}</div>
       </div>`;
 
     const threadListHtml = (messages, admin) => (messages && messages.length
       ? `<div class="cr-thread">${messages.map((m) => threadRowHtml(m, admin)).join('')}</div>`
-      : `<div class="cr-muted text-sm">Сообщений пока нет. Напишите${admin ? ' гостю' : ' администратору'} — ответ появится здесь.</div>`);
+      : `<div class="cr-muted text-sm">No messages yet. Write to${admin ? ' the guest' : ' the administrator'}  — the reply will appear here.</div>`);
 
     const threadBlockHtml = (messages, admin, placeholder) => `
       <div class="mt-5">
-        <div class="cr-field-label"><i class="fa-solid fa-comments text-accent"></i> ${admin ? 'Переписка с гостем' : 'Переписка с администратором'}</div>
+        <div class="cr-field-label"><i class="fa-solid fa-comments text-accent"></i> ${admin ? 'Conversation with the guest' : 'Conversation with the administrator'}</div>
         <div data-thread-list>${threadListHtml(messages, admin)}</div>
         <div class="cr-composer">
           <textarea class="w-full editor-input form-textarea" rows="2" maxlength="2000"
             data-thread-input placeholder="${esc(placeholder)}"></textarea>
           <button type="button" class="editor-btn editor-btn-primary" data-thread-send>
-            <i class="fa-solid fa-paper-plane"></i><span>Отправить</span>
+            <i class="fa-solid fa-paper-plane"></i><span>Send</span>
           </button>
         </div>
         <div class="text-xs cr-muted mt-1" data-thread-status></div>
@@ -440,13 +439,13 @@
       const status = root.querySelector('[data-thread-status]');
       const send = async () => {
         const body = String(input?.value || '').trim();
-        if (!body) { if (status) status.textContent = 'Введите сообщение.'; return; }
+        if (!body) { if (status) status.textContent = 'Enter a message.'; return; }
         if (button) button.disabled = true;
-        if (status) status.textContent = 'Отправка…';
+        if (status) status.textContent = 'Sending…';
         const res = await api('message', { method: 'POST', body: { id: requestId, body } });
         if (button) button.disabled = false;
         if (!res.ok) {
-          if (status) status.textContent = res.error || 'Не удалось отправить сообщение.';
+          if (status) status.textContent = res.error || 'Could not send the message.';
           return;
         }
         if (input) input.value = '';
@@ -460,7 +459,7 @@
     };
 
     /** Счётчик непрочитанного в списке запросов. */
-    const unreadPill = (n) => (n > 0 ? `<span class="cr-unread-pill" title="Непрочитанные сообщения">${n}</span>` : '');
+    const unreadPill = (n) => (n > 0 ? `<span class="cr-unread-pill" title="Unread messages">${n}</span>` : '');
 
     // ── Line diff (LCS) for JSON / multiline values ──────────────────────
     const lineDiff = (a, b) => {
@@ -498,7 +497,7 @@
           if (!near) {
             let end = k;
             while (end < rows.length && rows[end][0] === ' ' && !rows.slice(Math.max(0, end - CONTEXT), end + CONTEXT + 1).some(r => r[0] !== ' ')) end++;
-            html.push(`<div class="cr-diff-line cr-diff-line--gap"><span></span><span>… без изменений: ${end - k} ${plural(end - k, 'строка', 'строки', 'строк')}</span></div>`);
+            html.push(`<div class="cr-diff-line cr-diff-line--gap"><span></span><span>… unchanged:  ${end - k} ${plural(end - k, 'line', 'lines')}</span></div>`);
             k = end - 1;
             continue;
           }
@@ -509,7 +508,7 @@
       return `<div class="cr-diff">${html.join('')}</div>`;
     };
 
-    const valueHtml = (v) => (v === null || v === undefined ? '<span class="cr-null">NULL</span>' : v === '' ? '<span class="cr-null">пусто</span>' : `<span class="cr-val">${esc(v)}</span>`);
+    const valueHtml = (v) => (v === null || v === undefined ? '<span class="cr-null">NULL</span>' : v === '' ? '<span class="cr-null">empty</span>' : `<span class="cr-val">${esc(v)}</span>`);
     const isLong = (v) => typeof v === 'string' && (v.includes('\n') || v.length > 120);
 
     // Ссылки на запись в редакторе (снимок запроса или обычный редактор для гостя)
@@ -519,25 +518,25 @@
     const fieldNameHtml = (op, requestId, column, edit = false, mode = 'request') => {
       const attrs = openRecordAttrs(op, requestId, column, edit, mode);
       return attrs
-        ? `<a class="cr-open-record cr-col" ${attrs} title="Открыть поле ${esc(column)} в редакторе">${esc(column)} <i class="fa-solid fa-arrow-up-right-from-square"></i></a>`
+        ? `<a class="cr-open-record cr-col" ${attrs} title="Open field  ${esc(column)}  in the editor">${esc(column)} <i class="fa-solid fa-arrow-up-right-from-square"></i></a>`
         : `<span class="cr-col">${esc(column)}</span>`;
     };
 
     const renderChanges = (op, requestId = '', edit = false, mode = 'request') => {
       const changes = op.changes || [];
-      if (!changes.length) return '<div class="text-sm cr-muted">Нет изменённых полей.</div>';
+      if (!changes.length) return '<div class="text-sm cr-muted">No changed fields.</div>';
 
       if (op.type === 'delete') {
-        const rows = changes.map(c => `<tr><td>${fieldNameHtml(op, requestId, c.column, edit, mode)}</td><td class="cr-before">${isLong(c.before) ? `<details class="cr-details"><summary>показать (${String(c.before).length} симв.)</summary><div class="cr-diff mt-1"><div class="cr-diff-line"><span></span><span>${esc(c.before)}</span></div></div></details>` : valueHtml(c.before)}${c.refBefore ? `<span class="cr-ref"><i class="fa-solid fa-link"></i> ${esc(c.refBefore)}</span>` : ''}</td></tr>`).join('');
-        return `<details class="cr-details"><summary><i class="fa-solid fa-chevron-right"></i> Удаляемые данные (${changes.length} ${plural(changes.length, 'поле', 'поля', 'полей')})</summary>
-          <div class="cr-table-scroll"><table class="cr-changes mt-2"><thead><tr><th>Поле</th><th>Текущее значение</th></tr></thead><tbody>${rows}</tbody></table></div></details>`;
+        const rows = changes.map(c => `<tr><td>${fieldNameHtml(op, requestId, c.column, edit, mode)}</td><td class="cr-before">${isLong(c.before) ? `<details class="cr-details"><summary>show (${String(c.before).length} chars)</summary><div class="cr-diff mt-1"><div class="cr-diff-line"><span></span><span>${esc(c.before)}</span></div></div></details>` : valueHtml(c.before)}${c.refBefore ? `<span class="cr-ref"><i class="fa-solid fa-link"></i> ${esc(c.refBefore)}</span>` : ''}</td></tr>`).join('');
+        return `<details class="cr-details"><summary><i class="fa-solid fa-chevron-right"></i> Data to delete (${changes.length} ${plural(changes.length, 'field', 'fields')})</summary>
+          <div class="cr-table-scroll"><table class="cr-changes mt-2"><thead><tr><th>Field</th><th>Current value</th></tr></thead><tbody>${rows}</tbody></table></div></details>`;
       }
 
       const simple = changes.filter(c => !(c.json || isLong(c.before) || isLong(c.after)));
       const complex = changes.filter(c => c.json || isLong(c.before) || isLong(c.after));
       let html = '';
       if (simple.length) {
-        html += `<div class="cr-table-scroll"><table class="cr-changes"><thead><tr><th class="cr-col-field">Поле</th>${op.type === 'update' ? '<th>Было</th>' : ''}<th>${op.type === 'update' ? 'Станет' : 'Значение'}</th></tr></thead><tbody>`;
+        html += `<div class="cr-table-scroll"><table class="cr-changes"><thead><tr><th class="cr-col-field">Field</th>${op.type === 'update' ? '<th>Before</th>' : ''}<th>${op.type === 'update' ? 'After' : 'Value'}</th></tr></thead><tbody>`;
         html += simple.map(c => `<tr>
           <td>${fieldNameHtml(op, requestId, c.column, edit, mode)}</td>
           ${op.type === 'update' ? `<td class="cr-before">${valueHtml(c.before)}${c.refBefore ? `<span class="cr-ref"><i class="fa-solid fa-link"></i> ${esc(c.refBefore)}</span>` : ''}</td>` : ''}
@@ -546,7 +545,7 @@
         html += '</tbody></table></div>';
       }
       for (const c of complex) {
-        html += `<div class="mt-3"><div class="text-xs mb-1">${fieldNameHtml(op, requestId, c.column, edit, mode)} <span class="cr-muted">${c.json ? 'JSON' : 'текст'} · ${op.type === 'update' ? 'изменения построчно' : 'значение'}</span></div>
+        html += `<div class="mt-3"><div class="text-xs mb-1">${fieldNameHtml(op, requestId, c.column, edit, mode)} <span class="cr-muted">${c.json ? 'JSON' : 'text'} · ${op.type === 'update' ? 'changes line by line' : 'value'}</span></div>
           ${op.type === 'update' ? renderDiff(c.before ?? '', c.after ?? '') : renderDiff('', c.after ?? '')}</div>`;
       }
       return html;
@@ -562,19 +561,19 @@
       return `<div class="cr-notes">${notes.map(n => `<div class="cr-note cr-note--${esc(n.severity || 'info')}"><i class="fa-solid ${SEV_ICON[n.severity] || SEV_ICON.info}"></i><div>${esc(n.text)}</div></div>`).join('')}</div>`;
     };
 
-    const opIdText = (op) => (op.type === 'create' ? 'новая запись' : `#${op.id}`);
+    const opIdText = (op) => (op.type === 'create' ? 'new record' : `#${op.id}`);
 
     const renderOp = (op, { actionsHtml = '', extraNotes = [], requestId = '', edit = false, mode = 'request' } = {}) => {
       const t = TYPE[op.type] || TYPE.update;
       const recordAttrs = openRecordAttrs(op, requestId, '', edit, mode);
       const recordLink = recordAttrs
-        ? `<a class="editor-btn editor-btn-secondary editor-btn--sm cr-open-record" ${recordAttrs}><i class="fa-solid fa-arrow-up-right-from-square"></i><span>${op.type === 'create' ? 'Новая запись' : 'Открыть запись'}</span></a>` : '';
+        ? `<a class="editor-btn editor-btn-secondary editor-btn--sm cr-open-record" ${recordAttrs}><i class="fa-solid fa-arrow-up-right-from-square"></i><span>${op.type === 'create' ? 'New record' : 'Open record'}</span></a>` : '';
       return `<article class="cr-op cr-op--${esc(op.type)} ${op.error ? 'cr-op--error' : ''}">
         <div class="cr-op-head">
           <div class="cr-op-icon"><i class="fa-solid ${t.icon}"></i></div>
           <div class="min-w-0 flex-1">
             <div class="cr-op-title">${esc(op.title || `${t.label}: ${op.resourceTitle}`)}</div>
-            <div class="cr-op-meta">${esc(op.resourceTitle)} · <span class="cr-col">${esc(op.table)}</span> · ${esc(opIdText(op))}${op.noop ? ' · <b>без фактических изменений</b>' : ''}</div>
+            <div class="cr-op-meta">${esc(op.resourceTitle)} · <span class="cr-col">${esc(op.table)}</span> · ${esc(opIdText(op))}${op.noop ? ' · <b>no actual changes</b>' : ''}</div>
           </div>
           <div class="cr-op-actions"><span class="cr-chip cr-chip--${esc(op.type)}">${esc(t.label)}</span>${recordLink}${actionsHtml}</div>
         </div>
@@ -585,12 +584,12 @@
     const renderSummary = (summary) => {
       if (!summary) return '';
       const chips = [];
-      if (summary.create) chips.push(`<span class="cr-chip cr-chip--create"><i class="fa-solid fa-plus"></i>${summary.create} ${plural(summary.create, 'создание', 'создания', 'созданий')}</span>`);
-      if (summary.update) chips.push(`<span class="cr-chip cr-chip--update"><i class="fa-solid fa-pen"></i>${summary.update} ${plural(summary.update, 'изменение', 'изменения', 'изменений')}</span>`);
-      if (summary.delete) chips.push(`<span class="cr-chip cr-chip--delete"><i class="fa-solid fa-trash"></i>${summary.delete} ${plural(summary.delete, 'удаление', 'удаления', 'удалений')}</span>`);
-      if (summary.fields) chips.push(`<span class="cr-chip"><i class="fa-solid fa-list"></i>${summary.fields} ${plural(summary.fields, 'поле', 'поля', 'полей')}</span>`);
-      if (summary.danger) chips.push(`<span class="cr-chip cr-chip--danger"><i class="fa-solid fa-triangle-exclamation"></i>${summary.danger} критичн.</span>`);
-      if (summary.warning) chips.push(`<span class="cr-chip cr-chip--warning"><i class="fa-solid fa-circle-exclamation"></i>${summary.warning} предупр.</span>`);
+      if (summary.create) chips.push(`<span class="cr-chip cr-chip--create"><i class="fa-solid fa-plus"></i>${summary.create} ${plural(summary.create, 'creation', 'creations')}</span>`);
+      if (summary.update) chips.push(`<span class="cr-chip cr-chip--update"><i class="fa-solid fa-pen"></i>${summary.update} ${plural(summary.update, 'change', 'changes')}</span>`);
+      if (summary.delete) chips.push(`<span class="cr-chip cr-chip--delete"><i class="fa-solid fa-trash"></i>${summary.delete} ${plural(summary.delete, 'deletion', 'deletions')}</span>`);
+      if (summary.fields) chips.push(`<span class="cr-chip"><i class="fa-solid fa-list"></i>${summary.fields} ${plural(summary.fields, 'field', 'fields')}</span>`);
+      if (summary.danger) chips.push(`<span class="cr-chip cr-chip--danger"><i class="fa-solid fa-triangle-exclamation"></i>${summary.danger}  critical</span>`);
+      if (summary.warning) chips.push(`<span class="cr-chip cr-chip--warning"><i class="fa-solid fa-circle-exclamation"></i>${summary.warning}  warnings</span>`);
       Object.entries(summary.resources || {}).forEach(([title, n]) => chips.push(`<span class="cr-chip"><i class="fa-solid fa-table"></i>${esc(title)}: ${n}</span>`));
       return chips.join('');
     };
@@ -605,7 +604,7 @@
         <div class="text-xs cr-muted mt-1" style="display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden">${esc(r.message)}</div>
         <div class="flex items-center justify-between gap-2 mt-2 text-xs cr-muted">
           <span>${admin ? esc(fmtDate(r.createdAt)) : esc(r.id)}</span>
-          <span>${r.operationsCount} ${plural(r.operationsCount, 'операция', 'операции', 'операций')}${r.summary?.danger ? ` · <span class="editor-tone-danger"><i class="fa-solid fa-triangle-exclamation"></i> ${r.summary.danger}</span>` : ''}</span>
+          <span>${r.operationsCount} ${plural(r.operationsCount, 'operation', 'operations')}${r.summary?.danger ? ` · <span class="editor-tone-danger"><i class="fa-solid fa-triangle-exclamation"></i> ${r.summary.danger}</span>` : ''}</span>
         </div>
       </button>`;
 
@@ -622,19 +621,19 @@
       const msg = $('g-message').value.trim();
       const nickOk = nick.length >= lim.nickname.min && nick.length <= lim.nickname.max;
       const msgOk = msg.length >= lim.message.min && msg.length <= lim.message.max;
-      $('g-nickname-counter').textContent = `${nick.length} / ${lim.nickname.max}${nick.length && !nickOk ? ` · минимум ${lim.nickname.min}` : ''}`;
+      $('g-nickname-counter').textContent = `${nick.length} / ${lim.nickname.max}${nick.length && !nickOk ? ` · min ${lim.nickname.min}` : ''}`;
       $('g-nickname-counter').classList.toggle('bad', !!nick.length && !nickOk);
-      $('g-message-counter').textContent = `${msg.length} / ${lim.message.max}${msg.length < lim.message.min ? ` · минимум ${lim.message.min}` : ''}`;
+      $('g-message-counter').textContent = `${msg.length} / ${lim.message.max}${msg.length < lim.message.min ? ` · min ${lim.message.min}` : ''}`;
       $('g-message-counter').classList.toggle('bad', !!msg.length && !msgOk);
       const count = Guest.Draft.pendingCount();
       const submitted = Guest.Draft.submittedCount();
       const hasErrors = (G.analysis?.errors || []).length > 0;
       $('g-btn-submit').disabled = !(nickOk && msgOk && count > 0 && !hasErrors);
       $('g-btn-submit').title = !count
-        ? (submitted ? 'Нет новых изменений: всё уже отправлено и ждёт проверки' : 'Черновик пуст')
-        : hasErrors ? 'Исправьте ошибки в черновике' : (!nickOk || !msgOk) ? 'Заполните Nickname и описание' : '';
+        ? (submitted ? 'No new changes: everything is submitted and awaiting review' : 'The draft is empty')
+        : hasErrors ? 'Fix the errors in the draft' : (!nickOk || !msgOk) ? 'Fill in the nickname and the description' : '';
       const label = $('g-btn-submit').querySelector('span');
-      if (label) label.textContent = count ? `Отправить запрос (${count})` : 'Отправить запрос';
+      if (label) label.textContent = count ? `Send the request (${count})` : 'Send the request';
       return nickOk && msgOk;
     };
 
@@ -646,57 +645,57 @@
         $('g-summary').innerHTML = '';
         const available = (Guest.accountPages?.() || []).map(k => Guest.resourceTitle(k)).filter(Boolean);
         const hint = available.length
-          ? T('Откройте редактор ({0}), внесите правки и нажмите «Сохранить» — изменение появится здесь и сразу будет видно вам в редакторе.', [available.slice(0, 4).join(', ')])
-          : T('Откройте редактор, внесите правки и нажмите «Сохранить» — изменение появится здесь и сразу будет видно вам в редакторе.');
-        box.innerHTML = `<div class="cr-card"><div class="cr-empty"><i class="fa-regular fa-pen-to-square"></i>${esc(T('Черновик пуст.'))}<br/>${esc(hint)}</div></div>`;
+          ? T('Open the editor ({0}), make changes and click “Save” — the change appears here and is visible in the editor right away.', [available.slice(0, 4).join(', ')])
+          : T('Open the editor, make changes and click “Save” — the change appears here and is visible in the editor right away.');
+        box.innerHTML = `<div class="cr-card"><div class="cr-empty"><i class="fa-regular fa-pen-to-square"></i>${esc(T('The draft is empty.'))}<br/>${esc(hint)}</div></div>`;
         validateGuestForm();
         return;
       }
       const byKey = new Map(draft.ops.map(o => [draftKeyOf(o), o]));
-      const removeBtn = (uid) => uid ? `<button type="button" class="editor-icon-btn" data-remove-op="${esc(uid)}" title="Убрать из черновика"><i class="fa-solid fa-xmark"></i></button>` : '';
+      const removeBtn = (uid) => uid ? `<button type="button" class="editor-icon-btn" data-remove-op="${esc(uid)}" title="Remove from the draft"><i class="fa-solid fa-xmark"></i></button>` : '';
       // Быстрый переход из черновика в сам редактор записи (см. deep-link.js).
       const recordLink = (op) => {
         const attrs = openRecordAttrs(op, '', '', false, 'guest');
         if (!attrs) return '';
-        const title = op.type === 'create' ? 'Открыть новую запись в редакторе' : 'Открыть запись в редакторе';
-        return `<a class="editor-btn editor-btn-secondary editor-btn--sm cr-open-record" ${attrs} title="${title}"><i class="fa-solid fa-arrow-up-right-from-square"></i><span>${op.type === 'create' ? 'Новая запись' : 'Открыть запись'}</span></a>`;
+        const title = op.type === 'create' ? 'Open the new record in the editor' : 'Open the record in the editor';
+        return `<a class="editor-btn editor-btn-secondary editor-btn--sm cr-open-record" ${attrs} title="${title}"><i class="fa-solid fa-arrow-up-right-from-square"></i><span>${op.type === 'create' ? 'New record' : 'Open record'}</span></a>`;
       };
-      const submittedChip = (o) => `<span class="cr-chip cr-chip--pending" title="Отправлено администратору, ждёт проверки"><i class="fa-solid fa-hourglass-half"></i>В запросе ${esc(o.reqId || '')}</span>`;
+      const submittedChip = (o) => `<span class="cr-chip cr-chip--pending" title="Sent to the administrator, awaiting review"><i class="fa-solid fa-hourglass-half"></i>In request  ${esc(o.reqId || '')}</span>`;
 
       const drafts = draft.ops.filter(o => !o.reqId);
       const submitted = draft.ops.filter(o => o.reqId);
       const submittedHtml = submitted.length
         ? `<div class="cr-card cr-card-pad mb-3">
              <div class="flex items-center justify-between gap-3 flex-wrap mb-1">
-               <div class="font-semibold"><i class="fa-solid fa-hourglass-half editor-tone-warning"></i> На проверке у администратора</div>
-               <span class="cr-chip">${submitted.length} ${plural(submitted.length, 'операция', 'операции', 'операций')}</span>
+               <div class="font-semibold"><i class="fa-solid fa-hourglass-half editor-tone-warning"></i> Awaiting admin review</div>
+               <span class="cr-chip">${submitted.length} ${plural(submitted.length, 'operation', 'operations')}</span>
              </div>
-             <div class="text-sm cr-muted">Эти изменения уже отправлены. Локально вы видите свои значения, но в базу они попадут только после подтверждения.</div>
+             <div class="text-sm cr-muted">These changes are already submitted. You see your values locally, but they reach the database only after approval.</div>
            </div>
            ${submitted.map((o) => renderSubmittedOp(o, submittedChip(o))).join('')}`
         : '';
 
       if (G.analysis && G.analysis.operations) {
         $('g-summary').innerHTML = renderSummary(G.analysis.summary)
-          + (G.analysis.errors?.length ? `<span class="cr-chip cr-chip--danger"><i class="fa-solid fa-ban"></i>Ошибок: ${G.analysis.errors.length}</span>` : '')
-          + (submitted.length ? `<span class="cr-chip cr-chip--pending"><i class="fa-solid fa-hourglass-half"></i>На проверке: ${submitted.length}</span>` : '');
+          + (G.analysis.errors?.length ? `<span class="cr-chip cr-chip--danger"><i class="fa-solid fa-ban"></i>Errors:  ${G.analysis.errors.length}</span>` : '')
+          + (submitted.length ? `<span class="cr-chip cr-chip--pending"><i class="fa-solid fa-hourglass-half"></i>Under review:  ${submitted.length}</span>` : '');
         box.innerHTML = G.analysis.operations.map((op) => {
           const d = byKey.get(`${op.type}:${op.resource}:${op.type === 'create' ? op.tempId : op.id}`);
-          const notes = op.noop ? [{ severity: 'info', text: 'Значения совпадают с текущими в БД — эта операция не попадёт в запрос.' }] : [];
+          const notes = op.noop ? [{ severity: 'info', text: 'The values match the database — this operation will not be included in the request.' }] : [];
           return renderOp(op, { actionsHtml: removeBtn(d?.uid), extraNotes: notes, mode: 'guest' });
         }).join('') + submittedHtml;
       } else {
         $('g-summary').innerHTML = (G.analysisError
           ? `<span class="cr-chip cr-chip--danger"><i class="fa-solid fa-ban"></i>${esc(G.analysisError)}</span>`
-          : (drafts.length ? '<span class="cr-chip"><i class="fa-solid fa-spinner fa-spin"></i>Анализ…</span>' : ''))
-          + (submitted.length ? `<span class="cr-chip cr-chip--pending"><i class="fa-solid fa-hourglass-half"></i>На проверке: ${submitted.length}</span>` : '');
+          : (drafts.length ? '<span class="cr-chip"><i class="fa-solid fa-spinner fa-spin"></i>Analysing…</span>' : ''))
+          + (submitted.length ? `<span class="cr-chip cr-chip--pending"><i class="fa-solid fa-hourglass-half"></i>Under review:  ${submitted.length}</span>` : '');
         box.innerHTML = drafts.map((o) => {
           const t = TYPE[o.type];
           const fields = Object.keys(o.data || {});
           return `<article class="cr-op cr-op--${esc(o.type)}"><div class="cr-op-head">
             <div class="cr-op-icon"><i class="fa-solid ${t.icon}"></i></div>
-            <div class="min-w-0 flex-1"><div class="cr-op-title">${esc(t.label)}: ${esc(Guest.resourceTitle(o.resource))} ${o.type === 'create' ? '(новая запись)' : `#${esc(o.id)}`}${o.label ? ` «${esc(o.label)}»` : ''}</div>
-            <div class="cr-op-meta">${fields.length ? `Поля: ${esc(fields.join(', '))}` : ''}</div></div>
+            <div class="min-w-0 flex-1"><div class="cr-op-title">${esc(t.label)}: ${esc(Guest.resourceTitle(o.resource))} ${o.type === 'create' ? '(new record)' : `#${esc(o.id)}`}${o.label ? ` «${esc(o.label)}»` : ''}</div>
+            <div class="cr-op-meta">${fields.length ? `Fields: ${esc(fields.join(', '))}` : ''}</div></div>
             <div class="cr-op-actions">${recordLink(o)}${removeBtn(o.uid)}</div></div></article>`;
         }).join('') + submittedHtml;
       }
@@ -711,8 +710,8 @@
         <div class="cr-op-head">
           <div class="cr-op-icon"><i class="fa-solid ${t.icon}"></i></div>
           <div class="min-w-0 flex-1">
-            <div class="cr-op-title">${esc(t.label)}: ${esc(Guest.resourceTitle(o.resource))} ${o.type === 'create' ? '(новая запись)' : `#${esc(o.id)}`}${o.label ? ` «${esc(o.label)}»` : ''}</div>
-            <div class="cr-op-meta">${fields.length ? `Поля: ${esc(fields.join(', '))}` : ''}${o.submittedAt ? ` · отправлено ${esc(fmtDate(o.submittedAt))}` : ''}</div>
+            <div class="cr-op-title">${esc(t.label)}: ${esc(Guest.resourceTitle(o.resource))} ${o.type === 'create' ? '(new record)' : `#${esc(o.id)}`}${o.label ? ` «${esc(o.label)}»` : ''}</div>
+            <div class="cr-op-meta">${fields.length ? `Fields: ${esc(fields.join(', '))}` : ''}${o.submittedAt ? ` · sent ${esc(fmtDate(o.submittedAt))}` : ''}</div>
           </div>
           <div class="cr-op-actions">${recordLink(o)}${chipHtml}</div>
         </div>
@@ -733,7 +732,7 @@
       const res = await api('preview', { method: 'POST', body: { operations: ops } });
       if (seq !== G.previewSeq) return;
       if (res.ok) { G.analysis = res.analysis; G.analysisError = ''; }
-      else { G.analysis = res.analysis || null; G.analysisError = res.error || 'Не удалось проверить изменения'; }
+      else { G.analysis = res.analysis || null; G.analysisError = res.error || 'Could not check the changes'; }
       renderGuestDraft();
     };
     const schedulePreview = () => { clearTimeout(previewTimer); previewTimer = setTimeout(runPreview, 500); };
@@ -747,36 +746,36 @@
       const counter = $('g-mine-count');
       counter.textContent = String(pending);
       counter.title = pending
-        ? `На рассмотрении: ${pending}; всего запросов: ${G.mine.length}`
-        : `Нет запросов на рассмотрении; всего запросов: ${G.mine.length}`;
+        ? `Under review: ${pending}; total requests: ${G.mine.length}`
+        : `No requests under review; total requests: ${G.mine.length}`;
       const box = $('g-mine-list');
       box.innerHTML = G.mine.length
         ? G.mine.map(r => listItemHtml(r, r.id === G.selected, false)).join('')
-        : '<div class="cr-empty"><i class="fa-regular fa-folder-open"></i>Вы ещё не отправляли запросов.</div>';
+        : '<div class="cr-empty"><i class="fa-regular fa-folder-open"></i>You have not sent any requests yet.</div>';
     };
 
     const showMineDetail = async (id) => {
       G.selected = id;
       loadMine();
       const box = $('g-mine-detail');
-      box.innerHTML = '<div class="cr-muted">Загрузка…</div>';
+      box.innerHTML = '<div class="cr-muted">Loading…</div>';
       const res = await api('get', { query: { id } });
       if (!res.ok) { box.innerHTML = `<div class="cr-note cr-note--danger"><i class="fa-solid fa-ban"></i><div>${esc(res.error)}</div></div>`; return; }
       const r = res.request;
       G.detail = r;
       box.innerHTML = `
         <div class="flex items-start justify-between gap-3 flex-wrap">
-          <div><div class="text-lg font-semibold">Запрос ${esc(r.id)}</div><div class="text-sm cr-muted">Отправлен ${esc(fmtDate(r.createdAt))} от <b>${esc(r.nickname)}</b></div></div>
+          <div><div class="text-lg font-semibold">Request ${esc(r.id)}</div><div class="text-sm cr-muted">Sent  ${esc(fmtDate(r.createdAt))} from <b>${esc(r.nickname)}</b></div></div>
           <div class="flex gap-2 items-center flex-wrap">${revisionChip(r)}${statusChip(r.status)}
             ${editRequestButton(r)}
-            ${r.status === 'pending' ? `<button type="button" class="editor-btn editor-btn-secondary" data-withdraw="${esc(r.id)}"><i class="fa-solid fa-rotate-left"></i><span>Отозвать</span></button>` : ''}</div>
+            ${r.status === 'pending' ? `<button type="button" class="editor-btn editor-btn-secondary" data-withdraw="${esc(r.id)}"><i class="fa-solid fa-rotate-left"></i><span>Withdraw</span></button>` : ''}</div>
         </div>
-        ${r.review ? `<div class="cr-note ${r.status === 'approved' ? 'cr-note--ok' : 'cr-note--danger'} mt-3"><i class="fa-solid ${r.status === 'approved' ? 'fa-circle-check' : 'fa-circle-xmark'}"></i><div><b>Решение администратора</b> · ${esc(fmtDate(r.review.at))}${r.review.comment ? `<div class="mt-1" style="white-space:pre-wrap">${esc(r.review.comment)}</div>` : ''}</div></div>` : ''}
-        <div class="mt-4 cr-field-label">Ваше описание</div>
+        ${r.review ? `<div class="cr-note ${r.status === 'approved' ? 'cr-note--ok' : 'cr-note--danger'} mt-3"><i class="fa-solid ${r.status === 'approved' ? 'fa-circle-check' : 'fa-circle-xmark'}"></i><div><b>Administrator decision</b> · ${esc(fmtDate(r.review.at))}${r.review.comment ? `<div class="mt-1" style="white-space:pre-wrap">${esc(r.review.comment)}</div>` : ''}</div></div>` : ''}
+        <div class="mt-4 cr-field-label">Your description</div>
         <div class="cr-message">${esc(r.message)}</div>
         <div class="cr-summary mt-4">${renderSummary(r.analysis?.summary)}</div>
         <div class="mt-4">${(r.analysis?.operations || []).map(op => renderOp(op, { requestId: r.id, mode: 'guest' })).join('')}</div>
-        ${threadBlockHtml(r.messages || [], false, 'Написать администратору…')}`;
+        ${threadBlockHtml(r.messages || [], false, 'Write to the administrator…')}`;
       bindThread(box, r.id, false, () => showMineDetail(r.id));
     };
 
@@ -803,13 +802,13 @@
     const initGuest = async () => {
       const account = Guest.account?.() || {};
       const granted = Array.isArray(account.pages) ? account.pages : [];
-      $('page-title').textContent = 'Мои запросы на изменение';
-      $('page-sub').textContent = `Аккаунт: ${account.name || account.login || 'гость'} · доступно вкладок: ${granted.length}. `
-        + 'Изменения сохраняются в этом браузере и применяются к базе только после подтверждения администратором.';
+      $('page-title').textContent = 'My change requests';
+      $('page-sub').textContent = `Account:  ${account.name || account.login || 'guest'}  · tabs available:  ${granted.length}. `
+        + 'Changes are saved in this browser and applied to the database only after administrator approval.';
       $('view-guest').classList.remove('cr-hidden');
       G.config = await Guest.loadConfig();
       const lim = G.config?.limits;
-      if (lim) $('g-limits').textContent = `Лимиты: до ${lim.max_operations} операций в запросе · до ${lim.max_pending} на рассмотрении · пауза ${lim.cooldown} сек.`;
+      if (lim) $('g-limits').textContent = `Limits: up to  ${lim.max_operations}  operations per request · up to  ${lim.max_pending}  under review ·  ${lim.cooldown}  sec cooldown.`;
       $('g-nickname').maxLength = lim?.nickname?.max || 32;
       $('g-message').maxLength = lim?.message?.max || 2000;
       try { $('g-nickname').value = localStorage.getItem(NICK_KEY) || ''; } catch {}
@@ -820,8 +819,8 @@
       $('g-btn-analyze').addEventListener('click', runPreview);
       $('g-btn-clear').addEventListener('click', async () => {
         const n = Guest.Draft.pendingCount();
-        if (!n) return toast('Неотправленных изменений нет', 'info');
-        if (!await EditorCore.Page.confirm(`Убрать ${n} неотправленных изменени(й) из черновика? Отправленные запросы останутся на проверке.`)) return;
+        if (!n) return toast('No unsent changes', 'info');
+        if (!await EditorCore.Page.confirm(`Remove  ${n}  unsent change(s) from the draft? Submitted requests stay under review.`)) return;
         Guest.Draft.clear();
       });
       $('g-ops').addEventListener('click', (e) => {
@@ -843,10 +842,10 @@
           return;
         }
         const b = e.target.closest('[data-withdraw]');
-        if (!b || !await EditorCore.Page.confirm('Отозвать запрос? Администратор больше не увидит его в очереди.')) return;
+        if (!b || !await EditorCore.Page.confirm('Withdraw the request? The administrator will no longer see it in the queue.')) return;
         const res = await api('withdraw', { method: 'POST', body: { id: b.dataset.withdraw } });
-        if (!res.ok) return toast(res.error || 'Ошибка', 'error');
-        toast('Запрос отозван', 'success');
+        if (!res.ok) return toast(res.error || 'Error', 'error');
+        toast('Request withdrawn', 'success');
         showMineDetail(b.dataset.withdraw);
       });
 
@@ -855,10 +854,10 @@
         const ops = Guest.Draft.toOperations();
         const btn = $('g-btn-submit');
         btn.disabled = true;
-        $('g-submit-status').innerHTML = '<span class="cr-muted"><i class="fa-solid fa-spinner fa-spin"></i> Отправка…</span>';
+        $('g-submit-status').innerHTML = '<span class="cr-muted"><i class="fa-solid fa-spinner fa-spin"></i> Sending…</span>';
         const res = await api('submit', { method: 'POST', body: { nickname: $('g-nickname').value.trim(), message: $('g-message').value.trim(), operations: ops } });
         if (!res.ok) {
-          $('g-submit-status').innerHTML = `<div class="cr-note cr-note--danger"><i class="fa-solid fa-ban"></i><div style="white-space:pre-wrap">${esc(res.error || 'Ошибка отправки')}</div></div>`;
+          $('g-submit-status').innerHTML = `<div class="cr-note cr-note--danger"><i class="fa-solid fa-ban"></i><div style="white-space:pre-wrap">${esc(res.error || 'Sending failed')}</div></div>`;
           if (res.analysis) { G.analysis = res.analysis; renderGuestDraft(); }
           validateGuestForm();
           return;
@@ -872,8 +871,8 @@
         G.analysisError = '';
         renderGuestDraft();
         $('g-message').value = '';
-        $('g-submit-status').innerHTML = `<div class="cr-note cr-note--ok"><i class="fa-solid fa-circle-check"></i><div>Запрос <b>${esc(res.request.id)}</b> отправлен администратору. Изменения остаются видимыми вам и отмечены как «на проверке».</div></div>`;
-        toast('Запрос отправлен администратору', 'success');
+        $('g-submit-status').innerHTML = `<div class="cr-note cr-note--ok"><i class="fa-solid fa-circle-check"></i><div>Request <b>${esc(res.request.id)}</b> sent to the administrator. The changes stay visible to you and are marked as “under review”.</div></div>`;
+        toast('Request sent to the administrator', 'success');
         G.selected = res.request.id;
         setGuestTab('mine');
         showMineDetail(res.request.id);
@@ -894,7 +893,7 @@
           renderGuestDraft();
           loadMine();
           if (res?.revised?.length && G.selected && G.tab === 'mine') showMineDetail(G.selected);
-          if (res?.resolved?.length) toast(`Статус запросов обновлён: ${res.resolved.length}`, 'info');
+          if (res?.resolved?.length) toast(`Request statuses updated:  ${res.resolved.length}`, 'info');
         }
       };
       await reconcile();
@@ -939,14 +938,14 @@
       Object.entries(res.counts || {}).forEach(([k, v]) => { const el = document.querySelector(`[data-count="${k}"]`); if (el) el.textContent = String(v); });
       $('a-list').innerHTML = A.rows.length
         ? A.rows.map(r => listItemHtml(r, r.id === A.selected, true)).join('')
-        : `<div class="cr-empty"><i class="fa-regular fa-folder-open"></i>${A.status === 'pending' ? 'Нет запросов, ожидающих решения.' : 'Ничего не найдено.'}</div>`;
+        : `<div class="cr-empty"><i class="fa-regular fa-folder-open"></i>${A.status === 'pending' ? 'No requests awaiting a decision.' : 'Nothing found.'}</div>`;
       EditorCore.Http.postMessage(window.parent, { type: 'editor-shell:requests-changed' });
     };
 
     const renderAdminDetail = () => {
       const r = A.detail;
       const box = $('a-detail');
-      if (!r) { box.innerHTML = '<div class="cr-empty"><i class="fa-regular fa-hand-pointer"></i>Выберите запрос слева</div>'; return; }
+      if (!r) { box.innerHTML = '<div class="cr-empty"><i class="fa-regular fa-hand-pointer"></i>Select a request on the left</div>'; return; }
       const pending = r.status === 'pending';
       const hasLive = pending && r.liveAnalysis;
       const analysis = hasLive && A.view === 'live' ? r.liveAnalysis : r.analysis;
@@ -957,57 +956,57 @@
       box.innerHTML = `
         <div class="flex items-start justify-between gap-3 flex-wrap">
           <div class="min-w-0">
-            <div class="text-lg font-semibold break-all">Запрос ${esc(r.id)}</div>
+            <div class="text-lg font-semibold break-all">Request ${esc(r.id)}</div>
             <div class="text-sm cr-muted">${esc(fmtDate(r.createdAt))}</div>
           </div>
           <div class="flex gap-2 items-center flex-wrap">
             ${revisionChip(r)}${statusChip(r.status)}
             ${editRequestButton(r, true)}
             ${pending ? `
-              <button type="button" class="editor-btn editor-btn-primary" data-act="approve"><i class="fa-solid fa-check"></i><span>Принять и применить</span></button>
-              <button type="button" class="editor-btn editor-btn-secondary" data-act="reject"><i class="fa-solid fa-xmark"></i><span>Отклонить</span></button>` : ''}
-            <button type="button" class="editor-icon-btn" data-act="delete" title="Удалить запрос из истории"><i class="fa-solid fa-trash"></i></button>
+              <button type="button" class="editor-btn editor-btn-primary" data-act="approve"><i class="fa-solid fa-check"></i><span>Approve and apply</span></button>
+              <button type="button" class="editor-btn editor-btn-secondary" data-act="reject"><i class="fa-solid fa-xmark"></i><span>Reject</span></button>` : ''}
+            <button type="button" class="editor-icon-btn" data-act="delete" title="Delete the request from the history"><i class="fa-solid fa-trash"></i></button>
           </div>
         </div>
 
         <div class="editor-two-col mt-4">
           <dl class="cr-kv">
             <dt>Nickname</dt><dd><b>${esc(author.nickname)}</b></dd>
-            <dt>Гостевой аккаунт</dt><dd>${author.guestName || author.guestLogin
+            <dt>Guest account</dt><dd>${author.guestName || author.guestLogin
               ? `<b>${esc(author.guestName || author.guestLogin)}</b>${author.guestLogin ? ` <span class="cr-col">@${esc(author.guestLogin)}</span>` : ''}`
               : '<span class="cr-muted">—</span>'}</dd>
             <dt>IP</dt><dd><span class="cr-col">${esc(author.ip || '—')}</span></dd>
-            <dt>Браузер</dt><dd class="text-xs cr-muted">${esc(author.userAgent || '—')}</dd>
+            <dt>Browser</dt><dd class="text-xs cr-muted">${esc(author.userAgent || '—')}</dd>
           </dl>
           <dl class="cr-kv">
-            <dt>Операций</dt><dd>${(r.operations || []).length}</dd>
-            ${r.review ? `<dt>Решение</dt><dd>${esc(r.review.by || '')} · ${esc(fmtDate(r.review.at))}${r.review.force ? ' · <span class="editor-tone-warning">принудительно</span>' : ''}</dd>` : ''}
-            ${r.review?.idMap && Object.keys(r.review.idMap).length ? `<dt>Новые ID</dt><dd class="text-xs">${Object.entries(r.review.idMap).map(([t, id]) => `${esc(t)} → <b>#${esc(id)}</b>`).join('<br/>')}</dd>` : ''}
+            <dt>Operations</dt><dd>${(r.operations || []).length}</dd>
+            ${r.review ? `<dt>Decision</dt><dd>${esc(r.review.by || '')} · ${esc(fmtDate(r.review.at))}${r.review.force ? ' · <span class="editor-tone-warning">forced</span>' : ''}</dd>` : ''}
+            ${r.review?.idMap && Object.keys(r.review.idMap).length ? `<dt>New IDs</dt><dd class="text-xs">${Object.entries(r.review.idMap).map(([t, id]) => `${esc(t)} → <b>#${esc(id)}</b>`).join('<br/>')}</dd>` : ''}
           </dl>
         </div>
 
-        <div class="mt-4 cr-field-label"><i class="fa-solid fa-comment-dots text-accent"></i>Зачем гость это изменил</div>
+        <div class="mt-4 cr-field-label"><i class="fa-solid fa-comment-dots text-accent"></i>Why the guest changed this</div>
         <div class="cr-message">${esc(r.message)}</div>
-        ${r.review?.comment ? `<div class="mt-3 cr-field-label">Комментарий администратора</div><div class="cr-message" style="border-left-color:var(--editor-accent)">${esc(r.review.comment)}</div>` : ''}
+        ${r.review?.comment ? `<div class="mt-3 cr-field-label">Administrator comment</div><div class="cr-message" style="border-left-color:var(--editor-accent)">${esc(r.review.comment)}</div>` : ''}
 
-        ${pending && conflicts.length ? `<div class="cr-notes mt-4">${conflicts.map(c => `<div class="cr-note cr-note--warning"><i class="fa-solid fa-code-merge"></i><div><b>Конфликт:</b> ${esc(c.text)}</div></div>`).join('')}</div>` : ''}
-        ${pending && r.liveError ? `<div class="cr-note cr-note--danger mt-4"><i class="fa-solid fa-plug-circle-xmark"></i><div>Не удалось проверить по текущей БД: ${esc(r.liveError)}</div></div>` : ''}
+        ${pending && conflicts.length ? `<div class="cr-notes mt-4">${conflicts.map(c => `<div class="cr-note cr-note--warning"><i class="fa-solid fa-code-merge"></i><div><b>Conflict:</b> ${esc(c.text)}</div></div>`).join('')}</div>` : ''}
+        ${pending && r.liveError ? `<div class="cr-note cr-note--danger mt-4"><i class="fa-solid fa-plug-circle-xmark"></i><div>Could not verify against the current database: ${esc(r.liveError)}</div></div>` : ''}
         ${(r.review?.skipped || []).length ? `<div class="cr-notes mt-4">${r.review.skipped.map(s => `<div class="cr-note cr-note--warning"><i class="fa-solid fa-forward"></i><div>${esc(s.text)}</div></div>`).join('')}</div>` : ''}
 
         <div class="flex items-center justify-between gap-3 flex-wrap mt-5 mb-3">
           <div class="cr-summary">${renderSummary(analysis?.summary)}</div>
           ${hasLive ? `<div class="cr-tabs">
-            <button type="button" class="cr-tab ${A.view === 'live' ? 'active' : ''}" data-view="live" title="Сравнение с базой данных прямо сейчас"><i class="fa-solid fa-bolt"></i>Текущая БД</button>
-            <button type="button" class="cr-tab ${A.view === 'stored' ? 'active' : ''}" data-view="stored" title="Как изменения выглядели в момент отправки"><i class="fa-solid fa-camera"></i>На момент отправки</button>
+            <button type="button" class="cr-tab ${A.view === 'live' ? 'active' : ''}" data-view="live" title="Comparison with the database right now"><i class="fa-solid fa-bolt"></i>Current database</button>
+            <button type="button" class="cr-tab ${A.view === 'stored' ? 'active' : ''}" data-view="stored" title="How the changes looked when submitted"><i class="fa-solid fa-camera"></i>As submitted</button>
           </div>` : ''}
         </div>
         <div>${(analysis?.operations || []).map((op, idx) => {
           const c = conflictByIndex.get(idx);
-          const extra = c && A.view === 'live' ? [{ severity: 'warning', text: 'Конфликт: ' + c.text }] : [];
-          if (op.noop && pending && A.view === 'live') extra.push({ severity: 'info', text: 'Эти значения уже совпадают с текущими в БД.' });
+          const extra = c && A.view === 'live' ? [{ severity: 'warning', text: 'Conflict: ' + c.text }] : [];
+          if (op.noop && pending && A.view === 'live') extra.push({ severity: 'info', text: 'These values already match the database.' });
           return renderOp(op, { extraNotes: extra, requestId: r.id, edit: pending });
-        }).join('') || '<div class="cr-muted">Нет данных анализа.</div>'}</div>
-        ${threadBlockHtml(r.messages || [], true, 'Написать гостю…')}`;
+        }).join('') || '<div class="cr-muted">No analysis data.</div>'}</div>
+        ${threadBlockHtml(r.messages || [], true, 'Write to the guest…')}`;
       bindThread(box, r.id, true, async () => {
         await refreshAdminThread(r.id);
         loadAdminList();
@@ -1029,7 +1028,7 @@
     const showAdminDetail = async (id) => {
       A.selected = id;
       document.querySelectorAll('#a-list [data-id]').forEach(b => b.classList.toggle('active', b.dataset.id === id));
-      $('a-detail').innerHTML = '<div class="cr-muted"><i class="fa-solid fa-spinner fa-spin"></i> Загрузка и проверка по текущей БД…</div>';
+      $('a-detail').innerHTML = '<div class="cr-muted"><i class="fa-solid fa-spinner fa-spin"></i> Loading and checking against the current database…</div>';
       const res = await api('get', { query: { id } });
       if (!res.ok) { $('a-detail').innerHTML = `<div class="cr-note cr-note--danger"><i class="fa-solid fa-ban"></i><div>${esc(res.error)}</div></div>`; return; }
       A.detail = res.request;
@@ -1043,15 +1042,15 @@
       reviewMode = mode;
       reviewForce = conflicts.length > 0;
       const r = A.detail;
-      $('review-title').textContent = mode === 'approve' ? (reviewForce ? 'Применить принудительно?' : 'Принять и применить запрос?') : 'Отклонить запрос?';
+      $('review-title').textContent = mode === 'approve' ? (reviewForce ? 'Apply forcibly?' : 'Approve and apply the request?') : 'Reject the request?';
       $('review-text').textContent = mode === 'approve'
-        ? T('Изменения от «{0}» будут применены к базе данных одной транзакцией (всё или ничего). Операций: {1}.', [r.author?.nickname || '', (r.operations || []).length])
-        : T('Запрос от «{0}» будет отклонён. Гость увидит статус и ваш комментарий.', [r.author?.nickname || '']);
+        ? T('Changes from “{0}” will be applied to the database in one transaction (all or nothing). Operations:  {1}.', [r.author?.nickname || '', (r.operations || []).length])
+        : T('The request from “{0}” will be rejected. The guest will see the status and your comment.', [r.author?.nickname || '']);
       $('review-conflicts').innerHTML = conflicts.map(c => `<div class="cr-note cr-note--warning"><i class="fa-solid fa-code-merge"></i><div>${esc(c.text)}</div></div>`).join('')
-        + (reviewForce ? '<div class="cr-note cr-note--danger"><i class="fa-solid fa-triangle-exclamation"></i><div>Значения в БД изменились после отправки запроса. При принудительном применении изменения гостя перезапишут их; удалённые записи будут пропущены.</div></div>' : '');
+        + (reviewForce ? '<div class="cr-note cr-note--danger"><i class="fa-solid fa-triangle-exclamation"></i><div>The database values changed after the request was sent. Forcing the apply overwrites them with the guest\'s changes; deleted records are skipped.</div></div>' : '');
       const btn = $('review-confirm');
       btn.className = `editor-btn ${mode === 'approve' ? 'editor-btn-primary' : 'editor-btn-danger'}`;
-      btn.innerHTML = mode === 'approve' ? `<i class="fa-solid fa-check"></i><span>${reviewForce ? 'Применить принудительно' : 'Применить'}</span>` : '<i class="fa-solid fa-xmark"></i><span>Отклонить</span>';
+      btn.innerHTML = mode === 'approve' ? `<i class="fa-solid fa-check"></i><span>${reviewForce ? 'Apply anyway' : 'Apply'}</span>` : '<i class="fa-solid fa-xmark"></i><span>Reject</span>';
       $('review-status').textContent = '';
       $('review-modal').classList.remove('hidden');
       $('review-modal').classList.add('flex');
@@ -1066,7 +1065,7 @@
         applied.forEach((a) => Sync.record(a.resource, a.type, {
           id: a.id,
           data: a.type === 'delete' ? undefined : a.data,
-          label: T('Запрос {0}: {1} {2} #{3}', [A.detail?.id || '', TYPE[a.type]?.label || a.type, a.resource, a.id]),
+          label: T('Request {0}: {1} {2} #{3}', [A.detail?.id || '', TYPE[a.type]?.label || a.type, a.resource, a.id]),
         }));
         Sync.updateAllBadges?.();
       } catch (e) { console.warn('[requests] sync record failed', e); }
@@ -1077,7 +1076,7 @@
       if (!r) return;
       const btn = $('review-confirm');
       btn.disabled = true;
-      $('review-status').innerHTML = '<span class="cr-muted"><i class="fa-solid fa-spinner fa-spin"></i> Выполняется…</span>';
+      $('review-status').innerHTML = '<span class="cr-muted"><i class="fa-solid fa-spinner fa-spin"></i> Running…</span>';
       const body = { id: r.id, version: r.version, comment: $('review-comment').value };
       if (reviewMode === 'approve') body.force = reviewForce;
       const res = await api(reviewMode, { method: 'POST', body });
@@ -1086,7 +1085,7 @@
         if (res.code === 'version_conflict' && reviewMode === 'approve') {
           closeReview();
           await Promise.all([loadAdminList(), showAdminDetail(r.id)]);
-          toast('Запрос изменился. Загружена последняя версия — проверьте её перед принятием.', 'warning');
+          toast('The request changed. The latest version is loaded — review it before accepting.', 'warning');
           return;
         }
         if (res.status === 409 && Array.isArray(res.conflicts) && reviewMode === 'approve') {
@@ -1094,18 +1093,18 @@
           $('review-status').innerHTML = `<span class="editor-tone-warning">${esc(res.error)}</span>`;
           return;
         }
-        $('review-status').innerHTML = `<span class="editor-tone-danger">${esc(res.error || 'Ошибка')}</span>`;
+        $('review-status').innerHTML = `<span class="editor-tone-danger">${esc(res.error || 'Error')}</span>`;
         return;
       }
       closeReview();
       $('review-comment').value = '';
       if (reviewMode === 'approve') {
         recordSync(res.applied);
-        toast(`Запрос применён: ${res.applied?.length || 0} ${plural(res.applied?.length || 0, 'операция', 'операции', 'операций')}${res.skipped?.length ? `, пропущено ${res.skipped.length}` : ''}`, 'success');
+        toast(`Request applied:  ${res.applied?.length || 0} ${plural(res.applied?.length || 0, 'operation', 'operations')}${res.skipped?.length ? `, skipped ${res.skipped.length}` : ''}`, 'success');
         // The database changed: the editor in the shell must not keep stale rows.
         EditorCore.Http.postMessage(window.parent, { type: 'editor-shell:reload-editor' });
       } else {
-        toast('Запрос отклонён', 'success');
+        toast('Request rejected', 'success');
       }
       await loadAdminList();
       showAdminDetail(r.id);
@@ -1115,7 +1114,7 @@
     const openSettings = async () => {
       $('s-status').textContent = '';
       const res = await api('get_settings');
-      if (!res.ok) return toast(res.error || 'Ошибка', 'error');
+      if (!res.ok) return toast(res.error || 'Error', 'error');
       const s = res.settings;
       $('s-enabled').checked = !!s.guest_enabled;
       $('s-remote').checked = !!s.guest_allow_remote;
@@ -1131,8 +1130,8 @@
     const closeSettings = () => { $('settings-modal').classList.add('hidden'); $('settings-modal').classList.remove('flex'); };
 
     const initAdmin = async () => {
-      $('page-title').textContent = 'Запросы гостей';
-      $('page-sub').textContent = 'Изменения, предложенные гостевыми аккаунтами. Проверьте детали и последствия, затем примите или отклоните.';
+      $('page-title').textContent = 'Guest requests';
+      $('page-sub').textContent = 'Changes proposed by guest accounts. Review the details and consequences, then approve or reject.';
       $('view-admin').classList.remove('cr-hidden');
       $('btn-guest-settings').classList.remove('cr-hidden');
       $('btn-guests').classList.remove('cr-hidden');
@@ -1167,9 +1166,9 @@
         if (b.dataset.act === 'approve') openReview('approve', A.detail.conflicts || []);
         if (b.dataset.act === 'reject') openReview('reject');
         if (b.dataset.act === 'delete') {
-          if (!await EditorCore.Page.confirm(`Удалить запрос ${A.detail.id} из истории? Это не отменяет уже применённые изменения.`)) return;
+          if (!await EditorCore.Page.confirm(`Delete request  ${A.detail.id}  from the history? This does not revert changes that were already applied.`)) return;
           const res = await api('delete', { method: 'POST', body: { id: A.detail.id } });
-          if (!res.ok) return toast(res.error || 'Ошибка', 'error');
+          if (!res.ok) return toast(res.error || 'Error', 'error');
           A.detail = null; A.selected = null;
           renderAdminDetail();
           loadAdminList();
@@ -1194,7 +1193,7 @@
         };
         const res = await api('save_settings', { method: 'POST', body });
         if (!res.ok) { $('s-status').innerHTML = `<span class="editor-tone-danger">${esc(res.error)}</span>`; return; }
-        toast('Настройки гостевого доступа сохранены', 'success');
+        toast('Guest access settings saved', 'success');
         closeSettings();
         $('a-guest-disabled').classList.toggle('cr-hidden', body.guest_enabled);
       });

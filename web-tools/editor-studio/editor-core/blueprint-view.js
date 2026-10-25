@@ -256,8 +256,8 @@
       div.className = 'bp-empty';
       div.innerHTML = `
         <i class="fa-solid fa-diagram-project"></i>
-        <div class="bp-empty-title">Граф пуст</div>
-        <div>Добавьте шаг кнопкой «+» на панели графа или двойным кликом по пустому месту.</div>`;
+        <div class="bp-empty-title">Graph is empty</div>
+        <div>Add a step with the “+” button on the graph toolbar or by double-clicking empty space.</div>`;
       this.canvas.appendChild(div);
     }
 
@@ -280,20 +280,20 @@
       if (cmt.color) el.style.setProperty('--bp-comment-color', cmt.color);
 
       el.innerHTML = `
-        <div class="bp-comment-head" title="Перетащите, чтобы переместить заметку">
+        <div class="bp-comment-head" title="Drag to move the note">
           <i class="fa-solid fa-note-sticky"></i>
-          <span class="bp-comment-label">Комментарий</span>
+          <span class="bp-comment-label">Comment</span>
           <span class="bp-comment-actions">
-            <button data-cmt-action="color" title="Цвет"><i class="fa-solid fa-palette"></i></button>
-            <button data-cmt-action="delete" title="Удалить заметку"><i class="fa-solid fa-trash-can"></i></button>
+            <button data-cmt-action="color" title="Color"><i class="fa-solid fa-palette"></i></button>
+            <button data-cmt-action="delete" title="Delete the note"><i class="fa-solid fa-trash-can"></i></button>
           </span>
         </div>
-        <div class="bp-comment-body" data-role="text" contenteditable="false" spellcheck="false" title="Двойной клик — редактировать текст"></div>
-        <div class="bp-comment-resize" title="Изменить размер"></div>`;
+        <div class="bp-comment-body" data-role="text" contenteditable="false" spellcheck="false" title="Double-click to edit the text"></div>
+        <div class="bp-comment-resize" title="Resize"></div>`;
 
       const body = el.querySelector('[data-role="text"]');
       body.textContent = cmt.text || '';
-      body.setAttribute('data-placeholder', 'Двойной клик, чтобы добавить текст…');
+      body.setAttribute('data-placeholder', 'Double-click to add text…');
 
       // The body is read-only until double-clicked, so that pressing over it
       // pans the canvas (it's the back layer). Editing is opt-in.
@@ -441,12 +441,12 @@
       const flag = document.createElement('i');
       const hasEvent = this.editor.isKnownScenarioEvent?.(group.event_key);
       flag.className = `bp-group-flag fa-solid ${hasEvent ? 'fa-flag' : 'fa-flag-checkered'}`;
-      flag.title = hasEvent ? this.editor.getGroupEventLabel(group.event_key) : 'Группа';
+      flag.title = hasEvent ? this.editor.getGroupEventLabel(group.event_key) : 'Group';
       header.appendChild(flag);
 
       const title = document.createElement('span');
       title.className = 'bp-group-title';
-      title.textContent = group.name || 'Группа';
+      title.textContent = group.name || 'Group';
       title.contentEditable = 'true';
       title.spellcheck = false;
       title.addEventListener('mousedown', e => e.stopPropagation());
@@ -455,7 +455,7 @@
         if (e.key === 'Enter') { e.preventDefault(); title.blur(); }
       });
       title.addEventListener('blur', () => {
-        const name = title.textContent.trim() || 'Группа';
+        const name = title.textContent.trim() || 'Group';
         this.editor.renameGroupSilent?.(group.id, name) ?? this.editor.renameGroup?.(group.id, name);
       });
       header.appendChild(title);
@@ -463,9 +463,9 @@
       // event flag selector
       const sel = document.createElement('select');
       sel.className = 'bp-group-event';
-      sel.title = 'Событие группы';
+      sel.title = 'Group event';
       sel.addEventListener('mousedown', e => e.stopPropagation());
-      sel.innerHTML = ['<option value="">Без события</option>']
+      sel.innerHTML = ['<option value="">No event</option>']
         .concat(Object.entries(this.editor.scenarioEvents || {})
           .filter(([k]) => k !== 'general')
           .map(([k, label]) => `<option value="${k}">${this.esc(label)}</option>`)).join('');
@@ -478,7 +478,7 @@
 
       const del = document.createElement('button');
       del.className = 'bp-group-del';
-      del.title = 'Удалить группу';
+      del.title = 'Delete the group';
       del.innerHTML = '<i class="fa-solid fa-xmark"></i>';
       del.addEventListener('mousedown', e => e.stopPropagation());
       del.addEventListener('click', e => {
@@ -492,7 +492,7 @@
       // resize handle (bottom-right) — lets the user enlarge the group band
       const grip = document.createElement('div');
       grip.className = 'bp-group-resize';
-      grip.title = 'Потяните, чтобы изменить размер группы';
+      grip.title = 'Drag to resize the group';
       grip.innerHTML = '<i class="fa-solid fa-up-right-and-down-left-from-center"></i>';
       grip.addEventListener('mousedown', e => {
         if (e.button !== 0) return;
@@ -729,14 +729,14 @@
       const header = document.createElement('div');
       header.className = 'bp-node-header';
       header.innerHTML = `
-        <span class="bp-drag-zone" title="Перетащите, чтобы переместить шаг"><i class="fa-solid fa-grip-vertical"></i></span>
-        <span class="bp-node-title" data-role="title" title="Нажмите, чтобы переименовать; двойной клик — быстрые настройки">${this.esc(step.id)}</span>
-        ${showLogic ? `<span class="bp-logic-badge" data-logic="${logic}" title="Логика завершения: ${this.esc(lmeta.short)} — нажмите, чтобы переключить">${this.esc(lmeta.short)}</span>` : ''}
+        <span class="bp-drag-zone" title="Drag to move the step"><i class="fa-solid fa-grip-vertical"></i></span>
+        <span class="bp-node-title" data-role="title" title="Click to rename; double-click for quick settings">${this.esc(step.id)}</span>
+        ${showLogic ? `<span class="bp-logic-badge" data-logic="${logic}" title="Completion logic:  ${this.esc(lmeta.short)}  — click to switch">${this.esc(lmeta.short)}</span>` : ''}
         <span class="bp-node-actions">
-          <button data-bp-action="settings" title="Быстрые настройки"><i class="fa-solid fa-sliders"></i></button>
-          <button data-bp-action="edit-step" title="Открыть в списке"><i class="fa-solid fa-up-right-from-square"></i></button>
-          <button data-bp-action="add-comp" title="Добавить компонент"><i class="fa-solid fa-plus"></i></button>
-          <button data-bp-action="del-step" title="Удалить шаг"><i class="fa-solid fa-trash-can"></i></button>
+          <button data-bp-action="settings" title="Quick settings"><i class="fa-solid fa-sliders"></i></button>
+          <button data-bp-action="edit-step" title="Show in the list"><i class="fa-solid fa-up-right-from-square"></i></button>
+          <button data-bp-action="add-comp" title="Add a component"><i class="fa-solid fa-plus"></i></button>
+          <button data-bp-action="del-step" title="Delete the step"><i class="fa-solid fa-trash-can"></i></button>
         </span>`;
       // input exec pin on the header
       const inPin = document.createElement('span');
@@ -752,7 +752,7 @@
       if (components.length === 0) {
         const empty = document.createElement('div');
         empty.className = 'bp-empty-comp';
-        empty.textContent = 'Нет компонентов';
+        empty.textContent = 'No components';
         body.appendChild(empty);
       }
 
@@ -783,19 +783,19 @@
         if (broken) row.classList.add('is-broken');
 
         const orderChip = (showLogic && logic === 'sequential')
-          ? `<span class="bp-comp-order" title="Шаг последовательности №${index + 1}">${index + 1}</span>`
+          ? `<span class="bp-comp-order" title="Sequence step #${index + 1}">${index + 1}</span>`
           : '';
         row.innerHTML = `
           ${orderChip}
-          <i class="bp-comp-icon ${info.icon}" title="Перетащите за иконку, чтобы переместить компонент в другой шаг"></i>
+          <i class="bp-comp-icon ${info.icon}" title="Drag by the icon to move the component to another step"></i>
           <div class="bp-comp-text">
             <div class="bp-comp-name">${this.esc(info.name)}${broken ? '<span class="bp-broken-tag">⚠</span>' : ''}</div>
             <div class="bp-comp-sum">${this.editor.getComponentSummary(comp) || ''}</div>
           </div>
           <span class="bp-comp-actions">
-            <button data-bp-comp-action="edit" title="Редактировать компонент"><i class="fa-solid fa-pencil"></i></button>
-            <button data-bp-comp-action="duplicate" title="Дублировать компонент"><i class="fa-regular fa-copy"></i></button>
-            <button data-bp-comp-action="delete" title="Удалить компонент"><i class="fa-regular fa-trash-can"></i></button>
+            <button data-bp-comp-action="edit" title="Edit the component"><i class="fa-solid fa-pencil"></i></button>
+            <button data-bp-comp-action="duplicate" title="Duplicate the component"><i class="fa-regular fa-copy"></i></button>
+            <button data-bp-comp-action="delete" title="Delete the component"><i class="fa-regular fa-trash-can"></i></button>
           </span>`;
 
         // Component action buttons (edit / duplicate / delete) — don't start a drag.
@@ -839,8 +839,8 @@
             pin.appendChild(lbl);
           }
           pin.title = connected
-            ? `Связь: ${field} → ${linkByField.get(field)} (потяните, чтобы перенаправить; двойной клик — удалить)`
-            : `Потяните, чтобы создать связь (${field})`;
+            ? `Link:  ${field} → ${linkByField.get(field)}  (drag to redirect; double-click to delete)`
+            : `Drag to create a link (${field})`;
           pin.addEventListener('mousedown', ev => {
             if (ev.button !== 0) return;
             ev.preventDefault();
@@ -1243,7 +1243,7 @@
       // Floating ghost that follows the cursor.
       const ghost = document.createElement('div');
       ghost.className = 'bp-comp-ghost';
-      ghost.textContent = row.querySelector('.bp-comp-name')?.textContent || 'Компонент';
+      ghost.textContent = row.querySelector('.bp-comp-name')?.textContent || 'Component';
       document.body.appendChild(ghost);
       const moveGhost = (cx, cy) => { ghost.style.left = `${cx + 12}px`; ghost.style.top = `${cy + 12}px`; };
       moveGhost(e.clientX, e.clientY);
@@ -1701,9 +1701,9 @@
       const menu = document.createElement('div');
       menu.className = 'bp-create-menu';
       menu.innerHTML = `
-        <button data-create="step"><i class="fa-solid fa-bolt"></i> Шаг</button>
-        <button data-create="group"><i class="fa-solid fa-layer-group"></i> Группа</button>
-        <button data-create="comment"><i class="fa-solid fa-note-sticky"></i> Комментарий</button>`;
+        <button data-create="step"><i class="fa-solid fa-bolt"></i> Step</button>
+        <button data-create="group"><i class="fa-solid fa-layer-group"></i> Group</button>
+        <button data-create="comment"><i class="fa-solid fa-note-sticky"></i> Comment</button>`;
       document.body.appendChild(menu);
       this._createMenu = menu;
 

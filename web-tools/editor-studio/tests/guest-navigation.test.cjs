@@ -105,7 +105,7 @@ test('a submitted change cannot be reverted by field', async () => {
 
   await assert.rejects(
     () => Guest.Draft.revertField('items', 7, 'Name'),
-    /ждёт проверки администратора/,
+    /awaiting review/,
   );
   // Черновик не изменился: операция по-прежнему в запросе.
   assert.equal(JSON.parse(local.get(draftKey)).ops[0].data.Name, 'Renamed');
@@ -136,7 +136,7 @@ test('an empty field name is rejected instead of clearing the operation', async 
   });
   await Guest.ready();
 
-  await assert.rejects(() => Guest.Draft.revertField('items', 7, '   '), /Не указано поле/);
+  await assert.rejects(() => Guest.Draft.revertField('items', 7, '   '), /No field to restore/);
 });
 
 /** Мини-DOM для deep-link.js: строки списка и поле формы. */

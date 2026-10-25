@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Крафты • Editor Studio</title>
+  <title>Crafts • Editor Studio</title>
 
   <script src="editor-core/page-loader.js" data-mode="event"></script>
 
@@ -32,16 +32,16 @@
       <div class="editor-page-title">
         <i class="fa-solid fa-hammer text-accent text-xl"></i>
         <div>
-          <h1>Крафты</h1>
-          <div class="editor-page-sub">Управление рецептами: группы, подгруппы, итоговый предмет и ингредиенты.</div>
+          <h1>Crafts</h1>
+          <div class="editor-page-sub">Recipe management: groups, subgroups, result item and ingredients.</div>
         </div>
       </div>
       <div class="editor-page-actions">
         <button id="btn-refresh" class="editor-btn editor-btn-secondary">
-          <i class="fa-solid fa-rotate"></i><span>Обновить</span>
+          <i class="fa-solid fa-rotate"></i><span>Refresh</span>
         </button>
         <button id="btn-new" class="editor-btn editor-btn-primary">
-          <i class="fa-solid fa-plus"></i><span>Новый крафт</span>
+          <i class="fa-solid fa-plus"></i><span>New craft</span>
         </button>
       </div>
     </div>
@@ -52,14 +52,14 @@
         <div class="editor-dock-pad">
         <div class="flex items-center justify-between gap-3">
           <div class="flex items-center gap-2">
-            <div class="text-sm font-semibold">Категории</div>
+            <div class="text-sm font-semibold">Categories</div>
             <div class="text-xs editor-muted-text" id="meta-count">—</div>
           </div>
           <div class="flex items-center gap-1">
-            <button id="btn-collapse-all" class="editor-icon-btn" title="Свернуть или развернуть все группы" aria-label="Свернуть или развернуть все группы">
+            <button id="btn-collapse-all" class="editor-icon-btn" title="Collapse or expand all groups" aria-label="Collapse or expand all groups">
               <i class="fa-solid fa-layer-group"></i>
             </button>
-            <button id="btn-clear-filters" class="editor-icon-btn" title="Сбросить фильтры" aria-label="Сбросить фильтры">
+            <button id="btn-clear-filters" class="editor-icon-btn" title="Reset filters" aria-label="Reset filters">
               <i class="fa-solid fa-broom"></i>
             </button>
           </div>
@@ -67,11 +67,11 @@
 
         <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
           <div>
-            <div class="text-xs editor-muted-text mb-1">Группа</div>
+            <div class="text-xs editor-muted-text mb-1">Group</div>
             <select id="filter-group" class="w-full editor-input form-input"></select>
           </div>
           <div>
-            <div class="text-xs editor-muted-text mb-1">Подгруппа</div>
+            <div class="text-xs editor-muted-text mb-1">Subgroup</div>
             <select id="filter-sub" class="w-full editor-input form-input"></select>
           </div>
         </div>
@@ -79,7 +79,7 @@
         <div class="mt-3">
           <div class="editor-search">
             <i class="fa-solid fa-magnifying-glass"></i>
-            <input id="search" type="search" class="w-full editor-input form-input" placeholder="Поиск по ID / группе / предмету…" />
+            <input id="search" type="search" class="w-full editor-input form-input" placeholder="Search by ID / group / item…" />
           </div>
         </div>
 
@@ -93,66 +93,66 @@
         <div class="editor-sticky-toolbar flex items-start justify-between gap-4">
           <div>
             <div class="flex items-center gap-2">
-              <div class="text-lg font-semibold" id="title">Выберите крафт</div>
+              <div class="text-lg font-semibold" id="title">Select a craft</div>
               <span class="editor-badge" id="badge-id" style="display:none"></span>
             </div>
-            <div class="editor-muted-text text-sm mt-1" id="subtitle">или создайте новый рецепт</div>
+            <div class="editor-muted-text text-sm mt-1" id="subtitle">or create a new recipe</div>
           </div>
           <div class="editor-page-actions">
-            <span id="dirty-pill" class="editor-dirty-pill hidden">Данные не сохранены</span>
+            <span id="dirty-pill" class="editor-dirty-pill hidden">Data not saved</span>
             <button id="btn-save" class="editor-btn editor-btn-primary" disabled>
-              <i class="fa-solid fa-floppy-disk"></i><span>Сохранить</span>
+              <i class="fa-solid fa-floppy-disk"></i><span>Save</span>
             </button>
             <button id="btn-cancel" class="editor-btn editor-btn-secondary hidden" disabled>
-              <i class="fa-solid fa-rotate-left"></i><span>Отменить</span>
+              <i class="fa-solid fa-rotate-left"></i><span>Cancel</span>
             </button>
             <button id="btn-delete" class="editor-btn editor-btn-secondary" disabled>
-              <i class="fa-solid fa-trash"></i><span>Удалить</span>
+              <i class="fa-solid fa-trash"></i><span>Delete</span>
             </button>
           </div>
         </div>
 
         <div class="mt-4">
           <div id="empty-editor-state" class="editor-empty-state">
-            Выберите рецепт в списке слева или нажмите «Новый крафт», чтобы создать новый рецепт.
+            Select a recipe on the left or click “New craft” to create one.
           </div>
 
           <div id="editor-body" class="hidden">
           <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 editor-section">
             <div>
-              <div class="editor-label mb-1">Основная группа <span class="editor-muted-text">(необязательно)</span></div>
-              <input id="edit-main-group" type="text" class="w-full editor-input form-input" placeholder="Напр. Armor" list="main-group-list" />
+              <div class="editor-label mb-1">Main group <span class="editor-muted-text">(optional)</span></div>
+              <input id="edit-main-group" type="text" class="w-full editor-input form-input" placeholder="e.g. Armor" list="main-group-list" />
               <datalist id="main-group-list"></datalist>
             </div>
             <div>
-              <div class="editor-label mb-1">Группа</div>
-              <input id="edit-group" type="text" class="w-full editor-input form-input" placeholder="Напр. Armor" list="group-list" />
+              <div class="editor-label mb-1">Group</div>
+              <input id="edit-group" type="text" class="w-full editor-input form-input" placeholder="e.g. Armor" list="group-list" />
               <datalist id="group-list"></datalist>
             </div>
             <div>
-              <div class="editor-label mb-1">Подгруппа</div>
-              <input id="edit-sub" type="text" class="w-full editor-input form-input" placeholder="Напр. Tank" list="sub-list" />
+              <div class="editor-label mb-1">Subgroup</div>
+              <input id="edit-sub" type="text" class="w-full editor-input form-input" placeholder="e.g. Tank" list="sub-list" />
               <datalist id="sub-list"></datalist>
             </div>
             <div>
-              <div class="editor-label mb-1">Итоговая группа</div>
+              <div class="editor-label mb-1">Result group</div>
               <div class="editor-readonly" id="groupname-preview">—</div>
-              <div class="editor-muted-text text-xs mt-1">Формат: <code>|Основная|Группа:Подгруппа</code>. Без основной группы сохраняется старый формат.</div>
+              <div class="editor-muted-text text-xs mt-1">Format: <code>|Main|Group:Subgroup</code>. Without a main group the old format is kept.</div>
             </div>
           </div>
 
 		<div class="editor-section">
-		  <h3 class="text-sm font-semibold">Параметры</h3>
+		  <h3 class="text-sm font-semibold">Parameters</h3>
 		  <div id="form-main" class="mt-3"></div>
 		</div>
 		<div class="editor-section">
 		  <div class="flex items-center justify-between gap-3">
-			<h3 class="text-sm font-semibold">Ингредиенты</h3>
+			<h3 class="text-sm font-semibold">Ingredients</h3>
 			<div class="flex items-center gap-2">
 			  <button id="btn-add-req" type="button" class="editor-btn editor-btn-secondary text-sm">
-				<i class="fa-solid fa-plus"></i><span>Добавить</span>
+				<i class="fa-solid fa-plus"></i><span>Add</span>
 			  </button>
-			  <button id="btn-toggle-raw" type="button" class="editor-icon-btn" title="Показать исходную строку из базы">
+			  <button id="btn-toggle-raw" type="button" class="editor-icon-btn" title="Show the raw database value">
 				<i class="fa-solid fa-code"></i>
 			  </button>
 			</div>
@@ -160,7 +160,7 @@
 		  <div id="form-req"></div>
 		  <div class="mt-3">
 			<details id="raw-wrap" class="editor-details">
-			  <summary>Ингредиенты в исходном виде <span class="editor-muted-text">(как в БД)</span></summary>
+			  <summary>Raw ingredients <span class="editor-muted-text">(as in the DB)</span></summary>
 			  <div class="editor-details-body">
 				<textarea id="raw-required" class="w-full editor-textarea form-textarea" rows="3" readonly></textarea>
 			  </div>
@@ -180,33 +180,33 @@
         <div class="flex items-start gap-3">
           <div class="editor-label-icon"><i class="fa-solid fa-pen-to-square"></i></div>
           <div class="min-w-0 flex-1">
-            <h2 id="rename-group-heading" class="text-lg font-bold">Переименовать группу</h2>
-            <p id="rename-scope" class="editor-muted-text text-sm mt-1">Название изменится во всех связанных рецептах.</p>
+            <h2 id="rename-group-heading" class="text-lg font-bold">Rename group</h2>
+            <p id="rename-scope" class="editor-muted-text text-sm mt-1">The name changes in every related recipe.</p>
           </div>
-          <button id="btn-rename-close" type="button" class="editor-icon-btn" title="Закрыть" aria-label="Закрыть"><i class="fa-solid fa-xmark"></i></button>
+          <button id="btn-rename-close" type="button" class="editor-icon-btn" title="Close" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
         </div>
 
         <div class="editor-section mt-4">
-          <div class="text-xs editor-muted-text">Изменяемый уровень</div>
-          <div id="rename-level" class="font-medium mt-1">Группа</div>
-          <div class="text-xs editor-muted-text mt-3">Путь в навигации</div>
+          <div class="text-xs editor-muted-text">Level being changed</div>
+          <div id="rename-level" class="font-medium mt-1">Group</div>
+          <div class="text-xs editor-muted-text mt-3">Navigation path</div>
           <div id="rename-path" class="font-medium mt-1 break-words">—</div>
-          <div class="text-xs editor-muted-text mt-3">Текущее название</div>
+          <div class="text-xs editor-muted-text mt-3">Current name</div>
           <div id="rename-current-group" class="font-semibold mt-1 break-words">—</div>
         </div>
 
-        <label id="rename-input-label" for="rename-group-input" class="block text-sm font-medium mt-4 mb-1">Новое название</label>
-        <input id="rename-group-input" type="text" maxlength="512" class="w-full editor-input form-input" autocomplete="off" placeholder="Введите название группы" />
-        <div id="rename-impact" class="editor-muted-text text-sm mt-2" aria-live="polite">Проверка рецептов…</div>
+        <label id="rename-input-label" for="rename-group-input" class="block text-sm font-medium mt-4 mb-1">New name</label>
+        <input id="rename-group-input" type="text" maxlength="512" class="w-full editor-input form-input" autocomplete="off" placeholder="Enter the group name" />
+        <div id="rename-impact" class="editor-muted-text text-sm mt-2" aria-live="polite">Checking recipes…</div>
         <div id="rename-existing-warning" class="hidden mt-3 p-3 rounded-lg border text-sm" style="border-color: color-mix(in srgb, var(--editor-warning) 35%, transparent); background: color-mix(in srgb, var(--editor-warning) 10%, transparent); color: var(--editor-warning);" role="status">
-          На этом уровне уже есть элемент с таким названием. После переименования ветви объединятся.
+          This level already has an item with that name. After renaming the branches will merge.
         </div>
         <div id="rename-validation" class="hidden text-sm mt-2" style="color: var(--editor-danger);" role="alert"></div>
         <div id="rename-error" class="hidden text-sm mt-2" style="color: var(--editor-danger);" role="alert"></div>
         <div class="flex justify-end gap-2 mt-5 pt-4 border-t editor-hairline">
-          <button id="btn-rename-cancel" type="button" class="editor-btn editor-btn-secondary">Отмена</button>
+          <button id="btn-rename-cancel" type="button" class="editor-btn editor-btn-secondary">Cancel</button>
           <button id="btn-rename-confirm" type="button" class="editor-btn editor-btn-primary" disabled>
-            <i class="fa-solid fa-pen-to-square"></i><span>Переименовать</span>
+            <i class="fa-solid fa-pen-to-square"></i><span>Rename</span>
           </button>
         </div>
       </div>
@@ -352,7 +352,7 @@
       const groupKeys = new Set();
       for (const r of STATE.rows) {
         const { main, group, sub } = splitGroupName(r.GroupName);
-        const g = group || '(без группы)';
+        const g = group || '(no group)';
         if (!map.has(g)) map.set(g, new Set());
         if (sub) map.get(g).add(sub);
         groupKeys.add(makeGroupKey(main, group));
@@ -375,18 +375,14 @@
       }
     };
 
-    const pluralRu = (n, forms) => {
-      const value = Math.abs(Number(n) || 0) % 100;
-      const last = value % 10;
-      return value > 10 && value < 20 ? forms[2] : last > 1 && last < 5 ? forms[1] : last === 1 ? forms[0] : forms[2];
-    };
-    const countLabel = (n) => `${new Intl.NumberFormat('ru-RU').format(n)} ${pluralRu(n, ['рецепт', 'рецепта', 'рецептов'])}`;
-    const renameLabels = { main: 'Основная группа', group: 'Группа', sub: 'Подгруппа' };
-    const renameCases = { main: ['основную группу', 'основной группы'], group: ['группу', 'группы'], sub: ['подгруппу', 'подгруппы'] };
+    const plural = EditorCore.Page.plural;
+    const countLabel = (n) => `${new Intl.NumberFormat(EditorCore.I18n.locale()).format(n)} ${plural(n, 'recipe', 'recipes')}`;
+    const renameLabels = { main: 'Main group', group: 'Group', sub: 'Subgroup' };
+    const renameCases = { main: ['the main group', 'the main group'], group: ['the group', 'the groups'], sub: ['the subgroup', 'the subgroups'] };
     const renameScopeText = {
-      main: 'Переименуются все вложенные группы, подгруппы и их рецепты.',
-      group: 'Переименуются все рецепты этой группы и её подгрупп.',
-      sub: 'Переименуются все рецепты этой подгруппы.',
+      main: 'All nested groups, subgroups and their recipes will be renamed.',
+      group: 'All recipes of this group and its subgroups will be renamed.',
+      sub: 'All recipes of this subgroup will be renamed.',
     };
     const getRenameName = (target = STATE.rename) => target.level === 'main'
       ? target.mainGroup : target.level === 'group' ? target.group : target.subGroup;
@@ -407,10 +403,10 @@
 
     const getRenameValidation = () => {
       const next = String(els.renameInput.value || '').trim();
-      if (!next) return 'Введите новое название.';
-      if (next.includes(':') || next.includes('|')) return 'Символы «:» и «|» зарезервированы для структуры групп.';
-      if (Array.from(next).length > 256) return 'Максимальная длина — 256 символов.';
-      if (next === STATE.rename.currentName) return 'Новое название совпадает с текущим.';
+      if (!next) return 'Enter a new name.';
+      if (next.includes(':') || next.includes('|')) return 'The “:” and “|” characters are reserved for the group structure.';
+      if (Array.from(next).length > 256) return 'The maximum length is 256 characters.';
+      if (next === STATE.rename.currentName) return 'The new name matches the current one.';
       return '';
     };
 
@@ -420,8 +416,8 @@
       const duplicate = !!next && next !== STATE.rename.currentName && (
         STATE.rename.siblingNames.has(next) || (STATE.rename.forceMerge && STATE.rename.forceMergeName === next)
       );
-      const impact = STATE.rowsHaveMore ? `В загруженном списке: минимум ${countLabel(STATE.rename.count)}. Сервер обновит все записи этой ветви.`
-        : `Будет обновлено ${countLabel(STATE.rename.count)}.`;
+      const impact = STATE.rowsHaveMore ? `In the loaded list: at least  ${countLabel(STATE.rename.count)}. The server will update every record in this branch.`
+        : `Will be updated  ${countLabel(STATE.rename.count)}.`;
       els.renameImpact.textContent = impact;
       els.renameExistingWarning.classList.toggle('hidden', !duplicate);
       els.renameInput.disabled = STATE.rename.busy;
@@ -434,7 +430,7 @@
       els.renameError.textContent = STATE.rename.error;
       els.renameError.classList.toggle('hidden', !STATE.rename.error);
       els.renameConfirm.disabled = !STATE.rename.count || !!validation || STATE.rename.busy;
-      const label = STATE.rename.busy ? 'Переименование…' : duplicate ? 'Объединить' : 'Переименовать';
+      const label = STATE.rename.busy ? 'Renaming…' : duplicate ? 'Merge' : 'Rename';
       els.renameConfirm.querySelector('span').textContent = label;
       els.renameConfirm.querySelector('i').className = STATE.rename.busy
         ? 'fa-solid fa-spinner fa-spin' : 'fa-solid fa-pen-to-square';
@@ -442,7 +438,7 @@
 
     const openRenameGroup = (target, trigger) => {
       if (STATE.isDirty || (STATE.selected && !STATE.selectedId)) {
-        EditorCore.UI.toast('Сначала сохраните или отмените текущие изменения.', 'warning');
+        EditorCore.UI.toast('Save or discard the current changes first.', 'warning');
         return;
       }
       const currentName = String(getRenameName(target) || '').trim();
@@ -456,13 +452,13 @@
       }
       STATE.rename = { ...target, currentName, count, siblingNames, forceMerge: false, forceMergeName: '', busy: false, error: '', returnFocus: trigger || document.activeElement };
       els.renameLevel.textContent = renameLabels[target.level];
-      els.renameHeading.textContent = `Переименовать ${renameCases[target.level][0]}`;
-      els.renameInputLabel.textContent = `Новое название ${renameCases[target.level][1]}`;
+      els.renameHeading.textContent = `Rename ${renameCases[target.level][0]}`;
+      els.renameInputLabel.textContent = `New name ${renameCases[target.level][1]}`;
       els.renameScope.textContent = renameScopeText[target.level];
       els.renameCurrentGroup.textContent = currentName;
       els.renamePath.textContent = target.level === 'main' ? currentName
-        : target.level === 'group' ? `${target.mainGroup || '(без основной группы)'} › ${currentName}`
-          : `${target.mainGroup || '(без основной группы)'} › ${target.group} › ${currentName}`;
+        : target.level === 'group' ? `${target.mainGroup || '(no main group)'} › ${currentName}`
+          : `${target.mainGroup || '(no main group)'} › ${target.group} › ${currentName}`;
       els.renameInput.value = currentName;
       els.renameModal.classList.remove('hidden');
       els.renameModal.classList.add('flex');
@@ -482,7 +478,7 @@
     const fillFilterCombos = () => {
       const groups = Array.from(STATE.groups.keys()).sort((a,b)=>a.localeCompare(b));
       els.filterGroup.innerHTML = '';
-      els.filterGroup.appendChild(new Option('Все', '', STATE.filter.group === '', STATE.filter.group === ''));
+      els.filterGroup.appendChild(new Option('All', '', STATE.filter.group === '', STATE.filter.group === ''));
       for (const g of groups) {
         els.filterGroup.appendChild(new Option(g, g, STATE.filter.group === g, STATE.filter.group === g));
       }
@@ -493,7 +489,7 @@
       const g = STATE.filter.group;
       const subs = g && STATE.groups.has(g) ? Array.from(STATE.groups.get(g)).sort((a,b)=>a.localeCompare(b)) : [];
       els.filterSub.innerHTML = '';
-      els.filterSub.appendChild(new Option('Все', '', STATE.filter.sub === '', STATE.filter.sub === ''));
+      els.filterSub.appendChild(new Option('All', '', STATE.filter.sub === '', STATE.filter.sub === ''));
       for (const s of subs) {
         els.filterSub.appendChild(new Option(s, s, STATE.filter.sub === s, STATE.filter.sub === s));
       }
@@ -504,7 +500,7 @@
 
     const fillEditorDatalists = () => {
       const groups = Array.from(STATE.groups.keys())
-        .filter(g => g !== '(без группы)')
+        .filter(g => g !== '(no group)')
         .sort((a,b)=>a.localeCompare(b));
       const mainGroups = Array.from(new Set(STATE.rows.map(r => splitGroupName(r.GroupName).main).filter(Boolean))).sort((a,b)=>a.localeCompare(b));
       els.mainGroupList.innerHTML = mainGroups.map(g => `<option value="${escapeHtml(g)}"></option>`).join('');
@@ -545,7 +541,7 @@
 
       const filtered = STATE.rows.filter(r => {
         const { group, sub } = splitGroupName(r.GroupName);
-        const g = group || '(без группы)';
+        const g = group || '(no group)';
         if (fg && g !== fg) return false;
         if (fs && sub !== fs) return false;
         if (!search) return true;
@@ -565,10 +561,10 @@
       if (!filtered.length) {
         els.list.innerHTML = `
           <div class="p-5 text-center">
-            <div class="text-sm font-semibold">Ничего не найдено</div>
-            <div class="text-xs editor-muted-text mt-1">Попробуйте изменить фильтры или поиск.</div>
+            <div class="text-sm font-semibold">Nothing found</div>
+            <div class="text-xs editor-muted-text mt-1">Try changing the filters or the search.</div>
             <button class="editor-btn editor-btn-secondary mt-3" id="btn-empty-new">
-              <i class="fa-solid fa-plus"></i><span>Новый крафт</span>
+              <i class="fa-solid fa-plus"></i><span>New craft</span>
             </button>
           </div>`;
         const b = document.getElementById('btn-empty-new');
@@ -592,12 +588,12 @@
         const name = level === 'main' ? mainGroup : level === 'group' ? group : subGroup;
         if (!name || (level === 'sub' && !group)) return '';
         const label = renameCases[level][0];
-        return `<button type="button" class="editor-icon-btn crafts-group-rename" data-rename-level="${level}" data-rename-main="${encodeURIComponent(mainGroup)}" data-rename-group="${encodeURIComponent(group)}" data-rename-sub="${encodeURIComponent(subGroup)}" title="Переименовать ${label}" aria-label="Переименовать ${label}"><i class="fa-solid fa-pen-to-square"></i></button>`;
+        return `<button type="button" class="editor-icon-btn crafts-group-rename" data-rename-level="${level}" data-rename-main="${encodeURIComponent(mainGroup)}" data-rename-group="${encodeURIComponent(group)}" data-rename-sub="${encodeURIComponent(subGroup)}" title="Rename ${label}" aria-label="Rename ${label}"><i class="fa-solid fa-pen-to-square"></i></button>`;
       };
 
       const renderGroup = (mainGroup, group, rows) => {
         const groupKey = makeGroupKey(mainGroup, group);
-        const groupLabel = group || '(без группы)';
+        const groupLabel = group || '(no group)';
         const collapsed = STATE.ui.collapsedGroups.has(groupKey);
         const itemsBySub = new Map();
         for (const row of rows) {
@@ -608,13 +604,13 @@
 
         const renderItems = (items) => items.sort((a, b) => Number(a.ID) - Number(b.ID)).map((row) => {
           const active = String(row.ID) === String(STATE.selectedId);
-          const item = getItemLabel(row.ItemID) || (row.ItemID ? `Предмет #${row.ItemID}` : '—');
-          const world = getWorldLabel(row.WorldID) || (row.WorldID ? `Мир #${row.WorldID}` : 'Все миры');
+          const item = getItemLabel(row.ItemID) || (row.ItemID ? `Item #${row.ItemID}` : '—');
+          const world = getWorldLabel(row.WorldID) || (row.WorldID ? `World #${row.WorldID}` : 'All worlds');
           const price = Number(row.Price || 0);
           return `<button type="button" class="editor-row${active ? ' editor-row-active' : ''}" data-id="${row.ID}">
             <div class="flex items-start justify-between gap-2"><div class="min-w-0">
               <div class="flex items-center gap-2 min-w-0"><div class="font-semibold text-sm truncate">${escapeHtml(item)}</div><div class="text-xs editor-muted-text shrink-0">×${row.ItemValue || 1}</div></div>
-              <div class="mt-1 flex flex-wrap gap-1.5"><span class="editor-badge">ингр: ${reqCountQuick(row.RequiredItems)}</span><span class="editor-badge">${escapeHtml(world)}</span>${price ? `<span class="editor-badge">цена: ${price}</span>` : ''}</div>
+              <div class="mt-1 flex flex-wrap gap-1.5"><span class="editor-badge">ingr:  ${reqCountQuick(row.RequiredItems)}</span><span class="editor-badge">${escapeHtml(world)}</span>${price ? `<span class="editor-badge">price: ${price}</span>` : ''}</div>
             </div><div class="text-xs editor-muted-text shrink-0">#${row.ID}</div></div></button>`;
         }).join('');
 
@@ -631,9 +627,9 @@
         const groupHtml = Array.from(groups.keys()).sort((a, b) => a.localeCompare(b))
           .map(group => renderGroup(mainGroup, group, groups.get(group))).join('');
         const isGrouped = !!mainGroup;
-        const mainLabel = mainGroup || '(без основной группы)';
+        const mainLabel = mainGroup || '(no main group)';
         return `<section class="crafts-main-group ${isGrouped ? 'border editor-primary-border editor-primary-tint' : 'border editor-hairline editor-soft'} rounded-lg mb-2 overflow-hidden">
-          <div class="crafts-group-header px-3 py-2 ${isGrouped ? 'editor-primary-text' : 'editor-muted-text'}"><div class="flex items-center gap-1 min-w-0"><i class="fa-solid fa-layer-group text-xs"></i><span class="font-bold text-sm truncate">${escapeHtml(mainLabel)}</span>${renameControl('main', mainGroup)}</div><span class="text-xs editor-muted-text shrink-0">${total} рец.</span></div>${groupHtml}</section>`;
+          <div class="crafts-group-header px-3 py-2 ${isGrouped ? 'editor-primary-text' : 'editor-muted-text'}"><div class="flex items-center gap-1 min-w-0"><i class="fa-solid fa-layer-group text-xs"></i><span class="font-bold text-sm truncate">${escapeHtml(mainLabel)}</span>${renameControl('main', mainGroup)}</div><span class="text-xs editor-muted-text shrink-0">${total}  rec.</span></div>${groupHtml}</section>`;
       }).join('');
 
       els.list.innerHTML = html;
@@ -666,10 +662,10 @@
     let runtimeReq = null;
 
     const mainFields = {
-      ItemID: { type: 'db_select', label: 'Результат', ui: { dbKey: 'item', placeholder: '— выберите предмет —', searchable: true } },
-      ItemValue: { type: 'number', label: 'Количество', ui: { min: 1, max: 999999, step: 1 } },
-      Price: { type: 'number', label: 'Цена', ui: { min: 0, max: 999999999, step: 1 } },
-      WorldID: { type: 'db_select', label: 'Мир', ui: { dbKey: 'world', placeholder: '— выберите мир —', searchable: true, valueType: 'number' } },
+      ItemID: { type: 'db_select', label: 'Result', ui: { dbKey: 'item', placeholder: '— select an item —', searchable: true } },
+      ItemValue: { type: 'number', label: 'Quantity', ui: { min: 1, max: 999999, step: 1 } },
+      Price: { type: 'number', label: 'Price', ui: { min: 0, max: 999999999, step: 1 } },
+      WorldID: { type: 'db_select', label: 'World', ui: { dbKey: 'world', placeholder: '— select a world —', searchable: true, valueType: 'number' } },
     };
 
     const reqFields = {
@@ -679,11 +675,11 @@
         // На узких экранах складываем в 1 колонку, чтобы db_select не сжимался до наложений.
         // С md включаем 2 колонки (Item + Count).
         // listMode: 'table' makes list rows aligned (Item + Count on one line) and reusable across editors
-        ui: { hideLabel: true, addLabel: 'Добавить ингредиент', listMode: 'table', tableHeader: ['Предмет', 'Кол-во'], tableCols: 'minmax(0,1fr) var(--editor-table-col2)', tableColsMd: 'minmax(0,1fr) 160px' },
+        ui: { hideLabel: true, addLabel: 'Add an ingredient', listMode: 'table', tableHeader: ['Item', 'Qty'], tableCols: 'minmax(0,1fr) var(--editor-table-col2)', tableColsMd: 'minmax(0,1fr) 160px' },
         itemDefault: { id: 0, value: 1 },
         itemFields: {
-          id: { type: 'db_select', label: 'Предмет', ui: { dbKey: 'item', placeholder: '— выберите предмет —', searchable: true } },
-          value: { type: 'number', label: 'Кол-во', ui: { min: 1, max: 999999, step: 1, controlMinWidth: 120 } },
+          id: { type: 'db_select', label: 'Item', ui: { dbKey: 'item', placeholder: '— select an item —', searchable: true } },
+          value: { type: 'number', label: 'Qty', ui: { min: 1, max: 999999, step: 1, controlMinWidth: 120 } },
         }
       }
     };
@@ -722,23 +718,23 @@
       els.emptyState?.classList.toggle('hidden', hasSelected);
       els.editorBody?.classList.toggle('hidden', !hasSelected);
       if (!hasSelected) {
-        els.title.textContent = 'Выберите крафт';
-        els.subtitle.textContent = 'или создайте новый рецепт';
+        els.title.textContent = 'Select a craft';
+        els.subtitle.textContent = 'or create a new recipe';
         els.badgeId.style.display = 'none';
         return;
       }
-      const itemLabel = getItemLabel(STATE.selected.ItemID) || (STATE.selected.ItemID ? `Предмет #${STATE.selected.ItemID}` : 'Новый рецепт');
+      const itemLabel = getItemLabel(STATE.selected.ItemID) || (STATE.selected.ItemID ? `Item #${STATE.selected.ItemID}` : 'New recipe');
       els.title.textContent = itemLabel;
       const groupName = buildGroupName(STATE.selected.MainGroup, STATE.selected.Group, STATE.selected.SubGroup);
-      const worldLabel = getWorldLabel(STATE.selected.WorldID) || (STATE.selected.WorldID ? `Мир #${STATE.selected.WorldID}` : 'Все миры');
-      els.subtitle.textContent = `${groupName || '(без группы)'} · ${worldLabel}`;
-      els.badgeId.textContent = STATE.selectedId ? `#${STATE.selectedId}` : 'новый';
+      const worldLabel = getWorldLabel(STATE.selected.WorldID) || (STATE.selected.WorldID ? `World #${STATE.selected.WorldID}` : 'All worlds');
+      els.subtitle.textContent = `${groupName || '(no group)'} · ${worldLabel}`;
+      els.badgeId.textContent = STATE.selectedId ? `#${STATE.selectedId}` : 'new';
       els.badgeId.style.display = 'inline-flex';
     };
 
     const canDiscardDirty = async () => {
       if (!STATE.isDirty) return true;
-      return EditorCore.Page.confirm('Есть несохранённые изменения. Продолжить без сохранения?');
+      return EditorCore.Page.confirm('You have unsaved changes. Continue without saving?');
     };
 
     const applyEditorInputs = () => {
@@ -770,7 +766,7 @@
         STATE.selected = {
           ID: row?.ID ?? 0,
           MainGroup: split.main || '',
-          Group: split.group || (STATE.filter.group && STATE.filter.group !== '(без группы)' ? STATE.filter.group : ''),
+          Group: split.group || (STATE.filter.group && STATE.filter.group !== '(no group)' ? STATE.filter.group : ''),
           SubGroup: split.sub || (STATE.filter.sub || ''),
           ItemID: row?.ItemID == null ? 0 : Number(row.ItemID),
           ItemValue: Number(row?.ItemValue ?? 1),
@@ -797,10 +793,10 @@
       if (String(id) === String(STATE.selectedId) && STATE.selected) return;
       if (confirmDirty && !await canDiscardDirty()) return;
       try {
-        setStatus('Загрузка…');
+        setStatus('Loading…');
         const res = await EditorCore.DBCrud.get(RESOURCE, id);
         if (!res?.row) {
-          setStatus('Не найдено', 'err');
+          setStatus('Not found', 'err');
           return;
         }
         setSelected(res.row, false);
@@ -830,7 +826,7 @@
 
     const loadRows = async () => {
       try {
-        setStatus('Загрузка списка…');
+        setStatus('Loading list…');
         const res = await EditorCore.DBCrud.list(RESOURCE, { search: '', limit: 5000, offset: 0 });
         STATE.rows = Array.isArray(res?.rows) ? res.rows : [];
         STATE.rowsHaveMore = !!res?.has_more;
@@ -865,13 +861,13 @@
 
       try {
         els.save.disabled = true;
-        setStatus('Сохранение…');
+        setStatus('Saving…');
         if (STATE.selectedId) {
           await EditorCore.DBCrud.update(RESOURCE, STATE.selectedId, payload);
-          EditorCore.UI.toast('Сохранено', 'success');
+          EditorCore.UI.toast('Saved', 'success');
         } else {
           const created = await EditorCore.DBCrud.create(RESOURCE, payload);
-          EditorCore.UI.toast('Создано', 'success');
+          EditorCore.UI.toast('Created', 'success');
           STATE.lastSelectedIdBeforeCreate = null;
           // Reload list and open created row
           await loadRows();
@@ -905,7 +901,7 @@
         const result = await EditorCore.DBCrud.renameCraftGroup(target, newName, targetExists);
         const changed = Array.isArray(result?.changed) ? result.changed : [];
         if (!changed.length) {
-          STATE.rename.error = 'На сервере больше нет рецептов в этой ветви. Обновите список.';
+          STATE.rename.error = 'The server has no more recipes in this branch. Refresh the list.';
           await loadRows();
           return;
         }
@@ -920,10 +916,10 @@
         closeRenameDialog({ restoreFocus: false });
         await loadRows();
         if (selectedId && changedIds.has(String(selectedId))) await selectRow(selectedId);
-        EditorCore.UI.toast(`Переименовано: ${countLabel(changed.length)}.`, 'success');
+        EditorCore.UI.toast(`Renamed:  ${countLabel(changed.length)}.`, 'success');
       } catch (e) {
-        STATE.rename.error = String(e?.message || e || 'Не удалось переименовать.');
-        if (STATE.rename.error.includes('уже занято на этом уровне')) {
+        STATE.rename.error = String(e?.message || e || 'Renaming failed.');
+        if (STATE.rename.error.includes('is already taken at this level')) {
           STATE.rename.forceMerge = true;
           STATE.rename.forceMergeName = newName;
         }
@@ -936,11 +932,11 @@
 
     const remove = async () => {
       if (!STATE.selectedId) return;
-      if (!await EditorCore.Page.confirm('Удалить крафт #' + STATE.selectedId + '?')) return;
+      if (!await EditorCore.Page.confirm('Delete craft #' + STATE.selectedId + '?')) return;
       try {
-        setStatus('Удаление…');
+        setStatus('Deleting…');
         await EditorCore.DBCrud.remove(RESOURCE, STATE.selectedId);
-        EditorCore.UI.toast('Удалено', 'success');
+        EditorCore.UI.toast('Deleted', 'success');
         setSelected(null, false);
         await loadRows();
         setStatus('');
@@ -956,7 +952,7 @@
         const fallback = STATE.lastSelectedIdBeforeCreate;
         if (fallback) await selectRow(fallback);
         else setSelected(null, false);
-        setStatus('Создание записи отменено.', 'ok');
+        setStatus('Record creation cancelled.', 'ok');
         return;
       }
       STATE.selected = JSON.parse(JSON.stringify(STATE.originalSelected || STATE.selected));
@@ -965,7 +961,7 @@
       runtimeMain?.setData?.(STATE.selected);
       runtimeReq?.setData?.(STATE.selected);
       updateHeader();
-      setStatus('Локальные изменения отменены.', 'ok');
+      setStatus('Local changes discarded.', 'ok');
     };
 
     // Bind events
@@ -996,7 +992,7 @@
       if (!await canDiscardDirty()) return;
       const row = {
         ID: 0,
-        GroupName: buildGroupName('', STATE.filter.group && STATE.filter.group !== '(без группы)' ? STATE.filter.group : '', STATE.filter.sub || ''),
+        GroupName: buildGroupName('', STATE.filter.group && STATE.filter.group !== '(no group)' ? STATE.filter.group : '', STATE.filter.sub || ''),
         ItemID: null,
         ItemValue: 1,
         RequiredItems: '',
@@ -1004,7 +1000,7 @@
         WorldID: 0,
       };
       setSelected(row, true);
-      setStatus('Создание новой записи… (нажмите Сохранить)');
+      setStatus('Creating a new record… (press Save)');
     });
 
     window.addEventListener('message', (event) => {

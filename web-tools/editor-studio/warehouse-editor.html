@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Склады и магазины • Editor Studio</title>
+  <title>Warehouses and shops • Editor Studio</title>
 
   <script src="editor-core/page-loader.js" data-mode="event"></script>
 
@@ -35,16 +35,16 @@
       <div class="editor-page-title">
         <i class="fa-solid fa-warehouse text-accent text-xl"></i>
         <div>
-          <h1>Склады и магазины</h1>
-          <div class="editor-page-sub">Ассортимент складов и магазинов: мир, тип торговли и товары.</div>
+          <h1>Warehouses and shops</h1>
+          <div class="editor-page-sub">Warehouse and shop stock: world, trade type and goods.</div>
         </div>
       </div>
       <div class="editor-page-actions">
         <button id="btn-refresh" class="editor-btn editor-btn-secondary">
-          <i class="fa-solid fa-rotate"></i><span>Обновить</span>
+          <i class="fa-solid fa-rotate"></i><span>Refresh</span>
         </button>
         <button id="btn-new" class="editor-btn editor-btn-primary">
-          <i class="fa-solid fa-plus"></i><span>Новый склад</span>
+          <i class="fa-solid fa-plus"></i><span>New warehouse</span>
         </button>
       </div>
     </div>
@@ -54,30 +54,30 @@
         <div class="editor-dock-pad">
           <div class="flex items-center justify-between gap-3">
             <div class="flex items-center gap-2">
-              <div class="text-sm font-semibold">Список складов</div>
+              <div class="text-sm font-semibold">Warehouses</div>
               <div class="text-xs editor-muted-text" id="meta-count">—</div>
             </div>
           </div>
 
           <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div>
-              <div class="text-xs editor-muted-text mb-1">Мир</div>
+              <div class="text-xs editor-muted-text mb-1">World</div>
               <select id="filter-world" class="w-full editor-input form-input"></select>
             </div>
             <div>
-              <div class="text-xs editor-muted-text mb-1">Тип торговли</div>
+              <div class="text-xs editor-muted-text mb-1">Trade type</div>
               <select id="filter-type" class="w-full editor-input form-input">
-                <option value="">Все</option>
-                <option value="buying">покупка</option>
-                <option value="selling">продажа</option>
-                <option value="storage">хранение</option>
+                <option value="">All</option>
+                <option value="buying">buy</option>
+                <option value="selling">sell</option>
+                <option value="storage">storage</option>
               </select>
             </div>
           </div>
 
           <div class="mt-3 editor-search">
             <i class="fa-solid fa-magnifying-glass"></i>
-            <input id="search" type="search" class="w-full editor-input form-input" placeholder="Поиск по ID / имени / валюте…" />
+            <input id="search" type="search" class="w-full editor-input form-input" placeholder="Search by ID / name / currency…" />
           </div>
 
           <div id="list" class="mt-4 editor-sidebar-list editor-scroll"></div>
@@ -89,55 +89,55 @@
           <div class="editor-sticky-toolbar flex items-start justify-between gap-4">
             <div>
               <div class="flex items-center gap-2">
-                <div class="text-lg font-semibold" id="title">Выберите склад</div>
+                <div class="text-lg font-semibold" id="title">Select a warehouse</div>
                 <span class="editor-badge" id="badge-id" style="display:none"></span>
               </div>
-              <div class="editor-muted-text text-sm mt-1" id="subtitle">или создайте новый склад / магазин</div>
+              <div class="editor-muted-text text-sm mt-1" id="subtitle">or create a new warehouse / shop</div>
             </div>
             <div class="editor-page-actions">
-              <span id="dirty-pill" class="editor-dirty-pill hidden">Данные не сохранены</span>
+              <span id="dirty-pill" class="editor-dirty-pill hidden">Data not saved</span>
               <button id="btn-save" class="editor-btn editor-btn-primary" disabled>
-                <i class="fa-solid fa-floppy-disk"></i><span>Сохранить</span>
+                <i class="fa-solid fa-floppy-disk"></i><span>Save</span>
               </button>
               <button id="btn-cancel" class="editor-btn editor-btn-secondary hidden" disabled>
-                <i class="fa-solid fa-rotate-left"></i><span>Отменить</span>
+                <i class="fa-solid fa-rotate-left"></i><span>Cancel</span>
               </button>
               <button id="btn-delete" class="editor-btn editor-btn-secondary" disabled>
-                <i class="fa-solid fa-trash"></i><span>Удалить</span>
+                <i class="fa-solid fa-trash"></i><span>Delete</span>
               </button>
             </div>
           </div>
 
           <div class="mt-4">
             <div id="empty-editor-state" class="editor-empty-state">
-              Выберите склад или магазин в списке слева либо нажмите «Новый склад», чтобы создать запись.
+              Select a warehouse or shop on the left or click “New warehouse” to create one.
             </div>
 
             <div id="editor-body" class="hidden">
               <div class="editor-section">
-                <h3 class="text-sm font-semibold">Основные поля</h3>
+                <h3 class="text-sm font-semibold">Main fields</h3>
                 <div id="form-main" class="mt-3"></div>
               </div>
 
               <div class="editor-section">
                 <div class="flex flex-wrap items-center justify-between gap-3">
                   <div>
-                    <h3 class="text-sm font-semibold">Ассортимент и товары</h3>
-                    <div class="text-xs editor-muted-text mt-1">Основная группа необязательна. Пример иерархии: <code>|Armor|Armor Healer:1 level</code></div>
+                    <h3 class="text-sm font-semibold">Assortment & trades</h3>
+                    <div class="text-xs editor-muted-text mt-1">Main group is optional. Hierarchy example: <code>|Armor|Armor Healer:1 level</code></div>
                   </div>
                   <div class="flex items-center gap-2">
                     <button id="btn-add-trade-group" type="button" class="editor-btn editor-btn-secondary text-sm">
-                      <i class="fa-solid fa-layer-group"></i><span>Группа</span>
+                      <i class="fa-solid fa-layer-group"></i><span>Group</span>
                     </button>
                     <button id="btn-add-trade" type="button" class="editor-btn editor-btn-secondary text-sm">
-                      <i class="fa-solid fa-plus"></i><span>Позиция</span>
+                      <i class="fa-solid fa-plus"></i><span>Position</span>
                     </button>
                   </div>
                 </div>
                 <div id="trades-groups" class="mt-3 space-y-3"></div>
                 <div class="mt-3">
                   <details id="raw-wrap" class="editor-details">
-                    <summary>Строка товаров в исходном виде <span class="editor-muted-text">(как в БД)</span></summary>
+                    <summary>Raw goods value <span class="editor-muted-text">(as in the DB)</span></summary>
                     <div class="editor-details-body">
                       <textarea id="raw-trades" class="w-full editor-textarea form-textarea" rows="7" readonly></textarea>
                     </div>
@@ -366,17 +366,17 @@
           data-datasource="items"
           data-db-searchable="1"
           data-db-limit="1000"
-          data-placeholder="— Предмет —"
+          data-placeholder="— Item —"
           data-label-mode="id_name"
           data-bind-input-path="${path}"
           data-current-value="${cur > 0 ? String(cur) : ''}">
         <div class="editor-dbcombo-control">
-          <input type="search" class="editor-input form-input editor-dbcombo-input" placeholder="Поиск предмета..." autocomplete="off" />
-          <button type="button" class="editor-dbcombo-clear" title="Очистить выбор" aria-label="Очистить выбор"${cur > 0 ? '' : ' hidden'}>
+          <input type="search" class="editor-input form-input editor-dbcombo-input" placeholder="Search an item..." autocomplete="off" />
+          <button type="button" class="editor-dbcombo-clear" title="Clear selection" aria-label="Clear selection"${cur > 0 ? '' : ' hidden'}>
             <i class="fa-solid fa-xmark" aria-hidden="true"></i>
           </button>
         </div>
-        <div class="editor-dbcombo-dropdown" role="listbox" aria-label="Предмет"></div>
+        <div class="editor-dbcombo-dropdown" role="listbox" aria-label="Item"></div>
         <input type="number" class="editor-input form-input editor-dbselect-input editor-dbcombo-bound" data-field="item_id" data-path="${path}" value="${cur}" />
       </div>`;
     };
@@ -384,7 +384,7 @@
     const buildCollectionGroupOptionsHtml = (selectedGroup = '') => {
       const selected = String(selectedGroup || '').trim();
       const groups = Array.from(STATE.lookups.collectionMap.keys()).sort((a, b) => a.localeCompare(b));
-      const out = ['<option value="">— группа —</option>'];
+      const out = ['<option value="">— group —</option>'];
       groups.forEach((g) => out.push(`<option value="${esc(g)}" ${g === selected ? 'selected' : ''}>${esc(g)}</option>`));
       return out.join('');
     };
@@ -392,7 +392,7 @@
     const buildCollectionSubOptionsHtml = (group = '', selectedSub = '') => {
       const selected = String(selectedSub || '').trim();
       const subs = getCollectionSubs(group);
-      const out = ['<option value="">— подгруппа —</option>'];
+      const out = ['<option value="">— subgroup —</option>'];
       subs.forEach((s) => out.push(`<option value="${esc(s)}" ${s === selected ? 'selected' : ''}>${esc(s)}</option>`));
       return out.join('');
     };
@@ -412,7 +412,7 @@
       const worlds = Array.from(STATE.lookups.worlds.entries())
         .map(([value, label]) => ({ value, label }))
         .sort((a, b) => Number(a.value) - Number(b.value));
-      els.filterWorld.innerHTML = '<option value="">Все</option>';
+      els.filterWorld.innerHTML = '<option value="">All</option>';
       worlds.forEach((w) => {
         els.filterWorld.appendChild(new Option(`#${w.value} ${w.label || ''}`.trim(), w.value, STATE.filter.world === w.value, STATE.filter.world === w.value));
       });
@@ -434,7 +434,7 @@
 
       els.metaCount.textContent = `${filtered.length}/${STATE.rows.length}`;
       if (!filtered.length) {
-        els.list.innerHTML = `<div class="p-5 text-center"><div class="text-sm font-semibold">Ничего не найдено</div></div>`;
+        els.list.innerHTML = `<div class="p-5 text-center"><div class="text-sm font-semibold">Nothing found</div></div>`;
         return;
       }
 
@@ -447,19 +447,19 @@
 
       const html = Array.from(byWorld.keys()).sort((a,b) => Number(a)-Number(b)).map((wid) => {
         const rows = byWorld.get(wid) || [];
-        const worldLabel = getWorldLabel(wid) || `Мир #${wid}`;
+        const worldLabel = getWorldLabel(wid) || `World #${wid}`;
         const rowsHtml = rows.map((r) => {
           const isActive = String(r.ID) === String(STATE.selectedId);
-          const typeLabels = parseTypeSet(r.Type).map((t) => ({ buying: 'покупка', selling: 'продажа', storage: 'хранение' }[t] || t)).join(', ') || '—';
+          const typeLabels = parseTypeSet(r.Type).map((t) => ({ buying: 'buy', selling: 'sell', storage: 'storage' }[t] || t)).join(', ') || '—';
           const tradesCount = parseTrades(r.Trades || '').reduce((sum, g) => sum + ((g.entries || []).length), 0);
           return `<button type="button" class="editor-row${isActive ? ' editor-row-active' : ''}" data-id="${r.ID}">
             <div class="flex items-start justify-between gap-2">
               <div class="min-w-0">
-                <div class="font-semibold text-sm truncate">${esc(r.Name) || '(без имени)'}</div>
+                <div class="font-semibold text-sm truncate">${esc(r.Name) || '(no name)'}</div>
                 <div class="text-xs editor-muted-text mt-0.5">${esc(typeLabels)}</div>
                 <div class="mt-1 flex flex-wrap gap-1.5">
-                  <span class="editor-badge">позиций: ${tradesCount}</span>
-                  <span class="editor-badge">валюта: ${esc(getCurrencyLabel(r.Currency))}</span>
+                  <span class="editor-badge">positions:  ${tradesCount}</span>
+                  <span class="editor-badge">currency:  ${esc(getCurrencyLabel(r.Currency))}</span>
                 </div>
               </div>
               <div class="text-xs editor-muted-text shrink-0">#${r.ID}</div>
@@ -487,22 +487,22 @@
 
     let runtimeMain = null;
     const mainFields = {
-      Name: { type: 'text', label: 'Название', validate: { required: true }, ui: { placeholder: 'Например: Оружейная лавка' } },
-      TypeArr: { type: 'text', label: 'Режимы работы', ui: { type: 'tags', allowCreate: false, placeholder: 'Добавить режим…', options: [
-        { value: 'buying', label: 'покупка' },
-        { value: 'selling', label: 'продажа' },
-        { value: 'storage', label: 'хранение' },
+      Name: { type: 'text', label: 'Name', validate: { required: true }, ui: { placeholder: 'For example: Weapon shop' } },
+      TypeArr: { type: 'text', label: 'Operation modes', ui: { type: 'tags', allowCreate: false, placeholder: 'Add mode…', options: [
+        { value: 'buying', label: 'buy' },
+        { value: 'selling', label: 'sell' },
+        { value: 'storage', label: 'storage' },
       ] } },
-      Currency: { type: 'db_select', label: 'Валюта расчёта', ui: { dbKey: 'item', placeholder: '— выберите валюту —', valueType: 'number', searchable: true } },
-      WorldID: { type: 'db_select', label: 'Мир размещения', ui: { dbKey: 'world', placeholder: '— выберите мир —', valueType: 'number', searchable: true } },
+      Currency: { type: 'db_select', label: 'Payment currency', ui: { dbKey: 'item', placeholder: '— select currency —', valueType: 'number', searchable: true } },
+      WorldID: { type: 'db_select', label: 'Placement world', ui: { dbKey: 'world', placeholder: '— select a world —', valueType: 'number', searchable: true } },
       // Склад стоит в мире склада: PositionPicker использует WorldID и
       // сразу показывает игровой слой, чтобы точку не поставили в стену.
       Position: {
         type: 'vec2',
-        label: 'Координаты точки (X, Y)',
-        ui: { step: 1, axes: { x: 'PosX', y: 'PosY' }, mapWorldPath: 'WorldID', showTiles: false, radius: 320, highlightTiles: [29] },
+        label: 'Point coordinates (X, Y)',
+        ui: { step: 1, axes: { x: 'PosX', y: 'PosY' }, mapWorldPath: 'WorldID', showTiles: true, radius: 320, highlightTiles: [29] },
       },
-      StorageData: { type: 'textarea', label: 'Дополнительные данные (StorageData JSON)', ui: { rows: 3, placeholder: '{"position":{"x":0,"y":0},"value":"1"}' } },
+      StorageData: { type: 'textarea', label: 'Additional data (StorageData JSON)', ui: { rows: 3, placeholder: '{"position":{"x":0,"y":0},"value":"1"}' } },
     };
 
     const mountMainForm = () => {
@@ -530,13 +530,13 @@
 
     const renderTradesEditor = () => {
       if (!STATE.selected) {
-        els.tradesGroups.innerHTML = '<div class="editor-empty-state">Выберите запись</div>';
+        els.tradesGroups.innerHTML = '<div class="editor-empty-state">Select a record</div>';
         syncRawTrades();
         return;
       }
       const groups = Array.isArray(STATE.selected.TradesArr) ? STATE.selected.TradesArr : [];
       if (!groups.length) {
-        els.tradesGroups.innerHTML = '<div class="editor-empty-state">Ассортимент пуст. Нажмите «Группа» или «Позиция», чтобы добавить товары.</div>';
+        els.tradesGroups.innerHTML = '<div class="editor-empty-state">The assortment is empty. Click “Group” or “Item” to add goods.</div>';
         syncRawTrades();
         return;
       }
@@ -558,53 +558,53 @@
             return `<div class="trade-row" data-gi="${gi}" data-ei="${ei}">
               <select data-field="collection_group" class="editor-input form-input">${buildCollectionGroupOptionsHtml(e.collection_group || '')}</select>
               <select data-field="collection_sub" class="editor-input form-input">${buildCollectionSubOptionsHtml(e.collection_group || '', e.collection_sub || '')}</select>
-              <input disabled class="editor-input form-input" value="Набор" />
+              <input disabled class="editor-input form-input" value="Set" />
               <input disabled class="editor-input form-input" value="—" />
-              <button type="button" class="editor-icon-btn editor-icon-danger" data-action="del-entry" data-gi="${gi}" data-ei="${ei}" title="Удалить позицию"><i class="fa-solid fa-trash"></i></button>
+              <button type="button" class="editor-icon-btn editor-icon-danger" data-action="del-entry" data-gi="${gi}" data-ei="${ei}" title="Delete the position"><i class="fa-solid fa-trash"></i></button>
             </div>`;
           }
           if (e.kind === 'raw') {
             return `<div class="trade-row" data-gi="${gi}" data-ei="${ei}">
-              <input data-field="raw" class="editor-input form-input" value="${esc(e.raw || '')}" placeholder="Строка как в БД" />
+              <input data-field="raw" class="editor-input form-input" value="${esc(e.raw || '')}" placeholder="Raw database line" />
               <input disabled class="editor-input form-input" value="—" />
               <input disabled class="editor-input form-input" value="—" />
               <input disabled class="editor-input form-input" value="—" />
-              <button type="button" class="editor-icon-btn editor-icon-danger" data-action="del-entry" data-gi="${gi}" data-ei="${ei}" title="Удалить позицию"><i class="fa-solid fa-trash"></i></button>
+              <button type="button" class="editor-icon-btn editor-icon-danger" data-action="del-entry" data-gi="${gi}" data-ei="${ei}" title="Delete the position"><i class="fa-solid fa-trash"></i></button>
             </div>`;
           }
           return `<div class="trade-row" data-gi="${gi}" data-ei="${ei}">
             <div>${buildItemComboHtml(gi, ei, e.item_id)}</div>
-            <input data-field="amount" type="number" min="1" class="editor-input form-input" value="${Math.max(1, Number(e.amount || 1))}" placeholder="Кол-во" title="Количество" />
-            <input data-field="price" type="number" class="editor-input form-input" value="${Number(e.price || 0)}" placeholder="Цена 1" title="Основная цена" />
-            <input data-field="price_alt" type="number" class="editor-input form-input" value="${Number(e.price_alt || 0)}" placeholder="Цена 2" title="Дополнительная цена (0 — нет)" />
-            <button type="button" class="editor-icon-btn editor-icon-danger" data-action="del-entry" data-gi="${gi}" data-ei="${ei}" title="Удалить позицию"><i class="fa-solid fa-trash"></i></button>
+            <input data-field="amount" type="number" min="1" class="editor-input form-input" value="${Math.max(1, Number(e.amount || 1))}" placeholder="Qty" title="Quantity" />
+            <input data-field="price" type="number" class="editor-input form-input" value="${Number(e.price || 0)}" placeholder="Price 1" title="Base price" />
+            <input data-field="price_alt" type="number" class="editor-input form-input" value="${Number(e.price_alt || 0)}" placeholder="Price 2" title="Alternative price (0 — none)" />
+            <button type="button" class="editor-icon-btn editor-icon-danger" data-action="del-entry" data-gi="${gi}" data-ei="${ei}" title="Delete the position"><i class="fa-solid fa-trash"></i></button>
           </div>`;
         }).join('');
 
         const headerHtml = entries.length
-          ? `<div class="trade-header"><div>Предмет / коллекция</div><div>Кол-во</div><div>Цена 1</div><div>Цена 2</div><div></div></div>`
+          ? `<div class="trade-header"><div>Item / collection</div><div>Qty</div><div>Price 1</div><div>Price 2</div><div></div></div>`
           : '';
-        const mainLabel = String(g.main || '').trim() || 'Без основной группы';
+        const mainLabel = String(g.main || '').trim() || 'No main group';
         return `<div class="border ${g.main ? 'editor-primary-border editor-primary-tint' : 'editor-hairline'} rounded-xl p-3" data-main-group="${esc(mainLabel)}">
           <div class="mb-3 px-2.5 py-1.5 rounded-md ${g.main ? 'editor-primary-tint editor-primary-text' : 'editor-soft editor-muted-text'} flex items-center justify-between gap-2">
             <span class="text-xs font-semibold"><i class="fa-solid fa-layer-group mr-1"></i>${esc(mainLabel)}</span>
-            <span class="text-[11px] editor-muted-text">Основная группа</span>
+            <span class="text-[11px] editor-muted-text">Main group</span>
           </div>
           <div class="flex items-center justify-between gap-2 mb-2">
             <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 w-full">
-              <input data-gfield="main" data-gi="${gi}" class="editor-input form-input" value="${esc(g.main || '')}" placeholder="Основная группа (необязательно)" title="Например: Armor" />
-              <input data-gfield="group" data-gi="${gi}" class="editor-input form-input" value="${esc(g.group || '')}" placeholder="Группа" />
-              <input data-gfield="sub" data-gi="${gi}" class="editor-input form-input" value="${esc(g.sub || '')}" placeholder="Подгруппа" />
+              <input data-gfield="main" data-gi="${gi}" class="editor-input form-input" value="${esc(g.main || '')}" placeholder="Main group (optional)" title="For example: Armor" />
+              <input data-gfield="group" data-gi="${gi}" class="editor-input form-input" value="${esc(g.group || '')}" placeholder="Group" />
+              <input data-gfield="sub" data-gi="${gi}" class="editor-input form-input" value="${esc(g.sub || '')}" placeholder="Subgroup" />
             </div>
-            <button type="button" class="editor-icon-btn editor-icon-danger shrink-0" data-action="del-group" data-gi="${gi}" title="Удалить группу"><i class="fa-solid fa-trash"></i></button>
+            <button type="button" class="editor-icon-btn editor-icon-danger shrink-0" data-action="del-group" data-gi="${gi}" title="Delete the group"><i class="fa-solid fa-trash"></i></button>
           </div>
-          <div class="text-xs editor-muted-text mb-2">${esc(label)} · позиций: ${entries.length}</div>
+          <div class="text-xs editor-muted-text mb-2">${esc(label)}  · positions:  ${entries.length}</div>
           ${headerHtml}
-          <div class="space-y-2">${rows || '<div class="editor-muted-text text-sm">Нет позиций в этой группе.</div>'}</div>
+          <div class="space-y-2">${rows || '<div class="editor-muted-text text-sm">No positions in this group.</div>'}</div>
           <div class="mt-3 flex flex-wrap gap-2">
-            <button type="button" class="editor-btn editor-btn-secondary text-sm" data-action="add-item" data-gi="${gi}"><i class="fa-solid fa-plus"></i><span>Предмет</span></button>
-            <button type="button" class="editor-btn editor-btn-secondary text-sm" data-action="add-collection" data-gi="${gi}"><i class="fa-solid fa-boxes-stacked"></i><span>Набор</span></button>
-            <button type="button" class="editor-btn editor-btn-secondary text-sm" data-action="add-raw" data-gi="${gi}"><i class="fa-solid fa-code"></i><span>Строка БД</span></button>
+            <button type="button" class="editor-btn editor-btn-secondary text-sm" data-action="add-item" data-gi="${gi}"><i class="fa-solid fa-plus"></i><span>Item</span></button>
+            <button type="button" class="editor-btn editor-btn-secondary text-sm" data-action="add-collection" data-gi="${gi}"><i class="fa-solid fa-boxes-stacked"></i><span>Set</span></button>
+            <button type="button" class="editor-btn editor-btn-secondary text-sm" data-action="add-raw" data-gi="${gi}"><i class="fa-solid fa-code"></i><span>Database line</span></button>
           </div>
         </div>`;
       }).join('');
@@ -692,24 +692,24 @@
       els.emptyState?.classList.toggle('hidden', hasSelected);
       els.editorBody?.classList.toggle('hidden', !hasSelected);
       if (!hasSelected) {
-        els.title.textContent = 'Выберите склад';
-        els.subtitle.textContent = 'или создайте новый склад / магазин';
+        els.title.textContent = 'Select a warehouse';
+        els.subtitle.textContent = 'or create a new warehouse / shop';
         els.badgeId.style.display = 'none';
         return;
       }
-      const worldLabel = getWorldLabel(STATE.selected.WorldID) || `Мир #${STATE.selected.WorldID || 0}`;
+      const worldLabel = getWorldLabel(STATE.selected.WorldID) || `World #${STATE.selected.WorldID || 0}`;
       const typeLabels = (STATE.selected.TypeArr || [])
-        .map((t) => ({ buying: 'покупка', selling: 'продажа', storage: 'хранение' }[t] || t))
+        .map((t) => ({ buying: 'buy', selling: 'sell', storage: 'storage' }[t] || t))
         .join(', ');
-      els.title.textContent = STATE.selected.Name || '(без имени)';
-      els.subtitle.textContent = `${worldLabel} · ${typeLabels || 'без режима'}`;
-      els.badgeId.textContent = STATE.selectedId ? `#${STATE.selectedId}` : 'новый';
+      els.title.textContent = STATE.selected.Name || '(no name)';
+      els.subtitle.textContent = `${worldLabel} · ${typeLabels || 'no mode'}`;
+      els.badgeId.textContent = STATE.selectedId ? `#${STATE.selectedId}` : 'new';
       els.badgeId.style.display = 'inline-flex';
     };
 
     const canDiscardDirty = async () => {
       if (!STATE.isDirty) return true;
-      return EditorCore.Page.confirm('Есть несохранённые изменения. Продолжить без сохранения?');
+      return EditorCore.Page.confirm('You have unsaved changes. Continue without saving?');
     };
 
     const setSelected = (row, isNew = false) => {
@@ -740,9 +740,9 @@
       if (String(id) === String(STATE.selectedId) && STATE.selected) return;
       if (confirmDirty && !await canDiscardDirty()) return;
       try {
-        setStatus('Загрузка…');
+        setStatus('Loading…');
         const res = await EditorCore.DBCrud.get(RESOURCE, id);
-        if (!res?.row) return setStatus('Не найдено', 'err');
+        if (!res?.row) return setStatus('Not found', 'err');
         setSelected(res.row, false);
         setStatus('');
       } catch (e) {
@@ -782,7 +782,7 @@
 
     const loadRows = async () => {
       try {
-        setStatus('Загрузка списка…');
+        setStatus('Loading list…');
         const res = await EditorCore.DBCrud.list(RESOURCE, { search: '', limit: 5000, offset: 0 });
         STATE.rows = Array.isArray(res?.rows) ? res.rows : [];
         renderList();
@@ -799,13 +799,13 @@
       const payload = toPayload(STATE.selected);
       try {
         els.save.disabled = true;
-        setStatus('Сохранение…');
+        setStatus('Saving…');
         if (STATE.selectedId) {
           await EditorCore.DBCrud.update(RESOURCE, STATE.selectedId, payload);
-          EditorCore.UI.toast('Сохранено', 'success');
+          EditorCore.UI.toast('Saved', 'success');
         } else {
           const created = await EditorCore.DBCrud.create(RESOURCE, payload);
-          EditorCore.UI.toast('Создано', 'success');
+          EditorCore.UI.toast('Created', 'success');
           await loadRows();
           if (created?.id) await selectRow(created.id);
         }
@@ -820,11 +820,13 @@
 
     const remove = async () => {
       if (!STATE.selectedId) return;
-      if (!await EditorCore.Page.confirm('Удалить склад #' + STATE.selectedId + '?')) return;
+      // Текст собирается через I18n.t, чтобы подстановка номера не мешала
+      // переводу подтверждения («Delete warehouse #12?»).
+      if (!await EditorCore.Page.confirm(EditorCore.I18n.t('Delete warehouse #{0}?', [STATE.selectedId]))) return;
       try {
-        setStatus('Удаление…');
+        setStatus('Deleting…');
         await EditorCore.DBCrud.remove(RESOURCE, STATE.selectedId);
-        EditorCore.UI.toast('Удалено', 'success');
+        EditorCore.UI.toast('Deleted', 'success');
         setSelected(null, false);
         await loadRows();
         setStatus('');
@@ -845,7 +847,7 @@
       runtimeMain?.setData?.(STATE.selected);
       renderTradesEditor();
       updateHeader();
-      setStatus('Локальные изменения отменены.', 'ok');
+      setStatus('Local changes discarded.', 'ok');
     };
 
     els.refresh.addEventListener('click', async () => {

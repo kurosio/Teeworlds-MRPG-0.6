@@ -17,8 +17,11 @@
  *   4. макет собран на общем каркасе: .editor-page + шапка, размеры из CSS,
  *      таблицы в прокручиваемых контейнерах, dvh вместо vh;
  *   4.1 оформление только через токены дизайн-системы, без палитры Tailwind;
+ *   4.2 оболочка студии: меню — рельс иконок, который раскрывается при
+ *       наведении/фокусе, а поиск по редакторам убран;
  *   5. английский каталог покрывает статический текст страниц (разметку и
- *      подсказки); строки, которых нет в каталоге, печатаются списком.
+ *      подсказки) и текст интерфейса из JS-литералов; строки, которых нет в
+ *      каталоге, печатаются списком или считаются ошибкой.
  *
  * Код возврата 1, если есть ошибки (не покрытие перевода: это предупреждение).
  */
@@ -465,101 +468,348 @@ if (/\.editor-card\{[^}]*box-shadow:\s*(?!none)/.test(themeCss)) {
   problems.push('editor-core/editor-theme.css: .editor-card снова с тенью — карточки живут на волосяной рамке');
 }
 
-// ── 2.2. Подписи компонентов сценария переведены ───────────────────────────
+// ── 4.2. Оболочка студии: рельс меню и отсутствие поиска ────────────────────
 //
-// Схемы компонентов живут в JS, поэтому проверка страниц их не видит: подпись
-// вроде «disable_group_damage» проходила и в русский, и в английский интерфейс.
+// Меню по умолчанию сжато до столбца иконок и раскрывается при наведении или
+// фокусе. Панель вынесена из потока, поэтому раскрытие не пересобирает iframe
+// редактора. Поиск по редакторам убран — список короткий, а рельс с иконками
+// освобождает место для самой работы.
 
-try {
-  const schemaCtx = { window: {} };
-  schemaCtx.window.window = schemaCtx.window;
-  vm.createContext(schemaCtx);
-  vm.runInContext(read(path.join(CORE_DIR, 'registry.js')), schemaCtx);
-  vm.runInContext(read(path.join(CORE_DIR, 'i18n-en.js')), schemaCtx);
-  const schemas = schemaCtx.window.EditorCore?.schemas?.componentSchemas || {};
-  const en = new Set(Object.keys(schemaCtx.window.EditorCoreDict?.en || {}));
-  const labels = new Set();
-  const collect = (fields) => {
-    for (const field of Object.values(fields || {})) {
-      const label = String(field?.label || '').trim();
-      if (label) labels.add(label);
-      if (field?.type === 'list') collect(field.itemFields);
-      for (const option of field?.ui?.options || []) {
-        if (option && typeof option === 'object' && option.label) labels.add(String(option.label).trim());
-      }
-    }
-  };
-  Object.values(schemas).forEach((schema) => collect(schema.fields));
-  for (const label of labels) {
-    if (!/[А-Яа-яЁё]/.test(label)) continue; // латиница (ID, PvP) перевода не требует
-    if (!en.has(label)) problems.push(`editor-core/registry.js: подпись «${label}» без английского перевода`);
-  }
-} catch (error) {
-  problems.push(`editor-core/registry.js: не удалось разобрать схемы компонентов — ${error.message}`);
-}
-
-// ── 3. Покрытие английского каталога ─────────────────────────────────────────
-
-const dictSource = read(path.join(CORE_DIR, 'i18n-en.js'));
-const dict = new Map();
-for (const match of dictSource.matchAll(/^\s*"((?:[^"\\]|\\.)*)":\s*"((?:[^"\\]|\\.)*)",$/gm)) {
-  try {
-    dict.set(JSON.parse(`"${match[1]}"`), JSON.parse(`"${match[2]}"`));
-  } catch {
-    problems.push(`editor-core/i18n-en.js: не удалось разобрать ключ ${match[1]}`);
+const studioShell = read(path.join(ROOT, 'index.html'));
+for (const token of [
+  '--studio-rail-w', '--studio-panel-w', '.studio-sidebar__panel',
+  '.studio-sidebar.is-rail', '.studio-sidebar.is-open',
+  'body.studio-sidebar-pinned', 'setSidebarPinned', 'setSidebarOpen',
+  'pinSidebarBtn',
+]) {
+  if (!studioShell.includes(token)) {
+    problems.push(`index.html: оболочка потеряла ${token} — меню-рельс должно раскрываться при наведении`);
   }
 }
+for (const token of ['id="studioSearch"', 'id="mobileSearch"', 'studio-search-block', 'studio-sidebar-collapsed']) {
+  if (studioShell.includes(token)) {
+    problems.push(`index.html: поиск по редакторам удалён — ${token} не должен возвращаться`);
+  }
+}
+
+// ── 2.2. Языковые файлы ──────────────────────────────────────────────────────
+//
+// Источник строк интерфейса — английский: на нём написаны разметка и код.
+// Остальные языки лежат в `localization/`: файл `lang_<код>.js` регистрирует
+// себя в реестре и содержит словарь «английский текст → перевод». Здесь мы
+// проверяем, что файлы валидны, что манифест их подключает и что русский
+// словарь реально покрывает интерфейс.
 
 const CYRILLIC = /[А-Яа-яЁё]/;
 const normalize = (text) => text.replace(/\s+/g, ' ').trim();
-const entities = { '&amp;': '&', '&lt;': '<', '&gt;': '>', '&quot;': '"', '&#39;': "'", '&nbsp;': ' ' };
-const decode = (text) => text.replace(/&(?:amp|lt|gt|quot|#39|nbsp);/g, (m) => entities[m] ?? m);
+const LOCALIZATION_DIR = path.join(ROOT, 'localization');
 
-/** Статический текст страницы: текстовые узлы и подписи в атрибутах. */
-const staticStrings = (html) => {
-  const found = new Set();
-  const cleaned = html
-    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
-    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
-    .replace(/<!--[\s\S]*?-->/g, ' ');
-  for (const match of cleaned.matchAll(/>([^<>]+)</g)) {
-    const text = normalize(decode(match[1]));
-    if (text && CYRILLIC.test(text)) found.add(text);
+const langFiles = fs.readdirSync(LOCALIZATION_DIR)
+  .filter((name) => /^lang_[a-z-]+\.js$/.test(name))
+  .sort();
+
+let registry = null;
+try {
+  const sandboxWindow = {};
+  sandboxWindow.window = sandboxWindow;
+  const context = vm.createContext({ window: sandboxWindow, console });
+  vm.runInContext(read(path.join(LOCALIZATION_DIR, 'index.js')), context);
+  registry = sandboxWindow.EditorCoreLocalization;
+  for (const file of registry.files || []) {
+    if (!fs.existsSync(path.join(LOCALIZATION_DIR, file))) {
+      problems.push(`localization/index.js: в манифесте указан отсутствующий файл ${file}`);
+      continue;
+    }
+    try {
+      vm.runInContext(read(path.join(LOCALIZATION_DIR, file)), context);
+    } catch (error) {
+      problems.push(`localization/${file}: не удалось выполнить — ${error.message}`);
+    }
+  }
+} catch (error) {
+  problems.push(`localization/index.js: не удалось выполнить — ${error.message}`);
+}
+
+const languages = registry?.languages || {};
+const sourceLanguage = registry?.sourceLanguage || 'en';
+
+if (registry) {
+  for (const file of langFiles) {
+    if (!(registry.files || []).includes(file)) {
+      problems.push(`localization/${file}: файл не указан в манифесте localization/index.js`);
+    }
+  }
+  if (!registry.language(sourceLanguage)) {
+    problems.push(`localization: язык-источник «${sourceLanguage}» не зарегистрирован (нет localization/lang_${sourceLanguage}.js)`);
+  }
+  if (!registry.language(registry.defaultLanguage)) {
+    problems.push(`localization: язык по умолчанию «${registry.defaultLanguage}» не зарегистрирован`);
+  }
+  for (const [code, language] of Object.entries(languages)) {
+    if (!language.name || !language.locale) problems.push(`localization/lang_${code}.js: нет name или locale`);
+    if (code === sourceLanguage) {
+      if (Object.keys(language.strings).length) {
+        problems.push(`localization/lang_${code}.js: у языка-источника не должно быть словаря`);
+      }
+      continue;
+    }
+    if (!Object.keys(language.strings).length) {
+      problems.push(`localization/lang_${code}.js: пустой словарь`);
+    }
+    for (const [key, value] of Object.entries(language.strings)) {
+      if (CYRILLIC.test(key)) problems.push(`localization/lang_${code}.js: ключ с кириллицей «${key}» (источник должен быть английским)`);
+      if (!value || value === key) problems.push(`localization/lang_${code}.js: «${key}» не переведён`);
+    }
+  }
+}
+
+// Словарь русского языка: «английский текст» → «русский текст».
+const dict = new Map(Object.entries(registry?.strings('ru') || {}));
+
+// ── 3. Источник строк — английский, перевод на русский есть ──────────────────
+
+/** Код без комментариев: иначе пояснение на русском засчитается за строку UI. */
+const stripComments = (text) => {
+  let out = '';
+  let i = 0;
+  while (i < text.length) {
+    const ch = text[i];
+    const next = text[i + 1];
+    if (ch === '/' && next === '/') { while (i < text.length && text[i] !== '\n') i += 1; continue; }
+    if (ch === '/' && next === '*') {
+      i += 2;
+      while (i < text.length && !(text[i] === '*' && text[i + 1] === '/')) i += 1;
+      i += 2;
+      continue;
+    }
+    if (ch === '"' || ch === "'" || ch === '`') {
+      const quote = ch;
+      out += ch;
+      i += 1;
+      while (i < text.length) {
+        out += text[i];
+        if (text[i] === '\\') { i += 1; if (i < text.length) out += text[i]; i += 1; continue; }
+        if (text[i] === quote) { i += 1; break; }
+        i += 1;
+      }
+      continue;
+    }
+    out += ch;
+    i += 1;
+  }
+  return out;
+};
+
+/** Подстановки `${...}` заменяем метками, чтобы получить ключ «ID {0} · {1}». */
+const withMarkers = (markup) => {
+  let index = 0;
+  return markup.replace(/\$\{[^}]*\}/g, () => `\u0001${index++}\u0001`);
+};
+const unmark = (text) => {
+  let next = 0;
+  const map = new Map();
+  return text.replace(/\u0001(\d+)\u0001/g, (whole, n) => {
+    if (!map.has(n)) map.set(n, `{${next++}}`);
+    return map.get(n);
+  });
+};
+
+/** Текст интерфейса внутри разметки: текстовые узлы и подписи атрибутов. */
+const markupTexts = (markup) => {
+  const found = [];
+  const marked = withMarkers(markup);
+  for (const match of marked.matchAll(/>([^<>]+)</g)) {
+    const text = normalize(unmark(match[1]));
+    if (text) found.push(text);
   }
   for (const attr of ['title', 'placeholder', 'aria-label', 'alt', 'data-tooltip']) {
     const re = new RegExp(`${attr}="([^"]*)"`, 'gi');
-    for (const match of cleaned.matchAll(re)) {
-      const text = normalize(decode(match[1]));
-      if (text && CYRILLIC.test(text) && !text.includes('${')) found.add(text);
+    for (const match of marked.matchAll(re)) {
+      const text = normalize(unmark(match[1]));
+      if (text) found.push(text);
     }
   }
-  return [...found];
+  return found;
 };
 
-const untranslated = new Map();
-for (const page of list(ROOT, '.html')) {
-  for (const text of staticStrings(read(path.join(ROOT, page)))) {
-    if (dict.has(text)) continue;
-    // Шаблонные ключи каталога тоже считаются покрытием.
-    const covered = [...dict.keys()].some((key) => {
-      if (!key.includes('{')) return false;
-      const pattern = new RegExp(`^${key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\\\{\d+\\\}/g, '.*?')}$`);
-      return pattern.test(text);
-    });
-    if (!covered) untranslated.set(text, page);
+/** Экранирования в литералах: «\n» в коде — это перевод строки. */
+const decodeEscapes = (value) => value
+  .replace(/\\n/g, '\n')
+  .replace(/\\t/g, '\t')
+  .replace(/\\"/g, '"')
+  .replace(/\\'/g, "'")
+  .replace(/\\\\/g, '\\');
+
+/** Строки интерфейса из кода: литералы и шаблоны с подстановками. */
+const codeTexts = (code) => {
+  const found = [];
+  const re = /"((?:[^"\\\n]|\\.)*)"|'((?:[^'\\\n]|\\.)*)'|`((?:[^`\\]|\\.)*)`/g;
+  let match;
+  while ((match = re.exec(code))) {
+    // Сообщения разработчику (`new Error('…')`, `console.warn('…')`) — не интерфейс.
+    const context = code.slice(Math.max(0, match.index - 40), match.index);
+    if (/(?:Error|console\.(?:\w+)|throw)\s*\(\s*$/.test(context)) continue;
+    const template = match[3] !== undefined;
+    const value = template ? match[3] : (match[1] ?? match[2] ?? '');
+    if (!value.trim()) continue;
+    if (/<[a-z!/][^>]*>/i.test(value)) { found.push(...markupTexts(value)); continue; }
+    if (!template) { found.push(normalize(decodeEscapes(value))); continue; }
+    let index = 0;
+    const candidate = decodeEscapes(value).replace(/\$\{[^}]*\}/g, () => `{${index++}}`);
+    for (const piece of candidate.split(/[<>]/)) {
+      const text = normalize(piece);
+      if (text) found.push(text);
+    }
   }
+  return found;
+};
+
+/** Ключ словаря с подстановками: «Found: {0}» → регулярное выражение. */
+const templateKeys = [...dict.keys()]
+  .filter((key) => key.includes('{'))
+  .map((key) => new RegExp(`^${key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/\\{\d+\\}/g, '[\\s\\S]*?')}$`));
+const translatedText = (text) => {
+  const core = normalize(text);
+  if (!core) return true;
+  if (dict.has(core)) return true;
+  return templateKeys.some((re) => re.test(core));
+};
+
+/**
+ * Значения из базы: остаются английскими в обоих режимах (перечисления
+ * предметов, флаги квестов, эффекты мобов). Это не интерфейс, а данные.
+ */
+const DATA_STRINGS = new Set([
+  'Default', 'Usable', 'Resource', 'Decoration', 'Equipment', 'Potion', 'Currency', 'Quest', 'Settings', 'Other',
+  'Resource harvestable', 'Resource mineable', 'Resource fishes', 'Single use x1', 'Multiple use x99',
+  'Equip hammer', 'Equip gun', 'Equip shotgun', 'Equip grenade', 'Equip rifle', 'Equip pickaxe', 'Equip rake',
+  'Equip fishrod', 'Equip gloves', 'Equip armor (tank)', 'Equip armor (dps)', 'Equip armor (healer)',
+  'Equip helmet (tank)', 'Equip helmet (dps)', 'Equip helmet (healer)', 'Equip eidolon', 'Equip title',
+  'Equip potion HP', 'Equip potion MP', 'Equip potion Miner', "Can't droppable", "Can't tradeable",
+  'Tiny heal', 'Type main', 'Type side', 'Type daily', 'Type weekly', 'Type repeatable', "Can't refuse",
+  'Tutorial', 'Partial', 'Slowdown', 'Poison', 'Fire', 'Happy', 'Angry', 'Misc', 'Path', 'Unnamed',
+  'Без точки активности',
+  // имена собственные и технические токены
+  'Editor Studio', 'English', 'Liberation Mono', 'Backspace', 'use strict', 'unhandled rejection',
+  // технические значения, которые не переводятся
+  'NULL', 'OK', 'OUT', 'POST', 'GET', 'PUT', 'SELECT', 'TRUE', 'FALSE', 'Title', 'Skin.', 'text/plain',
+  'Enter', 'Escape', 'Shift', 'Delete', 'Tab', 'Backspace', 'Business', 'Data', 'Personal',
+  'Default (components/default.h)', 'application/json', 'NPC • Editor Studio', 'Editor registry requires an id.',
+]);
+
+/**
+ * Похоже ли на текст интерфейса, а не на техническое значение.
+ *
+ * Источник теперь английский, поэтому фильтровать приходится именно английский
+ * текст: иначе в «непереведённые» попадут идентификаторы, css-переменные, имена
+ * файлов и значения вида `world_id`. Считаем текстом интерфейса фразу с
+ * пробелами или подпись с заглавной буквы — без служебных символов кода.
+ */
+const looksLikeProse = (text) => {
+  if (text.length < 2 || !/[A-Za-z]/.test(text)) return false;
+  if (/[{}$#@\\_=<>|]/.test(text)) return false;
+  // CSS и инлайновые стили: «position:fixed», «padding:4px 10px».
+  if (/[a-z-]+:\s*[-0-9a-z.,()]/.test(text)) return false;
+  if (/\b\d+px\b|\b\d+deg\b|rgba?\(/i.test(text)) return false;
+  // Список css-классов: все слова строчные, без знаков предложения.
+  const tokens = text.split(/\s+/).filter(Boolean);
+  if (tokens.length > 1 && tokens.every((token) => /^[a-z0-9[\].:_-]+$/.test(token))) return false;
+  if (/\.[a-z]{2,5}\b/i.test(text) && /(?:html|js|css|php|json|map|sql|png|svg)/i.test(text)) return false;
+  if (text.includes('var(--')) return false;             // css-выражение с переменной
+  if (/^https?:\/\//.test(text)) return false;            // адрес
+  if (/^var\(/.test(text)) return false;
+  // css-функция: «minmax(0,1fr)»
+  if (/^(?:min|max|minmax|calc|clamp|repeat|rgba?|hsla?)\(/i.test(text)) return false;
+  // Технические значения: горячие клавиши, пути, css-селекторы, консольные
+  // префиксы, свойства вида `Position.x`, аббревиатуры (ID, JSON, NPC).
+  if (/^(?:Ctrl|Alt|Shift|Meta|Cmd)\+/.test(text)) return false;
+  if (/^[[/.\\]/.test(text)) return false;
+  if (/^[A-Z]{1,5}$/.test(text)) return false;
+  if (/^[A-Za-z]+(?:\.[A-Za-z]+)+$/.test(text)) return false;
+  if (/^[.,#\w-]+(?:, [.#\w-]+)+$/.test(text)) return false;
+  // css-селектор: «input, textarea, select, [contenteditable]»
+  if (/^[a-z][\w-]*(?:\s*,\s*(?:[a-z.#*][\w-]*|\[[^\]]*\]))+$/i.test(text)) return false;
+  // фрагмент кода: «lim.message.min ?»
+  if (/^[A-Za-z_$][\w$]*(?:\.[\w$]+)*\s*\?$/.test(text)) return false;
+  if (/[a-z][A-Z]/.test(text)) return false;                 // camelCase-идентификатор
+  if (/^[a-z0-9-]+$/.test(text)) return false;               // слаг или имя поля
+  if (/[A-Za-z]-[A-Za-z]/.test(text) && !/ /.test(text)) return false;
+  if (/^\d/.test(text)) return false;
+  const words = text.match(/[A-Za-z]{2,}/g) || [];
+  if (!words.length) return false;
+  if (words.length === 1 && !/^[A-Z]/.test(text)) return false;
+  return true;
+};
+// Служебные слова — тоже не подписи.
+const NOT_UI = new Set(['a', 'an', 'the', 'of', 'in', 'on', 'at', 'to', 'for', 'and', 'or', 'is', 'are']);
+
+const untranslated = new Map(); // строка интерфейса → где встретилась
+const russianSource = new Map(); // русский текст в источнике → где встретился
+const checkText = (text, where) => {
+  const core = normalize(text);
+  if (!core || core.length < 2) return;
+  if (DATA_STRINGS.has(core)) return;
+  if (CYRILLIC.test(core)) {
+    if (!russianSource.has(core)) russianSource.set(core, new Set());
+    russianSource.get(core).add(where);
+    return;
+  }
+  if (!looksLikeProse(core)) return;              // числа, идентификаторы, слаги
+  if (NOT_UI.has(core.toLowerCase())) return;
+  if (translatedText(core)) return;
+  if (!untranslated.has(core)) untranslated.set(core, new Set());
+  untranslated.get(core).add(where);
+};
+
+for (const page of list(ROOT, '.html')) {
+  const html = read(path.join(ROOT, page));
+  const withoutComments = html.replace(/<!--[\s\S]*?-->/g, ' ');
+  // Стили и скрипты — не разметка: css-селекторы и комментарии в них не интерфейс.
+  const markupOnly = withoutComments
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ');
+  for (const text of markupTexts(markupOnly)) {
+    checkText(text, page);
+  }
+  for (const match of withoutComments.matchAll(/<script(?![^>]*\bsrc=)[^>]*>([\s\S]*?)<\/script>/gi)) {
+    for (const text of codeTexts(stripComments(match[1]))) checkText(text, page);
+  }
+}
+for (const name of list(CORE_DIR, '.js')) {
+  if (name === 'i18n.js') continue;
+  for (const text of codeTexts(stripComments(read(path.join(CORE_DIR, name))))) {
+    checkText(text, `editor-core/${name}`);
+  }
+}
+for (const text of codeTexts(stripComments(read(path.join(ROOT, 'studio.manifest.js'))))) {
+  checkText(text, 'studio.manifest.js');
+}
+
+for (const [text, where] of [...russianSource].sort((a, b) => a[0].localeCompare(b[0], 'ru'))) {
+  problems.push(`русский текст в источнике: «${text}» (${[...where].slice(0, 3).join(', ')})`);
+}
+for (const [text, where] of [...untranslated].sort((a, b) => a[0].localeCompare(b[0], 'en'))) {
+  problems.push(`нет русского перевода: «${text}» (${[...where].slice(0, 3).join(', ')})`);
 }
 
 // ── Отчёт ────────────────────────────────────────────────────────────────────
 
 console.log(`editor-core: ${list(CORE_DIR, '.js').length} модулей, страниц: ${list(ROOT, '.html').length}`);
-console.log(`каталог EN: ${dict.size} строк`);
+console.log(`языки: ${Object.keys(languages).join(', ') || '—'} · русский словарь: ${dict.size} строк`);
 
 if (untranslated.size) {
-  console.log(`\nБез перевода (${untranslated.size}):`);
-  for (const [text, page] of [...untranslated].slice(0, 40)) console.log(`  ${page}: ${text}`);
-  if (untranslated.size > 40) console.log(`  … и ещё ${untranslated.size - 40}`);
-  warnings.push(`${untranslated.size} строк интерфейса без английского перевода`);
+  console.log(`\nСтроки без русского перевода (${untranslated.size}):`);
+  for (const [text, where] of [...untranslated].slice(0, 20)) {
+    console.log(`  «${text}» — ${[...where].slice(0, 2).join(', ')}`);
+  }
+  if (untranslated.size > 20) console.log(`  … и ещё ${untranslated.size - 20}`);
+}
+if (russianSource.size) {
+  console.log(`\nРусский текст в источнике (${russianSource.size}):`);
+  for (const [text, where] of [...russianSource].slice(0, 20)) {
+    console.log(`  «${text}» — ${[...where].slice(0, 2).join(', ')}`);
+  }
+  if (russianSource.size > 20) console.log(`  … и ещё ${russianSource.size - 20}`);
 }
 
 if (warnings.length) {

@@ -40,12 +40,15 @@
     }
   };
 
-  /** Согласование числительных: RU — 1/2/5, EN — one/other. */
-  const plural = (count, one, few, many) => {
-    if (typeof i18n()?.plural === 'function') return i18n().plural(count, one, few, many);
-    const n = Math.abs(Number(count) || 0);
-    if (n % 10 === 1 && n % 100 !== 11) return one;
-    return many ?? few ?? one;
+  /**
+   * Согласование числительных: `plural(n, 'line', 'lines')`.
+   *
+   * Формы выбирает язык: у русского они лежат в `plurals` под ключом английского
+   * единственного числа, у английского — one/other.
+   */
+  const plural = (count, one, many) => {
+    if (typeof i18n()?.plural === 'function') return i18n().plural(count, one, many);
+    return Math.abs(Number(count) || 0) === 1 ? one : many;
   };
 
   /**
@@ -149,11 +152,11 @@
     const cancel = document.createElement('button');
     cancel.type = 'button';
     cancel.className = 'ec-cancel';
-    cancel.textContent = cancelText || t('Отмена');
+    cancel.textContent = cancelText || t('Cancel');
     const ok = document.createElement('button');
     ok.type = 'button';
     ok.className = danger ? 'ec-ok is-danger' : 'ec-ok';
-    ok.textContent = confirmText || t(danger ? 'Удалить' : 'Продолжить');
+    ok.textContent = confirmText || t(danger ? 'Delete' : 'Continue');
     if (hideCancel) actions.append(ok);
     else actions.append(cancel, ok);
     box.appendChild(actions);
@@ -204,7 +207,7 @@
   const alertDialog = (message, options = {}) => confirmDialog(message, {
     ...options,
     hideCancel: true,
-    confirmText: options.confirmText || t('Понятно'),
+    confirmText: options.confirmText || t('Got it'),
   });
 
   /**

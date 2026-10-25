@@ -135,7 +135,7 @@ test('открытие настроек не сбрасывает пароль �
   assert.equal(editorTest.ok, true);
 
   // И поле показывает, что пароль сохранён на сервере.
-  assert.match(h.byId('f-pass').placeholder, /сохранён на сервере/);
+  assert.match(h.byId('f-pass').placeholder, /stored on the server/);
   assert.equal(h.sandbox.__test.active().hasServerPassword, true);
 });
 

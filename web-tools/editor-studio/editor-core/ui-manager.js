@@ -125,11 +125,11 @@
             <div>
               <div class="editor-modal-title flex items-center gap-2">
                 <i class="fa-solid fa-sliders editor-tone-accent"></i>
-                <span>Быстрые действия и вид</span>
+                <span>Quick actions and view</span>
               </div>
-              <div class="editor-muted-text text-xs mt-1">Горячие клавиши: Ctrl+S сохранить · Alt+N создать · / поиск · Ctrl+K палитра</div>
+              <div class="editor-muted-text text-xs mt-1">Shortcuts: Ctrl+S save · Alt+N create · / search · Ctrl+K palette</div>
             </div>
-            <button type="button" class="editor-icon-btn" data-role="close" title="Закрыть (Esc)">
+            <button type="button" class="editor-icon-btn" data-role="close" title="Close (Esc)">
               <i class="fa-solid fa-xmark"></i>
             </button>
           </div>
@@ -174,7 +174,7 @@
         {
           id: 'save',
           icon: 'fa-floppy-disk',
-          label: 'Сохранить изменения',
+          label: 'Save changes',
           kbd: 'Ctrl+S',
           disabled: !actions.save || actions.save.disabled || actions.save.classList?.contains('hidden'),
           closeOnRun: true,
@@ -183,7 +183,7 @@
         {
           id: 'new',
           icon: 'fa-plus',
-          label: 'Создать новую запись',
+          label: 'Create new record',
           kbd: 'Alt+N',
           disabled: !actions.newItem || actions.newItem.disabled || actions.newItem.classList?.contains('hidden'),
           closeOnRun: true,
@@ -192,7 +192,7 @@
         {
           id: 'refresh',
           icon: 'fa-rotate',
-          label: 'Обновить список',
+          label: 'Refresh the list',
           kbd: 'Alt+R',
           disabled: !actions.refresh || actions.refresh.disabled,
           closeOnRun: true,
@@ -201,7 +201,7 @@
         {
           id: 'search',
           icon: 'fa-magnifying-glass',
-          label: 'Перейти к поиску',
+          label: 'Go to search',
           kbd: '/',
           disabled: !actions.search,
           closeOnRun: true,
@@ -210,7 +210,7 @@
         {
           id: 'prev',
           icon: 'fa-arrow-up',
-          label: 'Предыдущая запись в списке',
+          label: 'Previous record in the list',
           kbd: 'Alt+↑',
           disabled: !actions.list,
           closeOnRun: true,
@@ -219,7 +219,7 @@
         {
           id: 'next',
           icon: 'fa-arrow-down',
-          label: 'Следующая запись в списке',
+          label: 'Next record in the list',
           kbd: 'Alt+↓',
           disabled: !actions.list,
           closeOnRun: true,
@@ -228,31 +228,31 @@
         {
           id: 'compact',
           icon: 'fa-compress',
-          label: prefs.compact ? 'Компактный режим: включён (выключить)' : 'Компактный режим: выключен (включить)',
-          kbd: prefs.compact ? 'ВКЛ' : 'ВЫКЛ',
+          label: prefs.compact ? 'Compact mode: on (turn off)' : 'Compact mode: off (turn on)',
+          kbd: prefs.compact ? 'ON' : 'OFF',
           closeOnRun: false,
           run: () => setMode('compact', !prefs.compact, prefs),
         },
         {
           id: 'focus',
           icon: 'fa-expand',
-          label: prefs.focus ? 'Режим фокуса без списка: включён (показать список)' : 'Режим фокуса: скрыть боковой список',
-          kbd: prefs.focus ? 'ВКЛ' : 'ВЫКЛ',
+          label: prefs.focus ? 'Focus mode without the list: on (show the list)' : 'Focus mode: hide the side list',
+          kbd: prefs.focus ? 'ON' : 'OFF',
           closeOnRun: false,
           run: () => setMode('focus', !prefs.focus, prefs),
         },
         {
           id: 'theme',
           icon: curTheme === 'dark' ? 'fa-sun' : 'fa-moon',
-          label: curTheme === 'dark' ? 'Переключить на светлую тему' : 'Переключить на тёмную тему',
-          kbd: curTheme === 'dark' ? 'Тёмная' : 'Светлая',
+          label: curTheme === 'dark' ? 'Switch to the light theme' : 'Switch to the dark theme',
+          kbd: curTheme === 'dark' ? 'Dark' : 'Light',
           closeOnRun: false,
           run: () => window.EditorCoreTheme?.toggleTheme?.(),
         },
         {
           id: 'help',
           icon: 'fa-circle-question',
-          label: 'Открыть справку по редактору',
+          label: 'Open the editor help',
           kbd: '?',
           disabled: !window.EditorCore?.Help?.open,
           closeOnRun: true,
@@ -294,8 +294,8 @@
       btn.type = 'button';
       btn.className = 'editor-btn editor-btn-secondary editor-tools-btn';
       btn.setAttribute('data-editor-quick-tools', '1');
-      btn.title = 'Быстрые действия и режим вида (Ctrl+K)';
-      btn.innerHTML = '<i class="fa-solid fa-sliders"></i><span>Вид</span><span class="editor-tools-dot"></span>';
+      btn.title = 'Quick actions and view mode (Ctrl+K)';
+      btn.innerHTML = '<i class="fa-solid fa-sliders"></i><span>View</span><span class="editor-tools-dot"></span>';
       host.appendChild(btn);
       syncToolsButtonState(prefs);
 
@@ -395,20 +395,20 @@
 
   const validateValue = ({ value, spec, inputType }) => {
     if (!spec) return { ok: true, message: '' };
-    const message = spec.message || 'Некорректное значение';
+    const message = spec.message || 'Invalid value';
 
     // Required
     if (spec.required) {
       const empty = value == null || value === '' || (Array.isArray(value) && value.length === 0);
-      if (empty) return { ok: false, message: spec.requiredMessage || 'Обязательное поле' };
+      if (empty) return { ok: false, message: spec.requiredMessage || 'Required field' };
     }
 
     // Number bounds
     if (inputType === 'number' || typeof value === 'number') {
       const num = typeof value === 'number' ? value : (value === '' ? NaN : Number(value));
       if (Number.isFinite(num)) {
-        if (spec.min !== undefined && num < spec.min) return { ok: false, message: spec.minMessage || `Минимум: ${spec.min}` };
-        if (spec.max !== undefined && num > spec.max) return { ok: false, message: spec.maxMessage || `Максимум: ${spec.max}` };
+        if (spec.min !== undefined && num < spec.min) return { ok: false, message: spec.minMessage || `Minimum:  ${spec.min}` };
+        if (spec.max !== undefined && num > spec.max) return { ok: false, message: spec.maxMessage || `Maximum:  ${spec.max}` };
       }
     }
 
@@ -523,13 +523,13 @@
 
           // Selected chips
           if (!selected.length) {
-            selectedWrap.innerHTML = `<div class="editor-tags-empty">Ничего не выбрано</div>`;
+            selectedWrap.innerHTML = `<div class="editor-tags-empty">Nothing selected</div>`;
           } else {
             selectedWrap.innerHTML = selected
               .map((v) => {
                 const label = pickLabel(allOptions, v);
                 return `
-                  <button type="button" class="editor-tag" data-tag-remove="${escapeHtml(v)}" title="Убрать">
+                  <button type="button" class="editor-tag" data-tag-remove="${escapeHtml(v)}" title="Remove ">
                     <span class="editor-tag-label">${escapeHtml(label)}</span>
                     <span class="editor-tag-x">×</span>
                   </button>`;
@@ -555,7 +555,7 @@
             if (!exists) {
               extraCreate = `
                 <button type="button" class="editor-tag-option" data-tag-add="${escapeHtml(qRaw)}" data-tag-option-index="0">
-                  + Добавить: <span class="editor-tag-option-strong">${escapeHtml(qRaw)}</span>
+                  + Add: <span class="editor-tag-option-strong">${escapeHtml(qRaw)}</span>
                 </button>`;
             }
           }
@@ -571,7 +571,7 @@
             .join('');
 
           const emptyHtml = (!extraCreate && !filtered.length)
-            ? `<div class="editor-tags-empty">Нет вариантов</div>`
+            ? `<div class="editor-tags-empty">No options</div>`
             : '';
 
           optionsWrap.innerHTML = `
@@ -766,7 +766,7 @@
             ? requestedMode
             : 'universal';
 
-          const fieldLabel = field.dataset.scenarioLabel || 'Сценарий';
+          const fieldLabel = field.dataset.scenarioLabel || 'Scenario';
 
           // Мир записи: компоненты сценария стоят в мире предмета/подземелья/
           // квеста, и карта «Местоположения» должна открыться именно в нём.
@@ -807,7 +807,7 @@
           };
 
           window.EditorCore?.UI?.openScenarioFieldOverlay?.({
-            title: `Редактирование: ${fieldLabel}`,
+            title: `Editing:  ${fieldLabel}`,
             mode,
             worldId: readWorldId(),
             scenarioText: String(hidden.value || ''),
@@ -819,7 +819,7 @@
               const status = field.querySelector('[data-scenario-status]');
               if (status) {
                 const hasValue = String(hidden.value || '').trim().length > 0;
-                status.textContent = hasValue ? 'JSON задан' : 'JSON не задан';
+                status.textContent = hasValue ? 'JSON set' : 'JSON not set';
               }
             }
           });

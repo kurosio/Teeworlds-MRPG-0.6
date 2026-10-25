@@ -22,7 +22,7 @@
   const jsonFetch = async (url, options = {}) => {
     const { timeoutMs = FETCH_TIMEOUT_MS, ...rest } = options;
     const res = await window.EditorCore.Http.json(url, { ...rest, timeout: timeoutMs });
-    if (!res.ok) throw new Error(res.error || 'Запрос не выполнен');
+    if (!res.ok) throw new Error(res.error || 'The request failed');
     return res.data;
   };
 
@@ -297,24 +297,24 @@
   const escapeHtml = (value) => window.EditorCore.utils.escapeHtml(value);
 
   const RESOURCE_LABELS = {
-    vouchers: 'Ваучеры',
-    bots_mobs: 'Мобы',
-    bots_info: 'Боты',
+    vouchers: 'Vouchers',
+    bots_mobs: 'Mobs',
+    bots_info: 'Bots',
     bots_npc: 'NPC',
-    crafts: 'Крафты',
-    warehouses: 'Склады',
-    worlds: 'Миры',
-    aethers: 'Телепорты',
-    items: 'Предметы',
-    dungeons: 'Подземелья',
-    quests: 'Квесты',
-    quest_bots: 'Шаги квестов',
+    crafts: 'Crafts',
+    warehouses: 'Warehouses',
+    worlds: 'Worlds',
+    aethers: 'Teleports',
+    items: 'Items',
+    dungeons: 'Dungeons',
+    quests: 'Quests',
+    quest_bots: 'Quest steps',
   };
 
   const ACTION_LABELS = {
-    create: { text: 'Создание', icon: 'fa-plus', color: '#34d399' },
-    update: { text: 'Обновление', icon: 'fa-pen', color: '#60a5fa' },
-    delete: { text: 'Удаление', icon: 'fa-trash', color: '#f87171' },
+    create: { text: 'Create', icon: 'fa-plus', color: '#34d399' },
+    update: { text: 'Refresh', icon: 'fa-pen', color: '#60a5fa' },
+    delete: { text: 'Delete', icon: 'fa-trash', color: '#f87171' },
   };
 
   /**
@@ -329,7 +329,7 @@
       if (fields.length <= 3) {
         return fields.join(', ');
       }
-      return `${fields.slice(0, 3).join(', ')} и ещё ${fields.length - 3}`;
+      return `${fields.slice(0, 3).join(', ')}  and  ${fields.length - 3}`;
     }
     return '';
   };
@@ -355,8 +355,8 @@
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.className = 'editor-btn editor-btn-sync';
-    btn.title = 'Синхронизация с другой БД';
-    btn.innerHTML = `<i class="fa-solid fa-arrows-rotate"></i><span>Синхро</span>`;
+    btn.title = 'Sync with another database';
+    btn.innerHTML = `<i class="fa-solid fa-arrows-rotate"></i><span>Sync</span>`;
     btn.dataset.syncBtn = '1';
 
     // Badge for unapplied count
@@ -384,7 +384,7 @@
   };
 
   const openSyncModal = async (cfg = {}) => {
-    const editorName = cfg.editorName || 'Редактор';
+    const editorName = cfg.editorName || 'Editor';
 
     // Create modal
     const id = 'editor-sync-modal';
@@ -400,11 +400,11 @@
           <div>
             <h3 class="text-xl font-bold flex items-center gap-2">
               <i class="fa-solid fa-arrows-rotate text-accent"></i>
-              Синхронизация изменений
+              Change sync
             </h3>
-            <p class="editor-muted-text text-sm mt-1">Применение изменений из «${escapeHtml(editorName)}» в другую базу данных.</p>
+            <p class="editor-muted-text text-sm mt-1">Apply changes from “${escapeHtml(editorName)}” to another database.</p>
           </div>
-          <button type="button" class="editor-icon-btn" data-sync-action="close" title="Закрыть">
+          <button type="button" class="editor-icon-btn" data-sync-action="close" title="Close">
             <i class="fa-solid fa-xmark"></i>
           </button>
         </div>
@@ -412,7 +412,7 @@
         <div class="editor-sync-body">
           <!-- Target info -->
           <div class="editor-sync-target" data-sync-role="target-info">
-            <div class="editor-muted-text">Загрузка…</div>
+            <div class="editor-muted-text">Loading…</div>
           </div>
 
           <!-- Schema comparison result -->
@@ -420,14 +420,14 @@
 
           <!-- Operations list -->
           <div class="editor-sync-ops" data-sync-role="operations">
-            <div class="editor-muted-text">Загрузка…</div>
+            <div class="editor-muted-text">Loading…</div>
           </div>
 
           <!-- Apply form -->
           <div class="editor-sync-apply" data-sync-role="apply-form" style="display:none">
             <div class="editor-sync-confirm">
-              <label class="editor-label">Для подтверждения введите <strong>Применить</strong></label>
-              <input type="text" class="w-full editor-input form-input" data-sync-role="confirm-input" placeholder="Применить" />
+              <label class="editor-label">To confirm, type <strong>Apply</strong></label>
+              <input type="text" class="w-full editor-input form-input" data-sync-role="confirm-input" placeholder="Apply" />
             </div>
           </div>
 
@@ -436,39 +436,38 @@
             <div class="editor-sync-reverse-head">
               <i class="fa-solid fa-cloud-arrow-down"></i>
               <div>
-                <div class="font-semibold">Обратная синхронизация: целевая → текущая БД</div>
+                <div class="font-semibold">Reverse sync: target → current database</div>
                 <div class="text-xs editor-muted-text">
-                  Заменяет данные текущей БД данными целевой. Аккаунты и связанные с ними таблицы не затрагиваются.
-                  Перед загрузкой автоматически создаётся дамп текущей БД.
+                  Replaces the current database data with the target one. Accounts and related tables are untouched. A dump of the current database is created automatically before loading.
                 </div>
               </div>
             </div>
             <div data-sync-role="pull-pending"></div>
             <div class="editor-sync-reverse-actions">
               <button type="button" class="editor-btn editor-btn-secondary" data-sync-action="pull-check" disabled>
-                <i class="fa-solid fa-shield-halved"></i><span>Проверить загрузку</span>
+                <i class="fa-solid fa-shield-halved"></i><span>Check the load</span>
               </button>
             </div>
             <div data-sync-role="pull-result"></div>
             <div class="editor-sync-pull-apply" data-sync-role="pull-apply-form" style="display:none">
               <div class="editor-sync-confirm">
-                <label class="editor-label">Для подтверждения введите <strong>Перезаписать</strong></label>
-                <input type="text" class="w-full editor-input form-input" data-sync-role="pull-confirm" placeholder="Перезаписать" />
+                <label class="editor-label">To confirm, type <strong>Overwrite</strong></label>
+                <input type="text" class="w-full editor-input form-input" data-sync-role="pull-confirm" placeholder="Overwrite" />
               </div>
               <button type="button" class="editor-btn editor-btn-danger" data-sync-action="pull-apply" disabled>
-                <i class="fa-solid fa-cloud-arrow-down"></i><span>Загрузить из целевой БД</span>
+                <i class="fa-solid fa-cloud-arrow-down"></i><span>Load from the target database</span>
               </button>
             </div>
           </div>
         </div>
 
         <div class="editor-sync-footer">
-          <button type="button" class="editor-btn editor-btn-secondary" data-sync-action="close">Закрыть</button>
+          <button type="button" class="editor-btn editor-btn-secondary" data-sync-action="close">Close</button>
           <button type="button" class="editor-btn editor-btn-secondary" data-sync-action="check" disabled>
-            <i class="fa-solid fa-shield-halved"></i><span>Проверить структуру</span>
+            <i class="fa-solid fa-shield-halved"></i><span>Check the schema</span>
           </button>
           <button type="button" class="editor-btn editor-btn-primary" data-sync-action="apply" disabled>
-            <i class="fa-solid fa-play"></i><span>Применить</span>
+            <i class="fa-solid fa-play"></i><span>Apply</span>
           </button>
         </div>
       </div>
@@ -507,7 +506,7 @@
                   <div class="text-xs editor-muted-text">${escapeHtml(res.target.database || '')} @ ${escapeHtml(res.target.host || '')}:${res.target.port || 3306}</div>
                 </div>
               </div>
-              <span class="editor-sync-status-ok"><i class="fa-solid fa-circle-check"></i> Настроено</span>
+              <span class="editor-sync-status-ok"><i class="fa-solid fa-circle-check"></i> Configured</span>
             </div>
           `;
           btnCheck.disabled = false;
@@ -518,18 +517,18 @@
               <div class="flex items-center gap-2">
                 <i class="fa-solid fa-database editor-muted-text"></i>
                 <div>
-                  <div class="font-semibold">Целевая БД не настроена</div>
-                  <div class="text-xs editor-muted-text">Перейдите в Настройки → раздел «Синхронизация» для настройки.</div>
+                  <div class="font-semibold">Target database is not configured</div>
+                  <div class="text-xs editor-muted-text">Go to Settings → “Synchronization” to configure it.</div>
                 </div>
               </div>
-              <span class="editor-sync-status-err"><i class="fa-solid fa-circle-xmark"></i> Не настроено</span>
+              <span class="editor-sync-status-err"><i class="fa-solid fa-circle-xmark"></i> Not configured</span>
             </div>
           `;
           btnCheck.disabled = true;
           btnApply.disabled = true;
         }
       } catch (err) {
-        $('target-info').innerHTML = `<div class="text-red-400 text-sm">Ошибка загрузки: ${escapeHtml(err.message)}</div>`;
+        $('target-info').innerHTML = `<div class="text-red-400 text-sm">Load failed:  ${escapeHtml(err.message)}</div>`;
       }
     };
 
@@ -543,8 +542,8 @@
         opsContainer.innerHTML = `
           <div class="editor-sync-ops-empty">
             <i class="fa-solid fa-circle-check text-emerald-400 text-2xl"></i>
-            <div class="font-semibold">Нет неприменённых изменений</div>
-            <div class="editor-muted-text text-sm">Все изменения уже синхронизированы или история пуста.</div>
+            <div class="font-semibold">No unapplied changes</div>
+            <div class="editor-muted-text text-sm">All changes are already synced or the history is empty.</div>
           </div>
         `;
         btnCheck.disabled = true;
@@ -564,10 +563,10 @@
         <div class="editor-sync-ops-header">
           <div class="font-semibold flex items-center gap-2">
             <i class="fa-solid fa-list-check text-accent"></i>
-            Неприменённые изменения: <span class="text-accent">${ops.length}</span>
+            Unapplied changes: <span class="text-accent">${ops.length}</span>
           </div>
           <button type="button" class="editor-btn editor-btn-secondary text-xs" data-sync-action="clear-history" style="padding:4px 10px">
-            <i class="fa-solid fa-broom"></i><span>Очистить историю</span>
+            <i class="fa-solid fa-broom"></i><span>Clear history</span>
           </button>
         </div>
         <div class="editor-sync-ops-list">
@@ -579,7 +578,7 @@
           <div class="editor-sync-ops-group">
             <div class="editor-sync-ops-group-title">
               <span>${escapeHtml(label)}</span>
-              <span class="editor-muted-text">${entries.length} оп.</span>
+              <span class="editor-muted-text">${entries.length}  ops.</span>
             </div>
         `;
         for (const entry of entries) {
@@ -594,7 +593,7 @@
               ${recordName ? `<span class="editor-sync-op-name">${escapeHtml(recordName)}</span>` : ''}
               ${description ? `<span class="editor-sync-op-desc">${escapeHtml(description)}</span>` : ''}
               <span class="editor-sync-op-time">${formatTimestamp(entry.timestamp)}</span>
-              <button type="button" class="editor-icon-btn editor-icon-danger editor-sync-op-remove" data-sync-remove="${entry.id}" title="Убрать из очереди">
+              <button type="button" class="editor-icon-btn editor-icon-danger editor-sync-op-remove" data-sync-remove="${entry.id}" title="Remove from the queue">
                 <i class="fa-solid fa-xmark"></i>
               </button>
             </div>
@@ -624,7 +623,7 @@
 
       // Clear history button
       opsContainer.querySelector('[data-sync-action="clear-history"]')?.addEventListener('click', async () => {
-        if (!await EditorCore.Page.confirm('Очистить всю историю изменений? Это действие нельзя отменить.')) return;
+        if (!await EditorCore.Page.confirm('Clear the entire change history? This cannot be undone.')) return;
         clearHistory();
         renderOperations();
         updateAllBadges();
@@ -644,13 +643,13 @@
       $('schema-result').innerHTML = `
         <div class="editor-sync-schema-loading">
           <i class="fa-solid fa-spinner fa-spin"></i>
-          <span>Сравнение структур БД…</span>
+          <span>Comparing database schemas…</span>
         </div>
       `;
 
       try {
         const res = await compareSchema({});
-        if (!res.ok) throw new Error(res.error || 'Ошибка сравнения');
+        if (!res.ok) throw new Error(res.error || 'Comparison failed');
 
         const c = res.comparison;
         let html = '';
@@ -661,11 +660,11 @@
             <div class="editor-sync-schema-ok">
               <i class="fa-solid fa-circle-check text-emerald-400"></i>
               <div>
-                <div class="font-semibold text-emerald-300">Структуры совместимы</div>
+                <div class="font-semibold text-emerald-300">Schemas are compatible</div>
                 <div class="text-xs editor-muted-text">
-                  Таблиц OK: ${c.tables_ok.length}
-                  ${c.tables_missing.length ? `, отсутствуют: ${c.tables_missing.length}` : ''}
-                  ${c.issues.filter(i => i.level === 'warning').length ? `, предупреждений: ${c.issues.filter(i => i.level === 'warning').length}` : ''}
+                  Tables OK:  ${c.tables_ok.length}
+                  ${c.tables_missing.length ? `, missing: ${c.tables_missing.length}` : ''}
+                  ${c.issues.filter(i => i.level === 'warning').length ? `, warnings: ${c.issues.filter(i => i.level === 'warning').length}` : ''}
                 </div>
               </div>
             </div>
@@ -690,8 +689,8 @@
             <div class="editor-sync-schema-err">
               <i class="fa-solid fa-circle-xmark text-red-400"></i>
               <div>
-                <div class="font-semibold text-red-300">Структуры несовместимы</div>
-                <div class="text-xs editor-muted-text">Применение изменений невозможно без обновления структуры целевой БД.</div>
+                <div class="font-semibold text-red-300">Schemas are incompatible</div>
+                <div class="text-xs editor-muted-text">Changes cannot be applied until the target database schema is updated.</div>
               </div>
             </div>
           `;
@@ -718,7 +717,7 @@
           <div class="editor-sync-schema-err">
             <i class="fa-solid fa-circle-xmark text-red-400"></i>
             <div>
-              <div class="font-semibold text-red-300">Ошибка проверки</div>
+              <div class="font-semibold text-red-300">Check failed</div>
               <div class="text-xs">${escapeHtml(err.message)}</div>
             </div>
           </div>
@@ -732,27 +731,27 @@
     // Apply
     btnApply.addEventListener('click', async () => {
       if (!schemaOk) {
-        toast('Сначала проверьте совместимость структур.', 'error');
+        toast('Check schema compatibility first.', 'error');
         return;
       }
 
       const confirm = confirmInput?.value?.trim() || '';
-      if (confirm.toUpperCase() !== 'ПРИМЕНИТЬ' && confirm.toUpperCase() !== 'APPLY') {
-        toast('Введите "Применить" для подтверждения.', 'error');
+      if (confirm.toUpperCase() !== 'APPLY' && confirm.toUpperCase() !== 'APPLY') {
+        toast('Type "Apply" to confirm.', 'error');
         confirmInput?.focus();
         return;
       }
 
       const entries = getUnappliedOperations();
       if (!entries.length) {
-        toast('Нет неприменённых операций.', 'warning');
+        toast('No unapplied operations.', 'warning');
         return;
       }
 
       const operations = buildOperationsFromHistory(entries);
 
       btnApply.disabled = true;
-      btnApply.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i><span>Применение…</span>`;
+      btnApply.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i><span>Applying…</span>`;
 
       try {
         const res = await applyOperations({
@@ -763,13 +762,13 @@
         if (!res.ok) {
           // Show validation errors if any
           if (res.validation_errors) {
-            let msg = 'Ошибки валидации:\n';
+            let msg = 'Validation errors:\n';
             for (const ve of (res.validation_errors || [])) {
               msg += `  #${ve.index}: ${ve.error}\n`;
             }
             toast(msg, 'error');
           } else {
-            toast(res.error || 'Ошибка применения', 'error');
+            toast(res.error || 'Apply failed', 'error');
           }
 
           // Show comparison if available
@@ -784,7 +783,7 @@
         const entryIds = entries.map(e => e.id);
         markAsApplied(entryIds);
 
-        toast(`Успешно применено: ${res.success} операций в «${res.target?.name || 'Target'}»`, 'success');
+        toast(`Applied successfully:  ${res.success}  operations in “${res.target?.name || 'Target'}»`, 'success');
 
         // Update UI
         renderOperations();
@@ -794,19 +793,19 @@
           <div class="editor-sync-schema-ok">
             <i class="fa-solid fa-circle-check text-emerald-400"></i>
             <div>
-              <div class="font-semibold text-emerald-300">Изменения применены</div>
+              <div class="font-semibold text-emerald-300">Changes applied</div>
               <div class="text-xs editor-muted-text">
-                Успешно: ${res.success} | Цель: ${escapeHtml(res.target?.database || '')}
+                Success:  ${res.success}  | Target:  ${escapeHtml(res.target?.database || '')}
               </div>
             </div>
           </div>
         `;
 
       } catch (err) {
-        toast(err.message || 'Ошибка применения', 'error');
+        toast(err.message || 'Apply failed', 'error');
       } finally {
         btnApply.disabled = false;
-        btnApply.innerHTML = `<i class="fa-solid fa-play"></i><span>Применить в ${escapeHtml(targetInfo?.name || 'Target')}</span>`;
+        btnApply.innerHTML = `<i class="fa-solid fa-play"></i><span>Apply to  ${escapeHtml(targetInfo?.name || 'Target')}</span>`;
       }
     });
 
@@ -814,7 +813,7 @@
     const btnPullCheck = modal.querySelector('[data-sync-action="pull-check"]');
     const btnPullApply = modal.querySelector('[data-sync-action="pull-apply"]');
     const pullConfirmInput = $('pull-confirm');
-    const PULL_CONFIRM_WORDS = ['ПЕРЕЗАПИСАТЬ', 'OVERWRITE'];
+    const PULL_CONFIRM_WORDS = ['OVERWRITE', 'OVERWRITE'];
     let pullData = null;   // last successful preview
     let pullBusy = false;
 
@@ -841,8 +840,7 @@
         <div class="editor-sync-warn">
           <i class="fa-solid fa-triangle-exclamation"></i>
           <div>
-            Есть неприменённые изменения (${pending}). Загрузка перезапишет текущую БД, поэтому сначала
-            примените их в целевую БД или очистите историю.
+            There are ${pending} unapplied changes. Loading overwrites the current database, so apply them to the target database first or clear the history.
           </div>
         </div>
       `: '';
@@ -858,7 +856,7 @@
       btnPullApply.disabled = pullBusy || !canApply || !confirmOk;
 
       const applyLabel = btnPullApply.querySelector('span');
-      if (applyLabel) applyLabel.textContent = `Загрузить из ${targetInfo?.name || 'целевой БД'}`;
+      if (applyLabel) applyLabel.textContent = `Load from  ${targetInfo?.name || 'target database'}`;
     };
 
     const renderPullPreview = (res) => {
@@ -871,7 +869,7 @@
       let html = `
         <div class="editor-sync-pull-summary">
           <div class="text-sm">
-            Текущая БД <b>${escapeHtml(res.local_database || '')}</b> будет заменена данными из
+            Current database <b>${escapeHtml(res.local_database || '')}</b> will be replaced with data from
             <b>${escapeHtml(res.target?.name || 'Target')}</b> (${escapeHtml(res.target?.database || '')}).
           </div>
         </div>
@@ -882,8 +880,8 @@
           <div class="editor-sync-schema-err">
             <i class="fa-solid fa-circle-xmark text-red-400"></i>
             <div>
-              <div class="font-semibold text-red-300">Структуры несовместимы</div>
-              <div class="text-xs editor-muted-text">Загрузка невозможна, пока структуры не совпадут.</div>
+              <div class="font-semibold text-red-300">Schemas are incompatible</div>
+              <div class="text-xs editor-muted-text">Loading is impossible until the schemas match.</div>
             </div>
           </div>
           <div class="editor-sync-schema-issues">
@@ -898,8 +896,8 @@
           <div class="editor-sync-schema-ok">
             <i class="fa-solid fa-circle-check text-emerald-400"></i>
             <div>
-              <div class="font-semibold text-emerald-300">Загрузка возможна</div>
-              <div class="text-xs editor-muted-text">Таблиц к перезаписи: ${tables.length}, строк в целевой БД: ${totalTarget}</div>
+              <div class="font-semibold text-emerald-300">Loading is possible</div>
+              <div class="text-xs editor-muted-text">Tables to overwrite:  ${tables.length}, rows in the target database:  ${totalTarget}</div>
             </div>
           </div>
         `;
@@ -914,10 +912,10 @@
       if (tables.length) {
         html += `
           <details class="editor-sync-pull-details">
-            <summary>Таблицы к перезаписи (${tables.length})</summary>
+            <summary>Tables to overwrite (${tables.length})</summary>
             <div class="editor-sync-pull-table-wrap">
               <table class="editor-sync-pull-table">
-                <thead><tr><th>Таблица</th><th>Сейчас</th><th>Станет</th></tr></thead>
+                <thead><tr><th>Table</th><th>Now</th><th>After</th></tr></thead>
                 <tbody>
                   ${tables.map(t => `
                     <tr>
@@ -935,10 +933,10 @@
       if (skipped.length) {
         html += `
           <details class="editor-sync-pull-details">
-            <summary>Не затрагиваются (${skipped.length})</summary>
+            <summary>Not affected (${skipped.length})</summary>
             <div class="editor-sync-pull-table-wrap">
               <table class="editor-sync-pull-table">
-                <thead><tr><th>Таблица</th><th>Причина</th></tr></thead>
+                <thead><tr><th>Table</th><th>Reason</th></tr></thead>
                 <tbody>
                   ${skipped.map(s => `
                     <tr>
@@ -953,7 +951,7 @@
       }
 
       if (localOnly.length) {
-        html += `<div class="text-xs editor-muted-text">Есть только в текущей БД (не изменяются): ${localOnly.map(escapeHtml).join(', ')}</div>`;
+        html += `<div class="text-xs editor-muted-text">Only in the current database (unchanged):  ${localOnly.map(escapeHtml).join(', ')}</div>`;
       }
 
       setPullResult(html);
@@ -962,7 +960,7 @@
     btnPullCheck.addEventListener('click', async () => {
       pullBusy = true;
       refreshReverseGate();
-      setPullLoading('Сравнение текущей и целевой БД…');
+      setPullLoading('Comparing the current and target databases…');
       try {
         const res = await pullPreview({ targetProfileId: '' });
         pullData = res;
@@ -973,7 +971,7 @@
           <div class="editor-sync-schema-err">
             <i class="fa-solid fa-circle-xmark text-red-400"></i>
             <div>
-              <div class="font-semibold text-red-300">Ошибка проверки</div>
+              <div class="font-semibold text-red-300">Check failed</div>
               <div class="text-xs">${escapeHtml(err.message)}</div>
             </div>
           </div>
@@ -986,17 +984,17 @@
 
     btnPullApply.addEventListener('click', async () => {
       if (!pullData?.comparison?.compatible) {
-        toast('Сначала выполните проверку загрузки.', 'error');
+        toast('Run the load check first.', 'error');
         return;
       }
       const phrase = (pullConfirmInput?.value || '').trim().toUpperCase();
       if (!PULL_CONFIRM_WORDS.includes(phrase)) {
-        toast('Введите «Перезаписать» для подтверждения.', 'error');
+        toast('Type “Overwrite” to confirm.', 'error');
         pullConfirmInput?.focus();
         return;
       }
       if (getUnappliedCount() > 0) {
-        toast('Есть неприменённые изменения. Сначала примените или очистите их.', 'error');
+        toast('There are unapplied changes. Apply or clear them first.', 'error');
         return;
       }
 
@@ -1005,7 +1003,7 @@
       let backupFile = '';
       try {
         // 1) Full dump of the current DB — the only way back if the copy goes wrong.
-        setPullLoading('Создание резервной копии текущей БД…');
+        setPullLoading('Backing up the current database…');
         const dump = await createBackup({
           confirmDb: pullData.local_database,
           label: 'before_reverse_sync',
@@ -1013,7 +1011,7 @@
         backupFile = dump?.file || '';
 
         // 2) Overwrite the current DB from the target.
-        setPullLoading('Загрузка данных из целевой БД…');
+        setPullLoading('Loading data from the target database…');
         const res = await pullFromTarget({ targetProfileId: '', confirmPhrase: pullConfirmInput.value.trim() });
 
         const warnings = (res.warnings || []).map(w => `<div class="editor-sync-schema-warning"><i class="fa-solid fa-triangle-exclamation text-amber-400"></i> ${escapeHtml(w)}</div>`).join('');
@@ -1021,27 +1019,26 @@
           <div class="editor-sync-schema-ok">
             <i class="fa-solid fa-circle-check text-emerald-400"></i>
             <div>
-              <div class="font-semibold text-emerald-300">Текущая БД обновлена из целевой</div>
+              <div class="font-semibold text-emerald-300">Current database updated from the target</div>
               <div class="text-xs editor-muted-text">
-                Таблиц: ${(res.tables || []).length}, строк: ${res.total_rows ?? 0}.
-                Резервная копия: ${escapeHtml(backupFile || '—')}. Страница будет обновлена.
+                Tables:  ${(res.tables || []).length}, rows:  ${res.total_rows ?? 0}. Backup:  ${escapeHtml(backupFile || '—')}. The page will be reloaded.
               </div>
             </div>
           </div>
           ${warnings}
         `);
-        toast(`Загрузка завершена: ${res.total_rows ?? 0} строк`, 'success');
+        toast(`Load complete:  ${res.total_rows ?? 0}  rows`, 'success');
         pullData = null;
         setTimeout(() => window.location.reload(), 1500);
       } catch (err) {
-        toast(err.message || 'Ошибка загрузки', 'error');
+        toast(err.message || 'Loading failed', 'error');
         setPullResult(`
           <div class="editor-sync-schema-err">
             <i class="fa-solid fa-circle-xmark text-red-400"></i>
             <div>
-              <div class="font-semibold text-red-300">Загрузка не выполнена</div>
+              <div class="font-semibold text-red-300">Load failed</div>
               <div class="text-xs">${escapeHtml(err.message)}</div>
-              ${backupFile ? `<div class="text-xs editor-muted-text mt-1">Резервная копия сохранена: ${escapeHtml(backupFile)}</div>` : ''}
+              ${backupFile ? `<div class="text-xs editor-muted-text mt-1">Backup saved: ${escapeHtml(backupFile)}</div>` : ''}
             </div>
           </div>
         `);

@@ -10,7 +10,7 @@
   const requestApi = () => window.EditorCore?.RequestContext || null;
   const assertRequestWritable = () => {
     if (requestApi()?.isReadOnly?.()) {
-      throw new Error('Открыт read-only снимок запроса. Вернитесь в запрос и сохраните исправленную версию там.');
+      throw new Error('A read-only snapshot of the request is open. Go back to the request and save the fixed version there.');
     }
   };
   const isGuestMode = async () => {
@@ -31,7 +31,7 @@
   const recordSync = (resource, action, { id, data = null, skip = false } = {}) => {
     const sync = window.EditorCore?.Sync;
     if (skip || !DBCrud._syncRecordEnabled || !sync || (action === 'create' && !id)) return;
-    const labels = { create: 'Создание', update: 'Обновление', remove: 'Удаление' };
+    const labels = { create: 'Create', update: 'Refresh', remove: 'Delete' };
     try {
       sync.record(resource, action === 'remove' ? 'delete' : action, {
         id,
@@ -126,7 +126,7 @@
         const operations = changed.map(row => ({
           id: row.ID,
           data: { GroupName: row.newGroupName },
-          label: `Переименование группы #${row.ID}`,
+          label: `Renaming group #${row.ID}`,
         }));
         if (sync.recordMany) sync.recordMany('crafts', 'update', operations);
         else operations.forEach(operation => sync.record('crafts', 'update', operation));

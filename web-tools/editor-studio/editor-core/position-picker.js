@@ -84,20 +84,20 @@
   };
 
   const FLAG_LABELS = {
-    safe: () => t('Без коллизий'),
-    highlightTiles: () => t('Подсветка тайлов'),
-    tiles: () => t('Игровой слой'),
-    radius: () => t('Радиус'),
-    snap: () => t('Центры тайлов'),
-    grid: () => t('Сетка'),
+    safe: () => t('No collision tiles'),
+    highlightTiles: () => t('Tile highlights'),
+    tiles: () => t('Gameplay layer'),
+    radius: () => t('Radius'),
+    snap: () => t('Tile centers'),
+    grid: () => t('Grid'),
   };
   const FLAG_TITLES = {
-    safe: () => t('Нельзя ставить точку на стене, смерти или тайле без крюка'),
-    highlightTiles: () => t('Подсветить выбранные ID тайлов на карте'),
-    tiles: () => t('Показать игровой слой карты'),
-    radius: () => t('Показать радиус вокруг точки'),
-    snap: () => t('Привязать точку к центрам тайлов'),
-    grid: () => t('Показать сетку тайлов'),
+    safe: () => t('A point cannot be placed on a solid, death or no-hook tile'),
+    highlightTiles: () => t('Highlight selected tile IDs on the map'),
+    tiles: () => t('Show the map gameplay layer'),
+    radius: () => t('Show a radius around the point'),
+    snap: () => t('Snap the point to tile centers'),
+    grid: () => t('Show the tile grid'),
   };
   const flagOn = (o, key) => ({
     safe: o.safe.length > 0,
@@ -117,7 +117,7 @@
   /** Разметка элемента. `xInputHtml`/`yInputHtml` — уже готовые скрытые инпуты. */
   const render = (options = {}) => {
     const {
-      label = t('Позиция на карте'),
+      label = t('Map position'),
       xPath = '', yPath = '',
       xInputHtml = '', yInputHtml = '',
       xFieldPath = '', yFieldPath = '',
@@ -132,7 +132,7 @@
     const worldAttr = attr('data-world-id', worldId);
     const numAttrs = (axis) => `${attr('min', min)}${attr('max', max)}${attr('step', step)}`
       + ` data-position-manual-axis="${axis}"`;
-    return `<div class="position-picker${compact ? ' position-picker--compact' : ''}${pinned ? ' is-pinned' : ''}"\n      data-position-picker="1" data-map-picker="${esc(tag)}"${attr('id', id)}${attr('data-position-field-path', fieldPath)}\n      data-position-label="${esc(label)}" data-position-pinned="${pinned ? '1' : '0'}"\n      data-position-min="${esc(min)}" data-position-max="${esc(max)}" data-position-step="${esc(step)}"\n      data-map-x-path="${esc(xPath)}" data-map-y-path="${esc(yPath)}"\n      data-map-world-path="${esc(worldPath)}"${worldAttr}\n      data-map-options="${esc(JSON.stringify(mapOptions))}"\n      role="group" aria-label="${esc(label)}">\n      ${xInputHtml}${yInputHtml}\n      <div class="position-picker__main">\n        <span class="position-picker__icon" aria-hidden="true"><i class="fa-solid fa-map-pin"></i></span>\n        <div class="position-picker__copy">\n          <strong class="position-picker__title" data-position-title>${esc(label)}</strong>\n          <div class="position-picker__state" aria-live="polite">\n            <span data-position-state>${esc(t('Точка не закреплена'))}</span>\n            <span class="position-picker__axis"${attr('data-field-path', xFieldPath)}>X <b data-position-value="x">—</b></span>\n            <span class="position-picker__axis"${attr('data-field-path', yFieldPath)}>Y <b data-position-value="y">—</b></span>\n          </div>\n          <div class="position-picker__flags" data-position-flags>${flagsHtml(mapOptions)}</div>\n          <div class="position-picker__warning" data-position-warning hidden></div>\n        </div>\n        ${world ? `<div class="position-picker__world" data-position-world-wrap>\n          <label class="position-picker__world-label" data-position-world-label>${esc(t('Мир'))}</label>\n          <select class="position-picker__world-select" data-position-world-select\n                  aria-label="${esc(t('Мир'))}" title="${esc(t('Мир'))}">\n            <option value="">${esc(t('— выберите мир —'))}</option>\n          </select>\n        </div>` : ''}\n        <div class="position-picker__actions">\n          ${map ? `<button type="button" class="editor-btn editor-btn-secondary" data-position-action="map" data-map-pick="1"\n              title="${esc(t('Закрепить позицию на карте'))}" aria-label="${esc(t('Закрепить позицию на карте'))}">\n            <i class="fa-solid fa-map-location-dot" aria-hidden="true"></i><span data-position-map-label>${esc(t('Закрепить позицию'))}</span>\n          </button>` : ''}\n          <button type="button" class="editor-btn editor-btn-secondary" data-position-action="manual"\n                  aria-expanded="false" title="${esc(t('Ввести координаты вручную'))}" aria-label="${esc(t('Ввести координаты вручную'))}">\n            <i class="fa-solid fa-keyboard" aria-hidden="true"></i><span data-position-manual-label>${esc(t('Ввести вручную'))}</span>\n          </button>\n        </div>\n      </div>\n      <div class="position-picker__manual" data-position-manual hidden>\n        <label class="position-picker__manual-field">X\n          <input class="editor-input form-input" type="number"${numAttrs('x')} value="" autocomplete="off">\n        </label>\n        <label class="position-picker__manual-field">Y\n          <input class="editor-input form-input" type="number"${numAttrs('y')} value="" autocomplete="off">\n        </label>\n        <div class="position-picker__manual-actions">\n          <button type="button" class="editor-btn editor-btn-primary editor-btn--sm" data-position-action="manual-apply">${esc(t('Применить'))}</button>\n          <button type="button" class="editor-btn editor-btn-secondary editor-btn--sm" data-position-action="manual-cancel">${esc(t('Отмена'))}</button>\n        </div>\n      </div>\n    </div>`;
+    return `<div class="position-picker${compact ? ' position-picker--compact' : ''}${pinned ? ' is-pinned' : ''}"\n      data-position-picker="1" data-map-picker="${esc(tag)}"${attr('id', id)}${attr('data-position-field-path', fieldPath)}\n      data-position-label="${esc(label)}" data-position-pinned="${pinned ? '1' : '0'}"\n      data-position-min="${esc(min)}" data-position-max="${esc(max)}" data-position-step="${esc(step)}"\n      data-map-x-path="${esc(xPath)}" data-map-y-path="${esc(yPath)}"\n      data-map-world-path="${esc(worldPath)}"${worldAttr}\n      data-map-options="${esc(JSON.stringify(mapOptions))}"\n      role="group" aria-label="${esc(label)}">\n      ${xInputHtml}${yInputHtml}\n      <div class="position-picker__main">\n        <span class="position-picker__icon" aria-hidden="true"><i class="fa-solid fa-map-pin"></i></span>\n        <div class="position-picker__copy">\n          <strong class="position-picker__title" data-position-title>${esc(label)}</strong>\n          <div class="position-picker__state" aria-live="polite">\n            <span data-position-state>${esc(t('No pinned point'))}</span>\n            <span class="position-picker__axis"${attr('data-field-path', xFieldPath)}>X <b data-position-value="x">—</b></span>\n            <span class="position-picker__axis"${attr('data-field-path', yFieldPath)}>Y <b data-position-value="y">—</b></span>\n          </div>\n          <div class="position-picker__flags" data-position-flags>${flagsHtml(mapOptions)}</div>\n          <div class="position-picker__warning" data-position-warning hidden></div>\n        </div>\n        ${world ? `<div class="position-picker__world" data-position-world-wrap>\n          <label class="position-picker__world-label" data-position-world-label>${esc(t('World'))}</label>\n          <select class="position-picker__world-select" data-position-world-select\n                  aria-label="${esc(t('World'))}" title="${esc(t('World'))}">\n            <option value="">${esc(t('— select a world —'))}</option>\n          </select>\n        </div>` : ''}\n        <div class="position-picker__actions">\n          ${map ? `<button type="button" class="editor-btn editor-btn-secondary" data-position-action="map" data-map-pick="1"\n              title="${esc(t('Pin position on the map'))}" aria-label="${esc(t('Pin position on the map'))}">\n            <i class="fa-solid fa-map-location-dot" aria-hidden="true"></i><span data-position-map-label>${esc(t('Pin position'))}</span>\n          </button>` : ''}\n          <button type="button" class="editor-btn editor-btn-secondary" data-position-action="manual"\n                  aria-expanded="false" title="${esc(t('Enter coordinates manually'))}" aria-label="${esc(t('Enter coordinates manually'))}">\n            <i class="fa-solid fa-keyboard" aria-hidden="true"></i><span data-position-manual-label>${esc(t('Enter manually'))}</span>\n          </button>\n        </div>\n      </div>\n      <div class="position-picker__manual" data-position-manual hidden>\n        <label class="position-picker__manual-field">X\n          <input class="editor-input form-input" type="number"${numAttrs('x')} value="" autocomplete="off">\n        </label>\n        <label class="position-picker__manual-field">Y\n          <input class="editor-input form-input" type="number"${numAttrs('y')} value="" autocomplete="off">\n        </label>\n        <div class="position-picker__manual-actions">\n          <button type="button" class="editor-btn editor-btn-primary editor-btn--sm" data-position-action="manual-apply">${esc(t('Apply'))}</button>\n          <button type="button" class="editor-btn editor-btn-secondary editor-btn--sm" data-position-action="manual-cancel">${esc(t('Cancel'))}</button>\n        </div>\n      </div>\n    </div>`;
   };
 
   /** Флаги, с которыми отрисован элемент. */
@@ -224,7 +224,7 @@
     if (wrap) {
       const canSave = !!boundWorldInput(root) || worldCallbacks.has(root);
       root.dataset.worldSave = canSave ? '1' : '0';
-      const title = canSave ? t('Мир сохраняется в записи') : t('Мир используется только для карты');
+      const title = canSave ? t('The world is saved in the record') : t('The world is used for the map only');
       wrap.title = title;
       if (select) select.title = title;
     }
@@ -235,14 +235,14 @@
     const select = root.querySelector('[data-position-world-select]');
     if (!select) return;
     const current = resolveWorldId(root);
-    const html = [`<option value="">${esc(t('— выберите мир —'))}</option>`];
+    const html = [`<option value="">${esc(t('— select a world —'))}</option>`];
     if (current !== null && !options.some((option) => option.id === current)) {
       html.push(`<option value="${current}">#${current}</option>`);
     }
     options.forEach((option) => {
       html.push(`<option value="${option.id}">${option.id}: ${esc(option.name)}</option>`);
     });
-    if (!options.length) html.push(`<option value="" disabled>${esc(t('Список миров недоступен'))}</option>`);
+    if (!options.length) html.push(`<option value="" disabled>${esc(t('The world list is unavailable'))}</option>`);
     select.innerHTML = html.join('');
     select.dataset.loaded = '1';
     select.value = current === null ? '' : String(current);
@@ -269,10 +269,10 @@
   const stateText = (root) => {
     const pinned = isPinned(root);
     const { x, y } = readValue(root);
-    if (!pinned) return t('Точка не закреплена');
+    if (!pinned) return t('No pinned point');
     const worldId = syncWorldContext(root);
     const world = worldId === null ? '—' : `#${worldId}`;
-    return t('Точка закреплена · мир {0} · X {1} · Y {2}', [world, formatCoord(x), formatCoord(y)]);
+    return t('Position pinned · world  {0} · X {1} · Y {2}', [world, formatCoord(x), formatCoord(y)]);
   };
 
   const updateText = (root) => {
@@ -282,7 +282,7 @@
     root.classList.toggle('is-pinned', pinned);
     root.dataset.positionPinned = pinned ? '1' : '0';
     syncWorldContext(root);
-    const label = t(root.getAttribute('data-position-label') || t('Позиция на карте'));
+    const label = t(root.getAttribute('data-position-label') || t('Map position'));
     const titleEl = root.querySelector('[data-position-title]');
     if (titleEl) titleEl.textContent = label;
     root.setAttribute('aria-label', label);
@@ -294,8 +294,8 @@
     if (yEl) yEl.textContent = pinned ? formatCoord(y) : '—';
     const mapBtn = root.querySelector('[data-position-action="map"]');
     if (mapBtn) {
-      const mapLabel = pinned ? t('Изменить позицию') : t('Закрепить позицию');
-      const mapTitle = pinned ? t('Изменить позицию на карте') : t('Закрепить позицию на карте');
+      const mapLabel = pinned ? t('Change position') : t('Pin position');
+      const mapTitle = pinned ? t('Change position on the map') : t('Pin position on the map');
       const span = mapBtn.querySelector('[data-position-map-label]');
       if (span) span.textContent = mapLabel;
       mapBtn.title = mapTitle;
@@ -304,25 +304,25 @@
     const manualBtn = root.querySelector('[data-position-action="manual"]');
     if (manualBtn) {
       const span = manualBtn.querySelector('[data-position-manual-label]');
-      if (span) span.textContent = t('Ввести вручную');
-      manualBtn.title = t('Ввести координаты вручную');
-      manualBtn.setAttribute('aria-label', t('Ввести координаты вручную'));
+      if (span) span.textContent = t('Enter manually');
+      manualBtn.title = t('Enter coordinates manually');
+      manualBtn.setAttribute('aria-label', t('Enter coordinates manually'));
     }
     const applyBtn = root.querySelector('[data-position-action="manual-apply"]');
     const cancelBtn = root.querySelector('[data-position-action="manual-cancel"]');
-    if (applyBtn) applyBtn.textContent = t('Применить');
-    if (cancelBtn) cancelBtn.textContent = t('Отмена');
+    if (applyBtn) applyBtn.textContent = t('Apply');
+    if (cancelBtn) cancelBtn.textContent = t('Cancel');
     const worldLabel = root.querySelector('[data-position-world-label]');
-    if (worldLabel) worldLabel.textContent = t('Мир');
+    if (worldLabel) worldLabel.textContent = t('World');
     const worldSelect = root.querySelector('[data-position-world-select]');
-    if (worldSelect) worldSelect.setAttribute('aria-label', t('Мир'));
+    if (worldSelect) worldSelect.setAttribute('aria-label', t('World'));
     root.querySelectorAll('[data-position-flag]').forEach((chip) => {
       const key = chip.getAttribute('data-position-flag');
       if (FLAG_LABELS[key]) chip.textContent = FLAG_LABELS[key]();
       if (FLAG_TITLES[key]) chip.title = FLAG_TITLES[key]();
     });
     const warning = root.querySelector('[data-position-warning]');
-    if (warning) warning.textContent = t('Точка на запрещённом тайле');
+    if (warning) warning.textContent = t('Point is on a forbidden tile');
   };
 
   const init = (root) => {
@@ -344,7 +344,7 @@
   };
 
   const validateCoords = (root, x, y) => {
-    if (!Number.isFinite(x) || !Number.isFinite(y)) return t('Координаты должны быть конечными числами');
+    if (!Number.isFinite(x) || !Number.isFinite(y)) return t('Coordinates must be finite numbers');
     // Пустые min/max — «без ограничений»: Number('') вернул бы 0 и запретил
     // отрицательные координаты сценариев.
     const minRaw = String(root.dataset.positionMin ?? '').trim();
@@ -352,7 +352,7 @@
     const min = minRaw === '' ? NaN : Number(minRaw);
     const max = maxRaw === '' ? NaN : Number(maxRaw);
     if ((Number.isFinite(min) && (x < min || y < min)) || (Number.isFinite(max) && (x > max || y > max))) {
-      return t('Координаты вне допустимого диапазона');
+      return t('Coordinates are outside the allowed range');
     }
     return '';
   };
@@ -429,7 +429,7 @@
     const worldId = explicit !== null ? explicit : recordWorldId(root);
     if (typeof options.onWorldChange === 'function') worldCallbacks.set(root, options.onWorldChange);
     if (!window.EditorCore?.PointMap?.open) {
-      toast(t('Карта мира недоступна — обновите страницу'), 'error');
+      toast(t('The world map is unavailable — reload the page'), 'error');
       return false;
     }
     window.EditorCore.PointMap.open(root, {

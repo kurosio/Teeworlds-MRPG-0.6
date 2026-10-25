@@ -1,23 +1,30 @@
 /**
- * editor-core/i18n.js — переключение языка интерфейса (RU / EN).
+ * editor-core/i18n.js — переключение языка интерфейса.
  *
- * Исходный язык интерфейса — русский: он лежит прямо в разметке и в коде
- * страниц. Английский каталог (`i18n-en.js`) сопоставляет русским строкам
- * английские. Такой подход выбран осознанно:
+ * Источник строк — сам интерфейс: разметка и код страниц написаны по-английски.
+ * Другие языки лежат в каталоге `localization/`: файл `lang_<код>.js` вызывает
+ * `EditorCoreLocalization.register({ code, name, locale, strings, plurals })` и
+ * содержит словарь «английский текст → перевод». Список файлов — манифест
+ * `localization/index.js`, язык по умолчанию — тоже там.
+ *
+ * Почему перевод применяется к готовому DOM, а не к размеченным строкам:
  *
  *  • не нужно размечать тысячи мест ключами — переводится любой узел DOM,
  *    включая тот, что страница отрисовала уже после загрузки (наблюдатель
  *    за изменениями переводит и его);
- *  • если перевода нет, интерфейс остаётся рабочим (показывается русская
- *    строка), а не «пустым» местом или ключом вида `nav.items`.
+ *  • если перевода нет, интерфейс остаётся рабочим: показывается английская
+ *    строка, а не «пустое» место или ключ вида `nav.items`;
+ *  • язык-источник (`en`) вообще ничего не переводит — это и есть исходный
+ *    текст, поэтому английский режим работает без единого словаря.
  *
- * Ключи каталога могут содержать подстановки `{0}`, `{1}` — они превращаются
- * в шаблоны и совпадают с уже отрисованным текстом («Найдено: 12»). Это
+ * Ключи словаря могут содержать подстановки `{0}`, `{1}` — они превращаются
+ * в шаблоны и совпадают с уже отрисованным текстом («Found: 12»). Это
  * позволяет переводить сообщения со счётчиками, не правя вызывающий код.
  *
  * Использование:
- *   EditorCore.I18n.t('Найдено: {0}', [12])   // → 'Found: 12' при lang = 'en'
- *   EditorCore.I18n.set('en')                 // переключить язык
+ *   EditorCore.I18n.t('Found: {0}', [12])     // → 'Найдено: 12' при lang = 'ru'
+ *   EditorCore.I18n.set('ru')                 // переключить язык
+ *   EditorCore.I18n.available()               // зарегистрированные языки
  *   EditorCore.I18n.onChange((lang) => {})    // реакция на смену языка
  */
 (() => {
@@ -27,42 +34,51 @@
   window.__editorCoreI18n = true;
 
   const LANG_KEY = 'editorStudio.lang';
-  const SUPPORTED = ['ru', 'en'];
-  const NAMES = { ru: 'Русский', en: 'English' };
-  const SHORT = { ru: 'RU', en: 'EN' };
-  const CYRILLIC = /[А-Яа-яЁё]/;
+  // Реестр языков лежит в `localization/index.js`; он подключается раньше.
+  const registry = () => window.EditorCoreLocalization || null;
+  const sourceLanguage = () => registry()?.sourceLanguage || 'en';
+  const available = () => registry()?.available?.() || ['en'];
+  const languageOf = (code) => registry()?.language?.(code) || null;
+  const langName = (code) => languageOf(code)?.name || String(code).toUpperCase();
+  const langShort = (code) => languageOf(code)?.short || String(code).toUpperCase();
+  const LATIN = /[A-Za-z]/;
   const TEXT_ATTRS = ['title', 'placeholder', 'aria-label', 'alt', 'data-tooltip'];
   const SKIP_TAGS = new Set(['SCRIPT', 'STYLE', 'CODE', 'PRE', 'KBD', 'SAMP', 'TEXTAREA']);
 
   const namespace = (window.EditorCore = window.EditorCore || {});
 
+  /**
+   * Язык по умолчанию — английский (язык исходников). Сохранённый выбор
+   * уважаем, но только если такой язык всё ещё зарегистрирован: файл языка
+   * могли убрать из `localization/`.
+   */
   const readLang = () => {
     try {
       const stored = window.localStorage?.getItem(LANG_KEY);
-      if (SUPPORTED.includes(stored)) return stored;
+      if (stored && available().includes(stored)) return stored;
     } catch { /* приватный режим — работаем без сохранения */ }
-    const nav = String(window.navigator?.language || '').toLowerCase();
-    return nav.startsWith('en') ? 'en' : 'ru';
+    const fallback = registry()?.defaultLanguage || sourceLanguage();
+    return available().includes(fallback) ? fallback : sourceLanguage();
   };
 
   let lang = readLang();
   const listeners = new Set();
   /** Обратные замены: чтобы вернуть русский текст без перезагрузки страницы. */
-  const originals = [];
   let applying = false;
   let observer = null;
   const patternCache = new Map();
 
-  const dictFor = (code) => window.EditorCoreDict?.[code] || null;
+  const dictFor = (code) => registry()?.strings?.(code) || null;
   const normalize = (text) => String(text).replace(/\s+/g, ' ').trim();
   const escapeRe = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
   // Служебные слова: шаблон, в котором нет ничего, кроме предлога, совпадёт с
-  // любой фразой («{0} из {0}» ломает «Удалить запрос из истории») — такие
-  // ключи не используются как шаблоны.
+  // любой фразой («{0} of {1}» ломает «Remove the request from the history») —
+  // такие ключи не используются как шаблоны.
   const WEAK_LITERALS = new Set([
-    'из', 'в', 'во', 'на', 'с', 'со', 'от', 'до', 'по', 'для', 'к', 'ко', 'о', 'об',
-    'при', 'за', 'под', 'над', 'без', 'и', 'или', 'а', 'но', 'же', 'ли', 'не', 'что',
+    'of', 'in', 'on', 'at', 'to', 'into', 'from', 'by', 'for', 'with', 'without',
+    'and', 'or', 'but', 'the', 'a', 'an', 'is', 'are', 'was', 'were', 'be', 'not',
+    'no', 'yes', 'as', 'if', 'so', 'then', 'than', 'that', 'this', 'it',
   ]);
 
   /**
@@ -119,11 +135,109 @@
 
       const head = key.startsWith('{') ? '*' : key.split(' ')[0];
       const bucket = patternCache.get(head) || patternCache.set(head, []).get(head);
-      bucket.push({ re: new RegExp(source, 'u'), segments, weight: literalWeight(key) });
+      bucket.push({ re: new RegExp(source, 'u'), segments, key, weight: literalWeight(key) });
     }
   };
 
-  /** Перевод произвольной строки: точное совпадение, затем шаблоны. */
+  // Разделители, которыми страницы склеивают подписи из готовых кусков:
+  // «Мир #3 · покупка», «Гость — онлайн». Такой узел целиком в каталоге не
+  // встречается, поэтому его переводим по частям.
+  const COMPOSITE_SEPARATORS = [' · ', ' | ', ' — ', ' – '];
+  // Символы, которые подстановка «заглатывать» не должна: иначе короткий ключ
+  // «Мир #{0}» совпал бы с целой строкой «Мир #3 · покупка» и съел её хвост.
+  const GUARD_CHARS = ['·', '|', '—', '–'];
+
+  /** Перевод подставленного значения: «Подключение 2» внутри сообщения. */
+  const translateValue = (value, depth) => {
+    if (typeof value !== 'string' || !LATIN.test(value)) return value;
+    const core = normalize(value);
+    if (!core) return value;
+    const lead = value.match(/^\s*/)[0];
+    const tail = value.match(/\s*$/)[0];
+    const next = translateCore(core, depth + 1);
+    return next === core ? value : lead + next + tail;
+  };
+
+  /**
+   * Подходит ли совпадение шаблона: подстановка не должна съедать соседнюю
+   * часть составной подписи. Проверяем именно разделитель с пробелами
+   * (« · »), иначе шаблон «Мир: {0}» отбрасывался бы на строке «Мир: —»,
+   * где подстановка — просто прочерк вместо пустого значения.
+   */
+  const capturesOk = (match, key) => {
+    for (let index = 1; index < match.length; index += 1) {
+      const capture = match[index] || '';
+      for (const char of GUARD_CHARS) {
+        if (key.includes(char)) continue;
+        // escapeRe: «|» иначе стал бы альтернацией, и подстановка «Подключение 2»
+        // отбрасывалась бы как разделитель.
+        if (new RegExp(`\\s${escapeRe(char)}\\s`).test(capture)) return false;
+      }
+    }
+    return true;
+  };
+
+  /**
+   * Перевод произвольной строки: точное совпадение, затем шаблоны с
+   * подстановками, затем — составные подписи по частям.
+   *
+   * `depth` ограничивает дробление: «{0} · {1}» не должно бесконечно
+   * раскладываться на части, если ни одна из них не переводится.
+   */
+  const translateCore = (core, depth = 0) => {
+    if (!core) return core;
+    const dict = dictFor(lang);
+    if (!dict) return core;
+    const exact = dict[core];
+    if (typeof exact === 'string') return exact;
+    if (patternCache.size === 0) buildPatterns();
+    const head = core.split(' ')[0];
+    const candidates = [patternCache.get(head), patternCache.get('*')];
+    // Первый подошедший шаблон — не всегда самый точный: общий «{0} · {1}»
+    // перехватил бы «ID 5 · Мир: Лес», оставив половину строки русской.
+    // Поэтому выбираем шаблон, который оставляет подстановкам меньше всего
+    // текста, то есть покрывает больше собственных слов ключа.
+    let best = null;
+    for (const bucket of candidates) {
+      if (!bucket) continue;
+      for (const { re, segments, key } of bucket) {
+        const match = core.match(re);
+        if (!match) continue;
+        if (!capturesOk(match, key)) continue;
+        let capturedLength = 0;
+        for (let index = 1; index < match.length; index += 1) capturedLength += (match[index] || '').length;
+        if (!best || capturedLength < best.capturedLength) best = { match, segments, capturedLength };
+      }
+    }
+    if (best) {
+      return best.segments.map((segment) => {
+        if (typeof segment === 'string') return segment;
+        // Подставленное значение тоже может быть текстом интерфейса
+        // (например, вложенное сообщение сервера или имя профиля) —
+        // переводим и его, сохраняя пробелы вокруг.
+        return translateValue(best.match[segment + 1] || '', depth);
+      }).join('');
+    }
+    if (depth < 2) {
+      for (const separator of COMPOSITE_SEPARATORS) {
+        if (!core.includes(separator)) continue;
+        let changed = false;
+        const parts = core.split(separator).map((part) => {
+          const trimmed = part.trim();
+          if (!trimmed) return part;
+          const next = translateCore(trimmed, depth + 1);
+          if (next !== trimmed) changed = true;
+          const lead = part.match(/^\s*/)[0];
+          const tail = part.match(/\s*$/)[0];
+          return lead + next + tail;
+        });
+        if (changed) return parts.join(separator);
+      }
+    }
+    return core;
+  };
+
+  /** Перевод строки целиком (с сохранением исходных пробелов по краям). */
   const translate = (text) => {
     const raw = String(text ?? '');
     if (!raw) return raw;
@@ -131,61 +245,55 @@
     if (!dict) return raw;
     const core = normalize(raw);
     if (!core) return raw;
-    const exact = dict[core];
-    if (typeof exact === 'string') return exact;
-    if (patternCache.size === 0) buildPatterns();
-    const head = core.split(' ')[0];
-    const candidates = [patternCache.get(head), patternCache.get('*')];
-    for (const bucket of candidates) {
-      if (!bucket) continue;
-      for (const { re, segments } of bucket) {
-        const match = core.match(re);
-        if (!match) continue;
-        return segments.map((segment) => {
-          if (typeof segment === 'string') return segment;
-          const value = match[segment + 1] || '';
-          // Подставленное значение тоже может быть текстом интерфейса
-          // (например, вложенное сообщение сервера) — переводим и его, сохраняя
-          // пробелы вокруг: «Напишите гостю» → «Write to the guest».
-          const trimmed = normalize(value);
-          if (!trimmed) return value;
-          const nested = dict[trimmed];
-          if (typeof nested !== 'string') return value;
-          const lead = value.match(/^\s*/)[0];
-          const tail = value.match(/\s*$/)[0];
-          return lead + nested + tail;
-        }).join('');
-      }
-    }
-    return raw;
+    const next = translateCore(core);
+    return next === core ? raw : next;
   };
 
-  const remember = (entry) => {
-    originals.push(entry);
-    // Не даём списку расти бесконечно на долгоживущей странице.
-    if (originals.length > 4000) originals.splice(0, 1000);
+  /**
+   * Запоминание исходного текста — по узлу и атрибуту, а не списком.
+   *
+   * Раньше это был массив с обрезкой «самое старое выкидываем», и на больших
+   * страницах (тысячи переведённых узлов) из него выпадали первые записи:
+   * заголовок вкладки, шапка справки, палитра команд. После возврата на
+   * русский они оставались английскими — «переведено не всё». Ключ узла
+   * (Map) решает это: повторный перевод того же узла обновляет значение,
+   * а не добавляет запись, и ничего не теряется.
+   */
+  const store = new Map(); // node -> { text?: original, attrs: Map<attr, original> }
+  let titleOriginal = null;
+
+  const slotFor = (node) => {
+    let slot = store.get(node);
+    if (!slot) { slot = { attrs: new Map() }; store.set(node, slot); }
+    return slot;
   };
+
+  const rememberText = (node, original) => { slotFor(node).text = original; };
+  const rememberAttr = (node, attr, original) => { slotFor(node).attrs.set(attr, original); };
+  const rememberTitle = (original) => { titleOriginal = original; };
 
   const translateTextNode = (node) => {
     const raw = node.nodeValue;
-    if (!raw || !CYRILLIC.test(raw)) return;
+    // Источник интерфейса — английский: узлы без латиницы переводить нечего
+    // (числа, прочерки, иконки), а это самый частый случай на странице.
+    if (!raw || !LATIN.test(raw)) return;
     const match = raw.match(/^(\s*)([\s\S]*?)(\s*)$/);
     if (!match) return;
     const [, lead, core, tail] = match;
     if (!core) return;
     const next = translate(core);
     if (next === core) return;
-    remember({ kind: 'text', node, original: raw });
+    rememberText(node, raw);
     node.nodeValue = lead + next + tail;
   };
 
   const translateAttr = (el, attr) => {
     if (!el || !el.getAttribute) return;
     const value = el.getAttribute(attr);
-    if (!value || !CYRILLIC.test(value)) return;
+    if (!value || !LATIN.test(value)) return;
     const next = translate(value);
     if (next === value) return;
-    remember({ kind: 'attr', node: el, attr, original: value });
+    rememberAttr(el, attr, value);
     el.setAttribute(attr, next);
   };
 
@@ -225,25 +333,32 @@
   };
 
   const restore = () => {
-    for (const entry of originals) {
-      if (entry.kind === 'title') { document.title = entry.original; continue; }
-      if (!entry.node || entry.node.isConnected === false) continue;
-      if (entry.kind === 'text') entry.node.nodeValue = entry.original;
-      else entry.node.setAttribute(entry.attr, entry.original);
+    if (titleOriginal !== null) {
+      document.title = titleOriginal;
+      titleOriginal = null;
     }
-    originals.length = 0;
+    for (const [node, slot] of store) {
+      // Узлы, которые страница уже выбросила из документа, не трогаем —
+      // иначе «русским» станет текст, которого никто не видит.
+      if (!node || node.isConnected === false) continue;
+      if (typeof slot.text === 'string' && node.nodeType === 3) node.nodeValue = slot.text;
+      for (const [attr, original] of slot.attrs) {
+        if (node.getAttribute?.(attr) !== null) node.setAttribute(attr, original);
+      }
+    }
+    store.clear();
   };
 
   /** Переводит поддерево (или весь документ). Русский режим — без изменений. */
   const apply = (root = document) => {
-    if (!root || lang === 'ru') return;
+    if (!root || !dictFor(lang)) return;
     applying = true;
     try {
       if (root === document) {
         if (document.title) {
           const next = translate(document.title);
           if (next !== document.title) {
-            remember({ kind: 'title', original: document.title });
+            rememberTitle(document.title);
             document.title = next;
           }
         }
@@ -272,14 +387,14 @@
     box.className = 'i18n-switcher';
     box.setAttribute('data-i18n-switcher', '1');
     box.setAttribute('role', 'group');
-    box.setAttribute('aria-label', 'Язык интерфейса');
-    for (const code of SUPPORTED) {
+    box.setAttribute('aria-label', t('Interface language'));
+    for (const code of available()) {
       const btn = document.createElement('button');
       btn.type = 'button';
       btn.dataset.lang = code;
-      btn.textContent = SHORT[code];
-      btn.title = NAMES[code];
-      btn.setAttribute('aria-label', NAMES[code]);
+      btn.textContent = langShort(code);
+      btn.title = langName(code);
+      btn.setAttribute('aria-label', langName(code));
       btn.addEventListener('click', () => set(code));
       box.appendChild(btn);
     }
@@ -328,7 +443,8 @@
   const observe = () => {
     if (observer || !window.MutationObserver || !document.documentElement) return;
     observer = new MutationObserver((records) => {
-      if (applying || lang === 'ru') return;
+      // Источник — английский: переводить нужно только когда у языка есть словарь.
+      if (applying || !dictFor(lang)) return;
       applying = true;
       try {
         for (const record of records) {
@@ -370,26 +486,33 @@
   const locale = () => (lang === 'en' ? 'en-US' : 'ru-RU');
 
   /**
-   * Согласование числительных. Русские формы передаются как обычно
-   * (1 операция / 2 операции / 5 операций); по-английски берётся единственная
-   * или множественная форма, переведённая по каталогу.
+   * Согласование числительных.
+   *
+   * Источник — английские формы из вызова: `plural(n, 'line', 'lines')`.
+   * Русские формы (1 строка / 2 строки / 5 строк) лежат в `localization/lang_ru.js`
+   * в таблице `plurals` под ключом английского единственного числа, а правило
+   * выбора формы задаёт `pluralIndex` этого языка. Язык без таблицы получает
+   * обычное английское правило: one / other.
    */
-  const plural = (n, one, few, many) => {
-    const count = Number(n) || 0;
-    if (lang === 'en') return translate(count === 1 ? one : (many ?? few ?? one));
-    const m10 = count % 10;
-    const m100 = count % 100;
-    if (m10 === 1 && m100 !== 11) return one;
-    if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return few;
-    return many;
+  const plural = (n, one, many) => {
+    const count = Math.abs(Number(n) || 0);
+    const language = languageOf(lang);
+    const forms = language?.plurals?.[one];
+    if (Array.isArray(forms) && forms.length) {
+      const index = typeof language.pluralIndex === 'function' ? language.pluralIndex(count) : (count === 1 ? 0 : 1);
+      return forms[Math.min(Math.max(index, 0), forms.length - 1)];
+    }
+    return count === 1 ? one : many;
   };
 
   const set = (code, { force = false } = {}) => {
-    const next = SUPPORTED.includes(code) ? code : 'ru';
+    const next = available().includes(code) ? code : sourceLanguage();
     const changed = next !== lang;
     if (!changed && !force) return lang;
+    // Перед сменой языка возвращаем исходный (английский) текст: иначе
+    // следующий словарь получил бы уже переведённые строки.
     applying = true;
-    try { if (next === 'ru') restore(); } finally { applying = false; }
+    try { restore(); } finally { applying = false; }
     lang = next;
     try { window.localStorage?.setItem(LANG_KEY, lang); } catch { /* приватный режим */ }
     document.documentElement.setAttribute('lang', lang);
@@ -406,11 +529,16 @@
   const t = (text, vars) => {
     const raw = String(text ?? '');
     const list = Array.isArray(vars) ? vars : (vars === undefined || vars === null ? [] : [vars]);
+    // Подставленные значения тоже переводим: `t('New profile “{0}”', [name])`,
+    // где name собрано кодом страницы, иначе в русском интерфейсе осталось бы
+    // английское имя внутри русской фразы.
     const fill = (template) => String(template).replace(/\{(\d+)\}/g, (whole, index) => {
       const value = list[Number(index)];
-      return value === undefined || value === null ? whole : String(value);
+      if (value === undefined || value === null) return whole;
+      if (typeof value !== 'string') return String(value);
+      return translateValue(value, 1);
     });
-    if (lang === 'ru') return fill(raw);
+    if (!dictFor(lang)) return fill(raw);
     const translated = translate(raw);
     return fill(translated === raw ? raw : translated);
   };
@@ -426,7 +554,7 @@
       const original = window[name];
       if (typeof original !== 'function') continue;
       window[name] = function patched(message, ...rest) {
-        if (lang === 'en') {
+        if (dictFor(lang)) {
           const translated = translate(message);
           if (translated !== message) return original.call(window, translated, ...rest);
         }
@@ -440,12 +568,12 @@
     injectStyles();
     document.documentElement.setAttribute('lang', lang);
     mountSwitchers(document);
-    if (lang !== 'ru') apply(document);
+    apply(document);
     observe();
     // Язык сменили в другом документе (шапка студии, соседняя вкладка).
     window.addEventListener('storage', (event) => {
       if (event.key !== LANG_KEY || !event.newValue || event.newValue === lang) return;
-      if (SUPPORTED.includes(event.newValue)) set(event.newValue);
+      if (available().includes(event.newValue)) set(event.newValue);
     });
   };
 
@@ -456,11 +584,21 @@
   }
 
   namespace.I18n = {
-    langs: SUPPORTED,
-    names: NAMES,
+    get langs() { return available(); },
+    get names() {
+      const names = {};
+      for (const code of available()) names[code] = langName(code);
+      return names;
+    },
+    available,
+    sourceLanguage: sourceLanguage(),
     get lang() { return lang; },
     set,
-    toggle: () => set(lang === 'ru' ? 'en' : 'ru'),
+    toggle: () => {
+      const codes = available();
+      const index = codes.indexOf(lang);
+      return set(codes[(index + 1) % codes.length] || sourceLanguage());
+    },
     t,
     tr: translate,
     locale,

@@ -9,105 +9,105 @@
   /** Помощь по вкладкам. Ключ — data-editor у <body>. */
   const STEPS = {
     items: [
-      'Выберите предмет в списке слева — справа появятся его поля.',
-      'Группа предмета меняет набор полей: сначала выберите группу, затем заполняйте.',
-      'Группа (Group) — раздел предмета; от неё зависит набор полей и фильтр в списке.',
+      'Pick an item in the list on the left — its fields appear on the right.',
+      'The item group defines the field set: choose the group first, then fill in the fields.',
+      'Group is the item section; it defines the field set and the list filter.',
     ],
     crafts: [
-      'Крафт — рецепт: готовый предмет плюс список RequiredItems.',
-      'Группу можно переименовать целиком кнопкой «Переименовать» — все рецепты ветки обновятся сразу.',
-      'Предметы и миры выбираются по названию, в базу сохраняется их ID.',
+      'A craft is a recipe: the result item plus its RequiredItems list.',
+      'The whole group can be renamed with “Rename” — every recipe in the branch updates at once.',
+      'Items and worlds are picked by name; their IDs are stored in the database.',
     ],
     warehouses: [
-      'Склад привязан к миру и типу торговли (покупка, продажа, хранение).',
-      'Trades — список товаров склада; позиции можно объединять в группы.',
-      'Поле «Исходная строка» показывает Trades точно так, как они лежат в БД.',
+      'A warehouse belongs to a world and a trade type (buy, sell, storage).',
+      'Trades is the warehouse stock list; entries can be grouped.',
+      'The “Raw value” field shows Trades exactly as they are stored in the database.',
     ],
     quests: [
-      'Слева дерево: квест → шаги мобов. Выберите квест или шаг — справа откроются настройки.',
-      'Шаг содержит три вкладки: Основное, Диалог и Задания.',
-      'На вкладке «Основное» позиция закрепляется картой или вводится вручную; мир выбирается прямо в карточке.',
-      'Карта не даст применить точку на стене, смерти или тайле без крюка — перенесите её на свободный тайл.',
-      'Шаги можно перетаскивать в дереве, задания внутри шага — за ручку слева.',
+      'The tree on the left lists quests → mob steps. Select a quest or a step to edit it on the right.',
+      'A step has three tabs: General, Dialogue and Objectives.',
+      'On the “General” tab, a position is pinned on the map or entered manually; the world is selected in the card.',
+      'The map will not apply a point on a solid, death or no-hook tile — move it to a free tile.',
+      'Drag steps in the tree, and objectives inside a step by the handle on the left.',
     ],
     bots_mobs: [
-      'Спавн моба привязан к миру и мобу: мир и моб выбираются по названию.',
-      'На карте видны запрещённые тайлы, спавны и радиус блуждания; точка на стене не применится.',
-      'Уровень и характеристики влияют на поведение моба в игре.',
-      'Дроп — до пяти слотов: предмет, количество и шанс в процентах (вкладка «Дроп»).',
+      'A mob spawn belongs to a world and a mob; both are picked by name.',
+      'The map shows forbidden tiles, spawns and the wander radius; a point on a wall cannot be applied.',
+      'The level and stats affect how the mob behaves in game.',
+      'Drop is up to five slots: item, amount and chance in percent (the “Drop” tab).',
     ],
     bots_info: [
-      'Профиль моба: имя, скин и экипировка.',
-      'Скин подставляется из каталога скинов — превью появится справа.',
-      'Оружие и броня выбираются из списка предметов — в базу сохраняются их ID.',
+      'Mob profile: name, skin and equipment.',
+      'The skin comes from the skin catalogue — a preview appears on the right.',
+      'Weapons and armour are picked from the item list; their IDs are stored in the database.',
     ],
     bots_npc: [
-      'NPC — это моб, стоящий в мире с репликами диалога.',
-      'Позиция (X, Y) задаётся в координатах мира; карта подсвечивает стены, смерть и спавны.',
-      'Квест выдаётся NPC, если выбран в поле «Выдаёт квест».',
+      'An NPC is a mob placed in a world with dialogue lines.',
+      'The position (X, Y) is set in world coordinates; the map highlights solid, death and spawn tiles.',
+      'A quest is given by the NPC if it is set in the “Gives quest” field.',
     ],
     worlds: [
-      'Мир: тип, путь к файлу карты и игровые флаги.',
-      'ID мира используется во всех остальных редакторах — меняйте его осторожно.',
-      'Тип мира (default или dungeon) и флаги влияют на правила игры внутри карты.',
+      'A world: type, map file path and game flags.',
+      'The world ID is used by every other editor — change it carefully.',
+      'The world type (default or dungeon) and flags define the in-map game rules.',
     ],
     aethers: [
-      'Аэтр — точка телепорта: мир и координаты.',
-      'Новые точки появляются в игре сразу после сохранения.',
-      'Название точки видно игроку в списке телепортов — пишите понятно.',
+      'An aether is a teleport point: world and coordinates.',
+      'New points appear in game right after saving.',
+      'Players see the point name in the teleport list — keep it clear.',
     ],
     dungeons: [
-      'Подземелье: мир, точка входа и настройки.',
-      'Связанные записи (миры, мобы) выбираются по названию.',
-      'DoorX и DoorY — точка входа в мир подземелья, TimeLimit — лимит времени в секундах.',
+      'A dungeon: world, entrance point and settings.',
+      'Linked records (worlds, mobs) are picked by name.',
+      'DoorX and DoorY are the dungeon entrance, TimeLimit is the time limit in seconds.',
     ],
     vouchers: [
-      'Ваучер — код с наградой и сроком действия: 0 означает «без ограничения».',
-      'Флаг multi разрешает использовать код несколько раз.',
-      'Награда — список предметов с количеством.',
-      'Дата окончания задаётся в ValidUntil; пустое значение — код действует бессрочно.',
+      'A voucher is a code with a reward and an expiry: 0 means “no limit”.',
+      'The multi flag allows reusing the code.',
+      'The reward is a list of items with amounts.',
+      'The expiry date is set in ValidUntil; an empty value means the code never expires.',
     ],
     accounts: [
-      'Найдите аккаунт по ID, логину или нику — список можно ограничить поиском.',
-      'Здесь же сброс пароля игрока и таймаута истечения сессии.',
-      'Изменения применяются сразу после подтверждения.',
+      'Find an account by ID, login or nickname — narrow the list with the search.',
+      'This is also where the player password and session timeout are reset.',
+      'Changes are applied right after confirmation.',
     ],
     scenario: [
-      'Сценарий — дерево шагов; выберите шаг слева, справа откроются его компоненты.',
-      'Шаги и компоненты можно перетаскивать: порядок сохраняется вместе со сценарием.',
-      '«Сохранить» записывает сценарий целиком — проверьте изменения перед нажатием.',
+      'A scenario is a tree of steps; select a step on the left to see its components on the right.',
+      'Steps and components can be dragged; the order is saved with the scenario.',
+      '“Save” writes the whole scenario — review the changes before pressing it.',
     ],
     requests: [
-      'Слева очередь запросов гостей, справа — подробности: что и на что меняется.',
-      'Принять и применить — изменения уходят в базу одной транзакцией.',
-      'Отклонить — изменения не применяются, гость увидит исходные данные.',
+      'On the left is the guest request queue, on the right the details: what changes into what.',
+      'Approve and apply — the changes go to the database in one transaction.',
+      'Reject — nothing is applied and the guest sees the original data.',
     ],
     guests: [
-      'Каждый гость — отдельный логин и пароль, которые выдаёт администратор.',
-      'Включайте только те вкладки, которые нужны этому гостю: остальные для него закрыты.',
-      'Гость не может писать в базу: его правки приходят сюда как запросы на проверку.',
+      'Every guest has a separate login and password issued by the administrator.',
+      'Enable only the tabs this guest needs: the rest stay closed for them.',
+      'A guest cannot write to the database: their edits arrive here as requests for review.',
     ],
     settings: [
-      'Здесь задаётся подключение к базе игры — оно нужно всем редакторам.',
-      'Кнопка «Проверить» показывает, доступна ли база с текущими настройками.',
-      'Профили подключения позволяют быстро переключаться между базами.',
+      'The game database connection is set here — every editor needs it.',
+      'The “Test” button shows whether the database is reachable with the current settings.',
+      'Connection profiles let you switch between databases quickly.',
     ],
     database: [
-      'Дамп — резервная копия базы; восстановление перезаписывает данные.',
-      'Восстановление требует ввести имя базы для подтверждения.',
-      'Скачайте дамп перед крупными правками — это самая быстрая точка возврата.',
+      'A dump is a database backup; restoring overwrites the data.',
+      'Restoring requires typing the database name to confirm.',
+      'Download a dump before big edits — it is the fastest way back.',
     ],
   };
 
   const GENERIC = [
-    'Выберите запись в списке слева — справа откроются её поля.',
-    'Измените значения и нажмите «Сохранить».',
-    '«Новый …» создаёт запись, «Удалить» удаляет её безвозвратно — потребуется подтверждение.',
+    'Pick a record in the list on the left — its fields appear on the right.',
+    'Change the values and press “Save”.',
+    '“New …” creates a record, “Delete” removes it for good — confirmation required.',
   ];
 
-  const GUEST_NOTE = 'Вы вошли как гость: «Сохранить» не меняет базу, а добавляет правку в черновик запроса. '
-    + 'Администратор проверит его и применит — до этого вы видите свои значения с пометкой «изменено». '
-    + 'Кнопка со стрелкой у метки «изм.» возвращает одно поле к значению из базы.';
+  const GUEST_NOTE = 'You are signed in as a guest: “Save” does not touch the database, it adds the edit to a request draft. '
+    + 'The administrator reviews and applies it — until then you see your values marked as “changed”. '
+    + 'The arrow button next to the “edited” mark restores a single field to the database value.';
 
   const isGuest = () => {
     try { return window.EditorCore?.Guest?.isGuest?.() === true; } catch { return false; }
@@ -133,35 +133,35 @@
     wrap.className = 'fixed inset-0 editor-modal-backdrop z-[950] flex items-center justify-center p-4';
     wrap.setAttribute('role', 'dialog');
     wrap.setAttribute('aria-modal', 'true');
-    wrap.setAttribute('aria-label', 'Как пользоваться редактором');
+    wrap.setAttribute('aria-label', 'How to use the editor');
     wrap.innerHTML = `
       <div class="editor-modal-content editor-modal-shell w-full max-w-lg">
         <div class="editor-modal-head flex items-start justify-between gap-3">
           <div class="editor-modal-title flex items-center gap-2.5">
             <i class="fa-solid fa-circle-question editor-tone-accent"></i>
-            <span>Как это работает</span>
+            <span>How it works</span>
           </div>
-          <button type="button" class="editor-icon-btn" data-help-close title="Закрыть (Esc)"><i class="fa-solid fa-xmark"></i></button>
+          <button type="button" class="editor-icon-btn" data-help-close title="Close (Esc)"><i class="fa-solid fa-xmark"></i></button>
         </div>
         <div class="editor-modal-body space-y-4">
           <ol class="list-decimal pl-5 space-y-2 text-sm leading-relaxed">
             ${steps.map((s) => `<li>${s}</li>`).join('')}
           </ol>
           <div class="editor-section pt-3">
-            <div class="text-xs font-semibold uppercase tracking-wider editor-muted-text mb-2">Горячие клавиши</div>
+            <div class="text-xs font-semibold uppercase tracking-wider editor-muted-text mb-2">Keyboard shortcuts</div>
             <div class="flex flex-wrap gap-1.5 text-xs">
-              <span class="editor-badge"><b>Ctrl+S</b> — сохранить</span>
-              <span class="editor-badge"><b>Ctrl+K</b> — команды и вид</span>
-              <span class="editor-badge"><b>/</b> — поиск</span>
-              <span class="editor-badge"><b>Alt+N</b> — создать</span>
-              <span class="editor-badge"><b>Alt+↑/↓</b> — по списку</span>
-              <span class="editor-badge"><b>?</b> — эта справка</span>
+              <span class="editor-badge"><b>Ctrl+S</b> — save</span>
+              <span class="editor-badge"><b>Ctrl+K</b> — commands and view</span>
+              <span class="editor-badge"><b>/</b> — search</span>
+              <span class="editor-badge"><b>Alt+N</b> — create</span>
+              <span class="editor-badge"><b>Alt+↑/↓</b> — through the list</span>
+              <span class="editor-badge"><b>?</b> — this help</span>
             </div>
           </div>
           ${isGuest() ? `<div class="guest-row-hint"><i class="fa-solid fa-user-secret"></i><div>${GUEST_NOTE}</div></div>` : ''}
         </div>
         <div class="editor-modal-foot flex justify-end">
-          <button type="button" class="editor-btn editor-btn-primary" data-help-close>Понятно</button>
+          <button type="button" class="editor-btn editor-btn-primary" data-help-close>Got it</button>
         </div>
       </div>`;
     return wrap;
@@ -215,8 +215,8 @@
     btn.type = 'button';
     btn.dataset.helpButton = '1';
     btn.className = 'editor-btn editor-btn-secondary';
-    btn.title = 'Как пользоваться (?)';
-    btn.setAttribute('aria-label', 'Как пользоваться редактором');
+    btn.title = 'How to use (?)';
+    btn.setAttribute('aria-label', 'How to use the editor');
     btn.innerHTML = '<i class="fa-solid fa-circle-question"></i>';
     btn.addEventListener('click', openHelp);
 

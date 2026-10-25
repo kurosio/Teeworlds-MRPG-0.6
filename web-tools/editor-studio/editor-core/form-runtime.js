@@ -27,7 +27,7 @@
       const render = () => {
         const renderer = window.EditorCore?.FieldRenderer;
         if (!renderer) {
-          root.innerHTML = '<div class="editor-muted-text">FieldRenderer не загружен</div>';
+          root.innerHTML = '<div class="editor-muted-text">FieldRenderer is not loaded</div>';
           return;
         }
         root.innerHTML = renderer.renderFields({

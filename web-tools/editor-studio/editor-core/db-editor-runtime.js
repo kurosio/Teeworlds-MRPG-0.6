@@ -62,7 +62,7 @@
       /** Спрашивает подтверждение, если в форме есть несохранённые правки. */
       const canDiscardDirty = async () => {
         if (!state.dirty?.isDirty?.()) return true;
-        return EditorCore.Page.confirm('Есть несохранённые изменения. Продолжить без сохранения?');
+        return EditorCore.Page.confirm('You have unsaved changes. Continue without saving?');
       };
 
       const makeDefault = () => {
@@ -86,13 +86,13 @@
       const setHeader = () => {
         if (!els.title && !els.subtitle) return;
         if (!state.model) {
-          if (els.title) els.title.textContent = cfg.emptyTitle || 'Выберите запись';
-          if (els.subtitle) els.subtitle.textContent = cfg.emptySubtitle || 'или создайте новую';
+          if (els.title) els.title.textContent = cfg.emptyTitle || 'Select a record';
+          if (els.subtitle) els.subtitle.textContent = cfg.emptySubtitle || 'or create a new one';
           return;
         }
         const title = typeof cfg.getTitle === 'function'
           ? cfg.getTitle(state.model, state.selectedId)
-          : (state.model?.Name || `Запись #${state.selectedId || 'new'}`);
+          : (state.model?.Name || `Record #${state.selectedId || 'new'}`);
         const subtitle = typeof cfg.getSubtitle === 'function'
           ? cfg.getSubtitle(state.model, state.selectedId)
           : '';
@@ -103,13 +103,13 @@
       const guestBadgeHtml = (meta) => {
         if (!meta) return '';
         const map = {
-          create: ['Новая', 'fa-plus'],
-          update: ['Изменено', 'fa-pen'],
-          delete: ['Удаление', 'fa-trash'],
+          create: ['New', 'fa-plus'],
+          update: ['Changed', 'fa-pen'],
+          delete: ['Delete', 'fa-trash'],
         };
         const [text, icon] = map[meta.state] || map.update;
         const submitted = meta.status === 'submitted';
-        return `<span class="guest-row-badge ${submitted ? 'is-submitted' : 'is-draft'}" title="${submitted ? 'Отправлено в запросе, ждёт проверки администратора' : 'Локальное изменение — в базу не записано'}"><i class="fa-solid ${submitted ? 'fa-hourglass-half' : icon}"></i>${escapeHtml(text)}</span>`;
+        return `<span class="guest-row-badge ${submitted ? 'is-submitted' : 'is-draft'}" title="${submitted ? 'Submitted in a request, awaiting administrator review' : 'Local change — not saved to the database'}"><i class="fa-solid ${submitted ? 'fa-hourglass-half' : icon}"></i>${escapeHtml(text)}</span>`;
       };
 
       let guestHintEl = null;
@@ -142,8 +142,8 @@
         button.type = 'button';
         button.className = 'guest-field-revert';
         button.dataset.guestRevert = column;
-        button.title = 'Вернуть исходное значение из базы';
-        button.setAttribute('aria-label', `Вернуть исходное значение поля ${column}`);
+        button.title = 'Restore the value from the database';
+        button.setAttribute('aria-label', `Restore the original value of field  ${column}`);
         button.innerHTML = '<i class="fa-solid fa-rotate-left" aria-hidden="true"></i>';
         node.appendChild(button);
       };
@@ -162,8 +162,8 @@
         const submitted = meta?.status === 'submitted';
         const revertable = !!meta && !submitted && meta.state === 'update';
         const note = submitted
-          ? `Поле изменено в запросе ${meta?.reqId || ''} — ждёт проверки администратора`
-          : 'Поле изменено в вашем черновике — в базу не записано';
+          ? `Field changed in request  ${meta?.reqId || ''}  — awaiting admin review`
+          : 'Field changed in your draft — not written to the database';
         els.form.querySelectorAll('[data-field-path]').forEach((node) => {
           const top = String(node.getAttribute('data-field-path') || '').split('.')[0];
           const changed = fields.has(top);
@@ -199,18 +199,18 @@
             const baseRow = await window.EditorCore.DBCrud.rawRow(resource, id);
             const original = baseRow ? toModel(baseRow) : null;
             if (!original || !(column in original)) {
-              throw new Error('Не удалось прочитать значение из базы — обновите список и повторите.');
+              throw new Error('Could not read the value from the database — refresh the list and try again.');
             }
             const result = await Guest.Draft.revertField(resource, id, column, baseRow);
             if (result?.removed) applyBaseValue(original[column], column);
             else updateGuestHint();
             renderList();
             setStatus(result?.dropped
-              ? 'Поле возвращено: изменений в черновике больше нет.'
-              : `Поле ${column} возвращено к значению из базы.`, 'ok');
+              ? 'Field restored: no changes left in the draft.'
+              : `Field ${column}  restored to the database value.`, 'ok');
             return true;
           } catch (error) {
-            const msg = error?.message || 'Не удалось вернуть поле к исходному значению';
+            const msg = error?.message || 'Could not restore the original field value';
             setStatus(msg, 'err');
             toast(msg, 'error');
             return false;
@@ -252,12 +252,12 @@
         }
         decorateGuestFields(meta);
         const submitted = meta.status === 'submitted';
-        const title = meta.state === 'create' ? 'Новая запись' : meta.state === 'delete' ? 'Помечена на удаление' : 'Локальное изменение';
+        const title = meta.state === 'create' ? 'New record' : meta.state === 'delete' ? 'Marked for deletion' : 'Local change';
         const note = submitted
-          ? `отправлено в запросе <b>${escapeHtml(meta.reqId || '')}</b> и ждёт проверки администратора`
-          : 'черновик запроса — в базу данных пока ничего не записано';
+          ? `submitted in a request <b>${escapeHtml(meta.reqId || '')}</b> and awaits admin review`
+          : 'request draft — nothing has been written to the database yet';
         const fields = meta.fields.length
-          ? `<div class="guest-row-hint-fields">Изменённые поля: ${meta.fields.slice(0, 8).map((f) => `<code>${escapeHtml(f)}</code>`).join(' ')}${meta.fields.length > 8 ? ' …' : ''}</div>`
+          ? `<div class="guest-row-hint-fields">Changed fields: ${meta.fields.slice(0, 8).map((f) => `<code>${escapeHtml(f)}</code>`).join(' ')}${meta.fields.length > 8 ? ' …' : ''}</div>`
           : '';
         el.className = `guest-row-hint ${submitted ? 'is-submitted' : 'is-draft'}`;
         el.innerHTML = `<i class="fa-solid ${submitted ? 'fa-hourglass-half' : 'fa-pen-to-square'}"></i><div><b>${title}</b> — ${note}${fields}</div>`;
@@ -292,7 +292,7 @@
         if (!els.form) return;
         ensureGuestHint();
         if (!state.model) {
-          els.form.innerHTML = `<div class="editor-empty-state editor-field--span-all">Выберите запись слева или создайте новую, чтобы начать редактирование.</div>`;
+          els.form.innerHTML = `<div class="editor-empty-state editor-field--span-all">Select a record on the left or create a new one to start editing.</div>`;
           if (guestHintEl) guestHintEl.classList.add('hidden');
           setButtons(false);
           return;
@@ -340,7 +340,7 @@
         const rawTotal = Array.isArray(state.rowsRaw) ? state.rowsRaw.length : 0;
         if (els.count) {
           if (state.search && rawTotal > rows.length) {
-            els.count.textContent = `${rows.length} из ${rawTotal}`;
+            els.count.textContent = `${rows.length}  of  ${rawTotal}`;
           } else {
             els.count.textContent = rows.length ? `${rows.length}` : '0';
           }
@@ -348,8 +348,8 @@
         if (!rows.length) {
           // Пустой список должен объяснять, что делать дальше.
           const message = state.search
-            ? `Ничего не найдено по запросу «${escapeHtml(state.search)}». Измените запрос или очистите поиск.`
-            : `Записей пока нет — нажмите «${escapeHtml(cfg.newLabel || (els.newBtn?.textContent || '').trim() || 'Новый')}», чтобы создать первую.`;
+            ? `Nothing found for “${escapeHtml(state.search)}”. Change the query or clear the search.`
+            : `No records yet — press “${escapeHtml(cfg.newLabel || (els.newBtn?.textContent || '').trim() || 'New')}” to create the first one.`;
           els.list.innerHTML = `<div class="editor-empty-state">${message}</div>`;
           return;
         }
@@ -374,7 +374,7 @@
         }).join('');
         const hasMore = orderedRows.length > visibleRows.length;
         const more = hasMore
-          ? `<div class="pt-2"><button type="button" class="editor-btn editor-btn-secondary w-full" data-editor-role="list-more">Показать ещё (${orderedRows.length - visibleRows.length})</button></div>`
+          ? `<div class="pt-2"><button type="button" class="editor-btn editor-btn-secondary w-full" data-editor-role="list-more">Show more (${orderedRows.length - visibleRows.length})</button></div>`
           : '';
         els.list.innerHTML = `<div class="editor-list">${html}${more}</div>`;
       };
@@ -438,7 +438,7 @@
         state.search = normalizeSearchText(search ?? state.search);
         state.rows = safeRows;
         state.visibleCount = 250;
-        setStatus(state.rows.length ? '' : 'Список пуст.', 'muted');
+        setStatus(state.rows.length ? '' : 'The list is empty.', 'muted');
         renderList();
 
         // Обновление списка не должно затирать несохранённые правки в форме
@@ -517,7 +517,7 @@
         const controller = new AbortController();
         state.searchRequest.controller = controller;
 
-        if (!silent) setStatus(search ? 'Идёт поиск…' : 'Загрузка списка…');
+        if (!silent) setStatus(search ? 'Searching…' : 'Loading list…');
         els.list?.setAttribute('aria-busy', 'true');
         try {
           const res = await window.EditorCore.DBCrud.list(resource, {
@@ -536,7 +536,7 @@
           await applyRows(transformed, { search, isRaw: true });
         } catch (err) {
           if (requestId !== listRequestSeq || controller.signal.aborted || token !== state.searchRequest.token) return;
-          const msg = err?.message || 'Ошибка загрузки';
+          const msg = err?.message || 'Loading failed';
           setStatus(msg, 'err');
           toast(msg, 'error');
         } finally {
@@ -571,7 +571,7 @@
           await (fallbackRow
             ? selectRow(fallbackRow, { confirmDirty: false })
             : selectRow(null, { confirmDirty: false }));
-          setStatus('Создание записи отменено.', 'ok');
+          setStatus('Record creation cancelled.', 'ok');
           return true;
         }
 
@@ -582,7 +582,7 @@
         renderList();
         setHeader();
         setButtons(true);
-        setStatus('Локальные изменения отменены.', 'ok');
+        setStatus('Local changes discarded.', 'ok');
         return true;
       };
 
@@ -610,41 +610,41 @@
         }
         const payload = toPayload(state.model);
         return runOperation(async () => {
-          setStatus('Сохранение…');
+          setStatus('Saving…');
           try {
             if (state.selectedId) {
               // DBCrud auto-records for sync
               await window.EditorCore.DBCrud.update(resource, state.selectedId, payload);
               if (isRequestEditing()) {
-                setStatus('Новая версия запроса сохранена. Игровая база не изменялась.', 'ok');
-                toast('Версия запроса обновлена', 'success');
+                setStatus('The new request version was saved. The game database was not changed.', 'ok');
+                toast('The request version has been updated', 'success');
               } else if (isGuest()) {
-                setStatus('Изменения в черновике запроса — в базу они попадут только после одобрения администратора.', 'ok');
-                toast('Добавлено в черновик запроса', 'info');
+                setStatus('Draft changes are written to the database only after admin approval.', 'ok');
+                toast('Added to the request draft', 'info');
               } else {
-                setStatus('Изменения сохранены.', 'ok');
-                toast('Сохранено', 'success');
+                setStatus('Changes saved.', 'ok');
+                toast('Saved', 'success');
               }
             } else {
               const res = await window.EditorCore.DBCrud.create(resource, payload);
               state.selectedId = Number(res.id || 0);
               state.lastSelectedIdBeforeCreate = 0;
               if (isRequestEditing()) {
-                setStatus('Создание добавлено в новую версию запроса. Игровая база не изменялась.', 'ok');
-                toast('Создание добавлено в запрос', 'success');
+                setStatus('The new record was added to the new request version. The game database was not changed.', 'ok');
+                toast('The new record was added to the request', 'success');
               } else if (isGuest()) {
-                setStatus('Новая запись в черновике запроса — отправьте её администратору.', 'ok');
-                toast('Новая запись в черновике', 'info');
+                setStatus('New record in the request draft — submit it to the administrator.', 'ok');
+                toast('New record in the draft', 'info');
               } else {
-                setStatus('Запись создана.', 'ok');
-                toast('Создано', 'success');
+                setStatus('Record created.', 'ok');
+                toast('Created', 'success');
               }
             }
             state.dirty?.setClean?.();
             await loadList({ forceServer: true });
             updateGuestHint();
           } catch (err) {
-            const msg = err?.message || 'Ошибка сохранения';
+            const msg = err?.message || 'Save failed';
             setStatus(msg, 'err');
             toast(msg, 'error');
           }
@@ -654,29 +654,29 @@
       const remove = async () => {
         const id = Number(state.selectedId || 0);
         if (state.operation || !id) return false;
-        if (!await EditorCore.Page.confirm('Удалить запись?')) return false;
+        if (!await EditorCore.Page.confirm('Delete the record?')) return false;
         // A second confirmation or a background refresh must not delete another
         // record (or ID 0) after the selection changed while the dialog was open.
         if (state.operation || Number(state.selectedId || 0) !== id) return false;
         return runOperation(async () => {
-          setStatus('Удаление…');
+          setStatus('Deleting…');
           try {
             // DBCrud auto-records for sync
             await window.EditorCore.DBCrud.remove(resource, id);
             if (isRequestEditing()) {
-              toast('Удаление добавлено в новую версию запроса', 'success');
-              setStatus('Удаление сохранено в запросе. Игровая база не изменялась.', 'ok');
+              toast('The deletion was added to the new request version', 'success');
+              setStatus('The deletion was saved in the request. The game database was not changed.', 'ok');
             } else if (isGuest()) {
-              toast('Удаление добавлено в черновик запроса', 'info');
-              setStatus('Удаление в черновике — запись удалится только после одобрения администратора.', 'ok');
+              toast('Deletion added to the request draft', 'info');
+              setStatus('Deletion is drafted — the record is removed only after admin approval.', 'ok');
             } else {
-              toast('Удалено', 'success');
-              setStatus('Удалено.', 'ok');
+              toast('Deleted', 'success');
+              setStatus('Deleted.', 'ok');
             }
             await selectRow(null, { confirmDirty: false });
             await loadList({ forceServer: true });
           } catch (err) {
-            const msg = err?.message || 'Ошибка удаления';
+            const msg = err?.message || 'Delete failed';
             setStatus(msg, 'err');
             toast(msg, 'error');
           }

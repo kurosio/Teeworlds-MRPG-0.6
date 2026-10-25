@@ -216,7 +216,7 @@
     const nestedLabelClass = options?.classes?.nestedLabel || baseLabelClass;
     const labelClass = isNested ? nestedLabelClass : baseLabelClass;
     const requiredMark = field?.validate?.required
-      ? '<span class="editor-required-mark" title="Обязательное поле" aria-hidden="true">*</span>'
+      ? '<span class="editor-required-mark" title="Required field" aria-hidden="true">*</span>'
       : '';
     const labelHtml = showLabel ? `<div class="${labelClass}">${label}${requiredMark}</div>` : '';
     const baseFieldWrapperClass = (isNested ? (options?.classes?.nestedFieldWrapper || options?.classes?.fieldWrapper) : options?.classes?.fieldWrapper) || '';
@@ -325,11 +325,11 @@
           <div class="editor-scenario-toolbar">
             <button type="button" class="editor-btn editor-btn-secondary" data-action="open-scenario-editor">
               <i class="fa-solid fa-scroll"></i>
-              <span>Открыть редактор сценария</span>
+              <span>Open the scenario editor</span>
             </button>
           </div>
           <div class="editor-muted-text text-xs mt-2">
-            Тип сценария: <b data-scenario-mode-label>${escapeHtml(modeLabel)}</b> · <span data-scenario-status>${hasValue ? 'JSON задан' : 'JSON не задан'}</span>
+            Scenario type: <b data-scenario-mode-label>${escapeHtml(modeLabel)}</b> · <span data-scenario-status>${hasValue ? 'JSON set' : 'JSON not set'}</span>
           </div>
         </div>`;
     };
@@ -369,7 +369,7 @@
       if (!ds && dbKey && window.EditorCore?.DB) {
         ds = window.EditorCore.DB.resolveSource(dbKey);
       }
-      const placeholder = ui.placeholder || '— выберите —';
+      const placeholder = ui.placeholder || '— select —';
       const labelMode = (ui.labelMode || (window.EditorCore?.DBMap?.[dbKey]?.labelMode) || 'id_name');
       return { ds: ds || '', dbKey, placeholder, labelMode };
     };
@@ -383,7 +383,7 @@
       searchPlaceholder,
       allowCreate = false,
     } = {}) => {
-      const ph = placeholder || searchPlaceholder || 'Добавить…';
+      const ph = placeholder || searchPlaceholder || 'Add…';
       const dsResolved = datasource
         ? (window.EditorCore?.DB?.resolveSource ? (window.EditorCore.DB.resolveSource(datasource) || datasource) : datasource)
         : '';
@@ -475,7 +475,7 @@
       const allowZero = ui.allowZero === true || String(dbKey || '').toLowerCase() === 'world' || String(ds).toLowerCase() === 'worlds';
       const cur = value ?? (allowZero ? '' : 0);
 
-      const searchPh = ui.searchPlaceholder || ui.placeholder || 'Поиск…';
+      const searchPh = ui.searchPlaceholder || ui.placeholder || 'Search…';
       const state = ds ? 'connected' : '';
       const hasVal = (v) => v !== undefined && v !== null && String(v) !== '' && (allowZero || String(v) !== '0');
       const curVal = hasVal(value) ? String(value) : '';
@@ -492,7 +492,7 @@
              data-allow-zero="${allowZero ? '1' : '0'}">
           <div class="editor-dbcombo-control">
             <input type="search" class="${inputClass} editor-dbcombo-input" placeholder="${escapeAttr(searchPh)}" autocomplete="off" />
-            <button type="button" class="editor-dbcombo-clear" title="Очистить выбор" aria-label="Очистить выбор"${curVal ? '' : ' hidden'}>
+            <button type="button" class="editor-dbcombo-clear" title="Clear selection" aria-label="Clear selection"${curVal ? '' : ' hidden'}>
               <i class="fa-solid fa-xmark" aria-hidden="true"></i>
             </button>
           </div>
@@ -599,7 +599,7 @@
           data-map-x-path="${escapeAttr(axisX)}" data-map-y-path="${escapeAttr(axisY)}"
           data-map-world-path="${escapeAttr(worldPath)}" data-position-pinned="${xValue !== 0 || yValue !== 0 ? '1' : '0'}">
           ${axisInputHtml(axisX, 'X')}${axisInputHtml(axisY, 'Y')}
-          <div class="editor-muted-text text-sm">${escapeHtml(t('Карта мира недоступна — обновите страницу'))}</div>
+          <div class="editor-muted-text text-sm">${escapeHtml(t('The world map is unavailable — reload the page'))}</div>
         </div>`;
       const wrapperPath = containerMode ? ` data-field-path="${escapeAttr(path)}"` : '';
       return `<div class="${fieldWrapperClass}"${wrapperPath}>${pickerHtml}${footerHtml}</div>`;
@@ -608,8 +608,8 @@
     if (field.type === 'item') {
       const itemDs = ui.datasource || field.datasource || null;
       const itemFields = {
-        id: { type: 'db_select', label: 'Предмет', datasource: itemDs || undefined, ui: { dbKey: ui.dbKey || 'item', placeholder: ui.placeholder || '— выберите предмет —', inputLabel: 'ID', selectLabel: 'Предмет (БД)' } },
-        value: { type: 'number', label: 'Количество', ui: { min: ui.min, max: ui.max, step: ui.step, placeholder: ui.placeholder } }
+        id: { type: 'db_select', label: 'Item', datasource: itemDs || undefined, ui: { dbKey: ui.dbKey || 'item', placeholder: ui.placeholder || '— select an item —', inputLabel: 'ID', selectLabel: 'Item (DB)' } },
+        value: { type: 'number', label: 'Quantity', ui: { min: ui.min, max: ui.max, step: ui.step, placeholder: ui.placeholder } }
       };
       // Responsive: stack on narrow screens
       return `<div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">${labelHtml}<div class="grid grid-cols-1 sm:grid-cols-2 gap-2">${renderComposite(itemFields)}</div>${footerHtml}</div>`;
@@ -650,7 +650,7 @@
           ? `<div class="editor-list-table-header"><div>#</div>${headerLabels.map(l => `<div>${escapeHtml(l)}</div>`).join('')}<div></div></div>`
           : '';
 
-        const emptyMessage = field?.ui?.emptyMessage || 'Список пуст';
+        const emptyMessage = field?.ui?.emptyMessage || 'The list is empty';
         const rowsHtml = items.length ? items.map((item, index) => {
           const itemPath = `${path}.${index}`;
           const cells = Object.keys(itemFields).map((key) => {
@@ -662,7 +662,7 @@
             <div class="editor-list-table-row" data-list-item="${escapeAttr(itemPath)}">
               <div class="editor-list-table-idx">#${index + 1}</div>
               ${cells}
-              <button type="button" class="${listRemoveClass} editor-list-table-del" title="Удалить" data-list-action="remove" data-list-path="${escapeAttr(path)}" data-list-index="${index}">
+              <button type="button" class="${listRemoveClass} editor-list-table-del" title="Delete" data-list-action="remove" data-list-path="${escapeAttr(path)}" data-list-index="${index}">
                 <i class="fa-solid fa-trash"></i>
               </button>
             </div>`;
@@ -675,7 +675,7 @@
           <div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">
             ${hideLabel ? '' : labelHtml}
             <div class="${listWrapperClass} editor-list-table" data-list-container="${escapeAttr(path)}" style="${escapeAttr(colsStyle)}">${headerHtml}${rowsHtml}</div>
-            <button type="button" class="${listAddClass} editor-list-add" data-list-action="add" data-list-path="${escapeAttr(path)}" data-list-default="${defaultPayload}">${field?.ui?.addLabel || options?.listAddLabel || 'Добавить'}</button>
+            <button type="button" class="${listAddClass} editor-list-add" data-list-action="add" data-list-path="${escapeAttr(path)}" data-list-default="${defaultPayload}">${field?.ui?.addLabel || options?.listAddLabel || 'Add'}</button>
             ${footerHtml}
           </div>`;
       }
@@ -714,7 +714,7 @@
       const listItems = items.map((item, index) => {
         const itemPath = `${path}.${index}`;
         const removeBtn = `
-              <button type="button" class="${listRemoveClass} editor-list-item-del" title="Удалить" data-list-action="remove" data-list-path="${escapeAttr(path)}" data-list-index="${index}">
+              <button type="button" class="${listRemoveClass} editor-list-item-del" title="Delete" data-list-action="remove" data-list-path="${escapeAttr(path)}" data-list-index="${index}">
                 <i class="fa-solid fa-trash"></i>
               </button>`;
 
@@ -743,7 +743,7 @@
           <div class="${listItemClass}" data-list-item="${escapeAttr(itemPath)}">
             <div class="flex items-center justify-between gap-3 mb-2">
               <div class="editor-muted-text text-xs">#${index + 1}</div>
-              <button type="button" class="${listRemoveClass}" title="Удалить" data-list-action="remove" data-list-path="${escapeAttr(path)}" data-list-index="${index}">
+              <button type="button" class="${listRemoveClass}" title="Delete" data-list-action="remove" data-list-path="${escapeAttr(path)}" data-list-index="${index}">
                 <i class="fa-solid fa-trash"></i>
               </button>
             </div>
@@ -765,7 +765,7 @@
             </div>
           </div>`;
       }).join('');
-      const emptyMessage = field?.ui?.emptyMessage || 'Список пуст';
+      const emptyMessage = field?.ui?.emptyMessage || 'The list is empty';
       const listContent = listItems || `<div class="editor-empty-state">${escapeHtml(emptyMessage)}</div>`;
       const defaultItem = buildDefaultItem(field);
       const defaultPayload = encodeURIComponent(JSON.stringify(defaultItem));
@@ -773,7 +773,7 @@
         <div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">
           ${hideLabel ? '' : labelHtml}
           <div class="${listWrapperClass}" data-list-container="${escapeAttr(path)}">${listContent}</div>
-          <button type="button" class="${listAddClass} editor-list-add" data-list-action="add" data-list-path="${escapeAttr(path)}" data-list-default="${defaultPayload}">${field?.ui?.addLabel || options?.listAddLabel || 'Добавить'}</button>
+          <button type="button" class="${listAddClass} editor-list-add" data-list-action="add" data-list-path="${escapeAttr(path)}" data-list-default="${defaultPayload}">${field?.ui?.addLabel || options?.listAddLabel || 'Add'}</button>
           ${footerHtml}
         </div>`;
     }

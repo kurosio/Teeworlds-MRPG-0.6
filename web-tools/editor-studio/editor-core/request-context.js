@@ -78,22 +78,22 @@
         openRequestPage();
       });
     }
-    const typeLabel = { create: 'создание', update: 'изменение', delete: 'удаление' };
+    const typeLabel = { create: 'creation', update: 'change', delete: 'deletion' };
     const targetOp = target ? findOperation(target.resource, target.id) : null;
     const details = loadError
       ? esc(loadError)
       : request
-        ? `${esc(requestId)} · v${Number(request.version) || 1}${targetOp ? ` · ${esc(typeLabel[targetOp.type] || targetOp.type)} #${operationId(targetOp)}` : ''}${target?.field ? ` · поле <code>${esc(target.field)}</code>` : ''}`
-        : `${esc(requestId)} · загрузка…`;
+        ? `${esc(requestId)} · v${Number(request.version) || 1}${targetOp ? ` · ${esc(typeLabel[targetOp.type] || targetOp.type)} #${operationId(targetOp)}` : ''}${target?.field ? ` · field <code>${esc(target.field)}</code>` : ''}`
+        : `${esc(requestId)}  · loading…`;
     const editing = editMode && request?.status === 'pending';
     const hint = editError || (editing
-      ? 'Обычные кнопки редактора сохраняют новую версию запроса, а не игровую базу.'
-      : 'Прямая запись в базу отключена. Правки выполняются в самом запросе.');
+      ? 'The editor\'s regular buttons save a new request version, not the game database.'
+      : 'Direct database writes are disabled. Changes are made in the request itself.');
     banner.classList.toggle('request-preview-banner--editing', editing);
     banner.innerHTML = `
       <i class="fa-solid ${loadError || editError ? 'fa-triangle-exclamation' : editing ? 'fa-pen-to-square' : 'fa-code-pull-request'}"></i>
-      <div class="request-preview-banner-text"><b>${loadError ? 'Не удалось открыть снимок запроса' : editing ? 'Редактирование запроса' : 'Режим просмотра запроса'}</b><span>${details}</span><small>${esc(hint)}</small></div>
-      <a class="editor-btn editor-btn-secondary editor-btn--sm" href="change-requests.html?request=${encodeURIComponent(requestId)}" data-request-open>Открыть запрос</a>`;
+      <div class="request-preview-banner-text"><b>${loadError ? 'Could not open the request snapshot' : editing ? 'Editing request ' : 'Request view mode'}</b><span>${details}</span><small>${esc(hint)}</small></div>
+      <a class="editor-btn editor-btn-secondary editor-btn--sm" href="change-requests.html?request=${encodeURIComponent(requestId)}" data-request-open>Open the request</a>`;
   };
 
   const syncView = ({ navigate: shouldNavigate = true, clearLive = true } = {}) => {
@@ -143,12 +143,12 @@
   const readyPromise = active
     ? Promise.all([requestPromise, rolePromise])
       .then(([response, role]) => {
-        if (!response?.ok || !response.request) throw new Error(response?.error || 'Запрос не найден.');
+        if (!response?.ok || !response.request) throw new Error(response?.error || 'Request not found.');
         prepareRequest(response.request, role);
         return request;
       })
       .catch((error) => {
-        loadError = error?.message || 'Ошибка загрузки запроса.';
+        loadError = error?.message || 'Failed to load the request.';
         editMode = false;
         renderBanner();
         return null;
@@ -323,14 +323,14 @@
     syncView({ navigate, clearLive });
   };
   const mutationError = (response) => {
-    const error = new Error(response?.error || 'Не удалось сохранить новую версию запроса.');
+    const error = new Error(response?.error || 'Failed to save the new request version.');
     error.code = response?.code || '';
     error.status = response?.status || 0;
     error.conflicts = response?.conflicts || [];
     throw error;
   };
-  const conflictMessage = 'Запрос изменён другой стороной. Откройте его заново и повторите правку в актуальной версии.';
-  const closedMessage = 'Запрос уже обработан в другом окне. Откройте его актуальную версию.';
+  const conflictMessage = 'The request was changed by the other side. Reopen it and repeat the edit in the current version.';
+  const closedMessage = 'The request was already processed in another window. Open its current version.';
   const isStaleError = (error) => error?.code === 'version_conflict' || error?.code === 'request_not_pending' || error?.status === 404;
 
   const commitSnapshot = async (snapshot, { navigate = true } = {}) => {
@@ -352,15 +352,15 @@
   const nextTempId = () => {
     const used = operations.map((op) => Number(op.tempId) || 0);
     const id = Math.max(TEMP_ID_BASE, ...used) + 1;
-    if (id > TEMP_ID_MAX) throw new Error('Исчерпаны временные ID новых записей запроса.');
+    if (id > TEMP_ID_MAX) throw new Error('Temporary IDs for new request records are exhausted.');
     return id;
   };
 
   const stageMutation = ({ action, resource, id = null, data = null, baseRow = null }) => {
-    if (!request || request.status !== 'pending') throw new Error('Редактировать можно только pending-запрос.');
+    if (!request || request.status !== 'pending') throw new Error('Only a pending request can be edited.');
     const numericId = Number(id) || 0;
     if (action !== 'create' && (!Number.isSafeInteger(numericId) || numericId <= 0)) {
-      throw new Error('Некорректный ID записи.');
+      throw new Error('Invalid record ID.');
     }
     if (action === 'create') {
       const tempId = nextTempId();
@@ -423,12 +423,12 @@
       target = null;
       return { ok: true, id: numericId, request: true };
     }
-    throw new Error('Неизвестная операция запроса.');
+    throw new Error('Unknown request operation.');
   };
 
   const assertEditable = () => {
     if (!editMode || request?.status !== 'pending') {
-      throw new Error('Открыт read-only снимок запроса. Вернитесь в запрос и сохраните исправленную версию там.');
+      throw new Error('A read-only snapshot of the request is open. Go back to the request and save the fixed version there.');
     }
     if (editBlocked) throw new Error(editError || conflictMessage);
   };
@@ -521,7 +521,7 @@
     const current = level === 'main' ? mainGroup : level === 'group' ? group : subGroup;
     if (!['main', 'group', 'sub'].includes(level) || !current) throw new Error('Invalid craft group target');
     if (!name || name.includes(':') || name.includes('|') || name.length > 256) {
-      throw new Error('Некорректное новое имя группы. Не используйте : или |; максимум 256 символов.');
+      throw new Error('Invalid new group name. Do not use : or |; 256 characters maximum.');
     }
     if (name === current) return { ok: true, changed: [] };
     const parentMatches = (p) => level === 'main' || (p.main === mainGroup && (level === 'group' || p.group === group));
@@ -543,7 +543,7 @@
       updates.push({ ID: Number(row.ID), newGroupName: renamed });
     }
     if (updates.length && merged && mergeExisting !== true) {
-      throw new Error('Такое имя уже занято на этом уровне. Проверьте предупреждение и повторите.');
+      throw new Error('This name is already taken at this level. Check the warning and try again.');
     }
     return batch(async () => {
       for (const update of updates) {

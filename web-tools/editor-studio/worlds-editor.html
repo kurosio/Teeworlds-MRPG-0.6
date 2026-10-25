@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Миры • Editor Studio</title>
+  <title>Worlds • Editor Studio</title>
   <script src="editor-core/page-loader.js" data-mode="event"></script>
 </head>
 
@@ -13,16 +13,16 @@
       <div class="editor-page-title">
         <i class="fa-solid fa-globe text-accent text-xl"></i>
         <div>
-          <h1>Миры</h1>
-          <div class="editor-page-sub">Параметры миров: тип, пути, игровые флаги и настройки.</div>
+          <h1>Worlds</h1>
+          <div class="editor-page-sub">World settings: type, paths, game flags and options.</div>
         </div>
       </div>
       <div class="editor-page-actions">
         <button class="editor-btn editor-btn-secondary" data-editor-role="refresh">
-          <i class="fa-solid fa-rotate"></i><span>Обновить</span>
+          <i class="fa-solid fa-rotate"></i><span>Refresh</span>
         </button>
         <button class="editor-btn editor-btn-primary" data-editor-role="new">
-          <i class="fa-solid fa-plus"></i><span>Новый мир</span>
+          <i class="fa-solid fa-plus"></i><span>New world</span>
         </button>
       </div>
     </div>
@@ -33,21 +33,21 @@
         <div class="editor-dock-pad">
           <div class="flex items-center justify-between gap-3">
             <div>
-              <div class="text-sm font-semibold">Список миров</div>
-              <div class="text-xs editor-muted-text">Всего: <span data-editor-role="count">—</span></div>
+              <div class="text-sm font-semibold">World list</div>
+              <div class="text-xs editor-muted-text">Total: <span data-editor-role="count">—</span></div>
             </div>
           </div>
 
           <div class="mt-3">
             <div class="editor-search">
               <i class="fa-solid fa-magnifying-glass"></i>
-              <input data-editor-role="search" type="search" class="w-full editor-input form-input" placeholder="Поиск по ID/названию/пути…" />
+              <input data-editor-role="search" type="search" class="w-full editor-input form-input" placeholder="Search by ID/name/path…" />
             </div>
           </div>
 
           <div class="mt-3 editor-sidebar-filters">
             <select id="filterType" class="w-full editor-input form-input">
-              <option value="">Все типы</option>
+              <option value="">All types</option>
             </select>
           </div>
 
@@ -60,19 +60,19 @@
         <div class="editor-dock-pad">
           <div class="editor-sticky-toolbar flex items-start justify-between gap-4">
             <div>
-              <div class="text-lg font-semibold" data-editor-role="title">Выберите мир</div>
-              <div class="editor-muted-text text-sm mt-1" data-editor-role="subtitle">или создайте новый</div>
+              <div class="text-lg font-semibold" data-editor-role="title">Select a world</div>
+              <div class="editor-muted-text text-sm mt-1" data-editor-role="subtitle">or create a new one</div>
             </div>
             <div class="editor-page-actions">
-              <span id="dirty-pill" class="editor-dirty-pill hidden">Данные не сохранены</span>
+              <span id="dirty-pill" class="editor-dirty-pill hidden">Data not saved</span>
               <button class="editor-btn editor-btn-primary" data-editor-role="save" disabled>
-                <i class="fa-solid fa-floppy-disk"></i><span>Сохранить</span>
+                <i class="fa-solid fa-floppy-disk"></i><span>Save</span>
               </button>
               <button class="editor-btn editor-btn-secondary hidden" data-editor-role="cancel" disabled>
-                <i class="fa-solid fa-rotate-left"></i><span>Отменить</span>
+                <i class="fa-solid fa-rotate-left"></i><span>Cancel</span>
               </button>
               <button class="editor-btn editor-btn-secondary" data-editor-role="delete" disabled>
-                <i class="fa-solid fa-trash"></i><span>Удалить</span>
+                <i class="fa-solid fa-trash"></i><span>Delete</span>
               </button>
             </div>
           </div>
@@ -120,39 +120,39 @@
     const worldFields = {
       Name: {
         type: 'text',
-        label: 'Название',
+        label: 'Name',
         validate: { required: true },
         ui: {
-          placeholder: 'Например: Gridania',
-          section: { title: 'Основная информация', icon: 'fa-globe', subtitle: 'Имя, файл карты и режим мира' },
+          placeholder: 'e.g. Gridania',
+          section: { title: 'Basic information', icon: 'fa-globe', subtitle: 'Name, map file and world mode' },
         },
       },
-      Path: { type: 'text', label: 'Путь карты', validate: { required: true }, ui: { placeholder: 'main.map' } },
+      Path: { type: 'text', label: 'Map path', validate: { required: true }, ui: { placeholder: 'main.map' } },
       Type: {
-        label: 'Тип мира',
+        label: 'World type',
         ui: {
           type: 'select',
           options: TYPES.map((type) => ({ value: type, label: type }))
         }
       },
-      RequiredLevel: { type: 'number', label: 'Минимальный уровень', ui: { min: 1, step: 1 } },
+      RequiredLevel: { type: 'number', label: 'Minimum level', ui: { min: 1, step: 1 } },
       RespawnWorldID: {
         type: 'db_select',
-        label: 'Мир респавна',
+        label: 'Respawn world',
         ui: {
           dbKey: 'world',
-          placeholder: '— мир —',
-          searchPlaceholder: 'Поиск мира…',
-          section: { title: 'Связанные миры и правила', icon: 'fa-route' },
+          placeholder: '— world —',
+          searchPlaceholder: 'Search a world…',
+          section: { title: 'Related worlds and rules', icon: 'fa-route' },
         },
       },
-      JailWorldID: { type: 'db_select', label: 'Мир тюрьмы', ui: { dbKey: 'world', placeholder: '— мир —', searchPlaceholder: 'Поиск мира…' } },
+      JailWorldID: { type: 'db_select', label: 'Jail world', ui: { dbKey: 'world', placeholder: '— world —', searchPlaceholder: 'Search a world…' } },
       Flags: {
-        label: 'Игровые флаги',
+        label: 'Game flags',
         ui: {
           type: 'tags',
           options: FLAGS,
-          placeholder: 'Добавить флаг…',
+          placeholder: 'Add a flag…',
           spanAll: true,
         }
       },
@@ -169,7 +169,7 @@
     const filterType = document.getElementById('filterType');
     if (filterType) {
       filterType.innerHTML = [
-        '<option value=\"\">Все типы</option>',
+        '<option value="">All types</option>',
         ...TYPES.map(type => `<option value=\"${type}\">${type}</option>`),
       ].join('');
     }
@@ -211,18 +211,18 @@
         RequiredLevel: Math.max(1, Number(model?.RequiredLevel || 1)),
       }),
       listItem: (row) => ({
-        title: row?.Name || `Мир #${row?.ID || 0}`,
+        title: row?.Name || `World #${row?.ID || 0}`,
         subtitle: `${row?.Path || '—'} · ID ${row?.ID ?? '—'}`
       }),
-      getTitle: (model, id) => (id ? `Мир: ${model?.Name || `#${id}`}` : 'Новый мир'),
+      getTitle: (model, id) => (id ? `World:  ${model?.Name || `#${id}`}` : 'New world'),
       getSubtitle: (model, id) => {
         if (!model) return '';
-        const type = model.Type ? `Тип: ${model.Type}` : 'Тип: —';
-        const path = model.Path ? `Путь: ${model.Path}` : 'Путь: —';
+        const type = model.Type ? `Type:  ${model.Type}` : 'Type: —';
+        const path = model.Path ? `Path:  ${model.Path}` : 'Path: —';
         return id ? `ID ${id} · ${type} · ${path}` : `${type} · ${path}`;
       },
-      emptyTitle: 'Выберите мир',
-      emptySubtitle: 'или создайте новый',
+      emptyTitle: 'Select a world',
+      emptySubtitle: 'or create a new one',
     });
 
     filterType?.addEventListener('change', () => {

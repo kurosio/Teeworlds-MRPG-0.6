@@ -73,7 +73,7 @@ test('PositionPicker is wired into the editor core and every quest position', ()
   const quests = read('quests-editor.html');
   const pointMap = read('editor-core/point-map.js');
   const positionPicker = read('editor-core/position-picker.js');
-  const en = read('editor-core/i18n-en.js');
+  const ru = read('localization/lang_ru.js');
 
   assert.match(loader, /editor-core\/position-picker\.js/);
   assert.match(loader, /editor-core\/position-picker\.css/);
@@ -104,8 +104,9 @@ test('PositionPicker is wired into the editor core and every quest position', ()
   assert.match(quests, /mapPickerTag: 'quest-step-position'/);
   assert.match(quests, /safeTiles: true/);
   assert.doesNotMatch(quests, /class="editor-vec2"/);
-  assert.match(en, /"Ввести вручную":/);
-  assert.match(en, /"Мир сохраняется в записи":/);
+  // Русский словарь переводит английский источник (layout/подписи карты).
+  assert.match(ru, /"Enter manually": "Ввести вручную"/);
+  assert.match(ru, /"The world is saved in the record": "Мир сохраняется в записи"/);
 });
 
 test('all position editors declare the map flags they need', () => {

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Настройки • Editor Studio</title>
+  <title>Settings • Editor Studio</title>
   <script src="editor-core/page-loader.js" data-mode="event"></script>
   <style>
     /* Профили подключения: чипы со статусной точкой. */
@@ -142,15 +142,15 @@
       <div class="editor-page-title">
         <i class="fa-solid fa-gear text-accent text-xl"></i>
         <div>
-          <h1>Настройки</h1>
-          <div class="editor-page-sub">Подключение к базе данных и источники данных для редакторов.</div>
+          <h1>Settings</h1>
+          <div class="editor-page-sub">Database connection and data sources for the editors.</div>
         </div>
       </div>
       <div class="editor-page-actions">
         <div data-i18n-switcher-host></div>
         <button id="btn-test" class="editor-btn editor-btn-secondary">
           <i class="fa-solid fa-plug-circle-check"></i>
-          <span>Проверить</span>
+          <span>Check</span>
         </button>
       </div>
     </div>
@@ -159,83 +159,82 @@
 
       <!-- ─── Database ─── -->
       <section class="editor-panel-card">
-        <h2 class="text-lg font-semibold mb-4">База данных</h2>
+        <h2 class="text-lg font-semibold mb-4">Database</h2>
 
-        <div class="editor-label mb-2">Профиль подключения</div>
+        <div class="editor-label mb-2">Connection profile</div>
         <div id="profiles-bar" class="profiles-bar mb-5"></div>
 
         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <div class="editor-label mb-1">Хост</div>
+            <div class="editor-label mb-1">Host</div>
             <input id="f-host" type="text" class="w-full editor-input form-input" placeholder="127.0.0.1" />
           </div>
           <div>
-            <div class="editor-label mb-1">Порт</div>
+            <div class="editor-label mb-1">Port</div>
             <input id="f-port" type="number" class="w-full editor-input form-input" placeholder="3306" />
           </div>
           <div>
-            <div class="editor-label mb-1">База данных</div>
+            <div class="editor-label mb-1">Database</div>
             <input id="f-db" type="text" class="w-full editor-input form-input" placeholder="mmorpg" />
           </div>
           <div>
-            <div class="editor-label mb-1">Пользователь</div>
+            <div class="editor-label mb-1">User</div>
             <input id="f-user" type="text" class="w-full editor-input form-input" placeholder="root" />
           </div>
           <div class="md:col-span-2">
-            <div class="editor-label mb-1">Пароль</div>
+            <div class="editor-label mb-1">Password</div>
             <input id="f-pass" type="password" class="w-full editor-input form-input" placeholder="••••••" autocomplete="off" />
             <label class="flex items-center gap-2 mt-1.5 cursor-pointer select-none">
               <input id="f-nopass" type="checkbox" class="rounded editor-hairline-strong editor-soft-strong editor-primary-text h-4 w-4" />
-              <span class="text-xs editor-muted-text">Без пароля</span>
+              <span class="text-xs editor-muted-text">No password</span>
             </label>
             <div class="editor-muted-text text-xs mt-1">
-              Пустое поле — оставить сохранённый на сервере пароль. Для подключения без пароля отметьте «Без пароля».
+              Leave the field empty to keep the password stored on the server. To connect without a password, check “No password”.
             </div>
           </div>
           <div class="md:col-span-2">
-            <div class="editor-label mb-1">API скинов</div>
+            <div class="editor-label mb-1">Skins API</div>
             <input id="f-skins" type="url" class="w-full editor-input form-input" placeholder="https://skins.example.com/api" />
             <div class="flex flex-wrap gap-2 mt-3">
               <button id="btn-test-skins" class="editor-btn editor-btn-secondary">
                 <i class="fa-solid fa-plug-circle-check"></i>
-                <span>Проверить API скинов</span>
+                <span>Test the skins API</span>
               </button>
             </div>
             <div id="skins-status" class="mt-2 text-xs"></div>
           </div>
           <div class="md:col-span-2 editor-section">
-            <div class="editor-label mb-1">Карты игрового сервера</div>
+            <div class="editor-label mb-1">Game server maps</div>
             <div class="editor-muted-text text-xs mb-3">
-              Карты (.map) и их текстуры редактор берёт с игрового сервера: через мост map-api или из каталогов на этом компьютере.
-              Каталог веб-редактора для карт больше не используется.
+              The editor takes maps (.map) and their textures from the game server: through the map-api bridge or from folders on this machine. The web editor folder is no longer used for maps.
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div class="md:col-span-2">
-                <div class="editor-label mb-1">Адрес map-api</div>
+                <div class="editor-label mb-1">map-api address</div>
                 <input id="f-map-api" type="url" class="w-full editor-input form-input" placeholder="https://game.example.com/map-api/" />
-                <div class="editor-muted-text text-xs mt-1">Пусто — карты ищутся в каталогах ниже.</div>
+                <div class="editor-muted-text text-xs mt-1">Empty — maps are looked up in the folders below.</div>
               </div>
               <div class="md:col-span-2">
-                <div class="editor-label mb-1">Токен map-api</div>
+                <div class="editor-label mb-1">map-api token</div>
                 <input id="f-map-token" type="password" class="w-full editor-input form-input" placeholder="••••••" autocomplete="off" />
                 <label class="flex items-center gap-2 mt-1.5 cursor-pointer select-none">
                   <input id="f-map-token-clear" type="checkbox" class="rounded editor-hairline-strong editor-soft-strong editor-primary-text h-4 w-4" />
-                  <span class="text-xs editor-muted-text">Забыть сохранённый токен</span>
+                  <span class="text-xs editor-muted-text">Forget the saved token</span>
                 </label>
               </div>
               <div>
-                <div class="editor-label mb-1">Каталог карт</div>
+                <div class="editor-label mb-1">Maps folder</div>
                 <input id="f-maps-dir" type="text" class="w-full editor-input form-input" placeholder="/srv/teeworlds/maps" />
               </div>
               <div>
-                <div class="editor-label mb-1">Каталог текстур карт</div>
+                <div class="editor-label mb-1">Map textures folder</div>
                 <input id="f-mapres-dir" type="text" class="w-full editor-input form-input" placeholder="/srv/teeworlds/data/mapres" />
               </div>
             </div>
             <div class="flex flex-wrap gap-2 mt-3">
               <button id="btn-test-map-api" class="editor-btn editor-btn-secondary">
                 <i class="fa-solid fa-plug-circle-check"></i>
-                <span>Проверить map-api</span>
+                <span>Test the map-api</span>
               </button>
             </div>
             <div id="map-api-status" class="mt-2 text-xs"></div>
@@ -245,7 +244,7 @@
         <div class="flex flex-wrap gap-2 mt-5">
           <button id="btn-save" class="editor-btn editor-btn-primary">
             <i class="fa-solid fa-floppy-disk"></i>
-            <span>Сохранить</span>
+            <span>Save</span>
           </button>
         </div>
 
@@ -255,20 +254,20 @@
       <div class="space-y-4">
         <!-- ─── Sources ─── -->
         <section class="editor-panel-card">
-          <h2 class="text-lg font-semibold">Источники списков</h2>
-          <p class="editor-muted-text text-sm mt-1">Справочники, из которых редакторы берут выпадающие списки. Нажмите, чтобы посмотреть содержимое.</p>
+          <h2 class="text-lg font-semibold">List sources</h2>
+          <p class="editor-muted-text text-sm mt-1">Reference lists the editors use for dropdowns. Click to view the contents.</p>
 
           <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <button class="editor-btn editor-btn-secondary active" data-source="quests"><i class="fa-solid fa-scroll"></i><span>Квесты</span></button>
-            <button class="editor-btn editor-btn-secondary" data-source="items"><i class="fa-solid fa-box"></i><span>Предметы</span></button>
-            <button class="editor-btn editor-btn-secondary" data-source="worlds"><i class="fa-solid fa-globe"></i><span>Миры</span></button>
-            <button class="editor-btn editor-btn-secondary" data-source="skills"><i class="fa-solid fa-wand-magic"></i><span>Скиллы</span></button>
-            <button class="editor-btn editor-btn-secondary" data-source="bots"><i class="fa-solid fa-robot"></i><span>Боты / Мобы</span></button>
+            <button class="editor-btn editor-btn-secondary active" data-source="quests"><i class="fa-solid fa-scroll"></i><span>Quests</span></button>
+            <button class="editor-btn editor-btn-secondary" data-source="items"><i class="fa-solid fa-box"></i><span>Items</span></button>
+            <button class="editor-btn editor-btn-secondary" data-source="worlds"><i class="fa-solid fa-globe"></i><span>Worlds</span></button>
+            <button class="editor-btn editor-btn-secondary" data-source="skills"><i class="fa-solid fa-wand-magic"></i><span>Skills</span></button>
+            <button class="editor-btn editor-btn-secondary" data-source="bots"><i class="fa-solid fa-robot"></i><span>Bots / Mobs</span></button>
           </div>
 
           <div class="mt-4 editor-search">
             <i class="fa-solid fa-magnifying-glass"></i>
-            <input id="search" type="search" class="w-full editor-input form-input" placeholder="Поиск по справочнику…" />
+            <input id="search" type="search" class="w-full editor-input form-input" placeholder="Search lookup…" />
           </div>
 
           <div id="list" class="mt-4 editor-list-scroll editor-list-scroll--short"></div>
@@ -276,13 +275,13 @@
 
         <!-- ─── Theme ─── -->
         <section class="editor-panel-card">
-          <h2 class="text-lg font-semibold">Внешний вид</h2>
-          <p class="editor-muted-text text-sm mt-1">Тема оформления для всех редакторов и рабочей оболочки.</p>
+          <h2 class="text-lg font-semibold">Appearance</h2>
+          <p class="editor-muted-text text-sm mt-1">Color theme across all editors and the studio shell.</p>
           <div class="mt-4">
-            <label class="text-sm font-medium editor-muted-text mb-1 block" for="theme-select">Тема</label>
+            <label class="text-sm font-medium editor-muted-text mb-1 block" for="theme-select">Theme</label>
             <select id="theme-select" class="w-full editor-input form-input">
-              <option value="dark">Тёмная</option>
-              <option value="light">Светлая</option>
+              <option value="dark">Dark</option>
+              <option value="light">Light</option>
             </select>
           </div>
         </section>
@@ -294,20 +293,20 @@
           <div>
             <h2 class="text-lg font-semibold flex items-center gap-2">
               <i class="fa-solid fa-arrows-rotate text-accent"></i>
-              Синхронизация между БД
+              Sync between databases
             </h2>
             <p class="editor-muted-text text-sm mt-1">
-              Настройка целевого подключения для применения изменений из редакторов в другую базу данных.
+              Configure the target connection to apply editor changes to another database.
             </p>
           </div>
           <button id="btn-sync-add" class="editor-btn editor-btn-secondary">
             <i class="fa-solid fa-plus"></i>
-            <span>Добавить профиль</span>
+            <span>Add a profile</span>
           </button>
         </div>
 
         <div id="sync-profiles" class="editor-sync-profile-list">
-          <div class="editor-muted-text text-sm">Загрузка…</div>
+          <div class="editor-muted-text text-sm">Loading…</div>
         </div>
 
         <!-- Sync table map: which tables are synced in which direction -->
@@ -316,18 +315,17 @@
             <div>
               <h3 class="text-base font-semibold flex items-center gap-2">
                 <i class="fa-solid fa-table-list text-accent"></i>
-                Карта синхронизации таблиц
+                Table sync map
               </h3>
               <p class="editor-muted-text text-xs mt-1">
-                Какие таблицы текущей БД синхронизируются с целевой и в какую сторону.
-                «Синхро → цель» — записи редакторов (CRUD), «цель → текущая» — обратная загрузка.
+                Which tables of the current database sync with the target and in which direction. “Sync → target” is editor (CRUD) writes, “target → current” is the reverse load.
               </p>
             </div>
-            <input id="sync-map-search" type="search" class="editor-input form-input" placeholder="Поиск таблицы или редактора…" data-width="sm" />
+            <input id="sync-map-search" type="search" class="editor-input form-input" placeholder="Search a table or editor…" data-width="sm" />
           </div>
           <div id="sync-map-summary" class="mt-3 text-xs editor-muted-text"></div>
           <div id="sync-map" class="editor-sync-map mt-2">
-            <div class="editor-muted-text text-sm">Загрузка…</div>
+            <div class="editor-muted-text text-sm">Loading…</div>
           </div>
         </div>
 
@@ -335,11 +333,8 @@
           <div class="flex items-start gap-2 text-sm">
             <i class="fa-solid fa-circle-info editor-primary-text mt-0.5"></i>
             <div class="editor-muted-text">
-              <strong>Как это работает:</strong> Все изменения в редакторах (создание, обновление, удаление) автоматически записываются в историю.
-              Кнопка <span class="text-accent font-medium">«Синхро»</span> в каждом редакторе позволяет проверить совместимость структур БД
-              и применить накопленные изменения в целевую базу данных. Перед применением выполняется полная валидация схемы и данных.
-              <br /><strong>Обратная синхронизация:</strong> в той же модалке «Синхро» можно заменить данные текущей БД данными целевой
-              (все таблицы, кроме аккаунтов). Перед загрузкой автоматически создаётся дамп текущей БД.
+              <strong>How it works:</strong> Every editor change (create, update, delete) is recorded in the history automatically. The <span class="text-accent font-medium">“Sync”</span> button in each editor checks schema compatibility and applies the accumulated changes to the target database. A full schema and data validation runs before applying.
+              <br /><strong>Reverse sync:</strong> in the same “Sync” dialog you can replace the current database data with the target one (all tables except accounts). A dump of the current database is created automatically before loading.
             </div>
           </div>
         </div>
@@ -353,47 +348,47 @@
     <div class="editor-modal-content p-6 w-full max-w-md">
       <h3 class="text-xl font-bold mb-4 flex items-center gap-2">
         <i class="fa-solid fa-database text-accent"></i>
-        <span id="sync-modal-title">Новый профиль синхронизации</span>
+        <span id="sync-modal-title">New sync profile</span>
       </h3>
       <div class="space-y-4">
         <div>
-          <label class="editor-label">Название</label>
+          <label class="editor-label">Name</label>
           <input id="sync-f-name" type="text" class="w-full editor-input form-input" placeholder="Production DB" />
         </div>
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label class="editor-label">Хост</label>
+            <label class="editor-label">Host</label>
             <input id="sync-f-host" type="text" class="w-full editor-input form-input" placeholder="127.0.0.1" />
           </div>
           <div>
-            <label class="editor-label">Порт</label>
+            <label class="editor-label">Port</label>
             <input id="sync-f-port" type="number" class="w-full editor-input form-input" placeholder="3306" />
           </div>
         </div>
         <div>
-          <label class="editor-label">База данных</label>
+          <label class="editor-label">Database</label>
           <input id="sync-f-db" type="text" class="w-full editor-input form-input" placeholder="mmorpg_prod" />
         </div>
         <div>
-          <label class="editor-label">Пользователь</label>
+          <label class="editor-label">User</label>
           <input id="sync-f-user" type="text" class="w-full editor-input form-input" placeholder="root" />
         </div>
         <div>
-          <label class="editor-label">Пароль</label>
+          <label class="editor-label">Password</label>
           <input id="sync-f-pass" type="password" class="w-full editor-input form-input" placeholder="••••••" />
-          <div class="text-xs editor-muted-text mt-1">Оставьте пустым, чтобы не изменять сохранённый пароль.</div>
+          <div class="text-xs editor-muted-text mt-1">Leave empty to keep the saved password.</div>
         </div>
         <label class="flex items-center gap-2 cursor-pointer select-none">
           <input id="sync-f-set-target" type="checkbox" class="rounded editor-hairline-strong editor-soft-strong editor-primary-text h-4 w-4" checked />
-          <span class="text-sm editor-muted-text">Сделать целевым подключением</span>
+          <span class="text-sm editor-muted-text">Make it the target connection</span>
         </label>
       </div>
       <div id="sync-modal-status" class="mt-3 text-sm"></div>
       <div class="flex justify-end gap-2 mt-6">
-        <button id="sync-modal-cancel" class="editor-btn editor-btn-secondary">Отмена</button>
+        <button id="sync-modal-cancel" class="editor-btn editor-btn-secondary">Cancel</button>
         <button id="sync-modal-save" class="editor-btn editor-btn-primary">
           <i class="fa-solid fa-floppy-disk"></i>
-          <span>Сохранить и проверить</span>
+          <span>Save and test</span>
         </button>
       </div>
     </div>
@@ -434,7 +429,7 @@
     const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 
     const blankProfile = name => ({
-      id: uid(), name: name || 'Default',
+      id: uid(), name: name || 'Default ',
       host: '', port: 3306, db: '', user: '', pass: '', nopass: false,
       // Признак от сервера (get_config.password_set): пароль сохранён, но
       // само значение в браузер не передаётся. Нужен для подсказки в поле.
@@ -461,7 +456,7 @@
         profiles = raw ? JSON.parse(raw) : [];
         if (!Array.isArray(profiles) || !profiles.length) throw 0;
       } catch {
-        profiles = [blankProfile('Default')];
+        profiles = [blankProfile('Default ')];
       }
       
       // Миграция старых профилей. Раньше отсутствие пароля в браузере
@@ -514,7 +509,7 @@
       
       // Show placeholder if server has password
       if (p.hasServerPassword && !p.nopass) {
-        F.pass.placeholder = '•••••• (сохранён на сервере)';
+        F.pass.placeholder = '•••••• (stored on the server)';
       } else {
         F.pass.placeholder = '••••••';
       }
@@ -528,7 +523,7 @@
       // Токен map-api не хранится в браузере: показываем только признак «сохранён».
       F.mapToken.value = '';
       F.mapTokenClear.checked = false;
-      F.mapToken.placeholder = p.mapTokenSet ? '•••••• (сохранён на сервере)' : '••••••';
+      F.mapToken.placeholder = p.mapTokenSet ? '•••••• (stored on the server)' : '••••••';
       // Форма показывает сохранённое состояние — значит, правок нет.
       formBaseline = formSnapshot();
     };
@@ -664,15 +659,15 @@
         const p = active();
         formWrite(p);
         render();
-        setStatus(`Переключение на «${p.name}»…`);
+        setStatus(`Switching to “${p.name}”…`);
 
         // 4. push to server + test
         const sr = await pushToServer(p);
         if (!sr.ok) {
           p.status = 'err';
           save(); render();
-          toast(sr.error || 'Ошибка отправки конфига', 'error');
-          setStatus(sr.error || 'Ошибка', 'err');
+          toast(sr.error || 'Sending the configuration failed', 'error');
+          setStatus(sr.error || 'Error', 'err');
           return;
         }
 
@@ -680,11 +675,11 @@
         if (tr.ok) {
           // Признак пароля уже обновлён ответом save_config (password_set).
           formWrite(p);  // Update placeholder
-          toast(`Подключено: ${p.name}`, 'success');
-          setStatus(`OK — «${p.name}» · ${tr.server || ''}`, 'ok');
+          toast(`Connected:  ${p.name}`, 'success');
+          setStatus(tr.server ? `OK — “${p.name}” · ${tr.server}` : `OK — “${p.name}”`, 'ok');
         } else {
-          toast(`Нет подключения: ${p.name}`, 'error');
-          setStatus(tr.error || 'Ошибка подключения', 'err');
+          toast(`No connection:  ${p.name}`, 'error');
+          setStatus(tr.error || 'Connection failed', 'err');
         }
       } finally {
         busy = false;
@@ -693,7 +688,7 @@
 
     const createProfile = async () => {
       formCapture(active());
-      const p = blankProfile(`Подключение ${profiles.length + 1}`);
+      const p = blankProfile(`Connection  ${profiles.length + 1}`);
       profiles.push(p);
       activeId = p.id;
       save();
@@ -701,17 +696,17 @@
 
       formWrite(p);
       render();
-      toast('Профиль создан', 'success');
-      setStatus(`Новый профиль «${p.name}»`, 'ok');
+      toast('Profile created', 'success');
+      setStatus(`New profile “${p.name}”`, 'ok');
     };
 
     const removeProfile = async (id) => {
       if (profiles.length <= 1) {
-        toast('Нельзя удалить единственный профиль', 'error');
+        toast('The only profile cannot be deleted', 'error');
         return;
       }
       const p = profiles.find(pp => pp.id === id);
-      if (!p || !await EditorCore.Page.confirm(`Удалить «${p.name}»?`)) return;
+      if (!p || !await EditorCore.Page.confirm(`Delete “${p.name}»?`)) return;
 
       profiles = profiles.filter(pp => pp.id !== id);
 
@@ -720,7 +715,7 @@
         formWrite(active());
       }
       save(); render();
-      toast('Удалён', 'success');
+      toast('Deleted', 'success');
     };
 
     const renameProfile = id => {
@@ -731,11 +726,11 @@
       bg.className = 'modal-bg';
       bg.innerHTML = `
         <div class="modal-box">
-          <h3><i class="fa-solid fa-pen" style="color:#6366f1;margin-right:6px"></i>Переименовать</h3>
+          <h3><i class="fa-solid fa-pen" style="color:#6366f1;margin-right:6px"></i>Rename</h3>
           <input id="m-name" type="text" class="w-full editor-input form-input" maxlength="40" />
           <div class="btns">
-            <button id="m-no" class="editor-btn editor-btn-secondary"><span>Отмена</span></button>
-            <button id="m-ok" class="editor-btn editor-btn-primary"><span>Готово</span></button>
+            <button id="m-no" class="editor-btn editor-btn-secondary"><span>Cancel</span></button>
+            <button id="m-ok" class="editor-btn editor-btn-primary"><span>Done</span></button>
           </div>
         </div>`;
       document.body.appendChild(bg);
@@ -776,7 +771,7 @@
           <span class="x-btn" data-del="${p.id}"><i class="fa-solid fa-xmark"></i></span>
         </div>`;
       }
-      h += `<button class="profile-add" id="p-add" title="Добавить профиль подключения" aria-label="Добавить профиль подключения"><i class="fa-solid fa-plus"></i></button>`;
+      h += `<button class="profile-add" id="p-add" title="Add a connection profile" aria-label="Add a connection profile"><i class="fa-solid fa-plus"></i></button>`;
       UI.profilesBar.innerHTML = h;
 
       // bind
@@ -834,12 +829,12 @@
 
         const sr = await pushToServer(p);
         if (!sr.ok) {
-          toast(sr.error || 'Ошибка сохранения', 'error');
-          setStatus(sr.error || 'Ошибка', 'err');
+          toast(sr.error || 'Save failed', 'error');
+          setStatus(sr.error || 'Error', 'err');
           return;
         }
 
-        toast(`Сохранено — «${p.name}»`, 'success');
+        toast(`Saved — “${p.name}»`, 'success');
         F.pass.value = '';
         applyMapTokenState(p);
         save();
@@ -848,9 +843,9 @@
         if (tr.ok) {
           // Признак пароля уже обновлён ответом save_config (password_set).
           formWrite(p);  // Update placeholder
-          setStatus(`Сохранено и подключено. Server: ${tr.server || ''}`, 'ok');
+          setStatus(`Saved and connected. Server:  ${tr.server || ''}`, 'ok');
         } else {
-          setStatus(`Сохранено, но подключение не удалось: ${tr.error || ''}`, 'err');
+          setStatus(`Saved, but the connection failed:  ${tr.error || ''}`, 'err');
         }
       } finally {
         busy = false;
@@ -868,8 +863,8 @@
 
         const sr = await pushToServer(p);
         if (!sr.ok) {
-          toast(sr.error || 'Ошибка отправки конфига', 'error');
-          setStatus(sr.error || 'Ошибка отправки конфига', 'err');
+          toast(sr.error || 'Sending the configuration failed', 'error');
+          setStatus(sr.error || 'Sending the configuration failed', 'err');
           return;
         }
 
@@ -879,11 +874,11 @@
         if (tr.ok) {
           // Признак пароля уже обновлён ответом save_config (password_set).
           formWrite(p);  // Update placeholder
-          toast('Соединение OK', 'success');
+          toast('Connection OK', 'success');
           setStatus(`OK. Server: ${tr.server || ''}`, 'ok');
         } else {
-          toast('Ошибка подключения', 'error');
-          setStatus(tr.error || 'Ошибка', 'err');
+          toast('Connection failed', 'error');
+          setStatus(tr.error || 'Error', 'err');
         }
       } finally {
         busy = false;
@@ -894,11 +889,11 @@
       const url = F.skins.value.trim();
       const r = await EditorCore.DB.testSkins({ url });
       if (r.ok) {
-        toast('API скинов отвечает', 'success');
-        setSkinsStatus(`Доступен. Статус: ${r.status || 'OK'}`, 'ok');
+        toast('The skins API responds', 'success');
+        setSkinsStatus(`Available. Status:  ${r.status || 'OK'}`, 'ok');
       } else {
-        toast(r.error || 'Skins API недоступен', 'error');
-        setSkinsStatus(r.error || 'Ошибка', 'err');
+        toast(r.error || 'The skins API is unavailable', 'error');
+        setSkinsStatus(r.error || 'Error', 'err');
       }
     };
 
@@ -914,24 +909,24 @@
         const r = await EditorCore.Http.json('api/map.php?action=status', { timeout: 20000 });
         const cfg = r.ok ? (r.data || {}) : {};
         if (!r.ok || cfg.ok === false) {
-          toast('Источник карт недоступен', 'error');
-          setMapApiStatus(r.error || cfg.error || 'Ошибка', 'err');
+          toast('The map source is unavailable', 'error');
+          setMapApiStatus(r.error || cfg.error || 'Error', 'err');
           return;
         }
-        const where = [cfg.maps_dir ? `карты: ${cfg.maps_dir}` : '', cfg.mapres_dir ? `текстуры: ${cfg.mapres_dir}` : '']
+        const where = [cfg.maps_dir ? `maps:  ${cfg.maps_dir}` : '', cfg.mapres_dir ? `textures:  ${cfg.mapres_dir}` : '']
           .filter(Boolean).join(', ');
-        toast('Каталоги карт доступны', 'success');
-        setMapApiStatus(where ? `Локальный источник. ${where}` : 'Локальный источник.', 'ok');
+        toast('The map folders are available', 'success');
+        setMapApiStatus(where ? `Local source. ${where}` : 'Local source.', 'ok');
         return;
       }
 
       const r = await EditorCore.DB.testMapApi({ url, token });
       if (r.ok) {
-        toast('map-api отвечает', 'success');
-        setMapApiStatus(`Мост доступен. Источник: ${r.source || 'не указан'}`, 'ok');
+        toast('The map-api responds', 'success');
+        setMapApiStatus(`The bridge is available. Source:  ${r.source || 'not set'}`, 'ok');
       } else {
-        toast(r.error || 'map-api недоступен', 'error');
-        setMapApiStatus(r.error || 'Ошибка', 'err');
+        toast(r.error || 'The map-api is unavailable', 'error');
+        setMapApiStatus(r.error || 'Error', 'err');
       }
     };
 
@@ -943,12 +938,12 @@
 
     const renderList = items => {
       const info = `<div class="px-3 py-2 text-xs editor-muted-text border-b editor-hairline flex items-center justify-between">
-        <span>Показано: <b>${items.length}</b>${listTotal != null ? ` из <b>${listTotal}</b>` : ''}</span>
-        ${listMore ? '<button id="load-more" class="editor-btn editor-btn-secondary" style="padding:5px 10px">Ещё</button>' : ''}
+        <span>Shown: <b>${items.length}</b>${listTotal != null ? `  of  <b>${listTotal}</b>` : ''}</span>
+        ${listMore ? '<button id="load-more" class="editor-btn editor-btn-secondary" style="padding:5px 10px">More</button>' : ''}
       </div>`;
 
       if (!items.length) {
-        UI.list.innerHTML = info + '<div class="p-3 editor-muted-text">Нет данных</div>';
+        UI.list.innerHTML = info + '<div class="p-3 editor-muted-text">No data</div>';
         return;
       }
 
@@ -964,7 +959,7 @@
           <table class="editor-table">
             <thead><tr>
               <th>ID</th>
-              <th>Название</th>
+              <th>Name</th>
             </tr></thead>
             <tbody>${rows}</tbody>
           </table>
@@ -1055,12 +1050,12 @@
         const tr = await testConn(p);
         if (tr.ok) {
           formWrite(p);  // Update placeholder из password_set
-          setStatus(`Подключено: «${p.name}»`, 'ok');
+          setStatus(`Connected: “${p.name}”`, 'ok');
         } else {
-          setStatus(`Ошибка: ${tr.error || ''}`, 'err');
+          setStatus(`Error:  ${tr.error || ''}`, 'err');
         }
       } else {
-        setStatus('Заполните параметры подключения.', 'muted');
+        setStatus('Fill in the connection parameters.', 'muted');
       }
 
       loadSource();
@@ -1083,10 +1078,10 @@
       F.pass.disabled = F.nopass.checked;
       if (F.nopass.checked) {
         F.pass.value = '';
-        F.pass.placeholder = '(без пароля)';
+        F.pass.placeholder = '(no password)';
       } else {
         // Restore placeholder based on server state
-        F.pass.placeholder = p.hasServerPassword ? '•••••• (сохранён на сервере)' : '••••••';
+        F.pass.placeholder = p.hasServerPassword ? '•••••• (stored on the server)' : '••••••';
       }
     });
 
@@ -1135,7 +1130,7 @@
       try {
         const res = await EditorCore.Sync.listProfiles();
         if (!res.ok) {
-          syncProfilesEl.innerHTML = `<div class="text-red-400 text-sm">Ошибка загрузки: ${esc(res.error || '')}</div>`;
+          syncProfilesEl.innerHTML = `<div class="text-red-400 text-sm">Load failed:  ${esc(res.error || '')}</div>`;
           return;
         }
 
@@ -1145,7 +1140,7 @@
         if (!profiles.length) {
           syncProfilesEl.innerHTML = `
             <div class="editor-muted-text text-sm p-4 text-center" style="border: 1px dashed var(--editor-border); border-radius: 10px;">
-              Нет настроенных профилей синхронизации. Нажмите «Добавить профиль» для создания.
+              No sync profiles configured. Press “Add a profile” to create one.
             </div>
           `;
           return;
@@ -1157,17 +1152,17 @@
             <div class="editor-sync-profile-card ${isTarget ? 'is-target' : ''}" data-profile-id="${esc(p.id)}">
               <div class="editor-sync-profile-info">
                 <div class="editor-sync-profile-name">
-                  ${esc(p.name || 'Unnamed')}
-                  ${isTarget ? '<span class="text-xs ml-2 px-2 py-0.5 rounded-full" style="background: rgba(114,214,192,.12); border: 1px solid rgba(114,214,192,.3); color: #72d6c0;">Целевая</span>' : ''}
+                  ${esc(p.name || 'Untitled')}
+                  ${isTarget ? '<span class="text-xs ml-2 px-2 py-0.5 rounded-full" style="background: rgba(114,214,192,.12); border: 1px solid rgba(114,214,192,.3); color: #72d6c0;">Target</span>' : ''}
                 </div>
                 <div class="editor-sync-profile-details">
                   ${esc(p.database || '')} @ ${esc(p.host || '')}:${p.port || 3306} • user: ${esc(p.user || '')}
                 </div>
               </div>
               <div class="editor-sync-profile-actions">
-                ${!isTarget ? `<button class="editor-btn editor-btn-secondary text-xs" data-sync-set="${esc(p.id)}" style="padding:4px 10px"><i class="fa-solid fa-bullseye"></i><span>Целевая</span></button>` : ''}
-                <button class="editor-btn editor-btn-secondary text-xs" data-sync-edit="${esc(p.id)}" style="padding:4px 10px"><i class="fa-solid fa-pen"></i><span>Изменить</span></button>
-                <button class="editor-btn editor-btn-danger text-xs" data-sync-del="${esc(p.id)}" style="padding:4px 10px"><i class="fa-solid fa-trash"></i><span>Удалить</span></button>
+                ${!isTarget ? `<button class="editor-btn editor-btn-secondary text-xs" data-sync-set="${esc(p.id)}" style="padding:4px 10px"><i class="fa-solid fa-bullseye"></i><span>Target</span></button>` : ''}
+                <button class="editor-btn editor-btn-secondary text-xs" data-sync-edit="${esc(p.id)}" style="padding:4px 10px"><i class="fa-solid fa-pen"></i><span>Edit</span></button>
+                <button class="editor-btn editor-btn-danger text-xs" data-sync-del="${esc(p.id)}" style="padding:4px 10px"><i class="fa-solid fa-trash"></i><span>Delete</span></button>
               </div>
             </div>
           `;
@@ -1181,10 +1176,10 @@
             if (!profile) return;
             try {
               await EditorCore.Sync.setAsTarget(profile.id);
-              toast('Целевое подключение обновлено', 'success');
+              toast('Target connection updated', 'success');
               renderSyncProfiles();
             } catch (err) {
-              toast(err.message || 'Ошибка', 'error');
+              toast(err.message || 'Error', 'error');
             }
           });
         });
@@ -1202,25 +1197,25 @@
           btn.addEventListener('click', async () => {
             const id = btn.getAttribute('data-sync-del');
             const profile = profiles.find(p => p.id === id);
-            if (!profile || !await EditorCore.Page.confirm(`Удалить профиль «${profile.name}»?`)) return;
+            if (!profile || !await EditorCore.Page.confirm(`Delete the profile “${profile.name}»?`)) return;
             try {
               await EditorCore.Sync.saveTarget({ profile_id: id, remove: true });
-              toast('Профиль удалён', 'success');
+              toast('Profile deleted', 'success');
               renderSyncProfiles();
             } catch (err) {
-              toast(err.message || 'Ошибка', 'error');
+              toast(err.message || 'Error', 'error');
             }
           });
         });
 
       } catch (err) {
-        syncProfilesEl.innerHTML = `<div class="text-red-400 text-sm">Ошибка: ${esc(err.message)}</div>`;
+        syncProfilesEl.innerHTML = `<div class="text-red-400 text-sm">Error:  ${esc(err.message)}</div>`;
       }
     };
 
     const openSyncProfileModal = (profile = null) => {
       syncEditingId = profile?.id || null;
-      syncModalTitle.textContent = profile ? 'Редактировать профиль' : 'Новый профиль синхронизации';
+      syncModalTitle.textContent = profile ? 'Edit the profile' : 'New sync profile';
       $('sync-f-name').value = profile?.name || '';
       $('sync-f-host').value = profile?.host || '';
       $('sync-f-port').value = profile?.port || 3306;
@@ -1253,14 +1248,14 @@
       const setAsTarget = $('sync-f-set-target').checked;
 
       if (!host || !db || !user) {
-        setSyncModalStatus('Заполните хост, базу данных и пользователя', 'err');
+        setSyncModalStatus('Fill in the host, database and user', 'err');
         return;
       }
 
       const profileId = syncEditingId || uid();
       const btn = $('sync-modal-save');
       btn.disabled = true;
-      setSyncModalStatus('Проверка подключения…');
+      setSyncModalStatus('Testing the connection…');
 
       try {
         const res = await EditorCore.Sync.saveTarget({
@@ -1275,19 +1270,19 @@
         });
 
         if (!res.ok) {
-          setSyncModalStatus(res.error || 'Ошибка сохранения', 'err');
+          setSyncModalStatus(res.error || 'Save failed', 'err');
           return;
         }
 
-        setSyncModalStatus(`Подключено! Server: ${res.server || 'OK'}`, 'ok');
-        toast('Профиль сохранён', 'success');
+        setSyncModalStatus(`Connected! Server:  ${res.server || 'OK'}`, 'ok');
+        toast('Profile saved', 'success');
         setTimeout(() => {
           closeSyncProfileModal();
           renderSyncProfiles();
         }, 800);
 
       } catch (err) {
-        setSyncModalStatus(err.message || 'Ошибка', 'err');
+        setSyncModalStatus(err.message || 'Error', 'err');
       } finally {
         btn.disabled = false;
       }
@@ -1302,20 +1297,20 @@
     let syncMapRows = [];
 
     const DIR_BADGES = {
-      both: '<span class="sync-dir sync-dir-both"><i class="fa-solid fa-right-left"></i> Обе стороны</span>',
-      push: '<span class="sync-dir sync-dir-push"><i class="fa-solid fa-arrow-right"></i> Только запись</span>',
-      pull: '<span class="sync-dir sync-dir-pull"><i class="fa-solid fa-arrow-left"></i> Только загрузка</span>',
-      none: '<span class="sync-dir sync-dir-none"><i class="fa-solid fa-ban"></i> Не синхронизируется</span>',
+      both: '<span class="sync-dir sync-dir-both"><i class="fa-solid fa-right-left"></i> Both directions</span>',
+      push: '<span class="sync-dir sync-dir-push"><i class="fa-solid fa-arrow-right"></i> Write only</span>',
+      pull: '<span class="sync-dir sync-dir-pull"><i class="fa-solid fa-arrow-left"></i> Load only</span>',
+      none: '<span class="sync-dir sync-dir-none"><i class="fa-solid fa-ban"></i> Not synced</span>',
     };
     const dirOf = r => (r.push && r.pull) ? 'both' : (r.push ? 'push' : (r.pull ? 'pull' : 'none'));
     const DIR_ORDER = { both: 0, push: 1, pull: 2, none: 3 };
 
     const syncMapNote = (r, dir) => {
-      if (dir === 'both') return `Ресурс «${esc(r.resource)}»`;
-      if (dir === 'push') return `Ресурс «${esc(r.resource)}» · загрузка из цели отключена`;
-      if (dir === 'pull') return 'Редактора нет — таблица подтягивается только при обратной загрузке';
-      if (!r.exists) return 'Таблицы нет в текущей БД';
-      return `Исключено: ${esc(r.pull_reason || '')}`;
+      if (dir === 'both') return `Resource “${esc(r.resource)}»`;
+      if (dir === 'push') return `Resource “${esc(r.resource)}” · loading from the target is disabled`;
+      if (dir === 'pull') return 'No editor — the table is only pulled on reverse load';
+      if (!r.exists) return 'The table is not in the current database';
+      return `Excluded:  ${esc(r.pull_reason || '')}`;
     };
 
     const renderSyncMapTable = () => {
@@ -1328,7 +1323,7 @@
       const counts = { both: 0, push: 0, pull: 0, none: 0 };
       rows.forEach(r => counts[r.dir]++);
       if (syncMapSummary) {
-        syncMapSummary.innerHTML = `Всего таблиц: ${rows.length} · Обе стороны: <b>${counts.both}</b> · Только загрузка: <b>${counts.pull}</b> · Только запись: <b>${counts.push}</b> · Не синхронизируются: <b>${counts.none}</b>`;
+        syncMapSummary.innerHTML = `Tables total:  ${rows.length}  · Both directions: <b>${counts.both}</b> · Load only: <b>${counts.pull}</b> · Write only: <b>${counts.push}</b> · Not synced: <b>${counts.none}</b>`;
       }
 
       const filtered = rows.filter(r => !q
@@ -1337,7 +1332,7 @@
         || (r.resource || '').toLowerCase().includes(q));
 
       if (!filtered.length) {
-        syncMapEl.innerHTML = `<div class="editor-muted-text text-sm p-4 text-center">Ничего не найдено.</div>`;
+        syncMapEl.innerHTML = `<div class="editor-muted-text text-sm p-4 text-center">Nothing found.</div>`;
         return;
       }
 
@@ -1346,10 +1341,10 @@
           <table class="editor-sync-map-table">
             <thead>
               <tr>
-                <th>Таблица</th>
-                <th>Редактор</th>
-                <th>Направление</th>
-                <th>Примечание</th>
+                <th>Table</th>
+                <th>Editor</th>
+                <th>Direction</th>
+                <th>Note</th>
               </tr>
             </thead>
             <tbody>
@@ -1370,11 +1365,11 @@
       if (!syncMapEl) return;
       try {
         const res = await EditorCore.Sync.syncMap();
-        if (!res.ok) throw new Error(res.error || 'Ошибка загрузки');
+        if (!res.ok) throw new Error(res.error || 'Loading failed');
         syncMapRows = res.tables || [];
         renderSyncMapTable();
       } catch (err) {
-        syncMapEl.innerHTML = `<div class="text-red-400 text-sm">Не удалось загрузить карту: ${esc(err.message)}</div>`;
+        syncMapEl.innerHTML = `<div class="text-red-400 text-sm">Could not load the map:  ${esc(err.message)}</div>`;
       }
     };
     syncMapSearch?.addEventListener('input', () => renderSyncMapTable());

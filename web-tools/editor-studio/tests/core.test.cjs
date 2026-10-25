@@ -243,7 +243,7 @@ test('guest draft snapshots stay isolated and failed storage writes do not mutat
   fields.Meta.value.Rank = 77;
   assert.equal(draft.get().ops[0].data.Meta.Rank, 1);
 
-  assert.throws(() => draft.removeOp('op-1'), /Не удалось сохранить черновик/);
+  assert.throws(() => draft.removeOp('op-1'), /Could not save the draft/);
   assert.equal(draft.count(), 1);
   assert.equal(JSON.parse(local.get(draftKey)).ops.length, 1);
 

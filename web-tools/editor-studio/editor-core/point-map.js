@@ -66,14 +66,14 @@
     dialog.className = 'editor-map-dialog';
     dialog.setAttribute('role', 'dialog');
     dialog.setAttribute('aria-modal', 'true');
-    dialog.setAttribute('aria-label', t('Местоположение'));
+    dialog.setAttribute('aria-label', t('Location'));
     dialog.innerHTML = `
       <div class="editor-map-dialog-frame">
         <div class="editor-map-dialog-world" hidden>
-          <label class="editor-map-dialog-world-label" for="editor-map-world-select">${esc(t('Мир'))}</label>
+          <label class="editor-map-dialog-world-label" for="editor-map-world-select">${esc(t('World'))}</label>
           <select id="editor-map-world-select" class="editor-map-dialog-world-select"></select>
         </div>
-        <iframe class="editor-map-dialog-frame-inner" title="${esc(t('Карта мира'))}"
+        <iframe class="editor-map-dialog-frame-inner" title="${esc(t('World map'))}"
           referrerpolicy="no-referrer" allow="fullscreen"></iframe>
       </div>`;
     iframe = dialog.querySelector('iframe');
@@ -100,11 +100,11 @@
   const fillWorldList = async () => {
     if (!worldSelect) return;
     try { worldList = await (MapWorlds()?.list?.() || Promise.resolve([])); } catch { worldList = []; }
-    const options = [`<option value="">${esc(t('— выберите мир —'))}</option>`];
+    const options = [`<option value="">${esc(t('— select a world —'))}</option>`];
     worldList.forEach((world) => {
       options.push(`<option value="${world.id}">${world.id}: ${esc(world.name)}</option>`);
     });
-    if (!worldList.length) options.push(`<option value="" disabled>${esc(t('Список миров недоступен'))}</option>`);
+    if (!worldList.length) options.push(`<option value="" disabled>${esc(t('The world list is unavailable'))}</option>`);
     worldSelect.innerHTML = options.join('');
   };
 
@@ -208,7 +208,7 @@
     const xInput = axisInput(row, 'x', xPath);
     const yInput = axisInput(row, 'y', yPath);
     if (!xInput || !yInput) {
-      if (window.EditorCore?.UI?.toast) window.EditorCore.UI.toast(t('Не удалось найти поля координат — обновите страницу'));
+      if (window.EditorCore?.UI?.toast) window.EditorCore.UI.toast(t('Could not find the coordinate fields — reload the page'));
       return;
     }
     if (session) close('replace'); // окно уже открыто — закрываем прежнюю сессию

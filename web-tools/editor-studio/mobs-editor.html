@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Мобы • Editor Studio</title>
+  <title>Mobs • Editor Studio</title>
   <script src="editor-core/page-loader.js" data-mode="scenario"></script>
 </head>
 
@@ -13,16 +13,16 @@
       <div class="editor-page-title">
         <i class="fa-solid fa-skull text-accent text-xl"></i>
         <div>
-          <h1>Мобы</h1>
-          <div class="editor-page-sub">Настройка спавнов: моб, мир, параметры появления.</div>
+          <h1>Mobs</h1>
+          <div class="editor-page-sub">Spawn settings: mob, world and spawn parameters.</div>
         </div>
       </div>
       <div class="editor-page-actions">
-        <button id="refreshBtn" class="editor-btn editor-btn-secondary" title="Обновить">
-          <i class="fa-solid fa-rotate"></i><span>Обновить</span>
+        <button id="refreshBtn" class="editor-btn editor-btn-secondary" title="Refresh">
+          <i class="fa-solid fa-rotate"></i><span>Refresh</span>
         </button>
         <button id="newBtn" class="editor-btn editor-btn-primary">
-          <i class="fa-solid fa-plus"></i><span>Новый спавн</span>
+          <i class="fa-solid fa-plus"></i><span>New spawn</span>
         </button>
       </div>
     </div>
@@ -32,30 +32,30 @@
         <div class="editor-dock-pad">
           <div class="editor-sidebar-head">
             <div>
-              <div class="text-sm font-semibold">Список спавнов</div>
-              <div class="editor-sidebar-meta">Всего: <span id="count">—</span></div>
+              <div class="text-sm font-semibold">Spawn list</div>
+              <div class="editor-sidebar-meta">Total: <span id="count">—</span></div>
             </div>
           </div>
 
           <div class="mt-3">
             <div class="editor-search">
               <i class="fa-solid fa-magnifying-glass"></i>
-              <input id="searchInput" class="w-full editor-input form-input" placeholder="Поиск: ID / имя моба / мир" />
+              <input id="searchInput" class="w-full editor-input form-input" placeholder="Search: ID / mob name / world" />
             </div>
           </div>
 
           <div class="mt-3 space-y-2">
             <select id="filterMob" class="w-full editor-input form-input" data-datasource="bots" data-label-mode="id_name" data-db-searchable="1" data-db-limit="300" data-value-type="number">
-              <option value="">Все мобы</option>
+              <option value="">All mobs</option>
             </select>
             <div class="editor-sidebar-filters two-col">
               <select id="filterWorld" class="w-full editor-input form-input" data-datasource="worlds" data-label-mode="id_name" data-db-searchable="0" data-db-limit="300" data-value-type="number">
-                <option value="">Все миры</option>
+                <option value="">All worlds</option>
               </select>
               <select id="filterBoss" class="w-full editor-input form-input">
-                <option value="">Все типы</option>
-                <option value="boss">Только босс</option>
-                <option value="regular">Обычные</option>
+                <option value="">All types</option>
+                <option value="boss">Boss only</option>
+                <option value="regular">Regular</option>
               </select>
             </div>
           </div>
@@ -65,7 +65,7 @@
           <div class="mt-3">
             <button id="moreBtn" class="w-full editor-btn editor-btn-secondary hidden">
               <i class="fa-solid fa-angles-down"></i>
-              <span>Загрузить ещё</span>
+              <span>Load more</span>
             </button>
           </div>
         </div>
@@ -75,22 +75,22 @@
         <div class="editor-dock-pad">
           <div class="editor-sticky-toolbar flex items-start justify-between gap-4">
             <div class="min-w-0">
-              <div class="text-lg font-semibold" id="title">Выберите моба</div>
-              <div class="editor-muted-text text-sm mt-1" id="subtitle">или создайте новый спавн</div>
+              <div class="text-lg font-semibold" id="title">Select a mob</div>
+              <div class="editor-muted-text text-sm mt-1" id="subtitle">or create a new spawn</div>
             </div>
             <div class="editor-page-actions">
-              <span id="dirty-pill" class="editor-dirty-pill hidden" aria-hidden="true">Данные не сохранены</span>
+              <span id="dirty-pill" class="editor-dirty-pill hidden" aria-hidden="true">Data not saved</span>
               <button id="saveBtn" class="editor-btn editor-btn-primary" disabled>
                 <i class="fa-solid fa-floppy-disk"></i>
-                <span>Сохранить</span>
+                <span>Save</span>
               </button>
               <button id="cancelBtn" class="editor-btn editor-btn-secondary hidden" disabled>
                 <i class="fa-solid fa-rotate-left"></i>
-                <span>Отменить</span>
+                <span>Cancel</span>
               </button>
               <button id="deleteBtn" class="editor-btn editor-btn-secondary" disabled>
                 <i class="fa-solid fa-trash"></i>
-                <span>Удалить</span>
+                <span>Delete</span>
               </button>
             </div>
           </div>
@@ -101,8 +101,8 @@
             <div class="editor-panel-card">
               <div class="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <div class="font-semibold">Параметры спавна</div>
-                  <div class="editor-muted-text text-sm">Справочники показывают названия, а в базу сохраняются ID</div>
+                  <div class="font-semibold">Spawn parameters</div>
+                  <div class="editor-muted-text text-sm">Lookups display names while IDs are saved to the database</div>
                 </div>
                 <div id="tabRoot"></div>
               </div>
@@ -300,15 +300,15 @@
 
     const setHeader = () => {
       if (!STATE.mob) {
-        DOM.title.textContent = 'Выберите моба';
-        DOM.subtitle.textContent = 'или создайте новый спавн';
+        DOM.title.textContent = 'Select a mob';
+        DOM.subtitle.textContent = 'or create a new spawn';
         setActionButtons(false);
         return;
       }
       const name = STATE.lookups.bots.get(String(STATE.mob.BotID)) || `BotID: ${STATE.mob.BotID}`;
       const world = formatWorld(STATE.mob.WorldID);
-      DOM.title.textContent = STATE.mob.ID ? `${name}` : 'Новый спавн';
-      DOM.subtitle.textContent = `ID: ${STATE.mob.ID || '—'} • Мир: ${world} • Уровень: ${STATE.mob.Level || 1}`;
+      DOM.title.textContent = STATE.mob.ID ? `${name}` : 'New spawn';
+      DOM.subtitle.textContent = `ID: ${STATE.mob.ID || '—'}  • World:  ${world}  • Level:  ${STATE.mob.Level || 1}`;
       setActionButtons(true);
     };
 
@@ -344,18 +344,18 @@
 
       if (!STATE.list.length) {
         if (DOM.count) DOM.count.textContent = '0';
-        DOM.list.innerHTML = `<div class="editor-empty-state">Спавнов пока нет — нажмите «Новый спавн», чтобы создать запись.</div>`;
+        DOM.list.innerHTML = `<div class="editor-empty-state">No spawns yet — click “New spawn” to create a record.</div>`;
         return;
       }
 
       if (DOM.count) {
         DOM.count.textContent = filtered.length < STATE.list.length
-          ? `${filtered.length} из ${STATE.list.length}`
+          ? `${filtered.length}  of  ${STATE.list.length}`
           : `${STATE.list.length}`;
       }
 
       if (!filtered.length) {
-        DOM.list.innerHTML = `<div class="editor-empty-state">Ничего не найдено по фильтрам</div>`;
+        DOM.list.innerHTML = `<div class="editor-empty-state">Nothing matches the filters</div>`;
         return;
       }
 
@@ -371,7 +371,7 @@
           ? `<img class="w-9 h-9 rounded-full border editor-hairline object-cover shrink-0" src="${esc(skinUrl)}" alt="" loading="lazy" />`
           : `<div class="w-9 h-9 rounded-full border editor-hairline editor-soft shrink-0 flex items-center justify-center text-[10px] editor-muted-text">—</div>`;
         const bossBadge = Number(r.Boss || 0)
-          ? `<span class="editor-badge" style="color: var(--editor-danger);">Босс</span>`
+          ? `<span class="editor-badge" style="color: var(--editor-danger);">Boss</span>`
           : '';
         return `
           <button type="button" class="w-full text-left editor-row ${active ? 'editor-row-active' : ''}" data-id="${r.ID}">
@@ -380,7 +380,7 @@
                 ${skinPreview}
                 <div class="min-w-0">
                   <div class="font-semibold truncate">${esc(title)}</div>
-                  <div class="text-xs editor-muted-text truncate">ID ${r.ID} · ${esc(world)} · Ур. ${r.Level ?? ''} · X ${r.PositionX ?? ''}, Y ${r.PositionY ?? ''}</div>
+                  <div class="text-xs editor-muted-text truncate">ID ${r.ID} · ${esc(world)}  · Lvl.  ${r.Level ?? ''} · X ${r.PositionX ?? ''}, Y ${r.PositionY ?? ''}</div>
                 </div>
               </div>
               ${bossBadge}
@@ -398,9 +398,9 @@
     const renderTabs = () => {
       window.EditorCore.UI.mountTabs(DOM.tabRoot, {
         tabs: [
-          { id: 'basic', title: 'Основное', icon: 'fa-sliders' },
-          { id: 'ai', title: 'AI / эффекты', icon: 'fa-brain' },
-          { id: 'drop', title: 'Дроп', icon: 'fa-gift' },
+          { id: 'basic', title: 'General', icon: 'fa-sliders' },
+          { id: 'ai', title: 'AI / effects', icon: 'fa-brain' },
+          { id: 'drop', title: 'Drop', icon: 'fa-gift' },
         ],
         active: STATE.activeTab,
         onChange: (id) => {
@@ -418,13 +418,13 @@
     };
 
     const fieldsBasic = {
-      BotID: { type: 'db_select', label: 'Моб (BotID)', validate: { required: true }, ui: { dbKey: 'mob', placeholder: '— выберите моба —', searchPlaceholder: 'Поиск моба…' } },
-      WorldID: { type: 'db_select', label: 'Мир (WorldID)', ui: { dbKey: 'world', placeholder: '— выберите мир —', searchPlaceholder: 'Поиск мира…' } },
+      BotID: { type: 'db_select', label: 'Mob (BotID)', validate: { required: true }, ui: { dbKey: 'mob', placeholder: '— select a mob —', searchPlaceholder: 'Search a mob…' } },
+      WorldID: { type: 'db_select', label: 'World (WorldID)', ui: { dbKey: 'world', placeholder: '— select a world —', searchPlaceholder: 'Search a world…' } },
       // Позиция моба: нельзя ставить на стены/смерть/без крюка, видны спавны
       // и радиус блуждания — всё это флаги общего PositionPicker.
       _pos: {
         type: 'vec2',
-        label: 'Позиция (X, Y)',
+        label: 'Position (X, Y)',
         ui: {
           min: 0,
           step: 1,
@@ -437,31 +437,31 @@
           snap: true,
         },
       },
-      Level: { type: 'number', label: 'Уровень', ui: { min: 1, step: 1 } },
-      Power: { type: 'number', label: 'Сила (Power)', ui: { min: 0, step: 1 } },
-      Number: { type: 'number', label: 'Количество на спавне', ui: { min: 1, step: 1 } },
-      Respawn: { type: 'number', label: 'Респавн (сек.)', ui: { min: 0, step: 1 } },
-      Radius: { type: 'number', label: 'Радиус блуждания', ui: { min: 0, step: 1 } },
-      ActiveRadius: { type: 'number', label: 'Радиус активности (0 — по умолч.)', ui: { min: 0, step: 1 } },
-      Boss: { type: 'toggle', label: 'Босс' },
+      Level: { type: 'number', label: 'Level', ui: { min: 1, step: 1 } },
+      Power: { type: 'number', label: 'Power', ui: { min: 0, step: 1 } },
+      Number: { type: 'number', label: 'Spawn count', ui: { min: 1, step: 1 } },
+      Respawn: { type: 'number', label: 'Respawn (sec)', ui: { min: 0, step: 1 } },
+      Radius: { type: 'number', label: 'Wander radius', ui: { min: 0, step: 1 } },
+      ActiveRadius: { type: 'number', label: 'Active radius (0 — default)', ui: { min: 0, step: 1 } },
+      Boss: { type: 'toggle', label: 'Boss' },
     };
 
     // Поля стихийных умений и дропа.
     const fieldsAi = {
       Debuffs: {
-        label: 'Накладываемые ослабления (Debuffs)',
-        help: 'Выберите эффекты, которые моб может накладывать при ударе.',
+        label: 'Applied debuffs (Debuffs)',
+        help: 'Choose status effects the mob can apply on hit.',
         ui: EditorCore.presets.tags({
           options: DEBUFFS,
-          placeholder: 'Добавить эффект…'
+          placeholder: 'Add effect…'
         })
       },
       Behavior: {
-        label: 'Поведение и навыки (Behavior)',
-        help: 'Набор тегов ИИ: агрессия, стихийные особенности и классовые умения.',
+        label: 'Behaviour & skills (Behavior)',
+        help: 'AI tag set: aggression, elemental traits and class abilities.',
         ui: EditorCore.presets.tags({
           options: BEHAVIORS,
-          placeholder: 'Добавить поведение…'
+          placeholder: 'Add behaviour…'
         })
       },
     };
@@ -469,20 +469,20 @@
     const fieldsDrop = {
       drops: {
         type: 'list',
-        label: 'Таблица дропа (максимум 5 слотов)',
+        label: 'Drop table (up to 5 slots)',
         ui: {
-          addLabel: 'Добавить слот дропа',
+          addLabel: 'Add drop slot',
           listMode: 'table',
-          tableHeader: ['Предмет', 'Количество', 'Шанс (%)'],
+          tableHeader: ['Item', 'Quantity', 'Chance (%)'],
           tableCols: 'minmax(0,1fr) 130px 130px',
           tableColsMd: 'minmax(0,1fr) 150px 150px',
-          emptyMessage: 'Дроп не настроен. Нажмите «Добавить слот дропа».',
+          emptyMessage: 'No drops configured. Click “Add drop slot”.',
         },
         itemDefault: { item_id: 0, count: 1, chance: 10 },
         itemFields: {
-          item_id: { type: 'db_select', label: 'Предмет', ui: { dbKey: 'item', placeholder: '— предмет —', searchPlaceholder: 'Поиск предмета…', searchServer: true, dbLimit: 1000 } },
-          count: { type: 'number', label: 'Количество', ui: { min: 0, step: 1 } },
-          chance: { type: 'number', label: 'Шанс (%)', ui: { min: 0, step: 0.1 } },
+          item_id: { type: 'db_select', label: 'Item', ui: { dbKey: 'item', placeholder: '— item —', searchPlaceholder: 'Search an item…', searchServer: true, dbLimit: 1000 } },
+          count: { type: 'number', label: 'Quantity', ui: { min: 0, step: 1 } },
+          chance: { type: 'number', label: 'Chance (%)', ui: { min: 0, step: 0.1 } },
         }
       }
     };
@@ -492,7 +492,7 @@
       const fr = window.EditorCore.FieldRenderer;
       const render = () => {
         if (!STATE.mob) {
-          root.innerHTML = `<div class="editor-empty-state">Выберите спавн моба в списке слева или нажмите «Новый спавн».</div>`;
+          root.innerHTML = `<div class="editor-empty-state">Select a mob spawn on the left or click “New spawn”.</div>`;
           return;
         }
 
@@ -556,7 +556,7 @@
 
               if (listPath === 'drops') {
                 if (arr.length >= 5) {
-                  window.EditorCore.UI.toast('Максимум 5 слотов дропа', 'warning');
+                  window.EditorCore.UI.toast('Up to 5 drop slots', 'warning');
                   return;
                 }
 
@@ -613,14 +613,14 @@
         DOM.dbStatus.textContent = '';
         DOM.dbStatus.classList.add('hidden');
       } else {
-        DOM.dbStatus.textContent = 'БД: нет подключения. Вместо справочника — ручной ввод ID.';
+        DOM.dbStatus.textContent = 'DB: no connection. The reference list falls back to manual ID input.';
         DOM.dbStatus.classList.remove('hidden');
       }
     };
 
     const canDiscardDirty = async () => {
       if (!DIRTY?.isDirty?.()) return true;
-      return EditorCore.Page.confirm('Есть несохранённые изменения. Продолжить без сохранения?');
+      return EditorCore.Page.confirm('You have unsaved changes. Continue without saving?');
     };
 
     const loadLookups = async () => {
@@ -666,7 +666,7 @@
         STATE.offset += rows.length;
         STATE.hasMore = rows.length === limit;
       } catch (e) {
-        window.EditorCore.UI.toast(e.message || 'Ошибка загрузки списка', 'error');
+        window.EditorCore.UI.toast(e.message || 'Loading the list failed', 'error');
         STATE.hasMore = false;
       }
 
@@ -689,7 +689,7 @@
         setHeader();
         STATE._closeDrawer?.();
       } catch (e) {
-        window.EditorCore.UI.toast(e.message || 'Ошибка загрузки записи', 'error');
+        window.EditorCore.UI.toast(e.message || 'Loading the record failed', 'error');
       }
     };
 
@@ -713,7 +713,7 @@
     const saveMob = async () => {
       if (!STATE.mob) return;
       if (!Number(STATE.mob.BotID || 0)) {
-        window.EditorCore.UI.toast('BotID обязателен', 'warning');
+        window.EditorCore.UI.toast('BotID is required', 'warning');
         return;
       }
       const payload = toPayload(STATE.mob);
@@ -721,10 +721,10 @@
       try {
         if (STATE.selectedId) {
           await window.EditorCore.DBCrud.update(RESOURCE, STATE.selectedId, payload);
-          window.EditorCore.UI.toast('Сохранено', 'success');
+          window.EditorCore.UI.toast('Saved', 'success');
         } else {
           const created = await window.EditorCore.DBCrud.create(RESOURCE, payload);
-          window.EditorCore.UI.toast('Создано', 'success');
+          window.EditorCore.UI.toast('Created', 'success');
           const newId = Number(created?.id || 0);
           STATE.lastSelectedIdBeforeCreate = 0;
           await loadList({ reset: true });
@@ -742,17 +742,17 @@
         setHeader();
         DIRTY?.setClean();
       } catch (e) {
-        window.EditorCore.UI.toast(e.message || 'Ошибка сохранения', 'error');
+        window.EditorCore.UI.toast(e.message || 'Save failed', 'error');
       }
     };
 
     const deleteMob = async () => {
       if (!STATE.selectedId) return;
-      const ok = await EditorCore.Page.confirm(`Удалить запись ID=${STATE.selectedId}?`);
+      const ok = await EditorCore.Page.confirm(`Delete the record ID=${STATE.selectedId}?`);
       if (!ok) return;
       try {
         await window.EditorCore.DBCrud.remove(RESOURCE, STATE.selectedId);
-        window.EditorCore.UI.toast('Удалено', 'success');
+        window.EditorCore.UI.toast('Deleted', 'success');
         STATE.selectedId = 0;
         STATE.mob = null;
         DIRTY?.setClean();
@@ -760,7 +760,7 @@
         setHeader();
         await loadList({ reset: true });
       } catch (e) {
-        window.EditorCore.UI.toast(e.message || 'Ошибка удаления', 'error');
+        window.EditorCore.UI.toast(e.message || 'Delete failed', 'error');
       }
     };
 

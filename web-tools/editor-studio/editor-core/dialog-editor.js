@@ -144,7 +144,7 @@
       sideOptions = [],
       extraSpeakers = [],
       speakerOptions = [],
-      textPlaceholder = 'Диалог...',
+      textPlaceholder = 'Dialogue...',
     } = {}) {
       const speakerList = Array.isArray(speakerOptions) && speakerOptions.length
         ? speakerOptions
@@ -152,7 +152,7 @@
       return {
         DialogData: {
           type: 'list',
-          label: 'Диалоги',
+          label: 'Dialogues',
           itemDefault: {
             text: '',
             side: sideOptions?.[0]?.value ?? 'default',
@@ -163,12 +163,12 @@
           itemFields: {
             text: {
               type: 'textarea',
-              label: 'Текст реплики',
+              label: 'Line text',
               ui: { rows: 2, placeholder: textPlaceholder, hideLabel: false, colSpan: 4 }
             },
             left_speaker_id: {
               type: 'select',
-              label: 'Левый говорящий',
+              label: 'Left speaker',
               ui: {
                 type: 'select',
                 options: speakerList,
@@ -178,12 +178,12 @@
             },
             side: {
               type: 'select',
-              label: 'Режим реплики',
+              label: 'Line mode',
               ui: { type: 'select', options: sideOptions, hideLabel: false, controlMinWidth: 120 }
             },
             right_speaker_id: {
               type: 'select',
-              label: 'Правый говорящий',
+              label: 'Right speaker',
               ui: {
                 type: 'select',
                 options: speakerList,
@@ -191,14 +191,14 @@
                 controlMinWidth: 140,
               }
             },
-            action: { type: 'toggle', label: 'Действие' },
+            action: { type: 'toggle', label: 'Action' },
           },
           ui: {
             layout: 'grid',
             gridGap: '12px',
             gridTemplate: 'minmax(140px,1fr) minmax(120px,1fr) minmax(140px,1fr) 90px',
             gridTemplateMd: 'minmax(140px,1fr) minmax(120px,1fr) minmax(140px,1fr) 90px',
-            addLabel: 'Добавить реплику',
+            addLabel: 'Add a line',
           },
         }
       };
@@ -210,7 +210,7 @@
       sideOptions = [],
       extraSpeakers = [],
       speakerOptions = [],
-      textPlaceholder = 'Диалог...',
+      textPlaceholder = 'Dialogue...',
       onChange,
     } = {}) {
       const state = { data: data || { DialogData: [] } };
@@ -230,7 +230,7 @@
         const renderField = window.EditorCore?.FieldRenderer?.renderField;
         const frOptions = fieldOptions || window.EditorCore?.defaults?.fieldOptions;
         if (!renderField) {
-          root.innerHTML = '<div class="editor-muted-text text-sm">FieldRenderer не загружен</div>';
+          root.innerHTML = '<div class="editor-muted-text text-sm">FieldRenderer is not loaded</div>';
           return;
         }
 
@@ -246,7 +246,7 @@
 
         const itemsHtml = list.map((item, index) => {
           const text = String(item?.text || '').trim();
-          const summary = text ? (text.length > 70 ? `${text.slice(0, 70)}…` : text) : 'Пустая реплика';
+          const summary = text ? (text.length > 70 ? `${text.slice(0, 70)}…` : text) : 'Empty line';
           return `
             <div class="editor-item" data-dialog-item="${index}">
               <div class="editor-item-header">
@@ -255,11 +255,11 @@
                   <span class="editor-item-summary truncate">${esc(summary)}</span>
                 </div>
                 <div class="editor-item-actions">
-                  <span class="editor-item-handle" title="Перетащить реплику"><i class="fa-solid fa-grip-vertical"></i></span>
-                  <button type="button" class="editor-icon-btn" title="Свернуть или развернуть" data-dialog-toggle="${index}">
+                  <span class="editor-item-handle" title="Drag the line"><i class="fa-solid fa-grip-vertical"></i></span>
+                  <button type="button" class="editor-icon-btn" title="Collapse or expand" data-dialog-toggle="${index}">
                     <i class="fa-solid fa-chevron-down"></i>
                   </button>
-                  <button type="button" class="editor-icon-btn editor-icon-danger" title="Удалить реплику" data-dialog-remove="${index}">
+                  <button type="button" class="editor-icon-btn editor-icon-danger" title="Delete the line" data-dialog-remove="${index}">
                     <i class="fa-solid fa-trash"></i>
                   </button>
                 </div>
@@ -275,12 +275,12 @@
               </div>
             </div>
           `;
-        }).join('') || '<div class="editor-empty-state">Реплик пока нет — нажмите «Добавить реплику».</div>';
+        }).join('') || '<div class="editor-empty-state">No lines yet — click “Add line”.</div>';
 
         root.innerHTML = `
           <div class="editor-items" data-dialog-items="list">${itemsHtml}</div>
           <button type="button" class="editor-btn editor-btn-secondary mt-3" data-dialog-add="1">
-            <i class="fa-solid fa-plus"></i><span>Добавить реплику</span>
+            <i class="fa-solid fa-plus"></i><span>Add a line</span>
           </button>
         `;
 

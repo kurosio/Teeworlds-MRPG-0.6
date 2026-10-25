@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Гостевые пользователи • Editor Studio</title>
+  <title>Guest users • Editor Studio</title>
   <script src="editor-core/page-loader.js" data-mode="event"></script>
   <style>
     .guests-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(330px, 100%), 1fr)); gap: 14px; }
@@ -39,34 +39,33 @@
       <div class="editor-page-title">
         <i class="fa-solid fa-user-shield text-accent text-xl"></i>
         <div>
-          <h1>Гостевые пользователи</h1>
+          <h1>Guest users</h1>
           <div class="editor-page-sub">
-            Личные аккаунты для правок «на проверку»: каждому можно включить свои вкладки редакторов.
-            Гость никогда не пишет в базу — его изменения применяются только после вашего подтверждения.
+            Personal accounts for “review” edits: each one can have its own editor tabs enabled. A guest never writes to the database — changes apply only after your approval.
           </div>
         </div>
       </div>
       <div class="editor-page-actions">
         <button class="editor-btn editor-btn-secondary" id="btn-refresh" type="button">
-          <i class="fa-solid fa-rotate"></i><span>Обновить</span>
+          <i class="fa-solid fa-rotate"></i><span>Refresh</span>
         </button>
         <button class="editor-btn editor-btn-primary" id="btn-create" type="button">
-          <i class="fa-solid fa-user-plus"></i><span>Добавить гостя</span>
+          <i class="fa-solid fa-user-plus"></i><span>Add a guest</span>
         </button>
       </div>
     </div>
 
     <div class="editor-page-body">
       <div id="guest-global"></div>
-      <div id="guest-loading" class="editor-panel-card editor-muted-text">Загрузка…</div>
+      <div id="guest-loading" class="editor-panel-card editor-muted-text">Loading…</div>
       <div id="guest-denied" class="editor-panel-card hidden">
-        <div class="editor-empty-state"><i class="fa-solid fa-lock"></i>Доступно только администратору.</div>
+        <div class="editor-empty-state"><i class="fa-solid fa-lock"></i>Available to the administrator only.</div>
       </div>
       <div id="guests-grid" class="guests-grid hidden"></div>
       <div id="guests-empty" class="editor-panel-card hidden">
         <div class="editor-empty-state">
           <i class="fa-solid fa-users"></i>
-          Гостевых аккаунтов пока нет. Нажмите «Добавить гостя», чтобы создать первый.
+          No guest accounts yet. Press “Add a guest” to create the first one.
         </div>
       </div>
     </div>
@@ -77,53 +76,53 @@
     <div class="editor-modal-content p-6 w-full max-w-2xl">
       <div class="flex items-start justify-between gap-3 mb-4">
         <div>
-          <h3 id="guest-modal-title" class="text-xl font-bold flex items-center gap-2"><i class="fa-solid fa-user-plus text-accent"></i>Гостевой аккаунт</h3>
-          <p class="text-sm editor-muted-text mt-1">Доступ даётся только к выбранным вкладкам. Любые правки гостя сохраняются локально и попадают в «Запросы гостей».</p>
+          <h3 id="guest-modal-title" class="text-xl font-bold flex items-center gap-2"><i class="fa-solid fa-user-plus text-accent"></i>Guest account</h3>
+          <p class="text-sm editor-muted-text mt-1">Access is granted only to the selected tabs. Every guest edit is saved locally and lands in “Guest requests”.</p>
         </div>
-        <button type="button" class="editor-icon-btn" data-close-modal title="Закрыть"><i class="fa-solid fa-xmark"></i></button>
+        <button type="button" class="editor-icon-btn" data-close-modal title="Close"><i class="fa-solid fa-xmark"></i></button>
       </div>
 
       <div class="editor-two-col">
         <label class="block">
-          <div class="text-sm font-medium mb-1">Имя (видно в запросах)</div>
-          <input id="g-name" type="text" class="w-full editor-input form-input" maxlength="48" placeholder="Например: Художник Аня" />
+          <div class="text-sm font-medium mb-1">Name (visible in requests)</div>
+          <input id="g-name" type="text" class="w-full editor-input form-input" maxlength="48" placeholder="e.g. Artist Anna" />
         </label>
         <label class="block">
-          <div class="text-sm font-medium mb-1">Логин <span class="editor-tone-danger">*</span></div>
+          <div class="text-sm font-medium mb-1">Login <span class="editor-tone-danger">*</span></div>
           <input id="g-login" type="text" class="w-full editor-input form-input" maxlength="32" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="artist" />
-          <div class="text-xs editor-muted-text mt-1">3–32 символа: латиница, цифры, - _ .</div>
+          <div class="text-xs editor-muted-text mt-1">3–32 characters: latin letters, digits, - _ .</div>
         </label>
       </div>
 
       <label class="block mt-4">
-        <div class="text-sm font-medium mb-1">Пароль <span id="g-pass-required" class="editor-tone-danger">*</span></div>
-        <input id="g-password" type="password" class="w-full editor-input form-input" autocomplete="new-password" placeholder="Минимум 6 символов" />
-        <div class="text-xs editor-muted-text mt-1" id="g-password-hint">Смена пароля завершает активные сессии этого аккаунта.</div>
+        <div class="text-sm font-medium mb-1">Password <span id="g-pass-required" class="editor-tone-danger">*</span></div>
+        <input id="g-password" type="password" class="w-full editor-input form-input" autocomplete="new-password" placeholder="At least 6 characters" />
+        <div class="text-xs editor-muted-text mt-1" id="g-password-hint">Changing the password ends the account's active sessions.</div>
       </label>
 
       <label class="editor-toggle mt-4" id="g-enabled-toggle" data-checked="1">
         <input id="g-enabled" type="checkbox" checked />
         <span class="editor-toggle-track"><span class="editor-toggle-knob"></span></span>
-        <span class="text-sm font-medium">Аккаунт активен (может входить)</span>
+        <span class="text-sm font-medium">Account active (can sign in)</span>
       </label>
 
       <div class="mt-4">
         <div class="flex items-center justify-between gap-3 mb-2">
-          <div class="text-sm font-medium">Вкладки редакторов</div>
+          <div class="text-sm font-medium">Editor tabs</div>
           <div class="flex gap-2">
-            <button type="button" class="editor-btn editor-btn-secondary editor-btn--xs" id="g-tabs-all">Все</button>
-            <button type="button" class="editor-btn editor-btn-secondary editor-btn--xs" id="g-tabs-none">Ни одной</button>
+            <button type="button" class="editor-btn editor-btn-secondary editor-btn--xs" id="g-tabs-all">All</button>
+            <button type="button" class="editor-btn editor-btn-secondary editor-btn--xs" id="g-tabs-none">None</button>
           </div>
         </div>
         <div class="guest-tabs-grid" id="g-tabs"></div>
         <div class="text-xs editor-muted-text mt-2">
-          Гость увидит только включённые вкладки. Запросы можно отправлять только по ним — это проверяется на сервере.
+          The guest sees only the enabled tabs. Requests can only be sent for them — this is enforced on the server.
         </div>
       </div>
 
       <div class="flex justify-end gap-2 mt-6">
-        <button type="button" class="editor-btn editor-btn-secondary" data-close-modal>Отмена</button>
-        <button type="button" class="editor-btn editor-btn-primary" id="g-save"><i class="fa-solid fa-floppy-disk"></i><span>Сохранить</span></button>
+        <button type="button" class="editor-btn editor-btn-secondary" data-close-modal>Cancel</button>
+        <button type="button" class="editor-btn editor-btn-primary" id="g-save"><i class="fa-solid fa-floppy-disk"></i><span>Save</span></button>
       </div>
       <div id="g-modal-status" class="text-sm mt-3"></div>
     </div>
@@ -159,11 +158,11 @@
       const accounts = state.users.filter(u => u.enabled).length;
       const total = state.users.length;
       const pill = enabled
-        ? `<span class="editor-badge editor-tone-success"><i class="fa-solid fa-circle-check"></i> Гостевой вход включён</span>`
-        : `<span class="editor-badge editor-tone-warning"><i class="fa-solid fa-triangle-exclamation"></i> Гостевой вход выключен</span>`;
+        ? `<span class="editor-badge editor-tone-success"><i class="fa-solid fa-circle-check"></i> Guest sign-in enabled</span>`
+        : `<span class="editor-badge editor-tone-warning"><i class="fa-solid fa-triangle-exclamation"></i> Guest sign-in disabled</span>`;
       const note = enabled
-        ? `Активных аккаунтов: <b>${accounts}</b> из ${total}. Лимиты: до ${esc(s.guest_max_pending)} ${plural(s.guest_max_pending, 'запроса', 'запросов', 'запросов')} на рассмотрении, пауза ${esc(s.guest_submit_cooldown)} сек., до ${esc(s.guest_max_operations)} операций в запросе.`
-        : 'Гости не могут войти. Включите общий переключатель в «Запросы гостей» → «Правила доступа».';
+        ? `Active accounts: <b>${accounts}</b>  of  ${total}. Limits: up to  ${esc(s.guest_max_pending)} ${plural(s.guest_max_pending, 'pending request', 'pending requests')} , cooldown ${esc(s.guest_submit_cooldown)}  sec cooldown., – ${esc(s.guest_max_operations)} operations per request.`
+        : 'Guests cannot sign in. Turn on the master switch in “Guest requests” → “Access rules”.';
       $('guest-global').innerHTML = `
         <div class="editor-panel-card flex items-start justify-between gap-4 flex-wrap">
           <div class="min-w-0">
@@ -171,7 +170,7 @@
             <div class="text-sm editor-muted-text mt-1">${note}</div>
           </div>
           <button type="button" class="editor-btn editor-btn-secondary" id="btn-policy">
-            <i class="fa-solid fa-sliders"></i><span>Общие лимиты</span>
+            <i class="fa-solid fa-sliders"></i><span>General limits</span>
           </button>
         </div>`;
       $('btn-policy')?.addEventListener('click', () => {
@@ -207,24 +206,24 @@
                 <div class="text-xs editor-muted-text truncate"><i class="fa-solid fa-at"></i> ${esc(u.login)}</div>
               </div>
               <div class="text-xs" style="color:${u.enabled ? 'var(--editor-success)' : 'var(--editor-text-muted)'}">
-                <span class="guest-status-dot ${u.enabled ? '' : 'is-off'}"></span> ${u.enabled ? 'активен' : 'выключен'}
+                <span class="guest-status-dot ${u.enabled ? '' : 'is-off'}"></span> ${u.enabled ? 'active' : 'disabled'}
               </div>
             </div>
             <div class="guest-tabs">${tabs}</div>
             <dl class="guest-meta">
-              <dt>Вкладок</dt><dd>${(u.pages || []).length} из ${state.pages.length}</dd>
-              <dt>На проверке</dt><dd>${pending ? `<b class="editor-tone-warning">${pending} ${plural(pending, 'запрос', 'запроса', 'запросов')}</b>` : '—'}</dd>
-              <dt>Последний вход</dt><dd>${esc(fmtDate(u.lastLoginAt))}</dd>
+              <dt>Tabs</dt><dd>${(u.pages || []).length}  of  ${state.pages.length}</dd>
+              <dt>Under review</dt><dd>${pending ? `<b class="editor-tone-warning">${pending} ${plural(pending, 'request', 'requests')}</b>` : '—'}</dd>
+              <dt>Last sign-in</dt><dd>${esc(fmtDate(u.lastLoginAt))}</dd>
             </dl>
             <div class="guest-card-actions">
-              <button type="button" class="editor-btn editor-btn-primary" data-act="edit"><i class="fa-solid fa-pen"></i><span>Изменить</span></button>
+              <button type="button" class="editor-btn editor-btn-primary" data-act="edit"><i class="fa-solid fa-pen"></i><span>Edit</span></button>
               <button type="button" class="editor-btn editor-btn-secondary" data-act="toggle">
-                <i class="fa-solid ${u.enabled ? 'fa-toggle-on' : 'fa-toggle-off'}"></i><span>${u.enabled ? 'Выключить' : 'Включить'}</span>
+                <i class="fa-solid ${u.enabled ? 'fa-toggle-on' : 'fa-toggle-off'}"></i><span>${u.enabled ? 'Turn off' : 'Enable'}</span>
               </button>
-              <button type="button" class="editor-btn editor-btn-secondary" data-act="revoke" title="Завершить все активные сессии аккаунта">
-                <i class="fa-solid fa-right-from-bracket"></i><span>Сессии</span>
+              <button type="button" class="editor-btn editor-btn-secondary" data-act="revoke" title="End all active sessions of the account">
+                <i class="fa-solid fa-right-from-bracket"></i><span>Sessions</span>
               </button>
-              <button type="button" class="editor-btn editor-btn-secondary" data-act="delete" title="Удалить аккаунт" aria-label="Удалить гостевой аккаунт ${esc(u.name || u.login)}">
+              <button type="button" class="editor-btn editor-btn-secondary" data-act="delete" title="Delete the account" aria-label="Delete guest account  ${esc(u.name || u.login)}">
                 <i class="fa-solid fa-trash"></i>
               </button>
             </div>
@@ -253,7 +252,7 @@
       }
       if (!list.ok) {
         $('guest-loading').classList.add('hidden');
-        toast(list.error || 'Не удалось загрузить гостевые аккаунты', 'error');
+        toast(list.error || 'Could not load the guest accounts', 'error');
         return;
       }
       state.legacyPassword = !!list.legacy_password;
@@ -265,8 +264,8 @@
       if (state.legacyPassword) {
         $('guest-global').insertAdjacentHTML('beforeend', `
           <div class="editor-panel-card mt-3" style="border-color:color-mix(in srgb,var(--editor-warning) 45%,transparent)">
-            <div class="font-semibold"><i class="fa-solid fa-triangle-exclamation editor-tone-warning"></i> Старый общий гостевой пароль больше не используется</div>
-            <div class="text-sm editor-muted-text mt-1">В конфиге осталось поле <code>guest_password</code> от прежнего единого гостевого режима. Оно игнорируется и будет удалено при сохранении настроек — создайте личные аккаунты вместо него.</div>
+            <div class="font-semibold"><i class="fa-solid fa-triangle-exclamation editor-tone-warning"></i> The old shared guest password is no longer used</div>
+            <div class="text-sm editor-muted-text mt-1">The settings still contain the field <code>guest_password</code> from the previous shared guest mode. It is ignored and will be removed when settings are saved — create personal accounts instead.</div>
           </div>`);
       }
       renderUsers();
@@ -299,11 +298,11 @@
     const openModal = (user = null) => {
       state.mode = user ? 'edit' : 'create';
       state.editingId = user?.id || '';
-      $('guest-modal-title').innerHTML = `<i class="fa-solid ${user ? 'fa-user-pen' : 'fa-user-plus'} text-accent"></i>${user ? 'Изменить гостевой аккаунт' : 'Новый гостевой аккаунт'}`;
+      $('guest-modal-title').innerHTML = `<i class="fa-solid ${user ? 'fa-user-pen' : 'fa-user-plus'} text-accent"></i>${user ? 'Edit guest account' : 'New guest account'}`;
       $('g-name').value = user?.name || '';
       $('g-login').value = user?.login || '';
       $('g-password').value = '';
-      $('g-password').placeholder = user ? 'Оставьте пустым, чтобы не менять' : 'Минимум 6 символов';
+      $('g-password').placeholder = user ? 'Leave empty to keep it unchanged' : 'At least 6 characters';
       $('g-pass-required').style.display = user ? 'none' : '';
       $('g-enabled').checked = user ? !!user.enabled : true;
       $('g-enabled-toggle').dataset.checked = $('g-enabled').checked ? '1' : '0';
@@ -328,25 +327,25 @@
       const pages = selectedPages();
 
       if (!/^[a-z0-9_.-]{3,32}$/.test(login)) {
-        setStatus('<span class="editor-tone-danger">Логин: 3–32 символа, латиница/цифры и - _ .</span>');
+        setStatus('<span class="editor-tone-danger">Login: 3–32 characters, latin letters/digits and - _ .</span>');
         $('g-login').focus();
         return;
       }
       if (state.mode === 'create' && password.length < 6) {
-        setStatus('<span class="editor-tone-danger">Задайте пароль (минимум 6 символов).</span>');
+        setStatus('<span class="editor-tone-danger">Set a password (at least 6 characters).</span>');
         $('g-password').focus();
         return;
       }
       if (password && password.length < 6) {
-        setStatus('<span class="editor-tone-danger">Пароль: минимум 6 символов.</span>');
+        setStatus('<span class="editor-tone-danger">Password: at least 6 characters.</span>');
         return;
       }
-      if (!pages.length && !await EditorCore.Page.confirm('Ни одной вкладки не выбрано — гостю будет нечего открыть. Сохранить так?')) {
+      if (!pages.length && !await EditorCore.Page.confirm('No tab is selected — the guest will have nothing to open. Save anyway?')) {
         return;
       }
 
       $('g-save').disabled = true;
-      setStatus('<span class="editor-muted-text"><i class="fa-solid fa-spinner fa-spin"></i> Сохранение…</span>');
+      setStatus('<span class="editor-muted-text"><i class="fa-solid fa-spinner fa-spin"></i> Saving…</span>');
 
       let id = state.editingId;
       let res;
@@ -361,11 +360,11 @@
       }
       $('g-save').disabled = false;
       if (!res.ok) {
-        setStatus(`<span class="editor-tone-danger">${esc(res.error || 'Ошибка сохранения')}</span>`);
+        setStatus(`<span class="editor-tone-danger">${esc(res.error || 'Save failed')}</span>`);
         return;
       }
       id = res.user?.id || id;
-      toast(state.mode === 'create' ? 'Гостевой аккаунт создан' : 'Изменения сохранены', 'success');
+      toast(state.mode === 'create' ? 'Guest account created' : 'Changes saved', 'success');
       closeModal();
       await load();
       // Let open guest sessions reload their tabs.
@@ -388,36 +387,36 @@
         btn.disabled = true;
         const res = await api('update', { method: 'POST', body: { id, enabled: !user.enabled } });
         btn.disabled = false;
-        if (!res.ok) return toast(res.error || 'Ошибка', 'error');
+        if (!res.ok) return toast(res.error || 'Error', 'error');
         // Показываем новое состояние сразу; сервер подтвердит его ниже.
         user.enabled = !user.enabled;
         renderGlobal();
         renderUsers();
-        toast(user.enabled ? 'Аккаунт включён' : 'Аккаунт выключен', 'success');
+        toast(user.enabled ? 'Account enabled' : 'Account disabled', 'success');
         EditorCore.Http.postMessage(window.parent, { type: 'editor-shell:guest-account-changed', id });
         return load();
       }
 
       if (act === 'revoke') {
-        if (!await EditorCore.Page.confirm(`Завершить все активные сессии аккаунта «${user.name || user.login}»?`)) return;
+        if (!await EditorCore.Page.confirm(`End all active sessions of the account “${user.name || user.login}»?`)) return;
         const res = await api('revoke', { method: 'POST', body: { id } });
-        if (!res.ok) return toast(res.error || 'Ошибка', 'error');
-        toast('Сессии завершены — гостю нужно войти заново', 'success');
+        if (!res.ok) return toast(res.error || 'Error', 'error');
+        toast('Sessions ended — the guest has to sign in again', 'success');
         return;
       }
 
       if (act === 'delete') {
         if (btn.disabled) return;
         if (!await EditorCore.Page.confirm(
-          `Удалить гостевой аккаунт «${user.name || user.login}»? Отправленные им запросы останутся в истории.`,
-          { danger: true, confirmText: 'Удалить' },
+          `Delete the guest account “${user.name || user.login}”? The requests it sent stay in the history.`,
+          { danger: true, confirmText: 'Delete' },
         )) return;
         btn.disabled = true;
         const res = await api('delete', { method: 'POST', body: { id } });
         btn.disabled = false;
         // 404 — аккаунт уже удалён (например, в другой вкладке). Для интерфейса
         // это тот же результат: запись должна исчезнуть, а не «зависнуть».
-        if (!res.ok && res.status !== 404) return toast(res.error || 'Ошибка', 'error');
+        if (!res.ok && res.status !== 404) return toast(res.error || 'Error', 'error');
 
         // Список обновляется сразу, а не только после ответа сервера: удалённая
         // карточка не должна оставаться на экране, даже если следующий запрос
@@ -425,7 +424,7 @@
         state.users = state.users.filter(u => u.id !== id);
         renderGlobal();
         renderUsers();
-        toast(res.ok ? 'Аккаунт удалён' : 'Аккаунт уже был удалён', res.ok ? 'success' : 'info');
+        toast(res.ok ? 'Account deleted' : 'The account has already been deleted', res.ok ? 'success' : 'info');
 
         // Открытая сессия удалённого гостя должна завершиться немедленно:
         // оболочка перечитает роль и закроет доступ.

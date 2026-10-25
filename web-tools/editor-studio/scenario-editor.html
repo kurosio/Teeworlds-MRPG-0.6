@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Сценарии • Editor Studio</title>
+    <title>Scenarios • Editor Studio</title>
     <script src="editor-core/page-loader.js" data-mode="scenario"></script>
     
     <!-- Библиотека для Drag-and-Drop -->
@@ -433,55 +433,55 @@
         <div class="editor-page-title">
             <i class="fa-solid fa-scroll text-accent text-xl"></i>
             <div>
-                <h1>Сценарии</h1>
-            <div class="editor-page-sub">Сценарии: структура шагов, компоненты и связи.</div>
+                <h1>Scenarios</h1>
+            <div class="editor-page-sub">Scenarios: step structure, components and links.</div>
             </div>
-            <span id="dirty-pill" class="editor-dirty-pill hidden" aria-hidden="true">Данные не сохранены</span>
+            <span id="dirty-pill" class="editor-dirty-pill hidden" aria-hidden="true">Data not saved</span>
         </div>
         <div class="controls editor-page-actions flex flex-nowrap items-center gap-3 min-w-0">
-            <div class="bp-viewmode" role="tablist" aria-label="Режим отображения">
-                <button type="button" id="view-mode-list" class="is-active" role="tab" aria-selected="true" title="Список шагов">
-                    <i class="fa-solid fa-list-ul"></i><span>Список</span>
+            <div class="bp-viewmode" role="tablist" aria-label="Display mode">
+                <button type="button" id="view-mode-list" class="is-active" role="tab" aria-selected="true" title="Step list">
+                    <i class="fa-solid fa-list-ul"></i><span>List</span>
                 </button>
-                <button type="button" id="view-mode-graph" role="tab" aria-selected="false" title="Граф">
-                    <i class="fa-solid fa-diagram-project"></i><span>Граф</span>
+                <button type="button" id="view-mode-graph" role="tab" aria-selected="false" title="Graph">
+                    <i class="fa-solid fa-diagram-project"></i><span>Graph</span>
                 </button>
             </div>
             <div class="flex items-center gap-1">
-                <button id="undo-button" class="editor-btn editor-btn-secondary" title="Отменить (Ctrl+Z)" disabled><i class="fa-solid fa-rotate-left"></i></button>
-                <button id="redo-button" class="editor-btn editor-btn-secondary" title="Повторить (Ctrl+U)" disabled><i class="fa-solid fa-rotate-right"></i></button>
+                <button id="undo-button" class="editor-btn editor-btn-secondary" title="Undo (Ctrl+Z)" disabled><i class="fa-solid fa-rotate-left"></i></button>
+                <button id="redo-button" class="editor-btn editor-btn-secondary" title="Redo (Ctrl+U)" disabled><i class="fa-solid fa-rotate-right"></i></button>
             </div>
             <div class="scenario-switch-wrap">
-                <span class="scenario-switch-label">Стрелки:</span>
-                <label class="scenario-switch" for="arrow-mode-toggle" aria-label="Стрелки">
+                <span class="scenario-switch-label">Arrows:</span>
+                <label class="scenario-switch" for="arrow-mode-toggle" aria-label="Arrows">
                     <input type="checkbox" name="arrow-mode-toggle" id="arrow-mode-toggle" />
                     <span class="track"></span>
                     <span class="thumb"></span>
                 </label>
             </div>
-            <label for="scenario-select" class="scenario-control-label text-sm font-medium editor-text">Сценарий:</label>
-            <select id="scenario-select" title="Сценарий" class="form-input w-full sm:w-56 min-w-[130px] max-w-[210px]"></select>
-            <button id="delete-scenario-btn" title="Удалить текущий сценарий" class="editor-btn editor-btn-danger">
+            <label for="scenario-select" class="scenario-control-label text-sm font-medium editor-text">Scenario:</label>
+            <select id="scenario-select" title="Scenario" class="form-input w-full sm:w-56 min-w-[130px] max-w-[210px]"></select>
+            <button id="delete-scenario-btn" title="Delete the current scenario" class="editor-btn editor-btn-danger">
                 <i class="fa-solid fa-trash-can"></i>
             </button>
-            <input type="text" id="save-as-filename" placeholder="Сохранить как..." class="form-input w-full sm:w-48 min-w-[130px] max-w-[210px]">
-            <button id="preview-json-button" title="Предпросмотр JSON" class="editor-btn editor-btn-secondary flex items-center gap-2">
+            <input type="text" id="save-as-filename" placeholder="Save as..." class="form-input w-full sm:w-48 min-w-[130px] max-w-[210px]">
+            <button id="preview-json-button" title="JSON preview" class="editor-btn editor-btn-secondary flex items-center gap-2">
                 <i class="fa-solid fa-code"></i> JSON
             </button>
-            <button id="import-json-button" title="Импорт шагов из JSON" class="editor-btn editor-btn-secondary flex items-center gap-2">
-                <i class="fa-solid fa-file-import"></i> Импорт
+            <button id="import-json-button" title="Import steps from JSON" class="editor-btn editor-btn-secondary flex items-center gap-2">
+                <i class="fa-solid fa-file-import"></i> Import
             </button>
-            <button id="save-button" title="Сохранить текущий сценарий" class="editor-btn editor-btn-primary flex items-center gap-2">
-                <i class="fa-solid fa-save"></i> Сохранить
+            <button id="save-button" title="Save the current scenario" class="editor-btn editor-btn-primary flex items-center gap-2">
+                <i class="fa-solid fa-save"></i> Save
             </button>
         </div>
     </header>
 
-    <section class="scenario-overview" aria-label="Сводка сценария">
-        <article class="scenario-overview-card"><div class="label">Шаги</div><div class="value" id="scenario-stat-steps">0</div></article>
-        <article class="scenario-overview-card"><div class="label">Компоненты</div><div class="value" id="scenario-stat-components">0</div></article>
-        <article class="scenario-overview-card"><div class="label">Группы</div><div class="value" id="scenario-stat-groups">0</div></article>
-        <article class="scenario-overview-card is-wide"><div class="label">Текущий контекст</div><div class="value text-base" id="scenario-stat-context">—</div></article>
+    <section class="scenario-overview" aria-label="Scenario summary">
+        <article class="scenario-overview-card"><div class="label">Steps</div><div class="value" id="scenario-stat-steps">0</div></article>
+        <article class="scenario-overview-card"><div class="label">Components</div><div class="value" id="scenario-stat-components">0</div></article>
+        <article class="scenario-overview-card"><div class="label">Groups</div><div class="value" id="scenario-stat-groups">0</div></article>
+        <article class="scenario-overview-card is-wide"><div class="label">Current context</div><div class="value text-base" id="scenario-stat-context">—</div></article>
     </section>
 </div>
 
@@ -489,14 +489,14 @@
         <aside id="navigator" class="w-full md:w-[350px] editor-surface border-r editor-hairline md:sticky overflow-y-auto flex-shrink-0 z-20">
             <div class="navigator-header p-3.5 border-b editor-hairline editor-surface sticky top-0 z-10 space-y-2.5">
                 <div class="flex justify-between items-center font-semibold">
-                    <span class="editor-text">Структура сценария</span>
-                    <button id="add-group-btn" class="editor-btn editor-btn-primary text-sm" title="Создать новую группу">
-                        <i class="fa-solid fa-plus"></i> <span>Группа</span>
+                    <span class="editor-text">Scenario structure</span>
+                    <button id="add-group-btn" class="editor-btn editor-btn-primary text-sm" title="Create a new group">
+                        <i class="fa-solid fa-plus"></i> <span>Group</span>
                     </button>
                 </div>
                 <div class="editor-search">
                     <i class="fa-solid fa-magnifying-glass"></i>
-                    <input id="navigator-search" type="search" class="w-full editor-input form-input text-sm" placeholder="Фильтр шагов и групп…" autocomplete="off" />
+                    <input id="navigator-search" type="search" class="w-full editor-input form-input text-sm" placeholder="Filter steps and groups…" autocomplete="off" />
                 </div>
             </div>
             <div id="navigator-tree-root" class="p-2"></div>
@@ -505,41 +505,41 @@
         <main id="editor-wrapper" class="flex-grow p-4 md:p-8 relative editor-panel">
             <div id="editor-container" class="space-y-8"></div>
              <button id="add-step-button" class="editor-btn editor-btn-primary w-full max-w-3xl mx-auto mt-8">
-                <i class="fa-solid fa-plus"></i> Добавить Новый Шаг
+                <i class="fa-solid fa-plus"></i> Add a new step
             </button>
 
             <!-- Blueprint (Unreal-style) graph canvas (shown only in graph mode) -->
             <div id="bp-canvas">
                 <div class="bp-toolbar">
-                    <button class="bp-tool-btn" id="bp-select-mode" title="Режим выделения рамкой (или удерживайте Shift)"><i class="fa-solid fa-object-group"></i></button>
+                    <button class="bp-tool-btn" id="bp-select-mode" title="Box selection mode (or hold Shift)"><i class="fa-solid fa-object-group"></i></button>
                     <div class="bp-sep"></div>
-                    <button class="bp-tool-btn" id="bp-add-step" title="Добавить шаг (двойной клик по пустому месту)"><i class="fa-solid fa-plus"></i></button>
-                    <button class="bp-tool-btn" id="bp-add-group" title="Добавить группу"><i class="fa-solid fa-layer-group"></i></button>
-                    <button class="bp-tool-btn" id="bp-add-comment" title="Добавить комментарий"><i class="fa-solid fa-note-sticky"></i></button>
+                    <button class="bp-tool-btn" id="bp-add-step" title="Add a step (double-click empty space)"><i class="fa-solid fa-plus"></i></button>
+                    <button class="bp-tool-btn" id="bp-add-group" title="Add a group"><i class="fa-solid fa-layer-group"></i></button>
+                    <button class="bp-tool-btn" id="bp-add-comment" title="Add a comment"><i class="fa-solid fa-note-sticky"></i></button>
                     <div class="bp-sep"></div>
-                    <button class="bp-tool-btn" id="bp-zoom-out" title="Уменьшить"><i class="fa-solid fa-minus"></i></button>
+                    <button class="bp-tool-btn" id="bp-zoom-out" title="Zoom out"><i class="fa-solid fa-minus"></i></button>
                     <div class="bp-zoom-label" id="bp-zoom-label">100%</div>
-                    <button class="bp-tool-btn" id="bp-zoom-in" title="Увеличить"><i class="fa-solid fa-plus"></i></button>
+                    <button class="bp-tool-btn" id="bp-zoom-in" title="Zoom in"><i class="fa-solid fa-plus"></i></button>
                     <div class="bp-sep"></div>
-                    <button class="bp-tool-btn" id="bp-fit" title="Вписать в экран (F)"><i class="fa-solid fa-expand"></i></button>
-                    <button class="bp-tool-btn" id="bp-relayout" title="Авто-раскладка"><i class="fa-solid fa-wand-magic-sparkles"></i></button>
+                    <button class="bp-tool-btn" id="bp-fit" title="Fit to screen (F)"><i class="fa-solid fa-expand"></i></button>
+                    <button class="bp-tool-btn" id="bp-relayout" title="Auto layout"><i class="fa-solid fa-wand-magic-sparkles"></i></button>
                     <div class="bp-sep"></div>
-                    <button class="bp-tool-btn" id="bp-undo" title="Отменить (Ctrl+Z)"><i class="fa-solid fa-rotate-left"></i></button>
-                    <button class="bp-tool-btn" id="bp-redo" title="Повторить (Ctrl+U)"><i class="fa-solid fa-rotate-right"></i></button>
+                    <button class="bp-tool-btn" id="bp-undo" title="Undo (Ctrl+Z)"><i class="fa-solid fa-rotate-left"></i></button>
+                    <button class="bp-tool-btn" id="bp-redo" title="Redo (Ctrl+U)"><i class="fa-solid fa-rotate-right"></i></button>
                     <div class="bp-sep"></div>
-                    <button class="bp-tool-btn" id="bp-minimap-toggle" title="Мини-карта"><i class="fa-solid fa-map"></i></button>
-                    <button class="bp-tool-btn" id="bp-fullscreen" title="Развернуть на весь экран"><i class="fa-solid fa-expand"></i></button>
+                    <button class="bp-tool-btn" id="bp-minimap-toggle" title="Minimap"><i class="fa-solid fa-map"></i></button>
+                    <button class="bp-tool-btn" id="bp-fullscreen" title="Full screen"><i class="fa-solid fa-expand"></i></button>
                 </div>
-                <canvas id="bp-minimap" width="220" height="150" title="Мини-карта (клик/перетаскивание — навигация)"></canvas>
+                <canvas id="bp-minimap" width="220" height="150" title="Minimap (click/drag to navigate)"></canvas>
                 <div id="bp-world">
                     <svg id="bp-wires"></svg>
                 </div>
                 <div class="bp-legend">
-                    <span><i style="background: var(--bp-wire-exec)"></i> Поток</span>
+                    <span><i style="background: var(--bp-wire-exec)"></i> Flow</span>
                     <span><i style="background: var(--bp-wire-true)"></i> TRUE</span>
                     <span><i style="background: var(--bp-wire-false)"></i> FALSE</span>
-                    <span><i style="background: var(--bp-wire-data)"></i> Прочее</span>
-                    <span><i class="is-dash"></i> По порядку</span>
+                    <span><i style="background: var(--bp-wire-data)"></i> Other</span>
+                    <span><i class="is-dash"></i> Sequential</span>
                 </div>
             </div>
         </main>
@@ -551,33 +551,33 @@
 
     <!-- Quick step settings popover (double-click on step header / node header) -->
     <div id="step-quick-popover">
-        <h4><i class="fa-solid fa-sliders text-accent"></i> Быстрые настройки шага</h4>
+        <h4><i class="fa-solid fa-sliders text-accent"></i> Quick step settings</h4>
         <div class="qp-row">
             <div>
-                <label>ID шага (латиницей)</label>
+                <label>Step ID (latin letters)</label>
                 <input type="text" id="qp-id" class="form-input w-full text-sm" autocomplete="off">
             </div>
             <div>
-                <label>Задержка (мс)</label>
+                <label>Delay (ms)</label>
                 <input type="number" id="qp-delay" class="form-input w-full text-sm" placeholder="0">
             </div>
         </div>
-        <label>Сообщение игроку</label>
-        <input type="text" id="qp-msg" class="form-input w-full text-sm" placeholder="Например, 'Найдите выход'">
+        <label>Message to the player</label>
+        <input type="text" id="qp-msg" class="form-input w-full text-sm" placeholder="e.g. 'Find the exit'">
         <div class="qp-logic">
-            <label>Логика завершения компонентов</label>
+            <label>Component completion logic</label>
             <div class="logic-segmented" id="qp-logic" role="radiogroup">
-                <div class="logic-seg" data-logic="all_of" role="radio" tabindex="0" title="Все компоненты должны завершиться">
-                    <span class="seg-top"><i class="fa-solid fa-list-check"></i> Все</span>
-                    <span class="seg-hint">все сразу</span>
+                <div class="logic-seg" data-logic="all_of" role="radio" tabindex="0" title="All components must finish">
+                    <span class="seg-top"><i class="fa-solid fa-list-check"></i> All</span>
+                    <span class="seg-hint">all at once</span>
                 </div>
-                <div class="logic-seg" data-logic="any_of" role="radio" tabindex="0" title="Достаточно завершить любой компонент">
-                    <span class="seg-top"><i class="fa-solid fa-code-branch"></i> Любой</span>
-                    <span class="seg-hint">любой</span>
+                <div class="logic-seg" data-logic="any_of" role="radio" tabindex="0" title="Any single component is enough">
+                    <span class="seg-top"><i class="fa-solid fa-code-branch"></i> Any</span>
+                    <span class="seg-hint">any</span>
                 </div>
-                <div class="logic-seg" data-logic="sequential" role="radio" tabindex="0" title="По порядку">
-                    <span class="seg-top"><i class="fa-solid fa-arrow-down-1-9"></i> Порядок</span>
-                    <span class="seg-hint">по шагам</span>
+                <div class="logic-seg" data-logic="sequential" role="radio" tabindex="0" title="Sequential">
+                    <span class="seg-top"><i class="fa-solid fa-arrow-down-1-9"></i> Order</span>
+                    <span class="seg-hint">in order</span>
                 </div>
             </div>
         </div>
@@ -585,11 +585,11 @@
 
     <div id="json-preview-modal" class="hidden fixed inset-0 editor-modal-backdrop z-[350] flex justify-center items-center p-4">
         <div class="editor-modal-content p-6 rounded-lg shadow-xl w-full max-w-4xl h-[80vh] flex flex-col">
-            <h3 class="text-xl font-bold mb-4">Предпросмотр JSON</h3>
+            <h3 class="text-xl font-bold mb-4">JSON preview</h3>
             <textarea id="json-preview-output" readonly class="w-full flex-grow p-3 rounded-md form-input font-mono text-sm resize-none"></textarea>
             <div class="text-right mt-4 pt-3 border-t editor-hairline">
-                <button id="json-preview-copy" class="editor-btn editor-btn-secondary">Копировать</button>
-                <button id="json-preview-close" class="editor-btn editor-btn-primary ml-2">Закрыть</button>
+                <button id="json-preview-copy" class="editor-btn editor-btn-secondary">Copy</button>
+                <button id="json-preview-close" class="editor-btn editor-btn-primary ml-2">Close</button>
             </div>
         </div>
     </div>
@@ -597,21 +597,21 @@
     <div id="json-import-modal" class="hidden fixed inset-0 editor-modal-backdrop z-[360] flex justify-center items-center p-4">
         <div class="editor-modal-content p-6 rounded-lg shadow-xl w-full max-w-4xl h-[80vh] flex flex-col gap-4">
             <div>
-                <h3 class="text-xl font-bold">Импорт шагов из JSON</h3>
-                <p class="text-sm editor-muted-text mt-1">Можно вставить массив шагов, объект сценария (<code>{"steps": [...]}</code>) или JSON события (<code>{"on_end": {"steps": [...]}}</code>).</p>
+                <h3 class="text-xl font-bold">Import steps from JSON</h3>
+                <p class="text-sm editor-muted-text mt-1">You can paste an array of steps, a scenario object (<code>{"steps": [...]}</code>) or an event JSON (<code>{"on_end": {"steps": [...]}}</code>).</p>
             </div>
             <textarea id="json-import-input" class="w-full flex-grow p-3 rounded-md form-input font-mono text-sm resize-none" placeholder='[{"id":"step_1","components":[]}]'></textarea>
             <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-3 border-t editor-hairline">
                 <label class="text-sm flex items-center gap-2">
-                    Режим импорта:
+                    Import mode:
                     <select id="json-import-mode" class="form-input">
-                        <option value="replace">Заменить текущие шаги</option>
-                        <option value="append">Добавить к текущим шагам</option>
+                        <option value="replace">Replace the current steps</option>
+                        <option value="append">Append to the current steps</option>
                     </select>
                 </label>
                 <div class="text-right">
-                    <button id="json-import-apply" class="editor-btn editor-btn-primary">Импортировать</button>
-                    <button id="json-import-close" class="editor-btn editor-btn-secondary ml-2">Закрыть</button>
+                    <button id="json-import-apply" class="editor-btn editor-btn-primary">Import</button>
+                    <button id="json-import-close" class="editor-btn editor-btn-secondary ml-2">Close</button>
                 </div>
             </div>
         </div>
@@ -622,64 +622,64 @@
         <div class="step-card editor-card rounded-lg border editor-hairline shadow-md transition-all duration-200 relative z-10">
             <div class="step-header flex justify-between items-center border-b editor-hairline p-4">
                 <div class="title text-lg font-bold editor-text flex items-center gap-3 flex-grow">
-                    <span class="drag-zone handle flex items-center gap-3 cursor-grab px-1 py-1" title="Перетащите, чтобы переместить шаг">
+                    <span class="drag-zone handle flex items-center gap-3 cursor-grab px-1 py-1" title="Drag to move the step">
                         <i class="fa-solid fa-grip-vertical editor-muted-text"></i>
                     </span>
-                    <i class="fa-solid fa-chevron-down toggle-icon transition-transform cursor-pointer" title="Свернуть/развернуть"></i>
-                    <span class="editor-muted-text">Шаг ID:</span>
-                    <span class="step-id-display font-mono text-sm font-medium px-2 py-1 rounded-md" title="Нажмите, чтобы переименовать"></span>
+                    <i class="fa-solid fa-chevron-down toggle-icon transition-transform cursor-pointer" title="Collapse/expand"></i>
+                    <span class="editor-muted-text">Step ID:</span>
+                    <span class="step-id-display font-mono text-sm font-medium px-2 py-1 rounded-md" title="Click to rename"></span>
                 </div>
-                <div class="step-logic-badge ml-auto mr-2" data-logic="all_of" title="Логика завершения компонентов"></div>
+                <div class="step-logic-badge ml-auto mr-2" data-logic="all_of" title="Component completion logic"></div>
                 <div class="step-delay-display hidden text-xs font-medium editor-soft editor-text px-2 py-1 rounded-md mr-4 items-center gap-1.5"></div>
                 <div class="controls-container flex items-center gap-1">
-                    <button class="control-btn duplicate-btn w-8 h-8 rounded-full editor-muted-text editor-hover editor-hover-warning transition-colors" title="Дублировать шаг"><i class="fa-regular fa-copy"></i></button>
-                    <button class="control-btn delete-btn w-8 h-8 rounded-full editor-muted-text editor-hover editor-hover-danger transition-colors" title="Удалить шаг"><i class="fa-regular fa-trash-can"></i></button>
+                    <button class="control-btn duplicate-btn w-8 h-8 rounded-full editor-muted-text editor-hover editor-hover-warning transition-colors" title="Duplicate the step"><i class="fa-regular fa-copy"></i></button>
+                    <button class="control-btn delete-btn w-8 h-8 rounded-full editor-muted-text editor-hover editor-hover-danger transition-colors" title="Delete the step"><i class="fa-regular fa-trash-can"></i></button>
                 </div>
             </div>
             <div class="step-body p-5 transition-all duration-300">
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-medium editor-text mb-1">ID Шага (уникальное, латиницей)</label>
+                        <label class="block text-sm font-medium editor-text mb-1">Step ID (unique, latin letters)</label>
                         <input type="text" class="step-id-input editor-input form-input">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium editor-text mb-1">Задержка (мс)</label>
+                        <label class="block text-sm font-medium editor-text mb-1">Delay (ms)</label>
                         <input type="number" class="step-delay-input editor-input form-input" placeholder="0">
                     </div>
                 </div>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                     <div>
-                        <label class="block text-sm font-medium editor-text mb-1">Сообщение игроку</label>
-                        <input type="text" class="msg-info-input editor-input form-input" placeholder="Например, 'Найдите выход'">
+                        <label class="block text-sm font-medium editor-text mb-1">Message to the player</label>
+                        <input type="text" class="msg-info-input editor-input form-input" placeholder="e.g. 'Find the exit'">
                     </div>
                     <div class="logic-selector-wrap">
-                        <label class="block text-sm font-medium editor-text mb-1">Логика завершения компонентов</label>
-                        <div class="logic-segmented" role="radiogroup" aria-label="Логика завершения компонентов">
-                            <div class="logic-seg" data-logic="all_of" role="radio" tabindex="0" title="Все компоненты должны завершиться (AND)">
-                                <span class="seg-top"><i class="fa-solid fa-list-check"></i> Все</span>
-                                <span class="seg-hint">все сразу</span>
+                        <label class="block text-sm font-medium editor-text mb-1">Component completion logic</label>
+                        <div class="logic-segmented" role="radiogroup" aria-label="Component completion logic">
+                            <div class="logic-seg" data-logic="all_of" role="radio" tabindex="0" title="All components must finish (AND)">
+                                <span class="seg-top"><i class="fa-solid fa-list-check"></i> All</span>
+                                <span class="seg-hint">all at once</span>
                             </div>
-                            <div class="logic-seg" data-logic="any_of" role="radio" tabindex="0" title="Достаточно любого компонента (OR)">
-                                <span class="seg-top"><i class="fa-solid fa-code-branch"></i> Любой</span>
-                                <span class="seg-hint">любой</span>
+                            <div class="logic-seg" data-logic="any_of" role="radio" tabindex="0" title="Any single component is enough (OR)">
+                                <span class="seg-top"><i class="fa-solid fa-code-branch"></i> Any</span>
+                                <span class="seg-hint">any</span>
                             </div>
-                            <div class="logic-seg" data-logic="sequential" role="radio" tabindex="0" title="Компоненты выполняются по порядку">
-                                <span class="seg-top"><i class="fa-solid fa-arrow-down-1-9"></i> По порядку</span>
-                                <span class="seg-hint">по шагам</span>
+                            <div class="logic-seg" data-logic="sequential" role="radio" tabindex="0" title="Components run in order">
+                                <span class="seg-top"><i class="fa-solid fa-arrow-down-1-9"></i> Sequential</span>
+                                <span class="seg-hint">in order</span>
                             </div>
                         </div>
                         <select class="completion-logic-select hidden" aria-hidden="true" tabindex="-1">
-                            <option value="all_of">Все сразу</option>
-                            <option value="any_of">Любой</option>
-                            <option value="sequential">По порядку</option>
+                            <option value="all_of">All at once</option>
+                            <option value="any_of">Any</option>
+                            <option value="sequential">Sequential</option>
                         </select>
                     </div>
                 </div>
                 <div class="components-container mt-5 pt-5 border-t border-dashed editor-hairline">
-                    <h4 class="font-bold editor-text mb-2">Компоненты</h4>
+                    <h4 class="font-bold editor-text mb-2">Components</h4>
                 </div>
                 <button class="add-button add-component-btn w-full mt-4 py-2 editor-soft editor-text font-semibold rounded-lg editor-hover transition-colors flex items-center justify-center gap-2">
-                    <i class="fa-solid fa-puzzle-piece"></i> Добавить компонент
+                    <i class="fa-solid fa-puzzle-piece"></i> Add a component
                 </button>
             </div>
         </div>
@@ -695,9 +695,9 @@
                 </div>
             </div>
             <div class="controls-container flex items-center gap-1">
-                <button class="control-btn edit-btn w-8 h-8 rounded-full editor-muted-text editor-hover editor-hover-accent transition-colors" title="Редактировать"><i class="fa-solid fa-pencil"></i></button>
-                <button class="control-btn duplicate-btn w-8 h-8 rounded-full editor-muted-text editor-hover editor-hover-warning transition-colors" title="Дублировать"><i class="fa-regular fa-copy"></i></button>
-                <button class="control-btn delete-btn w-8 h-8 rounded-full editor-muted-text editor-hover editor-hover-danger transition-colors" title="Удалить"><i class="fa-regular fa-trash-can"></i></button>
+                <button class="control-btn edit-btn w-8 h-8 rounded-full editor-muted-text editor-hover editor-hover-accent transition-colors" title="Edit"><i class="fa-solid fa-pencil"></i></button>
+                <button class="control-btn duplicate-btn w-8 h-8 rounded-full editor-muted-text editor-hover editor-hover-warning transition-colors" title="Duplicate"><i class="fa-regular fa-copy"></i></button>
+                <button class="control-btn delete-btn w-8 h-8 rounded-full editor-muted-text editor-hover editor-hover-danger transition-colors" title="Delete"><i class="fa-regular fa-trash-can"></i></button>
             </div>
         </div>
     </template>
@@ -815,15 +815,15 @@
                 this.scenarioModes = EditorCore.schemas.scenarioModeSchemas || {};
                 this.currentMode = 'default';
                 this.scenarioEvents = {
-                    general: 'Стандартный',
-                    on_recieve_objectives: 'При получении задач',
-                    on_complete_objectives: 'При завершении задач',
-                    on_end: 'При окончании шага',
-                    on_equip: 'При экипировке предмета',
-                    on_got: 'При получении предмета',
-                    on_lost: 'При потере предмета',
-                    on_use: 'При использовании предмета',
-                    on_unequip: 'При снятии предмета'
+                    general: 'Standard',
+                    on_recieve_objectives: 'On objectives received',
+                    on_complete_objectives: 'On objectives completed',
+                    on_end: 'On step end',
+                    on_equip: 'On item equipped',
+                    on_got: 'On item received',
+                    on_lost: 'On item lost',
+                    on_use: 'On item used',
+                    on_unequip: 'On item unequipped'
                 };
                 this.componentTypes = this.getComponentTypesByMode(this.currentMode);
                 this.executionTimeComponentTypes = new Set(['follow_camera', 'message', 'emote']);
@@ -908,19 +908,19 @@
                 // make sure the latest pending edit is captured before stepping back
                 this.commitHistorySnapshot();
                 const h = this.history;
-                if (h.index <= 0) { this.showToast('Нечего отменять', 'info'); return; }
+                if (h.index <= 0) { this.showToast('Nothing to undo', 'info'); return; }
                 h.index -= 1;
                 this.applyHistorySnapshot(h.stack[h.index]);
                 this.updateUndoRedoButtons();
-                this.showToast('Отменено', 'info');
+                this.showToast('Undone', 'info');
             }
             redo() {
                 const h = this.history;
-                if (h.index >= h.stack.length - 1) { this.showToast('Нечего повторять', 'info'); return; }
+                if (h.index >= h.stack.length - 1) { this.showToast('Nothing to redo', 'info'); return; }
                 h.index += 1;
                 this.applyHistorySnapshot(h.stack[h.index]);
                 this.updateUndoRedoButtons();
-                this.showToast('Повторено', 'info');
+                this.showToast('Redone', 'info');
             }
             updateUndoRedoButtons() {
                 const h = this.history;
@@ -1002,7 +1002,7 @@
                 if (this.bpFullscreenBtn) {
                     const icon = this.bpFullscreenBtn.querySelector('i');
                     if (icon) icon.className = on ? 'fa-solid fa-compress' : 'fa-solid fa-expand';
-                    this.bpFullscreenBtn.title = on ? 'Выйти из полноэкранного режима' : 'Развернуть на весь экран';
+                    this.bpFullscreenBtn.title = on ? 'Exit full screen' : 'Full screen';
                 }
                 // recompute sticky offsets + redraw after layout change
                 requestAnimationFrame(() => { this.blueprint?.applyTransform?.(); this.blueprint?.drawWires?.(); });
@@ -1145,11 +1145,11 @@
                 if (!step) return false;
                 const clean = String(newId).trim();
                 if (!clean || !/^[a-zA-Z0-9_]+$/.test(clean)) {
-                    this.showToast('ID может содержать только латиницу, цифры и _', 'error');
+                    this.showToast('The ID may contain only latin letters, digits and _', 'error');
                     return false;
                 }
                 if (clean !== oldId && this.scenarioData.steps.some(s => s.id === clean)) {
-                    this.showToast(`ID "${clean}" уже используется!`, 'error');
+                    this.showToast(`ID "${clean}" is already in use!`, 'error');
                     return false;
                 }
                 this.updateStepId(step, clean);
@@ -1181,7 +1181,7 @@
                 const normalized = {
                     ...group,
                     id: typeof group.id === 'string' && group.id ? group.id : `group_${this.generateUUID()}`,
-                    name: typeof group.name === 'string' && group.name ? group.name : 'Группа',
+                    name: typeof group.name === 'string' && group.name ? group.name : 'Group',
                     steps: Array.isArray(group.steps) ? group.steps.filter(stepId => typeof stepId === 'string' && stepId) : [],
                     collapsed: Boolean(group.collapsed)
                 };
@@ -1196,7 +1196,7 @@
             }
 
             getGroupEventLabel(eventKey) {
-                return this.isKnownScenarioEvent(eventKey) ? (this.scenarioEvents[eventKey] || eventKey) : 'Без события';
+                return this.isKnownScenarioEvent(eventKey) ? (this.scenarioEvents[eventKey] || eventKey) : 'No event';
             }
 
             getComponentTypesByMode(mode) {
@@ -1317,13 +1317,13 @@
                 if (this.importJsonButton) this.importJsonButton.classList.add('hidden');
 
                 if (this.saveButton) {
-                    this.saveButton.innerHTML = '<i class="fa-solid fa-check"></i><span>Применить</span>';
+                    this.saveButton.innerHTML = '<i class="fa-solid fa-check"></i><span>Apply</span>';
                 }
 
                 const titleEl = document.querySelector('#scenario-header .editor-page-title h1');
                 const subtitleEl = document.querySelector('#scenario-header .editor-page-title .editor-muted-text');
-                if (titleEl) titleEl.textContent = 'Встроенный редактор сценария';
-                if (subtitleEl) subtitleEl.textContent = 'Результат будет передан обратно в выбранное поле.';
+                if (titleEl) titleEl.textContent = 'Built-in scenario editor';
+                if (subtitleEl) subtitleEl.textContent = 'The result will be passed back to the selected field.';
             }
 
             normalizeExternalScenarioData(raw) {
@@ -1340,7 +1340,7 @@
                     try {
                         parsed = JSON.parse(text);
                     } catch (err) {
-                        this.showToast('Входной сценарий повреждён, загружено пустое состояние.', 'warning');
+                        this.showToast('The input scenario is damaged; an empty state was loaded.', 'warning');
                         return { scenario_mode: this.embed.mode || this.currentMode || 'universal', steps: [], editor_data: { groups: [] } };
                     }
                 }
@@ -1823,7 +1823,7 @@
             }
 
             renderEmptyState() {
-                this.editorContainer.innerHTML = `<div class="text-center p-20 my-5 max-w-3xl mx-auto border-2 border-dashed editor-hairline rounded-xl"><i class="fa-solid fa-wand-magic-sparkles text-accent text-5xl mb-4"></i><h2 class="text-2xl font-bold editor-text">Сценарий пока пуст</h2><p class="editor-muted-text mt-2 mb-6">Начните творить, добавив первый шаг с помощью кнопки ниже.</p></div>`;
+                this.editorContainer.innerHTML = `<div class="text-center p-20 my-5 max-w-3xl mx-auto border-2 border-dashed editor-hairline rounded-xl"><i class="fa-solid fa-wand-magic-sparkles text-accent text-5xl mb-4"></i><h2 class="text-2xl font-bold editor-text">The scenario is still empty</h2><p class="editor-muted-text mt-2 mb-6">Start by adding the first step with the button below.</p></div>`;
             }
 
             renderScenarioOverview(groups, ungroupedSteps) {
@@ -1842,7 +1842,7 @@
                 this.stats.groups && (this.stats.groups.textContent = String(groupsCount));
                 if (this.stats.context) {
                     const eventGroupsCount = (groups || []).filter(group => this.isKnownScenarioEvent(group.event_key)).length;
-                    this.stats.context.textContent = `${modeLabel} · event-групп: ${eventGroupsCount} · в группах: ${groupedStepsCount}`;
+                    this.stats.context.textContent = `${modeLabel}  · event groups:  ${eventGroupsCount}  · in groups:  ${groupedStepsCount}`;
                 }
             }
 
@@ -1853,9 +1853,9 @@
             }
             completionLogicMeta(logic) {
                 const map = {
-                    all_of:     { label: 'Все',       short: 'AND', sep: 'AND', icon: 'fa-solid fa-list-check' },
-                    any_of:     { label: 'Любой',     short: 'OR',  sep: 'OR',  icon: 'fa-solid fa-code-branch' },
-                    sequential: { label: 'По порядку', short: '1·2·3', sep: '→', icon: 'fa-solid fa-arrow-down-1-9' }
+                    all_of:     { label: 'All',       short: 'AND', sep: 'AND', icon: 'fa-solid fa-list-check' },
+                    any_of:     { label: 'Any',     short: 'OR',  sep: 'OR',  icon: 'fa-solid fa-code-branch' },
+                    sequential: { label: 'Sequential', short: '1·2·3', sep: '→', icon: 'fa-solid fa-arrow-down-1-9' }
                 };
                 return map[logic] || map.all_of;
             }
@@ -1886,7 +1886,7 @@
                     badge.dataset.logic = logic;
                     badge.classList.add('is-clickable');
                     badge.innerHTML = `<i class="${meta.icon}"></i> ${meta.short}`;
-                    badge.title = `Логика завершения: ${meta.label}. Нажмите, чтобы переключить (AND → OR → 1·2·3)`;
+                    badge.title = `Completion logic:  ${meta.label}. Click to switch (AND → OR → 1·2·3)`;
                 }
             }
             cycleCompletionLogic(stepId) {
@@ -1952,7 +1952,7 @@
             updateStepDelayDisplay(stepCard, delay) {
                 const display = stepCard.querySelector('.step-delay-display');
                 if (delay > 0) {
-                    display.innerHTML = `<i class="fa-solid fa-stopwatch"></i> ${delay} мс`;
+                    display.innerHTML = `<i class="fa-solid fa-stopwatch"></i> ${delay} ms`;
                     display.classList.remove('hidden');
                     display.classList.add('flex');
                 } else {
@@ -1964,12 +1964,12 @@
             createErrorStepElement(stepData, error) {
                 const stepCard = this.templates.step.content.cloneNode(true).firstElementChild;
                 stepCard.classList.add('border-red-500/60', 'bg-red-500/10');
-                const id = stepData?.id || 'ID_НЕ_УКАЗАН';
+                const id = stepData?.id || 'ID_NOT_SET';
                 stepCard.id = `step-card-error-${id}`;
                 stepCard.dataset.stepId = id;
                 stepCard.querySelector('.step-id-display').textContent = id;
                 const body = stepCard.querySelector('.step-body');
-                body.innerHTML = `<h4 class="font-bold text-red-300">Ошибка рендеринга шага</h4><p class="text-sm text-red-200/90 mt-2">Этот шаг не удалось отобразить. Возможно, данные в файле сценария повреждены. <br><b>Сообщение:</b> ${error.message}</p><p class="text-xs mt-2 editor-muted-text">Вы можете удалить этот шаг, чтобы исправить сценарий.</p>`;
+                body.innerHTML = `<h4 class="font-bold text-red-300">Step rendering failed</h4><p class="text-sm text-red-200/90 mt-2">This step could not be displayed. The scenario data may be damaged. <br><b>Message:</b> ${error.message}</p><p class="text-xs mt-2 editor-muted-text">You can delete this step to fix the scenario.</p>`;
                 stepCard.querySelector('.duplicate-btn')?.remove();
                 return stepCard;
             }
@@ -1991,14 +1991,14 @@
                     const orderSpan = document.createElement('span');
                     orderSpan.className = 'comp-order-chip mr-1';
                     orderSpan.textContent = `${index + 1}`;
-                    orderSpan.title = `Шаг последовательности №${index + 1}`;
+                    orderSpan.title = `Sequence step #${index + 1}`;
                     item.querySelector('.component-info').prepend(orderSpan);
                 }
 
                 if (this.executionTimeComponentTypes.has(component.type)) {
                     const delayWrapper = document.createElement('div');
                     delayWrapper.className = 'mt-2 flex items-center gap-2';
-                    delayWrapper.innerHTML = `<label class="text-xs font-medium editor-muted-text">Время выполнения (мс):</label>
+                    delayWrapper.innerHTML = `<label class="text-xs font-medium editor-muted-text">Run time (ms):</label>
                                             <input type="number" class="component-delay-input editor-input form-input w-24 text-sm" value="${component.execution_time || 0}">`;
                     item.querySelector('.component-text-wrapper').appendChild(delayWrapper);
                 }
@@ -2024,7 +2024,7 @@
                     container.appendChild(groupWrapper);
                 });
 
-                const ungroupedWrapper = this.createNavGroupElement({ id: 'ungrouped', name: 'Шаги без группы', collapsed: false, isDefault: true });
+                const ungroupedWrapper = this.createNavGroupElement({ id: 'ungrouped', name: 'Steps without a group', collapsed: false, isDefault: true });
                 const ungroupedList = ungroupedWrapper.querySelector('.nav-step-list');
                 
                 ungroupedSteps.forEach(stepId => {
@@ -2095,7 +2095,7 @@
                     if (this.isKnownScenarioEvent(group.event_key)) {
                         const eventBadge = document.createElement('span');
                         eventBadge.className = 'text-[11px] font-semibold px-2 py-0.5 rounded-full editor-primary-tint editor-primary-text border editor-primary-border';
-                        eventBadge.textContent = '(Событие)';
+                        eventBadge.textContent = '(Event)';
                         eventBadge.title = `${group.event_key} · ${this.getGroupEventLabel(group.event_key)}`;
                         titleWrapper.appendChild(eventBadge);
                     }
@@ -2110,8 +2110,8 @@
 
                     const eventSelect = document.createElement('select');
                     eventSelect.className = 'form-input text-xs h-7 min-w-[170px] max-w-[190px]';
-                    eventSelect.title = 'Тип события для группы';
-                    const eventOptions = ['<option value="">Без события</option>']
+                    eventSelect.title = 'Group event type';
+                    const eventOptions = ['<option value="">No event</option>']
                         .concat(Object.entries(this.scenarioEvents)
                             .filter(([key]) => key !== 'general')
                             .map(([key, label]) => `<option value="${key}" ${group.event_key === key ? 'selected' : ''}>${label}</option>`));
@@ -2127,7 +2127,7 @@
                     const copyBtn = document.createElement('button');
                     copyBtn.className = 'editor-muted-text hover:text-orange-500 w-6 h-6 rounded flex items-center justify-center';
                     copyBtn.innerHTML = '<i class="fa-regular fa-copy"></i>';
-                    copyBtn.title = 'Копировать группу';
+                    copyBtn.title = 'Copy the group';
                     copyBtn.onclick = (e) => {
                         e.stopPropagation();
                         this.duplicateGroup(group.id);
@@ -2137,7 +2137,7 @@
                     const deleteBtn = document.createElement('button');
                     deleteBtn.className = 'editor-muted-text hover:text-red-500 w-6 h-6 rounded flex items-center justify-center';
                     deleteBtn.innerHTML = '<i class="fa-solid fa-times"></i>';
-                    deleteBtn.title = 'Удалить группу';
+                    deleteBtn.title = 'Delete the group';
                     deleteBtn.onclick = (e) => {
                         e.stopPropagation();
                         this.openDeleteGroupModal(group.id);
@@ -2164,10 +2164,10 @@
 
                 const nextStepInfo = ''; // Removed from navigator view
                 const componentCount = step.components?.length || 0;
-                const componentInfo = `<span class="text-xs font-normal editor-muted-text">(${componentCount} комп.)</span>`;
+                const componentInfo = `<span class="text-xs font-normal editor-muted-text">(${componentCount}  comp.)</span>`;
                 
                 stepLi.innerHTML = `<a href="#step-card-${step.id}" data-nav-id="${step.id}" class="flex items-center p-1.5 rounded-md border-b border-transparent editor-hover"><i class="fa-solid fa-grip-vertical nav-handle editor-muted-text editor-hover-text mr-2 cursor-grab"></i><div class="flex-grow flex justify-between items-center font-semibold editor-text text-sm">
-                                            <span class="flex items-center gap-2">${step.id || '<i>Без ID</i>'} ${componentInfo}</span>
+                                            <span class="flex items-center gap-2">${step.id || '<i>No ID</i>'} ${componentInfo}</span>
                                             ${nextStepInfo}
                                         </div>
                                     </a>`;
@@ -2302,11 +2302,11 @@
                     const comp = step.components.find(c => c && c.component_id === componentId);
                     if (!comp) return;
                     const info = this.componentTypes[comp.type] || this.allComponentTypes[comp.type];
-                    const label = info?.name || comp.type || 'компонент';
-                    if (!await EditorCore.Page.confirm(`Удалить компонент «${label}»?`)) return;
+                    const label = info?.name || comp.type || 'component';
+                    if (!await EditorCore.Page.confirm(`Delete the component “${label}»?`)) return;
                     step.components = step.components.filter(c => c && c.component_id !== componentId);
                 } else {
-                    if (!await EditorCore.Page.confirm(`Вы уверены, что хотите удалить шаг "${stepId}"?`)) return;
+                    if (!await EditorCore.Page.confirm(`Are you sure you want to delete the step "${stepId}"?`)) return;
                     this.scenarioData.steps = this.scenarioData.steps.filter(s => s.id !== stepId);
                     this.removeStepFromViewState(stepId);
                 }
@@ -2346,7 +2346,7 @@
                 
                 const isUnique = !this.scenarioData.steps.some(s => s.id === newId);
                 if (!isUnique) {
-                    this.showToast(`ID "${newId}" уже используется!`, 'error');
+                    this.showToast(`ID "${newId}" is already in use!`, 'error');
                     this.validateAllStepIds(); 
                     return;
                 }
@@ -2370,7 +2370,7 @@
                 const step = this.findStep(stepId);
                 this.modal.context = { stepId, componentId, data: JSON.parse(JSON.stringify(component)) };
                 const componentInfo = this.componentTypes[component.type] || { name: component.type };
-                this.modal.title.textContent = `Редактирование: ${componentInfo.name}`;
+                this.modal.title.textContent = `Editing:  ${componentInfo.name}`;
                 const modalIcon = this.modal.backdrop?.querySelector('#modal-icon');
                 if (modalIcon) modalIcon.className = `editor-modal-icon ${componentInfo.icon || 'fa-solid fa-puzzle-piece'}`;
                 const modalContent = this.modal.backdrop?.querySelector('#modal-content');
@@ -2545,7 +2545,7 @@
                     const defaultItemRaw = button.dataset.listDefault ? decodeURIComponent(button.dataset.listDefault) : null;
                     const defaultItem = defaultItemRaw ? JSON.parse(defaultItemRaw) : {};
                     if (listPath.endsWith('.drops') && listValue.length >= 5) {
-                        this.showToast('Максимум 5 слотов дропа', 'warning');
+                        this.showToast('Up to 5 drop slots', 'warning');
                         return;
                     }
                     listValue.push(defaultItem);
@@ -2588,7 +2588,7 @@
 
             buildModalForm(data, step) {
                 const renderOptions = window.EditorCore.defaults.getFieldRenderOptions('scenario');
-                renderOptions.listAddLabel = 'Добавить элемент';
+                renderOptions.listAddLabel = 'Add an item';
 
                 // Поля — ячейки .sc-modal-field с шириной по типу поля.
                 const fields = [];
@@ -2613,7 +2613,7 @@
                         `</div>`
                     );
                 };
-                pushNavRow('next_step_id', 'Переход к шагу (если нужно)', data.next_step_id);
+                pushNavRow('next_step_id', 'Go to step (if needed)', data.next_step_id);
 
                 // Show execution time only for components where it is used by gameplay logic.
                 const shouldShowExecutionTime = this.executionTimeComponentTypes.has(data.type);
@@ -2628,7 +2628,7 @@
                 });
 
                 if (shouldShowExecutionTime && !filteredFields.execution_time) {
-                    const executionTimeField = { type: 'number', label: 'Время выполнения (мс)', ui: { min: 0, max: 600000 } };
+                    const executionTimeField = { type: 'number', label: 'Run time (ms)', ui: { min: 0, max: 600000 } };
                     pushField(window.EditorCore.FieldRenderer.renderField({ path: 'execution_time', field: executionTimeField, data, options: renderOptions }), 'narrow');
                 }
 
@@ -2656,7 +2656,7 @@
                         await this.loadScenario(data.files[0]);
                     } else this.loadScenarioData({ steps: [], editor_data: { groups: [] } }, 'new_scenario.json');
                 } catch (error) {
-                    this.showToast(`Ошибка загрузки списка: ${error.message}`, 'error');
+                    this.showToast(`Loading the list failed:  ${error.message}`, 'error');
                 }
             }
             async loadScenario(filename) {
@@ -2667,9 +2667,9 @@
                     const data = response.data || {};
                     if (data.error) throw new Error(data.error);
                     this.loadScenarioData(data, filename);
-                    this.showToast(`Сценарий "${filename}" загружен.`, 'success');
+                    this.showToast(`Scenario "${filename}" loaded.`, 'success');
                 } catch (error) {
-                    this.showToast(`Ошибка загрузки сценария: ${error.message}`, 'error');
+                    this.showToast(`Loading the scenario failed:  ${error.message}`, 'error');
                     this.loadScenarioData({ steps: [], editor_data: { groups: [] } }, filename); // Load empty state on error
                 }
             }
@@ -2779,7 +2779,7 @@
                 }
 
                 if (!payload || !Array.isArray(payload.steps)) {
-                    this.showToast("Ошибка: формат файла сценария некорректен.", "error");
+                    this.showToast("Error: the scenario file format is invalid.", "error");
                     this.scenarioData = { steps: [], editor_data: { groups: [] } };
                 } else {
                     this.scenarioData = {
@@ -3042,9 +3042,9 @@
             }
 
             async saveScenario() {
-                if (!this.validateAllStepIds()) return this.showToast('Есть шаги с некорректными ID. Исправьте!', 'error');
+                if (!this.validateAllStepIds()) return this.showToast('Some steps have invalid IDs. Fix them!', 'error');
                 let filename = this.saveAsInput.value.trim() || this.scenarioSelect.value;
-                if (!filename) return this.showToast('Введите имя файла для сохранения!', 'error');
+                if (!filename) return this.showToast('Enter a file name to save!', 'error');
                 if (!filename.endsWith('.json')) filename += '.json';
                 
                 const contentToSave = this.buildScenarioContent();
@@ -3067,13 +3067,13 @@
                         this.dirty.setClean();
                     } else this.showToast(result.error, 'error');
                 } catch (error) {
-                    this.showToast(`Ошибка сохранения: ${error.message}`, 'error');
+                    this.showToast(`Save failed:  ${error.message}`, 'error');
                 }
             }
 
             async deleteScenario() {
                 const filename = this.scenarioSelect.value;
-                if (!filename || !await EditorCore.Page.confirm(`Вы уверены, что хотите удалить сценарий "${filename}"? Это действие необратимо.`)) return;
+                if (!filename || !await EditorCore.Page.confirm(`Are you sure you want to delete the scenario "${filename}"? This cannot be undone.`)) return;
 
                 try {
                     const response = await EditorCore.Http.json(this.apiUrl(), { method: 'POST', body: { action: 'delete', filename } });
@@ -3087,7 +3087,7 @@
                         this.showToast(result.error, 'error');
                     }
                 } catch (error) {
-                    this.showToast(`Ошибка удаления: ${error.message}`, 'error');
+                    this.showToast(`Delete failed:  ${error.message}`, 'error');
                 }
             }
 
@@ -3119,9 +3119,9 @@
                         document.execCommand('copy');
                     }
 
-                    this.showToast('JSON скопирован.', 'success');
+                    this.showToast('JSON copied.', 'success');
                 } catch (error) {
-                    this.showToast(`Не удалось скопировать JSON: ${error.message}`, 'error');
+                    this.showToast(`Could not copy the JSON:  ${error.message}`, 'error');
                 }
             }
 
@@ -3186,7 +3186,7 @@
             applyJsonImport() {
                 const text = this.jsonImportModal.input?.value?.trim();
                 if (!text) {
-                    this.showToast('Вставьте JSON для импорта.', 'warning');
+                    this.showToast('Paste the JSON to import.', 'warning');
                     return;
                 }
 
@@ -3194,14 +3194,14 @@
                 try {
                     parsed = JSON.parse(text);
                 } catch (error) {
-                    this.showToast(`Некорректный JSON: ${error.message}`, 'error');
+                    this.showToast(`Invalid JSON:  ${error.message}`, 'error');
                     return;
                 }
 
                 const importedPayload = this.normalizeImportedPayload(parsed);
                 const importedSteps = importedPayload?.steps;
                 if (!Array.isArray(importedSteps)) {
-                    this.showToast('Не удалось найти шаги. Ожидается массив шагов или объект с полем steps.', 'error');
+                    this.showToast('No steps found. An array of steps or an object with a steps field is expected.', 'error');
                     return;
                 }
 
@@ -3210,7 +3210,7 @@
                     .map(step => JSON.parse(JSON.stringify(step)));
 
                 if (safeImportedSteps.length === 0) {
-                    this.showToast('Импорт не выполнен: список шагов пуст.', 'warning');
+                    this.showToast('Import cancelled: the step list is empty.', 'warning');
                     return;
                 }
 
@@ -3282,7 +3282,7 @@
                 this.renderAll();
                 this.dirty.markDirty();
                 this.closeJsonImport();
-                this.showToast(`Импортировано шагов: ${safeImportedSteps.length}.`, 'success');
+                this.showToast(`Steps imported:  ${safeImportedSteps.length}.`, 'success');
             }
 
             showToast(message, type = 'success') {
@@ -3329,14 +3329,14 @@
             }
             formatLinkFieldLabel(field) {
                 const map = {
-                    next_step_id: 'Переход к шагу (если нужно)',
-                    target_step_id: 'Целевой шаг',
-                    true_step_id: 'Шаг для TRUE',
-                    false_step_id: 'Шаг для FALSE',
-                    in_range_step_id: 'Шаг в диапазоне',
-                    out_of_range_step_id: 'Шаг вне диапазона',
-                    pass_step_id: 'Переход при выполнении',
-                    fail_step_id: 'Переход при таймауте'
+                    next_step_id: 'Go to step (if needed)',
+                    target_step_id: 'Target step',
+                    true_step_id: 'Step for TRUE',
+                    false_step_id: 'Step for FALSE',
+                    in_range_step_id: 'Step in range',
+                    out_of_range_step_id: 'Step out of range',
+                    pass_step_id: 'Transition on completion',
+                    fail_step_id: 'Transition on timeout'
                 };
                 return map[field] || field.replaceAll('_', ' ');
             }
@@ -3350,7 +3350,7 @@
             }
             generateUUID() { return EditorCore.utils.uuid(); }
             populateStepDropdown(select, selectedValue, excludeId = null) {
-                select.innerHTML = `<option value="">-- Не выбрано --</option>` + this.scenarioData.steps.filter(s => s.id !== excludeId).map(s => `<option value="${s.id}" ${s.id === selectedValue ? 'selected' : ''}>${s.id}</option>`).join('');
+                select.innerHTML = `<option value="">-- Not selected --</option>` + this.scenarioData.steps.filter(s => s.id !== excludeId).map(s => `<option value="${s.id}" ${s.id === selectedValue ? 'selected' : ''}>${s.id}</option>`).join('');
             }
             validateAllStepIds() {
                 const ids = new Map();
@@ -3400,51 +3400,58 @@
                 return parts.length ? ` · ${parts.join(', ')}` : '';
             }
             getComponentSummary(data) {
+                // Подпись собирается одной фразой через I18n.t. Если склеивать её
+                // из кусков, служебные слова («на», «включен», «нет») остаются
+                // русскими в английском интерфейсе: автоперевод работает только
+                // с целыми текстовыми узлами.
+                const T = (text, vars) => (window.EditorCore?.I18n?.t
+                    ? EditorCore.I18n.t(text, vars)
+                    : String(text).replace(/\{(\d+)\}/g, (whole, index) => (vars?.[Number(index)] ?? whole)));
                 try {
                     switch (data.type) {
                         case 'message': return `"${(data.text || '').substring(0, 50)}..."`;
-                        case 'branch_random': return `Случайная ветка: <b>${data.chance_percent ?? 50}%</b> (T → <b>${data.true_step_id || '?'}</b>, F → <b>${data.false_step_id || '?'}</b>)`;
-                        case 'dungeon_door_control': return `Действие: <b>${data.action}</b>, Ключ: <b>${data.key || 'нет'}</b>`;
-                        case 'use_chat_code': return `Код: "<b>${data.code}</b>", переход → <b>${data.next_step_id || '?'}</b>`;
-                        case 'restore_resources': return `Ресурсы: HP <b>${data.restore_hp ? 'ON' : 'OFF'}</b>, MP <b>${data.restore_mp ? 'ON' : 'OFF'}</b>, Ammo <b>${data.restore_ammo ? 'ON' : 'OFF'}</b>`;
-                        case 'set_group_lives': return `Жизни группы: <b>${data.action || 'set'}</b> на <b>${data.value ?? 0}</b>`;
-                        case 'set_group_spawn': return `Респавн группы (<b>${data.position?.x}, ${data.position?.y}</b>), ${data.enable_spawn ? 'включен' : 'отключен'}`;
-                        case 'check_has_item': return `Предмет: <b>${data.item_id || '?'}</b>, нужно: <b>${data.required || 1}</b>`;
-                        case 'universal_condition_item': return `Предмет: <b>${data.item_id || '?'}</b>, нужно: <b>${data.required || 1}</b>`;
-                        case 'reset_quest': return `Сброс квеста: <b>${data.quest_id || '?'}</b>`;
-                        case 'accept_quest': return `Принять квест: <b>${data.quest_id || '?'}</b>`;
-                        case 'quest_action': return `Квест: <b>${data.quest_id || '?'}</b>, действие: <b>${data.action || '?'}</b>`;
-                        case 'check_quest_accepted': return `Проверка принятия квеста: <b>${data.quest_id || '?'}</b>`;
-                        case 'check_quest_finished': return `Проверка завершения квеста: <b>${data.quest_id || '?'}</b>`;
-                        case 'check_quest_step_finished': return `Квест: <b>${data.quest_id || '?'}</b>, шаг > <b>${data.step ?? 0}</b>`;
-                        case 'quest_condition': return `Квест: <b>${data.quest_id || '?'}</b>, условие: <b>${data.condition || '?'}</b>${data.entire_group ? ', вся группа' : ''}${this.formatBranchSuffix(data)}`;
+                        case 'branch_random': return T('Random branch: <b>{0}%</b> (T → <b>{1}</b>, F → <b>{2}</b>)', [data.chance_percent ?? 50, data.true_step_id || '?', data.false_step_id || '?']);
+                        case 'dungeon_door_control': return T('Action: <b>{0}</b>, Key: <b>{1}</b>', [data.action, data.key || T('none')]);
+                        case 'use_chat_code': return T('Code: "<b>{0}</b>", go to → <b>{1}</b>', [data.code, data.next_step_id || '?']);
+                        case 'restore_resources': return T('Resources: HP <b>{0}</b>, MP <b>{1}</b>, Ammo <b>{2}</b>', [data.restore_hp ? 'ON' : 'OFF', data.restore_mp ? 'ON' : 'OFF', data.restore_ammo ? 'ON' : 'OFF']);
+                        case 'set_group_lives': return T('Group lives: <b>{0}</b> → <b>{1}</b>', [data.action || 'set', data.value ?? 0]);
+                        case 'set_group_spawn': return T('Group respawn (<b>{0}, {1}</b>), {2}', [data.position?.x, data.position?.y, data.enable_spawn ? T('on') : T('off')]);
+                        case 'check_has_item': return T('Item: <b>{0}</b>, required: <b>{1}</b>', [data.item_id || '?', data.required || 1]);
+                        case 'universal_condition_item': return T('Item: <b>{0}</b>, required: <b>{1}</b>', [data.item_id || '?', data.required || 1]);
+                        case 'reset_quest': return T('Quest reset: <b>{0}</b>', [data.quest_id || '?']);
+                        case 'accept_quest': return T('Accept quest: <b>{0}</b>', [data.quest_id || '?']);
+                        case 'quest_action': return T('Quest: <b>{0}</b>, action: <b>{1}</b>', [data.quest_id || '?', data.action || '?']);
+                        case 'check_quest_accepted': return T('Check quest accepted: <b>{0}</b>', [data.quest_id || '?']);
+                        case 'check_quest_finished': return T('Check quest finished: <b>{0}</b>', [data.quest_id || '?']);
+                        case 'check_quest_step_finished': return T('Quest: <b>{0}</b>, step > <b>{1}</b>', [data.quest_id || '?', data.step ?? 0]);
+                        case 'quest_condition': return T('Quest: <b>{0}</b>, condition: <b>{1}</b>{2}', [data.quest_id || '?', data.condition || '?', data.entire_group ? T(', the whole group') : '']) + this.formatBranchSuffix(data);
                         case 'dynamic_condition': {
                             const labels = {
-                                players_count: 'участники',
-                                alive_players_count: 'живые участники',
-                                item_count: 'предметы',
-                                quest_state: 'квест'
+                                players_count: T('participants'),
+                                alive_players_count: T('living participants'),
+                                item_count: T('items'),
+                                quest_state: T('quest')
                             };
                             const suffix = this.formatBranchSuffix(data);
-                            if (data.condition_type === 'item_count') return `Условие: <b>${labels[data.condition_type]}</b>, предмет <b>${data.item_id || '?'}</b>, <b>${data.item_scope || 'any_player'}</b> ${data.compare || '>='} <b>${data.value ?? 1}</b>${suffix}`;
-                            if (data.condition_type === 'quest_state') return `Условие: <b>квест ${data.quest_id || '?'}</b>, состояние <b>${data.quest_state || 'accepted'}</b>${data.entire_group ? ', вся группа' : ''}${suffix}`;
-                            return `Условие: <b>${labels[data.condition_type] || data.condition_type || 'players_count'}</b> ${data.compare || '>='} <b>${data.value ?? 1}</b>${data.invert ? ', инверсия' : ''}${suffix}`;
+                            if (data.condition_type === 'item_count') return T('Condition: <b>{0}</b>, item <b>{1}</b>, <b>{2}</b> {3} <b>{4}</b>', [labels[data.condition_type], data.item_id || '?', data.item_scope || 'any_player', data.compare || '>=', data.value ?? 1]) + suffix;
+                            if (data.condition_type === 'quest_state') return T('Condition: <b>quest  {0}</b>, state <b>{1}</b>{2}', [data.quest_id || '?', data.quest_state || 'accepted', data.entire_group ? T(', the whole group') : '']) + suffix;
+                            return T('Condition: <b>{0}</b> {1} <b>{2}</b>{3}', [labels[data.condition_type] || data.condition_type || 'players_count', data.compare || '>=', data.value ?? 1, data.invert ? T(', inverted') : '']) + suffix;
                         }
-                        case 'pick_item_task': return `Подбор предмета: <b>${data.item?.id || '?'}</b> x <b>${data.item?.value || 0}</b>`;
-                        case 'universal_pick_item_task': return `Подбор предмета: <b>${data.item?.id || '?'}</b> x <b>${data.item?.value || 0}</b>`;
-                        case 'shootmarkers': return `Маркеры: <b>${data.markers?.length || 0}</b>`;
-                        case 'universal_shootmarkers': return `Маркеры: <b>${data.markers?.length || 0}</b>`;
-                        case 'defeat_mobs': return `Режим: <b>${data.mode || 'annihilation'}</b>, ${data.mobs?.length || 0} групп(ы)`;
-                        case 'wait': return `Ожидание: <b>${data.duration}</b> сек.`;
-                        case 'follow_camera': return `К точке (<b>${data.position?.x}, ${data.position?.y}</b>), ${data.smooth ? 'плавно' : 'резко'}`;
-                        case 'condition_movement': return `Прийти в точку (<b>${data.position?.x}, ${data.position?.y}</b>), ${data.entire_group ? 'вся группа' : 'один игрок'}${this.formatBranchSuffix(data)}`;
-                        case 'teleport': return `В точку (<b>${data.position?.x}, ${data.position?.y}</b>)`;
-                        case 'universal_door_control': return `Действие: <b>${data.action}</b>, Ключ: <b>${data.key || 'нет'}</b>`;
-                        case 'dungeon_activate_point': return `Текст: "<b>${data.action_text || ''}</b>", Время: <b>${data.duration}</b> сек.`;
-                        case 'dungeon_complete': return `Завершение темницы`;
+                        case 'pick_item_task': return T('Pick up item: <b>{0}</b> x <b>{1}</b>', [data.item?.id || '?', data.item?.value || 0]);
+                        case 'universal_pick_item_task': return T('Pick up item: <b>{0}</b> x <b>{1}</b>', [data.item?.id || '?', data.item?.value || 0]);
+                        case 'shootmarkers': return T('Markers: <b>{0}</b>', [data.markers?.length || 0]);
+                        case 'universal_shootmarkers': return T('Markers: <b>{0}</b>', [data.markers?.length || 0]);
+                        case 'defeat_mobs': return T('Mode: <b>{0}</b>, {1}  group(s)', [data.mode || 'annihilation', data.mobs?.length || 0]);
+                        case 'wait': return T('Wait: <b>{0}</b> sec.', [data.duration]);
+                        case 'follow_camera': return T('To the point (<b>{0}, {1}</b>), {2}', [data.position?.x, data.position?.y, data.smooth ? T('smoothly') : T('instantly')]);
+                        case 'condition_movement': return T('Reach the point (<b>{0}, {1}</b>), {2}', [data.position?.x, data.position?.y, data.entire_group ? T('the whole group') : T('one player')]) + this.formatBranchSuffix(data);
+                        case 'teleport': return T('To the point (<b>{0}, {1}</b>)', [data.position?.x, data.position?.y]);
+                        case 'universal_door_control': return T('Action: <b>{0}</b>, Key: <b>{1}</b>', [data.action, data.key || T('none')]);
+                        case 'dungeon_activate_point': return T('Text: "<b>{0}</b>", Time: <b>{1}</b> sec.', [data.action_text || '', data.duration]);
+                        case 'dungeon_complete': return T('Dungeon completion');
                         default: return ``;
                     }
-                } catch { return "Ошибка в данных"; }
+                } catch { return "Data error"; }
             }
 
             //==================================================
@@ -3494,7 +3501,7 @@
                 const groups = this.scenarioData.editor_data.groups;
                 const newGroup = {
                     id: `group_${this.generateUUID()}`,
-                    name: `Новая группа ${groups.length + 1}`,
+                    name: `New group ${groups.length + 1}`,
                     steps: [],
                     collapsed: false,
                 };
@@ -3554,7 +3561,7 @@
                 const newGroup = JSON.parse(JSON.stringify(sourceGroup));
                 
                 newGroup.id = `group_${this.generateUUID()}`;
-                newGroup.name = `${sourceGroup.name} (копия)`;
+                newGroup.name = `${sourceGroup.name}  (copy)`;
                 newGroup.steps = [];
 
                 const idMap = new Map();
@@ -3886,10 +3893,10 @@
                 });
                 const items = entries.map(([type, info]) =>
                     `<div class="context-menu-item flex items-center gap-3 p-2 rounded-md editor-hover cursor-pointer" data-type="${type}"><i class="${info.icon} w-5 text-center editor-text"></i><div class="min-w-0"><div class="font-semibold editor-text">${info.name}</div><div class="text-xs editor-muted-text truncate">${info.desc || ''}</div></div></div>`
-                ).join('') || `<div class="px-2 py-4 text-sm editor-muted-text text-center">Ничего не найдено</div>`;
+                ).join('') || `<div class="px-2 py-4 text-sm editor-muted-text text-center">Nothing found</div>`;
                 menu.innerHTML =
                     `<div class="acm-head sticky top-0 z-10 pb-2">
-                        <input type="text" class="acm-search form-input w-full text-sm" placeholder="Поиск компонента…" autocomplete="off">
+                        <input type="text" class="acm-search form-input w-full text-sm" placeholder="Search a component…" autocomplete="off">
                      </div>
                      <div class="acm-list flex flex-col gap-1 overflow-y-auto">${items}</div>`;
                 const search = menu.querySelector('.acm-search');

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Подземелья • Editor Studio</title>
+  <title>Dungeons • Editor Studio</title>
   <script src="editor-core/page-loader.js" data-mode="event"></script>
 </head>
 
@@ -13,16 +13,16 @@
       <div class="editor-page-title">
         <i class="fa-solid fa-dungeon text-accent text-xl"></i>
         <div>
-          <h1>Подземелья</h1>
-          <div class="editor-page-sub">Точка входа в мир, сценарий и лимит времени.</div>
+          <h1>Dungeons</h1>
+          <div class="editor-page-sub">World entrance, scenario and time limit.</div>
         </div>
       </div>
       <div class="editor-page-actions">
         <button class="editor-btn editor-btn-secondary" data-editor-role="refresh">
-          <i class="fa-solid fa-rotate"></i><span>Обновить</span>
+          <i class="fa-solid fa-rotate"></i><span>Refresh</span>
         </button>
         <button class="editor-btn editor-btn-primary" data-editor-role="new">
-          <i class="fa-solid fa-plus"></i><span>Новое подземелье</span>
+          <i class="fa-solid fa-plus"></i><span>New dungeon</span>
         </button>
       </div>
     </div>
@@ -32,21 +32,21 @@
         <div class="editor-dock-pad">
           <div class="flex items-center justify-between gap-3">
             <div>
-              <div class="text-sm font-semibold">Список подземелий</div>
-              <div class="text-xs editor-muted-text">Всего: <span data-editor-role="count">—</span></div>
+              <div class="text-sm font-semibold">Dungeon list</div>
+              <div class="text-xs editor-muted-text">Total: <span data-editor-role="count">—</span></div>
             </div>
           </div>
 
           <div class="mt-3">
             <div class="editor-search">
               <i class="fa-solid fa-magnifying-glass"></i>
-              <input data-editor-role="search" type="search" class="w-full editor-input form-input" placeholder="Поиск по ID или миру…" />
+              <input data-editor-role="search" type="search" class="w-full editor-input form-input" placeholder="Search by ID or world…" />
             </div>
           </div>
 
           <div class="mt-3 editor-sidebar-filters">
             <select id="filterWorld" class="w-full editor-input form-input" data-datasource="worlds" data-label-mode="id_name" data-db-searchable="0" data-db-limit="300" data-value-type="number">
-              <option value="">Все миры</option>
+              <option value="">All worlds</option>
             </select>
           </div>
 
@@ -58,19 +58,19 @@
         <div class="editor-dock-pad">
           <div class="editor-sticky-toolbar flex items-start justify-between gap-4">
             <div>
-              <div class="text-lg font-semibold" data-editor-role="title">Выберите подземелье</div>
-              <div class="editor-muted-text text-sm mt-1" data-editor-role="subtitle">или создайте новое</div>
+              <div class="text-lg font-semibold" data-editor-role="title">Select a dungeon</div>
+              <div class="editor-muted-text text-sm mt-1" data-editor-role="subtitle">or create a new one</div>
             </div>
             <div class="editor-page-actions">
-              <span id="dirty-pill" class="editor-dirty-pill hidden">Данные не сохранены</span>
+              <span id="dirty-pill" class="editor-dirty-pill hidden">Data not saved</span>
               <button class="editor-btn editor-btn-primary" data-editor-role="save" disabled>
-                <i class="fa-solid fa-floppy-disk"></i><span>Сохранить</span>
+                <i class="fa-solid fa-floppy-disk"></i><span>Save</span>
               </button>
               <button class="editor-btn editor-btn-secondary hidden" data-editor-role="cancel" disabled>
-                <i class="fa-solid fa-rotate-left"></i><span>Отменить</span>
+                <i class="fa-solid fa-rotate-left"></i><span>Cancel</span>
               </button>
               <button class="editor-btn editor-btn-secondary" data-editor-role="delete" disabled>
-                <i class="fa-solid fa-trash"></i><span>Удалить</span>
+                <i class="fa-solid fa-trash"></i><span>Delete</span>
               </button>
             </div>
           </div>
@@ -96,20 +96,20 @@
       if (!Number.isFinite(id) || id < 0) return '—';
       const name = worldsMap.get(String(id));
       if (name) return `${name} (#${id})`;
-      return id ? `Мир #${id}` : 'Мир #0';
+      return id ? `World #${id}` : 'World #0';
     };
 
     const fields = {
-      WorldID: { type: 'db_select', label: 'Мир подземелья', validate: { required: true }, ui: { dbKey: 'world', placeholder: '— мир —', searchPlaceholder: 'Поиск мира…' } },
-      TimeLimit: { type: 'number', label: 'Лимит времени (сек.)', ui: { min: 0, step: 1, help: 'Время прохождения в секундах (например, 600 = 10 минут).' } },
+      WorldID: { type: 'db_select', label: 'Dungeon world', validate: { required: true }, ui: { dbKey: 'world', placeholder: '— world —', searchPlaceholder: 'Search a world…' } },
+      TimeLimit: { type: 'number', label: 'Time limit (sec.)', ui: { min: 0, step: 1, help: 'Time limit in seconds (for example, 600 = 10 minutes).' } },
       // Точка входа: дверь ставят по центрам тайлов, игровой слой виден сразу.
       Door: {
         type: 'vec2',
-        label: 'Точка входа (Дверь X, Y)',
-        ui: { step: 1, axes: { x: 'DoorX', y: 'DoorY' }, mapWorldPath: 'WorldID', showTiles: false, grid: true, snap: true, spanAll: true },
+        label: 'Entry point (Door X, Y)',
+        ui: { step: 1, axes: { x: 'DoorX', y: 'DoorY' }, mapWorldPath: 'WorldID', showTiles: true, grid: true, snap: true, spanAll: true },
       },
       // Компоненты сценария подземелья открывают карту в мире подземелья.
-      Scenario: { type: 'scenario', label: 'Сценарий подземелья', ui: { scenarioMode: 'dungeon', mapWorldPath: 'WorldID', spanAll: true } },
+      Scenario: { type: 'scenario', label: 'Dungeon scenario', ui: { scenarioMode: 'dungeon', mapWorldPath: 'WorldID', spanAll: true } },
     };
 
     const dirty = EditorCore.Dirty?.create
@@ -157,23 +157,23 @@
       listItem: (row) => {
         const wName = worldsMap.get(String(row?.WorldID ?? ''));
         return {
-          title: wName ? `Подземелье #${row?.ID || 0} — ${wName}` : `Подземелье #${row?.ID || 0}`,
-          subtitle: `${formatWorldLabel(row?.WorldID)} · Лимит ${row?.TimeLimit ?? 600} сек.`,
+          title: wName ? `Dungeon #${row?.ID || 0} — ${wName}` : `Dungeon #${row?.ID || 0}`,
+          subtitle: `${formatWorldLabel(row?.WorldID)}  · Limit  ${row?.TimeLimit ?? 600}  sec cooldown.`,
         };
       },
       getTitle: (model, id) => {
         const wName = worldsMap.get(String(model?.WorldID ?? ''));
-        if (id) return wName ? `Подземелье #${id} (${wName})` : `Подземелье #${id}`;
-        return 'Новое подземелье';
+        if (id) return wName ? `Dungeon #${id} (${wName})` : `Dungeon #${id}`;
+        return 'New dungeon';
       },
       getSubtitle: (model, id) => {
         if (!model) return '';
         const world = formatWorldLabel(model?.WorldID);
-        const limit = `Лимит: ${model?.TimeLimit ?? 600} сек.`;
+        const limit = `Limit:  ${model?.TimeLimit ?? 600}  sec cooldown.`;
         return id ? `ID ${id} · ${world} · ${limit}` : `${world} · ${limit}`;
       },
-      emptyTitle: 'Выберите подземелье',
-      emptySubtitle: 'или создайте новое',
+      emptyTitle: 'Select a dungeon',
+      emptySubtitle: 'or create a new one',
     });
 
     filterWorld?.addEventListener('change', () => {

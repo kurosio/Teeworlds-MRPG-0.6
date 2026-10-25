@@ -382,7 +382,7 @@ test('a stale admin editor cannot overwrite a newer request revision', async () 
   await harness.RequestContext.ready();
   await assert.rejects(harness.DBCrud.update('items', 7, { Name: 'Local' }), /другой стороной/);
   assert.equal(harness.RequestContext.request().version, 2);
-  await assert.rejects(harness.DBCrud.update('items', 7, { Name: 'Again' }), /Откройте его заново/);
+  await assert.rejects(harness.DBCrud.update('items', 7, { Name: 'Again' }), /Reopen it/);
   assert.equal(revisions, 1);
 });
 
