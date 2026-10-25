@@ -1,0 +1,20 @@
+name: Editor Bridge (temporary)
+
+on:
+  workflow_dispatch:
+    inputs:
+      note:
+        description: Free-form note
+        required: false
+        default: probe
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Probe editor endpoint
+        run: |
+          echo "note: ${{ inputs.note }}"
+          curl -sS -m 30 -o /tmp/status.json -w "http=%{http_code}\n" \
+            https://editor.mmotee.online/api/auth.php?action=status
+          cat /tmp/status.json
