@@ -139,8 +139,8 @@ void CEntityGatheringNode::Die(CPlayer* pPlayer, CProfession* pProfession)
 	if(m_CurrentHealth > 0 || m_pNode->m_vItems.isEmpty())
 		return;
 
-	int Value = 1 + rand() % 2;
 	const auto ItemID = m_pNode->m_vItems.getRandomElement();
+	int Value = m_pNode->GetItemAmount(ItemID) + rand() % 2;
 	auto* pPlayerItem = pPlayer->GetItem(ItemID);
 
 	if(m_Type == GATHERING_NODE_ORE)

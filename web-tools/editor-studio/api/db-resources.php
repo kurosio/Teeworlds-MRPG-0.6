@@ -132,6 +132,17 @@ function editor_resources(): array
             'refs' => ['RespawnWorldID' => 'tw_worlds', 'JailWorldID' => 'tw_worlds'],
             'guest' => true,
         ],
+        'nodes_collecting' => [
+            'title' => 'Узлы ресурсов',
+            'table' => 'tw_nodes_collecting',
+            'pk' => 'ID',
+            'columns' => ['SwitchID', 'Level', 'Health', 'Name', 'Properties', 'Type', 'WorldID'],
+            'search' => ['ID', 'Name', 'Type', 'SwitchID', 'WorldID'],
+            'order' => 'WorldID ASC, Type ASC, SwitchID ASC',
+            'label' => 'Name',
+            'refs' => ['WorldID' => 'tw_worlds'],
+            'guest' => true,
+        ],
         'aethers' => [
             'title' => 'Телепорты (Aether)',
             'table' => 'tw_aethers',
@@ -204,6 +215,7 @@ const EDITOR_TABLE_META = [
     'tw_quests_list'        => ['title' => 'Квест',              'label' => 'Name'],
     'tw_attributes'         => ['title' => 'Атрибут',            'label' => 'Name'],
     'tw_skills_list'        => ['title' => 'Скилл',              'label' => 'Name'],
+    'tw_nodes_collecting'   => ['title' => 'Узел ресурсов', 'label' => 'Name'],
     'tw_aethers'            => ['title' => 'Aether',             'label' => 'Name'],
     'tw_dungeons'           => ['title' => 'Подземелье',         'label' => null],
     'tw_bots_mobs'          => ['title' => 'Моб',                'label' => null],
@@ -258,6 +270,7 @@ function editor_reverse_refs(string $table): array
         ],
         'tw_worlds' => [
             ['table' => 'tw_accounts_data',      'column' => 'WorldID',        'action' => 'set_null'],
+            ['table' => 'tw_nodes_collecting',   'column' => 'WorldID', 'action' => 'none'],
             ['table' => 'tw_aethers',            'column' => 'WorldID',        'action' => 'cascade'],
             ['table' => 'tw_bots_mobs',          'column' => 'WorldID',        'action' => 'set_null'],
             ['table' => 'tw_bots_npc',           'column' => 'WorldID',        'action' => 'set_null'],
@@ -542,10 +555,47 @@ function crud_bind_values(array $data): array
     return [$types, $vals];
 }
 
+/** Validate collecting definitions on direct CRUD, approval and sync writes. */
+function validate_collecting_node(array $data): void
+{
+    foreach (['SwitchID' => [1, 255], 'Level' => [1, 2147483647], 'Health' => [1, 2147483647], 'WorldID' => [0, 2147483647]] as $key => [$min, $max]) {
+        $value = $data[$key] ?? null;
+        if (!is_scalar($value) || !preg_match('/^\d+$/D', (string)$value) || (float)$value < $min || (float)$value > $max) {
+            throw new RuntimeException("Некорректное поле узла: $key");
+        }
+    }
+    if (!in_array($data['Type'] ?? null, ['ore', 'plant', 'fish'], true)) {
+        throw new RuntimeException('Тип узла должен быть ore, plant или fish');
+    }
+    $name = $data['Name'] ?? null;
+    if (!is_string($name) || trim($name) === '' || preg_match('/^.{1,128}$/usD', $name) !== 1) {
+        throw new RuntimeException('Название узла: от 1 до 128 символов');
+    }
+    $properties = $data['Properties'] ?? null;
+    if (!is_string($properties) || trim($properties) === '') {
+        throw new RuntimeException('Укажите список добычи в Properties');
+    }
+    $seen = [];
+    foreach (explode(',', $properties) as $entry) {
+        if (!preg_match('/^\[(\d+)\/(?:(\d+)\/)?(\d+(?:\.\d+)?(?:e[+-]?\d+)?)\]$/iD', trim($entry), $m)) {
+            throw new RuntimeException('Properties: ожидается [item/chance] или [item/amount/chance]');
+        }
+        $item = (int)$m[1];
+        $amount = $m[2] === '' ? null : (float)$m[2];
+        $chance = (float)$m[3];
+        if ($item < 1 || $item > 2147483647 || isset($seen[$item]) ||
+            ($amount !== null && ($amount < 1 || $amount > 1000000)) || !is_finite($chance) || $chance <= 0 || $chance > 100) {
+            throw new RuntimeException('Properties: проверьте предметы, количества и шансы (0 < шанс <= 100); предметы не должны повторяться');
+        }
+        $seen[$item] = true;
+    }
+}
+
 /** $data must be sanitized + JSON-encoded already. Returns the new id. */
 function crud_insert(mysqli $mysqli, array $R, array $data): int
 {
     if (!$data) throw new RuntimeException('Пустые данные: нечего сохранять');
+    if ($R['table'] === 'tw_nodes_collecting') validate_collecting_node($data);
     $keys = array_keys($data);
     $placeholders = implode(',', array_fill(0, count($keys), '?'));
     $colSql = implode(',', array_map(fn($c) => '`' . $c . '`', $keys));
@@ -566,6 +616,11 @@ function crud_insert(mysqli $mysqli, array $R, array $data): int
 function crud_update(mysqli $mysqli, array $R, int $id, array $data): int
 {
     if (!$data) throw new RuntimeException('Пустые данные: нечего сохранять');
+    if ($R['table'] === 'tw_nodes_collecting') {
+        $current = crud_fetch_row($mysqli, $R, $id);
+        if (!$current) throw new RuntimeException('Узел ресурсов не найден');
+        validate_collecting_node(array_replace($current, $data));
+    }
     $keys = array_keys($data);
     $setSql = implode(', ', array_map(fn($c) => '`' . $c . '` = ?', $keys));
     $stmt = $mysqli->prepare('UPDATE `' . $R['table'] . "` SET $setSql WHERE `" . $R['pk'] . '` = ? LIMIT 1');

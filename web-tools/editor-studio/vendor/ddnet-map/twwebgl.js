@@ -643,7 +643,10 @@ tw.parseMapLayerTiles = function (layerData) {
   obj.image = d.int32();
   obj.data = d.int32();
 
-  //TODO: name
+  // CMapItemLayerTilemap: name[3], tele, speedup, front, switch, tune.
+  // Old maps may omit the DDNet extension entirely.
+  var switchOffset = obj.version <= 2 ? 72 : 84;
+  obj.switchData = layerData.byteLength >= switchOffset + 4 ? d.getInt32(switchOffset, true) : -1;
 
   return obj;
 }
@@ -844,6 +847,20 @@ tw.parseLayerQuads = function (layerData, num) {
 
   return quads;
 }
+
+// Switch tiles are NOT CTile/RLE: number, type, flags, delay (4 bytes).
+// Store only occupied cells so preview remains cheap even at whole-map zoom.
+tw.parseSwitchTiles = function (data, width, height) {
+  var count = width * height;
+  if (!data || !Number.isSafeInteger(count) || width <= 0 || height <= 0 || data.byteLength < count * 4)
+    throw new RangeError("Truncated or invalid switch tile data");
+  var bytes = new Uint8Array(data), tiles = [];
+  for (var i = 0; i < count; i++) {
+    if (bytes[i * 4 + 1]) tiles.push({ x: (i % width) * 32 + 16,
+      y: Math.floor(i / width) * 32 + 16, number: bytes[i * 4], type: bytes[i * 4 + 1] });
+  }
+  return { width: width, height: height, tiles: tiles };
+};
 
 // Editor-only compact gameplay data: one byte per cell, no per-tile objects.
 // Supports both uncompressed tiles (version < 4) and DDNet m_Skip RLE (version >= 4).
@@ -1106,6 +1123,11 @@ tw.Map = function (mapData) {
 
       if (layerInfo.type == tw.LAYERTYPE_TILES) {
         var tileLayerInfo = tw.parseMapLayerTiles(layerItem.data);
+
+        if ((tileLayerInfo.flags & 16) && tileLayerInfo.switchData >= 0) {
+          this.switchLayer = tw.parseSwitchTiles(dFile.getData(tileLayerInfo.switchData), tileLayerInfo.width, tileLayerInfo.height);
+          continue;
+        }
 
         // Слой без картинки — это игровой слой (или слой сущностей). Из него
         // берём точку спавна: по ней удобно открывать карту, когда координата

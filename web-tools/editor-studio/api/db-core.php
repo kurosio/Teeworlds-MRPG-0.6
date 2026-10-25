@@ -344,6 +344,7 @@ function editor_guest_page_catalog(): array
         'crafts'     => ['title' => 'Крафты',             'write' => ['crafts'],                'read' => ['crafts']],
         'warehouses' => ['title' => 'Склады',             'write' => ['warehouses'],            'read' => ['warehouses', 'items']],
         'worlds'     => ['title' => 'Миры',               'write' => ['worlds'],                'read' => ['worlds']],
+        'nodes_collecting' => ['title' => 'Узлы ресурсов', 'write' => ['nodes_collecting'], 'read' => ['nodes_collecting', 'items']],
         'aethers'    => ['title' => 'Телепорты (Aether)', 'write' => ['aethers'],               'read' => ['aethers']],
         'dungeons'   => ['title' => 'Подземелья',         'write' => ['dungeons'],              'read' => ['dungeons']],
         'quests'     => ['title' => 'Квесты',             'write' => ['quests', 'quest_bots'],  'read' => ['quests', 'quest_bots']],

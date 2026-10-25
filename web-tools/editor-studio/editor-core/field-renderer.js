@@ -591,6 +591,8 @@
         blockTiles: ui.blockTiles,
         showTiles: ui.showTiles,
         highlightTiles: ui.highlightTiles ?? [],
+        highlightLayer: ui.highlightLayer,
+        switchShowID: ui.switchShowID,
         radiusPath: ui.radiusPath,
         radius: ui.radius,
         snap: ui.snap,

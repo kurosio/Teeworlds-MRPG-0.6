@@ -117,3 +117,14 @@ node web-tools/editor-studio/tools/map-picker-check.mjs
 текстур и буферов WebGL для него. Файл `.map` не перезаписывается, изменений
 в БД до общего «Применить» нет. Новые инструменты не загружают дополнительные
 ресурсы БД и не расширяют права доступа.
+
+### Resource node switch previews
+
+`highlightLayer=switch&highlightTiles=200&switchShowID=1&preview=1`
+selects ore tiles (`191 + ENTITY_ORE`) with switch number 1 and draws their
+locations with numbered labels. `highlightTiles=199,200,201` without
+`switchShowID` displays plants, ores and fish of all switch numbers. Switch
+data is read separately from gameplay tiles (including old tilemap v2 layouts).
+`preview=1` disables coordinate placement/apply; pan, zoom, layers and measuring
+remain available. Without `highlightLayer=switch`, existing gameplay highlights
+are unchanged. See [collecting nodes](../../../../docs/collecting-nodes.md).

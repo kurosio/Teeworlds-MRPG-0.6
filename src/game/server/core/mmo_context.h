@@ -43,6 +43,13 @@ struct GatheringNode
 	int Health {};
 	std::string Name {};
 	ChanceProcessor<int> m_vItems {};
+	std::unordered_map<int, int> m_vItemAmounts {};
+
+	int GetItemAmount(int ItemID) const
+	{
+		const auto it = m_vItemAmounts.find(ItemID);
+		return it != m_vItemAmounts.end() ? it->second : 1 + rand() % 2;
+	}
 };
 
 // skin data

@@ -76,6 +76,8 @@
       // и не включают полный игровой слой за пользователя.
       tiles: showTiles,
       highlightTiles,
+      highlightLayer: o.highlightLayer === 'switch' ? 'switch' : 'game',
+      switchShowID: Number.isInteger(o.switchShowID) && o.switchShowID >= 1 && o.switchShowID <= 255 ? o.switchShowID : null,
       radiusPath: o.radiusPath == null ? '' : String(o.radiusPath),
       radius: o.radius == null ? '' : o.radius,
       snap: typeof o.snap === 'boolean' ? o.snap : null,
@@ -166,6 +168,8 @@
       safe: o.safe,
       tiles: !!o.tiles,
       highlightTiles: o.highlightTiles,
+      highlightLayer: o.highlightLayer,
+      switchShowID: o.switchShowID,
       radius,
       snap: o.snap,
       grid: o.grid,

@@ -298,6 +298,7 @@ function get_resource_whitelist(): array
         'crafts'     => ['table' => 'tw_crafts_list','pk' => 'ID', 'columns' => ['GroupName','ItemID','ItemValue','RequiredItems','Price','WorldID'], 'editor' => 'crafts-editor.html'],
         'warehouses' => ['table' => 'tw_warehouses', 'pk' => 'ID', 'columns' => ['Name','Type','Trades','PosX','PosY','StorageData','Currency','WorldID'], 'editor' => 'warehouse-editor.html'],
         'worlds'     => ['table' => 'tw_worlds',     'pk' => 'ID', 'columns' => ['Name','Path','Type','Flags','RespawnWorldID','JailWorldID','RequiredLevel'], 'editor' => 'worlds-editor.html'],
+        'nodes_collecting' => ['table' => 'tw_nodes_collecting', 'pk' => 'ID', 'columns' => ['SwitchID','Level','Health','Name','Properties','Type','WorldID'], 'editor' => 'nodes-collecting-editor.html'],
         'aethers'    => ['table' => 'tw_aethers',    'pk' => 'ID', 'columns' => ['Name','WorldID','TeleX','TeleY'], 'editor' => 'aethers-editor.html'],
         'items'      => ['table' => 'tw_items_list', 'pk' => 'ID', 'columns' => ['Comment','Name','Description','Group','Type','Flags','ScenarioMode','ScenarioData','InitialPrice','RequiresProducts','AT1','AT2','ATValue1','ATValue2','Data'], 'json' => ['Data'], 'editor' => 'items-editor.html'],
         'dungeons'   => ['table' => 'tw_dungeons',   'pk' => 'ID', 'columns' => ['Level','DoorX','DoorY','Scenario','WorldID','TimeLimit'], 'editor' => 'dungeons-editor.html'],
@@ -420,6 +421,7 @@ function apply_operations(mysqli $mysqli, array $operations, array $whitelist): 
                         throw new RuntimeException("Пустые данные для создания");
                     }
 
+                    if ($table === 'tw_nodes_collecting') validate_collecting_node($data);
                     $keys = array_keys($data);
                     $placeholders = implode(',', array_fill(0, count($keys), '?'));
                     $colSql = implode(',', array_map(fn($c) => '`' . $c . '`', $keys));
@@ -465,6 +467,7 @@ function apply_operations(mysqli $mysqli, array $operations, array $whitelist): 
                     // заменён на '' или 0. Пишем только реально отличающиеся
                     // колонки, иначе NULL в целевой базе станет пустой строкой.
                     $current = sync_fetch_row($mysqli, $R, $id);
+                    if ($table === 'tw_nodes_collecting') validate_collecting_node(array_replace($current ?? [], $data));
                     if ($current) {
                         $currentValues = decode_json_cols($current, $jsonCols);
                         $data = array_filter(

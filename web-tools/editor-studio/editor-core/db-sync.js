@@ -304,6 +304,7 @@
     crafts: 'Crafts',
     warehouses: 'Warehouses',
     worlds: 'Worlds',
+    nodes_collecting: 'Collecting nodes',
     aethers: 'Teleports',
     items: 'Items',
     dungeons: 'Dungeons',

@@ -170,7 +170,12 @@
             }
             draw.drawCollision(ctx, game, bounds, worldToScreen, options.safe);
           }
-          if (options.highlightTiles?.length) draw.drawHighlightedTiles(ctx, game, bounds, worldToScreen, options.highlightTiles);
+          if (options.highlightLayer === 'switch') {
+            const count = draw.drawSwitchTiles(ctx, tw.map?.switchLayer, worldToScreen, options.highlightTiles, options.switchShowID);
+            const nodeStatus = `${en ? 'Linked nodes' : 'Связанные узлы'}: ${count}${tw.map?.switchLayer ? '' : (en ? ' (no switch layer)' : ' (нет switch-слоя)')}`;
+            status += `${status ? ' · ' : ''}${nodeStatus}`;
+            if (options.preview) get('note').textContent = nodeStatus;
+          } else if (options.highlightTiles?.length) draw.drawHighlightedTiles(ctx, game, bounds, worldToScreen, options.highlightTiles);
           if (state.hasPoint && game) {
             const index = draw.tileAt(game, state.point);
             const kind = index === null ? text.outside : index === 0 ? text.empty : `${({1:text.solid,2:text.death,3:text.nohook})[index] || (en ? 'Tile' : 'Тайл')} (ID ${index})`;

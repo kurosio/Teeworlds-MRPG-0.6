@@ -71,6 +71,9 @@ inline TileType* TryLoadTileLayerData(IMap* pMap,  const CMapItemLayerTilemap* p
 
 void CCollision::Init(IKernel* pKernel, int WorldID)
 {
+	m_vOreNodes.clear();
+	m_vPlantNodes.clear();
+	m_vFishNodes.clear();
 	m_pLayers->Init(pKernel, WorldID);
 
 	const CMapItemLayerTilemap* pGameLayer = m_pLayers->GameLayer();
@@ -117,32 +120,6 @@ void CCollision::Init(IKernel* pKernel, int WorldID)
 	mem_zero(m_pDoor, DoorLayerSize * sizeof(CDoorTile));
 }
 
-static void initGatheringNode(const std::string& nodeType, const std::vector<std::string>& vSettings, int Number, std::unordered_map<int, GatheringNode>& vNodesContainer)
-{
-	std::string ItemsData {};
-	GatheringNode detail {};
-	const auto Identity = nodeType + " " + std::to_string(Number);
-
-	// load settings for the node
-	if(mystd::loadSettings<std::string, int, int, std::string>(Identity, vSettings, &detail.Name, &detail.Level, &detail.Health, &ItemsData))
-	{
-		// parse and add items
-		DBSet ItemsSet(ItemsData);
-		for(const auto& Elem : ItemsSet.getItems())
-		{
-			int ItemID;
-			float Chance;
-			if(sscanf(Elem.c_str(), "[%d/%f]", &ItemID, &Chance) == 2)
-				detail.m_vItems.addElement(ItemID, Chance);
-		}
-
-		// store the initialized node
-		detail.m_vItems.normalizeChances();
-		vNodesContainer[Number] = detail;
-		dbg_msg("map-init", "Gathering '%s' (switch: %d) initialized: Items='%d'", detail.Name.c_str(), Number, (int)detail.m_vItems.size());
-	}
-}
-
 void CCollision::InitSettings()
 {
 	const auto& settings = m_pLayers->GetSettings();
@@ -169,13 +146,6 @@ void CCollision::InitSettings()
 				dbg_msg("map-init", "Text (switch: %d) initialized: String='%s'", i, detail.Text.c_str());
 				m_vZoneTextDetail[i] = detail;
 			}
-		}
-
-		// initialize gathering nodes
-		{
-			initGatheringNode("#node_ore", settings, i, m_vOreNodes);
-			initGatheringNode("#node_plant", settings, i, m_vPlantNodes);
-			initGatheringNode("#node_fish", settings, i, m_vFishNodes);
 		}
 
 		// initialize action zones details

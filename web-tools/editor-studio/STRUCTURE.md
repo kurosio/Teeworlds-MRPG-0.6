@@ -897,3 +897,8 @@ Node.js на сервере не требуется. После изменени
   `php-wasm` (`npm install --no-save php-wasm`); без него проверка пропускается.
 - `tests/guest-navigation.test.cjs` — ссылки «открыть запись» (режимы request/guest),
   переход по `?record=&field=` и отмена одного поля в черновике гостя.
+
+### Collecting nodes
+
+`nodes-collecting-editor.html` edits `tw_nodes_collecting` via the shared CRUD runtime.
+Schema migration, map-settings import and switch preview options: [docs/collecting-nodes.md](../../docs/collecting-nodes.md).

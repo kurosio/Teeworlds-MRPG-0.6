@@ -134,6 +134,9 @@
     params.set('theme', theme);
     // Флаги элемента позиции: запрещённые тайлы, слои, радиус, инструменты.
     if (Array.isArray(mapOptions.safe) && mapOptions.safe.length) params.set('safe', mapOptions.safe.join(','));
+    if (mapOptions.preview) params.set('preview', '1');
+    if (mapOptions.highlightLayer === 'switch') params.set('highlightLayer', 'switch');
+    if (Number.isInteger(mapOptions.switchShowID) && mapOptions.switchShowID >= 1 && mapOptions.switchShowID <= 255) params.set('switchShowID', String(mapOptions.switchShowID));
     if (mapOptions.tiles) params.set('tiles', '1');
     if (Array.isArray(mapOptions.highlightTiles) && mapOptions.highlightTiles.length) params.set('highlightTiles', mapOptions.highlightTiles.join(','));
     if (Number.isFinite(mapOptions.radius) && mapOptions.radius > 0) params.set('radius', String(Math.round(mapOptions.radius)));
@@ -163,6 +166,7 @@
     if (!session || !iframe || event.source !== iframe.contentWindow || event.origin !== window.location.origin) return;
     const data = event.data || {};
     if (data.type === 'editor-map:apply') {
+      if (session.mapOptions?.preview) return;
       if (applyPoint(data.x, data.y)) {
         dispatch('editor-map:applied', {
           x: Number(data.x), y: Number(data.y), worldId: session.worldId,
@@ -253,6 +257,22 @@
     }).catch(() => {});
   };
 
+  // Read-only map preview for records placed by switch tiles, not coordinates.
+  const preview = ({ worldId, highlightTiles = [], switchShowID = null } = {}) => {
+    if (session) close('replace');
+    ensureDialog();
+    session = { worldId: parseWorldId(worldId), allowWorldChange: false,
+      startX: 0, startY: 0, hasPoint: false, worldName: '',
+      mapOptions: { preview: true, highlightLayer: 'switch', highlightTiles, switchShowID },
+      restoreFocus: document.activeElement };
+    dialog.classList.add('is-open');
+    dialog.removeAttribute('aria-hidden');
+    lockScroll(true);
+    window.addEventListener('message', onMessage);
+    window.addEventListener('keydown', onKeydown, true);
+    loadMap();
+  };
+
   const closeListeners = () => {
     window.removeEventListener('message', onMessage);
     window.removeEventListener('keydown', onKeydown, true);
@@ -290,5 +310,5 @@
   };
 
   window.EditorCore = window.EditorCore || {};
-  window.EditorCore.PointMap = { open, close: () => close('api') };
+  window.EditorCore.PointMap = { open, preview, close: () => close('api') };
 })();

@@ -5,6 +5,7 @@
 #include <game/server/gamecontext.h>
 
 #include <components/achievements/achievement_data.h>
+#include <components/inventory/item_info_data.h>
 
 CWorldManager::~CWorldManager()
 {
@@ -12,11 +13,74 @@ CWorldManager::~CWorldManager()
 	m_PathFinderBFS.clear();
 }
 
+void CWorldManager::InitCollectingNodes(const std::string& SqlQueryWhereWorld)
+{
+	// resource definitions belong to this world
+	ResultPtr pNodes = Database->Execute<DB::SELECT>("*", "tw_nodes_collecting", SqlQueryWhereWorld.c_str());
+	while(pNodes->next())
+	{
+		const int ID = pNodes->getInt("ID");
+		const int SwitchID = pNodes->getInt("SwitchID");
+		const std::string Type = pNodes->getString("Type");
+		GatheringNode Node {};
+		Node.Name = pNodes->getString("Name");
+		Node.Level = pNodes->getInt("Level");
+		Node.Health = pNodes->getInt("Health");
+		if(SwitchID < 1 || SwitchID > 255 || Node.Level < 1 || Node.Health < 1 || Node.Name.empty())
+		{
+			dbg_msg("collecting", "Invalid node #%d in world %d", ID, GS()->GetWorldID());
+			continue;
+		}
+
+		// sets an exact base amount. ChanceProcessor keeps the weighted selection.
+		const std::string Properties = pNodes->getString("Properties");
+		const DBSet Items(Properties);
+		bool Valid = true;
+		for(const auto& Entry : Items.getItems())
+		{
+			int ItemID = 0, Amount = 0, End = 0;
+			double Chance = 0;
+			const bool HasAmount = sscanf(Entry.c_str(), "[%d/%d/%lf]%n", &ItemID, &Amount, &Chance, &End) == 3 && End == (int)Entry.size();
+			if(!HasAmount)
+			{
+				End = 0;
+				if(sscanf(Entry.c_str(), "[%d/%lf]%n", &ItemID, &Chance, &End) != 2 || End != (int)Entry.size())
+				{
+					Valid = false;
+					break;
+				}
+			}
+
+			if(!CItemDescription::Data().contains(ItemID) || !std::isfinite(Chance) || Chance <= 0 || Chance > 100 ||
+				(HasAmount && (Amount < 1 || Amount > 1000000)) || Node.m_vItems.hasElement(ItemID))
+			{
+				Valid = false;
+				break;
+			}
+
+			Node.m_vItems.addElement(ItemID, Chance);
+			if(HasAmount)
+				Node.m_vItemAmounts[ItemID] = Amount;
+		}
+		if(!Valid || Node.m_vItems.isEmpty())
+		{
+			dbg_msg("collecting", "invalid Properties for node #%d", ID);
+			continue;
+		}
+
+		// add collecting node
+		Node.m_vItems.normalizeChances();
+		if(!GS()->Collision()->AddCollectingNode(Type, SwitchID, std::move(Node)))
+			dbg_msg("collecting", "unknown type or duplicate node #%d (%s, switch %d)", ID, Type.c_str(), SwitchID);
+	}
+}
+
 void CWorldManager::OnInitWorld(const std::string& SqlQueryWhereWorld)
 {
+	InitCollectingNodes(SqlQueryWhereWorld);
+
 	std::deque<CWorldSwapData> vSwappers{};
 	const auto currentWorldID = GS()->GetWorldID();
-//	const auto formatWhere = fmt_default("{} OR `TwoWorldID` = '{}'", SqlQueryWhereWorld, currentWorldID);
 
 	// initializing world swappers from the database
 	ResultPtr pResSwap = Database->Execute<DB::SELECT>("*", "tw_world_swap", SqlQueryWhereWorld.c_str());

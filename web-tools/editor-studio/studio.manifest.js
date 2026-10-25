@@ -34,6 +34,7 @@ window.STUDIO_MANIFEST = [
       { key: 'quests', title: 'Quests', icon: 'fa-scroll', src: 'quests-editor.html', hint: 'Quests, steps and objectives' },
       { key: 'dungeons', title: 'Dungeons', icon: 'fa-dungeon', src: 'dungeons-editor.html', hint: 'Entrance, scenario and timer' },
       { key: 'worlds', title: 'Worlds', icon: 'fa-globe', src: 'worlds-editor.html', hint: 'Worlds and their flags' },
+      { key: 'nodes_collecting', title: 'Collecting nodes', icon: 'fa-seedling', src: 'nodes-collecting-editor.html', hint: 'Ore, plants and fish by world and switch' },
       { key: 'aethers', title: 'Aethers (teleports)', icon: 'fa-wand-magic-sparkles', src: 'aethers-editor.html', hint: 'Teleport points' },
       { key: 'accounts', title: 'Player accounts', icon: 'fa-users-gear', src: 'accounts-editor.html', adminOnly: true, hint: 'Logins, passwords, timeouts' },
     ]

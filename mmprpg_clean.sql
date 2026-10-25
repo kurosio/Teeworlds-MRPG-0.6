@@ -2138,6 +2138,25 @@ INSERT INTO `tw_warehouses` (`ID`, `Name`, `Type`, `Trades`, `PosX`, `PosY`, `St
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `tw_nodes_collecting`
+--
+CREATE TABLE IF NOT EXISTS `tw_nodes_collecting` (
+  `ID` int(11) NOT NULL AUTO_INCREMENT,
+  `SwitchID` tinyint unsigned NOT NULL,
+  `Level` int NOT NULL DEFAULT 1,
+  `Health` int NOT NULL DEFAULT 1,
+  `Name` varchar(128) NOT NULL,
+  `Properties` longtext NOT NULL,
+  `Type` enum('ore','plant','fish') NOT NULL,
+  `WorldID` int NOT NULL,
+  PRIMARY KEY (`ID`),
+  UNIQUE KEY `world_type_switch` (`WorldID`,`Type`,`SwitchID`),
+  CONSTRAINT `collecting_switch` CHECK (`SwitchID` BETWEEN 1 AND 255),
+  CONSTRAINT `collecting_level` CHECK (`Level` >= 1),
+  CONSTRAINT `collecting_health` CHECK (`Health` >= 1)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
 -- Table structure for table `tw_worlds`
 --
 

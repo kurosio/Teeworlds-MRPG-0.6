@@ -147,6 +147,9 @@
     .map(Number)
     .filter((value, index, all) => Number.isInteger(value) && value >= 0 && all.indexOf(value) === index);
   const OPTIONS = {
+    preview: qs.get('preview') === '1',
+    highlightLayer: qs.get('highlightLayer') === 'switch' ? 'switch' : 'game',
+    switchShowID: /^([1-9]\d{0,2})$/.test(qs.get('switchShowID') || '') && Number(qs.get('switchShowID')) <= 255 ? Number(qs.get('switchShowID')) : null,
     safe: safeIds,
     tiles: qs.get('tiles') === '1',
     highlightTiles: [...new Set((qs.get('highlightTiles') || '').split(',')
@@ -156,6 +159,11 @@
     snap: qs.has('snap') ? qs.get('snap') === '1' : null,
     grid: qs.has('grid') ? qs.get('grid') === '1' : null,
   };
+  if (OPTIONS.preview) {
+    STR.noPoint = STR.ready = LANG === 'en' ? 'Resource node preview' : 'Предпросмотр ресурсных узлов';
+    STR.hint = LANG === 'en' ? 'Drag to pan · wheel to zoom · green rings show resource nodes with switch numbers'
+      : 'Перетаскивание — карта · колесо — масштаб · зелёные кольца — узлы ресурсов с номерами switch';
+  }
   const safeMode = OPTIONS.safe.length > 0;
   const Overlays = window.MapPickerOverlays;
   const gameplay = () => (typeof tw === 'undefined' ? null : tw.map?.gameplay || null);
@@ -206,7 +214,12 @@
   el.note.textContent = STR.coordsNote;
   el.hint.textContent = safeMode ? `${STR.hint} · ${STR.blockedHint}` : STR.hint;
   el.apply.textContent = STR.apply;
-  el.cancel.textContent = STR.cancel;
+  if (OPTIONS.preview) {
+    el.apply.hidden = true;
+    el.inX.disabled = el.inY.disabled = true;
+
+  }
+  el.cancel.textContent = OPTIONS.preview ? (LANG === 'en' ? 'Close preview' : 'Закрыть предпросмотр') : STR.cancel;
   el.retry.textContent = STR.retry;
   el.zoomIn.title = `${STR.zoomIn} (+)`;
   el.zoomOut.title = `${STR.zoomOut} (−)`;
@@ -288,7 +301,7 @@
   // ── готовая точка ─────────────────────────────────────────────────────────
   const paintInputs = () => {
     updateValidity();
-    el.apply.disabled = !state.hasPoint || state.invalid || [el.inX, el.inY].some(input =>
+    el.apply.disabled = OPTIONS.preview || !state.hasPoint || state.invalid || [el.inX, el.inY].some(input =>
       document.activeElement === input && (!input.value.trim() || !Number.isFinite(Number(input.value))));
     el.center.disabled = el.align.disabled = el.copy.disabled = !state.hasPoint;
     el.undo.disabled = !history.canUndo;
@@ -302,6 +315,7 @@
   };
 
   const setPoint = (x, y, { silent = false, snap = false, record = true } = {}) => {
+    if (OPTIONS.preview) return;
     const next = Model.point(Number(x), Number(y), snap);
     if (!next) return;
     if (!Number.isSafeInteger(next.x) || !Number.isSafeInteger(next.y)) return;
@@ -739,7 +753,7 @@
   el.fit.addEventListener('click', fitMap);
   el.center.addEventListener('click', centerOnPoint);
   el.apply.addEventListener('click', () => {
-    if (!state.hasPoint || el.apply.disabled) return;
+    if (OPTIONS.preview || !state.hasPoint || el.apply.disabled) return;
     commitGesture();
     post('editor-map:apply', { x: Math.round(state.point.x), y: Math.round(state.point.y) });
   });

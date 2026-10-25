@@ -153,6 +153,12 @@ public:
 	bool IsActiveActionZone(std::string_view ActionZoneName, vec2 Pos) const;
 	std::optional<vec2> TryGetTeleportOut(vec2 currentPos);
 	std::optional<std::pair<vec2, bool>> TryGetFixedCamPos(vec2 currentPos) const;
+	bool AddCollectingNode(const std::string& Type, int SwitchID, GatheringNode Node)
+	{
+		auto* pNodes = Type == "ore" ? &m_vOreNodes : Type == "plant" ? &m_vPlantNodes : Type == "fish" ? &m_vFishNodes : nullptr;
+		return pNodes && pNodes->emplace(SwitchID, std::move(Node)).second;
+	}
+
 	const std::unordered_map<int, GatheringNode>& GetOreNodes() const { return m_vOreNodes; }
 	const std::unordered_map<int, GatheringNode>& GetPlantNodes() const { return m_vPlantNodes; }
 	const std::unordered_map<int, GatheringNode>& GetFishNodes() const { return m_vFishNodes; }

@@ -70,6 +70,27 @@
     }
     ctx.restore();
   };
+  // highlightTiles identifies entity tile types; switchShowID narrows by switch
+  // number and labels every matching location. No gameplay layer is required.
+  const drawSwitchTiles = (ctx, layer, project, tileIds = [], switchShowID = null) => {
+    if (!layer || !tileIds.length) return 0;
+    ctx.save();
+    ctx.strokeStyle = '#52df9a'; ctx.fillStyle = '#ffffff'; ctx.lineWidth = 2;
+    ctx.font = 'bold 12px monospace';
+    let count = 0;
+    for (const tile of layer.tiles) {
+      if (!tileIds.includes(tile.type) || (switchShowID !== null && tile.number !== switchShowID)) continue;
+      count++;
+      const p = project(tile.x, tile.y), edge = project(tile.x + 12, tile.y);
+      ctx.beginPath(); ctx.arc(p.x, p.y, Math.max(4, Math.abs(edge.x - p.x)), 0, Math.PI * 2); ctx.stroke();
+      // A dark backing keeps IDs legible over both bright and dark maps.
+      const label = `#${tile.number}`;
+      ctx.fillStyle = '#101722'; ctx.fillRect(p.x + 5, p.y - 18, label.length * 8 + 4, 16);
+      ctx.fillStyle = '#ffffff'; ctx.fillText(label, p.x + 7, p.y - 6);
+    }
+    ctx.restore();
+    return count;
+  };
   /** Рамка одного тайла под курсором/точкой (цвет задаёт вызывающий код). */
   const drawTileBox = (ctx, worldX, worldY, project, fill, stroke) => {
     const tx = Math.floor(worldX / 32), ty = Math.floor(worldY / 32);
@@ -96,7 +117,7 @@
     for (const p of [start, end]) { ctx.beginPath(); ctx.arc(p.x, p.y, 4, 0, Math.PI * 2); ctx.fill(); }
     ctx.restore();
   };
-  const api = { tileAt, blockedTile, distance, visibleTiles, drawCollision, drawHighlightedTiles, drawTileBox, drawRadius, drawMeasure };
+  const api = { drawSwitchTiles, tileAt, blockedTile, distance, visibleTiles, drawCollision, drawHighlightedTiles, drawTileBox, drawRadius, drawMeasure };
   if (typeof module === 'object' && module.exports) module.exports = api;
   else root.MapPickerOverlays = api;
 })(typeof window !== 'undefined' ? window : globalThis);

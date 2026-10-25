@@ -250,8 +250,8 @@ void CEntityFishingRod::FishingTick(CPlayer* pPlayer, CProfession* pFisherman, G
 		if(m_Fishing.m_Health <= 0)
 		{
 			auto& lastPointRef = m_Rope.m_vPoints.back();
-			int Value = 1 + rand() % 2;
 			const auto ItemID = pNode->m_vItems.getRandomElement();
+			int Value = pNode->GetItemAmount(ItemID) + rand() % 2;
 			auto* pPlayerItem = pPlayer->GetItem(ItemID);
 			pPlayer->Account()->GetBonusManager().ApplyBonuses(MultiplierType::FishingDrop, &Value);
 			pFisherman->AddExperience(pNode->Level * 2);

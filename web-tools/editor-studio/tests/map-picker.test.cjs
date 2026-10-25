@@ -277,3 +277,20 @@ test('explicit map flags enable gameplay and grid without expanding tools', () =
   p.tw.onAfterRender(); // спавны/запрещённые тайлы/маркер рисуются без ошибок
   assert.match(p.node('collision-status').textContent,/Красные тайлы здесь запрещены/);
 });
+
+test('collecting preview is read-only and labels switch locations without a gameplay layer', () => {
+  const p = picker('?map=/map&point=0&preview=1&highlightLayer=switch&highlightTiles=200&switchShowID=255', {
+    groups:[], switchLayer:{width:2,height:1,tiles:[{x:16,y:16,type:200,number:255},{x:48,y:16,type:200,number:1}]},
+  });
+  assert.equal(p.node('apply').hidden,true);
+  assert.equal(p.node('x').disabled,true);
+  assert.equal(p.node('y').disabled,true);
+  const canvas = p.document.getElementById('cnvs');
+  p.emit('mousedown',{target:canvas,button:0,clientX:100,clientY:100});
+  p.emit('mouseup',{target:canvas,button:0,clientX:100,clientY:100});
+  p.node('x').value='123'; p.node('x').emit('change');
+  p.node('apply').click();
+  assert.equal(p.messages.some(m=>m.type==='editor-map:apply'),false);
+  assert.equal(p.messages.some(m=>m.type==='editor-map:change'),false);
+  assert.match(p.node('note').textContent, /1/);
+});

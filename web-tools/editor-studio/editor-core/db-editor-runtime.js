@@ -365,6 +365,7 @@
           return `
             <button type="button" class="w-full text-left editor-row ${active ? 'editor-row-active' : ''}" data-id="${escapeHtml(row?.ID)}">
               <div class="flex items-center gap-2">
+                ${label.icon ? `<i class="fa-solid ${escapeHtml(label.icon)} editor-primary-text shrink-0" aria-hidden="true"></i>` : ''}
                 <div class="font-semibold truncate">${escapeHtml(label.title || '')}</div>
                 ${badge}
               </div>
@@ -763,6 +764,7 @@
       setHeader();
 
       return {
+        getModel: () => cloneData(state.model),
         refresh: loadList,
         selectRow,
         setStatus,

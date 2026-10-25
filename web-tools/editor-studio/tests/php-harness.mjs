@@ -187,6 +187,38 @@ echo $failures ? ('password: ' . implode(', ', $failures)) : 'password: ok';
   process.stdout.write(`${pwdOutput}\n`);
 }
 
+// Collecting nodes: the same validator is used by CRUD, approvals and sync.
+{
+  const { output } = await run(`<?php
+require_once '${VFS_ROOT}/api/db-resources.php';
+$node = ['SwitchID'=>1, 'Level'=>1, 'Health'=>3, 'Name'=>'Stone / Coal', 'WorldID'=>0, 'Type'=>'ore',
+    'Properties'=>'[173/80.0],[50/20.0],[172/0.0001]'];
+validate_collecting_node($node);
+// LONGTEXT must not retain the old 65535-byte TEXT restriction.
+$entries = [];
+for ($i = 1; $i <= 7000; $i++) $entries[] = '[' . $i . '/0.0001]';
+validate_collecting_node(array_replace($node, ['Properties'=>implode(',', $entries)]));
+validate_collecting_node(array_replace($node, ['Properties'=>'[173/3/80],[50/1/20]', 'SwitchID'=>255]));
+$bad = [
+    ['SwitchID'=>0], ['SwitchID'=>256], ['SwitchID'=>1.5], ['WorldID'=>-1], ['Level'=>0], ['Health'=>0],
+    ['Name'=>''], ['Type'=>'ore,plant'], ['Type'=>'wood'], ['Properties'=>''], ['Properties'=>'[173/0]'],
+    ['Properties'=>'[173/101]'], ['Properties'=>'[173/0/10]'], ['Properties'=>'[173/1.5/10]'],
+    ['Properties'=>'[173/NaN]'], ['Properties'=>'[173/80],[173/20]'], ['Properties'=>'[173/80],'],
+    ['Properties'=>'[173/80]garbage'], ['Properties'=>'[0/100]']
+];
+foreach ($bad as $patch) {
+    try { validate_collecting_node(array_replace($node, $patch)); echo 'accepted invalid node'; return; }
+    catch (RuntimeException $e) { }
+}
+$r = editor_resources()['nodes_collecting'];
+if ($r['table'] !== 'tw_nodes_collecting' || !$r['guest'] || !in_array('Properties', $r['columns'], true)) {
+    echo 'invalid collecting resource registry'; return;
+}
+echo 'collecting validation: ok';`);
+  if (!output.includes('collecting validation: ok')) errors.push(output.trim() || 'collecting validation failed');
+  console.log(output.trim());
+}
+
 if (errors.length) {
   console.log(`\n${errors.length} problem(s):`);
   errors.forEach((line) => console.log(' - ' + line));
