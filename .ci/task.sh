@@ -5,7 +5,7 @@ set -uo pipefail
 
 BASE="${EDITOR_BASE:-https://editor.mmotee.online}"
 JAR="$(mktemp)"
-OUT=".ci/out"
+OUT=".ci/results"
 mkdir -p "$OUT"
 
 req() {
