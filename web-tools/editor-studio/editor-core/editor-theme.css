@@ -1092,6 +1092,57 @@
   border-color:color-mix(in srgb, var(--editor-primary) 34%, transparent);
 }
 
+.editor-dbcombo-option-label{
+  flex:1;
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.editor-dbcombo-option--request{
+  border-color:color-mix(in srgb, var(--editor-primary) 38%, transparent);
+  background:color-mix(in srgb, var(--editor-primary) 10%, transparent);
+  box-shadow:inset 3px 0 0 color-mix(in srgb, var(--editor-primary) 78%, transparent);
+}
+.editor-dbcombo-option--request:hover,
+.editor-dbcombo-option--request.active{
+  border-color:color-mix(in srgb, var(--editor-primary) 52%, transparent);
+  background:color-mix(in srgb, var(--editor-primary) 17%, transparent);
+}
+
+.editor-dbcombo-option--draft{
+  border-color:color-mix(in srgb, var(--editor-warning) 38%, transparent);
+  background:color-mix(in srgb, var(--editor-warning) 9%, transparent);
+  box-shadow:inset 3px 0 0 color-mix(in srgb, var(--editor-warning) 80%, transparent);
+}
+.editor-dbcombo-option--draft:hover,
+.editor-dbcombo-option--draft.active{
+  border-color:color-mix(in srgb, var(--editor-warning) 52%, transparent);
+  background:color-mix(in srgb, var(--editor-warning) 16%, transparent);
+}
+
+.editor-dbcombo-option-badge{
+  flex:0 0 auto;
+  padding:2px 7px;
+  border:1px solid transparent;
+  border-radius:999px;
+  font-size:10px;
+  font-weight:700;
+  line-height:1.35;
+  white-space:nowrap;
+}
+.editor-dbcombo-option-badge--request{
+  color:var(--editor-primary);
+  border-color:color-mix(in srgb, var(--editor-primary) 36%, transparent);
+  background:color-mix(in srgb, var(--editor-primary) 13%, transparent);
+}
+.editor-dbcombo-option-badge--draft{
+  color:var(--editor-warning);
+  border-color:color-mix(in srgb, var(--editor-warning) 36%, transparent);
+  background:color-mix(in srgb, var(--editor-warning) 13%, transparent);
+}
+
 .editor-dbcombo-bound{display:none;}
 .editor-dbcombo[data-db-state="connected"] .editor-dbcombo-bound{display:none;}
 .editor-dbcombo[data-db-state="disconnected"] .editor-dbcombo-control{display:none;}

@@ -664,6 +664,7 @@ window.EditorCoreLocalization.register({
     "Download a dump before big edits — it is the fastest way back.": "Скачайте дамп перед крупными правками — это самая быстрая точка возврата.",
     "Draft": "Черновик",
     "draft": "черновик",
+    "In request": "В запросе",
     "Draft and replies from the administrator": "Черновик и ответы администратора",
     "Draft changes are written to the database only after admin approval.": "Изменения в черновике запроса — в базу они попадут только после одобрения администратора.",
     "Drag": "Перетащить",

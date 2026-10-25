@@ -115,6 +115,34 @@ echo in_array(false, $checks, true) ? "cr_values_equal: FAIL\\n" : "cr_values_eq
 if (!libOutput.includes('cr_values_equal: ok')) errors.push(libOutput.trim());
 process.stdout.write(libOutput);
 
+// ── Временные ID ингредиентов крафта заменяются ID из БД ────────────────────
+{
+  const { output } = await run(`<?php
+require_once '${VFS_ROOT}/api/change-requests-lib.php';
+$itemTemp = 2000000123;
+$craftTemp = 2000000456;
+$raw = [
+    ['type'=>'create', 'resource'=>'crafts', 'tempId'=>$craftTemp,
+        'data'=>['ItemID'=>0, 'ItemValue'=>1, 'RequiredItems'=>"[{$itemTemp}/2]"]],
+    ['type'=>'create', 'resource'=>'items', 'tempId'=>$itemTemp, 'data'=>['Name'=>'Request item']],
+];
+$ordered = cr_normalize_ops($raw, 10);
+$orderedCorrectly = count($ordered) === 2 && $ordered[0]['resource'] === 'items' && $ordered[1]['resource'] === 'crafts';
+$canonical = cr_remap_craft_required_items("[{$itemTemp}/2],[17/1]", [$itemTemp => 84]);
+$json = cr_remap_craft_required_items(json_encode([[$itemTemp, 2], [17, 1]]), [$itemTemp => 84]);
+$jsonPairs = json_decode($json, true);
+$checks = [
+    $orderedCorrectly,
+    cr_craft_required_item_temp_refs("[{$itemTemp}/2]") === [$itemTemp],
+    $canonical === '[84/2],[17/1]',
+    is_array($jsonPairs) && $jsonPairs[0][0] === 84 && $jsonPairs[1][0] === 17,
+];
+echo in_array(false, $checks, true) ? "craft ID remapping: FAIL\n" : "craft ID remapping: ok\n";
+`);
+  if (!output.includes('craft ID remapping: ok')) errors.push(output.trim() || 'craft ID remapping failed');
+  process.stdout.write(output);
+}
+
 // ── Пароль БД: страница настроек не должна его стирать ──────────────────────
 // Берём настоящие обработчики из api/db.php и подменяем только хранилище:
 // при открытии настроек клиент шлёт конфиг без password и clear_password.

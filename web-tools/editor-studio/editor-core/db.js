@@ -22,6 +22,219 @@
     shouldCache: response => !!response?.ok,
   });
 
+  // Change-request creates have temporary IDs until approval. DB-backed
+  // selectors use the compact db.php API (value + label), so adapt overlays
+  // from the full editor rows before returning lookup options.
+  const LOOKUP_RESOURCES = {
+    quests: { resource: 'quests', id: 'ID', label: 'Name' },
+    items: { resource: 'items', id: 'ID', label: 'Name' },
+    worlds: { resource: 'worlds', id: 'ID', label: 'Name' },
+    bots: { resource: 'bots_info', id: 'ID', label: 'Name' },
+  };
+  const LOOKUP_CHANGE_KIND = '__editorChangeKind';
+  const lookupOperationId = (op, request = null) => {
+    const previewId = Number(op?.previewId) || 0;
+    if (previewId > 0) return previewId;
+    if (op?.type === 'create') {
+      return Number(request?.review?.idMap?.[op.tempId]) || Number(op.tempId) || 0;
+    }
+    return Number(op?.id) || 0;
+  };
+
+  const lookupOverlay = async (source) => {
+    const spec = LOOKUP_RESOURCES[source];
+    if (!spec) return null;
+
+    const preview = window.EditorCore?.RequestContext;
+    if (preview?.active?.()) {
+      try {
+        await preview.ready?.();
+        if (preview.hasResource?.(spec.resource)) {
+          const request = preview.request?.() || null;
+          const operations = (request?.operations || []).filter((op) => op?.resource === spec.resource);
+          return {
+            type: 'request', spec, request, operations,
+            overlayRows: (rows) => preview.overlayRows(spec.resource, rows),
+          };
+        }
+      } catch {
+        // A lookup must remain usable even if an optional preview snapshot fails.
+      }
+    }
+
+    const guest = window.EditorCore?.Guest;
+    if (guest?.ready && guest?.Draft) {
+      try {
+        if (await guest.ready() === 'guest') {
+          const operations = (guest.Draft.get()?.ops || []).filter((op) => op?.resource === spec.resource);
+          if (operations.length) {
+            return {
+              type: 'guest', spec, operations,
+              overlayRows: (rows, { search = '', offset = 0 } = {}) => guest.Draft.overlayRows(
+                spec.resource, rows, { search, offset },
+              ),
+            };
+          }
+        }
+      } catch {
+        // Do not block ordinary database lookups on local draft storage errors.
+      }
+    }
+    return null;
+  };
+
+  const lookupOperationMap = (overlay) => {
+    const byId = new Map();
+    for (const op of overlay?.operations || []) {
+      const id = lookupOperationId(op, overlay.request);
+      if (id > 0) byId.set(String(id), op);
+    }
+    return byId;
+  };
+
+  const lookupOperationRow = (op, overlay) => {
+    if (!op) return null;
+    const id = lookupOperationId(op, overlay?.request);
+    if (!id) return null;
+    const before = op.before && typeof op.before === 'object' ? op.before : {};
+    const data = op.data && typeof op.data === 'object' ? op.data : {};
+    const row = { ...before, [overlay.spec.id]: id, ...data };
+    if (!(overlay.spec.label in data) && !(overlay.spec.label in before) && op.label) {
+      row[overlay.spec.label] = op.label;
+    }
+    return row;
+  };
+
+  const lookupChangeKind = (op, overlay) => {
+    if (op?.type !== 'create') return '';
+    if (overlay.type === 'request') return overlay.request?.status === 'pending' ? 'request' : '';
+    return op.reqId ? 'request' : 'draft';
+  };
+
+  const lookupMatches = (row, spec, { search = '', filterKey = '', filterValue = '', filterValues = [] } = {}) => {
+    const values = Array.isArray(filterValues)
+      ? filterValues.map((value) => String(value ?? '').trim()).filter(Boolean)
+      : [];
+    if (!values.length && filterValue !== '') values.push(String(filterValue));
+    if (filterKey && values.length && !values.includes(String(row?.[filterKey] ?? ''))) return false;
+
+    const needle = String(search || '').trim().toLowerCase();
+    if (!needle) return true;
+    const id = String(row?.[spec.id] ?? '');
+    const label = String(row?.[spec.label] ?? '').toLowerCase();
+    if (/^\d+$/.test(needle)) return id === needle || label.includes(needle);
+    return label.includes(needle);
+  };
+
+  const lookupItem = (row, spec, op = null, overlay = null) => {
+    const item = {
+      value: String(row?.[spec.id] ?? ''),
+      label: String(row?.[spec.label] ?? ''),
+    };
+    const changeKind = lookupChangeKind(op, overlay);
+    if (changeKind) {
+      item[LOOKUP_CHANGE_KIND] = changeKind;
+      if (changeKind === 'request') item.__editorRequestId = String(op?.reqId || overlay?.request?.id || '');
+    }
+    return item;
+  };
+
+  const overlayLookupList = async (source, response, options = {}) => {
+    const overlay = await lookupOverlay(source);
+    if (!overlay || !Array.isArray(response?.items)) return response;
+
+    const spec = overlay.spec;
+    const baseRows = response.items.map((item) => ({
+      [spec.id]: Number(item?.value),
+      [spec.label]: String(item?.label ?? ''),
+    })).filter((row) => Number.isSafeInteger(row[spec.id]) && row[spec.id] > 0);
+    const baseIds = new Set(baseRows.map((row) => String(row[spec.id])));
+    const byId = lookupOperationMap(overlay);
+    let rows = overlay.overlayRows(baseRows, { search: '', offset: Number(options.offset) || 0 }) || baseRows;
+    rows = rows.slice();
+
+    // If a pending rename makes a row match the current search while its old
+    // database label does not, the API will not return it. Use the operation's
+    // before snapshot (or the guest's local label) as a lightweight fallback.
+    if (!(Number(options.offset) > 0)) {
+      for (const op of overlay.operations) {
+        if (op?.type !== 'update') continue;
+        const row = lookupOperationRow(op, overlay);
+        if (!row || rows.some((entry) => Number(entry?.[spec.id]) === Number(row[spec.id]))) continue;
+        if (lookupMatches(row, spec, options)) rows.push(row);
+      }
+    }
+
+    const seen = new Set();
+    const items = [];
+    for (const row of rows) {
+      const id = Number(row?.[spec.id]);
+      if (!Number.isSafeInteger(id) || id <= 0) continue;
+      const key = String(id);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      const op = byId.get(key) || null;
+      if (op?.type === 'delete') continue;
+      // Base DB results have already passed the API's search/filter. Re-check
+      // only rows touched by the request/draft because their label may change.
+      if (op && !lookupMatches(row, spec, options)) continue;
+      if (!baseIds.has(key) && !lookupMatches(row, spec, options)) continue;
+      items.push(lookupItem(row, spec, op, overlay));
+    }
+
+    // Lookup APIs are ordered by ID; put newly created temporary IDs after the
+    // persisted rows without disturbing the database's stable order.
+    items.sort((a, b) => Number(a.value) - Number(b.value));
+
+    let totalDelta = 0;
+    if (overlay.type !== 'request' || overlay.request?.status === 'pending') {
+      for (const op of overlay.operations) {
+        const id = lookupOperationId(op, overlay.request);
+        const after = lookupOperationRow(op, overlay);
+        const before = op?.before && typeof op.before === 'object'
+          ? op.before
+          : (op?.label ? { [spec.id]: id, [spec.label]: op.label } : null);
+        if (op?.type === 'create' && !baseIds.has(String(id)) && after && lookupMatches(after, spec, options)) totalDelta++;
+        else if (op?.type === 'delete' && before && lookupMatches(before, spec, options)) totalDelta--;
+        else if (op?.type === 'update' && op.before) {
+          const wasListed = lookupMatches(before, spec, options);
+          const isListed = after && lookupMatches(after, spec, options);
+          totalDelta += Number(isListed) - Number(wasListed);
+        }
+      }
+    }
+
+    const hasNumericTotal = response.total !== null && response.total !== undefined
+      && Number.isFinite(Number(response.total));
+    return {
+      ...response,
+      items,
+      ...(hasNumericTotal ? { total: Math.max(0, Number(response.total) + totalDelta) } : {}),
+    };
+  };
+
+  const overlayLookupOne = async (source, response, id, overlay = null) => {
+    overlay = overlay || await lookupOverlay(source);
+    if (!overlay) return response;
+    const spec = overlay.spec;
+    const numericId = Number(id) || 0;
+    const op = lookupOperationMap(overlay).get(String(numericId)) || null;
+    if (!op) return response;
+    if (op.type === 'delete') return { ...response, ok: true, item: null };
+
+    const row = lookupOperationRow(op, overlay);
+    if (op.type === 'create') return { ok: true, item: lookupItem(row, spec, op, overlay) };
+    if (op.type === 'update' && row) {
+      const item = response?.item ? { ...response.item } : { value: String(numericId), label: '' };
+      item.value = String(numericId);
+      item.label = String(row[spec.label] ?? '');
+      const changeKind = lookupChangeKind(op, overlay);
+      if (changeKind) item[LOOKUP_CHANGE_KIND] = changeKind;
+      return { ...response, ok: true, item };
+    }
+    return response;
+  };
+
   const readFilter = (el) => {
     if (!el) return null;
     const key = String(el.dataset.dbFilterKey || '').trim();
@@ -538,13 +751,13 @@
       extras.forEach((opt) => {
         const value = String(opt.value);
         if (seen.has(value)) return;
-        combined.push({ value, label: opt.label, isExtra: true });
+        combined.push({ ...opt, value, label: opt.label, isExtra: true });
         seen.add(value);
       });
       arr.forEach((it) => {
         const value = String(it.value);
         if (seen.has(value)) return;
-        combined.push({ value, label: it.label, isExtra: false });
+        combined.push({ ...it, value, label: it.label, isExtra: false });
         seen.add(value);
       });
       state.lastResults = combined;
@@ -563,11 +776,27 @@
       combined.forEach((item, index) => {
         const button = document.createElement('button');
         button.type = 'button';
-        button.className = 'editor-dbcombo-option';
+        const changeKind = item[LOOKUP_CHANGE_KIND] || '';
+        button.className = `editor-dbcombo-option${changeKind ? ` editor-dbcombo-option--${changeKind}` : ''}`;
         button.setAttribute('role', 'option');
         button.dataset.value = String(item.value);
         button.dataset.index = String(index);
-        button.textContent = formatLabel(item.value, item.label);
+        const label = document.createElement('span');
+        label.className = 'editor-dbcombo-option-label';
+        label.textContent = formatLabel(item.value, item.label);
+        button.appendChild(label);
+        if (changeKind) {
+          const status = document.createElement('span');
+          status.className = `editor-dbcombo-option-badge editor-dbcombo-option-badge--${changeKind}`;
+          status.textContent = changeKind === 'request' ? 'In request' : 'Draft';
+          button.appendChild(status);
+          button.title = changeKind === 'request'
+            ? `In request${item.__editorRequestId ? ` ${item.__editorRequestId}` : ''}`
+            : 'Draft';
+          button.setAttribute('aria-label', `${formatLabel(item.value, item.label)} · ${status.textContent}`);
+        } else {
+          button.setAttribute('aria-label', formatLabel(item.value, item.label));
+        }
         fragment.appendChild(button);
       });
       dropdown.appendChild(fragment);
@@ -582,7 +811,13 @@
       if (!value) return;
       const picked = state.lastResults[Number(button.dataset.index)];
       writeBoundValue(value);
-      if (input) input.value = picked ? formatLabel(picked.value, picked.label) : value;
+      if (input) {
+        input.value = picked ? formatLabel(picked.value, picked.label) : value;
+        input.dataset.lookupChangeKind = picked?.[LOOKUP_CHANGE_KIND] || '';
+        input.title = picked?.[LOOKUP_CHANGE_KIND] === 'request'
+          ? `In request${picked.__editorRequestId ? ` ${picked.__editorRequestId}` : ''}`
+          : picked?.[LOOKUP_CHANGE_KIND] === 'draft' ? 'Draft' : '';
+      }
       syncClearButton();
       close();
     };
@@ -607,6 +842,10 @@
         const one = await db.getOne(source, cur);
         if (one?.ok && one.item) {
           input.value = formatLabel(one.item.value, one.item.label);
+          input.dataset.lookupChangeKind = one.item[LOOKUP_CHANGE_KIND] || '';
+          input.title = one.item[LOOKUP_CHANGE_KIND] === 'request'
+            ? `In request${one.item.__editorRequestId ? ` ${one.item.__editorRequestId}` : ''}`
+            : one.item[LOOKUP_CHANGE_KIND] === 'draft' ? 'Draft' : '';
           syncClearButton();
           return;
         }
@@ -830,9 +1069,20 @@
     },
 
     async getOne(source, id) {
+      const overlay = await lookupOverlay(source);
+      const numericId = Number(id) || 0;
+      const localOperation = overlay
+        ? lookupOperationMap(overlay).get(String(numericId)) || null
+        : null;
+      if (localOperation?.type === 'create') {
+        return { ok: true, item: lookupItem(lookupOperationRow(localOperation, overlay), overlay.spec, localOperation, overlay) };
+      }
+      if (localOperation?.type === 'delete') return { ok: true, item: null };
+
       const key = `one:${source}:${id}`;
       const qs = new URLSearchParams({ action: 'get_one', source, id: String(id) }).toString();
-      return cache.load(key, () => fetchJson(`${this.endpoint}?${qs}`), cacheOptions());
+      const response = await cache.load(key, () => fetchJson(`${this.endpoint}?${qs}`), cacheOptions());
+      return overlayLookupOne(source, response, id, overlay);
     },
 
     async list(source, { search = '', limit = 1000, offset = 0, withTotal = false, filterKey = '', filterValue = '', filterValues = [], signal = null } = {}) {
@@ -853,7 +1103,8 @@
         }
       }
       const qs = new URLSearchParams(params).toString();
-      return cache.load(key, () => fetchJson(`${this.endpoint}?${qs}`, { signal }), cacheOptions(signal));
+      const response = await cache.load(key, () => fetchJson(`${this.endpoint}?${qs}`, { signal }), cacheOptions(signal));
+      return overlayLookupList(source, response, { search, offset, filterKey, filterValue, filterValues });
     },
 
     async init(root = document) {

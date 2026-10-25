@@ -538,7 +538,95 @@ function cr_normalize_ops(mixed $rawOps, int $maxOps): array
     return cr_order_ops($ops);
 }
 
-/** Temp ids referenced from FK columns of an operation. */
+/** Temporary item IDs inside tw_crafts_list.RequiredItems pairs. */
+function cr_craft_required_item_temp_refs(mixed $raw): array
+{
+    if (is_array($raw)) {
+        $decoded = $raw;
+    } elseif (is_string($raw)) {
+        $decoded = json_decode(trim($raw), true);
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($decoded)) $decoded = null;
+    } else {
+        $decoded = null;
+    }
+
+    $ids = [];
+    if (is_array($decoded) && array_is_list($decoded)) {
+        foreach ($decoded as $pair) {
+            if (!is_array($pair)) continue;
+            if (array_is_list($pair)) {
+                $id = $pair[0] ?? null;
+                $quantity = $pair[1] ?? null;
+            } else {
+                $id = null;
+                foreach (['id', 'ItemID', 'item_id', 'key'] as $key) {
+                    if (array_key_exists($key, $pair)) { $id = $pair[$key]; break; }
+                }
+                $quantity = null;
+                foreach (['value', 'count', 'qty', 'amount'] as $key) {
+                    if (array_key_exists($key, $pair)) { $quantity = $pair[$key]; break; }
+                }
+            }
+            if (is_numeric($quantity) && (float)$quantity > 0 && is_guest_temp_id($id)) {
+                $ids[] = (int)$id;
+            }
+        }
+    }
+
+    // The editor's canonical format is "[ItemID/Count],[ItemID/Count]".
+    // JSON arrays are also accepted by PairList, so support both encodings.
+    if ($decoded === null && is_string($raw)
+        && preg_match_all('/\[\s*(\d+)\s*\/\s*(\d+)\s*\]/', $raw, $matches, PREG_SET_ORDER)) {
+        foreach ($matches as $match) {
+            if ((int)$match[2] > 0 && is_guest_temp_id((int)$match[1])) {
+                $ids[] = (int)$match[1];
+            }
+        }
+    }
+    return array_values(array_unique($ids));
+}
+
+/** Replace temporary item IDs in a craft's serialized ingredient list. */
+function cr_remap_craft_required_items(mixed $raw, array $idMap): mixed
+{
+    if (!is_string($raw) || !$idMap) return $raw;
+
+    $trimmed = trim($raw);
+    $decoded = json_decode($trimmed, true);
+    if (json_last_error() === JSON_ERROR_NONE && is_array($decoded) && array_is_list($decoded)) {
+        foreach ($decoded as &$pair) {
+            if (!is_array($pair)) continue;
+            if (array_is_list($pair)) {
+                $idKey = 0;
+                $id = $pair[$idKey] ?? null;
+            } else {
+                $idKey = null;
+                $id = null;
+                foreach (['id', 'ItemID', 'item_id', 'key'] as $key) {
+                    if (array_key_exists($key, $pair)) { $idKey = $key; $id = $pair[$key]; break; }
+                }
+            }
+            if ($idKey === null || !is_guest_temp_id($id)) continue;
+            $key = (string)(int)$id;
+            if (array_key_exists($key, $idMap)) $pair[$idKey] = (int)$idMap[$key];
+        }
+        unset($pair);
+        return json_encode($decoded, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_THROW_ON_ERROR);
+    }
+
+    return preg_replace_callback(
+        '/(\[\s*)(\d+)(\s*\/\s*\d+\s*\])/',
+        static function (array $match) use ($idMap): string {
+            $tempId = (int)$match[2];
+            $key = (string)$tempId;
+            if (!is_guest_temp_id($tempId) || !array_key_exists($key, $idMap)) return $match[0];
+            return $match[1] . (int)$idMap[$key] . $match[3];
+        },
+        $raw,
+    ) ?? $raw;
+}
+
+/** Temp ids referenced from FK columns (and craft ingredient pairs) of an operation. */
 function cr_op_temp_refs(array $op): array
 {
     $R = cr_resource($op['resource'], false);
@@ -548,7 +636,10 @@ function cr_op_temp_refs(array $op): array
             $refs[] = (int)$op['data'][$col];
         }
     }
-    return $refs;
+    if (($op['resource'] ?? '') === 'crafts') {
+        $refs = array_merge($refs, cr_craft_required_item_temp_refs($op['data']['RequiredItems'] ?? null));
+    }
+    return array_values(array_unique($refs));
 }
 
 /** Creates first (dependency ordered), then updates, then deletes. */
@@ -1004,6 +1095,12 @@ function cr_apply(mysqli $db, array $req, bool $force): array
                     if (!isset($idMap[$t])) throw new RuntimeException("Не удалось сопоставить временный ID #$t");
                     $data[$col] = $idMap[$t];
                 }
+            }
+            if ($op['resource'] === 'crafts' && array_key_exists('RequiredItems', $data)) {
+                foreach (cr_craft_required_item_temp_refs($data['RequiredItems']) as $tempId) {
+                    if (!isset($idMap[$tempId])) throw new RuntimeException("Не удалось сопоставить временный ID #$tempId");
+                }
+                $data['RequiredItems'] = cr_remap_craft_required_items($data['RequiredItems'], $idMap);
             }
             if (isset($missing[$i])) {
                 $skipped[] = ['index' => $i, 'text' => "{$R['title']} #{$op['id']}: пропущено — запись не существует"];
