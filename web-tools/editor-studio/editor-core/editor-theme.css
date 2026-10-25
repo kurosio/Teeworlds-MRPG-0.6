@@ -997,26 +997,41 @@
 }
 
 .editor-dbcombo-input{padding-right:2.35rem;}
+.editor-dbcombo-input::-webkit-search-cancel-button{display:none;-webkit-appearance:none;}
 
 .editor-dbcombo-clear{
   position:absolute;
-  right:.6rem;
+  right:.45rem;
   top:50%;
   transform:translateY(-50%);
-  width:1.65rem;
-  height:1.65rem;
-  border-radius:10px;
+  width:1.6rem;
+  height:1.6rem;
+  border-radius:8px;
   display:flex;
   align-items:center;
   justify-content:center;
   background:var(--editor-button-secondary-bg);
   border:1px solid var(--editor-button-secondary-border);
-  color:var(--editor-text);
+  color:var(--editor-text-muted);
+  cursor:pointer;
+  transition:background-color .14s ease, border-color .14s ease, color .14s ease;
+}
+
+.editor-dbcombo-clear[hidden]{
+  display:none;
 }
 
 .editor-dbcombo-clear:hover{
-  background:var(--editor-button-secondary-hover-bg);
-  border-color:var(--editor-soft-border-strong);
+  background:color-mix(in srgb, var(--editor-danger) 14%, var(--editor-button-secondary-hover-bg));
+  border-color:color-mix(in srgb, var(--editor-danger) 40%, var(--editor-soft-border-strong));
+  color:var(--editor-danger);
+}
+
+.editor-required-mark{
+  color:var(--editor-danger);
+  font-weight:700;
+  margin-left:3px;
+  line-height:1;
 }
 
 .editor-dbcombo-dropdown{

@@ -118,7 +118,15 @@
     ];
 
     const worldFields = {
-      Name: { type: 'text', label: 'Название', validate: { required: true }, ui: { placeholder: 'Например: Gridania' } },
+      Name: {
+        type: 'text',
+        label: 'Название',
+        validate: { required: true },
+        ui: {
+          placeholder: 'Например: Gridania',
+          section: { title: 'Основная информация', icon: 'fa-globe', subtitle: 'Имя, файл карты и режим мира' },
+        },
+      },
       Path: { type: 'text', label: 'Путь карты', validate: { required: true }, ui: { placeholder: 'main.map' } },
       Type: {
         label: 'Тип мира',
@@ -127,17 +135,27 @@
           options: TYPES.map((type) => ({ value: type, label: type }))
         }
       },
+      RequiredLevel: { type: 'number', label: 'Минимальный уровень', ui: { min: 1, step: 1 } },
+      RespawnWorldID: {
+        type: 'db_select',
+        label: 'Мир респавна',
+        ui: {
+          dbKey: 'world',
+          placeholder: '— мир —',
+          searchPlaceholder: 'Поиск мира…',
+          section: { title: 'Связанные миры и правила', icon: 'fa-route' },
+        },
+      },
+      JailWorldID: { type: 'db_select', label: 'Мир тюрьмы', ui: { dbKey: 'world', placeholder: '— мир —', searchPlaceholder: 'Поиск мира…' } },
       Flags: {
-        label: 'Флаги',
+        label: 'Игровые флаги',
         ui: {
           type: 'tags',
           options: FLAGS,
-          placeholder: 'Добавить флаг…'
+          placeholder: 'Добавить флаг…',
+          spanAll: true,
         }
       },
-      RespawnWorldID: { type: 'db_select', label: 'Мир респавна', ui: { dbKey: 'world', placeholder: '— мир —', searchPlaceholder: 'Поиск мира…' } },
-      JailWorldID: { type: 'db_select', label: 'Мир тюрьмы', ui: { dbKey: 'world', placeholder: '— мир —', searchPlaceholder: 'Поиск мира…' } },
-      RequiredLevel: { type: 'number', label: 'Минимальный уровень', ui: { min: 1, step: 1 } },
     };
 
     const dirty = EditorCore.Dirty?.create

@@ -81,29 +81,28 @@
 
           <div class="editor-section mt-4">
             <div class="editor-panel-card">
-              <div class="flex items-center justify-between gap-3">
+              <div class="flex flex-wrap items-center justify-between gap-3">
                 <div>
                   <div class="font-semibold">Профиль бота</div>
-                  <div class="editor-muted-text text-sm">Секции разделены на вкладки: основное, скин и экипировка.</div>
+                  <div class="editor-muted-text text-sm">Имя, внешний вид скина и экипируемое снаряжение.</div>
                 </div>
                 <div id="tabRoot"></div>
               </div>
 
               <div class="mt-4">
                 <div id="tab_basic" class="space-y-6">
-                  <div class="editor-form-grid-2" id="formBasic"></div>
-                </div>
-
-                <div id="tab_skin" class="space-y-6 hidden">
                   <div class="grid gap-4 md:grid-cols-[220px,1fr] items-start">
                     <div class="editor-panel-card flex flex-col items-center gap-3">
-                      <div class="text-xs uppercase tracking-wider editor-muted-text">Preview</div>
+                      <div class="text-xs uppercase tracking-wider editor-muted-text">Превью скина</div>
                       <div class="skin-preview-frame w-36 h-36 rounded-2xl flex items-center justify-center">
-                        <img id="skinPreviewImg" class="w-28 h-28" alt="Skin preview" />
+                        <img id="skinPreviewImg" class="w-28 h-28" alt="Превью скина" />
                       </div>
                       <div id="skinPreviewMeta" class="text-xs editor-muted-text text-center">Скин не загружен</div>
                     </div>
-                    <div class="editor-form-grid-2" id="formSkin"></div>
+                    <div class="space-y-4">
+                      <div id="formBasic"></div>
+                      <div class="editor-form-grid-2" id="formSkin"></div>
+                    </div>
                   </div>
                 </div>
 
@@ -137,7 +136,6 @@
       count: document.querySelector('[data-editor-role="count"]'),
       tabRoot: document.getElementById('tabRoot'),
       tabBasic: document.getElementById('tab_basic'),
-      tabSkin: document.getElementById('tab_skin'),
       tabGear: document.getElementById('tab_gear'),
       formBasic: document.getElementById('formBasic'),
       formSkin: document.getElementById('formSkin'),
@@ -372,6 +370,12 @@
       if (DOM.del) DOM.del.disabled = !enabled || !STATE.selectedId;
     };
 
+    const esc = EditorCore.Page.esc;
+    const canDiscardDirty = async () => {
+      if (!dirty?.isDirty?.()) return true;
+      return EditorCore.Page.confirm('Есть несохранённые изменения. Продолжить без сохранения?');
+    };
+
     const setHeader = () => {
       if (!DOM.title && !DOM.subtitle) return;
       if (!STATE.model) {
@@ -379,9 +383,9 @@
         if (DOM.subtitle) DOM.subtitle.textContent = 'или создайте нового';
         return;
       }
-      const name = STATE.model?.Name || `Бот #${STATE.selectedId || 'new'}`;
+      const name = STATE.model?.Name || (STATE.selectedId ? `Бот #${STATE.selectedId}` : 'Новый бот');
       if (DOM.title) DOM.title.textContent = name;
-      if (DOM.subtitle) DOM.subtitle.textContent = `ID: ${STATE.selectedId || 'new'}`;
+      if (DOM.subtitle) DOM.subtitle.textContent = STATE.selectedId ? `ID ${STATE.selectedId}` : 'Новая запись';
     };
 
     const updateSkinControls = () => {
@@ -402,12 +406,14 @@
       const hasApi = !!STATE.skinsApi;
       if (!STATE.model) {
         DOM.skinPreviewImg.src = '';
+        DOM.skinPreviewImg.classList.add('hidden');
         DOM.skinPreviewMeta.textContent = 'Скин не выбран.';
         return;
       }
       if (!hasApi) {
         DOM.skinPreviewImg.src = '';
-        DOM.skinPreviewMeta.textContent = 'Skins API не настроен. Проверьте настройки.';
+        DOM.skinPreviewImg.classList.add('hidden');
+        DOM.skinPreviewMeta.textContent = 'Сервис превью скинов не настроен.';
         return;
       }
       const url = EditorCore.utils.renderSkinApiUrl(STATE.skinsApi, {
@@ -416,14 +422,16 @@
         foot: skin.custom_color ? skin.color_feet : '',
       });
       DOM.skinPreviewImg.src = url;
-      DOM.skinPreviewMeta.textContent = `${skin.name || 'default'} · ${skin.custom_color ? 'custom' : 'default'}`;
+      DOM.skinPreviewImg.classList.toggle('hidden', !url);
+      DOM.skinPreviewMeta.textContent = `${skin.name || 'default'} · ${skin.custom_color ? 'свой цвет' : 'стандартный'}`;
     };
 
     const showEmptyForm = () => {
-      const emptyHtml = '<div class="editor-muted-text">Выберите запись слева</div>';
+      const emptyHtml = '<div class="editor-empty-state editor-field--span-all">Выберите бота в списке слева или нажмите «Новый бот».</div>';
       DOM.formBasic.innerHTML = emptyHtml;
-      DOM.formSkin.innerHTML = emptyHtml;
+      DOM.formSkin.innerHTML = '';
       DOM.formGear.innerHTML = emptyHtml;
+      updatePreview();
     };
 
     const mountForms = () => {
@@ -484,10 +492,10 @@
 
     const renderList = () => {
       const rows = STATE.rows || [];
-      if (DOM.count) DOM.count.textContent = rows.length ? `${rows.length}` : '—';
+      if (DOM.count) DOM.count.textContent = rows.length ? `${rows.length}` : '0';
       if (!DOM.list) return;
       if (!rows.length) {
-        DOM.list.innerHTML = '<div class="editor-empty-state">Нет данных</div>';
+        DOM.list.innerHTML = '<div class="editor-empty-state">Боты не найдены — измените поиск или нажмите «Новый бот».</div>';
         return;
       }
       const skinsApi = STATE.skinsApi || '';
@@ -502,15 +510,15 @@
             })
           : '';
         const skinPreview = skinUrl
-          ? `<img class="w-9 h-9 rounded-full border editor-hairline object-cover" src="${skinUrl}" alt="skin" loading="lazy" />`
-          : `<div class="w-9 h-9 rounded-full border editor-hairline editor-soft flex items-center justify-center text-[10px] editor-muted-text">—</div>`;
+          ? `<img class="w-9 h-9 rounded-full border editor-hairline object-cover shrink-0" src="${esc(skinUrl)}" alt="" loading="lazy" />`
+          : `<div class="w-9 h-9 rounded-full border editor-hairline editor-soft shrink-0 flex items-center justify-center text-[10px] editor-muted-text">—</div>`;
         return `
-          <button type="button" class="w-full text-left editor-row ${active ? 'ring-2 editor-ring' : ''}" data-id="${row?.ID}">
+          <button type="button" class="w-full text-left editor-row ${active ? 'editor-row-active' : ''}" data-id="${esc(row?.ID)}">
             <div class="flex items-center gap-3">
               ${skinPreview}
               <div class="min-w-0">
-                <div class="font-semibold truncate">${row?.Name || `#${row?.ID}`}</div>
-                <div class="text-xs editor-muted-text truncate">ID: ${row?.ID}</div>
+                <div class="font-semibold truncate">${esc(row?.Name || `#${row?.ID}`)}</div>
+                <div class="text-xs editor-muted-text truncate">ID ${esc(row?.ID)} · ${esc(skin.name || 'default')}</div>
               </div>
             </div>
           </button>
@@ -519,7 +527,9 @@
       DOM.list.innerHTML = `<div class="editor-list">${html}</div>`;
     };
 
-    const selectRow = (row) => {
+    const selectRow = async (row, { confirmDirty = false } = {}) => {
+      if (row && Number(row.ID || 0) === Number(STATE.selectedId) && STATE.model && confirmDirty) return;
+      if (confirmDirty && !await canDiscardDirty()) return;
       if (!row) {
         STATE.selectedId = 0;
         STATE.model = null;
@@ -562,7 +572,8 @@
       }
     };
 
-    const createNew = () => {
+    const createNew = async () => {
+      if (!await canDiscardDirty()) return;
       STATE.lastSelectedIdBeforeCreate = Number(STATE.selectedId || 0);
       STATE.selectedId = 0;
       STATE.model = emptyModel();
@@ -639,14 +650,12 @@
 
     const tabs = EditorCore.UI.mountTabs(DOM.tabRoot, {
       tabs: [
-        { id: 'basic', title: 'Основное', icon: 'fa-bars-staggered' },
-        { id: 'skin', title: 'Скин', icon: 'fa-user-astronaut' },
+        { id: 'basic', title: 'Имя и скин', icon: 'fa-user-astronaut' },
         { id: 'gear', title: 'Экипировка', icon: 'fa-shield-halved' },
       ],
       active: 'basic',
       onChange: (id) => {
         DOM.tabBasic.classList.toggle('hidden', id !== 'basic');
-        DOM.tabSkin.classList.toggle('hidden', id !== 'skin');
         DOM.tabGear.classList.toggle('hidden', id !== 'gear');
       }
     });
@@ -654,7 +663,6 @@
     if (tabs?.getActive) {
       const active = tabs.getActive();
       DOM.tabBasic.classList.toggle('hidden', active !== 'basic');
-      DOM.tabSkin.classList.toggle('hidden', active !== 'skin');
       DOM.tabGear.classList.toggle('hidden', active !== 'gear');
     }
 
@@ -663,7 +671,18 @@
       if (!btn) return;
       const id = Number(btn.getAttribute('data-id') || 0);
       const row = STATE.rows.find(r => Number(r.ID) === id);
-      if (row) selectRow(row);
+      if (row) selectRow(row, { confirmDirty: true });
+    });
+
+    window.addEventListener('message', (event) => {
+      if (!window.EditorCore?.Http?.isSameOriginMessage?.(event, window.parent)) return;
+      const data = event.data || {};
+      if (data?.type !== 'editor-shell:request-dirty-status') return;
+      window.EditorCore.Http.postMessage(window.parent, {
+        type: 'editor-shell:dirty-status',
+        requestId: data.requestId,
+        dirty: !!dirty?.isDirty?.(),
+      });
     });
 
     DOM.refresh?.addEventListener('click', loadList);

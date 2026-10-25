@@ -82,12 +82,19 @@
       id: 'delete-group-modal-backdrop',
       html: `
         <div id="delete-group-modal-backdrop" class="hidden fixed inset-0 editor-modal-backdrop z-[300] flex justify-center items-center p-4">
-          <div class="editor-modal-content p-6 rounded-lg shadow-xl w-full max-w-md">
-            <h3 class="text-xl font-bold mb-4">Удалить группу</h3>
-            <p class="editor-muted-text mb-6">Как вы хотите удалить эту группу?</p>
-            <div class="flex justify-end gap-3">
+          <div class="editor-modal-content editor-modal-shell w-full max-w-md">
+            <div class="editor-modal-head">
+              <div class="editor-modal-head-main">
+                <i class="editor-modal-icon fa-solid fa-layer-group" aria-hidden="true"></i>
+                <h3 class="editor-modal-title">Удалить группу</h3>
+              </div>
+            </div>
+            <div class="editor-modal-body">
+              <p class="editor-muted-text text-sm">Выберите, нужно ли удалить только рамку группы или вместе с входящими в неё шагами сценария.</p>
+            </div>
+            <div class="editor-modal-foot">
               <button id="delete-group-cancel-btn" class="editor-btn editor-btn-secondary">Отмена</button>
-              <button id="delete-group-only-btn" class="editor-btn editor-btn-secondary" style="border-color: rgba(245,158,11,.35); color: rgb(253,230,138);">Только группу</button>
+              <button id="delete-group-only-btn" class="editor-btn editor-btn-secondary">Только группу</button>
               <button id="delete-group-and-steps-btn" class="editor-btn editor-btn-danger">Группу и шаги</button>
             </div>
           </div>

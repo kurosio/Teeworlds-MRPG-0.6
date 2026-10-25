@@ -67,14 +67,10 @@
         <div class="editor-dock-pad">
           <div class="editor-sticky-toolbar flex items-start justify-between gap-4">
             <div class="min-w-0">
-              <div class="text-2xl font-bold" id="title">Выберите ваучер</div>
-              <div class="editor-muted-text" id="subtitle">или создайте новый</div>
+              <div class="text-lg font-semibold" id="title">Выберите ваучер</div>
+              <div class="editor-muted-text text-sm mt-1" id="subtitle">или создайте новый</div>
             </div>
-            <div class="flex flex-wrap gap-2">
-              <button id="pickDateBtn" class="editor-btn editor-btn-secondary" disabled>
-                <i class="fa-solid fa-calendar"></i>
-                <span>Дата</span>
-              </button>
+            <div class="editor-page-actions">
               <span id="dirty-pill" class="editor-dirty-pill hidden" aria-hidden="true">Данные не сохранены</span>
               <button id="saveBtn" class="editor-btn editor-btn-primary" disabled>
                 <i class="fa-solid fa-floppy-disk"></i>
@@ -84,26 +80,50 @@
                 <i class="fa-solid fa-rotate-left"></i>
                 <span>Отменить</span>
               </button>
-              <button id="deleteBtn" class="editor-btn editor-btn-danger" disabled>
+              <button id="deleteBtn" class="editor-btn editor-btn-secondary" disabled>
                 <i class="fa-solid fa-trash"></i>
                 <span>Удалить</span>
               </button>
             </div>
           </div>
 
-          <div class="mt-6 space-y-6">
-            <div id="dbStatus" class="editor-db-alert"></div>
+          <div class="mt-4 space-y-4">
+            <div id="dbStatus" class="editor-db-alert hidden"></div>
 
-            <div id="formRoot"></div>
+            <div id="emptyVoucherState" class="editor-empty-state">
+              Выберите ваучер в списке слева или нажмите «Новый ваучер», чтобы создать промокод.
+            </div>
 
-            <div class="editor-panel-card">
-              <div class="flex items-center justify-between gap-3">
-                <div>
-                  <div class="font-semibold">Предметы</div>
-                  <div class="editor-muted-text text-sm">Список наград ваучера</div>
+            <div id="voucherEditorBody" class="space-y-4 hidden">
+              <div class="editor-section">
+                <div class="editor-form-grid-2" id="formRoot"></div>
+                <div class="mt-4 pt-4 border-t editor-hairline flex flex-wrap items-center justify-between gap-3">
+                  <div>
+                    <div class="editor-label">Срок действия</div>
+                    <div id="validUntilText" class="text-sm font-medium mt-1">— бессрочно —</div>
+                  </div>
+                  <div class="flex flex-wrap items-center gap-2">
+                    <button id="pickDateBtn" type="button" class="editor-btn editor-btn-secondary" disabled>
+                      <i class="fa-solid fa-calendar"></i>
+                      <span>Выбрать дату</span>
+                    </button>
+                    <button id="clearDateBtn" type="button" class="editor-btn editor-btn-secondary hidden">
+                      <i class="fa-solid fa-infinity"></i>
+                      <span>Бессрочно</span>
+                    </button>
+                  </div>
                 </div>
               </div>
-              <div class="mt-4" id="itemsRoot"></div>
+
+              <div class="editor-section">
+                <div class="flex items-center justify-between gap-3">
+                  <div>
+                    <div class="font-semibold text-sm">Награды ваучера</div>
+                    <div class="editor-muted-text text-xs mt-0.5">Предметы и количество, которые получит игрок при активации кода</div>
+                  </div>
+                </div>
+                <div class="mt-4" id="itemsRoot"></div>
+              </div>
             </div>
           </div>
         </div>
@@ -124,10 +144,14 @@
       subtitle: document.getElementById('subtitle'),
       formRoot: document.getElementById('formRoot'),
       itemsRoot: document.getElementById('itemsRoot'),
+      emptyState: document.getElementById('emptyVoucherState'),
+      editorBody: document.getElementById('voucherEditorBody'),
+      validUntilText: document.getElementById('validUntilText'),
       save: document.getElementById('saveBtn'),
       cancel: document.getElementById('cancelBtn'),
       del: document.getElementById('deleteBtn'),
       pickDate: document.getElementById('pickDateBtn'),
+      clearDate: document.getElementById('clearDateBtn'),
       dbStatus: document.getElementById('dbStatus'),
       sidebar: document.getElementById('sidebar'),
     };
@@ -214,15 +238,29 @@
     };
 
     const setHeader = () => {
-      if (!STATE.voucher) {
+      const hasVoucher = !!STATE.voucher;
+      DOM.emptyState?.classList.toggle('hidden', hasVoucher);
+      DOM.editorBody?.classList.toggle('hidden', !hasVoucher);
+      if (!hasVoucher) {
         DOM.title.textContent = 'Выберите ваучер';
         DOM.subtitle.textContent = 'или создайте новый';
         setDirtyUi(false);
         return;
       }
-      DOM.title.textContent = STATE.voucher.Code ? `Ваучер: ${STATE.voucher.Code}` : 'Новый ваучер';
-      DOM.subtitle.textContent = `ValidUntil: ${formatUntil(STATE.voucher.ValidUntil)}`;
+      DOM.title.textContent = STATE.voucher.Code
+        ? `Ваучер: ${STATE.voucher.Code}`
+        : (STATE.selectedId ? `Ваучер #${STATE.selectedId}` : 'Новый ваучер');
+      const untilLabel = formatUntil(STATE.voucher.ValidUntil);
+      const idPrefix = STATE.selectedId ? `ID ${STATE.selectedId} · ` : '';
+      DOM.subtitle.textContent = `${idPrefix}Срок: ${untilLabel}`;
+      if (DOM.validUntilText) DOM.validUntilText.textContent = untilLabel;
+      if (DOM.clearDate) DOM.clearDate.classList.toggle('hidden', !Number(STATE.voucher.ValidUntil || 0));
       setDirtyUi(true);
+    };
+
+    const canDiscardDirty = async () => {
+      if (!DIRTY?.isDirty?.()) return true;
+      return EditorCore.Page.confirm('Есть несохранённые изменения. Продолжить без сохранения?');
     };
 
     const applyListFilters = (rows) => {
@@ -244,27 +282,36 @@
 
     const renderList = () => {
       const rows = STATE.list;
-      if (DOM.count) DOM.count.textContent = rows.length ? `${rows.length}` : '—';
       if (!rows.length) {
-        DOM.list.innerHTML = `<div class="editor-empty-state">Нет ваучеров</div>`;
+        if (DOM.count) DOM.count.textContent = '0';
+        DOM.list.innerHTML = `<div class="editor-empty-state">Ваучеров пока нет — нажмите «Новый ваучер», чтобы создать первый.</div>`;
         return;
       }
       const filtered = applyListFilters(rows);
+      if (DOM.count) {
+        DOM.count.textContent = filtered.length < rows.length
+          ? `${filtered.length} из ${rows.length}`
+          : `${rows.length}`;
+      }
       if (!filtered.length) {
-        DOM.list.innerHTML = `<div class="editor-empty-state">Ничего не найдено по фильтрам</div>`;
+        DOM.list.innerHTML = `<div class="editor-empty-state">Ничего не найдено по выбранным фильтрам</div>`;
         return;
       }
+      const now = Math.floor(Date.now() / 1000);
       const listHtml = filtered.map(r => {
         const active = r.ID === STATE.selectedId;
-        const badge = r.Multiple ? `<span class="text-xs px-2 py-1 rounded-full" style="background: rgba(16,185,129,.16); border: 1px solid rgba(16,185,129,.3)">multi</span>` : '';
+        const isExpired = Number(r.ValidUntil || 0) > 0 && Number(r.ValidUntil || 0) <= now;
+        const badges = [];
+        if (r.Multiple) badges.push('<span class="editor-badge">множественный</span>');
+        if (isExpired) badges.push('<span class="editor-badge" style="color: var(--editor-danger);">истёк</span>');
         return `
-          <button class="w-full text-left editor-row ${active ? 'ring-2 editor-ring' : ''}" data-id="${r.ID}">
-            <div class="flex items-center justify-between gap-3">
+          <button type="button" class="w-full text-left editor-row ${active ? 'editor-row-active' : ''}" data-id="${r.ID}">
+            <div class="flex items-center justify-between gap-2">
               <div class="min-w-0">
                 <div class="font-semibold truncate">${EditorCore.utils.escapeHtml(r.Code || '')}</div>
-                <div class="text-sm editor-muted-text truncate">ID: ${r.ID} • ${formatUntil(r.ValidUntil)}</div>
+                <div class="text-xs editor-muted-text truncate">ID ${r.ID} · ${formatUntil(r.ValidUntil)}</div>
               </div>
-              ${badge}
+              <div class="flex shrink-0 gap-1">${badges.join('')}</div>
             </div>
           </button>
         `;
@@ -279,9 +326,11 @@
     const showDbStatus = async () => {
       const test = await window.EditorCore.DB.testConnection();
       if (test.ok) {
-        DOM.dbStatus.textContent = 'БД: подключена. Списки предметов будут загружаться автоматически.';
+        DOM.dbStatus.textContent = '';
+        DOM.dbStatus.classList.add('hidden');
       } else {
-        DOM.dbStatus.textContent = 'БД: не настроена или недоступна. Поля ID будут доступны для ручного ввода.';
+        DOM.dbStatus.textContent = 'БД не настроена или недоступна. Поля ID доступны для ручного ввода.';
+        DOM.dbStatus.classList.remove('hidden');
       }
     };
 
@@ -300,16 +349,16 @@
       const items = Array.isArray(STATE.voucher.items) ? STATE.voucher.items : [];
       if (!items.length) {
         DOM.itemsRoot.innerHTML = `
-          <div class="editor-muted-text text-sm mb-3">Список пуст. Добавьте предмет.</div>
+          <div class="editor-empty-state mb-3">Награды пока не добавлены. Нажмите «Добавить предмет», чтобы задать содержимое ваучера.</div>
           <button type="button" class="editor-btn editor-btn-primary" data-items-action="add"><i class="fa-solid fa-plus"></i><span>Добавить предмет</span></button>
         `;
         return;
       }
 
       const header = `
-        <div class="hidden md:grid grid-cols-[1fr_160px_40px] gap-3 px-1 mb-2 text-xs editor-muted-text">
+        <div class="hidden md:grid grid-cols-[1fr_160px_40px] gap-3 px-2 mb-2 text-xs font-semibold uppercase tracking-wider editor-muted-text">
           <div>Предмет</div>
-          <div>Кол-во</div>
+          <div>Количество</div>
           <div></div>
         </div>
       `;
@@ -330,10 +379,10 @@
           isNested: true
         });
         return `
-          <div class="editor-row grid grid-cols-1 md:grid-cols-[1fr_160px_40px] gap-3 items-end" data-item-row="${idx}">
+          <div class="editor-list-item grid grid-cols-1 md:grid-cols-[1fr_160px_40px] gap-3 items-center" data-item-row="${idx}">
             ${idHtml}
             ${qtyHtml}
-            <button type="button" class="editor-icon-btn editor-icon-danger justify-self-end" title="Удалить" data-items-action="remove" data-items-index="${idx}">
+            <button type="button" class="editor-icon-btn editor-icon-danger justify-self-end" title="Удалить предмет" data-items-action="remove" data-items-index="${idx}">
               <i class="fa-solid fa-trash"></i>
             </button>
           </div>
@@ -356,7 +405,12 @@
       STATE.form = window.EditorCore.FormRuntime.mount(DOM.formRoot, {
         fields: voucherFields,
         data: voucher,
-        fieldOptions
+        fieldOptions,
+        onChange: (next) => {
+          STATE.voucher = next;
+          DIRTY?.markDirty?.();
+          setHeader();
+        }
       });
       renderItems();
 
@@ -370,6 +424,8 @@
           if (!STATE.voucher || !path) return;
           const val = window.EditorCore.FieldRenderer.getInputValue(el);
           window.EditorCore.FieldRenderer.setValueAtPath(STATE.voucher, path, val);
+          DIRTY?.markDirty?.();
+          setDirtyUi(true);
         };
         DOM.itemsRoot.addEventListener('input', onFieldChange);
         DOM.itemsRoot.addEventListener('change', onFieldChange);
@@ -382,6 +438,7 @@
           if (action === 'add') {
             STATE.voucher.items.push({ id: 0, value: 1 });
             DIRTY?.markDirty?.();
+            setDirtyUi(true);
             renderItems();
           }
           if (action === 'remove') {
@@ -389,6 +446,7 @@
             if (Number.isFinite(idx) && idx >= 0 && idx < STATE.voucher.items.length) {
               STATE.voucher.items.splice(idx, 1);
               DIRTY?.markDirty?.();
+              setDirtyUi(true);
               renderItems();
             }
           }
@@ -396,7 +454,9 @@
       }
     };
 
-    const selectVoucher = async (id) => {
+    const selectVoucher = async (id, { confirmDirty = true } = {}) => {
+      if (id && id === STATE.selectedId && STATE.voucher) return;
+      if (confirmDirty && !await canDiscardDirty()) return;
       STATE.selectedId = id;
       const res = await window.EditorCore.DBCrud.get(RESOURCE, id);
       STATE.voucher = fromRow(res.row);
@@ -410,7 +470,8 @@
       STATE._closeDrawer?.();
     };
 
-    const newVoucher = () => {
+    const newVoucher = async () => {
+      if (!await canDiscardDirty()) return;
       STATE.lastSelectedIdBeforeCreate = Number(STATE.selectedId || 0);
       STATE.selectedId = 0;
       STATE.voucher = emptyVoucher();
@@ -475,6 +536,9 @@
     const deleteVoucher = async () => {
       if (!STATE.selectedId) return;
       const id = STATE.selectedId;
+      const label = STATE.voucher?.Code ? `«${STATE.voucher.Code}» (#${id})` : `#${id}`;
+      if (!await EditorCore.Page.confirm(`Удалить ваучер ${label}?`)) return;
+      if (STATE.selectedId !== id) return;
       // DBCrud auto-records for sync
       await window.EditorCore.DBCrud.remove(RESOURCE, id);
       window.EditorCore.UI.toast('Удалено', 'success');
@@ -490,18 +554,35 @@
     const pickDate = () => {
       if (!STATE.voucher) return;
       window.EditorCore.UI.openDateTimeModal({
-        title: 'Действует до',
+        title: 'Срок действия ваучера',
         valueSec: Number(STATE.voucher.ValidUntil || 0),
         onApply: (sec) => {
           STATE.voucher.ValidUntil = Number(sec || 0);
           DIRTY?.markDirty?.();
-          // re-render header + keep form state in sync
           STATE.form.setData(STATE.voucher);
           renderItems();
           setHeader();
         }
       });
     };
+
+    DOM.clearDate?.addEventListener('click', () => {
+      if (!STATE.voucher || !STATE.voucher.ValidUntil) return;
+      STATE.voucher.ValidUntil = 0;
+      DIRTY?.markDirty?.();
+      setHeader();
+    });
+
+    window.addEventListener('message', (event) => {
+      if (!window.EditorCore?.Http?.isSameOriginMessage?.(event, window.parent)) return;
+      const data = event.data || {};
+      if (data?.type !== 'editor-shell:request-dirty-status') return;
+      window.EditorCore.Http.postMessage(window.parent, {
+        type: 'editor-shell:dirty-status',
+        requestId: data.requestId,
+        dirty: !!DIRTY?.isDirty?.(),
+      });
+    });
 
     // Wiring
     DOM.refresh.addEventListener('click', loadList);
@@ -530,6 +611,11 @@
       try {
         await showDbStatus();
         await loadList();
+        if (!STATE.voucher && STATE.list.length) {
+          await selectVoucher(STATE.list[0].ID, { confirmDirty: false });
+        } else {
+          setHeader();
+        }
       } catch (err) {
         window.EditorCore.UI?.toast?.(err?.message || 'Не удалось загрузить список.', 'error');
         if (DOM.list) {

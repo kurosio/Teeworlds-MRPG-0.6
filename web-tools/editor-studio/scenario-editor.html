@@ -348,21 +348,64 @@
 
         /* ===== Step header: hover affordances ===== */
         .step-card .step-header .title .step-id-display{
-            transition: background-color .12s ease, box-shadow .12s ease;
+            background: rgba(59, 130, 246, .16);
+            color: #bfdbfe;
+            border: 1px solid rgba(96, 165, 250, .30);
+            transition: background-color .12s ease, box-shadow .12s ease, border-color .12s ease;
             cursor: text;
         }
         .step-card .step-header .title:hover .step-id-display{
-            background: rgba(96,165,250,.30);
-            box-shadow: 0 0 0 2px rgba(96,165,250,.35);
+            background: rgba(96,165,250,.28);
+            box-shadow: 0 0 0 2px rgba(96,165,250,.32);
         }
         /* the draggable handle area highlights green so it is clear it MOVES the step */
         .step-card .step-header .drag-zone{ border-radius:8px; transition: background-color .12s ease; }
         .step-card .step-header .drag-zone:hover{ background: rgba(114,214,192,.12); }
         /* inline-editing the step id */
         .step-id-display.is-editing{
-            background: rgba(15,23,42,.6) !important;
+            background: var(--editor-field-bg, rgba(15,23,42,.6)) !important;
+            color: var(--editor-text) !important;
             box-shadow: 0 0 0 2px rgba(96,165,250,.6) !important;
             outline: none; cursor: text; min-width: 40px;
+        }
+
+        html[data-editor-theme="light"] .step-card .step-header .title .step-id-display{
+            background: rgba(37, 99, 235, .10);
+            color: #1d4ed8;
+            border-color: rgba(37, 99, 235, .28);
+        }
+        html[data-editor-theme="light"] .step-logic-badge[data-logic="all_of"],
+        html[data-editor-theme="light"] .comp-separator[data-logic="all_of"] .sep-chip{
+            background: rgba(37, 99, 235, .12);
+            color: #1d4ed8;
+            border-color: rgba(37, 99, 235, .30);
+        }
+        html[data-editor-theme="light"] .step-logic-badge[data-logic="any_of"],
+        html[data-editor-theme="light"] .comp-separator[data-logic="any_of"] .sep-chip{
+            background: rgba(217, 119, 6, .13);
+            color: #92400e;
+            border-color: rgba(217, 119, 6, .32);
+        }
+        html[data-editor-theme="light"] .step-logic-badge[data-logic="sequential"],
+        html[data-editor-theme="light"] .comp-order-chip{
+            background: rgba(13, 148, 136, .13);
+            color: #0f766e;
+            border-color: rgba(13, 148, 136, .34);
+        }
+        html[data-editor-theme="light"] .logic-segmented .logic-seg.is-active{
+            box-shadow: 0 1px 4px rgba(15, 23, 42, .16);
+        }
+
+        body.bp-mode .scenario-switch-wrap{
+            display: none;
+        }
+        body.editor-focus .scenario-overview{
+            display: none !important;
+        }
+        @media (min-width: 768px){
+            body.editor-focus #navigator{
+                display: none !important;
+            }
         }
         /* clickable logic mini-toggle in header */
         .step-logic-badge.is-clickable{ cursor:pointer; }
@@ -444,11 +487,17 @@
 
     <div class="main-container flex flex-col md:flex-row items-start">
         <aside id="navigator" class="w-full md:w-[350px] editor-surface border-r editor-hairline md:sticky overflow-y-auto flex-shrink-0 z-20">
-            <div class="navigator-header p-4 font-semibold border-b editor-hairline editor-surface sticky top-0 z-10 flex justify-between items-center">
-                <span class="editor-text">Структура сценария</span>
-                <button id="add-group-btn" class="editor-btn editor-btn-primary text-sm" title="Создать новую группу">
-                    <i class="fa-solid fa-plus"></i> <span>Группа</span>
-                </button>
+            <div class="navigator-header p-3.5 border-b editor-hairline editor-surface sticky top-0 z-10 space-y-2.5">
+                <div class="flex justify-between items-center font-semibold">
+                    <span class="editor-text">Структура сценария</span>
+                    <button id="add-group-btn" class="editor-btn editor-btn-primary text-sm" title="Создать новую группу">
+                        <i class="fa-solid fa-plus"></i> <span>Группа</span>
+                    </button>
+                </div>
+                <div class="editor-search">
+                    <i class="fa-solid fa-magnifying-glass"></i>
+                    <input id="navigator-search" type="search" class="w-full editor-input form-input text-sm" placeholder="Фильтр шагов и групп…" autocomplete="off" />
+                </div>
             </div>
             <div id="navigator-tree-root" class="p-2"></div>
         </aside>
@@ -578,7 +627,7 @@
                     </span>
                     <i class="fa-solid fa-chevron-down toggle-icon transition-transform cursor-pointer" title="Свернуть/развернуть"></i>
                     <span class="editor-muted-text">Шаг ID:</span>
-                    <span class="step-id-display font-mono bg-blue-500/20 text-blue-100 text-sm font-medium px-2 py-1 rounded-md" title="Нажмите, чтобы переименовать"></span>
+                    <span class="step-id-display font-mono text-sm font-medium px-2 py-1 rounded-md" title="Нажмите, чтобы переименовать"></span>
                 </div>
                 <div class="step-logic-badge ml-auto mr-2" data-logic="all_of" title="Логика завершения компонентов"></div>
                 <div class="step-delay-display hidden text-xs font-medium editor-soft editor-text px-2 py-1 rounded-md mr-4 items-center gap-1.5"></div>
@@ -681,6 +730,7 @@
                 this.mainContainer = document.querySelector('.main-container');
                 this.editorContainer = document.getElementById('editor-container');
                 this.navigatorTree = document.getElementById('navigator-tree');
+                this.navigatorSearch = document.getElementById('navigator-search');
                 this.navigatorElement = document.getElementById('navigator');
                 this.connectionsContainer = document.getElementById('connections-svg-container');
                 this.addStepButton = document.getElementById('add-step-button');
@@ -1987,6 +2037,31 @@
                 this.navigatorTree.appendChild(container);
                 
                 this.addNavigatorEventListeners();
+                this.applyNavigatorFilter();
+            }
+
+            applyNavigatorFilter() {
+                if (!this.navigatorTree) return;
+                const q = String(this.navigatorSearch?.value || '').trim().toLowerCase();
+                this.navigatorTree.querySelectorAll('.nav-group-wrapper').forEach((groupEl) => {
+                    if (!q) {
+                        groupEl.classList.remove('hidden');
+                        groupEl.querySelectorAll('li[data-step-id]').forEach((item) => item.classList.remove('hidden'));
+                        return;
+                    }
+                    const groupTitle = groupEl.querySelector('.nav-group-header span.font-bold')?.textContent?.toLowerCase() || '';
+                    const groupMatch = groupEl.dataset.groupId !== 'ungrouped' && groupTitle.includes(q);
+                    let visibleSteps = 0;
+                    groupEl.querySelectorAll('li[data-step-id]').forEach((stepEl) => {
+                        const text = stepEl.textContent?.toLowerCase() || '';
+                        const match = groupMatch || text.includes(q);
+                        stepEl.classList.toggle('hidden', !match);
+                        if (match) visibleSteps += 1;
+                    });
+                    const stepList = groupEl.querySelector('.nav-step-list');
+                    if (visibleSteps > 0 && stepList) stepList.classList.remove('hidden');
+                    groupEl.classList.toggle('hidden', !groupMatch && visibleSteps === 0);
+                });
             }
 
             createNavGroupElement(group) {
@@ -3849,7 +3924,19 @@
                     parent: document.getElementById('navigator-tree-root'),
                     className: 'space-y-2'
                 });
-                app.state.editor = new ScenarioEditor();
+                const editor = new ScenarioEditor();
+                app.state.editor = editor;
+                editor.navigatorSearch?.addEventListener('input', () => editor.applyNavigatorFilter());
+                window.addEventListener('message', (event) => {
+                    if (!window.EditorCore?.Http?.isSameOriginMessage?.(event, window.parent)) return;
+                    const data = event.data || {};
+                    if (data?.type !== 'editor-shell:request-dirty-status') return;
+                    window.EditorCore.Http.postMessage(window.parent, {
+                        type: 'editor-shell:dirty-status',
+                        requestId: data.requestId,
+                        dirty: Boolean(editor.dirty?.isDirty?.()),
+                    });
+                });
             }
         });
 

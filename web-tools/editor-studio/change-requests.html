@@ -11,7 +11,7 @@
     .cr-tab { height: 34px; padding: 0 12px; border-radius: 9px; font-size: 13px; font-weight: 600; color: var(--editor-text-muted); display: inline-flex; align-items: center; gap: 8px; }
     .cr-tab.active { background: var(--editor-soft-bg-strong); color: var(--editor-text); box-shadow: inset 0 0 0 1px var(--editor-soft-border-strong); }
     .cr-count { min-width: 20px; padding: 0 6px; border-radius: 999px; font-size: 11px; line-height: 18px; text-align: center; background: var(--editor-soft-bg-strong); }
-    .cr-tab.active .cr-count { background: var(--editor-primary); color: #0b0f14; }
+    .cr-tab.active .cr-count { background: var(--editor-primary); color: #ffffff; }
 
     .cr-layout { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: 18px; align-items: start; }
     .cr-admin-layout { display: grid; grid-template-columns: 340px minmax(0, 1fr); gap: 18px; align-items: start; }
@@ -168,14 +168,15 @@
       </div>
     </div>
 
-    <div id="view-loading" class="cr-card cr-card-pad mt-6 cr-muted">Загрузка…</div>
+    <div class="editor-page-body">
+    <div id="view-loading" class="cr-card cr-card-pad cr-muted">Загрузка…</div>
 
-    <div id="view-denied" class="cr-card cr-card-pad mt-6 cr-hidden">
+    <div id="view-denied" class="cr-card cr-card-pad cr-hidden">
       <div class="cr-empty"><i class="fa-solid fa-lock"></i>Требуется вход в Editor Studio.</div>
     </div>
 
     <!-- ═══════════════════ GUEST VIEW ═══════════════════ -->
-    <div id="view-guest" class="cr-hidden mt-5">
+    <div id="view-guest" class="cr-hidden">
       <div class="flex items-center justify-between gap-3 flex-wrap mb-4">
         <div class="cr-tabs" role="tablist">
           <button type="button" class="cr-tab active" data-guest-tab="draft"><i class="fa-solid fa-pen-to-square"></i>Черновик <span class="cr-count" id="g-draft-count">0</span></button>
@@ -247,7 +248,7 @@
     </div>
 
     <!-- ═══════════════════ ADMIN VIEW ═══════════════════ -->
-    <div id="view-admin" class="cr-hidden mt-5">
+    <div id="view-admin" class="cr-hidden">
       <div id="a-guest-disabled" class="cr-note cr-note--warning mb-4 cr-hidden">
         <i class="fa-solid fa-triangle-exclamation"></i>
         <div>Гостевой вход сейчас <b>выключен</b> или не создано ни одного активного гостевого аккаунта — гости не могут войти и отправлять запросы. Включите доступ в «Правилах доступа», а аккаунты создайте в «Гостевые пользователи».</div>
@@ -273,6 +274,7 @@
           <div class="cr-empty"><i class="fa-regular fa-hand-pointer"></i>Выберите запрос слева</div>
         </section>
       </div>
+    </div>
     </div>
   </div>
 

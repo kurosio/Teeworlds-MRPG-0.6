@@ -11,7 +11,7 @@
   <div class="editor-page">
     <div class="editor-page-header">
       <div class="editor-page-title">
-        <i class="fa-solid fa-database"></i>
+        <i class="fa-solid fa-database text-accent text-xl"></i>
         <div>
           <h1>База данных</h1>
           <div class="editor-page-sub">Дампы и восстановление используют настройки подключения из вкладки «Настройки».</div>
@@ -28,23 +28,29 @@
 
     <div class="editor-page-body editor-two-col">
       <section class="editor-panel-card">
-        <h2 class="text-lg font-semibold">Текущее подключение</h2>
-        <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-          <div>
+        <div class="flex items-center justify-between gap-2">
+          <h2 class="text-lg font-semibold">Текущее подключение</h2>
+          <button id="btn-open-settings" type="button" class="editor-btn editor-btn-secondary editor-btn--xs">
+            <i class="fa-solid fa-gear"></i>
+            <span>Настройки</span>
+          </button>
+        </div>
+        <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+          <div class="editor-soft rounded-lg px-3 py-2 border editor-hairline">
             <div class="text-xs editor-muted-text">Хост</div>
-            <div id="info-host" class="editor-text font-medium">—</div>
+            <div id="info-host" class="editor-text font-medium mt-0.5">—</div>
           </div>
-          <div>
+          <div class="editor-soft rounded-lg px-3 py-2 border editor-hairline">
             <div class="text-xs editor-muted-text">Порт</div>
-            <div id="info-port" class="editor-text font-medium">—</div>
+            <div id="info-port" class="editor-text font-medium mt-0.5">—</div>
           </div>
-          <div>
+          <div class="editor-soft rounded-lg px-3 py-2 border editor-hairline">
             <div class="text-xs editor-muted-text">База данных</div>
-            <div id="info-db" class="editor-text font-medium">—</div>
+            <div id="info-db" class="editor-text font-medium mt-0.5">—</div>
           </div>
-          <div>
+          <div class="editor-soft rounded-lg px-3 py-2 border editor-hairline">
             <div class="text-xs editor-muted-text">Пользователь</div>
-            <div id="info-user" class="editor-text font-medium">—</div>
+            <div id="info-user" class="editor-text font-medium mt-0.5">—</div>
           </div>
         </div>
         <div class="editor-muted-text text-xs mt-4">
@@ -199,14 +205,14 @@
             <td class="px-3 py-2 editor-text">${formatBytes(dump.size)}</td>
             <td class="px-3 py-2 editor-text">${formatDate(dump.mtime)}</td>
             <td class="px-3 py-2 text-right">
-              <div class="flex justify-end gap-2">
-                <a class="editor-btn editor-btn-secondary" href="api/db-maintenance.php?action=download&file=${safeFile}">
+              <div class="flex justify-end gap-1.5">
+                <a class="editor-btn editor-btn-secondary editor-btn--xs" href="api/db-maintenance.php?action=download&file=${safeFile}">
                   <i class="fa-solid fa-file-arrow-down"></i><span>Скачать</span>
                 </a>
-                <button class="editor-btn editor-btn-secondary" data-action="restore" data-file="${esc(dump.file)}">
+                <button class="editor-btn editor-btn-secondary editor-btn--xs" data-action="restore" data-file="${esc(dump.file)}">
                   <i class="fa-solid fa-rotate-left"></i><span>Восстановить</span>
                 </button>
-                <button class="editor-btn editor-btn-secondary" data-action="delete" data-file="${esc(dump.file)}">
+                <button class="editor-btn editor-btn-danger editor-btn--xs" data-action="delete" data-file="${esc(dump.file)}">
                   <i class="fa-solid fa-trash"></i><span>Удалить</span>
                 </button>
               </div>
@@ -233,6 +239,14 @@
       setStatus(els.status, 'Конфигурация загружена.', 'ok');
     };
 
+    document.getElementById('btn-open-settings')?.addEventListener('click', () => {
+      if (window.parent && window.parent !== window) {
+        EditorCore.Http.postMessage(window.parent, { type: 'editor-shell:open-editor', key: 'settings' });
+      } else {
+        window.location.href = 'settings.html';
+      }
+    });
+
     const testConnection = async () => {
       const res = await EditorCore.DB.testConnection();
       if (!res.ok) {
@@ -240,8 +254,8 @@
         setStatus(els.status, res.error || 'Ошибка подключения', 'err');
         return;
       }
-      EditorCore.UI.toast('Соединение OK', 'success');
-      setStatus(els.status, `Соединение OK. Server: ${res.server || 'unknown'}`, 'ok');
+      EditorCore.UI.toast('Соединение установлено', 'success');
+      setStatus(els.status, `Соединение установлено. Сервер: ${res.server || 'неизвестен'}`, 'ok');
     };
 
     const loadDumps = async () => {

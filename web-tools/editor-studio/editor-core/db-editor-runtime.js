@@ -292,7 +292,7 @@
         if (!els.form) return;
         ensureGuestHint();
         if (!state.model) {
-          els.form.innerHTML = `<div class="editor-muted-text">Выберите запись слева</div>`;
+          els.form.innerHTML = `<div class="editor-empty-state editor-field--span-all">Выберите запись слева или создайте новую, чтобы начать редактирование.</div>`;
           if (guestHintEl) guestHintEl.classList.add('hidden');
           setButtons(false);
           return;
@@ -337,7 +337,14 @@
         const orderedRows = targetId && rows.some((row) => Number(row?.ID) === targetId)
           ? [...rows.filter((row) => Number(row?.ID) === targetId), ...rows.filter((row) => Number(row?.ID) !== targetId)]
           : rows;
-        if (els.count) els.count.textContent = rows.length ? `${rows.length}` : '—';
+        const rawTotal = Array.isArray(state.rowsRaw) ? state.rowsRaw.length : 0;
+        if (els.count) {
+          if (state.search && rawTotal > rows.length) {
+            els.count.textContent = `${rows.length} из ${rawTotal}`;
+          } else {
+            els.count.textContent = rows.length ? `${rows.length}` : '0';
+          }
+        }
         if (!rows.length) {
           // Пустой список должен объяснять, что делать дальше.
           const message = state.search
@@ -384,7 +391,16 @@
         return rows.filter((row) => {
           const name = String(row?.Name || '').toLowerCase();
           const id = String(row?.ID || '').toLowerCase();
-          return name.includes(q) || id.includes(q);
+          if (name.includes(q) || id.includes(q)) return true;
+          if (typeof cfg.listItem === 'function') {
+            try {
+              const item = cfg.listItem(row) || {};
+              const title = String(item.title || '').toLowerCase();
+              const subtitle = String(item.subtitle || '').toLowerCase();
+              if (title.includes(q) || subtitle.includes(q)) return true;
+            } catch {}
+          }
+          return false;
         });
       };
 

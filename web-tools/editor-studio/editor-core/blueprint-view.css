@@ -802,3 +802,123 @@ body.bp-fullscreen #bp-minimap{ bottom:60px; }
   #bp-minimap { width: 150px; height: 104px; right: 10px; bottom: 48px; }
   body.bp-fullscreen #bp-minimap { bottom: 54px; }
 }
+
+/* ============================================================
+   Light theme support (html[data-editor-theme="light"])
+   ============================================================ */
+html[data-editor-theme="light"] {
+  --bp-bg: #eef2f7;
+  --bp-grid-minor: rgba(15, 23, 42, 0.055);
+  --bp-grid-major: rgba(15, 23, 42, 0.11);
+  --bp-node-bg: rgba(255, 255, 255, 0.98);
+  --bp-node-border: rgba(15, 23, 42, 0.15);
+  --bp-node-border-strong: rgba(59, 130, 246, 0.85);
+  --bp-row-bg: rgba(15, 23, 42, 0.025);
+  --bp-row-hover: rgba(59, 130, 246, 0.09);
+  --bp-text: #162131;
+  --bp-text-muted: #526277;
+  --bp-wire-exec: #334155;
+  --bp-wire-true: #0d9488;
+  --bp-wire-false: #dc2626;
+  --bp-wire-data: #2563eb;
+}
+html[data-editor-theme="light"] .bp-node {
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.12), 0 1px 3px rgba(15, 23, 42, 0.08);
+}
+html[data-editor-theme="light"] .bp-node:hover {
+  border-color: rgba(15, 23, 42, 0.28);
+}
+html[data-editor-theme="light"] .bp-comp .bp-comp-sum b {
+  color: #1e293b;
+}
+html[data-editor-theme="light"] .bp-comp .bp-comp-actions button {
+  background: rgba(15, 23, 42, 0.06);
+  color: #475569;
+}
+html[data-editor-theme="light"] .bp-comp .bp-comp-actions button:hover {
+  background: rgba(15, 23, 42, 0.14);
+}
+html[data-editor-theme="light"] .bp-toolbar,
+html[data-editor-theme="light"] .bp-legend {
+  background: rgba(255, 255, 255, 0.94);
+  border-color: rgba(15, 23, 42, 0.12);
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.10);
+}
+html[data-editor-theme="light"] .bp-toolbar .bp-sep {
+  background: rgba(15, 23, 42, 0.12);
+}
+html[data-editor-theme="light"] .bp-tool-btn {
+  background: rgba(15, 23, 42, 0.04);
+  border-color: rgba(15, 23, 42, 0.10);
+  color: #1e293b;
+}
+html[data-editor-theme="light"] .bp-tool-btn:hover {
+  background: rgba(59, 130, 246, 0.14);
+  color: #0f172a;
+}
+html[data-editor-theme="light"] .bp-tool-btn.is-primary {
+  background: rgba(20, 184, 166, 0.16);
+  border-color: rgba(13, 148, 136, 0.45);
+  color: #0f766e;
+}
+html[data-editor-theme="light"] .bp-group {
+  border-color: rgba(15, 23, 42, 0.18);
+  background: rgba(100, 116, 139, 0.08);
+}
+html[data-editor-theme="light"] .bp-group-header {
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.06), rgba(15, 23, 42, 0));
+}
+html[data-editor-theme="light"] .bp-group-event {
+  background: rgba(255, 255, 255, 0.85);
+  border-color: rgba(15, 23, 42, 0.16);
+  color: #1e293b;
+}
+html[data-editor-theme="light"] .bp-group-del {
+  background: rgba(15, 23, 42, 0.08);
+  color: #475569;
+}
+html[data-editor-theme="light"] .bp-group-del:hover {
+  background: rgba(220, 38, 38, 0.16);
+  color: #b91c1c;
+}
+html[data-editor-theme="light"] #bp-minimap {
+  background: rgba(255, 255, 255, 0.92);
+  border-color: rgba(15, 23, 42, 0.16);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.14);
+}
+html[data-editor-theme="light"] .bp-comment {
+  background: linear-gradient(180deg,
+    color-mix(in srgb, var(--bp-comment-color) 24%, #ffffff) 0%,
+    color-mix(in srgb, var(--bp-comment-color) 12%, #ffffff) 100%);
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+}
+html[data-editor-theme="light"] .bp-comment-body {
+  color: #1e293b;
+  text-shadow: none;
+}
+html[data-editor-theme="light"] .bp-comp-sep span {
+  background: #ffffff;
+}
+html[data-editor-theme="light"] .bp-comp-sep[data-logic="any_of"] span {
+  color: #b45309;
+  border-color: rgba(217, 119, 6, 0.4);
+}
+html[data-editor-theme="light"] .bp-comp-sep[data-logic="all_of"] span {
+  color: #1d4ed8;
+  border-color: rgba(37, 99, 235, 0.35);
+}
+html[data-editor-theme="light"] .bp-comp-order {
+  background: rgba(13, 148, 136, 0.14);
+  color: #0f766e;
+  border-color: rgba(13, 148, 136, 0.35);
+}
+html[data-editor-theme="light"] .bp-create-menu button {
+  color: #1e293b;
+}
+html[data-editor-theme="light"] .bp-create-menu button:hover {
+  background: rgba(59, 130, 246, 0.12);
+  color: #0f172a;
+}
+html[data-editor-theme="light"] .bp-create-menu button:hover i {
+  color: #1d4ed8;
+}

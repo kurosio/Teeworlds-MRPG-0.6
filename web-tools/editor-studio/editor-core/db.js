@@ -332,6 +332,7 @@
     if (!source) return;
 
     const input = combo.querySelector('.editor-dbcombo-input');
+    const clearBtn = combo.querySelector('.editor-dbcombo-clear');
     const dropdownLocal = combo.querySelector('.editor-dbcombo-dropdown');
 
     // The portal is created only while open. This keeps document.body and the
@@ -508,10 +509,19 @@
       bound.dispatchEvent(new Event('change', { bubbles: true }));
     };
 
+    const syncClearButton = () => {
+      if (!clearBtn) return;
+      const hasVal = !!readBoundValue() || !!(input && String(input.value || '').trim());
+      const disabled = !!(input && input.disabled);
+      clearBtn.hidden = !hasVal || disabled;
+    };
+
     const writeBoundValue = (val) => {
       if (!bound) return;
-      bound.value = val ? String(val) : '0';
+      const str = val !== undefined && val !== null ? String(val).trim() : '';
+      bound.value = str ? str : (allowZero ? '' : '0');
       dispatchBound();
+      syncClearButton();
     };
 
     const readBoundValue = () => {
@@ -573,6 +583,7 @@
       const picked = state.lastResults[Number(button.dataset.index)];
       writeBoundValue(value);
       if (input) input.value = picked ? formatLabel(picked.value, picked.label) : value;
+      syncClearButton();
       close();
     };
     dropdownLocal?.addEventListener('click', onDropdownClick);
@@ -583,23 +594,43 @@
       if (!cur) {
         input.value = '';
         input.placeholder = placeholder;
+        syncClearButton();
         return;
       }
       const extra = findExtraOption(cur);
       if (extra) {
         input.value = formatLabel(extra.value, extra.label);
+        syncClearButton();
         return;
       }
       try {
         const one = await db.getOne(source, cur);
         if (one?.ok && one.item) {
           input.value = formatLabel(one.item.value, one.item.label);
+          syncClearButton();
           return;
         }
       } catch {}
       // Fallback: show raw id
       input.value = cur;
+      syncClearButton();
     };
+
+    if (clearBtn) {
+      clearBtn.addEventListener('mousedown', (event) => {
+        event.preventDefault();
+      });
+      clearBtn.addEventListener('click', (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        if (input) {
+          input.value = '';
+          input.placeholder = placeholder;
+        }
+        writeBoundValue('');
+        close();
+      });
+    }
 
     const loadClientItemsIfNeeded = async () => {
       if (state.items) return true;
@@ -681,6 +712,8 @@
         const raw = String(input.value || '').trim();
         if (!raw) {
           writeBoundValue('');
+        } else {
+          syncClearButton();
         }
         open();
         debouncedQuery(input.value);

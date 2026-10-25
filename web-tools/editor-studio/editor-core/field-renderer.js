@@ -212,8 +212,13 @@
     const baseLabelClass = options?.classes?.label || '';
     const nestedLabelClass = options?.classes?.nestedLabel || baseLabelClass;
     const labelClass = isNested ? nestedLabelClass : baseLabelClass;
-    const labelHtml = showLabel ? `<div class="${labelClass}">${label}</div>` : '';
-    const fieldWrapperClass = (isNested ? (options?.classes?.nestedFieldWrapper || options?.classes?.fieldWrapper) : options?.classes?.fieldWrapper) || '';
+    const requiredMark = field?.validate?.required
+      ? '<span class="editor-required-mark" title="Обязательное поле" aria-hidden="true">*</span>'
+      : '';
+    const labelHtml = showLabel ? `<div class="${labelClass}">${label}${requiredMark}</div>` : '';
+    const baseFieldWrapperClass = (isNested ? (options?.classes?.nestedFieldWrapper || options?.classes?.fieldWrapper) : options?.classes?.fieldWrapper) || '';
+    const spanClass = !isNested && ui.spanAll ? ' editor-field--span-all' : '';
+    const fieldWrapperClass = `${baseFieldWrapperClass}${spanClass}`.trim();
     const checkboxWrapperClass = options?.classes?.checkboxWrapper || '';
     const listItemClass = options?.classes?.listItem || '';
     const listWrapperClass = options?.classes?.listWrapper || '';
@@ -279,7 +284,7 @@
         includeDataPath,
         extraAttrs: styleAttr
       });
-      return `<textarea ${attrs}>${value ?? ''}</textarea>`;
+      return `<textarea ${attrs}>${escapeHtml(value ?? '')}</textarea>`;
     };
 
     const renderScenarioField = () => {
@@ -481,6 +486,9 @@
              data-allow-zero="${allowZero ? '1' : '0'}">
           <div class="editor-dbcombo-control">
             <input type="search" class="${inputClass} editor-dbcombo-input" placeholder="${escapeAttr(searchPh)}" autocomplete="off" />
+            <button type="button" class="editor-dbcombo-clear" title="Очистить выбор" aria-label="Очистить выбор"${curVal ? '' : ' hidden'}>
+              <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+            </button>
           </div>
           <div class="editor-dbcombo-dropdown" role="listbox" aria-label="${escapeAttr(label)}"></div>
           <input type="number" ${manualInputAttrs} value="${escapeAttr(String(cur))}" />
@@ -562,10 +570,10 @@
       const itemDs = ui.datasource || field.datasource || null;
       const itemFields = {
         id: { type: 'db_select', label: 'Предмет', datasource: itemDs || undefined, ui: { dbKey: ui.dbKey || 'item', placeholder: ui.placeholder || '— выберите предмет —', inputLabel: 'ID', selectLabel: 'Предмет (БД)' } },
-        value: { type: 'number', label: 'Value', ui: { min: ui.min, max: ui.max, step: ui.step, placeholder: ui.placeholder } }
+        value: { type: 'number', label: 'Количество', ui: { min: ui.min, max: ui.max, step: ui.step, placeholder: ui.placeholder } }
       };
       // Responsive: stack on narrow screens
-      return `<div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">${labelHtml}<div class="grid grid-cols-2 gap-2">${renderComposite(itemFields)}</div>${footerHtml}</div>`;
+      return `<div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">${labelHtml}<div class="grid grid-cols-1 sm:grid-cols-2 gap-2">${renderComposite(itemFields)}</div>${footerHtml}</div>`;
     }
 
     if (field.type === 'list') {
@@ -803,10 +811,33 @@
     return `<div class="${fieldWrapperClass}" data-field-path="${escapeAttr(path)}">${labelHtml}${renderInput('text', value ?? '')}${footerHtml}</div>`;
   };
 
+  const renderSectionDivider = (section) => {
+    if (!section) return '';
+    const spec = typeof section === 'string' ? { title: section } : section;
+    const title = String(spec?.title || '').trim();
+    if (!title) return '';
+    const icon = spec?.icon ? `<i class="fa-solid ${escapeAttr(spec.icon)}" aria-hidden="true"></i>` : '';
+    const sub = spec?.subtitle ? `<span class="editor-form-section-sub">${escapeHtml(spec.subtitle)}</span>` : '';
+    return `<div class="editor-form-section-divider"><span class="editor-form-section-heading">${icon}<span>${escapeHtml(title)}</span></span>${sub}</div>`;
+  };
+
   const renderFields = ({ fields, data, options, sort = false }) => {
     const entries = Object.entries(fields || {});
     if (sort) entries.sort(([a], [b]) => a.localeCompare(b));
-    return entries.map(([key, field]) => renderField({ path: key, field, data, options })).join('');
+    let pendingSection = null;
+    const out = [];
+    for (const [key, field] of entries) {
+      const section = field?.ui?.section ?? field?.section ?? null;
+      if (section) pendingSection = section;
+      const html = renderField({ path: key, field, data, options });
+      if (!html) continue;
+      if (pendingSection) {
+        out.push(renderSectionDivider(pendingSection));
+        pendingSection = null;
+      }
+      out.push(html);
+    }
+    return out.join('');
   };
 
   window.EditorCore = window.EditorCore || {};

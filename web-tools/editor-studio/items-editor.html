@@ -8,6 +8,9 @@
 
   <style>
     .items-form [data-field-path="Comment"],
+    .items-form [data-field-path="Description"],
+    .items-form [data-field-path="Flags"],
+    .items-form [data-field-path="ScenarioData"],
     .items-form [data-field-path="DataEditorType"],
     .items-form [data-field-path="DataRandomBoxItems"],
     .items-form [data-field-path="DataBoxItems"],
@@ -18,8 +21,10 @@
     }
 
     .items-form [data-field-path="DataEditorType"] {
-      border-color: var(--editor-primary);
-      box-shadow: 0 0 0 2px var(--editor-focus-ring), var(--editor-panel-glow), var(--editor-shadow-xs);
+      padding: 12px 14px;
+      border-radius: var(--editor-radius-md);
+      border: 1px solid var(--editor-soft-border-strong);
+      background: var(--editor-soft-bg);
     }
   </style>
 </head>
@@ -473,9 +478,15 @@
     };
 
     const itemFields = {
-      Comment: { type: 'text', label: 'Комментарий', ui: { placeholder: 'Опционально' } },
-      Name: { type: 'text', label: 'Название', validate: { required: true } },
-      Description: { type: 'textarea', label: 'Описание', ui: { rows: 2 } },
+      Name: {
+        type: 'text',
+        label: 'Название',
+        validate: { required: true },
+        ui: {
+          placeholder: 'Введите название предмета',
+          section: { title: 'Основная информация', icon: 'fa-cube', subtitle: 'Название, классификация и описание' },
+        },
+      },
       Group: {
         label: 'Группа',
         ui: {
@@ -490,6 +501,8 @@
           ...(TypeRule?.fieldUI ? TypeRule.fieldUI() : {}),
         }
       },
+      Comment: { type: 'text', label: 'Внутренний комментарий', ui: { placeholder: 'Заметка для разработчиков (опционально)' } },
+      Description: { type: 'textarea', label: 'Описание', ui: { rows: 2, placeholder: 'Описание предмета в инвентаре игрока' } },
       AT1: {
         type: 'db_select',
         label: 'Атрибут 1',
@@ -497,6 +510,7 @@
           dbKey: 'attribute',
           placeholder: '— атрибут —',
           showWhen: isEquipmentGroup,
+          section: { title: 'Характеристики экипировки', icon: 'fa-shield-halved' },
         }
       },
       ATValue1: {
@@ -524,28 +538,6 @@
           showWhen: isEquipmentGroup,
         }
       },
-      Flags: {
-        label: 'Флаги',
-        ui: {
-          type: 'tags',
-          options: FLAGS,
-          placeholder: 'Добавить флаг…',
-          showWhen: supportsItemOptions,
-        }
-      },
-      ScenarioMode: {
-        label: 'Тип сценария',
-        ui: {
-          type: 'select',
-          options: [
-            { value: 'universal', label: 'Одиночный (Universal)' },
-            { value: 'world', label: 'Мировой (World)' },
-          ],
-        }
-      },
-      // Мир сценария — то же поле, что «Мир сценария» в форме: карта компонента
-      // открывается в нём (см. editor-core/point-map.js).
-      ScenarioData: { type: 'scenario', label: 'ScenarioData', ui: { scenarioModePath: 'ScenarioMode', mapWorldPath: 'DataScenarioWorldID' } },
       InitialPrice: {
         type: 'number',
         label: 'Начальная цена',
@@ -553,6 +545,7 @@
           min: 0,
           step: 1,
           showWhen: supportsItemOptions,
+          section: { title: 'Экономика и ограничения', icon: 'fa-coins' },
         }
       },
       RequiresProducts: {
@@ -564,12 +557,36 @@
           showWhen: supportsItemOptions,
         }
       },
-      DataEditorType: {
-        label: 'Редактор данных',
+      Flags: {
+        label: 'Флаги',
+        ui: {
+          type: 'tags',
+          options: FLAGS,
+          placeholder: 'Добавить флаг…',
+          showWhen: supportsItemOptions,
+        }
+      },
+      ScenarioMode: {
+        label: 'Режим сценария',
         ui: {
           type: 'select',
+          section: { title: 'Сценарий предмета', icon: 'fa-diagram-project' },
+          options: [
+            { value: 'universal', label: 'Одиночный (Universal)' },
+            { value: 'world', label: 'Мировой (World)' },
+          ],
+        }
+      },
+      // Мир сценария — то же поле, что «Мир сценария» в форме: карта компонента
+      // открывается в нём (см. editor-core/point-map.js).
+      ScenarioData: { type: 'scenario', label: 'Сценарий при срабатывании', ui: { scenarioModePath: 'ScenarioMode', mapWorldPath: 'DataScenarioWorldID' } },
+      DataEditorType: {
+        label: 'Редактор данных (Data)',
+        ui: {
+          type: 'select',
+          section: { title: 'Параметры действия (JSON Data)', icon: 'fa-sliders' },
           options: (data) => getAvailableDataEditors(data?.Group),
-          help: 'Поля ниже зависят от типа. При выборе группы Potion включается «Зелье»; «Без данных» сохраняет null.',
+          help: 'Поля ниже зависят от выбранного режима. Для группы Potion доступен режим «Зелье»; «Без данных» сохраняет пустое значение.',
         },
       },
       DataRandomBoxItems: {

@@ -11,7 +11,7 @@
   <div class="editor-page">
     <div class="editor-page-header">
       <div class="editor-page-title">
-        <i class="fa-solid fa-users-gear"></i>
+        <i class="fa-solid fa-users-gear text-accent text-xl"></i>
         <div>
           <h1>Аккаунты игроков</h1>
           <div class="editor-page-sub">Поиск аккаунтов, сброс пароля и снятие блокировки входа.</div>
@@ -31,7 +31,10 @@
       <div class="flex flex-col md:flex-row gap-2 md:items-end">
         <div class="flex-grow">
           <div class="editor-label mb-1">Поиск по ID, логину или нику</div>
-          <input id="search" type="search" class="w-full editor-input form-input" placeholder="ID, логин или ник" autocomplete="off" />
+          <div class="editor-search">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input id="search" type="search" class="w-full editor-input form-input" placeholder="ID, логин или ник…" autocomplete="off" />
+          </div>
         </div>
         <button id="btn-search" class="editor-btn editor-btn-primary">
           <i class="fa-solid fa-magnifying-glass"></i>
@@ -130,23 +133,23 @@
           <td class="px-2 py-1.5">
             <div class="flex items-center gap-1.5 max-w-[11rem]">
               <code class="font-mono text-xs editor-text truncate" title="${escapeHtml(row.Password || '')}">${escapeHtml(shortPassword(row.Password))}</code>
-              ${row.Password ? `<button class="editor-btn editor-btn-secondary !px-2 !py-1" data-action="copy-password" data-id="${escapeHtml(row.ID)}" title="Скопировать текущий пароль"><i class="fa-solid fa-copy"></i></button>` : ''}
+              ${row.Password ? `<button class="editor-btn editor-btn-secondary editor-btn--xs" data-action="copy-password" data-id="${escapeHtml(row.ID)}" title="Скопировать текущий пароль"><i class="fa-solid fa-copy"></i></button>` : ''}
             </div>
           </td>
           <td class="px-2 py-1.5">
             ${row.HasTimeoutCode
-              ? '<span class="text-amber-300"><i class="fa-solid fa-lock"></i> установлен</span>'
+              ? '<span class="editor-tone-warning font-medium"><i class="fa-solid fa-lock"></i> установлен</span>'
               : '<span class="editor-muted-text"><i class="fa-solid fa-unlock"></i> пусто</span>'}
           </td>
           <td class="px-2 py-1.5">
             <div class="flex flex-wrap justify-end gap-1.5">
-              <button class="editor-btn editor-btn-secondary !px-2 !py-1" data-action="edit" data-id="${escapeHtml(row.ID)}" title="Редактировать логин и пароль">
+              <button class="editor-btn editor-btn-secondary editor-btn--xs" data-action="edit" data-id="${escapeHtml(row.ID)}" title="Редактировать логин и пароль">
                 <i class="fa-solid fa-pen-to-square"></i><span>Изменить</span>
               </button>
-              <button class="editor-btn editor-btn-secondary !px-2 !py-1" data-action="reset-password" data-id="${escapeHtml(row.ID)}">
+              <button class="editor-btn editor-btn-secondary editor-btn--xs" data-action="reset-password" data-id="${escapeHtml(row.ID)}">
                 <i class="fa-solid fa-wand-magic-sparkles"></i><span>Сбросить пароль</span>
               </button>
-              <button class="editor-btn editor-btn-danger !px-2 !py-1" data-action="reset-timeout" data-id="${escapeHtml(row.ID)}">
+              <button class="editor-btn editor-btn-danger editor-btn--xs" data-action="reset-timeout" data-id="${escapeHtml(row.ID)}">
                 <i class="fa-solid fa-clock-rotate-left"></i><span>Сбросить таймаут</span>
               </button>
             </div>
@@ -164,7 +167,7 @@
         renderRows(json.rows || []);
         setStatus(json.has_more ? 'Показаны первые 50 записей. Уточните поиск.' : `Найдено: ${(json.rows || []).length}`, json.has_more ? 'warning' : 'success');
       } catch (err) {
-        listEl.innerHTML = '<tr><td colspan="6" class="px-3 py-6 text-center text-red-300">Ошибка загрузки.</td></tr>';
+        listEl.innerHTML = '<tr><td colspan="6" class="px-3 py-6 text-center editor-tone-danger">Ошибка загрузки.</td></tr>';
         setStatus(err.message, 'error');
       }
     };

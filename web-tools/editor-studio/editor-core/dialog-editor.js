@@ -111,7 +111,9 @@
           const applyComboState = (combo, enabled) => {
             if (!combo) return;
             const comboInput = combo.querySelector('.editor-dbcombo-input');
+            const clearBtn = combo.querySelector('.editor-dbcombo-clear');
             if (comboInput) comboInput.disabled = !enabled;
+            if (clearBtn && !enabled) clearBtn.hidden = true;
             combo.classList.toggle('is-disabled', !enabled);
           };
           if (leftInput) {
@@ -161,35 +163,35 @@
           itemFields: {
             text: {
               type: 'textarea',
-              label: 'Текст',
-              ui: { rows: 2, placeholder: textPlaceholder, hideLabel: true, colSpan: 4 }
+              label: 'Текст реплики',
+              ui: { rows: 2, placeholder: textPlaceholder, hideLabel: false, colSpan: 4 }
             },
             left_speaker_id: {
               type: 'select',
-              label: 'Left',
+              label: 'Левый говорящий',
               ui: {
                 type: 'select',
                 options: speakerList,
-                hideLabel: true,
+                hideLabel: false,
                 controlMinWidth: 140,
               }
             },
             side: {
               type: 'select',
-              label: 'Side',
-              ui: { type: 'select', options: sideOptions, hideLabel: true, controlMinWidth: 120 }
+              label: 'Режим реплики',
+              ui: { type: 'select', options: sideOptions, hideLabel: false, controlMinWidth: 120 }
             },
             right_speaker_id: {
               type: 'select',
-              label: 'Right',
+              label: 'Правый говорящий',
               ui: {
                 type: 'select',
                 options: speakerList,
-                hideLabel: true,
+                hideLabel: false,
                 controlMinWidth: 140,
               }
             },
-            action: { type: 'toggle', label: 'Action' },
+            action: { type: 'toggle', label: 'Действие' },
           },
           ui: {
             layout: 'grid',
@@ -240,22 +242,24 @@
           isNested: true,
         });
 
+        const esc = window.EditorCore?.utils?.escapeHtml || ((v) => String(v ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch])));
+
         const itemsHtml = list.map((item, index) => {
           const text = String(item?.text || '').trim();
-          const summary = text ? (text.length > 70 ? `${text.slice(0, 70)}…` : text) : '—';
+          const summary = text ? (text.length > 70 ? `${text.slice(0, 70)}…` : text) : 'Пустая реплика';
           return `
             <div class="editor-item" data-dialog-item="${index}">
               <div class="editor-item-header">
-                <div>
+                <div class="flex items-center gap-2 min-w-0">
                   <span class="editor-badge">#${index + 1}</span>
-                  <span class="editor-item-summary">${summary}</span>
+                  <span class="editor-item-summary truncate">${esc(summary)}</span>
                 </div>
                 <div class="editor-item-actions">
-                  <span class="editor-item-handle"><i class="fa-solid fa-arrows-up-down-left-right"></i></span>
-                  <button type="button" class="editor-btn editor-btn-secondary" data-dialog-toggle="${index}">
+                  <span class="editor-item-handle" title="Перетащить реплику"><i class="fa-solid fa-grip-vertical"></i></span>
+                  <button type="button" class="editor-icon-btn" title="Свернуть или развернуть" data-dialog-toggle="${index}">
                     <i class="fa-solid fa-chevron-down"></i>
                   </button>
-                  <button type="button" class="editor-btn editor-btn-secondary" data-dialog-remove="${index}">
+                  <button type="button" class="editor-icon-btn editor-icon-danger" title="Удалить реплику" data-dialog-remove="${index}">
                     <i class="fa-solid fa-trash"></i>
                   </button>
                 </div>
@@ -271,7 +275,7 @@
               </div>
             </div>
           `;
-        }).join('') || '<div class="editor-muted-text text-sm">Нет элементов</div>';
+        }).join('') || '<div class="editor-empty-state">Реплик пока нет — нажмите «Добавить реплику».</div>';
 
         root.innerHTML = `
           <div class="editor-items" data-dialog-items="list">${itemsHtml}</div>

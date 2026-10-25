@@ -38,12 +38,18 @@
 
     /* ── боковая панель ───────────────────────────────────────────── */
     .studio-sidebar {
-      width: 292px;
+      width: 288px;
       background: var(--editor-surface);
       border-right: 1px solid var(--editor-line);
+      transition: margin-left .18s ease;
+    }
+    @media (min-width: 768px) {
+      body.studio-sidebar-collapsed #studioSidebar {
+        display: none !important;
+      }
     }
 
-    .studio-brand { padding: 18px 16px 14px; display: flex; align-items: center; gap: 12px; min-width: 0; }
+    .studio-brand { padding: 16px 16px 12px; display: flex; align-items: center; gap: 12px; min-width: 0; }
     .studio-brand-mark {
       width: 38px; height: 38px; flex: 0 0 38px; border-radius: 11px;
       display: grid; place-items: center; color: #fff; font-size: 15px;
@@ -59,13 +65,35 @@
       position: absolute; left: 11px; top: 50%; transform: translateY(-50%);
       color: var(--editor-text-muted); font-size: 12px; pointer-events: none;
     }
-    .studio-search-wrap input { height: 36px; min-height: 36px; padding-left: 32px; padding-right: 52px; font-size: 13px; }
+    .studio-search-wrap input { height: 36px; min-height: 36px; padding-left: 32px; padding-right: 54px; font-size: 13px; }
+    .studio-search-wrap input::-webkit-search-cancel-button { display: none; -webkit-appearance: none; }
     .studio-search-key {
       position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
       padding: 1px 6px; border: 1px solid var(--editor-line); border-radius: 5px;
       color: var(--editor-text-muted); background: var(--editor-soft-bg);
-      font-size: 10px; font-weight: 600; letter-spacing: .02em;
+      font-size: 10px; font-weight: 600; letter-spacing: .02em; pointer-events: none;
     }
+    .studio-search-clear {
+      position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+      width: 24px; height: 24px; border-radius: 6px;
+      display: inline-flex; align-items: center; justify-content: center;
+      color: var(--editor-text-muted); background: transparent; border: 0; cursor: pointer;
+    }
+    .studio-search-clear:hover { background: var(--editor-soft-bg-strong); color: var(--editor-text); }
+    .studio-search-clear[hidden], .studio-search-key[hidden] { display: none; }
+    .studio-item.is-kbd-focus {
+      background: var(--editor-row-hover-bg);
+      border-color: var(--editor-soft-border-strong);
+    }
+    .studio-pass-wrap { position: relative; display: block; }
+    .studio-pass-wrap input { padding-right: 38px; }
+    .studio-pass-toggle {
+      position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
+      width: 28px; height: 28px; border-radius: 7px; border: 0;
+      display: inline-flex; align-items: center; justify-content: center;
+      color: var(--editor-text-muted); background: transparent; cursor: pointer;
+    }
+    .studio-pass-toggle:hover { background: var(--editor-soft-bg-strong); color: var(--editor-text); }
 
     .studio-nav { padding: 0 8px 12px; }
 
@@ -240,11 +268,14 @@
       </div>
 
       <div class="studio-search-block">
-        <label class="studio-search-wrap" aria-label="Поиск редактора">
-          <i class="fa-solid fa-magnifying-glass"></i>
-          <input id="studioSearch" type="search" class="w-full editor-input" placeholder="Найти редактор…" autocomplete="off" />
-          <kbd class="studio-search-key">Ctrl K</kbd>
-        </label>
+        <div class="studio-search-wrap">
+          <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+          <input id="studioSearch" type="search" class="w-full editor-input" aria-label="Поиск редактора" placeholder="Найти редактор…" autocomplete="off" />
+          <kbd id="studioSearchKey" class="studio-search-key">Ctrl K</kbd>
+          <button id="studioSearchClear" type="button" class="studio-search-clear" title="Очистить поиск" aria-label="Очистить поиск" hidden>
+            <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+          </button>
+        </div>
       </div>
 
       <nav id="studioNav" class="studio-nav flex-grow overflow-y-auto" aria-label="Редакторы"></nav>
@@ -266,14 +297,22 @@
         <button id="mobileMenuBtn" class="editor-icon-btn" title="Открыть меню" aria-label="Открыть меню">
           <i class="fa-solid fa-bars"></i>
         </button>
-        <div id="mobileTitle" class="studio-mobile-title truncate">Editor Studio</div>
-        <button id="mobileNewTabBtn" class="editor-icon-btn" title="Открыть в новой вкладке" aria-label="Открыть в новой вкладке">
-          <i class="fa-solid fa-arrow-up-right-from-square"></i>
-        </button>
+        <div id="mobileTitle" class="studio-mobile-title truncate flex-1 text-center">Editor Studio</div>
+        <div class="flex items-center gap-1.5">
+          <button type="button" class="editor-icon-btn" data-theme-toggle title="Переключить тему" aria-label="Переключить тему">
+            <i class="fa-solid fa-circle-half-stroke"></i>
+          </button>
+          <button id="mobileNewTabBtn" class="editor-icon-btn" title="Открыть в новой вкладке" aria-label="Открыть в новой вкладке">
+            <i class="fa-solid fa-arrow-up-right-from-square"></i>
+          </button>
+        </div>
       </header>
 
       <header class="studio-workbar hidden md:flex">
         <div class="min-w-0 flex items-center gap-3">
+          <button id="toggleSidebarBtn" class="editor-icon-btn" type="button" title="Свернуть или показать боковое меню (Ctrl+B)" aria-label="Свернуть или показать боковое меню">
+            <i class="fa-solid fa-table-columns"></i>
+          </button>
           <span id="desktopEditorIcon" class="studio-brand-mark studio-brand-mark--sm"><i class="fa-solid fa-pen-ruler"></i></span>
           <div class="min-w-0">
             <div id="desktopEditorTitle" class="studio-workbar-title truncate">Рабочая область</div>
@@ -281,7 +320,10 @@
           </div>
         </div>
         <div class="studio-workbar-actions flex items-center gap-2">
-          <button id="reloadEditorBtn" class="editor-icon-btn" type="button" title="Перезагрузить редактор" aria-label="Перезагрузить редактор">
+          <button type="button" class="editor-icon-btn" data-theme-toggle title="Переключить тему оформления" aria-label="Переключить тему оформления">
+            <i class="fa-solid fa-circle-half-stroke"></i>
+          </button>
+          <button id="reloadEditorBtn" class="editor-icon-btn" type="button" title="Перезагрузить активный редактор" aria-label="Перезагрузить активный редактор">
             <i class="fa-solid fa-rotate"></i>
           </button>
         </div>
@@ -321,7 +363,12 @@
     <div class="absolute inset-0 studio-scrim"></div>
     <div class="absolute inset-0 flex items-center justify-center p-4 overflow-y-auto">
       <div class="studio-auth-card my-auto">
-        <div class="flex justify-end mb-3" data-i18n-switcher-host></div>
+        <div class="flex items-center justify-end gap-2 mb-3">
+          <button type="button" class="editor-icon-btn" data-theme-toggle title="Переключить тему оформления" aria-label="Переключить тему оформления">
+            <i class="fa-solid fa-circle-half-stroke"></i>
+          </button>
+          <div data-i18n-switcher-host></div>
+        </div>
 
         <div class="studio-auth-head">
           <span class="studio-auth-icon"><i class="fa-solid fa-shield-halved"></i></span>
@@ -343,7 +390,12 @@
           </label>
           <label class="studio-auth-field">
             <span>Пароль</span>
-            <input id="auth-pass" type="password" class="w-full editor-input" placeholder="Введите пароль администратора" autocomplete="current-password" />
+            <span class="studio-pass-wrap">
+              <input id="auth-pass" type="password" class="w-full editor-input" placeholder="Введите пароль администратора" autocomplete="current-password" />
+              <button type="button" class="studio-pass-toggle" data-pass-toggle="auth-pass" title="Показать пароль" aria-label="Показать пароль">
+                <i class="fa-solid fa-eye"></i>
+              </button>
+            </span>
           </label>
 
           <button id="auth-login-btn" class="editor-btn editor-btn-primary w-full mt-4">
@@ -365,7 +417,12 @@
             </label>
             <label class="studio-auth-field">
               <span>Пароль</span>
-              <input id="auth-guest-pass" type="password" class="w-full editor-input" placeholder="Пароль, выданный администратором" autocomplete="current-password" />
+              <span class="studio-pass-wrap">
+                <input id="auth-guest-pass" type="password" class="w-full editor-input" placeholder="Пароль, выданный администратором" autocomplete="current-password" />
+                <button type="button" class="studio-pass-toggle" data-pass-toggle="auth-guest-pass" title="Показать пароль" aria-label="Показать пароль">
+                  <i class="fa-solid fa-eye"></i>
+                </button>
+              </span>
             </label>
           </div>
           <div id="auth-guest-unavailable" class="editor-help-text mt-3 hidden">
@@ -394,7 +451,10 @@
     const mobileCloseBtn = document.getElementById('mobileCloseBtn');
     const mobileNewTabBtn = document.getElementById('mobileNewTabBtn');
     const studioSearch = document.getElementById('studioSearch');
+    const studioSearchKey = document.getElementById('studioSearchKey');
+    const studioSearchClear = document.getElementById('studioSearchClear');
     const mobileSearch = document.getElementById('mobileSearch');
+    const toggleSidebarBtn = document.getElementById('toggleSidebarBtn');
     const desktopEditorTitle = document.getElementById('desktopEditorTitle');
     const desktopEditorMeta = document.getElementById('desktopEditorMeta');
     const desktopEditorIcon = document.getElementById('desktopEditorIcon');
@@ -628,7 +688,7 @@
       for (const g of getGroups()) {
         const items = (g.items || []).filter((e) => {
           if (!q) return true;
-          const hay = `${e.title || ''} ${e.key || ''}`.toLowerCase();
+          const hay = `${e.title || ''} ${e.hint || ''} ${e.key || ''}`.toLowerCase();
           return hay.includes(q);
         });
         if (!items.length) continue;
@@ -647,6 +707,7 @@
           const btn = document.createElement('button');
           const isActive = e.key === active;
           btn.className = `studio-item${isActive ? ' active' : ''}`;
+          btn.dataset.editorKey = e.key;
           btn.setAttribute('aria-current', isActive ? 'page' : 'false');
           btn.title = e.title || e.key;
           const badge = navBadges[e.key] ? `<span class="studio-nav-badge" title="${currentRole === 'guest' ? 'Черновик и ответы администратора' : 'Запросы на рассмотрении и непрочитанные сообщения'}">${navBadges[e.key]}</span>` : '';
@@ -756,11 +817,22 @@
       if (closeMobile && mobileOverlay) mobileOverlay.classList.add('hidden');
     };
 
+    let navKbdIndex = -1;
+
+    const updateSearchAffordances = (term) => {
+      const hasTerm = !!String(term || '').trim();
+      if (studioSearchKey) studioSearchKey.hidden = hasTerm;
+      if (studioSearchClear) studioSearchClear.hidden = !hasTerm;
+    };
+
     const syncSearchValue = (value, source) => {
-      const term = String(value || '').trim();
+      const term = String(value || '');
+      const trimmed = term.trim();
       if (studioSearch && source !== studioSearch) studioSearch.value = term;
       if (mobileSearch && source !== mobileSearch) mobileSearch.value = term;
-      renderAllNavs(activeKey, term);
+      navKbdIndex = -1;
+      updateSearchAffordances(trimmed);
+      renderAllNavs(activeKey, trimmed);
     };
 
     studioSearch?.addEventListener('input', (event) => {
@@ -769,16 +841,41 @@
     mobileSearch?.addEventListener('input', (event) => {
       syncSearchValue(event.target.value, event.target);
     });
+    studioSearchClear?.addEventListener('click', () => {
+      syncSearchValue('', null);
+      studioSearch?.focus();
+    });
 
-    const focusSearch = () => {
-      const onMobile = window.matchMedia('(max-width: 767px)').matches;
-      if (onMobile) {
-        mobileOverlay?.classList.remove('hidden');
-        mobileSearch?.focus();
-      } else {
-        studioSearch?.focus();
+    const handleSearchKeydown = (event, navRoot, isMobile = false) => {
+      const items = Array.from(navRoot?.querySelectorAll('.studio-item') || []);
+      if (event.key === 'Escape') {
+        if (event.target.value) {
+          event.preventDefault();
+          syncSearchValue('', null);
+        } else {
+          event.target.blur();
+        }
+        return;
+      }
+      if (!items.length) return;
+      if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+        event.preventDefault();
+        const delta = event.key === 'ArrowDown' ? 1 : -1;
+        navKbdIndex = navKbdIndex < 0
+          ? (delta > 0 ? 0 : items.length - 1)
+          : (navKbdIndex + delta + items.length) % items.length;
+        items.forEach((el, idx) => el.classList.toggle('is-kbd-focus', idx === navKbdIndex));
+        items[navKbdIndex]?.scrollIntoView?.({ block: 'nearest' });
+      } else if (event.key === 'Enter') {
+        event.preventDefault();
+        const target = items[navKbdIndex >= 0 && navKbdIndex < items.length ? navKbdIndex : 0];
+        const key = target?.dataset?.editorKey;
+        if (key) openEditor(key, { closeMobile: isMobile });
       }
     };
+
+    studioSearch?.addEventListener('keydown', (e) => handleSearchKeydown(e, sidebarNav, false));
+    mobileSearch?.addEventListener('keydown', (e) => handleSearchKeydown(e, mobileNav, true));
 
     const safeStorage = (() => {
       try {
@@ -794,6 +891,72 @@
     const storageGet = (key) => safeStorage?.getItem(key) || '';
     const storageSet = (key, value) => safeStorage?.setItem(key, value);
 
+    // ── Боковая панель: сворачивание на широком экране ────────────────────
+    const SIDEBAR_COLLAPSED_KEY = 'studio.sidebarCollapsed';
+    const applySidebarCollapsed = (collapsed, persist = false) => {
+      document.body.classList.toggle('studio-sidebar-collapsed', !!collapsed);
+      if (toggleSidebarBtn) {
+        toggleSidebarBtn.classList.toggle('active', !!collapsed);
+        toggleSidebarBtn.setAttribute('aria-pressed', collapsed ? 'true' : 'false');
+      }
+      if (persist) storageSet(SIDEBAR_COLLAPSED_KEY, collapsed ? '1' : '0');
+    };
+    applySidebarCollapsed(storageGet(SIDEBAR_COLLAPSED_KEY) === '1', false);
+    toggleSidebarBtn?.addEventListener('click', () => {
+      const next = !document.body.classList.contains('studio-sidebar-collapsed');
+      applySidebarCollapsed(next, true);
+    });
+
+    // ── Переключатель темы оформления ─────────────────────────────────────
+    const syncThemeButtons = () => {
+      const theme = EditorCore.theme?.get?.() || 'dark';
+      const isLight = theme === 'light';
+      document.querySelectorAll('[data-theme-toggle]').forEach((btn) => {
+        const icon = btn.querySelector('i');
+        if (icon) icon.className = isLight ? 'fa-solid fa-moon' : 'fa-solid fa-sun';
+        const label = isLight ? 'Включить тёмную тему' : 'Включить светлую тему';
+        btn.title = label;
+        btn.setAttribute('aria-label', label);
+      });
+    };
+    syncThemeButtons();
+    window.addEventListener('editor-core:theme-changed', syncThemeButtons);
+    document.querySelectorAll('[data-theme-toggle]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        EditorCore.theme?.toggle?.();
+        syncThemeButtons();
+      });
+    });
+
+    // ── Показ/скрытие пароля в окне входа ─────────────────────────────────
+    document.querySelectorAll('[data-pass-toggle]').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const input = document.getElementById(btn.dataset.passToggle || '');
+        if (!input) return;
+        const reveal = input.type === 'password';
+        input.type = reveal ? 'text' : 'password';
+        const icon = btn.querySelector('i');
+        if (icon) icon.className = reveal ? 'fa-solid fa-eye-slash' : 'fa-solid fa-eye';
+        const label = reveal ? 'Скрыть пароль' : 'Показать пароль';
+        btn.title = label;
+        btn.setAttribute('aria-label', label);
+      });
+    });
+
+    const focusSearch = () => {
+      const onMobile = window.matchMedia('(max-width: 767px)').matches;
+      if (onMobile) {
+        mobileOverlay?.classList.remove('hidden');
+        mobileSearch?.focus();
+      } else {
+        if (document.body.classList.contains('studio-sidebar-collapsed')) {
+          applySidebarCollapsed(false, true);
+        }
+        studioSearch?.focus();
+        studioSearch?.select?.();
+      }
+    };
+
     document.addEventListener('keydown', (event) => {
       const tag = event.target?.tagName;
       const isTyping = tag === 'INPUT' || tag === 'TEXTAREA' || event.target?.isContentEditable;
@@ -801,6 +964,11 @@
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
         event.preventDefault();
         focusSearch();
+      } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'b') {
+        if (!window.matchMedia('(max-width: 767px)').matches) {
+          event.preventDefault();
+          applySidebarCollapsed(!document.body.classList.contains('studio-sidebar-collapsed'), true);
+        }
       } else if (event.key === '/' && !event.ctrlKey && !event.metaKey && !event.altKey) {
         event.preventDefault();
         focusSearch();
@@ -817,8 +985,13 @@
     });
 
     frame?.addEventListener('load', () => studioLoading?.classList.remove('active'));
-    reloadEditorBtn?.addEventListener('click', () => {
+    reloadEditorBtn?.addEventListener('click', async () => {
       if (!isAuthorized || !frame?.src) return;
+      const dirtyState = await requestFrameDirtyStatus();
+      if (dirtyState.supported && dirtyState.dirty) {
+        const approved = await EditorCore.Page.confirm('В открытом редакторе есть несохранённые изменения. Перезагрузить без сохранения?');
+        if (!approved) return;
+      }
       studioLoading?.classList.add('active');
       frame.contentWindow?.location.reload();
     });

@@ -59,23 +59,25 @@
       };
 
       return {
-        save: bySelectors(['[data-editor-role="save"]', '#saveBtn', '#btn-save']),
-        newItem: bySelectors(['[data-editor-role="new"]', '#newBtn', '#btn-new']),
-        refresh: bySelectors(['[data-editor-role="refresh"]', '#refreshBtn', '#btn-refresh']),
-        remove: bySelectors(['[data-editor-role="delete"]', '#deleteBtn', '#btn-delete']),
-        cancel: bySelectors(['[data-editor-role="cancel"]', '#cancelBtn', '#btn-cancel']),
+        save: bySelectors(['[data-editor-role="save"]', '[data-action="save"]', '#saveBtn', '#btn-save', '#save-button']),
+        newItem: bySelectors(['[data-editor-role="new"]', '[data-action="new"]', '#newBtn', '#btn-new', '#newQuestBtn']),
+        refresh: bySelectors(['[data-editor-role="refresh"]', '[data-action="refresh"]', '#refreshBtn', '#btn-refresh']),
+        remove: bySelectors(['[data-editor-role="delete"]', '[data-action="delete"]', '#deleteBtn', '#btn-delete']),
+        cancel: bySelectors(['[data-editor-role="cancel"]', '[data-action="cancel"]', '#cancelBtn', '#btn-cancel']),
         search: bySelectors([
           '[data-editor-role="search"]',
+          '[data-bind="search"]',
           '#searchInput',
+          '#search',
           'input[type="search"]',
           '.editor-search input',
         ]),
-        list: bySelectors(['[data-editor-role="list"]', '#list', '.editor-sidebar-list']),
+        list: bySelectors(['[data-editor-role="list"]', '[data-bind="list"]', '#list', '#tree', '.editor-sidebar-list']),
       };
     };
 
     const clickIfEnabled = (el) => {
-      if (!el || el.disabled) return false;
+      if (!el || el.disabled || el.classList?.contains('hidden')) return false;
       el.click();
       return true;
     };
@@ -89,13 +91,26 @@
 
     const moveSelection = (listRoot, direction = 1) => {
       if (!listRoot) return false;
-      const rows = Array.from(listRoot.querySelectorAll('.editor-row'));
+      const rows = Array.from(listRoot.querySelectorAll('.editor-row, .quest-node, .step-node'))
+        .filter((el) => el.offsetParent !== null || el.getClientRects?.().length);
       if (!rows.length) return false;
-      const active = rows.findIndex((r) => r.classList.contains('editor-row-active'));
+      const active = rows.findIndex((r) => (
+        r.classList.contains('editor-row-active')
+        || r.classList.contains('tree-selected')
+        || r.classList.contains('ring-2')
+      ));
       const next = Math.max(0, Math.min(rows.length - 1, active < 0 ? 0 : active + direction));
-      rows[next]?.click();
+      const target = rows[next]?.querySelector?.('.quest-node-title, .step-node-header') || rows[next];
+      target?.click?.();
       rows[next]?.scrollIntoView?.({ block: 'nearest' });
       return true;
+    };
+
+    const syncToolsButtonState = (prefs) => {
+      const btn = document.querySelector?.('[data-editor-quick-tools="1"]');
+      if (!btn) return;
+      const active = !!(prefs?.compact || prefs?.focus);
+      btn.setAttribute('data-active-modes', active ? '1' : '0');
     };
 
     const mountPalette = (root = document) => {
@@ -105,15 +120,20 @@
       modal.id = 'editor-command-palette';
       modal.className = 'hidden fixed inset-0 editor-modal-backdrop z-[550] items-start justify-center p-4';
       modal.innerHTML = `
-        <div class="editor-modal-content w-full max-w-xl mt-10 p-4">
-          <div class="flex items-center justify-between gap-3 mb-3">
-            <div class="font-semibold">Command Palette</div>
-            <button type="button" class="editor-icon-btn" data-role="close" title="Close">
+        <div class="editor-modal-content w-full max-w-xl mt-10 p-0 overflow-hidden">
+          <div class="editor-modal-head flex items-center justify-between gap-3">
+            <div>
+              <div class="editor-modal-title flex items-center gap-2">
+                <i class="fa-solid fa-sliders editor-tone-accent"></i>
+                <span>Быстрые действия и вид</span>
+              </div>
+              <div class="editor-muted-text text-xs mt-1">Горячие клавиши: Ctrl+S сохранить · Alt+N создать · / поиск · Ctrl+K палитра</div>
+            </div>
+            <button type="button" class="editor-icon-btn" data-role="close" title="Закрыть (Esc)">
               <i class="fa-solid fa-xmark"></i>
             </button>
           </div>
-          <div class="editor-muted-text text-xs mb-3">Shortcuts: Ctrl/Cmd+S save, Ctrl/Cmd+N new, Ctrl/Cmd+K palette</div>
-          <div class="grid gap-2" data-role="actions"></div>
+          <div class="editor-modal-body grid gap-2" data-role="actions"></div>
         </div>
       `;
       (document.body || root).appendChild(modal);
@@ -136,54 +156,151 @@
         prefs.focus = enabled;
       }
       savePrefs(prefs);
+      syncToolsButtonState(prefs);
+    };
+
+    const closePalette = (palette) => {
+      if (!palette) return;
+      palette.classList.add('hidden');
+      palette.classList.remove('flex');
     };
 
     const renderPalette = (palette, root, prefs) => {
       const actionsWrap = palette.querySelector('[data-role="actions"]');
       if (!actionsWrap) return;
       const actions = findActions(root);
+      const curTheme = window.EditorCoreTheme?.getTheme?.() === 'light' ? 'light' : 'dark';
       const rows = [
-        { id: 'save', label: 'Save (Ctrl/Cmd+S)', run: () => clickIfEnabled(actions.save) },
-        { id: 'new', label: 'New record (Ctrl/Cmd+N)', run: () => clickIfEnabled(actions.newItem) },
-        { id: 'refresh', label: 'Refresh list', run: () => clickIfEnabled(actions.refresh) },
-        { id: 'search', label: 'Focus search (Ctrl/Cmd+F)', run: () => focusSearch(actions.search) },
-        { id: 'prev', label: 'Previous row (Alt+ArrowUp)', run: () => moveSelection(actions.list, -1) },
-        { id: 'next', label: 'Next row (Alt+ArrowDown)', run: () => moveSelection(actions.list, +1) },
-        { id: 'compact', label: prefs.compact ? 'Disable compact mode' : 'Enable compact mode', run: () => setMode('compact', !prefs.compact, prefs) },
-        { id: 'focus', label: prefs.focus ? 'Disable focus mode' : 'Enable focus mode', run: () => setMode('focus', !prefs.focus, prefs) },
+        {
+          id: 'save',
+          icon: 'fa-floppy-disk',
+          label: 'Сохранить изменения',
+          kbd: 'Ctrl+S',
+          disabled: !actions.save || actions.save.disabled || actions.save.classList?.contains('hidden'),
+          closeOnRun: true,
+          run: () => clickIfEnabled(actions.save),
+        },
+        {
+          id: 'new',
+          icon: 'fa-plus',
+          label: 'Создать новую запись',
+          kbd: 'Alt+N',
+          disabled: !actions.newItem || actions.newItem.disabled || actions.newItem.classList?.contains('hidden'),
+          closeOnRun: true,
+          run: () => clickIfEnabled(actions.newItem),
+        },
+        {
+          id: 'refresh',
+          icon: 'fa-rotate',
+          label: 'Обновить список',
+          kbd: 'Alt+R',
+          disabled: !actions.refresh || actions.refresh.disabled,
+          closeOnRun: true,
+          run: () => clickIfEnabled(actions.refresh),
+        },
+        {
+          id: 'search',
+          icon: 'fa-magnifying-glass',
+          label: 'Перейти к поиску',
+          kbd: '/',
+          disabled: !actions.search,
+          closeOnRun: true,
+          run: () => focusSearch(actions.search),
+        },
+        {
+          id: 'prev',
+          icon: 'fa-arrow-up',
+          label: 'Предыдущая запись в списке',
+          kbd: 'Alt+↑',
+          disabled: !actions.list,
+          closeOnRun: true,
+          run: () => moveSelection(actions.list, -1),
+        },
+        {
+          id: 'next',
+          icon: 'fa-arrow-down',
+          label: 'Следующая запись в списке',
+          kbd: 'Alt+↓',
+          disabled: !actions.list,
+          closeOnRun: true,
+          run: () => moveSelection(actions.list, +1),
+        },
+        {
+          id: 'compact',
+          icon: 'fa-compress',
+          label: prefs.compact ? 'Компактный режим: включён (выключить)' : 'Компактный режим: выключен (включить)',
+          kbd: prefs.compact ? 'ВКЛ' : 'ВЫКЛ',
+          closeOnRun: false,
+          run: () => setMode('compact', !prefs.compact, prefs),
+        },
+        {
+          id: 'focus',
+          icon: 'fa-expand',
+          label: prefs.focus ? 'Режим фокуса без списка: включён (показать список)' : 'Режим фокуса: скрыть боковой список',
+          kbd: prefs.focus ? 'ВКЛ' : 'ВЫКЛ',
+          closeOnRun: false,
+          run: () => setMode('focus', !prefs.focus, prefs),
+        },
+        {
+          id: 'theme',
+          icon: curTheme === 'dark' ? 'fa-sun' : 'fa-moon',
+          label: curTheme === 'dark' ? 'Переключить на светлую тему' : 'Переключить на тёмную тему',
+          kbd: curTheme === 'dark' ? 'Тёмная' : 'Светлая',
+          closeOnRun: false,
+          run: () => window.EditorCoreTheme?.toggleTheme?.(),
+        },
+        {
+          id: 'help',
+          icon: 'fa-circle-question',
+          label: 'Открыть справку по редактору',
+          kbd: '?',
+          disabled: !window.EditorCore?.Help?.open,
+          closeOnRun: true,
+          run: () => window.EditorCore?.Help?.open?.(),
+        },
       ];
 
       actionsWrap.innerHTML = rows
-        .map((r) => `<button type="button" class="editor-btn editor-btn-secondary justify-start text-left" data-action="${esc(r.id)}">${esc(r.label)}</button>`)
+        .map((r) => `
+          <button type="button" class="editor-btn editor-btn-secondary justify-between text-left w-full" data-action="${esc(r.id)}" ${r.disabled ? 'disabled' : ''}>
+            <span class="flex items-center gap-2.5 min-w-0 truncate">
+              <i class="fa-solid ${esc(r.icon)} editor-muted-text"></i>
+              <span class="truncate">${esc(r.label)}</span>
+            </span>
+            <span class="editor-badge text-xs shrink-0">${esc(r.kbd || '')}</span>
+          </button>`)
         .join('');
 
       actionsWrap.querySelectorAll('[data-action]').forEach((btn) => {
         btn.addEventListener('click', () => {
           const id = btn.getAttribute('data-action');
           const row = rows.find((r) => r.id === id);
-          if (!row) return;
+          if (!row || row.disabled) return;
+          if (row.closeOnRun) closePalette(palette);
           row.run();
-          renderPalette(palette, root, prefs);
+          if (!row.closeOnRun) renderPalette(palette, root, prefs);
         });
       });
     };
 
     const mountQuickTools = (root = document, prefs) => {
-      const host = root.querySelector('.editor-page-actions') || document.querySelector('.editor-page-actions');
+      if (document.body?.dataset?.editor === 'home') return;
+      const host = root.querySelector('.editor-page-header .editor-page-actions')
+        || document.querySelector('.editor-page-header .editor-page-actions')
+        || root.querySelector('.editor-page-actions')
+        || document.querySelector('.editor-page-actions');
       if (!host || host.querySelector('[data-editor-quick-tools="1"]')) return;
       const btn = document.createElement('button');
       btn.type = 'button';
-      btn.className = 'editor-btn editor-btn-secondary';
+      btn.className = 'editor-btn editor-btn-secondary editor-tools-btn';
       btn.setAttribute('data-editor-quick-tools', '1');
-      btn.title = 'Open command palette';
-      btn.innerHTML = '<i class="fa-solid fa-bolt"></i><span>Tools</span>';
+      btn.title = 'Быстрые действия и режим вида (Ctrl+K)';
+      btn.innerHTML = '<i class="fa-solid fa-sliders"></i><span>Вид</span><span class="editor-tools-dot"></span>';
       host.appendChild(btn);
+      syncToolsButtonState(prefs);
 
       const palette = mountPalette(root);
-      const close = () => {
-        palette.classList.add('hidden');
-        palette.classList.remove('flex');
-      };
+      const close = () => closePalette(palette);
       const open = () => {
         renderPalette(palette, root, prefs);
         palette.classList.remove('hidden');
@@ -196,6 +313,12 @@
       });
     };
 
+    const isEditableTarget = (el) => {
+      if (!el) return false;
+      const tag = String(el.tagName || '').toLowerCase();
+      return tag === 'input' || tag === 'textarea' || tag === 'select' || !!el.isContentEditable;
+    };
+
     const bindShortcuts = (root = document, prefs) => {
       if (root.__editorShortcutsBound === true) return;
       root.__editorShortcutsBound = true;
@@ -205,46 +328,51 @@
         const ctrl = e.ctrlKey || e.metaKey;
         const actions = findActions(root);
 
-        if (ctrl && key === 's') {
+        // Ctrl+S is handled centrally by Help module when loaded; fallback only if Help is absent.
+        if (ctrl && !e.altKey && key === 's') {
+          if (document.body?.dataset?.ownSaveShortcut === '1' || window.EditorCore?.Help) return;
           e.preventDefault();
-          if (clickIfEnabled(actions.save)) return;
+          clickIfEnabled(actions.save);
+          return;
         }
-        if (ctrl && key === 'n') {
-          e.preventDefault();
-          if (clickIfEnabled(actions.newItem)) return;
+        if (e.altKey && !ctrl && key === 'n') {
+          if (clickIfEnabled(actions.newItem)) e.preventDefault();
+          return;
         }
-        if (ctrl && key === 'f') {
-          e.preventDefault();
-          if (focusSearch(actions.search)) return;
+        if (e.altKey && !ctrl && key === 'r') {
+          if (clickIfEnabled(actions.refresh)) e.preventDefault();
+          return;
+        }
+        if (!ctrl && !e.altKey && e.key === '/' && !isEditableTarget(e.target)) {
+          if (focusSearch(actions.search)) e.preventDefault();
+          return;
         }
         if (ctrl && key === 'k') {
           e.preventDefault();
           const palette = mountPalette(root);
+          if (!palette.classList.contains('hidden')) {
+            closePalette(palette);
+            return;
+          }
           renderPalette(palette, root, prefs);
           palette.classList.remove('hidden');
           palette.classList.add('flex');
           return;
         }
         if (e.altKey && key === 'arrowdown') {
-          e.preventDefault();
-          moveSelection(actions.list, +1);
+          if (moveSelection(actions.list, +1)) e.preventDefault();
           return;
         }
         if (e.altKey && key === 'arrowup') {
-          e.preventDefault();
-          moveSelection(actions.list, -1);
+          if (moveSelection(actions.list, -1)) e.preventDefault();
           return;
         }
         if (key === 'escape') {
           const palette = document.getElementById('editor-command-palette');
           if (palette && !palette.classList.contains('hidden')) {
             e.preventDefault();
-            palette.classList.add('hidden');
-            palette.classList.remove('flex');
+            closePalette(palette);
             return;
-          }
-          if (document.activeElement && typeof document.activeElement.blur === 'function') {
-            document.activeElement.blur();
           }
         }
       });
@@ -262,7 +390,7 @@
       bindShortcuts(root, prefs);
     };
 
-    return { init };
+    return { init, getPrefs, setMode: (mode, enabled) => setMode(mode, enabled, getPrefs()) };
   })();
 
   const validateValue = ({ value, spec, inputType }) => {
@@ -760,7 +888,9 @@
 
       // 3) Global productivity utilities (hotkeys + command palette + view modes)
       Productivity.init(root);
-    }
+    },
+    getPrefs: () => Productivity.getPrefs(),
+    setMode: (mode, enabled) => Productivity.setMode(mode, enabled),
   };
 
   window.EditorCore = window.EditorCore || {};

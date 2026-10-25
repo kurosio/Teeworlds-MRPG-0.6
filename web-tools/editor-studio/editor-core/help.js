@@ -127,25 +127,37 @@
     const steps = STEPS[key] || GENERIC;
     const wrap = document.createElement('div');
     wrap.id = 'editor-help-panel';
+    wrap.className = 'fixed inset-0 editor-modal-backdrop z-[950] flex items-center justify-center p-4';
     wrap.setAttribute('role', 'dialog');
     wrap.setAttribute('aria-modal', 'true');
     wrap.setAttribute('aria-label', 'Как пользоваться редактором');
-    wrap.style.cssText = 'position:fixed;inset:0;z-index:2147482000;display:flex;align-items:center;justify-content:center;'
-      + 'padding:20px;background:rgba(2,6,23,.72)';
     wrap.innerHTML = `
-      <div style="max-width:520px;width:100%;background:var(--editor-surface,#121821);color:var(--editor-text,#edf3fb);border:1px solid var(--editor-border,#273142);border-radius:18px;padding:22px;box-shadow:0 24px 60px rgba(0,0,0,.45)">
-        <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px">
-          <div style="font-size:17px;font-weight:700"><i class="fa-solid fa-circle-question" style="color:var(--editor-primary,#6366f1)"></i> Как это работает</div>
+      <div class="editor-modal-content editor-modal-shell w-full max-w-lg">
+        <div class="editor-modal-head flex items-start justify-between gap-3">
+          <div class="editor-modal-title flex items-center gap-2.5">
+            <i class="fa-solid fa-circle-question editor-tone-accent"></i>
+            <span>Как это работает</span>
+          </div>
           <button type="button" class="editor-icon-btn" data-help-close title="Закрыть (Esc)"><i class="fa-solid fa-xmark"></i></button>
         </div>
-        <ol style="margin:14px 0 0;padding-left:20px;font-size:13.5px;line-height:1.6;color:var(--editor-text,#edf3fb)">
-          ${steps.map((s) => `<li style="margin-bottom:6px">${s}</li>`).join('')}
-        </ol>
-        <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--editor-soft-border,rgba(255,255,255,.08));font-size:12.5px;color:var(--editor-text-muted,#9aa8bc)">
-          <b>Ctrl+S</b> — сохранить · <b>Esc</b> — закрыть это окно
+        <div class="editor-modal-body space-y-4">
+          <ol class="list-decimal pl-5 space-y-2 text-sm leading-relaxed">
+            ${steps.map((s) => `<li>${s}</li>`).join('')}
+          </ol>
+          <div class="editor-section pt-3">
+            <div class="text-xs font-semibold uppercase tracking-wider editor-muted-text mb-2">Горячие клавиши</div>
+            <div class="flex flex-wrap gap-1.5 text-xs">
+              <span class="editor-badge"><b>Ctrl+S</b> — сохранить</span>
+              <span class="editor-badge"><b>Ctrl+K</b> — команды и вид</span>
+              <span class="editor-badge"><b>/</b> — поиск</span>
+              <span class="editor-badge"><b>Alt+N</b> — создать</span>
+              <span class="editor-badge"><b>Alt+↑/↓</b> — по списку</span>
+              <span class="editor-badge"><b>?</b> — эта справка</span>
+            </div>
+          </div>
+          ${isGuest() ? `<div class="guest-row-hint"><i class="fa-solid fa-user-secret"></i><div>${GUEST_NOTE}</div></div>` : ''}
         </div>
-        ${isGuest() ? `<div class="guest-row-hint" style="margin:14px 0 0"><i class="fa-solid fa-user-secret"></i><div>${GUEST_NOTE}</div></div>` : ''}
-        <div style="margin-top:16px;text-align:right">
+        <div class="editor-modal-foot flex justify-end">
           <button type="button" class="editor-btn editor-btn-primary" data-help-close>Понятно</button>
         </div>
       </div>`;

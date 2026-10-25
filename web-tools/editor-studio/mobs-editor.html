@@ -44,18 +44,20 @@
             </div>
           </div>
 
-          <div class="mt-3 editor-sidebar-filters two-col">
-            <select id="filterMob" class="editor-input form-input" data-datasource="bots" data-label-mode="id_name" data-db-searchable="1" data-db-limit="300" data-value-type="number">
-              <option value="">Фильтр: моб</option>
+          <div class="mt-3 space-y-2">
+            <select id="filterMob" class="w-full editor-input form-input" data-datasource="bots" data-label-mode="id_name" data-db-searchable="1" data-db-limit="300" data-value-type="number">
+              <option value="">Все мобы</option>
             </select>
-            <select id="filterWorld" class="editor-input form-input" data-datasource="worlds" data-label-mode="id_name" data-db-searchable="0" data-db-limit="300" data-value-type="number">
-              <option value="">Фильтр: мир</option>
-            </select>
-            <select id="filterBoss" class="editor-input form-input">
-              <option value="">Все типы</option>
-              <option value="boss">Только босс</option>
-              <option value="regular">Обычные</option>
-            </select>
+            <div class="editor-sidebar-filters two-col">
+              <select id="filterWorld" class="w-full editor-input form-input" data-datasource="worlds" data-label-mode="id_name" data-db-searchable="0" data-db-limit="300" data-value-type="number">
+                <option value="">Все миры</option>
+              </select>
+              <select id="filterBoss" class="w-full editor-input form-input">
+                <option value="">Все типы</option>
+                <option value="boss">Только босс</option>
+                <option value="regular">Обычные</option>
+              </select>
+            </div>
           </div>
 
           <div id="list" class="mt-4 editor-sidebar-list editor-scroll"></div>
@@ -73,10 +75,10 @@
         <div class="editor-dock-pad">
           <div class="editor-sticky-toolbar flex items-start justify-between gap-4">
             <div class="min-w-0">
-              <div class="text-2xl font-bold" id="title">Выберите моба</div>
-              <div class="editor-muted-text" id="subtitle">или создайте новый спавн</div>
+              <div class="text-lg font-semibold" id="title">Выберите моба</div>
+              <div class="editor-muted-text text-sm mt-1" id="subtitle">или создайте новый спавн</div>
             </div>
-            <div class="flex flex-wrap gap-2">
+            <div class="editor-page-actions">
               <span id="dirty-pill" class="editor-dirty-pill hidden" aria-hidden="true">Данные не сохранены</span>
               <button id="saveBtn" class="editor-btn editor-btn-primary" disabled>
                 <i class="fa-solid fa-floppy-disk"></i>
@@ -86,21 +88,21 @@
                 <i class="fa-solid fa-rotate-left"></i>
                 <span>Отменить</span>
               </button>
-              <button id="deleteBtn" class="editor-btn editor-btn-danger" disabled>
+              <button id="deleteBtn" class="editor-btn editor-btn-secondary" disabled>
                 <i class="fa-solid fa-trash"></i>
                 <span>Удалить</span>
               </button>
             </div>
           </div>
 
-          <div class="mt-6 space-y-6">
-            <div id="dbStatus" class="editor-db-alert"></div>
+          <div class="mt-4 space-y-4">
+            <div id="dbStatus" class="editor-db-alert hidden"></div>
 
             <div class="editor-panel-card">
-              <div class="flex items-center justify-between gap-3">
+              <div class="flex flex-wrap items-center justify-between gap-3">
                 <div>
-                  <div class="font-semibold">Поля моба</div>
-                  <div class="editor-muted-text text-sm">Справочник показывает названия, а в базу сохраняется ID</div>
+                  <div class="font-semibold">Параметры спавна</div>
+                  <div class="editor-muted-text text-sm">Справочники показывают названия, а в базу сохраняются ID</div>
                 </div>
                 <div id="tabRoot"></div>
               </div>
@@ -109,13 +111,6 @@
                 <div id="tab_basic" class="space-y-6"></div>
                 <div id="tab_ai" class="space-y-6 hidden"></div>
                 <div id="tab_drop" class="space-y-6 hidden"></div>
-              </div>
-            </div>
-
-            <div class="editor-panel-card">
-              <div class="font-semibold">Подсказки</div>
-              <div class="editor-muted-text text-sm mt-1">
-                Эффекты и поведение хранятся в базе списком: в редакторе это теги — выбирайте нужные из списка, набор сохранится сам.
               </div>
             </div>
           </div>
@@ -348,18 +343,22 @@
       const filtered = applyClientFilters(STATE.list);
 
       if (!STATE.list.length) {
-        if (DOM.count) DOM.count.textContent = '—';
-        DOM.list.innerHTML = `<div class="editor-empty-state">Нет записей (или БД не настроена)</div>`;
+        if (DOM.count) DOM.count.textContent = '0';
+        DOM.list.innerHTML = `<div class="editor-empty-state">Спавнов пока нет — нажмите «Новый спавн», чтобы создать запись.</div>`;
         return;
       }
 
+      if (DOM.count) {
+        DOM.count.textContent = filtered.length < STATE.list.length
+          ? `${filtered.length} из ${STATE.list.length}`
+          : `${STATE.list.length}`;
+      }
+
       if (!filtered.length) {
-        if (DOM.count) DOM.count.textContent = `${STATE.list.length}`;
         DOM.list.innerHTML = `<div class="editor-empty-state">Ничего не найдено по фильтрам</div>`;
         return;
       }
 
-      if (DOM.count) DOM.count.textContent = `${STATE.list.length}`;
       const listHtml = filtered.map(r => {
         const active = r.ID === STATE.selectedId;
         const title = formatMobTitle(r);
@@ -369,19 +368,19 @@
           ? window.EditorCore.utils.renderSkinApiUrl(STATE.skinsApi, skinInfo)
           : '';
         const skinPreview = skinUrl
-          ? `<img class="w-9 h-9 rounded-full border editor-hairline object-cover" src="${skinUrl}" alt="skin" loading="lazy" />`
-          : `<div class="w-9 h-9 rounded-full border editor-hairline editor-soft"></div>`;
+          ? `<img class="w-9 h-9 rounded-full border editor-hairline object-cover shrink-0" src="${esc(skinUrl)}" alt="" loading="lazy" />`
+          : `<div class="w-9 h-9 rounded-full border editor-hairline editor-soft shrink-0 flex items-center justify-center text-[10px] editor-muted-text">—</div>`;
         const bossBadge = Number(r.Boss || 0)
-          ? `<span class="text-xs px-2 py-1 rounded-full" style="background: rgba(244,63,94,.14); border: 1px solid rgba(244,63,94,.3)">BOSS</span>`
+          ? `<span class="editor-badge" style="color: var(--editor-danger);">Босс</span>`
           : '';
         return `
-          <button class="w-full text-left editor-row ${active ? 'ring-2 editor-ring' : ''}" data-id="${r.ID}">
-            <div class="flex items-center justify-between gap-3">
+          <button type="button" class="w-full text-left editor-row ${active ? 'editor-row-active' : ''}" data-id="${r.ID}">
+            <div class="flex items-center justify-between gap-2">
               <div class="min-w-0 flex items-center gap-3">
                 ${skinPreview}
                 <div class="min-w-0">
                   <div class="font-semibold truncate">${esc(title)}</div>
-                  <div class="text-sm editor-muted-text truncate">ID: ${r.ID} • Мир: ${esc(world)} • Ур: ${r.Level ?? ''} • X:${r.PositionX ?? ''} Y:${r.PositionY ?? ''}</div>
+                  <div class="text-xs editor-muted-text truncate">ID ${r.ID} · ${esc(world)} · Ур. ${r.Level ?? ''} · X ${r.PositionX ?? ''}, Y ${r.PositionY ?? ''}</div>
                 </div>
               </div>
               ${bossBadge}
@@ -392,7 +391,7 @@
       DOM.list.innerHTML = `<div class="editor-list">${listHtml}</div>`;
 
       DOM.list.querySelectorAll('[data-id]').forEach(btn => {
-        btn.addEventListener('click', () => selectMob(Number(btn.getAttribute('data-id'))));
+        btn.addEventListener('click', () => selectMob(Number(btn.getAttribute('data-id')), { confirmDirty: true }));
       });
     };
 
@@ -435,27 +434,29 @@
       },
       Level: { type: 'number', label: 'Уровень', ui: { min: 1, step: 1 } },
       Power: { type: 'number', label: 'Сила (Power)', ui: { min: 0, step: 1 } },
-      Number: { type: 'number', label: 'Количество (Number)', ui: { min: 1, step: 1 } },
-      Respawn: { type: 'number', label: 'Респавн (сек)', ui: { min: 0, step: 1 } },
-      Radius: { type: 'number', label: 'Радиус (Radius)', ui: { min: 0, step: 1 } },
-      ActiveRadius: { type: 'number', label: 'Радиус Активности (0 - по умолч.)', ui: { min: 0, step: 1 } },
-      Boss: { type: 'toggle', label: 'Boss' },
+      Number: { type: 'number', label: 'Количество на спавне', ui: { min: 1, step: 1 } },
+      Respawn: { type: 'number', label: 'Респавн (сек.)', ui: { min: 0, step: 1 } },
+      Radius: { type: 'number', label: 'Радиус блуждания', ui: { min: 0, step: 1 } },
+      ActiveRadius: { type: 'number', label: 'Радиус активности (0 — по умолч.)', ui: { min: 0, step: 1 } },
+      Boss: { type: 'toggle', label: 'Босс' },
     };
 
     // Поля стихийных умений и дропа.
     const fieldsAi = {
       Debuffs: {
-        label: 'Debuffs',
+        label: 'Накладываемые ослабления (Debuffs)',
+        help: 'Выберите эффекты, которые моб может накладывать при ударе.',
         ui: EditorCore.presets.tags({
           options: DEBUFFS,
-          placeholder: 'Добавить debuff…'
+          placeholder: 'Добавить эффект…'
         })
       },
       Behavior: {
-        label: 'Behavior',
+        label: 'Поведение и навыки (Behavior)',
+        help: 'Набор тегов ИИ: агрессия, стихийные особенности и классовые умения.',
         ui: EditorCore.presets.tags({
           options: BEHAVIORS,
-          placeholder: 'Добавить behavior…'
+          placeholder: 'Добавить поведение…'
         })
       },
     };
@@ -463,12 +464,19 @@
     const fieldsDrop = {
       drops: {
         type: 'list',
-        label: 'Слоты дропа (макс 5)',
-        ui: { addLabel: 'Добавить слот' },
-        itemDefault: { item_id: 0, count: 0, chance: 0 },
+        label: 'Таблица дропа (максимум 5 слотов)',
+        ui: {
+          addLabel: 'Добавить слот дропа',
+          listMode: 'table',
+          tableHeader: ['Предмет', 'Количество', 'Шанс (%)'],
+          tableCols: 'minmax(0,1fr) 130px 130px',
+          tableColsMd: 'minmax(0,1fr) 150px 150px',
+          emptyMessage: 'Дроп не настроен. Нажмите «Добавить слот дропа».',
+        },
+        itemDefault: { item_id: 0, count: 1, chance: 10 },
         itemFields: {
           item_id: { type: 'db_select', label: 'Предмет', ui: { dbKey: 'item', placeholder: '— предмет —', searchPlaceholder: 'Поиск предмета…', searchServer: true, dbLimit: 1000 } },
-          count: { type: 'number', label: 'Кол-во', ui: { min: 0, step: 1 } },
+          count: { type: 'number', label: 'Количество', ui: { min: 0, step: 1 } },
           chance: { type: 'number', label: 'Шанс (%)', ui: { min: 0, step: 0.1 } },
         }
       }
@@ -479,7 +487,7 @@
       const fr = window.EditorCore.FieldRenderer;
       const render = () => {
         if (!STATE.mob) {
-          root.innerHTML = `<div class="editor-muted-text">Выберите запись слева</div>`;
+          root.innerHTML = `<div class="editor-empty-state">Выберите спавн моба в списке слева или нажмите «Новый спавн».</div>`;
           return;
         }
 
@@ -523,6 +531,7 @@
             if (path === 'drops' && Array.isArray(STATE.mob.drops)) {
               STATE.mob.drops = STATE.mob.drops.slice(0, 5);
             }
+            DIRTY?.markDirty?.();
             setHeader();
             setActionButtons(true);
           };
@@ -596,10 +605,17 @@
     const showDbStatus = async () => {
       const test = await window.EditorCore.DB.testConnection();
       if (test.ok) {
-        DOM.dbStatus.textContent = 'БД: подключена. Справочники загружаются автоматически.';
+        DOM.dbStatus.textContent = '';
+        DOM.dbStatus.classList.add('hidden');
       } else {
         DOM.dbStatus.textContent = 'БД: нет подключения. Вместо справочника — ручной ввод ID.';
+        DOM.dbStatus.classList.remove('hidden');
       }
+    };
+
+    const canDiscardDirty = async () => {
+      if (!DIRTY?.isDirty?.()) return true;
+      return EditorCore.Page.confirm('Есть несохранённые изменения. Продолжить без сохранения?');
     };
 
     const loadLookups = async () => {
@@ -653,8 +669,10 @@
       renderList();
     };
 
-    const selectMob = async (id) => {
+    const selectMob = async (id, { confirmDirty = false } = {}) => {
       if (!id) return;
+      if (id === STATE.selectedId && STATE.mob && confirmDirty) return;
+      if (confirmDirty && !await canDiscardDirty()) return;
       try {
         const res = await window.EditorCore.DBCrud.get(RESOURCE, id);
         STATE.selectedId = id;
@@ -670,10 +688,13 @@
       }
     };
 
-    const newMob = () => {
+    const newMob = async () => {
+      if (!await canDiscardDirty()) return;
       STATE.lastSelectedIdBeforeCreate = Number(STATE.selectedId || 0);
       STATE.selectedId = 0;
       STATE.mob = emptyMob();
+      if (Number(DOM.filterWorld?.value || 0) > 0) STATE.mob.WorldID = Number(DOM.filterWorld.value);
+      if (Number(DOM.filterMob?.value || 0) > 0) STATE.mob.BotID = Number(DOM.filterMob.value);
       STATE.persistedMob = null;
       DIRTY?.setClean();
       renderList();
@@ -792,6 +813,23 @@
 
       // Initial list
       await loadList({ reset: true });
+      if (!STATE.mob && STATE.list.length) {
+        await selectMob(STATE.list[0].ID, { confirmDirty: false });
+      } else {
+        renderForm();
+        setHeader();
+      }
+
+      window.addEventListener('message', (event) => {
+        if (!window.EditorCore?.Http?.isSameOriginMessage?.(event, window.parent)) return;
+        const data = event.data || {};
+        if (data?.type !== 'editor-shell:request-dirty-status') return;
+        window.EditorCore.Http.postMessage(window.parent, {
+          type: 'editor-shell:dirty-status',
+          requestId: data.requestId,
+          dirty: !!DIRTY?.isDirty?.(),
+        });
+      });
 
       DOM.refresh.addEventListener('click', async () => {
         await loadLookups();

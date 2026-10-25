@@ -66,6 +66,12 @@
             </div>
           </div>
 
+          <div class="mt-3 editor-sidebar-filters">
+            <select data-bind="filter-world" class="w-full editor-input form-input">
+              <option value="">Все миры</option>
+            </select>
+          </div>
+
           <div
             class="mt-4 editor-sidebar-list editor-scroll"
             data-bind="list"
@@ -194,6 +200,7 @@
           step: 1,
           axes: { x: 'PosX', y: 'PosY' },
           mapWorldPath: 'WorldID',
+          spanAll: true,
         },
       },
       GiveQuestID: {
@@ -259,27 +266,30 @@
        DOM CACHING
        ═══════════════════════════════════════════════════ */
 
-    const DOM = {
-      list:       $('list'),
-      search:     $('search'),
-      title:      $('title'),
-      subtitle:   $('subtitle'),
-      status:     $('status'),
-      count:      $('count'),
-      tabRoot:    $('tab-root'),
-      formBasic:  $('form-basic'),
-      formDialog: $('form-dialog'),
-      skinImg:    $('skin-img'),
-      skinMeta:   $('skin-meta'),
-      dirtyPill:  $('dirty-pill'),
-      tabBasic:   document.querySelector('[data-tab="basic"]'),
-      tabDialog:  document.querySelector('[data-tab="dialog"]'),
+    const esc = EditorCore.Page.esc;
 
-      btnRefresh: $a('refresh'),
-      btnNew:     $a('new'),
-      btnSave:    $a('save'),
-      btnCancel:  $a('cancel'),
-      btnDelete:  $a('delete'),
+    const DOM = {
+      list:        $('list'),
+      search:      $('search'),
+      filterWorld: $('filter-world'),
+      title:       $('title'),
+      subtitle:    $('subtitle'),
+      status:      $('status'),
+      count:       $('count'),
+      tabRoot:     $('tab-root'),
+      formBasic:   $('form-basic'),
+      formDialog:  $('form-dialog'),
+      skinImg:     $('skin-img'),
+      skinMeta:    $('skin-meta'),
+      dirtyPill:   $('dirty-pill'),
+      tabBasic:    document.querySelector('[data-tab="basic"]'),
+      tabDialog:   document.querySelector('[data-tab="dialog"]'),
+
+      btnRefresh:  $a('refresh'),
+      btnNew:      $a('new'),
+      btnSave:     $a('save'),
+      btnCancel:   $a('cancel'),
+      btnDelete:   $a('delete'),
     };
 
     /* ═══════════════════════════════════════════════════
@@ -364,11 +374,8 @@
 
     const UI = {
       /** Status line */
-      setStatus(html = '', tone = 'muted') {
-        if (!DOM.status) return;
-        const cls = { ok: 'text-emerald-300', err: 'text-red-300' }[tone] || 'editor-muted-text';
-        DOM.status.className = `text-sm ${cls}`;
-        DOM.status.innerHTML = html;
+      setStatus(text = '', tone = 'muted') {
+        EditorCore.utils.setStatus(DOM.status, text, tone, { className: 'text-sm' });
       },
 
       /** Toolbar buttons */
@@ -394,12 +401,13 @@
           return;
         }
         const m = state.model;
-        const botName = lookupLabel(state.lookups.bots, m.BotID, `Bot #${m.BotID || '—'}`);
+        const botName = lookupLabel(state.lookups.bots, m.BotID, m.BotID ? `Бот #${m.BotID}` : 'Новый NPC');
         const world   = lookupLabel(state.lookups.worlds, m.WorldID, '—');
+        const idLabel = state.selectedId ? `ID ${state.selectedId}` : 'Новая запись';
 
-        if (DOM.title)    DOM.title.textContent    = botName || `NPC #${state.selectedId || 'new'}`;
+        if (DOM.title)    DOM.title.textContent    = botName;
         if (DOM.subtitle) DOM.subtitle.textContent =
-          `ID: ${state.selectedId || 'new'} • World: ${world} • X:${m.PosX} Y:${m.PosY}`;
+          `${idLabel} · Мир: ${world} · X ${m.PosX}, Y ${m.PosY}`;
       },
 
       /** Skin preview */
@@ -407,35 +415,50 @@
         if (!DOM.skinImg || !DOM.skinMeta) return;
         if (!state.model) {
           DOM.skinImg.src = '';
+          DOM.skinImg.classList.add('hidden');
           DOM.skinMeta.textContent = 'Скин не выбран.';
           return;
         }
         const info = state.lookups.botSkins.get(String(state.model.BotID));
         if (!info || !state.skinsApi) {
           DOM.skinImg.src = '';
+          DOM.skinImg.classList.add('hidden');
           DOM.skinMeta.textContent = 'Скин не загружен';
           return;
         }
-        DOM.skinImg.src = EditorCore.utils.renderSkinApiUrl(state.skinsApi, info);
+        const url = EditorCore.utils.renderSkinApiUrl(state.skinsApi, info);
+        DOM.skinImg.src = url;
+        DOM.skinImg.classList.toggle('hidden', !url);
         DOM.skinMeta.textContent = info.name || 'default';
       },
 
       /** Sidebar list */
       renderList() {
         const rows = state.rows;
-        if (DOM.count) DOM.count.textContent = rows.length || '—';
         if (!DOM.list) return;
 
         if (!rows.length) {
-          DOM.list.innerHTML = '<div class="editor-empty-state">Данных нет — нажмите «Новый NPC»</div>';
+          if (DOM.count) DOM.count.textContent = '0';
+          DOM.list.innerHTML = '<div class="editor-empty-state">NPC пока нет — нажмите «Новый NPC», чтобы добавить первого.</div>';
           return;
         }
 
         const q = String(DOM.search?.value || '').trim().toLowerCase();
-        const filtered = q ? rows.filter((r) => this._matchRow(r, q)) : rows;
+        const worldFilter = String(DOM.filterWorld?.value || '');
+        const filtered = rows.filter((r) => {
+          if (worldFilter && String(r.WorldID || '') !== worldFilter) return false;
+          if (!q) return true;
+          return this._matchRow(r, q);
+        });
+
+        if (DOM.count) {
+          DOM.count.textContent = filtered.length < rows.length
+            ? `${filtered.length} из ${rows.length}`
+            : `${rows.length}`;
+        }
 
         if (!filtered.length) {
-          DOM.list.innerHTML = '<div class="editor-empty-state">Ничего не найдено</div>';
+          DOM.list.innerHTML = '<div class="editor-empty-state">Ничего не найдено по фильтрам</div>';
           return;
         }
 
@@ -465,22 +488,23 @@
 
       _rowHtml(row) {
         const active  = num(row.ID) === num(state.selectedId);
-        const bot     = lookupLabel(state.lookups.bots,   row.BotID,       `Bot #${row.BotID || '—'}`);
+        const bot     = lookupLabel(state.lookups.bots,   row.BotID,       `Бот #${row.BotID || '—'}`);
         const world   = lookupLabel(state.lookups.worlds, row.WorldID,     '—');
-        const quest   = lookupLabel(state.lookups.quests, row.GiveQuestID, '—');
+        const quest   = lookupLabel(state.lookups.quests, row.GiveQuestID, '');
         const skin    = this._skinThumb(row.BotID);
-        const ring    = active ? 'ring-2 editor-ring' : '';
+        const activeCls = active ? 'editor-row-active' : '';
+        const questSuffix = quest ? ` · Квест: ${quest}` : '';
 
         return `
           <button type="button"
-                  class="w-full text-left editor-row ${ring}"
-                  data-id="${row.ID}">
+                  class="w-full text-left editor-row ${activeCls}"
+                  data-id="${esc(row.ID)}">
             <div class="flex items-center gap-3">
               ${skin}
               <div class="min-w-0">
-                <div class="font-semibold truncate">${bot}</div>
+                <div class="font-semibold truncate">${esc(bot)}</div>
                 <div class="text-xs editor-muted-text truncate">
-                  ID: ${row.ID} • World: ${world} • Quest: ${quest}
+                  ID ${esc(row.ID)} · Мир: ${esc(world)}${esc(questSuffix)}
                 </div>
               </div>
             </div>
@@ -491,10 +515,10 @@
         const info = state.lookups.botSkins.get(String(botId));
         if (info && state.skinsApi) {
           const url = EditorCore.utils.renderSkinApiUrl(state.skinsApi, info);
-          return `<img class="w-9 h-9 rounded-full border editor-hairline object-cover"
-                       src="${url}" alt="skin" loading="lazy" />`;
+          return `<img class="w-9 h-9 rounded-full border editor-hairline object-cover shrink-0"
+                       src="${esc(url)}" alt="" loading="lazy" />`;
         }
-        return `<div class="w-9 h-9 rounded-full border editor-hairline editor-soft
+        return `<div class="w-9 h-9 rounded-full border editor-hairline editor-soft shrink-0
                      flex items-center justify-center text-[10px] editor-muted-text">—</div>`;
       },
     };
@@ -505,10 +529,12 @@
 
     const Forms = {
       clear() {
-        DOM.formBasic.innerHTML  = '<div class="editor-muted-text">Выберите запись слева</div>';
-        DOM.formDialog.innerHTML = '<div class="editor-muted-text">Выберите запись слева</div>';
+        const empty = '<div class="editor-empty-state editor-field--span-all">Выберите NPC в списке слева или нажмите «Новый NPC».</div>';
+        DOM.formBasic.innerHTML  = empty;
+        DOM.formDialog.innerHTML = empty;
         state.forms.basic  = null;
         state.forms.dialog = null;
+        UI.syncSkin();
       },
 
       mount() {
@@ -592,7 +618,14 @@
        ═══════════════════════════════════════════════════ */
 
     const Actions = {
-      select(row) {
+      async canDiscardDirty() {
+        if (!dirty?.isDirty?.()) return true;
+        return EditorCore.Page.confirm('Есть несохранённые изменения. Продолжить без сохранения?');
+      },
+
+      async select(row, { confirmDirty = false } = {}) {
+        if (row && num(row.ID) === num(state.selectedId) && state.model && confirmDirty) return;
+        if (confirmDirty && !await this.canDiscardDirty()) return;
         state.selectedId = row ? num(row.ID) : 0;
         state.model      = row ? Model.fromRow(row) : null;
         state.snapshot    = clone(state.model);
@@ -601,10 +634,12 @@
         UI.refresh();
       },
 
-      createNew() {
+      async createNew() {
+        if (!await this.canDiscardDirty()) return;
         state.prevSelectedId = num(state.selectedId);
         state.selectedId = 0;
         state.model      = Model.empty();
+        if (DOM.filterWorld?.value) state.model.WorldID = num(DOM.filterWorld.value);
         state.snapshot   = null;
         dirty.setClean();
         Forms.mount();
@@ -634,7 +669,7 @@
 
       async save() {
         if (!state.model) return;
-        UI.setStatus('Saving…');
+        UI.setStatus('Сохранение…');
         try {
           const payload = Model.toPayload(state.model);
 
@@ -646,8 +681,8 @@
             const res = await EditorCore.DBCrud.create(TABLE, payload);
             state.selectedId     = num(res.id);
             state.prevSelectedId = 0;
-            UI.setStatus('Created.', 'ok');
-            EditorCore.UI.toast('Created', 'success');
+            UI.setStatus('Запись создана.', 'ok');
+            EditorCore.UI.toast('Создано', 'success');
           }
 
           dirty.setClean();
@@ -659,12 +694,12 @@
 
       async remove() {
         if (!state.selectedId || !await EditorCore.Page.confirm('Удалить запись?')) return;
-        UI.setStatus('Deleting…');
+        UI.setStatus('Удаление…');
         try {
           await EditorCore.DBCrud.remove(TABLE, state.selectedId);
-          EditorCore.UI.toast('Deleted', 'success');
-          UI.setStatus('Deleted.', 'ok');
-          this.select(null);
+          EditorCore.UI.toast('Удалено', 'success');
+          UI.setStatus('Удалено.', 'ok');
+          await this.select(null);
           await this.loadList();
         } catch (err) {
           this._handleError(err, 'Не удалось удалить');
@@ -672,7 +707,7 @@
       },
 
       async loadList() {
-        UI.setStatus('Loading…');
+        UI.setStatus('Загрузка списка…');
         try {
           const search = DOM.search?.value?.trim() || '';
           const res    = await EditorCore.DBCrud.list(TABLE, { search, limit: 5000, offset: 0 });
@@ -684,9 +719,9 @@
           // Restore selection
           if (state.selectedId) {
             const found = state.rows.find((r) => num(r.ID) === state.selectedId);
-            if (found) this.select(found);
+            if (found && !dirty.isDirty?.()) await this.select(found);
           } else if (!state.model && state.rows.length) {
-            this.select(state.rows[0]);
+            await this.select(state.rows[0]);
           }
         } catch (err) {
           this._handleError(err, 'Не удалось загрузить');
@@ -709,7 +744,20 @@
       const btn = e.target?.closest('[data-id]');
       if (!btn) return;
       const row = state.rows.find((r) => num(r.ID) === num(btn.dataset.id));
-      if (row) Actions.select(row);
+      if (row) Actions.select(row, { confirmDirty: true });
+    });
+
+    DOM.filterWorld?.addEventListener('change', () => UI.renderList());
+
+    window.addEventListener('message', (event) => {
+      if (!window.EditorCore?.Http?.isSameOriginMessage?.(event, window.parent)) return;
+      const data = event.data || {};
+      if (data?.type !== 'editor-shell:request-dirty-status') return;
+      window.EditorCore.Http.postMessage(window.parent, {
+        type: 'editor-shell:dirty-status',
+        requestId: data.requestId,
+        dirty: !!dirty?.isDirty?.(),
+      });
     });
 
     // Buttons
@@ -763,6 +811,15 @@
 
       Object.assign(state.lookups, { bots, worlds, quests, botSkins });
       state.skinsApi = skinsApi;
+      if (DOM.filterWorld) {
+        const prev = DOM.filterWorld.value;
+        DOM.filterWorld.innerHTML = '<option value="">Все миры</option>';
+        Array.from(worlds.entries())
+          .sort((a, b) => Number(a[0]) - Number(b[0]))
+          .forEach(([id, label]) => {
+            DOM.filterWorld.appendChild(new Option(`#${id} ${label}`.trim(), id, prev === id, prev === id));
+          });
+      }
     }
 
     (async () => {

@@ -1,9 +1,9 @@
 :root{
-  /* Page layout: 1280px — комфортная ширина для формы, глаз не бегает
-     от края до края на широком мониторе. */
-  --editor-page-max: 1280px;
-  --editor-page-pad: clamp(14px, 1.8vw, 24px);
-  --editor-sidebar-w: 300px;
+  /* Page layout: 1520px — оптимальная ширина для двухколоночного редактора
+     внутри Studio: список и форма не зажаты, но и не расползаются на 4K. */
+  --editor-page-max: 1520px;
+  --editor-page-pad: clamp(14px, 1.6vw, 22px);
+  --editor-sidebar-w: 316px;
   --editor-sticky-top: 16px;
 
   /* Card / section tuning */
@@ -23,17 +23,25 @@
    Per-editor accents
 ------------------------------------------------------------- */
 body[data-editor="crafts"]{ --editor-accent:#22c55e; }
-body[data-editor="mobs"]{ --editor-accent:#f43f5e; }
+body[data-editor="mobs"],
+body[data-editor="bots_mobs"]{ --editor-accent:#f43f5e; }
 body[data-editor="events"]{ --editor-accent:#60a5fa; }
 body[data-editor="scenario"]{ --editor-accent:#a78bfa; }
 body[data-editor="vouchers"]{ --editor-accent:#f59e0b; }
 body[data-editor="worlds"]{ --editor-accent:#38bdf8; }
 body[data-editor="aethers"]{ --editor-accent:#fb923c; }
+body[data-editor="dungeons"]{ --editor-accent:#e879f9; }
 body[data-editor="quests"]{ --editor-accent:#8b5cf6; }
 body[data-editor="bots_npc"]{ --editor-accent:#38bdf8; }
 body[data-editor="bots_info"]{ --editor-accent:#f97316; }
 body[data-editor="items"]{ --editor-accent:#22c55e; }
-body[data-editor="warehouse"]{ --editor-accent:#14b8a6; }
+body[data-editor="warehouse"],
+body[data-editor="warehouses"]{ --editor-accent:#14b8a6; }
+body[data-editor="accounts"]{ --editor-accent:#60a5fa; }
+body[data-editor="requests"]{ --editor-accent:#fbbf24; }
+body[data-editor="guests"]{ --editor-accent:#2dd4bf; }
+body[data-editor="settings"]{ --editor-accent:#818cf8; }
+body[data-editor="database"]{ --editor-accent:#34d399; }
 
 /* -------------------------------------------------------------
    Page shell
@@ -764,20 +772,96 @@ body[data-editor="warehouse"]{ --editor-accent:#14b8a6; }
 .editor-task-content.is-open{display:block;}
 
 /* -------------------------------------------------------------
-   Productivity modes
+   Productivity modes & viewport-docked desktop split
 ------------------------------------------------------------- */
 body.editor-compact{
   --editor-page-pad: 12px;
   --editor-card-pad: 12px;
   --editor-fields-gap: 10px;
-  --editor-control-h: 38px;
+  --editor-control-h: 36px;
 }
 
 body.editor-compact .editor-sticky-toolbar{padding:10px;}
-body.editor-compact .editor-row{padding:8px;}
+body.editor-compact .editor-row{padding:7px 9px;}
 
-body.editor-focus .editor-shell{
-  grid-template-columns:minmax(220px, 260px) minmax(0, 1fr);
+@media (min-width:1101px){
+  /* Полноэкранный сплит для двухколоночных редакторов: шапка закреплена,
+     список слева и форма справа прокручиваются независимо друг от друга. */
+  .editor-page:has(> .editor-shell--docked){
+    display:flex;
+    flex-direction:column;
+    height:100vh;
+    height:100dvh;
+    overflow:hidden;
+    padding-bottom:14px;
+  }
+
+  .editor-page:has(> .editor-shell--docked) > .editor-page-header{
+    flex:0 0 auto;
+    z-index:45;
+    padding-bottom:12px;
+  }
+
+  .editor-page:has(> .editor-shell--docked) > .editor-shell--docked{
+    flex:1 1 auto;
+    min-height:0;
+    margin-top:12px;
+    align-items:stretch;
+  }
+
+  .editor-shell--docked > .editor-dock-sidebar{
+    position:relative;
+    top:0;
+    height:100%;
+    min-height:0;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+  }
+
+  .editor-shell--docked > .editor-dock-sidebar > .editor-dock-pad{
+    flex:1 1 auto;
+    min-height:0;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+  }
+
+  .editor-shell--docked > .editor-dock-sidebar :is(.editor-sidebar-list, .editor-list-scroll, .quest-tree-surface){
+    flex:1 1 auto;
+    min-height:0;
+    max-height:none !important;
+    overflow-y:auto;
+  }
+
+  .editor-shell--docked > .editor-dock-main{
+    height:100%;
+    min-height:0;
+    overflow-y:auto;
+    overflow-x:hidden;
+    scrollbar-gutter:stable;
+  }
+
+  .editor-shell--docked > .editor-dock-main .editor-sticky-toolbar{
+    top:0;
+  }
+
+  html.editor-guest-mode .editor-shell--docked > .editor-dock-main > .editor-dock-pad{
+    padding-bottom:64px;
+  }
+
+  /* Режим фокуса: скрывает боковой список, отдавая всю ширину форме. */
+  body.editor-focus .editor-shell--docked{
+    grid-template-columns:minmax(0, 1fr);
+  }
+
+  body.editor-focus .editor-shell--docked > .editor-dock-sidebar{
+    display:none;
+  }
+
+  body.editor-focus .editor-shell--docked > .editor-dock-main{
+    border-radius:var(--editor-card-radius);
+  }
 }
 
 body.editor-focus .editor-page-sub,
@@ -785,12 +869,83 @@ body.editor-focus .editor-sidebar-meta{
   opacity:.78;
 }
 
-body.editor-focus .editor-sidebar-list{
-  max-height:72vh !important;
-}
-
 @media (max-width:1100px){
   body.editor-focus .editor-shell{grid-template-columns:1fr;}
+  .editor-dock-sidebar :is(.editor-list-scroll, .quest-tree-surface){
+    max-height:min(46vh, 420px);
+    max-height:min(46dvh, 420px);
+  }
+}
+
+/* -------------------------------------------------------------
+   Form section dividers & destructive button affordances
+------------------------------------------------------------- */
+.editor-form-section-divider{
+  grid-column:1 / -1;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:14px 0 6px;
+  margin-top:4px;
+  border-bottom:1px solid var(--editor-line);
+}
+
+.editor-form-section-divider:first-child{
+  padding-top:0;
+  margin-top:0;
+}
+
+.editor-form-section-heading{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  font-size:var(--editor-text-sm);
+  font-weight:700;
+  letter-spacing:.04em;
+  text-transform:uppercase;
+  color:var(--editor-text);
+}
+
+.editor-form-section-heading > i{
+  color:var(--editor-accent);
+  font-size:12px;
+}
+
+.editor-form-section-sub{
+  font-size:var(--editor-text-xs);
+  color:var(--editor-text-muted);
+}
+
+.editor-field--span-all{
+  grid-column:1 / -1;
+}
+
+/* Кнопки удаления в едином тулбаре получают явный опасный ховер, даже если
+   в разметке они вторичные — чтобы их нельзя было спутать с «Отменить». */
+.editor-btn-secondary:is([data-editor-role="delete"], [data-action="delete"], #btn-delete):not(:disabled):hover{
+  color:var(--editor-danger);
+  border-color:color-mix(in srgb, var(--editor-danger) 45%, transparent);
+  background:color-mix(in srgb, var(--editor-danger) 10%, var(--editor-button-secondary-bg));
+}
+
+/* Индикатор активного режима (компакт / фокус) на кнопке «Вид» */
+.editor-tools-btn[data-active-modes="1"]{
+  border-color:color-mix(in srgb, var(--editor-primary) 48%, transparent);
+  background:color-mix(in srgb, var(--editor-primary) 12%, transparent);
+  color:var(--editor-text);
+}
+
+.editor-tools-dot{
+  width:7px;
+  height:7px;
+  border-radius:999px;
+  background:var(--editor-primary);
+  display:none;
+}
+
+.editor-tools-btn[data-active-modes="1"] .editor-tools-dot{
+  display:inline-block;
 }
 
 /* -------------------------------------------------------------

@@ -40,8 +40,14 @@
           <div class="mt-3">
             <div class="editor-search">
               <i class="fa-solid fa-magnifying-glass"></i>
-              <input data-editor-role="search" type="search" class="w-full editor-input form-input" placeholder="Поиск по ID / уровню / миру..." />
+              <input data-editor-role="search" type="search" class="w-full editor-input form-input" placeholder="Поиск по ID или миру…" />
             </div>
+          </div>
+
+          <div class="mt-3 editor-sidebar-filters">
+            <select id="filterWorld" class="w-full editor-input form-input" data-datasource="worlds" data-label-mode="id_name" data-db-searchable="0" data-db-limit="300" data-value-type="number">
+              <option value="">Все миры</option>
+            </select>
           </div>
 
           <div class="mt-4 editor-sidebar-list editor-scroll" data-editor-role="list"></div>
@@ -84,17 +90,26 @@
 
     const toNullableInt = (value, fallback = 0) => EditorCore.utils.toNullableInt(value, fallback);
 
+    const worldsMap = new Map();
+    const formatWorldLabel = (worldId) => {
+      const id = Number(worldId ?? 0);
+      if (!Number.isFinite(id) || id < 0) return '—';
+      const name = worldsMap.get(String(id));
+      if (name) return `${name} (#${id})`;
+      return id ? `Мир #${id}` : 'Мир #0';
+    };
+
     const fields = {
-      WorldID: { type: 'db_select', label: 'Мир', ui: { dbKey: 'world', placeholder: '— мир —' } },
+      WorldID: { type: 'db_select', label: 'Мир подземелья', validate: { required: true }, ui: { dbKey: 'world', placeholder: '— мир —', searchPlaceholder: 'Поиск мира…' } },
+      TimeLimit: { type: 'number', label: 'Лимит времени (сек.)', ui: { min: 0, step: 1, help: 'Время прохождения в секундах (например, 600 = 10 минут).' } },
       // Точка входа — та же пара X/Y с картой мира подземелья.
       Door: {
         type: 'vec2',
-        label: 'Дверь (X, Y)',
-        ui: { step: 1, axes: { x: 'DoorX', y: 'DoorY' }, mapWorldPath: 'WorldID' },
+        label: 'Точка входа (Дверь X, Y)',
+        ui: { step: 1, axes: { x: 'DoorX', y: 'DoorY' }, mapWorldPath: 'WorldID', spanAll: true },
       },
       // Компоненты сценария подземелья открывают карту в мире подземелья.
-      Scenario: { type: 'scenario', label: 'Scenario', ui: { scenarioMode: 'dungeon', mapWorldPath: 'WorldID' } },
-      TimeLimit: { type: 'number', label: 'Time Limit (seconds)', ui: { step: 1 } },
+      Scenario: { type: 'scenario', label: 'Сценарий подземелья', ui: { scenarioMode: 'dungeon', mapWorldPath: 'WorldID', spanAll: true } },
     };
 
     const dirty = EditorCore.Dirty?.create
@@ -105,11 +120,19 @@
         })
       : { markDirty: () => {}, setClean: () => {} };
 
-    EditorCore.DbEditor.mount(document.body, {
+    const filterWorld = document.getElementById('filterWorld');
+
+    const editor = EditorCore.DbEditor.mount(document.body, {
       resource: 'dungeons',
       fields,
       fieldOptions: fieldRenderOptions,
       dirty,
+      transformList: (rows) => {
+        const world = filterWorld?.value ?? '';
+        if (world === '') return rows;
+        const wNum = Number(world);
+        return rows.filter(row => Number(row?.WorldID ?? -1) === wNum);
+      },
       defaults: () => ({
         WorldID: 0,
         DoorX: 0,
@@ -131,19 +154,37 @@
         Scenario: model?.Scenario ? String(model.Scenario) : null,
         TimeLimit: toNullableInt(model?.TimeLimit, 600),
       }),
-      listItem: (row) => ({
-        title: `Dungeon #${row?.ID || 0}`,
-        subtitle: `World ${row?.WorldID || '—'}`,
-      }),
-      getTitle: (_model, id) => (id ? `Подземелье #${id}` : 'Новое подземелье'),
+      listItem: (row) => {
+        const wName = worldsMap.get(String(row?.WorldID ?? ''));
+        return {
+          title: wName ? `Подземелье #${row?.ID || 0} — ${wName}` : `Подземелье #${row?.ID || 0}`,
+          subtitle: `${formatWorldLabel(row?.WorldID)} · Лимит ${row?.TimeLimit ?? 600} сек.`,
+        };
+      },
+      getTitle: (model, id) => {
+        const wName = worldsMap.get(String(model?.WorldID ?? ''));
+        if (id) return wName ? `Подземелье #${id} (${wName})` : `Подземелье #${id}`;
+        return 'Новое подземелье';
+      },
       getSubtitle: (model, id) => {
         if (!model) return '';
-        const world = Number(model?.WorldID || 0);
-        return id ? `ID ${id} · World ${world || '—'}` : `World ${world || '—'}`;
+        const world = formatWorldLabel(model?.WorldID);
+        const limit = `Лимит: ${model?.TimeLimit ?? 600} сек.`;
+        return id ? `ID ${id} · ${world} · ${limit}` : `${world} · ${limit}`;
       },
       emptyTitle: 'Выберите подземелье',
       emptySubtitle: 'или создайте новое',
     });
+
+    filterWorld?.addEventListener('change', () => {
+      editor.refresh();
+    });
+
+    EditorCore.DB?.list?.('worlds', { limit: 1000 })?.then((res) => {
+      if (!res?.ok || !Array.isArray(res.items)) return;
+      res.items.forEach((it) => worldsMap.set(String(it.value), String(it.label || '')));
+      editor.refresh();
+    }).catch(() => {});
   </script>
 </body>
 </html>

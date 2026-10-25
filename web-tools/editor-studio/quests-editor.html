@@ -48,6 +48,12 @@
       padding: 10px;
     }
 
+    @media (min-width: 1101px) {
+      .quest-tree-surface {
+        max-height: none;
+      }
+    }
+
     .quest-tree {
       display: flex;
       flex-direction: column;
@@ -519,11 +525,21 @@
 
     .quest-toolbar-title {
       margin: 0;
-      font-size: clamp(24px, 2.2vw, 34px);
+      font-size: clamp(18px, 1.6vw, 22px);
       font-weight: 800;
-      line-height: 1.06;
-      letter-spacing: -.03em;
+      line-height: 1.15;
+      letter-spacing: -.02em;
       min-width: 0;
+    }
+
+    .quest-rcon-hint code {
+      cursor: pointer;
+      transition: border-color .14s ease, background-color .14s ease, color .14s ease;
+    }
+    .quest-rcon-hint code:hover {
+      border-color: var(--editor-accent);
+      color: var(--editor-accent);
+      background: var(--editor-soft-bg-strong);
     }
 
     .quest-toolbar-subtitle {
@@ -854,8 +870,8 @@
   <div class="editor-page quest-editor-page">
     <div class="editor-page-header">
       <div class="editor-page-title">
+        <i class="fa-solid fa-compass text-accent text-xl"></i>
         <div>
-          <div class="editor-badge quest-page-badge">Редактор квестов</div>
           <h1>Квесты</h1>
           <div class="editor-page-sub">Квесты, шаги мобов, диалоги и задания — в одном окне.</div>
         </div>
@@ -881,9 +897,14 @@
                 <span class="editor-badge" title="Шагов">Шагов <strong id="stepCount">—</strong></span>
               </div>
             </div>
-            <button id="newQuestBtn" class="editor-btn editor-btn-secondary" title="Создать квест">
-              <i class="fa-solid fa-plus"></i><span>Новый</span>
-            </button>
+            <div class="flex items-center gap-1.5">
+              <button id="toggleAllQuestsBtn" type="button" class="editor-btn editor-btn-secondary px-2.5" title="Развернуть или свернуть все квесты">
+                <i class="fa-solid fa-angles-down"></i>
+              </button>
+              <button id="newQuestBtn" class="editor-btn editor-btn-primary" title="Создать квест">
+                <i class="fa-solid fa-plus"></i><span>Новый</span>
+              </button>
+            </div>
           </div>
 
           <div class="editor-section quest-sidebar-tools">
@@ -1031,7 +1052,7 @@
     const DOM = Object.freeze({
       tree: $('tree'), questCount: $('questCount'), stepCount: $('stepCount'),
       search: $('searchInput'), refresh: $('refreshBtn'), save: $('saveBtn'),
-      newQuest: $('newQuestBtn'), newStep: $('newStepBtn'),
+      newQuest: $('newQuestBtn'), toggleAllQuests: $('toggleAllQuestsBtn'), newStep: $('newStepBtn'),
       duplicateBtn: $('duplicateBtn'), deleteBtn: $('deleteBtn'),
       title: $('editorTitle'), subtitle: $('editorSubtitle'),
       empty: $('editorEmpty'), questEditor: $('questEditor'), stepEditor: $('stepEditor'),
@@ -1332,8 +1353,8 @@
         if (step && step.QuestID) {
           const stepPos = toNum(step.Step, 1);
           DOM.stepRconHint.innerHTML =
-            `<b>Проверка:</b> <code>quest accept ${step.QuestID} ${stepPos}</code>` +
-            `<b>Отказ:</b> <code>quest deny ${step.QuestID}</code>`;
+            `<b>Проверка:</b> <code title="Нажмите, чтобы скопировать">quest accept ${step.QuestID} ${stepPos}</code>` +
+            `<b>Отказ:</b> <code title="Нажмите, чтобы скопировать">quest deny ${step.QuestID}</code>`;
         } else {
           DOM.stepRconHint.innerHTML = '';
         }
@@ -1342,8 +1363,8 @@
         const quest = selectedQuest();
         if (quest) {
           DOM.questRconHint.innerHTML =
-            `<b>Проверка:</b> <code>quest accept ${quest.ID}</code>` +
-            `<b>Отказ:</b> <code>quest deny ${quest.ID}</code>`;
+            `<b>Проверка:</b> <code title="Нажмите, чтобы скопировать">quest accept ${quest.ID}</code>` +
+            `<b>Отказ:</b> <code title="Нажмите, чтобы скопировать">quest deny ${quest.ID}</code>`;
         } else {
           DOM.questRconHint.innerHTML = '';
         }
@@ -2718,11 +2739,45 @@
     DOM.refresh.addEventListener('click', loadData);
     DOM.save.addEventListener('click', saveAll);
     DOM.newQuest.addEventListener('click', createQuest);
+    DOM.toggleAllQuests?.addEventListener('click', () => {
+      const questsWithSteps = STATE.quests.filter((q) => STATE.steps.some((s) => s.QuestID === q.ID));
+      const allExpanded = questsWithSteps.length > 0 && questsWithSteps.every((q) => STATE.expandedQuests.has(q.ID));
+      if (allExpanded) {
+        STATE.expandedQuests.clear();
+      } else {
+        questsWithSteps.forEach((q) => STATE.expandedQuests.add(q.ID));
+      }
+      const icon = DOM.toggleAllQuests.querySelector('i');
+      if (icon) icon.className = allExpanded ? 'fa-solid fa-angles-down' : 'fa-solid fa-angles-up';
+      renderTree({ preserveScroll: true });
+    });
     DOM.newStep.addEventListener('click', createStep);
     DOM.duplicateBtn.addEventListener('click', duplicateStep);
     DOM.deleteBtn.addEventListener('click', removeSelected);
     DOM.search.addEventListener('input', debouncedRenderTree);
     DOM.typeFilter.addEventListener('change', () => renderTree());
+
+    [DOM.questRconHint, DOM.stepRconHint].forEach((hintHost) => {
+      hintHost?.addEventListener('click', async (e) => {
+        const codeEl = e.target?.closest?.('code');
+        if (!codeEl) return;
+        const text = codeEl.textContent?.trim() || '';
+        if (!text) return;
+        const ok = await EditorCore.utils.copyToClipboard(text);
+        if (ok) EditorCore.UI.toast(`Скопировано: ${text}`, 'success');
+      });
+    });
+
+    window.addEventListener('message', (event) => {
+      if (!window.EditorCore?.Http?.isSameOriginMessage?.(event, window.parent)) return;
+      const data = event.data || {};
+      if (data?.type !== 'editor-shell:request-dirty-status') return;
+      window.EditorCore.Http.postMessage(window.parent, {
+        type: 'editor-shell:dirty-status',
+        requestId: data.requestId,
+        dirty: Boolean(isDirty()),
+      });
+    });
 
     loadData();
   </script>

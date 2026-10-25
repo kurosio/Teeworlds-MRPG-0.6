@@ -90,12 +90,21 @@
   <script>
     const { fieldRenderOptions } = window.EditorCoreBootstrap || EditorCore.bootstrapEditor({ mode: 'event' });
 
+    const worldsMap = new Map();
+    const formatWorldLabel = (worldId) => {
+      const id = Number(worldId ?? 0);
+      if (!Number.isFinite(id) || id < 0) return '—';
+      const name = worldsMap.get(String(id));
+      if (name) return `${name} (#${id})`;
+      return id ? `Мир #${id}` : 'Мир #0';
+    };
+
     const aetherFields = {
       Name: { type: 'text', label: 'Название', validate: { required: true }, ui: { placeholder: 'Например: Gridania (Center)' } },
       WorldID: { type: 'db_select', label: 'Мир', validate: { required: true }, ui: { datasource: 'worlds', labelMode: 'id_name', placeholder: '— мир —', searchPlaceholder: 'Поиск мира…' } },
       Position: {
-        type: 'vec2', label: 'Позиция',
-        ui: { step: 1, axes: { x: 'TeleX', y: 'TeleY' }, mapWorldPath: 'WorldID' }
+        type: 'vec2', label: 'Координаты точки телепорта',
+        ui: { step: 1, axes: { x: 'TeleX', y: 'TeleY' }, mapWorldPath: 'WorldID', spanAll: true }
       },
     };
 
@@ -139,18 +148,24 @@
       }),
       listItem: (row) => ({
         title: row?.Name || `Телепорт #${row?.ID || 0}`,
-        subtitle: `Мир ${row?.WorldID ?? '—'} · ${row?.TeleX ?? '—'}:${row?.TeleY ?? '—'}`
+        subtitle: `ID ${row?.ID ?? '—'} · ${formatWorldLabel(row?.WorldID)} · X ${row?.TeleX ?? '—'}, Y ${row?.TeleY ?? '—'}`
       }),
       getTitle: (model, id) => (id ? `Телепорт: ${model?.Name || `#${id}`}` : 'Новый телепорт'),
       getSubtitle: (model, id) => {
         if (!model) return '';
-        const world = `Мир: ${model.WorldID || '—'}`;
-        const coords = `Коорд.: ${model.TeleX ?? '—'}:${model.TeleY ?? '—'}`;
+        const world = formatWorldLabel(model.WorldID);
+        const coords = `X ${model.TeleX ?? '—'}, Y ${model.TeleY ?? '—'}`;
         return id ? `ID ${id} · ${world} · ${coords}` : `${world} · ${coords}`;
       },
       emptyTitle: 'Выберите телепорт',
       emptySubtitle: 'или создайте новый',
     });
+
+    EditorCore.DB?.list?.('worlds', { limit: 1000 })?.then((res) => {
+      if (!res?.ok || !Array.isArray(res.items)) return;
+      res.items.forEach((it) => worldsMap.set(String(it.value), String(it.label || '')));
+      editor.refresh();
+    }).catch(() => {});
 
     filterWorld?.addEventListener('change', () => {
       editor.refresh();

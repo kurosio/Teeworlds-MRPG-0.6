@@ -37,7 +37,6 @@
         </div>
       </div>
       <div class="editor-page-actions">
-        <span id="dirty-pill" class="editor-dirty-pill hidden">Данные не сохранены</span>
         <button id="btn-refresh" class="editor-btn editor-btn-secondary">
           <i class="fa-solid fa-rotate"></i><span>Обновить</span>
         </button>
@@ -56,9 +55,14 @@
             <div class="text-sm font-semibold">Категории</div>
             <div class="text-xs editor-muted-text" id="meta-count">—</div>
           </div>
-          <button id="btn-clear-filters" class="editor-icon-btn" title="Сбросить фильтры">
-            <i class="fa-solid fa-broom"></i>
-          </button>
+          <div class="flex items-center gap-1">
+            <button id="btn-collapse-all" class="editor-icon-btn" title="Свернуть или развернуть все группы" aria-label="Свернуть или развернуть все группы">
+              <i class="fa-solid fa-layer-group"></i>
+            </button>
+            <button id="btn-clear-filters" class="editor-icon-btn" title="Сбросить фильтры" aria-label="Сбросить фильтры">
+              <i class="fa-solid fa-broom"></i>
+            </button>
+          </div>
         </div>
 
         <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -77,16 +81,9 @@
             <i class="fa-solid fa-magnifying-glass"></i>
             <input id="search" type="search" class="w-full editor-input form-input" placeholder="Поиск по ID / группе / предмету…" />
           </div>
-          <div class="mt-2 flex items-center justify-between">
-            <!-- Подсказки по горячим клавишам убраны по просьбе (горячие клавиши отключены в этом редакторе) -->
-            <div></div>
-            <button id="btn-collapse-all" class="editor-icon-btn" title="Свернуть/развернуть группы">
-              <i class="fa-solid fa-layer-group"></i>
-            </button>
-          </div>
         </div>
 
-        <div id="list" class="mt-4 editor-list-scroll editor-scroll"></div>
+        <div id="list" class="mt-4 editor-sidebar-list editor-scroll"></div>
         </div>
       </aside>
 
@@ -99,22 +96,28 @@
               <div class="text-lg font-semibold" id="title">Выберите крафт</div>
               <span class="editor-badge" id="badge-id" style="display:none"></span>
             </div>
-            <div class="editor-muted-text text-sm mt-1" id="subtitle">—</div>
+            <div class="editor-muted-text text-sm mt-1" id="subtitle">или создайте новый рецепт</div>
           </div>
-          <div class="flex flex-wrap gap-2">
+          <div class="editor-page-actions">
+            <span id="dirty-pill" class="editor-dirty-pill hidden">Данные не сохранены</span>
+            <button id="btn-save" class="editor-btn editor-btn-primary" disabled>
+              <i class="fa-solid fa-floppy-disk"></i><span>Сохранить</span>
+            </button>
             <button id="btn-cancel" class="editor-btn editor-btn-secondary hidden" disabled>
               <i class="fa-solid fa-rotate-left"></i><span>Отменить</span>
             </button>
             <button id="btn-delete" class="editor-btn editor-btn-secondary" disabled>
               <i class="fa-solid fa-trash"></i><span>Удалить</span>
             </button>
-            <button id="btn-save" class="editor-btn editor-btn-primary" disabled>
-              <i class="fa-solid fa-floppy-disk"></i><span>Сохранить</span>
-            </button>
           </div>
         </div>
 
         <div class="mt-4">
+          <div id="empty-editor-state" class="editor-empty-state">
+            Выберите рецепт в списке слева или нажмите «Новый крафт», чтобы создать новый рецепт.
+          </div>
+
+          <div id="editor-body" class="hidden">
           <div class="grid grid-cols-1 lg:grid-cols-4 gap-4 editor-section">
             <div>
               <div class="editor-label mb-1">Основная группа <span class="editor-muted-text">(необязательно)</span></div>
@@ -164,6 +167,7 @@
 			</details>
 		  </div>
 		</div>
+          </div>
 
           <div class="mt-5" id="status"></div>
         </div>
@@ -194,11 +198,11 @@
         <label id="rename-input-label" for="rename-group-input" class="block text-sm font-medium mt-4 mb-1">Новое название</label>
         <input id="rename-group-input" type="text" maxlength="512" class="w-full editor-input form-input" autocomplete="off" placeholder="Введите название группы" />
         <div id="rename-impact" class="editor-muted-text text-sm mt-2" aria-live="polite">Проверка рецептов…</div>
-        <div id="rename-existing-warning" class="hidden mt-3 p-3 rounded-lg border border-amber-400/30 bg-amber-400/10 text-sm text-amber-100" role="status">
+        <div id="rename-existing-warning" class="hidden mt-3 p-3 rounded-lg border text-sm" style="border-color: color-mix(in srgb, var(--editor-warning) 35%, transparent); background: color-mix(in srgb, var(--editor-warning) 10%, transparent); color: var(--editor-warning);" role="status">
           На этом уровне уже есть элемент с таким названием. После переименования ветви объединятся.
         </div>
-        <div id="rename-validation" class="hidden text-sm text-red-300 mt-2" role="alert"></div>
-        <div id="rename-error" class="hidden text-sm text-red-300 mt-2" role="alert"></div>
+        <div id="rename-validation" class="hidden text-sm mt-2" style="color: var(--editor-danger);" role="alert"></div>
+        <div id="rename-error" class="hidden text-sm mt-2" style="color: var(--editor-danger);" role="alert"></div>
         <div class="flex justify-end gap-2 mt-5 pt-4 border-t editor-hairline">
           <button id="btn-rename-cancel" type="button" class="editor-btn editor-btn-secondary">Отмена</button>
           <button id="btn-rename-confirm" type="button" class="editor-btn editor-btn-primary" disabled>
@@ -239,6 +243,8 @@
       mainGroupList: document.getElementById('main-group-list'),
       groupList: document.getElementById('group-list'),
       subList: document.getElementById('sub-list'),
+      emptyState: document.getElementById('empty-editor-state'),
+      editorBody: document.getElementById('editor-body'),
       formMain: document.getElementById('form-main'),
       formReq: document.getElementById('form-req'),
       rawRequired: document.getElementById('raw-required'),
@@ -602,8 +608,8 @@
 
         const renderItems = (items) => items.sort((a, b) => Number(a.ID) - Number(b.ID)).map((row) => {
           const active = String(row.ID) === String(STATE.selectedId);
-          const item = getItemLabel(row.ItemID) || (row.ItemID ? `Item #${row.ItemID}` : '—');
-          const world = getWorldLabel(row.WorldID) || (row.WorldID ? `World #${row.WorldID}` : 'All');
+          const item = getItemLabel(row.ItemID) || (row.ItemID ? `Предмет #${row.ItemID}` : '—');
+          const world = getWorldLabel(row.WorldID) || (row.WorldID ? `Мир #${row.WorldID}` : 'Все миры');
           const price = Number(row.Price || 0);
           return `<button type="button" class="editor-row${active ? ' editor-row-active' : ''}" data-id="${row.ID}">
             <div class="flex items-start justify-between gap-2"><div class="min-w-0">
@@ -626,8 +632,8 @@
           .map(group => renderGroup(mainGroup, group, groups.get(group))).join('');
         const isGrouped = !!mainGroup;
         const mainLabel = mainGroup || '(без основной группы)';
-        return `<section class="crafts-main-group ${isGrouped ? 'border editor-primary-border editor-primary-tint' : 'border border-white/10 bg-black/5'} rounded-lg mb-2 overflow-hidden">
-          <div class="crafts-group-header px-3 py-2 ${isGrouped ? 'editor-primary-text' : 'editor-muted-text'}"><div class="flex items-center gap-1 min-w-0"><i class="fa-solid fa-layer-group text-xs"></i><span class="font-bold text-sm truncate">${escapeHtml(mainLabel)}</span>${renameControl('main', mainGroup)}</div><span class="text-xs editor-muted-text shrink-0">${total} предметов</span></div>${groupHtml}</section>`;
+        return `<section class="crafts-main-group ${isGrouped ? 'border editor-primary-border editor-primary-tint' : 'border editor-hairline editor-soft'} rounded-lg mb-2 overflow-hidden">
+          <div class="crafts-group-header px-3 py-2 ${isGrouped ? 'editor-primary-text' : 'editor-muted-text'}"><div class="flex items-center gap-1 min-w-0"><i class="fa-solid fa-layer-group text-xs"></i><span class="font-bold text-sm truncate">${escapeHtml(mainLabel)}</span>${renameControl('main', mainGroup)}</div><span class="text-xs editor-muted-text shrink-0">${total} рец.</span></div>${groupHtml}</section>`;
       }).join('');
 
       els.list.innerHTML = html;
@@ -712,19 +718,27 @@
     };
 
     const updateHeader = () => {
-      if (!STATE.selected) {
+      const hasSelected = !!STATE.selected;
+      els.emptyState?.classList.toggle('hidden', hasSelected);
+      els.editorBody?.classList.toggle('hidden', !hasSelected);
+      if (!hasSelected) {
         els.title.textContent = 'Выберите крафт';
-        els.subtitle.textContent = '—';
+        els.subtitle.textContent = 'или создайте новый рецепт';
         els.badgeId.style.display = 'none';
         return;
       }
-      const itemLabel = getItemLabel(STATE.selected.ItemID) || (STATE.selected.ItemID ? `Item #${STATE.selected.ItemID}` : '—');
+      const itemLabel = getItemLabel(STATE.selected.ItemID) || (STATE.selected.ItemID ? `Предмет #${STATE.selected.ItemID}` : 'Новый рецепт');
       els.title.textContent = itemLabel;
       const groupName = buildGroupName(STATE.selected.MainGroup, STATE.selected.Group, STATE.selected.SubGroup);
-      const worldLabel = getWorldLabel(STATE.selected.WorldID) || (STATE.selected.WorldID ? `World #${STATE.selected.WorldID}` : 'All');
-      els.subtitle.textContent = `${groupName || '(без группы)'} • ${worldLabel}`;
-      els.badgeId.textContent = `#${STATE.selectedId || 'new'}`;
+      const worldLabel = getWorldLabel(STATE.selected.WorldID) || (STATE.selected.WorldID ? `Мир #${STATE.selected.WorldID}` : 'Все миры');
+      els.subtitle.textContent = `${groupName || '(без группы)'} · ${worldLabel}`;
+      els.badgeId.textContent = STATE.selectedId ? `#${STATE.selectedId}` : 'новый';
       els.badgeId.style.display = 'inline-flex';
+    };
+
+    const canDiscardDirty = async () => {
+      if (!STATE.isDirty) return true;
+      return EditorCore.Page.confirm('Есть несохранённые изменения. Продолжить без сохранения?');
     };
 
     const applyEditorInputs = () => {
@@ -778,8 +792,10 @@
       renderList();
     };
 
-    const selectRow = async (id) => {
+    const selectRow = async (id, { confirmDirty = true } = {}) => {
       if (!id) return;
+      if (String(id) === String(STATE.selectedId) && STATE.selected) return;
+      if (confirmDirty && !await canDiscardDirty()) return;
       try {
         setStatus('Загрузка…');
         const res = await EditorCore.DBCrud.get(RESOURCE, id);
@@ -976,7 +992,8 @@
       STATE.ui.collapsedGroups = allCollapsed ? new Set() : new Set(all);
       renderList();
     });
-    els.newBtn.addEventListener('click', () => {
+    els.newBtn.addEventListener('click', async () => {
+      if (!await canDiscardDirty()) return;
       const row = {
         ID: 0,
         GroupName: buildGroupName('', STATE.filter.group && STATE.filter.group !== '(без группы)' ? STATE.filter.group : '', STATE.filter.sub || ''),
@@ -988,6 +1005,17 @@
       };
       setSelected(row, true);
       setStatus('Создание новой записи… (нажмите Сохранить)');
+    });
+
+    window.addEventListener('message', (event) => {
+      if (!window.EditorCore?.Http?.isSameOriginMessage?.(event, window.parent)) return;
+      const data = event.data || {};
+      if (data?.type !== 'editor-shell:request-dirty-status') return;
+      window.EditorCore.Http.postMessage(window.parent, {
+        type: 'editor-shell:dirty-status',
+        requestId: data.requestId,
+        dirty: !!STATE.isDirty,
+      });
     });
 
     els.filterGroup.addEventListener('change', () => {

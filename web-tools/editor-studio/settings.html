@@ -123,6 +123,15 @@
       gap: 8px;
       margin-top: 16px;
     }
+
+    [data-source].active {
+      background: var(--editor-primary-soft);
+      border-color: color-mix(in srgb, var(--editor-primary) 45%, transparent);
+      color: var(--editor-text);
+    }
+    [data-source].active i {
+      color: var(--editor-primary);
+    }
   </style>
 </head>
 
@@ -131,7 +140,7 @@
 
     <div class="editor-page-header">
       <div class="editor-page-title">
-        <i class="fa-solid fa-gear"></i>
+        <i class="fa-solid fa-gear text-accent text-xl"></i>
         <div>
           <h1>Настройки</h1>
           <div class="editor-page-sub">Подключение к базе данных и источники данных для редакторов.</div>
@@ -240,39 +249,41 @@
         <div id="status" class="mt-4 text-sm"></div>
       </section>
 
-      <!-- ─── Sources ─── -->
-      <section class="editor-panel-card">
-        <h2 class="text-lg font-semibold">Источники списков</h2>
-        <p class="editor-muted-text text-sm mt-1">Справочники, из которых редакторы берут выпадающие списки. Нажмите, чтобы посмотреть содержимое.</p>
+      <div class="space-y-4">
+        <!-- ─── Sources ─── -->
+        <section class="editor-panel-card">
+          <h2 class="text-lg font-semibold">Источники списков</h2>
+          <p class="editor-muted-text text-sm mt-1">Справочники, из которых редакторы берут выпадающие списки. Нажмите, чтобы посмотреть содержимое.</p>
 
-        <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <button class="editor-btn editor-btn-secondary" data-source="quests"><i class="fa-solid fa-scroll"></i><span>Квесты</span></button>
-          <button class="editor-btn editor-btn-secondary" data-source="items"><i class="fa-solid fa-box"></i><span>Предметы</span></button>
-          <button class="editor-btn editor-btn-secondary" data-source="worlds"><i class="fa-solid fa-globe"></i><span>Миры</span></button>
-          <button class="editor-btn editor-btn-secondary" data-source="skills"><i class="fa-solid fa-wand-magic"></i><span>Скиллы</span></button>
-          <button class="editor-btn editor-btn-secondary" data-source="bots"><i class="fa-solid fa-robot"></i><span>Боты / Мобы</span></button>
-        </div>
+          <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <button class="editor-btn editor-btn-secondary active" data-source="quests"><i class="fa-solid fa-scroll"></i><span>Квесты</span></button>
+            <button class="editor-btn editor-btn-secondary" data-source="items"><i class="fa-solid fa-box"></i><span>Предметы</span></button>
+            <button class="editor-btn editor-btn-secondary" data-source="worlds"><i class="fa-solid fa-globe"></i><span>Миры</span></button>
+            <button class="editor-btn editor-btn-secondary" data-source="skills"><i class="fa-solid fa-wand-magic"></i><span>Скиллы</span></button>
+            <button class="editor-btn editor-btn-secondary" data-source="bots"><i class="fa-solid fa-robot"></i><span>Боты / Мобы</span></button>
+          </div>
 
-        <div class="mt-4 flex items-center gap-2">
-          <i class="fa-solid fa-magnifying-glass editor-muted-text"></i>
-          <input id="search" type="search" class="w-full editor-input form-input" placeholder="Поиск…" />
-        </div>
+          <div class="mt-4 editor-search">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input id="search" type="search" class="w-full editor-input form-input" placeholder="Поиск по справочнику…" />
+          </div>
 
-        <div id="list" class="mt-4 editor-list-scroll editor-list-scroll--short"></div>
-      </section>
+          <div id="list" class="mt-4 editor-list-scroll editor-list-scroll--short"></div>
+        </section>
 
-      <!-- ─── Theme ─── -->
-      <section class="editor-panel-card">
-        <h2 class="text-lg font-semibold">Внешний вид</h2>
-        <p class="editor-muted-text text-sm mt-1">Тема оформления для всех редакторов.</p>
-        <div class="mt-4">
-          <label class="text-sm font-medium editor-muted-text mb-1 block" for="theme-select">Тема</label>
-          <select id="theme-select" class="w-full editor-input form-input">
-            <option value="dark">Тёмная</option>
-            <option value="light">Светлая</option>
-          </select>
-        </div>
-      </section>
+        <!-- ─── Theme ─── -->
+        <section class="editor-panel-card">
+          <h2 class="text-lg font-semibold">Внешний вид</h2>
+          <p class="editor-muted-text text-sm mt-1">Тема оформления для всех редакторов и рабочей оболочки.</p>
+          <div class="mt-4">
+            <label class="text-sm font-medium editor-muted-text mb-1 block" for="theme-select">Тема</label>
+            <select id="theme-select" class="w-full editor-input form-input">
+              <option value="dark">Тёмная</option>
+              <option value="light">Светлая</option>
+            </select>
+          </div>
+        </section>
+      </div>
 
       <!-- ─── Sync ─── -->
       <section class="editor-panel-card editor-span-all">
@@ -1074,6 +1085,12 @@
     UI.themeSelect.addEventListener('change', e => {
       if (window.EditorCore?.theme?.set) EditorCore.theme.set(e.target.value);
     });
+    window.addEventListener('editor-core:theme-changed', e => {
+      const next = e.detail?.theme;
+      if (next && UI.themeSelect && UI.themeSelect.value !== next) {
+        UI.themeSelect.value = next;
+      }
+    });
 
     // Source buttons
     document.querySelectorAll('[data-source]').forEach(btn => {
@@ -1094,14 +1111,8 @@
     const syncModalStatus = $('sync-modal-status');
     let syncEditingId = null;
 
-    const setSyncModalStatus = (msg, tone = 'muted') => {
-      if (!syncModalStatus) return;
-      syncModalStatus.textContent = msg;
-      syncModalStatus.className = 'mt-3 text-sm';
-      if (tone === 'ok') syncModalStatus.classList.add('text-emerald-400');
-      else if (tone === 'err') syncModalStatus.classList.add('text-red-400');
-      else syncModalStatus.classList.add('editor-muted-text');
-    };
+    const setSyncModalStatus = (msg, tone = 'muted') =>
+      EditorCore.utils.setStatus(syncModalStatus, msg, tone, { className: 'mt-3 text-sm' });
 
     const renderSyncProfiles = async () => {
       if (!syncProfilesEl) return;

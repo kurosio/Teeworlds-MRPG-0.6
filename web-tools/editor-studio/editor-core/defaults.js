@@ -43,6 +43,7 @@
   window.EditorCore.defaults = {
     getFieldRenderOptions,
     FIELD_RENDER_OPTIONS,
+    fieldOptions: FIELD_RENDER_OPTIONS.scenario,
   };
 
   // UI presets to keep schemas small and consistent across editors.
