@@ -223,6 +223,104 @@
       const itemFields = fields?.DialogData?.itemFields || {};
       const defaults = fields?.DialogData?.itemDefault || {};
 
+      /**
+       * Реплики диалога всегда хранятся в том порядке, в котором их видит
+       * пользователь. Перестановка (перетаскивание, кнопки ↑/↓, клавиатура)
+       * собирает порядок из DOM: индексы «как было» превращаются в новую
+       * последовательность элементов, поэтому скрытые поля, индексы в путях
+       * (`DialogData.N.*`) и данные формы не могут разъехаться.
+       */
+      const dialogItems = () => {
+        if (!Array.isArray(state.data.DialogData)) state.data.DialogData = [];
+        return state.data.DialogData;
+      };
+
+      const commitOrder = (order) => {
+        const items = dialogItems();
+        if (!Array.isArray(order) || order.length !== items.length) return false;
+        const valid = order.every((index) => Number.isInteger(index) && index >= 0 && index < items.length);
+        if (!valid || new Set(order).size !== items.length) return false;
+        if (order.every((index, position) => index === position)) return false;
+        const next = order.map((index) => items[index]);
+        state.data.DialogData = next;
+        if (typeof onChange === 'function') {
+          onChange(state.data, { path: 'DialogData', value: next, oldValue: items });
+        }
+        render();
+        return true;
+      };
+
+      const moveItem = (from, to) => {
+        const items = dialogItems();
+        const start = Number(from);
+        if (!Number.isInteger(start) || start < 0 || start >= items.length) return false;
+        const target = Math.min(Math.max(Number(to) || 0, 0), items.length - 1);
+        if (target === start) return false;
+        const order = items.map((_, index) => index);
+        const [moved] = order.splice(start, 1);
+        order.splice(target, 0, moved);
+        if (!commitOrder(order)) return false;
+        // Перерисовка заменяет узлы: фокус возвращаем на рукоятку реплики,
+        // иначе клавиатура «теряет» строку после первого нажатия.
+        const nextHandle = root?.querySelector(`[data-dialog-handle="${target}"]`);
+        try { nextHandle?.focus({ preventScroll: true }); } catch { nextHandle?.focus?.(); }
+        return true;
+      };
+
+      /**
+       * Перетаскивание живёт в самом модуле, без Sortable с CDN: страницы
+       * редактора работают и без интернета, а на странице NPC внешняя
+       * библиотека не подключена вовсе — из-за этого реплики не двигались.
+       */
+      const startDrag = (event, itemEl, listEl) => {
+        if (!listEl || !itemEl || !listEl.isConnected) return;
+        if (event.pointerType === 'mouse' && event.button !== 0) return;
+        const startY = event.clientY;
+        let active = false;
+        let finished = false;
+
+        const onMove = (ev) => {
+          if (finished || !listEl.isConnected) return;
+          if (!active) {
+            if (Math.abs(ev.clientY - startY) < 4) return;
+            active = true;
+            itemEl.classList.add('is-dragging');
+            document.body.classList.add('is-dialog-dragging');
+          }
+          if (ev.cancelable) ev.preventDefault();
+          const siblings = Array.from(listEl.querySelectorAll('[data-dialog-item]'))
+            .filter((el) => el !== itemEl);
+          const before = siblings.find((el) => {
+            const rect = el.getBoundingClientRect();
+            return ev.clientY < rect.top + rect.height / 2;
+          });
+          if (before) {
+            if (itemEl.nextElementSibling !== before) listEl.insertBefore(itemEl, before);
+          } else if (itemEl.nextElementSibling) {
+            listEl.appendChild(itemEl);
+          }
+        };
+
+        const finish = () => {
+          if (finished) return;
+          finished = true;
+          window.removeEventListener('pointermove', onMove);
+          window.removeEventListener('pointerup', finish);
+          window.removeEventListener('pointercancel', finish);
+          document.body.classList.remove('is-dialog-dragging');
+          itemEl.classList.remove('is-dragging');
+          if (!active || !listEl.isConnected) return;
+          active = false;
+          const order = Array.from(listEl.querySelectorAll('[data-dialog-item]'))
+            .map((el) => Number(el.getAttribute('data-dialog-item')));
+          commitOrder(order);
+        };
+
+        window.addEventListener('pointermove', onMove, { passive: false });
+        window.addEventListener('pointerup', finish);
+        window.addEventListener('pointercancel', finish);
+      };
+
       const render = () => {
         if (!root) return;
         const list = Array.isArray(state.data.DialogData) ? state.data.DialogData : [];
@@ -255,7 +353,16 @@
                   <span class="editor-item-summary truncate">${esc(summary)}</span>
                 </div>
                 <div class="editor-item-actions">
-                  <span class="editor-item-handle" title="Drag the line"><i class="fa-solid fa-grip-vertical"></i></span>
+                  <span class="editor-item-handle" tabindex="0" title="Drag the line"
+                        data-dialog-handle="${index}"><i class="fa-solid fa-grip-vertical"></i></span>
+                  <button type="button" class="editor-icon-btn" title="Move the line up"
+                          data-dialog-move="up" data-dialog-move-index="${index}"${index === 0 ? ' disabled' : ''}>
+                    <i class="fa-solid fa-arrow-up"></i>
+                  </button>
+                  <button type="button" class="editor-icon-btn" title="Move the line down"
+                          data-dialog-move="down" data-dialog-move-index="${index}"${index === list.length - 1 ? ' disabled' : ''}>
+                    <i class="fa-solid fa-arrow-down"></i>
+                  </button>
                   <button type="button" class="editor-icon-btn" title="Collapse or expand" data-dialog-toggle="${index}">
                     <i class="fa-solid fa-chevron-down"></i>
                   </button>
@@ -287,23 +394,29 @@
         window.EditorCore?.UIManager?.init(root);
 
         const listEl = root.querySelector('[data-dialog-items="list"]');
-        if (window.Sortable && listEl) {
-          if (state.sortable) state.sortable.destroy();
-          state.sortable = new Sortable(listEl, {
-            handle: '.editor-item-handle',
-            animation: 150,
-            onEnd: (evt) => {
-              const items = Array.isArray(state.data.DialogData) ? state.data.DialogData : [];
-              const [moved] = items.splice(evt.oldIndex, 1);
-              items.splice(evt.newIndex, 0, moved);
-              state.data.DialogData = items;
-              if (typeof onChange === 'function') {
-                onChange(state.data, { path: 'DialogData', value: items });
+        if (listEl) {
+          listEl.querySelectorAll('[data-dialog-item]').forEach((itemEl) => {
+            const handle = itemEl.querySelector('[data-dialog-handle]');
+            if (!handle) return;
+            handle.addEventListener('pointerdown', (event) => startDrag(event, itemEl, listEl));
+            handle.addEventListener('keydown', (event) => {
+              const index = Number(handle.getAttribute('data-dialog-handle'));
+              if (event.key === 'ArrowUp') {
+                if (moveItem(index, index - 1)) event.preventDefault();
+              } else if (event.key === 'ArrowDown') {
+                if (moveItem(index, index + 1)) event.preventDefault();
               }
-              render();
-            }
+            });
           });
         }
+
+        root.querySelectorAll('[data-dialog-move]').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const index = Number(btn.getAttribute('data-dialog-move-index'));
+            const direction = btn.getAttribute('data-dialog-move');
+            moveItem(index, direction === 'up' ? index - 1 : index + 1);
+          });
+        });
 
         root.querySelectorAll('[data-dialog-remove]').forEach((btn) => {
           btn.addEventListener('click', () => {

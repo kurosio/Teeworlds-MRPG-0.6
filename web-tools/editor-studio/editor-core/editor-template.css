@@ -728,6 +728,34 @@ body[data-editor="database"]{ --editor-accent:#34d399; }
   color:var(--editor-text-muted);
   user-select:none;
   touch-action:none;
+  border-radius:var(--editor-radius-sm);
+  padding:0 2px;
+}
+
+.editor-item-handle:hover{
+  color:var(--editor-text);
+}
+
+.editor-item-handle:focus-visible{
+  outline:2px solid var(--editor-focus-ring);
+  outline-offset:2px;
+}
+
+/* Реплика, которую сейчас тащат: приподнята над списком, остальные на месте. */
+.editor-item.is-dragging{
+  position:relative;
+  z-index:2;
+  cursor:grabbing;
+  border-color:var(--editor-secondary);
+  border-color:color-mix(in srgb, var(--editor-secondary) 65%, var(--editor-soft-border));
+  box-shadow:var(--editor-shadow-md);
+  background:var(--editor-light-bg);
+}
+
+body.is-dialog-dragging,
+body.is-dialog-dragging *{
+  cursor:grabbing !important;
+  user-select:none;
 }
 
 .editor-item-subgroup{

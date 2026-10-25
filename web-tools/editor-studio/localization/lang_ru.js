@@ -1151,6 +1151,8 @@ window.EditorCoreLocalization.register({
     "Monster to defeat": "Моб для победы",
     "More": "Ещё",
     "Move the camera to a point": "Переместить камеру к точке",
+    "Move the line down": "Переместить реплику ниже",
+    "Move the line up": "Переместить реплику выше",
     "Movement disabled": "Движение отключено",
     "Movement objective": "Задача на движение",
     "MRPG workspace": "Рабочее место MRPG",
