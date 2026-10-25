@@ -758,6 +758,253 @@ body.is-dialog-dragging *{
   user-select:none;
 }
 
+/* ── Диалог: панель форматов, чипы подстановок и выбор записи ─────────────
+   Реплика — это текст с подстановками <bot_12>, <item_31>, <world_3>,
+   <player>, <time>, <here>, <eidolon>. Панель над полем вставляет их, чипы
+   под полем показывают, что уже вставлено, и позволяют заменить запись. */
+
+.dlg-line{
+  display:grid;
+  gap:6px;
+  min-width:0;
+}
+
+.dlg-toolbar{
+  display:flex;
+  align-items:center;
+  flex-wrap:wrap;
+  gap:2px;
+  padding:3px;
+  border:1px solid var(--editor-soft-border);
+  border-radius:10px;
+  background:var(--editor-soft-bg);
+}
+
+.dlg-toolbar-btn{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  height:26px;
+  padding:0 8px;
+  border:1px solid transparent;
+  border-radius:8px;
+  background:transparent;
+  color:var(--editor-text-muted);
+  font-size:12px;
+  line-height:1;
+  white-space:nowrap;
+  cursor:pointer;
+  transition:background .14s ease, border-color .14s ease, color .14s ease;
+}
+
+.dlg-toolbar-btn i{font-size:11px;}
+.dlg-toolbar-btn code{font-size:11px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;}
+.dlg-toolbar-btn:hover{background:var(--editor-soft-bg-strong);border-color:var(--editor-soft-border);color:var(--editor-text);}
+.dlg-toolbar-btn:focus-visible{outline:2px solid var(--editor-focus-ring);outline-offset:1px;}
+
+.dlg-toolbar-sep{
+  width:1px;
+  height:16px;
+  margin:0 3px;
+  background:var(--editor-soft-border);
+}
+
+.dlg-counter{
+  margin-left:auto;
+  padding:0 4px;
+  font-size:11px;
+  font-variant-numeric:tabular-nums;
+  color:var(--editor-text-muted);
+}
+
+.dlg-counter.is-over{color:#f87171;font-weight:600;}
+
+/* Реплика — компактное многострочное поле: 104px из общей темы здесь лишние. */
+.dlg-line textarea{
+  min-height:58px;
+  resize:vertical;
+}
+
+.dlg-tokens{
+  display:flex;
+  flex-wrap:wrap;
+  gap:4px;
+}
+
+.dlg-tokens:empty{display:none;}
+
+.dlg-token{
+  display:inline-flex;
+  align-items:center;
+  max-width:100%;
+  border:1px solid var(--editor-tag-border);
+  border-radius:999px;
+  background:var(--editor-tag-bg);
+  color:var(--editor-text);
+  font-size:11px;
+  line-height:1;
+}
+
+.dlg-token > i{
+  padding:0 2px 0 8px;
+  opacity:.75;
+}
+
+.dlg-token.is-invalid{
+  border-color:rgba(248,113,113,.55);
+  background:rgba(248,113,113,.12);
+  color:#fca5a5;
+}
+
+.dlg-token-label{
+  max-width:16rem;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.dlg-token-code{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;}
+.dlg-token-id{opacity:.55;font-variant-numeric:tabular-nums;}
+
+.dlg-token-main{
+  display:inline-flex;
+  align-items:center;
+  gap:5px;
+  max-width:100%;
+  padding:4px 8px;
+  border:0;
+  border-radius:999px;
+  background:transparent;
+  color:inherit;
+  font:inherit;
+  cursor:pointer;
+}
+
+.dlg-token-main:hover{background:var(--editor-tag-hover-bg);}
+.dlg-token-main:focus-visible{outline:2px solid var(--editor-focus-ring);outline-offset:-1px;}
+
+.dlg-token-x{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  width:22px;
+  align-self:stretch;
+  padding:4px 6px 4px 2px;
+  border:0;
+  border-radius:0 999px 999px 0;
+  background:transparent;
+  color:inherit;
+  opacity:.65;
+  cursor:pointer;
+}
+
+.dlg-token-x:hover{opacity:1;background:var(--editor-tag-hover-bg);}
+.dlg-token-x:focus-visible{outline:2px solid var(--editor-focus-ring);outline-offset:-1px;}
+
+/* Всплывающий список записей: вынесен в body и позиционируется от кнопки,
+   поэтому его не обрезают прокручиваемые панели редактора. */
+.dlg-picker{
+  position:fixed;
+  z-index:420;
+  display:flex;
+  flex-direction:column;
+  max-height:min(60dvh,380px);
+  overflow:hidden;
+  border:1px solid var(--editor-soft-border-strong);
+  border-radius:14px;
+  background:var(--editor-surface);
+  box-shadow:var(--editor-dropdown-shadow);
+}
+
+.dlg-picker-head{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:8px 10px;
+  border-bottom:1px solid var(--editor-soft-border);
+  color:var(--editor-text-muted);
+}
+
+.dlg-picker-search{
+  flex:1 1 auto;
+  min-width:0;
+  height:28px;
+  border:0;
+  background:transparent;
+  color:var(--editor-text);
+  font-size:13px;
+  outline:none;
+}
+
+.dlg-picker-list{
+  flex:1 1 auto;
+  display:flex;
+  flex-direction:column;
+  gap:1px;
+  overflow:auto;
+  padding:4px;
+}
+
+.dlg-picker-option{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  width:100%;
+  padding:6px 8px;
+  border:1px solid transparent;
+  border-radius:9px;
+  background:transparent;
+  color:var(--editor-text);
+  font-size:12px;
+  text-align:left;
+  cursor:pointer;
+}
+
+.dlg-picker-option:hover,
+.dlg-picker-option.is-active{background:var(--editor-soft-bg-strong);}
+
+.dlg-picker-option.is-current{
+  border-color:color-mix(in srgb, var(--editor-primary) 45%, transparent);
+}
+
+.dlg-picker-id{
+  min-width:44px;
+  color:var(--editor-text-muted);
+  font-variant-numeric:tabular-nums;
+}
+
+.dlg-picker-label{
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.dlg-picker-foot{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:6px 8px;
+  border-top:1px solid var(--editor-soft-border);
+}
+
+.dlg-picker-foot:empty{display:none;}
+
+.dlg-picker-remove{
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  height:28px;
+  padding:0 10px;
+  border:1px solid rgba(248,113,113,.35);
+  border-radius:9px;
+  background:transparent;
+  color:#f87171;
+  font-size:12px;
+  cursor:pointer;
+}
+
+.dlg-picker-remove:hover{background:rgba(248,113,113,.12);}
+
 .editor-item-subgroup{
   border:1px dashed var(--editor-soft-border-strong);
   border-radius:12px;

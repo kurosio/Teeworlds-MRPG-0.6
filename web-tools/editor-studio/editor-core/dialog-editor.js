@@ -1,4 +1,132 @@
 (() => {
+  /**
+   * Форматы реплики — подстановки, которые игровой сервер заменяет в тексте
+   * (`src/game/server/core/components/Bots/DialogsData.cpp`):
+   *   <bot_12> <item_31> <world_3> — имя записи по её ID;
+   *   <player> <time> <here> <eidolon> — данные игрока в момент показа.
+   */
+  const RECORD_FORMATS = {
+    bot:   { source: 'bots',   label: 'Bot',   icon: 'fa-user-ninja', title: 'Insert a bot name',   search: 'Search bots…' },
+    item:  { source: 'items',  label: 'Item',  icon: 'fa-cube',       title: 'Insert an item name', search: 'Search items…' },
+    world: { source: 'worlds', label: 'World', icon: 'fa-globe',      title: 'Insert a world name', search: 'Search worlds…' },
+  };
+
+  const SIMPLE_FORMATS = {
+    player:  { icon: 'fa-user',         title: "Insert the player's name" },
+    time:    { icon: 'fa-clock',        title: 'Insert the in-game time' },
+    here:    { icon: 'fa-location-dot', title: 'Insert the world you are in' },
+    eidolon: { icon: 'fa-ghost',        title: "Insert the summoned Eidolon's name" },
+  };
+
+  // На сервере текст реплики живёт в char aBufText[1024] — длиннее обрежется.
+  const GAME_TEXT_LIMIT = 1024;
+
+  const TOKEN_PATTERN = '<(bot|item|world)_(\\d+)>|<(player|time|here|eidolon)>';
+
+  /** Все форматы в тексте реплики — с позициями, чтобы их можно было менять. */
+  const parseTokens = (text) => {
+    const value = String(text ?? '');
+    const tokens = [];
+    const re = new RegExp(TOKEN_PATTERN, 'g');
+    let match;
+    while ((match = re.exec(value))) {
+      tokens.push({
+        raw: match[0],
+        kind: match[1] || match[3],
+        id: match[2] === undefined ? null : Number(match[2]),
+        start: match.index,
+        end: match.index + match[0].length,
+      });
+    }
+    return tokens;
+  };
+
+  /** Длина текста в байтах: сервер считает именно байты, а не символы. */
+  const byteLength = (text) => {
+    const value = String(text ?? '');
+    if (typeof TextEncoder === 'function') {
+      try { return new TextEncoder().encode(value).length; } catch { /* считаем символы */ }
+    }
+    return value.length;
+  };
+
+  // Подписи записей для форматов: <bot_12> → имя бота. Кэш общий на страницу:
+  // NPC-редактор и шаг квеста показывают одни и те же записи.
+  const recordLabels = new Map();
+  const completeRecords = new Set();
+  const recordLoads = new Map();
+  const text = (value) => String(value ?? '').trim();
+
+  /** Приводим Map / массив / {value,label} к одному виду {value,label}. */
+  const normalizeOptions = (input) => {
+    const out = [];
+    const seen = new Set();
+    const add = (value, label) => {
+      const id = Number(value);
+      if (!Number.isFinite(id) || id < 0 || seen.has(id)) return;
+      seen.add(id);
+      out.push({ value: id, label: text(label) });
+    };
+    // Map проверяем по методам, а не instanceof: справочник может прийти из
+    // другого документа (оболочка студии держит редактор в iframe).
+    const isMap = input && typeof input.forEach === 'function'
+      && typeof input.get === 'function' && typeof input.entries === 'function';
+    if (isMap) {
+      input.forEach((label, value) => add(value, label));
+    } else if (Array.isArray(input)) {
+      input.forEach((option) => {
+        if (option === null || option === undefined) return;
+        if (typeof option === 'object') add(option.value ?? option.id, option.label ?? option.name ?? '');
+        else add(option, '');
+      });
+    }
+    return out.sort((a, b) => a.value - b.value);
+  };
+
+  const rememberRecords = (kind, options, { complete = false } = {}) => {
+    if (!RECORD_FORMATS[kind] || !Array.isArray(options) || !options.length) return;
+    const labels = recordLabels.get(kind) || new Map();
+    options.forEach((option) => {
+      const id = Number(option?.value);
+      if (!Number.isFinite(id) || id < 0) return;
+      const label = text(option?.label);
+      if (label) labels.set(id, label);
+    });
+    recordLabels.set(kind, labels);
+    if (complete) completeRecords.add(kind);
+  };
+
+  const recordLabel = (kind, id) => recordLabels.get(kind)?.get(Number(id)) || '';
+  const recordsComplete = (kind) => completeRecords.has(kind);
+
+  /** Список записей из БД — один запрос на вид формата, с кэшем ядра. */
+  const loadRecords = (kind) => {
+    const meta = RECORD_FORMATS[kind];
+    if (!meta) return Promise.resolve([]);
+    if (recordLoads.has(kind)) return recordLoads.get(kind);
+    const promise = (async () => {
+      const db = window.EditorCore?.DB;
+      if (!db?.list) return [];
+      const result = await db.list(meta.source, { limit: 5000 });
+      const options = normalizeOptions(result?.items);
+      rememberRecords(kind, options, { complete: true });
+      return options;
+    })().catch((error) => {
+      // Неудачную загрузку не кэшируем: следующий клик попробует снова.
+      recordLoads.delete(kind);
+      throw error;
+    });
+    recordLoads.set(kind, promise);
+    return promise;
+  };
+
+  const ensureRecords = (kind) => (recordsComplete(kind) ? Promise.resolve([]) : loadRecords(kind));
+
+  // Открытый список записей один на документ: второй mount (переход на другой
+  // шаг квеста) не должен оставлять висеть список от прежней формы.
+  let closeActivePicker = null;
+  let activePickerAnchor = null;
+
   const DialogEditor = {
     buildSpeakerCandidates(map, extraSpeakers = []) {
       const base = Array.isArray(extraSpeakers)
@@ -164,7 +292,11 @@
             text: {
               type: 'textarea',
               label: 'Line text',
-              ui: { rows: 2, placeholder: textPlaceholder, hideLabel: false, colSpan: 4 }
+              // Подпись не нужна: над полем стоит панель форматов, а сам текст
+              // узнаётся по плейсхолдеру — так реплика занимает меньше места.
+              // `format` включает многострочное поле: по типу поля FieldRenderer
+              // textarea не создаёт.
+              ui: { format: 'textarea', rows: 2, placeholder: textPlaceholder, hideLabel: true, colSpan: 4 }
             },
             left_speaker_id: {
               type: 'select',
@@ -211,6 +343,7 @@
       extraSpeakers = [],
       speakerOptions = [],
       textPlaceholder = 'Dialogue...',
+      formats = {},
       onChange,
     } = {}) {
       const state = { data: data || { DialogData: [] } };
@@ -222,6 +355,18 @@
       });
       const itemFields = fields?.DialogData?.itemFields || {};
       const defaults = fields?.DialogData?.itemDefault || {};
+      const esc = window.EditorCore?.utils?.escapeHtml
+        || ((v) => String(v ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch])));
+
+      // Подписи записей для форматов: <bot_12> → «Имя». Карта общая на все
+      // редакторы страницы (NPC и шаг квеста показывают одни и те же записи).
+      // `formats` — объект или функция: справочники страницы могут догружаться.
+      closeActivePicker?.();
+      const formatsOf = () => ((typeof formats === 'function' ? formats() : formats) || {});
+      const declared = (kind) => normalizeOptions(formatsOf()?.[kind]);
+      Object.keys(RECORD_FORMATS).forEach((kind) => {
+        rememberRecords(kind, declared(kind), { complete: true });
+      });
 
       /**
        * Реплики диалога всегда хранятся в том порядке, в котором их видит
@@ -321,8 +466,204 @@
         window.addEventListener('pointercancel', finish);
       };
 
+      // ── Всплывающий выбор записи для формата ──────────────────────────────
+      // Одна панель на редактор: создаётся при открытии и удаляется при
+      // закрытии, поэтому перерисовки и повторные mount не оставляют мусора.
+      let closePicker = null;
+      const closeRecordPicker = () => { closePicker?.(); closePicker = null; };
+
+      const openRecordPicker = ({ kind, anchor, current = null, onPick }) => {
+        const meta = RECORD_FORMATS[kind];
+        if (!meta || !anchor || !document?.body) return;
+        // Повторный клик по той же кнопке закрывает список, а не открывает заново.
+        if (closeActivePicker && activePickerAnchor === anchor) {
+          closeActivePicker();
+          return;
+        }
+        closeRecordPicker();
+        closeActivePicker?.();
+
+        const box = document.createElement('div');
+        box.className = 'dlg-picker';
+        box.setAttribute('role', 'dialog');
+        box.setAttribute('aria-label', meta.title);
+        box.innerHTML = `
+          <div class="dlg-picker-head">
+            <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+            <input type="search" class="dlg-picker-search" autocomplete="off"
+                   placeholder="${esc(meta.search)}" aria-label="${esc(meta.search)}">
+          </div>
+          <div class="dlg-picker-list" role="listbox" aria-label="${esc(meta.label)}"></div>
+          <div class="dlg-picker-foot">${current === null ? '' : `
+            <button type="button" class="dlg-picker-remove" data-dialog-picker-remove>
+              <i class="fa-solid fa-trash" aria-hidden="true"></i><span>Remove the format</span>
+            </button>`}
+          </div>`;
+
+        const listEl = box.querySelector('.dlg-picker-list');
+        const searchEl = box.querySelector('.dlg-picker-search');
+        let options = [];
+        let visible = [];
+        let active = 0;
+        let closed = false;
+
+        const place = () => {
+          if (closed) return;
+          const rect = anchor.getBoundingClientRect();
+          const width = Math.max(220, Math.min(340, window.innerWidth - 16));
+          box.style.width = `${width}px`;
+          box.style.visibility = 'hidden';
+          const height = box.offsetHeight || 300;
+          let left = rect.left;
+          if (left + width > window.innerWidth - 8) left = window.innerWidth - width - 8;
+          let top = rect.bottom + 6;
+          if (top + height > window.innerHeight - 8) {
+            const above = rect.top - 6 - height;
+            top = above > 8 ? above : Math.max(8, window.innerHeight - height - 8);
+          }
+          box.style.left = `${Math.max(8, left)}px`;
+          box.style.top = `${Math.max(8, top)}px`;
+          box.style.visibility = '';
+        };
+
+        const close = () => {
+          if (closed) return;
+          closed = true;
+          document.removeEventListener('pointerdown', onOutside, true);
+          document.removeEventListener('keydown', onKey, true);
+          window.removeEventListener('resize', place);
+          window.removeEventListener('scroll', onScroll, true);
+          box.remove();
+          closePicker = null;
+          if (closeActivePicker === close) closeActivePicker = null;
+          if (activePickerAnchor === anchor) activePickerAnchor = null;
+        };
+
+        const pick = (option) => {
+          if (!option) return;
+          close();
+          onPick(String(option.value));
+        };
+
+        const optionHtml = (option, index) => {
+          const label = option.label
+            ? `<span class="dlg-picker-label">${esc(option.label)}</span>`
+            : `<span class="dlg-picker-label">Use ID ${esc(String(option.value))}</span>`;
+          return `<button type="button" class="dlg-picker-option${index === active ? ' is-active' : ''}${Number(option.value) === Number(current) ? ' is-current' : ''}"
+                          role="option" aria-selected="${index === active ? 'true' : 'false'}"
+                          data-picker-index="${index}">
+                    <span class="dlg-picker-id">#${esc(String(option.value))}</span>${label}
+                  </button>`;
+        };
+
+        const renderList = () => {
+          if (closed) return;
+          if (!visible.length) {
+            listEl.innerHTML = '<div class="editor-dbcombo-empty">Nothing found</div>';
+            return;
+          }
+          listEl.innerHTML = visible.slice(0, 300).map(optionHtml).join('');
+        };
+
+        const applyFilter = () => {
+          const query = String(searchEl.value || '').trim().toLowerCase();
+          active = 0;
+          if (!query) {
+            visible = options.slice();
+          } else {
+            visible = options.filter((option) => String(option.label || '').toLowerCase().includes(query)
+              || String(option.value) === query);
+            // Число в поиске — это всегда готовый ID, даже если записи нет в списке.
+            if (/^\d+$/.test(query) && !visible.some((option) => String(option.value) === query)) {
+              visible = [{ value: Number(query), label: '' }, ...visible];
+            }
+          }
+          renderList();
+        };
+
+        const onKey = (event) => {
+          if (event.key === 'Escape') {
+            event.preventDefault();
+            event.stopPropagation();
+            close();
+            return;
+          }
+          if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+            event.preventDefault();
+            if (!visible.length) return;
+            const step = event.key === 'ArrowDown' ? 1 : -1;
+            active = (active + step + visible.length) % visible.length;
+            renderList();
+            listEl.querySelector('.is-active')?.scrollIntoView?.({ block: 'nearest' });
+            return;
+          }
+          if (event.key === 'Enter') {
+            event.preventDefault();
+            pick(visible[active]);
+          }
+        };
+
+        const onOutside = (event) => {
+          if (box.contains(event.target) || anchor.contains(event.target)) return;
+          close();
+        };
+
+        const onScroll = (event) => {
+          if (box.contains(event.target)) return;
+          close();
+        };
+
+        box.addEventListener('click', (event) => {
+          const optionBtn = event.target.closest('[data-picker-index]');
+          if (optionBtn) {
+            pick(visible[Number(optionBtn.getAttribute('data-picker-index'))]);
+            return;
+          }
+          if (event.target.closest('[data-dialog-picker-remove]')) {
+            close();
+            onPick(null);
+          }
+        });
+        searchEl.addEventListener('input', applyFilter);
+
+        const load = async () => {
+          listEl.innerHTML = '<div class="editor-dbcombo-empty">Loading…</div>';
+          try {
+            const local = declared(kind);
+            options = local.length ? local : await loadRecords(kind);
+            if (closed) return;
+            rememberRecords(kind, options, { complete: true });
+            refreshTokens();
+          } catch {
+            if (closed) return;
+            options = [];
+            listEl.innerHTML = '<div class="editor-dbcombo-empty">Could not load the list — type an ID</div>';
+            searchEl.focus({ preventScroll: true });
+            return;
+          }
+          applyFilter();
+          place();
+          searchEl.focus({ preventScroll: true });
+        };
+
+        document.body.appendChild(box);
+        place();
+        document.addEventListener('pointerdown', onOutside, true);
+        document.addEventListener('keydown', onKey, true);
+        window.addEventListener('resize', place);
+        window.addEventListener('scroll', onScroll, true);
+        closePicker = close;
+        closeActivePicker = close;
+        activePickerAnchor = anchor;
+        load();
+      };
+
+      // Перерисовка списка заменяет узлы форматов — обновляем их по ссылкам.
+      let refreshTokens = () => {};
+
       const render = () => {
         if (!root) return;
+        closeRecordPicker();
         const list = Array.isArray(state.data.DialogData) ? state.data.DialogData : [];
 
         const renderField = window.EditorCore?.FieldRenderer?.renderField;
@@ -340,11 +681,20 @@
           isNested: true,
         });
 
-        const esc = window.EditorCore?.utils?.escapeHtml || ((v) => String(v ?? '').replace(/[&<>"']/g, (ch) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[ch])));
+        const recordButtons = Object.entries(RECORD_FORMATS).map(([kind, meta]) => `
+          <button type="button" class="dlg-toolbar-btn" data-dialog-insert="${kind}" title="${esc(meta.title)}">
+            <i class="fa-solid ${meta.icon}" aria-hidden="true"></i><span>${esc(meta.label)}</span>
+          </button>`).join('');
+
+        const simpleButtons = Object.entries(SIMPLE_FORMATS).map(([kind, meta]) => `
+          <button type="button" class="dlg-toolbar-btn" data-dialog-insert="${kind}" title="${esc(meta.title)}">
+            <i class="fa-solid ${meta.icon}" aria-hidden="true"></i><code>&lt;${kind}&gt;</code>
+          </button>`).join('');
 
         const itemsHtml = list.map((item, index) => {
-          const text = String(item?.text || '').trim();
-          const summary = text ? (text.length > 70 ? `${text.slice(0, 70)}…` : text) : 'Empty line';
+          const lineText = String(item?.text || '').trim();
+          const flat = lineText.replace(/\s+/g, ' ');
+          const summary = flat ? (flat.length > 70 ? `${flat.slice(0, 70)}…` : flat) : 'Empty line';
           return `
             <div class="editor-item" data-dialog-item="${index}">
               <div class="editor-item-header">
@@ -363,6 +713,9 @@
                           data-dialog-move="down" data-dialog-move-index="${index}"${index === list.length - 1 ? ' disabled' : ''}>
                     <i class="fa-solid fa-arrow-down"></i>
                   </button>
+                  <button type="button" class="editor-icon-btn" title="Duplicate the line" data-dialog-copy="${index}">
+                    <i class="fa-regular fa-clone"></i>
+                  </button>
                   <button type="button" class="editor-icon-btn" title="Collapse or expand" data-dialog-toggle="${index}">
                     <i class="fa-solid fa-chevron-down"></i>
                   </button>
@@ -372,7 +725,17 @@
                 </div>
               </div>
               <div class="editor-item-body">
-                <div>${renderItemField(index, 'text')}</div>
+                <div class="dlg-line" data-dialog-line="${index}">
+                  <div class="dlg-toolbar" role="toolbar" aria-label="Insert a format" data-dialog-toolbar="${index}">
+                    ${recordButtons}
+                    <span class="dlg-toolbar-sep" aria-hidden="true"></span>
+                    ${simpleButtons}
+                    <span class="dlg-counter" data-dialog-counter="${index}"
+                          title="Line length in bytes (game limit 1024)"></span>
+                  </div>
+                  ${renderItemField(index, 'text')}
+                  <div class="dlg-tokens" data-dialog-tokens="${index}"></div>
+                </div>
                 <div class="editor-item-grid">
                   ${renderItemField(index, 'left_speaker_id')}
                   ${renderItemField(index, 'side')}
@@ -418,12 +781,183 @@
           });
         });
 
+        // ── Форматы реплики: панель над полем и чипы под ним ────────────────
+        const tokenSyncs = [];
+        root.querySelectorAll('[data-dialog-item]').forEach((itemEl) => {
+          const index = Number(itemEl.getAttribute('data-dialog-item'));
+          // Поле текста: textarea или input — зависит от FieldRenderer страницы.
+          const textarea = itemEl.querySelector(`[data-path="DialogData.${index}.text"]`);
+          const tokensEl = itemEl.querySelector(`[data-dialog-tokens="${index}"]`);
+          const counterEl = itemEl.querySelector(`[data-dialog-counter="${index}"]`);
+          const toolbarEl = itemEl.querySelector(`[data-dialog-toolbar="${index}"]`);
+          if (!textarea || !tokensEl) return;
+
+          // Каретка теряется при клике по кнопке панели — запоминаем последнюю.
+          let caret = null;
+          const rememberCaret = () => {
+            const start = Number(textarea.selectionStart);
+            const end = Number(textarea.selectionEnd);
+            if (Number.isInteger(start)) caret = { start, end: Number.isInteger(end) ? end : start };
+          };
+          ['click', 'keyup', 'select', 'focus', 'blur'].forEach((name) => {
+            textarea.addEventListener(name, rememberCaret);
+          });
+
+          const emit = () => textarea.dispatchEvent(new Event('input', { bubbles: true }));
+
+          const insertAtCaret = (insert) => {
+            const value = textarea.value;
+            const position = caret || { start: value.length, end: value.length };
+            const start = Math.min(Math.max(position.start, 0), value.length);
+            const end = Math.min(Math.max(position.end, start), value.length);
+            textarea.value = value.slice(0, start) + insert + value.slice(end);
+            const next = start + insert.length;
+            caret = { start: next, end: next };
+            try { textarea.setSelectionRange(next, next); } catch { /* не все браузеры */ }
+            emit();
+            textarea.focus();
+          };
+
+          const tokenHtml = (token) => {
+            const meta = RECORD_FORMATS[token.kind];
+            const position = `data-token-start="${token.start}" data-token-end="${token.end}" data-token-raw="${esc(token.raw)}" data-token-kind="${token.kind}"`;
+            const removeBtn = `<button type="button" class="dlg-token-x" data-dialog-token-remove title="Remove the format">
+                                 <i class="fa-solid fa-xmark" aria-hidden="true"></i>
+                               </button>`;
+            if (!meta) {
+              const simple = SIMPLE_FORMATS[token.kind] || {};
+              return `
+                <span class="dlg-token" data-dialog-token ${position} title="${esc(simple.title || '')}">
+                  <i class="fa-solid ${simple.icon || 'fa-code'}" aria-hidden="true"></i>
+                  <span class="dlg-token-label dlg-token-code">${esc(token.raw)}</span>
+                  ${removeBtn}
+                </span>`;
+            }
+            const label = recordLabel(token.kind, token.id);
+            const invalid = !label && recordsComplete(token.kind);
+            const title = invalid ? `Unknown record #${token.id}` : 'Change the record';
+            // Имя записи показываем, когда оно известно; иначе — только номер.
+            const labelHtml = label
+              ? `<span class="dlg-token-label">${esc(label)}</span><span class="dlg-token-id">#${token.id}</span>`
+              : `<span class="dlg-token-label dlg-token-id">#${token.id}</span>`;
+            return `
+              <span class="dlg-token${invalid ? ' is-invalid' : ''}" data-dialog-token ${position} data-token-id="${token.id}">
+                <button type="button" class="dlg-token-main" data-dialog-token-edit title="${esc(title)}">
+                  <i class="fa-solid ${meta.icon}" aria-hidden="true"></i>
+                  ${labelHtml}
+                </button>
+                ${removeBtn}
+              </span>`;
+          };
+
+          const syncFormats = () => {
+            tokensEl.innerHTML = parseTokens(textarea.value).map(tokenHtml).join('');
+            if (counterEl) {
+              const bytes = byteLength(textarea.value);
+              counterEl.textContent = `${bytes}/${GAME_TEXT_LIMIT}`;
+              counterEl.classList.toggle('is-over', bytes > GAME_TEXT_LIMIT);
+            }
+          };
+          tokenSyncs.push(syncFormats);
+
+          // Позиции чипа сверяем с текущим текстом: если поле успели
+          // поправить руками, ищем формат заново по его виду.
+          const locate = (chip) => {
+            const raw = chip.getAttribute('data-token-raw') || '';
+            const value = textarea.value;
+            const start = Number(chip.getAttribute('data-token-start'));
+            const end = Number(chip.getAttribute('data-token-end'));
+            if (Number.isInteger(start) && value.slice(start, end) === raw) return { raw, start, end };
+            const found = raw ? value.indexOf(raw) : -1;
+            return found < 0 ? null : { raw, start: found, end: found + raw.length };
+          };
+
+          const replaceToken = (token, next) => {
+            if (!token) return;
+            const value = textarea.value;
+            textarea.value = value.slice(0, token.start) + next + value.slice(token.end);
+            const position = token.start + next.length;
+            caret = { start: position, end: position };
+            try { textarea.setSelectionRange(position, position); } catch { /* не все браузеры */ }
+            emit();
+          };
+
+          tokensEl.addEventListener('click', (event) => {
+            const chip = event.target.closest('[data-dialog-token]');
+            if (!chip) return;
+            const token = locate(chip);
+            if (!token) return;
+            if (event.target.closest('[data-dialog-token-remove]')) {
+              replaceToken(token, '');
+              textarea.focus();
+              return;
+            }
+            const editBtn = event.target.closest('[data-dialog-token-edit]');
+            const kind = chip.getAttribute('data-token-kind');
+            if (!editBtn || !RECORD_FORMATS[kind]) return;
+            const current = Number(chip.getAttribute('data-token-id'));
+            openRecordPicker({
+              kind,
+              anchor: editBtn,
+              current,
+              onPick: (value) => {
+                if (value === null) replaceToken(locate(chip) || token, '');
+                else replaceToken(locate(chip) || token, `<${kind}_${value}>`);
+                textarea.focus();
+              },
+            });
+          });
+
+          toolbarEl?.querySelectorAll('[data-dialog-insert]').forEach((btn) => {
+            btn.addEventListener('click', () => {
+              const kind = btn.getAttribute('data-dialog-insert');
+              if (RECORD_FORMATS[kind]) {
+                openRecordPicker({
+                  kind,
+                  anchor: btn,
+                  current: null,
+                  onPick: (value) => insertAtCaret(`<${kind}_${value}>`),
+                });
+                return;
+              }
+              if (SIMPLE_FORMATS[kind]) insertAtCaret(`<${kind}>`);
+            });
+          });
+
+          textarea.addEventListener('input', syncFormats);
+          syncFormats();
+        });
+        refreshTokens = () => tokenSyncs.forEach((sync) => sync());
+
+        // Подписи записей могут прийти позже (БД, справочники) — показываем
+        // номера сразу, а имена подставляем, как только они известны.
+        root.querySelectorAll('[data-dialog-token][data-token-id]').forEach((chip) => {
+          const kind = chip.getAttribute('data-token-kind');
+          if (recordLabel(kind, Number(chip.getAttribute('data-token-id'))) || recordsComplete(kind)) return;
+          ensureRecords(kind).then(() => refreshTokens()).catch(() => { /* без подписей */ });
+        });
+
         root.querySelectorAll('[data-dialog-remove]').forEach((btn) => {
           btn.addEventListener('click', () => {
             const idx = Number(btn.getAttribute('data-dialog-remove'));
-            const items = Array.isArray(state.data.DialogData) ? state.data.DialogData : [];
+            const items = dialogItems();
             if (!Number.isFinite(idx) || idx < 0 || idx >= items.length) return;
             items.splice(idx, 1);
+            state.data.DialogData = items;
+            if (typeof onChange === 'function') {
+              onChange(state.data, { path: 'DialogData', value: items });
+            }
+            render();
+          });
+        });
+
+        root.querySelectorAll('[data-dialog-copy]').forEach((btn) => {
+          btn.addEventListener('click', () => {
+            const idx = Number(btn.getAttribute('data-dialog-copy'));
+            const items = dialogItems();
+            if (!Number.isFinite(idx) || idx < 0 || idx >= items.length) return;
+            const copy = JSON.parse(JSON.stringify(items[idx] ?? defaults));
+            items.splice(idx + 1, 0, copy);
             state.data.DialogData = items;
             if (typeof onChange === 'function') {
               onChange(state.data, { path: 'DialogData', value: items });
@@ -457,8 +991,8 @@
             if (textMatch) {
               const index = Number(textMatch[1]);
               const item = state.data.DialogData?.[index];
-              const text = String(item?.text || '').trim();
-              const summary = text ? (text.length > 70 ? `${text.slice(0, 70)}…` : text) : '—';
+              const lineText = String(item?.text || '').trim();
+              const summary = lineText ? (lineText.length > 70 ? `${lineText.slice(0, 70)}…` : lineText) : '—';
               const summaryEl = root.querySelector(`[data-dialog-item="${index}"] .editor-item-summary`);
               if (summaryEl) summaryEl.textContent = summary;
             }
@@ -470,7 +1004,7 @@
 
         const addBtn = root.querySelector('[data-dialog-add]');
         addBtn?.addEventListener('click', () => {
-          const items = Array.isArray(state.data.DialogData) ? state.data.DialogData : [];
+          const items = dialogItems();
           items.push(JSON.parse(JSON.stringify(defaults)));
           state.data.DialogData = items;
           if (typeof onChange === 'function') {
@@ -486,13 +1020,17 @@
         setData: (next) => {
           state.data = next || { DialogData: [] };
           render();
-        }
+        },
+        destroy: () => { closeRecordPicker(); },
       };
 
       render();
       return api;
     },
   };
+
+  // Разбор форматов нужен и снаружи (проверки, отчёты по текстам реплик).
+  DialogEditor.parseTokens = parseTokens;
 
   window.EditorCore = window.EditorCore || {};
   window.EditorCore.DialogEditor = DialogEditor;

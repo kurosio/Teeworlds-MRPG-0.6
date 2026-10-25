@@ -1921,6 +1921,8 @@
         sideOptions: DIALOG_SIDE_OPTIONS,
         extraSpeakers: DIALOG_EXTRA_SPEAKERS,
         speakerOptions: EditorCore.DialogEditor.buildSpeakerOptions(STATE.lookups.bots, DIALOG_EXTRA_SPEAKERS),
+        // Форматы реплики (<bot_12>, <world_3>): имена из справочников страницы.
+        formats: { bot: STATE.lookups.bots, world: STATE.lookups.worlds },
         onChange: syncDialog
       });
 

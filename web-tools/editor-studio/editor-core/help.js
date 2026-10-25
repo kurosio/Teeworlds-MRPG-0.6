@@ -29,6 +29,7 @@
       'On the “General” tab, a position is pinned on the map or entered manually; the world is selected in the card.',
       'The map will not apply a point on a solid, death or no-hook tile — move it to a free tile.',
       'Drag steps in the tree, and objectives inside a step by the handle on the left.',
+      'On the “Dialogue” tab, the buttons above a line insert a bot, item or world name, and the chips below the field show what is already inserted.',
     ],
     bots_mobs: [
       'A mob spawn belongs to a world and a mob; both are picked by name.',
@@ -45,6 +46,7 @@
       'An NPC is a mob placed in a world with dialogue lines.',
       'The position (X, Y) is set in world coordinates; the map highlights solid, death and spawn tiles.',
       'A quest is given by the NPC if it is set in the “Gives quest” field.',
+      'The buttons above a dialogue line insert a bot, item or world name, and the game placeholders — the game substitutes them for the player.',
     ],
     worlds: [
       'A world: type, map file path and game flags.',

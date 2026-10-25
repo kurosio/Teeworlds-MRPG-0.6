@@ -610,6 +610,9 @@
             sideOptions: DIALOG_SIDE_OPTIONS,
             extraSpeakers: DIALOG_EXTRA_SPEAKERS,
             speakerOptions,
+            // Форматы реплики (<bot_12>, <world_3>): имена берём из справочников
+            // страницы, чтобы чипы показывали названия, а не только ID.
+            formats: { bot: state.lookups.bots, world: state.lookups.worlds },
             onChange,
           });
         }

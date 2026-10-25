@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dialogue editor — preview</title>
+
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  <link rel="stylesheet" href="../editor-core/editor-theme.css" />
+  <link rel="stylesheet" href="../editor-core/editor-template.css" />
+  <link rel="stylesheet" href="../editor-core/tailwind.css" />
+
+  <style>
+    /* Страница-витрина диалогового модуля: живёт вне студии, чтобы можно было
+       посмотреть панель форматов, чипы и выбор записи без базы данных. */
+    body.preview-page {
+      margin: 0;
+      padding: 24px;
+      background: var(--editor-bg);
+      color: var(--editor-text);
+      font-family: Inter, system-ui, sans-serif;
+    }
+    .preview-wrap { max-width: 980px; margin: 0 auto; display: grid; gap: 18px; }
+    .preview-head h1 { margin: 0 0 6px; font-size: 20px; }
+    .preview-head p { margin: 0; color: var(--editor-text-muted); font-size: 13px; line-height: 1.5; }
+    .preview-notes { margin: 0; padding-left: 18px; color: var(--editor-text-muted); font-size: 12.5px; line-height: 1.7; }
+    .preview-notes code { font-family: ui-monospace, Menlo, monospace; }
+    .preview-card {
+      padding: 14px;
+      border: 1px solid var(--editor-border);
+      border-radius: var(--editor-radius-lg, 14px);
+      background: var(--editor-surface);
+    }
+    .preview-card h2 { margin: 0 0 10px; font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--editor-text-muted); }
+    .preview-json {
+      margin: 0;
+      max-height: 240px;
+      overflow: auto;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: var(--editor-soft-bg);
+      color: var(--editor-text-muted);
+      font-family: ui-monospace, Menlo, monospace;
+      font-size: 12px;
+      line-height: 1.5;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+  </style>
+</head>
+
+<body class="editor-theme preview-page">
+  <div class="preview-wrap">
+    <div class="preview-head">
+      <h1><i class="fa-solid fa-comments"></i> Dialogue editor — preview</h1>
+      <p>Живая витрина модуля <code>editor-core/dialog-editor.js</code>: панель форматов, всплывающий выбор записи,
+        чипы подстановок и порядок реплик. Данные — учебные, база не нужна.</p>
+    </div>
+
+    <ul class="preview-notes">
+      <li>«Bot / Item / World» над полем открывают список с поиском и вставляют <code>&lt;bot_12&gt;</code>, <code>&lt;item_31&gt;</code>, <code>&lt;world_3&gt;</code> в позицию курсора.</li>
+      <li><code>&lt;player&gt;</code>, <code>&lt;time&gt;</code>, <code>&lt;here&gt;</code>, <code>&lt;eidolon&gt;</code> вставляются одной кнопкой — это значения, которые подставляет игра.</li>
+      <li>Чипы под полем показывают, что уже вставлено: клик по чипу меняет запись, крестик убирает формат, неизвестный ID подсвечен.</li>
+      <li>Справа в панели — длина реплики в байтах и лимит игры (1024). Порядок реплик — перетаскиванием, кнопками ↑/↓ или клавиатурой.</li>
+    </ul>
+
+    <div class="preview-card">
+      <h2>Диалог NPC</h2>
+      <div id="dialog-host"></div>
+    </div>
+
+    <div class="preview-card">
+      <h2>Что уйдёт в базу (DialogData)</h2>
+      <pre class="preview-json" id="dialog-json"></pre>
+    </div>
+  </div>
+
+  <script src="../editor-core/utils.js"></script>
+  <script src="../editor-core/field-renderer.js"></script>
+  <script src="../editor-core/defaults.js"></script>
+  <script src="../editor-core/dialog-editor.js"></script>
+
+  <script>
+    // Справочники «как из базы»: в студии их отдаёт EditorCore.DB, здесь — готовые карты.
+    const BOTS = new Map([['1', 'Elder'], ['2', 'Blacksmith'], ['12', 'Mira the Guide']]);
+    const WORLDS = new Map([['3', 'Gridania'], ['4', 'Limsa Lominsa']]);
+    const ITEMS = new Map([['31', 'Iron Sword'], ['32', 'Healing Potion']]);
+
+    const host = document.getElementById('dialog-host');
+    const jsonBox = document.getElementById('dialog-json');
+
+    const data = {
+      DialogData: [
+        {
+          text: 'Welcome to <world_3>, <player>! My name is <bot_12>.',
+          side: 'default',
+          left_speaker_id: 12,
+          right_speaker_id: -1,
+          action: false,
+        },
+        {
+          text: 'Take this <item_31> — it will help you against the <bot_2> of the woods.',
+          side: 'default',
+          left_speaker_id: 12,
+          right_speaker_id: -1,
+          action: false,
+        },
+      ],
+    };
+
+    const renderJson = () => {
+      jsonBox.textContent = JSON.stringify(data.DialogData, null, 2);
+    };
+
+    window.EditorCore.DialogEditor.mount(host, {
+      data,
+      fieldOptions: window.EditorCore.defaults.fieldOptions,
+      sideOptions: [
+        { value: 'default', label: 'addresses the player' },
+        { value: 'author', label: 'speaks as itself' },
+        { value: 'thoughts', label: 'thoughts' },
+      ],
+      extraSpeakers: [{ value: -1, label: 'Player' }, { value: 0, label: 'This mob' }],
+      speakerOptions: EditorCore.DialogEditor.buildSpeakerOptions(BOTS, [
+        { value: -1, label: 'Player' },
+        { value: 0, label: 'This mob' },
+      ]),
+      formats: { bot: BOTS, item: ITEMS, world: WORLDS },
+      onChange: () => renderJson(),
+    });
+
+    renderJson();
+  </script>
+</body>
+</html>
