@@ -381,3 +381,36 @@ test('highlightTiles normalizes a tile ID array without implicit spawn IDs', () 
   assert.deepEqual(Array.from(api.resolveMapOptions(rootWith({ highlightTiles: true })).highlightTiles), []);
   assert.deepEqual(Array.from(api.resolveMapOptions(rootWith({ highlightTiles: [42, 0, 42, 255, -1, 256, 1.5, null, '18'] })).highlightTiles), [42, 0, 255]);
 });
+
+test('quests-editor enforces exclusive quest/step panes, clean UI copy, RCON hints, and step/task position pickers', () => {
+  const quests = read('quests-editor.html');
+
+  // 1. Не переподключаем базовые таблицы стилей после page-loader.js и жёстко скрываем .hidden/[hidden],
+  // чтобы настройки квеста никогда не показывались при выборе бота и наоборот.
+  assert.doesNotMatch(quests, /<link[^>]+editor-(theme|template)\.css/i);
+  assert.match(quests, /\.quest-editor-page\s+\.hidden[\s\S]*?display:\s*none\s*!important/);
+  assert.match(quests, /const showEditor = \(type\) => \{[\s\S]*?clearStepPane\(\)[\s\S]*?clearQuestPane\(\)/);
+
+  // 2. Убран лишний промо-текст, но команды приёма/отказа квеста в игре сохранены.
+  assert.doesNotMatch(quests, /Дерево слева|quest-empty-pills|quest-empty-grid|Основные параметры|Настройки шага/);
+  assert.match(quests, /id="questRconHint"/);
+  assert.match(quests, /id="stepRconHint"/);
+  assert.match(quests, /quest accept \$\{step\.QuestID\} \$\{stepPos\}/);
+  assert.match(quests, /quest accept \$\{quest\.ID\}/);
+  assert.match(quests, /quest deny \$\{quest\.ID\}/);
+
+  // 3. В дереве слева у квестового бота рядом с move/duplicate/delete есть быстрый пин позиции.
+  const quickMatch = quests.match(/<div class="step-node-quick">([\s\S]*?)<\/div>/);
+  assert.ok(quickMatch, 'step-node-quick container exists');
+  const actionsOrder = Array.from(quickMatch[1].matchAll(/data-step-action="([^"]+)"/g), (m) => m[1]);
+  assert.deepEqual(actionsOrder, ['pin', 'move', 'duplicate', 'delete']);
+
+  // 4. В редактировании задач (move_to) есть прикрепление позиции как внутри карточки (PositionPicker),
+  // так и быстрой кнопкой data-task-pin в шапке задачи.
+  assert.match(quests, /data-task-pin="\$\{section\.id\}"/);
+  assert.match(quests, /quest-task-position/);
+  assert.match(quests, /quest-task-interactive-position/);
+  assert.match(quests, /vec2Task\(section, index, 'x', 'y'/);
+  assert.match(quests, /vec2Task\(section, index, 'interactive_x', 'interactive_y', move\.interactive_x, move\.interactive_y/);
+});
+

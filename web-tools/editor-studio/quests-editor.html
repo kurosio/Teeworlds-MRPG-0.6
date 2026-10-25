@@ -5,8 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Квесты • Editor Studio</title>
   <script src="editor-core/page-loader.js" data-mode="event"></script>
-  <link rel="stylesheet" href="editor-core/editor-theme.css" />
-  <link rel="stylesheet" href="editor-core/editor-template.css" />
   <style>
     body[data-editor="quests"] {
       --editor-page-max: 1560px;
@@ -17,13 +15,6 @@
 
     .quest-editor-page {
       position: relative;
-    }
-
-    .quest-page-badge {
-      margin-bottom: 10px;
-      font-size: 11px;
-      letter-spacing: .08em;
-      text-transform: uppercase;
     }
 
     .quest-main-wrap {
@@ -269,8 +260,8 @@
     }
 
     .step-node-preview {
-      width: 40px;
-      height: 40px;
+      width: 36px;
+      height: 36px;
       border-radius: var(--editor-radius-sm);
       border: 1px solid var(--editor-line);
       background: var(--editor-soft-bg-strong);
@@ -338,19 +329,22 @@
       white-space: nowrap;
     }
 
-	.step-node-actions {
-		display: flex;
-		gap: 6px;
-		flex-shrink: 0;
-		flex-wrap: wrap;
-		align-items: center;
-		align-content: stretch;
-	}
+    .step-empty-hint {
+      padding-left: 4px;
+    }
+
+    .step-node-actions {
+      display: flex;
+      gap: 4px;
+      flex-shrink: 0;
+      flex-wrap: nowrap;
+      align-items: center;
+    }
 
     .step-node-level {
-      width: 52px !important;
+      width: 44px !important;
       text-align: center;
-      padding: 6px 4px !important;
+      padding: 4px 2px !important;
       font-size: 12px;
       font-weight: 700;
     }
@@ -358,6 +352,7 @@
     .step-node-quick {
       display: flex;
       align-items: center;
+      gap: 2px;
       flex-shrink: 0;
     }
 
@@ -388,8 +383,8 @@
     }
 
     .step-quick-btn.is-danger:hover {
-      color: var(--editor-danger, #ef4444);
-      border-color: var(--editor-danger, #ef4444);
+      color: var(--editor-danger);
+      border-color: var(--editor-danger);
     }
 
     .step-quick-btn.is-grab {
@@ -406,13 +401,19 @@
       background: var(--editor-light-bg);
     }
 
+    .task-pin-btn.is-active {
+      color: var(--editor-primary);
+      border-color: color-mix(in srgb, var(--editor-primary) 50%, var(--editor-soft-border));
+      background: color-mix(in srgb, var(--editor-primary) 12%, var(--editor-light-bg));
+    }
+
     .step-drop-indicator {
       height: 3px;
       background: linear-gradient(90deg,
         transparent 0%,
-        var(--editor-primary, #6366f1) 16%,
-        var(--editor-accent, #14b8a6) 50%,
-        var(--editor-primary, #6366f1) 84%,
+        var(--editor-primary) 16%,
+        var(--editor-accent) 50%,
+        var(--editor-primary) 84%,
         transparent 100%);
       border-radius: 999px;
       margin: -2px 0;
@@ -452,29 +453,15 @@
       margin-top: 14px;
     }
 
-    .step-section-title {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 10px;
-      margin-bottom: 8px;
-      font-weight: 800;
-      letter-spacing: .01em;
-    }
-
-    .step-section-sub {
-      margin-bottom: 10px;
-      font-size: 12px;
-      color: var(--editor-text-muted);
-    }
-
     .step-tabs {
       display: grid;
       gap: 14px;
     }
 
     .step-tab-panel.is-hidden,
-    .is-hidden {
+    .is-hidden,
+    .quest-editor-page .hidden,
+    .quest-editor-page [hidden] {
       display: none !important;
     }
 
@@ -501,7 +488,7 @@
 
     .quest-toolbar {
       display: flex;
-      align-items: flex-start;
+      align-items: center;
       justify-content: space-between;
       gap: 16px;
     }
@@ -509,24 +496,7 @@
     .quest-toolbar-copy {
       min-width: 0;
       display: grid;
-      gap: 6px;
-    }
-
-    .quest-toolbar-eyebrow {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      width: fit-content;
-      min-height: 26px;
-      padding: 0 10px;
-      border-radius: 999px;
-      border: 1px solid var(--editor-soft-border);
-      background: var(--editor-light-bg);
-      color: var(--editor-text-muted);
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: .08em;
-      text-transform: uppercase;
+      gap: 4px;
     }
 
     .quest-toolbar-title {
@@ -568,112 +538,42 @@
 
     .quest-empty-state {
       display: grid;
-      gap: 14px;
-      min-height: 220px;
+      min-height: 160px;
       align-content: center;
-    }
-
-    .quest-empty-title {
-      font-size: 22px;
-      font-weight: 800;
-      letter-spacing: -.02em;
     }
 
     .quest-empty-sub {
       max-width: 68ch;
       color: var(--editor-text-muted);
+      font-size: 14px;
       line-height: 1.6;
-    }
-
-    .quest-empty-pills {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 8px;
-    }
-
-    .quest-empty-grid {
-      display: grid;
-      gap: 10px;
-      grid-template-columns: repeat(3, minmax(0, 1fr));
-    }
-
-    .quest-empty-card {
-      padding: 14px;
-      border-radius: var(--editor-radius-sm);
-      border: 1px solid var(--editor-line);
-      background: var(--editor-soft-bg);
-    }
-
-    .quest-empty-card strong {
-      display: block;
-      margin-bottom: 6px;
-      font-size: 13px;
-    }
-
-    .quest-empty-card span {
-      color: var(--editor-text-muted);
-      font-size: 12px;
-      line-height: 1.5;
     }
 
     .quest-editor-pane {
       display: grid;
-      gap: 18px;
+      gap: 14px;
     }
 
-    .quest-pane-head {
+    .quest-step-head {
       display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 16px;
-      min-width: 0;
-    }
-
-    .quest-pane-copy {
-      min-width: 0;
-      display: grid;
-      gap: 6px;
-    }
-
-    .quest-pane-eyebrow {
-      display: inline-flex;
+      flex-wrap: wrap;
       align-items: center;
-      gap: 6px;
-      width: fit-content;
-      min-height: 24px;
-      padding: 0 10px;
-      border-radius: 999px;
-      border: 1px solid var(--editor-soft-border);
-      background: var(--editor-light-bg);
-      color: var(--editor-accent);
-      font-size: 11px;
-      font-weight: 800;
-      letter-spacing: .08em;
-      text-transform: uppercase;
-    }
-
-    .quest-pane-title {
-      font-size: 20px;
-      font-weight: 800;
-      letter-spacing: -.02em;
-      line-height: 1.1;
-    }
-
-    .quest-pane-sub {
-      font-size: 13px;
-      color: var(--editor-text-muted);
-      max-width: 76ch;
-      line-height: 1.55;
+      justify-content: space-between;
+      gap: 12px;
+      min-width: 0;
     }
 
     .quest-rcon-hint {
       display: flex;
       flex-wrap: wrap;
-      gap: 10px;
+      gap: 8px;
       align-items: center;
-      margin-top: 8px;
       font-size: 12px;
       color: var(--editor-text-muted);
+    }
+
+    .quest-rcon-hint:empty {
+      display: none;
     }
 
     .quest-rcon-hint b {
@@ -698,13 +598,6 @@
     .quest-form-host {
       display: grid;
       gap: 6px;
-    }
-
-    .kbd-hint {
-      margin-left: 6px;
-      font-size: 10px;
-      color: var(--editor-text-muted);
-      opacity: .75;
     }
 
     .editor-items {
@@ -800,10 +693,6 @@
     }
 
     @media (max-width: 820px) {
-      .quest-empty-grid {
-        grid-template-columns: 1fr;
-      }
-
       .step-node-header {
         align-items: flex-start;
       }
@@ -814,7 +703,7 @@
       }
 
       .step-node-level {
-        width: 64px !important;
+        width: 56px !important;
       }
     }
 
@@ -860,7 +749,7 @@
         margin-left: auto;
       }
 
-      .quest-pane-head {
+      .quest-step-head {
         flex-direction: column;
         align-items: stretch;
       }
@@ -879,7 +768,7 @@
         <i class="fa-solid fa-compass text-accent text-xl"></i>
         <div>
           <h1>Квесты</h1>
-          <div class="editor-page-sub">Квесты, шаги мобов, диалоги и задания — в одном окне.</div>
+          <div class="editor-page-sub">Квесты, шаги и задания</div>
         </div>
       </div>
       <div class="editor-page-actions">
@@ -913,26 +802,20 @@
             </div>
           </div>
 
-          <div class="editor-section quest-sidebar-tools">
-            <div class="editor-section-head">
-              <div class="editor-section-title">Поиск</div>
-              <div class="editor-section-hint">по квесту, шагу, мобу или миру</div>
+          <div class="quest-sidebar-tools editor-sidebar-filters">
+            <div class="editor-search">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input id="searchInput" type="search" class="editor-input form-input" placeholder="Поиск…" />
             </div>
-            <div class="editor-sidebar-filters">
-              <div class="editor-search">
-                <i class="fa-solid fa-magnifying-glass"></i>
-                <input id="searchInput" class="editor-input form-input" placeholder="Поиск" />
-              </div>
-              <select id="typeFilter" class="editor-input form-input">
-                <option value="all">Все типы</option>
-                <option value="Type main">Основной</option>
-                <option value="Type side">Побочный</option>
-                <option value="Type daily">Ежедневный</option>
-                <option value="Type weekly">Недельный</option>
-                <option value="Type repeatable">Повторяемый</option>
-                <option value="Tutorial">Обучающий</option>
-              </select>
-            </div>
+            <select id="typeFilter" class="editor-input form-input">
+              <option value="all">Все типы</option>
+              <option value="Type main">Основной</option>
+              <option value="Type side">Побочный</option>
+              <option value="Type daily">Ежедневный</option>
+              <option value="Type weekly">Недельный</option>
+              <option value="Type repeatable">Повторяемый</option>
+              <option value="Tutorial">Обучающий</option>
+            </select>
           </div>
 
           <div id="tree" class="quest-tree quest-tree-surface editor-scroll"></div>
@@ -943,19 +826,18 @@
         <div class="editor-dock-pad quest-main-wrap">
           <div class="editor-sticky-toolbar quest-toolbar">
             <div class="quest-toolbar-copy">
-              <div class="quest-toolbar-eyebrow">Выбрано</div>
               <div class="quest-toolbar-title" id="editorTitle">Выберите элемент слева</div>
               <div class="quest-toolbar-subtitle" id="editorSubtitle">квест или шаг моба</div>
             </div>
             <div class="quest-toolbar-actions">
-              <span id="dirty-pill" class="editor-dirty-pill hidden">Есть несохранённые изменения</span>
-              <button id="newStepBtn" class="editor-btn editor-btn-secondary hidden" disabled>
+              <span id="dirty-pill" class="editor-dirty-pill hidden" hidden>Есть несохранённые изменения</span>
+              <button id="newStepBtn" class="editor-btn editor-btn-secondary hidden" hidden disabled>
                 <i class="fa-solid fa-person-walking"></i><span>Новый шаг</span>
               </button>
-              <button id="duplicateBtn" class="editor-btn editor-btn-secondary hidden" disabled title="Дублировать (Ctrl+D)">
+              <button id="duplicateBtn" class="editor-btn editor-btn-secondary hidden" hidden disabled title="Дублировать (Ctrl+D)">
                 <i class="fa-solid fa-copy"></i><span>Дублировать</span>
               </button>
-              <button id="deleteBtn" class="editor-btn editor-btn-danger hidden" disabled>
+              <button id="deleteBtn" class="editor-btn editor-btn-danger hidden" hidden disabled>
                 <i class="fa-solid fa-trash"></i><span>Удалить</span>
               </button>
             </div>
@@ -963,81 +845,36 @@
 
           <div class="quest-content-stack">
             <section id="editorEmpty" class="editor-panel-card quest-empty-state">
-              <div class="quest-empty-title">Редактор квестов</div>
-              <div class="quest-empty-sub">
-                Выберите квест или шаг моба в дереве слева: справа появятся его параметры, диалоги и задания.
-                <br /><span class="kbd-hint">Ctrl+S — сохранить · Del — удалить · Ctrl+D — дублировать шаг</span>
-              </div>
-              <div class="quest-empty-pills">
-                <span class="editor-badge"><i class="fa-solid fa-sitemap"></i> Дерево слева</span>
-                <span class="editor-badge"><i class="fa-solid fa-arrows-up-down-left-right"></i> Перетаскивание шагов</span>
-                <span class="editor-badge"><i class="fa-solid fa-comments"></i> Диалоги</span>
-                <span class="editor-badge"><i class="fa-solid fa-list-check"></i> Задания</span>
-              </div>
-              <div class="quest-empty-grid">
-                <div class="quest-empty-card">
-                  <strong>Квесты</strong>
-                  <span>Раскройте квест в дереве — под ним покажутся его шаги.</span>
-                </div>
-                <div class="quest-empty-card">
-                  <strong>Шаги мобов</strong>
-                  <span>Мир, координаты, сценарий и автозавершение — на вкладке «Основное».</span>
-                </div>
-                <div class="quest-empty-card">
-                  <strong>Задания</strong>
-                  <span>Награды, нужные предметы, мобы и цели — на вкладке «Задания».</span>
-                </div>
-              </div>
+              <div class="quest-empty-sub">Выберите квест или шаг моба в дереве слева: справа появятся его параметры, диалоги и задания.</div>
             </section>
 
-            <section id="questEditor" class="editor-panel-card quest-editor-pane hidden">
-              <div class="quest-pane-head">
-                <div class="quest-pane-copy">
-                  <div class="quest-pane-eyebrow">Квест</div>
-                  <div class="quest-pane-title">Основные параметры</div>
-                  <div class="quest-pane-sub">Название квеста — не длиннее 24 символов (ограничение игры).</div>
-                  <div class="quest-rcon-hint" id="questRconHint"></div>
-                </div>
-              </div>
+            <section id="questEditor" class="editor-panel-card quest-editor-pane hidden" hidden>
+              <div class="quest-rcon-hint" id="questRconHint"></div>
               <div id="questForm" class="quest-form-host"></div>
             </section>
 
-            <section id="stepEditor" class="editor-panel-card quest-editor-pane hidden">
-              <div class="quest-pane-head">
-                <div class="quest-pane-copy">
-                  <div class="quest-pane-eyebrow">Шаг моба</div>
-                  <div class="quest-pane-title">Настройки шага</div>
-                  <div class="quest-pane-sub">Шаги мобов: диалоги, данные сценария и задания.</div>
-                  <div class="quest-rcon-hint" id="stepRconHint"></div>
-                </div>
+            <section id="stepEditor" class="editor-panel-card quest-editor-pane hidden" hidden>
+              <div class="quest-step-head">
+                <div id="stepTabs"></div>
+                <div class="quest-rcon-hint" id="stepRconHint"></div>
               </div>
 
               <div class="step-tabs">
-                <div id="stepTabs"></div>
-
                 <div class="step-tab-panel" data-step-tab-panel="mob">
                   <div class="step-section">
-                    <div class="step-section-title">Параметры шага</div>
-                    <div class="step-section-sub">Автозавершение закрывает шаг само, как только выполнены все его условия.</div>
                     <div id="stepBaseForm" class="step-base-grid" data-map-picker="quest-step-position"></div>
                   </div>
                 </div>
 
                 <div class="step-tab-panel is-hidden" data-step-tab-panel="dialog">
                   <div class="step-section">
-                    <div class="step-section-title">
-                      <span>Реплики диалога</span>
-                      <span class="editor-muted-text text-xs">Сторона · слева · справа · действие</span>
-                    </div>
-                    <div class="step-section-sub">Реплики показываются в порядке списка — перетаскивайте, чтобы изменить порядок.</div>
-                    <div id="dialogForm"></div>
+                    <div id="dialogForm" data-field-path="DialogData"></div>
                   </div>
                 </div>
 
                 <div class="step-tab-panel is-hidden" data-step-tab-panel="tasks">
                   <div class="step-section">
-                    <div class="step-section-title">Задания шага</div>
-                    <div id="stepTasksEditor" data-position-picker-host="quest-tasks"></div>
+                    <div id="stepTasksEditor" data-position-picker-host="quest-tasks" data-field-path="TasksData"></div>
                   </div>
                 </div>
               </div>
@@ -1199,15 +1036,22 @@
     const t = EditorCore.Page.t;
     const isObj = (v) => v && typeof v === 'object' && !Array.isArray(v);
 
+    const hasCoords = (x, y) => {
+      const nx = Number(x);
+      const ny = Number(y);
+      return Number.isFinite(nx) && Number.isFinite(ny) && (nx !== 0 || ny !== 0);
+    };
+
+    const hasMoveTaskPosition = (item) => Boolean(item && (item._posPinned === true || hasCoords(item.x, item.y)));
+    const hasInteractivePosition = (item) => Boolean(item && (item._intPinned === true || hasCoords(item.interactive_x, item.interactive_y)));
+
     // Пин в дереве — ярлык к общему PositionPicker шага. «Закреплённой»
     // считается точка с координатами, отличными от (0, 0); PositionPinned
     // помнит честно выбранные (0, 0) в текущей сессии редактора.
     const hasStepPosition = (step) => {
       if (!step) return false;
       if (step.PositionPinned === true) return true;
-      const x = Number(step.PosX);
-      const y = Number(step.PosY);
-      return Number.isFinite(x) && Number.isFinite(y) && (x !== 0 || y !== 0);
+      return hasCoords(step.PosX, step.PosY);
     };
 
     // Мир шага — контекст для всех карт внутри формы (включая сценарий).
@@ -1223,31 +1067,48 @@
 
     const stepPositionPicker = () => DOM.stepBaseForm.querySelector('[data-position-picker]');
 
+    const lookupLabel = (map, id, { allowZero = false } = {}) => {
+      if (id === null || id === undefined || String(id).trim() === '') return '—';
+      const n = toNum(id);
+      if (!allowZero && !n) return '—';
+      if (allowZero && n < 0) return '—';
+      return map?.get(String(n)) || `#${n}`;
+    };
+
+    const updateQuestHeader = (quest) => {
+      if (!quest || STATE.selected?.type !== 'quest' || STATE.selected?.id !== quest.ID) return;
+      DOM.title.textContent = quest.Name ? `Quest: ${quest.Name}` : `Quest #${quest.ID}`;
+      DOM.subtitle.textContent = `ID ${quest.ID} · Next: ${quest.NextQuestID || '—'}`;
+    };
+
+    const updateStepHeader = (step) => {
+      if (!step || STATE.selected?.type !== 'step' || STATE.selected?.id !== step.ID) return;
+      const botLabel = lookupLabel(STATE.lookups.bots, step.BotID);
+      const worldLabel = lookupLabel(STATE.lookups.worlds, step.WorldID, { allowZero: true });
+      DOM.title.textContent = `Step #${step.ID} — ${botLabel}`;
+      DOM.subtitle.textContent = `Quest ${step.QuestID || '—'} · Step ${step.Step || 1} · ${worldLabel}`;
+    };
+
     const openStepMapPicker = () => {
       const step = selectedStep();
       if (!step) return;
-      setActiveStepTab('mob');
       syncStepMapWorldContext(step);
       const picker = stepPositionPicker();
       if (!picker || !EditorCore.PositionPicker?.openMap) {
         EditorCore.UI.toast(t('Карта мира недоступна — обновите страницу'), 'error');
         return;
       }
+      EditorCore.PositionPicker.init?.(picker);
       EditorCore.PositionPicker.openMap(picker, {
         worldId: step.WorldID,
         onWorldChange: (worldId) => {
           step.WorldID = worldId;
           syncStepMapWorldContext(step);
+          updateStepHeader(step);
           markStepDirty(step.ID);
           scheduleTreeRender();
         },
       });
-    };
-
-    const lookupLabel = (map, id) => {
-      const n = toNum(id);
-      if (!n) return '—';
-      return map?.get(String(n)) || `#${n}`;
     };
 
     const getLabelMap = EditorCore.utils.loadLookupMap;
@@ -1290,7 +1151,9 @@
       required_item_id: toNum(item.required_item_id),
       required_item_value: toNum(item.required_item_value),
       pick_up_item_id: toNum(item.pick_up_item_id),
-      pick_up_item_value: toNum(item.pick_up_item_value)
+      pick_up_item_value: toNum(item.pick_up_item_value),
+      _posPinned: Boolean(item._posPinned || hasCoords(item.x, item.y)),
+      _intPinned: Boolean(item._intPinned || hasCoords(item.interactive_x, item.interactive_y))
     });
 
     const normalizeTasks = (raw) => {
@@ -1329,7 +1192,9 @@
               interactive_y: entry?.interactive_y ?? interactive?.y,
               defeat_bot_id: entry?.defeat_bot_id ?? defeat?.id ?? defeat?.bot_id,
               defeat_bot_attribute_power: entry?.defeat_bot_attribute_power ?? defeat?.attribute_power,
-              defeat_bot_world_id: entry?.defeat_bot_world_id ?? defeat?.world_id
+              defeat_bot_world_id: entry?.defeat_bot_world_id ?? defeat?.world_id,
+              _posPinned: entry?._posPinned,
+              _intPinned: entry?._intPinned || Boolean(entry?.interactive)
             });
           })
         : [];
@@ -1362,7 +1227,9 @@
             };
             if (entry?.pick_up_item_id) output.pick_up_item = { id: toNum(entry.pick_up_item_id), value: toNum(entry.pick_up_item_value) };
             if (entry?.required_item_id) output.required_item = { id: toNum(entry.required_item_id), value: toNum(entry.required_item_value) };
-            if (entry?.interactive_x || entry?.interactive_y) output.interactive = { x: toNum(entry.interactive_x), y: toNum(entry.interactive_y) };
+            if (entry?.interactive_x || entry?.interactive_y || (entry?.mode === 'move_follow_press' && entry?._intPinned)) {
+              output.interactive = { x: toNum(entry.interactive_x), y: toNum(entry.interactive_y) };
+            }
             if (entry?.defeat_bot_id) {
               output.defeat_bot = {
                 id: toNum(entry.defeat_bot_id),
@@ -1377,9 +1244,16 @@
       return raw;
     };
 
+    const setHidden = (el, hidden) => {
+      if (!el) return;
+      const flag = Boolean(hidden);
+      el.hidden = flag;
+      el.classList.toggle('hidden', flag);
+    };
+
     const isDirty = () => STATE.dirtyQuests.size || STATE.dirtySteps.size;
     EditorCore.Page.guardUnsaved(isDirty);
-    const setDirty = () => DOM.dirtyPill.classList.toggle('hidden', !isDirty());
+    const setDirty = () => setHidden(DOM.dirtyPill, !isDirty());
     const updateCounts = () => {
       DOM.questCount.textContent = STATE.quests.length;
       DOM.stepCount.textContent = STATE.steps.length;
@@ -1397,8 +1271,12 @@
       }
     };
 
-    const selectedQuest = () => STATE.quests.find((q) => q.ID === STATE.selected?.id);
-    const selectedStep = () => STATE.steps.find((s) => s.ID === STATE.selected?.id);
+    const selectedQuest = () => STATE.selected?.type === 'quest'
+      ? STATE.quests.find((q) => q.ID === STATE.selected.id)
+      : undefined;
+    const selectedStep = () => STATE.selected?.type === 'step'
+      ? STATE.steps.find((s) => s.ID === STATE.selected.id)
+      : undefined;
 
     const renderRconHints = () => {
       if (DOM.stepRconHint) {
@@ -1432,6 +1310,7 @@
       quest.Money = toNum(data?.Money);
       quest.Exp = toNum(data?.Exp);
       quest.Flags = buildFlags(data?.Flags);
+      updateQuestHeader(quest);
       markQuestDirty(quest.ID);
       renderRconHints();
       scheduleTreeRender();
@@ -1462,6 +1341,7 @@
       step.AutoFinish = data?.AutoFinish ? 'Partial' : null;
       step.ScenarioData = String(data?.ScenarioData || '');
       syncStepMapWorldContext(step);
+      updateStepHeader(step);
       markStepDirty(step.ID);
       renderRconHints();
       scheduleTreeRender();
@@ -1534,7 +1414,10 @@
         case 'reward_items': return `#${item.id || 0} ×${item.value || 0}`;
         case 'required_items': return `#${item.id || 0} ×${item.value || 0} (${item.type || 'default'})`;
         case 'defeat_bots': return `#${item.id || 0} ×${item.value || 0}`;
-        case 'move_to': return item.name || `Цель (${item.mode || 'move'})`;
+        case 'move_to': {
+          const title = item.name || `Цель (${item.mode || 'move'})`;
+          return hasMoveTaskPosition(item) ? `${title} · X ${toNum(item.x)}, Y ${toNum(item.y)}` : title;
+        }
         default: return '—';
       }
     };
@@ -1569,7 +1452,7 @@
           <input class="editor-input form-input editor-dbselect-input editor-dbcombo-bound"
             type="number" data-path="${path}"
             data-task-field="${sectionId}" data-task-index="${index}" data-task-key="${key}"
-            data-value-type="number" value="${value || 0}">
+            data-value-type="number" value="${value ?? 0}">
         </div>
       </div>`;
     };
@@ -1577,11 +1460,11 @@
     // Позиция задачи — тот же общий PositionPicker, что и в остальных
     // редакторах. Значения живут в скрытых инпутах с data-task-field, поэтому
     // map-picker и ручной ввод обновляют задание через обычный onField.
-    const vec2Task = (section, index, xKey, yKey, xVal, yVal, worldPath, caption = 'Координаты (X, Y)', worldId = '') => {
-      const xPath = `${section}.${index}.${xKey}`;
-      const yPath = `${section}.${index}.${yKey}`;
-      const axis = (name, key, value) => `<input class="editor-input form-input position-picker__axis-input"
-        type="number" step="1" value="${esc(value)}" data-value-type="number"
+    const vec2Task = (section, index, xKey, yKey, xVal, yVal, worldPath, caption = 'Координаты (X, Y)', worldId = '', pinned = false, kind = 'target') => {
+      const xPath = `tasks.${section}.${index}.${xKey}`;
+      const yPath = `tasks.${section}.${index}.${yKey}`;
+      const axis = (name, key, path, value) => `<input class="editor-input form-input position-picker__axis-input"
+        type="number" step="1" value="${esc(value)}" data-value-type="number" data-path="${esc(path)}"
         data-map-axis="${name.toLowerCase()}" data-position-axis="${name.toLowerCase()}"
         data-task-field="${section}" data-task-index="${index}" data-task-key="${key}" hidden>`;
       const renderPicker = EditorCore.PositionPicker?.render;
@@ -1589,14 +1472,14 @@
         label: caption,
         xPath,
         yPath,
-        xInputHtml: axis('X', xKey, xVal),
-        yInputHtml: axis('Y', yKey, yVal),
+        xInputHtml: axis('X', xKey, xPath, toNum(xVal)),
+        yInputHtml: axis('Y', yKey, yPath, toNum(yVal)),
         worldPath,
         worldId,
         step: 1,
-        pinned: toNum(xVal) !== 0 || toNum(yVal) !== 0,
+        pinned: Boolean(pinned) || hasCoords(xVal, yVal),
         compact: true,
-        tag: 'position',
+        tag: kind === 'interactive' ? 'quest-task-interactive-position' : 'quest-task-position',
         // Цели заданий — тоже «живые» точки: запрещаем игровые тайлы.
         safeTiles: true,
         grid: true,
@@ -1648,7 +1531,7 @@
             ${inp('Название цели', 'name', move.name, 'text')}
           </div>
           <div class="editor-item-grid">
-            ${vec2Task(section, index, 'x', 'y', move.x, move.y, `tasks.move_to.${index}.world_id`, 'Точка цели (X, Y)', move.world_id)}
+            ${vec2Task(section, index, 'x', 'y', move.x, move.y, `tasks.move_to.${index}.world_id`, 'Точка цели (X, Y)', move.world_id, hasMoveTaskPosition(move), 'target')}
             ${dbCombo({ source: 'worlds', value: move.world_id, label: 'Мир', sectionId: section, index, key: 'world_id', placeholder: '— мир —', limit: 500 })}
           </div>
           <div class="editor-item-grid">
@@ -1668,14 +1551,14 @@
           </div>
           <div class="editor-item-subgroup" data-move-modes="move_follow_press">
             <div class="editor-item-grid">
-              ${vec2Task(section, index, 'interactive_x', 'interactive_y', move.interactive_x || '', move.interactive_y || '', `tasks.move_to.${index}.world_id`, 'Интерактив (X, Y)', move.world_id)}
+              ${vec2Task(section, index, 'interactive_x', 'interactive_y', move.interactive_x, move.interactive_y, `tasks.move_to.${index}.world_id`, 'Интерактив (X, Y)', move.world_id, hasInteractivePosition(move), 'interactive')}
             </div>
           </div>
           <div class="editor-item-subgroup" data-move-modes="defeat_bot">
             <div class="editor-item-grid">
               ${dbCombo({ source: 'bots', value: move.defeat_bot_id, label: 'Моб для победы', sectionId: section, index, key: 'defeat_bot_id', placeholder: '— моб —', limit: 500 })}
               ${inp('Сила атрибута', 'defeat_bot_attribute_power', move.defeat_bot_attribute_power || 10)}
-              ${dbCombo({ source: 'worlds', value: move.defeat_bot_world_id, label: 'World', sectionId: section, index, key: 'defeat_bot_world_id', placeholder: '— world —', limit: 500 })}
+              ${dbCombo({ source: 'worlds', value: move.defeat_bot_world_id, label: 'Мир', sectionId: section, index, key: 'defeat_bot_world_id', placeholder: '— мир —', limit: 500 })}
             </div>
           </div>
           <div class="editor-item-subgroup" data-move-modes="move_press,move_follow_press">
@@ -1696,11 +1579,42 @@
       return '';
     };
 
-    const renderTasksEditor = (step) => {
-      if (!DOM.stepTasksEditor) return;
-      const tasks = step?.TasksData || taskDefault();
+    const destroyTaskSortables = () => {
       Object.values(Runtime.taskSortables).forEach((sortable) => sortable?.destroy());
       Runtime.taskSortables = {};
+    };
+
+    const renderTasksEditor = (step, { expandItem = null, removeItem = null } = {}) => {
+      if (!DOM.stepTasksEditor) return;
+      const tasks = step?.TasksData || taskDefault();
+      const stepKey = String(step?.ID ?? '');
+      const sameStep = DOM.stepTasksEditor.dataset.stepId === stepKey;
+      const openKeys = new Set();
+
+      if (sameStep) {
+        DOM.stepTasksEditor.querySelectorAll('.editor-item[data-task-item]').forEach((el) => {
+          if (el.classList.contains('is-collapsed')) return;
+          const sec = el.getAttribute('data-task-item');
+          let idx = toNum(el.getAttribute('data-task-index'), -1);
+          if (idx < 0) return;
+          if (removeItem && removeItem.section === sec) {
+            if (idx === removeItem.index) return;
+            if (idx > removeItem.index) idx -= 1;
+          } else if (expandItem?.inserted && expandItem.section === sec && idx >= expandItem.index) {
+            idx += 1;
+          }
+          openKeys.add(`${sec}:${idx}`);
+        });
+      }
+
+      if (expandItem) {
+        openKeys.add(`${expandItem.section}:${expandItem.index}`);
+      } else if (!sameStep && getList(tasks, 'move_to').length === 1) {
+        openKeys.add('move_to:0');
+      }
+
+      DOM.stepTasksEditor.dataset.stepId = stepKey;
+      destroyTaskSortables();
 
       DOM.stepTasksEditor.innerHTML = TASK_SECTIONS.map((section) => `
         <section class="editor-task-section" data-task-section="${section.id}">
@@ -1729,14 +1643,23 @@
         }
 
         listEl.innerHTML = list.length
-          ? list.map((item, index) => `
-              <div class="editor-item is-collapsed" data-task-item="${section.id}" data-task-index="${index}">
+          ? list.map((item, index) => {
+              const isOpen = openKeys.has(`${section.id}:${index}`);
+              const isMoveTo = section.id === 'move_to';
+              const taskPinned = isMoveTo && hasMoveTaskPosition(item);
+              const pinTitle = taskPinned ? 'Изменить позицию на карте' : 'Закрепить позицию на карте';
+              const pinBtnHtml = isMoveTo
+                ? `<button type="button" class="editor-btn editor-btn-secondary task-pin-btn ${taskPinned ? 'is-active' : ''}" data-task-pin="${section.id}" data-task-index="${index}" title="${pinTitle}" aria-label="${pinTitle}"><i class="fa-solid fa-map-pin" aria-hidden="true"></i></button>`
+                : '';
+              return `
+              <div class="editor-item ${isOpen ? '' : 'is-collapsed'}" data-task-item="${section.id}" data-task-index="${index}">
                 <div class="editor-item-header">
                   <div>
                     <span class="editor-badge">#${index + 1}</span>
                     <span class="editor-item-summary">${esc(taskSummary(section.id, item))}</span>
                   </div>
                   <div class="editor-item-actions">
+                    ${pinBtnHtml}
                     <span class="editor-item-handle" title="Перетащить"><i class="fa-solid fa-arrows-up-down-left-right"></i></span>
                     <button type="button" class="editor-btn editor-btn-secondary" data-task-toggle="${section.id}" data-task-index="${index}" title="Свернуть/развернуть"><i class="fa-solid fa-chevron-down"></i></button>
                     <button type="button" class="editor-btn editor-btn-secondary" data-task-duplicate="${section.id}" data-task-index="${index}" title="Дублировать"><i class="fa-solid fa-copy"></i></button>
@@ -1744,8 +1667,8 @@
                   </div>
                 </div>
                 <div class="editor-item-body">${renderItemBody(section.id, item, index)}</div>
-              </div>
-            `).join('')
+              </div>`;
+            }).join('')
           : '<div class="editor-muted-text text-sm">Пока пусто — нажмите «Добавить»</div>';
 
         if (list.length && EditorCore.DB?.init) {
@@ -1797,6 +1720,32 @@
         }
 
         sectionEl.addEventListener('click', (e) => {
+          const pinBtn = e.target.closest('[data-task-pin]');
+          if (pinBtn) {
+            e.preventDefault();
+            e.stopPropagation();
+            const idx = toNum(pinBtn.getAttribute('data-task-index'));
+            const card = listEl.querySelector(`[data-task-item="move_to"][data-task-index="${idx}"]`);
+            const picker = card?.querySelector('[data-map-picker="quest-task-position"]');
+            const item = getList(tasks, 'move_to')[idx];
+            if (!picker || !item || !EditorCore.PositionPicker?.openMap) {
+              EditorCore.UI.toast(t('Карта мира недоступна — обновите страницу'), 'error');
+              return;
+            }
+            EditorCore.PositionPicker.init?.(picker);
+            const parsedWorld = EditorCore.PositionPicker.parseWorldId
+              ? EditorCore.PositionPicker.parseWorldId(item.world_id)
+              : toNum(item.world_id, 0);
+            EditorCore.PositionPicker.openMap(picker, {
+              worldId: parsedWorld ?? (step?.WorldID != null ? toNum(step.WorldID, 0) : 0),
+              onWorldChange: (worldId) => {
+                setVal(tasks, 'move_to', idx, 'world_id', toNum(worldId, 0));
+                syncStepTasks(tasks);
+              },
+            });
+            return;
+          }
+
           const duplicateBtn = e.target.closest('[data-task-duplicate]');
           if (duplicateBtn) {
             e.preventDefault();
@@ -1808,10 +1757,9 @@
             const copy = structuredClone(src);
             items.splice(idx + 1, 0, copy);
             syncStepTasks(tasks);
-            renderTasksEditor(step);
+            renderTasksEditor(step, { expandItem: { section: section.id, index: idx + 1, inserted: true } });
             requestAnimationFrame(() => {
               const newCard = DOM.stepTasksEditor.querySelector(`[data-task-item="${section.id}"][data-task-index="${idx + 1}"]`);
-              newCard?.classList.remove('is-collapsed');
               newCard?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
             });
             EditorCore.UI.toast('Задание продублировано', 'success');
@@ -1823,7 +1771,7 @@
             const idx = toNum(removeBtn.getAttribute('data-task-index'));
             getList(tasks, section.id).splice(idx, 1);
             syncStepTasks(tasks);
-            renderTasksEditor(step);
+            renderTasksEditor(step, { removeItem: { section: section.id, index: idx } });
             return;
           }
 
@@ -1847,10 +1795,27 @@
             value = value === '' ? 0 : Number(value);
           }
           setVal(tasks, sid, idx, key, value);
+          const item = getList(tasks, sid)[idx];
+          if (sid === 'move_to' && item) {
+            if (key === 'x' || key === 'y') item._posPinned = true;
+            if (key === 'interactive_x' || key === 'interactive_y') item._intPinned = true;
+          }
           syncStepTasks(tasks);
-          const summary = listEl.querySelector(`[data-task-item="${sid}"][data-task-index="${idx}"] .editor-item-summary`);
-          if (summary) summary.textContent = taskSummary(sid, getList(tasks, sid)[idx]);
-          if (sid === 'move_to') refreshMoveVisibility(listEl, tasks);
+          const updatedItem = getList(tasks, sid)[idx];
+          const cardEl = listEl.querySelector(`[data-task-item="${sid}"][data-task-index="${idx}"]`);
+          const summary = cardEl?.querySelector('.editor-item-summary');
+          if (summary) summary.textContent = taskSummary(sid, updatedItem);
+          if (sid === 'move_to') {
+            const headerPin = cardEl?.querySelector('[data-task-pin="move_to"]');
+            if (headerPin) {
+              const pinned = hasMoveTaskPosition(updatedItem);
+              const label = t(pinned ? 'Изменить позицию на карте' : 'Закрепить позицию на карте');
+              headerPin.classList.toggle('is-active', pinned);
+              headerPin.setAttribute('title', label);
+              headerPin.setAttribute('aria-label', label);
+            }
+            refreshMoveVisibility(listEl, tasks);
+          }
         };
 
         sectionEl.addEventListener('input', onField);
@@ -1858,11 +1823,12 @@
 
         addBtn?.addEventListener('click', () => {
           const items = getList(tasks, section.id);
-          if (section.id === 'move_to') items.push(moveToDefaults({}));
+          const defaultWorldId = step?.WorldID != null ? toNum(step.WorldID, 0) : 0;
+          if (section.id === 'move_to') items.push(moveToDefaults({ world_id: defaultWorldId }));
           else if (section.id === 'required_items') items.push({ id: 0, value: 1, type: 'default' });
           else items.push({ id: 0, value: 1 });
           syncStepTasks(tasks);
-          renderTasksEditor(step);
+          renderTasksEditor(step, { expandItem: { section: section.id, index: items.length - 1, inserted: true } });
         });
       });
 
@@ -1872,27 +1838,50 @@
     const setBtn = (btn, { enabled = false, hidden = false, label } = {}) => {
       if (!btn) return;
       btn.disabled = !enabled;
-      btn.classList.toggle('hidden', hidden);
+      setHidden(btn, hidden);
       if (label) {
         const text = btn.querySelector('span');
         if (text) text.textContent = label;
       }
     };
 
+    const clearQuestPane = () => {
+      Runtime.questForm = null;
+      if (DOM.questForm) DOM.questForm.innerHTML = '';
+      if (DOM.questRconHint) DOM.questRconHint.innerHTML = '';
+    };
+
+    const clearStepPane = () => {
+      Runtime.stepBase = null;
+      Runtime.dialog = null;
+      destroyTaskSortables();
+      if (DOM.stepBaseForm) DOM.stepBaseForm.innerHTML = '';
+      if (DOM.dialogForm) DOM.dialogForm.innerHTML = '';
+      if (DOM.stepTasksEditor) {
+        delete DOM.stepTasksEditor.dataset.stepId;
+        DOM.stepTasksEditor.innerHTML = '';
+      }
+      if (DOM.stepRconHint) DOM.stepRconHint.innerHTML = '';
+    };
+
     const showEditor = (type) => {
-      DOM.empty.classList.toggle('hidden', !!type);
-      DOM.questEditor.classList.toggle('hidden', type !== 'quest');
-      DOM.stepEditor.classList.toggle('hidden', type !== 'step');
+      setHidden(DOM.empty, Boolean(type));
+      setHidden(DOM.questEditor, type !== 'quest');
+      setHidden(DOM.stepEditor, type !== 'step');
       if (type === 'quest') {
+        clearStepPane();
         setBtn(DOM.deleteBtn, { enabled: true, hidden: false, label: 'Удалить квест' });
         setBtn(DOM.newStep, { enabled: true, hidden: false });
         setBtn(DOM.duplicateBtn, { enabled: false, hidden: true });
       } else if (type === 'step') {
+        clearQuestPane();
         setBtn(DOM.deleteBtn, { enabled: true, hidden: false, label: 'Удалить шаг' });
         setBtn(DOM.newStep, { enabled: true, hidden: false });
         setBtn(DOM.duplicateBtn, { enabled: true, hidden: false });
       } else {
-        setBtn(DOM.deleteBtn, { enabled: false, hidden: true, label: 'Delete' });
+        clearQuestPane();
+        clearStepPane();
+        setBtn(DOM.deleteBtn, { enabled: false, hidden: true, label: 'Удалить' });
         setBtn(DOM.newStep, { enabled: false, hidden: true });
         setBtn(DOM.duplicateBtn, { enabled: false, hidden: true });
       }
@@ -1904,10 +1893,7 @@
     };
 
     const mountStepEditor = (step) => {
-      const botLabel = lookupLabel(STATE.lookups.bots, step.BotID);
-      const worldLabel = lookupLabel(STATE.lookups.worlds, step.WorldID);
-      DOM.title.textContent = `Step #${step.ID} — ${botLabel}`;
-      DOM.subtitle.textContent = `Quest ${step.QuestID || '—'} · Step ${step.Step || 1} · ${worldLabel}`;
+      updateStepHeader(step);
       // Карта шага всегда открывается в мире самой записи, а не в последнем
       // мире, выбранном вручную в другом редакторе.
       syncStepMapWorldContext(step);
@@ -1947,17 +1933,19 @@
 
     const renderStepCard = (step, isSelected, isDirty) => {
       const mobLabel = lookupLabel(STATE.lookups.bots, step.BotID);
-      const worldLabel = lookupLabel(STATE.lookups.worlds, step.WorldID);
+      const worldLabel = lookupLabel(STATE.lookups.worlds, step.WorldID, { allowZero: true });
+      const pinned = hasStepPosition(step);
+      const pinTitle = pinned ? 'Изменить позицию на карте' : 'Закрепить позицию на карте';
       const skinInfo = STATE.lookups.botSkins?.get(String(step.BotID));
       const skinUrl = (skinInfo && STATE.skinsApi)
         ? EditorCore.utils.renderSkinApiUrl(STATE.skinsApi, skinInfo)
         : '';
       const preview = skinUrl
         ? `<img src="${skinUrl}" alt="" loading="lazy" />`
-        : '<i class="fa-solid fa-person-walking text-accent" style="font-size:14px"></i>';
+        : '<i class="fa-solid fa-person-walking text-accent text-sm"></i>';
 
       return `
-        <div class="step-node ${isSelected ? 'tree-selected' : ''} ${isDirty ? 'is-dirty' : ''} ${hasStepPosition(step) ? 'is-pinned' : ''}"
+        <div class="step-node ${isSelected ? 'tree-selected' : ''} ${isDirty ? 'is-dirty' : ''} ${pinned ? 'is-pinned' : ''}"
              draggable="true" data-node-type="step" data-id="${step.ID}">
           <div class="step-node-header">
             <div class="step-node-title">
@@ -1975,9 +1963,9 @@
                 min="1" step="1" value="${toNum(step.Step, 1)}"
                 title="Позиция шага" data-step-level-id="${step.ID}" />
               <div class="step-node-quick">
-                <button type="button" class="step-quick-btn is-pin ${hasStepPosition(step) ? 'is-active' : ''}"
+                <button type="button" class="step-quick-btn is-pin ${pinned ? 'is-active' : ''}"
                         data-step-action="pin" data-step-id="${step.ID}"
-                        title="Закрепить позицию на карте" aria-label="Закрепить позицию на карте">
+                        title="${pinTitle}" aria-label="${pinTitle}">
                   <i class="fa-solid fa-map-pin" aria-hidden="true"></i>
                 </button>
                 <button type="button" class="step-quick-btn is-grab"
@@ -2041,7 +2029,7 @@
           step.ID,
           step.Step,
           lookupLabel(STATE.lookups.bots, step.BotID),
-          lookupLabel(STATE.lookups.worlds, step.WorldID)
+          lookupLabel(STATE.lookups.worlds, step.WorldID, { allowZero: true })
         ].join(' ')));
 
         const stepsHtml = filteredSteps.length
@@ -2056,7 +2044,7 @@
             `<div class="step-drop-indicator" data-drop-quest="${quest.ID}" data-drop-index="${filteredSteps.length}"></div>
              <div class="step-drop-zone" data-drop-quest="${quest.ID}" data-drop-index="${filteredSteps.length}"></div>`
           : `<div class="step-drop-zone" data-drop-quest="${quest.ID}" data-drop-index="0"></div>
-             <div class="editor-muted-text text-xs" style="padding-left:4px">Шагов нет</div>`;
+             <div class="editor-muted-text text-xs step-empty-hint">Шагов нет</div>`;
 
         const classes = [
           'quest-node',
@@ -2170,7 +2158,9 @@
           if (!step) return;
           if (action === 'pin') {
             // Открываем тот же world-aware map-picker, что и кнопка в форме.
-            selectStep(step);
+            if (STATE.selected?.type !== 'step' || STATE.selected?.id !== step.ID) {
+              selectStep(step);
+            }
             window.requestAnimationFrame(openStepMapPicker);
           } else if (action === 'move') {
             selectStep(step);
@@ -2380,8 +2370,7 @@
       const resetScroll = STATE.lastQuestScrollId !== quest.ID;
       STATE.selected = { type: 'quest', id: quest.ID };
       STATE.lastQuestScrollId = quest.ID;
-      DOM.title.textContent = quest.Name ? `Quest: ${quest.Name}` : `Quest #${quest.ID}`;
-      DOM.subtitle.textContent = `ID ${quest.ID} · Next: ${quest.NextQuestID || '—'}`;
+      updateQuestHeader(quest);
       Runtime.questForm = EditorCore.FormRuntime.mount(DOM.questForm, {
         fields: questFields,
         data: {
@@ -2718,6 +2707,9 @@
         STATE.expandedQuests.clear();
         STATE.nextTempStepId = -1;
         STATE.lastQuestScrollId = null;
+        STATE.selected = null;
+        showEditor(null);
+        resetHeader();
         setDirty();
         renderTree();
       } catch (err) {
