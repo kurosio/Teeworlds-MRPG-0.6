@@ -118,3 +118,17 @@ print("  total:", len(rows))
 for r in rows:
     print("  ", r.get('id'), r.get('status'), '|', (r.get('author') or {}).get('nickname'), '|', (r.get('message') or '')[:60])
 PY
+
+echo "== request details =="
+for id in CR-20261025-162749-5b4f86 CR-20261025-162855-70c47e; do
+  req "api/change-requests.php?action=get&id=$id&peek=1" > "$OUT/req-$id.json"
+  python3 - "$OUT/req-$id.json" <<'PY'
+import json, sys
+d = json.load(open(sys.argv[1]))
+r = d.get('request') or d
+print('  id:', r.get('id'), '| status:', r.get('status'), '| ops:', len(r.get('operations') or []), '| version:', r.get('version'))
+for o in (r.get('operations') or []):
+    print('   -', o.get('type'), o.get('resource'), o.get('id') or o.get('tempId'))
+print('  message:', (r.get('message') or '')[:120])
+PY
+done
