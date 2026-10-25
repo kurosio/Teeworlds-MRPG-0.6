@@ -7,28 +7,39 @@ on:
       - '.ci/**'
       - '.github/workflows/editor-bridge.yml'
 
+concurrency:
+  group: editor-bridge
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
 jobs:
   bridge:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
-      - name: Probe editor endpoint
+        with:
+          ref: arena/79c9a834-teeworlds-mrpg-0-6
+      - name: Run task
+        env:
+          EDITOR_BASE: https://editor.mmotee.online
+          GUEST_LOGIN: test
+          GUEST_PASSWORD: '123123'
         run: |
-          echo "== status =="
-          curl -sS -m 30 -w "\nhttp=%{http_code}\n" \
-            -c /tmp/cookies.txt \
-            https://editor.mmotee.online/api/auth.php?action=status
-          echo "== guest login =="
-          curl -sS -m 30 -w "\nhttp=%{http_code}\n" \
-            -b /tmp/cookies.txt -c /tmp/cookies.txt \
-            -H 'Content-Type: application/json' \
-            -H 'Origin: https://editor.mmotee.online' \
-            -H 'Referer: https://editor.mmotee.online/index.html' \
-            -X POST \
-            --data '{"login":"test","password":"123123"}' \
-            https://editor.mmotee.online/api/auth.php?action=guest_login
-          echo "== status after =="
-          curl -sS -m 30 -w "\nhttp=%{http_code}\n" \
-            -b /tmp/cookies.txt \
-            https://editor.mmotee.online/api/auth.php?action=status
+          set -o pipefail
+          mkdir -p .ci/out
+          bash .ci/task.sh 2>&1 | tee .ci/out/result.txt
+      - name: Publish result
+        run: |
+          git config user.name editor-bridge
+          git config user.email editor-bridge@users.noreply.github.com
+          git add -A .ci
+          if git diff --cached --quiet; then
+            echo "nothing to publish"
+            exit 0
+          fi
+          git commit -q -m "ci(bridge): result"
+          git pull --rebase --autostash origin arena/79c9a834-teeworlds-mrpg-0-6
+          git push origin HEAD:arena/79c9a834-teeworlds-mrpg-0-6
