@@ -50,6 +50,16 @@
     .qb-picker-row { width:100%;text-align:left;cursor:pointer; }
     .qb-pool.is-drag-over .qb-pool-list { outline:2px dashed var(--editor-primary);outline-offset:4px;border-radius:10px; }
     @media(max-width:900px){.qb-layout{grid-template-columns:1fr}.qb-pool{position:static;max-height:none}.qb-pool-list{max-height:300px}.qb-card{width:min(340px,calc(100vw - 48px));min-width:min(340px,calc(100vw - 48px))}}
+    /* Guest mode: mark every local change (draft / in a change request) */
+    .qb-quest.qb-guest-changed{box-shadow:0 0 0 2px color-mix(in srgb,var(--editor-warning,#ffc27f) 55%,transparent),inset 3px 0 0 var(--editor-warning,#ffc27f)}
+    .qb-quest.qb-guest-changed.is-submitted{box-shadow:0 0 0 2px color-mix(in srgb,var(--editor-primary,#6366f1) 55%,transparent),inset 3px 0 0 var(--editor-primary,#6366f1)}
+    .qb-card.qb-guest-changed{box-shadow:var(--editor-shadow-sm,0 1px 3px rgba(0,0,0,.12)),inset 3px 0 0 var(--editor-warning,#ffc27f)}
+    .qb-card.qb-guest-changed.is-submitted{box-shadow:var(--editor-shadow-sm,0 1px 3px rgba(0,0,0,.12)),inset 3px 0 0 var(--editor-primary,#6366f1)}
+    .qb-card > .guest-row-badge{display:block;width:fit-content;margin:10px 0 0 16px}
+    .qb-field-changed{position:relative;border-radius:10px;box-shadow:0 0 0 1px color-mix(in srgb,var(--editor-warning,#ffc27f) 45%,transparent);background:color-mix(in srgb,var(--editor-warning,#ffc27f) 5%,transparent)}
+    .qb-field-changed::after{content:'изм.';position:absolute;top:-7px;right:6px;padding:0 5px;border-radius:999px;font-size:9.5px;font-weight:700;line-height:1.6;color:var(--editor-warning,#ffc27f);background:var(--editor-surface,#121821);border:1px solid color-mix(in srgb,var(--editor-warning,#ffc27f) 45%,transparent)}
+    .qb-field-changed.is-submitted{box-shadow:0 0 0 1px color-mix(in srgb,var(--editor-primary,#6366f1) 45%,transparent);background:color-mix(in srgb,var(--editor-primary,#6366f1) 5%,transparent)}
+    .qb-field-changed.is-submitted::after{content:'в запросе';color:var(--editor-primary,#6366f1);border-color:color-mix(in srgb,var(--editor-primary,#6366f1) 45%,transparent)}
   </style>
 </head>
 <body class="editor-theme" data-editor="quest_boards">
@@ -98,11 +108,51 @@
     const state = { boards:[], quests:[], links:new Map(), allLinkRows:[], original:new Map(), pickerBoard:null, dragging:null, loading:false, editingBoard:null, boardFormRuntime:null };
     const num = (v) => { const n=Number(v); return Number.isFinite(n)&&n>0?n:null; };
     const esc = (v) => String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+    const Guest = window.EditorCore.Guest || null;
+    const isGuest = () => !!Guest?.isGuest?.();
+    const RES_LINK = 'quest_board_links';
+    const RES_BOARD = 'quest_boards';
+
+    const guestOps = () => {
+      if (!isGuest()) return [];
+      const draft = Guest.Draft.get();
+      return (draft && Array.isArray(draft.ops) ? draft.ops : []).filter(
+        (o) => o.resource === RES_LINK || o.resource === RES_BOARD);
+    };
+
+    const guestBadgeHtml = (op) => {
+      const submitted = !!op.reqId;
+      const labels = { create: 'New', update: 'Changed', delete: 'Delete' };
+      const icons = { create: 'fa-plus', update: 'fa-pen', delete: 'fa-trash' };
+      return `<span class="guest-row-badge ${submitted ? 'is-submitted' : 'is-draft'}" title="${esc(submitted ? `Изменение в запросе ${op.reqId} — ожидает проверки администратором` : 'Локальное изменение — пока не записано в базу данных')}"><i class="fa-solid ${submitted ? 'fa-hourglass-half' : (icons[op.type] || 'fa-pen')}"></i>${esc(submitted ? 'в запросе' : (labels[op.type] || 'Изменено'))}</span>`;
+    };
+
+    const boardGuestOp = (b) => {
+      const ops = guestOps().filter((o) => o.resource === RES_BOARD);
+      return ops.find((o) => (o.type === 'create' ? Number(o.tempId) : Number(o.id)) === b.ID) || null;
+    };
+
+    const questGuestState = (q) => {
+      const link = state.links.get(q.ID);
+      const linkId = link ? Number(link.id) : 0;
+      const changedLocally = currentBoard(q.ID) !== (state.original.get(q.ID) || null);
+      const ops = guestOps().filter((o) => o.resource === RES_LINK);
+      const op = ops.find((o) => {
+        if (o.type === 'create') return Number(o.data?.QuestID) === q.ID;
+        return linkId > 0 && Number(o.id) === linkId;
+      }) || null;
+      return (changedLocally || op) ? { op, changedLocally } : null;
+    };
+
     const questType = (q) => { const raw=String(q.Flags||''); const type=raw.split(',').find(x=>x.trim().startsWith('Type '))?.trim().replace('Type ','') || (raw.includes('Tutorial')?'tutorial':'quest'); return ({main:'main',side:'side',daily:'daily',weekly:'weekly',repeatable:'repeatable',tutorial:'tutorial',quest:'quest'})[type]||type; };
     const currentBoard = (questId) => state.links.get(questId)?.boardId || null;
     const isDirty = () => state.quests.some(q => currentBoard(q.ID)!==(state.original.get(q.ID)||null));
     function updateDirty(){ const dirty=isDirty(); DOM.save.disabled=!dirty||state.loading; DOM.dirty.classList.toggle('hidden',!dirty); }
-    function questRow(q, removable=false){ return `<div class="qb-quest" draggable="true" data-quest="${q.ID}" title="Double-click to open the quest in a new tab"><span class="qb-quest-id">#${q.ID}</span><span class="qb-quest-name">${esc(q.Name||`Quest #${q.ID}`)}</span><span class="qb-quest-open" aria-hidden="true"><i class="fa-solid fa-arrow-up-right-from-square"></i></span><span class="qb-quest-type">${esc(questType(q))}</span>${removable?`<button class="qb-remove" data-remove="${q.ID}" title="Remove from board"><i class="fa-solid fa-xmark"></i></button>`:''}</div>`; }
+    function questRow(q, removable=false){
+      const mark = questGuestState(q);
+      const cls = 'qb-quest' + (mark ? ' qb-guest-changed' : '') + (mark && mark.op && mark.op.reqId ? ' is-submitted' : '');
+      const badge = mark && mark.op ? guestBadgeHtml(mark.op) : '';
+      return `<div class="${cls}" draggable="true" data-quest="${q.ID}" title="Double-click to open the quest in a new tab"><span class="qb-quest-id">#${q.ID}</span><span class="qb-quest-name">${esc(q.Name||`Quest #${q.ID}`)}</span><span class="qb-quest-open" aria-hidden="true"><i class="fa-solid fa-arrow-up-right-from-square"></i></span><span class="qb-quest-type">${esc(questType(q))}</span>${badge}${removable?`<button class="qb-remove" data-remove="${q.ID}" title="Remove from board"><i class="fa-solid fa-xmark"></i></button>`:''}</div>`; }
     function filtered(quests, term){ const tokens=String(term||'').toLowerCase().trim().split(/\s+/).filter(Boolean); return !tokens.length?quests:quests.filter(q=>{const h=`${q.ID} ${q.Name} ${q.Flags}`.toLowerCase();return tokens.every(t=>h.includes(t));}); }
     function render(){
       const term=DOM.search.value;
@@ -113,7 +163,7 @@
       const termLower=String(term||'').trim().toLowerCase();
       const visibleBoards=state.boards.filter(b=>!termLower||`${b.ID} ${b.Name}`.toLowerCase().includes(termLower)||filtered(state.quests.filter(q=>currentBoard(q.ID)===b.ID),term).length);
       DOM.boardNav.innerHTML=visibleBoards.map(b=>`<button class="qb-nav-chip" data-nav-board="${b.ID}" title="Go to board">${esc(b.Name||'#'+b.ID)}</button>`).join('');
-      DOM.boards.innerHTML=visibleBoards.map(b=>{const boardMatches=termLower&&`${b.ID} ${b.Name}`.toLowerCase().includes(termLower);const quests=boardMatches?state.quests.filter(q=>currentBoard(q.ID)===b.ID):filtered(state.quests.filter(q=>currentBoard(q.ID)===b.ID),term);const total=state.quests.filter(q=>currentBoard(q.ID)===b.ID).length;return `<section class="qb-card" data-board="${b.ID}"><div class="qb-card-head"><div class="qb-card-title"><span class="qb-card-icon"><i class="fa-solid fa-clipboard-check"></i></span><div class="min-w-0"><div class="qb-title">${esc(b.Name||`Board #${b.ID}`)}</div><div class="qb-meta"><span>ID ${b.ID}</span><span><i class="fa-solid fa-earth-americas"></i> World ${b.WorldID??'—'}</span><span><i class="fa-solid fa-location-dot"></i> ${b.PosX??'—'}, ${b.PosY??'—'}</span></div></div><span class="qb-count">${total}</span></div></div><div class="qb-list">${quests.length?quests.map(q=>questRow(q,true)).join(''):`<div class="qb-empty">${total?'No matching quests':'Drop a quest here'}</div>`}</div><div class="qb-card-actions"><button class="qb-add" data-add="${b.ID}"><i class="fa-solid fa-plus"></i>Add quest</button><button class="qb-edit" data-edit-board="${b.ID}" title="Edit board and map position"><i class="fa-solid fa-pen"></i></button></div></section>`;}).join('');
+      DOM.boards.innerHTML=visibleBoards.map(b=>{const boardMatches=termLower&&`${b.ID} ${b.Name}`.toLowerCase().includes(termLower);const quests=boardMatches?state.quests.filter(q=>currentBoard(q.ID)===b.ID):filtered(state.quests.filter(q=>currentBoard(q.ID)===b.ID),term);const total=state.quests.filter(q=>currentBoard(q.ID)===b.ID).length;const bOp=boardGuestOp(b);const bCls='qb-card'+(bOp?' qb-guest-changed':'')+(bOp&&bOp.reqId?' is-submitted':'');const bChanged=bOp?Object.keys(bOp.data||{}):[];const bMark=(key)=>bChanged.includes(key)?' qb-field-changed'+(bOp.reqId?' is-submitted':''):'';return `<section class="${bCls}" data-board="${b.ID}"><div class="qb-card-head"><div class="qb-card-title"><span class="qb-card-icon"><i class="fa-solid fa-clipboard-check"></i></span><div class="min-w-0"><div class="qb-title${bMark('Name')}">${esc(b.Name||`Board #${b.ID}`)}</div><div class="qb-meta"><span>ID ${b.ID}</span><span class="${bMark('WorldID')}"><i class="fa-solid fa-earth-americas"></i> World ${esc(b.WorldID??'—')}</span><span class="${bMark('PosX')||bMark('PosY')}"><i class="fa-solid fa-location-dot"></i> ${esc(b.PosX??'—')}, ${esc(b.PosY??'—')}</span></div></div><span class="qb-count">${total}</span></div></div><div class="qb-list">${quests.length?quests.map(q=>questRow(q,true)).join(''):`<div class="qb-empty">${total?'No matching quests':'Drop a quest here'}</div>`}</div><div class="qb-card-actions"><button class="qb-add" data-add="${b.ID}"><i class="fa-solid fa-plus"></i>Add quest</button><button class="qb-edit" data-edit-board="${b.ID}" title="Edit board and map position"><i class="fa-solid fa-pen"></i></button></div>${bOp?guestBadgeHtml(bOp):''}</section>`;}).join('');
       const assigned=state.quests.filter(q=>currentBoard(q.ID)).length;
       DOM.stats.innerHTML=`<span class="qb-stat"><b>${state.boards.length}</b> boards</span><span class="qb-stat"><b>${assigned}</b> assigned</span><span class="qb-stat"><b>${state.quests.length-assigned}</b> unassigned</span>`;
       DOM.boardNav.querySelectorAll('[data-nav-board]').forEach(btn=>btn.addEventListener('click',()=>{
@@ -155,7 +205,7 @@
       const payload={Name:String(data.Name||'').trim(),WorldID:num(data.WorldID),PosX:Number(data.PosX||0),PosY:Number(data.PosY||0)};
       if(!payload.Name||!payload.WorldID){EditorCore.UI.toast('Enter a name and select a world','error');return;}
       DOM.boardSubmit.disabled=true;
-      try{if(state.editingBoard)await EditorCore.DBCrud.update('quest_boards',state.editingBoard.ID,payload);else await EditorCore.DBCrud.create('quest_boards',payload);DOM.boardDialog.close();EditorCore.UI.toast(state.editingBoard?'Quest board updated':'Quest board created','success');await load();setTimeout(()=>{DOM.viewport.scrollLeft=DOM.viewport.scrollWidth},30)}catch(e){EditorCore.UI.toast(e.message||'Could not save the board','error')}finally{DOM.boardSubmit.disabled=false}
+      try{if(state.editingBoard)await EditorCore.DBCrud.update('quest_boards',state.editingBoard.ID,payload);else await EditorCore.DBCrud.create('quest_boards',payload);DOM.boardDialog.close();EditorCore.UI.toast(isGuest()?(state.editingBoard?'Изменения доски добавлены в черновик заявки':'Новая доска добавлена в черновик заявки'):(state.editingBoard?'Quest board updated':'Quest board created'),isGuest()?'info':'success');await load();setTimeout(()=>{DOM.viewport.scrollLeft=DOM.viewport.scrollWidth},30)}catch(e){EditorCore.UI.toast(e.message||'Could not save the board','error')}finally{DOM.boardSubmit.disabled=false}
     }
     async function deleteBoard(){
       const board=state.editingBoard;
@@ -178,7 +228,7 @@
         }
         await EditorCore.DBCrud.remove('quest_boards',board.ID);
         DOM.boardDialog.close();
-        EditorCore.UI.toast(`Quest board deleted. Unassigned quests: ${assigned.length}`,'success');
+        EditorCore.UI.toast(isGuest()?'Доска удалена в черновике заявки':`Quest board deleted. Unassigned quests: ${assigned.length}`,isGuest()?'info':'success');
         await load();
       }catch(e){
         EditorCore.UI.toast(e.message||'Could not safely delete the quest board','error');
@@ -190,8 +240,8 @@
     function openPicker(boardId){state.pickerBoard=boardId;DOM.pickerSearch.value='';const b=state.boards.find(x=>x.ID===boardId);DOM.pickerTitle.textContent=`Add quest to ${b?.Name||`board #${boardId}`}`;renderPicker();DOM.picker.showModal();setTimeout(()=>DOM.pickerSearch.focus(),0)}
     function renderPicker(){const rows=filtered(state.quests.filter(q=>currentBoard(q.ID)!==state.pickerBoard),DOM.pickerSearch.value);DOM.pickerList.innerHTML=rows.length?rows.map(q=>`<button class="qb-quest qb-picker-row" data-pick="${q.ID}"><span class="qb-quest-id">#${q.ID}</span><span class="qb-quest-name">${esc(q.Name)}</span><span class="qb-quest-type">${currentBoard(q.ID)?'move':'add'}</span></button>`).join(''):'<div class="qb-empty">No quests found</div>';DOM.pickerList.querySelectorAll('[data-pick]').forEach(btn=>btn.addEventListener('click',()=>{move(num(btn.dataset.pick),state.pickerBoard);DOM.picker.close()}));}
     $('picker-close').addEventListener('click',()=>DOM.picker.close());DOM.pickerSearch.addEventListener('input',renderPicker);DOM.search.addEventListener('input',render);
-    async function load(){state.loading=true;DOM.save.disabled=true;DOM.boards.innerHTML='<div class="editor-muted-text">Loading quest boards…</div>';try{const [boards,quests,links]=await Promise.all([EditorCore.DBCrud.list('quest_boards',{limit:5000}),EditorCore.DBCrud.list('quests',{limit:5000}),EditorCore.DBCrud.list('quest_board_links',{limit:5000})]);state.boards=(boards.rows||[]).map(x=>({...x,ID:num(x.ID)})).sort((a,b)=>a.ID-b.ID);state.quests=(quests.rows||[]).map(x=>({...x,ID:num(x.ID)})).sort((a,b)=>a.ID-b.ID);state.allLinkRows=links.rows||[];state.links=new Map();state.allLinkRows.forEach(x=>{const q=num(x.QuestID);if(q)state.links.set(q,{id:num(x.ID),boardId:num(x.DailyBoardID)})});state.original=new Map(state.quests.map(q=>[q.ID,currentBoard(q.ID)]));render()}catch(e){DOM.boards.innerHTML='<div class="editor-empty-state"><i class="fa-solid fa-triangle-exclamation"></i><div>Could not load quest boards</div></div>';EditorCore.UI.toast(e.message||'Loading failed','error')}finally{state.loading=false;updateDirty()}}
-    async function save(){const changed=state.quests.filter(q=>currentBoard(q.ID)!==(state.original.get(q.ID)||null));if(!changed.length)return;state.loading=true;updateDirty();try{for(const q of changed){const link=state.links.get(q.ID)||{id:null,boardId:null};if(link.boardId){if(link.id)await EditorCore.DBCrud.update('quest_board_links',link.id,{QuestID:q.ID,DailyBoardID:link.boardId});else{const r=await EditorCore.DBCrud.create('quest_board_links',{QuestID:q.ID,DailyBoardID:link.boardId});link.id=num(r.id);state.links.set(q.ID,link)}}else if(link.id){await EditorCore.DBCrud.remove('quest_board_links',link.id);state.links.set(q.ID,{id:null,boardId:null})}state.original.set(q.ID,link.boardId||null)}EditorCore.UI.toast(`Saved assignments: ${changed.length}`,'success');render()}catch(e){EditorCore.UI.toast(e.message||'Saving failed','error')}finally{state.loading=false;updateDirty()}}
+    async function load(){state.loading=true;DOM.save.disabled=true;DOM.boards.innerHTML='<div class="editor-muted-text">Loading quest boards…</div>';try{const [boards,quests,links]=await Promise.all([EditorCore.DBCrud.list('quest_boards',{limit:5000}),EditorCore.DBCrud.list('quests',{limit:5000}),EditorCore.DBCrud.list('quest_board_links',{limit:5000})]);state.boards=(boards.rows||[]).map(x=>({...x,ID:num(x.ID)})).sort((a,b)=>a.ID-b.ID);state.quests=(quests.rows||[]).map(x=>({...x,ID:num(x.ID)})).sort((a,b)=>a.ID-b.ID);state.allLinkRows=links.rows||[];state.links=new Map();state.allLinkRows.forEach(x=>{const q=num(x.QuestID);if(q)state.links.set(q,{id:num(x.ID),boardId:num(x.DailyBoardID)})});if(state.original.size===0) state.original=new Map(state.quests.map(q=>[q.ID,currentBoard(q.ID)]));render()}catch(e){DOM.boards.innerHTML='<div class="editor-empty-state"><i class="fa-solid fa-triangle-exclamation"></i><div>Could not load quest boards</div></div>';EditorCore.UI.toast(e.message||'Loading failed','error')}finally{state.loading=false;updateDirty()}}
+    async function save(){const changed=state.quests.filter(q=>currentBoard(q.ID)!==(state.original.get(q.ID)||null));if(!changed.length)return;state.loading=true;updateDirty();try{for(const q of changed){const link=state.links.get(q.ID)||{id:null,boardId:null};if(link.boardId){if(link.id)await EditorCore.DBCrud.update('quest_board_links',link.id,{QuestID:q.ID,DailyBoardID:link.boardId});else{const r=await EditorCore.DBCrud.create('quest_board_links',{QuestID:q.ID,DailyBoardID:link.boardId});link.id=num(r.id);state.links.set(q.ID,link)}}else if(link.id){await EditorCore.DBCrud.remove('quest_board_links',link.id);state.links.set(q.ID,{id:null,boardId:null})}state.original.set(q.ID,link.boardId||null)}EditorCore.UI.toast(isGuest()?'Изменения назначений добавлены в черновик заявки':`Saved assignments: ${changed.length}`,isGuest()?'info':'success');render()}catch(e){EditorCore.UI.toast(e.message||'Saving failed','error')}finally{state.loading=false;updateDirty()}}
     // Native modal dialogs occupy the browser top layer. Some browsers keep a
     // previously opened parent dialog above a map dialog even when the map calls
     // showModal(). Temporarily close the board editor while PointMap is active;
@@ -217,7 +267,13 @@
     $('board-dialog-close').addEventListener('click',()=>DOM.boardDialog.close()); $('board-cancel').addEventListener('click',()=>DOM.boardDialog.close()); DOM.boardSubmit.addEventListener('click',submitBoard); DOM.boardDelete.addEventListener('click',deleteBoard);
     $('scroll-left').addEventListener('click',()=>DOM.viewport.scrollBy({left:-760,behavior:'smooth'})); $('scroll-right').addEventListener('click',()=>DOM.viewport.scrollBy({left:760,behavior:'smooth'}));
     DOM.viewport.addEventListener('wheel',e=>{if(Math.abs(e.deltaY)>Math.abs(e.deltaX)){e.preventDefault();DOM.viewport.scrollLeft+=e.deltaY}},{passive:false});
-    DOM.save.addEventListener('click',save);DOM.refresh.addEventListener('click',()=>{if(isDirty()&&!confirm('Discard unsaved board changes?'))return;load()});window.addEventListener('beforeunload',e=>{if(isDirty()){e.preventDefault();e.returnValue=''}});load();
+    DOM.save.addEventListener('click',save);DOM.refresh.addEventListener('click',()=>{if(isDirty()&&!confirm('Discard unsaved board changes?'))return;load()});window.addEventListener('beforeunload',e=>{if(isDirty()){e.preventDefault();e.returnValue=''}});
+    const guestRefresh = () => { if (state.loading || DOM.boardDialog.open) return; load(); };
+    window.addEventListener('editor-core:guest-updated', guestRefresh);
+    window.addEventListener('editor-core:guest-ready', guestRefresh);
+    window.addEventListener('editor-core:guest-request-resolved', () => { if (!isGuest()) return; state.original.clear(); guestRefresh(); });
+    window.addEventListener('editor-core:guest-request-revised', guestRefresh);
+    load();
   </script>
 </body>
 </html>
