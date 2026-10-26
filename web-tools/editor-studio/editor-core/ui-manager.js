@@ -89,22 +89,62 @@
       return true;
     };
 
-    const moveSelection = (listRoot, direction = 1) => {
-      if (!listRoot) return false;
-      const rows = Array.from(listRoot.querySelectorAll('.editor-row, .quest-node, .step-node'))
-        .filter((el) => el.offsetParent !== null || el.getClientRects?.().length);
-      if (!rows.length) return false;
-      const active = rows.findIndex((r) => (
-        r.classList.contains('editor-row-active')
-        || r.classList.contains('tree-selected')
-        || r.classList.contains('ring-2')
-      ));
-      const next = Math.max(0, Math.min(rows.length - 1, active < 0 ? 0 : active + direction));
-      const target = rows[next]?.querySelector?.('.quest-node-title, .step-node-header') || rows[next];
-      target?.click?.();
-      rows[next]?.scrollIntoView?.({ block: 'nearest' });
+    // Строки списков записей во всех редакторах: CRUD-списки (.editor-row),
+    // дерево квестов (.quest-node/.step-node) и очередь запросов
+    // (.cr-list-item). Классы активной строки — тот же набор, что в
+    // change-markers.js/deep-link.js: единый вид списков.
+    const ROW_SELECTOR = '.editor-row, .quest-node, .step-node, .cr-list-item';
+    const ACTIVE_ROW_CLASSES = ['editor-row-active', 'tree-selected', 'ring-2', 'active', 'is-active', 'selected'];
+
+    const isRowVisible = (el) => {
+      if (el.offsetParent !== null || el.getClientRects?.().length) return true;
+      // Строка без геометрии: либо спрятана (display:none у неё или родителя),
+      // либо среда без layout вовсе (jsdom в тестах) — различаем по стилям.
+      for (let node = el; node && node !== document.body; node = node.parentElement) {
+        if (node.hidden) return false;
+        let display = '';
+        try { display = window.getComputedStyle?.(node)?.display || ''; } catch { /* нет стилей — считаем видимой */ }
+        if (display === 'none') return false;
+      }
       return true;
     };
+
+    const listRows = (listRoot) => {
+      if (!listRoot?.querySelectorAll) return [];
+      return Array.from(listRoot.querySelectorAll(ROW_SELECTOR)).filter(isRowVisible);
+    };
+
+    const activeRowIndex = (rows) => rows.findIndex((row) => (
+      ACTIVE_ROW_CLASSES.some((cls) => row.classList?.contains(cls))
+    ));
+
+    const clickRow = (row) => {
+      if (!row) return false;
+      const target = row.querySelector?.('.quest-node-title, .step-node-header') || row;
+      target?.click?.();
+      row.scrollIntoView?.({ block: 'nearest' });
+      return true;
+    };
+
+    const moveSelectionTo = (listRoot, index) => {
+      const rows = listRows(listRoot);
+      if (!rows.length) return false;
+      const next = Math.max(0, Math.min(rows.length - 1, index));
+      if (next === activeRowIndex(rows)) {
+        rows[next].scrollIntoView?.({ block: 'nearest' });
+        return true;
+      }
+      return clickRow(rows[next]);
+    };
+
+    const moveSelectionBy = (listRoot, delta) => {
+      const rows = listRows(listRoot);
+      if (!rows.length) return false;
+      const active = activeRowIndex(rows);
+      return moveSelectionTo(listRoot, active < 0 ? (delta < 0 ? rows.length - 1 : 0) : active + delta);
+    };
+
+    const moveSelection = (listRoot, direction = 1) => moveSelectionBy(listRoot, direction);
 
     const syncToolsButtonState = (prefs) => {
       const btn = document.querySelector?.('[data-editor-quick-tools="1"]');
@@ -127,7 +167,7 @@
                 <i class="fa-solid fa-sliders editor-tone-accent"></i>
                 <span>Quick actions and view</span>
               </div>
-              <div class="editor-muted-text text-xs mt-1">Shortcuts: Ctrl+S save · Alt+N create · / search · Ctrl+K palette</div>
+              <div class="editor-muted-text text-xs mt-1">Shortcuts: Ctrl+S save · Alt+N create · / search · ↑↓ records · Ctrl+Tab switch editor</div>
             </div>
             <button type="button" class="editor-icon-btn" data-role="close" title="Close (Esc)">
               <i class="fa-solid fa-xmark"></i>
@@ -207,6 +247,26 @@
           closeOnRun: true,
           run: () => focusSearch(actions.search),
         },
+        // Переключение между редакторами доступно только внутри оболочки;
+        // у редактора, открытого отдельной вкладкой браузера, студии нет.
+        ...(inShellFrame() ? [
+          {
+            id: 'switch-editor',
+            icon: 'fa-arrow-right-arrow-left',
+            label: 'Find and switch editor',
+            kbd: 'Ctrl+Tab',
+            closeOnRun: true,
+            run: () => forwardToShell('palette'),
+          },
+          {
+            id: 'prev-editor',
+            icon: 'fa-arrow-left',
+            label: 'Back to the previous editor',
+            kbd: 'Alt+←',
+            closeOnRun: true,
+            run: () => forwardToShell('history-back'),
+          },
+        ] : []),
         {
           id: 'prev',
           icon: 'fa-arrow-up',
@@ -319,6 +379,164 @@
       return tag === 'input' || tag === 'textarea' || tag === 'select' || !!el.isContentEditable;
     };
 
+    // ── Навигация оболочки изнутри редактора ──────────────────────────────
+    // Редактор живёт в iframe, поэтому горячие клавиши студии (Ctrl+Tab,
+    // Alt+1…9, история Alt+←/→) сами до оболочки не доходят: при активной
+    // работе фокус почти всегда в редакторе, и переключение «не работает»,
+    // пока не щёлкнешь шапку студии. Пересылаем эти команды родителю —
+    // оболочка принимает их только от своих кадров (editor-shell:navigate).
+    const inShellFrame = () => {
+      try { return !!window.parent && window.parent !== window; } catch { return false; }
+    };
+
+    const forwardToShell = (action, extra = {}) => {
+      if (!inShellFrame()) return false;
+      const http = window.EditorCore?.Http;
+      if (!http?.postMessage) return false;
+      return http.postMessage(window.parent, { type: 'editor-shell:navigate', action, ...extra });
+    };
+
+    // ── Навигация по списку записей ───────────────────────────────────────
+    // Один маленький блок над списком каждого редактора: предыдущая и
+    // следующая запись кнопками и счётчик «N / M» — видно, где вы в списке,
+    // и не нужно целиться мышью в соседнюю строку при массовой правке.
+    // Плюс поведение списка как в файловых менеджерах: ↑/↓/Home/End/PgUp/
+    // PgDn, когда фокус в списке; Tab заходит в список один раз (roving
+    // tabindex), а не идёт по каждой записи; активная строка сама
+    // подкручивается в видимую область; фокус не теряется, когда редактор
+    // перерисовывает список после выбора строки.
+    const recordNav = { sync: null };
+
+    const mountRecordNav = (root = document) => {
+      if (document.body?.dataset?.editor === 'home') return;
+      const list = findActions(root).list;
+      if (!list || list.dataset.recordNav === '1' || !list.parentElement) return;
+      list.dataset.recordNav = '1';
+
+      // Страница со своей контекстной навигацией (дерево квестов: полоса
+      // «квест/шаги/цепочка» в тулбаре) помечает список data-record-nav-off:
+      // общая планка «вверх/вниз + N/M» ей не нужна и только дублирует
+      // управление, а клавиатура, roving tabindex и возврат фокуса остаются.
+      const customNav = !!list.closest?.('[data-record-nav-off]');
+
+      const bar = customNav ? null : document.createElement('div');
+      if (bar) {
+        bar.className = 'editor-record-nav';
+        bar.setAttribute('data-editor-record-nav', '1');
+        bar.innerHTML = `
+        <button type="button" class="editor-icon-btn editor-record-nav-btn" data-record-nav="prev" title="Previous record (Alt+↑)" aria-label="Previous record"><i class="fa-solid fa-chevron-up" aria-hidden="true"></i></button>
+        <button type="button" class="editor-icon-btn editor-record-nav-btn" data-record-nav="next" title="Next record (Alt+↓)" aria-label="Next record"><i class="fa-solid fa-chevron-down" aria-hidden="true"></i></button>
+        <span class="editor-record-nav-pos" data-record-nav-pos></span>`;
+        list.parentElement.insertBefore(bar, list);
+      }
+
+      const prevBtn = bar?.querySelector('[data-record-nav="prev"]') || null;
+      const nextBtn = bar?.querySelector('[data-record-nav="next"]') || null;
+      const posEl = bar?.querySelector('[data-record-nav-pos]') || null;
+
+      let lastActiveKey = null;
+      let hadFocus = false;
+      let syncQueued = false;
+
+      const rowKey = (row, index) => {
+        const id = row?.getAttribute?.('data-id');
+        return id != null && id !== '' ? `${row.getAttribute('data-node-type') || 'row'}:${id}` : `i:${index}`;
+      };
+
+      const focusActiveRow = () => {
+        const rows = listRows(list);
+        const idx = activeRowIndex(rows);
+        if (idx >= 0) rows[idx].focus?.({ preventScroll: true });
+      };
+
+      const sync = () => {
+        const rows = listRows(list);
+        const idx = activeRowIndex(rows);
+        bar?.classList.toggle('hidden', !rows.length);
+        const pos = idx >= 0 ? `${idx + 1} / ${rows.length}` : `— / ${rows.length}`;
+        if (posEl && posEl.textContent !== pos) posEl.textContent = pos;
+        if (prevBtn) prevBtn.disabled = idx <= 0;
+        if (nextBtn) nextBtn.disabled = idx >= 0 && idx >= rows.length - 1;
+        // Tab входит в список один раз — на активную (или первую) строку.
+        const tabStop = idx >= 0 ? idx : 0;
+        rows.forEach((row, i) => {
+          const value = i === tabStop ? '0' : '-1';
+          if (row.getAttribute?.('tabindex') !== value) row.setAttribute?.('tabindex', value);
+        });
+        const key = idx >= 0 ? rowKey(rows[idx], idx) : null;
+        if (key !== null && key !== lastActiveKey) rows[idx].scrollIntoView?.({ block: 'nearest' });
+        lastActiveKey = key;
+        // Перерисовка списка (innerHTML) уничтожает сфокусированную строку
+        // и фокус падает на body — возвращаем его на активную строку, чтобы
+        // стрелки продолжали работать без лишнего клика.
+        if (hadFocus && idx >= 0 && !list.contains(document.activeElement)) focusActiveRow();
+      };
+
+      const queueSync = () => {
+        if (syncQueued) return;
+        syncQueued = true;
+        const run = () => { syncQueued = false; sync(); };
+        if (typeof window.requestAnimationFrame === 'function') window.requestAnimationFrame(run);
+        else setTimeout(run, 0);
+      };
+      recordNav.sync = queueSync;
+
+      prevBtn?.addEventListener('click', () => { moveSelectionBy(list, -1); queueSync(); });
+      nextBtn?.addEventListener('click', () => { moveSelectionBy(list, +1); queueSync(); });
+
+      list.addEventListener('focusin', () => { hadFocus = true; });
+      list.addEventListener('focusout', (event) => {
+        // Фокус ушёл на конкретный элемент вне списка — пользователь дальше
+        // работает там, фокус не возвращаем. relatedTarget === null обычно
+        // означает, что сфокусированная строка удалена перерисовкой.
+        if (event.relatedTarget && !list.contains(event.relatedTarget)) hadFocus = false;
+      });
+      document.addEventListener('pointerdown', (event) => {
+        if (!list.contains(event.target) && !bar?.contains(event.target)) hadFocus = false;
+      }, true);
+      list.addEventListener('click', () => queueSync());
+
+      list.addEventListener('keydown', (event) => {
+        if (event.ctrlKey || event.metaKey || event.altKey) return;
+        if (isEditableTarget(event.target)) return;
+        const rowEl = event.target?.closest?.(ROW_SELECTOR);
+        if (!rowEl || !list.contains(rowEl)) return;
+        const jump = { ArrowDown: 1, ArrowUp: -1, PageDown: 10, PageUp: -10 }[event.key];
+        if (jump) {
+          if (moveSelectionBy(list, jump)) {
+            event.preventDefault();
+            queueSync();
+            setTimeout(focusActiveRow, 0);
+          }
+          return;
+        }
+        if (event.key === 'Home' || event.key === 'End') {
+          if (moveSelectionTo(list, event.key === 'Home' ? 0 : listRows(list).length - 1)) {
+            event.preventDefault();
+            queueSync();
+            setTimeout(focusActiveRow, 0);
+          }
+          return;
+        }
+        // Строка-не-кнопка (узел дерева) сама по Enter не «нажимается».
+        if ((event.key === 'Enter' || event.key === ' ') && event.target === rowEl) {
+          const tag = String(rowEl.tagName || '').toLowerCase();
+          if (tag !== 'button' && tag !== 'a') {
+            event.preventDefault();
+            clickRow(rowEl);
+            queueSync();
+          }
+        }
+      });
+
+      if (typeof MutationObserver === 'function') {
+        new MutationObserver(queueSync).observe(list, {
+          childList: true, subtree: true, attributes: true, attributeFilter: ['class'],
+        });
+      }
+      sync();
+    };
+
     const bindShortcuts = (root = document, prefs) => {
       if (root.__editorShortcutsBound === true) return;
       root.__editorShortcutsBound = true;
@@ -327,6 +545,37 @@
         const key = String(e.key || '').toLowerCase();
         const ctrl = e.ctrlKey || e.metaKey;
         const actions = findActions(root);
+
+        // Команды оболочки студии: сами по себе они внутри iframe не
+        // срабатывают, пересылаем их родителю (см. forwardToShell).
+        if (e.ctrlKey && e.key === 'Tab') {
+          if (forwardToShell('cycle-tab', { dir: e.shiftKey ? -1 : 1 })) e.preventDefault();
+          return;
+        }
+        if (ctrl && e.shiftKey && key === 't') {
+          if (forwardToShell('reopen-tab')) e.preventDefault();
+          return;
+        }
+        // Alt+цифра и Alt+стрелки влево/вправо не отнимаем у полей ввода:
+        // там Alt+←/→ — переход по словам. Ctrl+Tab в полях безопасен.
+        if (!isEditableTarget(e.target)) {
+          if (e.altKey && /^[1-9]$/.test(e.key)) {
+            if (forwardToShell('tab-index', { index: Number(e.key) - 1 })) e.preventDefault();
+            return;
+          }
+          if (e.altKey && e.key === 'ArrowLeft') {
+            if (forwardToShell('history-back')) e.preventDefault();
+            return;
+          }
+          if (e.altKey && e.key === 'ArrowRight') {
+            if (forwardToShell('history-forward')) e.preventDefault();
+            return;
+          }
+          if (ctrl && !e.altKey && key === 'b' && !e.target?.isContentEditable) {
+            if (forwardToShell('toggle-sidebar')) e.preventDefault();
+            return;
+          }
+        }
 
         // Ctrl+S is handled centrally by Help module when loaded; fallback only if Help is absent.
         if (ctrl && !e.altKey && key === 's') {
@@ -360,11 +609,11 @@
           return;
         }
         if (e.altKey && key === 'arrowdown') {
-          if (moveSelection(actions.list, +1)) e.preventDefault();
+          if (moveSelection(actions.list, +1)) { e.preventDefault(); recordNav.sync?.(); }
           return;
         }
         if (e.altKey && key === 'arrowup') {
-          if (moveSelection(actions.list, -1)) e.preventDefault();
+          if (moveSelection(actions.list, -1)) { e.preventDefault(); recordNav.sync?.(); }
           return;
         }
         if (key === 'escape') {
@@ -387,10 +636,22 @@
       setMode('compact', prefs.compact, prefs);
       setMode('focus', prefs.focus, prefs);
       mountQuickTools(root, prefs);
+      mountRecordNav(root);
       bindShortcuts(root, prefs);
     };
 
-    return { init, getPrefs, setMode: (mode, enabled) => setMode(mode, enabled, getPrefs()) };
+    return {
+      init,
+      getPrefs,
+      setMode: (mode, enabled) => setMode(mode, enabled, getPrefs()),
+      // Перемещение по списку записей: палитра, клавиши и тесты ходят сюда.
+      moveSelection,
+      moveSelectionBy,
+      moveSelectionTo,
+      listRows,
+      activeRowIndex,
+      forwardToShell,
+    };
   })();
 
   const validateValue = ({ value, spec, inputType }) => {
@@ -891,6 +1152,9 @@
     },
     getPrefs: () => Productivity.getPrefs(),
     setMode: (mode, enabled) => Productivity.setMode(mode, enabled),
+    moveSelection: (...args) => Productivity.moveSelection(...args),
+    moveSelectionBy: (...args) => Productivity.moveSelectionBy(...args),
+    moveSelectionTo: (...args) => Productivity.moveSelectionTo(...args),
   };
 
   window.EditorCore = window.EditorCore || {};

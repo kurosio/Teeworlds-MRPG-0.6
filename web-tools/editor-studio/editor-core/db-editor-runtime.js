@@ -83,6 +83,20 @@
       const setStatus = (message = '', tone = 'muted') =>
         window.EditorCore.utils.setStatus(els.status, message, tone);
 
+      // Последняя открытая запись редактора: после перезагрузки кадра
+      // (F5, вытеснение iframe оболочкой, повторный вход) редактор должен
+      // открыться там же, где вы работали, а не на первой строке списка.
+      const LAST_RECORD_KEY = `editor-core:last-record:${resource}`;
+      const readLastRecordId = () => {
+        try {
+          const id = Number(localStorage.getItem(LAST_RECORD_KEY));
+          return Number.isSafeInteger(id) && id > 0 ? id : 0;
+        } catch { return 0; }
+      };
+      const storeLastRecordId = (id) => {
+        try { if (id > 0) localStorage.setItem(LAST_RECORD_KEY, String(id)); } catch { /* ignore storage failures */ }
+      };
+
       const setHeader = () => {
         if (!els.title && !els.subtitle) return;
         if (!state.model) {
@@ -345,12 +359,16 @@
             els.count.textContent = rows.length ? `${rows.length}` : '0';
           }
         }
+        // Перерисовка через innerHTML сбрасывает прокрутку списка в начало:
+        // при массовой работе список «прыгает» после каждого выбора/сохранения.
+        const prevScrollTop = els.list.scrollTop || 0;
         if (!rows.length) {
           // Пустой список должен объяснять, что делать дальше.
           const message = state.search
             ? `Nothing found for “${escapeHtml(state.search)}”. Change the query or clear the search.`
             : `No records yet — press “${escapeHtml(cfg.newLabel || (els.newBtn?.textContent || '').trim() || 'New')}” to create the first one.`;
           els.list.innerHTML = `<div class="editor-empty-state">${message}</div>`;
+          els.list.scrollTop = prevScrollTop;
           return;
         }
 
@@ -378,6 +396,7 @@
           ? `<div class="pt-2"><button type="button" class="editor-btn editor-btn-secondary w-full" data-editor-role="list-more">Show more (${orderedRows.length - visibleRows.length})</button></div>`
           : '';
         els.list.innerHTML = `<div class="editor-list">${html}${more}</div>`;
+        els.list.scrollTop = prevScrollTop;
       };
 
 
@@ -456,7 +475,11 @@
           const found = state.rows.find(r => Number(r.ID) === Number(state.selectedId));
           if (found && !state.dirty?.isDirty?.()) await selectRow(found, { confirmDirty: false, refresh: true });
         } else if (!state.model && state.rows.length) {
-          await selectRow(state.rows[0], { confirmDirty: false });
+          // Первый выбор после загрузки: сначала запись, на которой вы
+          // остановились в прошлый раз, и только если её нет — первая строка.
+          const lastId = readLastRecordId();
+          const remembered = lastId ? state.rows.find(r => Number(r.ID) === lastId) : null;
+          await selectRow(remembered || state.rows[0], { confirmDirty: false });
         }
       };
 
@@ -482,6 +505,7 @@
         state.model = toModel(row);
         state.persistedModel = cloneData(state.model);
         state.dirty?.setClean?.();
+        storeLastRecordId(state.selectedId);
         renderForm();
         renderList();
         setHeader();

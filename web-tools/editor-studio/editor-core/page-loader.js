@@ -4,11 +4,8 @@
 
 
   // Иконки — локальные (vendor/), шрифты — системные: редактор работает
-  // офлайн, а CSP страниц может запрещать внешние источники (font-src 'self').
+  // офлайн и не ходит на CDN за стилями и шрифтами.
   const linkTags = [
-    // CSP страниц редакторов: всё локальное (vendor/), инлайн-скрипты страниц
-    // разрешены, внешние источники и встраивание объектов запрещены.
-    '<meta http-equiv="Content-Security-Policy" content="default-src \'self\'; script-src \'self\' \'unsafe-inline\'; style-src \'self\' \'unsafe-inline\'; img-src \'self\' data: blob:; font-src \'self\' data:; connect-src \'self\'; frame-src \'self\'; worker-src \'self\' blob:; media-src \'self\' data: blob:; object-src \'none\'; base-uri \'self\'; form-action \'self\'">',
     '<link rel="stylesheet" href="vendor/fontawesome/css/all.min.css">',
     '<link rel="stylesheet" href="editor-core/editor-theme.css">',
     '<link rel="stylesheet" href="editor-core/position-picker.css">',

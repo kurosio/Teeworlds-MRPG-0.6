@@ -156,7 +156,9 @@
               <span class="editor-badge"><b>Ctrl+K</b> — commands and view</span>
               <span class="editor-badge"><b>/</b> — search</span>
               <span class="editor-badge"><b>Alt+N</b> — create</span>
-              <span class="editor-badge"><b>Alt+↑/↓</b> — through the list</span>
+              <span class="editor-badge"><b>↑/↓</b> — through the list</span>
+              <span class="editor-badge"><b>Ctrl+Tab</b> — switch editor</span>
+              <span class="editor-badge"><b>Alt+←/→</b> — back/forward</span>
               <span class="editor-badge"><b>?</b> — this help</span>
             </div>
           </div>

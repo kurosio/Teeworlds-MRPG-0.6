@@ -3,10 +3,9 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; frame-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'" />
   <title>Editor Studio</title>
 
-  <!-- Icons: локальные файлы из vendor/ (офлайн + строгий CSP); шрифты — системные -->
+  <!-- Icons: локальные файлы из vendor/ (офлайн); шрифты — системные -->
   <link rel="stylesheet" href="vendor/fontawesome/css/all.min.css" />
 
   <!-- Shared theme (CSS vars) -->
@@ -98,6 +97,12 @@
         <div class="min-w-0 flex items-center gap-3">
           <button id="toggleSidebarBtn" class="editor-icon-btn" type="button" title="Pin the menu (Ctrl+B)" aria-label="Pin the menu (Ctrl+B)" aria-pressed="false">
             <i class="fa-solid fa-table-columns"></i>
+          </button>
+          <button id="navBackBtn" class="editor-icon-btn" type="button" title="Back to the previous editor (Alt+Left)" aria-label="Back to the previous editor" disabled>
+            <i class="fa-solid fa-arrow-left"></i>
+          </button>
+          <button id="navForwardBtn" class="editor-icon-btn" type="button" title="Forward to the next editor (Alt+Right)" aria-label="Forward to the next editor" disabled>
+            <i class="fa-solid fa-arrow-right"></i>
           </button>
           <span id="desktopEditorIcon" class="studio-brand-mark studio-brand-mark--sm"><i class="fa-solid fa-pen-ruler"></i></span>
           <div class="min-w-0">
@@ -295,11 +300,12 @@
         <dt><span class="studio-kbd">Ctrl Tab</span></dt><dd>Next open editor (with Shift: previous)</dd>
         <dt><span class="studio-kbd">Ctrl Shift T</span></dt><dd>Reopen the closed tab</dd>
         <dt><span class="studio-kbd">Alt 1…9</span></dt><dd>Switch to a tab by number</dd>
+        <dt><span class="studio-kbd">Alt ←/→</span></dt><dd>Back / forward between editors (history)</dd>
         <dt><span class="studio-kbd">/</span></dt><dd>Focus the menu filter</dd>
         <dt><span class="studio-kbd">?</span></dt><dd>This list of shortcuts</dd>
         <dt><span class="studio-kbd">Esc</span></dt><dd>Close dialogs and menus</dd>
       </dl>
-      <p class="editor-help-text mt-4">Shortcuts work when the shell has focus. Inside an editor, click its header or the menu first.</p>
+      <p class="editor-help-text mt-4">Shortcuts work everywhere — also while you are working inside an editor.</p>
       <div class="flex justify-end gap-2 mt-5">
         <button type="button" class="editor-btn editor-btn-primary" data-close-shortcuts>Done</button>
       </div>
@@ -319,6 +325,8 @@
     const mobileCloseBtn = document.getElementById('mobileCloseBtn');
     const mobileNewTabBtn = document.getElementById('mobileNewTabBtn');
     const toggleSidebarBtn = document.getElementById('toggleSidebarBtn');
+    const navBackBtn = document.getElementById('navBackBtn');
+    const navForwardBtn = document.getElementById('navForwardBtn');
     const pinSidebarBtn = document.getElementById('pinSidebarBtn');
     const desktopEditorTitle = document.getElementById('desktopEditorTitle');
     const desktopEditorMeta = document.getElementById('desktopEditorMeta');
@@ -810,6 +818,9 @@
       tabOrder = [];
       closedTabs.length = 0;
       tabsRestoredFor = '';
+      navHistory = [];
+      navHistoryIndex = -1;
+      syncHistoryButtons();
       renderTabs();
     };
 
@@ -861,6 +872,49 @@
       }
     };
 
+    // ── История переходов между редакторами (Alt+←/→) ────────────────────
+    // Как «назад/вперёд» в браузере: при активной работе постоянно прыгают
+    // между двумя-тремя редакторами (Предметы ↔ Крафты ↔ Квесты), и вернуться
+    // к предыдущему должно быть одним нажатием, а не поиском по меню.
+    // Ctrl+Tab при этом продолжает идти по порядку вкладок.
+    let navHistory = [];
+    let navHistoryIndex = -1;
+    let navHistoryWalking = false;
+
+    const syncHistoryButtons = () => {
+      if (navBackBtn) navBackBtn.disabled = navHistoryIndex <= 0;
+      if (navForwardBtn) navForwardBtn.disabled = navHistoryIndex < 0 || navHistoryIndex >= navHistory.length - 1;
+    };
+
+    const pushNavHistory = (key) => {
+      if (navHistoryWalking) return;
+      if (navHistory[navHistoryIndex] === key) return;
+      navHistory = navHistory.slice(0, navHistoryIndex + 1);
+      navHistory.push(key);
+      if (navHistory.length > 50) navHistory.shift();
+      navHistoryIndex = navHistory.length - 1;
+      syncHistoryButtons();
+    };
+
+    const walkNavHistory = (dir) => {
+      let index = navHistoryIndex + dir;
+      // Пропускаем редакторы, ставшие недоступными (смена роли/прав гостя).
+      // Проверка точная, а не через byKey(): у него fallback на первый редактор.
+      const available = (key) => getEditors().some((entry) => entry.key === key);
+      while (index >= 0 && index < navHistory.length && !available(navHistory[index])) index += dir;
+      if (index < 0 || index >= navHistory.length) return false;
+      navHistoryIndex = index;
+      navHistoryWalking = true;
+      syncHistoryButtons();
+      Promise.resolve(openEditor(navHistory[index]))
+        .catch(() => {})
+        .finally(() => { navHistoryWalking = false; syncHistoryButtons(); });
+      return true;
+    };
+
+    navBackBtn?.addEventListener('click', () => walkNavHistory(-1));
+    navForwardBtn?.addEventListener('click', () => walkNavHistory(1));
+
     const openEditor = async (key, { closeMobile = false, syncHash = true, params = {} } = {}) => {
       if (!isAuthorized) {
         await ensureAuthorized();
@@ -905,6 +959,7 @@
       if (desktopEditorIcon) desktopEditorIcon.innerHTML = `<i class="fa-solid ${e.icon || 'fa-pen-ruler'}"></i>`;
       storageSet(activeEditorStorageKey(), e.key);
       pushRecent(e.key);
+      pushNavHistory(e.key);
       if (syncHash && location.hash !== '#' + e.key) location.hash = e.key;
 
       if (mobileTitle) mobileTitle.textContent = e.title || 'Editor Studio';
@@ -1117,6 +1172,8 @@
         { kind: 'action', action: 'reload', title: 'Reload active editor', icon: 'fa-rotate', keywords: 'refresh' },
         { kind: 'action', action: 'new-tab', title: 'Open current editor in a new tab', icon: 'fa-arrow-up-right-from-square', keywords: 'external window' },
         { kind: 'action', action: 'reopen-tab', title: 'Reopen the closed tab', hint: 'Ctrl+Shift+T', icon: 'fa-rotate-left', keywords: 'restore closed tab undo' },
+        { kind: 'action', action: 'nav-back', title: 'Back to the previous editor', hint: 'Alt+Left', icon: 'fa-arrow-left', keywords: 'back history previous editor' },
+        { kind: 'action', action: 'nav-forward', title: 'Forward to the next editor', hint: 'Alt+Right', icon: 'fa-arrow-right', keywords: 'forward history next editor' },
         { kind: 'action', action: 'shortcuts', title: 'Keyboard shortcuts', hint: '?', icon: 'fa-keyboard', keywords: 'hotkeys help' },
         { kind: 'action', action: 'logout', title: 'Sign out', icon: 'fa-right-from-bracket', keywords: 'exit logout' },
       ];
@@ -1137,6 +1194,8 @@
           else if (item.action === 'reload') reloadEditorBtn?.click();
           else if (item.action === 'new-tab') openNewTab?.click();
           else if (item.action === 'reopen-tab') reopenClosedTab();
+          else if (item.action === 'nav-back') walkNavHistory(-1);
+          else if (item.action === 'nav-forward') walkNavHistory(1);
           else if (item.action === 'shortcuts') toggleShortcuts(true);
           else if (item.action === 'logout') logout();
         },
@@ -1199,6 +1258,9 @@
       } else if (event.altKey && /^[1-9]$/.test(event.key)) {
         const target = tabOrder[Number(event.key) - 1];
         if (target) { event.preventDefault(); openEditor(target); }
+      } else if (event.altKey && (event.key === 'ArrowLeft' || event.key === 'ArrowRight') && !isTypingTarget(event.target)) {
+        event.preventDefault();
+        walkNavHistory(event.key === 'ArrowLeft' ? -1 : 1);
       } else if (event.key === '/' && !isTypingTarget(event.target)) {
         event.preventDefault();
         focusNavFilter();
@@ -1368,6 +1430,27 @@
       if (!fromFrame && !ownAuthWarning) return;
       if (data?.type === 'editor-shell:open-editor' && typeof data.key === 'string') {
         if (isAuthorized) openEditor(data.key, { params: data.params && typeof data.params === 'object' ? data.params : {} });
+        return;
+      }
+      if (data?.type === 'editor-shell:navigate') {
+        // Горячие клавиши студии, нажатые внутри редактора (фокус в iframe):
+        // редактор пересылает их сюда, иначе при активной работе Ctrl+Tab
+        // и Alt+1…9 «не работали», пока не щёлкнешь оболочку.
+        if (!isAuthorized) return;
+        const action = String(data.action || '');
+        const focusFrame = () => { try { frame?.contentWindow?.focus?.(); } catch { /* кадр ещё грузится */ } };
+        if (action === 'cycle-tab') { cycleTab(data.dir === -1 ? -1 : 1); queueMicrotask(focusFrame); }
+        else if (action === 'tab-index') {
+          const target = tabOrder[Number(data.index) || 0];
+          if (target) { openEditor(target); queueMicrotask(focusFrame); }
+        }
+        else if (action === 'reopen-tab') reopenClosedTab();
+        else if (action === 'history-back') { if (walkNavHistory(-1)) queueMicrotask(focusFrame); }
+        else if (action === 'history-forward') { if (walkNavHistory(1)) queueMicrotask(focusFrame); }
+        else if (action === 'palette') togglePalette();
+        else if (action === 'toggle-sidebar') {
+          if (!window.matchMedia('(max-width: 767px)').matches) setSidebarPinned(!sidebarPinned);
+        }
         return;
       }
       if (data?.type === 'editor-shell:guest-draft-changed' || data?.type === 'editor-shell:requests-changed') {

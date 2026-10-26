@@ -93,7 +93,7 @@
     if (!done) timer = window.setInterval(attempt, POLL_MS);
   };
 
-  namespace.DeepLink = {
+  window.EditorCore.DeepLink = {
     active: !!record,
     record,
     field,

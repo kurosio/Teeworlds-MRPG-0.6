@@ -15,8 +15,6 @@ function apply_security_headers(): void
     header('Referrer-Policy: same-origin');
     header('Cross-Origin-Resource-Policy: same-origin');
     header('Cross-Origin-Opener-Policy: same-origin');
-    // Ответы API — данные, а не документы: браузеру нечего из них выполнять.
-    header("Content-Security-Policy: default-src 'none'; sandbox");
     header('Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()');
     header('X-Permitted-Cross-Domain-Policies: none');
     header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');

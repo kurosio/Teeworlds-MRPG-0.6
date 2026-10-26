@@ -800,6 +800,35 @@
   color:var(--editor-text-strong);
 }
 
+/* Навигация по записям над списком (ui-manager): ↑/↓ и позиция «N / M». */
+.editor-record-nav{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  margin:0 0 8px;
+}
+
+.editor-record-nav-btn{
+  min-width:30px;
+  min-height:30px;
+}
+
+.editor-record-nav-pos{
+  font-size:var(--editor-text-xs);
+  color:var(--editor-text-muted);
+  font-variant-numeric:tabular-nums;
+  white-space:nowrap;
+}
+
+/* Клавиатурный фокус на строке должен быть виден: по списку ходят стрелками. */
+.editor-row:focus-visible,
+.quest-node:focus-visible,
+.step-node:focus-visible,
+.cr-list-item:focus-visible{
+  outline:2px solid var(--editor-primary);
+  outline-offset:1px;
+}
+
 .editor-db-alert{
   padding:10px 12px;
   border-radius:12px;

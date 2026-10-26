@@ -48,7 +48,7 @@
     .quest-tree {
       display: flex;
       flex-direction: column;
-      gap: 12px;
+      gap: 8px;
       font-size: 13px;
     }
 
@@ -56,7 +56,7 @@
       position: relative;
       border: 1px solid var(--editor-line);
       border-radius: var(--editor-radius-md);
-      padding: 12px;
+      padding: 8px;
       background: var(--editor-surface-2);
       transition: border-color .16s ease, background-color .16s ease;
       min-width: 0;
@@ -77,12 +77,28 @@
       box-shadow: 0 0 0 2px color-mix(in srgb, var(--editor-primary) 30%, transparent) !important;
     }
 
+    /* Заголовок квеста липнет к верху дерева, пока листаешь его шаги:
+       всегда видно, в каком квесте находишься. Отрицательные поля
+       подтягивают плашку к краям узла, top компенсирует padding дерева. */
     .quest-node-header {
+      position: sticky;
+      top: -11px;
+      z-index: 3;
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 10px;
+      gap: 8px;
       min-width: 0;
+      margin: -8px -8px 0;
+      padding: 6px 8px;
+      border-radius: var(--editor-radius-sm);
+      background: var(--editor-surface-2);
+    }
+
+    .quest-node-chain {
+      color: var(--editor-text-muted);
+      font-size: 11px;
+      flex-shrink: 0;
     }
 
     .quest-node-title {
@@ -136,8 +152,8 @@
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      width: 32px;
-      height: 32px;
+      width: 28px;
+      height: 28px;
       border-radius: var(--editor-radius-sm);
       border: 1px solid var(--editor-line);
       background: var(--editor-soft-bg);
@@ -178,8 +194,8 @@
       position: relative;
       display: flex;
       flex-direction: column;
-      gap: 4px;
-      margin-top: 6px;
+      gap: 3px;
+      margin-top: 4px;
     }
 
     .step-list::before {
@@ -193,12 +209,11 @@
       pointer-events: none;
     }
 
+    /* Шаг — одна компактная строка, а не карточка: в дерево помещается
+       в разы больше шагов, и маршрут квеста читается сверху вниз. */
     .step-node {
       position: relative;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      padding: 8px 6px;
+      padding: 4px 6px;
       border-radius: var(--editor-radius-sm);
       border: 1px solid var(--editor-line);
       background: var(--editor-surface);
@@ -211,7 +226,7 @@
       content: '';
       position: absolute;
       left: -13px;
-      top: 21px;
+      top: 17px;
       width: 10px;
       height: 1px;
       background: var(--editor-soft-border-strong);
@@ -250,18 +265,9 @@
       min-width: 0;
     }
 
-    .step-node-title {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      min-width: 0;
-      flex: 1 1 auto;
-      overflow: hidden;
-    }
-
     .step-node-preview {
-      width: 36px;
-      height: 36px;
+      width: 28px;
+      height: 28px;
       border-radius: var(--editor-radius-sm);
       border: 1px solid var(--editor-line);
       background: var(--editor-soft-bg-strong);
@@ -521,6 +527,62 @@
     .quest-toolbar-subtitle {
       color: var(--editor-text-muted);
       font-size: 13px;
+    }
+
+    /* Контекстная полоса навигации под заголовком: вверх к квесту, соседние
+       шаги и ходьба по цепочке NextQuestID — без возврата в дерево. */
+    .quest-nav-strip {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px;
+      margin-top: 8px;
+    }
+
+    .quest-nav-strip.hidden,
+    .quest-nav-strip[hidden] {
+      display: none;
+    }
+
+    .quest-nav-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      max-width: 100%;
+      min-height: 30px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--editor-soft-border);
+      background: var(--editor-soft-bg);
+      color: var(--editor-text);
+      cursor: pointer;
+      font: inherit;
+      font-size: 12.5px;
+    }
+
+    .quest-nav-btn:hover:not(:disabled) {
+      border-color: var(--editor-primary);
+      background: var(--editor-light-bg);
+    }
+
+    .quest-nav-btn:disabled {
+      opacity: .45;
+      cursor: default;
+    }
+
+    .quest-nav-btn .quest-nav-btn-label {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-weight: 600;
+    }
+
+    .quest-nav-pos {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--editor-text-muted);
+      padding: 0 2px;
+      white-space: nowrap;
     }
 
     .quest-toolbar-actions {
@@ -805,7 +867,7 @@
           <div class="quest-sidebar-tools editor-sidebar-filters">
             <div class="editor-search">
               <i class="fa-solid fa-magnifying-glass"></i>
-              <input id="searchInput" type="search" class="editor-input form-input" placeholder="Search…" />
+              <input id="searchInput" type="search" class="editor-input form-input" placeholder="Quest, mob, world or ID…" />
             </div>
             <select id="typeFilter" class="editor-input form-input">
               <option value="all">All types</option>
@@ -818,7 +880,7 @@
             </select>
           </div>
 
-          <div id="tree" class="quest-tree quest-tree-surface editor-scroll"></div>
+          <div id="tree" class="quest-tree quest-tree-surface editor-scroll" data-record-nav-off></div>
         </div>
       </aside>
 
@@ -828,6 +890,7 @@
             <div class="quest-toolbar-copy">
               <div class="quest-toolbar-title" id="editorTitle">Select an item on the left</div>
               <div class="quest-toolbar-subtitle" id="editorSubtitle">quest or mob step</div>
+              <div id="questNavStrip" class="quest-nav-strip hidden" hidden></div>
             </div>
             <div class="quest-toolbar-actions">
               <span id="dirty-pill" class="editor-dirty-pill hidden" hidden>You have unsaved changes</span>
@@ -897,7 +960,7 @@
       search: $('searchInput'), refresh: $('refreshBtn'), save: $('saveBtn'),
       newQuest: $('newQuestBtn'), toggleAllQuests: $('toggleAllQuestsBtn'), newStep: $('newStepBtn'),
       duplicateBtn: $('duplicateBtn'), deleteBtn: $('deleteBtn'),
-      title: $('editorTitle'), subtitle: $('editorSubtitle'),
+      title: $('editorTitle'), subtitle: $('editorSubtitle'), navStrip: $('questNavStrip'),
       empty: $('editorEmpty'), questEditor: $('questEditor'), stepEditor: $('stepEditor'),
       questForm: $('questForm'), stepTabs: $('stepTabs'),
       stepBaseForm: $('stepBaseForm'), stepTasksEditor: $('stepTasksEditor'),
@@ -969,7 +1032,6 @@
       dirtySteps: new Set(),
       newSteps: new Set(),
       expandedQuests: new Set(),
-      lastQuestScrollId: null,
       stepTab: 'mob',
       nextTempStepId: -1,
       lookups: { bots: new Map(), worlds: new Map(), botSkins: new Map() },
@@ -1078,15 +1140,22 @@
     const updateQuestHeader = (quest) => {
       if (!quest || STATE.selected?.type !== 'quest' || STATE.selected?.id !== quest.ID) return;
       DOM.title.textContent = quest.Name ? `Quest: ${quest.Name}` : `Quest #${quest.ID}`;
-      DOM.subtitle.textContent = `ID ${quest.ID} · Next: ${quest.NextQuestID || '—'}`;
+      const next = nextQuestInChain(quest);
+      const nextLabel = next ? (next.Name || `#${next.ID}`) : (quest.NextQuestID ? `#${quest.NextQuestID}` : '—');
+      DOM.subtitle.textContent = `ID ${quest.ID} · Next: ${nextLabel}`;
+      renderNavStrip();
     };
 
     const updateStepHeader = (step) => {
       if (!step || STATE.selected?.type !== 'step' || STATE.selected?.id !== step.ID) return;
       const botLabel = lookupLabel(STATE.lookups.bots, step.BotID);
       const worldLabel = lookupLabel(STATE.lookups.worlds, step.WorldID, { allowZero: true });
+      const quest = STATE.quests.find((q) => q.ID === step.QuestID);
+      const siblings = questStepsSorted(step.QuestID);
+      const position = siblings.findIndex((s) => s.ID === step.ID) + 1;
       DOM.title.textContent = `Step #${step.ID} — ${botLabel}`;
-      DOM.subtitle.textContent = `Quest ${step.QuestID || '—'} · Step ${step.Step || 1} · ${worldLabel}`;
+      DOM.subtitle.textContent = `${quest?.Name || `Quest ${step.QuestID || '—'}`} · Step ${position || step.Step || 1}${siblings.length ? ` of ${siblings.length}` : ''} · ${worldLabel}`;
+      renderNavStrip();
     };
 
     const openStepMapPicker = () => {
@@ -1885,6 +1954,7 @@
         setBtn(DOM.newStep, { enabled: false, hidden: true });
         setBtn(DOM.duplicateBtn, { enabled: false, hidden: true });
       }
+      renderNavStrip();
     };
 
     const resetHeader = () => {
@@ -1933,6 +2003,106 @@
       scheduleTreeRender();
     };
 
+    // ── Навигация: стабильное дерево + контекстная полоса ─────────────────
+    // Порядок квестов никогда не меняется от выбора (раньше выбранный квест
+    // «прыгал» в начало списка, а дерево скроллилось в ноль). Место работы —
+    // выбранный квест/шаг, раскрытые ветки и фильтр типа — запоминается и
+    // восстанавливается при следующем открытии и после «Обновить».
+    const QUEST_NAV_KEY = 'mrpgEditor:questsNav:v1';
+
+    const persistQuestNav = () => {
+      try {
+        localStorage.setItem(QUEST_NAV_KEY, JSON.stringify({
+          selected: STATE.selected,
+          expanded: [...STATE.expandedQuests],
+          typeFilter: DOM.typeFilter?.value || 'all',
+        }));
+      } catch { /* private mode — просто не запоминаем */ }
+    };
+
+    const readQuestNav = () => {
+      try {
+        const raw = JSON.parse(localStorage.getItem(QUEST_NAV_KEY) || 'null');
+        if (!raw || typeof raw !== 'object') return null;
+        const selected = raw.selected && (raw.selected.type === 'quest' || raw.selected.type === 'step')
+          ? { type: raw.selected.type, id: toNum(raw.selected.id) }
+          : null;
+        const expanded = Array.isArray(raw.expanded) ? raw.expanded.map((id) => toNum(id)).filter(Boolean) : [];
+        return { selected, expanded, typeFilter: String(raw.typeFilter || 'all') };
+      } catch { return null; }
+    };
+
+    const questStepsSorted = (questId) => STATE.steps
+      .filter((step) => step.QuestID === questId)
+      .sort((a, b) => (a.Step - b.Step) || (a.ID - b.ID));
+
+    const nextQuestInChain = (quest) => {
+      const nextId = toNum(quest?.NextQuestID);
+      return nextId ? (STATE.quests.find((q) => q.ID === nextId) || null) : null;
+    };
+
+    const prevQuestInChain = (quest) => STATE.quests
+      .filter((q) => quest && toNum(q.NextQuestID) === quest.ID)
+      .sort((a, b) => a.ID - b.ID)[0] || null;
+
+    const revealSelectedNode = () => {
+      const sel = STATE.selected;
+      if (!sel) return;
+      requestAnimationFrame(() => {
+        DOM.tree.querySelector(`[data-node-type="${sel.type}"][data-id="${sel.id}"]`)
+          ?.scrollIntoView({ block: 'nearest' });
+      });
+    };
+
+    let lastStripKey = '';
+    const renderNavStrip = () => {
+      if (!DOM.navStrip) return;
+      const sel = STATE.selected;
+      let html = '';
+      if (sel?.type === 'step') {
+        const step = STATE.steps.find((s) => s.ID === sel.id);
+        const quest = step ? STATE.quests.find((q) => q.ID === step.QuestID) : null;
+        if (step && quest) {
+          const steps = questStepsSorted(quest.ID);
+          const idx = steps.findIndex((s) => s.ID === step.ID);
+          const prev = idx > 0 ? steps[idx - 1] : null;
+          const next = idx >= 0 && idx < steps.length - 1 ? steps[idx + 1] : null;
+          html = `
+            <button type="button" class="quest-nav-btn" data-qnav="quest" data-id="${quest.ID}" title="Back to the quest">
+              <i class="fa-solid fa-arrow-turn-up"></i><span class="quest-nav-btn-label">${esc(quest.Name || 'Untitled')}</span>
+            </button>
+            <button type="button" class="quest-nav-btn" data-qnav="step" data-id="${prev?.ID ?? ''}" ${prev ? '' : 'disabled'} title="Previous step" aria-label="Previous step">
+              <i class="fa-solid fa-chevron-left"></i>
+            </button>
+            <span class="quest-nav-pos">${idx + 1} / ${steps.length}</span>
+            <button type="button" class="quest-nav-btn" data-qnav="step" data-id="${next?.ID ?? ''}" ${next ? '' : 'disabled'} title="Next step" aria-label="Next step">
+              <i class="fa-solid fa-chevron-right"></i>
+            </button>`;
+        }
+      } else if (sel?.type === 'quest') {
+        const quest = STATE.quests.find((q) => q.ID === sel.id);
+        if (quest) {
+          const prev = prevQuestInChain(quest);
+          const next = nextQuestInChain(quest);
+          if (prev || next) {
+            html = `
+              <button type="button" class="quest-nav-btn" data-qnav="quest" data-id="${prev?.ID ?? ''}" ${prev ? '' : 'disabled'} title="Previous quest in the chain">
+                <i class="fa-solid fa-chevron-left"></i><span class="quest-nav-btn-label">${esc(prev?.Name || '—')}</span>
+              </button>
+              <button type="button" class="quest-nav-btn" data-qnav="quest" data-id="${next?.ID ?? ''}" ${next ? '' : 'disabled'} title="Next quest in the chain">
+                <span class="quest-nav-btn-label">${esc(next?.Name || '—')}</span><i class="fa-solid fa-chevron-right"></i>
+              </button>`;
+          }
+        }
+      }
+      if (html === lastStripKey) return;
+      lastStripKey = html;
+      DOM.navStrip.innerHTML = html;
+      const show = !!html;
+      DOM.navStrip.classList.toggle('hidden', !show);
+      DOM.navStrip.hidden = !show;
+    };
+
     const renderStepCard = (step, isSelected, isDirty) => {
       const mobLabel = lookupLabel(STATE.lookups.bots, step.BotID);
       const worldLabel = lookupLabel(STATE.lookups.worlds, step.WorldID, { allowZero: true });
@@ -1950,20 +2120,18 @@
         <div class="step-node ${isSelected ? 'tree-selected' : ''} ${isDirty ? 'is-dirty' : ''} ${pinned ? 'is-pinned' : ''}"
              draggable="true" data-node-type="step" data-id="${step.ID}">
           <div class="step-node-header">
-            <div class="step-node-title">
-              <div class="step-node-preview">${preview}</div>
-              <div class="step-node-info">
-                <div class="step-node-name">
-                  <span class="step-node-name-text" title="${esc(mobLabel)}">${esc(mobLabel)}</span>
-                  <span class="step-node-id">#${step.ID}</span>
-                </div>
-                <div class="step-node-sub" title="${esc(worldLabel)}">${esc(worldLabel)}</div>
+            <input class="editor-input form-input step-node-level" type="number"
+              min="1" step="1" value="${toNum(step.Step, 1)}"
+              title="Step position" data-step-level-id="${step.ID}" />
+            <div class="step-node-preview">${preview}</div>
+            <div class="step-node-info">
+              <div class="step-node-name">
+                <span class="step-node-name-text" title="${esc(mobLabel)}">${esc(mobLabel)}</span>
+                <span class="step-node-id">#${step.ID}</span>
               </div>
+              <div class="step-node-sub" title="${esc(worldLabel)}">${esc(worldLabel)}</div>
             </div>
             <div class="step-node-actions">
-              <input class="editor-input form-input step-node-level" type="number"
-                min="1" step="1" value="${toNum(step.Step, 1)}"
-                title="Step position" data-step-level-id="${step.ID}" />
               <div class="step-node-quick">
                 <button type="button" class="step-quick-btn is-pin ${pinned ? 'is-active' : ''}"
                         data-step-action="pin" data-step-id="${step.ID}"
@@ -1996,43 +2164,30 @@
       const hasSearch = tokens.length > 0;
       const typeFilter = DOM.typeFilter?.value || 'all';
       const activeType = typeFilter !== 'all' ? typeFilter : null;
-      const match = (value) => !hasSearch || tokens.every((token) => norm(value).includes(token));
 
-      const stepsByQuest = new Map();
-      for (const step of STATE.steps) {
-        const arr = stepsByQuest.get(step.QuestID);
-        if (arr) arr.push(step); else stepsByQuest.set(step.QuestID, [step]);
-      }
-
-      const list = STATE.quests
-        .filter((quest) => {
-          if (activeType && !parseFlags(quest.Flags).includes(activeType)) return false;
-          return !hasSearch || match([quest.Name || '', quest.ID].join(' '));
-        })
-        .sort((a, b) => a.ID - b.ID);
-
-      if (STATE.lastQuestScrollId && !hasSearch) {
-        const idx = list.findIndex((quest) => quest.ID === STATE.lastQuestScrollId);
-        if (idx > 0) {
-          const [picked] = list.splice(idx, 1);
-          list.unshift(picked);
-        }
-      }
-
-      if (!list.length) return '<div class="editor-muted-text text-sm">No quests found</div>';
-
-      return list.map((quest) => {
-        const expanded = hasSearch || STATE.expandedQuests.has(quest.ID);
-        const questSelected = STATE.selected?.type === 'quest' && STATE.selected?.id === quest.ID;
-        const questDirty = STATE.dirtyQuests.has(quest.ID);
-        const steps = (stepsByQuest.get(quest.ID) || []).sort((a, b) => (a.Step - b.Step) || (a.ID - b.ID));
-        const filteredSteps = steps.filter((step) => !hasSearch || match([
+      // Порядок всегда по ID, поиск находит квест по имени ИЛИ по любому его
+      // шагу (моб, мир, ID шага) — см. EditorCore.utils.matchQuestTree.
+      const entries = EditorCore.utils.matchQuestTree({
+        quests: STATE.quests,
+        steps: STATE.steps,
+        tokens,
+        questAllowed: (quest) => !activeType || parseFlags(quest.Flags).includes(activeType),
+        questText: (quest) => [quest.Name || '', quest.ID].join(' '),
+        stepText: (step) => [
           step.BotID,
           step.ID,
           step.Step,
           lookupLabel(STATE.lookups.bots, step.BotID),
           lookupLabel(STATE.lookups.worlds, step.WorldID, { allowZero: true })
-        ].join(' ')));
+        ].join(' ')
+      });
+
+      if (!entries.length) return '<div class="editor-muted-text text-sm">No quests found</div>';
+
+      return entries.map(({ quest, steps: filteredSteps, totalSteps }) => {
+        const expanded = hasSearch || STATE.expandedQuests.has(quest.ID);
+        const questSelected = STATE.selected?.type === 'quest' && STATE.selected?.id === quest.ID;
+        const questDirty = STATE.dirtyQuests.has(quest.ID);
 
         const stepsHtml = filteredSteps.length
           ? filteredSteps.map((step, index) => `
@@ -2055,21 +2210,27 @@
           questDirty ? 'is-dirty' : ''
         ].filter(Boolean).join(' ');
 
+        const chainNext = nextQuestInChain(quest);
+        const stepsMeta = hasSearch && filteredSteps.length !== totalSteps
+          ? `${filteredSteps.length}/${totalSteps}`
+          : `${totalSteps}`;
+
         return `
           <div class="${classes}" data-node-type="quest" data-id="${quest.ID}">
             <div class="quest-node-header">
-              <div class="quest-node-title">
-                <i class="fa-solid fa-flag text-accent"></i>
-                <span>${esc(quest.Name || 'Untitled')}</span>
-                <span class="badge">#${quest.ID}</span>
-              </div>
-              <div class="quest-node-meta">Steps: ${steps.length}</div>
               <button type="button" class="quest-node-toggle"
                       data-quest-toggle="${quest.ID}"
                       title="${expanded ? 'Collapse' : 'Expand'}"
                       aria-expanded="${expanded}">
                 <i class="fa-solid fa-chevron-right"></i>
               </button>
+              <div class="quest-node-title">
+                <i class="fa-solid fa-flag text-accent"></i>
+                <span>${esc(quest.Name || 'Untitled')}</span>
+                <span class="badge">#${quest.ID}</span>
+                ${chainNext ? `<i class="fa-solid fa-arrow-right quest-node-chain" title="Next: ${esc(chainNext.Name || `#${chainNext.ID}`)}"></i>` : ''}
+              </div>
+              <div class="quest-node-meta">Steps: ${stepsMeta}</div>
             </div>
             <div class="step-list">${stepsHtml}</div>
           </div>`;
@@ -2113,6 +2274,7 @@
           if (STATE.expandedQuests.has(id)) STATE.expandedQuests.delete(id);
           else STATE.expandedQuests.add(id);
           renderTree({ preserveScroll: true });
+          persistQuestNav();
         });
       });
 
@@ -2369,9 +2531,10 @@
     };
 
     const selectQuest = (quest) => {
-      const resetScroll = STATE.lastQuestScrollId !== quest.ID;
       STATE.selected = { type: 'quest', id: quest.ID };
-      STATE.lastQuestScrollId = quest.ID;
+      // Выбранный квест раскрывается, чтобы его шаги были под рукой; порядок
+      // дерева и позиция скролла при этом не трогаются.
+      STATE.expandedQuests.add(quest.ID);
       updateQuestHeader(quest);
       Runtime.questForm = EditorCore.FormRuntime.mount(DOM.questForm, {
         fields: questFields,
@@ -2388,14 +2551,17 @@
       DOM.questForm.querySelector('input[name="Name"]')?.setAttribute('maxlength', '24');
       showEditor('quest');
       renderRconHints();
-      renderTree({ preserveScroll: !resetScroll });
-      if (resetScroll && DOM.tree) DOM.tree.scrollTop = 0;
+      renderTree({ preserveScroll: true });
+      revealSelectedNode();
+      persistQuestNav();
     };
 
     const selectStep = (step) => {
       STATE.selected = { type: 'step', id: step.ID };
       if (step.QuestID) STATE.expandedQuests.add(step.QuestID);
       mountStepEditor(step);
+      revealSelectedNode();
+      persistQuestNav();
     };
 
     const renumberSteps = (sorted, movedId) => {
@@ -2476,6 +2642,7 @@
 
       STATE.selected = { type: 'step', id: stepId };
       STATE.expandedQuests.add(targetQuestId);
+      persistQuestNav();
       renderTree({ preserveScroll: true });
       requestAnimationFrame(() => {
         DOM.tree.querySelector(`.step-node[data-id="${stepId}"]`)?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
@@ -2661,6 +2828,60 @@
       TasksData: denormalizeTasks(step.TasksData)
     });
 
+    // После загрузки данных: прямая ссылка (?record=) открывает запись сразу;
+    // иначе возвращаемся туда, где остановились (выбор, раскрытые ветки,
+    // фильтр типа). При ручном «Обновить» текущее место тоже сохраняется.
+    let deepLinkConsumed = false;
+    const restoreQuestNav = () => {
+      const params = new URLSearchParams(location.search);
+      // Ссылка ?record= действует один раз при открытии: ручное «Обновить»
+      // не должно снова утягивать пользователя к той же записи.
+      const recordId = deepLinkConsumed ? 0 : (Number(params.get('record')) || 0);
+      if (recordId) deepLinkConsumed = true;
+      const inRequest = !!params.get('request');
+      const stored = readQuestNav();
+
+      const expandedSeed = STATE.expandedQuests.size ? [...STATE.expandedQuests] : (stored?.expanded || []);
+      STATE.expandedQuests = new Set(expandedSeed.filter((id) => STATE.quests.some((q) => q.ID === id)));
+
+      if (stored?.typeFilter && DOM.typeFilter
+        && [...DOM.typeFilter.options].some((opt) => opt.value === stored.typeFilter)) {
+        DOM.typeFilter.value = stored.typeFilter;
+      }
+
+      if (recordId && !inRequest) {
+        const quest = STATE.quests.find((q) => q.ID === recordId);
+        const step = quest ? null : STATE.steps.find((s) => s.ID === recordId);
+        if (quest || step) {
+          EditorCore.DeepLink?.markHandled?.();
+          if (quest) selectQuest(quest); else selectStep(step);
+          return;
+        }
+      }
+      if (recordId && inRequest) {
+        // Выбором управляет request-context; родительский квест он раскроет
+        // сам, но подстрахуемся, если запись — шаг.
+        const step = STATE.steps.find((s) => s.ID === recordId);
+        if (step?.QuestID) STATE.expandedQuests.add(step.QuestID);
+      }
+
+      // В режиме запроса первую запись выбирает request-context; сохранённый
+      // выбор прошлой сессии не подставляем (текущий внутри сессии — можно).
+      const wanted = STATE.selected || (inRequest ? null : stored?.selected) || null;
+      if (wanted?.type === 'quest') {
+        const quest = STATE.quests.find((q) => q.ID === wanted.id);
+        if (quest) { selectQuest(quest); return; }
+      }
+      if (wanted?.type === 'step') {
+        const step = STATE.steps.find((s) => s.ID === wanted.id);
+        if (step) { selectStep(step); return; }
+      }
+      STATE.selected = null;
+      showEditor(null);
+      resetHeader();
+      renderTree();
+    };
+
     const loadData = async () => {
       DOM.tree.innerHTML = '<div class="editor-muted-text text-sm">Loading…</div>';
       try {
@@ -2706,14 +2927,9 @@
         STATE.dirtyQuests.clear();
         STATE.dirtySteps.clear();
         STATE.newSteps.clear();
-        STATE.expandedQuests.clear();
         STATE.nextTempStepId = -1;
-        STATE.lastQuestScrollId = null;
-        STATE.selected = null;
-        showEditor(null);
-        resetHeader();
         setDirty();
-        renderTree();
+        restoreQuestNav();
       } catch (err) {
         DOM.tree.innerHTML = '<div class="editor-muted-text text-sm">Could not load the data</div>';
         EditorCore.UI.toast(err.message || 'Loading failed', 'error');
@@ -2804,10 +3020,17 @@
         return;
       }
       if (e.key === 'Escape' && STATE.selected && !inField) {
+        // Esc идёт вверх по иерархии: шаг → его квест → ничего не выбрано.
+        if (STATE.selected.type === 'step') {
+          const step = STATE.steps.find((s) => s.ID === STATE.selected.id);
+          const quest = step ? STATE.quests.find((q) => q.ID === step.QuestID) : null;
+          if (quest) { selectQuest(quest); return; }
+        }
         STATE.selected = null;
         showEditor(null);
         resetHeader();
         renderTree({ preserveScroll: true });
+        persistQuestNav();
       }
     });
 
@@ -2832,12 +3055,27 @@
       const icon = DOM.toggleAllQuests.querySelector('i');
       if (icon) icon.className = allExpanded ? 'fa-solid fa-angles-down' : 'fa-solid fa-angles-up';
       renderTree({ preserveScroll: true });
+      persistQuestNav();
     });
     DOM.newStep.addEventListener('click', createStep);
     DOM.duplicateBtn.addEventListener('click', duplicateStep);
     DOM.deleteBtn.addEventListener('click', removeSelected);
     DOM.search.addEventListener('input', debouncedRenderTree);
-    DOM.typeFilter.addEventListener('change', () => renderTree());
+    DOM.typeFilter.addEventListener('change', () => { renderTree(); persistQuestNav(); });
+
+    DOM.navStrip?.addEventListener('click', (e) => {
+      const btn = e.target.closest('[data-qnav]');
+      if (!btn || btn.disabled) return;
+      const id = toNum(btn.dataset.id);
+      if (!id) return;
+      if (btn.dataset.qnav === 'quest') {
+        const quest = STATE.quests.find((q) => q.ID === id);
+        if (quest) selectQuest(quest);
+      } else if (btn.dataset.qnav === 'step') {
+        const step = STATE.steps.find((s) => s.ID === id);
+        if (step) selectStep(step);
+      }
+    });
 
     [DOM.questRconHint, DOM.stepRconHint].forEach((hintHost) => {
       hintHost?.addEventListener('click', async (e) => {

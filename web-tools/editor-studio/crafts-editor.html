@@ -8,11 +8,41 @@
   <script src="editor-core/page-loader.js" data-mode="event"></script>
 
   <style>
-    /* Craft list separators (small local cosmetics; layout comes from editor-template.css) */
-    .crafts-group-header,.crafts-subgroup-header{display:flex;align-items:center;justify-content:space-between;gap:8px;border-bottom:1px solid var(--editor-soft-border)}
-    .crafts-group-btn{flex:1;min-width:0;border-bottom:0;text-align:left}
-    .crafts-group-rename{align-self:center;min-width:34px;min-height:34px;margin:2px 5px 2px 0;padding:6px}
-    .crafts-subgroup-header{padding:15px 10px 4px 18px;font-size:12px;font-weight:600;color: var(--editor-text-muted)}
+    /* Catalog navigation: breadcrumb path + next-level chips + one flat
+       list with sticky section headers. A recipe can no longer hide inside
+       a collapsed branch: the list always shows the current path (or the
+       whole catalog while searching). */
+    .crafts-crumbs{display:flex;align-items:center;flex-wrap:wrap;gap:2px;margin-top:12px;font-size:13px}
+    .crafts-crumb{display:inline-flex;align-items:center;gap:6px;min-width:0;max-width:100%;padding:4px 8px;border-radius:var(--editor-radius-sm);border:1px solid transparent;background:transparent;color:var(--editor-text-muted);cursor:pointer;font:inherit}
+    .crafts-crumb:hover{background:var(--editor-soft-bg);color:var(--editor-text)}
+    .crafts-crumb.is-current{color:var(--editor-text);font-weight:700;background:var(--editor-soft-bg);border-color:var(--editor-soft-border)}
+    .crafts-crumb span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .crafts-crumb-sep{color:var(--editor-text-muted);font-size:10px;flex-shrink:0}
+    .crafts-crumb-rename{margin-left:auto;min-width:30px;min-height:30px;padding:5px}
+    .crafts-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+    .crafts-chips:empty{display:none}
+    .crafts-chip{display:inline-flex;align-items:center;gap:7px;max-width:100%;padding:6px 10px;border-radius:999px;border:1px solid var(--editor-soft-border);background:var(--editor-soft-bg);color:var(--editor-text);cursor:pointer;font:inherit;font-size:12.5px}
+    .crafts-chip:hover{border-color:var(--editor-primary);background:var(--editor-light-bg)}
+    .crafts-chip .crafts-chip-name{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+    .crafts-chip .crafts-chip-count{flex-shrink:0;font-size:11px;color:var(--editor-text-muted)}
+    /* Каждый раздел — отдельная обёртка: sticky-заголовок ограничен своим
+       разделом и уходит вверх вместе с ним. Если все заголовки держать
+       прямыми детьми общего списка, они прилипают в одну точку и
+       накладываются друг на друга. Фон обязан быть непрозрачным. */
+    .crafts-section{min-width:0}
+    .crafts-section + .crafts-section{margin-top:6px}
+    .crafts-section-header{position:sticky;top:0;z-index:3;display:flex;align-items:center;gap:7px;width:100%;padding:6px 9px;border:0;border-bottom:1px solid var(--editor-soft-border);background:var(--editor-surface-2);color:var(--editor-text);cursor:pointer;font:inherit;font-size:12px;font-weight:700;text-align:left}
+    .crafts-section-header:hover{color:var(--editor-accent)}
+    .crafts-section-header .crafts-section-name{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    .crafts-section-header .crafts-section-count{flex-shrink:0;font-size:10.5px;font-weight:600;color:var(--editor-text-muted)}
+    .crafts-row-path{font-size:10.5px;line-height:1.3;color:var(--editor-text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+    /* Ингредиенты, мир и цена — одна компактная строка, а не три крупные
+       пилюли: так рецепт занимает две строки вместо четырёх. */
+    .crafts-row-meta{display:flex;align-items:center;gap:5px;min-width:0;margin-top:2px;overflow:hidden;color:var(--editor-text-muted);font-size:10.5px;line-height:1.3;white-space:nowrap}
+    .crafts-row-meta > span{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis}
+    .crafts-row-meta > span:first-child,.crafts-row-meta > span:last-child{flex-shrink:0}
+    .crafts-row-meta > span.crafts-row-world{flex-shrink:1}
+    .crafts-row-meta > span + span::before{content:"·";margin-right:5px;opacity:.6}
 
 
     /* Main craft fields: 2-col grid with full-width selects */
@@ -52,36 +82,23 @@
         <div class="editor-dock-pad">
         <div class="flex items-center justify-between gap-3">
           <div class="flex items-center gap-2">
-            <div class="text-sm font-semibold">Categories</div>
+            <div class="text-sm font-semibold">Recipes</div>
             <div class="text-xs editor-muted-text" id="meta-count">—</div>
           </div>
-          <div class="flex items-center gap-1">
-            <button id="btn-collapse-all" class="editor-icon-btn" title="Collapse or expand all groups" aria-label="Collapse or expand all groups">
-              <i class="fa-solid fa-layer-group"></i>
-            </button>
-            <button id="btn-clear-filters" class="editor-icon-btn" title="Reset filters" aria-label="Reset filters">
-              <i class="fa-solid fa-broom"></i>
-            </button>
-          </div>
-        </div>
-
-        <div class="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2">
-          <div>
-            <div class="text-xs editor-muted-text mb-1">Group</div>
-            <select id="filter-group" class="w-full editor-input form-input"></select>
-          </div>
-          <div>
-            <div class="text-xs editor-muted-text mb-1">Subgroup</div>
-            <select id="filter-sub" class="w-full editor-input form-input"></select>
-          </div>
+          <button id="btn-clear-filters" class="editor-icon-btn" title="Reset search and category" aria-label="Reset search and category">
+            <i class="fa-solid fa-broom"></i>
+          </button>
         </div>
 
         <div class="mt-3">
           <div class="editor-search">
             <i class="fa-solid fa-magnifying-glass"></i>
-            <input id="search" type="search" class="w-full editor-input form-input" placeholder="Search by ID / group / item…" />
+            <input id="search" type="search" class="w-full editor-input form-input" placeholder="Search all recipes: ID, item, group…" />
           </div>
         </div>
+
+        <nav id="crumb-bar" class="crafts-crumbs" aria-label="Category path"></nav>
+        <div id="cat-chips" class="crafts-chips"></div>
 
         <div id="list" class="mt-4 editor-sidebar-list editor-scroll"></div>
         </div>
@@ -228,11 +245,10 @@
       status: document.getElementById('status'),
       list: document.getElementById('list'),
       metaCount: document.getElementById('meta-count'),
-      filterGroup: document.getElementById('filter-group'),
-      filterSub: document.getElementById('filter-sub'),
       clearFilters: document.getElementById('btn-clear-filters'),
       search: document.getElementById('search'),
-      collapseAll: document.getElementById('btn-collapse-all'),
+      crumbBar: document.getElementById('crumb-bar'),
+      catChips: document.getElementById('cat-chips'),
       title: document.getElementById('title'),
       subtitle: document.getElementById('subtitle'),
       badgeId: document.getElementById('badge-id'),
@@ -287,6 +303,23 @@
     // Уход со страницы с несохранёнными правками — с предупреждением браузера.
     EditorCore.Page.guardUnsaved(() => STATE.isDirty);
 
+    // Каталог открывается там же, где пользователь остановился в прошлый
+    // раз: путь категории и выбранный рецепт переживают перезагрузку.
+    const NAV_STORE_KEY = 'mrpgEditor:craftsNav:v1';
+    const readStoredNav = () => {
+      try {
+        const raw = JSON.parse(localStorage.getItem(NAV_STORE_KEY) || 'null');
+        if (!raw || typeof raw !== 'object') return null;
+        const path = Array.isArray(raw.path)
+          ? raw.path.filter((seg) => seg && ['main', 'group', 'sub'].includes(seg.kind))
+            .map((seg) => ({ kind: seg.kind, name: String(seg.name || '') }))
+          : [];
+        const selectedId = Number(raw.selectedId) || null;
+        return { path, selectedId };
+      } catch { return null; }
+    };
+    const storedNav = readStoredNav();
+
     const STATE = {
       rows: [],
       selectedId: null,
@@ -294,13 +327,10 @@
       selected: null, // editor model
       originalSelected: null,
       isDirty: false,
-      filter: { group: '', sub: '' },
+      // Текущее место в каталоге: цепочка сегментов [{kind, name}].
+      // Пустой путь — корень («Все рецепты»).
+      navPath: storedNav?.path || [],
       search: '',
-      ui: {
-        collapsedGroups: new Set(),
-        collapseAll: false,
-        initCollapsedDone: false,
-      },
       lookups: {
         items: new Map(),
         worlds: new Map(),
@@ -345,34 +375,19 @@
     const cssEscape = EditorCore.utils.cssEscape;
     const escapeHtml = EditorCore.Page.esc;
 
-    const makeGroupKey = (mainGroup, group) => JSON.stringify([mainGroup, group]);
-
     const rebuildGroups = () => {
+      // Карта «группа → подгруппы» нужна подсказкам (datalist) в форме.
       const map = new Map();
-      const groupKeys = new Set();
       for (const r of STATE.rows) {
-        const { main, group, sub } = splitGroupName(r.GroupName);
+        const { group, sub } = splitGroupName(r.GroupName);
         const g = group || '(no group)';
         if (!map.has(g)) map.set(g, new Set());
         if (sub) map.get(g).add(sub);
-        groupKeys.add(makeGroupKey(main, group));
       }
       STATE.groups = map;
-
-      // By default all groups are collapsed (requested)
-      if (!STATE.ui.initCollapsedDone) {
-        STATE.ui.collapsedGroups = new Set(groupKeys);
-        STATE.ui.initCollapsedDone = true;
-      }
-
-      // Cleanup collapsed state for removed groups
-      if (STATE.ui?.collapsedGroups?.size) {
-        const next = new Set();
-        for (const key of STATE.ui.collapsedGroups) {
-          if (groupKeys.has(key)) next.add(key);
-        }
-        STATE.ui.collapsedGroups = next;
-      }
+      // Категория могла исчезнуть (удаление/переименование на сервере) —
+      // путь обрезается до самого глубокого живого уровня, а не в пустоту.
+      STATE.navPath = EditorCore.utils.craftNavPrunePath(STATE.rows, STATE.navPath, (r) => r.GroupName);
     };
 
     const plural = EditorCore.Page.plural;
@@ -475,29 +490,6 @@
       if (restoreFocus && STATE.rename.returnFocus?.isConnected) STATE.rename.returnFocus.focus();
     };
 
-    const fillFilterCombos = () => {
-      const groups = Array.from(STATE.groups.keys()).sort((a,b)=>a.localeCompare(b));
-      els.filterGroup.innerHTML = '';
-      els.filterGroup.appendChild(new Option('All', '', STATE.filter.group === '', STATE.filter.group === ''));
-      for (const g of groups) {
-        els.filterGroup.appendChild(new Option(g, g, STATE.filter.group === g, STATE.filter.group === g));
-      }
-      fillSubFilter();
-    };
-
-    const fillSubFilter = () => {
-      const g = STATE.filter.group;
-      const subs = g && STATE.groups.has(g) ? Array.from(STATE.groups.get(g)).sort((a,b)=>a.localeCompare(b)) : [];
-      els.filterSub.innerHTML = '';
-      els.filterSub.appendChild(new Option('All', '', STATE.filter.sub === '', STATE.filter.sub === ''));
-      for (const s of subs) {
-        els.filterSub.appendChild(new Option(s, s, STATE.filter.sub === s, STATE.filter.sub === s));
-      }
-      if (STATE.filter.sub && !subs.includes(STATE.filter.sub)) {
-        STATE.filter.sub = '';
-      }
-    };
-
     const fillEditorDatalists = () => {
       const groups = Array.from(STATE.groups.keys())
         .filter(g => g !== '(no group)')
@@ -534,121 +526,225 @@
       }
     };
 
-    const renderList = () => {
+    // ── Навигация каталога: путь + плоский список ─────────────────────────
+    // Одна модель вместо бывших трёх (селекты-фильтры, сворачиваемое дерево
+    // и поиск поверх него): хлебные крошки показывают текущую категорию,
+    // чипсы — что внутри неё, список — плоский, со sticky-заголовками
+    // разделов. Поиск всегда идёт по всему каталогу и показывает путь
+    // каждой находки, поэтому рецепт не может спрятаться в свёрнутой ветке.
+    const navIcons = { main: 'fa-layer-group', group: 'fa-folder-open', sub: 'fa-tag' };
+    const navEmptyLabels = { main: '(no main group)', group: '(no group)', sub: '(no subgroup)' };
+    const segmentLabel = (seg) => seg?.name || navEmptyLabels[seg?.kind] || '(no group)';
+    const rowSegments = (row) => EditorCore.utils.craftNavSegments(row?.GroupName);
+    const humanPath = (segments) => (segments || []).filter((s) => s.name).map((s) => s.name).join(' › ');
+    const navPathFields = () => EditorCore.utils.craftNavPathFields(STATE.navPath);
+
+    const persistNav = () => {
+      try {
+        localStorage.setItem(NAV_STORE_KEY, JSON.stringify({
+          path: STATE.navPath,
+          selectedId: STATE.selectedId || null,
+        }));
+      } catch { /* private mode — навигация работает и без запоминания */ }
+    };
+
+    const setNavPath = (path) => {
+      STATE.navPath = Array.isArray(path) ? path : [];
+      persistNav();
+      renderList();
+      els.list.scrollTop = 0;
+    };
+
+    const rowMatchesSearch = (row, search) => {
+      if (!search) return true;
+      const itemLabel = getItemLabel(row.ItemID);
+      return String(row.ID).includes(search)
+        || String(row.GroupName || '').toLowerCase().includes(search)
+        || String(row.ItemID || '').includes(search)
+        || (itemLabel && itemLabel.toLowerCase().includes(search))
+        || String(row.RequiredItems || '').includes(search);
+    };
+
+    // Выбранный рецепт обязан быть виден в списке: если текущие поиск/путь
+    // его скрывают (прямая ссылка, смена группы при сохранении, восстановление
+    // сессии) — навигация сама переходит в его категорию.
+    const ensureRowVisible = (row) => {
+      if (!row) return;
       const search = String(STATE.search || '').trim().toLowerCase();
-      const fg = STATE.filter.group;
-      const fs = STATE.filter.sub;
+      if (search) {
+        if (rowMatchesSearch(row, search)) return;
+        STATE.search = '';
+        els.search.value = '';
+      }
+      const segments = rowSegments(row);
+      if (!EditorCore.utils.craftNavInPath(segments, STATE.navPath)) {
+        STATE.navPath = segments;
+      }
+    };
 
-      const filtered = STATE.rows.filter(r => {
-        const { group, sub } = splitGroupName(r.GroupName);
-        const g = group || '(no group)';
-        if (fg && g !== fg) return false;
-        if (fs && sub !== fs) return false;
-        if (!search) return true;
-
-        const idStr = String(r.ID);
-        const itemLabel = getItemLabel(r.ItemID);
-        const gStr = String(r.GroupName || '');
-        const reqStr = String(r.RequiredItems || '');
-        return idStr.includes(search)
-          || gStr.toLowerCase().includes(search)
-          || String(r.ItemID || '').includes(search)
-          || (itemLabel && itemLabel.toLowerCase().includes(search))
-          || reqStr.includes(search);
-      });
-
-      els.metaCount.textContent = `${filtered.length}/${STATE.rows.length}`;
-      if (!filtered.length) {
-        els.list.innerHTML = `
-          <div class="p-5 text-center">
-            <div class="text-sm font-semibold">Nothing found</div>
-            <div class="text-xs editor-muted-text mt-1">Try changing the filters or the search.</div>
-            <button class="editor-btn editor-btn-secondary mt-3" id="btn-empty-new">
-              <i class="fa-solid fa-plus"></i><span>New craft</span>
-            </button>
-          </div>`;
-        const b = document.getElementById('btn-empty-new');
-        if (b) b.addEventListener('click', () => els.newBtn.click());
+    const renderNav = (searching) => {
+      if (searching) {
+        els.crumbBar.innerHTML = `
+          <span class="crafts-crumb is-current"><i class="fa-solid fa-magnifying-glass"></i><span>Searching all recipes</span></span>
+          <button type="button" class="editor-icon-btn crafts-crumb-rename" data-nav-clear-search title="Clear the search" aria-label="Clear the search"><i class="fa-solid fa-xmark"></i></button>`;
+        els.catChips.innerHTML = '';
+        els.crumbBar.querySelector('[data-nav-clear-search]')?.addEventListener('click', () => {
+          STATE.search = '';
+          els.search.value = '';
+          renderList();
+          els.search.focus();
+        });
         return;
       }
 
-      // Group rows by main group, then by group. This makes the optional
-      // hierarchy visible instead of mixing all recipes in one flat list.
-      const byMain = new Map();
-      for (const r of filtered) {
-        const { main, group } = splitGroupName(r.GroupName);
-        if (!byMain.has(main)) byMain.set(main, new Map());
-        const byGroup = byMain.get(main);
-        if (!byGroup.has(group)) byGroup.set(group, []);
-        byGroup.get(group).push(r);
+      const path = STATE.navPath;
+      const last = path[path.length - 1];
+      const crumbs = [
+        `<button type="button" class="crafts-crumb${path.length ? '' : ' is-current'}" data-nav-depth="0" ${path.length ? '' : 'aria-current="page"'}><i class="fa-solid fa-house"></i><span>All recipes</span></button>`,
+        ...path.map((seg, i) => {
+          const current = i === path.length - 1;
+          return `<i class="fa-solid fa-chevron-right crafts-crumb-sep" aria-hidden="true"></i><button type="button" class="crafts-crumb${current ? ' is-current' : ''}" data-nav-depth="${i + 1}" ${current ? 'aria-current="page"' : ''} title="${escapeHtml(segmentLabel(seg))}"><i class="fa-solid ${navIcons[seg.kind] || 'fa-folder-open'}"></i><span>${escapeHtml(segmentLabel(seg))}</span></button>`;
+        }),
+      ];
+      if (last?.name) {
+        const label = renameCases[last.kind]?.[0] || 'the group';
+        crumbs.push(`<button type="button" class="editor-icon-btn crafts-crumb-rename" data-nav-rename title="Rename ${label}" aria-label="Rename ${label}"><i class="fa-solid fa-pen-to-square"></i></button>`);
+      }
+      els.crumbBar.innerHTML = crumbs.join('');
+      els.crumbBar.querySelectorAll('[data-nav-depth]').forEach((btn) => btn.addEventListener('click', () => {
+        setNavPath(STATE.navPath.slice(0, Number(btn.dataset.navDepth) || 0));
+      }));
+      els.crumbBar.querySelector('[data-nav-rename]')?.addEventListener('click', (event) => {
+        const seg = STATE.navPath[STATE.navPath.length - 1];
+        if (!seg?.name) return;
+        const fields = navPathFields();
+        openRenameGroup({
+          level: seg.kind,
+          mainGroup: fields.main,
+          group: fields.group,
+          subGroup: fields.sub,
+        }, event.currentTarget);
+      });
+
+      const children = EditorCore.utils.craftNavChildren(STATE.rows, path, (r) => r.GroupName);
+      els.catChips.innerHTML = children.map((child) => `
+        <button type="button" class="crafts-chip" data-nav-child="${encodeURIComponent(JSON.stringify(child))}" title="${escapeHtml(segmentLabel(child))}">
+          <i class="fa-solid ${navIcons[child.kind] || 'fa-folder-open'}"></i>
+          <span class="crafts-chip-name">${escapeHtml(segmentLabel(child))}</span>
+          <span class="crafts-chip-count">${child.count}</span>
+        </button>`).join('');
+      els.catChips.querySelectorAll('[data-nav-child]').forEach((btn) => btn.addEventListener('click', () => {
+        try {
+          const child = JSON.parse(decodeURIComponent(btn.dataset.navChild || ''));
+          setNavPath([...STATE.navPath, { kind: child.kind, name: child.name || '' }]);
+        } catch { /* битый data-атрибут — игнорируем клик */ }
+      }));
+    };
+
+    const renderList = () => {
+      const search = String(STATE.search || '').trim().toLowerCase();
+      const searching = !!search;
+
+      const visible = STATE.rows.filter((row) => searching
+        ? rowMatchesSearch(row, search)
+        : EditorCore.utils.craftNavInPath(rowSegments(row), STATE.navPath));
+
+      els.metaCount.textContent = `${visible.length}/${STATE.rows.length}`;
+      renderNav(searching);
+
+      if (!visible.length) {
+        const filtered = searching || STATE.navPath.length > 0;
+        els.list.innerHTML = `
+          <div class="p-5 text-center">
+            <div class="text-sm font-semibold">Nothing found</div>
+            <div class="text-xs editor-muted-text mt-1">${searching
+              ? 'No recipe matches the search in the whole catalog.'
+              : 'This category is empty.'}</div>
+            <div class="flex flex-wrap justify-center gap-2 mt-3">
+              ${filtered ? `<button class="editor-btn editor-btn-secondary" id="btn-empty-reset">
+                <i class="fa-solid fa-broom"></i><span>Reset search and category</span>
+              </button>` : ''}
+              <button class="editor-btn editor-btn-secondary" id="btn-empty-new">
+                <i class="fa-solid fa-plus"></i><span>New craft</span>
+              </button>
+            </div>
+          </div>`;
+        document.getElementById('btn-empty-new')?.addEventListener('click', () => els.newBtn.click());
+        document.getElementById('btn-empty-reset')?.addEventListener('click', () => els.clearFilters.click());
+        return;
       }
 
       const reqCountQuick = (value) => (String(value || '').match(/\[/g) || []).length;
-      const renameControl = (level, mainGroup, group = '', subGroup = '') => {
-        const name = level === 'main' ? mainGroup : level === 'group' ? group : subGroup;
-        if (!name || (level === 'sub' && !group)) return '';
-        const label = renameCases[level][0];
-        return `<button type="button" class="editor-icon-btn crafts-group-rename" data-rename-level="${level}" data-rename-main="${encodeURIComponent(mainGroup)}" data-rename-group="${encodeURIComponent(group)}" data-rename-sub="${encodeURIComponent(subGroup)}" title="Rename ${label}" aria-label="Rename ${label}"><i class="fa-solid fa-pen-to-square"></i></button>`;
+      const renderRow = (row, showPath) => {
+        const active = String(row.ID) === String(STATE.selectedId);
+        const item = getItemLabel(row.ItemID) || (row.ItemID ? `Item #${row.ItemID}` : '—');
+        const world = getWorldLabel(row.WorldID) || (row.WorldID ? `World #${row.WorldID}` : 'All worlds');
+        const price = Number(row.Price || 0);
+        const pathLine = showPath ? humanPath(rowSegments(row)) : '';
+        return `<button type="button" class="editor-row${active ? ' editor-row-active' : ''}" data-id="${row.ID}">
+          <div class="flex items-start justify-between gap-2"><div class="min-w-0">
+            <div class="flex items-center gap-2 min-w-0"><div class="font-semibold text-sm truncate">${escapeHtml(item)}</div><div class="text-xs editor-muted-text shrink-0">×${row.ItemValue || 1}</div></div>
+            ${pathLine ? `<div class="crafts-row-path" title="${escapeHtml(pathLine)}">${escapeHtml(pathLine)}</div>` : ''}
+            <div class="crafts-row-meta"><span>ingr: ${reqCountQuick(row.RequiredItems)}</span><span class="crafts-row-world" title="${escapeHtml(world)}">${escapeHtml(world)}</span>${price ? `<span>price: ${price}</span>` : ''}</div>
+          </div><div class="text-xs editor-muted-text shrink-0">#${row.ID}</div></div></button>`;
       };
 
-      const renderGroup = (mainGroup, group, rows) => {
-        const groupKey = makeGroupKey(mainGroup, group);
-        const groupLabel = group || '(no group)';
-        const collapsed = STATE.ui.collapsedGroups.has(groupKey);
-        const itemsBySub = new Map();
-        for (const row of rows) {
-          const { sub } = splitGroupName(row.GroupName);
-          if (!itemsBySub.has(sub)) itemsBySub.set(sub, []);
-          itemsBySub.get(sub).push(row);
+      // Стабильный порядок: по цепочке категории, затем по ID. Рецепты ровно
+      // на текущем уровне идут первыми, подразделы — по алфавиту.
+      const segCache = new Map(visible.map((row) => [row, rowSegments(row)]));
+      const sorted = [...visible].sort((a, b) => {
+        const sa = segCache.get(a);
+        const sb = segCache.get(b);
+        const depth = Math.max(sa.length, sb.length);
+        for (let i = 0; i < depth; i += 1) {
+          if (!sa[i]) return -1;
+          if (!sb[i]) return 1;
+          const cmp = EditorCore.utils.compareCraftNavSegments(sa[i], sb[i]);
+          if (cmp) return cmp;
         }
+        return Number(a.ID) - Number(b.ID);
+      });
 
-        const renderItems = (items) => items.sort((a, b) => Number(a.ID) - Number(b.ID)).map((row) => {
-          const active = String(row.ID) === String(STATE.selectedId);
-          const item = getItemLabel(row.ItemID) || (row.ItemID ? `Item #${row.ItemID}` : '—');
-          const world = getWorldLabel(row.WorldID) || (row.WorldID ? `World #${row.WorldID}` : 'All worlds');
-          const price = Number(row.Price || 0);
-          return `<button type="button" class="editor-row${active ? ' editor-row-active' : ''}" data-id="${row.ID}">
-            <div class="flex items-start justify-between gap-2"><div class="min-w-0">
-              <div class="flex items-center gap-2 min-w-0"><div class="font-semibold text-sm truncate">${escapeHtml(item)}</div><div class="text-xs editor-muted-text shrink-0">×${row.ItemValue || 1}</div></div>
-              <div class="mt-1 flex flex-wrap gap-1.5"><span class="editor-badge">ingr:  ${reqCountQuick(row.RequiredItems)}</span><span class="editor-badge">${escapeHtml(world)}</span>${price ? `<span class="editor-badge">price: ${price}</span>` : ''}</div>
-            </div><div class="text-xs editor-muted-text shrink-0">#${row.ID}</div></div></button>`;
-        }).join('');
-
-        const subs = Array.from(itemsBySub.keys()).sort((a, b) => a === b ? 0 : !a ? -1 : !b ? 1 : a.localeCompare(b));
-        const subHtml = subs.map((sub) => `<div>${sub ? `<div class="crafts-subgroup-header"><span class="truncate">${escapeHtml(sub)}</span>${renameControl('sub', mainGroup, group, sub)}</div>` : ''}${renderItems(itemsBySub.get(sub))}</div>`).join('');
-        const icon = collapsed ? 'fa-chevron-right' : 'fa-chevron-down';
-        return `<div><div class="crafts-group-header"><button type="button" class="crafts-group-btn px-3 py-2 flex items-center justify-between gap-2 editor-hover" data-group="${encodeURIComponent(groupKey)}" aria-expanded="${!collapsed}"><div class="flex items-center gap-2 min-w-0"><i class="fa-solid ${icon} text-xs editor-muted-text"></i><div class="font-semibold text-sm truncate">${escapeHtml(groupLabel)}</div></div><div class="text-xs editor-muted-text shrink-0">${rows.length}</div></button>${group ? renameControl('group', mainGroup, group) : ''}</div><div class="${collapsed ? 'hidden' : ''}">${subHtml}</div></div>`;
-      };
-
-      const mainNames = Array.from(byMain.keys()).sort((a, b) => a === b ? 0 : !a ? -1 : !b ? 1 : a.localeCompare(b));
-      const html = mainNames.map((mainGroup) => {
-        const groups = byMain.get(mainGroup);
-        const total = Array.from(groups.values()).reduce((n, rows) => n + rows.length, 0);
-        const groupHtml = Array.from(groups.keys()).sort((a, b) => a.localeCompare(b))
-          .map(group => renderGroup(mainGroup, group, groups.get(group))).join('');
-        const isGrouped = !!mainGroup;
-        const mainLabel = mainGroup || '(no main group)';
-        return `<section class="crafts-main-group ${isGrouped ? 'border editor-primary-border editor-primary-tint' : 'border editor-hairline editor-soft'} rounded-lg mb-2 overflow-hidden">
-          <div class="crafts-group-header px-3 py-2 ${isGrouped ? 'editor-primary-text' : 'editor-muted-text'}"><div class="flex items-center gap-1 min-w-0"><i class="fa-solid fa-layer-group text-xs"></i><span class="font-bold text-sm truncate">${escapeHtml(mainLabel)}</span>${renameControl('main', mainGroup)}</div><span class="text-xs editor-muted-text shrink-0">${total}  rec.</span></div>${groupHtml}</section>`;
-      }).join('');
+      let html;
+      if (searching) {
+        html = sorted.map((row) => renderRow(row, true)).join('');
+      } else {
+        // Разделы по следующему сегменту пути: заголовок липнет к верху
+        // списка при скролле и ведёт в тот же подраздел, что и чип сверху.
+        const depthAt = STATE.navPath.length;
+        const parts = [];
+        let sectionKey = null;
+        let sectionRows = [];
+        const flush = () => {
+          if (!sectionRows.length) return;
+          const rowsHtml = sectionRows.map((row) => renderRow(row, false)).join('');
+          if (sectionKey) {
+            const seg = JSON.parse(sectionKey);
+            // Обёртка раздела ограничивает sticky-заголовок его собственными
+            // строками; без неё все заголовки прилипают к верху одновременно.
+            parts.push(`<section class="crafts-section"><button type="button" class="crafts-section-header" data-nav-descend="${encodeURIComponent(sectionKey)}" title="${escapeHtml(segmentLabel(seg))}"><i class="fa-solid ${navIcons[seg.kind] || 'fa-folder-open'}"></i><span class="crafts-section-name">${escapeHtml(segmentLabel(seg))}</span><span class="crafts-section-count">${sectionRows.length}</span><i class="fa-solid fa-chevron-right text-xs"></i></button>${rowsHtml}</section>`);
+          } else {
+            parts.push(rowsHtml);
+          }
+          sectionRows = [];
+        };
+        for (const row of sorted) {
+          const next = segCache.get(row)[depthAt];
+          const key = next ? JSON.stringify({ kind: next.kind, name: next.name }) : null;
+          if (key !== sectionKey) { flush(); sectionKey = key; }
+          sectionRows.push(row);
+        }
+        flush();
+        html = parts.join('');
+      }
 
       els.list.innerHTML = html;
       els.list.querySelectorAll('button[data-id]').forEach(btn => btn.addEventListener('click', () => selectRow(btn.getAttribute('data-id'))));
-      els.list.querySelectorAll('button[data-group]').forEach(btn => btn.addEventListener('click', () => {
-        const key = decodeURIComponent(btn.getAttribute('data-group') || '');
-        if (!key) return;
-        if (STATE.ui.collapsedGroups.has(key)) STATE.ui.collapsedGroups.delete(key);
-        else STATE.ui.collapsedGroups.add(key);
-        renderList();
-      }));
-      els.list.querySelectorAll('button[data-rename-level]').forEach(btn => btn.addEventListener('click', (event) => {
-        event.stopPropagation();
-        openRenameGroup({
-          level: btn.dataset.renameLevel,
-          mainGroup: decodeURIComponent(btn.dataset.renameMain || ''),
-          group: decodeURIComponent(btn.dataset.renameGroup || ''),
-          subGroup: decodeURIComponent(btn.dataset.renameSub || ''),
-        }, btn);
+      els.list.querySelectorAll('[data-nav-descend]').forEach((btn) => btn.addEventListener('click', () => {
+        try {
+          const seg = JSON.parse(decodeURIComponent(btn.dataset.navDescend || ''));
+          setNavPath([...STATE.navPath, { kind: seg.kind, name: seg.name || '' }]);
+        } catch { /* битый data-атрибут — игнорируем клик */ }
       }));
 
       // Keep the active item visible
@@ -727,7 +823,7 @@
       els.title.textContent = itemLabel;
       const groupName = buildGroupName(STATE.selected.MainGroup, STATE.selected.Group, STATE.selected.SubGroup);
       const worldLabel = getWorldLabel(STATE.selected.WorldID) || (STATE.selected.WorldID ? `World #${STATE.selected.WorldID}` : 'All worlds');
-      els.subtitle.textContent = `${groupName || '(no group)'} · ${worldLabel}`;
+      els.subtitle.textContent = `${humanPath(EditorCore.utils.craftNavSegments(groupName)) || '(no group)'} · ${worldLabel}`;
       els.badgeId.textContent = STATE.selectedId ? `#${STATE.selectedId}` : 'new';
       els.badgeId.style.display = 'inline-flex';
     };
@@ -763,11 +859,13 @@
         STATE.originalSelected = null;
       } else {
         const split = splitGroupName(row?.GroupName);
+        // Новый рецепт наследует категорию текущего пути каталога.
+        const fields = navPathFields();
         STATE.selected = {
           ID: row?.ID ?? 0,
-          MainGroup: split.main || '',
-          Group: split.group || (STATE.filter.group && STATE.filter.group !== '(no group)' ? STATE.filter.group : ''),
-          SubGroup: split.sub || (STATE.filter.sub || ''),
+          MainGroup: split.main || fields.main || '',
+          Group: split.group || fields.group || '',
+          SubGroup: split.sub || fields.sub || '',
           ItemID: row?.ItemID == null ? 0 : Number(row.ItemID),
           ItemValue: Number(row?.ItemValue ?? 1),
           Price: Number(row?.Price ?? 0),
@@ -777,6 +875,11 @@
         STATE.originalSelected = isNew ? null : JSON.parse(JSON.stringify(STATE.selected));
         if (isNew) STATE.lastSelectedIdBeforeCreate = prevId;
       }
+
+      // Существующая запись обязана остаться видимой в списке (см.
+      // ensureRowVisible) — до renderList(), одним проходом.
+      if (row && !isNew) ensureRowVisible(row);
+      persistNav();
 
       els.del.disabled = !STATE.selectedId;
       els.save.disabled = true;
@@ -831,7 +934,6 @@
         STATE.rows = Array.isArray(res?.rows) ? res.rows : [];
         STATE.rowsHaveMore = !!res?.has_more;
         rebuildGroups();
-        fillFilterCombos();
         fillEditorDatalists();
         renderList();
         setStatus('');
@@ -841,7 +943,6 @@
         STATE.rows = [];
         STATE.rowsHaveMore = false;
         rebuildGroups();
-        fillFilterCombos();
         fillEditorDatalists();
         renderList();
       }
@@ -876,6 +977,10 @@
         markDirty(false);
         // refresh list row values
         await loadRows();
+        // Рецепт мог переехать в другую категорию при правке группы —
+        // список следует за ним, а не теряет выделение из виду.
+        const current = STATE.rows.find((r) => String(r.ID) === String(STATE.selectedId));
+        if (current) { ensureRowVisible(current); renderList(); }
         setStatus('');
       } catch (e) {
         setStatus(String(e?.message || e), 'err');
@@ -905,8 +1010,19 @@
           await loadRows();
           return;
         }
-        if (target.level === 'group' && STATE.filter.group === oldName) STATE.filter.group = newName;
-        if (target.level === 'sub' && STATE.filter.sub === oldName) STATE.filter.sub = newName;
+        // Путь каталога следует за переименованной веткой: сегмент с тем же
+        // уровнем, именем и родителями получает новое имя.
+        const renamedIdx = STATE.navPath.findIndex((seg, i) => {
+          if (seg.kind !== target.level || seg.name !== oldName) return false;
+          const parents = EditorCore.utils.craftNavPathFields(STATE.navPath.slice(0, i));
+          if (target.level === 'main') return true;
+          if (target.level === 'group') return parents.main === target.mainGroup;
+          return parents.main === target.mainGroup && parents.group === target.group;
+        });
+        if (renamedIdx >= 0) {
+          STATE.navPath = STATE.navPath.map((seg, i) => (i === renamedIdx ? { ...seg, name: newName } : seg));
+          persistNav();
+        }
         if (String(STATE.search || '').trim().toLowerCase() === oldName.toLowerCase()) {
           STATE.search = newName;
           els.search.value = newName;
@@ -970,29 +1086,19 @@
       await loadRows();
     });
 
+    // Один сброс для всей навигации: корень каталога + пустой поиск.
     els.clearFilters?.addEventListener('click', () => {
-      STATE.filter.group = '';
-      STATE.filter.sub = '';
       STATE.search = '';
       els.search.value = '';
-      fillFilterCombos();
-      renderList();
+      setNavPath([]);
     });
 
-    els.collapseAll?.addEventListener('click', () => {
-      const all = Array.from(els.list.querySelectorAll('button[data-group]'))
-        .map(btn => decodeURIComponent(btn.getAttribute('data-group') || ''))
-        .filter(Boolean);
-      if (!all.length) return;
-      const allCollapsed = all.every(g => STATE.ui.collapsedGroups.has(g));
-      STATE.ui.collapsedGroups = allCollapsed ? new Set() : new Set(all);
-      renderList();
-    });
     els.newBtn.addEventListener('click', async () => {
       if (!await canDiscardDirty()) return;
+      const fields = navPathFields();
       const row = {
         ID: 0,
-        GroupName: buildGroupName('', STATE.filter.group && STATE.filter.group !== '(no group)' ? STATE.filter.group : '', STATE.filter.sub || ''),
+        GroupName: buildGroupName(fields.main, fields.group, fields.sub),
         ItemID: null,
         ItemValue: 1,
         RequiredItems: '',
@@ -1012,17 +1118,6 @@
         requestId: data.requestId,
         dirty: !!STATE.isDirty,
       });
-    });
-
-    els.filterGroup.addEventListener('change', () => {
-      STATE.filter.group = els.filterGroup.value || '';
-      STATE.filter.sub = '';
-      fillSubFilter();
-      renderList();
-    });
-    els.filterSub.addEventListener('change', () => {
-      STATE.filter.sub = els.filterSub.value || '';
-      renderList();
     });
 
     els.search.addEventListener('input', EditorCore.utils.debounce(() => {
@@ -1087,6 +1182,36 @@
     (async () => {
       await loadLookups();
       await loadRows();
+
+      // Прямая ссылка (?record=) важнее восстановленной сессии: категория
+      // записи открывается сразу, иначе строка может отсутствовать в DOM
+      // и deep-link/request-context её не найдут (раньше спасало только то,
+      // что свёрнутые группы всё равно рендерились скрытыми).
+      const params = new URLSearchParams(location.search);
+      const recordId = Number(params.get('record')) || 0;
+      const inRequest = !!params.get('request');
+      if (recordId) {
+        const row = STATE.rows.find((r) => Number(r.ID) === recordId);
+        if (row) {
+          STATE.navPath = rowSegments(row);
+          if (inRequest) {
+            // Выбором управляет request-context — просто показываем строку.
+            renderList();
+            return;
+          }
+          EditorCore.DeepLink?.markHandled?.();
+          await selectRow(recordId, { confirmDirty: false });
+          return;
+        }
+      }
+
+      // Обычное открытие: вернуться к последнему рецепту прошлой сессии.
+      // В режиме запроса выбором управляет request-context — не спорим с ним.
+      const lastId = inRequest ? 0 : (storedNav?.selectedId || 0);
+      if (lastId && STATE.rows.some((r) => Number(r.ID) === lastId)) {
+        await selectRow(lastId, { confirmDirty: false });
+        return;
+      }
       setSelected(null, false);
     })();
   </script>

@@ -255,6 +255,126 @@
     return `|${mainName}|${nested}`;
   };
 
+  // ── Каталог крафтов: навигация «путь + плоский список» ──────────────────
+  // Рецепт описывается цепочкой сегментов [{kind:'main'|'group'|'sub', name}]:
+  // главная группа — только если задана, группа — всегда (имя может быть
+  // пустым: «без группы»), подгруппа — только если задана. Текущее место
+  // пользователя — префикс такой цепочки (хлебные крошки). Чипсы следующего
+  // уровня и заголовки разделов плоского списка строятся из тех же данных,
+  // поэтому рецепт не может «потеряться» внутри свёрнутой ветки дерева.
+  const craftNavSegments = (groupName) => {
+    const { main, group, sub } = splitGroupHierarchy(groupName);
+    const segments = [];
+    if (main) segments.push({ kind: 'main', name: main });
+    segments.push({ kind: 'group', name: group || '' });
+    if (sub) segments.push({ kind: 'sub', name: sub });
+    return segments;
+  };
+
+  const craftNavKey = (segment) => `${segment?.kind || ''}\n${segment?.name || ''}`;
+
+  /** Лежит ли цепочка рецепта внутри выбранного пути (префиксное совпадение). */
+  const craftNavInPath = (segments, navPath) => {
+    const path = Array.isArray(navPath) ? navPath : [];
+    if (path.length > segments.length) return false;
+    for (let i = 0; i < path.length; i += 1) {
+      if (craftNavKey(segments[i]) !== craftNavKey(path[i])) return false;
+    }
+    return true;
+  };
+
+  /** Сортировка сегментов: «без …» (пустое имя) первым, дальше по алфавиту. */
+  const compareCraftNavSegments = (a, b) => {
+    const an = a?.name || '';
+    const bn = b?.name || '';
+    if (an === bn) return String(a?.kind || '').localeCompare(String(b?.kind || ''));
+    if (!an) return -1;
+    if (!bn) return 1;
+    return an.localeCompare(bn);
+  };
+
+  /**
+   * Дочерние категории текущего пути: [{kind, name, count}] — сколько
+   * рецептов лежит под каждым следующим сегментом. `rows` — строки каталога,
+   * `groupNameOf` извлекает GroupName из строки.
+   */
+  const craftNavChildren = (rows, navPath, groupNameOf) => {
+    const path = Array.isArray(navPath) ? navPath : [];
+    const byKey = new Map();
+    for (const row of rows || []) {
+      const segments = craftNavSegments(groupNameOf(row));
+      if (!craftNavInPath(segments, path)) continue;
+      const next = segments[path.length];
+      if (!next) continue;
+      const key = craftNavKey(next);
+      const hit = byKey.get(key);
+      if (hit) hit.count += 1;
+      else byKey.set(key, { kind: next.kind, name: next.name, count: 1 });
+    }
+    return Array.from(byKey.values()).sort(compareCraftNavSegments);
+  };
+
+  /** Значения формы (main/group/sub) из пути каталога — для новых рецептов. */
+  const craftNavPathFields = (navPath) => {
+    const fields = { main: '', group: '', sub: '' };
+    for (const segment of Array.isArray(navPath) ? navPath : []) {
+      if (segment && segment.kind in fields) fields[segment.kind] = segment.name || '';
+    }
+    return fields;
+  };
+
+  /**
+   * Обрезать путь до самого глубокого префикса, под которым ещё есть
+   * рецепты (после удаления/переименования категории путь не должен вести
+   * в пустоту). Возвращает новый массив, исходный не меняет.
+   */
+  const craftNavPrunePath = (rows, navPath, groupNameOf) => {
+    const path = Array.isArray(navPath) ? [...navPath] : [];
+    const all = (rows || []).map((row) => craftNavSegments(groupNameOf(row)));
+    while (path.length && !all.some((segments) => craftNavInPath(segments, path))) path.pop();
+    return path;
+  };
+
+  // ── Дерево квестов: стабильный порядок + поиск по квестам и шагам ───────
+  // Квест попадает в результат, если совпал он сам ИЛИ любой его шаг
+  // (раньше поиск по мобу/миру давал пустой список, пока имя квеста тоже не
+  // совпадёт). Если совпал сам квест — показываются все его шаги, если только
+  // шаги — лишь совпавшие. Порядок всегда по ID: выбор записи список не
+  // перетасовывает. `questText`/`stepText` возвращают текст для поиска,
+  // `questAllowed` — дополнительный фильтр квестов (тип/флаги).
+  const matchQuestTree = ({ quests, steps, tokens, questText, stepText, questAllowed } = {}) => {
+    const parts = (Array.isArray(tokens) ? tokens : [])
+      .map((token) => String(token ?? '').trim().toLowerCase())
+      .filter(Boolean);
+    const hasSearch = parts.length > 0;
+    const matches = (text) => {
+      if (!hasSearch) return true;
+      const haystack = String(text ?? '').toLowerCase();
+      return parts.every((token) => haystack.includes(token));
+    };
+
+    const stepsByQuest = new Map();
+    for (const step of steps || []) {
+      const arr = stepsByQuest.get(step.QuestID);
+      if (arr) arr.push(step); else stepsByQuest.set(step.QuestID, [step]);
+    }
+
+    const out = [];
+    const sortedQuests = [...(quests || [])].sort((a, b) => a.ID - b.ID);
+    for (const quest of sortedQuests) {
+      if (questAllowed && !questAllowed(quest)) continue;
+      const allSteps = (stepsByQuest.get(quest.ID) || [])
+        .sort((a, b) => (a.Step - b.Step) || (a.ID - b.ID));
+      const questMatched = !hasSearch || matches(questText ? questText(quest) : '');
+      const visibleSteps = questMatched
+        ? allSteps
+        : allSteps.filter((step) => matches(stepText ? stepText(step) : ''));
+      if (hasSearch && !questMatched && !visibleSteps.length) continue;
+      out.push({ quest, steps: visibleSteps, totalSteps: allSteps.length, questMatched });
+    }
+    return out;
+  };
+
   const STATUS_TONES = {
     muted: 'editor-status--muted', info: 'editor-status--muted',
     ok: 'editor-status--success', success: 'editor-status--success',
@@ -651,6 +771,13 @@
     joinComposite,
     splitGroupHierarchy,
     joinGroupHierarchy,
+    craftNavSegments,
+    craftNavInPath,
+    craftNavChildren,
+    craftNavPathFields,
+    craftNavPrunePath,
+    compareCraftNavSegments,
+    matchQuestTree,
     setStatus,
     escapeAttr,
     escapeHtml,
