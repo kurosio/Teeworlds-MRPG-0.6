@@ -276,3 +276,24 @@ test('quest tree: no shared bar under data-record-nav-off, arrows still walk nod
   assert.equal(active?.dataset.nodeType, 'step', 'ArrowDown перешёл с квеста на его первый шаг');
   assert.equal(active?.dataset.id, '11');
 });
+
+test('quest boards editor exposes visual assignment workflow', () => {
+  const html = readRoot('quest-boards-editor.html');
+  const manifest = readRoot('studio.manifest.js');
+  assert.ok(manifest.includes("key: 'quest_boards'") && manifest.includes("src: 'quest-boards-editor.html'"));
+  assert.ok(html.includes('qb-board-grid') && html.includes('data-board='), 'board card grid is missing');
+  assert.ok(html.includes('draggable="true"') && html.includes("addEventListener('drop'"), 'drag and drop is missing');
+  assert.ok(html.includes("DBCrud.list('quest_boards'") && html.includes("DBCrud.list('quest_board_links'"));
+  assert.ok(html.includes("DBCrud.create('quest_board_links'") && html.includes("DBCrud.remove('quest_board_links'"));
+  assert.ok(html.includes('Unassigned quests') && html.includes('Add quest'), 'assignment affordances are missing');
+  assert.ok(html.includes('highlightTiles:[21]') && html.includes("DBCrud.create('quest_boards'"), 'board creation/map placement is missing');
+  assert.ok(html.includes('qb-board-viewport') && html.includes('scrollBy({left:'), 'horizontal board scrolling is missing');
+  assert.ok(html.includes('reopenBoardAfterMap') && html.includes("addEventListener('editor-map:closed'"),
+    'board popup is not suspended while the map picker is open');
+  assert.ok(html.includes('openQuestInNewTab') && html.includes("addEventListener('dblclick'")
+    && html.includes("url.searchParams.set('record'"), 'double-click quest deep link is missing');
+  assert.ok(html.includes('async function deleteBoard()') && html.includes("DBCrud.remove('quest_boards'"),
+    'quest board deletion is missing');
+  assert.ok(html.indexOf("DBCrud.remove('quest_board_links'") < html.indexOf("DBCrud.remove('quest_boards'"),
+    'board deletion must remove assignments before the board');
+});

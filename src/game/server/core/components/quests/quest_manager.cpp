@@ -56,9 +56,19 @@ void CQuestManager::OnPreInit()
 		const auto QuestID = pResDailyQuest->getInt("QuestID");
 		const auto BoardID = pResDailyQuest->getInt("DailyBoardID");
 
-		// add quest to board
-		auto* pQuest = GS()->GetQuestInfo(QuestID);
-		auto* pBoard = CQuestsBoard::Data()[BoardID];
+		// Add the quest only when both referenced records exist. Keep startup safe
+		// when an administrator interrupted a database edit or imported legacy data
+		// containing an orphaned board assignment.
+		const auto QuestIt = CQuestDescription::Data().find(QuestID);
+		const auto BoardIt = CQuestsBoard::Data().find(BoardID);
+		if(QuestIt == CQuestDescription::Data().end() || BoardIt == CQuestsBoard::Data().end())
+		{
+			dbg_msg(PRINT_QUEST_PREFIX, "ignored invalid board assignment: quest=%d board=%d", QuestID, BoardID);
+			continue;
+		}
+
+		auto* pQuest = QuestIt->second;
+		auto* pBoard = BoardIt->second;
 		pQuest->AddFlag(QUEST_FLAG_GRANTED_FROM_BOARD);
 		pBoard->GetQuestList().push_back(pQuest);
 	}

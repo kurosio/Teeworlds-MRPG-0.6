@@ -62,10 +62,12 @@
 
   const ensureDialog = () => {
     if (dialog) return dialog;
-    dialog = document.createElement('div');
+    // A native <dialog> is required here. A regular fixed <div>, regardless of
+    // z-index, is always rendered below an already opened modal <dialog>
+    // (for example the Quest Board editor). showModal() moves the map into the
+    // browser top layer, so the picker reliably opens above every editor popup.
+    dialog = document.createElement('dialog');
     dialog.className = 'editor-map-dialog';
-    dialog.setAttribute('role', 'dialog');
-    dialog.setAttribute('aria-modal', 'true');
     dialog.setAttribute('aria-label', t('Location'));
     dialog.innerHTML = `
       <div class="editor-map-dialog-frame">
@@ -91,6 +93,11 @@
     });
     dialog.addEventListener('click', (event) => {
       if (event.target === dialog) close('backdrop');
+    });
+    dialog.addEventListener('cancel', (event) => {
+      // Keep cleanup, focus restoration and editor-map:closed in one path.
+      event.preventDefault();
+      close('escape');
     });
     document.body.appendChild(dialog);
     return dialog;
@@ -202,6 +209,7 @@
     lockScroll(false);
     dialog?.classList.remove('is-open');
     dialog?.setAttribute('aria-hidden', 'true');
+    if (dialog?.open) dialog.close();
     if (iframe) iframe.src = 'about:blank';
     try { restoreFocus?.focus?.({ preventScroll: true }); } catch { /* поле могли перерисовать */ }
   };
@@ -232,6 +240,7 @@
     const startY = Number(yInput.value || 0) || 0;
 
     ensureDialog();
+    if (!dialog.open) dialog.showModal();
     dialog.classList.add('is-open');
     dialog.removeAttribute('aria-hidden');
     lockScroll(true);
@@ -265,6 +274,7 @@
       startX: 0, startY: 0, hasPoint: false, worldName: '',
       mapOptions: { preview: true, highlightLayer: 'switch', highlightTiles, switchShowID },
       restoreFocus: document.activeElement };
+    if (!dialog.open) dialog.showModal();
     dialog.classList.add('is-open');
     dialog.removeAttribute('aria-hidden');
     lockScroll(true);

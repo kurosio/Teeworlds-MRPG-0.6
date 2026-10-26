@@ -88,6 +88,10 @@ test('PositionPicker is wired into the editor core and every quest position', ()
   assert.match(pointMap, /editor-map:applied/);
   assert.match(pointMap, /editor-map:world/);
   assert.match(pointMap, /editor-map:closed/);
+  // The map must join the browser top layer, otherwise a parent modal dialog
+  // (such as the Quest Board editor) is painted above it regardless of z-index.
+  assert.match(pointMap, /createElement\('dialog'\)/);
+  assert.match(pointMap, /dialog\.showModal\(\)/);
   assert.match(pointMap, /editor-map:validity/);
   assert.match(pointMap, /params\.set\('safe'/);
   assert.doesNotMatch(pointMap, /data-map-pick/);

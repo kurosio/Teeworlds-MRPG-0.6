@@ -1003,6 +1003,7 @@
     const questFields = Object.freeze({
       Name: { type: 'text', label: 'Quest name', validate: { required: true }, ui: { placeholder: 'e.g. First step' } },
       NextQuestID: { type: 'db_select', label: 'Next quest', ui: { dbKey: 'quest', placeholder: '— not set —' } },
+      BoardID: { type: 'db_select', label: 'Quest board', ui: { dbKey: 'quest_board', placeholder: '— not from a board —', searchPlaceholder: 'Search a quest board…' } },
       Money: { type: 'number', label: 'Reward (money)', ui: { min: 0, step: 1, placeholder: '0' } },
       Exp: { type: 'number', label: 'Reward (experience)', ui: { min: 0, step: 1, placeholder: '0' } },
       Flags: {
@@ -1376,6 +1377,7 @@
       if (!quest) return;
       quest.Name = String(data?.Name || '');
       quest.NextQuestID = toNum(data?.NextQuestID);
+      quest.BoardID = toNum(data?.BoardID);
       quest.Money = toNum(data?.Money);
       quest.Exp = toNum(data?.Exp);
       quest.Flags = buildFlags(data?.Flags);
@@ -2541,6 +2543,7 @@
         data: {
           Name: quest.Name || '',
           NextQuestID: toNum(quest.NextQuestID),
+          BoardID: toNum(quest.BoardID),
           Money: toNum(quest.Money),
           Exp: toNum(quest.Exp),
           Flags: parseFlags(quest.Flags)
@@ -2885,19 +2888,23 @@
     const loadData = async () => {
       DOM.tree.innerHTML = '<div class="editor-muted-text text-sm">Loading…</div>';
       try {
-        const [questsRes, stepsRes, botLabels, worldLabels, botSkins, skinsApi] = await Promise.all([
+        const [questsRes, stepsRes, boardLinksRes, botLabels, worldLabels, botSkins, skinsApi] = await Promise.all([
           EditorCore.DBCrud.list('quests', { limit: 5000 }),
           EditorCore.DBCrud.list('quest_bots', { limit: 5000 }),
+          EditorCore.DBCrud.list('quest_board_links', { limit: 5000 }),
           getLabelMap('bots'),
           getLabelMap('worlds'),
           EditorCore.utils.getBotSkinsMap(),
           EditorCore.utils.getSkinsApi()
         ]);
 
+        const boardLinks = new Map((boardLinksRes?.rows || []).map((row) => [toNum(row.QuestID), row]));
         STATE.quests = (questsRes?.rows || []).map((row) => ({
           ID: toNum(row.ID),
           Name: String(row.Name || ''),
           NextQuestID: toNum(row.NextQuestID),
+          BoardID: toNum(boardLinks.get(toNum(row.ID))?.DailyBoardID),
+          BoardLinkID: toNum(boardLinks.get(toNum(row.ID))?.ID),
           Money: toNum(row.Money),
           Exp: toNum(row.Exp),
           Flags: row.Flags || QuestFlags.typeMain
@@ -2957,6 +2964,24 @@
               Exp: quest.Exp,
               Flags: quest.Flags || QuestFlags.typeMain
             });
+
+            // Board membership is stored in the existing junction table. An empty
+            // selection removes the assignment; changing it updates the same row.
+            if (quest.BoardID) {
+              if (quest.BoardLinkID) {
+                await EditorCore.DBCrud.update('quest_board_links', quest.BoardLinkID, {
+                  QuestID: quest.ID, DailyBoardID: quest.BoardID
+                });
+              } else {
+                const link = await EditorCore.DBCrud.create('quest_board_links', {
+                  QuestID: quest.ID, DailyBoardID: quest.BoardID
+                });
+                quest.BoardLinkID = toNum(link?.id);
+              }
+            } else if (quest.BoardLinkID) {
+              await EditorCore.DBCrud.remove('quest_board_links', quest.BoardLinkID);
+              quest.BoardLinkID = null;
+            }
           }
 
           for (const id of newIds) {

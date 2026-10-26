@@ -33,6 +33,7 @@ window.STUDIO_MANIFEST = [
       { key: 'bots_mobs', title: 'Mobs', icon: 'fa-skull', src: 'mobs-editor.html', hint: 'Spawns, levels and drop', keywords: 'mobs spawns levels drop monsters' },
       { key: 'bots_npc', title: 'NPC', icon: 'fa-user-ninja', src: 'bots-npc-editor.html', hint: 'NPCs and their dialogues', keywords: 'npc dialogues dialogs characters talk' },
       { key: 'quests', title: 'Quests', icon: 'fa-scroll', src: 'quests-editor.html', hint: 'Quests, steps and objectives', keywords: 'quests tasks steps objectives missions' },
+      { key: 'quest_boards', title: 'Quest boards', icon: 'fa-clipboard-list', src: 'quest-boards-editor.html', hint: 'Assign quests to notice boards', keywords: 'quest boards assignments board tasks missions' },
       { key: 'dungeons', title: 'Dungeons', icon: 'fa-dungeon', src: 'dungeons-editor.html', hint: 'Entrance, scenario and timer', keywords: 'dungeons instances entrance timer raid' },
       { key: 'worlds', title: 'Worlds', icon: 'fa-globe', src: 'worlds-editor.html', hint: 'Worlds and their flags', keywords: 'worlds maps zones locations flags' },
       { key: 'nodes_collecting', title: 'Collecting nodes', icon: 'fa-seedling', src: 'nodes-collecting-editor.html', hint: 'Ore, plants and fish by world and switch', keywords: 'nodes collecting ore plants fish gathering resources' },

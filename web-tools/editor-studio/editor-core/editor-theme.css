@@ -2185,6 +2185,13 @@
 .editor-map-dialog{
   position:fixed;
   inset:0;
+  width:auto;
+  height:auto;
+  max-width:none;
+  max-height:none;
+  margin:0;
+  border:0;
+  color:inherit;
   z-index:620;
   display:none;
   align-items:center;
@@ -2195,6 +2202,7 @@
 }
 
 .editor-map-dialog.is-open{display:flex;}
+.editor-map-dialog::backdrop{background:transparent;}
 
 .editor-map-dialog-frame{
   position:relative;

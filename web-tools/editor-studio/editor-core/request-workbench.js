@@ -11,6 +11,7 @@
     .filter((item) => item?.key && item?.src)
     .map((item) => [item.key, { key: item.key, src: item.src }]));
   if (RESOURCE_PAGES.quests) RESOURCE_PAGES.quest_bots = { ...RESOURCE_PAGES.quests };
+  if (RESOURCE_PAGES.quest_boards) RESOURCE_PAGES.quest_board_links = { ...RESOURCE_PAGES.quest_boards };
 
   const linkParams = ({ request = '', resource = '', record = '', field = '', edit = '' } = {}) => {
     const params = { request, resource, record, field, edit };

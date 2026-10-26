@@ -303,6 +303,8 @@ function get_resource_whitelist(): array
         'items'      => ['table' => 'tw_items_list', 'pk' => 'ID', 'columns' => ['Comment','Name','Description','Group','Type','Flags','ScenarioMode','ScenarioData','InitialPrice','RequiresProducts','AT1','AT2','ATValue1','ATValue2','Data'], 'json' => ['Data'], 'editor' => 'items-editor.html'],
         'dungeons'   => ['table' => 'tw_dungeons',   'pk' => 'ID', 'columns' => ['Level','DoorX','DoorY','Scenario','WorldID','TimeLimit'], 'editor' => 'dungeons-editor.html'],
         'quests'     => ['table' => 'tw_quests_list','pk' => 'ID', 'columns' => ['NextQuestID','Name','Money','Exp','Flags'], 'editor' => 'quests-editor.html'],
+        'quest_boards' => ['table' => 'tw_quest_boards', 'pk' => 'ID', 'columns' => ['Name','PosX','PosY','WorldID'], 'editor' => 'quest-boards-editor.html'],
+        'quest_board_links' => ['table' => 'tw_quests_board_list', 'pk' => 'ID', 'columns' => ['QuestID','DailyBoardID'], 'editor' => 'quest-boards-editor.html'],
         'quest_bots' => ['table' => 'tw_bots_quest', 'pk' => 'ID', 'columns' => ['BotID','QuestID','Step','WorldID','PosX','PosY','AutoFinish','DialogData','ScenarioData','TasksData'], 'json' => ['DialogData','TasksData'], 'editor' => 'quests-editor.html'],
     ];
 }

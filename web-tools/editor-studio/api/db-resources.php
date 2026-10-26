@@ -191,6 +191,28 @@ function editor_resources(): array
             'refs' => ['NextQuestID' => 'tw_quests_list'],
             'guest' => true,
         ],
+        'quest_board_links' => [
+            'title' => 'Доски квестов',
+            'table' => 'tw_quests_board_list',
+            'pk' => 'ID',
+            'columns' => ['QuestID', 'DailyBoardID'],
+            'search' => ['ID', 'QuestID', 'DailyBoardID'],
+            'order' => 'ID ASC',
+            'label' => null,
+            'refs' => ['QuestID' => 'tw_quests_list', 'DailyBoardID' => 'tw_quest_boards'],
+            'guest' => true,
+        ],
+        'quest_boards' => [
+            'title' => 'Доски квестов',
+            'table' => 'tw_quest_boards',
+            'pk' => 'ID',
+            'columns' => ['Name', 'PosX', 'PosY', 'WorldID'],
+            'search' => ['ID', 'Name', 'WorldID'],
+            'order' => 'ID ASC',
+            'label' => 'Name',
+            'refs' => ['WorldID' => 'tw_worlds'],
+            'guest' => true,
+        ],
         'quest_bots' => [
             'title' => 'Шаги квестов',
             'table' => 'tw_bots_quest',
@@ -294,7 +316,11 @@ function editor_reverse_refs(string $table): array
             ['table' => 'tw_accounts_quests', 'column' => 'QuestID',     'action' => 'cascade'],
             ['table' => 'tw_bots_npc',        'column' => 'GiveQuestID', 'action' => 'cascade'],
             ['table' => 'tw_bots_quest',      'column' => 'QuestID',     'action' => 'cascade'],
+            ['table' => 'tw_quests_board_list', 'column' => 'QuestID',  'action' => 'cascade'],
             ['table' => 'tw_quests_list',     'column' => 'NextQuestID', 'action' => 'none'],
+        ],
+        'tw_quest_boards' => [
+            ['table' => 'tw_quests_board_list', 'column' => 'DailyBoardID', 'action' => 'cascade'],
         ],
         'tw_aethers' => [
             ['table' => 'tw_accounts_aethers', 'column' => 'AetherID', 'action' => 'cascade'],
@@ -591,11 +617,34 @@ function validate_collecting_node(array $data): void
     }
 }
 
+function validate_quest_board_link(mysqli $mysqli, array $data, ?int $excludeId = null): void
+{
+    $questId = filter_var($data['QuestID'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+    $boardId = filter_var($data['DailyBoardID'] ?? null, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+    if ($questId === false || $boardId === false) throw new RuntimeException('Укажите существующий квест и доску квестов');
+
+    foreach ([['tw_quests_list', $questId, 'Квест не найден'], ['tw_quest_boards', $boardId, 'Доска квестов не найдена']] as [$table, $id, $error]) {
+        $stmt = $mysqli->prepare("SELECT 1 FROM `$table` WHERE `ID` = ? LIMIT 1");
+        if ($stmt === false) throw new RuntimeException('Не удалось проверить ссылку');
+        $stmt->bind_param('i', $id); $stmt->execute(); $stmt->store_result();
+        $exists = $stmt->num_rows > 0; $stmt->close();
+        if (!$exists) throw new RuntimeException($error);
+    }
+
+    $sql = 'SELECT 1 FROM `tw_quests_board_list` WHERE `QuestID` = ?' . ($excludeId === null ? '' : ' AND `ID` <> ?') . ' LIMIT 1';
+    $stmt = $mysqli->prepare($sql);
+    if ($stmt === false) throw new RuntimeException('Не удалось проверить назначение квеста');
+    if ($excludeId === null) $stmt->bind_param('i', $questId); else $stmt->bind_param('ii', $questId, $excludeId);
+    $stmt->execute(); $stmt->store_result(); $duplicate = $stmt->num_rows > 0; $stmt->close();
+    if ($duplicate) throw new RuntimeException('Квест уже назначен другой доске. Переместите существующее назначение вместо создания второго.');
+}
+
 /** $data must be sanitized + JSON-encoded already. Returns the new id. */
 function crud_insert(mysqli $mysqli, array $R, array $data): int
 {
     if (!$data) throw new RuntimeException('Пустые данные: нечего сохранять');
     if ($R['table'] === 'tw_nodes_collecting') validate_collecting_node($data);
+    if ($R['table'] === 'tw_quests_board_list') validate_quest_board_link($mysqli, $data);
     $keys = array_keys($data);
     $placeholders = implode(',', array_fill(0, count($keys), '?'));
     $colSql = implode(',', array_map(fn($c) => '`' . $c . '`', $keys));
@@ -620,6 +669,11 @@ function crud_update(mysqli $mysqli, array $R, int $id, array $data): int
         $current = crud_fetch_row($mysqli, $R, $id);
         if (!$current) throw new RuntimeException('Узел ресурсов не найден');
         validate_collecting_node(array_replace($current, $data));
+    }
+    if ($R['table'] === 'tw_quests_board_list') {
+        $current = crud_fetch_row($mysqli, $R, $id);
+        if (!$current) throw new RuntimeException('Назначение квеста не найдено');
+        validate_quest_board_link($mysqli, array_replace($current, $data), $id);
     }
     $keys = array_keys($data);
     $setSql = implode(', ', array_map(fn($c) => '`' . $c . '` = ?', $keys));

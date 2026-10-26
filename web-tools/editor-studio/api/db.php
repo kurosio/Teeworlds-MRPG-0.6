@@ -25,6 +25,7 @@ $ROLE = bootstrap_editor_api_roles([EDITOR_ROLE_ADMIN, EDITOR_ROLE_GUEST]);
 
 const SOURCES = [
     'quests'     => ['table' => 'tw_quests_list', 'id' => 'ID', 'label' => 'Name'],
+    'quest_boards' => ['table' => 'tw_quest_boards', 'id' => 'ID', 'label' => 'Name'],
     'items'      => ['table' => 'tw_items_list',  'id' => 'ID', 'label' => 'Name', 'filters' => ['Type', 'Group']],
     'worlds'     => ['table' => 'tw_worlds',      'id' => 'ID', 'label' => 'Name'],
     'skills'     => ['table' => 'tw_skills_list', 'id' => 'ID', 'label' => 'Name'],
@@ -37,6 +38,7 @@ const SOURCES = [
 // editors the account cannot open).
 const SOURCE_TABS = [
     'quests'     => ['quests'],
+    'quest_boards' => ['quests'],
     'items'      => ['items', 'crafts', 'warehouses', 'quests'],
     'worlds'     => ['worlds', 'crafts', 'quests', 'dungeons', 'aethers'],
     'skills'     => ['items', 'bots_mobs', 'quests'],

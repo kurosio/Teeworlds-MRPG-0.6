@@ -10,6 +10,7 @@
 
   const DB_MAP = {
     quest: { source: 'quests', labelMode: 'id_name' },
+    quest_board: { source: 'quest_boards', labelMode: 'id_name' },
     item:  { source: 'items',  labelMode: 'id_name' },
     mob:   { source: 'bots',   labelMode: 'id_name' },
     world: { source: 'worlds', labelMode: 'id_name' },
