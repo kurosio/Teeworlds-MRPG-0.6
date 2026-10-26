@@ -30,6 +30,9 @@
     .guest-tab-option.is-on { border-color: color-mix(in srgb, var(--editor-accent) 45%, transparent); background: color-mix(in srgb, var(--editor-accent) 9%, transparent); }
     .guest-status-dot { width: 8px; height: 8px; border-radius: 999px; background: var(--editor-success); display: inline-block; }
     .guest-status-dot.is-off { background: var(--editor-text-muted); }
+    .guest-status-dot.is-expired { background: var(--editor-danger); }
+    .guest-limits-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+    @media (max-width: 640px) { .guest-limits-grid { grid-template-columns: minmax(0, 1fr); } }
   </style>
 </head>
 
@@ -94,17 +97,44 @@
         </label>
       </div>
 
-      <label class="block mt-4">
+      <div class="mt-4">
         <div class="text-sm font-medium mb-1">Password <span id="g-pass-required" class="editor-tone-danger">*</span></div>
-        <input id="g-password" type="password" class="w-full editor-input form-input" autocomplete="new-password" placeholder="At least 6 characters" />
+        <div class="flex gap-2">
+          <input id="g-password" type="password" class="w-full editor-input form-input" autocomplete="new-password" placeholder="At least 10 characters" />
+          <button type="button" class="editor-btn editor-btn-secondary" id="g-gen-password" title="Generate a strong random password"><i class="fa-solid fa-dice"></i><span>Generate</span></button>
+          <button type="button" class="editor-icon-btn" id="g-show-password" title="Show / hide the password"><i class="fa-solid fa-eye"></i></button>
+        </div>
         <div class="text-xs editor-muted-text mt-1" id="g-password-hint">Changing the password ends the account's active sessions.</div>
-      </label>
+      </div>
 
       <label class="editor-toggle mt-4" id="g-enabled-toggle" data-checked="1">
         <input id="g-enabled" type="checkbox" checked />
         <span class="editor-toggle-track"><span class="editor-toggle-knob"></span></span>
         <span class="text-sm font-medium">Account active (can sign in)</span>
       </label>
+
+      <div class="mt-4">
+        <div class="text-sm font-medium mb-2">Individual limits <span class="editor-muted-text font-normal">(empty = inherit the general rules shown as placeholders)</span></div>
+        <div class="guest-limits-grid">
+          <label class="block">
+            <div class="text-xs editor-muted-text mb-1">Requests under review (1–50)</div>
+            <input id="g-limit-pending" type="number" min="1" max="50" class="w-full editor-input form-input" />
+          </label>
+          <label class="block">
+            <div class="text-xs editor-muted-text mb-1">Cooldown, seconds (0–3600)</div>
+            <input id="g-limit-cooldown" type="number" min="0" max="3600" class="w-full editor-input form-input" />
+          </label>
+          <label class="block">
+            <div class="text-xs editor-muted-text mb-1">Operations per request (1–500)</div>
+            <input id="g-limit-ops" type="number" min="1" max="500" class="w-full editor-input form-input" />
+          </label>
+        </div>
+        <label class="block mt-3">
+          <div class="text-sm font-medium mb-1">Account expires <span class="editor-muted-text font-normal">(optional)</span></div>
+          <input id="g-expires" type="date" class="editor-input form-input" />
+          <div class="text-xs editor-muted-text mt-1">After this date (end of day, UTC) the account can no longer sign in. Empty = no expiry.</div>
+        </label>
+      </div>
 
       <div class="mt-4">
         <div class="flex items-center justify-between gap-3 mb-2">
@@ -140,7 +170,7 @@
     const esc = Page.esc;
     const toast = Page.toast;
 
-    const state = { users: [], pages: [], settings: null, byGuest: {}, mode: 'create', editingId: '', legacyPassword: false };
+    const state = { users: [], pages: [], settings: null, byGuest: {}, mode: 'create', editingId: '', legacyPassword: false, policy: { min: 10, max_bytes: 72 } };
 
     /** Запрос к API гостевых аккаунтов: `{ ok, status, error, ...поля ответа }`. */
     const api = (action, { method = 'GET', body = null } = {}) => (
@@ -161,7 +191,7 @@
         ? `<span class="editor-badge editor-tone-success"><i class="fa-solid fa-circle-check"></i> Guest sign-in enabled</span>`
         : `<span class="editor-badge editor-tone-warning"><i class="fa-solid fa-triangle-exclamation"></i> Guest sign-in disabled</span>`;
       const note = enabled
-        ? `Active accounts: <b>${accounts}</b>  of  ${total}. Limits: up to  ${esc(s.guest_max_pending)} ${plural(s.guest_max_pending, 'pending request', 'pending requests')} , cooldown ${esc(s.guest_submit_cooldown)}  sec cooldown., – ${esc(s.guest_max_operations)} operations per request.`
+        ? `Active accounts: <b>${accounts}</b> of ${total}. General limits: up to ${esc(s.guest_max_pending)} ${plural(s.guest_max_pending, 'pending request', 'pending requests')}, cooldown ${esc(s.guest_submit_cooldown)} sec, ${esc(s.guest_max_operations)} operations per request. Individual accounts can override them.`
         : 'Guests cannot sign in. Turn on the master switch in “Guest requests” → “Access rules”.';
       $('guest-global').innerHTML = `
         <div class="editor-panel-card flex items-start justify-between gap-4 flex-wrap">
@@ -192,21 +222,27 @@
       grid.classList.remove('hidden');
       grid.innerHTML = state.users.map((u) => {
         const pending = Number(state.byGuest?.[u.id] || 0);
+        const limitParts = [];
+        if (u.limits?.max_pending != null) limitParts.push(`${u.limits.max_pending} pending`);
+        if (u.limits?.cooldown != null) limitParts.push(`${u.limits.cooldown} sec cooldown`);
+        if (u.limits?.max_operations != null) limitParts.push(`${u.limits.max_operations} ops`);
+        const statusText = u.expired ? 'expired' : (u.enabled ? 'active' : 'disabled');
+        const statusColor = u.expired ? 'var(--editor-danger)' : (u.enabled ? 'var(--editor-success)' : 'var(--editor-text-muted)');
         const tabs = state.pages.map(p => {
           const on = (u.pages || []).includes(p.key);
           return `<span class="guest-tab-chip ${on ? 'is-on' : ''}" title="${esc(p.title)}"><i class="fa-solid ${on ? 'fa-check' : 'fa-minus'}"></i>${esc(p.title)}</span>`;
         }).join('');
         const initial = esc((u.name || u.login || '?').trim().charAt(0).toUpperCase());
         return `
-          <article class="guest-card ${u.enabled ? '' : 'is-disabled'}" data-id="${esc(u.id)}">
+          <article class="guest-card ${u.enabled && !u.expired ? '' : 'is-disabled'}" data-id="${esc(u.id)}">
             <div class="flex items-start gap-3">
               <div class="guest-avatar">${initial}</div>
               <div class="min-w-0 flex-1">
                 <div class="font-semibold truncate">${esc(u.name || u.login)}</div>
                 <div class="text-xs editor-muted-text truncate"><i class="fa-solid fa-at"></i> ${esc(u.login)}</div>
               </div>
-              <div class="text-xs" style="color:${u.enabled ? 'var(--editor-success)' : 'var(--editor-text-muted)'}">
-                <span class="guest-status-dot ${u.enabled ? '' : 'is-off'}"></span> ${u.enabled ? 'active' : 'disabled'}
+              <div class="text-xs" style="color:${statusColor}">
+                <span class="guest-status-dot ${u.expired ? 'is-expired' : (u.enabled ? '' : 'is-off')}"></span> ${statusText}
               </div>
             </div>
             <div class="guest-tabs">${tabs}</div>
@@ -214,6 +250,8 @@
               <dt>Tabs</dt><dd>${(u.pages || []).length}  of  ${state.pages.length}</dd>
               <dt>Under review</dt><dd>${pending ? `<b class="editor-tone-warning">${pending} ${plural(pending, 'request', 'requests')}</b>` : '—'}</dd>
               <dt>Last sign-in</dt><dd>${esc(fmtDate(u.lastLoginAt))}</dd>
+              ${u.expiresAt ? `<dt>Expires</dt><dd>${u.expired ? '<b class="editor-tone-danger">expired</b> · ' : ''}${esc(fmtDate(u.expiresAt))}</dd>` : ''}
+              ${limitParts.length ? `<dt>Limits</dt><dd title="Individual limits override the general rules">custom: ${esc(limitParts.join(' · '))}</dd>` : ''}
             </dl>
             <div class="guest-card-actions">
               <button type="button" class="editor-btn editor-btn-primary" data-act="edit"><i class="fa-solid fa-pen"></i><span>Edit</span></button>
@@ -256,6 +294,7 @@
         return;
       }
       state.legacyPassword = !!list.legacy_password;
+      if (list.password_policy) state.policy = list.password_policy;
       state.users = Array.isArray(list.users) ? list.users : [];
       state.pages = Array.isArray(list.pages) ? list.pages : [];
       state.settings = list.settings || null;
@@ -302,10 +341,21 @@
       $('g-name').value = user?.name || '';
       $('g-login').value = user?.login || '';
       $('g-password').value = '';
-      $('g-password').placeholder = user ? 'Leave empty to keep it unchanged' : 'At least 6 characters';
+      $('g-password').type = 'password';
+      $('g-password').placeholder = user ? 'Leave empty to keep it unchanged' : `At least ${state.policy.min} characters`;
+      $('g-password-hint').textContent = `At least ${state.policy.min} characters (max ${state.policy.max_bytes} bytes). Changing the password ends the account's active sessions.`;
       $('g-pass-required').style.display = user ? 'none' : '';
       $('g-enabled').checked = user ? !!user.enabled : true;
       $('g-enabled-toggle').dataset.checked = $('g-enabled').checked ? '1' : '0';
+      const limits = user?.limits || {};
+      const settings = state.settings || {};
+      $('g-limit-pending').value = limits.max_pending ?? '';
+      $('g-limit-cooldown').value = limits.cooldown ?? '';
+      $('g-limit-ops').value = limits.max_operations ?? '';
+      $('g-limit-pending').placeholder = settings.guest_max_pending ?? '';
+      $('g-limit-cooldown').placeholder = settings.guest_submit_cooldown ?? '';
+      $('g-limit-ops').placeholder = settings.guest_max_operations ?? '';
+      $('g-expires').value = user?.expiresAt ? String(user.expiresAt).slice(0, 10) : '';
       renderTabOptions(user?.pages || []);
       setStatus('');
       $('g-save').disabled = false;
@@ -331,15 +381,38 @@
         $('g-login').focus();
         return;
       }
-      if (state.mode === 'create' && password.length < 6) {
-        setStatus('<span class="editor-tone-danger">Set a password (at least 6 characters).</span>');
+      const minPw = state.policy?.min || 10;
+      const maxPwBytes = state.policy?.max_bytes || 72;
+      if (state.mode === 'create' && password.length < minPw) {
+        setStatus(`<span class="editor-tone-danger">Set a password (at least ${minPw} characters).</span>`);
         $('g-password').focus();
         return;
       }
-      if (password && password.length < 6) {
-        setStatus('<span class="editor-tone-danger">Password: at least 6 characters.</span>');
+      if (password && password.length < minPw) {
+        setStatus(`<span class="editor-tone-danger">Password: at least ${minPw} characters.</span>`);
+        $('g-password').focus();
         return;
       }
+      if (password && new TextEncoder().encode(password).length > maxPwBytes) {
+        setStatus(`<span class="editor-tone-danger">Password is too long (max ${maxPwBytes} bytes).</span>`);
+        $('g-password').focus();
+        return;
+      }
+      // Индивидуальные лимиты: пустое поле — наследовать общие правила.
+      const numOrNull = (id) => { const v = $(id).value.trim(); return v === '' ? null : Number(v); };
+      const limits = {};
+      const maxPending = numOrNull('g-limit-pending');
+      const cooldown = numOrNull('g-limit-cooldown');
+      const maxOps = numOrNull('g-limit-ops');
+      if ([maxPending, cooldown, maxOps].some(v => v !== null && !Number.isFinite(v))) {
+        setStatus('<span class="editor-tone-danger">Limits must be numbers (or empty to inherit).</span>');
+        return;
+      }
+      if (maxPending !== null) limits.max_pending = maxPending;
+      if (cooldown !== null) limits.cooldown = cooldown;
+      if (maxOps !== null) limits.max_operations = maxOps;
+      const limitsBody = Object.keys(limits).length ? limits : null;
+      const expiresAt = $('g-expires').value || '';
       if (!pages.length && !await EditorCore.Page.confirm('No tab is selected — the guest will have nothing to open. Save anyway?')) {
         return;
       }
@@ -350,9 +423,9 @@
       let id = state.editingId;
       let res;
       if (state.mode === 'create') {
-        res = await api('create', { method: 'POST', body: { login, name, password, pages, enabled } });
+        res = await api('create', { method: 'POST', body: { login, name, password, pages, enabled, limits: limitsBody, expires_at: expiresAt } });
       } else {
-        res = await api('update', { method: 'POST', body: { id, login, name, pages, enabled } });
+        res = await api('update', { method: 'POST', body: { id, login, name, pages, enabled, limits: limitsBody, expires_at: expiresAt } });
         if (res.ok && password) {
           const pw = await api('password', { method: 'POST', body: { id, password } });
           if (!pw.ok) res = pw;
@@ -433,6 +506,24 @@
         return load();
       }
     };
+
+    // ── Password helpers ──────────────────────────────────────────────────
+    $('g-gen-password')?.addEventListener('click', () => {
+      // Буквы без похожих символов (0/O, 1/l/I): пароль диктуют и переписывают.
+      const alphabet = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789';
+      const bytes = new Uint8Array(16);
+      crypto.getRandomValues(bytes);
+      $('g-password').value = [...bytes].map(b => alphabet[b % alphabet.length]).join('');
+      $('g-password').type = 'text';
+      setStatus('<span class="editor-muted-text">The generated password is shown in the field — copy it now; after saving it cannot be viewed again.</span>');
+      $('g-password').focus();
+      $('g-password').select();
+    });
+    $('g-show-password')?.addEventListener('click', () => {
+      const input = $('g-password');
+      input.type = input.type === 'password' ? 'text' : 'password';
+      input.focus();
+    });
 
     // ── Wiring ────────────────────────────────────────────────────────────
     $('btn-refresh').addEventListener('click', load);

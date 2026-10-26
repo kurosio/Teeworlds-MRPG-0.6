@@ -142,6 +142,14 @@
     .cr-composer textarea { min-height: 42px; max-height: 140px; resize: vertical; }
     .cr-unread-pill { min-width: 20px; padding: 0 6px; border-radius: 999px; font-size: 11px; font-weight: 700;
       background: var(--editor-warning); color: #1b1206; display: inline-flex; justify-content: center; }
+
+    /* Массовый выбор в списке администратора */
+    .cr-bulk-row { display: flex; gap: 8px; align-items: flex-start; }
+    .cr-bulk-row + .cr-bulk-row { margin-top: 8px; }
+    .cr-bulk-row .cr-list-item { flex: 1; min-width: 0; }
+    .cr-bulk-row .cr-list-item + .cr-list-item { margin-top: 0; }
+    .cr-bulk-check { margin-top: 14px; width: 16px; height: 16px; flex: 0 0 auto; cursor: pointer; accent-color: var(--editor-primary); }
+    .cr-audit-detail { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11px; white-space: pre-wrap; word-break: break-all; color: var(--editor-text-muted); }
   </style>
 </head>
 
@@ -197,6 +205,9 @@
               <div class="flex gap-2">
                 <button class="editor-btn editor-btn-secondary" id="g-btn-analyze" type="button"><i class="fa-solid fa-magnifying-glass-chart"></i><span>Check</span></button>
                 <button class="editor-btn editor-btn-secondary" id="g-btn-clear" type="button"><i class="fa-solid fa-trash-can"></i><span>Clear</span></button>
+                <button class="editor-btn editor-btn-secondary" id="g-btn-export" type="button" title="Download unsent changes as a file (backup / move to another browser)"><i class="fa-solid fa-file-export"></i><span>Export draft</span></button>
+                <button class="editor-btn editor-btn-secondary" id="g-btn-import" type="button" title="Load a draft exported earlier"><i class="fa-solid fa-file-import"></i><span>Import</span></button>
+                <input type="file" id="g-import-file" accept="application/json,.json" class="cr-hidden" />
               </div>
             </div>
             <div id="g-summary" class="cr-summary mt-3"></div>
@@ -239,6 +250,7 @@
         <div class="cr-card cr-card-pad">
           <div class="font-semibold mb-3">Submitted requests</div>
           <div id="g-mine-list"></div>
+          <button id="g-mine-more" class="editor-btn editor-btn-secondary w-full mt-3 cr-hidden" type="button"><i class="fa-solid fa-angles-down"></i><span>Load more</span></button>
         </div>
         <div id="g-mine-detail" class="cr-card cr-card-pad">
           <div class="cr-empty"><i class="fa-regular fa-hand-pointer"></i>Select a request on the left</div>
@@ -253,7 +265,12 @@
         <div>Guest sign-in is currently <b>disabled</b> or no active guest account exists — guests cannot sign in or send requests. Enable access in “Access rules” and create accounts in “Guest users”.</div>
       </div>
 
-      <div class="cr-admin-layout">
+      <div class="cr-tabs mb-4" role="tablist" id="a-tabs">
+        <button type="button" class="cr-tab active" data-admin-tab="requests"><i class="fa-solid fa-inbox"></i>Requests</button>
+        <button type="button" class="cr-tab" data-admin-tab="audit"><i class="fa-solid fa-scroll"></i>Audit log</button>
+      </div>
+
+      <div class="cr-admin-layout" id="a-tab-requests">
         <aside class="cr-card cr-card-pad">
           <div class="cr-tabs w-full mb-3" id="a-filters">
             <button type="button" class="cr-tab active" data-status="pending">Pending <span class="cr-count" data-count="pending">0</span></button>
@@ -266,12 +283,41 @@
             <i class="fa-solid fa-magnifying-glass"></i>
             <input id="a-search" type="search" class="w-full editor-input form-input" placeholder="Nickname, text, section, ID…" />
           </div>
+          <select id="a-resource" class="w-full editor-input form-input mt-2" title="Filter by editor section">
+            <option value="">All sections</option>
+          </select>
+          <div id="a-bulk-bar" class="cr-hidden mt-2">
+            <div class="flex items-center gap-2 flex-wrap text-sm">
+              <span id="a-bulk-count" class="font-semibold"></span>
+              <button type="button" class="editor-btn editor-btn-secondary editor-btn--sm" id="a-bulk-reject"><i class="fa-solid fa-xmark"></i><span>Reject</span></button>
+              <button type="button" class="editor-btn editor-btn-secondary editor-btn--sm" id="a-bulk-delete"><i class="fa-solid fa-trash"></i><span>Delete</span></button>
+              <button type="button" class="editor-btn editor-btn-secondary editor-btn--sm" id="a-bulk-clear"><span>Clear</span></button>
+            </div>
+          </div>
           <div id="a-list" class="mt-3 editor-list-scroll editor-list-scroll--tall"></div>
+          <button id="a-more" class="editor-btn editor-btn-secondary w-full mt-2 cr-hidden" type="button"><i class="fa-solid fa-angles-down"></i><span>Load more</span></button>
         </aside>
 
         <section id="a-detail" class="cr-card cr-card-pad">
           <div class="cr-empty"><i class="fa-regular fa-hand-pointer"></i>Select a request on the left</div>
         </section>
+      </div>
+
+      <div id="a-tab-audit" class="cr-hidden">
+        <div class="cr-card cr-card-pad">
+          <div class="flex items-center justify-between gap-3 flex-wrap">
+            <div>
+              <div class="font-semibold flex items-center gap-2"><i class="fa-solid fa-scroll text-accent"></i>Audit log</div>
+              <div class="text-sm cr-muted mt-1">Sign-ins, guest account changes and every request decision. <span id="a-audit-total"></span></div>
+            </div>
+            <div class="editor-search" style="min-width:min(320px,100%)">
+              <i class="fa-solid fa-magnifying-glass"></i>
+              <input id="a-audit-q" type="search" class="w-full editor-input form-input" placeholder="Actor, action, request ID…" />
+            </div>
+          </div>
+          <div id="a-audit-list" class="mt-3"></div>
+          <button id="a-audit-more" class="editor-btn editor-btn-secondary w-full mt-3 cr-hidden" type="button"><i class="fa-solid fa-angles-down"></i><span>Load more</span></button>
+        </div>
       </div>
     </div>
     </div>
@@ -342,7 +388,15 @@
       <h3 id="review-title" class="text-xl font-bold mb-2"></h3>
       <p id="review-text" class="text-sm cr-muted mb-4"></p>
       <div id="review-conflicts" class="cr-notes mb-3"></div>
-      <div class="cr-field-label">Comment for the guest <span class="cr-muted font-normal">(optional)</span></div>
+      <div class="cr-field-label">Comment for the guest <span class="cr-muted font-normal">(optional; required for a forced apply)</span></div>
+      <select id="review-preset" class="w-full editor-input form-input mb-2">
+        <option value="">Quick comment templates…</option>
+        <option value="Thanks! The changes look good and are applied.">Applied — thank the guest</option>
+        <option value="Please describe in more detail why these changes are needed.">Ask for more detail</option>
+        <option value="The values contradict the balance rules — please review the numbers and resubmit.">Balance issues</option>
+        <option value="These records were already fixed in another request.">Already fixed elsewhere</option>
+        <option value="Please split this into smaller requests, one topic per request.">Split into smaller requests</option>
+      </select>
       <textarea id="review-comment" rows="4" class="w-full editor-input form-textarea" maxlength="2000"></textarea>
       <div class="flex justify-end gap-2 mt-5">
         <button type="button" class="editor-btn editor-btn-secondary" data-close-review>Cancel</button>
@@ -456,6 +510,17 @@
       input?.addEventListener('keydown', (e) => {
         if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); send(); }
       });
+    };
+
+    /**
+     * Отметка «прочитано»: серверные GET больше не меняют состояние, поэтому
+     * клиент явно подтверждает просмотр диалога. Возвращает true, если что-то
+     * действительно было помечено (списки тогда стоит перечитать).
+     */
+    const markRead = async (id, messages) => {
+      if (!id || !(messages || []).some((m) => !m.read && !m.mine)) return false;
+      const res = await api('mark_read', { method: 'POST', body: { id } });
+      return !!res.ok;
     };
 
     /** Счётчик непрочитанного в списке запросов. */
@@ -611,9 +676,32 @@
     // ═══════════════════════════════════════════════════════════════════
     // GUEST
     // ═══════════════════════════════════════════════════════════════════
-    const G = { config: null, analysis: null, analysisError: '', previewSeq: 0, previewKey: '', mine: [], selected: null, detail: null, tab: 'draft' };
+    const G = { config: null, analysis: null, analysisError: '', previewSeq: 0, previewKey: '', mine: [], mineTotal: 0, selected: null, detail: null, tab: 'draft', cooldownUntil: 0, cooldownTimer: null };
 
     const draftKeyOf = (o) => `${o.type}:${o.resource}:${o.type === 'create' ? o.tempId : o.id}`;
+
+    /** Видимый обратный отсчёт кулдауна отправки (ответ 429 с Retry-After). */
+    const startCooldown = (seconds) => {
+      const sec = Math.max(1, Math.ceil(Number(seconds) || 0));
+      G.cooldownUntil = Date.now() + sec * 1000;
+      clearInterval(G.cooldownTimer);
+      const tick = () => {
+        const left = Math.ceil((G.cooldownUntil - Date.now()) / 1000);
+        if (left <= 0) {
+          clearInterval(G.cooldownTimer);
+          G.cooldownTimer = null;
+          G.cooldownUntil = 0;
+          $('g-submit-status').innerHTML = '';
+          validateGuestForm();
+          return;
+        }
+        $('g-submit-status').innerHTML = `<div class="cr-note cr-note--warning"><i class="fa-solid fa-hourglass-half"></i><div>Too many submissions. Please wait <b>${left}</b> ${plural(left, 'second', 'seconds')} and send again — your draft is untouched.</div></div>`;
+        const btn = $('g-btn-submit');
+        if (btn) btn.disabled = true;
+      };
+      tick();
+      G.cooldownTimer = setInterval(tick, 500);
+    };
 
     const validateGuestForm = () => {
       const lim = G.config?.limits || { nickname: { min: 2, max: 32 }, message: { min: 10, max: 2000 } };
@@ -628,10 +716,11 @@
       const count = Guest.Draft.pendingCount();
       const submitted = Guest.Draft.submittedCount();
       const hasErrors = (G.analysis?.errors || []).length > 0;
-      $('g-btn-submit').disabled = !(nickOk && msgOk && count > 0 && !hasErrors);
+      const cooling = G.cooldownUntil > Date.now();
+      $('g-btn-submit').disabled = !(nickOk && msgOk && count > 0 && !hasErrors) || cooling;
       $('g-btn-submit').title = !count
         ? (submitted ? 'No new changes: everything is submitted and awaiting review' : 'The draft is empty')
-        : hasErrors ? 'Fix the errors in the draft' : (!nickOk || !msgOk) ? 'Fill in the nickname and the description' : '';
+        : hasErrors ? 'Fix the errors in the draft' : cooling ? 'Please wait for the cooldown to finish' : (!nickOk || !msgOk) ? 'Fill in the nickname and the description' : '';
       const label = $('g-btn-submit').querySelector('span');
       if (label) label.textContent = count ? `Send the request (${count})` : 'Send the request';
       return nickOk && msgOk;
@@ -733,26 +822,36 @@
       const res = await api('preview', { method: 'POST', body: { operations: ops } });
       if (seq !== G.previewSeq) return;
       if (res.ok) { G.analysis = res.analysis; G.analysisError = ''; }
-      else { G.analysis = res.analysis || null; G.analysisError = res.error || 'Could not check the changes'; }
+      else {
+        G.analysis = res.analysis || null;
+        G.analysisError = (res.error || 'Could not check the changes')
+          + (res.retryAfter ? ` — retry in ${res.retryAfter} sec` : '');
+      }
       renderGuestDraft();
     };
     const schedulePreview = () => { clearTimeout(previewTimer); previewTimer = setTimeout(runPreview, 500); };
 
-    const loadMine = async () => {
-      const res = await api('mine');
-      G.mine = res.ok ? (res.rows || []) : [];
+    const loadMine = async (append = false) => {
+      const limit = append ? 50 : Math.max(50, G.mine.length);
+      const offset = append ? G.mine.length : 0;
+      const res = await api('mine', { query: { limit, offset } });
+      const rows = res.ok ? (res.rows || []) : [];
+      G.mine = append ? G.mine.concat(rows.filter(r => !G.mine.some(x => x.id === r.id))) : rows;
+      G.mineTotal = res.ok ? (res.total ?? G.mine.length) : G.mine.length;
       // Счётчик вкладки — это запросы, которые ещё ждут решения; раньше при
       // отсутствии ожидающих он показывал общее число запросов и «залипал».
+      // Ожидающие сервер отдаёт первыми, поэтому счётчик точен и с пагинацией.
       const pending = G.mine.filter(r => r.status === 'pending').length;
       const counter = $('g-mine-count');
       counter.textContent = String(pending);
       counter.title = pending
-        ? `Under review: ${pending}; total requests: ${G.mine.length}`
-        : `No requests under review; total requests: ${G.mine.length}`;
+        ? `Under review: ${pending}; total requests: ${G.mineTotal}`
+        : `No requests under review; total requests: ${G.mineTotal}`;
       const box = $('g-mine-list');
       box.innerHTML = G.mine.length
         ? G.mine.map(r => listItemHtml(r, r.id === G.selected, false)).join('')
         : '<div class="cr-empty"><i class="fa-regular fa-folder-open"></i>You have not sent any requests yet.</div>';
+      $('g-mine-more')?.classList.toggle('cr-hidden', !(G.mine.length < G.mineTotal));
     };
 
     const showMineDetail = async (id) => {
@@ -778,6 +877,7 @@
         <div class="mt-4">${(r.analysis?.operations || []).map(op => renderOp(op, { requestId: r.id, mode: 'guest' })).join('')}</div>
         ${threadBlockHtml(r.messages || [], false, 'Write to the administrator…')}`;
       bindThread(box, r.id, false, () => showMineDetail(r.id));
+      markRead(r.id, r.messages).then((marked) => { if (marked) loadMine(); });
     };
 
     /**
@@ -789,6 +889,7 @@
       if (!res.ok) return;
       const list = document.querySelector('#g-mine-detail [data-thread-list]');
       if (list) list.innerHTML = threadListHtml(res.messages || [], false);
+      await markRead(id, res.messages);
       loadMine();
     };
 
@@ -818,6 +919,29 @@
       $('g-nickname').addEventListener('input', () => { validateGuestForm(); try { localStorage.setItem(NICK_KEY, $('g-nickname').value.trim()); } catch {} });
       $('g-message').addEventListener('input', validateGuestForm);
       $('g-btn-analyze').addEventListener('click', runPreview);
+      $('g-btn-export').addEventListener('click', () => {
+        if (!Guest.Draft.pendingCount()) return toast('No unsent changes to export', 'info');
+        const blob = new Blob([Guest.Draft.exportDraft()], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `editor-studio-draft-${new Date().toISOString().slice(0, 10)}.json`;
+        link.click();
+        setTimeout(() => URL.revokeObjectURL(url), 5000);
+      });
+      $('g-btn-import').addEventListener('click', () => $('g-import-file').click());
+      $('g-import-file').addEventListener('change', async (e) => {
+        const file = e.target.files?.[0];
+        e.target.value = '';
+        if (!file) return;
+        try {
+          const result = await Guest.Draft.importDraft(await file.text());
+          toast(`Imported ${result.imported} ${plural(result.imported, 'change', 'changes')}${result.skipped ? `, skipped ${result.skipped}` : ''}`, result.imported ? 'success' : 'warning');
+        } catch (err) {
+          toast(err?.message || 'Import failed', 'error');
+        }
+      });
+      $('g-mine-more').addEventListener('click', () => loadMine(true));
       $('g-btn-clear').addEventListener('click', async () => {
         const n = Guest.Draft.pendingCount();
         if (!n) return toast('No unsent changes', 'info');
@@ -856,8 +980,13 @@
         const btn = $('g-btn-submit');
         btn.disabled = true;
         $('g-submit-status').innerHTML = '<span class="cr-muted"><i class="fa-solid fa-spinner fa-spin"></i> Sending…</span>';
-        const res = await api('submit', { method: 'POST', body: { nickname: $('g-nickname').value.trim(), message: $('g-message').value.trim(), operations: ops } });
+        const res = await api('submit', { method: 'POST', body: { nickname: $('g-nickname').value.trim(), message: $('g-message').value.trim(), operations: ops, idempotency_key: Guest.Draft.submitKey?.() || '' } });
         if (!res.ok) {
+          if (res.retryAfter) {
+            if (res.analysis) { G.analysis = res.analysis; renderGuestDraft(); }
+            startCooldown(res.retryAfter);
+            return;
+          }
           $('g-submit-status').innerHTML = `<div class="cr-note cr-note--danger"><i class="fa-solid fa-ban"></i><div style="white-space:pre-wrap">${esc(res.error || 'Sending failed')}</div></div>`;
           if (res.analysis) { G.analysis = res.analysis; renderGuestDraft(); }
           validateGuestForm();
@@ -872,8 +1001,10 @@
         G.analysisError = '';
         renderGuestDraft();
         $('g-message').value = '';
-        $('g-submit-status').innerHTML = `<div class="cr-note cr-note--ok"><i class="fa-solid fa-circle-check"></i><div>Request <b>${esc(res.request.id)}</b> sent to the administrator. The changes stay visible to you and are marked as “under review”.</div></div>`;
-        toast('Request sent to the administrator', 'success');
+        $('g-submit-status').innerHTML = res.duplicate
+          ? `<div class="cr-note cr-note--ok"><i class="fa-solid fa-circle-check"></i><div>This draft had already reached the administrator as request <b>${esc(res.request.id)}</b> — no duplicate was created.</div></div>`
+          : `<div class="cr-note cr-note--ok"><i class="fa-solid fa-circle-check"></i><div>Request <b>${esc(res.request.id)}</b> sent to the administrator. The changes stay visible to you and are marked as “under review”.</div></div>`;
+        toast(res.duplicate ? 'Already submitted — no duplicate created' : 'Request sent to the administrator', 'success');
         G.selected = res.request.id;
         setGuestTab('mine');
         showMineDetail(res.request.id);
@@ -930,17 +1061,69 @@
     // ═══════════════════════════════════════════════════════════════════
     // ADMIN
     // ═══════════════════════════════════════════════════════════════════
-    const A = { status: 'pending', q: '', rows: [], selected: null, detail: null, view: 'live' };
+    const A = { status: 'pending', q: '', resource: '', rows: [], total: 0, checked: new Set(), selected: null, detail: null, view: 'live', tab: 'requests', audit: [], auditTotal: 0, auditQ: '' };
 
-    const loadAdminList = async () => {
-      const res = await api('list', { query: { status: A.status, q: A.q } });
-      if (!res.ok) { $('a-list').innerHTML = `<div class="cr-note cr-note--danger"><i class="fa-solid fa-ban"></i><div>${esc(res.error)}</div></div>`; return; }
-      A.rows = res.rows || [];
-      Object.entries(res.counts || {}).forEach(([k, v]) => { const el = document.querySelector(`[data-count="${k}"]`); if (el) el.textContent = String(v); });
+    const updateBulkBar = () => {
+      const n = A.checked.size;
+      $('a-bulk-bar')?.classList.toggle('cr-hidden', n === 0);
+      const el = $('a-bulk-count');
+      if (el) el.textContent = `${n} selected`;
+    };
+
+    const renderAdminRows = () => {
       $('a-list').innerHTML = A.rows.length
-        ? A.rows.map(r => listItemHtml(r, r.id === A.selected, true)).join('')
+        ? A.rows.map(r => `<div class="cr-bulk-row"><input type="checkbox" class="cr-bulk-check" data-bulk="${esc(r.id)}" ${A.checked.has(r.id) ? 'checked' : ''} title="Select for bulk actions" />${listItemHtml(r, r.id === A.selected, true)}</div>`).join('')
         : `<div class="cr-empty"><i class="fa-regular fa-folder-open"></i>${A.status === 'pending' ? 'No requests awaiting a decision.' : 'Nothing found.'}</div>`;
+      $('a-more')?.classList.toggle('cr-hidden', !(A.rows.length < A.total));
+      updateBulkBar();
+    };
+
+    const loadAdminList = async (append = false) => {
+      const limit = append ? 100 : Math.max(100, A.rows.length);
+      const offset = append ? A.rows.length : 0;
+      const res = await api('list', { query: { status: A.status, q: A.q, resource: A.resource, limit, offset } });
+      if (!res.ok) { $('a-list').innerHTML = `<div class="cr-note cr-note--danger"><i class="fa-solid fa-ban"></i><div>${esc(res.error)}</div></div>`; return; }
+      const rows = res.rows || [];
+      A.rows = append ? A.rows.concat(rows.filter(r => !A.rows.some(x => x.id === r.id))) : rows;
+      A.total = res.total ?? A.rows.length;
+      if (!append) A.checked = new Set([...A.checked].filter(id => A.rows.some(r => r.id === id)));
+      Object.entries(res.counts || {}).forEach(([k, v]) => { const el = document.querySelector(`[data-count="${k}"]`); if (el) el.textContent = String(v); });
+      renderAdminRows();
       EditorCore.Http.postMessage(window.parent, { type: 'editor-shell:requests-changed' });
+    };
+
+    // ── Журнал аудита ──────────────────────────────────────────────────────
+    const renderAudit = () => {
+      const box = $('a-audit-list');
+      box.innerHTML = A.audit.length
+        ? `<div class="cr-table-scroll"><table class="cr-changes"><thead><tr><th>When</th><th>Who</th><th>Action</th><th>Request</th><th>Details</th><th>IP</th></tr></thead><tbody>${A.audit.map(e => `<tr>
+            <td style="white-space:nowrap">${esc(fmtDate(e.at))}</td>
+            <td>${e.actor_role === 'admin' ? '<i class="fa-solid fa-user-shield"></i> ' : ''}${esc(e.actor_name || e.actor_id || '—')}<div class="text-xs cr-muted">${esc(e.actor_role || '')}</div></td>
+            <td><span class="cr-col">${esc(e.action)}</span></td>
+            <td>${e.request_id ? `<button type="button" class="cr-open-record" data-audit-open="${esc(e.request_id)}">${esc(e.request_id)}</button>` : '—'}</td>
+            <td><span class="cr-audit-detail">${esc(e.detail && Object.keys(e.detail).length ? JSON.stringify(e.detail) : '')}</span></td>
+            <td><span class="cr-col">${esc(e.ip || '—')}</span></td>
+          </tr>`).join('')}</tbody></table></div>`
+        : '<div class="cr-empty"><i class="fa-regular fa-folder-open"></i>No audit entries yet.</div>';
+      $('a-audit-more')?.classList.toggle('cr-hidden', !(A.audit.length < A.auditTotal));
+      const total = $('a-audit-total');
+      if (total) total.textContent = A.auditTotal ? `Showing ${A.audit.length} of ${A.auditTotal}.` : '';
+    };
+
+    const loadAudit = async (append = false) => {
+      const res = await api('audit', { query: { q: A.auditQ, limit: 100, offset: append ? A.audit.length : 0 } });
+      if (!res.ok) { $('a-audit-list').innerHTML = `<div class="cr-note cr-note--danger"><i class="fa-solid fa-ban"></i><div>${esc(res.error)}</div></div>`; return; }
+      A.audit = append ? A.audit.concat(res.rows || []) : (res.rows || []);
+      A.auditTotal = res.total ?? A.audit.length;
+      renderAudit();
+    };
+
+    const setAdminTab = (tab) => {
+      A.tab = tab;
+      document.querySelectorAll('[data-admin-tab]').forEach(b => b.classList.toggle('active', b.dataset.adminTab === tab));
+      $('a-tab-requests').classList.toggle('cr-hidden', tab !== 'requests');
+      $('a-tab-audit').classList.toggle('cr-hidden', tab !== 'audit');
+      if (tab === 'audit') loadAudit();
     };
 
     const renderAdminDetail = () => {
@@ -1012,6 +1195,7 @@
         await refreshAdminThread(r.id);
         loadAdminList();
       });
+      markRead(r.id, r.messages).then((marked) => { if (marked) loadAdminList(); });
     };
 
     /**
@@ -1023,7 +1207,7 @@
       if (!res.ok) return;
       const list = document.querySelector('#a-detail [data-thread-list]');
       if (list) list.innerHTML = threadListHtml(res.messages || [], true);
-      if ((res.messages || []).some((m) => !m.read)) loadAdminList();
+      if (await markRead(id, res.messages)) loadAdminList();
     };
 
     const showAdminDetail = async (id) => {
@@ -1053,6 +1237,8 @@
       btn.className = `editor-btn ${mode === 'approve' ? 'editor-btn-primary' : 'editor-btn-danger'}`;
       btn.innerHTML = mode === 'approve' ? `<i class="fa-solid fa-check"></i><span>${reviewForce ? 'Apply anyway' : 'Apply'}</span>` : '<i class="fa-solid fa-xmark"></i><span>Reject</span>';
       $('review-status').textContent = '';
+      const preset = $('review-preset');
+      if (preset) preset.value = '';
       $('review-modal').classList.remove('hidden');
       $('review-modal').classList.add('flex');
       $('review-comment').focus();
@@ -1075,6 +1261,11 @@
     $('review-confirm').addEventListener('click', async () => {
       const r = A.detail;
       if (!r) return;
+      if (reviewMode === 'approve' && reviewForce && !$('review-comment').value.trim()) {
+        $('review-status').innerHTML = '<span class="editor-tone-warning">A forced apply overwrites newer database values — add a comment explaining why.</span>';
+        $('review-comment').focus();
+        return;
+      }
       const btn = $('review-confirm');
       btn.disabled = true;
       $('review-status').innerHTML = '<span class="cr-muted"><i class="fa-solid fa-spinner fa-spin"></i> Running…</span>';
@@ -1144,16 +1335,64 @@
       const stats = await api('stats');
       $('a-guest-disabled').classList.toggle('cr-hidden', !stats.ok || stats.guest_enabled);
 
+      const cfg = await api('config');
+      if (cfg.ok && cfg.resources) {
+        $('a-resource').innerHTML = '<option value="">All sections</option>' + Object.entries(cfg.resources)
+          .map(([key, info]) => `<option value="${esc(key)}">${esc(info?.title || key)}</option>`).join('');
+      }
+
       $('a-filters').addEventListener('click', (e) => {
         const b = e.target.closest('[data-status]');
         if (!b) return;
         A.status = b.dataset.status;
+        A.checked.clear();
         document.querySelectorAll('#a-filters [data-status]').forEach(x => x.classList.toggle('active', x === b));
         loadAdminList();
       });
       let t = null;
       $('a-search').addEventListener('input', () => { clearTimeout(t); t = setTimeout(() => { A.q = $('a-search').value.trim(); loadAdminList(); }, 250); });
       $('a-list').addEventListener('click', (e) => { const b = e.target.closest('[data-id]'); if (b) showAdminDetail(b.dataset.id); });
+      $('a-resource').addEventListener('change', () => { A.resource = $('a-resource').value; A.checked.clear(); loadAdminList(); });
+      $('a-more').addEventListener('click', () => loadAdminList(true));
+      $('a-list').addEventListener('change', (e) => {
+        const c = e.target.closest('[data-bulk]');
+        if (!c) return;
+        if (c.checked) A.checked.add(c.dataset.bulk); else A.checked.delete(c.dataset.bulk);
+        updateBulkBar();
+      });
+      const runBulk = async (op) => {
+        const ids = [...A.checked];
+        if (!ids.length) return;
+        const label = op === 'reject' ? 'Reject' : 'Delete';
+        if (!await EditorCore.Page.confirm(`${label} ${ids.length} selected ${plural(ids.length, 'request', 'requests')}?${op === 'delete' ? ' This does not revert changes that were already applied.' : ''}`)) return;
+        const res = await api('bulk', { method: 'POST', body: { op, ids } });
+        if (!res.ok) return toast(res.error || 'Error', 'error');
+        const failed = (res.results || []).filter(x => !x.ok);
+        toast(`${label}: done ${res.done ?? 0}${failed.length ? `, failed ${failed.length}` : ''}`, failed.length ? 'warning' : 'success');
+        A.checked.clear();
+        await loadAdminList();
+        if (A.selected && ids.includes(A.selected)) showAdminDetail(A.selected);
+      };
+      $('a-bulk-reject').addEventListener('click', () => runBulk('reject'));
+      $('a-bulk-delete').addEventListener('click', () => runBulk('delete'));
+      $('a-bulk-clear').addEventListener('click', () => { A.checked.clear(); renderAdminRows(); });
+      document.querySelectorAll('[data-admin-tab]').forEach(b => b.addEventListener('click', () => setAdminTab(b.dataset.adminTab)));
+      let auditT = null;
+      $('a-audit-q').addEventListener('input', () => { clearTimeout(auditT); auditT = setTimeout(() => { A.auditQ = $('a-audit-q').value.trim(); loadAudit(); }, 300); });
+      $('a-audit-more').addEventListener('click', () => loadAudit(true));
+      $('a-audit-list').addEventListener('click', (e) => {
+        const b = e.target.closest('[data-audit-open]');
+        if (!b) return;
+        setAdminTab('requests');
+        showAdminDetail(b.dataset.auditOpen);
+      });
+      $('review-preset')?.addEventListener('change', () => {
+        const value = $('review-preset').value;
+        if (!value) return;
+        $('review-comment').value = value;
+        $('review-preset').value = '';
+        $('review-comment').focus();
+      });
       $('a-detail').addEventListener('click', async (e) => {
         const v = e.target.closest('[data-view]');
         if (v) { A.view = v.dataset.view; renderAdminDetail(); return; }

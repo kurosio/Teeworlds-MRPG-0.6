@@ -310,6 +310,14 @@
 
   const uid = () => window.EditorCore.utils.uuid();
 
+  /** Компактный отпечаток текста (не криптография — только сравнение составов). */
+  const hashText = (text) => {
+    let hash = 5381;
+    const value = String(text || '');
+    for (let i = 0; i < value.length; i++) hash = ((hash << 5) + hash + value.charCodeAt(i)) | 0;
+    return (hash >>> 0).toString(16).padStart(8, '0');
+  };
+
   const assertGuestResource = async (resource) => {
     await loadConfig();
     if (config?.resources && !config.resources[resource]) {
@@ -585,6 +593,141 @@
           : { type: 'delete', resource: o.resource, id: o.id })));
     },
 
+    /** Отпечаток неотправленной части черновика: меняется при любой правке. */
+    fingerprint() {
+      const pending = readDraft().ops.filter(o => !o.reqId);
+      return hashText(JSON.stringify(pending.map(o => [o.uid, o.type, o.resource, o.id || o.tempId, o.data])));
+    },
+
+    /**
+     * Ключ идемпотентности для отправки текущего состава черновика.
+     * Стабилен между попытками отправки одного и того же состава (двойной
+     * клик, потерянный ответ, повтор после кулдауна) — сервер вернёт уже
+     * созданный запрос вместо дубликата. Любая правка черновика меняет ключ.
+     */
+    submitKey() {
+      const storeKey = `editorStudio.guestSubmitKey:${accountId()}`;
+      const fingerprint = Draft.fingerprint();
+      try {
+        const saved = JSON.parse(safeLocal?.getItem(storeKey) || 'null');
+        if (saved?.fingerprint === fingerprint && /^[A-Za-z0-9-]{16,80}$/.test(saved.key || '')) return saved.key;
+      } catch { /* повреждённое значение — выпустим новый ключ */ }
+      const key = uid();
+      try { safeLocal?.setItem(storeKey, JSON.stringify({ key, fingerprint })); } catch { /* ключ всё равно вернём */ }
+      return key;
+    },
+
+    clearSubmitKey() {
+      try { safeLocal?.removeItem(`editorStudio.guestSubmitKey:${accountId()}`); } catch { /* ignore */ }
+    },
+
+    /**
+     * Черновик одним файлом: резервная копия неотправленных правок.
+     * Уже отправленные операции не включаются — они принадлежат запросам
+     * на сервере и восстанавливаются входом в тот же аккаунт.
+     */
+    exportDraft() {
+      const pending = readDraft().ops.filter(o => !o.reqId);
+      return JSON.stringify({
+        app: 'editor-studio-guest-draft',
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        account: accountLabel(),
+        ops: pending.map(o => ({
+          type: o.type, resource: o.resource,
+          id: o.type === 'create' ? undefined : o.id,
+          tempId: o.type === 'create' ? o.tempId : undefined,
+          data: clone(o.data), label: o.label || '',
+        })),
+      }, null, 2);
+    },
+
+    /**
+     * Импорт черновика из exportDraft(). Операции проверяются так же, как
+     * при чтении из хранилища, разделы вне доступа аккаунта пропускаются,
+     * временные ID при коллизиях перевыпускаются (ссылки внутри импортируемых
+     * данных переписываются), строки, уже занятые черновиком, не затираются.
+     * @returns {Promise<{imported:number, skipped:number}>}
+     */
+    async importDraft(text) {
+      let parsed;
+      try { parsed = JSON.parse(String(text || '')); }
+      catch { throw new Error('The file is not valid JSON.'); }
+      if (!parsed || parsed.app !== 'editor-studio-guest-draft' || !Array.isArray(parsed.ops)) {
+        throw new Error('This file is not an Editor Studio guest draft.');
+      }
+      await loadConfig();
+      const d = draftForWrite();
+      const existingKeys = new Set(d.ops.map(o => `${o.type}:${o.resource}:${o.type === 'create' ? o.tempId : o.id}`));
+      const busyRows = new Set(d.ops.filter(o => o.type !== 'create').map(o => `${o.resource}:${o.id}`));
+      const usedTemps = new Set(d.ops.filter(o => o.type === 'create').map(o => Number(o.tempId)));
+
+      const incoming = [];
+      let skipped = 0;
+      for (const raw of parsed.ops.slice(0, 500)) {
+        const op = normalizeOp(raw && typeof raw === 'object' ? { ...raw, uid: '', reqId: null } : raw);
+        if (!op) { skipped++; continue; }
+        if (config?.resources && !config.resources[op.resource]) { skipped++; continue; }
+        op.reqId = null;
+        op.reqDirty = false;
+        op.submittedAt = null;
+        incoming.push(op);
+      }
+
+      let nextTemp = Number(d.nextTemp) || TEMP_ID_BASE + 1;
+      const allocTemp = () => {
+        while (usedTemps.has(nextTemp)) nextTemp++;
+        const allocated = nextTemp++;
+        if (allocated > TEMP_ID_MAX) throw new Error('Too many new records in the draft.');
+        usedTemps.add(allocated);
+        return allocated;
+      };
+      const remap = new Map();
+      const seenCreates = new Set();
+      for (const op of incoming) {
+        if (op.type !== 'create') continue;
+        const original = Number(op.tempId);
+        if (usedTemps.has(original) || seenCreates.has(original)) {
+          const fresh = allocTemp();
+          if (!remap.has(original)) remap.set(original, fresh);
+          op.tempId = fresh;
+        } else {
+          usedTemps.add(original);
+        }
+        seenCreates.add(original);
+      }
+      const remapValue = (value) => {
+        if (typeof value === 'number' && remap.has(value)) return remap.get(value);
+        if (Array.isArray(value)) return value.map(remapValue);
+        if (value && typeof value === 'object') {
+          const out = {};
+          for (const [k, v] of Object.entries(value)) out[k] = remapValue(v);
+          return out;
+        }
+        if (typeof value === 'string' && remap.size) {
+          return value.replace(/200\d{7}/g, (m) => (remap.has(Number(m)) ? String(remap.get(Number(m))) : m));
+        }
+        return value;
+      };
+
+      let imported = 0;
+      for (const op of incoming) {
+        op.data = remapValue(op.data);
+        const key = `${op.type}:${op.resource}:${op.type === 'create' ? op.tempId : op.id}`;
+        if (existingKeys.has(key) || (op.type !== 'create' && busyRows.has(`${op.resource}:${op.id}`))) {
+          skipped++;
+          continue;
+        }
+        d.ops.push(op);
+        existingKeys.add(key);
+        imported++;
+      }
+      d.nextTemp = Math.max(nextTemp, TEMP_ID_BASE + 1,
+        ...d.ops.filter(o => o.type === 'create').map(o => Number(o.tempId) + 1));
+      if (imported) writeDraft(d);
+      return { imported, skipped };
+    },
+
     /** Replace one pending request after a server-validated revision. */
     replaceRequest(request) {
       const requestId = String(request?.id || '');
@@ -632,6 +775,7 @@
         }
       }
       writeDraft(d);
+      Draft.clearSubmitKey();
       return n;
     },
 
@@ -963,7 +1107,8 @@
     try { window.dispatchEvent(new CustomEvent('editor-core:guest-ready', { detail: summary() })); } catch {}
   };
 
-  // Guest identity key (lets the guest see its previous requests on this browser).
+  // Guest identity key (deprecated: request ownership is defined by the
+  // personal account id on the server; kept only for API compatibility).
   const GuestKey = {
     get: () => safeLocal?.getItem(GUEST_KEY) || '',
     set: (k) => { try { if (/^[a-f0-9]{48}$/.test(k)) safeLocal?.setItem(GUEST_KEY, k); } catch {} },

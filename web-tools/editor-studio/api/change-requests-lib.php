@@ -202,7 +202,11 @@ function cr_delete(string $id): void
     $stmt->execute([$id]);
 }
 
-/** @return list<array> newest first */
+/**
+ * @return list<array> newest first
+ * @deprecated Полная загрузка всех запросов в память. Оставлена для
+ * совместимости; новый код использует cr_query_list()/cr_counts_by_status().
+ */
 function cr_all(): array
 {
     $out = [];
@@ -211,6 +215,123 @@ function cr_all(): array
         if (is_array($data)) {
             $out[] = $data;
         }
+    }
+    return $out;
+}
+
+/** Экранирование пользовательского текста для LIKE … ESCAPE '\'. */
+function cr_like_escape(string $value): string
+{
+    return str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], $value);
+}
+
+/**
+ * Постраничная выборка запросов из SQLite (индексы по статусу и гостю),
+ * вместо загрузки всех документов в память.
+ *
+ * @param array{status?:string, guest_id?:string, q?:string, resource?:string, pending_first?:bool} $filters
+ * @return array{rows:list<array>, total:int} rows — полные документы запросов
+ */
+function cr_query_list(array $filters, int $limit, int $offset): array
+{
+    $where = [];
+    $params = [];
+
+    $status = (string)($filters['status'] ?? 'all');
+    if ($status !== 'all' && $status !== '') {
+        if (!in_array($status, CR_STATUSES, true)) {
+            throw new CrInputError('Неизвестный статус запроса.');
+        }
+        $where[] = 'status = ?';
+        $params[] = $status;
+    }
+    $guestId = trim((string)($filters['guest_id'] ?? ''));
+    if ($guestId !== '') {
+        $where[] = 'guest_id = ?';
+        $params[] = $guestId;
+    }
+    $q = trim((string)($filters['q'] ?? ''));
+    if ($q !== '') {
+        $like = '%' . cr_like_escape($q) . '%';
+        $where[] = "(id LIKE ? ESCAPE '\\' OR nickname LIKE ? ESCAPE '\\' OR guest_login LIKE ? ESCAPE '\\'"
+            . " OR message LIKE ? ESCAPE '\\' OR payload LIKE ? ESCAPE '\\')";
+        array_push($params, $like, $like, $like, $like, $like);
+    }
+    $resource = trim((string)($filters['resource'] ?? ''));
+    if ($resource !== '') {
+        // Раздел хранится только внутри документа операции («"resource":"items"»);
+        // формат записи контролирует cr_save (json_encode без пробелов).
+        if (!isset(editor_resources()[$resource])) {
+            throw new CrInputError('Неизвестный раздел: ' . $resource);
+        }
+        $where[] = "payload LIKE ? ESCAPE '\\'";
+        $params[] = '%"resource":"' . cr_like_escape($resource) . '"%';
+    }
+
+    $sqlWhere = $where ? (' WHERE ' . implode(' AND ', $where)) : '';
+    $order = !empty($filters['pending_first'])
+        ? " ORDER BY (status = 'pending') DESC, created_at DESC, id DESC"
+        : ' ORDER BY created_at DESC, id DESC';
+    $pdo = store_db();
+
+    $stmt = $pdo->prepare('SELECT COUNT(*) FROM change_requests' . $sqlWhere);
+    $stmt->execute($params);
+    $total = (int)$stmt->fetchColumn();
+
+    $stmt = $pdo->prepare('SELECT payload FROM change_requests' . $sqlWhere . $order . ' LIMIT ? OFFSET ?');
+    $i = 1;
+    foreach ($params as $param) {
+        $stmt->bindValue($i++, $param);
+    }
+    $stmt->bindValue($i++, max(1, $limit), PDO::PARAM_INT);
+    $stmt->bindValue($i, max(0, $offset), PDO::PARAM_INT);
+    $stmt->execute();
+
+    $rows = [];
+    foreach ($stmt->fetchAll() as $row) {
+        $data = json_decode((string)$row['payload'], true);
+        if (is_array($data)) {
+            $rows[] = $data;
+        }
+    }
+    return ['rows' => $rows, 'total' => $total];
+}
+
+/** @return array<string,int> количество запросов по статусам */
+function cr_counts_by_status(): array
+{
+    $counts = array_fill_keys(CR_STATUSES, 0);
+    foreach (store_db()->query('SELECT status, COUNT(*) AS c FROM change_requests GROUP BY status') as $row) {
+        $status = (string)$row['status'];
+        if (isset($counts[$status])) {
+            $counts[$status] = (int)$row['c'];
+        }
+    }
+    return $counts;
+}
+
+/** Число запросов на рассмотрении: всех или одного гостя. */
+function cr_pending_count(string $guestId = ''): int
+{
+    if ($guestId === '') {
+        $stmt = store_db()->prepare("SELECT COUNT(*) FROM change_requests WHERE status = 'pending'");
+        $stmt->execute();
+    } else {
+        $stmt = store_db()->prepare("SELECT COUNT(*) FROM change_requests WHERE status = 'pending' AND guest_id = ?");
+        $stmt->execute([$guestId]);
+    }
+    return (int)$stmt->fetchColumn();
+}
+
+/** @return array<string,int> guest_id => число запросов на рассмотрении */
+function cr_pending_by_guest(): array
+{
+    $out = [];
+    $stmt = store_db()->query(
+        "SELECT guest_id, COUNT(*) AS c FROM change_requests WHERE status = 'pending' AND guest_id <> '' GROUP BY guest_id"
+    );
+    foreach ($stmt as $row) {
+        $out[(string)$row['guest_id']] = (int)$row['c'];
     }
     return $out;
 }

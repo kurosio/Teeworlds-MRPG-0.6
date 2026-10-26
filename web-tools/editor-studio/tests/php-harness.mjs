@@ -247,6 +247,48 @@ echo 'collecting validation: ok';`);
   console.log(output.trim());
 }
 
+
+// ── db-core security helpers: client IP, password policy, guest limits ─────
+{
+  const { output } = await run(`<?php
+require_once '${VFS_ROOT}/api/db-core.php';
+$checks = [];
+// IP: заголовки прокси верят только доверенным соседям.
+$checks['ip-untrusted'] = editor_resolve_client_ip('203.0.113.10', '1.2.3.4', '', []) === '203.0.113.10';
+$checks['ip-chain'] = editor_resolve_client_ip('10.0.0.2', '198.51.100.7, 10.0.0.3', '', ['10.0.0.0/8']) === '198.51.100.7';
+$checks['ip-all-trusted'] = editor_resolve_client_ip('10.0.0.2', '10.0.0.9, 10.0.0.3', '', ['10.0.0.0/8']) === '10.0.0.9';
+$checks['ip-real'] = editor_resolve_client_ip('10.0.0.2', '', '198.51.100.8', ['10.0.0.2']) === '198.51.100.8';
+$checks['ip-spoof'] = editor_resolve_client_ip('203.0.113.10', '198.51.100.7', '', ['10.0.0.0/8']) === '203.0.113.10';
+$checks['ip-invalid-remote'] = editor_resolve_client_ip('junk', '1.2.3.4', '', []) === '';
+$checks['ip-junk-in-chain'] = editor_resolve_client_ip('10.0.0.2', 'junk, 198.51.100.7', '', ['10.0.0.0/8']) === '198.51.100.7';
+// Политика паролей: минимум символов, максимум 72 байта (bcrypt), валидный UTF-8.
+$checks['pw-empty'] = editor_password_policy_error('') !== null;
+$checks['pw-short'] = editor_password_policy_error('short') !== null;
+$checks['pw-ok'] = editor_password_policy_error('1234567890') === null;
+$checks['pw-min-arg'] = editor_password_policy_error('123456', 6) === null;
+$checks['pw-72'] = editor_password_policy_error(str_repeat('a', 72)) === null;
+$checks['pw-73'] = editor_password_policy_error(str_repeat('a', 73)) !== null;
+$checks['pw-mb-ok'] = editor_password_policy_error(str_repeat('ж', 10)) === null;
+$checks['pw-mb-long'] = editor_password_policy_error(str_repeat('ж', 40)) !== null;
+$checks['pw-bad-utf8'] = editor_password_policy_error(chr(0xC3) . chr(0x28) . 'abcdefgh') !== null;
+// Лимиты гостя: глобальные правила + индивидуальные переопределения.
+$cfg = ['guest_users' => [], 'guest_max_pending' => 7, 'guest_submit_cooldown' => 30, 'guest_max_operations' => 55];
+$g = guest_effective_limits(null, $cfg);
+$checks['lim-global'] = $g === ['max_pending' => 7, 'cooldown' => 30, 'max_operations' => 55, 'custom' => false];
+$o = guest_effective_limits(['limits' => ['max_pending' => 2]], $cfg);
+$checks['lim-override-one'] = $o['max_pending'] === 2 && $o['cooldown'] === 30 && $o['custom'] === true;
+$j = guest_effective_limits(['limits' => '{"cooldown":0}'], $cfg);
+$checks['lim-json'] = $j['cooldown'] === 0 && $j['custom'] === true;
+$c = guest_effective_limits(['limits' => ['max_pending' => 999, 'max_operations' => 0]], $cfg);
+$checks['lim-clamp'] = $c['max_pending'] === 50 && $c['max_operations'] === 1;
+$e = guest_effective_limits(['limits' => []], $cfg);
+$checks['lim-empty'] = $e['custom'] === false;
+$failed = array_keys(array_filter($checks, fn($v) => !$v));
+echo $failed ? ('db-core security helpers failed: ' . implode(', ', $failed)) : 'db-core security helpers: ok';`);
+  if (!output.includes('db-core security helpers: ok')) errors.push(output.trim() || 'db-core security helpers failed');
+  console.log(output.trim());
+}
+
 if (errors.length) {
   console.log(`\n${errors.length} problem(s):`);
   errors.forEach((line) => console.log(' - ' + line));

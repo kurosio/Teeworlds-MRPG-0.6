@@ -15,6 +15,10 @@ function apply_security_headers(): void
     header('Referrer-Policy: same-origin');
     header('Cross-Origin-Resource-Policy: same-origin');
     header('Cross-Origin-Opener-Policy: same-origin');
+    // Ответы API — данные, а не документы: браузеру нечего из них выполнять.
+    header("Content-Security-Policy: default-src 'none'; sandbox");
+    header('Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=()');
+    header('X-Permitted-Cross-Domain-Policies: none');
     header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
     header('Pragma: no-cache');
 }
@@ -24,6 +28,43 @@ function respond(array $payload, int $code = 200): never
     http_response_code($code);
     echo json_encode($payload, JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR);
     exit;
+}
+
+/** Единый ответ «слишком часто»: заголовок Retry-After + машинные поля для UI. */
+function respond_rate_limited(int $retryAfter, string $message): never
+{
+    $retryAfter = max(1, $retryAfter);
+    header('Retry-After: ' . $retryAfter);
+    respond([
+        'ok' => false,
+        'error' => $message,
+        'code' => 'rate_limited',
+        'retry_after' => $retryAfter,
+    ], 429);
+}
+
+/**
+ * Общая политика паролей (гостевые аккаунты; для администратора — рекомендация
+ * при инициализации). Возвращает текст ошибки или null.
+ *
+ * Максимум 72 БАЙТА — граница bcrypt (PASSWORD_DEFAULT): более длинные пароли
+ * password_hash молча обрезает, и два разных пароля с общим префиксом в 72
+ * байта стали бы одинаковыми.
+ */
+function editor_password_policy_error(string $password, int $minLength = 10): ?string
+{
+    $bytes = strlen($password);
+    if ($bytes > 72) {
+        return 'Пароль слишком длинный (максимум 72 байта в UTF-8).';
+    }
+    $chars = function_exists('mb_strlen') ? mb_strlen($password, 'UTF-8') : $bytes;
+    if ($chars < $minLength) {
+        return sprintf('Пароль слишком короткий: минимум %d символов.', $minLength);
+    }
+    if (preg_match('//u', $password) !== 1) {
+        return 'Пароль содержит некорректные символы (ожидается UTF-8).';
+    }
+    return null;
 }
 
 /**
@@ -241,6 +282,72 @@ function auth_throttle_clear(string $scope, string $identity): void
     }
 }
 
+// ── Generic rate limiting ────────────────────────────────────────────────────
+//
+// Та же механика счётчиков, что и для входа, но для любых дорогих/шумных
+// действий (анализ запроса, переписка, отправка). Состояние — в SQLite,
+// а не в сессии: сброс cookie лимит не обходит.
+
+/** Секунд до снятия блокировки (0 — действие разрешено). */
+function editor_rate_limit_left(string $scope, string $identity): int
+{
+    return auth_throttle_left('rate:' . $scope, $identity);
+}
+
+/**
+ * Учитывает одно действие; возвращает секунды блокировки, если лимит
+ * ($maxAttempts действий за $window секунд) исчерпан, иначе 0.
+ */
+function editor_rate_limit_hit(string $scope, string $identity, int $maxAttempts, int $window, int $lockSeconds): int
+{
+    return auth_throttle_fail('rate:' . $scope, $identity, $maxAttempts, $window, $lockSeconds);
+}
+
+/**
+ * Удобная проверка «можно ли прямо сейчас»: при блокировке отвечает 429
+ * с Retry-After, иначе учитывает действие и продолжает выполнение.
+ */
+function editor_rate_limit_guard(string $scope, string $identity, int $maxAttempts, int $window, int $lockSeconds, string $message): void
+{
+    $left = editor_rate_limit_left($scope, $identity);
+    if ($left > 0) {
+        respond_rate_limited($left, $message);
+    }
+    $locked = editor_rate_limit_hit($scope, $identity, $maxAttempts, $window, $lockSeconds);
+    if ($locked > 0) {
+        respond_rate_limited($locked, $message);
+    }
+}
+
+// ── Audit log ────────────────────────────────────────────────────────────────
+
+/**
+ * Запись в журнал аудита от имени текущего актора сессии.
+ * Ошибки журнала никогда не ломают саму операцию — только уходят в лог.
+ */
+function editor_audit(string $action, string $requestId = '', array $detail = []): void
+{
+    try {
+        if (session_status() === PHP_SESSION_ACTIVE && !empty($_SESSION['editor_studio_auth'])) {
+            $role = EDITOR_ROLE_ADMIN;
+            $actorId = (string)($_SESSION['editor_studio_user'] ?? 'admin');
+            $actorName = $actorId;
+        } elseif (session_status() === PHP_SESSION_ACTIVE && !empty($_SESSION['editor_studio_guest'])) {
+            $account = editor_guest_user();
+            $role = EDITOR_ROLE_GUEST;
+            $actorId = (string)($account['id'] ?? ($_SESSION['editor_studio_guest_user'] ?? ''));
+            $actorName = (string)($account['name'] ?? $account['login'] ?? 'guest');
+        } else {
+            $role = 'anonymous';
+            $actorId = '';
+            $actorName = '';
+        }
+        store_audit_add($role, $actorId, $actorName, $action, $requestId, $detail, get_request_ip());
+    } catch (Throwable $e) {
+        editor_log_error($e);
+    }
+}
+
 /** New unique id of a guest account. */
 function guest_new_id(): string
 {
@@ -248,8 +355,104 @@ function guest_new_id(): string
 }
 
 // ── Session ──────────────────────────────────────────────────────────────────
+//
+// Жизненный цикл сессии ограничен двумя сроками (настройки в хранилище,
+// ключи session_idle_seconds / session_absolute_seconds):
+//   * idle     — бездействие: сессия умирает, если ею не пользовались дольше
+//                срока (по умолчанию 12 часов — рабочий день редактора);
+//   * absolute — полный срок жизни от входа (по умолчанию 7 дней): украденная
+//                cookie не живёт вечно, даже при постоянной активности.
+// Периодическая ротация ID намеренно НЕ делается: студия держит несколько
+// параллельных запросов из iframe, и ротация под нагрузкой обрывала бы часть
+// из них (строгий режим сессий). ID меняется при входе/выходе и при истечении.
 
-function start_editor_session(): void
+const EDITOR_SESSION_IDLE_DEFAULT = 43200;      // 12 часов
+const EDITOR_SESSION_ABSOLUTE_DEFAULT = 604800; // 7 дней
+
+$GLOBALS['EDITOR_SESSION_EXPIRED'] = false;
+
+/** Путь cookie: каталог студии, а не весь домен. */
+function editor_cookie_path(): string
+{
+    $script = str_replace('\\', '/', (string)($_SERVER['SCRIPT_NAME'] ?? '/'));
+    $apiPos = strpos($script, '/api/');
+    if ($apiPos !== false) {
+        $root = substr($script, 0, $apiPos + 1);
+        return $root !== '' ? $root : '/';
+    }
+    $dir = rtrim(dirname($script), '/');
+    return ($dir === '' || $dir === '.') ? '/' : $dir . '/';
+}
+
+/** @return array{idle:int, absolute:int} */
+function editor_session_limits(?array $cfg = null): array
+{
+    $cfg ??= load_cfg(false);
+    return [
+        'idle' => clamp_int($cfg['session_idle_seconds'] ?? null, 900, 172800, EDITOR_SESSION_IDLE_DEFAULT),
+        'absolute' => clamp_int($cfg['session_absolute_seconds'] ?? null, 3600, 2592000, EDITOR_SESSION_ABSOLUTE_DEFAULT),
+    ];
+}
+
+/** Отмечает начало авторизованной сессии (вызывается при успешном входе). */
+function editor_session_mark_login(): void
+{
+    $now = time();
+    $_SESSION['_es_created'] = $now;
+    $_SESSION['_es_last'] = $now;
+    $GLOBALS['EDITOR_SESSION_EXPIRED'] = false;
+}
+
+/** Момент (ISO), когда текущая авторизованная сессия истечёт. */
+function editor_session_expires_at(?array $cfg = null): ?string
+{
+    if (session_status() !== PHP_SESSION_ACTIVE || empty($_SESSION['_es_created'])) {
+        return null;
+    }
+    $limits = editor_session_limits($cfg);
+    $created = (int)$_SESSION['_es_created'];
+    $last = (int)($_SESSION['_es_last'] ?? $created);
+    $expires = min($created + $limits['absolute'], $last + $limits['idle']);
+    return gmdate('Y-m-d\TH:i:s\Z', $expires);
+}
+
+/**
+ * Проверка сроков сессии. Просроченная сессия теряет авторизацию (роли и
+ * CSRF-токен), получает новый ID и помечается флагом EDITOR_SESSION_EXPIRED —
+ * оболочка по нему показывает «сессия истекла», а не «войдите».
+ */
+function editor_session_enforce_lifetime(?array $cfg = null): void
+{
+    if (session_status() !== PHP_SESSION_ACTIVE) {
+        return;
+    }
+    $now = time();
+    $created = (int)($_SESSION['_es_created'] ?? 0);
+    if ($created <= 0) {
+        $_SESSION['_es_created'] = $now;
+        $_SESSION['_es_last'] = $now;
+        return;
+    }
+    $last = (int)($_SESSION['_es_last'] ?? $created);
+    $authorized = !empty($_SESSION['editor_studio_auth']) || !empty($_SESSION['editor_studio_guest']);
+    if ($authorized) {
+        $limits = editor_session_limits($cfg);
+        if ($now - $last > $limits['idle'] || $now - $created > $limits['absolute']) {
+            unset(
+                $_SESSION['editor_studio_auth'],
+                $_SESSION['editor_studio_user'],
+                $_SESSION['editor_studio_csrf']
+            );
+            clear_guest_session();
+            $_SESSION['_es_created'] = $now;
+            $GLOBALS['EDITOR_SESSION_EXPIRED'] = true;
+            @session_regenerate_id(true);
+        }
+    }
+    $_SESSION['_es_last'] = $now;
+}
+
+function start_editor_session(?array $cfg = null): void
 {
     if (session_status() === PHP_SESSION_ACTIVE) {
         return;
@@ -265,14 +468,64 @@ function start_editor_session(): void
 
     session_set_cookie_params([
         'lifetime' => 0,
-        'path'     => '/',
+        'path'     => editor_cookie_path(),
         'domain'   => '',
         'secure'   => $isHttps,
         'httponly'  => true,
-        'samesite'  => 'Lax',
+        // Strict: студия — самостоятельное приложение, переходов с внешних
+        // сайтов с сохранением сессии ей не нужно; запросы самой страницы
+        // (fetch к своему API) cookie получают как обычно (same-site).
+        'samesite'  => 'Strict',
     ]);
 
     session_start();
+    editor_session_enforce_lifetime($cfg);
+}
+
+// ── CSRF ─────────────────────────────────────────────────────────────────────
+//
+// Синхронизаторный токен в дополнение к проверке Origin: токен живёт в сессии,
+// клиент присылает его заголовком X-Editor-CSRF в каждом POST. Чужой сайт
+// токен не знает (и не прочитает ответ из-за same-origin policy), поэтому
+// подделать запрос нельзя даже при ослабленной проверке Origin (прокси,
+// misconfigured Host и т.п.). Токен ротируется при входе и выходе.
+
+/** Текущий CSRF-токен сессии (создаётся при первом обращении). */
+function editor_csrf_token(): string
+{
+    if (session_status() !== PHP_SESSION_ACTIVE) {
+        return '';
+    }
+    $token = (string)($_SESSION['editor_studio_csrf'] ?? '');
+    if (preg_match('/^[a-f0-9]{64}$/', $token) !== 1) {
+        $token = bin2hex(random_bytes(32));
+        $_SESSION['editor_studio_csrf'] = $token;
+    }
+    return $token;
+}
+
+function editor_csrf_rotate(): string
+{
+    if (session_status() !== PHP_SESSION_ACTIVE) {
+        return '';
+    }
+    $token = bin2hex(random_bytes(32));
+    $_SESSION['editor_studio_csrf'] = $token;
+    return $token;
+}
+
+/** Проверка заголовка X-Editor-CSRF; при несовпадении — 403 с кодом для клиента. */
+function editor_csrf_verify(): void
+{
+    $expected = editor_csrf_token();
+    $provided = trim((string)($_SERVER['HTTP_X_EDITOR_CSRF'] ?? ''));
+    if ($expected === '' || $provided === '' || !hash_equals($expected, $provided)) {
+        respond([
+            'ok' => false,
+            'error' => 'Защитный токен сессии устарел. Обновите страницу и попробуйте ещё раз.',
+            'code' => 'csrf_token',
+        ], 403);
+    }
 }
 
 // ── Roles ────────────────────────────────────────────────────────────────────
@@ -317,6 +570,64 @@ function guest_cfg(?array $cfg = null): array
         // Guest logins exist only as personal accounts created by an administrator.
         'users_count'    => $usersCount,
     ];
+}
+
+/**
+ * Нормализованные индивидуальные лимиты гостевого аккаунта.
+ * null — переопределений нет, действуют глобальные правила guest_cfg().
+ * Ключи: max_pending (1–50), cooldown (0–3600 сек), max_operations (1–500).
+ */
+function guest_limits_normalize(mixed $raw): ?array
+{
+    if (is_string($raw) && trim($raw) !== '') {
+        $raw = json_decode($raw, true);
+    }
+    if (!is_array($raw)) {
+        return null;
+    }
+    $out = [];
+    if (array_key_exists('max_pending', $raw) && $raw['max_pending'] !== null && $raw['max_pending'] !== '') {
+        $out['max_pending'] = clamp_int($raw['max_pending'], 1, 50, 5);
+    }
+    if (array_key_exists('cooldown', $raw) && $raw['cooldown'] !== null && $raw['cooldown'] !== '') {
+        $out['cooldown'] = clamp_int($raw['cooldown'], 0, 3600, 60);
+    }
+    if (array_key_exists('max_operations', $raw) && $raw['max_operations'] !== null && $raw['max_operations'] !== '') {
+        $out['max_operations'] = clamp_int($raw['max_operations'], 1, 500, 100);
+    }
+    return $out !== [] ? $out : null;
+}
+
+/**
+ * Действующие лимиты конкретного гостя: глобальные правила, перекрытые
+ * индивидуальными настройками аккаунта (если администратор их задал).
+ * @return array{max_pending:int, cooldown:int, max_operations:int, custom:bool}
+ */
+function guest_effective_limits(?array $account, ?array $cfg = null): array
+{
+    $global = guest_cfg($cfg);
+    $limits = [
+        'max_pending' => $global['max_pending'],
+        'cooldown' => $global['cooldown'],
+        'max_operations' => $global['max_operations'],
+        'custom' => false,
+    ];
+    $own = guest_limits_normalize($account['limits'] ?? null);
+    if ($own !== null) {
+        $limits = array_merge($limits, $own, ['custom' => true]);
+    }
+    return $limits;
+}
+
+/** Истёк ли срок действия гостевого аккаунта ('' — бессрочно). */
+function guest_user_expired(array $user): bool
+{
+    $expires = trim((string)($user['expiresAt'] ?? ''));
+    if ($expires === '') {
+        return false;
+    }
+    $ts = strtotime($expires);
+    return $ts !== false && $ts <= time();
 }
 
 // ── Guest accounts ───────────────────────────────────────────────────────────
@@ -409,6 +720,11 @@ function guest_user_normalize(mixed $raw): ?array
         $name = $login;
     }
 
+    $expiresAt = trim((string)($raw['expiresAt'] ?? ''));
+    if ($expiresAt !== '' && strtotime($expiresAt) === false) {
+        $expiresAt = '';
+    }
+
     return [
         'id'             => $id,
         'login'          => $login,
@@ -420,6 +736,8 @@ function guest_user_normalize(mixed $raw): ?array
         'createdAt'      => (string)($raw['createdAt'] ?? ''),
         'updatedAt'      => (string)($raw['updatedAt'] ?? ''),
         'lastLoginAt'    => (string)($raw['lastLoginAt'] ?? ''),
+        'limits'         => guest_limits_normalize($raw['limits'] ?? null),
+        'expiresAt'      => $expiresAt,
     ];
 }
 
@@ -484,6 +802,9 @@ function guest_user_public(array $user): array
         'createdAt'   => $user['createdAt'],
         'updatedAt'   => $user['updatedAt'],
         'lastLoginAt' => $user['lastLoginAt'],
+        'limits'      => $user['limits'] ?? null,
+        'expiresAt'   => $user['expiresAt'] ?? '',
+        'expired'     => guest_user_expired($user),
     ];
 }
 
@@ -518,7 +839,7 @@ function editor_guest_user(?array $cfg = null): ?array
     }
     $guest = guest_cfg($cfg);
     $user = guest_user_by_id($cfg, (string)($_SESSION['editor_studio_guest_user'] ?? ''));
-    if (!$guest['enabled'] || $user === null || !$user['enabled']) {
+    if (!$guest['enabled'] || $user === null || !$user['enabled'] || guest_user_expired($user)) {
         clear_guest_session();
         return null;
     }
@@ -588,7 +909,7 @@ function editor_network_guest_only(): bool
 
 function ensure_editor_auth(): void
 {
-    start_editor_session();
+    start_editor_session(load_cfg(false));
     ensure_editor_role([EDITOR_ROLE_ADMIN]);
 }
 
@@ -605,7 +926,12 @@ function ensure_editor_role(array $roles): string
         $role = null;
     }
     if ($role === null) {
-        respond(['ok' => false, 'error' => 'Требуется вход в Editor Studio'], 401);
+        $expired = !empty($GLOBALS['EDITOR_SESSION_EXPIRED']);
+        respond([
+            'ok' => false,
+            'error' => $expired ? 'Сессия истекла. Войдите в Editor Studio ещё раз.' : 'Требуется вход в Editor Studio',
+            'code' => $expired ? 'session_expired' : 'auth_required',
+        ], 401);
     }
     if (!in_array($role, $roles, true)) {
         respond([
@@ -666,6 +992,8 @@ function require_same_origin_json_post(): void
         || $originHost !== $requestName || $originPort !== $requestPort) {
         respond(['ok' => false, 'error' => 'Запрос с постороннего сайта отклонён'], 403);
     }
+    // Второй рубеж: синхронизаторный CSRF-токен сессии (см. editor_csrf_token).
+    editor_csrf_verify();
 }
 
 /**
@@ -684,29 +1012,80 @@ function guard_write_actions(string $action, array $writeActions): void
 
 // ── Network / IP helpers ─────────────────────────────────────────────────────
 
-function get_request_ip(): string
+/**
+ * Список доверенных обратных прокси (CIDR/IP), которым разрешено сообщать
+ * реальный адрес клиента заголовками X-Forwarded-For / X-Real-IP.
+ * Источник: переменная окружения EDITOR_STUDIO_TRUSTED_PROXIES (через запятую)
+ * или настройка trusted_proxies в хранилище. По умолчанию список пуст:
+ * заголовки игнорируются, клиент — это REMOTE_ADDR.
+ *
+ * Почему это важно: без списка любой клиент мог прислать
+ * `X-Forwarded-For: 127.0.0.1` и обойти сетевую политику «только localhost»,
+ * а за настоящим прокси, наоборот, все клиенты выглядели бы одним адресом
+ * прокси (общий счётчик попыток входа и «localhost» для всех).
+ * @return list<string>
+ */
+function editor_trusted_proxies(?array $cfg = null): array
 {
-    // REMOTE_ADDR is the most trustworthy; proxy headers checked as fallback
-    $candidates = [
-        (string)($_SERVER['REMOTE_ADDR'] ?? ''),
-        trim((string)($_SERVER['HTTP_X_FORWARDED_FOR'] ?? '')),
-        trim((string)($_SERVER['HTTP_X_REAL_IP'] ?? '')),
-    ];
+    $env = getenv('EDITOR_STUDIO_TRUSTED_PROXIES');
+    if (is_string($env) && trim($env) !== '') {
+        return array_values(array_filter(array_map('trim', explode(',', $env)), fn($v) => $v !== ''));
+    }
+    $cfg ??= load_cfg(false);
+    $raw = $cfg['trusted_proxies'] ?? [];
+    if (is_string($raw)) {
+        $raw = array_map('trim', explode(',', $raw));
+    }
+    if (!is_array($raw)) {
+        return [];
+    }
+    return array_values(array_filter(array_map('strval', $raw), fn($v) => trim($v) !== ''));
+}
 
-    foreach ($candidates as $candidate) {
-        if ($candidate === '') {
-            continue;
-        }
-        // X-Forwarded-For may contain a chain: take the first valid IP
-        $parts = array_map('trim', explode(',', $candidate));
-        foreach ($parts as $part) {
-            if (filter_var($part, FILTER_VALIDATE_IP)) {
-                return $part;
-            }
-        }
+/**
+ * Чистая логика выбора адреса клиента (выделена для тестов).
+ * Заголовки прокси учитываются, только если непосредственный сосед
+ * (REMOTE_ADDR) входит в список доверенных прокси. В цепочке
+ * X-Forwarded-For идём справа налево, пропуская доверенные узлы:
+ * первый недоверенный — клиент; если доверены все — самый левый.
+ */
+function editor_resolve_client_ip(string $remoteAddr, string $forwardedFor, string $realIp, array $trustedProxies): string
+{
+    $remote = trim($remoteAddr);
+    if (!filter_var($remote, FILTER_VALIDATE_IP)) {
+        return '';
+    }
+    if ($trustedProxies === [] || !ip_in_cidrs($remote, $trustedProxies)) {
+        return $remote;
     }
 
-    return '';
+    $chain = [];
+    foreach (array_map('trim', explode(',', $forwardedFor)) as $part) {
+        if (filter_var($part, FILTER_VALIDATE_IP)) {
+            $chain[] = $part;
+        }
+    }
+    if ($chain !== []) {
+        for ($i = count($chain) - 1; $i >= 0; $i--) {
+            if (!ip_in_cidrs($chain[$i], $trustedProxies)) {
+                return $chain[$i];
+            }
+        }
+        return $chain[0];
+    }
+
+    $real = trim($realIp);
+    return filter_var($real, FILTER_VALIDATE_IP) ? $real : $remote;
+}
+
+function get_request_ip(?array $cfg = null): string
+{
+    return editor_resolve_client_ip(
+        (string)($_SERVER['REMOTE_ADDR'] ?? ''),
+        (string)($_SERVER['HTTP_X_FORWARDED_FOR'] ?? ''),
+        (string)($_SERVER['HTTP_X_REAL_IP'] ?? ''),
+        editor_trusted_proxies($cfg)
+    );
 }
 
 function ip_is_loopback(string $ip): bool
@@ -789,12 +1168,12 @@ function network_policy_error(array $cfg): ?string
             // Remote allowed but no IP whitelist → open access
             return null;
         }
-        $ip = get_request_ip();
+        $ip = get_request_ip($cfg);
         return ip_in_cidrs($ip, $allowed) ? null : 'Доступ с этого IP запрещён';
     }
 
     // Local-only mode
-    return ip_is_loopback(get_request_ip()) ? null : 'API редактора доступен только с localhost';
+    return ip_is_loopback(get_request_ip($cfg)) ? null : 'API редактора доступен только с localhost';
 }
 
 function enforce_network_policy(array $cfg): void
@@ -841,7 +1220,7 @@ function bootstrap_editor_api_roles(?array $roles): ?string
         $GLOBALS['EDITOR_NETWORK_GUEST_ONLY'] = true;
     }
 
-    start_editor_session();
+    start_editor_session($cfg);
 
     if ($roles === null) {
         $role = editor_session_role($cfg);

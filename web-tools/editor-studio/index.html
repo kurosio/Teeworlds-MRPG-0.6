@@ -3,18 +3,17 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; frame-src 'self'; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; form-action 'self'" />
   <title>Editor Studio</title>
+
+  <!-- Icons: локальные файлы из vendor/ (офлайн + строгий CSP); шрифты — системные -->
+  <link rel="stylesheet" href="vendor/fontawesome/css/all.min.css" />
 
   <!-- Shared theme (CSS vars) -->
   <link rel="stylesheet" href="editor-core/editor-theme.css" />
   <link rel="stylesheet" href="editor-core/editor-template.css" />
   <link rel="stylesheet" href="editor-core/tailwind.css" />
-
-  <!-- Fonts + icons -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="editor-core/studio-shell.css" />
 
   <!-- Shared theme preferences -->
   <script src="editor-core/tailwind-theme.js"></script>
@@ -32,291 +31,12 @@
   </script>
   <script src="editor-core/i18n.js"></script>
   <script src="editor-core/page-kit.js"></script>
+  <script src="editor-core/studio-palette.js"></script>
 
-  <style>
-    /* Оболочка студии: боковое меню + рабочая область.
-       Всё оформление — на токенах editor-theme.css, чтобы оболочка и сами
-       редакторы выглядели как одно приложение. */
-    html, body { height: 100%; }
-    body { overflow: hidden; }
-    .studio-iframe { width: 100%; height: 100%; border: 0; background: var(--editor-bg); }
-    .studio-app { height: 100vh; height: 100dvh; }
-
-    /* ── боковая панель: «рельс» из иконок ─────────────────────────────
-       По умолчанию меню занимает минимум места: виден только столбец иконок
-       (рельс). Наведение курсора или фокус с клавиатуры раскрывает панель
-       ПОВЕРХ рабочей области — редактор в iframe при этом не пересобирается
-       и не «прыгает». Когда область не активна, панель снова сворачивается
-       до рельса. Кнопка в шапке (Ctrl+B) закрепляет панель открытой: тогда
-       она занимает место в раскладке и ничего не перекрывает. */
-    .studio-app {
-      --studio-rail-w: 64px;
-      --studio-panel-w: 292px;
-    }
-    @media (max-width: 1280px) { .studio-app { --studio-panel-w: 276px; } }
-    @media (max-width: 1024px) { .studio-app { --studio-rail-w: 58px; --studio-panel-w: 260px; } }
-    @media (max-width: 860px)  { .studio-app { --studio-rail-w: 52px; --studio-panel-w: 244px; } }
-    @media (min-width: 1680px) { .studio-app { --studio-panel-w: 312px; } }
-
-    .studio-sidebar {
-      position: relative;
-      flex: 0 0 auto;
-      display: none;
-      width: var(--studio-rail-w);
-      z-index: 60;
-      transition: width .2s ease;
-    }
-    @media (min-width: 768px) { .studio-sidebar { display: block; } }
-    body.studio-sidebar-pinned .studio-sidebar { width: var(--studio-panel-w); }
-
-    /* Панель вынесена из потока: раскрытие не меняет ширину рабочей области. */
-    .studio-sidebar__panel {
-      position: absolute; top: 0; bottom: 0; left: 0;
-      display: flex; flex-direction: column;
-      width: var(--studio-rail-w);
-      overflow: hidden;
-      background: var(--editor-surface);
-      border-right: 1px solid var(--editor-line);
-      transition: width .2s ease, box-shadow .2s ease;
-    }
-    .studio-sidebar.is-open .studio-sidebar__panel,
-    body.studio-sidebar-pinned .studio-sidebar__panel {
-      width: var(--studio-panel-w);
-    }
-    .studio-sidebar.is-open .studio-sidebar__panel {
-      box-shadow: var(--editor-shadow-md);
-    }
-
-    /* ── рельс: видны только иконки ─────────────────────────────────── */
-    .studio-sidebar.is-rail .studio-label,
-    .studio-sidebar.is-rail .studio-item-text,
-    .studio-sidebar.is-rail .studio-brand-text,
-    .studio-sidebar.is-rail .studio-group-count { display: none; }
-
-    .studio-sidebar.is-rail .studio-brand { padding: 14px 0; justify-content: center; }
-    .studio-sidebar.is-rail .studio-nav { padding: 0 6px 10px; }
-    .studio-sidebar.is-rail .studio-item { justify-content: center; gap: 0; padding: 6px 0; }
-    .studio-sidebar.is-rail .studio-group-title {
-      justify-content: center; padding: 10px 0 2px; margin-top: 4px;
-    }
-    /* Заголовок группы остаётся для скринридеров, но не занимает места. */
-    .studio-sidebar.is-rail .studio-group-label {
-      position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
-      overflow: hidden; clip: rect(0 0 0 0); clip-path: inset(50%);
-      white-space: nowrap; border: 0;
-    }
-    .studio-sidebar.is-rail .studio-group-title::after {
-      content: ''; width: 22px; height: 1px; background: var(--editor-line-strong);
-    }
-    /* Счётчик запросов в рельсе — точка в углу иконки. */
-    .studio-sidebar.is-rail .studio-nav-badge {
-      position: absolute; top: 4px; right: 10px;
-      width: 8px; height: 8px; min-width: 0; padding: 0; border-radius: 999px;
-      font-size: 0; line-height: 0; overflow: hidden;
-      box-shadow: 0 0 0 2px var(--editor-surface);
-    }
-    .studio-sidebar.is-rail .studio-sidebar-foot {
-      flex-direction: column; align-items: center; gap: 6px; padding: 10px 0;
-    }
-    .studio-sidebar.is-rail .studio-foot-btn {
-      flex: 0 0 auto; width: 36px; min-width: 36px; height: 36px; padding: 0;
-      justify-content: center;
-    }
-
-    /* ── мобильное меню (наведения на телефоне нет) ─────────────────── */
-    .studio-drawer {
-      width: min(320px, 86vw);
-      background: var(--editor-surface);
-      border-right: 1px solid var(--editor-line);
-      display: flex; flex-direction: column;
-    }
-
-    /* Кнопка-переключатель в «нажатом» состоянии (меню закреплено). */
-    .studio-app .editor-icon-btn.active {
-      color: var(--editor-primary);
-      border-color: color-mix(in srgb, var(--editor-primary) 45%, transparent);
-      background: color-mix(in srgb, var(--editor-primary) 14%, transparent);
-    }
-
-    .studio-brand { padding: 16px 16px 12px; display: flex; align-items: center; gap: 12px; min-width: 0; }
-    .studio-brand-text { min-width: 0; flex: 1 1 auto; }
-    .studio-brand-mark {
-      width: 38px; height: 38px; flex: 0 0 38px; border-radius: 11px;
-      display: grid; place-items: center; color: #fff; font-size: 15px;
-      background: linear-gradient(140deg, var(--editor-primary), var(--editor-accent));
-    }
-    .studio-brand-mark--sm { width: 32px; height: 32px; flex-basis: 32px; border-radius: 9px; font-size: 13px; }
-    .studio-brand-title { font-size: 15px; font-weight: 700; letter-spacing: -.01em; line-height: 1.2; }
-    .studio-brand-sub { margin-top: 2px; font-size: 11.5px; color: var(--editor-text-muted); line-height: 1.3; }
-
-    .studio-pass-wrap { position: relative; display: block; }
-    .studio-pass-wrap input { padding-right: 38px; }
-    .studio-pass-toggle {
-      position: absolute; right: 6px; top: 50%; transform: translateY(-50%);
-      width: 28px; height: 28px; border-radius: 7px; border: 0;
-      display: inline-flex; align-items: center; justify-content: center;
-      color: var(--editor-text-muted); background: transparent; cursor: pointer;
-    }
-    .studio-pass-toggle:hover { background: var(--editor-soft-bg-strong); color: var(--editor-text); }
-
-    .studio-nav { padding: 0 8px 12px; }
-
-    /* Группа: заголовок с разрядкой и счётчиком. */
-    .studio-group-title {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 16px 10px 6px; gap: 8px;
-      font-size: 10.5px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase;
-      color: var(--editor-text-muted);
-    }
-    .studio-group-count {
-      padding: 0 6px; border-radius: 999px; font-size: 10px; font-weight: 600;
-      background: var(--editor-soft-bg-strong); color: var(--editor-text-muted);
-      letter-spacing: 0;
-    }
-
-    /* Пункт меню: плитка иконки, название, подсказка, счётчик запросов. */
-    .studio-item {
-      position: relative;
-      display: flex; align-items: center; gap: 10px; width: 100%;
-      padding: 8px 10px;
-      border: 1px solid transparent; border-radius: var(--editor-radius-sm);
-      background: transparent; color: var(--editor-text); text-align: left;
-      transition: background-color .12s ease, color .12s ease;
-    }
-    .studio-item + .studio-item { margin-top: 1px; }
-    .studio-item:hover { background: var(--editor-row-hover-bg); }
-    .studio-item-icon {
-      flex: 0 0 30px; width: 30px; height: 30px; border-radius: 8px;
-      display: grid; place-items: center; font-size: 12.5px;
-      background: var(--editor-soft-bg); color: var(--editor-text-muted);
-      transition: background-color .12s ease, color .12s ease;
-    }
-    .studio-item-text { min-width: 0; flex: 1 1 auto; }
-    .studio-item-title { font-size: 13.5px; font-weight: 600; line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .studio-item-hint { margin-top: 1px; font-size: 11.5px; line-height: 1.3; color: var(--editor-text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .studio-item:hover .studio-item-icon { color: var(--editor-text); }
-
-    .studio-item.active { background: var(--editor-row-active-bg); }
-    .studio-item.active::before {
-      content: ''; position: absolute; left: 0; top: 8px; bottom: 8px; width: 2px;
-      border-radius: 999px; background: var(--editor-primary);
-    }
-    .studio-item.active .studio-item-icon { background: var(--editor-primary); color: #fff; }
-    .studio-item.active .studio-item-title { color: var(--editor-text-strong); }
-    .studio-item:focus-visible { outline: 2px solid var(--editor-primary); outline-offset: 1px; }
-
-    .studio-nav-badge {
-      flex: 0 0 auto; min-width: 20px; padding: 1px 6px; border-radius: 999px;
-      font-size: 10.5px; font-weight: 700; text-align: center;
-      background: var(--editor-warning); color: #1b1206;
-    }
-
-    .studio-sidebar-foot {
-      display: flex; align-items: center; gap: 8px;
-      padding: 12px; border-top: 1px solid var(--editor-line);
-    }
-    .studio-foot-btn { flex: 1 1 auto; min-width: 0; }
-    .studio-foot-icon { flex: 0 0 auto; }
-
-    .studio-role-chip {
-      display: inline-flex; align-items: center; gap: 5px; padding: 1px 7px;
-      border-radius: 999px; font-size: 10.5px; font-weight: 600;
-      border: 1px solid var(--editor-soft-border-strong);
-    }
-    .studio-role-chip.is-guest { color: var(--editor-warning); border-color: color-mix(in srgb, var(--editor-warning) 40%, transparent); background: color-mix(in srgb, var(--editor-warning) 10%, transparent); }
-    .studio-role-chip.is-admin { color: var(--editor-accent); border-color: color-mix(in srgb, var(--editor-accent) 36%, transparent); background: color-mix(in srgb, var(--editor-accent) 8%, transparent); }
-
-    /* ── рабочая область ──────────────────────────────────────────── */
-    .studio-workbar {
-      min-height: 60px; padding: 0 18px;
-      background: var(--editor-surface);
-      border-bottom: 1px solid var(--editor-line);
-      display: flex; align-items: center; justify-content: space-between; gap: 16px;
-    }
-    .studio-workbar-title { font-size: 14.5px; font-weight: 650; letter-spacing: -.005em; line-height: 1.25; }
-    .studio-workbar-meta { margin-top: 1px; font-size: 11.5px; color: var(--editor-text-muted); line-height: 1.3; }
-
-    .studio-mobile-bar {
-      min-height: 56px; padding: 0 12px;
-      background: var(--editor-surface); border-bottom: 1px solid var(--editor-line);
-      display: flex; align-items: center; justify-content: space-between; gap: 12px;
-    }
-    .studio-mobile-title { font-size: 14px; font-weight: 650; }
-
-    .studio-loading {
-      position: absolute; z-index: 5; left: 0; right: 0; top: 0; height: 2px;
-      overflow: hidden; opacity: 0; transition: opacity .15s ease;
-    }
-    .studio-loading::after {
-      content: ''; display: block; width: 32%; height: 100%;
-      background: var(--editor-primary);
-      animation: studioLoad 1.1s ease-in-out infinite;
-    }
-    .studio-loading.active { opacity: 1; }
-    @keyframes studioLoad { from { transform: translateX(-110%); } to { transform: translateX(360%); } }
-
-    /* ── вход ─────────────────────────────────────────────────────── */
-    .studio-auth-card {
-      position: relative;
-      width: 100%; max-width: 420px;
-      background: var(--editor-surface);
-      border: 1px solid var(--editor-line-strong);
-      border-radius: var(--editor-radius-lg);
-      box-shadow: var(--editor-shadow-lg);
-      padding: 24px;
-    }
-    .studio-auth-head { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
-    .studio-auth-icon {
-      width: 36px; height: 36px; flex: 0 0 36px; border-radius: 10px;
-      display: grid; place-items: center; font-size: 14px;
-      background: color-mix(in srgb, var(--editor-accent) 14%, transparent);
-      border: 1px solid color-mix(in srgb, var(--editor-accent) 28%, transparent);
-      color: var(--editor-accent);
-    }
-    .studio-auth-card h2 { margin: 0; font-size: 17px; font-weight: 700; letter-spacing: -.01em; }
-    .studio-auth-field { display: block; }
-    .studio-auth-field + .studio-auth-field { margin-top: 12px; }
-    .studio-auth-field > span { display: block; margin-bottom: 5px; font-size: 12.5px; font-weight: 600; color: var(--editor-text-muted); }
-    .studio-auth-tabs {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px;
-      border-radius: var(--editor-radius-md);
-      background: var(--editor-soft-bg); border: 1px solid var(--editor-line);
-    }
-    .auth-tabs {
-      display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px;
-      border-radius: var(--editor-radius-md);
-      background: var(--editor-soft-bg); border: 1px solid var(--editor-line);
-    }
-    .auth-tab {
-      height: 32px; border-radius: 7px; font-size: 12.5px; font-weight: 600;
-      color: var(--editor-text-muted); display: inline-flex; align-items: center;
-      justify-content: center; gap: 6px; border: 0; background: transparent;
-    }
-    .auth-tab:hover { color: var(--editor-text); }
-    .auth-tab.active { background: var(--editor-surface-2); color: var(--editor-text); box-shadow: 0 0 0 1px var(--editor-line-strong); }
-    .auth-tab:disabled { opacity: .45; cursor: not-allowed; }
-    .auth-guest-note {
-      border: 1px solid color-mix(in srgb, var(--editor-warning) 30%, transparent);
-      background: color-mix(in srgb, var(--editor-warning) 8%, transparent);
-      border-radius: var(--editor-radius-md); padding: 10px 12px;
-      font-size: 12.5px; line-height: 1.5; color: var(--editor-text);
-    }
-    .auth-guest-note b { font-weight: 600; }
-
-    .studio-scrim { background: color-mix(in srgb, #05080f 72%, transparent); backdrop-filter: blur(2px); }
-
-    .auth-status { margin-top: 12px; font-size: var(--editor-text-sm); line-height: 1.45; }
-    .auth-status.is-ok { color: var(--editor-success); }
-    .auth-status.is-err { color: var(--editor-danger); }
-
-    @media (prefers-reduced-motion: reduce) {
-      .studio-item, .studio-item:hover, .studio-loading::after { transition: none; animation: none; }
-      .studio-sidebar, .studio-sidebar__panel { transition: none; }
-    }
-  </style>
 </head>
 
 <body class="editor-theme" data-editor="home">
+  <a class="studio-skip" href="#studioMain">Skip to the editor</a>
   <div id="studioApp" class="studio-app flex overflow-hidden hidden">
     <!-- Sidebar: рельс с иконками, раскрывается при наведении/фокусе -->
     <aside id="studioSidebar" class="studio-sidebar">
@@ -329,6 +49,13 @@
               <span class="studio-label">MRPG workspace</span>
               <span id="studioRoleChip" class="studio-role-chip hidden"></span>
             </div>
+          </div>
+        </div>
+
+        <div class="studio-nav-filter">
+          <div class="editor-search">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input id="navFilter" type="search" class="w-full editor-input form-input" placeholder="Filter editors…" aria-label="Filter editors" />
           </div>
         </div>
 
@@ -346,6 +73,7 @@
             <i class="fa-solid fa-right-from-bracket"></i>
           </button>
         </div>
+        <div id="sidebarResizer" class="studio-resizer" title="Drag to resize the menu"></div>
       </div>
     </aside>
 
@@ -378,18 +106,29 @@
           </div>
         </div>
         <div class="studio-workbar-actions flex items-center gap-2">
+          <button id="paletteBtn" class="editor-btn editor-btn-secondary" type="button" title="Search editors and actions (Ctrl+K)" aria-label="Search editors and actions (Ctrl+K)">
+            <i class="fa-solid fa-magnifying-glass"></i><span class="hidden xl:inline">Search</span><span class="studio-kbd">Ctrl K</span>
+          </button>
           <button type="button" class="editor-icon-btn" data-theme-toggle title="Switch color theme" aria-label="Switch color theme">
             <i class="fa-solid fa-circle-half-stroke"></i>
           </button>
           <button id="reloadEditorBtn" class="editor-icon-btn" type="button" title="Reload active editor" aria-label="Reload active editor">
             <i class="fa-solid fa-rotate"></i>
           </button>
+          <button id="prefsBtn" class="editor-icon-btn" type="button" title="Appearance settings" aria-label="Appearance settings">
+            <i class="fa-solid fa-sliders"></i>
+          </button>
+          <button id="shortcutsBtn" class="editor-icon-btn" type="button" title="Keyboard shortcuts (?)" aria-label="Keyboard shortcuts">
+            <i class="fa-solid fa-keyboard"></i>
+          </button>
         </div>
       </header>
 
-      <main class="flex-grow overflow-hidden relative">
+      <div id="studioTabs" class="studio-tabs" role="tablist" aria-label="Open editors"></div>
+
+      <main id="studioMain" class="flex-grow overflow-hidden relative" tabindex="-1">
         <div id="studioLoading" class="studio-loading" aria-hidden="true"></div>
-        <iframe id="editor-frame" class="studio-iframe" src="" title="Active editor"></iframe>
+        <div id="studioFrames" class="studio-frames"></div>
       </main>
     </div>
 
@@ -401,6 +140,12 @@
           <span class="studio-brand-mark"><i class="fa-solid fa-layer-group"></i></span>
           <div class="studio-brand-title flex-grow">Menu</div>
           <button id="mobileCloseBtn" title="Close the menu" aria-label="Close the menu" class="editor-icon-btn"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="studio-nav-filter">
+          <div class="editor-search">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input id="navFilterMobile" type="search" class="w-full editor-input form-input" placeholder="Filter editors…" aria-label="Filter editors" />
+          </div>
         </div>
         <nav id="mobileNav" class="studio-nav flex-grow overflow-y-auto" aria-label="Editors"></nav>
         <div class="studio-sidebar-foot">
@@ -485,12 +230,84 @@
           </button>
         </div>
         <div id="auth-status" class="editor-help-text mt-3" role="status"></div>
+        <div id="auth-caps" class="studio-caps" hidden><i class="fa-solid fa-triangle-exclamation"></i>Caps Lock is on</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Appearance preferences -->
+  <div id="prefsModal" class="hidden fixed inset-0 z-[800] items-center justify-center editor-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="prefsTitle">
+    <div class="editor-modal-content p-6 w-full max-w-lg">
+      <div class="flex items-start justify-between gap-3 mb-4">
+        <div>
+          <h3 id="prefsTitle" class="text-xl font-bold flex items-center gap-2"><i class="fa-solid fa-sliders text-accent"></i>Appearance</h3>
+          <p class="editor-help-text mt-1">Applies to the shell and every editor. Stored in this browser.</p>
+        </div>
+        <button type="button" class="editor-icon-btn" data-close-prefs title="Close" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+
+      <div class="space-y-5">
+        <div>
+          <div class="text-sm font-medium mb-2">Theme</div>
+          <div class="studio-seg" role="group" aria-label="Theme">
+            <button type="button" class="studio-seg-btn" data-pref-mode="dark"><i class="fa-solid fa-moon"></i>Dark</button>
+            <button type="button" class="studio-seg-btn" data-pref-mode="light"><i class="fa-solid fa-sun"></i>Light</button>
+            <button type="button" class="studio-seg-btn" data-pref-mode="system"><i class="fa-solid fa-display"></i>System</button>
+          </div>
+        </div>
+
+        <div>
+          <div class="text-sm font-medium mb-2">Accent color</div>
+          <div class="flex items-center gap-2" role="group" aria-label="Accent color">
+            <button type="button" class="studio-swatch" data-pref-accent="indigo" title="Indigo" aria-label="Indigo accent"></button>
+            <button type="button" class="studio-swatch" data-pref-accent="teal" title="Teal" aria-label="Teal accent"></button>
+            <button type="button" class="studio-swatch" data-pref-accent="violet" title="Violet" aria-label="Violet accent"></button>
+            <button type="button" class="studio-swatch" data-pref-accent="amber" title="Amber" aria-label="Amber accent"></button>
+          </div>
+        </div>
+
+        <div>
+          <div class="text-sm font-medium mb-2">Density</div>
+          <div class="studio-seg" role="group" aria-label="Density">
+            <button type="button" class="studio-seg-btn" data-pref-density="comfortable"><i class="fa-solid fa-expand"></i>Comfortable</button>
+            <button type="button" class="studio-seg-btn" data-pref-density="compact"><i class="fa-solid fa-compress"></i>Compact</button>
+          </div>
+          <p class="editor-help-text mt-2">Compact density fits more rows on screen — handy for large tables.</p>
+        </div>
+      </div>
+
+      <div class="flex justify-end gap-2 mt-6">
+        <button type="button" class="editor-btn editor-btn-secondary" data-close-prefs>Close</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Keyboard shortcuts -->
+  <div id="shortcutsModal" class="hidden fixed inset-0 z-[800] items-center justify-center editor-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby="shortcutsTitle">
+    <div class="editor-modal-content p-6 w-full max-w-lg">
+      <div class="flex items-start justify-between gap-3 mb-4">
+        <h3 id="shortcutsTitle" class="text-xl font-bold flex items-center gap-2"><i class="fa-solid fa-keyboard text-accent"></i>Keyboard shortcuts</h3>
+        <button type="button" class="editor-icon-btn" data-close-shortcuts title="Close" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <dl class="studio-shortcuts">
+        <dt><span class="studio-kbd">Ctrl K</span></dt><dd>Command palette: find an editor or an action</dd>
+        <dt><span class="studio-kbd">Ctrl B</span></dt><dd>Pin or unpin the menu</dd>
+        <dt><span class="studio-kbd">Ctrl Tab</span></dt><dd>Next open editor (with Shift: previous)</dd>
+        <dt><span class="studio-kbd">Ctrl Shift T</span></dt><dd>Reopen the closed tab</dd>
+        <dt><span class="studio-kbd">Alt 1…9</span></dt><dd>Switch to a tab by number</dd>
+        <dt><span class="studio-kbd">/</span></dt><dd>Focus the menu filter</dd>
+        <dt><span class="studio-kbd">?</span></dt><dd>This list of shortcuts</dd>
+        <dt><span class="studio-kbd">Esc</span></dt><dd>Close dialogs and menus</dd>
+      </dl>
+      <p class="editor-help-text mt-4">Shortcuts work when the shell has focus. Inside an editor, click its header or the menu first.</p>
+      <div class="flex justify-end gap-2 mt-5">
+        <button type="button" class="editor-btn editor-btn-primary" data-close-shortcuts>Done</button>
       </div>
     </div>
   </div>
 
   <script>
-    const frame = document.getElementById('editor-frame');
+    let frame = null;
     const openNewTab = document.getElementById('open-new-tab');
 
     const sidebarNav = document.getElementById('studioNav');
@@ -508,6 +325,10 @@
     const desktopEditorIcon = document.getElementById('desktopEditorIcon');
     const reloadEditorBtn = document.getElementById('reloadEditorBtn');
     const studioLoading = document.getElementById('studioLoading');
+    const framesHost = document.getElementById('studioFrames');
+    const tabsHost = document.getElementById('studioTabs');
+    const navFilterInput = document.getElementById('navFilter');
+    const navFilterMobileInput = document.getElementById('navFilterMobile');
 
     const ALL_GROUPS = Array.isArray(window.STUDIO_MANIFEST) ? window.STUDIO_MANIFEST : [];
     const Guest = window.EditorCore?.Guest || null;
@@ -533,6 +354,17 @@
     };
     const getEditors = () => getGroups().flatMap(g => g.items || []);
     const navBadges = { requests: 0 };
+    // Меню: фильтр, избранное и недавние редакторы (отдельно для каждой роли).
+    let navFilterText = '';
+    const favoritesKey = () => (currentRole === 'guest' ? 'studio.favorites.guest' : 'studio.favorites.admin');
+    const recentKey = () => (currentRole === 'guest' ? 'studio.recent.guest' : 'studio.recent.admin');
+    const readKeyList = (key) => {
+      try {
+        const value = JSON.parse(storageGet(key) || '[]');
+        return Array.isArray(value) ? value.map(String) : [];
+      } catch { return []; }
+    };
+    const writeKeyList = (key, list) => storageSet(key, JSON.stringify(list.slice(0, 24)));
     // The last opened tab is remembered per role: a guest must not inherit the
     // administrator's tab (and vice versa) on a shared browser profile.
     const activeEditorStorageKey = () => (currentRole === 'guest' ? 'studio.activeEditor.guest' : 'studio.activeEditor');
@@ -638,6 +470,7 @@
     const setRole = (role, label = '') => {
       currentRole = role || null;
       currentUserLabel = label || '';
+      restoreTabsForRole(currentRole);
       if (roleChip) {
         roleChip.classList.toggle('hidden', !currentRole);
         roleChip.classList.toggle('is-guest', currentRole === 'guest');
@@ -667,6 +500,11 @@
     // перезаписать свежий.
     const refreshBadges = async () => {
       clearTimeout(badgeTimer);
+      // Скрытой вкладке браузер и так душит таймеры; сервер не дёргаем вовсе.
+      if (document.visibilityState === 'hidden') {
+        if (currentRole === 'guest' || currentRole === 'admin') badgeTimer = setTimeout(refreshBadges, 60000);
+        return;
+      }
       const seq = ++badgeSeq;
       let next = 0;
       if (currentRole === 'guest') {
@@ -718,35 +556,95 @@
       }
       isAuthorized = false;
       setRole(null);
-      frame.src = 'about:blank';
-      setAuthStatus(activeAuthTab === 'guest'
+      clearFrames();
+      setAuthStatus(status.code === 'session_expired'
+        ? 'The session has expired. Sign in again to continue.'
+        : activeAuthTab === 'guest'
         ? (authInfo.guest?.enabled ? 'Enter the guest account login and password.' : 'No guest accounts exist — contact the administrator.')
         : 'Enter the administrator credentials to sign in.');
       setAuthOverlay(true);
       return false;
     };
 
+    const editorMatchesFilter = (e, groupTitle) => {
+      const q = navFilterText.trim().toLowerCase();
+      if (!q) return true;
+      const keywords = Array.isArray(e.keywords) ? e.keywords.join(' ') : String(e.keywords || '');
+      const hay = [e.title, e.hint, e.key, groupTitle, keywords].join(' ').toLowerCase();
+      return q.split(/\s+/).every((term) => hay.includes(term));
+    };
+
+    const toggleFavorite = (key) => {
+      const list = readKeyList(favoritesKey());
+      writeKeyList(favoritesKey(), list.includes(key) ? list.filter((k) => k !== key) : [key, ...list]);
+      renderAllNavs(activeKey);
+    };
+
+    const pushRecent = (key) => {
+      writeKeyList(recentKey(), [key, ...readKeyList(recentKey()).filter((k) => k !== key)].slice(0, 6));
+    };
+
+    const collapsedGroupsKey = () => (currentRole === 'guest' ? 'studio.collapsedGroups.guest' : 'studio.collapsedGroups.admin');
+    const toggleGroupCollapsed = (id) => {
+      const list = readKeyList(collapsedGroupsKey());
+      writeKeyList(collapsedGroupsKey(), list.includes(id) ? list.filter((k) => k !== id) : [...list, id]);
+      renderAllNavs(activeKey);
+    };
+
     const renderNav = (root, active) => {
       if (!root) return;
       root.innerHTML = '';
+      const filtering = !!navFilterText.trim();
+      const all = getEditors();
+      const byEditorKey = new Map(all.map((e) => [e.key, e]));
+      const favorites = readKeyList(favoritesKey());
+      const favoriteSet = new Set(favorites);
+
+      const sections = [];
+      const favItems = favorites.map((k) => byEditorKey.get(k)).filter(Boolean);
+      if (favItems.length) sections.push({ id: 'favorites', title: 'Favorites', items: favItems });
+      const recentItems = readKeyList(recentKey())
+        .map((k) => byEditorKey.get(k))
+        .filter((e) => e && !favoriteSet.has(e.key))
+        .slice(0, 5);
+      if (recentItems.length) sections.push({ id: 'recent', title: 'Recent', items: recentItems });
+      for (const g of getGroups()) sections.push({ id: g.id || g.title || 'Group', title: g.title || 'Group', items: g.items || [] });
+
       let hasItems = false;
       const fragment = document.createDocumentFragment();
-      for (const g of getGroups()) {
-        const items = g.items || [];
+      // При активном фильтре свёрнутые группы временно раскрываются.
+      const collapsedSet = filtering ? new Set() : new Set(readKeyList(collapsedGroupsKey()));
+      for (const section of sections) {
+        const items = section.items.filter((e) => editorMatchesFilter(e, section.title));
         if (!items.length) continue;
         hasItems = true;
-        const header = document.createElement('div');
-        header.className = 'studio-group-title';
+        const collapsed = collapsedSet.has(section.id);
+        const header = document.createElement('button');
+        header.type = 'button';
+        header.className = `studio-group-title${collapsed ? ' is-collapsed' : ''}`;
+        header.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+        header.addEventListener('click', () => toggleGroupCollapsed(section.id));
         const groupLabel = document.createElement('span');
         groupLabel.className = 'studio-group-label';
-        groupLabel.textContent = g.title || 'Group';
+        groupLabel.textContent = section.title;
+        const groupMeta = document.createElement('span');
+        groupMeta.className = 'studio-group-meta';
         const groupCount = document.createElement('span');
         groupCount.className = 'studio-group-count';
         groupCount.textContent = String(items.length);
-        header.append(groupLabel, groupCount);
+        const groupChev = document.createElement('span');
+        groupChev.className = 'studio-group-chev';
+        groupChev.innerHTML = '<i class="fa-solid fa-chevron-down"></i>';
+        groupMeta.append(groupCount, groupChev);
+        header.append(groupLabel, groupMeta);
         fragment.appendChild(header);
+        const itemsBox = document.createElement('div');
+        itemsBox.className = 'studio-group-items';
+        fragment.appendChild(itemsBox);
 
         for (const e of items) {
+          const wrap = document.createElement('div');
+          wrap.className = 'studio-item-wrap';
           const btn = document.createElement('button');
           const isActive = e.key === active;
           btn.className = `studio-item${isActive ? ' active' : ''}`;
@@ -760,16 +658,30 @@
           const sub = e.hint || '';
           btn.innerHTML = `<span class="studio-item-icon"><i class="fa-solid ${e.icon}"></i></span><span class="studio-item-text"><span class="studio-item-title block">${e.title}</span>${sub ? `<span class="studio-item-hint block">${sub}</span>` : ''}</span>${badge}`;
           btn.addEventListener('click', () => openEditor(e.key, { closeMobile: true }));
-          fragment.appendChild(btn);
+
+          const isFav = favoriteSet.has(e.key);
+          const favBtn = document.createElement('button');
+          favBtn.type = 'button';
+          favBtn.className = `studio-fav-btn${isFav ? ' is-fav' : ''}`;
+          favBtn.innerHTML = `<i class="${isFav ? 'fa-solid' : 'fa-regular'} fa-star"></i>`;
+          const favLabel = isFav ? 'Remove from favorites' : 'Add to favorites';
+          favBtn.title = favLabel;
+          favBtn.setAttribute('aria-label', `${favLabel}: ${e.title || e.key}`);
+          favBtn.setAttribute('aria-pressed', isFav ? 'true' : 'false');
+          favBtn.addEventListener('click', (event) => { event.stopPropagation(); toggleFavorite(e.key); });
+
+          wrap.append(btn, favBtn);
+          itemsBox.appendChild(wrap);
         }
       }
       if (!hasItems) {
-        // У гостя список пуст, пока администратор не выдал ни одной вкладки.
         const empty = document.createElement('div');
         empty.className = 'editor-empty-state';
-        empty.textContent = currentRole === 'guest'
-          ? 'The administrator has not enabled any tab for you yet. Message them to get access.'
-          : 'The editor list is empty.';
+        empty.textContent = filtering
+          ? 'Nothing matches the filter.'
+          : currentRole === 'guest'
+            ? 'The administrator has not enabled any tab for you yet. Message them to get access.'
+            : 'The editor list is empty.';
         root.appendChild(empty);
         return;
       }
@@ -781,9 +693,9 @@
       renderNav(mobileNav, active);
     };
 
-    const requestFrameDirtyStatus = () => {
-      const frameWindow = frame?.contentWindow;
-      if (!frameWindow || !activeKey) return Promise.resolve({ supported: false, dirty: false });
+    const requestFrameDirtyStatus = (targetFrame = frame) => {
+      const frameWindow = targetFrame?.contentWindow;
+      if (!frameWindow || !targetFrame?.dataset?.editorKey) return Promise.resolve({ supported: false, dirty: false });
       const requestId = `dirty:${Date.now()}:${++dirtyStatusRequestSeq}`;
 
       return new Promise((resolve) => {
@@ -821,6 +733,134 @@
       return url.href;
     };
 
+    // ── Keep-alive editors ──────────────────────────────────────────────
+    // Каждый открытый редактор живёт в собственном iframe. Переключение
+    // только прячет/показывает кадры: мгновенно и без потери несохранённых
+    // правок. Одновременно держим до MAX_FRAMES редакторов; вытесняется
+    // давно не использовавшийся и только если в нём нет несохранённой работы.
+    const MAX_FRAMES = 5;
+    const frames = new Map(); // key -> iframe
+    const frameUse = new Map(); // key -> время последнего показа
+    // Вкладки отделены от кадров: список открытых вкладок сохраняется по
+    // роли и переживает перезагрузку страницы, а iframe создаётся лениво —
+    // при первом выборе вкладки. Вытеснение кадра вкладку не закрывает.
+    let tabOrder = [];
+    const closedTabs = []; // стек закрытых вкладок (Ctrl+Shift+T)
+    let tabsRestoredFor = '';
+    const tabsStorageKey = () => (currentRole === 'guest' ? 'studio.tabs.guest' : 'studio.tabs.admin');
+    const persistTabs = () => { if (currentRole) writeKeyList(tabsStorageKey(), tabOrder); };
+    const restoreTabsForRole = (role) => {
+      const rk = role || '';
+      if (tabsRestoredFor === rk) return;
+      tabsRestoredFor = rk;
+      closedTabs.length = 0;
+      if (!rk) { tabOrder = []; return; }
+      const allowed = new Set(getEditors().map((entry) => entry.key));
+      tabOrder = readKeyList(tabsStorageKey()).filter((k) => allowed.has(k));
+      renderTabs();
+    };
+
+    const renderTabs = () => {
+      if (!tabsHost) return;
+      tabsHost.innerHTML = '';
+      for (const key of tabOrder) {
+        const e = getEditors().find((entry) => entry.key === key);
+        if (!e) continue;
+        const tab = document.createElement('div');
+        tab.className = `studio-tab${key === activeKey ? ' active' : ''}${frames.has(key) ? '' : ' is-lazy'}`;
+        tab.dataset.tabKey = key;
+        tab.draggable = true;
+        tab.setAttribute('role', 'tab');
+        tab.setAttribute('aria-selected', key === activeKey ? 'true' : 'false');
+        const open = document.createElement('button');
+        open.type = 'button';
+        open.className = 'studio-tab-open';
+        open.dataset.openTab = key;
+        open.innerHTML = `<i class="fa-solid ${e.icon || 'fa-pen-ruler'}"></i><span class="studio-tab-title">${e.title || key}</span>`;
+        const close = document.createElement('button');
+        close.type = 'button';
+        close.className = 'studio-tab-close';
+        close.dataset.closeTab = key;
+        close.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+        close.title = 'Close editor';
+        close.setAttribute('aria-label', `Close editor: ${e.title || key}`);
+        tab.append(open, close);
+        tabsHost.appendChild(tab);
+      }
+    };
+
+    const showFrame = (key) => {
+      for (const [k, el] of frames) el.hidden = k !== key;
+      frameUse.set(key, Date.now());
+    };
+
+    const destroyFrame = (key) => {
+      const el = frames.get(key);
+      if (el) {
+        try { el.src = 'about:blank'; } catch { /* кадр уже мёртв */ }
+        el.remove();
+      }
+      frames.delete(key);
+      frameUse.delete(key);
+      if (frame?.dataset?.editorKey === key) frame = null;
+    };
+
+    const clearFrames = () => {
+      for (const key of [...frames.keys()]) destroyFrame(key);
+      tabOrder = [];
+      closedTabs.length = 0;
+      tabsRestoredFor = '';
+      renderTabs();
+    };
+
+    const evictFramesIfNeeded = async (keepKey) => {
+      while (frames.size > MAX_FRAMES) {
+        const candidates = [...frames.keys()]
+          .filter((k) => k !== keepKey && k !== activeKey)
+          .sort((a, b) => (frameUse.get(a) || 0) - (frameUse.get(b) || 0));
+        if (!candidates.length) return;
+        let evicted = false;
+        for (const candidate of candidates) {
+          const state = await requestFrameDirtyStatus(frames.get(candidate));
+          if (!(state.supported && state.dirty)) { destroyFrame(candidate); evicted = true; break; }
+        }
+        if (!evicted) return; // везде несохранённая работа — временно превышаем лимит
+        renderTabs();
+      }
+    };
+
+    const closeEditor = async (key) => {
+      const el = frames.get(key);
+      if (!el && !tabOrder.includes(key)) return;
+      if (el) {
+        const state = await requestFrameDirtyStatus(el);
+        if (state.supported && state.dirty) {
+          const approved = await EditorCore.Page.confirm('You have unsaved changes. Close without saving?');
+          if (!approved) return;
+        }
+      }
+      const wasActive = key === activeKey;
+      const idx = tabOrder.indexOf(key);
+      destroyFrame(key);
+      if (idx >= 0) {
+        tabOrder = tabOrder.filter((k) => k !== key);
+        closedTabs.push(key);
+        persistTabs();
+      }
+      renderTabs();
+      if (wasActive) {
+        // Активной становится соседняя справа; у крайней правой — левая.
+        const next = tabOrder[idx] || tabOrder[tabOrder.length - 1];
+        if (next) openEditor(next);
+        else {
+          activeKey = '';
+          renderAllNavs('');
+          if (desktopEditorTitle) desktopEditorTitle.textContent = 'Workspace';
+          if (desktopEditorMeta) desktopEditorMeta.textContent = 'Pick an editor in the menu';
+        }
+      }
+    };
+
     const openEditor = async (key, { closeMobile = false, syncHash = true, params = {} } = {}) => {
       if (!isAuthorized) {
         await ensureAuthorized();
@@ -830,32 +870,47 @@
       // Never open an editor that is not allowed for the current role.
       const e = byKey(key);
       if (!e) {
-        frame.src = '';
         renderAllNavs('');
         return;
       }
-      if (activeKey && e.key !== activeKey) {
-        const dirtyState = await requestFrameDirtyStatus();
-        if (requestSeq !== openEditorRequestSeq) return;
-        if (dirtyState.supported && dirtyState.dirty) {
-          const approved = await EditorCore.Page.confirm('You have unsaved changes. Continue without saving?');
-          if (!approved) return;
-        }
+      const hasParams = Object.values(params || {}).some((v) => String(v ?? '').trim());
+      if (!tabOrder.includes(e.key)) { tabOrder.push(e.key); persistTabs(); }
+      let el = frames.get(e.key);
+      const isNew = !el;
+      if (isNew) {
+        el = document.createElement('iframe');
+        el.className = 'studio-iframe';
+        el.dataset.editorKey = e.key;
+        el.addEventListener('load', () => {
+          if (el === frame) studioLoading?.classList.remove('active');
+        });
+        frames.set(e.key, el);
+        framesHost?.appendChild(el);
       }
-      if (requestSeq !== openEditorRequestSeq) return;
       activeKey = e.key;
+      frame = el;
+      showFrame(e.key);
       renderAllNavs(e.key);
-      studioLoading?.classList.add('active');
-      frame.title = e.title || 'Active editor';
-      frame.src = editorSource(e, params);
+      renderTabs();
+      el.title = e.title || 'Active editor';
+      // Существующий кадр без параметров не перезагружаем: в нём живёт
+      // текущее состояние редактора. Глубокая ссылка с параметрами — наоборот.
+      if (isNew || hasParams) {
+        studioLoading?.classList.add('active');
+        el.src = editorSource(e, params);
+      }
+      const group = getGroups().find((g) => (g.items || []).some((it) => it.key === e.key));
       if (desktopEditorTitle) desktopEditorTitle.textContent = e.title || 'Editor';
-      if (desktopEditorMeta) desktopEditorMeta.textContent = e.hint || '';
+      if (desktopEditorMeta) desktopEditorMeta.textContent = [group?.title, e.hint].filter(Boolean).join(' · ');
       if (desktopEditorIcon) desktopEditorIcon.innerHTML = `<i class="fa-solid ${e.icon || 'fa-pen-ruler'}"></i>`;
       storageSet(activeEditorStorageKey(), e.key);
+      pushRecent(e.key);
       if (syncHash && location.hash !== '#' + e.key) location.hash = e.key;
 
       if (mobileTitle) mobileTitle.textContent = e.title || 'Editor Studio';
       if (closeMobile && mobileOverlay) mobileOverlay.classList.add('hidden');
+      if (requestSeq !== openEditorRequestSeq) return;
+      evictFramesIfNeeded(e.key);
     };
 
     const safeStorage = (() => {
@@ -958,6 +1013,154 @@
       });
     });
 
+    // ── Ширина меню: перетаскивание правого края панели ───────────────────
+    // Ширина хранится в localStorage и подставляет --studio-panel-w инлайн-
+    // стилем на .studio-app там же, где CSS задаёт значение по умолчанию.
+    // Двойной клик по ручке сбрасывает ширину к CSS-значению.
+    const SIDEBAR_WIDTH_KEY = 'studio.sidebarWidth';
+    const sidebarResizer = document.getElementById('sidebarResizer');
+    const clampSidebarWidth = (px) => Math.max(220, Math.min(440, Math.round(px) || 0));
+    const applySidebarWidth = (px) => {
+      const w = clampSidebarWidth(px);
+      if (w) studioApp?.style.setProperty('--studio-panel-w', `${w}px`);
+      return w;
+    };
+    const savedSidebarWidth = Number(storageGet(SIDEBAR_WIDTH_KEY));
+    if (savedSidebarWidth) applySidebarWidth(savedSidebarWidth);
+    sidebarResizer?.addEventListener('pointerdown', (event) => {
+      const panel = sidebar?.querySelector('.studio-sidebar__panel');
+      if (!panel) return;
+      event.preventDefault();
+      const startX = event.clientX;
+      const startW = panel.getBoundingClientRect().width;
+      // Щит на весь экран: иначе pointermove умирает над iframe редактора.
+      const shield = document.createElement('div');
+      shield.className = 'studio-drag-shield';
+      document.body.appendChild(shield);
+      const onMove = (e) => applySidebarWidth(startW + (e.clientX - startX));
+      const onUp = () => {
+        shield.removeEventListener('pointermove', onMove);
+        shield.removeEventListener('pointerup', onUp);
+        shield.remove();
+        const cur = parseInt(studioApp?.style.getPropertyValue('--studio-panel-w'), 10);
+        if (cur) storageSet(SIDEBAR_WIDTH_KEY, String(cur));
+      };
+      shield.addEventListener('pointermove', onMove);
+      shield.addEventListener('pointerup', onUp);
+    });
+    sidebarResizer?.addEventListener('dblclick', () => {
+      studioApp?.style.removeProperty('--studio-panel-w');
+      safeStorage?.removeItem(SIDEBAR_WIDTH_KEY);
+    });
+
+    // ── Палитра команд, внешний вид, справка по клавишам ──────────────────
+    const prefsModal = document.getElementById('prefsModal');
+    const shortcutsModal = document.getElementById('shortcutsModal');
+    const toggleModal = (modal, show) => {
+      modal?.classList.toggle('hidden', !show);
+      modal?.classList.toggle('flex', !!show);
+    };
+
+    const syncPrefsUi = () => {
+      const prefs = EditorCore.prefs?.get?.() || { mode: 'dark', accent: 'indigo', density: 'comfortable' };
+      document.querySelectorAll('[data-pref-mode]').forEach((b) => b.classList.toggle('active', b.dataset.prefMode === prefs.mode));
+      document.querySelectorAll('[data-pref-density]').forEach((b) => b.classList.toggle('active', b.dataset.prefDensity === prefs.density));
+      document.querySelectorAll('[data-pref-accent]').forEach((b) => {
+        const active = b.dataset.prefAccent === prefs.accent;
+        b.classList.toggle('active', active);
+        b.innerHTML = active ? '<i class="fa-solid fa-check"></i>' : '';
+      });
+    };
+    const togglePrefs = (show) => {
+      toggleModal(prefsModal, show);
+      if (show) { syncPrefsUi(); prefsModal?.querySelector('[data-close-prefs]')?.focus(); }
+    };
+    const toggleShortcuts = (show) => {
+      toggleModal(shortcutsModal, show);
+      if (show) shortcutsModal?.querySelector('[data-close-shortcuts]')?.focus();
+    };
+
+    document.getElementById('prefsBtn')?.addEventListener('click', () => togglePrefs(true));
+    document.getElementById('shortcutsBtn')?.addEventListener('click', () => toggleShortcuts(true));
+    document.querySelectorAll('[data-close-prefs]').forEach((b) => b.addEventListener('click', () => togglePrefs(false)));
+    document.querySelectorAll('[data-close-shortcuts]').forEach((b) => b.addEventListener('click', () => toggleShortcuts(false)));
+    [prefsModal, shortcutsModal].forEach((modal) => modal?.addEventListener('mousedown', (e) => {
+      if (e.target === modal) toggleModal(modal, false);
+    }));
+    document.querySelectorAll('[data-pref-mode]').forEach((b) => b.addEventListener('click', () => {
+      EditorCore.prefs?.set?.({ mode: b.dataset.prefMode });
+      syncPrefsUi(); syncThemeButtons();
+    }));
+    document.querySelectorAll('[data-pref-density]').forEach((b) => b.addEventListener('click', () => {
+      EditorCore.prefs?.set?.({ density: b.dataset.prefDensity });
+      syncPrefsUi();
+    }));
+    document.querySelectorAll('[data-pref-accent]').forEach((b) => b.addEventListener('click', () => {
+      EditorCore.prefs?.set?.({ accent: b.dataset.prefAccent });
+      syncPrefsUi();
+    }));
+    window.addEventListener('editor-core:prefs-changed', syncPrefsUi);
+    syncPrefsUi();
+
+    const paletteItems = () => {
+      const editors = [];
+      for (const g of getGroups()) {
+        for (const e of g.items || []) {
+          editors.push({ kind: 'editor', key: e.key, title: e.title, hint: e.hint || '', group: g.title || '', icon: e.icon || 'fa-pen-ruler', keywords: e.keywords || '' });
+        }
+      }
+      const ordered = EditorCore.StudioPalette?.prioritize?.(editors, tabOrder) || editors;
+      return [...ordered,
+        { kind: 'action', action: 'theme', title: 'Toggle color theme', hint: 'Switch between dark and light', icon: 'fa-circle-half-stroke', keywords: 'dark light mode' },
+        { kind: 'action', action: 'appearance', title: 'Appearance settings', hint: 'Theme mode, accent color, density', icon: 'fa-sliders', keywords: 'theme accent density compact' },
+        { kind: 'action', action: 'pin', title: sidebarPinned ? 'Unpin the menu' : 'Pin the menu', hint: 'Ctrl+B', icon: 'fa-thumbtack', keywords: 'sidebar rail collapse' },
+        { kind: 'action', action: 'reload', title: 'Reload active editor', icon: 'fa-rotate', keywords: 'refresh' },
+        { kind: 'action', action: 'new-tab', title: 'Open current editor in a new tab', icon: 'fa-arrow-up-right-from-square', keywords: 'external window' },
+        { kind: 'action', action: 'reopen-tab', title: 'Reopen the closed tab', hint: 'Ctrl+Shift+T', icon: 'fa-rotate-left', keywords: 'restore closed tab undo' },
+        { kind: 'action', action: 'shortcuts', title: 'Keyboard shortcuts', hint: '?', icon: 'fa-keyboard', keywords: 'hotkeys help' },
+        { kind: 'action', action: 'logout', title: 'Sign out', icon: 'fa-right-from-bracket', keywords: 'exit logout' },
+      ];
+    };
+
+    const togglePalette = () => {
+      const Palette = EditorCore.StudioPalette;
+      if (!Palette) return;
+      if (Palette.isOpen()) { Palette.close(); return; }
+      if (!isAuthorized) return;
+      Palette.open({
+        items: paletteItems(),
+        onPick: (item) => {
+          if (item.kind === 'editor') return openEditor(item.key, { closeMobile: true });
+          if (item.action === 'theme') { EditorCore.theme?.toggle?.(); syncThemeButtons(); }
+          else if (item.action === 'appearance') togglePrefs(true);
+          else if (item.action === 'pin') setSidebarPinned(!sidebarPinned);
+          else if (item.action === 'reload') reloadEditorBtn?.click();
+          else if (item.action === 'new-tab') openNewTab?.click();
+          else if (item.action === 'reopen-tab') reopenClosedTab();
+          else if (item.action === 'shortcuts') toggleShortcuts(true);
+          else if (item.action === 'logout') logout();
+        },
+      });
+    };
+    document.getElementById('paletteBtn')?.addEventListener('click', togglePalette);
+
+    const isTypingTarget = (t) => {
+      const tag = String(t?.tagName || '').toLowerCase();
+      return !!t && (tag === 'input' || tag === 'textarea' || tag === 'select' || t.isContentEditable);
+    };
+    const cycleTab = (dir) => {
+      const keys = [...tabOrder];
+      if (keys.length < 2) return;
+      const idx = keys.indexOf(activeKey);
+      openEditor(keys[(idx + dir + keys.length) % keys.length]);
+    };
+    const reopenClosedTab = () => {
+      while (closedTabs.length) {
+        const key = closedTabs.pop();
+        if (getEditors().some((e) => e.key === key)) { openEditor(key); return; }
+      }
+    };
+
     // ── Показ/скрытие пароля в окне входа ─────────────────────────────────
     document.querySelectorAll('[data-pass-toggle]').forEach((btn) => {
       btn.addEventListener('click', () => {
@@ -973,16 +1176,46 @@
       });
     });
 
+    // Caps Lock включён — пароль почти наверняка вводится не в том регистре.
+    const capsHint = document.getElementById('auth-caps');
+    const syncCapsHint = (event) => {
+      if (capsHint) capsHint.hidden = !(event.getModifierState?.('CapsLock'));
+    };
+    [authPass, authGuestPass].forEach((input) => {
+      input?.addEventListener('keydown', syncCapsHint);
+      input?.addEventListener('keyup', syncCapsHint);
+      input?.addEventListener('blur', () => { if (capsHint) capsHint.hidden = true; });
+    });
+
     // Ctrl+B — закрепить/открепить меню (рельс ↔ раскрытая панель),
     // Esc — свернуть рельс и закрыть мобильное меню.
     document.addEventListener('keydown', (event) => {
-      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'b') {
+      if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        togglePalette();
+      } else if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === 't') {
+        event.preventDefault();
+        reopenClosedTab();
+      } else if (event.altKey && /^[1-9]$/.test(event.key)) {
+        const target = tabOrder[Number(event.key) - 1];
+        if (target) { event.preventDefault(); openEditor(target); }
+      } else if (event.key === '/' && !isTypingTarget(event.target)) {
+        event.preventDefault();
+        focusNavFilter();
+      } else if (event.ctrlKey && event.key === 'Tab') {
+        event.preventDefault();
+        cycleTab(event.shiftKey ? -1 : 1);
+      } else if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'b') {
         if (window.matchMedia('(max-width: 767px)').matches) return;
         event.preventDefault();
         setSidebarPinned(!sidebarPinned);
+      } else if (event.key === '?' && !isTypingTarget(event.target)) {
+        toggleShortcuts(true);
       } else if (event.key === 'Escape') {
         setSidebarOpen(false);
         mobileOverlay?.classList.add('hidden');
+        togglePrefs(false);
+        toggleShortcuts(false);
       }
     });
 
@@ -995,7 +1228,87 @@
       window.open(key === activeKey && frame?.src ? frame.src : e.src, '_blank', 'noopener');
     });
 
-    frame?.addEventListener('load', () => studioLoading?.classList.remove('active'));
+    const focusNavFilter = () => {
+      if (window.matchMedia('(max-width: 767px)').matches) {
+        mobileOverlay?.classList.remove('hidden');
+        navFilterMobileInput?.focus();
+        return;
+      }
+      setSidebarOpen(true);
+      navFilterInput?.focus();
+      navFilterInput?.select();
+    };
+    const setNavFilter = (value) => {
+      navFilterText = String(value || '');
+      if (navFilterInput && navFilterInput.value !== navFilterText) navFilterInput.value = navFilterText;
+      if (navFilterMobileInput && navFilterMobileInput.value !== navFilterText) navFilterMobileInput.value = navFilterText;
+      renderAllNavs(activeKey);
+    };
+    let navFilterTimer = null;
+    [navFilterInput, navFilterMobileInput].forEach((input) => {
+      input?.addEventListener('input', () => {
+        clearTimeout(navFilterTimer);
+        navFilterTimer = setTimeout(() => setNavFilter(input.value), 120);
+      });
+    });
+    tabsHost?.addEventListener('click', (event) => {
+      const close = event.target.closest('[data-close-tab]');
+      if (close) { closeEditor(close.dataset.closeTab); return; }
+      const open = event.target.closest('[data-open-tab]');
+      if (open) openEditor(open.dataset.openTab);
+    });
+    // Средняя кнопка мыши закрывает вкладку, как в браузере.
+    tabsHost?.addEventListener('auxclick', (event) => {
+      if (event.button !== 1) return;
+      const tab = event.target.closest('[data-tab-key]');
+      if (!tab) return;
+      event.preventDefault();
+      closeEditor(tab.dataset.tabKey);
+    });
+    // Вкладки переставляются перетаскиванием; порядок сохраняется по роли.
+    let dragTabKey = '';
+    const clearTabDropMarks = () => tabsHost?.querySelectorAll('.is-drop-before,.is-drop-after,.is-dragging')
+      .forEach((el) => el.classList.remove('is-drop-before', 'is-drop-after', 'is-dragging'));
+    tabsHost?.addEventListener('dragstart', (event) => {
+      const tab = event.target.closest('[data-tab-key]');
+      if (!tab) return;
+      dragTabKey = tab.dataset.tabKey;
+      tab.classList.add('is-dragging');
+      if (event.dataTransfer) {
+        event.dataTransfer.effectAllowed = 'move';
+        try { event.dataTransfer.setData('text/plain', dragTabKey); } catch { /* старый браузер */ }
+      }
+    });
+    tabsHost?.addEventListener('dragend', () => { dragTabKey = ''; clearTabDropMarks(); });
+    tabsHost?.addEventListener('dragover', (event) => {
+      if (!dragTabKey) return;
+      event.preventDefault();
+      const tab = event.target.closest('[data-tab-key]');
+      tabsHost.querySelectorAll('.is-drop-before,.is-drop-after')
+        .forEach((el) => el.classList.remove('is-drop-before', 'is-drop-after'));
+      if (!tab || tab.dataset.tabKey === dragTabKey) return;
+      const rect = tab.getBoundingClientRect();
+      tab.classList.add(event.clientX < rect.left + rect.width / 2 ? 'is-drop-before' : 'is-drop-after');
+    });
+    tabsHost?.addEventListener('drop', (event) => {
+      if (!dragTabKey) return;
+      event.preventDefault();
+      const tab = event.target.closest('[data-tab-key]');
+      const from = tabOrder.indexOf(dragTabKey);
+      const moved = dragTabKey;
+      dragTabKey = '';
+      if (from < 0) { clearTabDropMarks(); return; }
+      let to = tab ? tabOrder.indexOf(tab.dataset.tabKey) : tabOrder.length - 1;
+      if (tab) {
+        const rect = tab.getBoundingClientRect();
+        if (event.clientX >= rect.left + rect.width / 2) to += 1;
+      }
+      tabOrder.splice(from, 1);
+      if (to > from) to -= 1;
+      tabOrder.splice(Math.max(0, Math.min(to, tabOrder.length)), 0, moved);
+      persistTabs();
+      renderTabs();
+    });
     reloadEditorBtn?.addEventListener('click', async () => {
       if (!isAuthorized || !frame?.src) return;
       const dirtyState = await requestFrameDirtyStatus();
@@ -1046,8 +1359,8 @@
 
     window.addEventListener('message', (event) => {
       const data = event.data || {};
-      const frameWindow = frame?.contentWindow;
-      const fromFrame = !!frameWindow && EditorCore.Http.isSameOriginMessage(event, frameWindow);
+      const senderFrame = [...frames.values()].find((el) => el.contentWindow && el.contentWindow === event.source) || null;
+      const fromFrame = !!senderFrame && EditorCore.Http.isSameOriginMessage(event, senderFrame.contentWindow);
       // Http can report an expired session from the shell itself. Other shell
       // commands are accepted only from the active editor frame.
       const ownAuthWarning = data?.type === 'editor-shell:auth-required'
@@ -1068,6 +1381,13 @@
         // Admin changed this account's tabs/state → re-read the role from the server.
         ensureAuthorized().then((ok) => {
           if (!ok) return;
+          // Кадры редакторов, доступ к которым отозвали, уничтожаем сразу.
+          for (const key of [...frames.keys()]) {
+            if (!getEditors().some((entry) => entry.key === key)) destroyFrame(key);
+          }
+          tabOrder = tabOrder.filter((k) => getEditors().some((entry) => entry.key === k));
+          persistTabs();
+          renderTabs();
           renderAllNavs(activeKey);
           // The open tab may have just been revoked: switch to a granted one.
           if (!getEditors().some((entry) => entry.key === activeKey)) {
@@ -1077,10 +1397,12 @@
         return;
       }
       if (data?.type === 'editor-shell:reload-editor') {
-        // Server data changed (e.g. an approved change request) → reload the open editor.
-        if (!isAuthorized || !frame?.src) return;
-        studioLoading?.classList.add('active');
-        try { frame.contentWindow?.location.reload(); } catch {}
+        // Server data changed (e.g. an approved change request) → reload the
+        // editor that asked (with keep-alive it may not be the visible one).
+        const target = senderFrame || frame;
+        if (!isAuthorized || !target?.src) return;
+        if (target === frame) studioLoading?.classList.add('active');
+        try { target.contentWindow?.location.reload(); } catch {}
         return;
       }
       if (data?.type !== 'editor-shell:auth-required') return;
@@ -1089,7 +1411,7 @@
         ? 'The session has expired. Sign in to the guest account again.'
         : 'The session has expired. Sign in as administrator again.', 'err');
       setAuthOverlay(true);
-      frame.src = 'about:blank';
+      clearFrames();
     });
 
     authLoginBtn?.addEventListener('click', async () => {
@@ -1177,7 +1499,7 @@
       isAuthorized = false;
       activeKey = '';
       setRole(null);
-      frame.src = 'about:blank';
+      clearFrames();
       mobileOverlay?.classList.add('hidden');
       await ensureAuthorized();
       setAuthStatus('You have signed out of Editor Studio.');

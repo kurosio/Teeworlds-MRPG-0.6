@@ -11,29 +11,29 @@
 .editor-theme[data-editor-theme="dark"]{
   /* Поверхности: фон → панель → поле. Разница в 2–3% яркости, чтобы
      вложенные блоки читались без тяжёлых рамок и теней. */
-  --editor-bg:#0e1218;
-  --editor-surface:#151b24;
-  --editor-surface-alt:#171e28;
-  --editor-surface-2:#1a2230;
-  --editor-panel:#151b24;
+  --editor-bg:#0a0a0c;
+  --editor-surface:#121216;
+  --editor-surface-alt:#141419;
+  --editor-surface-2:#1a1a21;
+  --editor-panel:#121216;
 
-  --editor-border:#232c3a;
+  --editor-border:#232329;
   --editor-line:rgba(255,255,255,.07);
   --editor-line-strong:rgba(255,255,255,.13);
 
   /* Акцент один — синий. Бирюзовый остаётся «вторым» для графиков и метrik. */
-  --editor-primary:#6f8cff;
+  --editor-primary:#818cf8;
   --editor-secondary:#a78bfa;
   --editor-accent:#5cc6b0;
   --editor-danger:#f2727f;
   --editor-warning:#f0b464;
   --editor-success:#4fbe8b;
 
-  --editor-text:#e8eef7;
-  --editor-text-muted:#97a3b6;
+  --editor-text:#eceef2;
+  --editor-text-muted:#9ba1ad;
   --editor-text-strong:#ffffff;
 
-  --editor-font:'Inter','Manrope','Segoe UI Variable','Segoe UI',sans-serif;
+  --editor-font:system-ui,-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
   --editor-font-mono:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,'Liberation Mono','Courier New',monospace;
   --editor-color-scheme:dark;
 
@@ -59,12 +59,12 @@
   --editor-radius-lg:14px;
   --editor-radius:12px;
 
-  --editor-bg-gradient-1:rgba(111,140,255,.10);
+  --editor-bg-gradient-1:rgba(129,140,248,.10);
   --editor-bg-gradient-2:rgba(92,198,176,.07);
   --editor-bg-gradient-3:rgba(167,139,250,.05);
 
-  --editor-input-bg:#111823;
-  --editor-panel-bg:#151b24;
+  --editor-input-bg:#0e0e12;
+  --editor-panel-bg:#121216;
   --editor-field-bg:transparent;
   --editor-field-border:transparent;
   --editor-soft-bg:rgba(255,255,255,.028);
@@ -88,19 +88,19 @@
   --editor-icon-btn-border:rgba(255,255,255,.10);
   --editor-icon-btn-hover-bg:rgba(255,255,255,.09);
 
-  --editor-tag-bg:rgba(111,140,255,.14);
-  --editor-tag-border:rgba(111,140,255,.26);
-  --editor-tag-hover-bg:rgba(111,140,255,.20);
-  --editor-tag-hover-border:rgba(111,140,255,.40);
+  --editor-tag-bg:rgba(129,140,248,.14);
+  --editor-tag-border:rgba(129,140,248,.26);
+  --editor-tag-hover-bg:rgba(129,140,248,.20);
+  --editor-tag-hover-border:rgba(129,140,248,.40);
   --editor-badge-bg:rgba(255,255,255,.05);
   --editor-badge-border:rgba(255,255,255,.12);
 
-  --editor-dropdown-bg:#1a2230;
+  --editor-dropdown-bg:#1a1a21;
   --editor-dropdown-border:rgba(255,255,255,.12);
   --editor-dropdown-shadow:0 16px 40px rgba(0,0,0,.45);
 
-  --editor-toolbar-bg:rgba(21,27,36,.94);
-  --editor-toolbar-bg-2:rgba(21,27,36,.86);
+  --editor-toolbar-bg:rgba(18,18,22,.94);
+  --editor-toolbar-bg-2:rgba(18,18,22,.86);
   --editor-toolbar-border:rgba(255,255,255,.09);
   --editor-toolbar-shadow:0 10px 30px rgba(0,0,0,.30);
 
@@ -119,7 +119,7 @@
   --editor-space-sm:10px;
   --editor-icon-size:18px;
   --editor-icon-bg:color-mix(in srgb, var(--editor-primary) 18%, transparent);
-  --editor-icon-color:#c9d5ff;
+  --editor-icon-color:#c9ceff;
   --editor-focus-ring:color-mix(in srgb, var(--editor-primary) 32%, transparent);
 
   /* Тени только там, где блок действительно «висит» над страницей:
@@ -131,7 +131,7 @@
   --editor-elevated-bg:var(--editor-surface-2);
   --editor-elevated-border:var(--editor-line-strong);
   --editor-panel-glow:0 0 0 1px transparent;
-  --editor-input-hover-bg:#131b26;
+  --editor-input-hover-bg:#141419;
   --editor-disabled-opacity:.5;
 }
 
@@ -147,7 +147,7 @@
   --editor-line:rgba(16,23,34,.08);
   --editor-line-strong:rgba(16,23,34,.14);
 
-  --editor-primary:#4565d8;
+  --editor-primary:#4f46e5;
   --editor-secondary:#7c5cd6;
   --editor-accent:#1f9e86;
   --editor-danger:#cf4d5b;
@@ -159,7 +159,7 @@
   --editor-text-strong:#000000;
   --editor-color-scheme:light;
 
-  --editor-bg-gradient-1:rgba(69,101,216,.07);
+  --editor-bg-gradient-1:rgba(79,70,229,.07);
   --editor-bg-gradient-2:rgba(31,158,134,.05);
   --editor-bg-gradient-3:rgba(124,92,214,.04);
 
@@ -188,10 +188,10 @@
   --editor-icon-btn-border:rgba(16,23,34,.14);
   --editor-icon-btn-hover-bg:#f3f6fb;
 
-  --editor-tag-bg:rgba(69,101,216,.10);
-  --editor-tag-border:rgba(69,101,216,.22);
-  --editor-tag-hover-bg:rgba(69,101,216,.15);
-  --editor-tag-hover-border:rgba(69,101,216,.32);
+  --editor-tag-bg:rgba(79,70,229,.10);
+  --editor-tag-border:rgba(79,70,229,.22);
+  --editor-tag-hover-bg:rgba(79,70,229,.15);
+  --editor-tag-hover-border:rgba(79,70,229,.32);
   --editor-badge-bg:rgba(16,23,34,.04);
   --editor-badge-border:rgba(16,23,34,.12);
 
@@ -212,8 +212,8 @@
   --editor-shell-sidebar-bg:rgba(16,23,34,.015);
   --editor-shell-main-bg:transparent;
 
-  --editor-icon-bg:rgba(69,101,216,.10);
-  --editor-icon-color:#3c56bd;
+  --editor-icon-bg:rgba(79,70,229,.10);
+  --editor-icon-color:#4338ca;
   --editor-focus-ring:color-mix(in srgb, var(--editor-primary) 26%, transparent);
 
   --editor-shadow-xs:0 1px 2px rgba(15,23,42,.06);
@@ -2238,4 +2238,90 @@ html.editor-map-open{overflow:hidden;}
 .editor-modal-backdrop.hidden,
 #editor-sync-modal.hidden {
   display: none !important;
+}
+
+/* =============================================================
+   Акцентные пресеты (data-editor-accent) и плотность интерфейса
+   (data-editor-density). Атрибуты ставит editor-core/tailwind-theme.js
+   на <html> и <body class="editor-theme">; indigo/comfortable — значения
+   по умолчанию из блоков выше.
+   ============================================================= */
+
+:root[data-editor-theme="dark"][data-editor-accent="teal"],
+.editor-theme[data-editor-theme="dark"][data-editor-accent="teal"]{
+  --editor-primary:#2dd4bf;
+  --editor-icon-color:#99f6e4;
+}
+:root[data-editor-theme="light"][data-editor-accent="teal"],
+.editor-theme[data-editor-theme="light"][data-editor-accent="teal"]{
+  --editor-primary:#0d9488;
+  --editor-icon-color:#0f766e;
+}
+:root[data-editor-theme="dark"][data-editor-accent="violet"],
+.editor-theme[data-editor-theme="dark"][data-editor-accent="violet"]{
+  --editor-primary:#a78bfa;
+  --editor-icon-color:#ddd6fe;
+}
+:root[data-editor-theme="light"][data-editor-accent="violet"],
+.editor-theme[data-editor-theme="light"][data-editor-accent="violet"]{
+  --editor-primary:#7c3aed;
+  --editor-icon-color:#6d28d9;
+}
+:root[data-editor-theme="dark"][data-editor-accent="amber"],
+.editor-theme[data-editor-theme="dark"][data-editor-accent="amber"]{
+  --editor-primary:#fbbf24;
+  --editor-icon-color:#fde68a;
+}
+:root[data-editor-theme="light"][data-editor-accent="amber"],
+.editor-theme[data-editor-theme="light"][data-editor-accent="amber"]{
+  --editor-primary:#d97706;
+  --editor-icon-color:#b45309;
+}
+
+/* Теги и градиенты следуют за выбранным акцентом (у indigo остаются базовые). */
+:root[data-editor-accent="teal"],
+:root[data-editor-accent="violet"],
+:root[data-editor-accent="amber"],
+.editor-theme[data-editor-accent="teal"],
+.editor-theme[data-editor-accent="violet"],
+.editor-theme[data-editor-accent="amber"]{
+  --editor-tag-bg:color-mix(in srgb, var(--editor-primary) 14%, transparent);
+  --editor-tag-border:color-mix(in srgb, var(--editor-primary) 30%, transparent);
+  --editor-tag-hover-bg:color-mix(in srgb, var(--editor-primary) 20%, transparent);
+  --editor-tag-hover-border:color-mix(in srgb, var(--editor-primary) 42%, transparent);
+  --editor-icon-bg:color-mix(in srgb, var(--editor-primary) 16%, transparent);
+  --editor-bg-gradient-1:color-mix(in srgb, var(--editor-primary) 10%, transparent);
+}
+
+/* Компактная плотность: ниже контролы, теснее отступы — для больших таблиц. */
+:root[data-editor-density="compact"],
+.editor-theme[data-editor-density="compact"]{
+  --editor-control-h:32px;
+  --editor-space:10px;
+  --editor-space-sm:8px;
+  --editor-font-size:13px;
+  --editor-text-md:13px;
+  --editor-text-lg:14px;
+  --editor-gap-3:10px;
+  --editor-gap-4:12px;
+  --editor-gap-5:18px;
+  --editor-gap-6:24px;
+}
+
+/* Видимый фокус с клавиатуры везде, где компонент не нарисовал свой. */
+.editor-theme :where(button, a, input, select, textarea, [tabindex]):focus-visible{
+  outline:2px solid var(--editor-primary);
+  outline-offset:2px;
+}
+
+/* Уважаем системную настройку «меньше движения». */
+@media (prefers-reduced-motion: reduce){
+  .editor-theme *,
+  .editor-theme *::before,
+  .editor-theme *::after{
+    animation-duration:.01ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:.01ms !important;
+    scroll-behavior:auto !important;
+  }
 }

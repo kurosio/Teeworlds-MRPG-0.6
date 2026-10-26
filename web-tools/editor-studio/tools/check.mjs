@@ -468,27 +468,30 @@ if (/\.editor-card\{[^}]*box-shadow:\s*(?!none)/.test(themeCss)) {
   problems.push('editor-core/editor-theme.css: .editor-card снова с тенью — карточки живут на волосяной рамке');
 }
 
-// ── 4.2. Оболочка студии: рельс меню и отсутствие поиска ────────────────────
+// ── 4.2. Оболочка студии: рельс меню, фильтр и палитра команд ────────────────
 //
 // Меню по умолчанию сжато до столбца иконок и раскрывается при наведении или
 // фокусе. Панель вынесена из потока, поэтому раскрытие не пересобирает iframe
-// редактора. Поиск по редакторам убран — список короткий, а рельс с иконками
-// освобождает место для самой работы.
+// редакторов (их теперь несколько — keep-alive вкладки). Навигацию дополняют
+// встроенный фильтр списка (navFilter) и палитра команд Ctrl+K
+// (editor-core/studio-palette.js); стили оболочки лежат в
+// editor-core/studio-shell.css, поэтому токены ищем в обоих файлах.
 
-const studioShell = read(path.join(ROOT, 'index.html'));
+const studioShell = read(path.join(ROOT, 'index.html'))
+  + '\n' + read(path.join(ROOT, 'editor-core', 'studio-shell.css'));
 for (const token of [
   '--studio-rail-w', '--studio-panel-w', '.studio-sidebar__panel',
   '.studio-sidebar.is-rail', '.studio-sidebar.is-open',
   'body.studio-sidebar-pinned', 'setSidebarPinned', 'setSidebarOpen',
-  'pinSidebarBtn',
+  'pinSidebarBtn', 'id="navFilter"', 'studio-palette.js', 'id="studioFrames"',
 ]) {
   if (!studioShell.includes(token)) {
-    problems.push(`index.html: оболочка потеряла ${token} — меню-рельс должно раскрываться при наведении`);
+    problems.push(`оболочка студии потеряла ${token} — проверьте index.html и editor-core/studio-shell.css`);
   }
 }
 for (const token of ['id="studioSearch"', 'id="mobileSearch"', 'studio-search-block', 'studio-sidebar-collapsed']) {
   if (studioShell.includes(token)) {
-    problems.push(`index.html: поиск по редакторам удалён — ${token} не должен возвращаться`);
+    problems.push(`оболочка студии: устаревший поиск вернулся — ${token} заменён фильтром navFilter и палитрой Ctrl+K`);
   }
 }
 
@@ -694,6 +697,7 @@ const DATA_STRINGS = new Set([
   // технические значения, которые не переводятся
   'NULL', 'OK', 'OUT', 'POST', 'GET', 'PUT', 'SELECT', 'TRUE', 'FALSE', 'Title', 'Skin.', 'text/plain',
   'Enter', 'Escape', 'Shift', 'Delete', 'Tab', 'Backspace', 'Business', 'Data', 'Personal',
+  'Esc', 'Ctrl K', 'Ctrl B', 'Ctrl Tab', 'Ctrl Shift T', 'Alt 1…9', 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz23456789',
   'Default (components/default.h)', 'application/json', 'NPC • Editor Studio', 'Editor registry requires an id.',
 ]);
 

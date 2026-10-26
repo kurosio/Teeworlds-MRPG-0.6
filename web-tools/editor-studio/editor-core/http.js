@@ -40,6 +40,57 @@
     return !source || event.source === source;
   };
 
+  // ── CSRF ────────────────────────────────────────────────────────────────
+  // Сервер требует заголовок X-Editor-CSRF в каждом POST (токен сессии).
+  // Токен приходит в ответах auth (status/login/logout/csrf) и кэшируется в
+  // sessionStorage: оболочка и редакторы в iframe одной вкладки делят его.
+  const CSRF_KEY = 'editorStudio.csrf';
+  const CSRF_RE = /^[a-f0-9]{64}$/;
+  const csrfStorage = () => {
+    try { return typeof sessionStorage !== 'undefined' ? sessionStorage : null; } catch { return null; }
+  };
+  let csrfToken = '';
+  try { csrfToken = csrfStorage()?.getItem(CSRF_KEY) || ''; } catch { /* приватный режим */ }
+  if (!CSRF_RE.test(csrfToken)) csrfToken = '';
+
+  function setCsrf(token) {
+    if (typeof token !== 'string' || !CSRF_RE.test(token)) return;
+    csrfToken = token;
+    try { csrfStorage()?.setItem(CSRF_KEY, token); } catch { /* приватный режим */ }
+  }
+
+  function clearCsrf() {
+    csrfToken = '';
+    try { csrfStorage()?.removeItem(CSRF_KEY); } catch { /* приватный режим */ }
+  }
+
+  /** Адрес выдачи токена по адресу вызываемого API ('' — не наш API). */
+  const csrfUrlFor = (url) => {
+    const value = String(url || '');
+    const idx = value.indexOf('api/');
+    if (idx >= 0) return `${value.slice(0, idx)}api/auth.php?action=csrf`;
+    const fileApi = value.match(/^(.*?)api\.php(?:\?.*)?$/);
+    return fileApi ? `${fileApi[1]}api/auth.php?action=csrf` : '';
+  };
+
+  let csrfPromise = null;
+  async function fetchCsrf(hintUrl, force = false) {
+    if (csrfToken && !force) return csrfToken;
+    const target = csrfUrlFor(hintUrl || 'api/');
+    if (!target) return '';
+    if (!csrfPromise) {
+      csrfPromise = text(target)
+        .then((response) => {
+          const { data } = parseBody(response.data);
+          if (data && typeof data === 'object') setCsrf(data.csrf);
+          return csrfToken;
+        })
+        .catch(() => '')
+        .finally(() => { csrfPromise = null; });
+    }
+    return csrfPromise;
+  }
+
   const notifyAuthRequired = () => {
     postMessage(window.top, { type: 'editor-shell:auth-required' });
   };
@@ -107,6 +158,13 @@
       cache = 'no-store',
     } = options;
 
+    const writeMethod = !['GET', 'HEAD'].includes(String(method).toUpperCase());
+    let requestHeaders = headers;
+    if (writeMethod) {
+      if (!csrfToken) { try { await fetchCsrf(url); } catch { /* отправим без токена — сервер ответит 403 csrf_token */ } }
+      if (csrfToken) requestHeaders = { ...(headers || {}), 'X-Editor-CSRF': csrfToken };
+    }
+
     const controller = new AbortController();
     const { signal, cleanup } = combineSignals(controller.signal, externalSignal);
     let timedOut = false;
@@ -118,16 +176,22 @@
         method,
         credentials,
         cache,
-        headers: payload == null ? (headers || undefined) : { 'Content-Type': 'application/json', ...(headers || {}) },
+        headers: payload == null ? (requestHeaders || undefined) : { 'Content-Type': 'application/json', ...(requestHeaders || {}) },
         body: payload ?? undefined,
         signal,
       });
       if (response.status === 401) notifyAuthRequired();
+      let retryAfter = null;
+      try {
+        const seconds = Number(response.headers?.get?.('retry-after'));
+        if (Number.isFinite(seconds) && seconds > 0) retryAfter = seconds;
+      } catch { /* заголовки недоступны в тестовом окружении */ }
       const data = await response.text();
       return {
         status: response.status,
         ok: response.ok,
         error: response.ok ? '' : `HTTP ${response.status}`,
+        retryAfter,
         data,
       };
     } catch (error) {
@@ -149,6 +213,15 @@
   const json = async (url, options = {}) => {
     const response = await text(url, options);
     const { data, invalid } = parseBody(response.data);
+    // Ответы auth несут актуальный токен (вход/выход ротируют его).
+    if (data && typeof data === 'object' && typeof data.csrf === 'string') setCsrf(data.csrf);
+    // Устаревший токен: запрос отклонён ДО обработки, поэтому повтор безопасен.
+    const writeMethod = !['GET', 'HEAD'].includes(String(options.method || 'GET').toUpperCase());
+    if (writeMethod && response.status === 403 && data?.code === 'csrf_token' && !options.__csrfRetried) {
+      clearCsrf();
+      await fetchCsrf(url, true);
+      if (csrfToken) return json(url, { ...options, __csrfRetried: true });
+    }
     const failedByPayload = data !== null && typeof data === 'object'
       && (data.ok === false || data.success === false);
     const ok = response.ok && !failedByPayload && !invalid;
@@ -160,12 +233,14 @@
           : `HTTP ${response.status}`;
     }
 
+    const retryAfter = Number(data?.retry_after) > 0 ? Number(data.retry_after) : response.retryAfter;
     return {
       ...response,
       ...(data && typeof data === 'object' ? data : {}),
       status: response.status,
       ok,
       error,
+      retryAfter: retryAfter ?? null,
       data,
     };
   };
@@ -186,6 +261,12 @@
     json,
     text,
     request,
+    csrf: {
+      get: () => csrfToken,
+      set: setCsrf,
+      clear: clearCsrf,
+      refresh: (hintUrl) => fetchCsrf(hintUrl || 'api/', true),
+    },
     postMessage,
     isSameOriginMessage,
     DEFAULT_TIMEOUT,

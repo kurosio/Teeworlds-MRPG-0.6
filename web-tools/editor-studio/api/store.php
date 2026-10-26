@@ -16,7 +16,7 @@
 
 declare(strict_types=1);
 
-const EDITOR_STORE_SCHEMA = 3;
+const EDITOR_STORE_SCHEMA = 4;
 const EDITOR_STORE_FILE = 'editor-studio.sqlite';
 
 /** Путь к файлу базы редактора (можно переопределить переменной окружения). */
@@ -104,6 +104,10 @@ function store_init_network_rules(PDO $pdo): void
     $stmt = $pdo->prepare('INSERT OR IGNORE INTO settings(key, value, updated_at) VALUES(?, ?, ?)');
     $stmt->execute(['allow_remote_editor', 'false', $now]);
     $stmt->execute(['allowed_editor_ips', '[]', $now]);
+    // Прокси, которым разрешено передавать реальный IP клиента заголовками
+    // X-Forwarded-For / X-Real-IP. Пустой список = заголовки игнорируются,
+    // клиентом считается REMOTE_ADDR (см. get_request_ip в db-core.php).
+    $stmt->execute(['trusted_proxies', '[]', $now]);
 }
 
 /** Схема создаётся идемпотентно; версия хранится в PRAGMA user_version. */
@@ -188,7 +192,50 @@ function store_schema(PDO $pdo): void
                 key TEXT PRIMARY KEY,
                 ts  INTEGER NOT NULL
             );
+
+            -- Журнал аудита: кто, когда и что сделал (входы, запросы гостей,
+            -- решения администратора, изменения аккаунтов и настроек).
+            CREATE TABLE IF NOT EXISTS audit_log (
+                id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                ts         TEXT NOT NULL,
+                actor_role TEXT NOT NULL DEFAULT '',
+                actor_id   TEXT NOT NULL DEFAULT '',
+                actor_name TEXT NOT NULL DEFAULT '',
+                action     TEXT NOT NULL,
+                request_id TEXT NOT NULL DEFAULT '',
+                detail     TEXT NOT NULL DEFAULT '{}',
+                ip         TEXT NOT NULL DEFAULT ''
+            );
+            CREATE INDEX IF NOT EXISTS idx_audit_ts ON audit_log(ts DESC, id DESC);
+            CREATE INDEX IF NOT EXISTS idx_audit_request ON audit_log(request_id, id DESC);
+            CREATE INDEX IF NOT EXISTS idx_audit_actor ON audit_log(actor_role, actor_id, id DESC);
+
+            -- Ключи идемпотентности отправки запросов: повторная отправка того
+            -- же черновика (двойной клик, потерянный ответ сети) возвращает уже
+            -- созданный запрос вместо дубликата.
+            CREATE TABLE IF NOT EXISTS submit_keys (
+                key        TEXT PRIMARY KEY,
+                request_id TEXT NOT NULL,
+                guest_id   TEXT NOT NULL DEFAULT '',
+                created_at TEXT NOT NULL
+            );
+            CREATE INDEX IF NOT EXISTS idx_submit_keys_created ON submit_keys(created_at);
+
+            CREATE INDEX IF NOT EXISTS idx_cr_guest_status ON change_requests(guest_id, status, created_at DESC);
             SQL);
+
+        // Схема v4: индивидуальные лимиты и срок действия гостевого аккаунта.
+        // Колонки добавляются только если их ещё нет (базы схемы v3).
+        $guestColumns = [];
+        foreach ($pdo->query('PRAGMA table_info(guest_users)') as $column) {
+            $guestColumns[(string)$column['name']] = true;
+        }
+        if (!isset($guestColumns['limits'])) {
+            $pdo->exec("ALTER TABLE guest_users ADD COLUMN limits TEXT NOT NULL DEFAULT ''");
+        }
+        if (!isset($guestColumns['expires_at'])) {
+            $pdo->exec("ALTER TABLE guest_users ADD COLUMN expires_at TEXT NOT NULL DEFAULT ''");
+        }
 
         $pdo->exec('PRAGMA user_version = ' . EDITOR_STORE_SCHEMA);
     });
@@ -299,6 +346,8 @@ function store_settings_set(string $key, mixed $value): void
 
 function store_guest_user_from_row(array $row): array
 {
+    $limitsRaw = trim((string)($row['limits'] ?? ''));
+    $limits = $limitsRaw !== '' ? json_decode($limitsRaw, true) : null;
     return [
         'id'             => (string)$row['id'],
         'login'          => (string)$row['login'],
@@ -310,6 +359,10 @@ function store_guest_user_from_row(array $row): array
         'createdAt'      => (string)$row['created_at'],
         'updatedAt'      => (string)$row['updated_at'],
         'lastLoginAt'    => (string)$row['last_login_at'],
+        // Индивидуальные лимиты аккаунта (null — действуют глобальные правила).
+        'limits'         => is_array($limits) ? $limits : null,
+        // Срок действия аккаунта (ISO, '' — бессрочно).
+        'expiresAt'      => (string)($row['expires_at'] ?? ''),
     ];
 }
 
@@ -346,8 +399,8 @@ function store_guest_user_by_login(string $login): ?array
 function store_guest_user_insert(array $user): bool
 {
     $stmt = store_db()->prepare(
-        'INSERT INTO guest_users(id, login, name, enabled, pages, password_hash, session_version, created_at, updated_at, last_login_at)
-         VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
+        'INSERT INTO guest_users(id, login, name, enabled, pages, password_hash, session_version, created_at, updated_at, last_login_at, limits, expires_at)
+         VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)'
     );
     return $stmt->execute([
         (string)$user['id'],
@@ -360,6 +413,9 @@ function store_guest_user_insert(array $user): bool
         (string)($user['createdAt'] ?? store_now()),
         (string)($user['updatedAt'] ?? store_now()),
         (string)($user['lastLoginAt'] ?? ''),
+        isset($user['limits']) && is_array($user['limits'])
+            ? (string)json_encode($user['limits'], JSON_UNESCAPED_UNICODE) : '',
+        (string)($user['expiresAt'] ?? ''),
     ]);
 }
 
@@ -376,6 +432,8 @@ function store_guest_user_update(string $id, array $fields): bool
         'sessionVersion' => 'session_version',
         'updatedAt'      => 'updated_at',
         'lastLoginAt'    => 'last_login_at',
+        'limits'         => 'limits',
+        'expiresAt'      => 'expires_at',
     ];
     $sets = [];
     $values = [];
@@ -386,6 +444,8 @@ function store_guest_user_update(string $id, array $fields): bool
         $value = $fields[$field];
         if ($field === 'pages') {
             $value = json_encode(array_values((array)$value), JSON_UNESCAPED_UNICODE);
+        } elseif ($field === 'limits') {
+            $value = is_array($value) ? (string)json_encode($value, JSON_UNESCAPED_UNICODE) : '';
         } elseif ($field === 'enabled') {
             $value = $value ? 1 : 0;
         }
@@ -481,6 +541,135 @@ function store_rate_prune(int $olderThan): void
 {
     $stmt = store_db()->prepare('DELETE FROM rate_limits WHERE ts < ?');
     $stmt->execute([$olderThan]);
+}
+
+// ── Журнал аудита ────────────────────────────────────────────────────────────
+//
+// Каждая значимая операция оставляет запись: кто (роль, аккаунт), что сделал,
+// с каким запросом и с какого адреса. Журнал ограничен по размеру: храним
+// последние STORE_AUDIT_KEEP записей, обрезка — вероятностная, чтобы не
+// платить полным COUNT(*) на каждой вставке.
+
+const STORE_AUDIT_KEEP = 5000;
+
+function store_audit_add(
+    string $actorRole,
+    string $actorId,
+    string $actorName,
+    string $action,
+    string $requestId = '',
+    array $detail = [],
+    string $ip = ''
+): void {
+    $stmt = store_db()->prepare(
+        'INSERT INTO audit_log(ts, actor_role, actor_id, actor_name, action, request_id, detail, ip)
+         VALUES(?, ?, ?, ?, ?, ?, ?, ?)'
+    );
+    $stmt->execute([
+        store_now(),
+        $actorRole,
+        $actorId,
+        $actorName,
+        $action,
+        $requestId,
+        (string)json_encode($detail, JSON_UNESCAPED_UNICODE),
+        $ip,
+    ]);
+    if (random_int(1, 50) === 1) {
+        $count = (int)store_db()->query('SELECT COUNT(*) FROM audit_log')->fetchColumn();
+        if ($count > STORE_AUDIT_KEEP + 500) {
+            store_db()->exec('DELETE FROM audit_log WHERE id IN (
+                SELECT id FROM audit_log ORDER BY id DESC LIMIT -1 OFFSET ' . STORE_AUDIT_KEEP . '
+            )');
+        }
+    }
+}
+
+/**
+ * Выборка журнала с фильтрами и постраничной навигацией.
+ * @param array{q?:string, action?:string, request_id?:string, actor_id?:string} $filters
+ * @return array{rows:list<array>, total:int}
+ */
+function store_audit_list(array $filters, int $limit, int $offset): array
+{
+    $where = [];
+    $params = [];
+    if (!empty($filters['action'])) {
+        $where[] = 'action = ?';
+        $params[] = (string)$filters['action'];
+    }
+    if (!empty($filters['request_id'])) {
+        $where[] = 'request_id = ?';
+        $params[] = (string)$filters['request_id'];
+    }
+    if (!empty($filters['actor_id'])) {
+        $where[] = 'actor_id = ?';
+        $params[] = (string)$filters['actor_id'];
+    }
+    if (!empty($filters['q'])) {
+        $like = '%' . str_replace(['\\', '%', '_'], ['\\\\', '\\%', '\\_'], (string)$filters['q']) . '%';
+        $where[] = "(action LIKE ? ESCAPE '\\' OR actor_name LIKE ? ESCAPE '\\'"
+            . " OR actor_id LIKE ? ESCAPE '\\' OR request_id LIKE ? ESCAPE '\\')";
+        array_push($params, $like, $like, $like, $like);
+    }
+    $sqlWhere = $where ? (' WHERE ' . implode(' AND ', $where)) : '';
+    $pdo = store_db();
+
+    $stmt = $pdo->prepare('SELECT COUNT(*) FROM audit_log' . $sqlWhere);
+    $stmt->execute($params);
+    $total = (int)$stmt->fetchColumn();
+
+    $stmt = $pdo->prepare('SELECT * FROM audit_log' . $sqlWhere . ' ORDER BY id DESC LIMIT ? OFFSET ?');
+    $i = 1;
+    foreach ($params as $param) {
+        $stmt->bindValue($i++, $param);
+    }
+    $stmt->bindValue($i++, max(1, $limit), PDO::PARAM_INT);
+    $stmt->bindValue($i, max(0, $offset), PDO::PARAM_INT);
+    $stmt->execute();
+
+    $rows = [];
+    foreach ($stmt->fetchAll() as $row) {
+        $detail = json_decode((string)$row['detail'], true);
+        $rows[] = [
+            'id' => (int)$row['id'],
+            'at' => (string)$row['ts'],
+            'actor_role' => (string)$row['actor_role'],
+            'actor_id' => (string)$row['actor_id'],
+            'actor_name' => (string)$row['actor_name'],
+            'action' => (string)$row['action'],
+            'request_id' => (string)$row['request_id'],
+            'detail' => is_array($detail) ? $detail : new stdClass(),
+            'ip' => (string)$row['ip'],
+        ];
+    }
+    return ['rows' => $rows, 'total' => $total];
+}
+
+// ── Идемпотентность отправки запросов ────────────────────────────────────────
+
+function store_submit_key_get(string $key): ?string
+{
+    $stmt = store_db()->prepare('SELECT request_id FROM submit_keys WHERE key = ?');
+    $stmt->execute([$key]);
+    $id = $stmt->fetchColumn();
+    return $id === false ? null : (string)$id;
+}
+
+function store_submit_key_put(string $key, string $requestId, string $guestId): void
+{
+    $stmt = store_db()->prepare(
+        'INSERT OR IGNORE INTO submit_keys(key, request_id, guest_id, created_at) VALUES(?, ?, ?, ?)'
+    );
+    $stmt->execute([$key, $requestId, $guestId, store_now()]);
+}
+
+/** Ключи старше недели больше не нужны: черновик за это время уже отправлен или брошен. */
+function store_submit_keys_prune(): void
+{
+    $border = gmdate('Y-m-d\TH:i:s\Z', time() - 7 * 86400);
+    $stmt = store_db()->prepare('DELETE FROM submit_keys WHERE created_at < ?');
+    $stmt->execute([$border]);
 }
 
 // ── Миграция со старого (файлового) хранилища ───────────────────────────────

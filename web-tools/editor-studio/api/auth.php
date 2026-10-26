@@ -36,6 +36,17 @@ function auth_password_matches(string $expected, string $provided): bool {
 }
 
 /**
+ * «Пустой» bcrypt-хеш для выравнивания времени ответа: проверка пароля
+ * выполняется всегда, даже если аккаунта не существует или логин неверен.
+ * Иначе по времени ответа можно перебирать существующие логины.
+ */
+const AUTH_DUMMY_HASH = '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi';
+
+function auth_dummy_verify(string $provided): void {
+  password_verify($provided, AUTH_DUMMY_HASH);
+}
+
+/**
  * Shared brute-force protection for admin and guest logins.
  * The counters live in the SQLite store (table auth_throttle) and therefore
  * survive a dropped session cookie; the account scope is bound to the address,
@@ -98,11 +109,21 @@ function auth_status_payload(?string $role): array {
   $guest = guest_cfg($cfg);
   $guestEnabled = $guest['enabled'] && $guest['users_count'] > 0;
 
+  $sessionLimits = editor_session_limits($cfg);
   $payload = [
     'ok' => true,
     'authorized' => $role !== null,
     'role' => $role,
     'user' => null,
+    // CSRF-токен текущей сессии: клиент шлёт его заголовком X-Editor-CSRF
+    // в каждом POST. Выдаётся и анонимной сессии — он нужен самому входу.
+    'csrf' => editor_csrf_token(),
+    'session_expired' => !empty($GLOBALS['EDITOR_SESSION_EXPIRED']),
+    'session' => $role !== null ? [
+      'expires_at' => editor_session_expires_at($cfg),
+      'idle_seconds' => $sessionLimits['idle'],
+      'absolute_seconds' => $sessionLimits['absolute'],
+    ] : null,
     'guest' => [
       // Guest login is possible only when the administrator enabled it AND at least one account is active.
       'enabled' => $guestEnabled,
@@ -136,10 +157,12 @@ function auth_status_payload(?string $role): array {
     $payload['guest']['login'] = $account['login'];
     $payload['guest']['name'] = $account['name'];
     $payload['guest']['id'] = $account['id'];
+    $effective = guest_effective_limits($account, $cfg);
     $payload['guest']['limits'] = [
-      'max_pending' => $guest['max_pending'],
-      'cooldown' => $guest['cooldown'],
-      'max_operations' => $guest['max_operations'],
+      'max_pending' => $effective['max_pending'],
+      'cooldown' => $effective['cooldown'],
+      'max_operations' => $effective['max_operations'],
+      'custom' => $effective['custom'],
     ];
   }
   return $payload;
@@ -148,7 +171,7 @@ function auth_status_payload(?string $role): array {
 try {
   $method = strtoupper((string)($_SERVER['REQUEST_METHOD'] ?? 'GET'));
 
-  if ($action === 'status' && $method !== 'GET') {
+  if (in_array($action, ['status', 'csrf'], true) && $method !== 'GET') {
     respond(['ok' => false, 'error' => 'Метод запроса не поддерживается'], 405);
   }
   if (in_array($action, ['login', 'guest_login', 'logout'], true) && $method !== 'POST') {
@@ -160,6 +183,10 @@ try {
 
   if ($action === 'status') {
     respond(auth_status_payload($currentRole));
+  }
+
+  if ($action === 'csrf') {
+    respond(['ok' => true, 'csrf' => editor_csrf_token(), 'authorized' => $currentRole !== null, 'role' => $currentRole]);
   }
 
   if ($action === 'login') {
@@ -184,8 +211,27 @@ try {
 
     auth_check_throttle($user);
 
-    if (!hash_equals($expectedUser, $user) || !auth_password_matches($expectedPassword, $password)) {
+    // Проверка пароля выполняется всегда (для неверного логина — по пустому
+    // хешу), чтобы время ответа не выдавало, существует ли такой логин.
+    $userOk = hash_equals($expectedUser, $user);
+    if ($userOk) {
+      $passwordOk = auth_password_matches($expectedPassword, $password);
+    } else {
+      auth_dummy_verify($password);
+      $passwordOk = false;
+    }
+    if (!$userOk || !$passwordOk) {
+      editor_audit('auth.login_failed', '', ['login' => $user]);
       auth_reject('Неверный логин или пароль', auth_register_failure($user));
+    }
+
+    // Наследие старых установок: пароль хранился открытым текстом.
+    // При первом успешном входе заменяем его хешем.
+    if (empty(password_get_info($expectedPassword)['algo'])) {
+      mutate_cfg(function (array $cfg) use ($password) {
+        $cfg['editor_password'] = password_hash($password, PASSWORD_DEFAULT);
+        return $cfg;
+      });
     }
 
     clear_guest_session();
@@ -193,6 +239,9 @@ try {
     $_SESSION['editor_studio_user'] = $expectedUser;
     auth_clear_throttle($user);
     session_regenerate_id(true);
+    editor_session_mark_login();
+    editor_csrf_rotate();
+    editor_audit('auth.login');
 
     respond(auth_status_payload(EDITOR_ROLE_ADMIN));
   }
@@ -216,26 +265,41 @@ try {
     auth_check_throttle($login);
 
     $account = guest_user_by_login($cfg, $login);
-    // Uniform error: never reveal whether the account exists.
-    if ($account === null || !$account['enabled'] || $account['passwordHash'] === ''
-      || !password_verify($password, $account['passwordHash'])) {
+    // Uniform error: never reveal whether the account exists. The password
+    // check also always runs (against a dummy hash for unknown/disabled/
+    // expired accounts) so the response time does not leak account existence.
+    $usable = $account !== null && $account['enabled'] && !guest_user_expired($account)
+      && $account['passwordHash'] !== '';
+    if ($usable) {
+      $passwordOk = password_verify($password, $account['passwordHash']);
+    } else {
+      auth_dummy_verify($password);
+      $passwordOk = false;
+    }
+    if (!$usable || !$passwordOk) {
+      editor_audit('auth.guest_login_failed', '', ['login' => $login]);
       auth_reject('Неверный логин или пароль гостевого аккаунта', auth_register_failure($login));
     }
 
     auth_clear_throttle($login);
 
-    // A guest can resume its identity (to see its previous requests) with the key stored in its browser.
-    $resumeKey = strtolower(trim((string)($body['guest_key'] ?? '')));
-    $guestKey = preg_match('/^[a-f0-9]{48}$/', $resumeKey) === 1 ? $resumeKey : bin2hex(random_bytes(24));
+    // Ключ гостя выпускает только сервер. Раньше клиент мог прислать свой
+    // ключ и «унаследовать» чужие старые запросы; теперь принадлежность
+    // запроса определяется аккаунтом (см. cr_guest_owns), а ключ остался
+    // лишь совместимым полем ответа для старых клиентов.
+    $guestKey = bin2hex(random_bytes(24));
 
     // Never keep admin privileges in a guest session.
     unset($_SESSION['editor_studio_auth'], $_SESSION['editor_studio_user']);
     session_regenerate_id(true);
+    editor_session_mark_login();
+    editor_csrf_rotate();
 
     $_SESSION['editor_studio_guest'] = true;
     $_SESSION['editor_studio_guest_user'] = $account['id'];
     $_SESSION['editor_studio_guest_key'] = $guestKey;
     $_SESSION['editor_studio_guest_epoch'] = guest_user_epoch($account);
+    editor_audit('auth.guest_login');
 
     // Remember the last successful login (admin sees it in "Гостевые пользователи").
     store_guest_user_update($account['id'], ['lastLoginAt' => gmdate('Y-m-d\TH:i:s\Z')]);
@@ -246,10 +310,12 @@ try {
   }
 
   if ($action === 'logout') {
+    editor_audit('auth.logout');
     unset($_SESSION['editor_studio_auth'], $_SESSION['editor_studio_user']);
     clear_guest_session();
     session_regenerate_id(true);
-    respond(['ok' => true, 'authorized' => false, 'role' => null]);
+    $csrf = editor_csrf_rotate();
+    respond(['ok' => true, 'authorized' => false, 'role' => null, 'csrf' => $csrf]);
   }
 
   respond(['ok' => false, 'error' => 'Неизвестное действие'], 400);

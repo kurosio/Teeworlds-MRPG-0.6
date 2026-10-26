@@ -3,11 +3,13 @@
   window.__editorCorePageLoader = true;
 
 
+  // Иконки — локальные (vendor/), шрифты — системные: редактор работает
+  // офлайн, а CSP страниц может запрещать внешние источники (font-src 'self').
   const linkTags = [
-    '<link rel="preconnect" href="https://fonts.googleapis.com">',
-    '<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>',
-    '<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">',
-    '<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">',
+    // CSP страниц редакторов: всё локальное (vendor/), инлайн-скрипты страниц
+    // разрешены, внешние источники и встраивание объектов запрещены.
+    '<meta http-equiv="Content-Security-Policy" content="default-src \'self\'; script-src \'self\' \'unsafe-inline\'; style-src \'self\' \'unsafe-inline\'; img-src \'self\' data: blob:; font-src \'self\' data:; connect-src \'self\'; frame-src \'self\'; worker-src \'self\' blob:; media-src \'self\' data: blob:; object-src \'none\'; base-uri \'self\'; form-action \'self\'">',
+    '<link rel="stylesheet" href="vendor/fontawesome/css/all.min.css">',
     '<link rel="stylesheet" href="editor-core/editor-theme.css">',
     '<link rel="stylesheet" href="editor-core/position-picker.css">',
     '<link rel="stylesheet" href="editor-core/editor-template.css">',

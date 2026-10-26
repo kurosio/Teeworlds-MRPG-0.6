@@ -3,8 +3,8 @@
 // Endpoint: api/guests.php?action=...
 //
 //   list     (GET)  — guest accounts + editor tab catalogue
-//   create   (POST) — {login, name, password, pages[], enabled}
-//   update   (POST) — {id, login?, name?, pages[]?, enabled?}
+//   create   (POST) — {login, name, password, pages[], enabled, limits?, expires_at?}
+//   update   (POST) — {id, login?, name?, pages[]?, enabled?, limits?, expires_at?}
 //   password (POST) — {id, password}         (also revokes the account sessions)
 //   revoke   (POST) — {id}                   (ends all active sessions of the account)
 //   delete   (POST) — {id}
@@ -22,8 +22,8 @@ $ROLE = bootstrap_editor_api(true); // admin only
 $action = (string)($_GET['action'] ?? 'list');
 
 const GUEST_LOGIN_RE = '/^[a-z0-9_.-]{3,32}$/';
-const GUEST_PASSWORD_MIN = 6;
-const GUEST_PASSWORD_MAX = 128;
+const GUEST_PASSWORD_MIN = 10;
+const GUEST_PASSWORD_MAX = 72; // байт: граница bcrypt (см. editor_password_policy_error)
 const GUEST_NAME_MAX = 48;
 
 function guests_read_body(): array
@@ -64,11 +64,56 @@ function guests_valid_login(mixed $raw): string
 function guests_valid_password(mixed $raw): string
 {
     $password = (string)(is_scalar($raw) ? $raw : '');
-    $len = strlen($password);
-    if ($len < GUEST_PASSWORD_MIN || $len > GUEST_PASSWORD_MAX) {
-        respond(['ok' => false, 'error' => sprintf('Пароль: от %d до %d символов.', GUEST_PASSWORD_MIN, GUEST_PASSWORD_MAX)], 400);
+    $error = editor_password_policy_error($password, GUEST_PASSWORD_MIN);
+    if ($error !== null) {
+        respond(['ok' => false, 'error' => $error], 400);
     }
     return $password;
+}
+
+/**
+ * Индивидуальные лимиты аккаунта из тела запроса.
+ * null — наследовать глобальные правила; массив — только заданные ключи.
+ */
+function guests_valid_limits(mixed $raw): ?array
+{
+    if ($raw === null || $raw === '') {
+        return null;
+    }
+    if (!is_array($raw)) {
+        respond(['ok' => false, 'error' => 'Лимиты: ожидается объект {max_pending, cooldown, max_operations} или null.'], 400);
+    }
+    $unknown = array_diff(array_keys($raw), ['max_pending', 'cooldown', 'max_operations']);
+    if ($unknown) {
+        respond(['ok' => false, 'error' => 'Неизвестные поля лимитов: ' . implode(', ', array_map('strval', $unknown))], 400);
+    }
+    foreach ($raw as $key => $value) {
+        if ($value !== null && $value !== '' && !is_numeric($value)) {
+            respond(['ok' => false, 'error' => "Лимит {$key}: ожидается число."], 400);
+        }
+    }
+    return guest_limits_normalize($raw);
+}
+
+/**
+ * Срок действия аккаунта: '' — бессрочно, дата YYYY-MM-DD — до конца дня UTC,
+ * иначе полная дата-время ISO. Возвращает ISO-строку для хранения.
+ */
+function guests_valid_expires(mixed $raw): string
+{
+    $value = trim((string)(is_scalar($raw) ? $raw : ''));
+    if ($value === '') {
+        return '';
+    }
+    if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $value) === 1) {
+        $ts = strtotime($value . 'T23:59:59Z');
+    } else {
+        $ts = strtotime($value);
+    }
+    if ($ts === false) {
+        respond(['ok' => false, 'error' => 'Срок действия: укажите дату (ГГГГ-ММ-ДД) или оставьте пустым.'], 400);
+    }
+    return gmdate('Y-m-d\TH:i:s\Z', $ts);
 }
 
 /** Whitelist of editor tabs, returns valid keys only. */
@@ -130,6 +175,7 @@ try {
                 'guest_max_operations' => $guest['max_operations'],
                 'accounts' => $guest['users_count'],
             ],
+            'password_policy' => ['min' => GUEST_PASSWORD_MIN, 'max_bytes' => GUEST_PASSWORD_MAX],
         ]);
     }
 
@@ -140,6 +186,8 @@ try {
         $name = guests_clean_name($body['name'] ?? '');
         $pages = guests_valid_pages($body['pages'] ?? []);
         $enabled = ($body['enabled'] ?? true) !== false;
+        $limits = guests_valid_limits($body['limits'] ?? null);
+        $expiresAt = guests_valid_expires($body['expires_at'] ?? '');
         $now = gmdate('Y-m-d\TH:i:s\Z');
         $newId = guest_new_id();
 
@@ -158,6 +206,8 @@ try {
                 'createdAt' => $now,
                 'updatedAt' => $now,
                 'lastLoginAt' => '',
+                'limits' => $limits,
+                'expiresAt' => $expiresAt,
             ]);
         } catch (PDOException $e) {
             // Unique index on login: the same answer as the explicit check above.
@@ -167,6 +217,7 @@ try {
             throw $e;
         }
         $user = store_guest_user_get($newId);
+        editor_audit('guests.create', '', ['guest_id' => $newId, 'login' => $login, 'pages' => $pages]);
         respond(['ok' => true, 'user' => $user ? guest_user_public(guest_user_normalize($user) ?? $user) : null]);
     }
 
@@ -202,7 +253,14 @@ try {
                 $fields['sessionVersion'] = (int)$current['sessionVersion'] + 1;
             }
         }
+        if (array_key_exists('limits', $body)) {
+            $fields['limits'] = guests_valid_limits($body['limits']);
+        }
+        if (array_key_exists('expires_at', $body)) {
+            $fields['expiresAt'] = guests_valid_expires($body['expires_at']);
+        }
         store_guest_user_update($id, $fields);
+        editor_audit('guests.update', '', ['guest_id' => $id, 'fields' => array_keys($fields)]);
         $user = store_guest_user_get($id);
         respond(['ok' => true, 'user' => $user ? guest_user_public(guest_user_normalize($user) ?? $user) : null]);
     }
@@ -220,6 +278,7 @@ try {
             'sessionVersion' => (int)$current['sessionVersion'] + 1,
             'updatedAt' => gmdate('Y-m-d\TH:i:s\Z'),
         ]);
+        editor_audit('guests.password', '', ['guest_id' => $id]);
         respond(['ok' => true]);
     }
 
@@ -231,6 +290,7 @@ try {
             respond(['ok' => false, 'error' => 'Гостевой аккаунт не найден.'], 404);
         }
         store_guest_user_update($id, ['sessionVersion' => (int)$current['sessionVersion'] + 1]);
+        editor_audit('guests.revoke', '', ['guest_id' => $id]);
         respond(['ok' => true]);
     }
 
@@ -240,6 +300,7 @@ try {
         if (!store_guest_user_delete($id)) {
             respond(['ok' => false, 'error' => 'Гостевой аккаунт не найден.'], 404);
         }
+        editor_audit('guests.delete', '', ['guest_id' => $id]);
         respond(['ok' => true]);
     }
 
