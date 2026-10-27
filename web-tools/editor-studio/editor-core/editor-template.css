@@ -1786,3 +1786,83 @@ body.editor-focus .editor-sidebar-meta{
   .editor-sticky-toolbar .editor-btn{flex:1 1 auto;}
 }
 .related-record-list{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px;}
+
+/* -------------------------------------------------------------
+   Адаптивная «страховочная сетка» (идёт последней намеренно)
+   -------------------------------------------------------------
+   Раньше на ≤640px .editor-page-actions превращался в grid
+   repeat(auto-fit, minmax(140px, 1fr)): каждая кнопка, поле ввода,
+   select и переключатель становились отдельной ячейкой во всю её
+   ширину, шапка редактора растягивалась на пол-экрана (см. мобильный
+   Scenarios: Delete/JSON/Import/Save — каждый на своей строке), а
+   элементы с min-width вылезали за край и налезали друг на друга.
+   Ниже — предсказуемый перенос: кнопки делят строку пополам, поля и
+   выпадающие списки занимают строку целиком, иконочные кнопки не
+   растягиваются. Специфичность .editor-page-header/.editor-sticky-toolbar
+   выше одиночных Tailwind-утилит (flex-nowrap и т.п.), которые иначе
+   перебивали бы перенос из-за порядка подключения стилей. */
+@media (max-width:640px){
+  .editor-page-header .editor-page-actions,
+  .editor-sticky-toolbar .editor-page-actions,
+  .editor-page-actions{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    justify-content:flex-start;
+    width:100%;
+    min-width:0;
+  }
+
+  .editor-page-actions > *{min-width:0;}
+
+  /* Текстовые кнопки — по две в ряд, подписи не рвутся по словам. */
+  .editor-page-actions .editor-btn{
+    flex:1 1 calc(50% - 4px);
+    justify-content:center;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+
+  /* Кнопка только с иконкой (помощь «?», корзина, undo) не должна
+     тянуться на полстроки из-за общего правила выше. */
+  .editor-page-actions .editor-btn:has(> i:only-child),
+  .editor-page-actions .editor-icon-btn{
+    flex:0 0 auto;
+    justify-content:center;
+  }
+  .editor-page-actions .editor-btn:has(> i:only-child){min-width:44px;}
+
+  /* Поля в шапке — всегда своей строкой: в ячейке 140px select/поиск
+     нечитаемы и именно они создавали горизонтальный перелив. */
+  .editor-page-actions :is(input, select, textarea){
+    flex:1 1 100%;
+    width:auto;
+    max-width:100%;
+  }
+  .editor-page-actions > label{flex:1 1 100%;min-width:0;}
+
+  /* Заголовок страницы: длинное название/подзаголовок переносятся,
+     а не выдавливают действия за экран. */
+  .editor-page-title{min-width:0;flex:1 1 auto;}
+  .editor-page-title h1{overflow-wrap:anywhere;}
+  .editor-page-title > i{flex-basis:36px;width:36px;height:36px;}
+
+  /* Окна не выходят за вьюпорт телефона. */
+  .editor-modal-content{max-width:calc(100vw - 24px);max-width:calc(100dvw - 24px);}
+  .editor-modal-backdrop{padding:12px;}
+
+  /* Любой прямой ребёнок страницы может сжаться: flex/grid-элементы
+     по умолчанию имеют min-width:auto и широким содержимым (таблицей,
+     длинным словом) раздвигают страницу вбок. */
+  .editor-page > *,
+  .editor-page-body > *,
+  .main-container > *{min-width:0;}
+}
+
+/* Совсем узкие экраны: одна кнопка в ряд надёжнее, чем две по 140px. */
+@media (max-width:360px){
+  .editor-page-actions .editor-btn{flex-basis:100%;}
+  .editor-page-actions .editor-btn:has(> i:only-child),
+  .editor-page-actions .editor-icon-btn{flex-basis:auto;}
+}
